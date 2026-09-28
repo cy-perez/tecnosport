@@ -18,6 +18,7 @@ Umbrales WCAG 2.1: 4.5:1 para texto normal, 3:1 para texto grande (24px o
 | Texto sobre el tono 2 de la escala de ambar | `#14171C` | `#F6BE25` | 10.53:1 | AAA |
 | Texto sobre el tono 3 de la escala de ambar | `#14171C` | `#F8C848` | 11.42:1 | AAA |
 | Texto sobre el tono 4 de la escala de ambar | `#14171C` | `#F9D36C` | 12.46:1 | AAA |
+| Texto sobre el tono 5 de la escala de ambar | `#14171C` | `#FBDE8F` | 13.64:1 | AAA |
 | Etiqueta 'En stock' sobre tarjeta | `#116B3E` | `#FFFFFF` | 6.57:1 | AA |
 | Aviso sobre tarjeta | `#A15C00` | `#FFFFFF` | 5.19:1 | AA |
 | Mensaje de error sobre fondo | `#B3261E` | `#F5F6F8` | 6.04:1 | AA |
@@ -45,6 +46,7 @@ suave que funciona sobre blanco casi nunca funciona sobre negro.
 | Texto sobre el tono 2 de la escala de ambar | `#14171C` | `#F6BE25` | 10.53:1 | AAA |
 | Texto sobre el tono 3 de la escala de ambar | `#14171C` | `#F8C848` | 11.42:1 | AAA |
 | Texto sobre el tono 4 de la escala de ambar | `#14171C` | `#F9D36C` | 12.46:1 | AAA |
+| Texto sobre el tono 5 de la escala de ambar | `#14171C` | `#FBDE8F` | 13.64:1 | AAA |
 | Etiqueta 'En stock' sobre tarjeta | `#3DBB7E` | `#191E26` | 6.86:1 | AA |
 | Aviso sobre tarjeta | `#E5912F` | `#191E26` | 6.71:1 | AA |
 | Mensaje de error sobre fondo | `#F27168` | `#0E1217` | 6.57:1 | AA |

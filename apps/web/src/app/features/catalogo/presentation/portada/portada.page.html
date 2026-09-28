@@ -54,25 +54,40 @@
     class="grid grid-cols-[repeat(auto-fit,minmax(var(--ancho-min-eje),1fr))] gap-16"
     [attr.aria-label]="'portada.lineas' | transloco"
   >
-    <!-- `hover:border-ts-primario` y no `acento`: el ambar sobre blanco da 1,85:1, y el salto
-           desde `--color-borde` es de 1,44:1, asi que la afordancia de hover de estas baldosas
-           simplemente no existia en tema claro. En oscuro si se veia —9,03:1— y por eso nadie lo
-           noto. `docs/04-ui-marca.md` lo dice sin rodeos: el ambar es relleno con texto grafito
-           encima, nunca linea ni icono sobre fondo claro. `--color-primario` es grafito en claro y
-           ambar en oscuro, que es lo que este borde necesita en cada tema. -->
-    <!-- **`bg-ts-primario-suave` y no `superficie`**, que es el relleno tenue de marca que se pidió
-           el 26 de septiembre de 2026. El token ya existía y hace justo esto: en tema claro es el
-           grafito de marca aclarado casi hasta el gris (#E8E9E9) y en oscuro el ámbar apagado
-           (#2E2914), así que cada tema pone su propio tinte de marca sin una regla aparte.
+    <!-- **Ámbar suave, y es la tercera vuelta de esta decisión: conviene leerla entera.**
+           `ADR-0063` probó un tono distinto por línea (`acento-2/3/4`), `ADR-0064` lo revirtió al
+           día siguiente a `primario-suave` con dos argumentos, y el 28 de septiembre de 2026 se
+           pidió volver al ámbar —uno solo, más suave que el del carrusel— con `ADR-0065`. El
+           tono 5 no existía: se pidió al kit, que deriva la rampa en pasos del 14 %, en vez de
+           escribir un amarillo a mano (regla dura #2). De los
+           dos argumentos del 0064, uno muere y el otro se asume a sabiendas: **cuatro tonos ordenan
+           cuatro líneas que valen lo mismo** deja de aplicar en cuanto el tono es uno; **el ámbar es
+           una sola cosa por pantalla** sigue siendo cierto y esta pantalla ya lo gasta en los
+           botones del carrusel. Se acepta porque `acento-5` es el ámbar cinco pasos aclarado hacia
+           la superficie, no el color señal: la jerarquía con el carrusel se mantiene por saturación.
 
-           **No es ámbar, y no puede serlo.** `ADR-0063` probó rellenar estas baldosas con la escala
-           `--color-acento-2/3/4` y `ADR-0064` lo revirtió al día siguiente: el tono más claro se
-           leía como un botón deshabilitado, y cuatro tonos ordenan cuatro líneas que valen lo
-           mismo. La regla del ámbar —una sola cosa por pantalla— volvió a quedar sin excepciones,
-           y esta pantalla ya gasta la suya en los botones del carrusel. -->
+           **El tono es el mismo en los dos temas, y por eso el texto y los bordes también.** Los
+           cinco tokens de la escala ámbar valen igual en claro y en oscuro, así que aquí no hay
+           nada que voltear — pero eso obliga a soltar los tokens que sí voltean. `text-ts-texto` se
+           iba a casi blanco en oscuro y sobre este amarillo no se leía; `sobre-acento` es grafito
+           siempre y ya está vigilado por `npm run contrastes`.
+
+           **El borde cambia de par por lo mismo, y el viejo estaba al revés en oscuro**:
+           `--color-borde` sobre este amarillo da 1,3:1 en claro —invisible— pero 8,9:1 en oscuro, y
+           el hover a `--color-primario` daba grafito en claro (fuerte) y ámbar en oscuro (1,4:1),
+           o sea que en tema oscuro pasar el puntero **borraba** el borde en vez de marcarlo. Ahora
+           el reposo es `acento` —un filo apenas más hondo que el relleno, decoración— y el hover
+           `sobre-acento`, que es grafito en los dos temas y es la afordancia de verdad.
+
+           **El anillo de foco se queda en `anillo-foco` y NO pasa a `anillo-foco-sobre-acento`**,
+           que es lo que hacen `ts-boton` en su variante ámbar y el enlace de salto. Aquí sería el
+           error contrario: `outline-offset` de 2 px dibuja el anillo **fuera** de la baldosa, sobre
+           el lienzo, y `--color-sobre-acento` es grafito contra un lienzo casi negro en tema oscuro
+           —1,05:1, invisible—. `--color-foco` es ámbar ahí y da 8,9:1 contra el lienzo, separado de
+           la baldosa por los 2 px del offset. El par ya lo vigila `npm run contrastes`. -->
     @for (linea of lineas; track linea) {
       <a
-        class="anillo-foco chaflan border border-ts-borde bg-ts-primario-suave p-24 text-ts-texto no-underline hover:border-ts-primario"
+        class="anillo-foco chaflan border border-ts-acento bg-ts-acento-5 p-24 text-ts-sobre-acento no-underline hover:border-ts-sobre-acento"
         [routerLink]="['/', idioma(), 'productos']"
         [queryParams]="{ linea }"
       >

@@ -103,8 +103,14 @@ def derivar(t):
     d["sobre_primario"]    = sobre(c["primario"])
     d["sobre_acento"]      = sobre(c["acento"])
     d["acento_hover"], d["acento_pressed"] = estados_primario(c["acento"])
-    # La escala de ambar. Cuatro tonos de la MISMA senal, uno por linea de negocio, mezclando el
-    # acento hacia la superficie en pasos iguales. El tono 1 es el acento tal cual.
+    # La escala de ambar. Tonos de la MISMA senal, mezclando el acento hacia la superficie en pasos
+    # iguales del 14 %. El tono 1 es el acento tal cual.
+    #
+    # Nacio con tres pasos y una intencion concreta -- un tono por linea de negocio, `ADR-0063` --
+    # que `ADR-0064` revirtio al dia siguiente. El quinto paso entro el 28 de septiembre de 2026
+    # con `ADR-0065`, que rellena las baldosas de linea con UN tono para las cuatro y lo queria mas
+    # suave que el 4. O sea que la escala ya no es "una por linea": es la rampa de un mismo ambar, y
+    # quien la usa elige cuanto quiere bajar la senal.
     #
     # Hacia el claro y no hacia el oscuro, y no es gusto: oscurecer un 12 % es exactamente lo que
     # hace `estados_primario` para el hover, asi que el tono 2 saldria identico al hover del tono 1
@@ -112,7 +118,7 @@ def derivar(t):
     #
     # El texto encima no cambia: mezclar hacia la superficie solo ACLARA, asi que el contraste de
     # `sobre_acento` sube en cada paso en vez de bajar. Lo comprueba la tabla de contraste.
-    for _i, _p in ((2, 0.14), (3, 0.28), (4, 0.42)):
+    for _i, _p in ((2, 0.14), (3, 0.28), (4, 0.42), (5, 0.56)):
         d["acento_{}".format(_i)] = mezclar(c["acento"], c["superficie"], _p)
     d["deshabilitado"]     = mezclar(c["texto_suave"], c["fondo"], 0.55)
     d["sobre_deshabilitado"] = sobre(d["deshabilitado"])
@@ -141,7 +147,7 @@ def derivar(t):
     d["o_acento"]     = c["acento"]
     # El ambar no cambia de tema (ver `o_acento` justo arriba), asi que su escala tampoco. Se
     # declaran igual para que el bloque oscuro no dependa de que el claro siga cargado.
-    for _i in (2, 3, 4):
+    for _i in (2, 3, 4, 5):
         d["o_acento_{}".format(_i)] = d["acento_{}".format(_i)]
     d["o_marca"]      = d["o_superficie"]
     d["o_exito"]      = c["exito"]
@@ -291,7 +297,7 @@ def css(d, tip, esp, rad, tipo, extra=None, fuentes_ok=False):
     L += ["", ":root {"]
     for k in ["primario","primario_hover","primario_pressed","primario_suave","sobre_primario",
               "acento","acento_hover","acento_pressed","sobre_acento",
-              "acento_2","acento_3","acento_4",
+              "acento_2","acento_3","acento_4","acento_5",
               "marca","marca_alt","marca_fuerte","sobre_marca",
               "fondo","superficie","superficie_alt","texto","texto_suave","borde",
               "exito","aviso","error","deshabilitado","sobre_deshabilitado",
@@ -354,7 +360,7 @@ def css(d, tip, esp, rad, tipo, extra=None, fuentes_ok=False):
                  ("primario-pressed","o_primario_pressed"),("primario-suave","o_primario_suave"),
                  ("sobre-primario","o_sobre_primario"),("acento","o_acento"),
                  ("acento-2","o_acento_2"),("acento-3","o_acento_3"),
-                 ("acento-4","o_acento_4"),
+                 ("acento-4","o_acento_4"),("acento-5","o_acento_5"),
                  ("marca","o_marca"),("marca-alt","o_marca_alt"),
                  ("marca-fuerte","o_marca_fuerte"),("sobre-marca","o_sobre_marca"),
                  ("sobre-acento","o_sobre_acento"),("exito","o_exito"),("aviso","o_aviso"),
@@ -408,6 +414,7 @@ PARES = [("texto","fondo","Texto principal sobre fondo",False),
          ("sobre_acento","acento_2","Texto sobre el tono 2 de la escala de ambar",False),
          ("sobre_acento","acento_3","Texto sobre el tono 3 de la escala de ambar",False),
          ("sobre_acento","acento_4","Texto sobre el tono 4 de la escala de ambar",False),
+         ("sobre_acento","acento_5","Texto sobre el tono 5 de la escala de ambar",False),
          ("exito","superficie","Etiqueta 'En stock' sobre tarjeta",False),
          ("aviso","superficie","Aviso sobre tarjeta",False),
          ("error","fondo","Mensaje de error sobre fondo",False),
