@@ -21,7 +21,6 @@ import {
   logoAmericanExpress,
   logoBancolombia,
   logoBbva,
-  logoContraentrega,
   logoDaviplata,
   logoMastercard,
   logoNequi,
@@ -89,61 +88,83 @@ const ENLACES_LEGALES: readonly EnlaceDelPie[] = [
 ];
 
 /**
- * Un medio de pago del pie: su etiqueta y el logo con que se dibuja.
+ * Un medio de pago del pie: su etiqueta y, si lo tiene, el logo con que se dibuja.
  *
- * <p><b>El logo ya no es opcional</b>, y eso es lo que queda de una simplificación. Hubo un segundo
- * campo, `icono`, para los dos que no tenían marca propia —la tarjeta genérica y la contraentrega—
- * con la regla de que uno de los dos estaba siempre en `null`. El 28 de septiembre de 2026 los dos
- * consiguieron dibujo propio: la contraentrega su símbolo, y la tarjeta se abrió en las tres
- * franquicias que Wompi acepta de verdad. Sin ningún caso que lo use, el campo era una rama muerta
- * y una invitación a volver a mezclar dos lenguajes gráficos en una lista.
+ * <p><b>El logo es opcional y hoy hay exactamente un caso sin él</b>, la contraentrega. Llegó a ser
+ * obligatorio durante unas horas del 28 de septiembre de 2026 —ese día la contraentrega estrenó
+ * símbolo propio y la tarjeta genérica se abrió en las tres franquicias de Wompi, así que no
+ * quedaba ninguno pelado— y volvió a ser opcional el mismo día, cuando el símbolo de la
+ * contraentrega se quitó a pedido.
+ *
+ * <p><b>Sin logo, el nombre se ve; con logo, no.</b> Eso ya no es un campo que haya que acordarse de
+ * marcar: la plantilla lo deduce de si hay logo, y no puede desincronizarse. Hubo una bandera
+ * `nombreALaVista` para lo mismo, y con ella eran dos datos que había que mantener de acuerdo
+ * —poner el nombre a la vista junto a un logo que ya dice lo mismo es el ruido que se quitó, y
+ * quitarlo sin logo deja un elemento de lista vacío—.
  *
  * <p>Los logos salen de `logos-pago.generado.ts`, que produce `npm run logos-pago`. El porqué de
  * que vayan en línea y no como archivos servidos está en `ts-logo-pago`.
  */
 interface MedioDePago {
   readonly clave: string;
-  readonly logo: LogoPago;
+
+  /** Sin logo, el medio va como texto y su nombre se ve. Hoy solo la contraentrega. */
+  readonly logo?: LogoPago;
 
   /**
-   * Enseña el nombre al lado del logo en vez de dejarlo solo para el lector de pantalla. Lo lleva
-   * únicamente la contraentrega, y va como dato y no como un caso en la plantilla porque es la
-   * excepción de una regla, no una segunda regla.
-   */
-  readonly nombreALaVista?: boolean;
-
-  /**
-   * Caja distinta de la de la fila, cuando el dibujo no aguanta la de todos.
+   * Caja distinta de la de la fila —`h-24 w-64`—, cuando el dibujo no aguanta la de todos.
    *
    * <p><b>La caja compartida no iguala lo que se ve, iguala lo que se reserva.</b> Cada logo se
-   * contiene dentro de ella, así que lo que acaba midiendo su dibujo depende de cuánto lienzo
-   * vacío traiga su propio archivo y de qué tan grande esté puesto el logotipo dentro. Medido en el
-   * navegador el 28 de septiembre de 2026, la altura de equis de la fila iba de 4,0 px
-   * (Bancolombia) a 6,2 (Sistecrédito) sin que nadie lo hubiera decidido. De ahí las tres
-   * excepciones, y las tres salen de una medición y no del ojo:
+   * contiene dentro de ella, así que lo que acaba midiendo su dibujo depende de su relación de
+   * aspecto: los apaisados llegan al ancho y se quedan cortos de alto, los cuadrados al revés. Sin
+   * ninguna excepción la columna tenía a American Express, PSE, Nequi y BBVA pisando los 19-23 px
+   * de alto —más que Visa, que es la franquicia que la gente busca primero— y a Sistecrédito en
+   * 7,7. El tamaño lo estaba decidiendo el encuadre del archivo.
+   *
+   * <p><b>Lo que se baja es el alto, y el ancho casi nunca se toca</b>: nueve de los diez reservan
+   * `w-64`, y esa columna de 64 px más el `gap-x-16` es lo único que sostiene las dos columnas del
+   * `flex-wrap`, a 0 y a 80 px. El décimo es Bancolombia, que lo toca porque no le queda otra —ver
+   * más abajo— y por eso es el único que rompe esa rejilla. Todo, alto y ancho, sale de un token:
+   * nunca un píxel suelto (regla dura #2).
+   *
+   * <p>Las seis excepciones de hoy, todas del 28 de septiembre de 2026 y todas medidas en el
+   * navegador, nunca a ojo:
    *
    * <ul>
-   *   <li><b>La contraentrega</b>, `h-32`. Es el único cuadrado —512×512, dos manos y una caja— y
-   *       a la altura de la fila le queda una fracción del área de un logotipo ancho. Fue `h-48`
-   *       hasta que pesó el doble que sus vecinos.
-   *   <li><b>Bancolombia</b>, `h-32 w-96`. Su archivo pone el logotipo muy pequeño dentro de su
-   *       propio lienzo —173 de 217 de ancho, 22 de 61 de alto— así que en la caja común su letra
-   *       medía 4,0 px contra los 6,2 de Sistecrédito. <b>Hacen falta las dos medidas</b>: solo con
-   *       `w-96` la caja pasa a ser más apaisada que el dibujo y el límite se muda al alto, que
-   *       seguía en 24 — la letra se quedaba en 5,35. Con las dos, 6,02.
-   *   <li><b>Addi</b>, `h-16`. Al revés que los anteriores: su archivo va ceñido, así que en la
-   *       caja común se dibujaba a 22,6 px de alto contra los 19,1 de BBVA, y era el logo más
-   *       grande de la columna sin ser el más importante. Un paso de la escala por debajo lo deja
-   *       en 15,1.
+   *   <li><b>American Express</b> y <b>PSE</b>, `h-16`. Eran los dos más altos de la columna
+   *       —23,4 y 23,6 px de tinta— sin que eso lo hubiera decidido nadie: los dos son casi tan
+   *       apaisados como la caja, así que la llenaban de lado a lado. Quedan en 43,8×16 y 40,3×16.
+   *   <li><b>Nequi</b>, <b>BBVA</b> y <b>Addi</b>, `h-12`. Los tres se dibujaban entre 19 y 23 px de
+   *       alto. Quedan en 38×12, 39,3×12 y 31,5×12.
+   *   <li><b>Bancolombia</b>, `w-logo-pago`. El único que pide <b>ancho</b>, y el único que pide un
+   *       token con nombre en vez de un escalón de la escala: ver abajo.
    * </ul>
    *
-   * <p>Va como dato y no como un caso en la plantilla porque son excepciones de una regla, no una
-   * segunda regla.
+   * <h3>Bancolombia, y por qué su escalón está en el ancho</h3>
    *
-   * <p><b>Fue `h-48` hasta el 28 de septiembre de 2026 y bajó a `h-32`.</b> A 48 px pesaba el doble
-   * que cualquier logotipo de la fila y se leía como un icono de otra familia más que como un medio
-   * de pago entre once. A 32 queda a la par visual de Daviplata —que contenido en la caja se dibuja
-   * a 24 de alto por unos 29 de ancho— sin caer en los 24 donde el símbolo se vuelve mancha.
+   * <p>Llevaba `h-32 w-96` por la razón equivocada: en la caja común su letra medía 4,0 px contra
+   * los 6,2 de Sistecrédito, y la culpa no era de la caja sino de su archivo, que declaraba un
+   * lienzo de 217×61 con el logotipo metido en `22 19 174 23` —un tercio del alto en aire—.
+   * Ceñido el `viewBox` en el generador, esa compensación sobra: **una caja a medida para tapar un
+   * lienzo mal recortado es una excepción que no sabe lo que está arreglando.**
+   *
+   * <p>Lo que queda es un tamaño pedido a propósito, y va en `w-` y no en `h-` porque **en este
+   * logo el `h-` no hace nada**. Ceñido, su relación es 174×23, o sea 7,6:1, la más apaisada de los
+   * diez: dentro de una caja de 64 de ancho el dibujo topa con el ancho mucho antes que con el
+   * alto, así que `h-24`, `h-32` y `h-48` dan los mismos 63,7×8,2 px. Medido en el navegador, los
+   * tres.
+   *
+   * <p><b>Y va en un token con nombre porque en la escala no hay nada en medio.</b> De 64 el
+   * siguiente escalón es 96 —y es el último—, que deja el logo en 95,6×12,3 px: demasiado. Los
+   * 80 de `--ancho-logo-pago` lo dejan en 79,6×10,2. La otra salida era meter un 80 en
+   * `espaciado_px`, y se descartó: rompía la progresión de la escala —de 32 en adelante va ×1,5—
+   * y regalaba un `p-80` y un `gap-80` que nadie pidió. El precedente es `--ancho-menu-riel`, 72 px,
+   * que tampoco está en la escala por lo mismo.
+   *
+   * <p><b>Es el único que rompe la columna de 64</b>, y cabe porque cae en la columna derecha: 80 +
+   * 80 = 160 sobre los 214 px que mide la columna del pie en escritorio. Si algún día cambia el
+   * orden de la lista y le toca la izquierda, empuja a su vecina; es un precio conocido, no un
+   * descuido.
    */
   readonly clase?: string;
 }
@@ -174,20 +195,17 @@ interface MedioDePago {
 const MEDIOS_DE_PAGO: readonly MedioDePago[] = [
   { clave: 'pie.pagos.visa', logo: logoVisa },
   { clave: 'pie.pagos.mastercard', logo: logoMastercard },
-  { clave: 'pie.pagos.american_express', logo: logoAmericanExpress },
-  { clave: 'pie.pagos.pse', logo: logoPse },
-  { clave: 'pie.pagos.nequi', logo: logoNequi },
-  { clave: 'pie.pagos.bancolombia', logo: logoBancolombia, clase: 'h-32 w-96' },
+  { clave: 'pie.pagos.american_express', logo: logoAmericanExpress, clase: 'h-16' },
+  { clave: 'pie.pagos.pse', logo: logoPse, clase: 'h-16' },
+  { clave: 'pie.pagos.nequi', logo: logoNequi, clase: 'h-12' },
+  { clave: 'pie.pagos.bancolombia', logo: logoBancolombia, clase: 'w-logo-pago' },
   { clave: 'pie.pagos.daviplata', logo: logoDaviplata },
-  { clave: 'pie.pagos.bbva', logo: logoBbva },
+  { clave: 'pie.pagos.bbva', logo: logoBbva, clase: 'h-12' },
   { clave: 'pie.pagos.sistecredito', logo: logoSistecredito },
-  { clave: 'pie.pagos.addi', logo: logoAddi, clase: 'h-16' },
-  {
-    clave: 'pie.pagos.contraentrega',
-    logo: logoContraentrega,
-    nombreALaVista: true,
-    clase: 'h-32',
-  },
+  { clave: 'pie.pagos.addi', logo: logoAddi, clase: 'h-12' },
+  // Sin logo: va solo con su nombre, y por eso es la única de la columna que se lee en vez de
+  // reconocerse. Tuvo símbolo propio unas horas del 28 de septiembre de 2026 y se quitó a pedido.
+  { clave: 'pie.pagos.contraentrega' },
 ];
 
 /**

@@ -50,14 +50,17 @@ describe('Pie', () => {
    *
    * <p>Eran siete `<img>` de `assets/pagos/` hasta el 28 de septiembre de 2026, y desde entonces
    * son SVG en línea —`ts-logo-pago`— porque un `<img>` no hereda `currentColor` y los logos
-   * pasaron a monocromo. Lo que la prueba cuida es lo de siempre: que sigan siendo siete y que
-   * ninguno hable.
+   * pasaron a monocromo. Lo que la prueba cuida es lo de siempre: que sigan siendo los que son y
+   * que ninguno hable.
+   *
+   * <p><b>Son diez y los medios son once</b>: la contraentrega no tiene logo, va con su nombre a la
+   * vista. Ese uno de diferencia es justo lo que fija la prueba de más abajo.
    */
   it('los logos de pago son decorativos, no el nombre del medio', async () => {
     const { container } = await renderPie();
 
     const logos = [...container.querySelectorAll('ts-logo-pago svg')];
-    expect(logos.length).toBe(11);
+    expect(logos.length).toBe(10);
     expect(logos.every((svg) => svg.getAttribute('aria-hidden') === 'true')).toBe(true);
     expect(logos.every((svg) => svg.getAttribute('focusable') === 'false')).toBe(true);
   });
@@ -66,7 +69,7 @@ describe('Pie', () => {
    * <b>Quitar el texto de la vista no puede dejar la columna muda.</b> Desde el 28 de septiembre de
    * 2026 los medios con logo van sin nombre visible —el logo se explica solo— y el logo es
    * `aria-hidden`, así que sin el `sr-only` de al lado quien escucha no oiría absolutamente nada:
-   * ocho elementos de lista vacíos bajo el título "Medios de pago".
+   * diez elementos de lista vacíos bajo el título "Medios de pago".
    *
    * <p>Esta prueba es la que sostiene esa mitad. Y de paso sostiene lo de Addi: su nombre accesible
    * sigue diciendo "próximamente" aunque el texto ya no se vea.
@@ -89,9 +92,6 @@ describe('Pie', () => {
       es.pie.pagos.bbva,
       es.pie.pagos.sistecredito,
       es.pie.pagos.addi,
-      // La contraentrega va al final y es la única con el nombre a la vista, así que su `span` no
-      // es `sr-only` y aquí sale vacío. Lo comprueba la prueba de abajo, que es donde toca.
-      '',
     ]);
   });
 
@@ -128,24 +128,55 @@ describe('Pie', () => {
   });
 
   /**
-   * <b>La contraentrega es la única con el nombre a la vista, y va al final.</b> Su símbolo es el
-   * único cuadrado y detallado de los once —dos manos y una caja en 512x512— y a la altura de fila
-   * de los logotipos anchos se vuelve una mancha; con el nombre al lado no tiene que cargar solo
-   * con el significado.
+   * <b>La contraentrega es la única sin logo, y por eso la única con el nombre a la vista.</b> Va al
+   * final, que es donde una excepción estorba menos.
    *
-   * <p>Lo que la prueba cuida es que siga siendo <b>la única</b>: el día que alguien le devuelva el
-   * texto a otra, la columna vuelve a ser la lista de nombres que se quitó a propósito.
+   * <p>Tuvo símbolo propio —dos manos y una caja en 512×512— unas horas del 28 de septiembre de
+   * 2026, con el nombre al lado; se quitó a pedido.
+   *
+   * <p><b>Lo que la prueba cuida son las dos mitades de una misma regla</b>, porque ya no hay una
+   * bandera que las ate: quien tiene logo calla —si no, la columna vuelve a ser la lista de nombres
+   * que se quitó a propósito— y quien no lo tiene habla —si no, queda un elemento de lista vacío
+   * que nadie ve ni oye—. Un `@if` invertido en la plantilla rompe exactamente una de las dos.
    */
-  it('solo la contraentrega lleva su nombre a la vista, y va de última', async () => {
+  it('solo el medio sin logo lleva su nombre a la vista, y va de último', async () => {
     const { container } = await renderPie();
 
-    const alaVista = [...container.querySelectorAll('ts-logo-pago')]
-      .map((logo) => logo.parentElement)
-      .filter((fila) => fila?.querySelector('span:not(.sr-only)'));
+    const filas = [...container.querySelectorAll('ul[aria-labelledby="pie-columna-pagos"] > li')];
 
+    const alaVista = filas.filter((fila) => fila.querySelector('span:not(.sr-only)'));
     expect(alaVista.length).toBe(1);
+    expect(alaVista[0]).toBe(filas.at(-1));
     expect(alaVista[0]?.textContent?.trim()).toBe(es.pie.pagos.contraentrega);
-    expect(alaVista[0]).toBe(container.querySelectorAll('ts-logo-pago')[10]?.parentElement);
+
+    // Y la otra mitad: el único que habla es también el único sin logo.
+    expect(alaVista[0]?.querySelector('ts-logo-pago')).toBeNull();
+    expect(filas.filter((fila) => !fila.querySelector('ts-logo-pago'))).toEqual(alaVista);
+  });
+
+  /**
+   * <b>Todos los logos se pegan al borde izquierdo de su caja, y no hay excepciones.</b> Una lista
+   * se lee por su borde izquierdo, y con el centrado que hubo hasta el 28 de septiembre de 2026 ese
+   * borde era un zigzag que no había decidido nadie: cada dibujo se apartaba la mitad de lo que le
+   * sobraba en la caja de 64 px —Visa 14, Daviplata 17,4, Mastercard 12, BBVA 0—, según su
+   * relación de aspecto.
+   *
+   * <p>Daviplata estuvo centrado unos minutos de ese día, por ser el dibujo más cuadrado de los
+   * diez —50×41, y a ras deja 34,7 px vacíos a su derecha—, y se descartó.
+   *
+   * <p><b>Lo que esta prueba cuida es que no vuelva a aparecer una excepción</b>, no que se vea
+   * bien: lo que un `preserveAspectRatio` hace con un dibujo no se sabe en jsdom, donde es una
+   * cadena más (regla dura #8). Los píxeles de arriba salen del navegador.
+   */
+  it('todos los logos dibujan a ras del borde izquierdo de su caja', async () => {
+    const { container } = await renderPie();
+
+    const encuadres = [...container.querySelectorAll('ts-logo-pago svg')].map((svg) =>
+      svg.getAttribute('preserveAspectRatio'),
+    );
+
+    expect(encuadres.length).toBe(10);
+    expect(encuadres.every((encuadre) => encuadre === 'xMinYMid meet')).toBe(true);
   });
 
   /**

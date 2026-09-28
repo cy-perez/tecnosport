@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Convierte los logos de los medios de pago en un registro monocromo que hereda `currentColor`.
 //
-// **Por qué un generador y no once `<img>`.** Hasta el 28 de septiembre de 2026 estos logos se
+// **Por qué un generador y no diez `<img>`.** Hasta el 28 de septiembre de 2026 estos logos se
 // servían como archivos desde `src/assets/pagos/` y se pintaban con `<img>`, cada uno con sus
 // colores de marca sobre una pastilla blanca. La pastilla no era un adorno: tres son negro puro o
 // casi —Addi, BBVA y Bancolombia— y sobre `--color-marca`, que es grafito en los dos temas, no se
@@ -65,13 +65,13 @@ const ORIGENES = {
 };
 
 /**
- * Las marcas de pago y el símbolo de la contraentrega, en el orden en que los enseña el pie.
+ * Las marcas de pago, en el orden en que las enseña el pie.
  *
- * **La contraentrega no es una marca y aun así vive aquí**, porque lo que agrupa esta lista no es
- * "logos de terceros" sino "dibujos rellenos con su propia caja". Su símbolo es un icono de 512×512
- * sin un solo relleno declarado, así que ya hereda `currentColor`; lo que no puede es pasar por
- * `ts-icono`, que dibuja con contorno y `fill="none"` y lo dejaría invisible —el mismo motivo por
- * el que `ts-icono-marca` existe aparte—.
+ * <p><b>Tuvo un duodécimo que no era una marca</b>: el símbolo de la contraentrega, dos manos y una
+ * caja en 512×512. Salió el 28 de septiembre de 2026 junto con el archivo, porque el pie dejó de
+ * dibujarlo y aquí la regla es la de abajo —o entran en `LOGOS`, o se borran—. La contraentrega
+ * sigue en el pie; lo que ya no tiene es dibujo, solo su nombre. Con él se fueron 2,0 kB de
+ * trazado que viajaban en el paquete sin que nadie los pintara.
  *
  * <p><b>Las tres franquicias de tarjeta van primero y son exactamente las que Wompi acepta</b>:
  * Visa, Mastercard y American Express, nacionales e internacionales, según su documentación y su
@@ -111,6 +111,7 @@ const LOGOS = [
     archivo: "bancolombia.svg",
     titulo: "Bancolombia",
     origen: "propio",
+    vista: "22 19 174 23",
   },
   { constante: "logoDaviplata", archivo: "daviplata.svg", titulo: "Daviplata", origen: "propio" },
   { constante: "logoBbva", archivo: "bbva.svg", titulo: "BBVA", origen: "propio" },
@@ -120,12 +121,6 @@ const LOGOS = [
     titulo: "Sistecrédito",
     origen: "propio",
   },
-  {
-    constante: "logoContraentrega",
-    archivo: "contraentrega.svg",
-    titulo: "Contraentrega",
-    origen: "propio",
-  },
   { constante: "logoAddi", archivo: "addi.svg", titulo: "Addi", origen: "propio" },
 ];
 
@@ -133,7 +128,7 @@ const LOGOS = [
  * Cuándo se declara `vista` en `LOGOS` y por qué no es lo normal.
  *
  * <p>Lo normal es que el `viewBox` salga del archivo: es el dueño del logo quien decide cuánto aire
- * lleva alrededor. La anulación existe para un caso concreto y hoy solo la usa Visa.
+ * lleva alrededor. La anulación existe para cuando ese aire no lo decidió nadie, y hoy la usan dos.
  *
  * <p><b>`simple-icons` dibuja todos sus iconos en un cuadrado de 24×24</b>, porque su caso de uso
  * es un glifo cuadrado. El logotipo de Visa es apaisado, así que dentro de ese cuadrado ocupa los
@@ -150,6 +145,25 @@ const LOGOS = [
  * American Express: aquellos cambiaban de <b>dibujo</b> —les faltaban los círculos y la silueta—,
  * y a este no le falta nada. Vendorizarlo por un encuadre sería perder la actualización de la
  * librería a cambio de cuatro números que se pueden escribir aquí.
+ *
+ * <h2>Bancolombia, `22 19 174 23`</h2>
+ *
+ * <p>El segundo caso, y entró el 28 de septiembre de 2026 por un motivo distinto: aquí el aire
+ * <b>no lo puso el dueño del logo</b>, lo dejó el trazador. `bancolombia.svg` declara un lienzo de
+ * 217×61 y el logotipo vive en `22 19 174 23` —sobra un 10 % del ancho por lado y un 32 % del alto
+ * arriba y abajo—. Medido en el navegador con `getScreenCTM().inverse()` sobre lo que de verdad se
+ * pinta, no leído del archivo.
+ *
+ * <p><b>Ese lienzo vacío costaba dos cosas.</b> En el pie los logos van pegados al borde izquierdo
+ * de su caja (`ts-logo-pago`), y Bancolombia era el único que no llegaba: sus 22 unidades de aire
+ * se dibujaban como 9,8 px de sangría que ningún `preserveAspectRatio` puede quitar, porque están
+ * <i>dentro</i> del dibujo. Y cegó el tamaño: contenido en la caja común su letra medía 4,0 px
+ * contra los 6,2 de Sistecrédito, lo que le había ganado una caja propia de `h-32 w-96` en el pie
+ * para compensar. Ceñido, el logo vuelve a la caja de todos y la compensación sobra.
+ *
+ * <p>Aquí <b>sí</b> se ciñe del todo, al revés que en Visa. No es una incoherencia: en Visa el aire
+ * es el encuadre cuadrado que `simple-icons` le impone a un logotipo apaisado —quitarlo entero lo
+ * volvía el logo más grande de la columna— y aquí es un margen que no significa nada.
  */
 
 /**
@@ -384,7 +398,7 @@ const valor = (v) => (v === null ? "null" : `'${v.replace(/'/g, "\\'")}'`);
 
 const contenido = `// GENERADO por tools/generar-logos-pago.mjs — no editar a mano.
 //
-// Los logos de los medios de pago. Diez son monocromos —sin un solo relleno propio, para que
+// Los logos de los medios de pago. Nueve son monocromos —sin un solo relleno propio, para que
 // hereden el \`currentColor\` de quien los dibuja— y Mastercard no, porque su dibujo significa con
 // el color: aplanado se queda en dos manchas solapadas. Los pinta \`ts-logo-pago\`.
 //
@@ -410,7 +424,7 @@ const contenido = `// GENERADO por tools/generar-logos-pago.mjs — no editar a 
  * Un trazo del dibujo. Todo lo que no sea \`d\` va en \`null\` cuando el archivo no lo trae, y el
  * componente lo ata con \`[attr.*]\`, que quita el atributo cuando el valor es nulo.
  *
- * \`relleno\` es \`null\` en los diez logos monocromos, y ahí pinta el \`fill="currentColor"\` del
+ * \`relleno\` es \`null\` en los nueve logos monocromos, y ahí pinta el \`fill="currentColor"\` del
  * \`<svg>\`. Solo Mastercard lo trae, porque su dibujo significa con el color.
  *
  * \`trazo\` es \`'currentColor'\` o nada: en un logo monocromo el color propio no sobrevive al
