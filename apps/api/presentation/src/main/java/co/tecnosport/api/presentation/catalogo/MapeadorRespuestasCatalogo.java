@@ -14,6 +14,7 @@ import co.tecnosport.api.domain.catalogo.SetRotacion;
 import co.tecnosport.api.domain.catalogo.ValorAtributo;
 import co.tecnosport.api.domain.catalogo.Variante;
 import co.tecnosport.api.domain.compartido.Dinero;
+import co.tecnosport.api.domain.compartido.Hashtag;
 import co.tecnosport.api.presentation.catalogo.dto.AtributoRespuesta;
 import co.tecnosport.api.presentation.catalogo.dto.AtributoValorRespuesta;
 import co.tecnosport.api.presentation.catalogo.dto.CategoriaRespuesta;
@@ -89,7 +90,8 @@ public class MapeadorRespuestasCatalogo {
         categoria.nombre(),
         categoria.slug().valor(),
         categoria.linea().name(),
-        categoria.padreId().orElse(null));
+        categoria.padreId().orElse(null),
+        categoria.hashtags().stream().map(Hashtag::valor).toList());
   }
 
   public ResultadoPaginadoRespuesta<AtributoRespuesta> aRespuestaDeAtributos(

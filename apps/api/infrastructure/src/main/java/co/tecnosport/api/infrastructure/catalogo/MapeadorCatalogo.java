@@ -18,6 +18,7 @@ import co.tecnosport.api.domain.catalogo.Variante;
 import co.tecnosport.api.domain.catalogo.VarianteDeImagen;
 import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.compartido.HashContenido;
+import co.tecnosport.api.domain.compartido.Hashtag;
 import co.tecnosport.api.domain.compartido.Sku;
 import co.tecnosport.api.domain.compartido.Slug;
 import co.tecnosport.api.infrastructure.catalogo.entidad.AtributoJpaEntity;
@@ -337,7 +338,8 @@ public class MapeadorCatalogo {
         c.getNombre(),
         new Slug(c.getSlug()),
         LineaCatalogo.valueOf(c.getLinea()),
-        c.getPadreId());
+        c.getPadreId(),
+        c.getHashtags().stream().map(Hashtag::new).toList());
   }
 
   private Atributo aAtributo(AtributoJpaEntity a) {

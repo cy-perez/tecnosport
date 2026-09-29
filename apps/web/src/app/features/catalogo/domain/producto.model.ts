@@ -86,6 +86,14 @@ export interface Categoria {
    * primero va a colgar. Lo cuelga `construirArbolDeCategorias`.
    */
   readonly padreId: string | null;
+  /**
+   * Las etiquetas con que se difunden en redes los productos de esta categoría, con almohadilla.
+   *
+   * Viajan también en la respuesta pública, que solo las ignora: el razonamiento está en
+   * `CategoriaRespuesta` del backend. Vacío es lo normal mientras nadie las escriba — un pie sin
+   * etiquetas se publica igual, solo llega a menos gente.
+   */
+  readonly hashtags: readonly string[];
 }
 
 export interface Producto {

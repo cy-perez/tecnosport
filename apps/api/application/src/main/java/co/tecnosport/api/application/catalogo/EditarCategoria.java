@@ -3,6 +3,7 @@ package co.tecnosport.api.application.catalogo;
 import co.tecnosport.api.domain.catalogo.Categoria;
 import co.tecnosport.api.domain.catalogo.LineaCatalogo;
 import co.tecnosport.api.domain.compartido.ExcepcionDeDominio;
+import co.tecnosport.api.domain.compartido.Hashtag;
 import co.tecnosport.api.domain.compartido.Slug;
 import java.util.List;
 import java.util.Objects;
@@ -44,12 +45,30 @@ public final class EditarCategoria {
     Optional<Categoria> nuevoPadre = padreValidado(comando, actual);
 
     Categoria editada =
-        actual
-            .renombrada(comando.nombre(), slug)
-            .movidaBajo(nuevoPadre, lineaDe(comando, nuevoPadre, actual));
+        conHashtagsDe(
+            comando,
+            actual
+                .renombrada(comando.nombre(), slug)
+                .movidaBajo(nuevoPadre, lineaDe(comando, nuevoPadre, actual)));
 
     repositorioCategorias.guardar(editada);
     return editada;
+  }
+
+  /**
+   * Nulo es "no las toques"; la lista vacía es "bórralas todas". La diferencia importa porque el
+   * panel puede guardar un cambio de nombre sin mandar el campo, y perder las etiquetas en ese
+   * guardado sería un daño silencioso -- nadie mira los hashtags de una categoría al renombrarla.
+   *
+   * <p>La validación de la forma de cada etiqueta la hace {@link Hashtag}, no este caso de uso: un
+   * guion o un espacio partirían la etiqueta en dos al publicarla, y ese error tiene que salir con
+   * su explicación desde el sitio que conoce la regla.
+   */
+  private static Categoria conHashtagsDe(EditarCategoriaComando comando, Categoria categoria) {
+    if (comando.hashtags() == null) {
+      return categoria;
+    }
+    return categoria.conHashtags(comando.hashtags().stream().map(Hashtag::new).toList());
   }
 
   private static Slug slugDe(EditarCategoriaComando comando, Categoria actual) {

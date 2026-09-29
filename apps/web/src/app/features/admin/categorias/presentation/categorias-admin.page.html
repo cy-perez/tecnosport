@@ -36,6 +36,20 @@
       formControlName="slug"
     />
 
+    <!-- Las etiquetas solo se editan sobre una categoría que ya existe: al crearla no se pinta el
+         campo. No es una limitación técnica sino la forma del contrato — el alta no lleva
+         hashtags, y meterlos ahí habría obligado a decidir si el campo ausente los borra, que es
+         justo la ambigüedad que el PUT resuelve distinguiendo "no los toques" de "bórralos
+         todos". Una categoría recién creada se edita a continuación y ahí sí aparece. -->
+    @if (editando()) {
+      <ts-campo
+        idCampo="categoria-hashtags"
+        [label]="'admin.categorias.hashtags' | transloco"
+        [ayuda]="'admin.categorias.hashtagsAyuda' | transloco"
+        formControlName="hashtags"
+      />
+    }
+
     <ts-select
       idCampo="categoria-padre"
       [label]="'admin.categorias.padre' | transloco"

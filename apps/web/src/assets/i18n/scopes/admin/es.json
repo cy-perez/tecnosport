@@ -688,6 +688,35 @@
     "error_demasiados_intentos": "Demasiados intentos seguidos. Espera unos minutos y vuelve a probar.",
     "error_sesion_expirada": "Tu sesión venció. Vuelve a entrar y repite el cambio."
   },
+  "difusion": {
+    "titulo": "Difundir en redes",
+    "explicacion": "Publica la foto principal del producto en Facebook o en Instagram, con su precio y su enlace. El texto se propone con los datos de hoy; puedes ajustarlo antes de enviarlo.",
+    "elegirRed": "¿Dónde se publica?",
+    "red": {
+      "FACEBOOK": "Facebook",
+      "INSTAGRAM": "Instagram"
+    },
+    "ultimaVez": "Última vez: {{fecha}}",
+    "nuncaDifundido": "Nunca se ha difundido",
+    "pie": "Texto de la publicación",
+    "pieAyuda": "En Instagram los enlaces no son clicables: por eso ahí el texto remite a la biografía en vez de pintar la URL.",
+    "armandoPie": "Armando el texto…",
+    "errorPropuesta": "No pudimos armar el texto. Revisa que el producto esté publicado y tenga imagen principal.",
+    "difundir": "Publicar",
+    "difundirEn": "Publicar en {{red}}",
+    "restaurar": "Volver al texto propuesto",
+    "faltaPie": "Escribe el texto de la publicación antes de enviarla.",
+    "yaEnMarcha": "Esa publicación se acaba de enviar. Espera a que termine antes de volver a intentarlo.",
+    "fallo": "La red no la aceptó: {{motivo}}",
+    "error": "No pudimos publicar. Vuelve a intentarlo.",
+    "publicado": "Publicado en {{red}}.",
+    "verHistorial": "Ver las {{total}} difusiones anteriores",
+    "estado": {
+      "PENDIENTE": "Sin confirmar — revisa la cuenta antes de reintentar",
+      "PUBLICADA": "Publicada",
+      "FALLIDA": "No salió"
+    }
+  },
   "categorias": {
     "titulo": "Categorías",
     "explicacion": "El árbol del catálogo. Cada línea de negocio abre hasta dos niveles: una rama —Dama, Caballero— y sus prendas. Los productos cuelgan siempre de una hoja, nunca de una rama.",
@@ -696,6 +725,8 @@
     "nombre": "Nombre",
     "slug": "Slug",
     "slugAyuda": "Opcional. Si lo dejas vacío se deriva del nombre. Al editar, vacío significa «déjalo como está»: el slug está en enlaces que ya se compartieron.",
+    "hashtags": "Etiquetas de redes",
+    "hashtagsAyuda": "Las que se publican con cada producto de esta categoría. Separadas por espacios o comas; la almohadilla se pone sola. Vacío las borra todas.",
     "padre": "Cuelga de",
     "padreAyuda": "Vacío la deja en el primer nivel, colgando directamente de la línea.",
     "sinPadre": "De la línea (primer nivel)",

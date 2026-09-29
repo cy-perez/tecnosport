@@ -30,11 +30,11 @@ import { FiltrosProductos } from './filtros-productos';
 class RepositorioCategoriasFalso implements RepositorioCategorias {
   async listarTodas(): Promise<Categoria[]> {
     return [
-      { id: 'c2', nombre: 'Celulares', slug: 'celulares', linea: 'TECNOLOGIA', padreId: null },
-      { id: 'd0', nombre: 'Dama', slug: 'ropa-dama', linea: 'ROPA', padreId: null },
-      { id: 'd1', nombre: 'Blusas', slug: 'ropa-dama-blusas', linea: 'ROPA', padreId: 'd0' },
-      { id: 'd2', nombre: 'Busos', slug: 'ropa-dama-busos', linea: 'ROPA', padreId: 'd0' },
-      { id: 'u0', nombre: 'Unisex', slug: 'calzado-unisex', linea: 'CALZADO', padreId: null },
+      { id: 'c2', nombre: 'Celulares', slug: 'celulares', linea: 'TECNOLOGIA', padreId: null, hashtags: [] },
+      { id: 'd0', nombre: 'Dama', slug: 'ropa-dama', linea: 'ROPA', padreId: null, hashtags: [] },
+      { id: 'd1', nombre: 'Blusas', slug: 'ropa-dama-blusas', linea: 'ROPA', padreId: 'd0', hashtags: [] },
+      { id: 'd2', nombre: 'Busos', slug: 'ropa-dama-busos', linea: 'ROPA', padreId: 'd0', hashtags: [] },
+      { id: 'u0', nombre: 'Unisex', slug: 'calzado-unisex', linea: 'CALZADO', padreId: null, hashtags: [] },
     ];
   }
 }
@@ -43,7 +43,7 @@ class RepositorioCategoriasFalso implements RepositorioCategorias {
 class RepositorioCategoriasSoloTecnologia implements RepositorioCategorias {
   async listarTodas(): Promise<Categoria[]> {
     return [
-      { id: 'c2', nombre: 'Celulares', slug: 'celulares', linea: 'TECNOLOGIA', padreId: null },
+      { id: 'c2', nombre: 'Celulares', slug: 'celulares', linea: 'TECNOLOGIA', padreId: null, hashtags: [] },
     ];
   }
 }

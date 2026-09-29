@@ -25,7 +25,7 @@ function productoDePrueba(slug: string): Producto {
     nombre: `Producto ${slug}`,
     descripcion: '',
     marca: { id: '1', nombre: 'TecnoSport' },
-    categoria: { id: 'c1', nombre: 'Bolsos', slug: 'bolsos', linea: 'BOLSOS', padreId: null },
+    categoria: { id: 'c1', nombre: 'Bolsos', slug: 'bolsos', linea: 'BOLSOS', padreId: null, hashtags: [] },
     imagenPrincipal: null,
     galeria: [],
     rotacion: null,
@@ -63,9 +63,9 @@ class RepositorioCategoriasFalso implements RepositorioCategorias {
 }
 
 const TRES_LINEAS: Categoria[] = [
-  { id: 'c0', nombre: 'Ropa deportiva', slug: 'ropa-deportiva', linea: 'ROPA', padreId: null },
-  { id: 'c1', nombre: 'Bolsos', slug: 'bolsos', linea: 'BOLSOS', padreId: null },
-  { id: 'c2', nombre: 'Celulares', slug: 'celulares', linea: 'TECNOLOGIA', padreId: null },
+  { id: 'c0', nombre: 'Ropa deportiva', slug: 'ropa-deportiva', linea: 'ROPA', padreId: null, hashtags: [] },
+  { id: 'c1', nombre: 'Bolsos', slug: 'bolsos', linea: 'BOLSOS', padreId: null, hashtags: [] },
+  { id: 'c2', nombre: 'Celulares', slug: 'celulares', linea: 'TECNOLOGIA', padreId: null, hashtags: [] },
 ];
 
 async function renderPortada(
@@ -196,7 +196,7 @@ describe('PortadaPage', () => {
    */
   it('las cuatro baldosas salen aunque el catálogo sea de pura tecnología', async () => {
     await renderPortada(new RepositorioProductosFalso(), [
-      { id: 'c2', nombre: 'Celulares', slug: 'celulares', linea: 'TECNOLOGIA', padreId: null },
+      { id: 'c2', nombre: 'Celulares', slug: 'celulares', linea: 'TECNOLOGIA', padreId: null, hashtags: [] },
     ]);
 
     await screen.findByRole('link', { name: 'Tecnología' });

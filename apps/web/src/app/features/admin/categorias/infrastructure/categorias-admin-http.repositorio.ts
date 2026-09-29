@@ -80,6 +80,10 @@ export class CategoriasAdminHttpRepositorio
         slug: cambio.slug,
         linea: cambio.linea,
         padreId: cambio.padreId,
+        // `undefined` viaja como campo ausente y el backend lo lee como "no las toques"; `[]` sí
+        // se manda y las borra. Convertirlo aquí a `[]` habría hecho que renombrar una categoría
+        // le vaciara las etiquetas en silencio.
+        hashtags: cambio.hashtags === undefined ? undefined : [...cambio.hashtags],
       },
     });
 

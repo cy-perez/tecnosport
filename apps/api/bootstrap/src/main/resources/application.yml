@@ -216,6 +216,34 @@ tecnosport:
     # 1.499.900, que el negocio si quiere despachar contra entrega. Esta lista queda para el dia que alguna linea
     # no deba ir contra entrega a ningun precio, que hoy no es el caso de ninguna.
     categorias-excluidas: ${CONTRAENTREGA_CATEGORIAS_EXCLUIDAS:}
+  # Difusion en redes sociales (Facebook e Instagram) desde el panel.
+  meta:
+    # La version va dentro de la ruta y Meta retira versiones con calendario publicado: congelarla
+    # en el codigo obligaria a un despliegue cada vez.
+    url-base: ${META_URL_BASE:https://graph.facebook.com/v26.0}
+    # Medidos contra la cuenta real el 29 de septiembre de 2026 con el token del usuario del
+    # sistema. No son secretos -- son identificadores publicos de la pagina y del perfil -- pero
+    # entran por variable de entorno igual, para poder apuntar a otra cuenta sin recompilar.
+    page-id: ${META_PAGE_ID:100737384988350}
+    ig-user-id: ${META_IG_USER_ID:17841411711270701}
+    # Este SI es secreto y vive en Secret Manager. El valor de aqui no autentica contra nada
+    # (regla dura #5).
+    token: ${META_TOKEN:token_pendiente_de_configurar}
+    # El origen que se pinta en el enlace del pie. Lleva www por decision del 29 de septiembre de
+    # 2026; el certificado todavia no cubre el subdominio y hay que arreglarlo en produccion.
+    url-base-del-sitio: ${META_URL_BASE_DEL_SITIO:https://www.tecnosport.co}
+    # Las que van en todo lo que se publique. Las de cada categoria viven en la categoria.
+    hashtags-de-marca: ${META_HASHTAGS_DE_MARCA:}
+    # FALSE POR OMISION A PROPOSITO. No hay sandbox de la Graph API: la unica cuenta que existe es
+    # la real del negocio, asi que bootRun en una maquina de desarrollo apunta a ella. Encenderlo
+    # es un acto deliberado de quien despliega, no un descuido de quien prueba.
+    publicar-de-verdad: ${META_PUBLICAR_DE_VERDAD:false}
+    # Parametros tecnicos del sondeo del contenedor de Instagram, que es asincrono: sin sondear,
+    # publicar un contenedor a medias devuelve un error que parece de permisos y no lo es.
+    timeout-segundos: ${META_TIMEOUT_SEGUNDOS:15}
+    sondeos-del-contenedor: ${META_SONDEOS_DEL_CONTENEDOR:10}
+    espera-entre-sondeos-segundos: ${META_ESPERA_ENTRE_SONDEOS_SEGUNDOS:2}
+
   skydropx:
     # El host de PRUEBAS sí está confirmado, y este es: sb-pro.skydropx.com es el único de los
     # candidatos que autentica con las credenciales del sandbox — api-pro y pro responden

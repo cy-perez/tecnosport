@@ -4,6 +4,7 @@ import co.tecnosport.api.application.catalogo.CategoriaSlugYaExisteException;
 import co.tecnosport.api.application.catalogo.RepositorioCategorias;
 import co.tecnosport.api.domain.catalogo.Categoria;
 import co.tecnosport.api.domain.catalogo.LineaCatalogo;
+import co.tecnosport.api.domain.compartido.Hashtag;
 import co.tecnosport.api.domain.compartido.Slug;
 import co.tecnosport.api.infrastructure.catalogo.entidad.CategoriaJpaEntity;
 import java.time.Instant;
@@ -82,7 +83,8 @@ public class RepositorioCategoriasJpa implements RepositorioCategorias {
               categoria.slug().valor(),
               categoria.linea().name(),
               categoria.padreId().orElse(null),
-              creadoEn));
+              creadoEn,
+              categoria.hashtags().stream().map(Hashtag::valor).toList()));
     } catch (DataIntegrityViolationException e) {
       throw new CategoriaSlugYaExisteException(categoria.slug().valor());
     }

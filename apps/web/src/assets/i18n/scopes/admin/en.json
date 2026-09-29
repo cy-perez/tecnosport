@@ -688,6 +688,35 @@
     "error_demasiados_intentos": "Too many attempts in a row. Wait a few minutes and try again.",
     "error_sesion_expirada": "Your session expired. Sign in again and repeat the change."
   },
+  "difusion": {
+    "titulo": "Share on social",
+    "explicacion": "Post the product's main photo to Facebook or Instagram, with its price and link. The text is drafted from today's data; you can adjust it before sending.",
+    "elegirRed": "Where does it go?",
+    "red": {
+      "FACEBOOK": "Facebook",
+      "INSTAGRAM": "Instagram"
+    },
+    "ultimaVez": "Last time: {{fecha}}",
+    "nuncaDifundido": "Never shared",
+    "pie": "Post text",
+    "pieAyuda": "Instagram captions cannot hold clickable links: that is why the text points to the bio there instead of printing the URL.",
+    "armandoPie": "Drafting the text…",
+    "errorPropuesta": "We could not draft the text. Check that the product is published and has a main image.",
+    "difundir": "Post",
+    "difundirEn": "Post to {{red}}",
+    "restaurar": "Back to the drafted text",
+    "faltaPie": "Write the post text before sending it.",
+    "yaEnMarcha": "That post was just sent. Wait for it to finish before trying again.",
+    "fallo": "The network rejected it: {{motivo}}",
+    "error": "We could not post. Try again.",
+    "publicado": "Posted to {{red}}.",
+    "verHistorial": "See the {{total}} previous posts",
+    "estado": {
+      "PENDIENTE": "Unconfirmed — check the account before retrying",
+      "PUBLICADA": "Posted",
+      "FALLIDA": "Did not go out"
+    }
+  },
   "categorias": {
     "titulo": "Categories",
     "explicacion": "The catalogue tree. Each business line opens up to two levels: a branch —Women, Men— and its garments. Products always hang from a leaf, never from a branch.",
@@ -696,6 +725,8 @@
     "nombre": "Name",
     "slug": "Slug",
     "slugAyuda": "Optional. Leave it empty and it is derived from the name. When editing, empty means “leave it as it is”: the slug is in links people already shared.",
+    "hashtags": "Social tags",
+    "hashtagsAyuda": "Published with every product in this category. Separate them with spaces or commas; the hash sign is added for you. Empty clears them all.",
     "padre": "Hangs from",
     "padreAyuda": "Empty leaves it at the first level, hanging directly from the line.",
     "sinPadre": "From the line (first level)",

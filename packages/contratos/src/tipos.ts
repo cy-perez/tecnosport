@@ -420,6 +420,38 @@ export interface paths {
         patch: operations["editar_1"];
         trace?: never;
     };
+    "/api/v1/admin/productos/{id}/difusion": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["historial"];
+        put?: never;
+        post: operations["difundir"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/productos/{id}/difusion/propuesta": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["propuesta"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/productos/{id}/galeria": {
         parameters: {
             query?: never;
@@ -1406,6 +1438,7 @@ export interface components {
             usuarioId?: string;
         };
         CategoriaRespuesta: {
+            hashtags?: string[];
             /** Format: uuid */
             id?: string;
             linea?: string;
@@ -1507,6 +1540,10 @@ export interface components {
         DespacharPedidoRequest: {
             guias?: components["schemas"]["GuiaDespachadaRequest"][];
         };
+        DifundirProductoPeticion: {
+            pieDeFoto?: string;
+            redes: string[];
+        };
         DineroRespuesta: {
             moneda?: string;
             /** Format: int64 */
@@ -1531,6 +1568,7 @@ export interface components {
             indicaciones?: string;
         };
         EditarCategoriaPeticion: {
+            hashtags?: string[];
             linea?: string;
             nombre?: string;
             /** Format: uuid */
@@ -1933,6 +1971,9 @@ export interface components {
             /** Format: int64 */
             totalProductos?: number;
         };
+        PropuestaDePieRespuesta: {
+            pieDeFoto?: string;
+        };
         ProrrogaRespuesta: {
             /** Format: date-time */
             avisadaEn?: string;
@@ -1943,6 +1984,20 @@ export interface components {
         };
         ProrrogarSolicitudRequest: {
             motivo?: string;
+        };
+        PublicacionEnRedRespuesta: {
+            detalleDelFallo?: string;
+            estado?: string;
+            /** Format: uuid */
+            id?: string;
+            idPublicacionExterna?: string;
+            pieDeFoto?: string;
+            /** Format: date-time */
+            publicadaEn?: string;
+            red?: string;
+            /** Format: date-time */
+            solicitadaEn?: string;
+            urlImagen?: string;
         };
         RadicarGarantiaRequest: {
             descripcionDelFallo?: string;
@@ -3123,6 +3178,78 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["ProductoAdminRespuesta"];
+                };
+            };
+        };
+    };
+    historial: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PublicacionEnRedRespuesta"][];
+                };
+            };
+        };
+    };
+    difundir: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DifundirProductoPeticion"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PublicacionEnRedRespuesta"][];
+                };
+            };
+        };
+    };
+    propuesta: {
+        parameters: {
+            query: {
+                red: string;
+            };
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PropuestaDePieRespuesta"];
                 };
             };
         };

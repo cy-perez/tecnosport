@@ -36,6 +36,7 @@ import {
   REPOSITORIO_PRODUCTOS_ADMIN,
   RepositorioProductosAdmin,
 } from '../../domain/repositorio-productos-admin.puerto';
+import { REPOSITORIO_DIFUSION } from '../../../difusion/domain/repositorio-difusion.puerto';
 import { esperarSinViolaciones } from '../../../../../../testing/axe';
 import { EditarProductoAdminPage } from './editar-producto-admin.page';
 
@@ -47,6 +48,7 @@ const CATEGORIA: Categoria = {
   slug: 'bolsos',
   linea: 'BOLSOS',
   padreId: null,
+  hashtags: [],
 };
 const OTRA_CATEGORIA: Categoria = {
   id: 'c2',
@@ -54,6 +56,7 @@ const OTRA_CATEGORIA: Categoria = {
   slug: 'celulares',
   linea: 'TECNOLOGIA',
   padreId: null,
+  hashtags: [],
 };
 
 function productoDePrueba(galeria: readonly ImagenDeGaleriaAdmin[] = []): ProductoAdminDetalle {
@@ -254,6 +257,16 @@ async function renderPagina(repositorioProductos: RepositorioProductosAdmin, id 
       { provide: REPOSITORIO_MARCAS, useValue: new RepositorioMarcasFalso() },
       { provide: REPOSITORIO_CATEGORIAS, useValue: new RepositorioCategoriasFalso() },
       { provide: ActivatedRoute, useValue: activatedRouteConId(id) },
+      // La ficha monta el panel de difusión al final. No se prueba aquí —tiene su propio spec—
+      // pero sin su puerto el componente ni se construye.
+      {
+        provide: REPOSITORIO_DIFUSION,
+        useValue: {
+          difundir: async () => ({ tipo: 'OK', publicaciones: [] }),
+          historial: async () => [],
+          proponerPie: async () => '',
+        },
+      },
     ],
   });
 }

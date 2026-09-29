@@ -107,6 +107,22 @@ export class TsCampo implements ControlValueAccessor {
   readonly etiquetaOculta = input(false);
 
   /**
+   * Convierte el control en un `<textarea>`.
+   *
+   * Vive aquí y no en un componente aparte porque todo lo que rodea al control —la etiqueta fuera
+   * del `<label>`, el `aria-required`, el `aria-describedby` de la ayuda y del error, el
+   * `ControlValueAccessor`— es exactamente igual para una línea que para diez. Un `ts-area-texto`
+   * habría sido copiar cuarenta líneas de accesibilidad ya auditadas para cambiar una etiqueta de
+   * HTML, y la copia es justo donde estas cosas se desincronizan.
+   *
+   * `tipo()` deja de tener efecto en este modo: un `<textarea>` no tiene `type`.
+   */
+  readonly multilinea = input(false);
+
+  /** Alto inicial en líneas. Solo cuenta con `multilinea`. */
+  readonly filas = input(6);
+
+  /**
    * Texto de apoyo debajo de la etiqueta, atado al control con `aria-describedby`.
    *
    * Entró porque escribirlo como un `<p>` suelto antes del componente lo deja visualmente pegado al

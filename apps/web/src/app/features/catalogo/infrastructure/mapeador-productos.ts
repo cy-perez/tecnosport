@@ -50,6 +50,7 @@ export function aCategoria(dto?: CategoriaDto): Categoria {
     // sería un id que no existe. `construirArbolDeCategorias` distingue las dos cosas para saber
     // qué va en la raíz.
     padreId: dto?.padreId ?? null,
+    hashtags: dto?.hashtags ?? [],
   };
 }
 

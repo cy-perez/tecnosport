@@ -1,0 +1,112 @@
+<section class="mt-32 flex flex-col gap-16 border-t border-ts-borde pt-24">
+  <h2 class="m-0 font-display text-xl">{{ 'admin.difusion.titulo' | transloco }}</h2>
+
+  <p class="m-0 text-ts-texto-suave">{{ 'admin.difusion.explicacion' | transloco }}</p>
+
+  <!-- Baldosas y no un desplegable, igual que los medios de pago del checkout: son dos opciones y
+       la diferencia entre ellas importa —el pie no es el mismo texto—, así que se ven las dos. -->
+  <fieldset class="m-0 flex flex-wrap gap-8 border-0 p-0">
+    <legend class="mb-8 p-0 text-sm text-ts-texto-suave">
+      {{ 'admin.difusion.elegirRed' | transloco }}
+    </legend>
+    @for (opcion of ultimaPorRed(); track opcion.red) {
+      <button
+        class="anillo-foco min-h-tactil flex flex-col items-start gap-4 rounded-md border border-ts-borde px-16 py-8 text-start"
+        [class.border-ts-primario]="red() === opcion.red"
+        [class.bg-ts-superficie-alt]="red() === opcion.red"
+        type="button"
+        [attr.aria-pressed]="red() === opcion.red"
+        (click)="elegirRed(opcion.red)"
+      >
+        <span>{{ 'admin.difusion.red.' + opcion.red | transloco }}</span>
+        <!-- Cuándo se difundió por última vez, ahí mismo: es lo que evita publicar dos veces sin
+             darse cuenta, y con el botón al lado no hay que ir a buscarlo a otro sitio. -->
+        <span class="text-sm text-ts-texto-suave">
+          @if (opcion.ultima; as ultima) {
+            {{
+              'admin.difusion.ultimaVez' | transloco: { fecha: ultima.solicitadaEn | date: 'short' }
+            }}
+          } @else {
+            {{ 'admin.difusion.nuncaDifundido' | transloco }}
+          }
+        </span>
+      </button>
+    }
+  </fieldset>
+
+  @if (propuesta.isPending()) {
+    <p class="m-0 text-ts-texto-suave">{{ 'admin.difusion.armandoPie' | transloco }}</p>
+  } @else if (propuesta.isError()) {
+    <p class="m-0 text-ts-error" role="alert">{{ 'admin.difusion.errorPropuesta' | transloco }}</p>
+  } @else {
+    <ts-campo
+      idCampo="difusion-pie"
+      [label]="'admin.difusion.pie' | transloco"
+      [ayuda]="'admin.difusion.pieAyuda' | transloco"
+      [multilinea]="true"
+      [filas]="10"
+      [formControl]="pie"
+    />
+  }
+
+  @if (error(); as mensaje) {
+    <p class="m-0 text-ts-error" role="alert">{{ mensaje }}</p>
+  }
+
+  <!-- La región viva vive siempre en el DOM y lo que cambia es su contenido: montar un
+       `role="status"` ya lleno con un `@if` es justo lo que los lectores de pantalla callan. -->
+  <p class="m-0 text-ts-exito" role="status">
+    @if (aviso(); as mensaje) {
+      {{ mensaje }}
+    }
+  </p>
+
+  <div class="flex flex-wrap gap-16">
+    <ts-boton
+      variante="primario"
+      tipo="button"
+      [ocupado]="difusion.isPending()"
+      [etiquetaAccesible]="
+        'admin.difusion.difundirEn' | transloco: { red: 'admin.difusion.red.' + red() | transloco }
+      "
+      (click)="difundir()"
+    >
+      {{ 'admin.difusion.difundir' | transloco }}
+    </ts-boton>
+
+    <ts-boton variante="texto" tipo="button" (click)="restaurarPropuesta()">
+      {{ 'admin.difusion.restaurar' | transloco }}
+    </ts-boton>
+  </div>
+
+  @if (historial.data(); as publicaciones) {
+    @if (publicaciones.length > 0) {
+      <details class="mt-8">
+        <summary class="anillo-foco min-h-tactil cursor-pointer">
+          {{ 'admin.difusion.verHistorial' | transloco: { total: publicaciones.length } }}
+        </summary>
+        <ul class="m-0 mt-8 list-none p-0">
+          @for (publicacion of publicaciones; track publicacion.id) {
+            <li class="border-b border-ts-borde py-8">
+              <p class="m-0">
+                {{ 'admin.difusion.red.' + publicacion.red | transloco }}
+                <span class="text-sm text-ts-texto-suave">
+                  {{ publicacion.solicitadaEn | date: 'short' }} ·
+                  {{ 'admin.difusion.estado.' + publicacion.estado | transloco }}
+                </span>
+              </p>
+              @if (publicacion.detalleDelFallo; as motivo) {
+                <p class="m-0 text-sm text-ts-error">{{ motivo }}</p>
+              }
+              <!-- El pie tal como se publicó ese día, con el precio y las etiquetas de entonces:
+                   es lo único que queda para saber qué decía un post. -->
+              <p class="m-0 text-sm whitespace-pre-line text-ts-texto-suave">
+                {{ publicacion.pieDeFoto }}
+              </p>
+            </li>
+          }
+        </ul>
+      </details>
+    }
+  }
+</section>
