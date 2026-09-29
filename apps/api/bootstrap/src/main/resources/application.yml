@@ -329,7 +329,7 @@ tecnosport:
   origen:
     # La dirección de despacho del negocio, que es la misma del punto de recogida y ya está
     # decidida (docs/09-plan-de-arranque.md, cierre de datos pendientes del 10/09/2026).
-    nombre: ${ORIGEN_NOMBRE:TecnoSport}
+    nombre: ${ORIGEN_NOMBRE:Tecno Sport}
     # El mismo celular que publica el pie del sitio y los textos legales (npm run datos-negocio
     # vigila que no se separen). No es un número inventado.
     telefono: ${ORIGEN_TELEFONO:+573138816711}
