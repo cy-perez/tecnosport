@@ -1,22 +1,94 @@
 <fieldset class="m-0 border-0 p-0">
-  <legend class="mb-8 p-0 text-sm text-ts-texto-suave">{{ etiquetaGrupo() }}</legend>
-  <div class="flex flex-wrap gap-8">
+  <legend class="mb-16 p-0 text-sm text-ts-texto-suave">{{ etiquetaGrupo() }}</legend>
+
+  <!-- **Dos columnas y `max-content`, y eso es lo que hace que todos los botones midan igual.** La
+       primera columna se resuelve al ancho del botón más largo —"Tarjeta, PSE o Bancolombia"— y
+       todos lo llenan con `w-full`, así que no hay que fijar ningún ancho a mano ni inventar un
+       token. La descripción se queda en la segunda, al frente del botón que describe.
+
+       En el teléfono no caben las dos: a 390 px el botón más largo se lleva casi 300 y a la
+       descripción le quedarían 90. Por debajo de tableta es una sola columna, con la descripción
+       debajo de su botón.
+
+       **En el teléfono el hueco de la rejilla es de 8 y la descripción pone los otros 8.** Con un
+       hueco parejo, la descripción queda a la misma distancia del botón que describe y del
+       siguiente: la proximidad —que es lo que dice a quién pertenece un texto— no dice nada. Así
+       quedan 8 px dentro de cada par y 16 entre opciones, incluidas las que no llevan descripción,
+       porque su celda vacía mide cero y los dos huecos de 8 se suman. En dos columnas el `mb-8`
+       sobra y se anula: allí la descripción está al lado de su botón, no debajo de otro.
+
+       Se intentó al revés —hueco de 16 y la descripción subida con `-mt-8`— y **`-mt-8` no
+       existe**: la escala de espacio por omisión está borrada y las negativas no se generaron.
+       `npm run clases` la dio por buena, así que esto se midió en el navegador, que es donde una
+       clase que no hace nada se nota. -->
+  <div
+    class="grid grid-cols-1 gap-x-24 gap-y-8 desde-tableta:grid-cols-[max-content_1fr] desde-tableta:items-center desde-tableta:gap-y-16"
+  >
     @for (opcion of opciones(); track opcion.valor) {
-      <!-- El detalle va DENTRO del botón, no al lado: es parte de lo que se elige, así que tiene
-           que entrar en el nombre accesible y en el objetivo táctil. Fuera quedaría como texto
-           suelto que quien navega con teclado nunca oye junto a su opción. -->
+      <!-- **La descripción se pinta fuera del botón, y por eso va enlazada con `aria-describedby`.**
+           Hasta el 28 de septiembre de 2026 vivía dentro: entraba sola en el nombre accesible y en
+           el objetivo táctil, que es lo que un detalle dentro de un botón hace gratis. Fuera no hay
+           nada gratis — un texto suelto al lado es, para un lector de pantalla, un párrafo que
+           nadie relaciona con la opción—, así que lo que allí era automático aquí lo sostiene el
+           `aria-describedby` del botón real (`ts-boton.descritoPor`). Se pidió la disposición; el
+           enlace no es opcional.
+
+           El nombre accesible sigue siendo solo la etiqueta: "Transferencia bancaria". La
+           descripción se anuncia **después**, como descripción, que es justo la jerarquía correcta
+           — primero qué es, luego el detalle. -->
       <ts-boton
-        [variante]="estaSeleccionado(opcion) ? 'primario' : 'secundario'"
+        variante="baldosa"
+        [clase]="claseDeBoton(opcion)"
         [presionado]="estaSeleccionado(opcion)"
+        [descritoPor]="opcion.detalle ? idDeDetalle(opcion) : null"
         (click)="elegir(opcion)"
       >
-        <span class="flex flex-col items-start gap-4 text-start">
-          <span>{{ opcion.etiqueta }}</span>
-          @if (opcion.detalle) {
-            <span class="text-xs font-regular opacity-80">{{ opcion.detalle }}</span>
+        <!-- **La marca de elegido: el disco de un radio, no un icono que aparece y desaparece.**
+             Un visto que solo se pinta al elegir cambiaría el ancho del botón, y con él el de la
+             columna entera cada vez que alguien cambia de opción. El hueco está siempre; lo que
+             cambia es si el disco está relleno.
+
+             Es la forma que todo el mundo reconoce para "de estas, esta", y aquí encaja con lo que
+             el control ya es: `aria-pressed` sobre un grupo donde solo uno queda pulsado. Va junto
+             al contorno grafito del botón (ver `claseDeBoton`), así que la elección se ve por dos
+             señales y ninguna de las dos es solo color — WCAG 1.4.1.
+
+             `border-current` y `bg-current` y no un token: el texto del botón ya es grafito en los
+             dos temas, así que el disco hereda y no hay un par `oscuro:` que mantener.
+             `aria-hidden` porque quien anuncia el estado es el `aria-pressed` del botón. -->
+        <span
+          class="grid size-24 shrink-0 place-items-center rounded-completo border-2 border-current"
+          [class.bg-current]="estaSeleccionado(opcion)"
+          aria-hidden="true"
+        >
+          @if (estaSeleccionado(opcion)) {
+            <!-- El visto se dibuja **del color del relleno del botón**, que es lo único que
+                 contrasta contra el disco grafito: gris en claro (14,8:1) y ámbar en oscuro
+                 (10:1). -->
+            <ts-icono
+              class="text-ts-primario-suave oscuro:text-ts-acento-2"
+              [icono]="iconoVisto"
+              clase="size-16"
+            />
           }
         </span>
+        {{ opcion.etiqueta }}
       </ts-boton>
+
+      @if (opcion.detalle) {
+        <p
+          class="mt-0 mb-8 text-sm text-ts-texto-suave desde-tableta:mb-0"
+          [id]="idDeDetalle(opcion)"
+        >
+          {{ opcion.detalle }}
+        </p>
+      } @else {
+        <!-- La celda vacía de la segunda columna. Sin ella el botón siguiente caería en la columna
+             de las descripciones: la rejilla coloca por orden, no por opción. No pinta nada y no
+             añade alto —en dos columnas la fila ya mide lo que mide el botón, y en una mide cero—,
+             pero **sí ocupa su sitio**, que es justo para lo que está. -->
+        <span class="block"></span>
+      }
     }
   </div>
 </fieldset>

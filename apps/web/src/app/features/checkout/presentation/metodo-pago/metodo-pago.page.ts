@@ -34,7 +34,8 @@ const CLAVE_ETIQUETA: Record<MetodoPago, string> = {
 };
 
 /**
- * Lo que el nombre del botón no alcanza a decir, debajo y en letra menor. Solo dos lo necesitan.
+ * Lo que el nombre del botón no alcanza a decir, al frente del botón y en letra menor. Solo dos
+ * lo necesitan.
  *
  * <p><b>`WOMPI` lo necesita más que ninguno</b>: el enum agrupa ahí tarjeta, PSE y botón
  * Bancolombia (`V66`) porque el Web Checkout hospedado nunca recibió cuál había elegido el
@@ -49,8 +50,36 @@ const CLAVE_DETALLE: Partial<Record<MetodoPago, string>> = {
   TRANSFERENCIA_MANUAL: 'checkout.metodoPago.transferencia_manual_detalle',
 };
 
+/**
+ * El orden en que se pintan los botones, que no es el que devuelve el servidor.
+ *
+ * <p>La respuesta de `POST /pedidos/metodos-de-pago-disponibles` dice **cuáles** se ofrecen, no en
+ * qué orden se enseñan: eso es una decisión de la vitrina, y sin fijarla aquí cualquier cambio en
+ * el backend reordenaría los botones de la pantalla sin que nadie lo pidiera. Se pidió esta
+ * secuencia el 28 de septiembre de 2026.
+ *
+ * <p>`CONTRAENTREGA` va al final y no estaba en la petición: solo se ofrece donde el sistema la
+ * habilita por ciudad (`docs/11-pagos-y-envios.md`), así que en la mayoría de los pedidos no hay
+ * cuarto botón. Cuando lo hay, cierra la lista.
+ *
+ * <p>Un método que llegue del servidor y no esté aquí **se pinta igual**, detrás de los conocidos:
+ * un medio de pago que el backend ofrece y la vitrina esconde es una venta que no ocurre.
+ */
+const ORDEN_DE_PRESENTACION: readonly MetodoPago[] = [
+  'WOMPI',
+  'TRANSFERENCIA_MANUAL',
+  'SISTECREDITO',
+  'CONTRAENTREGA',
+];
+
 /** Los que acepta la pasarela de Sistecrédito (`adr/0048`). */
 const TIPOS_DE_DOCUMENTO: readonly TipoDocumento[] = ['CC', 'TI', 'TIE', 'NIT'];
+
+/** La posición de un método en {@link ORDEN_DE_PRESENTACION}; los desconocidos, al final. */
+function posicionDe(metodo: MetodoPago): number {
+  const posicion = ORDEN_DE_PRESENTACION.indexOf(metodo);
+  return posicion === -1 ? ORDEN_DE_PRESENTACION.length : posicion;
+}
 
 /**
  * Segundo paso del checkout (Fase 3, paso 4b de `docs/09-plan-de-arranque.md`).
@@ -104,14 +133,16 @@ export class MetodoPagoPage {
   protected readonly consulta = usarMetodosDePagoDisponibles(() => this.comando());
 
   protected readonly opciones = computed<OpcionMetodoPago[]>(() =>
-    (this.consulta.data() ?? []).map((metodo) => {
-      const claveDetalle = CLAVE_DETALLE[metodo];
-      return {
-        valor: metodo,
-        etiqueta: this.traducir()(CLAVE_ETIQUETA[metodo]),
-        detalle: claveDetalle ? this.traducir()(claveDetalle) : undefined,
-      };
-    }),
+    [...(this.consulta.data() ?? [])]
+      .sort((uno, otro) => posicionDe(uno) - posicionDe(otro))
+      .map((metodo) => {
+        const claveDetalle = CLAVE_DETALLE[metodo];
+        return {
+          valor: metodo,
+          etiqueta: this.traducir()(CLAVE_ETIQUETA[metodo]),
+          detalle: claveDetalle ? this.traducir()(claveDetalle) : undefined,
+        };
+      }),
   );
 
   /**

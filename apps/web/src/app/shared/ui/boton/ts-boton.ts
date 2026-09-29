@@ -4,7 +4,7 @@ import { RouterLink } from '@angular/router';
 import { TsCargando } from '../cargando/ts-cargando';
 import { cn } from '../cn';
 
-export type VarianteBoton = 'primario' | 'secundario' | 'texto' | 'peligro' | 'acento';
+export type VarianteBoton = 'primario' | 'secundario' | 'texto' | 'peligro' | 'acento' | 'baldosa';
 
 /**
  * Estilos por variante. Fuera de la clase a propósito: son datos, no estado,
@@ -42,6 +42,32 @@ const VARIANTES: Record<VarianteBoton, string> = {
   acento:
     'min-h-tactil bg-ts-acento text-ts-sobre-acento focus-visible:outline-ts-sobre-acento ' +
     'not-disabled:hover:bg-ts-acento-hover not-disabled:active:bg-ts-acento-pressed',
+  // La baldosa de "Nuestras líneas" de la portada, convertida en variante porque desde el 28 de
+  // septiembre de 2026 la usa una segunda pantalla —el selector de método de pago— y una firma
+  // visual repetida a mano en dos sitios se despega en el tercero.
+  //
+  // **El relleno no es el mismo en los dos temas, y ahí está toda la decisión** (ADR-0065): en
+  // claro es el gris tenue de marca y en oscuro es ámbar. El porqué de la excepción al "una sola
+  // cosa por pantalla" del ámbar está entero en `portada.page.html`: sobre el lienzo oscuro
+  // `--color-acento` da 10,14:1 contra `--color-fondo`, que es donde la regla del ámbar —nacida de
+  // un problema de fondo claro— no aprieta.
+  //
+  // `text-ts-sobre-acento` a secas y no el par `text-ts-texto oscuro:text-ts-sobre-acento` que
+  // escribió la portada: los dos tokens valen el mismo grafito en tema claro (#14171C), así que el
+  // par es una forma larga de decir lo mismo. Grafito da 14,77:1 sobre el gris y 10,53:1 sobre el
+  // ámbar.
+  //
+  // `border-2` y no `border`: quien use esta variante como selector marca lo elegido cambiando
+  // **el color** de este borde, y con 1 px un contorno grafito no se lee como una elección. Que el
+  // ancho no dependa del estado es lo que mantiene todas las baldosas del mismo tamaño.
+  //
+  // El hover oscurece el relleno con un filtro en vez de cambiar de token, y es por descarte: no
+  // hay un token de gris un paso por debajo de `primario-suave`, y mover el borde —que es lo que
+  // hace la portada— chocaría con el contorno grafito de lo elegido.
+  baldosa:
+    'min-h-tactil border-2 border-ts-borde-control/50 bg-ts-primario-suave text-ts-sobre-acento ' +
+    'oscuro:border-ts-acento oscuro:bg-ts-acento-2 ' +
+    'not-disabled:hover:brightness-95 not-disabled:active:brightness-90',
 };
 
 /**
@@ -127,6 +153,17 @@ export class TsBoton {
    */
   readonly expandido = input<boolean | null>(null);
   readonly controla = input<string | null>(null);
+  /**
+   * El `id` de lo que **describe** al botón sin ser su nombre: va al `aria-describedby` del
+   * `<button>` real, por la misma razón que {@link controla} — puesto en `<ts-boton>` caería en el
+   * host y el lector de pantalla no se enteraría.
+   *
+   * <p>Lo pidió el selector de método de pago, donde la descripción de cada medio se pinta
+   * **fuera** del botón, a su lado. Dentro entraría sola en el nombre accesible; fuera hay que
+   * enlazarla, o quien navega con lector de pantalla oye "Transferencia bancaria" y nunca se
+   * entera de que va a Nequi, DaviPlata o BBVA.
+   */
+  readonly descritoPor = input<string | null>(null);
   /** Ajustes puntuales de quien llama, p. ej. `w-full`. Gana sobre la base. */
   readonly clase = input('');
   /**

@@ -61,10 +61,10 @@
   "metodoPago": {
     "titulo": "Método de pago",
     "wompi": "Tarjeta, PSE o Bancolombia",
-    "wompi_detalle": "Pagas en Wompi con tarjeta de crédito o débito, PSE o el botón de Bancolombia. Eliges cuál en su pantalla.",
+    "wompi_detalle": "Pagar en Wompi con tarjeta de crédito o débito, PSE o el botón de Bancolombia.",
     "sistecredito": "Sistecrédito",
     "transferencia_manual": "Transferencia bancaria",
-    "transferencia_manual_detalle": "Nequi, Daviplata o cuenta de ahorros BBVA. Nos envías el comprobante y confirmamos el pago.",
+    "transferencia_manual_detalle": "Disponible para Nequi, DaviPlata o cuenta de ahorros del BBVA. Envías el comprobante y confirmamos el pago.",
     "contraentrega": "Pago contraentrega",
     "volver": "‹ Editar dirección",
     "error": "No se pudieron consultar los métodos de pago disponibles. Intenta de nuevo.",

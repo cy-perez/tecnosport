@@ -189,6 +189,60 @@ describe('MetodoPagoPage', () => {
   });
 
   /**
+   * El orden lo decide la vitrina, no el servidor (`ORDEN_DE_PRESENTACION`). Se le devuelve la
+   * lista justo al revés de como se pide en pantalla: si el componente se limitara a recorrer la
+   * respuesta, los botones saldrían invertidos.
+   */
+  it('pinta los métodos en el orden de la vitrina y no en el que responde el servidor', async () => {
+    sembrarCarritoId('carrito-1');
+
+    await renderConDatosEntrega(
+      new RepositorioCarritoFalso(CARRITO_CON_LINEAS),
+      new RepositorioPedidosFalso([
+        'CONTRAENTREGA',
+        'SISTECREDITO',
+        'TRANSFERENCIA_MANUAL',
+        'WOMPI',
+      ]),
+    );
+
+    await screen.findByRole('button', { name: /^Tarjeta, PSE o Bancolombia/ });
+    const nombres = screen
+      .getAllByRole('button')
+      .map((boton) => boton.textContent?.trim())
+      .filter((nombre): nombre is string => !!nombre && nombre !== 'Continuar');
+
+    expect(nombres).toEqual([
+      'Tarjeta, PSE o Bancolombia',
+      'Transferencia bancaria',
+      'Sistecrédito',
+      'Pago contraentrega',
+    ]);
+  });
+
+  /**
+   * La descripción de cada medio se pinta **fuera** del botón desde el 28 de septiembre de 2026, y
+   * eso solo es aceptable si sigue llegando al lector de pantalla: el nombre accesible queda limpio
+   * y el detalle entra como *descripción*, por el `aria-describedby`. Sin ese enlace, quien navega
+   * con lector de pantalla oiría "Transferencia bancaria" y nunca sabría a qué cuentas va.
+   */
+  it('la descripción vive fuera del botón pero sigue siendo su descripción accesible', async () => {
+    sembrarCarritoId('carrito-1');
+
+    await renderConDatosEntrega(
+      new RepositorioCarritoFalso(CARRITO_CON_LINEAS),
+      new RepositorioPedidosFalso(['TRANSFERENCIA_MANUAL']),
+    );
+
+    const boton = await screen.findByRole('button', { name: 'Transferencia bancaria' });
+    const descripcion = document.getElementById(boton.getAttribute('aria-describedby') ?? '');
+
+    // Fuera del botón, y aun así enlazada con él.
+    expect(boton.contains(descripcion)).toBe(false);
+    expect(descripcion?.textContent).toContain('Nequi, DaviPlata o cuenta de ahorros del BBVA');
+  });
+
+  /**
    * El aviso se muestra cuando la opción se ofrece, no cuando se elige: informar es previo a
    * decidir. Dice las dos cosas que sorprenden al recibir el paquete — que se cobra el total con
    * el envío incluido, y que la transportadora solo recibe efectivo (docs/12-legales-de-envio.md).
