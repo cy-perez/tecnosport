@@ -3,11 +3,17 @@ package co.tecnosport.api.infrastructure.correo;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import co.tecnosport.api.application.compartido.TextoDeCorreo;
 import co.tecnosport.api.domain.compartido.Dinero;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 import org.junit.jupiter.api.Test;
 import org.springframework.context.support.ResourceBundleMessageSource;
@@ -171,6 +177,37 @@ class TextosDeCorreoMessageSourceTest {
   }
 
   /**
+   * <b>El mismo correo, cuando el pedido va en varios paquetes — y aquí estaba roto.</b> A la
+   * primera línea de {@code pedido.despacho.cuerpo_varias} le faltaba la barra de continuación, y
+   * en un {@code .properties} de Java eso cierra el valor ahí: las tres líneas siguientes se
+   * perdían. Quien recibía un pedido en tres paquetes leía "va en 3 paquetes" y nada más, sin los
+   * números de guía y <b>sin el enlace para seguir el pedido</b>.
+   *
+   * <p><b>La clave existía con valor truncado</b>, así que el guardiãn de arranque no la veía
+   * faltar: comprueba que ninguna falte, no que ninguna esté a medias. Y la prueba de al lado
+   * cubría el correo de <i>un</i> paquete, que está escrito de otra forma —con {@code } en una sola
+   * línea— y por eso nunca se rompió. Dos redacciones para lo mismo, una probada y la otra no.
+   *
+   * <p>Encontrado el 28 de septiembre de 2026 pasando por aquí a corregir el nombre comercial.
+   */
+  @Test
+  void elCorreoDeVariosPaquetesLlegaEnteroYNoSoloSuPrimeraLinea() {
+    String cuerpo =
+        textos()
+            .texto(
+                TextoDeCorreo.PEDIDO_DESPACHO_CUERPO_VARIAS,
+                "TS-2026-000001",
+                "3",
+                "SE1, SE2, SE3",
+                "https://tecnosport.co/es/checkout/estado?pedidoId=1&correo=a%40b.co");
+
+    assertTrue(cuerpo.contains("3 paquetes"), cuerpo);
+    assertTrue(cuerpo.contains("por separado"), cuerpo);
+    assertTrue(cuerpo.contains("SE1, SE2, SE3"), cuerpo);
+    assertTrue(cuerpo.contains("https://tecnosport.co/es/checkout/estado"), cuerpo);
+  }
+
+  /**
    * Lo que el correo <b>no</b> puede decir. Este sistema no consume eventos de la transportadora ni
    * enlaza a su rastreo: prometerlo en el correo sería la misma promesa vacía que tuvo retenido el
    * párrafo del numeral 8 durante toda la fase, con otro signo.
@@ -305,5 +342,65 @@ class TextosDeCorreoMessageSourceTest {
   void elImporteSeAgrupaComoSeEscribeEnElIdiomaQueRige() {
     assertEquals("179.800", textos().dinero(Dinero.deCop(179_800)));
     assertEquals("0", textos().dinero(Dinero.deCop(0)));
+  }
+
+  /**
+   * <b>Ninguna línea suelta en los archivos de texto</b>, en ningún idioma. Esta prueba no mira lo
+   * que dicen los correos sino cómo están escritos, y existe porque los dos defectos que
+   * aparecieron el 28 de septiembre de 2026 eran el mismo error con dos caras y <b>ninguna
+   * herramienta los veía</b>:
+   *
+   * <ul>
+   *   <li>A {@code pedido.despacho.cuerpo_varias} le faltaba la barra de continuación, así que sus
+   *       tres líneas siguientes se caían del valor y el correo salía a medias.
+   *   <li>Cinco líneas de {@code pedido.plazo_vencido} se habían quedado sueltas al reformatear,
+   *       con su texto duplicado más arriba.
+   * </ul>
+   *
+   * <p><b>Java no se queja de ninguno de los dos.</b> Una línea sin {@code =} es, para {@code
+   * Properties}, una clave válida con valor vacío; y una clave con valor truncado sigue existiendo.
+   * El guardián de arranque comprueba que ninguna <i>falte</i>, que es otra cosa.
+   *
+   * <p>Por eso se lee el archivo crudo y no el {@code MessageSource}: para cuando el {@code
+   * MessageSource} lo cargó, el daño ya es invisible.
+   */
+  @Test
+  void ningunaLineaDeLosArchivosDeTextoQuedaSuelta() throws IOException {
+    for (String idioma : List.of("es", "en")) {
+      List<String> sueltas = lineasSinClave("correos_" + idioma + ".properties");
+
+      assertTrue(
+          sueltas.isEmpty(),
+          "correos_"
+              + idioma
+              + ".properties tiene líneas que no son ni comentario, ni continuación, ni"
+              + " clave=valor. O le falta una barra al final de la línea anterior, o son restos de"
+              + " una edición: "
+              + sueltas);
+    }
+  }
+
+  /** Las líneas que no son comentario, ni continuación de la anterior, ni {@code clave=valor}. */
+  private static List<String> lineasSinClave(String recurso) throws IOException {
+    List<String> sueltas = new ArrayList<>();
+    try (InputStream entrada =
+        TextosDeCorreoMessageSourceTest.class.getClassLoader().getResourceAsStream(recurso)) {
+      assertNotNull(entrada, recurso + " no está en el classpath");
+      String[] lineas = new String(entrada.readAllBytes(), StandardCharsets.UTF_8).split("\\n");
+      boolean continuacion = false;
+      for (String cruda : lineas) {
+        String linea = cruda.strip();
+        boolean sigue = cruda.stripTrailing().endsWith("\\");
+        if (continuacion) {
+          continuacion = sigue;
+          continue;
+        }
+        if (!linea.isEmpty() && !linea.startsWith("#") && !linea.contains("=")) {
+          sueltas.add(linea.length() > 60 ? linea.substring(0, 60) + "…" : linea);
+        }
+        continuacion = sigue;
+      }
+    }
+    return sueltas;
   }
 }
