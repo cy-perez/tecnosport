@@ -23,6 +23,7 @@ import co.tecnosport.api.application.catalogo.SkuYaEnUsoException;
 import co.tecnosport.api.application.catalogo.TasaIvaNoPermitidaException;
 import co.tecnosport.api.application.catalogo.VarianteNoEncontradaPorIdException;
 import co.tecnosport.api.application.compartido.LimiteDeIntentosExcedidoException;
+import co.tecnosport.api.application.difusion.DifusionRepetidaException;
 import co.tecnosport.api.application.envio.AcuseNoAplicableException;
 import co.tecnosport.api.application.envio.ArticuloNoAsegurableException;
 import co.tecnosport.api.application.envio.ArticuloSinMedidasException;
@@ -65,6 +66,7 @@ import co.tecnosport.api.domain.catalogo.ImagenDeGaleriaDuplicadaException;
 import co.tecnosport.api.domain.catalogo.ImagenDeGaleriaNoEncontradaException;
 import co.tecnosport.api.domain.catalogo.ProductoSinImagenPrincipalException;
 import co.tecnosport.api.domain.compartido.ExcepcionDeDominio;
+import co.tecnosport.api.domain.difusion.ProductoNoDifundibleException;
 import co.tecnosport.api.domain.inventario.ExistenciaInsuficienteException;
 import co.tecnosport.api.domain.usuario.CorreoSinVerificarException;
 import co.tecnosport.api.domain.usuario.CorreoYaRegistradoException;
@@ -154,6 +156,21 @@ public class ManejadorDeErrores {
   @ExceptionHandler(ProductoSinImagenPrincipalException.class)
   public ProblemDetail productoSinImagenPrincipal(ProductoSinImagenPrincipalException excepcion) {
     return problema(HttpStatus.CONFLICT, "El producto no tiene imagen principal", excepcion);
+  }
+
+  // 409 y no 422: la petición está bien formada y el producto existe; lo que falta es una
+  // condición del producto —imagen, precio publicable, estar publicado— que quien administra
+  // arregla en la ficha y vuelve. El mensaje dice cuál de las tres es.
+  @ExceptionHandler(ProductoNoDifundibleException.class)
+  public ProblemDetail productoNoDifundible(ProductoNoDifundibleException excepcion) {
+    return problema(HttpStatus.CONFLICT, "El producto todavía no se puede difundir", excepcion);
+  }
+
+  // 429 y no 409: no es que el estado impida la operación, es que se pidió demasiado seguido. El
+  // panel lo traduce a "espera a que termine", que es la única acción posible.
+  @ExceptionHandler(DifusionRepetidaException.class)
+  public ProblemDetail difusionRepetida(DifusionRepetidaException excepcion) {
+    return problema(HttpStatus.TOO_MANY_REQUESTS, "Esa difusión ya está en marcha", excepcion);
   }
 
   // 409 por el mismo criterio que el set publicado: la petición está bien formada y el producto

@@ -276,6 +276,12 @@
       },
       "CategoriaRespuesta" : {
         "properties" : {
+          "hashtags" : {
+            "items" : {
+              "type" : "string"
+            },
+            "type" : "array"
+          },
           "id" : {
             "format" : "uuid",
             "type" : "string"
@@ -572,6 +578,23 @@
         },
         "type" : "object"
       },
+      "DifundirProductoPeticion" : {
+        "properties" : {
+          "pieDeFoto" : {
+            "type" : "string"
+          },
+          "redes" : {
+            "items" : {
+              "type" : "string"
+            },
+            "type" : "array"
+          }
+        },
+        "required" : [
+          "redes"
+        ],
+        "type" : "object"
+      },
       "DineroRespuesta" : {
         "properties" : {
           "moneda" : {
@@ -638,6 +661,12 @@
       },
       "EditarCategoriaPeticion" : {
         "properties" : {
+          "hashtags" : {
+            "items" : {
+              "type" : "string"
+            },
+            "type" : "array"
+          },
           "linea" : {
             "type" : "string"
           },
@@ -1704,6 +1733,14 @@
         },
         "type" : "object"
       },
+      "PropuestaDePieRespuesta" : {
+        "properties" : {
+          "pieDeFoto" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
       "ProrrogaRespuesta" : {
         "properties" : {
           "avisadaEn" : {
@@ -1726,6 +1763,41 @@
       "ProrrogarSolicitudRequest" : {
         "properties" : {
           "motivo" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "PublicacionEnRedRespuesta" : {
+        "properties" : {
+          "detalleDelFallo" : {
+            "type" : "string"
+          },
+          "estado" : {
+            "type" : "string"
+          },
+          "id" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "idPublicacionExterna" : {
+            "type" : "string"
+          },
+          "pieDeFoto" : {
+            "type" : "string"
+          },
+          "publicadaEn" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "red" : {
+            "type" : "string"
+          },
+          "solicitadaEn" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "urlImagen" : {
             "type" : "string"
           }
         },
@@ -3847,6 +3919,121 @@
         },
         "tags" : [
           "admin-producto-controlador"
+        ]
+      }
+    },
+    "/api/v1/admin/productos/{id}/difusion" : {
+      "get" : {
+        "operationId" : "historial",
+        "parameters" : [
+          {
+            "in" : "path",
+            "name" : "id",
+            "required" : true,
+            "schema" : {
+              "format" : "uuid",
+              "type" : "string"
+            }
+          }
+        ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/PublicacionEnRedRespuesta"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "admin-difusion-controlador"
+        ]
+      },
+      "post" : {
+        "operationId" : "difundir",
+        "parameters" : [
+          {
+            "in" : "path",
+            "name" : "id",
+            "required" : true,
+            "schema" : {
+              "format" : "uuid",
+              "type" : "string"
+            }
+          }
+        ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/DifundirProductoPeticion"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/PublicacionEnRedRespuesta"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "admin-difusion-controlador"
+        ]
+      }
+    },
+    "/api/v1/admin/productos/{id}/difusion/propuesta" : {
+      "get" : {
+        "operationId" : "propuesta",
+        "parameters" : [
+          {
+            "in" : "path",
+            "name" : "id",
+            "required" : true,
+            "schema" : {
+              "format" : "uuid",
+              "type" : "string"
+            }
+          },
+          {
+            "in" : "query",
+            "name" : "red",
+            "required" : true,
+            "schema" : {
+              "type" : "string"
+            }
+          }
+        ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PropuestaDePieRespuesta"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "admin-difusion-controlador"
         ]
       }
     },
