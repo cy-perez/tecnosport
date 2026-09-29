@@ -61,10 +61,10 @@
   "metodoPago": {
     "titulo": "Payment method",
     "wompi": "Card, PSE or Bancolombia",
-    "wompi_detalle": "You pay through Wompi with a credit or debit card, PSE or the Bancolombia button. You choose which one on their screen.",
+    "wompi_detalle": "Pay through Wompi with a credit or debit card, PSE or the Bancolombia button.",
     "sistecredito": "Sistecrédito",
     "transferencia_manual": "Bank transfer",
-    "transferencia_manual_detalle": "Nequi, Daviplata or a BBVA savings account. Send us the receipt and we confirm the payment.",
+    "transferencia_manual_detalle": "Available for Nequi, DaviPlata or a BBVA savings account. You send the receipt and we confirm the payment.",
     "contraentrega": "Pay on delivery",
     "volver": "‹ Edit address",
     "error": "We couldn't check the available payment methods. Please try again.",

@@ -195,6 +195,10 @@ describe('TsBoton', () => {
       texto: 'bg-transparent',
       peligro: 'bg-ts-error',
       acento: 'bg-ts-acento',
+      // El relleno de la baldosa **es distinto en cada tema** (`ADR-0065`): gris en claro y ámbar
+      // en oscuro. Se comprueban los dos, porque lo que una clase hace o deja de hacer bajo
+      // `oscuro:` no se ve en jsdom y la única defensa es que la clase esté escrita.
+      baldosa: 'bg-ts-primario-suave',
     };
     const { fixture } = await render(Anfitrion);
 
@@ -203,6 +207,18 @@ describe('TsBoton', () => {
       await fixture.whenStable();
       expect(boton().className).toContain(clase);
     }
+  });
+
+  // El par claro/oscuro de la baldosa, que la prueba de arriba no puede mirar: el relleno ámbar
+  // solo existe bajo el variante `oscuro:`, y jsdom no aplica ningún tema.
+  it('la baldosa declara también su relleno de tema oscuro', async () => {
+    const { fixture } = await render(Anfitrion);
+    fixture.componentInstance.variante.set('baldosa');
+    await fixture.whenStable();
+
+    expect(boton().className).toContain('oscuro:bg-ts-acento-2');
+    // Grafito en los dos temas: es lo único que contrasta contra el gris y contra el ámbar.
+    expect(boton().className).toContain('text-ts-sobre-acento');
   });
 
   // docs/04-ui-marca.md: foco visible en el 100% de los enfocables, y el

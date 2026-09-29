@@ -18,7 +18,7 @@ import {
 } from '../../features/catalogo/domain/arbol-categorias';
 import { Categoria } from '../../features/catalogo/domain/producto.model';
 import { REPOSITORIO_CATEGORIAS } from '../../features/catalogo/domain/repositorio-categorias.puerto';
-import { iconoChevron, iconoFijar } from '../../shared/ui/icono/iconos';
+import { iconoChevron, iconoFijar, iconoMenu } from '../../shared/ui/icono/iconos';
 import { TsIcono } from '../../shared/ui/icono/ts-icono';
 import { MenuLateralStore } from './menu-lateral.store';
 
@@ -86,6 +86,13 @@ export class MenuLateral {
 
   protected readonly iconoChevron = iconoChevron;
   protected readonly iconoFijar = iconoFijar;
+  /**
+   * El glifo del catálogo con el riel recogido: **el mismo `Menu` del encabezado móvil**, no uno
+   * propio. Ahí las tres líneas ya significan "aquí está el menú" —abren el panel con el catálogo,
+   * la sesión y los alternadores—, así que en el riel no hay nada nuevo que aprender. Se pidió el
+   * 28 de septiembre de 2026, en reemplazo de la palabra "Catálogo" recortada a 72 px.
+   */
+  protected readonly iconoMenu = iconoMenu;
 
   /**
    * El estado vive en un store de raíz y no aquí porque lo miran además el encabezado —que corre el

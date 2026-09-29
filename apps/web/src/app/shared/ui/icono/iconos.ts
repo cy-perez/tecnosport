@@ -44,11 +44,13 @@ export { Play as iconoReanudar } from 'lucide';
 // anuncia a qué tema lleva el clic, no en cuál estás. En claro se ve la luna, en oscuro el sol.
 export { Moon as iconoTemaOscuro } from 'lucide';
 export { Sun as iconoTemaClaro } from 'lucide';
-// **Las ramas de primer nivel del menú lateral tuvieron icono y ya no.** Eran un `LayoutGrid`
-// —cuatro cuadritos— para el catálogo y un `LayoutDashboard` para el panel, y existían porque con
-// el menú recogido se creía que solo cabían iconos. Sí cabe el nombre: se pidió el 28 de
-// septiembre de 2026 —un pictograma abstracto no dice qué hay detrás— y el riel ahora lee
-// "Catálogo" y "Panel". El porqué de que quepa está en `menu-lateral.html`.
+// **Las ramas de primer nivel del menú lateral tuvieron icono propio y ya no.** Eran un
+// `LayoutGrid` —cuatro cuadritos— para el catálogo y un `LayoutDashboard` para el panel, y
+// existían porque con el menú recogido se creía que solo cabían iconos. Sí cabe el nombre: se
+// pidió el 28 de septiembre de 2026 —un pictograma abstracto no dice qué hay detrás— y el riel
+// pasó a leer "Catálogo" y "Panel". Ese mismo día el catálogo cambió otra vez, y no vuelve a un
+// pictograma de rama: con el riel recogido lleva el `Menu` de aquí arriba, el de la barra móvil,
+// que ya significa "el menú" en este sitio. Por eso no se agregó ningún icono nuevo.
 // El chevron se queda: dice si una rama está desplegada, y gira con la misma curva que el panel.
 export { ChevronDown as iconoChevron } from 'lucide';
 // Lo pidió el botón que fija el menú lateral abierto. `PanelLeft` y no una chincheta: el icono

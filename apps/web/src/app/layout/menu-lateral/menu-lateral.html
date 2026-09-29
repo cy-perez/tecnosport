@@ -44,6 +44,7 @@
       clave: 'catalogo',
       etiqueta: 'encabezado.catalogo' | transloco,
       contenido: contenidoCatalogo,
+      glifo: iconoMenu,
     }"
   />
 
@@ -55,6 +56,7 @@
         clave: 'panel',
         etiqueta: 'encabezado.panel' | transloco,
         contenido: contenidoPanel,
+        glifo: null,
       }"
     />
   }
@@ -63,34 +65,51 @@
 <!-- Un grupo de primer nivel: el botón que lo pliega y la región que pliega.
      `aria-expanded` y `aria-controls` son lo que lo convierte en un *disclosure* anunciable; sin
      ellos es un botón que un lector de pantalla no puede explicar. -->
-<ng-template #grupo let-clave="clave" let-etiqueta="etiqueta" let-contenido="contenido">
-  <!-- **El nombre de la rama se lee siempre, también con el menú recogido, y eso sustituyó al
-       icono.** Hasta el 28 de septiembre de 2026 el riel enseñaba un `LayoutGrid` —cuatro
-       cuadritos— para el catálogo y un `LayoutDashboard` para el panel, y la etiqueta se
-       desvanecía. Se pidió quitarlos: un pictograma abstracto no dice qué hay detrás, y estas
-       son las dos únicas ramas del sitio, no una barra de doce iconos donde el espacio manda.
+<ng-template
+  #grupo
+  let-clave="clave"
+  let-etiqueta="etiqueta"
+  let-contenido="contenido"
+  let-glifo="glifo"
+>
+  <!-- **Con el riel recogido, el catálogo se anuncia con el glifo de menú; desplegado, con su
+       nombre.** Es la tercera forma que tiene este sitio en una semana y conviene el recorrido:
+       hasta el 28 de septiembre de 2026 eran dos pictogramas de rama —`LayoutGrid` el catálogo y
+       `LayoutDashboard` el panel— con la etiqueta desvanecida; se pidió quitarlos, porque un
+       pictograma abstracto no dice qué hay detrás, y el riel pasó a leer "Catálogo" recortando el
+       padding a `px-8` y el texto a `--texto-xs` para que cupiera en 72 px. Ese mismo día se pidió
+       lo de ahora: en vez de la palabra, **las tres líneas apiladas del encabezado móvil**, que es
+       el glifo que en este sitio ya significa "aquí está el menú" — el que reúne catálogo, sesión
+       y los alternadores. No es un pictograma que haya que aprender; es el que ya está en la barra.
 
-       **Por qué antes no cabía y ahora sí.** El primer intento fue dejar la etiqueta visible sin
-       más, y a 72 px "Catálogo" asomaba cortada —"Cat"— porque el botón lleva `px-24`: de los 72
-       del riel solo quedaban 48 útiles para un texto de 55,4. Con `px-8` quedan 56, y en
-       `--texto-xs` el texto mide 47,5. Medido en el navegador, no calculado.
+       **El nombre sigue estando, aunque no se vea.** `sr-only` y no `display: none` ni `opacity-0`:
+       quien usa lector de pantalla tiene que oír "Catálogo" esté el panel desplegado o no, y
+       ocultarlo de verdad lo sacaría además del orden de tabulación — que es lo que haría el menú
+       inservible con teclado. El `<ts-icono>` va `aria-hidden` por su cuenta, así que el nombre
+       accesible del botón es solo la etiqueta.
 
-       El padding y el tamaño cambian con el estado, y el texto **no** se desvanece nunca: quien
-       usa lector de pantalla tiene que oír "Catálogo" esté el panel desplegado o no, y un
-       `display: none` lo sacaría además del orden de tabulación — que es lo que haría el menú
-       inservible con teclado. Eso no cambió; lo que cambió es que ahora también se ve. -->
+       **`px-24` centra el glifo en el riel sin una sola medida nueva**: 24 de padding + 24 de icono
+       dejan otros 24 hasta los 72 del riel. Por eso el `px-8` solo sobrevive para una rama sin
+       glifo —hoy, "Panel"—, que es la que sigue leyéndose como texto recortado.
+
+       El glifo desaparece al desplegar. Manteniéndolo, el nombre del catálogo arrancaría 40 px más
+       adentro que el de "Panel", que no tiene ninguno, y las dos ramas dejarían de alinearse. -->
   <button
     class="anillo-foco flex min-h-tactil w-menu-lateral shrink-0 cursor-pointer items-center gap-16 border-0 bg-transparent text-start font-texto text-ts-texto transition-[padding] ease-[var(--curva-suave)] hover:bg-ts-superficie-alt"
     type="button"
-    [class.px-24]="desplegado()"
-    [class.px-8]="!desplegado()"
+    [class.px-24]="desplegado() || !!glifo"
+    [class.px-8]="!desplegado() && !glifo"
     [attr.aria-expanded]="estaAbierto(clave)"
     [attr.aria-controls]="'menu-grupo-' + clave"
     [style.transitionDuration]="sinMovimiento() ? '0ms' : 'var(--mov-panel)'"
     (click)="alternar(clave)"
   >
+    @if (glifo && !desplegado()) {
+      <ts-icono class="shrink-0" [icono]="glifo" />
+    }
     <span
       class="grow truncate transition-[font-size] ease-[var(--curva-suave)]"
+      [class.sr-only]="glifo && !desplegado()"
       [class.text-sm]="desplegado()"
       [class.text-xs]="!desplegado()"
       [style.transitionDuration]="sinMovimiento() ? '0ms' : 'var(--mov-panel)'"
