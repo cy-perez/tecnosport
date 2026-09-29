@@ -181,35 +181,41 @@ describe('MenuLateral', () => {
   });
 
   /**
-   * <b>Las ramas de primer nivel se leen por su nombre, no por un pictograma.</b> Tenían icono
-   * —`LayoutGrid` el catálogo, `LayoutDashboard` el panel— porque se creía que con el menú
-   * recogido solo cabían iconos; sí cabe el nombre, y se pidió el 28 de septiembre de 2026.
+   * <b>Con el riel recogido, el catálogo se anuncia con el glifo de menú; al desplegar, con su
+   * nombre.</b> Es la tercera forma en una semana: primero un pictograma de rama con la etiqueta
+   * desvanecida, luego la palabra "Catálogo" recortada para caber en 72 px, y desde el 28 de
+   * septiembre de 2026 las tres líneas apiladas del encabezado móvil.
    *
-   * <p>Lo que esta prueba fija es que <b>no vuelva un icono a ocupar ese sitio</b>: el chevron sí
-   * se queda —dice si la rama está desplegada— así que no vale contar los `ts-icono` del botón,
-   * hay que mirar que el único que quede sea el que gira.
+   * <p>Lo que esta prueba fija es <b>lo que no puede cambiar con la forma</b>: que el nombre
+   * accesible siga siendo "Catálogo" en los dos estados. Con `display: none` u `opacity-0` en vez
+   * de `sr-only` el botón se quedaría sin nombre —o fuera del orden de tabulación— y nada más lo
+   * atraparía: el glifo va `aria-hidden`, así que no hay de dónde sacar el nombre.
    *
-   * <p><b>Que quepa no lo sabe jsdom</b>, donde nada mide: los 47,5 px del texto contra los 56 que
-   * deja el riel salen del navegador (regla dura #8). Aquí se cuida la otra mitad, la que sí
-   * puede romperse en silencio al editar la plantilla.
+   * <p><b>Cómo se ve no lo sabe jsdom</b>, donde nada mide: que el glifo quede centrado en los
+   * 72 px del riel se comprueba en el navegador (regla dura #8). Aquí se cuida la otra mitad.
    */
-  it('una rama de primer nivel se nombra con texto y sin icono propio', async () => {
-    await renderMenu();
+  it('el catálogo se nombra igual recogido —con glifo— que desplegado —con texto—', async () => {
+    const { fixture } = await renderMenu();
 
-    for (const nombre of ['Catálogo']) {
-      const boton = botonDe(nombre);
-      expect(boton.textContent?.trim()).toBe(nombre);
+    // Recogido: el botón sigue encontrándose por su nombre, aunque la palabra no se vea.
+    const boton = botonDe('Catálogo');
+    const etiqueta = [...boton.querySelectorAll('span')].find(
+      (x) => x.textContent?.trim() === 'Catálogo',
+    );
+    expect(etiqueta?.className).toContain('sr-only');
+    expect(etiqueta?.className).not.toContain('opacity-0');
 
-      // El chevron y nada más: si vuelve un icono de rama, aquí hay dos.
-      expect(boton.querySelectorAll('ts-icono').length).toBe(1);
+    // El glifo del encabezado móvil más el chevron. Si alguien vuelve a meter un icono de rama
+    // propio, aquí hay tres.
+    expect(boton.querySelectorAll('ts-icono').length).toBe(2);
 
-      // Y el nombre no se esconde con el menú recogido, que es justo lo que hacía antes.
-      const etiqueta = [...boton.querySelectorAll('span')].find(
-        (x) => x.textContent?.trim() === nombre,
-      );
-      expect(etiqueta?.className).not.toContain('opacity-0');
-      expect(etiqueta?.className).not.toContain('sr-only');
-    }
+    fireEvent.mouseEnter(panel());
+    await fixture.whenStable();
+
+    // Desplegado: la palabra vuelve a verse y el glifo se va, para que "Catálogo" y "Panel"
+    // arranquen en la misma columna.
+    expect(etiqueta?.className).not.toContain('sr-only');
+    expect(botonDe('Catálogo').querySelectorAll('ts-icono').length).toBe(1);
   });
 
   it('cada grupo se anuncia como un disclosure y apunta a su región', async () => {
