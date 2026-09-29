@@ -30,19 +30,39 @@
         clase="size-16"
       />
     }
-    <input
-      [class]="clasesControl()"
-      [id]="idCampo()"
-      [type]="tipo()"
-      [attr.placeholder]="placeholder()"
-      [value]="valorMostrado()"
-      [disabled]="deshabilitado()"
-      [attr.aria-required]="obligatorio() ? 'true' : null"
-      [attr.aria-invalid]="error() ? 'true' : null"
-      [attr.aria-describedby]="descripcion()"
-      (input)="manejarEntrada($any($event.target).value)"
-      (blur)="manejarSalida()"
-    />
+    @if (multilinea()) {
+      <!-- Dos ramas y no un elemento dinámico: `<input>` y `<textarea>` no son intercambiables en
+           Angular —el segundo lleva el valor en su contenido y no en un atributo— y no hay forma
+           de ligarlos con la misma plantilla sin perder el `[value]`. Lo que sí está compartido es
+           todo lo de alrededor, que es lo que cuesta auditar. -->
+      <textarea
+        [class]="clasesControl()"
+        [id]="idCampo()"
+        [rows]="filas()"
+        [attr.placeholder]="placeholder()"
+        [value]="valorMostrado()"
+        [disabled]="deshabilitado()"
+        [attr.aria-required]="obligatorio() ? 'true' : null"
+        [attr.aria-invalid]="error() ? 'true' : null"
+        [attr.aria-describedby]="descripcion()"
+        (input)="manejarEntrada($any($event.target).value)"
+        (blur)="manejarSalida()"
+      ></textarea>
+    } @else {
+      <input
+        [class]="clasesControl()"
+        [id]="idCampo()"
+        [type]="tipo()"
+        [attr.placeholder]="placeholder()"
+        [value]="valorMostrado()"
+        [disabled]="deshabilitado()"
+        [attr.aria-required]="obligatorio() ? 'true' : null"
+        [attr.aria-invalid]="error() ? 'true' : null"
+        [attr.aria-describedby]="descripcion()"
+        (input)="manejarEntrada($any($event.target).value)"
+        (blur)="manejarSalida()"
+      />
+    }
   </div>
   <p [class]="clasesError" [id]="idCampo() + '-error'" role="alert">{{ error() }}</p>
 </div>
