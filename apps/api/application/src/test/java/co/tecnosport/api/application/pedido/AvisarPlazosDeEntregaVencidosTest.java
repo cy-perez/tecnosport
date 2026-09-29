@@ -81,7 +81,7 @@ class AvisarPlazosDeEntregaVencidosTest {
 
   @Test
   void avisaAlCompradorCuandoElPlazoSeAgoto() {
-    Pedido pedido = pedidoEn(MetodoPago.NEQUI, EstadoPedido.PAGADO);
+    Pedido pedido = pedidoEn(MetodoPago.WOMPI, EstadoPedido.PAGADO);
 
     ResultadoVigilanciaPlazos resultado = casoDeUso(PASADO_EL_PLAZO).ejecutar();
 
@@ -94,7 +94,7 @@ class AvisarPlazosDeEntregaVencidosTest {
   @Test
   void noCancelaNiCambiaElEstadoDelPedido() {
     // ADR-0028: terminar el contrato lo decide quien compró, no el vigilante.
-    Pedido pedido = pedidoEn(MetodoPago.NEQUI, EstadoPedido.PAGADO);
+    Pedido pedido = pedidoEn(MetodoPago.WOMPI, EstadoPedido.PAGADO);
 
     casoDeUso(PASADO_EL_PLAZO).ejecutar();
 
@@ -112,7 +112,7 @@ class AvisarPlazosDeEntregaVencidosTest {
    */
   @Test
   void siElCorreoFallaDevuelveElReclamoYLaVueltaSiguienteReintenta() {
-    Pedido pedido = pedidoEn(MetodoPago.NEQUI, EstadoPedido.PAGADO);
+    Pedido pedido = pedidoEn(MetodoPago.WOMPI, EstadoPedido.PAGADO);
     correos.hazQueFalle();
     AvisarPlazosDeEntregaVencidos casoDeUso = casoDeUso(PASADO_EL_PLAZO);
 
@@ -132,7 +132,7 @@ class AvisarPlazosDeEntregaVencidosTest {
 
   @Test
   void noVuelveAEscribirEnLaSiguienteVuelta() {
-    pedidoEn(MetodoPago.NEQUI, EstadoPedido.PAGADO);
+    pedidoEn(MetodoPago.WOMPI, EstadoPedido.PAGADO);
 
     casoDeUso(PASADO_EL_PLAZO).ejecutar();
     ResultadoVigilanciaPlazos segunda =
@@ -144,7 +144,7 @@ class AvisarPlazosDeEntregaVencidosTest {
 
   @Test
   void dentroDelPlazoNoAvisaNada() {
-    pedidoEn(MetodoPago.NEQUI, EstadoPedido.PAGADO);
+    pedidoEn(MetodoPago.WOMPI, EstadoPedido.PAGADO);
 
     ResultadoVigilanciaPlazos resultado =
         casoDeUso(CONFIRMADO.plus(20, ChronoUnit.DAYS)).ejecutar();
@@ -156,7 +156,7 @@ class AvisarPlazosDeEntregaVencidosTest {
   @Test
   void unPedidoEntregadoNoIncumpleNada() {
     pedidoEn(
-        MetodoPago.NEQUI,
+        MetodoPago.WOMPI,
         EstadoPedido.PAGADO,
         EstadoPedido.EN_PREPARACION,
         EstadoPedido.DESPACHADO,
@@ -168,7 +168,7 @@ class AvisarPlazosDeEntregaVencidosTest {
   @Test
   void unPagoPendienteNoTienePlazoQueIncumplir() {
     // El plazo ni siquiera arrancó: no hay contrato perfeccionado que incumplir.
-    pedidoEn(MetodoPago.NEQUI);
+    pedidoEn(MetodoPago.WOMPI);
 
     assertEquals(new ResultadoVigilanciaPlazos(0, 0), casoDeUso(PASADO_EL_PLAZO).ejecutar());
     assertTrue(correos.enviados().isEmpty());
@@ -179,7 +179,7 @@ class AvisarPlazosDeEntregaVencidosTest {
     // El plazo legal corre hasta la entrega, no hasta el despacho, y el texto de ese caso pide que
     // lo corrijan si el pedido ya llegó.
     pedidoEn(
-        MetodoPago.NEQUI,
+        MetodoPago.WOMPI,
         EstadoPedido.PAGADO,
         EstadoPedido.EN_PREPARACION,
         EstadoPedido.DESPACHADO);
@@ -197,7 +197,7 @@ class AvisarPlazosDeEntregaVencidosTest {
   @Test
   void aUnDespachadoNoSeLePrometeUnaCancelacionQueElDominioNoPermite() {
     pedidoEn(
-        MetodoPago.NEQUI,
+        MetodoPago.WOMPI,
         EstadoPedido.PAGADO,
         EstadoPedido.EN_PREPARACION,
         EstadoPedido.DESPACHADO);
@@ -215,7 +215,7 @@ class AvisarPlazosDeEntregaVencidosTest {
    */
   @Test
   void siOtraInstanciaGanaElReclamoNoSeEscribeNada() {
-    Pedido pedido = pedidoEn(MetodoPago.NEQUI, EstadoPedido.PAGADO);
+    Pedido pedido = pedidoEn(MetodoPago.WOMPI, EstadoPedido.PAGADO);
     pedidos.queOtroGaneElReclamoDe(pedido.id());
 
     ResultadoVigilanciaPlazos resultado = casoDeUso(PASADO_EL_PLAZO).ejecutar();
@@ -227,8 +227,8 @@ class AvisarPlazosDeEntregaVencidosTest {
   /** Y se reclama antes de escribir, no después: el orden es la garantía. */
   @Test
   void seReclamaCadaPedidoVencidoYSoloUnaVez() {
-    Pedido vencido = pedidoEn(MetodoPago.NEQUI, EstadoPedido.PAGADO);
-    pedidoEn(MetodoPago.NEQUI);
+    Pedido vencido = pedidoEn(MetodoPago.WOMPI, EstadoPedido.PAGADO);
+    pedidoEn(MetodoPago.WOMPI);
 
     casoDeUso(PASADO_EL_PLAZO).ejecutar();
     casoDeUso(PASADO_EL_PLAZO.plus(12, ChronoUnit.HOURS)).ejecutar();
@@ -238,7 +238,7 @@ class AvisarPlazosDeEntregaVencidosTest {
 
   @Test
   void unPedidoSinDespacharNoDiceQueVaEnCamino() {
-    pedidoEn(MetodoPago.NEQUI, EstadoPedido.PAGADO);
+    pedidoEn(MetodoPago.WOMPI, EstadoPedido.PAGADO);
 
     casoDeUso(PASADO_EL_PLAZO).ejecutar();
 
@@ -247,7 +247,7 @@ class AvisarPlazosDeEntregaVencidosTest {
 
   @Test
   void siElDineroYaEntroElCorreoOfreceDevolverlo() {
-    pedidoEn(MetodoPago.NEQUI, EstadoPedido.PAGADO);
+    pedidoEn(MetodoPago.WOMPI, EstadoPedido.PAGADO);
 
     casoDeUso(PASADO_EL_PLAZO).ejecutar();
 
@@ -267,7 +267,7 @@ class AvisarPlazosDeEntregaVencidosTest {
 
   @Test
   void avisaAVariosPedidosEnLaMismaVuelta() {
-    pedidoEn(MetodoPago.NEQUI, EstadoPedido.PAGADO);
+    pedidoEn(MetodoPago.WOMPI, EstadoPedido.PAGADO);
     pedidoEn(MetodoPago.CONTRAENTREGA, EstadoPedido.EN_PREPARACION);
 
     assertEquals(new ResultadoVigilanciaPlazos(2, 2), casoDeUso(PASADO_EL_PLAZO).ejecutar());

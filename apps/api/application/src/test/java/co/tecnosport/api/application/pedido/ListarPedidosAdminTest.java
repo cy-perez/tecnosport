@@ -51,7 +51,7 @@ class ListarPedidosAdminTest {
                     UUID.randomUUID())),
             TipoEntrega.ENVIO_A_DOMICILIO,
             DIRECCION_MEDELLIN,
-            MetodoPago.NEQUI,
+            MetodoPago.WOMPI,
             "cliente@tecnosport.co",
             creadoEn);
     pedidos.guardar(pedido);

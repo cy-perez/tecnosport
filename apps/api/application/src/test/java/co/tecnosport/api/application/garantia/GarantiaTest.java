@@ -71,7 +71,7 @@ class GarantiaTest {
   private Pedido sembrarPedido(String categoriaSlug) {
     varianteId = UUID.randomUUID();
     LineaPedido linea = PedidosDePrueba.linea(varianteId, UUID.randomUUID());
-    Pedido pedido = PedidosDePrueba.entregado(MetodoPago.NEQUI, linea, ENTREGA);
+    Pedido pedido = PedidosDePrueba.entregado(MetodoPago.WOMPI, linea, ENTREGA);
     pedidos.sembrar(pedido);
     if (categoriaSlug != null) {
       productos.conProducto(

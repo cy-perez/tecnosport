@@ -190,7 +190,7 @@ class AdminPedidosControladorTest {
 
   @Test
   void elPanelVeElPlazoDeEntregaVencido() throws Exception {
-    pedidoViejo(MetodoPago.NEQUI, 40, EstadoPedido.PAGADO);
+    pedidoViejo(MetodoPago.WOMPI, 40, EstadoPedido.PAGADO);
 
     mockMvc
         .perform(get("/api/v1/admin/pedidos"))
@@ -203,7 +203,7 @@ class AdminPedidosControladorTest {
 
   @Test
   void unPedidoDentroDelPlazoNoSePintaComoIncumplido() throws Exception {
-    pedidoViejo(MetodoPago.NEQUI, 3, EstadoPedido.PAGADO);
+    pedidoViejo(MetodoPago.WOMPI, 3, EstadoPedido.PAGADO);
 
     mockMvc
         .perform(get("/api/v1/admin/pedidos"))
@@ -213,7 +213,7 @@ class AdminPedidosControladorTest {
 
   @Test
   void mientrasElPagoSigaPendienteNoHayPlazoQueMostrar() throws Exception {
-    pedidoViejo(MetodoPago.NEQUI, 40);
+    pedidoViejo(MetodoPago.WOMPI, 40);
 
     mockMvc
         .perform(get("/api/v1/admin/pedidos"))
@@ -226,7 +226,7 @@ class AdminPedidosControladorTest {
     // Se juzga contra su fecha de entrega, no contra el reloj de hoy: si no, cualquier pedido
     // antiguo cumplido aparecería como incumplido para siempre.
     pedidoViejo(
-        MetodoPago.NEQUI,
+        MetodoPago.WOMPI,
         120,
         EstadoPedido.PAGADO,
         EstadoPedido.EN_PREPARACION,
@@ -241,7 +241,7 @@ class AdminPedidosControladorTest {
 
   @Test
   void listaLosPedidosPaginados() throws Exception {
-    pedidoConMetodo(MetodoPago.NEQUI);
+    pedidoConMetodo(MetodoPago.WOMPI);
     pedidoConMetodo(MetodoPago.TRANSFERENCIA_MANUAL);
 
     mockMvc
@@ -267,7 +267,7 @@ class AdminPedidosControladorTest {
 
   @Test
   void conciliarUnPedidoDeWompiDevuelve409() throws Exception {
-    Pedido pedido = pedidoConMetodo(MetodoPago.NEQUI);
+    Pedido pedido = pedidoConMetodo(MetodoPago.WOMPI);
     autenticarComoAdmin();
 
     mockMvc
@@ -583,7 +583,7 @@ class AdminPedidosControladorTest {
 
   @Test
   void listarFiltradoPorEstadoSoloTraeEsePedido() throws Exception {
-    pedidoConMetodo(MetodoPago.NEQUI);
+    pedidoConMetodo(MetodoPago.WOMPI);
     Pedido pendiente = pedidoConMetodo(MetodoPago.CONTRAENTREGA);
     pendiente.transicionar(EstadoPedido.EN_PREPARACION, "admin:test", "verificado", Instant.now());
     pendiente.transicionar(EstadoPedido.DESPACHADO, "admin:test", "despachado", Instant.now());
@@ -842,7 +842,7 @@ class AdminPedidosControladorTest {
     @Bean
     PropiedadesTransferenciaManual propiedadesTransferenciaManual() {
       return new PropiedadesTransferenciaManual(
-          "Bancolombia", "ahorros", "123-456789-00", "TecnoSport SAS");
+          "Bancolombia", "ahorros", "123-456789-00", "Tecno Sport");
     }
 
     @Bean

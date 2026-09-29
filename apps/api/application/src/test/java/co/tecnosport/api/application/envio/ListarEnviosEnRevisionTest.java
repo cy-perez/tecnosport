@@ -83,7 +83,7 @@ class ListarEnviosEnRevisionTest {
                     UUID.randomUUID())),
             TipoEntrega.ENVIO_A_DOMICILIO,
             MEDELLIN,
-            MetodoPago.NEQUI,
+            MetodoPago.WOMPI,
             "cliente@tecnosport.co",
             DESPACHO.minusSeconds(3600));
     pedido.transicionar(EstadoPedido.PAGADO, "webhook", "pago aprobado", DESPACHO);

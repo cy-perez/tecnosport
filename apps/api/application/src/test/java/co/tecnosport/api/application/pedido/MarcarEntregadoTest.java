@@ -160,7 +160,7 @@ class MarcarEntregadoTest {
   @Test
   void unPedidoPagadoEnLineaEntregadoSeQuedaEnEntregado() {
     MarcarEntregado caso = crear();
-    Pedido pedido = pedidoDespachado(MetodoPago.NEQUI);
+    Pedido pedido = pedidoDespachado(MetodoPago.WOMPI);
 
     ResultadoEntrega resultado =
         caso.ejecutar(new MarcarEntregadoComando(pedido.id(), "admin:test"));
@@ -172,7 +172,7 @@ class MarcarEntregadoTest {
   @Test
   void unPedidoPagadoEnLineaNoVuelveAConfirmarSuReserva() {
     MarcarEntregado caso = crear();
-    Pedido pedido = pedidoDespachado(MetodoPago.NEQUI);
+    Pedido pedido = pedidoDespachado(MetodoPago.WOMPI);
 
     ResultadoEntrega resultado =
         caso.ejecutar(new MarcarEntregadoComando(pedido.id(), "admin:test"));

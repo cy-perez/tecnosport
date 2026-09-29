@@ -18,15 +18,18 @@ import org.junit.jupiter.api.Test;
  * Wompi y es lo que lo mantiene fuera del checkout". Ese valor salió del enum (V61) y con él la
  * prueba: lo que queda en su lugar fija qué métodos cobra Wompi, para que sumar uno sea un acto
  * deliberado y no el efecto lateral de otra cosa — que es exactamente lo que le pasó a Addi.
+ *
+ * <p><b>Y desde el 28 de septiembre de 2026 ese conjunto tiene un solo elemento</b> ({@code V66}):
+ * los cuatro medios de pasarela se agruparon en {@code WOMPI} porque el Web Checkout hospedado
+ * nunca recibió cuál había elegido el comprador. La prueba del conjunto no sobra por eso —al revés:
+ * ahora lo que vigila es que <b>nadie vuelva a meter un medio suelto</b> al lado de {@code WOMPI},
+ * que es justo la forma que tenía el problema.
  */
 class MetodoPagoTest {
 
   @Test
-  void losMetodosDeWompiLosCobraWompi() {
-    assertEquals(ProveedorDePago.WOMPI, MetodoPago.TARJETA.pasarela());
-    assertEquals(ProveedorDePago.WOMPI, MetodoPago.PSE.pasarela());
-    assertEquals(ProveedorDePago.WOMPI, MetodoPago.NEQUI.pasarela());
-    assertEquals(ProveedorDePago.WOMPI, MetodoPago.BANCOLOMBIA.pasarela());
+  void loQueCobraWompiLoCobraWompi() {
+    assertEquals(ProveedorDePago.WOMPI, MetodoPago.WOMPI.pasarela());
   }
 
   @Test
@@ -44,20 +47,24 @@ class MetodoPagoTest {
   }
 
   /**
-   * Los métodos que cobra Wompi son exactamente estos cuatro. La prueba no es decorativa: un valor
-   * enrutado a una pasarela que no lo ofrece se cuela en el checkout en cuanto alguien toque la
-   * lista de habilitados de esa cuenta, y así estuvo Addi cuatro meses — apuntando a Wompi, donde
-   * no existe, y fuera del checkout solo porque la lista no lo incluía.
+   * Lo que cobra Wompi es <b>exactamente un valor</b>, y la prueba no es decorativa: un medio
+   * suelto enrutado a una pasarela se cuela en el checkout en cuanto alguien toque la lista de
+   * habilitados de esa cuenta, y así estuvo Addi cuatro meses —apuntando a Wompi, donde no existe,
+   * y fuera del checkout solo porque la lista no lo incluía—.
+   *
+   * <p>Con el agrupamiento de la {@code V66} vigila además lo contrario: que no vuelva a aparecer
+   * {@code TARJETA}, {@code PSE} o {@code BANCOLOMBIA} al lado de {@code WOMPI}. Dos valores para
+   * el mismo cobro son dos formas de contar lo mismo, y una de las dos siempre miente — el checkout
+   * no puede prometer cuál de ellos usará el comprador, porque eso se decide en la pantalla de
+   * Wompi.
    */
   @Test
-  void losQueCobraWompiSonExactamenteEsosCuatro() {
+  void loQueCobraWompiEsExactamenteUnMetodo() {
     Set<MetodoPago> deWompi =
         Arrays.stream(MetodoPago.values())
             .filter(metodo -> metodo.pasarela() == ProveedorDePago.WOMPI)
             .collect(Collectors.toCollection(() -> EnumSet.noneOf(MetodoPago.class)));
 
-    assertEquals(
-        EnumSet.of(MetodoPago.TARJETA, MetodoPago.PSE, MetodoPago.NEQUI, MetodoPago.BANCOLOMBIA),
-        deWompi);
+    assertEquals(EnumSet.of(MetodoPago.WOMPI), deWompi);
   }
 }

@@ -59,7 +59,7 @@ export function aPedidoAdmin(dto: PedidoDto): PedidoAdmin {
     lineas: (dto.lineas ?? []).map(aLineaPedido),
     tipoEntrega: (dto.tipoEntrega ?? 'ENVIO_A_DOMICILIO') as TipoEntrega,
     direccion: dto.direccion ? aDireccion(dto.direccion) : null,
-    metodoPago: dto.metodoPago ?? 'TARJETA',
+    metodoPago: dto.metodoPago ?? 'WOMPI',
     estado: (dto.estado ?? 'PAGO_PENDIENTE') as EstadoPedido,
     total: { valor: dto.total?.valor ?? 0, moneda: dto.total?.moneda ?? 'COP' },
     dineroRecibido: {

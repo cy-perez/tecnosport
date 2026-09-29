@@ -57,7 +57,7 @@ class ReversionTest {
   private Pedido pedidoDespachado() {
     Pedido pedido =
         PedidosDePrueba.despachado(
-            MetodoPago.NEQUI,
+            MetodoPago.WOMPI,
             PedidosDePrueba.linea(UUID.randomUUID(), UUID.randomUUID()),
             HECHO.minusSeconds(864_000));
     pedidos.sembrar(pedido);

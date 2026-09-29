@@ -57,9 +57,15 @@ class MetodosDeWompiEnApplicationYmlTest {
             + " (legales.terminos, medios de pago) — hoy dicen que no lo aceptamos.");
   }
 
+  /**
+   * Desde la {@code V66} el único valor posible es {@code WOMPI}: los cuatro medios de pasarela se
+   * agruparon porque el Web Checkout hospedado nunca recibió cuál había elegido el comprador. La
+   * lista quedó siendo un interruptor con forma de lista, y se dejó así a propósito — el porqué, en
+   * {@code PropiedadesMetodosDeWompi}.
+   */
   @Test
   void losMetodosPorOmisionSonLosQueLaCuentaTieneActivados() throws IOException {
-    assertEquals(List.of("TARJETA", "PSE", "NEQUI", "BANCOLOMBIA"), habilitadosPorOmision());
+    assertEquals(List.of("WOMPI"), habilitadosPorOmision());
   }
 
   /** Lo que diga el YAML tiene que poder leerlo el bean, no solo parecerse a un método. */
@@ -68,9 +74,7 @@ class MetodosDeWompiEnApplicationYmlTest {
     Set<MetodoPago> metodos =
         new PropiedadesMetodosDeWompi(habilitadosPorOmision()).comoMetodosDePago();
 
-    assertEquals(
-        Set.of(MetodoPago.TARJETA, MetodoPago.PSE, MetodoPago.NEQUI, MetodoPago.BANCOLOMBIA),
-        metodos);
+    assertEquals(Set.of(MetodoPago.WOMPI), metodos);
     assertTrue(metodos.stream().allMatch(m -> m.pasarela() == ProveedorDePago.WOMPI));
   }
 
@@ -82,7 +86,7 @@ class MetodosDeWompiEnApplicationYmlTest {
   @Test
   void sistecreditoNoSeHabilitaDesdeLaListaDeWompi() {
     PropiedadesMetodosDeWompi propiedades =
-        new PropiedadesMetodosDeWompi(List.of("TARJETA", "SISTECREDITO"));
+        new PropiedadesMetodosDeWompi(List.of("WOMPI", "SISTECREDITO"));
 
     IllegalStateException error =
         assertThrows(IllegalStateException.class, propiedades::comoMetodosDePago);
@@ -93,7 +97,7 @@ class MetodosDeWompiEnApplicationYmlTest {
   @Test
   void unMetodoDesconocidoImpideArrancar() {
     PropiedadesMetodosDeWompi propiedades =
-        new PropiedadesMetodosDeWompi(List.of("TARJETA", "ADDI_PAGOS"));
+        new PropiedadesMetodosDeWompi(List.of("WOMPI", "ADDI_PAGOS"));
 
     assertThrows(IllegalStateException.class, propiedades::comoMetodosDePago);
   }
@@ -102,7 +106,7 @@ class MetodosDeWompiEnApplicationYmlTest {
   @Test
   void unMetodoQueNoPasaPorLaPasarelaImpideArrancar() {
     PropiedadesMetodosDeWompi propiedades =
-        new PropiedadesMetodosDeWompi(List.of("TARJETA", "CONTRAENTREGA"));
+        new PropiedadesMetodosDeWompi(List.of("WOMPI", "CONTRAENTREGA"));
 
     assertThrows(IllegalStateException.class, propiedades::comoMetodosDePago);
   }

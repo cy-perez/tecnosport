@@ -27,7 +27,7 @@ class RegistrarIdTransaccionWompiTest {
   void registraElIdEnElPagoEncontradoPorReferencia() {
     RegistrarIdTransaccionWompi caso = crear();
     Pago pago =
-        Pago.crear(UUID.randomUUID(), REFERENCIA, MetodoPago.NEQUI, Dinero.deCop(100_000), AHORA);
+        Pago.crear(UUID.randomUUID(), REFERENCIA, MetodoPago.WOMPI, Dinero.deCop(100_000), AHORA);
     pagos.guardar(pago);
 
     caso.ejecutar(

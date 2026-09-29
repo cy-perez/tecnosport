@@ -49,7 +49,7 @@ class PedidoTest {
           Instant.parse("2026-09-03T12:00:00Z"));
 
   private Pedido crearAlDomicilioCon(TarifaEnvio tarifa) {
-    return crearAlDomicilioCon(tarifa, MetodoPago.NEQUI);
+    return crearAlDomicilioCon(tarifa, MetodoPago.WOMPI);
   }
 
   private Pedido crearAlDomicilioCon(TarifaEnvio tarifa, MetodoPago metodoPago) {
@@ -100,7 +100,7 @@ class PedidoTest {
                 lineas,
                 TipoEntrega.ENVIO_A_DOMICILIO,
                 DIRECCION_MEDELLIN,
-                MetodoPago.NEQUI,
+                MetodoPago.WOMPI,
                 "cliente@tecnosport.co",
                 AHORA));
   }
@@ -130,7 +130,7 @@ class PedidoTest {
             List.of(linea(BigDecimal.valueOf(50_000), 2)),
             TipoEntrega.ENVIO_A_DOMICILIO,
             DIRECCION_MEDELLIN,
-            MetodoPago.NEQUI,
+            MetodoPago.WOMPI,
             "cliente@tecnosport.co",
             AHORA,
             null,
@@ -142,12 +142,12 @@ class PedidoTest {
   /** Los pedidos anteriores a este campo se reconstruyen sin él y siguen siendo válidos. */
   @Test
   void unPedidoSinContactoSigueSiendoValido() {
-    assertTrue(crearAlDomicilio(MetodoPago.NEQUI).contacto().isEmpty());
+    assertTrue(crearAlDomicilio(MetodoPago.WOMPI).contacto().isEmpty());
   }
 
   @Test
   void crearConMetodoEnLineaQuedaEnPagoPendiente() {
-    Pedido pedido = crearAlDomicilio(MetodoPago.NEQUI);
+    Pedido pedido = crearAlDomicilio(MetodoPago.WOMPI);
 
     assertEquals(EstadoPedido.PAGO_PENDIENTE, pedido.estado());
   }
@@ -161,14 +161,14 @@ class PedidoTest {
 
   @Test
   void conservaElMetodoDePagoElegido() {
-    Pedido pedido = crearAlDomicilio(MetodoPago.NEQUI);
+    Pedido pedido = crearAlDomicilio(MetodoPago.WOMPI);
 
-    assertEquals(MetodoPago.NEQUI, pedido.metodoPago());
+    assertEquals(MetodoPago.WOMPI, pedido.metodoPago());
   }
 
   @Test
   void crearRegistraUnPrimerHistorialConElActorYElMotivo() {
-    Pedido pedido = crearAlDomicilio(MetodoPago.NEQUI);
+    Pedido pedido = crearAlDomicilio(MetodoPago.WOMPI);
 
     assertEquals(1, pedido.historial().size());
     HistorialPedido registro = pedido.historial().get(0);
@@ -189,7 +189,7 @@ class PedidoTest {
                 List.of(),
                 TipoEntrega.ENVIO_A_DOMICILIO,
                 DIRECCION_MEDELLIN,
-                MetodoPago.NEQUI,
+                MetodoPago.WOMPI,
                 "cliente@tecnosport.co",
                 AHORA));
   }
@@ -206,7 +206,7 @@ class PedidoTest {
                 List.of(linea(BigDecimal.valueOf(50_000), 1)),
                 TipoEntrega.ENVIO_A_DOMICILIO,
                 null,
-                MetodoPago.NEQUI,
+                MetodoPago.WOMPI,
                 "cliente@tecnosport.co",
                 AHORA));
   }
@@ -223,7 +223,7 @@ class PedidoTest {
                 List.of(linea(BigDecimal.valueOf(50_000), 1)),
                 TipoEntrega.RETIRO_EN_PUNTO,
                 DIRECCION_MEDELLIN,
-                MetodoPago.NEQUI,
+                MetodoPago.WOMPI,
                 "cliente@tecnosport.co",
                 AHORA));
   }
@@ -238,7 +238,7 @@ class PedidoTest {
             List.of(linea(BigDecimal.valueOf(50_000), 1)),
             TipoEntrega.RETIRO_EN_PUNTO,
             null,
-            MetodoPago.NEQUI,
+            MetodoPago.WOMPI,
             "cliente@tecnosport.co",
             AHORA);
 
@@ -255,7 +255,7 @@ class PedidoTest {
             List.of(linea(BigDecimal.valueOf(50_000), 2), linea(BigDecimal.valueOf(30_000), 1)),
             TipoEntrega.ENVIO_A_DOMICILIO,
             DIRECCION_MEDELLIN,
-            MetodoPago.NEQUI,
+            MetodoPago.WOMPI,
             "cliente@tecnosport.co",
             AHORA);
 
@@ -279,7 +279,7 @@ class PedidoTest {
   /** Sin tarifa el envío es cero, y es cierto en los dos casos en que pasa. */
   @Test
   void sinTarifaElEnvioEsCeroYElTotalEsElSubtotal() {
-    Pedido pedido = crearAlDomicilio(MetodoPago.NEQUI);
+    Pedido pedido = crearAlDomicilio(MetodoPago.WOMPI);
 
     assertEquals(Dinero.deCop(0), pedido.costoEnvio());
     assertEquals(pedido.subtotal(), pedido.total());
@@ -307,7 +307,7 @@ class PedidoTest {
                     List.of(linea(BigDecimal.valueOf(50_000), 1)),
                     TipoEntrega.RETIRO_EN_PUNTO,
                     null,
-                    MetodoPago.NEQUI,
+                    MetodoPago.WOMPI,
                     "cliente@tecnosport.co",
                     AHORA,
                     TARIFA));
@@ -330,7 +330,7 @@ class PedidoTest {
 
   @Test
   void transicionarAUnEstadoValidoActualizaEstadoYAgregaHistorial() {
-    Pedido pedido = crearAlDomicilio(MetodoPago.NEQUI);
+    Pedido pedido = crearAlDomicilio(MetodoPago.WOMPI);
 
     pedido.transicionar(
         EstadoPedido.PAGADO, "webhook-wompi", "pago aprobado", AHORA.plusSeconds(60));
@@ -342,7 +342,7 @@ class PedidoTest {
 
   @Test
   void unPedidoEntregadoNuncaVuelveAPagado() {
-    Pedido pedido = crearAlDomicilio(MetodoPago.NEQUI);
+    Pedido pedido = crearAlDomicilio(MetodoPago.WOMPI);
     pedido.transicionar(EstadoPedido.PAGADO, "webhook-wompi", "pago aprobado", AHORA);
     pedido.transicionar(EstadoPedido.EN_PREPARACION, "admin", "alistado", AHORA);
     pedido.transicionar(EstadoPedido.DESPACHADO, "admin", "despachado", AHORA);
@@ -355,7 +355,7 @@ class PedidoTest {
 
   @Test
   void actualizarReservasReemplazaElIdReservaDeCadaLineaSinTocarElResto() {
-    Pedido pedido = crearAlDomicilio(MetodoPago.NEQUI);
+    Pedido pedido = crearAlDomicilio(MetodoPago.WOMPI);
     LineaPedido lineaOriginal = pedido.lineas().get(0);
     UUID nuevaReserva = UUID.randomUUID();
 
@@ -370,7 +370,7 @@ class PedidoTest {
 
   @Test
   void actualizarReservasSinCubrirTodasLasLineasSeRechaza() {
-    Pedido pedido = crearAlDomicilio(MetodoPago.NEQUI);
+    Pedido pedido = crearAlDomicilio(MetodoPago.WOMPI);
 
     assertThrows(
         ExcepcionDeDominio.class,
@@ -379,7 +379,7 @@ class PedidoTest {
 
   @Test
   void transicionarSaltandoEstadosSeRechaza() {
-    Pedido pedido = crearAlDomicilio(MetodoPago.NEQUI);
+    Pedido pedido = crearAlDomicilio(MetodoPago.WOMPI);
 
     assertThrows(
         TransicionDeEstadoInvalidaException.class,
@@ -399,7 +399,7 @@ class PedidoTest {
 
   @Test
   void unPedidoSinEntregarNoTieneFechaDeEntrega() {
-    Pedido pedido = crearAlDomicilio(MetodoPago.NEQUI);
+    Pedido pedido = crearAlDomicilio(MetodoPago.WOMPI);
     pedido.transicionar(EstadoPedido.PAGADO, "sistema", "pago aprobado", AHORA);
     pedido.transicionar(EstadoPedido.EN_PREPARACION, "admin:1", "listo", AHORA);
     pedido.transicionar(EstadoPedido.DESPACHADO, "admin:1", "guía 123", AHORA);
@@ -410,7 +410,7 @@ class PedidoTest {
   @Test
   void laFechaDeEntregaEsLaDelRegistroDeEntregaYNoLaDeOtraTransicion() {
     Instant entrega = Instant.parse("2026-09-10T15:30:00Z");
-    Pedido pedido = entregado(MetodoPago.NEQUI, entrega);
+    Pedido pedido = entregado(MetodoPago.WOMPI, entrega);
 
     assertEquals(entrega, pedido.fechaDeEntrega().orElseThrow());
   }
@@ -432,7 +432,7 @@ class PedidoTest {
 
   @Test
   void elPlazoDeEntregaArrancaCuandoSeAplicaElPago() {
-    Pedido pedido = crearAlDomicilio(MetodoPago.NEQUI);
+    Pedido pedido = crearAlDomicilio(MetodoPago.WOMPI);
     Instant pagado = AHORA.plusSeconds(3600);
     pedido.transicionar(EstadoPedido.PAGADO, "wompi", "pago aprobado", pagado);
 
@@ -450,14 +450,14 @@ class PedidoTest {
 
   @Test
   void mientrasElPagoSigaPendienteElPlazoNoHaArrancado() {
-    Pedido pedido = crearAlDomicilio(MetodoPago.NEQUI);
+    Pedido pedido = crearAlDomicilio(MetodoPago.WOMPI);
 
     assertTrue(pedido.fechaDeInicioDelPlazoDeEntrega().isEmpty());
   }
 
   @Test
   void unPagoFallidoTampocoArrancaElPlazo() {
-    Pedido pedido = crearAlDomicilio(MetodoPago.NEQUI);
+    Pedido pedido = crearAlDomicilio(MetodoPago.WOMPI);
     pedido.transicionar(EstadoPedido.PAGO_FALLIDO, "wompi", "rechazado", AHORA.plusSeconds(60));
 
     assertTrue(pedido.fechaDeInicioDelPlazoDeEntrega().isEmpty());
@@ -467,7 +467,7 @@ class PedidoTest {
   void elPlazoSigueColgandoDelPrimerPagoAunqueElPedidoAvance() {
     // Despachar tarde no reinicia nada: el plazo se cuenta desde que se pagó, no desde el último
     // movimiento del pedido.
-    Pedido pedido = crearAlDomicilio(MetodoPago.NEQUI);
+    Pedido pedido = crearAlDomicilio(MetodoPago.WOMPI);
     Instant pagado = AHORA.plusSeconds(3600);
     pedido.transicionar(EstadoPedido.PAGADO, "wompi", "pago aprobado", pagado);
     pedido.transicionar(
@@ -478,7 +478,7 @@ class PedidoTest {
 
   @Test
   void unPedidoNuevoNoTieneAvisoDePlazo() {
-    assertTrue(crearAlDomicilio(MetodoPago.NEQUI).avisoDePlazoEnviadoEn().isEmpty());
+    assertTrue(crearAlDomicilio(MetodoPago.WOMPI).avisoDePlazoEnviadoEn().isEmpty());
   }
 
   /**
@@ -488,7 +488,7 @@ class PedidoTest {
    */
   @Test
   void elAvisoSoloLlegaAlReconstruirElPedido() {
-    Pedido nuevo = crearAlDomicilio(MetodoPago.NEQUI);
+    Pedido nuevo = crearAlDomicilio(MetodoPago.WOMPI);
     Instant aviso = AHORA.plusSeconds(86_400L * 31);
 
     Pedido reconstruido =

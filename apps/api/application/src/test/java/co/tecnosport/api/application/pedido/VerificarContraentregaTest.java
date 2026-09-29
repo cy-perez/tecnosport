@@ -90,7 +90,7 @@ class VerificarContraentregaTest {
   @Test
   void unPedidoQueNoEstaConfirmadoContraentregaNoSePuedeVerificar() {
     VerificarContraentrega caso = crear();
-    Pedido pedido = pedidoConMetodo(MetodoPago.NEQUI);
+    Pedido pedido = pedidoConMetodo(MetodoPago.WOMPI);
 
     assertThrows(
         TransicionDeEstadoInvalidaException.class,

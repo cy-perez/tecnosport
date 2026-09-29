@@ -7,14 +7,16 @@ export interface Dinero {
 export type TipoEntrega = 'ENVIO_A_DOMICILIO' | 'RETIRO_EN_PUNTO';
 
 /** Tabla de métodos de `docs/11-pagos-y-envios.md`. */
-export type MetodoPago =
-  | 'TARJETA'
-  | 'PSE'
-  | 'NEQUI'
-  | 'BANCOLOMBIA'
-  | 'SISTECREDITO'
-  | 'TRANSFERENCIA_MANUAL'
-  | 'CONTRAENTREGA';
+/**
+ * Espejo de `MetodoPago` del backend.
+ *
+ * <p><b>`WOMPI` es uno y fueron cuatro.</b> Hasta el 28 de septiembre de 2026 había `TARJETA`,
+ * `PSE`, `NEQUI` y `BANCOLOMBIA`. Los cuatro los cobra Wompi, y lo que el comprador elegía aquí
+ * nunca viajaba: el Web Checkout hospedado pinta su propia lista y el comprador vuelve a elegir
+ * allí, así que un pedido podía decir NEQUI y haberse cobrado con tarjeta. Agruparlos dice lo que
+ * de verdad se sabe; con qué se cobró vive en `medio_reportado_pasarela`, del lado del servidor.
+ */
+export type MetodoPago = 'WOMPI' | 'SISTECREDITO' | 'TRANSFERENCIA_MANUAL' | 'CONTRAENTREGA';
 
 /**
  * Los tipos de documento que acepta la pasarela de Sistecrédito (`adr/0048`). No son todos los que

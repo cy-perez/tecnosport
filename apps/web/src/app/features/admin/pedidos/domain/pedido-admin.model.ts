@@ -5,14 +5,7 @@ export interface Dinero {
 
 export type TipoEntrega = 'ENVIO_A_DOMICILIO' | 'RETIRO_EN_PUNTO';
 
-export type MetodoPago =
-  | 'TARJETA'
-  | 'PSE'
-  | 'NEQUI'
-  | 'BANCOLOMBIA'
-  | 'SISTECREDITO'
-  | 'TRANSFERENCIA_MANUAL'
-  | 'CONTRAENTREGA';
+export type MetodoPago = 'WOMPI' | 'SISTECREDITO' | 'TRANSFERENCIA_MANUAL' | 'CONTRAENTREGA';
 
 /** Grafo completo de `docs/02-modelo-datos.md` — el panel opera todos los estados, a
  * diferencia de la página de seguimiento del cliente. */

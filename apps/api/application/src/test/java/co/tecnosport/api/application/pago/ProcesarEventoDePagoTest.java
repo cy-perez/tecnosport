@@ -100,7 +100,7 @@ class ProcesarEventoDePagoTest {
             List.of(linea),
             TipoEntrega.ENVIO_A_DOMICILIO,
             DIRECCION_MEDELLIN,
-            MetodoPago.NEQUI,
+            MetodoPago.WOMPI,
             "cliente@tecnosport.co",
             AHORA);
     pedidos.conPedido(pedido);
@@ -155,14 +155,14 @@ class ProcesarEventoDePagoTest {
   @Test
   void elEventoGuardaConQueSeCobroDeVerdadSinTocarElMetodoElegido() {
     ProcesarEventoDePago caso = crear();
-    Pedido pedido = pedidoConMetodo(MetodoPago.NEQUI);
+    Pedido pedido = pedidoConMetodo(MetodoPago.WOMPI);
     pagoPendienteParaElPedido(pedido);
 
     caso.ejecutar(comando("APPROVED", "CARD"));
 
     Pago pago = pagos.buscarPorReferencia(REFERENCIA).orElseThrow();
     assertEquals("CARD", pago.medioReportadoPorLaPasarela().orElseThrow());
-    assertEquals(MetodoPago.NEQUI, pago.metodoPago());
+    assertEquals(MetodoPago.WOMPI, pago.metodoPago());
   }
 
   /**
@@ -171,7 +171,7 @@ class ProcesarEventoDePagoTest {
   @Test
   void unEventoSinElMedioNoImpideAplicarlo() {
     ProcesarEventoDePago caso = crear();
-    Pedido pedido = pedidoConMetodo(MetodoPago.NEQUI);
+    Pedido pedido = pedidoConMetodo(MetodoPago.WOMPI);
     pagoPendienteParaElPedido(pedido);
 
     ResultadoEventoDePago resultado = caso.ejecutar(comando("APPROVED", null));
@@ -188,7 +188,7 @@ class ProcesarEventoDePagoTest {
   @Test
   void eventoAprobadoTransicionaElPagoYElPedido() {
     ProcesarEventoDePago caso = crear();
-    Pedido pedido = pedidoConMetodo(MetodoPago.NEQUI);
+    Pedido pedido = pedidoConMetodo(MetodoPago.WOMPI);
     pagoPendienteParaElPedido(pedido);
 
     ResultadoEventoDePago resultado = caso.ejecutar(comando("APPROVED"));
@@ -204,7 +204,7 @@ class ProcesarEventoDePagoTest {
   @Test
   void eventoAprobadoConfirmaLaReservaConvirtiendolaEnSalida() {
     ProcesarEventoDePago caso = crear();
-    Pedido pedido = pedidoConMetodo(MetodoPago.NEQUI);
+    Pedido pedido = pedidoConMetodo(MetodoPago.WOMPI);
     pagoPendienteParaElPedido(pedido);
 
     caso.ejecutar(comando("APPROVED"));
@@ -217,7 +217,7 @@ class ProcesarEventoDePagoTest {
   @Test
   void eventoRechazadoDejaElPedidoEnPagoFallido() {
     ProcesarEventoDePago caso = crear();
-    Pedido pedido = pedidoConMetodo(MetodoPago.NEQUI);
+    Pedido pedido = pedidoConMetodo(MetodoPago.WOMPI);
     pagoPendienteParaElPedido(pedido);
 
     caso.ejecutar(comando("DECLINED"));
@@ -229,7 +229,7 @@ class ProcesarEventoDePagoTest {
   @Test
   void eventoRechazadoLiberaLaReserva() {
     ProcesarEventoDePago caso = crear();
-    Pedido pedido = pedidoConMetodo(MetodoPago.NEQUI);
+    Pedido pedido = pedidoConMetodo(MetodoPago.WOMPI);
     pagoPendienteParaElPedido(pedido);
 
     caso.ejecutar(comando("DECLINED"));
@@ -254,7 +254,7 @@ class ProcesarEventoDePagoTest {
   @Test
   void eventoConElMismoChecksumDosVecesNoSeReaplica() {
     ProcesarEventoDePago caso = crear();
-    Pedido pedido = pedidoConMetodo(MetodoPago.NEQUI);
+    Pedido pedido = pedidoConMetodo(MetodoPago.WOMPI);
     pagoPendienteParaElPedido(pedido);
     caso.ejecutar(comando("APPROVED"));
 
@@ -275,7 +275,7 @@ class ProcesarEventoDePagoTest {
   @Test
   void unWebhookTardioSobreUnPagoYaResueltoSeCuentaComoProcesadoYNoRevienta() {
     ProcesarEventoDePago caso = crear();
-    Pedido pedido = pedidoConMetodo(MetodoPago.NEQUI);
+    Pedido pedido = pedidoConMetodo(MetodoPago.WOMPI);
     pagoPendienteParaElPedido(pedido);
     caso.ejecutar(comando("APPROVED"));
 
@@ -290,7 +290,7 @@ class ProcesarEventoDePagoTest {
   @Test
   void firmaInvalidaNoAplicaNada() {
     ProcesarEventoDePago caso = crear();
-    Pedido pedido = pedidoConMetodo(MetodoPago.NEQUI);
+    Pedido pedido = pedidoConMetodo(MetodoPago.WOMPI);
     pagoPendienteParaElPedido(pedido);
     pasarela.conFirmaEventoInvalida();
 
@@ -315,7 +315,7 @@ class ProcesarEventoDePagoTest {
   @Test
   void estadoVoidedNoSeAplica() {
     ProcesarEventoDePago caso = crear();
-    Pedido pedido = pedidoConMetodo(MetodoPago.NEQUI);
+    Pedido pedido = pedidoConMetodo(MetodoPago.WOMPI);
     pagoPendienteParaElPedido(pedido);
 
     ResultadoEventoDePago resultado = caso.ejecutar(comando("VOIDED"));
@@ -328,7 +328,7 @@ class ProcesarEventoDePagoTest {
   @Test
   void unPedidoYaResueltoPorOtroIntentoNoSeToca() {
     ProcesarEventoDePago caso = crear();
-    Pedido pedido = pedidoConMetodo(MetodoPago.NEQUI);
+    Pedido pedido = pedidoConMetodo(MetodoPago.WOMPI);
     pagoPendienteParaElPedido(pedido);
     pedido.transicionar(EstadoPedido.PAGADO, "webhook-wompi", "otro intento aprobado", AHORA);
     pedidos.guardar(pedido);

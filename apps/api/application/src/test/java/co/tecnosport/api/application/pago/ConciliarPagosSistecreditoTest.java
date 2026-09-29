@@ -118,7 +118,7 @@ class ConciliarPagosSistecreditoTest {
   @Test
   void noTocaLosPagosDeLaOtraPasarela() {
     ConciliarPagosSistecredito caso = crear();
-    pagoPendienteCon(MetodoPago.NEQUI, "id-de-wompi", 2);
+    pagoPendienteCon(MetodoPago.WOMPI, "id-de-wompi", 2);
 
     ResultadoConciliacion resultado = caso.ejecutar();
 

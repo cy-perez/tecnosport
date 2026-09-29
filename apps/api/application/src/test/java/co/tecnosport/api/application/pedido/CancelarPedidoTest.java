@@ -131,7 +131,7 @@ class CancelarPedidoTest {
    */
   @Test
   void porNoDisponibilidadDevuelveLaUnidadYElDinero() {
-    Pedido pedido = pedidoEn(EstadoPedido.PAGADO, MetodoPago.NEQUI);
+    Pedido pedido = pedidoEn(EstadoPedido.PAGADO, MetodoPago.WOMPI);
 
     casoDeUso()
         .ejecutar(
@@ -153,7 +153,7 @@ class CancelarPedidoTest {
   /** El camino de "Envio y entrega": no se entrego a tiempo y el comprador termina el contrato. */
   @Test
   void porPlazoIncumplidoElReintegroLlevaSuPropioMotivo() {
-    Pedido pedido = pedidoEn(EstadoPedido.EN_PREPARACION, MetodoPago.NEQUI);
+    Pedido pedido = pedidoEn(EstadoPedido.EN_PREPARACION, MetodoPago.WOMPI);
 
     casoDeUso()
         .ejecutar(
@@ -190,7 +190,7 @@ class CancelarPedidoTest {
 
   @Test
   void unPagoPendienteTampocoDejaConstanciaDeDinero() {
-    Pedido pedido = pedidoEn(EstadoPedido.PAGO_PENDIENTE, MetodoPago.NEQUI);
+    Pedido pedido = pedidoEn(EstadoPedido.PAGO_PENDIENTE, MetodoPago.WOMPI);
 
     casoDeUso()
         .ejecutar(
@@ -207,7 +207,7 @@ class CancelarPedidoTest {
    */
   @Test
   void siElDineroYaEntroNoSePuedeCancelarSinReintegro() {
-    Pedido pedido = pedidoEn(EstadoPedido.PAGADO, MetodoPago.NEQUI);
+    Pedido pedido = pedidoEn(EstadoPedido.PAGADO, MetodoPago.WOMPI);
 
     assertThrows(
         ReintegroRequeridoException.class,
@@ -228,7 +228,7 @@ class CancelarPedidoTest {
   /** Despues de despachar ya existen los caminos que corresponden: entrega, rechazo, devolucion. */
   @Test
   void unPedidoDespachadoNoSeCancela() {
-    Pedido pedido = pedidoEn(EstadoPedido.EN_PREPARACION, MetodoPago.NEQUI);
+    Pedido pedido = pedidoEn(EstadoPedido.EN_PREPARACION, MetodoPago.WOMPI);
     pedido.transicionar(EstadoPedido.DESPACHADO, "admin:1", "guia 123", AHORA);
     pedidos.guardar(pedido);
 
@@ -249,7 +249,7 @@ class CancelarPedidoTest {
   /** "Te lo comunicaremos de inmediato", dice el texto de Disponibilidad. */
   @Test
   void avisaAlCompradorDeQueSuPedidoNoVaALlegar() {
-    Pedido pedido = pedidoEn(EstadoPedido.PAGADO, MetodoPago.NEQUI);
+    Pedido pedido = pedidoEn(EstadoPedido.PAGADO, MetodoPago.WOMPI);
 
     casoDeUso()
         .ejecutar(
@@ -269,7 +269,7 @@ class CancelarPedidoTest {
 
   @Test
   void noSeDevuelveMasDeLoQueSePago() {
-    Pedido pedido = pedidoEn(EstadoPedido.PAGADO, MetodoPago.NEQUI);
+    Pedido pedido = pedidoEn(EstadoPedido.PAGADO, MetodoPago.WOMPI);
 
     assertThrows(
         co.tecnosport.api.application.reintegro.MontoDeReintegroInvalidoException.class,
@@ -339,7 +339,7 @@ class CancelarPedidoTest {
    */
   @Test
   void anularLasGuiasNoSostieneNingunBloqueoDeInventario() {
-    Pedido pedido = pedidoEn(EstadoPedido.EN_PREPARACION, MetodoPago.NEQUI);
+    Pedido pedido = pedidoEn(EstadoPedido.EN_PREPARACION, MetodoPago.WOMPI);
     emisionEmitidaDe(pedido, "envio-1", "envio-2");
     int[] consultasAlHablarConElProveedor = {-1};
     emisor.mientrasCancelaHaz(
@@ -357,7 +357,7 @@ class CancelarPedidoTest {
 
   @Test
   void cancelarUnPedidoConGuiaEmitidaLaAnulaEnLaPlataforma() {
-    Pedido pedido = pedidoEn(EstadoPedido.EN_PREPARACION, MetodoPago.NEQUI);
+    Pedido pedido = pedidoEn(EstadoPedido.EN_PREPARACION, MetodoPago.WOMPI);
     EmisionDeGuia emision = emisionEmitidaDe(pedido, "envio-1", "envio-2");
 
     cancelar(pedido);
@@ -373,7 +373,7 @@ class CancelarPedidoTest {
    */
   @Test
   void siLaPlataformaNoAnulaElPedidoSeCancelaIgualYLaEmisionPideOjoHumano() {
-    Pedido pedido = pedidoEn(EstadoPedido.EN_PREPARACION, MetodoPago.NEQUI);
+    Pedido pedido = pedidoEn(EstadoPedido.EN_PREPARACION, MetodoPago.WOMPI);
     EmisionDeGuia emision = emisionEmitidaDe(pedido, "envio-1");
     emisor.alCancelarResponde(new ResultadoCancelacion.NoSePudo("la plataforma respondio 500"));
 
@@ -395,7 +395,7 @@ class CancelarPedidoTest {
    */
   @Test
   void bastaConQueUnEnvioQuedeEnDudaParaQueLaEmisionNoCuenteComoAnulada() {
-    Pedido pedido = pedidoEn(EstadoPedido.EN_PREPARACION, MetodoPago.NEQUI);
+    Pedido pedido = pedidoEn(EstadoPedido.EN_PREPARACION, MetodoPago.WOMPI);
     EmisionDeGuia emision = emisionEmitidaDe(pedido, "envio-1", "envio-2");
     emisor.alCancelarResponde(new ResultadoCancelacion.NoSePudo("sin respuesta"));
 
@@ -411,7 +411,7 @@ class CancelarPedidoTest {
    */
   @Test
   void unaEmisionFallidaNoSeIntentaAnular() {
-    Pedido pedido = pedidoEn(EstadoPedido.EN_PREPARACION, MetodoPago.NEQUI);
+    Pedido pedido = pedidoEn(EstadoPedido.EN_PREPARACION, MetodoPago.WOMPI);
     EmisionDeGuia emision =
         EmisionDeGuia.solicitar(pedido.id(), "Servientrega", "tarifa-1", "admin:1", AHORA);
     emision.resolver(EstadoEmision.FALLIDA, "la transportadora no la acepto", AHORA);
@@ -429,7 +429,7 @@ class CancelarPedidoTest {
    */
   @Test
   void unaEmisionSinIdentificadoresVaALaBandejaEnVezDeDarsePorLimpia() {
-    Pedido pedido = pedidoEn(EstadoPedido.EN_PREPARACION, MetodoPago.NEQUI);
+    Pedido pedido = pedidoEn(EstadoPedido.EN_PREPARACION, MetodoPago.WOMPI);
     EmisionDeGuia emision =
         EmisionDeGuia.solicitar(pedido.id(), "Servientrega", "tarifa-1", "admin:1", AHORA);
     emisiones.guardar(emision);
@@ -446,7 +446,7 @@ class CancelarPedidoTest {
   /** Lo más común: un pedido que nunca llegó a pedir guía no llama a la plataforma. */
   @Test
   void unPedidoSinEmisionNoLlamaALaPlataforma() {
-    Pedido pedido = pedidoEn(EstadoPedido.PAGADO, MetodoPago.NEQUI);
+    Pedido pedido = pedidoEn(EstadoPedido.PAGADO, MetodoPago.WOMPI);
 
     cancelar(pedido);
 

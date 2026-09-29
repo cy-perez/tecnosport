@@ -492,10 +492,7 @@
           },
           "metodoPago" : {
             "enum" : [
-              "TARJETA",
-              "PSE",
-              "NEQUI",
-              "BANCOLOMBIA",
+              "WOMPI",
               "SISTECREDITO",
               "TRANSFERENCIA_MANUAL",
               "CONTRAENTREGA"
@@ -1401,10 +1398,7 @@
           },
           "metodoPago" : {
             "enum" : [
-              "TARJETA",
-              "PSE",
-              "NEQUI",
-              "BANCOLOMBIA",
+              "WOMPI",
               "SISTECREDITO",
               "TRANSFERENCIA_MANUAL",
               "CONTRAENTREGA"
@@ -1481,10 +1475,7 @@
           },
           "metodoPago" : {
             "enum" : [
-              "TARJETA",
-              "PSE",
-              "NEQUI",
-              "BANCOLOMBIA",
+              "WOMPI",
               "SISTECREDITO",
               "TRANSFERENCIA_MANUAL",
               "CONTRAENTREGA"
@@ -5373,10 +5364,7 @@
                 "schema" : {
                   "items" : {
                     "enum" : [
-                      "TARJETA",
-                      "PSE",
-                      "NEQUI",
-                      "BANCOLOMBIA",
+                      "WOMPI",
                       "SISTECREDITO",
                       "TRANSFERENCIA_MANUAL",
                       "CONTRAENTREGA"

@@ -116,7 +116,7 @@ class RecibirProductoDevueltoTest {
 
   @Test
   void pagoEnLineaDejaElPedidoDevueltoYLaUnidadOtraVezVendible() {
-    SolicitudRetracto solicitud = escenario(MetodoPago.NEQUI);
+    SolicitudRetracto solicitud = escenario(MetodoPago.WOMPI);
 
     casoDeUso().ejecutar(new RecibirProductoDevueltoComando(solicitud.id(), "admin:1"));
 
@@ -152,7 +152,7 @@ class RecibirProductoDevueltoTest {
    */
   @Test
   void unaReservaSinConfirmarSeLiberaEnVezDeEntrar() {
-    SolicitudRetracto solicitud = escenario(MetodoPago.NEQUI, false);
+    SolicitudRetracto solicitud = escenario(MetodoPago.WOMPI, false);
 
     casoDeUso().ejecutar(new RecibirProductoDevueltoComando(solicitud.id(), "admin:1"));
 
@@ -173,7 +173,7 @@ class RecibirProductoDevueltoTest {
 
   @Test
   void laFechaDeRecepcionArrancaElPlazoDeReintegro() {
-    SolicitudRetracto solicitud = escenario(MetodoPago.NEQUI);
+    SolicitudRetracto solicitud = escenario(MetodoPago.WOMPI);
 
     casoDeUso().ejecutar(new RecibirProductoDevueltoComando(solicitud.id(), "admin:1"));
 
@@ -184,7 +184,7 @@ class RecibirProductoDevueltoTest {
 
   @Test
   void recibirDosVecesNoMueveElInventarioDeNuevo() {
-    SolicitudRetracto solicitud = escenario(MetodoPago.NEQUI);
+    SolicitudRetracto solicitud = escenario(MetodoPago.WOMPI);
     RecibirProductoDevuelto caso = casoDeUso();
     caso.ejecutar(new RecibirProductoDevueltoComando(solicitud.id(), "admin:1"));
 

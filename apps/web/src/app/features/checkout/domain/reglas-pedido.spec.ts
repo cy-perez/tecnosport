@@ -16,7 +16,7 @@ function pedidoDePrueba(overrides: Partial<Pedido>): Pedido {
     lineas: [],
     tipoEntrega: 'ENVIO_A_DOMICILIO',
     direccion: null,
-    metodoPago: 'TARJETA',
+    metodoPago: 'WOMPI',
     estado: 'PAGO_PENDIENTE',
     subtotal: { valor: 100_000, moneda: 'COP' },
     costoEnvio: { valor: 0, moneda: 'COP' },
@@ -39,12 +39,14 @@ describe('requiereDireccion', () => {
 });
 
 describe('esMetodoPagoWompi', () => {
-  it.each(['TARJETA', 'PSE', 'NEQUI', 'BANCOLOMBIA'] as const)(
-    '%s va por Wompi',
-    (metodo) => {
-      expect(esMetodoPagoWompi(metodo)).toBe(true);
-    },
-  );
+  /**
+   * Eran cuatro hasta el 28 de septiembre de 2026, cuando el dominio los agrupó en uno: el Web
+   * Checkout hospedado nunca recibió cuál había elegido el comprador, así que los cuatro valores
+   * eran una intención y no un hecho.
+   */
+  it('WOMPI va por Wompi', () => {
+    expect(esMetodoPagoWompi('WOMPI')).toBe(true);
+  });
 
   it.each(['TRANSFERENCIA_MANUAL', 'CONTRAENTREGA'] as const)('%s no va por Wompi', (metodo) => {
     expect(esMetodoPagoWompi(metodo)).toBe(false);
@@ -65,7 +67,7 @@ describe('esMetodoPagoSistecredito', () => {
     expect(esMetodoPagoSistecredito('SISTECREDITO')).toBe(true);
   });
 
-  it.each(['TARJETA', 'BANCOLOMBIA', 'TRANSFERENCIA_MANUAL', 'CONTRAENTREGA'] as const)(
+  it.each(['WOMPI', 'TRANSFERENCIA_MANUAL', 'CONTRAENTREGA'] as const)(
     '%s no lo cobra Sistecrédito',
     (metodo) => {
       expect(esMetodoPagoSistecredito(metodo)).toBe(false);
@@ -105,7 +107,7 @@ describe('datosTransferenciaDelPedido', () => {
 
   it('devuelve null para cualquier otro método de pago, incluso si el campo llegara poblado', () => {
     const pedido = pedidoDePrueba({
-      metodoPago: 'TARJETA',
+      metodoPago: 'WOMPI',
       contacto: null,
       datosTransferencia: {
         banco: 'Bancolombia',

@@ -18,7 +18,7 @@ function pedidoDePrueba(overrides: Partial<Pedido> = {}): Pedido {
     lineas: [],
     tipoEntrega: 'ENVIO_A_DOMICILIO',
     direccion: null,
-    metodoPago: 'TARJETA',
+    metodoPago: 'WOMPI',
     estado: 'PAGO_PENDIENTE',
     subtotal: { valor: 150_000, moneda: 'COP' },
     costoEnvio: { valor: 0, moneda: 'COP' },
@@ -41,7 +41,7 @@ class RepositorioPedidosFalso implements RepositorioPedidos {
   }
 
   async metodosDePagoDisponibles(): Promise<MetodoPago[]> {
-    return ['TARJETA', 'CONTRAENTREGA'];
+    return ['WOMPI', 'CONTRAENTREGA'];
   }
 
   correoDelUltimoReintento: string | null = null;
@@ -92,7 +92,7 @@ function comandoDePrueba(): CrearPedidoComando {
     lineas: [{ varianteId: 'variante-1', cantidad: 1 }],
     tipoEntrega: 'RETIRO_EN_PUNTO',
     direccion: null,
-    metodoPago: 'TARJETA',
+    metodoPago: 'WOMPI',
     contacto: { nombre: 'Ana Pérez', telefono: '3138816711' },
     autorizaDatos: true,
   };
@@ -177,7 +177,7 @@ describe('CheckoutStore', () => {
 
   it('elegirMetodoPago descarta el pedido ya creado con el método anterior', async () => {
     const { store } = await renderConRepositorio(new RepositorioPedidosFalso());
-    store.elegirMetodoPago('TARJETA');
+    store.elegirMetodoPago('WOMPI');
     await store.crearPedido(comandoDePrueba());
 
     store.elegirMetodoPago('CONTRAENTREGA');

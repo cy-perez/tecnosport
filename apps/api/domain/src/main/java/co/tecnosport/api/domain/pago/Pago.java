@@ -122,9 +122,10 @@ public final class Pago {
 
   /**
    * El medio con el que la pasarela dice que se cobró de verdad, tal como ella lo nombra ({@code
-   * CARD}, {@code NEQUI}, {@code PSE}...). Crudo a propósito: es la evidencia de lo que pasó, y un
-   * valor que hoy no sepamos traducir tiene que quedar guardado igual en vez de perderse en un
-   * mapeo.
+   * CARD}, {@code NEQUI}, {@code PSE}...). Crudo a propósito: es la evidencia de lo que pasó —y
+   * desde que {@code MetodoPago} agrupa los medios de pasarela en {@code WOMPI}, es lo único que
+   * distingue con cuál de ellos se cobró—, y un valor que hoy no sepamos traducir tiene que quedar
+   * guardado igual en vez de perderse en un mapeo.
    *
    * <p>Vacío mientras el pago no haya recibido ni un evento ni una conciliación que lo traiga.
    */

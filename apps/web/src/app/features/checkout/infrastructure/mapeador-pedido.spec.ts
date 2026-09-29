@@ -122,7 +122,7 @@ describe('aPedido', () => {
       lineas: [],
       tipoEntrega: 'ENVIO_A_DOMICILIO',
       direccion: null,
-      metodoPago: 'TARJETA',
+      metodoPago: 'WOMPI',
       estado: 'PAGO_PENDIENTE',
       subtotal: { valor: 0, moneda: 'COP' },
       costoEnvio: { valor: 0, moneda: 'COP' },
