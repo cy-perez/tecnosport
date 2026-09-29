@@ -18,10 +18,10 @@ import { MenuLateral } from './menu-lateral';
  * rama con hojas debajo (Dama › Blusas / Busos) y una línea sin nada cargado (Calzado).
  */
 const ARBOL: Categoria[] = [
-  { id: 'c1', nombre: 'Celulares', slug: 'celulares', linea: 'TECNOLOGIA', padreId: null },
-  { id: 'd0', nombre: 'Dama', slug: 'ropa-dama', linea: 'ROPA', padreId: null },
-  { id: 'd1', nombre: 'Blusas', slug: 'ropa-dama-blusas', linea: 'ROPA', padreId: 'd0' },
-  { id: 'd2', nombre: 'Busos', slug: 'ropa-dama-busos', linea: 'ROPA', padreId: 'd0' },
+  { id: 'c1', nombre: 'Celulares', slug: 'celulares', linea: 'TECNOLOGIA', padreId: null, hashtags: [] },
+  { id: 'd0', nombre: 'Dama', slug: 'ropa-dama', linea: 'ROPA', padreId: null, hashtags: [] },
+  { id: 'd1', nombre: 'Blusas', slug: 'ropa-dama-blusas', linea: 'ROPA', padreId: 'd0', hashtags: [] },
+  { id: 'd2', nombre: 'Busos', slug: 'ropa-dama-busos', linea: 'ROPA', padreId: 'd0', hashtags: [] },
 ];
 
 class RepositorioCategoriasFalso implements RepositorioCategorias {

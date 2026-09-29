@@ -39,6 +39,7 @@ const CATEGORIA: Categoria = {
   slug: 'bolsos',
   linea: 'BOLSOS',
   padreId: null,
+  hashtags: [],
 };
 
 class RepositorioMarcasFalso implements RepositorioMarcas {

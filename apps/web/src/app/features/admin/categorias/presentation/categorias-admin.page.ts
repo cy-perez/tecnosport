@@ -153,6 +153,7 @@ export class CategoriasAdminPage {
     slug: new FormControl('', { nonNullable: true }),
     linea: new FormControl('', { nonNullable: true }),
     padreId: new FormControl('', { nonNullable: true }),
+    hashtags: new FormControl('', { nonNullable: true }),
   });
 
   protected editar(categoria: Categoria): void {
@@ -164,6 +165,7 @@ export class CategoriasAdminPage {
       slug: categoria.slug,
       linea: categoria.padreId === null ? categoria.linea : '',
       padreId: categoria.padreId ?? '',
+      hashtags: categoria.hashtags.join(' '),
     });
   }
 
@@ -202,7 +204,14 @@ export class CategoriasAdminPage {
 
     if (enEdicion) {
       this.edicion.mutate(
-        { id: enEdicion.id, nombre: valores.nombre, slug, linea, padreId },
+        {
+          id: enEdicion.id,
+          nombre: valores.nombre,
+          slug,
+          linea,
+          padreId,
+          hashtags: etiquetasDe(valores.hashtags),
+        },
         {
           onSuccess: (resultado) => this.alResponder(resultado, 'editada'),
           onError: () => this.error.set(this.transloco.translate('admin.categorias.error')),
@@ -287,4 +296,19 @@ export class CategoriasAdminPage {
         return this.transloco.translate('admin.categorias.error');
     }
   }
+}
+
+/**
+ * Parte lo que se escribió en el campo en etiquetas sueltas: separadas por espacios, comas o saltos
+ * de línea, porque quien las pega las trae de cualquiera de las tres formas.
+ *
+ * No valida la forma de cada una ni les pone la almohadilla — eso lo hace `Hashtag` en el backend,
+ * que es quien sabe por qué un guión partiría la etiqueta en dos al publicarla. Aquí solo se
+ * reparten, y un campo vacío devuelve la lista vacía, que el backend lee como "bórralas todas".
+ */
+function etiquetasDe(texto: string): string[] {
+  return texto
+    .split(/[\s,]+/)
+    .map((t) => t.trim())
+    .filter((t) => t !== '');
 }

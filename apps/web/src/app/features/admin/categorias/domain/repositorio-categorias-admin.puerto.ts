@@ -19,6 +19,12 @@ export interface CambioDeCategoria {
   readonly slug?: string;
   readonly linea?: string;
   readonly padreId?: string;
+  /**
+   * Las etiquetas de redes. **`undefined` no es lo mismo que `[]`**: sin el campo el backend las
+   * deja como están, y con la lista vacía las borra todas. Quien solo mueve una categoría de sitio
+   * no manda el campo y no pierde las etiquetas por eso.
+   */
+  readonly hashtags?: readonly string[];
 }
 
 /**
