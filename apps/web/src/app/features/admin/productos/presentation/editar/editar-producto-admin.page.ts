@@ -47,9 +47,11 @@ const TIPOS_DE_IMAGEN_SOPORTADOS = ['image/jpeg', 'image/png', 'image/webp'];
  */
 const TOPE_DE_GALERIA = 8;
 
+import { PanelDeDifusion } from '../../../difusion/presentation/panel-de-difusion';
 @Component({
   selector: 'app-editar-producto-admin',
   imports: [
+    PanelDeDifusion,
     TsPaginaFormulario,
     ReactiveFormsModule,
     RouterLink,

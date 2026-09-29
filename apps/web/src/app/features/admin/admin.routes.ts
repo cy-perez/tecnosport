@@ -4,6 +4,8 @@ import { REPOSITORIO_ATRIBUTOS } from '../catalogo/domain/repositorio-atributos.
 import { REPOSITORIO_CATEGORIAS } from '../catalogo/domain/repositorio-categorias.puerto';
 import { REPOSITORIO_MARCAS } from '../catalogo/domain/repositorio-marcas.puerto';
 import { AtributosHttpRepositorio } from '../catalogo/infrastructure/atributos-http.repositorio';
+import { REPOSITORIO_DIFUSION } from './difusion/domain/repositorio-difusion.puerto';
+import { DifusionHttpRepositorio } from './difusion/infrastructure/difusion-http.repositorio';
 import { CategoriasAdminHttpRepositorio } from './categorias/infrastructure/categorias-admin-http.repositorio';
 import { REPOSITORIO_CATEGORIAS_ADMIN } from './categorias/domain/repositorio-categorias-admin.puerto';
 import { MarcasAdminHttpRepositorio } from './marcas/infrastructure/marcas-admin-http.repositorio';
@@ -187,6 +189,7 @@ export const adminRoutes: Routes = [
                   // ofrecería nunca aquella a la que hay que cargarle el primero.
                   { provide: REPOSITORIO_CATEGORIAS, useClass: CategoriasAdminHttpRepositorio },
                   { provide: REPOSITORIO_MARCAS, useClass: MarcasAdminHttpRepositorio },
+                  { provide: REPOSITORIO_DIFUSION, useClass: DifusionHttpRepositorio },
                 ],
                 loadComponent: () =>
                   import('./productos/presentation/crear/crear-producto-admin.page').then(
