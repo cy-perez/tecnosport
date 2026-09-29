@@ -1,0 +1,281 @@
+package co.tecnosport.api.application.difusion;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import co.tecnosport.api.application.catalogo.ProductoNoEncontradoPorIdException;
+import co.tecnosport.api.application.compartido.EnTransaccionPropia;
+import co.tecnosport.api.application.compartido.Reloj;
+import co.tecnosport.api.domain.catalogo.EstadoProducto;
+import co.tecnosport.api.domain.catalogo.Producto;
+import co.tecnosport.api.domain.difusion.EstadoPublicacion;
+import co.tecnosport.api.domain.difusion.ProductoNoDifundibleException;
+import co.tecnosport.api.domain.difusion.PublicacionEnRed;
+import co.tecnosport.api.domain.difusion.RedSocial;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
+import org.junit.jupiter.api.Test;
+
+class DifundirProductoTest {
+
+  private static final Instant AHORA = Instant.parse("2026-09-29T15:00:00Z");
+  private static final String VISTA_PREVIA = "https://storage.googleapis.com/b/principal.jpg";
+
+  private final RepositorioPublicacionesFalso publicaciones = new RepositorioPublicacionesFalso();
+  private final PublicadorFalso publicador = new PublicadorFalso();
+
+  @Test
+  void publicaEnLaRedPedidaYDejaLaConstanciaEnPublicada() {
+    Producto producto = publicado();
+    DifundirProducto caso = casoDeUso(producto);
+
+    List<PublicacionEnRed> resultado =
+        caso.ejecutar(
+            new DifundirProductoComando(producto.id(), List.of(RedSocial.INSTAGRAM), null));
+
+    assertEquals(1, resultado.size());
+    assertEquals(EstadoPublicacion.PUBLICADA, resultado.get(0).estado());
+    assertEquals("18196134166390376", resultado.get(0).idPublicacionExterna().orElseThrow());
+    assertEquals(VISTA_PREVIA, publicador.ultimaUrlImagen);
+  }
+
+  /**
+   * La que importa de todo el caso de uso: que Instagram rechace no puede borrar el post que
+   * Facebook ya publicó. Nada de lo que hagamos aquí lo despublica.
+   */
+  @Test
+  void siUnaRedFallaLaOtraSePublicaIgual() {
+    Producto producto = publicado();
+    publicador.fallaEn = RedSocial.INSTAGRAM;
+    DifundirProducto caso = casoDeUso(producto);
+
+    List<PublicacionEnRed> resultado =
+        caso.ejecutar(
+            new DifundirProductoComando(
+                producto.id(), List.of(RedSocial.FACEBOOK, RedSocial.INSTAGRAM), null));
+
+    assertEquals(2, resultado.size());
+    assertEquals(EstadoPublicacion.PUBLICADA, resultado.get(0).estado());
+    assertEquals(EstadoPublicacion.FALLIDA, resultado.get(1).estado());
+    assertEquals(
+        "La imagen no se pudo descargar.", resultado.get(1).detalleDelFallo().orElseThrow());
+  }
+
+  /**
+   * Se guarda antes de llamar a la red, no después: una caída en mitad del viaje tiene que dejar
+   * rastro de que se intentó. Si solo se guardara el resultado, un post ya publicado podría no
+   * existir en la base y nadie sabría que salió.
+   */
+  @Test
+  void dejaLaConstanciaEnPendienteAntesDeLlamarALaRed() {
+    Producto producto = publicado();
+    publicador.alPublicar =
+        () ->
+            assertEquals(
+                EstadoPublicacion.PENDIENTE,
+                publicaciones.guardadas.get(0).estado(),
+                "la fila tiene que existir y estar PENDIENTE antes de que la red conteste");
+    DifundirProducto caso = casoDeUso(producto);
+
+    caso.ejecutar(new DifundirProductoComando(producto.id(), List.of(RedSocial.FACEBOOK), null));
+
+    assertEquals(EstadoPublicacion.PUBLICADA, publicaciones.guardadas.get(0).estado());
+  }
+
+  @Test
+  void elPieEscritoAManoSeUsaTalCual() {
+    Producto producto = publicado();
+    DifundirProducto caso = casoDeUso(producto);
+
+    caso.ejecutar(
+        new DifundirProductoComando(
+            producto.id(), List.of(RedSocial.FACEBOOK), "Lo escribí yo y así se queda."));
+
+    assertEquals("Lo escribí yo y así se queda.", publicador.ultimoPie);
+  }
+
+  @Test
+  void sinPieEscritoSeArmaElPropuesto() {
+    Producto producto = publicado();
+    DifundirProducto caso = casoDeUso(producto);
+
+    caso.ejecutar(new DifundirProductoComando(producto.id(), List.of(RedSocial.FACEBOOK), "   "));
+
+    assertTrue(publicador.ultimoPie.startsWith("JBL Grip — $299.900"), publicador.ultimoPie);
+  }
+
+  @Test
+  void elDobleClicSeRechazaEnVezDeDuplicarElPost() {
+    Producto producto = publicado();
+    publicaciones.hayReciente = true;
+    DifundirProducto caso = casoDeUso(producto);
+
+    DifusionRepetidaException error =
+        assertThrows(
+            DifusionRepetidaException.class,
+            () ->
+                caso.ejecutar(
+                    new DifundirProductoComando(
+                        producto.id(), List.of(RedSocial.INSTAGRAM), null)));
+
+    assertTrue(error.getMessage().contains("se acaba de mandar"), error.getMessage());
+    assertEquals(0, publicador.veces);
+  }
+
+  @Test
+  void pedirDosVecesLaMismaRedPublicaUnaSolaVez() {
+    Producto producto = publicado();
+    DifundirProducto caso = casoDeUso(producto);
+
+    List<PublicacionEnRed> resultado =
+        caso.ejecutar(
+            new DifundirProductoComando(
+                producto.id(), List.of(RedSocial.FACEBOOK, RedSocial.FACEBOOK), null));
+
+    assertEquals(1, resultado.size());
+    assertEquals(1, publicador.veces);
+  }
+
+  @Test
+  void unBorradorNoSeAnunciaPorqueSuFichaResponde404() {
+    Producto borrador = ApoyoDeDifusion.jblGrip(EstadoProducto.BORRADOR, VISTA_PREVIA);
+    DifundirProducto caso = casoDeUso(borrador);
+
+    ProductoNoDifundibleException error =
+        assertThrows(
+            ProductoNoDifundibleException.class,
+            () ->
+                caso.ejecutar(
+                    new DifundirProductoComando(borrador.id(), List.of(RedSocial.FACEBOOK), null)));
+
+    assertTrue(error.getMessage().contains("404"), error.getMessage());
+    assertEquals(0, publicador.veces);
+  }
+
+  @Test
+  void sinImagenPrincipalNoHayNadaQuePublicar() {
+    Producto sinImagen = ApoyoDeDifusion.jblGrip(EstadoProducto.PUBLICADO, null, false);
+    DifundirProducto caso = casoDeUso(sinImagen);
+
+    ProductoNoDifundibleException error =
+        assertThrows(
+            ProductoNoDifundibleException.class,
+            () ->
+                caso.ejecutar(
+                    new DifundirProductoComando(
+                        sinImagen.id(), List.of(RedSocial.FACEBOOK), null)));
+
+    assertTrue(error.getMessage().contains("no tiene imagen principal"), error.getMessage());
+  }
+
+  /** La imagen del sitio es AVIF y Meta no lo entiende: sin la vista previa JPEG no hay envío. */
+  @Test
+  void sinVistaPreviaEnJpegTampoco() {
+    Producto sinPrevia = ApoyoDeDifusion.jblGrip(EstadoProducto.PUBLICADO, null);
+    DifundirProducto caso = casoDeUso(sinPrevia);
+
+    ProductoNoDifundibleException error =
+        assertThrows(
+            ProductoNoDifundibleException.class,
+            () ->
+                caso.ejecutar(
+                    new DifundirProductoComando(
+                        sinPrevia.id(), List.of(RedSocial.FACEBOOK), null)));
+
+    assertTrue(error.getMessage().contains("AVIF"), error.getMessage());
+  }
+
+  @Test
+  void unProductoQueNoExisteNoSeDifunde() {
+    DifundirProducto caso = casoDeUso(null);
+
+    assertThrows(
+        ProductoNoEncontradoPorIdException.class,
+        () ->
+            caso.ejecutar(
+                new DifundirProductoComando(UUID.randomUUID(), List.of(RedSocial.FACEBOOK), null)));
+  }
+
+  @Test
+  void hayQueDecirEnQueRedSeDifunde() {
+    Producto producto = publicado();
+    DifundirProducto caso = casoDeUso(producto);
+
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> caso.ejecutar(new DifundirProductoComando(producto.id(), List.of(), null)));
+  }
+
+  // --- armado ---
+
+  private static Producto publicado() {
+    return ApoyoDeDifusion.jblGrip(EstadoProducto.PUBLICADO, VISTA_PREVIA);
+  }
+
+  private DifundirProducto casoDeUso(Producto producto) {
+    return new DifundirProducto(
+        new ApoyoDeDifusion.RepositorioProductosFalso(producto),
+        publicaciones,
+        publicador,
+        new ArmadorDePieDeFoto("https://www.tecnosport.co", List.of()),
+        // La transacción propia, en una prueba, es simplemente ejecutar: lo que se comprueba aquí
+        // es el orden de las escrituras, no que Postgres confirme.
+        new EnTransaccionPropia() {
+          @Override
+          public <T> T ejecutar(java.util.function.Supplier<T> trabajo) {
+            return trabajo.get();
+          }
+        },
+        (Reloj) () -> AHORA);
+  }
+
+  /** Doble escrito a mano: diez líneas hacen el trabajo y no hace falta Mockito. */
+  private static final class PublicadorFalso implements PublicadorEnRedSocial {
+    private RedSocial fallaEn;
+    private Runnable alPublicar = () -> {};
+    private String ultimoPie;
+    private String ultimaUrlImagen;
+    private int veces;
+
+    @Override
+    public ResultadoPublicacion publicar(RedSocial red, String urlImagen, String pieDeFoto) {
+      veces++;
+      ultimoPie = pieDeFoto;
+      ultimaUrlImagen = urlImagen;
+      alPublicar.run();
+      return red == fallaEn
+          ? ResultadoPublicacion.fallida("La imagen no se pudo descargar.")
+          : ResultadoPublicacion.publicada("18196134166390376");
+    }
+  }
+
+  private static final class RepositorioPublicacionesFalso implements RepositorioPublicaciones {
+    private final List<PublicacionEnRed> guardadas = new ArrayList<>();
+    private boolean hayReciente;
+
+    @Override
+    public void guardar(PublicacionEnRed publicacion) {
+      if (!guardadas.contains(publicacion)) {
+        guardadas.add(publicacion);
+      }
+    }
+
+    @Override
+    public java.util.Optional<PublicacionEnRed> ultimaDe(UUID productoId, RedSocial red) {
+      return guardadas.stream().filter(p -> p.red() == red).reduce((a, b) -> b);
+    }
+
+    @Override
+    public List<PublicacionEnRed> historialDe(UUID productoId) {
+      return List.copyOf(guardadas);
+    }
+
+    @Override
+    public boolean hayUnaReciente(UUID productoId, RedSocial red, Instant desde) {
+      return hayReciente;
+    }
+  }
+}
