@@ -91,10 +91,14 @@ describe('puedeReintentarPago', () => {
 describe('datosTransferenciaDelPedido', () => {
   it('los expone cuando el método de pago es transferencia manual', () => {
     const datos = {
-      banco: 'Bancolombia',
-      tipoCuenta: 'Ahorros',
-      numeroCuenta: '000-000000-00',
-      titular: 'Tecno Sport',
+      cuentas: [
+        {
+          entidad: 'Bancolombia',
+          tipoCuenta: 'Ahorros',
+          numeroCuenta: '000-000000-00',
+          titular: 'Tecno Sport',
+        },
+      ],
       referencia: 'TS-2026-000123',
     };
     const pedido = pedidoDePrueba({
@@ -110,10 +114,14 @@ describe('datosTransferenciaDelPedido', () => {
       metodoPago: 'WOMPI',
       contacto: null,
       datosTransferencia: {
-        banco: 'Bancolombia',
-        tipoCuenta: 'Ahorros',
-        numeroCuenta: '000-000000-00',
-        titular: 'Tecno Sport',
+        cuentas: [
+          {
+            entidad: 'Bancolombia',
+            tipoCuenta: 'Ahorros',
+            numeroCuenta: '000-000000-00',
+            titular: 'Tecno Sport',
+          },
+        ],
         referencia: 'TS-2026-000123',
       },
     });

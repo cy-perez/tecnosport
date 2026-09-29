@@ -201,9 +201,16 @@
                     <h2 class="mt-16 mb-8 text-base font-medio">
                       {{ 'admin.pedidos.detalle.transferencia' | transloco }}
                     </h2>
+                    <!-- Una linea por cuenta desde el 28 de septiembre de 2026: el comprador
+                         pudo transferir a cualquiera de las que se le ofrecieron, asi que quien
+                         concilia tiene que ver todas para saber donde mirar. -->
+                    @for (cuenta of transferencia.cuentas; track cuenta.numeroCuenta) {
+                      <p class="m-0">
+                        {{ cuenta.entidad }} — {{ cuenta.tipoCuenta }} {{ cuenta.numeroCuenta }} —
+                        {{ cuenta.titular }}
+                      </p>
+                    }
                     <p>
-                      {{ transferencia.banco }} — {{ transferencia.tipoCuenta }}
-                      {{ transferencia.numeroCuenta }} — {{ transferencia.titular }} —
                       {{ 'admin.pedidos.detalle.referencia' | transloco }}:
                       {{ transferencia.referencia }}
                     </p>

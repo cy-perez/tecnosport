@@ -361,21 +361,34 @@ tecnosport:
     # transaccional, porque lo que escriba la transportadora tiene que leerlo una persona.
     correo: ${ORIGEN_CORREO:contacto@tecnosport.co}
   transferencia-manual:
+    # Las cuentas a las que el comprador puede transferir. Eran cuatro campos sueltos —una sola
+    # cuenta— hasta el 28 de septiembre de 2026; el pie ya nombraba tres medios de transferencia,
+    # asi que el sitio prometia a la vista algo que el checkout no podia dar.
+    #
+    # QUE CUENTAS HAY SE DECIDE AQUI Y QUE DICEN SE DECIDE FUERA. La entidad y el tipo van fijos
+    # porque no son secreto ni cambian: Nequi y Daviplata son billeteras —se identifican con un
+    # numero de celular— y BBVA es una cuenta de ahorros. El numero y el titular entran por
+    # variable de entorno, con nombres legibles en vez de los indices que Spring exigiria para una
+    # lista entera (TECNOSPORT_TRANSFERENCIAMANUAL_CUENTAS_0_NUMERO): quien opera el despliegue
+    # tiene que poder leer lo que escribe.
+    #
     # Dato de negocio real, no inventado (regla dura #5): estos placeholders nunca sirven para
-    # transferir de verdad. Se sobrescriben con la cuenta real por variable de entorno.
-    #
-    # El titular decia "TecnoSport SAS" y estaba mal por partida doble: el sitio lo opera una
-    # PERSONA NATURAL, asi que no lleva sigla societaria —nada de S.A.S., Ltda. ni S.A.
-    # (docs/08-seguridad-legal.md y packages/marca/kit/ENTREGA.md)— y ademas el nombre comercial se
-    # escribe "Tecno Sport", separado. Corregido el 28 de septiembre de 2026.
-    #
-    # Y no se reemplaza por "Tecno Sport": el titular de una cuenta bancaria es el nombre de quien
-    # la tiene, no el nombre comercial del negocio, y ese dato no esta aqui. Queda como los otros
-    # tres, diciendo que falta.
-    banco: ${TRANSFERENCIA_BANCO:banco_pendiente_de_configurar}
-    tipo-cuenta: ${TRANSFERENCIA_TIPO_CUENTA:ahorros}
-    numero-cuenta: ${TRANSFERENCIA_NUMERO_CUENTA:000000000}
-    titular: ${TRANSFERENCIA_TITULAR:titular_pendiente_de_configurar}
+    # transferir de verdad. Y el titular es el nombre de QUIEN TIENE LA CUENTA, no el nombre
+    # comercial: el sitio lo opera una persona natural, sin sigla societaria
+    # (docs/08-seguridad-legal.md).
+    cuentas:
+      - entidad: Nequi
+        tipo: billetera
+        numero: ${TRANSFERENCIA_NEQUI_NUMERO:numero_pendiente_de_configurar}
+        titular: ${TRANSFERENCIA_NEQUI_TITULAR:titular_pendiente_de_configurar}
+      - entidad: Daviplata
+        tipo: billetera
+        numero: ${TRANSFERENCIA_DAVIPLATA_NUMERO:numero_pendiente_de_configurar}
+        titular: ${TRANSFERENCIA_DAVIPLATA_TITULAR:titular_pendiente_de_configurar}
+      - entidad: BBVA
+        tipo: ahorros
+        numero: ${TRANSFERENCIA_BBVA_NUMERO:numero_pendiente_de_configurar}
+        titular: ${TRANSFERENCIA_BBVA_TITULAR:titular_pendiente_de_configurar}
   jwt:
     # Placeholder de al menos 32 bytes (HS256 lo exige) — nunca un secreto real
     # (regla dura #5). Producción lo sobrescribe desde Secret Manager.

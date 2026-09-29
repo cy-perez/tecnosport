@@ -37,10 +37,14 @@ describe('aPedido', () => {
       total: { valor: 160_000, moneda: 'COP' },
       creadoEn: '2026-09-04T12:00:00Z',
       datosTransferencia: {
-        banco: 'Bancolombia',
-        tipoCuenta: 'Ahorros',
-        numeroCuenta: '000-000000-00',
-        titular: 'Tecno Sport',
+        cuentas: [
+          {
+            entidad: 'Bancolombia',
+            tipoCuenta: 'Ahorros',
+            numeroCuenta: '000-000000-00',
+            titular: 'Tecno Sport',
+          },
+        ],
         referencia: 'TS-2026-000001',
       },
     });
@@ -80,10 +84,14 @@ describe('aPedido', () => {
       total: { valor: 160_000, moneda: 'COP' },
       creadoEn: '2026-09-04T12:00:00Z',
       datosTransferencia: {
-        banco: 'Bancolombia',
-        tipoCuenta: 'Ahorros',
-        numeroCuenta: '000-000000-00',
-        titular: 'Tecno Sport',
+        cuentas: [
+          {
+            entidad: 'Bancolombia',
+            tipoCuenta: 'Ahorros',
+            numeroCuenta: '000-000000-00',
+            titular: 'Tecno Sport',
+          },
+        ],
         referencia: 'TS-2026-000001',
       },
     });

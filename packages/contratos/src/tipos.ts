@@ -1494,12 +1494,15 @@ export interface components {
             marcaId?: string;
             nombre?: string;
         };
-        DatosTransferenciaRespuesta: {
-            banco?: string;
+        CuentaDeTransferenciaRespuesta: {
+            entidad?: string;
             numeroCuenta?: string;
-            referencia?: string;
             tipoCuenta?: string;
             titular?: string;
+        };
+        DatosTransferenciaRespuesta: {
+            cuentas?: components["schemas"]["CuentaDeTransferenciaRespuesta"][];
+            referencia?: string;
         };
         DespacharPedidoRequest: {
             guias?: components["schemas"]["GuiaDespachadaRequest"][];

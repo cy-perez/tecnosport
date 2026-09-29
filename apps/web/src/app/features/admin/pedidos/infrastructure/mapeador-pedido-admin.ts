@@ -113,10 +113,12 @@ function aLineaPedido(dto: LineaPedidoDto): LineaPedidoAdmin {
 
 function aDatosTransferencia(dto: DatosTransferenciaDto): DatosTransferencia {
   return {
-    banco: dto.banco ?? '',
-    tipoCuenta: dto.tipoCuenta ?? '',
-    numeroCuenta: dto.numeroCuenta ?? '',
-    titular: dto.titular ?? '',
+    cuentas: (dto.cuentas ?? []).map((cuenta) => ({
+      entidad: cuenta.entidad ?? '',
+      tipoCuenta: cuenta.tipoCuenta ?? '',
+      numeroCuenta: cuenta.numeroCuenta ?? '',
+      titular: cuenta.titular ?? '',
+    })),
     referencia: dto.referencia ?? '',
   };
 }

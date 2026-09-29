@@ -7,21 +7,32 @@
       {{ 'checkout.transferencia.instrucciones' | transloco }}
     </p>
 
+    <!-- **Una caja por cuenta, y la referencia aparte.** El comprador elige a cual transfiere, asi
+         que cada cuenta tiene que leerse entera y sin mezclarse con la de al lado —un solo `dl`
+         con tres bloques seguidos se lee como una lista de doce datos sueltos—. La referencia no
+         entra en ninguna: es del pedido y vale para todas, y repetirla invitaria a pensar que cada
+         cuenta lleva la suya. Eran cuatro campos y una cuenta hasta el 28 de septiembre de 2026. -->
+    @for (cuenta of datos.cuentas; track cuenta.numeroCuenta) {
+      <dl
+        class="m-0 mb-16 grid grid-cols-[auto_1fr] gap-x-16 gap-y-8 [&_dt]:text-ts-texto-suave [&_dd]:m-0 border border-ts-borde p-16 [&_dd]:font-mono"
+      >
+        <dt>{{ 'checkout.transferencia.entidad' | transloco }}</dt>
+        <dd>{{ cuenta.entidad }}</dd>
+
+        <dt>{{ 'checkout.transferencia.tipo_cuenta' | transloco }}</dt>
+        <dd>{{ cuenta.tipoCuenta }}</dd>
+
+        <dt>{{ 'checkout.transferencia.numero_cuenta' | transloco }}</dt>
+        <dd>{{ cuenta.numeroCuenta }}</dd>
+
+        <dt>{{ 'checkout.transferencia.titular' | transloco }}</dt>
+        <dd>{{ cuenta.titular }}</dd>
+      </dl>
+    }
+
     <dl
       class="m-0 mb-24 grid grid-cols-[auto_1fr] gap-x-16 gap-y-8 [&_dt]:text-ts-texto-suave [&_dd]:m-0 border border-ts-borde p-16 [&_dd]:font-mono"
     >
-      <dt>{{ 'checkout.transferencia.banco' | transloco }}</dt>
-      <dd>{{ datos.banco }}</dd>
-
-      <dt>{{ 'checkout.transferencia.tipo_cuenta' | transloco }}</dt>
-      <dd>{{ datos.tipoCuenta }}</dd>
-
-      <dt>{{ 'checkout.transferencia.numero_cuenta' | transloco }}</dt>
-      <dd>{{ datos.numeroCuenta }}</dd>
-
-      <dt>{{ 'checkout.transferencia.titular' | transloco }}</dt>
-      <dd>{{ datos.titular }}</dd>
-
       <dt>{{ 'checkout.transferencia.referencia' | transloco }}</dt>
       <dd>{{ datos.referencia }}</dd>
 
