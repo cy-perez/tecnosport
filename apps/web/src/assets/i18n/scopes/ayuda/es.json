@@ -18,7 +18,7 @@
           {
             "pregunta": "¿Qué medios de pago aceptan?",
             "respuesta": [
-              "Tarjeta de crédito y débito, PSE, Nequi y Bancolombia, procesados por la pasarela de pagos Wompi; transferencia bancaria manual; y pago contraentrega, cuando esté habilitado para tu ciudad y tu pedido.",
+              "Tarjeta de crédito y débito, PSE y el botón de Bancolombia, procesados por la pasarela de pagos Wompi; transferencia a nuestras cuentas de Nequi, Daviplata o BBVA; pago a cuotas con Sistecrédito; y pago contraentrega, cuando esté habilitado para tu ciudad y tu pedido.",
               "Los medios que veas al momento de pagar son los disponibles para ese pedido: no todos están habilitados para todos los pedidos.",
               "No almacenamos datos de tarjetas: esa información se maneja íntegramente en la plataforma de la pasarela."
             ]

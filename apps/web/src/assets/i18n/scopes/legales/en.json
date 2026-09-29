@@ -1,8 +1,8 @@
 {
   "comun": {
     "version_etiqueta": "Version",
-    "version": "2026-09-23",
-    "vigencia": "In force since 23 September 2026.",
+    "version": "2026-09-28",
+    "vigencia": "In force since 28 September 2026.",
     "otros_documentos": "Other legal documents",
     "titular_aviso": "This site is operated by Cristhian Yurday Pérez Hoyos, NIT 1054994043-9, Carrera 26C # 38B-31, Medellín, Antioquia, Colombia.",
     "traduccion_cortesia": "This is a courtesy translation and has no legal effect. These documents are governed by Colombian law, and the Spanish version available on this site is the one that governs; in case of any discrepancy, the Spanish text prevails."
@@ -62,7 +62,7 @@
       {
         "titulo": "6. Payment data",
         "parrafos": [
-          "We do not store card numbers or financial data. Payments by debit or credit card, PSE, Nequi, and Bancolombia are processed entirely on the Wompi payment gateway platform, and that data never passes through our servers. If you choose to pay in instalments with Sistecrédito, the credit is assessed and granted by Sistecrédito on its own platform: we send them your identity document type and number and your order details, and we do not keep the document. When you pay by manual bank transfer, we keep only the order reference and the confirmation that the payment arrived."
+          "We do not store card numbers or financial data. Payments by credit or debit card, PSE and the Bancolombia button are processed entirely on the Wompi payment gateway platform, and that data never passes through our servers. If you choose to pay in instalments with Sistecrédito, the credit is assessed and granted by Sistecrédito on its own platform: we send them your identity document type and number and your order details, and we do not keep the document. When you pay by transfer to our Nequi, Daviplata or BBVA accounts, the payment does not go through any gateway: you send us the receipt and a person checks it. That receipt shows us the name of the account holder you transfer from, the institution and the amount, and we use it only to confirm your payment; we do not store it in our systems — only your order reference and the confirmation that the payment arrived remain."
         ]
       },
       {
@@ -199,7 +199,7 @@
       {
         "titulo": "6. Payment methods",
         "parrafos": [
-          "We accept credit and debit cards, PSE, Nequi, and Bancolombia, processed by the Wompi payment gateway; manual bank transfer; and cash on delivery, where enabled for your city and your order. The payment methods available for your order are the ones we show you at checkout: not all of them are enabled for every order. We do not store card data: that information is handled entirely on the gateway's platform.",
+          "We accept credit and debit cards, PSE and the Bancolombia button, processed by the Wompi payment gateway; transfers to our Nequi, Daviplata or BBVA accounts, which we check by hand against the receipt you send us; instalment payments with Sistecrédito; and cash on delivery, where enabled for your city and your order. The payment methods available for your order are the ones we show you at checkout: not all of them are enabled for every order. When you pay by transfer, your order is held for 24 hours: if we do not receive the receipt within that time, the hold is released and the order is cancelled. We do not store card data: that information is handled entirely on the gateway's platform.",
           "For every purchase we email you a receipt, to the address you gave us, with the detail of what you bought, what you paid, and how we deliver it. Keep it: it is the proof of your purchase and what you need to claim the warranty. That receipt is not a sales invoice: Tecno Sport is not a VAT (IVA) taxpayer and is not required to issue invoices, under article 1.6.1.4.3 of Decree 1625 of 2016."
         ]
       },

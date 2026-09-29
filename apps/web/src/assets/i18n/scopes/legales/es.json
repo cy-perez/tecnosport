@@ -1,8 +1,8 @@
 {
   "comun": {
     "version_etiqueta": "Versión",
-    "version": "2026-09-23",
-    "vigencia": "Vigente desde el 23 de septiembre de 2026.",
+    "version": "2026-09-28",
+    "vigencia": "Vigente desde el 28 de septiembre de 2026.",
     "otros_documentos": "Otros documentos legales",
     "titular_aviso": "Este sitio lo opera Cristhian Yurday Pérez Hoyos, NIT 1054994043-9, Carrera 26C # 38B-31, Medellín, Antioquia, Colombia.",
     "traduccion_cortesia": "Este documento está redactado en castellano, que es el idioma en el que rige. La versión en inglés de este sitio es una traducción de cortesía y no produce efectos legales; en caso de discrepancia, prevalece el texto en castellano."
@@ -62,7 +62,7 @@
       {
         "titulo": "6. Datos de pago",
         "parrafos": [
-          "No almacenamos números de tarjeta ni datos financieros. El pago con tarjeta débito o crédito, PSE, Nequi y Bancolombia se procesa íntegramente en la plataforma de la pasarela de pagos Wompi, y esos datos nunca pasan por nuestros servidores. Si eliges pagar a cuotas con Sistecrédito, el crédito lo estudia y lo otorga Sistecrédito en su propia plataforma: le enviamos tu tipo y número de documento de identidad y los datos de tu pedido, y no conservamos el documento. Cuando pagas por transferencia manual, conservamos únicamente la referencia del pedido y la confirmación de que el pago llegó."
+          "No almacenamos números de tarjeta ni datos financieros. El pago con tarjeta de crédito o débito, PSE y el botón de Bancolombia se procesa íntegramente en la plataforma de la pasarela de pagos Wompi, y esos datos nunca pasan por nuestros servidores. Si eliges pagar a cuotas con Sistecrédito, el crédito lo estudia y lo otorga Sistecrédito en su propia plataforma: le enviamos tu tipo y número de documento de identidad y los datos de tu pedido, y no conservamos el documento. Cuando pagas por transferencia a nuestras cuentas de Nequi, Daviplata o BBVA, el pago no pasa por ninguna pasarela: tú nos envías el comprobante y una persona lo verifica. Ese comprobante nos muestra el nombre del titular de la cuenta desde la que transfieres, la entidad y el valor, y lo usamos únicamente para confirmar tu pago; en nuestros sistemas no lo guardamos, queda solo la referencia de tu pedido y la confirmación de que el pago llegó."
         ]
       },
       {
@@ -199,7 +199,7 @@
       {
         "titulo": "6. Medios de pago",
         "parrafos": [
-          "Aceptamos tarjeta de crédito y débito, PSE, Nequi y Bancolombia, procesados por la pasarela de pagos Wompi; transferencia bancaria manual; y pago contraentrega, cuando esté habilitado para tu ciudad y tu pedido. Los medios de pago disponibles para tu pedido son los que te mostramos al momento de pagar: no todos están habilitados para todos los pedidos. No almacenamos datos de tarjetas: esa información se maneja íntegramente en la plataforma de la pasarela.",
+          "Aceptamos tarjeta de crédito y débito, PSE y el botón de Bancolombia, procesados por la pasarela de pagos Wompi; transferencia a nuestras cuentas de Nequi, Daviplata o BBVA, que verificamos a mano con el comprobante que nos envíes; pago a cuotas con Sistecrédito; y pago contraentrega, cuando esté habilitado para tu ciudad y tu pedido. Los medios de pago disponibles para tu pedido son los que te mostramos al momento de pagar: no todos están habilitados para todos los pedidos. Cuando pagas por transferencia, tu pedido queda reservado 24 horas: si en ese plazo no recibimos el comprobante, la reserva se libera y el pedido se cancela. No almacenamos datos de tarjetas: esa información se maneja íntegramente en la plataforma de la pasarela.",
           "Por cada compra te enviamos al correo que registraste un comprobante con el detalle de lo que compraste, lo que pagaste y cómo te lo entregamos. Guárdalo: es el soporte de tu compra y es lo que necesitas para reclamar la garantía. Ese comprobante no es una factura de venta: Tecno Sport no es responsable de IVA y no está obligado a expedir factura, según el artículo 1.6.1.4.3 del Decreto 1625 de 2016."
         ]
       },

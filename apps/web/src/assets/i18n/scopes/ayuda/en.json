@@ -18,7 +18,7 @@
           {
             "pregunta": "Which payment methods do you accept?",
             "respuesta": [
-              "Credit and debit cards, PSE, Nequi and Bancolombia, processed by the Wompi payment gateway; manual bank transfer; and cash on delivery, where it is enabled for your city and your order.",
+              "Credit and debit cards, PSE and the Bancolombia button, processed by the Wompi payment gateway; transfers to our Nequi, Daviplata or BBVA accounts; instalment payments with Sistecrédito; and cash on delivery, where it is enabled for your city and your order.",
               "The methods you see at checkout are the ones available for that order: not all of them are enabled for every order.",
               "We do not store card details: that information is handled entirely by the gateway."
             ]
