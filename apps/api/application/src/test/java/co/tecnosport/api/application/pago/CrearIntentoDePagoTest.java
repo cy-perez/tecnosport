@@ -71,7 +71,7 @@ class CrearIntentoDePagoTest {
   @Test
   void creaUnPagoPendienteYDevuelveLaFirma() {
     CrearIntentoDePago caso = crear();
-    Pedido pedido = pedidoConMetodo(MetodoPago.NEQUI, 1);
+    Pedido pedido = pedidoConMetodo(MetodoPago.WOMPI, 1);
 
     IntentoDePago intento = caso.ejecutar(new CrearIntentoDePagoComando(pedido.id()));
 
@@ -87,7 +87,7 @@ class CrearIntentoDePagoTest {
   @Test
   void unSegundoIntentoIncrementaElNumeroDeLaReferencia() {
     CrearIntentoDePago caso = crear();
-    Pedido pedido = pedidoConMetodo(MetodoPago.NEQUI, 1);
+    Pedido pedido = pedidoConMetodo(MetodoPago.WOMPI, 1);
 
     caso.ejecutar(new CrearIntentoDePagoComando(pedido.id()));
     IntentoDePago segundo = caso.ejecutar(new CrearIntentoDePagoComando(pedido.id()));

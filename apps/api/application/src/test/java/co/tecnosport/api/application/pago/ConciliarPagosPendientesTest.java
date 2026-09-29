@@ -77,7 +77,7 @@ class ConciliarPagosPendientesTest {
             List.of(lineaConReservaVigente()),
             TipoEntrega.ENVIO_A_DOMICILIO,
             DIRECCION_MEDELLIN,
-            MetodoPago.NEQUI,
+            MetodoPago.WOMPI,
             "cliente@tecnosport.co",
             AHORA);
     pedidos.conPedido(pedido);
@@ -267,7 +267,7 @@ class ConciliarPagosPendientesTest {
             List.of(linea),
             TipoEntrega.ENVIO_A_DOMICILIO,
             DIRECCION_MEDELLIN,
-            MetodoPago.NEQUI,
+            MetodoPago.WOMPI,
             "cliente@tecnosport.co",
             AHORA);
     pedidos.conPedido(pedido);

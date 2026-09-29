@@ -2,12 +2,20 @@
   <legend class="mb-8 p-0 text-sm text-ts-texto-suave">{{ etiquetaGrupo() }}</legend>
   <div class="flex flex-wrap gap-8">
     @for (opcion of opciones(); track opcion.valor) {
+      <!-- El detalle va DENTRO del botón, no al lado: es parte de lo que se elige, así que tiene
+           que entrar en el nombre accesible y en el objetivo táctil. Fuera quedaría como texto
+           suelto que quien navega con teclado nunca oye junto a su opción. -->
       <ts-boton
         [variante]="estaSeleccionado(opcion) ? 'primario' : 'secundario'"
         [presionado]="estaSeleccionado(opcion)"
         (click)="elegir(opcion)"
       >
-        {{ opcion.etiqueta }}
+        <span class="flex flex-col items-start gap-4 text-start">
+          <span>{{ opcion.etiqueta }}</span>
+          @if (opcion.detalle) {
+            <span class="text-xs font-regular opacity-80">{{ opcion.detalle }}</span>
+          }
+        </span>
       </ts-boton>
     }
   </div>

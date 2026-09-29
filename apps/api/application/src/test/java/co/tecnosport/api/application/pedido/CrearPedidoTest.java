@@ -103,8 +103,7 @@ class CrearPedidoTest {
   }
 
   /** Los mismos que el valor por omisión de {@code application.yml}. */
-  private static final Set<MetodoPago> HABILITADOS_EN_PASARELA =
-      EnumSet.of(MetodoPago.TARJETA, MetodoPago.PSE, MetodoPago.NEQUI, MetodoPago.BANCOLOMBIA);
+  private static final Set<MetodoPago> HABILITADOS_EN_PASARELA = EnumSet.of(MetodoPago.WOMPI);
 
   /**
    * Valor de prueba, NO el dato real: el mínimo del crédito lo define Sistecrédito y todavía no lo
@@ -204,7 +203,7 @@ class CrearPedidoTest {
         lineas,
         TipoEntrega.ENVIO_A_DOMICILIO,
         DIRECCION_MEDELLIN,
-        MetodoPago.NEQUI,
+        MetodoPago.WOMPI,
         true,
         IP);
   }
@@ -290,7 +289,7 @@ class CrearPedidoTest {
             List.of(new CrearPedidoComando.LineaComando(variante.id(), 1)),
             TipoEntrega.RETIRO_EN_PUNTO,
             null,
-            MetodoPago.NEQUI,
+            MetodoPago.WOMPI,
             true,
             IP);
 
@@ -306,7 +305,7 @@ class CrearPedidoTest {
     CrearPedido caso = crear();
     publicarProductoConVarianteYExistencia(5);
 
-    Pedido pedido = caso.ejecutar(comando(MetodoPago.NEQUI, 1));
+    Pedido pedido = caso.ejecutar(comando(MetodoPago.WOMPI, 1));
 
     assertEquals(CONTACTO, pedido.contacto().orElseThrow());
   }
@@ -316,7 +315,7 @@ class CrearPedidoTest {
     CrearPedido caso = crear();
     publicarProductoConVarianteYExistencia(5);
 
-    Pedido pedido = caso.ejecutar(comando(MetodoPago.NEQUI, 2));
+    Pedido pedido = caso.ejecutar(comando(MetodoPago.WOMPI, 2));
 
     assertEquals(1, pedido.lineas().size());
     var linea = pedido.lineas().get(0);
@@ -338,7 +337,7 @@ class CrearPedidoTest {
     CrearPedido caso = crear();
     publicarProductoConVarianteYExistencia(5);
 
-    Pedido pedido = caso.ejecutar(comando(MetodoPago.NEQUI, 2));
+    Pedido pedido = caso.ejecutar(comando(MetodoPago.WOMPI, 2));
 
     assertEquals(TARIFA, pedido.tarifaEnvio().orElseThrow());
     assertEquals(Dinero.deCop(14_900), pedido.costoEnvio());
@@ -356,7 +355,7 @@ class CrearPedidoTest {
     cotizador.sinTarifas();
 
     assertThrows(
-        EnvioSinCoberturaException.class, () -> caso.ejecutar(comando(MetodoPago.NEQUI, 2)));
+        EnvioSinCoberturaException.class, () -> caso.ejecutar(comando(MetodoPago.WOMPI, 2)));
 
     assertEquals(
         5, inventarios.buscarPorVarianteId(variante.id()).orElseThrow().saldoDisponible(AHORA));
@@ -369,7 +368,7 @@ class CrearPedidoTest {
     CrearPedido caso = crear();
     publicarProductoConVarianteYExistencia(5);
 
-    Pedido pedido = caso.ejecutar(comandoRetiroEnPunto(MetodoPago.NEQUI, 2));
+    Pedido pedido = caso.ejecutar(comandoRetiroEnPunto(MetodoPago.WOMPI, 2));
 
     assertEquals(0, cotizador.vecesLlamado());
     assertTrue(pedido.tarifaEnvio().isEmpty());
@@ -512,7 +511,7 @@ class CrearPedidoTest {
     CrearPedido caso = crear();
     publicarProductoConVarianteYExistencia(5);
 
-    caso.ejecutar(comando(MetodoPago.NEQUI, 2));
+    caso.ejecutar(comando(MetodoPago.WOMPI, 2));
 
     Inventario inventario = inventarios.buscarPorVarianteId(variante.id()).orElseThrow();
     assertEquals(3, inventario.saldoDisponible(AHORA));
@@ -523,7 +522,7 @@ class CrearPedidoTest {
     CrearPedido caso = crear();
     publicarProductoConVarianteYExistencia(5);
 
-    caso.ejecutar(comando(MetodoPago.NEQUI, 2));
+    caso.ejecutar(comando(MetodoPago.WOMPI, 2));
 
     MovimientoInventario reserva = ultimaReserva();
     assertEquals(AHORA.plus(RESERVA_PAGO_EN_LINEA), reserva.expiraEn());
@@ -690,7 +689,7 @@ class CrearPedidoTest {
     CrearPedido caso = crear();
     publicarProductoConVarianteYExistencia(5);
 
-    Pedido pedido = caso.ejecutar(comando(MetodoPago.TARJETA, 1));
+    Pedido pedido = caso.ejecutar(comando(MetodoPago.WOMPI, 1));
 
     assertEquals(EstadoPedido.PAGO_PENDIENTE, pedido.estado());
   }
@@ -700,7 +699,7 @@ class CrearPedidoTest {
     CrearPedido caso = crear();
     publicarProductoConVarianteYExistencia(5);
 
-    Pedido pedido = caso.ejecutar(comando(MetodoPago.NEQUI, 1));
+    Pedido pedido = caso.ejecutar(comando(MetodoPago.WOMPI, 1));
 
     assertEquals("TS-2026-000001", pedido.numeroPedido().valor());
   }
@@ -710,8 +709,8 @@ class CrearPedidoTest {
     CrearPedido caso = crear();
     publicarProductoConVarianteYExistencia(5);
 
-    Pedido primero = caso.ejecutar(comando(MetodoPago.NEQUI, 1));
-    Pedido segundo = caso.ejecutar(comando(MetodoPago.NEQUI, 1));
+    Pedido primero = caso.ejecutar(comando(MetodoPago.WOMPI, 1));
+    Pedido segundo = caso.ejecutar(comando(MetodoPago.WOMPI, 1));
 
     assertEquals("TS-2026-000001", primero.numeroPedido().valor());
     assertEquals("TS-2026-000002", segundo.numeroPedido().valor());
@@ -722,7 +721,7 @@ class CrearPedidoTest {
     CrearPedido caso = crear();
     publicarProductoConVarianteYExistencia(5);
 
-    Pedido pedido = caso.ejecutar(comando(MetodoPago.NEQUI, 1));
+    Pedido pedido = caso.ejecutar(comando(MetodoPago.WOMPI, 1));
 
     assertTrue(pedidos.buscarPorId(pedido.id()).isPresent());
   }
@@ -733,7 +732,7 @@ class CrearPedidoTest {
     publicarProductoConVarianteYExistencia(1);
 
     assertThrows(
-        ExistenciaInsuficienteException.class, () -> caso.ejecutar(comando(MetodoPago.NEQUI, 2)));
+        ExistenciaInsuficienteException.class, () -> caso.ejecutar(comando(MetodoPago.WOMPI, 2)));
   }
 
   @Test
@@ -748,7 +747,7 @@ class CrearPedidoTest {
             List.of(new CrearPedidoComando.LineaComando(UUID.randomUUID(), 1)),
             TipoEntrega.ENVIO_A_DOMICILIO,
             DIRECCION_MEDELLIN,
-            MetodoPago.NEQUI,
+            MetodoPago.WOMPI,
             true,
             IP);
 
@@ -785,7 +784,7 @@ class CrearPedidoTest {
             List.of(new CrearPedidoComando.LineaComando(varianteSinPublicar.id(), 1)),
             TipoEntrega.ENVIO_A_DOMICILIO,
             DIRECCION_MEDELLIN,
-            MetodoPago.NEQUI,
+            MetodoPago.WOMPI,
             true,
             IP);
 
@@ -801,7 +800,7 @@ class CrearPedidoTest {
     limitadorDeIntentos.denegarSiempre();
 
     assertThrows(
-        LimiteDeIntentosExcedidoException.class, () -> caso.ejecutar(comando(MetodoPago.NEQUI, 1)));
+        LimiteDeIntentosExcedidoException.class, () -> caso.ejecutar(comando(MetodoPago.WOMPI, 1)));
   }
 
   private MovimientoInventario ultimaReserva() {
@@ -815,7 +814,7 @@ class CrearPedidoTest {
     CrearPedido caso = crear();
     publicarProductoConVarianteYExistencia(5);
 
-    caso.ejecutar(comando(MetodoPago.NEQUI, 1));
+    caso.ejecutar(comando(MetodoPago.WOMPI, 1));
 
     AutorizacionDatos constancia = autorizaciones.todas().getFirst();
     assertEquals(OrigenAutorizacion.CHECKOUT, constancia.origen());
@@ -831,7 +830,7 @@ class CrearPedidoTest {
     CrearPedido caso = crear();
     publicarProductoConVarianteYExistencia(5);
 
-    caso.ejecutar(comando(MetodoPago.NEQUI, 1));
+    caso.ejecutar(comando(MetodoPago.WOMPI, 1));
 
     assertTrue(autorizaciones.todas().getFirst().usuarioId().isEmpty());
   }
@@ -848,7 +847,7 @@ class CrearPedidoTest {
             List.of(new CrearPedidoComando.LineaComando(variante.id(), 1)),
             TipoEntrega.ENVIO_A_DOMICILIO,
             DIRECCION_MEDELLIN,
-            MetodoPago.NEQUI,
+            MetodoPago.WOMPI,
             false,
             IP);
 
@@ -872,7 +871,7 @@ class CrearPedidoTest {
             List.of(new CrearPedidoComando.LineaComando(variante.id(), 1)),
             TipoEntrega.ENVIO_A_DOMICILIO,
             DIRECCION_MEDELLIN,
-            MetodoPago.NEQUI,
+            MetodoPago.WOMPI,
             false,
             IP);
 

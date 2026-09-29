@@ -64,7 +64,7 @@ function pedidoDePrueba(overrides: Partial<Pedido> = {}): Pedido {
     lineas: [],
     tipoEntrega: 'RETIRO_EN_PUNTO',
     direccion: null,
-    metodoPago: 'TARJETA',
+    metodoPago: 'WOMPI',
     estado: 'PAGO_PENDIENTE',
     subtotal: { valor: 150_000, moneda: 'COP' },
     costoEnvio: { valor: 0, moneda: 'COP' },
@@ -364,7 +364,7 @@ describe('ConfirmarPage', () => {
     sembrarSnapshotLinea(snapshotDePrueba('variante-1'));
 
     await renderConDatos(
-      'NEQUI',
+      'WOMPI',
       new RepositorioCarritoFalso(CARRITO_CON_LINEAS),
       new RepositorioPedidosFalso(),
       new RepositorioPagosFalso(),
@@ -412,7 +412,7 @@ describe('ConfirmarPage', () => {
     // Del JSON y no repetida aquí: la etiqueta ya cambió una vez —le sobraba un "sin costo" que
     // es falso mientras el flete va embebido en el precio— y lo que se verifica es que se pinte.
     expect(screen.getByText(esCheckout.resumen.retiro_en_punto)).toBeTruthy();
-    expect(screen.getByText('Pago contra entrega')).toBeTruthy();
+    expect(screen.getByText('Pago contraentrega')).toBeTruthy();
   });
 
   /**
@@ -438,7 +438,7 @@ describe('ConfirmarPage', () => {
     const pagos = new RepositorioPagosFalso();
 
     const { fixture } = await renderConDatos(
-      'TARJETA',
+      'WOMPI',
       new RepositorioCarritoFalso(CARRITO_CON_LINEAS),
       pedidos,
       pagos,
@@ -520,7 +520,7 @@ describe('ConfirmarPage', () => {
     sembrarCarritoId('carrito-1');
 
     const { fixture } = await renderConDatos(
-      'TARJETA',
+      'WOMPI',
       new RepositorioCarritoFalso(CARRITO_CON_LINEAS),
       new RepositorioPedidosQueFalla(),
     );
@@ -715,10 +715,10 @@ describe('ConfirmarPage', () => {
 
   it('si el intento de pago falla, el carrito queda intacto para reintentar', async () => {
     sembrarCarritoId('carrito-1');
-    const pedidos = new RepositorioPedidosFalso(pedidoDePrueba({ metodoPago: 'TARJETA' }));
+    const pedidos = new RepositorioPedidosFalso(pedidoDePrueba({ metodoPago: 'WOMPI' }));
 
     const { fixture } = await renderConDatos(
-      'TARJETA',
+      'WOMPI',
       new RepositorioCarritoFalso(CARRITO_CON_LINEAS),
       pedidos,
       new RepositorioPagosQueFalla(),
@@ -802,7 +802,7 @@ describe('ConfirmarPage', () => {
     sembrarSnapshotLinea(snapshotDePrueba('variante-1'));
 
     const { fixture } = await renderConDatos(
-      'NEQUI',
+      'WOMPI',
       new RepositorioCarritoFalso(CARRITO_CON_LINEAS),
       new RepositorioPedidosQueFalla(),
     );

@@ -114,12 +114,22 @@ tecnosport:
       # Lo que la CUENTA de Wompi tiene activado hoy, que no es lo mismo que lo que el codigo sabe
       # procesar. Separados por comas, de MetodoPago, y solo metodos que pasen por la pasarela.
       #
+      # DESDE EL 28 DE SEPTIEMBRE DE 2026 EL UNICO VALOR POSIBLE ES `WOMPI`, porque el enum agrupo
+      # ahi los cuatro medios de la pasarela (V66). O sea que esto quedo siendo un interruptor
+      # —lista vacia apaga la pasarela, `WOMPI` la enciende— con forma de lista.
+      #
+      # Se deja como lista y no se convierte en un booleano tipo SISTECREDITO_HABILITADO a
+      # proposito: cambiar la forma obliga a tocar WOMPI_METODOS_HABILITADOS en el despliegue, y un
+      # despliegue con la variable vieja arrancaria con la pasarela apagada y el checkout ofreciendo
+      # solo transferencia y contraentrega, sin que nada falle. El dia que se toquen las variables
+      # de Cloud Run por otra razon, este es el momento de pasarla a booleano.
+      #
       # ADDI YA NO ES UN VALOR DE MetodoPago (22 de septiembre de 2026, V61). Estuvo fuera de
       # esta lista desde el 14 de septiembre porque Addi exige que el sitio este en linea para
       # estudiar la activacion, y el 22 se quito del enum: un valor que solo se mantenia fuera del
       # checkout por no estar aqui. Cuando se integre de verdad vuelve a las dos partes, y hay que
       # devolver la frase de los terminos que se quito con esto (docs/11-pagos-y-envios.md).
-      habilitados: ${WOMPI_METODOS_HABILITADOS:TARJETA,PSE,NEQUI,BANCOLOMBIA}
+      habilitados: ${WOMPI_METODOS_HABILITADOS:WOMPI}
     conciliacion:
       intervalo-minutos: ${WOMPI_CONCILIACION_INTERVALO_MINUTOS:15}
       antiguedad-minima-minutos: ${WOMPI_CONCILIACION_ANTIGUEDAD_MINIMA_MINUTOS:15}
@@ -353,10 +363,19 @@ tecnosport:
   transferencia-manual:
     # Dato de negocio real, no inventado (regla dura #5): estos placeholders nunca sirven para
     # transferir de verdad. Se sobrescriben con la cuenta real por variable de entorno.
+    #
+    # El titular decia "TecnoSport SAS" y estaba mal por partida doble: el sitio lo opera una
+    # PERSONA NATURAL, asi que no lleva sigla societaria —nada de S.A.S., Ltda. ni S.A.
+    # (docs/08-seguridad-legal.md y packages/marca/kit/ENTREGA.md)— y ademas el nombre comercial se
+    # escribe "Tecno Sport", separado. Corregido el 28 de septiembre de 2026.
+    #
+    # Y no se reemplaza por "Tecno Sport": el titular de una cuenta bancaria es el nombre de quien
+    # la tiene, no el nombre comercial del negocio, y ese dato no esta aqui. Queda como los otros
+    # tres, diciendo que falta.
     banco: ${TRANSFERENCIA_BANCO:banco_pendiente_de_configurar}
     tipo-cuenta: ${TRANSFERENCIA_TIPO_CUENTA:ahorros}
     numero-cuenta: ${TRANSFERENCIA_NUMERO_CUENTA:000000000}
-    titular: ${TRANSFERENCIA_TITULAR:TecnoSport SAS}
+    titular: ${TRANSFERENCIA_TITULAR:titular_pendiente_de_configurar}
   jwt:
     # Placeholder de al menos 32 bytes (HS256 lo exige) — nunca un secreto real
     # (regla dura #5). Producción lo sobrescribe desde Secret Manager.

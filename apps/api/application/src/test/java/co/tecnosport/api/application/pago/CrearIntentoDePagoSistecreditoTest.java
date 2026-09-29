@@ -159,7 +159,7 @@ class CrearIntentoDePagoSistecreditoTest {
   @Test
   void unPedidoDeOtroMetodoDePagoNoSeCobraPorSistecredito() {
     CrearIntentoDePagoSistecredito caso = crear();
-    Pedido pedido = pedidoConMetodo(MetodoPago.NEQUI, 1);
+    Pedido pedido = pedidoConMetodo(MetodoPago.WOMPI, 1);
 
     assertThrows(
         MetodoDePagoNoEsDeSistecreditoException.class,

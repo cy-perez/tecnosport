@@ -27,13 +27,26 @@ import { TsSelectControl } from '../../../../shared/ui/select/ts-select-control'
 import { MetodoPago, TipoDocumento } from '../../domain/pedido.model';
 
 const CLAVE_ETIQUETA: Record<MetodoPago, string> = {
-  TARJETA: 'checkout.metodoPago.tarjeta',
-  PSE: 'checkout.metodoPago.pse',
-  NEQUI: 'checkout.metodoPago.nequi',
-  BANCOLOMBIA: 'checkout.metodoPago.bancolombia',
+  WOMPI: 'checkout.metodoPago.wompi',
   SISTECREDITO: 'checkout.metodoPago.sistecredito',
   TRANSFERENCIA_MANUAL: 'checkout.metodoPago.transferencia_manual',
   CONTRAENTREGA: 'checkout.metodoPago.contraentrega',
+};
+
+/**
+ * Lo que el nombre del botón no alcanza a decir, debajo y en letra menor. Solo dos lo necesitan.
+ *
+ * <p><b>`WOMPI` lo necesita más que ninguno</b>: el enum agrupa ahí tarjeta, PSE y botón
+ * Bancolombia (`V66`) porque el Web Checkout hospedado nunca recibió cuál había elegido el
+ * comprador. Un botón a secas sería peor que los cuatro que reemplaza —nombraría la pasarela en
+ * vez del medio— y por eso la etiqueta dice los medios y el detalle dice dónde se eligen.
+ *
+ * <p>`TRANSFERENCIA_MANUAL` lo necesita por lo contrario: su nombre es claro pero no dice a dónde
+ * se transfiere, y desde el 28 de septiembre de 2026 son tres cuentas y no una.
+ */
+const CLAVE_DETALLE: Partial<Record<MetodoPago, string>> = {
+  WOMPI: 'checkout.metodoPago.wompi_detalle',
+  TRANSFERENCIA_MANUAL: 'checkout.metodoPago.transferencia_manual_detalle',
 };
 
 /** Los que acepta la pasarela de Sistecrédito (`adr/0048`). */
@@ -91,10 +104,14 @@ export class MetodoPagoPage {
   protected readonly consulta = usarMetodosDePagoDisponibles(() => this.comando());
 
   protected readonly opciones = computed<OpcionMetodoPago[]>(() =>
-    (this.consulta.data() ?? []).map((metodo) => ({
-      valor: metodo,
-      etiqueta: this.traducir()(CLAVE_ETIQUETA[metodo]),
-    })),
+    (this.consulta.data() ?? []).map((metodo) => {
+      const claveDetalle = CLAVE_DETALLE[metodo];
+      return {
+        valor: metodo,
+        etiqueta: this.traducir()(CLAVE_ETIQUETA[metodo]),
+        detalle: claveDetalle ? this.traducir()(claveDetalle) : undefined,
+      };
+    }),
   );
 
   /**

@@ -31,7 +31,8 @@ existe.
 **Qué se ofrece lo dice la configuración, no el enum.**
 `tecnosport.wompi.metodos.habilitados` (`WOMPI_METODOS_HABILITADOS`) es la lista
 de lo que la *cuenta* de Wompi tiene activado, separada por comas. Por omisión
-`TARJETA,PSE,NEQUI,BANCOLOMBIA`; Addi fuera. Solo admite métodos que pasen por la
+`WOMPI` —eran `TARJETA,PSE,NEQUI,BANCOLOMBIA` hasta que la `V66` los agrupó en uno;
+ver la posdata—; Addi fuera. Solo admite métodos que pasen por la
 pasarela: contraentrega y transferencia manual tienen su propio interruptor y un
 segundo los haría divergir. Un nombre que no exista impide arrancar, porque un
 despliegue con la lista mal escrita tiene que fallar al arrancar y no al primer
@@ -114,3 +115,25 @@ puede mejorar sin migración.
 - `esMetodoPagoWompi` en `apps/web` sigue siendo un espejo escrito a mano de
   `seProcesaPorPasarela()`, con `ADDI` dentro. Es correcto mientras el servidor no
   lo ofrezca.
+
+## Posdata: el 28 de septiembre de 2026 la lista se quedó con un solo valor
+
+`MetodoPago` agrupó `TARJETA`, `PSE`, `NEQUI` y `BANCOLOMBIA` en **`WOMPI`** (`V66`,
+`docs/11-pagos-y-envios.md`), así que esta configuración pasó a ser un interruptor con forma de
+lista: vacía apaga la pasarela, `WOMPI` la enciende.
+
+**Eso no invalida la decisión de este ADR, la confirma.** El agujero que se cerraba aquí era
+"ofrecer lo que el código sabe procesar en vez de lo que la cuenta acepta", y sigue cerrado: lo que
+cambió es cuántas cosas hay que decidir, no quién las decide. La comprobación de que un nombre
+desconocido impide arrancar, y la de que un método con su propio interruptor no se cuela aquí,
+siguen ganandose el sueldo igual.
+
+**Se deja como lista y no se convierte en un booleano** tipo `SISTECREDITO_HABILITADO` a propósito:
+cambiar la forma obliga a tocar `WOMPI_METODOS_HABILITADOS` en el despliegue, y arrancar con la
+variable vieja dejaría la pasarela apagada y el checkout con solo transferencia y contraentrega,
+**sin que nada falle**. El día que se toquen esas variables por otra razón, ese es el momento.
+
+**Y `MediosDeWompi` se borró.** Traducía `CARD`, `NEQUI`, `PSE`, `BANCOLOMBIA_TRANSFER` y
+`BANCOLOMBIA_QR` al enum, no lo llamaba nadie en producción, y con un solo valor de destino la
+traducción dejaba de distinguir nada. Lo que el párrafo de arriba describe sigue vivo en la parte
+que importa: `medio_reportado_pasarela` se guarda **crudo** y no pisa `metodo_pago`.

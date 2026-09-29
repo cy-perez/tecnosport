@@ -2,7 +2,7 @@ import { fireEvent, render, screen } from '@testing-library/angular';
 import { OpcionMetodoPago, TsSelectorMetodoPago } from './ts-selector-metodo-pago';
 
 const opciones: OpcionMetodoPago[] = [
-  { valor: 'TARJETA', etiqueta: 'Tarjeta' },
+  { valor: 'WOMPI', etiqueta: 'Tarjeta' },
   { valor: 'CONTRAENTREGA', etiqueta: 'Contraentrega' },
 ];
 
@@ -21,7 +21,7 @@ describe('TsSelectorMetodoPago', () => {
 
   it('marca la opción elegida con aria-pressed', async () => {
     await render(TsSelectorMetodoPago, {
-      inputs: { opciones, seleccionado: 'TARJETA', etiquetaGrupo: 'Método de pago' },
+      inputs: { opciones, seleccionado: 'WOMPI', etiquetaGrupo: 'Método de pago' },
     });
 
     expect(screen.getByRole('button', { name: 'Tarjeta' }).getAttribute('aria-pressed')).toBe(

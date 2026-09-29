@@ -2,15 +2,53 @@
 
 ## Métodos de pago
 
-| Método | Proveedor | Cuándo entra el dinero |
-|---|---|---|
-| Tarjeta débito y crédito | Wompi | Al aprobar |
-| PSE | Wompi | Al aprobar |
-| Nequi | Wompi | Al aprobar |
-| Bancolombia a la mano y botón Bancolombia | Wompi | Al aprobar |
-| **Sistecrédito** | Sistecrédito (pasarela propia) | Al aprobar el crédito |
-| Transferencia manual | Ninguno | Al conciliar el comprobante |
-| **Contraentrega** | Transportadora con recaudo, vía Skydropx | Días después de la entrega |
+| Método | Comprende | Proveedor | Cuándo entra el dinero |
+|---|---|---|---|
+| **`WOMPI`** | Tarjeta débito y crédito, PSE, Bancolombia a la mano y botón Bancolombia | Wompi | Al aprobar |
+| **`SISTECREDITO`** | — | Sistecrédito (pasarela propia) | Al aprobar el crédito |
+| `TRANSFERENCIA_MANUAL` | Nequi, Daviplata, BBVA | Ninguno | Al conciliar el comprobante |
+| **`CONTRAENTREGA`** | — | Transportadora con recaudo, vía Skydropx | Días después de la entrega |
+
+### Por qué los medios de Wompi son un solo método
+
+**Cambiado el 28 de septiembre de 2026 (`V66`).** Hasta ese día el enum tenía `TARJETA`, `PSE`,
+`NEQUI` y `BANCOLOMBIA`, y el checkout los ofrecía como cuatro botones.
+
+**Lo que el comprador elegía aquí nunca viajaba.** La URL del Web Checkout hospedado no le manda a
+Wompi el método elegido: Wompi pinta su propia lista y el comprador vuelve a elegir allí. Así que
+un pedido podía decir `NEQUI` y haberse cobrado con tarjeta, sin ninguna señal. No es un
+descubrimiento nuevo — está escrito desde la `V39`, que añadió `pago.medio_reportado_pasarela`
+justamente para tener la evidencia de lo que sí pasó. Lo que cambió es dejar de fingir lo
+contrario en la pantalla.
+
+Un valor que el sistema no puede honrar no es un dato: es una intención disfrazada de dato. `WOMPI`
+dice lo que de verdad se sabe, y con qué se cobró sigue en `medio_reportado_pasarela`, crudo.
+
+**Consecuencias:**
+
+- `WOMPI_METODOS_HABILITADOS` solo admite un valor, `WOMPI`, así que quedó siendo un interruptor
+  con forma de lista. Se deja así a propósito: cambiarla a un booleano obliga a tocar la variable
+  en el despliegue, y arrancar con la vieja dejaría la pasarela apagada **sin que nada falle**.
+- `MediosDeWompi` se borró. Traducía el `payment_method_type` de Wompi a `MetodoPago` y no lo
+  llamaba nadie en producción; con un solo valor de destino, la traducción no distingue nada.
+- El checkout enseña un botón con los medios en la etiqueta y **dónde se eligen en la descripción**.
+  Nombrar solo a la pasarela sería peor que los cuatro botones que reemplaza.
+- Los pedidos históricos con los cuatro valores **se migraron** a `WOMPI`. Distinto de `ADDI`
+  (`V61`), que salió sin migrar nada porque nunca se pudo elegir.
+
+### Nequi sale de Wompi
+
+**Decidido el 28 de septiembre de 2026.** Nequi se recibe como **transferencia manual**, no por la
+pasarela. Deja de confirmarse solo: el pedido se queda en `PAGO_PENDIENTE` hasta que alguien
+concilie el comprobante.
+
+Los pedidos históricos con `NEQUI` migran a `WOMPI` y no a `TRANSFERENCIA_MANUAL`: los cobró la
+pasarela y se confirmaron solos, así que escribir que se conciliaron a mano falsearía el historial.
+
+**Pendiente**: la transferencia manual soporta hoy **una sola cuenta**
+(`PropiedadesTransferenciaManual`, cuatro campos en singular). Para ofrecer Nequi, Daviplata y BBVA
+hay que convertirla en lista, y faltan los datos reales de las tres — titular, tipo y número. No se
+inventan (regla dura #5).
 
 **Qué se ofrece no lo decide esta tabla, lo deciden
 `tecnosport.wompi.metodos.habilitados` (`WOMPI_METODOS_HABILITADOS`) y

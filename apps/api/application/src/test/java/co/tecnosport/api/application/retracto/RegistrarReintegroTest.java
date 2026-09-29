@@ -73,7 +73,7 @@ class RegistrarReintegroTest {
   private SolicitudRetracto radicada() {
     Pedido pedido =
         PedidosDePrueba.entregado(
-            MetodoPago.NEQUI, PedidosDePrueba.linea(UUID.randomUUID(), UUID.randomUUID()), ENTREGA);
+            MetodoPago.WOMPI, PedidosDePrueba.linea(UUID.randomUUID(), UUID.randomUUID()), ENTREGA);
     pedidos.sembrar(pedido);
     SolicitudRetracto solicitud =
         SolicitudRetracto.radicar(

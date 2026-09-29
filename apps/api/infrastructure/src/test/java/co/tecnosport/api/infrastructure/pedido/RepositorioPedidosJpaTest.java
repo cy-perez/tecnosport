@@ -121,7 +121,7 @@ class RepositorioPedidosJpaTest {
             List.of(vendida),
             TipoEntrega.ENVIO_A_DOMICILIO,
             DIRECCION_MEDELLIN,
-            MetodoPago.NEQUI,
+            MetodoPago.WOMPI,
             "cliente@tecnosport.co",
             Instant.now(),
             null);
@@ -149,7 +149,7 @@ class RepositorioPedidosJpaTest {
    */
   @Test
   void laTarifaCongeladaVuelveEnteraDeLaBase() {
-    Pedido pedido = pedidoAlDomicilio(MetodoPago.NEQUI, TARIFA);
+    Pedido pedido = pedidoAlDomicilio(MetodoPago.WOMPI, TARIFA);
 
     repositorio.guardar(pedido);
 
@@ -166,7 +166,7 @@ class RepositorioPedidosJpaTest {
    */
   @Test
   void unPedidoSinTarifaVuelveConEnvioEnCero() {
-    Pedido pedido = pedidoAlDomicilio(MetodoPago.NEQUI);
+    Pedido pedido = pedidoAlDomicilio(MetodoPago.WOMPI);
 
     repositorio.guardar(pedido);
 
@@ -188,7 +188,7 @@ class RepositorioPedidosJpaTest {
             List.of(linea()),
             TipoEntrega.RETIRO_EN_PUNTO,
             null,
-            MetodoPago.NEQUI,
+            MetodoPago.WOMPI,
             "cliente@tecnosport.co",
             Instant.now(),
             null,
@@ -203,7 +203,7 @@ class RepositorioPedidosJpaTest {
   /** Los pedidos anteriores a V36 no tienen contacto y siguen leyéndose. */
   @Test
   void unPedidoSinContactoVuelveVacio() {
-    Pedido pedido = pedidoAlDomicilio(MetodoPago.NEQUI);
+    Pedido pedido = pedidoAlDomicilio(MetodoPago.WOMPI);
 
     repositorio.guardar(pedido);
 
@@ -212,7 +212,7 @@ class RepositorioPedidosJpaTest {
 
   @Test
   void guardarYBuscarUnPedidoDeEnvioADomicilio() {
-    Pedido pedido = pedidoAlDomicilio(MetodoPago.NEQUI);
+    Pedido pedido = pedidoAlDomicilio(MetodoPago.WOMPI);
 
     repositorio.guardar(pedido);
 
@@ -221,7 +221,7 @@ class RepositorioPedidosJpaTest {
     assertThat(encontrado.correo().valor()).isEqualTo("cliente@tecnosport.co");
     assertThat(encontrado.tipoEntrega()).isEqualTo(TipoEntrega.ENVIO_A_DOMICILIO);
     assertThat(encontrado.direccion()).contains(DIRECCION_MEDELLIN);
-    assertThat(encontrado.metodoPago()).isEqualTo(MetodoPago.NEQUI);
+    assertThat(encontrado.metodoPago()).isEqualTo(MetodoPago.WOMPI);
     assertThat(encontrado.estado()).isEqualTo(EstadoPedido.PAGO_PENDIENTE);
     assertThat(encontrado.lineas()).hasSize(1);
     assertThat(encontrado.lineas().get(0).sku()).isEqualTo(new Sku("TS-CAM-AZ-M"));
@@ -239,7 +239,7 @@ class RepositorioPedidosJpaTest {
             List.of(linea()),
             TipoEntrega.RETIRO_EN_PUNTO,
             null,
-            MetodoPago.TARJETA,
+            MetodoPago.WOMPI,
             "cliente@tecnosport.co",
             Instant.now());
 
@@ -262,7 +262,7 @@ class RepositorioPedidosJpaTest {
 
   @Test
   void transicionarYGuardarDeNuevoActualizaEstadoYAgregaHistorial() {
-    Pedido pedido = pedidoAlDomicilio(MetodoPago.NEQUI);
+    Pedido pedido = pedidoAlDomicilio(MetodoPago.WOMPI);
     repositorio.guardar(pedido);
 
     pedido.transicionar(EstadoPedido.PAGADO, "webhook-wompi", "pago aprobado", Instant.now());
@@ -317,10 +317,10 @@ class RepositorioPedidosJpaTest {
 
   @Test
   void buscarTodosPaginadoSinFiltroOrdenaPorMasRecientePrimero() throws InterruptedException {
-    Pedido primero = pedidoConNumero(101, MetodoPago.NEQUI);
+    Pedido primero = pedidoConNumero(101, MetodoPago.WOMPI);
     repositorio.guardar(primero);
     Thread.sleep(10);
-    Pedido segundo = pedidoConNumero(102, MetodoPago.NEQUI);
+    Pedido segundo = pedidoConNumero(102, MetodoPago.WOMPI);
     repositorio.guardar(segundo);
 
     PedidosPaginados resultado = repositorio.buscarTodosPaginado(0, 10, null);
@@ -351,7 +351,7 @@ class RepositorioPedidosJpaTest {
     pendienteReciente.transicionar(
         EstadoPedido.RECAUDO_PENDIENTE, "admin:test", "recaudo pendiente", Instant.now());
     repositorio.guardar(pendienteReciente);
-    repositorio.guardar(pedidoConNumero(105, MetodoPago.NEQUI));
+    repositorio.guardar(pedidoConNumero(105, MetodoPago.WOMPI));
 
     PedidosPaginados resultado =
         repositorio.buscarTodosPaginado(0, 10, EstadoPedido.RECAUDO_PENDIENTE);
@@ -445,7 +445,7 @@ class RepositorioPedidosJpaTest {
   void soloElPrimerReclamoGana() {
     Pedido pedido =
         pedidoCreadoEn(
-            701, Instant.now().minus(40, java.time.temporal.ChronoUnit.DAYS), MetodoPago.NEQUI);
+            701, Instant.now().minus(40, java.time.temporal.ChronoUnit.DAYS), MetodoPago.WOMPI);
     repositorio.guardar(pedido);
     Instant primero = Instant.now().truncatedTo(java.time.temporal.ChronoUnit.MILLIS);
 
@@ -467,7 +467,7 @@ class RepositorioPedidosJpaTest {
   void guardarElPedidoNoPisaUnReclamoYaHecho() {
     Pedido pedido =
         pedidoCreadoEn(
-            702, Instant.now().minus(40, java.time.temporal.ChronoUnit.DAYS), MetodoPago.NEQUI);
+            702, Instant.now().minus(40, java.time.temporal.ChronoUnit.DAYS), MetodoPago.WOMPI);
     repositorio.guardar(pedido);
     Instant aviso = Instant.now().truncatedTo(java.time.temporal.ChronoUnit.MILLIS);
     repositorio.reclamarAvisoDePlazo(pedido.id(), aviso);
@@ -513,7 +513,7 @@ class RepositorioPedidosJpaTest {
     repositorio.guardar(yaAvisado);
     repositorio.reclamarAvisoDePlazo(yaAvisado.id(), Instant.now());
 
-    Pedido enOtroEstado = pedidoCreadoEn(713, viejo, MetodoPago.NEQUI);
+    Pedido enOtroEstado = pedidoCreadoEn(713, viejo, MetodoPago.WOMPI);
     repositorio.guardar(enOtroEstado);
 
     List<Pedido> encontrados =
@@ -643,7 +643,7 @@ class RepositorioPedidosJpaTest {
   @Test
   void buscarSinComprobanteRespetaElEstado() {
     Pedido enFirme = pedidoCreadoEn(712, Instant.now(), MetodoPago.CONTRAENTREGA);
-    Pedido pendiente = pedidoCreadoEn(713, Instant.now(), MetodoPago.NEQUI);
+    Pedido pendiente = pedidoCreadoEn(713, Instant.now(), MetodoPago.WOMPI);
     repositorio.guardar(enFirme);
     repositorio.guardar(pendiente);
 

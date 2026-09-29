@@ -5,6 +5,18 @@ import { TsBoton } from '../../../../shared/ui/boton/ts-boton';
 export interface OpcionMetodoPago {
   readonly valor: MetodoPago;
   readonly etiqueta: string;
+
+  /**
+   * Lo que el botón no puede decir con su nombre, debajo y en letra menor. Opcional porque no
+   * todos lo necesitan: "Sistecrédito" y "Pago contraentrega" se explican solos.
+   *
+   * <p>Nació con el agrupamiento de los medios de Wompi (28 de septiembre de 2026). Un botón que
+   * dijera solo "Wompi" sería peor que los cuatro que reemplaza: nombra a la pasarela, que al
+   * comprador no le dice nada, en vez del medio, que es lo que él reconoce. La descripción es la
+   * que devuelve esa información — sin volver a prometer cuál se usará, que es lo que no se puede
+   * prometer.
+   */
+  readonly detalle?: string;
 }
 
 /** Mismo patrón de "botones de alternancia" que `ts-selector-variante`: no es

@@ -6,16 +6,16 @@ export function requiereDireccion(tipoEntrega: TipoEntrega): boolean {
   return tipoEntrega === 'ENVIO_A_DOMICILIO';
 }
 
-/** Métodos que `CrearIntentoDePago` resuelve por el Web Checkout de Wompi
+/** Lo que `CrearIntentoDePago` resuelve por el Web Checkout de Wompi
  * (`docs/09-plan-de-arranque.md`, Fase 3). Transferencia manual y
- * contraentrega no pasan por Wompi. */
+ * contraentrega no pasan por Wompi.
+ *
+ * <p>Compara con cuatro valores hasta el 28 de septiembre de 2026, cuando el dominio los agrupó en
+ * uno. **Se queda como función y no se reemplaza por la comparación suelta** por lo mismo que
+ * `esMetodoPagoSistecredito`: quien pregunta quiere saber qué flujo de pago sigue, y eso tiene que
+ * poder crecer sin que el que llama se entere. */
 export function esMetodoPagoWompi(metodoPago: MetodoPago): boolean {
-  return (
-    metodoPago === 'TARJETA' ||
-    metodoPago === 'PSE' ||
-    metodoPago === 'NEQUI' ||
-    metodoPago === 'BANCOLOMBIA'
-  );
+  return metodoPago === 'WOMPI';
 }
 
 /**

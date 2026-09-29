@@ -171,7 +171,7 @@ class PedidoControladorTest {
   void crearPedidoDevuelveElPedidoCreadoEnPagoPendiente() throws Exception {
     Variante variante = publicarProductoConVarianteYExistencia(5);
     CrearPedidoRequest cuerpo =
-        solicitud(variante, "ENVIO_A_DOMICILIO", DIRECCION_MEDELLIN, MetodoPago.NEQUI);
+        solicitud(variante, "ENVIO_A_DOMICILIO", DIRECCION_MEDELLIN, MetodoPago.WOMPI);
 
     mockMvc
         .perform(
@@ -182,7 +182,7 @@ class PedidoControladorTest {
         .andExpect(jsonPath("$.id").exists())
         .andExpect(jsonPath("$.numeroPedido").value(matchesPattern("TS-\\d{4}-\\d{6}")))
         .andExpect(jsonPath("$.estado").value("PAGO_PENDIENTE"))
-        .andExpect(jsonPath("$.metodoPago").value("NEQUI"))
+        .andExpect(jsonPath("$.metodoPago").value("WOMPI"))
         .andExpect(jsonPath("$.lineas[0].sku").value("TS-CAM-AZ-M"))
         .andExpect(jsonPath("$.subtotal.valor").value(100_000))
         .andExpect(jsonPath("$.costoEnvio.valor").value(14_900))
@@ -194,7 +194,7 @@ class PedidoControladorTest {
   void crearPedidoConLimiteDeIntentosExcedidoDevuelve429() throws Exception {
     Variante variante = publicarProductoConVarianteYExistencia(5);
     CrearPedidoRequest cuerpo =
-        solicitud(variante, "ENVIO_A_DOMICILIO", DIRECCION_MEDELLIN, MetodoPago.NEQUI);
+        solicitud(variante, "ENVIO_A_DOMICILIO", DIRECCION_MEDELLIN, MetodoPago.WOMPI);
     limitadorDeIntentos.denegarSiempre();
 
     mockMvc
@@ -222,7 +222,7 @@ class PedidoControladorTest {
         .andExpect(jsonPath("$.datosTransferencia.banco").value("Bancolombia"))
         .andExpect(jsonPath("$.datosTransferencia.tipoCuenta").value("ahorros"))
         .andExpect(jsonPath("$.datosTransferencia.numeroCuenta").value("123-456789-00"))
-        .andExpect(jsonPath("$.datosTransferencia.titular").value("TecnoSport SAS"))
+        .andExpect(jsonPath("$.datosTransferencia.titular").value("Tecno Sport"))
         .andExpect(
             jsonPath("$.datosTransferencia.referencia").value(matchesPattern("TS-\\d{4}-\\d{6}")));
   }
@@ -231,7 +231,7 @@ class PedidoControladorTest {
   void crearPedidoConMetodoDistintoDeTransferenciaNoTraeDatosDeCuenta() throws Exception {
     Variante variante = publicarProductoConVarianteYExistencia(5);
     CrearPedidoRequest cuerpo =
-        solicitud(variante, "ENVIO_A_DOMICILIO", DIRECCION_MEDELLIN, MetodoPago.NEQUI);
+        solicitud(variante, "ENVIO_A_DOMICILIO", DIRECCION_MEDELLIN, MetodoPago.WOMPI);
 
     mockMvc
         .perform(
@@ -268,7 +268,7 @@ class PedidoControladorTest {
   @Test
   void crearPedidoDeRetiroEnPuntoSinDireccion() throws Exception {
     Variante variante = publicarProductoConVarianteYExistencia(5);
-    CrearPedidoRequest cuerpo = solicitud(variante, "RETIRO_EN_PUNTO", null, MetodoPago.TARJETA);
+    CrearPedidoRequest cuerpo = solicitud(variante, "RETIRO_EN_PUNTO", null, MetodoPago.WOMPI);
 
     mockMvc
         .perform(
@@ -289,7 +289,7 @@ class PedidoControladorTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
                     """
-                    {"lineas":[{"varianteId":"%s","cantidad":1}],"tipoEntrega":"RETIRO_EN_PUNTO","metodoPago":"TARJETA"}
+                    {"lineas":[{"varianteId":"%s","cantidad":1}],"tipoEntrega":"RETIRO_EN_PUNTO","metodoPago":"WOMPI"}
                     """
                         .formatted(variante.id())))
         .andExpect(status().isUnprocessableContent());
@@ -298,7 +298,7 @@ class PedidoControladorTest {
   @Test
   void crearPedidoConTipoEntregaInvalidoDevuelve422() throws Exception {
     Variante variante = publicarProductoConVarianteYExistencia(5);
-    CrearPedidoRequest cuerpo = solicitud(variante, "TELETRANSPORTE", null, MetodoPago.TARJETA);
+    CrearPedidoRequest cuerpo = solicitud(variante, "TELETRANSPORTE", null, MetodoPago.WOMPI);
 
     mockMvc
         .perform(
@@ -324,7 +324,7 @@ class PedidoControladorTest {
             List.of(new CrearPedidoRequest.LineaRequest(variante.id(), 1)),
             "RETIRO_EN_PUNTO",
             null,
-            MetodoPago.TARJETA,
+            MetodoPago.WOMPI,
             false);
 
     mockMvc
@@ -344,7 +344,7 @@ class PedidoControladorTest {
         """
         {"correo":"cliente@tecnosport.co","nombre":"Ana Pérez","telefono":"",
          "lineas":[{"varianteId":"%s","cantidad":1}],
-         "tipoEntrega":"RETIRO_EN_PUNTO","metodoPago":"TARJETA","autorizaDatos":true}
+         "tipoEntrega":"RETIRO_EN_PUNTO","metodoPago":"WOMPI","autorizaDatos":true}
         """
             .formatted(variante.id());
 
@@ -356,7 +356,7 @@ class PedidoControladorTest {
   @Test
   void elPedidoCreadoDevuelveElContactoNormalizado() throws Exception {
     Variante variante = publicarProductoConVarianteYExistencia(5);
-    CrearPedidoRequest cuerpo = solicitud(variante, "RETIRO_EN_PUNTO", null, MetodoPago.TARJETA);
+    CrearPedidoRequest cuerpo = solicitud(variante, "RETIRO_EN_PUNTO", null, MetodoPago.WOMPI);
 
     mockMvc
         .perform(
@@ -378,7 +378,7 @@ class PedidoControladorTest {
             List.of(new CrearPedidoRequest.LineaRequest(java.util.UUID.randomUUID(), 1)),
             "RETIRO_EN_PUNTO",
             null,
-            MetodoPago.TARJETA,
+            MetodoPago.WOMPI,
             true);
 
     mockMvc
@@ -393,7 +393,7 @@ class PedidoControladorTest {
   @Test
   void crearPedidoConExistenciaInsuficienteDevuelve409() throws Exception {
     Variante variante = publicarProductoConVarianteYExistencia(1);
-    CrearPedidoRequest cuerpo = solicitud(variante, "RETIRO_EN_PUNTO", null, MetodoPago.TARJETA);
+    CrearPedidoRequest cuerpo = solicitud(variante, "RETIRO_EN_PUNTO", null, MetodoPago.WOMPI);
 
     mockMvc
         .perform(
@@ -455,7 +455,7 @@ class PedidoControladorTest {
                 .content(json.writeValueAsString(cuerpo)))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$", not(hasItem("CONTRAENTREGA"))))
-        .andExpect(jsonPath("$", hasItem("TARJETA")));
+        .andExpect(jsonPath("$", hasItem("WOMPI")));
   }
 
   @Test
@@ -483,7 +483,7 @@ class PedidoControladorTest {
                     java.util.UUID.randomUUID())),
             TipoEntrega.ENVIO_A_DOMICILIO,
             Direccion.sinBarrio("05", "Antioquia", "05001", "Medellín", "Cra. 26C #38B-31", null),
-            MetodoPago.NEQUI,
+            MetodoPago.WOMPI,
             "cliente@tecnosport.co",
             Instant.now());
     pedido.transicionar(
@@ -512,7 +512,7 @@ class PedidoControladorTest {
   void reintentarPagoDeUnPedidoQueNoEstaEnPagoFallidoDevuelve422() throws Exception {
     Variante variante = publicarProductoConVarianteYExistencia(5);
     CrearPedidoRequest cuerpo =
-        solicitud(variante, "ENVIO_A_DOMICILIO", DIRECCION_MEDELLIN, MetodoPago.NEQUI);
+        solicitud(variante, "ENVIO_A_DOMICILIO", DIRECCION_MEDELLIN, MetodoPago.WOMPI);
     String respuesta =
         mockMvc
             .perform(
@@ -912,7 +912,7 @@ class PedidoControladorTest {
           criteriosContraentrega,
           // Los mismos que el valor por omisión de application.yml: Addi fuera, y Sistecrédito
           // también — su interruptor arranca apagado mientras falte el monto mínimo (adr/0048).
-          EnumSet.of(MetodoPago.TARJETA, MetodoPago.PSE, MetodoPago.NEQUI, MetodoPago.BANCOLOMBIA),
+          EnumSet.of(MetodoPago.WOMPI),
           null);
     }
 
@@ -1022,7 +1022,7 @@ class PedidoControladorTest {
     @Bean
     PropiedadesTransferenciaManual propiedadesTransferenciaManual() {
       return new PropiedadesTransferenciaManual(
-          "Bancolombia", "ahorros", "123-456789-00", "TecnoSport SAS");
+          "Bancolombia", "ahorros", "123-456789-00", "Tecno Sport");
     }
 
     @Bean

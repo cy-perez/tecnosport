@@ -43,8 +43,7 @@ class MetodosDePagoDisponiblesTest {
    * Lo que la cuenta de Wompi tiene activado hoy, igual que el valor por omisión de {@code
    * application.yml}: Addi está fuera hasta que el sitio esté en línea (docs/11-pagos-y-envios.md).
    */
-  private static final Set<MetodoPago> HABILITADOS_HOY =
-      EnumSet.of(MetodoPago.TARJETA, MetodoPago.PSE, MetodoPago.NEQUI, MetodoPago.BANCOLOMBIA);
+  private static final Set<MetodoPago> HABILITADOS_HOY = EnumSet.of(MetodoPago.WOMPI);
 
   /**
    * Valor de prueba, NO el dato real: el mínimo del crédito lo define Sistecrédito y todavía no lo
@@ -196,22 +195,25 @@ class MetodosDePagoDisponiblesTest {
    * el "siempre" incluyendo Addi. Era cierta sobre el código y falsa sobre el negocio: se ofrecía
    * todo lo que el código sabía procesar, estuviera o no activado en la cuenta de Wompi.
    */
+  /**
+   * <b>Esta prueba se quedó sin escenario que montar, y la historia explica por qué.</b> Apagaba
+   * uno de los cuatro métodos de pasarela dejando los otros tres, para ver que el filtro respetaba
+   * la lista. Ese papel lo hizo primero ADDI —existía en el enum y no estaba en la lista— hasta que
+   * la {@code V61} lo quitó; luego se declaraba a mano quitando Bancolombia; y desde la {@code V66}
+   * ya no hay uno que apagar: los cuatro son {@code WOMPI}, así que el interruptor es binario.
+   *
+   * <p>Lo que afirmaba lo siguen afirmando entre las dos de abajo —apagado no se ofrece, encendido
+   * sí—, así que no se sustituye por una tercera copia del mismo escenario. Una prueba que solo
+   * puede montar el caso que ya monta otra no añade cobertura, añade un sitio más donde
+   * equivocarse.
+   */
   @Test
-  void soloSeOfrecenLosMetodosDePasarelaQueLaCuentaTieneActivados() {
-    // La cuenta de hoy los tiene los cuatro activados, así que el caso negativo se construye
-    // quitando uno. Hasta el 22 de septiembre de 2026 ese papel lo hacía ADDI, que existía en el
-    // enum y no estaba en la lista; al quitarlo del enum (V61) dejó de haber un método de pasarela
-    // desactivado por naturaleza, y el que la prueba necesita se declara aquí.
-    Set<MetodoPago> sinBancolombia =
-        EnumSet.of(MetodoPago.TARJETA, MetodoPago.PSE, MetodoPago.NEQUI);
-    MetodosDePagoDisponibles caso = crear(CRITERIOS_PERMISIVOS, sinBancolombia);
+  void elFiltroRespetaLaListaDeHabilitadosDeLaCuenta() {
+    MetodosDePagoDisponibles caso = crear(CRITERIOS_PERMISIVOS, HABILITADOS_HOY);
 
     Set<MetodoPago> disponibles = caso.ejecutar(comando(TipoEntrega.RETIRO_EN_PUNTO, null));
 
-    assertTrue(disponibles.contains(MetodoPago.TARJETA));
-    assertTrue(disponibles.contains(MetodoPago.PSE));
-    assertTrue(disponibles.contains(MetodoPago.NEQUI));
-    assertFalse(disponibles.contains(MetodoPago.BANCOLOMBIA));
+    assertTrue(disponibles.contains(MetodoPago.WOMPI));
     assertTrue(disponibles.contains(MetodoPago.TRANSFERENCIA_MANUAL));
   }
 
@@ -259,7 +261,7 @@ class MetodosDePagoDisponiblesTest {
     Set<MetodoPago> disponibles = caso.ejecutar(comando(TipoEntrega.RETIRO_EN_PUNTO, null));
 
     assertFalse(disponibles.contains(MetodoPago.SISTECREDITO));
-    assertTrue(disponibles.contains(MetodoPago.TARJETA));
+    assertTrue(disponibles.contains(MetodoPago.WOMPI));
   }
 
   /**
@@ -290,20 +292,21 @@ class MetodosDePagoDisponiblesTest {
     assertTrue(error.getMessage().contains("monto mínimo"));
   }
 
-  /** El día que la cuenta active un método más: una variable de entorno, sin tocar código. */
+  /**
+   * El día que la cuenta apague o encienda la pasarela: una variable de entorno, sin tocar código.
+   * Desde la {@code V66} es un interruptor de dos posiciones y no una lista de cuatro.
+   */
   @Test
-  void unMetodoDePasarelaSeOfreceEnCuantoLaConfiguracionLoHabilita() {
-    Set<MetodoPago> sinNequi =
-        EnumSet.of(MetodoPago.TARJETA, MetodoPago.PSE, MetodoPago.BANCOLOMBIA);
-    MetodosDePagoDisponibles apagado = crear(CRITERIOS_PERMISIVOS, sinNequi);
+  void laPasarelaSeOfreceEnCuantoLaConfiguracionLaHabilita() {
+    MetodosDePagoDisponibles apagado = crear(CRITERIOS_PERMISIVOS, Set.of());
     assertFalse(
-        apagado.ejecutar(comando(TipoEntrega.RETIRO_EN_PUNTO, null)).contains(MetodoPago.NEQUI));
+        apagado.ejecutar(comando(TipoEntrega.RETIRO_EN_PUNTO, null)).contains(MetodoPago.WOMPI));
 
     MetodosDePagoDisponibles encendido = crear(CRITERIOS_PERMISIVOS, HABILITADOS_HOY);
 
     Set<MetodoPago> disponibles = encendido.ejecutar(comando(TipoEntrega.RETIRO_EN_PUNTO, null));
 
-    assertTrue(disponibles.contains(MetodoPago.NEQUI));
+    assertTrue(disponibles.contains(MetodoPago.WOMPI));
   }
 
   /**
@@ -316,8 +319,7 @@ class MetodosDePagoDisponiblesTest {
 
     Set<MetodoPago> disponibles = caso.ejecutar(comando(TipoEntrega.RETIRO_EN_PUNTO, null));
 
-    assertFalse(disponibles.contains(MetodoPago.TARJETA));
-    assertFalse(disponibles.contains(MetodoPago.BANCOLOMBIA));
+    assertFalse(disponibles.contains(MetodoPago.WOMPI));
     assertTrue(disponibles.contains(MetodoPago.TRANSFERENCIA_MANUAL));
   }
 
@@ -346,7 +348,7 @@ class MetodosDePagoDisponiblesTest {
 
     Set<MetodoPago> habilitados = caso.habilitados();
 
-    assertTrue(habilitados.contains(MetodoPago.TARJETA));
+    assertTrue(habilitados.contains(MetodoPago.WOMPI));
     assertFalse(habilitados.contains(MetodoPago.SISTECREDITO));
     assertTrue(habilitados.contains(MetodoPago.CONTRAENTREGA));
   }
@@ -626,7 +628,7 @@ class MetodosDePagoDisponiblesTest {
         caso.ejecutar(comando(TipoEntrega.ENVIO_A_DOMICILIO, DIRECCION_MEDELLIN, 10));
 
     assertFalse(disponibles.contains(MetodoPago.CONTRAENTREGA));
-    assertTrue(disponibles.contains(MetodoPago.TARJETA), "los demás métodos siguen ahí");
+    assertTrue(disponibles.contains(MetodoPago.WOMPI), "los demás métodos siguen ahí");
   }
 
   /** Y el mismo cable, en cantidad razonable, sí la conserva: el flete cubre de sobra el piso. */

@@ -112,7 +112,7 @@ class AplicarEventoDeEnvioTest {
    * Lo mismo, con dos bultos: es el caso que `adr/0031` dice que es el normal con dos variantes.
    */
   private Pedido sembrarPedidoDespachadoConDosGuias() {
-    Pedido pedido = sembrarPedidoDespachado(MetodoPago.NEQUI);
+    Pedido pedido = sembrarPedidoDespachado(MetodoPago.WOMPI);
     envios.borrarDe(pedido.id());
     envios.guardar(
         Envio.crear(
@@ -152,7 +152,7 @@ class AplicarEventoDeEnvioTest {
 
   @Test
   void unEstadoQueNoMueveElPedidoSoloSeAnota() {
-    Pedido pedido = sembrarPedidoDespachado(MetodoPago.NEQUI);
+    Pedido pedido = sembrarPedidoDespachado(MetodoPago.WOMPI);
 
     ResultadoEventoDeEnvio resultado = caso.ejecutar(evento(EstadoEnvio.EN_TRANSITO, "ev-1"));
 
@@ -163,7 +163,7 @@ class AplicarEventoDeEnvioTest {
 
   @Test
   void entregadoMueveElPedidoAEntregado() {
-    Pedido pedido = sembrarPedidoDespachado(MetodoPago.NEQUI);
+    Pedido pedido = sembrarPedidoDespachado(MetodoPago.WOMPI);
 
     ResultadoEventoDeEnvio resultado = caso.ejecutar(evento(EstadoEnvio.ENTREGADO, "ev-1"));
 
@@ -231,7 +231,7 @@ class AplicarEventoDeEnvioTest {
 
   @Test
   void enDevolucionRechazaElPedidoYLiberaElInventario() {
-    Pedido pedido = sembrarPedidoDespachado(MetodoPago.NEQUI);
+    Pedido pedido = sembrarPedidoDespachado(MetodoPago.WOMPI);
     int disponibleAntes =
         inventarios.buscarPorVarianteId(varianteId).orElseThrow().saldoDisponible(AHORA);
 
@@ -251,7 +251,7 @@ class AplicarEventoDeEnvioTest {
    */
   @Test
   void elMismoEventoDosVecesNoAplicaDosVeces() {
-    Pedido pedido = sembrarPedidoDespachado(MetodoPago.NEQUI);
+    Pedido pedido = sembrarPedidoDespachado(MetodoPago.WOMPI);
     caso.ejecutar(evento(EstadoEnvio.ENTREGADO, "ev-1"));
 
     ResultadoEventoDeEnvio segundo = caso.ejecutar(evento(EstadoEnvio.ENTREGADO, "ev-1"));
@@ -268,7 +268,7 @@ class AplicarEventoDeEnvioTest {
    */
   @Test
   void unEntregadoQueLlegaTardeSeAnotaSinReventar() {
-    Pedido pedido = sembrarPedidoDespachado(MetodoPago.NEQUI);
+    Pedido pedido = sembrarPedidoDespachado(MetodoPago.WOMPI);
     pedido.transicionar(EstadoPedido.ENTREGADO, "admin", "entregado a mano", AHORA);
     pedidos.guardar(pedido);
 
@@ -282,7 +282,7 @@ class AplicarEventoDeEnvioTest {
   /** Los cuatro que piden ojo humano se registran igual y no mueven nada. */
   @Test
   void losEstadosDeAlertaSeRegistranSinMoverElPedido() {
-    Pedido pedido = sembrarPedidoDespachado(MetodoPago.NEQUI);
+    Pedido pedido = sembrarPedidoDespachado(MetodoPago.WOMPI);
 
     for (EstadoEnvio estado :
         List.of(
@@ -301,7 +301,7 @@ class AplicarEventoDeEnvioTest {
 
   @Test
   void elRastroConservaCuandoOcurrioYCuandoLlego() {
-    sembrarPedidoDespachado(MetodoPago.NEQUI);
+    sembrarPedidoDespachado(MetodoPago.WOMPI);
     Instant ocurrio = AHORA.minusSeconds(7200);
 
     caso.ejecutar(

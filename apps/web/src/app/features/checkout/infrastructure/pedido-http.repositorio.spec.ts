@@ -31,7 +31,7 @@ describe('PedidoHttpRepositorio: la llave de idempotencia', () => {
       indicaciones: null,
       barrio: null,
     },
-    metodoPago: 'NEQUI',
+    metodoPago: 'WOMPI',
     autorizaDatos: true,
   };
 
@@ -40,7 +40,7 @@ describe('PedidoHttpRepositorio: la llave de idempotencia', () => {
     numeroPedido: 'TS-2026-000001',
     estado: 'PAGO_PENDIENTE',
     correo: 'cliente@tecnosport.co',
-    metodoPago: 'NEQUI',
+    metodoPago: 'WOMPI',
     subtotal: { valor: '100000', moneda: 'COP' },
     costoEnvio: { valor: '10000', moneda: 'COP' },
     total: { valor: '110000', moneda: 'COP' },

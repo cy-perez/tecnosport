@@ -124,7 +124,7 @@ class ConciliarTransferenciaTest {
   @Test
   void unPedidoDeWompiSeRechaza() {
     ConciliarTransferencia caso = crear();
-    Pedido pedido = pedidoConReservaVigente(MetodoPago.NEQUI);
+    Pedido pedido = pedidoConReservaVigente(MetodoPago.WOMPI);
 
     assertThrows(
         MetodoDePagoNoEsTransferenciaManualException.class,

@@ -20,6 +20,15 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * <b>hay que devolver también la frase de los términos</b>, que se quitó junto con esto
  * (docs/11-pagos-y-envios.md).
  *
+ * <p><b>Desde el 28 de septiembre de 2026 el único valor posible es {@code WOMPI}</b>, porque el
+ * enum agrupó ahí los cuatro medios de la pasarela ({@code V66}). Esto quedó siendo un interruptor
+ * —lista vacía apaga, {@code WOMPI} enciende— con forma de lista, y se deja así a propósito:
+ * cambiarlo a un booleano como {@code SISTECREDITO_HABILITADO} obliga a tocar {@code
+ * WOMPI_METODOS_HABILITADOS} en el despliegue, y arrancar con la variable vieja dejaría la pasarela
+ * apagada y el checkout con solo transferencia y contraentrega, <b>sin que nada falle</b>. La
+ * comprobación de abajo sigue ganándose el sueldo igual: lo que rechaza no es un método de más en
+ * una lista larga, es escribir aquí algo que tiene su propio interruptor.
+ *
  * <p>Solo admite métodos que <b>cobre Wompi</b>: contraentrega y transferencia manual no las
  * habilita ni las apaga Wompi, y aceptarlas aquí daría un segundo interruptor para algo que ya
  * tiene el suyo ({@code CONTRAENTREGA_HABILITADA}). Desde {@code adr/0048} tampoco admite {@code

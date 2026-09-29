@@ -201,7 +201,7 @@ describe('EstadoPage', () => {
 
   it('sin pedido en memoria pero con pedidoId y correo en la URL, consulta el seguimiento', async () => {
     const pedidos = new RepositorioPedidosFalso(
-      seguimientoDePrueba({ estado: 'PAGADO', metodoPago: 'TARJETA' }),
+      seguimientoDePrueba({ estado: 'PAGADO', metodoPago: 'WOMPI' }),
     );
 
     await renderConProviders(pedidos, new RepositorioPagosFalso(), {
@@ -231,7 +231,7 @@ describe('EstadoPage', () => {
 
   it('el formulario consulta por número y pinta el pedido encontrado', async () => {
     const pedidos = new RepositorioPedidosFalso(
-      seguimientoDePrueba({ estado: 'PAGADO', metodoPago: 'TARJETA' }),
+      seguimientoDePrueba({ estado: 'PAGADO', metodoPago: 'WOMPI' }),
     );
     await renderConProviders(pedidos, new RepositorioPagosFalso());
 
@@ -274,7 +274,7 @@ describe('EstadoPage', () => {
   it('un pedido PAGO_FALLIDO muestra el botón de reintentar; uno confirmado no', async () => {
     const pedidos = new RepositorioPedidosFalso();
     await renderConPedidoEnMemoria(
-      pedidoDePrueba({ estado: 'PAGO_FALLIDO', metodoPago: 'TARJETA' }),
+      pedidoDePrueba({ estado: 'PAGO_FALLIDO', metodoPago: 'WOMPI' }),
       pedidos,
       new RepositorioPagosFalso(),
     );
@@ -299,11 +299,11 @@ describe('EstadoPage', () => {
 
     const pedidos = new RepositorioPedidosFalso(
       null,
-      pedidoDePrueba({ estado: 'PAGO_PENDIENTE', metodoPago: 'TARJETA' }),
+      pedidoDePrueba({ estado: 'PAGO_PENDIENTE', metodoPago: 'WOMPI' }),
     );
     const pagos = new RepositorioPagosFalso();
     await renderConPedidoEnMemoria(
-      pedidoDePrueba({ estado: 'PAGO_FALLIDO', metodoPago: 'TARJETA' }),
+      pedidoDePrueba({ estado: 'PAGO_FALLIDO', metodoPago: 'WOMPI' }),
       pedidos,
       pagos,
     );
@@ -370,7 +370,7 @@ describe('EstadoPage', () => {
 
   it('muestra el retracto del comprador cuando el seguimiento lo trae', async () => {
     const pedidos = new RepositorioPedidosFalso({
-      ...pedidoDePrueba({ estado: 'DEVUELTO', metodoPago: 'TARJETA' }),
+      ...pedidoDePrueba({ estado: 'DEVUELTO', metodoPago: 'WOMPI' }),
       envio: null,
       retractos: [
         {
@@ -395,7 +395,7 @@ describe('EstadoPage', () => {
 
   it('no muestra el bloque de retracto cuando no hay ninguno', async () => {
     const pedidos = new RepositorioPedidosFalso(
-      seguimientoDePrueba({ estado: 'PAGADO', metodoPago: 'TARJETA' }),
+      seguimientoDePrueba({ estado: 'PAGADO', metodoPago: 'WOMPI' }),
     );
 
     await renderConProviders(pedidos, new RepositorioPagosFalso(), {
@@ -413,7 +413,7 @@ describe('EstadoPage', () => {
     const pedidos = new RepositorioPedidosFalso(
       seguimientoDePrueba({
         estado: 'DESPACHADO',
-        metodoPago: 'TARJETA',
+        metodoPago: 'WOMPI',
         tipoEntrega: 'ENVIO_A_DOMICILIO',
         subtotal: { valor: 300_000, moneda: 'COP' },
         costoEnvio: { valor: 14_500, moneda: 'COP' },
@@ -453,7 +453,7 @@ describe('EstadoPage', () => {
 
   it('muestra la transportadora y la guia cuando el pedido ya se despacho', async () => {
     const pedidos = new RepositorioPedidosFalso({
-      ...pedidoDePrueba({ estado: 'DESPACHADO', metodoPago: 'TARJETA' }),
+      ...pedidoDePrueba({ estado: 'DESPACHADO', metodoPago: 'WOMPI' }),
       envio: {
         guias: [{ transportadora: 'Servientrega', guia: 'SE123456' }],
         despachadoEn: '2026-09-14T15:00:00Z',
@@ -479,7 +479,7 @@ describe('EstadoPage', () => {
    */
   it('con dos guias muestra las dos y avisa que son dos paquetes', async () => {
     const pedidos = new RepositorioPedidosFalso({
-      ...pedidoDePrueba({ estado: 'DESPACHADO', metodoPago: 'TARJETA' }),
+      ...pedidoDePrueba({ estado: 'DESPACHADO', metodoPago: 'WOMPI' }),
       envio: {
         guias: [
           { transportadora: 'Servientrega', guia: 'SE123456' },
@@ -505,7 +505,7 @@ describe('EstadoPage', () => {
 
   it('sin envio no pinta el bloque de envio', async () => {
     const pedidos = new RepositorioPedidosFalso(
-      seguimientoDePrueba({ estado: 'PAGADO', metodoPago: 'TARJETA' }),
+      seguimientoDePrueba({ estado: 'PAGADO', metodoPago: 'WOMPI' }),
     );
 
     await renderConProviders(pedidos, new RepositorioPagosFalso(), {

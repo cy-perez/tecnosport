@@ -68,7 +68,7 @@ class ReintentarPagoTest {
                     UUID.randomUUID())),
             TipoEntrega.ENVIO_A_DOMICILIO,
             DIRECCION_MEDELLIN,
-            MetodoPago.NEQUI,
+            MetodoPago.WOMPI,
             "cliente@tecnosport.co",
             AHORA);
     pedido.transicionar(EstadoPedido.PAGO_FALLIDO, "webhook-wompi", "pago rechazado", AHORA);

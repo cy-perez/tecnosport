@@ -27,10 +27,7 @@ import { esMetodoPagoSistecredito, esMetodoPagoWompi } from '../../domain/reglas
 import { urlWebCheckoutWompi } from '../../domain/wompi';
 
 const CLAVE_ETIQUETA: Record<MetodoPago, string> = {
-  TARJETA: 'checkout.metodoPago.tarjeta',
-  PSE: 'checkout.metodoPago.pse',
-  NEQUI: 'checkout.metodoPago.nequi',
-  BANCOLOMBIA: 'checkout.metodoPago.bancolombia',
+  WOMPI: 'checkout.metodoPago.wompi',
   SISTECREDITO: 'checkout.metodoPago.sistecredito',
   TRANSFERENCIA_MANUAL: 'checkout.metodoPago.transferencia_manual',
   CONTRAENTREGA: 'checkout.metodoPago.contraentrega',

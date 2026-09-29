@@ -166,7 +166,7 @@ class EnviarComprobantesDeCompraTest {
   /** Un pedido que todavía no es una compra no tiene nada que comprobar. */
   @Test
   void noMandaComprobanteDeUnPedidoConElPagoPendiente() {
-    pedidoEn(MetodoPago.TARJETA, TipoEntrega.ENVIO_A_DOMICILIO);
+    pedidoEn(MetodoPago.WOMPI, TipoEntrega.ENVIO_A_DOMICILIO);
 
     ResultadoComprobantes resultado = casoDeUso().ejecutar();
 
@@ -177,7 +177,7 @@ class EnviarComprobantesDeCompraTest {
   /** Ni uno que se deshizo: ahí "gracias por tu compra" sería el mensaje equivocado. */
   @Test
   void noMandaComprobanteDeUnPedidoCancelado() {
-    pedidoEn(MetodoPago.TARJETA, TipoEntrega.ENVIO_A_DOMICILIO, EstadoPedido.CANCELADO);
+    pedidoEn(MetodoPago.WOMPI, TipoEntrega.ENVIO_A_DOMICILIO, EstadoPedido.CANCELADO);
 
     ResultadoComprobantes resultado = casoDeUso().ejecutar();
 
@@ -193,7 +193,7 @@ class EnviarComprobantesDeCompraTest {
   @Test
   void mandaElComprobanteDeUnPagoEnLineaQueYaPasoAPreparacion() {
     pedidoEn(
-        MetodoPago.TARJETA,
+        MetodoPago.WOMPI,
         TipoEntrega.ENVIO_A_DOMICILIO,
         EstadoPedido.PAGADO,
         EstadoPedido.EN_PREPARACION);

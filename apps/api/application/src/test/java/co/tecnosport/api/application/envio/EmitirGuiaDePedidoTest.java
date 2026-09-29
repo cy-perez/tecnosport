@@ -129,7 +129,7 @@ class EmitirGuiaDePedidoTest {
                     GeneradorIdentificador.nuevo())),
             tipoEntrega,
             direccion,
-            MetodoPago.TARJETA,
+            MetodoPago.WOMPI,
             estado,
             List.of(
                 new HistorialPedido(

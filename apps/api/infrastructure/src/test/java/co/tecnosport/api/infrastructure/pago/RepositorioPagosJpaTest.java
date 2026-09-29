@@ -72,7 +72,7 @@ class RepositorioPagosJpaTest {
                     UUID.randomUUID())),
             TipoEntrega.ENVIO_A_DOMICILIO,
             DIRECCION_MEDELLIN,
-            MetodoPago.NEQUI,
+            MetodoPago.WOMPI,
             "cliente@tecnosport.co",
             Instant.now());
     repositorioPedidos.guardar(pedido);
@@ -84,13 +84,13 @@ class RepositorioPagosJpaTest {
     UUID pedidoId = crearYGuardarPedido();
     ReferenciaPago referencia = new ReferenciaPago("TS-" + UUID.randomUUID());
     Pago pago =
-        Pago.crear(pedidoId, referencia, MetodoPago.NEQUI, Dinero.deCop(100_000), Instant.now());
+        Pago.crear(pedidoId, referencia, MetodoPago.WOMPI, Dinero.deCop(100_000), Instant.now());
 
     repositorio.guardar(pago);
 
     Pago encontrado = repositorio.buscarPorReferencia(referencia).orElseThrow();
     assertThat(encontrado.pedidoId()).isEqualTo(pedidoId);
-    assertThat(encontrado.metodoPago()).isEqualTo(MetodoPago.NEQUI);
+    assertThat(encontrado.metodoPago()).isEqualTo(MetodoPago.WOMPI);
     assertThat(encontrado.monto()).isEqualTo(Dinero.deCop(100_000));
     assertThat(encontrado.estado()).isEqualTo(EstadoPago.PENDIENTE);
     assertThat(encontrado.eventos()).isEmpty();
@@ -105,7 +105,7 @@ class RepositorioPagosJpaTest {
     UUID pedidoId = crearYGuardarPedido();
     ReferenciaPago referencia = new ReferenciaPago("TS-" + UUID.randomUUID());
     Pago pago =
-        Pago.crear(pedidoId, referencia, MetodoPago.NEQUI, Dinero.deCop(100_000), Instant.now());
+        Pago.crear(pedidoId, referencia, MetodoPago.WOMPI, Dinero.deCop(100_000), Instant.now());
 
     repositorio.guardar(pago);
 
@@ -123,7 +123,7 @@ class RepositorioPagosJpaTest {
     UUID pedidoId = crearYGuardarPedido();
     ReferenciaPago referencia = new ReferenciaPago("TS-" + UUID.randomUUID());
     Pago pago =
-        Pago.crear(pedidoId, referencia, MetodoPago.NEQUI, Dinero.deCop(100_000), Instant.now());
+        Pago.crear(pedidoId, referencia, MetodoPago.WOMPI, Dinero.deCop(100_000), Instant.now());
     pago.registrarMedioReportadoPorLaPasarela("BANCOLOMBIA_TRANSFER");
 
     repositorio.guardar(pago);
@@ -131,7 +131,7 @@ class RepositorioPagosJpaTest {
     Pago encontrado = repositorio.buscarPorReferencia(referencia).orElseThrow();
     assertThat(encontrado.medioReportadoPorLaPasarela()).contains("BANCOLOMBIA_TRANSFER");
     // El método elegido no se toca: son dos hechos distintos.
-    assertThat(encontrado.metodoPago()).isEqualTo(MetodoPago.NEQUI);
+    assertThat(encontrado.metodoPago()).isEqualTo(MetodoPago.WOMPI);
   }
 
   @Test
@@ -139,7 +139,7 @@ class RepositorioPagosJpaTest {
     UUID pedidoId = crearYGuardarPedido();
     ReferenciaPago referencia = new ReferenciaPago("TS-" + UUID.randomUUID());
     Instant ahora = Instant.now();
-    Pago pago = Pago.crear(pedidoId, referencia, MetodoPago.NEQUI, Dinero.deCop(100_000), ahora);
+    Pago pago = Pago.crear(pedidoId, referencia, MetodoPago.WOMPI, Dinero.deCop(100_000), ahora);
     pago.aplicarEvento(new EventoPago("evt-1", EstadoPago.APROBADO, ahora.plusSeconds(30)));
 
     repositorio.guardar(pago);
@@ -157,14 +157,14 @@ class RepositorioPagosJpaTest {
         Pago.crear(
             pedidoId,
             new ReferenciaPago("TS-" + UUID.randomUUID()),
-            MetodoPago.NEQUI,
+            MetodoPago.WOMPI,
             Dinero.deCop(100_000),
             Instant.now());
     Pago segundo =
         Pago.crear(
             pedidoId,
             new ReferenciaPago("TS-" + UUID.randomUUID()),
-            MetodoPago.NEQUI,
+            MetodoPago.WOMPI,
             Dinero.deCop(100_000),
             Instant.now());
     repositorio.guardar(primero);
@@ -241,7 +241,7 @@ class RepositorioPagosJpaTest {
             UUID.randomUUID(),
             pedidoId,
             referencia,
-            MetodoPago.NEQUI,
+            MetodoPago.WOMPI,
             Dinero.deCop(100_000),
             EstadoPago.PENDIENTE,
             List.of(),
@@ -256,7 +256,7 @@ class RepositorioPagosJpaTest {
             UUID.randomUUID(),
             pedidoId,
             referencia,
-            MetodoPago.NEQUI,
+            MetodoPago.WOMPI,
             Dinero.deCop(100_000),
             EstadoPago.PENDIENTE,
             List.of(),
@@ -275,7 +275,7 @@ class RepositorioPagosJpaTest {
     UUID pedidoId = crearYGuardarPedido();
     ReferenciaPago referencia = new ReferenciaPago("TS-" + UUID.randomUUID());
     Pago pago =
-        Pago.crear(pedidoId, referencia, MetodoPago.NEQUI, Dinero.deCop(100_000), Instant.now());
+        Pago.crear(pedidoId, referencia, MetodoPago.WOMPI, Dinero.deCop(100_000), Instant.now());
     pago.registrarIdTransaccionPasarela("1234-1610641025-49201");
 
     repositorio.guardar(pago);
@@ -295,7 +295,7 @@ class RepositorioPagosJpaTest {
         Pago.crear(
             pedidoId,
             new ReferenciaPago("TS-" + UUID.randomUUID()),
-            MetodoPago.NEQUI,
+            MetodoPago.WOMPI,
             Dinero.deCop(100_000),
             viejo);
     califica.registrarIdTransaccionPasarela("wompi-tx-califica");
@@ -305,7 +305,7 @@ class RepositorioPagosJpaTest {
         Pago.crear(
             pedidoId,
             new ReferenciaPago("TS-" + UUID.randomUUID()),
-            MetodoPago.NEQUI,
+            MetodoPago.WOMPI,
             Dinero.deCop(100_000),
             viejo);
     repositorio.guardar(sinId);
@@ -314,7 +314,7 @@ class RepositorioPagosJpaTest {
         Pago.crear(
             pedidoId,
             new ReferenciaPago("TS-" + UUID.randomUUID()),
-            MetodoPago.NEQUI,
+            MetodoPago.WOMPI,
             Dinero.deCop(100_000),
             ahora);
     muyReciente.registrarIdTransaccionPasarela("wompi-tx-reciente");
@@ -324,7 +324,7 @@ class RepositorioPagosJpaTest {
         Pago.crear(
             pedidoId,
             new ReferenciaPago("TS-" + UUID.randomUUID()),
-            MetodoPago.NEQUI,
+            MetodoPago.WOMPI,
             Dinero.deCop(100_000),
             viejo);
     yaAprobado.registrarIdTransaccionPasarela("wompi-tx-aprobado");

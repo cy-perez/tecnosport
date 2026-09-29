@@ -19,7 +19,7 @@ class PagoTest {
 
   private Pago crear() {
     return Pago.crear(
-        UUID.randomUUID(), REFERENCIA, MetodoPago.NEQUI, Dinero.deCop(100_000), AHORA);
+        UUID.randomUUID(), REFERENCIA, MetodoPago.WOMPI, Dinero.deCop(100_000), AHORA);
   }
 
   @Test
@@ -139,26 +139,26 @@ class PagoTest {
     pago.registrarMedioReportadoPorLaPasarela("CARD");
 
     assertEquals("CARD", pago.medioReportadoPorLaPasarela().orElseThrow());
-    assertEquals(MetodoPago.NEQUI, pago.metodoPago());
+    assertEquals(MetodoPago.WOMPI, pago.metodoPago());
   }
 
   /** Un evento que no trae el medio no borra lo que ya se sabía: "no viene" no es "no fue". */
   @Test
   void unMedioNuloOVacioNoBorraElQueYaSeConocia() {
     Pago pago = crear();
-    pago.registrarMedioReportadoPorLaPasarela("PSE");
+    pago.registrarMedioReportadoPorLaPasarela("WOMPI");
 
     pago.registrarMedioReportadoPorLaPasarela(null);
     pago.registrarMedioReportadoPorLaPasarela("   ");
 
-    assertEquals("PSE", pago.medioReportadoPorLaPasarela().orElseThrow());
+    assertEquals("WOMPI", pago.medioReportadoPorLaPasarela().orElseThrow());
   }
 
   /** Lo reporta la pasarela: este agregado no lo discute, se queda con lo último que dijo. */
   @Test
   void seQuedaConElUltimoMedioQueReportoLaPasarela() {
     Pago pago = crear();
-    pago.registrarMedioReportadoPorLaPasarela("NEQUI");
+    pago.registrarMedioReportadoPorLaPasarela("WOMPI");
 
     pago.registrarMedioReportadoPorLaPasarela("CARD");
 

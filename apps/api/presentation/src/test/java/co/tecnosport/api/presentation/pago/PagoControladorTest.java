@@ -135,7 +135,7 @@ class PagoControladorTest {
 
   @Test
   void webhookAprobadoTransicionaElPagoYElPedido() throws Exception {
-    Pedido pedido = pedidoConMetodo(MetodoPago.NEQUI);
+    Pedido pedido = pedidoConMetodo(MetodoPago.WOMPI);
     Pago pago = pagoPendienteParaElPedido(pedido);
 
     mockMvc
@@ -152,7 +152,7 @@ class PagoControladorTest {
 
   @Test
   void webhookConFirmaInvalidaResponde200SinTransicionar() throws Exception {
-    Pedido pedido = pedidoConMetodo(MetodoPago.NEQUI);
+    Pedido pedido = pedidoConMetodo(MetodoPago.WOMPI);
     Pago pago = pagoPendienteParaElPedido(pedido);
 
     mockMvc
@@ -168,7 +168,7 @@ class PagoControladorTest {
 
   @Test
   void webhookDeOtroTipoDeEventoNoProcesaNada() throws Exception {
-    Pedido pedido = pedidoConMetodo(MetodoPago.NEQUI);
+    Pedido pedido = pedidoConMetodo(MetodoPago.WOMPI);
     pagoPendienteParaElPedido(pedido);
     String cuerpoOtroEvento =
         """
@@ -188,7 +188,7 @@ class PagoControladorTest {
 
   @Test
   void crearIntentoDevuelveLaReferenciaYLaFirma() throws Exception {
-    Pedido pedido = pedidoConMetodo(MetodoPago.NEQUI);
+    Pedido pedido = pedidoConMetodo(MetodoPago.WOMPI);
 
     mockMvc
         .perform(
@@ -250,7 +250,7 @@ class PagoControladorTest {
 
   @Test
   void registrarIdTransaccionGuardaElIdEnElPago() throws Exception {
-    Pedido pedido = pedidoConMetodo(MetodoPago.NEQUI);
+    Pedido pedido = pedidoConMetodo(MetodoPago.WOMPI);
     Pago pago = pagoPendienteParaElPedido(pedido);
 
     mockMvc
@@ -286,7 +286,7 @@ class PagoControladorTest {
 
   @Test
   void registrarIdTransaccionVacioDevuelve422() throws Exception {
-    Pedido pedido = pedidoConMetodo(MetodoPago.NEQUI);
+    Pedido pedido = pedidoConMetodo(MetodoPago.WOMPI);
     Pago pago = pagoPendienteParaElPedido(pedido);
 
     mockMvc

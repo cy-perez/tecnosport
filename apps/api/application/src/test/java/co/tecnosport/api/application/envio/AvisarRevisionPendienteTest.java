@@ -95,7 +95,7 @@ class AvisarRevisionPendienteTest {
                     UUID.randomUUID())),
             TipoEntrega.ENVIO_A_DOMICILIO,
             MEDELLIN,
-            MetodoPago.NEQUI,
+            MetodoPago.WOMPI,
             "cliente@tecnosport.co",
             AHORA.minus(Duration.ofDays(10)));
     pedido.transicionar(

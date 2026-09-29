@@ -61,7 +61,7 @@ class RepositorioCarritoFalso implements RepositorioCarrito {
 }
 
 class RepositorioPedidosFalso implements RepositorioPedidos {
-  constructor(private disponibles: MetodoPago[] = ['TARJETA', 'CONTRAENTREGA']) {}
+  constructor(private disponibles: MetodoPago[] = ['WOMPI', 'CONTRAENTREGA']) {}
 
   async crear(): Promise<Pedido> {
     throw new Error('no usado en esta prueba');
@@ -181,11 +181,11 @@ describe('MetodoPagoPage', () => {
 
     await renderConDatosEntrega(
       new RepositorioCarritoFalso(CARRITO_CON_LINEAS),
-      new RepositorioPedidosFalso(['TARJETA', 'CONTRAENTREGA']),
+      new RepositorioPedidosFalso(['WOMPI', 'CONTRAENTREGA']),
     );
 
-    expect(await screen.findByRole('button', { name: 'Tarjeta de crédito o débito' })).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Pago contra entrega' })).toBeTruthy();
+    expect(await screen.findByRole('button', { name: /^Tarjeta, PSE o Bancolombia/ })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Pago contraentrega' })).toBeTruthy();
   });
 
   /**
@@ -198,7 +198,7 @@ describe('MetodoPagoPage', () => {
 
     await renderConDatosEntrega(
       new RepositorioCarritoFalso(CARRITO_CON_LINEAS),
-      new RepositorioPedidosFalso(['TARJETA', 'CONTRAENTREGA']),
+      new RepositorioPedidosFalso(['WOMPI', 'CONTRAENTREGA']),
     );
 
     expect(
@@ -212,10 +212,10 @@ describe('MetodoPagoPage', () => {
 
     await renderConDatosEntrega(
       new RepositorioCarritoFalso(CARRITO_CON_LINEAS),
-      new RepositorioPedidosFalso(['TARJETA', 'PSE']),
+      new RepositorioPedidosFalso(['WOMPI', 'TRANSFERENCIA_MANUAL']),
     );
 
-    await screen.findByRole('button', { name: 'Tarjeta de crédito o débito' });
+    await screen.findByRole('button', { name: /^Tarjeta, PSE o Bancolombia/ });
     expect(screen.queryByText(/solo en efectivo/)).toBeFalsy();
   });
 
@@ -224,14 +224,14 @@ describe('MetodoPagoPage', () => {
 
     const { fixture } = await renderConDatosEntrega(
       new RepositorioCarritoFalso(CARRITO_CON_LINEAS),
-      new RepositorioPedidosFalso(['TARJETA', 'CONTRAENTREGA']),
+      new RepositorioPedidosFalso(['WOMPI', 'CONTRAENTREGA']),
     );
-    await screen.findByRole('button', { name: 'Tarjeta de crédito o débito' });
+    await screen.findByRole('button', { name: /^Tarjeta, PSE o Bancolombia/ });
     const checkout = fixture.debugElement.injector.get(CheckoutStore);
 
     expect(screen.getByRole('button', { name: 'Continuar' }).hasAttribute('disabled')).toBe(true);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Pago contra entrega' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Pago contraentrega' }));
 
     expect(screen.getByRole('button', { name: 'Continuar' }).hasAttribute('disabled')).toBe(false);
     expect(checkout.metodoPago()).toBe('CONTRAENTREGA');
@@ -246,13 +246,13 @@ describe('MetodoPagoPage', () => {
 
     await renderConDatosEntrega(
       new RepositorioCarritoFalso(CARRITO_CON_LINEAS),
-      new RepositorioPedidosFalso(['TARJETA', 'SISTECREDITO']),
+      new RepositorioPedidosFalso(['WOMPI', 'SISTECREDITO']),
     );
-    await screen.findByRole('button', { name: 'Tarjeta de crédito o débito' });
+    await screen.findByRole('button', { name: /^Tarjeta, PSE o Bancolombia/ });
 
     expect(screen.queryByLabelText('Número de documento')).toBeFalsy();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Sistecrédito (paga a cuotas)' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Sistecrédito' }));
 
     expect(await screen.findByLabelText('Número de documento')).toBeTruthy();
     expect(screen.getByLabelText('Tipo de documento')).toBeTruthy();
@@ -271,7 +271,7 @@ describe('MetodoPagoPage', () => {
       new RepositorioPedidosFalso(['SISTECREDITO']),
     );
     const checkout = fixture.debugElement.injector.get(CheckoutStore);
-    fireEvent.click(await screen.findByRole('button', { name: 'Sistecrédito (paga a cuotas)' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Sistecrédito' }));
     await screen.findByLabelText('Número de documento');
 
     fireEvent.click(screen.getByRole('button', { name: 'Continuar' }));
@@ -289,7 +289,7 @@ describe('MetodoPagoPage', () => {
       new RepositorioPedidosFalso(['SISTECREDITO']),
     );
     const checkout = fixture.debugElement.injector.get(CheckoutStore);
-    fireEvent.click(await screen.findByRole('button', { name: 'Sistecrédito (paga a cuotas)' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Sistecrédito' }));
     const campo = await screen.findByLabelText('Número de documento');
 
     fireEvent.input(campo, { target: { value: '1017254896' } });
@@ -307,12 +307,12 @@ describe('MetodoPagoPage', () => {
 
     const { fixture } = await renderConDatosEntrega(
       new RepositorioCarritoFalso(CARRITO_CON_LINEAS),
-      new RepositorioPedidosFalso(['TARJETA', 'SISTECREDITO']),
+      new RepositorioPedidosFalso(['WOMPI', 'SISTECREDITO']),
     );
     const checkout = fixture.debugElement.injector.get(CheckoutStore);
     checkout.anotarDocumentoComprador({ tipoDocumento: 'CC', documento: '1017254896' });
 
-    fireEvent.click(await screen.findByRole('button', { name: 'Tarjeta de crédito o débito' }));
+    fireEvent.click(await screen.findByRole('button', { name: /^Tarjeta, PSE o Bancolombia/ }));
 
     expect(checkout.documentoComprador()).toBeNull();
   });
@@ -324,9 +324,9 @@ describe('MetodoPagoPage', () => {
 
     const { container } = await renderConDatosEntrega(
       new RepositorioCarritoFalso(CARRITO_CON_LINEAS),
-      new RepositorioPedidosFalso(['TARJETA', 'CONTRAENTREGA']),
+      new RepositorioPedidosFalso(['WOMPI', 'CONTRAENTREGA']),
     );
-    await screen.findByRole('button', { name: 'Tarjeta de crédito o débito' });
+    await screen.findByRole('button', { name: /^Tarjeta, PSE o Bancolombia/ });
 
     await esperarSinViolaciones(container);
   });

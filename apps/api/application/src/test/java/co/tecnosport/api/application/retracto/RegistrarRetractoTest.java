@@ -49,7 +49,7 @@ class RegistrarRetractoTest {
   private Pedido pedidoEntregado() {
     Pedido pedido =
         PedidosDePrueba.entregado(
-            MetodoPago.NEQUI, PedidosDePrueba.linea(UUID.randomUUID(), UUID.randomUUID()), ENTREGA);
+            MetodoPago.WOMPI, PedidosDePrueba.linea(UUID.randomUUID(), UUID.randomUUID()), ENTREGA);
     pedidos.sembrar(pedido);
     return pedido;
   }
@@ -72,7 +72,7 @@ class RegistrarRetractoTest {
     // El plazo se cuenta desde la entrega: sin entrega el derecho ni empezó a correr.
     Pedido pedido =
         PedidosDePrueba.despachado(
-            MetodoPago.NEQUI, PedidosDePrueba.linea(UUID.randomUUID(), UUID.randomUUID()), ENTREGA);
+            MetodoPago.WOMPI, PedidosDePrueba.linea(UUID.randomUUID(), UUID.randomUUID()), ENTREGA);
     pedidos.sembrar(pedido);
 
     assertThrows(
