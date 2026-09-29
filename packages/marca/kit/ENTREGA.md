@@ -195,7 +195,7 @@ comercial y el NIT, que en este caso es la cédula con su dígito de verificaci�
 
 ```
 Tecno Sport
-NIT 1054994043-1
+NIT 1054994043-9
 Cra. 26C #38B-31
 Medellín, Antioquia, Colombia
 ```
