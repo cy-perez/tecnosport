@@ -2,7 +2,10 @@ package co.tecnosport.api.domain.catalogo;
 
 import co.tecnosport.api.domain.compartido.ExcepcionDeDominio;
 import co.tecnosport.api.domain.compartido.GeneradorIdentificador;
+import co.tecnosport.api.domain.compartido.Hashtag;
 import co.tecnosport.api.domain.compartido.Slug;
+import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
@@ -31,8 +34,25 @@ public final class Categoria {
   private final Slug slug;
   private final LineaCatalogo linea;
   private final UUID padreId;
+  private final List<Hashtag> hashtags;
 
+  /**
+   * El constructor de toda la vida, sin etiquetas. Delega en el de abajo con la lista vacía y sigue
+   * aquí <b>a propósito</b>: lo llaman ciento diecisiete sitios, casi todos pruebas que montan una
+   * categoría para hablar de otra cosa. Obligarlas a pasar una lista vacía habría sido un cambio de
+   * cuarenta y ocho archivos para no decir nada en ninguno.
+   */
   public Categoria(UUID id, String nombre, Slug slug, LineaCatalogo linea, UUID padreId) {
+    this(id, nombre, slug, linea, padreId, List.of());
+  }
+
+  public Categoria(
+      UUID id,
+      String nombre,
+      Slug slug,
+      LineaCatalogo linea,
+      UUID padreId,
+      List<Hashtag> hashtags) {
     this.id = Objects.requireNonNull(id, "El id de la categoría no puede ser nulo.");
     if (nombre == null || nombre.isBlank()) {
       throw new ExcepcionDeDominio("El nombre de la categoría no puede estar vacío.");
@@ -44,6 +64,20 @@ public final class Categoria {
     this.slug = Objects.requireNonNull(slug, "El slug de la categoría no puede ser nulo.");
     this.linea = Objects.requireNonNull(linea, "La línea de la categoría no puede ser nula.");
     this.padreId = padreId;
+    this.hashtags = sinRepetirYEnOrden(hashtags);
+  }
+
+  /**
+   * Quita las repetidas conservando el orden en que se escribieron. Publicar {@code #JBL #JBL} no
+   * es un error que merezca reventar —quien las teclea puede haberse repetido sin más— pero sí algo
+   * que no tiene por qué llegar al post: las redes cuentan las etiquetas contra su tope y una
+   * duplicada gasta un cupo sin aportar alcance.
+   */
+  private static List<Hashtag> sinRepetirYEnOrden(List<Hashtag> hashtags) {
+    if (hashtags == null || hashtags.isEmpty()) {
+      return List.of();
+    }
+    return List.copyOf(new LinkedHashSet<>(hashtags));
   }
 
   /** Una categoría de primer nivel: cuelga de la línea y de nadie más. */
@@ -60,9 +94,21 @@ public final class Categoria {
     return new Categoria(GeneradorIdentificador.nuevo(), nombre, slug, padre.linea(), padre.id());
   }
 
-  /** La misma categoría con otro nombre y otro slug. El id, la línea y el padre no se mueven. */
+  /**
+   * La misma categoría con otro nombre y otro slug. El id, la línea, el padre y las etiquetas no se
+   * mueven — renombrar "Camisas" no tiene por qué borrar lo que se publicaba con ellas.
+   */
   public Categoria renombrada(String nuevoNombre, Slug nuevoSlug) {
-    return new Categoria(id, nuevoNombre, nuevoSlug, linea, padreId);
+    return new Categoria(id, nuevoNombre, nuevoSlug, linea, padreId, hashtags);
+  }
+
+  /**
+   * La misma categoría con otras etiquetas. Es un cambio de marketing, no de catálogo: no toca el
+   * nombre, ni el slug, ni el sitio en el árbol, así que tiene su propio camino y no viaja de
+   * polizón en {@link #renombrada}.
+   */
+  public Categoria conHashtags(List<Hashtag> nuevos) {
+    return new Categoria(id, nombre, slug, linea, padreId, nuevos);
   }
 
   /**
@@ -72,8 +118,8 @@ public final class Categoria {
    */
   public Categoria movidaBajo(Optional<Categoria> nuevoPadre, LineaCatalogo lineaSiEsRaiz) {
     return nuevoPadre
-        .map(padre -> new Categoria(id, nombre, slug, padre.linea(), padre.id()))
-        .orElseGet(() -> new Categoria(id, nombre, slug, lineaSiEsRaiz, null));
+        .map(padre -> new Categoria(id, nombre, slug, padre.linea(), padre.id(), hashtags))
+        .orElseGet(() -> new Categoria(id, nombre, slug, lineaSiEsRaiz, null, hashtags));
   }
 
   public UUID id() {
@@ -99,6 +145,15 @@ public final class Categoria {
 
   public boolean esRaiz() {
     return padreId == null;
+  }
+
+  /**
+   * Las etiquetas con que se difunden los productos de esta categoría. Vacía mientras nadie las
+   * escriba, y eso no es un defecto: un pie sin etiquetas se publica igual, solo llega a menos
+   * gente. Que estuvieran en el código habría significado un despliegue por cada ajuste.
+   */
+  public List<Hashtag> hashtags() {
+    return hashtags;
   }
 
   @Override

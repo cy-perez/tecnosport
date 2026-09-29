@@ -91,7 +91,12 @@ public class AdminCategoriaControlador {
     Categoria categoria =
         editarCategoria.ejecutar(
             new EditarCategoriaComando(
-                id, cuerpo.nombre(), cuerpo.slug(), linea(cuerpo.linea()), cuerpo.padreId()));
+                id,
+                cuerpo.nombre(),
+                cuerpo.slug(),
+                linea(cuerpo.linea()),
+                cuerpo.padreId(),
+                cuerpo.hashtags()));
     log.info("Categoría editada: {} ({})", categoria.slug().valor(), categoria.id());
     return mapeador.aRespuesta(categoria);
   }
