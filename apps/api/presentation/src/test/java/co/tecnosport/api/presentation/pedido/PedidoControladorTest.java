@@ -219,10 +219,17 @@ class PedidoControladorTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(json.writeValueAsString(cuerpo)))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.datosTransferencia.banco").value("Bancolombia"))
-        .andExpect(jsonPath("$.datosTransferencia.tipoCuenta").value("ahorros"))
-        .andExpect(jsonPath("$.datosTransferencia.numeroCuenta").value("123-456789-00"))
-        .andExpect(jsonPath("$.datosTransferencia.titular").value("Tecno Sport"))
+        // Las cuentas van en lista desde el 28 de septiembre de 2026: Nequi, Daviplata y BBVA.
+        // Se comprueban las dos, y en orden: el que transfiere elige, asi que el orden en que se
+        // le ofrecen es parte de lo que se publica y no un detalle de serializacion.
+        .andExpect(jsonPath("$.datosTransferencia.cuentas.length()").value(2))
+        .andExpect(jsonPath("$.datosTransferencia.cuentas[0].entidad").value("Nequi"))
+        .andExpect(jsonPath("$.datosTransferencia.cuentas[0].tipoCuenta").value("billetera"))
+        .andExpect(jsonPath("$.datosTransferencia.cuentas[0].numeroCuenta").value("300 000 0000"))
+        .andExpect(jsonPath("$.datosTransferencia.cuentas[0].titular").value("Tecno Sport"))
+        .andExpect(jsonPath("$.datosTransferencia.cuentas[1].entidad").value("BBVA"))
+        .andExpect(jsonPath("$.datosTransferencia.cuentas[1].tipoCuenta").value("ahorros"))
+        .andExpect(jsonPath("$.datosTransferencia.cuentas[1].numeroCuenta").value("123-456789-00"))
         .andExpect(
             jsonPath("$.datosTransferencia.referencia").value(matchesPattern("TS-\\d{4}-\\d{6}")));
   }
@@ -1022,7 +1029,9 @@ class PedidoControladorTest {
     @Bean
     PropiedadesTransferenciaManual propiedadesTransferenciaManual() {
       return new PropiedadesTransferenciaManual(
-          "Bancolombia", "ahorros", "123-456789-00", "Tecno Sport");
+          List.of(
+              new CuentaDeTransferencia("Nequi", "billetera", "300 000 0000", "Tecno Sport"),
+              new CuentaDeTransferencia("BBVA", "ahorros", "123-456789-00", "Tecno Sport")));
     }
 
     @Bean

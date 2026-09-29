@@ -31,10 +31,14 @@ function pedidoDePrueba(overrides: Partial<Pedido> = {}): Pedido {
     creadoEn: '2026-01-01T00:00:00Z',
     contacto: null,
     datosTransferencia: {
-      banco: 'Bancolombia',
-      tipoCuenta: 'Ahorros',
-      numeroCuenta: '000-000000-00',
-      titular: 'Tecno Sport',
+      cuentas: [
+        {
+          entidad: 'Bancolombia',
+          tipoCuenta: 'Ahorros',
+          numeroCuenta: '000-000000-00',
+          titular: 'Tecno Sport',
+        },
+      ],
       referencia: 'TS-2026-000001',
     },
     ...overrides,
@@ -137,6 +141,50 @@ describe('TransferenciaPage', () => {
     expect(await screen.findByText('Bancolombia')).toBeTruthy();
     expect(screen.getByText('000-000000-00')).toBeTruthy();
     expect(screen.getByText('TS-2026-000001')).toBeTruthy();
+  });
+
+  /**
+   * <b>Se pintan TODAS las cuentas, no la primera.</b> Desde el 28 de septiembre de 2026 el sitio
+   * acepta tres —Nequi, Daviplata y una de ahorros de BBVA— y el comprador elige a cuál
+   * transfiere; enseñar una sola lo dejaría sin la opción que quizá es la única que tiene.
+   *
+   * <p>Lo que esta prueba cuida es justo lo que un `@for` mal escrito rompe sin fallar: pintar el
+   * primero y callar el resto. Con una sola cuenta —que es como estuvo el sitio hasta hoy— las dos
+   * versiones se ven igual, así que el escenario necesita dos.
+   *
+   * <p>Y la referencia va <b>una sola vez</b>: es del pedido y vale para todas. Repetirla en cada
+   * caja invitaría a pensar que cada cuenta lleva la suya.
+   */
+  it('muestra todas las cuentas ofrecidas, y la referencia una sola vez', async () => {
+    const pedido = pedidoDePrueba();
+    const conDosCuentas = {
+      ...pedido,
+      datosTransferencia: {
+        cuentas: [
+          ...pedido.datosTransferencia!.cuentas,
+          {
+            entidad: 'Nequi',
+            tipoCuenta: 'billetera',
+            numeroCuenta: '300 000 0000',
+            titular: 'Tecno Sport',
+          },
+        ],
+        referencia: pedido.datosTransferencia!.referencia,
+      },
+    };
+
+    await renderConProviders(
+      new RepositorioPedidosFalso(),
+      {},
+      anfitrionConPedidoEnMemoria(conDosCuentas),
+    );
+
+    expect(await screen.findByText('Bancolombia')).toBeTruthy();
+    expect(screen.getByText('000-000000-00')).toBeTruthy();
+    expect(screen.getByText('Nequi')).toBeTruthy();
+    expect(screen.getByText('300 000 0000')).toBeTruthy();
+
+    expect(screen.getAllByText('TS-2026-000001')).toHaveLength(1);
   });
 
   it('sin pedido en memoria pero con pedidoId y correo en la URL, consulta el seguimiento', async () => {

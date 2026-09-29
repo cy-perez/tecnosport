@@ -842,7 +842,9 @@ class AdminPedidosControladorTest {
     @Bean
     PropiedadesTransferenciaManual propiedadesTransferenciaManual() {
       return new PropiedadesTransferenciaManual(
-          "Bancolombia", "ahorros", "123-456789-00", "Tecno Sport");
+          List.of(
+              new CuentaDeTransferencia("Nequi", "billetera", "300 000 0000", "Tecno Sport"),
+              new CuentaDeTransferencia("BBVA", "ahorros", "123-456789-00", "Tecno Sport")));
     }
 
     @Bean

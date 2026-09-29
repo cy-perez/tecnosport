@@ -530,21 +530,32 @@
         },
         "type" : "object"
       },
-      "DatosTransferenciaRespuesta" : {
+      "CuentaDeTransferenciaRespuesta" : {
         "properties" : {
-          "banco" : {
+          "entidad" : {
             "type" : "string"
           },
           "numeroCuenta" : {
-            "type" : "string"
-          },
-          "referencia" : {
             "type" : "string"
           },
           "tipoCuenta" : {
             "type" : "string"
           },
           "titular" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "DatosTransferenciaRespuesta" : {
+        "properties" : {
+          "cuentas" : {
+            "items" : {
+              "$ref" : "#/components/schemas/CuentaDeTransferenciaRespuesta"
+            },
+            "type" : "array"
+          },
+          "referencia" : {
             "type" : "string"
           }
         },

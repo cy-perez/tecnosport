@@ -74,13 +74,23 @@ export interface LineaPedido {
   readonly imagenUrl: string | null;
 }
 
-/** Solo llega cuando `metodoPago === 'TRANSFERENCIA_MANUAL'`. `referencia` es el
- * número legible del pedido, no una referencia aparte (`docs/11-pagos-y-envios.md`). */
-export interface DatosTransferencia {
-  readonly banco: string;
+/** Una cuenta a la que transferir. `entidad` y no `banco`: dos de las tres son
+ * billeteras —Nequi y Daviplata— y el comprador las busca por ese nombre en su
+ * app, no por el del banco que hay detrás. */
+export interface CuentaDeTransferencia {
+  readonly entidad: string;
   readonly tipoCuenta: string;
   readonly numeroCuenta: string;
   readonly titular: string;
+}
+
+/** Solo llega cuando `metodoPago === 'TRANSFERENCIA_MANUAL'`. `referencia` es el
+ * número legible del pedido, no una referencia aparte (`docs/11-pagos-y-envios.md`),
+ * y por eso no se repite en cada cuenta: es del pedido, no de la cuenta.
+ *
+ * <p>Era una sola cuenta hasta el 28 de septiembre de 2026. */
+export interface DatosTransferencia {
+  readonly cuentas: readonly CuentaDeTransferencia[];
   readonly referencia: string;
 }
 

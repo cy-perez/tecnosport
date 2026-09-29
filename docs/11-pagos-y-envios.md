@@ -45,10 +45,35 @@ concilie el comprobante.
 Los pedidos históricos con `NEQUI` migran a `WOMPI` y no a `TRANSFERENCIA_MANUAL`: los cobró la
 pasarela y se confirmaron solos, así que escribir que se conciliaron a mano falsearía el historial.
 
-**Pendiente**: la transferencia manual soporta hoy **una sola cuenta**
-(`PropiedadesTransferenciaManual`, cuatro campos en singular). Para ofrecer Nequi, Daviplata y BBVA
-hay que convertirla en lista, y faltan los datos reales de las tres — titular, tipo y número. No se
-inventan (regla dura #5).
+### Transferencia manual: tres cuentas
+
+**Desde el 28 de septiembre de 2026 se aceptan tres**, y antes era una sola. El pie ya nombraba tres
+medios de transferencia —Nequi, Daviplata y BBVA— mientras el checkout solo podía enseñar una: el
+sitio prometía a la vista algo que no podía dar.
+
+| Entidad | Tipo | Se identifica con |
+|---|---|---|
+| Nequi | billetera | número de celular |
+| Daviplata | billetera | número de celular |
+| BBVA | ahorros | número de cuenta |
+
+**Qué cuentas hay se decide en el código y qué dicen se decide fuera.** La entidad y el tipo van
+fijos en `application.yml` —no son secreto ni cambian— y el número y el titular entran por variable
+de entorno con nombres legibles: `TRANSFERENCIA_NEQUI_NUMERO`, `TRANSFERENCIA_BBVA_TITULAR`… La
+alternativa era declarar la lista entera por entorno, y Spring obliga entonces a escribir índices
+(`TECNOSPORT_TRANSFERENCIAMANUAL_CUENTAS_0_NUMERO`): quien opera el despliegue tiene que poder leer
+lo que escribe.
+
+**La lista no puede quedar vacía**: si lo estuviera, el checkout ofrecería "transferencia bancaria"
+y la pantalla siguiente no tendría a dónde mandar a nadie. Falla al arrancar, que es donde un
+despliegue mal configurado tiene que fallar.
+
+**`entidad` y no `banco`**, que es como se llamaba el campo: dos de las tres no son bancos sino
+billeteras, y el comprador las busca en su app por ese nombre, no por el del banco que hay detrás.
+
+**Faltan los datos reales** —titular y número de las tres— y no se inventan (regla dura #5): los
+valores por omisión son placeholders que nunca sirven para transferir. La estructura ya los acepta;
+lo que falta es escribirlos en el despliegue.
 
 **Qué se ofrece no lo decide esta tabla, lo deciden
 `tecnosport.wompi.metodos.habilitados` (`WOMPI_METODOS_HABILITADOS`) y

@@ -14,6 +14,7 @@ import co.tecnosport.api.domain.pedido.Pedido;
 import co.tecnosport.api.domain.pedido.PlazoDeEntrega;
 import co.tecnosport.api.presentation.compartido.dto.DineroRespuesta;
 import co.tecnosport.api.presentation.pedido.dto.ContactoRespuesta;
+import co.tecnosport.api.presentation.pedido.dto.CuentaDeTransferenciaRespuesta;
 import co.tecnosport.api.presentation.pedido.dto.DatosTransferenciaRespuesta;
 import co.tecnosport.api.presentation.pedido.dto.DireccionRespuesta;
 import co.tecnosport.api.presentation.pedido.dto.EnvioRespuesta;
@@ -149,10 +150,12 @@ public class MapeadorRespuestasPedido {
       return null;
     }
     return new DatosTransferenciaRespuesta(
-        propiedadesTransferencia.banco(),
-        propiedadesTransferencia.tipoCuenta(),
-        propiedadesTransferencia.numeroCuenta(),
-        propiedadesTransferencia.titular(),
+        propiedadesTransferencia.cuentas().stream()
+            .map(
+                cuenta ->
+                    new CuentaDeTransferenciaRespuesta(
+                        cuenta.entidad(), cuenta.tipo(), cuenta.numero(), cuenta.titular()))
+            .toList(),
         pedido.numeroPedido().valor());
   }
 }

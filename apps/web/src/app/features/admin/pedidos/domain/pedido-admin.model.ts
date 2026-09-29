@@ -43,12 +43,20 @@ export interface LineaPedidoAdmin {
   readonly imagenUrl: string | null;
 }
 
-/** Solo llega cuando `metodoPago === 'TRANSFERENCIA_MANUAL'`. */
-export interface DatosTransferencia {
-  readonly banco: string;
+/** Una cuenta a la que transferir. `entidad` y no `banco`: dos de las tres son
+ * billeteras —Nequi y Daviplata— y el comprador las busca por ese nombre en su
+ * app, no por el del banco que hay detrás. */
+export interface CuentaDeTransferencia {
+  readonly entidad: string;
   readonly tipoCuenta: string;
   readonly numeroCuenta: string;
   readonly titular: string;
+}
+
+/** Solo llega cuando `metodoPago === 'TRANSFERENCIA_MANUAL'`. Era una sola cuenta
+ * hasta el 28 de septiembre de 2026. */
+export interface DatosTransferencia {
+  readonly cuentas: readonly CuentaDeTransferencia[];
   readonly referencia: string;
 }
 
