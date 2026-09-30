@@ -79,16 +79,25 @@ se puede probar de punta a punta sin gastar una llamada.
   API sino derecho al bucket, y por eso hay dos topes —el del zip y el de lo
   descomprimido— que responden 413 y 422 antes de intentar nada.
 - La ingesta corre en un solo hilo dentro de la aplicación. Dos lotes del mismo
-  proveedor no se pisan porque van en fila, y un lote que no cabe en la cola
-  responde 503 con el lote ya guardado en `RECIBIDO`.
+  proveedor no se pisan porque van en fila. Un lote que no cabe en la cola
+  responde 503 y **queda cerrado en `ERROR`** con su motivo: la cola vive en
+  memoria y solo entra lo que se encola, así que dejarlo en `RECIBIDO` era
+  prometer un trabajador que no iba a llegar. Se vuelve a subir la exportación.
+- **La cola no sobrevive a un reinicio, y eso está resuelto al arrancar.**
+  `ReanudadorDeIngestas` devuelve a la cola lo que quedó en `RECIBIDO` y cierra
+  en `ERROR` lo que estaba en `PROCESANDO`, con un motivo que pide volver a
+  subir el archivo. No se reanuda a medias porque no hay forma de saber en qué
+  publicación iba, y repetir la subida es seguro por la deduplicación.
+- **El mismo anuncio repetido no abre dos borradores.** Mientras hay uno en
+  revisión con la misma huella, la publicación repetida se descarta con ese
+  motivo; y si el primero ya se aprobó, aprobar el segundo responde 409
+  (`PRODUCTO_DE_PROVEEDOR_YA_EXISTE`) en vez de chocar con el índice único.
+- **Un producto aprobado se ve al aprobar, no en la fecha del mensaje.** Entre
+  exportar y aprobar pasan días; con la fecha del mensaje nacía ya vencido para
+  la ventana de `ADR-0066` y el job lo ocultaba en su primera vuelta.
 
 ## Pendientes que este ADR deja escritos
 
-- **Reanudar los lotes tras un reinicio.** Un lote en `RECIBIDO` o
-  `PROCESANDO` cuando la aplicación se reinicia se queda así: nadie lo vuelve a
-  encolar. Hoy se resuelve subiendo la exportación otra vez, que es seguro por
-  la deduplicación. Cuando duela, la solución es una tarea al arrancar que
-  encole lo que quedó abierto.
 - **La confirmación con el proveedor en los pedidos.** Aprobar un borrador
   registra una existencia inicial por variante, pero nadie la cuenta después:
   antes de despachar un pedido con productos de proveedor habría que
