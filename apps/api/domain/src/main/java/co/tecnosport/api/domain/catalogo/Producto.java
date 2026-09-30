@@ -1,8 +1,11 @@
 package co.tecnosport.api.domain.catalogo;
 
+import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.compartido.ExcepcionDeDominio;
 import co.tecnosport.api.domain.compartido.GeneradorIdentificador;
 import co.tecnosport.api.domain.compartido.Slug;
+import co.tecnosport.api.domain.proveedores.HuellaProveedor;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -39,7 +42,14 @@ public final class Producto {
   private final List<ImagenProducto> galeria;
   private SetRotacion setRotacion;
   private final List<Variante> variantes;
+  private final OrigenProducto origen;
+  private final UUID proveedorId;
+  private Dinero precioProveedor;
+  private final HuellaProveedor huellaProveedor;
+  private Instant vistoPorUltimaVez;
+  private EstadoDisponibilidad estadoDisponibilidad;
 
+  /** Un producto creado a mano o reconstruido sin datos de proveedor: origen {@code MANUAL}. */
   public Producto(
       UUID id,
       String nombre,
@@ -52,6 +62,50 @@ public final class Producto {
       List<ImagenProducto> galeria,
       SetRotacion setRotacion,
       List<Variante> variantes) {
+    this(
+        id,
+        nombre,
+        slug,
+        descripcion,
+        marca,
+        categoria,
+        estado,
+        imagenPrincipal,
+        galeria,
+        setRotacion,
+        variantes,
+        OrigenProducto.MANUAL,
+        null,
+        null,
+        null,
+        null,
+        EstadoDisponibilidad.DISPONIBLE);
+  }
+
+  /**
+   * Reconstrucción completa, con lo que un producto de proveedor lleva además: de quién viene, a
+   * cuánto lo vende el proveedor, su huella, cuándo se vio por última vez en sus mensajes y si
+   * sigue disponible. Un {@code PROVEEDOR} trae proveedor, huella y última vista; un {@code MANUAL}
+   * no trae nada de eso y el job de disponibilidad no lo toca.
+   */
+  public Producto(
+      UUID id,
+      String nombre,
+      Slug slug,
+      String descripcion,
+      Marca marca,
+      Categoria categoria,
+      EstadoProducto estado,
+      ImagenProducto imagenPrincipal,
+      List<ImagenProducto> galeria,
+      SetRotacion setRotacion,
+      List<Variante> variantes,
+      OrigenProducto origen,
+      UUID proveedorId,
+      Dinero precioProveedor,
+      HuellaProveedor huellaProveedor,
+      Instant vistoPorUltimaVez,
+      EstadoDisponibilidad estadoDisponibilidad) {
     this.id = Objects.requireNonNull(id, "El id del producto no puede ser nulo.");
     if (nombre == null || nombre.isBlank()) {
       throw new ExcepcionDeDominio("El nombre del producto no puede estar vacío.");
@@ -78,6 +132,27 @@ public final class Producto {
     for (Variante variante : Objects.requireNonNullElse(variantes, List.<Variante>of())) {
       agregarVariante(variante);
     }
+    this.origen = Objects.requireNonNull(origen, "El origen del producto no puede ser nulo.");
+    this.estadoDisponibilidad =
+        Objects.requireNonNull(estadoDisponibilidad, "La disponibilidad no puede ser nula.");
+    if (origen == OrigenProducto.PROVEEDOR) {
+      this.proveedorId =
+          Objects.requireNonNull(proveedorId, "Un producto de proveedor dice de cuál viene.");
+      this.huellaProveedor =
+          Objects.requireNonNull(huellaProveedor, "Un producto de proveedor lleva huella.");
+      this.vistoPorUltimaVez =
+          Objects.requireNonNull(
+              vistoPorUltimaVez, "Un producto de proveedor sabe cuándo se vio por última vez.");
+      this.precioProveedor = precioProveedor;
+    } else {
+      if (proveedorId != null || huellaProveedor != null || precioProveedor != null) {
+        throw new ExcepcionDeDominio("Un producto manual no lleva datos de proveedor.");
+      }
+      this.proveedorId = null;
+      this.huellaProveedor = null;
+      this.vistoPorUltimaVez = null;
+      this.precioProveedor = null;
+    }
   }
 
   public static Producto crear(
@@ -100,6 +175,103 @@ public final class Producto {
    * Edita los datos descriptivos desde el panel admin. El {@code slug} no cambia: es el
    * identificador de URL estable del producto, no se regenera aunque cambie el nombre.
    */
+  /**
+   * Un producto que viene de un proveedor. Nace en {@code BORRADOR} como cualquier otro —quien
+   * aprueba lo publica en el mismo paso— y {@code DISPONIBLE}, visto por última vez en la fecha del
+   * mensaje que lo trajo, no en la de la aprobación.
+   */
+  public static Producto crearDeProveedor(
+      String nombre,
+      Slug slug,
+      String descripcion,
+      Marca marca,
+      Categoria categoria,
+      UUID proveedorId,
+      Dinero precioProveedor,
+      HuellaProveedor huellaProveedor,
+      Instant vistoPorUltimaVez) {
+    return new Producto(
+        GeneradorIdentificador.nuevo(),
+        nombre,
+        slug,
+        descripcion,
+        marca,
+        categoria,
+        EstadoProducto.BORRADOR,
+        null,
+        List.of(),
+        null,
+        List.of(),
+        OrigenProducto.PROVEEDOR,
+        proveedorId,
+        precioProveedor,
+        huellaProveedor,
+        vistoPorUltimaVez,
+        EstadoDisponibilidad.DISPONIBLE);
+  }
+
+  /**
+   * El proveedor lo volvió a anunciar: se anota la fecha y, si estaba oculto por vencimiento o
+   * agotado, vuelve a estar disponible. Solo para lo que viene de un proveedor; un manual no tiene
+   * mensajes que lo renueven.
+   */
+  public void renovar(Instant vistoEn) {
+    exigirDeProveedor("renovar");
+    Objects.requireNonNull(vistoEn, "La fecha de la renovación no puede ser nula.");
+    if (vistoPorUltimaVez.isBefore(vistoEn)) {
+      this.vistoPorUltimaVez = vistoEn;
+    }
+    this.estadoDisponibilidad = EstadoDisponibilidad.DISPONIBLE;
+  }
+
+  /** El proveedor cambió el precio. Se guarda el nuevo; el margen lo revisa una persona. */
+  public void actualizarPrecioProveedor(Dinero precio) {
+    exigirDeProveedor("cambiar el precio de proveedor de");
+    this.precioProveedor = Objects.requireNonNull(precio, "El precio no puede ser nulo.");
+  }
+
+  /**
+   * Lleva demasiado sin aparecer en los mensajes. Se oculta, no se borra: los enlaces siguen
+   * respondiendo y el siguiente mensaje que lo traiga lo reactiva. Idempotente.
+   */
+  public void ocultarPorVencimiento() {
+    exigirDeProveedor("ocultar por vencimiento");
+    if (estadoDisponibilidad == EstadoDisponibilidad.DISPONIBLE) {
+      this.estadoDisponibilidad = EstadoDisponibilidad.OCULTO_POR_VENCIMIENTO;
+    }
+  }
+
+  /** El proveedor dijo que se acabó. De inmediato, y sin esperar ninguna ventana. */
+  public void marcarAgotadoPorProveedor(Instant vistoEn) {
+    exigirDeProveedor("marcar como agotado");
+    Objects.requireNonNull(vistoEn, "La fecha del aviso no puede ser nula.");
+    if (vistoPorUltimaVez.isBefore(vistoEn)) {
+      this.vistoPorUltimaVez = vistoEn;
+    }
+    this.estadoDisponibilidad = EstadoDisponibilidad.AGOTADO_POR_PROVEEDOR;
+  }
+
+  /** Lo que el catálogo público muestra: publicado y disponible, las dos cosas. */
+  public boolean estaEnVitrina() {
+    return estado == EstadoProducto.PUBLICADO
+        && estadoDisponibilidad == EstadoDisponibilidad.DISPONIBLE;
+  }
+
+  public boolean esDeProveedor() {
+    return origen == OrigenProducto.PROVEEDOR;
+  }
+
+  private void exigirDeProveedor(String accion) {
+    if (origen != OrigenProducto.PROVEEDOR) {
+      throw new ExcepcionDeDominio(
+          "Solo se puede "
+              + accion
+              + " un producto que viene de un proveedor; '"
+              + nombre
+              + "' es manual.");
+    }
+  }
+
   public void actualizarDatosBasicos(
       String nombre, String descripcion, Marca marca, Categoria categoria) {
     if (nombre == null || nombre.isBlank()) {
@@ -378,6 +550,30 @@ public final class Producto {
 
   public List<Variante> variantes() {
     return List.copyOf(variantes);
+  }
+
+  public OrigenProducto origen() {
+    return origen;
+  }
+
+  public Optional<UUID> proveedorId() {
+    return Optional.ofNullable(proveedorId);
+  }
+
+  public Optional<Dinero> precioProveedor() {
+    return Optional.ofNullable(precioProveedor);
+  }
+
+  public Optional<HuellaProveedor> huellaProveedor() {
+    return Optional.ofNullable(huellaProveedor);
+  }
+
+  public Optional<Instant> vistoPorUltimaVez() {
+    return Optional.ofNullable(vistoPorUltimaVez);
+  }
+
+  public EstadoDisponibilidad estadoDisponibilidad() {
+    return estadoDisponibilidad;
   }
 
   @Override
