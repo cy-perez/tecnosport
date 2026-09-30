@@ -38,6 +38,7 @@ public final class ImagenProducto {
   private final HashContenido hash;
   private final String altEs;
   private final String altEn;
+  private final UUID varianteId;
 
   public ImagenProducto(
       UUID id,
@@ -49,6 +50,26 @@ public final class ImagenProducto {
       HashContenido hash,
       String altEs,
       String altEn) {
+    this(id, tipo, orden, variantes, urlVistaPrevia, alto, hash, altEs, altEn, null);
+  }
+
+  /**
+   * @param varianteId la variante a la que pertenece la foto —el tono que muestra— o nulo cuando es
+   *     del producto entero. Es lo que la ficha usa para cambiar de foto al elegir un color, y lo
+   *     que la aprobación de un borrador de proveedor asigna por foto.
+   */
+  public ImagenProducto(
+      UUID id,
+      TipoImagen tipo,
+      int orden,
+      List<VarianteDeImagen> variantes,
+      String urlVistaPrevia,
+      int alto,
+      HashContenido hash,
+      String altEs,
+      String altEn,
+      UUID varianteId) {
+    this.varianteId = varianteId;
     this.id = Objects.requireNonNull(id, "El id de la imagen no puede ser nulo.");
     this.tipo = Objects.requireNonNull(tipo, "El tipo de la imagen no puede ser nulo.");
     if (orden < 0) {
@@ -105,9 +126,33 @@ public final class ImagenProducto {
    * —ninguna repetida, ninguna perdida—; desde fuera del agregado, cambiar el orden de una sola
    * imagen solo puede dejar dos en la misma posición.
    */
+  /** Una imagen de una variante concreta: la foto del tono. */
+  public static ImagenProducto crearDeVariante(
+      TipoImagen tipo,
+      int orden,
+      List<VarianteDeImagen> variantes,
+      String urlVistaPrevia,
+      int alto,
+      HashContenido hash,
+      String altEs,
+      String altEn,
+      UUID varianteId) {
+    return new ImagenProducto(
+        GeneradorIdentificador.nuevo(),
+        tipo,
+        orden,
+        variantes,
+        urlVistaPrevia,
+        alto,
+        hash,
+        altEs,
+        altEn,
+        varianteId);
+  }
+
   ImagenProducto conOrden(int nuevoOrden) {
     return new ImagenProducto(
-        id, tipo, nuevoOrden, variantes, urlVistaPrevia, alto, hash, altEs, altEn);
+        id, tipo, nuevoOrden, variantes, urlVistaPrevia, alto, hash, altEs, altEn, varianteId);
   }
 
   /**
@@ -210,5 +255,10 @@ public final class ImagenProducto {
   @Override
   public int hashCode() {
     return id.hashCode();
+  }
+
+  /** Vacío cuando la foto es del producto entero y no de un tono. */
+  public Optional<UUID> varianteId() {
+    return Optional.ofNullable(varianteId);
   }
 }

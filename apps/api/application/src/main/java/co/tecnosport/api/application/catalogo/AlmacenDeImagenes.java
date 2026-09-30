@@ -39,6 +39,13 @@ public interface AlmacenDeImagenes {
    *
    * <p>Idempotente: borrar algo que ya no está devuelve {@code false}, no falla.
    */
+  /**
+   * Escribe los bytes desde el servidor. Existe para las fotos que el servidor sí tiene —las que
+   * llegaron dentro de una exportación de proveedor—; las del panel siguen subiendo directo con URL
+   * firmada y nunca pasan por aquí.
+   */
+  void subir(String objectKey, String contentType, byte[] bytes);
+
   boolean eliminar(String objectKey);
 
   /**

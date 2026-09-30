@@ -72,6 +72,13 @@ public class AlmacenDeImagenesGcs implements AlmacenDeImagenes {
   }
 
   @Override
+  public void subir(String objectKey, String contentType, byte[] bytes) {
+    BlobInfo blobInfo =
+        BlobInfo.newBuilder(BlobId.of(bucket, objectKey)).setContentType(contentType).build();
+    storage.create(blobInfo, bytes);
+  }
+
+  @Override
   public boolean eliminar(String objectKey) {
     // Por nombre, sin generación, por lo mismo que explica eliminarPorPrefijo: con la generación
     // concreta el borrado se salta el versionado del bucket y no queda nada que restaurar.

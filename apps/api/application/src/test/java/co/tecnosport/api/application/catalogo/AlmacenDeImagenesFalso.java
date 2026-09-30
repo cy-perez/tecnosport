@@ -62,6 +62,11 @@ final class AlmacenDeImagenesFalso implements AlmacenDeImagenes {
   }
 
   @Override
+  public void subir(String objectKey, String contentType, byte[] bytes) {
+    objetos.put(objectKey, (long) bytes.length);
+  }
+
+  @Override
   public boolean eliminar(String objectKey) {
     if (fallarAlEliminar) {
       throw new IllegalStateException("El almacén falló al borrar.");
