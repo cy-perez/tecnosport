@@ -144,32 +144,7 @@ class BorradorProductoTest {
   }
 
   @Test
-  void alReconstruirUnAprobadoSinProductoOUnRechazadoSinMotivoNoSeSostiene() {
-    assertThrows(
-        ExcepcionDeDominio.class,
-        () ->
-            new BorradorProducto(
-                UUID.randomUUID(),
-                PUBLICACION,
-                PROVEEDOR,
-                "{}",
-                "t",
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                EstadoBorrador.APROBADO,
-                null,
-                null,
-                T));
+  void alReconstruirUnRechazadoSinMotivoNoSeSostiene() {
     assertThrows(
         ExcepcionDeDominio.class,
         () ->

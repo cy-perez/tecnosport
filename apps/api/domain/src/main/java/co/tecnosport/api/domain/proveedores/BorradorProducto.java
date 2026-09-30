@@ -1,3 +1,5 @@
+// Sin exigir productoId en APROBADO ni en RENOVACION_APLICADA: nacen con él, pero el producto
+// se puede borrar del catálogo después y la constancia tiene que poder releerse sin él.
 package co.tecnosport.api.domain.proveedores;
 
 import co.tecnosport.api.domain.catalogo.LineaCatalogo;
