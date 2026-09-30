@@ -66,3 +66,4 @@ sistecredito_listo = true
 #   printf %s "<token>" | gcloud secrets versions add meta-token --project tecnosport-dev --data-file=-
 meta_listo              = true
 meta_publicar_de_verdad = true
+ingesta_lista			= true
