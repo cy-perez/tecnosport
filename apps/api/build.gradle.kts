@@ -57,6 +57,13 @@ subprojects {
     }
 
     tasks.withType<Test> {
-        useJUnitPlatform()
+        useJUnitPlatform {
+            // Las pruebas contra un tercero de verdad —hoy la API de Claude— cuestan dinero y
+            // dependen de una clave que el pipeline no tiene. Corren solo a pedido:
+            //   gradlew.bat :infrastructure:test -PintegracionExterna=true
+            if (project.findProperty("integracionExterna") != "true") {
+                excludeTags("integracion-externa")
+            }
+        }
     }
 }
