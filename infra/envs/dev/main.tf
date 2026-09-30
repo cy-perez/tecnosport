@@ -266,6 +266,15 @@ locals {
     "sistecredito-llave-suscripcion",
     "sistecredito-store-id",
     "sistecredito-vendor-id",
+    # El token del usuario del sistema de Meta, para publicar en la pagina de Facebook y en la
+    # cuenta de Instagram. Es permanente (`expires_at: 0`), asi que no hay rotacion que programar.
+    #
+    # **Esta lista no solo crea el recipiente: tambien es la que concede el acceso.**
+    # `api_lee_sus_secretos` itera sobre ella, asi que un secreto montado en el servicio pero
+    # ausente de aqui deja la revision sin arrancar con un "Permission denied on secret ...
+    # /versions/latest" que no dice que lo que falta es el binding de IAM. Paso el 30 de
+    # septiembre de 2026 al montar este.
+    "meta-token",
   ]
 }
 
