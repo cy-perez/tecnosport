@@ -49,3 +49,20 @@ dominio_publico_api = "https://tecnosport-api-sdlqfchkiq-ue.a.run.app"
 # apunta es `api.credinet.co`, la de verdad, porque esta cuenta no tiene ambiente de pruebas. El
 # booleano del sandbox es lo único que separa una prueba de un crédito real a nombre de una persona.
 sistecredito_listo = true
+
+# **Difusion en redes encendida contra la cuenta REAL del negocio.**
+#
+# No hay sandbox de la Graph API: la unica cuenta de Instagram que existe es @tecnosport_co. Con
+# esto en true, el boton del panel de dev publica de verdad, y la unica reparacion es borrar el
+# post a mano desde Facebook e Instagram — entre que sale y se borra, alguien puede verlo.
+#
+# Decidido asi por el dueno del negocio el 29 de septiembre de 2026, a sabiendas. La alternativa
+# que se propuso y se descarto era una segunda cuenta de Instagram Business y una pagina de
+# Facebook de pruebas, asignadas al mismo usuario del sistema: sigue siendo el camino si algun dia
+# molesta estar borrando posts.
+#
+# `meta_listo` sigue la secuencia de siempre: cargar el valor del secreto con gcloud primero.
+#   gcloud secrets create meta-token --project tecnosport-dev --replication-policy automatic
+#   printf %s "<token>" | gcloud secrets versions add meta-token --project tecnosport-dev --data-file=-
+meta_listo              = true
+meta_publicar_de_verdad = true

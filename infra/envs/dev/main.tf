@@ -335,6 +335,16 @@ module "api" {
     # la que es. Lo que la infraestructura no describe, el siguiente apply lo deshace.
     ADMIN_CORREO   = var.correo_admin
     WOMPI_AMBIENTE = "sandbox"
+    # **Difusion en redes, y aqui no hay sandbox que valga.** `SISTECREDITO_SANDBOX_ACTIVO` al
+    # menos separa una prueba de un credito real; la Graph API no tiene nada equivalente: la unica
+    # cuenta que existe es @tecnosport_co y este booleano es lo unico que separa una prueba de un
+    # post en la cuenta del negocio. Encendido a peticion del dueno el 29 de septiembre de 2026,
+    # con el borrado manual del post como unica reparacion y sabiendo que entre que sale y se
+    # borra, alguien puede verlo.
+    #
+    # Los ids no van aqui: los valores por omision de `application.yml` son los de la cuenta real,
+    # medidos contra ella ese mismo dia. El dia que haya una cuenta de pruebas, se sobrescriben.
+    META_PUBLICAR_DE_VERDAD = tostring(var.meta_publicar_de_verdad)
     # La aplicación **no** migra al arrancar: lo hace el flujo de despliegue, en un paso propio y
     # antes de mover la revisión. Es lo que `docs/07-infra-gcp.md` exige para producción, y dev
     # existe para ensayar producción. Y si el paso se saltara, esto no lo tapa: Hibernate valida
@@ -403,6 +413,11 @@ module "api" {
     SKYDROPX_CLIENT_ID       = "skydropx-client-id"
     SKYDROPX_CLIENT_SECRET   = "skydropx-client-secret"
     SKYDROPX_SECRETO_WEBHOOK = "skydropx-secreto-webhook"
+    } : {}, var.meta_listo ? {
+    # El token del usuario del sistema de Meta. Permanente (`expires_at: 0`), asi que no hay
+    # rotacion que programar — pero si alguien lo revoca desde el panel de Meta, la difusion
+    # empieza a fallar y el motivo llega entero a la ficha del panel.
+    META_TOKEN = "meta-token"
     } : {}, var.sistecredito_listo ? {
     SISTECREDITO_SUBSCRIPTION_KEY = "sistecredito-llave-suscripcion"
     SISTECREDITO_STORE_ID         = "sistecredito-store-id"
