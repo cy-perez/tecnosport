@@ -232,6 +232,26 @@ tecnosport:
     # Cuantos lotes caben esperando. Corta a proposito: un lote tarda minutos y el panel lo usa una
     # persona, asi que una cola llena no es carga, es alguien pulsando muchas veces.
     cola-de-ingestas: ${PROVEEDORES_COLA_DE_INGESTAS:20}
+    extraccion:
+      # La API de Claude con salida estructurada (platform.claude.com/docs/en/build-with-claude/
+      # structured-outputs). La clave vive en Secret Manager; VACIA, el extractor es el sembrado
+      # y el arranque lo avisa en el registro (regla dura #5: ningun valor real por omision).
+      url-base: ${ANTHROPIC_URL_BASE:https://api.anthropic.com}
+      api-key: ${ANTHROPIC_API_KEY:}
+      # Uno de los modelos que la documentacion lista con salida estructurada, verificado el 30 de
+      # septiembre de 2026. Alternativa mas capaz y mas cara: claude-sonnet-4-6.
+      modelo: ${PROVEEDORES_EXTRACCION_MODELO:claude-haiku-4-5-20251001}
+      max-tokens: ${PROVEEDORES_EXTRACCION_MAX_TOKENS:1024}
+      # Por debajo de esta confianza del propio extractor el borrador lleva alerta. No es un dato
+      # de negocio: es cuanto se le cree a un modelo.
+      umbral-confianza: ${PROVEEDORES_EXTRACCION_UMBRAL_CONFIANZA:0.75}
+      timeout: ${PROVEEDORES_EXTRACCION_TIMEOUT:PT30S}
+      # Reintentos ante 429 y 5xx, con espera exponencial desde la inicial.
+      intentos: ${PROVEEDORES_EXTRACCION_INTENTOS:4}
+      espera-inicial: ${PROVEEDORES_EXTRACCION_ESPERA_INICIAL:PT2S}
+      # Cuanto silencio cierra una publicacion: un texto con precio abre, y lo que llegue dentro de
+      # esta ventana desde el ultimo mensaje anexado es suyo.
+      ventana-agrupacion: ${PROVEEDORES_VENTANA_AGRUPACION:PT15M}
 
   meta:
     # La version va dentro de la ruta y Meta retira versiones con calendario publicado: congelarla
