@@ -86,4 +86,4 @@ EXPOSE 8080
 # CDS no sirve —porque cambió el JDK, el classpath o la ruta— la JVM lo ignora y arranca como
 # siempre, en vez de negarse a arrancar. Un archivo inválido tiene que costar los 6 segundos que
 # ahorra, nunca el servicio.
-ENTRYPOINT ["sh", "-c", "exec java -XX:MaxRAMPercentage=75 -Xshare:auto -XX:SharedArchiveFile=/app/aplicacion.jsa -jar /app/app.jar"]
+ENTRYPOINT ["sh", "-c", "exec java -Djava.awt.headless=true -XX:MaxRAMPercentage=75 -Xshare:auto -XX:SharedArchiveFile=/app/aplicacion.jsa -jar /app/app.jar"]

@@ -4,6 +4,7 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.UUID;
 
@@ -37,6 +38,24 @@ public class ProductoJpaEntity {
   @Column(name = "actualizado_en", nullable = false)
   private Instant actualizadoEn;
 
+  @Column(nullable = false)
+  private String origen;
+
+  @Column(name = "proveedor_id")
+  private UUID proveedorId;
+
+  @Column(name = "precio_proveedor")
+  private BigDecimal precioProveedor;
+
+  @Column(name = "huella_proveedor")
+  private String huellaProveedor;
+
+  @Column(name = "visto_por_ultima_vez")
+  private Instant vistoPorUltimaVez;
+
+  @Column(name = "estado_disponibilidad", nullable = false)
+  private String estadoDisponibilidad;
+
   protected ProductoJpaEntity() {}
 
   public ProductoJpaEntity(
@@ -49,6 +68,47 @@ public class ProductoJpaEntity {
       String estado,
       Instant creadoEn,
       Instant actualizadoEn) {
+    this(
+        id,
+        nombre,
+        slug,
+        descripcion,
+        marcaId,
+        categoriaId,
+        estado,
+        creadoEn,
+        actualizadoEn,
+        "MANUAL",
+        null,
+        null,
+        null,
+        null,
+        "DISPONIBLE");
+  }
+
+  /** Con lo que un producto de proveedor lleva de más (V71). */
+  public ProductoJpaEntity(
+      UUID id,
+      String nombre,
+      String slug,
+      String descripcion,
+      UUID marcaId,
+      UUID categoriaId,
+      String estado,
+      Instant creadoEn,
+      Instant actualizadoEn,
+      String origen,
+      UUID proveedorId,
+      BigDecimal precioProveedor,
+      String huellaProveedor,
+      Instant vistoPorUltimaVez,
+      String estadoDisponibilidad) {
+    this.origen = origen;
+    this.proveedorId = proveedorId;
+    this.precioProveedor = precioProveedor;
+    this.huellaProveedor = huellaProveedor;
+    this.vistoPorUltimaVez = vistoPorUltimaVez;
+    this.estadoDisponibilidad = estadoDisponibilidad;
     this.id = id;
     this.nombre = nombre;
     this.slug = slug;
@@ -94,5 +154,29 @@ public class ProductoJpaEntity {
 
   public Instant getActualizadoEn() {
     return actualizadoEn;
+  }
+
+  public String getOrigen() {
+    return origen;
+  }
+
+  public UUID getProveedorId() {
+    return proveedorId;
+  }
+
+  public BigDecimal getPrecioProveedor() {
+    return precioProveedor;
+  }
+
+  public String getHuellaProveedor() {
+    return huellaProveedor;
+  }
+
+  public Instant getVistoPorUltimaVez() {
+    return vistoPorUltimaVez;
+  }
+
+  public String getEstadoDisponibilidad() {
+    return estadoDisponibilidad;
   }
 }

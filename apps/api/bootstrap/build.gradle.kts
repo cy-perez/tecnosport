@@ -73,6 +73,9 @@ fun leerVariablesDeEntorno(archivo: java.io.File): Map<String, String> {
 // Solo para desarrollo local: activa SembradorCatalogo (@Profile("local")).
 // No afecta el jar empaquetado que corre en Cloud Run.
 tasks.named<org.springframework.boot.gradle.tasks.run.BootRun>("bootRun") {
+    // Sin pantalla: el pHash de las fotos de proveedor usa java.awt, y sin esta bandera intenta
+    // cargar el sistema gráfico. El Dockerfile lleva la misma.
+    jvmArgs("-Djava.awt.headless=true")
     // `local` por omisión, y el valor entero se puede reemplazar con -Dperfiles=... El único que
     // lo hace es el flujo `recorridos` de integración continua, que pide `local,e2e` para que
     // CotizadorEnvioSembrado sustituya al cliente de Skydropx (sin credenciales allí, el cliente

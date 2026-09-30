@@ -26,7 +26,7 @@ public class RepositorioMapaDelSitioJpa implements RepositorioMapaDelSitio {
       """
       select slug, actualizado_en
       from producto
-      where estado = 'PUBLICADO'
+      where estado = 'PUBLICADO' and estado_disponibilidad = 'DISPONIBLE'
       order by actualizado_en desc
       limit :limite
       """;
