@@ -3,6 +3,7 @@ package co.tecnosport.api.bootstrap.proveedores;
 import co.tecnosport.api.domain.catalogo.LineaCatalogo;
 import co.tecnosport.api.domain.proveedores.Proveedor;
 import java.math.BigDecimal;
+import java.time.Duration;
 import java.util.Map;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
@@ -23,7 +24,26 @@ public record PropiedadesProveedores(
     long descomprimidoMaximoBytes,
     int colaDeIngestas,
     Map<LineaCatalogo, BigDecimal> margenPorLinea,
-    Huella huella) {
+    Huella huella,
+    Duration ventanaDisponibilidad,
+    JobExpiracion jobExpiracion) {
+
+  /**
+   * Cada cuánto corre el job que oculta lo vencido, y cuánto espera tras arrancar. El intervalo se
+   * acorta a minutos para probar; {@code habilitado} lo apaga sin desplegar.
+   */
+  public record JobExpiracion(boolean habilitado, Duration intervalo, Duration retrasoInicial) {
+    public JobExpiracion {
+      if (intervalo == null || intervalo.isNegative() || intervalo.isZero()) {
+        throw new IllegalStateException(
+            "tecnosport.proveedores.job-expiracion.intervalo debe ser una duración positiva.");
+      }
+      if (retrasoInicial == null || retrasoInicial.isNegative()) {
+        throw new IllegalStateException(
+            "tecnosport.proveedores.job-expiracion.retraso-inicial no puede ser negativo.");
+      }
+    }
+  }
 
   /** La distancia de Hamming hasta la que dos fotos son la misma. */
   public record Huella(int umbralHamming) {
@@ -71,6 +91,15 @@ public record PropiedadesProveedores(
     }
     if (huella == null) {
       throw new IllegalStateException("Falta tecnosport.proveedores.huella.umbral-hamming.");
+    }
+    if (ventanaDisponibilidad == null
+        || ventanaDisponibilidad.isNegative()
+        || ventanaDisponibilidad.isZero()) {
+      throw new IllegalStateException(
+          "tecnosport.proveedores.ventana-disponibilidad debe ser una duración positiva.");
+    }
+    if (jobExpiracion == null) {
+      throw new IllegalStateException("Falta tecnosport.proveedores.job-expiracion.");
     }
   }
 }

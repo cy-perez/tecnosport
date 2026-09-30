@@ -242,6 +242,17 @@ tecnosport:
       # Hasta cuantos bits de 64 pueden diferir dos pHash para ser la misma foto. Parametro
       # tecnico: 6 es lo habitual para reconocer la misma imagen reescalada o recomprimida.
       umbral-hamming: ${PROVEEDORES_UMBRAL_HAMMING:6}
+    # Cuanto puede llevar un producto de proveedor sin aparecer en sus mensajes antes de
+    # ocultarse. Tres dias es lo que pidio el negocio (30 de septiembre de 2026); en pruebas
+    # se baja a minutos. Duracion ISO-8601: P3D, PT10M.
+    ventana-disponibilidad: ${PROVEEDORES_VENTANA_DISPONIBILIDAD:P3D}
+    job-expiracion:
+      # Dentro de la aplicacion, como las demas tareas (docs/07): en produccion la API lleva la
+      # CPU siempre asignada. Encendido por omision; la bandera existe para apagarlo sin
+      # desplegar. Con varias instancias corre en cada una y no importa: es idempotente.
+      habilitado: ${PROVEEDORES_JOB_EXPIRACION_HABILITADO:true}
+      intervalo: ${PROVEEDORES_JOB_EXPIRACION_INTERVALO:PT24H}
+      retraso-inicial: ${PROVEEDORES_JOB_EXPIRACION_RETRASO_INICIAL:PT5M}
     extraccion:
       # La API de Claude con salida estructurada (platform.claude.com/docs/en/build-with-claude/
       # structured-outputs). La clave vive en Secret Manager; VACIA, el extractor es el sembrado

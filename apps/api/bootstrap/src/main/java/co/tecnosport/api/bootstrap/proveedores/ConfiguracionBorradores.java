@@ -11,6 +11,7 @@ import co.tecnosport.api.application.proveedores.AlmacenDeArchivosDeProveedor;
 import co.tecnosport.api.application.proveedores.AprobarBorrador;
 import co.tecnosport.api.application.proveedores.CalculadorDePHash;
 import co.tecnosport.api.application.proveedores.EditarBorrador;
+import co.tecnosport.api.application.proveedores.ExpirarDisponibilidadDeProductos;
 import co.tecnosport.api.application.proveedores.ProcesadorDeImagenes;
 import co.tecnosport.api.application.proveedores.RechazarBorrador;
 import co.tecnosport.api.application.proveedores.RepositorioBorradores;
@@ -91,6 +92,16 @@ public class ConfiguracionBorradores {
         almacenPrivado,
         almacenDeImagenes,
         procesador);
+  }
+
+  @Bean
+  public ExpirarDisponibilidadDeProductos expirarDisponibilidadDeProductos(
+      RepositorioProductosDeProveedor productosDeProveedor,
+      RepositorioProductos productos,
+      Reloj reloj,
+      PropiedadesProveedores propiedades) {
+    return new ExpirarDisponibilidadDeProductos(
+        productosDeProveedor, productos, reloj, propiedades.ventanaDisponibilidad());
   }
 
   @Bean
