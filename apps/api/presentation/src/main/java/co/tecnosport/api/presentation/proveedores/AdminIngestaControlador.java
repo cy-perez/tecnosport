@@ -1,6 +1,8 @@
 package co.tecnosport.api.presentation.proveedores;
 
 import co.tecnosport.api.application.catalogo.SolicitudDeSubida;
+import co.tecnosport.api.application.compartido.Reloj;
+import co.tecnosport.api.application.proveedores.ColaDeIngestasLlenaException;
 import co.tecnosport.api.application.proveedores.EjecutorDeIngestas;
 import co.tecnosport.api.application.proveedores.IniciarIngesta;
 import co.tecnosport.api.application.proveedores.IniciarIngestaComando;
@@ -48,6 +50,7 @@ public class AdminIngestaControlador {
   private final IniciarIngesta iniciarIngesta;
   private final EjecutorDeIngestas ejecutor;
   private final RepositorioLotesIngesta repositorioLotes;
+  private final Reloj reloj;
   private final TransactionTemplate transaccion;
 
   public AdminIngestaControlador(
@@ -55,11 +58,13 @@ public class AdminIngestaControlador {
       IniciarIngesta iniciarIngesta,
       EjecutorDeIngestas ejecutor,
       RepositorioLotesIngesta repositorioLotes,
+      Reloj reloj,
       PlatformTransactionManager transactionManager) {
     this.solicitarSubida = Objects.requireNonNull(solicitarSubida);
     this.iniciarIngesta = Objects.requireNonNull(iniciarIngesta);
     this.ejecutor = Objects.requireNonNull(ejecutor);
     this.repositorioLotes = Objects.requireNonNull(repositorioLotes);
+    this.reloj = Objects.requireNonNull(reloj);
     this.transaccion = new TransactionTemplate(Objects.requireNonNull(transactionManager));
   }
 
@@ -77,7 +82,19 @@ public class AdminIngestaControlador {
     LoteIngesta lote =
         transaccion.execute(
             estado -> iniciarIngesta.ejecutar(new IniciarIngestaComando(id, cuerpo.objectKey())));
-    ejecutor.encolar(lote.id());
+    try {
+      ejecutor.encolar(lote.id());
+    } catch (ColaDeIngestasLlenaException e) {
+      // El lote ya está confirmado en RECIBIDO y nadie lo va a tomar: la cola vive en memoria y
+      // solo entra lo que se encola. Se cierra con su motivo para que el panel diga la verdad.
+      transaccion.executeWithoutResult(
+          estado -> {
+            lote.fallar(
+                "La cola de ingestas estaba llena. Vuelve a subir la exportación.", reloj.ahora());
+            repositorioLotes.actualizar(lote);
+          });
+      throw e;
+    }
     log.info(
         "Lote de ingesta {} del proveedor {} encolado desde {}", lote.id(), id, cuerpo.objectKey());
     return LoteIngestaRespuesta.de(lote);

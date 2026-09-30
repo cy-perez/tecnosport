@@ -72,26 +72,30 @@ public class ConfiguracionBorradores {
       RepositorioMensajesProveedor mensajes,
       RepositorioProveedores proveedores,
       RepositorioProductos productos,
+      RepositorioProductosDeProveedor productosDeProveedor,
       RepositorioMarcas marcas,
       RepositorioCategorias categorias,
       RepositorioAtributos atributos,
       AgregarVariante agregarVariante,
       AlmacenDeArchivosDeProveedor almacenPrivado,
       AlmacenDeImagenes almacenDeImagenes,
-      ProcesadorDeImagenes procesador) {
+      ProcesadorDeImagenes procesador,
+      Reloj reloj) {
     return new AprobarBorrador(
         borradores,
         publicaciones,
         mensajes,
         proveedores,
         productos,
+        productosDeProveedor,
         marcas,
         categorias,
         atributos,
         agregarVariante,
         almacenPrivado,
         almacenDeImagenes,
-        procesador);
+        procesador,
+        reloj);
   }
 
   @Bean

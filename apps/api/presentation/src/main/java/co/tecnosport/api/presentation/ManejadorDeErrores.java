@@ -63,6 +63,7 @@ import co.tecnosport.api.application.proveedores.ExportacionNoEncontradaExceptio
 import co.tecnosport.api.application.proveedores.FotoNoEsDelBorradorException;
 import co.tecnosport.api.application.proveedores.ImagenDeProveedorIlegibleException;
 import co.tecnosport.api.application.proveedores.LoteNoEncontradoException;
+import co.tecnosport.api.application.proveedores.ProductoDeProveedorYaExisteException;
 import co.tecnosport.api.application.proveedores.ProveedorInactivoException;
 import co.tecnosport.api.application.proveedores.ProveedorNoEncontradoException;
 import co.tecnosport.api.application.proveedores.TipoDeExportacionNoAdmitidoException;
@@ -223,10 +224,17 @@ public class ManejadorDeErrores {
     return problema(HttpStatus.CONTENT_TOO_LARGE, "La exportación pesa demasiado", excepcion);
   }
 
-  // 503: el lote quedó escrito y en RECIBIDO; lo que no hay es quien lo tome ahora mismo.
+  // 503: el lote quedó escrito, y el controlador lo cierra en ERROR antes de responder, porque la
+  // cola vive en memoria y nadie lo iba a tomar. Hay que volver a subir la exportación.
   @ExceptionHandler(ColaDeIngestasLlenaException.class)
   public ProblemDetail colaDeIngestasLlena(ColaDeIngestasLlenaException excepcion) {
     return problema(HttpStatus.SERVICE_UNAVAILABLE, "La cola de ingestas está llena", excepcion);
+  }
+
+  // 409: el mismo anuncio ya se aprobó desde otro borrador; este se rechaza, no se aprueba.
+  @ExceptionHandler(ProductoDeProveedorYaExisteException.class)
+  public ProblemDetail productoDeProveedorYaExiste(ProductoDeProveedorYaExisteException excepcion) {
+    return problema(HttpStatus.CONFLICT, "El producto ya existe", excepcion);
   }
 
   @ExceptionHandler(BorradorNoEncontradoException.class)

@@ -17,6 +17,7 @@ import co.tecnosport.api.application.proveedores.RepositorioLotesIngesta;
 import co.tecnosport.api.application.proveedores.RepositorioProveedores;
 import co.tecnosport.api.application.proveedores.SolicitarSubidaDeExportacion;
 import co.tecnosport.api.domain.catalogo.LineaCatalogo;
+import co.tecnosport.api.domain.proveedores.EstadoLote;
 import co.tecnosport.api.domain.proveedores.LoteIngesta;
 import co.tecnosport.api.domain.proveedores.Proveedor;
 import co.tecnosport.api.domain.proveedores.ResumenIngesta;
@@ -169,8 +170,12 @@ class AdminIngestaControladorTest {
         .andExpect(jsonPath("$.codigo").value("PROVEEDOR_INACTIVO"));
   }
 
+  /**
+   * La cola vive en memoria: un lote que no entró no lo toma nadie nunca. Queda escrito, sí, pero
+   * en ERROR con su motivo, no en RECIBIDO esperando a un trabajador que no existe.
+   */
   @Test
-  void laColaLlenaEs503YElLoteQuedaEscrito() throws Exception {
+  void laColaLlenaEs503YElLoteQuedaEnErrorConSuMotivo() throws Exception {
     ejecutor.llena = true;
 
     mockMvc
@@ -180,6 +185,10 @@ class AdminIngestaControladorTest {
                 .content("{\"objectKey\":\"" + key + "\"}"))
         .andExpect(status().isServiceUnavailable())
         .andExpect(jsonPath("$.codigo").value("COLA_DE_INGESTAS_LLENA"));
+
+    LoteIngesta lote = lotes.porId.values().iterator().next();
+    assertThat(lote.estado()).isEqualTo(EstadoLote.ERROR);
+    assertThat(lote.detalleError()).hasValueSatisfying(m -> assertThat(m).contains("cola"));
   }
 
   @Test
@@ -248,6 +257,11 @@ class AdminIngestaControladorTest {
     }
 
     @Bean
+    Reloj reloj() {
+      return () -> AHORA;
+    }
+
+    @Bean
     SolicitarSubidaDeExportacion solicitarSubida(
         RepositorioProveedoresDoble proveedores, AlmacenDoble almacen) {
       return new SolicitarSubidaDeExportacion(proveedores, almacen);
@@ -302,6 +316,11 @@ class AdminIngestaControladorTest {
     @Override
     public Optional<LoteIngesta> buscarPorId(UUID id) {
       return Optional.ofNullable(porId.get(id));
+    }
+
+    @Override
+    public List<LoteIngesta> abiertos() {
+      return porId.values().stream().filter(LoteIngesta::estaAbierto).toList();
     }
 
     @Override

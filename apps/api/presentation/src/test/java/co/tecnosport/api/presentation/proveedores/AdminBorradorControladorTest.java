@@ -24,6 +24,7 @@ import co.tecnosport.api.application.proveedores.ProcesadorDeImagenes;
 import co.tecnosport.api.application.proveedores.RechazarBorrador;
 import co.tecnosport.api.application.proveedores.RepositorioBorradores;
 import co.tecnosport.api.application.proveedores.RepositorioMensajesProveedor;
+import co.tecnosport.api.application.proveedores.RepositorioProductosDeProveedor;
 import co.tecnosport.api.application.proveedores.RepositorioProveedores;
 import co.tecnosport.api.application.proveedores.RepositorioPublicacionesProveedor;
 import co.tecnosport.api.application.proveedores.VerBorrador;
@@ -32,6 +33,7 @@ import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.proveedores.AlertaBorrador;
 import co.tecnosport.api.domain.proveedores.BorradorProducto;
 import co.tecnosport.api.domain.proveedores.EstadoBorrador;
+import co.tecnosport.api.domain.proveedores.HuellaProveedor;
 import co.tecnosport.api.domain.proveedores.IdExternoDeMensaje;
 import co.tecnosport.api.domain.proveedores.MensajeProveedor;
 import co.tecnosport.api.domain.proveedores.ProductoExtraido;
@@ -317,6 +319,7 @@ class AdminBorradorControladorTest {
           mensajes,
           inerte(RepositorioProveedores.class),
           productos,
+          inerte(RepositorioProductosDeProveedor.class),
           inerte(RepositorioMarcas.class),
           inerte(RepositorioCategorias.class),
           inerte(RepositorioAtributos.class),
@@ -328,7 +331,8 @@ class AdminBorradorControladorTest {
               false),
           almacen,
           inerte(AlmacenDeImagenes.class),
-          inerte(ProcesadorDeImagenes.class));
+          inerte(ProcesadorDeImagenes.class),
+          (Reloj) () -> T);
     }
 
     @Bean
@@ -400,6 +404,11 @@ class AdminBorradorControladorTest {
     @Override
     public List<HuellaVisual> huellasVisualesDelProveedor(UUID proveedorId) {
       return List.of();
+    }
+
+    @Override
+    public boolean existeEnRevisionConHuella(UUID proveedorId, HuellaProveedor huella) {
+      return false;
     }
   }
 

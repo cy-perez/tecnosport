@@ -73,9 +73,10 @@ public final class EjecutorDeIngestasEnHilo implements EjecutorDeIngestas, Dispo
           lote.proveedorId(),
           lote.estado(),
           lote.resumen().map(Object::toString).orElse(""));
-    } catch (RuntimeException e) {
+    } catch (RuntimeException | Error e) {
       // El lote ya quedó en ERROR con su motivo para el panel; aquí va la traza, que es lo que el
-      // panel no enseña y lo que hace falta para arreglarlo.
+      // panel no enseña y lo que hace falta para arreglarlo. También los Error: un zip que no cabe
+      // en memoria mata el hilo en silencio, y el pool lo repone pero nadie se entera.
       log.error("El lote de ingesta {} falló", loteId, e);
     }
   }
@@ -84,7 +85,9 @@ public final class EjecutorDeIngestasEnHilo implements EjecutorDeIngestas, Dispo
   public void destroy() throws InterruptedException {
     executor.shutdown();
     if (!executor.awaitTermination(30, TimeUnit.SECONDS)) {
-      log.warn("La ingesta en curso no terminó en 30 segundos; el lote quedará en PROCESANDO.");
+      log.warn(
+          "La ingesta en curso no terminó en 30 segundos; el lote quedará en PROCESANDO y el"
+              + " arranque siguiente lo cerrará con error (ReanudadorDeIngestas).");
       executor.shutdownNow();
     }
   }

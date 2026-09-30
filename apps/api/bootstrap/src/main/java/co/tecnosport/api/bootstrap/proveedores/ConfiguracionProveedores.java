@@ -11,6 +11,7 @@ import co.tecnosport.api.application.proveedores.ExtraerProductoDePublicacion;
 import co.tecnosport.api.application.proveedores.FuenteDeMensajes;
 import co.tecnosport.api.application.proveedores.IniciarIngesta;
 import co.tecnosport.api.application.proveedores.ProcesarLoteDeIngesta;
+import co.tecnosport.api.application.proveedores.ReanudarLotesDeIngesta;
 import co.tecnosport.api.application.proveedores.RegistrarMensajesDeProveedor;
 import co.tecnosport.api.application.proveedores.RepositorioLotesIngesta;
 import co.tecnosport.api.application.proveedores.RepositorioMensajesProveedor;
@@ -114,5 +115,11 @@ public class ConfiguracionProveedores {
   public EjecutorDeIngestas ejecutorDeIngestas(
       ProcesarLoteDeIngesta procesar, PropiedadesProveedores propiedades) {
     return new EjecutorDeIngestasEnHilo(procesar, propiedades.colaDeIngestas());
+  }
+
+  @Bean
+  public ReanudarLotesDeIngesta reanudarLotesDeIngesta(
+      RepositorioLotesIngesta lotes, EjecutorDeIngestas ejecutor, Reloj reloj) {
+    return new ReanudarLotesDeIngesta(lotes, ejecutor, reloj);
   }
 }
