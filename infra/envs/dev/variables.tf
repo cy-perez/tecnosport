@@ -28,6 +28,18 @@ variable "bucket_imagenes" {
   default     = "tecnosport-dev-imagenes"
 }
 
+variable "bucket_proveedores" {
+  description = "Bucket PRIVADO de los originales de los proveedores por WhatsApp: las exportaciones subidas y las fotos tal como llegaron. Otro bucket y no una carpeta del de imagenes porque aquel es publico de lectura y esto no lo puede ser. El de local lo crea infra/local/bucket-imagenes.mjs."
+  type        = string
+  default     = "tecnosport-dev-proveedores"
+}
+
+variable "ingesta_lista" {
+  description = "Si el secreto `anthropic-api-key` ya tiene version cargada. Mientras sea false no se monta y la extraccion queda sembrada: solo lee el precio y todo borrador sale con alertas. Misma secuencia que `meta_listo`: cargar el valor con gcloud, poner esto en true, aplicar."
+  type        = bool
+  default     = false
+}
+
 variable "dominio_publico_web" {
   description = "Origen público del sitio. Se llena después del primer apply, cuando Cloud Run asigna la URL, y se vuelve a aplicar: APP_URL_PUBLICA y NG_ALLOWED_HOSTS lo necesitan."
   type        = string
