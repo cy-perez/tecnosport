@@ -238,33 +238,43 @@ final class ApoyoDeIngesta {
     }
   }
 
-  /** Devuelve siempre el mismo producto y recuerda qué texto le mandaron. */
+  /**
+   * Devuelve siempre el mismo producto —o el que salga de una función del texto— y recuerda qué le
+   * mandaron.
+   */
   static final class ExtractorFalso implements ExtractorDeProductos {
 
-    private final ProductoExtraido respuesta;
-    private final RuntimeException fallo;
+    private final java.util.function.Function<TextoDePublicacion, ProductoExtraido> respuesta;
     TextoDePublicacion ultimoTexto;
     int llamadas;
 
     ExtractorFalso(ProductoExtraido respuesta) {
-      this.respuesta = respuesta;
-      this.fallo = null;
+      this.respuesta = texto -> respuesta;
     }
 
     ExtractorFalso(RuntimeException fallo) {
-      this.respuesta = null;
-      this.fallo = fallo;
+      this.respuesta =
+          texto -> {
+            throw fallo;
+          };
+    }
+
+    static ExtractorFalso porTexto(
+        java.util.function.Function<TextoDePublicacion, ProductoExtraido> respuesta) {
+      return new ExtractorFalso(respuesta);
+    }
+
+    private ExtractorFalso(
+        java.util.function.Function<TextoDePublicacion, ProductoExtraido> respuesta) {
+      this.respuesta = respuesta;
     }
 
     @Override
     public ResultadoExtraccion extraer(TextoDePublicacion texto) {
       ultimoTexto = texto;
       llamadas++;
-      if (fallo != null) {
-        throw fallo;
-      }
       return new ResultadoExtraccion(
-          respuesta, "{\"fixture\":true}", new UsoDelExtractor("falso", 10, 5, 1));
+          respuesta.apply(texto), "{\"fixture\":true}", new UsoDelExtractor("falso", 10, 5, 1));
     }
   }
 }
