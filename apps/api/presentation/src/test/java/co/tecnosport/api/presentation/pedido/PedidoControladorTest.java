@@ -872,6 +872,12 @@ class PedidoControladorTest {
   /** Medellín recauda; el resto del país, no. Es lo que hace hoy el sandbox. */
   private static final String CIUDAD_QUE_RECAUDA = "05001";
 
+  /**
+   * Vigente una hora desde que corre la prueba, y no una fecha escrita: la cotización llevaba
+   * {@code 2026-09-30T12:00:00Z} y el reloj del contexto es el real, así que a esa hora las seis
+   * pruebas que crean un pedido empezaron a fallar solas —cotización vencida, 409 y sin
+   * contraentrega— en la CI y en cada máquina, sin que nadie hubiera tocado nada.
+   */
   private static final TarifaEnvio TARIFA =
       new TarifaEnvio(
           "rate_1",
@@ -880,7 +886,7 @@ class PedidoControladorTest {
           Dinero.deCop(14_900),
           2,
           false,
-          Instant.parse("2026-09-30T12:00:00Z"));
+          Instant.now().plusSeconds(3600));
 
   @TestConfiguration
   static class Configuracion {
