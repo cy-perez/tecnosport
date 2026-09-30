@@ -52,6 +52,70 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/borradores": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listar_14"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/borradores/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ver_2"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["editar_3"];
+        trace?: never;
+    };
+    "/api/v1/admin/borradores/{id}/aprobar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["aprobar"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/borradores/{id}/rechazar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["rechazar"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/categorias": {
         parameters: {
             query?: never;
@@ -187,7 +251,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["ver_4"];
+        get: operations["ver_5"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1083,7 +1147,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["ver_3"];
+        get: operations["ver_4"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1179,7 +1243,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["ver_2"];
+        get: operations["ver_3"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1496,6 +1560,22 @@ export interface components {
             cantidadContada?: number;
             motivo?: string;
         };
+        AprobarBorradorPeticion: {
+            altEn: string;
+            altEs: string;
+            /** Format: uuid */
+            categoriaId: string;
+            descripcion?: string;
+            /** Format: int32 */
+            existenciaInicial: number;
+            fotos: components["schemas"]["FotoAprobadaPeticion"][];
+            /** Format: uuid */
+            marcaId: string;
+            /** Format: int64 */
+            precioVenta: number;
+            tallas?: components["schemas"]["TallasPeticion"];
+            titulo?: string;
+        };
         AtributoRespuesta: {
             /** Format: uuid */
             id?: string;
@@ -1513,6 +1593,49 @@ export interface components {
         BandejaDeRevisionRespuesta: {
             emisiones?: components["schemas"]["EmisionEnRevisionRespuesta"][];
             guias?: components["schemas"]["GuiaEnRevisionRespuesta"][];
+        };
+        BorradorDetalleRespuesta: {
+            borrador?: components["schemas"]["BorradorRespuesta"];
+            fotos?: components["schemas"]["FotoRespuesta"][];
+            textos?: string[];
+        };
+        BorradorRespuesta: {
+            alertas?: string[];
+            /** Format: int32 */
+            cantidadTonos?: number;
+            caracteristicas?: string[];
+            /** Format: date-time */
+            creadoEn?: string;
+            estado?: string;
+            extraccionCruda?: string;
+            /** Format: uuid */
+            id?: string;
+            linea?: string;
+            material?: string;
+            motivoRechazo?: string;
+            /** Format: int64 */
+            precioProveedor?: number;
+            /** Format: int64 */
+            precioVentaSugerido?: number;
+            /** Format: uuid */
+            productoId?: string;
+            /** Format: uuid */
+            proveedorId?: string;
+            /** Format: uuid */
+            publicacionId?: string;
+            tallas?: components["schemas"]["TallasRespuesta"];
+            tipo?: string;
+            titulo?: string;
+            tonosNombrados?: string[];
+        };
+        BorradoresPaginadosRespuesta: {
+            items?: components["schemas"]["BorradorRespuesta"][];
+            /** Format: int32 */
+            pagina?: number;
+            /** Format: int64 */
+            totalBorradores?: number;
+            /** Format: int32 */
+            totalPaginas?: number;
         };
         CambiarClaveRequest: {
             claveActual: string;
@@ -1663,6 +1786,18 @@ export interface components {
             direccion?: string;
             indicaciones?: string;
         };
+        EditarBorradorPeticion: {
+            /** Format: int32 */
+            cantidadTonos?: number;
+            caracteristicas?: string[];
+            material?: string;
+            /** Format: int64 */
+            precioVentaSugerido?: number;
+            tallas?: components["schemas"]["TallasPeticion"];
+            tipo?: string;
+            titulo?: string;
+            tonosNombrados?: string[];
+        };
         EditarCategoriaPeticion: {
             hashtags?: string[];
             linea?: string;
@@ -1771,6 +1906,18 @@ export interface components {
             totalSinExistencia?: number;
             /** Format: int32 */
             totalSinExistenciaEnPublicados?: number;
+        };
+        FotoAprobadaPeticion: {
+            colorHex?: string;
+            /** Format: uuid */
+            mensajeId: string;
+            tono?: string;
+        };
+        FotoRespuesta: {
+            /** Format: uuid */
+            mensajeId?: string;
+            pieDeFoto?: string;
+            url?: string;
         };
         FotogramaPeticion: {
             /** Format: int32 */
@@ -2078,6 +2225,7 @@ export interface components {
         ProductoRespuesta: {
             categoria?: components["schemas"]["CategoriaRespuesta"];
             descripcion?: string;
+            estadoDisponibilidad?: string;
             galeria?: components["schemas"]["ImagenRespuesta"][];
             imagenPrincipal?: components["schemas"]["ImagenRespuesta"];
             marca?: components["schemas"]["MarcaRespuesta"];
@@ -2166,6 +2314,9 @@ export interface components {
             /** Format: date-time */
             recibidaEn?: string;
             tipo?: string;
+        };
+        RechazarBorradorPeticion: {
+            motivo: string;
         };
         RechazarEnEntregaRequest: {
             motivo?: string;
@@ -2421,6 +2572,16 @@ export interface components {
             orden?: number;
             url?: string;
         };
+        TallasPeticion: {
+            sirveHasta?: string;
+            tipo?: string;
+            valores?: string[];
+        };
+        TallasRespuesta: {
+            sirveHasta?: string;
+            tipo?: string;
+            valores?: string[];
+        };
         UrlSubidaRespuesta: {
             objectKey?: string;
             url?: string;
@@ -2588,6 +2749,131 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["SolicitudAtencionRespuesta"];
+                };
+            };
+        };
+    };
+    listar_14: {
+        parameters: {
+            query?: {
+                estado?: string;
+                proveedorId?: string;
+                pagina?: number;
+                tamano?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["BorradoresPaginadosRespuesta"];
+                };
+            };
+        };
+    };
+    ver_2: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["BorradorDetalleRespuesta"];
+                };
+            };
+        };
+    };
+    editar_3: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EditarBorradorPeticion"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["BorradorRespuesta"];
+                };
+            };
+        };
+    };
+    aprobar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AprobarBorradorPeticion"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ProductoAdminRespuesta"];
+                };
+            };
+        };
+    };
+    rechazar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RechazarBorradorPeticion"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["BorradorRespuesta"];
                 };
             };
         };
@@ -2832,7 +3118,7 @@ export interface operations {
             };
         };
     };
-    ver_4: {
+    ver_5: {
         parameters: {
             query?: never;
             header?: never;
@@ -4409,7 +4695,7 @@ export interface operations {
             };
         };
     };
-    ver_3: {
+    ver_4: {
         parameters: {
             query?: never;
             header?: never;
@@ -4573,7 +4859,7 @@ export interface operations {
             };
         };
     };
-    ver_2: {
+    ver_3: {
         parameters: {
             query?: never;
             header?: never;

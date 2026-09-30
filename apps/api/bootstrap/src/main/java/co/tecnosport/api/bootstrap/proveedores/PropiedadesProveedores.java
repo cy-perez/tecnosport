@@ -1,5 +1,9 @@
 package co.tecnosport.api.bootstrap.proveedores;
 
+import co.tecnosport.api.domain.catalogo.LineaCatalogo;
+import co.tecnosport.api.domain.proveedores.Proveedor;
+import java.math.BigDecimal;
+import java.util.Map;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 /**
@@ -17,7 +21,19 @@ public record PropiedadesProveedores(
     long minutosUrlFirmada,
     long exportacionMaximaBytes,
     long descomprimidoMaximoBytes,
-    int colaDeIngestas) {
+    int colaDeIngestas,
+    Map<LineaCatalogo, BigDecimal> margenPorLinea,
+    Huella huella) {
+
+  /** La distancia de Hamming hasta la que dos fotos son la misma. */
+  public record Huella(int umbralHamming) {
+    public Huella {
+      if (umbralHamming < 0 || umbralHamming > 64) {
+        throw new IllegalStateException(
+            "tecnosport.proveedores.huella.umbral-hamming va de 0 a 64.");
+      }
+    }
+  }
 
   public PropiedadesProveedores {
     if (bucket == null || bucket.isBlank()) {
@@ -39,6 +55,22 @@ public record PropiedadesProveedores(
     if (colaDeIngestas <= 0) {
       throw new IllegalStateException(
           "tecnosport.proveedores.cola-de-ingestas debe ser mayor que cero.");
+    }
+    if (margenPorLinea == null) {
+      throw new IllegalStateException("Falta tecnosport.proveedores.margen-por-linea.");
+    }
+    for (LineaCatalogo linea : Proveedor.LINEAS_ADMITIDAS) {
+      BigDecimal factor = margenPorLinea.get(linea);
+      if (factor == null || factor.compareTo(BigDecimal.ONE) < 0) {
+        throw new IllegalStateException(
+            "tecnosport.proveedores.margen-por-linea."
+                + linea
+                + " tiene que existir y ser al menos 1: es lo que multiplica el precio del"
+                + " proveedor.");
+      }
+    }
+    if (huella == null) {
+      throw new IllegalStateException("Falta tecnosport.proveedores.huella.umbral-hamming.");
     }
   }
 }

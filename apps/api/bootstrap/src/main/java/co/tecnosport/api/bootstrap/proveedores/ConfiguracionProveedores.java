@@ -3,9 +3,11 @@ package co.tecnosport.api.bootstrap.proveedores;
 import co.tecnosport.api.application.compartido.EnTransaccionPropia;
 import co.tecnosport.api.application.compartido.Reloj;
 import co.tecnosport.api.application.proveedores.AlmacenDeArchivosDeProveedor;
+import co.tecnosport.api.application.proveedores.ArmarPublicaciones;
 import co.tecnosport.api.application.proveedores.CrearProveedor;
 import co.tecnosport.api.application.proveedores.EditarProveedor;
 import co.tecnosport.api.application.proveedores.EjecutorDeIngestas;
+import co.tecnosport.api.application.proveedores.ExtraerProductoDePublicacion;
 import co.tecnosport.api.application.proveedores.FuenteDeMensajes;
 import co.tecnosport.api.application.proveedores.IniciarIngesta;
 import co.tecnosport.api.application.proveedores.ProcesarLoteDeIngesta;
@@ -13,6 +15,8 @@ import co.tecnosport.api.application.proveedores.RegistrarMensajesDeProveedor;
 import co.tecnosport.api.application.proveedores.RepositorioLotesIngesta;
 import co.tecnosport.api.application.proveedores.RepositorioMensajesProveedor;
 import co.tecnosport.api.application.proveedores.RepositorioProveedores;
+import co.tecnosport.api.application.proveedores.RepositorioPublicacionesProveedor;
+import co.tecnosport.api.application.proveedores.ResolverBorrador;
 import co.tecnosport.api.application.proveedores.SolicitarSubidaDeExportacion;
 import co.tecnosport.api.infrastructure.proveedores.AlmacenDeArchivosDeProveedorGcs;
 import co.tecnosport.api.infrastructure.proveedores.whatsapp.ExportacionChatWhatsApp;
@@ -82,11 +86,28 @@ public class ConfiguracionProveedores {
   @Bean
   public ProcesarLoteDeIngesta procesarLoteDeIngesta(
       RepositorioLotesIngesta lotes,
+      RepositorioProveedores proveedores,
+      RepositorioMensajesProveedor mensajes,
+      RepositorioPublicacionesProveedor publicaciones,
       FuenteDeMensajes fuente,
       RegistrarMensajesDeProveedor registrar,
+      ArmarPublicaciones armar,
+      ExtraerProductoDePublicacion extraer,
+      ResolverBorrador resolver,
       EnTransaccionPropia enTransaccionPropia,
       Reloj reloj) {
-    return new ProcesarLoteDeIngesta(lotes, fuente, registrar, enTransaccionPropia, reloj);
+    return new ProcesarLoteDeIngesta(
+        lotes,
+        proveedores,
+        mensajes,
+        publicaciones,
+        fuente,
+        registrar,
+        armar,
+        extraer,
+        resolver,
+        enTransaccionPropia,
+        reloj);
   }
 
   @Bean

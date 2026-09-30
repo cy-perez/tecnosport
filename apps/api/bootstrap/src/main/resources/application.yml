@@ -232,6 +232,16 @@ tecnosport:
     # Cuantos lotes caben esperando. Corta a proposito: un lote tarda minutos y el panel lo usa una
     # persona, asi que una cola llena no es carga, es alguien pulsando muchas veces.
     cola-de-ingestas: ${PROVEEDORES_COLA_DE_INGESTAS:20}
+    # El factor con que se sugiere el precio de venta a partir del del proveedor, por linea;
+    # un proveedor puede traer el suyo y entonces manda. Son los del documento de la ingesta
+    # (30 de septiembre de 2026); es una sugerencia y quien aprueba pone el precio final.
+    margen-por-linea:
+      BOLSOS: ${PROVEEDORES_MARGEN_BOLSOS:1.35}
+      ROPA: ${PROVEEDORES_MARGEN_ROPA:1.30}
+    huella:
+      # Hasta cuantos bits de 64 pueden diferir dos pHash para ser la misma foto. Parametro
+      # tecnico: 6 es lo habitual para reconocer la misma imagen reescalada o recomprimida.
+      umbral-hamming: ${PROVEEDORES_UMBRAL_HAMMING:6}
     extraccion:
       # La API de Claude con salida estructurada (platform.claude.com/docs/en/build-with-claude/
       # structured-outputs). La clave vive en Secret Manager; VACIA, el extractor es el sembrado
