@@ -46,6 +46,11 @@ que lo lee.
 
 El de local lo crea `node infra/local/bucket-imagenes.mjs`, idempotente, con la
 llave de la cuenta de servicio en la ruta de `GOOGLE_APPLICATION_CREDENTIALS`.
+El mismo script crea también `tecnosport-local-proveedores`, el bucket
+**privado** de la ingesta por WhatsApp (`ADR-0067`): ahí van los zip exportados
+y las fotos originales de los proveedores, que nunca se sirven al público —al
+aprobar un borrador las fotos se copian al bucket de imágenes—. En dev lo declara
+Terraform con `public_access_prevention = "enforced"` y sin CDN delante.
 Sin esa llave el backend arranca igual —el bean `Storage` se construye sin
 credenciales— pero firmar falla:
 `POST /api/v1/admin/sets-rotacion/{id}/subidas` responde 500 con
@@ -72,8 +77,9 @@ JVM se siente. CRaC o imagen nativa solo si el costo aprieta, no de entrada.
 
 **Esta tabla listaba un Cloud Scheduler que nadie usa** —"liberar reservas vencidas, conciliar
 pagos, conciliar seguimiento de envíos, generar sitemap"— y la frase llevaba ahí desde el primer
-commit del documento. Las once tareas son `@Scheduled` dentro de la API (`grep -rln "@Scheduled"
-apps/api/bootstrap/src/main/java`). Es la tercera frase de este documento que describía en presente
+commit del documento. Las once tareas —doce desde el 30 de septiembre de 2026, con la que oculta
+los productos de proveedor vencidos (`ADR-0066`)— son `@Scheduled` dentro de la API
+(`grep -rln "@Scheduled" apps/api/bootstrap/src/main/java`). Es la tercera frase de este documento que describía en presente
 algo que no existía, después del freno de seguridad y del `terraform plan` de cada pull request.
 
 Eso tiene una consecuencia que no estaba dicha en ninguna parte y que se midió el 23 de septiembre
@@ -491,6 +497,19 @@ GCS_BUCKET_IMAGENES, GCS_URL_PUBLICA, GCS_MINUTOS_URL_FIRMADA
 GOOGLE_APPLICATION_CREDENTIALS  (solo local: ruta a la llave de la cuenta de servicio;
                                  en Cloud Run no se define, se usa la cuenta de servicio adjunta)
 
+GCS_BUCKET_PROVEEDORES          (el privado: exportaciones y fotos originales, ADR-0067)
+PROVEEDORES_EXPORTACION_MAXIMA_BYTES, PROVEEDORES_DESCOMPRIMIDO_MAXIMO_BYTES
+PROVEEDORES_COLA_DE_INGESTAS
+PROVEEDORES_MARGEN_BOLSOS, PROVEEDORES_MARGEN_ROPA, PROVEEDORES_UMBRAL_HAMMING
+PROVEEDORES_VENTANA_AGRUPACION
+PROVEEDORES_VENTANA_DISPONIBILIDAD                          (P3D, ADR-0066)
+PROVEEDORES_JOB_EXPIRACION_HABILITADO, PROVEEDORES_JOB_EXPIRACION_INTERVALO,
+PROVEEDORES_JOB_EXPIRACION_RETRASO_INICIAL
+ANTHROPIC_API_KEY, ANTHROPIC_URL_BASE
+PROVEEDORES_EXTRACCION_MODELO, PROVEEDORES_EXTRACCION_MAX_TOKENS,
+PROVEEDORES_EXTRACCION_UMBRAL_CONFIANZA, PROVEEDORES_EXTRACCION_TIMEOUT,
+PROVEEDORES_EXTRACCION_INTENTOS, PROVEEDORES_EXTRACCION_ESPERA_INICIAL
+
 SMTP_HOST, SMTP_PUERTO, SMTP_AUTH, SMTP_USUARIO, SMTP_CLAVE, CORREO_REMITENTE
 
 SKYDROPX_URL_BASE, SKYDROPX_CLIENT_ID, SKYDROPX_CLIENT_SECRET
@@ -557,6 +576,18 @@ Las de `SKYDROPX_*` son la cotización, la emisión de guía y el seguimiento
   reliquida semanas después de la entrega, y el orden en que la plataforma devuelve
   los cobros no está documentado, así que preguntar por ventana es lo único que no se
   apoya en un orden que nadie prometió.
+
+- **`ANTHROPIC_API_KEY` es la única de la ingesta que decide qué implementación
+  arranca.** Sin ella el extractor es uno sembrado que devuelve confianza cero,
+  y todo lo que la ingesta lea queda en revisión con la alerta
+  `CONFIANZA_BAJA`: el flujo entero se ensaya sin gastar una llamada. En dev el
+  secreto `anthropic-api-key` existe en Secret Manager y **se monta solo cuando
+  `ingesta_lista = true`** en Terraform, por el mismo orden que abajo: el
+  recipiente primero, el valor después, el montaje al final. Las duraciones
+  (`PT15M`, `P3D`, `PT24H`) son ISO-8601 y se acortan para probar: con
+  `PROVEEDORES_VENTANA_DISPONIBILIDAD=PT1M` y el intervalo del job en `PT1M`, un
+  producto que el proveedor no vuelve a anunciar desaparece de la vitrina en dos
+  minutos.
 
 En Spring, `@ConfigurationProperties` tipadas y validadas al arrancar. Si falta
 una variable obligatoria, la aplicación no arranca; no arranca a medias para

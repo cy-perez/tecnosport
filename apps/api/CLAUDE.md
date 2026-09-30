@@ -17,7 +17,12 @@ un `Pedido` no se confirma sin líneas, un `Inventario` no baja de cero.
 de todo lo externo: `RepositorioPedidos`, `PasarelaDePagos` y `PasarelaSistecredito`
 —una por pasarela, no un puerto común: no comparten ni una operación (`ADR-0048`)—,
 `RecaudoContraentrega`, `EmisorFacturaElectronica`, `AlmacenDeImagenes`,
-`EnviadorDeCorreo`, `Reloj`.
+`EnviadorDeCorreo`, `Reloj`. Y los de la ingesta de proveedores por WhatsApp
+(`ADR-0067`): `FuenteDeMensajes` —la exportación del chat hoy, un webhook
+mañana—, `AlmacenDeArchivosDeProveedor` (el bucket privado),
+`ExtractorDeProductos` (la API de Claude, o el sembrado sin clave),
+`CalculadorDePHash`, `ProcesadorDeImagenes` y `EjecutorDeIngestas` (la cola de
+un hilo). Los repositorios de esa carpeta son puertos como los demás.
 
 **La transacción NO se abre aquí, y esta línea decía que sí.** La abre quien
 llama, con un `TransactionTemplate` en el controlador —`PedidoControlador` para
@@ -27,12 +32,15 @@ septiembre de 2026, cuando una revisión adversarial cruzó esta frase con el
 javadoc de `CrearPedido`, que decía lo contrario.
 
 Con una excepción, y tiene nombre: `EnTransaccionPropia`. La usan **dos** casos de
-uso, los dos con la misma forma: escriben una fila, llaman a un tercero que mueve
-dinero de verdad, y escriben otra vez. Ahí la atomicidad ya no existe —ninguna
-transacción de base de datos revierte lo que hizo el tercero—, así que agrupar las
-dos escrituras solo consigue que la primera no esté confirmada cuando el dinero se
-va. Si un caso de uso quiere esto sin tener un tercero en la mitad, lo que quiere
-es otra cosa.
+uso con la misma forma —escriben una fila, llaman a un tercero que mueve dinero
+de verdad, y escriben otra vez— y, desde el 30 de septiembre de 2026, dos más de
+la ingesta por la misma razón con otro tercero: `ProcesarLoteDeIngesta` abre una
+transacción por publicación y deja fuera la llamada a la API de Claude, y la
+tarea de expiración (`ADR-0066`) corre sin controlador que le abra ninguna. Ahí
+la atomicidad ya no existe —ninguna transacción de base de datos revierte lo que
+hizo el tercero—, así que agrupar las dos escrituras solo consigue que la primera
+no esté confirmada cuando el dinero se va. Si un caso de uso quiere esto sin tener
+un tercero en la mitad, lo que quiere es otra cosa.
 
 - **La emisión de la guía** (`ADR-0033`): la plataforma de envíos cobra.
 - **El intento de pago con Sistecrédito** (`ADR-0048`): la pasarela abre una
