@@ -807,7 +807,7 @@
       "remitente": "Nombre en el chat exportado",
       "remitenteAyuda": "Tal como el teléfono guardó el contacto: es lo que sale antes de los dos puntos en cada línea del chat. Si no coincide, la ingesta no lee ni un mensaje.",
       "telefono": "Teléfono de WhatsApp",
-      "telefonoAyuda": "Con indicativo, sin espacios: 573001234567.",
+      "telefonoAyuda": "Con indicativo y sin espacios: el 57 de Colombia seguido de los diez dígitos del celular.",
       "linea": "Línea",
       "seleccionar": "Selecciona una opción",
       "margen": "Factor de margen",

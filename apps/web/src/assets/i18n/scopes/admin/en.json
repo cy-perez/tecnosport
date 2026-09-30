@@ -807,7 +807,7 @@
       "remitente": "Name in the exported chat",
       "remitenteAyuda": "Exactly as the phone saved the contact: it is what comes before the colon on every line of the chat. If it does not match, the import reads no messages at all.",
       "telefono": "WhatsApp phone",
-      "telefonoAyuda": "With country code, no spaces: 573001234567.",
+      "telefonoAyuda": "With country code and no spaces: Colombia's 57 followed by the ten digits of the mobile number.",
       "linea": "Line",
       "seleccionar": "Select an option",
       "margen": "Margin factor",
