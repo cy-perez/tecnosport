@@ -189,7 +189,6 @@ export const adminRoutes: Routes = [
                   // ofrecería nunca aquella a la que hay que cargarle el primero.
                   { provide: REPOSITORIO_CATEGORIAS, useClass: CategoriasAdminHttpRepositorio },
                   { provide: REPOSITORIO_MARCAS, useClass: MarcasAdminHttpRepositorio },
-                  { provide: REPOSITORIO_DIFUSION, useClass: DifusionHttpRepositorio },
                 ],
                 loadComponent: () =>
                   import('./productos/presentation/crear/crear-producto-admin.page').then(
@@ -204,6 +203,15 @@ export const adminRoutes: Routes = [
                   // ofrecería nunca aquella a la que hay que cargarle el primero.
                   { provide: REPOSITORIO_CATEGORIAS, useClass: CategoriasAdminHttpRepositorio },
                   { provide: REPOSITORIO_MARCAS, useClass: MarcasAdminHttpRepositorio },
+                  // Solo aquí y no en `crear`: el panel de difusión se monta al final de esta
+                  // ficha, y un producto que todavía no existe no se puede difundir.
+                  //
+                  // Estuvo en `crear` por error entre el 29 y el 30 de septiembre de 2026, y la
+                  // ficha reventaba con un NG0201 y la pantalla en blanco. Las dos rutas tienen
+                  // bloques de `providers` idénticos, así que un reemplazo pegó en la primera.
+                  // Ninguna prueba lo vio porque los specs de página proveen los puertos a mano:
+                  // lo cubre `admin.routes.spec.ts`, que mira esta configuración y no un montaje.
+                  { provide: REPOSITORIO_DIFUSION, useClass: DifusionHttpRepositorio },
                 ],
                 loadComponent: () =>
                   import('./productos/presentation/editar/editar-producto-admin.page').then(
