@@ -5,7 +5,9 @@ import co.tecnosport.api.domain.catalogo.LineaCatalogo;
 import co.tecnosport.api.domain.proveedores.IdExternoDeMensaje;
 import co.tecnosport.api.domain.proveedores.LoteIngesta;
 import co.tecnosport.api.domain.proveedores.MensajeProveedor;
+import co.tecnosport.api.domain.proveedores.ProductoExtraido;
 import co.tecnosport.api.domain.proveedores.Proveedor;
+import co.tecnosport.api.domain.proveedores.PublicacionProveedor;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -199,6 +201,70 @@ final class ApoyoDeIngesta {
         throw fallo;
       }
       return mensajes;
+    }
+  }
+
+  static final class RepositorioPublicacionesEnMemoria
+      implements RepositorioPublicacionesProveedor {
+
+    final Map<UUID, PublicacionProveedor> porId = new LinkedHashMap<>();
+
+    @Override
+    public void guardarTodas(List<PublicacionProveedor> publicaciones) {
+      for (PublicacionProveedor publicacion : publicaciones) {
+        porId.put(publicacion.id(), publicacion);
+      }
+    }
+
+    @Override
+    public void actualizar(PublicacionProveedor publicacion) {
+      if (!porId.containsKey(publicacion.id())) {
+        throw new IllegalStateException("No se actualiza lo que no se guardó.");
+      }
+      porId.put(publicacion.id(), publicacion);
+    }
+
+    @Override
+    public Optional<PublicacionProveedor> buscarPorId(UUID id) {
+      return Optional.ofNullable(porId.get(id));
+    }
+
+    @Override
+    public List<PublicacionProveedor> listarDeLote(UUID loteId) {
+      return porId.values().stream()
+          .filter(p -> p.loteId().equals(loteId))
+          .sorted(Comparator.comparing(PublicacionProveedor::fecha))
+          .toList();
+    }
+  }
+
+  /** Devuelve siempre el mismo producto y recuerda qué texto le mandaron. */
+  static final class ExtractorFalso implements ExtractorDeProductos {
+
+    private final ProductoExtraido respuesta;
+    private final RuntimeException fallo;
+    TextoDePublicacion ultimoTexto;
+    int llamadas;
+
+    ExtractorFalso(ProductoExtraido respuesta) {
+      this.respuesta = respuesta;
+      this.fallo = null;
+    }
+
+    ExtractorFalso(RuntimeException fallo) {
+      this.respuesta = null;
+      this.fallo = fallo;
+    }
+
+    @Override
+    public ResultadoExtraccion extraer(TextoDePublicacion texto) {
+      ultimoTexto = texto;
+      llamadas++;
+      if (fallo != null) {
+        throw fallo;
+      }
+      return new ResultadoExtraccion(
+          respuesta, "{\"fixture\":true}", new UsoDelExtractor("falso", 10, 5, 1));
     }
   }
 }
