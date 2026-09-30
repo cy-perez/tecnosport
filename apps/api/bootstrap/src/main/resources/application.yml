@@ -217,6 +217,22 @@ tecnosport:
     # no deba ir contra entrega a ningun precio, que hoy no es el caso de ninguna.
     categorias-excluidas: ${CONTRAENTREGA_CATEGORIAS_EXCLUIDAS:}
   # Difusion en redes sociales (Facebook e Instagram) desde el panel.
+  proveedores:
+    # El bucket PRIVADO de los originales del proveedor: exportaciones subidas y fotos tal como
+    # llegaron. Distinto del de imagenes, y tambien uno por ambiente (ADR-0058): el valor por
+    # omision es el de local, que crea infra/local/bucket-imagenes.mjs; el desplegado lo fija
+    # Terraform. Nada de aqui es publico: el panel lee con URL firmada.
+    bucket: ${GCS_BUCKET_PROVEEDORES:tecnosport-local-proveedores}
+    minutos-url-firmada: ${GCS_MINUTOS_URL_FIRMADA:15}
+    # Parametros tecnicos, no datos de negocio. El zip se abre entero en memoria dentro de una
+    # instancia de Cloud Run, y 30 MB es lo que cabe con holgura; lo descomprimido se acota aparte
+    # porque un zip que infle a gigas no es una exportacion de WhatsApp.
+    exportacion-maxima-bytes: ${PROVEEDORES_EXPORTACION_MAXIMA_BYTES:31457280}
+    descomprimido-maximo-bytes: ${PROVEEDORES_DESCOMPRIMIDO_MAXIMO_BYTES:209715200}
+    # Cuantos lotes caben esperando. Corta a proposito: un lote tarda minutos y el panel lo usa una
+    # persona, asi que una cola llena no es carga, es alguien pulsando muchas veces.
+    cola-de-ingestas: ${PROVEEDORES_COLA_DE_INGESTAS:20}
+
   meta:
     # La version va dentro de la ruta y Meta retira versiones con calendario publicado: congelarla
     # en el codigo obligaria a un despliegue cada vez.

@@ -1155,6 +1155,17 @@
         },
         "type" : "object"
       },
+      "IniciarIngestaPeticion" : {
+        "properties" : {
+          "objectKey" : {
+            "type" : "string"
+          }
+        },
+        "required" : [
+          "objectKey"
+        ],
+        "type" : "object"
+      },
       "IniciarSesionRequest" : {
         "properties" : {
           "clave" : {
@@ -1258,6 +1269,66 @@
           "varianteId" : {
             "format" : "uuid",
             "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "LoteIngestaRespuesta" : {
+        "properties" : {
+          "creadoEn" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "detalleError" : {
+            "type" : "string"
+          },
+          "estado" : {
+            "type" : "string"
+          },
+          "id" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "iniciadoEn" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "origen" : {
+            "type" : "string"
+          },
+          "proveedorId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "resumen" : {
+            "$ref" : "#/components/schemas/ResumenIngestaRespuesta"
+          },
+          "terminadoEn" : {
+            "format" : "date-time",
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "LotesPaginadosRespuesta" : {
+        "properties" : {
+          "items" : {
+            "items" : {
+              "$ref" : "#/components/schemas/LoteIngestaRespuesta"
+            },
+            "type" : "array"
+          },
+          "pagina" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "totalLotes" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "totalPaginas" : {
+            "format" : "int32",
+            "type" : "integer"
           }
         },
         "type" : "object"
@@ -1768,6 +1839,68 @@
         },
         "type" : "object"
       },
+      "ProveedorPeticion" : {
+        "properties" : {
+          "activo" : {
+            "type" : "boolean"
+          },
+          "factorDeMargen" : {
+            "type" : "number"
+          },
+          "linea" : {
+            "type" : "string"
+          },
+          "nombre" : {
+            "type" : "string"
+          },
+          "nombreEnExportacion" : {
+            "type" : "string"
+          },
+          "publicacionAutomatica" : {
+            "type" : "boolean"
+          },
+          "telefonoWhatsApp" : {
+            "type" : "string"
+          }
+        },
+        "required" : [
+          "linea",
+          "nombre",
+          "nombreEnExportacion",
+          "telefonoWhatsApp"
+        ],
+        "type" : "object"
+      },
+      "ProveedorRespuesta" : {
+        "properties" : {
+          "activo" : {
+            "type" : "boolean"
+          },
+          "factorDeMargen" : {
+            "type" : "number"
+          },
+          "id" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "linea" : {
+            "type" : "string"
+          },
+          "nombre" : {
+            "type" : "string"
+          },
+          "nombreEnExportacion" : {
+            "type" : "string"
+          },
+          "publicacionAutomatica" : {
+            "type" : "boolean"
+          },
+          "telefonoWhatsApp" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
       "PublicacionEnRedRespuesta" : {
         "properties" : {
           "detalleDelFallo" : {
@@ -2178,6 +2311,47 @@
         },
         "type" : "object"
       },
+      "ResumenIngestaRespuesta" : {
+        "properties" : {
+          "agotados" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "alertas" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "borradoresNuevos" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "descartes" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "mensajesIgnorados" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "mensajesLeidos" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "mensajesNuevos" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "publicaciones" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "renovaciones" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        },
+        "type" : "object"
+      },
       "RetractoPublicoRespuesta" : {
         "properties" : {
           "estado" : {
@@ -2299,6 +2473,17 @@
             "type" : "string"
           }
         },
+        "type" : "object"
+      },
+      "SolicitarSubidaDeExportacionPeticion" : {
+        "properties" : {
+          "contentType" : {
+            "type" : "string"
+          }
+        },
+        "required" : [
+          "contentType"
+        ],
         "type" : "object"
       },
       "SolicitarSubidaDeImagenDeGaleriaPeticion" : {
@@ -2465,6 +2650,17 @@
             "type" : "string"
           },
           "verdictoAlRadicar" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "SubidaDeExportacionRespuesta" : {
+        "properties" : {
+          "objectKey" : {
+            "type" : "string"
+          },
+          "url" : {
             "type" : "string"
           }
         },
@@ -2660,7 +2856,7 @@
   "paths" : {
     "/api/v1/admin/atencion" : {
       "get" : {
-        "operationId" : "listar_6",
+        "operationId" : "listar_7",
         "parameters" : [
           {
             "in" : "query",
@@ -2808,7 +3004,7 @@
     },
     "/api/v1/admin/categorias" : {
       "get" : {
-        "operationId" : "listar_5",
+        "operationId" : "listar_6",
         "responses" : {
           "200" : {
             "content" : {
@@ -2826,7 +3022,7 @@
         ]
       },
       "post" : {
-        "operationId" : "crear_7",
+        "operationId" : "crear_8",
         "requestBody" : {
           "content" : {
             "application/json" : {
@@ -2878,7 +3074,7 @@
         ]
       },
       "put" : {
-        "operationId" : "editar",
+        "operationId" : "editar_1",
         "parameters" : [
           {
             "in" : "path",
@@ -2919,7 +3115,7 @@
     },
     "/api/v1/admin/envios/revision" : {
       "get" : {
-        "operationId" : "listar_11",
+        "operationId" : "listar_13",
         "parameters" : [
           {
             "in" : "query",
@@ -3112,9 +3308,91 @@
         ]
       }
     },
+    "/api/v1/admin/ingestas" : {
+      "get" : {
+        "operationId" : "listar_12",
+        "parameters" : [
+          {
+            "in" : "query",
+            "name" : "proveedorId",
+            "required" : false,
+            "schema" : {
+              "format" : "uuid",
+              "type" : "string"
+            }
+          },
+          {
+            "in" : "query",
+            "name" : "pagina",
+            "required" : false,
+            "schema" : {
+              "default" : 0,
+              "format" : "int32",
+              "type" : "integer"
+            }
+          },
+          {
+            "in" : "query",
+            "name" : "tamano",
+            "required" : false,
+            "schema" : {
+              "default" : 20,
+              "format" : "int32",
+              "type" : "integer"
+            }
+          }
+        ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/LotesPaginadosRespuesta"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "admin-ingesta-controlador"
+        ]
+      }
+    },
+    "/api/v1/admin/ingestas/{id}" : {
+      "get" : {
+        "operationId" : "ver_4",
+        "parameters" : [
+          {
+            "in" : "path",
+            "name" : "id",
+            "required" : true,
+            "schema" : {
+              "format" : "uuid",
+              "type" : "string"
+            }
+          }
+        ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/LoteIngestaRespuesta"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "admin-ingesta-controlador"
+        ]
+      }
+    },
     "/api/v1/admin/marcas" : {
       "get" : {
-        "operationId" : "listar_4",
+        "operationId" : "listar_5",
         "responses" : {
           "200" : {
             "content" : {
@@ -3132,7 +3410,7 @@
         ]
       },
       "post" : {
-        "operationId" : "crear_6",
+        "operationId" : "crear_7",
         "requestBody" : {
           "content" : {
             "application/json" : {
@@ -3162,7 +3440,7 @@
     },
     "/api/v1/admin/pedidos" : {
       "get" : {
-        "operationId" : "listar_10",
+        "operationId" : "listar_11",
         "parameters" : [
           {
             "in" : "query",
@@ -3544,7 +3822,7 @@
     },
     "/api/v1/admin/pedidos/{pedidoId}/garantias" : {
       "get" : {
-        "operationId" : "listar_3",
+        "operationId" : "listar_4",
         "parameters" : [
           {
             "in" : "path",
@@ -3617,7 +3895,7 @@
     },
     "/api/v1/admin/pedidos/{pedidoId}/retractos" : {
       "get" : {
-        "operationId" : "listar_2",
+        "operationId" : "listar_3",
         "parameters" : [
           {
             "in" : "path",
@@ -3689,7 +3967,7 @@
     },
     "/api/v1/admin/pedidos/{pedidoId}/reversiones" : {
       "get" : {
-        "operationId" : "listar_1",
+        "operationId" : "listar_2",
         "parameters" : [
           {
             "in" : "path",
@@ -3762,7 +4040,7 @@
     },
     "/api/v1/admin/productos" : {
       "get" : {
-        "operationId" : "listar",
+        "operationId" : "listar_1",
         "parameters" : [
           {
             "in" : "query",
@@ -3802,7 +4080,7 @@
         ]
       },
       "post" : {
-        "operationId" : "crear_5",
+        "operationId" : "crear_6",
         "requestBody" : {
           "content" : {
             "application/json" : {
@@ -3854,7 +4132,7 @@
         ]
       },
       "get" : {
-        "operationId" : "ver",
+        "operationId" : "ver_1",
         "parameters" : [
           {
             "in" : "path",
@@ -3883,7 +4161,7 @@
         ]
       },
       "patch" : {
-        "operationId" : "editar_1",
+        "operationId" : "editar_2",
         "parameters" : [
           {
             "in" : "path",
@@ -4325,6 +4603,209 @@
         },
         "tags" : [
           "admin-producto-controlador"
+        ]
+      }
+    },
+    "/api/v1/admin/proveedores" : {
+      "get" : {
+        "operationId" : "listar",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/ProveedorRespuesta"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "admin-proveedor-controlador"
+        ]
+      },
+      "post" : {
+        "operationId" : "crear_5",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ProveedorPeticion"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProveedorRespuesta"
+                }
+              }
+            },
+            "description" : "Created"
+          }
+        },
+        "tags" : [
+          "admin-proveedor-controlador"
+        ]
+      }
+    },
+    "/api/v1/admin/proveedores/{id}" : {
+      "get" : {
+        "operationId" : "ver",
+        "parameters" : [
+          {
+            "in" : "path",
+            "name" : "id",
+            "required" : true,
+            "schema" : {
+              "format" : "uuid",
+              "type" : "string"
+            }
+          }
+        ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProveedorRespuesta"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "admin-proveedor-controlador"
+        ]
+      },
+      "put" : {
+        "operationId" : "editar",
+        "parameters" : [
+          {
+            "in" : "path",
+            "name" : "id",
+            "required" : true,
+            "schema" : {
+              "format" : "uuid",
+              "type" : "string"
+            }
+          }
+        ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ProveedorPeticion"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProveedorRespuesta"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "admin-proveedor-controlador"
+        ]
+      }
+    },
+    "/api/v1/admin/proveedores/{id}/ingestas" : {
+      "post" : {
+        "operationId" : "iniciar",
+        "parameters" : [
+          {
+            "in" : "path",
+            "name" : "id",
+            "required" : true,
+            "schema" : {
+              "format" : "uuid",
+              "type" : "string"
+            }
+          }
+        ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/IniciarIngestaPeticion"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "202" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/LoteIngestaRespuesta"
+                }
+              }
+            },
+            "description" : "Accepted"
+          }
+        },
+        "tags" : [
+          "admin-ingesta-controlador"
+        ]
+      }
+    },
+    "/api/v1/admin/proveedores/{id}/ingestas/url-subida" : {
+      "post" : {
+        "operationId" : "urlDeSubida",
+        "parameters" : [
+          {
+            "in" : "path",
+            "name" : "id",
+            "required" : true,
+            "schema" : {
+              "format" : "uuid",
+              "type" : "string"
+            }
+          }
+        ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/SolicitarSubidaDeExportacionPeticion"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SubidaDeExportacionRespuesta"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "admin-ingesta-controlador"
         ]
       }
     },
@@ -4826,7 +5307,7 @@
     },
     "/api/v1/atributos" : {
       "get" : {
-        "operationId" : "listar_9",
+        "operationId" : "listar_10",
         "responses" : {
           "200" : {
             "content" : {
@@ -5097,7 +5578,7 @@
     },
     "/api/v1/carritos/{id}" : {
       "get" : {
-        "operationId" : "ver_2",
+        "operationId" : "ver_3",
         "parameters" : [
           {
             "in" : "path",
@@ -5257,7 +5738,7 @@
     },
     "/api/v1/categorias" : {
       "get" : {
-        "operationId" : "listar_8",
+        "operationId" : "listar_9",
         "responses" : {
           "200" : {
             "content" : {
@@ -5331,7 +5812,7 @@
     },
     "/api/v1/mapa-del-sitio" : {
       "get" : {
-        "operationId" : "ver_1",
+        "operationId" : "ver_2",
         "responses" : {
           "200" : {
             "content" : {
@@ -5351,7 +5832,7 @@
     },
     "/api/v1/marcas" : {
       "get" : {
-        "operationId" : "listar_7",
+        "operationId" : "listar_8",
         "responses" : {
           "200" : {
             "content" : {

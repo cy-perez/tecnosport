@@ -51,6 +51,13 @@ import co.tecnosport.api.application.pedido.MetodoDePagoNoHabilitadoException;
 import co.tecnosport.api.application.pedido.PedidoNoEncontradoException;
 import co.tecnosport.api.application.pedido.SistecreditoNoDisponibleException;
 import co.tecnosport.api.application.pedido.VarianteNoEncontradaException;
+import co.tecnosport.api.application.proveedores.ColaDeIngestasLlenaException;
+import co.tecnosport.api.application.proveedores.ExportacionDemasiadoGrandeException;
+import co.tecnosport.api.application.proveedores.ExportacionNoEncontradaException;
+import co.tecnosport.api.application.proveedores.LoteNoEncontradoException;
+import co.tecnosport.api.application.proveedores.ProveedorInactivoException;
+import co.tecnosport.api.application.proveedores.ProveedorNoEncontradoException;
+import co.tecnosport.api.application.proveedores.TipoDeExportacionNoAdmitidoException;
 import co.tecnosport.api.application.reintegro.MontoDeReintegroInvalidoException;
 import co.tecnosport.api.application.reintegro.ReintegroRequeridoException;
 import co.tecnosport.api.application.retracto.PedidoSinEntregarException;
@@ -171,6 +178,47 @@ public class ManejadorDeErrores {
   @ExceptionHandler(DifusionRepetidaException.class)
   public ProblemDetail difusionRepetida(DifusionRepetidaException excepcion) {
     return problema(HttpStatus.TOO_MANY_REQUESTS, "Esa difusión ya está en marcha", excepcion);
+  }
+
+  @ExceptionHandler(ProveedorNoEncontradoException.class)
+  public ProblemDetail proveedorNoEncontrado(ProveedorNoEncontradoException excepcion) {
+    return problema(HttpStatus.NOT_FOUND, "Proveedor no encontrado", excepcion);
+  }
+
+  @ExceptionHandler(LoteNoEncontradoException.class)
+  public ProblemDetail loteNoEncontrado(LoteNoEncontradoException excepcion) {
+    return problema(HttpStatus.NOT_FOUND, "Lote de ingesta no encontrado", excepcion);
+  }
+
+  // 409: el proveedor existe y la petición está bien; lo que falta es reactivarlo en el panel.
+  @ExceptionHandler(ProveedorInactivoException.class)
+  public ProblemDetail proveedorInactivo(ProveedorInactivoException excepcion) {
+    return problema(HttpStatus.CONFLICT, "El proveedor está inactivo", excepcion);
+  }
+
+  // 422 y no 404: la key viene en el cuerpo, y una key que no es de ese proveedor o que no apunta
+  // a nada es un cuerpo que no se puede procesar, no un recurso que falte en la ruta.
+  @ExceptionHandler(ExportacionNoEncontradaException.class)
+  public ProblemDetail exportacionNoEncontrada(ExportacionNoEncontradaException excepcion) {
+    return problema(HttpStatus.UNPROCESSABLE_CONTENT, "Exportación no encontrada", excepcion);
+  }
+
+  @ExceptionHandler(TipoDeExportacionNoAdmitidoException.class)
+  public ProblemDetail tipoDeExportacionNoAdmitido(TipoDeExportacionNoAdmitidoException excepcion) {
+    return problema(HttpStatus.UNPROCESSABLE_CONTENT, "Tipo de archivo no admitido", excepcion);
+  }
+
+  // 413 aunque el archivo no viajara en esta petición: es lo que el cliente entiende como «pesa
+  // demasiado», y el mensaje trae las cifras y qué hacer.
+  @ExceptionHandler(ExportacionDemasiadoGrandeException.class)
+  public ProblemDetail exportacionDemasiadoGrande(ExportacionDemasiadoGrandeException excepcion) {
+    return problema(HttpStatus.CONTENT_TOO_LARGE, "La exportación pesa demasiado", excepcion);
+  }
+
+  // 503: el lote quedó escrito y en RECIBIDO; lo que no hay es quien lo tome ahora mismo.
+  @ExceptionHandler(ColaDeIngestasLlenaException.class)
+  public ProblemDetail colaDeIngestasLlena(ColaDeIngestasLlenaException excepcion) {
+    return problema(HttpStatus.SERVICE_UNAVAILABLE, "La cola de ingestas está llena", excepcion);
   }
 
   // 409 por el mismo criterio que el set publicado: la petición está bien formada y el producto
