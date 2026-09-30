@@ -22,7 +22,23 @@
     "imagen_de_galeria_duplicada": "Esa misma imagen ya está en la galería.",
     "imagen_de_galeria_no_encontrada": "Esa imagen ya no está en la galería.",
     "producto_publicado": "Está publicado: retíralo de la vitrina antes de eliminarlo.",
-    "producto_con_ventas": "Tiene ventas, así que no se puede eliminar. Retíralo de la vitrina: los pedidos, las garantías y los retractos siguen necesitándolo."
+    "producto_con_ventas": "Tiene ventas, así que no se puede eliminar. Retíralo de la vitrina: los pedidos, las garantías y los retractos siguen necesitándolo.",
+    "proveedor_no_encontrado": "Ese proveedor ya no existe. Recarga la lista.",
+    "proveedor_inactivo": "El proveedor está inactivo. Actívalo desde su ficha antes de subirle una exportación.",
+    "exportacion_no_encontrada": "El archivo no llegó al bucket. Vuelve a elegirlo y súbelo de nuevo.",
+    "exportacion_demasiado_grande": "La exportación pesa demasiado. Exporta el chat sin archivos o parte el periodo en dos.",
+    "exportacion_ilegible": "No se pudo leer la exportación: el zip tiene que traer el .txt del chat tal como lo exporta WhatsApp.",
+    "tipo_de_exportacion_no_admitido": "Ese archivo no es una exportación de chat. Sube el .zip que genera WhatsApp.",
+    "cola_de_ingestas_llena": "Hay otra ingesta en curso. El lote quedó guardado: espera a que termine y vuelve a intentarlo.",
+    "lote_no_encontrado": "Ese lote ya no existe. Recarga la lista.",
+    "borrador_no_encontrado": "Ese borrador ya no existe. Recarga la lista.",
+    "borrador_no_editable": "Este borrador ya se decidió: no se puede cambiar ni aprobar de nuevo.",
+    "borrador_sin_fotos": "No se puede aprobar un producto sin fotos. Si la publicación no traía ninguna, recházalo.",
+    "borrador_sin_precio": "Falta el precio de venta. Escríbelo antes de aprobar.",
+    "borrador_sin_titulo": "Falta el título del producto. Corrígelo en los datos extraídos antes de aprobar.",
+    "atributo_de_catalogo_no_definido": "Faltan los atributos de color o talla en el catálogo. Créalos antes de aprobar.",
+    "foto_no_es_del_borrador": "Una de las fotos no pertenece a esta publicación. Recarga la página.",
+    "imagen_de_proveedor_ilegible": "Una de las fotos no se pudo procesar. Recházalo o pídele al proveedor la foto de nuevo."
   },
   "iniciarSesion": {
     "titulo": "Panel administrativo",
@@ -61,7 +77,10 @@
     "ir_a_clave": "Cambiar mi clave",
     "ir_a_categorias": "Categorías",
     "ir_a_panel": "Resumen",
-    "navegacion": "Secciones del panel"
+    "navegacion": "Secciones del panel",
+    "ir_a_proveedores": "Proveedores",
+    "ir_a_ingestas": "Ingestas",
+    "ir_a_borradores": "Borradores"
   },
   "pedidos": {
     "titulo": "Pedidos",
@@ -756,5 +775,210 @@
     "ciclo": "Una categoría no puede colgar de sí misma ni de una de sus hijas.",
     "error": "No pudimos guardar el cambio. Inténtalo de nuevo.",
     "errorLista": "No pudimos cargar las categorías."
+  },
+  "proveedores": {
+    "titulo": "Proveedores",
+    "explicacion": "Los proveedores que mandan su catálogo por WhatsApp. De cada uno se guarda cómo aparece en el chat exportado —eso decide qué mensajes son suyos— y el margen con el que se sugiere el precio de venta. No se borran: se desactivan.",
+    "errorLista": "No se pudo cargar la lista de proveedores.",
+    "total": "{{total}} proveedor(es)",
+    "nuevo": "Nuevo proveedor",
+    "ninguno": "Todavía no hay ningún proveedor.",
+    "editar": "Editar",
+    "activo": "Activo",
+    "inactivo": "Inactivo",
+    "lineas": {
+      "BOLSOS": "Bolsos",
+      "ROPA": "Ropa"
+    },
+    "columnas": {
+      "nombre": "Proveedor",
+      "linea": "Línea",
+      "remitente": "Nombre en el chat",
+      "margen": "Margen",
+      "estado": "Estado",
+      "acciones": "Acciones"
+    },
+    "formulario": {
+      "miga": "Ficha del proveedor",
+      "tituloCrear": "Nuevo proveedor",
+      "tituloEditar": "Editar proveedor",
+      "errorCarga": "No se pudo cargar el proveedor.",
+      "nombre": "Nombre",
+      "remitente": "Nombre en el chat exportado",
+      "remitenteAyuda": "Tal como el teléfono guardó el contacto: es lo que sale antes de los dos puntos en cada línea del chat. Si no coincide, la ingesta no lee ni un mensaje.",
+      "telefono": "Teléfono de WhatsApp",
+      "telefonoAyuda": "Con indicativo, sin espacios: 573001234567.",
+      "linea": "Línea",
+      "seleccionar": "Selecciona una opción",
+      "margen": "Factor de margen",
+      "margenAyuda": "Multiplica el precio del proveedor para sugerir el de venta. 1,30 es un 30 % sobre el costo; no puede ser menor que 1.",
+      "publicacionAutomatica": "Publicar sin revisar (todavía no aplica: todo borrador pasa por el panel)",
+      "activo": "Activo. Desmarcado, no se le pueden subir exportaciones.",
+      "faltanCampos": "Faltan datos: nombre, nombre en el chat, teléfono, línea y un margen de por lo menos 1.",
+      "guardado": "Listo: {{nombre}} quedó guardado.",
+      "enviando": "Guardando…",
+      "guardar": "Guardar cambios",
+      "crear": "Crear proveedor",
+      "error": "No se pudo guardar el proveedor. Intenta de nuevo."
+    }
+  },
+  "ingestas": {
+    "titulo": "Ingestas",
+    "explicacion": "Cada lote es una exportación del chat de un proveedor. Se sube el zip que genera WhatsApp (Exportar chat, con archivos), el servidor lee los mensajes, los agrupa en publicaciones y deja un borrador por cada producto nuevo. Subir dos veces el mismo chat es seguro: lo que ya se leyó no se repite.",
+    "errorLista": "No se pudo cargar la lista de ingestas.",
+    "total": "{{total}} lote(s)",
+    "ninguna": "Todavía no se ha subido ninguna exportación.",
+    "filtroProveedor": "Ver los lotes de",
+    "todosLosProveedores": "Todos los proveedores",
+    "terminadoEn": "Terminó: {{fecha}}",
+    "enCurso": "En curso…",
+    "estados": {
+      "RECIBIDO": "En cola",
+      "PROCESANDO": "Procesando",
+      "TERMINADO": "Terminado",
+      "ERROR": "Con error"
+    },
+    "columnas": {
+      "proveedor": "Proveedor",
+      "estado": "Estado",
+      "fechas": "Fechas",
+      "resumen": "Resultado"
+    },
+    "resumen": {
+      "mensajes": "{{leidos}} mensajes leídos, {{nuevos}} nuevos",
+      "publicaciones": "{{total}} publicaciones",
+      "borradores": "{{nuevos}} borradores nuevos, {{renovaciones}} renovaciones, {{agotados}} agotados",
+      "alertas": "{{alertas}} con alertas, {{descartes}} descartadas"
+    },
+    "subir": {
+      "titulo": "Subir una exportación",
+      "proveedor": "Proveedor",
+      "seleccionar": "Selecciona un proveedor",
+      "archivo": "Archivo exportado por WhatsApp (.zip)",
+      "archivoAyuda": "En WhatsApp: abre el chat › Más › Exportar chat › Incluir archivos. Sube el zip tal cual, sin descomprimirlo.",
+      "tipoNoSoportado": "Ese archivo no es un zip. Sube el que genera WhatsApp al exportar el chat.",
+      "faltanCampos": "Elige el proveedor y el archivo antes de subir.",
+      "accion": "Subir e ingerir",
+      "subiendo": "Subiendo…",
+      "enCola": "Listo: {{archivo}} quedó en cola. La tabla se actualiza sola mientras se procesa.",
+      "error": "No se pudo subir la exportación. Intenta de nuevo."
+    }
+  },
+  "borradores": {
+    "titulo": "Borradores",
+    "explicacion": "Lo que la ingesta entendió de cada publicación del proveedor, esperando revisión. Aprobar crea el producto con sus variantes y sus fotos; rechazar lo deja escrito con un motivo. Las renovaciones no pasan por aquí: si el proveedor volvió a publicar algo que ya está en el catálogo, solo se le renueva la fecha.",
+    "errorLista": "No se pudo cargar la lista de borradores.",
+    "total": "{{total}} borrador(es)",
+    "ninguno": "No hay borradores con ese filtro.",
+    "filtroEstado": "Estado",
+    "todosLosEstados": "Todos los estados",
+    "filtroProveedor": "Proveedor",
+    "todosLosProveedores": "Todos los proveedores",
+    "sinTitulo": "(sin título)",
+    "precioProveedor": "Proveedor: {{precio}}",
+    "revisar": "Revisar",
+    "estados": {
+      "EN_REVISION": "En revisión",
+      "APROBADO": "Aprobado",
+      "RECHAZADO": "Rechazado",
+      "RENOVACION_APLICADA": "Renovación"
+    },
+    "columnas": {
+      "titulo": "Producto",
+      "precios": "Precio sugerido",
+      "alertas": "Alertas",
+      "estado": "Estado",
+      "acciones": "Acciones"
+    },
+    "tipos": {
+      "BOLSO": "Bolso",
+      "MORRAL": "Morral",
+      "CANGURO": "Canguro",
+      "CONJUNTO_PANTALON": "Conjunto con pantalón",
+      "CONJUNTO_SHORT": "Conjunto con short",
+      "ENTERIZO": "Enterizo",
+      "OTRO": "Otro"
+    },
+    "tallas": {
+      "DESCONOCIDA": "No la dijo",
+      "UNICA": "Talla única (sirve hasta)",
+      "LISTA": "Lista de tallas"
+    },
+    "alertas": {
+      "PRECIO_INCONSISTENTE": "El precio del texto y el que entendió la extracción no coinciden. Se tomó el del texto; revísalo.",
+      "SIN_PRECIO": "La publicación no trae precio. Sin precio de venta no se puede aprobar.",
+      "TITULO_VACIO": "No se pudo sacar un título. Escríbelo antes de aprobar.",
+      "TIPO_DESCONOCIDO": "No se reconoció qué tipo de producto es.",
+      "CONFIANZA_BAJA": "La extracción no está segura de lo que entendió. Revisa todo con calma.",
+      "SIN_FOTOS": "La publicación no trae fotos. Sin fotos no se puede aprobar.",
+      "PRECIO_CAMBIO": "El proveedor cambió el precio de un producto que ya existe. Se actualizó el precio de proveedor; revisa el de venta."
+    },
+    "detalle": {
+      "miga": "Revisión",
+      "errorCarga": "No se pudo cargar el borrador.",
+      "de": "De {{proveedor}} · precio del proveedor: {{precio}}",
+      "alertasTitulo": "Antes de aprobar, revisa",
+      "fotos": "Fotos de la publicación",
+      "sinFotos": "La publicación no trajo fotos.",
+      "fotoAlt": "Foto {{numero}} de la publicación",
+      "textos": "Lo que escribió el proveedor",
+      "sinTextos": "La publicación no trajo texto.",
+      "motivoRechazo": "Rechazado: {{motivo}}",
+      "verProducto": "Ver el producto que creó",
+      "cerrado": "Este borrador ya se decidió."
+    },
+    "datos": {
+      "titulo": "Datos extraídos",
+      "explicacion": "Lo que la extracción entendió. Corrige aquí lo que esté mal y guarda; la aprobación de abajo parte de estos datos.",
+      "tituloProducto": "Título",
+      "tipo": "Tipo de producto",
+      "precioSugerido": "Precio de venta sugerido",
+      "precioSugeridoAyuda": "En pesos, sin decimales. Sale del precio del proveedor por el margen; puedes ajustarlo.",
+      "tipoDeTalla": "Tallas",
+      "sirveHasta": "Sirve hasta",
+      "tallasLista": "Tallas",
+      "separadas": "Separadas por coma: S, M, L.",
+      "cantidadTonos": "Cantidad de tonos",
+      "tonosNombrados": "Tonos, por nombre",
+      "material": "Material",
+      "caracteristicas": "Características",
+      "unaPorLinea": "Una por línea.",
+      "invalidos": "El precio tiene que ser un entero en pesos y la cantidad de tonos un número.",
+      "guardar": "Guardar datos",
+      "guardando": "Guardando…",
+      "guardado": "Datos guardados.",
+      "error": "No se pudieron guardar los datos. Intenta de nuevo."
+    },
+    "aprobar": {
+      "titulo": "Aprobar y crear el producto",
+      "explicacion": "Se crea el producto publicado, con una variante por cada tono y talla, las fotos copiadas al catálogo y las unidades que indiques en el inventario.",
+      "marca": "Marca",
+      "categoria": "Categoría",
+      "seleccionar": "Selecciona una opción",
+      "precioVenta": "Precio de venta",
+      "precioVentaAyuda": "El definitivo, en pesos. Parte del sugerido.",
+      "existenciaInicial": "Unidades por variante",
+      "existenciaInicialAyuda": "Las que entran al inventario por cada tono y talla. Cero deja el producto agotado hasta que cuentes.",
+      "descripcion": "Descripción (opcional)",
+      "altEs": "Texto alternativo de las fotos (español)",
+      "altEn": "Texto alternativo de las fotos (inglés)",
+      "tonoDeFoto": "Tono de la foto {{numero}}",
+      "todosLosTonos": "Vale para todos los tonos",
+      "faltanCampos": "Faltan datos: marca, categoría, precio de venta entero, unidades (0 o más) y los dos textos alternativos.",
+      "accion": "Aprobar y crear producto",
+      "aprobando": "Creando el producto…",
+      "hecho": "Producto creado y publicado.",
+      "verProducto": "Abrir el producto",
+      "error": "No se pudo aprobar el borrador. Intenta de nuevo."
+    },
+    "rechazar": {
+      "titulo": "Rechazar",
+      "motivo": "Motivo",
+      "faltaMotivo": "Escribe por qué se rechaza.",
+      "accion": "Rechazar borrador",
+      "rechazando": "Rechazando…",
+      "hecho": "Borrador rechazado.",
+      "error": "No se pudo rechazar el borrador. Intenta de nuevo."
+    }
   }
 }

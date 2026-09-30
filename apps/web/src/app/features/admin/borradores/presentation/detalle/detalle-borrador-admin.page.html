@@ -1,0 +1,332 @@
+<section class="mx-auto max-w-contenido px-16 py-32">
+  <ts-migas [ruta]="migas()" />
+
+  @if (consulta.isPending()) {
+    <ts-esqueleto />
+  } @else if (consulta.isError() || !borrador()) {
+    <p class="text-ts-error" role="alert">
+      {{ 'admin.borradores.detalle.errorCarga' | transloco }}
+    </p>
+  } @else if (borrador(); as borrador) {
+    <div class="mb-16 flex flex-wrap items-center gap-12">
+      <h1 class="m-0 font-display text-2xl">
+        {{ borrador.titulo || ('admin.borradores.sinTitulo' | transloco) }}
+      </h1>
+      <span [class]="clasesEstado(borrador.estado)">{{ etiquetaEstado(borrador.estado) }}</span>
+    </div>
+
+    <p class="mb-24 text-ts-texto-suave">
+      {{
+        'admin.borradores.detalle.de'
+          | transloco: { proveedor: nombreDelProveedor(), precio: precio(borrador.precioProveedor) }
+      }}
+    </p>
+
+    @if (borrador.alertas.length > 0) {
+      <div
+        class="mb-24 rounded-lg border border-ts-error p-16"
+        role="region"
+        [attr.aria-label]="'admin.borradores.detalle.alertasTitulo' | transloco"
+      >
+        <h2 class="m-0 mb-8 font-display text-lg text-ts-error">
+          {{ 'admin.borradores.detalle.alertasTitulo' | transloco }}
+        </h2>
+        <ul class="m-0 list-disc pl-16 text-sm">
+          @for (alerta of borrador.alertas; track alerta) {
+            <li>{{ etiquetaAlerta(alerta) }}</li>
+          }
+        </ul>
+      </div>
+    }
+
+    <!-- Siempre en el DOM: la region viva cambia de contenido, no de existencia. -->
+    <p #avisoDecisionRef class="m-0 mb-16 text-ts-exito" role="status" tabindex="-1">
+      @if (aprobado(); as productoId) {
+        {{ 'admin.borradores.aprobar.hecho' | transloco }}
+        <a
+          class="anillo-foco text-ts-primario"
+          [routerLink]="['/', idioma(), 'admin', 'productos', productoId, 'editar']"
+          >{{ 'admin.borradores.aprobar.verProducto' | transloco }}</a
+        >
+      } @else if (rechazado()) {
+        {{ 'admin.borradores.rechazar.hecho' | transloco }}
+      }
+    </p>
+
+    @if (!editable()) {
+      <div class="mb-24 rounded-lg border border-ts-borde bg-ts-superficie p-16">
+        @if (borrador.motivoRechazo; as motivo) {
+          <p class="m-0">
+            {{ 'admin.borradores.detalle.motivoRechazo' | transloco: { motivo: motivo } }}
+          </p>
+        }
+        @if (borrador.productoId; as productoId) {
+          <p class="m-0">
+            <a
+              class="anillo-foco text-ts-primario"
+              [routerLink]="['/', idioma(), 'admin', 'productos', productoId, 'editar']"
+              >{{ 'admin.borradores.detalle.verProducto' | transloco }}</a
+            >
+          </p>
+        }
+        @if (!borrador.motivoRechazo && !borrador.productoId) {
+          <p class="m-0 text-ts-texto-suave">
+            {{ 'admin.borradores.detalle.cerrado' | transloco }}
+          </p>
+        }
+      </div>
+    }
+
+    <h2 class="m-0 mb-8 font-display text-lg">
+      {{ 'admin.borradores.detalle.fotos' | transloco }}
+    </h2>
+    @if (fotos().length === 0) {
+      <p class="mb-24 text-ts-texto-suave">{{ 'admin.borradores.detalle.sinFotos' | transloco }}</p>
+    } @else {
+      <ul class="m-0 mb-24 grid list-none grid-cols-2 gap-12 p-0 desde-tableta:grid-cols-4">
+        @for (foto of fotos(); track foto.mensajeId; let i = $index) {
+          <li class="flex flex-col gap-8">
+            <!-- `<img>` a secas y no NgOptimizedImage: la URL es firmada, caduca y lleva su
+                 propia query; el cargador del catalogo la partiria en variantes que no existen. -->
+            <img
+              class="aspect-square w-full rounded-md object-cover"
+              [src]="foto.url"
+              [alt]="
+                foto.pieDeFoto ||
+                ('admin.borradores.detalle.fotoAlt' | transloco: { numero: i + 1 })
+              "
+            />
+            @if (foto.pieDeFoto) {
+              <p class="m-0 text-xs text-ts-texto-suave">{{ foto.pieDeFoto }}</p>
+            }
+            @if (editable() && opcionesTono().length > 0) {
+              <ts-select
+                [idCampo]="'tono-foto-' + i"
+                [label]="'admin.borradores.aprobar.tonoDeFoto' | transloco: { numero: i + 1 }"
+                [opciones]="opcionesTono()"
+                [placeholder]="'admin.borradores.aprobar.todosLosTonos' | transloco"
+                [valor]="tonoDe(foto.mensajeId)"
+                (cambio)="elegirTono(foto.mensajeId, $event)"
+              />
+            }
+          </li>
+        }
+      </ul>
+    }
+
+    <h2 class="m-0 mb-8 font-display text-lg">
+      {{ 'admin.borradores.detalle.textos' | transloco }}
+    </h2>
+    @if (textos().length === 0) {
+      <p class="mb-24 text-ts-texto-suave">
+        {{ 'admin.borradores.detalle.sinTextos' | transloco }}
+      </p>
+    } @else {
+      <ul class="m-0 mb-24 flex list-none flex-col gap-8 p-0">
+        @for (texto of textos(); track $index) {
+          <li class="rounded-md bg-ts-superficie-alt p-12 text-sm whitespace-pre-wrap">
+            {{ texto }}
+          </li>
+        }
+      </ul>
+    }
+
+    <form
+      class="mb-32 flex flex-col gap-16 rounded-lg border border-ts-borde bg-ts-superficie p-16"
+      [formGroup]="formDatos"
+      (submit)="$event.preventDefault(); guardarDatos()"
+    >
+      <h2 class="m-0 font-display text-lg">{{ 'admin.borradores.datos.titulo' | transloco }}</h2>
+      <p class="m-0 text-sm text-ts-texto-suave">
+        {{ 'admin.borradores.datos.explicacion' | transloco }}
+      </p>
+
+      <ts-campo
+        idCampo="borrador-titulo"
+        [label]="'admin.borradores.datos.tituloProducto' | transloco"
+        formControlName="titulo"
+      />
+      <ts-select
+        idCampo="borrador-tipo"
+        [label]="'admin.borradores.datos.tipo' | transloco"
+        [opciones]="opcionesTipo()"
+        formControlName="tipo"
+      />
+      <ts-campo
+        idCampo="borrador-precio-sugerido"
+        [label]="'admin.borradores.datos.precioSugerido' | transloco"
+        [ayuda]="'admin.borradores.datos.precioSugeridoAyuda' | transloco"
+        formControlName="precioVentaSugerido"
+      />
+      <ts-select
+        idCampo="borrador-tipo-talla"
+        [label]="'admin.borradores.datos.tipoDeTalla' | transloco"
+        [opciones]="opcionesTipoDeTalla()"
+        formControlName="tipoDeTalla"
+      />
+      @if (formDatos.controls.tipoDeTalla.value === 'UNICA') {
+        <ts-campo
+          idCampo="borrador-sirve-hasta"
+          [label]="'admin.borradores.datos.sirveHasta' | transloco"
+          formControlName="sirveHasta"
+        />
+      }
+      @if (formDatos.controls.tipoDeTalla.value === 'LISTA') {
+        <ts-campo
+          idCampo="borrador-tallas"
+          [label]="'admin.borradores.datos.tallasLista' | transloco"
+          [ayuda]="'admin.borradores.datos.separadas' | transloco"
+          formControlName="tallas"
+        />
+      }
+      <ts-campo
+        idCampo="borrador-cantidad-tonos"
+        [label]="'admin.borradores.datos.cantidadTonos' | transloco"
+        formControlName="cantidadTonos"
+      />
+      <ts-campo
+        idCampo="borrador-tonos"
+        [label]="'admin.borradores.datos.tonosNombrados' | transloco"
+        [ayuda]="'admin.borradores.datos.separadas' | transloco"
+        formControlName="tonosNombrados"
+      />
+      <ts-campo
+        idCampo="borrador-material"
+        [label]="'admin.borradores.datos.material' | transloco"
+        formControlName="material"
+      />
+      <ts-campo
+        idCampo="borrador-caracteristicas"
+        [label]="'admin.borradores.datos.caracteristicas' | transloco"
+        [ayuda]="'admin.borradores.datos.unaPorLinea' | transloco"
+        [multilinea]="true"
+        [filas]="4"
+        formControlName="caracteristicas"
+      />
+
+      <p class="m-0 text-ts-error" role="alert">{{ errorDatos() }}</p>
+      <p #avisoDatosRef class="m-0 text-ts-exito" role="status" tabindex="-1">
+        @if (avisoDatos()) {
+          {{ 'admin.borradores.datos.guardado' | transloco }}
+        }
+      </p>
+
+      @if (editable()) {
+        <div>
+          <ts-boton
+            variante="secundario"
+            tipo="submit"
+            [ocupado]="guardando()"
+            [etiquetaCargando]="'admin.borradores.datos.guardando' | transloco"
+          >
+            {{ 'admin.borradores.datos.guardar' | transloco }}
+          </ts-boton>
+        </div>
+      }
+    </form>
+
+    @if (editable()) {
+      <form
+        class="mb-32 flex flex-col gap-16 rounded-lg border border-ts-borde bg-ts-superficie p-16"
+        [formGroup]="formAprobar"
+        (submit)="$event.preventDefault(); aprobarBorrador()"
+      >
+        <h2 class="m-0 font-display text-lg">
+          {{ 'admin.borradores.aprobar.titulo' | transloco }}
+        </h2>
+        <p class="m-0 text-sm text-ts-texto-suave">
+          {{ 'admin.borradores.aprobar.explicacion' | transloco }}
+        </p>
+
+        <ts-select
+          idCampo="aprobar-marca"
+          [label]="'admin.borradores.aprobar.marca' | transloco"
+          [opciones]="opcionesMarca()"
+          [placeholder]="'admin.borradores.aprobar.seleccionar' | transloco"
+          [obligatorio]="true"
+          formControlName="marcaId"
+        />
+        <ts-select
+          idCampo="aprobar-categoria"
+          [label]="'admin.borradores.aprobar.categoria' | transloco"
+          [opciones]="opcionesCategoria()"
+          [placeholder]="'admin.borradores.aprobar.seleccionar' | transloco"
+          [obligatorio]="true"
+          formControlName="categoriaId"
+        />
+        <ts-campo
+          idCampo="aprobar-precio"
+          [label]="'admin.borradores.aprobar.precioVenta' | transloco"
+          [ayuda]="'admin.borradores.aprobar.precioVentaAyuda' | transloco"
+          [obligatorio]="true"
+          formControlName="precioVenta"
+        />
+        <ts-campo
+          idCampo="aprobar-existencia"
+          tipo="number"
+          [label]="'admin.borradores.aprobar.existenciaInicial' | transloco"
+          [ayuda]="'admin.borradores.aprobar.existenciaInicialAyuda' | transloco"
+          [obligatorio]="true"
+          formControlName="existenciaInicial"
+        />
+        <ts-campo
+          idCampo="aprobar-descripcion"
+          [label]="'admin.borradores.aprobar.descripcion' | transloco"
+          [multilinea]="true"
+          [filas]="3"
+          formControlName="descripcion"
+        />
+        <ts-campo
+          idCampo="aprobar-alt-es"
+          [label]="'admin.borradores.aprobar.altEs' | transloco"
+          [obligatorio]="true"
+          formControlName="altEs"
+        />
+        <ts-campo
+          idCampo="aprobar-alt-en"
+          [label]="'admin.borradores.aprobar.altEn' | transloco"
+          [obligatorio]="true"
+          formControlName="altEn"
+        />
+
+        <p class="m-0 text-ts-error" role="alert">{{ errorDecision() }}</p>
+
+        <div class="flex flex-wrap items-end gap-16">
+          <ts-boton
+            variante="primario"
+            tipo="submit"
+            [ocupado]="aprobando()"
+            [etiquetaCargando]="'admin.borradores.aprobar.aprobando' | transloco"
+          >
+            {{ 'admin.borradores.aprobar.accion' | transloco }}
+          </ts-boton>
+        </div>
+      </form>
+
+      <form
+        class="mb-32 flex flex-col gap-16 rounded-lg border border-ts-borde bg-ts-superficie p-16"
+        (submit)="$event.preventDefault(); rechazarBorrador()"
+      >
+        <h2 class="m-0 font-display text-lg">
+          {{ 'admin.borradores.rechazar.titulo' | transloco }}
+        </h2>
+        <ts-campo
+          idCampo="rechazar-motivo"
+          [label]="'admin.borradores.rechazar.motivo' | transloco"
+          [obligatorio]="true"
+          [formControl]="motivoRechazo"
+        />
+        <div>
+          <ts-boton
+            variante="secundario"
+            tipo="submit"
+            [ocupado]="rechazando()"
+            [etiquetaCargando]="'admin.borradores.rechazar.rechazando' | transloco"
+          >
+            {{ 'admin.borradores.rechazar.accion' | transloco }}
+          </ts-boton>
+        </div>
+      </form>
+    }
+  }
+</section>

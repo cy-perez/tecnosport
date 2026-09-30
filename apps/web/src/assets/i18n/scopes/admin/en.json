@@ -22,7 +22,23 @@
     "imagen_de_galeria_duplicada": "That same image is already in the gallery.",
     "imagen_de_galeria_no_encontrada": "That image is no longer in the gallery.",
     "producto_publicado": "It is published: take it off the storefront before deleting it.",
-    "producto_con_ventas": "It has sales, so it cannot be deleted. Take it off the storefront instead: orders, warranties and withdrawals still need it."
+    "producto_con_ventas": "It has sales, so it cannot be deleted. Take it off the storefront instead: orders, warranties and withdrawals still need it.",
+    "proveedor_no_encontrado": "That supplier no longer exists. Reload the list.",
+    "proveedor_inactivo": "The supplier is inactive. Activate it from its page before uploading an export.",
+    "exportacion_no_encontrada": "The file did not reach the bucket. Pick it again and upload once more.",
+    "exportacion_demasiado_grande": "The export is too large. Export the chat without media or split the period in two.",
+    "exportacion_ilegible": "The export could not be read: the zip must contain the chat .txt exactly as WhatsApp exports it.",
+    "tipo_de_exportacion_no_admitido": "That file is not a chat export. Upload the .zip WhatsApp generates.",
+    "cola_de_ingestas_llena": "Another import is running. The batch was saved: wait for it to finish and try again.",
+    "lote_no_encontrado": "That batch no longer exists. Reload the list.",
+    "borrador_no_encontrado": "That draft no longer exists. Reload the list.",
+    "borrador_no_editable": "This draft has already been decided: it cannot be changed or approved again.",
+    "borrador_sin_fotos": "A product cannot be approved without photos. If the post had none, reject it.",
+    "borrador_sin_precio": "The sale price is missing. Enter it before approving.",
+    "borrador_sin_titulo": "The product title is missing. Fix it in the extracted data before approving.",
+    "atributo_de_catalogo_no_definido": "The colour or size attributes are missing from the catalogue. Create them before approving.",
+    "foto_no_es_del_borrador": "One of the photos does not belong to this post. Reload the page.",
+    "imagen_de_proveedor_ilegible": "One of the photos could not be processed. Reject it or ask the supplier for the photo again."
   },
   "iniciarSesion": {
     "titulo": "Admin panel",
@@ -61,7 +77,10 @@
     "ir_a_clave": "Change my password",
     "ir_a_categorias": "Categories",
     "ir_a_panel": "Overview",
-    "navegacion": "Panel sections"
+    "navegacion": "Panel sections",
+    "ir_a_proveedores": "Suppliers",
+    "ir_a_ingestas": "Imports",
+    "ir_a_borradores": "Drafts"
   },
   "pedidos": {
     "titulo": "Orders",
@@ -756,5 +775,210 @@
     "ciclo": "A category cannot hang from itself or from one of its children.",
     "error": "We could not save the change. Please try again.",
     "errorLista": "We could not load the categories."
+  },
+  "proveedores": {
+    "titulo": "Suppliers",
+    "explicacion": "The suppliers who send their catalogue over WhatsApp. For each one we keep how they appear in the exported chat —that decides which messages are theirs— and the margin used to suggest the sale price. They are never deleted: they are deactivated.",
+    "errorLista": "The supplier list could not be loaded.",
+    "total": "{{total}} supplier(s)",
+    "nuevo": "New supplier",
+    "ninguno": "There are no suppliers yet.",
+    "editar": "Edit",
+    "activo": "Active",
+    "inactivo": "Inactive",
+    "lineas": {
+      "BOLSOS": "Bags",
+      "ROPA": "Clothing"
+    },
+    "columnas": {
+      "nombre": "Supplier",
+      "linea": "Line",
+      "remitente": "Name in the chat",
+      "margen": "Margin",
+      "estado": "Status",
+      "acciones": "Actions"
+    },
+    "formulario": {
+      "miga": "Supplier details",
+      "tituloCrear": "New supplier",
+      "tituloEditar": "Edit supplier",
+      "errorCarga": "The supplier could not be loaded.",
+      "nombre": "Name",
+      "remitente": "Name in the exported chat",
+      "remitenteAyuda": "Exactly as the phone saved the contact: it is what comes before the colon on every line of the chat. If it does not match, the import reads no messages at all.",
+      "telefono": "WhatsApp phone",
+      "telefonoAyuda": "With country code, no spaces: 573001234567.",
+      "linea": "Line",
+      "seleccionar": "Select an option",
+      "margen": "Margin factor",
+      "margenAyuda": "Multiplies the supplier price to suggest the sale price. 1.30 is 30% over cost; it cannot be less than 1.",
+      "publicacionAutomatica": "Publish without review (not in effect yet: every draft goes through the panel)",
+      "activo": "Active. Unchecked, no exports can be uploaded for it.",
+      "faltanCampos": "Missing data: name, name in the chat, phone, line and a margin of at least 1.",
+      "guardado": "Done: {{nombre}} was saved.",
+      "enviando": "Saving…",
+      "guardar": "Save changes",
+      "crear": "Create supplier",
+      "error": "The supplier could not be saved. Try again."
+    }
+  },
+  "ingestas": {
+    "titulo": "Imports",
+    "explicacion": "Each batch is one export of a supplier's chat. Upload the zip WhatsApp generates (Export chat, with media); the server reads the messages, groups them into posts and leaves one draft per new product. Uploading the same chat twice is safe: what was already read is not repeated.",
+    "errorLista": "The import list could not be loaded.",
+    "total": "{{total}} batch(es)",
+    "ninguna": "No export has been uploaded yet.",
+    "filtroProveedor": "Show batches from",
+    "todosLosProveedores": "All suppliers",
+    "terminadoEn": "Finished: {{fecha}}",
+    "enCurso": "In progress…",
+    "estados": {
+      "RECIBIDO": "Queued",
+      "PROCESANDO": "Processing",
+      "TERMINADO": "Finished",
+      "ERROR": "Failed"
+    },
+    "columnas": {
+      "proveedor": "Supplier",
+      "estado": "Status",
+      "fechas": "Dates",
+      "resumen": "Result"
+    },
+    "resumen": {
+      "mensajes": "{{leidos}} messages read, {{nuevos}} new",
+      "publicaciones": "{{total}} posts",
+      "borradores": "{{nuevos}} new drafts, {{renovaciones}} renewals, {{agotados}} sold out",
+      "alertas": "{{alertas}} with alerts, {{descartes}} discarded"
+    },
+    "subir": {
+      "titulo": "Upload an export",
+      "proveedor": "Supplier",
+      "seleccionar": "Select a supplier",
+      "archivo": "File exported by WhatsApp (.zip)",
+      "archivoAyuda": "In WhatsApp: open the chat › More › Export chat › Include media. Upload the zip as is, without unzipping it.",
+      "tipoNoSoportado": "That file is not a zip. Upload the one WhatsApp generates when exporting the chat.",
+      "faltanCampos": "Pick the supplier and the file before uploading.",
+      "accion": "Upload and import",
+      "subiendo": "Uploading…",
+      "enCola": "Done: {{archivo}} is queued. The table refreshes on its own while it is processed.",
+      "error": "The export could not be uploaded. Try again."
+    }
+  },
+  "borradores": {
+    "titulo": "Drafts",
+    "explicacion": "What the import understood from each supplier post, awaiting review. Approving creates the product with its variants and photos; rejecting records it with a reason. Renewals do not come through here: if the supplier re-posted something already in the catalogue, only its date is renewed.",
+    "errorLista": "The draft list could not be loaded.",
+    "total": "{{total}} draft(s)",
+    "ninguno": "There are no drafts with that filter.",
+    "filtroEstado": "Status",
+    "todosLosEstados": "All statuses",
+    "filtroProveedor": "Supplier",
+    "todosLosProveedores": "All suppliers",
+    "sinTitulo": "(untitled)",
+    "precioProveedor": "Supplier: {{precio}}",
+    "revisar": "Review",
+    "estados": {
+      "EN_REVISION": "In review",
+      "APROBADO": "Approved",
+      "RECHAZADO": "Rejected",
+      "RENOVACION_APLICADA": "Renewal"
+    },
+    "columnas": {
+      "titulo": "Product",
+      "precios": "Suggested price",
+      "alertas": "Alerts",
+      "estado": "Status",
+      "acciones": "Actions"
+    },
+    "tipos": {
+      "BOLSO": "Bag",
+      "MORRAL": "Backpack",
+      "CANGURO": "Belt bag",
+      "CONJUNTO_PANTALON": "Set with trousers",
+      "CONJUNTO_SHORT": "Set with shorts",
+      "ENTERIZO": "Jumpsuit",
+      "OTRO": "Other"
+    },
+    "tallas": {
+      "DESCONOCIDA": "Not stated",
+      "UNICA": "One size (fits up to)",
+      "LISTA": "Size list"
+    },
+    "alertas": {
+      "PRECIO_INCONSISTENTE": "The price in the text and the one the extraction understood do not match. The text price was kept; check it.",
+      "SIN_PRECIO": "The post has no price. It cannot be approved without a sale price.",
+      "TITULO_VACIO": "No title could be extracted. Write one before approving.",
+      "TIPO_DESCONOCIDO": "The product type was not recognised.",
+      "CONFIANZA_BAJA": "The extraction is not confident about what it understood. Review everything carefully.",
+      "SIN_FOTOS": "The post has no photos. It cannot be approved without photos.",
+      "PRECIO_CAMBIO": "The supplier changed the price of a product that already exists. The supplier price was updated; check the sale price."
+    },
+    "detalle": {
+      "miga": "Review",
+      "errorCarga": "The draft could not be loaded.",
+      "de": "From {{proveedor}} · supplier price: {{precio}}",
+      "alertasTitulo": "Before approving, check",
+      "fotos": "Post photos",
+      "sinFotos": "The post had no photos.",
+      "fotoAlt": "Photo {{numero}} of the post",
+      "textos": "What the supplier wrote",
+      "sinTextos": "The post had no text.",
+      "motivoRechazo": "Rejected: {{motivo}}",
+      "verProducto": "See the product it created",
+      "cerrado": "This draft has already been decided."
+    },
+    "datos": {
+      "titulo": "Extracted data",
+      "explicacion": "What the extraction understood. Fix anything wrong here and save; the approval below starts from this data.",
+      "tituloProducto": "Title",
+      "tipo": "Product type",
+      "precioSugerido": "Suggested sale price",
+      "precioSugeridoAyuda": "In pesos, no decimals. Comes from the supplier price times the margin; you can adjust it.",
+      "tipoDeTalla": "Sizes",
+      "sirveHasta": "Fits up to",
+      "tallasLista": "Sizes",
+      "separadas": "Comma separated: S, M, L.",
+      "cantidadTonos": "Number of colours",
+      "tonosNombrados": "Colours, by name",
+      "material": "Material",
+      "caracteristicas": "Features",
+      "unaPorLinea": "One per line.",
+      "invalidos": "The price must be a whole number in pesos and the number of colours a number.",
+      "guardar": "Save data",
+      "guardando": "Saving…",
+      "guardado": "Data saved.",
+      "error": "The data could not be saved. Try again."
+    },
+    "aprobar": {
+      "titulo": "Approve and create the product",
+      "explicacion": "Creates the published product, with one variant per colour and size, the photos copied into the catalogue and the units you indicate in stock.",
+      "marca": "Brand",
+      "categoria": "Category",
+      "seleccionar": "Select an option",
+      "precioVenta": "Sale price",
+      "precioVentaAyuda": "The final one, in pesos. Starts from the suggested price.",
+      "existenciaInicial": "Units per variant",
+      "existenciaInicialAyuda": "What goes into stock for each colour and size. Zero leaves the product sold out until you count.",
+      "descripcion": "Description (optional)",
+      "altEs": "Alternative text for the photos (Spanish)",
+      "altEn": "Alternative text for the photos (English)",
+      "tonoDeFoto": "Colour of photo {{numero}}",
+      "todosLosTonos": "Applies to every colour",
+      "faltanCampos": "Missing data: brand, category, whole sale price, units (0 or more) and both alternative texts.",
+      "accion": "Approve and create product",
+      "aprobando": "Creating the product…",
+      "hecho": "Product created and published.",
+      "verProducto": "Open the product",
+      "error": "The draft could not be approved. Try again."
+    },
+    "rechazar": {
+      "titulo": "Reject",
+      "motivo": "Reason",
+      "faltaMotivo": "Write why it is rejected.",
+      "accion": "Reject draft",
+      "rechazando": "Rejecting…",
+      "hecho": "Draft rejected.",
+      "error": "The draft could not be rejected. Try again."
+    }
   }
 }

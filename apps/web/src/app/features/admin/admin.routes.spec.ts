@@ -29,18 +29,32 @@ describe('adminRoutes', () => {
   });
 });
 
-/** La primera ruta con ese `path` en todo el árbol, a cualquier profundidad. */
+/**
+ * La primera ruta con ese `path` en todo el árbol, a cualquier profundidad.
+ *
+ * <p>La búsqueda en sí no lanza: hasta el 30 de septiembre de 2026 sí lo hacía, y la primera rama
+ * con hijos que no tuviera el `path` —`proveedores`, recién llegada— cortaba el recorrido antes
+ * de llegar a `productos`, donde sí está.
+ */
 function buscarRuta(rutas: Routes, path: string): Route {
+  const ruta = buscar(rutas, path);
+  if (!ruta) {
+    throw new Error(`No hay ninguna ruta con path '${path}'.`);
+  }
+  return ruta;
+}
+
+function buscar(rutas: Routes, path: string): Route | undefined {
   for (const ruta of rutas) {
     if (ruta.path === path) {
       return ruta;
     }
-    const hija = ruta.children && buscarRuta(ruta.children, path);
+    const hija = ruta.children && buscar(ruta.children, path);
     if (hija) {
       return hija;
     }
   }
-  throw new Error(`No hay ninguna ruta con path '${path}'.`);
+  return undefined;
 }
 
 /**

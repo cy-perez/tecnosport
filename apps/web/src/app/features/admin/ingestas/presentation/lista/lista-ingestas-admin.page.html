@@ -1,0 +1,194 @@
+<section class="mx-auto max-w-contenido px-16 py-32">
+  <ts-migas [ruta]="migas()" />
+
+  <h1 class="m-0 mb-16 font-display text-2xl">{{ 'admin.ingestas.titulo' | transloco }}</h1>
+
+  <p class="mb-24 text-ts-texto-suave">{{ 'admin.ingestas.explicacion' | transloco }}</p>
+
+  <form
+    class="mb-32 flex flex-col gap-16 rounded-lg border border-ts-borde bg-ts-superficie p-16"
+    (submit)="$event.preventDefault(); subir()"
+  >
+    <h2 class="m-0 font-display text-xl">{{ 'admin.ingestas.subir.titulo' | transloco }}</h2>
+
+    <ts-select
+      idCampo="ingesta-proveedor"
+      [label]="'admin.ingestas.subir.proveedor' | transloco"
+      [opciones]="opcionesProveedorActivo()"
+      [placeholder]="'admin.ingestas.subir.seleccionar' | transloco"
+      [obligatorio]="true"
+      [formControl]="proveedorParaSubir"
+    />
+
+    <div class="flex flex-col gap-4">
+      <label for="ingesta-archivo">{{ 'admin.ingestas.subir.archivo' | transloco }}</label>
+      <input
+        #entradaArchivo
+        class="anillo-foco min-h-tactil"
+        id="ingesta-archivo"
+        type="file"
+        accept=".zip,application/zip,application/x-zip-compressed"
+        (change)="onArchivoSeleccionado($event)"
+      />
+      <p class="m-0 text-xs text-ts-texto-suave">
+        {{ 'admin.ingestas.subir.archivoAyuda' | transloco }}
+      </p>
+    </div>
+
+    <p class="m-0 text-ts-error" role="alert">{{ error() }}</p>
+
+    <p #avisoSubida class="m-0 text-ts-exito" role="status" tabindex="-1">
+      @if (aviso(); as nombre) {
+        {{ 'admin.ingestas.subir.enCola' | transloco: { archivo: nombre } }}
+      }
+    </p>
+
+    <div>
+      <ts-boton
+        variante="primario"
+        tipo="submit"
+        [cargando]="subiendo()"
+        [etiquetaCargando]="'admin.ingestas.subir.subiendo' | transloco"
+      >
+        {{ 'admin.ingestas.subir.accion' | transloco }}
+      </ts-boton>
+    </div>
+  </form>
+
+  <div class="mb-16 max-w-formulario">
+    <ts-select
+      idCampo="ingesta-filtro-proveedor"
+      [label]="'admin.ingestas.filtroProveedor' | transloco"
+      [opciones]="opcionesProveedor()"
+      [placeholder]="'admin.ingestas.todosLosProveedores' | transloco"
+      [formControl]="proveedorFiltro"
+      (cambio)="filtrarPorProveedor($event)"
+    />
+  </div>
+
+  @if (consulta.isPending()) {
+    <ts-esqueleto />
+  } @else if (consulta.isError()) {
+    <p class="text-ts-error" role="alert">{{ 'admin.ingestas.errorLista' | transloco }}</p>
+  } @else {
+    <div class="overflow-hidden rounded-lg border border-ts-borde bg-ts-superficie">
+      <div class="border-b border-ts-borde px-16 py-12">
+        <p class="m-0 font-medio">
+          {{ 'admin.ingestas.total' | transloco: { total: totalLotes() } }}
+        </p>
+      </div>
+
+      @if (sinLotes()) {
+        <p class="m-0 px-16 py-32 text-ts-texto-suave">
+          {{ 'admin.ingestas.ninguna' | transloco }}
+        </p>
+      } @else {
+        <div class="overflow-x-auto">
+          <table
+            class="w-full border-collapse text-sm [&_td]:px-16 [&_td]:py-12 [&_th]:px-16 [&_th]:py-12 [&_:is(th,td)]:text-left"
+          >
+            <thead>
+              <tr class="border-b border-ts-borde">
+                <th class="font-medio text-ts-texto-suave" scope="col">
+                  {{ 'admin.ingestas.columnas.proveedor' | transloco }}
+                </th>
+                <th class="font-medio text-ts-texto-suave" scope="col">
+                  {{ 'admin.ingestas.columnas.estado' | transloco }}
+                </th>
+                <th class="font-medio text-ts-texto-suave" scope="col">
+                  {{ 'admin.ingestas.columnas.fechas' | transloco }}
+                </th>
+                <th class="font-medio text-ts-texto-suave" scope="col">
+                  {{ 'admin.ingestas.columnas.resumen' | transloco }}
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (lote of lotes(); track lote.id) {
+                <tr class="border-b border-ts-borde last:border-b-0 align-top">
+                  <td class="font-medio">{{ nombreDelProveedor(lote) }}</td>
+                  <td>
+                    <span [class]="clasesEstado(lote.estado)">{{
+                      etiquetaEstado(lote.estado)
+                    }}</span>
+                    @if (lote.detalleError; as detalle) {
+                      <p class="m-0 mt-8 text-xs text-ts-error">{{ detalle }}</p>
+                    }
+                  </td>
+                  <td class="tabular-nums">
+                    <p class="m-0">{{ formatearFecha(lote.creadoEn) }}</p>
+                    @if (lote.terminadoEn) {
+                      <p class="m-0 text-xs text-ts-texto-suave">
+                        {{
+                          'admin.ingestas.terminadoEn'
+                            | transloco: { fecha: formatearFecha(lote.terminadoEn) }
+                        }}
+                      </p>
+                    }
+                  </td>
+                  <td>
+                    @if (lote.estado === 'TERMINADO' || lote.estado === 'ERROR') {
+                      <ul class="m-0 list-none p-0 text-xs">
+                        <li>
+                          {{
+                            'admin.ingestas.resumen.mensajes'
+                              | transloco
+                                : {
+                                    leidos: lote.resumen.mensajesLeidos,
+                                    nuevos: lote.resumen.mensajesNuevos,
+                                  }
+                          }}
+                        </li>
+                        <li>
+                          {{
+                            'admin.ingestas.resumen.publicaciones'
+                              | transloco: { total: lote.resumen.publicaciones }
+                          }}
+                        </li>
+                        <li>
+                          {{
+                            'admin.ingestas.resumen.borradores'
+                              | transloco
+                                : {
+                                    nuevos: lote.resumen.borradoresNuevos,
+                                    renovaciones: lote.resumen.renovaciones,
+                                    agotados: lote.resumen.agotados,
+                                  }
+                          }}
+                        </li>
+                        @if (lote.resumen.alertas > 0 || lote.resumen.descartes > 0) {
+                          <li>
+                            {{
+                              'admin.ingestas.resumen.alertas'
+                                | transloco
+                                  : {
+                                      alertas: lote.resumen.alertas,
+                                      descartes: lote.resumen.descartes,
+                                    }
+                            }}
+                          </li>
+                        }
+                      </ul>
+                    } @else {
+                      <span class="text-xs text-ts-texto-suave">{{
+                        'admin.ingestas.enCurso' | transloco
+                      }}</span>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </div>
+
+    @if ((consulta.data()?.totalPaginas ?? 0) > 1) {
+      <ts-paginador
+        [pagina]="filtro().pagina"
+        [totalPaginas]="consulta.data()?.totalPaginas ?? 1"
+        (paginaCambiada)="irAPagina($event)"
+      />
+    }
+  }
+</section>

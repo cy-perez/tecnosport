@@ -16,7 +16,8 @@ interface PestanaAdmin {
  *
  * <p>`Resumen` primero porque es la que sirve `/:lang/admin`, y `Cambiar mi clave` al final porque
  * es lo único de la lista que no es trabajo del negocio. Entre medias van juntas las que se
- * consultan seguidas: pedidos, el catálogo con sus dos listas de inventario, y las dos bandejas.
+ * consultan seguidas: pedidos, el catálogo con sus dos listas de inventario, lo que llega de los
+ * proveedores por WhatsApp —proveedores, ingestas, borradores— y las dos bandejas.
  */
 const PESTANAS: readonly PestanaAdmin[] = [
   { clave: 'admin.panel.ir_a_panel', segmentos: ['panel'] },
@@ -26,6 +27,9 @@ const PESTANAS: readonly PestanaAdmin[] = [
   { clave: 'admin.panel.ir_a_medidas', segmentos: ['productos', 'medidas'] },
   { clave: 'admin.panel.ir_a_marcas', segmentos: ['marcas'] },
   { clave: 'admin.panel.ir_a_categorias', segmentos: ['categorias'] },
+  { clave: 'admin.panel.ir_a_proveedores', segmentos: ['proveedores'] },
+  { clave: 'admin.panel.ir_a_ingestas', segmentos: ['ingestas'] },
+  { clave: 'admin.panel.ir_a_borradores', segmentos: ['borradores'] },
   { clave: 'admin.panel.ir_a_atencion', segmentos: ['atencion'] },
   { clave: 'admin.panel.ir_a_envios', segmentos: ['envios'] },
   { clave: 'admin.panel.ir_a_clave', segmentos: ['clave'] },
