@@ -12,8 +12,10 @@ import co.tecnosport.api.application.catalogo.RepositorioMarcas;
 import co.tecnosport.api.application.catalogo.RepositorioProductos;
 import co.tecnosport.api.application.catalogo.ValorAtributoComando;
 import co.tecnosport.api.application.catalogo.VarianteCreada;
+import co.tecnosport.api.application.compartido.Reloj;
 import co.tecnosport.api.domain.catalogo.Atributo;
 import co.tecnosport.api.domain.catalogo.Categoria;
+import co.tecnosport.api.domain.catalogo.GaleriaLlenaException;
 import co.tecnosport.api.domain.catalogo.ImagenProducto;
 import co.tecnosport.api.domain.catalogo.Marca;
 import co.tecnosport.api.domain.catalogo.Producto;
@@ -35,6 +37,7 @@ import co.tecnosport.api.domain.proveedores.TipoDeTalla;
 import java.math.BigDecimal;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HexFormat;
 import java.util.LinkedHashMap;
@@ -73,6 +76,7 @@ public final class AprobarBorrador {
   private final RepositorioMensajesProveedor repositorioMensajes;
   private final RepositorioProveedores repositorioProveedores;
   private final RepositorioProductos repositorioProductos;
+  private final RepositorioProductosDeProveedor productosDeProveedor;
   private final RepositorioMarcas repositorioMarcas;
   private final RepositorioCategorias repositorioCategorias;
   private final RepositorioAtributos repositorioAtributos;
@@ -80,6 +84,7 @@ public final class AprobarBorrador {
   private final AlmacenDeArchivosDeProveedor almacenPrivado;
   private final AlmacenDeImagenes almacenDeImagenes;
   private final ProcesadorDeImagenes procesador;
+  private final Reloj reloj;
 
   public AprobarBorrador(
       RepositorioBorradores repositorioBorradores,
@@ -87,18 +92,21 @@ public final class AprobarBorrador {
       RepositorioMensajesProveedor repositorioMensajes,
       RepositorioProveedores repositorioProveedores,
       RepositorioProductos repositorioProductos,
+      RepositorioProductosDeProveedor productosDeProveedor,
       RepositorioMarcas repositorioMarcas,
       RepositorioCategorias repositorioCategorias,
       RepositorioAtributos repositorioAtributos,
       AgregarVariante agregarVariante,
       AlmacenDeArchivosDeProveedor almacenPrivado,
       AlmacenDeImagenes almacenDeImagenes,
-      ProcesadorDeImagenes procesador) {
+      ProcesadorDeImagenes procesador,
+      Reloj reloj) {
     this.repositorioBorradores = Objects.requireNonNull(repositorioBorradores);
     this.repositorioPublicaciones = Objects.requireNonNull(repositorioPublicaciones);
     this.repositorioMensajes = Objects.requireNonNull(repositorioMensajes);
     this.repositorioProveedores = Objects.requireNonNull(repositorioProveedores);
     this.repositorioProductos = Objects.requireNonNull(repositorioProductos);
+    this.productosDeProveedor = Objects.requireNonNull(productosDeProveedor);
     this.repositorioMarcas = Objects.requireNonNull(repositorioMarcas);
     this.repositorioCategorias = Objects.requireNonNull(repositorioCategorias);
     this.repositorioAtributos = Objects.requireNonNull(repositorioAtributos);
@@ -106,6 +114,7 @@ public final class AprobarBorrador {
     this.almacenPrivado = Objects.requireNonNull(almacenPrivado);
     this.almacenDeImagenes = Objects.requireNonNull(almacenDeImagenes);
     this.procesador = Objects.requireNonNull(procesador);
+    this.reloj = Objects.requireNonNull(reloj);
   }
 
   public Producto ejecutar(AprobarBorradorComando comando) {
@@ -119,6 +128,16 @@ public final class AprobarBorrador {
     }
     if (comando.fotos().isEmpty()) {
       throw new BorradorSinFotosException();
+    }
+    // Antes de subir una sola foto al bucket público: lo que se pueda saber sin los bytes se sabe
+    // aquí, o cada rechazo dejaría objetos huérfanos ya subidos.
+    if (comando.fotos().size() - 1 > Producto.TOPE_DE_GALERIA) {
+      throw new GaleriaLlenaException(
+          "La publicación trae "
+              + comando.fotos().size()
+              + " fotos y la galería admite la principal más "
+              + Producto.TOPE_DE_GALERIA
+              + ". Deja fuera las que sobren.");
     }
     Dinero precioProveedor =
         borrador.precioProveedor().orElseThrow(BorradorSinPrecioException::new);
@@ -159,6 +178,18 @@ public final class AprobarBorrador {
         borrador
             .huella()
             .orElseGet(() -> HuellaProveedor.calcular(proveedor.id(), titulo, precioProveedor));
+    // El mismo anuncio repetido deja dos borradores en revisión; aprobar el segundo chocaría con
+    // el índice único de la huella. Se consulta antes, no se atrapa después (apps/api/CLAUDE.md).
+    productosDeProveedor
+        .buscarPorHuella(proveedor.id(), huella)
+        .ifPresent(
+            existente -> {
+              throw new ProductoDeProveedorYaExisteException(existente.id());
+            });
+    // Visto ahora, no en la fecha del mensaje: entre exportar y aprobar pasan días, y con la fecha
+    // del mensaje el producto nacía ya vencido y el job lo ocultaba en su primera vuelta.
+    Instant ahora = reloj.ahora();
+    Instant vistoPorUltimaVez = publicacion.fecha().isAfter(ahora) ? publicacion.fecha() : ahora;
     Producto producto =
         Producto.crearDeProveedor(
             titulo,
@@ -169,7 +200,7 @@ public final class AprobarBorrador {
             proveedor.id(),
             precioProveedor,
             huella,
-            publicacion.fecha());
+            vistoPorUltimaVez);
     repositorioProductos.guardar(producto);
 
     Map<String, UUID> variantePorTono = crearVariantes(producto, comando, borrador);
@@ -239,11 +270,33 @@ public final class AprobarBorrador {
     return variantePorTono;
   }
 
+  /**
+   * Si algo falla después de la primera subida —una foto repetida, una ilegible, la base—, lo que
+   * ya está en el bucket público se borra antes de relanzar: el informe de huérfanos informa, no
+   * limpia.
+   */
   private void publicarFotos(
       Producto producto,
       AprobarBorradorComando comando,
       Map<UUID, MensajeProveedor> fotos,
       Map<String, UUID> variantePorTono) {
+    List<String> subidas = new ArrayList<>();
+    try {
+      publicarFotos(producto, comando, fotos, variantePorTono, subidas);
+    } catch (RuntimeException e) {
+      for (String key : subidas) {
+        almacenDeImagenes.eliminar(key);
+      }
+      throw e;
+    }
+  }
+
+  private void publicarFotos(
+      Producto producto,
+      AprobarBorradorComando comando,
+      Map<UUID, MensajeProveedor> fotos,
+      Map<String, UUID> variantePorTono,
+      List<String> subidas) {
     int orden = 0;
     for (AprobarBorradorComando.FotoAprobada foto : comando.fotos()) {
       MensajeProveedor mensaje = fotos.get(foto.mensajeId());
@@ -256,7 +309,11 @@ public final class AprobarBorrador {
       boolean principal = orden == 0;
       String key = keyDe(producto.id(), principal, procesada.contentType());
       almacenDeImagenes.subir(key, procesada.contentType(), procesada.bytes());
-      UUID varianteId = foto.tono() == null ? null : variantePorTono.get(foto.tono());
+      subidas.add(key);
+      // La principal nunca cuelga de una variante: el índice único de PRINCIPAL y el reemplazo
+      // desde el panel solo conocen la que tiene variante_id nulo. El tono de esa foto se pierde,
+      // y es el precio de que el panel pueda reemplazarla.
+      UUID varianteId = principal || foto.tono() == null ? null : variantePorTono.get(foto.tono());
       ImagenProducto imagen =
           ImagenProducto.crearDeVariante(
               principal ? TipoImagen.PRINCIPAL : TipoImagen.GALERIA,

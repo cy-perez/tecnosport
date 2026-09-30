@@ -14,6 +14,7 @@ import co.tecnosport.api.application.proveedores.ApoyoDeCatalogoParaIngesta.Repo
 import co.tecnosport.api.application.proveedores.ApoyoDeCatalogoParaIngesta.RepositorioCategoriasFijo;
 import co.tecnosport.api.application.proveedores.ApoyoDeCatalogoParaIngesta.RepositorioInventarioEnMemoria;
 import co.tecnosport.api.application.proveedores.ApoyoDeCatalogoParaIngesta.RepositorioMarcasFijo;
+import co.tecnosport.api.application.proveedores.ApoyoDeCatalogoParaIngesta.RepositorioProductosDeProveedorEnMemoria;
 import co.tecnosport.api.application.proveedores.ApoyoDeCatalogoParaIngesta.RepositorioProductosEnMemoria;
 import co.tecnosport.api.application.proveedores.ApoyoDeIngesta.AlmacenEnMemoria;
 import co.tecnosport.api.application.proveedores.ApoyoDeIngesta.RepositorioMensajesEnMemoria;
@@ -139,13 +140,15 @@ class AprobarBorradorTest {
         mensajes,
         proveedores,
         productos,
+        new RepositorioProductosDeProveedorEnMemoria(productos),
         new RepositorioMarcasFijo(),
         new RepositorioCategoriasFijo(),
         atributos,
         agregarVariante,
         almacenPrivado,
         almacenPublico,
-        new ProcesadorNulo());
+        new ProcesadorNulo(),
+        new RelojFalso(AHORA));
   }
 
   private AprobarBorradorComando comando(List<FotoAprobada> fotos) {
@@ -180,10 +183,9 @@ class AprobarBorradorTest {
     assertEquals(EstadoDisponibilidad.DISPONIBLE, producto.estadoDisponibilidad());
     assertEquals(OrigenProducto.PROVEEDOR, producto.origen());
     assertEquals(Optional.of(proveedor.id()), producto.proveedorId());
-    assertEquals(
-        Optional.of(FECHA_DEL_MENSAJE),
-        producto.vistoPorUltimaVez(),
-        "visto en la fecha del mensaje");
+    // Visto al aprobar y no en la fecha del mensaje: dos días después, y con la ventana de tres
+    // el job lo habría ocultado en su primera vuelta.
+    assertEquals(Optional.of(AHORA), producto.vistoPorUltimaVez(), "visto al aprobar");
     assertEquals(Optional.of(Dinero.deCop(53000)), producto.precioProveedor());
     assertEquals(
         "2 compartimientos internos\nincluye llavero\nMaterial: importado", producto.descripcion());
@@ -200,10 +202,9 @@ class AprobarBorradorTest {
 
     ImagenProducto principal = producto.imagenPrincipal().orElseThrow();
     assertEquals(TipoImagen.PRINCIPAL, principal.tipo());
-    assertEquals(
-        Optional.of(variantes.get(0).id()),
-        principal.varianteId(),
-        "la foto negra cuelga de la negra");
+    // La principal no cuelga de ninguna variante aunque su foto sea la negra: el reemplazo desde
+    // el panel y el índice único solo conocen la que tiene variante_id nulo.
+    assertEquals(Optional.empty(), principal.varianteId(), "la principal vale para todos");
     assertEquals("Bolso de dama mediano", principal.altEs());
     assertEquals(1, producto.galeria().size());
     assertEquals(Optional.of(variantes.get(1).id()), producto.galeria().get(0).varianteId());
@@ -247,6 +248,99 @@ class AprobarBorradorTest {
             .orElseThrow()
             .saldoTotal());
     assertTrue(producto.imagenPrincipal().orElseThrow().varianteId().isEmpty());
+  }
+
+  /**
+   * El anuncio repetido: el primer borrador ya se aprobó y el segundo tiene la misma huella. Sin
+   * esto, el índice único respondía con un 500 al aprobar el segundo.
+   */
+  @Test
+  void elMismoAnuncioYaAprobadoNoSeApruebaDosVeces() {
+    caso().ejecutar(comando(List.of(new FotoAprobada(foto1.id(), null, null))));
+    BorradorProducto repetido =
+        BorradorProducto.nuevo(
+            borrador.publicacionId(),
+            proveedor.id(),
+            new ProductoExtraido(
+                true,
+                false,
+                "Bolso de dama mediano",
+                LineaCatalogo.BOLSOS,
+                TipoProductoProveedor.BOLSO,
+                Dinero.deCop(53000),
+                Tallas.desconocida(),
+                0,
+                List.of(),
+                null,
+                List.of(),
+                new BigDecimal("0.9"),
+                null),
+            "{}",
+            Dinero.deCop(53000),
+            Dinero.deCop(71600),
+            borrador.huella().orElseThrow(),
+            null,
+            Set.of(),
+            AHORA);
+    borradores.guardar(repetido);
+    AprobarBorradorComando segundo =
+        new AprobarBorradorComando(
+            repetido.id(),
+            null,
+            null,
+            ApoyoDeCatalogoParaIngesta.BOLSOS_DE_MANO.id(),
+            ApoyoDeCatalogoParaIngesta.MARCA.id(),
+            71600,
+            null,
+            1,
+            "alt",
+            "alt",
+            List.of(new FotoAprobada(foto2.id(), null, null)));
+
+    assertThrows(ProductoDeProveedorYaExisteException.class, () -> caso().ejecutar(segundo));
+    assertEquals(1, productos.porId.size(), "no se creó un duplicado");
+    assertEquals(EstadoBorrador.EN_REVISION, repetido.estado());
+  }
+
+  /** Lo que ya subió al bucket público se borra si el resto falla: nada de huérfanos. */
+  @Test
+  void siFallaAMitadDeLasFotosBorraLasQueYaHabiaSubido() {
+    MensajeProveedor ajena =
+        MensajeProveedor.imagen(
+            proveedor.id(),
+            borrador.publicacionId(),
+            new IdExternoDeMensaje("ajena"),
+            FECHA_DEL_MENSAJE,
+            null,
+            "proveedores/x/2026/09/no-existe.jpg");
+
+    assertThrows(
+        FotoNoEsDelBorradorException.class,
+        () ->
+            caso()
+                .ejecutar(
+                    comando(
+                        List.of(
+                            new FotoAprobada(foto1.id(), null, null),
+                            new FotoAprobada(ajena.id(), null, null)))));
+    assertTrue(almacenPublico.objetos.isEmpty(), "sin fotos huérfanas en el bucket público");
+  }
+
+  /**
+   * La principal no cuelga de ninguna variante aunque su foto tenga tono: el panel la reemplaza.
+   */
+  @Test
+  void laFotoPrincipalNoCuelgaDeUnaVarianteAunqueTengaTono() {
+    Producto producto =
+        caso()
+            .ejecutar(
+                comando(
+                    List.of(
+                        new FotoAprobada(foto1.id(), "Negro", "#000000"),
+                        new FotoAprobada(foto2.id(), "Vino", null))));
+
+    assertEquals(Optional.empty(), producto.imagenPrincipal().orElseThrow().varianteId());
+    assertTrue(producto.galeria().get(0).varianteId().isPresent(), "la galería sí lleva su tono");
   }
 
   @Test

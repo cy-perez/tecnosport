@@ -17,6 +17,7 @@ import co.tecnosport.api.domain.proveedores.PublicacionProveedor;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.EnumSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -75,11 +76,38 @@ public final class ResolverBorrador {
     this.umbralHamming = umbralHamming;
   }
 
+  /**
+   * La forma cómoda: calcula el pHash y carga las huellas visuales aquí mismo. Lee del bucket y
+   * consulta al repositorio, así que <b>no se llama dentro de una transacción</b>; el lote usa la
+   * otra sobrecarga con las dos cosas ya preparadas fuera.
+   */
   public Resolucion ejecutar(
       PublicacionProveedor publicacion,
       Map<UUID, MensajeProveedor> mensajes,
       Proveedor proveedor,
       ExtraccionEvaluada evaluada) {
+    return ejecutar(
+        publicacion,
+        mensajes,
+        proveedor,
+        evaluada,
+        pHashDe(publicacion, mensajes).orElse(null),
+        huellasVisualesDe(proveedor.id()));
+  }
+
+  /**
+   * @param pHash el de la primera foto de la publicación, ya calculado fuera de la transacción, o
+   *     nulo si no hay foto legible
+   * @param huellasVisuales las de los productos que ya existen del proveedor, cargadas una vez por
+   *     lote
+   */
+  public Resolucion ejecutar(
+      PublicacionProveedor publicacion,
+      Map<UUID, MensajeProveedor> mensajes,
+      Proveedor proveedor,
+      ExtraccionEvaluada evaluada,
+      PHash pHash,
+      List<HuellaVisual> huellasVisuales) {
     ProductoExtraido extraido = evaluada.producto();
     if (!extraido.esProducto()) {
       return descartar(publicacion, "El extractor no reconoció un producto en el mensaje.");
@@ -90,16 +118,20 @@ public final class ResolverBorrador {
         extraido.tituloOpcional().isPresent() && precio != null
             ? HuellaProveedor.calcular(proveedor.id(), extraido.titulo(), precio)
             : null;
-    PHash pHash = pHashDeLaPrimeraFoto(publicacion, mensajes).orElse(null);
     Instant ahora = reloj.ahora();
 
-    Optional<Producto> existente = buscarExistente(proveedor.id(), huella, pHash);
+    Optional<Producto> existente = buscarExistente(proveedor.id(), huella, pHash, huellasVisuales);
     if (existente.isPresent()) {
       return renovar(
           publicacion, proveedor, evaluada, existente.get(), huella, pHash, precio, ahora);
     }
     if (extraido.estaAgotado()) {
       return descartar(publicacion, "Anuncia como agotado un producto que no está en el catálogo.");
+    }
+    if (huella != null && repositorioBorradores.existeEnRevisionConHuella(proveedor.id(), huella)) {
+      // El mismo anuncio repetido antes de que alguien apruebe el primero. Un segundo borrador
+      // solo sirve para chocar con el índice único al aprobarlo.
+      return descartar(publicacion, "Es el mismo anuncio de un borrador que ya está en revisión.");
     }
 
     Dinero precioSugerido =
@@ -170,7 +202,7 @@ public final class ResolverBorrador {
   }
 
   private Optional<Producto> buscarExistente(
-      UUID proveedorId, HuellaProveedor huella, PHash pHash) {
+      UUID proveedorId, HuellaProveedor huella, PHash pHash, List<HuellaVisual> huellasVisuales) {
     if (huella != null) {
       Optional<Producto> porHuella = productosDeProveedor.buscarPorHuella(proveedorId, huella);
       if (porHuella.isPresent()) {
@@ -180,13 +212,22 @@ public final class ResolverBorrador {
     if (pHash == null) {
       return Optional.empty();
     }
-    return repositorioBorradores.huellasVisualesDelProveedor(proveedorId).stream()
+    return huellasVisuales.stream()
         .filter(h -> h.pHash().distanciaHamming(pHash) <= umbralHamming)
         .findFirst()
         .flatMap(h -> repositorioProductos.buscarPorId(h.productoId()));
   }
 
-  private Optional<PHash> pHashDeLaPrimeraFoto(
+  /** Las huellas visuales contra las que se compara cada foto del lote. Una consulta por lote. */
+  public List<HuellaVisual> huellasVisualesDe(UUID proveedorId) {
+    return repositorioBorradores.huellasVisualesDelProveedor(proveedorId);
+  }
+
+  /**
+   * El pHash de la primera foto de la publicación: lee el archivo del bucket y lo decodifica, así
+   * que va fuera de cualquier transacción.
+   */
+  public Optional<PHash> pHashDe(
       PublicacionProveedor publicacion, Map<UUID, MensajeProveedor> mensajes) {
     return publicacion.medios().stream()
         .map(mensajes::get)

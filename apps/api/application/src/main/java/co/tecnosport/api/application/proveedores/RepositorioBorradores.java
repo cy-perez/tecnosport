@@ -2,6 +2,7 @@ package co.tecnosport.api.application.proveedores;
 
 import co.tecnosport.api.domain.proveedores.BorradorProducto;
 import co.tecnosport.api.domain.proveedores.EstadoBorrador;
+import co.tecnosport.api.domain.proveedores.HuellaProveedor;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -24,4 +25,10 @@ public interface RepositorioBorradores {
    * compara la foto de un anuncio nuevo para reconocer un producto reescrito.
    */
   List<HuellaVisual> huellasVisualesDelProveedor(UUID proveedorId);
+
+  /**
+   * ¿Ya hay un borrador de este proveedor esperando revisión con esta misma huella? Es el mismo
+   * anuncio repetido antes de que alguien lo apruebe: no se abre otro.
+   */
+  boolean existeEnRevisionConHuella(UUID proveedorId, HuellaProveedor huella);
 }

@@ -1,6 +1,7 @@
 package co.tecnosport.api.application.proveedores;
 
 import co.tecnosport.api.domain.proveedores.LoteIngesta;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -18,4 +19,7 @@ public interface RepositorioLotesIngesta {
    * nulo lista los de todos los proveedores.
    */
   LotesPaginados listar(UUID proveedorId, int pagina, int tamanoPagina);
+
+  /** Los que están en la cola o a medio procesar, del más antiguo al más reciente. */
+  List<LoteIngesta> abiertos();
 }

@@ -200,6 +200,21 @@ class ResolverBorradorTest {
   }
 
   /** El cuarto criterio de aceptación: misma huella, no hay borrador nuevo y se reactiva. */
+  /** El proveedor repite el anuncio antes de que alguien apruebe el primero: un solo borrador. */
+  @Test
+  void elMismoAnuncioRepetidoAntesDeAprobarNoAbreOtroBorrador() {
+    PublicacionProveedor primera = publicacion("Bolso de dama mediano 💰 53.000", null);
+    PublicacionProveedor repetida = publicacion("Bolso de dama mediano 💰 53.000", null);
+    ExtraccionEvaluada evaluada = evaluada("Bolso de dama mediano", 53000, true, false, Set.of());
+
+    Resolucion primero = caso().ejecutar(primera, mensajes, proveedor, evaluada);
+    Resolucion segundo = caso().ejecutar(repetida, mensajes, proveedor, evaluada);
+
+    assertEquals(TipoDeResolucion.NUEVO, primero.tipo());
+    assertEquals(TipoDeResolucion.DESCARTADA, segundo.tipo());
+    assertEquals(1, borradores.enEstado(EstadoBorrador.EN_REVISION).size());
+  }
+
   @Test
   void laMismaHuellaRenuevaElProductoYLoReactiva() {
     Producto oculto =

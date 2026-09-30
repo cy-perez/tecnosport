@@ -45,7 +45,7 @@ public final class Producto {
   private final OrigenProducto origen;
   private final UUID proveedorId;
   private Dinero precioProveedor;
-  private final HuellaProveedor huellaProveedor;
+  private HuellaProveedor huellaProveedor;
   private Instant vistoPorUltimaVez;
   private EstadoDisponibilidad estadoDisponibilidad;
 
@@ -218,16 +218,25 @@ public final class Producto {
   public void renovar(Instant vistoEn) {
     exigirDeProveedor("renovar");
     Objects.requireNonNull(vistoEn, "La fecha de la renovación no puede ser nula.");
-    if (vistoPorUltimaVez.isBefore(vistoEn)) {
-      this.vistoPorUltimaVez = vistoEn;
+    // Un aviso más viejo que el último visto no manda: dos lotes procesados fuera de orden no
+    // pueden convertir un "agotado" de ayer en un "disponible" de anteayer.
+    if (vistoEn.isBefore(vistoPorUltimaVez)) {
+      return;
     }
+    this.vistoPorUltimaVez = vistoEn;
     this.estadoDisponibilidad = EstadoDisponibilidad.DISPONIBLE;
   }
 
-  /** El proveedor cambió el precio. Se guarda el nuevo; el margen lo revisa una persona. */
+  /**
+   * El proveedor cambió el precio. Se guarda el nuevo y <b>la huella se recalcula con él</b>: la
+   * huella lleva el precio dentro, y si se quedara con el viejo, el siguiente anuncio del mismo
+   * producto al precio nuevo ya no la encontraría y acabaría en un producto duplicado. El margen lo
+   * revisa una persona.
+   */
   public void actualizarPrecioProveedor(Dinero precio) {
     exigirDeProveedor("cambiar el precio de proveedor de");
     this.precioProveedor = Objects.requireNonNull(precio, "El precio no puede ser nulo.");
+    this.huellaProveedor = HuellaProveedor.calcular(proveedorId, nombre, precio);
   }
 
   /**
@@ -245,9 +254,10 @@ public final class Producto {
   public void marcarAgotadoPorProveedor(Instant vistoEn) {
     exigirDeProveedor("marcar como agotado");
     Objects.requireNonNull(vistoEn, "La fecha del aviso no puede ser nula.");
-    if (vistoPorUltimaVez.isBefore(vistoEn)) {
-      this.vistoPorUltimaVez = vistoEn;
+    if (vistoEn.isBefore(vistoPorUltimaVez)) {
+      return;
     }
+    this.vistoPorUltimaVez = vistoEn;
     this.estadoDisponibilidad = EstadoDisponibilidad.AGOTADO_POR_PROVEEDOR;
   }
 

@@ -114,6 +114,39 @@ class ProductoDeProveedorTest {
     assertEquals(Optional.of(DESPUES), producto.vistoPorUltimaVez());
   }
 
+  /**
+   * Dos lotes procesados fuera de orden: el "agotado" de hoy no lo pisa una renovación con fecha de
+   * anteayer, ni al revés.
+   */
+  @Test
+  void unAvisoMasViejoQueElUltimoVistoNoCambiaElEstado() {
+    Producto producto = deProveedor();
+    producto.marcarAgotadoPorProveedor(DESPUES);
+
+    producto.renovar(VISTO);
+    assertEquals(EstadoDisponibilidad.AGOTADO_POR_PROVEEDOR, producto.estadoDisponibilidad());
+
+    producto.renovar(DESPUES.plusSeconds(60));
+    assertEquals(EstadoDisponibilidad.DISPONIBLE, producto.estadoDisponibilidad());
+    producto.marcarAgotadoPorProveedor(VISTO);
+    assertEquals(EstadoDisponibilidad.DISPONIBLE, producto.estadoDisponibilidad());
+  }
+
+  /**
+   * La huella lleva el precio dentro: con el precio viejo, el siguiente anuncio no la encuentra.
+   */
+  @Test
+  void cambiarElPrecioDeProveedorRecalculaLaHuella() {
+    Producto producto = deProveedor();
+
+    producto.actualizarPrecioProveedor(Dinero.deCop(60000));
+
+    assertEquals(
+        Optional.of(
+            HuellaProveedor.calcular(PROVEEDOR, "Bolso de dama mediano", Dinero.deCop(60000))),
+        producto.huellaProveedor());
+  }
+
   @Test
   void agotadoPorProveedorEsInmediatoYSeReactivaConUnaRenovacion() {
     Producto producto = deProveedor();

@@ -224,6 +224,14 @@ final class ApoyoDeCatalogoParaIngesta {
           .toList();
     }
 
+    @Override
+    public boolean existeEnRevisionConHuella(UUID proveedorId, HuellaProveedor huella) {
+      return porId.values().stream()
+          .filter(b -> b.proveedorId().equals(proveedorId))
+          .filter(b -> b.estado() == EstadoBorrador.EN_REVISION)
+          .anyMatch(b -> b.huella().map(huella::equals).orElse(false));
+    }
+
     List<BorradorProducto> enEstado(EstadoBorrador estado) {
       return porId.values().stream().filter(b -> b.estado() == estado).toList();
     }

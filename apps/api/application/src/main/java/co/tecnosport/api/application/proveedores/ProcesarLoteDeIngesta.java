@@ -7,6 +7,7 @@ import co.tecnosport.api.domain.proveedores.AgrupadorDePublicaciones;
 import co.tecnosport.api.domain.proveedores.EstadoLote;
 import co.tecnosport.api.domain.proveedores.LoteIngesta;
 import co.tecnosport.api.domain.proveedores.MensajeProveedor;
+import co.tecnosport.api.domain.proveedores.PHash;
 import co.tecnosport.api.domain.proveedores.Proveedor;
 import co.tecnosport.api.domain.proveedores.PublicacionProveedor;
 import co.tecnosport.api.domain.proveedores.ResumenIngesta;
@@ -86,8 +87,10 @@ public final class ProcesarLoteDeIngesta {
               .orElseThrow(
                   () -> new ExportacionIlegibleException("El lote no tiene archivo que leer."));
       List<MensajeCrudo> crudos = fuente.leer(referencia);
-      MensajesRegistrados registrados =
-          enTransaccionPropia.ejecutar(() -> registrar.ejecutar(lote.id(), crudos));
+      // Sin transacción a propósito: registrar sube cada foto al bucket, y un lote con dos mil
+      // fotos sostendría una conexión durante minutos. Lo único que escribe en la base es un solo
+      // guardarTodos, que el adaptador ya hace atómico.
+      MensajesRegistrados registrados = registrar.ejecutar(lote.id(), crudos);
 
       AgrupadorDePublicaciones.Resultado agrupado =
           enTransaccionPropia.ejecutar(() -> armar.ejecutar(lote.id()));
@@ -100,9 +103,11 @@ public final class ProcesarLoteDeIngesta {
           repositorioMensajes.listarDeLote(lote.id()).stream()
               .collect(Collectors.toMap(MensajeProveedor::id, Function.identity()));
 
+      // Una consulta por lote y no una por publicación: la lista crece con cada renovación.
+      List<HuellaVisual> huellasVisuales = resolver.huellasVisualesDe(proveedor.id());
       Contador contador = new Contador();
       for (PublicacionProveedor publicacion : agrupado.publicaciones()) {
-        resolverUna(publicacion, mensajes, proveedor, contador);
+        resolverUna(publicacion, mensajes, proveedor, huellasVisuales, contador);
       }
 
       ResumenIngesta resumen =
@@ -122,13 +127,20 @@ public final class ProcesarLoteDeIngesta {
             repositorioLotes.actualizar(lote);
             return lote;
           });
-    } catch (RuntimeException e) {
+    } catch (RuntimeException | Error e) {
+      // También los Error: un zip que no cabe en memoria o una foto que revienta el decodificador
+      // lanzan OutOfMemoryError, y el lote no puede quedar PROCESANDO para siempre por eso.
       String motivo = motivoLegible(e);
       enTransaccionPropia.ejecutar(
           () -> {
-            lote.fallar(motivo, reloj.ahora());
-            repositorioLotes.actualizar(lote);
-            return lote;
+            // Si lo que falló fue el commit de "terminar", el lote en memoria ya dice TERMINADO y
+            // no admite fallar: se relee de la base, donde sigue PROCESANDO.
+            LoteIngesta fresco = repositorioLotes.buscarPorId(lote.id()).orElse(lote);
+            if (fresco.estaAbierto()) {
+              fresco.fallar(motivo, reloj.ahora());
+              repositorioLotes.actualizar(fresco);
+            }
+            return fresco;
           });
       throw e;
     }
@@ -139,6 +151,7 @@ public final class ProcesarLoteDeIngesta {
       PublicacionProveedor publicacion,
       Map<UUID, MensajeProveedor> mensajes,
       Proveedor proveedor,
+      List<HuellaVisual> huellasVisuales,
       Contador contador) {
     ExtraccionEvaluada evaluada;
     try {
@@ -149,9 +162,13 @@ public final class ProcesarLoteDeIngesta {
       return;
     }
     try {
+      // La foto se lee y se decodifica aquí, fuera de la transacción; adentro solo se decide.
+      PHash pHash = resolver.pHashDe(publicacion, mensajes).orElse(null);
       ResolverBorrador.Resolucion resolucion =
           enTransaccionPropia.ejecutar(
-              () -> resolver.ejecutar(publicacion, mensajes, proveedor, evaluada));
+              () ->
+                  resolver.ejecutar(
+                      publicacion, mensajes, proveedor, evaluada, pHash, huellasVisuales));
       switch (resolucion.tipo()) {
         case NUEVO -> contador.nuevos++;
         case RENOVACION -> contador.renovaciones++;
@@ -196,7 +213,7 @@ public final class ProcesarLoteDeIngesta {
    * sustituye por algo que al menos diga que fue un fallo del programa. La traza completa la
    * registra quien llama, que es quien tiene el log.
    */
-  private static String motivoLegible(RuntimeException e) {
+  private static String motivoLegible(Throwable e) {
     if (e instanceof ExportacionIlegibleException
         || e instanceof ExtraccionFallidaException
         || e instanceof ExcepcionDeDominio) {

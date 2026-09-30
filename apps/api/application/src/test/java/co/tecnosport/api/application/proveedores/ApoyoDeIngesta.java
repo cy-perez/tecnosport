@@ -93,6 +93,14 @@ final class ApoyoDeIngesta {
     }
 
     @Override
+    public List<LoteIngesta> abiertos() {
+      return porId.values().stream()
+          .filter(LoteIngesta::estaAbierto)
+          .sorted(Comparator.comparing(LoteIngesta::creadoEn))
+          .toList();
+    }
+
+    @Override
     public LotesPaginados listar(UUID proveedorId, int pagina, int tamanoPagina) {
       List<LoteIngesta> todos =
           porId.values().stream()
