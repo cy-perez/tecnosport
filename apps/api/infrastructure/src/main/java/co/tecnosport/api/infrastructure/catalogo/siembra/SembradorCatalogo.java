@@ -353,11 +353,21 @@ public class SembradorCatalogo implements ApplicationRunner {
                         + "', que carga V63__arbol_de_categorias.sql."));
   }
 
+  /**
+   * Reutiliza el que ya exista con ese nombre: desde {@code V72} "Color" y "Talla" entran por
+   * migración, antes de que este sembrador corra, y sin esto una base recién creada acababa con dos
+   * ejes de cada uno. Los valores permitidos son los del que ya está —ninguno, en el caso de la
+   * migración—, que es lo que la ingesta necesita para admitir la talla que diga el anuncio.
+   */
   private AtributoJpaEntity guardarAtributo(
       String nombre, String tipo, List<String> valoresPermitidos, Instant ahora) {
-    return atributos.save(
-        new AtributoJpaEntity(
-            GeneradorIdentificador.nuevo(), nombre, tipo, valoresPermitidos, ahora));
+    return atributos
+        .findFirstByNombreIgnoreCase(nombre)
+        .orElseGet(
+            () ->
+                atributos.save(
+                    new AtributoJpaEntity(
+                        GeneradorIdentificador.nuevo(), nombre, tipo, valoresPermitidos, ahora)));
   }
 
   private ProductoJpaEntity guardarProductoPublicado(
