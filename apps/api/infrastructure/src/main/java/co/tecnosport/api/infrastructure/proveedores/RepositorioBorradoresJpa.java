@@ -86,9 +86,17 @@ public class RepositorioBorradoresJpa implements RepositorioBorradores {
 
   @Override
   public List<HuellaVisual> huellasVisualesDelProveedor(UUID proveedorId) {
+    // Cada renovación deja una fila más con el mismo producto y el mismo pHash: se dedupe aquí.
     return jpa.findByProveedorIdAndProductoIdIsNotNullAndPhashIsNotNull(proveedorId).stream()
         .map(f -> new HuellaVisual(f.getProductoId(), PHash.deHex(f.getPhash())))
+        .distinct()
         .toList();
+  }
+
+  @Override
+  public boolean existeEnRevisionConHuella(UUID proveedorId, HuellaProveedor huella) {
+    return jpa.existsByProveedorIdAndEstadoAndHuella(
+        proveedorId, EstadoBorrador.EN_REVISION.name(), huella.valor());
   }
 
   private static BorradorProductoJpaEntity aFila(BorradorProducto b, Instant ahora) {

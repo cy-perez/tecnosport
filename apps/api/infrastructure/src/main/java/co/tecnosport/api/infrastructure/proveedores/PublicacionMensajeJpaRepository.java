@@ -11,6 +11,4 @@ public interface PublicacionMensajeJpaRepository
 
   List<PublicacionMensajeJpaEntity> findByClavePublicacionIdInOrderByClaveOrdenAsc(
       Collection<UUID> publicacionIds);
-
-  void deleteByClavePublicacionId(UUID publicacionId);
 }

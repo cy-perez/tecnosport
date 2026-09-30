@@ -7,6 +7,7 @@ import co.tecnosport.api.domain.proveedores.LoteIngesta;
 import co.tecnosport.api.domain.proveedores.OrigenIngesta;
 import co.tecnosport.api.domain.proveedores.ResumenIngesta;
 import co.tecnosport.api.infrastructure.proveedores.entidad.LoteIngestaJpaEntity;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
@@ -37,6 +38,16 @@ public class RepositorioLotesIngestaJpa implements RepositorioLotesIngesta {
   @Override
   public Optional<LoteIngesta> buscarPorId(UUID id) {
     return jpa.findById(id).map(RepositorioLotesIngestaJpa::aDominio);
+  }
+
+  @Override
+  public List<LoteIngesta> abiertos() {
+    return jpa
+        .findByEstadoInOrderByCreadoEnAsc(
+            List.of(EstadoLote.RECIBIDO.name(), EstadoLote.PROCESANDO.name()))
+        .stream()
+        .map(RepositorioLotesIngestaJpa::aDominio)
+        .toList();
   }
 
   @Override

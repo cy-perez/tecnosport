@@ -132,6 +132,27 @@ class RepositoriosDeIngestaJpaTest {
     assertThat(leido.detalleError()).contains("El zip no trae ningún .txt.");
   }
 
+  /** Lo que un reinicio deja abierto, del más antiguo al más reciente; lo cerrado no cuenta. */
+  @Test
+  void losLotesAbiertosSonLosRecibidosYLosQueIbanAMedias() {
+    Proveedor uno = proveedorGuardado(null);
+    LoteIngesta aMedias =
+        LoteIngesta.recibirExportacion(uno.id(), "p/exportaciones/1.zip", T.plusSeconds(10));
+    aMedias.iniciar(T.plusSeconds(11));
+    LoteIngesta enCola = LoteIngesta.recibirExportacion(uno.id(), "p/exportaciones/2.zip", T);
+    LoteIngesta cerrado =
+        LoteIngesta.recibirExportacion(uno.id(), "p/exportaciones/3.zip", T.plusSeconds(20));
+    cerrado.iniciar(T.plusSeconds(21));
+    cerrado.terminar(new ResumenIngesta(0, 0, 0, 0, 0, 0, 0, 0, 0), T.plusSeconds(22));
+    lotes.guardar(aMedias);
+    lotes.guardar(enCola);
+    lotes.guardar(cerrado);
+
+    assertThat(lotes.abiertos())
+        .extracting(LoteIngesta::estado)
+        .containsExactly(EstadoLote.RECIBIDO, EstadoLote.PROCESANDO);
+  }
+
   @Test
   void losLotesSeListanDelMasRecienteAlMasAntiguoYPorProveedor() {
     Proveedor uno = proveedorGuardado(null);

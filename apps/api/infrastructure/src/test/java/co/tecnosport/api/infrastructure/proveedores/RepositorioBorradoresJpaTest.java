@@ -220,4 +220,31 @@ class RepositorioBorradoresJpaTest {
     List<HuellaVisual> ninguna = borradores.huellasVisualesDelProveedor(UUID.randomUUID());
     assertThat(ninguna).isEmpty();
   }
+
+  /** El anuncio repetido: solo cuenta el que sigue en revisión, y solo el de ese proveedor. */
+  @Test
+  void sabeSiYaHayUnBorradorEnRevisionConLaMismaHuella() {
+    unaPublicacion();
+    HuellaProveedor huella = HuellaProveedor.calcular(proveedor.id(), "Uno", Dinero.deCop(1000));
+    BorradorProducto enRevision =
+        BorradorProducto.nuevo(
+            publicacion.id(),
+            proveedor.id(),
+            extraido("Uno", List.of()),
+            "{}",
+            Dinero.deCop(1000),
+            null,
+            huella,
+            null,
+            Set.of(),
+            T);
+    borradores.guardar(enRevision);
+
+    assertThat(borradores.existeEnRevisionConHuella(proveedor.id(), huella)).isTrue();
+    assertThat(borradores.existeEnRevisionConHuella(UUID.randomUUID(), huella)).isFalse();
+
+    enRevision.rechazar("Repetido.");
+    borradores.actualizar(enRevision);
+    assertThat(borradores.existeEnRevisionConHuella(proveedor.id(), huella)).isFalse();
+  }
 }
