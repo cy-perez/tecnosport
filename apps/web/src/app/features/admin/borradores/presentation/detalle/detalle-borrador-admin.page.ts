@@ -42,7 +42,7 @@ import {
   TipoDeTalla,
   TipoProductoProveedor,
 } from '../../domain/borrador.model';
-import { clasesDeEstadoBorrador } from '../lista/lista-borradores-admin.page';
+import { clasesDeEstadoBorrador } from '../estado-borrador';
 
 const TIPOS_DE_TALLA: readonly TipoDeTalla[] = ['DESCONOCIDA', 'UNICA', 'LISTA'];
 
@@ -142,6 +142,8 @@ export class DetalleBorradorAdminPage {
   protected readonly errorDatos = signal<string | null>(null);
   protected readonly avisoDatos = signal<string | null>(null);
   protected readonly errorDecision = signal<string | null>(null);
+  /** Aparte del de aprobar: cada error se pinta dentro de la tarjeta del formulario que lo causó. */
+  protected readonly errorRechazo = signal<string | null>(null);
   /** El producto recién creado, para enlazarlo desde el aviso. */
   protected readonly aprobado = signal<string | null>(null);
   protected readonly rechazado = signal(false);
@@ -224,13 +226,33 @@ export class DetalleBorradorAdminPage {
         return;
       }
       this.cargado = borrador.id;
+      // Todo lo que es de la decisión anterior se va con ella: navegar de un borrador a otro por
+      // la URL reutiliza el componente.
+      this.tonoPorFoto.set({});
+      this.aprobado.set(null);
+      this.rechazado.set(false);
+      this.avisoDatos.set(null);
+      this.errorDatos.set(null);
+      this.errorDecision.set(null);
+      this.errorRechazo.set(null);
+      this.motivoRechazo.reset();
       this.formDatos.reset(this.aFormularioDatos(borrador));
-      this.formAprobar.patchValue({
+      // El alt en inglés no se prellena con el título en español: obligatorio y vacío, para que
+      // alguien lo escriba y la vitrina en inglés no herede un alt en castellano.
+      this.formAprobar.reset({
         precioVenta:
           borrador.precioVentaSugerido === null ? '' : String(borrador.precioVentaSugerido),
+        existenciaInicial: '1',
         altEs: borrador.titulo,
-        altEn: borrador.titulo,
+        altEn: '',
       });
+      // Un borrador decidido se lee, no se corrige: los campos quedan deshabilitados y no solo
+      // sin botón.
+      if (borradorEditable(borrador)) {
+        this.formDatos.enable({ emitEvent: false });
+      } else {
+        this.formDatos.disable({ emitEvent: false });
+      }
     });
   }
 
@@ -353,10 +375,15 @@ export class DetalleBorradorAdminPage {
     this.errorDecision.set(null);
 
     const tonos = this.tonoPorFoto();
+    const datos = this.formDatos.getRawValue();
     this.aprobar.mutate(
       {
         id: this.id(),
         aprobacion: {
+          // Lo que está escrito en "Datos extraídos" manda, se haya guardado o no: la explicación
+          // de esa tarjeta promete que la aprobación parte de ahí.
+          ...(datos.titulo.trim() ? { titulo: datos.titulo.trim() } : {}),
+          tallas: this.tallasDelFormulario(),
           marcaId: valores.marcaId,
           categoriaId: valores.categoriaId,
           precioVenta,
@@ -390,10 +417,10 @@ export class DetalleBorradorAdminPage {
     }
     const motivo = this.motivoRechazo.value.trim();
     if (!motivo) {
-      this.errorDecision.set(this.transloco.translate('admin.borradores.rechazar.faltaMotivo'));
+      this.errorRechazo.set(this.transloco.translate('admin.borradores.rechazar.faltaMotivo'));
       return;
     }
-    this.errorDecision.set(null);
+    this.errorRechazo.set(null);
 
     this.rechazar.mutate(
       { id: this.id(), motivo },
@@ -403,7 +430,7 @@ export class DetalleBorradorAdminPage {
           this.enfocarDespuesDePintar(() => this.avisoDecisionRef()?.nativeElement);
         },
         onError: (error: unknown) =>
-          this.errorDecision.set(
+          this.errorRechazo.set(
             mensajeDeError(error, this.transloco, 'admin.borradores.rechazar.error'),
           ),
       },

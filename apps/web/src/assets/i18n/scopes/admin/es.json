@@ -27,9 +27,8 @@
     "proveedor_inactivo": "El proveedor está inactivo. Actívalo desde su ficha antes de subirle una exportación.",
     "exportacion_no_encontrada": "El archivo no llegó al bucket. Vuelve a elegirlo y súbelo de nuevo.",
     "exportacion_demasiado_grande": "La exportación pesa demasiado. Exporta el chat sin archivos o parte el periodo en dos.",
-    "exportacion_ilegible": "No se pudo leer la exportación: el zip tiene que traer el .txt del chat tal como lo exporta WhatsApp.",
     "tipo_de_exportacion_no_admitido": "Ese archivo no es una exportación de chat. Sube el .zip que genera WhatsApp.",
-    "cola_de_ingestas_llena": "Hay otra ingesta en curso. El lote quedó guardado: espera a que termine y vuelve a intentarlo.",
+    "cola_de_ingestas_llena": "Hay demasiadas ingestas en curso y esta no entró en la cola. Vuelve a subir la exportación en un rato.",
     "lote_no_encontrado": "Ese lote ya no existe. Recarga la lista.",
     "borrador_no_encontrado": "Ese borrador ya no existe. Recarga la lista.",
     "borrador_no_editable": "Este borrador ya se decidió: no se puede cambiar ni aprobar de nuevo.",
@@ -38,7 +37,8 @@
     "borrador_sin_titulo": "Falta el título del producto. Corrígelo en los datos extraídos antes de aprobar.",
     "atributo_de_catalogo_no_definido": "Faltan los atributos de color o talla en el catálogo. Créalos antes de aprobar.",
     "foto_no_es_del_borrador": "Una de las fotos no pertenece a esta publicación. Recarga la página.",
-    "imagen_de_proveedor_ilegible": "Una de las fotos no se pudo procesar. Recházalo o pídele al proveedor la foto de nuevo."
+    "imagen_de_proveedor_ilegible": "Una de las fotos no se pudo procesar. Recházalo o pídele al proveedor la foto de nuevo.",
+    "producto_de_proveedor_ya_existe": "Este anuncio ya es un producto del catálogo: es el mismo título al mismo precio. Rechaza el borrador."
   },
   "iniciarSesion": {
     "titulo": "Panel administrativo",
@@ -796,7 +796,8 @@
       "remitente": "Nombre en el chat",
       "margen": "Margen",
       "estado": "Estado",
-      "acciones": "Acciones"
+      "acciones": "Acciones",
+      "margenValor": "×{{factor}}"
     },
     "formulario": {
       "miga": "Ficha del proveedor",
@@ -861,7 +862,9 @@
       "accion": "Subir e ingerir",
       "subiendo": "Subiendo…",
       "enCola": "Listo: {{archivo}} quedó en cola. La tabla se actualiza sola mientras se procesa.",
-      "error": "No se pudo subir la exportación. Intenta de nuevo."
+      "error": "No se pudo subir la exportación. Intenta de nuevo.",
+      "sinProveedores": "No hay ningún proveedor activo al que subirle una exportación.",
+      "crearProveedor": "Crear un proveedor"
     }
   },
   "borradores": {

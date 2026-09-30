@@ -154,6 +154,33 @@ describe('ListaIngestasAdminPage', () => {
     expect(repositorio.subidas).toEqual([{ proveedorId: 'prov-1', archivo }]);
   });
 
+  it('sin ningún proveedor activo lo dice y enlaza el alta', async () => {
+    const repositorio = new RepositorioIngestasAdminFalso([]);
+    await render(ListaIngestasAdminPage, {
+      imports: [
+        TranslocoTestingModule.forRoot({
+          langs: { es, en, 'admin/es': esAdmin } as never,
+          translocoConfig: { availableLangs: ['es', 'en'], defaultLang: 'es' },
+          preloadLangs: true,
+        }),
+      ],
+      providers: [
+        provideRouter([]),
+        provideTanStackQuery(new QueryClient({ defaultOptions: { queries: { retry: false } } })),
+        { provide: REPOSITORIO_INGESTAS_ADMIN, useValue: repositorio },
+        {
+          provide: REPOSITORIO_PROVEEDORES_ADMIN,
+          useValue: new RepositorioProveedoresAdminFalso([
+            proveedorDePrueba({ id: 'prov-2', nombre: 'Inactivo S.A.', activo: false }),
+          ]),
+        },
+      ],
+    });
+
+    expect(await screen.findByText(s.sinProveedores)).toBeTruthy();
+    expect(screen.getByRole('link', { name: s.crearProveedor })).toBeTruthy();
+  });
+
   it('rechaza un archivo que no es zip antes de subirlo', async () => {
     const { repositorio } = await renderPagina();
     await within(screen.getByLabelText(s.proveedor)).findByRole('option', {

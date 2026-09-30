@@ -95,6 +95,7 @@ async function llenarAprobacion() {
   fireEvent.change(screen.getByLabelText(a.marca), { target: { value: 'm1' } });
   fireEvent.change(screen.getByLabelText(a.categoria), { target: { value: 'c1' } });
   fireEvent.input(screen.getByLabelText(a.existenciaInicial), { target: { value: '2' } });
+  fireEvent.input(screen.getByLabelText(a.altEn), { target: { value: 'Medium tote bag' } });
 }
 
 describe('DetalleBorradorAdminPage', () => {
@@ -115,6 +116,31 @@ describe('DetalleBorradorAdminPage', () => {
     expect((screen.getByLabelText(d.sirveHasta) as HTMLInputElement).value).toBe('L');
     expect((screen.getByLabelText(d.tonosNombrados) as HTMLInputElement).value).toBe('Negro, Café');
     expect((screen.getByLabelText(a.precioVenta) as HTMLInputElement).value).toBe('72000');
+    expect((screen.getByLabelText(a.altEs) as HTMLInputElement).value).toBe(
+      'Bolso tote en cuero sintético',
+    );
+    expect((screen.getByLabelText(a.altEn) as HTMLInputElement).value).toBe('');
+  });
+
+  /**
+   * La tarjeta de datos dice "la aprobación de abajo parte de estos datos": el título corregido
+   * viaja con la aprobación aunque nadie haya pulsado "Guardar datos".
+   */
+  it('aprobar lleva el título y las tallas tal como están escritos, sin guardar antes', async () => {
+    const { repositorio } = await renderPagina();
+    await llenarAprobacion();
+    const titulo = screen.getByLabelText(d.tituloProducto) as HTMLInputElement;
+    await vi.waitFor(() => expect(titulo.value).toBe('Bolso tote en cuero sintético'));
+
+    fireEvent.input(titulo, { target: { value: 'Bolso tote negro' } });
+    fireEvent.input(screen.getByLabelText(d.sirveHasta), { target: { value: 'XL' } });
+    fireEvent.click(screen.getByRole('button', { name: a.accion }));
+
+    await screen.findByRole('link', { name: a.verProducto });
+    expect(repositorio.aprobaciones[0].aprobacion).toMatchObject({
+      titulo: 'Bolso tote negro',
+      tallas: { tipo: 'UNICA', sirveHasta: 'XL', valores: [] },
+    });
   });
 
   /**
@@ -178,7 +204,9 @@ describe('DetalleBorradorAdminPage', () => {
     const r = esAdmin.borradores.rechazar;
 
     fireEvent.click(await screen.findByRole('button', { name: r.accion }));
-    expect(await screen.findByText(r.faltaMotivo)).toBeTruthy();
+    const aviso = await screen.findByText(r.faltaMotivo);
+    // Dentro de la tarjeta de rechazar, no en la de aprobar: la vista tiene que relacionarlos.
+    expect(aviso.closest('form')).toBe(screen.getByLabelText(r.motivo).closest('form'));
 
     fireEvent.input(screen.getByLabelText(r.motivo), { target: { value: 'Foto borrosa' } });
     fireEvent.click(screen.getByRole('button', { name: r.accion }));
@@ -196,6 +224,9 @@ describe('DetalleBorradorAdminPage', () => {
     ).toBeTruthy();
     expect(screen.queryByRole('button', { name: a.accion })).toBeNull();
     expect(screen.queryByRole('button', { name: d.guardar })).toBeNull();
+    await vi.waitFor(() =>
+      expect((screen.getByLabelText(d.tituloProducto) as HTMLInputElement).disabled).toBe(true),
+    );
   });
 
   it('no tiene violaciones de accesibilidad', async () => {

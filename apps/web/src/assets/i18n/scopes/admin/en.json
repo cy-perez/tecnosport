@@ -27,9 +27,8 @@
     "proveedor_inactivo": "The supplier is inactive. Activate it from its page before uploading an export.",
     "exportacion_no_encontrada": "The file did not reach the bucket. Pick it again and upload once more.",
     "exportacion_demasiado_grande": "The export is too large. Export the chat without media or split the period in two.",
-    "exportacion_ilegible": "The export could not be read: the zip must contain the chat .txt exactly as WhatsApp exports it.",
     "tipo_de_exportacion_no_admitido": "That file is not a chat export. Upload the .zip WhatsApp generates.",
-    "cola_de_ingestas_llena": "Another import is running. The batch was saved: wait for it to finish and try again.",
+    "cola_de_ingestas_llena": "Too many imports are running and this one did not make it into the queue. Upload the export again in a while.",
     "lote_no_encontrado": "That batch no longer exists. Reload the list.",
     "borrador_no_encontrado": "That draft no longer exists. Reload the list.",
     "borrador_no_editable": "This draft has already been decided: it cannot be changed or approved again.",
@@ -38,7 +37,8 @@
     "borrador_sin_titulo": "The product title is missing. Fix it in the extracted data before approving.",
     "atributo_de_catalogo_no_definido": "The colour or size attributes are missing from the catalogue. Create them before approving.",
     "foto_no_es_del_borrador": "One of the photos does not belong to this post. Reload the page.",
-    "imagen_de_proveedor_ilegible": "One of the photos could not be processed. Reject it or ask the supplier for the photo again."
+    "imagen_de_proveedor_ilegible": "One of the photos could not be processed. Reject it or ask the supplier for the photo again.",
+    "producto_de_proveedor_ya_existe": "This post is already a product in the catalogue: same title at the same price. Reject the draft."
   },
   "iniciarSesion": {
     "titulo": "Admin panel",
@@ -796,7 +796,8 @@
       "remitente": "Name in the chat",
       "margen": "Margin",
       "estado": "Status",
-      "acciones": "Actions"
+      "acciones": "Actions",
+      "margenValor": "×{{factor}}"
     },
     "formulario": {
       "miga": "Supplier details",
@@ -861,7 +862,9 @@
       "accion": "Upload and import",
       "subiendo": "Uploading…",
       "enCola": "Done: {{archivo}} is queued. The table refreshes on its own while it is processed.",
-      "error": "The export could not be uploaded. Try again."
+      "error": "The export could not be uploaded. Try again.",
+      "sinProveedores": "There is no active supplier to upload an export for.",
+      "crearProveedor": "Create a supplier"
     }
   },
   "borradores": {

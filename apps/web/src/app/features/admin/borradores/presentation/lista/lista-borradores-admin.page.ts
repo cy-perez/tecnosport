@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -25,20 +25,7 @@ import {
   filtroBorradoresDesdeQueryParams,
   queryParamsDesdeFiltroBorradores,
 } from '../../domain/query-params-filtro';
-
-const CLASES_INSIGNIA =
-  'inline-flex items-center rounded-completo border px-12 py-4 text-xs font-medio';
-
-export const CLASES_ESTADO_BORRADOR: Record<EstadoBorrador, string> = {
-  EN_REVISION: 'border-ts-primario text-ts-primario',
-  APROBADO: 'border-ts-exito text-ts-exito',
-  RECHAZADO: 'border-ts-error text-ts-error',
-  RENOVACION_APLICADA: 'border-ts-borde text-ts-texto-suave',
-};
-
-export function clasesDeEstadoBorrador(estado: EstadoBorrador): string {
-  return CLASES_INSIGNIA + ' ' + CLASES_ESTADO_BORRADOR[estado];
-}
+import { clasesDeEstadoBorrador } from '../estado-borrador';
 
 /**
  * Los borradores que dejó la extracción, para revisar. Por omisión se ven todos; el filtro por
@@ -107,8 +94,12 @@ export class ListaBorradoresAdminPage {
   );
 
   constructor() {
-    this.estadoFiltro.setValue(this.filtro().estado, { emitEvent: false });
-    this.proveedorFiltro.setValue(this.filtro().proveedorId, { emitEvent: false });
+    // Un `effect` y no una sola asignación: con "atrás" del navegador cambia la URL y la tabla, y
+    // los desplegables tienen que seguirla (mismo criterio que la lista de pedidos).
+    effect(() => {
+      this.estadoFiltro.setValue(this.filtro().estado, { emitEvent: false });
+      this.proveedorFiltro.setValue(this.filtro().proveedorId, { emitEvent: false });
+    });
   }
 
   protected nombreDelProveedor(borrador: Borrador): string {

@@ -62,7 +62,7 @@
                   </td>
                   <td>{{ etiquetaLinea(proveedor.linea) }}</td>
                   <td>{{ proveedor.nombreEnExportacion }}</td>
-                  <td class="tabular-nums">×{{ proveedor.factorDeMargen }}</td>
+                  <td class="tabular-nums">{{ margen(proveedor) }}</td>
                   <td>
                     <span [class]="clasesActivo(proveedor.activo)">
                       {{

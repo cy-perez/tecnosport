@@ -1,5 +1,5 @@
-import { ChangeDetectionStrategy, Component, computed } from '@angular/core';
-import { TranslocoPipe } from '@jsverse/transloco';
+import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { usarTraductor } from '../../../../../core/i18n/traductor';
 import { TsBoton } from '../../../../../shared/ui/boton/ts-boton';
 import { TsEsqueleto } from '../../../../../shared/ts-esqueleto/ts-esqueleto';
@@ -32,12 +32,23 @@ const CLASES_INSIGNIA =
 export class ListaProveedoresAdminPage {
   protected readonly migas = usarMigasAdmin([{ clave: 'admin.proveedores.titulo' }]);
   private readonly traducir = usarTraductor();
+  private readonly transloco = inject(TranslocoService);
 
   protected readonly consulta = usarProveedoresAdmin();
   protected readonly proveedores = computed<readonly Proveedor[]>(() => this.consulta.data() ?? []);
 
   protected etiquetaLinea(linea: LineaProveedor): string {
     return this.traducir()(CLAVE_LINEA[linea]);
+  }
+
+  /** «×1,35» en español y «×1.35» en inglés: el separador decimal es del idioma. */
+  protected margen(proveedor: Proveedor): string {
+    const idioma = this.transloco.activeLang();
+    const factor = new Intl.NumberFormat(idioma === 'en' ? 'en-US' : 'es-CO', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(proveedor.factorDeMargen);
+    return this.traducir()('admin.proveedores.columnas.margenValor', { factor });
   }
 
   protected clasesActivo(activo: boolean): string {

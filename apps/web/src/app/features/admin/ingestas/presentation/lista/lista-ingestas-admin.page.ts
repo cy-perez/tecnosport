@@ -2,6 +2,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
+  effect,
   ElementRef,
   inject,
   signal,
@@ -9,7 +10,7 @@ import {
 } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { mensajeDeError } from '../../../../../core/errores/mensaje-de-error';
 import { fechaConHora } from '../../../../../core/i18n/fecha-colombia';
@@ -48,8 +49,11 @@ const CLASES_ESTADO: Record<EstadoLote, string> = {
   ERROR: 'border-ts-error text-ts-error',
 };
 
-/** Lo que acepta el `<input type="file">`: el zip que exporta WhatsApp, con cualquier tipo. */
-const TIPOS_DE_ZIP = ['application/zip', 'application/x-zip-compressed', ''];
+/**
+ * Lo que acepta el `<input type="file">`: el zip que exporta WhatsApp, con el tipo que diga el
+ * sistema. Un archivo sin tipo pasa solo si termina en `.zip`.
+ */
+const TIPOS_DE_ZIP = ['application/zip', 'application/x-zip-compressed'];
 
 /**
  * Subir una exportación de chat y ver cómo van los lotes.
@@ -66,6 +70,7 @@ const TIPOS_DE_ZIP = ['application/zip', 'application/x-zip-compressed', ''];
   selector: 'app-lista-ingestas-admin',
   imports: [
     ReactiveFormsModule,
+    RouterLink,
     TranslocoPipe,
     TsBoton,
     TsEsqueleto,
@@ -136,8 +141,16 @@ export class ListaIngestasAdminPage {
     () => new Map((this.proveedores.data() ?? []).map((p) => [p.id, p.nombre] as const)),
   );
 
+  /** Sin ningún proveedor activo no hay a quién subirle: se dice y se enlaza el alta. */
+  protected readonly sinProveedoresActivos = computed(
+    () => this.proveedores.isSuccess() && this.opcionesProveedorActivo().length === 0,
+  );
+
   constructor() {
-    this.proveedorFiltro.setValue(this.filtro().proveedorId, { emitEvent: false });
+    // Un `effect`: con "atrás" del navegador cambia la URL y la tabla, y el desplegable la sigue.
+    effect(() => {
+      this.proveedorFiltro.setValue(this.filtro().proveedorId, { emitEvent: false });
+    });
   }
 
   protected nombreDelProveedor(lote: LoteIngesta): string {
