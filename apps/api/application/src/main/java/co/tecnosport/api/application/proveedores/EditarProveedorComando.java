@@ -1,0 +1,18 @@
+package co.tecnosport.api.application.proveedores;
+
+import co.tecnosport.api.domain.catalogo.LineaCatalogo;
+import java.math.BigDecimal;
+import java.util.UUID;
+
+/**
+ * @param factorDeMargen nulo para usar el de la línea
+ */
+public record EditarProveedorComando(
+    UUID id,
+    String nombre,
+    LineaCatalogo linea,
+    String telefonoWhatsApp,
+    String nombreEnExportacion,
+    boolean activo,
+    boolean publicacionAutomatica,
+    BigDecimal factorDeMargen) {}

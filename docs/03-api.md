@@ -397,6 +397,16 @@ POST /api/v1/admin/productos/{id}/imagen-principal            confirma la subida
 POST /api/v1/admin/productos/{id}/galeria/url-subida         igual que la principal, con su propio prefijo: la limpieza de una no toca a la otra
 POST /api/v1/admin/productos/{id}/galeria                    confirma y suma a la galería; 409 si la foto ya está o si no caben más (adr/0052)
 DELETE /api/v1/admin/productos/{id}/galeria/{imagenId}       la saca de la ficha y borra su objeto; 204, y 404 si no era de ese producto
+GET/POST /api/v1/admin/proveedores                           los proveedores de WhatsApp, y crear uno; la línea es BOLSOS o ROPA
+GET/PUT /api/v1/admin/proveedores/{id}                       ficha y edición; desactivarlo es lo que impide subirle exportaciones
+POST /api/v1/admin/proveedores/{id}/ingestas/url-subida      URL firmada para subir el zip de la exportación al bucket privado
+POST /api/v1/admin/proveedores/{id}/ingestas                 encola el lote con la key; 202. 413 si pesa demasiado, 422 si no es un zip, 503 si la cola está llena (el lote queda en ERROR: se vuelve a subir)
+GET /api/v1/admin/ingestas                                   los lotes, paginados; ?proveedorId= filtra
+GET /api/v1/admin/ingestas/{id}                              un lote con su estado, su resumen y, si falló, por qué
+GET /api/v1/admin/borradores                                 paginado; ?estado= y ?proveedorId= filtran
+GET/PATCH /api/v1/admin/borradores/{id}                      detalle —con las fotos firmadas y los textos— y corrección de lo extraído; 409 si ya se decidió
+POST /api/v1/admin/borradores/{id}/aprobar                   crea el producto publicado con sus variantes, fotos e inventario inicial; 422 sin fotos, precio o título; 409 si el mismo anuncio ya es un producto
+POST /api/v1/admin/borradores/{id}/rechazar                  lo cierra con un motivo; 409 si ya se decidió
 GET /api/v1/admin/pedidos                                   paginado; ?estado= filtra y ordena por más antiguo primero
 POST /api/v1/admin/pedidos/{id}/verificar-contraentrega     contacto por WhatsApp o llamada
 POST /api/v1/admin/pedidos/{id}/emitir-guia                 le pide las guías a Skydropx; 202, no despacha todavía
@@ -539,6 +549,29 @@ primero.
 
 La imagen principal (Fase 4) verifica menos que esto: solo que el objeto exista y
 su tamaño en bytes, sin proporción esperada.
+
+### La ingesta de proveedores
+
+El zip de la exportación sigue el mismo camino que las imágenes: URL firmada,
+`PUT` desde el navegador al bucket privado de proveedores, y un `POST` con la
+`objectKey`. El servidor comprueba que la key esté bajo el prefijo del proveedor,
+que el objeto exista y cuánto pesa, escribe el lote en `RECIBIDO` y lo encola
+**después de confirmar la transacción**: un lote que el hilo de ingesta tome
+antes de que la fila exista es un lote que no encuentra. Responde 202 con el
+lote; el estado se consulta después, y el panel lo sondea cada cuatro segundos
+mientras haya alguno abierto.
+
+La ingesta corre en un hilo único dentro de la aplicación, en su propia
+transacción por publicación: la extracción —que llama a un tercero—, la subida
+de las fotos al bucket y el pHash van fuera de la transacción, y la resolución
+del borrador dentro. Una publicación que falla no tumba el lote; queda
+`DESCARTADA` con su motivo y el resumen la cuenta. Al arrancar, lo que un
+reinicio dejó en `RECIBIDO` vuelve a la cola y lo que iba en `PROCESANDO` se
+cierra en `ERROR` (`ADR-0067`).
+
+Volver a subir la misma exportación es seguro y es la forma de reintentar: cada
+mensaje lleva un `id_externo` derivado del remitente, la fecha y el contenido, y
+los que ya están no se vuelven a registrar. El lote termina con cero nuevos.
 
 ## Idempotencia
 

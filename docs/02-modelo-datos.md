@@ -678,6 +678,47 @@ lee el catálogo actual para reconstruir su total.
 parte de lo que el comprador aceptó. Que mañana la transportadora suba la tarifa
 no cambia lo que ese pedido debe.
 
+## Proveedores por WhatsApp
+
+Desde el 30 de septiembre de 2026 hay productos que no carga una persona: los
+deja la ingesta de los chats de los proveedores de bolsos y ropa (`ADR-0067`).
+Son cinco tablas nuevas (`V69`, `V70`, `V71`) y seis columnas en `producto`.
+
+| Agregado | Contenido | Nota |
+|---|---|---|
+| `Proveedor` | nombre, nombre en la exportación, teléfono, línea, factor de margen, activo | La línea es **una**: `BOLSOS` o `ROPA`, las únicas que hoy llegan por WhatsApp. El nombre en la exportación es como el teléfono guardó el contacto y es lo que decide qué mensajes son suyos |
+| `LoteIngesta` | proveedor, origen, estado, key de la exportación, resumen, detalle de error | `RECIBIDO -> PROCESANDO -> TERMINADO | ERROR`. El resumen son nueve enteros que se escriben al terminar |
+| `MensajeProveedor` | proveedor, lote, `id_externo`, tipo, enviado en, texto, key de la foto | `(proveedor_id, id_externo)` es único: el `id_externo` es un hash del remitente, la fecha y el contenido, y es lo que hace seguro volver a subir el mismo chat. Solo se guardan los del remitente registrado |
+| `PublicacionProveedor` | proveedor, lote, mensajes en orden, estado | Varios mensajes seguidos —las fotos y el texto de un mismo bolso— son una publicación. Se agrupan por ventana de tiempo desde el último mensaje (`PROVEEDORES_VENTANA_AGRUPACION`, 15 minutos) |
+| `BorradorProducto` | publicación, título, tipo, precios, tallas, tonos, material, características, alertas, huella, pHash, estado | Lo que la extracción entendió, esperando revisión. `EN_REVISION -> APROBADO | RECHAZADO`; `RENOVACION_APLICADA` es el que no hizo falta revisar. `phash` es `varchar(16)`: `char(16)` no pasa la validación de Hibernate |
+
+Y en `producto`: `origen` (`MANUAL` o `PROVEEDOR`), `proveedor_id`,
+`precio_proveedor`, `huella_proveedor`, `visto_por_ultima_vez` y
+`estado_disponibilidad` (`DISPONIBLE`, `OCULTO_POR_VENCIMIENTO`,
+`AGOTADO_POR_PROVEEDOR`). Un `check` exige que un producto de proveedor lleve
+proveedor y huella, y un índice único parcial sobre `(proveedor_id,
+huella_proveedor)` es lo que hace que la renovación encuentre su producto.
+
+**Dos formas de reconocer que un mensaje es un producto que ya existe:**
+
+- **La huella**: `sha256(proveedor | título normalizado | precio)`. Si coincide,
+  es el mismo bolso al mismo precio: se renueva `visto_por_ultima_vez` y no se
+  crea borrador.
+- **El parecido visual**: el pHash de la primera foto (DCT 32×32 reducida a 8×8,
+  bits contra la mediana) contra los de los borradores aprobados del mismo
+  proveedor, con distancia de Hamming hasta `PROVEEDORES_UMBRAL_HAMMING` (6).
+  Reconoce el mismo bolso aunque el precio haya cambiado; entonces se actualiza
+  `precio_proveedor` y el borrador de la renovación lleva la alerta
+  `PRECIO_CAMBIO`.
+
+El precio de venta que se sugiere es `precio_proveedor × factor de margen`,
+redondeado a la centena con `HALF_UP`; el factor sale del proveedor y, si no lo
+tiene, de la línea (`PROVEEDORES_MARGEN_BOLSOS`, `PROVEEDORES_MARGEN_ROPA`).
+Aprobar crea el producto **con una variante por cada tono y talla**, copia las
+fotos del bucket privado al público y registra la existencia inicial que el
+panel indique como un movimiento de `ENTRADA`. Lo que deja de verse es asunto de
+`ADR-0066`.
+
 ## Convenciones de base de datos
 
 - Nombres en español, `snake_case`, tablas en singular: `producto`,

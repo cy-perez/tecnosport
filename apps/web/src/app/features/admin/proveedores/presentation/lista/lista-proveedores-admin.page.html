@@ -1,0 +1,91 @@
+<section class="mx-auto max-w-contenido px-16 py-32">
+  <ts-migas [ruta]="migas()" />
+
+  <h1 class="m-0 mb-16 font-display text-2xl">{{ 'admin.proveedores.titulo' | transloco }}</h1>
+
+  <p class="mb-24 text-ts-texto-suave">{{ 'admin.proveedores.explicacion' | transloco }}</p>
+
+  @if (consulta.isPending()) {
+    <ts-esqueleto />
+  } @else if (consulta.isError()) {
+    <p class="text-ts-error" role="alert">{{ 'admin.proveedores.errorLista' | transloco }}</p>
+  } @else {
+    <div class="overflow-hidden rounded-lg border border-ts-borde bg-ts-superficie">
+      <div
+        class="flex flex-wrap items-center justify-between gap-16 border-b border-ts-borde px-16 py-12"
+      >
+        <p class="m-0 font-medio">
+          {{ 'admin.proveedores.total' | transloco: { total: proveedores().length } }}
+        </p>
+        <ts-boton [enlace]="['crear']">{{ 'admin.proveedores.nuevo' | transloco }}</ts-boton>
+      </div>
+
+      @if (proveedores().length === 0) {
+        <p class="m-0 px-16 py-32 text-ts-texto-suave">
+          {{ 'admin.proveedores.ninguno' | transloco }}
+        </p>
+      } @else {
+        <div class="overflow-x-auto">
+          <table
+            class="w-full border-collapse text-sm [&_td]:px-16 [&_td]:py-12 [&_th]:px-16 [&_th]:py-12 [&_:is(th,td)]:text-left"
+          >
+            <thead>
+              <tr class="border-b border-ts-borde">
+                <th class="font-medio text-ts-texto-suave" scope="col">
+                  {{ 'admin.proveedores.columnas.nombre' | transloco }}
+                </th>
+                <th class="font-medio text-ts-texto-suave" scope="col">
+                  {{ 'admin.proveedores.columnas.linea' | transloco }}
+                </th>
+                <th class="font-medio text-ts-texto-suave" scope="col">
+                  {{ 'admin.proveedores.columnas.remitente' | transloco }}
+                </th>
+                <th class="font-medio text-ts-texto-suave" scope="col">
+                  {{ 'admin.proveedores.columnas.margen' | transloco }}
+                </th>
+                <th class="font-medio text-ts-texto-suave" scope="col">
+                  {{ 'admin.proveedores.columnas.estado' | transloco }}
+                </th>
+                <th scope="col">
+                  <span class="sr-only">{{
+                    'admin.proveedores.columnas.acciones' | transloco
+                  }}</span>
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (proveedor of proveedores(); track proveedor.id) {
+                <tr class="border-b border-ts-borde last:border-b-0">
+                  <td>
+                    <p class="m-0 font-medio">{{ proveedor.nombre }}</p>
+                    <p class="m-0 text-xs text-ts-texto-suave">{{ proveedor.telefonoWhatsApp }}</p>
+                  </td>
+                  <td>{{ etiquetaLinea(proveedor.linea) }}</td>
+                  <td>{{ proveedor.nombreEnExportacion }}</td>
+                  <td class="tabular-nums">{{ margen(proveedor) }}</td>
+                  <td>
+                    <span [class]="clasesActivo(proveedor.activo)">
+                      {{
+                        (proveedor.activo
+                          ? 'admin.proveedores.activo'
+                          : 'admin.proveedores.inactivo'
+                        ) | transloco
+                      }}
+                    </span>
+                  </td>
+                  <td>
+                    <div class="flex justify-end">
+                      <ts-boton variante="secundario" [enlace]="[proveedor.id]">
+                        {{ 'admin.proveedores.editar' | transloco }}
+                      </ts-boton>
+                    </div>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </div>
+  }
+</section>

@@ -2,12 +2,14 @@ package co.tecnosport.api.infrastructure.catalogo;
 
 import co.tecnosport.api.domain.catalogo.Atributo;
 import co.tecnosport.api.domain.catalogo.Categoria;
+import co.tecnosport.api.domain.catalogo.EstadoDisponibilidad;
 import co.tecnosport.api.domain.catalogo.EstadoProducto;
 import co.tecnosport.api.domain.catalogo.EstadoSetRotacion;
 import co.tecnosport.api.domain.catalogo.EstadoVariante;
 import co.tecnosport.api.domain.catalogo.ImagenProducto;
 import co.tecnosport.api.domain.catalogo.LineaCatalogo;
 import co.tecnosport.api.domain.catalogo.Marca;
+import co.tecnosport.api.domain.catalogo.OrigenProducto;
 import co.tecnosport.api.domain.catalogo.Paquete;
 import co.tecnosport.api.domain.catalogo.Producto;
 import co.tecnosport.api.domain.catalogo.SetRotacion;
@@ -21,6 +23,7 @@ import co.tecnosport.api.domain.compartido.HashContenido;
 import co.tecnosport.api.domain.compartido.Hashtag;
 import co.tecnosport.api.domain.compartido.Sku;
 import co.tecnosport.api.domain.compartido.Slug;
+import co.tecnosport.api.domain.proveedores.HuellaProveedor;
 import co.tecnosport.api.infrastructure.catalogo.entidad.AtributoJpaEntity;
 import co.tecnosport.api.infrastructure.catalogo.entidad.CategoriaJpaEntity;
 import co.tecnosport.api.infrastructure.catalogo.entidad.ImagenProductoJpaEntity;
@@ -164,16 +167,19 @@ public class MapeadorCatalogo {
     Marca marca = aMarca(marcasPorId.get(p.getMarcaId()));
     Categoria categoria = aCategoria(categoriasPorId.get(p.getCategoriaId()));
 
+    // Sin filtrar por variante_id: una principal o una de galería puede colgar de una variante —el
+    // tono que muestra la foto de un producto de proveedor— y sigue siendo del producto. Lo que sí
+    // se separa por variante son los fotogramas de rotación, que se leen por su set.
     ImagenProducto imagenPrincipal =
         imagenesDelProducto.stream()
-            .filter(i -> "PRINCIPAL".equals(i.getTipo()) && i.getVarianteId() == null)
+            .filter(i -> "PRINCIPAL".equals(i.getTipo()))
             .findFirst()
             .map(i -> aImagen(i, variantesPorImagen))
             .orElse(null);
 
     List<ImagenProducto> galeria =
         imagenesDelProducto.stream()
-            .filter(i -> "GALERIA".equals(i.getTipo()) && i.getVarianteId() == null)
+            .filter(i -> "GALERIA".equals(i.getTipo()))
             .sorted(Comparator.comparingInt(ImagenProductoJpaEntity::getOrden))
             .map(i -> aImagen(i, variantesPorImagen))
             .toList();
@@ -219,7 +225,13 @@ public class MapeadorCatalogo {
         imagenPrincipal,
         galeria,
         setRotacionProducto,
-        variantes);
+        variantes,
+        OrigenProducto.valueOf(p.getOrigen()),
+        p.getProveedorId(),
+        p.getPrecioProveedor() == null ? null : Dinero.deCop(p.getPrecioProveedor()),
+        p.getHuellaProveedor() == null ? null : new HuellaProveedor(p.getHuellaProveedor()),
+        p.getVistoPorUltimaVez(),
+        EstadoDisponibilidad.valueOf(p.getEstadoDisponibilidad()));
   }
 
   private Variante aVariante(
@@ -325,7 +337,8 @@ public class MapeadorCatalogo {
         i.getAlto(),
         new HashContenido(i.getHash()),
         i.getAltEs(),
-        i.getAltEn());
+        i.getAltEn(),
+        i.getVarianteId());
   }
 
   private Marca aMarca(MarcaJpaEntity m) {

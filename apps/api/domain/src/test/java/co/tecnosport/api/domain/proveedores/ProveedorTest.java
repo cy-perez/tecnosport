@@ -1,0 +1,126 @@
+package co.tecnosport.api.domain.proveedores;
+
+import static co.tecnosport.api.domain.proveedores.Proveedor.ESPACIO_ANGOSTO;
+import static co.tecnosport.api.domain.proveedores.Proveedor.MARCA_DE_DIRECCION;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import co.tecnosport.api.domain.catalogo.LineaCatalogo;
+import co.tecnosport.api.domain.compartido.ExcepcionDeDominio;
+import java.math.BigDecimal;
+import java.util.Optional;
+import org.junit.jupiter.api.Test;
+
+class ProveedorTest {
+
+  private static Proveedor bolsos() {
+    return Proveedor.crear(
+        "Bolsos del Centro", LineaCatalogo.BOLSOS, "+57 300 123 4567", "Bolsos Centro", null);
+  }
+
+  @Test
+  void naceActivoYSinPublicacionAutomatica() {
+    Proveedor proveedor = bolsos();
+
+    assertTrue(proveedor.activo());
+    assertFalse(proveedor.publicacionAutomatica());
+    assertEquals(Optional.empty(), proveedor.factorDeMargen());
+    assertEquals("Bolsos del Centro", proveedor.nombre());
+  }
+
+  @Test
+  void soloBolsosYRopaEntranPorWhatsApp() {
+    ExcepcionDeDominio error =
+        assertThrows(
+            ExcepcionDeDominio.class,
+            () ->
+                Proveedor.crear(
+                    "Celulares", LineaCatalogo.TECNOLOGIA, "+57 300", "Celulares", null));
+
+    assertTrue(error.getMessage().contains("bolsos o de ropa"), error.getMessage());
+    assertThrows(
+        ExcepcionDeDominio.class,
+        () -> Proveedor.crear("Tenis", LineaCatalogo.CALZADO, "+57 300", "Tenis", null));
+  }
+
+  /** 0,35 donde iba 1,35 es un error al teclear, y vendería por debajo del costo. */
+  @Test
+  void unFactorPorDebajoDeUnoSeRechaza() {
+    ExcepcionDeDominio error =
+        assertThrows(
+            ExcepcionDeDominio.class,
+            () ->
+                Proveedor.crear(
+                    "Bolsos", LineaCatalogo.BOLSOS, "+57 300", "Bolsos", new BigDecimal("0.35")));
+
+    assertTrue(error.getMessage().contains("menor que 1"), error.getMessage());
+  }
+
+  @Test
+  void unFactorDeUnoOMasSeGuarda() {
+    Proveedor proveedor =
+        Proveedor.crear(
+            "Bolsos", LineaCatalogo.BOLSOS, "+57 300", "Bolsos", new BigDecimal("1.40"));
+
+    assertEquals(Optional.of(new BigDecimal("1.40")), proveedor.factorDeMargen());
+  }
+
+  @Test
+  void sinNombreDeExportacionNoHayFormaDeReconocerSusMensajes() {
+    ExcepcionDeDominio error =
+        assertThrows(
+            ExcepcionDeDominio.class,
+            () -> Proveedor.crear("Bolsos", LineaCatalogo.BOLSOS, "+57 300", "  ", null));
+
+    assertTrue(error.getMessage().contains("exportación"), error.getMessage());
+  }
+
+  @Test
+  void sinTelefonoNoSeCrea() {
+    assertThrows(
+        ExcepcionDeDominio.class,
+        () -> Proveedor.crear("Bolsos", LineaCatalogo.BOLSOS, null, "Bolsos", null));
+  }
+
+  /**
+   * Android escribe el nombre con un espacio angosto y una marca de dirección delante; iOS no.
+   * Comparar carácter por carácter descartaría todos los mensajes del proveedor sin ningún error.
+   */
+  @Test
+  void reconoceAlRemitenteAunqueLaExportacionMetaMarcasInvisibles() {
+    Proveedor proveedor = bolsos();
+
+    assertTrue(proveedor.esRemitente("Bolsos Centro"));
+    assertTrue(proveedor.esRemitente(MARCA_DE_DIRECCION + "Bolsos" + ESPACIO_ANGOSTO + "Centro "));
+    assertTrue(proveedor.esRemitente("bolsos centro"));
+    assertFalse(proveedor.esRemitente("Tecno Sport"));
+    assertFalse(proveedor.esRemitente(null));
+  }
+
+  @Test
+  void editarCambiaTodoLoEditableYAplicaLasMismasReglas() {
+    Proveedor proveedor = bolsos();
+
+    proveedor.editar(
+        "Meraki",
+        LineaCatalogo.ROPA,
+        "+57 321 942 7252",
+        "Meraki Cúcuta",
+        false,
+        true,
+        new BigDecimal("1.30"));
+
+    assertEquals("Meraki", proveedor.nombre());
+    assertEquals(LineaCatalogo.ROPA, proveedor.linea());
+    assertFalse(proveedor.activo());
+    assertTrue(proveedor.publicacionAutomatica());
+    assertTrue(proveedor.esRemitente("Meraki Cúcuta"));
+    assertThrows(
+        ExcepcionDeDominio.class,
+        () ->
+            proveedor.editar(
+                "Meraki", LineaCatalogo.TECNOLOGIA, "+57", "Meraki", true, false, null));
+  }
+}

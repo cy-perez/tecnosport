@@ -175,6 +175,38 @@ resource "google_storage_bucket_iam_binding" "api_escribe_imagenes" {
   members = ["serviceAccount:${google_service_account.api.email}"]
 }
 
+# ── El bucket privado de los proveedores ─────────────────────────────────────────────────────
+# Las exportaciones de chat que sube el panel y las fotos tal como llegaron del proveedor. Otro
+# bucket y no una carpeta del de imagenes, porque aquel es publico de lectura y esto no lo puede
+# ser: nadie lee aqui sin URL firmada, y solo la API escribe. Sin versionado: un original que se
+# borra no es recuperable ni hace falta que lo sea, la exportacion se vuelve a subir.
+resource "google_storage_bucket" "proveedores" {
+  name          = var.bucket_proveedores
+  location      = "US-EAST1"
+  storage_class = "STANDARD"
+
+  uniform_bucket_level_access = true
+  public_access_prevention    = "enforced"
+
+  # El PUT firmado del zip sale del navegador del panel, y sin CORS muere en el preflight.
+  cors {
+    origin          = [var.dominio_publico_web]
+    method          = ["GET", "HEAD", "PUT"]
+    response_header = ["Content-Type"]
+    max_age_seconds = 3600
+  }
+
+  lifecycle {
+    prevent_destroy = true
+  }
+}
+
+resource "google_storage_bucket_iam_binding" "api_administra_proveedores" {
+  bucket  = google_storage_bucket.proveedores.name
+  role    = "roles/storage.objectAdmin"
+  members = ["serviceAccount:${google_service_account.api.email}"]
+}
+
 # ── Federación de identidad con GitHub ──────────────────────────────────────────────────────────
 # Sin llaves JSON en los secretos de GitHub: una llave que se filtra sirve para siempre y desde
 # cualquier parte. Aquí GitHub presenta un token firmado de esa ejecución y GCP lo cambia por
@@ -275,6 +307,13 @@ locals {
     # /versions/latest" que no dice que lo que falta es el binding de IAM. Paso el 30 de
     # septiembre de 2026 al montar este.
     "meta-token",
+    # La clave de la API de Claude con la que se leen los mensajes de los proveedores. Sin ella
+    # la ingesta arranca con el extractor sembrado y todo borrador sale con alertas.
+    "anthropic-api-key",
+    # El recipiente de la siguiente iteracion, el webhook de la WhatsApp Cloud API. Se crea
+    # vacio y no se monta: existe para que el dia que llegue el adaptador no haya que tocar
+    # esta lista ni el binding de IAM.
+    "whatsapp-cloud-api-token",
   ]
 }
 
@@ -330,13 +369,14 @@ module "api" {
   # `jdbc:postgresql://:5432/` y el arranque moriría con un error sobre la URL, no sobre lo que
   # de verdad falta.
   variables = merge({
-    APP_URL_PUBLICA     = var.dominio_publico_web
-    GCS_BUCKET_IMAGENES = var.bucket_imagenes
-    SMTP_HOST           = "smtp.resend.com"
-    SMTP_PUERTO         = "587"
-    SMTP_AUTH           = "true"
-    SMTP_USUARIO        = "resend"
-    CORREO_REMITENTE    = "no-responder@dev.tecnosport.co"
+    APP_URL_PUBLICA        = var.dominio_publico_web
+    GCS_BUCKET_IMAGENES    = var.bucket_imagenes
+    GCS_BUCKET_PROVEEDORES = var.bucket_proveedores
+    SMTP_HOST              = "smtp.resend.com"
+    SMTP_PUERTO            = "587"
+    SMTP_AUTH              = "true"
+    SMTP_USUARIO           = "resend"
+    CORREO_REMITENTE       = "no-responder@dev.tecnosport.co"
     # La cuenta del panel. **Estaba puesta a mano en el servicio y no aquí**, y se descubrió el 22
     # de septiembre porque el plan de un cambio ajeno proponía borrarla: un `apply` la habría
     # quitado, el arranque habría vuelto al valor por omisión de `application.yml`
@@ -427,6 +467,10 @@ module "api" {
     # rotacion que programar — pero si alguien lo revoca desde el panel de Meta, la difusion
     # empieza a fallar y el motivo llega entero a la ficha del panel.
     META_TOKEN = "meta-token"
+    } : {}, var.ingesta_lista ? {
+    # La clave de la API de Claude. Con ella montada la ingesta extrae de verdad; sin ella, el
+    # sembrado. El nombre de la variable es el que el SDK y la documentacion esperan.
+    ANTHROPIC_API_KEY = "anthropic-api-key"
     } : {}, var.sistecredito_listo ? {
     SISTECREDITO_SUBSCRIPTION_KEY = "sistecredito-llave-suscripcion"
     SISTECREDITO_STORE_ID         = "sistecredito-store-id"

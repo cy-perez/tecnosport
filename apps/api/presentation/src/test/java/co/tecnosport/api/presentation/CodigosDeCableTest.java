@@ -24,6 +24,22 @@ import co.tecnosport.api.application.garantia.LineaNoEsDelPedidoException;
 import co.tecnosport.api.application.pago.SistecreditoNoEntregoLaUrlDePagoException;
 import co.tecnosport.api.application.pedido.ContraentregaNoDisponibleException;
 import co.tecnosport.api.application.pedido.MetodoDePagoNoEsTransferenciaManualException;
+import co.tecnosport.api.application.proveedores.AtributoDeCatalogoNoDefinidoException;
+import co.tecnosport.api.application.proveedores.BorradorNoEditableException;
+import co.tecnosport.api.application.proveedores.BorradorNoEncontradoException;
+import co.tecnosport.api.application.proveedores.BorradorSinFotosException;
+import co.tecnosport.api.application.proveedores.BorradorSinPrecioException;
+import co.tecnosport.api.application.proveedores.BorradorSinTituloException;
+import co.tecnosport.api.application.proveedores.ColaDeIngestasLlenaException;
+import co.tecnosport.api.application.proveedores.ExportacionDemasiadoGrandeException;
+import co.tecnosport.api.application.proveedores.ExportacionNoEncontradaException;
+import co.tecnosport.api.application.proveedores.FotoNoEsDelBorradorException;
+import co.tecnosport.api.application.proveedores.ImagenDeProveedorIlegibleException;
+import co.tecnosport.api.application.proveedores.LoteNoEncontradoException;
+import co.tecnosport.api.application.proveedores.ProductoDeProveedorYaExisteException;
+import co.tecnosport.api.application.proveedores.ProveedorInactivoException;
+import co.tecnosport.api.application.proveedores.ProveedorNoEncontradoException;
+import co.tecnosport.api.application.proveedores.TipoDeExportacionNoAdmitidoException;
 import co.tecnosport.api.application.reintegro.MontoDeReintegroInvalidoException;
 import co.tecnosport.api.application.reintegro.ReintegroRequeridoException;
 import co.tecnosport.api.application.retracto.PedidoSinEntregarException;
@@ -115,7 +131,26 @@ class CodigosDeCableTest {
           Map.entry(TransicionDeEstadoInvalidaException.class, "TRANSICION_DE_ESTADO_INVALIDA"),
           Map.entry(AtributoNoEncontradoException.class, "ATRIBUTO_NO_ENCONTRADO"),
           Map.entry(
-              SolicitudAtencionNoEncontradaException.class, "SOLICITUD_ATENCION_NO_ENCONTRADA"));
+              SolicitudAtencionNoEncontradaException.class, "SOLICITUD_ATENCION_NO_ENCONTRADA"),
+          // La ingesta de proveedores por WhatsApp (30 de septiembre de 2026): una clave por cada
+          // uno en `admin.errores.*`.
+          Map.entry(ProveedorNoEncontradoException.class, "PROVEEDOR_NO_ENCONTRADO"),
+          Map.entry(ProveedorInactivoException.class, "PROVEEDOR_INACTIVO"),
+          Map.entry(ExportacionNoEncontradaException.class, "EXPORTACION_NO_ENCONTRADA"),
+          Map.entry(ExportacionDemasiadoGrandeException.class, "EXPORTACION_DEMASIADO_GRANDE"),
+          Map.entry(TipoDeExportacionNoAdmitidoException.class, "TIPO_DE_EXPORTACION_NO_ADMITIDO"),
+          Map.entry(ColaDeIngestasLlenaException.class, "COLA_DE_INGESTAS_LLENA"),
+          Map.entry(LoteNoEncontradoException.class, "LOTE_NO_ENCONTRADO"),
+          Map.entry(BorradorNoEncontradoException.class, "BORRADOR_NO_ENCONTRADO"),
+          Map.entry(BorradorNoEditableException.class, "BORRADOR_NO_EDITABLE"),
+          Map.entry(BorradorSinFotosException.class, "BORRADOR_SIN_FOTOS"),
+          Map.entry(BorradorSinPrecioException.class, "BORRADOR_SIN_PRECIO"),
+          Map.entry(BorradorSinTituloException.class, "BORRADOR_SIN_TITULO"),
+          Map.entry(
+              AtributoDeCatalogoNoDefinidoException.class, "ATRIBUTO_DE_CATALOGO_NO_DEFINIDO"),
+          Map.entry(FotoNoEsDelBorradorException.class, "FOTO_NO_ES_DEL_BORRADOR"),
+          Map.entry(ImagenDeProveedorIlegibleException.class, "IMAGEN_DE_PROVEEDOR_ILEGIBLE"),
+          Map.entry(ProductoDeProveedorYaExisteException.class, "PRODUCTO_DE_PROVEEDOR_YA_EXISTE"));
 
   @Test
   void losCodigosQueUnAdaptadorDelFrontendCableaNoCambian() {

@@ -39,6 +39,12 @@ import { RetractosHttpRepositorio } from './retractos/infrastructure/retractos-h
 import { REPOSITORIO_PRODUCTOS_ADMIN } from './productos/domain/repositorio-productos-admin.puerto';
 import { ProductosAdminHttpRepositorio } from './productos/infrastructure/productos-admin-http.repositorio';
 import { precargarScopeI18n } from '../../core/i18n/precargar-scope';
+import { REPOSITORIO_PROVEEDORES_ADMIN } from './proveedores/domain/repositorio-proveedores-admin.puerto';
+import { ProveedoresAdminHttpRepositorio } from './proveedores/infrastructure/proveedores-admin-http.repositorio';
+import { REPOSITORIO_INGESTAS_ADMIN } from './ingestas/domain/repositorio-ingestas-admin.puerto';
+import { IngestasAdminHttpRepositorio } from './ingestas/infrastructure/ingestas-admin-http.repositorio';
+import { REPOSITORIO_BORRADORES_ADMIN } from './borradores/domain/repositorio-borradores-admin.puerto';
+import { BorradoresAdminHttpRepositorio } from './borradores/infrastructure/borradores-admin-http.repositorio';
 
 // Sin proveedor de puerto aquí: REPOSITORIO_SESION es compartido y se
 // provee en app.config.ts (SesionStore lo va a necesitar también
@@ -146,6 +152,80 @@ export const adminRoutes: Routes = [
             ],
             loadComponent: () =>
               import('./marcas/presentation/marcas-admin.page').then((m) => m.MarcasAdminPage),
+          },
+          {
+            path: 'proveedores',
+            providers: [
+              { provide: REPOSITORIO_PROVEEDORES_ADMIN, useClass: ProveedoresAdminHttpRepositorio },
+            ],
+            children: [
+              {
+                path: '',
+                loadComponent: () =>
+                  import('./proveedores/presentation/lista/lista-proveedores-admin.page').then(
+                    (m) => m.ListaProveedoresAdminPage,
+                  ),
+              },
+              {
+                path: 'crear',
+                loadComponent: () =>
+                  import('./proveedores/presentation/formulario/formulario-proveedor-admin.page').then(
+                    (m) => m.FormularioProveedorAdminPage,
+                  ),
+              },
+              {
+                // `:id` y no `:id/editar` como en productos: la ficha del proveedor es su edicion,
+                // no hay otra cosa que ver de el. Y `admin.routes.spec.ts` busca la primera ruta
+                // `:id/editar` del arbol para comprobar la de productos.
+                path: ':id',
+                loadComponent: () =>
+                  import('./proveedores/presentation/formulario/formulario-proveedor-admin.page').then(
+                    (m) => m.FormularioProveedorAdminPage,
+                  ),
+              },
+            ],
+          },
+          {
+            path: 'ingestas',
+            // El de proveedores también: el formulario de subida elige a quién y la tabla nombra
+            // al dueño de cada lote.
+            providers: [
+              { provide: REPOSITORIO_INGESTAS_ADMIN, useClass: IngestasAdminHttpRepositorio },
+              { provide: REPOSITORIO_PROVEEDORES_ADMIN, useClass: ProveedoresAdminHttpRepositorio },
+            ],
+            loadComponent: () =>
+              import('./ingestas/presentation/lista/lista-ingestas-admin.page').then(
+                (m) => m.ListaIngestasAdminPage,
+              ),
+          },
+          {
+            path: 'borradores',
+            providers: [
+              { provide: REPOSITORIO_BORRADORES_ADMIN, useClass: BorradoresAdminHttpRepositorio },
+              { provide: REPOSITORIO_PROVEEDORES_ADMIN, useClass: ProveedoresAdminHttpRepositorio },
+            ],
+            children: [
+              {
+                path: '',
+                loadComponent: () =>
+                  import('./borradores/presentation/lista/lista-borradores-admin.page').then(
+                    (m) => m.ListaBorradoresAdminPage,
+                  ),
+              },
+              {
+                path: ':id',
+                // Aprobar crea un producto y pide marca y categoría: los del panel y no los de la
+                // vitrina, por lo mismo que en el alta de producto.
+                providers: [
+                  { provide: REPOSITORIO_CATEGORIAS, useClass: CategoriasAdminHttpRepositorio },
+                  { provide: REPOSITORIO_MARCAS, useClass: MarcasAdminHttpRepositorio },
+                ],
+                loadComponent: () =>
+                  import('./borradores/presentation/detalle/detalle-borrador-admin.page').then(
+                    (m) => m.DetalleBorradorAdminPage,
+                  ),
+              },
+            ],
           },
           {
             path: 'productos',

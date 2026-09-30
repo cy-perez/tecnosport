@@ -58,6 +58,36 @@ npm run dev --workspace=apps/web
 - Correos de prueba (Mailpit): http://localhost:8025
 - Base de datos (Adminer): http://localhost:8081
 
+### Ingesta de proveedores por WhatsApp
+
+Los proveedores de bolsos y ropa publican su catálogo en un chat; la tienda lo
+lee de la exportación (`docs/adr/0067`). Para probarlo en local:
+
+1. Crear el bucket privado, una sola vez: `node infra/local/bucket-imagenes.mjs`
+   crea también `tecnosport-local-proveedores`.
+2. Poner `ANTHROPIC_API_KEY` en `.env.local` si se quiere la extracción real.
+   Sin ella todo entra en revisión con la alerta de confianza baja, y el flujo se
+   prueba igual.
+3. En el panel, **Proveedores › Nuevo proveedor**. El campo que importa es el
+   nombre en el chat exportado: tal como el teléfono guardó al contacto.
+4. En el teléfono: abrir el chat › Más › Exportar chat › **Incluir archivos**.
+   Llega un `.zip`.
+5. En el panel, **Ingestas**: elegir el proveedor, subir el zip. La tabla se
+   actualiza sola hasta que el lote termina; subir el mismo zip dos veces es
+   seguro.
+6. **Borradores**: revisar, corregir lo que la extracción sacó mal, y aprobar
+   con marca, categoría, precio de venta y unidades por variante. El producto
+   queda publicado.
+
+Para ver el job que oculta lo que el proveedor deja de anunciar sin esperar
+tres días, en `.env.local`:
+
+```
+PROVEEDORES_VENTANA_DISPONIBILIDAD=PT1M
+PROVEEDORES_JOB_EXPIRACION_INTERVALO=PT1M
+PROVEEDORES_JOB_EXPIRACION_RETRASO_INICIAL=PT10S
+```
+
 ## Comandos frecuentes
 
 | Comando | Qué hace |

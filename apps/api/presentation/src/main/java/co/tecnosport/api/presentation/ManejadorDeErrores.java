@@ -51,6 +51,22 @@ import co.tecnosport.api.application.pedido.MetodoDePagoNoHabilitadoException;
 import co.tecnosport.api.application.pedido.PedidoNoEncontradoException;
 import co.tecnosport.api.application.pedido.SistecreditoNoDisponibleException;
 import co.tecnosport.api.application.pedido.VarianteNoEncontradaException;
+import co.tecnosport.api.application.proveedores.AtributoDeCatalogoNoDefinidoException;
+import co.tecnosport.api.application.proveedores.BorradorNoEditableException;
+import co.tecnosport.api.application.proveedores.BorradorNoEncontradoException;
+import co.tecnosport.api.application.proveedores.BorradorSinFotosException;
+import co.tecnosport.api.application.proveedores.BorradorSinPrecioException;
+import co.tecnosport.api.application.proveedores.BorradorSinTituloException;
+import co.tecnosport.api.application.proveedores.ColaDeIngestasLlenaException;
+import co.tecnosport.api.application.proveedores.ExportacionDemasiadoGrandeException;
+import co.tecnosport.api.application.proveedores.ExportacionNoEncontradaException;
+import co.tecnosport.api.application.proveedores.FotoNoEsDelBorradorException;
+import co.tecnosport.api.application.proveedores.ImagenDeProveedorIlegibleException;
+import co.tecnosport.api.application.proveedores.LoteNoEncontradoException;
+import co.tecnosport.api.application.proveedores.ProductoDeProveedorYaExisteException;
+import co.tecnosport.api.application.proveedores.ProveedorInactivoException;
+import co.tecnosport.api.application.proveedores.ProveedorNoEncontradoException;
+import co.tecnosport.api.application.proveedores.TipoDeExportacionNoAdmitidoException;
 import co.tecnosport.api.application.reintegro.MontoDeReintegroInvalidoException;
 import co.tecnosport.api.application.reintegro.ReintegroRequeridoException;
 import co.tecnosport.api.application.retracto.PedidoSinEntregarException;
@@ -171,6 +187,79 @@ public class ManejadorDeErrores {
   @ExceptionHandler(DifusionRepetidaException.class)
   public ProblemDetail difusionRepetida(DifusionRepetidaException excepcion) {
     return problema(HttpStatus.TOO_MANY_REQUESTS, "Esa difusión ya está en marcha", excepcion);
+  }
+
+  @ExceptionHandler(ProveedorNoEncontradoException.class)
+  public ProblemDetail proveedorNoEncontrado(ProveedorNoEncontradoException excepcion) {
+    return problema(HttpStatus.NOT_FOUND, "Proveedor no encontrado", excepcion);
+  }
+
+  @ExceptionHandler(LoteNoEncontradoException.class)
+  public ProblemDetail loteNoEncontrado(LoteNoEncontradoException excepcion) {
+    return problema(HttpStatus.NOT_FOUND, "Lote de ingesta no encontrado", excepcion);
+  }
+
+  // 409: el proveedor existe y la petición está bien; lo que falta es reactivarlo en el panel.
+  @ExceptionHandler(ProveedorInactivoException.class)
+  public ProblemDetail proveedorInactivo(ProveedorInactivoException excepcion) {
+    return problema(HttpStatus.CONFLICT, "El proveedor está inactivo", excepcion);
+  }
+
+  // 422 y no 404: la key viene en el cuerpo, y una key que no es de ese proveedor o que no apunta
+  // a nada es un cuerpo que no se puede procesar, no un recurso que falte en la ruta.
+  @ExceptionHandler(ExportacionNoEncontradaException.class)
+  public ProblemDetail exportacionNoEncontrada(ExportacionNoEncontradaException excepcion) {
+    return problema(HttpStatus.UNPROCESSABLE_CONTENT, "Exportación no encontrada", excepcion);
+  }
+
+  @ExceptionHandler(TipoDeExportacionNoAdmitidoException.class)
+  public ProblemDetail tipoDeExportacionNoAdmitido(TipoDeExportacionNoAdmitidoException excepcion) {
+    return problema(HttpStatus.UNPROCESSABLE_CONTENT, "Tipo de archivo no admitido", excepcion);
+  }
+
+  // 413 aunque el archivo no viajara en esta petición: es lo que el cliente entiende como «pesa
+  // demasiado», y el mensaje trae las cifras y qué hacer.
+  @ExceptionHandler(ExportacionDemasiadoGrandeException.class)
+  public ProblemDetail exportacionDemasiadoGrande(ExportacionDemasiadoGrandeException excepcion) {
+    return problema(HttpStatus.CONTENT_TOO_LARGE, "La exportación pesa demasiado", excepcion);
+  }
+
+  // 503: el lote quedó escrito, y el controlador lo cierra en ERROR antes de responder, porque la
+  // cola vive en memoria y nadie lo iba a tomar. Hay que volver a subir la exportación.
+  @ExceptionHandler(ColaDeIngestasLlenaException.class)
+  public ProblemDetail colaDeIngestasLlena(ColaDeIngestasLlenaException excepcion) {
+    return problema(HttpStatus.SERVICE_UNAVAILABLE, "La cola de ingestas está llena", excepcion);
+  }
+
+  // 409: el mismo anuncio ya se aprobó desde otro borrador; este se rechaza, no se aprueba.
+  @ExceptionHandler(ProductoDeProveedorYaExisteException.class)
+  public ProblemDetail productoDeProveedorYaExiste(ProductoDeProveedorYaExisteException excepcion) {
+    return problema(HttpStatus.CONFLICT, "El producto ya existe", excepcion);
+  }
+
+  @ExceptionHandler(BorradorNoEncontradoException.class)
+  public ProblemDetail borradorNoEncontrado(BorradorNoEncontradoException excepcion) {
+    return problema(HttpStatus.NOT_FOUND, "Borrador no encontrado", excepcion);
+  }
+
+  // 409 los cuatro: el borrador existe y la petición está bien; lo que falta es un estado o un
+  // dato que quien revisa arregla en el panel y vuelve.
+  @ExceptionHandler({
+    BorradorNoEditableException.class,
+    BorradorSinFotosException.class,
+    BorradorSinPrecioException.class,
+    BorradorSinTituloException.class,
+    AtributoDeCatalogoNoDefinidoException.class
+  })
+  public ProblemDetail borradorNoAprobable(RuntimeException excepcion) {
+    return problema(HttpStatus.CONFLICT, "El borrador no se puede aprobar así", excepcion);
+  }
+
+  // 422: lo que no cuadra está en el cuerpo, una foto que no es de este borrador o una que no
+  // se puede abrir.
+  @ExceptionHandler({FotoNoEsDelBorradorException.class, ImagenDeProveedorIlegibleException.class})
+  public ProblemDetail fotoDeBorradorInvalida(RuntimeException excepcion) {
+    return problema(HttpStatus.UNPROCESSABLE_CONTENT, "Foto del borrador inválida", excepcion);
   }
 
   // 409 por el mismo criterio que el set publicado: la petición está bien formada y el producto

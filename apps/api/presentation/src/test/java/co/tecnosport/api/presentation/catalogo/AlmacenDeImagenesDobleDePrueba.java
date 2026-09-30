@@ -64,6 +64,11 @@ class AlmacenDeImagenesDobleDePrueba implements AlmacenDeImagenes {
   }
 
   @Override
+  public void subir(String objectKey, String contentType, byte[] bytes) {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
   public boolean eliminar(String objectKey) {
     objetosEliminados.add(objectKey);
     return objetosExistentes.remove(objectKey) != null;

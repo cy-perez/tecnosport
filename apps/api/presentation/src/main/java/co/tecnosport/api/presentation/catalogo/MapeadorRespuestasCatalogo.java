@@ -57,7 +57,8 @@ public class MapeadorRespuestasCatalogo {
             .orElse(null),
         producto.variantes().stream()
             .map(variante -> aRespuesta(variante, disponibles.hay(variante.id())))
-            .toList());
+            .toList(),
+        producto.estadoDisponibilidad().name());
   }
 
   public ResultadoPaginadoRespuesta<ProductoRespuesta> aRespuesta(CatalogoPaginado catalogo) {

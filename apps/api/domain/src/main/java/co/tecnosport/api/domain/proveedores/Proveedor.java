@@ -1,0 +1,192 @@
+package co.tecnosport.api.domain.proveedores;
+
+import co.tecnosport.api.domain.catalogo.LineaCatalogo;
+import co.tecnosport.api.domain.compartido.ExcepcionDeDominio;
+import co.tecnosport.api.domain.compartido.GeneradorIdentificador;
+import java.math.BigDecimal;
+import java.util.EnumSet;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.UUID;
+
+/**
+ * Una línea mayorista que manda su surtido por WhatsApp.
+ *
+ * <p>Lo que identifica al proveedor en una exportación de chat no es su teléfono sino <b>el nombre
+ * con que WhatsApp lo escribe</b> delante de cada mensaje, que es el nombre con que está guardado
+ * en el contacto del celular del negocio. Por eso {@code nombreEnExportacion} es un dato aparte de
+ * {@code nombre}: el primero lo dicta el teléfono y el segundo lo elige quien administra. El
+ * teléfono sí importa, y por eso se exige desde ya: es la llave con la que la API de WhatsApp
+ * identifica al remitente cuando la ingesta deje de ser por exportación.
+ *
+ * <h2>Solo bolsos y ropa</h2>
+ *
+ * <p>La ingesta por mensajes cubre las líneas que llegan así; la tecnología sigue entrando por
+ * listas ({@code tools/cargar-catalogo.mjs}). Dejar entrar un proveedor de otra línea sería
+ * prometer un flujo que no existe.
+ *
+ * <h2>El factor de margen es del proveedor o de la línea, nunca de los dos</h2>
+ *
+ * <p>Vacío quiere decir «el de su línea», que vive en configuración. Un factor por debajo de uno no
+ * es una decisión sino un error al teclear —0,35 donde iba 1,35—, y venderlo por debajo del costo
+ * no lo arregla ningún borrador: se rechaza aquí.
+ */
+public final class Proveedor {
+
+  /** Las dos marcas invisibles que la exportacion de Android mete delante del nombre. */
+  static final String MARCA_DE_DIRECCION = String.valueOf((char) 0x200E);
+
+  static final String ESPACIO_ANGOSTO = String.valueOf((char) 0x202F);
+
+  public static final Set<LineaCatalogo> LINEAS_ADMITIDAS =
+      EnumSet.of(LineaCatalogo.BOLSOS, LineaCatalogo.ROPA);
+
+  private final UUID id;
+  private String nombre;
+  private LineaCatalogo linea;
+  private String telefonoWhatsApp;
+  private String nombreEnExportacion;
+  private boolean activo;
+  private boolean publicacionAutomatica;
+  private BigDecimal factorDeMargen;
+
+  public Proveedor(
+      UUID id,
+      String nombre,
+      LineaCatalogo linea,
+      String telefonoWhatsApp,
+      String nombreEnExportacion,
+      boolean activo,
+      boolean publicacionAutomatica,
+      BigDecimal factorDeMargen) {
+    this.id = Objects.requireNonNull(id, "El id del proveedor no puede ser nulo.");
+    this.nombre = exigirTexto(nombre, "El proveedor necesita un nombre.");
+    this.linea = exigirLinea(linea);
+    this.telefonoWhatsApp =
+        exigirTexto(telefonoWhatsApp, "El proveedor necesita el teléfono de WhatsApp.");
+    this.nombreEnExportacion =
+        exigirTexto(
+            nombreEnExportacion,
+            "El proveedor necesita el nombre tal como aparece en la exportación del chat.");
+    this.activo = activo;
+    this.publicacionAutomatica = publicacionAutomatica;
+    this.factorDeMargen = exigirFactor(factorDeMargen);
+  }
+
+  /** Nace activo y sin publicación automática: publicar solo lo decide una persona por ahora. */
+  public static Proveedor crear(
+      String nombre,
+      LineaCatalogo linea,
+      String telefonoWhatsApp,
+      String nombreEnExportacion,
+      BigDecimal factorDeMargen) {
+    return new Proveedor(
+        GeneradorIdentificador.nuevo(),
+        nombre,
+        linea,
+        telefonoWhatsApp,
+        nombreEnExportacion,
+        true,
+        false,
+        factorDeMargen);
+  }
+
+  public void editar(
+      String nombre,
+      LineaCatalogo linea,
+      String telefonoWhatsApp,
+      String nombreEnExportacion,
+      boolean activo,
+      boolean publicacionAutomatica,
+      BigDecimal factorDeMargen) {
+    this.nombre = exigirTexto(nombre, "El proveedor necesita un nombre.");
+    this.linea = exigirLinea(linea);
+    this.telefonoWhatsApp =
+        exigirTexto(telefonoWhatsApp, "El proveedor necesita el teléfono de WhatsApp.");
+    this.nombreEnExportacion =
+        exigirTexto(
+            nombreEnExportacion,
+            "El proveedor necesita el nombre tal como aparece en la exportación del chat.");
+    this.activo = activo;
+    this.publicacionAutomatica = publicacionAutomatica;
+    this.factorDeMargen = exigirFactor(factorDeMargen);
+  }
+
+  /**
+   * ¿Este remitente es el proveedor? WhatsApp escribe el nombre del contacto tal cual, pero entre
+   * lo que exporta Android y lo que exporta iOS cambian los espacios y aparecen marcas invisibles
+   * de dirección de texto; comparar carácter por carácter fallaría por eso y no por nada real.
+   */
+  public boolean esRemitente(String remitente) {
+    return remitente != null && normalizar(remitente).equals(normalizar(nombreEnExportacion));
+  }
+
+  private static String normalizar(String nombre) {
+    return nombre
+        .replace(MARCA_DE_DIRECCION, "")
+        .replace(ESPACIO_ANGOSTO, " ")
+        .strip()
+        .toLowerCase();
+  }
+
+  private static String exigirTexto(String valor, String mensaje) {
+    if (valor == null || valor.isBlank()) {
+      throw new ExcepcionDeDominio(mensaje);
+    }
+    return valor.strip();
+  }
+
+  private static LineaCatalogo exigirLinea(LineaCatalogo linea) {
+    if (linea == null || !LINEAS_ADMITIDAS.contains(linea)) {
+      throw new ExcepcionDeDominio(
+          "Un proveedor por WhatsApp solo puede ser de bolsos o de ropa; la tecnología entra por"
+              + " listas.");
+    }
+    return linea;
+  }
+
+  private static BigDecimal exigirFactor(BigDecimal factor) {
+    if (factor == null) {
+      return null;
+    }
+    if (factor.compareTo(BigDecimal.ONE) < 0) {
+      throw new ExcepcionDeDominio(
+          "El factor de margen no puede ser menor que 1: vendería por debajo del costo.");
+    }
+    return factor;
+  }
+
+  public UUID id() {
+    return id;
+  }
+
+  public String nombre() {
+    return nombre;
+  }
+
+  public LineaCatalogo linea() {
+    return linea;
+  }
+
+  public String telefonoWhatsApp() {
+    return telefonoWhatsApp;
+  }
+
+  public String nombreEnExportacion() {
+    return nombreEnExportacion;
+  }
+
+  public boolean activo() {
+    return activo;
+  }
+
+  public boolean publicacionAutomatica() {
+    return publicacionAutomatica;
+  }
+
+  /** Vacío cuando manda el factor de la línea. */
+  public Optional<BigDecimal> factorDeMargen() {
+    return Optional.ofNullable(factorDeMargen);
+  }
+}

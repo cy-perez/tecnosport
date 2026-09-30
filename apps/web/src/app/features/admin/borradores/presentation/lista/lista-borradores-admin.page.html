@@ -1,0 +1,122 @@
+<section class="mx-auto max-w-contenido px-16 py-32">
+  <ts-migas [ruta]="migas()" />
+
+  <h1 class="m-0 mb-16 font-display text-2xl">{{ 'admin.borradores.titulo' | transloco }}</h1>
+
+  <p class="mb-24 text-ts-texto-suave">{{ 'admin.borradores.explicacion' | transloco }}</p>
+
+  <div class="mb-16 flex flex-wrap gap-16">
+    <ts-select
+      idCampo="borradores-filtro-estado"
+      [label]="'admin.borradores.filtroEstado' | transloco"
+      [opciones]="opcionesEstado()"
+      [placeholder]="'admin.borradores.todosLosEstados' | transloco"
+      [formControl]="estadoFiltro"
+      (cambio)="filtrarPorEstado($event)"
+    />
+    <ts-select
+      idCampo="borradores-filtro-proveedor"
+      [label]="'admin.borradores.filtroProveedor' | transloco"
+      [opciones]="opcionesProveedor()"
+      [placeholder]="'admin.borradores.todosLosProveedores' | transloco"
+      [formControl]="proveedorFiltro"
+      (cambio)="filtrarPorProveedor($event)"
+    />
+  </div>
+
+  @if (consulta.isPending()) {
+    <ts-esqueleto />
+  } @else if (consulta.isError()) {
+    <p class="text-ts-error" role="alert">{{ 'admin.borradores.errorLista' | transloco }}</p>
+  } @else {
+    <div class="overflow-hidden rounded-lg border border-ts-borde bg-ts-superficie">
+      <div class="border-b border-ts-borde px-16 py-12">
+        <p class="m-0 font-medio">{{ 'admin.borradores.total' | transloco: { total: total() } }}</p>
+      </div>
+
+      @if (sinBorradores()) {
+        <p class="m-0 px-16 py-32 text-ts-texto-suave">
+          {{ 'admin.borradores.ninguno' | transloco }}
+        </p>
+      } @else {
+        <div class="overflow-x-auto">
+          <table
+            class="w-full border-collapse text-sm [&_td]:px-16 [&_td]:py-12 [&_th]:px-16 [&_th]:py-12 [&_:is(th,td)]:text-left"
+          >
+            <thead>
+              <tr class="border-b border-ts-borde">
+                <th class="font-medio text-ts-texto-suave" scope="col">
+                  {{ 'admin.borradores.columnas.titulo' | transloco }}
+                </th>
+                <th class="font-medio text-ts-texto-suave" scope="col">
+                  {{ 'admin.borradores.columnas.precios' | transloco }}
+                </th>
+                <th class="font-medio text-ts-texto-suave" scope="col">
+                  {{ 'admin.borradores.columnas.alertas' | transloco }}
+                </th>
+                <th class="font-medio text-ts-texto-suave" scope="col">
+                  {{ 'admin.borradores.columnas.estado' | transloco }}
+                </th>
+                <th scope="col">
+                  <span class="sr-only">{{
+                    'admin.borradores.columnas.acciones' | transloco
+                  }}</span>
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (borrador of borradores(); track borrador.id) {
+                <tr class="border-b border-ts-borde last:border-b-0 align-top">
+                  <td>
+                    <p class="m-0 font-medio">
+                      {{ borrador.titulo || ('admin.borradores.sinTitulo' | transloco) }}
+                    </p>
+                    <p class="m-0 text-xs text-ts-texto-suave">
+                      {{ nombreDelProveedor(borrador) }} · {{ formatearFecha(borrador.creadoEn) }}
+                    </p>
+                  </td>
+                  <td class="tabular-nums">
+                    <p class="m-0">{{ precio(borrador.precioVentaSugerido) }}</p>
+                    <p class="m-0 text-xs text-ts-texto-suave">
+                      {{
+                        'admin.borradores.precioProveedor'
+                          | transloco: { precio: precio(borrador.precioProveedor) }
+                      }}
+                    </p>
+                  </td>
+                  <td>
+                    @if (borrador.alertas.length > 0) {
+                      <span class="text-ts-error">{{ borrador.alertas.length }}</span>
+                    } @else {
+                      <span class="text-ts-texto-suave">0</span>
+                    }
+                  </td>
+                  <td>
+                    <span [class]="clasesEstado(borrador.estado)">{{
+                      etiquetaEstado(borrador.estado)
+                    }}</span>
+                  </td>
+                  <td>
+                    <div class="flex justify-end">
+                      <ts-boton variante="secundario" [enlace]="[borrador.id]">
+                        {{ 'admin.borradores.revisar' | transloco }}
+                      </ts-boton>
+                    </div>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </div>
+
+    @if ((consulta.data()?.totalPaginas ?? 0) > 1) {
+      <ts-paginador
+        [pagina]="filtro().pagina"
+        [totalPaginas]="consulta.data()?.totalPaginas ?? 1"
+        (paginaCambiada)="irAPagina($event)"
+      />
+    }
+  }
+</section>

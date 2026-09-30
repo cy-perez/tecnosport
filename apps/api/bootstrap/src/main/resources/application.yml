@@ -217,6 +217,63 @@ tecnosport:
     # no deba ir contra entrega a ningun precio, que hoy no es el caso de ninguna.
     categorias-excluidas: ${CONTRAENTREGA_CATEGORIAS_EXCLUIDAS:}
   # Difusion en redes sociales (Facebook e Instagram) desde el panel.
+  proveedores:
+    # El bucket PRIVADO de los originales del proveedor: exportaciones subidas y fotos tal como
+    # llegaron. Distinto del de imagenes, y tambien uno por ambiente (ADR-0058): el valor por
+    # omision es el de local, que crea infra/local/bucket-imagenes.mjs; el desplegado lo fija
+    # Terraform. Nada de aqui es publico: el panel lee con URL firmada.
+    bucket: ${GCS_BUCKET_PROVEEDORES:tecnosport-local-proveedores}
+    minutos-url-firmada: ${GCS_MINUTOS_URL_FIRMADA:15}
+    # Parametros tecnicos, no datos de negocio. El zip se abre entero en memoria dentro de una
+    # instancia de Cloud Run, y 30 MB es lo que cabe con holgura; lo descomprimido se acota aparte
+    # porque un zip que infle a gigas no es una exportacion de WhatsApp.
+    exportacion-maxima-bytes: ${PROVEEDORES_EXPORTACION_MAXIMA_BYTES:31457280}
+    descomprimido-maximo-bytes: ${PROVEEDORES_DESCOMPRIMIDO_MAXIMO_BYTES:209715200}
+    # Cuantos lotes caben esperando. Corta a proposito: un lote tarda minutos y el panel lo usa una
+    # persona, asi que una cola llena no es carga, es alguien pulsando muchas veces.
+    cola-de-ingestas: ${PROVEEDORES_COLA_DE_INGESTAS:20}
+    # El factor con que se sugiere el precio de venta a partir del del proveedor, por linea;
+    # un proveedor puede traer el suyo y entonces manda. Son los del documento de la ingesta
+    # (30 de septiembre de 2026); es una sugerencia y quien aprueba pone el precio final.
+    margen-por-linea:
+      BOLSOS: ${PROVEEDORES_MARGEN_BOLSOS:1.35}
+      ROPA: ${PROVEEDORES_MARGEN_ROPA:1.30}
+    huella:
+      # Hasta cuantos bits de 64 pueden diferir dos pHash para ser la misma foto. Parametro
+      # tecnico: 6 es lo habitual para reconocer la misma imagen reescalada o recomprimida.
+      umbral-hamming: ${PROVEEDORES_UMBRAL_HAMMING:6}
+    # Cuanto puede llevar un producto de proveedor sin aparecer en sus mensajes antes de
+    # ocultarse. Tres dias es lo que pidio el negocio (30 de septiembre de 2026); en pruebas
+    # se baja a minutos. Duracion ISO-8601: P3D, PT10M.
+    ventana-disponibilidad: ${PROVEEDORES_VENTANA_DISPONIBILIDAD:P3D}
+    job-expiracion:
+      # Dentro de la aplicacion, como las demas tareas (docs/07): en produccion la API lleva la
+      # CPU siempre asignada. Encendido por omision; la bandera existe para apagarlo sin
+      # desplegar. Con varias instancias corre en cada una y no importa: es idempotente.
+      habilitado: ${PROVEEDORES_JOB_EXPIRACION_HABILITADO:true}
+      intervalo: ${PROVEEDORES_JOB_EXPIRACION_INTERVALO:PT24H}
+      retraso-inicial: ${PROVEEDORES_JOB_EXPIRACION_RETRASO_INICIAL:PT5M}
+    extraccion:
+      # La API de Claude con salida estructurada (platform.claude.com/docs/en/build-with-claude/
+      # structured-outputs). La clave vive en Secret Manager; VACIA, el extractor es el sembrado
+      # y el arranque lo avisa en el registro (regla dura #5: ningun valor real por omision).
+      url-base: ${ANTHROPIC_URL_BASE:https://api.anthropic.com}
+      api-key: ${ANTHROPIC_API_KEY:}
+      # Uno de los modelos que la documentacion lista con salida estructurada, verificado el 30 de
+      # septiembre de 2026. Alternativa mas capaz y mas cara: claude-sonnet-4-6.
+      modelo: ${PROVEEDORES_EXTRACCION_MODELO:claude-haiku-4-5-20251001}
+      max-tokens: ${PROVEEDORES_EXTRACCION_MAX_TOKENS:1024}
+      # Por debajo de esta confianza del propio extractor el borrador lleva alerta. No es un dato
+      # de negocio: es cuanto se le cree a un modelo.
+      umbral-confianza: ${PROVEEDORES_EXTRACCION_UMBRAL_CONFIANZA:0.75}
+      timeout: ${PROVEEDORES_EXTRACCION_TIMEOUT:PT30S}
+      # Reintentos ante 429 y 5xx, con espera exponencial desde la inicial.
+      intentos: ${PROVEEDORES_EXTRACCION_INTENTOS:4}
+      espera-inicial: ${PROVEEDORES_EXTRACCION_ESPERA_INICIAL:PT2S}
+      # Cuanto silencio cierra una publicacion: un texto con precio abre, y lo que llegue dentro de
+      # esta ventana desde el ultimo mensaje anexado es suyo.
+      ventana-agrupacion: ${PROVEEDORES_VENTANA_AGRUPACION:PT15M}
+
   meta:
     # La version va dentro de la ruta y Meta retira versiones con calendario publicado: congelarla
     # en el codigo obligaria a un despliegue cada vez.

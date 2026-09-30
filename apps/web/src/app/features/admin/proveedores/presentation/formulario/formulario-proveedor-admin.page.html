@@ -1,0 +1,105 @@
+<ts-pagina-formulario
+  [titulo]="
+    (editando()
+      ? 'admin.proveedores.formulario.tituloEditar'
+      : 'admin.proveedores.formulario.tituloCrear'
+    ) | transloco
+  "
+>
+  <ts-migas [ruta]="migas()" />
+
+  @if (editando() && consulta.isPending()) {
+    <ts-esqueleto />
+  } @else if (editando() && consulta.isError()) {
+    <p class="text-ts-error" role="alert">
+      {{ 'admin.proveedores.formulario.errorCarga' | transloco }}
+    </p>
+  } @else {
+    <form
+      class="flex flex-col gap-16"
+      [formGroup]="form"
+      (submit)="$event.preventDefault(); enviar()"
+    >
+      <ts-campo
+        idCampo="proveedor-nombre"
+        [label]="'admin.proveedores.formulario.nombre' | transloco"
+        [obligatorio]="true"
+        formControlName="nombre"
+      />
+
+      <ts-campo
+        idCampo="proveedor-remitente"
+        [label]="'admin.proveedores.formulario.remitente' | transloco"
+        [ayuda]="'admin.proveedores.formulario.remitenteAyuda' | transloco"
+        [obligatorio]="true"
+        formControlName="nombreEnExportacion"
+      />
+
+      <ts-campo
+        idCampo="proveedor-telefono"
+        tipo="tel"
+        [label]="'admin.proveedores.formulario.telefono' | transloco"
+        [ayuda]="'admin.proveedores.formulario.telefonoAyuda' | transloco"
+        [obligatorio]="true"
+        formControlName="telefonoWhatsApp"
+      />
+
+      <ts-select
+        idCampo="proveedor-linea"
+        [label]="'admin.proveedores.formulario.linea' | transloco"
+        [opciones]="opcionesLinea()"
+        [placeholder]="'admin.proveedores.formulario.seleccionar' | transloco"
+        [obligatorio]="true"
+        formControlName="linea"
+      />
+
+      <ts-campo
+        idCampo="proveedor-margen"
+        [label]="'admin.proveedores.formulario.margen' | transloco"
+        [ayuda]="'admin.proveedores.formulario.margenAyuda' | transloco"
+        [obligatorio]="true"
+        formControlName="factorDeMargen"
+      />
+
+      <ts-checkbox
+        idCasilla="proveedor-publicacion-automatica"
+        [etiqueta]="'admin.proveedores.formulario.publicacionAutomatica' | transloco"
+        [marcado]="form.controls.publicacionAutomatica.value"
+        (marcadoCambio)="form.controls.publicacionAutomatica.setValue($event)"
+      />
+
+      @if (editando()) {
+        <ts-checkbox
+          idCasilla="proveedor-activo"
+          [etiqueta]="'admin.proveedores.formulario.activo' | transloco"
+          [marcado]="form.controls.activo.value"
+          (marcadoCambio)="form.controls.activo.setValue($event)"
+        />
+      }
+
+      <p class="m-0 text-ts-error" role="alert">{{ error() }}</p>
+
+      <p #avisoGuardado class="m-0 text-ts-exito" role="status" tabindex="-1">
+        @if (guardado(); as nombre) {
+          {{ 'admin.proveedores.formulario.guardado' | transloco: { nombre: nombre } }}
+        }
+      </p>
+
+      <div>
+        <ts-boton
+          variante="primario"
+          tipo="submit"
+          [cargando]="enviando()"
+          [etiquetaCargando]="'admin.proveedores.formulario.enviando' | transloco"
+        >
+          {{
+            (editando()
+              ? 'admin.proveedores.formulario.guardar'
+              : 'admin.proveedores.formulario.crear'
+            ) | transloco
+          }}
+        </ts-boton>
+      </div>
+    </form>
+  }
+</ts-pagina-formulario>

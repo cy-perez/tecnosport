@@ -13,9 +13,11 @@ import co.tecnosport.api.domain.catalogo.Paquete;
 import co.tecnosport.api.domain.catalogo.Producto;
 import co.tecnosport.api.domain.catalogo.ValorAtributo;
 import co.tecnosport.api.domain.catalogo.Variante;
+import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.compartido.GeneradorIdentificador;
 import co.tecnosport.api.domain.compartido.Sku;
 import co.tecnosport.api.domain.compartido.Slug;
+import co.tecnosport.api.domain.proveedores.HuellaProveedor;
 import co.tecnosport.api.infrastructure.catalogo.entidad.ImagenProductoJpaEntity;
 import co.tecnosport.api.infrastructure.catalogo.entidad.ProductoJpaEntity;
 import co.tecnosport.api.infrastructure.catalogo.entidad.VarianteAtributoValorJpaEntity;
@@ -109,7 +111,13 @@ public class RepositorioProductosJpa implements RepositorioProductos {
             producto.categoria().id(),
             producto.estado().name(),
             ahora,
-            ahora));
+            ahora,
+            producto.origen().name(),
+            producto.proveedorId().orElse(null),
+            producto.precioProveedor().map(Dinero::valor).orElse(null),
+            producto.huellaProveedor().map(HuellaProveedor::valor).orElse(null),
+            producto.vistoPorUltimaVez().orElse(null),
+            producto.estadoDisponibilidad().name()));
   }
 
   @Override
@@ -140,7 +148,13 @@ public class RepositorioProductosJpa implements RepositorioProductos {
             producto.categoria().id(),
             producto.estado().name(),
             existente.getCreadoEn(),
-            Instant.now()));
+            Instant.now(),
+            producto.origen().name(),
+            producto.proveedorId().orElse(null),
+            producto.precioProveedor().map(Dinero::valor).orElse(null),
+            producto.huellaProveedor().map(HuellaProveedor::valor).orElse(null),
+            producto.vistoPorUltimaVez().orElse(null),
+            producto.estadoDisponibilidad().name()));
   }
 
   @Override
@@ -218,7 +232,7 @@ public class RepositorioProductosJpa implements RepositorioProductos {
         new ImagenProductoJpaEntity(
             imagen.id(),
             productoId,
-            null,
+            imagen.varianteId().orElse(null),
             null,
             imagen.tipo().name(),
             imagen.orden(),
@@ -419,7 +433,9 @@ public class RepositorioProductosJpa implements RepositorioProductos {
                 + "join categoria c on c.id = p.categoria_id "
                 + "left join (select producto_id, min(precio) as precio_desde from variante "
                 + "  where estado = 'ACTIVA' group by producto_id) v on v.producto_id = p.id "
-                + "where p.estado = 'PUBLICADO' ");
+                // Publicado Y disponible: lo que el proveedor ya no tiene no se lista, aunque
+                // siga publicado y su ficha siga respondiendo (V71).
+                + "where p.estado = 'PUBLICADO' and p.estado_disponibilidad = 'DISPONIBLE' ");
 
     if (filtro.categoriaSlug() != null) {
       sql.append("and c.slug = :categoriaSlug ");

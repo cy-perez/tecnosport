@@ -39,13 +39,22 @@ const config = (clave) => process.env[clave] || local[clave];
 
 const PROYECTO = config('GCP_PROYECTO_DEV') ?? 'tecnosport-dev';
 const BUCKET = config('GCS_BUCKET_IMAGENES') ?? 'tecnosport-local-imagenes';
+// El bucket PRIVADO de los originales de los proveedores por WhatsApp (exportaciones y
+// fotos). Lo administra la misma cuenta de servicio; nadie mas lee ahi.
+const BUCKET_PROVEEDORES =
+  config('GCS_BUCKET_PROVEEDORES') ?? 'tecnosport-local-proveedores';
 
 // Los buckets de los ambientes desplegados. Este script los rechaza, y no por
 // prudencia de más: lo que hace abajo —CORS, ciclo de vida, lectura pública, una
 // cuenta de servicio con objectAdmin— es configuración del ambiente, y la del
 // desplegado la declara Terraform. Dos dueños de la misma línea es peor que
 // ninguno: el último que corre gana, y nada dice cuál corrió.
-const BUCKETS_DESPLEGADOS = ['tecnosport-dev-imagenes', 'tecnosport-prod-imagenes'];
+const BUCKETS_DESPLEGADOS = [
+  'tecnosport-dev-imagenes',
+  'tecnosport-prod-imagenes',
+  'tecnosport-dev-proveedores',
+  'tecnosport-prod-proveedores',
+];
 if (BUCKETS_DESPLEGADOS.includes(BUCKET)) {
   console.error(`
 ${BUCKET} es el bucket de un ambiente desplegado, y lo administra Terraform
@@ -211,11 +220,37 @@ directorio a mano si de verdad es ahí donde va.`);
   console.log(`\nLlave escrita en ${LLAVE}. No la subas a git.`);
 }
 
+// 7. El bucket privado de los proveedores: mismo proyecto, misma region, misma cuenta con
+//    objectAdmin, y **sin lectura publica**. El panel sube el zip con URL firmada desde el
+//    navegador, asi que necesita CORS; las fotos las lee el panel con URL firmada de GET.
+if (BUCKETS_DESPLEGADOS.includes(BUCKET_PROVEEDORES)) {
+  console.error(`\n${BUCKET_PROVEEDORES} es de un ambiente desplegado y lo administra Terraform.`);
+  process.exit(1);
+}
+if (existe(['storage', 'buckets', 'describe', `gs://${BUCKET_PROVEEDORES}`, '--format=value(name)'])) {
+  console.log('\nEl bucket de proveedores ya existe, no se recrea.');
+} else {
+  gcloud([
+    'storage', 'buckets', 'create', `gs://${BUCKET_PROVEEDORES}`,
+    `--location=${REGION}`,
+    '--default-storage-class=STANDARD',
+    '--uniform-bucket-level-access',
+    '--public-access-prevention',
+  ]);
+}
+gcloud(['storage', 'buckets', 'update', `gs://${BUCKET_PROVEEDORES}`, `--cors-file=${archivoCors}`]);
+gcloud([
+  'storage', 'buckets', 'add-iam-policy-binding', `gs://${BUCKET_PROVEEDORES}`,
+  `--member=serviceAccount:${correo}`,
+  '--role=roles/storage.objectAdmin',
+]);
+
 console.log(`
 Listo. En .env.local:
 
   GCS_BUCKET_IMAGENES=${BUCKET}
   GCS_URL_PUBLICA=https://storage.googleapis.com/${BUCKET}
+  GCS_BUCKET_PROVEEDORES=${BUCKET_PROVEEDORES}
   GOOGLE_APPLICATION_CREDENTIALS=${LLAVE}
 
 Después reinicia bootRun: el bean Storage lee la credencial al arrancar.
