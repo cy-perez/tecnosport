@@ -80,6 +80,18 @@ variable "sistecredito_listo" {
   default     = false
 }
 
+variable "meta_listo" {
+  description = "Si el secreto `meta-token` ya tiene version cargada. Mientras sea false, el secreto no se monta y la difusion queda simulada (`PublicadorSembrado`) — misma secuencia que `sistecredito_listo` y por el mismo motivo doble: montar `latest` de un secreto sin versiones deja la revision sin arrancar, y encender la publicacion sin token tampoco arranca, porque `PropiedadesMeta` lo exige. Orden: cargar el valor con gcloud, poner esto en true, aplicar."
+  type        = bool
+  default     = false
+}
+
+variable "meta_publicar_de_verdad" {
+  description = "**Lo unico que separa una prueba de un post real en la cuenta del negocio.** No hay sandbox de la Graph API: la unica cuenta que existe es @tecnosport_co, asi que con esto en true el boton del panel de dev publica en la cuenta de verdad. Mismo genero que `sistecredito_sandbox`, pero sin la red de seguridad que aquel tiene — alli el sandbox evita el credito; aqui no hay nada equivalente y lo que queda es borrar el post a mano. Se encendio a peticion del dueno del negocio el 29 de septiembre de 2026, asumiendo ese riesgo de forma explicita."
+  type        = bool
+  default     = false
+}
+
 variable "correo_admin" {
   description = "La cuenta de administración del panel. No es secreta —la clave sí, y vive en Secret Manager—. Estaba fijada a mano en el servicio de Cloud Run y no en esta configuración, así que el primer apply que tocara el servicio la habría borrado."
   type        = string
