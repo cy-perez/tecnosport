@@ -168,8 +168,8 @@ public class SembradorCatalogo implements ApplicationRunner {
     CategoriaJpaEntity bolsosMorrales = categoriaPorSlug("bolsos-dama-morrales");
     CategoriaJpaEntity celulares = categoriaPorSlug("celulares");
 
-    AtributoJpaEntity tallaRopa =
-        guardarAtributo("Talla", "TEXTO", List.of("S", "M", "L", "XL"), ahora);
+    // Sin valores permitidos desde V73: la lista de tallas la dicta cada prenda.
+    AtributoJpaEntity tallaRopa = guardarAtributo("Talla", "TEXTO", List.of(), ahora);
     AtributoJpaEntity tallaCalzado = guardarAtributo("Talla calzado", "NUMERO", List.of(), ahora);
     AtributoJpaEntity color = guardarAtributo("Color", "COLOR", List.of(), ahora);
     AtributoJpaEntity genero =

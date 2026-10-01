@@ -15,7 +15,9 @@ Reglas, en orden de importancia:
    Ejemplos: «Bolso de dama mediano», «Morral dúo», «Conjunto pantalón tela burda strech».
 5. `linea` es `bolsos` para bolsos, morrales, canguros, manos libres y porta celulares;
    `ropa` para conjuntos, enterizos, chalecos, blusones, polos y prendas; `otra` si no es
-   ninguna de las dos.
+   ninguna de las dos. `tipo` es el artículo concreto: `bolso`, `morral`, `canguro` (también
+   «manos libres»), `conjunto_pantalon`, `conjunto_short`, `enterizo`, `polo`, `camiseta`,
+   `buso`, `chaqueta`, `pantalon`, `short`, `vestido`; `otro` solo si no encaja en ninguno.
 6. El precio es un entero en pesos colombianos: «53.000» es `53000`, «$45.000» es `45000`.
    Si hay dos precios —«por difusión» y «después de 6»— toma el primero. Si no hay precio,
    `null`.

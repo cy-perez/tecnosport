@@ -900,6 +900,13 @@
       "CONJUNTO_PANTALON": "Conjunto con pantalón",
       "CONJUNTO_SHORT": "Conjunto con short",
       "ENTERIZO": "Enterizo",
+      "POLO": "Polo",
+      "CAMISETA": "Camiseta",
+      "BUSO": "Buso",
+      "CHAQUETA": "Chaqueta",
+      "PANTALON": "Pantalón",
+      "SHORT": "Short",
+      "VESTIDO": "Vestido",
       "OTRO": "Otro"
     },
     "tallas": {

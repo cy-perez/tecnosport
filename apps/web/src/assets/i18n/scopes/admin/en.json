@@ -900,6 +900,13 @@
       "CONJUNTO_PANTALON": "Set with trousers",
       "CONJUNTO_SHORT": "Set with shorts",
       "ENTERIZO": "Jumpsuit",
+      "POLO": "Polo shirt",
+      "CAMISETA": "T-shirt",
+      "BUSO": "Sweatshirt",
+      "CHAQUETA": "Jacket",
+      "PANTALON": "Trousers",
+      "SHORT": "Shorts",
+      "VESTIDO": "Dress",
       "OTRO": "Other"
     },
     "tallas": {

@@ -12,5 +12,14 @@ public enum TipoProductoProveedor {
   CONJUNTO_PANTALON,
   CONJUNTO_SHORT,
   ENTERIZO,
+  // Las prendas sueltas: el proveedor de ropa real vende polos y camisetas por unidad, y con solo
+  // los conjuntos todas salían OTRO con la alerta TIPO_DESCONOCIDO (30 de septiembre de 2026).
+  POLO,
+  CAMISETA,
+  BUSO,
+  CHAQUETA,
+  PANTALON,
+  SHORT,
+  VESTIDO,
   OTRO
 }

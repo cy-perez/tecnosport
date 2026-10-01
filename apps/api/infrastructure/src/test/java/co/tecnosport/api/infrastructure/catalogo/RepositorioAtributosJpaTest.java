@@ -74,7 +74,12 @@ class RepositorioAtributosJpaTest {
     assertThat(resultado)
         .filteredOn(a -> a.nombre().equals("Talla"))
         .singleElement()
-        .satisfies(talla -> assertThat(talla.tipo()).isEqualTo(TipoAtributo.TEXTO));
+        .satisfies(
+            talla -> {
+              assertThat(talla.tipo()).isEqualTo(TipoAtributo.TEXTO);
+              // V73: sin valores permitidos, o una XXL real no se podría aprobar.
+              assertThat(talla.valoresPermitidos()).isEmpty();
+            });
   }
 
   @Test
