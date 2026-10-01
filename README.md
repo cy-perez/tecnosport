@@ -69,9 +69,16 @@ lee de la exportación (`docs/adr/0067`). Para probarlo en local:
    Sin ella todo entra en revisión con la alerta de confianza baja, y el flujo se
    prueba igual.
 3. En el panel, **Proveedores › Nuevo proveedor**. El campo que importa es el
-   nombre en el chat exportado: tal como el teléfono guardó al contacto.
+   nombre en el chat exportado: tal como el teléfono guardó al contacto o, si no
+   está guardado, el nombre que esa persona se puso (sin la `~` que WhatsApp le
+   antepone). Si en el chat sale solo el número, basta con el teléfono.
 4. En el teléfono: abrir el chat › Más › Exportar chat › **Incluir archivos**.
-   Llega un `.zip`.
+   Sirve igual un grupo o el canal de avisos de una comunidad, que es donde
+   publican los proveedores de verdad: solo se leen los mensajes del remitente
+   registrado y los de los demás miembros se ignoran. Si el mismo proveedor
+   publica lo mismo en dos comunidades, con exportar una basta. En iPhone llega
+   un `.zip`; en Android llegan el `.txt` y las fotos sueltos, y hay que
+   comprimirlos en un zip con el `.txt` en la raíz.
 5. En el panel, **Ingestas**: elegir el proveedor, subir el zip. La tabla se
    actualiza sola hasta que el lote termina; subir el mismo zip dos veces es
    seguro.

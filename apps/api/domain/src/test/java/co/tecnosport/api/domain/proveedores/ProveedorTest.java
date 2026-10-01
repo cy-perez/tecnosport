@@ -99,6 +99,28 @@ class ProveedorTest {
     assertFalse(proveedor.esRemitente(null));
   }
 
+  /**
+   * En un grupo o en los avisos de una comunidad, quien no está en los contactos sale como {@code ~
+   * Nombre}, y a veces solo como su número. El proveedor de bolsos publica en un grupo y el de ropa
+   * en los avisos de dos comunidades: es el caso real, no el chat de a dos.
+   */
+  @Test
+  void reconoceAlRemitenteDeUnGrupoPorSuApodoOPorSuNumero() {
+    Proveedor proveedor = bolsos();
+
+    assertTrue(proveedor.esRemitente("~ Bolsos Centro"));
+    assertTrue(proveedor.esRemitente(MARCA_DE_DIRECCION + "~" + ESPACIO_ANGOSTO + "Bolsos Centro"));
+    assertTrue(proveedor.esRemitente("+57 300 123 4567"));
+    assertTrue(
+        proveedor.esRemitente("+57" + ESPACIO_ANGOSTO + "300" + ESPACIO_ANGOSTO + "1234567"));
+    assertTrue(proveedor.esRemitente("573001234567"));
+    assertFalse(proveedor.esRemitente("+57 310 999 0000"));
+    assertFalse(proveedor.esRemitente("~ Osman"), "otro apodo no es el proveedor");
+    assertFalse(
+        proveedor.esRemitente("Bolsos 24"),
+        "un número corto dentro de un nombre no es un teléfono");
+  }
+
   @Test
   void editarCambiaTodoLoEditableYAplicaLasMismasReglas() {
     Proveedor proveedor = bolsos();

@@ -117,17 +117,44 @@ public final class Proveedor {
    * ¿Este remitente es el proveedor? WhatsApp escribe el nombre del contacto tal cual, pero entre
    * lo que exporta Android y lo que exporta iOS cambian los espacios y aparecen marcas invisibles
    * de dirección de texto; comparar carácter por carácter fallaría por eso y no por nada real.
+   *
+   * <p>Y en un grupo o en el canal de avisos de una comunidad —que es donde los proveedores de
+   * verdad publican— el remitente no siempre es el nombre del contacto: si no está guardado,
+   * WhatsApp escribe {@code ~ Nombre} con el nombre que esa persona se puso, o el número con el
+   * indicativo y espacios. Se acepta cualquiera de las tres formas: el nombre configurado con o sin
+   * la virgulilla, y el número del proveedor comparando solo los dígitos.
    */
   public boolean esRemitente(String remitente) {
-    return remitente != null && normalizar(remitente).equals(normalizar(nombreEnExportacion));
+    if (remitente == null) {
+      return false;
+    }
+    String normalizado = normalizar(remitente);
+    if (normalizado.equals(normalizar(nombreEnExportacion))) {
+      return true;
+    }
+    String digitos = soloDigitos(normalizado);
+    return !digitos.isEmpty() && digitos.equals(soloDigitos(telefonoWhatsApp));
   }
 
   private static String normalizar(String nombre) {
-    return nombre
-        .replace(MARCA_DE_DIRECCION, "")
-        .replace(ESPACIO_ANGOSTO, " ")
-        .strip()
-        .toLowerCase();
+    String limpio = nombre.replace(MARCA_DE_DIRECCION, "").replace(ESPACIO_ANGOSTO, " ").strip();
+    // La virgulilla con la que WhatsApp marca a quien no está en los contactos.
+    if (limpio.startsWith("~")) {
+      limpio = limpio.substring(1).strip();
+    }
+    return limpio.toLowerCase();
+  }
+
+  /** Un número solo compara por sus dígitos: "+57 300 123 4567" y "573001234567" son el mismo. */
+  private static String soloDigitos(String texto) {
+    StringBuilder digitos = new StringBuilder();
+    for (char c : texto.toCharArray()) {
+      if (Character.isDigit(c)) {
+        digitos.append(c);
+      }
+    }
+    // Un nombre con un número dentro ("Bolsos 24") no es un teléfono.
+    return digitos.length() >= 7 ? digitos.toString() : "";
   }
 
   private static String exigirTexto(String valor, String mensaje) {
