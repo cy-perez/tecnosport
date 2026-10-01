@@ -179,6 +179,49 @@ describe('DetalleBorradorAdminPage', () => {
     });
   });
 
+  /**
+   * Una publicación de ropa trae doce o catorce fotos y el catálogo admite nueve: por omisión
+   * entran las nueve primeras, y quien aprueba cambia cuáles. La primera elegida es la principal.
+   */
+  it('con más fotos de las que caben entran las nueve primeras y se puede cambiar cuáles', async () => {
+    const fotos = Array.from({ length: 11 }, (_, i) => fotoDePrueba('f-' + (i + 1)));
+    const { repositorio } = await renderPagina(borradorDePrueba(), fotos);
+    await llenarAprobacion();
+
+    expect(await screen.findByText(/9 de 9 fotos elegidas/)).toBeTruthy();
+    expect((screen.getByLabelText('Incluir la foto 11') as HTMLInputElement).checked).toBe(false);
+
+    fireEvent.click(screen.getByLabelText('Foto principal (la 1)'));
+    fireEvent.click(screen.getByLabelText('Incluir la foto 11'));
+    expect(await screen.findByText('Foto principal (la 2)')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: a.accion }));
+
+    await screen.findByRole('link', { name: a.verProducto });
+    expect(repositorio.aprobaciones[0].aprobacion.fotos.map((f) => f.mensajeId)).toEqual([
+      'f-2',
+      'f-3',
+      'f-4',
+      'f-5',
+      'f-6',
+      'f-7',
+      'f-8',
+      'f-9',
+      'f-11',
+    ]);
+  });
+
+  it('sin ninguna foto elegida no aprueba y lo dice', async () => {
+    const { repositorio } = await renderPagina();
+    await llenarAprobacion();
+
+    fireEvent.click(screen.getByLabelText('Foto principal (la 1)'));
+    fireEvent.click(screen.getByLabelText('Foto principal (la 2)'));
+    fireEvent.click(screen.getByRole('button', { name: a.accion }));
+
+    expect(await screen.findByText(a.sinFotosElegidas)).toBeTruthy();
+    expect(repositorio.aprobaciones).toEqual([]);
+  });
+
   it('guarda las correcciones de los datos extraídos', async () => {
     const { repositorio } = await renderPagina();
     const titulo = (await screen.findByLabelText(d.tituloProducto)) as HTMLInputElement;

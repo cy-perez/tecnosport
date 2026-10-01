@@ -972,7 +972,12 @@
       "aprobando": "Creando el producto…",
       "hecho": "Producto creado y publicado.",
       "verProducto": "Abrir el producto",
-      "error": "No se pudo aprobar el borrador. Intenta de nuevo."
+      "error": "No se pudo aprobar el borrador. Intenta de nuevo.",
+      "incluirFoto": "Incluir la foto {{numero}}",
+      "fotoPrincipal": "Foto principal (la {{numero}})",
+      "fotosElegidas": "{{elegidas}} de {{maximo}} fotos elegidas. La primera elegida es la principal; destilda las que sobren.",
+      "sinFotosElegidas": "Elige por lo menos una foto: sin fotos no hay producto.",
+      "demasiadasFotos": "Caben como máximo {{maximo}} fotos: la principal y ocho de galería. Destilda las que sobren."
     },
     "rechazar": {
       "titulo": "Rechazar",

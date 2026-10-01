@@ -18,6 +18,7 @@ import { usarFoco } from '../../../../../shared/foco/foco';
 import { formatearPrecio } from '../../../../../shared/ts-precio/formato-precio';
 import { TsBoton } from '../../../../../shared/ui/boton/ts-boton';
 import { TsCampo } from '../../../../../shared/ui/campo/ts-campo';
+import { TsCheckbox } from '../../../../../shared/ui/checkbox/ts-checkbox';
 import { OpcionSelect, TsSelect } from '../../../../../shared/ui/select/ts-select';
 import { TsSelectControl } from '../../../../../shared/ui/select/ts-select-control';
 import { TsEsqueleto } from '../../../../../shared/ts-esqueleto/ts-esqueleto';
@@ -37,6 +38,7 @@ import {
   Borrador,
   borradorEditable,
   EstadoBorrador,
+  MAXIMO_FOTOS_POR_PRODUCTO,
   Tallas,
   TIPOS_PRODUCTO_PROVEEDOR,
   TipoDeTalla,
@@ -87,6 +89,7 @@ function enteroPositivo(texto: string): number | null {
     TranslocoPipe,
     TsBoton,
     TsCampo,
+    TsCheckbox,
     TsEsqueleto,
     TsMigas,
     TsSelect,
@@ -183,6 +186,18 @@ export class DetalleBorradorAdminPage {
   /** El tono elegido por foto, por `mensajeId`. Vacío = la foto vale para todos los tonos. */
   protected readonly tonoPorFoto = signal<Readonly<Record<string, string>>>({});
 
+  /**
+   * Las fotos que NO entran al producto, por `mensajeId`. Se guardan las excluidas y no las
+   * elegidas para que una foto nueva en una revalidación entre por omisión. Al cargar, las que
+   * sobrepasan el máximo quedan fuera: una publicación de ropa trae doce o catorce.
+   */
+  protected readonly fotosExcluidas = signal<ReadonlySet<string>>(new Set());
+  protected readonly maximoFotos = MAXIMO_FOTOS_POR_PRODUCTO;
+
+  protected readonly fotosElegidas = computed(() =>
+    this.fotos().filter((foto) => !this.fotosExcluidas().has(foto.mensajeId)),
+  );
+
   protected readonly opcionesTipo = computed<OpcionSelect[]>(() =>
     TIPOS_PRODUCTO_PROVEEDOR.map((tipo) => ({
       valor: tipo,
@@ -229,6 +244,13 @@ export class DetalleBorradorAdminPage {
       // Todo lo que es de la decisión anterior se va con ella: navegar de un borrador a otro por
       // la URL reutiliza el componente.
       this.tonoPorFoto.set({});
+      this.fotosExcluidas.set(
+        new Set(
+          this.fotos()
+            .slice(MAXIMO_FOTOS_POR_PRODUCTO)
+            .map((foto) => foto.mensajeId),
+        ),
+      );
       this.aprobado.set(null);
       this.rechazado.set(false);
       this.avisoDatos.set(null);
@@ -308,6 +330,27 @@ export class DetalleBorradorAdminPage {
     this.tonoPorFoto.update((actual) => ({ ...actual, [mensajeId]: tono }));
   }
 
+  protected fotoIncluida(mensajeId: string): boolean {
+    return !this.fotosExcluidas().has(mensajeId);
+  }
+
+  protected incluirFoto(mensajeId: string, incluir: boolean): void {
+    this.fotosExcluidas.update((actual) => {
+      const siguiente = new Set(actual);
+      if (incluir) {
+        siguiente.delete(mensajeId);
+      } else {
+        siguiente.add(mensajeId);
+      }
+      return siguiente;
+    });
+  }
+
+  /** Cuál es la principal: la primera de las elegidas, en el orden de la publicación. */
+  protected esPrincipal(mensajeId: string): boolean {
+    return this.fotosElegidas()[0]?.mensajeId === mensajeId;
+  }
+
   protected guardarDatos(): void {
     if (this.guardando()) {
       return;
@@ -372,6 +415,19 @@ export class DetalleBorradorAdminPage {
       this.errorDecision.set(this.transloco.translate('admin.borradores.aprobar.faltanCampos'));
       return;
     }
+    const elegidas = this.fotosElegidas();
+    if (elegidas.length === 0) {
+      this.errorDecision.set(this.transloco.translate('admin.borradores.aprobar.sinFotosElegidas'));
+      return;
+    }
+    if (elegidas.length > MAXIMO_FOTOS_POR_PRODUCTO) {
+      this.errorDecision.set(
+        this.transloco.translate('admin.borradores.aprobar.demasiadasFotos', {
+          maximo: MAXIMO_FOTOS_POR_PRODUCTO,
+        }),
+      );
+      return;
+    }
     this.errorDecision.set(null);
 
     const tonos = this.tonoPorFoto();
@@ -391,7 +447,7 @@ export class DetalleBorradorAdminPage {
           ...(valores.descripcion.trim() ? { descripcion: valores.descripcion.trim() } : {}),
           altEs: valores.altEs.trim(),
           altEn: valores.altEn.trim(),
-          fotos: this.fotos().map((foto) => ({
+          fotos: elegidas.map((foto) => ({
             mensajeId: foto.mensajeId,
             tono: tonos[foto.mensajeId] || null,
             colorHex: null,

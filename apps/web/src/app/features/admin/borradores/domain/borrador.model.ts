@@ -134,6 +134,13 @@ export interface AprobarBorrador {
   readonly existenciaInicial: number;
 }
 
+/**
+ * Las fotos que caben en un producto: la principal más las ocho de galería que admite el catálogo
+ * (`Producto.TOPE_DE_GALERIA` en la API). Una publicación de ropa trae doce o catorce, así que
+ * quien aprueba elige cuáles entran.
+ */
+export const MAXIMO_FOTOS_POR_PRODUCTO = 9;
+
 export function borradorEditable(borrador: Borrador): boolean {
   return borrador.estado === 'EN_REVISION';
 }

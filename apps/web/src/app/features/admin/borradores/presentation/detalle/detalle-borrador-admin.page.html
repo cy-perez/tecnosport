@@ -80,6 +80,14 @@
     <h2 class="m-0 mb-8 font-display text-lg">
       {{ 'admin.borradores.detalle.fotos' | transloco }}
     </h2>
+    @if (editable() && fotos().length > 0) {
+      <p class="m-0 mb-8 text-sm text-ts-texto-suave">
+        {{
+          'admin.borradores.aprobar.fotosElegidas'
+            | transloco: { elegidas: fotosElegidas().length, maximo: maximoFotos }
+        }}
+      </p>
+    }
     @if (fotos().length === 0) {
       <p class="mb-24 text-ts-texto-suave">{{ 'admin.borradores.detalle.sinFotos' | transloco }}</p>
     } @else {
@@ -98,6 +106,19 @@
             />
             @if (foto.pieDeFoto) {
               <p class="m-0 text-xs text-ts-texto-suave">{{ foto.pieDeFoto }}</p>
+            }
+            @if (editable()) {
+              <ts-checkbox
+                [idCasilla]="'incluir-foto-' + i"
+                [etiqueta]="
+                  (esPrincipal(foto.mensajeId)
+                    ? 'admin.borradores.aprobar.fotoPrincipal'
+                    : 'admin.borradores.aprobar.incluirFoto'
+                  ) | transloco: { numero: i + 1 }
+                "
+                [marcado]="fotoIncluida(foto.mensajeId)"
+                (marcadoCambio)="incluirFoto(foto.mensajeId, $event)"
+              />
             }
             @if (editable() && opcionesTono().length > 0) {
               <ts-select
