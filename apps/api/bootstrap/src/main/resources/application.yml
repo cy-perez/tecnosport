@@ -99,8 +99,14 @@ tecnosport:
     # lado (deuda 29, ADR-0058). Un valor por omisión describe dónde corre el proceso por omisión,
     # que es esta máquina; el ambiente desplegado fija sus variables desde Terraform y no depende
     # de esta línea.
+    #
+    # **La URL pública sale del bucket, no de un segundo literal.** Cuando eran dos, Terraform fijó
+    # solo el bucket: dev subía a `tecnosport-dev-imagenes` y guardaba en la base URLs de
+    # `tecnosport-local-imagenes`, que daban 404 — del 23 de septiembre al 1 de octubre de 2026.
+    # `GCS_URL_PUBLICA` queda para cuando haya un CDN delante; si apunta a storage.googleapis.com,
+    # `PropiedadesGcs` exige que sea el mismo bucket.
     bucket-imagenes: ${GCS_BUCKET_IMAGENES:tecnosport-local-imagenes}
-    url-publica: ${GCS_URL_PUBLICA:https://storage.googleapis.com/tecnosport-local-imagenes}
+    url-publica: ${GCS_URL_PUBLICA:https://storage.googleapis.com/${tecnosport.gcs.bucket-imagenes}}
     minutos-url-firmada: ${GCS_MINUTOS_URL_FIRMADA:15}
   wompi:
     # Sin valor por defecto que sea una llave real (regla dura #5): los de abajo son placeholders
