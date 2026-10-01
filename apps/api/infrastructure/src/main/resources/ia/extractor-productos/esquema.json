@@ -30,6 +30,13 @@
         "conjunto_pantalon",
         "conjunto_short",
         "enterizo",
+        "polo",
+        "camiseta",
+        "buso",
+        "chaqueta",
+        "pantalon",
+        "short",
+        "vestido",
         "otro"
       ]
     },

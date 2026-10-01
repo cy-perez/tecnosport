@@ -12,7 +12,20 @@ export const ESTADOS_BORRADOR: readonly EstadoBorrador[] = [
 ];
 
 export type TipoProductoProveedor =
-  'BOLSO' | 'MORRAL' | 'CANGURO' | 'CONJUNTO_PANTALON' | 'CONJUNTO_SHORT' | 'ENTERIZO' | 'OTRO';
+  | 'BOLSO'
+  | 'MORRAL'
+  | 'CANGURO'
+  | 'CONJUNTO_PANTALON'
+  | 'CONJUNTO_SHORT'
+  | 'ENTERIZO'
+  | 'POLO'
+  | 'CAMISETA'
+  | 'BUSO'
+  | 'CHAQUETA'
+  | 'PANTALON'
+  | 'SHORT'
+  | 'VESTIDO'
+  | 'OTRO';
 
 export const TIPOS_PRODUCTO_PROVEEDOR: readonly TipoProductoProveedor[] = [
   'BOLSO',
@@ -21,6 +34,13 @@ export const TIPOS_PRODUCTO_PROVEEDOR: readonly TipoProductoProveedor[] = [
   'CONJUNTO_PANTALON',
   'CONJUNTO_SHORT',
   'ENTERIZO',
+  'POLO',
+  'CAMISETA',
+  'BUSO',
+  'CHAQUETA',
+  'PANTALON',
+  'SHORT',
+  'VESTIDO',
   'OTRO',
 ];
 
