@@ -112,20 +112,62 @@ class AgrupadorDePublicacionesTest {
     assertEquals(1, resultado.sueltos());
   }
 
+  /**
+   * La forma de los chats reales (30 de septiembre de 2026): el álbum de fotos sale primero y el
+   * texto con el precio después, al minuto. Cada tanda es de su texto, no del anterior.
+   */
   @Test
-  void loQueLlegaAntesDeCualquierPrecioQuedaSueltoYUnAudioNoSeAnexa() {
-    MensajeProveedor saludo = texto(0, "Buenos días, hoy llega surtido");
-    MensajeProveedor huerfana = foto(10, null);
-    MensajeProveedor bolso = texto(20, "Bolso 💰 53.000");
-    MensajeProveedor nota = audio(30);
-    MensajeProveedor foto = foto(40, null);
+  void lasFotosQueLleganAntesDelTextoConPrecioSonSuyas() {
+    MensajeProveedor foto1 = foto(0, null);
+    MensajeProveedor foto2 = foto(5, null);
+    MensajeProveedor bolso = texto(60, "Bolso de dama 💰 53.000");
+    MensajeProveedor foto3 = foto(2 * 3600, null);
+    MensajeProveedor foto4 = foto(2 * 3600 + 10, null);
+    MensajeProveedor manosLibres = texto(2 * 3600 + 60, "Manos libres 💰 45.000");
 
     AgrupadorDePublicaciones.Resultado resultado =
         new AgrupadorDePublicaciones(QUINCE_MINUTOS)
-            .agrupar(List.of(saludo, huerfana, bolso, nota, foto));
+            .agrupar(List.of(foto1, foto2, bolso, foto3, foto4, manosLibres));
+
+    assertEquals(2, resultado.publicaciones().size());
+    assertEquals(0, resultado.sueltos());
+    assertEquals(List.of(foto1.id(), foto2.id()), resultado.publicaciones().get(0).medios());
+    assertEquals(bolso.id(), resultado.publicaciones().get(0).mensajePrincipalId());
+    assertEquals(List.of(foto3.id(), foto4.id()), resultado.publicaciones().get(1).medios());
+  }
+
+  /** Entre dos precios cercanos, la foto es del más cercano; en empate, del de antes. */
+  @Test
+  void entreDosPreciosLaFotoEsDelMasCercano() {
+    MensajeProveedor bolso = texto(0, "Bolso 💰 53.000");
+    MensajeProveedor delBolso = foto(60, null);
+    MensajeProveedor delMorral = foto(240, null);
+    MensajeProveedor tambienDelMorral = foto(300, null);
+    MensajeProveedor morral = texto(360, "Morral 💰 52.000");
+
+    AgrupadorDePublicaciones.Resultado resultado =
+        new AgrupadorDePublicaciones(QUINCE_MINUTOS)
+            .agrupar(List.of(bolso, delBolso, delMorral, tambienDelMorral, morral));
+
+    // 60 s: a un minuto del bolso y a cinco del morral. 240 s: a cuatro del bolso y a dos del
+    // morral. La distancia se mide al precio de cada lado, no a la última foto anexada.
+    assertEquals(List.of(delBolso.id()), resultado.publicaciones().get(0).medios());
+    assertEquals(
+        List.of(delMorral.id(), tambienDelMorral.id()), resultado.publicaciones().get(1).medios());
+  }
+
+  @Test
+  void loQueQuedaLejosDeCualquierPrecioQuedaSueltoYUnAudioNoSeAnexa() {
+    MensajeProveedor huerfana = foto(0, null);
+    MensajeProveedor bolso = texto(3600, "Bolso 💰 53.000");
+    MensajeProveedor nota = audio(3610);
+    MensajeProveedor foto = foto(3620, null);
+
+    AgrupadorDePublicaciones.Resultado resultado =
+        new AgrupadorDePublicaciones(QUINCE_MINUTOS).agrupar(List.of(huerfana, bolso, nota, foto));
 
     assertEquals(1, resultado.publicaciones().size());
-    assertEquals(3, resultado.sueltos());
+    assertEquals(2, resultado.sueltos());
     assertEquals(List.of(foto.id()), resultado.publicaciones().get(0).medios());
   }
 

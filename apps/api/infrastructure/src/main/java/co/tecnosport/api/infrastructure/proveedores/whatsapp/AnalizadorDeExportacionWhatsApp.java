@@ -96,7 +96,10 @@ public final class AnalizadorDeExportacionWhatsApp {
     }
     List<MensajeCrudo> mensajes = new ArrayList<>(bloques.size());
     for (Bloque bloque : bloques) {
-      mensajes.add(aMensaje(bloque));
+      MensajeCrudo mensaje = aMensaje(bloque);
+      if (mensaje != null) {
+        mensajes.add(mensaje);
+      }
     }
     return mensajes;
   }
@@ -176,9 +179,21 @@ public final class AnalizadorDeExportacionWhatsApp {
     }
   }
 
+  /**
+   * @return el mensaje, o nulo si el bloque no es un mensaje: el Android de 2026 exporta cada álbum
+   *     de fotos con una línea cabecera sin texto ({@code 30/9/2026, 12:01 - D'Osman: }) seguida de
+   *     una línea por foto. Esa cabecera no trae nada, y convertida en texto el dominio la
+   *     rechazaba y tumbaba el lote entero.
+   */
   private MensajeCrudo aMensaje(Bloque bloque) {
     String primera = limpiar(bloque.primeraLinea()).strip();
     String resto = unir(bloque.lineas());
+    if (primera.isEmpty() && resto.isBlank()) {
+      return null;
+    }
+    if (primera.isEmpty()) {
+      return MensajeCrudo.texto(bloque.enviadoEn(), bloque.remitente(), resto);
+    }
 
     Matcher adjunto = ADJUNTO_ANDROID.matcher(primera);
     if (!adjunto.matches()) {
