@@ -55,12 +55,19 @@ class AnalizadorDeExportacionWhatsAppTest {
         .analizar(fixture("exportacion-ios.txt"));
   }
 
+  /**
+   * La cabecera vacía con la que el Android de 2026 abre cada álbum ({@code Bolsos Centro: } y nada
+   * más, antes de la primera foto) no cuenta: el chat de bolsos real traía cuatro y el de ropa
+   * tres, y cada una tumbaba el lote con "Un mensaje de texto tiene que traer texto".
+   */
   @Test
-  void androidLeeTodosLosMensajesYDescartaElAvisoDelSistema() {
+  void androidLeeTodosLosMensajesYDescartaElAvisoDelSistemaYLaCabeceraDelAlbum() {
     List<MensajeCrudo> mensajes = android();
 
-    // 5 textos de producto + 10 marcas de foto + 1 audio + 1 respuesta nuestra + 1 texto suelto
+    // 5 textos de producto + 10 marcas de foto + 1 audio + 1 respuesta nuestra + 1 texto suelto;
+    // la cabecera vacía del álbum de la línea 11 no es ninguno.
     assertThat(mensajes).hasSize(18);
+    assertThat(mensajes).noneMatch(m -> m.tipo() == TipoMensaje.TEXTO && m.texto().isBlank());
     assertThat(mensajes).noneMatch(m -> m.remitente().contains("cifrados"));
     assertThat(mensajes.stream().filter(m -> m.remitente().equals("Tecno Sport"))).hasSize(1);
   }
