@@ -38,6 +38,13 @@ mete en las fechas), filtra los mensajes del remitente que el proveedor tiene
 registrado, los deduplica por huella para que volver a subir el mismo chat sea
 seguro, los agrupa en publicaciones, y le pide a la extracción lo demás.
 
+Y es el único de los dos que llega a donde publican estos proveedores: el de
+bolsos en un grupo y el de ropa en el canal de avisos de dos comunidades, siempre
+desde el número del administrador. Un grupo exportado trae a todos los miembros,
+y el filtro por remitente se queda solo con el proveedor: por el nombre del
+contacto, por el apodo con virgulilla que WhatsApp pone a quien no está guardado,
+o por el número.
+
 Se elige por tres razones, en este orden:
 
 1. **Funciona con lo que los proveedores ya hacen.** No hay que pedirles que
