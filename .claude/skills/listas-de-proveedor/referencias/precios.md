@@ -109,12 +109,45 @@ Cuatro trampas que aparecieron en la lista del 12/09/2026:
 | `Juego NINTENDO SWITCH 2 Mario Kart World` | es el **juego**, no la consola |
 | `PARTY BOX ON THE GO 2` | es la generación siguiente del On-The-Go Essential |
 
-## Las tiendas VTEX tienen dos manías
+### Ktronix no es una fuente aparte
 
-- **Responden 400 si la búsqueda trae `"` o `+`.** Las pulgadas (`8.7"`) y los
-  modelos con plus (`A11+`) tumbaban la consulta de las tres tiendas a la vez, y
-  el síntoma es un montón de `HTTP Error 400` sin explicación. `sanear()` los
-  quita sin tocar el número.
+Es del mismo grupo que Alkosto y muestra el mismo catálogo a los mismos precios
+(comprobado el 02/10/2026 con el S25 Ultra: tarjeta por tarjeta, idénticas).
+Contarla como segunda tienda le da dos votos al mismo número.
+
+### La vitrina oficial de la marca, cuando Alkosto no tiene la referencia
+
+En la lista del 02/10/2026, 45 de 93 productos no estaban en Alkosto. Dos sitios
+oficiales cubren buena parte de ese hueco, y «Fuentes», arriba, los pone por
+encima del retail:
+
+- **mi.com/co**: la página `/co/product/<slug>/buy/` pinta el precio en el
+  navegador, uno por configuración. Se lee eligiendo cada botón
+  `button.sku-select__button`, como lo haría una persona, y tomando el precio
+  del bloque «Total» —el primer «Current Price» de la página es de un accesorio
+  sugerido—. Ese precio de la marca confirmó, de paso, cuál RAM era una tarjeta
+  de Alkosto que no la decía.
+- **samsung.com/co**: la página `/co/smartphones/<modelo>/buy/` sí trae en el
+  HTML el objeto `products` con precio de lista, precio de promoción y
+  existencia por código de modelo. Un código sin precio es un modelo agotado.
+  Las rutas de relojes, tablets y audífonos no siguen ese patrón.
+
+Se suman al corpus como inventario propio de la tienda oficial, con el enlace a
+la página de compra.
+
+## Las tiendas VTEX tienen tres manías
+
+- **Responden 400 si la búsqueda trae `"`, `+` o paréntesis.** Las pulgadas
+  (`8.7"`), los modelos con plus (`A11+`) y las aclaraciones del título
+  (`(bundle)`) tumbaban la consulta de las tres tiendas a la vez, y el síntoma
+  es un montón de `HTTP Error 400` sin explicación. `sanear()` los quita sin
+  tocar el texto.
+- **El emparejador deja pasar vecinos de la misma línea.** En la lista del
+  02/10/2026 hubo que quitar 128 ofertas: Tune 520, 720 y 770 en los Tune 730BT,
+  un iPhone 16e en el iPhone 16, el Watch 8 de 44 mm en el de 40, la variante
+  de 4GB en un producto de 6GB, la consola sola en el paquete con juego. Antes
+  de cerrar los precios, lee los nombres de las fuentes de cada producto: el
+  número sale razonable aunque la oferta sea de otro equipo.
 - **Devuelven una fila por color.** El mismo producto en negro y en gris, al
   mismo precio y en la misma tienda, es **una** observación. Contarlas aparte le
   daba a Éxito dos votos contra uno de Alkosto y movía la mediana.

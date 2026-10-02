@@ -60,11 +60,12 @@ def normalizar(texto):
 
 def sanear(consulta):
     """
-    VTEX responde 400 si el texto de búsqueda trae comillas o un más: las
-    pulgadas (`8.7"`) y los modelos con plus (`A11+`) tumbaban la consulta de
-    las tres tiendas a la vez. Se quitan los dos caracteres, no el número.
+    VTEX responde 400 si el texto de búsqueda trae comillas, un más o
+    paréntesis: las pulgadas (`8.7"`), los modelos con plus (`A11+`) y las
+    aclaraciones del título (`(bundle)`) tumbaban la consulta de las tres
+    tiendas a la vez. Se quitan los caracteres, no el texto.
     """
-    return re.sub(r"\s+", " ", consulta.replace('"', " ").replace("+", " ")).strip()
+    return re.sub(r"\s+", " ", re.sub(r'["+()]', " ", consulta)).strip()
 
 
 def consultas(titulo):
