@@ -141,6 +141,8 @@ ENCABEZADOS = [
     ("APPLE WATCH", ("relojes", "Apple", "nuevo")),
     ("RELOJES", ("relojes", None, "nuevo")),
     ("TABLET", ("tablets", None, "nuevo")),
+    ("IPAD", ("tablets", "Apple", "nuevo")),
+    ("ALEXA", ("parlantes", "Amazon", "nuevo")),
     ("AUDIFONOS", ("audifonos", None, "nuevo")),
     ("AUDÍFONOS", ("audifonos", None, "nuevo")),
     ("CARGADORES", ("cargadores", None, "nuevo")),
@@ -236,6 +238,15 @@ SUBMARCA_XIAOMI = [
     # Xiaomi publica las bandas como "Smart Band"; la lista a veces omite
     # "Smart". Esta sí se queda en la línea Xiaomi.
     (r"^Band (\d+)", r"Smart Band \1", False),
+]
+
+# Referencias que el proveedor escribe sin marca pero que ya se confirmaron con
+# el negocio: (categoría, patrón sobre el modelo, marca, modelo comercial).
+# Solo se aplica si la línea no trae marca, para que un "PROYECTOR EPSON L1"
+# no se vuelva Xiaomi. Cada entrada es una decisión del negocio, con su fecha.
+REFERENCIAS_SIN_MARCA = [
+    # 02/10/2026: «PROYECTOR L1» es el Xiaomi Smart Projector L1.
+    ("proyectores", r"^(Proyector\s+)?L1$", "Xiaomi", "Smart Projector L1"),
 ]
 
 CASING = {
@@ -383,7 +394,8 @@ def categoria_por_palabras(texto: str):
     t = texto.upper()
     if re.search(r"\bWATCH\b|\bBAND\b|\d{2}\s*MM\b", t):
         return "relojes"
-    if re.search(r"\bTABLET\b|\bPAD\b|\bTAB\b|\bXPAD\b|\bMEGAPAD\b", t):
+    # Con límite de palabra: "PAD" suelto también es GAMEPAD, KEYPAD o TOUCHPAD.
+    if re.search(r"\bTABLETS?\b|\b(I|X|MEGA)?PAD\b|\bTAB\b", t):
         return "tablets"
     if RE_MAH.search(t):
         return "power_bank"
@@ -610,11 +622,30 @@ def construir_producto(texto, categoria, marca, condicion, seccion, linea):
             prod["modelo"] = "Galaxy " + prod["modelo"]
         prod["revisar"].append("confirmar nombre comercial oficial del modelo")
 
+    aplicar_referencia_sin_marca(prod)
     aplicar_submarca(prod)
     armar_titulo(prod)
     if prod["condicion"] == "nuevo_activado":
         prod["revisar"].append("equipo con la garantía ya activada")
     return prod
+
+
+def aplicar_referencia_sin_marca(prod):
+    """Pone la marca y el modelo comercial a una referencia que el negocio ya identificó.
+
+    Solo actúa cuando la lista no trae marca, y deja el rastro en `supuestos`.
+    """
+    if prod.get("marca"):
+        return
+    modelo = prod.get("modelo") or ""
+    for categoria, patron, marca, nuevo in REFERENCIAS_SIN_MARCA:
+        if prod["categoria"] == categoria and re.match(patron, modelo, re.I):
+            prod["marca"], prod["modelo"] = marca, nuevo
+            prod["supuestos"].append(
+                f"la lista no trae marca; «{modelo}» se toma como {marca} {nuevo}, "
+                "referencia confirmada por el negocio (REFERENCIAS_SIN_MARCA)"
+            )
+            return
 
 
 def aplicar_submarca(prod):

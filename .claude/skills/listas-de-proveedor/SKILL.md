@@ -427,6 +427,12 @@ No hay que volver a hacerlo a mano en cada lista:
   "XIAOMI" pero el fabricante publica como Redmi (`WATCH 5 ACTIVE`,
   `BUDS 6 PLAY`, `PAD 2`…) se corrigen solas con `SUBMARCA_XIAOMI` y dejan la
   nota en `supuestos`. La tabla completa está en `referencias/titulos.md`.
+- **Referencias sin marca ya identificadas**: `PROYECTOR L1` es el **Xiaomi
+  Smart Projector L1** (decisión del negocio, 02/10/2026) y no se vuelve a
+  preguntar. Está en `REFERENCIAS_SIN_MARCA`, solo actúa si la línea no trae
+  marca —`PROYECTOR EPSON L1` y `PROYECTOR L1 PRO` no se tocan— y deja la nota
+  en `supuestos`. Una referencia nueva entra a esa tabla solo cuando el negocio
+  la confirma; mientras tanto se aplica la regla 10.
 
 ## Cosas que se rompen si no se cuidan
 
