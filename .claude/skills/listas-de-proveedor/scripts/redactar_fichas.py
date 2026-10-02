@@ -59,8 +59,29 @@ FILAS = [
 ]
 
 
+# Atributos cuyo valor no se entiende suelto en la tabla. Sin esto, un parlante
+# publicaba «Batería: 17,28 Wh · No» (el «No» era el adaptador), «Conectividad:
+# 5.4» (la versión de Bluetooth) y tres medidas sin decir cuál es cuál.
+ROTULOS = {
+    "Número de núcleos de procesador": "{} núcleos",
+    "Resolución de la cámara trasera (numérica)": "trasera {}",
+    "Resolución de la cámara frontal (numérica)": "frontal {}",
+    "Adaptador AC incluido": "adaptador incluido: {}",
+    "Versión de Bluetooth": "Bluetooth {}",
+    "Comunicación de Campo Cercano (NFC)": "NFC: {}",
+    "Altura": "alto {}",
+    "Ancho": "ancho {}",
+    "Profundidad": "fondo {}",
+    "Peso": "peso {}",
+}
+
+
 def limpiar(valor):
     return re.sub(r"\s+", " ", str(valor)).strip()
+
+
+def rotular(atributo, valor):
+    return ROTULOS.get(atributo, "{}").format(valor)
 
 
 def tabla_icecat(ficha):
@@ -70,7 +91,7 @@ def tabla_icecat(ficha):
         por_atributo.setdefault(limpiar(e["atributo"]), limpiar(e["valor"]))
     filas = []
     for etiqueta, atributos in FILAS:
-        partes = [por_atributo[a] for a in atributos if por_atributo.get(a)]
+        partes = [rotular(a, por_atributo[a]) for a in atributos if por_atributo.get(a)]
         if partes:
             filas.append((etiqueta, " · ".join(dict.fromkeys(partes))))
     return filas
