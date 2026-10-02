@@ -18,6 +18,7 @@ import co.tecnosport.api.application.inventario.RepositorioInventario;
 import co.tecnosport.api.application.proveedores.AlmacenDeArchivosDeProveedor;
 import co.tecnosport.api.application.proveedores.AprobarBorrador;
 import co.tecnosport.api.application.proveedores.BorradoresPaginados;
+import co.tecnosport.api.application.proveedores.CalculadorDePHash;
 import co.tecnosport.api.application.proveedores.EditarBorrador;
 import co.tecnosport.api.application.proveedores.HuellaVisual;
 import co.tecnosport.api.application.proveedores.ProcesadorDeImagenes;
@@ -332,6 +333,7 @@ class AdminBorradorControladorTest {
           almacen,
           inerte(AlmacenDeImagenes.class),
           inerte(ProcesadorDeImagenes.class),
+          inerte(CalculadorDePHash.class),
           (Reloj) () -> T);
     }
 

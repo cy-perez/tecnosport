@@ -103,6 +103,43 @@ se puede probar de punta a punta sin gastar una llamada.
   exportar y aprobar pasan días; con la fecha del mensaje nacía ya vencido para
   la ventana de `ADR-0066` y el job lo ocultaba en su primera vuelta.
 
+## Varios productos en un mensaje (2 de octubre de 2026)
+
+La primera exportación de Violeta trajo lo que el diseño no esperaba: un pie de
+foto con dos productos, cada uno con su código y su precio —«Chaqueta Denim
+corta (Q377) 💲108 … Jean Mom Fit Licrado (Q343) 💲119900»— sobre la foto del
+conjunto puesto. Cinco de sus diez publicaciones eran así. Con un borrador por
+publicación, el segundo producto se perdía.
+
+- **Parte el mensaje el extractor, no el agrupador.** El esquema devuelve
+  `productos: [...]`, en el orden del mensaje, y vacía cuando no anuncia
+  ninguno. El agrupador no sabe dónde termina el texto de un producto y empieza
+  el del otro; el modelo sí. Lo que no se le cree es el precio: cada producto se
+  contrasta con el precio **de su misma posición** en el texto, y solo cuando
+  hay exactamente uno por producto. Con más o con menos no hay forma honesta de
+  emparejarlos, y todos llevan `PRECIO_INCONSISTENTE`.
+- **Cinco por mensaje, como mucho.** Si el extractor devuelve más, entran los
+  cinco primeros con `CONFIANZA_BAJA`: un mensaje de catálogo con treinta
+  líneas no son treinta borradores. El tope lo decidió el negocio.
+- **Las fotos son de todos, y lo dice `FOTOS_COMPARTIDAS`.** Cada borrador ve
+  todas las fotos de la publicación, y la persona deja las suyas al aprobar.
+- **Sin huella visual hasta aprobar.** La primera foto del conjunto puede ser
+  de cualquiera de los productos, y con su pHash el próximo anuncio del jean se
+  habría reconocido como renovación de la chaqueta. Esos borradores nacen sin
+  pHash y no se reconocen por foto; al aprobarse reciben el de la foto que la
+  persona **marcó como principal**, y el panel no deja aprobarlos sin esa
+  marca. Desde entonces el panel deja marcar la principal en cualquier
+  borrador, no solo en estos.
+- **La publicación queda extraída si algún producto quedó.** Se descarta solo
+  cuando se descartan todos; el descarte de uno —el jean que ya estaba en
+  revisión por otro mensaje— se cuenta en el resumen del lote, no en la
+  publicación.
+
+El mismo día, el patrón de precio aprendió las formas de La Riverah
+(`🤑🤑*55.000*`, `🎽55.000~~`) y de Violeta (`💲124` por 124.000): sin ellas,
+tres de los ocho productos de La Riverah no abrían publicación y sus fotos
+terminaban en el producto vecino, y de Violeta no salía ninguno.
+
 ## Pendientes que este ADR deja escritos
 
 - **La confirmación con el proveedor en los pedidos.** Aprobar un borrador

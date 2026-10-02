@@ -44,7 +44,7 @@ public final class BorradorProducto {
   private String material;
   private List<String> caracteristicas;
   private final HuellaProveedor huella;
-  private final PHash pHash;
+  private PHash pHash;
   private final Set<AlertaBorrador> alertas;
   private EstadoBorrador estado;
   private UUID productoId;
@@ -231,10 +231,19 @@ public final class BorradorProducto {
     }
   }
 
-  public void aprobar(UUID productoId) {
+  /**
+   * @param pHashDeLaPrincipal el de la foto que quien aprueba eligió como principal, o nulo si no
+   *     se pudo calcular. Solo se usa cuando el borrador no trae uno: el de un mensaje con varios
+   *     productos nace sin huella visual, porque la primera foto podía ser de cualquiera de ellos,
+   *     y es aquí donde una persona dice cuál es de este.
+   */
+  public void aprobar(UUID productoId, PHash pHashDeLaPrincipal) {
     exigirEnRevision("aprobar");
     this.productoId = Objects.requireNonNull(productoId, "Aprobar es crear un producto.");
     this.estado = EstadoBorrador.APROBADO;
+    if (this.pHash == null) {
+      this.pHash = pHashDeLaPrincipal;
+    }
   }
 
   public void rechazar(String motivo) {

@@ -16,7 +16,9 @@ import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
 
 /**
- * Del JSON del esquema ({@code ia/extractor-productos/esquema.json}) a {@link ProductoExtraido}.
+ * Del JSON del esquema ({@code ia/extractor-productos/esquema.json}) a una lista de {@link
+ * ProductoExtraido}. Cada elemento de la lista es un producto: no lleva {@code es_producto}, porque
+ * un mensaje que no anuncia ninguno devuelve la lista vacía.
  *
  * <p>Los enumerados se comparan sin distinguir mayúsculas: la API puede devolverlos con la primera
  * letra cambiada. Un valor que no reconoce cae en {@code OTRO} o en {@code DESCONOCIDA}, y eso
@@ -26,7 +28,10 @@ final class MapeadorDeExtraccion {
 
   private final JsonMapper json = JsonMapper.builder().build();
 
-  ProductoExtraido aProducto(String texto) {
+  /**
+   * @return los productos en el orden en que el mensaje los anuncia; vacía si no anuncia ninguno
+   */
+  List<ProductoExtraido> aProductos(String texto) {
     JsonNode raiz;
     try {
       raiz = json.readTree(texto);
@@ -36,21 +41,37 @@ final class MapeadorDeExtraccion {
     if (!raiz.isObject()) {
       throw new ExtraccionFallidaException("El extractor devolvió algo que no es un objeto JSON.");
     }
+    JsonNode productos = raiz.path("productos");
+    if (!productos.isArray()) {
+      throw new ExtraccionFallidaException("El extractor no devolvió la lista de productos.");
+    }
+    List<ProductoExtraido> extraidos = new ArrayList<>();
+    for (JsonNode producto : productos) {
+      if (!producto.isObject()) {
+        throw new ExtraccionFallidaException(
+            "El extractor devolvió un producto que no es un objeto JSON.");
+      }
+      extraidos.add(aProducto(producto));
+    }
+    return extraidos;
+  }
+
+  private static ProductoExtraido aProducto(JsonNode nodo) {
     try {
       return new ProductoExtraido(
-          raiz.path("es_producto").asBoolean(false),
-          raiz.path("esta_agotado").asBoolean(false),
-          textoONulo(raiz.path("titulo")),
-          linea(raiz.path("linea")),
-          tipo(raiz.path("tipo")),
-          precio(raiz.path("precio_proveedor_cop")),
-          tallas(raiz.path("tallas")),
-          raiz.path("cantidad_tonos").isNumber() ? raiz.path("cantidad_tonos").asInt() : null,
-          lista(raiz.path("tonos_nombrados")),
-          textoONulo(raiz.path("material")),
-          lista(raiz.path("caracteristicas")),
-          confianza(raiz.path("confianza")),
-          textoONulo(raiz.path("notas")));
+          true,
+          nodo.path("esta_agotado").asBoolean(false),
+          textoONulo(nodo.path("titulo")),
+          linea(nodo.path("linea")),
+          tipo(nodo.path("tipo")),
+          precio(nodo.path("precio_proveedor_cop")),
+          tallas(nodo.path("tallas")),
+          nodo.path("cantidad_tonos").isNumber() ? nodo.path("cantidad_tonos").asInt() : null,
+          lista(nodo.path("tonos_nombrados")),
+          textoONulo(nodo.path("material")),
+          lista(nodo.path("caracteristicas")),
+          confianza(nodo.path("confianza")),
+          textoONulo(nodo.path("notas")));
     } catch (ExcepcionDeDominio e) {
       throw new ExtraccionFallidaException(
           "El extractor devolvió un valor que el dominio no admite: " + e.getMessage(), e);

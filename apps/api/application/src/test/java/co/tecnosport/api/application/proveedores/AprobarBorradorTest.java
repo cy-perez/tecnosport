@@ -8,6 +8,7 @@ import co.tecnosport.api.application.catalogo.AgregarVariante;
 import co.tecnosport.api.application.catalogo.CategoriaNoEsHojaException;
 import co.tecnosport.api.application.compartido.RelojFalso;
 import co.tecnosport.api.application.proveedores.ApoyoDeCatalogoParaIngesta.AlmacenDeImagenesEnMemoria;
+import co.tecnosport.api.application.proveedores.ApoyoDeCatalogoParaIngesta.CalculadorDePHashPorContenido;
 import co.tecnosport.api.application.proveedores.ApoyoDeCatalogoParaIngesta.ProcesadorNulo;
 import co.tecnosport.api.application.proveedores.ApoyoDeCatalogoParaIngesta.RepositorioAtributosFijo;
 import co.tecnosport.api.application.proveedores.ApoyoDeCatalogoParaIngesta.RepositorioBorradoresEnMemoria;
@@ -36,6 +37,7 @@ import co.tecnosport.api.domain.proveedores.HuellaProveedor;
 import co.tecnosport.api.domain.proveedores.IdExternoDeMensaje;
 import co.tecnosport.api.domain.proveedores.LoteIngesta;
 import co.tecnosport.api.domain.proveedores.MensajeProveedor;
+import co.tecnosport.api.domain.proveedores.PHash;
 import co.tecnosport.api.domain.proveedores.ProductoExtraido;
 import co.tecnosport.api.domain.proveedores.Proveedor;
 import co.tecnosport.api.domain.proveedores.PublicacionProveedor;
@@ -148,6 +150,7 @@ class AprobarBorradorTest {
         almacenPrivado,
         almacenPublico,
         new ProcesadorNulo(),
+        new CalculadorDePHashPorContenido(),
         new RelojFalso(AHORA));
   }
 
@@ -443,5 +446,26 @@ class AprobarBorradorTest {
                     List.of(new FotoAprobada(foto2.id(), null, null))));
 
     assertEquals("bolso-de-dama-mediano-2", segundo.slug().valor());
+  }
+
+  /**
+   * El borrador de un mensaje con varios productos nace sin huella visual; la recibe de la foto que
+   * la persona marcó como principal, no de la primera de la publicación.
+   */
+  @Test
+  void laHuellaVisualSaleDeLaFotoQueSeMarcoComoPrincipal() {
+    caso()
+        .ejecutar(
+            comando(
+                List.of(
+                    new FotoAprobada(foto2.id(), "Vino", null),
+                    new FotoAprobada(foto1.id(), "Negro", null))));
+
+    PHash esperado =
+        new CalculadorDePHashPorContenido()
+            .de("foto-vino".getBytes(StandardCharsets.UTF_8))
+            .orElseThrow();
+    assertEquals(
+        Optional.of(esperado), borradores.buscarPorId(borrador.id()).orElseThrow().pHash());
   }
 }

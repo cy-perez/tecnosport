@@ -87,7 +87,7 @@ class BorradorProductoTest {
     assertEquals(TipoProductoProveedor.BOLSO, borrador.tipo());
     assertEquals(Optional.of(4), borrador.cantidadTonos());
 
-    borrador.aprobar(UUID.randomUUID());
+    borrador.aprobar(UUID.randomUUID(), null);
     assertThrows(
         ExcepcionDeDominio.class,
         () -> borrador.editar("x", null, null, null, null, null, null, null));
@@ -98,13 +98,45 @@ class BorradorProductoTest {
     BorradorProducto borrador = nuevo(Set.of());
     UUID producto = UUID.randomUUID();
 
-    borrador.aprobar(producto);
+    borrador.aprobar(producto, null);
 
     assertEquals(EstadoBorrador.APROBADO, borrador.estado());
     assertEquals(Optional.of(producto), borrador.productoId());
     assertFalse(borrador.esPublicableAutomaticamente());
     assertThrows(ExcepcionDeDominio.class, () -> borrador.rechazar("tarde"));
-    assertThrows(ExcepcionDeDominio.class, () -> borrador.aprobar(UUID.randomUUID()));
+    assertThrows(ExcepcionDeDominio.class, () -> borrador.aprobar(UUID.randomUUID(), null));
+  }
+
+  /**
+   * El borrador de un mensaje con varios productos nace sin pHash: la huella visual sale de la foto
+   * que la persona marcó como principal al aprobar. El que ya traía uno lo conserva.
+   */
+  @Test
+  void aprobarDaLaHuellaVisualSoloAlQueNacioSinElla() {
+    PHash principal = PHash.deHex("00ff00ff00ff00ff");
+    BorradorProducto sinHuella = nuevo(Set.of(AlertaBorrador.FOTOS_COMPARTIDAS));
+
+    sinHuella.aprobar(UUID.randomUUID(), principal);
+
+    assertEquals(Optional.of(principal), sinHuella.pHash());
+
+    PHash deLaPublicacion = PHash.deHex("ffffffff00000000");
+    BorradorProducto conHuella =
+        BorradorProducto.nuevo(
+            PUBLICACION,
+            PROVEEDOR,
+            extraido(),
+            "{}",
+            Dinero.deCop(53000),
+            Dinero.deCop(71600),
+            HUELLA,
+            deLaPublicacion,
+            Set.of(),
+            T);
+
+    conHuella.aprobar(UUID.randomUUID(), principal);
+
+    assertEquals(Optional.of(deLaPublicacion), conHuella.pHash());
   }
 
   @Test
@@ -140,7 +172,7 @@ class BorradorProductoTest {
     assertEquals(Optional.of(producto), renovacion.productoId());
     assertEquals(Optional.empty(), renovacion.precioVentaSugerido());
     assertTrue(renovacion.alertas().contains(AlertaBorrador.PRECIO_CAMBIO));
-    assertThrows(ExcepcionDeDominio.class, () -> renovacion.aprobar(producto));
+    assertThrows(ExcepcionDeDominio.class, () -> renovacion.aprobar(producto, null));
   }
 
   @Test
