@@ -141,6 +141,8 @@ ENCABEZADOS = [
     ("APPLE WATCH", ("relojes", "Apple", "nuevo")),
     ("RELOJES", ("relojes", None, "nuevo")),
     ("TABLET", ("tablets", None, "nuevo")),
+    ("IPAD", ("tablets", "Apple", "nuevo")),
+    ("ALEXA", ("parlantes", "Amazon", "nuevo")),
     ("AUDIFONOS", ("audifonos", None, "nuevo")),
     ("AUDÍFONOS", ("audifonos", None, "nuevo")),
     ("CARGADORES", ("cargadores", None, "nuevo")),
@@ -383,7 +385,8 @@ def categoria_por_palabras(texto: str):
     t = texto.upper()
     if re.search(r"\bWATCH\b|\bBAND\b|\d{2}\s*MM\b", t):
         return "relojes"
-    if re.search(r"\bTABLET\b|\bPAD\b|\bTAB\b|\bXPAD\b|\bMEGAPAD\b", t):
+    # Con límite de palabra: "PAD" suelto también es GAMEPAD, KEYPAD o TOUCHPAD.
+    if re.search(r"\bTABLETS?\b|\b(I|X|MEGA)?PAD\b|\bTAB\b", t):
         return "tablets"
     if RE_MAH.search(t):
         return "power_bank"
