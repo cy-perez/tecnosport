@@ -240,6 +240,15 @@ SUBMARCA_XIAOMI = [
     (r"^Band (\d+)", r"Smart Band \1", False),
 ]
 
+# Referencias que el proveedor escribe sin marca pero que ya se confirmaron con
+# el negocio: (categoría, patrón sobre el modelo, marca, modelo comercial).
+# Solo se aplica si la línea no trae marca, para que un "PROYECTOR EPSON L1"
+# no se vuelva Xiaomi. Cada entrada es una decisión del negocio, con su fecha.
+REFERENCIAS_SIN_MARCA = [
+    # 02/10/2026: «PROYECTOR L1» es el Xiaomi Smart Projector L1.
+    ("proyectores", r"^(Proyector\s+)?L1$", "Xiaomi", "Smart Projector L1"),
+]
+
 CASING = {
     "Jbl": "JBL", "Hp": "HP", "Lg": "LG", "Tp-Link": "TP-Link", "Ssd": "SSD",
     "Hdd": "HDD", "Ram": "RAM", "Ddr4": "DDR4", "Ddr5": "DDR5", "Gb": "GB",
@@ -613,11 +622,30 @@ def construir_producto(texto, categoria, marca, condicion, seccion, linea):
             prod["modelo"] = "Galaxy " + prod["modelo"]
         prod["revisar"].append("confirmar nombre comercial oficial del modelo")
 
+    aplicar_referencia_sin_marca(prod)
     aplicar_submarca(prod)
     armar_titulo(prod)
     if prod["condicion"] == "nuevo_activado":
         prod["revisar"].append("equipo con la garantía ya activada")
     return prod
+
+
+def aplicar_referencia_sin_marca(prod):
+    """Pone la marca y el modelo comercial a una referencia que el negocio ya identificó.
+
+    Solo actúa cuando la lista no trae marca, y deja el rastro en `supuestos`.
+    """
+    if prod.get("marca"):
+        return
+    modelo = prod.get("modelo") or ""
+    for categoria, patron, marca, nuevo in REFERENCIAS_SIN_MARCA:
+        if prod["categoria"] == categoria and re.match(patron, modelo, re.I):
+            prod["marca"], prod["modelo"] = marca, nuevo
+            prod["supuestos"].append(
+                f"la lista no trae marca; «{modelo}» se toma como {marca} {nuevo}, "
+                "referencia confirmada por el negocio (REFERENCIAS_SIN_MARCA)"
+            )
+            return
 
 
 def aplicar_submarca(prod):
