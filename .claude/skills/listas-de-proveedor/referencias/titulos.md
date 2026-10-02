@@ -75,6 +75,7 @@ mi.com/co el 15/09/2026:
 | `XIAOMI BUDS 6 PLAY` | `Xiaomi Redmi Buds 6 Play` | sí, a Redmi |
 | `XIAOMI BUDS 6 ACTIVE` | `Xiaomi Redmi Buds 6 Active` | sí, a Redmi |
 | `XIAOMI BUDS 8 ACTIVE` | `Xiaomi Redmi Buds 8 Active` | sí, a Redmi |
+| `XIAOMI WATCH 6` (Lite, Active) | `Xiaomi Redmi Watch 6` (Lite, Active) | sí, a Redmi (02/10/2026) |
 | `XIAOMI PAD 2` (9.7", 11", Pro) | `Xiaomi Redmi Pad 2` | sí, a Redmi |
 | `XIAOMI BAND 10` | `Xiaomi Smart Band 10` | no, solo faltaba «Smart» |
 | `XIAOMI BAND 11 ACTIVE` | `Xiaomi Smart Band 11 Active` | no, solo faltaba «Smart» |
@@ -97,6 +98,11 @@ Ninguno de estos se adivina; salieron de la ficha oficial o de la vitrina:
 | `SAMSUNG BUDS 4` | `Samsung Galaxy Buds4` | vitrina de Alkosto |
 | `HONOR X8B WiFi 11"` | `Honor Pad X8b 11" WiFi` | vitrina de Alkosto |
 | `JBL ON THE GO ESSENTIAL + MIC` | `JBL PartyBox On-The-Go Essential` | vitrina de Alkosto |
+| `JBL PARTY BOX ENCORE 2` | `JBL PartyBox Encore 2` | Icecat |
+| `JBL BARRA DE SONIDO CINEMA SB580` | `JBL Cinema SB580` | Icecat |
+| `F8 ULTRA` bajo *XIAOMI* | `Xiaomi POCO F8 Ultra` | mi.com/co |
+| `NINTENDO SWITCH 2 MARIO KART` | `Nintendo Switch 2 + Mario Kart World` | paquete consola + juego |
+| `XIAOMI PAD 2" 4G` / `WIFI` | `Xiaomi Redmi Pad 2 11"` | mi.com/co (la comilla suelta no es la pulgada) |
 
 ### Las pulgadas de la lista mienten seguido
 

@@ -232,6 +232,9 @@ ALIAS = [
 # cambia, se corrige aquí.
 SUBMARCA_XIAOMI = [
     (r"^Watch 5 (Active|Lite)\b", r"Redmi Watch 5 \1", True),
+    # Verificado contra mi.com/co el 02/10/2026: el Watch 6, el 6 Lite y el 6
+    # Active solo existen como Redmi. El Watch S4 sigue siendo Xiaomi.
+    (r"^Watch 6\b", "Redmi Watch 6", True),
     (r"^Buds 6 (Play|Active)\b", r"Redmi Buds 6 \1", True),
     (r"^Buds 8\b", "Redmi Buds 8", True),
     (r"^Pad 2\b", "Redmi Pad 2", True),
