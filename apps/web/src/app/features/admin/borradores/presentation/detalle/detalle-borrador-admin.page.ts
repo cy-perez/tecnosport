@@ -100,6 +100,7 @@ function enteroPositivo(texto: string): number | null {
 })
 export class DetalleBorradorAdminPage {
   private readonly route = inject(ActivatedRoute);
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly transloco = inject(TranslocoService);
   private readonly traducir = usarTraductor();
 
@@ -194,8 +195,24 @@ export class DetalleBorradorAdminPage {
   protected readonly fotosExcluidas = signal<ReadonlySet<string>>(new Set());
   protected readonly maximoFotos = MAXIMO_FOTOS_POR_PRODUCTO;
 
-  protected readonly fotosElegidas = computed(() =>
-    this.fotos().filter((foto) => !this.fotosExcluidas().has(foto.mensajeId)),
+  /**
+   * La foto que la persona marcó como principal, por `mensajeId`; nula si no marcó ninguna, y
+   * entonces manda la primera elegida. En un borrador con `FOTOS_COMPARTIDAS` marcarla es
+   * obligatorio: el mensaje anunciaba varios productos con las mismas fotos, y de la principal sale
+   * la huella visual con que después se reconoce este y no el otro.
+   */
+  protected readonly principalMarcada = signal<string | null>(null);
+
+  /** Las elegidas, en el orden de la publicación salvo la principal marcada, que va primero. */
+  protected readonly fotosElegidas = computed(() => {
+    const elegidas = this.fotos().filter((foto) => !this.fotosExcluidas().has(foto.mensajeId));
+    const marcada = this.principalMarcada();
+    const principal = elegidas.find((foto) => foto.mensajeId === marcada);
+    return principal ? [principal, ...elegidas.filter((foto) => foto !== principal)] : elegidas;
+  });
+
+  protected readonly fotosCompartidas = computed(
+    () => this.borrador()?.alertas.includes('FOTOS_COMPARTIDAS') ?? false,
   );
 
   protected readonly opcionesTipo = computed<OpcionSelect[]>(() =>
@@ -244,6 +261,7 @@ export class DetalleBorradorAdminPage {
       // Todo lo que es de la decisión anterior se va con ella: navegar de un borrador a otro por
       // la URL reutiliza el componente.
       this.tonoPorFoto.set({});
+      this.principalMarcada.set(null);
       this.fotosExcluidas.set(
         new Set(
           this.fotos()
@@ -344,11 +362,33 @@ export class DetalleBorradorAdminPage {
       }
       return siguiente;
     });
+    if (!incluir && this.principalMarcada() === mensajeId) {
+      this.principalMarcada.set(null);
+    }
   }
 
-  /** Cuál es la principal: la primera de las elegidas, en el orden de la publicación. */
+  /**
+   * Cuál es la principal: la marcada o, sin marca, la primera de las elegidas. Con fotos
+   * compartidas no hay principal hasta que alguien la marque: suponerla sería justo el error que la
+   * marca existe para evitar.
+   */
   protected esPrincipal(mensajeId: string): boolean {
+    if (this.fotosCompartidas() && this.principalMarcada() === null) {
+      return false;
+    }
     return this.fotosElegidas()[0]?.mensajeId === mensajeId;
+  }
+
+  /**
+   * El botón desaparece al pulsarlo —la foto ya es la principal—, y sin moverlo el foco caería en
+   * `<body>` y devolvería al principio de la página a quien navega con teclado. Va a la casilla de
+   * la misma foto, que ahora dice que es la principal.
+   */
+  protected marcarPrincipal(mensajeId: string, indice: number): void {
+    this.principalMarcada.set(mensajeId);
+    this.enfocarDespuesDePintar(() =>
+      this.host.nativeElement.querySelector<HTMLElement>('#incluir-foto-' + indice),
+    );
   }
 
   protected guardarDatos(): void {
@@ -426,6 +466,10 @@ export class DetalleBorradorAdminPage {
           maximo: MAXIMO_FOTOS_POR_PRODUCTO,
         }),
       );
+      return;
+    }
+    if (this.fotosCompartidas() && elegidas[0].mensajeId !== this.principalMarcada()) {
+      this.errorDecision.set(this.transloco.translate('admin.borradores.aprobar.marcaLaPrincipal'));
       return;
     }
     this.errorDecision.set(null);

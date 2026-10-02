@@ -55,7 +55,8 @@ export type AlertaBorrador =
   | 'TIPO_DESCONOCIDO'
   | 'CONFIANZA_BAJA'
   | 'SIN_FOTOS'
-  | 'PRECIO_CAMBIO';
+  | 'PRECIO_CAMBIO'
+  | 'FOTOS_COMPARTIDAS';
 
 export type TipoDeTalla = 'UNICA' | 'LISTA' | 'DESCONOCIDA';
 

@@ -210,6 +210,48 @@ describe('DetalleBorradorAdminPage', () => {
     ]);
   });
 
+  it('marcar otra foto como principal la manda primero', async () => {
+    const { repositorio } = await renderPagina();
+    await llenarAprobacion();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Marcar la foto 2 como principal' }));
+    expect(await screen.findByLabelText('Foto principal (la 2)')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: a.accion }));
+
+    await screen.findByRole('link', { name: a.verProducto });
+    expect(repositorio.aprobaciones[0].aprobacion.fotos.map((f) => f.mensajeId)).toEqual([
+      'f-2',
+      'f-1',
+    ]);
+  });
+
+  /**
+   * Un mensaje con varios productos y las mismas fotos: no hay principal hasta que alguien la
+   * marque, porque de ella sale la huella con que se reconoce este producto y no el otro.
+   */
+  it('con fotos compartidas no aprueba sin marcar la principal', async () => {
+    const { repositorio } = await renderPagina(
+      borradorDePrueba({ alertas: ['FOTOS_COMPARTIDAS'] }),
+    );
+    await llenarAprobacion();
+
+    expect(await screen.findByText(a.fotosCompartidas)).toBeTruthy();
+    expect(screen.queryByLabelText('Foto principal (la 1)')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: a.accion }));
+
+    expect(await screen.findByText(a.marcaLaPrincipal)).toBeTruthy();
+    expect(repositorio.aprobaciones).toEqual([]);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Marcar la foto 2 como principal' }));
+    fireEvent.click(screen.getByRole('button', { name: a.accion }));
+
+    await screen.findByRole('link', { name: a.verProducto });
+    expect(repositorio.aprobaciones[0].aprobacion.fotos.map((f) => f.mensajeId)).toEqual([
+      'f-2',
+      'f-1',
+    ]);
+  });
+
   it('sin ninguna foto elegida no aprueba y lo dice', async () => {
     const { repositorio } = await renderPagina();
     await llenarAprobacion();
