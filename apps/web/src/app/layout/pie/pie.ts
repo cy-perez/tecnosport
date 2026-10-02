@@ -1,5 +1,14 @@
+import { ViewportScroller } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import {
+  NavigationCancel,
+  NavigationEnd,
+  NavigationError,
+  NavigationSkipped,
+  Router,
+  RouterLink,
+} from '@angular/router';
+import { filter, take } from 'rxjs';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { TsAlternadorTema } from '../../shared/ts-alternador-tema/ts-alternador-tema';
 import { TsIcono } from '../../shared/ui/icono/ts-icono';
@@ -265,8 +274,60 @@ export class Pie {
   protected readonly idioma = inject(TranslocoService).activeLang;
   protected readonly anioActual = new Date().getFullYear();
 
+  private readonly router = inject(Router);
+  private readonly desplazador = inject(ViewportScroller);
+
   /** `['/', 'es', 'ayuda', 'contacto']` a partir de los segmentos de un enlace. */
   protected rutaDe(enlace: EnlaceDelPie): unknown[] {
     return ['/', this.idioma(), ...enlace.segmentos];
+  }
+
+  /**
+   * <b>Un enlace del pie lleva al comienzo de la página, no a la altura a la que se estaba.</b> El
+   * router no tiene `withInMemoryScrolling`, así que conserva el desplazamiento entre pantallas: se
+   * hace clic al fondo de una página larga y la siguiente abre por la mitad o por el final. Y el
+   * enlace a la página en la que ya se está no hacía nada, porque el router ignora la navegación a
+   * la misma URL.
+   *
+   * <p>Es del pie y no global <b>a propósito</b>: los filtros del catálogo y las listas del panel
+   * navegan cambiando solo la consulta, y un desplazamiento global al comienzo los haría saltar
+   * arriba con cada filtro que se toca.
+   *
+   * <p>Si la navegación se cancela —un guardián que redirige— no se mueve nada: quien redirige
+   * decide. Ctrl+clic y compañía abren otra pestaña y la página actual se queda donde está.
+   */
+  protected alComienzoDe(enlace: EnlaceDelPie, evento: MouseEvent): void {
+    if (
+      evento.button !== 0 ||
+      evento.ctrlKey ||
+      evento.metaKey ||
+      evento.shiftKey ||
+      evento.altKey
+    ) {
+      return;
+    }
+
+    const destino = this.router.serializeUrl(this.router.createUrlTree(this.rutaDe(enlace)));
+    if (destino === this.router.url) {
+      this.desplazador.scrollToPosition([0, 0]);
+      return;
+    }
+
+    this.router.events
+      .pipe(
+        filter(
+          (evento) =>
+            evento instanceof NavigationEnd ||
+            evento instanceof NavigationCancel ||
+            evento instanceof NavigationError ||
+            evento instanceof NavigationSkipped,
+        ),
+        take(1),
+      )
+      .subscribe((evento) => {
+        if (evento instanceof NavigationEnd) {
+          this.desplazador.scrollToPosition([0, 0]);
+        }
+      });
   }
 }

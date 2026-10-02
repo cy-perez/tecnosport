@@ -1,4 +1,6 @@
-import { provideRouter } from '@angular/router';
+import { ViewportScroller } from '@angular/common';
+import { Component } from '@angular/core';
+import { Router, provideRouter } from '@angular/router';
 import { TranslocoTestingModule } from '@jsverse/transloco';
 import { render, screen } from '@testing-library/angular';
 import en from '../../../assets/i18n/en.json';
@@ -18,7 +20,77 @@ async function renderPie() {
   });
 }
 
+@Component({ template: '' })
+class PantallaVacia {}
+
+/**
+ * El pie con rutas de verdad —cualquier URL resuelve— y el desplazador espiado, para ver si un
+ * clic lleva la página al comienzo. jsdom no desplaza nada: lo que se comprueba es la orden.
+ */
+async function renderPieNavegable(urlInicial: string) {
+  const scrollToPosition = vi.fn();
+  const resultado = await render(Pie, {
+    imports: [
+      TranslocoTestingModule.forRoot({
+        langs: { es, en } as never,
+        translocoConfig: { availableLangs: ['es', 'en'], defaultLang: 'es' },
+        preloadLangs: true,
+      }),
+    ],
+    providers: [
+      provideRouter([{ path: '**', component: PantallaVacia }]),
+      { provide: ViewportScroller, useValue: { scrollToPosition } },
+    ],
+  });
+  const router = resultado.fixture.debugElement.injector.get(Router);
+  await router.navigateByUrl(urlInicial);
+  scrollToPosition.mockClear();
+  return { router, scrollToPosition };
+}
+
 describe('Pie', () => {
+  /**
+   * Sin `withInMemoryScrolling` el router conserva el desplazamiento entre pantallas: el enlace se
+   * pulsa al fondo de la página y la siguiente abría por la mitad o por el final.
+   */
+  it('un enlace a otra página la abre desde el comienzo', async () => {
+    const { router, scrollToPosition } = await renderPieNavegable('/es/productos');
+
+    screen.getByRole('link', { name: 'Contáctanos' }).click();
+    await vi.waitFor(() => expect(router.url).toBe('/es/ayuda/contacto'));
+
+    expect(scrollToPosition).toHaveBeenCalledWith([0, 0]);
+  });
+
+  /** El router ignora la navegación a la URL actual, así que el clic no hacía nada. */
+  it('el enlace a la página actual lleva a su comienzo', async () => {
+    const { scrollToPosition } = await renderPieNavegable('/es/ayuda/contacto');
+
+    screen.getByRole('link', { name: 'Contáctanos' }).click();
+
+    expect(scrollToPosition).toHaveBeenCalledWith([0, 0]);
+  });
+
+  it('vale también para los enlaces legales de la franja final', async () => {
+    const { router, scrollToPosition } = await renderPieNavegable('/es');
+
+    screen.getByRole('link', { name: 'Cookies' }).click();
+    await vi.waitFor(() => expect(router.url).toBe('/es/legales/cookies'));
+
+    expect(scrollToPosition).toHaveBeenCalledWith([0, 0]);
+  });
+
+  /** Ctrl+clic abre otra pestaña: la página en la que se está no tiene por qué moverse. */
+  it('ctrl+clic no mueve la página actual', async () => {
+    const { scrollToPosition } = await renderPieNavegable('/es/ayuda/contacto');
+
+    screen
+      .getByRole('link', { name: 'Contáctanos' })
+      .dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, ctrlKey: true }));
+
+    expect(scrollToPosition).not.toHaveBeenCalled();
+  });
+
   /**
    * La columna de medios de pago. Lo que esta prueba protege no es el adorno sino <b>qué se
    * promete</b>: la lista tiene que ser la del checkout, y Addi tiene que seguir diciendo
