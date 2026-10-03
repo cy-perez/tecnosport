@@ -19,6 +19,11 @@ export interface RepositorioBorradoresAdmin {
   editar(id: string, cambios: EditarBorrador): Promise<Borrador>;
   aprobar(id: string, comando: AprobarBorrador): Promise<Borrador>;
   rechazar(id: string, motivo: string): Promise<Borrador>;
+  /**
+   * Saca una foto de la revisión. El archivo no se borra: es de la publicación, y otro borrador del
+   * mismo mensaje puede usarlo.
+   */
+  descartarFoto(id: string, mensajeId: string): Promise<void>;
   /** Sin vuelta atrás: el borrador, la publicación, los mensajes y las fotos del bucket. */
   eliminar(id: string): Promise<void>;
 }

@@ -58,7 +58,8 @@ export function aBorrador(dto: BorradorDto): Borrador {
     cantidadTonos: dto.cantidadTonos ?? 0,
     tonosNombrados: dto.tonosNombrados ?? [],
     material: dto.material ?? null,
-    caracteristicas: dto.caracteristicas ?? [],
+    descripcion: dto.descripcion ?? null,
+    altEn: dto.altEn ?? null,
     alertas: (dto.alertas ?? []) as AlertaBorrador[],
     motivoRechazo: dto.motivoRechazo ?? null,
     productoId: dto.productoId ?? null,
@@ -105,9 +106,8 @@ export function aEditarPeticion(cambios: EditarBorrador): EditarPeticionDto {
       ? { tonosNombrados: [...cambios.tonosNombrados] }
       : {}),
     ...(cambios.material !== undefined ? { material: cambios.material } : {}),
-    ...(cambios.caracteristicas !== undefined
-      ? { caracteristicas: [...cambios.caracteristicas] }
-      : {}),
+    ...(cambios.descripcion !== undefined ? { descripcion: cambios.descripcion } : {}),
+    ...(cambios.altEn !== undefined ? { altEn: cambios.altEn } : {}),
   };
 }
 

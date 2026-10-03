@@ -30,6 +30,7 @@ import { usarMigasAdmin } from '../../../migas-admin';
 import { usarProveedoresAdmin } from '../../../proveedores/application/listar-proveedores.consulta';
 import {
   usarAprobarBorrador,
+  usarDescartarFotoBorrador,
   usarEditarBorrador,
   usarEliminarBorrador,
   usarRechazarBorrador,
@@ -41,6 +42,7 @@ import {
   borradorEditable,
   CATEGORIA_SUGERIDA_POR_TIPO,
   EstadoBorrador,
+  MARCA_DE_REPLICAS,
   MAXIMO_FOTOS_POR_PRODUCTO,
   Tallas,
   TIPOS_PRODUCTO_PROVEEDOR,
@@ -59,12 +61,9 @@ function separar(texto: string): string[] {
     .filter((parte) => parte.length > 0);
 }
 
-/** Una característica por línea: es lo que mejor se lee al corregir lo que sacó la extracción. */
-function separarLineas(texto: string): string[] {
-  return texto
-    .split('\n')
-    .map((linea) => linea.trim())
-    .filter((linea) => linea.length > 0);
+/** «Genérica», «GENERICA» y «generica» son la misma marca. */
+function sinTildes(texto: string): string {
+  return texto.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase().trim();
 }
 
 function enteroPositivo(texto: string): number | null {
@@ -125,6 +124,7 @@ export class DetalleBorradorAdminPage {
   private readonly aprobar = usarAprobarBorrador();
   private readonly rechazar = usarRechazarBorrador();
   private readonly eliminar = usarEliminarBorrador();
+  private readonly descartarFoto = usarDescartarFotoBorrador();
 
   protected readonly borrador = computed<Borrador | null>(
     () => this.consulta.data()?.borrador ?? null,
@@ -152,6 +152,7 @@ export class DetalleBorradorAdminPage {
   protected readonly aprobando = computed(() => this.aprobar.isPending());
   protected readonly rechazando = computed(() => this.rechazar.isPending());
   protected readonly borrando = computed(() => this.eliminar.isPending());
+  protected readonly descartandoFoto = computed(() => this.descartarFoto.isPending());
   /** Cualquiera de las tres en vuelo bloquea las otras dos: el servidor solo admite una. */
   private readonly decidiendo = computed(
     () => this.aprobando() || this.rechazando() || this.borrando(),
@@ -166,12 +167,18 @@ export class DetalleBorradorAdminPage {
   protected readonly aprobado = signal<string | null>(null);
   protected readonly rechazado = signal(false);
   protected readonly confirmandoBorrar = signal(false);
+  /** La foto que se está por eliminar, por `mensajeId`; nula si no se pregunta por ninguna. */
+  protected readonly confirmandoEliminarFoto = signal<string | null>(null);
+  protected readonly errorEliminarFoto = signal<string | null>(null);
+  protected readonly fotoEliminada = signal(false);
   protected readonly errorBorrar = signal<string | null>(null);
 
   private readonly enfocarDespuesDePintar = usarFoco();
   private readonly avisoDatosRef = viewChild<ElementRef<HTMLElement>>('avisoDatosRef');
   private readonly avisoDecisionRef = viewChild<ElementRef<HTMLElement>>('avisoDecisionRef');
   private readonly cajaBorrar = viewChild<ElementRef<HTMLElement>>('cajaBorrar');
+  private readonly cajaEliminarFoto = viewChild<ElementRef<HTMLElement>>('cajaEliminarFoto');
+  private readonly avisoFotosRef = viewChild<ElementRef<HTMLElement>>('avisoFotosRef');
   private readonly botonBorrar = viewChild('botonBorrar', { read: ElementRef });
 
   protected readonly formDatos = new FormGroup({
@@ -184,7 +191,9 @@ export class DetalleBorradorAdminPage {
     cantidadTonos: new FormControl('0', { nonNullable: true }),
     tonosNombrados: new FormControl('', { nonNullable: true }),
     material: new FormControl('', { nonNullable: true }),
-    caracteristicas: new FormControl('', { nonNullable: true }),
+    // Obligatoria desde el 3 de octubre de 2026: es la descripción de la ficha, y reemplazó a la
+    // lista de características.
+    descripcion: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
   });
 
   protected readonly formAprobar = new FormGroup({
@@ -195,7 +204,6 @@ export class DetalleBorradorAdminPage {
       nonNullable: true,
       validators: [Validators.required],
     }),
-    descripcion: new FormControl('', { nonNullable: true }),
     altEs: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
     altEn: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
   });
@@ -267,8 +275,13 @@ export class DetalleBorradorAdminPage {
     (this.borrador()?.tonosNombrados ?? []).map((tono) => ({ valor: tono, etiqueta: tono })),
   );
 
+  protected readonly esReplica = computed(
+    () => this.borrador()?.alertas.includes('REPLICA') ?? false,
+  );
+
   private cargado: string | null = null;
   private sugeridaAplicada: string | null = null;
+  private marcaDeReplicaAplicada: string | null = null;
 
   constructor() {
     effect(() => {
@@ -292,20 +305,24 @@ export class DetalleBorradorAdminPage {
       this.rechazado.set(false);
       this.confirmandoBorrar.set(false);
       this.errorBorrar.set(null);
+      this.confirmandoEliminarFoto.set(null);
+      this.errorEliminarFoto.set(null);
+      this.fotoEliminada.set(false);
       this.avisoDatos.set(null);
       this.errorDatos.set(null);
       this.errorDecision.set(null);
       this.errorRechazo.set(null);
       this.motivoRechazo.reset();
       this.formDatos.reset(this.aFormularioDatos(borrador));
-      // El alt en inglés no se prellena con el título en español: obligatorio y vacío, para que
-      // alguien lo escriba y la vitrina en inglés no herede un alt en castellano.
+      // El alt en inglés parte del título en inglés que propuso la extracción, con el nombre
+      // comercial del artículo; nunca del título en español, para que la vitrina en inglés no
+      // herede un alt en castellano. Si la extracción no lo dio, queda vacío y obligatorio.
       this.formAprobar.reset({
         precioVenta:
           borrador.precioVentaSugerido === null ? '' : String(borrador.precioVentaSugerido),
         existenciaInicial: '1',
         altEs: borrador.titulo,
-        altEn: '',
+        altEn: borrador.altEn ?? '',
       });
       // Un borrador decidido se lee, no se corrige: los campos quedan deshabilitados y no solo
       // sin botón.
@@ -333,6 +350,27 @@ export class DetalleBorradorAdminPage {
         control.setValue(sugerida.id);
       }
     });
+
+    // Una réplica se publica con la marca Genérica: se propone en cuanto llegan las marcas, una
+    // vez por borrador y solo si nadie eligió otra.
+    effect(() => {
+      const borrador = this.borrador();
+      const marcas = this.opciones.marcas.data();
+      if (!borrador || !marcas || this.marcaDeReplicaAplicada === borrador.id) {
+        return;
+      }
+      this.marcaDeReplicaAplicada = borrador.id;
+      const generica = marcas.find((marca) => sinTildes(marca.nombre) === MARCA_DE_REPLICAS);
+      const control = this.formAprobar.controls.marcaId;
+      if (
+        generica &&
+        borrador.alertas.includes('REPLICA') &&
+        borradorEditable(borrador) &&
+        control.value === ''
+      ) {
+        control.setValue(generica.id);
+      }
+    });
   }
 
   private aFormularioDatos(borrador: Borrador) {
@@ -347,7 +385,7 @@ export class DetalleBorradorAdminPage {
       cantidadTonos: String(borrador.cantidadTonos),
       tonosNombrados: borrador.tonosNombrados.join(', '),
       material: borrador.material ?? '',
-      caracteristicas: borrador.caracteristicas.join('\n'),
+      descripcion: borrador.descripcion ?? '',
     };
   }
 
@@ -430,6 +468,52 @@ export class DetalleBorradorAdminPage {
     );
   }
 
+  protected preguntarSiEliminarFoto(mensajeId: string): void {
+    this.errorEliminarFoto.set(null);
+    this.confirmandoEliminarFoto.set(mensajeId);
+    this.enfocarDespuesDePintar(() => this.cajaEliminarFoto()?.nativeElement);
+  }
+
+  protected cancelarEliminarFoto(indice: number): void {
+    this.confirmandoEliminarFoto.set(null);
+    this.errorEliminarFoto.set(null);
+    this.enfocarDespuesDePintar(() =>
+      this.host.nativeElement.querySelector<HTMLElement>('#eliminar-foto-' + indice + ' button'),
+    );
+  }
+
+  /**
+   * La foto desaparece con su fila y el botón pulsado con ella: el foco va al aviso de que se
+   * eliminó, que vive siempre en la página.
+   */
+  protected eliminarFoto(mensajeId: string): void {
+    if (this.descartandoFoto()) {
+      return;
+    }
+    this.errorEliminarFoto.set(null);
+    this.descartarFoto.mutate(
+      { id: this.id(), mensajeId },
+      {
+        onSuccess: () => {
+          this.confirmandoEliminarFoto.set(null);
+          this.incluirFoto(mensajeId, true);
+          this.tonoPorFoto.update((actual) =>
+            Object.fromEntries(Object.entries(actual).filter(([id]) => id !== mensajeId)),
+          );
+          if (this.principalMarcada() === mensajeId) {
+            this.principalMarcada.set(null);
+          }
+          this.fotoEliminada.set(true);
+          this.enfocarDespuesDePintar(() => this.avisoFotosRef()?.nativeElement);
+        },
+        onError: (error: unknown) =>
+          this.errorEliminarFoto.set(
+            mensajeDeError(error, this.transloco, 'admin.borradores.eliminarFoto.error'),
+          ),
+      },
+    );
+  }
+
   protected guardarDatos(): void {
     if (this.guardando()) {
       return;
@@ -456,7 +540,7 @@ export class DetalleBorradorAdminPage {
           cantidadTonos,
           tonosNombrados: separar(valores.tonosNombrados),
           material: valores.material.trim(),
-          caracteristicas: separarLineas(valores.caracteristicas),
+          descripcion: valores.descripcion.trim(),
         },
       },
       {
@@ -511,10 +595,15 @@ export class DetalleBorradorAdminPage {
       this.errorDecision.set(this.transloco.translate('admin.borradores.aprobar.marcaLaPrincipal'));
       return;
     }
+    const datos = this.formDatos.getRawValue();
+    if (!datos.descripcion.trim()) {
+      this.formDatos.controls.descripcion.markAsTouched();
+      this.errorDecision.set(this.transloco.translate('admin.borradores.aprobar.faltaDescripcion'));
+      return;
+    }
     this.errorDecision.set(null);
 
     const tonos = this.tonoPorFoto();
-    const datos = this.formDatos.getRawValue();
     this.aprobar.mutate(
       {
         id: this.id(),
@@ -527,7 +616,7 @@ export class DetalleBorradorAdminPage {
           categoriaId: valores.categoriaId,
           precioVenta,
           existenciaInicial: existencia,
-          ...(valores.descripcion.trim() ? { descripcion: valores.descripcion.trim() } : {}),
+          descripcion: datos.descripcion.trim(),
           altEs: valores.altEs.trim(),
           altEn: valores.altEn.trim(),
           fotos: elegidas.map((foto) => ({

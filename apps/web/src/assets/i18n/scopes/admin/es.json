@@ -35,6 +35,7 @@
     "borrador_no_eliminable": "Un borrador aprobado o una renovación no se borra: es lo que reconoce el producto cuando el proveedor lo vuelve a anunciar.",
     "borrador_sin_fotos": "No se puede aprobar un producto sin fotos. Si la publicación no traía ninguna, recházalo.",
     "borrador_sin_precio": "Falta el precio de venta. Escríbelo antes de aprobar.",
+    "borrador_sin_descripcion": "Falta la descripción del producto. Escríbela en los datos extraídos antes de aprobar.",
     "borrador_sin_titulo": "Falta el título del producto. Corrígelo en los datos extraídos antes de aprobar.",
     "atributo_de_catalogo_no_definido": "Faltan los atributos de color o talla en el catálogo. Créalos antes de aprobar.",
     "foto_no_es_del_borrador": "Una de las fotos no pertenece a esta publicación. Recarga la página.",
@@ -909,12 +910,12 @@
       "SHORT": "Short",
       "VESTIDO": "Vestido",
       "BLUSA": "Blusa",
-      "BODY": "Body",
+      "BODI": "Bodi",
       "OTRO": "Otro"
     },
     "tallas": {
       "DESCONOCIDA": "No la dijo",
-      "UNICA": "Talla única (sirve hasta)",
+      "UNICA": "Talla única",
       "LISTA": "Lista de tallas"
     },
     "alertas": {
@@ -925,7 +926,8 @@
       "CONFIANZA_BAJA": "La extracción no está segura de lo que entendió. Revisa todo con calma.",
       "SIN_FOTOS": "La publicación no trae fotos. Sin fotos no se puede aprobar.",
       "PRECIO_CAMBIO": "El proveedor cambió el precio de un producto que ya existe. Se actualizó el precio de proveedor; revisa el de venta.",
-      "FOTOS_COMPARTIDAS": "El mensaje anunciaba varios productos con las mismas fotos. Deja solo las de este producto y marca su foto principal."
+      "FOTOS_COMPARTIDAS": "El mensaje anunciaba varios productos con las mismas fotos. Deja solo las de este producto y marca su foto principal.",
+      "REPLICA": "El proveedor lo anuncia como réplica (1.1). Se publica con la marca Genérica y la marca original solo en el título, como «Camiseta estilo Puma - BMW». Confirma las dos cosas antes de aprobar."
     },
     "detalle": {
       "miga": "Revisión",
@@ -950,13 +952,14 @@
       "precioSugeridoAyuda": "En pesos, sin decimales. Sale del precio del proveedor por el margen; puedes ajustarlo.",
       "tipoDeTalla": "Tallas",
       "sirveHasta": "Sirve hasta",
+      "sirveHastaAyuda": "Solo si el proveedor escribió «sirve hasta». Si no lo dijo, déjalo en blanco.",
       "tallasLista": "Tallas",
       "separadas": "Separadas por coma: S, M, L.",
       "cantidadTonos": "Cantidad de tonos",
       "tonosNombrados": "Tonos, por nombre",
       "material": "Material",
-      "caracteristicas": "Características",
-      "unaPorLinea": "Una por línea.",
+      "descripcion": "Descripción",
+      "descripcionAyuda": "Es la que muestra la ficha del producto. La redactó la extracción con lo que dice el proveedor; corrígela si hace falta.",
       "invalidos": "El precio tiene que ser un entero en pesos y la cantidad de tonos un número.",
       "guardar": "Guardar datos",
       "guardando": "Guardando…",
@@ -973,9 +976,10 @@
       "precioVentaAyuda": "El definitivo, en pesos. Parte del sugerido.",
       "existenciaInicial": "Unidades por variante",
       "existenciaInicialAyuda": "Las que entran al inventario por cada tono y talla. Cero deja el producto agotado hasta que cuentes.",
-      "descripcion": "Descripción (opcional)",
       "altEs": "Texto alternativo de las fotos (español)",
       "altEn": "Texto alternativo de las fotos (inglés)",
+      "altEnAyuda": "El título en inglés, con el nombre con que se vende el artículo en inglés. Lo propone la extracción; revísalo.",
+      "faltaDescripcion": "Falta la descripción del producto. Escríbela en los datos extraídos antes de aprobar.",
       "tonoDeFoto": "Tono de la foto {{numero}}",
       "todosLosTonos": "Vale para todos los tonos",
       "faltanCampos": "Faltan datos: marca, categoría, precio de venta entero, unidades (0 o más) y los dos textos alternativos.",
@@ -993,6 +997,17 @@
       "marcarPrincipal": "Marcar como principal",
       "marcarPrincipalFoto": "Marcar la foto {{numero}} como principal",
       "marcaLaPrincipal": "Marca la foto principal de este producto: las fotos venían compartidas con otro."
+    },
+    "eliminarFoto": {
+      "accion": "Eliminar foto",
+      "accionFoto": "Eliminar la foto {{numero}}",
+      "pregunta": "¿Eliminar la foto {{numero}} de este borrador?",
+      "loQueImplica": "Deja de verse aquí y no entra al producto. Si la publicación tenía otro producto con la misma foto, allá sigue.",
+      "confirmar": "Sí, eliminar",
+      "eliminando": "Eliminando…",
+      "cancelar": "Cancelar",
+      "hecho": "Foto eliminada del borrador.",
+      "error": "No se pudo eliminar la foto. Intenta de nuevo."
     },
     "rechazar": {
       "titulo": "Rechazar",

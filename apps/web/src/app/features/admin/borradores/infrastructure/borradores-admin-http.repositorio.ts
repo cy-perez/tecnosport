@@ -71,6 +71,13 @@ export class BorradoresAdminHttpRepositorio implements RepositorioBorradoresAdmi
     return aBorrador(desempaquetar(respuesta, 'no se pudo rechazar el borrador'));
   }
 
+  async descartarFoto(id: string, mensajeId: string): Promise<void> {
+    const respuesta = await this.cliente.DELETE('/api/v1/admin/borradores/{id}/fotos/{mensajeId}', {
+      params: { path: { id, mensajeId } },
+    });
+    exigirExito(respuesta, 'no se pudo eliminar la foto del borrador');
+  }
+
   async eliminar(id: string): Promise<void> {
     const respuesta = await this.cliente.DELETE('/api/v1/admin/borradores/{id}', {
       params: { path: { id } },

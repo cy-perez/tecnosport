@@ -23,7 +23,8 @@ export function borradorDePrueba(overrides: Partial<Borrador> = {}): Borrador {
     cantidadTonos: 2,
     tonosNombrados: ['Negro', 'Café'],
     material: 'Cuero sintético',
-    caracteristicas: ['Cierre magnético'],
+    descripcion: 'Bolso tote en cuero sintético con cierre magnético.',
+    altEn: null,
     alertas: [],
     motivoRechazo: null,
     productoId: null,
@@ -42,12 +43,13 @@ export class RepositorioBorradoresAdminFalso implements RepositorioBorradoresAdm
   readonly aprobaciones: { id: string; aprobacion: AprobarBorrador }[] = [];
   readonly rechazos: { id: string; motivo: string }[] = [];
   readonly eliminados: string[] = [];
+  readonly fotosDescartadas: { id: string; mensajeId: string }[] = [];
   /** Si se pone, `eliminar` revienta con esto: el 409 de un borrador que no se borra. */
   falloAlEliminar: unknown = null;
 
   constructor(
     private borradores: Borrador[] = [],
-    private readonly fotos: FotoBorrador[] = [],
+    private fotos: FotoBorrador[] = [],
     private readonly textos: string[] = [],
   ) {}
 
@@ -81,6 +83,11 @@ export class RepositorioBorradoresAdminFalso implements RepositorioBorradoresAdm
   async rechazar(id: string, motivo: string): Promise<Borrador> {
     this.rechazos.push({ id, motivo });
     return this.reemplazar(id, { estado: 'RECHAZADO', motivoRechazo: motivo });
+  }
+
+  async descartarFoto(id: string, mensajeId: string): Promise<void> {
+    this.fotosDescartadas.push({ id, mensajeId });
+    this.fotos = this.fotos.filter((foto) => foto.mensajeId !== mensajeId);
   }
 
   async eliminar(id: string): Promise<void> {
