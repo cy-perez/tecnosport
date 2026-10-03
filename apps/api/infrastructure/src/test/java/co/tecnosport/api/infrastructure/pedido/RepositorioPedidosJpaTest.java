@@ -70,7 +70,8 @@ class RepositorioPedidosJpaTest {
         Dinero.deCop(50_000),
         new BigDecimal("0.19"),
         "https://cdn.tecnosport.co/img.jpg",
-        UUID.randomUUID());
+        UUID.randomUUID(),
+        "Azul · M");
   }
 
   private static final TarifaEnvio TARIFA =
@@ -225,6 +226,7 @@ class RepositorioPedidosJpaTest {
     assertThat(encontrado.estado()).isEqualTo(EstadoPedido.PAGO_PENDIENTE);
     assertThat(encontrado.lineas()).hasSize(1);
     assertThat(encontrado.lineas().get(0).sku()).isEqualTo(new Sku("TS-CAM-AZ-M"));
+    assertThat(encontrado.lineas().get(0).detalleVariante()).isEqualTo("Azul · M");
     assertThat(encontrado.total()).isEqualTo(Dinero.deCop(100_000));
     assertThat(encontrado.historial()).hasSize(1);
   }

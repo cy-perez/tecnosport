@@ -769,8 +769,9 @@ class PedidoControladorTest {
             .andExpect(jsonPath("$.*", org.hamcrest.Matchers.hasSize(17)))
             // Y el de la linea, que es un objeto que este mapeador NO escribe a mano: lo copia
             // entero del panel. Un campo nuevo ahi sale bajo $.lineas[0] y la cuenta de la raiz
-            // ni se entera — comprobado agregandolo a proposito.
-            .andExpect(jsonPath("$.lineas[0].*", org.hamcrest.Matchers.hasSize(8)))
+            // ni se entera — comprobado agregandolo a proposito. Nueve desde el 3 de octubre de
+            // 2026: `detalleVariante` ("Negro · M") es lo que el propio comprador eligio.
+            .andExpect(jsonPath("$.lineas[0].*", org.hamcrest.Matchers.hasSize(9)))
             // Y el costo de envio del pedido es el precio congelado, no el costo real del flete.
             // Este pedido es de retiro en punto, asi que su precio de envio es 0; si alguien
             // mapeara aqui `Envio.costoEnvio`, saldrian 12.000 y esta linea lo dice.

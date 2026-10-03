@@ -19,6 +19,10 @@ import java.util.UUID;
  * liberar cuando el pedido se rechaza en la entrega o el pago falla: dos pedidos distintos pueden
  * tener reservas pendientes de la misma variante al mismo tiempo, así que no se puede adivinar por
  * variante y cantidad.
+ *
+ * <p>{@code detalleVariante} congela lo que la variante era —«Negro · M»— desde el 3 de octubre de
+ * 2026, cuando la vitrina empezó a ofrecer tallas: con el SKU solo, quien despacha no sabía qué
+ * talla empacar sin ir a buscarla. Nulo en las líneas anteriores y en un producto sin variaciones.
  */
 public record LineaPedido(
     UUID id,
@@ -29,9 +33,27 @@ public record LineaPedido(
     Dinero precioUnitario,
     BigDecimal tasaIva,
     String imagenUrl,
-    UUID idReserva) {
+    UUID idReserva,
+    String detalleVariante) {
+
+  /** Sin detalle de variante: las líneas de antes y un producto que no varía. */
+  public LineaPedido(
+      UUID id,
+      UUID varianteId,
+      Sku sku,
+      String nombre,
+      int cantidad,
+      Dinero precioUnitario,
+      BigDecimal tasaIva,
+      String imagenUrl,
+      UUID idReserva) {
+    this(
+        id, varianteId, sku, nombre, cantidad, precioUnitario, tasaIva, imagenUrl, idReserva, null);
+  }
 
   public LineaPedido {
+    detalleVariante =
+        detalleVariante == null || detalleVariante.isBlank() ? null : detalleVariante.strip();
     Objects.requireNonNull(id, "El id de la línea no puede ser nulo.");
     Objects.requireNonNull(varianteId, "El id de la variante no puede ser nulo.");
     Objects.requireNonNull(sku, "El SKU no puede ser nulo.");
@@ -47,6 +69,14 @@ public record LineaPedido(
     if (tasaIva.signum() < 0) {
       throw new ExcepcionDeDominio("La tasa de IVA no puede ser negativa.");
     }
+  }
+
+  /**
+   * El nombre con lo que se eligió: «Bodi herraje (Negro · Única)». Lo que leen el correo y el
+   * panel.
+   */
+  public String descripcion() {
+    return detalleVariante == null ? nombre : nombre + " (" + detalleVariante + ")";
   }
 
   public Dinero subtotal() {

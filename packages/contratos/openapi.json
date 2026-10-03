@@ -449,6 +449,12 @@
       },
       "CategoriaRespuesta" : {
         "properties" : {
+          "escalaTallas" : {
+            "items" : {
+              "type" : "string"
+            },
+            "type" : "array"
+          },
           "hashtags" : {
             "items" : {
               "type" : "string"
@@ -470,6 +476,24 @@
             "type" : "string"
           },
           "slug" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "ColorDePaletaRespuesta" : {
+        "properties" : {
+          "hex" : {
+            "type" : "string"
+          },
+          "id" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "nombre" : {
+            "type" : "string"
+          },
+          "nombreEn" : {
             "type" : "string"
           }
         },
@@ -1369,6 +1393,10 @@
           "urlVistaPrevia" : {
             "type" : "string"
           },
+          "varianteId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
           "variantes" : {
             "items" : {
               "$ref" : "#/components/schemas/VarianteDeImagenRespuesta"
@@ -1476,6 +1504,9 @@
           "cantidad" : {
             "format" : "int32",
             "type" : "integer"
+          },
+          "detalleVariante" : {
+            "type" : "string"
           },
           "id" : {
             "format" : "uuid",
@@ -1994,6 +2025,12 @@
           "descripcion" : {
             "type" : "string"
           },
+          "escalaTallas" : {
+            "items" : {
+              "type" : "string"
+            },
+            "type" : "array"
+          },
           "estadoDisponibilidad" : {
             "type" : "string"
           },
@@ -2016,6 +2053,9 @@
             "$ref" : "#/components/schemas/RotacionRespuesta"
           },
           "slug" : {
+            "type" : "string"
+          },
+          "tallaSirveHasta" : {
             "type" : "string"
           },
           "variantes" : {
@@ -3295,7 +3335,7 @@
     },
     "/api/v1/admin/borradores" : {
       "get" : {
-        "operationId" : "listar_14",
+        "operationId" : "listar_15",
         "parameters" : [
           {
             "in" : "query",
@@ -3672,7 +3712,7 @@
     },
     "/api/v1/admin/envios/revision" : {
       "get" : {
-        "operationId" : "listar_13",
+        "operationId" : "listar_14",
         "parameters" : [
           {
             "in" : "query",
@@ -3867,7 +3907,7 @@
     },
     "/api/v1/admin/ingestas" : {
       "get" : {
-        "operationId" : "listar_12",
+        "operationId" : "listar_13",
         "parameters" : [
           {
             "in" : "query",
@@ -3997,7 +4037,7 @@
     },
     "/api/v1/admin/pedidos" : {
       "get" : {
-        "operationId" : "listar_11",
+        "operationId" : "listar_12",
         "parameters" : [
           {
             "in" : "query",
@@ -5864,7 +5904,7 @@
     },
     "/api/v1/atributos" : {
       "get" : {
-        "operationId" : "listar_10",
+        "operationId" : "listar_11",
         "responses" : {
           "200" : {
             "content" : {
@@ -6295,7 +6335,7 @@
     },
     "/api/v1/categorias" : {
       "get" : {
-        "operationId" : "listar_9",
+        "operationId" : "listar_10",
         "responses" : {
           "200" : {
             "content" : {
@@ -6310,6 +6350,29 @@
         },
         "tags" : [
           "categoria-controlador"
+        ]
+      }
+    },
+    "/api/v1/colores" : {
+      "get" : {
+        "operationId" : "listar_9",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/ColorDePaletaRespuesta"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "paleta-de-colores-controlador"
         ]
       }
     },

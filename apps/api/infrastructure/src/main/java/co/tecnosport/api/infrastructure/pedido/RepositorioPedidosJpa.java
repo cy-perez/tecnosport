@@ -310,7 +310,8 @@ public class RepositorioPedidosJpa implements RepositorioPedidos {
         Dinero.deCop(l.getPrecioUnitario()),
         l.getTasaIva(),
         l.getImagenUrl(),
-        l.getIdReserva());
+        l.getIdReserva(),
+        l.getDetalleVariante());
   }
 
   private HistorialPedido aHistorial(HistorialPedidoJpaEntity h) {
@@ -352,16 +353,17 @@ public class RepositorioPedidosJpa implements RepositorioPedidos {
 
   private LineaPedidoJpaEntity aEntidadLinea(UUID pedidoId, LineaPedido l) {
     return new LineaPedidoJpaEntity(
-        l.id(),
-        pedidoId,
-        l.varianteId(),
-        l.sku().valor(),
-        l.nombre(),
-        l.cantidad(),
-        l.precioUnitario().valor(),
-        l.tasaIva(),
-        l.imagenUrl(),
-        l.idReserva());
+            l.id(),
+            pedidoId,
+            l.varianteId(),
+            l.sku().valor(),
+            l.nombre(),
+            l.cantidad(),
+            l.precioUnitario().valor(),
+            l.tasaIva(),
+            l.imagenUrl(),
+            l.idReserva())
+        .conDetalleVariante(l.detalleVariante());
   }
 
   private HistorialPedidoJpaEntity aEntidadHistorial(UUID pedidoId, HistorialPedido h) {

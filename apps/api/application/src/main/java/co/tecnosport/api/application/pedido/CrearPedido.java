@@ -325,7 +325,17 @@ public final class CrearPedido {
         variante.precio(),
         variante.tasaIva(),
         imagenUrl,
-        reserva.id());
+        reserva.id(),
+        detalleDe(variante));
+  }
+
+  /** «Negro · M»: los valores de sus atributos, con la unidad si la tienen. */
+  private static String detalleDe(Variante variante) {
+    return variante.atributos().stream()
+        .map(
+            valor ->
+                valor.atributo().unidad().map(u -> valor.valor() + " " + u).orElse(valor.valor()))
+        .collect(java.util.stream.Collectors.joining(" · "));
   }
 
   private Producto buscarProductoVendible(UUID varianteId) {

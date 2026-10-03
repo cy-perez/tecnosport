@@ -12,4 +12,6 @@ public record LineaPedidoRespuesta(
     int cantidad,
     DineroRespuesta precioUnitario,
     BigDecimal tasaIva,
-    String imagenUrl) {}
+    String imagenUrl,
+    /** Lo que se eligió de la variante, «Negro · M»; nulo en las líneas anteriores a V76. */
+    String detalleVariante) {}

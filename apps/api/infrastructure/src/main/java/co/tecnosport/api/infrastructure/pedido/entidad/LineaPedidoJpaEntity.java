@@ -37,6 +37,10 @@ public class LineaPedidoJpaEntity {
   @Column(name = "imagen_url")
   private String imagenUrl;
 
+  /** «Negro · M», congelado al crear el pedido (V76). */
+  @Column(name = "detalle_variante")
+  private String detalleVariante;
+
   @Column(name = "id_reserva", nullable = false)
   private UUID idReserva;
 
@@ -99,6 +103,15 @@ public class LineaPedidoJpaEntity {
 
   public String getImagenUrl() {
     return imagenUrl;
+  }
+
+  public String getDetalleVariante() {
+    return detalleVariante;
+  }
+
+  public LineaPedidoJpaEntity conDetalleVariante(String detalleVariante) {
+    this.detalleVariante = detalleVariante;
+    return this;
   }
 
   public UUID getIdReserva() {
