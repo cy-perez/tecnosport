@@ -76,4 +76,9 @@ public class AlmacenDeArchivosDeProveedorGcs implements AlmacenDeArchivosDeProve
             Storage.SignUrlOption.withV4Signature());
     return new UrlFirmada(url.toString());
   }
+
+  @Override
+  public void borrar(String objectKey) {
+    storage.delete(BlobId.of(bucket, objectKey));
+  }
 }

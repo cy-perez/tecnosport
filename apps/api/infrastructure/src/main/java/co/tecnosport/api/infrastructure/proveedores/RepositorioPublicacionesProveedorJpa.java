@@ -8,11 +8,14 @@ import co.tecnosport.api.infrastructure.proveedores.entidad.PublicacionMensajeJp
 import co.tecnosport.api.infrastructure.proveedores.entidad.PublicacionProveedorJpaEntity;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import org.springframework.stereotype.Repository;
 
@@ -73,6 +76,23 @@ public class RepositorioPublicacionesProveedorJpa implements RepositorioPublicac
         publicaciones.findByLoteIdOrderByFechaAscCreadoEnAsc(loteId);
     Map<UUID, List<PublicacionMensajeJpaEntity>> composicion = composicionDe(filas);
     return filas.stream().map(fila -> aDominio(fila, composicion)).toList();
+  }
+
+  /** La composición primero: el orden de los {@code delete} es el de las llaves foráneas. */
+  @Override
+  public void eliminar(UUID id) {
+    mensajes.deleteByClavePublicacionId(id);
+    publicaciones.deleteById(id);
+  }
+
+  @Override
+  public Set<UUID> mensajesUsadosPorOtras(UUID publicacionId, Collection<UUID> mensajeIds) {
+    if (mensajeIds.isEmpty()) {
+      return Set.of();
+    }
+    Set<UUID> usados = new HashSet<>(mensajes.usadosPorOtras(publicacionId, mensajeIds));
+    usados.addAll(publicaciones.principalesDeOtras(publicacionId, mensajeIds));
+    return usados;
   }
 
   private Map<UUID, List<PublicacionMensajeJpaEntity>> composicionDe(

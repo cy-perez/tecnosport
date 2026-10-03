@@ -1,4 +1,4 @@
-import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
+import { ActivatedRoute, convertToParamMap, provideRouter, Router } from '@angular/router';
 import { TranslocoTestingModule } from '@jsverse/transloco';
 import { QueryClient, provideTanStackQuery } from '@tanstack/angular-query-experimental';
 import { fireEvent, render, screen } from '@testing-library/angular';
@@ -7,6 +7,7 @@ import en from '../../../../../../assets/i18n/en.json';
 import es from '../../../../../../assets/i18n/es.json';
 import esAdmin from '../../../../../../assets/i18n/scopes/admin/es.json';
 import { esperarSinViolaciones } from '../../../../../../testing/axe';
+import { ErrorHttp } from '../../../../../core/http/respuesta-http';
 import { Categoria, Marca } from '../../../../catalogo/domain/producto.model';
 import {
   REPOSITORIO_CATEGORIAS,
@@ -336,9 +337,64 @@ describe('DetalleBorradorAdminPage', () => {
     ).toBeTruthy();
     expect(screen.queryByRole('button', { name: a.accion })).toBeNull();
     expect(screen.queryByRole('button', { name: d.guardar })).toBeNull();
+    expect(screen.queryByRole('button', { name: esAdmin.borradores.borrar.accion })).toBeNull();
     await vi.waitFor(() =>
       expect((screen.getByLabelText(d.tituloProducto) as HTMLInputElement).disabled).toBe(true),
     );
+  });
+
+  it('borrar pregunta antes, borra y vuelve a la bandeja', async () => {
+    const { repositorio, fixture } = await renderPagina();
+    const router = fixture.debugElement.injector.get(Router);
+    const navegar = vi.spyOn(router, 'navigate').mockResolvedValue(true);
+    const b = esAdmin.borradores.borrar;
+
+    const boton = await screen.findByRole('button', { name: b.accion });
+    expect(boton.getAttribute('aria-expanded')).toBe('false');
+    fireEvent.click(boton);
+
+    // La advertencia va en la descripción del grupo, para que se oiga antes de confirmar.
+    const grupo = await screen.findByRole('group', { name: b.pregunta });
+    expect(grupo.getAttribute('aria-describedby')).toBe('borrar-implica');
+    expect(screen.getByText(b.loQueImplica)).toBeTruthy();
+    expect(repositorio.eliminados).toEqual([]);
+
+    fireEvent.click(screen.getByRole('button', { name: b.confirmar }));
+
+    await vi.waitFor(() => expect(repositorio.eliminados).toEqual(['b-1']));
+    await vi.waitFor(() => expect(navegar).toHaveBeenCalledWith(['/es', 'admin', 'borradores']));
+  });
+
+  it('cancelar cierra la pregunta sin borrar nada', async () => {
+    const { repositorio } = await renderPagina();
+    const b = esAdmin.borradores.borrar;
+
+    fireEvent.click(await screen.findByRole('button', { name: b.accion }));
+    fireEvent.click(await screen.findByRole('button', { name: b.cancelar }));
+
+    expect(screen.queryByRole('group', { name: b.pregunta })).toBeNull();
+    expect(repositorio.eliminados).toEqual([]);
+  });
+
+  it('si el servidor no deja borrar, lo dice con su código y no sale de la pantalla', async () => {
+    const { repositorio, fixture } = await renderPagina();
+    const navegar = vi.spyOn(fixture.debugElement.injector.get(Router), 'navigate');
+    repositorio.falloAlEliminar = new ErrorHttp(409, 'no', 'BORRADOR_NO_ELIMINABLE');
+    const b = esAdmin.borradores.borrar;
+
+    fireEvent.click(await screen.findByRole('button', { name: b.accion }));
+    fireEvent.click(await screen.findByRole('button', { name: b.confirmar }));
+
+    expect(await screen.findByText(esAdmin.errores.borrador_no_eliminable)).toBeTruthy();
+    expect(navegar).not.toHaveBeenCalled();
+  });
+
+  it('un rechazado también se puede borrar', async () => {
+    await renderPagina(borradorDePrueba({ estado: 'RECHAZADO', motivoRechazo: 'Promoción' }));
+
+    expect(
+      await screen.findByRole('button', { name: esAdmin.borradores.borrar.accion }),
+    ).toBeTruthy();
   });
 
   it('no tiene violaciones de accesibilidad', async () => {

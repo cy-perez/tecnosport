@@ -149,6 +149,11 @@ final class ApoyoDeIngesta {
           .sorted(Comparator.comparing(MensajeProveedor::enviadoEn))
           .toList();
     }
+
+    @Override
+    public void eliminarTodos(Collection<UUID> ids) {
+      guardados.removeIf(m -> ids.contains(m.id()));
+    }
   }
 
   static final class AlmacenEnMemoria implements AlmacenDeArchivosDeProveedor {
@@ -180,6 +185,11 @@ final class ApoyoDeIngesta {
     @Override
     public UrlFirmada urlDeLectura(String objectKey) {
       return new UrlFirmada("https://firmada.local/leer/" + objectKey);
+    }
+
+    @Override
+    public void borrar(String objectKey) {
+      objetos.remove(objectKey);
     }
   }
 
@@ -243,6 +253,27 @@ final class ApoyoDeIngesta {
           .filter(p -> p.loteId().equals(loteId))
           .sorted(Comparator.comparing(PublicacionProveedor::fecha))
           .toList();
+    }
+
+    @Override
+    public void eliminar(UUID id) {
+      porId.remove(id);
+    }
+
+    @Override
+    public Set<UUID> mensajesUsadosPorOtras(
+        UUID publicacionId, java.util.Collection<UUID> mensajeIds) {
+      Set<UUID> usados = new java.util.HashSet<>();
+      for (PublicacionProveedor otra : porId.values()) {
+        if (otra.id().equals(publicacionId)) {
+          continue;
+        }
+        List<UUID> deOtra = new java.util.ArrayList<>(otra.textosAdicionales());
+        deOtra.addAll(otra.medios());
+        deOtra.add(otra.mensajePrincipalId());
+        deOtra.stream().filter(mensajeIds::contains).forEach(usados::add);
+      }
+      return usados;
     }
   }
 

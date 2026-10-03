@@ -26,6 +26,7 @@ import co.tecnosport.api.application.pedido.ContraentregaNoDisponibleException;
 import co.tecnosport.api.application.pedido.MetodoDePagoNoEsTransferenciaManualException;
 import co.tecnosport.api.application.proveedores.AtributoDeCatalogoNoDefinidoException;
 import co.tecnosport.api.application.proveedores.BorradorNoEditableException;
+import co.tecnosport.api.application.proveedores.BorradorNoEliminableException;
 import co.tecnosport.api.application.proveedores.BorradorNoEncontradoException;
 import co.tecnosport.api.application.proveedores.BorradorSinFotosException;
 import co.tecnosport.api.application.proveedores.BorradorSinPrecioException;
@@ -143,6 +144,7 @@ class CodigosDeCableTest {
           Map.entry(LoteNoEncontradoException.class, "LOTE_NO_ENCONTRADO"),
           Map.entry(BorradorNoEncontradoException.class, "BORRADOR_NO_ENCONTRADO"),
           Map.entry(BorradorNoEditableException.class, "BORRADOR_NO_EDITABLE"),
+          Map.entry(BorradorNoEliminableException.class, "BORRADOR_NO_ELIMINABLE"),
           Map.entry(BorradorSinFotosException.class, "BORRADOR_SIN_FOTOS"),
           Map.entry(BorradorSinPrecioException.class, "BORRADOR_SIN_PRECIO"),
           Map.entry(BorradorSinTituloException.class, "BORRADOR_SIN_TITULO"),

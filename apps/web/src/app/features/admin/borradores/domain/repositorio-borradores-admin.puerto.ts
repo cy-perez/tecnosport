@@ -19,6 +19,8 @@ export interface RepositorioBorradoresAdmin {
   editar(id: string, cambios: EditarBorrador): Promise<Borrador>;
   aprobar(id: string, comando: AprobarBorrador): Promise<Borrador>;
   rechazar(id: string, motivo: string): Promise<Borrador>;
+  /** Sin vuelta atrás: el borrador, la publicación, los mensajes y las fotos del bucket. */
+  eliminar(id: string): Promise<void>;
 }
 
 export const REPOSITORIO_BORRADORES_ADMIN = new InjectionToken<RepositorioBorradoresAdmin>(

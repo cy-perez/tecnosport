@@ -99,6 +99,16 @@ public class RepositorioBorradoresJpa implements RepositorioBorradores {
         proveedorId, EstadoBorrador.EN_REVISION.name(), huella.valor());
   }
 
+  @Override
+  public long contarDePublicacion(UUID publicacionId) {
+    return jpa.countByPublicacionId(publicacionId);
+  }
+
+  @Override
+  public void eliminar(UUID id) {
+    jpa.deleteById(id);
+  }
+
   private static BorradorProductoJpaEntity aFila(BorradorProducto b, Instant ahora) {
     return new BorradorProductoJpaEntity(
         b.id(),

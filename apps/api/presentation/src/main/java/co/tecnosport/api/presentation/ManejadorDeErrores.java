@@ -53,6 +53,7 @@ import co.tecnosport.api.application.pedido.SistecreditoNoDisponibleException;
 import co.tecnosport.api.application.pedido.VarianteNoEncontradaException;
 import co.tecnosport.api.application.proveedores.AtributoDeCatalogoNoDefinidoException;
 import co.tecnosport.api.application.proveedores.BorradorNoEditableException;
+import co.tecnosport.api.application.proveedores.BorradorNoEliminableException;
 import co.tecnosport.api.application.proveedores.BorradorNoEncontradoException;
 import co.tecnosport.api.application.proveedores.BorradorSinFotosException;
 import co.tecnosport.api.application.proveedores.BorradorSinPrecioException;
@@ -253,6 +254,12 @@ public class ManejadorDeErrores {
   })
   public ProblemDetail borradorNoAprobable(RuntimeException excepcion) {
     return problema(HttpStatus.CONFLICT, "El borrador no se puede aprobar así", excepcion);
+  }
+
+  // 409: aprobado o renovación. Es la huella con que la ingesta reconoce el producto.
+  @ExceptionHandler(BorradorNoEliminableException.class)
+  public ProblemDetail borradorNoEliminable(BorradorNoEliminableException excepcion) {
+    return problema(HttpStatus.CONFLICT, "El borrador no se puede borrar", excepcion);
   }
 
   // 422: lo que no cuadra está en el cuerpo, una foto que no es de este borrador o una que no

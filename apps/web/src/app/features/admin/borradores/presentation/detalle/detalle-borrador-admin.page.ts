@@ -10,7 +10,7 @@ import {
 } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { mensajeDeError } from '../../../../../core/errores/mensaje-de-error';
 import { usarTraductor } from '../../../../../core/i18n/traductor';
@@ -31,11 +31,13 @@ import { usarProveedoresAdmin } from '../../../proveedores/application/listar-pr
 import {
   usarAprobarBorrador,
   usarEditarBorrador,
+  usarEliminarBorrador,
   usarRechazarBorrador,
 } from '../../application/decidir-borrador.mutacion';
 import { usarVerBorrador } from '../../application/ver-borrador.consulta';
 import {
   Borrador,
+  borradorBorrable,
   borradorEditable,
   CATEGORIA_SUGERIDA_POR_TIPO,
   EstadoBorrador,
@@ -101,6 +103,7 @@ function enteroPositivo(texto: string): number | null {
 })
 export class DetalleBorradorAdminPage {
   private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly transloco = inject(TranslocoService);
   private readonly traducir = usarTraductor();
@@ -121,6 +124,7 @@ export class DetalleBorradorAdminPage {
   private readonly editar = usarEditarBorrador();
   private readonly aprobar = usarAprobarBorrador();
   private readonly rechazar = usarRechazarBorrador();
+  private readonly eliminar = usarEliminarBorrador();
 
   protected readonly borrador = computed<Borrador | null>(
     () => this.consulta.data()?.borrador ?? null,
@@ -130,6 +134,10 @@ export class DetalleBorradorAdminPage {
   protected readonly editable = computed(() => {
     const borrador = this.borrador();
     return borrador !== null && borradorEditable(borrador);
+  });
+  protected readonly borrable = computed(() => {
+    const borrador = this.borrador();
+    return borrador !== null && borradorBorrable(borrador);
   });
   protected readonly idioma = computed(() => this.transloco.activeLang());
 
@@ -143,6 +151,11 @@ export class DetalleBorradorAdminPage {
   protected readonly guardando = computed(() => this.editar.isPending());
   protected readonly aprobando = computed(() => this.aprobar.isPending());
   protected readonly rechazando = computed(() => this.rechazar.isPending());
+  protected readonly borrando = computed(() => this.eliminar.isPending());
+  /** Cualquiera de las tres en vuelo bloquea las otras dos: el servidor solo admite una. */
+  private readonly decidiendo = computed(
+    () => this.aprobando() || this.rechazando() || this.borrando(),
+  );
 
   protected readonly errorDatos = signal<string | null>(null);
   protected readonly avisoDatos = signal<string | null>(null);
@@ -152,10 +165,14 @@ export class DetalleBorradorAdminPage {
   /** El producto recién creado, para enlazarlo desde el aviso. */
   protected readonly aprobado = signal<string | null>(null);
   protected readonly rechazado = signal(false);
+  protected readonly confirmandoBorrar = signal(false);
+  protected readonly errorBorrar = signal<string | null>(null);
 
   private readonly enfocarDespuesDePintar = usarFoco();
   private readonly avisoDatosRef = viewChild<ElementRef<HTMLElement>>('avisoDatosRef');
   private readonly avisoDecisionRef = viewChild<ElementRef<HTMLElement>>('avisoDecisionRef');
+  private readonly cajaBorrar = viewChild<ElementRef<HTMLElement>>('cajaBorrar');
+  private readonly botonBorrar = viewChild('botonBorrar', { read: ElementRef });
 
   protected readonly formDatos = new FormGroup({
     titulo: new FormControl('', { nonNullable: true }),
@@ -273,6 +290,8 @@ export class DetalleBorradorAdminPage {
       );
       this.aprobado.set(null);
       this.rechazado.set(false);
+      this.confirmandoBorrar.set(false);
+      this.errorBorrar.set(null);
       this.avisoDatos.set(null);
       this.errorDatos.set(null);
       this.errorDecision.set(null);
@@ -459,7 +478,7 @@ export class DetalleBorradorAdminPage {
   }
 
   protected aprobarBorrador(): void {
-    if (this.aprobando() || this.rechazando()) {
+    if (this.decidiendo()) {
       return;
     }
     const valores = this.formAprobar.getRawValue();
@@ -532,7 +551,7 @@ export class DetalleBorradorAdminPage {
   }
 
   protected rechazarBorrador(): void {
-    if (this.aprobando() || this.rechazando()) {
+    if (this.decidiendo()) {
       return;
     }
     const motivo = this.motivoRechazo.value.trim();
@@ -555,5 +574,35 @@ export class DetalleBorradorAdminPage {
           ),
       },
     );
+  }
+
+  protected preguntarSiBorrar(): void {
+    this.errorBorrar.set(null);
+    this.confirmandoBorrar.set(true);
+    // Como en la galería del producto: sin esto, tabular desde "Borrar" salta directo a "Sí,
+    // borrar" y se confirma sin haber pasado por la advertencia de que no hay vuelta atrás.
+    this.enfocarDespuesDePintar(() => this.cajaBorrar()?.nativeElement);
+  }
+
+  protected cancelarBorrar(): void {
+    this.confirmandoBorrar.set(false);
+    this.errorBorrar.set(null);
+    this.enfocarDespuesDePintar(() => this.botonBorrar()?.nativeElement.querySelector('button'));
+  }
+
+  /** Lo borrado ya no tiene pantalla: se vuelve a la bandeja. */
+  protected borrarBorrador(): void {
+    if (this.decidiendo()) {
+      return;
+    }
+    this.errorBorrar.set(null);
+    this.eliminar.mutate(this.id(), {
+      onSuccess: () =>
+        void this.router.navigate(['/' + this.transloco.activeLang(), 'admin', 'borradores']),
+      onError: (error: unknown) =>
+        this.errorBorrar.set(
+          mensajeDeError(error, this.transloco, 'admin.borradores.borrar.error'),
+        ),
+    });
   }
 }

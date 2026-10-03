@@ -23,8 +23,8 @@ export interface RechazarBorradorComando {
 }
 
 /**
- * Las tres decisiones sobre un borrador, en un solo archivo porque invalidan lo mismo: el prefijo
- * de borradores entero, que cubre la lista con cualquier filtro y el detalle del tocado.
+ * Las decisiones sobre un borrador, en un solo archivo porque invalidan lo mismo: el prefijo de
+ * borradores entero, que cubre la lista con cualquier filtro y el detalle del tocado.
  */
 export function usarEditarBorrador() {
   const repositorio = inject(REPOSITORIO_BORRADORES_ADMIN);
@@ -60,5 +60,23 @@ export function usarRechazarBorrador() {
     mutationFn: (comando: RechazarBorradorComando): Promise<Borrador> =>
       repositorio.rechazar(comando.id, comando.motivo),
     onSuccess: () => void queryClient.invalidateQueries({ queryKey: CLAVE_BORRADORES_ADMIN }),
+  }));
+}
+
+/**
+ * Borrar saca el detalle de la caché en vez de invalidarlo: invalidarlo lo volvería a pedir con la
+ * pantalla todavía abierta, y la respuesta sería un 404 pintado antes de salir hacia la lista.
+ */
+export function usarEliminarBorrador() {
+  const repositorio = inject(REPOSITORIO_BORRADORES_ADMIN);
+  const queryClient = inject(QueryClient);
+
+  return injectMutation(() => ({
+    mutationFn: (id: string): Promise<void> => repositorio.eliminar(id),
+    onSuccess: (_: void, id: string) => {
+      const detalle = [...CLAVE_BORRADORES_ADMIN, id];
+      queryClient.removeQueries({ queryKey: detalle, exact: true });
+      void queryClient.invalidateQueries({ queryKey: CLAVE_BORRADORES_ADMIN });
+    },
   }));
 }

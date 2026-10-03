@@ -26,4 +26,7 @@ public interface AlmacenDeArchivosDeProveedor {
 
   /** Una URL firmada de {@code GET}, de vida corta, para que el panel muestre una foto. */
   UrlFirmada urlDeLectura(String objectKey);
+
+  /** Borrar lo que ya no está no falla: reintentar un borrado a medias tiene que poder terminar. */
+  void borrar(String objectKey);
 }

@@ -51,6 +51,11 @@ public class RepositorioMensajesProveedorJpa implements RepositorioMensajesProve
         .toList();
   }
 
+  @Override
+  public void eliminarTodos(Collection<UUID> ids) {
+    jpa.deleteAllById(ids);
+  }
+
   private static MensajeProveedorJpaEntity aFila(MensajeProveedor m, Instant creadoEn) {
     return new MensajeProveedorJpaEntity(
         m.id(),

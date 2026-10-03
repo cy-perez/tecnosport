@@ -1,5 +1,7 @@
 package co.tecnosport.api.presentation.proveedores;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -20,6 +22,7 @@ import co.tecnosport.api.application.proveedores.AprobarBorrador;
 import co.tecnosport.api.application.proveedores.BorradoresPaginados;
 import co.tecnosport.api.application.proveedores.CalculadorDePHash;
 import co.tecnosport.api.application.proveedores.EditarBorrador;
+import co.tecnosport.api.application.proveedores.EliminarBorrador;
 import co.tecnosport.api.application.proveedores.HuellaVisual;
 import co.tecnosport.api.application.proveedores.ProcesadorDeImagenes;
 import co.tecnosport.api.application.proveedores.RechazarBorrador;
@@ -48,6 +51,7 @@ import java.lang.reflect.Proxy;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -87,6 +91,7 @@ class AdminBorradorControladorTest {
   @Autowired private RepositorioBorradoresDoble borradores;
   @Autowired private RepositorioPublicacionesDoble publicaciones;
   @Autowired private RepositorioMensajesDoble mensajes;
+  @Autowired private ObjetosBorrados objetosBorrados;
 
   private BorradorProducto borrador;
   private MensajeProveedor foto;
@@ -94,6 +99,7 @@ class AdminBorradorControladorTest {
   @BeforeEach
   void unBorradorEnRevision() {
     borradores.porId.clear();
+    objetosBorrados.claves.clear();
     UUID proveedorId = UUID.randomUUID();
     UUID loteId = UUID.randomUUID();
     MensajeProveedor principal =
@@ -212,6 +218,33 @@ class AdminBorradorControladorTest {
   }
 
   @Test
+  void borrarEs204YSeLlevaLaFotoDelBucket() throws Exception {
+    mockMvc
+        .perform(delete("/api/v1/admin/borradores/{id}", borrador.id()))
+        .andExpect(status().isNoContent());
+
+    assertThat(borradores.porId).doesNotContainKey(borrador.id());
+    assertThat(publicaciones.porId).doesNotContainKey(borrador.publicacionId());
+    assertThat(objetosBorrados.claves).containsExactly("p/f.jpg");
+
+    mockMvc
+        .perform(delete("/api/v1/admin/borradores/{id}", borrador.id()))
+        .andExpect(status().isNotFound())
+        .andExpect(jsonPath("$.codigo").value("BORRADOR_NO_ENCONTRADO"));
+  }
+
+  @Test
+  void borrarUnAprobadoEs409() throws Exception {
+    borrador.aprobar(UUID.randomUUID(), null);
+
+    mockMvc
+        .perform(delete("/api/v1/admin/borradores/{id}", borrador.id()))
+        .andExpect(status().isConflict())
+        .andExpect(jsonPath("$.codigo").value("BORRADOR_NO_ELIMINABLE"));
+    assertThat(borradores.porId).containsKey(borrador.id());
+  }
+
+  @Test
   void aprobarSinFotosEs409YSinCategoriaEs422() throws Exception {
     mockMvc
         .perform(
@@ -258,7 +291,12 @@ class AdminBorradorControladorTest {
     }
 
     @Bean
-    AlmacenDeArchivosDeProveedor almacen() {
+    ObjetosBorrados objetosBorrados() {
+      return new ObjetosBorrados();
+    }
+
+    @Bean
+    AlmacenDeArchivosDeProveedor almacen(ObjetosBorrados objetosBorrados) {
       return new AlmacenDeArchivosDeProveedor() {
         @Override
         public UrlFirmada generarUrlDeSubida(String objectKey, String contentType) {
@@ -284,6 +322,11 @@ class AdminBorradorControladorTest {
         public UrlFirmada urlDeLectura(String objectKey) {
           return new UrlFirmada("https://firmada.local/leer/" + objectKey);
         }
+
+        @Override
+        public void borrar(String objectKey) {
+          objetosBorrados.claves.add(objectKey);
+        }
       };
     }
 
@@ -294,6 +337,15 @@ class AdminBorradorControladorTest {
         RepositorioMensajesDoble mensajes,
         AlmacenDeArchivosDeProveedor almacen) {
       return new VerBorrador(borradores, publicaciones, mensajes, almacen);
+    }
+
+    @Bean
+    EliminarBorrador eliminarBorrador(
+        RepositorioBorradoresDoble borradores,
+        RepositorioPublicacionesDoble publicaciones,
+        RepositorioMensajesDoble mensajes,
+        AlmacenDeArchivosDeProveedor almacen) {
+      return new EliminarBorrador(borradores, publicaciones, mensajes, almacen);
     }
 
     @Bean
@@ -373,6 +425,11 @@ class AdminBorradorControladorTest {
     }
   }
 
+  /** Lo que el almacén borró, en un bean propio: un {@code Set<String>} inyectado junta Strings. */
+  static final class ObjetosBorrados {
+    final Set<String> claves = new HashSet<>();
+  }
+
   static final class RepositorioBorradoresDoble implements RepositorioBorradores {
     final Map<UUID, BorradorProducto> porId = new LinkedHashMap<>();
 
@@ -412,6 +469,16 @@ class AdminBorradorControladorTest {
     public boolean existeEnRevisionConHuella(UUID proveedorId, HuellaProveedor huella) {
       return false;
     }
+
+    @Override
+    public long contarDePublicacion(UUID publicacionId) {
+      return porId.values().stream().filter(b -> b.publicacionId().equals(publicacionId)).count();
+    }
+
+    @Override
+    public void eliminar(UUID id) {
+      porId.remove(id);
+    }
   }
 
   static final class RepositorioPublicacionesDoble implements RepositorioPublicacionesProveedor {
@@ -436,6 +503,27 @@ class AdminBorradorControladorTest {
     public List<PublicacionProveedor> listarDeLote(UUID loteId) {
       return porId.values().stream().filter(p -> p.loteId().equals(loteId)).toList();
     }
+
+    @Override
+    public void eliminar(UUID id) {
+      porId.remove(id);
+    }
+
+    @Override
+    public Set<UUID> mensajesUsadosPorOtras(
+        UUID publicacionId, java.util.Collection<UUID> mensajeIds) {
+      Set<UUID> usados = new java.util.HashSet<>();
+      for (PublicacionProveedor otra : porId.values()) {
+        if (otra.id().equals(publicacionId)) {
+          continue;
+        }
+        List<UUID> deOtra = new java.util.ArrayList<>(otra.textosAdicionales());
+        deOtra.addAll(otra.medios());
+        deOtra.add(otra.mensajePrincipalId());
+        deOtra.stream().filter(mensajeIds::contains).forEach(usados::add);
+      }
+      return usados;
+    }
   }
 
   static final class RepositorioMensajesDoble implements RepositorioMensajesProveedor {
@@ -455,6 +543,11 @@ class AdminBorradorControladorTest {
     @Override
     public List<MensajeProveedor> listarDeLote(UUID loteId) {
       return porLote.getOrDefault(loteId, List.of());
+    }
+
+    @Override
+    public void eliminarTodos(java.util.Collection<UUID> ids) {
+      porLote.replaceAll((lote, l) -> l.stream().filter(m -> !ids.contains(m.id())).toList());
     }
   }
 }

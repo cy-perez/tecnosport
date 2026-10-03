@@ -3353,6 +3353,28 @@
       }
     },
     "/api/v1/admin/borradores/{id}" : {
+      "delete" : {
+        "operationId" : "eliminar_2",
+        "parameters" : [
+          {
+            "in" : "path",
+            "name" : "id",
+            "required" : true,
+            "schema" : {
+              "format" : "uuid",
+              "type" : "string"
+            }
+          }
+        ],
+        "responses" : {
+          "204" : {
+            "description" : "No Content"
+          }
+        },
+        "tags" : [
+          "admin-borrador-controlador"
+        ]
+      },
       "get" : {
         "operationId" : "ver_2",
         "parameters" : [
@@ -5497,7 +5519,7 @@
     },
     "/api/v1/admin/sets-rotacion/{id}" : {
       "delete" : {
-        "operationId" : "eliminar_2",
+        "operationId" : "eliminar_3",
         "parameters" : [
           {
             "in" : "path",
