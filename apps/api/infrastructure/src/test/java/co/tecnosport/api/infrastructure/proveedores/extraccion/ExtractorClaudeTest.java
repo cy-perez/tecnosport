@@ -253,6 +253,21 @@ class ExtractorClaudeTest {
     assertThat(resultado.productos()).allMatch(p -> p.esProducto());
   }
 
+  /** Las prendas de dama de Violeta tienen tipo propio; el chaleco no (lo cubre la de arriba). */
+  @Test
+  void blusaYBodySonTiposReconocidos() {
+    String blusa = BOLSO.replace("\"tipo\":\"bolso\"", "\"tipo\":\"blusa\"");
+    String body = BOLSO.replace("\"tipo\":\"bolso\"", "\"tipo\":\"BODY\"");
+    respuestas.add(
+        new Respuesta(200, exito("{\"productos\":[" + blusa + "," + body + "]}", "end_turn")));
+
+    ResultadoExtraccion resultado = extractor(1).extraer(texto());
+
+    assertThat(resultado.productos())
+        .extracting(p -> p.tipo())
+        .containsExactly(TipoProductoProveedor.BLUSA, TipoProductoProveedor.BODY);
+  }
+
   /** Un saludo o una promoción: la lista vacía, sin fallo. */
   @Test
   void unMensajeSinProductosDevuelveLaListaVacia() {

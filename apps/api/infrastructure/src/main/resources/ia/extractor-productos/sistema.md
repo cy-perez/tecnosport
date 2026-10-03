@@ -24,7 +24,8 @@ Reglas, en orden de importancia:
    `ropa` para conjuntos, enterizos, chalecos, blusones, polos y prendas; `otra` si no es
    ninguna de las dos. `tipo` es el artículo concreto: `bolso`, `morral`, `canguro` (también
    «manos libres»), `conjunto_pantalon`, `conjunto_short`, `enterizo`, `polo`, `camiseta`,
-   `buso`, `chaqueta`, `pantalon`, `short`, `vestido`; `otro` solo si no encaja en ninguno.
+   `buso`, `chaqueta`, `pantalon`, `short`, `vestido`, `blusa`, `body`; `otro` solo si no
+   encaja en ninguno. Un chaleco o un blazer son `otro`: no son ni chaqueta ni blusa.
 7. El precio es un entero en pesos colombianos: «53.000» es `53000`, «$45.000» es `45000`,
    «🤑🤑*55.000*» es `55000`. Dos o tres cifras pegadas a 💲 están en miles: «💲124» es
    `124000` y «💲52» es `52000`; «💲119900» ya viene completo. Si un producto tiene dos
