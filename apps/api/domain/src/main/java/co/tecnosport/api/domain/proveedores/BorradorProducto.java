@@ -111,10 +111,6 @@ public final class BorradorProducto {
     this.motivoRechazo = enBlancoEsNulo(motivoRechazo);
     this.creadoEn = Objects.requireNonNull(creadoEn, "El borrador tiene fecha.");
 
-    if ((estado == EstadoBorrador.APROBADO || estado == EstadoBorrador.RENOVACION_APLICADA)
-        && productoId == null) {
-      throw new ExcepcionDeDominio("Un borrador " + estado + " apunta a un producto.");
-    }
     if (estado == EstadoBorrador.RECHAZADO && this.motivoRechazo == null) {
       throw new ExcepcionDeDominio("Un borrador rechazado dice por qué.");
     }

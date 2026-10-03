@@ -200,6 +200,42 @@ class BorradorProductoTest {
   }
 
   @Test
+  void alReconstruirUnAprobadoOUnaRenovacionCuyoProductoSeBorroSeSostiene() {
+    // La base deja `producto_id` en nulo cuando el producto se borra del catálogo; si esto
+    // lanzara, la bandeja entera respondería 422 desde ese momento.
+    for (EstadoBorrador estado :
+        List.of(EstadoBorrador.APROBADO, EstadoBorrador.RENOVACION_APLICADA)) {
+      BorradorProducto huerfano =
+          new BorradorProducto(
+              UUID.randomUUID(),
+              PUBLICACION,
+              PROVEEDOR,
+              "{}",
+              "t",
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              estado,
+              null,
+              null,
+              T);
+      assertEquals(estado, huerfano.estado());
+      assertEquals(Optional.empty(), huerfano.productoId());
+    }
+  }
+
+  @Test
   void alReconstruirUnRechazadoSinMotivoNoSeSostiene() {
     assertThrows(
         ExcepcionDeDominio.class,
