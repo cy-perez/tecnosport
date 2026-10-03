@@ -11,6 +11,7 @@ import co.tecnosport.api.application.catalogo.CategoriaSlugYaExisteException;
 import co.tecnosport.api.application.catalogo.CicloDeCategoriasException;
 import co.tecnosport.api.application.catalogo.ProductoConVentasException;
 import co.tecnosport.api.application.catalogo.ProductoPublicadoException;
+import co.tecnosport.api.application.catalogo.ProductoSinDescripcionException;
 import co.tecnosport.api.application.catalogo.ProfundidadDeCategoriaExcedidaException;
 import co.tecnosport.api.application.compartido.LimiteDeIntentosExcedidoException;
 import co.tecnosport.api.application.envio.AcuseNoAplicableException;
@@ -150,6 +151,7 @@ class CodigosDeCableTest {
           Map.entry(BorradorSinPrecioException.class, "BORRADOR_SIN_PRECIO"),
           Map.entry(BorradorSinTituloException.class, "BORRADOR_SIN_TITULO"),
           Map.entry(BorradorSinDescripcionException.class, "BORRADOR_SIN_DESCRIPCION"),
+          Map.entry(ProductoSinDescripcionException.class, "PRODUCTO_SIN_DESCRIPCION"),
           Map.entry(
               AtributoDeCatalogoNoDefinidoException.class, "ATRIBUTO_DE_CATALOGO_NO_DEFINIDO"),
           Map.entry(FotoNoEsDelBorradorException.class, "FOTO_NO_ES_DEL_BORRADOR"),

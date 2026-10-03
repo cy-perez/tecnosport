@@ -2,6 +2,8 @@ package co.tecnosport.api.presentation.catalogo;
 
 import co.tecnosport.api.application.catalogo.AgregarImagenDeGaleria;
 import co.tecnosport.api.application.catalogo.AgregarImagenDeGaleriaComando;
+import co.tecnosport.api.application.catalogo.AsignarColorAImagenDeGaleria;
+import co.tecnosport.api.application.catalogo.AsignarColorAImagenDeGaleriaComando;
 import co.tecnosport.api.application.catalogo.ConfirmacionDeImagenPrincipal;
 import co.tecnosport.api.application.catalogo.ConfirmarImagenPrincipal;
 import co.tecnosport.api.application.catalogo.ConfirmarImagenPrincipalComando;
@@ -30,6 +32,7 @@ import co.tecnosport.api.application.catalogo.VerProductoAdmin;
 import co.tecnosport.api.domain.catalogo.ImagenProducto;
 import co.tecnosport.api.domain.catalogo.Producto;
 import co.tecnosport.api.presentation.catalogo.dto.AgregarImagenDeGaleriaPeticion;
+import co.tecnosport.api.presentation.catalogo.dto.AsignarColorPeticion;
 import co.tecnosport.api.presentation.catalogo.dto.ConfirmarImagenPrincipalPeticion;
 import co.tecnosport.api.presentation.catalogo.dto.CrearProductoPeticion;
 import co.tecnosport.api.presentation.catalogo.dto.EditarProductoPeticion;
@@ -84,6 +87,7 @@ public class AdminProductoControlador {
   private final AgregarImagenDeGaleria agregarImagenDeGaleria;
   private final QuitarImagenDeGaleria quitarImagenDeGaleria;
   private final ReordenarGaleria reordenarGaleria;
+  private final AsignarColorAImagenDeGaleria asignarColorAImagenDeGaleria;
   private final PublicarProducto publicarProducto;
   private final DespublicarProducto despublicarProducto;
   private final EliminarProducto eliminarProducto;
@@ -100,6 +104,7 @@ public class AdminProductoControlador {
       AgregarImagenDeGaleria agregarImagenDeGaleria,
       QuitarImagenDeGaleria quitarImagenDeGaleria,
       ReordenarGaleria reordenarGaleria,
+      AsignarColorAImagenDeGaleria asignarColorAImagenDeGaleria,
       PublicarProducto publicarProducto,
       DespublicarProducto despublicarProducto,
       EliminarProducto eliminarProducto,
@@ -116,6 +121,7 @@ public class AdminProductoControlador {
     this.agregarImagenDeGaleria = Objects.requireNonNull(agregarImagenDeGaleria);
     this.quitarImagenDeGaleria = Objects.requireNonNull(quitarImagenDeGaleria);
     this.reordenarGaleria = Objects.requireNonNull(reordenarGaleria);
+    this.asignarColorAImagenDeGaleria = Objects.requireNonNull(asignarColorAImagenDeGaleria);
     this.publicarProducto = Objects.requireNonNull(publicarProducto);
     this.despublicarProducto = Objects.requireNonNull(despublicarProducto);
     this.eliminarProducto = Objects.requireNonNull(eliminarProducto);
@@ -152,7 +158,12 @@ public class AdminProductoControlador {
     Producto producto =
         editarProducto.ejecutar(
             new EditarProductoComando(
-                id, cuerpo.nombre(), cuerpo.descripcion(), cuerpo.marcaId(), cuerpo.categoriaId()));
+                id,
+                cuerpo.nombre(),
+                cuerpo.descripcion(),
+                cuerpo.marcaId(),
+                cuerpo.categoriaId(),
+                cuerpo.tallaSirveHasta()));
     return mapeador.aRespuesta(producto);
   }
 
@@ -311,6 +322,17 @@ public class AdminProductoControlador {
     } else {
       log.info("Producto {}: imagen {} retirada de la galería, con su objeto.", id, imagenId);
     }
+  }
+
+  /** De qué color es una foto de la galería. {@code 204}: el panel vuelve a pedir el producto. */
+  @PutMapping("/{id}/galeria/{imagenId}/variante")
+  @ResponseStatus(HttpStatus.NO_CONTENT)
+  public void asignarColorAImagen(
+      @PathVariable("id") UUID id,
+      @PathVariable("imagenId") UUID imagenId,
+      @RequestBody AsignarColorPeticion cuerpo) {
+    asignarColorAImagenDeGaleria.ejecutar(
+        new AsignarColorAImagenDeGaleriaComando(id, imagenId, cuerpo.varianteId()));
   }
 
   /**

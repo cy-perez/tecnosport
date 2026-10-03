@@ -15,6 +15,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import co.tecnosport.api.application.catalogo.AgregarImagenDeGaleria;
 import co.tecnosport.api.application.catalogo.AlmacenDeImagenes;
+import co.tecnosport.api.application.catalogo.AsignarColorAImagenDeGaleria;
 import co.tecnosport.api.application.catalogo.ConfirmarImagenPrincipal;
 import co.tecnosport.api.application.catalogo.CrearProducto;
 import co.tecnosport.api.application.catalogo.DespublicarProducto;
@@ -401,6 +402,29 @@ class AdminProductoControladorTest {
                 .content(cuerpoDeGaleria(objectKey, "%064x".formatted(99))))
         .andExpect(status().isConflict())
         .andExpect(jsonPath("$.codigo").value("GALERIA_LLENA"));
+  }
+
+  /** El color de una foto: la cuelga de una variante del producto, o de ninguna. */
+  @Test
+  void marcarElColorDeUnaFotoDevuelve204YLoGraba() throws Exception {
+    Producto producto = productoEnBorrador();
+    Variante vino =
+        Variante.crear(
+            new Sku("PRV-VINO"), Dinero.deCop(60000), BigDecimal.ZERO, null, null, List.of());
+    producto.agregarVariante(vino);
+    ImagenProducto foto = imagenDeGaleria(0);
+    producto.agregarImagenGaleria(foto);
+    repositorio.conProductos(producto);
+
+    mockMvc
+        .perform(
+            put("/api/v1/admin/productos/{id}/galeria/{imagen}/variante", producto.id(), foto.id())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"varianteId\":\"%s\"}".formatted(vino.id())))
+        .andExpect(status().isNoContent());
+
+    org.junit.jupiter.api.Assertions.assertEquals(foto.id(), repositorio.imagenConVariante);
+    org.junit.jupiter.api.Assertions.assertEquals(vino.id(), repositorio.varianteDeLaImagen);
   }
 
   @Test
@@ -824,6 +848,12 @@ class AdminProductoControladorTest {
     @Bean
     ReordenarGaleria reordenarGaleria(RepositorioProductos repositorioProductos) {
       return new ReordenarGaleria(repositorioProductos);
+    }
+
+    @Bean
+    AsignarColorAImagenDeGaleria asignarColorAImagenDeGaleria(
+        RepositorioProductos repositorioProductos) {
+      return new AsignarColorAImagenDeGaleria(repositorioProductos);
     }
 
     /**

@@ -212,6 +212,15 @@
         ],
         "type" : "object"
       },
+      "AsignarColorPeticion" : {
+        "properties" : {
+          "varianteId" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
       "AtributoRespuesta" : {
         "properties" : {
           "id" : {
@@ -932,6 +941,9 @@
           },
           "nombre" : {
             "type" : "string"
+          },
+          "tallaSirveHasta" : {
+            "type" : "string"
           }
         },
         "type" : "object"
@@ -1360,6 +1372,10 @@
             "type" : "string"
           },
           "urlVistaPrevia" : {
+            "type" : "string"
+          },
+          "varianteId" : {
+            "format" : "uuid",
             "type" : "string"
           },
           "variantes" : {
@@ -1976,9 +1992,18 @@
           "slug" : {
             "type" : "string"
           },
+          "tallaSirveHasta" : {
+            "type" : "string"
+          },
           "totalVariantes" : {
             "format" : "int32",
             "type" : "integer"
+          },
+          "variantes" : {
+            "items" : {
+              "$ref" : "#/components/schemas/VarianteResumenAdminRespuesta"
+            },
+            "type" : "array"
           }
         },
         "type" : "object"
@@ -3106,6 +3131,24 @@
         "required" : [
           "disponible"
         ],
+        "type" : "object"
+      },
+      "VarianteResumenAdminRespuesta" : {
+        "properties" : {
+          "atributos" : {
+            "items" : {
+              "$ref" : "#/components/schemas/AtributoValorRespuesta"
+            },
+            "type" : "array"
+          },
+          "id" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "sku" : {
+            "type" : "string"
+          }
+        },
         "type" : "object"
       },
       "VarianteSinMedirRespuesta" : {
@@ -5051,6 +5094,49 @@
             }
           }
         ],
+        "responses" : {
+          "204" : {
+            "description" : "No Content"
+          }
+        },
+        "tags" : [
+          "admin-producto-controlador"
+        ]
+      }
+    },
+    "/api/v1/admin/productos/{id}/galeria/{imagenId}/variante" : {
+      "put" : {
+        "operationId" : "asignarColorAImagen",
+        "parameters" : [
+          {
+            "in" : "path",
+            "name" : "id",
+            "required" : true,
+            "schema" : {
+              "format" : "uuid",
+              "type" : "string"
+            }
+          },
+          {
+            "in" : "path",
+            "name" : "imagenId",
+            "required" : true,
+            "schema" : {
+              "format" : "uuid",
+              "type" : "string"
+            }
+          }
+        ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/AsignarColorPeticion"
+              }
+            }
+          },
+          "required" : true
+        },
         "responses" : {
           "204" : {
             "description" : "No Content"

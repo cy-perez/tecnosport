@@ -4,6 +4,7 @@ import co.tecnosport.api.application.catalogo.AbrirSetRotacion;
 import co.tecnosport.api.application.catalogo.AgregarImagenDeGaleria;
 import co.tecnosport.api.application.catalogo.AgregarVariante;
 import co.tecnosport.api.application.catalogo.AlmacenDeImagenes;
+import co.tecnosport.api.application.catalogo.AsignarColorAImagenDeGaleria;
 import co.tecnosport.api.application.catalogo.BuscarProductos;
 import co.tecnosport.api.application.catalogo.CompletarSetRotacion;
 import co.tecnosport.api.application.catalogo.ConfirmarImagenPrincipal;
@@ -133,6 +134,12 @@ public class ConfiguracionCatalogo {
       DisponibilidadDeVariantes disponibilidad,
       RepositorioCategorias repositorioCategorias) {
     return new VerFichaDeProducto(repositorioProductos, disponibilidad, repositorioCategorias);
+  }
+
+  @Bean
+  public AsignarColorAImagenDeGaleria asignarColorAImagenDeGaleria(
+      RepositorioProductos repositorioProductos) {
+    return new AsignarColorAImagenDeGaleria(repositorioProductos);
   }
 
   @Bean

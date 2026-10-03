@@ -181,6 +181,17 @@ class RepositorioProductosDobleDePrueba implements RepositorioProductos {
   }
 
   @Override
+  public void guardarVarianteDeImagen(UUID imagenId, UUID varianteId) {
+    this.imagenConVariante = imagenId;
+    this.varianteDeLaImagen = varianteId;
+  }
+
+  /** La última imagen colgada de una variante, y la variante (nula si se soltó). */
+  UUID imagenConVariante;
+
+  UUID varianteDeLaImagen;
+
+  @Override
   public List<MedidaDeVariante> medidasDeVariantes() {
     return sinMedir;
   }

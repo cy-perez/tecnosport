@@ -105,6 +105,11 @@ final class RepositorioProductosFalso implements RepositorioProductos {
   public void guardarOrdenDeGaleria(UUID productoId, List<ImagenProducto> galeria) {}
 
   @Override
+  public void guardarVarianteDeImagen(UUID imagenId, UUID varianteId) {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
   public void eliminar(UUID productoId) {
     throw new UnsupportedOperationException();
   }

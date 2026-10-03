@@ -800,6 +800,37 @@ class RepositorioProductosJpaTest {
     assertThat(hidratado.imagenPrincipal()).isPresent();
   }
 
+  /** El color de una foto de la galería va y vuelve, y se puede soltar. */
+  @Test
+  void elColorDeUnaFotoDeLaGaleriaVaYVuelve() {
+    MarcaJpaEntity marca = marca("Genérica");
+    CategoriaJpaEntity categoria = categoria("Bodis", "bodis-t22", "ROPA");
+    ProductoJpaEntity productoJpa = producto("Bodi t22", "bodi-t22", "BORRADOR", marca, categoria);
+    VarianteJpaEntity vino = variante(productoJpa, "PRV-T22-VINO", "60000");
+    ImagenProducto foto = imagenDeGaleria(0, 22);
+    repositorio.guardarImagenDeGaleria(productoJpa.getId(), foto);
+
+    repositorio.guardarVarianteDeImagen(foto.id(), vino.getId());
+    assertThat(
+            repositorio
+                .buscarPorSlug(new Slug("bodi-t22"))
+                .orElseThrow()
+                .galeria()
+                .get(0)
+                .varianteId())
+        .contains(vino.getId());
+
+    repositorio.guardarVarianteDeImagen(foto.id(), null);
+    assertThat(
+            repositorio
+                .buscarPorSlug(new Slug("bodi-t22"))
+                .orElseThrow()
+                .galeria()
+                .get(0)
+                .varianteId())
+        .isEmpty();
+  }
+
   @Test
   void laGaleriaSeHidrataOrdenadaAunqueLasFilasSeHayanInsertadoAlReves() {
     MarcaJpaEntity marca = marca("TecnoSport");

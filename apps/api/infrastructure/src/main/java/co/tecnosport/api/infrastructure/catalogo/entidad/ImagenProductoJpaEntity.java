@@ -120,6 +120,10 @@ public class ImagenProductoJpaEntity {
     this.orden = nuevoOrden;
   }
 
+  public void cambiarVariante(UUID nuevaVarianteId) {
+    this.varianteId = nuevaVarianteId;
+  }
+
   public int getOrden() {
     return orden;
   }

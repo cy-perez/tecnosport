@@ -9,6 +9,7 @@ import co.tecnosport.api.presentation.catalogo.dto.ProductoAdminDetalleRespuesta
 import co.tecnosport.api.presentation.catalogo.dto.ProductoAdminRespuesta;
 import co.tecnosport.api.presentation.catalogo.dto.ProductosAdminPaginadosRespuesta;
 import co.tecnosport.api.presentation.catalogo.dto.VarianteDeImagenRespuesta;
+import co.tecnosport.api.presentation.catalogo.dto.VarianteResumenAdminRespuesta;
 import org.springframework.stereotype.Component;
 
 /**
@@ -51,7 +52,16 @@ public class MapeadorRespuestasProductoAdmin {
         mapeadorCatalogo.aRespuesta(producto.categoria()),
         producto.imagenPrincipal().map(this::aRespuesta).orElse(null),
         producto.variantes().size(),
-        producto.galeria().stream().map(this::aRespuestaDeGaleria).toList());
+        producto.galeria().stream().map(this::aRespuestaDeGaleria).toList(),
+        producto.tallaSirveHasta().orElse(null),
+        producto.variantes().stream()
+            .map(
+                variante ->
+                    new VarianteResumenAdminRespuesta(
+                        variante.id(),
+                        variante.sku().valor(),
+                        mapeadorCatalogo.aRespuesta(variante, false).atributos()))
+            .toList());
   }
 
   public ImagenRespuesta aRespuesta(ImagenProducto imagen) {
@@ -70,7 +80,8 @@ public class MapeadorRespuestasProductoAdmin {
         imagen.alto(),
         imagen.orden(),
         imagen.altEs(),
-        imagen.altEn());
+        imagen.altEn(),
+        imagen.varianteId().orElse(null));
   }
 
   public ProductosAdminPaginadosRespuesta aRespuesta(ProductosPaginados productos) {

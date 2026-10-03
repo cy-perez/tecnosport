@@ -150,6 +150,12 @@ public final class ImagenProducto {
         varianteId);
   }
 
+  /** La misma foto colgada de otra variante —otro tono—, o de ninguna. */
+  ImagenProducto conVariante(UUID nuevaVarianteId) {
+    return new ImagenProducto(
+        id, tipo, orden, variantes, urlVistaPrevia, alto, hash, altEs, altEn, nuevaVarianteId);
+  }
+
   ImagenProducto conOrden(int nuevoOrden) {
     return new ImagenProducto(
         id, tipo, nuevoOrden, variantes, urlVistaPrevia, alto, hash, altEs, altEn, varianteId);

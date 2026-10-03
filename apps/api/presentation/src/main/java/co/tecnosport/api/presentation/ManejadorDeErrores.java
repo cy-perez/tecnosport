@@ -16,6 +16,7 @@ import co.tecnosport.api.application.catalogo.ProductoConVentasException;
 import co.tecnosport.api.application.catalogo.ProductoNoEncontradoException;
 import co.tecnosport.api.application.catalogo.ProductoNoEncontradoPorIdException;
 import co.tecnosport.api.application.catalogo.ProductoPublicadoException;
+import co.tecnosport.api.application.catalogo.ProductoSinDescripcionException;
 import co.tecnosport.api.application.catalogo.ProfundidadDeCategoriaExcedidaException;
 import co.tecnosport.api.application.catalogo.SetRotacionNoEncontradoException;
 import co.tecnosport.api.application.catalogo.SetRotacionPublicadoExistenteException;
@@ -256,6 +257,12 @@ public class ManejadorDeErrores {
   })
   public ProblemDetail borradorNoAprobable(RuntimeException excepcion) {
     return problema(HttpStatus.CONFLICT, "El borrador no se puede aprobar así", excepcion);
+  }
+
+  /** Un dato que falta en el cuerpo de la edición: 422, como un nombre vacío. */
+  @ExceptionHandler(ProductoSinDescripcionException.class)
+  public ProblemDetail productoSinDescripcion(ProductoSinDescripcionException excepcion) {
+    return problema(HttpStatus.UNPROCESSABLE_CONTENT, "Falta la descripción", excepcion);
   }
 
   // 409: aprobado o renovación. Es la huella con que la ingesta reconoce el producto.
