@@ -161,7 +161,11 @@
                   <ul class="m-0 pl-16">
                     @for (linea of pedido.lineas; track linea.id) {
                       <li>
-                        {{ linea.cantidad }} × {{ linea.nombre }} ({{ linea.sku }}) —
+                        {{ linea.cantidad }} × {{ linea.nombre }}
+                        @if (linea.detalleVariante) {
+                          · {{ linea.detalleVariante }}
+                        }
+                        ({{ linea.sku }}) —
                         <ts-precio
                           [valor]="linea.precioUnitario.valor"
                           [moneda]="linea.precioUnitario.moneda"

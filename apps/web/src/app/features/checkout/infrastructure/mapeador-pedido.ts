@@ -96,6 +96,7 @@ function aLineaPedido(dto: LineaPedidoDto): LineaPedido {
     },
     tasaIva: dto.tasaIva ?? 0,
     imagenUrl: dto.imagenUrl ?? null,
+    detalleVariante: dto.detalleVariante ?? null,
   };
 }
 

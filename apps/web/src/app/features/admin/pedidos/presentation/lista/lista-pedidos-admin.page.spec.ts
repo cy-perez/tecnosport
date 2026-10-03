@@ -109,6 +109,7 @@ function pedidoDePrueba(overrides: Partial<PedidoAdmin> = {}): PedidoAdmin {
         precioUnitario: { valor: 50_000, moneda: 'COP' },
         tasaIva: 0.19,
         imagenUrl: null,
+        detalleVariante: 'Negro · M',
       },
     ],
     tipoEntrega: 'ENVIO_A_DOMICILIO',
@@ -303,6 +304,8 @@ describe('ListaPedidosAdminPage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Ver detalle' }));
 
     expect(await screen.findByText(/Camiseta/)).toBeTruthy();
+    // Quien despacha ve qué talla y color empacar, no solo el SKU.
+    expect(screen.getByText(/Negro · M/)).toBeTruthy();
   });
 
   /**
