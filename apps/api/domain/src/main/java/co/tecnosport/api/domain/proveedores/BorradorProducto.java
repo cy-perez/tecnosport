@@ -259,6 +259,16 @@ public final class BorradorProducto {
   }
 
   /**
+   * La huella visual salió de la primera foto de la publicación; si quien revisa la descarta, esa
+   * huella es de algo que no es este producto. Se olvida, y al aprobar se calcula de la principal
+   * que la persona deje.
+   */
+  public void olvidarHuellaVisual() {
+    exigirEnRevision("olvidar la huella visual de");
+    this.pHash = null;
+  }
+
+  /**
    * @param pHashDeLaPrincipal el de la foto que quien aprueba eligió como principal, o nulo si no
    *     se pudo calcular. Solo se usa cuando el borrador no trae uno: el de un mensaje con varios
    *     productos nace sin huella visual, porque la primera foto podía ser de cualquiera de ellos,

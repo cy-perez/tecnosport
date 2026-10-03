@@ -503,8 +503,9 @@ public final class Pedido {
   /**
    * Reemplaza el {@code idReserva} de cada línea tras un reintento de pago
    * (docs/02-modelo-datos.md: "el pago rechazado... la libera", así que un reintento necesita una
-   * reserva nueva). El resto de cada línea —precio, nombre, sku, cantidad— sigue congelado: solo
-   * cambia qué movimiento de inventario la respalda, nunca lo que el comprador acordó pagar.
+   * reserva nueva). El resto de cada línea —precio, nombre, sku, cantidad, la talla y el color
+   * elegidos— sigue congelado: solo cambia qué movimiento de inventario la respalda, nunca lo que
+   * el comprador acordó pagar.
    */
   public void actualizarReservas(Map<UUID, UUID> idReservaPorLineaId) {
     Objects.requireNonNull(idReservaPorLineaId, "El mapa de reservas no puede ser nulo.");
@@ -524,7 +525,8 @@ public final class Pedido {
               linea.precioUnitario(),
               linea.tasaIva(),
               linea.imagenUrl(),
-              nuevaReserva));
+              nuevaReserva,
+              linea.detalleVariante()));
     }
     this.lineas = actualizadas;
   }

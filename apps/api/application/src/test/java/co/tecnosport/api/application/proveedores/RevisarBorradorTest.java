@@ -3,6 +3,7 @@ package co.tecnosport.api.application.proveedores;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import co.tecnosport.api.application.proveedores.ApoyoDeCatalogoParaIngesta.RepositorioBorradoresEnMemoria;
 import co.tecnosport.api.application.proveedores.ApoyoDeIngesta.AlmacenEnMemoria;
@@ -15,6 +16,7 @@ import co.tecnosport.api.domain.proveedores.EstadoBorrador;
 import co.tecnosport.api.domain.proveedores.IdExternoDeMensaje;
 import co.tecnosport.api.domain.proveedores.LoteIngesta;
 import co.tecnosport.api.domain.proveedores.MensajeProveedor;
+import co.tecnosport.api.domain.proveedores.PHash;
 import co.tecnosport.api.domain.proveedores.ProductoExtraido;
 import co.tecnosport.api.domain.proveedores.Proveedor;
 import co.tecnosport.api.domain.proveedores.PublicacionProveedor;
@@ -94,7 +96,7 @@ class RevisarBorradorTest {
             Dinero.deCop(53000),
             Dinero.deCop(71600),
             null,
-            null,
+            PHash.deHex("a1b2c3d4e5f60718"),
             Set.of(),
             T);
     borradores.guardar(borrador);
@@ -142,6 +144,19 @@ class RevisarBorradorTest {
     assertThrows(
         BorradorNoEditableException.class,
         () -> new RechazarBorrador(borradores).ejecutar(borrador.id(), "otra vez"));
+  }
+
+  /** Si la foto descartada es la primera, la huella visual salió de ella y se olvida. */
+  @Test
+  void descartarLaPrimeraFotoOlvidaLaHuellaVisual() {
+    PublicacionProveedor publicacion =
+        publicaciones.buscarPorId(borrador.publicacionId()).orElseThrow();
+    UUID primera = publicacion.medios().getFirst();
+    assertTrue(borrador.pHash().isPresent(), "el borrador nace con huella visual");
+
+    new DescartarFotoDeBorrador(borradores, publicaciones).ejecutar(borrador.id(), primera);
+
+    assertEquals(Optional.empty(), borradores.buscarPorId(borrador.id()).orElseThrow().pHash());
   }
 
   /** La foto descartada deja de verse en la revisión, y su archivo se queda en el bucket. */

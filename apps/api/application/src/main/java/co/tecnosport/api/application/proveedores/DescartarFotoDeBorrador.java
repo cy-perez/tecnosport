@@ -42,6 +42,10 @@ public final class DescartarFotoDeBorrador {
       throw new FotoNoEsDelBorradorException(mensajeId);
     }
     borrador.descartarFoto(mensajeId);
+    // La huella visual sale de la primera foto de la publicación (ResolverBorrador.pHashDe).
+    if (publicacion.medios().getFirst().equals(mensajeId)) {
+      borrador.olvidarHuellaVisual();
+    }
     repositorioBorradores.actualizar(borrador);
     return borrador;
   }

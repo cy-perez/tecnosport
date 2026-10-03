@@ -315,7 +315,15 @@ public final class CrearPedido {
         inventario.reservar(lineaComando.cantidad(), vigenciaReserva, ahora);
     repositorioInventario.guardar(inventario);
 
-    String imagenUrl = producto.imagenPrincipal().map(ImagenProducto::url).orElse(null);
+    // La foto del tono que se compró, si la galería la tiene; si no, la principal. El estado del
+    // pedido y el panel la pintan, y la del otro color sería una evidencia en contra.
+    String imagenUrl =
+        producto.galeria().stream()
+            .filter(imagen -> imagen.varianteId().filter(variante.id()::equals).isPresent())
+            .findFirst()
+            .or(producto::imagenPrincipal)
+            .map(ImagenProducto::url)
+            .orElse(null);
     return new LineaPedido(
         GeneradorIdentificador.nuevo(),
         variante.id(),
@@ -329,9 +337,14 @@ public final class CrearPedido {
         detalleDe(variante));
   }
 
-  /** «Negro · M»: los valores de sus atributos, con la unidad si la tienen. */
+  /**
+   * «Negro · M»: los valores de sus atributos, con la unidad si la tienen, ordenados por el nombre
+   * del atributo —Color antes que Talla—. Las filas llegan de la base sin orden, y el carrito y el
+   * pedido tienen que decir la misma variante de la misma forma.
+   */
   private static String detalleDe(Variante variante) {
     return variante.atributos().stream()
+        .sorted(java.util.Comparator.comparing(valor -> valor.atributo().nombre()))
         .map(
             valor ->
                 valor.atributo().unidad().map(u -> valor.valor() + " " + u).orElse(valor.valor()))

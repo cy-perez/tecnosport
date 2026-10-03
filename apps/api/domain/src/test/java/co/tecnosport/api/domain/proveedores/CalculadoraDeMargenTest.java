@@ -74,6 +74,23 @@ class CalculadoraDeMargenTest {
     assertEquals(Dinero.deCop(230000), sugerir(200050, "1.35", TOPES));
   }
 
+  /**
+   * 53.020 + 20.000 = 73.020: hacia arriba es 73.100; con HALF_UP sería 73.000, que gana 19.980 y
+   * rompe el mínimo. Este caso es el que distingue los dos redondeos.
+   */
+  @Test
+  void elMinimoRedondeaHaciaArribaYNoAlMasCercano() {
+    assertEquals(Dinero.deCop(73100), sugerir(53020, "1.35", TOPES));
+  }
+
+  /** Mínimo y máximo iguales: subir a la centena no puede ganar más que el máximo. */
+  @Test
+  void conTopesIgualesNoSePasaDelMaximo() {
+    TopesDeGanancia iguales = new TopesDeGanancia(Dinero.deCop(20000), Dinero.deCop(20000));
+
+    assertEquals(Dinero.deCop(60000), sugerir(40050, "1", iguales));
+  }
+
   @Test
   void unFactorDeUnoConTopesGanaAlMenosElMinimo() {
     assertEquals(Dinero.deCop(53000), sugerir(53000, "1", SIN_TOPES));

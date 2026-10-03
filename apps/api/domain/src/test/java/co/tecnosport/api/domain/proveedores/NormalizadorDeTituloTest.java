@@ -45,6 +45,8 @@ class NormalizadorDeTituloTest {
         NormalizadorDeTitulo.normalizar("Bodies de encaje"),
         NormalizadorDeTitulo.normalizar("Bodis de encaje"));
     assertEquals("bolso bodega", NormalizadorDeTitulo.normalizar("Bolso bodega"));
+    // El plural no se confunde con el singular: es otra palabra en otra huella.
+    assertEquals("bodies de encaje", NormalizadorDeTitulo.normalizar("Bodis de encaje"));
   }
 
   @Test

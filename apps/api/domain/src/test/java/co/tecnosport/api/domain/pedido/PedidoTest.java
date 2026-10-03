@@ -35,7 +35,8 @@ class PedidoTest {
         Dinero.deCop(precioUnitario),
         new BigDecimal("0.19"),
         "https://cdn.tecnosport.co/img.webp",
-        UUID.randomUUID());
+        UUID.randomUUID(),
+        "Azul · M");
   }
 
   private static final TarifaEnvio TARIFA =
@@ -366,6 +367,8 @@ class PedidoTest {
     assertEquals(lineaOriginal.id(), lineaActualizada.id());
     assertEquals(lineaOriginal.precioUnitario(), lineaActualizada.precioUnitario());
     assertEquals(lineaOriginal.cantidad(), lineaActualizada.cantidad());
+    // Reintentar el pago no puede borrar lo que se eligió: quien despacha lo necesita.
+    assertEquals("Azul · M", lineaActualizada.detalleVariante());
   }
 
   @Test

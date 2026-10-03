@@ -164,7 +164,8 @@ public class SembradorCatalogo implements ApplicationRunner {
     // bases de quien hubiera sembrado. `V63` las borra, así que un `save` con id nuevo reventaría
     // contra el índice único de `slug` en cuanto alguien arrancara sobre una base migrada.
     CategoriaJpaEntity ropaCamisetas = categoriaPorSlug("ropa-caballero-camisetas");
-    CategoriaJpaEntity calzadoUnisex = categoriaPorSlug("calzado-unisex");
+    // La hoja y no la rama: desde V75 calzado-unisex tiene hijas y un producto cuelga de una hoja.
+    CategoriaJpaEntity calzadoUnisex = categoriaPorSlug("calzado-unisex-deportivo");
     CategoriaJpaEntity bolsosMorrales = categoriaPorSlug("bolsos-dama-morrales");
     CategoriaJpaEntity celulares = categoriaPorSlug("celulares");
 

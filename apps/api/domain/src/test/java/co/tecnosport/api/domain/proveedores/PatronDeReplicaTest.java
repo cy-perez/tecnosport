@@ -12,7 +12,6 @@ class PatronDeReplicaTest {
   void reconoceLaMarcaUnoPuntoUno() {
     assertTrue(PatronDeReplica.esReplica("*NUEVA COLECCIÓN 1.1* *SUPERDRY*"));
     assertTrue(PatronDeReplica.esReplica("*NUEVA POLO 1.1🍯* *MARCA P U M A BMW*"));
-    assertTrue(PatronDeReplica.esReplica("Producto importado 1:1"));
   }
 
   @Test
@@ -23,5 +22,16 @@ class PatronDeReplicaTest {
     assertFalse(PatronDeReplica.esReplica("Relación 1.15"));
     assertFalse(PatronDeReplica.esReplica("Bolso de dama 💰 53.000"));
     assertFalse(PatronDeReplica.esReplica(null));
+  }
+
+  /** Una medida, una relación de aspecto o una lista numerada no son la marca de una réplica. */
+  @Test
+  void lasMedidasYLasListasNoSonReplicas() {
+    assertFalse(PatronDeReplica.esReplica("Parlante JBL 1.1 kg"));
+    assertFalse(PatronDeReplica.esReplica("Termo 1.1 L"));
+    assertFalse(PatronDeReplica.esReplica("Pantalla de 1.1\""));
+    assertFalse(PatronDeReplica.esReplica("Proyector relación 1:1"));
+    assertFalse(PatronDeReplica.esReplica("1. 1 par de medias"));
+    assertTrue(PatronDeReplica.esReplica("Tenis 1.1 Nike"));
   }
 }

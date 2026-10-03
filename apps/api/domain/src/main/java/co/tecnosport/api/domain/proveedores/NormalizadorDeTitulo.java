@@ -19,7 +19,10 @@ public final class NormalizadorDeTitulo {
    * 2026 ({@link CorrectorDeTitulo}), y sin esto los productos aprobados antes con «Body» dejaban
    * de reconocerse en su siguiente anuncio y volvían como nuevos.
    */
-  private static final Pattern BODI = Pattern.compile("\\bbod(?:y|i)(?:s|es)?\\b");
+  private static final Pattern BODI = Pattern.compile("\\bbod(?:y|i)\\b");
+
+  /** El plural: «bodis», «bodys» y «bodies» son la misma palabra, y no la del singular. */
+  private static final Pattern BODIS = Pattern.compile("\\bbod(?:ys|is|ies)\\b");
 
   private NormalizadorDeTitulo() {}
 
@@ -31,6 +34,6 @@ public final class NormalizadorDeTitulo {
         DIACRITICOS.matcher(Normalizer.normalize(titulo, Normalizer.Form.NFD)).replaceAll("");
     String plano =
         NO_ALFANUMERICO.matcher(sinTildes.toLowerCase(Locale.ROOT)).replaceAll(" ").strip();
-    return BODI.matcher(plano).replaceAll("body");
+    return BODIS.matcher(BODI.matcher(plano).replaceAll("body")).replaceAll("bodies");
   }
 }
