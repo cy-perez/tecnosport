@@ -31,4 +31,9 @@ public interface RepositorioBorradores {
    * anuncio repetido antes de que alguien lo apruebe: no se abre otro.
    */
   boolean existeEnRevisionConHuella(UUID proveedorId, HuellaProveedor huella);
+
+  /** Cuántos borradores salieron de esta publicación, en cualquier estado. */
+  long contarDePublicacion(UUID publicacionId);
+
+  void eliminar(UUID id);
 }

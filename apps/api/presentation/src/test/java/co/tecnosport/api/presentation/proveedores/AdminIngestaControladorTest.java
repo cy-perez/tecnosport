@@ -361,6 +361,11 @@ class AdminIngestaControladorTest {
     public UrlFirmada urlDeLectura(String objectKey) {
       return new UrlFirmada("https://firmada.local/leer/" + objectKey);
     }
+
+    @Override
+    public void borrar(String objectKey) {
+      objetos.remove(objectKey);
+    }
   }
 
   /** Cuenta cuántas transacciones hay abiertas, para saber desde dónde se encoló. */

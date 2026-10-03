@@ -22,4 +22,6 @@ public interface RepositorioMensajesProveedor {
 
   /** Los de un lote, en orden de envío. */
   List<MensajeProveedor> listarDeLote(UUID loteId);
+
+  void eliminarTodos(Collection<UUID> ids);
 }

@@ -20,6 +20,8 @@ import co.tecnosport.api.domain.proveedores.PublicacionProveedor;
 import co.tecnosport.api.domain.proveedores.Tallas;
 import co.tecnosport.api.domain.proveedores.TipoDeTalla;
 import co.tecnosport.api.domain.proveedores.TipoProductoProveedor;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
@@ -51,6 +53,7 @@ class RepositorioBorradoresJpaTest {
   @Autowired private RepositorioMensajesProveedorJpa mensajes;
   @Autowired private RepositorioPublicacionesProveedorJpa publicaciones;
   @Autowired private RepositorioBorradoresJpa borradores;
+  @PersistenceContext private EntityManager em;
 
   private Proveedor proveedor;
   private PublicacionProveedor publicacion;
@@ -246,5 +249,85 @@ class RepositorioBorradoresJpaTest {
     enRevision.rechazar("Repetido.");
     borradores.actualizar(enRevision);
     assertThat(borradores.existeEnRevisionConHuella(proveedor.id(), huella)).isFalse();
+  }
+
+  /**
+   * Lo que {@code EliminarBorrador} hace con las filas, contra Postgres y con {@code flush}: el
+   * orden de los {@code delete} tiene que respetar las llaves foráneas, y eso solo lo dice la base.
+   */
+  @Test
+  void seBorraLaPublicacionConSusMensajesYSeSabeCualesUsanOtras() {
+    proveedor = Proveedor.crear("Bolsos", LineaCatalogo.BOLSOS, "+57 300", "Bolsos Centro", null);
+    proveedores.guardar(proveedor);
+    LoteIngesta lote = LoteIngesta.recibirExportacion(proveedor.id(), "p/exportaciones/a.zip", T);
+    lotes.guardar(lote);
+    MensajeProveedor principal =
+        MensajeProveedor.texto(proveedor.id(), lote.id(), new IdExternoDeMensaje("p"), T, "Bolso");
+    MensajeProveedor nota =
+        MensajeProveedor.texto(
+            proveedor.id(), lote.id(), new IdExternoDeMensaje("n"), T.plusSeconds(5), "Con tira");
+    MensajeProveedor foto =
+        MensajeProveedor.imagen(
+            proveedor.id(), lote.id(), new IdExternoDeMensaje("f"), T.plusSeconds(10), null, "f");
+    MensajeProveedor otro =
+        MensajeProveedor.texto(
+            proveedor.id(), lote.id(), new IdExternoDeMensaje("x"), T.plusSeconds(600), "Morral");
+    mensajes.guardarTodos(List.of(principal, nota, foto, otro));
+    publicacion = PublicacionProveedor.abrir(principal);
+    publicacion.anexar(nota);
+    publicacion.anexar(foto);
+    // Una reagrupación que usa la foto como principal, y otra que lleva la nota en su composición.
+    PublicacionProveedor conLaFoto = PublicacionProveedor.abrir(foto);
+    PublicacionProveedor conLaNota = PublicacionProveedor.abrir(otro);
+    conLaNota.anexar(nota);
+    publicaciones.guardarTodas(List.of(publicacion, conLaFoto, conLaNota));
+    BorradorProducto uno =
+        BorradorProducto.nuevo(
+            publicacion.id(),
+            proveedor.id(),
+            extraido("Uno", List.of()),
+            "{}",
+            null,
+            null,
+            null,
+            null,
+            Set.of(),
+            T);
+    BorradorProducto dos =
+        BorradorProducto.nuevo(
+            publicacion.id(),
+            proveedor.id(),
+            extraido("Dos", List.of()),
+            "{}",
+            null,
+            null,
+            null,
+            null,
+            Set.of(),
+            T);
+    borradores.guardar(uno);
+    borradores.guardar(dos);
+    em.flush();
+
+    assertThat(borradores.contarDePublicacion(publicacion.id())).isEqualTo(2);
+    assertThat(
+            publicaciones.mensajesUsadosPorOtras(
+                publicacion.id(), List.of(principal.id(), nota.id(), foto.id())))
+        .containsExactlyInAnyOrder(nota.id(), foto.id());
+
+    borradores.eliminar(uno.id());
+    borradores.eliminar(dos.id());
+    publicaciones.eliminar(publicacion.id());
+    mensajes.eliminarTodos(List.of(principal.id()));
+    em.flush();
+    em.clear();
+
+    assertThat(borradores.contarDePublicacion(publicacion.id())).isZero();
+    assertThat(publicaciones.buscarPorId(publicacion.id())).isEmpty();
+    assertThat(publicaciones.buscarPorId(conLaNota.id()).orElseThrow().textosAdicionales())
+        .containsExactly(nota.id());
+    assertThat(mensajes.listarDeLote(lote.id()))
+        .extracting(MensajeProveedor::id)
+        .containsExactly(nota.id(), foto.id(), otro.id());
   }
 }

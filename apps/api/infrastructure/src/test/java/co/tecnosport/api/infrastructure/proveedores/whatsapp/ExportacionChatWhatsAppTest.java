@@ -138,5 +138,10 @@ class ExportacionChatWhatsAppTest {
     public UrlFirmada urlDeLectura(String objectKey) {
       throw new UnsupportedOperationException();
     }
+
+    @Override
+    public void borrar(String objectKey) {
+      throw new UnsupportedOperationException();
+    }
   }
 }

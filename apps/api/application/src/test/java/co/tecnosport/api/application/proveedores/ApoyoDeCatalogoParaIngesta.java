@@ -232,6 +232,16 @@ final class ApoyoDeCatalogoParaIngesta {
           .anyMatch(b -> b.huella().map(huella::equals).orElse(false));
     }
 
+    @Override
+    public long contarDePublicacion(UUID publicacionId) {
+      return porId.values().stream().filter(b -> b.publicacionId().equals(publicacionId)).count();
+    }
+
+    @Override
+    public void eliminar(UUID id) {
+      porId.remove(id);
+    }
+
     List<BorradorProducto> enEstado(EstadoBorrador estado) {
       return porId.values().stream().filter(b -> b.estado() == estado).toList();
     }

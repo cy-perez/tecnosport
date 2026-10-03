@@ -78,7 +78,7 @@ export interface paths {
         get: operations["ver_2"];
         put?: never;
         post?: never;
-        delete?: never;
+        delete: operations["eliminar_2"];
         options?: never;
         head?: never;
         patch: operations["editar_3"];
@@ -814,7 +814,7 @@ export interface paths {
         get?: never;
         put?: never;
         post?: never;
-        delete: operations["eliminar_2"];
+        delete: operations["eliminar_3"];
         options?: never;
         head?: never;
         patch?: never;
@@ -2800,6 +2800,26 @@ export interface operations {
             };
         };
     };
+    eliminar_2: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     editar_3: {
         parameters: {
             query?: never;
@@ -4218,7 +4238,7 @@ export interface operations {
             };
         };
     };
-    eliminar_2: {
+    eliminar_3: {
         parameters: {
             query?: never;
             header?: never;

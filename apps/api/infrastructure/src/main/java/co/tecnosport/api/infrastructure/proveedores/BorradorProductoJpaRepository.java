@@ -23,6 +23,8 @@ public interface BorradorProductoJpaRepository
    */
   List<HuellaVisualFila> findByProveedorIdAndProductoIdIsNotNullAndPhashIsNotNull(UUID proveedorId);
 
+  long countByPublicacionId(UUID publicacionId);
+
   boolean existsByProveedorIdAndEstadoAndHuella(UUID proveedorId, String estado, String huella);
 
   /** Lo que el pHash necesita de un borrador que ya es producto. */
