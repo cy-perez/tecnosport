@@ -37,13 +37,14 @@ import tools.jackson.databind.json.JsonMapper;
 class ExtractorClaudeTest {
 
   private static final JsonMapper JSON = JsonMapper.builder().build();
-  private static final String PRODUCTO_JSON =
-      "{\"es_producto\":true,\"esta_agotado\":false,\"titulo\":\"Bolso de dama mediano\","
+  private static final String BOLSO =
+      "{\"esta_agotado\":false,\"titulo\":\"Bolso de dama mediano\","
           + "\"linea\":\"Bolsos\",\"tipo\":\"bolso\",\"precio_proveedor_cop\":53000,"
           + "\"tallas\":{\"tipo\":\"desconocida\",\"sirve_hasta\":null,\"valores\":[]},"
           + "\"cantidad_tonos\":4,\"tonos_nombrados\":[],\"material\":\"importado\","
           + "\"caracteristicas\":[\"2 compartimientos internos\",\"incluye llavero\"],"
           + "\"confianza\":0.92,\"notas\":null}";
+  private static final String PRODUCTO_JSON = "{\"productos\":[" + BOLSO + "]}";
 
   private HttpServer servidor;
   private final Deque<Respuesta> respuestas = new ArrayDeque<>();
@@ -137,12 +138,12 @@ class ExtractorClaudeTest {
         .containsEntry("x-api-key", "sk-prueba")
         .containsEntry("anthropic-version", "2023-06-01");
 
-    assertThat(resultado.producto().titulo()).isEqualTo("Bolso de dama mediano");
-    assertThat(resultado.producto().linea()).isEqualTo(LineaCatalogo.BOLSOS);
-    assertThat(resultado.producto().tipo()).isEqualTo(TipoProductoProveedor.BOLSO);
-    assertThat(resultado.producto().precioProveedor()).isEqualTo(Dinero.deCop(53000));
-    assertThat(resultado.producto().cantidadTonos()).isEqualTo(4);
-    assertThat(resultado.producto().tallas().tipo()).isEqualTo(TipoDeTalla.DESCONOCIDA);
+    assertThat(resultado.productos().getFirst().titulo()).isEqualTo("Bolso de dama mediano");
+    assertThat(resultado.productos().getFirst().linea()).isEqualTo(LineaCatalogo.BOLSOS);
+    assertThat(resultado.productos().getFirst().tipo()).isEqualTo(TipoProductoProveedor.BOLSO);
+    assertThat(resultado.productos().getFirst().precioProveedor()).isEqualTo(Dinero.deCop(53000));
+    assertThat(resultado.productos().getFirst().cantidadTonos()).isEqualTo(4);
+    assertThat(resultado.productos().getFirst().tallas().tipo()).isEqualTo(TipoDeTalla.DESCONOCIDA);
     assertThat(resultado.jsonCrudo()).isEqualTo(PRODUCTO_JSON);
     assertThat(resultado.uso().modelo()).isEqualTo("claude-haiku-4-5-20251001");
     assertThat(resultado.uso().tokensDeEntrada()).isEqualTo(812);
@@ -157,7 +158,7 @@ class ExtractorClaudeTest {
 
     ResultadoExtraccion resultado = extractor(4).extraer(texto());
 
-    assertThat(resultado.producto().titulo()).isEqualTo("Bolso de dama mediano");
+    assertThat(resultado.productos().getFirst().titulo()).isEqualTo("Bolso de dama mediano");
     assertThat(peticiones).hasSize(3);
     assertThat(pausas).containsExactly(Duration.ofSeconds(1), Duration.ofSeconds(2));
   }
@@ -206,24 +207,24 @@ class ExtractorClaudeTest {
         new Respuesta(
             200,
             exito(
-                "{\"es_producto\":true,\"esta_agotado\":true,\"titulo\":null,\"linea\":\"otra\","
+                "{\"productos\":[{\"esta_agotado\":true,\"titulo\":null,\"linea\":\"otra\","
                     + "\"tipo\":\"chaleco\",\"precio_proveedor_cop\":null,"
                     + "\"tallas\":{\"tipo\":\"Lista\",\"sirve_hasta\":null,\"valores\":[\"M\",\"L\"]},"
                     + "\"cantidad_tonos\":null,\"tonos_nombrados\":[\"negro\"],\"material\":null,"
-                    + "\"caracteristicas\":[],\"confianza\":0.5,\"notas\":\"sin foto\"}",
+                    + "\"caracteristicas\":[],\"confianza\":0.5,\"notas\":\"sin foto\"}]}",
                 "end_turn")));
 
     ResultadoExtraccion resultado = extractor(1).extraer(texto());
 
-    assertThat(resultado.producto().titulo()).isNull();
-    assertThat(resultado.producto().linea()).isNull();
-    assertThat(resultado.producto().tipo()).isEqualTo(TipoProductoProveedor.OTRO);
-    assertThat(resultado.producto().precioProveedor()).isNull();
-    assertThat(resultado.producto().estaAgotado()).isTrue();
-    assertThat(resultado.producto().tallas().tipo()).isEqualTo(TipoDeTalla.LISTA);
-    assertThat(resultado.producto().tallas().valores()).containsExactly("M", "L");
-    assertThat(resultado.producto().tonosNombrados()).containsExactly("negro");
-    assertThat(resultado.producto().notas()).isEqualTo("sin foto");
+    assertThat(resultado.productos().getFirst().titulo()).isNull();
+    assertThat(resultado.productos().getFirst().linea()).isNull();
+    assertThat(resultado.productos().getFirst().tipo()).isEqualTo(TipoProductoProveedor.OTRO);
+    assertThat(resultado.productos().getFirst().precioProveedor()).isNull();
+    assertThat(resultado.productos().getFirst().estaAgotado()).isTrue();
+    assertThat(resultado.productos().getFirst().tallas().tipo()).isEqualTo(TipoDeTalla.LISTA);
+    assertThat(resultado.productos().getFirst().tallas().valores()).containsExactly("M", "L");
+    assertThat(resultado.productos().getFirst().tonosNombrados()).containsExactly("negro");
+    assertThat(resultado.productos().getFirst().notas()).isEqualTo("sin foto");
   }
 
   @Test
@@ -233,5 +234,55 @@ class ExtractorClaudeTest {
     assertThatThrownBy(() -> extractor(1).extraer(texto()))
         .isInstanceOf(ExtraccionFallidaException.class)
         .hasMessageContaining("JSON");
+  }
+
+  /** Violeta: el conjunto de chaqueta y jean, en el orden del mensaje. */
+  @Test
+  void variosProductosLleganEnElOrdenDelMensaje() {
+    String jean =
+        BOLSO.replace("Bolso de dama mediano", "Jean Mom Fit Licrado").replace("53000", "119900");
+    respuestas.add(
+        new Respuesta(200, exito("{\"productos\":[" + BOLSO + "," + jean + "]}", "end_turn")));
+
+    ResultadoExtraccion resultado = extractor(1).extraer(texto());
+
+    assertThat(resultado.productos())
+        .extracting(p -> p.titulo())
+        .containsExactly("Bolso de dama mediano", "Jean Mom Fit Licrado");
+    assertThat(resultado.productos().get(1).precioProveedor()).isEqualTo(Dinero.deCop(119900));
+    assertThat(resultado.productos()).allMatch(p -> p.esProducto());
+  }
+
+  /** Las prendas de dama de Violeta tienen tipo propio; el chaleco no (lo cubre la de arriba). */
+  @Test
+  void blusaYBodySonTiposReconocidos() {
+    String blusa = BOLSO.replace("\"tipo\":\"bolso\"", "\"tipo\":\"blusa\"");
+    String body = BOLSO.replace("\"tipo\":\"bolso\"", "\"tipo\":\"BODY\"");
+    respuestas.add(
+        new Respuesta(200, exito("{\"productos\":[" + blusa + "," + body + "]}", "end_turn")));
+
+    ResultadoExtraccion resultado = extractor(1).extraer(texto());
+
+    assertThat(resultado.productos())
+        .extracting(p -> p.tipo())
+        .containsExactly(TipoProductoProveedor.BLUSA, TipoProductoProveedor.BODY);
+  }
+
+  /** Un saludo o una promoción: la lista vacía, sin fallo. */
+  @Test
+  void unMensajeSinProductosDevuelveLaListaVacia() {
+    respuestas.add(new Respuesta(200, exito("{\"productos\":[]}", "end_turn")));
+
+    assertThat(extractor(1).extraer(texto()).productos()).isEmpty();
+  }
+
+  /** La forma vieja, un solo objeto suelto, ya no es una respuesta válida. */
+  @Test
+  void sinLaListaDeProductosEsUnFallo() {
+    respuestas.add(new Respuesta(200, exito(BOLSO, "end_turn")));
+
+    assertThatThrownBy(() -> extractor(1).extraer(texto()))
+        .isInstanceOf(ExtraccionFallidaException.class)
+        .hasMessageContaining("lista de productos");
   }
 }

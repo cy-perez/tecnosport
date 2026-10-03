@@ -247,17 +247,17 @@ final class ApoyoDeIngesta {
   }
 
   /**
-   * Devuelve siempre el mismo producto —o el que salga de una función del texto— y recuerda qué le
-   * mandaron.
+   * Devuelve siempre los mismos productos —o los que salgan de una función del texto— y recuerda
+   * qué le mandaron.
    */
   static final class ExtractorFalso implements ExtractorDeProductos {
 
-    private final java.util.function.Function<TextoDePublicacion, ProductoExtraido> respuesta;
+    private final java.util.function.Function<TextoDePublicacion, List<ProductoExtraido>> respuesta;
     TextoDePublicacion ultimoTexto;
     int llamadas;
 
     ExtractorFalso(ProductoExtraido respuesta) {
-      this.respuesta = texto -> respuesta;
+      this.respuesta = texto -> List.of(respuesta);
     }
 
     ExtractorFalso(RuntimeException fallo) {
@@ -269,11 +269,22 @@ final class ApoyoDeIngesta {
 
     static ExtractorFalso porTexto(
         java.util.function.Function<TextoDePublicacion, ProductoExtraido> respuesta) {
-      return new ExtractorFalso(respuesta);
+      return new ExtractorFalso(respuesta.andThen(List::of), true);
+    }
+
+    /** Un mensaje que anuncia varios productos, como los conjuntos de Violeta. */
+    static ExtractorFalso varios(List<ProductoExtraido> productos) {
+      return new ExtractorFalso(texto -> productos, true);
+    }
+
+    static ExtractorFalso variosPorTexto(
+        java.util.function.Function<TextoDePublicacion, List<ProductoExtraido>> respuesta) {
+      return new ExtractorFalso(respuesta, true);
     }
 
     private ExtractorFalso(
-        java.util.function.Function<TextoDePublicacion, ProductoExtraido> respuesta) {
+        java.util.function.Function<TextoDePublicacion, List<ProductoExtraido>> respuesta,
+        boolean lista) {
       this.respuesta = respuesta;
     }
 

@@ -18,5 +18,10 @@ public enum AlertaBorrador {
   /** La publicación no trae ninguna foto con archivo. */
   SIN_FOTOS,
   /** En una renovación: el proveedor cambió el precio y el catálogo tiene que revisarse. */
-  PRECIO_CAMBIO
+  PRECIO_CAMBIO,
+  /**
+   * El mensaje anunciaba varios productos con las mismas fotos: quien aprueba elige cuáles son de
+   * este y marca la principal, porque de esa sale la huella visual.
+   */
+  FOTOS_COMPARTIDAS
 }

@@ -79,7 +79,8 @@ class ExtraerProductoDePublicacionTest {
   private ExtraccionEvaluada evaluar(PublicacionProveedor publicacion, ProductoExtraido respuesta) {
     ApoyoDeIngesta.ExtractorFalso extractor = new ApoyoDeIngesta.ExtractorFalso(respuesta);
     return new ExtraerProductoDePublicacion(extractor, UMBRAL)
-        .ejecutar(publicacion, mensajes, LineaCatalogo.BOLSOS);
+        .ejecutar(publicacion, mensajes, LineaCatalogo.BOLSOS)
+        .getFirst();
   }
 
   @Test
@@ -221,5 +222,128 @@ class ExtraerProductoDePublicacionTest {
     assertThrows(
         IllegalArgumentException.class,
         () -> new ExtraerProductoDePublicacion(extractor, new BigDecimal("1.5")));
+  }
+
+  private List<ExtraccionEvaluada> evaluarVarios(
+      PublicacionProveedor publicacion, List<ProductoExtraido> respuesta) {
+    return new ExtraerProductoDePublicacion(ApoyoDeIngesta.ExtractorFalso.varios(respuesta), UMBRAL)
+        .ejecutar(publicacion, mensajes, LineaCatalogo.ROPA);
+  }
+
+  /** Violeta: la chaqueta y el jean del conjunto, cada uno con el precio de su posición. */
+  @Test
+  void variosProductosTomanCadaUnoElPrecioDeSuPosicionYCompartenFotos() {
+    PublicacionProveedor publicacion =
+        PublicacionProveedor.abrir(
+            texto(
+                """
+                Chaqueta Denim corta (Q377)
+                💲108
+
+                Jean Mom Fit Licrado (Q343)
+                💲119900"""));
+    publicacion.anexar(foto("proveedores/x/conjunto.jpg"));
+
+    List<ExtraccionEvaluada> evaluadas =
+        evaluarVarios(
+            publicacion,
+            List.of(
+                extraido("Chaqueta Denim corta", 108000L, "0.9"),
+                extraido("Jean Mom Fit Licrado", 119900L, "0.9")));
+
+    assertEquals(2, evaluadas.size());
+    assertEquals(Optional.of(Dinero.deCop(108000)), evaluadas.get(0).precioProveedorOpcional());
+    assertEquals(Optional.of(Dinero.deCop(119900)), evaluadas.get(1).precioProveedorOpcional());
+    assertEquals(Set.of(AlertaBorrador.FOTOS_COMPARTIDAS), evaluadas.get(0).alertas());
+    assertEquals(Set.of(AlertaBorrador.FOTOS_COMPARTIDAS), evaluadas.get(1).alertas());
+  }
+
+  /**
+   * El extractor invirtió los precios: el texto manda, posición por posición, y lo dice. Si se
+   * comparara contra «cualquier precio del texto», este error pasaría callado.
+   */
+  @Test
+  void variosProductosConLosPreciosCruzadosSiguenElTextoYAlertan() {
+    PublicacionProveedor publicacion =
+        PublicacionProveedor.abrir(
+            texto(
+                """
+                Chaqueta 💲108
+
+                Jean 💲124"""));
+    publicacion.anexar(foto("proveedores/x/conjunto.jpg"));
+
+    List<ExtraccionEvaluada> evaluadas =
+        evaluarVarios(
+            publicacion,
+            List.of(extraido("Chaqueta", 124000L, "0.9"), extraido("Jean", 108000L, "0.9")));
+
+    assertEquals(Optional.of(Dinero.deCop(108000)), evaluadas.get(0).precioProveedorOpcional());
+    assertEquals(Optional.of(Dinero.deCop(124000)), evaluadas.get(1).precioProveedorOpcional());
+    assertTrue(evaluadas.get(0).alertas().contains(AlertaBorrador.PRECIO_INCONSISTENTE));
+    assertTrue(evaluadas.get(1).alertas().contains(AlertaBorrador.PRECIO_INCONSISTENTE));
+  }
+
+  /** Tres precios para dos productos: no hay forma honesta de emparejarlos. */
+  @Test
+  void variosProductosSinUnPrecioPorProductoSiguenElExtractorYAlertan() {
+    PublicacionProveedor publicacion =
+        PublicacionProveedor.abrir(
+            texto(
+                """
+                Chaqueta 💲108
+                Jean 💲124
+                Promo 💰 200.000"""));
+    publicacion.anexar(foto("proveedores/x/conjunto.jpg"));
+
+    List<ExtraccionEvaluada> evaluadas =
+        evaluarVarios(
+            publicacion,
+            List.of(extraido("Chaqueta", 108000L, "0.9"), extraido("Jean", 124000L, "0.9")));
+
+    assertEquals(Optional.of(Dinero.deCop(108000)), evaluadas.get(0).precioProveedorOpcional());
+    assertEquals(Optional.of(Dinero.deCop(124000)), evaluadas.get(1).precioProveedorOpcional());
+    assertTrue(evaluadas.get(0).alertas().contains(AlertaBorrador.PRECIO_INCONSISTENTE));
+    assertTrue(evaluadas.get(1).alertas().contains(AlertaBorrador.PRECIO_INCONSISTENTE));
+  }
+
+  /** El tope que decidió el negocio: cinco, y los que quedan con la confianza baja. */
+  @Test
+  void masDeCincoProductosSeRecortanACincoConConfianzaBaja() {
+    PublicacionProveedor publicacion = PublicacionProveedor.abrir(texto("Catálogo 💰 50.000"));
+    publicacion.anexar(foto("proveedores/x/catalogo.jpg"));
+    List<ProductoExtraido> seis =
+        List.of(
+            extraido("Uno", 50000L, "0.95"),
+            extraido("Dos", 50000L, "0.95"),
+            extraido("Tres", 50000L, "0.95"),
+            extraido("Cuatro", 50000L, "0.95"),
+            extraido("Cinco", 50000L, "0.95"),
+            extraido("Seis", 50000L, "0.95"));
+
+    List<ExtraccionEvaluada> evaluadas = evaluarVarios(publicacion, seis);
+
+    assertEquals(ExtraerProductoDePublicacion.TOPE_DE_PRODUCTOS, evaluadas.size());
+    assertEquals("Cinco", evaluadas.getLast().producto().titulo());
+    assertTrue(
+        evaluadas.stream().allMatch(e -> e.alertas().contains(AlertaBorrador.CONFIANZA_BAJA)));
+  }
+
+  @Test
+  void sinProductosNoHayEvaluaciones() {
+    PublicacionProveedor publicacion = PublicacionProveedor.abrir(texto("Hoy no abrimos 💰 1.000"));
+
+    assertEquals(List.of(), evaluarVarios(publicacion, List.of()));
+  }
+
+  /** Uno solo con fotos no las comparte con nadie. */
+  @Test
+  void unSoloProductoNoLlevaFotosCompartidas() {
+    PublicacionProveedor publicacion = PublicacionProveedor.abrir(texto("Bolso 💰 *53.000*"));
+    publicacion.anexar(foto("proveedores/x/1.jpg"));
+
+    ExtraccionEvaluada evaluada = evaluar(publicacion, extraido("Bolso", 53000L, "0.9"));
+
+    assertFalse(evaluada.alertas().contains(AlertaBorrador.FOTOS_COMPARTIDAS));
   }
 }

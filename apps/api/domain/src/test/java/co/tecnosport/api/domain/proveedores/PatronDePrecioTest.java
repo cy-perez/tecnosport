@@ -85,4 +85,67 @@ class PatronDePrecioTest {
   void unaCifraDeMenosDeMilConMarcaNoCuenta() {
     assertTrue(PatronDePrecio.extraer("💰 500").isEmpty());
   }
+
+  /**
+   * La Riverah (exportación del 2 de octubre de 2026): tres de sus ocho productos no abrían
+   * publicación, y sus fotos terminaban en el producto vecino.
+   */
+  @Test
+  void lasFormasDeLaRiverah() {
+    assertEquals(Optional.of(Dinero.deCop(55000)), PatronDePrecio.extraer("🤑🤑*55.000*"));
+    assertEquals(
+        Optional.of(Dinero.deCop(65000)),
+        PatronDePrecio.extraer("       🤑65.000🥳🥳\nPromo 6x360.000"));
+    assertEquals(
+        Optional.of(Dinero.deCop(55000)),
+        PatronDePrecio.extraer("  Camiseta 🎽55.000~~\nPromo 4x200.000"));
+    assertEquals(
+        Optional.of(Dinero.deCop(125000)), PatronDePrecio.extraer("*PRECIO X MAYOR* $125.000"));
+  }
+
+  /** Violeta escribe el precio en miles detrás de 💲, y a veces completo. */
+  @Test
+  void lasFormasDeVioleta() {
+    assertEquals(
+        Optional.of(Dinero.deCop(124000)),
+        PatronDePrecio.extraer("Chaleco Denim Oversize(Q287)\n💲124\nTalla U"));
+    assertEquals(Optional.of(Dinero.deCop(52000)), PatronDePrecio.extraer("💲52  \nTalla S M L"));
+    assertEquals(Optional.of(Dinero.deCop(119900)), PatronDePrecio.extraer("💲119900"));
+  }
+
+  /**
+   * Las cifras en miles solo valen pegadas a un símbolo de dinero: detrás de la palabra PRECIO
+   * vienen cantidades («PRECIO X 12 unidades»), y una tachadura de WhatsApp ({@code ~70.000~}) es
+   * el precio viejo, no el cierre del nuevo.
+   */
+  @Test
+  void loQueSigueSinSerUnPrecio() {
+    assertFalse(PatronDePrecio.tienePrecio("PRECIO X 12 unidades"));
+    assertFalse(PatronDePrecio.tienePrecio("Tallas 6 8 10 12 14"));
+    assertFalse(PatronDePrecio.tienePrecio("💲5"));
+    assertFalse(PatronDePrecio.tienePrecio("Nota: Las gorras tiene un valor de 35mil-"));
+    assertEquals(
+        Optional.of(Dinero.deCop(55000)), PatronDePrecio.extraer("Antes ~70.000~ hoy 💰55.000"));
+  }
+
+  /** Un mensaje de Violeta con dos productos: los dos precios, en el orden del texto. */
+  @Test
+  void extraerTodosDevuelveCadaPrecioEnOrden() {
+    String texto =
+        """
+        *✨NEW COLLECTION ✨*
+
+        Chaqueta Denim corta (Q377)
+        💲108
+        Talla S M L
+
+        Jean Mom Fit Licrado (Q343)
+        💲119900
+        Talla S M L XL""";
+
+    assertEquals(
+        List.of(Dinero.deCop(108000), Dinero.deCop(119900)), PatronDePrecio.extraerTodos(texto));
+    assertEquals(List.of(), PatronDePrecio.extraerTodos("Tallas M-L-XL-XXL"));
+    assertEquals(List.of(), PatronDePrecio.extraerTodos(null));
+  }
 }

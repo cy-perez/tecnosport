@@ -16,6 +16,7 @@ import co.tecnosport.api.domain.proveedores.Proveedor;
 import co.tecnosport.api.domain.proveedores.PublicacionProveedor;
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
@@ -23,6 +24,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 /**
  * Con la extracción ya evaluada, decide qué es la publicación: un producto nuevo que espera
@@ -41,6 +43,8 @@ import java.util.UUID;
  * nada que publicar, y se descarta con ese motivo.
  */
 public final class ResolverBorrador {
+
+  private static final String SIN_PRODUCTO = "El extractor no reconoció un producto en el mensaje.";
 
   private final RepositorioBorradores repositorioBorradores;
   private final RepositorioProductosDeProveedor productosDeProveedor;
@@ -81,36 +85,77 @@ public final class ResolverBorrador {
    * consulta al repositorio, así que <b>no se llama dentro de una transacción</b>; el lote usa la
    * otra sobrecarga con las dos cosas ya preparadas fuera.
    */
-  public Resolucion ejecutar(
+  public List<Resolucion> ejecutar(
       PublicacionProveedor publicacion,
       Map<UUID, MensajeProveedor> mensajes,
       Proveedor proveedor,
-      ExtraccionEvaluada evaluada) {
+      List<ExtraccionEvaluada> evaluadas) {
     return ejecutar(
         publicacion,
         mensajes,
         proveedor,
-        evaluada,
-        pHashDe(publicacion, mensajes).orElse(null),
+        evaluadas,
+        evaluadas.size() == 1 ? pHashDe(publicacion, mensajes).orElse(null) : null,
         huellasVisualesDe(proveedor.id()));
   }
 
   /**
+   * Resuelve cada producto de la publicación y después decide la publicación una sola vez: queda
+   * extraída si al menos uno terminó en borrador o en renovación, y descartada solo si se
+   * descartaron todos.
+   *
+   * <p><b>Con varios productos no se usa el pHash</b>, ni para reconocer ni para guardarlo: la
+   * primera foto puede ser de cualquiera de ellos, y con ella el jean del conjunto se reconocería
+   * después como la chaqueta. Esos borradores nacen sin huella visual y la reciben al aprobarse, de
+   * la foto que la persona marque como principal.
+   *
    * @param pHash el de la primera foto de la publicación, ya calculado fuera de la transacción, o
    *     nulo si no hay foto legible
    * @param huellasVisuales las de los productos que ya existen del proveedor, cargadas una vez por
    *     lote
+   * @return una resolución por producto, en el orden del mensaje; una sola, descartada, si el
+   *     extractor no reconoció ninguno
    */
-  public Resolucion ejecutar(
+  public List<Resolucion> ejecutar(
       PublicacionProveedor publicacion,
       Map<UUID, MensajeProveedor> mensajes,
+      Proveedor proveedor,
+      List<ExtraccionEvaluada> evaluadas,
+      PHash pHash,
+      List<HuellaVisual> huellasVisuales) {
+    if (evaluadas.isEmpty()) {
+      return List.of(descartar(publicacion, SIN_PRODUCTO));
+    }
+    PHash pHashUsable = evaluadas.size() == 1 ? pHash : null;
+    List<Resolucion> resoluciones = new ArrayList<>(evaluadas.size());
+    for (ExtraccionEvaluada evaluada : evaluadas) {
+      resoluciones.add(resolverUno(publicacion, proveedor, evaluada, pHashUsable, huellasVisuales));
+    }
+    boolean algunoSeQuedo =
+        resoluciones.stream().anyMatch(r -> r.tipo() != TipoDeResolucion.DESCARTADA);
+    if (algunoSeQuedo) {
+      publicacion.marcarExtraida();
+    } else {
+      publicacion.descartar(
+          resoluciones.stream()
+              .map(Resolucion::motivo)
+              .filter(Objects::nonNull)
+              .distinct()
+              .collect(Collectors.joining(" ")));
+    }
+    repositorioPublicaciones.actualizar(publicacion);
+    return resoluciones;
+  }
+
+  private Resolucion resolverUno(
+      PublicacionProveedor publicacion,
       Proveedor proveedor,
       ExtraccionEvaluada evaluada,
       PHash pHash,
       List<HuellaVisual> huellasVisuales) {
     ProductoExtraido extraido = evaluada.producto();
     if (!extraido.esProducto()) {
-      return descartar(publicacion, "El extractor no reconoció un producto en el mensaje.");
+      return Resolucion.descartada(SIN_PRODUCTO);
     }
 
     Dinero precio = evaluada.precioProveedor();
@@ -126,12 +171,12 @@ public final class ResolverBorrador {
           publicacion, proveedor, evaluada, existente.get(), huella, pHash, precio, ahora);
     }
     if (extraido.estaAgotado()) {
-      return descartar(publicacion, "Anuncia como agotado un producto que no está en el catálogo.");
+      return Resolucion.descartada("Anuncia como agotado un producto que no está en el catálogo.");
     }
     if (huella != null && repositorioBorradores.existeEnRevisionConHuella(proveedor.id(), huella)) {
       // El mismo anuncio repetido antes de que alguien apruebe el primero. Un segundo borrador
       // solo sirve para chocar con el índice único al aprobarlo.
-      return descartar(publicacion, "Es el mismo anuncio de un borrador que ya está en revisión.");
+      return Resolucion.descartada("Es el mismo anuncio de un borrador que ya está en revisión.");
     }
 
     Dinero precioSugerido =
@@ -149,9 +194,7 @@ public final class ResolverBorrador {
             evaluada.alertas(),
             ahora);
     repositorioBorradores.guardar(borrador);
-    publicacion.marcarExtraida();
-    repositorioPublicaciones.actualizar(publicacion);
-    return new Resolucion(TipoDeResolucion.NUEVO, borrador.alertas());
+    return new Resolucion(TipoDeResolucion.NUEVO, borrador.alertas(), null);
   }
 
   private Resolucion renovar(
@@ -190,15 +233,13 @@ public final class ResolverBorrador {
             pHash,
             alertas,
             ahora));
-    publicacion.marcarExtraida();
-    repositorioPublicaciones.actualizar(publicacion);
-    return new Resolucion(tipo, alertas);
+    return new Resolucion(tipo, alertas, null);
   }
 
   private Resolucion descartar(PublicacionProveedor publicacion, String motivo) {
     publicacion.descartar(motivo);
     repositorioPublicaciones.actualizar(publicacion);
-    return new Resolucion(TipoDeResolucion.DESCARTADA, Set.of());
+    return Resolucion.descartada(motivo);
   }
 
   private Optional<Producto> buscarExistente(
@@ -267,10 +308,18 @@ public final class ResolverBorrador {
     DESCARTADA
   }
 
-  /** Qué se decidió y con qué alertas, para que el lote las cuente. */
-  public record Resolucion(TipoDeResolucion tipo, Set<AlertaBorrador> alertas) {
+  /**
+   * Qué se decidió y con qué alertas, para que el lote las cuente.
+   *
+   * @param motivo por qué se descartó; nulo en lo demás
+   */
+  public record Resolucion(TipoDeResolucion tipo, Set<AlertaBorrador> alertas, String motivo) {
     public Resolucion {
       alertas = Set.copyOf(alertas);
+    }
+
+    static Resolucion descartada(String motivo) {
+      return new Resolucion(TipoDeResolucion.DESCARTADA, Set.of(), motivo);
     }
   }
 }

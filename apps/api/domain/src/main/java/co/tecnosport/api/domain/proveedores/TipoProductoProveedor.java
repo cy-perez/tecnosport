@@ -21,5 +21,10 @@ public enum TipoProductoProveedor {
   PANTALON,
   SHORT,
   VESTIDO,
+  // Las de dama que trajo Violeta (2 de octubre de 2026). El chaleco y el blazer se quedan en OTRO
+  // a
+  // propósito: el catálogo no tiene dónde ponerlos y los revisa una persona.
+  BLUSA,
+  BODY,
   OTRO
 }

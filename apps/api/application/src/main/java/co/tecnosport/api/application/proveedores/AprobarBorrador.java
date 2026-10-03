@@ -30,6 +30,7 @@ import co.tecnosport.api.domain.proveedores.BorradorProducto;
 import co.tecnosport.api.domain.proveedores.EstadoBorrador;
 import co.tecnosport.api.domain.proveedores.HuellaProveedor;
 import co.tecnosport.api.domain.proveedores.MensajeProveedor;
+import co.tecnosport.api.domain.proveedores.PHash;
 import co.tecnosport.api.domain.proveedores.Proveedor;
 import co.tecnosport.api.domain.proveedores.PublicacionProveedor;
 import co.tecnosport.api.domain.proveedores.Tallas;
@@ -84,6 +85,7 @@ public final class AprobarBorrador {
   private final AlmacenDeArchivosDeProveedor almacenPrivado;
   private final AlmacenDeImagenes almacenDeImagenes;
   private final ProcesadorDeImagenes procesador;
+  private final CalculadorDePHash calculadorDePHash;
   private final Reloj reloj;
 
   public AprobarBorrador(
@@ -100,6 +102,7 @@ public final class AprobarBorrador {
       AlmacenDeArchivosDeProveedor almacenPrivado,
       AlmacenDeImagenes almacenDeImagenes,
       ProcesadorDeImagenes procesador,
+      CalculadorDePHash calculadorDePHash,
       Reloj reloj) {
     this.repositorioBorradores = Objects.requireNonNull(repositorioBorradores);
     this.repositorioPublicaciones = Objects.requireNonNull(repositorioPublicaciones);
@@ -114,6 +117,7 @@ public final class AprobarBorrador {
     this.almacenPrivado = Objects.requireNonNull(almacenPrivado);
     this.almacenDeImagenes = Objects.requireNonNull(almacenDeImagenes);
     this.procesador = Objects.requireNonNull(procesador);
+    this.calculadorDePHash = Objects.requireNonNull(calculadorDePHash);
     this.reloj = Objects.requireNonNull(reloj);
   }
 
@@ -208,11 +212,17 @@ public final class AprobarBorrador {
     // Las fotos se releen del repositorio: agregarVariante las dejó ya guardadas y el agregado en
     // memoria tiene que verlas para poder publicar.
     Producto conVariantes = repositorioProductos.buscarPorId(producto.id()).orElseThrow();
-    publicarFotos(conVariantes, comando, fotosDeLaPublicacion, variantePorTono);
+    PHash pHashDeLaPrincipal =
+        publicarFotos(
+            conVariantes,
+            comando,
+            fotosDeLaPublicacion,
+            variantePorTono,
+            borrador.pHash().isEmpty());
     conVariantes.publicar();
     repositorioProductos.actualizar(conVariantes);
 
-    borrador.aprobar(conVariantes.id());
+    borrador.aprobar(conVariantes.id(), pHashDeLaPrincipal);
     repositorioBorradores.actualizar(borrador);
     return conVariantes;
   }
@@ -274,15 +284,21 @@ public final class AprobarBorrador {
    * Si algo falla después de la primera subida —una foto repetida, una ilegible, la base—, lo que
    * ya está en el bucket público se borra antes de relanzar: el informe de huérfanos informa, no
    * limpia.
+   *
+   * @param conHuellaVisual si hay que calcular el pHash de la principal: el borrador de un mensaje
+   *     con varios productos nace sin él, y la foto que la persona puso primero es la que dice cuál
+   *     es este producto
+   * @return ese pHash, o nulo si no se pidió o la foto no se pudo decodificar
    */
-  private void publicarFotos(
+  private PHash publicarFotos(
       Producto producto,
       AprobarBorradorComando comando,
       Map<UUID, MensajeProveedor> fotos,
-      Map<String, UUID> variantePorTono) {
+      Map<String, UUID> variantePorTono,
+      boolean conHuellaVisual) {
     List<String> subidas = new ArrayList<>();
     try {
-      publicarFotos(producto, comando, fotos, variantePorTono, subidas);
+      return publicarFotos(producto, comando, fotos, variantePorTono, conHuellaVisual, subidas);
     } catch (RuntimeException e) {
       for (String key : subidas) {
         almacenDeImagenes.eliminar(key);
@@ -291,12 +307,14 @@ public final class AprobarBorrador {
     }
   }
 
-  private void publicarFotos(
+  private PHash publicarFotos(
       Producto producto,
       AprobarBorradorComando comando,
       Map<UUID, MensajeProveedor> fotos,
       Map<String, UUID> variantePorTono,
+      boolean conHuellaVisual,
       List<String> subidas) {
+    PHash pHashDeLaPrincipal = null;
     int orden = 0;
     for (AprobarBorradorComando.FotoAprobada foto : comando.fotos()) {
       MensajeProveedor mensaje = fotos.get(foto.mensajeId());
@@ -307,6 +325,9 @@ public final class AprobarBorrador {
               .orElseThrow(() -> new ImagenDeProveedorIlegibleException(referencia));
       ImagenProcesada procesada = procesador.procesar(original, contentTypeDe(referencia));
       boolean principal = orden == 0;
+      if (principal && conHuellaVisual) {
+        pHashDeLaPrincipal = calculadorDePHash.de(original).orElse(null);
+      }
       String key = keyDe(producto.id(), principal, procesada.contentType());
       almacenDeImagenes.subir(key, procesada.contentType(), procesada.bytes());
       subidas.add(key);
@@ -338,6 +359,7 @@ public final class AprobarBorrador {
       }
       orden++;
     }
+    return pHashDeLaPrincipal;
   }
 
   private Map<UUID, MensajeProveedor> fotosDe(PublicacionProveedor publicacion) {

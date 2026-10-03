@@ -268,7 +268,9 @@ tecnosport:
       # Uno de los modelos que la documentacion lista con salida estructurada, verificado el 30 de
       # septiembre de 2026. Alternativa mas capaz y mas cara: claude-sonnet-4-6.
       modelo: ${PROVEEDORES_EXTRACCION_MODELO:claude-haiku-4-5-20251001}
-      max-tokens: ${PROVEEDORES_EXTRACCION_MAX_TOKENS:1024}
+      # Un mensaje puede traer hasta cinco productos (el tope de ExtraerProductoDePublicacion), y
+      # cada uno ronda los 200 tokens de salida: 1024 alcanzaba para uno y se cortaba con cinco.
+      max-tokens: ${PROVEEDORES_EXTRACCION_MAX_TOKENS:2048}
       # Por debajo de esta confianza del propio extractor el borrador lleva alerta. No es un dato
       # de negocio: es cuanto se le cree a un modelo.
       umbral-confianza: ${PROVEEDORES_EXTRACCION_UMBRAL_CONFIANZA:0.75}

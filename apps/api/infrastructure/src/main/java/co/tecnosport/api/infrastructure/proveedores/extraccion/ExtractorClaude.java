@@ -13,6 +13,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.List;
 import java.util.Objects;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -141,7 +142,7 @@ public final class ExtractorClaude implements ExtractorDeProductos {
     if (jsonCrudo == null || jsonCrudo.isBlank()) {
       throw new ExtraccionFallidaException("El extractor respondió con un bloque vacío.");
     }
-    ProductoExtraido producto = mapeador.aProducto(jsonCrudo);
+    List<ProductoExtraido> productos = mapeador.aProductos(jsonCrudo);
 
     UsoDelExtractor uso =
         new UsoDelExtractor(
@@ -155,7 +156,7 @@ public final class ExtractorClaude implements ExtractorDeProductos {
         uso.tokensDeEntrada(),
         uso.tokensDeSalida(),
         uso.latenciaMilis());
-    return new ResultadoExtraccion(producto, jsonCrudo, uso);
+    return new ResultadoExtraccion(productos, jsonCrudo, uso);
   }
 
   private String cuerpoDe(TextoDePublicacion texto) {

@@ -907,6 +907,8 @@
       "PANTALON": "Trousers",
       "SHORT": "Shorts",
       "VESTIDO": "Dress",
+      "BLUSA": "Blouse",
+      "BODY": "Bodysuit",
       "OTRO": "Other"
     },
     "tallas": {
@@ -921,7 +923,8 @@
       "TIPO_DESCONOCIDO": "The product type was not recognised.",
       "CONFIANZA_BAJA": "The extraction is not confident about what it understood. Review everything carefully.",
       "SIN_FOTOS": "The post has no photos. It cannot be approved without photos.",
-      "PRECIO_CAMBIO": "The supplier changed the price of a product that already exists. The supplier price was updated; check the sale price."
+      "PRECIO_CAMBIO": "The supplier changed the price of a product that already exists. The supplier price was updated; check the sale price.",
+      "FOTOS_COMPARTIDAS": "The message announced several products with the same photos. Keep only the ones of this product and mark its main photo."
     },
     "detalle": {
       "miga": "Review",
@@ -982,9 +985,13 @@
       "error": "The draft could not be approved. Try again.",
       "incluirFoto": "Include photo {{numero}}",
       "fotoPrincipal": "Main photo (number {{numero}})",
-      "fotosElegidas": "{{elegidas}} of {{maximo}} photos selected. The first selected one is the main photo; untick the extra ones.",
+      "fotosElegidas": "{{elegidas}} of {{maximo}} photos selected. The main photo is the one you mark; if you mark none, the first selected one. Untick the extra ones.",
       "sinFotosElegidas": "Select at least one photo: without photos there is no product.",
-      "demasiadasFotos": "At most {{maximo}} photos fit: the main one plus eight in the gallery. Untick the extra ones."
+      "demasiadasFotos": "At most {{maximo}} photos fit: the main one plus eight in the gallery. Untick the extra ones.",
+      "fotosCompartidas": "These photos come from a message with several products: some may belong to the other one. Untick the ones that are not of this product and mark the main one.",
+      "marcarPrincipal": "Mark as main photo",
+      "marcarPrincipalFoto": "Mark photo {{numero}} as the main photo",
+      "marcaLaPrincipal": "Mark the main photo of this product: the photos were shared with another one."
     },
     "rechazar": {
       "titulo": "Reject",

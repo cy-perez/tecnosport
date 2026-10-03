@@ -80,6 +80,7 @@ public class ConfiguracionBorradores {
       AlmacenDeArchivosDeProveedor almacenPrivado,
       AlmacenDeImagenes almacenDeImagenes,
       ProcesadorDeImagenes procesador,
+      CalculadorDePHash calculadorDePHash,
       Reloj reloj) {
     return new AprobarBorrador(
         borradores,
@@ -95,6 +96,7 @@ public class ConfiguracionBorradores {
         almacenPrivado,
         almacenDeImagenes,
         procesador,
+        calculadorDePHash,
         reloj);
   }
 

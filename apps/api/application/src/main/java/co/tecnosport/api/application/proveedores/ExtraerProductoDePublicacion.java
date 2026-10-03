@@ -30,8 +30,21 @@ import java.util.UUID;
  * alerta es {@code SIN_PRECIO}. Título vacío, tipo desconocido, confianza por debajo del umbral y
  * publicación sin fotos con archivo alertan también. Ninguna alerta detiene nada: el borrador se
  * crea igual y lo mira una persona.
+ *
+ * <h2>Varios productos en un mensaje</h2>
+ *
+ * <p>Cada producto se contrasta con <b>el precio de su misma posición</b> en el texto, y solo si el
+ * texto trae exactamente un precio por producto: con más o con menos no hay forma honesta de saber
+ * cuál es de cuál, así que se sigue con el del extractor y se alerta. Todos llevan {@code
+ * FOTOS_COMPARTIDAS}, porque las fotos de la publicación pueden ser de cualquiera de ellos. Y no
+ * pasan de {@link #TOPE_DE_PRODUCTOS}: un mensaje de catálogo con treinta líneas no son treinta
+ * borradores, es algo que tiene que mirar una persona, y por eso los que quedan llevan además
+ * {@code CONFIANZA_BAJA}.
  */
 public final class ExtraerProductoDePublicacion {
+
+  /** Decidido por el negocio el 2 de octubre de 2026. */
+  static final int TOPE_DE_PRODUCTOS = 5;
 
   private final ExtractorDeProductos extractor;
   private final BigDecimal umbralDeConfianza;
@@ -49,8 +62,10 @@ public final class ExtraerProductoDePublicacion {
 
   /**
    * @param mensajes los mensajes del lote por id; la publicación solo guarda identificadores
+   * @return una evaluación por producto, en el orden del mensaje; vacía si el extractor no
+   *     reconoció ninguno
    */
-  public ExtraccionEvaluada ejecutar(
+  public List<ExtraccionEvaluada> ejecutar(
       PublicacionProveedor publicacion,
       Map<UUID, MensajeProveedor> mensajes,
       LineaCatalogo lineaDelProveedor) {
@@ -63,44 +78,75 @@ public final class ExtraerProductoDePublicacion {
         new TextoDePublicacion(principal.textoLegible().orElse(""), adicionales, lineaDelProveedor);
 
     ResultadoExtraccion resultado = extractor.extraer(texto);
-    ProductoExtraido producto = resultado.producto();
+    List<ProductoExtraido> productos = resultado.productos();
+    boolean recortado = productos.size() > TOPE_DE_PRODUCTOS;
+    if (recortado) {
+      productos = productos.subList(0, TOPE_DE_PRODUCTOS);
+    }
+    boolean varios = productos.size() > 1;
 
-    Set<AlertaBorrador> alertas = EnumSet.noneOf(AlertaBorrador.class);
-    Optional<Dinero> delTexto = PatronDePrecio.extraer(texto.completo());
-    Optional<Dinero> delExtractor = producto.precioProveedorOpcional();
-    Dinero precio;
-    if (delTexto.isPresent()) {
-      precio = delTexto.get();
-      if (delExtractor.isEmpty() || !delExtractor.get().equals(precio)) {
-        alertas.add(AlertaBorrador.PRECIO_INCONSISTENTE);
-      }
-    } else if (delExtractor.isPresent()) {
-      precio = delExtractor.get();
-      alertas.add(AlertaBorrador.PRECIO_INCONSISTENTE);
-    } else {
-      precio = null;
-      alertas.add(AlertaBorrador.SIN_PRECIO);
-    }
-
-    if (producto.tituloOpcional().isEmpty()) {
-      alertas.add(AlertaBorrador.TITULO_VACIO);
-    }
-    if (producto.tipo() == TipoProductoProveedor.OTRO) {
-      alertas.add(AlertaBorrador.TIPO_DESCONOCIDO);
-    }
-    if (producto.confianza().compareTo(umbralDeConfianza) < 0) {
-      alertas.add(AlertaBorrador.CONFIANZA_BAJA);
-    }
     boolean sinFotos =
         publicacion.medios().stream()
             .map(mensajes::get)
             .noneMatch(m -> m != null && m.referenciaArchivo().isPresent());
-    if (sinFotos) {
-      alertas.add(AlertaBorrador.SIN_FOTOS);
-    }
+    List<Dinero> preciosDelTexto = PatronDePrecio.extraerTodos(texto.completo());
 
-    return new ExtraccionEvaluada(
-        producto, resultado.jsonCrudo(), precio, alertas, resultado.uso());
+    List<ExtraccionEvaluada> evaluadas = new ArrayList<>(productos.size());
+    for (int i = 0; i < productos.size(); i++) {
+      ProductoExtraido producto = productos.get(i);
+      Set<AlertaBorrador> alertas = EnumSet.noneOf(AlertaBorrador.class);
+      Optional<Dinero> delTexto = precioDelTexto(preciosDelTexto, i, productos.size());
+      Dinero precio = contrastarPrecio(delTexto, producto.precioProveedorOpcional(), alertas);
+
+      if (producto.tituloOpcional().isEmpty()) {
+        alertas.add(AlertaBorrador.TITULO_VACIO);
+      }
+      if (producto.tipo() == TipoProductoProveedor.OTRO) {
+        alertas.add(AlertaBorrador.TIPO_DESCONOCIDO);
+      }
+      if (recortado || producto.confianza().compareTo(umbralDeConfianza) < 0) {
+        alertas.add(AlertaBorrador.CONFIANZA_BAJA);
+      }
+      if (sinFotos) {
+        alertas.add(AlertaBorrador.SIN_FOTOS);
+      } else if (varios) {
+        alertas.add(AlertaBorrador.FOTOS_COMPARTIDAS);
+      }
+      evaluadas.add(
+          new ExtraccionEvaluada(
+              producto, resultado.jsonCrudo(), precio, alertas, resultado.uso()));
+    }
+    return evaluadas;
+  }
+
+  /**
+   * Con un solo producto, el primer precio del texto, como siempre: el «por difusión» va delante
+   * del «después de 6». Con varios, el de su posición, y solo si hay uno por producto.
+   */
+  private static Optional<Dinero> precioDelTexto(List<Dinero> precios, int posicion, int cuantos) {
+    if (precios.isEmpty()) {
+      return Optional.empty();
+    }
+    if (cuantos == 1) {
+      return Optional.of(precios.getFirst());
+    }
+    return precios.size() == cuantos ? Optional.of(precios.get(posicion)) : Optional.empty();
+  }
+
+  private static Dinero contrastarPrecio(
+      Optional<Dinero> delTexto, Optional<Dinero> delExtractor, Set<AlertaBorrador> alertas) {
+    if (delTexto.isPresent()) {
+      if (delExtractor.isEmpty() || !delExtractor.get().equals(delTexto.get())) {
+        alertas.add(AlertaBorrador.PRECIO_INCONSISTENTE);
+      }
+      return delTexto.get();
+    }
+    if (delExtractor.isPresent()) {
+      alertas.add(AlertaBorrador.PRECIO_INCONSISTENTE);
+      return delExtractor.get();
+    }
+    alertas.add(AlertaBorrador.SIN_PRECIO);
+    return null;
   }
 
   private static MensajeProveedor mensajeDe(Map<UUID, MensajeProveedor> mensajes, UUID id) {

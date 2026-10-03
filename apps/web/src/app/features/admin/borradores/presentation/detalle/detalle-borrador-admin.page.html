@@ -87,6 +87,11 @@
             | transloco: { elegidas: fotosElegidas().length, maximo: maximoFotos }
         }}
       </p>
+      @if (fotosCompartidas()) {
+        <p class="m-0 mb-8 text-sm text-ts-texto">
+          {{ 'admin.borradores.aprobar.fotosCompartidas' | transloco }}
+        </p>
+      }
     }
     @if (fotos().length === 0) {
       <p class="mb-24 text-ts-texto-suave">{{ 'admin.borradores.detalle.sinFotos' | transloco }}</p>
@@ -119,6 +124,17 @@
                 [marcado]="fotoIncluida(foto.mensajeId)"
                 (marcadoCambio)="incluirFoto(foto.mensajeId, $event)"
               />
+              @if (fotoIncluida(foto.mensajeId) && !esPrincipal(foto.mensajeId)) {
+                <ts-boton
+                  variante="texto"
+                  [etiquetaAccesible]="
+                    'admin.borradores.aprobar.marcarPrincipalFoto' | transloco: { numero: i + 1 }
+                  "
+                  (click)="marcarPrincipal(foto.mensajeId, i)"
+                >
+                  {{ 'admin.borradores.aprobar.marcarPrincipal' | transloco }}
+                </ts-boton>
+              }
             }
             @if (editable() && opcionesTono().length > 0) {
               <ts-select

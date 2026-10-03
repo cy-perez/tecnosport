@@ -1,61 +1,71 @@
 {
   "type": "object",
   "additionalProperties": false,
-  "required": [
-    "es_producto",
-    "esta_agotado",
-    "titulo",
-    "linea",
-    "tipo",
-    "precio_proveedor_cop",
-    "tallas",
-    "cantidad_tonos",
-    "tonos_nombrados",
-    "material",
-    "caracteristicas",
-    "confianza",
-    "notas"
-  ],
+  "required": ["productos"],
   "properties": {
-    "es_producto": { "type": "boolean" },
-    "esta_agotado": { "type": "boolean" },
-    "titulo": { "type": ["string", "null"] },
-    "linea": { "type": "string", "enum": ["bolsos", "ropa", "otra"] },
-    "tipo": {
-      "type": "string",
-      "enum": [
-        "bolso",
-        "morral",
-        "canguro",
-        "conjunto_pantalon",
-        "conjunto_short",
-        "enterizo",
-        "polo",
-        "camiseta",
-        "buso",
-        "chaqueta",
-        "pantalon",
-        "short",
-        "vestido",
-        "otro"
-      ]
-    },
-    "precio_proveedor_cop": { "type": ["integer", "null"] },
-    "tallas": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": ["tipo", "sirve_hasta", "valores"],
-      "properties": {
-        "tipo": { "type": "string", "enum": ["unica", "lista", "desconocida"] },
-        "sirve_hasta": { "type": ["string", "null"] },
-        "valores": { "type": "array", "items": { "type": "string" } }
+    "productos": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "esta_agotado",
+          "titulo",
+          "linea",
+          "tipo",
+          "precio_proveedor_cop",
+          "tallas",
+          "cantidad_tonos",
+          "tonos_nombrados",
+          "material",
+          "caracteristicas",
+          "confianza",
+          "notas"
+        ],
+        "properties": {
+          "esta_agotado": { "type": "boolean" },
+          "titulo": { "type": ["string", "null"] },
+          "linea": { "type": "string", "enum": ["bolsos", "ropa", "otra"] },
+          "tipo": {
+            "type": "string",
+            "enum": [
+              "bolso",
+              "morral",
+              "canguro",
+              "conjunto_pantalon",
+              "conjunto_short",
+              "enterizo",
+              "polo",
+              "camiseta",
+              "buso",
+              "chaqueta",
+              "pantalon",
+              "short",
+              "vestido",
+              "blusa",
+              "body",
+              "otro"
+            ]
+          },
+          "precio_proveedor_cop": { "type": ["integer", "null"] },
+          "tallas": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["tipo", "sirve_hasta", "valores"],
+            "properties": {
+              "tipo": { "type": "string", "enum": ["unica", "lista", "desconocida"] },
+              "sirve_hasta": { "type": ["string", "null"] },
+              "valores": { "type": "array", "items": { "type": "string" } }
+            }
+          },
+          "cantidad_tonos": { "type": ["integer", "null"] },
+          "tonos_nombrados": { "type": "array", "items": { "type": "string" } },
+          "material": { "type": ["string", "null"] },
+          "caracteristicas": { "type": "array", "items": { "type": "string" } },
+          "confianza": { "type": "number" },
+          "notas": { "type": ["string", "null"] }
+        }
       }
-    },
-    "cantidad_tonos": { "type": ["integer", "null"] },
-    "tonos_nombrados": { "type": "array", "items": { "type": "string" } },
-    "material": { "type": ["string", "null"] },
-    "caracteristicas": { "type": "array", "items": { "type": "string" } },
-    "confianza": { "type": "number" },
-    "notas": { "type": ["string", "null"] }
+    }
   }
 }

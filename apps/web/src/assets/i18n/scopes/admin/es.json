@@ -907,6 +907,8 @@
       "PANTALON": "Pantalón",
       "SHORT": "Short",
       "VESTIDO": "Vestido",
+      "BLUSA": "Blusa",
+      "BODY": "Body",
       "OTRO": "Otro"
     },
     "tallas": {
@@ -921,7 +923,8 @@
       "TIPO_DESCONOCIDO": "No se reconoció qué tipo de producto es.",
       "CONFIANZA_BAJA": "La extracción no está segura de lo que entendió. Revisa todo con calma.",
       "SIN_FOTOS": "La publicación no trae fotos. Sin fotos no se puede aprobar.",
-      "PRECIO_CAMBIO": "El proveedor cambió el precio de un producto que ya existe. Se actualizó el precio de proveedor; revisa el de venta."
+      "PRECIO_CAMBIO": "El proveedor cambió el precio de un producto que ya existe. Se actualizó el precio de proveedor; revisa el de venta.",
+      "FOTOS_COMPARTIDAS": "El mensaje anunciaba varios productos con las mismas fotos. Deja solo las de este producto y marca su foto principal."
     },
     "detalle": {
       "miga": "Revisión",
@@ -982,9 +985,13 @@
       "error": "No se pudo aprobar el borrador. Intenta de nuevo.",
       "incluirFoto": "Incluir la foto {{numero}}",
       "fotoPrincipal": "Foto principal (la {{numero}})",
-      "fotosElegidas": "{{elegidas}} de {{maximo}} fotos elegidas. La primera elegida es la principal; destilda las que sobren.",
+      "fotosElegidas": "{{elegidas}} de {{maximo}} fotos elegidas. La principal es la que marques; si no marcas ninguna, la primera elegida. Destilda las que sobren.",
       "sinFotosElegidas": "Elige por lo menos una foto: sin fotos no hay producto.",
-      "demasiadasFotos": "Caben como máximo {{maximo}} fotos: la principal y ocho de galería. Destilda las que sobren."
+      "demasiadasFotos": "Caben como máximo {{maximo}} fotos: la principal y ocho de galería. Destilda las que sobren.",
+      "fotosCompartidas": "Estas fotos son de un mensaje con varios productos: algunas pueden ser del otro. Destilda las que no sean de este y marca la principal.",
+      "marcarPrincipal": "Marcar como principal",
+      "marcarPrincipalFoto": "Marcar la foto {{numero}} como principal",
+      "marcaLaPrincipal": "Marca la foto principal de este producto: las fotos venían compartidas con otro."
     },
     "rechazar": {
       "titulo": "Rechazar",

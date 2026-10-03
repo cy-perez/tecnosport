@@ -153,29 +153,33 @@ public final class ProcesarLoteDeIngesta {
       Proveedor proveedor,
       List<HuellaVisual> huellasVisuales,
       Contador contador) {
-    ExtraccionEvaluada evaluada;
+    List<ExtraccionEvaluada> evaluadas;
     try {
-      evaluada = extraer.ejecutar(publicacion, mensajes, proveedor.linea());
+      evaluadas = extraer.ejecutar(publicacion, mensajes, proveedor.linea());
     } catch (ExtraccionFallidaException e) {
       fallarPublicacion(publicacion, e.getMessage());
       contador.descartes++;
       return;
     }
     try {
-      // La foto se lee y se decodifica aquí, fuera de la transacción; adentro solo se decide.
-      PHash pHash = resolver.pHashDe(publicacion, mensajes).orElse(null);
-      ResolverBorrador.Resolucion resolucion =
+      // La foto se lee y se decodifica aquí, fuera de la transacción; adentro solo se decide. Con
+      // varios productos no se lee: la primera foto puede ser de cualquiera y no se usa.
+      PHash pHash =
+          evaluadas.size() == 1 ? resolver.pHashDe(publicacion, mensajes).orElse(null) : null;
+      List<ResolverBorrador.Resolucion> resoluciones =
           enTransaccionPropia.ejecutar(
               () ->
                   resolver.ejecutar(
-                      publicacion, mensajes, proveedor, evaluada, pHash, huellasVisuales));
-      switch (resolucion.tipo()) {
-        case NUEVO -> contador.nuevos++;
-        case RENOVACION -> contador.renovaciones++;
-        case AGOTADO -> contador.agotados++;
-        case DESCARTADA -> contador.descartes++;
+                      publicacion, mensajes, proveedor, evaluadas, pHash, huellasVisuales));
+      for (ResolverBorrador.Resolucion resolucion : resoluciones) {
+        switch (resolucion.tipo()) {
+          case NUEVO -> contador.nuevos++;
+          case RENOVACION -> contador.renovaciones++;
+          case AGOTADO -> contador.agotados++;
+          case DESCARTADA -> contador.descartes++;
+        }
+        contador.alertas += resolucion.alertas().size();
       }
-      contador.alertas += resolucion.alertas().size();
     } catch (RuntimeException e) {
       fallarPublicacion(publicacion, motivoLegible(e));
       contador.descartes++;

@@ -153,17 +153,19 @@ class ResolverBorradorTest {
     return producto;
   }
 
+  private static final Set<AlertaBorrador> COMPARTIDAS = Set.of(AlertaBorrador.FOTOS_COMPARTIDAS);
+
+  /** Un mensaje, un producto: la forma de casi todas las pruebas. */
+  private Resolucion resolver(PublicacionProveedor publicacion, ExtraccionEvaluada evaluada) {
+    return caso().ejecutar(publicacion, mensajes, proveedor, List.of(evaluada)).getFirst();
+  }
+
   @Test
   void unProductoNuevoDejaUnBorradorEnRevisionConElMargenDeLaLinea() {
     PublicacionProveedor publicacion = publicacion("Bolso de dama 💰 53.000", "foto-a");
 
     Resolucion resolucion =
-        caso()
-            .ejecutar(
-                publicacion,
-                mensajes,
-                proveedor,
-                evaluada("Bolso de dama mediano", 53000, true, false, Set.of()));
+        resolver(publicacion, evaluada("Bolso de dama mediano", 53000, true, false, Set.of()));
 
     assertEquals(TipoDeResolucion.NUEVO, resolucion.tipo());
     List<BorradorProducto> enRevision = borradores.enEstado(EstadoBorrador.EN_REVISION);
@@ -190,9 +192,7 @@ class ResolverBorradorTest {
         new BigDecimal("1.5"));
     PublicacionProveedor publicacion = publicacion("Bolso 💰 53.000", null);
 
-    caso()
-        .ejecutar(
-            publicacion, mensajes, proveedor, evaluada("Bolso", 53000, true, false, Set.of()));
+    resolver(publicacion, evaluada("Bolso", 53000, true, false, Set.of()));
 
     assertEquals(
         Optional.of(Dinero.deCop(79500)),
@@ -207,8 +207,8 @@ class ResolverBorradorTest {
     PublicacionProveedor repetida = publicacion("Bolso de dama mediano 💰 53.000", null);
     ExtraccionEvaluada evaluada = evaluada("Bolso de dama mediano", 53000, true, false, Set.of());
 
-    Resolucion primero = caso().ejecutar(primera, mensajes, proveedor, evaluada);
-    Resolucion segundo = caso().ejecutar(repetida, mensajes, proveedor, evaluada);
+    Resolucion primero = resolver(primera, evaluada);
+    Resolucion segundo = resolver(repetida, evaluada);
 
     assertEquals(TipoDeResolucion.NUEVO, primero.tipo());
     assertEquals(TipoDeResolucion.DESCARTADA, segundo.tipo());
@@ -223,12 +223,7 @@ class ResolverBorradorTest {
     PublicacionProveedor publicacion = publicacion("Bolso de dama mediano 💰 53.000", null);
 
     Resolucion resolucion =
-        caso()
-            .ejecutar(
-                publicacion,
-                mensajes,
-                proveedor,
-                evaluada("BOLSO DE DAMA MEDIANO", 53000, true, false, Set.of()));
+        resolver(publicacion, evaluada("BOLSO DE DAMA MEDIANO", 53000, true, false, Set.of()));
 
     assertEquals(TipoDeResolucion.RENOVACION, resolucion.tipo());
     assertEquals(EstadoDisponibilidad.DISPONIBLE, oculto.estadoDisponibilidad());
@@ -244,22 +239,12 @@ class ResolverBorradorTest {
     Producto existente =
         productoExistente("Bolso de dama mediano", 53000, EstadoDisponibilidad.DISPONIBLE);
     PublicacionProveedor anterior = publicacion("Bolso de dama mediano 💰 53.000", "misma-foto");
-    caso()
-        .ejecutar(
-            anterior,
-            mensajes,
-            proveedor,
-            evaluada("Bolso de dama mediano", 53000, true, false, Set.of()));
+    resolver(anterior, evaluada("Bolso de dama mediano", 53000, true, false, Set.of()));
     // Esa resolución fue una renovación por huella; dejó la huella visual apuntando al producto.
     PublicacionProveedor reescrita = publicacion("Bolso mediano elegante 💰 55.000", "misma-foto");
 
     Resolucion resolucion =
-        caso()
-            .ejecutar(
-                reescrita,
-                mensajes,
-                proveedor,
-                evaluada("Bolso mediano elegante", 55000, true, false, Set.of()));
+        resolver(reescrita, evaluada("Bolso mediano elegante", 55000, true, false, Set.of()));
 
     assertEquals(TipoDeResolucion.RENOVACION, resolucion.tipo());
     assertTrue(resolucion.alertas().contains(AlertaBorrador.PRECIO_CAMBIO));
@@ -271,18 +256,10 @@ class ResolverBorradorTest {
   void unaFotoDistintaConOtroTextoEsUnProductoNuevo() {
     productoExistente("Bolso de dama mediano", 53000, EstadoDisponibilidad.DISPONIBLE);
     PublicacionProveedor conFoto = publicacion("Bolso de dama mediano 💰 53.000", "foto-uno");
-    caso()
-        .ejecutar(
-            conFoto,
-            mensajes,
-            proveedor,
-            evaluada("Bolso de dama mediano", 53000, true, false, Set.of()));
+    resolver(conFoto, evaluada("Bolso de dama mediano", 53000, true, false, Set.of()));
     PublicacionProveedor otra = publicacion("Morral fino 💰 52.000", "foto-dos-muy-distinta");
 
-    Resolucion resolucion =
-        caso()
-            .ejecutar(
-                otra, mensajes, proveedor, evaluada("Morral fino", 52000, true, false, Set.of()));
+    Resolucion resolucion = resolver(otra, evaluada("Morral fino", 52000, true, false, Set.of()));
 
     assertEquals(TipoDeResolucion.NUEVO, resolucion.tipo());
   }
@@ -295,12 +272,7 @@ class ResolverBorradorTest {
     PublicacionProveedor publicacion = publicacion("Bolso de dama mediano 💰 53.000 AGOTADO", null);
 
     Resolucion resolucion =
-        caso()
-            .ejecutar(
-                publicacion,
-                mensajes,
-                proveedor,
-                evaluada("Bolso de dama mediano", 53000, true, true, Set.of()));
+        resolver(publicacion, evaluada("Bolso de dama mediano", 53000, true, true, Set.of()));
 
     assertEquals(TipoDeResolucion.AGOTADO, resolucion.tipo());
     assertEquals(EstadoDisponibilidad.AGOTADO_POR_PROVEEDOR, existente.estadoDisponibilidad());
@@ -311,10 +283,7 @@ class ResolverBorradorTest {
   void agotadoSobreAlgoQueNoEstaEnElCatalogoSeDescarta() {
     PublicacionProveedor publicacion = publicacion("Canguro 💰 35.000 agotado", null);
 
-    Resolucion resolucion =
-        caso()
-            .ejecutar(
-                publicacion, mensajes, proveedor, evaluada("Canguro", 35000, true, true, Set.of()));
+    Resolucion resolucion = resolver(publicacion, evaluada("Canguro", 35000, true, true, Set.of()));
 
     assertEquals(TipoDeResolucion.DESCARTADA, resolucion.tipo());
     assertEquals(
@@ -327,10 +296,7 @@ class ResolverBorradorTest {
   void loQueNoEsUnProductoSeDescartaConMotivo() {
     PublicacionProveedor publicacion = publicacion("Hoy no abrimos 💰 promo", null);
 
-    Resolucion resolucion =
-        caso()
-            .ejecutar(
-                publicacion, mensajes, proveedor, evaluada(null, 1000, false, false, Set.of()));
+    Resolucion resolucion = resolver(publicacion, evaluada(null, 1000, false, false, Set.of()));
 
     assertEquals(TipoDeResolucion.DESCARTADA, resolucion.tipo());
     PublicacionProveedor guardada = publicaciones.buscarPorId(publicacion.id()).orElseThrow();
@@ -343,17 +309,14 @@ class ResolverBorradorTest {
     PublicacionProveedor publicacion = publicacion("Bolso 💰 53.000", null);
 
     Resolucion resolucion =
-        caso()
-            .ejecutar(
-                publicacion,
-                mensajes,
-                proveedor,
-                evaluada(
-                    "Bolso",
-                    53000,
-                    true,
-                    false,
-                    Set.of(AlertaBorrador.SIN_FOTOS, AlertaBorrador.CONFIANZA_BAJA)));
+        resolver(
+            publicacion,
+            evaluada(
+                "Bolso",
+                53000,
+                true,
+                false,
+                Set.of(AlertaBorrador.SIN_FOTOS, AlertaBorrador.CONFIANZA_BAJA)));
 
     assertEquals(2, resolucion.alertas().size());
     assertTrue(borradores.enEstado(EstadoBorrador.EN_REVISION).get(0).tieneAlertas());
@@ -363,11 +326,125 @@ class ResolverBorradorTest {
   void unaFotoIlegibleNoDejaHuellaVisualYNoRompeNada() {
     PublicacionProveedor publicacion = publicacion("Bolso 💰 53.000", "ilegible");
 
-    caso()
-        .ejecutar(
-            publicacion, mensajes, proveedor, evaluada("Bolso", 53000, true, false, Set.of()));
+    resolver(publicacion, evaluada("Bolso", 53000, true, false, Set.of()));
 
     assertTrue(borradores.enEstado(EstadoBorrador.EN_REVISION).get(0).pHash().isEmpty());
     assertTrue(new PHash(1).distanciaHamming(new PHash(3)) == 1);
+  }
+
+  /** Violeta: la chaqueta y el jean del mismo pie de foto son dos borradores, sin huella visual. */
+  @Test
+  void variosProductosDejanUnBorradorCadaUnoSinHuellaVisual() {
+    PublicacionProveedor publicacion = publicacion("Chaqueta 💲108 Jean 💲124", "foto-conjunto");
+
+    List<Resolucion> resoluciones =
+        caso()
+            .ejecutar(
+                publicacion,
+                mensajes,
+                proveedor,
+                List.of(
+                    evaluada("Chaqueta Denim corta", 108000, true, false, COMPARTIDAS),
+                    evaluada("Jean wide leg", 124000, true, false, COMPARTIDAS)));
+
+    assertEquals(
+        List.of(TipoDeResolucion.NUEVO, TipoDeResolucion.NUEVO),
+        resoluciones.stream().map(Resolucion::tipo).toList());
+    List<BorradorProducto> enRevision = borradores.enEstado(EstadoBorrador.EN_REVISION);
+    assertEquals(2, enRevision.size());
+    assertTrue(
+        enRevision.stream().allMatch(b -> b.pHash().isEmpty()),
+        "la foto del conjunto no es de ninguno de los dos en particular");
+    assertTrue(enRevision.stream().allMatch(b -> b.publicacionId().equals(publicacion.id())));
+    assertEquals(
+        EstadoPublicacionProveedor.EXTRAIDA,
+        publicaciones.buscarPorId(publicacion.id()).orElseThrow().estado());
+  }
+
+  /**
+   * La razón de no usar el pHash con varios productos: la foto del conjunto ya es la de la chaqueta
+   * aprobada, y el jean no es una renovación de la chaqueta.
+   */
+  @Test
+  void conVariosProductosLaFotoNoReconoceAUnoComoOtro() {
+    productoExistente("Chaqueta Denim corta", 108000, EstadoDisponibilidad.DISPONIBLE);
+    resolver(
+        publicacion("Chaqueta Denim corta 💲108", "foto-conjunto"),
+        evaluada("Chaqueta Denim corta", 108000, true, false, Set.of()));
+    PublicacionProveedor conjunto = publicacion("Chaqueta 💲108 Jean 💲124", "foto-conjunto");
+
+    List<Resolucion> resoluciones =
+        caso()
+            .ejecutar(
+                conjunto,
+                mensajes,
+                proveedor,
+                List.of(
+                    evaluada("Jean wide leg", 124000, true, false, COMPARTIDAS),
+                    evaluada("Chaqueta Denim corta", 108000, true, false, COMPARTIDAS)));
+
+    assertEquals(TipoDeResolucion.NUEVO, resoluciones.get(0).tipo());
+    assertEquals(
+        TipoDeResolucion.RENOVACION, resoluciones.get(1).tipo(), "la chaqueta sí, por su huella");
+  }
+
+  /** El jean ya está en revisión por otro mensaje: se descarta él, no la publicación. */
+  @Test
+  void unProductoRepetidoSeDescartaSinDescartarLaPublicacion() {
+    resolver(
+        publicacion("Jean wide leg 💲124", null),
+        evaluada("Jean wide leg", 124000, true, false, Set.of()));
+    PublicacionProveedor conjunto = publicacion("Blusa 💲28 Jean 💲124", "foto-conjunto");
+
+    List<Resolucion> resoluciones =
+        caso()
+            .ejecutar(
+                conjunto,
+                mensajes,
+                proveedor,
+                List.of(
+                    evaluada("Blusa Rib larga", 28000, true, false, COMPARTIDAS),
+                    evaluada("Jean wide leg", 124000, true, false, COMPARTIDAS)));
+
+    assertEquals(TipoDeResolucion.NUEVO, resoluciones.get(0).tipo());
+    assertEquals(TipoDeResolucion.DESCARTADA, resoluciones.get(1).tipo());
+    assertTrue(resoluciones.get(1).motivo().contains("ya está en revisión"));
+    assertEquals(
+        EstadoPublicacionProveedor.EXTRAIDA,
+        publicaciones.buscarPorId(conjunto.id()).orElseThrow().estado());
+  }
+
+  /** Solo cuando se descartan todos la publicación queda descartada, con los motivos. */
+  @Test
+  void siSeDescartanTodosLaPublicacionQuedaDescartada() {
+    PublicacionProveedor publicacion = publicacion("Chaqueta 💲108 Jean 💲124 AGOTADOS", null);
+
+    List<Resolucion> resoluciones =
+        caso()
+            .ejecutar(
+                publicacion,
+                mensajes,
+                proveedor,
+                List.of(
+                    evaluada("Chaqueta", 108000, true, true, COMPARTIDAS),
+                    evaluada("Jean", 124000, true, true, COMPARTIDAS)));
+
+    assertTrue(resoluciones.stream().allMatch(r -> r.tipo() == TipoDeResolucion.DESCARTADA));
+    PublicacionProveedor guardada = publicaciones.buscarPorId(publicacion.id()).orElseThrow();
+    assertEquals(EstadoPublicacionProveedor.DESCARTADA, guardada.estado());
+    assertTrue(guardada.motivo().orElseThrow().contains("agotado"));
+  }
+
+  @Test
+  void sinProductosLaPublicacionSeDescarta() {
+    PublicacionProveedor publicacion = publicacion("Hoy no abrimos", null);
+
+    List<Resolucion> resoluciones =
+        caso().ejecutar(publicacion, mensajes, proveedor, List.of(), null, List.of());
+
+    assertEquals(TipoDeResolucion.DESCARTADA, resoluciones.getFirst().tipo());
+    assertEquals(
+        EstadoPublicacionProveedor.DESCARTADA,
+        publicaciones.buscarPorId(publicacion.id()).orElseThrow().estado());
   }
 }

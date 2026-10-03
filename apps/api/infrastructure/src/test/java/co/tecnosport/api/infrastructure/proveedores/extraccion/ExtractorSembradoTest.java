@@ -25,11 +25,11 @@ class ExtractorSembradoTest {
                 List.of(),
                 LineaCatalogo.BOLSOS));
 
-    assertThat(resultado.producto().esProducto()).isTrue();
-    assertThat(resultado.producto().titulo()).isEqualTo("Bolso de dama mediano");
-    assertThat(resultado.producto().precioProveedor()).isEqualTo(Dinero.deCop(53000));
-    assertThat(resultado.producto().tipo()).isEqualTo(TipoProductoProveedor.OTRO);
-    assertThat(resultado.producto().confianza()).isEqualByComparingTo(BigDecimal.ZERO);
+    assertThat(resultado.productos().getFirst().esProducto()).isTrue();
+    assertThat(resultado.productos().getFirst().titulo()).isEqualTo("Bolso de dama mediano");
+    assertThat(resultado.productos().getFirst().precioProveedor()).isEqualTo(Dinero.deCop(53000));
+    assertThat(resultado.productos().getFirst().tipo()).isEqualTo(TipoProductoProveedor.OTRO);
+    assertThat(resultado.productos().getFirst().confianza()).isEqualByComparingTo(BigDecimal.ZERO);
     assertThat(resultado.uso().modelo()).isEqualTo("sembrado");
   }
 
@@ -38,12 +38,12 @@ class ExtractorSembradoTest {
     ResultadoExtraccion saludo =
         extractor.extraer(
             new TextoDePublicacion("Buenos días 🙌", List.of(), LineaCatalogo.BOLSOS));
-    assertThat(saludo.producto().esProducto()).isFalse();
+    assertThat(saludo.productos().getFirst().esProducto()).isFalse();
 
     ResultadoExtraccion agotado =
         extractor.extraer(
             new TextoDePublicacion(
                 "Bolso mediano 💰 53.000\nAgotado el negro", List.of(), LineaCatalogo.BOLSOS));
-    assertThat(agotado.producto().estaAgotado()).isTrue();
+    assertThat(agotado.productos().getFirst().estaAgotado()).isTrue();
   }
 }

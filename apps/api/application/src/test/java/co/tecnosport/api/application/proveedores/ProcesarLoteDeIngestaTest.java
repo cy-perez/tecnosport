@@ -20,6 +20,7 @@ import co.tecnosport.api.application.proveedores.ApoyoDeIngesta.RepositorioPubli
 import co.tecnosport.api.domain.catalogo.LineaCatalogo;
 import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.proveedores.AgrupadorDePublicaciones;
+import co.tecnosport.api.domain.proveedores.AlertaBorrador;
 import co.tecnosport.api.domain.proveedores.BorradorProducto;
 import co.tecnosport.api.domain.proveedores.EstadoBorrador;
 import co.tecnosport.api.domain.proveedores.EstadoLote;
@@ -44,9 +45,11 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -367,5 +370,97 @@ class ProcesarLoteDeIngestaTest {
     ProcesarLoteDeIngesta caso = casoCon(new FuenteFija(List.of()), extractorDelAnexo());
 
     assertThrows(LoteNoEncontradoException.class, () -> caso.ejecutar(UUID.randomUUID()));
+  }
+
+  /**
+   * Violeta (2 de octubre de 2026): dos pies de foto con un conjunto cada uno, y el jean repetido
+   * en los dos. Salen tres borradores de dos publicaciones —el jean una sola vez—, todos con las
+   * fotos compartidas y sin huella visual.
+   */
+  @Test
+  void dosConjuntosDeVioletaDejanTresBorradoresYElJeanUnaSolaVez() {
+    String primero =
+        """
+        ✨NEW COLLECTION✨
+        Chaleco Denim (Q300)
+        💲99
+        Talla S M L
+
+        Jean wide Leg Licrado (Q337)
+        💲124
+        Talla S M L XL""";
+    String segundo =
+        """
+        NEW NEW NEW✨✨
+        Blusa Rib larga (VY2719)
+        💲28
+        Talla Única
+
+        Jean wide Leg Licrado (Q337)
+        💲124
+        Talla S M L XL""";
+    List<MensajeCrudo> crudos =
+        List.of(
+            MensajeCrudo.imagen(
+                T, ApoyoDeIngesta.REMITENTE, primero, ApoyoDeIngesta.foto("IMG-0315.jpg")),
+            MensajeCrudo.imagen(
+                T.plusSeconds(5),
+                ApoyoDeIngesta.REMITENTE,
+                null,
+                ApoyoDeIngesta.foto("IMG-0316.jpg")),
+            MensajeCrudo.imagen(
+                T.plusSeconds(1320),
+                ApoyoDeIngesta.REMITENTE,
+                segundo,
+                ApoyoDeIngesta.foto("IMG-0318.jpg")));
+    ExtractorFalso extractor =
+        ExtractorFalso.variosPorTexto(
+            texto ->
+                texto.completo().contains("Chaleco")
+                    ? List.of(
+                        prenda("Chaleco Denim", 99000), prenda("Jean wide Leg Licrado", 124000))
+                    : List.of(
+                        prenda("Blusa Rib larga", 28000), prenda("Jean wide Leg Licrado", 124000)));
+
+    LoteIngesta resultado = casoCon(new FuenteFija(crudos), extractor).ejecutar(lote.id());
+
+    ResumenIngesta resumen = resultado.resumen().orElseThrow();
+    assertEquals(2, resumen.publicaciones());
+    assertEquals(3, resumen.borradoresNuevos());
+    assertEquals(1, resumen.descartes(), "el jean repetido");
+    List<BorradorProducto> enRevision =
+        borradores.porId.values().stream()
+            .filter(b -> b.estado() == EstadoBorrador.EN_REVISION)
+            .toList();
+    assertEquals(
+        Set.of("Chaleco Denim", "Jean wide Leg Licrado", "Blusa Rib larga"),
+        enRevision.stream().map(b -> b.titulo().orElseThrow()).collect(Collectors.toSet()));
+    assertTrue(enRevision.stream().allMatch(b -> b.pHash().isEmpty()));
+    assertTrue(
+        enRevision.stream().allMatch(b -> b.alertas().contains(AlertaBorrador.FOTOS_COMPARTIDAS)));
+    assertTrue(
+        enRevision.stream()
+            .noneMatch(b -> b.alertas().contains(AlertaBorrador.PRECIO_INCONSISTENTE)),
+        "cada precio con el de su posición");
+    assertTrue(
+        publicaciones.listarDeLote(lote.id()).stream()
+            .allMatch(p -> p.estado() == EstadoPublicacionProveedor.EXTRAIDA));
+  }
+
+  private static ProductoExtraido prenda(String titulo, long precio) {
+    return new ProductoExtraido(
+        true,
+        false,
+        titulo,
+        LineaCatalogo.ROPA,
+        TipoProductoProveedor.CHAQUETA,
+        Dinero.deCop(precio),
+        Tallas.desconocida(),
+        null,
+        List.of(),
+        null,
+        List.of(),
+        new BigDecimal("0.9"),
+        null);
   }
 }
