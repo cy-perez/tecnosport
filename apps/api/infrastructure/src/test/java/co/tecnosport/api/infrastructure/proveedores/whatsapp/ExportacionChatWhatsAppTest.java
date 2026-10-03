@@ -10,11 +10,14 @@ import co.tecnosport.api.application.proveedores.MensajeCrudo;
 import co.tecnosport.api.domain.proveedores.TipoMensaje;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.zip.CRC32;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 import org.junit.jupiter.api.Test;
@@ -40,6 +43,46 @@ class ExportacionChatWhatsAppTest {
       throw new IllegalStateException(e);
     }
     return salida.toByteArray();
+  }
+
+  /**
+   * Un zip como el que exporta WhatsApp en iPhone: cada entrada sin comprimir (STORED) y con el bit
+   * 3 de las banderas, que manda el CRC y los tamaños a un descriptor después de los datos. {@code
+   * ZipOutputStream} no produce esa combinación, así que se arma a mano.
+   */
+  private static byte[] zipDeIphone(Map<String, byte[]> entradas) {
+    ByteBuffer locales = ByteBuffer.allocate(1 << 16).order(ByteOrder.LITTLE_ENDIAN);
+    ByteBuffer central = ByteBuffer.allocate(1 << 16).order(ByteOrder.LITTLE_ENDIAN);
+    for (Map.Entry<String, byte[]> entrada : entradas.entrySet()) {
+      byte[] nombre = entrada.getKey().getBytes(StandardCharsets.UTF_8);
+      byte[] datos = entrada.getValue();
+      CRC32 crc = new CRC32();
+      crc.update(datos);
+      int desplazamiento = locales.position();
+
+      locales.putInt(0x04034b50).putShort((short) 20).putShort((short) 0x0808);
+      locales.putShort((short) 0).putShort((short) 0).putShort((short) 0);
+      locales.putInt(0).putInt(0).putInt(0);
+      locales.putShort((short) nombre.length).putShort((short) 0).put(nombre).put(datos);
+      locales.putInt(0x08074b50).putInt((int) crc.getValue());
+      locales.putInt(datos.length).putInt(datos.length);
+
+      central.putInt(0x02014b50).putShort((short) 20).putShort((short) 20);
+      central.putShort((short) 0x0808).putShort((short) 0).putShort((short) 0).putShort((short) 0);
+      central.putInt((int) crc.getValue()).putInt(datos.length).putInt(datos.length);
+      central.putShort((short) nombre.length).putShort((short) 0).putShort((short) 0);
+      central.putShort((short) 0).putShort((short) 0).putInt(0).putInt(desplazamiento);
+      central.put(nombre);
+    }
+    int inicioCentral = locales.position();
+    int largoCentral = central.position();
+    locales.put(central.flip());
+    locales.putInt(0x06054b50).putShort((short) 0).putShort((short) 0);
+    locales.putShort((short) entradas.size()).putShort((short) entradas.size());
+    locales.putInt(largoCentral).putInt(inicioCentral).putShort((short) 0);
+    byte[] zip = new byte[locales.position()];
+    locales.flip().get(zip);
+    return zip;
   }
 
   @Test
@@ -75,6 +118,33 @@ class ExportacionChatWhatsAppTest {
         new ExportacionChatWhatsApp(almacen, 1_000_000).leer("p/exportaciones/a.zip");
 
     assertThat(mensajes.get(2).adjunto().bytes()).isEqualTo("foto-13".getBytes());
+  }
+
+  /** Antes reventaba con "only DEFLATED entries can have EXT descriptor". */
+  @Test
+  void abreLaExportacionDeIphoneConFotosSinComprimirYDescriptorDeDatos() {
+    almacen.objetos.put(
+        "p/exportaciones/a.zip",
+        zipDeIphone(
+            Map.of(
+                "_chat.txt", CHAT.getBytes(StandardCharsets.UTF_8),
+                "IMG-20260928-WA0012.jpg", "foto-12".getBytes(StandardCharsets.UTF_8))));
+
+    List<MensajeCrudo> mensajes =
+        new ExportacionChatWhatsApp(almacen, 1_000_000).leer("p/exportaciones/a.zip");
+
+    assertThat(mensajes).hasSize(3);
+    assertThat(mensajes.get(1).adjunto().bytes()).isEqualTo("foto-12".getBytes());
+  }
+
+  @Test
+  void unArchivoQueNoEsZipSeExplica() {
+    almacen.objetos.put("p/exportaciones/a.zip", "no soy un zip".getBytes(StandardCharsets.UTF_8));
+
+    assertThatThrownBy(
+            () -> new ExportacionChatWhatsApp(almacen, 1_000_000).leer("p/exportaciones/a.zip"))
+        .isInstanceOf(ExportacionIlegibleException.class)
+        .hasMessageContaining("no es un zip");
   }
 
   @Test
