@@ -14,6 +14,7 @@ import co.tecnosport.api.domain.proveedores.PHash;
 import co.tecnosport.api.domain.proveedores.ProductoExtraido;
 import co.tecnosport.api.domain.proveedores.Proveedor;
 import co.tecnosport.api.domain.proveedores.PublicacionProveedor;
+import co.tecnosport.api.domain.proveedores.TopesDeGanancia;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -54,6 +55,7 @@ public final class ResolverBorrador {
   private final CalculadorDePHash calculadorDePHash;
   private final Reloj reloj;
   private final Map<LineaCatalogo, BigDecimal> factorPorLinea;
+  private final TopesDeGanancia topesDeGanancia;
   private final int umbralHamming;
 
   public ResolverBorrador(
@@ -65,6 +67,7 @@ public final class ResolverBorrador {
       CalculadorDePHash calculadorDePHash,
       Reloj reloj,
       Map<LineaCatalogo, BigDecimal> factorPorLinea,
+      TopesDeGanancia topesDeGanancia,
       int umbralHamming) {
     this.repositorioBorradores = Objects.requireNonNull(repositorioBorradores);
     this.productosDeProveedor = Objects.requireNonNull(productosDeProveedor);
@@ -74,6 +77,7 @@ public final class ResolverBorrador {
     this.calculadorDePHash = Objects.requireNonNull(calculadorDePHash);
     this.reloj = Objects.requireNonNull(reloj);
     this.factorPorLinea = Map.copyOf(Objects.requireNonNull(factorPorLinea));
+    this.topesDeGanancia = Objects.requireNonNull(topesDeGanancia);
     if (umbralHamming < 0) {
       throw new IllegalArgumentException("El umbral de Hamming no puede ser negativo.");
     }
@@ -180,7 +184,9 @@ public final class ResolverBorrador {
     }
 
     Dinero precioSugerido =
-        precio == null ? null : CalculadoraDeMargen.sugerir(precio, factorDe(proveedor, extraido));
+        precio == null
+            ? null
+            : CalculadoraDeMargen.sugerir(precio, factorDe(proveedor, extraido), topesDeGanancia);
     BorradorProducto borrador =
         BorradorProducto.nuevo(
             publicacion.id(),

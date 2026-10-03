@@ -100,6 +100,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/borradores/{id}/fotos/{mensajeId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["descartarFoto"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/borradores/{id}/rechazar": {
         parameters: {
             query?: never;
@@ -1601,11 +1617,12 @@ export interface components {
         };
         BorradorRespuesta: {
             alertas?: string[];
+            altEn?: string;
             /** Format: int32 */
             cantidadTonos?: number;
-            caracteristicas?: string[];
             /** Format: date-time */
             creadoEn?: string;
+            descripcion?: string;
             estado?: string;
             extraccionCruda?: string;
             /** Format: uuid */
@@ -1787,9 +1804,10 @@ export interface components {
             indicaciones?: string;
         };
         EditarBorradorPeticion: {
+            altEn?: string;
             /** Format: int32 */
             cantidadTonos?: number;
-            caracteristicas?: string[];
+            descripcion?: string;
             material?: string;
             /** Format: int64 */
             precioVentaSugerido?: number;
@@ -2869,6 +2887,27 @@ export interface operations {
                 content: {
                     "*/*": components["schemas"]["ProductoAdminRespuesta"];
                 };
+            };
+        };
+    };
+    descartarFoto: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                mensajeId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

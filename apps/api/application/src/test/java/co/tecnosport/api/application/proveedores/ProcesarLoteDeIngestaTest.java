@@ -34,6 +34,7 @@ import co.tecnosport.api.domain.proveedores.ResumenIngesta;
 import co.tecnosport.api.domain.proveedores.Tallas;
 import co.tecnosport.api.domain.proveedores.TipoDeTalla;
 import co.tecnosport.api.domain.proveedores.TipoProductoProveedor;
+import co.tecnosport.api.domain.proveedores.TopesDeGanancia;
 import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigDecimal;
@@ -111,6 +112,7 @@ class ProcesarLoteDeIngestaTest {
                 new BigDecimal("1.35"),
                 LineaCatalogo.ROPA,
                 new BigDecimal("1.30")),
+            new TopesDeGanancia(Dinero.deCop(20000), Dinero.deCop(30000)),
             6);
     return new ProcesarLoteDeIngesta(
         lotes,
@@ -191,7 +193,9 @@ class ProcesarLoteDeIngestaTest {
               tonos.find() ? Integer.parseInt(tonos.group(1)) : null,
               List.of(),
               null,
-              List.of(),
+              null,
+              null,
+              false,
               new BigDecimal("0.9"),
               null);
         });
@@ -254,11 +258,12 @@ class ProcesarLoteDeIngestaTest {
     assertTrue(
         porPublicacion.stream().allMatch(b -> b.pHash().isPresent()),
         "cada uno con su huella visual");
-    assertEquals(Optional.of(Dinero.deCop(71600)), porPublicacion.get(0).precioVentaSugerido());
+    // 53.000 × 1,35 gana 18.600 y 60.000 × 1,30 gana 18.000: los dos suben a ganar 20.000.
+    assertEquals(Optional.of(Dinero.deCop(73000)), porPublicacion.get(0).precioVentaSugerido());
     assertEquals(
-        Optional.of(Dinero.deCop(78000)),
+        Optional.of(Dinero.deCop(80000)),
         porPublicacion.get(5).precioVentaSugerido(),
-        "ropa al 1,30");
+        "ropa al 1,30, con la ganancia mínima");
     assertTrue(pubs.stream().allMatch(p -> p.estado() == EstadoPublicacionProveedor.EXTRAIDA));
   }
 
@@ -305,6 +310,8 @@ class ProcesarLoteDeIngestaTest {
                   null,
                   null,
                   null,
+                  null,
+                  false,
                   BigDecimal.ONE,
                   null);
             });
@@ -459,7 +466,9 @@ class ProcesarLoteDeIngestaTest {
         null,
         List.of(),
         null,
-        List.of(),
+        null,
+        null,
+        false,
         new BigDecimal("0.9"),
         null);
   }

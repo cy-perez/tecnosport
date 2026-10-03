@@ -30,7 +30,8 @@ public final class EditarBorrador {
         comando.cantidadTonos(),
         comando.tonosNombrados(),
         comando.material(),
-        comando.caracteristicas());
+        comando.descripcion(),
+        comando.altEn());
     repositorioBorradores.actualizar(borrador);
     return borrador;
   }

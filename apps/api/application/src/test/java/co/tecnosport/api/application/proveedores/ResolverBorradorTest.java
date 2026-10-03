@@ -31,6 +31,7 @@ import co.tecnosport.api.domain.proveedores.Proveedor;
 import co.tecnosport.api.domain.proveedores.PublicacionProveedor;
 import co.tecnosport.api.domain.proveedores.Tallas;
 import co.tecnosport.api.domain.proveedores.TipoProductoProveedor;
+import co.tecnosport.api.domain.proveedores.TopesDeGanancia;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
@@ -78,6 +79,7 @@ class ResolverBorradorTest {
         new CalculadorDePHashPorContenido(),
         new RelojFalso(AHORA),
         FACTORES,
+        new TopesDeGanancia(Dinero.deCop(20000), Dinero.deCop(30000)),
         6);
   }
 
@@ -127,7 +129,9 @@ class ResolverBorradorTest {
             4,
             List.of(),
             "importado",
-            List.of("incluye llavero"),
+            "incluye llavero.",
+            null,
+            false,
             new BigDecimal("0.9"),
             null);
     return new ExtraccionEvaluada(
@@ -171,7 +175,8 @@ class ResolverBorradorTest {
     List<BorradorProducto> enRevision = borradores.enEstado(EstadoBorrador.EN_REVISION);
     assertEquals(1, enRevision.size());
     BorradorProducto borrador = enRevision.get(0);
-    assertEquals(Optional.of(Dinero.deCop(71600)), borrador.precioVentaSugerido());
+    // 53.000 × 1,35 = 71.600 gana 18.600: la sugerencia sube a ganar 20.000.
+    assertEquals(Optional.of(Dinero.deCop(73000)), borrador.precioVentaSugerido());
     assertEquals(Optional.of(Dinero.deCop(53000)), borrador.precioProveedor());
     assertTrue(borrador.huella().isPresent());
     assertTrue(borrador.pHash().isPresent(), "la primera foto deja huella visual");

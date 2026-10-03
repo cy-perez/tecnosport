@@ -2,6 +2,7 @@ package co.tecnosport.api.presentation.proveedores;
 
 import co.tecnosport.api.application.proveedores.AprobarBorrador;
 import co.tecnosport.api.application.proveedores.AprobarBorradorComando;
+import co.tecnosport.api.application.proveedores.DescartarFotoDeBorrador;
 import co.tecnosport.api.application.proveedores.EditarBorrador;
 import co.tecnosport.api.application.proveedores.EditarBorradorComando;
 import co.tecnosport.api.application.proveedores.EliminarBorrador;
@@ -39,7 +40,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * La bandeja de borradores: listar, ver, editar, aprobar, rechazar y borrar.
+ * La bandeja de borradores: listar, ver, editar, descartar una foto, aprobar, rechazar y borrar.
  *
  * <p>Aprobar corre en una transacción del controlador aunque copie fotos al bucket en la mitad: si
  * algo falla después de copiar, quedan objetos sueltos en el bucket y ningún producto a medias en
@@ -59,6 +60,7 @@ public class AdminBorradorControlador {
   private final AprobarBorrador aprobarBorrador;
   private final RechazarBorrador rechazarBorrador;
   private final EliminarBorrador eliminarBorrador;
+  private final DescartarFotoDeBorrador descartarFotoDeBorrador;
   private final MapeadorRespuestasProductoAdmin mapeadorProducto;
   private final TransactionTemplate transaccion;
 
@@ -69,6 +71,7 @@ public class AdminBorradorControlador {
       AprobarBorrador aprobarBorrador,
       RechazarBorrador rechazarBorrador,
       EliminarBorrador eliminarBorrador,
+      DescartarFotoDeBorrador descartarFotoDeBorrador,
       MapeadorRespuestasProductoAdmin mapeadorProducto,
       PlatformTransactionManager transactionManager) {
     this.repositorioBorradores = Objects.requireNonNull(repositorioBorradores);
@@ -77,6 +80,7 @@ public class AdminBorradorControlador {
     this.aprobarBorrador = Objects.requireNonNull(aprobarBorrador);
     this.rechazarBorrador = Objects.requireNonNull(rechazarBorrador);
     this.eliminarBorrador = Objects.requireNonNull(eliminarBorrador);
+    this.descartarFotoDeBorrador = Objects.requireNonNull(descartarFotoDeBorrador);
     this.mapeadorProducto = Objects.requireNonNull(mapeadorProducto);
     this.transaccion = new TransactionTemplate(Objects.requireNonNull(transactionManager));
   }
@@ -116,7 +120,8 @@ public class AdminBorradorControlador {
                         cuerpo.cantidadTonos(),
                         cuerpo.tonosNombrados(),
                         cuerpo.material(),
-                        cuerpo.caracteristicas()))));
+                        cuerpo.descripcion(),
+                        cuerpo.altEn()))));
   }
 
   @PostMapping("/{id}/aprobar")
@@ -156,6 +161,13 @@ public class AdminBorradorControlador {
       @PathVariable UUID id, @RequestBody RechazarBorradorPeticion cuerpo) {
     return BorradorRespuesta.de(
         transaccion.execute(estado -> rechazarBorrador.ejecutar(id, cuerpo.motivo())));
+  }
+
+  /** Saca una foto de la revisión; el archivo se queda, porque es de la publicación. */
+  @DeleteMapping("/{id}/fotos/{mensajeId}")
+  @ResponseStatus(HttpStatus.NO_CONTENT)
+  public void descartarFoto(@PathVariable UUID id, @PathVariable UUID mensajeId) {
+    transaccion.executeWithoutResult(estado -> descartarFotoDeBorrador.ejecutar(id, mensajeId));
   }
 
   /**

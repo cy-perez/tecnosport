@@ -169,7 +169,8 @@ public final class AprobarBorrador {
     }
     Map<UUID, MensajeProveedor> fotosDeLaPublicacion = fotosDe(publicacion);
     for (AprobarBorradorComando.FotoAprobada foto : comando.fotos()) {
-      if (!fotosDeLaPublicacion.containsKey(foto.mensajeId())) {
+      if (!fotosDeLaPublicacion.containsKey(foto.mensajeId())
+          || borrador.fotosDescartadas().contains(foto.mensajeId())) {
         throw new FotoNoEsDelBorradorException(foto.mensajeId());
       }
     }
@@ -178,6 +179,10 @@ public final class AprobarBorrador {
         comando.titulo() == null || comando.titulo().isBlank()
             ? borrador.titulo().orElseThrow(BorradorSinTituloException::new)
             : comando.titulo().strip();
+    String descripcion =
+        comando.descripcion() == null || comando.descripcion().isBlank()
+            ? borrador.descripcion().orElseThrow(BorradorSinDescripcionException::new)
+            : comando.descripcion().strip();
     HuellaProveedor huella =
         borrador
             .huella()
@@ -198,7 +203,7 @@ public final class AprobarBorrador {
         Producto.crearDeProveedor(
             titulo,
             slugDisponible(Slug.generarDesde(titulo)),
-            comando.descripcion() == null ? descripcionDe(borrador) : comando.descripcion(),
+            descripcion,
             marca,
             categoria,
             proveedor.id(),
@@ -385,13 +390,6 @@ public final class AprobarBorrador {
       sufijo++;
     }
     return intento;
-  }
-
-  /** La descripción sale de lo que el mensaje dijo: las características, una por línea. */
-  private static String descripcionDe(BorradorProducto borrador) {
-    List<String> lineas = new ArrayList<>(borrador.caracteristicas());
-    borrador.material().ifPresent(m -> lineas.add("Material: " + m));
-    return String.join("\n", lineas);
   }
 
   /**

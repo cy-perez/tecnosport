@@ -71,7 +71,7 @@ class RepositorioBorradoresJpaTest {
     publicaciones.guardarTodas(List.of(publicacion));
   }
 
-  private static ProductoExtraido extraido(String titulo, List<String> caracteristicas) {
+  private static ProductoExtraido extraido(String titulo, String descripcion) {
     return new ProductoExtraido(
         true,
         false,
@@ -83,7 +83,9 @@ class RepositorioBorradoresJpaTest {
         3,
         List.of("negro", "vino"),
         "burda strech",
-        caracteristicas,
+        descripcion,
+        descripcion == null ? null : "Pants set",
+        false,
         new BigDecimal("0.88"),
         "una nota");
   }
@@ -96,7 +98,7 @@ class RepositorioBorradoresJpaTest {
         BorradorProducto.nuevo(
             publicacion.id(),
             proveedor.id(),
-            extraido("Conjunto pantalón", List.of("tela burda strech", "camiseta oversize")),
+            extraido("Conjunto pantalón", "Conjunto en tela burda strech con camiseta oversize."),
             "{\"es_producto\":true}",
             Dinero.deCop(60000),
             Dinero.deCop(78000),
@@ -106,8 +108,12 @@ class RepositorioBorradoresJpaTest {
             T);
     borradores.guardar(borrador);
 
+    UUID descartada = UUID.randomUUID();
+    borrador.descartarFoto(descartada);
+    borradores.actualizar(borrador);
     BorradorProducto leido = borradores.buscarPorId(borrador.id()).orElseThrow();
 
+    assertThat(leido.fotosDescartadas()).containsExactly(descartada);
     assertThat(leido.titulo()).contains("Conjunto pantalón");
     assertThat(leido.linea()).contains(LineaCatalogo.ROPA);
     assertThat(leido.tipo()).isEqualTo(TipoProductoProveedor.CONJUNTO_PANTALON);
@@ -118,7 +124,9 @@ class RepositorioBorradoresJpaTest {
     assertThat(leido.cantidadTonos()).contains(3);
     assertThat(leido.tonosNombrados()).containsExactly("negro", "vino");
     assertThat(leido.material()).contains("burda strech");
-    assertThat(leido.caracteristicas()).containsExactly("tela burda strech", "camiseta oversize");
+    assertThat(leido.descripcion())
+        .contains("Conjunto en tela burda strech con camiseta oversize.");
+    assertThat(leido.altEn()).contains("Pants set");
     assertThat(leido.huella()).isEqualTo(borrador.huella());
     assertThat(leido.pHash()).contains(pHash);
     assertThat(leido.alertas())
@@ -147,6 +155,8 @@ class RepositorioBorradoresJpaTest {
                 null,
                 null,
                 null,
+                null,
+                false,
                 BigDecimal.ZERO,
                 null),
             "{}",
@@ -167,7 +177,9 @@ class RepositorioBorradoresJpaTest {
     assertThat(leido.tallas().tipo()).isEqualTo(TipoDeTalla.DESCONOCIDA);
     assertThat(leido.tallas().valores()).isEmpty();
     assertThat(leido.tonosNombrados()).isEmpty();
-    assertThat(leido.caracteristicas()).isEmpty();
+    assertThat(leido.descripcion()).isEmpty();
+    assertThat(leido.altEn()).isEmpty();
+    assertThat(leido.fotosDescartadas()).isEmpty();
     assertThat(leido.huella()).isEmpty();
     assertThat(leido.pHash()).isEmpty();
     assertThat(leido.alertas()).isEmpty();
@@ -180,7 +192,7 @@ class RepositorioBorradoresJpaTest {
         BorradorProducto.nuevo(
             publicacion.id(),
             proveedor.id(),
-            extraido("Uno", List.of()),
+            extraido("Uno", null),
             "{}",
             Dinero.deCop(1000),
             null,
@@ -192,7 +204,7 @@ class RepositorioBorradoresJpaTest {
         BorradorProducto.nuevo(
             publicacion.id(),
             proveedor.id(),
-            extraido("Dos", List.of()),
+            extraido("Dos", null),
             "{}",
             Dinero.deCop(1000),
             null,
@@ -233,7 +245,7 @@ class RepositorioBorradoresJpaTest {
         BorradorProducto.nuevo(
             publicacion.id(),
             proveedor.id(),
-            extraido("Uno", List.of()),
+            extraido("Uno", null),
             "{}",
             Dinero.deCop(1000),
             null,
@@ -285,7 +297,7 @@ class RepositorioBorradoresJpaTest {
         BorradorProducto.nuevo(
             publicacion.id(),
             proveedor.id(),
-            extraido("Uno", List.of()),
+            extraido("Uno", null),
             "{}",
             null,
             null,
@@ -297,7 +309,7 @@ class RepositorioBorradoresJpaTest {
         BorradorProducto.nuevo(
             publicacion.id(),
             proveedor.id(),
-            extraido("Dos", List.of()),
+            extraido("Dos", null),
             "{}",
             null,
             null,

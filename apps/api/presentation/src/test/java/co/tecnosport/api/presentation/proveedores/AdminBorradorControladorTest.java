@@ -21,6 +21,7 @@ import co.tecnosport.api.application.proveedores.AlmacenDeArchivosDeProveedor;
 import co.tecnosport.api.application.proveedores.AprobarBorrador;
 import co.tecnosport.api.application.proveedores.BorradoresPaginados;
 import co.tecnosport.api.application.proveedores.CalculadorDePHash;
+import co.tecnosport.api.application.proveedores.DescartarFotoDeBorrador;
 import co.tecnosport.api.application.proveedores.EditarBorrador;
 import co.tecnosport.api.application.proveedores.EliminarBorrador;
 import co.tecnosport.api.application.proveedores.HuellaVisual;
@@ -132,7 +133,9 @@ class AdminBorradorControladorTest {
                 4,
                 List.of(),
                 "importado",
-                List.of("incluye llavero"),
+                "incluye llavero.",
+                null,
+                false,
                 new BigDecimal("0.9"),
                 null),
             "{\"fixture\":true}",
@@ -231,6 +234,29 @@ class AdminBorradorControladorTest {
         .perform(delete("/api/v1/admin/borradores/{id}", borrador.id()))
         .andExpect(status().isNotFound())
         .andExpect(jsonPath("$.codigo").value("BORRADOR_NO_ENCONTRADO"));
+  }
+
+  /** La foto deja de verse en la revisión y el archivo se queda: es de la publicación. */
+  @Test
+  void descartarUnaFotoEs204YDejaDeVerse() throws Exception {
+    mockMvc
+        .perform(delete("/api/v1/admin/borradores/{id}/fotos/{foto}", borrador.id(), foto.id()))
+        .andExpect(status().isNoContent());
+
+    mockMvc
+        .perform(get("/api/v1/admin/borradores/{id}", borrador.id()))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.fotos").isEmpty());
+    assertThat(objetosBorrados.claves).isEmpty();
+  }
+
+  @Test
+  void descartarUnaFotoAjenaEs422() throws Exception {
+    mockMvc
+        .perform(
+            delete("/api/v1/admin/borradores/{id}/fotos/{foto}", borrador.id(), UUID.randomUUID()))
+        .andExpect(status().isUnprocessableContent())
+        .andExpect(jsonPath("$.codigo").value("FOTO_NO_ES_DEL_BORRADOR"));
   }
 
   @Test
@@ -346,6 +372,12 @@ class AdminBorradorControladorTest {
         RepositorioMensajesDoble mensajes,
         AlmacenDeArchivosDeProveedor almacen) {
       return new EliminarBorrador(borradores, publicaciones, mensajes, almacen);
+    }
+
+    @Bean
+    DescartarFotoDeBorrador descartarFotoDeBorrador(
+        RepositorioBorradoresDoble borradores, RepositorioPublicacionesDoble publicaciones) {
+      return new DescartarFotoDeBorrador(borradores, publicaciones);
     }
 
     @Bean

@@ -53,7 +53,10 @@ public class BorradorProductoJpaEntity {
 
   @Column private String material;
 
-  @Column private String caracteristicas;
+  @Column private String descripcion;
+
+  @Column(name = "alt_en")
+  private String altEn;
 
   @Column private String huella;
 
@@ -61,6 +64,9 @@ public class BorradorProductoJpaEntity {
 
   @Column(nullable = false)
   private String alertas;
+
+  @Column(name = "fotos_descartadas")
+  private String fotosDescartadas;
 
   @Column(nullable = false)
   private String estado;
@@ -95,10 +101,12 @@ public class BorradorProductoJpaEntity {
       Integer cantidadTonos,
       String tonosNombrados,
       String material,
-      String caracteristicas,
+      String descripcion,
+      String altEn,
       String huella,
       String phash,
       String alertas,
+      String fotosDescartadas,
       String estado,
       UUID productoId,
       String motivoRechazo,
@@ -119,10 +127,12 @@ public class BorradorProductoJpaEntity {
     this.cantidadTonos = cantidadTonos;
     this.tonosNombrados = tonosNombrados;
     this.material = material;
-    this.caracteristicas = caracteristicas;
+    this.descripcion = descripcion;
+    this.altEn = altEn;
     this.huella = huella;
     this.phash = phash;
     this.alertas = alertas;
+    this.fotosDescartadas = fotosDescartadas;
     this.estado = estado;
     this.productoId = productoId;
     this.motivoRechazo = motivoRechazo;
@@ -190,8 +200,12 @@ public class BorradorProductoJpaEntity {
     return material;
   }
 
-  public String getCaracteristicas() {
-    return caracteristicas;
+  public String getDescripcion() {
+    return descripcion;
+  }
+
+  public String getAltEn() {
+    return altEn;
   }
 
   public String getHuella() {
@@ -200,6 +214,10 @@ public class BorradorProductoJpaEntity {
 
   public String getPhash() {
     return phash;
+  }
+
+  public String getFotosDescartadas() {
+    return fotosDescartadas;
   }
 
   public String getAlertas() {

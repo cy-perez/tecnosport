@@ -28,6 +28,7 @@ import co.tecnosport.api.application.proveedores.AtributoDeCatalogoNoDefinidoExc
 import co.tecnosport.api.application.proveedores.BorradorNoEditableException;
 import co.tecnosport.api.application.proveedores.BorradorNoEliminableException;
 import co.tecnosport.api.application.proveedores.BorradorNoEncontradoException;
+import co.tecnosport.api.application.proveedores.BorradorSinDescripcionException;
 import co.tecnosport.api.application.proveedores.BorradorSinFotosException;
 import co.tecnosport.api.application.proveedores.BorradorSinPrecioException;
 import co.tecnosport.api.application.proveedores.BorradorSinTituloException;
@@ -148,6 +149,7 @@ class CodigosDeCableTest {
           Map.entry(BorradorSinFotosException.class, "BORRADOR_SIN_FOTOS"),
           Map.entry(BorradorSinPrecioException.class, "BORRADOR_SIN_PRECIO"),
           Map.entry(BorradorSinTituloException.class, "BORRADOR_SIN_TITULO"),
+          Map.entry(BorradorSinDescripcionException.class, "BORRADOR_SIN_DESCRIPCION"),
           Map.entry(
               AtributoDeCatalogoNoDefinidoException.class, "ATRIBUTO_DE_CATALOGO_NO_DEFINIDO"),
           Map.entry(FotoNoEsDelBorradorException.class, "FOTO_NO_ES_DEL_BORRADOR"),

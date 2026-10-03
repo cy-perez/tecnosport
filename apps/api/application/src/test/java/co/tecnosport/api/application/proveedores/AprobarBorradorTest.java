@@ -109,7 +109,9 @@ class AprobarBorradorTest {
                 2,
                 List.of(),
                 "importado",
-                List.of("2 compartimientos internos", "incluye llavero"),
+                "2 compartimientos internos. incluye llavero.",
+                null,
+                false,
                 new BigDecimal("0.9"),
                 null),
             "{}",
@@ -191,7 +193,9 @@ class AprobarBorradorTest {
     assertEquals(Optional.of(AHORA), producto.vistoPorUltimaVez(), "visto al aprobar");
     assertEquals(Optional.of(Dinero.deCop(53000)), producto.precioProveedor());
     assertEquals(
-        "2 compartimientos internos\nincluye llavero\nMaterial: importado", producto.descripcion());
+        "2 compartimientos internos. incluye llavero.",
+        producto.descripcion(),
+        "la del borrador, cuando la aprobación no trae otra");
 
     List<Variante> variantes = producto.variantes();
     assertEquals(2, variantes.size());
@@ -275,7 +279,9 @@ class AprobarBorradorTest {
                 0,
                 List.of(),
                 null,
-                List.of(),
+                null,
+                null,
+                false,
                 new BigDecimal("0.9"),
                 null),
             "{}",
@@ -290,7 +296,7 @@ class AprobarBorradorTest {
         new AprobarBorradorComando(
             repetido.id(),
             null,
-            null,
+            "Bolso de dama mediano.",
             ApoyoDeCatalogoParaIngesta.BOLSOS_DE_MANO.id(),
             ApoyoDeCatalogoParaIngesta.MARCA.id(),
             71600,
@@ -353,12 +359,66 @@ class AprobarBorradorTest {
     assertTrue(productos.porId.isEmpty());
   }
 
+  /**
+   * La descripción es obligatoria desde el 3 de octubre de 2026: sin la del extractor ni la de la
+   * aprobación no se publica nada, y no se sube ni una foto.
+   */
+  @Test
+  void sinDescripcionNoSeAprueba() {
+    borrador.editar(null, null, null, null, null, null, null, " ", null);
+    borradores.actualizar(borrador);
+
+    assertThrows(
+        BorradorSinDescripcionException.class,
+        () -> caso().ejecutar(comando(List.of(new FotoAprobada(foto1.id(), null, null)))));
+    assertEquals(0, productos.porId.size());
+    assertEquals(EstadoBorrador.EN_REVISION, borrador.estado());
+  }
+
+  @Test
+  void laDescripcionDeLaAprobacionMandaSobreLaDelBorrador() {
+    AprobarBorradorComando base = comando(List.of(new FotoAprobada(foto1.id(), null, null)));
+    AprobarBorradorComando conDescripcion =
+        new AprobarBorradorComando(
+            base.borradorId(),
+            base.titulo(),
+            "  Bolso mediano con tira en cuero.  ",
+            base.categoriaId(),
+            base.marcaId(),
+            base.precioVenta(),
+            base.tallas(),
+            base.existenciaInicial(),
+            base.altEs(),
+            base.altEn(),
+            base.fotos());
+
+    assertEquals("Bolso mediano con tira en cuero.", caso().ejecutar(conDescripcion).descripcion());
+  }
+
   @Test
   void unaFotoQueNoEsDelBorradorSeRechaza() {
     assertThrows(
         FotoNoEsDelBorradorException.class,
         () ->
             caso().ejecutar(comando(List.of(new FotoAprobada(UUID.randomUUID(), "Negro", null)))));
+  }
+
+  /** Lo que quien revisa sacó no vuelve a entrar por la aprobación. */
+  @Test
+  void unaFotoDescartadaNoSeApruebaAunqueSeaDeLaPublicacion() {
+    borrador.descartarFoto(foto2.id());
+    borradores.actualizar(borrador);
+
+    assertThrows(
+        FotoNoEsDelBorradorException.class,
+        () ->
+            caso()
+                .ejecutar(
+                    comando(
+                        List.of(
+                            new FotoAprobada(foto1.id(), null, null),
+                            new FotoAprobada(foto2.id(), null, null)))));
+    assertTrue(productos.porId.isEmpty());
   }
 
   @Test
@@ -418,6 +478,8 @@ class AprobarBorradorTest {
                 null,
                 null,
                 null,
+                null,
+                false,
                 BigDecimal.ONE,
                 null),
             "{}",
@@ -435,7 +497,7 @@ class AprobarBorradorTest {
                 new AprobarBorradorComando(
                     otro.id(),
                     null,
-                    null,
+                    "Bolso de dama mediano.",
                     ApoyoDeCatalogoParaIngesta.BOLSOS_DE_MANO.id(),
                     ApoyoDeCatalogoParaIngesta.MARCA.id(),
                     81000,
