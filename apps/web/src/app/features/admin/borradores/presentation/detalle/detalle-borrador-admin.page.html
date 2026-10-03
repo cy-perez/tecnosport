@@ -266,6 +266,32 @@
           formControlName="sirveHasta"
         />
       }
+      @if (formDatos.controls.tipoDeTalla.value === 'LISTA' && escalaTallas().length > 0) {
+        <fieldset class="m-0 flex flex-col gap-8 border-0 p-0">
+          <legend class="mb-8 p-0 text-sm text-ts-texto">
+            {{ 'admin.borradores.datos.tallasDeLaEscala' | transloco }}
+          </legend>
+          <div class="flex flex-wrap gap-x-16 gap-y-8">
+            @for (talla of escalaTallas(); track talla; let t = $index) {
+              <ts-checkbox
+                [idCasilla]="'talla-escala-' + t"
+                [etiqueta]="talla"
+                [marcado]="tallasMarcadas().has(talla)"
+                [deshabilitado]="!editable()"
+                (marcadoCambio)="marcarTalla(talla, $event)"
+              />
+            }
+          </div>
+          @if (tallasFueraDeEscala().length > 0) {
+            <p class="m-0 text-sm text-ts-texto">
+              {{
+                'admin.borradores.datos.fueraDeEscala'
+                  | transloco: { tallas: tallasFueraDeEscala().join(', ') }
+              }}
+            </p>
+          }
+        </fieldset>
+      }
       @if (formDatos.controls.tipoDeTalla.value === 'LISTA') {
         <ts-campo
           idCampo="borrador-tallas"

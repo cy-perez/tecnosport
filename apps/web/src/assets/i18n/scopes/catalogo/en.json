@@ -28,6 +28,15 @@
     "mostrar": "Filter and sort",
     "ocultar": "Hide filters"
   },
+  "talla": {
+    "unica": "One size",
+    "sirve_hasta": "Fits up to: {{talla}}",
+    "no_disponible": "not available"
+  },
+  "colores": {
+    "elegir": "View in {{color}}",
+    "mas": "and {{cantidad}} more colours"
+  },
   "ficha": {
     "no_encontrado": "We couldn't find this product.",
     "error": "We couldn't load this product. Please try again.",

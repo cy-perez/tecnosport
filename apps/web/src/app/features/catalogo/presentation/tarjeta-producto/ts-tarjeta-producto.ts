@@ -1,5 +1,5 @@
 import { NgOptimizedImage } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { TsPrecio } from '../../../../shared/ts-precio/ts-precio';
@@ -12,6 +12,14 @@ import {
 } from '../../domain/producto.model';
 import { TAMANOS_TARJETA } from '../../../../core/imagenes/tamanos-de-imagen';
 import { TsEtiquetaStock } from '../etiqueta-stock/ts-etiqueta-stock';
+import { coloresDe, imagenDelColor, tallaUnicaDe } from '../../domain/seleccion-variante';
+
+/** Cuántas muestras caben en una tarjeta sin envolver en dos filas; el resto se cuenta. */
+const MUESTRAS_VISIBLES = 5;
+
+const MUESTRA_BASE = 'block size-24 rounded-completo';
+const MUESTRA = `${MUESTRA_BASE} border border-ts-borde-control`;
+const MUESTRA_ACTIVA = `${MUESTRA_BASE} border-2 border-ts-primario`;
 
 /**
  * Vive en `features/catalogo/presentation` y no en `shared/`, que es de donde
@@ -57,12 +65,37 @@ export class TsTarjetaProducto {
 
   protected readonly parametros = parametrosDe;
 
+  /** El color que el visitante eligió en esta tarjeta; nulo, la foto principal. */
+  protected readonly colorElegido = signal<string | null>(null);
+
+  protected readonly colores = computed(() => coloresDe(this.producto()));
+  protected readonly coloresVisibles = computed(() => this.colores().slice(0, MUESTRAS_VISIBLES));
+  protected readonly coloresOcultos = computed(() =>
+    Math.max(0, this.colores().length - MUESTRAS_VISIBLES),
+  );
+
+  protected readonly imagenMostrada = computed(() => {
+    const imagen = imagenDelColor(this.producto(), this.colorElegido());
+    return imagen ? [imagen] : [];
+  });
+
+  protected readonly tallaUnica = computed(() => tallaUnicaDe(this.producto()));
+
   protected readonly precio = computed(() => precioDesde(this.producto()));
   protected readonly disponible = computed(() => hayExistencia(this.producto()));
 
+  protected elegirColor(color: string): void {
+    this.colorElegido.set(color);
+  }
+
+  /** Completas y no compuestas: `border` y `border-2` compiten por la misma propiedad. */
+  protected claseMuestra(activa: boolean): string {
+    return activa ? MUESTRA_ACTIVA : MUESTRA;
+  }
+
   protected readonly alt = computed(() => {
     const producto = this.producto();
-    const imagen = producto.imagenPrincipal;
+    const imagen = this.imagenMostrada()[0] ?? null;
     if (!imagen) {
       return producto.nombre;
     }

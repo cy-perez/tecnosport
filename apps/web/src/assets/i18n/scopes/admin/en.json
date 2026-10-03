@@ -954,6 +954,8 @@
       "sirveHasta": "Fits up to",
       "sirveHastaAyuda": "Only if the supplier wrote “fits up to”. If they did not, leave it blank.",
       "tallasLista": "Sizes",
+      "tallasDeLaEscala": "Sizes it comes in, from the category scale",
+      "fueraDeEscala": "Outside the category scale: {{tallas}}. Check whether they belong to this product.",
       "separadas": "Comma separated: S, M, L.",
       "cantidadTonos": "Number of colours",
       "tonosNombrados": "Colours, by name",

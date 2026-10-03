@@ -49,6 +49,7 @@ const CATEGORIA: Categoria = {
   linea: 'BOLSOS',
   padreId: null,
   hashtags: [],
+  escalaTallas: [],
 };
 const OTRA_CATEGORIA: Categoria = {
   id: 'c2',
@@ -57,6 +58,7 @@ const OTRA_CATEGORIA: Categoria = {
   linea: 'TECNOLOGIA',
   padreId: null,
   hashtags: [],
+  escalaTallas: [],
 };
 
 function productoDePrueba(galeria: readonly ImagenDeGaleriaAdmin[] = []): ProductoAdminDetalle {
@@ -388,6 +390,7 @@ describe('EditarProductoAdminPage', () => {
           alto: 600,
           altEs: 'alt es',
           altEn: 'alt en',
+          varianteId: null,
         },
       ]);
     });
@@ -549,6 +552,7 @@ describe('EditarProductoAdminPage', () => {
           alto: 600,
           altEs: 'alt es',
           altEn: 'alt en',
+          varianteId: null,
         },
       ]);
     });

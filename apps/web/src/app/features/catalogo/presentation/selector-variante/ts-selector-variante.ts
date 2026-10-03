@@ -41,6 +41,15 @@ export class TsSelectorVariante {
 
   readonly ejes = input.required<readonly EjeAtributo[]>();
   readonly seleccion = input.required<Seleccion>();
+  /**
+   * Por eje, los valores que con lo demás elegido no llevan a nada que se pueda comprar: las tallas
+   * agotadas en el color elegido y las de la escala que este producto no trae. Se ven tachadas y no
+   * se eligen, como en las tiendas de referencia; los colores no se tachan, porque elegir otro
+   * color es justo lo que deja ver qué tallas tiene.
+   */
+  readonly noDisponibles = input<Readonly<Record<string, readonly string[]>>>({});
+  /** Lo que el lector de pantalla oye después del valor: «agotada». Traducido por quien llama. */
+  readonly textoNoDisponible = input('');
   readonly seleccionCambio = output<Seleccion>();
 
   protected esColor(opcion: OpcionEje): boolean {
@@ -51,7 +60,26 @@ export class TsSelectorVariante {
     return this.seleccion()[nombreEje] === opcion.valor;
   }
 
+  protected noDisponible(nombreEje: string, opcion: OpcionEje): boolean {
+    return !this.esColor(opcion) && (this.noDisponibles()[nombreEje] ?? []).includes(opcion.valor);
+  }
+
+  protected etiquetaAccesible(eje: EjeAtributo, opcion: OpcionEje): string | null {
+    return this.noDisponible(eje.nombre, opcion)
+      ? `${this.etiqueta(eje, opcion)}, ${this.textoNoDisponible()}`
+      : null;
+  }
+
+  protected claseOpcion(nombreEje: string, opcion: OpcionEje): string {
+    return this.noDisponible(nombreEje, opcion)
+      ? 'line-through text-ts-texto-suave border-ts-borde'
+      : '';
+  }
+
   protected elegir(nombreEje: string, opcion: OpcionEje): void {
+    if (this.noDisponible(nombreEje, opcion)) {
+      return;
+    }
     this.seleccionCambio.emit({ ...this.seleccion(), [nombreEje]: opcion.valor });
   }
 

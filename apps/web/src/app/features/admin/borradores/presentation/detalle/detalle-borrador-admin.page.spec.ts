@@ -8,7 +8,11 @@ import es from '../../../../../../assets/i18n/es.json';
 import esAdmin from '../../../../../../assets/i18n/scopes/admin/es.json';
 import { esperarSinViolaciones } from '../../../../../../testing/axe';
 import { ErrorHttp } from '../../../../../core/http/respuesta-http';
-import { Categoria, Marca } from '../../../../catalogo/domain/producto.model';
+import { Categoria, ColorDePaleta, Marca } from '../../../../catalogo/domain/producto.model';
+import {
+  REPOSITORIO_PALETA_COLORES,
+  RepositorioPaletaColores,
+} from '../../../../catalogo/domain/repositorio-paleta-colores.puerto';
 import {
   REPOSITORIO_CATEGORIAS,
   RepositorioCategorias,
@@ -39,6 +43,7 @@ const CATEGORIA: Categoria = {
   linea: 'BOLSOS',
   padreId: null,
   hashtags: [],
+  escalaTallas: [],
 };
 
 class RepositorioMarcasFalso implements RepositorioMarcas {
@@ -54,11 +59,41 @@ const BLUSAS: Categoria = {
   linea: 'ROPA',
   padreId: null,
   hashtags: [],
+  escalaTallas: [],
+};
+
+const DAMA: Categoria = {
+  id: 'c3',
+  nombre: 'Dama',
+  slug: 'ropa-dama',
+  linea: 'ROPA',
+  padreId: null,
+  hashtags: [],
+  escalaTallas: ['XS', 'S', 'M', 'L'],
+};
+
+const CAMISAS: Categoria = {
+  id: 'c4',
+  nombre: 'Camisas',
+  slug: 'ropa-dama-camisas',
+  linea: 'ROPA',
+  padreId: 'c3',
+  hashtags: [],
+  escalaTallas: [],
 };
 
 class RepositorioCategoriasFalso implements RepositorioCategorias {
   async listarTodas(): Promise<Categoria[]> {
-    return [CATEGORIA, BLUSAS];
+    return [CATEGORIA, BLUSAS, DAMA, CAMISAS];
+  }
+}
+
+class RepositorioPaletaFalso implements RepositorioPaletaColores {
+  async listarTodos(): Promise<ColorDePaleta[]> {
+    return [
+      { nombre: 'Negro', nombreEn: 'Black', hex: '#111111' },
+      { nombre: 'Vino', nombreEn: 'Burgundy', hex: '#722F37' },
+    ];
   }
 }
 
@@ -91,6 +126,7 @@ async function renderPagina(
       },
       { provide: REPOSITORIO_MARCAS, useValue: new RepositorioMarcasFalso() },
       { provide: REPOSITORIO_CATEGORIAS, useValue: new RepositorioCategoriasFalso() },
+      { provide: REPOSITORIO_PALETA_COLORES, useValue: new RepositorioPaletaFalso() },
       { provide: ActivatedRoute, useValue: rutaCon(borrador.id) },
     ],
   });
@@ -170,7 +206,8 @@ describe('DetalleBorradorAdminPage', () => {
     const { repositorio } = await renderPagina();
     await llenarAprobacion();
 
-    fireEvent.change(screen.getByLabelText('Tono de la foto 1'), { target: { value: 'Negro' } });
+    await screen.findAllByRole('option', { name: 'Vino' });
+    fireEvent.change(screen.getByLabelText('Color de la foto 1'), { target: { value: 'Negro' } });
     fireEvent.input(screen.getByLabelText(a.precioVenta), { target: { value: '75.000' } });
     fireEvent.click(screen.getByRole('button', { name: a.accion }));
 
@@ -183,8 +220,8 @@ describe('DetalleBorradorAdminPage', () => {
       existenciaInicial: 2,
       altEs: 'Bolso tote en cuero sintético',
       fotos: [
-        { mensajeId: 'f-1', tono: 'Negro' },
-        { mensajeId: 'f-2', tono: null },
+        { mensajeId: 'f-1', tono: 'Negro', colorHex: '#111111' },
+        { mensajeId: 'f-2', tono: null, colorHex: null },
       ],
     });
   });
@@ -390,6 +427,30 @@ describe('DetalleBorradorAdminPage', () => {
 
     expect(screen.queryByText('¿Eliminar la foto 1 de este borrador?')).toBeNull();
     expect(repositorio.fotosDescartadas).toEqual([]);
+  });
+
+  /** Camisas no tiene escala propia: la revisión ofrece la de Ropa › Dama para marcar. */
+  it('con categoría, las tallas se marcan sobre su escala y avisa las que no están', async () => {
+    const { repositorio } = await renderPagina(
+      borradorDePrueba({ tallas: { tipo: 'LISTA', sirveHasta: null, valores: ['M', 'XXL'] } }),
+    );
+    await screen.findByRole('option', { name: /Camisas/ });
+    fireEvent.change(screen.getByLabelText(a.categoria), { target: { value: 'c4' } });
+
+    const s = (await screen.findByLabelText('S')) as HTMLInputElement;
+    expect(s.checked).toBe(false);
+    expect((screen.getByLabelText('M') as HTMLInputElement).checked).toBe(true);
+    expect(screen.getByText(/Fuera de la escala de la categoría: XXL/)).toBeTruthy();
+
+    fireEvent.click(s);
+    fireEvent.click(screen.getByRole('button', { name: d.guardar }));
+
+    expect(await screen.findByText(d.guardado)).toBeTruthy();
+    expect(repositorio.ediciones[0].cambios.tallas).toEqual({
+      tipo: 'LISTA',
+      sirveHasta: null,
+      valores: ['S', 'M', 'XXL'],
+    });
   });
 
   it('rechazar exige un motivo y lo manda', async () => {

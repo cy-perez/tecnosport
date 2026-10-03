@@ -25,10 +25,20 @@ function productoDePrueba(slug: string): Producto {
     nombre: `Producto ${slug}`,
     descripcion: '',
     marca: { id: '1', nombre: 'TecnoSport' },
-    categoria: { id: 'c1', nombre: 'Bolsos', slug: 'bolsos', linea: 'BOLSOS', padreId: null, hashtags: [] },
+    categoria: {
+      id: 'c1',
+      nombre: 'Bolsos',
+      slug: 'bolsos',
+      linea: 'BOLSOS',
+      padreId: null,
+      hashtags: [],
+      escalaTallas: [],
+    },
     imagenPrincipal: null,
     galeria: [],
     rotacion: null,
+    escalaTallas: [],
+    tallaSirveHasta: null,
     variantes: [
       {
         id: `id-${slug}`,
@@ -63,9 +73,33 @@ class RepositorioCategoriasFalso implements RepositorioCategorias {
 }
 
 const TRES_LINEAS: Categoria[] = [
-  { id: 'c0', nombre: 'Ropa deportiva', slug: 'ropa-deportiva', linea: 'ROPA', padreId: null, hashtags: [] },
-  { id: 'c1', nombre: 'Bolsos', slug: 'bolsos', linea: 'BOLSOS', padreId: null, hashtags: [] },
-  { id: 'c2', nombre: 'Celulares', slug: 'celulares', linea: 'TECNOLOGIA', padreId: null, hashtags: [] },
+  {
+    id: 'c0',
+    nombre: 'Ropa deportiva',
+    slug: 'ropa-deportiva',
+    linea: 'ROPA',
+    padreId: null,
+    hashtags: [],
+    escalaTallas: [],
+  },
+  {
+    id: 'c1',
+    nombre: 'Bolsos',
+    slug: 'bolsos',
+    linea: 'BOLSOS',
+    padreId: null,
+    hashtags: [],
+    escalaTallas: [],
+  },
+  {
+    id: 'c2',
+    nombre: 'Celulares',
+    slug: 'celulares',
+    linea: 'TECNOLOGIA',
+    padreId: null,
+    hashtags: [],
+    escalaTallas: [],
+  },
 ];
 
 async function renderPortada(
@@ -196,7 +230,15 @@ describe('PortadaPage', () => {
    */
   it('las cuatro baldosas salen aunque el catálogo sea de pura tecnología', async () => {
     await renderPortada(new RepositorioProductosFalso(), [
-      { id: 'c2', nombre: 'Celulares', slug: 'celulares', linea: 'TECNOLOGIA', padreId: null, hashtags: [] },
+      {
+        id: 'c2',
+        nombre: 'Celulares',
+        slug: 'celulares',
+        linea: 'TECNOLOGIA',
+        padreId: null,
+        hashtags: [],
+        escalaTallas: [],
+      },
     ]);
 
     await screen.findByRole('link', { name: 'Tecnología' });
@@ -222,9 +264,7 @@ describe('PortadaPage', () => {
     expect(screen.getByText('Opción de pago contraentrega')).toBeTruthy();
     expect(screen.getByText('Diversos medios de pago')).toBeTruthy();
     expect(screen.getByText('Garantía legal en todo')).toBeTruthy();
-    expect(
-      screen.getByText('y cinco días hábiles para retractarte de tu compra'),
-    ).toBeTruthy();
+    expect(screen.getByText('y cinco días hábiles para retractarte de tu compra')).toBeTruthy();
   });
 
   it('la sección de líneas se pinta incluso con el catálogo vacío', async () => {

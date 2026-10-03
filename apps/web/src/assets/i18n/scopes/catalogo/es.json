@@ -28,6 +28,15 @@
     "mostrar": "Filtrar y ordenar",
     "ocultar": "Ocultar filtros"
   },
+  "talla": {
+    "unica": "Talla única",
+    "sirve_hasta": "Sirve hasta: {{talla}}",
+    "no_disponible": "no disponible"
+  },
+  "colores": {
+    "elegir": "Ver en {{color}}",
+    "mas": "y {{cantidad}} colores más"
+  },
   "ficha": {
     "no_encontrado": "No encontramos este producto.",
     "error": "No se pudo cargar el producto. Intenta de nuevo.",

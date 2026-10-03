@@ -7,16 +7,16 @@ const ejes: EjeAtributo[] = [
     nombre: 'Color',
     unidad: null,
     opciones: [
-      { valor: 'Azul marino', colorHex: '#1E3A8A' },
-      { valor: 'Negro', colorHex: '#111111' },
+      { valor: 'Azul marino', colorHex: '#1E3A8A', existe: true },
+      { valor: 'Negro', colorHex: '#111111', existe: true },
     ],
   },
   {
     nombre: 'Talla',
     unidad: null,
     opciones: [
-      { valor: 'M', colorHex: null },
-      { valor: 'L', colorHex: null },
+      { valor: 'M', colorHex: null, existe: true },
+      { valor: 'L', colorHex: null, existe: true },
     ],
   },
 ];
@@ -27,7 +27,11 @@ describe('TsSelectorVariante', () => {
     await render(TsSelectorVariante, {
       inputs: {
         ejes: [
-          { nombre: 'Garantía', unidad: 'meses', opciones: [{ valor: '12', colorHex: null }] },
+          {
+            nombre: 'Garantía',
+            unidad: 'meses',
+            opciones: [{ valor: '12', colorHex: null, existe: true }],
+          },
         ],
         seleccion: { Garantía: '12' },
       },
@@ -46,6 +50,44 @@ describe('TsSelectorVariante', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Negro' }));
 
     expect(emitido).toEqual({ Color: 'Negro', Talla: 'M' });
+  });
+
+  /**
+   * Una talla agotada se ve tachada y no se elige, pero sigue en el orden de tabulación y dice por
+   * qué: `aria-disabled` y no `disabled`, para que quien navega con teclado sepa que existe.
+   */
+  it('una talla no disponible se ve, no se elige y lo dice', async () => {
+    let emitido: unknown;
+    await render(TsSelectorVariante, {
+      inputs: {
+        ejes,
+        seleccion: { Color: 'Azul marino', Talla: 'M' },
+        noDisponibles: { Talla: ['L'] },
+        textoNoDisponible: 'no disponible',
+      },
+      on: { seleccionCambio: (valor) => (emitido = valor) },
+    });
+
+    const agotada = screen.getByRole('button', { name: 'L, no disponible' });
+    expect(agotada.getAttribute('aria-disabled')).toBe('true');
+    expect(agotada.hasAttribute('disabled')).toBe(false);
+    expect(agotada.className).toContain('line-through');
+
+    fireEvent.click(agotada);
+    expect(emitido).toBeUndefined();
+  });
+
+  it('un color no se tacha aunque venga en la lista', async () => {
+    await render(TsSelectorVariante, {
+      inputs: {
+        ejes,
+        seleccion: { Color: 'Azul marino', Talla: 'M' },
+        noDisponibles: { Color: ['Negro'] },
+        textoNoDisponible: 'no disponible',
+      },
+    });
+
+    expect(screen.getByRole('button', { name: 'Negro' }).getAttribute('aria-disabled')).toBeNull();
   });
 
   it('elegir una talla emite la selección con ese eje actualizado', async () => {

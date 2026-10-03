@@ -48,10 +48,20 @@ function productoDePrueba(): Producto {
     nombre: 'Morral urbano',
     descripcion: 'Un morral resistente para el día a día.',
     marca: { id: '1', nombre: 'TecnoSport' },
-    categoria: { id: 'c1', nombre: 'Bolsos', slug: 'bolsos', linea: 'BOLSOS', padreId: null, hashtags: [] },
+    categoria: {
+      id: 'c1',
+      nombre: 'Bolsos',
+      slug: 'bolsos',
+      linea: 'BOLSOS',
+      padreId: null,
+      hashtags: [],
+      escalaTallas: [],
+    },
     imagenPrincipal: null,
     galeria: [],
     rotacion: null,
+    escalaTallas: [],
+    tallaSirveHasta: null,
     variantes: [
       {
         id: 'variante-1',
@@ -77,10 +87,13 @@ function productoConVariantes(): Producto {
       linea: 'ROPA',
       padreId: null,
       hashtags: [],
+      escalaTallas: [],
     },
     imagenPrincipal: null,
     galeria: [],
     rotacion: null,
+    escalaTallas: [],
+    tallaSirveHasta: null,
     variantes: [
       {
         id: 'variante-az',
@@ -111,6 +124,7 @@ function productoConRotacion(): Producto {
       alto: 600,
       altEs: 'Morral de frente',
       altEn: 'Backpack, front',
+      varianteId: null,
     },
     // Ordenados, como los entrega el mapeador: que el orden se garantice en la frontera es
     // asunto de `mapeador-productos.spec.ts`, no de esta pantalla.
@@ -447,6 +461,78 @@ describe('FichaPage', () => {
 
     expect(await screen.findByText(/99\.900/)).toBeTruthy();
     expect(screen.queryByText(/89\.900/)).toBeFalsy();
+  });
+
+  /** La talla única no es una elección: se dice, con hasta dónde sirve, y no sale en el selector. */
+  it('una prenda de talla única dice su talla en vez de ofrecerla', async () => {
+    const bodi: Producto = {
+      ...productoDePrueba(),
+      slug: 'bodi',
+      tallaSirveHasta: 'L',
+      escalaTallas: ['XS', 'S', 'M', 'L'],
+      variantes: [
+        {
+          id: 'v-u',
+          sku: 'PRV-1',
+          precio: { valor: 60_000, moneda: 'COP' },
+          disponible: true,
+          atributos: [{ nombre: 'Talla', valor: 'Única', colorHex: null, unidad: null }],
+        },
+      ],
+    };
+    const repositorio: RepositorioProductos = {
+      buscar: () =>
+        Promise.resolve<ResultadoPaginado<Producto>>({ items: [], cursorSiguiente: null }),
+      buscarPorSlug: () => Promise.resolve(bodi),
+    };
+
+    await renderFicha(repositorio, 'bodi');
+
+    expect(await screen.findByText(/Talla única/)).toBeTruthy();
+    expect(screen.getByText(/Sirve hasta: L/)).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Única' })).toBeNull();
+    expect(screen.queryByRole('button', { name: /^XS/ })).toBeNull();
+  });
+
+  /** Como en la tienda de referencia: la escala entera, con lo que no se puede comprar tachado. */
+  it('la escala de la categoría enseña todas las tallas y tacha las que no hay', async () => {
+    const talla = (valor: string) => [{ nombre: 'Talla', valor, colorHex: null, unidad: null }];
+    const camiseta: Producto = {
+      ...productoDePrueba(),
+      slug: 'camiseta-escala',
+      escalaTallas: ['S', 'M', 'L'],
+      variantes: [
+        {
+          id: 'v-m',
+          sku: 'SKU-M',
+          precio: { valor: 50_000, moneda: 'COP' },
+          disponible: true,
+          atributos: talla('M'),
+        },
+        {
+          id: 'v-l',
+          sku: 'SKU-L',
+          precio: { valor: 50_000, moneda: 'COP' },
+          disponible: false,
+          atributos: talla('L'),
+        },
+      ],
+    };
+    const repositorio: RepositorioProductos = {
+      buscar: () =>
+        Promise.resolve<ResultadoPaginado<Producto>>({ items: [], cursorSiguiente: null }),
+      buscarPorSlug: () => Promise.resolve(camiseta),
+    };
+
+    await renderFicha(repositorio, 'camiseta-escala');
+
+    expect(await screen.findByRole('button', { name: 'M' })).toBeTruthy();
+    expect(
+      screen.getByRole('button', { name: 'S, no disponible' }).getAttribute('aria-disabled'),
+    ).toBe('true');
+    expect(
+      screen.getByRole('button', { name: 'L, no disponible' }).getAttribute('aria-disabled'),
+    ).toBe('true');
   });
 
   // `docs/06-testing.md`: axe automatizado en las pantallas clave. La ficha es

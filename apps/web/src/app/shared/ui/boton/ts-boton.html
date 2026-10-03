@@ -44,6 +44,7 @@
     [disabled]="deshabilitado() || cargando()"
     [attr.aria-busy]="cargando() || ocupado() ? 'true' : null"
     [attr.aria-pressed]="presionado() === null ? null : presionado() ? 'true' : 'false'"
+    [attr.aria-disabled]="inactivo() ? 'true' : null"
     [attr.aria-expanded]="expandido() === null ? null : expandido() ? 'true' : 'false'"
     [attr.aria-controls]="controla()"
     [attr.aria-label]="etiquetaAccesible()"

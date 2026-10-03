@@ -37,11 +37,21 @@
         <p class="text-sm text-ts-texto-suave">{{ p.marca.nombre }}</p>
         <h1 class="m-0 font-display text-2xl">{{ p.nombre }}</h1>
         <p class="text-sm text-ts-texto-suave">{{ p.categoria.nombre }}</p>
+        @if (tallaUnica(); as unica) {
+          <p class="m-0 text-ts-texto">
+            {{ 'catalogo.talla.unica' | transloco }}
+            @if (unica.sirveHasta) {
+              · {{ 'catalogo.talla.sirve_hasta' | transloco: { talla: unica.sirveHasta } }}
+            }
+          </p>
+        }
 
         @if (ejes().length > 0) {
           <ts-selector-variante
             [ejes]="ejes()"
             [seleccion]="seleccion()"
+            [noDisponibles]="noDisponibles()"
+            [textoNoDisponible]="'catalogo.talla.no_disponible' | transloco"
             (seleccionCambio)="cambiarSeleccion($event)"
           />
         }

@@ -20,6 +20,11 @@ export interface Imagen {
   readonly alto: number;
   readonly altEs: string;
   readonly altEn: string;
+  /**
+   * La variante cuyo tono muestra la foto, o `null` si vale para todas. Es lo que deja cambiar la
+   * foto al elegir un color, en la tarjeta y en la ficha.
+   */
+  readonly varianteId: string | null;
 }
 
 /** Un fotograma de rotación se publica en un solo ancho: el visor los pinta todos igual. */
@@ -94,6 +99,21 @@ export interface Categoria {
    * etiquetas se publica igual, solo llega a menos gente.
    */
   readonly hashtags: readonly string[];
+  /**
+   * Las tallas propias de la categoría, en su orden; vacía si usa las de su rama o no talla. Quien
+   * necesita la que vale —la propia o la heredada— la pide a `escalaDeTallasDe`.
+   */
+  readonly escalaTallas: readonly string[];
+}
+
+/**
+ * Un color de la paleta con que se marca el tono de cada foto. Vive en la base y llega por la API:
+ * es un dato del producto, no del sistema visual, así que su HEX no es un literal del frontend.
+ */
+export interface ColorDePaleta {
+  readonly nombre: string;
+  readonly nombreEn: string;
+  readonly hex: string;
 }
 
 export interface Producto {
@@ -106,6 +126,13 @@ export interface Producto {
   readonly galeria: readonly Imagen[];
   readonly rotacion: Rotacion | null;
   readonly variantes: readonly Variante[];
+  /**
+   * Las tallas de la categoría en su orden —XS…XXXL, 26…42, 34…43—, heredadas de la rama si la
+   * hoja no tiene las suyas. Solo llega con la ficha: en la rejilla viene vacía.
+   */
+  readonly escalaTallas: readonly string[];
+  /** Hasta qué talla le sirve una prenda de talla única, si el proveedor lo dijo. */
+  readonly tallaSirveHasta: string | null;
 }
 
 /**

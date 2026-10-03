@@ -37,9 +37,16 @@ import { usarFichaProducto } from '../../application/buscar-ficha-producto.consu
 import { CarritoStore } from '../../../carrito/application/carrito.store';
 import { hayExistencia, Imagen } from '../../domain/producto.model';
 import {
+  detalleDeVariante,
+  ejeDeColor,
   ejesDeAtributos,
+  esEjeDeTalla,
+  imagenDelColor,
+  imagenesDelColor,
+  opcionDisponible,
   Seleccion,
   seleccionDeVariante,
+  tallaUnicaDe,
   variantePorDefecto,
   varianteSeleccionada,
 } from '../../domain/seleccion-variante';
@@ -94,9 +101,12 @@ export class FichaPage {
     if (!producto) {
       return [];
     }
-    return [producto.imagenPrincipal, ...producto.galeria].filter(
+    const todas = [producto.imagenPrincipal, ...producto.galeria].filter(
       (imagen): imagen is Imagen => imagen !== null,
     );
+    // Al elegir un color, las fotos de ese tono primero y las que valen para todos detrás.
+    const eje = ejeDeColor(producto);
+    return imagenesDelColor(producto, todas, eje ? (this.seleccion()[eje] ?? null) : null);
   });
 
   /** El visor recibe URL y nada más. Llegan ya ordenadas por `orden` desde el mapeador. */
@@ -104,9 +114,44 @@ export class FichaPage {
     (this.producto()?.rotacion?.imagenes ?? []).map((fotograma) => fotograma.url),
   );
 
+  /**
+   * La talla única no es una elección: no sale en el selector, se dice al lado del nombre. El eje de
+   * talla sigue la escala de la categoría, con las tallas que este producto no trae tachadas.
+   */
   protected readonly ejes = computed(() => {
     const producto = this.producto();
-    return producto ? ejesDeAtributos(producto) : [];
+    if (!producto) {
+      return [];
+    }
+    const unica = tallaUnicaDe(producto) !== null;
+    return ejesDeAtributos(producto, producto.escalaTallas).filter(
+      (eje) => !(unica && esEjeDeTalla(eje.nombre)),
+    );
+  });
+
+  protected readonly tallaUnica = computed(() => {
+    const producto = this.producto();
+    return producto ? tallaUnicaDe(producto) : null;
+  });
+
+  /** Lo que se ve tachado: lo que con lo demás elegido no lleva a nada que se pueda comprar. */
+  protected readonly noDisponibles = computed<Record<string, string[]>>(() => {
+    const producto = this.producto();
+    if (!producto) {
+      return {};
+    }
+    const seleccion = this.seleccion();
+    return Object.fromEntries(
+      this.ejes().map((eje) => [
+        eje.nombre,
+        eje.opciones
+          .filter(
+            (opcion) =>
+              !opcion.existe || !opcionDisponible(producto, seleccion, eje.nombre, opcion.valor),
+          )
+          .map((opcion) => opcion.valor),
+      ]),
+    );
   });
 
   protected readonly seleccion = signal<Seleccion>({});
@@ -241,7 +286,10 @@ export class FichaPage {
       return;
     }
     const idioma = this.transloco.activeLang();
-    const imagen = producto.imagenPrincipal;
+    // La foto del color que se lleva, no la principal: en el carrito se ve lo que eligió.
+    const eje = ejeDeColor(producto);
+    const imagen = imagenDelColor(producto, eje ? (this.seleccion()[eje] ?? null) : null);
+    const detalle = detalleDeVariante(variante);
     void this.carrito.agregarAlCarrito(variante.id, 1, {
       varianteId: variante.id,
       nombreProducto: producto.nombre,
@@ -251,6 +299,7 @@ export class FichaPage {
       imagenAlt: (imagen ? (idioma === 'en' ? imagen.altEn : imagen.altEs) : '') || producto.nombre,
       precioValor: variante.precio.valor,
       precioMoneda: variante.precio.moneda,
+      detalleVariante: detalle || null,
     });
   }
 }

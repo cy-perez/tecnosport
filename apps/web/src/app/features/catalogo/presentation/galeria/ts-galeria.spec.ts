@@ -19,6 +19,7 @@ function imagen(seed: string, altEs: string): Imagen {
     alto: 600,
     altEs,
     altEn: altEs,
+    varianteId: null,
   };
 }
 
@@ -105,6 +106,7 @@ describe('TsGaleria', () => {
         alto: 600,
         altEs: 'Foto A',
         altEn: 'Photo A',
+        varianteId: null,
       },
     ]);
 
@@ -132,6 +134,7 @@ describe('TsGaleria', () => {
       alto: 600,
       altEs: '',
       altEn: '',
+      varianteId: null,
     };
 
     await renderGaleria([sinAlt, imagen('dos', 'Foto dos')]);

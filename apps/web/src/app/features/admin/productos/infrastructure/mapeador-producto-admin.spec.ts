@@ -34,6 +34,7 @@ describe('aProductoAdminDetalle', () => {
         alto: 900,
         altEs: 'alt es',
         altEn: 'alt en',
+        varianteId: null,
       }),
     );
 

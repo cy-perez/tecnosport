@@ -30,11 +30,51 @@ import { FiltrosProductos } from './filtros-productos';
 class RepositorioCategoriasFalso implements RepositorioCategorias {
   async listarTodas(): Promise<Categoria[]> {
     return [
-      { id: 'c2', nombre: 'Celulares', slug: 'celulares', linea: 'TECNOLOGIA', padreId: null, hashtags: [] },
-      { id: 'd0', nombre: 'Dama', slug: 'ropa-dama', linea: 'ROPA', padreId: null, hashtags: [] },
-      { id: 'd1', nombre: 'Blusas', slug: 'ropa-dama-blusas', linea: 'ROPA', padreId: 'd0', hashtags: [] },
-      { id: 'd2', nombre: 'Busos', slug: 'ropa-dama-busos', linea: 'ROPA', padreId: 'd0', hashtags: [] },
-      { id: 'u0', nombre: 'Unisex', slug: 'calzado-unisex', linea: 'CALZADO', padreId: null, hashtags: [] },
+      {
+        id: 'c2',
+        nombre: 'Celulares',
+        slug: 'celulares',
+        linea: 'TECNOLOGIA',
+        padreId: null,
+        hashtags: [],
+        escalaTallas: [],
+      },
+      {
+        id: 'd0',
+        nombre: 'Dama',
+        slug: 'ropa-dama',
+        linea: 'ROPA',
+        padreId: null,
+        hashtags: [],
+        escalaTallas: [],
+      },
+      {
+        id: 'd1',
+        nombre: 'Blusas',
+        slug: 'ropa-dama-blusas',
+        linea: 'ROPA',
+        padreId: 'd0',
+        hashtags: [],
+        escalaTallas: [],
+      },
+      {
+        id: 'd2',
+        nombre: 'Busos',
+        slug: 'ropa-dama-busos',
+        linea: 'ROPA',
+        padreId: 'd0',
+        hashtags: [],
+        escalaTallas: [],
+      },
+      {
+        id: 'u0',
+        nombre: 'Unisex',
+        slug: 'calzado-unisex',
+        linea: 'CALZADO',
+        padreId: null,
+        hashtags: [],
+        escalaTallas: [],
+      },
     ];
   }
 }
@@ -43,7 +83,15 @@ class RepositorioCategoriasFalso implements RepositorioCategorias {
 class RepositorioCategoriasSoloTecnologia implements RepositorioCategorias {
   async listarTodas(): Promise<Categoria[]> {
     return [
-      { id: 'c2', nombre: 'Celulares', slug: 'celulares', linea: 'TECNOLOGIA', padreId: null, hashtags: [] },
+      {
+        id: 'c2',
+        nombre: 'Celulares',
+        slug: 'celulares',
+        linea: 'TECNOLOGIA',
+        padreId: null,
+        hashtags: [],
+        escalaTallas: [],
+      },
     ];
   }
 }

@@ -9,6 +9,7 @@ function imagen(anchos: number[]): Imagen {
     alto: 900,
     altEs: 'alt es',
     altEn: 'alt en',
+    varianteId: null,
   };
 }
 

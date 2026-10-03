@@ -46,6 +46,22 @@ describe('LineaCarritoComponent', () => {
     expect(screen.getByText('SKU-1')).toBeTruthy();
   });
 
+  /** Desde que se elige talla, el carrito tiene que decir cuál: el SKU solo no lo dice. */
+  it('dice la talla y el color que se eligieron', async () => {
+    await renderLinea({
+      linea: lineaDePrueba(),
+      snapshot: { ...snapshotDePrueba(), detalleVariante: 'Negro · M' },
+    });
+
+    expect(screen.getByText('Negro · M')).toBeTruthy();
+  });
+
+  it('un carrito guardado antes, sin detalle, se pinta igual', async () => {
+    await renderLinea({ linea: lineaDePrueba(), snapshot: snapshotDePrueba() });
+
+    expect(screen.queryByText(/·/)).toBeNull();
+  });
+
   it('sin foto guardada muestra un texto genérico', async () => {
     await renderLinea({ linea: lineaDePrueba(), snapshot: null });
 
