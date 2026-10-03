@@ -907,6 +907,8 @@
       "PANTALON": "Trousers",
       "SHORT": "Shorts",
       "VESTIDO": "Dress",
+      "BLUSA": "Blouse",
+      "BODY": "Bodysuit",
       "OTRO": "Other"
     },
     "tallas": {

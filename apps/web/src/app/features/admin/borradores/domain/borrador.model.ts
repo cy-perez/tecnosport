@@ -25,6 +25,8 @@ export type TipoProductoProveedor =
   | 'PANTALON'
   | 'SHORT'
   | 'VESTIDO'
+  | 'BLUSA'
+  | 'BODY'
   | 'OTRO';
 
 export const TIPOS_PRODUCTO_PROVEEDOR: readonly TipoProductoProveedor[] = [
@@ -41,8 +43,21 @@ export const TIPOS_PRODUCTO_PROVEEDOR: readonly TipoProductoProveedor[] = [
   'PANTALON',
   'SHORT',
   'VESTIDO',
+  'BLUSA',
+  'BODY',
   'OTRO',
 ];
+
+/**
+ * La categoría que el formulario de aprobación propone según el tipo, por slug: los ids cambian de
+ * un ambiente a otro y el slug no. Solo los tipos que caen siempre en la misma hoja; los demás
+ * dependen del género o de la línea y los elige quien aprueba (decidido el 2 de octubre de 2026).
+ */
+export const CATEGORIA_SUGERIDA_POR_TIPO: Readonly<Partial<Record<TipoProductoProveedor, string>>> =
+  {
+    BLUSA: 'ropa-dama-blusas',
+    BODY: 'ropa-dama-bodis',
+  };
 
 /**
  * Lo que la extracción no pudo resolver sola y alguien tiene que mirar antes de aprobar. Los

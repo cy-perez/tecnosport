@@ -46,9 +46,18 @@ class RepositorioMarcasFalso implements RepositorioMarcas {
   }
 }
 
+const BLUSAS: Categoria = {
+  id: 'c2',
+  nombre: 'Blusas',
+  slug: 'ropa-dama-blusas',
+  linea: 'ROPA',
+  padreId: null,
+  hashtags: [],
+};
+
 class RepositorioCategoriasFalso implements RepositorioCategorias {
   async listarTodas(): Promise<Categoria[]> {
-    return [CATEGORIA];
+    return [CATEGORIA, BLUSAS];
   }
 }
 
@@ -208,6 +217,24 @@ describe('DetalleBorradorAdminPage', () => {
       'f-9',
       'f-11',
     ]);
+  });
+
+  /** Una blusa siempre cae en Dama › Blusas: la categoría llega puesta y se puede cambiar. */
+  it('una blusa llega con su categoría preseleccionada', async () => {
+    await renderPagina(borradorDePrueba({ tipo: 'BLUSA' }));
+    await screen.findByRole('option', { name: /Blusas/ });
+
+    await vi.waitFor(() =>
+      expect((screen.getByLabelText(a.categoria) as HTMLSelectElement).value).toBe('c2'),
+    );
+  });
+
+  /** Un bolso depende de para quién es: la categoría la elige quien aprueba. */
+  it('un tipo sin categoría fija no preselecciona ninguna', async () => {
+    await renderPagina(borradorDePrueba({ tipo: 'BOLSO' }));
+    await screen.findByRole('option', { name: /Blusas/ });
+
+    expect((screen.getByLabelText(a.categoria) as HTMLSelectElement).value).toBe('');
   });
 
   it('marcar otra foto como principal la manda primero', async () => {

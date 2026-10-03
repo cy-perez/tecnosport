@@ -907,6 +907,8 @@
       "PANTALON": "Pantalón",
       "SHORT": "Short",
       "VESTIDO": "Vestido",
+      "BLUSA": "Blusa",
+      "BODY": "Body",
       "OTRO": "Otro"
     },
     "tallas": {

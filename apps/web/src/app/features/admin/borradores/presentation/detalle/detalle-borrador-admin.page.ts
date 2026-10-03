@@ -37,6 +37,7 @@ import { usarVerBorrador } from '../../application/ver-borrador.consulta';
 import {
   Borrador,
   borradorEditable,
+  CATEGORIA_SUGERIDA_POR_TIPO,
   EstadoBorrador,
   MAXIMO_FOTOS_POR_PRODUCTO,
   Tallas,
@@ -250,6 +251,7 @@ export class DetalleBorradorAdminPage {
   );
 
   private cargado: string | null = null;
+  private sugeridaAplicada: string | null = null;
 
   constructor() {
     effect(() => {
@@ -292,6 +294,24 @@ export class DetalleBorradorAdminPage {
         this.formDatos.enable({ emitEvent: false });
       } else {
         this.formDatos.disable({ emitEvent: false });
+      }
+    });
+
+    // Las categorías llegan por su lado, antes o después del borrador; la sugerida se pone cuando
+    // están las dos cosas, una vez por borrador y solo si nadie eligió otra. Va después del efecto
+    // de arriba, que reinicia el formulario: los efectos corren en el orden en que se crean.
+    effect(() => {
+      const borrador = this.borrador();
+      const categorias = this.opciones.categorias.data();
+      if (!borrador || !categorias || this.sugeridaAplicada === borrador.id) {
+        return;
+      }
+      this.sugeridaAplicada = borrador.id;
+      const slug = CATEGORIA_SUGERIDA_POR_TIPO[borrador.tipo];
+      const sugerida = slug ? categorias.find((categoria) => categoria.slug === slug) : undefined;
+      const control = this.formAprobar.controls.categoriaId;
+      if (sugerida && borradorEditable(borrador) && control.value === '') {
+        control.setValue(sugerida.id);
       }
     });
   }
