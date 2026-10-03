@@ -41,6 +41,9 @@ export class RepositorioBorradoresAdminFalso implements RepositorioBorradoresAdm
   readonly ediciones: { id: string; cambios: EditarBorrador }[] = [];
   readonly aprobaciones: { id: string; aprobacion: AprobarBorrador }[] = [];
   readonly rechazos: { id: string; motivo: string }[] = [];
+  readonly eliminados: string[] = [];
+  /** Si se pone, `eliminar` revienta con esto: el 409 de un borrador que no se borra. */
+  falloAlEliminar: unknown = null;
 
   constructor(
     private borradores: Borrador[] = [],
@@ -78,6 +81,14 @@ export class RepositorioBorradoresAdminFalso implements RepositorioBorradoresAdm
   async rechazar(id: string, motivo: string): Promise<Borrador> {
     this.rechazos.push({ id, motivo });
     return this.reemplazar(id, { estado: 'RECHAZADO', motivoRechazo: motivo });
+  }
+
+  async eliminar(id: string): Promise<void> {
+    if (this.falloAlEliminar) {
+      throw this.falloAlEliminar;
+    }
+    this.eliminados.push(id);
+    this.borradores = this.borradores.filter((b) => b.id !== id);
   }
 
   private reemplazar(id: string, cambios: Partial<Borrador>): Borrador {

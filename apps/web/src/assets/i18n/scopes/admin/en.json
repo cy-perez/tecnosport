@@ -32,6 +32,7 @@
     "lote_no_encontrado": "That batch no longer exists. Reload the list.",
     "borrador_no_encontrado": "That draft no longer exists. Reload the list.",
     "borrador_no_editable": "This draft has already been decided: it cannot be changed or approved again.",
+    "borrador_no_eliminable": "An approved draft or a renewal cannot be deleted: it is what recognises the product when the supplier posts it again.",
     "borrador_sin_fotos": "A product cannot be approved without photos. If the post had none, reject it.",
     "borrador_sin_precio": "The sale price is missing. Enter it before approving.",
     "borrador_sin_titulo": "The product title is missing. Fix it in the extracted data before approving.",
@@ -1001,6 +1002,17 @@
       "rechazando": "Rejecting…",
       "hecho": "Draft rejected.",
       "error": "The draft could not be rejected. Try again."
+    },
+    "borrar": {
+      "titulo": "Delete",
+      "explicacion": "Rejecting keeps a record of why it was not published. Deleting keeps nothing.",
+      "accion": "Delete draft",
+      "pregunta": "Delete this draft?",
+      "loQueImplica": "The draft, the supplier's messages and their photos are deleted and cannot be recovered. If another draft came from the same message, only this one is deleted and the photos stay. If you upload an export that includes the post again, it will show up again.",
+      "confirmar": "Yes, delete",
+      "cancelar": "Cancel",
+      "borrando": "Deleting…",
+      "error": "The draft could not be deleted. Try again."
     }
   }
 }

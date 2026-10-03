@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { SesionStore } from '../../../../core/autenticacion/sesion.store';
 import { baseUrl } from '../../../../core/http/base-url';
 import { crearClienteAutenticado } from '../../../../core/http/cliente-autenticado';
-import { desempaquetar } from '../../../../core/http/respuesta-http';
+import { desempaquetar, exigirExito } from '../../../../core/http/respuesta-http';
 import {
   AprobarBorrador,
   Borrador,
@@ -69,5 +69,12 @@ export class BorradoresAdminHttpRepositorio implements RepositorioBorradoresAdmi
       body: { motivo },
     });
     return aBorrador(desempaquetar(respuesta, 'no se pudo rechazar el borrador'));
+  }
+
+  async eliminar(id: string): Promise<void> {
+    const respuesta = await this.cliente.DELETE('/api/v1/admin/borradores/{id}', {
+      params: { path: { id } },
+    });
+    exigirExito(respuesta, 'no se pudo borrar el borrador');
   }
 }

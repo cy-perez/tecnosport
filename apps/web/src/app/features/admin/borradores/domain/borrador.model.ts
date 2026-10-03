@@ -180,3 +180,11 @@ export const MAXIMO_FOTOS_POR_PRODUCTO = 9;
 export function borradorEditable(borrador: Borrador): boolean {
   return borrador.estado === 'EN_REVISION';
 }
+
+/**
+ * Borrar se lleva el borrador con sus mensajes y sus fotos. Un aprobado o una renovación no: son la
+ * huella con que la ingesta reconoce el producto la próxima vez, y la API responde 409.
+ */
+export function borradorBorrable(borrador: Borrador): boolean {
+  return borrador.estado === 'EN_REVISION' || borrador.estado === 'RECHAZADO';
+}

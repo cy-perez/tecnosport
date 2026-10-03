@@ -366,5 +366,68 @@
         </div>
       </form>
     }
+
+    <!-- Aparte de rechazar y fuera del `editable()`: un rechazado también se puede borrar. -->
+    @if (borrable()) {
+      <section
+        class="mb-32 flex flex-col gap-16 rounded-lg border border-ts-error p-16"
+        aria-labelledby="borrar-titulo"
+      >
+        <h2 id="borrar-titulo" class="m-0 font-display text-lg">
+          {{ 'admin.borradores.borrar.titulo' | transloco }}
+        </h2>
+        <p class="m-0 text-ts-texto-suave">
+          {{ 'admin.borradores.borrar.explicacion' | transloco }}
+        </p>
+        <div>
+          <ts-boton
+            #botonBorrar
+            variante="secundario"
+            [expandido]="confirmandoBorrar()"
+            controla="borrar-confirmar"
+            (click)="preguntarSiBorrar()"
+          >
+            {{ 'admin.borradores.borrar.accion' | transloco }}
+          </ts-boton>
+        </div>
+
+        @if (confirmandoBorrar()) {
+          <div
+            #cajaBorrar
+            id="borrar-confirmar"
+            class="flex flex-col gap-16 border border-ts-borde-control p-16"
+            role="group"
+            tabindex="-1"
+            aria-labelledby="borrar-pregunta"
+            aria-describedby="borrar-implica"
+            (keydown.escape)="cancelarBorrar()"
+          >
+            <p id="borrar-pregunta" class="m-0">
+              {{ 'admin.borradores.borrar.pregunta' | transloco }}
+            </p>
+            <!-- En el `aria-describedby` del grupo para que se oiga al entrar, como en la galería. -->
+            <p id="borrar-implica" class="m-0 text-ts-texto-suave">
+              {{ 'admin.borradores.borrar.loQueImplica' | transloco }}
+            </p>
+            @if (errorBorrar(); as mensaje) {
+              <p class="m-0 text-ts-error" role="alert">{{ mensaje }}</p>
+            }
+            <div class="flex flex-wrap gap-16">
+              <ts-boton
+                variante="peligro"
+                [cargando]="borrando()"
+                [etiquetaCargando]="'admin.borradores.borrar.borrando' | transloco"
+                (click)="borrarBorrador()"
+              >
+                {{ 'admin.borradores.borrar.confirmar' | transloco }}
+              </ts-boton>
+              <ts-boton variante="secundario" (click)="cancelarBorrar()">
+                {{ 'admin.borradores.borrar.cancelar' | transloco }}
+              </ts-boton>
+            </div>
+          </div>
+        }
+      </section>
+    }
   }
 </section>

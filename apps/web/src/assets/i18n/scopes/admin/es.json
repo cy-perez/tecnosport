@@ -32,6 +32,7 @@
     "lote_no_encontrado": "Ese lote ya no existe. Recarga la lista.",
     "borrador_no_encontrado": "Ese borrador ya no existe. Recarga la lista.",
     "borrador_no_editable": "Este borrador ya se decidió: no se puede cambiar ni aprobar de nuevo.",
+    "borrador_no_eliminable": "Un borrador aprobado o una renovación no se borra: es lo que reconoce el producto cuando el proveedor lo vuelve a anunciar.",
     "borrador_sin_fotos": "No se puede aprobar un producto sin fotos. Si la publicación no traía ninguna, recházalo.",
     "borrador_sin_precio": "Falta el precio de venta. Escríbelo antes de aprobar.",
     "borrador_sin_titulo": "Falta el título del producto. Corrígelo en los datos extraídos antes de aprobar.",
@@ -1001,6 +1002,17 @@
       "rechazando": "Rechazando…",
       "hecho": "Borrador rechazado.",
       "error": "No se pudo rechazar el borrador. Intenta de nuevo."
+    },
+    "borrar": {
+      "titulo": "Borrar",
+      "explicacion": "Rechazar deja constancia de por qué no se publicó. Borrar no deja nada.",
+      "accion": "Borrar borrador",
+      "pregunta": "¿Borrar este borrador?",
+      "loQueImplica": "Se borran el borrador, los mensajes del proveedor y sus fotos, y no se pueden recuperar. Si otro borrador salió del mismo mensaje, solo se borra este y las fotos se quedan. Si vuelves a subir una exportación que traiga el anuncio, aparecerá otra vez.",
+      "confirmar": "Sí, borrar",
+      "cancelar": "Cancelar",
+      "borrando": "Borrando…",
+      "error": "No se pudo borrar el borrador. Intenta de nuevo."
     }
   }
 }
