@@ -138,6 +138,10 @@ class RepositorioProductosAdminFalso implements RepositorioProductosAdmin {
   reordenarGaleria(): Promise<void> {
     throw new Error('no usado por esta prueba');
   }
+
+  asignarColorAImagen(): Promise<void> {
+    throw new Error('no usado por esta prueba');
+  }
 }
 
 async function renderLista(items: ProductoAdmin[], totalPaginas = 1) {

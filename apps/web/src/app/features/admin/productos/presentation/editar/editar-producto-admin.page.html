@@ -30,6 +30,10 @@
       <ts-campo
         idCampo="editar-producto-descripcion"
         [label]="'admin.productos.editar.descripcion' | transloco"
+        [multilinea]="true"
+        [filas]="5"
+        [obligatorio]="true"
+        [error]="errorDescripcion()"
         formControlName="descripcion"
       />
 
@@ -49,6 +53,15 @@
         [placeholder]="'admin.productos.editar.seleccionar' | transloco"
         formControlName="categoriaId"
       />
+
+      @if (esTallaUnica()) {
+        <ts-campo
+          idCampo="editar-producto-sirve-hasta"
+          [label]="'admin.productos.editar.sirveHasta' | transloco"
+          [ayuda]="'admin.productos.editar.sirveHastaAyuda' | transloco"
+          formControlName="tallaSirveHasta"
+        />
+      }
 
       <p class="m-0 text-ts-error" role="alert">{{ error() }}</p>
 
@@ -135,6 +148,30 @@
       </ts-boton>
     </section>
 
+    @if (variantes().length > 0) {
+      <section
+        class="mt-32 flex flex-col gap-8 border-t border-ts-borde pt-24"
+        aria-labelledby="editar-producto-variantes-titulo"
+      >
+        <h2 id="editar-producto-variantes-titulo">
+          {{ 'admin.productos.editar.variantes' | transloco }}
+        </h2>
+        <p class="m-0 text-ts-texto-suave">
+          {{ 'admin.productos.editar.variantesAyuda' | transloco }}
+        </p>
+        <ul class="m-0 flex list-none flex-col gap-4 p-0">
+          @for (variante of variantes(); track variante.id) {
+            <li>
+              <span class="font-medio">{{ variante.sku }}</span>
+              @if (variante.detalle) {
+                — {{ variante.detalle }}
+              }
+            </li>
+          }
+        </ul>
+      </section>
+    }
+
     <section
       class="mt-32 flex flex-col gap-16 border-t border-ts-borde pt-24"
       aria-labelledby="editar-producto-galeria-titulo"
@@ -142,6 +179,21 @@
       <h2 id="editar-producto-galeria-titulo">
         {{ 'admin.productos.editar.galeria.titulo' | transloco }}
       </h2>
+
+      @if (opcionesColor().length > 1) {
+        <p class="m-0 text-ts-texto-suave">
+          {{ 'admin.productos.editar.galeria.ayudaColor' | transloco }}
+        </p>
+      }
+      @if (errorColor(); as mensaje) {
+        <p class="m-0 text-ts-error" role="alert">{{ mensaje }}</p>
+      }
+      <!-- Siempre en la pagina: lo que cambia es su contenido (apps/web/CLAUDE.md). -->
+      <p class="m-0 text-ts-exito" role="status">
+        @if (avisoColor()) {
+          {{ 'admin.productos.editar.galeria.colorGuardado' | transloco }}
+        }
+      </p>
 
       <p class="m-0 text-ts-texto-suave">
         {{ 'admin.productos.editar.galeria.ayuda' | transloco: { tope: topeDeGaleria } }}
@@ -177,6 +229,20 @@
               >
                 {{ idioma() === 'en' ? imagen.altEn : imagen.altEs }}
               </p>
+              @if (opcionesColor().length > 1) {
+                @for (version of [versionDeColores()]; track version) {
+                <ts-select
+                  [idCampo]="'color-foto-' + i"
+                  [label]="
+                    'admin.productos.editar.galeria.colorDeFoto' | transloco: { posicion: i + 1 }
+                  "
+                  [opciones]="opcionesColor()"
+                  [placeholder]="'admin.productos.editar.galeria.todosLosColores' | transloco"
+                  [valor]="colorDeImagen(imagen)"
+                  (cambio)="asignarColor(imagen, $event)"
+                />
+                }
+              }
               <!-- Un puesto a la vez y con botones, no arrastrando: el arrastre no existe para
                    quien navega con teclado. En cada extremo el boton que no lleva a ningun sitio
                    no se deshabilita, se quita: un control deshabilitado no es enfocable y para un

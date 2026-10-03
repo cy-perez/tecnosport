@@ -6,6 +6,7 @@ import { crearClienteAutenticado } from '../../../../core/http/cliente-autentica
 import { SesionStore } from '../../../../core/autenticacion/sesion.store';
 import {
   AgregarVarianteAdmin,
+  AsignarColorAImagenAdmin,
   CrearProductoAdmin,
   EditarProductoAdmin,
   FiltroProductosAdmin,
@@ -80,6 +81,9 @@ export class ProductosAdminHttpRepositorio implements RepositorioProductosAdmin 
         descripcion: comando.descripcion,
         marcaId: comando.marcaId,
         categoriaId: comando.categoriaId,
+        ...(comando.tallaSirveHasta !== undefined
+          ? { tallaSirveHasta: comando.tallaSirveHasta }
+          : {}),
       },
     });
     return aProductoAdmin(desempaquetar(respuesta, 'no se pudo editar el producto'));
@@ -262,5 +266,16 @@ export class ProductosAdminHttpRepositorio implements RepositorioProductosAdmin 
       body: { imagenIds: [...comando.imagenIds] },
     });
     exigirExito(respuesta, 'no se pudo cambiar el orden de la galería');
+  }
+
+  async asignarColorAImagen(comando: AsignarColorAImagenAdmin): Promise<void> {
+    const respuesta = await this.cliente.PUT(
+      '/api/v1/admin/productos/{id}/galeria/{imagenId}/variante',
+      {
+        params: { path: { id: comando.productoId, imagenId: comando.imagenId } },
+        body: { varianteId: comando.varianteId ?? undefined },
+      },
+    );
+    exigirExito(respuesta, 'no se pudo marcar el color de la foto');
   }
 }

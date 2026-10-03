@@ -35,6 +35,7 @@
     "borrador_no_eliminable": "Un borrador aprobado o una renovación no se borra: es lo que reconoce el producto cuando el proveedor lo vuelve a anunciar.",
     "borrador_sin_fotos": "No se puede aprobar un producto sin fotos. Si la publicación no traía ninguna, recházalo.",
     "borrador_sin_precio": "Falta el precio de venta. Escríbelo antes de aprobar.",
+    "producto_sin_descripcion": "Falta la descripción del producto: es lo que dice la ficha.",
     "borrador_sin_descripcion": "Falta la descripción del producto. Escríbela en los datos extraídos antes de aprobar.",
     "borrador_sin_titulo": "Falta el título del producto. Corrígelo en los datos extraídos antes de aprobar.",
     "atributo_de_catalogo_no_definido": "Faltan los atributos de color o talla en el catálogo. Créalos antes de aprobar.",
@@ -224,12 +225,17 @@
       "faltaMarca": "¿No está la marca? Crearla (se pierde lo escrito aquí)"
     },
     "editar": {
-      "faltanCampos": "Faltan datos obligatorios. Revisa los campos marcados y vuelve a intentarlo.",
+      "faltanCampos": "Faltan datos obligatorios: el nombre, la descripción, la marca y la categoría.",
       "titulo": "Editar producto",
       "nombre": "Nombre",
       "descripcion": "Descripción",
       "marca": "Marca",
       "categoria": "Categoría",
+      "descripcionObligatoria": "Escribe la descripción: es lo que la ficha dice del producto.",
+      "sirveHasta": "Sirve hasta",
+      "sirveHastaAyuda": "La talla límite de esta prenda de talla única. Déjalo en blanco si no se sabe.",
+      "variantes": "Variantes",
+      "variantesAyuda": "Cada una con su SKU y lo que la distingue. Se agregan con «Agregar variante».",
       "seleccionar": "Selecciona una opción",
       "guardar": "Guardar cambios",
       "guardando": "Guardando…",
@@ -251,6 +257,11 @@
         "error": "No se pudo subir la imagen. Intenta de nuevo."
       },
       "galeria": {
+        "colorGuardado": "Color de la foto guardado.",
+        "ayudaColor": "Marca de qué color es cada foto: la tarjeta y la ficha la muestran al elegir ese color.",
+        "colorDeFoto": "Color de la foto {{posicion}}",
+        "todosLosColores": "Vale para todos los colores",
+        "errorColor": "No se pudo guardar el color de la foto. Intenta de nuevo.",
         "faltanCampos": "Falta el archivo o alguno de los dos textos alternativos.",
         "titulo": "Galería",
         "ayuda": "Hasta {{tope}} imágenes, además de la principal. Salen en la ficha en este mismo orden, y lo puedes cambiar.",
