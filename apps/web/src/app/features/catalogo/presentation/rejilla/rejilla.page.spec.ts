@@ -1,3 +1,4 @@
+import { proveerPaletaDePrueba } from '../../../../../testing/paleta-colores';
 import { ActivatedRoute, Params, provideRouter } from '@angular/router';
 import { TranslocoTestingModule } from '@jsverse/transloco';
 import { provideTanStackQuery, QueryClient } from '@tanstack/angular-query-experimental';
@@ -101,6 +102,7 @@ function renderRejilla(repositorio: RepositorioProductos, queryParams: Params = 
     ],
     providers: [
       provideRouter([]),
+      proveerPaletaDePrueba(),
       provideTanStackQuery(new QueryClient()),
       // Los filtros viven en la URL (ADR-0011): para probar el estado vacío
       // con y sin filtros hace falta poder fijarlos, no solo el repositorio.

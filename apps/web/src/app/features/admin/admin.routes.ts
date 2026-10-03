@@ -3,8 +3,6 @@ import { provideTranslocoScope } from '@jsverse/transloco';
 import { REPOSITORIO_ATRIBUTOS } from '../catalogo/domain/repositorio-atributos.puerto';
 import { REPOSITORIO_CATEGORIAS } from '../catalogo/domain/repositorio-categorias.puerto';
 import { REPOSITORIO_MARCAS } from '../catalogo/domain/repositorio-marcas.puerto';
-import { REPOSITORIO_PALETA_COLORES } from '../catalogo/domain/repositorio-paleta-colores.puerto';
-import { PaletaColoresHttpRepositorio } from '../catalogo/infrastructure/paleta-colores-http.repositorio';
 import { AtributosHttpRepositorio } from '../catalogo/infrastructure/atributos-http.repositorio';
 import { REPOSITORIO_DIFUSION } from './difusion/domain/repositorio-difusion.puerto';
 import { DifusionHttpRepositorio } from './difusion/infrastructure/difusion-http.repositorio';
@@ -221,7 +219,6 @@ export const adminRoutes: Routes = [
                 providers: [
                   { provide: REPOSITORIO_CATEGORIAS, useClass: CategoriasAdminHttpRepositorio },
                   { provide: REPOSITORIO_MARCAS, useClass: MarcasAdminHttpRepositorio },
-                  { provide: REPOSITORIO_PALETA_COLORES, useClass: PaletaColoresHttpRepositorio },
                 ],
                 loadComponent: () =>
                   import('./borradores/presentation/detalle/detalle-borrador-admin.page').then(

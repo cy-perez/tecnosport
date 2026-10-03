@@ -1,3 +1,5 @@
+import { proveerPaletaDePrueba } from '../../../../../testing/paleta-colores';
+import { provideTanStackQuery, QueryClient } from '@tanstack/angular-query-experimental';
 import { provideRouter } from '@angular/router';
 import { TranslocoTestingModule } from '@jsverse/transloco';
 import { fireEvent, render, screen } from '@testing-library/angular';
@@ -61,7 +63,11 @@ async function renderTarjeta(prioritaria = false) {
         preloadLangs: true,
       }),
     ],
-    providers: [provideRouter([])],
+    providers: [
+      provideRouter([]),
+      provideTanStackQuery(new QueryClient()),
+      proveerPaletaDePrueba(),
+    ],
   });
 }
 
@@ -120,7 +126,11 @@ async function renderBodi() {
         preloadLangs: true,
       }),
     ],
-    providers: [provideRouter([])],
+    providers: [
+      provideRouter([]),
+      provideTanStackQuery(new QueryClient()),
+      proveerPaletaDePrueba(),
+    ],
   });
 }
 
@@ -154,6 +164,37 @@ describe('TsTarjetaProducto', () => {
     expect(container.querySelector('img')!.getAttribute('alt')).toBe('Bodi vino');
   });
 
+  it('si quedan más de cinco colores, cuenta los que no caben, en singular si es uno', async () => {
+    const colores = ['Negro', 'Vino', 'Azul', 'Rojo', 'Verde', 'Gris'];
+    const producto = {
+      ...bodiDePrueba(),
+      variantes: colores.map((color, i) => ({
+        id: 'v' + i,
+        sku: 'SKU-' + i,
+        precio: { valor: 60_000, moneda: 'COP' },
+        disponible: true,
+        atributos: [{ nombre: 'Color', valor: color, colorHex: '#111111', unidad: null }],
+      })),
+    };
+    await render(TsTarjetaProducto, {
+      inputs: { producto },
+      imports: [
+        TranslocoTestingModule.forRoot({
+          langs: { es, en, 'catalogo/es': esCatalogo } as never,
+          translocoConfig: { availableLangs: ['es', 'en'], defaultLang: 'es' },
+          preloadLangs: true,
+        }),
+      ],
+      providers: [
+        provideRouter([]),
+        provideTanStackQuery(new QueryClient()),
+        proveerPaletaDePrueba(),
+      ],
+    });
+
+    expect(screen.getByText('y 1 color más')).toBeTruthy();
+  });
+
   it('un producto de un solo color no pinta muestras', async () => {
     await renderTarjeta();
 
@@ -170,7 +211,11 @@ describe('TsTarjetaProducto', () => {
           preloadLangs: true,
         }),
       ],
-      providers: [provideRouter([])],
+      providers: [
+        provideRouter([]),
+        provideTanStackQuery(new QueryClient()),
+        proveerPaletaDePrueba(),
+      ],
     });
 
     const enlace = screen.getByRole('link', { name: /morral urbano/i });

@@ -12,7 +12,14 @@ import {
 } from '../../domain/producto.model';
 import { TAMANOS_TARJETA } from '../../../../core/imagenes/tamanos-de-imagen';
 import { TsEtiquetaStock } from '../etiqueta-stock/ts-etiqueta-stock';
-import { coloresDe, imagenDelColor, tallaUnicaDe } from '../../domain/seleccion-variante';
+import { usarPaletaDeColores } from '../../application/listar-paleta-colores.consulta';
+import { usarIdiomaActivo } from '../../../../core/i18n/traductor';
+import {
+  coloresDe,
+  imagenDelColor,
+  nombreDeColor,
+  tallaUnicaDe,
+} from '../../domain/seleccion-variante';
 
 /** Cuántas muestras caben en una tarjeta sin envolver en dos filas; el resto se cuenta. */
 const MUESTRAS_VISIBLES = 5;
@@ -65,6 +72,9 @@ export class TsTarjetaProducto {
 
   protected readonly parametros = parametrosDe;
 
+  private readonly paleta = usarPaletaDeColores();
+  private readonly idioma = usarIdiomaActivo();
+
   /** El color que el visitante eligió en esta tarjeta; nulo, la foto principal. */
   protected readonly colorElegido = signal<string | null>(null);
 
@@ -83,6 +93,11 @@ export class TsTarjetaProducto {
 
   protected readonly precio = computed(() => precioDesde(this.producto()));
   protected readonly disponible = computed(() => hayExistencia(this.producto()));
+
+  /** «Negro» en la vitrina en español, «Black» en la de inglés. */
+  protected nombreDeColor(valor: string): string {
+    return nombreDeColor(valor, this.paleta.data() ?? [], this.idioma());
+  }
 
   protected elegirColor(color: string): void {
     this.colorElegido.set(color);

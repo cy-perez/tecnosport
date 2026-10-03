@@ -1,6 +1,10 @@
 import { Producto, Variante } from './producto.model';
 import {
   detalleDeVariante,
+  imagenesDelColor,
+  nombreDeColor,
+  seleccionAlElegir,
+  tallaNormalizada,
   ejesDeAtributos,
   opcionDisponible,
   tallaUnicaDe,
@@ -240,5 +244,108 @@ describe('detalleDeVariante', () => {
         ]),
       ),
     ).toBe('12 meses');
+  });
+});
+
+describe('seleccionAlElegir', () => {
+  const celular = (almacenamiento: string, ram: string, disponible = true) =>
+    variante(`SKU-${almacenamiento}-${ram}`, disponible, [
+      { nombre: 'Almacenamiento', valor: almacenamiento, colorHex: null, unidad: null },
+      { nombre: 'RAM', valor: ram, colorHex: null, unidad: null },
+    ]);
+
+  it('si la combinación existe, es esa', () => {
+    const producto = productoDePrueba([celular('128', '6'), celular('128', '8')]);
+
+    expect(seleccionAlElegir(producto, { Almacenamiento: '128', RAM: '6' }, 'RAM', '8')).toEqual({
+      Almacenamiento: '128',
+      RAM: '8',
+    });
+  });
+
+  it('si no existe, salta a la variante que tiene lo elegido', () => {
+    const producto = productoDePrueba([celular('128', '6'), celular('256', '8')]);
+
+    expect(
+      seleccionAlElegir(producto, { Almacenamiento: '128', RAM: '6' }, 'Almacenamiento', '256'),
+    ).toEqual({ Almacenamiento: '256', RAM: '8' });
+  });
+
+  it('entre varias, prefiere la disponible', () => {
+    const producto = productoDePrueba([
+      celular('128', '6'),
+      celular('256', '8', false),
+      celular('256', '12'),
+    ]);
+
+    expect(
+      seleccionAlElegir(producto, { Almacenamiento: '128', RAM: '6' }, 'Almacenamiento', '256'),
+    ).toEqual({ Almacenamiento: '256', RAM: '12' });
+  });
+});
+
+describe('imagenesDelColor', () => {
+  const imagen = (url: string, varianteId: string | null) => ({
+    url,
+    variantes: [{ ancho: 800, url }],
+    urlVistaPrevia: null,
+    ancho: 800,
+    alto: 800,
+    altEs: url,
+    altEn: url,
+    varianteId,
+  });
+  const vino = variante('SKU-V', true, [
+    { nombre: 'Color', valor: 'Vino', colorHex: '#722F37', unidad: null },
+  ]);
+  const negro = variante('SKU-N', true, [
+    { nombre: 'Color', valor: 'Negro', colorHex: '#111111', unidad: null },
+  ]);
+  const producto = productoDePrueba([vino, negro]);
+  const principal = imagen('principal', null);
+  const deVino = imagen('vino', vino.id);
+
+  it('el color con fotos propias las enseña primero, con las que valen para todos', () => {
+    expect(imagenesDelColor(producto, [principal, deVino], 'Vino')).toEqual([deVino, principal]);
+  });
+
+  /** Sin fotos propias, las de todos —la principal—, y no las de los otros colores. */
+  it('un color sin fotos propias no enseña las de los otros colores', () => {
+    expect(imagenesDelColor(producto, [principal, deVino], 'Negro')).toEqual([principal]);
+  });
+});
+
+describe('tallaNormalizada', () => {
+  it('la misma talla escrita distinto es la misma', () => {
+    expect(tallaNormalizada('m')).toBe(tallaNormalizada('M'));
+    expect(tallaNormalizada('2XL')).toBe('XXL');
+    expect(tallaNormalizada('3xl')).toBe('XXXL');
+    expect(tallaNormalizada(' 38 ')).toBe('38');
+  });
+
+  it('con la escala, «m» y «2XL» caen en su casilla y no se duplican', () => {
+    const minuscula = variante('SKU-m', true, [
+      { nombre: 'Talla', valor: 'm', colorHex: null, unidad: null },
+    ]);
+    const dosXl = variante('SKU-2XL', true, [
+      { nombre: 'Talla', valor: '2XL', colorHex: null, unidad: null },
+    ]);
+    const ejes = ejesDeAtributos(productoDePrueba([minuscula, dosXl]), ['M', 'XL', 'XXL']);
+
+    expect(ejes[0].opciones.map((o) => [o.valor, o.existe])).toEqual([
+      ['m', true],
+      ['XL', false],
+      ['2XL', true],
+    ]);
+  });
+});
+
+describe('nombreDeColor', () => {
+  const paleta = [{ nombre: 'Negro', nombreEn: 'Black' }];
+
+  it('en inglés dice el nombre en inglés de la paleta', () => {
+    expect(nombreDeColor('Negro', paleta, 'en')).toBe('Black');
+    expect(nombreDeColor('Negro', paleta, 'es')).toBe('Negro');
+    expect(nombreDeColor('Fucsia', paleta, 'en')).toBe('Fucsia');
   });
 });

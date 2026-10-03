@@ -276,7 +276,7 @@
               <ts-checkbox
                 [idCasilla]="'talla-escala-' + t"
                 [etiqueta]="talla"
-                [marcado]="tallasMarcadas().has(talla)"
+                [marcado]="tallaMarcada(talla)"
                 [deshabilitado]="!editable()"
                 (marcadoCambio)="marcarTalla(talla, $event)"
               />
@@ -323,6 +323,7 @@
         [multilinea]="true"
         [filas]="5"
         [obligatorio]="true"
+        [error]="errorDescripcion()"
         formControlName="descripcion"
       />
 

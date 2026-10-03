@@ -53,10 +53,10 @@ describe('TsSelectorVariante', () => {
   });
 
   /**
-   * Una talla agotada se ve tachada y no se elige, pero sigue en el orden de tabulación y dice por
-   * qué: `aria-disabled` y no `disabled`, para que quien navega con teclado sepa que existe.
+   * Una talla agotada en lo elegido se ve tachada y lo dice, pero se puede elegir: la ficha salta
+   * a la combinación que la tenga. Bloquearla dejaba variantes imposibles de alcanzar.
    */
-  it('una talla no disponible se ve, no se elige y lo dice', async () => {
+  it('una talla agotada se ve tachada, lo dice y se puede elegir', async () => {
     let emitido: unknown;
     await render(TsSelectorVariante, {
       inputs: {
@@ -69,6 +69,36 @@ describe('TsSelectorVariante', () => {
     });
 
     const agotada = screen.getByRole('button', { name: 'L, no disponible' });
+    expect(agotada.className).toContain('line-through');
+    expect(agotada.getAttribute('aria-disabled')).toBeNull();
+
+    fireEvent.click(agotada);
+    expect(emitido).toEqual({ Color: 'Azul marino', Talla: 'L' });
+  });
+
+  /**
+   * Una talla de la escala que el producto no trae se ve, no se elige y lo dice, sin salir del
+   * orden de tabulación: `aria-disabled` y no `disabled`.
+   */
+  it('una talla que el producto no trae se ve, no se elige y lo dice', async () => {
+    let emitido: unknown;
+    await render(TsSelectorVariante, {
+      inputs: {
+        ejes: [
+          ejes[0],
+          {
+            ...ejes[1],
+            opciones: [{ valor: 'XS', colorHex: null, existe: false }, ...ejes[1].opciones],
+          },
+        ],
+        seleccion: { Color: 'Azul marino', Talla: 'M' },
+        noDisponibles: { Talla: ['XS'] },
+        textoNoDisponible: 'no disponible',
+      },
+      on: { seleccionCambio: (valor) => (emitido = valor) },
+    });
+
+    const agotada = screen.getByRole('button', { name: 'XS, no disponible' });
     expect(agotada.getAttribute('aria-disabled')).toBe('true');
     expect(agotada.hasAttribute('disabled')).toBe(false);
     expect(agotada.className).toContain('line-through');

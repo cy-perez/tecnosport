@@ -356,7 +356,8 @@ describe('DetalleBorradorAdminPage', () => {
 
     fireEvent.click(screen.getByRole('button', { name: a.accion }));
 
-    expect(await screen.findByText(a.faltaDescripcion)).toBeTruthy();
+    // En el aviso de aprobar y en el propio campo, que es donde hay que escribirla.
+    expect(await screen.findAllByText(a.faltaDescripcion)).toHaveLength(2);
     expect(repositorio.aprobaciones).toEqual([]);
   });
 

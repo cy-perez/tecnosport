@@ -13,7 +13,7 @@ import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { mensajeDeError } from '../../../../../core/errores/mensaje-de-error';
-import { usarTraductor } from '../../../../../core/i18n/traductor';
+import { usarIdiomaActivo, usarTraductor } from '../../../../../core/i18n/traductor';
 import { usarFoco } from '../../../../../shared/foco/foco';
 import { formatearPrecio } from '../../../../../shared/ts-precio/formato-precio';
 import { TsBoton } from '../../../../../shared/ui/boton/ts-boton';
@@ -26,6 +26,7 @@ import { TsMigas } from '../../../../../shared/ts-migas/ts-migas';
 import { usarOpcionesFiltro } from '../../../../catalogo/application/listar-opciones-filtro.consulta';
 import { usarPaletaDeColores } from '../../../../catalogo/application/listar-paleta-colores.consulta';
 import { escalaDeTallasDe, hojasConRuta } from '../../../../catalogo/domain/arbol-categorias';
+import { tallaNormalizada } from '../../../../catalogo/domain/seleccion-variante';
 import { claveDeLinea } from '../../../../catalogo/domain/filtro-productos.model';
 import { usarMigasAdmin } from '../../../migas-admin';
 import { usarProveedoresAdmin } from '../../../proveedores/application/listar-proveedores.consulta';
@@ -141,7 +142,9 @@ export class DetalleBorradorAdminPage {
     const borrador = this.borrador();
     return borrador !== null && borradorBorrable(borrador);
   });
-  protected readonly idioma = computed(() => this.transloco.activeLang());
+  // `usarIdiomaActivo` y no un `computed` sobre `activeLang()`, que no lee ninguna señal y no se
+  // vuelve a calcular al cambiar de idioma (apps/web/CLAUDE.md).
+  protected readonly idioma = usarIdiomaActivo();
 
   protected readonly nombreDelProveedor = computed(() => {
     const borrador = this.borrador();
@@ -303,15 +306,40 @@ export class DetalleBorradorAdminPage {
     return escalaDeTallasDe(elegida, categorias);
   });
 
-  protected readonly tallasMarcadas = computed(() => new Set(separar(this.tallasEscritas())));
+  private readonly descripcionEscrita = toSignal(
+    this.formDatos.controls.descripcion.statusChanges,
+    { initialValue: this.formDatos.controls.descripcion.status },
+  );
+
+  /** El error del campo, enganchado al `markAsTouched()` de aprobar: las dos mitades juntas. */
+  protected readonly errorDescripcion = computed(() => {
+    this.descripcionEscrita();
+    this.tocadoDescripcion();
+    const control = this.formDatos.controls.descripcion;
+    return control.invalid && control.touched
+      ? this.traducir()('admin.borradores.aprobar.faltaDescripcion')
+      : null;
+  });
+
+  /** `markAsTouched()` no emite: se avisa a mano para que el error se pinte. */
+  private readonly tocadoDescripcion = signal(0);
+
+  /** Las tallas escritas, normalizadas: «m» marca la casilla «M» y «2XL» la de «XXL». */
+  protected readonly tallasMarcadas = computed(
+    () => new Set(separar(this.tallasEscritas()).map(tallaNormalizada)),
+  );
+
+  protected tallaMarcada(talla: string): boolean {
+    return this.tallasMarcadas().has(tallaNormalizada(talla));
+  }
 
   /** Lo que la extracción dejó y la escala de la categoría no tiene: se avisa, no se borra. */
   protected readonly tallasFueraDeEscala = computed(() => {
-    const escala = new Set(this.escalaTallas());
+    const escala = new Set(this.escalaTallas().map(tallaNormalizada));
     if (escala.size === 0) {
       return [];
     }
-    return [...this.tallasMarcadas()].filter((talla) => !escala.has(talla));
+    return separar(this.tallasEscritas()).filter((talla) => !escala.has(tallaNormalizada(talla)));
   });
 
   protected readonly esReplica = computed(
@@ -460,14 +488,18 @@ export class DetalleBorradorAdminPage {
   protected marcarTalla(talla: string, marcada: boolean): void {
     const actuales = new Set(this.tallasMarcadas());
     if (marcada) {
-      actuales.add(talla);
+      actuales.add(tallaNormalizada(talla));
     } else {
-      actuales.delete(talla);
+      actuales.delete(tallaNormalizada(talla));
     }
+    // Las de la escala, escritas como la escala y en su orden; las de fuera, como se escribieron.
     const escala = this.escalaTallas();
+    const deLaEscala = new Set(escala.map(tallaNormalizada));
     const ordenadas = [
-      ...escala.filter((valor) => actuales.has(valor)),
-      ...[...actuales].filter((valor) => !escala.includes(valor)),
+      ...escala.filter((valor) => actuales.has(tallaNormalizada(valor))),
+      ...separar(this.tallasEscritas()).filter(
+        (valor) => !deLaEscala.has(tallaNormalizada(valor)) && actuales.has(tallaNormalizada(valor)),
+      ),
     ];
     this.formDatos.controls.tallas.setValue(ordenadas.join(', '));
   }
@@ -653,6 +685,7 @@ export class DetalleBorradorAdminPage {
     const datos = this.formDatos.getRawValue();
     if (!datos.descripcion.trim()) {
       this.formDatos.controls.descripcion.markAsTouched();
+      this.tocadoDescripcion.update((n) => n + 1);
       this.errorDecision.set(this.transloco.translate('admin.borradores.aprobar.faltaDescripcion'));
       return;
     }

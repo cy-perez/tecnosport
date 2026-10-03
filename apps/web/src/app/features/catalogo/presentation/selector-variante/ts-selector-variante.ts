@@ -48,6 +48,8 @@ export class TsSelectorVariante {
    * color es justo lo que deja ver qué tallas tiene.
    */
   readonly noDisponibles = input<Readonly<Record<string, readonly string[]>>>({});
+  /** El nombre de cada color en el idioma de quien mira, por su valor; si falta, el valor. */
+  readonly nombresDeColor = input<Readonly<Record<string, string>>>({});
   /** Lo que el lector de pantalla oye después del valor: «agotada». Traducido por quien llama. */
   readonly textoNoDisponible = input('');
   readonly seleccionCambio = output<Seleccion>();
@@ -70,14 +72,36 @@ export class TsSelectorVariante {
       : null;
   }
 
+  /**
+   * Tachada y apagada si no se puede elegir. Si además es la elegida —pasa al cambiar a un color
+   * donde esa talla está agotada—, solo tachada: el texto suave sobre el fondo primario no cumple
+   * el contraste.
+   */
   protected claseOpcion(nombreEje: string, opcion: OpcionEje): string {
-    return this.noDisponible(nombreEje, opcion)
-      ? 'line-through text-ts-texto-suave border-ts-borde'
-      : '';
+    if (!this.noDisponible(nombreEje, opcion)) {
+      return '';
+    }
+    return this.estaSeleccionada(nombreEje, opcion)
+      ? 'line-through'
+      : 'line-through text-ts-texto-suave border-ts-borde';
+  }
+
+  protected nombreDeColor(opcion: OpcionEje): string {
+    return this.nombresDeColor()[opcion.valor] ?? opcion.valor;
+  }
+
+  /**
+   * Solo no se elige lo que el producto no trae —una talla de la escala que no tiene—. Una opción
+   * agotada en lo demás elegido sí se elige: la ficha salta a la combinación que la tenga. Si
+   * también se bloqueara, dos ejes sin color se bloquearían entre sí —128 GB tachado porque no
+   * hay 128/8 y 8 GB tachado porque no hay 256/6— y el 256/8 no se podría elegir nunca.
+   */
+  protected bloqueada(opcion: OpcionEje): boolean {
+    return !opcion.existe;
   }
 
   protected elegir(nombreEje: string, opcion: OpcionEje): void {
-    if (this.noDisponible(nombreEje, opcion)) {
+    if (this.bloqueada(opcion)) {
       return;
     }
     this.seleccionCambio.emit({ ...this.seleccion(), [nombreEje]: opcion.valor });

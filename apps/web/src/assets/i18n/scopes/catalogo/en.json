@@ -34,6 +34,7 @@
     "no_disponible": "not available"
   },
   "colores": {
+    "mas_uno": "and 1 more colour",
     "elegir": "View in {{color}}",
     "mas": "and {{cantidad}} more colours"
   },

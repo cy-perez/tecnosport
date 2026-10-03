@@ -80,22 +80,63 @@ export function ejesDeAtributos(
   });
 }
 
+/**
+ * Una talla como se compara: sin tildes, en mayúsculas y con «2XL» escrito «XXL». El proveedor y la
+ * extracción no la escriben siempre como la escala, y sin esto «m» y «M» eran dos tallas.
+ */
+export function tallaNormalizada(talla: string): string {
+  const plana = plano(talla).toUpperCase().replace(/\s+/g, '');
+  const conNumero = /^([2-5])XL$/.exec(plana);
+  return conNumero ? 'X'.repeat(Number(conNumero[1])) + 'L' : plana;
+}
+
 function segunLaEscala(presentes: OpcionEje[], escala: readonly string[]): OpcionEje[] {
-  const porValor = new Map(presentes.map((opcion) => [plano(opcion.valor), opcion]));
+  const porValor = new Map(presentes.map((opcion) => [tallaNormalizada(opcion.valor), opcion]));
   const enEscala = escala.map(
-    (talla) => porValor.get(plano(talla)) ?? { valor: talla, colorHex: null, existe: false },
+    (talla) =>
+      porValor.get(tallaNormalizada(talla)) ?? { valor: talla, colorHex: null, existe: false },
   );
-  const deLaEscala = new Set(escala.map(plano));
-  const fuera = presentes.filter((opcion) => !deLaEscala.has(plano(opcion.valor)));
+  const deLaEscala = new Set(escala.map(tallaNormalizada));
+  const fuera = presentes.filter((opcion) => !deLaEscala.has(tallaNormalizada(opcion.valor)));
   return [...enEscala, ...fuera];
 }
 
-function esTallaUnica(valor: string): boolean {
+export function esTallaUnica(valor: string): boolean {
   return plano(valor) === plano(TALLA_UNICA);
 }
 
 export function seleccionDeVariante(variante: Variante): Seleccion {
   return Object.fromEntries(variante.atributos.map((va) => [va.nombre, va.valor]));
+}
+
+/**
+ * Lo que queda elegido al pulsar una opción. Si con lo demás elegido esa combinación existe, es
+ * esa; si no —se pulsó una talla que en este color no hay—, la variante que tenga la opción
+ * pulsada y se parezca más a lo que estaba elegido, primero entre las disponibles.
+ */
+export function seleccionAlElegir(
+  producto: Producto,
+  actual: Seleccion,
+  nombreEje: string,
+  valor: string,
+): Seleccion {
+  const deseada = { ...actual, [nombreEje]: valor };
+  if (varianteSeleccionada(producto, deseada)) {
+    return deseada;
+  }
+  const candidatas = producto.variantes.filter(
+    (variante) => seleccionDeVariante(variante)[nombreEje] === valor,
+  );
+  const coincidencias = (variante: Variante) => {
+    const valores = seleccionDeVariante(variante);
+    return Object.entries(actual).filter(([nombre, elegido]) => valores[nombre] === elegido)
+      .length;
+  };
+  const mejor = [...candidatas].sort(
+    (una, otra) =>
+      Number(otra.disponible) - Number(una.disponible) || coincidencias(otra) - coincidencias(una),
+  )[0];
+  return mejor ? seleccionDeVariante(mejor) : deseada;
 }
 
 /** `null` si la combinación elegida no corresponde a ningún SKU real. */
@@ -133,9 +174,14 @@ export function opcionDisponible(
   });
 }
 
-/** Lo que la variante es, para decirlo en el carrito: «Negro · M», «12 meses». */
+/**
+ * Lo que la variante es, para decirlo en el carrito: «Negro · M», «12 meses». Ordenado por el
+ * nombre del atributo, igual que lo congela el pedido en la API: la misma variante se lee igual en
+ * los dos sitios.
+ */
 export function detalleDeVariante(variante: Variante): string {
-  return variante.atributos
+  return [...variante.atributos]
+    .sort((uno, otro) => uno.nombre.localeCompare(otro.nombre))
     .map((valor) => (valor.unidad ? `${valor.valor} ${valor.unidad}` : valor.valor))
     .join(' · ');
 }
@@ -210,10 +256,13 @@ export function imagenesDelColor(
   }
   const delColor = variantesDelColor(producto, color);
   const propias = imagenes.filter((imagen) => imagen.varianteId && delColor.has(imagen.varianteId));
+  const deTodos = imagenes.filter((imagen) => imagen.varianteId === null);
   if (propias.length === 0) {
-    return [...imagenes];
+    // Sin fotos propias, las que valen para todos —la principal casi siempre—, y no las de los
+    // otros colores. Solo si tampoco hay de esas, todas: una galería vacía no le sirve a nadie.
+    return deTodos.length > 0 ? deTodos : [...imagenes];
   }
-  return [...propias, ...imagenes.filter((imagen) => imagen.varianteId === null)];
+  return [...propias, ...deTodos];
 }
 
 /**
@@ -230,6 +279,21 @@ export function imagenDelColor(producto: Producto, color: string | null): Imagen
     producto.galeria.find((imagen) => imagen.varianteId && delColor.has(imagen.varianteId)) ??
     producto.imagenPrincipal
   );
+}
+
+/**
+ * El nombre de un color en el idioma de quien mira: el valor del atributo es el nombre en español,
+ * y la paleta trae el inglés. Un color que no está en la paleta se dice como está guardado.
+ */
+export function nombreDeColor(
+  valor: string,
+  paleta: readonly { readonly nombre: string; readonly nombreEn: string }[],
+  idioma: string,
+): string {
+  if (idioma !== 'en') {
+    return valor;
+  }
+  return paleta.find((color) => plano(color.nombre) === plano(valor))?.nombreEn ?? valor;
 }
 
 /** El nombre del eje de color del producto, si lo tiene: «Color». */

@@ -1,3 +1,4 @@
+import { proveerPaletaDePrueba } from '../../../../../testing/paleta-colores';
 import { IMAGE_LOADER } from '@angular/common';
 import { cargadorDeImagenes } from '../../../../core/imagenes/cargador-de-imagenes';
 import { ActivatedRoute, convertToParamMap } from '@angular/router';
@@ -160,6 +161,7 @@ async function renderFicha(repositorio: RepositorioProductos, slug = 'morral-urb
     providers: [
       { provide: IMAGE_LOADER, useValue: cargadorDeImagenes },
       ...proveerAlmacenesCarrito(),
+      proveerPaletaDePrueba(),
       provideTanStackQuery(queryClient),
       { provide: REPOSITORIO_PRODUCTOS, useValue: repositorio },
       { provide: REPOSITORIO_CARRITO, useClass: RepositorioCarritoFalso },
@@ -187,6 +189,7 @@ async function renderFichaNavegable(repositorio: RepositorioProductos, slugInici
     providers: [
       { provide: IMAGE_LOADER, useValue: cargadorDeImagenes },
       ...proveerAlmacenesCarrito(),
+      proveerPaletaDePrueba(),
       provideTanStackQuery(queryClient),
       { provide: REPOSITORIO_PRODUCTOS, useValue: repositorio },
       { provide: REPOSITORIO_CARRITO, useClass: RepositorioCarritoFalso },
@@ -530,9 +533,53 @@ describe('FichaPage', () => {
     expect(
       screen.getByRole('button', { name: 'S, no disponible' }).getAttribute('aria-disabled'),
     ).toBe('true');
+    // L existe pero está agotada: tachada, y se puede elegir para ver que no hay.
     expect(
       screen.getByRole('button', { name: 'L, no disponible' }).getAttribute('aria-disabled'),
-    ).toBe('true');
+    ).toBeNull();
+  });
+
+  /**
+   * Dos ejes sin color no se bloquean entre sí: con 128/6 y 256/8, elegir 256 salta a 256/8 en vez
+   * de quedarse en un 256/6 que no existe.
+   */
+  it('elegir una opción que no casa con lo elegido salta a la variante que la tiene', async () => {
+    const atributos = (almacenamiento: string, ram: string) => [
+      { nombre: 'Almacenamiento', valor: almacenamiento, colorHex: null, unidad: null },
+      { nombre: 'RAM', valor: ram, colorHex: null, unidad: null },
+    ];
+    const celular: Producto = {
+      ...productoDePrueba(),
+      slug: 'celular',
+      variantes: [
+        {
+          id: 'v-128',
+          sku: 'CEL-128',
+          precio: { valor: 900_000, moneda: 'COP' },
+          disponible: true,
+          atributos: atributos('128GB', '6GB'),
+        },
+        {
+          id: 'v-256',
+          sku: 'CEL-256',
+          precio: { valor: 1_100_000, moneda: 'COP' },
+          disponible: true,
+          atributos: atributos('256GB', '8GB'),
+        },
+      ],
+    };
+    const repositorio: RepositorioProductos = {
+      buscar: () =>
+        Promise.resolve<ResultadoPaginado<Producto>>({ items: [], cursorSiguiente: null }),
+      buscarPorSlug: () => Promise.resolve(celular),
+    };
+
+    await renderFicha(repositorio, 'celular');
+    expect(await screen.findByText(/900\.000/)).toBeTruthy();
+
+    fireEvent.click(screen.getByRole('button', { name: '256GB, no disponible' }));
+
+    expect(await screen.findByText(/1\.100\.000/)).toBeTruthy();
   });
 
   // `docs/06-testing.md`: axe automatizado en las pantallas clave. La ficha es

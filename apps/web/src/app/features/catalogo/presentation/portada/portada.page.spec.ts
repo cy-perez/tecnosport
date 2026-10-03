@@ -1,3 +1,4 @@
+import { proveerPaletaDePrueba } from '../../../../../testing/paleta-colores';
 import { DeferBlockBehavior } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { TranslocoTestingModule } from '@jsverse/transloco';
@@ -120,6 +121,7 @@ async function renderPortada(
     ],
     providers: [
       provideRouter([]),
+      proveerPaletaDePrueba(),
       provideTanStackQuery(new QueryClient()),
       { provide: REPOSITORIO_PRODUCTOS, useValue: repositorio },
       { provide: REPOSITORIO_CATEGORIAS, useValue: new RepositorioCategoriasFalso(categorias) },
@@ -302,6 +304,7 @@ describe('PortadaPage', () => {
       ],
       providers: [
         provideRouter([]),
+        proveerPaletaDePrueba(),
         provideTanStackQuery(new QueryClient({ defaultOptions: { queries: { retry: false } } })),
         { provide: REPOSITORIO_PRODUCTOS, useValue: repositorioCaido },
         { provide: REPOSITORIO_CATEGORIAS, useValue: new RepositorioCategoriasFalso(TRES_LINEAS) },
@@ -331,6 +334,7 @@ describe('PortadaPage', () => {
       ],
       providers: [
         provideRouter([]),
+        proveerPaletaDePrueba(),
         provideTanStackQuery(new QueryClient()),
         { provide: REPOSITORIO_PRODUCTOS, useValue: repositorioVacio },
         { provide: REPOSITORIO_CATEGORIAS, useValue: new RepositorioCategoriasFalso(TRES_LINEAS) },

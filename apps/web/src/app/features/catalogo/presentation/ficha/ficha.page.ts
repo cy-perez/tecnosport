@@ -36,15 +36,20 @@ import { TsVisor360 } from '../../../../shared/ts-visor-360/ts-visor-360';
 import { usarFichaProducto } from '../../application/buscar-ficha-producto.consulta';
 import { CarritoStore } from '../../../carrito/application/carrito.store';
 import { hayExistencia, Imagen } from '../../domain/producto.model';
+import { usarPaletaDeColores } from '../../application/listar-paleta-colores.consulta';
+import { usarIdiomaActivo } from '../../../../core/i18n/traductor';
 import {
+  coloresDe,
   detalleDeVariante,
   ejeDeColor,
   ejesDeAtributos,
   esEjeDeTalla,
   imagenDelColor,
   imagenesDelColor,
+  nombreDeColor,
   opcionDisponible,
   Seleccion,
+  seleccionAlElegir,
   seleccionDeVariante,
   tallaUnicaDe,
   variantePorDefecto,
@@ -132,6 +137,22 @@ export class FichaPage {
   protected readonly tallaUnica = computed(() => {
     const producto = this.producto();
     return producto ? tallaUnicaDe(producto) : null;
+  });
+
+  private readonly paleta = usarPaletaDeColores();
+  private readonly idiomaActivo = usarIdiomaActivo();
+
+  /** El nombre de cada color en el idioma de quien mira, para el selector. */
+  protected readonly nombresDeColor = computed<Record<string, string>>(() => {
+    const producto = this.producto();
+    const paleta = this.paleta.data() ?? [];
+    const idioma = this.idiomaActivo();
+    return Object.fromEntries(
+      (producto ? coloresDe(producto) : []).map((color) => [
+        color.valor,
+        nombreDeColor(color.valor, paleta, idioma),
+      ]),
+    );
   });
 
   /** Lo que se ve tachado: lo que con lo demás elegido no lleva a nada que se pueda comprar. */
@@ -275,8 +296,19 @@ export class FichaPage {
     });
   }
 
+  /**
+   * El selector manda la selección con la opción pulsada; si esa combinación no existe, se salta a
+   * la variante que la tenga y más se parezca a lo elegido (`seleccionAlElegir`).
+   */
   protected cambiarSeleccion(seleccion: Seleccion): void {
-    this.seleccion.set(seleccion);
+    const producto = this.producto();
+    const anterior = this.seleccion();
+    const cambiado = Object.keys(seleccion).find((eje) => seleccion[eje] !== anterior[eje]);
+    if (!producto || !cambiado) {
+      this.seleccion.set(seleccion);
+      return;
+    }
+    this.seleccion.set(seleccionAlElegir(producto, anterior, cambiado, seleccion[cambiado]));
   }
 
   protected agregarAlCarrito(): void {
