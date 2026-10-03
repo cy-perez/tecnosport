@@ -71,7 +71,9 @@ class ExtraerProductoDePublicacionTest {
         4,
         List.of(),
         "importado",
-        List.of("incluye llavero"),
+        "incluye llavero.",
+        null,
+        false,
         new BigDecimal(confianza),
         null);
   }
@@ -96,6 +98,50 @@ class ExtraerProductoDePublicacionTest {
     assertEquals(Optional.of(Dinero.deCop(53000)), evaluada.precioProveedorOpcional());
     assertEquals("Bolso de dama mediano", evaluada.producto().titulo());
     assertEquals("{\"fixture\":true}", evaluada.jsonCrudo());
+  }
+
+  /** El extractor no marcó la réplica, pero el texto dice «1.1»: se alerta igual. */
+  @Test
+  void elUnoPuntoUnoDelTextoAlertaLaReplica() {
+    PublicacionProveedor publicacion =
+        PublicacionProveedor.abrir(texto("*NUEVA COLECCIÓN 1.1* *SUPERDRY* 💰 *53.000*"));
+    publicacion.anexar(foto("proveedores/x/1.jpg"));
+
+    ExtraccionEvaluada evaluada =
+        evaluar(publicacion, extraido("Camiseta estilo Superdry", 53000L, "0.92"));
+
+    assertEquals(Set.of(AlertaBorrador.REPLICA), evaluada.alertas());
+    assertTrue(evaluada.producto().esReplica());
+  }
+
+  /** El extractor dedujo un «sirve hasta» que el texto no escribe: no se cree. */
+  @Test
+  void elSirveHastaQueElTextoNoDiceNoLlegaAlBorrador() {
+    PublicacionProveedor publicacion =
+        PublicacionProveedor.abrir(texto("Body herraje talla única 💰 *53.000*"));
+    publicacion.anexar(foto("proveedores/x/1.jpg"));
+    ProductoExtraido base = extraido("Bodi herraje", 53000L, "0.92");
+    ProductoExtraido conLimite =
+        new ProductoExtraido(
+            true,
+            false,
+            base.titulo(),
+            base.linea(),
+            TipoProductoProveedor.BODI,
+            base.precioProveedor(),
+            Tallas.unica("L"),
+            null,
+            List.of(),
+            null,
+            "Bodi con herraje.",
+            "Hardware bodysuit",
+            false,
+            base.confianza(),
+            null);
+
+    ExtraccionEvaluada evaluada = evaluar(publicacion, conLimite);
+
+    assertEquals(Optional.empty(), evaluada.producto().tallas().sirveHastaOpcional());
   }
 
   /** La salvaguarda que importa: el modelo dice 35.000 donde el texto dice 53.000. */
@@ -158,6 +204,8 @@ class ExtraerProductoDePublicacionTest {
             null,
             null,
             null,
+            null,
+            false,
             new BigDecimal("0.40"),
             null);
 

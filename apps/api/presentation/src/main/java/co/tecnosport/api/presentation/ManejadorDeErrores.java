@@ -55,6 +55,7 @@ import co.tecnosport.api.application.proveedores.AtributoDeCatalogoNoDefinidoExc
 import co.tecnosport.api.application.proveedores.BorradorNoEditableException;
 import co.tecnosport.api.application.proveedores.BorradorNoEliminableException;
 import co.tecnosport.api.application.proveedores.BorradorNoEncontradoException;
+import co.tecnosport.api.application.proveedores.BorradorSinDescripcionException;
 import co.tecnosport.api.application.proveedores.BorradorSinFotosException;
 import co.tecnosport.api.application.proveedores.BorradorSinPrecioException;
 import co.tecnosport.api.application.proveedores.BorradorSinTituloException;
@@ -250,6 +251,7 @@ public class ManejadorDeErrores {
     BorradorSinFotosException.class,
     BorradorSinPrecioException.class,
     BorradorSinTituloException.class,
+    BorradorSinDescripcionException.class,
     AtributoDeCatalogoNoDefinidoException.class
   })
   public ProblemDetail borradorNoAprobable(RuntimeException excepcion) {

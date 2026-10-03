@@ -22,9 +22,10 @@ public enum TipoProductoProveedor {
   SHORT,
   VESTIDO,
   // Las de dama que trajo Violeta (2 de octubre de 2026). El chaleco y el blazer se quedan en OTRO
-  // a
-  // propósito: el catálogo no tiene dónde ponerlos y los revisa una persona.
+  // a propósito: el catálogo no tiene dónde ponerlos y los revisa una persona.
   BLUSA,
-  BODY,
+  // «Bodi», no «body»: es como se escribe en español (3 de octubre de 2026). V74 renombró los que
+  // ya estaban guardados, y el extractor todavía acepta «body» de una extracción vieja.
+  BODI,
   OTRO
 }

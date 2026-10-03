@@ -26,7 +26,7 @@ export type TipoProductoProveedor =
   | 'SHORT'
   | 'VESTIDO'
   | 'BLUSA'
-  | 'BODY'
+  | 'BODI'
   | 'OTRO';
 
 export const TIPOS_PRODUCTO_PROVEEDOR: readonly TipoProductoProveedor[] = [
@@ -44,7 +44,7 @@ export const TIPOS_PRODUCTO_PROVEEDOR: readonly TipoProductoProveedor[] = [
   'SHORT',
   'VESTIDO',
   'BLUSA',
-  'BODY',
+  'BODI',
   'OTRO',
 ];
 
@@ -56,7 +56,7 @@ export const TIPOS_PRODUCTO_PROVEEDOR: readonly TipoProductoProveedor[] = [
 export const CATEGORIA_SUGERIDA_POR_TIPO: Readonly<Partial<Record<TipoProductoProveedor, string>>> =
   {
     BLUSA: 'ropa-dama-blusas',
-    BODY: 'ropa-dama-bodis',
+    BODI: 'ropa-dama-bodis',
   };
 
 /**
@@ -71,7 +71,15 @@ export type AlertaBorrador =
   | 'CONFIANZA_BAJA'
   | 'SIN_FOTOS'
   | 'PRECIO_CAMBIO'
-  | 'FOTOS_COMPARTIDAS';
+  | 'FOTOS_COMPARTIDAS'
+  | 'REPLICA';
+
+/**
+ * Cómo se llama la marca con que se publica una réplica («1.1»): la original solo va en el título,
+ * como «Camiseta estilo Puma - BMW» (decidido por el negocio el 3 de octubre de 2026). Se busca por
+ * nombre, sin tildes ni mayúsculas, porque el id cambia de un ambiente a otro.
+ */
+export const MARCA_DE_REPLICAS = 'generica';
 
 export type TipoDeTalla = 'UNICA' | 'LISTA' | 'DESCONOCIDA';
 
@@ -100,7 +108,10 @@ export interface Borrador {
   readonly cantidadTonos: number;
   readonly tonosNombrados: readonly string[];
   readonly material: string | null;
-  readonly caracteristicas: readonly string[];
+  /** Lo que la ficha va a decir del producto; la redacta la extracción y es obligatoria al aprobar. */
+  readonly descripcion: string | null;
+  /** El título en inglés que propone la extracción, para el texto alternativo de las fotos. */
+  readonly altEn: string | null;
   readonly alertas: readonly AlertaBorrador[];
   readonly motivoRechazo: string | null;
   /** El producto que creó al aprobarse, o el que renovó. */
@@ -146,7 +157,8 @@ export interface EditarBorrador {
   readonly cantidadTonos?: number;
   readonly tonosNombrados?: readonly string[];
   readonly material?: string;
-  readonly caracteristicas?: readonly string[];
+  readonly descripcion?: string;
+  readonly altEn?: string;
 }
 
 export interface FotoAprobada {

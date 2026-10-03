@@ -17,7 +17,8 @@ public record EditarBorradorComando(
     Integer cantidadTonos,
     List<String> tonosNombrados,
     String material,
-    List<String> caracteristicas) {
+    String descripcion,
+    String altEn) {
 
   public EditarBorradorComando {
     Objects.requireNonNull(borradorId, "El id del borrador no puede ser nulo.");

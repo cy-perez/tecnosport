@@ -18,7 +18,9 @@
           "cantidad_tonos",
           "tonos_nombrados",
           "material",
-          "caracteristicas",
+          "descripcion",
+          "alt_en",
+          "es_replica",
           "confianza",
           "notas"
         ],
@@ -43,7 +45,7 @@
               "short",
               "vestido",
               "blusa",
-              "body",
+              "bodi",
               "otro"
             ]
           },
@@ -61,7 +63,9 @@
           "cantidad_tonos": { "type": ["integer", "null"] },
           "tonos_nombrados": { "type": "array", "items": { "type": "string" } },
           "material": { "type": ["string", "null"] },
-          "caracteristicas": { "type": "array", "items": { "type": "string" } },
+          "descripcion": { "type": ["string", "null"] },
+          "alt_en": { "type": ["string", "null"] },
+          "es_replica": { "type": "boolean" },
           "confianza": { "type": "number" },
           "notas": { "type": ["string", "null"] }
         }

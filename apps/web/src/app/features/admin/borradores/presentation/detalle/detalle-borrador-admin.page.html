@@ -93,6 +93,13 @@
         </p>
       }
     }
+    <!-- Siempre en la pagina: recibe el foco al eliminar una foto, porque el boton pulsado se va
+         con su fila. -->
+    <p #avisoFotosRef class="m-0 mb-8 text-ts-exito" role="status" tabindex="-1">
+      @if (fotoEliminada()) {
+        {{ 'admin.borradores.eliminarFoto.hecho' | transloco }}
+      }
+    </p>
     @if (fotos().length === 0) {
       <p class="mb-24 text-ts-texto-suave">{{ 'admin.borradores.detalle.sinFotos' | transloco }}</p>
     } @else {
@@ -134,6 +141,56 @@
                 >
                   {{ 'admin.borradores.aprobar.marcarPrincipal' | transloco }}
                 </ts-boton>
+              }
+            }
+            @if (editable()) {
+              <ts-boton
+                variante="texto"
+                tipo="button"
+                [id]="'eliminar-foto-' + i"
+                [etiquetaAccesible]="
+                  'admin.borradores.eliminarFoto.accionFoto' | transloco: { numero: i + 1 }
+                "
+                [expandido]="confirmandoEliminarFoto() === foto.mensajeId"
+                [controla]="'confirmar-eliminar-foto-' + i"
+                (click)="preguntarSiEliminarFoto(foto.mensajeId)"
+              >
+                {{ 'admin.borradores.eliminarFoto.accion' | transloco }}
+              </ts-boton>
+              @if (confirmandoEliminarFoto() === foto.mensajeId) {
+                <div
+                  #cajaEliminarFoto
+                  class="flex flex-col gap-12 rounded-md border border-ts-borde-control p-12"
+                  role="group"
+                  tabindex="-1"
+                  [id]="'confirmar-eliminar-foto-' + i"
+                  [attr.aria-labelledby]="'pregunta-eliminar-foto-' + i"
+                  [attr.aria-describedby]="'implica-eliminar-foto-' + i"
+                  (keydown.escape)="cancelarEliminarFoto(i)"
+                >
+                  <p class="m-0" [id]="'pregunta-eliminar-foto-' + i">
+                    {{ 'admin.borradores.eliminarFoto.pregunta' | transloco: { numero: i + 1 } }}
+                  </p>
+                  <p class="m-0 text-sm text-ts-texto-suave" [id]="'implica-eliminar-foto-' + i">
+                    {{ 'admin.borradores.eliminarFoto.loQueImplica' | transloco }}
+                  </p>
+                  @if (errorEliminarFoto(); as mensaje) {
+                    <p class="m-0 text-ts-error" role="alert">{{ mensaje }}</p>
+                  }
+                  <div class="flex flex-wrap gap-12">
+                    <ts-boton
+                      variante="peligro"
+                      [ocupado]="descartandoFoto()"
+                      [etiquetaCargando]="'admin.borradores.eliminarFoto.eliminando' | transloco"
+                      (click)="eliminarFoto(foto.mensajeId)"
+                    >
+                      {{ 'admin.borradores.eliminarFoto.confirmar' | transloco }}
+                    </ts-boton>
+                    <ts-boton variante="secundario" (click)="cancelarEliminarFoto(i)">
+                      {{ 'admin.borradores.eliminarFoto.cancelar' | transloco }}
+                    </ts-boton>
+                  </div>
+                </div>
               }
             }
             @if (editable() && opcionesTono().length > 0) {
@@ -205,6 +262,7 @@
         <ts-campo
           idCampo="borrador-sirve-hasta"
           [label]="'admin.borradores.datos.sirveHasta' | transloco"
+          [ayuda]="'admin.borradores.datos.sirveHastaAyuda' | transloco"
           formControlName="sirveHasta"
         />
       }
@@ -233,12 +291,13 @@
         formControlName="material"
       />
       <ts-campo
-        idCampo="borrador-caracteristicas"
-        [label]="'admin.borradores.datos.caracteristicas' | transloco"
-        [ayuda]="'admin.borradores.datos.unaPorLinea' | transloco"
+        idCampo="borrador-descripcion"
+        [label]="'admin.borradores.datos.descripcion' | transloco"
+        [ayuda]="'admin.borradores.datos.descripcionAyuda' | transloco"
         [multilinea]="true"
-        [filas]="4"
-        formControlName="caracteristicas"
+        [filas]="5"
+        [obligatorio]="true"
+        formControlName="descripcion"
       />
 
       <p class="m-0 text-ts-error" role="alert">{{ errorDatos() }}</p>
@@ -307,13 +366,6 @@
           formControlName="existenciaInicial"
         />
         <ts-campo
-          idCampo="aprobar-descripcion"
-          [label]="'admin.borradores.aprobar.descripcion' | transloco"
-          [multilinea]="true"
-          [filas]="3"
-          formControlName="descripcion"
-        />
-        <ts-campo
           idCampo="aprobar-alt-es"
           [label]="'admin.borradores.aprobar.altEs' | transloco"
           [obligatorio]="true"
@@ -322,6 +374,7 @@
         <ts-campo
           idCampo="aprobar-alt-en"
           [label]="'admin.borradores.aprobar.altEn' | transloco"
+          [ayuda]="'admin.borradores.aprobar.altEnAyuda' | transloco"
           [obligatorio]="true"
           formControlName="altEn"
         />

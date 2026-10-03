@@ -298,18 +298,18 @@
             },
             "type" : "array"
           },
+          "altEn" : {
+            "type" : "string"
+          },
           "cantidadTonos" : {
             "format" : "int32",
             "type" : "integer"
           },
-          "caracteristicas" : {
-            "items" : {
-              "type" : "string"
-            },
-            "type" : "array"
-          },
           "creadoEn" : {
             "format" : "date-time",
+            "type" : "string"
+          },
+          "descripcion" : {
             "type" : "string"
           },
           "estado" : {
@@ -834,15 +834,15 @@
       },
       "EditarBorradorPeticion" : {
         "properties" : {
+          "altEn" : {
+            "type" : "string"
+          },
           "cantidadTonos" : {
             "format" : "int32",
             "type" : "integer"
           },
-          "caracteristicas" : {
-            "items" : {
-              "type" : "string"
-            },
-            "type" : "array"
+          "descripcion" : {
+            "type" : "string"
           },
           "material" : {
             "type" : "string"
@@ -3478,6 +3478,39 @@
               }
             },
             "description" : "OK"
+          }
+        },
+        "tags" : [
+          "admin-borrador-controlador"
+        ]
+      }
+    },
+    "/api/v1/admin/borradores/{id}/fotos/{mensajeId}" : {
+      "delete" : {
+        "operationId" : "descartarFoto",
+        "parameters" : [
+          {
+            "in" : "path",
+            "name" : "id",
+            "required" : true,
+            "schema" : {
+              "format" : "uuid",
+              "type" : "string"
+            }
+          },
+          {
+            "in" : "path",
+            "name" : "mensajeId",
+            "required" : true,
+            "schema" : {
+              "format" : "uuid",
+              "type" : "string"
+            }
+          }
+        ],
+        "responses" : {
+          "204" : {
+            "description" : "No Content"
           }
         },
         "tags" : [

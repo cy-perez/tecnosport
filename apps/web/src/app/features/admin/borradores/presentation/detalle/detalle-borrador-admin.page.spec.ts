@@ -298,8 +298,8 @@ describe('DetalleBorradorAdminPage', () => {
     await vi.waitFor(() => expect(titulo.value).toBe('Bolso tote en cuero sintético'));
 
     fireEvent.input(titulo, { target: { value: 'Bolso tote negro' } });
-    fireEvent.input(screen.getByLabelText(d.caracteristicas), {
-      target: { value: 'Cierre magnético\nBolsillo interno' },
+    fireEvent.input(screen.getByLabelText(d.descripcion), {
+      target: { value: 'Bolso tote negro con cierre magnético y bolsillo interno.' },
     });
     fireEvent.click(screen.getByRole('button', { name: d.guardar }));
 
@@ -308,8 +308,88 @@ describe('DetalleBorradorAdminPage', () => {
       titulo: 'Bolso tote negro',
       tallas: { tipo: 'UNICA', sirveHasta: 'L', valores: [] },
       tonosNombrados: ['Negro', 'Café'],
-      caracteristicas: ['Cierre magnético', 'Bolsillo interno'],
+      descripcion: 'Bolso tote negro con cierre magnético y bolsillo interno.',
     });
+  });
+
+  /** La descripción es la de la ficha: obligatoria desde el 3 de octubre de 2026. */
+  it('sin descripción no aprueba y dice dónde escribirla', async () => {
+    const { repositorio } = await renderPagina(borradorDePrueba({ descripcion: null }));
+    await llenarAprobacion();
+
+    fireEvent.click(screen.getByRole('button', { name: a.accion }));
+
+    expect(await screen.findByText(a.faltaDescripcion)).toBeTruthy();
+    expect(repositorio.aprobaciones).toEqual([]);
+  });
+
+  it('la descripción de los datos extraídos viaja con la aprobación, como está escrita', async () => {
+    const { repositorio } = await renderPagina();
+    await llenarAprobacion();
+    const descripcion = screen.getByLabelText(d.descripcion) as HTMLTextAreaElement;
+    await vi.waitFor(() =>
+      expect(descripcion.value).toBe('Bolso tote en cuero sintético con cierre magnético.'),
+    );
+
+    fireEvent.input(descripcion, { target: { value: '  Bolso tote con tira larga.  ' } });
+    fireEvent.click(screen.getByRole('button', { name: a.accion }));
+
+    await screen.findByRole('link', { name: a.verProducto });
+    expect(repositorio.aprobaciones[0].aprobacion.descripcion).toBe('Bolso tote con tira larga.');
+  });
+
+  /** El título en inglés de la extracción, con el nombre comercial, es el alt en inglés. */
+  it('el alt en inglés parte del título en inglés que propuso la extracción', async () => {
+    await renderPagina(borradorDePrueba({ altEn: 'Faux leather tote bag' }));
+
+    const altEn = (await screen.findByLabelText(a.altEn)) as HTMLInputElement;
+    await vi.waitFor(() => expect(altEn.value).toBe('Faux leather tote bag'));
+  });
+
+  /** Una réplica se publica con la marca Genérica; la original solo va en el título. */
+  it('una réplica llega con la marca Genérica y lo explica', async () => {
+    await renderPagina(borradorDePrueba({ alertas: ['REPLICA'] }));
+    await screen.findByRole('option', { name: 'Genérica' });
+
+    await vi.waitFor(() =>
+      expect((screen.getByLabelText(a.marca) as HTMLSelectElement).value).toBe('m1'),
+    );
+    expect(screen.getByText(esAdmin.borradores.alertas.REPLICA)).toBeTruthy();
+  });
+
+  it('sin la alerta de réplica no elige marca', async () => {
+    await renderPagina();
+    await screen.findByRole('option', { name: 'Genérica' });
+
+    expect((screen.getByLabelText(a.marca) as HTMLSelectElement).value).toBe('');
+  });
+
+  it('eliminar una foto pregunta antes, la saca de la revisión y lo anuncia', async () => {
+    const { repositorio } = await renderPagina();
+    const e = esAdmin.borradores.eliminarFoto;
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Eliminar la foto 2' }));
+    expect(screen.getByText('¿Eliminar la foto 2 de este borrador?')).toBeTruthy();
+    expect(repositorio.fotosDescartadas).toEqual([]);
+
+    fireEvent.click(screen.getByRole('button', { name: e.confirmar }));
+
+    expect(await screen.findByText(e.hecho)).toBeTruthy();
+    expect(repositorio.fotosDescartadas).toEqual([{ id: 'b-1', mensajeId: 'f-2' }]);
+    await vi.waitFor(() =>
+      expect(screen.queryByRole('button', { name: 'Eliminar la foto 2' })).toBeNull(),
+    );
+  });
+
+  it('cancelar la eliminación de una foto no toca nada', async () => {
+    const { repositorio } = await renderPagina();
+    const e = esAdmin.borradores.eliminarFoto;
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Eliminar la foto 1' }));
+    fireEvent.click(screen.getByRole('button', { name: e.cancelar }));
+
+    expect(screen.queryByText('¿Eliminar la foto 1 de este borrador?')).toBeNull();
+    expect(repositorio.fotosDescartadas).toEqual([]);
   });
 
   it('rechazar exige un motivo y lo manda', async () => {

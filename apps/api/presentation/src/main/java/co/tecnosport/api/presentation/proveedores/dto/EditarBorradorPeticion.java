@@ -11,4 +11,5 @@ public record EditarBorradorPeticion(
     Integer cantidadTonos,
     List<String> tonosNombrados,
     String material,
-    List<String> caracteristicas) {}
+    String descripcion,
+    String altEn) {}

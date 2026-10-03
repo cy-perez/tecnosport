@@ -23,5 +23,10 @@ public enum AlertaBorrador {
    * El mensaje anunciaba varios productos con las mismas fotos: quien aprueba elige cuáles son de
    * este y marca la principal, porque de esa sale la huella visual.
    */
-  FOTOS_COMPARTIDAS
+  FOTOS_COMPARTIDAS,
+  /**
+   * El mensaje anuncia una réplica («1.1»): se publica con la marca Genérica y la original solo va
+   * en el título, como «Camiseta estilo Puma - BMW». Quien aprueba confirma las dos cosas.
+   */
+  REPLICA
 }

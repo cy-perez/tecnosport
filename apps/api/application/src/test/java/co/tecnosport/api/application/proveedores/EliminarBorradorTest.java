@@ -176,6 +176,8 @@ class EliminarBorradorTest {
             null,
             null,
             null,
+            null,
+            false,
             new BigDecimal("0.9"),
             null),
         "{}",

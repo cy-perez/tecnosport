@@ -31,6 +31,9 @@ import java.util.UUID;
  * publicación sin fotos con archivo alertan también. Ninguna alerta detiene nada: el borrador se
  * crea igual y lo mira una persona.
  *
+ * <p>Tampoco se cree el «sirve hasta» que el texto no escribe, y una réplica se reconoce por el
+ * «1.1» del texto aunque el extractor no la marque ({@link ProductoExtraido#contrastadoCon}).
+ *
  * <h2>Varios productos en un mensaje</h2>
  *
  * <p>Cada producto se contrasta con <b>el precio de su misma posición</b> en el texto, y solo si el
@@ -93,7 +96,7 @@ public final class ExtraerProductoDePublicacion {
 
     List<ExtraccionEvaluada> evaluadas = new ArrayList<>(productos.size());
     for (int i = 0; i < productos.size(); i++) {
-      ProductoExtraido producto = productos.get(i);
+      ProductoExtraido producto = productos.get(i).contrastadoCon(texto.completo());
       Set<AlertaBorrador> alertas = EnumSet.noneOf(AlertaBorrador.class);
       Optional<Dinero> delTexto = precioDelTexto(preciosDelTexto, i, productos.size());
       Dinero precio = contrastarPrecio(delTexto, producto.precioProveedorOpcional(), alertas);
@@ -106,6 +109,9 @@ public final class ExtraerProductoDePublicacion {
       }
       if (recortado || producto.confianza().compareTo(umbralDeConfianza) < 0) {
         alertas.add(AlertaBorrador.CONFIANZA_BAJA);
+      }
+      if (producto.esReplica()) {
+        alertas.add(AlertaBorrador.REPLICA);
       }
       if (sinFotos) {
         alertas.add(AlertaBorrador.SIN_FOTOS);

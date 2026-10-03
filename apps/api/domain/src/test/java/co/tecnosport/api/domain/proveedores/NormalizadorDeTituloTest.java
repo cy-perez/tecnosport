@@ -32,6 +32,21 @@ class NormalizadorDeTituloTest {
     assertEquals("polo 1 1 puma", NormalizadorDeTitulo.normalizar("POLO 1.1 PUMA"));
   }
 
+  /**
+   * El título se corrige a «bodi» desde el 3 de octubre de 2026; la huella de lo aprobado antes con
+   * «Body» tiene que seguir coincidiendo.
+   */
+  @Test
+  void bodiYBodySonLaMismaPrenda() {
+    assertEquals(
+        NormalizadorDeTitulo.normalizar("Body herraje"),
+        NormalizadorDeTitulo.normalizar("Bodi herraje"));
+    assertEquals(
+        NormalizadorDeTitulo.normalizar("Bodies de encaje"),
+        NormalizadorDeTitulo.normalizar("Bodis de encaje"));
+    assertEquals("bolso bodega", NormalizadorDeTitulo.normalizar("Bolso bodega"));
+  }
+
   @Test
   void nuloYVacioDanVacio() {
     assertEquals("", NormalizadorDeTitulo.normalizar(null));

@@ -1,7 +1,9 @@
 package co.tecnosport.api.bootstrap.proveedores;
 
 import co.tecnosport.api.domain.catalogo.LineaCatalogo;
+import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.proveedores.Proveedor;
+import co.tecnosport.api.domain.proveedores.TopesDeGanancia;
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.util.Map;
@@ -24,6 +26,7 @@ public record PropiedadesProveedores(
     long descomprimidoMaximoBytes,
     int colaDeIngestas,
     Map<LineaCatalogo, BigDecimal> margenPorLinea,
+    Ganancia ganancia,
     Huella huella,
     Duration ventanaDisponibilidad,
     JobExpiracion jobExpiracion) {
@@ -42,6 +45,24 @@ public record PropiedadesProveedores(
         throw new IllegalStateException(
             "tecnosport.proveedores.job-expiracion.retraso-inicial no puede ser negativo.");
       }
+    }
+  }
+
+  /**
+   * Lo menos y lo más que el precio sugerido le gana a cada unidad, en pesos enteros. Datos del
+   * negocio (3 de octubre de 2026), no parámetros técnicos.
+   */
+  public record Ganancia(long minima, long maxima) {
+    public Ganancia {
+      if (minima < 0 || maxima < minima) {
+        throw new IllegalStateException(
+            "tecnosport.proveedores.ganancia: la mínima no puede ser negativa ni superar la"
+                + " máxima.");
+      }
+    }
+
+    public TopesDeGanancia aTopes() {
+      return new TopesDeGanancia(Dinero.deCop(minima), Dinero.deCop(maxima));
     }
   }
 
@@ -88,6 +109,9 @@ public record PropiedadesProveedores(
                 + " tiene que existir y ser al menos 1: es lo que multiplica el precio del"
                 + " proveedor.");
       }
+    }
+    if (ganancia == null) {
+      throw new IllegalStateException("Falta tecnosport.proveedores.ganancia.");
     }
     if (huella == null) {
       throw new IllegalStateException("Falta tecnosport.proveedores.huella.umbral-hamming.");

@@ -244,6 +244,12 @@ tecnosport:
     margen-por-linea:
       BOLSOS: ${PROVEEDORES_MARGEN_BOLSOS:1.35}
       ROPA: ${PROVEEDORES_MARGEN_ROPA:1.30}
+    # Despues del factor, lo que el precio sugerido le gana a cada unidad se lleva a estos topes,
+    # en pesos: para todas las lineas y tambien con el factor propio del proveedor (3 de octubre
+    # de 2026). Ajustan la sugerencia; quien aprueba puede poner otro precio.
+    ganancia:
+      minima: ${PROVEEDORES_GANANCIA_MINIMA:20000}
+      maxima: ${PROVEEDORES_GANANCIA_MAXIMA:30000}
     huella:
       # Hasta cuantos bits de 64 pueden diferir dos pHash para ser la misma foto. Parametro
       # tecnico: 6 es lo habitual para reconocer la misma imagen reescalada o recomprimida.

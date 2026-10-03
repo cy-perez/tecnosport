@@ -69,7 +69,9 @@ final class MapeadorDeExtraccion {
           nodo.path("cantidad_tonos").isNumber() ? nodo.path("cantidad_tonos").asInt() : null,
           lista(nodo.path("tonos_nombrados")),
           textoONulo(nodo.path("material")),
-          lista(nodo.path("caracteristicas")),
+          textoONulo(nodo.path("descripcion")),
+          textoONulo(nodo.path("alt_en")),
+          nodo.path("es_replica").asBoolean(false),
           confianza(nodo.path("confianza")),
           textoONulo(nodo.path("notas")));
     } catch (ExcepcionDeDominio e) {
@@ -102,6 +104,11 @@ final class MapeadorDeExtraccion {
     String valor = textoONulo(nodo);
     if (valor == null) {
       return TipoProductoProveedor.OTRO;
+    }
+    // «body» es como lo devolvía el esquema hasta el 3 de octubre de 2026: un borrador viejo que se
+    // vuelva a leer no tiene por qué caer en OTRO.
+    if (valor.equalsIgnoreCase("body")) {
+      return TipoProductoProveedor.BODI;
     }
     try {
       return TipoProductoProveedor.valueOf(valor.toUpperCase(Locale.ROOT));

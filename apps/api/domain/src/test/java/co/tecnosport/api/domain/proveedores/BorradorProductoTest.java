@@ -36,7 +36,9 @@ class BorradorProductoTest {
         4,
         List.of(),
         "importado",
-        List.of("incluye llavero"),
+        "incluye llavero.",
+        null,
+        false,
         new BigDecimal("0.92"),
         null);
   }
@@ -80,17 +82,39 @@ class BorradorProductoTest {
     BorradorProducto borrador = nuevo(Set.of());
 
     borrador.editar(
-        "Bolso mediano ejecutivo", null, Dinero.deCop(75000), null, null, null, null, null);
+        "Bolso mediano ejecutivo",
+        null,
+        Dinero.deCop(75000),
+        null,
+        null,
+        null,
+        null,
+        "Bolso ejecutivo con tira.",
+        null);
 
     assertEquals(Optional.of("Bolso mediano ejecutivo"), borrador.titulo());
     assertEquals(Optional.of(Dinero.deCop(75000)), borrador.precioVentaSugerido());
     assertEquals(TipoProductoProveedor.BOLSO, borrador.tipo());
     assertEquals(Optional.of(4), borrador.cantidadTonos());
+    assertEquals(Optional.of("Bolso ejecutivo con tira."), borrador.descripcion());
 
     borrador.aprobar(UUID.randomUUID(), null);
     assertThrows(
         ExcepcionDeDominio.class,
-        () -> borrador.editar("x", null, null, null, null, null, null, null));
+        () -> borrador.editar("x", null, null, null, null, null, null, null, null));
+  }
+
+  @Test
+  void descartarUnaFotoSoloEnRevision() {
+    BorradorProducto borrador = nuevo(Set.of());
+    UUID foto = UUID.randomUUID();
+
+    borrador.descartarFoto(foto);
+    borrador.descartarFoto(foto);
+
+    assertEquals(Set.of(foto), borrador.fotosDescartadas());
+    borrador.aprobar(UUID.randomUUID(), null);
+    assertThrows(ExcepcionDeDominio.class, () -> borrador.descartarFoto(UUID.randomUUID()));
   }
 
   @Test
@@ -186,6 +210,8 @@ class BorradorProductoTest {
                 PROVEEDOR,
                 "{}",
                 "t",
+                null,
+                null,
                 null,
                 null,
                 null,

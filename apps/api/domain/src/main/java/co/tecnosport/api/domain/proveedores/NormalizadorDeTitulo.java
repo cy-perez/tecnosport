@@ -14,6 +14,13 @@ public final class NormalizadorDeTitulo {
   private static final Pattern DIACRITICOS = Pattern.compile("\\p{M}+");
   private static final Pattern NO_ALFANUMERICO = Pattern.compile("[^a-z0-9]+");
 
+  /**
+   * «Bodi» y «body» son la misma prenda: el título se corrige a «bodi» desde el 3 de octubre de
+   * 2026 ({@link CorrectorDeTitulo}), y sin esto los productos aprobados antes con «Body» dejaban
+   * de reconocerse en su siguiente anuncio y volvían como nuevos.
+   */
+  private static final Pattern BODI = Pattern.compile("\\bbod(?:y|i)(?:s|es)?\\b");
+
   private NormalizadorDeTitulo() {}
 
   public static String normalizar(String titulo) {
@@ -22,6 +29,8 @@ public final class NormalizadorDeTitulo {
     }
     String sinTildes =
         DIACRITICOS.matcher(Normalizer.normalize(titulo, Normalizer.Form.NFD)).replaceAll("");
-    return NO_ALFANUMERICO.matcher(sinTildes.toLowerCase(Locale.ROOT)).replaceAll(" ").strip();
+    String plano =
+        NO_ALFANUMERICO.matcher(sinTildes.toLowerCase(Locale.ROOT)).replaceAll(" ").strip();
+    return BODI.matcher(plano).replaceAll("body");
   }
 }

@@ -13,7 +13,8 @@ import java.util.stream.Collectors;
 
 /**
  * El borrador con lo que hace falta para revisarlo: el texto original del proveedor y sus fotos,
- * cada una con una URL firmada de lectura porque el bucket es privado.
+ * cada una con una URL firmada de lectura porque el bucket es privado. Las que quien revisa
+ * descartó no vienen.
  */
 public final class VerBorrador {
 
@@ -63,7 +64,7 @@ public final class VerBorrador {
     List<FotoDeBorrador> fotos = new ArrayList<>();
     for (UUID id : publicacion.medios()) {
       MensajeProveedor mensaje = mensajes.get(id);
-      if (mensaje == null) {
+      if (mensaje == null || borrador.fotosDescartadas().contains(id)) {
         continue;
       }
       fotos.add(

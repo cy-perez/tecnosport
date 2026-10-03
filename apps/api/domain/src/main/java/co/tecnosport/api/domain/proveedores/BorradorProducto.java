@@ -8,6 +8,7 @@ import co.tecnosport.api.domain.compartido.ExcepcionDeDominio;
 import co.tecnosport.api.domain.compartido.GeneradorIdentificador;
 import java.time.Instant;
 import java.util.EnumSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -42,10 +43,12 @@ public final class BorradorProducto {
   private Integer cantidadTonos;
   private List<String> tonosNombrados;
   private String material;
-  private List<String> caracteristicas;
+  private String descripcion;
+  private String altEn;
   private final HuellaProveedor huella;
   private PHash pHash;
   private final Set<AlertaBorrador> alertas;
+  private final Set<UUID> fotosDescartadas;
   private EstadoBorrador estado;
   private UUID productoId;
   private String motivoRechazo;
@@ -65,10 +68,12 @@ public final class BorradorProducto {
       Integer cantidadTonos,
       List<String> tonosNombrados,
       String material,
-      List<String> caracteristicas,
+      String descripcion,
+      String altEn,
       HuellaProveedor huella,
       PHash pHash,
       Set<AlertaBorrador> alertas,
+      Set<UUID> fotosDescartadas,
       EstadoBorrador estado,
       UUID productoId,
       String motivoRechazo,
@@ -88,13 +93,18 @@ public final class BorradorProducto {
     this.cantidadTonos = cantidadTonos;
     this.tonosNombrados = tonosNombrados == null ? List.of() : List.copyOf(tonosNombrados);
     this.material = enBlancoEsNulo(material);
-    this.caracteristicas = caracteristicas == null ? List.of() : List.copyOf(caracteristicas);
+    this.descripcion = enBlancoEsNulo(descripcion);
+    this.altEn = enBlancoEsNulo(altEn);
     this.huella = huella;
     this.pHash = pHash;
     // EnumSet.copyOf revienta con una colección vacía que no sea EnumSet; se copia a mano.
     this.alertas = EnumSet.noneOf(AlertaBorrador.class);
     if (alertas != null) {
       this.alertas.addAll(alertas);
+    }
+    this.fotosDescartadas = new LinkedHashSet<>();
+    if (fotosDescartadas != null) {
+      this.fotosDescartadas.addAll(fotosDescartadas);
     }
     this.estado = Objects.requireNonNull(estado, "El estado del borrador no puede ser nulo.");
     this.productoId = productoId;
@@ -140,10 +150,12 @@ public final class BorradorProducto {
         extraido.cantidadTonos(),
         extraido.tonosNombrados(),
         extraido.material(),
-        extraido.caracteristicas(),
+        extraido.descripcion(),
+        extraido.altEn(),
         huella,
         pHash,
         alertas,
+        Set.of(),
         EstadoBorrador.EN_REVISION,
         null,
         null,
@@ -181,10 +193,12 @@ public final class BorradorProducto {
         extraido.cantidadTonos(),
         extraido.tonosNombrados(),
         extraido.material(),
-        extraido.caracteristicas(),
+        extraido.descripcion(),
+        extraido.altEn(),
         huella,
         pHash,
         alertas,
+        Set.of(),
         EstadoBorrador.RENOVACION_APLICADA,
         productoId,
         null,
@@ -200,7 +214,8 @@ public final class BorradorProducto {
       Integer cantidadTonos,
       List<String> tonosNombrados,
       String material,
-      List<String> caracteristicas) {
+      String descripcion,
+      String altEn) {
     exigirEnRevision("editar");
     if (titulo != null) {
       this.titulo = enBlancoEsNulo(titulo);
@@ -226,9 +241,21 @@ public final class BorradorProducto {
     if (material != null) {
       this.material = enBlancoEsNulo(material);
     }
-    if (caracteristicas != null) {
-      this.caracteristicas = List.copyOf(caracteristicas);
+    if (descripcion != null) {
+      this.descripcion = enBlancoEsNulo(descripcion);
     }
+    if (altEn != null) {
+      this.altEn = enBlancoEsNulo(altEn);
+    }
+  }
+
+  /**
+   * Quien revisa saca una foto que no es de este producto. No se borra el archivo: la foto es de la
+   * publicación, y otro borrador del mismo mensaje puede usarla; solo deja de ofrecerse aquí.
+   */
+  public void descartarFoto(UUID mensajeId) {
+    exigirEnRevision("descartar fotos de");
+    fotosDescartadas.add(Objects.requireNonNull(mensajeId, "La foto no puede ser nula."));
   }
 
   /**
@@ -328,8 +355,14 @@ public final class BorradorProducto {
     return Optional.ofNullable(material);
   }
 
-  public List<String> caracteristicas() {
-    return caracteristicas;
+  /** Lo que la ficha va a decir del producto. Sin ella el borrador no se aprueba. */
+  public Optional<String> descripcion() {
+    return Optional.ofNullable(descripcion);
+  }
+
+  /** El título en inglés, que el panel propone como texto alternativo de las fotos. */
+  public Optional<String> altEn() {
+    return Optional.ofNullable(altEn);
   }
 
   public Optional<HuellaProveedor> huella() {
@@ -342,6 +375,11 @@ public final class BorradorProducto {
 
   public Set<AlertaBorrador> alertas() {
     return Set.copyOf(alertas);
+  }
+
+  /** Las fotos de la publicación que quien revisa sacó de este borrador, por mensaje. */
+  public Set<UUID> fotosDescartadas() {
+    return Set.copyOf(fotosDescartadas);
   }
 
   public EstadoBorrador estado() {

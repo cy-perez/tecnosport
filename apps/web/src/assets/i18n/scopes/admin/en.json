@@ -35,6 +35,7 @@
     "borrador_no_eliminable": "An approved draft or a renewal cannot be deleted: it is what recognises the product when the supplier posts it again.",
     "borrador_sin_fotos": "A product cannot be approved without photos. If the post had none, reject it.",
     "borrador_sin_precio": "The sale price is missing. Enter it before approving.",
+    "borrador_sin_descripcion": "The product description is missing. Write it in the extracted data before approving.",
     "borrador_sin_titulo": "The product title is missing. Fix it in the extracted data before approving.",
     "atributo_de_catalogo_no_definido": "The colour or size attributes are missing from the catalogue. Create them before approving.",
     "foto_no_es_del_borrador": "One of the photos does not belong to this post. Reload the page.",
@@ -909,12 +910,12 @@
       "SHORT": "Shorts",
       "VESTIDO": "Dress",
       "BLUSA": "Blouse",
-      "BODY": "Bodysuit",
+      "BODI": "Bodysuit",
       "OTRO": "Other"
     },
     "tallas": {
       "DESCONOCIDA": "Not stated",
-      "UNICA": "One size (fits up to)",
+      "UNICA": "One size",
       "LISTA": "Size list"
     },
     "alertas": {
@@ -925,7 +926,8 @@
       "CONFIANZA_BAJA": "The extraction is not confident about what it understood. Review everything carefully.",
       "SIN_FOTOS": "The post has no photos. It cannot be approved without photos.",
       "PRECIO_CAMBIO": "The supplier changed the price of a product that already exists. The supplier price was updated; check the sale price.",
-      "FOTOS_COMPARTIDAS": "The message announced several products with the same photos. Keep only the ones of this product and mark its main photo."
+      "FOTOS_COMPARTIDAS": "The message announced several products with the same photos. Keep only the ones of this product and mark its main photo.",
+      "REPLICA": "The supplier announces it as a replica (1.1). It is published under the Generic brand, with the original brand only in the title, such as “Puma - BMW style T-shirt”. Confirm both before approving."
     },
     "detalle": {
       "miga": "Review",
@@ -950,13 +952,14 @@
       "precioSugeridoAyuda": "In pesos, no decimals. Comes from the supplier price times the margin; you can adjust it.",
       "tipoDeTalla": "Sizes",
       "sirveHasta": "Fits up to",
+      "sirveHastaAyuda": "Only if the supplier wrote “fits up to”. If they did not, leave it blank.",
       "tallasLista": "Sizes",
       "separadas": "Comma separated: S, M, L.",
       "cantidadTonos": "Number of colours",
       "tonosNombrados": "Colours, by name",
       "material": "Material",
-      "caracteristicas": "Features",
-      "unaPorLinea": "One per line.",
+      "descripcion": "Description",
+      "descripcionAyuda": "This is what the product page shows. The extraction wrote it from what the supplier said; fix it if needed.",
       "invalidos": "The price must be a whole number in pesos and the number of colours a number.",
       "guardar": "Save data",
       "guardando": "Saving…",
@@ -973,9 +976,10 @@
       "precioVentaAyuda": "The final one, in pesos. Starts from the suggested price.",
       "existenciaInicial": "Units per variant",
       "existenciaInicialAyuda": "What goes into stock for each colour and size. Zero leaves the product sold out until you count.",
-      "descripcion": "Description (optional)",
       "altEs": "Alternative text for the photos (Spanish)",
       "altEn": "Alternative text for the photos (English)",
+      "altEnAyuda": "The title in English, with the name the item is sold under in English. Suggested by the extraction; check it.",
+      "faltaDescripcion": "The product description is missing. Write it in the extracted data before approving.",
       "tonoDeFoto": "Colour of photo {{numero}}",
       "todosLosTonos": "Applies to every colour",
       "faltanCampos": "Missing data: brand, category, whole sale price, units (0 or more) and both alternative texts.",
@@ -993,6 +997,17 @@
       "marcarPrincipal": "Mark as main photo",
       "marcarPrincipalFoto": "Mark photo {{numero}} as the main photo",
       "marcaLaPrincipal": "Mark the main photo of this product: the photos were shared with another one."
+    },
+    "eliminarFoto": {
+      "accion": "Remove photo",
+      "accionFoto": "Remove photo {{numero}}",
+      "pregunta": "Remove photo {{numero}} from this draft?",
+      "loQueImplica": "It stops showing here and does not go into the product. If the post had another product with the same photo, it stays there.",
+      "confirmar": "Yes, remove",
+      "eliminando": "Removing…",
+      "cancelar": "Cancel",
+      "hecho": "Photo removed from the draft.",
+      "error": "The photo could not be removed. Try again."
     },
     "rechazar": {
       "titulo": "Reject",

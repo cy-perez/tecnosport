@@ -86,6 +86,8 @@ class RevisarBorradorTest {
                 null,
                 null,
                 null,
+                null,
+                false,
                 new BigDecimal("0.9"),
                 null),
             "{}",
@@ -112,7 +114,11 @@ class RevisarBorradorTest {
                     null,
                     null,
                     null,
-                    null));
+                    "Bolso con dos compartimientos.",
+                    "Medium women's handbag"));
+
+    assertEquals(Optional.of("Bolso con dos compartimientos."), editado.descripcion());
+    assertEquals(Optional.of("Medium women's handbag"), editado.altEn());
 
     assertEquals(Optional.of("Bolso de dama mediano"), editado.titulo());
     assertEquals(Optional.of(Dinero.deCop(75000)), editado.precioVentaSugerido());
@@ -132,10 +138,31 @@ class RevisarBorradorTest {
             new EditarBorrador(borradores)
                 .ejecutar(
                     new EditarBorradorComando(
-                        borrador.id(), "x", null, null, null, null, null, null, null)));
+                        borrador.id(), "x", null, null, null, null, null, null, null, null)));
     assertThrows(
         BorradorNoEditableException.class,
         () -> new RechazarBorrador(borradores).ejecutar(borrador.id(), "otra vez"));
+  }
+
+  /** La foto descartada deja de verse en la revisión, y su archivo se queda en el bucket. */
+  @Test
+  void descartarUnaFotoLaSacaDeLaRevision() {
+    new DescartarFotoDeBorrador(borradores, publicaciones).ejecutar(borrador.id(), foto.id());
+
+    VerBorrador.DetalleDeBorrador detalle =
+        new VerBorrador(borradores, publicaciones, mensajes, almacen).ejecutar(borrador.id());
+    assertEquals(List.of(omitida.id()), detalle.fotos().stream().map(f -> f.mensajeId()).toList());
+    assertEquals(
+        Set.of(foto.id()), borradores.buscarPorId(borrador.id()).orElseThrow().fotosDescartadas());
+  }
+
+  @Test
+  void noSeDescartaUnaFotoQueNoEsDeLaPublicacion() {
+    assertThrows(
+        FotoNoEsDelBorradorException.class,
+        () ->
+            new DescartarFotoDeBorrador(borradores, publicaciones)
+                .ejecutar(borrador.id(), UUID.randomUUID()));
   }
 
   @Test

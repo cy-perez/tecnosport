@@ -17,6 +17,11 @@ export interface AprobarBorradorComando {
   readonly aprobacion: AprobarBorrador;
 }
 
+export interface DescartarFotoComando {
+  readonly id: string;
+  readonly mensajeId: string;
+}
+
 export interface RechazarBorradorComando {
   readonly id: string;
   readonly motivo: string;
@@ -59,6 +64,18 @@ export function usarRechazarBorrador() {
   return injectMutation(() => ({
     mutationFn: (comando: RechazarBorradorComando): Promise<Borrador> =>
       repositorio.rechazar(comando.id, comando.motivo),
+    onSuccess: () => void queryClient.invalidateQueries({ queryKey: CLAVE_BORRADORES_ADMIN }),
+  }));
+}
+
+/** Descartar una foto cambia el detalle: se vuelve a pedir, ya sin ella. */
+export function usarDescartarFotoBorrador() {
+  const repositorio = inject(REPOSITORIO_BORRADORES_ADMIN);
+  const queryClient = inject(QueryClient);
+
+  return injectMutation(() => ({
+    mutationFn: (comando: DescartarFotoComando): Promise<void> =>
+      repositorio.descartarFoto(comando.id, comando.mensajeId),
     onSuccess: () => void queryClient.invalidateQueries({ queryKey: CLAVE_BORRADORES_ADMIN }),
   }));
 }

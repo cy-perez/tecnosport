@@ -42,7 +42,8 @@ class ExtractorClaudeTest {
           + "\"linea\":\"Bolsos\",\"tipo\":\"bolso\",\"precio_proveedor_cop\":53000,"
           + "\"tallas\":{\"tipo\":\"desconocida\",\"sirve_hasta\":null,\"valores\":[]},"
           + "\"cantidad_tonos\":4,\"tonos_nombrados\":[],\"material\":\"importado\","
-          + "\"caracteristicas\":[\"2 compartimientos internos\",\"incluye llavero\"],"
+          + "\"descripcion\":\"Bolso con dos compartimientos internos. Incluye llavero.\","
+          + "\"alt_en\":\"Medium women's handbag\",\"es_replica\":false,"
           + "\"confianza\":0.92,\"notas\":null}";
   private static final String PRODUCTO_JSON = "{\"productos\":[" + BOLSO + "]}";
 
@@ -142,6 +143,10 @@ class ExtractorClaudeTest {
     assertThat(resultado.productos().getFirst().linea()).isEqualTo(LineaCatalogo.BOLSOS);
     assertThat(resultado.productos().getFirst().tipo()).isEqualTo(TipoProductoProveedor.BOLSO);
     assertThat(resultado.productos().getFirst().precioProveedor()).isEqualTo(Dinero.deCop(53000));
+    assertThat(resultado.productos().getFirst().descripcion())
+        .isEqualTo("Bolso con dos compartimientos internos. Incluye llavero.");
+    assertThat(resultado.productos().getFirst().altEn()).isEqualTo("Medium women's handbag");
+    assertThat(resultado.productos().getFirst().esReplica()).isFalse();
     assertThat(resultado.productos().getFirst().cantidadTonos()).isEqualTo(4);
     assertThat(resultado.productos().getFirst().tallas().tipo()).isEqualTo(TipoDeTalla.DESCONOCIDA);
     assertThat(resultado.jsonCrudo()).isEqualTo(PRODUCTO_JSON);
@@ -211,7 +216,8 @@ class ExtractorClaudeTest {
                     + "\"tipo\":\"chaleco\",\"precio_proveedor_cop\":null,"
                     + "\"tallas\":{\"tipo\":\"Lista\",\"sirve_hasta\":null,\"valores\":[\"M\",\"L\"]},"
                     + "\"cantidad_tonos\":null,\"tonos_nombrados\":[\"negro\"],\"material\":null,"
-                    + "\"caracteristicas\":[],\"confianza\":0.5,\"notas\":\"sin foto\"}]}",
+                    + "\"descripcion\":null,\"alt_en\":null,\"es_replica\":false,"
+                    + "\"confianza\":0.5,\"notas\":\"sin foto\"}]}",
                 "end_turn")));
 
     ResultadoExtraccion resultado = extractor(1).extraer(texto());
@@ -253,19 +259,25 @@ class ExtractorClaudeTest {
     assertThat(resultado.productos()).allMatch(p -> p.esProducto());
   }
 
-  /** Las prendas de dama de Violeta tienen tipo propio; el chaleco no (lo cubre la de arriba). */
+  /**
+   * Las prendas de dama de Violeta tienen tipo propio; el chaleco no (lo cubre la de arriba). El
+   * bodi se llamaba «body» hasta el 3 de octubre de 2026, y una extracción vieja todavía lo dice.
+   */
   @Test
-  void blusaYBodySonTiposReconocidos() {
+  void blusaYBodiSonTiposReconocidos() {
     String blusa = BOLSO.replace("\"tipo\":\"bolso\"", "\"tipo\":\"blusa\"");
+    String bodi = BOLSO.replace("\"tipo\":\"bolso\"", "\"tipo\":\"bodi\"");
     String body = BOLSO.replace("\"tipo\":\"bolso\"", "\"tipo\":\"BODY\"");
     respuestas.add(
-        new Respuesta(200, exito("{\"productos\":[" + blusa + "," + body + "]}", "end_turn")));
+        new Respuesta(
+            200, exito("{\"productos\":[" + blusa + "," + bodi + "," + body + "]}", "end_turn")));
 
     ResultadoExtraccion resultado = extractor(1).extraer(texto());
 
     assertThat(resultado.productos())
         .extracting(p -> p.tipo())
-        .containsExactly(TipoProductoProveedor.BLUSA, TipoProductoProveedor.BODY);
+        .containsExactly(
+            TipoProductoProveedor.BLUSA, TipoProductoProveedor.BODI, TipoProductoProveedor.BODI);
   }
 
   /** Un saludo o una promoción: la lista vacía, sin fallo. */

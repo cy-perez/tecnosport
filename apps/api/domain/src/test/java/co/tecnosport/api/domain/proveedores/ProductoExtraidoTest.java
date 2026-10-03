@@ -25,7 +25,9 @@ class ProductoExtraidoTest {
         4,
         null,
         "importado",
-        List.of("incluye llavero"),
+        "incluye llavero.",
+        null,
+        false,
         confianza,
         "  ");
   }
@@ -56,6 +58,8 @@ class ProductoExtraidoTest {
             null,
             null,
             null,
+            null,
+            false,
             BigDecimal.ONE,
             null);
 
@@ -79,5 +83,56 @@ class ProductoExtraidoTest {
     assertThrows(ExcepcionDeDominio.class, () -> Tallas.lista(List.of()));
     assertThrows(ExcepcionDeDominio.class, () -> new Tallas(TipoDeTalla.UNICA, "L", List.of("M")));
     assertEquals(TipoDeTalla.DESCONOCIDA, new Tallas(null, null, null).tipo());
+  }
+
+  private static ProductoExtraido bodi(Tallas tallas, boolean esReplica) {
+    return new ProductoExtraido(
+        true,
+        false,
+        "Body  Herraje",
+        LineaCatalogo.ROPA,
+        TipoProductoProveedor.BODI,
+        Dinero.deCop(30000),
+        tallas,
+        null,
+        null,
+        null,
+        "Bodi con herraje metálico.",
+        "Hardware bodysuit",
+        esReplica,
+        BigDecimal.ONE,
+        null);
+  }
+
+  @Test
+  void elTituloSaleCorregido() {
+    assertEquals(Optional.of("Bodi Herraje"), bodi(Tallas.desconocida(), false).tituloOpcional());
+  }
+
+  /** Talla única sin «sirve hasta» en el texto: el límite que dijo el extractor se cae. */
+  @Test
+  void elSirveHastaQueElTextoNoEscribeSeCae() {
+    ProductoExtraido contrastado =
+        bodi(Tallas.unica("L"), false).contrastadoCon("*Body Herraje* talla única 💲30");
+
+    assertEquals(TipoDeTalla.UNICA, contrastado.tallas().tipo());
+    assertEquals(Optional.empty(), contrastado.tallas().sirveHastaOpcional());
+  }
+
+  @Test
+  void elSirveHastaQueElTextoEscribeSeQueda() {
+    ProductoExtraido contrastado =
+        bodi(Tallas.unica("L"), false).contrastadoCon("Talla única, SIRVE HASTA la L 💲30");
+
+    assertEquals(Optional.of("L"), contrastado.tallas().sirveHastaOpcional());
+  }
+
+  @Test
+  void elUnoPuntoUnoDelTextoLoVuelveReplicaAunqueElExtractorNoLoDiga() {
+    assertEquals(
+        true,
+        bodi(Tallas.desconocida(), false).contrastadoCon("*NUEVA COLECCIÓN 1.1*").esReplica());
+    assertEquals(false, bodi(Tallas.desconocida(), false).contrastadoCon("Bodi 💲30").esReplica());
+    assertEquals(true, bodi(Tallas.desconocida(), true).contrastadoCon("Bodi 💲30").esReplica());
   }
 }

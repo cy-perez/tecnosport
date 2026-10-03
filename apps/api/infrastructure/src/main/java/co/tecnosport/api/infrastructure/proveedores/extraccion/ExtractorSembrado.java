@@ -51,7 +51,9 @@ public final class ExtractorSembrado implements ExtractorDeProductos {
             null,
             List.of(),
             null,
-            List.of(),
+            null,
+            null,
+            false,
             BigDecimal.ZERO,
             "Extraído sin modelo: solo el precio y la primera línea. Revisar todo.");
     String jsonCrudo =
