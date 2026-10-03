@@ -163,6 +163,10 @@ export class RepositorioMedicionFalso implements RepositorioProductosAdmin {
   reordenarGaleria(): Promise<void> {
     throw new Error('no usado por esta prueba');
   }
+
+  asignarColorAImagen(): Promise<void> {
+    throw new Error('no usado por esta prueba');
+  }
 }
 
 /**
@@ -289,6 +293,10 @@ export class RepositorioExistenciasFalso implements RepositorioProductosAdmin {
   }
 
   reordenarGaleria(): Promise<void> {
+    throw new Error('no usado por esta prueba');
+  }
+
+  asignarColorAImagen(): Promise<void> {
     throw new Error('no usado por esta prueba');
   }
 }

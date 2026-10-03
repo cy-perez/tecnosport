@@ -19,6 +19,7 @@ function imagen(seed: string, altEs: string): Imagen {
     alto: 600,
     altEs,
     altEn: altEs,
+    varianteId: null,
   };
 }
 
@@ -63,6 +64,25 @@ describe('TsGaleria', () => {
     expect(screen.getByRole('img', { name: 'Foto B' })).toBeTruthy();
   });
 
+  /**
+   * Al elegir otro color la ficha cambia las fotos. Con el índice fijo, la tercera foto de un color
+   * con tres apuntaba a nada en uno con dos y la galería desaparecía entera, miniaturas incluidas.
+   */
+  it('cuando cambian las fotos vuelve a la primera', async () => {
+    const { fixture } = await renderGaleria([
+      imagen('a', 'Foto A'),
+      imagen('b', 'Foto B'),
+      imagen('c', 'Foto C'),
+    ]);
+    fireEvent.click(screen.getByRole('button', { name: 'Foto C' }));
+
+    fixture.componentRef.setInput('imagenes', [imagen('d', 'Foto D'), imagen('e', 'Foto E')]);
+    fixture.detectChanges();
+
+    expect(await screen.findByRole('img', { name: 'Foto D' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Foto E' })).toBeTruthy();
+  });
+
   it('sin más de una imagen no muestra miniaturas', async () => {
     await renderGaleria([imagen('a', 'Foto A')]);
 
@@ -105,6 +125,7 @@ describe('TsGaleria', () => {
         alto: 600,
         altEs: 'Foto A',
         altEn: 'Photo A',
+        varianteId: null,
       },
     ]);
 
@@ -132,6 +153,7 @@ describe('TsGaleria', () => {
       alto: 600,
       altEs: '',
       altEn: '',
+      varianteId: null,
     };
 
     await renderGaleria([sinAlt, imagen('dos', 'Foto dos')]);

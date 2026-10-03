@@ -24,6 +24,9 @@
           }
           <div class="flex min-w-0 flex-col gap-4">
             <p class="m-0 font-medio">{{ linea.nombre }}</p>
+            @if (linea.detalleVariante) {
+              <p class="m-0 text-sm text-ts-texto">{{ linea.detalleVariante }}</p>
+            }
             <p class="m-0 text-sm text-ts-texto-suave">
               {{ 'checkout.resumen.cantidad' | transloco: { cantidad: linea.cantidad } }}
             </p>

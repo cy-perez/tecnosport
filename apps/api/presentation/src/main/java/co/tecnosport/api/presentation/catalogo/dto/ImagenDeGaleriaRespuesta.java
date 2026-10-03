@@ -17,4 +17,6 @@ public record ImagenDeGaleriaRespuesta(
     int alto,
     int orden,
     String altEs,
-    String altEn) {}
+    String altEn,
+    /** La variante cuyo tono muestra la foto, o nula si vale para todas. */
+    UUID varianteId) {}

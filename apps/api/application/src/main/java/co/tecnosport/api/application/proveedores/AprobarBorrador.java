@@ -55,12 +55,12 @@ import java.util.stream.Collectors;
  * De borrador a producto publicado, en un paso.
  *
  * <p>Lo que hace, en orden: crea el producto con origen {@code PROVEEDOR} y la huella del borrador;
- * una variante por tono —y por talla, cuando el borrador trae una lista— con el precio de venta
- * final, IVA en cero y la existencia inicial que la persona decidió, reutilizando {@code
- * AgregarVariante} para que el SKU, los atributos y el libro de inventario sigan las mismas reglas
- * que el panel; copia cada foto del bucket privado al público con la huella del contenido calculada
- * aquí —el servidor sí tiene los bytes—, la primera como principal y las demás en la galería, cada
- * una colgada de la variante de su tono; y publica.
+ * una variante por tono —y por talla, cuando el borrador trae una lista o la talla única— con el
+ * precio de venta final, IVA en cero y la existencia inicial que la persona decidió, reutilizando
+ * {@code AgregarVariante} para que el SKU, los atributos y el libro de inventario sigan las mismas
+ * reglas que el panel; copia cada foto del bucket privado al público con la huella del contenido
+ * calculada aquí —el servidor sí tiene los bytes—, la primera como principal y las demás en la
+ * galería, cada una colgada de la variante de su tono; y publica.
  *
  * <p>Las reglas del catálogo se aplican enteras: la categoría es una hoja, la marca existe, sin
  * imagen principal no se publica, y {@code AgregarVariante} rechaza un SKU repetido. El SKU se
@@ -71,6 +71,9 @@ public final class AprobarBorrador {
 
   private static final String ATRIBUTO_COLOR = "color";
   private static final String ATRIBUTO_TALLA = "talla";
+
+  /** El valor de Talla de una prenda de talla única. La vitrina lo reconoce por este texto. */
+  static final String TALLA_UNICA = "Única";
 
   private final RepositorioBorradores repositorioBorradores;
   private final RepositorioPublicacionesProveedor repositorioPublicaciones;
@@ -210,6 +213,10 @@ public final class AprobarBorrador {
             precioProveedor,
             huella,
             vistoPorUltimaVez);
+    Tallas tallasAprobadas = comando.tallas() == null ? borrador.tallas() : comando.tallas();
+    if (tallasAprobadas.tipo() == TipoDeTalla.UNICA) {
+      producto.definirTallaSirveHasta(tallasAprobadas.sirveHasta());
+    }
     repositorioProductos.guardar(producto);
 
     Map<String, UUID> variantePorTono = crearVariantes(producto, comando, borrador);
@@ -246,7 +253,13 @@ public final class AprobarBorrador {
             .filter(f -> f.tono() != null && f.colorHex() != null)
             .collect(Collectors.toMap(f -> f.tono(), f -> f.colorHex(), (a, b) -> a));
     Tallas tallas = comando.tallas() == null ? borrador.tallas() : comando.tallas();
-    List<String> valoresDeTalla = tallas.tipo() == TipoDeTalla.LISTA ? tallas.valores() : List.of();
+    List<String> valoresDeTalla =
+        switch (tallas.tipo()) {
+          case LISTA -> tallas.valores();
+          // La talla única es una talla: la ficha y la tarjeta la dicen, y el carrito la muestra.
+          case UNICA -> List.of(TALLA_UNICA);
+          case DESCONOCIDA -> List.of();
+        };
 
     Optional<Atributo> color =
         tonos.isEmpty()

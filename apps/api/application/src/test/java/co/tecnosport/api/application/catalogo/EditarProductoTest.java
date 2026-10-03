@@ -9,6 +9,7 @@ import co.tecnosport.api.domain.catalogo.LineaCatalogo;
 import co.tecnosport.api.domain.catalogo.Marca;
 import co.tecnosport.api.domain.catalogo.Producto;
 import co.tecnosport.api.domain.compartido.Slug;
+import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 
@@ -51,6 +52,47 @@ class EditarProductoTest {
     assertEquals(nuevaCategoria, editado.categoria());
     assertEquals("morral-urbano", editado.slug().valor());
     assertSame(producto, repositorioProductos.ultimoActualizado);
+  }
+
+  /** La descripción es la de la ficha: editar no la deja vacía, como aprobar un borrador. */
+  @Test
+  void sinDescripcionNoSeEdita() {
+    Marca marca = Marca.crear("Genérica");
+    Categoria bodis = Categoria.crear("Bodis", new Slug("bodis-sd"), LineaCatalogo.ROPA);
+    Producto bodi = Producto.crear("Bodi", new Slug("bodi-sd"), "Bodi.", marca, bodis);
+    repositorioProductos.conProductos(bodi);
+    repositorioMarcas.conMarcas(marca);
+    repositorioCategorias.conCategorias(bodis);
+
+    assertThrows(
+        ProductoSinDescripcionException.class,
+        () ->
+            editarProducto.ejecutar(
+                new EditarProductoComando(bodi.id(), "Bodi", "  ", marca.id(), bodis.id())));
+    assertEquals("Bodi.", bodi.descripcion());
+  }
+
+  /** El «sirve hasta» de una talla única: nulo no lo toca, en blanco lo quita. */
+  @Test
+  void elSirveHastaSeEditaSeConservaYSeQuita() {
+    Marca marca = Marca.crear("Genérica");
+    Categoria bodis = Categoria.crear("Bodis", new Slug("bodis"), LineaCatalogo.ROPA);
+    Producto bodi = Producto.crear("Bodi herraje", new Slug("bodi"), "Bodi.", marca, bodis);
+    repositorioProductos.conProductos(bodi);
+    repositorioMarcas.conMarcas(marca);
+    repositorioCategorias.conCategorias(bodis);
+
+    editarProducto.ejecutar(
+        new EditarProductoComando(bodi.id(), "Bodi herraje", "Bodi.", marca.id(), bodis.id(), "L"));
+    assertEquals(Optional.of("L"), bodi.tallaSirveHasta());
+
+    editarProducto.ejecutar(
+        new EditarProductoComando(bodi.id(), "Bodi herraje", "Bodi.", marca.id(), bodis.id()));
+    assertEquals(Optional.of("L"), bodi.tallaSirveHasta(), "sin el campo no se toca");
+
+    editarProducto.ejecutar(
+        new EditarProductoComando(bodi.id(), "Bodi herraje", "Bodi.", marca.id(), bodis.id(), ""));
+    assertEquals(Optional.empty(), bodi.tallaSirveHasta());
   }
 
   @Test

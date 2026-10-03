@@ -12,4 +12,9 @@ export interface SnapshotLinea {
   readonly imagenAlt: string;
   readonly precioValor: number;
   readonly precioMoneda: string;
+  /**
+   * Lo que eligió de la variante, para que el carrito lo diga: «Negro · M». Opcional porque un
+   * carrito guardado antes del 3 de octubre de 2026 no lo trae, y entonces solo se ve el SKU.
+   */
+  readonly detalleVariante?: string | null;
 }

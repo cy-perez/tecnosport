@@ -36,6 +36,8 @@ import { usarReordenarGaleriaAdmin } from '../../application/reordenar-galeria-a
 import { usarFoco } from '../../../../../shared/foco/foco';
 import { mensajeDeError } from '../../../../../core/errores/mensaje-de-error';
 import { ImagenDeGaleriaAdmin } from '../../domain/producto-admin.model';
+import { esEjeDeTalla, esTallaUnica } from '../../../../catalogo/domain/seleccion-variante';
+import { usarAsignarColorAImagenAdmin } from '../../application/asignar-color-imagen-admin.mutacion';
 import { usarVerProductoAdmin } from '../../application/ver-producto-admin.consulta';
 
 const TIPOS_DE_IMAGEN_SOPORTADOS = ['image/jpeg', 'image/png', 'image/webp'];
@@ -81,6 +83,7 @@ export class EditarProductoAdminPage {
   private readonly mutacionGaleria = usarSubirImagenDeGaleriaAdmin();
   private readonly mutacionQuitarDeGaleria = usarQuitarImagenDeGaleriaAdmin();
   private readonly mutacionReordenarGaleria = usarReordenarGaleriaAdmin();
+  private readonly mutacionColor = usarAsignarColorAImagenAdmin();
   private readonly esNavegador = isPlatformBrowser(inject(PLATFORM_ID));
   protected readonly idioma = usarIdiomaActivo();
 
@@ -114,10 +117,78 @@ export class EditarProductoAdminPage {
 
   protected readonly form = new FormGroup({
     nombre: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
-    descripcion: new FormControl('', { nonNullable: true }),
+    // Obligatoria, como en la revisión de un borrador: es lo que la ficha dice del producto.
+    descripcion: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
     marcaId: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
     categoriaId: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
+    tallaSirveHasta: new FormControl('', { nonNullable: true }),
   });
+
+  /**
+   * Una prenda de talla única: la única que dice hasta dónde sirve. Con las mismas reglas que la
+   * vitrina —`esEjeDeTalla` y `TALLA_UNICA`—, para que el panel y la ficha no difieran.
+   */
+  protected readonly esTallaUnica = computed(() =>
+    (this.consulta.data()?.variantes ?? []).some((variante) =>
+      variante.atributos.some(
+        (atributo) => esEjeDeTalla(atributo.nombre) && esTallaUnica(atributo.valor),
+      ),
+    ),
+  );
+
+  private readonly descripcionEstado = toSignal(this.form.controls.descripcion.statusChanges, {
+    initialValue: this.form.controls.descripcion.status,
+  });
+  private readonly intentosDeGuardar = signal(0);
+
+  /** El error del campo enganchado al `markAllAsTouched()` de guardar. */
+  protected readonly errorDescripcion = computed(() => {
+    this.descripcionEstado();
+    this.intentosDeGuardar();
+    const control = this.form.controls.descripcion;
+    return control.invalid && control.touched
+      ? this.traducir()('admin.productos.editar.descripcionObligatoria')
+      : null;
+  });
+
+  protected readonly avisoColor = signal(false);
+  /**
+   * Sube cuando guardar un color falla. El `<select>` mostraba lo que la persona eligió aunque no
+   * se hubiera guardado: el valor que le llega no cambió y nada lo volvía a sincronizar. La
+   * plantilla lo vuelve a crear con esta clave.
+   */
+  protected readonly versionDeColores = signal(0);
+
+  /** Las variantes con lo que las distingue: «PRV-1A2B — Negro · M». */
+  protected readonly variantes = computed(() =>
+    (this.consulta.data()?.variantes ?? []).map((variante) => ({
+      id: variante.id,
+      sku: variante.sku,
+      detalle: variante.atributos.map((atributo) => atributo.valor).join(' · '),
+    })),
+  );
+
+  /**
+   * Los colores del producto, uno por valor, con la primera variante de cada uno: marcar una foto
+   * como «Negro» la cuelga de esa variante, que es lo que la tarjeta y la ficha leen para cambiar
+   * de foto al elegir el color.
+   */
+  protected readonly opcionesColor = computed<OpcionSelect[]>(() => {
+    const vistos = new Map<string, string>();
+    for (const variante of this.consulta.data()?.variantes ?? []) {
+      for (const atributo of variante.atributos) {
+        if (atributo.colorHex && !vistos.has(atributo.valor)) {
+          vistos.set(atributo.valor, variante.id);
+        }
+      }
+    }
+    return [...vistos.entries()].map(([valor, varianteId]) => ({
+      valor: varianteId,
+      etiqueta: valor,
+    }));
+  });
+
+  protected readonly errorColor = signal<string | null>(null);
 
   private readonly valorFormulario = toSignal(this.form.valueChanges, {
     initialValue: this.form.getRawValue(),
@@ -269,6 +340,7 @@ export class EditarProductoAdminPage {
           descripcion: producto.descripcion,
           marcaId: producto.marca.id,
           categoriaId: producto.categoria.id,
+          tallaSirveHasta: producto.tallaSirveHasta ?? '',
         });
       }
     });
@@ -277,6 +349,7 @@ export class EditarProductoAdminPage {
   protected enviar(): void {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
+      this.intentosDeGuardar.update((n) => n + 1);
       // Se dice qué falta en vez de deshabilitar el botón: un `<button disabled>` sale del orden
       // de tabulación, así que quien borre el nombre no encuentra "Guardar" en ninguna parte y
       // nada le explica por qué. Mismo criterio que marcas, medidas y existencias.
@@ -294,12 +367,45 @@ export class EditarProductoAdminPage {
           descripcion: valores.descripcion,
           marcaId: valores.marcaId,
           categoriaId: valores.categoriaId,
+          ...(this.esTallaUnica() ? { tallaSirveHasta: valores.tallaSirveHasta.trim() } : {}),
         },
       },
       {
         onSuccess: () =>
           void this.router.navigate(['/' + this.transloco.activeLang(), 'admin', 'productos']),
         onError: () => this.error.set(this.transloco.translate('admin.productos.editar.error')),
+      },
+    );
+  }
+
+  /**
+   * El color que muestra una foto: el de la variante de la que cuelga. Se compara por color y no
+   * por variante, porque la opción del selector es la primera variante de ese color.
+   */
+  protected colorDeImagen(imagen: ImagenDeGaleriaAdmin): string {
+    if (!imagen.varianteId) {
+      return '';
+    }
+    const variantes = this.consulta.data()?.variantes ?? [];
+    const color = variantes
+      .find((variante) => variante.id === imagen.varianteId)
+      ?.atributos.find((atributo) => atributo.colorHex)?.valor;
+    return this.opcionesColor().find((opcion) => opcion.etiqueta === color)?.valor ?? '';
+  }
+
+  protected asignarColor(imagen: ImagenDeGaleriaAdmin, varianteId: string): void {
+    this.errorColor.set(null);
+    this.avisoColor.set(false);
+    this.mutacionColor.mutate(
+      { productoId: this.id(), imagenId: imagen.id, varianteId: varianteId || null },
+      {
+        onSuccess: () => this.avisoColor.set(true),
+        onError: (error: unknown) => {
+          this.errorColor.set(
+            mensajeDeError(error, this.transloco, 'admin.productos.editar.galeria.errorColor'),
+          );
+          this.versionDeColores.update((n) => n + 1);
+        },
       },
     );
   }

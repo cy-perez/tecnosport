@@ -40,6 +40,7 @@ const CATEGORIA: Categoria = {
   linea: 'BOLSOS',
   padreId: null,
   hashtags: [],
+  escalaTallas: [],
 };
 
 class RepositorioMarcasFalso implements RepositorioMarcas {
@@ -138,6 +139,10 @@ class RepositorioProductosAdminFalso implements RepositorioProductosAdmin {
   }
 
   reordenarGaleria(): Promise<void> {
+    throw new Error('no usado por esta prueba');
+  }
+
+  asignarColorAImagen(): Promise<void> {
     throw new Error('no usado por esta prueba');
   }
 }

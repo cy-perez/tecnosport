@@ -36,7 +36,13 @@ public final class CalculadoraDeMargen {
     BigDecimal conFactor = aCentena(costo.multiply(factor), RoundingMode.HALF_UP);
     BigDecimal ganancia = conFactor.subtract(costo);
     if (ganancia.compareTo(topes.minima().valor()) < 0) {
-      return Dinero.deCop(aCentena(costo.add(topes.minima().valor()), RoundingMode.CEILING));
+      BigDecimal conMinima = aCentena(costo.add(topes.minima().valor()), RoundingMode.CEILING);
+      // Con topes a menos de una centena el uno del otro, subir a la centena puede pasarse del
+      // máximo; ahí manda el máximo, hacia abajo.
+      if (conMinima.subtract(costo).compareTo(topes.maxima().valor()) > 0) {
+        return Dinero.deCop(aCentena(costo.add(topes.maxima().valor()), RoundingMode.FLOOR));
+      }
+      return Dinero.deCop(conMinima);
     }
     if (ganancia.compareTo(topes.maxima().valor()) > 0) {
       return Dinero.deCop(aCentena(costo.add(topes.maxima().valor()), RoundingMode.FLOOR));

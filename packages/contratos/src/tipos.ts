@@ -59,7 +59,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["listar_14"];
+        get: operations["listar_15"];
         put?: never;
         post?: never;
         delete?: never;
@@ -171,7 +171,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["listar_13"];
+        get: operations["listar_14"];
         put?: never;
         post?: never;
         delete?: never;
@@ -251,7 +251,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["listar_12"];
+        get: operations["listar_13"];
         put?: never;
         post?: never;
         delete?: never;
@@ -299,7 +299,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["listar_11"];
+        get: operations["listar_12"];
         put?: never;
         post?: never;
         delete?: never;
@@ -623,6 +623,22 @@ export interface paths {
         put?: never;
         post?: never;
         delete: operations["quitarImagenDeGaleria"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/productos/{id}/galeria/{imagenId}/variante": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["asignarColorAImagen"];
+        post?: never;
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -987,7 +1003,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["listar_10"];
+        get: operations["listar_11"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1205,6 +1221,22 @@ export interface paths {
         trace?: never;
     };
     "/api/v1/categorias": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listar_10"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/colores": {
         parameters: {
             query?: never;
             header?: never;
@@ -1592,6 +1624,10 @@ export interface components {
             tallas?: components["schemas"]["TallasPeticion"];
             titulo?: string;
         };
+        AsignarColorPeticion: {
+            /** Format: uuid */
+            varianteId?: string;
+        };
         AtributoRespuesta: {
             /** Format: uuid */
             id?: string;
@@ -1674,6 +1710,7 @@ export interface components {
             usuarioId?: string;
         };
         CategoriaRespuesta: {
+            escalaTallas?: string[];
             hashtags?: string[];
             /** Format: uuid */
             id?: string;
@@ -1682,6 +1719,13 @@ export interface components {
             /** Format: uuid */
             padreId?: string;
             slug?: string;
+        };
+        ColorDePaletaRespuesta: {
+            hex?: string;
+            /** Format: uuid */
+            id?: string;
+            nombre?: string;
+            nombreEn?: string;
         };
         CompletarSetRotacionPeticion: {
             fotogramas?: components["schemas"]["FotogramaPeticion"][];
@@ -1831,6 +1875,7 @@ export interface components {
             /** Format: uuid */
             marcaId?: string;
             nombre?: string;
+            tallaSirveHasta?: string;
         };
         EmisionDeGuiaRespuesta: {
             /** Format: int32 */
@@ -1998,6 +2043,8 @@ export interface components {
             orden?: number;
             url?: string;
             urlVistaPrevia?: string;
+            /** Format: uuid */
+            varianteId?: string;
             variantes?: components["schemas"]["VarianteDeImagenRespuesta"][];
         };
         ImagenRespuesta: {
@@ -2009,6 +2056,8 @@ export interface components {
             ancho?: number;
             url?: string;
             urlVistaPrevia?: string;
+            /** Format: uuid */
+            varianteId?: string;
             variantes?: components["schemas"]["VarianteDeImagenRespuesta"][];
         };
         ImagenRotacionRespuesta: {
@@ -2050,6 +2099,7 @@ export interface components {
         LineaPedidoRespuesta: {
             /** Format: int32 */
             cantidad?: number;
+            detalleVariante?: string;
             /** Format: uuid */
             id?: string;
             imagenUrl?: string;
@@ -2224,8 +2274,10 @@ export interface components {
             marca?: components["schemas"]["MarcaRespuesta"];
             nombre?: string;
             slug?: string;
+            tallaSirveHasta?: string;
             /** Format: int32 */
             totalVariantes?: number;
+            variantes?: components["schemas"]["VarianteResumenAdminRespuesta"][];
         };
         ProductoAdminRespuesta: {
             categoria?: components["schemas"]["CategoriaRespuesta"];
@@ -2243,6 +2295,7 @@ export interface components {
         ProductoRespuesta: {
             categoria?: components["schemas"]["CategoriaRespuesta"];
             descripcion?: string;
+            escalaTallas?: string[];
             estadoDisponibilidad?: string;
             galeria?: components["schemas"]["ImagenRespuesta"][];
             imagenPrincipal?: components["schemas"]["ImagenRespuesta"];
@@ -2250,6 +2303,7 @@ export interface components {
             nombre?: string;
             rotacion?: components["schemas"]["RotacionRespuesta"];
             slug?: string;
+            tallaSirveHasta?: string;
             variantes?: components["schemas"]["VarianteRespuesta"][];
         };
         ProductosAdminPaginadosRespuesta: {
@@ -2637,6 +2691,12 @@ export interface components {
             precio?: components["schemas"]["DineroRespuesta"];
             sku?: string;
         };
+        VarianteResumenAdminRespuesta: {
+            atributos?: components["schemas"]["AtributoValorRespuesta"][];
+            /** Format: uuid */
+            id?: string;
+            sku?: string;
+        };
         VarianteSinMedirRespuesta: {
             estadoProducto?: string;
             nombreProducto?: string;
@@ -2771,7 +2831,7 @@ export interface operations {
             };
         };
     };
-    listar_14: {
+    listar_15: {
         parameters: {
             query?: {
                 estado?: string;
@@ -3027,7 +3087,7 @@ export interface operations {
             };
         };
     };
-    listar_13: {
+    listar_14: {
         parameters: {
             query?: {
                 maximo?: number;
@@ -3153,7 +3213,7 @@ export interface operations {
             };
         };
     };
-    listar_12: {
+    listar_13: {
         parameters: {
             query?: {
                 proveedorId?: string;
@@ -3243,7 +3303,7 @@ export interface operations {
             };
         };
     };
-    listar_11: {
+    listar_12: {
         parameters: {
             query?: {
                 pagina?: number;
@@ -3913,6 +3973,31 @@ export interface operations {
             };
         };
     };
+    asignarColorAImagen: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                imagenId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AsignarColorPeticion"];
+            };
+        };
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     confirmarImagenPrincipal: {
         parameters: {
             query?: never;
@@ -4507,7 +4592,7 @@ export interface operations {
             };
         };
     };
-    listar_10: {
+    listar_11: {
         parameters: {
             query?: never;
             header?: never;
@@ -4852,7 +4937,7 @@ export interface operations {
             };
         };
     };
-    listar_9: {
+    listar_10: {
         parameters: {
             query?: never;
             header?: never;
@@ -4868,6 +4953,26 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["ResultadoPaginadoRespuestaCategoriaRespuesta"];
+                };
+            };
+        };
+    };
+    listar_9: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ColorDePaletaRespuesta"][];
                 };
             };
         };

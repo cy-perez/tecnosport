@@ -67,7 +67,7 @@ public record Tallas(TipoDeTalla tipo, String sirveHasta, List<String> valores) 
             .matcher(Normalizer.normalize(texto, Normalizer.Form.NFD))
             .replaceAll("")
             .toLowerCase(Locale.ROOT)
-            .replaceAll("\\s+", " ");
+            .replaceAll("[\\s\\u00A0]+", " ");
     return SIRVE_HASTA.matcher(plano).find();
   }
 

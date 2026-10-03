@@ -18,9 +18,33 @@ import {
 import { CategoriasAdminPage } from './categorias-admin.page';
 
 const ARBOL: Categoria[] = [
-  { id: 'c1', nombre: 'Celulares', slug: 'celulares', linea: 'TECNOLOGIA', padreId: null, hashtags: [] },
-  { id: 'd0', nombre: 'Dama', slug: 'ropa-dama', linea: 'ROPA', padreId: null, hashtags: [] },
-  { id: 'd1', nombre: 'Blusas', slug: 'ropa-dama-blusas', linea: 'ROPA', padreId: 'd0', hashtags: [] },
+  {
+    id: 'c1',
+    nombre: 'Celulares',
+    slug: 'celulares',
+    linea: 'TECNOLOGIA',
+    padreId: null,
+    hashtags: [],
+    escalaTallas: [],
+  },
+  {
+    id: 'd0',
+    nombre: 'Dama',
+    slug: 'ropa-dama',
+    linea: 'ROPA',
+    padreId: null,
+    hashtags: [],
+    escalaTallas: [],
+  },
+  {
+    id: 'd1',
+    nombre: 'Blusas',
+    slug: 'ropa-dama-blusas',
+    linea: 'ROPA',
+    padreId: 'd0',
+    hashtags: [],
+    escalaTallas: [],
+  },
 ];
 
 class RepositorioCategoriasAdminFalso implements RepositorioCategoriasAdmin {

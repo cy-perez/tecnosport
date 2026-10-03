@@ -177,5 +177,10 @@ final class ApoyoDeDifusion {
     public void guardarOrdenDeGaleria(UUID productoId, List<ImagenProducto> galeria) {
       throw new UnsupportedOperationException();
     }
+
+    @Override
+    public void guardarVarianteDeImagen(UUID imagenId, UUID varianteId) {
+      throw new UnsupportedOperationException();
+    }
   }
 }

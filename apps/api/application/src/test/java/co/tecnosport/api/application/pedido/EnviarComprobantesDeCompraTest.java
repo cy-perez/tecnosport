@@ -52,7 +52,8 @@ class EnviarComprobantesDeCompraTest {
         Dinero.deCop(BigDecimal.valueOf(precio)),
         BigDecimal.ZERO,
         null,
-        UUID.randomUUID());
+        UUID.randomUUID(),
+        "Azul · M");
   }
 
   private Pedido pedidoEn(
@@ -97,6 +98,8 @@ class EnviarComprobantesDeCompraTest {
     assertTrue(cuerpo.contains(TextoDeCorreo.PEDIDO_COMPROBANTE_CUERPO.clave()), cuerpo);
     assertTrue(cuerpo.contains(TextoDeCorreo.PEDIDO_COMPROBANTE_VENDEDOR.clave()), cuerpo);
     assertTrue(cuerpo.contains(TextoDeCorreo.PEDIDO_COMPROBANTE_CIERRE.clave()), cuerpo);
+    // La constancia de lo que se compró: con la talla y el color, no solo el nombre.
+    assertTrue(cuerpo.contains("Camiseta running Dry-Fit (Azul · M)"), cuerpo);
   }
 
   /** Dos vueltas de la tarea, un solo comprobante: el reclamo es lo que lo impide. */
@@ -216,7 +219,7 @@ class EnviarComprobantesDeCompraTest {
     // agrupar,
     // porque el doble no agrupa a propósito: cómo se escribe un importe es parte del idioma y se
     // prueba donde vive el idioma, en TextosDeCorreoMessageSourceTest.
-    assertTrue(cuerpo.contains("2|Camiseta running Dry-Fit|TS-CAM-AZ-M|179800"), cuerpo);
+    assertTrue(cuerpo.contains("2|Camiseta running Dry-Fit (Azul · M)|TS-CAM-AZ-M|179800"), cuerpo);
     assertTrue(
         cuerpo.contains(TextoDeCorreo.PEDIDO_COMPROBANTE_TOTALES.clave() + "|179800"), cuerpo);
   }

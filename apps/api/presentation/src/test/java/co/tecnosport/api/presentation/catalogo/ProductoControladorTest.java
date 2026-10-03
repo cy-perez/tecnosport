@@ -81,7 +81,23 @@ class ProductoControladorTest {
         .andExpect(jsonPath("$.nombre").value(producto.nombre()))
         .andExpect(jsonPath("$.marca.nombre").value("TecnoSport"))
         .andExpect(jsonPath("$.variantes", hasSize(0)))
-        .andExpect(jsonPath("$.rotacion").isEmpty());
+        .andExpect(jsonPath("$.rotacion").isEmpty())
+        .andExpect(jsonPath("$.escalaTallas", hasSize(0)))
+        .andExpect(jsonPath("$.tallaSirveHasta").isEmpty())
+        .andExpect(jsonPath("$.imagenPrincipal.varianteId").isEmpty());
+  }
+
+  /** La talla única dice hasta dónde sirve: la tarjeta y la ficha lo leen de aquí. */
+  @Test
+  void laFichaDiceHastaQueTallaSirveUnaTallaUnica() throws Exception {
+    Producto producto = productoPublicado();
+    producto.definirTallaSirveHasta("L");
+    repositorio.conProductos(producto);
+
+    mockMvc
+        .perform(get("/api/v1/productos/{slug}", producto.slug().valor()))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.tallaSirveHasta").value("L"));
   }
 
   @Test
@@ -165,7 +181,8 @@ class ProductoControladorTest {
     @Bean
     VerFichaDeProducto verFichaDeProducto(
         RepositorioProductos repositorio, DisponibilidadDeVariantes disponibilidad) {
-      return new VerFichaDeProducto(repositorio, disponibilidad);
+      return new VerFichaDeProducto(
+          repositorio, disponibilidad, new RepositorioCategoriasDobleDePrueba());
     }
 
     @Bean

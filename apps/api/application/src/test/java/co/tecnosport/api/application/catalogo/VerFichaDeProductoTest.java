@@ -1,5 +1,6 @@
 package co.tecnosport.api.application.catalogo;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -31,10 +32,57 @@ class VerFichaDeProductoTest {
   private static final Instant AHORA = Instant.parse("2026-09-20T15:00:00Z");
 
   private final RepositorioInventarioFalso inventarios = new RepositorioInventarioFalso();
+  private final RepositorioCategoriasFalso categorias = new RepositorioCategoriasFalso();
 
   private VerFichaDeProducto verFicha(RepositorioProductosFalso repositorio) {
     return new VerFichaDeProducto(
-        repositorio, new DisponibilidadDeVariantes(inventarios, new RelojFalso(AHORA)));
+        repositorio, new DisponibilidadDeVariantes(inventarios, new RelojFalso(AHORA)), categorias);
+  }
+
+  /** Bodis no tiene escala propia: hereda la de Ropa › Dama. */
+  @Test
+  void laEscalaDeTallasSeHeredaDeLaRama() {
+    Categoria dama =
+        Categoria.crear("Dama", new Slug("ropa-dama"), LineaCatalogo.ROPA)
+            .conEscalaDeTallas(List.of("XS", "S", "M"));
+    Categoria bodis = Categoria.crearBajo(dama, "Bodis", new Slug("ropa-dama-bodis"));
+    categorias.conCategorias(dama, bodis);
+    RepositorioProductosFalso repositorio = new RepositorioProductosFalso();
+    Producto producto =
+        Producto.crear(
+            "Bodi herraje", new Slug("bodi-herraje"), "", Marca.crear("Genérica"), bodis);
+    producto.asignarImagenPrincipal(imagenPrincipal());
+    producto.publicar();
+    repositorio.conProductos(producto);
+
+    FichaDeProducto ficha =
+        verFicha(repositorio).ejecutar(new VerFichaDeProductoComando(producto.slug()));
+
+    assertEquals(List.of("XS", "S", "M"), ficha.escalaTallas());
+  }
+
+  /** Jeans tiene la suya y manda sobre la de la rama. */
+  @Test
+  void laEscalaPropiaMandaSobreLaDeLaRama() {
+    Categoria dama =
+        Categoria.crear("Dama", new Slug("ropa-dama"), LineaCatalogo.ROPA)
+            .conEscalaDeTallas(List.of("XS", "S", "M"));
+    Categoria jeans =
+        Categoria.crearBajo(dama, "Jeans", new Slug("ropa-dama-jeans"))
+            .conEscalaDeTallas(List.of("26", "28"));
+    categorias.conCategorias(dama, jeans);
+    RepositorioProductosFalso repositorio = new RepositorioProductosFalso();
+    Producto producto =
+        Producto.crear("Jean mom", new Slug("jean-mom"), "", Marca.crear("Genérica"), jeans);
+    producto.asignarImagenPrincipal(imagenPrincipal());
+    producto.publicar();
+    repositorio.conProductos(producto);
+
+    assertEquals(
+        List.of("26", "28"),
+        verFicha(repositorio)
+            .ejecutar(new VerFichaDeProductoComando(producto.slug()))
+            .escalaTallas());
   }
 
   @Test

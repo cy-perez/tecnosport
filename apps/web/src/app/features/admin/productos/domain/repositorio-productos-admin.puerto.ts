@@ -1,6 +1,7 @@
 import { InjectionToken } from '@angular/core';
 import {
   AgregarVarianteAdmin,
+  AsignarColorAImagenAdmin,
   CrearProductoAdmin,
   EditarProductoAdmin,
   FiltroProductosAdmin,
@@ -79,6 +80,8 @@ export interface RepositorioProductosAdmin {
    * último sin que nadie se entere.
    */
   reordenarGaleria(comando: ReordenarGaleriaAdmin): Promise<void>;
+  /** De qué color es una foto de la galería: la cuelga de una variante de ese color. */
+  asignarColorAImagen(comando: AsignarColorAImagenAdmin): Promise<void>;
 }
 
 export const REPOSITORIO_PRODUCTOS_ADMIN = new InjectionToken<RepositorioProductosAdmin>(

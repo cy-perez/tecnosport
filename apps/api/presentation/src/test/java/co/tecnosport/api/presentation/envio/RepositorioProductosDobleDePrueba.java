@@ -100,6 +100,11 @@ final class RepositorioProductosDobleDePrueba implements RepositorioProductos {
   }
 
   @Override
+  public void guardarVarianteDeImagen(UUID imagenId, UUID varianteId) {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
   public java.util.List<co.tecnosport.api.application.catalogo.MedidaDeVariante>
       medidasDeVariantes() {
     throw new UnsupportedOperationException("No usado por las pruebas de envio.");

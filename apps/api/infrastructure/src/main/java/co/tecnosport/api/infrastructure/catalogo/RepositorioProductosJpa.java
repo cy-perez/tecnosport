@@ -76,6 +76,14 @@ public class RepositorioProductosJpa implements RepositorioProductos {
     this.jdbc = jdbc;
   }
 
+  /**
+   * El nombre como lo compara la búsqueda: en minúsculas y con «body» escrito «bodi», igual que el
+   * texto que llega de {@code SinonimosDeBusqueda}. Los productos aprobados antes del 3 de octubre
+   * de 2026 todavía se llaman «Body …», y sin esto dejaban de salir al buscar «body».
+   */
+  private static final String NOMBRE_BUSCABLE =
+      "regexp_replace(lower(p.nombre), '\\mbod(?:y|ie)(s?)\\M', 'bodi\\1', 'g')";
+
   @Override
   public Optional<Producto> buscarPorSlug(Slug slug) {
     return productoJpaRepository
@@ -103,21 +111,22 @@ public class RepositorioProductosJpa implements RepositorioProductos {
     Instant ahora = Instant.now();
     productoJpaRepository.save(
         new ProductoJpaEntity(
-            producto.id(),
-            producto.nombre(),
-            producto.slug().valor(),
-            producto.descripcion(),
-            producto.marca().id(),
-            producto.categoria().id(),
-            producto.estado().name(),
-            ahora,
-            ahora,
-            producto.origen().name(),
-            producto.proveedorId().orElse(null),
-            producto.precioProveedor().map(Dinero::valor).orElse(null),
-            producto.huellaProveedor().map(HuellaProveedor::valor).orElse(null),
-            producto.vistoPorUltimaVez().orElse(null),
-            producto.estadoDisponibilidad().name()));
+                producto.id(),
+                producto.nombre(),
+                producto.slug().valor(),
+                producto.descripcion(),
+                producto.marca().id(),
+                producto.categoria().id(),
+                producto.estado().name(),
+                ahora,
+                ahora,
+                producto.origen().name(),
+                producto.proveedorId().orElse(null),
+                producto.precioProveedor().map(Dinero::valor).orElse(null),
+                producto.huellaProveedor().map(HuellaProveedor::valor).orElse(null),
+                producto.vistoPorUltimaVez().orElse(null),
+                producto.estadoDisponibilidad().name())
+            .conTallaSirveHasta(producto.tallaSirveHasta().orElse(null)));
   }
 
   @Override
@@ -140,21 +149,22 @@ public class RepositorioProductosJpa implements RepositorioProductos {
                             + "' que se intenta actualizar."));
     productoJpaRepository.save(
         new ProductoJpaEntity(
-            producto.id(),
-            producto.nombre(),
-            producto.slug().valor(),
-            producto.descripcion(),
-            producto.marca().id(),
-            producto.categoria().id(),
-            producto.estado().name(),
-            existente.getCreadoEn(),
-            Instant.now(),
-            producto.origen().name(),
-            producto.proveedorId().orElse(null),
-            producto.precioProveedor().map(Dinero::valor).orElse(null),
-            producto.huellaProveedor().map(HuellaProveedor::valor).orElse(null),
-            producto.vistoPorUltimaVez().orElse(null),
-            producto.estadoDisponibilidad().name()));
+                producto.id(),
+                producto.nombre(),
+                producto.slug().valor(),
+                producto.descripcion(),
+                producto.marca().id(),
+                producto.categoria().id(),
+                producto.estado().name(),
+                existente.getCreadoEn(),
+                Instant.now(),
+                producto.origen().name(),
+                producto.proveedorId().orElse(null),
+                producto.precioProveedor().map(Dinero::valor).orElse(null),
+                producto.huellaProveedor().map(HuellaProveedor::valor).orElse(null),
+                producto.vistoPorUltimaVez().orElse(null),
+                producto.estadoDisponibilidad().name())
+            .conTallaSirveHasta(producto.tallaSirveHasta().orElse(null)));
   }
 
   @Override
@@ -298,6 +308,16 @@ public class RepositorioProductosJpa implements RepositorioProductos {
       }
     }
     imagenProductoJpaRepository.saveAll(cambiadas);
+  }
+
+  @Override
+  public void guardarVarianteDeImagen(UUID imagenId, UUID varianteId) {
+    ImagenProductoJpaEntity fila =
+        imagenProductoJpaRepository
+            .findById(imagenId)
+            .orElseThrow(() -> new IllegalStateException("No existe la imagen " + imagenId + "."));
+    fila.cambiarVariante(varianteId);
+    imagenProductoJpaRepository.save(fila);
   }
 
   @Override
@@ -458,7 +478,7 @@ public class RepositorioProductosJpa implements RepositorioProductos {
       parametros.addValue("precioMaximo", filtro.precioMaximo());
     }
     if (conTexto) {
-      sql.append("and similarity(lower(p.nombre), lower(:texto)) > :umbralSimilitud ");
+      sql.append("and similarity(" + NOMBRE_BUSCABLE + ", lower(:texto)) > :umbralSimilitud ");
       parametros.addValue("texto", filtro.texto());
       parametros.addValue("umbralSimilitud", UMBRAL_SIMILITUD);
     }
@@ -507,7 +527,7 @@ public class RepositorioProductosJpa implements RepositorioProductos {
       case MAS_RECIENTES -> new ClaveDeOrden("p.creado_en", false);
       case RELEVANCIA ->
           conTexto
-              ? new ClaveDeOrden("similarity(lower(p.nombre), lower(:texto))", false)
+              ? new ClaveDeOrden("similarity(" + NOMBRE_BUSCABLE + ", lower(:texto))", false)
               : new ClaveDeOrden("p.creado_en", false);
     };
   }

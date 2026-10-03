@@ -83,6 +83,25 @@ export function agruparPorLinea(categorias: readonly Categoria[]): readonly Rama
  * porque "Busos" aparece dos veces y "Dama" tres — sin ella, el desplegable tiene entradas que no
  * se distinguen.
  */
+/**
+ * La escala de tallas que vale para una categoría: la suya o, si no tiene, la de su rama. Camisas y
+ * Bodis heredan la de Ropa › Dama; Jeans la reemplaza con la suya. Es la misma regla que aplica la
+ * API en la ficha (`Categoria.escalaEfectiva`).
+ */
+export function escalaDeTallasDe(
+  categoria: Categoria | undefined,
+  todas: readonly Categoria[],
+): readonly string[] {
+  if (!categoria) {
+    return [];
+  }
+  if (categoria.escalaTallas.length > 0) {
+    return categoria.escalaTallas;
+  }
+  const padre = todas.find((otra) => otra.id === categoria.padreId);
+  return padre?.escalaTallas ?? [];
+}
+
 export function hojasConRuta(
   categorias: readonly Categoria[],
   nombreDeLinea: (linea: string) => string,

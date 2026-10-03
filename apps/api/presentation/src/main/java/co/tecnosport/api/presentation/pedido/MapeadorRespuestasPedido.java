@@ -123,7 +123,8 @@ public class MapeadorRespuestasPedido {
         linea.cantidad(),
         aRespuesta(linea.precioUnitario()),
         linea.tasaIva(),
-        linea.imagenUrl());
+        linea.imagenUrl(),
+        linea.detalleVariante());
   }
 
   private ContactoRespuesta aRespuesta(Contacto contacto) {

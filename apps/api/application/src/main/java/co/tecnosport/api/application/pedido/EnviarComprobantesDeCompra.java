@@ -127,7 +127,7 @@ public final class EnviarComprobantesDeCompra {
           textos.texto(
               TextoDeCorreo.PEDIDO_COMPROBANTE_LINEA,
               linea.cantidad(),
-              linea.nombre(),
+              linea.descripcion(),
               linea.sku().valor(),
               textos.dinero(linea.subtotal())));
     }

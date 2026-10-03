@@ -79,20 +79,27 @@ class ArbolDeCategoriasTest {
                   "ropa-dama-shorts",
                   "ropa-dama-bodis",
                   "ropa-dama-licras",
-                  "ropa-dama-sudaderas"),
+                  "ropa-dama-sudaderas",
+                  "ropa-dama-jeans"),
           "ropa-caballero",
               List.of(
                   "ropa-caballero-camisetas",
                   "ropa-caballero-busos",
                   "ropa-caballero-sudaderas",
-                  "ropa-caballero-pantalonetas"),
+                  "ropa-caballero-pantalonetas",
+                  "ropa-caballero-jeans"),
           "bolsos-dama",
               List.of(
                   "bolsos-dama-bolsos-de-mano", "bolsos-dama-manos-libres", "bolsos-dama-morrales"),
           // `V64`, 26 de septiembre de 2026. Una rama con una sola hoja no es un error: es el
           // surtido que hay. El morral de caballero no cuelga de Dama porque un morral de hombre
           // no es una subcategoria de la rama de mujer.
-          "bolsos-caballero", List.of("bolsos-caballero-morrales"));
+          "bolsos-caballero", List.of("bolsos-caballero-morrales"),
+          // `V75`, 3 de octubre de 2026: Jeans en las dos ramas de ropa, y las de calzado dejan de
+          // ser hojas para tener la suya, Deportivo, que es lo que el negocio vende en calzado.
+          "calzado-dama", List.of("calzado-dama-deportivo"),
+          "calzado-caballero", List.of("calzado-caballero-deportivo"),
+          "calzado-unisex", List.of("calzado-unisex-deportivo"));
 
   @Test
   void cadaLineaTieneExactamenteSusCategoriasDePrimerNivel() {

@@ -38,10 +38,15 @@ import org.springframework.stereotype.Component;
 public class MapeadorRespuestasCatalogo {
 
   public ProductoRespuesta aRespuesta(FichaDeProducto ficha) {
-    return aRespuesta(ficha.producto(), ficha.disponibles());
+    return aRespuesta(ficha.producto(), ficha.disponibles(), ficha.escalaTallas());
   }
 
   public ProductoRespuesta aRespuesta(Producto producto, VariantesDisponibles disponibles) {
+    return aRespuesta(producto, disponibles, List.of());
+  }
+
+  private ProductoRespuesta aRespuesta(
+      Producto producto, VariantesDisponibles disponibles, List<String> escalaTallas) {
     return new ProductoRespuesta(
         producto.slug().valor(),
         producto.nombre(),
@@ -58,7 +63,9 @@ public class MapeadorRespuestasCatalogo {
         producto.variantes().stream()
             .map(variante -> aRespuesta(variante, disponibles.hay(variante.id())))
             .toList(),
-        producto.estadoDisponibilidad().name());
+        producto.estadoDisponibilidad().name(),
+        escalaTallas,
+        producto.tallaSirveHasta().orElse(null));
   }
 
   public ResultadoPaginadoRespuesta<ProductoRespuesta> aRespuesta(CatalogoPaginado catalogo) {
@@ -92,7 +99,8 @@ public class MapeadorRespuestasCatalogo {
         categoria.slug().valor(),
         categoria.linea().name(),
         categoria.padreId().orElse(null),
-        categoria.hashtags().stream().map(Hashtag::valor).toList());
+        categoria.hashtags().stream().map(Hashtag::valor).toList(),
+        categoria.escalaTallas());
   }
 
   public ResultadoPaginadoRespuesta<AtributoRespuesta> aRespuestaDeAtributos(
@@ -133,7 +141,8 @@ public class MapeadorRespuestasCatalogo {
         imagen.ancho(),
         imagen.alto(),
         imagen.altEs(),
-        imagen.altEn());
+        imagen.altEn(),
+        imagen.varianteId().orElse(null));
   }
 
   /** Las variantes del dominio, que el agregado ya devuelve de menor a mayor ancho. */

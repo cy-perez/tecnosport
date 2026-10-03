@@ -6,8 +6,8 @@ import co.tecnosport.api.domain.catalogo.Producto;
 import java.util.Objects;
 
 /**
- * Edita nombre, descripción, marca y categoría de un producto existente. No toca variantes,
- * imágenes ni estado — {@link Producto#actualizarDatosBasicos} tampoco lo permite.
+ * Edita nombre, descripción, marca, categoría y el «sirve hasta» de una talla única. No toca
+ * variantes, imágenes ni estado — {@link Producto#actualizarDatosBasicos} tampoco lo permite.
  */
 public final class EditarProducto {
 
@@ -41,8 +41,14 @@ public final class EditarProducto {
             .orElseThrow(() -> new CategoriaNoEncontradaException(comando.categoriaId()));
 
     exigirQueSeaHoja(categoria);
+    if (comando.descripcion() == null || comando.descripcion().isBlank()) {
+      throw new ProductoSinDescripcionException();
+    }
 
     producto.actualizarDatosBasicos(comando.nombre(), comando.descripcion(), marca, categoria);
+    if (comando.tallaSirveHasta() != null) {
+      producto.definirTallaSirveHasta(comando.tallaSirveHasta());
+    }
     repositorioProductos.actualizar(producto);
     return producto;
   }

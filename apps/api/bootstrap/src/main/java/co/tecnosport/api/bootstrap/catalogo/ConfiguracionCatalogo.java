@@ -4,6 +4,7 @@ import co.tecnosport.api.application.catalogo.AbrirSetRotacion;
 import co.tecnosport.api.application.catalogo.AgregarImagenDeGaleria;
 import co.tecnosport.api.application.catalogo.AgregarVariante;
 import co.tecnosport.api.application.catalogo.AlmacenDeImagenes;
+import co.tecnosport.api.application.catalogo.AsignarColorAImagenDeGaleria;
 import co.tecnosport.api.application.catalogo.BuscarProductos;
 import co.tecnosport.api.application.catalogo.CompletarSetRotacion;
 import co.tecnosport.api.application.catalogo.ConfirmarImagenPrincipal;
@@ -22,6 +23,7 @@ import co.tecnosport.api.application.catalogo.ListarMapaDelSitio;
 import co.tecnosport.api.application.catalogo.ListarMarcas;
 import co.tecnosport.api.application.catalogo.ListarMarcasAdmin;
 import co.tecnosport.api.application.catalogo.ListarMedidasDeVariantes;
+import co.tecnosport.api.application.catalogo.ListarPaletaDeColores;
 import co.tecnosport.api.application.catalogo.ListarProductosAdmin;
 import co.tecnosport.api.application.catalogo.ListarVariantesSinMedir;
 import co.tecnosport.api.application.catalogo.MedirVariante;
@@ -33,6 +35,7 @@ import co.tecnosport.api.application.catalogo.RepositorioAtributos;
 import co.tecnosport.api.application.catalogo.RepositorioCategorias;
 import co.tecnosport.api.application.catalogo.RepositorioMapaDelSitio;
 import co.tecnosport.api.application.catalogo.RepositorioMarcas;
+import co.tecnosport.api.application.catalogo.RepositorioPaletaDeColores;
 import co.tecnosport.api.application.catalogo.RepositorioProductos;
 import co.tecnosport.api.application.catalogo.RepositorioSetsRotacion;
 import co.tecnosport.api.application.catalogo.SolicitarSubidaDeImagenDeGaleria;
@@ -127,8 +130,21 @@ public class ConfiguracionCatalogo {
 
   @Bean
   public VerFichaDeProducto verFichaDeProducto(
-      RepositorioProductos repositorioProductos, DisponibilidadDeVariantes disponibilidad) {
-    return new VerFichaDeProducto(repositorioProductos, disponibilidad);
+      RepositorioProductos repositorioProductos,
+      DisponibilidadDeVariantes disponibilidad,
+      RepositorioCategorias repositorioCategorias) {
+    return new VerFichaDeProducto(repositorioProductos, disponibilidad, repositorioCategorias);
+  }
+
+  @Bean
+  public AsignarColorAImagenDeGaleria asignarColorAImagenDeGaleria(
+      RepositorioProductos repositorioProductos) {
+    return new AsignarColorAImagenDeGaleria(repositorioProductos);
+  }
+
+  @Bean
+  public ListarPaletaDeColores listarPaletaDeColores(RepositorioPaletaDeColores repositorio) {
+    return new ListarPaletaDeColores(repositorio);
   }
 
   @Bean

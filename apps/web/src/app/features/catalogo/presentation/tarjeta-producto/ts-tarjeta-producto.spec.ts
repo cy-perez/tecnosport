@@ -1,6 +1,8 @@
+import { proveerPaletaDePrueba } from '../../../../../testing/paleta-colores';
+import { provideTanStackQuery, QueryClient } from '@tanstack/angular-query-experimental';
 import { provideRouter } from '@angular/router';
 import { TranslocoTestingModule } from '@jsverse/transloco';
-import { render, screen } from '@testing-library/angular';
+import { fireEvent, render, screen } from '@testing-library/angular';
 import es from '../../../../../assets/i18n/es.json';
 import en from '../../../../../assets/i18n/en.json';
 import esCatalogo from '../../../../../assets/i18n/scopes/catalogo/es.json';
@@ -13,7 +15,15 @@ function productoDePrueba(): Producto {
     nombre: 'Morral urbano',
     descripcion: '',
     marca: { id: '1', nombre: 'TecnoSport' },
-    categoria: { id: 'c1', nombre: 'Bolsos', slug: 'bolsos', linea: 'BOLSOS', padreId: null, hashtags: [] },
+    categoria: {
+      id: 'c1',
+      nombre: 'Bolsos',
+      slug: 'bolsos',
+      linea: 'BOLSOS',
+      padreId: null,
+      hashtags: [],
+      escalaTallas: [],
+    },
     imagenPrincipal: {
       url: 'https://cdn.example.com/morral-1200.avif',
       variantes: [
@@ -25,9 +35,12 @@ function productoDePrueba(): Producto {
       alto: 900,
       altEs: 'Morral urbano negro',
       altEn: 'Black urban backpack',
+      varianteId: null,
     },
     galeria: [],
     rotacion: null,
+    escalaTallas: [],
+    tallaSirveHasta: null,
     variantes: [
       {
         id: 'variante-1',
@@ -50,11 +63,144 @@ async function renderTarjeta(prioritaria = false) {
         preloadLangs: true,
       }),
     ],
-    providers: [provideRouter([])],
+    providers: [
+      provideRouter([]),
+      provideTanStackQuery(new QueryClient()),
+      proveerPaletaDePrueba(),
+    ],
+  });
+}
+
+function imagenDePrueba(nombre: string, varianteId: string | null) {
+  return {
+    url: `https://cdn.example.com/${nombre}-1200.avif`,
+    variantes: [{ ancho: 1200, url: `https://cdn.example.com/${nombre}-1200.avif` }],
+    urlVistaPrevia: null,
+    ancho: 1200,
+    alto: 900,
+    altEs: `Bodi ${nombre}`,
+    altEn: `Bodysuit ${nombre}`,
+    varianteId,
+  };
+}
+
+/** Un bodi de talla única en dos colores, con una foto por color. */
+function bodiDePrueba(): Producto {
+  const atributos = (color: string, hex: string) => [
+    { nombre: 'Color', valor: color, colorHex: hex, unidad: null },
+    { nombre: 'Talla', valor: 'Única', colorHex: null, unidad: null },
+  ];
+  return {
+    ...productoDePrueba(),
+    slug: 'bodi-herraje',
+    nombre: 'Bodi herraje',
+    imagenPrincipal: imagenDePrueba('negro', null),
+    galeria: [imagenDePrueba('vino', 'v-vino')],
+    tallaSirveHasta: 'L',
+    variantes: [
+      {
+        id: 'v-negro',
+        sku: 'PRV-1',
+        precio: { valor: 60_000, moneda: 'COP' },
+        disponible: true,
+        atributos: atributos('Negro', '#111111'),
+      },
+      {
+        id: 'v-vino',
+        sku: 'PRV-2',
+        precio: { valor: 60_000, moneda: 'COP' },
+        disponible: true,
+        atributos: atributos('Vino', '#722F37'),
+      },
+    ],
+  };
+}
+
+async function renderBodi() {
+  return render(TsTarjetaProducto, {
+    inputs: { producto: bodiDePrueba() },
+    imports: [
+      TranslocoTestingModule.forRoot({
+        langs: { es, en, 'catalogo/es': esCatalogo } as never,
+        translocoConfig: { availableLangs: ['es', 'en'], defaultLang: 'es' },
+        preloadLangs: true,
+      }),
+    ],
+    providers: [
+      provideRouter([]),
+      provideTanStackQuery(new QueryClient()),
+      proveerPaletaDePrueba(),
+    ],
   });
 }
 
 describe('TsTarjetaProducto', () => {
+  /** Con la marca, el nombre y el precio, quien compra no sabía de qué talla era el bodi. */
+  it('una prenda de talla única dice su talla y hasta dónde sirve', async () => {
+    await renderBodi();
+
+    expect(screen.getByText(/Talla única/)).toBeTruthy();
+    expect(screen.getByText(/Sirve hasta: L/)).toBeTruthy();
+  });
+
+  it('un producto sin talla no dice talla', async () => {
+    await renderTarjeta();
+
+    expect(screen.queryByText(/Talla única/)).toBeNull();
+  });
+
+  /** Como en Tiendanube: las muestras están fuera del enlace y cambian la foto de la tarjeta. */
+  it('elegir un color cambia la foto y no navega', async () => {
+    const { container } = await renderBodi();
+    const enlace = screen.getByRole('link', { name: /bodi herraje/i });
+
+    expect(container.querySelector('img')!.getAttribute('alt')).toBe('Bodi negro');
+    const vino = screen.getByRole('button', { name: 'Ver en Vino' });
+    expect(enlace.contains(vino)).toBe(false);
+
+    fireEvent.click(vino);
+
+    expect(vino.getAttribute('aria-pressed')).toBe('true');
+    expect(container.querySelector('img')!.getAttribute('alt')).toBe('Bodi vino');
+  });
+
+  it('si quedan más de cinco colores, cuenta los que no caben, en singular si es uno', async () => {
+    const colores = ['Negro', 'Vino', 'Azul', 'Rojo', 'Verde', 'Gris'];
+    const producto = {
+      ...bodiDePrueba(),
+      variantes: colores.map((color, i) => ({
+        id: 'v' + i,
+        sku: 'SKU-' + i,
+        precio: { valor: 60_000, moneda: 'COP' },
+        disponible: true,
+        atributos: [{ nombre: 'Color', valor: color, colorHex: '#111111', unidad: null }],
+      })),
+    };
+    await render(TsTarjetaProducto, {
+      inputs: { producto },
+      imports: [
+        TranslocoTestingModule.forRoot({
+          langs: { es, en, 'catalogo/es': esCatalogo } as never,
+          translocoConfig: { availableLangs: ['es', 'en'], defaultLang: 'es' },
+          preloadLangs: true,
+        }),
+      ],
+      providers: [
+        provideRouter([]),
+        provideTanStackQuery(new QueryClient()),
+        proveerPaletaDePrueba(),
+      ],
+    });
+
+    expect(screen.getByText('y 1 color más')).toBeTruthy();
+  });
+
+  it('un producto de un solo color no pinta muestras', async () => {
+    await renderTarjeta();
+
+    expect(screen.queryByRole('button', { name: /Ver en/ })).toBeNull();
+  });
+
   it('enlaza a la ficha del producto por su slug', async () => {
     await render(TsTarjetaProducto, {
       inputs: { producto: productoDePrueba() },
@@ -65,7 +211,11 @@ describe('TsTarjetaProducto', () => {
           preloadLangs: true,
         }),
       ],
-      providers: [provideRouter([])],
+      providers: [
+        provideRouter([]),
+        provideTanStackQuery(new QueryClient()),
+        proveerPaletaDePrueba(),
+      ],
     });
 
     const enlace = screen.getByRole('link', { name: /morral urbano/i });

@@ -119,6 +119,15 @@ class ProductoExtraidoTest {
     assertEquals(Optional.empty(), contrastado.tallas().sirveHastaOpcional());
   }
 
+  /** WhatsApp a veces pega las palabras con un espacio duro. */
+  @Test
+  void elSirveHastaConEspacioDuroTambienCuenta() {
+    ProductoExtraido contrastado =
+        bodi(Tallas.unica("L"), false).contrastadoCon("Talla única, sirve hasta la L");
+
+    assertEquals(Optional.of("L"), contrastado.tallas().sirveHastaOpcional());
+  }
+
   @Test
   void elSirveHastaQueElTextoEscribeSeQueda() {
     ProductoExtraido contrastado =

@@ -1,5 +1,12 @@
 import { NgOptimizedImage } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  inject,
+  input,
+  linkedSignal,
+} from '@angular/core';
 import { TranslocoService } from '@jsverse/transloco';
 import { descriptoresDe, Imagen, parametrosDe } from '../../domain/producto.model';
 import { TAMANOS_GALERIA, TAMANOS_MINIATURA } from '../../../../core/imagenes/tamanos-de-imagen';
@@ -57,10 +64,19 @@ export class TsGaleria {
    */
   readonly prioritaria = input(false);
 
-  protected readonly indiceActivo = signal(0);
+  /**
+   * Vuelve a la primera foto cuando cambian las fotos —al elegir otro color en la ficha—: con un
+   * `signal` suelto, el índice de la cuarta foto de un color con cuatro se quedaba apuntando a nada
+   * en uno con dos, y la galería desaparecía entera. La fuente son las URL y no el arreglo: una
+   * revalidación que devuelve las mismas fotos no tiene por qué mover a quien está mirando.
+   */
+  protected readonly indiceActivo = linkedSignal({
+    source: () => this.imagenes().map((imagen) => imagen.url).join('|'),
+    computation: () => 0,
+  });
 
   protected readonly activa = computed<Imagen | null>(
-    () => this.imagenes()[this.indiceActivo()] ?? null,
+    () => this.imagenes()[this.indiceActivo()] ?? this.imagenes()[0] ?? null,
   );
 
   protected elegir(indice: number): void {

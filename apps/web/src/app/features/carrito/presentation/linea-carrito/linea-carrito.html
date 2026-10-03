@@ -25,6 +25,9 @@
     }
     <div class="flex min-w-0 flex-col gap-4">
       <p class="m-0 font-medio">{{ foto.nombreProducto }}</p>
+      @if (foto.detalleVariante) {
+        <p class="m-0 text-sm text-ts-texto">{{ foto.detalleVariante }}</p>
+      }
       <p class="m-0 text-sm text-ts-texto-suave">{{ foto.sku }}</p>
     </div>
   } @else {

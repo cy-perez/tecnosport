@@ -35,6 +35,7 @@ public final class Categoria {
   private final LineaCatalogo linea;
   private final UUID padreId;
   private final List<Hashtag> hashtags;
+  private final List<String> escalaTallas;
 
   /**
    * El constructor de toda la vida, sin etiquetas. Delega en el de abajo con la lista vacía y sigue
@@ -53,6 +54,21 @@ public final class Categoria {
       LineaCatalogo linea,
       UUID padreId,
       List<Hashtag> hashtags) {
+    this(id, nombre, slug, linea, padreId, hashtags, List.of());
+  }
+
+  /**
+   * @param escalaTallas las tallas de la categoría en su orden —XS…XXXL, 26…42—, o vacía si usa la
+   *     de su rama o no talla
+   */
+  public Categoria(
+      UUID id,
+      String nombre,
+      Slug slug,
+      LineaCatalogo linea,
+      UUID padreId,
+      List<Hashtag> hashtags,
+      List<String> escalaTallas) {
     this.id = Objects.requireNonNull(id, "El id de la categoría no puede ser nulo.");
     if (nombre == null || nombre.isBlank()) {
       throw new ExcepcionDeDominio("El nombre de la categoría no puede estar vacío.");
@@ -65,6 +81,20 @@ public final class Categoria {
     this.linea = Objects.requireNonNull(linea, "La línea de la categoría no puede ser nula.");
     this.padreId = padreId;
     this.hashtags = sinRepetirYEnOrden(hashtags);
+    this.escalaTallas = tallasLimpias(escalaTallas);
+  }
+
+  private static List<String> tallasLimpias(List<String> tallas) {
+    if (tallas == null) {
+      return List.of();
+    }
+    return List.copyOf(
+        new LinkedHashSet<>(
+            tallas.stream()
+                .filter(Objects::nonNull)
+                .map(String::strip)
+                .filter(t -> !t.isEmpty())
+                .toList()));
   }
 
   /**
@@ -99,7 +129,7 @@ public final class Categoria {
    * mueven — renombrar "Camisas" no tiene por qué borrar lo que se publicaba con ellas.
    */
   public Categoria renombrada(String nuevoNombre, Slug nuevoSlug) {
-    return new Categoria(id, nuevoNombre, nuevoSlug, linea, padreId, hashtags);
+    return new Categoria(id, nuevoNombre, nuevoSlug, linea, padreId, hashtags, escalaTallas);
   }
 
   /**
@@ -108,7 +138,28 @@ public final class Categoria {
    * polizón en {@link #renombrada}.
    */
   public Categoria conHashtags(List<Hashtag> nuevos) {
-    return new Categoria(id, nombre, slug, linea, padreId, nuevos);
+    return new Categoria(id, nombre, slug, linea, padreId, nuevos, escalaTallas);
+  }
+
+  /** La misma categoría con otra escala de tallas. */
+  public Categoria conEscalaDeTallas(List<String> nuevas) {
+    return new Categoria(id, nombre, slug, linea, padreId, hashtags, nuevas);
+  }
+
+  /**
+   * La escala que vale para esta categoría: la suya o, si no tiene, la de su rama. Camisas y Bodis
+   * heredan la de Ropa › Dama; Jeans la reemplaza con la suya.
+   */
+  public List<String> escalaEfectiva(Optional<Categoria> padre) {
+    if (!escalaTallas.isEmpty()) {
+      return escalaTallas;
+    }
+    return padre.map(Categoria::escalaTallas).orElse(List.of());
+  }
+
+  /** Las tallas propias, sin heredar; vacía si usa las de su rama. */
+  public List<String> escalaTallas() {
+    return escalaTallas;
   }
 
   /**
@@ -118,8 +169,11 @@ public final class Categoria {
    */
   public Categoria movidaBajo(Optional<Categoria> nuevoPadre, LineaCatalogo lineaSiEsRaiz) {
     return nuevoPadre
-        .map(padre -> new Categoria(id, nombre, slug, padre.linea(), padre.id(), hashtags))
-        .orElseGet(() -> new Categoria(id, nombre, slug, lineaSiEsRaiz, null, hashtags));
+        .map(
+            padre ->
+                new Categoria(id, nombre, slug, padre.linea(), padre.id(), hashtags, escalaTallas))
+        .orElseGet(
+            () -> new Categoria(id, nombre, slug, lineaSiEsRaiz, null, hashtags, escalaTallas));
   }
 
   public UUID id() {

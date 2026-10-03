@@ -49,6 +49,8 @@ export interface EditarProductoAdmin {
   readonly descripcion: string;
   readonly marcaId: string;
   readonly categoriaId: string;
+  /** Solo en una prenda de talla única. Ausente no lo toca; vacío lo quita. */
+  readonly tallaSirveHasta?: string;
 }
 
 export interface ValorAtributoAdmin {
@@ -96,6 +98,26 @@ export interface ImagenDeGaleriaAdmin {
   readonly orden: number;
   readonly altEs: string;
   readonly altEn: string;
+  /** La variante cuyo tono muestra la foto; `null` si vale para todos. */
+  readonly varianteId: string | null;
+}
+
+/** Una variante como la lista la edición: su SKU y lo que la distingue. */
+export interface VarianteResumenAdmin {
+  readonly id: string;
+  readonly sku: string;
+  readonly atributos: readonly {
+    readonly nombre: string;
+    readonly valor: string;
+    readonly colorHex: string | null;
+  }[];
+}
+
+export interface AsignarColorAImagenAdmin {
+  readonly productoId: string;
+  readonly imagenId: string;
+  /** Una variante del color que muestra la foto, o `null` para que valga para todos. */
+  readonly varianteId: string | null;
 }
 
 /**
@@ -104,6 +126,8 @@ export interface ImagenDeGaleriaAdmin {
  */
 export interface ProductoAdminDetalle extends ProductoAdmin {
   readonly galeria: readonly ImagenDeGaleriaAdmin[];
+  readonly tallaSirveHasta: string | null;
+  readonly variantes: readonly VarianteResumenAdmin[];
 }
 
 export interface SubirImagenDeGaleriaAdmin {

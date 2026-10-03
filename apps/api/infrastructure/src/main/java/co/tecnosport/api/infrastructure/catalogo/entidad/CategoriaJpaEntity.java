@@ -37,6 +37,10 @@ public class CategoriaJpaEntity {
   @Column(name = "padre_id")
   private UUID padreId;
 
+  /** Las tallas de la categoría, una por línea; nula si usa las de su rama (V75). */
+  @Column(name = "escala_tallas")
+  private String escalaTallas;
+
   @Column(name = "creado_en", nullable = false)
   private Instant creadoEn;
 
@@ -101,6 +105,14 @@ public class CategoriaJpaEntity {
 
   public Instant getCreadoEn() {
     return creadoEn;
+  }
+
+  public String getEscalaTallas() {
+    return escalaTallas;
+  }
+
+  public void setEscalaTallas(String escalaTallas) {
+    this.escalaTallas = escalaTallas;
   }
 
   /** Nunca nula: una categoría sin etiquetas tiene la lista vacía, no un nulo. */

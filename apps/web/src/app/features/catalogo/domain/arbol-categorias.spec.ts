@@ -8,7 +8,7 @@ function categoria(
   linea: string,
   padreId: string | null = null,
 ): Categoria {
-  return { id, nombre, slug: id, linea, padreId, hashtags: [] };
+  return { id, nombre, slug: id, linea, padreId, hashtags: [], escalaTallas: [] };
 }
 
 describe('construirArbolDeCategorias', () => {

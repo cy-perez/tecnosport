@@ -27,6 +27,8 @@ import { SnapshotLineasLocalStorageAlmacen } from './features/carrito/infrastruc
 import { CarritoHttpRepositorio } from './features/carrito/infrastructure/carrito-http.repositorio';
 import { REPOSITORIO_CATEGORIAS } from './features/catalogo/domain/repositorio-categorias.puerto';
 import { CategoriasHttpRepositorio } from './features/catalogo/infrastructure/categorias-http.repositorio';
+import { REPOSITORIO_PALETA_COLORES } from './features/catalogo/domain/repositorio-paleta-colores.puerto';
+import { PaletaColoresHttpRepositorio } from './features/catalogo/infrastructure/paleta-colores-http.repositorio';
 import { REPOSITORIO_ENVIOS } from './features/checkout/domain/repositorio-envios.puerto';
 import { REPOSITORIO_PAGOS } from './features/checkout/domain/repositorio-pagos.puerto';
 import { REPOSITORIO_PEDIDOS } from './features/checkout/domain/repositorio-pedidos.puerto';
@@ -79,6 +81,9 @@ export const appConfig: ApplicationConfig = {
     // sustituyéndola por la suya dentro de su propio inyector, que es lo que hace falta para que
     // el formulario de producto siga viendo lo que ve.
     { provide: REPOSITORIO_CATEGORIAS, useClass: CategoriasHttpRepositorio },
+    // La paleta de colores la leen la vitrina —el nombre del color en inglés— y el panel —el color
+    // de cada foto—. Pública y no sensible, como `/atributos`.
+    { provide: REPOSITORIO_PALETA_COLORES, useClass: PaletaColoresHttpRepositorio },
     // Mismo criterio que REPOSITORIO_CARRITO: SesionStore es compartido
     // (`core/autenticacion/`, no atado a ninguna funcionalidad), lo va a
     // necesitar tanto el guardia de rutas de admin como, más adelante,

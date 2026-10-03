@@ -48,6 +48,7 @@ public final class Producto {
   private HuellaProveedor huellaProveedor;
   private Instant vistoPorUltimaVez;
   private EstadoDisponibilidad estadoDisponibilidad;
+  private String tallaSirveHasta;
 
   /** Un producto creado a mano o reconstruido sin datos de proveedor: origen {@code MANUAL}. */
   public Producto(
@@ -489,6 +490,32 @@ public final class Producto {
     galeria.addAll(reordenada);
   }
 
+  /**
+   * Marca de qué tono es una foto de la galería: la cuelga de una variante de este producto, o de
+   * ninguna si vale para todos. Es lo que la tarjeta y la ficha usan para cambiar la foto al elegir
+   * un color. La principal no se marca: el reemplazo desde el panel solo conoce la que no tiene
+   * variante.
+   *
+   * @return la foto ya marcada
+   */
+  public ImagenProducto asignarVarianteAImagenDeGaleria(UUID imagenId, UUID varianteId) {
+    Objects.requireNonNull(imagenId, "La imagen no puede ser nula.");
+    if (varianteId != null && variantes.stream().noneMatch(v -> v.id().equals(varianteId))) {
+      throw new ImagenProductoInvalidaException(
+          "La variante '" + varianteId + "' no es de '" + nombre + "'.");
+    }
+    for (int i = 0; i < galeria.size(); i++) {
+      ImagenProducto imagen = galeria.get(i);
+      if (imagen.id().equals(imagenId)) {
+        ImagenProducto marcada = imagen.conVariante(varianteId);
+        galeria.set(i, marcada);
+        return marcada;
+      }
+    }
+    throw new ImagenDeGaleriaNoEncontradaException(
+        "La imagen '" + imagenId + "' no está en la galería de '" + nombre + "'.");
+  }
+
   public void asignarSetRotacion(SetRotacion setRotacion) {
     this.setRotacion = setRotacion;
   }
@@ -584,6 +611,27 @@ public final class Producto {
 
   public EstadoDisponibilidad estadoDisponibilidad() {
     return estadoDisponibilidad;
+  }
+
+  /**
+   * Hasta qué talla le sirve una prenda de talla única, si el proveedor lo dijo: «sirve hasta la
+   * L». Lo dicen la tarjeta y la ficha al lado de «Talla única», porque con la marca, el nombre y
+   * el precio quien compra no sabe de qué talla es.
+   */
+  public Optional<String> tallaSirveHasta() {
+    return Optional.ofNullable(tallaSirveHasta);
+  }
+
+  /**
+   * @param talla la talla límite, o nulo o en blanco para quitarla
+   */
+  public void definirTallaSirveHasta(String talla) {
+    String limpia = talla == null || talla.isBlank() ? null : talla.strip();
+    if (limpia != null && limpia.length() > 20) {
+      throw new ExcepcionDeDominio(
+          "«Sirve hasta» es una talla, no una frase: hasta 20 caracteres.");
+    }
+    this.tallaSirveHasta = limpia;
   }
 
   @Override

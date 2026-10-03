@@ -31,6 +31,7 @@ function pedidoDePrueba(overrides: Partial<Pedido> = {}): Pedido {
         precioUnitario: { valor: 150_000, moneda: 'COP' },
         tasaIva: 0.19,
         imagenUrl: null,
+        detalleVariante: 'Negro · Única',
       },
     ],
     tipoEntrega: 'RETIRO_EN_PUNTO',
@@ -196,6 +197,8 @@ describe('EstadoPage', () => {
 
     expect(await screen.findByText('Pedido TS-2026-000001')).toBeTruthy();
     expect(screen.getByText('Morral urbano')).toBeTruthy();
+    // Lo que eligió: el comprador ve la talla y el color que compró.
+    expect(screen.getByText('Negro · Única')).toBeTruthy();
     expect(screen.getByText('Confirmado, pago contra entrega')).toBeTruthy();
   });
 

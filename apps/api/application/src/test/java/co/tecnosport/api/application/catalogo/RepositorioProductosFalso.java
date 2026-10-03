@@ -17,6 +17,9 @@ import java.util.UUID;
 /** Doble de prueba escrito a mano, sin Mockito, ver docs/06-testing.md. */
 final class RepositorioProductosFalso implements RepositorioProductos {
 
+  /** La última imagen colgada de una variante, con la variante (o nula). */
+  java.util.Map.Entry<UUID, UUID> varianteGuardada;
+
   private List<Producto> productos = new ArrayList<>();
   private ResultadoPaginado<Producto> resultadoBusqueda = new ResultadoPaginado<>(List.of(), null);
   private ProductosPaginados resultadoAdmin = new ProductosPaginados(List.of(), 0, 0, 0);
@@ -152,6 +155,11 @@ final class RepositorioProductosFalso implements RepositorioProductos {
   public void guardarOrdenDeGaleria(UUID productoId, List<ImagenProducto> galeria) {
     this.ultimoProductoIdConImagenDeGaleria = productoId;
     this.ordenGuardado = List.copyOf(galeria);
+  }
+
+  @Override
+  public void guardarVarianteDeImagen(UUID imagenId, UUID varianteId) {
+    this.varianteGuardada = new java.util.AbstractMap.SimpleEntry<>(imagenId, varianteId);
   }
 
   @Override

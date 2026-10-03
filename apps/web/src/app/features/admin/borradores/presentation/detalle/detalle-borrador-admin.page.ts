@@ -13,7 +13,7 @@ import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { mensajeDeError } from '../../../../../core/errores/mensaje-de-error';
-import { usarTraductor } from '../../../../../core/i18n/traductor';
+import { usarIdiomaActivo, usarTraductor } from '../../../../../core/i18n/traductor';
 import { usarFoco } from '../../../../../shared/foco/foco';
 import { formatearPrecio } from '../../../../../shared/ts-precio/formato-precio';
 import { TsBoton } from '../../../../../shared/ui/boton/ts-boton';
@@ -24,7 +24,9 @@ import { TsSelectControl } from '../../../../../shared/ui/select/ts-select-contr
 import { TsEsqueleto } from '../../../../../shared/ts-esqueleto/ts-esqueleto';
 import { TsMigas } from '../../../../../shared/ts-migas/ts-migas';
 import { usarOpcionesFiltro } from '../../../../catalogo/application/listar-opciones-filtro.consulta';
-import { hojasConRuta } from '../../../../catalogo/domain/arbol-categorias';
+import { usarPaletaDeColores } from '../../../../catalogo/application/listar-paleta-colores.consulta';
+import { escalaDeTallasDe, hojasConRuta } from '../../../../catalogo/domain/arbol-categorias';
+import { tallaNormalizada } from '../../../../catalogo/domain/seleccion-variante';
 import { claveDeLinea } from '../../../../catalogo/domain/filtro-productos.model';
 import { usarMigasAdmin } from '../../../migas-admin';
 import { usarProveedoresAdmin } from '../../../proveedores/application/listar-proveedores.consulta';
@@ -120,6 +122,7 @@ export class DetalleBorradorAdminPage {
   protected readonly consulta = usarVerBorrador(this.id);
   private readonly proveedores = usarProveedoresAdmin();
   private readonly opciones = usarOpcionesFiltro();
+  private readonly paleta = usarPaletaDeColores();
   private readonly editar = usarEditarBorrador();
   private readonly aprobar = usarAprobarBorrador();
   private readonly rechazar = usarRechazarBorrador();
@@ -139,7 +142,9 @@ export class DetalleBorradorAdminPage {
     const borrador = this.borrador();
     return borrador !== null && borradorBorrable(borrador);
   });
-  protected readonly idioma = computed(() => this.transloco.activeLang());
+  // `usarIdiomaActivo` y no un `computed` sobre `activeLang()`, que no lee ninguna señal y no se
+  // vuelve a calcular al cambiar de idioma (apps/web/CLAUDE.md).
+  protected readonly idioma = usarIdiomaActivo();
 
   protected readonly nombreDelProveedor = computed(() => {
     const borrador = this.borrador();
@@ -270,10 +275,72 @@ export class DetalleBorradorAdminPage {
     ).map((hoja) => ({ valor: hoja.categoria.id, etiqueta: hoja.ruta }));
   });
 
-  /** Los tonos que se pueden asignar a una foto: los que el borrador nombra. */
-  protected readonly opcionesTono = computed<OpcionSelect[]>(() =>
-    (this.borrador()?.tonosNombrados ?? []).map((tono) => ({ valor: tono, etiqueta: tono })),
+  /**
+   * Los colores que se le pueden asignar a una foto: los de la paleta, con su nombre en español
+   * —que es el valor del atributo Color— y, en el panel en inglés, el inglés al lado. Su HEX viaja
+   * con la aprobación y es lo que pinta la muestra en la tarjeta y en la ficha.
+   */
+  protected readonly opcionesTono = computed<OpcionSelect[]>(() => {
+    const ingles = this.idioma() === 'en';
+    return (this.paleta.data() ?? []).map((color) => ({
+      valor: color.nombre,
+      etiqueta: ingles ? `${color.nombreEn} (${color.nombre})` : color.nombre,
+    }));
+  });
+
+  private readonly categoriaElegida = toSignal(this.formAprobar.controls.categoriaId.valueChanges, {
+    initialValue: '',
+  });
+  private readonly tallasEscritas = toSignal(this.formDatos.controls.tallas.valueChanges, {
+    initialValue: '',
+  });
+
+  /**
+   * La escala de tallas de la categoría elegida —la suya o la de su rama—: las casillas que la
+   * revisión ofrece en vez de escribir las tallas a mano. Vacía mientras no haya categoría, o si la
+   * categoría no talla.
+   */
+  protected readonly escalaTallas = computed(() => {
+    const categorias = this.opciones.categorias.data() ?? [];
+    const elegida = categorias.find((categoria) => categoria.id === this.categoriaElegida());
+    return escalaDeTallasDe(elegida, categorias);
+  });
+
+  private readonly descripcionEscrita = toSignal(
+    this.formDatos.controls.descripcion.statusChanges,
+    { initialValue: this.formDatos.controls.descripcion.status },
   );
+
+  /** El error del campo, enganchado al `markAsTouched()` de aprobar: las dos mitades juntas. */
+  protected readonly errorDescripcion = computed(() => {
+    this.descripcionEscrita();
+    this.tocadoDescripcion();
+    const control = this.formDatos.controls.descripcion;
+    return control.invalid && control.touched
+      ? this.traducir()('admin.borradores.aprobar.faltaDescripcion')
+      : null;
+  });
+
+  /** `markAsTouched()` no emite: se avisa a mano para que el error se pinte. */
+  private readonly tocadoDescripcion = signal(0);
+
+  /** Las tallas escritas, normalizadas: «m» marca la casilla «M» y «2XL» la de «XXL». */
+  protected readonly tallasMarcadas = computed(
+    () => new Set(separar(this.tallasEscritas()).map(tallaNormalizada)),
+  );
+
+  protected tallaMarcada(talla: string): boolean {
+    return this.tallasMarcadas().has(tallaNormalizada(talla));
+  }
+
+  /** Lo que la extracción dejó y la escala de la categoría no tiene: se avisa, no se borra. */
+  protected readonly tallasFueraDeEscala = computed(() => {
+    const escala = new Set(this.escalaTallas().map(tallaNormalizada));
+    if (escala.size === 0) {
+      return [];
+    }
+    return separar(this.tallasEscritas()).filter((talla) => !escala.has(tallaNormalizada(talla)));
+  });
 
   protected readonly esReplica = computed(
     () => this.borrador()?.alertas.includes('REPLICA') ?? false,
@@ -415,6 +482,26 @@ export class DetalleBorradorAdminPage {
 
   protected precio(valor: number | null): string {
     return valor === null ? '—' : formatearPrecio(valor, 'COP', this.transloco.activeLang());
+  }
+
+  /** Marcar o desmarcar una talla escribe la lista en el orden de la escala, y lo de fuera al final. */
+  protected marcarTalla(talla: string, marcada: boolean): void {
+    const actuales = new Set(this.tallasMarcadas());
+    if (marcada) {
+      actuales.add(tallaNormalizada(talla));
+    } else {
+      actuales.delete(tallaNormalizada(talla));
+    }
+    // Las de la escala, escritas como la escala y en su orden; las de fuera, como se escribieron.
+    const escala = this.escalaTallas();
+    const deLaEscala = new Set(escala.map(tallaNormalizada));
+    const ordenadas = [
+      ...escala.filter((valor) => actuales.has(tallaNormalizada(valor))),
+      ...separar(this.tallasEscritas()).filter(
+        (valor) => !deLaEscala.has(tallaNormalizada(valor)) && actuales.has(tallaNormalizada(valor)),
+      ),
+    ];
+    this.formDatos.controls.tallas.setValue(ordenadas.join(', '));
   }
 
   protected tonoDe(mensajeId: string): string {
@@ -598,6 +685,7 @@ export class DetalleBorradorAdminPage {
     const datos = this.formDatos.getRawValue();
     if (!datos.descripcion.trim()) {
       this.formDatos.controls.descripcion.markAsTouched();
+      this.tocadoDescripcion.update((n) => n + 1);
       this.errorDecision.set(this.transloco.translate('admin.borradores.aprobar.faltaDescripcion'));
       return;
     }
@@ -622,7 +710,7 @@ export class DetalleBorradorAdminPage {
           fotos: elegidas.map((foto) => ({
             mensajeId: foto.mensajeId,
             tono: tonos[foto.mensajeId] || null,
-            colorHex: null,
+            colorHex: this.hexDe(tonos[foto.mensajeId]),
           })),
         },
       },
@@ -637,6 +725,13 @@ export class DetalleBorradorAdminPage {
           ),
       },
     );
+  }
+
+  private hexDe(tono: string | undefined): string | null {
+    if (!tono) {
+      return null;
+    }
+    return (this.paleta.data() ?? []).find((color) => color.nombre === tono)?.hex ?? null;
   }
 
   protected rechazarBorrador(): void {

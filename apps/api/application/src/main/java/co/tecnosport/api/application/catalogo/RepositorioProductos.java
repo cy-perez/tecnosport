@@ -140,4 +140,7 @@ public interface RepositorioProductos {
    * Producto.reordenarGaleria}—, así que aquí no se calcula nada: se escribe.
    */
   void guardarOrdenDeGaleria(UUID productoId, List<ImagenProducto> galeria);
+
+  /** Cuelga una imagen de una variante —su tono— o de ninguna. */
+  void guardarVarianteDeImagen(UUID imagenId, UUID varianteId);
 }

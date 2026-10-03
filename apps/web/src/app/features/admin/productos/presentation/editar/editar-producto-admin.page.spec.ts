@@ -28,6 +28,7 @@ import {
   ProductosPaginadosAdmin,
   QuitarImagenDeGaleriaAdmin,
   ReordenarGaleriaAdmin,
+  AsignarColorAImagenAdmin,
   SubirImagenDeGaleriaAdmin,
   SubirImagenPrincipalAdmin,
   VarianteMedida,
@@ -49,6 +50,7 @@ const CATEGORIA: Categoria = {
   linea: 'BOLSOS',
   padreId: null,
   hashtags: [],
+  escalaTallas: [],
 };
 const OTRA_CATEGORIA: Categoria = {
   id: 'c2',
@@ -57,6 +59,7 @@ const OTRA_CATEGORIA: Categoria = {
   linea: 'TECNOLOGIA',
   padreId: null,
   hashtags: [],
+  escalaTallas: [],
 };
 
 function productoDePrueba(galeria: readonly ImagenDeGaleriaAdmin[] = []): ProductoAdminDetalle {
@@ -71,6 +74,25 @@ function productoDePrueba(galeria: readonly ImagenDeGaleriaAdmin[] = []): Produc
     imagenPrincipalUrl: null,
     totalVariantes: 0,
     galeria,
+    tallaSirveHasta: null,
+    variantes: [],
+  };
+}
+
+/** Un bodi de talla única en dos colores, con dos fotos en la galería. */
+function bodiDePrueba(): ProductoAdminDetalle {
+  const atributos = (color: string, hex: string) => [
+    { nombre: 'Color', valor: color, colorHex: hex },
+    { nombre: 'Talla', valor: 'Única', colorHex: null },
+  ];
+  return {
+    ...productoDePrueba([{ ...imagenDeGaleria(0), varianteId: 'v-vino' }, imagenDeGaleria(1)]),
+    nombre: 'Bodi herraje',
+    tallaSirveHasta: 'L',
+    variantes: [
+      { id: 'v-negro', sku: 'PRV-1', atributos: atributos('Negro', '#111111') },
+      { id: 'v-vino', sku: 'PRV-2', atributos: atributos('Vino', '#722F37') },
+    ],
   };
 }
 
@@ -83,6 +105,7 @@ function imagenDeGaleria(orden: number): ImagenDeGaleriaAdmin {
     orden,
     altEs: 'Vista ' + orden,
     altEn: 'View ' + orden,
+    varianteId: null,
   };
 }
 
@@ -104,6 +127,7 @@ class RepositorioProductosAdminFalso implements RepositorioProductosAdmin {
   llamadasSubirGaleria: SubirImagenDeGaleriaAdmin[] = [];
   llamadasQuitarDeGaleria: QuitarImagenDeGaleriaAdmin[] = [];
   llamadasReordenarGaleria: ReordenarGaleriaAdmin[] = [];
+  llamadasAsignarColor: AsignarColorAImagenAdmin[] = [];
   errorAlTocarLaGaleria = false;
 
   constructor(
@@ -209,6 +233,10 @@ class RepositorioProductosAdminFalso implements RepositorioProductosAdmin {
         galeria: comando.imagenIds.map((id, orden) => ({ ...porId.get(id)!, orden })),
       };
     }
+  }
+
+  async asignarColorAImagen(comando: AsignarColorAImagenAdmin): Promise<void> {
+    this.llamadasAsignarColor.push(comando);
   }
 
   async quitarImagenDeGaleria(comando: QuitarImagenDeGaleriaAdmin): Promise<void> {
@@ -333,6 +361,67 @@ describe('EditarProductoAdminPage', () => {
       },
     ]);
     expect(navegar).toHaveBeenCalledWith(['/es', 'admin', 'productos']);
+  });
+
+  /** Como en la revisión de un borrador: la descripción es la de la ficha y no se deja vacía. */
+  it('sin descripción no guarda y dice qué falta', async () => {
+    const repositorio = new RepositorioProductosAdminFalso();
+    await renderPagina(repositorio);
+    await screen.findByDisplayValue('Morral urbano');
+
+    fireEvent.input(screen.getByLabelText('Descripción'), { target: { value: '' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
+
+    expect(
+      await screen.findByText(
+        'Faltan datos obligatorios: el nombre, la descripción, la marca y la categoría.',
+      ),
+    ).toBeTruthy();
+    expect(repositorio.llamadasEditar).toEqual([]);
+  });
+
+  it('una prenda de talla única edita hasta dónde sirve', async () => {
+    const repositorio = new RepositorioProductosAdminFalso(bodiDePrueba());
+    const { fixture } = await renderPagina(repositorio);
+    // Guardar navega a la lista, que esta prueba no registra.
+    vi.spyOn(fixture.debugElement.injector.get(Router), 'navigate').mockResolvedValue(true);
+    const sirveHasta = (await screen.findByLabelText('Sirve hasta')) as HTMLInputElement;
+    await vi.waitFor(() => expect(sirveHasta.value).toBe('L'));
+
+    fireEvent.input(sirveHasta, { target: { value: 'XL' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
+
+    await vi.waitFor(() => expect(repositorio.llamadasEditar).toHaveLength(1));
+    expect(repositorio.llamadasEditar[0].comando.tallaSirveHasta).toBe('XL');
+    expect(screen.getByText(/PRV-1/)).toBeTruthy();
+    expect(screen.getByText(/Negro · Única/)).toBeTruthy();
+  });
+
+  it('un producto que no es de talla única no pregunta hasta dónde sirve', async () => {
+    await renderPagina(new RepositorioProductosAdminFalso());
+    await screen.findByDisplayValue('Morral urbano');
+
+    expect(screen.queryByLabelText('Sirve hasta')).toBeNull();
+  });
+
+  /** El mismo color por foto que la revisión de un borrador, sobre un producto que ya existe. */
+  it('cada foto de la galería dice su color y se puede cambiar', async () => {
+    const repositorio = new RepositorioProductosAdminFalso(bodiDePrueba());
+    await renderPagina(repositorio);
+
+    const primera = (await screen.findByLabelText('Color de la foto 1')) as HTMLSelectElement;
+    await vi.waitFor(() => expect(primera.value).toBe('v-vino'));
+    expect((screen.getByLabelText('Color de la foto 2') as HTMLSelectElement).value).toBe('');
+
+    fireEvent.change(screen.getByLabelText('Color de la foto 2'), {
+      target: { value: 'v-negro' },
+    });
+
+    await vi.waitFor(() =>
+      expect(repositorio.llamadasAsignarColor).toEqual([
+        { productoId: 'p1', imagenId: 'img1', varianteId: 'v-negro' },
+      ]),
+    );
   });
 
   it('con un error del servidor al guardar, muestra el mensaje genérico', async () => {

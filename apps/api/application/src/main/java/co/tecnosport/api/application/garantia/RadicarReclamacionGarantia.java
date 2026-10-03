@@ -81,7 +81,7 @@ public final class RadicarReclamacionGarantia {
                 pedido.correo().valor(),
                 pedido.id(),
                 comando.recibidaEn(),
-                "Garantia de " + linea.nombre(),
+                "Garantia de " + linea.descripcion(),
                 comando.actor()));
 
     ReclamacionGarantia reclamacion =

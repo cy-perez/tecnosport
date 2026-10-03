@@ -97,6 +97,11 @@ final class RepositorioProductosParaGarantiaFalso implements RepositorioProducto
     throw new UnsupportedOperationException("No usado por los casos de uso de garantia.");
   }
 
+  @Override
+  public void guardarVarianteDeImagen(UUID imagenId, UUID varianteId) {
+    throw new UnsupportedOperationException();
+  }
+
   static List<UUID> vacio() {
     return List.of();
   }

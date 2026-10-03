@@ -62,6 +62,16 @@ export function aProductoAdminDetalle(dto: ProductoDetalleDto): ProductoAdminDet
     // variantes existen en el contrato para quien sí las necesita, que es el informe de huérfanos.
     imagenPrincipalUrl: dto.imagenPrincipal?.url ?? null,
     galeria: (dto.galeria ?? []).map(aImagenDeGaleriaAdmin),
+    tallaSirveHasta: dto.tallaSirveHasta ?? null,
+    variantes: (dto.variantes ?? []).map((variante) => ({
+      id: variante.id ?? '',
+      sku: variante.sku ?? '',
+      atributos: (variante.atributos ?? []).map((atributo) => ({
+        nombre: atributo.nombre ?? '',
+        valor: atributo.valor ?? '',
+        colorHex: atributo.colorHex ?? null,
+      })),
+    })),
   };
 }
 
@@ -74,6 +84,7 @@ export function aImagenDeGaleriaAdmin(dto: ImagenDeGaleriaDto): ImagenDeGaleriaA
     orden: dto.orden ?? 0,
     altEs: dto.altEs ?? '',
     altEn: dto.altEn ?? '',
+    varianteId: dto.varianteId ?? null,
   };
 }
 

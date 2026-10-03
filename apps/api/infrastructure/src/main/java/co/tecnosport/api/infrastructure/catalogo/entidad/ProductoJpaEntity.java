@@ -56,6 +56,10 @@ public class ProductoJpaEntity {
   @Column(name = "estado_disponibilidad", nullable = false)
   private String estadoDisponibilidad;
 
+  /** Hasta qué talla le sirve una prenda de talla única, si el proveedor lo dijo (V75). */
+  @Column(name = "talla_sirve_hasta")
+  private String tallaSirveHasta;
+
   protected ProductoJpaEntity() {}
 
   public ProductoJpaEntity(
@@ -174,6 +178,15 @@ public class ProductoJpaEntity {
 
   public Instant getVistoPorUltimaVez() {
     return vistoPorUltimaVez;
+  }
+
+  public String getTallaSirveHasta() {
+    return tallaSirveHasta;
+  }
+
+  public ProductoJpaEntity conTallaSirveHasta(String tallaSirveHasta) {
+    this.tallaSirveHasta = tallaSirveHasta;
+    return this;
   }
 
   public String getEstadoDisponibilidad() {

@@ -1,9 +1,13 @@
-<a
-  class="anillo-foco chaflan flex flex-col overflow-hidden border border-ts-borde bg-ts-superficie text-inherit no-underline"
-  [routerLink]="enlace()"
->
-  @if (producto().imagenPrincipal; as imagen) {
-    <!-- `fill`, no `width`/`height`: la tarjeta recorta a un cuadrado con
+<!-- Las muestras de color van FUERA del enlace: un <button> dentro de un <a> es HTML inválido y
+     dejaría dos paradas de tabulación con significados distintos en la misma caja. El marco es el
+     <div>; el enlace ocupa todo menos la fila de colores. -->
+<div class="chaflan flex h-full flex-col overflow-hidden border border-ts-borde bg-ts-superficie">
+  <a class="anillo-foco flex flex-1 flex-col text-inherit no-underline" [routerLink]="enlace()">
+    <!-- Un `@for` de una sola entrada y no un `@if`: las entradas de NgOptimizedImage distintas de
+       `ngSrc` se congelan al iniciar, así que al elegir otro color el <img> tiene que nacer de
+       nuevo con su `srcset` y sus parámetros (apps/web/CLAUDE.md). -->
+    @for (imagen of imagenMostrada(); track imagen.url) {
+      <!-- `fill`, no `width`/`height`: la tarjeta recorta a un cuadrado con
          `object-cover`, así que la relación de aspecto pintada nunca coincide
          con la del archivo y NgOptimizedImage avisaba (NG02952) con razón.
          `fill` es el modo que Angular documenta para una imagen cuyo tamaño lo
@@ -12,23 +16,32 @@
 
          `relative` en el marco no es decoración: Angular posiciona el <img> en
          absoluto, y sin un ancestro posicionado se saldría de la tarjeta. -->
-    <div class="relative aspect-square bg-ts-superficie-alt">
-      <img
-        class="object-cover"
-        [ngSrc]="imagen.url"
-        [ngSrcset]="descriptores(imagen)"
-        [loaderParams]="parametros(imagen)"
-        [sizes]="TAMANOS"
-        [alt]="alt()"
-        [priority]="prioritaria()"
-        fill
-      />
-    </div>
-  }
-  <div class="flex flex-col gap-4 p-16">
-    <p class="m-0 text-xs uppercase text-ts-texto-suave">{{ producto().marca.nombre }}</p>
-    <h3 class="m-0 font-texto text-base font-medio text-ts-texto">{{ producto().nombre }}</h3>
-    <!-- Apilado, no en fila. El pie **no cabía en ninguna tarjeta**: medido en el
+      <div class="relative aspect-square bg-ts-superficie-alt">
+        <img
+          class="object-cover"
+          [ngSrc]="imagen.url"
+          [ngSrcset]="descriptores(imagen)"
+          [loaderParams]="parametros(imagen)"
+          [sizes]="TAMANOS"
+          [alt]="alt()"
+          [priority]="prioritaria()"
+          fill
+        />
+      </div>
+    }
+    <div class="flex flex-col gap-4 p-16">
+      <p class="m-0 text-xs uppercase text-ts-texto-suave">{{ producto().marca.nombre }}</p>
+      <h3 class="m-0 font-texto text-base font-medio text-ts-texto">{{ producto().nombre }}</h3>
+      <!-- Con la marca, el nombre y el precio, quien compra no sabe de qué talla es un bodi. -->
+      @if (tallaUnica(); as unica) {
+        <p class="m-0 text-xs text-ts-texto-suave">
+          {{ 'catalogo.talla.unica' | transloco }}
+          @if (unica.sirveHasta) {
+            · {{ 'catalogo.talla.sirve_hasta' | transloco: { talla: unica.sirveHasta } }}
+          }
+        </p>
+      }
+      <!-- Apilado, no en fila. El pie **no cabía en ninguna tarjeta**: medido en el
            navegador con datos reales, a las cuatro les faltaban entre 10 y 38 px,
            y sin envolver el `overflow-hidden` de arriba recortaba la etiqueta
            ("Disponibl"). `flex-wrap` lo tapó, pero deja el resultado a merced de
@@ -39,18 +52,48 @@
            ningún precio —ni con "Desde $1.250.000"— y todas las tarjetas quedan
            iguales. Apilar es lo que el `wrap` terminaba haciendo casi siempre;
            esto solo lo hace predecible. -->
-    <div class="mt-8 flex flex-col items-start gap-4">
-      @if (precio(); as precioValor) {
-        <!-- El prefijo se traduce aquí y no dentro de `ts-precio`: esa clave
+      <div class="mt-8 flex flex-col items-start gap-4">
+        @if (precio(); as precioValor) {
+          <!-- El prefijo se traduce aquí y no dentro de `ts-precio`: esa clave
              vive en el scope perezoso del catálogo, y `ts-precio` lo comparten
              checkout y admin, donde ese scope no está cargado. -->
-        <ts-precio
-          [valor]="precioValor.valor"
-          [moneda]="precioValor.moneda"
-          [prefijo]="'catalogo.precio_desde' | transloco"
-        />
-      }
-      <ts-etiqueta-stock [disponible]="disponible()" />
+          <ts-precio
+            [valor]="precioValor.valor"
+            [moneda]="precioValor.moneda"
+            [prefijo]="'catalogo.precio_desde' | transloco"
+          />
+        }
+        <ts-etiqueta-stock [disponible]="disponible()" />
+      </div>
     </div>
-  </div>
-</a>
+  </a>
+  @if (colores().length > 1) {
+    <div class="flex flex-wrap items-center gap-4 px-12 pb-12">
+      @for (color of coloresVisibles(); track color.valor) {
+        <!-- El botón es el objetivo táctil de 44 px; la muestra, lo que se ve. Igual que en el
+           selector de la ficha. -->
+        <button
+          type="button"
+          class="anillo-foco grid size-tactil cursor-pointer place-items-center border-0 bg-transparent p-0"
+          [attr.aria-pressed]="colorElegido() === color.valor ? 'true' : 'false'"
+          [attr.aria-label]="'catalogo.colores.elegir' | transloco: { color: nombreDeColor(color.valor) }"
+          (click)="elegirColor(color.valor)"
+        >
+          <span
+            [class]="claseMuestra(colorElegido() === color.valor)"
+            [style.background-color]="color.colorHex"
+          ></span>
+        </button>
+      }
+      @if (coloresOcultos() > 0) {
+        <span class="text-xs text-ts-texto-suave">
+          @if (coloresOcultos() === 1) {
+          {{ 'catalogo.colores.mas_uno' | transloco }}
+        } @else {
+          {{ 'catalogo.colores.mas' | transloco: { cantidad: coloresOcultos() } }}
+        }
+        </span>
+      }
+    </div>
+  }
+</div>

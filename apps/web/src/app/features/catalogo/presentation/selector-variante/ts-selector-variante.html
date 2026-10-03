@@ -13,7 +13,7 @@
             type="button"
             [class]="claseSwatch()"
             [attr.aria-pressed]="estaSeleccionada(eje.nombre, opcion) ? 'true' : 'false'"
-            [attr.aria-label]="opcion.valor"
+            [attr.aria-label]="nombreDeColor(opcion)"
             (click)="elegir(eje.nombre, opcion)"
           >
             <span
@@ -22,9 +22,14 @@
             ></span>
           </button>
         } @else {
+          <!-- Una talla agotada o que este producto no trae se ve tachada y no se elige, pero sigue
+               en el orden de tabulación: `inactivo` es `aria-disabled`, no `disabled`. -->
           <ts-boton
             [variante]="estaSeleccionada(eje.nombre, opcion) ? 'primario' : 'secundario'"
             [presionado]="estaSeleccionada(eje.nombre, opcion)"
+            [inactivo]="bloqueada(opcion)"
+            [etiquetaAccesible]="etiquetaAccesible(eje, opcion)"
+            [clase]="claseOpcion(eje.nombre, opcion)"
             (click)="elegir(eje.nombre, opcion)"
           >
             {{ etiqueta(eje, opcion) }}

@@ -16,6 +16,7 @@ import co.tecnosport.api.application.envio.EnvioSinCoberturaException;
 import co.tecnosport.api.application.envio.MetodosDePagoDisponibles;
 import co.tecnosport.api.application.envio.ResultadoCotizacion;
 import co.tecnosport.api.application.legal.RepositorioAutorizacionesFalso;
+import co.tecnosport.api.domain.catalogo.Atributo;
 import co.tecnosport.api.domain.catalogo.Categoria;
 import co.tecnosport.api.domain.catalogo.EstadoVariante;
 import co.tecnosport.api.domain.catalogo.ImagenProducto;
@@ -23,7 +24,9 @@ import co.tecnosport.api.domain.catalogo.LineaCatalogo;
 import co.tecnosport.api.domain.catalogo.Marca;
 import co.tecnosport.api.domain.catalogo.Paquete;
 import co.tecnosport.api.domain.catalogo.Producto;
+import co.tecnosport.api.domain.catalogo.TipoAtributo;
 import co.tecnosport.api.domain.catalogo.TipoImagen;
+import co.tecnosport.api.domain.catalogo.ValorAtributo;
 import co.tecnosport.api.domain.catalogo.Variante;
 import co.tecnosport.api.domain.catalogo.VarianteDeImagen;
 import co.tecnosport.api.domain.compartido.CorreoElectronico;
@@ -236,7 +239,10 @@ class CrearPedidoTest {
             new BigDecimal("0.19"),
             null,
             new Paquete(180, 30, 25, 4),
-            List.of());
+            List.of(
+                ValorAtributo.deColor(
+                    Atributo.crear("Color", TipoAtributo.COLOR, List.of()), "Azul", "#1565C0"),
+                ValorAtributo.de(Atributo.crear("Talla", TipoAtributo.TEXTO, List.of()), "M")));
     producto.agregarVariante(variante);
     producto.publicar();
     primerProducto = producto;
@@ -321,6 +327,8 @@ class CrearPedidoTest {
     var linea = pedido.lineas().get(0);
     assertEquals(variante.sku(), linea.sku());
     assertEquals("Camiseta running Dry-Fit", linea.nombre());
+    // Lo que se eligió, para que quien despacha sepa qué talla empacar sin ir a buscarla.
+    assertEquals("Azul · M", linea.detalleVariante());
     assertEquals(Dinero.deCop(50_000), linea.precioUnitario());
     assertEquals(new BigDecimal("0.19"), linea.tasaIva());
     assertEquals("https://cdn.tecnosport.co/img.jpg", linea.imagenUrl());

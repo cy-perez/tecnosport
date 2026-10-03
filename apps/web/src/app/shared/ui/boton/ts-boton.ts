@@ -132,6 +132,13 @@ export class TsBoton {
    */
   readonly ocupado = input(false);
   readonly deshabilitado = input(false);
+  /**
+   * Una opción que se ve pero no se puede elegir —una talla agotada—: va a `aria-disabled` y **no**
+   * deshabilita el `<button>`. Deshabilitado saldría del orden de tabulación, y quien navega con
+   * teclado o con lector de pantalla no sabría que esa talla existe ni que está agotada. Quien lo
+   * usa ignora el clic.
+   */
+  readonly inactivo = input(false);
   /** Para usarlo como botón de alternancia (p. ej. una opción de un selector de variante). */
   readonly presionado = input<boolean | null>(null);
   /** Reemplaza el contenido proyectado mientras carga. Traducido por quien llama. */

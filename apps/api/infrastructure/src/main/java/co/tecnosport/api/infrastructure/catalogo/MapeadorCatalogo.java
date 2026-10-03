@@ -214,24 +214,27 @@ public class MapeadorCatalogo {
                         variantesPorImagen))
             .toList();
 
-    return new Producto(
-        p.getId(),
-        p.getNombre(),
-        new Slug(p.getSlug()),
-        p.getDescripcion(),
-        marca,
-        categoria,
-        EstadoProducto.valueOf(p.getEstado()),
-        imagenPrincipal,
-        galeria,
-        setRotacionProducto,
-        variantes,
-        OrigenProducto.valueOf(p.getOrigen()),
-        p.getProveedorId(),
-        p.getPrecioProveedor() == null ? null : Dinero.deCop(p.getPrecioProveedor()),
-        p.getHuellaProveedor() == null ? null : new HuellaProveedor(p.getHuellaProveedor()),
-        p.getVistoPorUltimaVez(),
-        EstadoDisponibilidad.valueOf(p.getEstadoDisponibilidad()));
+    Producto producto =
+        new Producto(
+            p.getId(),
+            p.getNombre(),
+            new Slug(p.getSlug()),
+            p.getDescripcion(),
+            marca,
+            categoria,
+            EstadoProducto.valueOf(p.getEstado()),
+            imagenPrincipal,
+            galeria,
+            setRotacionProducto,
+            variantes,
+            OrigenProducto.valueOf(p.getOrigen()),
+            p.getProveedorId(),
+            p.getPrecioProveedor() == null ? null : Dinero.deCop(p.getPrecioProveedor()),
+            p.getHuellaProveedor() == null ? null : new HuellaProveedor(p.getHuellaProveedor()),
+            p.getVistoPorUltimaVez(),
+            EstadoDisponibilidad.valueOf(p.getEstadoDisponibilidad()));
+    producto.definirTallaSirveHasta(p.getTallaSirveHasta());
+    return producto;
   }
 
   private Variante aVariante(
@@ -352,7 +355,8 @@ public class MapeadorCatalogo {
         new Slug(c.getSlug()),
         LineaCatalogo.valueOf(c.getLinea()),
         c.getPadreId(),
-        c.getHashtags().stream().map(Hashtag::new).toList());
+        c.getHashtags().stream().map(Hashtag::new).toList(),
+        EscalaDeTallasEnTexto.partir(c.getEscalaTallas()));
   }
 
   private Atributo aAtributo(AtributoJpaEntity a) {

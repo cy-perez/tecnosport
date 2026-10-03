@@ -33,6 +33,8 @@ export function aProducto(dto: ProductoDto): Producto {
     galeria: (dto.galeria ?? []).map(aImagen),
     rotacion: dto.rotacion ? aRotacion(dto.rotacion) : null,
     variantes: (dto.variantes ?? []).map(aVariante),
+    escalaTallas: dto.escalaTallas ?? [],
+    tallaSirveHasta: dto.tallaSirveHasta ?? null,
   };
 }
 
@@ -51,6 +53,7 @@ export function aCategoria(dto?: CategoriaDto): Categoria {
     // qué va en la raíz.
     padreId: dto?.padreId ?? null,
     hashtags: dto?.hashtags ?? [],
+    escalaTallas: dto?.escalaTallas ?? [],
   };
 }
 
@@ -84,6 +87,7 @@ function aImagen(dto: ImagenDto): Imagen {
     alto: dto.alto ?? 0,
     altEs: dto.altEs ?? '',
     altEn: dto.altEn ?? '',
+    varianteId: dto.varianteId ?? null,
   };
 }
 

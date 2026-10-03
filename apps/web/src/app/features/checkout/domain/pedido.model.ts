@@ -72,6 +72,8 @@ export interface LineaPedido {
   readonly precioUnitario: Dinero;
   readonly tasaIva: number;
   readonly imagenUrl: string | null;
+  /** Lo que se eligió de la variante, «Negro · M»; nulo en los pedidos de antes. */
+  readonly detalleVariante: string | null;
 }
 
 /** Una cuenta a la que transferir. `entidad` y no `banco`: dos de las tres son

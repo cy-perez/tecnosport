@@ -39,6 +39,9 @@
               <p class="m-0 font-medio">
                 {{ snapshot?.nombreProducto ?? ('checkout.resumen.producto_sin_foto' | transloco) }}
               </p>
+              @if (snapshot?.detalleVariante) {
+                <p class="m-0 text-sm text-ts-texto">{{ snapshot?.detalleVariante }}</p>
+              }
               <p class="m-0 text-sm text-ts-texto-suave">
                 {{ 'checkout.resumen.cantidad' | transloco: { cantidad: linea.cantidad } }}
               </p>

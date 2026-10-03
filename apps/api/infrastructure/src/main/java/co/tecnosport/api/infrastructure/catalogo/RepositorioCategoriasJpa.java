@@ -75,16 +75,18 @@ public class RepositorioCategoriasJpa implements RepositorioCategorias {
             .map(CategoriaJpaEntity::getCreadoEn)
             .orElseGet(Instant::now);
 
+    CategoriaJpaEntity fila =
+        new CategoriaJpaEntity(
+            categoria.id(),
+            categoria.nombre(),
+            categoria.slug().valor(),
+            categoria.linea().name(),
+            categoria.padreId().orElse(null),
+            creadoEn,
+            categoria.hashtags().stream().map(Hashtag::valor).toList());
+    fila.setEscalaTallas(EscalaDeTallasEnTexto.unir(categoria.escalaTallas()));
     try {
-      categoriaJpaRepository.saveAndFlush(
-          new CategoriaJpaEntity(
-              categoria.id(),
-              categoria.nombre(),
-              categoria.slug().valor(),
-              categoria.linea().name(),
-              categoria.padreId().orElse(null),
-              creadoEn,
-              categoria.hashtags().stream().map(Hashtag::valor).toList()));
+      categoriaJpaRepository.saveAndFlush(fila);
     } catch (DataIntegrityViolationException e) {
       throw new CategoriaSlugYaExisteException(categoria.slug().valor());
     }
@@ -106,6 +108,8 @@ public class RepositorioCategoriasJpa implements RepositorioCategorias {
         c.getNombre(),
         new Slug(c.getSlug()),
         LineaCatalogo.valueOf(c.getLinea()),
-        c.getPadreId());
+        c.getPadreId(),
+        List.of(),
+        EscalaDeTallasEnTexto.partir(c.getEscalaTallas()));
   }
 }
