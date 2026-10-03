@@ -1,10 +1,14 @@
 package co.tecnosport.api.application.catalogo;
 
 import co.tecnosport.api.domain.catalogo.LineaCatalogo;
+import co.tecnosport.api.domain.catalogo.SinonimosDeBusqueda;
 import co.tecnosport.api.domain.compartido.Slug;
 import java.util.UUID;
 
-/** Todo campo nulo significa "sin ese filtro". */
+/**
+ * Todo campo nulo significa "sin ese filtro". El texto llega con sus sinónimos ya llevados a como
+ * los escribe el catálogo: «body» busca «bodi» ({@link SinonimosDeBusqueda}).
+ */
 public record FiltroProductos(
     Slug categoriaSlug,
     UUID marcaId,
@@ -12,6 +16,10 @@ public record FiltroProductos(
     Long precioMinimo,
     Long precioMaximo,
     String texto) {
+
+  public FiltroProductos {
+    texto = SinonimosDeBusqueda.aplicar(texto);
+  }
 
   public static FiltroProductos vacio() {
     return new FiltroProductos(null, null, null, null, null, null);
