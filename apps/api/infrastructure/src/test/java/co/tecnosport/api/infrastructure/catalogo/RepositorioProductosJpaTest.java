@@ -199,6 +199,27 @@ class RepositorioProductosJpaTest {
         .containsExactly("SKU-T7-ACTIVA");
   }
 
+  /** El «sirve hasta» de una talla única va y vuelve, y se puede quitar. */
+  @Test
+  void elSirveHastaDeUnaTallaUnicaVaYVuelve() {
+    MarcaJpaEntity marca = marca("Genérica");
+    CategoriaJpaEntity categoria = categoria("Bodis", "bodis-t2", "ROPA");
+    producto("Bodi herraje", "bodi-herraje-t2", "BORRADOR", marca, categoria);
+    Producto bodi = repositorio.buscarPorSlug(new Slug("bodi-herraje-t2")).orElseThrow();
+
+    bodi.definirTallaSirveHasta("L");
+    repositorio.actualizar(bodi);
+    assertThat(
+            repositorio.buscarPorSlug(new Slug("bodi-herraje-t2")).orElseThrow().tallaSirveHasta())
+        .contains("L");
+
+    bodi.definirTallaSirveHasta(null);
+    repositorio.actualizar(bodi);
+    assertThat(
+            repositorio.buscarPorSlug(new Slug("bodi-herraje-t2")).orElseThrow().tallaSirveHasta())
+        .isEmpty();
+  }
+
   @Test
   void buscarPorSlugDevuelveUnProductoEnBorrador() {
     MarcaJpaEntity marca = marca("TecnoSport");

@@ -103,21 +103,22 @@ public class RepositorioProductosJpa implements RepositorioProductos {
     Instant ahora = Instant.now();
     productoJpaRepository.save(
         new ProductoJpaEntity(
-            producto.id(),
-            producto.nombre(),
-            producto.slug().valor(),
-            producto.descripcion(),
-            producto.marca().id(),
-            producto.categoria().id(),
-            producto.estado().name(),
-            ahora,
-            ahora,
-            producto.origen().name(),
-            producto.proveedorId().orElse(null),
-            producto.precioProveedor().map(Dinero::valor).orElse(null),
-            producto.huellaProveedor().map(HuellaProveedor::valor).orElse(null),
-            producto.vistoPorUltimaVez().orElse(null),
-            producto.estadoDisponibilidad().name()));
+                producto.id(),
+                producto.nombre(),
+                producto.slug().valor(),
+                producto.descripcion(),
+                producto.marca().id(),
+                producto.categoria().id(),
+                producto.estado().name(),
+                ahora,
+                ahora,
+                producto.origen().name(),
+                producto.proveedorId().orElse(null),
+                producto.precioProveedor().map(Dinero::valor).orElse(null),
+                producto.huellaProveedor().map(HuellaProveedor::valor).orElse(null),
+                producto.vistoPorUltimaVez().orElse(null),
+                producto.estadoDisponibilidad().name())
+            .conTallaSirveHasta(producto.tallaSirveHasta().orElse(null)));
   }
 
   @Override
@@ -140,21 +141,22 @@ public class RepositorioProductosJpa implements RepositorioProductos {
                             + "' que se intenta actualizar."));
     productoJpaRepository.save(
         new ProductoJpaEntity(
-            producto.id(),
-            producto.nombre(),
-            producto.slug().valor(),
-            producto.descripcion(),
-            producto.marca().id(),
-            producto.categoria().id(),
-            producto.estado().name(),
-            existente.getCreadoEn(),
-            Instant.now(),
-            producto.origen().name(),
-            producto.proveedorId().orElse(null),
-            producto.precioProveedor().map(Dinero::valor).orElse(null),
-            producto.huellaProveedor().map(HuellaProveedor::valor).orElse(null),
-            producto.vistoPorUltimaVez().orElse(null),
-            producto.estadoDisponibilidad().name()));
+                producto.id(),
+                producto.nombre(),
+                producto.slug().valor(),
+                producto.descripcion(),
+                producto.marca().id(),
+                producto.categoria().id(),
+                producto.estado().name(),
+                existente.getCreadoEn(),
+                Instant.now(),
+                producto.origen().name(),
+                producto.proveedorId().orElse(null),
+                producto.precioProveedor().map(Dinero::valor).orElse(null),
+                producto.huellaProveedor().map(HuellaProveedor::valor).orElse(null),
+                producto.vistoPorUltimaVez().orElse(null),
+                producto.estadoDisponibilidad().name())
+            .conTallaSirveHasta(producto.tallaSirveHasta().orElse(null)));
   }
 
   @Override

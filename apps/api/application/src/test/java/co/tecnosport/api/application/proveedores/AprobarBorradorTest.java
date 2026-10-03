@@ -226,6 +226,55 @@ class AprobarBorradorTest {
     assertEquals(Optional.of(producto.id()), borrador.productoId());
   }
 
+  /**
+   * La talla única es una talla: la variante la lleva como «Única» y el producto guarda hasta qué
+   * talla sirve, que es lo que la tarjeta y la ficha dicen al lado.
+   */
+  @Test
+  void laTallaUnicaQuedaEnLaVarianteYElSirveHastaEnElProducto() {
+    Producto producto =
+        caso()
+            .ejecutar(
+                new AprobarBorradorComando(
+                    borrador.id(),
+                    null,
+                    "Bodi con herraje.",
+                    ApoyoDeCatalogoParaIngesta.BOLSOS_DE_MANO.id(),
+                    ApoyoDeCatalogoParaIngesta.MARCA.id(),
+                    70000,
+                    Tallas.unica("L"),
+                    1,
+                    "Bodi",
+                    "Bodysuit",
+                    List.of(new FotoAprobada(foto1.id(), null, null))));
+
+    assertEquals(1, producto.variantes().size());
+    assertEquals("Única", producto.variantes().get(0).atributos().get(0).valor());
+    assertEquals(Optional.of("L"), producto.tallaSirveHasta());
+  }
+
+  @Test
+  void unaTallaUnicaSinSirveHastaNoLoInventa() {
+    Producto producto =
+        caso()
+            .ejecutar(
+                new AprobarBorradorComando(
+                    borrador.id(),
+                    null,
+                    "Bodi con herraje.",
+                    ApoyoDeCatalogoParaIngesta.BOLSOS_DE_MANO.id(),
+                    ApoyoDeCatalogoParaIngesta.MARCA.id(),
+                    70000,
+                    Tallas.unica(null),
+                    1,
+                    "Bodi",
+                    "Bodysuit",
+                    List.of(new FotoAprobada(foto1.id(), null, null))));
+
+    assertEquals("Única", producto.variantes().get(0).atributos().get(0).valor());
+    assertEquals(Optional.empty(), producto.tallaSirveHasta());
+  }
+
   @Test
   void sinTonosNaceUnaSolaVarianteSinColorYConLaTallaDelBorrador() {
     Producto producto =

@@ -17,4 +17,11 @@ public record ProductoRespuesta(
      * proveedor ya no tiene sigue respondiendo su ficha —los enlaces no mueren— pero no se lista ni
      * se compra; el cliente lo pinta como no disponible.
      */
-    String estadoDisponibilidad) {}
+    String estadoDisponibilidad,
+    /**
+     * Las tallas de la categoría en su orden, heredadas de la rama si la hoja no tiene las suyas.
+     * Solo en la ficha; en la rejilla viene vacía, porque la tarjeta no la usa.
+     */
+    List<String> escalaTallas,
+    /** Hasta qué talla le sirve una prenda de talla única, si el proveedor lo dijo. */
+    String tallaSirveHasta) {}

@@ -48,6 +48,7 @@ public final class Producto {
   private HuellaProveedor huellaProveedor;
   private Instant vistoPorUltimaVez;
   private EstadoDisponibilidad estadoDisponibilidad;
+  private String tallaSirveHasta;
 
   /** Un producto creado a mano o reconstruido sin datos de proveedor: origen {@code MANUAL}. */
   public Producto(
@@ -584,6 +585,27 @@ public final class Producto {
 
   public EstadoDisponibilidad estadoDisponibilidad() {
     return estadoDisponibilidad;
+  }
+
+  /**
+   * Hasta qué talla le sirve una prenda de talla única, si el proveedor lo dijo: «sirve hasta la
+   * L». Lo dicen la tarjeta y la ficha al lado de «Talla única», porque con la marca, el nombre y
+   * el precio quien compra no sabe de qué talla es.
+   */
+  public Optional<String> tallaSirveHasta() {
+    return Optional.ofNullable(tallaSirveHasta);
+  }
+
+  /**
+   * @param talla la talla límite, o nulo o en blanco para quitarla
+   */
+  public void definirTallaSirveHasta(String talla) {
+    String limpia = talla == null || talla.isBlank() ? null : talla.strip();
+    if (limpia != null && limpia.length() > 20) {
+      throw new ExcepcionDeDominio(
+          "«Sirve hasta» es una talla, no una frase: hasta 20 caracteres.");
+    }
+    this.tallaSirveHasta = limpia;
   }
 
   @Override

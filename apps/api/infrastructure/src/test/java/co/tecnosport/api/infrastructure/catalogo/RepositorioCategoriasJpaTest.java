@@ -98,6 +98,38 @@ class RepositorioCategoriasJpaTest {
         .isEqualTo(LineaCatalogo.ROPA);
   }
 
+  /** La escala de tallas va y vuelve en su orden; vacía es vacía, no nula. */
+  @Test
+  void laEscalaDeTallasVaYVuelveEnSuOrden() {
+    Categoria jeans =
+        Categoria.crear("Jeans TC", new Slug("ropa-jeans-tc"), LineaCatalogo.ROPA)
+            .conEscalaDeTallas(List.of("26", "28", "30"));
+    Categoria sinEscala =
+        Categoria.crear("Faldas TC2", new Slug("ropa-faldas-tc2"), LineaCatalogo.ROPA);
+    repositorio.guardar(jeans);
+    repositorio.guardar(sinEscala);
+
+    assertThat(repositorio.buscarPorId(jeans.id()).orElseThrow().escalaTallas())
+        .containsExactly("26", "28", "30");
+    assertThat(repositorio.buscarPorId(sinEscala.id()).orElseThrow().escalaTallas()).isEmpty();
+  }
+
+  /** V75 deja las escalas que dio el negocio en las ramas de ropa, en Jeans y en calzado. */
+  @Test
+  void laMigracionDejaLasEscalasDelNegocio() {
+    assertThat(repositorio.buscarPorSlug(new Slug("ropa-dama")).orElseThrow().escalaTallas())
+        .containsExactly("XS", "S", "M", "L", "XL", "XXL", "XXXL");
+    assertThat(
+            repositorio
+                .buscarPorSlug(new Slug("ropa-caballero-jeans"))
+                .orElseThrow()
+                .escalaTallas())
+        .containsExactly("26", "28", "30", "32", "34", "36", "38", "40", "42");
+    assertThat(repositorio.buscarPorSlug(new Slug("calzado-unisex")).orElseThrow().escalaTallas())
+        .containsExactly("34", "35", "36", "37", "38", "39", "40", "41", "42", "43");
+    assertThat(repositorio.buscarPorSlug(new Slug("calzado-dama-deportivo"))).isPresent();
+  }
+
   /** Una categoría de primer nivel no tiene padre, y eso también se afirma. */
   @Test
   void unaCategoriaDePrimerNivelNoTienePadre() {

@@ -23,4 +23,11 @@ import java.util.UUID;
  * respuesta pública engorda por otras razones, este es el primer campo que debería salir.
  */
 public record CategoriaRespuesta(
-    UUID id, String nombre, String slug, String linea, UUID padreId, List<String> hashtags) {}
+    UUID id,
+    String nombre,
+    String slug,
+    String linea,
+    UUID padreId,
+    List<String> hashtags,
+    /** Las tallas propias, en su orden; vacía si usa las de su rama o no talla. */
+    List<String> escalaTallas) {}

@@ -52,7 +52,8 @@ final class ApoyoDeCatalogoParaIngesta {
       Categoria.crearBajo(BOLSOS_DAMA, "Bolsos de mano", new Slug("bolsos-de-mano"));
   static final Atributo COLOR = Atributo.crear("Color", TipoAtributo.COLOR, List.of());
   static final Atributo TALLA =
-      Atributo.crear("Talla", TipoAtributo.TEXTO, List.of("S", "M", "L", "XL"));
+      // Sin valores permitidos, como en producción desde V73: la lista la dicta cada prenda.
+      Atributo.crear("Talla", TipoAtributo.TEXTO, List.of());
 
   private ApoyoDeCatalogoParaIngesta() {}
 
