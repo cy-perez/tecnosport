@@ -25,7 +25,7 @@ import {
 /** Cuántas muestras caben en una tarjeta sin envolver en dos filas; el resto se cuenta. */
 const MUESTRAS_VISIBLES = 5;
 
-const MUESTRA_BASE = 'block size-24 overflow-hidden rounded-completo';
+const MUESTRA_BASE = 'block size-[var(--control-muestra-tarjeta)] overflow-hidden rounded-completo';
 const MUESTRA = `${MUESTRA_BASE} border border-ts-borde-control`;
 const MUESTRA_ACTIVA = `${MUESTRA_BASE} border-2 border-ts-primario`;
 

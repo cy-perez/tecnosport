@@ -144,6 +144,25 @@ describe('TsTarjetaProducto', () => {
     expect(screen.getByText(/Sirve hasta: L/)).toBeTruthy();
   });
 
+  it('antepone «Marca:» en negrita al nombre de la marca', async () => {
+    await renderTarjeta();
+
+    const etiqueta = screen.getByText('Marca:');
+    expect(etiqueta.tagName).toBe('STRONG');
+    expect(etiqueta.className).toContain('font-fuerte');
+    expect(etiqueta.parentElement!.textContent).toContain('TecnoSport');
+  });
+
+  /** 20 px y no 24: el tamaño sale del token del kit, no de la escala de espacio. */
+  it('la muestra de color es un círculo del tamaño de la tarjeta', async () => {
+    await renderBodi();
+
+    const muestra = screen.getByRole('button', { name: 'Ver en Vino' }).firstElementChild!;
+    expect(muestra.className).toContain('size-[var(--control-muestra-tarjeta)]');
+    expect(muestra.className).toContain('rounded-completo');
+    expect(muestra.className).not.toContain('size-24');
+  });
+
   it('un producto sin talla no dice talla', async () => {
     await renderTarjeta();
 

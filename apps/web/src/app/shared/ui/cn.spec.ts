@@ -77,6 +77,10 @@ describe('cn con los nombres de token del proyecto', () => {
     expect(cn('min-h-tactil', 'min-h-0')).toBe('min-h-0');
   });
 
+  it('el alto compacto reemplaza al táctil', () => {
+    expect(cn('min-h-tactil', 'min-h-compacto')).toBe('min-h-compacto');
+  });
+
   // Lo que ya funcionaba sin configurar, fijado para que la configuración
   // nueva no lo rompa.
   it('dos radios compiten entre sí, también el de la píldora', () => {

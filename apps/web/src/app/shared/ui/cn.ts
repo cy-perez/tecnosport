@@ -47,7 +47,7 @@ const fusionar = extendTailwindMerge({
       'font-weight': [{ font: PESOS }],
       leading: [{ leading: INTERLINEADOS }],
       'max-w': [{ 'max-w': ANCHOS }],
-      'min-h': [{ 'min-h': ['tactil'] }],
+      'min-h': [{ 'min-h': ['tactil', 'compacto'] }],
     },
   },
 });

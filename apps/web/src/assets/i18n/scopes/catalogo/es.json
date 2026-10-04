@@ -7,6 +7,7 @@
   "sin_productos": "Todavía no hay productos publicados.",
   "disponible": "Disponible",
   "agotado": "Agotado",
+  "marca": "Marca:",
   "precio_desde": "Desde",
   "filtros": {
     "linea_label": "Línea",

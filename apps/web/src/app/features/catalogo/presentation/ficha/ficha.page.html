@@ -34,7 +34,10 @@
       }
 
       <div class="flex flex-col gap-8">
-        <p class="text-sm text-ts-texto-suave">{{ p.marca.nombre }}</p>
+        <p class="text-sm text-ts-texto-suave">
+          <strong class="font-fuerte">{{ 'catalogo.marca' | transloco }}</strong>
+          {{ p.marca.nombre }}
+        </p>
         <h1 class="m-0 font-display text-2xl">{{ p.nombre }}</h1>
         <p class="text-sm text-ts-texto-suave">{{ p.categoria.nombre }}</p>
         @if (tallaUnica(); as unica) {
