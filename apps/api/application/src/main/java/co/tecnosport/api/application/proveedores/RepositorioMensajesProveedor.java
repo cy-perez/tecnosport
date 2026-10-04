@@ -10,6 +10,10 @@ import java.util.UUID;
 /** Los mensajes registrados, tal como llegaron. */
 public interface RepositorioMensajesProveedor {
 
+  /**
+   * Guarda los mensajes <b>recordando el orden de la lista</b>, que es el de la fuente: con él se
+   * desempatan los del mismo instante al leerlos.
+   */
   void guardarTodos(List<MensajeProveedor> mensajes);
 
   /**
@@ -20,7 +24,13 @@ public interface RepositorioMensajesProveedor {
   Set<IdExternoDeMensaje> idsExternosExistentes(
       UUID proveedorId, Collection<IdExternoDeMensaje> candidatos);
 
-  /** Los de un lote, en orden de envío. */
+  /**
+   * Los de un lote, en orden de envío; los del mismo instante, en el orden en que se guardaron.
+   *
+   * <p>El desempate no es un detalle: una exportación de Android no trae segundos, y el agrupador
+   * decide de qué precio es una foto por lo que tiene antes y después. Si el empate saliera en
+   * cualquier orden, la misma exportación armaría publicaciones distintas en cada corrida.
+   */
   List<MensajeProveedor> listarDeLote(UUID loteId);
 
   void eliminarTodos(Collection<UUID> ids);

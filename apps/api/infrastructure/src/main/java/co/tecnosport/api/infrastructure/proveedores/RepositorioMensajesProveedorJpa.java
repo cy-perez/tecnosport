@@ -7,6 +7,7 @@ import co.tecnosport.api.domain.proveedores.MensajeProveedor;
 import co.tecnosport.api.domain.proveedores.TipoMensaje;
 import co.tecnosport.api.infrastructure.proveedores.entidad.MensajeProveedorJpaEntity;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
@@ -29,7 +30,13 @@ public class RepositorioMensajesProveedorJpa implements RepositorioMensajesProve
   @Override
   public void guardarTodos(List<MensajeProveedor> mensajes) {
     Instant ahora = reloj.ahora();
-    jpa.saveAll(mensajes.stream().map(m -> aFila(m, ahora)).toList());
+    // Todo el lote comparte `ahora`, y una exportación de Android no trae segundos: sin la
+    // posición, los mensajes del mismo minuto no tendrían con qué desempatar al leerse.
+    List<MensajeProveedorJpaEntity> filas = new ArrayList<>(mensajes.size());
+    for (int i = 0; i < mensajes.size(); i++) {
+      filas.add(aFila(mensajes.get(i), ahora, i));
+    }
+    jpa.saveAll(filas);
   }
 
   @Override
@@ -46,7 +53,7 @@ public class RepositorioMensajesProveedorJpa implements RepositorioMensajesProve
 
   @Override
   public List<MensajeProveedor> listarDeLote(UUID loteId) {
-    return jpa.findByLoteIdOrderByEnviadoEnAscCreadoEnAsc(loteId).stream()
+    return jpa.findByLoteIdOrderByEnviadoEnAscCreadoEnAscPosicionAsc(loteId).stream()
         .map(RepositorioMensajesProveedorJpa::aDominio)
         .toList();
   }
@@ -56,7 +63,8 @@ public class RepositorioMensajesProveedorJpa implements RepositorioMensajesProve
     jpa.deleteAllById(ids);
   }
 
-  private static MensajeProveedorJpaEntity aFila(MensajeProveedor m, Instant creadoEn) {
+  private static MensajeProveedorJpaEntity aFila(
+      MensajeProveedor m, Instant creadoEn, int posicion) {
     return new MensajeProveedorJpaEntity(
         m.id(),
         m.proveedorId(),
@@ -68,7 +76,8 @@ public class RepositorioMensajesProveedorJpa implements RepositorioMensajesProve
         m.pieDeFoto().orElse(null),
         m.referenciaArchivo().orElse(null),
         m.medioOmitido(),
-        creadoEn);
+        creadoEn,
+        posicion);
   }
 
   private static MensajeProveedor aDominio(MensajeProveedorJpaEntity fila) {
