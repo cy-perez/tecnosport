@@ -217,6 +217,7 @@ public final class AprobarBorrador {
     if (tallasAprobadas.tipo() == TipoDeTalla.UNICA) {
       producto.definirTallaSirveHasta(tallasAprobadas.sirveHasta());
     }
+    producto.definirFotosGeneralesEnCadaColor(comando.fotosGeneralesEnCadaColor());
     repositorioProductos.guardar(producto);
 
     Map<String, UUID> variantePorTono = crearVariantes(producto, comando, borrador);

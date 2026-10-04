@@ -182,6 +182,11 @@ export interface AprobarBorrador {
   readonly altEn: string;
   /** Unidades por variante que entran al inventario al aprobar. Cero es válido: agotado desde ya. */
   readonly existenciaInicial: number;
+  /**
+   * Si las fotos sin tono —la principal casi siempre— acompañan a las de cada color en la ficha.
+   * Se apaga cuando cada color trae sus propias fotos.
+   */
+  readonly fotosGeneralesEnCadaColor: boolean;
 }
 
 /**

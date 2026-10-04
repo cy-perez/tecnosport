@@ -1617,6 +1617,7 @@ export interface components {
             /** Format: int32 */
             existenciaInicial: number;
             fotos: components["schemas"]["FotoAprobadaPeticion"][];
+            fotosGeneralesEnCadaColor?: boolean;
             /** Format: uuid */
             marcaId: string;
             /** Format: int64 */
@@ -1872,6 +1873,7 @@ export interface components {
             /** Format: uuid */
             categoriaId?: string;
             descripcion?: string;
+            fotosGeneralesEnCadaColor?: boolean;
             /** Format: uuid */
             marcaId?: string;
             nombre?: string;
@@ -2267,6 +2269,7 @@ export interface components {
             categoria?: components["schemas"]["CategoriaRespuesta"];
             descripcion?: string;
             estado?: string;
+            fotosGeneralesEnCadaColor?: boolean;
             galeria?: components["schemas"]["ImagenDeGaleriaRespuesta"][];
             /** Format: uuid */
             id?: string;
@@ -2297,6 +2300,7 @@ export interface components {
             descripcion?: string;
             escalaTallas?: string[];
             estadoDisponibilidad?: string;
+            fotosGeneralesEnCadaColor?: boolean;
             galeria?: components["schemas"]["ImagenRespuesta"][];
             imagenPrincipal?: components["schemas"]["ImagenRespuesta"];
             marca?: components["schemas"]["MarcaRespuesta"];

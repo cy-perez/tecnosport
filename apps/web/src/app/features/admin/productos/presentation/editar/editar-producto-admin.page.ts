@@ -20,6 +20,7 @@ import { usarOpcionesFiltro } from '../../../../catalogo/application/listar-opci
 import { TsBoton } from '../../../../../shared/ui/boton/ts-boton';
 import { TsPaginaFormulario } from '../../../../../shared/ui/pagina-formulario/ts-pagina-formulario';
 import { TsCampo } from '../../../../../shared/ui/campo/ts-campo';
+import { TsCheckbox } from '../../../../../shared/ui/checkbox/ts-checkbox';
 import { TsEsqueleto } from '../../../../../shared/ts-esqueleto/ts-esqueleto';
 import { TsMigas } from '../../../../../shared/ts-migas/ts-migas';
 import { usarTraductor } from '../../../../../core/i18n/traductor';
@@ -61,6 +62,7 @@ import { PanelDeDifusion } from '../../../difusion/presentation/panel-de-difusio
     TranslocoPipe,
     TsBoton,
     TsCampo,
+    TsCheckbox,
     TsEsqueleto,
     TsMigas,
     TsSelect,
@@ -123,6 +125,7 @@ export class EditarProductoAdminPage {
     marcaId: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
     categoriaId: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
     tallaSirveHasta: new FormControl('', { nonNullable: true }),
+    fotosGeneralesEnCadaColor: new FormControl(true, { nonNullable: true }),
   });
 
   /**
@@ -342,6 +345,7 @@ export class EditarProductoAdminPage {
           marcaId: producto.marca.id,
           categoriaId: producto.categoria.id,
           tallaSirveHasta: producto.tallaSirveHasta ?? '',
+          fotosGeneralesEnCadaColor: producto.fotosGeneralesEnCadaColor,
         });
       }
     });
@@ -369,6 +373,7 @@ export class EditarProductoAdminPage {
           marcaId: valores.marcaId,
           categoriaId: valores.categoriaId,
           ...(this.esTallaUnica() ? { tallaSirveHasta: valores.tallaSirveHasta.trim() } : {}),
+          fotosGeneralesEnCadaColor: valores.fotosGeneralesEnCadaColor,
         },
       },
       {

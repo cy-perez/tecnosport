@@ -230,4 +230,21 @@ class RepositorioProductosDeProveedorJpaTest {
 
     assertThat(proveedores.dependenciasDe(proveedor.id()).productos()).isEqualTo(2);
   }
+
+  /** La columna de V79 va y vuelve, al guardar y al actualizar. */
+  @Test
+  void lasFotosGeneralesEnCadaColorVanYVuelven() {
+    catalogoBase();
+    Producto producto = deProveedor("Bolso de dama mediano", 53000);
+    producto.definirFotosGeneralesEnCadaColor(false);
+    productos.guardar(producto);
+
+    Producto leido = productos.buscarPorId(producto.id()).orElseThrow();
+    assertThat(leido.fotosGeneralesEnCadaColor()).isFalse();
+
+    leido.definirFotosGeneralesEnCadaColor(true);
+    productos.actualizar(leido);
+    assertThat(productos.buscarPorId(producto.id()).orElseThrow().fotosGeneralesEnCadaColor())
+        .isTrue();
+  }
 }

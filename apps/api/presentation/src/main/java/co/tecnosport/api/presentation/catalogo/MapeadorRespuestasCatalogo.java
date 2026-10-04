@@ -65,7 +65,8 @@ public class MapeadorRespuestasCatalogo {
             .toList(),
         producto.estadoDisponibilidad().name(),
         escalaTallas,
-        producto.tallaSirveHasta().orElse(null));
+        producto.tallaSirveHasta().orElse(null),
+        producto.fotosGeneralesEnCadaColor());
   }
 
   public ResultadoPaginadoRespuesta<ProductoRespuesta> aRespuesta(CatalogoPaginado catalogo) {

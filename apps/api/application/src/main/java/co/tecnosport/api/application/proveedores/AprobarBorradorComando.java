@@ -12,6 +12,7 @@ import java.util.UUID;
  *
  * @param fotos en el orden en que van a publicarse; la primera es la principal
  * @param existenciaInicial por variante; el checkout no vende lo que el libro no tiene
+ * @param fotosGeneralesEnCadaColor si las fotos sin tono acompañan a las de cada color en la ficha
  */
 public record AprobarBorradorComando(
     UUID borradorId,
@@ -24,7 +25,36 @@ public record AprobarBorradorComando(
     int existenciaInicial,
     String altEs,
     String altEn,
-    List<FotoAprobada> fotos) {
+    List<FotoAprobada> fotos,
+    boolean fotosGeneralesEnCadaColor) {
+
+  /** Las fotos generales acompañan a cada color, que es lo que se hacía antes de poder elegirlo. */
+  public AprobarBorradorComando(
+      UUID borradorId,
+      String titulo,
+      String descripcion,
+      UUID categoriaId,
+      UUID marcaId,
+      long precioVenta,
+      Tallas tallas,
+      int existenciaInicial,
+      String altEs,
+      String altEn,
+      List<FotoAprobada> fotos) {
+    this(
+        borradorId,
+        titulo,
+        descripcion,
+        categoriaId,
+        marcaId,
+        precioVenta,
+        tallas,
+        existenciaInicial,
+        altEs,
+        altEn,
+        fotos,
+        true);
+  }
 
   public AprobarBorradorComando {
     Objects.requireNonNull(borradorId, "El id del borrador no puede ser nulo.");

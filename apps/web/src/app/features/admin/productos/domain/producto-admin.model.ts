@@ -51,6 +51,8 @@ export interface EditarProductoAdmin {
   readonly categoriaId: string;
   /** Solo en una prenda de talla única. Ausente no lo toca; vacío lo quita. */
   readonly tallaSirveHasta?: string;
+  /** Si las fotos generales acompañan a las de cada color en la ficha. Ausente no lo toca. */
+  readonly fotosGeneralesEnCadaColor?: boolean;
 }
 
 export interface ValorAtributoAdmin {
@@ -127,6 +129,7 @@ export interface AsignarColorAImagenAdmin {
 export interface ProductoAdminDetalle extends ProductoAdmin {
   readonly galeria: readonly ImagenDeGaleriaAdmin[];
   readonly tallaSirveHasta: string | null;
+  readonly fotosGeneralesEnCadaColor: boolean;
   readonly variantes: readonly VarianteResumenAdmin[];
 }
 

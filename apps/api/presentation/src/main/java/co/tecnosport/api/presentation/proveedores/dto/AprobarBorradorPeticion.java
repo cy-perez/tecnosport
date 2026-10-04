@@ -8,7 +8,8 @@ import java.util.UUID;
 /**
  * Lo que decide quien aprueba. {@code titulo} y {@code descripcion} son opcionales: sin ellos van
  * el del borrador y las características del mensaje. {@code fotos} va en el orden de publicación y
- * la primera es la principal.
+ * la primera es la principal. {@code fotosGeneralesEnCadaColor} nulo es sí: lo que se hacía antes
+ * de poder elegirlo.
  */
 public record AprobarBorradorPeticion(
     String titulo,
@@ -20,7 +21,8 @@ public record AprobarBorradorPeticion(
     @Schema(requiredMode = Schema.RequiredMode.REQUIRED) int existenciaInicial,
     @Schema(requiredMode = Schema.RequiredMode.REQUIRED) String altEs,
     @Schema(requiredMode = Schema.RequiredMode.REQUIRED) String altEn,
-    @Schema(requiredMode = Schema.RequiredMode.REQUIRED) List<FotoAprobadaPeticion> fotos) {
+    @Schema(requiredMode = Schema.RequiredMode.REQUIRED) List<FotoAprobadaPeticion> fotos,
+    Boolean fotosGeneralesEnCadaColor) {
 
   public AprobarBorradorPeticion {
     Objects.requireNonNull(categoriaId, "La categoría es obligatoria.");

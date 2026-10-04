@@ -235,7 +235,23 @@ describe('DetalleBorradorAdminPage', () => {
         { mensajeId: 'f-1', tono: 'Negro', colorHex: '#111111' },
         { mensajeId: 'f-2', tono: null, colorHex: null },
       ],
+      fotosGeneralesEnCadaColor: true,
     });
+  });
+
+  /** Por omisión las generales acompañan a cada color; desmarcada la casilla, no. */
+  it('aprueba sin las fotos generales en cada color si se desmarca la casilla', async () => {
+    const { repositorio } = await renderPagina();
+    await llenarAprobacion();
+
+    const casilla = screen.getByLabelText(a.fotosGeneralesEnCadaColor) as HTMLInputElement;
+    expect(casilla.checked).toBe(true);
+    fireEvent.click(casilla);
+    fireEvent.input(screen.getByLabelText(a.precioVenta), { target: { value: '75.000' } });
+    fireEvent.click(screen.getByRole('button', { name: a.accion }));
+
+    expect(await screen.findByRole('link', { name: a.verProducto })).toBeTruthy();
+    expect(repositorio.aprobaciones[0].aprobacion.fotosGeneralesEnCadaColor).toBe(false);
   });
 
   /**

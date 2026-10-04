@@ -1,8 +1,10 @@
 package co.tecnosport.api.application.catalogo;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import co.tecnosport.api.domain.catalogo.Categoria;
 import co.tecnosport.api.domain.catalogo.LineaCatalogo;
@@ -142,5 +144,26 @@ class EditarProductoTest {
         () ->
             editarProducto.ejecutar(
                 new EditarProductoComando(producto.id(), "Nombre", "", marca.id(), categoriaId)));
+  }
+
+  /** Si las fotos generales acompañan a cada color: nulo no lo toca. */
+  @Test
+  void lasFotosGeneralesSeApaganYSeConservan() {
+    Marca marca = Marca.crear("Genérica");
+    Categoria bolsos = Categoria.crear("Bolsos", new Slug("bolsos"), LineaCatalogo.BOLSOS);
+    Producto bolso = Producto.crear("Bolso", new Slug("bolso"), "Bolso.", marca, bolsos);
+    repositorioProductos.conProductos(bolso);
+    repositorioMarcas.conMarcas(marca);
+    repositorioCategorias.conCategorias(bolsos);
+    assertTrue(bolso.fotosGeneralesEnCadaColor(), "por omisión, como antes");
+
+    editarProducto.ejecutar(
+        new EditarProductoComando(
+            bolso.id(), "Bolso", "Bolso.", marca.id(), bolsos.id(), null, false));
+    assertFalse(bolso.fotosGeneralesEnCadaColor());
+
+    editarProducto.ejecutar(
+        new EditarProductoComando(bolso.id(), "Bolso", "Bolso.", marca.id(), bolsos.id()));
+    assertFalse(bolso.fotosGeneralesEnCadaColor(), "sin el campo no se toca");
   }
 }

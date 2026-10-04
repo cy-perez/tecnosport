@@ -63,6 +63,14 @@
         />
       }
 
+      <!-- La misma casilla que la revisión del borrador: un producto aprobado se corrige aquí. -->
+      <ts-checkbox
+        idCasilla="editar-producto-fotos-generales"
+        [etiqueta]="'admin.productos.editar.fotosGeneralesEnCadaColor' | transloco"
+        [marcado]="form.controls.fotosGeneralesEnCadaColor.value"
+        (marcadoCambio)="form.controls.fotosGeneralesEnCadaColor.setValue($event)"
+      />
+
       <p class="m-0 text-ts-error" role="alert">{{ error() }}</p>
 
       <ts-boton
@@ -231,16 +239,16 @@
               </p>
               @if (opcionesColor().length > 1) {
                 @for (version of [versionDeColores()]; track version) {
-                <ts-select
-                  [idCampo]="'color-foto-' + i"
-                  [label]="
-                    'admin.productos.editar.galeria.colorDeFoto' | transloco: { posicion: i + 1 }
-                  "
-                  [opciones]="opcionesColor()"
-                  [placeholder]="'admin.productos.editar.galeria.todosLosColores' | transloco"
-                  [valor]="colorDeImagen(imagen)"
-                  (cambio)="asignarColor(imagen, $event)"
-                />
+                  <ts-select
+                    [idCampo]="'color-foto-' + i"
+                    [label]="
+                      'admin.productos.editar.galeria.colorDeFoto' | transloco: { posicion: i + 1 }
+                    "
+                    [opciones]="opcionesColor()"
+                    [placeholder]="'admin.productos.editar.galeria.todosLosColores' | transloco"
+                    [valor]="colorDeImagen(imagen)"
+                    (cambio)="asignarColor(imagen, $event)"
+                  />
                 }
               }
               <!-- Un puesto a la vez y con botones, no arrastrando: el arrastre no existe para

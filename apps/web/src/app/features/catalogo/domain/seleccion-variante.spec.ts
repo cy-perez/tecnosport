@@ -39,6 +39,7 @@ function productoDePrueba(variantes: Variante[]): Producto {
     variantes,
     escalaTallas: [],
     tallaSirveHasta: null,
+    fotosGeneralesEnCadaColor: true,
   };
 }
 
@@ -312,6 +313,19 @@ describe('imagenesDelColor', () => {
   /** Sin fotos propias, las de todos —la principal—, y no las de los otros colores. */
   it('un color sin fotos propias no enseña las de los otros colores', () => {
     expect(imagenesDelColor(producto, [principal, deVino], 'Negro')).toEqual([principal]);
+  });
+
+  /** La casilla de la revisión: cada color trae sus fotos y la principal no se cuela en los demás. */
+  describe('sin las fotos generales en cada color', () => {
+    const soloPorColor = { ...producto, fotosGeneralesEnCadaColor: false };
+
+    it('el color con fotos propias enseña solo las suyas', () => {
+      expect(imagenesDelColor(soloPorColor, [principal, deVino], 'Vino')).toEqual([deVino]);
+    });
+
+    it('un color sin fotos propias sigue enseñando las generales: la galería no queda vacía', () => {
+      expect(imagenesDelColor(soloPorColor, [principal, deVino], 'Negro')).toEqual([principal]);
+    });
   });
 });
 

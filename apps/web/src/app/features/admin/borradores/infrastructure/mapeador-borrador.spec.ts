@@ -40,8 +40,10 @@ describe('mapeador-borrador', () => {
       altEs: 'Bolso negro',
       altEn: 'Black bag',
       existenciaInicial: 2,
+      fotosGeneralesEnCadaColor: false,
     });
 
+    expect(peticion.fotosGeneralesEnCadaColor).toBe(false);
     expect(peticion.tallas).toEqual({ tipo: 'UNICA', sirveHasta: 'L', valores: [] });
     expect(peticion.fotos).toEqual([{ mensajeId: 'f1', tono: 'Negro' }, { mensajeId: 'f2' }]);
     expect(peticion.existenciaInicial).toBe(2);

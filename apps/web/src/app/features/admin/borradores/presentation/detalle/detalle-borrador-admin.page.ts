@@ -212,6 +212,7 @@ export class DetalleBorradorAdminPage {
     }),
     altEs: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
     altEn: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
+    fotosGeneralesEnCadaColor: new FormControl(true, { nonNullable: true }),
   });
 
   protected readonly motivoRechazo = new FormControl('', { nonNullable: true });
@@ -711,6 +712,7 @@ export class DetalleBorradorAdminPage {
           descripcion: datos.descripcion.trim(),
           altEs: valores.altEs.trim(),
           altEn: valores.altEn.trim(),
+          fotosGeneralesEnCadaColor: valores.fotosGeneralesEnCadaColor,
           fotos: elegidas.map((foto) => ({
             mensajeId: foto.mensajeId,
             tono: tonos[foto.mensajeId] || null,

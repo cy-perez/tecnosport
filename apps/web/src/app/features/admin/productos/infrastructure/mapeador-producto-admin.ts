@@ -63,6 +63,7 @@ export function aProductoAdminDetalle(dto: ProductoDetalleDto): ProductoAdminDet
     imagenPrincipalUrl: dto.imagenPrincipal?.url ?? null,
     galeria: (dto.galeria ?? []).map(aImagenDeGaleriaAdmin),
     tallaSirveHasta: dto.tallaSirveHasta ?? null,
+    fotosGeneralesEnCadaColor: dto.fotosGeneralesEnCadaColor ?? true,
     variantes: (dto.variantes ?? []).map((variante) => ({
       id: variante.id ?? '',
       sku: variante.sku ?? '',

@@ -129,8 +129,7 @@ export function seleccionAlElegir(
   );
   const coincidencias = (variante: Variante) => {
     const valores = seleccionDeVariante(variante);
-    return Object.entries(actual).filter(([nombre, elegido]) => valores[nombre] === elegido)
-      .length;
+    return Object.entries(actual).filter(([nombre, elegido]) => valores[nombre] === elegido).length;
   };
   const mejor = [...candidatas].sort(
     (una, otra) =>
@@ -243,8 +242,9 @@ function variantesDelColor(producto: Producto, color: string): Set<string> {
 }
 
 /**
- * Las fotos de la ficha para el color elegido: las de ese tono y las que valen para todos. Sin
- * color, o si ninguna foto es de ese tono, todas — una galería vacía no le sirve a nadie.
+ * Las fotos de la ficha para el color elegido: las de ese tono y las que valen para todos, salvo
+ * que el producto diga que las generales no acompañan a cada color —entonces solo las de ese tono—.
+ * Sin color, o si ninguna foto es de ese tono, todas — una galería vacía no le sirve a nadie.
  */
 export function imagenesDelColor(
   producto: Producto,
@@ -262,7 +262,7 @@ export function imagenesDelColor(
     // otros colores. Solo si tampoco hay de esas, todas: una galería vacía no le sirve a nadie.
     return deTodos.length > 0 ? deTodos : [...imagenes];
   }
-  return [...propias, ...deTodos];
+  return producto.fotosGeneralesEnCadaColor ? [...propias, ...deTodos] : propias;
 }
 
 /**

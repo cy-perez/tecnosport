@@ -1,6 +1,7 @@
 package co.tecnosport.api.application.proveedores;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -578,5 +579,38 @@ class AprobarBorradorTest {
             .orElseThrow();
     assertEquals(
         Optional.of(esperado), borradores.buscarPorId(borrador.id()).orElseThrow().pHash());
+  }
+
+  /**
+   * La casilla de la revisión (4 de octubre de 2026): por omisión las fotos generales acompañan a
+   * cada color, y quien aprueba puede apagarlo para el producto que solo trae fotos por color.
+   */
+  @Test
+  void lasFotosGeneralesAcompananACadaColorSalvoQueSeApague() {
+    List<FotoAprobada> fotos =
+        List.of(
+            new FotoAprobada(foto1.id(), "Negro", "#000000"),
+            new FotoAprobada(foto2.id(), "Vino", null));
+    AprobarBorradorComando conLasGenerales = comando(fotos);
+
+    assertTrue(conLasGenerales.fotosGeneralesEnCadaColor(), "por omisión, como antes");
+
+    AprobarBorradorComando sinLasGenerales =
+        new AprobarBorradorComando(
+            conLasGenerales.borradorId(),
+            conLasGenerales.titulo(),
+            conLasGenerales.descripcion(),
+            conLasGenerales.categoriaId(),
+            conLasGenerales.marcaId(),
+            conLasGenerales.precioVenta(),
+            conLasGenerales.tallas(),
+            conLasGenerales.existenciaInicial(),
+            conLasGenerales.altEs(),
+            conLasGenerales.altEn(),
+            fotos,
+            false);
+    Producto producto = caso().ejecutar(sinLasGenerales);
+
+    assertFalse(producto.fotosGeneralesEnCadaColor());
   }
 }
