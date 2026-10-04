@@ -35,10 +35,11 @@ import org.testcontainers.utility.DockerImageName;
  *
  * <p><strong>Los dos perfiles juntos, y no solo {@code e2e}</strong>: es la combinación que {@code
  * bootRun -Pperfiles=local,e2e} levanta en el flujo. {@code local} enciende además el sembrador del
- * catálogo, así que esta prueba cubre también que la siembra corra contra el esquema migrado.
- * Probar {@code e2e} a solas dejaría sin vigilar justo lo que se despliega en el recorrido.
+ * catálogo —con la bandera, como en el flujo—, así que esta prueba cubre también que la siembra
+ * corra contra el esquema migrado. Probar {@code e2e} a solas dejaría sin vigilar justo lo que se
+ * despliega en el recorrido.
  */
-@SpringBootTest
+@SpringBootTest(properties = "tecnosport.siembra.catalogo=true")
 @Testcontainers
 @ActiveProfiles({"local", "e2e"})
 class ContextoBajoPerfilE2eTest {

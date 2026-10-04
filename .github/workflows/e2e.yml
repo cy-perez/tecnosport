@@ -39,12 +39,15 @@ jobs:
       - name: Levantar PostgreSQL
         run: docker compose up -d postgres
 
-      # `-Pperfiles=local,e2e`: `local` siembra el catálogo que el recorrido navega, y `e2e`
+      # `-Pperfiles=local,e2e` con SIEMBRA_CATALOGO: `local` más la bandera siembran el catálogo que
+      # el recorrido navega —la siembra está apagada por omisión desde el 4/10/2026—, y `e2e`
       # sustituye el cliente de Skydropx por CotizadorEnvioSembrado. Sin ese segundo perfil no hay
       # credenciales del proveedor, el cliente real falla cerrado —como debe— y la compra a
       # domicilio queda bloqueada en el resumen sin llegar nunca al pedido creado.
       - name: Levantar la API y esperarla
         working-directory: apps/api
+        env:
+          SIEMBRA_CATALOGO: "true"
         run: |
           ./gradlew bootRun -Pperfiles=local,e2e > /tmp/api.log 2>&1 &
           gradle_pid=$!
