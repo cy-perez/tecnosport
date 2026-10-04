@@ -27,7 +27,7 @@
         "properties": {
           "esta_agotado": { "type": "boolean" },
           "titulo": { "type": ["string", "null"] },
-          "linea": { "type": "string", "enum": ["bolsos", "ropa", "otra"] },
+          "linea": { "type": "string", "enum": ["bolsos", "ropa", "calzado", "otra"] },
           "tipo": {
             "type": "string",
             "enum": [
@@ -46,6 +46,7 @@
               "vestido",
               "blusa",
               "bodi",
+              "tenis",
               "otro"
             ]
           },

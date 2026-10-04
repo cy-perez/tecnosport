@@ -297,4 +297,19 @@ class ExtractorClaudeTest {
         .isInstanceOf(ExtraccionFallidaException.class)
         .hasMessageContaining("lista de productos");
   }
+
+  /** Las réplicas AAA de tenis (4 de octubre de 2026): línea calzado y tipo propio. */
+  @Test
+  void losTenisSonCalzadoYTienenTipo() {
+    String tenis =
+        BOLSO
+            .replace("\"tipo\":\"bolso\"", "\"tipo\":\"tenis\"")
+            .replace("\"linea\":\"Bolsos\"", "\"linea\":\"calzado\"");
+    respuestas.add(new Respuesta(200, exito("{\"productos\":[" + tenis + "]}", "end_turn")));
+
+    ResultadoExtraccion resultado = extractor(1).extraer(texto());
+
+    assertThat(resultado.productos().get(0).tipo()).isEqualTo(TipoProductoProveedor.TENIS);
+    assertThat(resultado.productos().get(0).linea()).isEqualTo(LineaCatalogo.CALZADO);
+  }
 }

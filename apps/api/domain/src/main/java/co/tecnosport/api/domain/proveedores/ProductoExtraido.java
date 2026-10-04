@@ -20,7 +20,7 @@ import java.util.Optional;
  *     reemplazó a la lista de características el 3 de octubre de 2026
  * @param altEn el título en inglés, con el nombre comercial que el artículo tiene en inglés: el
  *     texto alternativo de las fotos en el sitio en inglés
- * @param esReplica el mensaje lo anuncia como réplica («1.1»)
+ * @param esReplica el mensaje lo anuncia como réplica («1.1» o «AAA»)
  */
 public record ProductoExtraido(
     boolean esProducto,
@@ -40,7 +40,7 @@ public record ProductoExtraido(
     String notas) {
 
   public ProductoExtraido {
-    titulo = CorrectorDeTitulo.corregir(enBlancoEsNulo(titulo));
+    titulo = enBlancoEsNulo(CorrectorDeTitulo.corregir(enBlancoEsNulo(titulo)));
     material = enBlancoEsNulo(material);
     descripcion = enBlancoEsNulo(descripcion);
     altEn = enBlancoEsNulo(altEn);
@@ -60,7 +60,7 @@ public record ProductoExtraido(
 
   /**
    * Lo que el texto del mensaje confirma, aunque el extractor no lo haya dicho o lo haya dicho de
-   * más: el «sirve hasta» solo si el texto lo escribe, y la réplica si el texto trae «1.1».
+   * más: el «sirve hasta» solo si el texto lo escribe, y la réplica si el texto trae «1.1» o «AAA».
    */
   public ProductoExtraido contrastadoCon(String texto) {
     return new ProductoExtraido(

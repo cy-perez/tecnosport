@@ -936,6 +936,7 @@
       "VESTIDO": "Dress",
       "BLUSA": "Blouse",
       "BODI": "Bodysuit",
+      "TENIS": "Sneakers",
       "OTRO": "Other"
     },
     "tallas": {
@@ -952,7 +953,7 @@
       "SIN_FOTOS": "The post has no photos. It cannot be approved without photos.",
       "PRECIO_CAMBIO": "The supplier changed the price of a product that already exists. The supplier price was updated; check the sale price.",
       "FOTOS_COMPARTIDAS": "The message announced several products with the same photos. Keep only the ones of this product and mark its main photo.",
-      "REPLICA": "The supplier announces it as a replica (1.1). It is published under the Generic brand, with the original brand only in the title, such as “Puma - BMW style T-shirt”. Confirm both before approving."
+      "REPLICA": "The supplier announces it as a replica (1.1 or AAA). It is published under the Generic brand, with the original brand only in the title, such as “Puma - BMW style T-shirt”. Confirm both before approving."
     },
     "detalle": {
       "miga": "Review",

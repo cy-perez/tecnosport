@@ -936,6 +936,7 @@
       "VESTIDO": "Vestido",
       "BLUSA": "Blusa",
       "BODI": "Bodi",
+      "TENIS": "Tenis",
       "OTRO": "Otro"
     },
     "tallas": {
@@ -952,7 +953,7 @@
       "SIN_FOTOS": "La publicación no trae fotos. Sin fotos no se puede aprobar.",
       "PRECIO_CAMBIO": "El proveedor cambió el precio de un producto que ya existe. Se actualizó el precio de proveedor; revisa el de venta.",
       "FOTOS_COMPARTIDAS": "El mensaje anunciaba varios productos con las mismas fotos. Deja solo las de este producto y marca su foto principal.",
-      "REPLICA": "El proveedor lo anuncia como réplica (1.1). Se publica con la marca Genérica y la marca original solo en el título, como «Camiseta estilo Puma - BMW». Confirma las dos cosas antes de aprobar."
+      "REPLICA": "El proveedor lo anuncia como réplica (1.1 o AAA). Se publica con la marca Genérica y la marca original solo en el título, como «Camiseta estilo Puma - BMW». Confirma las dos cosas antes de aprobar."
     },
     "detalle": {
       "miga": "Revisión",

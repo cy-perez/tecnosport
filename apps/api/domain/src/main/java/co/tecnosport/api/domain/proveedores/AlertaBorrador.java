@@ -25,8 +25,8 @@ public enum AlertaBorrador {
    */
   FOTOS_COMPARTIDAS,
   /**
-   * El mensaje anuncia una réplica («1.1»): se publica con la marca Genérica y la original solo va
-   * en el título, como «Camiseta estilo Puma - BMW». Quien aprueba confirma las dos cosas.
+   * El mensaje anuncia una réplica («1.1» o «AAA»): se publica con la marca Genérica y la original
+   * solo va en el título, como «Camiseta estilo Puma - BMW». Quien aprueba confirma las dos cosas.
    */
   REPLICA
 }

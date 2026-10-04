@@ -144,4 +144,14 @@ class ProductoExtraidoTest {
     assertEquals(false, bodi(Tallas.desconocida(), false).contrastadoCon("Bodi 💲30").esReplica());
     assertEquals(true, bodi(Tallas.desconocida(), true).contrastadoCon("Bodi 💲30").esReplica());
   }
+
+  /** La AAA cuenta como la 1.1 desde el 4 de octubre de 2026; las pilas AAA, no. */
+  @Test
+  void laTripleADelTextoLoVuelveReplica() {
+    assertEquals(
+        true, bodi(Tallas.desconocida(), false).contrastadoCon("Adidas Importado AAA").esReplica());
+    assertEquals(
+        false,
+        bodi(Tallas.desconocida(), false).contrastadoCon("Control con pilas AAA").esReplica());
+  }
 }

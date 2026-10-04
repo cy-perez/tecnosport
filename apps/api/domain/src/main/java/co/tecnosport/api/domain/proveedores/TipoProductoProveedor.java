@@ -27,5 +27,8 @@ public enum TipoProductoProveedor {
   // «Bodi», no «body»: es como se escribe en español (3 de octubre de 2026). V74 renombró los que
   // ya estaban guardados, y el extractor todavía acepta «body» de una extracción vieja.
   BODI,
+  // El calzado, para las réplicas AAA de tenis (4 de octubre de 2026): sin tipo propio salían OTRO
+  // con la alerta TIPO_DESCONOCIDO, aunque el título dijera «Tenis estilo Adidas».
+  TENIS,
   OTRO
 }
