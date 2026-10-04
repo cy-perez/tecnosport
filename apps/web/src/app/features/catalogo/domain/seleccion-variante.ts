@@ -1,8 +1,10 @@
-import { Imagen, Producto, Variante } from './producto.model';
+import { Imagen, muestraDe, ParteDeMuestra, Producto, Variante } from './producto.model';
 
 export interface OpcionEje {
   readonly valor: string;
   readonly colorHex: string | null;
+  /** Las porciones del círculo de un color; ausente, la de `colorHex` solo. */
+  readonly muestra?: readonly ParteDeMuestra[];
   /**
    * Si alguna variante del producto la tiene. Falso en las tallas que la escala de la categoría
    * enseña aunque este producto no venga en ellas: se pintan tachadas, como las agotadas, para que
@@ -49,7 +51,10 @@ export function ejesDeAtributos(
   producto: Producto,
   escalaTallas: readonly string[] = [],
 ): EjeAtributo[] {
-  const valoresPorEje = new Map<string, Map<string, string | null>>();
+  const valoresPorEje = new Map<
+    string,
+    Map<string, { colorHex: string | null; muestra: readonly ParteDeMuestra[] }>
+  >();
   const unidadPorEje = new Map<string, string | null>();
 
   for (const variante of producto.variantes) {
@@ -58,14 +63,19 @@ export function ejesDeAtributos(
         valoresPorEje.set(valorAtributo.nombre, new Map());
         unidadPorEje.set(valorAtributo.nombre, valorAtributo.unidad);
       }
-      valoresPorEje.get(valorAtributo.nombre)!.set(valorAtributo.valor, valorAtributo.colorHex);
+      valoresPorEje.get(valorAtributo.nombre)!.set(valorAtributo.valor, {
+        colorHex: valorAtributo.colorHex,
+        muestra: muestraDe(valorAtributo),
+      });
     }
   }
 
   return [...valoresPorEje.entries()].map(([nombre, valores]) => {
-    const presentes: OpcionEje[] = [...valores.entries()].map(([valor, colorHex]) => ({
+    const presentes: OpcionEje[] = [...valores.entries()].map(([valor, color]) => ({
       valor,
-      colorHex,
+      colorHex: color.colorHex,
+      // Solo en un color: una talla no tiene muestra que pintar.
+      ...(color.muestra.length > 0 ? { muestra: color.muestra } : {}),
       existe: true,
     }));
     const unicaSola = presentes.length === 1 && esTallaUnica(presentes[0].valor);
@@ -216,19 +226,25 @@ export function tallaUnicaDe(producto: Producto): { readonly sirveHasta: string 
 export interface ColorDeProducto {
   readonly valor: string;
   readonly colorHex: string;
+  /** Las porciones del círculo, en el orden en que se eligieron: «Negro / Rojo» son dos. */
+  readonly muestra: readonly ParteDeMuestra[];
 }
 
 /** Los colores del producto, sin repetir y en el orden de sus variantes; solo los que tienen HEX. */
 export function coloresDe(producto: Producto): ColorDeProducto[] {
-  const vistos = new Map<string, string>();
+  const vistos = new Map<string, ColorDeProducto>();
   for (const variante of producto.variantes) {
     for (const valor of variante.atributos) {
       if (valor.colorHex && !vistos.has(valor.valor)) {
-        vistos.set(valor.valor, valor.colorHex);
+        vistos.set(valor.valor, {
+          valor: valor.valor,
+          colorHex: valor.colorHex,
+          muestra: muestraDe(valor),
+        });
       }
     }
   }
-  return [...vistos.entries()].map(([valor, colorHex]) => ({ valor, colorHex }));
+  return [...vistos.values()];
 }
 
 function variantesDelColor(producto: Producto, color: string): Set<string> {
@@ -283,7 +299,8 @@ export function imagenDelColor(producto: Producto, color: string | null): Imagen
 
 /**
  * El nombre de un color en el idioma de quien mira: el valor del atributo es el nombre en español,
- * y la paleta trae el inglés. Un color que no está en la paleta se dice como está guardado.
+ * y la paleta trae el inglés. Una combinación se traduce parte por parte —«Negro / Rojo» es
+ * «Black / Red»—, y un color que no está en la paleta se dice como está guardado.
  */
 export function nombreDeColor(
   valor: string,
@@ -293,7 +310,11 @@ export function nombreDeColor(
   if (idioma !== 'en') {
     return valor;
   }
-  return paleta.find((color) => plano(color.nombre) === plano(valor))?.nombreEn ?? valor;
+  return valor
+    .split('/')
+    .map((parte) => parte.trim())
+    .map((parte) => paleta.find((color) => plano(color.nombre) === plano(parte))?.nombreEn ?? parte)
+    .join(' / ');
 }
 
 /** El nombre del eje de color del producto, si lo tiene: «Color». */

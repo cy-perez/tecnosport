@@ -1,10 +1,11 @@
-import { Producto, Variante } from './producto.model';
+import { muestraDe, Producto, Variante } from './producto.model';
 import {
   detalleDeVariante,
   imagenesDelColor,
   nombreDeColor,
   seleccionAlElegir,
   tallaNormalizada,
+  coloresDe,
   ejesDeAtributos,
   opcionDisponible,
   tallaUnicaDe,
@@ -61,8 +62,18 @@ describe('ejesDeAtributos', () => {
         nombre: 'Color',
         unidad: null,
         opciones: [
-          { valor: 'Azul marino', colorHex: '#1E3A8A', existe: true },
-          { valor: 'Negro', colorHex: '#111111', existe: true },
+          {
+            valor: 'Azul marino',
+            colorHex: '#1E3A8A',
+            muestra: [{ patron: null, colores: ['#1E3A8A'] }],
+            existe: true,
+          },
+          {
+            valor: 'Negro',
+            colorHex: '#111111',
+            muestra: [{ patron: null, colores: ['#111111'] }],
+            existe: true,
+          },
         ],
       },
       {
@@ -361,5 +372,48 @@ describe('nombreDeColor', () => {
     expect(nombreDeColor('Negro', paleta, 'en')).toBe('Black');
     expect(nombreDeColor('Negro', paleta, 'es')).toBe('Negro');
     expect(nombreDeColor('Fucsia', paleta, 'en')).toBe('Fucsia');
+  });
+
+  /** «Negro / Rojo» se traduce parte por parte; la que no está en la paleta se queda como va. */
+  it('una combinación se traduce parte por parte', () => {
+    const conRojo = [...paleta, { nombre: 'Rojo', nombreEn: 'Red' }];
+
+    expect(nombreDeColor('Negro / Rojo', conRojo, 'en')).toBe('Black / Red');
+    expect(nombreDeColor('Negro / Fucsia', conRojo, 'en')).toBe('Black / Fucsia');
+    expect(nombreDeColor('Negro / Rojo', conRojo, 'es')).toBe('Negro / Rojo');
+  });
+});
+
+describe('la muestra de los colores', () => {
+  const negroRojo = {
+    nombre: 'Color',
+    valor: 'Negro / Rojo',
+    colorHex: '#111111',
+    unidad: null,
+    muestra: [
+      { patron: null, colores: ['#111111'] },
+      { patron: null, colores: ['#C62828'] },
+    ],
+  };
+  const blanco = { nombre: 'Color', valor: 'Blanco', colorHex: '#FFFFFF', unidad: null };
+
+  /** La tarjeta y la ficha pintan las porciones en el orden en que se eligieron. */
+  it('una combinación llega a la tarjeta y al selector con sus porciones en orden', () => {
+    const producto = productoDePrueba([
+      variante('SKU-NR', true, [negroRojo]),
+      variante('SKU-B', true, [blanco]),
+    ]);
+
+    expect(coloresDe(producto).map((c) => c.muestra.map((p) => p.colores[0]))).toEqual([
+      ['#111111', '#C62828'],
+      ['#FFFFFF'],
+    ]);
+    expect(ejesDeAtributos(producto)[0].opciones[0].muestra).toEqual(negroRojo.muestra);
+  });
+
+  /** Un valor de antes de las combinaciones no trae porciones: su muestra es su `colorHex`. */
+  it('sin porciones la muestra es el colorHex solo', () => {
+    expect(muestraDe(blanco)).toEqual([{ patron: null, colores: ['#FFFFFF'] }]);
+    expect(muestraDe({ colorHex: null })).toEqual([]);
   });
 });

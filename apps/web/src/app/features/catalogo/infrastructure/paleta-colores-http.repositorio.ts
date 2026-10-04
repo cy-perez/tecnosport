@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { crearClienteContratos } from '@tecnosport/contratos';
 import { baseUrl } from '../../../core/http/base-url';
 import { desempaquetar } from '../../../core/http/respuesta-http';
-import { ColorDePaleta } from '../domain/producto.model';
+import { ColorDePaleta, PatronDeColor } from '../domain/producto.model';
 import { RepositorioPaletaColores } from '../domain/repositorio-paleta-colores.puerto';
 
 @Injectable()
@@ -15,6 +15,8 @@ export class PaletaColoresHttpRepositorio implements RepositorioPaletaColores {
       nombre: color.nombre ?? '',
       nombreEn: color.nombreEn ?? '',
       hex: color.hex ?? '',
+      patron: (color.patron ?? null) as PatronDeColor | null,
+      coloresPatron: color.coloresPatron ?? [],
     }));
   }
 }

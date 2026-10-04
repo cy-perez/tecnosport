@@ -1,3 +1,5 @@
+import { TsMuestraColor } from '../../../../shared/ui/muestra-color/ts-muestra-color';
+import { ParteDeMuestra } from '../../domain/producto.model';
 import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
 import {
   EjeAtributo,
@@ -18,13 +20,13 @@ import { TsBoton } from '../../../../shared/ui/boton/ts-boton';
 const SWATCH =
   'anillo-foco grid size-tactil cursor-pointer place-items-center border-0 bg-transparent p-0';
 
-const MUESTRA_BASE = 'block size-32';
+const MUESTRA_BASE = 'block size-32 overflow-hidden';
 const MUESTRA = `${MUESTRA_BASE} border border-ts-borde-control`;
 const MUESTRA_ACTIVA = `${MUESTRA_BASE} border-2 border-ts-primario`;
 
 @Component({
   selector: 'ts-selector-variante',
-  imports: [TsBoton],
+  imports: [TsBoton, TsMuestraColor],
   templateUrl: './ts-selector-variante.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -33,6 +35,15 @@ export class TsSelectorVariante {
    *  propiedad, así que no pueden convivir en el atributo. */
   protected claseSwatch(): string {
     return SWATCH;
+  }
+
+  /** La muestra de la opción: sus porciones, o su `colorHex` solo si no las trae. */
+  protected muestraDeOpcion(opcion: OpcionEje): readonly ParteDeMuestra[] {
+    return opcion.muestra && opcion.muestra.length > 0
+      ? opcion.muestra
+      : opcion.colorHex
+        ? [{ patron: null, colores: [opcion.colorHex] }]
+        : [];
   }
 
   protected claseMuestra(activa: boolean): string {
