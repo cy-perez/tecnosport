@@ -122,6 +122,12 @@ export interface AsignarColorAImagenAdmin {
   readonly varianteId: string | null;
 }
 
+/** La foto de la galería que pasa a ser la principal; la principal anterior ocupa su puesto. */
+export interface UsarImagenComoPrincipalAdmin {
+  readonly productoId: string;
+  readonly imagenId: string;
+}
+
 /**
  * El producto con su galería. Lo devuelve `obtener`, no la lista: veinte productos por página con
  * hasta ocho imágenes cada uno engordarían la lista para que la pantalla que las usa no sea esa.

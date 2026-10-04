@@ -1,4 +1,4 @@
-import { isPlatformBrowser } from '@angular/common';
+import { isPlatformBrowser, NgTemplateOutlet } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -41,6 +41,26 @@ import { ImagenDeGaleriaAdmin } from '../../domain/producto-admin.model';
 import { esEjeDeTalla, esTallaUnica } from '../../../../catalogo/domain/seleccion-variante';
 import { usarAsignarColorAImagenAdmin } from '../../application/asignar-color-imagen-admin.mutacion';
 import { usarVerProductoAdmin } from '../../application/ver-producto-admin.consulta';
+import { usarUsarImagenComoPrincipalAdmin } from '../../application/usar-imagen-como-principal-admin.mutacion';
+import {
+  usarDespublicarProducto,
+  usarPublicarProducto,
+} from '../../application/publicar-producto.mutacion';
+import { usarEliminarProducto } from '../../application/eliminar-producto.mutacion';
+import { TsMuestraColor } from '../../../../../shared/ui/muestra-color/ts-muestra-color';
+import {
+  ParteDeMuestra,
+  separarColores,
+} from '../../../../../shared/ui/muestra-color/muestra-color.model';
+import { parteDeColor } from '../../../../catalogo/domain/producto.model';
+import { usarPaletaDeColores } from '../../../../catalogo/application/listar-paleta-colores.consulta';
+import {
+  AccionDeProducto,
+  CLAVE_ERROR,
+  CLAVE_ETIQUETA_ESTADO,
+  clasesDeEstadoProducto,
+  TEXTOS_DE_CONFIRMACION,
+} from '../estado-producto';
 
 const TIPOS_DE_IMAGEN_SOPORTADOS = ['image/jpeg', 'image/png', 'image/webp'];
 
@@ -55,6 +75,7 @@ import { PanelDeDifusion } from '../../../difusion/presentation/panel-de-difusio
 @Component({
   selector: 'app-editar-producto-admin',
   imports: [
+    NgTemplateOutlet,
     PanelDeDifusion,
     TsPaginaFormulario,
     ReactiveFormsModule,
@@ -65,6 +86,7 @@ import { PanelDeDifusion } from '../../../difusion/presentation/panel-de-difusio
     TsCheckbox,
     TsEsqueleto,
     TsMigas,
+    TsMuestraColor,
     TsSelect,
     TsSelectControl,
   ],
@@ -163,14 +185,173 @@ export class EditarProductoAdminPage {
    */
   protected readonly versionDeColores = signal(0);
 
-  /** Las variantes con lo que las distingue: «PRV-1A2B — Negro · M». */
+  /**
+   * Las variantes con lo que las distingue: «PRV-1A2B — Negro · M», y la muestra de su color, como
+   * la que ve quien revisa un borrador al elegir el tono.
+   */
   protected readonly variantes = computed(() =>
     (this.consulta.data()?.variantes ?? []).map((variante) => ({
       id: variante.id,
       sku: variante.sku,
       detalle: variante.atributos.map((atributo) => atributo.valor).join(' · '),
+      muestra: this.muestraDeVariante(variante.atributos),
     })),
   );
+
+  private readonly paleta = usarPaletaDeColores();
+
+  /**
+   * Con la paleta, como la tarjeta: «Negro / Rojo» se pinta en dos porciones y un estampado con su
+   * patrón. Si algún nombre no está en la paleta, el HEX del atributo, que es lo que se guardó.
+   */
+  private muestraDeVariante(
+    atributos: readonly { readonly valor: string; readonly colorHex: string | null }[],
+  ): readonly ParteDeMuestra[] | null {
+    const color = atributos.find((atributo) => atributo.colorHex);
+    if (!color?.colorHex) {
+      return null;
+    }
+    const nombres = separarColores(color.valor);
+    const paleta = this.paleta.data() ?? [];
+    const partes = nombres
+      .map((nombre) => paleta.find((deLaPaleta) => deLaPaleta.nombre === nombre))
+      .filter((deLaPaleta) => deLaPaleta !== undefined)
+      .map(parteDeColor);
+    return partes.length === nombres.length && partes.length > 0
+      ? partes
+      : [{ patron: null, colores: [color.colorHex] }];
+  }
+
+  // --- Estado, publicación y borrado: lo que la revisión de un borrador resuelve con aprobar,
+  // rechazar y borrar, y que en un producto solo se podía hacer desde la lista. ---
+
+  private readonly mutacionPublicar = usarPublicarProducto();
+  private readonly mutacionRetirar = usarDespublicarProducto();
+  private readonly mutacionEliminar = usarEliminarProducto();
+
+  protected readonly estado = computed(() => this.consulta.data()?.estado ?? null);
+  protected readonly publicado = computed(() => this.estado() === 'PUBLICADO');
+
+  protected etiquetaEstado(): string {
+    const estado = this.estado();
+    return estado ? this.traducir()(CLAVE_ETIQUETA_ESTADO[estado]) : '';
+  }
+
+  protected clasesEstado(): string {
+    const estado = this.estado();
+    return estado ? clasesDeEstadoProducto(estado) : '';
+  }
+
+  /** La acción que está preguntando: una sola a la vez, como en la lista. */
+  protected readonly confirmandoAccion = signal<AccionDeProducto | null>(null);
+  protected readonly errorAccion = signal<string | null>(null);
+  /** El acuse de publicar o retirar; guarda la clave, no el texto. */
+  protected readonly avisoAccion = signal<string | null>(null);
+  protected readonly ocupadoAccion = computed(
+    () =>
+      this.mutacionPublicar.isPending() ||
+      this.mutacionRetirar.isPending() ||
+      this.mutacionEliminar.isPending(),
+  );
+  protected readonly textosAccion = computed(
+    () => TEXTOS_DE_CONFIRMACION[this.confirmandoAccion() ?? 'publicar'],
+  );
+  protected readonly nombreProducto = computed(() => this.consulta.data()?.nombre ?? '');
+
+  private readonly cajaAccion = viewChild<ElementRef<HTMLElement>>('cajaAccion');
+  private readonly avisoAccionRef = viewChild<ElementRef<HTMLElement>>('avisoAccionRef');
+  private readonly botonPublicacion = viewChild<string, ElementRef<HTMLElement>>(
+    'botonPublicacion',
+    {
+      read: ElementRef,
+    },
+  );
+  private readonly botonEliminar = viewChild<string, ElementRef<HTMLElement>>('botonEliminar', {
+    read: ElementRef,
+  });
+
+  protected preguntarPublicacion(): void {
+    this.preguntar(this.publicado() ? 'retirar' : 'publicar');
+  }
+
+  protected preguntarEliminar(): void {
+    this.preguntar('eliminar');
+  }
+
+  private preguntar(accion: AccionDeProducto): void {
+    this.errorAccion.set(null);
+    this.avisoAccion.set(null);
+    this.confirmandoAccion.set(accion);
+    this.enfocarDespuesDePintar(() => this.cajaAccion()?.nativeElement);
+  }
+
+  protected cancelarAccion(): void {
+    const accion = this.confirmandoAccion();
+    this.confirmandoAccion.set(null);
+    this.errorAccion.set(null);
+    // De vuelta al botón que abrió la caja; está dentro de `ts-boton`, así que hasta su `<button>`.
+    const origen = accion === 'eliminar' ? this.botonEliminar() : this.botonPublicacion();
+    this.enfocarDespuesDePintar(
+      () => origen?.nativeElement.querySelector<HTMLElement>('button') ?? null,
+    );
+  }
+
+  /** Guarda de reentrada: el botón usa `[ocupado]`, no `[cargando]`, y sigue siendo pulsable. */
+  protected confirmarAccion(): void {
+    const accion = this.confirmandoAccion();
+    if (!accion || this.ocupadoAccion()) {
+      return;
+    }
+    this.errorAccion.set(null);
+    const alFallar = (error: unknown) =>
+      this.errorAccion.set(mensajeDeError(error, this.transloco, CLAVE_ERROR[accion]));
+    if (accion === 'eliminar') {
+      this.mutacionEliminar.mutate(this.id(), {
+        // Como al borrar un borrador: la pantalla ya no tiene producto que enseñar.
+        onSuccess: () =>
+          void this.router.navigate(['/' + this.transloco.activeLang(), 'admin', 'productos']),
+        onError: alFallar,
+      });
+      return;
+    }
+    const mutacion = accion === 'publicar' ? this.mutacionPublicar : this.mutacionRetirar;
+    mutacion.mutate(this.id(), {
+      onSuccess: () => {
+        this.confirmandoAccion.set(null);
+        this.avisoAccion.set(TEXTOS_DE_CONFIRMACION[accion].hecho);
+        this.enfocarDespuesDePintar(() => this.avisoAccionRef()?.nativeElement);
+      },
+      onError: alFallar,
+    });
+  }
+
+  // --- La foto principal elegida entre las de la galería, como al revisar un borrador. ---
+
+  private readonly mutacionPrincipal = usarUsarImagenComoPrincipalAdmin();
+  protected readonly cambiandoPrincipal = computed(() => this.mutacionPrincipal.isPending());
+  protected readonly errorPrincipal = signal<string | null>(null);
+
+  protected usarComoPrincipal(imagen: ImagenDeGaleriaAdmin): void {
+    if (this.cambiandoPrincipal()) {
+      return;
+    }
+    this.errorPrincipal.set(null);
+    this.aviso.set(null);
+    this.mutacionPrincipal.mutate(
+      { productoId: this.id(), imagenId: imagen.id },
+      {
+        onSuccess: () => {
+          this.aviso.set('admin.productos.editar.galeria.principalCambiada');
+          // La fila cambia de foto —o desaparece, si no había principal—: el foco va al aviso.
+          this.enfocarDespuesDePintar(() => this.avisoGaleria()?.nativeElement);
+        },
+        onError: (error: unknown) =>
+          this.errorPrincipal.set(
+            mensajeDeError(error, this.transloco, 'admin.productos.editar.galeria.errorPrincipal'),
+          ),
+      },
+    );
+  }
 
   /**
    * Los colores del producto, uno por valor, con la primera variante de cada uno: marcar una foto
