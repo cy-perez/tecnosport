@@ -218,4 +218,16 @@ class RepositorioProductosDeProveedorJpaTest {
         .as("la foto cuelga de su variante")
         .contains(oculto.variantes().get(0).id());
   }
+
+  /** Un producto basta para que el proveedor no se pueda eliminar; los manuales no cuentan. */
+  @Test
+  void lasDependenciasCuentanSoloLosProductosDelProveedor() {
+    catalogoBase();
+    assertThat(proveedores.dependenciasDe(proveedor.id()).productos()).isZero();
+
+    productos.guardar(deProveedor("Bolso de dama mediano", 53000));
+    productos.guardar(deProveedor("Morral dúo", 60000));
+
+    assertThat(proveedores.dependenciasDe(proveedor.id()).productos()).isEqualTo(2);
+  }
 }

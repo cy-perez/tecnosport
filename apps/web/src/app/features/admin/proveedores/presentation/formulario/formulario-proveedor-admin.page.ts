@@ -13,6 +13,7 @@ import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { ActivatedRoute, Router } from '@angular/router';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { mensajeDeError } from '../../../../../core/errores/mensaje-de-error';
+import { ErrorHttp } from '../../../../../core/http/respuesta-http';
 import { usarTraductor } from '../../../../../core/i18n/traductor';
 import { usarFoco } from '../../../../../shared/foco/foco';
 import { TsBoton } from '../../../../../shared/ui/boton/ts-boton';
@@ -27,6 +28,7 @@ import { usarMigasAdmin } from '../../../migas-admin';
 import {
   usarCrearProveedor,
   usarEditarProveedor,
+  usarEliminarProveedor,
 } from '../../application/guardar-proveedor.mutacion';
 import { usarVerProveedorAdmin } from '../../application/ver-proveedor.consulta';
 import {
@@ -44,6 +46,9 @@ import {
  * contacto, tal cual sale en cada línea del chat exportado. Si no coincide, la ingesta ignora
  * todos los mensajes del proveedor y el lote termina con cero publicaciones —sin error, porque
  * técnicamente no hubo ninguno—. La ayuda del campo lo dice.
+ *
+ * Al editar, debajo va eliminarlo, con la misma confirmación en dos pasos que borrar un borrador.
+ * El servidor lo rechaza si algún producto del catálogo salió de él, y la pantalla dice cuántos.
  */
 @Component({
   selector: 'app-formulario-proveedor-admin',
@@ -82,6 +87,7 @@ export class FormularioProveedorAdminPage {
   protected readonly consulta = usarVerProveedorAdmin(this.id);
   private readonly crear = usarCrearProveedor();
   private readonly editar = usarEditarProveedor();
+  private readonly eliminar = usarEliminarProveedor();
 
   protected readonly enviando = computed(() => this.crear.isPending() || this.editar.isPending());
   protected readonly error = signal<string | null>(null);
@@ -89,6 +95,12 @@ export class FormularioProveedorAdminPage {
 
   private readonly enfocarDespuesDePintar = usarFoco();
   private readonly avisoGuardado = viewChild<ElementRef<HTMLElement>>('avisoGuardado');
+  private readonly botonEliminar = viewChild('botonEliminar', { read: ElementRef });
+  private readonly cajaEliminar = viewChild<ElementRef<HTMLElement>>('cajaEliminar');
+
+  protected readonly confirmandoEliminar = signal(false);
+  protected readonly errorEliminar = signal<string | null>(null);
+  protected readonly eliminando = computed(() => this.eliminar.isPending());
 
   protected readonly form = new FormGroup({
     nombre: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
@@ -184,5 +196,41 @@ export class FormularioProveedorAdminPage {
     } else {
       this.crear.mutate(datos, manejadores);
     }
+  }
+
+  protected preguntarSiEliminar(): void {
+    this.errorEliminar.set(null);
+    this.confirmandoEliminar.set(true);
+    // Sin esto, tabular desde "Eliminar" salta directo a "Sí, eliminar" y se confirma sin haber
+    // pasado por la advertencia de que no hay vuelta atrás.
+    this.enfocarDespuesDePintar(() => this.cajaEliminar()?.nativeElement);
+  }
+
+  protected cancelarEliminar(): void {
+    this.confirmandoEliminar.set(false);
+    this.errorEliminar.set(null);
+    this.enfocarDespuesDePintar(() => this.botonEliminar()?.nativeElement.querySelector('button'));
+  }
+
+  /** Lo eliminado ya no tiene ficha: se vuelve a la lista. */
+  protected eliminarProveedor(): void {
+    if (this.eliminando()) {
+      return;
+    }
+    this.errorEliminar.set(null);
+    this.eliminar.mutate(this.id(), {
+      onSuccess: () => void this.router.navigate(['..'], { relativeTo: this.route }),
+      onError: (error: unknown) => this.errorEliminar.set(this.mensajeAlEliminar(error)),
+    });
+  }
+
+  /** Con productos, cuántos: es lo que dice que la salida es desactivarlo y no reintentar. */
+  private mensajeAlEliminar(error: unknown): string {
+    if (error instanceof ErrorHttp && error.codigo === 'PROVEEDOR_CON_PRODUCTOS') {
+      return this.transloco.translate('admin.proveedores.eliminar.conProductos', {
+        productos: error.datos['productos'] ?? '',
+      });
+    }
+    return mensajeDeError(error, this.transloco, 'admin.proveedores.eliminar.error');
   }
 }

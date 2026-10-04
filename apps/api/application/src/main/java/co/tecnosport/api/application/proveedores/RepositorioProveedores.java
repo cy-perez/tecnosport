@@ -16,4 +16,13 @@ public interface RepositorioProveedores {
 
   /** Todos, activos o no, por nombre. Son pocos: el panel los lista sin paginar. */
   List<Proveedor> listar();
+
+  /** Lo que cuelga del proveedor: sus productos, si tiene una ingesta abierta y sus archivos. */
+  DependenciasDeProveedor dependenciasDe(UUID id);
+
+  /**
+   * Borra el proveedor y su historial de ingesta: borradores, publicaciones, mensajes y lotes. Los
+   * productos no: quien llama ya comprobó que no tiene.
+   */
+  void eliminarConSuHistorial(UUID id);
 }

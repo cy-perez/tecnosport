@@ -3437,7 +3437,7 @@
     },
     "/api/v1/admin/borradores/{id}" : {
       "delete" : {
-        "operationId" : "eliminar_2",
+        "operationId" : "eliminar_3",
         "parameters" : [
           {
             "in" : "path",
@@ -3692,7 +3692,7 @@
     },
     "/api/v1/admin/categorias/{id}" : {
       "delete" : {
-        "operationId" : "eliminar",
+        "operationId" : "eliminar_1",
         "parameters" : [
           {
             "in" : "path",
@@ -4750,7 +4750,7 @@
     },
     "/api/v1/admin/productos/{id}" : {
       "delete" : {
-        "operationId" : "eliminar_1",
+        "operationId" : "eliminar_2",
         "parameters" : [
           {
             "in" : "path",
@@ -5341,6 +5341,28 @@
       }
     },
     "/api/v1/admin/proveedores/{id}" : {
+      "delete" : {
+        "operationId" : "eliminar",
+        "parameters" : [
+          {
+            "in" : "path",
+            "name" : "id",
+            "required" : true,
+            "schema" : {
+              "format" : "uuid",
+              "type" : "string"
+            }
+          }
+        ],
+        "responses" : {
+          "204" : {
+            "description" : "No Content"
+          }
+        },
+        "tags" : [
+          "admin-proveedor-controlador"
+        ]
+      },
       "get" : {
         "operationId" : "ver",
         "parameters" : [
@@ -5678,7 +5700,7 @@
     },
     "/api/v1/admin/sets-rotacion/{id}" : {
       "delete" : {
-        "operationId" : "eliminar_3",
+        "operationId" : "eliminar_4",
         "parameters" : [
           {
             "in" : "path",

@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { SesionStore } from '../../../../core/autenticacion/sesion.store';
 import { baseUrl } from '../../../../core/http/base-url';
 import { crearClienteAutenticado } from '../../../../core/http/cliente-autenticado';
-import { desempaquetar } from '../../../../core/http/respuesta-http';
+import { desempaquetar, exigirExito } from '../../../../core/http/respuesta-http';
 import { DatosProveedor, Proveedor } from '../domain/proveedor.model';
 import { RepositorioProveedoresAdmin } from '../domain/repositorio-proveedores-admin.puerto';
 import { aProveedor, aProveedorPeticion } from './mapeador-proveedor';
@@ -36,5 +36,12 @@ export class ProveedoresAdminHttpRepositorio implements RepositorioProveedoresAd
       body: aProveedorPeticion(datos),
     });
     return aProveedor(desempaquetar(respuesta, 'no se pudo guardar el proveedor'));
+  }
+
+  async eliminar(id: string): Promise<void> {
+    const respuesta = await this.cliente.DELETE('/api/v1/admin/proveedores/{id}', {
+      params: { path: { id } },
+    });
+    exigirExito(respuesta, 'no se pudo eliminar el proveedor');
   }
 }

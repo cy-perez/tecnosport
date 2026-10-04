@@ -43,6 +43,8 @@ final class ApoyoDeIngesta {
   static final class RepositorioProveedoresEnMemoria implements RepositorioProveedores {
 
     private final Map<UUID, Proveedor> porId = new LinkedHashMap<>();
+    final Map<UUID, DependenciasDeProveedor> dependencias = new HashMap<>();
+    final List<UUID> eliminados = new ArrayList<>();
 
     @Override
     public void guardar(Proveedor proveedor) {
@@ -65,6 +67,17 @@ final class ApoyoDeIngesta {
     @Override
     public List<Proveedor> listar() {
       return porId.values().stream().sorted(Comparator.comparing(Proveedor::nombre)).toList();
+    }
+
+    @Override
+    public DependenciasDeProveedor dependenciasDe(UUID id) {
+      return dependencias.getOrDefault(id, new DependenciasDeProveedor(0, false, List.of()));
+    }
+
+    @Override
+    public void eliminarConSuHistorial(UUID id) {
+      porId.remove(id);
+      eliminados.add(id);
     }
   }
 

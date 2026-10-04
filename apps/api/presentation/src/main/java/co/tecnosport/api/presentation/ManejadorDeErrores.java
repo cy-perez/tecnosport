@@ -67,6 +67,8 @@ import co.tecnosport.api.application.proveedores.FotoNoEsDelBorradorException;
 import co.tecnosport.api.application.proveedores.ImagenDeProveedorIlegibleException;
 import co.tecnosport.api.application.proveedores.LoteNoEncontradoException;
 import co.tecnosport.api.application.proveedores.ProductoDeProveedorYaExisteException;
+import co.tecnosport.api.application.proveedores.ProveedorConIngestaEnCursoException;
+import co.tecnosport.api.application.proveedores.ProveedorConProductosException;
 import co.tecnosport.api.application.proveedores.ProveedorInactivoException;
 import co.tecnosport.api.application.proveedores.ProveedorNoEncontradoException;
 import co.tecnosport.api.application.proveedores.TipoDeExportacionNoAdmitidoException;
@@ -195,6 +197,24 @@ public class ManejadorDeErrores {
   @ExceptionHandler(ProveedorNoEncontradoException.class)
   public ProblemDetail proveedorNoEncontrado(ProveedorNoEncontradoException excepcion) {
     return problema(HttpStatus.NOT_FOUND, "Proveedor no encontrado", excepcion);
+  }
+
+  /**
+   * {@code 409} como la categoría con productos: el id es válido y lo que lo impide es el estado
+   * del catálogo. {@code productos} viaja aparte para que el panel diga cuántos sin leer la frase.
+   */
+  @ExceptionHandler(ProveedorConProductosException.class)
+  public ProblemDetail proveedorConProductos(ProveedorConProductosException excepcion) {
+    ProblemDetail problema =
+        problema(HttpStatus.CONFLICT, "El proveedor tiene productos", excepcion);
+    problema.setProperty("productos", excepcion.productos());
+    return problema;
+  }
+
+  // 409: se arregla solo, esperando a que el lote termine.
+  @ExceptionHandler(ProveedorConIngestaEnCursoException.class)
+  public ProblemDetail proveedorConIngestaEnCurso(ProveedorConIngestaEnCursoException excepcion) {
+    return problema(HttpStatus.CONFLICT, "El proveedor tiene una ingesta en curso", excepcion);
   }
 
   @ExceptionHandler(LoteNoEncontradoException.class)

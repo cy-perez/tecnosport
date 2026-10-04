@@ -25,6 +25,8 @@
     "producto_con_ventas": "It has sales, so it cannot be deleted. Take it off the storefront instead: orders, warranties and withdrawals still need it.",
     "proveedor_no_encontrado": "That supplier no longer exists. Reload the list.",
     "proveedor_inactivo": "The supplier is inactive. Activate it from its page before uploading an export.",
+    "proveedor_con_productos": "The supplier has products in the catalogue. Deactivate it instead of deleting it.",
+    "proveedor_con_ingesta_en_curso": "The supplier has an export being processed. Wait for it to finish and try again.",
     "exportacion_no_encontrada": "The file did not reach the bucket. Pick it again and upload once more.",
     "exportacion_demasiado_grande": "The export is too large. Export the chat without media or split the period in two.",
     "tipo_de_exportacion_no_admitido": "That file is not a chat export. Upload the .zip WhatsApp generates.",
@@ -791,7 +793,7 @@
   },
   "proveedores": {
     "titulo": "Suppliers",
-    "explicacion": "The suppliers who send their catalogue over WhatsApp. For each one we keep how they appear in the exported chat —that decides which messages are theirs— and the margin used to suggest the sale price. They are never deleted: they are deactivated.",
+    "explicacion": "The suppliers who send their catalogue over WhatsApp. For each one we keep how they appear in the exported chat —that decides which messages are theirs— and the margin used to suggest the sale price. A supplier with products in the catalogue is not deleted: it is deactivated.",
     "errorLista": "The supplier list could not be loaded.",
     "total": "{{total}} supplier(s)",
     "nuevo": "New supplier",
@@ -834,6 +836,18 @@
       "guardar": "Save changes",
       "crear": "Create supplier",
       "error": "The supplier could not be saved. Try again."
+    },
+    "eliminar": {
+      "titulo": "Delete supplier",
+      "explicacion": "It is deleted along with everything uploaded for it: exports, messages, photos and drafts. Only possible if no catalogue product came from it; otherwise, deactivate it.",
+      "accion": "Delete supplier",
+      "pregunta": "Delete {{nombre}}?",
+      "loQueImplica": "This cannot be undone. If you upload one of their exports again, their listings will come back as new drafts.",
+      "confirmar": "Yes, delete",
+      "cancelar": "Cancel",
+      "eliminando": "Deleting…",
+      "conProductos": "It cannot be deleted: {{productos}} catalogue product(s) came from this supplier. Deactivate it instead.",
+      "error": "The supplier could not be deleted. Try again."
     }
   },
   "ingestas": {
