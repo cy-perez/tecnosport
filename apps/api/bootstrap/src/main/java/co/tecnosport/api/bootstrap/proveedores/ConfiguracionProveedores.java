@@ -1,5 +1,6 @@
 package co.tecnosport.api.bootstrap.proveedores;
 
+import co.tecnosport.api.application.catalogo.EliminarProducto;
 import co.tecnosport.api.application.compartido.EnTransaccionPropia;
 import co.tecnosport.api.application.compartido.Reloj;
 import co.tecnosport.api.application.proveedores.AlmacenDeArchivosDeProveedor;
@@ -7,6 +8,9 @@ import co.tecnosport.api.application.proveedores.ArmarPublicaciones;
 import co.tecnosport.api.application.proveedores.CrearProveedor;
 import co.tecnosport.api.application.proveedores.EditarProveedor;
 import co.tecnosport.api.application.proveedores.EjecutorDeIngestas;
+import co.tecnosport.api.application.proveedores.EliminacionDeProductos;
+import co.tecnosport.api.application.proveedores.EliminacionDeProductosDelCatalogo;
+import co.tecnosport.api.application.proveedores.EliminarLoteDeIngesta;
 import co.tecnosport.api.application.proveedores.EliminarProveedor;
 import co.tecnosport.api.application.proveedores.ExtraerProductoDePublicacion;
 import co.tecnosport.api.application.proveedores.FuenteDeMensajes;
@@ -57,6 +61,19 @@ public class ConfiguracionProveedores {
   @Bean
   public EditarProveedor editarProveedor(RepositorioProveedores repositorio) {
     return new EditarProveedor(repositorio);
+  }
+
+  @Bean
+  public EliminacionDeProductos eliminacionDeProductos(EliminarProducto eliminarProducto) {
+    return new EliminacionDeProductosDelCatalogo(eliminarProducto);
+  }
+
+  @Bean
+  public EliminarLoteDeIngesta eliminarLoteDeIngesta(
+      RepositorioLotesIngesta repositorio,
+      EliminacionDeProductos eliminacionDeProductos,
+      AlmacenDeArchivosDeProveedor almacen) {
+    return new EliminarLoteDeIngesta(repositorio, eliminacionDeProductos, almacen);
   }
 
   @Bean

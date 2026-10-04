@@ -78,6 +78,27 @@
     />
   </div>
 
+  <!-- Siempre en la página: lo que cambia es su contenido. Recibe el foco al borrar, porque la fila
+       y su botón desaparecen. -->
+  <p
+    #avisoEliminadoRef
+    class="m-0 text-ts-exito"
+    [class.mb-16]="avisoEliminado()"
+    role="status"
+    tabindex="-1"
+  >
+    @if (avisoEliminado(); as resultado) {
+      {{
+        'admin.ingestas.eliminar.hecho'
+          | transloco
+            : {
+                eliminados: resultado.productosEliminados,
+                conservados: resultado.productosConservados,
+              }
+      }}
+    }
+  </p>
+
   @if (consulta.isPending()) {
     <ts-esqueleto />
   } @else if (consulta.isError()) {
@@ -112,6 +133,9 @@
                 </th>
                 <th class="font-medio text-ts-texto-suave" scope="col">
                   {{ 'admin.ingestas.columnas.resumen' | transloco }}
+                </th>
+                <th class="font-medio text-ts-texto-suave" scope="col">
+                  {{ 'admin.ingestas.columnas.acciones' | transloco }}
                 </th>
               </tr>
             </thead>
@@ -187,7 +211,77 @@
                       }}</span>
                     }
                   </td>
+                  <td>
+                    @if (sePuedeEliminar(lote)) {
+                      <ts-boton
+                        variante="secundario"
+                        tipo="button"
+                        [attr.data-eliminar]="lote.id"
+                        [etiquetaAccesible]="
+                          'admin.ingestas.eliminar.accionLote'
+                            | transloco
+                              : {
+                                  proveedor: nombreDelProveedor(lote),
+                                  fecha: formatearFecha(lote.creadoEn),
+                                }
+                        "
+                        [expandido]="confirmandoEliminar() === lote.id"
+                        [controla]="'eliminar-lote-' + lote.id"
+                        (click)="preguntarSiEliminar(lote)"
+                      >
+                        {{ 'admin.ingestas.eliminar.accion' | transloco }}
+                      </ts-boton>
+                    }
+                  </td>
                 </tr>
+
+                <!-- En su propia fila y a todo lo ancho, como la lista de productos: dentro de la
+                     celda ensanchaba la columna y empujaba la tabla al abrirse. -->
+                @if (confirmandoEliminar() === lote.id) {
+                  <tr class="border-b border-ts-borde last:border-b-0">
+                    <td colspan="5">
+                      <div
+                        #cajaEliminar
+                        class="flex flex-col gap-12 rounded-md border border-ts-borde-control p-12"
+                        role="group"
+                        tabindex="-1"
+                        [id]="'eliminar-lote-' + lote.id"
+                        [attr.aria-labelledby]="'eliminar-lote-pregunta-' + lote.id"
+                        [attr.aria-describedby]="'eliminar-lote-implica-' + lote.id"
+                        (keydown.escape)="cancelarEliminar()"
+                      >
+                        <p class="m-0" [id]="'eliminar-lote-pregunta-' + lote.id">
+                          {{
+                            'admin.ingestas.eliminar.pregunta'
+                              | transloco: { proveedor: nombreDelProveedor(lote) }
+                          }}
+                        </p>
+                        <p
+                          class="m-0 text-ts-texto-suave"
+                          [id]="'eliminar-lote-implica-' + lote.id"
+                        >
+                          {{ 'admin.ingestas.eliminar.loQueImplica' | transloco }}
+                        </p>
+                        @if (errorEliminar(); as mensaje) {
+                          <p class="m-0 text-ts-error" role="alert">{{ mensaje }}</p>
+                        }
+                        <div class="flex flex-wrap gap-12">
+                          <ts-boton
+                            variante="peligro"
+                            [ocupado]="eliminando()"
+                            [etiquetaCargando]="'admin.ingestas.eliminar.eliminando' | transloco"
+                            (click)="eliminar(lote)"
+                          >
+                            {{ 'admin.ingestas.eliminar.confirmar' | transloco }}
+                          </ts-boton>
+                          <ts-boton variante="secundario" (click)="cancelarEliminar()">
+                            {{ 'admin.ingestas.eliminar.cancelar' | transloco }}
+                          </ts-boton>
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
+                }
               }
             </tbody>
           </table>

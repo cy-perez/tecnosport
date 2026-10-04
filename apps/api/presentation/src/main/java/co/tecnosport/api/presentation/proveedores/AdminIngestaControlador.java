@@ -4,13 +4,16 @@ import co.tecnosport.api.application.catalogo.SolicitudDeSubida;
 import co.tecnosport.api.application.compartido.Reloj;
 import co.tecnosport.api.application.proveedores.ColaDeIngestasLlenaException;
 import co.tecnosport.api.application.proveedores.EjecutorDeIngestas;
+import co.tecnosport.api.application.proveedores.EliminarLoteDeIngesta;
 import co.tecnosport.api.application.proveedores.IniciarIngesta;
 import co.tecnosport.api.application.proveedores.IniciarIngestaComando;
+import co.tecnosport.api.application.proveedores.LoteEliminado;
 import co.tecnosport.api.application.proveedores.LoteNoEncontradoException;
 import co.tecnosport.api.application.proveedores.RepositorioLotesIngesta;
 import co.tecnosport.api.application.proveedores.SolicitarSubidaDeExportacion;
 import co.tecnosport.api.domain.proveedores.LoteIngesta;
 import co.tecnosport.api.presentation.proveedores.dto.IniciarIngestaPeticion;
+import co.tecnosport.api.presentation.proveedores.dto.LoteEliminadoRespuesta;
 import co.tecnosport.api.presentation.proveedores.dto.LoteIngestaRespuesta;
 import co.tecnosport.api.presentation.proveedores.dto.LotesPaginadosRespuesta;
 import co.tecnosport.api.presentation.proveedores.dto.SolicitarSubidaDeExportacionPeticion;
@@ -22,6 +25,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -52,6 +56,7 @@ public class AdminIngestaControlador {
   private final RepositorioLotesIngesta repositorioLotes;
   private final Reloj reloj;
   private final TransactionTemplate transaccion;
+  private final EliminarLoteDeIngesta eliminarLote;
 
   public AdminIngestaControlador(
       SolicitarSubidaDeExportacion solicitarSubida,
@@ -59,13 +64,15 @@ public class AdminIngestaControlador {
       EjecutorDeIngestas ejecutor,
       RepositorioLotesIngesta repositorioLotes,
       Reloj reloj,
-      PlatformTransactionManager transactionManager) {
+      PlatformTransactionManager transactionManager,
+      EliminarLoteDeIngesta eliminarLote) {
     this.solicitarSubida = Objects.requireNonNull(solicitarSubida);
     this.iniciarIngesta = Objects.requireNonNull(iniciarIngesta);
     this.ejecutor = Objects.requireNonNull(ejecutor);
     this.repositorioLotes = Objects.requireNonNull(repositorioLotes);
     this.reloj = Objects.requireNonNull(reloj);
     this.transaccion = new TransactionTemplate(Objects.requireNonNull(transactionManager));
+    this.eliminarLote = Objects.requireNonNull(eliminarLote);
   }
 
   @PostMapping("/proveedores/{id}/ingestas/url-subida")
@@ -106,6 +113,24 @@ public class AdminIngestaControlador {
         .buscarPorId(id)
         .map(LoteIngestaRespuesta::de)
         .orElseThrow(() -> new LoteNoEncontradoException(id));
+  }
+
+  /**
+   * Borra la ingesta con sus borradores y los productos no publicados que salieron de ella; ver
+   * {@link EliminarLoteDeIngesta}. {@code 200} y no {@code 204}: el panel dice cuántos productos se
+   * fueron y cuántos se quedaron por estar publicados. En curso, {@code 409}.
+   */
+  @DeleteMapping("/ingestas/{id}")
+  public LoteEliminadoRespuesta eliminar(@PathVariable UUID id) {
+    LoteEliminado resultado = transaccion.execute(estado -> eliminarLote.ejecutar(id));
+    log.info(
+        "Lote de ingesta {} eliminado: {} productos borrados, {} conservados, {} archivos.",
+        id,
+        resultado.productosEliminados(),
+        resultado.productosConservados(),
+        resultado.archivosBorrados());
+    return new LoteEliminadoRespuesta(
+        resultado.productosEliminados(), resultado.productosConservados());
   }
 
   @GetMapping("/ingestas")

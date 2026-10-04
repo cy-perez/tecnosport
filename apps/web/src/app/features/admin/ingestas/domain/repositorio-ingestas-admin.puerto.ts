@@ -1,5 +1,11 @@
 import { InjectionToken } from '@angular/core';
-import { FiltroLotes, LoteIngesta, LotesPaginados, SubirExportacion } from './ingesta.model';
+import {
+  FiltroLotes,
+  LoteEliminado,
+  LoteIngesta,
+  LotesPaginados,
+  SubirExportacion,
+} from './ingesta.model';
 
 /**
  * Lo que el panel hace con las ingestas: subir una exportación y mirar cómo van los lotes.
@@ -12,6 +18,8 @@ export interface RepositorioIngestasAdmin {
   listar(filtro: FiltroLotes): Promise<LotesPaginados>;
   obtener(id: string): Promise<LoteIngesta>;
   subir(comando: SubirExportacion): Promise<LoteIngesta>;
+  /** Borra la ingesta con sus borradores y los productos no publicados que salieron de ella. */
+  eliminar(id: string): Promise<LoteEliminado>;
 }
 
 export const REPOSITORIO_INGESTAS_ADMIN = new InjectionToken<RepositorioIngestasAdmin>(

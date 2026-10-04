@@ -1,5 +1,6 @@
 package co.tecnosport.api.infrastructure.proveedores;
 
+import co.tecnosport.api.application.proveedores.DependenciasDeLote;
 import co.tecnosport.api.application.proveedores.LotesPaginados;
 import co.tecnosport.api.application.proveedores.RepositorioLotesIngesta;
 import co.tecnosport.api.domain.proveedores.EstadoLote;
@@ -7,6 +8,7 @@ import co.tecnosport.api.domain.proveedores.LoteIngesta;
 import co.tecnosport.api.domain.proveedores.OrigenIngesta;
 import co.tecnosport.api.domain.proveedores.ResumenIngesta;
 import co.tecnosport.api.infrastructure.proveedores.entidad.LoteIngestaJpaEntity;
+import jakarta.persistence.EntityManager;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -19,10 +21,73 @@ import org.springframework.stereotype.Repository;
 @Repository
 public class RepositorioLotesIngestaJpa implements RepositorioLotesIngesta {
 
-  private final LoteIngestaJpaRepository jpa;
+  /**
+   * El orden es el de las llaves foráneas, todas {@code restrict} salvo la de {@code
+   * publicacion_mensaje}, que cae en cascada con su publicación. Como en {@code
+   * RepositorioProveedoresJpa}, pero por lote.
+   */
+  private static final List<String> BORRAR_HISTORIAL =
+      List.of(
+          "delete from borrador_producto where publicacion_id in"
+              + " (select id from publicacion_proveedor where lote_id = ?1)",
+          "delete from publicacion_proveedor where lote_id = ?1",
+          "delete from mensaje_proveedor where lote_id = ?1",
+          "delete from lote_ingesta where id = ?1");
 
-  public RepositorioLotesIngestaJpa(LoteIngestaJpaRepository jpa) {
+  private final LoteIngestaJpaRepository jpa;
+  private final EntityManager entityManager;
+
+  public RepositorioLotesIngestaJpa(LoteIngestaJpaRepository jpa, EntityManager entityManager) {
     this.jpa = Objects.requireNonNull(jpa);
+    this.entityManager = Objects.requireNonNull(entityManager);
+  }
+
+  @Override
+  public DependenciasDeLote dependenciasDe(UUID loteId) {
+    @SuppressWarnings("unchecked")
+    List<Object> productos =
+        entityManager
+            .createNativeQuery(
+                "select distinct b.producto_id from borrador_producto b"
+                    + " join publicacion_proveedor p on p.id = b.publicacion_id"
+                    + " where p.lote_id = ?1 and b.estado = 'APROBADO'"
+                    + " and b.producto_id is not null")
+            .setParameter(1, loteId)
+            .getResultList();
+    @SuppressWarnings("unchecked")
+    List<String> archivos =
+        entityManager
+            .createNativeQuery(
+                // El ZIP solo si ningún otro lote lo nombra: un envío repetido de la misma
+                // exportación crea dos lotes sobre el mismo objeto.
+                "select l.referencia_archivo from lote_ingesta l"
+                    + " where l.id = ?1 and l.referencia_archivo is not null"
+                    + " and not exists (select 1 from lote_ingesta o"
+                    + " where o.referencia_archivo = l.referencia_archivo and o.id <> l.id)"
+                    + " union"
+                    + " select referencia_archivo from mensaje_proveedor"
+                    + " where lote_id = ?1 and referencia_archivo is not null")
+            .setParameter(1, loteId)
+            .getResultList();
+    return new DependenciasDeLote(
+        productos.stream()
+            .map(id -> id instanceof UUID uuid ? uuid : UUID.fromString(id.toString()))
+            .sorted()
+            .toList(),
+        archivos.stream().sorted().toList());
+  }
+
+  @Override
+  public void eliminarConSuHistorial(UUID loteId) {
+    // Lo pendiente de esta transacción, antes del `clear()` de abajo, que lo descartaría en
+    // silencio.
+    entityManager.flush();
+    for (String sentencia : BORRAR_HISTORIAL) {
+      entityManager.createNativeQuery(sentencia).setParameter(1, loteId).executeUpdate();
+    }
+    // Las sentencias nativas no pasan por el contexto de persistencia: sin esto, el lote ya cargado
+    // en esta transacción seguiría devolviéndose como si existiera.
+    entityManager.clear();
   }
 
   @Override

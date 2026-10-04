@@ -1,6 +1,7 @@
 package co.tecnosport.api.presentation.proveedores;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -10,8 +11,11 @@ import co.tecnosport.api.application.catalogo.UrlFirmada;
 import co.tecnosport.api.application.compartido.Reloj;
 import co.tecnosport.api.application.proveedores.AlmacenDeArchivosDeProveedor;
 import co.tecnosport.api.application.proveedores.ColaDeIngestasLlenaException;
+import co.tecnosport.api.application.proveedores.DependenciasDeLote;
 import co.tecnosport.api.application.proveedores.DependenciasDeProveedor;
 import co.tecnosport.api.application.proveedores.EjecutorDeIngestas;
+import co.tecnosport.api.application.proveedores.EliminacionDeProductos;
+import co.tecnosport.api.application.proveedores.EliminarLoteDeIngesta;
 import co.tecnosport.api.application.proveedores.IniciarIngesta;
 import co.tecnosport.api.application.proveedores.LotesPaginados;
 import co.tecnosport.api.application.proveedores.RepositorioLotesIngesta;
@@ -62,6 +66,7 @@ class AdminIngestaControladorTest {
   @Autowired private AlmacenDoble almacen;
   @Autowired private EjecutorDoble ejecutor;
   @Autowired private TransaccionEspia transaccion;
+  @Autowired private EliminacionDoble eliminacion;
 
   private Proveedor proveedor;
   private String key;
@@ -72,6 +77,10 @@ class AdminIngestaControladorTest {
     lotes.porId.clear();
     almacen.objetos.clear();
     ejecutor.encolados.clear();
+    lotes.dependencias.clear();
+    lotes.eliminados.clear();
+    eliminacion.publicados.clear();
+    eliminacion.eliminados.clear();
     ejecutor.llena = false;
     transaccion.abiertas = 0;
     ejecutor.transaccionesAbiertasAlEncolar = -1;
@@ -204,6 +213,52 @@ class AdminIngestaControladorTest {
   }
 
   @Test
+  void eliminarUnaIngestaBorraSusProductosNoPublicadosYDiceCuantosQuedan() throws Exception {
+    LoteIngesta lote = LoteIngesta.recibirExportacion(proveedor.id(), key, AHORA);
+    lote.iniciar(AHORA.plusSeconds(1));
+    lote.terminar(new ResumenIngesta(40, 5, 35, 9, 9, 0, 0, 0, 2), AHORA.plusSeconds(60));
+    lotes.porId.put(lote.id(), lote);
+    UUID borrador = UUID.randomUUID();
+    UUID publicado = UUID.randomUUID();
+    eliminacion.publicados.add(publicado);
+    lotes.dependencias.put(
+        lote.id(), new DependenciasDeLote(List.of(borrador, publicado), List.of(key)));
+
+    mockMvc
+        .perform(delete("/api/v1/admin/ingestas/{id}", lote.id()))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.productosEliminados").value(1))
+        .andExpect(jsonPath("$.productosConservados").value(1));
+
+    assertThat(lotes.eliminados).containsExactly(lote.id());
+    assertThat(eliminacion.eliminados).containsExactly(borrador);
+    assertThat(almacen.objetos).doesNotContainKey(key);
+    assertThat(transaccion.abiertas).as("la transacción se cerró").isZero();
+  }
+
+  @Test
+  void eliminarUnaIngestaEnCursoEs409YNoBorraNada() throws Exception {
+    LoteIngesta lote = LoteIngesta.recibirExportacion(proveedor.id(), key, AHORA);
+    lotes.porId.put(lote.id(), lote);
+    lotes.dependencias.put(lote.id(), new DependenciasDeLote(List.of(), List.of(key)));
+
+    mockMvc
+        .perform(delete("/api/v1/admin/ingestas/{id}", lote.id()))
+        .andExpect(status().isConflict())
+        .andExpect(jsonPath("$.codigo").value("LOTE_EN_CURSO"));
+
+    assertThat(lotes.eliminados).isEmpty();
+    assertThat(almacen.objetos).containsKey(key);
+  }
+
+  @Test
+  void eliminarUnaIngestaQueNoExisteEs404() throws Exception {
+    mockMvc
+        .perform(delete("/api/v1/admin/ingestas/{id}", UUID.randomUUID()))
+        .andExpect(status().isNotFound());
+  }
+
+  @Test
   void verYListarDevuelvenElResumenCuandoLoHay() throws Exception {
     LoteIngesta lote = LoteIngesta.recibirExportacion(proveedor.id(), key, AHORA);
     lote.iniciar(AHORA.plusSeconds(1));
@@ -255,6 +310,17 @@ class AdminIngestaControladorTest {
     @Bean
     EjecutorDoble ejecutor(TransaccionEspia transaccion) {
       return new EjecutorDoble(transaccion);
+    }
+
+    @Bean
+    EliminacionDoble eliminacionDeProductos() {
+      return new EliminacionDoble();
+    }
+
+    @Bean
+    EliminarLoteDeIngesta eliminarLote(
+        RepositorioLotesDoble lotes, EliminacionDoble eliminacion, AlmacenDoble almacen) {
+      return new EliminarLoteDeIngesta(lotes, eliminacion, almacen);
     }
 
     @Bean
@@ -342,6 +408,35 @@ class AdminIngestaControladorTest {
               .sorted(Comparator.comparing(LoteIngesta::creadoEn).reversed())
               .toList();
       return new LotesPaginados(items, 0, 1, items.size());
+    }
+
+    final Map<UUID, DependenciasDeLote> dependencias = new HashMap<>();
+    final List<UUID> eliminados = new ArrayList<>();
+
+    @Override
+    public DependenciasDeLote dependenciasDe(UUID loteId) {
+      return dependencias.getOrDefault(loteId, new DependenciasDeLote(List.of(), List.of()));
+    }
+
+    @Override
+    public void eliminarConSuHistorial(UUID loteId) {
+      eliminados.add(loteId);
+      porId.remove(loteId);
+    }
+  }
+
+  /** Los productos de esta lista se quedan, como si estuvieran publicados. */
+  static final class EliminacionDoble implements EliminacionDeProductos {
+    final java.util.Set<UUID> publicados = new java.util.HashSet<>();
+    final List<UUID> eliminados = new ArrayList<>();
+
+    @Override
+    public boolean eliminarSiSePuede(UUID productoId) {
+      if (publicados.contains(productoId)) {
+        return false;
+      }
+      eliminados.add(productoId);
+      return true;
     }
   }
 

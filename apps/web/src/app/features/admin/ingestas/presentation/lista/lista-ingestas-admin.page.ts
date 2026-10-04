@@ -13,6 +13,9 @@ import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { mensajeDeError } from '../../../../../core/errores/mensaje-de-error';
+import { ErrorHttp } from '../../../../../core/http/respuesta-http';
+import { QueryClient } from '@tanstack/angular-query-experimental';
+import { CLAVE_INGESTAS_ADMIN } from '../../application/listar-ingestas.consulta';
 import { fechaConHora } from '../../../../../core/i18n/fecha-colombia';
 import { usarTraductor } from '../../../../../core/i18n/traductor';
 import { usarFoco } from '../../../../../shared/foco/foco';
@@ -26,7 +29,14 @@ import { usarMigasAdmin } from '../../../migas-admin';
 import { usarProveedoresAdmin } from '../../../proveedores/application/listar-proveedores.consulta';
 import { usarListarIngestas } from '../../application/listar-ingestas.consulta';
 import { usarSubirExportacion } from '../../application/subir-exportacion.mutacion';
-import { EstadoLote, FiltroLotes, LoteIngesta } from '../../domain/ingesta.model';
+import { usarEliminarIngesta } from '../../application/eliminar-ingesta.mutacion';
+import {
+  EstadoLote,
+  FiltroLotes,
+  LoteEliminado,
+  LoteIngesta,
+  loteAbierto,
+} from '../../domain/ingesta.model';
 import {
   filtroLotesDesdeQueryParams,
   queryParamsDesdeFiltroLotes,
@@ -211,6 +221,73 @@ export class ListaIngestasAdminPage {
           this.error.set(mensajeDeError(error, this.transloco, 'admin.ingestas.subir.error')),
       },
     );
+  }
+
+  // --- Eliminar una ingesta, con su pregunta en una fila aparte como en la lista de productos. ---
+
+  private readonly eliminacion = usarEliminarIngesta();
+  private readonly queryClient = inject(QueryClient);
+  private eliminacionEnVuelo = false;
+  protected readonly eliminando = computed(() => this.eliminacion.isPending());
+  /** El lote cuya fila está preguntando: una sola a la vez. */
+  protected readonly confirmandoEliminar = signal<string | null>(null);
+  protected readonly errorEliminar = signal<string | null>(null);
+  /** Lo que dejó el último borrado, para decirlo cuando la fila ya no existe. */
+  protected readonly avisoEliminado = signal<LoteEliminado | null>(null);
+  private readonly cajaEliminar = viewChild<ElementRef<HTMLElement>>('cajaEliminar');
+  private readonly avisoEliminadoRef = viewChild<ElementRef<HTMLElement>>('avisoEliminadoRef');
+  private readonly raiz = inject<ElementRef<HTMLElement>>(ElementRef);
+
+  /** Con el lote en la cola o a medio procesar no se ofrece: el servidor responde 409. */
+  protected sePuedeEliminar(lote: LoteIngesta): boolean {
+    return !loteAbierto(lote);
+  }
+
+  protected preguntarSiEliminar(lote: LoteIngesta): void {
+    this.errorEliminar.set(null);
+    this.avisoEliminado.set(null);
+    this.confirmandoEliminar.set(lote.id);
+    this.enfocarDespuesDePintar(() => this.cajaEliminar()?.nativeElement);
+  }
+
+  protected cancelarEliminar(): void {
+    const id = this.confirmandoEliminar();
+    this.confirmandoEliminar.set(null);
+    this.errorEliminar.set(null);
+    // De vuelta al botón que abrió la pregunta; vive dentro de `ts-boton`.
+    this.enfocarDespuesDePintar(() =>
+      this.raiz.nativeElement.querySelector<HTMLElement>(`[data-eliminar="${id}"] button`),
+    );
+  }
+
+  /** Guarda de reentrada: el botón usa `[ocupado]`, no `[cargando]`, y sigue siendo pulsable. */
+  protected eliminar(lote: LoteIngesta): void {
+    // Una marca propia y no `eliminando()`: `isPending` de TanStack no cambia en el mismo tic del
+    // `mutate`, y un doble clic pasaba los dos.
+    if (this.eliminacionEnVuelo) {
+      return;
+    }
+    this.eliminacionEnVuelo = true;
+    this.errorEliminar.set(null);
+    this.eliminacion.mutate(lote.id, {
+      onSettled: () => (this.eliminacionEnVuelo = false),
+      onSuccess: (resultado) => {
+        this.confirmandoEliminar.set(null);
+        this.avisoEliminado.set(resultado);
+        // La fila se fue con su botón: el foco va al aviso, que dice lo que pasó.
+        this.enfocarDespuesDePintar(() => this.avisoEliminadoRef()?.nativeElement);
+      },
+      onError: (error: unknown) => {
+        this.errorEliminar.set(
+          mensajeDeError(error, this.transloco, 'admin.ingestas.eliminar.error'),
+        );
+        // Ya no existe —otra pestaña la borró—: reintentar daría 404 para siempre, así que la lista
+        // se vuelve a pedir y la fila desaparece.
+        if (error instanceof ErrorHttp && error.estado === 404) {
+          void this.queryClient.invalidateQueries({ queryKey: CLAVE_INGESTAS_ADMIN });
+        }
+      },
+    });
   }
 
   protected filtrarPorProveedor(proveedorId: string): void {

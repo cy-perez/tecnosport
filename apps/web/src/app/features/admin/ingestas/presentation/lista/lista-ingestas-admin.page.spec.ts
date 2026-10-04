@@ -6,12 +6,18 @@ import en from '../../../../../../assets/i18n/en.json';
 import es from '../../../../../../assets/i18n/es.json';
 import esAdmin from '../../../../../../assets/i18n/scopes/admin/es.json';
 import { esperarSinViolaciones } from '../../../../../../testing/axe';
+import { ErrorHttp } from '../../../../../core/http/respuesta-http';
 import { REPOSITORIO_PROVEEDORES_ADMIN } from '../../../proveedores/domain/repositorio-proveedores-admin.puerto';
 import {
   proveedorDePrueba,
   RepositorioProveedoresAdminFalso,
 } from '../../../proveedores/presentation/apoyo-proveedores.spec-util';
-import { LoteIngesta, LotesPaginados, SubirExportacion } from '../../domain/ingesta.model';
+import {
+  LoteEliminado,
+  LoteIngesta,
+  LotesPaginados,
+  SubirExportacion,
+} from '../../domain/ingesta.model';
 import {
   REPOSITORIO_INGESTAS_ADMIN,
   RepositorioIngestasAdmin,
@@ -58,6 +64,18 @@ class RepositorioIngestasAdminFalso implements RepositorioIngestasAdmin {
 
   async obtener(id: string): Promise<LoteIngesta> {
     return this.lotes.find((l) => l.id === id) ?? loteDePrueba({ id });
+  }
+
+  readonly eliminados: string[] = [];
+  errorAlEliminar: Error | null = null;
+
+  async eliminar(id: string): Promise<LoteEliminado> {
+    this.eliminados.push(id);
+    if (this.errorAlEliminar) {
+      throw this.errorAlEliminar;
+    }
+    this.lotes = this.lotes.filter((l) => l.id !== id);
+    return { productosEliminados: 3, productosConservados: 1 };
   }
 
   async subir(comando: SubirExportacion): Promise<LoteIngesta> {
@@ -219,5 +237,75 @@ describe('ListaIngestasAdminPage', () => {
 
     await within(await screen.findByRole('table')).findByText('Bolsos Medellín');
     await esperarSinViolaciones(container);
+  });
+
+  describe('eliminar una ingesta', () => {
+    const e = esAdmin.ingestas.eliminar;
+    const accion = 'Eliminar la ingesta de Bolsos Medellín del';
+
+    it('pregunta, borra y dice cuántos productos se fueron y cuántos se quedaron', async () => {
+      const { repositorio } = await renderPagina([loteDePrueba()]);
+
+      fireEvent.click(await screen.findByRole('button', { name: new RegExp(accion) }));
+      expect(repositorio.eliminados).toEqual([]);
+      expect(screen.getByText('¿Eliminar esta ingesta de Bolsos Medellín?')).toBeTruthy();
+      fireEvent.click(screen.getByRole('button', { name: e.confirmar }));
+
+      expect(
+        await screen.findByText(
+          'Ingesta eliminada. Productos borrados: 3. Se quedaron por estar publicados o vendidos: 1.',
+        ),
+      ).toBeTruthy();
+      expect(repositorio.eliminados).toEqual(['lote-1']);
+    });
+
+    it('cancelar no borra nada', async () => {
+      const { repositorio } = await renderPagina([loteDePrueba()]);
+
+      fireEvent.click(await screen.findByRole('button', { name: new RegExp(accion) }));
+      fireEvent.click(screen.getByRole('button', { name: e.cancelar }));
+
+      expect(screen.queryByRole('button', { name: e.confirmar })).toBeNull();
+      expect(repositorio.eliminados).toEqual([]);
+    });
+
+    it('si falla, lo dice dentro de la pregunta', async () => {
+      const { repositorio } = await renderPagina([loteDePrueba()]);
+      repositorio.errorAlEliminar = new Error('falló');
+
+      fireEvent.click(await screen.findByRole('button', { name: new RegExp(accion) }));
+      fireEvent.click(screen.getByRole('button', { name: e.confirmar }));
+
+      expect(await screen.findByText(e.error)).toBeTruthy();
+    });
+
+    it('con el lote en curso dice que espere, con el texto del código', async () => {
+      const { repositorio } = await renderPagina([loteDePrueba()]);
+      repositorio.errorAlEliminar = new ErrorHttp(409, 'en curso', 'LOTE_EN_CURSO');
+
+      fireEvent.click(await screen.findByRole('button', { name: new RegExp(accion) }));
+      fireEvent.click(screen.getByRole('button', { name: e.confirmar }));
+
+      expect(await screen.findByText(esAdmin.errores.lote_en_curso)).toBeTruthy();
+    });
+
+    it('dos clics en confirmar borran una sola vez', async () => {
+      const { repositorio } = await renderPagina([loteDePrueba()]);
+
+      fireEvent.click(await screen.findByRole('button', { name: new RegExp(accion) }));
+      const confirmar = screen.getByRole('button', { name: e.confirmar });
+      fireEvent.click(confirmar);
+      fireEvent.click(confirmar);
+
+      await screen.findByText(/Ingesta eliminada/);
+      expect(repositorio.eliminados).toEqual(['lote-1']);
+    });
+
+    it('no se ofrece mientras el lote se procesa', async () => {
+      await renderPagina([loteDePrueba({ estado: 'PROCESANDO', terminadoEn: null })]);
+      await screen.findByRole('table');
+
+      expect(screen.queryByRole('button', { name: new RegExp(accion) })).toBeNull();
+    });
   });
 });

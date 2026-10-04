@@ -22,4 +22,13 @@ public interface RepositorioLotesIngesta {
 
   /** Los que están en la cola o a medio procesar, del más antiguo al más reciente. */
   List<LoteIngesta> abiertos();
+
+  /** Lo que cuelga del lote: ver {@link EliminarLoteDeIngesta}. */
+  DependenciasDeLote dependenciasDe(UUID loteId);
+
+  /**
+   * Borra el lote con sus borradores, publicaciones y mensajes. Los productos ya se resolvieron
+   * antes: los que quedan pierden el vínculo con su borrador por el {@code on delete set null}.
+   */
+  void eliminarConSuHistorial(UUID loteId);
 }

@@ -1584,6 +1584,19 @@
         },
         "type" : "object"
       },
+      "LoteEliminadoRespuesta" : {
+        "properties" : {
+          "productosConservados" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "productosEliminados" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        },
+        "type" : "object"
+      },
       "LoteIngestaRespuesta" : {
         "properties" : {
           "creadoEn" : {
@@ -4041,6 +4054,35 @@
       }
     },
     "/api/v1/admin/ingestas/{id}" : {
+      "delete" : {
+        "operationId" : "eliminar_4",
+        "parameters" : [
+          {
+            "in" : "path",
+            "name" : "id",
+            "required" : true,
+            "schema" : {
+              "format" : "uuid",
+              "type" : "string"
+            }
+          }
+        ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/LoteEliminadoRespuesta"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "admin-ingesta-controlador"
+        ]
+      },
       "get" : {
         "operationId" : "ver_5",
         "parameters" : [
@@ -5774,7 +5816,7 @@
     },
     "/api/v1/admin/sets-rotacion/{id}" : {
       "delete" : {
-        "operationId" : "eliminar_4",
+        "operationId" : "eliminar_5",
         "parameters" : [
           {
             "in" : "path",

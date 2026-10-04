@@ -3,6 +3,7 @@ package co.tecnosport.api.infrastructure.proveedores;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import co.tecnosport.api.application.proveedores.BorradoresPaginados;
+import co.tecnosport.api.application.proveedores.DependenciasDeLote;
 import co.tecnosport.api.application.proveedores.DependenciasDeProveedor;
 import co.tecnosport.api.application.proveedores.HuellaVisual;
 import co.tecnosport.api.domain.catalogo.LineaCatalogo;
@@ -402,5 +403,125 @@ class RepositorioBorradoresJpaTest {
     assertThat(proveedores.buscarPorId(ajeno.id())).isPresent();
     assertThat(proveedores.dependenciasDe(ajeno.id()).archivos())
         .containsExactly("o/exportaciones/b.zip");
+  }
+
+  /**
+   * El lote se va con sus borradores, publicaciones y mensajes, y solo él: otro lote del mismo
+   * proveedor se queda. De productos solo cuenta el que nació de un borrador aprobado de este lote.
+   */
+  @Test
+  void elLoteSeVaConSuHistorialYSoloElSuyo() {
+    unaPublicacion();
+    LoteIngesta lote = lotes.buscarPorId(publicacion.loteId()).orElseThrow();
+    MensajeProveedor foto =
+        MensajeProveedor.imagen(
+            proveedor.id(),
+            lote.id(),
+            new IdExternoDeMensaje("foto"),
+            T.plusSeconds(5),
+            null,
+            "p/fotos/1.jpg");
+    mensajes.guardarTodos(List.of(foto));
+    // Con un medio, para que haya filas en `publicacion_mensaje` que también se vayan.
+    publicacion.anexar(foto);
+    publicaciones.guardarTodas(List.of(publicacion));
+    UUID productoId = unProducto();
+    BorradorProducto aprobado = unBorrador("Bolso");
+    aprobado.aprobar(productoId, null);
+    borradores.guardar(aprobado);
+    borradores.guardar(unBorrador("Morral"));
+
+    // Otro lote del mismo proveedor, con todo lo suyo y el mismo ZIP: un envío repetido.
+    LoteIngesta otro =
+        LoteIngesta.recibirExportacion(proveedor.id(), "p/exportaciones/a.zip", T.plusSeconds(1));
+    lotes.guardar(otro);
+    MensajeProveedor textoDelOtro =
+        MensajeProveedor.texto(
+            proveedor.id(), otro.id(), new IdExternoDeMensaje("q"), T, "Morral 💰 40.000");
+    MensajeProveedor fotoDelOtro =
+        MensajeProveedor.imagen(
+            proveedor.id(),
+            otro.id(),
+            new IdExternoDeMensaje("foto-q"),
+            T.plusSeconds(6),
+            null,
+            "p/fotos/2.jpg");
+    mensajes.guardarTodos(List.of(textoDelOtro, fotoDelOtro));
+    PublicacionProveedor publicacionDelOtro = PublicacionProveedor.abrir(textoDelOtro);
+    publicacionDelOtro.anexar(fotoDelOtro);
+    publicaciones.guardarTodas(List.of(publicacionDelOtro));
+    PublicacionProveedor propia = publicacion;
+    publicacion = publicacionDelOtro;
+    BorradorProducto borradorDelOtro = unBorrador("Morral del otro");
+    borradores.guardar(borradorDelOtro);
+    publicacion = propia;
+
+    DependenciasDeLote dependencias = lotes.dependenciasDe(lote.id());
+    assertThat(dependencias.productos()).containsExactly(productoId);
+    // El ZIP lo nombra también el otro lote: no se ofrece para borrar.
+    assertThat(dependencias.archivos()).containsExactly("p/fotos/1.jpg");
+
+    lotes.eliminarConSuHistorial(lote.id());
+
+    assertThat(lotes.buscarPorId(lote.id())).isEmpty();
+    for (String tabla : List.of("publicacion_proveedor", "mensaje_proveedor")) {
+      assertThat(contar("select count(*) from " + tabla + " where lote_id = ?1", lote.id()))
+          .as(tabla)
+          .isZero();
+      assertThat(contar("select count(*) from " + tabla + " where lote_id = ?1", otro.id()))
+          .as(tabla + " del otro lote")
+          .isPositive();
+    }
+    assertThat(borradores.buscarPorId(aprobado.id())).isEmpty();
+    assertThat(borradores.buscarPorId(borradorDelOtro.id())).isPresent();
+    assertThat(
+            contar(
+                "select count(*) from publicacion_mensaje where publicacion_id = ?1",
+                publicacionDelOtro.id()))
+        .isPositive();
+    assertThat(lotes.dependenciasDe(otro.id()).archivos())
+        .containsExactly("p/exportaciones/a.zip", "p/fotos/2.jpg");
+  }
+
+  private long contar(String sql, UUID id) {
+    return ((Number) em.createNativeQuery(sql).setParameter(1, id).getSingleResult()).longValue();
+  }
+
+  private BorradorProducto unBorrador(String titulo) {
+    return BorradorProducto.nuevo(
+        publicacion.id(),
+        proveedor.id(),
+        extraido(titulo, titulo + " de dama."),
+        "{}",
+        Dinero.deCop(53000),
+        Dinero.deCop(70000),
+        HuellaProveedor.calcular(proveedor.id(), titulo, Dinero.deCop(53000)),
+        null,
+        Set.of(),
+        T);
+  }
+
+  /** Una fila de producto mínima: la llave de {@code borrador_producto.producto_id} la exige. */
+  private UUID unProducto() {
+    UUID marca = UUID.randomUUID();
+    UUID categoria = UUID.randomUUID();
+    UUID producto = UUID.randomUUID();
+    em.createNativeQuery("insert into marca (id, nombre, creado_en) values (?1, 'Genérica', now())")
+        .setParameter(1, marca)
+        .executeUpdate();
+    em.createNativeQuery(
+            "insert into categoria (id, nombre, slug, linea, creado_en)"
+                + " values (?1, 'Bolsos', 'bolsos-lote', 'BOLSOS', now())")
+        .setParameter(1, categoria)
+        .executeUpdate();
+    em.createNativeQuery(
+            "insert into producto (id, nombre, slug, descripcion, marca_id, categoria_id, estado,"
+                + " origen, estado_disponibilidad, creado_en, actualizado_en) values (?1, 'Bolso',"
+                + " 'bolso-lote', '', ?2, ?3, 'BORRADOR', 'MANUAL', 'DISPONIBLE', now(), now())")
+        .setParameter(1, producto)
+        .setParameter(2, marca)
+        .setParameter(3, categoria)
+        .executeUpdate();
+    return producto;
   }
 }

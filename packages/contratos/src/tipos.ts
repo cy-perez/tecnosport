@@ -270,7 +270,7 @@ export interface paths {
         get: operations["ver_5"];
         put?: never;
         post?: never;
-        delete?: never;
+        delete: operations["eliminar_4"];
         options?: never;
         head?: never;
         patch?: never;
@@ -862,7 +862,7 @@ export interface paths {
         get?: never;
         put?: never;
         post?: never;
-        delete: operations["eliminar_4"];
+        delete: operations["eliminar_5"];
         options?: never;
         head?: never;
         patch?: never;
@@ -2137,6 +2137,12 @@ export interface components {
             /** Format: uuid */
             varianteId?: string;
         };
+        LoteEliminadoRespuesta: {
+            /** Format: int32 */
+            productosConservados?: number;
+            /** Format: int32 */
+            productosEliminados?: number;
+        };
         LoteIngestaRespuesta: {
             /** Format: date-time */
             creadoEn?: string;
@@ -3286,6 +3292,28 @@ export interface operations {
             };
         };
     };
+    eliminar_4: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["LoteEliminadoRespuesta"];
+                };
+            };
+        };
+    };
     listar_5: {
         parameters: {
             query?: never;
@@ -4430,7 +4458,7 @@ export interface operations {
             };
         };
     };
-    eliminar_4: {
+    eliminar_5: {
         parameters: {
             query?: never;
             header?: never;

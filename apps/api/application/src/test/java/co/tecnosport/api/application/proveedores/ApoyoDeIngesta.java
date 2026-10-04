@@ -122,6 +122,20 @@ final class ApoyoDeIngesta {
               .toList();
       return new LotesPaginados(todos, 0, 1, todos.size());
     }
+
+    final Map<UUID, DependenciasDeLote> dependencias = new HashMap<>();
+    final List<UUID> eliminados = new ArrayList<>();
+
+    @Override
+    public DependenciasDeLote dependenciasDe(UUID loteId) {
+      return dependencias.getOrDefault(loteId, new DependenciasDeLote(List.of(), List.of()));
+    }
+
+    @Override
+    public void eliminarConSuHistorial(UUID loteId) {
+      eliminados.add(loteId);
+      porId.remove(loteId);
+    }
   }
 
   static final class RepositorioMensajesEnMemoria implements RepositorioMensajesProveedor {

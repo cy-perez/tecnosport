@@ -5,6 +5,7 @@ import { crearClienteAutenticado } from '../../../../core/http/cliente-autentica
 import { desempaquetar, ErrorHttp } from '../../../../core/http/respuesta-http';
 import {
   FiltroLotes,
+  LoteEliminado,
   LoteIngesta,
   LotesPaginados,
   SubirExportacion,
@@ -50,6 +51,17 @@ export class IngestasAdminHttpRepositorio implements RepositorioIngestasAdmin {
       params: { path: { id } },
     });
     return aLoteIngesta(desempaquetar(respuesta, 'no se pudo cargar la ingesta'));
+  }
+
+  async eliminar(id: string): Promise<LoteEliminado> {
+    const respuesta = await this.cliente.DELETE('/api/v1/admin/ingestas/{id}', {
+      params: { path: { id } },
+    });
+    const cuerpo = desempaquetar(respuesta, 'no se pudo eliminar la ingesta');
+    return {
+      productosEliminados: cuerpo.productosEliminados ?? 0,
+      productosConservados: cuerpo.productosConservados ?? 0,
+    };
   }
 
   async subir(comando: SubirExportacion): Promise<LoteIngesta> {
