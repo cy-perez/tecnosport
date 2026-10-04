@@ -5,8 +5,9 @@ import { REPOSITORIO_INGESTAS_ADMIN } from '../domain/repositorio-ingestas-admin
 import { CLAVE_INGESTAS_ADMIN } from './listar-ingestas.consulta';
 
 /**
- * Borrar una ingesta se lleva sus borradores y sus productos no publicados, así que además de la
- * lista de lotes se invalidan la bandeja de borradores y la lista de productos del panel.
+ * Borrar una ingesta se lleva sus borradores y sus productos no publicados, así que se invalida el
+ * panel entero y no solo la lista de lotes: la bandeja, los productos y las tres pantallas que
+ * listan por variante —existencias, medidas, sin medir— enseñaban lo que ya no está.
  */
 export function usarEliminarIngesta() {
   const repositorio = inject(REPOSITORIO_INGESTAS_ADMIN);
@@ -16,8 +17,7 @@ export function usarEliminarIngesta() {
     mutationFn: (id: string): Promise<LoteEliminado> => repositorio.eliminar(id),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: CLAVE_INGESTAS_ADMIN });
-      await queryClient.invalidateQueries({ queryKey: ['admin', 'borradores'] });
-      await queryClient.invalidateQueries({ queryKey: ['admin', 'productos'] });
+      await queryClient.invalidateQueries({ queryKey: ['admin'] });
     },
   }));
 }

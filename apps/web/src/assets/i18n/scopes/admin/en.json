@@ -31,7 +31,7 @@
     "exportacion_demasiado_grande": "The export is too large. Export the chat without media or split the period in two.",
     "tipo_de_exportacion_no_admitido": "That file is not a chat export. Upload the .zip WhatsApp generates.",
     "cola_de_ingestas_llena": "Too many imports are running and this one did not make it into the queue. Upload the export again in a while.",
-    "lote_no_encontrado": "That batch no longer exists. Reload the list.",
+    "lote_no_encontrado": "That import no longer exists: the list was just refreshed.",
     "borrador_no_encontrado": "That draft no longer exists. Reload the list.",
     "borrador_no_editable": "This draft has already been decided: it cannot be changed or approved again.",
     "borrador_no_eliminable": "An approved draft or a renewal cannot be deleted: it is what recognises the product when the supplier posts it again.",

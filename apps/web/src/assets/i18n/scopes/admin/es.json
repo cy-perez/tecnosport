@@ -31,7 +31,7 @@
     "exportacion_demasiado_grande": "La exportación pesa demasiado. Exporta el chat sin archivos o parte el periodo en dos.",
     "tipo_de_exportacion_no_admitido": "Ese archivo no es una exportación de chat. Sube el .zip que genera WhatsApp.",
     "cola_de_ingestas_llena": "Hay demasiadas ingestas en curso y esta no entró en la cola. Vuelve a subir la exportación en un rato.",
-    "lote_no_encontrado": "Ese lote ya no existe. Recarga la lista.",
+    "lote_no_encontrado": "Esa ingesta ya no existe: la lista se acaba de actualizar.",
     "borrador_no_encontrado": "Ese borrador ya no existe. Recarga la lista.",
     "borrador_no_editable": "Este borrador ya se decidió: no se puede cambiar ni aprobar de nuevo.",
     "borrador_no_eliminable": "Un borrador aprobado o una renovación no se borra: es lo que reconoce el producto cuando el proveedor lo vuelve a anunciar.",

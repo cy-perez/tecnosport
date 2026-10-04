@@ -13,6 +13,9 @@ import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { mensajeDeError } from '../../../../../core/errores/mensaje-de-error';
+import { ErrorHttp } from '../../../../../core/http/respuesta-http';
+import { QueryClient } from '@tanstack/angular-query-experimental';
+import { CLAVE_INGESTAS_ADMIN } from '../../application/listar-ingestas.consulta';
 import { fechaConHora } from '../../../../../core/i18n/fecha-colombia';
 import { usarTraductor } from '../../../../../core/i18n/traductor';
 import { usarFoco } from '../../../../../shared/foco/foco';
@@ -220,9 +223,11 @@ export class ListaIngestasAdminPage {
     );
   }
 
-  // --- Eliminar una ingesta, con su pregunta en línea como las filas de la lista de productos. ---
+  // --- Eliminar una ingesta, con su pregunta en una fila aparte como en la lista de productos. ---
 
   private readonly eliminacion = usarEliminarIngesta();
+  private readonly queryClient = inject(QueryClient);
+  private eliminacionEnVuelo = false;
   protected readonly eliminando = computed(() => this.eliminacion.isPending());
   /** El lote cuya fila está preguntando: una sola a la vez. */
   protected readonly confirmandoEliminar = signal<string | null>(null);
@@ -257,21 +262,31 @@ export class ListaIngestasAdminPage {
 
   /** Guarda de reentrada: el botón usa `[ocupado]`, no `[cargando]`, y sigue siendo pulsable. */
   protected eliminar(lote: LoteIngesta): void {
-    if (this.eliminando()) {
+    // Una marca propia y no `eliminando()`: `isPending` de TanStack no cambia en el mismo tic del
+    // `mutate`, y un doble clic pasaba los dos.
+    if (this.eliminacionEnVuelo) {
       return;
     }
+    this.eliminacionEnVuelo = true;
     this.errorEliminar.set(null);
     this.eliminacion.mutate(lote.id, {
+      onSettled: () => (this.eliminacionEnVuelo = false),
       onSuccess: (resultado) => {
         this.confirmandoEliminar.set(null);
         this.avisoEliminado.set(resultado);
         // La fila se fue con su botón: el foco va al aviso, que dice lo que pasó.
         this.enfocarDespuesDePintar(() => this.avisoEliminadoRef()?.nativeElement);
       },
-      onError: (error: unknown) =>
+      onError: (error: unknown) => {
         this.errorEliminar.set(
           mensajeDeError(error, this.transloco, 'admin.ingestas.eliminar.error'),
-        ),
+        );
+        // Ya no existe —otra pestaña la borró—: reintentar daría 404 para siempre, así que la lista
+        // se vuelve a pedir y la fila desaparece.
+        if (error instanceof ErrorHttp && error.estado === 404) {
+          void this.queryClient.invalidateQueries({ queryKey: CLAVE_INGESTAS_ADMIN });
+        }
+      },
     });
   }
 
