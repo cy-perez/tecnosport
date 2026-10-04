@@ -91,8 +91,10 @@ class RepositorioCategoriasFalso implements RepositorioCategorias {
 class RepositorioPaletaFalso implements RepositorioPaletaColores {
   async listarTodos(): Promise<ColorDePaleta[]> {
     return [
-      { nombre: 'Negro', nombreEn: 'Black', hex: '#111111' },
+      // Fuera de orden a propósito: la pantalla los ordena alfabéticamente.
       { nombre: 'Vino', nombreEn: 'Burgundy', hex: '#722F37' },
+      { nombre: 'Negro', nombreEn: 'Black', hex: '#111111' },
+      { nombre: 'Café', nombreEn: 'Brown', hex: '#6F4E37' },
     ];
   }
 }
@@ -200,6 +202,16 @@ describe('DetalleBorradorAdminPage', () => {
 
     expect(await screen.findByText(a.faltanCampos)).toBeTruthy();
     expect(repositorio.aprobaciones).toEqual([]);
+  });
+
+  it('ofrece los colores de la paleta en orden alfabético', async () => {
+    await renderPagina();
+
+    await screen.findAllByRole('option', { name: 'Vino' });
+    const opciones = [...(screen.getByLabelText('Color de la foto 1') as HTMLSelectElement).options]
+      .map((opcion) => opcion.textContent?.trim())
+      .filter((texto) => ['Café', 'Negro', 'Vino'].includes(texto ?? ''));
+    expect(opciones).toEqual(['Café', 'Negro', 'Vino']);
   });
 
   it('aprueba con el tono de cada foto, las unidades y el precio, y enlaza el producto', async () => {

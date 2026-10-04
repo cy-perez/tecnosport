@@ -26,6 +26,7 @@ import { usarTraductor } from '../../../../../core/i18n/traductor';
 import { hojasConRuta } from '../../../../catalogo/domain/arbol-categorias';
 import { claveDeLinea } from '../../../../catalogo/domain/filtro-productos.model';
 import { OpcionSelect, TsSelect } from '../../../../../shared/ui/select/ts-select';
+import { ordenarPorEtiqueta } from '../../../../../shared/ui/select/ordenar-opciones';
 import { TsSelectControl } from '../../../../../shared/ui/select/ts-select-control';
 import { usarMigasAdmin } from '../../../migas-admin';
 import { usarEditarProductoAdmin } from '../../application/editar-producto-admin.mutacion';
@@ -171,7 +172,7 @@ export class EditarProductoAdminPage {
   /**
    * Los colores del producto, uno por valor, con la primera variante de cada uno: marcar una foto
    * como «Negro» la cuelga de esa variante, que es lo que la tarjeta y la ficha leen para cambiar
-   * de foto al elegir el color.
+   * de foto al elegir el color. En orden alfabético, como el selector de la revisión de borradores.
    */
   protected readonly opcionesColor = computed<OpcionSelect[]>(() => {
     const vistos = new Map<string, string>();
@@ -182,10 +183,10 @@ export class EditarProductoAdminPage {
         }
       }
     }
-    return [...vistos.entries()].map(([valor, varianteId]) => ({
-      valor: varianteId,
-      etiqueta: valor,
-    }));
+    return ordenarPorEtiqueta(
+      [...vistos.entries()].map(([valor, varianteId]) => ({ valor: varianteId, etiqueta: valor })),
+      this.idioma(),
+    );
   });
 
   protected readonly errorColor = signal<string | null>(null);
