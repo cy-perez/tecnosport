@@ -41,6 +41,7 @@ import co.tecnosport.api.application.catalogo.RepositorioSetsRotacion;
 import co.tecnosport.api.application.catalogo.SolicitarSubidaDeImagenDeGaleria;
 import co.tecnosport.api.application.catalogo.SolicitarSubidaDeImagenPrincipal;
 import co.tecnosport.api.application.catalogo.SolicitarSubidasDeRotacion;
+import co.tecnosport.api.application.catalogo.UsarImagenDeGaleriaComoPrincipal;
 import co.tecnosport.api.application.catalogo.VerFichaDeProducto;
 import co.tecnosport.api.application.catalogo.VerProductoAdmin;
 import co.tecnosport.api.application.compartido.Reloj;
@@ -140,6 +141,12 @@ public class ConfiguracionCatalogo {
   public AsignarColorAImagenDeGaleria asignarColorAImagenDeGaleria(
       RepositorioProductos repositorioProductos) {
     return new AsignarColorAImagenDeGaleria(repositorioProductos);
+  }
+
+  @Bean
+  public UsarImagenDeGaleriaComoPrincipal usarImagenDeGaleriaComoPrincipal(
+      RepositorioProductos repositorioProductos) {
+    return new UsarImagenDeGaleriaComoPrincipal(repositorioProductos);
   }
 
   @Bean

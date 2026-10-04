@@ -31,6 +31,7 @@ import co.tecnosport.api.application.catalogo.RepositorioMarcas;
 import co.tecnosport.api.application.catalogo.RepositorioProductos;
 import co.tecnosport.api.application.catalogo.SolicitarSubidaDeImagenDeGaleria;
 import co.tecnosport.api.application.catalogo.SolicitarSubidaDeImagenPrincipal;
+import co.tecnosport.api.application.catalogo.UsarImagenDeGaleriaComoPrincipal;
 import co.tecnosport.api.application.catalogo.VerProductoAdmin;
 import co.tecnosport.api.application.pedido.RepositorioPedidos;
 import co.tecnosport.api.domain.catalogo.Categoria;
@@ -425,6 +426,39 @@ class AdminProductoControladorTest {
 
     org.junit.jupiter.api.Assertions.assertEquals(foto.id(), repositorio.imagenConVariante);
     org.junit.jupiter.api.Assertions.assertEquals(vino.id(), repositorio.varianteDeLaImagen);
+  }
+
+  @Test
+  void usarUnaFotoComoPrincipalDevuelve204YGrabaElIntercambio() throws Exception {
+    Producto producto = productoEnBorrador();
+    ImagenProducto foto = imagenDeGaleria(0);
+    producto.agregarImagenGaleria(foto);
+    repositorio.conProductos(producto);
+
+    mockMvc
+        .perform(
+            put(
+                "/api/v1/admin/productos/{id}/galeria/{imagen}/principal",
+                producto.id(),
+                foto.id()))
+        .andExpect(status().isNoContent());
+
+    org.junit.jupiter.api.Assertions.assertEquals(
+        foto.id(), repositorio.intercambioGuardado.imagenDeGaleriaQuitada());
+  }
+
+  @Test
+  void usarComoPrincipalUnaFotoQueNoEstaDevuelve404() throws Exception {
+    Producto producto = productoEnBorrador();
+    repositorio.conProductos(producto);
+
+    mockMvc
+        .perform(
+            put(
+                "/api/v1/admin/productos/{id}/galeria/{imagen}/principal",
+                producto.id(),
+                java.util.UUID.randomUUID()))
+        .andExpect(status().isNotFound());
   }
 
   @Test
@@ -854,6 +888,12 @@ class AdminProductoControladorTest {
     AsignarColorAImagenDeGaleria asignarColorAImagenDeGaleria(
         RepositorioProductos repositorioProductos) {
       return new AsignarColorAImagenDeGaleria(repositorioProductos);
+    }
+
+    @Bean
+    UsarImagenDeGaleriaComoPrincipal usarImagenDeGaleriaComoPrincipal(
+        RepositorioProductos repositorioProductos) {
+      return new UsarImagenDeGaleriaComoPrincipal(repositorioProductos);
     }
 
     /**

@@ -9,8 +9,10 @@ import co.tecnosport.api.application.catalogo.VarianteActiva;
 import co.tecnosport.api.application.compartido.ResultadoPaginado;
 import co.tecnosport.api.domain.catalogo.EstadoProducto;
 import co.tecnosport.api.domain.catalogo.ImagenProducto;
+import co.tecnosport.api.domain.catalogo.IntercambioDePrincipal;
 import co.tecnosport.api.domain.catalogo.Paquete;
 import co.tecnosport.api.domain.catalogo.Producto;
+import co.tecnosport.api.domain.catalogo.TipoImagen;
 import co.tecnosport.api.domain.catalogo.ValorAtributo;
 import co.tecnosport.api.domain.catalogo.Variante;
 import co.tecnosport.api.domain.compartido.Dinero;
@@ -310,6 +312,35 @@ public class RepositorioProductosJpa implements RepositorioProductos {
       }
     }
     imagenProductoJpaRepository.saveAll(cambiadas);
+  }
+
+  /**
+   * Las cuatro escrituras en una transacción, y los dos borrados volcados antes de insertar: es la
+   * misma trampa del {@code ActionQueue} que explica {@link #guardarImagenPrincipal}, y sin el
+   * {@code flush} la principal nueva chocaría con el índice único de la que todavía no se borró.
+   * Las variantes de las filas borradas se van por el {@code on delete cascade} de la V60.
+   */
+  @Override
+  @Transactional
+  public void guardarIntercambioDePrincipal(UUID productoId, IntercambioDePrincipal intercambio) {
+    imagenProductoJpaRepository
+        .findByProductoIdAndTipoAndVarianteIdIsNull(productoId, TipoImagen.PRINCIPAL.name())
+        .ifPresent(imagenProductoJpaRepository::delete);
+    if (imagenProductoJpaRepository.deleteByIdAndProductoId(
+            intercambio.imagenDeGaleriaQuitada(), productoId)
+        == 0) {
+      throw new IllegalStateException(
+          "La imagen "
+              + intercambio.imagenDeGaleriaQuitada()
+              + " ya no está en la galería del producto "
+              + productoId
+              + ".");
+    }
+    imagenProductoJpaRepository.flush();
+    guardarFilaYVariantes(productoId, intercambio.nuevaPrincipal());
+    intercambio
+        .anteriorEnLaGaleria()
+        .ifPresent(anterior -> guardarFilaYVariantes(productoId, anterior));
   }
 
   @Override

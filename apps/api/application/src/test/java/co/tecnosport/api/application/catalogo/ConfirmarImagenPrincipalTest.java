@@ -6,10 +6,13 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import co.tecnosport.api.domain.catalogo.Categoria;
+import co.tecnosport.api.domain.catalogo.ImagenProducto;
 import co.tecnosport.api.domain.catalogo.LineaCatalogo;
 import co.tecnosport.api.domain.catalogo.Marca;
 import co.tecnosport.api.domain.catalogo.Producto;
 import co.tecnosport.api.domain.catalogo.TipoImagen;
+import co.tecnosport.api.domain.catalogo.VarianteDeImagen;
+import co.tecnosport.api.domain.compartido.HashContenido;
 import co.tecnosport.api.domain.compartido.Slug;
 import java.util.List;
 import java.util.UUID;
@@ -449,5 +452,56 @@ class ConfirmarImagenPrincipalTest {
                     HASH,
                     "alt es",
                     "alt en")));
+  }
+
+  /**
+   * Tras usar una foto de la galería como principal, la principal anterior vive en la galería con
+   * sus objetos {@code principal-}, y la vigente es un objeto {@code galeria-}. Subir otra
+   * principal barría el prefijo entero y se llevaba la foto viva de la galería.
+   */
+  @Test
+  void reemplazarLaPrincipalNoSeLlevaLaFotoDeLaGaleriaNiDejaLaAnteriorEnElBucket() {
+    Producto producto = productoDePrueba();
+    String keyPrincipalVieja = "productos/" + producto.id() + "/principal-vieja.webp";
+    String keyGaleria = "productos/" + producto.id() + "/galeria-lado.webp";
+    almacenDeImagenes.conObjeto(keyPrincipalVieja, 1000);
+    almacenDeImagenes.conObjeto(keyGaleria, 1000);
+    producto.asignarImagenPrincipal(
+        imagenEn(TipoImagen.PRINCIPAL, keyPrincipalVieja, "%064x".formatted(1)));
+    ImagenProducto lado = imagenEn(TipoImagen.GALERIA, keyGaleria, "%064x".formatted(2));
+    producto.agregarImagenGaleria(lado);
+    producto.usarImagenDeGaleriaComoPrincipal(lado.id());
+    repositorioProductos.conProductos(producto);
+
+    String keyNueva = "productos/" + producto.id() + "/principal-nueva.webp";
+    almacenDeImagenes.conObjeto(keyNueva, 2000);
+    var confirmacion =
+        confirmarImagenPrincipal.ejecutar(
+            new ConfirmarImagenPrincipalComando(
+                producto.id(),
+                List.of(new VarianteSubida(1000, keyNueva)),
+                null,
+                800,
+                HASH,
+                "alt es",
+                "alt en"));
+
+    assertTrue(almacenDeImagenes.existe(keyPrincipalVieja), "se borró una foto viva de la galería");
+    assertFalse(
+        almacenDeImagenes.existe(keyGaleria), "la principal reemplazada quedó en el bucket");
+    assertTrue(almacenDeImagenes.existe(keyNueva));
+    assertEquals(1, confirmacion.objetosAnterioresBorrados());
+  }
+
+  private ImagenProducto imagenEn(TipoImagen tipo, String objectKey, String hash) {
+    return ImagenProducto.crear(
+        tipo,
+        0,
+        List.of(new VarianteDeImagen(1000, almacenDeImagenes.urlPublica(objectKey), 1000)),
+        null,
+        800,
+        new HashContenido(hash),
+        "alt es",
+        "alt en");
   }
 }

@@ -2,6 +2,7 @@ package co.tecnosport.api.application.catalogo;
 
 import co.tecnosport.api.application.compartido.ResultadoPaginado;
 import co.tecnosport.api.domain.catalogo.ImagenProducto;
+import co.tecnosport.api.domain.catalogo.IntercambioDePrincipal;
 import co.tecnosport.api.domain.catalogo.Paquete;
 import co.tecnosport.api.domain.catalogo.Producto;
 import co.tecnosport.api.domain.catalogo.Variante;
@@ -143,4 +144,12 @@ public interface RepositorioProductos {
 
   /** Cuelga una imagen de una variante —su tono— o de ninguna. */
   void guardarVarianteDeImagen(UUID imagenId, UUID varianteId);
+
+  /**
+   * Graba el intercambio de {@code Producto.usarImagenDeGaleriaComoPrincipal}, todo o nada: quita
+   * la foto de la galería y la principal vigente, y escribe la principal nueva y —si la había— la
+   * anterior como foto de la galería. Por separado, un fallo a mitad dejaría el producto sin
+   * principal o con la misma foto dos veces.
+   */
+  void guardarIntercambioDePrincipal(UUID productoId, IntercambioDePrincipal intercambio);
 }

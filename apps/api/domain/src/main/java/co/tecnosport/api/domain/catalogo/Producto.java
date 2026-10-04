@@ -517,6 +517,37 @@ public final class Producto {
         "La imagen '" + imagenId + "' no está en la galería de '" + nombre + "'.");
   }
 
+  /**
+   * Usa una foto de la galería como principal, que es lo que la revisión de un borrador permite al
+   * elegir la foto principal entre las del proveedor. <b>Es un intercambio y no una copia</b>: la
+   * elegida sale de la galería y la principal anterior, si la había, ocupa su puesto. Así no se
+   * pierde ninguna foto, el tope de la galería no se rebasa y nada se sube dos veces.
+   *
+   * <p>Si la elegida mostraba un tono, deja de hacerlo: la principal es del producto entero.
+   *
+   * @return la nueva principal y, si la había, la anterior ya convertida en foto de la galería
+   */
+  public IntercambioDePrincipal usarImagenDeGaleriaComoPrincipal(UUID imagenId) {
+    Objects.requireNonNull(imagenId, "La imagen no puede ser nula.");
+    for (int i = 0; i < galeria.size(); i++) {
+      ImagenProducto elegida = galeria.get(i);
+      if (elegida.id().equals(imagenId)) {
+        ImagenProducto nuevaPrincipal = elegida.comoPrincipal();
+        ImagenProducto anteriorEnGaleria =
+            imagenPrincipal == null ? null : imagenPrincipal.comoGaleria(elegida.orden());
+        if (anteriorEnGaleria == null) {
+          galeria.remove(i);
+        } else {
+          galeria.set(i, anteriorEnGaleria);
+        }
+        this.imagenPrincipal = nuevaPrincipal;
+        return new IntercambioDePrincipal(elegida.id(), nuevaPrincipal, anteriorEnGaleria);
+      }
+    }
+    throw new ImagenDeGaleriaNoEncontradaException(
+        "La imagen '" + imagenId + "' no está en la galería de '" + nombre + "'.");
+  }
+
   public void asignarSetRotacion(SetRotacion setRotacion) {
     this.setRotacion = setRotacion;
   }

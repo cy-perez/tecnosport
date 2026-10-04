@@ -383,6 +383,70 @@ class ProductoTest {
                 List.of()));
   }
 
+  @Test
+  void usarUnaFotoDeLaGaleriaComoPrincipalIntercambiaLasDos() {
+    Producto producto = productoDePrueba();
+    ImagenProducto principal = imagenPrincipal();
+    producto.asignarImagenPrincipal(principal);
+    producto.agregarImagenGaleria(imagenDeGaleria(0, 1));
+    ImagenProducto elegida = imagenDeGaleria(1, 2);
+    producto.agregarImagenGaleria(elegida);
+
+    IntercambioDePrincipal intercambio = producto.usarImagenDeGaleriaComoPrincipal(elegida.id());
+
+    ImagenProducto nueva = producto.imagenPrincipal().orElseThrow();
+    assertEquals(TipoImagen.PRINCIPAL, nueva.tipo());
+    assertEquals(elegida.url(), nueva.url());
+    assertEquals(nueva, intercambio.nuevaPrincipal());
+    assertEquals(elegida.id(), intercambio.imagenDeGaleriaQuitada());
+    // La anterior no se pierde: ocupa el puesto de la elegida, y la galería no crece.
+    assertEquals(2, producto.galeria().size());
+    ImagenProducto anterior = producto.galeria().get(1);
+    assertEquals(TipoImagen.GALERIA, anterior.tipo());
+    assertEquals(principal.url(), anterior.url());
+    assertEquals(1, anterior.orden());
+    assertEquals(anterior, intercambio.anteriorEnLaGaleria().orElseThrow());
+  }
+
+  @Test
+  void sinPrincipalLaFotoElegidaSoloSaleDeLaGaleria() {
+    Producto producto = productoDePrueba();
+    ImagenProducto elegida = imagenDeGaleria(0, 1);
+    producto.agregarImagenGaleria(elegida);
+
+    IntercambioDePrincipal intercambio = producto.usarImagenDeGaleriaComoPrincipal(elegida.id());
+
+    assertEquals(elegida.url(), producto.imagenPrincipal().orElseThrow().url());
+    assertTrue(producto.galeria().isEmpty());
+    assertTrue(intercambio.anteriorEnLaGaleria().isEmpty());
+  }
+
+  @Test
+  void laFotoDeUnTonoPasaAPrincipalSinVariante() {
+    Producto producto = productoDePrueba();
+    Variante negra = variante("SKU-NEGRO");
+    producto.agregarVariante(negra);
+    ImagenProducto elegida = imagenDeGaleria(0, 1);
+    producto.agregarImagenGaleria(elegida);
+    producto.asignarVarianteAImagenDeGaleria(elegida.id(), negra.id());
+
+    producto.usarImagenDeGaleriaComoPrincipal(elegida.id());
+
+    assertTrue(producto.imagenPrincipal().orElseThrow().varianteId().isEmpty());
+  }
+
+  @Test
+  void usarComoPrincipalUnaFotoQueNoEstaEnLaGaleriaFalla() {
+    Producto producto = productoDePrueba();
+    producto.agregarImagenGaleria(imagenDeGaleria(0, 1));
+
+    assertThrows(
+        ImagenDeGaleriaNoEncontradaException.class,
+        () -> producto.usarImagenDeGaleriaComoPrincipal(UUID.randomUUID()));
+    assertTrue(producto.imagenPrincipal().isEmpty());
+    assertEquals(1, producto.galeria().size());
+  }
+
   private static ImagenProducto imagenDeGaleria(int orden, int semillaDelHash) {
     return ImagenProducto.crear(
         TipoImagen.GALERIA,

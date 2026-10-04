@@ -5145,6 +5145,39 @@
         ]
       }
     },
+    "/api/v1/admin/productos/{id}/galeria/{imagenId}/principal" : {
+      "put" : {
+        "operationId" : "usarImagenComoPrincipal",
+        "parameters" : [
+          {
+            "in" : "path",
+            "name" : "id",
+            "required" : true,
+            "schema" : {
+              "format" : "uuid",
+              "type" : "string"
+            }
+          },
+          {
+            "in" : "path",
+            "name" : "imagenId",
+            "required" : true,
+            "schema" : {
+              "format" : "uuid",
+              "type" : "string"
+            }
+          }
+        ],
+        "responses" : {
+          "204" : {
+            "description" : "No Content"
+          }
+        },
+        "tags" : [
+          "admin-producto-controlador"
+        ]
+      }
+    },
     "/api/v1/admin/productos/{id}/galeria/{imagenId}/variante" : {
       "put" : {
         "operationId" : "asignarColorAImagen",

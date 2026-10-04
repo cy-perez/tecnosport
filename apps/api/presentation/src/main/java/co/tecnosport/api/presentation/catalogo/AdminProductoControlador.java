@@ -27,6 +27,8 @@ import co.tecnosport.api.application.catalogo.SolicitarSubidaDeImagenDeGaleriaCo
 import co.tecnosport.api.application.catalogo.SolicitarSubidaDeImagenPrincipal;
 import co.tecnosport.api.application.catalogo.SolicitarSubidaDeImagenPrincipalComando;
 import co.tecnosport.api.application.catalogo.SolicitudDeSubida;
+import co.tecnosport.api.application.catalogo.UsarImagenDeGaleriaComoPrincipal;
+import co.tecnosport.api.application.catalogo.UsarImagenDeGaleriaComoPrincipalComando;
 import co.tecnosport.api.application.catalogo.VarianteSubida;
 import co.tecnosport.api.application.catalogo.VerProductoAdmin;
 import co.tecnosport.api.domain.catalogo.ImagenProducto;
@@ -88,6 +90,7 @@ public class AdminProductoControlador {
   private final QuitarImagenDeGaleria quitarImagenDeGaleria;
   private final ReordenarGaleria reordenarGaleria;
   private final AsignarColorAImagenDeGaleria asignarColorAImagenDeGaleria;
+  private final UsarImagenDeGaleriaComoPrincipal usarImagenDeGaleriaComoPrincipal;
   private final PublicarProducto publicarProducto;
   private final DespublicarProducto despublicarProducto;
   private final EliminarProducto eliminarProducto;
@@ -105,6 +108,7 @@ public class AdminProductoControlador {
       QuitarImagenDeGaleria quitarImagenDeGaleria,
       ReordenarGaleria reordenarGaleria,
       AsignarColorAImagenDeGaleria asignarColorAImagenDeGaleria,
+      UsarImagenDeGaleriaComoPrincipal usarImagenDeGaleriaComoPrincipal,
       PublicarProducto publicarProducto,
       DespublicarProducto despublicarProducto,
       EliminarProducto eliminarProducto,
@@ -122,6 +126,8 @@ public class AdminProductoControlador {
     this.quitarImagenDeGaleria = Objects.requireNonNull(quitarImagenDeGaleria);
     this.reordenarGaleria = Objects.requireNonNull(reordenarGaleria);
     this.asignarColorAImagenDeGaleria = Objects.requireNonNull(asignarColorAImagenDeGaleria);
+    this.usarImagenDeGaleriaComoPrincipal =
+        Objects.requireNonNull(usarImagenDeGaleriaComoPrincipal);
     this.publicarProducto = Objects.requireNonNull(publicarProducto);
     this.despublicarProducto = Objects.requireNonNull(despublicarProducto);
     this.eliminarProducto = Objects.requireNonNull(eliminarProducto);
@@ -334,6 +340,18 @@ public class AdminProductoControlador {
       @RequestBody AsignarColorPeticion cuerpo) {
     asignarColorAImagenDeGaleria.ejecutar(
         new AsignarColorAImagenDeGaleriaComando(id, imagenId, cuerpo.varianteId()));
+  }
+
+  /**
+   * Usa una foto de la galería como principal: la elegida sube y la principal anterior ocupa su
+   * puesto. {@code 204}: el panel vuelve a pedir el producto.
+   */
+  @PutMapping("/{id}/galeria/{imagenId}/principal")
+  @ResponseStatus(HttpStatus.NO_CONTENT)
+  public void usarImagenComoPrincipal(
+      @PathVariable("id") UUID id, @PathVariable("imagenId") UUID imagenId) {
+    usarImagenDeGaleriaComoPrincipal.ejecutar(
+        new UsarImagenDeGaleriaComoPrincipalComando(id, imagenId));
   }
 
   /**

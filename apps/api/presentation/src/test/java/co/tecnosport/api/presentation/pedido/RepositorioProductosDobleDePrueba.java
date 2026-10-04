@@ -7,6 +7,7 @@ import co.tecnosport.api.application.catalogo.RepositorioProductos;
 import co.tecnosport.api.application.catalogo.VarianteActiva;
 import co.tecnosport.api.application.compartido.ResultadoPaginado;
 import co.tecnosport.api.domain.catalogo.ImagenProducto;
+import co.tecnosport.api.domain.catalogo.IntercambioDePrincipal;
 import co.tecnosport.api.domain.catalogo.Paquete;
 import co.tecnosport.api.domain.catalogo.Producto;
 import co.tecnosport.api.domain.catalogo.Variante;
@@ -105,6 +106,11 @@ final class RepositorioProductosDobleDePrueba implements RepositorioProductos {
 
   @Override
   public void guardarVarianteDeImagen(UUID imagenId, UUID varianteId) {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public void guardarIntercambioDePrincipal(UUID productoId, IntercambioDePrincipal intercambio) {
     throw new UnsupportedOperationException();
   }
 
