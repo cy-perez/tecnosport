@@ -928,6 +928,35 @@ describe('EditarProductoAdminPage', () => {
       expect(await screen.findByRole('button', { name: 'Retirar' })).toBeTruthy();
     });
 
+    it('dos clics en confirmar publican una sola vez', async () => {
+      const repositorio = new RepositorioProductosAdminFalso();
+      await renderPagina(repositorio);
+      await screen.findByDisplayValue('Morral urbano');
+
+      fireEvent.click(screen.getByRole('button', { name: 'Publicar' }));
+      const confirmar = screen.getByRole('button', { name: 'Sí, publicar' });
+      fireEvent.click(confirmar);
+      fireEvent.click(confirmar);
+
+      await screen.findByText('Morral urbano quedó publicado.');
+      expect(repositorio.llamadasPublicar).toEqual(['p1']);
+    });
+
+    it('dos clics en usar como principal llaman una sola vez', async () => {
+      const repositorio = new RepositorioProductosAdminFalso(
+        productoDePrueba([imagenDeGaleria(0), imagenDeGaleria(1)]),
+      );
+      await renderPagina(repositorio);
+      await screen.findByDisplayValue('Morral urbano');
+
+      const boton = screen.getByRole('button', { name: 'Usar la imagen 2 como principal' });
+      fireEvent.click(boton);
+      fireEvent.click(boton);
+
+      await screen.findByText(esAdmin.productos.editar.galeria.principalCambiada);
+      expect(repositorio.llamadasUsarComoPrincipal).toHaveLength(1);
+    });
+
     it('cancelar la pregunta no publica nada', async () => {
       const repositorio = new RepositorioProductosAdminFalso();
       await renderPagina(repositorio);

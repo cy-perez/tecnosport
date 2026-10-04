@@ -244,6 +244,7 @@ export class EditarProductoAdminPage {
 
   /** La acción que está preguntando: una sola a la vez, como en la lista. */
   protected readonly confirmandoAccion = signal<AccionDeProducto | null>(null);
+  private accionEnVuelo = false;
   protected readonly errorAccion = signal<string | null>(null);
   /** El acuse de publicar o retirar; guarda la clave, no el texto. */
   protected readonly avisoAccion = signal<string | null>(null);
@@ -299,14 +300,18 @@ export class EditarProductoAdminPage {
   /** Guarda de reentrada: el botón usa `[ocupado]`, no `[cargando]`, y sigue siendo pulsable. */
   protected confirmarAccion(): void {
     const accion = this.confirmandoAccion();
-    if (!accion || this.ocupadoAccion()) {
+    // Una marca propia además de `ocupadoAccion()`, que no cambia en el mismo tic del `mutate`.
+    if (!accion || this.accionEnVuelo || this.ocupadoAccion()) {
       return;
     }
+    this.accionEnVuelo = true;
+    const alTerminar = () => (this.accionEnVuelo = false);
     this.errorAccion.set(null);
     const alFallar = (error: unknown) =>
       this.errorAccion.set(mensajeDeError(error, this.transloco, CLAVE_ERROR[accion]));
     if (accion === 'eliminar') {
       this.mutacionEliminar.mutate(this.id(), {
+        onSettled: alTerminar,
         // Como al borrar un borrador: la pantalla ya no tiene producto que enseñar.
         onSuccess: () =>
           void this.router.navigate(['/' + this.transloco.activeLang(), 'admin', 'productos']),
@@ -316,6 +321,7 @@ export class EditarProductoAdminPage {
     }
     const mutacion = accion === 'publicar' ? this.mutacionPublicar : this.mutacionRetirar;
     mutacion.mutate(this.id(), {
+      onSettled: alTerminar,
       onSuccess: () => {
         this.confirmandoAccion.set(null);
         this.avisoAccion.set(TEXTOS_DE_CONFIRMACION[accion].hecho);
@@ -339,7 +345,9 @@ export class EditarProductoAdminPage {
    * intercambio deja vieja.
    */
   protected usarComoPrincipal(imagen: ImagenDeGaleriaAdmin): void {
-    if (this.cambiandoPrincipal() || this.subiendoImagen()) {
+    // `principalEnVuelo` y no `cambiandoPrincipal()`: `isPending` de TanStack no cambia en el mismo
+    // tic del `mutate`, y un doble clic pasaba los dos.
+    if (this.principalEnVuelo() !== null || this.subiendoImagen()) {
       return;
     }
     this.principalEnVuelo.set(imagen.id);
