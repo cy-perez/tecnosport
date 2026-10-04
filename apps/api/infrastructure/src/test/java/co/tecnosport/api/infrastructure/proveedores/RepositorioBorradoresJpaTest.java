@@ -3,6 +3,7 @@ package co.tecnosport.api.infrastructure.proveedores;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import co.tecnosport.api.application.proveedores.BorradoresPaginados;
+import co.tecnosport.api.application.proveedores.DependenciasDeLote;
 import co.tecnosport.api.application.proveedores.DependenciasDeProveedor;
 import co.tecnosport.api.application.proveedores.HuellaVisual;
 import co.tecnosport.api.domain.catalogo.LineaCatalogo;
@@ -402,5 +403,99 @@ class RepositorioBorradoresJpaTest {
     assertThat(proveedores.buscarPorId(ajeno.id())).isPresent();
     assertThat(proveedores.dependenciasDe(ajeno.id()).archivos())
         .containsExactly("o/exportaciones/b.zip");
+  }
+
+  /**
+   * El lote se va con sus borradores, publicaciones y mensajes, y solo él: otro lote del mismo
+   * proveedor se queda. De productos solo cuenta el que nació de un borrador aprobado de este lote.
+   */
+  @Test
+  void elLoteSeVaConSuHistorialYSoloElSuyo() {
+    unaPublicacion();
+    LoteIngesta lote = lotes.buscarPorId(publicacion.loteId()).orElseThrow();
+    mensajes.guardarTodos(
+        List.of(
+            MensajeProveedor.imagen(
+                proveedor.id(),
+                lote.id(),
+                new IdExternoDeMensaje("foto"),
+                T.plusSeconds(5),
+                null,
+                "p/fotos/1.jpg")));
+    UUID productoId = unProducto();
+    BorradorProducto aprobado = unBorrador("Bolso");
+    aprobado.aprobar(productoId, null);
+    borradores.guardar(aprobado);
+    borradores.guardar(unBorrador("Morral"));
+    LoteIngesta otro =
+        LoteIngesta.recibirExportacion(proveedor.id(), "p/exportaciones/b.zip", T.plusSeconds(1));
+    lotes.guardar(otro);
+
+    DependenciasDeLote abierto = lotes.dependenciasDe(lote.id());
+    assertThat(abierto.enCurso()).isTrue();
+    assertThat(abierto.productos()).containsExactly(productoId);
+    assertThat(abierto.archivos()).containsExactly("p/exportaciones/a.zip", "p/fotos/1.jpg");
+
+    lote.fallar("se cayó", T.plusSeconds(10));
+    lotes.actualizar(lote);
+    assertThat(lotes.dependenciasDe(lote.id()).enCurso()).isFalse();
+
+    lotes.eliminarConSuHistorial(lote.id());
+
+    assertThat(lotes.buscarPorId(lote.id())).isEmpty();
+    for (String tabla : List.of("publicacion_proveedor", "mensaje_proveedor")) {
+      Number filas =
+          (Number)
+              em.createNativeQuery("select count(*) from " + tabla + " where lote_id = ?1")
+                  .setParameter(1, lote.id())
+                  .getSingleResult();
+      assertThat(filas.longValue()).as(tabla).isZero();
+    }
+    Number borradoresQueQuedan =
+        (Number)
+            em.createNativeQuery("select count(*) from borrador_producto where proveedor_id = ?1")
+                .setParameter(1, proveedor.id())
+                .getSingleResult();
+    assertThat(borradoresQueQuedan.longValue()).isZero();
+    assertThat(lotes.buscarPorId(otro.id())).isPresent();
+    assertThat(lotes.dependenciasDe(otro.id()).archivos()).containsExactly("p/exportaciones/b.zip");
+  }
+
+  private BorradorProducto unBorrador(String titulo) {
+    return BorradorProducto.nuevo(
+        publicacion.id(),
+        proveedor.id(),
+        extraido(titulo, titulo + " de dama."),
+        "{}",
+        Dinero.deCop(53000),
+        Dinero.deCop(70000),
+        HuellaProveedor.calcular(proveedor.id(), titulo, Dinero.deCop(53000)),
+        null,
+        Set.of(),
+        T);
+  }
+
+  /** Una fila de producto mínima: la llave de {@code borrador_producto.producto_id} la exige. */
+  private UUID unProducto() {
+    UUID marca = UUID.randomUUID();
+    UUID categoria = UUID.randomUUID();
+    UUID producto = UUID.randomUUID();
+    em.createNativeQuery("insert into marca (id, nombre, creado_en) values (?1, 'Genérica', now())")
+        .setParameter(1, marca)
+        .executeUpdate();
+    em.createNativeQuery(
+            "insert into categoria (id, nombre, slug, linea, creado_en)"
+                + " values (?1, 'Bolsos', 'bolsos-lote', 'BOLSOS', now())")
+        .setParameter(1, categoria)
+        .executeUpdate();
+    em.createNativeQuery(
+            "insert into producto (id, nombre, slug, descripcion, marca_id, categoria_id, estado,"
+                + " origen, estado_disponibilidad, creado_en, actualizado_en) values (?1, 'Bolso',"
+                + " 'bolso-lote', '', ?2, ?3, 'BORRADOR', 'MANUAL', 'DISPONIBLE', now(), now())")
+        .setParameter(1, producto)
+        .setParameter(2, marca)
+        .setParameter(3, categoria)
+        .executeUpdate();
+    return producto;
   }
 }
