@@ -25,6 +25,8 @@
     "producto_con_ventas": "Tiene ventas, así que no se puede eliminar. Retíralo de la vitrina: los pedidos, las garantías y los retractos siguen necesitándolo.",
     "proveedor_no_encontrado": "Ese proveedor ya no existe. Recarga la lista.",
     "proveedor_inactivo": "El proveedor está inactivo. Actívalo desde su ficha antes de subirle una exportación.",
+    "proveedor_con_productos": "El proveedor tiene productos en el catálogo. Desactívalo en vez de eliminarlo.",
+    "proveedor_con_ingesta_en_curso": "El proveedor tiene una exportación en proceso. Espera a que termine e inténtalo de nuevo.",
     "exportacion_no_encontrada": "El archivo no llegó al bucket. Vuelve a elegirlo y súbelo de nuevo.",
     "exportacion_demasiado_grande": "La exportación pesa demasiado. Exporta el chat sin archivos o parte el periodo en dos.",
     "tipo_de_exportacion_no_admitido": "Ese archivo no es una exportación de chat. Sube el .zip que genera WhatsApp.",
@@ -234,6 +236,7 @@
       "descripcionObligatoria": "Escribe la descripción: es lo que la ficha dice del producto.",
       "sirveHasta": "Sirve hasta",
       "sirveHastaAyuda": "La talla límite de esta prenda de talla única. Déjalo en blanco si no se sabe.",
+      "fotosGeneralesEnCadaColor": "Las fotos sin color —la principal— acompañan a cada color en la ficha. Desmárcalo si cada color tiene sus propias fotos: al elegir uno se verán solo las suyas.",
       "variantes": "Variantes",
       "variantesAyuda": "Cada una con su SKU y lo que la distingue. Se agregan con «Agregar variante».",
       "seleccionar": "Selecciona una opción",
@@ -310,7 +313,7 @@
       "atributos": "Atributos",
       "atributo": "Atributo",
       "valor": "Valor",
-      "colorHex": "Color (hex)",
+      "color": "Color",
       "seleccionar": "Selecciona una opción",
       "agregarAtributo": "Agregar atributo",
       "quitarAtributo": "Quitar",
@@ -791,7 +794,7 @@
   },
   "proveedores": {
     "titulo": "Proveedores",
-    "explicacion": "Los proveedores que mandan su catálogo por WhatsApp. De cada uno se guarda cómo aparece en el chat exportado —eso decide qué mensajes son suyos— y el margen con el que se sugiere el precio de venta. No se borran: se desactivan.",
+    "explicacion": "Los proveedores que mandan su catálogo por WhatsApp. De cada uno se guarda cómo aparece en el chat exportado —eso decide qué mensajes son suyos— y el margen con el que se sugiere el precio de venta. Un proveedor con productos en el catálogo no se elimina: se desactiva.",
     "errorLista": "No se pudo cargar la lista de proveedores.",
     "total": "{{total}} proveedor(es)",
     "nuevo": "Nuevo proveedor",
@@ -834,6 +837,18 @@
       "guardar": "Guardar cambios",
       "crear": "Crear proveedor",
       "error": "No se pudo guardar el proveedor. Intenta de nuevo."
+    },
+    "eliminar": {
+      "titulo": "Eliminar proveedor",
+      "explicacion": "Se elimina con todo lo que se le ha subido: exportaciones, mensajes, fotos y borradores. Solo se puede si ningún producto del catálogo salió de él; si no, desactívalo.",
+      "accion": "Eliminar proveedor",
+      "pregunta": "¿Eliminar a {{nombre}}?",
+      "loQueImplica": "No se puede deshacer. Si vuelves a subir una exportación suya, sus anuncios llegarán otra vez como borradores nuevos.",
+      "confirmar": "Sí, eliminar",
+      "cancelar": "Cancelar",
+      "eliminando": "Eliminando…",
+      "conProductos": "No se puede eliminar: {{productos}} producto(s) del catálogo salieron de este proveedor. Desactívalo en vez de eliminarlo.",
+      "error": "No se pudo eliminar el proveedor. Intenta de nuevo."
     }
   },
   "ingestas": {
@@ -922,6 +937,7 @@
       "VESTIDO": "Vestido",
       "BLUSA": "Blusa",
       "BODI": "Bodi",
+      "TENIS": "Tenis",
       "OTRO": "Otro"
     },
     "tallas": {
@@ -938,7 +954,7 @@
       "SIN_FOTOS": "La publicación no trae fotos. Sin fotos no se puede aprobar.",
       "PRECIO_CAMBIO": "El proveedor cambió el precio de un producto que ya existe. Se actualizó el precio de proveedor; revisa el de venta.",
       "FOTOS_COMPARTIDAS": "El mensaje anunciaba varios productos con las mismas fotos. Deja solo las de este producto y marca su foto principal.",
-      "REPLICA": "El proveedor lo anuncia como réplica (1.1). Se publica con la marca Genérica y la marca original solo en el título, como «Camiseta estilo Puma - BMW». Confirma las dos cosas antes de aprobar."
+      "REPLICA": "El proveedor lo anuncia como réplica (1.1 o AAA). Se publica con la marca Genérica y la marca original solo en el título, como «Camiseta estilo Puma - BMW». Confirma las dos cosas antes de aprobar."
     },
     "detalle": {
       "miga": "Revisión",
@@ -993,6 +1009,7 @@
       "altEn": "Texto alternativo de las fotos (inglés)",
       "altEnAyuda": "El título en inglés, con el nombre con que se vende el artículo en inglés. Lo propone la extracción; revísalo.",
       "faltaDescripcion": "Falta la descripción del producto. Escríbela en los datos extraídos antes de aprobar.",
+      "fotosGeneralesEnCadaColor": "Las fotos sin color —la principal— acompañan a cada color en la ficha. Desmárcalo si cada color tiene sus propias fotos: al elegir uno se verán solo las suyas.",
       "tonoDeFoto": "Color de la foto {{numero}}",
       "todosLosTonos": "Vale para todos los tonos",
       "faltanCampos": "Faltan datos: marca, categoría, precio de venta entero, unidades (0 o más) y los dos textos alternativos.",

@@ -35,6 +35,8 @@ export function aProducto(dto: ProductoDto): Producto {
     variantes: (dto.variantes ?? []).map(aVariante),
     escalaTallas: dto.escalaTallas ?? [],
     tallaSirveHasta: dto.tallaSirveHasta ?? null,
+    // Una respuesta sin el campo es de antes de poder elegirlo: lo de entonces era que sí.
+    fotosGeneralesEnCadaColor: dto.fotosGeneralesEnCadaColor ?? true,
   };
 }
 

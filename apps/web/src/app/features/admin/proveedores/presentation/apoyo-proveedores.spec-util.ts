@@ -19,6 +19,9 @@ export function proveedorDePrueba(overrides: Partial<Proveedor> = {}): Proveedor
 export class RepositorioProveedoresAdminFalso implements RepositorioProveedoresAdmin {
   readonly creados: DatosProveedor[] = [];
   readonly editados: { id: string; datos: DatosProveedor }[] = [];
+  readonly eliminados: string[] = [];
+  /** Si se le da, `eliminar` lo lanza en vez de eliminar: es como se simula el 409. */
+  errorAlEliminar: unknown = null;
 
   constructor(private proveedores: Proveedor[] = []) {}
 
@@ -44,5 +47,13 @@ export class RepositorioProveedoresAdminFalso implements RepositorioProveedoresA
   async editar(id: string, datos: DatosProveedor): Promise<Proveedor> {
     this.editados.push({ id, datos });
     return { id, ...datos };
+  }
+
+  async eliminar(id: string): Promise<void> {
+    if (this.errorAlEliminar) {
+      throw this.errorAlEliminar;
+    }
+    this.eliminados.push(id);
+    this.proveedores = this.proveedores.filter((p) => p.id !== id);
   }
 }

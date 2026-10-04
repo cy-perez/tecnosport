@@ -7,6 +7,7 @@ import co.tecnosport.api.application.proveedores.ArmarPublicaciones;
 import co.tecnosport.api.application.proveedores.CrearProveedor;
 import co.tecnosport.api.application.proveedores.EditarProveedor;
 import co.tecnosport.api.application.proveedores.EjecutorDeIngestas;
+import co.tecnosport.api.application.proveedores.EliminarProveedor;
 import co.tecnosport.api.application.proveedores.ExtraerProductoDePublicacion;
 import co.tecnosport.api.application.proveedores.FuenteDeMensajes;
 import co.tecnosport.api.application.proveedores.IniciarIngesta;
@@ -56,6 +57,12 @@ public class ConfiguracionProveedores {
   @Bean
   public EditarProveedor editarProveedor(RepositorioProveedores repositorio) {
     return new EditarProveedor(repositorio);
+  }
+
+  @Bean
+  public EliminarProveedor eliminarProveedor(
+      RepositorioProveedores repositorio, AlmacenDeArchivosDeProveedor almacen) {
+    return new EliminarProveedor(repositorio, almacen);
   }
 
   @Bean

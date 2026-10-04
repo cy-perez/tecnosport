@@ -20,6 +20,7 @@ import { TsBoton } from '../../../../../shared/ui/boton/ts-boton';
 import { TsCampo } from '../../../../../shared/ui/campo/ts-campo';
 import { TsCheckbox } from '../../../../../shared/ui/checkbox/ts-checkbox';
 import { OpcionSelect, TsSelect } from '../../../../../shared/ui/select/ts-select';
+import { ordenarPorEtiqueta } from '../../../../../shared/ui/select/ordenar-opciones';
 import { TsSelectControl } from '../../../../../shared/ui/select/ts-select-control';
 import { TsEsqueleto } from '../../../../../shared/ts-esqueleto/ts-esqueleto';
 import { TsMigas } from '../../../../../shared/ts-migas/ts-migas';
@@ -211,6 +212,7 @@ export class DetalleBorradorAdminPage {
     }),
     altEs: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
     altEn: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
+    fotosGeneralesEnCadaColor: new FormControl(true, { nonNullable: true }),
   });
 
   protected readonly motivoRechazo = new FormControl('', { nonNullable: true });
@@ -278,14 +280,16 @@ export class DetalleBorradorAdminPage {
   /**
    * Los colores que se le pueden asignar a una foto: los de la paleta, con su nombre en español
    * —que es el valor del atributo Color— y, en el panel en inglés, el inglés al lado. Su HEX viaja
-   * con la aprobación y es lo que pinta la muestra en la tarjeta y en la ficha.
+   * con la aprobación y es lo que pinta la muestra en la tarjeta y en la ficha. En orden alfabético
+   * de lo que se lee, que en inglés es el nombre en inglés.
    */
   protected readonly opcionesTono = computed<OpcionSelect[]>(() => {
     const ingles = this.idioma() === 'en';
-    return (this.paleta.data() ?? []).map((color) => ({
+    const opciones = (this.paleta.data() ?? []).map((color) => ({
       valor: color.nombre,
       etiqueta: ingles ? `${color.nombreEn} (${color.nombre})` : color.nombre,
     }));
+    return ordenarPorEtiqueta(opciones, this.idioma());
   });
 
   private readonly categoriaElegida = toSignal(this.formAprobar.controls.categoriaId.valueChanges, {
@@ -498,7 +502,8 @@ export class DetalleBorradorAdminPage {
     const ordenadas = [
       ...escala.filter((valor) => actuales.has(tallaNormalizada(valor))),
       ...separar(this.tallasEscritas()).filter(
-        (valor) => !deLaEscala.has(tallaNormalizada(valor)) && actuales.has(tallaNormalizada(valor)),
+        (valor) =>
+          !deLaEscala.has(tallaNormalizada(valor)) && actuales.has(tallaNormalizada(valor)),
       ),
     ];
     this.formDatos.controls.tallas.setValue(ordenadas.join(', '));
@@ -707,6 +712,7 @@ export class DetalleBorradorAdminPage {
           descripcion: datos.descripcion.trim(),
           altEs: valores.altEs.trim(),
           altEn: valores.altEn.trim(),
+          fotosGeneralesEnCadaColor: valores.fotosGeneralesEnCadaColor,
           fotos: elegidas.map((foto) => ({
             mensajeId: foto.mensajeId,
             tono: tonos[foto.mensajeId] || null,

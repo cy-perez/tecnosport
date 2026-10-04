@@ -10,6 +10,7 @@ import co.tecnosport.api.application.catalogo.UrlFirmada;
 import co.tecnosport.api.application.compartido.Reloj;
 import co.tecnosport.api.application.proveedores.AlmacenDeArchivosDeProveedor;
 import co.tecnosport.api.application.proveedores.ColaDeIngestasLlenaException;
+import co.tecnosport.api.application.proveedores.DependenciasDeProveedor;
 import co.tecnosport.api.application.proveedores.EjecutorDeIngestas;
 import co.tecnosport.api.application.proveedores.IniciarIngesta;
 import co.tecnosport.api.application.proveedores.LotesPaginados;
@@ -297,6 +298,16 @@ class AdminIngestaControladorTest {
     @Override
     public List<Proveedor> listar() {
       return new ArrayList<>(porId.values());
+    }
+
+    @Override
+    public DependenciasDeProveedor dependenciasDe(UUID id) {
+      throw new UnsupportedOperationException("La ingesta no elimina proveedores.");
+    }
+
+    @Override
+    public void eliminarConSuHistorial(UUID id) {
+      throw new UnsupportedOperationException("La ingesta no elimina proveedores.");
     }
   }
 

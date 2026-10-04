@@ -406,6 +406,13 @@
           formControlName="altEn"
         />
 
+        <ts-checkbox
+          idCasilla="aprobar-fotos-generales"
+          [etiqueta]="'admin.borradores.aprobar.fotosGeneralesEnCadaColor' | transloco"
+          [marcado]="formAprobar.controls.fotosGeneralesEnCadaColor.value"
+          (marcadoCambio)="formAprobar.controls.fotosGeneralesEnCadaColor.setValue($event)"
+        />
+
         <p class="m-0 text-ts-error" role="alert">{{ errorDecision() }}</p>
 
         <div class="flex flex-wrap items-end gap-16">

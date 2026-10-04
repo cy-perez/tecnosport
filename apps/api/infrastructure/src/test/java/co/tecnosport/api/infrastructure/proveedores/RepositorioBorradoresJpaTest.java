@@ -3,6 +3,7 @@ package co.tecnosport.api.infrastructure.proveedores;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import co.tecnosport.api.application.proveedores.BorradoresPaginados;
+import co.tecnosport.api.application.proveedores.DependenciasDeProveedor;
 import co.tecnosport.api.application.proveedores.HuellaVisual;
 import co.tecnosport.api.domain.catalogo.LineaCatalogo;
 import co.tecnosport.api.domain.compartido.Dinero;
@@ -341,5 +342,65 @@ class RepositorioBorradoresJpaTest {
     assertThat(mensajes.listarDeLote(lote.id()))
         .extracting(MensajeProveedor::id)
         .containsExactly(nota.id(), foto.id(), otro.id());
+  }
+
+  /**
+   * Lo que el caso de uso pregunta antes de eliminar un proveedor, y que el borrado se lleve todo
+   * su historial en el orden de las llaves foráneas sin tocar el de otro.
+   */
+  @Test
+  void elProveedorSeVaConSuHistorialYSoloElSuyo() {
+    unaPublicacion();
+    LoteIngesta lote = lotes.buscarPorId(publicacion.loteId()).orElseThrow();
+    mensajes.guardarTodos(
+        List.of(
+            MensajeProveedor.imagen(
+                proveedor.id(),
+                lote.id(),
+                new IdExternoDeMensaje("foto"),
+                T.plusSeconds(5),
+                null,
+                "p/fotos/1.jpg")));
+    borradores.guardar(
+        BorradorProducto.nuevo(
+            publicacion.id(),
+            proveedor.id(),
+            extraido("Bolso", "Bolso de dama."),
+            "{}",
+            Dinero.deCop(53000),
+            Dinero.deCop(70000),
+            HuellaProveedor.calcular(proveedor.id(), "Bolso", Dinero.deCop(53000)),
+            null,
+            Set.of(),
+            T));
+    Proveedor ajeno = Proveedor.crear("Otro", LineaCatalogo.ROPA, "+57 301", "Otro", null);
+    proveedores.guardar(ajeno);
+    lotes.guardar(LoteIngesta.recibirExportacion(ajeno.id(), "o/exportaciones/b.zip", T));
+
+    DependenciasDeProveedor abiertas = proveedores.dependenciasDe(proveedor.id());
+    assertThat(abiertas.productos()).isZero();
+    assertThat(abiertas.ingestaEnCurso()).isTrue();
+    assertThat(abiertas.archivos()).containsExactly("p/exportaciones/a.zip", "p/fotos/1.jpg");
+
+    lote.fallar("se cayó", T.plusSeconds(10));
+    lotes.actualizar(lote);
+    assertThat(proveedores.dependenciasDe(proveedor.id()).ingestaEnCurso()).isFalse();
+
+    proveedores.eliminarConSuHistorial(proveedor.id());
+
+    assertThat(proveedores.buscarPorId(proveedor.id())).isEmpty();
+    for (String tabla :
+        List.of(
+            "borrador_producto", "publicacion_proveedor", "mensaje_proveedor", "lote_ingesta")) {
+      Number filas =
+          (Number)
+              em.createNativeQuery("select count(*) from " + tabla + " where proveedor_id = ?1")
+                  .setParameter(1, proveedor.id())
+                  .getSingleResult();
+      assertThat(filas.longValue()).as(tabla).isZero();
+    }
+    assertThat(proveedores.buscarPorId(ajeno.id())).isPresent();
+    assertThat(proveedores.dependenciasDe(ajeno.id()).archivos())
+        .containsExactly("o/exportaciones/b.zip");
   }
 }

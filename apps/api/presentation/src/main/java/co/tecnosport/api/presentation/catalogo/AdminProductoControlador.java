@@ -163,7 +163,8 @@ public class AdminProductoControlador {
                 cuerpo.descripcion(),
                 cuerpo.marcaId(),
                 cuerpo.categoriaId(),
-                cuerpo.tallaSirveHasta()));
+                cuerpo.tallaSirveHasta(),
+                cuerpo.fotosGeneralesEnCadaColor()));
     return mapeador.aRespuesta(producto);
   }
 

@@ -399,6 +399,7 @@ POST /api/v1/admin/productos/{id}/galeria                    confirma y suma a l
 DELETE /api/v1/admin/productos/{id}/galeria/{imagenId}       la saca de la ficha y borra su objeto; 204, y 404 si no era de ese producto
 GET/POST /api/v1/admin/proveedores                           los proveedores de WhatsApp, y crear uno; la línea es BOLSOS o ROPA
 GET/PUT /api/v1/admin/proveedores/{id}                       ficha y edición; desactivarlo es lo que impide subirle exportaciones
+DELETE /api/v1/admin/proveedores/{id}                        con su historial de ingesta; 409 si algún producto salió de él (`productos` dice cuántos) o si tiene un lote abierto
 POST /api/v1/admin/proveedores/{id}/ingestas/url-subida      URL firmada para subir el zip de la exportación al bucket privado
 POST /api/v1/admin/proveedores/{id}/ingestas                 encola el lote con la key; 202. 413 si pesa demasiado, 422 si no es un zip, 503 si la cola está llena (el lote queda en ERROR: se vuelve a subir)
 GET /api/v1/admin/ingestas                                   los lotes, paginados; ?proveedorId= filtra

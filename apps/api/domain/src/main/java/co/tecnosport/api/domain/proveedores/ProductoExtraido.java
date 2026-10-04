@@ -20,7 +20,7 @@ import java.util.Optional;
  *     reemplazó a la lista de características el 3 de octubre de 2026
  * @param altEn el título en inglés, con el nombre comercial que el artículo tiene en inglés: el
  *     texto alternativo de las fotos en el sitio en inglés
- * @param esReplica el mensaje lo anuncia como réplica («1.1»)
+ * @param esReplica el mensaje lo anuncia como réplica («1.1» o «AAA»)
  */
 public record ProductoExtraido(
     boolean esProducto,
@@ -40,7 +40,7 @@ public record ProductoExtraido(
     String notas) {
 
   public ProductoExtraido {
-    titulo = CorrectorDeTitulo.corregir(enBlancoEsNulo(titulo));
+    titulo = enBlancoEsNulo(CorrectorDeTitulo.corregir(enBlancoEsNulo(titulo)));
     material = enBlancoEsNulo(material);
     descripcion = enBlancoEsNulo(descripcion);
     altEn = enBlancoEsNulo(altEn);
@@ -60,7 +60,8 @@ public record ProductoExtraido(
 
   /**
    * Lo que el texto del mensaje confirma, aunque el extractor no lo haya dicho o lo haya dicho de
-   * más: el «sirve hasta» solo si el texto lo escribe, y la réplica si el texto trae «1.1».
+   * más: el «sirve hasta» solo si el texto lo escribe, el rango de tallas de un pantalón contado de
+   * 2 en 2, y la réplica si el texto trae «1.1» o «AAA».
    */
   public ProductoExtraido contrastadoCon(String texto) {
     return new ProductoExtraido(
@@ -70,7 +71,7 @@ public record ProductoExtraido(
         linea,
         tipo,
         precioProveedor,
-        tallas.sinSirveHastaQueElTextoNoDiga(texto),
+        tallasContrastadas(texto),
         cantidadTonos,
         tonosNombrados,
         material,
@@ -79,6 +80,20 @@ public record ProductoExtraido(
         esReplica || PatronDeReplica.esReplica(texto),
         confianza,
         notas);
+  }
+
+  /**
+   * Un pantalón o un short con un rango en el texto —«Tallas 30 a la 36»— talla de 2 en 2, diga lo
+   * que diga el extractor ({@link RangoDeTallas}). El calzado no: ahí el rango va de 1 en 1.
+   */
+  private Tallas tallasContrastadas(String texto) {
+    if (tipo == TipoProductoProveedor.PANTALON || tipo == TipoProductoProveedor.SHORT) {
+      Optional<List<String>> rango = RangoDeTallas.deDosEnDos(texto);
+      if (rango.isPresent()) {
+        return Tallas.lista(rango.get());
+      }
+    }
+    return tallas.sinSirveHastaQueElTextoNoDiga(texto);
   }
 
   public Optional<String> tituloOpcional() {

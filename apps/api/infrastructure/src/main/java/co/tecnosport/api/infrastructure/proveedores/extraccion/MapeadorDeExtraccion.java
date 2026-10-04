@@ -96,6 +96,7 @@ final class MapeadorDeExtraccion {
     return switch (valor.toLowerCase(Locale.ROOT)) {
       case "bolsos" -> LineaCatalogo.BOLSOS;
       case "ropa" -> LineaCatalogo.ROPA;
+      case "calzado" -> LineaCatalogo.CALZADO;
       default -> null;
     };
   }

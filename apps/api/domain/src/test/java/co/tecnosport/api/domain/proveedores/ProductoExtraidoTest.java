@@ -144,4 +144,62 @@ class ProductoExtraidoTest {
     assertEquals(false, bodi(Tallas.desconocida(), false).contrastadoCon("Bodi 💲30").esReplica());
     assertEquals(true, bodi(Tallas.desconocida(), true).contrastadoCon("Bodi 💲30").esReplica());
   }
+
+  /** La AAA cuenta como la 1.1 desde el 4 de octubre de 2026; las pilas AAA, no. */
+  @Test
+  void laTripleADelTextoLoVuelveReplica() {
+    assertEquals(
+        true, bodi(Tallas.desconocida(), false).contrastadoCon("Adidas Importado AAA").esReplica());
+    assertEquals(
+        false,
+        bodi(Tallas.desconocida(), false).contrastadoCon("Control con pilas AAA").esReplica());
+  }
+
+  private static ProductoExtraido conTipo(TipoProductoProveedor tipo, Tallas tallas) {
+    return new ProductoExtraido(
+        true,
+        false,
+        "Jean clásico",
+        LineaCatalogo.ROPA,
+        tipo,
+        Dinero.deCop(85000),
+        tallas,
+        null,
+        null,
+        null,
+        null,
+        null,
+        false,
+        BigDecimal.ONE,
+        null);
+  }
+
+  /** Aunque el extractor solo devuelva los extremos: el rango de un pantalón va de 2 en 2. */
+  @Test
+  void elRangoDeUnPantalonOUnShortVaDeDosEnDos() {
+    Tallas extremos = Tallas.lista(List.of("30", "36"));
+    String texto = "Jean clásico 💲85 · Tallas 30 a la 36";
+
+    assertEquals(
+        List.of("30", "32", "34", "36"),
+        conTipo(TipoProductoProveedor.PANTALON, extremos).contrastadoCon(texto).tallas().valores());
+    assertEquals(
+        List.of("30", "32", "34", "36"),
+        conTipo(TipoProductoProveedor.SHORT, Tallas.desconocida())
+            .contrastadoCon(texto)
+            .tallas()
+            .valores());
+  }
+
+  /** En calzado «34 al 40» es de 1 en 1: lo que dijo el extractor se queda. */
+  @Test
+  void elRangoDeOtroTipoNoSeToca() {
+    Tallas deUnoEnUno = Tallas.lista(List.of("34", "35", "36", "37", "38", "39", "40"));
+
+    assertEquals(
+        deUnoEnUno,
+        conTipo(TipoProductoProveedor.TENIS, deUnoEnUno)
+            .contrastadoCon("Tenis tallas 34 al 40")
+            .tallas());
+  }
 }

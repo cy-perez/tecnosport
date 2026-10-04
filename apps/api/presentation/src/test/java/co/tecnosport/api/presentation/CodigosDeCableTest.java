@@ -40,6 +40,8 @@ import co.tecnosport.api.application.proveedores.FotoNoEsDelBorradorException;
 import co.tecnosport.api.application.proveedores.ImagenDeProveedorIlegibleException;
 import co.tecnosport.api.application.proveedores.LoteNoEncontradoException;
 import co.tecnosport.api.application.proveedores.ProductoDeProveedorYaExisteException;
+import co.tecnosport.api.application.proveedores.ProveedorConIngestaEnCursoException;
+import co.tecnosport.api.application.proveedores.ProveedorConProductosException;
 import co.tecnosport.api.application.proveedores.ProveedorInactivoException;
 import co.tecnosport.api.application.proveedores.ProveedorNoEncontradoException;
 import co.tecnosport.api.application.proveedores.TipoDeExportacionNoAdmitidoException;
@@ -138,6 +140,8 @@ class CodigosDeCableTest {
           // La ingesta de proveedores por WhatsApp (30 de septiembre de 2026): una clave por cada
           // uno en `admin.errores.*`.
           Map.entry(ProveedorNoEncontradoException.class, "PROVEEDOR_NO_ENCONTRADO"),
+          Map.entry(ProveedorConProductosException.class, "PROVEEDOR_CON_PRODUCTOS"),
+          Map.entry(ProveedorConIngestaEnCursoException.class, "PROVEEDOR_CON_INGESTA_EN_CURSO"),
           Map.entry(ProveedorInactivoException.class, "PROVEEDOR_INACTIVO"),
           Map.entry(ExportacionNoEncontradaException.class, "EXPORTACION_NO_ENCONTRADA"),
           Map.entry(ExportacionDemasiadoGrandeException.class, "EXPORTACION_DEMASIADO_GRANDE"),

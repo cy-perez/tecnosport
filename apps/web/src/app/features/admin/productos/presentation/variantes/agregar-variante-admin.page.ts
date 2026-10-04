@@ -11,12 +11,15 @@ import {
 } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
+import { usarIdiomaActivo } from '../../../../../core/i18n/traductor';
 import { usarAtributos } from '../../../../catalogo/application/listar-atributos.consulta';
+import { usarPaletaDeColores } from '../../../../catalogo/application/listar-paleta-colores.consulta';
 import { Atributo } from '../../../../catalogo/domain/producto.model';
 import { TsBoton } from '../../../../../shared/ui/boton/ts-boton';
 import { TsPaginaFormulario } from '../../../../../shared/ui/pagina-formulario/ts-pagina-formulario';
 import { TsCampo } from '../../../../../shared/ui/campo/ts-campo';
 import { TsMigas } from '../../../../../shared/ts-migas/ts-migas';
+import { ordenarPorEtiqueta } from '../../../../../shared/ui/select/ordenar-opciones';
 import { OpcionSelect, TsSelect } from '../../../../../shared/ui/select/ts-select';
 import { TsSelectControl } from '../../../../../shared/ui/select/ts-select-control';
 import { usarMigasAdmin } from '../../../migas-admin';
@@ -25,14 +28,12 @@ import { usarAgregarVarianteAdmin } from '../../application/agregar-variante-adm
 type GrupoAtributo = FormGroup<{
   atributoId: FormControl<string>;
   valor: FormControl<string>;
-  colorHex: FormControl<string>;
 }>;
 
 function grupoAtributo(): GrupoAtributo {
   return new FormGroup({
     atributoId: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
     valor: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
-    colorHex: new FormControl('', { nonNullable: true }),
   });
 }
 
@@ -74,6 +75,8 @@ export class AgregarVarianteAdminPage {
   private readonly router = inject(Router);
   private readonly transloco = inject(TranslocoService);
   private readonly atributos = usarAtributos();
+  private readonly paleta = usarPaletaDeColores();
+  private readonly idioma = usarIdiomaActivo();
   private readonly mutacion = usarAgregarVarianteAdmin();
 
   private readonly paramMap = toSignal(this.route.paramMap, {
@@ -152,6 +155,21 @@ export class AgregarVarianteAdminPage {
     })),
   );
 
+  /**
+   * Un color se elige de la paleta y no se escribe: así el nombre y el HEX son los mismos que pone
+   * la revisión de un borrador, y la muestra de la tarjeta sale igual venga de donde venga la
+   * variante. Antes eran dos campos libres —el nombre y el HEX a mano— y un «negro» con «#000»
+   * quedaba como otro color al lado del «Negro» de la paleta.
+   */
+  protected readonly opcionesColor = computed<OpcionSelect[]>(() => {
+    const ingles = this.idioma() === 'en';
+    const opciones = (this.paleta.data() ?? []).map((color) => ({
+      valor: color.nombre,
+      etiqueta: ingles ? `${color.nombreEn} (${color.nombre})` : color.nombre,
+    }));
+    return ordenarPorEtiqueta(opciones, this.idioma());
+  });
+
   protected esAtributoDeColor(atributoId: string): boolean {
     const atributo = (this.atributos.data() ?? []).find((a: Atributo) => a.id === atributoId);
     return atributo?.tipo === 'COLOR';
@@ -196,7 +214,7 @@ export class AgregarVarianteAdminPage {
         atributos: valores.atributos.map((a) => ({
           atributoId: a.atributoId,
           valor: a.valor,
-          colorHex: this.esAtributoDeColor(a.atributoId) ? a.colorHex || null : null,
+          colorHex: this.esAtributoDeColor(a.atributoId) ? this.hexDe(a.valor) : null,
         })),
       },
       {
@@ -212,5 +230,9 @@ export class AgregarVarianteAdminPage {
           this.error.set(this.transloco.translate('admin.productos.agregarVariante.error')),
       },
     );
+  }
+
+  private hexDe(nombre: string): string | null {
+    return (this.paleta.data() ?? []).find((color) => color.nombre === nombre)?.hex ?? null;
   }
 }

@@ -101,5 +101,69 @@
         </ts-boton>
       </div>
     </form>
+
+    @if (editando()) {
+      <section
+        class="mt-32 flex flex-col gap-16 border-t border-ts-borde pt-24"
+        aria-labelledby="eliminar-titulo"
+      >
+        <h2 id="eliminar-titulo" class="m-0 font-display text-lg">
+          {{ 'admin.proveedores.eliminar.titulo' | transloco }}
+        </h2>
+        <p class="m-0 text-ts-texto-suave">
+          {{ 'admin.proveedores.eliminar.explicacion' | transloco }}
+        </p>
+        <div>
+          <ts-boton
+            #botonEliminar
+            variante="secundario"
+            [expandido]="confirmandoEliminar()"
+            controla="eliminar-confirmar"
+            (click)="preguntarSiEliminar()"
+          >
+            {{ 'admin.proveedores.eliminar.accion' | transloco }}
+          </ts-boton>
+        </div>
+
+        @if (confirmandoEliminar()) {
+          <div
+            #cajaEliminar
+            id="eliminar-confirmar"
+            class="flex flex-col gap-16 border border-ts-borde-control p-16"
+            role="group"
+            tabindex="-1"
+            aria-labelledby="eliminar-pregunta"
+            aria-describedby="eliminar-implica"
+            (keydown.escape)="cancelarEliminar()"
+          >
+            <p id="eliminar-pregunta" class="m-0">
+              {{
+                'admin.proveedores.eliminar.pregunta'
+                  | transloco: { nombre: consulta.data()?.nombre ?? '' }
+              }}
+            </p>
+            <p id="eliminar-implica" class="m-0 text-ts-texto-suave">
+              {{ 'admin.proveedores.eliminar.loQueImplica' | transloco }}
+            </p>
+            @if (errorEliminar(); as mensaje) {
+              <p class="m-0 text-ts-error" role="alert">{{ mensaje }}</p>
+            }
+            <div class="flex flex-wrap gap-16">
+              <ts-boton
+                variante="peligro"
+                [cargando]="eliminando()"
+                [etiquetaCargando]="'admin.proveedores.eliminar.eliminando' | transloco"
+                (click)="eliminarProveedor()"
+              >
+                {{ 'admin.proveedores.eliminar.confirmar' | transloco }}
+              </ts-boton>
+              <ts-boton variante="secundario" (click)="cancelarEliminar()">
+                {{ 'admin.proveedores.eliminar.cancelar' | transloco }}
+              </ts-boton>
+            </div>
+          </div>
+        }
+      </section>
+    }
   }
 </ts-pagina-formulario>

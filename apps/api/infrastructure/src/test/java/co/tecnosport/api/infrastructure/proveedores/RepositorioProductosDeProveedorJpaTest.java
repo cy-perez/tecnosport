@@ -218,4 +218,33 @@ class RepositorioProductosDeProveedorJpaTest {
         .as("la foto cuelga de su variante")
         .contains(oculto.variantes().get(0).id());
   }
+
+  /** Un producto basta para que el proveedor no se pueda eliminar; los manuales no cuentan. */
+  @Test
+  void lasDependenciasCuentanSoloLosProductosDelProveedor() {
+    catalogoBase();
+    assertThat(proveedores.dependenciasDe(proveedor.id()).productos()).isZero();
+
+    productos.guardar(deProveedor("Bolso de dama mediano", 53000));
+    productos.guardar(deProveedor("Morral dúo", 60000));
+
+    assertThat(proveedores.dependenciasDe(proveedor.id()).productos()).isEqualTo(2);
+  }
+
+  /** La columna de V79 va y vuelve, al guardar y al actualizar. */
+  @Test
+  void lasFotosGeneralesEnCadaColorVanYVuelven() {
+    catalogoBase();
+    Producto producto = deProveedor("Bolso de dama mediano", 53000);
+    producto.definirFotosGeneralesEnCadaColor(false);
+    productos.guardar(producto);
+
+    Producto leido = productos.buscarPorId(producto.id()).orElseThrow();
+    assertThat(leido.fotosGeneralesEnCadaColor()).isFalse();
+
+    leido.definirFotosGeneralesEnCadaColor(true);
+    productos.actualizar(leido);
+    assertThat(productos.buscarPorId(producto.id()).orElseThrow().fotosGeneralesEnCadaColor())
+        .isTrue();
+  }
 }

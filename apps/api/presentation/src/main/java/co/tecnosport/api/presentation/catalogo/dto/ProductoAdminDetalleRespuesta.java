@@ -30,6 +30,8 @@ public record ProductoAdminDetalleRespuesta(
     List<ImagenDeGaleriaRespuesta> galeria,
     /** Hasta qué talla sirve una prenda de talla única, si se sabe. */
     String tallaSirveHasta,
+    /** Si las fotos sin tono acompañan a las de cada color en la ficha. */
+    boolean fotosGeneralesEnCadaColor,
     /**
      * Las variantes con sus atributos —talla, color—, para que la edición diga cuáles hay y deje
      * marcar de qué color es cada foto de la galería.

@@ -133,6 +133,12 @@ export interface Producto {
   readonly escalaTallas: readonly string[];
   /** Hasta qué talla le sirve una prenda de talla única, si el proveedor lo dijo. */
   readonly tallaSirveHasta: string | null;
+  /**
+   * Si las fotos sin variante —casi siempre la principal— acompañan a las de cada color en la
+   * galería. Falso en el producto que solo trae fotos por color: ahí la general es la de uno de
+   * ellos y se colaría en los demás.
+   */
+  readonly fotosGeneralesEnCadaColor: boolean;
 }
 
 /**

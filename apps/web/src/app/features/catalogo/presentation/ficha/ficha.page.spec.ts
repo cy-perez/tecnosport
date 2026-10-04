@@ -63,6 +63,7 @@ function productoDePrueba(): Producto {
     rotacion: null,
     escalaTallas: [],
     tallaSirveHasta: null,
+    fotosGeneralesEnCadaColor: true,
     variantes: [
       {
         id: 'variante-1',
@@ -95,6 +96,7 @@ function productoConVariantes(): Producto {
     rotacion: null,
     escalaTallas: [],
     tallaSirveHasta: null,
+    fotosGeneralesEnCadaColor: true,
     variantes: [
       {
         id: 'variante-az',

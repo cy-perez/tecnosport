@@ -24,4 +24,9 @@ public record ProductoRespuesta(
      */
     List<String> escalaTallas,
     /** Hasta qué talla le sirve una prenda de talla única, si el proveedor lo dijo. */
-    String tallaSirveHasta) {}
+    String tallaSirveHasta,
+    /**
+     * Si las fotos sin variante acompañan a las de cada color en la galería. Falso en el producto
+     * que solo trae fotos por color: ahí, elegido un color, se muestran solo las suyas.
+     */
+    boolean fotosGeneralesEnCadaColor) {}

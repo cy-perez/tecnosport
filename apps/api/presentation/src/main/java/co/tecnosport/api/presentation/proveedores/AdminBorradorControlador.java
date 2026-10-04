@@ -147,7 +147,8 @@ public class AdminBorradorControlador {
                                 f ->
                                     new AprobarBorradorComando.FotoAprobada(
                                         f.mensajeId(), f.tono(), f.colorHex()))
-                            .toList())));
+                            .toList(),
+                        !Boolean.FALSE.equals(cuerpo.fotosGeneralesEnCadaColor()))));
     log.info(
         "Borrador {} aprobado: producto {} publicado con {} variante(s)",
         id,

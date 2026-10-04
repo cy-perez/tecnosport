@@ -41,6 +41,7 @@ function productoDePrueba(): Producto {
     rotacion: null,
     escalaTallas: [],
     tallaSirveHasta: null,
+    fotosGeneralesEnCadaColor: true,
     variantes: [
       {
         id: 'variante-1',

@@ -27,6 +27,7 @@ export type TipoProductoProveedor =
   | 'VESTIDO'
   | 'BLUSA'
   | 'BODI'
+  | 'TENIS'
   | 'OTRO';
 
 export const TIPOS_PRODUCTO_PROVEEDOR: readonly TipoProductoProveedor[] = [
@@ -45,6 +46,7 @@ export const TIPOS_PRODUCTO_PROVEEDOR: readonly TipoProductoProveedor[] = [
   'VESTIDO',
   'BLUSA',
   'BODI',
+  'TENIS',
   'OTRO',
 ];
 
@@ -75,7 +77,7 @@ export type AlertaBorrador =
   | 'REPLICA';
 
 /**
- * Cómo se llama la marca con que se publica una réplica («1.1»): la original solo va en el título,
+ * Cómo se llama la marca con que se publica una réplica («1.1» o «AAA»): la original solo va en el título,
  * como «Camiseta estilo Puma - BMW» (decidido por el negocio el 3 de octubre de 2026). Se busca por
  * nombre, sin tildes ni mayúsculas, porque el id cambia de un ambiente a otro.
  */
@@ -180,6 +182,11 @@ export interface AprobarBorrador {
   readonly altEn: string;
   /** Unidades por variante que entran al inventario al aprobar. Cero es válido: agotado desde ya. */
   readonly existenciaInicial: number;
+  /**
+   * Si las fotos sin tono —la principal casi siempre— acompañan a las de cada color en la ficha.
+   * Se apaga cuando cada color trae sus propias fotos.
+   */
+  readonly fotosGeneralesEnCadaColor: boolean;
 }
 
 /**

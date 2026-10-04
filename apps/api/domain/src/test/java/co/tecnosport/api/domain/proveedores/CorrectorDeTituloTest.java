@@ -37,4 +37,13 @@ class CorrectorDeTituloTest {
   void nuloEsNulo() {
     assertNull(CorrectorDeTitulo.corregir(null));
   }
+
+  /** La marca de réplica no es parte del nombre: el extractor la quita, y esto por si no. */
+  @Test
+  void quitaLaMarcaDeReplica() {
+    assertEquals(
+        "Tenis estilo Superstar", CorrectorDeTitulo.corregir("Tenis estilo Superstar AAA"));
+    assertEquals(
+        "Camiseta estilo Superdry", CorrectorDeTitulo.corregir("Camiseta estilo Superdry 1.1"));
+  }
 }

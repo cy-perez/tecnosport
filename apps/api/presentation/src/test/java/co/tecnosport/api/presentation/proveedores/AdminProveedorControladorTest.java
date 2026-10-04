@@ -1,13 +1,18 @@
 package co.tecnosport.api.presentation.proveedores;
 
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import co.tecnosport.api.application.catalogo.UrlFirmada;
+import co.tecnosport.api.application.proveedores.AlmacenDeArchivosDeProveedor;
 import co.tecnosport.api.application.proveedores.CrearProveedor;
+import co.tecnosport.api.application.proveedores.DependenciasDeProveedor;
 import co.tecnosport.api.application.proveedores.EditarProveedor;
+import co.tecnosport.api.application.proveedores.EliminarProveedor;
 import co.tecnosport.api.application.proveedores.RepositorioProveedores;
 import co.tecnosport.api.domain.proveedores.Proveedor;
 import co.tecnosport.api.presentation.ManejadorDeErrores;
@@ -40,6 +45,7 @@ class AdminProveedorControladorTest {
   @BeforeEach
   void limpio() {
     proveedores.porId.clear();
+    proveedores.dependencias = new DependenciasDeProveedor(0, false, List.of());
   }
 
   @Test
@@ -113,6 +119,61 @@ class AdminProveedorControladorTest {
         .andExpect(jsonPath("$.codigo").value("PROVEEDOR_NO_ENCONTRADO"));
   }
 
+  @Test
+  void eliminarUnoSinProductosResponde204YDesaparece() throws Exception {
+    Proveedor proveedor = unoGuardado();
+
+    mockMvc
+        .perform(delete("/api/v1/admin/proveedores/{id}", proveedor.id()))
+        .andExpect(status().isNoContent());
+
+    mockMvc.perform(get("/api/v1/admin/proveedores")).andExpect(jsonPath("$.length()").value(0));
+  }
+
+  /** El panel dice cuántos con {@code productos}, sin leer la frase del {@code detail}. */
+  @Test
+  void eliminarUnoConProductosEs409YDiceCuantos() throws Exception {
+    Proveedor proveedor = unoGuardado();
+    proveedores.dependencias = new DependenciasDeProveedor(3, false, List.of());
+
+    mockMvc
+        .perform(delete("/api/v1/admin/proveedores/{id}", proveedor.id()))
+        .andExpect(status().isConflict())
+        .andExpect(jsonPath("$.codigo").value("PROVEEDOR_CON_PRODUCTOS"))
+        .andExpect(jsonPath("$.productos").value(3));
+  }
+
+  @Test
+  void eliminarUnoConIngestaEnCursoEs409() throws Exception {
+    Proveedor proveedor = unoGuardado();
+    proveedores.dependencias = new DependenciasDeProveedor(0, true, List.of());
+
+    mockMvc
+        .perform(delete("/api/v1/admin/proveedores/{id}", proveedor.id()))
+        .andExpect(status().isConflict())
+        .andExpect(jsonPath("$.codigo").value("PROVEEDOR_CON_INGESTA_EN_CURSO"));
+  }
+
+  @Test
+  void eliminarUnoQueNoExisteEs404() throws Exception {
+    mockMvc
+        .perform(delete("/api/v1/admin/proveedores/{id}", UUID.randomUUID()))
+        .andExpect(status().isNotFound())
+        .andExpect(jsonPath("$.codigo").value("PROVEEDOR_NO_ENCONTRADO"));
+  }
+
+  private Proveedor unoGuardado() {
+    Proveedor proveedor =
+        Proveedor.crear(
+            "Bolsos",
+            co.tecnosport.api.domain.catalogo.LineaCatalogo.BOLSOS,
+            "+57 300",
+            "Bolsos",
+            null);
+    proveedores.porId.put(proveedor.id(), proveedor);
+    return proveedor;
+  }
+
   @TestConfiguration
   static class Configuracion {
     @Bean
@@ -128,6 +189,11 @@ class AdminProveedorControladorTest {
     @Bean
     EditarProveedor editarProveedor(RepositorioDoble repositorio) {
       return new EditarProveedor(repositorio);
+    }
+
+    @Bean
+    EliminarProveedor eliminarProveedor(RepositorioDoble repositorio) {
+      return new EliminarProveedor(repositorio, new AlmacenSinUso());
     }
 
     @Bean
@@ -153,6 +219,7 @@ class AdminProveedorControladorTest {
 
   static final class RepositorioDoble implements RepositorioProveedores {
     final Map<UUID, Proveedor> porId = new TreeMap<>();
+    DependenciasDeProveedor dependencias = new DependenciasDeProveedor(0, false, List.of());
 
     @Override
     public void guardar(Proveedor proveedor) {
@@ -172,6 +239,50 @@ class AdminProveedorControladorTest {
     @Override
     public List<Proveedor> listar() {
       return new ArrayList<>(porId.values());
+    }
+
+    @Override
+    public DependenciasDeProveedor dependenciasDe(UUID id) {
+      return dependencias;
+    }
+
+    @Override
+    public void eliminarConSuHistorial(UUID id) {
+      porId.remove(id);
+    }
+  }
+
+  /** Las dependencias del doble no traen archivos: si alguien llama, la prueba está mal armada. */
+  static final class AlmacenSinUso implements AlmacenDeArchivosDeProveedor {
+
+    @Override
+    public UrlFirmada generarUrlDeSubida(String objectKey, String contentType) {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public Optional<Long> tamanoBytes(String objectKey) {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void guardar(String objectKey, String contentType, byte[] bytes) {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public Optional<byte[]> leer(String objectKey) {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public UrlFirmada urlDeLectura(String objectKey) {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void borrar(String objectKey) {
+      throw new UnsupportedOperationException();
     }
   }
 }

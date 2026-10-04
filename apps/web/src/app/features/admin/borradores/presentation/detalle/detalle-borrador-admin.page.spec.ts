@@ -91,8 +91,10 @@ class RepositorioCategoriasFalso implements RepositorioCategorias {
 class RepositorioPaletaFalso implements RepositorioPaletaColores {
   async listarTodos(): Promise<ColorDePaleta[]> {
     return [
-      { nombre: 'Negro', nombreEn: 'Black', hex: '#111111' },
+      // Fuera de orden a propósito: la pantalla los ordena alfabéticamente.
       { nombre: 'Vino', nombreEn: 'Burgundy', hex: '#722F37' },
+      { nombre: 'Negro', nombreEn: 'Black', hex: '#111111' },
+      { nombre: 'Café', nombreEn: 'Brown', hex: '#6F4E37' },
     ];
   }
 }
@@ -202,6 +204,16 @@ describe('DetalleBorradorAdminPage', () => {
     expect(repositorio.aprobaciones).toEqual([]);
   });
 
+  it('ofrece los colores de la paleta en orden alfabético', async () => {
+    await renderPagina();
+
+    await screen.findAllByRole('option', { name: 'Vino' });
+    const opciones = [...(screen.getByLabelText('Color de la foto 1') as HTMLSelectElement).options]
+      .map((opcion) => opcion.textContent?.trim())
+      .filter((texto) => ['Café', 'Negro', 'Vino'].includes(texto ?? ''));
+    expect(opciones).toEqual(['Café', 'Negro', 'Vino']);
+  });
+
   it('aprueba con el tono de cada foto, las unidades y el precio, y enlaza el producto', async () => {
     const { repositorio } = await renderPagina();
     await llenarAprobacion();
@@ -223,7 +235,23 @@ describe('DetalleBorradorAdminPage', () => {
         { mensajeId: 'f-1', tono: 'Negro', colorHex: '#111111' },
         { mensajeId: 'f-2', tono: null, colorHex: null },
       ],
+      fotosGeneralesEnCadaColor: true,
     });
+  });
+
+  /** Por omisión las generales acompañan a cada color; desmarcada la casilla, no. */
+  it('aprueba sin las fotos generales en cada color si se desmarca la casilla', async () => {
+    const { repositorio } = await renderPagina();
+    await llenarAprobacion();
+
+    const casilla = screen.getByLabelText(a.fotosGeneralesEnCadaColor) as HTMLInputElement;
+    expect(casilla.checked).toBe(true);
+    fireEvent.click(casilla);
+    fireEvent.input(screen.getByLabelText(a.precioVenta), { target: { value: '75.000' } });
+    fireEvent.click(screen.getByRole('button', { name: a.accion }));
+
+    expect(await screen.findByRole('link', { name: a.verProducto })).toBeTruthy();
+    expect(repositorio.aprobaciones[0].aprobacion.fotosGeneralesEnCadaColor).toBe(false);
   });
 
   /**

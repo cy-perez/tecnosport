@@ -78,7 +78,7 @@ export interface paths {
         get: operations["ver_2"];
         put?: never;
         post?: never;
-        delete: operations["eliminar_2"];
+        delete: operations["eliminar_3"];
         options?: never;
         head?: never;
         patch: operations["editar_3"];
@@ -158,7 +158,7 @@ export interface paths {
         get?: never;
         put: operations["editar_1"];
         post?: never;
-        delete: operations["eliminar"];
+        delete: operations["eliminar_1"];
         options?: never;
         head?: never;
         patch?: never;
@@ -526,7 +526,7 @@ export interface paths {
         get: operations["ver_1"];
         put?: never;
         post?: never;
-        delete: operations["eliminar_1"];
+        delete: operations["eliminar_2"];
         options?: never;
         head?: never;
         patch: operations["editar_2"];
@@ -718,7 +718,7 @@ export interface paths {
         get: operations["ver"];
         put: operations["editar"];
         post?: never;
-        delete?: never;
+        delete: operations["eliminar"];
         options?: never;
         head?: never;
         patch?: never;
@@ -846,7 +846,7 @@ export interface paths {
         get?: never;
         put?: never;
         post?: never;
-        delete: operations["eliminar_3"];
+        delete: operations["eliminar_4"];
         options?: never;
         head?: never;
         patch?: never;
@@ -1617,6 +1617,7 @@ export interface components {
             /** Format: int32 */
             existenciaInicial: number;
             fotos: components["schemas"]["FotoAprobadaPeticion"][];
+            fotosGeneralesEnCadaColor?: boolean;
             /** Format: uuid */
             marcaId: string;
             /** Format: int64 */
@@ -1872,6 +1873,7 @@ export interface components {
             /** Format: uuid */
             categoriaId?: string;
             descripcion?: string;
+            fotosGeneralesEnCadaColor?: boolean;
             /** Format: uuid */
             marcaId?: string;
             nombre?: string;
@@ -2267,6 +2269,7 @@ export interface components {
             categoria?: components["schemas"]["CategoriaRespuesta"];
             descripcion?: string;
             estado?: string;
+            fotosGeneralesEnCadaColor?: boolean;
             galeria?: components["schemas"]["ImagenDeGaleriaRespuesta"][];
             /** Format: uuid */
             id?: string;
@@ -2297,6 +2300,7 @@ export interface components {
             descripcion?: string;
             escalaTallas?: string[];
             estadoDisponibilidad?: string;
+            fotosGeneralesEnCadaColor?: boolean;
             galeria?: components["schemas"]["ImagenRespuesta"][];
             imagenPrincipal?: components["schemas"]["ImagenRespuesta"];
             marca?: components["schemas"]["MarcaRespuesta"];
@@ -2878,7 +2882,7 @@ export interface operations {
             };
         };
     };
-    eliminar_2: {
+    eliminar_3: {
         parameters: {
             query?: never;
             header?: never;
@@ -3067,7 +3071,7 @@ export interface operations {
             };
         };
     };
-    eliminar: {
+    eliminar_1: {
         parameters: {
             query?: never;
             header?: never;
@@ -3758,7 +3762,7 @@ export interface operations {
             };
         };
     };
-    eliminar_1: {
+    eliminar_2: {
         parameters: {
             query?: never;
             header?: never;
@@ -4186,6 +4190,26 @@ export interface operations {
             };
         };
     };
+    eliminar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     iniciar: {
         parameters: {
             query?: never;
@@ -4362,7 +4386,7 @@ export interface operations {
             };
         };
     };
-    eliminar_3: {
+    eliminar_4: {
         parameters: {
             query?: never;
             header?: never;

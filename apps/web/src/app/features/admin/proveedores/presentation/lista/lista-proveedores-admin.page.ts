@@ -20,8 +20,7 @@ const CLASES_INSIGNIA =
 /**
  * Los proveedores de WhatsApp y el enlace para dar de alta uno.
  *
- * Sin borrar: de un proveedor cuelgan lotes, mensajes, borradores y productos. Para dejar de
- * recibirle se desactiva desde su ficha, y la ingesta rechaza al inactivo.
+ * Eliminar y desactivar se hacen desde su ficha: la lista solo enlaza a ella.
  */
 @Component({
   selector: 'app-lista-proveedores-admin',
