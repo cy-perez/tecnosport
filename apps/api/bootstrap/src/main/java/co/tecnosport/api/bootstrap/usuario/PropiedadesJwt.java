@@ -7,8 +7,11 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 public record PropiedadesJwt(String secreto, int minutosAcceso, int diasRefresco) {
 
   public PropiedadesJwt {
-    if (secreto == null || secreto.isBlank()) {
-      throw new IllegalStateException("tecnosport.jwt.secreto no puede estar vacío.");
+    // `${` es un marcador que el Binder de Boot no resolvió y entregó como texto: sin esta guarda,
+    // `${JWT_SECRETO}` sería una clave HS256 válida y conocida por quien lea el YAML.
+    if (secreto == null || secreto.isBlank() || secreto.contains("${")) {
+      throw new IllegalStateException(
+          "tecnosport.jwt.secreto no está configurado: falta la variable de entorno JWT_SECRETO.");
     }
     if (minutosAcceso <= 0) {
       throw new IllegalStateException("tecnosport.jwt.minutos-acceso debe ser mayor que cero.");

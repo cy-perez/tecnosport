@@ -22,9 +22,9 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * desde el 16 de septiembre de 2026, en Secret Manager, comprobado con un evento de prueba del
  * panel que sí pasó la firma.
  *
- * <p>El valor por omisión sigue siendo un marcador de desarrollo, igual que las credenciales de
- * {@code PropiedadesSkydropx}: con él todo evento se rechaza, que es lo que tiene que pasar cuando
- * no hay con qué verificar.
+ * <p>El secreto no tiene valor por omisión fuera del perfil {@code local}. El marcador que tuvo no
+ * rechazaba todo evento, como decía este comentario: aceptaba cualquiera firmado con él mismo, y un
+ * evento de entrega inventado arranca el plazo de retracto.
  */
 @ConfigurationProperties(prefix = "tecnosport.skydropx.webhook")
 public record PropiedadesWebhookEnvio(String cabeceraFirma, String secreto) {
@@ -32,6 +32,13 @@ public record PropiedadesWebhookEnvio(String cabeceraFirma, String secreto) {
   public PropiedadesWebhookEnvio {
     exigir(cabeceraFirma, "tecnosport.skydropx.webhook.cabecera-firma");
     exigir(secreto, "tecnosport.skydropx.webhook.secreto");
+    // `${` es un marcador que el Binder de Boot no resolvió y entregó como texto: firmar con él
+    // sería tan fácil como leer el YAML.
+    if (secreto.contains("${")) {
+      throw new IllegalStateException(
+          "tecnosport.skydropx.webhook.secreto no está configurado: falta la variable de entorno"
+              + " SKYDROPX_SECRETO_WEBHOOK.");
+    }
   }
 
   private static void exigir(String valor, String propiedad) {

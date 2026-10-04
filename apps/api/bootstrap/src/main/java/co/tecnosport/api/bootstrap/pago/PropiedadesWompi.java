@@ -12,11 +12,18 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 public record PropiedadesWompi(String secretoIntegridad, String secretoEventos) {
 
   public PropiedadesWompi {
-    if (secretoIntegridad == null || secretoIntegridad.isBlank()) {
-      throw new IllegalStateException("tecnosport.wompi.secreto-integridad no puede estar vacío.");
-    }
-    if (secretoEventos == null || secretoEventos.isBlank()) {
-      throw new IllegalStateException("tecnosport.wompi.secreto-eventos no puede estar vacío.");
+    exigir(secretoIntegridad, "tecnosport.wompi.secreto-integridad", "WOMPI_SECRETO_INTEGRIDAD");
+    exigir(secretoEventos, "tecnosport.wompi.secreto-eventos", "WOMPI_SECRETO_EVENTOS");
+  }
+
+  /**
+   * El Binder de Boot no falla ante un marcador que no puede resolver: lo entrega como texto. Sin
+   * esto, {@code ${VARIABLE}} pasaría por un secreto válido —y conocido por quien lea el YAML.
+   */
+  private static void exigir(String valor, String propiedad, String variable) {
+    if (valor == null || valor.isBlank() || valor.contains("${")) {
+      throw new IllegalStateException(
+          propiedad + " no está configurado: falta la variable de entorno " + variable + ".");
     }
   }
 }

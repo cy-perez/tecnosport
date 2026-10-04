@@ -114,12 +114,14 @@ tecnosport:
     url-publica: ${GCS_URL_PUBLICA:https://storage.googleapis.com/${tecnosport.gcs.bucket-imagenes}}
     minutos-url-firmada: ${GCS_MINUTOS_URL_FIRMADA:15}
   wompi:
-    # Sin valor por defecto que sea una llave real (regla dura #5): los de abajo son placeholders
-    # de sandbox para desarrollo local, nunca válidos contra Wompi. Producción los sobrescribe
-    # siempre por variable de entorno, servida desde Secret Manager (docs/07-infra-gcp.md).
+    # La llave pública conserva un marcador de sandbox: no es secreta y con ella no se firma nada.
+    # Los dos secretos NO tienen valor por omisión aquí, sino en application-local.yml: con el de
+    # eventos publicado en el repositorio, cualquiera podía inventar un webhook APPROVED en un
+    # despliegue que olvidara la variable (ClavesSinValorDeEjemploTest). Los despliegues los
+    # reciben desde Secret Manager (docs/07-infra-gcp.md).
     llave-publica: ${WOMPI_LLAVE_PUBLICA:pub_test_placeholder}
-    secreto-integridad: ${WOMPI_SECRETO_INTEGRIDAD:test_integrity_placeholder}
-    secreto-eventos: ${WOMPI_SECRETO_EVENTOS:test_events_placeholder}
+    secreto-integridad: ${WOMPI_SECRETO_INTEGRIDAD}
+    secreto-eventos: ${WOMPI_SECRETO_EVENTOS}
     ambiente: ${WOMPI_AMBIENTE:sandbox}
     metodos:
       # Lo que la CUENTA de Wompi tiene activado hoy, que no es lo mismo que lo que el codigo sabe
@@ -360,10 +362,11 @@ tecnosport:
       cabecera-firma: ${SKYDROPX_CABECERA_FIRMA:authorization}
       # El secreto con el que Skydropx firma el evento. Lo ponemos nosotros y se teclea igual en el
       # panel (Conexiones > Webhooks): es una clave compartida, y se rota en los dos sitios o en
-      # ninguno. Dev lo tiene desde el 16 de septiembre de 2026 y el valor de aquí sigue siendo un
-      # marcador de desarrollo (regla dura #5): con él toda firma se rechaza, que es lo correcto
-      # mientras no haya con qué verificar. Los despliegues lo sobrescriben desde Secret Manager.
-      secreto: ${SKYDROPX_SECRETO_WEBHOOK:secreto_pendiente_de_configurar}
+      # ninguno. Dev lo tiene desde el 16 de septiembre de 2026. Sin valor por omisión aquí: el
+      # marcador que hubo no rechazaba toda firma, como decía este comentario, sino que aceptaba
+      # cualquiera hecha con él mismo, y un evento de entrega inventado arranca el plazo de
+      # retracto. El de desarrollo vive en application-local.yml.
+      secreto: ${SKYDROPX_SECRETO_WEBHOOK}
     seguimiento:
       # Cada cuánto le pregunta la conciliación a la transportadora por los envíos callados, y
       # desde cuándo se considera callado uno. Las doce horas no son capricho: menos que eso
@@ -494,15 +497,17 @@ tecnosport:
         numero: ${TRANSFERENCIA_BBVA_NUMERO:numero_pendiente_de_configurar}
         titular: ${TRANSFERENCIA_BBVA_TITULAR:titular_pendiente_de_configurar}
   jwt:
-    # Placeholder de al menos 32 bytes (HS256 lo exige) — nunca un secreto real
-    # (regla dura #5). Producción lo sobrescribe desde Secret Manager.
-    secreto: ${JWT_SECRETO:placeholder_jwt_secreto_de_desarrollo_no_usar_en_produccion}
+    # Sin valor por omisión: con uno publicado, cualquiera firmaba un JWT de ADMIN en el despliegue
+    # que olvidara la variable. El de desarrollo vive en application-local.yml (regla dura #5).
+    secreto: ${JWT_SECRETO}
     minutos-acceso: ${JWT_MINUTOS_ACCESO:15}
     dias-refresco: ${JWT_DIAS_REFRESCO:30}
   admin-semilla:
-    # Dato de negocio real, no inventado (regla dura #5): cambiar antes de desplegar a producción.
+    # Dato de negocio real, no inventado (regla dura #5). La clave no tiene valor por omisión
+    # aquí: el primer admin de un despliegue nuevo nacería con la del repositorio. La de desarrollo
+    # vive en application-local.yml.
     correo: ${ADMIN_CORREO:admin@tecnosport.co}
-    clave: ${ADMIN_CLAVE:admin_clave_de_desarrollo_cambiar}
+    clave: ${ADMIN_CLAVE}
   carrito:
     purga:
       # docs/02-modelo-datos.md: "el carrito vive 30 días". Se cuentan desde la última actividad,
