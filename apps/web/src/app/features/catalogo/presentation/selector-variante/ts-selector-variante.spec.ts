@@ -40,6 +40,38 @@ describe('TsSelectorVariante', () => {
     expect(screen.getByRole('button', { name: '12 meses' })).toBeTruthy();
   });
 
+  it('la muestra de color es un círculo de 24 dentro del objetivo de 44', async () => {
+    await render(TsSelectorVariante, {
+      inputs: { ejes, seleccion: { Color: 'Azul marino', Talla: 'M' } },
+    });
+
+    const boton = screen.getByRole('button', { name: 'Negro' });
+    const muestra = boton.firstElementChild!;
+    expect(boton.className).toContain('size-tactil');
+    expect(muestra.className).toContain('size-24');
+    expect(muestra.className).toContain('rounded-completo');
+  });
+
+  /** Una escala por debajo: 35 px de alto en vez de 44, y el texto pequeño. */
+  it('el botón de la talla es compacto, también si está agotada', async () => {
+    await render(TsSelectorVariante, {
+      inputs: {
+        ejes,
+        seleccion: { Color: 'Azul marino', Talla: 'M' },
+        noDisponibles: { Talla: ['L'] },
+        textoNoDisponible: 'no disponible',
+      },
+    });
+
+    for (const nombre of ['M', 'L, no disponible']) {
+      const talla = screen.getByRole('button', { name: nombre });
+      expect(talla.className, nombre).toContain('min-h-compacto');
+      expect(talla.className, nombre).not.toContain('min-h-tactil');
+      expect(talla.className, nombre).toContain('text-sm');
+      expect(talla.className, nombre).toContain('px-16');
+    }
+  });
+
   it('elegir un color emite la selección con ese eje actualizado', async () => {
     let emitido: unknown;
     await render(TsSelectorVariante, {

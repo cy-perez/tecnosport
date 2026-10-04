@@ -20,7 +20,13 @@ import { TsBoton } from '../../../../shared/ui/boton/ts-boton';
 const SWATCH =
   'anillo-foco grid size-tactil cursor-pointer place-items-center border-0 bg-transparent p-0';
 
-const MUESTRA_BASE = 'block size-32 overflow-hidden';
+/**
+ * La talla, una escala por debajo del botón de siempre: 35 px de alto y no 44 (`compacto`, el
+ * mismo token de los alternadores del encabezado). Sigue por encima del mínimo AA de 24.
+ */
+const TALLA = 'min-h-compacto px-16 py-8 text-sm';
+
+const MUESTRA_BASE = 'block size-24 overflow-hidden rounded-completo';
 const MUESTRA = `${MUESTRA_BASE} border border-ts-borde-control`;
 const MUESTRA_ACTIVA = `${MUESTRA_BASE} border-2 border-ts-primario`;
 
@@ -90,11 +96,11 @@ export class TsSelectorVariante {
    */
   protected claseOpcion(nombreEje: string, opcion: OpcionEje): string {
     if (!this.noDisponible(nombreEje, opcion)) {
-      return '';
+      return TALLA;
     }
     return this.estaSeleccionada(nombreEje, opcion)
-      ? 'line-through'
-      : 'line-through text-ts-texto-suave border-ts-borde';
+      ? `${TALLA} line-through`
+      : `${TALLA} line-through text-ts-texto-suave border-ts-borde`;
   }
 
   protected nombreDeColor(opcion: OpcionEje): string {
