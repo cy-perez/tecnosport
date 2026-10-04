@@ -8,6 +8,7 @@ import co.tecnosport.api.application.catalogo.RepositorioProductos;
 import co.tecnosport.api.application.catalogo.VarianteActiva;
 import co.tecnosport.api.application.compartido.ResultadoPaginado;
 import co.tecnosport.api.domain.catalogo.EstadoProducto;
+import co.tecnosport.api.domain.catalogo.ImagenDeGaleriaNoEncontradaException;
 import co.tecnosport.api.domain.catalogo.ImagenProducto;
 import co.tecnosport.api.domain.catalogo.IntercambioDePrincipal;
 import co.tecnosport.api.domain.catalogo.Paquete;
@@ -329,7 +330,9 @@ public class RepositorioProductosJpa implements RepositorioProductos {
     if (imagenProductoJpaRepository.deleteByIdAndProductoId(
             intercambio.imagenDeGaleriaQuitada(), productoId)
         == 0) {
-      throw new IllegalStateException(
+      // La misma que la guarda del dominio, y un 404: otra pestaña la movió o la quitó mientras
+      // tanto. La transacción revierte el borrado de la principal.
+      throw new ImagenDeGaleriaNoEncontradaException(
           "La imagen "
               + intercambio.imagenDeGaleriaQuitada()
               + " ya no está en la galería del producto "

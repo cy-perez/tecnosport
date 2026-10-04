@@ -76,6 +76,17 @@ public final class ConfirmarImagenPrincipal {
     if (comando.objectKeyVistaPrevia() != null && !comando.objectKeyVistaPrevia().isBlank()) {
       claves.add(comando.objectKeyVistaPrevia().trim());
     }
+    // Una key que ya reclama una foto de la galería no puede ser también la principal: desde
+    // `UsarImagenDeGaleriaComoPrincipal` hay fotos de la galería con objetos `principal-`, y quitar
+    // esa foto se llevaría el archivo de la principal por la key exacta.
+    Set<String> clavesDeLaGaleria = new HashSet<>();
+    producto.galeria().forEach(foto -> clavesDeLaGaleria.addAll(clavesDe(foto)));
+    for (String clave : claves) {
+      if (clavesDeLaGaleria.contains(clave)) {
+        throw new IllegalArgumentException(
+            "El objeto '" + clave + "' ya es de una foto de la galería de este producto.");
+      }
+    }
     // El tamaño se pregunta una sola vez por objeto y se guarda: cada consulta es una llamada a
     // Cloud Storage, y preguntarlo otra vez al armar las variantes costaría el doble de viajes sin
     // enterarse de nada nuevo.
@@ -133,8 +144,13 @@ public final class ConfirmarImagenPrincipal {
       // Todas las claves recién confirmadas, no solo la primera: la limpieza borra el prefijo
       // entero, así que una variante que no estuviera en esta lista se borraría a sí misma justo
       // después de guardarse. Y las de la galería, que pueden vivir bajo `principal-`.
+      //
+      // La galería se vuelve a leer aquí y no se toma del agregado de arriba: si mientras tanto un
+      // intercambio pasó la principal anterior a la galería, sus objetos `principal-` están vivos y
+      // la foto que se leyó al empezar no lo sabe.
+      Producto vigente = repositorioProductos.buscarPorId(producto.id()).orElse(producto);
       Set<String> deLaGaleria = new HashSet<>();
-      producto.galeria().forEach(foto -> deLaGaleria.addAll(clavesDe(foto)));
+      vigente.galeria().forEach(foto -> deLaGaleria.addAll(clavesDe(foto)));
       Set<String> conservar = new HashSet<>(claves);
       conservar.addAll(deLaGaleria);
       int borrados = almacenDeImagenes.eliminarPorPrefijo(prefijoEsperado, conservar);

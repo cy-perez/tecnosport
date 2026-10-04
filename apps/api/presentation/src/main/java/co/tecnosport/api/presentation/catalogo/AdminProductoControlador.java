@@ -250,7 +250,8 @@ public class AdminProductoControlador {
     if (confirmacion.limpiezaFallida()) {
       log.error(
           "Producto {}: la imagen principal se guardó, pero no se pudieron borrar las anteriores"
-              + " del bucket. Quedan objetos sin reclamar bajo 'productos/{}/principal-'.",
+              + " del bucket. Quedan objetos sin reclamar bajo 'productos/{}/' (principal- o, si"
+              + " la anterior venía de la galería, galeria-).",
           id,
           id);
     } else {

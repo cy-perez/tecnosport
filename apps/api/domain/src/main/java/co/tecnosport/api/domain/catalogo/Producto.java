@@ -533,8 +533,19 @@ public final class Producto {
       ImagenProducto elegida = galeria.get(i);
       if (elegida.id().equals(imagenId)) {
         ImagenProducto nuevaPrincipal = elegida.comoPrincipal();
+        // Si la galería ya tiene la misma foto que la principal anterior, esa no vuelve: quedaría
+        // repetida, que es justo lo que `agregarImagenGaleria` impide.
+        boolean yaEstaEnLaGaleria =
+            imagenPrincipal != null
+                && galeria.stream()
+                    .anyMatch(
+                        foto ->
+                            !foto.id().equals(imagenId)
+                                && foto.hash().equals(imagenPrincipal.hash()));
         ImagenProducto anteriorEnGaleria =
-            imagenPrincipal == null ? null : imagenPrincipal.comoGaleria(elegida.orden());
+            imagenPrincipal == null || yaEstaEnLaGaleria
+                ? null
+                : imagenPrincipal.comoGaleria(elegida.orden());
         if (anteriorEnGaleria == null) {
           galeria.remove(i);
         } else {

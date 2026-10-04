@@ -436,6 +436,22 @@ class ProductoTest {
   }
 
   @Test
+  void laPrincipalAnteriorNoVuelveALaGaleriaSiYaHayOtraFotoIgual() {
+    Producto producto = productoDePrueba();
+    producto.asignarImagenPrincipal(imagenPrincipal());
+    // La misma foto que la principal —hash 0— ya está en la galería.
+    producto.agregarImagenGaleria(imagenDeGaleria(0, 0));
+    ImagenProducto elegida = imagenDeGaleria(1, 2);
+    producto.agregarImagenGaleria(elegida);
+
+    IntercambioDePrincipal intercambio = producto.usarImagenDeGaleriaComoPrincipal(elegida.id());
+
+    assertTrue(intercambio.anteriorEnLaGaleria().isEmpty());
+    assertEquals(1, producto.galeria().size());
+    assertEquals(1, producto.galeria().stream().map(ImagenProducto::hash).distinct().count());
+  }
+
+  @Test
   void usarComoPrincipalUnaFotoQueNoEstaEnLaGaleriaFalla() {
     Producto producto = productoDePrueba();
     producto.agregarImagenGaleria(imagenDeGaleria(0, 1));

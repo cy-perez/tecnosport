@@ -105,7 +105,20 @@ public final class AgregarImagenDeGaleria {
     // Dos filas apuntando al mismo objeto romperían el borrado: quitar una se lleva el archivo por
     // la key exacta y deja a la hermana rota. El rechazo por hash no cubre esto —el hash lo manda
     // el cliente—, así que la unicidad que de verdad sostiene el borrado se comprueba aquí.
-    boolean mismoObjeto = producto.galeria().stream().anyMatch(i -> i.url().equals(url));
+    //
+    // Contra todas las URL —cada ancho y la vista previa— y también contra la principal: desde
+    // `UsarImagenDeGaleriaComoPrincipal` la principal puede apuntar a objetos `galeria-`, y una
+    // confirmación repetida de esa foto pasaría el prefijo y dejaría dos filas sobre el mismo
+    // objeto.
+    java.util.Set<String> reclamadas = new java.util.HashSet<>();
+    producto.galeria().forEach(foto -> reclamadas.addAll(urlsDe(foto)));
+    producto.imagenPrincipal().ifPresent(principal -> reclamadas.addAll(urlsDe(principal)));
+    boolean mismoObjeto =
+        variantesDeImagen.stream().anyMatch(v -> reclamadas.contains(v.url()))
+            || (comando.objectKeyVistaPrevia() != null
+                && !comando.objectKeyVistaPrevia().isBlank()
+                && reclamadas.contains(
+                    almacenDeImagenes.urlPublica(comando.objectKeyVistaPrevia().trim())));
     if (mismoObjeto) {
       throw new ImagenDeGaleriaDuplicadaException(
           "El objeto '" + url + "' ya está en la galería de este producto.");
@@ -127,5 +140,12 @@ public final class AgregarImagenDeGaleria {
     producto.agregarImagenGaleria(imagen);
     repositorioProductos.guardarImagenDeGaleria(producto.id(), imagen);
     return imagen;
+  }
+
+  private static List<String> urlsDe(ImagenProducto imagen) {
+    List<String> urls = new java.util.ArrayList<>();
+    imagen.variantes().forEach(variante -> urls.add(variante.url()));
+    imagen.urlVistaPrevia().ifPresent(urls::add);
+    return urls;
   }
 }

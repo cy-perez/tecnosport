@@ -493,6 +493,37 @@ class ConfirmarImagenPrincipalTest {
     assertEquals(1, confirmacion.objetosAnterioresBorrados());
   }
 
+  /**
+   * Tras un intercambio, la galería tiene objetos `principal-`: no se pueden volver a confirmar.
+   */
+  @Test
+  void unaKeyQueYaEsDeUnaFotoDeLaGaleriaNoSePuedeConfirmarComoPrincipal() {
+    Producto producto = productoDePrueba();
+    String keyVieja = "productos/" + producto.id() + "/principal-vieja.webp";
+    String keyLado = "productos/" + producto.id() + "/galeria-lado.webp";
+    almacenDeImagenes.conObjeto(keyVieja, 1000);
+    almacenDeImagenes.conObjeto(keyLado, 1000);
+    producto.asignarImagenPrincipal(imagenEn(TipoImagen.PRINCIPAL, keyVieja, "%064x".formatted(1)));
+    ImagenProducto lado = imagenEn(TipoImagen.GALERIA, keyLado, "%064x".formatted(2));
+    producto.agregarImagenGaleria(lado);
+    producto.usarImagenDeGaleriaComoPrincipal(lado.id());
+    repositorioProductos.conProductos(producto);
+
+    assertThrows(
+        IllegalArgumentException.class,
+        () ->
+            confirmarImagenPrincipal.ejecutar(
+                new ConfirmarImagenPrincipalComando(
+                    producto.id(),
+                    List.of(new VarianteSubida(1000, keyVieja)),
+                    null,
+                    800,
+                    HASH,
+                    "alt es",
+                    "alt en")));
+    assertTrue(almacenDeImagenes.existe(keyVieja));
+  }
+
   private ImagenProducto imagenEn(TipoImagen tipo, String objectKey, String hash) {
     return ImagenProducto.crear(
         tipo,
