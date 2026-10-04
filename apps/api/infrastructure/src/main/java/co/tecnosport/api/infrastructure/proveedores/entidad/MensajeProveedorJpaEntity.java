@@ -42,6 +42,10 @@ public class MensajeProveedorJpaEntity {
   @Column(name = "creado_en", nullable = false)
   private Instant creadoEn;
 
+  /** El lugar en la lista con la que se guardó; desempata los mensajes del mismo instante. */
+  @Column(nullable = false)
+  private int posicion;
+
   protected MensajeProveedorJpaEntity() {}
 
   public MensajeProveedorJpaEntity(
@@ -55,7 +59,8 @@ public class MensajeProveedorJpaEntity {
       String pieDeFoto,
       String referenciaArchivo,
       boolean medioOmitido,
-      Instant creadoEn) {
+      Instant creadoEn,
+      int posicion) {
     this.id = id;
     this.proveedorId = proveedorId;
     this.loteId = loteId;
@@ -67,6 +72,7 @@ public class MensajeProveedorJpaEntity {
     this.referenciaArchivo = referenciaArchivo;
     this.medioOmitido = medioOmitido;
     this.creadoEn = creadoEn;
+    this.posicion = posicion;
   }
 
   public UUID getId() {
@@ -111,5 +117,9 @@ public class MensajeProveedorJpaEntity {
 
   public Instant getCreadoEn() {
     return creadoEn;
+  }
+
+  public int getPosicion() {
+    return posicion;
   }
 }

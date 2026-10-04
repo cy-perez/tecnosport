@@ -15,5 +15,6 @@ public interface MensajeProveedorJpaRepository
           + " where m.proveedorId = :proveedorId and m.idExterno in :candidatos")
   List<String> idsExternosExistentes(UUID proveedorId, Collection<String> candidatos);
 
-  List<MensajeProveedorJpaEntity> findByLoteIdOrderByEnviadoEnAscCreadoEnAsc(UUID loteId);
+  List<MensajeProveedorJpaEntity> findByLoteIdOrderByEnviadoEnAscCreadoEnAscPosicionAsc(
+      UUID loteId);
 }

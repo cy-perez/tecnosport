@@ -23,6 +23,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.annotation.Transactional;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -48,6 +49,8 @@ class RepositoriosDeIngestaJpaTest {
   @Autowired private RepositorioLotesIngestaJpa lotes;
   @Autowired private RepositorioMensajesProveedorJpa mensajes;
   @Autowired private ProveedorJpaRepository filasDeProveedor;
+  @Autowired private MensajeProveedorJpaRepository filasDeMensaje;
+  @Autowired private JdbcTemplate jdbc;
 
   private Proveedor proveedorGuardado(BigDecimal factor) {
     Proveedor proveedor =
@@ -216,6 +219,57 @@ class RepositoriosDeIngestaJpaTest {
     assertThat(leidos.get(2).medioOmitido()).isTrue();
     assertThat(leidos.get(2).referenciaArchivo()).isEmpty();
     assertThat(leidos.get(2).texto()).isEmpty();
+  }
+
+  /**
+   * Una exportación de Android no trae segundos y el lote entero comparte {@code creado_en}: los
+   * mensajes del mismo minuto empatan en todo, y el agrupador necesita el orden del archivo para
+   * saber de qué precio es cada foto.
+   *
+   * <p>Recién insertadas, Postgres devuelve las filas en el orden de inserción aunque nada lo pida,
+   * y la prueba pasaría sin el arreglo. Por eso se reescriben al revés: así el orden físico de la
+   * tabla y el de los índices quedan invertidos, y solo la posición guardada los endereza.
+   *
+   * <p>Y se apagan los recorridos por índice: {@code ix_mensaje_proveedor_lote} termina en {@code
+   * posicion}, y leyendo por él el orden sale bien aunque la consulta no lo pida. Lo que se prueba
+   * es el {@code ORDER BY}, que es lo único que el planificador promete respetar.
+   */
+  @Test
+  void losMensajesDelMismoMinutoSeLeenEnElOrdenEnQueSeGuardaron() {
+    Proveedor proveedor = proveedorGuardado(null);
+    LoteIngesta lote = LoteIngesta.recibirExportacion(proveedor.id(), "p/exportaciones/a.zip", T);
+    lotes.guardar(lote);
+    MensajeProveedor foto =
+        MensajeProveedor.imagen(
+            proveedor.id(), lote.id(), new IdExternoDeMensaje("a"), T, null, "p/m/1.jpg");
+    MensajeProveedor caballero =
+        MensajeProveedor.texto(
+            proveedor.id(), lote.id(), new IdExternoDeMensaje("b"), T, "Caballero 💰 $115.000");
+    MensajeProveedor otraFoto =
+        MensajeProveedor.imagen(
+            proveedor.id(), lote.id(), new IdExternoDeMensaje("c"), T, null, "p/m/2.jpg");
+    MensajeProveedor superstar =
+        MensajeProveedor.texto(
+            proveedor.id(), lote.id(), new IdExternoDeMensaje("d"), T, "Superstar 💰 $105.000");
+    mensajes.guardarTodos(List.of(foto, caballero, otraFoto, superstar));
+    filasDeMensaje.flush();
+
+    jdbc.execute(
+        "create temp table copia_de_mensajes on commit drop as"
+            + " select * from mensaje_proveedor where lote_id = '"
+            + lote.id()
+            + "'");
+    jdbc.update("delete from mensaje_proveedor where lote_id = ?", lote.id());
+    jdbc.update(
+        "insert into mensaje_proveedor select * from copia_de_mensajes order by id_externo desc");
+
+    jdbc.execute("set local enable_indexscan = off");
+    jdbc.execute("set local enable_indexonlyscan = off");
+    jdbc.execute("set local enable_bitmapscan = off");
+
+    assertThat(mensajes.listarDeLote(lote.id()))
+        .extracting(MensajeProveedor::id)
+        .containsExactly(foto.id(), caballero.id(), otraFoto.id(), superstar.id());
   }
 
   @Test
