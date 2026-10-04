@@ -100,17 +100,20 @@
             formControlName="atributoId"
           />
 
-          <ts-campo
-            [idCampo]="'variante-valor-' + $index"
-            [label]="'admin.productos.agregarVariante.valor' | transloco"
-            formControlName="valor"
-          />
-
           @if (esAtributoDeColor(fila.controls.atributoId.value)) {
+            <ts-select
+              [idCampo]="'variante-color-' + $index"
+              [label]="'admin.productos.agregarVariante.color' | transloco"
+              [opciones]="opcionesColor()"
+              [placeholder]="'admin.productos.agregarVariante.seleccionar' | transloco"
+              [obligatorio]="true"
+              formControlName="valor"
+            />
+          } @else {
             <ts-campo
-              [idCampo]="'variante-color-hex-' + $index"
-              [label]="'admin.productos.agregarVariante.colorHex' | transloco"
-              formControlName="colorHex"
+              [idCampo]="'variante-valor-' + $index"
+              [label]="'admin.productos.agregarVariante.valor' | transloco"
+              formControlName="valor"
             />
           }
 

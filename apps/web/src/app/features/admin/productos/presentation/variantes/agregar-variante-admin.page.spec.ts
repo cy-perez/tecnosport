@@ -1,3 +1,8 @@
+import {
+  REPOSITORIO_PALETA_COLORES,
+  RepositorioPaletaColores,
+} from '../../../../catalogo/domain/repositorio-paleta-colores.puerto';
+import { ColorDePaleta } from '../../../../catalogo/domain/producto.model';
 import { vi } from 'vitest';
 import { ActivatedRoute, convertToParamMap, provideRouter, Router } from '@angular/router';
 import { TranslocoTestingModule } from '@jsverse/transloco';
@@ -151,9 +156,21 @@ async function renderPagina(repositorioProductos: RepositorioProductosAdmin, pro
       provideTanStackQuery(new QueryClient()),
       { provide: REPOSITORIO_PRODUCTOS_ADMIN, useValue: repositorioProductos },
       { provide: REPOSITORIO_ATRIBUTOS, useValue: new RepositorioAtributosFalso() },
+      { provide: REPOSITORIO_PALETA_COLORES, useValue: new RepositorioPaletaFalso() },
       { provide: ActivatedRoute, useValue: activatedRouteConProductoId(productoId) },
     ],
   });
+}
+
+class RepositorioPaletaFalso implements RepositorioPaletaColores {
+  async listarTodos(): Promise<ColorDePaleta[]> {
+    // Fuera de orden a propósito: la pantalla los ordena alfabéticamente.
+    return [
+      { nombre: 'Vino', nombreEn: 'Burgundy', hex: '#722F37' },
+      { nombre: 'Negro', nombreEn: 'Black', hex: '#111111' },
+      { nombre: 'Café', nombreEn: 'Brown', hex: '#6F4E37' },
+    ];
+  }
 }
 
 /** El paquete es obligatorio desde adr/0021, así que el mínimo enviable ya no es SKU y precio. */
@@ -242,14 +259,35 @@ describe('AgregarVarianteAdminPage', () => {
     expect(repositorio.llamadasAgregarVariante).toHaveLength(0);
   });
 
-  it('al elegir un atributo de tipo color, muestra el campo de color', async () => {
-    await renderPagina(new RepositorioProductosAdminFalso());
+  /**
+   * El color se elige de la paleta, en orden alfabético, y el HEX sale de ella: el mismo nombre y
+   * la misma muestra que pone la revisión de un borrador.
+   */
+  it('un atributo de color se elige de la paleta y manda su HEX', async () => {
+    const repositorio = new RepositorioProductosAdminFalso();
+    const { fixture } = await renderPagina(repositorio, 'p1');
+    vi.spyOn(fixture.debugElement.injector.get(Router), 'navigate').mockResolvedValue(true);
 
+    fireEvent.input(screen.getByLabelText('SKU'), { target: { value: 'TS-1' } });
+    fireEvent.input(screen.getByLabelText('Precio'), { target: { value: '1000' } });
+    llenarPaquete();
     fireEvent.click(screen.getByRole('button', { name: 'Agregar atributo' }));
     await screen.findByRole('option', { name: 'Color' });
     fireEvent.change(screen.getByLabelText('Atributo'), { target: { value: 'a1' } });
 
-    expect(await screen.findByLabelText('Color (hex)')).toBeTruthy();
+    const selector = (await screen.findByLabelText(/^Color/)) as HTMLSelectElement;
+    await screen.findByRole('option', { name: 'Vino' });
+    const nombres = [...selector.options].map((o) => o.textContent?.trim()).filter((t) => t);
+    expect(nombres.slice(-3)).toEqual(['Café', 'Negro', 'Vino']);
+    expect(screen.queryByLabelText('Valor')).toBeNull();
+
+    fireEvent.change(selector, { target: { value: 'Negro' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Crear variante' }));
+
+    await vi.waitFor(() => expect(repositorio.llamadasAgregarVariante).toHaveLength(1));
+    expect(repositorio.llamadasAgregarVariante[0].atributos).toEqual([
+      { atributoId: 'a1', valor: 'Negro', colorHex: '#111111' },
+    ]);
   });
 
   it('al enviar exitosamente, agrega la variante y navega de vuelta a editar producto', async () => {

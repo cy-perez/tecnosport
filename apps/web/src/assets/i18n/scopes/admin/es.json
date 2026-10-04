@@ -313,7 +313,7 @@
       "atributos": "Atributos",
       "atributo": "Atributo",
       "valor": "Valor",
-      "colorHex": "Color (hex)",
+      "color": "Color",
       "seleccionar": "Selecciona una opción",
       "agregarAtributo": "Agregar atributo",
       "quitarAtributo": "Quitar",
