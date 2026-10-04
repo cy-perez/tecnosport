@@ -563,6 +563,17 @@ describe('DetalleBorradorAdminPage', () => {
     expect(navegar).not.toHaveBeenCalled();
   });
 
+  /** Su producto se borró: ya no es memoria de nada, y sin esto sus fotos no se podían liberar. */
+  it('un aprobado cuyo producto se borró se puede borrar y dice por qué', async () => {
+    await renderPagina(borradorDePrueba({ estado: 'APROBADO', productoId: null }));
+
+    expect(
+      await screen.findByRole('button', { name: esAdmin.borradores.borrar.accion }),
+    ).toBeTruthy();
+    expect(screen.getByText(esAdmin.borradores.borrar.explicacionSinProducto)).toBeTruthy();
+    expect(screen.queryByText(esAdmin.borradores.borrar.explicacion)).toBeNull();
+  });
+
   it('un rechazado también se puede borrar', async () => {
     await renderPagina(borradorDePrueba({ estado: 'RECHAZADO', motivoRechazo: 'Promoción' }));
 

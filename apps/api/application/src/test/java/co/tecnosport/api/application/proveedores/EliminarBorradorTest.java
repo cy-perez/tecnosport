@@ -12,6 +12,7 @@ import co.tecnosport.api.application.proveedores.ApoyoDeIngesta.RepositorioPubli
 import co.tecnosport.api.domain.catalogo.LineaCatalogo;
 import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.proveedores.BorradorProducto;
+import co.tecnosport.api.domain.proveedores.EstadoBorrador;
 import co.tecnosport.api.domain.proveedores.IdExternoDeMensaje;
 import co.tecnosport.api.domain.proveedores.LoteIngesta;
 import co.tecnosport.api.domain.proveedores.MensajeProveedor;
@@ -125,6 +126,64 @@ class EliminarBorradorTest {
     assertTrue(publicaciones.buscarPorId(publicacion.id()).isPresent());
     assertEquals(5, mensajes.listarDeLote(lote.id()).size());
     assertTrue(almacen.objetos.containsKey(CLAVE_FOTO));
+  }
+
+  /**
+   * Aprobado y después borrado su producto: la base le pone el producto en nulo y el borrador queda
+   * sin reconocer nada. Antes no se podía borrar y sus fotos se quedaban en el bucket privado.
+   */
+  @Test
+  void unAprobadoCuyoProductoSeBorroSeBorraConSusFotos() {
+    BorradorProducto huerfano = sinProducto(EstadoBorrador.APROBADO);
+    borradores.guardar(huerfano);
+    borradores.eliminar(borrador.id());
+
+    int objetos = eliminar.ejecutar(huerfano.id());
+
+    assertEquals(1, objetos);
+    assertTrue(borradores.buscarPorId(huerfano.id()).isEmpty());
+    assertTrue(publicaciones.buscarPorId(publicacion.id()).isEmpty());
+    assertFalse(almacen.objetos.containsKey(CLAVE_FOTO));
+  }
+
+  @Test
+  void unaRenovacionCuyoProductoSeBorroTambienSeBorra() {
+    BorradorProducto huerfano = sinProducto(EstadoBorrador.RENOVACION_APLICADA);
+    borradores.guardar(huerfano);
+    borradores.eliminar(borrador.id());
+
+    eliminar.ejecutar(huerfano.id());
+
+    assertTrue(borradores.buscarPorId(huerfano.id()).isEmpty());
+    assertFalse(almacen.objetos.containsKey(CLAVE_FOTO));
+  }
+
+  /** Como lo deja la base tras borrar el producto: mismo borrador, `producto_id` en nulo. */
+  private BorradorProducto sinProducto(EstadoBorrador estado) {
+    return new BorradorProducto(
+        UUID.randomUUID(),
+        publicacion.id(),
+        proveedor.id(),
+        "{}",
+        "Bolso",
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        estado,
+        null,
+        null,
+        T);
   }
 
   @Test

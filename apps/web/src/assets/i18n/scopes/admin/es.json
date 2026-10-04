@@ -34,7 +34,7 @@
     "lote_no_encontrado": "Esa ingesta ya no existe: la lista se acaba de actualizar.",
     "borrador_no_encontrado": "Ese borrador ya no existe. Recarga la lista.",
     "borrador_no_editable": "Este borrador ya se decidió: no se puede cambiar ni aprobar de nuevo.",
-    "borrador_no_eliminable": "Un borrador aprobado o una renovación no se borra: es lo que reconoce el producto cuando el proveedor lo vuelve a anunciar.",
+    "borrador_no_eliminable": "Un borrador aprobado o una renovación no se borra mientras su producto exista: es lo que reconoce el producto cuando el proveedor lo vuelve a anunciar.",
     "borrador_sin_fotos": "No se puede aprobar un producto sin fotos. Si la publicación no traía ninguna, recházalo.",
     "borrador_sin_precio": "Falta el precio de venta. Escríbelo antes de aprobar.",
     "producto_sin_descripcion": "Falta la descripción del producto: es lo que dice la ficha.",
@@ -1091,7 +1091,8 @@
       "confirmar": "Sí, borrar",
       "cancelar": "Cancelar",
       "borrando": "Borrando…",
-      "error": "No se pudo borrar el borrador. Intenta de nuevo."
+      "error": "No se pudo borrar el borrador. Intenta de nuevo.",
+      "explicacionSinProducto": "Su producto ya se borró: este borrador ya no reconoce nada y solo guarda los mensajes y las fotos del proveedor. Borrarlo los libera del bucket."
     }
   }
 }

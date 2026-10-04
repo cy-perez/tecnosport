@@ -205,5 +205,19 @@ export function borradorEditable(borrador: Borrador): boolean {
  * huella con que la ingesta reconoce el producto la próxima vez, y la API responde 409.
  */
 export function borradorBorrable(borrador: Borrador): boolean {
-  return borrador.estado === 'EN_REVISION' || borrador.estado === 'RECHAZADO';
+  // Un aprobado o una renovación también, cuando su producto ya se borró: no reconoce nada y solo
+  // guarda las fotos del proveedor. Con el producto vivo, no (`EliminarBorrador` en la API).
+  return (
+    borrador.estado === 'EN_REVISION' ||
+    borrador.estado === 'RECHAZADO' ||
+    borrador.productoId === null
+  );
+}
+
+/** Un aprobado o una renovación que perdió su producto: el único borrado que no es un descarte. */
+export function borradorSinProducto(borrador: Borrador): boolean {
+  return (
+    (borrador.estado === 'APROBADO' || borrador.estado === 'RENOVACION_APLICADA') &&
+    borrador.productoId === null
+  );
 }

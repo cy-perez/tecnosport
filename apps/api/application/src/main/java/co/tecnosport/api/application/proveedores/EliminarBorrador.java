@@ -15,9 +15,12 @@ import java.util.UUID;
  * Borra un borrador con todo lo que lo sostiene: la publicación, los mensajes del proveedor y sus
  * fotos en el bucket privado. Es lo contrario de {@link RechazarBorrador}, que deja la constancia.
  *
- * <p><b>Solo en revisión o rechazado.</b> Un aprobado y una renovación son la memoria con que la
- * ingesta reconoce un producto que vuelve con otro texto ({@link
- * RepositorioBorradores#huellasVisualesDelProveedor}): borrarlos la deja ciega sin avisar.
+ * <p><b>En revisión o rechazado, y también un aprobado o una renovación cuyo producto ya se
+ * borró.</b> Mientras el producto exista, esos dos son la memoria con que la ingesta reconoce un
+ * producto que vuelve con otro texto ({@link RepositorioBorradores#huellasVisualesDelProveedor}):
+ * borrarlos la deja ciega sin avisar. Sin producto ya no reconocen nada —la huella visual solo
+ * cuenta borradores con producto— y lo único que guardan son las fotos del proveedor en el bucket
+ * privado, que sin esto quedaban ahí hasta borrar la ingesta entera.
  *
  * <p><b>Lo compartido no se toca.</b> Un mensaje con varios productos da varios borradores sobre la
  * misma publicación; si queda otro, solo se borra la fila de este. Y un mensaje que otra
@@ -60,7 +63,7 @@ public final class EliminarBorrador {
         repositorioBorradores
             .buscarPorId(borradorId)
             .orElseThrow(() -> new BorradorNoEncontradoException(borradorId));
-    if (!ELIMINABLES.contains(borrador.estado())) {
+    if (!ELIMINABLES.contains(borrador.estado()) && borrador.productoId().isPresent()) {
       throw new BorradorNoEliminableException(borrador.estado());
     }
 
