@@ -16,6 +16,7 @@ import co.tecnosport.api.application.inventario.RepositorioInventario;
 import co.tecnosport.api.domain.catalogo.Atributo;
 import co.tecnosport.api.domain.catalogo.Categoria;
 import co.tecnosport.api.domain.catalogo.ImagenProducto;
+import co.tecnosport.api.domain.catalogo.IntercambioDePrincipal;
 import co.tecnosport.api.domain.catalogo.LineaCatalogo;
 import co.tecnosport.api.domain.catalogo.Marca;
 import co.tecnosport.api.domain.catalogo.Paquete;
@@ -153,6 +154,11 @@ final class ApoyoDeCatalogoParaIngesta {
 
     @Override
     public void guardarVarianteDeImagen(UUID imagenId, UUID varianteId) {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void guardarIntercambioDePrincipal(UUID productoId, IntercambioDePrincipal intercambio) {
       throw new UnsupportedOperationException();
     }
   }

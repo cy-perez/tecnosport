@@ -293,7 +293,21 @@
         "errorQuitar": "Couldn't remove the image. Try again.",
         "quitarImagen": "Remove gallery image {{posicion}}",
         "quitando": "Removing…",
-        "agregada": "The image was added to the gallery."
+        "agregada": "The image was added to the gallery.",
+        "usarComoPrincipal": "Use as main",
+        "usarComoPrincipalImagen": "Use image {{posicion}} as the main image",
+        "principalCambiada": "The chosen photo is now the main image. If there was another one, it took its place in the gallery.",
+        "errorPrincipal": "We could not change the main image. Please try again."
+      },
+      "estado": "Status:",
+      "publicacion": {
+        "titulo": "Publishing",
+        "borrador": "It is a draft: it is not shown in the store.",
+        "publicado": "It is published: anyone can see it in the store and buy it."
+      },
+      "eliminar": {
+        "titulo": "Delete product",
+        "explicacion": "Removes it from the catalog with its variants, stock and photos. Only a draft product that has never been sold can be deleted."
       }
     },
     "agregarVariante": {

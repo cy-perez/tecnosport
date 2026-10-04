@@ -2,6 +2,7 @@ package co.tecnosport.api.application.catalogo;
 
 import co.tecnosport.api.application.compartido.ResultadoPaginado;
 import co.tecnosport.api.domain.catalogo.ImagenProducto;
+import co.tecnosport.api.domain.catalogo.IntercambioDePrincipal;
 import co.tecnosport.api.domain.catalogo.Paquete;
 import co.tecnosport.api.domain.catalogo.Producto;
 import co.tecnosport.api.domain.catalogo.Variante;
@@ -43,6 +44,7 @@ final class RepositorioProductosFalso implements RepositorioProductos {
   List<ImagenProducto> ordenGuardado;
 
   final List<UUID> imagenesDeGaleriaEliminadas = new ArrayList<>();
+  IntercambioDePrincipal intercambioGuardado;
   private final Set<UUID> idsBorrados = new HashSet<>();
   UUID ultimaVarianteMedida;
   Paquete ultimoPaqueteGrabado;
@@ -160,6 +162,11 @@ final class RepositorioProductosFalso implements RepositorioProductos {
   @Override
   public void guardarVarianteDeImagen(UUID imagenId, UUID varianteId) {
     this.varianteGuardada = new java.util.AbstractMap.SimpleEntry<>(imagenId, varianteId);
+  }
+
+  @Override
+  public void guardarIntercambioDePrincipal(UUID productoId, IntercambioDePrincipal intercambio) {
+    this.intercambioGuardado = intercambio;
   }
 
   @Override

@@ -2,6 +2,7 @@ import { InjectionToken } from '@angular/core';
 import {
   AgregarVarianteAdmin,
   AsignarColorAImagenAdmin,
+  UsarImagenComoPrincipalAdmin,
   CrearProductoAdmin,
   EditarProductoAdmin,
   FiltroProductosAdmin,
@@ -82,6 +83,9 @@ export interface RepositorioProductosAdmin {
   reordenarGaleria(comando: ReordenarGaleriaAdmin): Promise<void>;
   /** De qué color es una foto de la galería: la cuelga de una variante de ese color. */
   asignarColorAImagen(comando: AsignarColorAImagenAdmin): Promise<void>;
+
+  /** Intercambia la principal con una foto de la galería, sin subir nada. */
+  usarImagenComoPrincipal(comando: UsarImagenComoPrincipalAdmin): Promise<void>;
 }
 
 export const REPOSITORIO_PRODUCTOS_ADMIN = new InjectionToken<RepositorioProductosAdmin>(

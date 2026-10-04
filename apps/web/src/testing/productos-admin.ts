@@ -167,6 +167,10 @@ export class RepositorioMedicionFalso implements RepositorioProductosAdmin {
   asignarColorAImagen(): Promise<void> {
     throw new Error('no usado por esta prueba');
   }
+
+  usarImagenComoPrincipal(): Promise<void> {
+    throw new Error('no usado por esta prueba');
+  }
 }
 
 /**
@@ -297,6 +301,10 @@ export class RepositorioExistenciasFalso implements RepositorioProductosAdmin {
   }
 
   asignarColorAImagen(): Promise<void> {
+    throw new Error('no usado por esta prueba');
+  }
+
+  usarImagenComoPrincipal(): Promise<void> {
     throw new Error('no usado por esta prueba');
   }
 }

@@ -803,6 +803,39 @@ class RepositorioProductosJpaTest {
     assertThat(hidratado.imagenPrincipal()).isPresent();
   }
 
+  /**
+   * Usar una foto de la galería como principal deja, al volver a leer, la elegida de principal y la
+   * principal de antes en la galería: una sola principal y ninguna foto perdida.
+   */
+  @Test
+  void elIntercambioDePrincipalQuedaGrabadoYSeVuelveALeer() {
+    MarcaJpaEntity marca = marca("TecnoSport");
+    CategoriaJpaEntity categoria = categoria("Bolsos", "bolsos-t23", "BOLSOS");
+    ProductoJpaEntity productoJpa =
+        producto("Morral t23", "morral-t23", "BORRADOR", marca, categoria);
+    imagenPrincipal(productoJpa);
+    repositorio.guardarImagenDeGaleria(productoJpa.getId(), imagenDeGaleria(0, 31));
+    ImagenProducto elegida = imagenDeGaleria(1, 32);
+    repositorio.guardarImagenDeGaleria(productoJpa.getId(), elegida);
+    Producto producto = repositorio.buscarPorId(productoJpa.getId()).orElseThrow();
+    String urlPrincipalAnterior = producto.imagenPrincipal().orElseThrow().url();
+
+    repositorio.guardarIntercambioDePrincipal(
+        producto.id(), producto.usarImagenDeGaleriaComoPrincipal(elegida.id()));
+
+    Producto releido = repositorio.buscarPorSlug(new Slug("morral-t23")).orElseThrow();
+    assertThat(releido.imagenPrincipal().orElseThrow().url()).isEqualTo(elegida.url());
+    assertThat(releido.galeria()).hasSize(2);
+    assertThat(releido.galeria().stream().map(ImagenProducto::url).toList())
+        .contains(urlPrincipalAnterior)
+        .doesNotContain(elegida.url());
+    assertThat(
+            imagenes.findByProductoIdIn(List.of(productoJpa.getId())).stream()
+                .filter(fila -> "PRINCIPAL".equals(fila.getTipo()))
+                .count())
+        .isEqualTo(1);
+  }
+
   /** El color de una foto de la galería va y vuelve, y se puede soltar. */
   @Test
   void elColorDeUnaFotoDeLaGaleriaVaYVuelve() {

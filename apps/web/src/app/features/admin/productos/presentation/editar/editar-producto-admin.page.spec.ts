@@ -29,6 +29,7 @@ import {
   QuitarImagenDeGaleriaAdmin,
   ReordenarGaleriaAdmin,
   AsignarColorAImagenAdmin,
+  UsarImagenComoPrincipalAdmin,
   SubirImagenDeGaleriaAdmin,
   SubirImagenPrincipalAdmin,
   VarianteMedida,
@@ -39,6 +40,7 @@ import {
 } from '../../domain/repositorio-productos-admin.puerto';
 import { REPOSITORIO_DIFUSION } from '../../../difusion/domain/repositorio-difusion.puerto';
 import { esperarSinViolaciones } from '../../../../../../testing/axe';
+import { proveerPaletaDePrueba } from '../../../../../../testing/paleta-colores';
 import { EditarProductoAdminPage } from './editar-producto-admin.page';
 
 const MARCA: Marca = { id: 'm1', nombre: 'TecnoSport' };
@@ -129,7 +131,12 @@ class RepositorioProductosAdminFalso implements RepositorioProductosAdmin {
   llamadasQuitarDeGaleria: QuitarImagenDeGaleriaAdmin[] = [];
   llamadasReordenarGaleria: ReordenarGaleriaAdmin[] = [];
   llamadasAsignarColor: AsignarColorAImagenAdmin[] = [];
+  llamadasPublicar: string[] = [];
+  llamadasRetirar: string[] = [];
+  llamadasEliminar: string[] = [];
+  llamadasUsarComoPrincipal: UsarImagenComoPrincipalAdmin[] = [];
   errorAlTocarLaGaleria = false;
+  errorAlEliminar = false;
 
   constructor(
     private producto: ProductoAdminDetalle | null = productoDePrueba(),
@@ -186,16 +193,43 @@ class RepositorioProductosAdminFalso implements RepositorioProductosAdmin {
     throw new Error('no usado por esta prueba');
   }
 
-  publicar(): Promise<ProductoAdmin> {
-    throw new Error('no usado por esta prueba');
+  async publicar(id: string): Promise<ProductoAdmin> {
+    this.llamadasPublicar.push(id);
+    if (this.producto) {
+      this.producto = { ...this.producto, estado: 'PUBLICADO' };
+    }
+    return this.producto!;
   }
 
-  eliminar(): Promise<void> {
-    throw new Error('no usado por esta prueba');
+  async eliminar(id: string): Promise<void> {
+    this.llamadasEliminar.push(id);
+    if (this.errorAlEliminar) {
+      throw new Error('falló');
+    }
+    // Como el servidor: después de borrarlo, pedirlo da 404.
+    this.producto = null;
   }
 
-  despublicar(): Promise<ProductoAdmin> {
-    throw new Error('no usado por esta prueba');
+  async despublicar(id: string): Promise<ProductoAdmin> {
+    this.llamadasRetirar.push(id);
+    if (this.producto) {
+      this.producto = { ...this.producto, estado: 'BORRADOR' };
+    }
+    return this.producto!;
+  }
+
+  async usarImagenComoPrincipal(comando: UsarImagenComoPrincipalAdmin): Promise<void> {
+    this.llamadasUsarComoPrincipal.push(comando);
+    if (this.errorAlTocarLaGaleria) {
+      throw new Error('falló');
+    }
+    if (this.producto) {
+      this.producto = {
+        ...this.producto,
+        imagenPrincipalUrl: this.producto.galeria.find((i) => i.id === comando.imagenId)!.url,
+        galeria: this.producto.galeria.filter((i) => i.id !== comando.imagenId),
+      };
+    }
   }
 
   medirVariante(): Promise<VarianteMedida> {
@@ -286,6 +320,7 @@ async function renderPagina(repositorioProductos: RepositorioProductosAdmin, id 
       { provide: REPOSITORIO_MARCAS, useValue: new RepositorioMarcasFalso() },
       { provide: REPOSITORIO_CATEGORIAS, useValue: new RepositorioCategoriasFalso() },
       { provide: ActivatedRoute, useValue: activatedRouteConId(id) },
+      proveerPaletaDePrueba(),
       // La ficha monta el panel de difusión al final. No se prueba aquí —tiene su propio spec—
       // pero sin su puerto el componente ni se construye.
       {
@@ -865,5 +900,151 @@ describe('EditarProductoAdminPage', () => {
 
     const regiones = screen.getAllByRole('status');
     expect(regiones.some((region) => region.textContent?.trim() === '')).toBe(true);
+  });
+
+  describe('como la revisión de un borrador', () => {
+    it('dice en qué estado está el producto', async () => {
+      await renderPagina(new RepositorioProductosAdminFalso());
+      await screen.findByDisplayValue('Morral urbano');
+
+      expect(screen.getByText('Estado:').textContent).toContain('Borrador');
+    });
+
+    it('publica desde la edición, preguntando antes, y lo anuncia', async () => {
+      const repositorio = new RepositorioProductosAdminFalso();
+      await renderPagina(repositorio);
+      await screen.findByDisplayValue('Morral urbano');
+
+      fireEvent.click(screen.getByRole('button', { name: 'Publicar' }));
+      expect(repositorio.llamadasPublicar).toEqual([]);
+      expect(
+        screen.getByText('¿Publicar Morral urbano? Va a quedar visible en la tienda.'),
+      ).toBeTruthy();
+      fireEvent.click(screen.getByRole('button', { name: 'Sí, publicar' }));
+
+      expect(await screen.findByText('Morral urbano quedó publicado.')).toBeTruthy();
+      expect(repositorio.llamadasPublicar).toEqual(['p1']);
+      // Ya publicado, el mismo botón ofrece lo contrario.
+      expect(await screen.findByRole('button', { name: 'Retirar' })).toBeTruthy();
+    });
+
+    it('dos clics en confirmar publican una sola vez', async () => {
+      const repositorio = new RepositorioProductosAdminFalso();
+      await renderPagina(repositorio);
+      await screen.findByDisplayValue('Morral urbano');
+
+      fireEvent.click(screen.getByRole('button', { name: 'Publicar' }));
+      const confirmar = screen.getByRole('button', { name: 'Sí, publicar' });
+      fireEvent.click(confirmar);
+      fireEvent.click(confirmar);
+
+      await screen.findByText('Morral urbano quedó publicado.');
+      expect(repositorio.llamadasPublicar).toEqual(['p1']);
+    });
+
+    it('dos clics en usar como principal llaman una sola vez', async () => {
+      const repositorio = new RepositorioProductosAdminFalso(
+        productoDePrueba([imagenDeGaleria(0), imagenDeGaleria(1)]),
+      );
+      await renderPagina(repositorio);
+      await screen.findByDisplayValue('Morral urbano');
+
+      const boton = screen.getByRole('button', { name: 'Usar la imagen 2 como principal' });
+      fireEvent.click(boton);
+      fireEvent.click(boton);
+
+      await screen.findByText(esAdmin.productos.editar.galeria.principalCambiada);
+      expect(repositorio.llamadasUsarComoPrincipal).toHaveLength(1);
+    });
+
+    it('cancelar la pregunta no publica nada', async () => {
+      const repositorio = new RepositorioProductosAdminFalso();
+      await renderPagina(repositorio);
+      await screen.findByDisplayValue('Morral urbano');
+
+      fireEvent.click(screen.getByRole('button', { name: 'Publicar' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Cancelar' }));
+
+      expect(screen.queryByRole('button', { name: 'Sí, publicar' })).toBeNull();
+      expect(repositorio.llamadasPublicar).toEqual([]);
+    });
+
+    it('elimina desde la edición y vuelve a la lista', async () => {
+      const repositorio = new RepositorioProductosAdminFalso();
+      const { fixture } = await renderPagina(repositorio);
+      await screen.findByDisplayValue('Morral urbano');
+      const navegar = vi
+        .spyOn(fixture.debugElement.injector.get(Router), 'navigate')
+        .mockResolvedValue(true);
+
+      fireEvent.click(screen.getByRole('button', { name: 'Eliminar' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Sí, eliminar' }));
+
+      await vi.waitFor(() => {
+        expect(repositorio.llamadasEliminar).toEqual(['p1']);
+        expect(navegar).toHaveBeenCalledWith(['/es', 'admin', 'productos']);
+      });
+      // El detalle salió de la caché: no se vuelve a pedir y no se pinta un error de carga.
+      expect(screen.queryByText(esAdmin.productos.editar.error_carga)).toBeNull();
+    });
+
+    it('si eliminar falla, lo dice y no se va', async () => {
+      const repositorio = new RepositorioProductosAdminFalso();
+      repositorio.errorAlEliminar = true;
+      const { fixture } = await renderPagina(repositorio);
+      await screen.findByDisplayValue('Morral urbano');
+      const navegar = vi.spyOn(fixture.debugElement.injector.get(Router), 'navigate');
+
+      fireEvent.click(screen.getByRole('button', { name: 'Eliminar' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Sí, eliminar' }));
+
+      expect(
+        await screen.findByText('No pudimos eliminar el producto. Vuelve a intentarlo.'),
+      ).toBeTruthy();
+      expect(navegar).not.toHaveBeenCalled();
+    });
+
+    it('usa una foto de la galería como principal y lo anuncia', async () => {
+      const repositorio = new RepositorioProductosAdminFalso(
+        productoDePrueba([imagenDeGaleria(0), imagenDeGaleria(1)]),
+      );
+      await renderPagina(repositorio);
+      await screen.findByDisplayValue('Morral urbano');
+
+      fireEvent.click(screen.getByRole('button', { name: 'Usar la imagen 2 como principal' }));
+
+      expect(
+        await screen.findByText(
+          'La foto elegida es ahora la principal. Si había otra, quedó en su puesto de la galería.',
+        ),
+      ).toBeTruthy();
+      expect(repositorio.llamadasUsarComoPrincipal).toEqual([
+        { productoId: 'p1', imagenId: 'img1' },
+      ]);
+    });
+
+    it('si usar la foto como principal falla, lo dice', async () => {
+      const repositorio = new RepositorioProductosAdminFalso(
+        productoDePrueba([imagenDeGaleria(0), imagenDeGaleria(1)]),
+      );
+      repositorio.errorAlTocarLaGaleria = true;
+      await renderPagina(repositorio);
+      await screen.findByDisplayValue('Morral urbano');
+
+      fireEvent.click(screen.getByRole('button', { name: 'Usar la imagen 1 como principal' }));
+
+      expect(await screen.findByText(esAdmin.productos.editar.galeria.errorPrincipal)).toBeTruthy();
+    });
+
+    it('pinta la muestra del color junto a cada variante', async () => {
+      const { container } = await renderPagina(new RepositorioProductosAdminFalso(bodiDePrueba()));
+      await screen.findByDisplayValue('Bodi herraje');
+
+      const fila = screen.getByText('PRV-2').closest('li')!;
+      await vi.waitFor(() =>
+        expect(fila.querySelector('ts-muestra-color path')?.getAttribute('fill')).toBe('#722F37'),
+      );
+      expect(container.querySelectorAll('ts-muestra-color').length).toBeGreaterThanOrEqual(2);
+    });
   });
 });

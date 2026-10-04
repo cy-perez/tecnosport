@@ -92,6 +92,21 @@ class AgregarImagenDeGaleriaTest {
     assertTrue(almacenDeImagenes.existe("productos/" + producto.id() + "/galeria-uno.jpg"));
   }
 
+  /**
+   * Tras usar una foto como principal, la principal apunta a objetos `galeria-`: volver a confirmar
+   * esa key como foto de la galería dejaría dos filas sobre el mismo objeto.
+   */
+  @Test
+  void unaKeyQueYaEsDeLaPrincipalNoVuelveALaGaleria() {
+    Producto producto = productoDePrueba();
+    repositorioProductos.conProductos(producto);
+    ImagenProducto lado = agregar(producto, "lado", 3);
+    producto.usarImagenDeGaleriaComoPrincipal(lado.id());
+
+    assertThrows(ImagenDeGaleriaDuplicadaException.class, () -> agregar(producto, "lado", 4));
+    assertTrue(producto.galeria().isEmpty());
+  }
+
   @Test
   void laMismaFotoDosVecesNoEntraYNoSeGuarda() {
     Producto producto = productoDePrueba();

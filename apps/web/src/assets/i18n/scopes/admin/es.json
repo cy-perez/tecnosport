@@ -293,7 +293,21 @@
         "errorQuitar": "No se pudo quitar la imagen. Intenta de nuevo.",
         "quitarImagen": "Quitar la imagen {{posicion}} de la galería",
         "quitando": "Quitando…",
-        "agregada": "La imagen se agregó a la galería."
+        "agregada": "La imagen se agregó a la galería.",
+        "usarComoPrincipal": "Usar como principal",
+        "usarComoPrincipalImagen": "Usar la imagen {{posicion}} como principal",
+        "principalCambiada": "La foto elegida es ahora la principal. Si había otra, quedó en su puesto de la galería.",
+        "errorPrincipal": "No se pudo cambiar la imagen principal. Intenta de nuevo."
+      },
+      "estado": "Estado:",
+      "publicacion": {
+        "titulo": "Publicación",
+        "borrador": "Está en borrador: no se ve en la tienda.",
+        "publicado": "Está publicado: cualquiera lo ve en la tienda y lo puede comprar."
+      },
+      "eliminar": {
+        "titulo": "Eliminar producto",
+        "explicacion": "Lo borra del catálogo con sus variantes, su inventario y sus fotos. Solo se puede con un producto en borrador que nunca se haya vendido."
       }
     },
     "agregarVariante": {

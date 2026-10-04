@@ -27,72 +27,17 @@ import {
 } from '../../application/publicar-producto.mutacion';
 import { filtroDesdeQueryParams, queryParamsDesdeFiltro } from '../../domain/query-params-filtro';
 import {
+  AccionDeProducto,
+  CLAVE_ERROR,
+  CLAVE_ETIQUETA_ESTADO,
+  clasesDeEstadoProducto,
+  TEXTOS_DE_CONFIRMACION,
+} from '../estado-producto';
+import {
   EstadoProducto,
   FiltroProductosAdmin,
   ProductoAdmin,
 } from '../../domain/producto-admin.model';
-
-const CLAVE_ETIQUETA_ESTADO: Record<EstadoProducto, string> = {
-  BORRADOR: 'admin.productos.estados.borrador',
-  PUBLICADO: 'admin.productos.estados.publicado',
-};
-
-/**
- * La insignia de estado. Contorno y no relleno: el relleno de color pide un `sobre-` propio por
- * cada estado y el sistema solo tiene los de primario, acento, marca y deshabilitado —inventar
- * dos sería inventar color, que es lo que la regla dura #2 prohíbe—. Con el contorno, el par que
- * hay que verificar es `--color-exito` sobre `--color-superficie`, que ya existe en esta misma
- * pantalla (el aviso de "quedó publicado").
- */
-const CLASES_INSIGNIA =
-  'inline-flex items-center rounded-completo border px-12 py-4 text-xs font-medio';
-
-const CLASES_INSIGNIA_ESTADO: Record<EstadoProducto, string> = {
-  BORRADOR: 'border-ts-borde text-ts-texto-suave',
-  PUBLICADO: 'border-ts-exito text-ts-exito',
-};
-
-/** Lo que el menú de una fila ofrece, y lo que cada opción arrastra al confirmarse. */
-type AccionDeFila = 'publicar' | 'retirar' | 'eliminar';
-
-/**
- * Los tres textos de cada confirmación: la pregunta, lo que implica y el botón que la acepta.
- *
- * <p>Como tabla y no como tres `?:` en la plantilla: con dos acciones ya era un condicional
- * anidado por cada línea de la caja, y con tres son nueve sitios donde emparejar mal la pregunta
- * de una con el botón de otra. Las de publicar y retirar conservan sus claves originales —el texto
- * no cambió— y por eso viven bajo `publicar.` aunque una de ellas retire.
- */
-const TEXTOS_DE_CONFIRMACION: Record<
-  AccionDeFila,
-  { pregunta: string; implica: string; accion: string; hecho: string }
-> = {
-  publicar: {
-    pregunta: 'admin.productos.publicar.confirmar',
-    implica: 'admin.productos.publicar.loQueImplica',
-    accion: 'admin.productos.publicar.confirmarAccion',
-    hecho: 'admin.productos.publicar.hecho',
-  },
-  retirar: {
-    pregunta: 'admin.productos.publicar.confirmarRetirar',
-    implica: 'admin.productos.publicar.loQueImplicaRetirar',
-    accion: 'admin.productos.publicar.confirmarRetirarAccion',
-    hecho: 'admin.productos.publicar.retirado',
-  },
-  eliminar: {
-    pregunta: 'admin.productos.eliminar.confirmar',
-    implica: 'admin.productos.eliminar.loQueImplica',
-    accion: 'admin.productos.eliminar.accion',
-    hecho: 'admin.productos.eliminar.hecho',
-  },
-};
-
-/** La clave genérica del error de cada acción, cuando el código del backend no tiene traducción. */
-const CLAVE_ERROR: Record<AccionDeFila, string> = {
-  publicar: 'admin.productos.publicar.error',
-  retirar: 'admin.productos.publicar.errorRetirar',
-  eliminar: 'admin.productos.eliminar.error',
-};
 
 /**
  * La lista del catálogo desde el panel: el único sitio donde un producto pasa de BORRADOR a
@@ -163,7 +108,7 @@ export class ListaProductosAdminPage {
   }
 
   protected clasesEstado(estado: EstadoProducto): string {
-    return CLASES_INSIGNIA + ' ' + CLASES_INSIGNIA_ESTADO[estado];
+    return clasesDeEstadoProducto(estado);
   }
 
   /**
@@ -221,7 +166,7 @@ export class ListaProductosAdminPage {
   }
 
   /** La fila con una confirmación abierta, y cuál. `null` = ninguna. */
-  protected readonly confirmando = signal<{ id: string; accion: AccionDeFila } | null>(null);
+  protected readonly confirmando = signal<{ id: string; accion: AccionDeProducto } | null>(null);
   protected readonly error = signal<string | null>(null);
   /** Lo último que se hizo, para decirlo cuando su fila ya cambió de estado o desapareció. */
   protected readonly aviso = signal<{ clave: string; nombre: string } | null>(null);
@@ -291,7 +236,7 @@ export class ListaProductosAdminPage {
     }
     this.error.set(null);
 
-    const acciones: Record<AccionDeFila, () => void> = {
+    const acciones: Record<AccionDeProducto, () => void> = {
       publicar: () =>
         this.mutacionPublicar.mutate(producto.id, this.manejadores(producto, 'publicar')),
       retirar: () =>
@@ -311,7 +256,7 @@ export class ListaProductosAdminPage {
    * borrado —publicado, con ventas— llegan con su código y cada uno dice qué hacer. Sin esto, "no
    * pudimos eliminar el producto" deja a quien opera sin saber cuál de los dos le tocó.
    */
-  private manejadores(producto: ProductoAdmin, accion: AccionDeFila) {
+  private manejadores(producto: ProductoAdmin, accion: AccionDeProducto) {
     return {
       onSuccess: () => {
         this.confirmando.set(null);

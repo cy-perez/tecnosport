@@ -156,6 +156,39 @@ public final class ImagenProducto {
         id, tipo, orden, variantes, urlVistaPrevia, alto, hash, altEs, altEn, nuevaVarianteId);
   }
 
+  /**
+   * Esta foto de la galería convertida en la principal: otro id —es otra fila—, orden 0 y sin
+   * variante, porque la principal es la del producto entero. Los objetos del bucket son los mismos.
+   */
+  ImagenProducto comoPrincipal() {
+    return new ImagenProducto(
+        GeneradorIdentificador.nuevo(),
+        TipoImagen.PRINCIPAL,
+        0,
+        variantes,
+        urlVistaPrevia,
+        alto,
+        hash,
+        altEs,
+        altEn,
+        null);
+  }
+
+  /** La principal convertida en una foto de la galería, en el puesto que se le indique. */
+  ImagenProducto comoGaleria(int nuevoOrden) {
+    return new ImagenProducto(
+        GeneradorIdentificador.nuevo(),
+        TipoImagen.GALERIA,
+        nuevoOrden,
+        variantes,
+        urlVistaPrevia,
+        alto,
+        hash,
+        altEs,
+        altEn,
+        null);
+  }
+
   ImagenProducto conOrden(int nuevoOrden) {
     return new ImagenProducto(
         id, tipo, nuevoOrden, variantes, urlVistaPrevia, alto, hash, altEs, altEn, varianteId);

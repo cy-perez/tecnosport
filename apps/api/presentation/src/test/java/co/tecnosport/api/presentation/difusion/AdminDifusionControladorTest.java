@@ -22,6 +22,7 @@ import co.tecnosport.api.application.difusion.ResultadoPublicacion;
 import co.tecnosport.api.domain.catalogo.Categoria;
 import co.tecnosport.api.domain.catalogo.EstadoProducto;
 import co.tecnosport.api.domain.catalogo.ImagenProducto;
+import co.tecnosport.api.domain.catalogo.IntercambioDePrincipal;
 import co.tecnosport.api.domain.catalogo.LineaCatalogo;
 import co.tecnosport.api.domain.catalogo.Marca;
 import co.tecnosport.api.domain.catalogo.Paquete;
@@ -364,6 +365,11 @@ class AdminDifusionControladorTest {
 
     @Override
     public void guardarVarianteDeImagen(UUID imagenId, UUID varianteId) {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void guardarIntercambioDePrincipal(UUID productoId, IntercambioDePrincipal intercambio) {
       throw new UnsupportedOperationException();
     }
   }

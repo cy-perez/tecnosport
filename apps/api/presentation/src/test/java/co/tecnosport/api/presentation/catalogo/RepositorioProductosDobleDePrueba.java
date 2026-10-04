@@ -8,6 +8,7 @@ import co.tecnosport.api.application.catalogo.RepositorioProductos;
 import co.tecnosport.api.application.catalogo.VarianteActiva;
 import co.tecnosport.api.application.compartido.ResultadoPaginado;
 import co.tecnosport.api.domain.catalogo.ImagenProducto;
+import co.tecnosport.api.domain.catalogo.IntercambioDePrincipal;
 import co.tecnosport.api.domain.catalogo.Paquete;
 import co.tecnosport.api.domain.catalogo.Producto;
 import co.tecnosport.api.domain.catalogo.Variante;
@@ -186,8 +187,15 @@ class RepositorioProductosDobleDePrueba implements RepositorioProductos {
     this.varianteDeLaImagen = varianteId;
   }
 
+  @Override
+  public void guardarIntercambioDePrincipal(UUID productoId, IntercambioDePrincipal intercambio) {
+    this.intercambioGuardado = intercambio;
+  }
+
   /** La última imagen colgada de una variante, y la variante (nula si se soltó). */
   UUID imagenConVariante;
+
+  IntercambioDePrincipal intercambioGuardado;
 
   UUID varianteDeLaImagen;
 

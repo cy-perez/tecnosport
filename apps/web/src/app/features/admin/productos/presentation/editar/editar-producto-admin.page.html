@@ -1,6 +1,13 @@
 <ts-pagina-formulario [titulo]="'admin.productos.editar.titulo' | transloco">
   <ts-migas [ruta]="migas()" />
 
+  @if (estado()) {
+    <p class="m-0 mb-16 flex items-center gap-8 text-sm text-ts-texto-suave">
+      {{ 'admin.productos.editar.estado' | transloco }}
+      <span [class]="clasesEstado()">{{ etiquetaEstado() }}</span>
+    </p>
+  }
+
   <a
     class="anillo-foco mb-24 inline-flex min-h-tactil items-center text-ts-primario"
     [routerLink]="enlaceAgregarVariante()"
@@ -169,7 +176,16 @@
         </p>
         <ul class="m-0 flex list-none flex-col gap-4 p-0">
           @for (variante of variantes(); track variante.id) {
-            <li>
+            <li class="flex items-center gap-8">
+              <!-- Decorativa: el nombre del color ya va en el detalle de al lado. -->
+              @if (variante.muestra; as muestra) {
+                <span
+                  class="block size-16 shrink-0 overflow-hidden rounded-completo border border-ts-borde-control"
+                  aria-hidden="true"
+                >
+                  <ts-muestra-color [partes]="muestra" />
+                </span>
+              }
               <span class="font-medio">{{ variante.sku }}</span>
               @if (variante.detalle) {
                 — {{ variante.detalle }}
@@ -291,6 +307,20 @@
               <ts-boton
                 variante="secundario"
                 tipo="button"
+                data-principal
+                [ocupado]="principalEnVuelo() === imagen.id"
+                [etiquetaAccesible]="
+                  'admin.productos.editar.galeria.usarComoPrincipalImagen'
+                    | transloco: { posicion: i + 1 }
+                "
+                (click)="usarComoPrincipal(imagen)"
+              >
+                {{ 'admin.productos.editar.galeria.usarComoPrincipal' | transloco }}
+              </ts-boton>
+
+              <ts-boton
+                variante="secundario"
+                tipo="button"
                 data-quitar
                 [etiquetaAccesible]="
                   'admin.productos.editar.galeria.quitarImagen' | transloco: { posicion: i + 1 }
@@ -352,6 +382,9 @@
         </ul>
 
         @if (errorReordenar(); as mensaje) {
+          <p class="m-0 text-ts-error" role="alert">{{ mensaje }}</p>
+        }
+        @if (errorPrincipal(); as mensaje) {
           <p class="m-0 text-ts-error" role="alert">{{ mensaje }}</p>
         }
       }
@@ -424,6 +457,114 @@
         </div>
       }
     </section>
+
+    <!-- Publicar o retirar desde aquí, como se aprueba un borrador desde su revisión: antes solo se
+         podía desde el menú de la lista. -->
+    <section
+      class="mt-32 flex flex-col gap-16 border-t border-ts-borde pt-24"
+      aria-labelledby="editar-producto-publicacion-titulo"
+    >
+      <h2 id="editar-producto-publicacion-titulo">
+        {{ 'admin.productos.editar.publicacion.titulo' | transloco }}
+      </h2>
+      <p class="m-0 text-ts-texto-suave">
+        {{
+          (publicado()
+            ? 'admin.productos.editar.publicacion.publicado'
+            : 'admin.productos.editar.publicacion.borrador'
+          ) | transloco
+        }}
+      </p>
+      <!-- Siempre en la página: lo que cambia es su contenido. Recibe el foco al confirmar. -->
+      <p #avisoAccionRef class="m-0 text-ts-exito" role="status" tabindex="-1">
+        @if (avisoAccion(); as clave) {
+          {{ clave | transloco: { nombre: nombreProducto() } }}
+        }
+      </p>
+      <div>
+        <ts-boton
+          #botonPublicacion
+          [variante]="publicado() ? 'secundario' : 'primario'"
+          tipo="button"
+          [expandido]="confirmandoAccion() === 'publicar' || confirmandoAccion() === 'retirar'"
+          controla="editar-producto-confirmar-accion"
+          (click)="preguntarPublicacion()"
+        >
+          {{
+            (publicado()
+              ? 'admin.productos.publicar.accionRetirar'
+              : 'admin.productos.publicar.accion'
+            ) | transloco
+          }}
+        </ts-boton>
+      </div>
+      @if (confirmandoAccion() === 'publicar' || confirmandoAccion() === 'retirar') {
+        <ng-container *ngTemplateOutlet="cajaDeConfirmacion" />
+      }
+    </section>
+
+    <!-- Aparte y con borde de error, como «Borrar» en la revisión de un borrador. -->
+    <section
+      class="mt-32 flex flex-col gap-16 rounded-lg border border-ts-error p-16"
+      aria-labelledby="editar-producto-eliminar-titulo"
+    >
+      <h2 id="editar-producto-eliminar-titulo" class="m-0">
+        {{ 'admin.productos.editar.eliminar.titulo' | transloco }}
+      </h2>
+      <p class="m-0 text-ts-texto-suave">
+        {{ 'admin.productos.editar.eliminar.explicacion' | transloco }}
+      </p>
+      <div>
+        <ts-boton
+          #botonEliminar
+          variante="secundario"
+          tipo="button"
+          [expandido]="confirmandoAccion() === 'eliminar'"
+          controla="editar-producto-confirmar-accion"
+          (click)="preguntarEliminar()"
+        >
+          {{ 'admin.productos.acciones.eliminar' | transloco }}
+        </ts-boton>
+      </div>
+      @if (confirmandoAccion() === 'eliminar') {
+        <ng-container *ngTemplateOutlet="cajaDeConfirmacion" />
+      }
+    </section>
+
+    <ng-template #cajaDeConfirmacion>
+      <div
+        #cajaAccion
+        id="editar-producto-confirmar-accion"
+        class="flex flex-col gap-16 border border-ts-borde-control p-16"
+        role="group"
+        tabindex="-1"
+        aria-labelledby="editar-producto-pregunta-accion"
+        aria-describedby="editar-producto-implica-accion"
+        (keydown.escape)="cancelarAccion()"
+      >
+        <p id="editar-producto-pregunta-accion" class="m-0">
+          {{ textosAccion().pregunta | transloco: { nombre: nombreProducto() } }}
+        </p>
+        <p id="editar-producto-implica-accion" class="m-0 text-ts-texto-suave">
+          {{ textosAccion().implica | transloco }}
+        </p>
+        @if (errorAccion(); as mensaje) {
+          <p class="m-0 text-ts-error" role="alert">{{ mensaje }}</p>
+        }
+        <div class="flex flex-wrap gap-16">
+          <ts-boton
+            [variante]="confirmandoAccion() === 'eliminar' ? 'peligro' : 'primario'"
+            [ocupado]="ocupadoAccion()"
+            (click)="confirmarAccion()"
+          >
+            {{ textosAccion().accion | transloco }}
+          </ts-boton>
+          <ts-boton variante="secundario" (click)="cancelarAccion()">
+            {{ 'admin.productos.publicar.cancelar' | transloco }}
+          </ts-boton>
+        </div>
+      </div>
+    </ng-template>
   }
   <!-- La difusión va al final y en su propio componente: no es catálogo, es marketing sobre un
        producto, y meterla en el formulario la habría atado a su guardado. -->

@@ -6,6 +6,7 @@ import co.tecnosport.api.domain.catalogo.TipoImagen;
 import co.tecnosport.api.domain.catalogo.VarianteDeImagen;
 import co.tecnosport.api.domain.compartido.HashContenido;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -34,6 +35,12 @@ import java.util.Set;
  * deja objetos sin reclamar; se reporta en {@code ConfirmacionDeImagenPrincipal} en vez de tumbar
  * una confirmación que ya se guardó, y se cura sola: el siguiente reemplazo de ese producto borra
  * todo lo que haya quedado bajo el prefijo.
+ *
+ * <p><strong>Sin llevarse lo que reclama la galería.</strong> Desde {@link
+ * UsarImagenDeGaleriaComoPrincipal} una principal puede pasar a la galería con sus objetos {@code
+ * principal-}, y la principal vigente puede ser un objeto {@code galeria-}. Así que el barrido
+ * conserva toda key de la galería, y la principal reemplazada se borra además por sus keys, que el
+ * prefijo no alcanza si venía de la galería.
  */
 public final class ConfirmarImagenPrincipal {
 
@@ -68,6 +75,17 @@ public final class ConfirmarImagenPrincipal {
         new ArrayList<>(variantes.stream().map(VarianteSubida::objectKey).toList());
     if (comando.objectKeyVistaPrevia() != null && !comando.objectKeyVistaPrevia().isBlank()) {
       claves.add(comando.objectKeyVistaPrevia().trim());
+    }
+    // Una key que ya reclama una foto de la galería no puede ser también la principal: desde
+    // `UsarImagenDeGaleriaComoPrincipal` hay fotos de la galería con objetos `principal-`, y quitar
+    // esa foto se llevaría el archivo de la principal por la key exacta.
+    Set<String> clavesDeLaGaleria = new HashSet<>();
+    producto.galeria().forEach(foto -> clavesDeLaGaleria.addAll(clavesDe(foto)));
+    for (String clave : claves) {
+      if (clavesDeLaGaleria.contains(clave)) {
+        throw new IllegalArgumentException(
+            "El objeto '" + clave + "' ya es de una foto de la galería de este producto.");
+      }
     }
     // El tamaño se pregunta una sola vez por objeto y se guarda: cada consulta es una llamada a
     // Cloud Storage, y preguntarlo otra vez al armar las variantes costaría el doble de viajes sin
@@ -118,14 +136,33 @@ public final class ConfirmarImagenPrincipal {
             comando.altEs(),
             comando.altEn());
 
+    ImagenProducto anterior = producto.imagenPrincipal().orElse(null);
     producto.asignarImagenPrincipal(imagen);
     repositorioProductos.guardarImagenPrincipal(producto.id(), imagen);
 
     try {
       // Todas las claves recién confirmadas, no solo la primera: la limpieza borra el prefijo
       // entero, así que una variante que no estuviera en esta lista se borraría a sí misma justo
-      // después de guardarse.
-      int borrados = almacenDeImagenes.eliminarPorPrefijo(prefijoEsperado, Set.copyOf(claves));
+      // después de guardarse. Y las de la galería, que pueden vivir bajo `principal-`.
+      //
+      // La galería se vuelve a leer aquí y no se toma del agregado de arriba: si mientras tanto un
+      // intercambio pasó la principal anterior a la galería, sus objetos `principal-` están vivos y
+      // la foto que se leyó al empezar no lo sabe.
+      Producto vigente = repositorioProductos.buscarPorId(producto.id()).orElse(producto);
+      Set<String> deLaGaleria = new HashSet<>();
+      vigente.galeria().forEach(foto -> deLaGaleria.addAll(clavesDe(foto)));
+      Set<String> conservar = new HashSet<>(claves);
+      conservar.addAll(deLaGaleria);
+      int borrados = almacenDeImagenes.eliminarPorPrefijo(prefijoEsperado, conservar);
+      if (anterior != null) {
+        for (String clave : clavesDe(anterior)) {
+          if (!clave.startsWith(prefijoEsperado)
+              && !deLaGaleria.contains(clave)
+              && almacenDeImagenes.eliminar(clave)) {
+            borrados++;
+          }
+        }
+      }
       return new ConfirmacionDeImagenPrincipal(imagen, borrados, false);
     } catch (RuntimeException e) {
       // La imagen ya está guardada y la ficha ya la muestra: propagar esto sería reportar como
@@ -133,5 +170,15 @@ public final class ConfirmarImagenPrincipal {
       // encarga el siguiente reemplazo, que borra el prefijo entero menos la key vigente.
       return new ConfirmacionDeImagenPrincipal(imagen, 0, true);
     }
+  }
+
+  /** Las keys de todos los anchos de una imagen y de su vista previa. */
+  private List<String> clavesDe(ImagenProducto imagen) {
+    List<String> claves = new ArrayList<>();
+    for (VarianteDeImagen variante : imagen.variantes()) {
+      almacenDeImagenes.objectKeyDe(variante.url()).ifPresent(claves::add);
+    }
+    imagen.urlVistaPrevia().flatMap(almacenDeImagenes::objectKeyDe).ifPresent(claves::add);
+    return claves;
   }
 }
