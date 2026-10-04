@@ -464,7 +464,12 @@
           {{ 'admin.borradores.borrar.titulo' | transloco }}
         </h2>
         <p class="m-0 text-ts-texto-suave">
-          {{ 'admin.borradores.borrar.explicacion' | transloco }}
+          {{
+            (sinProducto()
+              ? 'admin.borradores.borrar.explicacionSinProducto'
+              : 'admin.borradores.borrar.explicacion'
+            ) | transloco
+          }}
         </p>
         <div>
           <ts-boton

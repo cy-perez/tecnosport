@@ -34,7 +34,7 @@
     "lote_no_encontrado": "That import no longer exists: the list was just refreshed.",
     "borrador_no_encontrado": "That draft no longer exists. Reload the list.",
     "borrador_no_editable": "This draft has already been decided: it cannot be changed or approved again.",
-    "borrador_no_eliminable": "An approved draft or a renewal cannot be deleted: it is what recognises the product when the supplier posts it again.",
+    "borrador_no_eliminable": "An approved draft or a renewal cannot be deleted while its product exists: it is what recognizes the product when the supplier posts it again.",
     "borrador_sin_fotos": "A product cannot be approved without photos. If the post had none, reject it.",
     "borrador_sin_precio": "The sale price is missing. Enter it before approving.",
     "producto_sin_descripcion": "The product description is missing: it is what the product page says.",
@@ -1091,7 +1091,8 @@
       "confirmar": "Yes, delete",
       "cancelar": "Cancel",
       "borrando": "Deleting…",
-      "error": "The draft could not be deleted. Try again."
+      "error": "The draft could not be deleted. Try again.",
+      "explicacionSinProducto": "Its product was already deleted: this draft no longer recognizes anything and only keeps the supplier's messages and photos. Deleting it frees them from the bucket."
     }
   }
 }

@@ -50,6 +50,7 @@ import { usarVerBorrador } from '../../application/ver-borrador.consulta';
 import {
   Borrador,
   borradorBorrable,
+  borradorSinProducto,
   borradorEditable,
   CATEGORIA_SUGERIDA_POR_TIPO,
   EstadoBorrador,
@@ -151,6 +152,10 @@ export class DetalleBorradorAdminPage {
   protected readonly borrable = computed(() => {
     const borrador = this.borrador();
     return borrador !== null && borradorBorrable(borrador);
+  });
+  protected readonly sinProducto = computed(() => {
+    const borrador = this.borrador();
+    return borrador !== null && borradorSinProducto(borrador);
   });
   // `usarIdiomaActivo` y no un `computed` sobre `activeLang()`, que no lee ninguna señal y no se
   // vuelve a calcular al cambiar de idioma (apps/web/CLAUDE.md).
