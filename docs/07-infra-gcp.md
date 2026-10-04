@@ -415,6 +415,17 @@ base es una carrera perdida.
 
 Todo parametrizable, nada literal en el código.
 
+**Cinco variables no tienen valor por omisión fuera del perfil `local`**, y sin
+ellas la API no arranca: `JWT_SECRETO`, `ADMIN_CLAVE`, `WOMPI_SECRETO_EVENTOS`,
+`WOMPI_SECRETO_INTEGRIDAD` y `SKYDROPX_SECRETO_WEBHOOK`. Son las que permiten
+hacerse pasar por alguien —firmar un JWT de administrador, inventar un webhook de
+pago o de entrega—, y hasta el 4 de octubre de 2026 tenían un marcador publicado
+en `application.yml` con el que un despliegue sin la variable arrancaba en
+silencio. Los marcadores de desarrollo viven ahora en `application-local.yml`.
+Consecuencia para el primer `apply` de un ambiente: con `secretos_cargados =
+false` la revisión de la API **no arranca**, y es a propósito — se cargan los
+valores con gcloud, se pone `true` y se vuelve a aplicar.
+
 ```
 APP_URL_PUBLICA
 API_URL_PUBLICA

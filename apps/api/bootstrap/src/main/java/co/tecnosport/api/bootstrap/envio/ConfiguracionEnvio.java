@@ -177,10 +177,9 @@ public class ConfiguracionEnvio {
    * <p>Se cablea aquí, como {@link SkydropxClient}, y no con {@code @Component}: necesita el
    * secreto, y un adaptador que se anota a sí mismo tendría que ir a buscarlo.
    *
-   * <p>Que el bean exista no significa que verifique: mientras {@code SKYDROPX_SECRETO_WEBHOOK} sea
-   * el marcador de desarrollo, la firma nunca cuadra y todo evento se descarta. Lo que cambió es el
-   * motivo — antes faltaba el algoritmo, ahora falta el secreto del panel, y eso es una variable de
-   * entorno y no un despliegue.
+   * <p>Fuera del perfil {@code local}, {@code SKYDROPX_SECRETO_WEBHOOK} no tiene valor por omisión:
+   * sin la variable el contexto no arranca, en vez de verificar con un marcador que cualquiera
+   * puede leer en el repositorio.
    */
   @Bean
   public VerificadorFirmaEnvio verificadorFirmaEnvio(PropiedadesWebhookEnvio propiedades) {

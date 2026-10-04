@@ -1,0 +1,20 @@
+# Solo para el perfil `local`: `bootRun` y las pruebas (`bootstrap/build.gradle.kts` lo fija por
+# omisión). Ningún despliegue lo activa —dev corre con `dev`—, y por eso aquí, y solo aquí, viven
+# los marcadores de los secretos que permiten hacerse pasar por alguien. En application.yml no
+# tienen valor por omisión: un despliegue que olvide la variable no arranca, en vez de arrancar con
+# un secreto publicado en el repositorio (ClavesSinValorDeEjemploTest).
+#
+# Ninguno de estos valores es válido contra un tercero (regla dura #5). Una variable de entorno, o
+# `.env.local`, sigue ganándoles.
+tecnosport:
+  wompi:
+    secreto-integridad: ${WOMPI_SECRETO_INTEGRIDAD:test_integrity_placeholder}
+    secreto-eventos: ${WOMPI_SECRETO_EVENTOS:test_events_placeholder}
+  skydropx:
+    webhook:
+      secreto: ${SKYDROPX_SECRETO_WEBHOOK:secreto_pendiente_de_configurar}
+  jwt:
+    # Al menos 32 bytes: HS256 lo exige.
+    secreto: ${JWT_SECRETO:placeholder_jwt_secreto_de_desarrollo_no_usar_en_produccion}
+  admin-semilla:
+    clave: ${ADMIN_CLAVE:admin_clave_de_desarrollo_cambiar}

@@ -119,16 +119,27 @@ class VerificadorFirmaEnvioHmacTest {
   }
 
   /**
-   * Mientras el secreto valga el marcador de desarrollo de {@code application.yml}, ningún evento
-   * firmado de verdad pasa. Es el estado del sistema hoy y conviene que esté escrito: el webhook
-   * está cableado y no verifica nada todavía.
+   * La firma depende del secreto: lo hecho con otro no pasa. Esta prueba se llamaba "con el
+   * marcador de desarrollo no pasa ningún evento" y no probaba eso —cualquier HMAC rechaza una
+   * firma de otra clave—. Lo que de verdad pasaba era lo contrario, y lo fija la siguiente.
    */
   @Test
-  void conElMarcadorDeDesarrolloNoPasaNingunEvento() {
-    VerificadorFirmaEnvioHmac sinSecretoReal =
+  void unaFirmaHechaConOtroSecretoNoPasa() {
+    assertFalse(verificador.esValida(CUERPO, "HMAC " + firmaDe("otro-secreto", CUERPO)));
+  }
+
+  /**
+   * Por qué ningún despliegue puede quedarse con un marcador publicado: quien lo conozca firma lo
+   * que quiera, y el verificador no tiene cómo saberlo. Lo impide la configuración, no esta clase
+   * (ClavesSinValorDeEjemploTest, en bootstrap).
+   */
+  @Test
+  void conUnSecretoConocidoCualquieraFirmaUnEventoValido() {
+    VerificadorFirmaEnvioHmac conMarcador =
         new VerificadorFirmaEnvioHmac("secreto_pendiente_de_configurar");
 
-    assertFalse(sinSecretoReal.esValida(CUERPO, "HMAC " + firmaDe("el-secreto-real", CUERPO)));
+    assertTrue(
+        conMarcador.esValida(CUERPO, "HMAC " + firmaDe("secreto_pendiente_de_configurar", CUERPO)));
   }
 
   /** Auxiliar de la prueba, no del adaptador: firma con la biblioteca estándar. */
