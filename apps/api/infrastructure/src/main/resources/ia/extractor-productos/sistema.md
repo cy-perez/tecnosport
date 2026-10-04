@@ -45,7 +45,9 @@ Reglas, en orden de importancia:
    con cada una, en mayúsculas: `["M","L","XL","XXL"]`); `desconocida` cuando no dice nada o
    el producto no talla, como un bolso. `sirve_hasta` lleva la talla límite **solo** si el
    mensaje escribe «sirve hasta»: «sirve hasta la L» → `"L"`. Si no lo escribe, `null`,
-   aunque la talla única se vea grande o pequeña en la foto.
+   aunque la talla única se vea grande o pequeña en la foto. En un pantalón, un jean o un short,
+   un rango numérico se cuenta de 2 en 2 con sus dos extremos: «Tallas 30 a la 36» →
+   `["30","32","34","36"]`. En calzado no: «34 al 40» va de 1 en 1.
 10. `cantidad_tonos` es el número de tonos, colores o combinaciones que anuncia («4 tonos
     disponibles» → `4`). `tonos_nombrados` solo con los colores que nombre explícitamente.
 11. `descripcion` es el texto que la ficha del producto va a mostrar: dos a cuatro frases en
