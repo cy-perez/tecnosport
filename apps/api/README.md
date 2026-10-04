@@ -31,9 +31,13 @@ gradlew.bat bootRun
 
 `gradlew.bat bootRun` activa el perfil `local` (fijado en
 `bootstrap/build.gradle.kts`, no en `application.yml` — nunca se cuela en el
-jar empaquetado). Con él, `SembradorCatalogo` inserta un catálogo de ejemplo
-la primera vez que arranca contra una base vacía. El jar de producción nunca
-siembra nada; ver `docs/adr/0010-datos-de-siembra-por-perfil.md`.
+jar empaquetado). Con él y con `SIEMBRA_CATALOGO=true` en `.env.local`,
+`SembradorCatalogo` inserta un catálogo de ejemplo al arrancar contra una base
+sin productos. La bandera está apagada por omisión desde el 4 de octubre de
+2026: vaciar el catálogo no puede devolver el ejemplo en el siguiente arranque.
+El recorrido E2E la enciende en su flujo; para `npm run lighthouse`, que mide
+sobre ese ejemplo, hay que encenderla antes del `bootRun`. El jar de producción nunca siembra nada; ver
+`docs/adr/0010-datos-de-siembra-por-perfil.md`.
 
 ## Catálogo (Fase 1 — cerrada)
 

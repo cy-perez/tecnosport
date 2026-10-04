@@ -31,6 +31,7 @@ import java.util.List;
 import java.util.UUID;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Profile;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
@@ -52,6 +53,11 @@ import org.springframework.stereotype.Component;
 // Correr esto en cada arranque es seguro porque `run` sale temprano si ya hay productos, y con
 // `min-instances=0` los arranques en frío son muchos.
 @Profile({"local", "dev"})
+// Y además con la bandera encendida, apagada por omisión desde el 4 de octubre de 2026: con un
+// catálogo de verdad que se carga y se limpia, la regla de «sembrar si no hay productos» devolvía
+// los cuatro de ejemplo en cuanto alguien vaciaba el catálogo —en dev, en el siguiente arranque en
+// frío—. La enciende quien necesita el ejemplo: el recorrido E2E y quien la pida en `.env.local`.
+@ConditionalOnProperty(name = "tecnosport.siembra.catalogo", havingValue = "true")
 @Order(1)
 public class SembradorCatalogo implements ApplicationRunner {
 

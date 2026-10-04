@@ -43,6 +43,11 @@ spring:
             enable: true
 
 tecnosport:
+  siembra:
+    # El catálogo de ejemplo de SembradorCatalogo, solo en los perfiles local y dev y solo con esto
+    # en true. Apagado por omisión: vaciar el catálogo no puede devolver los productos de ejemplo
+    # en el siguiente arranque. Lo encienden el flujo E2E y quien lo pida en `.env.local`.
+    catalogo: ${SIEMBRA_CATALOGO:false}
   app:
     # La raiz del sitio, con la que el backend arma los enlaces que manda por correo. Misma
     # variable de entorno de siempre: lo que cambio es de quien cuelga, no como se configura.
