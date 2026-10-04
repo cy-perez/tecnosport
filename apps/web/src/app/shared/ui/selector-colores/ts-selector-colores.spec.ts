@@ -63,6 +63,17 @@ describe('TsSelectorColores', () => {
   });
 
   /** El caso de la camiseta Ferrari: el orden de marcado es el orden de la combinación. */
+  /** El nombre del botón dice la etiqueta y lo marcado: sin lo segundo, no se oye qué hay. */
+  it('el botón se nombra con la etiqueta y los colores marcados', async () => {
+    const { anfitrion, fixture } = await renderSelector();
+    anfitrion.seleccion.set(['Negro', 'Rojo']);
+    fixture.detectChanges();
+
+    expect(
+      await screen.findByRole('button', { name: 'Color de la foto 1 Negro / Rojo' }),
+    ).toBeTruthy();
+  });
+
   it('el orden en que se marcan es el orden de la combinación', async () => {
     const { anfitrion } = await renderSelector();
     abrir();

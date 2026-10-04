@@ -1,7 +1,9 @@
 <div class="flex flex-col gap-4">
   <!-- El asterisco fuera del `<label>`, como en `ts-select`: dentro se colaría en el texto. -->
   <div class="flex items-baseline gap-4">
-    <label [class]="clasesEtiqueta" [for]="idCampo()">{{ label() }}</label>
+    <label [class]="clasesEtiqueta" [for]="idCampo()" [id]="idCampo() + '-etiqueta'">{{
+      label()
+    }}</label>
     @if (obligatorio()) {
       <span class="text-ts-texto-suave" aria-hidden="true">*</span>
     }
@@ -19,6 +21,7 @@
     [attr.aria-controls]="idLista()"
     [attr.aria-describedby]="ayuda() ? idAyuda() : null"
     [attr.aria-required]="obligatorio() ? 'true' : null"
+    [attr.aria-labelledby]="idCampo() + '-etiqueta ' + idCampo() + '-valor'"
     (click)="alternar()"
   >
     @if (muestra().length > 0) {
@@ -28,7 +31,9 @@
         <ts-muestra-color [partes]="muestra()" />
       </span>
     }
-    <span class="min-w-0 flex-1 truncate">{{ resumen() }}</span>
+    <!-- En el nombre del botón junto a la etiqueta: con solo el `<label>`, un lector de pantalla
+         decía «Color, botón» y no qué colores había marcados. Visto en el navegador. -->
+    <span class="min-w-0 flex-1 truncate" [id]="idCampo() + '-valor'">{{ resumen() }}</span>
     <ts-icono class="shrink-0 text-ts-texto-suave" [icono]="iconoChevron" clase="size-16" />
   </button>
 
