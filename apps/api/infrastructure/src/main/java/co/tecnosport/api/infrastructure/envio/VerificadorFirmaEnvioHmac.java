@@ -44,9 +44,9 @@ import javax.crypto.spec.SecretKeySpec;
  * volverlo a codificar daría bytes distintos y la firma no cuadraría por un motivo que no se ve
  * leyendo este archivo.
  *
- * <p>Mientras el secreto valga el marcador de desarrollo, esto rechaza todos los eventos. Es lo
- * correcto: sin secreto no hay nada que verificar, y el seguimiento lo cubre entretanto la
- * conciliación programada, que no depende de la firma.
+ * <p>Esto no sabe distinguir un secreto real de uno conocido: con cualquiera, acepta lo que venga
+ * firmado con él. Que nunca sea un marcador publicado lo garantiza la configuración, que no arranca
+ * sin la variable fuera del perfil {@code local} ({@code PropiedadesWebhookEnvio}).
  */
 public final class VerificadorFirmaEnvioHmac implements VerificadorFirmaEnvio {
 
