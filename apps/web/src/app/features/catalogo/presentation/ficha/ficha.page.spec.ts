@@ -218,7 +218,12 @@ describe('FichaPage', () => {
     await renderFicha(repositorio);
 
     expect(await screen.findByRole('heading', { name: 'Morral urbano' })).toBeTruthy();
-    expect(screen.getByText('TecnoSport')).toBeTruthy();
+    // «Marca:» en negrita y luego el nombre, como en la tarjeta.
+    const etiqueta = screen.getByText('Marca:');
+    expect(etiqueta.tagName).toBe('STRONG');
+    expect(etiqueta.parentElement!.textContent!.replace(/\s+/g, ' ').trim()).toBe(
+      'Marca: TecnoSport',
+    );
   });
 
   it('muestra "no encontrado" cuando el repositorio devuelve null', async () => {

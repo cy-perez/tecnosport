@@ -30,7 +30,10 @@
       </div>
     }
     <div class="flex flex-col gap-4 p-16">
-      <p class="m-0 text-xs uppercase text-ts-texto-suave">{{ producto().marca.nombre }}</p>
+      <p class="m-0 text-xs text-ts-texto-suave">
+        <strong class="font-fuerte">{{ 'catalogo.marca' | transloco }}</strong>
+        {{ producto().marca.nombre }}
+      </p>
       <h3 class="m-0 font-texto text-base font-medio text-ts-texto">{{ producto().nombre }}</h3>
       <!-- Con la marca, el nombre y el precio, quien compra no sabe de qué talla es un bodi. -->
       @if (tallaUnica(); as unica) {

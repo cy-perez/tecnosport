@@ -7,6 +7,7 @@
   "sin_productos": "There are no published products yet.",
   "disponible": "In stock",
   "agotado": "Out of stock",
+  "marca": "Brand:",
   "precio_desde": "From",
   "filtros": {
     "linea_label": "Category group",
