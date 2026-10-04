@@ -206,6 +206,8 @@ class RepositorioProductosAdminFalso implements RepositorioProductosAdmin {
     if (this.errorAlEliminar) {
       throw new Error('falló');
     }
+    // Como el servidor: después de borrarlo, pedirlo da 404.
+    this.producto = null;
   }
 
   async despublicar(id: string): Promise<ProductoAdmin> {
@@ -218,6 +220,9 @@ class RepositorioProductosAdminFalso implements RepositorioProductosAdmin {
 
   async usarImagenComoPrincipal(comando: UsarImagenComoPrincipalAdmin): Promise<void> {
     this.llamadasUsarComoPrincipal.push(comando);
+    if (this.errorAlTocarLaGaleria) {
+      throw new Error('falló');
+    }
     if (this.producto) {
       this.producto = {
         ...this.producto,
@@ -950,6 +955,8 @@ describe('EditarProductoAdminPage', () => {
         expect(repositorio.llamadasEliminar).toEqual(['p1']);
         expect(navegar).toHaveBeenCalledWith(['/es', 'admin', 'productos']);
       });
+      // El detalle salió de la caché: no se vuelve a pedir y no se pinta un error de carga.
+      expect(screen.queryByText(esAdmin.productos.editar.error_carga)).toBeNull();
     });
 
     it('si eliminar falla, lo dice y no se va', async () => {
@@ -985,6 +992,19 @@ describe('EditarProductoAdminPage', () => {
       expect(repositorio.llamadasUsarComoPrincipal).toEqual([
         { productoId: 'p1', imagenId: 'img1' },
       ]);
+    });
+
+    it('si usar la foto como principal falla, lo dice', async () => {
+      const repositorio = new RepositorioProductosAdminFalso(
+        productoDePrueba([imagenDeGaleria(0), imagenDeGaleria(1)]),
+      );
+      repositorio.errorAlTocarLaGaleria = true;
+      await renderPagina(repositorio);
+      await screen.findByDisplayValue('Morral urbano');
+
+      fireEvent.click(screen.getByRole('button', { name: 'Usar la imagen 1 como principal' }));
+
+      expect(await screen.findByText(esAdmin.productos.editar.galeria.errorPrincipal)).toBeTruthy();
     });
 
     it('pinta la muestra del color junto a cada variante', async () => {

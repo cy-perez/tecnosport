@@ -329,17 +329,26 @@ export class EditarProductoAdminPage {
 
   private readonly mutacionPrincipal = usarUsarImagenComoPrincipalAdmin();
   protected readonly cambiandoPrincipal = computed(() => this.mutacionPrincipal.isPending());
+  /** La foto cuya petición va en vuelo: solo su botón se anuncia ocupado. */
+  protected readonly principalEnVuelo = signal<string | null>(null);
   protected readonly errorPrincipal = signal<string | null>(null);
 
+  /**
+   * No mientras se sube otra principal, y la subida tampoco mientras va esto: las dos reemplazan la
+   * principal, y la subida barre los objetos de la anterior con una foto del producto que el
+   * intercambio deja vieja.
+   */
   protected usarComoPrincipal(imagen: ImagenDeGaleriaAdmin): void {
-    if (this.cambiandoPrincipal()) {
+    if (this.cambiandoPrincipal() || this.subiendoImagen()) {
       return;
     }
+    this.principalEnVuelo.set(imagen.id);
     this.errorPrincipal.set(null);
     this.aviso.set(null);
     this.mutacionPrincipal.mutate(
       { productoId: this.id(), imagenId: imagen.id },
       {
+        onSettled: () => this.principalEnVuelo.set(null),
         onSuccess: () => {
           this.aviso.set('admin.productos.editar.galeria.principalCambiada');
           // La fila cambia de foto —o desaparece, si no había principal—: el foco va al aviso.
@@ -848,6 +857,9 @@ export class EditarProductoAdminPage {
   }
 
   protected subirImagenPrincipal(): void {
+    if (this.subiendoImagen() || this.cambiandoPrincipal()) {
+      return;
+    }
     const archivo = this.archivoSeleccionado();
     if (!archivo || !this.dimensionesArchivo || this.formularioImagen.invalid) {
       this.formularioImagen.markAllAsTouched();

@@ -308,7 +308,7 @@
                 variante="secundario"
                 tipo="button"
                 data-principal
-                [ocupado]="cambiandoPrincipal()"
+                [ocupado]="principalEnVuelo() === imagen.id"
                 [etiquetaAccesible]="
                   'admin.productos.editar.galeria.usarComoPrincipalImagen'
                     | transloco: { posicion: i + 1 }

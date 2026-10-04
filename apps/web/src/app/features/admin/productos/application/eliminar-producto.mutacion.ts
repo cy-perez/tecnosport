@@ -17,6 +17,10 @@ import { CLAVE_VARIANTES_SIN_MEDIR } from './listar-variantes-sin-medir.consulta
  * vitrina abierta en otra pestaña de la SPA. Aquí no debería hacer falta —solo se borra lo que está
  * en borrador, y un borrador no sale en la rejilla— pero invalidar una consulta que no cambió no
  * cuesta nada, y depender de que la regla del servidor no se relaje nunca sí.
+ *
+ * <p>El detalle del producto se saca de la caché antes de invalidar, como al borrar un borrador:
+ * desde la edición la pantalla sigue abierta, e invalidarlo lo volvería a pedir y pintaría el 404
+ * —tras tres reintentos— antes de salir hacia la lista.
  */
 export function usarEliminarProducto() {
   const repositorio = inject(REPOSITORIO_PRODUCTOS_ADMIN);
@@ -24,7 +28,8 @@ export function usarEliminarProducto() {
 
   return injectMutation(() => ({
     mutationFn: (id: string): Promise<void> => repositorio.eliminar(id),
-    onSuccess: async () => {
+    onSuccess: async (_: void, id: string) => {
+      queryClient.removeQueries({ queryKey: ['admin', 'productos', id], exact: true });
       await queryClient.invalidateQueries({ queryKey: ['admin', 'productos'] });
       await queryClient.invalidateQueries({ queryKey: CLAVE_EXISTENCIAS });
       await queryClient.invalidateQueries({ queryKey: CLAVE_MEDIDAS });
