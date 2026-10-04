@@ -274,13 +274,15 @@ public class ConfiguracionCatalogo {
       RepositorioAtributos repositorioAtributos,
       RepositorioInventario repositorioInventario,
       Reloj reloj,
-      PropiedadesNegocio propiedadesNegocio) {
+      PropiedadesNegocio propiedadesNegocio,
+      RepositorioPaletaDeColores paleta) {
     return new AgregarVariante(
         repositorioProductos,
         repositorioAtributos,
         repositorioInventario,
         reloj,
-        propiedadesNegocio.responsableDeIva());
+        propiedadesNegocio.responsableDeIva(),
+        paleta);
   }
 
   @Bean

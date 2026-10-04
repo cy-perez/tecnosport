@@ -420,7 +420,8 @@ public class RepositorioProductosJpa implements RepositorioProductos {
         varianteId,
         valorAtributo.atributo().id(),
         valorAtributo.valor(),
-        valorAtributo.colorHex());
+        valorAtributo.colorHex(),
+        CodecDeMuestra.aTexto(valorAtributo.muestra()));
   }
 
   @Override

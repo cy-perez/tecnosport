@@ -253,6 +253,12 @@
           "colorHex" : {
             "type" : "string"
           },
+          "muestra" : {
+            "items" : {
+              "$ref" : "#/components/schemas/ParteDeMuestraRespuesta"
+            },
+            "type" : "array"
+          },
           "nombre" : {
             "type" : "string"
           },
@@ -495,6 +501,12 @@
       },
       "ColorDePaletaRespuesta" : {
         "properties" : {
+          "coloresPatron" : {
+            "items" : {
+              "type" : "string"
+            },
+            "type" : "array"
+          },
           "hex" : {
             "type" : "string"
           },
@@ -506,6 +518,9 @@
             "type" : "string"
           },
           "nombreEn" : {
+            "type" : "string"
+          },
+          "patron" : {
             "type" : "string"
           }
         },
@@ -1752,6 +1767,20 @@
             "type" : "array"
           },
           "tipoEntrega" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "ParteDeMuestraRespuesta" : {
+        "properties" : {
+          "colores" : {
+            "items" : {
+              "type" : "string"
+            },
+            "type" : "array"
+          },
+          "patron" : {
             "type" : "string"
           }
         },

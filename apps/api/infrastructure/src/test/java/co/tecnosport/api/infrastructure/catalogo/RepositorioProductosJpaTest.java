@@ -14,7 +14,10 @@ import co.tecnosport.api.domain.catalogo.EstadoProducto;
 import co.tecnosport.api.domain.catalogo.ImagenProducto;
 import co.tecnosport.api.domain.catalogo.LineaCatalogo;
 import co.tecnosport.api.domain.catalogo.Marca;
+import co.tecnosport.api.domain.catalogo.MuestraDeColor;
 import co.tecnosport.api.domain.catalogo.Paquete;
+import co.tecnosport.api.domain.catalogo.ParteDeMuestra;
+import co.tecnosport.api.domain.catalogo.PatronDeColor;
 import co.tecnosport.api.domain.catalogo.Producto;
 import co.tecnosport.api.domain.catalogo.TipoAtributo;
 import co.tecnosport.api.domain.catalogo.TipoImagen;
@@ -1194,5 +1197,42 @@ class RepositorioProductosJpaTest {
    */
   private static String hashDePrueba(String semilla) {
     return "%064x".formatted(Integer.toUnsignedLong(semilla.hashCode()));
+  }
+
+  /** La muestra de una combinación con patrón va y vuelve, y `color_hex` guarda su primer color. */
+  @Test
+  void laMuestraDeUnaCombinacionVaYVuelve() {
+    MarcaJpaEntity marca = marca("TecnoSport");
+    CategoriaJpaEntity categoria = categoria("Bolsos", "bolsos-t-muestra", "BOLSOS");
+    ProductoJpaEntity productoJpa =
+        producto("Bolso t-muestra", "bolso-t-muestra", "BORRADOR", marca, categoria);
+    AtributoJpaEntity colorJpa = atributo("Color", "COLOR");
+    Atributo color = new Atributo(colorJpa.getId(), "Color", TipoAtributo.COLOR, List.of());
+    MuestraDeColor muestra =
+        new MuestraDeColor(
+            List.of(
+                new ParteDeMuestra(PatronDeColor.ANIMAL_PRINT, List.of("#C19A6B", "#3B2A1A")),
+                ParteDeMuestra.lisa("#111111")));
+
+    repositorio.agregarVariante(
+        productoJpa.getId(),
+        Variante.crear(
+            new Sku("TS-BOL-AP-NE"),
+            Dinero.deCop(89_900),
+            BigDecimal.ZERO,
+            null,
+            null,
+            List.of(ValorAtributo.deColor(color, "Animal print / Negro", muestra))));
+
+    ValorAtributo leido =
+        repositorio
+            .buscarPorSlug(new Slug("bolso-t-muestra"))
+            .orElseThrow()
+            .variantes()
+            .get(0)
+            .atributos()
+            .get(0);
+    assertThat(leido.muestra()).isEqualTo(muestra);
+    assertThat(leido.colorHex()).isEqualTo("#C19A6B");
   }
 }

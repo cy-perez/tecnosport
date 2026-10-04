@@ -3,8 +3,10 @@ package co.tecnosport.api.application.catalogo;
 import co.tecnosport.api.application.compartido.Reloj;
 import co.tecnosport.api.application.inventario.RepositorioInventario;
 import co.tecnosport.api.domain.catalogo.Atributo;
+import co.tecnosport.api.domain.catalogo.MuestraDeColor;
 import co.tecnosport.api.domain.catalogo.Paquete;
 import co.tecnosport.api.domain.catalogo.Producto;
+import co.tecnosport.api.domain.catalogo.TipoAtributo;
 import co.tecnosport.api.domain.catalogo.ValorAtributo;
 import co.tecnosport.api.domain.catalogo.Variante;
 import co.tecnosport.api.domain.compartido.Dinero;
@@ -13,6 +15,7 @@ import co.tecnosport.api.domain.inventario.Inventario;
 import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 /**
  * Alta de una variante nueva para un producto ya existente, con su inventario inicial. Toca dos
@@ -27,18 +30,37 @@ public final class AgregarVariante {
   private final RepositorioInventario repositorioInventario;
   private final Reloj reloj;
   private final boolean negocioResponsableDeIva;
+  private final RepositorioPaletaDeColores paleta;
 
+  /** Sin paleta: un color solo se pinta si trae su HEX. Lo usan las pruebas que no la miran. */
   public AgregarVariante(
       RepositorioProductos repositorioProductos,
       RepositorioAtributos repositorioAtributos,
       RepositorioInventario repositorioInventario,
       Reloj reloj,
       boolean negocioResponsableDeIva) {
+    this(
+        repositorioProductos,
+        repositorioAtributos,
+        repositorioInventario,
+        reloj,
+        negocioResponsableDeIva,
+        List::of);
+  }
+
+  public AgregarVariante(
+      RepositorioProductos repositorioProductos,
+      RepositorioAtributos repositorioAtributos,
+      RepositorioInventario repositorioInventario,
+      Reloj reloj,
+      boolean negocioResponsableDeIva,
+      RepositorioPaletaDeColores paleta) {
     this.repositorioProductos = Objects.requireNonNull(repositorioProductos);
     this.repositorioAtributos = Objects.requireNonNull(repositorioAtributos);
     this.repositorioInventario = Objects.requireNonNull(repositorioInventario);
     this.reloj = Objects.requireNonNull(reloj);
     this.negocioResponsableDeIva = negocioResponsableDeIva;
+    this.paleta = Objects.requireNonNull(paleta);
   }
 
   public VarianteCreada ejecutar(AgregarVarianteComando comando) {
@@ -93,6 +115,16 @@ public final class AgregarVariante {
         repositorioAtributos
             .buscarPorId(comando.atributoId())
             .orElseThrow(() -> new AtributoNoEncontradoException(comando.atributoId()));
+    if (atributo.tipo() == TipoAtributo.COLOR) {
+      // La muestra sale del nombre y de la paleta, no de lo que mande el cliente: «Negro / Rojo» se
+      // pinta con los HEX de la paleta y en ese orden. El HEX del comando queda para un color que
+      // no está en la paleta, como lo cargaba el panel antes de elegir de ella.
+      Optional<MuestraDeColor> muestra =
+          MuestraDeColor.componer(comando.valor(), paleta.listarTodos());
+      if (muestra.isPresent()) {
+        return ValorAtributo.deColor(atributo, comando.valor(), muestra.get());
+      }
+    }
     return comando.colorHex() == null
         ? ValorAtributo.de(atributo, comando.valor())
         : ValorAtributo.deColor(atributo, comando.valor(), comando.colorHex());

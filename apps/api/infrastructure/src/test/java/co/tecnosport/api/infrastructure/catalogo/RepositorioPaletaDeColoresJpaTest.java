@@ -3,6 +3,7 @@ package co.tecnosport.api.infrastructure.catalogo;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import co.tecnosport.api.domain.catalogo.ColorDePaleta;
+import co.tecnosport.api.domain.catalogo.PatronDeColor;
 import java.text.Collator;
 import java.util.List;
 import java.util.Locale;
@@ -35,8 +36,25 @@ class RepositorioPaletaDeColoresJpaTest {
     Collator espanol = Collator.getInstance(Locale.forLanguageTag("es"));
     espanol.setStrength(Collator.PRIMARY);
     assertThat(nombres).isSortedAccordingTo(espanol);
-    assertThat(nombres).hasSize(63).doesNotHaveDuplicates();
+    assertThat(nombres).hasSize(66).doesNotHaveDuplicates();
     assertThat(nombres)
         .contains("Negro", "Verde militar", "Azul oscuro", "Gris jaspe", "Coñac", "Índigo");
+  }
+
+  /** Los tres diseños de V80 llegan con su patrón y sus colores; los lisos, sin ninguno. */
+  @Test
+  void losDisenosLleganConSuPatron() {
+    List<ColorDePaleta> todos = paleta.listarTodos();
+    ColorDePaleta animalPrint =
+        todos.stream().filter(c -> c.nombre().equals("Animal print")).findFirst().orElseThrow();
+    ColorDePaleta negro =
+        todos.stream().filter(c -> c.nombre().equals("Negro")).findFirst().orElseThrow();
+
+    assertThat(animalPrint.patron()).isEqualTo(PatronDeColor.ANIMAL_PRINT);
+    assertThat(animalPrint.coloresDelPatron()).containsExactly("#C19A6B", "#3B2A1A");
+    assertThat(negro.patron()).isNull();
+    assertThat(negro.coloresDelPatron()).isEmpty();
+    assertThat(todos.stream().filter(c -> c.patron() != null).map(ColorDePaleta::nombre))
+        .containsExactlyInAnyOrder("Multicolor", "Estampado", "Animal print");
   }
 }
