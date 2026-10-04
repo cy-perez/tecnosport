@@ -43,7 +43,8 @@
     "atributo_de_catalogo_no_definido": "Faltan los atributos de color o talla en el catálogo. Créalos antes de aprobar.",
     "foto_no_es_del_borrador": "Una de las fotos no pertenece a esta publicación. Recarga la página.",
     "imagen_de_proveedor_ilegible": "Una de las fotos no se pudo procesar. Recházalo o pídele al proveedor la foto de nuevo.",
-    "producto_de_proveedor_ya_existe": "Este anuncio ya es un producto del catálogo: es el mismo título al mismo precio. Rechaza el borrador."
+    "producto_de_proveedor_ya_existe": "Este anuncio ya es un producto del catálogo: es el mismo título al mismo precio. Rechaza el borrador.",
+    "lote_en_curso": "La ingesta todavía se está procesando. Espera a que termine para eliminarla."
   },
   "iniciarSesion": {
     "titulo": "Panel administrativo",
@@ -878,7 +879,8 @@
       "proveedor": "Proveedor",
       "estado": "Estado",
       "fechas": "Fechas",
-      "resumen": "Resultado"
+      "resumen": "Resultado",
+      "acciones": "Acciones"
     },
     "resumen": {
       "mensajes": "{{leidos}} mensajes leídos, {{nuevos}} nuevos",
@@ -900,6 +902,17 @@
       "error": "No se pudo subir la exportación. Intenta de nuevo.",
       "sinProveedores": "No hay ningún proveedor activo al que subirle una exportación.",
       "crearProveedor": "Crear un proveedor"
+    },
+    "eliminar": {
+      "accion": "Eliminar",
+      "accionLote": "Eliminar la ingesta de {{proveedor}} del {{fecha}}",
+      "pregunta": "¿Eliminar esta ingesta de {{proveedor}}?",
+      "loQueImplica": "Se borran sus mensajes, sus borradores, su archivo y los productos que salieron de ella y no están publicados. Los publicados o ya vendidos se quedan en la tienda. No tiene vuelta, y volver a subir la misma exportación la vuelve a convertir en borradores.",
+      "confirmar": "Sí, eliminar",
+      "eliminando": "Eliminando…",
+      "cancelar": "Cancelar",
+      "hecho": "Ingesta eliminada. Productos borrados: {{eliminados}}. Se quedaron por estar publicados o vendidos: {{conservados}}.",
+      "error": "No pudimos eliminar la ingesta. Vuelve a intentarlo."
     }
   },
   "borradores": {

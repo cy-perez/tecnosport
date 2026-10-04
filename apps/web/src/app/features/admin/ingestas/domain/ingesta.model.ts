@@ -51,6 +51,12 @@ export interface SubirExportacion {
   readonly archivo: File;
 }
 
+/** Lo que dejó borrar una ingesta: cuántos productos se fueron y cuántos se quedaron publicados. */
+export interface LoteEliminado {
+  readonly productosEliminados: number;
+  readonly productosConservados: number;
+}
+
 export function loteAbierto(lote: LoteIngesta): boolean {
   return ESTADOS_ABIERTOS.includes(lote.estado);
 }

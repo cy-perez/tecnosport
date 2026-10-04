@@ -26,7 +26,14 @@ import { usarMigasAdmin } from '../../../migas-admin';
 import { usarProveedoresAdmin } from '../../../proveedores/application/listar-proveedores.consulta';
 import { usarListarIngestas } from '../../application/listar-ingestas.consulta';
 import { usarSubirExportacion } from '../../application/subir-exportacion.mutacion';
-import { EstadoLote, FiltroLotes, LoteIngesta } from '../../domain/ingesta.model';
+import { usarEliminarIngesta } from '../../application/eliminar-ingesta.mutacion';
+import {
+  EstadoLote,
+  FiltroLotes,
+  LoteEliminado,
+  LoteIngesta,
+  loteAbierto,
+} from '../../domain/ingesta.model';
 import {
   filtroLotesDesdeQueryParams,
   queryParamsDesdeFiltroLotes,
@@ -211,6 +218,61 @@ export class ListaIngestasAdminPage {
           this.error.set(mensajeDeError(error, this.transloco, 'admin.ingestas.subir.error')),
       },
     );
+  }
+
+  // --- Eliminar una ingesta, con su pregunta en línea como las filas de la lista de productos. ---
+
+  private readonly eliminacion = usarEliminarIngesta();
+  protected readonly eliminando = computed(() => this.eliminacion.isPending());
+  /** El lote cuya fila está preguntando: una sola a la vez. */
+  protected readonly confirmandoEliminar = signal<string | null>(null);
+  protected readonly errorEliminar = signal<string | null>(null);
+  /** Lo que dejó el último borrado, para decirlo cuando la fila ya no existe. */
+  protected readonly avisoEliminado = signal<LoteEliminado | null>(null);
+  private readonly cajaEliminar = viewChild<ElementRef<HTMLElement>>('cajaEliminar');
+  private readonly avisoEliminadoRef = viewChild<ElementRef<HTMLElement>>('avisoEliminadoRef');
+  private readonly raiz = inject<ElementRef<HTMLElement>>(ElementRef);
+
+  /** Con el lote en la cola o a medio procesar no se ofrece: el servidor responde 409. */
+  protected sePuedeEliminar(lote: LoteIngesta): boolean {
+    return !loteAbierto(lote);
+  }
+
+  protected preguntarSiEliminar(lote: LoteIngesta): void {
+    this.errorEliminar.set(null);
+    this.avisoEliminado.set(null);
+    this.confirmandoEliminar.set(lote.id);
+    this.enfocarDespuesDePintar(() => this.cajaEliminar()?.nativeElement);
+  }
+
+  protected cancelarEliminar(): void {
+    const id = this.confirmandoEliminar();
+    this.confirmandoEliminar.set(null);
+    this.errorEliminar.set(null);
+    // De vuelta al botón que abrió la pregunta; vive dentro de `ts-boton`.
+    this.enfocarDespuesDePintar(() =>
+      this.raiz.nativeElement.querySelector<HTMLElement>(`[data-eliminar="${id}"] button`),
+    );
+  }
+
+  /** Guarda de reentrada: el botón usa `[ocupado]`, no `[cargando]`, y sigue siendo pulsable. */
+  protected eliminar(lote: LoteIngesta): void {
+    if (this.eliminando()) {
+      return;
+    }
+    this.errorEliminar.set(null);
+    this.eliminacion.mutate(lote.id, {
+      onSuccess: (resultado) => {
+        this.confirmandoEliminar.set(null);
+        this.avisoEliminado.set(resultado);
+        // La fila se fue con su botón: el foco va al aviso, que dice lo que pasó.
+        this.enfocarDespuesDePintar(() => this.avisoEliminadoRef()?.nativeElement);
+      },
+      onError: (error: unknown) =>
+        this.errorEliminar.set(
+          mensajeDeError(error, this.transloco, 'admin.ingestas.eliminar.error'),
+        ),
+    });
   }
 
   protected filtrarPorProveedor(proveedorId: string): void {
