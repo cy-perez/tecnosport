@@ -47,7 +47,7 @@ variable "dominio_publico_web" {
 }
 
 variable "secretos_cargados" {
-  description = "Si los secretos de Secret Manager ya tienen al menos una versión. Mientras sea false, los servicios no los montan: un secreto vacío hace que la revisión no arranque, y Cloud Run lo reporta como un error interno que no menciona los secretos."
+  description = "Si los secretos de Secret Manager ya tienen al menos una versión. Mientras sea false, los servicios no los montan: un secreto vacío hace que la revisión no arranque, y Cloud Run lo reporta como un error interno que no menciona los secretos. Con false la API tampoco arranca, esta vez a propósito: JWT_SECRETO, ADMIN_CLAVE y los secretos de Wompi y del webhook de Skydropx no tienen valor por omisión fuera del perfil local (docs/07-infra-gcp.md, Configuración)."
   type        = bool
   default     = false
 }
