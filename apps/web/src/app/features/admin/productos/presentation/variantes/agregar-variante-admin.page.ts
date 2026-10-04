@@ -1,3 +1,12 @@
+import {
+  TextosSelectorColores,
+  TsSelectorColores,
+} from '../../../../../shared/ui/selector-colores/ts-selector-colores';
+import {
+  separarColores,
+  unirColores,
+} from '../../../../../shared/ui/muestra-color/muestra-color.model';
+import { ColorParaElegir, paletaParaElegir } from '../../../../catalogo/domain/producto.model';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import {
@@ -11,7 +20,7 @@ import {
 } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
-import { usarIdiomaActivo } from '../../../../../core/i18n/traductor';
+import { usarIdiomaActivo, usarTraductor } from '../../../../../core/i18n/traductor';
 import { usarAtributos } from '../../../../catalogo/application/listar-atributos.consulta';
 import { usarPaletaDeColores } from '../../../../catalogo/application/listar-paleta-colores.consulta';
 import { Atributo } from '../../../../catalogo/domain/producto.model';
@@ -19,7 +28,6 @@ import { TsBoton } from '../../../../../shared/ui/boton/ts-boton';
 import { TsPaginaFormulario } from '../../../../../shared/ui/pagina-formulario/ts-pagina-formulario';
 import { TsCampo } from '../../../../../shared/ui/campo/ts-campo';
 import { TsMigas } from '../../../../../shared/ts-migas/ts-migas';
-import { ordenarPorEtiqueta } from '../../../../../shared/ui/select/ordenar-opciones';
 import { OpcionSelect, TsSelect } from '../../../../../shared/ui/select/ts-select';
 import { TsSelectControl } from '../../../../../shared/ui/select/ts-select-control';
 import { usarMigasAdmin } from '../../../migas-admin';
@@ -61,6 +69,7 @@ function paqueteCompletoOAusente(control: AbstractControl): ValidationErrors | n
     TsMigas,
     TsSelect,
     TsSelectControl,
+    TsSelectorColores,
   ],
   templateUrl: './agregar-variante-admin.page.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -77,6 +86,7 @@ export class AgregarVarianteAdminPage {
   private readonly atributos = usarAtributos();
   private readonly paleta = usarPaletaDeColores();
   private readonly idioma = usarIdiomaActivo();
+  private readonly traducir = usarTraductor();
   private readonly mutacion = usarAgregarVarianteAdmin();
 
   private readonly paramMap = toSignal(this.route.paramMap, {
@@ -161,14 +171,29 @@ export class AgregarVarianteAdminPage {
    * variante. Antes eran dos campos libres —el nombre y el HEX a mano— y un «negro» con «#000»
    * quedaba como otro color al lado del «Negro» de la paleta.
    */
-  protected readonly opcionesColor = computed<OpcionSelect[]>(() => {
-    const ingles = this.idioma() === 'en';
-    const opciones = (this.paleta.data() ?? []).map((color) => ({
-      valor: color.nombre,
-      etiqueta: ingles ? `${color.nombreEn} (${color.nombre})` : color.nombre,
-    }));
-    return ordenarPorEtiqueta(opciones, this.idioma());
+  protected readonly opcionesColor = computed<ColorParaElegir[]>(() =>
+    paletaParaElegir(this.paleta.data() ?? [], this.idioma()),
+  );
+
+  protected readonly textosColores = computed<TextosSelectorColores>(() => {
+    const traducir = this.traducir();
+    return {
+      ninguno: traducir('admin.productos.agregarVariante.elegirColor'),
+      buscar: traducir('admin.colores.buscar'),
+      maximo: traducir('admin.colores.maximo'),
+      sinResultados: traducir('admin.colores.sinResultados'),
+    };
   });
+
+  /** Los colores de la fila, en orden: el valor «Negro / Rojo» guarda la combinación. */
+  protected coloresDeFila(valor: string): string[] {
+    return separarColores(valor);
+  }
+
+  protected elegirColores(fila: GrupoAtributo, colores: readonly string[]): void {
+    fila.controls.valor.setValue(unirColores(colores));
+    fila.controls.valor.markAsTouched();
+  }
 
   protected esAtributoDeColor(atributoId: string): boolean {
     const atributo = (this.atributos.data() ?? []).find((a: Atributo) => a.id === atributoId);
@@ -232,7 +257,9 @@ export class AgregarVarianteAdminPage {
     );
   }
 
+  /** El HEX del primer color; el servidor arma la muestra entera de la combinación con la paleta. */
   private hexDe(nombre: string): string | null {
-    return (this.paleta.data() ?? []).find((color) => color.nombre === nombre)?.hex ?? null;
+    const primero = separarColores(nombre)[0];
+    return (this.paleta.data() ?? []).find((color) => color.nombre === primero)?.hex ?? null;
   }
 }

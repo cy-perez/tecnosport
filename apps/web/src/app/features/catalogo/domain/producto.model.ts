@@ -234,3 +234,29 @@ export function parteDeColor(color: ColorDePaleta): ParteDeMuestra {
     ? { patron: color.patron, colores: color.coloresPatron }
     : { patron: null, colores: [color.hex] };
 }
+
+/** Un color de la paleta listo para marcar: su nombre en español, lo que se lee y su muestra. */
+export interface ColorParaElegir {
+  readonly valor: string;
+  readonly etiqueta: string;
+  readonly muestra: ParteDeMuestra;
+}
+
+/**
+ * La paleta como se ofrece para elegir, en orden alfabético de lo que se lee: el valor es el
+ * nombre en español —el del atributo Color— y, en inglés, la etiqueta lleva el inglés delante.
+ */
+export function paletaParaElegir(
+  paleta: readonly ColorDePaleta[],
+  idioma: string,
+): ColorParaElegir[] {
+  const ingles = idioma === 'en';
+  const comparador = new Intl.Collator(idioma, { sensitivity: 'base', numeric: true });
+  return paleta
+    .map((color) => ({
+      valor: color.nombre,
+      etiqueta: ingles ? `${color.nombreEn} (${color.nombre})` : color.nombre,
+      muestra: parteDeColor(color),
+    }))
+    .sort((uno, otro) => comparador.compare(uno.etiqueta, otro.etiqueta));
+}

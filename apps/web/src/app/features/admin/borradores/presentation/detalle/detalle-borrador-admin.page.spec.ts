@@ -207,19 +207,23 @@ describe('DetalleBorradorAdminPage', () => {
   it('ofrece los colores de la paleta en orden alfabético', async () => {
     await renderPagina();
 
-    await screen.findAllByRole('option', { name: 'Vino' });
-    const opciones = [...(screen.getByLabelText('Color de la foto 1') as HTMLSelectElement).options]
-      .map((opcion) => opcion.textContent?.trim())
-      .filter((texto) => ['Café', 'Negro', 'Vino'].includes(texto ?? ''));
-    expect(opciones).toEqual(['Café', 'Negro', 'Vino']);
+    fireEvent.click(await screen.findByRole('button', { name: /Color de la foto 1/ }));
+    const casillas = await screen.findAllByRole('checkbox', { name: /^(Café|Negro|Vino)$/ });
+    expect(casillas.map((c) => (c as HTMLInputElement).labels?.[0]?.textContent?.trim())).toEqual([
+      'Café',
+      'Negro',
+      'Vino',
+    ]);
   });
 
   it('aprueba con el tono de cada foto, las unidades y el precio, y enlaza el producto', async () => {
     const { repositorio } = await renderPagina();
     await llenarAprobacion();
 
-    await screen.findAllByRole('option', { name: 'Vino' });
-    fireEvent.change(screen.getByLabelText('Color de la foto 1'), { target: { value: 'Negro' } });
+    // La foto 1 es de dos colores, marcados en orden: negro y luego vino.
+    fireEvent.click(await screen.findByRole('button', { name: /Color de la foto 1/ }));
+    fireEvent.click(await screen.findByLabelText('Negro'));
+    fireEvent.click(screen.getByLabelText('Vino'));
     fireEvent.input(screen.getByLabelText(a.precioVenta), { target: { value: '75.000' } });
     fireEvent.click(screen.getByRole('button', { name: a.accion }));
 
@@ -232,7 +236,7 @@ describe('DetalleBorradorAdminPage', () => {
       existenciaInicial: 2,
       altEs: 'Bolso tote en cuero sintético',
       fotos: [
-        { mensajeId: 'f-1', tono: 'Negro', colorHex: '#111111' },
+        { mensajeId: 'f-1', tono: 'Negro / Vino', colorHex: '#111111' },
         { mensajeId: 'f-2', tono: null, colorHex: null },
       ],
       fotosGeneralesEnCadaColor: true,

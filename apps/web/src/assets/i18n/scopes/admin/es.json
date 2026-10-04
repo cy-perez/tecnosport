@@ -314,6 +314,8 @@
       "atributo": "Atributo",
       "valor": "Valor",
       "color": "Color",
+      "colorAyuda": "Marca hasta tres, en orden: el primero que marques va a la izquierda del círculo. «Negro» y luego «Rojo» es «Negro / Rojo».",
+      "elegirColor": "Elige el color",
       "seleccionar": "Selecciona una opción",
       "agregarAtributo": "Agregar atributo",
       "quitarAtributo": "Quitar",
@@ -791,6 +793,11 @@
     "ciclo": "Una categoría no puede colgar de sí misma ni de una de sus hijas.",
     "error": "No pudimos guardar el cambio. Inténtalo de nuevo.",
     "errorLista": "No pudimos cargar las categorías."
+  },
+  "colores": {
+    "buscar": "Buscar color",
+    "maximo": "Ya marcaste tres colores, el máximo. Desmarca uno para cambiarlo; para más colores, usa «Multicolor».",
+    "sinResultados": "Ningún color de la paleta se llama así."
   },
   "proveedores": {
     "titulo": "Proveedores",
