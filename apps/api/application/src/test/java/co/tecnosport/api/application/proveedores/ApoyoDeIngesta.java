@@ -128,7 +128,7 @@ final class ApoyoDeIngesta {
 
     @Override
     public DependenciasDeLote dependenciasDe(UUID loteId) {
-      return dependencias.getOrDefault(loteId, new DependenciasDeLote(false, List.of(), List.of()));
+      return dependencias.getOrDefault(loteId, new DependenciasDeLote(List.of(), List.of()));
     }
 
     @Override

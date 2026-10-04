@@ -1,9 +1,6 @@
 package co.tecnosport.api.bootstrap.proveedores;
 
 import co.tecnosport.api.application.catalogo.EliminarProducto;
-import co.tecnosport.api.application.catalogo.ProductoConVentasException;
-import co.tecnosport.api.application.catalogo.ProductoNoEncontradoPorIdException;
-import co.tecnosport.api.application.catalogo.ProductoPublicadoException;
 import co.tecnosport.api.application.compartido.EnTransaccionPropia;
 import co.tecnosport.api.application.compartido.Reloj;
 import co.tecnosport.api.application.proveedores.AlmacenDeArchivosDeProveedor;
@@ -12,6 +9,7 @@ import co.tecnosport.api.application.proveedores.CrearProveedor;
 import co.tecnosport.api.application.proveedores.EditarProveedor;
 import co.tecnosport.api.application.proveedores.EjecutorDeIngestas;
 import co.tecnosport.api.application.proveedores.EliminacionDeProductos;
+import co.tecnosport.api.application.proveedores.EliminacionDeProductosDelCatalogo;
 import co.tecnosport.api.application.proveedores.EliminarLoteDeIngesta;
 import co.tecnosport.api.application.proveedores.EliminarProveedor;
 import co.tecnosport.api.application.proveedores.ExtraerProductoDePublicacion;
@@ -65,22 +63,9 @@ public class ConfiguracionProveedores {
     return new EditarProveedor(repositorio);
   }
 
-  /**
-   * El catálogo cumple el puerto con {@code EliminarProducto}: lo publicado o vendido se queda, y
-   * eso se responde con {@code false} en vez de tumbar el borrado del lote entero.
-   */
   @Bean
   public EliminacionDeProductos eliminacionDeProductos(EliminarProducto eliminarProducto) {
-    return productoId -> {
-      try {
-        eliminarProducto.ejecutar(productoId);
-        return true;
-      } catch (ProductoPublicadoException | ProductoConVentasException e) {
-        return false;
-      } catch (ProductoNoEncontradoPorIdException e) {
-        return true;
-      }
-    };
+    return new EliminacionDeProductosDelCatalogo(eliminarProducto);
   }
 
   @Bean

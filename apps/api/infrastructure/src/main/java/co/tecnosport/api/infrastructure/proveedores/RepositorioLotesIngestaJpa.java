@@ -44,14 +44,6 @@ public class RepositorioLotesIngestaJpa implements RepositorioLotesIngesta {
 
   @Override
   public DependenciasDeLote dependenciasDe(UUID loteId) {
-    Number abiertos =
-        (Number)
-            entityManager
-                .createNativeQuery(
-                    "select count(*) from lote_ingesta where id = ?1"
-                        + " and estado in ('RECIBIDO', 'PROCESANDO')")
-                .setParameter(1, loteId)
-                .getSingleResult();
     @SuppressWarnings("unchecked")
     List<Object> productos =
         entityManager
@@ -66,15 +58,18 @@ public class RepositorioLotesIngestaJpa implements RepositorioLotesIngesta {
     List<String> archivos =
         entityManager
             .createNativeQuery(
-                "select referencia_archivo from lote_ingesta"
-                    + " where id = ?1 and referencia_archivo is not null"
+                // El ZIP solo si ningún otro lote lo nombra: un envío repetido de la misma
+                // exportación crea dos lotes sobre el mismo objeto.
+                "select l.referencia_archivo from lote_ingesta l"
+                    + " where l.id = ?1 and l.referencia_archivo is not null"
+                    + " and not exists (select 1 from lote_ingesta o"
+                    + " where o.referencia_archivo = l.referencia_archivo and o.id <> l.id)"
                     + " union"
                     + " select referencia_archivo from mensaje_proveedor"
                     + " where lote_id = ?1 and referencia_archivo is not null")
             .setParameter(1, loteId)
             .getResultList();
     return new DependenciasDeLote(
-        abiertos.longValue() > 0,
         productos.stream()
             .map(id -> id instanceof UUID uuid ? uuid : UUID.fromString(id.toString()))
             .sorted()
@@ -84,6 +79,9 @@ public class RepositorioLotesIngestaJpa implements RepositorioLotesIngesta {
 
   @Override
   public void eliminarConSuHistorial(UUID loteId) {
+    // Lo pendiente de esta transacción, antes del `clear()` de abajo, que lo descartaría en
+    // silencio.
+    entityManager.flush();
     for (String sentencia : BORRAR_HISTORIAL) {
       entityManager.createNativeQuery(sentencia).setParameter(1, loteId).executeUpdate();
     }

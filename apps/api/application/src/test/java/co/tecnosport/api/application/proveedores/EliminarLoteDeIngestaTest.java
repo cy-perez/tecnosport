@@ -54,7 +54,6 @@ class EliminarLoteDeIngestaTest {
     lotes.dependencias.put(
         lote.id(),
         new DependenciasDeLote(
-            false,
             List.of(enBorrador, publicado),
             List.of("proveedores/x/exportacion.zip", "proveedores/x/foto.jpg")));
 
@@ -68,12 +67,15 @@ class EliminarLoteDeIngestaTest {
 
   @Test
   void conElLoteEnCursoNoBorraNada() {
-    LoteIngesta lote = loteTerminado();
+    LoteIngesta lote =
+        LoteIngesta.recibirExportacion(
+            UUID.randomUUID(), "proveedores/x/exportacion.zip", ApoyoDeIngesta.AHORA);
+    lotes.guardar(lote);
     UUID producto = UUID.randomUUID();
     almacen.objetos.put("proveedores/x/exportacion.zip", new byte[] {1});
     lotes.dependencias.put(
         lote.id(),
-        new DependenciasDeLote(true, List.of(producto), List.of("proveedores/x/exportacion.zip")));
+        new DependenciasDeLote(List.of(producto), List.of("proveedores/x/exportacion.zip")));
 
     assertThrows(LoteEnCursoException.class, () -> eliminarLote.ejecutar(lote.id()));
 

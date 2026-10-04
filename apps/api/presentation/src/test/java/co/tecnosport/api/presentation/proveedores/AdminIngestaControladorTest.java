@@ -222,7 +222,7 @@ class AdminIngestaControladorTest {
     UUID publicado = UUID.randomUUID();
     eliminacion.publicados.add(publicado);
     lotes.dependencias.put(
-        lote.id(), new DependenciasDeLote(false, List.of(borrador, publicado), List.of(key)));
+        lote.id(), new DependenciasDeLote(List.of(borrador, publicado), List.of(key)));
 
     mockMvc
         .perform(delete("/api/v1/admin/ingestas/{id}", lote.id()))
@@ -240,7 +240,7 @@ class AdminIngestaControladorTest {
   void eliminarUnaIngestaEnCursoEs409YNoBorraNada() throws Exception {
     LoteIngesta lote = LoteIngesta.recibirExportacion(proveedor.id(), key, AHORA);
     lotes.porId.put(lote.id(), lote);
-    lotes.dependencias.put(lote.id(), new DependenciasDeLote(true, List.of(), List.of(key)));
+    lotes.dependencias.put(lote.id(), new DependenciasDeLote(List.of(), List.of(key)));
 
     mockMvc
         .perform(delete("/api/v1/admin/ingestas/{id}", lote.id()))
@@ -415,7 +415,7 @@ class AdminIngestaControladorTest {
 
     @Override
     public DependenciasDeLote dependenciasDe(UUID loteId) {
-      return dependencias.getOrDefault(loteId, new DependenciasDeLote(false, List.of(), List.of()));
+      return dependencias.getOrDefault(loteId, new DependenciasDeLote(List.of(), List.of()));
     }
 
     @Override

@@ -1,5 +1,6 @@
 package co.tecnosport.api.application.proveedores;
 
+import co.tecnosport.api.domain.proveedores.LoteIngesta;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -21,6 +22,15 @@ import java.util.UUID;
  * borran antes que las filas, porque al revés un fallo a mitad deja objetos que ya ninguna fila
  * nombra. Borrar los mensajes tiene la consecuencia que explica {@link EliminarBorrador}: volver a
  * subir la misma exportación la vuelve a convertir en borradores. Es lo que se pide.
+ *
+ * <p><b>Los objetos del bucket se borran dentro de la transacción del controlador</b>, como en
+ * {@link EliminarProveedor}: si algo falla después, las filas vuelven y los archivos ya no, y
+ * reintentar termina el trabajo porque borrar un objeto que no está no falla. Con lotes de cientos
+ * de fotos eso alarga la transacción; si llega a pesar, el borrado de objetos sale de ella.
+ *
+ * <p>Una aprobación de un borrador de este lote que confirme mientras tanto puede dejar su producto
+ * fuera de la cuenta: se lee antes de que exista. Es una carrera de dos personas sobre el mismo
+ * lote en el mismo segundo, y el producto queda en borrador, visible en el panel.
  */
 public final class EliminarLoteDeIngesta {
 
@@ -39,13 +49,14 @@ public final class EliminarLoteDeIngesta {
 
   public LoteEliminado ejecutar(UUID loteId) {
     Objects.requireNonNull(loteId, "El id no puede ser nulo.");
-    if (repositorioLotes.buscarPorId(loteId).isEmpty()) {
-      throw new LoteNoEncontradoException(loteId);
-    }
-    DependenciasDeLote dependencias = repositorioLotes.dependenciasDe(loteId);
-    if (dependencias.enCurso()) {
+    LoteIngesta lote =
+        repositorioLotes
+            .buscarPorId(loteId)
+            .orElseThrow(() -> new LoteNoEncontradoException(loteId));
+    if (lote.estaAbierto()) {
       throw new LoteEnCursoException();
     }
+    DependenciasDeLote dependencias = repositorioLotes.dependenciasDe(loteId);
 
     int eliminados = 0;
     int conservados = 0;
