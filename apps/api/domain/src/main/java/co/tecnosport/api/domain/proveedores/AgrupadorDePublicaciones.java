@@ -25,9 +25,15 @@ import java.util.Objects;
  * {@code SIN_FOTOS}.
  *
  * <p>Cuando un mensaje cabe en los dos lados —el precio de antes todavía abierto y otro precio
- * pocos minutos después— gana el más cercano, y en empate el de antes. Lo que queda fuera —un texto
- * sin precio lejos de todo, una foto huérfana, un audio— no es de ninguna publicación. Se cuenta, y
- * no se inventa un producto para darle sitio.
+ * pocos minutos después— gana el más cercano, y <b>en empate el de después</b>, por la misma razón
+ * que existe la ventana hacia atrás: la foto sale antes que su texto. El empate no es raro, es lo
+ * normal: Android exporta sin segundos, y cuando el proveedor manda en el mismo minuto el precio de
+ * un producto, la foto del siguiente y el precio de ese siguiente, la foto queda a cero de los dos.
+ * Con el empate hacia atrás, en la exportación de Imperio Wicho (3 de octubre de 2026) la foto de
+ * la Superstar cayó en el anuncio de caballero y la Superstar salió sin fotos.
+ *
+ * <p>Lo que queda fuera —un texto sin precio lejos de todo, una foto huérfana, un audio— no es de
+ * ninguna publicación. Se cuenta, y no se inventa un producto para darle sitio.
  */
 public final class AgrupadorDePublicaciones {
 
@@ -88,7 +94,7 @@ public final class AgrupadorDePublicaciones {
             Duration.between(enOrden.get(anclas.get(anterior)).enviadoEn(), cuando);
         Duration haciaAdelante =
             Duration.between(cuando, enOrden.get(anclas.get(siguiente)).enviadoEn());
-        elegida = haciaAdelante.compareTo(haciaAtras) < 0 ? siguiente : anterior;
+        elegida = haciaAdelante.compareTo(haciaAtras) <= 0 ? siguiente : anterior;
       } else if (cabeAtras) {
         elegida = anterior;
       } else if (cabeAdelante) {

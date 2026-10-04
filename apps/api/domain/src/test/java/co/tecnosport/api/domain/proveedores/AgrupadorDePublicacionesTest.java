@@ -136,7 +136,7 @@ class AgrupadorDePublicacionesTest {
     assertEquals(List.of(foto3.id(), foto4.id()), resultado.publicaciones().get(1).medios());
   }
 
-  /** Entre dos precios cercanos, la foto es del más cercano; en empate, del de antes. */
+  /** Entre dos precios cercanos, la foto es del más cercano. */
   @Test
   void entreDosPreciosLaFotoEsDelMasCercano() {
     MensajeProveedor bolso = texto(0, "Bolso 💰 53.000");
@@ -154,6 +154,41 @@ class AgrupadorDePublicacionesTest {
     assertEquals(List.of(delBolso.id()), resultado.publicaciones().get(0).medios());
     assertEquals(
         List.of(delMorral.id(), tambienDelMorral.id()), resultado.publicaciones().get(1).medios());
+  }
+
+  /**
+   * La forma de la exportación de Imperio Wicho (3 de octubre de 2026): Android no trae segundos, y
+   * en el mismo minuto llegan el precio de un producto, la foto del siguiente y el precio de ese
+   * siguiente. La foto queda a cero de los dos, y es del de después: la foto sale antes que su
+   * texto.
+   */
+  @Test
+  void enElMismoMinutoLaFotoEsDelPrecioDeDespues() {
+    MensajeProveedor caballero = texto(0, "Importado AAA Caballero 💰*$115,000*");
+    MensajeProveedor laSuperstar = foto(0, null);
+    MensajeProveedor superstar = texto(0, "Superstar Importado AAA 💰 *$105,000*");
+
+    AgrupadorDePublicaciones.Resultado resultado =
+        new AgrupadorDePublicaciones(QUINCE_MINUTOS)
+            .agrupar(List.of(caballero, laSuperstar, superstar));
+
+    assertEquals(List.of(), resultado.publicaciones().get(0).medios());
+    assertEquals(superstar.id(), resultado.publicaciones().get(1).mensajePrincipalId());
+    assertEquals(List.of(laSuperstar.id()), resultado.publicaciones().get(1).medios());
+  }
+
+  /** El empate a la misma distancia sin ser cero se decide igual: hacia el precio de después. */
+  @Test
+  void aIgualDistanciaDeDosPreciosLaFotoEsDelDeDespues() {
+    MensajeProveedor bolso = texto(0, "Bolso 💰 53.000");
+    MensajeProveedor enMedio = foto(180, null);
+    MensajeProveedor morral = texto(360, "Morral 💰 52.000");
+
+    AgrupadorDePublicaciones.Resultado resultado =
+        new AgrupadorDePublicaciones(QUINCE_MINUTOS).agrupar(List.of(bolso, enMedio, morral));
+
+    assertEquals(List.of(), resultado.publicaciones().get(0).medios());
+    assertEquals(List.of(enMedio.id()), resultado.publicaciones().get(1).medios());
   }
 
   @Test
