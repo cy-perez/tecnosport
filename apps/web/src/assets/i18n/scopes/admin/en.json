@@ -314,6 +314,8 @@
       "atributo": "Attribute",
       "valor": "Value",
       "color": "Colour",
+      "colorAyuda": "Tick up to three, in order: the first one you tick goes on the left of the circle. “Black” then “Red” is “Black / Red”.",
+      "elegirColor": "Choose the colour",
       "seleccionar": "Select an option",
       "agregarAtributo": "Add attribute",
       "quitarAtributo": "Remove",
@@ -791,6 +793,11 @@
     "ciclo": "A category cannot hang from itself or from one of its children.",
     "error": "We could not save the change. Please try again.",
     "errorLista": "We could not load the categories."
+  },
+  "colores": {
+    "buscar": "Search colour",
+    "maximo": "You already ticked three colours, the maximum. Untick one to change it; for more colours, use “Multicolour”.",
+    "sinResultados": "No colour in the palette has that name."
   },
   "proveedores": {
     "titulo": "Suppliers",

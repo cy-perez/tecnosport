@@ -9,11 +9,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import co.tecnosport.api.application.compartido.RelojFalso;
 import co.tecnosport.api.domain.catalogo.Atributo;
 import co.tecnosport.api.domain.catalogo.Categoria;
+import co.tecnosport.api.domain.catalogo.ColorDePaleta;
 import co.tecnosport.api.domain.catalogo.LineaCatalogo;
 import co.tecnosport.api.domain.catalogo.Marca;
 import co.tecnosport.api.domain.catalogo.Paquete;
+import co.tecnosport.api.domain.catalogo.ParteDeMuestra;
 import co.tecnosport.api.domain.catalogo.Producto;
 import co.tecnosport.api.domain.catalogo.TipoAtributo;
+import co.tecnosport.api.domain.catalogo.ValorAtributo;
 import co.tecnosport.api.domain.compartido.Slug;
 import co.tecnosport.api.domain.inventario.TipoMovimientoInventario;
 import java.math.BigDecimal;
@@ -244,5 +247,50 @@ class AgregarVarianteTest {
                 List.of()));
 
     assertEquals(new BigDecimal("0.19"), creada.variante().tasaIva());
+  }
+
+  /**
+   * Una combinación de la paleta (4 de octubre de 2026): la muestra sale de la paleta y en el orden
+   * del nombre, aunque el cliente mande otro HEX.
+   */
+  @Test
+  void unaCombinacionDeLaPaletaSePintaConSusColoresEnOrden() {
+    Producto producto = productoDePrueba();
+    repositorioProductos.conProductos(producto);
+    Atributo color = Atributo.crear("Color", TipoAtributo.COLOR, List.of());
+    repositorioAtributos.conAtributos(color);
+    AgregarVariante conPaleta =
+        new AgregarVariante(
+            repositorioProductos,
+            repositorioAtributos,
+            repositorioInventario,
+            reloj,
+            false,
+            () ->
+                List.of(
+                    new ColorDePaleta(UUID.randomUUID(), "Negro", "Black", "#111111", 1),
+                    new ColorDePaleta(UUID.randomUUID(), "Rojo", "Red", "#C62828", 2)));
+
+    var creada =
+        conPaleta.ejecutar(
+            new AgregarVarianteComando(
+                producto.id(),
+                "TS-CAM-NR-M",
+                89_900,
+                BigDecimal.ZERO,
+                null,
+                1,
+                null,
+                null,
+                null,
+                null,
+                List.of(new ValorAtributoComando(color.id(), "Negro / Rojo", "#ABCDEF"))));
+
+    ValorAtributo valor = creada.variante().atributos().get(0);
+    assertEquals("Negro / Rojo", valor.valor());
+    assertEquals("#111111", valor.colorHex());
+    assertEquals(
+        List.of(ParteDeMuestra.lisa("#111111"), ParteDeMuestra.lisa("#C62828")),
+        valor.muestra().partes());
   }
 }

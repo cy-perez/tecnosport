@@ -21,6 +21,7 @@ import co.tecnosport.api.presentation.catalogo.dto.CategoriaRespuesta;
 import co.tecnosport.api.presentation.catalogo.dto.ImagenRespuesta;
 import co.tecnosport.api.presentation.catalogo.dto.ImagenRotacionRespuesta;
 import co.tecnosport.api.presentation.catalogo.dto.MarcaRespuesta;
+import co.tecnosport.api.presentation.catalogo.dto.ParteDeMuestraRespuesta;
 import co.tecnosport.api.presentation.catalogo.dto.ProductoRespuesta;
 import co.tecnosport.api.presentation.catalogo.dto.ResultadoPaginadoRespuesta;
 import co.tecnosport.api.presentation.catalogo.dto.RotacionRespuesta;
@@ -170,6 +171,14 @@ public class MapeadorRespuestasCatalogo {
         valorAtributo.atributo().nombre(),
         valorAtributo.valor(),
         valorAtributo.colorHex(),
-        valorAtributo.atributo().unidad().orElse(null));
+        valorAtributo.atributo().unidad().orElse(null),
+        valorAtributo.muestra() == null
+            ? List.of()
+            : valorAtributo.muestra().partes().stream()
+                .map(
+                    parte ->
+                        new ParteDeMuestraRespuesta(
+                            parte.patron() == null ? null : parte.patron().name(), parte.colores()))
+                .toList());
   }
 }

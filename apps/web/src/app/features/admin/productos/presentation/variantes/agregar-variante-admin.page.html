@@ -101,13 +101,15 @@
           />
 
           @if (esAtributoDeColor(fila.controls.atributoId.value)) {
-            <ts-select
+            <ts-selector-colores
               [idCampo]="'variante-color-' + $index"
               [label]="'admin.productos.agregarVariante.color' | transloco"
-              [opciones]="opcionesColor()"
-              [placeholder]="'admin.productos.agregarVariante.seleccionar' | transloco"
+              [ayuda]="'admin.productos.agregarVariante.colorAyuda' | transloco"
               [obligatorio]="true"
-              formControlName="valor"
+              [opciones]="opcionesColor()"
+              [seleccion]="coloresDeFila(fila.controls.valor.value)"
+              [textos]="textosColores()"
+              (seleccionCambio)="elegirColores(fila, $event)"
             />
           } @else {
             <ts-campo

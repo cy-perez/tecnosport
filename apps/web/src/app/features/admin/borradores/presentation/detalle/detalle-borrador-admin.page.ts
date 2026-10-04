@@ -1,4 +1,13 @@
 import {
+  TextosSelectorColores,
+  TsSelectorColores,
+} from '../../../../../shared/ui/selector-colores/ts-selector-colores';
+import {
+  separarColores,
+  unirColores,
+} from '../../../../../shared/ui/muestra-color/muestra-color.model';
+import { ColorParaElegir, paletaParaElegir } from '../../../../catalogo/domain/producto.model';
+import {
   ChangeDetectionStrategy,
   Component,
   computed,
@@ -20,7 +29,6 @@ import { TsBoton } from '../../../../../shared/ui/boton/ts-boton';
 import { TsCampo } from '../../../../../shared/ui/campo/ts-campo';
 import { TsCheckbox } from '../../../../../shared/ui/checkbox/ts-checkbox';
 import { OpcionSelect, TsSelect } from '../../../../../shared/ui/select/ts-select';
-import { ordenarPorEtiqueta } from '../../../../../shared/ui/select/ordenar-opciones';
 import { TsSelectControl } from '../../../../../shared/ui/select/ts-select-control';
 import { TsEsqueleto } from '../../../../../shared/ts-esqueleto/ts-esqueleto';
 import { TsMigas } from '../../../../../shared/ts-migas/ts-migas';
@@ -99,6 +107,7 @@ function enteroPositivo(texto: string): number | null {
     TsMigas,
     TsSelect,
     TsSelectControl,
+    TsSelectorColores,
   ],
   templateUrl: './detalle-borrador-admin.page.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -278,18 +287,24 @@ export class DetalleBorradorAdminPage {
   });
 
   /**
-   * Los colores que se le pueden asignar a una foto: los de la paleta, con su nombre en español
-   * —que es el valor del atributo Color— y, en el panel en inglés, el inglés al lado. Su HEX viaja
-   * con la aprobación y es lo que pinta la muestra en la tarjeta y en la ficha. En orden alfabético
-   * de lo que se lee, que en inglés es el nombre en inglés.
+   * Los colores que se le pueden marcar a una foto: los de la paleta, con su nombre en español
+   * —que es el valor del atributo Color— y, en el panel en inglés, el inglés al lado; en orden
+   * alfabético de lo que se lee. Se marcan hasta tres y el orden de marcado es el de la
+   * combinación: «Negro / Rojo» (4 de octubre de 2026). La muestra la arma el servidor con la
+   * paleta; aquí solo se elige el nombre.
    */
-  protected readonly opcionesTono = computed<OpcionSelect[]>(() => {
-    const ingles = this.idioma() === 'en';
-    const opciones = (this.paleta.data() ?? []).map((color) => ({
-      valor: color.nombre,
-      etiqueta: ingles ? `${color.nombreEn} (${color.nombre})` : color.nombre,
-    }));
-    return ordenarPorEtiqueta(opciones, this.idioma());
+  protected readonly opcionesTono = computed<ColorParaElegir[]>(() =>
+    paletaParaElegir(this.paleta.data() ?? [], this.idioma()),
+  );
+
+  protected readonly textosColores = computed<TextosSelectorColores>(() => {
+    const traducir = this.traducir();
+    return {
+      ninguno: traducir('admin.borradores.aprobar.todosLosTonos'),
+      buscar: traducir('admin.colores.buscar'),
+      maximo: traducir('admin.colores.maximo'),
+      sinResultados: traducir('admin.colores.sinResultados'),
+    };
   });
 
   private readonly categoriaElegida = toSignal(this.formAprobar.controls.categoriaId.valueChanges, {
@@ -517,6 +532,15 @@ export class DetalleBorradorAdminPage {
     this.tonoPorFoto.update((actual) => ({ ...actual, [mensajeId]: tono }));
   }
 
+  /** Los colores marcados de una foto, en orden: «Negro / Rojo» → ['Negro', 'Rojo']. */
+  protected coloresDe(mensajeId: string): string[] {
+    return separarColores(this.tonoDe(mensajeId));
+  }
+
+  protected elegirColores(mensajeId: string, colores: readonly string[]): void {
+    this.elegirTono(mensajeId, unirColores(colores));
+  }
+
   protected fotoIncluida(mensajeId: string): boolean {
     return !this.fotosExcluidas().has(mensajeId);
   }
@@ -733,11 +757,13 @@ export class DetalleBorradorAdminPage {
     );
   }
 
+  /** El HEX del primer color de la combinación. El servidor arma la muestra entera con la paleta. */
   private hexDe(tono: string | undefined): string | null {
-    if (!tono) {
+    const primero = tono ? separarColores(tono)[0] : undefined;
+    if (!primero) {
       return null;
     }
-    return (this.paleta.data() ?? []).find((color) => color.nombre === tono)?.hex ?? null;
+    return (this.paleta.data() ?? []).find((color) => color.nombre === primero)?.hex ?? null;
   }
 
   protected rechazarBorrador(): void {

@@ -25,7 +25,15 @@ public class PaletaDeColoresControlador {
   @GetMapping
   public List<ColorDePaletaRespuesta> listar() {
     return listarPaletaDeColores.ejecutar().stream()
-        .map(c -> new ColorDePaletaRespuesta(c.id(), c.nombre(), c.nombreEn(), c.hex()))
+        .map(
+            c ->
+                new ColorDePaletaRespuesta(
+                    c.id(),
+                    c.nombre(),
+                    c.nombreEn(),
+                    c.hex(),
+                    c.patron() == null ? null : c.patron().name(),
+                    c.coloresDelPatron()))
         .toList();
   }
 }

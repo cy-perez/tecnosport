@@ -4,6 +4,7 @@ import {
   Categoria,
   Imagen,
   Marca,
+  PatronDeColor,
   Producto,
   Rotacion,
   TipoAtributo,
@@ -132,6 +133,11 @@ function aValorAtributo(dto: ValorAtributoDto): ValorAtributo {
     valor: dto.valor ?? '',
     colorHex: dto.colorHex ?? null,
     unidad: dto.unidad ?? null,
+    muestra: (dto.muestra ?? []).map((parte) => ({
+      // El contrato expone el patrón como `string`; el backend manda el nombre exacto del enum.
+      patron: (parte.patron ?? null) as PatronDeColor | null,
+      colores: parte.colores ?? [],
+    })),
   };
 }
 

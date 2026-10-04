@@ -24,6 +24,13 @@ public class ColorPaletaJpaEntity {
   @Column(nullable = false)
   private int orden;
 
+  /** MULTICOLOR, ESTAMPADO o ANIMAL_PRINT; nulo en un color liso (V80). */
+  @Column private String patron;
+
+  /** Los colores del patrón en su orden, separados por coma; nulo en un color liso. */
+  @Column(name = "colores_patron")
+  private String coloresPatron;
+
   protected ColorPaletaJpaEntity() {}
 
   public UUID getId() {
@@ -44,5 +51,13 @@ public class ColorPaletaJpaEntity {
 
   public int getOrden() {
     return orden;
+  }
+
+  public String getPatron() {
+    return patron;
+  }
+
+  public String getColoresPatron() {
+    return coloresPatron;
   }
 }

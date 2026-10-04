@@ -76,22 +76,23 @@
           type="button"
           class="anillo-foco grid size-tactil cursor-pointer place-items-center border-0 bg-transparent p-0"
           [attr.aria-pressed]="colorElegido() === color.valor ? 'true' : 'false'"
-          [attr.aria-label]="'catalogo.colores.elegir' | transloco: { color: nombreDeColor(color.valor) }"
+          [attr.aria-label]="
+            'catalogo.colores.elegir' | transloco: { color: nombreDeColor(color.valor) }
+          "
           (click)="elegirColor(color.valor)"
         >
-          <span
-            [class]="claseMuestra(colorElegido() === color.valor)"
-            [style.background-color]="color.colorHex"
-          ></span>
+          <span [class]="claseMuestra(colorElegido() === color.valor)">
+            <ts-muestra-color [partes]="color.muestra" />
+          </span>
         </button>
       }
       @if (coloresOcultos() > 0) {
         <span class="text-xs text-ts-texto-suave">
           @if (coloresOcultos() === 1) {
-          {{ 'catalogo.colores.mas_uno' | transloco }}
-        } @else {
-          {{ 'catalogo.colores.mas' | transloco: { cantidad: coloresOcultos() } }}
-        }
+            {{ 'catalogo.colores.mas_uno' | transloco }}
+          } @else {
+            {{ 'catalogo.colores.mas' | transloco: { cantidad: coloresOcultos() } }}
+          }
         </span>
       }
     </div>

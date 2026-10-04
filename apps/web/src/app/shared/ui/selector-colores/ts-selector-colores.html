@@ -1,0 +1,92 @@
+<div class="flex flex-col gap-4">
+  <!-- El asterisco fuera del `<label>`, como en `ts-select`: dentro se colaría en el texto. -->
+  <div class="flex items-baseline gap-4">
+    <label [class]="clasesEtiqueta" [for]="idCampo()" [id]="idCampo() + '-etiqueta'">{{
+      label()
+    }}</label>
+    @if (obligatorio()) {
+      <span class="text-ts-texto-suave" aria-hidden="true">*</span>
+    }
+  </div>
+  @if (ayuda(); as textoDeAyuda) {
+    <p [class]="clasesAyuda" [id]="idAyuda()">{{ textoDeAyuda }}</p>
+  }
+
+  <button
+    #boton
+    type="button"
+    [class]="clasesBoton"
+    [id]="idCampo()"
+    [attr.aria-expanded]="abierto() ? 'true' : 'false'"
+    [attr.aria-controls]="idLista()"
+    [attr.aria-describedby]="ayuda() ? idAyuda() : null"
+    [attr.aria-required]="obligatorio() ? 'true' : null"
+    [attr.aria-labelledby]="idCampo() + '-etiqueta ' + idCampo() + '-valor'"
+    (click)="alternar()"
+  >
+    @if (muestra().length > 0) {
+      <span
+        class="block size-24 shrink-0 overflow-hidden rounded-completo border border-ts-borde-control"
+      >
+        <ts-muestra-color [partes]="muestra()" />
+      </span>
+    }
+    <!-- En el nombre del botón junto a la etiqueta: con solo el `<label>`, un lector de pantalla
+         decía «Color, botón» y no qué colores había marcados. Visto en el navegador. -->
+    <span class="min-w-0 flex-1 truncate" [id]="idCampo() + '-valor'">{{ resumen() }}</span>
+    <ts-icono class="shrink-0 text-ts-texto-suave" [icono]="iconoChevron" clase="size-16" />
+  </button>
+
+  @if (abierto()) {
+    <div
+      class="flex flex-col gap-8 rounded-md border border-ts-borde-control bg-ts-superficie p-12"
+      role="group"
+      [id]="idLista()"
+      [attr.aria-label]="label()"
+      (keydown.escape)="cerrar()"
+    >
+      <div class="flex flex-col gap-4">
+        <label [class]="clasesEtiqueta" [for]="idCampo() + '-buscar'">{{ textos().buscar }}</label>
+        <input
+          #buscador
+          [class]="clasesBuscador"
+          [id]="idCampo() + '-buscar'"
+          type="search"
+          autocomplete="off"
+          [value]="filtro()"
+          (input)="filtro.set($any($event.target).value)"
+        />
+      </div>
+
+      <!-- Siempre en el DOM: la región viva cambia de contenido, no de existencia. -->
+      <p class="m-0 text-sm text-ts-texto-suave" role="status">
+        @if (lleno()) {
+          {{ textos().maximo }}
+        }
+      </p>
+
+      <ul
+        class="m-0 flex max-h-[var(--control-lista-desplegable)] list-none flex-col overflow-y-auto p-0"
+      >
+        @for (opcion of visibles(); track opcion.valor) {
+          <li class="flex items-center gap-8">
+            <span
+              class="block size-24 shrink-0 overflow-hidden rounded-completo border border-ts-borde-control"
+            >
+              <ts-muestra-color [partes]="[opcion.muestra]" />
+            </span>
+            <ts-checkbox
+              [idCasilla]="idCampo() + '-' + $index"
+              [etiqueta]="etiquetaDe(opcion)"
+              [marcado]="posicion(opcion.valor) !== null"
+              [deshabilitado]="deshabilitada(opcion.valor)"
+              (marcadoCambio)="marcar(opcion.valor, $event)"
+            />
+          </li>
+        } @empty {
+          <li class="text-sm text-ts-texto-suave">{{ textos().sinResultados }}</li>
+        }
+      </ul>
+    </div>
+  }
+</div>

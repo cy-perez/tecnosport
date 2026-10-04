@@ -16,10 +16,9 @@
             [attr.aria-label]="nombreDeColor(opcion)"
             (click)="elegir(eje.nombre, opcion)"
           >
-            <span
-              [class]="claseMuestra(estaSeleccionada(eje.nombre, opcion))"
-              [style.background-color]="opcion.colorHex"
-            ></span>
+            <span [class]="claseMuestra(estaSeleccionada(eje.nombre, opcion))">
+              <ts-muestra-color [partes]="muestraDeOpcion(opcion)" />
+            </span>
           </button>
         } @else {
           <!-- Una talla agotada o que este producto no trae se ve tachada y no se elige, pero sigue

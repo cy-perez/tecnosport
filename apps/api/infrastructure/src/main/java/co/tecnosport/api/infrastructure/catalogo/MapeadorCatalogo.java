@@ -253,7 +253,8 @@ public class MapeadorCatalogo {
                     new ValorAtributo(
                         aAtributo(atributosPorId.get(val.getAtributoId())),
                         val.getValor(),
-                        val.getColorHex()))
+                        val.getColorHex(),
+                        CodecDeMuestra.deTexto(val.getMuestra(), val.getColorHex())))
             .toList();
 
     SetRotacion setRotacionPropio =

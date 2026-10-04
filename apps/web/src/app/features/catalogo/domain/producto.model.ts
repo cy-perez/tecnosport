@@ -40,12 +40,29 @@ export interface Rotacion {
   readonly imagenes: readonly ImagenRotacion[];
 }
 
+/** Lo que no es un color sino un diseño. Los mismos nombres que `PatronDeColor` en la API. */
+export type PatronDeColor = 'MULTICOLOR' | 'ESTAMPADO' | 'ANIMAL_PRINT';
+
+/**
+ * Una porción del círculo de un color: `patron` nulo es liso y trae un solo color; un patrón trae
+ * los suyos en orden. «Negro / Rojo» son dos porciones, en el orden en que se eligieron.
+ */
+export interface ParteDeMuestra {
+  readonly patron: PatronDeColor | null;
+  readonly colores: readonly string[];
+}
+
 export interface ValorAtributo {
   readonly nombre: string;
   readonly valor: string;
   readonly colorHex: string | null;
   /** Lo que acompaña al valor cuando el número solo no dice nada: "12" + "meses". */
   readonly unidad: string | null;
+  /**
+   * Las porciones del círculo, en un color. Ausente o vacía, la muestra es `colorHex` solo: así la
+   * cargaba todo antes de las combinaciones (4 de octubre de 2026). Leerla con `muestraDe`.
+   */
+  readonly muestra?: readonly ParteDeMuestra[];
 }
 
 export interface Variante {
@@ -114,6 +131,9 @@ export interface ColorDePaleta {
   readonly nombre: string;
   readonly nombreEn: string;
   readonly hex: string;
+  /** Un diseño —multicolor, estampado, animal print— y los colores que lo dibujan. */
+  readonly patron?: PatronDeColor | null;
+  readonly coloresPatron?: readonly string[];
 }
 
 export interface Producto {
@@ -195,4 +215,48 @@ export function precioDesde(producto: Producto): Dinero | null {
 
 export function hayExistencia(producto: Producto): boolean {
   return producto.variantes.some((variante) => variante.disponible);
+}
+
+/** La muestra de un valor de color: sus porciones, o `colorHex` solo si no las trae. */
+export function muestraDe(valor: {
+  readonly colorHex: string | null;
+  readonly muestra?: readonly ParteDeMuestra[];
+}): readonly ParteDeMuestra[] {
+  if (valor.muestra && valor.muestra.length > 0) {
+    return valor.muestra;
+  }
+  return valor.colorHex ? [{ patron: null, colores: [valor.colorHex] }] : [];
+}
+
+/** La porción que pinta un color de la paleta: su patrón, o su HEX liso. */
+export function parteDeColor(color: ColorDePaleta): ParteDeMuestra {
+  return color.patron && color.coloresPatron && color.coloresPatron.length > 0
+    ? { patron: color.patron, colores: color.coloresPatron }
+    : { patron: null, colores: [color.hex] };
+}
+
+/** Un color de la paleta listo para marcar: su nombre en español, lo que se lee y su muestra. */
+export interface ColorParaElegir {
+  readonly valor: string;
+  readonly etiqueta: string;
+  readonly muestra: ParteDeMuestra;
+}
+
+/**
+ * La paleta como se ofrece para elegir, en orden alfabético de lo que se lee: el valor es el
+ * nombre en español —el del atributo Color— y, en inglés, la etiqueta lleva el inglés delante.
+ */
+export function paletaParaElegir(
+  paleta: readonly ColorDePaleta[],
+  idioma: string,
+): ColorParaElegir[] {
+  const ingles = idioma === 'en';
+  const comparador = new Intl.Collator(idioma, { sensitivity: 'base', numeric: true });
+  return paleta
+    .map((color) => ({
+      valor: color.nombre,
+      etiqueta: ingles ? `${color.nombreEn} (${color.nombre})` : color.nombre,
+      muestra: parteDeColor(color),
+    }))
+    .sort((uno, otro) => comparador.compare(uno.etiqueta, otro.etiqueta));
 }

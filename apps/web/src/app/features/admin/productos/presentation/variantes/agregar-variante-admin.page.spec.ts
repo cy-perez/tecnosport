@@ -263,7 +263,7 @@ describe('AgregarVarianteAdminPage', () => {
    * El color se elige de la paleta, en orden alfabético, y el HEX sale de ella: el mismo nombre y
    * la misma muestra que pone la revisión de un borrador.
    */
-  it('un atributo de color se elige de la paleta y manda su HEX', async () => {
+  it('un atributo de color se elige de la paleta, hasta tres y en orden', async () => {
     const repositorio = new RepositorioProductosAdminFalso();
     const { fixture } = await renderPagina(repositorio, 'p1');
     vi.spyOn(fixture.debugElement.injector.get(Router), 'navigate').mockResolvedValue(true);
@@ -275,18 +275,20 @@ describe('AgregarVarianteAdminPage', () => {
     await screen.findByRole('option', { name: 'Color' });
     fireEvent.change(screen.getByLabelText('Atributo'), { target: { value: 'a1' } });
 
-    const selector = (await screen.findByLabelText(/^Color/)) as HTMLSelectElement;
-    await screen.findByRole('option', { name: 'Vino' });
-    const nombres = [...selector.options].map((o) => o.textContent?.trim()).filter((t) => t);
-    expect(nombres.slice(-3)).toEqual(['Café', 'Negro', 'Vino']);
+    fireEvent.click(await screen.findByRole('button', { name: /^Color/ }));
     expect(screen.queryByLabelText('Valor')).toBeNull();
+    const nombres = (await screen.findAllByRole('checkbox')).map((c) =>
+      (c as HTMLInputElement).labels?.[0]?.textContent?.trim(),
+    );
+    expect(nombres).toEqual(['Café', 'Negro', 'Vino']);
 
-    fireEvent.change(selector, { target: { value: 'Negro' } });
+    fireEvent.click(screen.getByLabelText('Negro'));
+    fireEvent.click(screen.getByLabelText('Vino'));
     fireEvent.click(screen.getByRole('button', { name: 'Crear variante' }));
 
     await vi.waitFor(() => expect(repositorio.llamadasAgregarVariante).toHaveLength(1));
     expect(repositorio.llamadasAgregarVariante[0].atributos).toEqual([
-      { atributoId: 'a1', valor: 'Negro', colorHex: '#111111' },
+      { atributoId: 'a1', valor: 'Negro / Vino', colorHex: '#111111' },
     ]);
   });
 

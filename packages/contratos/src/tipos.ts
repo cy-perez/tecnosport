@@ -1639,6 +1639,7 @@ export interface components {
         };
         AtributoValorRespuesta: {
             colorHex?: string;
+            muestra?: components["schemas"]["ParteDeMuestraRespuesta"][];
             nombre?: string;
             unidad?: string;
             valor?: string;
@@ -1722,11 +1723,13 @@ export interface components {
             slug?: string;
         };
         ColorDePaletaRespuesta: {
+            coloresPatron?: string[];
             hex?: string;
             /** Format: uuid */
             id?: string;
             nombre?: string;
             nombreEn?: string;
+            patron?: string;
         };
         CompletarSetRotacionPeticion: {
             fotogramas?: components["schemas"]["FotogramaPeticion"][];
@@ -2193,6 +2196,10 @@ export interface components {
             direccion?: components["schemas"]["DireccionRequest"];
             lineas?: components["schemas"]["LineaRequest"][];
             tipoEntrega?: string;
+        };
+        ParteDeMuestraRespuesta: {
+            colores?: string[];
+            patron?: string;
         };
         PedidoRespuesta: {
             contacto?: components["schemas"]["ContactoRespuesta"];

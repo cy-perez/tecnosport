@@ -1,3 +1,4 @@
+import { TsMuestraColor } from '../../../../shared/ui/muestra-color/ts-muestra-color';
 import { NgOptimizedImage } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
@@ -24,7 +25,7 @@ import {
 /** Cuántas muestras caben en una tarjeta sin envolver en dos filas; el resto se cuenta. */
 const MUESTRAS_VISIBLES = 5;
 
-const MUESTRA_BASE = 'block size-24 rounded-completo';
+const MUESTRA_BASE = 'block size-24 overflow-hidden rounded-completo';
 const MUESTRA = `${MUESTRA_BASE} border border-ts-borde-control`;
 const MUESTRA_ACTIVA = `${MUESTRA_BASE} border-2 border-ts-primario`;
 
@@ -38,7 +39,7 @@ const MUESTRA_ACTIVA = `${MUESTRA_BASE} border-2 border-ts-primario`;
  */
 @Component({
   selector: 'ts-tarjeta-producto',
-  imports: [NgOptimizedImage, TranslocoPipe, TsPrecio, TsEtiquetaStock, RouterLink],
+  imports: [NgOptimizedImage, TranslocoPipe, TsPrecio, TsEtiquetaStock, RouterLink, TsMuestraColor],
   templateUrl: './ts-tarjeta-producto.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

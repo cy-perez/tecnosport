@@ -194,13 +194,13 @@
               }
             }
             @if (editable() && opcionesTono().length > 0) {
-              <ts-select
+              <ts-selector-colores
                 [idCampo]="'tono-foto-' + i"
                 [label]="'admin.borradores.aprobar.tonoDeFoto' | transloco: { numero: i + 1 }"
                 [opciones]="opcionesTono()"
-                [placeholder]="'admin.borradores.aprobar.todosLosTonos' | transloco"
-                [valor]="tonoDe(foto.mensajeId)"
-                (cambio)="elegirTono(foto.mensajeId, $event)"
+                [seleccion]="coloresDe(foto.mensajeId)"
+                [textos]="textosColores()"
+                (seleccionCambio)="elegirColores(foto.mensajeId, $event)"
               />
             }
           </li>
