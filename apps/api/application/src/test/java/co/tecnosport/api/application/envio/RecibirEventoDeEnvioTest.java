@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import co.tecnosport.api.application.compartido.EnTransaccionPropiaFalsa;
 import co.tecnosport.api.application.pedido.MarcarEntregado;
 import co.tecnosport.api.application.pedido.RechazarEnEntrega;
 import co.tecnosport.api.domain.compartido.Dinero;
@@ -59,7 +60,10 @@ class RecibirEventoDeEnvioTest {
           return List.of(queDevuelveElRastreo);
         };
     return new RecibirEventoDeEnvio(
-        verificador, lector, envios, new ConciliarGuia(consultor, aplicar));
+        verificador,
+        lector,
+        envios,
+        new ConciliarGuia(consultor, aplicar, new EnTransaccionPropiaFalsa()));
   }
 
   private static AplicarEventoDeEnvioComando eventoDePrueba() {

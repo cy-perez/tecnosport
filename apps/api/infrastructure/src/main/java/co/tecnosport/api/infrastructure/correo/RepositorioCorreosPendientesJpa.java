@@ -5,9 +5,12 @@ import co.tecnosport.api.application.compartido.RepositorioCorreosPendientes;
 import co.tecnosport.api.domain.compartido.CorreoElectronico;
 import co.tecnosport.api.infrastructure.correo.entidad.CorreoPendienteJpaEntity;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,18 +29,37 @@ import org.springframework.transaction.annotation.Transactional;
 @Component
 public class RepositorioCorreosPendientesJpa implements RepositorioCorreosPendientes {
 
+  private static final Logger log = LoggerFactory.getLogger(RepositorioCorreosPendientesJpa.class);
+
   private final CorreoPendienteJpaRepository correos;
 
   public RepositorioCorreosPendientesJpa(CorreoPendienteJpaRepository correos) {
     this.correos = Objects.requireNonNull(correos);
   }
 
+  /**
+   * Una fila que no se deja leer —un destinatario que ya no pasa la validación de {@code
+   * CorreoElectronico}— revienta al mapearse. Antes eso lanzaba antes del bucle del drenaje y
+   * ningún correo salía mientras esa fila existiera; ahora se rinde con su motivo y las demás
+   * siguen.
+   */
   @Override
+  @Transactional
   public List<CorreoPendiente> buscarEnviables(int maxIntentos, Instant ahora, int limite) {
     Objects.requireNonNull(ahora, "La fecha no puede ser nula.");
-    return correos.buscarEnviables(maxIntentos, ahora, PageRequest.of(0, limite)).stream()
-        .map(RepositorioCorreosPendientesJpa::aCorreoPendiente)
-        .toList();
+    List<CorreoPendiente> enviables = new ArrayList<>();
+    for (CorreoPendienteJpaEntity entidad :
+        correos.buscarEnviables(maxIntentos, ahora, PageRequest.of(0, limite))) {
+      try {
+        enviables.add(aCorreoPendiente(entidad));
+      } catch (RuntimeException ilegible) {
+        log.error(
+            "Correo pendiente {} imposible de mandar: {}", entidad.getId(), ilegible.toString());
+        correos.rendir(
+            entidad.getId(), maxIntentos, "ilegible: " + ilegible.getClass().getSimpleName());
+      }
+    }
+    return enviables;
   }
 
   @Override

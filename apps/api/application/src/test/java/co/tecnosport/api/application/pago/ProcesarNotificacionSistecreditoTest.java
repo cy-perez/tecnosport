@@ -67,7 +67,12 @@ class ProcesarNotificacionSistecreditoTest {
     pago.registrarIdTransaccionPasarela(ID_TRANSACCION);
     pagos.guardar(pago);
     return new ProcesarNotificacionSistecredito(
-        pagos, pedidos, inventarios, pasarela, new RelojFalso(AHORA));
+        pagos,
+        pedidos,
+        inventarios,
+        pasarela,
+        new RelojFalso(AHORA),
+        new EnTransaccionPropiaFalsa());
   }
 
   /** Con reserva vigente: confirmar o liberar la encuentran válida, como en un pedido real. */

@@ -18,8 +18,6 @@ import java.util.Objects;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
-import org.springframework.transaction.PlatformTransactionManager;
-import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -43,15 +41,12 @@ public class SistecreditoControlador {
 
   private final CrearIntentoDePagoSistecredito crearIntento;
   private final ProcesarNotificacionSistecredito procesarNotificacion;
-  private final TransactionTemplate transaccion;
 
   public SistecreditoControlador(
       CrearIntentoDePagoSistecredito crearIntento,
-      ProcesarNotificacionSistecredito procesarNotificacion,
-      PlatformTransactionManager transactionManager) {
+      ProcesarNotificacionSistecredito procesarNotificacion) {
     this.crearIntento = Objects.requireNonNull(crearIntento);
     this.procesarNotificacion = Objects.requireNonNull(procesarNotificacion);
-    this.transaccion = new TransactionTemplate(Objects.requireNonNull(transactionManager));
   }
 
   /**
@@ -104,8 +99,9 @@ public class SistecreditoControlador {
   }
 
   /**
-   * <b>El {@code catch} va fuera del {@code TransactionTemplate} y no dentro</b>: atraparlo dentro
-   * dejaría la transacción marcada para deshacer y confirmarla reventaría igual, con otro nombre.
+   * El caso de uso abre su propia transacción para escribir, después de consultar a la pasarela; el
+   * {@code catch} queda fuera de ella, porque atraparlo dentro dejaría la transacción marcada para
+   * deshacer y confirmarla reventaría igual, con otro nombre.
    *
    * <p>Que dos copias de la misma notificación entren a la vez no es un error: Sistecrédito lo hizo
    * en las dos corridas de prueba del 23 de septiembre de 2026. La guarda del caso de uso —un pago
@@ -117,7 +113,7 @@ public class SistecreditoControlador {
   private ResultadoNotificacionSistecredito aplicar(
       ProcesarNotificacionSistecreditoComando comando) {
     try {
-      return transaccion.execute(estado -> procesarNotificacion.ejecutar(comando));
+      return procesarNotificacion.ejecutar(comando);
     } catch (EventoDePagoYaRegistradoException e) {
       return ResultadoNotificacionSistecredito.YA_PROCESADO;
     }

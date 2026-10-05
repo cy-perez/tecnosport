@@ -17,6 +17,13 @@ spring:
   flyway:
     enabled: true
     locations: classpath:db/migration
+  task:
+    scheduling:
+      pool:
+        # Boot 4.1 trae un solo hilo para todas las tareas @Scheduled (lo dice su metadata, valor
+        # por omisión 1): una que se colgara —un tercero sin responder— detenía a las demás. Con
+        # varios hilos, una tarea lenta deja de bloquear la conciliación de pagos.
+        size: ${PLANIFICADOR_HILOS:4}
   jpa:
     open-in-view: false
     hibernate:
@@ -41,6 +48,12 @@ spring:
           auth: ${SMTP_AUTH:false}
           starttls:
             enable: true
+          # Jakarta Mail espera sin límite por omisión. Las tareas programadas comparten hilos, y un
+          # servidor SMTP que dejara colgada una conexión detenía también, sin un solo error, la
+          # conciliación de pagos y de envíos. En milisegundos.
+          connectiontimeout: ${SMTP_TIMEOUT_CONEXION_MS:10000}
+          timeout: ${SMTP_TIMEOUT_LECTURA_MS:10000}
+          writetimeout: ${SMTP_TIMEOUT_ESCRITURA_MS:10000}
 
 tecnosport:
   siembra:

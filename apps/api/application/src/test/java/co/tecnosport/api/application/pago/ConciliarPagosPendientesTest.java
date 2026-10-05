@@ -44,7 +44,13 @@ class ConciliarPagosPendientesTest {
     inventarios = new RepositorioInventarioFalso();
     pasarela = new PasarelaDePagosFalsa();
     return new ConciliarPagosPendientes(
-        pagos, pedidos, inventarios, pasarela, new RelojFalso(AHORA), ANTIGUEDAD_MINIMA);
+        pagos,
+        pedidos,
+        inventarios,
+        pasarela,
+        new RelojFalso(AHORA),
+        ANTIGUEDAD_MINIMA,
+        new EnTransaccionPropiaFalsa());
   }
 
   private LineaPedido lineaConReservaVigente() {

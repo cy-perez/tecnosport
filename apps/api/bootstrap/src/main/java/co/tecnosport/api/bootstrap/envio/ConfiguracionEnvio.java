@@ -194,8 +194,10 @@ public class ConfiguracionEnvio {
    */
   @Bean
   public ConciliarGuia conciliarGuia(
-      ConsultorDeSeguimiento consultor, AplicarEventoDeEnvio aplicarEvento) {
-    return new ConciliarGuia(consultor, aplicarEvento);
+      ConsultorDeSeguimiento consultor,
+      AplicarEventoDeEnvio aplicarEvento,
+      EnTransaccionPropia enTransaccionPropia) {
+    return new ConciliarGuia(consultor, aplicarEvento, enTransaccionPropia);
   }
 
   /**
@@ -209,13 +211,11 @@ public class ConfiguracionEnvio {
   public ConciliarEnvios conciliarEnvios(
       RepositorioEnvios repositorioEnvios,
       ConciliarGuia conciliarGuia,
-      EnTransaccionPropia enTransaccionPropia,
       Reloj reloj,
       PropiedadesSeguimientoEnvios propiedades) {
     return new ConciliarEnvios(
         repositorioEnvios,
         conciliarGuia,
-        enTransaccionPropia,
         reloj,
         Duration.ofHours(propiedades.antiguedadMinimaHoras()),
         propiedades.maximoPorCorrida());

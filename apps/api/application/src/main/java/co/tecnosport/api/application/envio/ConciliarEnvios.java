@@ -1,6 +1,5 @@
 package co.tecnosport.api.application.envio;
 
-import co.tecnosport.api.application.compartido.EnTransaccionPropia;
 import co.tecnosport.api.application.compartido.Reloj;
 import co.tecnosport.api.domain.envio.Envio;
 import co.tecnosport.api.domain.envio.GuiaEnvio;
@@ -35,13 +34,13 @@ import java.util.Objects;
  * idéntico al de una guía sin eventos todavía, así que se registraría como "sin novedad" algo que
  * en realidad nadie miró.
  *
- * <p><strong>Una guía que revienta tampoco.</strong> Cada guía se aplica en su propia transacción
- * ({@link EnTransaccionPropia}): hay un tercero en la mitad —la consulta a la plataforma—, así que
- * el lote nunca fue atómico de verdad, y agruparlo solo conseguía que una excepción revirtiera lo
- * ya conciliado. Pasó: un pedido pagado y devuelto hacía reventar el rechazo en cada vuelta, la
- * corrida entera se revertía, y como ese envío era de los más viejos volvía a ser el primero en la
- * siguiente. Ningún otro envío registró su entrega mientras tanto. La guía que falla se cuenta y su
- * motivo sube a quien registra; las demás siguen.
+ * <p><strong>Una guía que revienta tampoco.</strong> Cada evento se aplica en su propia transacción
+ * —la abre {@link ConciliarGuia}, con la consulta a la plataforma fuera—: hay un tercero en la
+ * mitad, así que el lote nunca fue atómico de verdad, y agruparlo solo conseguía que una excepción
+ * revirtiera lo ya conciliado. Pasó: un pedido pagado y devuelto hacía reventar el rechazo en cada
+ * vuelta, la corrida entera se revertía, y como ese envío era de los más viejos volvía a ser el
+ * primero en la siguiente. Ningún otro envío registró su entrega mientras tanto. La guía que falla
+ * se cuenta y su motivo sube a quien registra; las demás siguen.
  *
  * <p><strong>Un proveedor caído no puede tumbar el lote.</strong> Una consulta que falla devuelve
  * lista vacía y ese envío queda para la próxima corrida; los demás se revisan igual. Es el mismo
@@ -52,7 +51,6 @@ public final class ConciliarEnvios {
 
   private final RepositorioEnvios repositorioEnvios;
   private final ConciliarGuia conciliarGuia;
-  private final EnTransaccionPropia enTransaccionPropia;
   private final Reloj reloj;
   private final Duration antiguedadMinima;
   private final int maximoPorCorrida;
@@ -60,13 +58,11 @@ public final class ConciliarEnvios {
   public ConciliarEnvios(
       RepositorioEnvios repositorioEnvios,
       ConciliarGuia conciliarGuia,
-      EnTransaccionPropia enTransaccionPropia,
       Reloj reloj,
       Duration antiguedadMinima,
       int maximoPorCorrida) {
     this.repositorioEnvios = Objects.requireNonNull(repositorioEnvios);
     this.conciliarGuia = Objects.requireNonNull(conciliarGuia);
-    this.enTransaccionPropia = Objects.requireNonNull(enTransaccionPropia);
     this.reloj = Objects.requireNonNull(reloj);
     this.antiguedadMinima = Objects.requireNonNull(antiguedadMinima);
     if (maximoPorCorrida <= 0) {
@@ -102,7 +98,7 @@ public final class ConciliarEnvios {
         // las dos peticiones por segundo, así que tampoco cuenta contra el tope.
         ResultadoEventoDeEnvio resultado;
         try {
-          resultado = enTransaccionPropia.ejecutar(() -> conciliarGuia.ejecutar(guia));
+          resultado = conciliarGuia.ejecutar(guia);
         } catch (RuntimeException e) {
           // Gastó su consulta igual, así que cuenta contra el tope.
           consultadas++;

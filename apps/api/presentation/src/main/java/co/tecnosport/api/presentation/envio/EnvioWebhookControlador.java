@@ -8,8 +8,6 @@ import java.util.Objects;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
-import org.springframework.transaction.PlatformTransactionManager;
-import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -44,15 +42,11 @@ public class EnvioWebhookControlador {
   private static final Logger log = LoggerFactory.getLogger(EnvioWebhookControlador.class);
 
   private final RecibirEventoDeEnvio recibirEvento;
-  private final TransactionTemplate transaccion;
   private final String cabeceraFirma;
 
   public EnvioWebhookControlador(
-      RecibirEventoDeEnvio recibirEvento,
-      PlatformTransactionManager transactionManager,
-      PropiedadesWebhookEnvio propiedades) {
+      RecibirEventoDeEnvio recibirEvento, PropiedadesWebhookEnvio propiedades) {
     this.recibirEvento = Objects.requireNonNull(recibirEvento);
-    this.transaccion = new TransactionTemplate(Objects.requireNonNull(transactionManager));
     this.cabeceraFirma = Objects.requireNonNull(propiedades).cabeceraFirma();
   }
 
@@ -70,7 +64,9 @@ public class EnvioWebhookControlador {
     String firma = peticion.getHeader(cabeceraFirma);
     String cuerpoCrudo = new String(cuerpo, StandardCharsets.UTF_8);
     ResultadoEventoDeEnvio resultado =
-        transaccion.execute(estado -> recibirEvento.ejecutar(cuerpoCrudo, firma));
+        // Sin transacción alrededor: recibir el evento consulta a la plataforma por HTTP, y cada
+        // evento que trae se aplica en su propia transacción (ConciliarGuia).
+        recibirEvento.ejecutar(cuerpoCrudo, firma);
     registrar(resultado);
     return ResponseEntity.ok().build();
   }

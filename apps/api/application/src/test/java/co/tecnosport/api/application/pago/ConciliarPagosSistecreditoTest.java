@@ -47,7 +47,13 @@ class ConciliarPagosSistecreditoTest {
     inventarios = new RepositorioInventarioFalso();
     pasarela = new PasarelaSistecreditoFalsa();
     return new ConciliarPagosSistecredito(
-        pagos, pedidos, inventarios, pasarela, new RelojFalso(AHORA), Duration.ofMinutes(5));
+        pagos,
+        pedidos,
+        inventarios,
+        pasarela,
+        new RelojFalso(AHORA),
+        Duration.ofMinutes(5),
+        new EnTransaccionPropiaFalsa());
   }
 
   private Pago pagoPendienteCon(MetodoPago metodoPago, String idTransaccion, int secuencial) {
@@ -214,7 +220,12 @@ class ConciliarPagosSistecreditoTest {
 
     ProcesarNotificacionSistecredito notificacion =
         new ProcesarNotificacionSistecredito(
-            pagos, pedidos, inventarios, pasarela, new RelojFalso(AHORA));
+            pagos,
+            pedidos,
+            inventarios,
+            pasarela,
+            new RelojFalso(AHORA),
+            new EnTransaccionPropiaFalsa());
     ResultadoNotificacionSistecredito resultado =
         notificacion.ejecutar(
             new ProcesarNotificacionSistecreditoComando(

@@ -1,5 +1,6 @@
 package co.tecnosport.api.bootstrap.pago;
 
+import co.tecnosport.api.application.compartido.EnTransaccionPropia;
 import co.tecnosport.api.application.compartido.Reloj;
 import co.tecnosport.api.application.inventario.RepositorioInventario;
 import co.tecnosport.api.application.pago.ConciliarPagosPendientes;
@@ -77,6 +78,7 @@ public class ConfiguracionWompi {
       RepositorioInventario repositorioInventario,
       PasarelaDePagos pasarelaDePagos,
       Reloj reloj,
+      EnTransaccionPropia enTransaccionPropia,
       PropiedadesConciliacionWompi propiedades) {
     return new ConciliarPagosPendientes(
         repositorioPagos,
@@ -84,6 +86,7 @@ public class ConfiguracionWompi {
         repositorioInventario,
         pasarelaDePagos,
         reloj,
-        Duration.ofMinutes(propiedades.antiguedadMinimaMinutos()));
+        Duration.ofMinutes(propiedades.antiguedadMinimaMinutos()),
+        enTransaccionPropia);
   }
 }

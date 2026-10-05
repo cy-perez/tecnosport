@@ -8,14 +8,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.PlatformTransactionManager;
-import org.springframework.transaction.support.TransactionTemplate;
 
 /**
- * Gemela de {@code TareaConciliacionWompi}, y por el mismo motivo: la conciliación corre dentro de
- * su propia transacción para que un fallo a mitad del lote no deje un {@code Pago} actualizado sin
- * su {@code Pedido}. Un lote fallido se reintenta en la siguiente corrida — el mecanismo es
- * idempotente por diseño.
+ * Gemela de {@code TareaConciliacionWompi}: una transacción por pago, con la consulta a la pasarela
+ * fuera de ella. Lo que falle se reintenta en la corrida siguiente — el mecanismo es idempotente
+ * por diseño.
  *
  * <p>Corre aunque el método esté apagado, y no pasa nada: sin pagos de Sistecrédito la consulta
  * devuelve una lista vacía y la tarea no llama a nadie.
@@ -26,12 +23,9 @@ public class TareaConciliacionSistecredito {
   private static final Logger log = LoggerFactory.getLogger(TareaConciliacionSistecredito.class);
 
   private final ConciliarPagosSistecredito conciliarPagos;
-  private final TransactionTemplate transaccion;
 
-  public TareaConciliacionSistecredito(
-      ConciliarPagosSistecredito conciliarPagos, PlatformTransactionManager transactionManager) {
+  public TareaConciliacionSistecredito(ConciliarPagosSistecredito conciliarPagos) {
     this.conciliarPagos = Objects.requireNonNull(conciliarPagos);
-    this.transaccion = new TransactionTemplate(Objects.requireNonNull(transactionManager));
   }
 
   @Scheduled(
@@ -39,7 +33,7 @@ public class TareaConciliacionSistecredito {
       initialDelayString = "${tecnosport.sistecredito.conciliacion.intervalo-minutos}",
       timeUnit = TimeUnit.MINUTES)
   public void conciliar() {
-    ResultadoConciliacion resultado = transaccion.execute(estado -> conciliarPagos.ejecutar());
+    ResultadoConciliacion resultado = conciliarPagos.ejecutar();
     if (resultado.revisados() == 0) {
       return;
     }
@@ -48,5 +42,11 @@ public class TareaConciliacionSistecredito {
         resultado.revisados(),
         resultado.conciliados(),
         resultado.sinNovedad());
+    if (!resultado.errores().isEmpty()) {
+      log.error(
+          "Conciliación: {} pagos fallaron y se reintentan en la vuelta siguiente: {}",
+          resultado.errores().size(),
+          resultado.errores());
+    }
   }
 }

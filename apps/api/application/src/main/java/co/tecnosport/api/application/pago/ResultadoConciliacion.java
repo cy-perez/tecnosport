@@ -1,8 +1,21 @@
 package co.tecnosport.api.application.pago;
 
+import java.util.List;
+import java.util.Objects;
+
 /**
- * {@code sinNovedad} agrupa todo lo que no cambió nada: la transacción sigue pendiente en Wompi, la
- * consulta falló (red, id inexistente — se reintenta en la próxima corrida), o el evento ya se
- * había aplicado antes (por ejemplo, el webhook llegó justo antes que esta corrida).
+ * Lo que hizo una corrida de conciliación. {@code errores} lleva los pagos que reventaron: se
+ * saltan y se reintentan en la vuelta siguiente, pero tienen que verse —antes revertían la corrida
+ * entera y no se veía nada—.
  */
-public record ResultadoConciliacion(int revisados, int conciliados, int sinNovedad) {}
+public record ResultadoConciliacion(
+    int revisados, int conciliados, int sinNovedad, List<String> errores) {
+
+  public ResultadoConciliacion {
+    errores = List.copyOf(Objects.requireNonNull(errores));
+  }
+
+  public ResultadoConciliacion(int revisados, int conciliados, int sinNovedad) {
+    this(revisados, conciliados, sinNovedad, List.of());
+  }
+}

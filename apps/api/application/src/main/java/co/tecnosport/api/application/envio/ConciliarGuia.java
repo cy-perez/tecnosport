@@ -1,5 +1,6 @@
 package co.tecnosport.api.application.envio;
 
+import co.tecnosport.api.application.compartido.EnTransaccionPropia;
 import co.tecnosport.api.domain.envio.GuiaEnvio;
 import java.util.List;
 import java.util.Objects;
@@ -26,10 +27,15 @@ public final class ConciliarGuia {
 
   private final ConsultorDeSeguimiento consultor;
   private final AplicarEventoDeEnvio aplicar;
+  private final EnTransaccionPropia enTransaccionPropia;
 
-  public ConciliarGuia(ConsultorDeSeguimiento consultor, AplicarEventoDeEnvio aplicar) {
+  public ConciliarGuia(
+      ConsultorDeSeguimiento consultor,
+      AplicarEventoDeEnvio aplicar,
+      EnTransaccionPropia enTransaccionPropia) {
     this.consultor = Objects.requireNonNull(consultor);
     this.aplicar = Objects.requireNonNull(aplicar);
+    this.enTransaccionPropia = Objects.requireNonNull(enTransaccionPropia);
   }
 
   /**
@@ -48,7 +54,11 @@ public final class ConciliarGuia {
 
     ResultadoEventoDeEnvio desenlace = ResultadoEventoDeEnvio.REPETIDO;
     for (AplicarEventoDeEnvioComando evento : eventos) {
-      ResultadoEventoDeEnvio resultado = aplicar.ejecutar(evento);
+      // La consulta de arriba es HTTP y va fuera de toda transacción; cada evento se aplica en la
+      // suya. Antes la tarea y el webhook envolvían todo, y una conexión de la base quedaba
+      // retenida mientras la plataforma contestaba, con su límite de dos peticiones por segundo.
+      ResultadoEventoDeEnvio resultado =
+          enTransaccionPropia.ejecutar(() -> aplicar.ejecutar(evento));
       if (resultado == ResultadoEventoDeEnvio.REGISTRADO_Y_APLICADO) {
         desenlace = resultado;
       } else if (resultado == ResultadoEventoDeEnvio.REGISTRADO

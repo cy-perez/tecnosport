@@ -54,8 +54,7 @@ class ConciliarEnviosTest {
             () -> AHORA);
     return new ConciliarEnvios(
         envios,
-        new ConciliarGuia(consultor, aplicar),
-        transacciones,
+        new ConciliarGuia(consultor, aplicar, transacciones),
         () -> AHORA,
         ANTIGUEDAD,
         MAXIMO);
@@ -248,6 +247,7 @@ class ConciliarEnviosTest {
     assertTrue(resultado.errores().get(0).contains("reserva ya procesada"));
     assertEquals(1, eventosDe("NN-2").size());
     assertEquals(0, eventosDe("NN-1").size());
-    assertEquals(2, transacciones.veces());
+    // Una transacción por evento aplicado: el de NN-2. La consulta de NN-1 reventó antes.
+    assertEquals(1, transacciones.veces());
   }
 }

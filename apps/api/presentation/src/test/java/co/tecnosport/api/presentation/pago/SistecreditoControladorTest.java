@@ -253,7 +253,12 @@ class SistecreditoControladorTest {
         RepositorioInventario repositorioInventario,
         PasarelaSistecredito pasarela) {
       return new ProcesarNotificacionSistecredito(
-          repositorioPagos, repositorioPedidos, repositorioInventario, pasarela, Instant::now);
+          repositorioPagos,
+          repositorioPedidos,
+          repositorioInventario,
+          pasarela,
+          Instant::now,
+          new co.tecnosport.api.presentation.pedido.EnTransaccionPropiaDobleDePrueba());
     }
   }
 }
