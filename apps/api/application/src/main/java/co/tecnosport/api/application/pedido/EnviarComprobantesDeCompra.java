@@ -173,7 +173,11 @@ public final class EnviarComprobantesDeCompra {
     return urlBaseEstado
         + "?pedidoId="
         + URLEncoder.encode(pedido.id().toString(), StandardCharsets.UTF_8)
-        + "&correo="
+        // En el fragmento y no en la consulta: el navegador nunca manda lo que va después del #,
+        // así
+        // que el correo no queda en los registros del servidor ni en el Referer. La pantalla de
+        // estado lo lee de ahí.
+        + "#correo="
         + URLEncoder.encode(pedido.correo().valor(), StandardCharsets.UTF_8);
   }
 }

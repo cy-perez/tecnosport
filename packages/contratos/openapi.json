@@ -2848,6 +2848,17 @@
         },
         "type" : "object"
       },
+      "SeguimientoPorIdRequest" : {
+        "properties" : {
+          "correo" : {
+            "type" : "string"
+          }
+        },
+        "required" : [
+          "correo"
+        ],
+        "type" : "object"
+      },
       "SeguimientoPorNumeroRequest" : {
         "properties" : {
           "correo" : {
@@ -7182,7 +7193,7 @@
       }
     },
     "/api/v1/pedidos/{id}/seguimiento" : {
-      "get" : {
+      "post" : {
         "operationId" : "seguimiento",
         "parameters" : [
           {
@@ -7193,16 +7204,18 @@
               "format" : "uuid",
               "type" : "string"
             }
-          },
-          {
-            "in" : "query",
-            "name" : "correo",
-            "required" : true,
-            "schema" : {
-              "type" : "string"
-            }
           }
         ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/SeguimientoPorIdRequest"
+              }
+            }
+          },
+          "required" : true
+        },
         "responses" : {
           "200" : {
             "content" : {

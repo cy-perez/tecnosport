@@ -1547,9 +1547,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["seguimiento"];
+        get?: never;
         put?: never;
-        post?: never;
+        post: operations["seguimiento"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2655,6 +2655,9 @@ export interface components {
             /** Format: int32 */
             fotogramas?: number;
             imagenes?: components["schemas"]["ImagenRotacionRespuesta"][];
+        };
+        SeguimientoPorIdRequest: {
+            correo: string;
         };
         SeguimientoPorNumeroRequest: {
             correo: string;
@@ -5559,16 +5562,18 @@ export interface operations {
     };
     seguimiento: {
         parameters: {
-            query: {
-                correo: string;
-            };
+            query?: never;
             header?: never;
             path: {
                 id: string;
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SeguimientoPorIdRequest"];
+            };
+        };
         responses: {
             /** @description OK */
             200: {
