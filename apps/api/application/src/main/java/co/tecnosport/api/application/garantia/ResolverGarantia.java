@@ -112,7 +112,7 @@ public final class ResolverGarantia {
       ReclamacionGarantia reclamacion, ResolverGarantiaComando comando) {
     Pedido pedido =
         repositorioPedidos
-            .buscarPorId(reclamacion.pedidoId())
+            .buscarPorIdParaModificar(reclamacion.pedidoId())
             .orElseThrow(() -> new PedidoNoEncontradoException(reclamacion.pedidoId()));
     Dinero monto = Dinero.deCop(comando.monto());
     tope.exigirQueQuepa(pedido.id(), pedido.total(), monto);

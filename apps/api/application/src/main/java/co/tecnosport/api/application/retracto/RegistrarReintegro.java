@@ -83,7 +83,7 @@ public final class RegistrarReintegro {
             .orElseThrow(() -> new SolicitudRetractoNoEncontradaException(comando.solicitudId()));
     Pedido pedido =
         repositorioPedidos
-            .buscarPorId(solicitud.pedidoId())
+            .buscarPorIdParaModificar(solicitud.pedidoId())
             .orElseThrow(() -> new PedidoNoEncontradoException(solicitud.pedidoId()));
 
     // Antes de registrar nada: cerrar la solicitud la deja REEMBOLSADA, y con el dinero ya

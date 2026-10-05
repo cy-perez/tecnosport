@@ -42,6 +42,20 @@ final class AplicadorDeResultadoDePago {
       RepositorioPagos repositorioPagos,
       RepositorioPedidos repositorioPedidos,
       RepositorioInventario repositorioInventario) {
+    // Se relee con bloqueo: quien llama lo leyó sin él, y el webhook y la conciliación pueden
+    // llegar a la vez con ids de evento distintos. El segundo espera aquí y encuentra el pago ya
+    // resuelto.
+    Pago bloqueado =
+        repositorioPagos.buscarPorReferenciaParaModificar(pago.referencia()).orElse(pago);
+    if (bloqueado.estado() != EstadoPago.PENDIENTE) {
+      return ResultadoEventoDePago.YA_PROCESADO;
+    }
+    // Lo que quien llama ya anotó en su copia —el id de transacción que trae el webhook— pasa a la
+    // copia bloqueada, que es la que se guarda.
+    if (bloqueado != pago && bloqueado.idTransaccionPasarela().isEmpty()) {
+      pago.idTransaccionPasarela().ifPresent(bloqueado::registrarIdTransaccionPasarela);
+    }
+    pago = bloqueado;
     boolean aplicado = pago.aplicarEvento(evento);
     if (!aplicado) {
       return ResultadoEventoDePago.YA_PROCESADO;
@@ -64,7 +78,7 @@ final class AplicadorDeResultadoDePago {
    */
   private static boolean hayUnPedidoQueLoEspera(Pago pago, RepositorioPedidos repositorioPedidos) {
     return repositorioPedidos
-        .buscarPorId(pago.pedidoId())
+        .buscarPorIdParaModificar(pago.pedidoId())
         .map(pedido -> pedido.estado() == EstadoPedido.PAGO_PENDIENTE)
         .orElse(false);
   }
@@ -84,7 +98,7 @@ final class AplicadorDeResultadoDePago {
     if (siguienteEstadoPedido == null) {
       return ResultadoEventoDePago.APLICADO;
     }
-    Pedido pedido = repositorioPedidos.buscarPorId(pago.pedidoId()).orElse(null);
+    Pedido pedido = repositorioPedidos.buscarPorIdParaModificar(pago.pedidoId()).orElse(null);
     // Un pedido ya resuelto por otro intento de pago no se toca: EstadoPedido ya rechazaría la
     // transición, pero comprobarlo antes evita depender de esa excepción como control de flujo.
     if (pedido == null || pedido.estado() != EstadoPedido.PAGO_PENDIENTE) {

@@ -38,7 +38,7 @@ public final class ConfirmarInventarioDePedidoPagado {
     Objects.requireNonNull(pedidoId, "El pedido no puede ser nulo.");
     Pedido pedido =
         repositorioPedidos
-            .buscarPorId(pedidoId)
+            .buscarPorIdParaModificar(pedidoId)
             .orElseThrow(() -> new PedidoNoEncontradoException(pedidoId));
     Instant ahora = reloj.ahora();
     // La transición se comprueba antes de tocar el inventario: confirmar la venta de un pedido que

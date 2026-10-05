@@ -75,7 +75,7 @@ public final class RecibirPedidoRechazado {
     Objects.requireNonNull(comando, "El comando no puede ser nulo.");
     Pedido pedido =
         repositorioPedidos
-            .buscarPorId(comando.pedidoId())
+            .buscarPorIdParaModificar(comando.pedidoId())
             .orElseThrow(() -> new PedidoNoEncontradoException(comando.pedidoId()));
 
     Dinero porDevolver = porDevolver(pedido);

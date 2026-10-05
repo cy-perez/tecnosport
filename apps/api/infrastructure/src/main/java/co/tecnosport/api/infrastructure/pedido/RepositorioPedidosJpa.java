@@ -104,6 +104,18 @@ public class RepositorioPedidosJpa implements RepositorioPedidos {
    * no existe, y esa diferencia es medible desde fuera aunque las dos respondan el mismo 404.
    */
   @Override
+  public Optional<Pedido> buscarPorIdParaModificar(UUID id) {
+    return pedidos
+        .findByIdParaModificar(id)
+        .map(
+            entidad ->
+                aPedido(
+                    entidad,
+                    lineas.findByPedidoId(entidad.getId()),
+                    historial.findByPedidoIdOrderByFechaAsc(entidad.getId())));
+  }
+
+  @Override
   public Optional<Pedido> buscarPorNumeroYCorreo(NumeroPedido numero, String correoNormalizado) {
     return pedidos
         .findByNumeroPedidoAndCorreo(numero.valor(), correoNormalizado)

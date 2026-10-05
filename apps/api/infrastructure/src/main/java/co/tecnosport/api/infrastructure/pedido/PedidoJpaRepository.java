@@ -1,6 +1,7 @@
 package co.tecnosport.api.infrastructure.pedido;
 
 import co.tecnosport.api.infrastructure.pedido.entidad.PedidoJpaEntity;
+import jakarta.persistence.LockModeType;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
@@ -9,11 +10,17 @@ import java.util.UUID;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 public interface PedidoJpaRepository extends JpaRepository<PedidoJpaEntity, UUID> {
+
+  /** {@code select ... for update}: ver {@code RepositorioPedidos.buscarPorIdParaModificar}. */
+  @Lock(LockModeType.PESSIMISTIC_WRITE)
+  @Query("select p from PedidoJpaEntity p where p.id = :id")
+  Optional<PedidoJpaEntity> findByIdParaModificar(@Param("id") UUID id);
 
   boolean existsByCorreoAndEstado(String correo, String estado);
 

@@ -57,6 +57,11 @@ public class RepositorioPagosJpa implements RepositorioPagos {
   }
 
   @Override
+  public Optional<Pago> buscarPorReferenciaParaModificar(ReferenciaPago referencia) {
+    return pagos.findByReferenciaParaModificar(referencia.valor()).map(this::aPago);
+  }
+
+  @Override
   public Optional<Pago> buscarPorId(UUID id) {
     return pagos.findById(id).map(this::aPago);
   }

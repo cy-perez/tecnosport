@@ -55,7 +55,7 @@ public final class ReintentarPago {
     Objects.requireNonNull(comando, "El comando no puede ser nulo.");
     Pedido pedido =
         repositorioPedidos
-            .buscarPorId(comando.pedidoId())
+            .buscarPorIdParaModificar(comando.pedidoId())
             .orElseThrow(() -> new PedidoNoEncontradoException(comando.pedidoId()));
     // El correo autoriza, y un correo que no es el del pedido se trata como si el pedido no
     // existiera —mismo criterio que `ConsultarSeguimientoPedido`—: un 403 confirmaría que ese id

@@ -34,7 +34,7 @@ public final class ConciliarRecaudo {
     Objects.requireNonNull(comando, "El comando no puede ser nulo.");
     Pedido pedido =
         repositorioPedidos
-            .buscarPorId(comando.pedidoId())
+            .buscarPorIdParaModificar(comando.pedidoId())
             .orElseThrow(() -> new PedidoNoEncontradoException(comando.pedidoId()));
     Instant ahora = reloj.ahora();
     pedido.transicionar(

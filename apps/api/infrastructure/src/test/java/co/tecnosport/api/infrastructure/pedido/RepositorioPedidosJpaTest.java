@@ -674,4 +674,22 @@ class RepositorioPedidosJpaTest {
 
     assertThat(repositorio.reclamarComprobante(pedido.id(), Instant.now())).isFalse();
   }
+
+  /**
+   * La lectura con bloqueo reconstruye el mismo agregado que la normal. Que bloquee de verdad lo
+   * decide Postgres con el {@code for update}; aquí se comprueba que la consulta existe, corre y no
+   * pierde nada por el camino.
+   */
+  @Test
+  void buscarParaModificarDevuelveElMismoPedidoQueBuscarPorId() {
+    Pedido pedido = pedidoAlDomicilio(MetodoPago.WOMPI);
+    repositorio.guardar(pedido);
+
+    Pedido bloqueado = repositorio.buscarPorIdParaModificar(pedido.id()).orElseThrow();
+
+    assertThat(bloqueado.id()).isEqualTo(pedido.id());
+    assertThat(bloqueado.lineas()).hasSize(pedido.lineas().size());
+    assertThat(bloqueado.historial()).hasSize(pedido.historial().size());
+    assertThat(bloqueado.estado()).isEqualTo(pedido.estado());
+  }
 }

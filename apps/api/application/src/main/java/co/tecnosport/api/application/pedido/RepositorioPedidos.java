@@ -14,6 +14,18 @@ public interface RepositorioPedidos {
   Optional<Pedido> buscarPorId(UUID id);
 
   /**
+   * Lo mismo que {@link #buscarPorId}, bloqueando la fila hasta que termine la transacción. Lo usan
+   * los casos de uso que cambian el pedido: el webhook, la conciliación y el panel podían leer el
+   * mismo pedido a la vez y el último en guardar pisaba al otro sin aviso —el pedido se guarda
+   * borrando y reinsertando líneas e historial—. Exige una transacción abierta.
+   *
+   * <p>Por omisión delega en {@link #buscarPorId}: en memoria no hay concurrencia que serializar.
+   */
+  default Optional<Pedido> buscarPorIdParaModificar(UUID id) {
+    return buscarPorId(id);
+  }
+
+  /**
    * Por el número legible ({@code TS-2026-000123}) <b>y el correo a la vez</b>. El número es el
    * único identificador del pedido que el comprador conoce: es el que lleva su comprobante y el que
    * anuncia el correo de despacho. El id es un UUID y no aparece en nada que una persona lea.
