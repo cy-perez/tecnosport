@@ -24,6 +24,27 @@ public interface PedidoJpaRepository extends JpaRepository<PedidoJpaEntity, UUID
 
   boolean existsByCorreoAndEstado(String correo, String estado);
 
+  @Query(
+      nativeQuery = true,
+      value =
+          "select exists (select 1 from pedido p join historial_pedido h on h.pedido_id = p.id"
+              + " where p.correo = :correo and h.estado = 'RECHAZADO_EN_ENTREGA')")
+  boolean algunaVezRechazadoPorCorreo(@Param("correo") String correo);
+
+  /**
+   * Por los últimos diez dígitos: el mismo celular llega como {@code 300 123 4567}, {@code +57
+   * 3001234567} o {@code 573001234567}.
+   */
+  @Query(
+      nativeQuery = true,
+      value =
+          "select exists (select 1 from pedido p join historial_pedido h on h.pedido_id = p.id"
+              + " where p.telefono_contacto is not null"
+              + " and right(regexp_replace(p.telefono_contacto, '[^0-9]', '', 'g'), 10)"
+              + " = right(regexp_replace(:telefono, '[^0-9]', '', 'g'), 10)"
+              + " and h.estado = 'RECHAZADO_EN_ENTREGA')")
+  boolean algunaVezRechazadoPorTelefono(@Param("telefono") String telefono);
+
   Optional<PedidoJpaEntity> findByNumeroPedidoAndCorreo(String numeroPedido, String correo);
 
   Page<PedidoJpaEntity> findByEstado(String estado, Pageable pageable);

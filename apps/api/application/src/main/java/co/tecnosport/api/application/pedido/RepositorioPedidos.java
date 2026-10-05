@@ -72,12 +72,20 @@ public interface RepositorioPedidos {
   PedidosPaginados buscarTodosPaginado(int pagina, int tamanoPagina, EstadoPedido estado);
 
   /**
-   * Historial de rechazos en la entrega (docs/11-pagos-y-envios.md: "si un correo... ya rechazó
-   * pedidos en la entrega, no se le ofrece más"). Sin teléfono en el dominio todavía, solo por
-   * correo. {@code RECHAZADO_EN_ENTREGA} es terminal (ver {@code EstadoPedido}), así que basta con
-   * el estado actual del pedido, sin recorrer su historial.
+   * Historial de rechazos en la entrega (docs/11-pagos-y-envios.md: "si un correo o un teléfono ya
+   * rechazó pedidos en la entrega, no se le ofrece más"), con el correo ya normalizado.
+   *
+   * <p><b>Se mira el historial, no el estado actual.</b> {@code RECHAZADO_EN_ENTREGA} era terminal
+   * y bastaba el estado; desde el 4 de octubre de 2026 sale a {@code DEVUELTO} cuando la mercancía
+   * vuelve, y con el criterio viejo el comprador que rechazó dejaba de contar en cuanto alguien
+   * recibía el paquete.
    */
   boolean tieneRechazoEnEntrega(String correo);
+
+  /** Lo mismo, por el teléfono de contacto. Por omisión no encuentra nada. */
+  default boolean tieneRechazoEnEntregaPorTelefono(String telefono) {
+    return false;
+  }
 
   /**
    * Los pedidos que el vigilante del plazo de entrega tiene que mirar: en alguno de {@code

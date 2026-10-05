@@ -160,7 +160,15 @@ public class RepositorioPedidosJpa implements RepositorioPedidos {
 
   @Override
   public boolean tieneRechazoEnEntrega(String correo) {
-    return pedidos.existsByCorreoAndEstado(correo, EstadoPedido.RECHAZADO_EN_ENTREGA.name());
+    return correo != null && pedidos.algunaVezRechazadoPorCorreo(correo.trim().toLowerCase());
+  }
+
+  @Override
+  public boolean tieneRechazoEnEntregaPorTelefono(String telefono) {
+    if (telefono == null || telefono.replaceAll("[^0-9]", "").length() < 7) {
+      return false;
+    }
+    return pedidos.algunaVezRechazadoPorTelefono(telefono);
   }
 
   @Override
