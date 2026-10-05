@@ -7,6 +7,7 @@ import { MenuLateral } from './layout/menu-lateral/menu-lateral';
 import { MenuLateralStore } from './layout/menu-lateral/menu-lateral.store';
 import { Pie } from './layout/pie/pie';
 import { ServicioTema } from './core/tema/tema.servicio';
+import { usarFocoAlNavegar } from './core/navegacion/foco-al-navegar';
 
 @Component({
   imports: [RouterOutlet, TranslocoPipe, BotonWhatsapp, Encabezado, MenuLateral, Pie],
@@ -51,5 +52,7 @@ export class App {
     // Se crea aquí y no solo donde está el botón de tema: es quien pone el color de la barra del
     // navegador al hidratar, y eso tiene que pasar en toda pantalla, haya botón o no.
     inject(ServicioTema);
+    // Al cambiar de pantalla el foco va al título de la nueva, no a `<body>`.
+    usarFocoAlNavegar();
   }
 }
