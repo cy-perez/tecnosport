@@ -27,6 +27,7 @@ import co.tecnosport.api.application.pedido.DespacharPedido;
 import co.tecnosport.api.application.pedido.ListarPedidosAdmin;
 import co.tecnosport.api.application.pedido.MarcarEntregado;
 import co.tecnosport.api.application.pedido.RechazarEnEntrega;
+import co.tecnosport.api.application.pedido.RecibirPedidoRechazado;
 import co.tecnosport.api.application.pedido.RepositorioPedidos;
 import co.tecnosport.api.application.pedido.VerificarContraentrega;
 import co.tecnosport.api.application.reintegro.RepositorioReintegros;
@@ -532,7 +533,7 @@ class AdminPedidosControladorTest {
   }
 
   @Test
-  void rechazarEnEntregaLiberaElInventario() throws Exception {
+  void rechazarEnEntregaNoLiberaLaUnidadHastaQueVuelva() throws Exception {
     UUID varianteId = UUID.randomUUID();
     Inventario inventario = Inventario.crear(varianteId);
     inventario.registrarEntrada(5, "siembra de prueba", Instant.now());
@@ -576,9 +577,80 @@ class AdminPedidosControladorTest {
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.estado").value("RECHAZADO_EN_ENTREGA"));
 
+    // El paquete viene en camino: la unidad no vuelve a la venta hasta que alguien la recibe.
     assertEquals(
-        5,
+        4,
         inventarios.buscarPorVarianteId(varianteId).orElseThrow().saldoDisponible(Instant.now()));
+  }
+
+  /** Un pedido pagado y rechazado, con la reserva ya confirmada por el pago. */
+  private Pedido pagadoYRechazado(UUID varianteId) {
+    Inventario inventario = Inventario.crear(varianteId);
+    inventario.registrarEntrada(5, "siembra de prueba", Instant.now());
+    MovimientoInventario reserva = inventario.reservar(1, null, Instant.now());
+    inventario.confirmar(reserva.id(), Instant.now());
+    inventarios.conInventario(inventario);
+    Pedido pedido =
+        Pedido.crear(
+            siguienteNumeroDePrueba(),
+            null,
+            new CorreoElectronico("cliente@tecnosport.co"),
+            List.of(
+                new LineaPedido(
+                    UUID.randomUUID(),
+                    varianteId,
+                    new Sku("TS-CAM-AZ-M"),
+                    "Camiseta running Dry-Fit",
+                    1,
+                    Dinero.deCop(50_000),
+                    BigDecimal.ZERO,
+                    "https://cdn.tecnosport.co/img.webp",
+                    reserva.id())),
+            TipoEntrega.ENVIO_A_DOMICILIO,
+            DIRECCION_MEDELLIN,
+            MetodoPago.WOMPI,
+            "cliente@tecnosport.co",
+            Instant.now());
+    pedido.transicionar(EstadoPedido.PAGADO, "webhook", "aprobado", Instant.now());
+    pedido.transicionar(EstadoPedido.EN_PREPARACION, "admin:test", "listo", Instant.now());
+    pedido.transicionar(EstadoPedido.DESPACHADO, "admin:test", "despachado", Instant.now());
+    pedido.transicionar(EstadoPedido.RECHAZADO_EN_ENTREGA, "skydropx", "no recibió", Instant.now());
+    pedidos.guardar(pedido);
+    return pedido;
+  }
+
+  @Test
+  void recibirUnPedidoPagadoYRechazadoLoDevuelveYReingresaLaUnidad() throws Exception {
+    UUID varianteId = UUID.randomUUID();
+    Pedido pedido = pagadoYRechazado(varianteId);
+    autenticarComoAdmin();
+
+    mockMvc
+        .perform(
+            post("/api/v1/admin/pedidos/{id}/devolucion-rechazo", pedido.id())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    """
+                    {"medio":"WOMPI","comprobante":"REF-1"}
+                    """))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.estado").value("DEVUELTO"));
+
+    assertEquals(5, inventarios.buscarPorVarianteId(varianteId).orElseThrow().saldoTotal());
+  }
+
+  @Test
+  void recibirUnPedidoQueCobroSinDecirPorDondeSeDevuelveEsUn422() throws Exception {
+    Pedido pedido = pagadoYRechazado(UUID.randomUUID());
+    autenticarComoAdmin();
+
+    mockMvc
+        .perform(
+            post("/api/v1/admin/pedidos/{id}/devolucion-rechazo", pedido.id())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{}"))
+        .andExpect(status().isUnprocessableContent())
+        .andExpect(jsonPath("$.codigo").value("REINTEGRO_REQUERIDO"));
   }
 
   @Test
@@ -812,6 +884,21 @@ class AdminPedidosControladorTest {
     }
 
     @Bean
+    RecibirPedidoRechazado recibirPedidoRechazado(
+        RepositorioPedidos repositorioPedidos,
+        RepositorioInventario repositorioInventario,
+        RepositorioReintegros repositorioReintegros) {
+      return new RecibirPedidoRechazado(
+          repositorioPedidos,
+          repositorioInventario,
+          repositorioReintegros,
+          new TopeDeReintegro(repositorioReintegros, new RepositorioSolicitudesReversionVacio()),
+          (destinatario, asunto, cuerpo) -> {},
+          new TextosDeCorreoDobleDePrueba(),
+          Instant::now);
+    }
+
+    @Bean
     RepositorioReintegros repositorioReintegros() {
       return new RepositorioReintegrosDobleDePrueba();
     }
@@ -825,7 +912,7 @@ class AdminPedidosControladorTest {
     @Bean
     RechazarEnEntrega rechazarEnEntrega(
         RepositorioPedidos repositorioPedidos, RepositorioInventario repositorioInventario) {
-      return new RechazarEnEntrega(repositorioPedidos, repositorioInventario, Instant::now);
+      return new RechazarEnEntrega(repositorioPedidos, Instant::now);
     }
 
     @Bean

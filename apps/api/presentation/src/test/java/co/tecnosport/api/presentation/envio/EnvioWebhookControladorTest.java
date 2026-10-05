@@ -171,7 +171,7 @@ class EnvioWebhookControladorTest {
           envios,
           pedidos,
           new MarcarEntregado(pedidos, inventarios, reloj),
-          new RechazarEnEntrega(pedidos, inventarios, reloj),
+          new RechazarEnEntrega(pedidos, reloj),
           reloj);
     }
 

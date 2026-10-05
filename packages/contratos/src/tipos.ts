@@ -356,6 +356,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/pedidos/{id}/devolucion-rechazo": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["recibirPedidoRechazado"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/pedidos/{id}/emitir-guia": {
         parameters: {
             query?: never;
@@ -2426,6 +2442,10 @@ export interface components {
         RechazarEnEntregaRequest: {
             motivo?: string;
         };
+        RecibirPedidoRechazadoRequest: {
+            comprobante?: string;
+            medio?: string;
+        };
         ReclamacionGarantiaRespuesta: {
             descripcionDelFallo?: string;
             desenlace?: string;
@@ -3442,6 +3462,32 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["DespacharPedidoRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PedidoRespuesta"];
+                };
+            };
+        };
+    };
+    recibirPedidoRechazado: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecibirPedidoRechazadoRequest"];
             };
         };
         responses: {

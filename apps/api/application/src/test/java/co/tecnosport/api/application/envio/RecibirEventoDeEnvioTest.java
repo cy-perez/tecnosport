@@ -51,7 +51,7 @@ class RecibirEventoDeEnvioTest {
             envios,
             pedidos,
             new MarcarEntregado(pedidos, inventarios, () -> AHORA),
-            new RechazarEnEntrega(pedidos, inventarios, () -> AHORA),
+            new RechazarEnEntrega(pedidos, () -> AHORA),
             () -> AHORA);
     ConsultorDeSeguimiento consultor =
         (codigoTransportadora, guia) -> {

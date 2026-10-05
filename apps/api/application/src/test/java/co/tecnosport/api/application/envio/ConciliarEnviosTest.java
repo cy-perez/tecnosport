@@ -50,7 +50,7 @@ class ConciliarEnviosTest {
             envios,
             pedidos,
             new MarcarEntregado(pedidos, inventarios, () -> AHORA),
-            new RechazarEnEntrega(pedidos, inventarios, () -> AHORA),
+            new RechazarEnEntrega(pedidos, () -> AHORA),
             () -> AHORA);
     return new ConciliarEnvios(
         envios,
