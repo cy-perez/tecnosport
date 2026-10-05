@@ -190,9 +190,18 @@ public class SembradorCatalogo implements ApplicationRunner {
     // docs/02-modelo-datos.md exige el atributo, pero el valor lo define el negocio cuando exista
     // un panel para cargarlo (Fase 4). Mismo criterio que los precios y las fotos de picsum.photos.
     AtributoJpaEntity garantia =
-        atributos.save(
-            new AtributoJpaEntity(
-                GeneradorIdentificador.nuevo(), "Garantía", "NUMERO", List.of(), ahora, "meses"));
+        atributos
+            .findFirstByNombreIgnoreCase("Garantía")
+            .orElseGet(
+                () ->
+                    atributos.save(
+                        new AtributoJpaEntity(
+                            GeneradorIdentificador.nuevo(),
+                            "Garantía",
+                            "NUMERO",
+                            List.of(),
+                            ahora,
+                            "meses")));
 
     // Las descripciones son texto de desarrollo, como los precios y las fotos: describen el tipo
     // de producto sin prometer nada que el negocio no haya dicho. Existen para que la ficha no se
@@ -340,8 +349,18 @@ public class SembradorCatalogo implements ApplicationRunner {
     guardarSetRotacion(morral, FOTOGRAMAS_MINIMOS, ahora);
   }
 
+  /**
+   * Reutiliza la que ya exista con ese nombre, como {@link #guardarAtributo}. La guarda de arriba
+   * solo mira si hay productos, y una base sin productos puede tener marcas: las crea el panel o la
+   * carga del catálogo antes de publicar nada. Ahí el {@code save} reventaba contra el índice único
+   * de {@code V56} y el arranque entero caía con {@code marca_nombre_unico} — encontrado el 5 de
+   * octubre de 2026 al levantar la API local con {@code SIEMBRA_CATALOGO=true}.
+   */
   private MarcaJpaEntity guardarMarca(String nombre, Instant ahora) {
-    return marcas.save(new MarcaJpaEntity(GeneradorIdentificador.nuevo(), nombre, ahora));
+    return marcas
+        .findFirstByNombreIgnoreCase(nombre)
+        .orElseGet(
+            () -> marcas.save(new MarcaJpaEntity(GeneradorIdentificador.nuevo(), nombre, ahora)));
   }
 
   /**
