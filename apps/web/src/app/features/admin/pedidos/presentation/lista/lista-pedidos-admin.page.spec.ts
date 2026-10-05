@@ -334,8 +334,12 @@ describe('ListaPedidosAdminPage', () => {
     await renderLista([pedidoDePrueba()]);
     await screen.findByText('TS-2026-000123');
 
-    expect(screen.getByRole('button', { name: 'Anterior' }).hasAttribute('disabled')).toBe(true);
-    expect(screen.getByRole('button', { name: 'Siguiente' }).hasAttribute('disabled')).toBe(true);
+    expect(screen.getByRole('button', { name: 'Anterior' }).getAttribute('aria-disabled')).toBe(
+      'true',
+    );
+    expect(screen.getByRole('button', { name: 'Siguiente' }).getAttribute('aria-disabled')).toBe(
+      'true',
+    );
   });
 
   it('ver detalle expande la fila con las líneas del pedido', async () => {
