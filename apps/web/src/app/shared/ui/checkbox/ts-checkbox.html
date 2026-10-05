@@ -13,6 +13,7 @@
       type="checkbox"
       [checked]="marcado()"
       [disabled]="deshabilitado()"
+      [attr.aria-required]="obligatorio() ? 'true' : null"
       [attr.aria-invalid]="error() ? 'true' : null"
       [attr.aria-describedby]="error() ? idCasilla() + '-error' : null"
       (change)="marcadoCambio.emit($any($event.target).checked)"

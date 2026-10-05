@@ -291,7 +291,11 @@ describe('MetodoPagoPage', () => {
     expect(screen.queryByText(/solo en efectivo/)).toBeFalsy();
   });
 
-  it('el botón continuar arranca deshabilitado hasta elegir un método', async () => {
+  /**
+   * El botón estaba deshabilitado hasta elegir un método: fuera del orden de tabulación y sin
+   * decir por qué no avanzaba. Ahora está vivo y, sin método, lo dice.
+   */
+  it('continuar sin método elegido lo explica en vez de quedarse deshabilitado', async () => {
     sembrarCarritoId('carrito-1');
 
     const { fixture } = await renderConDatosEntrega(
@@ -300,12 +304,17 @@ describe('MetodoPagoPage', () => {
     );
     await screen.findByRole('button', { name: /^Tarjeta, PSE o Bancolombia/ });
     const checkout = fixture.debugElement.injector.get(CheckoutStore);
+    const continuar = screen.getByRole('button', { name: 'Continuar' });
 
-    expect(screen.getByRole('button', { name: 'Continuar' }).hasAttribute('disabled')).toBe(true);
+    expect(continuar.hasAttribute('disabled')).toBe(false);
+    fireEvent.click(continuar);
+    expect(await screen.findByText('Elige un método de pago para continuar.')).toBeTruthy();
 
     fireEvent.click(screen.getByRole('button', { name: 'Pago contraentrega' }));
 
-    expect(screen.getByRole('button', { name: 'Continuar' }).hasAttribute('disabled')).toBe(false);
+    await vi.waitFor(() =>
+      expect(screen.queryByText('Elige un método de pago para continuar.')).toBeNull(),
+    );
     expect(checkout.metodoPago()).toBe('CONTRAENTREGA');
   });
 
@@ -350,6 +359,9 @@ describe('MetodoPagoPage', () => {
 
     expect(await screen.findByText(/Escribe tu número de documento/)).toBeTruthy();
     expect(checkout.documentoComprador()).toBeNull();
+    await vi.waitFor(() =>
+      expect(document.activeElement).toBe(screen.getByLabelText('Número de documento')),
+    );
   });
 
   /** Con el documento puesto, se anota para que la pantalla de confirmar lo mande a la pasarela. */

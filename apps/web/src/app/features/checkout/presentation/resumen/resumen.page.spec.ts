@@ -645,6 +645,41 @@ describe('ResumenPage', () => {
   });
 
   /**
+   * Siete `Validators.required` y ningún campo lo declaraba: con lector de pantalla, "Correo,
+   * editar" no decía que hiciera falta. Y al fallar el envío el foco se quedaba en «Continuar».
+   */
+  // El costo de envío y el total cambian solos al tocar la dirección, lejos del campo que se está
+  // llenando. El desglose es una región viva que vive siempre, no solo mientras se cotiza.
+  it('el desglose de envío y total se anuncia al cambiar', async () => {
+    sembrarCarritoId('carrito-1');
+    sembrarSnapshotLinea(snapshotDePrueba('variante-1'));
+    await renderResumen(new RepositorioCarritoFalso(CARRITO_CON_LINEAS));
+    await screen.findByText('Morral urbano');
+
+    const desglose = screen.getByText('Subtotal').closest('dl');
+    expect(desglose?.getAttribute('aria-live')).toBe('polite');
+    expect(desglose?.getAttribute('aria-atomic')).toBe('true');
+  });
+
+  it('declara los obligatorios y al fallar lleva el foco al primer campo con error', async () => {
+    sembrarCarritoId('carrito-1');
+    sembrarSnapshotLinea(snapshotDePrueba('variante-1'));
+    await renderResumen(new RepositorioCarritoFalso(CARRITO_CON_LINEAS));
+    await screen.findByText('Morral urbano');
+
+    for (const etiqueta of ['Nombre de quien recibe', 'Correo electrónico', 'Dirección']) {
+      expect(screen.getByLabelText(etiqueta).getAttribute('aria-required'), etiqueta).toBe('true');
+    }
+    expect(screen.getByRole('checkbox').getAttribute('aria-required')).toBe('true');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Continuar' }));
+
+    await vi.waitFor(() =>
+      expect(document.activeElement).toBe(screen.getByLabelText('Nombre de quien recibe')),
+    );
+  });
+
+  /**
    * Sin quien reciba no hay guía ni mensajero: el pedido nacía sin nombre ni teléfono durante
    * cuatro fases. Se dice en el campo, y no se guarda el borrador.
    */

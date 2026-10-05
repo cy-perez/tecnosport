@@ -9,6 +9,7 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { usarFocoEnPrimerInvalido } from '../../../../shared/foco/foco';
 import { RouterLink } from '@angular/router';
 import { filter, firstValueFrom } from 'rxjs';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -71,6 +72,7 @@ interface ValoresDireccion {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ResumenPage {
+  private readonly enfocarPrimerInvalido = usarFocoEnPrimerInvalido();
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly transloco = inject(TranslocoService);
@@ -531,6 +533,9 @@ export class ResumenPage {
   protected async enviar(): Promise<void> {
     this.form.markAllAsTouched();
     if (this.form.invalid) {
+      // Al primer campo con error: el foco se quedaba en «Continuar» y quien usa lector de
+      // pantalla no oía qué faltaba.
+      this.enfocarPrimerInvalido();
       return;
     }
 

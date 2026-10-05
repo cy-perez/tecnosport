@@ -30,12 +30,14 @@
         <div class="grid grid-cols-1 gap-16 desde-tableta:grid-cols-2">
           <ts-select
             idCampo="tipo-documento"
+            [obligatorio]="true"
             formControlName="tipoDocumento"
             [label]="'checkout.metodoPago.documento.tipo.label' | transloco"
             [opciones]="opcionesTipoDocumento()"
           />
           <ts-campo
             idCampo="numero-documento"
+            [obligatorio]="true"
             formControlName="documento"
             tipo="text"
             [label]="'checkout.metodoPago.documento.numero' | transloco"
@@ -51,12 +53,15 @@
       </p>
     }
 
-    <ts-boton
-      class="mt-24 block"
-      variante="primario"
-      [deshabilitado]="checkout.metodoPago() === null"
-      (click)="continuar()"
-    >
+    <!-- Vivo aunque no haya método elegido: deshabilitado salía del orden de tabulación sin decir
+         por qué no avanzaba. Al pulsarlo sin elegir, lo dice aquí. Región siempre presente: lo que
+         cambia es el texto. -->
+    <p class="mt-16 mb-0 text-ts-error" role="status">
+      @if (faltaMetodo()) {
+        {{ 'checkout.metodoPago.elige_metodo' | transloco }}
+      }
+    </p>
+    <ts-boton class="mt-24 block" variante="primario" (click)="continuar()">
       {{ 'checkout.metodoPago.continuar' | transloco }}
     </ts-boton>
   }
