@@ -408,11 +408,13 @@ export class ListaPedidosAdminPage {
    * demas metodos, llegar a PAGADO o EN_PREPARACION significa que el pago se aplico. La misma regla
    * que aplica el servidor, aqui solo para decidir que campos mostrar: quien manda es el.
    */
+  /**
+   * Lo que dice el servidor (`dineroRecibido`, de `Pedido.dineroRecibido()`), y no una tercera
+   * formulación por estado. Eran tres —dominio, `CancelarPedido` y esta—, y si una cambiaba el panel
+   * escondía los campos del reintegro mientras el backend respondía 422 por faltar.
+   */
   protected elDineroYaEntro(pedido: PedidoAdmin): boolean {
-    if (pedido.metodoPago === 'CONTRAENTREGA') {
-      return false;
-    }
-    return pedido.estado === 'PAGADO' || pedido.estado === 'EN_PREPARACION';
+    return pedido.dineroRecibido.valor > 0;
   }
 
   protected async cancelar(pedido: PedidoAdmin): Promise<void> {

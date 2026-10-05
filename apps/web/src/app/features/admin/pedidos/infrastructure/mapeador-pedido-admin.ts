@@ -2,6 +2,7 @@ import type { components } from '@tecnosport/contratos';
 import type { MismaUnion } from '../../../../core/contratos/misma-union';
 import {
   DatosTransferencia,
+  Dinero,
   Direccion,
   EmisionDeGuiaAdmin,
   EnvioAdmin,
@@ -60,13 +61,13 @@ export function aPedidoAdmin(dto: PedidoDto): PedidoAdmin {
     tipoEntrega: (dto.tipoEntrega ?? 'ENVIO_A_DOMICILIO') as TipoEntrega,
     direccion: dto.direccion ? aDireccion(dto.direccion) : null,
     metodoPago: dto.metodoPago ?? 'WOMPI',
-    estado: (dto.estado ?? 'PAGO_PENDIENTE') as EstadoPedido,
-    total: { valor: dto.total?.valor ?? 0, moneda: dto.total?.moneda ?? 'COP' },
-    dineroRecibido: {
-      valor: dto.dineroRecibido?.valor ?? 0,
-      moneda: dto.dineroRecibido?.moneda ?? 'COP',
-    },
-    yaDevuelto: { valor: dto.yaDevuelto?.valor ?? 0, moneda: dto.yaDevuelto?.moneda ?? 'COP' },
+    estado: requerido(dto.estado, 'estado') as EstadoPedido,
+    // El dinero y los estados no se rellenan: un total que falta pintado como $0, o un plazo que
+    // falta pintado como "dentro del plazo", es inventar justo el dato que decide qué hace quien
+    // atiende. Si el contrato cambia y deja de venir, la fila falla en vez de mentir.
+    total: dinero(dto.total, 'total'),
+    dineroRecibido: dinero(dto.dineroRecibido, 'dineroRecibido'),
+    yaDevuelto: dinero(dto.yaDevuelto, 'yaDevuelto'),
     creadoEn: dto.creadoEn ?? '',
     datosTransferencia: dto.datosTransferencia ? aDatosTransferencia(dto.datosTransferencia) : null,
     envio: dto.envio ? aEnvio(dto.envio) : null,
@@ -145,14 +146,14 @@ function aPlazoDeEntrega(dto: PlazoDeEntregaDto): PlazoDeEntregaAdmin {
   return {
     inicio: dto.inicio ?? '',
     limite: dto.limite ?? '',
-    verdicto: (dto.verdicto ?? 'EN_PLAZO') as VerdictoPlazoEntrega,
+    verdicto: requerido(dto.verdicto, 'plazoDeEntrega.verdicto') as VerdictoPlazoEntrega,
     avisadoEn: dto.avisadoEn ?? null,
   };
 }
 
 function aHistorial(dto: HistorialPedidoDto): HistorialPedidoAdmin {
   return {
-    estado: (dto.estado ?? 'PAGO_PENDIENTE') as EstadoPedido,
+    estado: requerido(dto.estado, 'historial.estado') as EstadoPedido,
     fecha: dto.fecha ?? '',
     actor: dto.actor ?? '',
     motivo: dto.motivo ?? '',
@@ -170,4 +171,16 @@ export function aEmisionDeGuia(dto: EmisionDeGuiaDto): EmisionDeGuiaAdmin {
     transportadora: dto.transportadora ?? '',
     cuantosEnvios: dto.cuantosEnvios ?? 0,
   };
+}
+
+function requerido<T>(valor: T | null | undefined, campo: string): T {
+  if (valor === null || valor === undefined) {
+    throw new Error(`El servidor no mandó ${campo} del pedido.`);
+  }
+  return valor;
+}
+
+function dinero(dto: { valor: number; moneda: string } | undefined, campo: string): Dinero {
+  const valor = requerido(dto, campo);
+  return { valor: valor.valor, moneda: valor.moneda };
 }

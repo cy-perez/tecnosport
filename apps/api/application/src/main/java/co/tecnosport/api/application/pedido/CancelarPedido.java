@@ -18,7 +18,6 @@ import co.tecnosport.api.domain.envio.EstadoEmision;
 import co.tecnosport.api.domain.inventario.Inventario;
 import co.tecnosport.api.domain.pedido.EstadoPedido;
 import co.tecnosport.api.domain.pedido.LineaPedido;
-import co.tecnosport.api.domain.pedido.MetodoPago;
 import co.tecnosport.api.domain.pedido.MotivoCancelacion;
 import co.tecnosport.api.domain.pedido.Pedido;
 import co.tecnosport.api.domain.reintegro.MotivoReintegro;
@@ -151,10 +150,9 @@ public final class CancelarPedido {
    * aplicó — es la única forma de alcanzar esos estados.
    */
   private static boolean elDineroYaEntro(Pedido pedido) {
-    if (pedido.metodoPago() == MetodoPago.CONTRAENTREGA) {
-      return false;
-    }
-    return pedido.estado() == EstadoPedido.PAGADO || pedido.estado() == EstadoPedido.EN_PREPARACION;
+    // La misma regla que el panel y el tope: Pedido.dineroRecibido(). Esta clase tenía su propia
+    // formulación por estado actual, y las tres podían separarse sin que nada fallara.
+    return pedido.dineroRecibido().valor().signum() > 0;
   }
 
   private void devolverAlInventario(LineaPedido linea, MotivoCancelacion motivo, Instant ahora) {

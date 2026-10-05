@@ -655,7 +655,12 @@ describe('ListaPedidosAdminPage', () => {
    */
   it('cancelar un contraentrega sin despachar no pide monto y viaja sin dinero', async () => {
     const { repositorio } = await renderLista([
-      pedidoDePrueba({ estado: 'CONFIRMADO_CONTRAENTREGA', metodoPago: 'CONTRAENTREGA' }),
+      // Lo que manda el servidor para un contraentrega sin recaudar: no entró dinero.
+      pedidoDePrueba({
+        estado: 'CONFIRMADO_CONTRAENTREGA',
+        metodoPago: 'CONTRAENTREGA',
+        dineroRecibido: { valor: 0, moneda: 'COP' },
+      }),
     ]);
     fireEvent.click(await screen.findByRole('button', { name: 'Ver detalle' }));
     await screen.findByRole('button', { name: 'Cancelar pedido' });
