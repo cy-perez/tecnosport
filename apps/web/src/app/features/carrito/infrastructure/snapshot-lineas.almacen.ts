@@ -16,7 +16,12 @@ export class SnapshotLineasLocalStorageAlmacen implements AlmacenSnapshotLineas 
     }
     const todos = this.leerTodos();
     todos[snapshot.varianteId] = snapshot;
-    window.localStorage.setItem(CLAVE, JSON.stringify(todos));
+    try {
+      window.localStorage.setItem(CLAVE, JSON.stringify(todos));
+    } catch {
+      // Sin almacenamiento o con la cuota llena: la foto es solo para pintar nombre e imagen, y
+      // perderla no puede impedir agregar al carrito, que es lo que pasaba.
+    }
   }
 
   /** Un JSON corrupto no debe tumbar el carrito: se trata como "no hay nada guardado". */
@@ -24,12 +29,9 @@ export class SnapshotLineasLocalStorageAlmacen implements AlmacenSnapshotLineas 
     if (typeof window === 'undefined') {
       return {};
     }
-    const crudo = window.localStorage.getItem(CLAVE);
-    if (!crudo) {
-      return {};
-    }
     try {
-      return JSON.parse(crudo) as Record<string, SnapshotLinea>;
+      const crudo = window.localStorage.getItem(CLAVE);
+      return crudo ? (JSON.parse(crudo) as Record<string, SnapshotLinea>) : {};
     } catch {
       return {};
     }

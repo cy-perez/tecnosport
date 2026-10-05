@@ -6,6 +6,7 @@ import { CrearPedidoComando, MetodosDePagoDisponiblesComando } from '../domain/p
 import { Direccion, MetodoPago, Pedido, Seguimiento } from '../domain/pedido.model';
 import { RepositorioPedidos } from '../domain/repositorio-pedidos.puerto';
 import { aPedido, aSeguimiento } from './mapeador-pedido';
+import { nuevaLlaveDeIdempotencia } from '../../../core/http/llave-de-idempotencia';
 
 function aDireccionRequest(direccion: Direccion | null) {
   if (!direccion) {
@@ -47,7 +48,7 @@ export class PedidoHttpRepositorio implements RepositorioPedidos {
    * y su reserva de inventario.
    */
   async crear(comando: CrearPedidoComando): Promise<Pedido> {
-    this.llaveDeCreacion ??= crypto.randomUUID();
+    this.llaveDeCreacion ??= nuevaLlaveDeIdempotencia();
     const respuesta = await this.cliente.POST('/api/v1/pedidos', {
       headers: { 'Idempotency-Key': this.llaveDeCreacion },
       body: {

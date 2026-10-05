@@ -79,8 +79,21 @@ export class SesionStore {
     this.sesion.set(null);
   }
 
-  async intentarRefrescar(): Promise<void> {
-    const sesion = await this.repositorio.refrescar();
-    this.sesion.set(sesion);
+  private refrescoEnCurso: Promise<void> | null = null;
+
+  /**
+   * Uno a la vez: las peticiones que reciben un 401 mientras ya hay un refresco en vuelo esperan ese
+   * mismo. Antes cada 401 pedía el suyo, y el servidor —que revoca la familia entera cuando ve
+   * reutilizado un token de refresco ya usado— cerraba la sesión del panel en cuanto vencía el
+   * token con varias consultas abiertas, y registraba un "posible robo de token" que no lo era.
+   */
+  intentarRefrescar(): Promise<void> {
+    this.refrescoEnCurso ??= this.repositorio
+      .refrescar()
+      .then((sesion) => this.sesion.set(sesion))
+      .finally(() => {
+        this.refrescoEnCurso = null;
+      });
+    return this.refrescoEnCurso;
   }
 }

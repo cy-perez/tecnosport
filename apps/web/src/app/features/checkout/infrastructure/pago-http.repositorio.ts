@@ -6,6 +6,7 @@ import { IntentoDePago } from '../domain/intento-pago.model';
 import { DocumentoComprador, IntentoSistecredito } from '../domain/intento-sistecredito.model';
 import { RepositorioPagos } from '../domain/repositorio-pagos.puerto';
 import { aIntentoDePago, aIntentoSistecredito } from './mapeador-pago';
+import { nuevaLlaveDeIdempotencia } from '../../../core/http/llave-de-idempotencia';
 
 @Injectable()
 export class PagoHttpRepositorio implements RepositorioPagos {
@@ -28,7 +29,7 @@ export class PagoHttpRepositorio implements RepositorioPagos {
     if (existente) {
       return existente;
     }
-    const nueva = crypto.randomUUID();
+    const nueva = nuevaLlaveDeIdempotencia();
     this.llavesPorPedido.set(pedidoId, nueva);
     return nueva;
   }
