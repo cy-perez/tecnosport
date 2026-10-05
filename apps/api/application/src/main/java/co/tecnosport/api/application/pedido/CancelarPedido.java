@@ -111,6 +111,13 @@ public final class CancelarPedido {
       throw ReintegroRequeridoException.porqueElDineroYaEntro(pedido.id());
     }
 
+    // El monto se valida antes de tocar a nadie de fuera. Se validaba al final, después de anular
+    // las guías en Skydropx: un monto que no cabía revertía el pedido en la base, pero la anulación
+    // en la plataforma ya estaba hecha y no vuelve.
+    if (elDineroYaEntro) {
+      tope.exigirQueQuepa(pedido.id(), pedido.total(), Dinero.deCop(comando.monto()));
+    }
+
     Instant ahora = reloj.ahora();
     pedido.transicionar(EstadoPedido.CANCELADO, comando.actor(), motivo(comando), ahora);
 
@@ -161,7 +168,6 @@ public final class CancelarPedido {
 
   private void registrarReintegro(Pedido pedido, CancelarPedidoComando comando, Instant ahora) {
     Dinero monto = Dinero.deCop(comando.monto());
-    tope.exigirQueQuepa(pedido.id(), pedido.total(), monto);
     repositorioReintegros.guardar(
         Reintegro.registrar(
             pedido.id(),
