@@ -359,8 +359,6 @@ class RepositorioPagosJpaTest {
 
     assertThat(repositorio.buscarPorId(pago.id()).orElseThrow().sinPedidoQueLoEspereDesde())
         .contains(desde);
-    assertThat(repositorio.buscarSinPedidoQueLosEspere())
-        .extracting(Pago::id)
-        .contains(pago.id());
+    assertThat(repositorio.buscarSinPedidoQueLosEspere()).extracting(Pago::id).contains(pago.id());
   }
 }

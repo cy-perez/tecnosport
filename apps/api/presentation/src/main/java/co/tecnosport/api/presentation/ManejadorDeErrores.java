@@ -48,6 +48,7 @@ import co.tecnosport.api.application.pago.PedidoNoEstaEnPagoPendienteException;
 import co.tecnosport.api.application.pago.ReferenciaDePagoYaExisteException;
 import co.tecnosport.api.application.pago.SistecreditoNoEntregoLaUrlDePagoException;
 import co.tecnosport.api.application.pago.SistecreditoNoRespondeException;
+import co.tecnosport.api.application.pago.TransaccionDeOtroPagoException;
 import co.tecnosport.api.application.pedido.ContraentregaNoDisponibleException;
 import co.tecnosport.api.application.pedido.MetodoDePagoNoEsTransferenciaManualException;
 import co.tecnosport.api.application.pedido.MetodoDePagoNoHabilitadoException;
@@ -477,6 +478,12 @@ public class ManejadorDeErrores {
   @ExceptionHandler(PagoSinPedidoYaDevueltoException.class)
   public ProblemDetail pagoSinPedidoYaDevuelto(PagoSinPedidoYaDevueltoException excepcion) {
     return problema(HttpStatus.CONFLICT, "El pago ya se devolvió", excepcion);
+  }
+
+  @ExceptionHandler(TransaccionDeOtroPagoException.class)
+  public ProblemDetail transaccionDeOtroPago(TransaccionDeOtroPagoException excepcion) {
+    return problema(
+        HttpStatus.UNPROCESSABLE_CONTENT, "La transacción no es de este pago", excepcion);
   }
 
   @ExceptionHandler(PagoNoEncontradoException.class)

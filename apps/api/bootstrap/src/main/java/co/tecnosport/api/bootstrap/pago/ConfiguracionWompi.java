@@ -66,8 +66,8 @@ public class ConfiguracionWompi {
 
   @Bean
   public RegistrarIdTransaccionWompi registrarIdTransaccionWompi(
-      RepositorioPagos repositorioPagos) {
-    return new RegistrarIdTransaccionWompi(repositorioPagos);
+      RepositorioPagos repositorioPagos, PasarelaDePagos pasarelaDePagos) {
+    return new RegistrarIdTransaccionWompi(repositorioPagos, pasarelaDePagos);
   }
 
   @Bean

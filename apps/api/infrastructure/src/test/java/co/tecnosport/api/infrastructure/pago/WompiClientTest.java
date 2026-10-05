@@ -50,6 +50,19 @@ class WompiClientTest {
     return new WompiClient("secreto-integridad-de-prueba", secretoEventos, "pub_test", "sandbox");
   }
 
+  /**
+   * Un vector calculado fuera de este código —{@code sha256("TS-2026-000001-1" + "10000000" + "COP"
+   * + secreto)}, con Python—, como el que ya tenía el checksum del webhook. Las otras pruebas solo
+   * miraban que la firma fuera determinista y cambiara con los datos: pasarían igual firmando el
+   * monto en pesos, sin la moneda o sin el secreto, y Wompi rechazaría todos los pagos en línea.
+   */
+  @Test
+  void laFirmaDeIntegridadEsLaQueWompiCalcula() {
+    assertEquals(
+        "872cd9fe1cd0e650a29c9f596925cd0c74c8f237e25316eac54896a3a8e06389",
+        cliente("secreto-eventos-de-prueba").generarFirmaIntegridad(REFERENCIA, MONTO));
+  }
+
   @Test
   void laFirmaDeIntegridadEsDeterministaParaLosMismosDatos() {
     WompiClient cliente = cliente("secreto-eventos-de-prueba");
@@ -324,6 +337,21 @@ class WompiClientTest {
     WompiClient cliente =
         clienteContra(
             "{\"data\":{\"status\":\"APPROVED\",\"reference\":\"TS-2026-000001-1\"}}", 200);
+
+    assertEquals(Optional.empty(), cliente.consultarTransaccion("wompi-tx-1"));
+  }
+
+  /**
+   * 99.999,50 pesos se redondeaba a 100.000 y pasaba la comparación contra un pago de 100.000: se
+   * redondeaba antes de comparar. Un monto en pesos colombianos con centavos no es uno que hayamos
+   * cobrado.
+   */
+  @Test
+  void consultarTransaccionDevuelveVacioSiElMontoTraeCentavos() throws IOException {
+    WompiClient cliente =
+        clienteContra(
+            "{\"data\":{\"status\":\"APPROVED\",\"reference\":\"TS-2026-000001-1\",\"amount_in_cents\":9999950}}",
+            200);
 
     assertEquals(Optional.empty(), cliente.consultarTransaccion("wompi-tx-1"));
   }

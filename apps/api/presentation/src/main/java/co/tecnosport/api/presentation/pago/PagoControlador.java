@@ -114,7 +114,11 @@ public class PagoControlador {
             LectorEventoWompi.medio(cuerpo),
             LectorEventoWompi.valoresDePropiedadesFirmadas(cuerpo),
             LectorEventoWompi.timestamp(cuerpo),
-            LectorEventoWompi.checksum(cuerpo));
+            LectorEventoWompi.checksum(cuerpo),
+            LectorEventoWompi.propiedadesFirmadas(cuerpo),
+            LectorEventoWompi.idTransaccion(cuerpo),
+            LectorEventoWompi.montoEnCentavos(cuerpo),
+            LectorEventoWompi.moneda(cuerpo));
     ResultadoEventoDePago resultado = aplicar(comando);
     registrar(resultado, comando);
     return ResponseEntity.ok().build();
@@ -139,6 +143,19 @@ public class PagoControlador {
 
   private void registrar(ResultadoEventoDePago resultado, ProcesarEventoDePagoComando comando) {
     switch (resultado) {
+      case ESTADO_SIN_FIRMAR ->
+          log.warn(
+              "Webhook de Wompi con firma válida que no cubre el estado; no se aplicó, queda para la"
+                  + " conciliación. referencia={}",
+              comando.referencia());
+      case MONTO_NO_COINCIDE ->
+          log.error(
+              "Webhook de Wompi cuyo monto o moneda no son los del pago. NO se aplicó: despacharlo"
+                  + " sería entregar la mercancía por otro importe. referencia={}, centavos={},"
+                  + " moneda={}",
+              comando.referencia(),
+              comando.montoEnCentavos(),
+              comando.moneda());
       case FIRMA_INVALIDA ->
           log.warn("Firma de webhook de Wompi inválida, referencia={}", comando.referencia());
       case PAGO_NO_ENCONTRADO ->

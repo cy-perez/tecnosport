@@ -155,9 +155,15 @@ public final class WompiClient implements PasarelaDePagos {
       if (referencia.isBlank() || !centavos.isNumber()) {
         return Optional.empty();
       }
-      // Dividir por 100 es exacto siempre —corre la coma, no aproxima— y `Dinero` normaliza a
-      // escala 0. Nada de `double` por el camino (regla dura #6).
-      Dinero monto = Dinero.deCop(new BigDecimal(centavos.asString()).divide(CENTAVOS_POR_PESO));
+      // Dividir por 100 es exacto siempre —corre la coma, no aproxima—, pero `Dinero` redondea a
+      // escala 0, y redondear antes de comparar dejaba pasar hasta 50 centavos de faltante. Un
+      // monto en pesos colombianos que no sea múltiplo de 100 centavos no es uno que hayamos
+      // cobrado: se trata como no poder consultar. Nada de `double` (regla dura #6).
+      BigDecimal enPesos = new BigDecimal(centavos.asString()).divide(CENTAVOS_POR_PESO);
+      if (enPesos.stripTrailingZeros().scale() > 0) {
+        return Optional.empty();
+      }
+      Dinero monto = Dinero.deCop(enPesos);
       return Optional.of(
           new TransaccionDePasarela(estado, medio.isBlank() ? null : medio, referencia, monto));
     } catch (IOException e) {

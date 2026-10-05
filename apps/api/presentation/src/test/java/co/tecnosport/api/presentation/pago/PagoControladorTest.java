@@ -2,6 +2,7 @@ package co.tecnosport.api.presentation.pago;
 
 import static org.hamcrest.Matchers.matchesPattern;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -51,6 +52,7 @@ import org.springframework.transaction.PlatformTransactionManager;
 class PagoControladorTest {
 
   @Autowired private MockMvc mockMvc;
+  @Autowired private PasarelaDePagosDobleDePrueba pasarela;
   @Autowired private RepositorioPedidosDobleDePrueba pedidos;
   @Autowired private RepositorioPagosDobleDePrueba pagos;
 
@@ -60,6 +62,7 @@ class PagoControladorTest {
     // esta clase: sin esto, los pedidos y pagos de una prueba siguen visibles en la siguiente.
     pedidos.limpiar();
     pagos.limpiar();
+    pasarela.limpiar();
   }
 
   private final ObjectMapper json = new ObjectMapper();
@@ -119,7 +122,8 @@ class PagoControladorTest {
               "id": "wompi-tx-1",
               "reference": "%s",
               "status": "%s",
-              "amount_in_cents": 10000000
+              "amount_in_cents": 10000000,
+              "currency": "COP"
             }
           },
           "signature": {
@@ -252,6 +256,7 @@ class PagoControladorTest {
   void registrarIdTransaccionGuardaElIdEnElPago() throws Exception {
     Pedido pedido = pedidoConMetodo(MetodoPago.WOMPI);
     Pago pago = pagoPendienteParaElPedido(pedido);
+    pasarela.conTransaccion("1234-1610641025-49201", pago.referencia().valor(), pago.monto());
 
     mockMvc
         .perform(
@@ -269,6 +274,27 @@ class PagoControladorTest {
             .orElseThrow()
             .idTransaccionPasarela()
             .orElseThrow());
+  }
+
+  /** El id que la pasarela no reporta con esta referencia no entra, y el pago sigue sin id. */
+  @Test
+  void registrarUnIdQueNoEsDeEstePagoDevuelve422YNoLoGuarda() throws Exception {
+    Pago pago = pagoPendienteParaElPedido(pedidoConMetodo(MetodoPago.WOMPI));
+
+    mockMvc
+        .perform(
+            patch("/api/v1/pagos/intentos/{referencia}", pago.referencia().valor())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(json.writeValueAsString(new RegistrarIdTransaccionWompiRequest("basura"))))
+        .andExpect(status().isUnprocessableContent())
+        .andExpect(jsonPath("$.codigo").value("TRANSACCION_DE_OTRO_PAGO"));
+
+    assertTrue(
+        pagos
+            .buscarPorReferencia(pago.referencia())
+            .orElseThrow()
+            .idTransaccionPasarela()
+            .isEmpty());
   }
 
   @Test
@@ -311,7 +337,7 @@ class PagoControladorTest {
     }
 
     @Bean
-    PasarelaDePagos pasarelaDePagos() {
+    PasarelaDePagosDobleDePrueba pasarelaDePagos() {
       return new PasarelaDePagosDobleDePrueba();
     }
 
@@ -349,8 +375,9 @@ class PagoControladorTest {
     }
 
     @Bean
-    RegistrarIdTransaccionWompi registrarIdTransaccionWompi(RepositorioPagos repositorioPagos) {
-      return new RegistrarIdTransaccionWompi(repositorioPagos);
+    RegistrarIdTransaccionWompi registrarIdTransaccionWompi(
+        RepositorioPagos repositorioPagos, PasarelaDePagos pasarelaDePagos) {
+      return new RegistrarIdTransaccionWompi(repositorioPagos, pasarelaDePagos);
     }
 
     @Bean

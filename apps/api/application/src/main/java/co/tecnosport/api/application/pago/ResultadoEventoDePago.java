@@ -25,6 +25,19 @@ public enum ResultadoEventoDePago {
 
   YA_PROCESADO,
   FIRMA_INVALIDA,
+
+  /**
+   * La firma es válida pero no cubre el estado: lo que mueve el pedido no estaría autenticado. No
+   * se aplica; la conciliación, que consulta a la pasarela, lo resuelve.
+   */
+  ESTADO_SIN_FIRMAR,
+
+  /**
+   * El evento es de esta referencia, pero el monto o la moneda no son los del pago. No se aplica:
+   * despacharlo sería entregar la mercancía por otro importe. Es la contraprueba que la
+   * conciliación ya hacía y el webhook no.
+   */
+  MONTO_NO_COINCIDE,
   PAGO_NO_ENCONTRADO,
   ESTADO_NO_SOPORTADO
 }

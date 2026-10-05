@@ -1,6 +1,7 @@
 package co.tecnosport.api.application.pago;
 
 import java.util.List;
+import java.util.Objects;
 
 /**
  * {@code valoresPropiedadesFirma} son los valores (no los nombres) de las propiedades que Wompi
@@ -18,4 +19,15 @@ public record ProcesarEventoDePagoComando(
     String medioWompi,
     List<String> valoresPropiedadesFirma,
     long timestampFirma,
-    String checksum) {}
+    String checksum,
+    List<String> propiedadesFirmadas,
+    String idTransaccion,
+    Long montoEnCentavos,
+    String moneda) {
+
+  public ProcesarEventoDePagoComando {
+    valoresPropiedadesFirma =
+        List.copyOf(Objects.requireNonNullElse(valoresPropiedadesFirma, List.of()));
+    propiedadesFirmadas = List.copyOf(Objects.requireNonNullElse(propiedadesFirmadas, List.of()));
+  }
+}

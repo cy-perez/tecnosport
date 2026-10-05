@@ -37,6 +37,9 @@ class ProcesarEventoDePagoTest {
   private static final List<String> VALORES_FIRMA = List.of("wompi-tx-1", "APPROVED", "100000");
   private static final long TIMESTAMP_FIRMA = 1_700_000_000L;
   private static final String CHECKSUM = "checksum-del-evento-1";
+  private static final String ID_TRANSACCION = "wompi-tx-1";
+  private static final List<String> PROPIEDADES_FIRMADAS =
+      List.of("transaction.id", "transaction.status", "transaction.amount_in_cents");
 
   private RepositorioPedidosFalso pedidos;
   private RepositorioPagosFalso pagos;
@@ -144,8 +147,36 @@ class ProcesarEventoDePagoTest {
    */
   private ProcesarEventoDePagoComando comandoConChecksum(
       String estadoWompi, String medioWompi, String checksum) {
+    return comandoCompleto(
+        estadoWompi, medioWompi, checksum, PROPIEDADES_FIRMADAS, centavosDelPago(), "COP");
+  }
+
+  /** Lo que de verdad cobra el pago sembrado: el evento normal trae ese monto. */
+  private Long centavosDelPago() {
+    return pagos
+        .buscarPorReferencia(REFERENCIA)
+        .map(p -> p.monto().valor().longValueExact() * 100)
+        .orElse(0L);
+  }
+
+  private ProcesarEventoDePagoComando comandoCompleto(
+      String estadoWompi,
+      String medioWompi,
+      String checksum,
+      List<String> propiedadesFirmadas,
+      Long centavos,
+      String moneda) {
     return new ProcesarEventoDePagoComando(
-        REFERENCIA.valor(), estadoWompi, medioWompi, VALORES_FIRMA, TIMESTAMP_FIRMA, checksum);
+        REFERENCIA.valor(),
+        estadoWompi,
+        medioWompi,
+        VALORES_FIRMA,
+        TIMESTAMP_FIRMA,
+        checksum,
+        propiedadesFirmadas,
+        ID_TRANSACCION,
+        centavos,
+        moneda);
   }
 
   /**
@@ -415,5 +446,86 @@ class ProcesarEventoDePagoTest {
 
     assertTrue(
         pagos.buscarPorReferencia(REFERENCIA).orElseThrow().sinPedidoQueLoEspereDesde().isEmpty());
+  }
+
+  /**
+   * La contraprueba que el webhook no hacía: un evento firmado con la referencia del pago pero otro
+   * importe no se aplica. La conciliación ya comparaba; el camino principal se fiaba.
+   */
+  @Test
+  void unEventoConOtroMontoNoAplicaNada() {
+    ProcesarEventoDePago caso = crear();
+    Pedido pedido = pedidoConMetodo(MetodoPago.WOMPI);
+    pagoPendienteParaElPedido(pedido);
+
+    ResultadoEventoDePago resultado =
+        caso.ejecutar(
+            comandoCompleto("APPROVED", null, CHECKSUM, PROPIEDADES_FIRMADAS, 2_000_000L, "COP"));
+
+    assertEquals(ResultadoEventoDePago.MONTO_NO_COINCIDE, resultado);
+    assertEquals(
+        EstadoPago.PENDIENTE, pagos.buscarPorReferencia(REFERENCIA).orElseThrow().estado());
+    assertEquals(
+        EstadoPedido.PAGO_PENDIENTE, pedidos.buscarPorId(pedido.id()).orElseThrow().estado());
+  }
+
+  @Test
+  void unEventoEnOtraMonedaNoAplicaNada() {
+    ProcesarEventoDePago caso = crear();
+    pagoPendienteParaElPedido(pedidoConMetodo(MetodoPago.WOMPI));
+
+    assertEquals(
+        ResultadoEventoDePago.MONTO_NO_COINCIDE,
+        caso.ejecutar(
+            comandoCompleto(
+                "APPROVED", null, CHECKSUM, PROPIEDADES_FIRMADAS, centavosDelPago(), "USD")));
+  }
+
+  @Test
+  void unEventoSinMontoNoSeAplicaYQuedaParaLaConciliacion() {
+    ProcesarEventoDePago caso = crear();
+    pagoPendienteParaElPedido(pedidoConMetodo(MetodoPago.WOMPI));
+
+    assertEquals(
+        ResultadoEventoDePago.MONTO_NO_COINCIDE,
+        caso.ejecutar(
+            comandoCompleto("APPROVED", null, CHECKSUM, PROPIEDADES_FIRMADAS, null, "COP")));
+  }
+
+  /** Una firma válida que no cubre el estado no autentica el APPROVED que se leería. */
+  @Test
+  void unaFirmaQueNoCubreElEstadoNoAplicaNada() {
+    ProcesarEventoDePago caso = crear();
+    pagoPendienteParaElPedido(pedidoConMetodo(MetodoPago.WOMPI));
+
+    ResultadoEventoDePago resultado =
+        caso.ejecutar(
+            comandoCompleto(
+                "APPROVED",
+                null,
+                CHECKSUM,
+                List.of("transaction.id", "transaction.amount_in_cents"),
+                centavosDelPago(),
+                "COP"));
+
+    assertEquals(ResultadoEventoDePago.ESTADO_SIN_FIRMAR, resultado);
+    assertEquals(
+        EstadoPago.PENDIENTE, pagos.buscarPorReferencia(REFERENCIA).orElseThrow().estado());
+  }
+
+  /**
+   * El webhook deja el id de la transacción: un comprador que cerró la pestaña sin volver del
+   * checkout ya no deja el pago sin id para la conciliación.
+   */
+  @Test
+  void elWebhookRegistraElIdDeLaTransaccion() {
+    ProcesarEventoDePago caso = crear();
+    pagoPendienteParaElPedido(pedidoConMetodo(MetodoPago.WOMPI));
+
+    caso.ejecutar(comando("APPROVED"));
+
+    assertEquals(
+        Optional.of(ID_TRANSACCION),
+        pagos.buscarPorReferencia(REFERENCIA).orElseThrow().idTransaccionPasarela());
   }
 }
