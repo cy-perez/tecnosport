@@ -32,7 +32,31 @@ describe('TsAlternadorIdioma', () => {
   it('el botón dice a dónde lleva, no en qué idioma estás', async () => {
     await renderAlternador();
 
-    expect(screen.getByRole('button', { name: 'Ver el sitio en inglés' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'EN, ver el sitio en inglés' })).toBeTruthy();
+  });
+
+  // WCAG 2.5.3: el nombre accesible contiene lo que se ve. "Pulsa EN" por voz no encontraba un
+  // botón llamado "Ver el sitio en inglés".
+  it('el nombre accesible empieza por el código que se ve', async () => {
+    await renderAlternador();
+
+    const boton = screen.getByRole('button');
+    expect(boton.getAttribute('aria-label')?.startsWith(boton.textContent!.trim())).toBe(true);
+  });
+
+  it('tras cambiar de idioma el foco queda en el segmento activo, no en body', async () => {
+    const { fixture } = await renderAlternador();
+    const router = fixture.debugElement.injector.get(Router);
+    const transloco = fixture.debugElement.injector.get(TranslocoService);
+    vi.spyOn(router, 'url', 'get').mockReturnValue('/es/productos');
+    vi.spyOn(router, 'navigateByUrl').mockImplementation(async () => {
+      transloco.setActiveLang('en');
+      return true;
+    });
+
+    fireEvent.click(screen.getByRole('button'));
+
+    await vi.waitFor(() => expect(document.activeElement).toBe(screen.getByText('EN')));
   });
 
   it('el grupo tiene nombre: "ES" y "EN" sueltos no dicen de qué son', async () => {
@@ -62,7 +86,7 @@ describe('TsAlternadorIdioma', () => {
 
     // Se invierten los papeles: ahora el marcado es EN y el botón lleva a ES.
     expect(screen.getByText('EN').getAttribute('aria-current')).toBe('true');
-    expect(screen.getByRole('button', { name: 'View the site in Spanish' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'ES, view the site in Spanish' })).toBeTruthy();
     // Seguir a la URL no debe disparar otra navegación: sería un ciclo.
     expect(navegar).not.toHaveBeenCalled();
   });

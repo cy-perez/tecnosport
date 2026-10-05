@@ -53,9 +53,12 @@
            dos `oscuro:`, que es justo para lo que existe el variant. La pista
            baja a `fondo` y no se queda en `superficie`, que es el color del
            encabezado y la dejaría invisible. -->
+      <!-- `tabindex="-1"`: recibe el foco por programa al cambiar de idioma, sin entrar en el
+           orden de tabulación. Con anillo, porque ese foco llega desde el teclado. -->
       <span
-        class="box-border inline-flex min-w-compacto items-center justify-center rounded-md bg-ts-superficie px-8 font-medio text-ts-texto shadow-sm oscuro:bg-ts-superficie-alt"
+        class="anillo-foco box-border inline-flex min-w-compacto items-center justify-center rounded-md bg-ts-superficie px-8 font-medio text-ts-texto shadow-sm oscuro:bg-ts-superficie-alt"
         aria-current="true"
+        tabindex="-1"
         >{{ idioma.toUpperCase() }}</span
       >
     } @else {
