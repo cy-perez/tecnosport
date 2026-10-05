@@ -1,5 +1,6 @@
 import { isPlatformBrowser } from '@angular/common';
-import { DOCUMENT, inject, Injectable, PLATFORM_ID } from '@angular/core';
+import { afterNextRender, DOCUMENT, inject, Injectable, PLATFORM_ID } from '@angular/core';
+import { leerToken } from '../tokens/leer-token';
 
 /**
  * Dueño único de la preferencia de tema: la persiste y la aplica al documento.
@@ -38,6 +39,13 @@ const COOKIE = 'ts-tema';
 /** Un año: la preferencia de tema no caduca sola (docs/04-ui-marca.md). */
 const UN_ANIO_EN_SEGUNDOS = 31536000;
 
+/**
+ * El token con el que se pinta la barra del navegador: el fondo del encabezado, que es lo que queda
+ * pegado a ella. Se lee del estilo computado y no se copia: con `[data-tema="oscuro"]` el mismo
+ * nombre devuelve otro color, que es justo lo que hace falta.
+ */
+const TOKEN_BARRA_DEL_NAVEGADOR = '--color-superficie';
+
 export function esTema(valor: unknown): valor is Tema {
   return typeof valor === 'string' && (TEMAS as readonly string[]).includes(valor);
 }
@@ -46,6 +54,15 @@ export function esTema(valor: unknown): valor is Tema {
 export class ServicioTema {
   private readonly documento = inject(DOCUMENT);
   private readonly esNavegador = isPlatformBrowser(inject(PLATFORM_ID));
+
+  constructor() {
+    // Al hidratar ya hay un tema aplicado —lo puso el servidor o el script de `index.html`—, y la
+    // `<meta name="theme-color">` todavía dice lo que diga `index.html`, que es uno solo para los
+    // dos temas.
+    if (this.esNavegador) {
+      afterNextRender(() => this.sincronizarBarraDelNavegador());
+    }
+  }
 
   /**
    * El tema que el documento tiene puesto ahora mismo. No lee la cookie: el
@@ -73,5 +90,27 @@ export class ServicioTema {
     }
     this.documento.cookie = `${COOKIE}=${tema}; path=/; max-age=${UN_ANIO_EN_SEGUNDOS}; samesite=lax`;
     this.documento.documentElement.setAttribute('data-tema', tema);
+    this.sincronizarBarraDelNavegador();
+  }
+
+  /**
+   * Pone en la `<meta name="theme-color">` el color del tema aplicado. Fue `#0E1217` fijo hasta el 4
+   * de octubre de 2026: la barra del navegador en el teléfono salía grafito casi negro también con el
+   * sitio en claro, una franja oscura pegada a un encabezado blanco.
+   *
+   * Si el token no se puede leer no toca nada: dejar el valor de `index.html` es mejor que vaciarlo.
+   */
+  private sincronizarBarraDelNavegador(): void {
+    const color = leerToken(this.documento, TOKEN_BARRA_DEL_NAVEGADOR);
+    if (!color) {
+      return;
+    }
+    let meta = this.documento.querySelector('meta[name="theme-color"]');
+    if (!meta) {
+      meta = this.documento.createElement('meta');
+      meta.setAttribute('name', 'theme-color');
+      this.documento.head.appendChild(meta);
+    }
+    meta.setAttribute('content', color);
   }
 }
