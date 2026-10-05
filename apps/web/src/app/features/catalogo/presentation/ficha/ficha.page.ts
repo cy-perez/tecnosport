@@ -335,7 +335,6 @@ export class FichaPage {
       return;
     }
     this.resultadoAgregar.set(null);
-    const idioma = this.transloco.activeLang();
     // La foto del color que se lleva, no la principal: en el carrito se ve lo que eligió.
     const eje = ejeDeColor(producto);
     const imagen = imagenDelColor(producto, eje ? (this.seleccion()[eje] ?? null) : null);
@@ -347,8 +346,6 @@ export class FichaPage {
         slugProducto: producto.slug,
         sku: variante.sku,
         imagenUrl: imagen?.url ?? null,
-        imagenAlt:
-          (imagen ? (idioma === 'en' ? imagen.altEn : imagen.altEs) : '') || producto.nombre,
         precioValor: variante.precio.valor,
         precioMoneda: variante.precio.moneda,
         detalleVariante: detalle || null,

@@ -264,7 +264,6 @@ function snapshotDePrueba(varianteId: string) {
     slugProducto: 'morral-urbano',
     sku: 'SKU-1',
     imagenUrl: null,
-    imagenAlt: 'Morral urbano',
     precioValor: 150_000,
     precioMoneda: 'COP',
   };
