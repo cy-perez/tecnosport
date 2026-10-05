@@ -26,6 +26,9 @@ if (!soloApi) {
   // da igual que el lint y las pruebas pasen: el diseño ya se rompió, y enterarse en 2 segundos
   // es mejor que enterarse después del build.
   ejecutar("node tools/verificar-capas.mjs");
+  // Y el guardián se prueba a sí mismo: la expresión que lo dejó ciego con features/admin pasó
+  // meses sin que nada lo notara.
+  ejecutar("node --test tools/pruebas/*.test.mjs");
   // Mismo criterio y mismo precio (poco más de un segundo): un par de color por debajo del
   // mínimo de la WCAG es un defecto, y hasta ahora solo se veía si alguien se acordaba de correr
   // `npm run contrastes` a mano.
