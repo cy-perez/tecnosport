@@ -84,6 +84,21 @@ export class PedidosAdminHttpRepositorio implements RepositorioPedidosAdmin {
     return aPedidoAdmin(desempaquetar(respuesta, 'no se pudo registrar el rechazo en la entrega'));
   }
 
+  async recibirDevolucion(entrada: {
+    pedidoId: string;
+    medio: MedioReintegro | null;
+    comprobante: string | null;
+  }): Promise<PedidoAdmin> {
+    const respuesta = await this.cliente.POST('/api/v1/admin/pedidos/{id}/devolucion-rechazo', {
+      params: { path: { id: entrada.pedidoId } },
+      body: {
+        medio: entrada.medio ?? undefined,
+        comprobante: entrada.comprobante ?? undefined,
+      },
+    });
+    return aPedidoAdmin(desempaquetar(respuesta, 'no se pudo recibir la devolución'));
+  }
+
   async conciliarRecaudo(
     pedidoId: string,
     modalidadRecaudo: ModalidadRecaudo,

@@ -180,6 +180,15 @@
       "guia_requerida": "Enter the tracking number.",
       "costo_envio_requerido": "Enter what this shipment cost. If you do not know yet, enter 0 and fix it later."
     },
+    "devolucion": {
+      "titulo": "Receive the return",
+      "ayuda": "When the rejected parcel is back at the warehouse: the unit goes back on sale and, if the order had been paid, the refund is recorded and the buyer is notified.",
+      "por_devolver": "Refunded in full, product and shipping:",
+      "sin_dinero": "This order had not been paid, so there is no money to refund.",
+      "medio": "Refund method",
+      "comprobante": "Receipt",
+      "recibir": "Receive return"
+    },
     "cancelacion": {
       "titulo": "Cancel the order",
       "ayuda": "On our side and before dispatch: the product became unavailable, or we did not deliver within the agreed time.",
@@ -488,6 +497,7 @@
     "medios": {
       "transferencia_bancaria": "Bank transfer",
       "wompi": "Wompi",
+      "sistecredito": "Sistecrédito (cancel the credit)",
       "efectivo": "Cash",
       "otro": "Other"
     },

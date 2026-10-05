@@ -183,6 +183,18 @@ class RepositorioPedidosAdminFalso implements RepositorioPedidosAdmin {
     return this.items[0];
   }
 
+  devoluciones: { pedidoId: string; medio: MedioReintegro | null; comprobante: string | null }[] =
+    [];
+
+  async recibirDevolucion(entrada: {
+    pedidoId: string;
+    medio: MedioReintegro | null;
+    comprobante: string | null;
+  }): Promise<PedidoAdmin> {
+    this.devoluciones.push(entrada);
+    return this.items[0];
+  }
+
   recaudos: { pedidoId: string; modalidadRecaudo: ModalidadRecaudo; comisionRecaudo: number }[] =
     [];
 
@@ -630,6 +642,60 @@ describe('ListaPedidosAdminPage', () => {
     await vi.waitFor(() => expect(repositorio.cancelaciones.length).toBe(1));
     expect(repositorio.cancelaciones[0].monto).toBeNull();
     expect(repositorio.cancelaciones[0].medio).toBeNull();
+  });
+
+  /**
+   * Un pedido pagado por Sistecrédito y rechazado: se devuelve por donde entró, que aquí es anular
+   * el crédito, y el monto lo pone el servidor —no viaja—. Antes el panel solo ofrecía Wompi.
+   */
+  it('recibir un rechazado que cobró propone devolver por donde entró y no manda monto', async () => {
+    const { repositorio } = await renderLista([
+      pedidoDePrueba({
+        estado: 'RECHAZADO_EN_ENTREGA',
+        metodoPago: 'SISTECREDITO',
+        dineroRecibido: { valor: 50_000, moneda: 'COP' },
+        yaDevuelto: { valor: 10_000, moneda: 'COP' },
+      }),
+    ]);
+    fireEvent.click(await screen.findByRole('button', { name: 'Ver detalle' }));
+    await screen.findByText('Se devuelve entero, producto y envío:');
+
+    fireEvent.input(
+      screen.getByLabelText('Comprobante', { selector: '#devolucion-comprobante-p1' }),
+      {
+        target: { value: ' CRED-9 ' },
+      },
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Recibir devolución' }));
+
+    await vi.waitFor(() => expect(repositorio.devoluciones.length).toBe(1));
+    expect(repositorio.devoluciones[0]).toEqual({
+      pedidoId: 'p1',
+      medio: 'SISTECREDITO',
+      comprobante: 'CRED-9',
+    });
+  });
+
+  it('recibir un contraentrega rechazado no pide medio y viaja sin dinero', async () => {
+    const { repositorio } = await renderLista([
+      pedidoDePrueba({
+        estado: 'RECHAZADO_EN_ENTREGA',
+        metodoPago: 'CONTRAENTREGA',
+        dineroRecibido: { valor: 0, moneda: 'COP' },
+      }),
+    ]);
+    fireEvent.click(await screen.findByRole('button', { name: 'Ver detalle' }));
+    await screen.findByRole('button', { name: 'Recibir devolución' });
+
+    expect(screen.queryByLabelText('Por dónde se devuelve')).toBeNull();
+    expect(
+      screen.getByText('Este pedido no había cobrado nada, así que no hay dinero que devolver.'),
+    ).toBeTruthy();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Recibir devolución' }));
+
+    await vi.waitFor(() => expect(repositorio.devoluciones.length).toBe(1));
+    expect(repositorio.devoluciones[0].medio).toBeNull();
   });
 
   /** Despues de despachar ya existen los caminos que corresponden: no se ofrece cancelar. */

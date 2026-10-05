@@ -180,6 +180,15 @@
       "guia_requerida": "Escribe el número de guía.",
       "costo_envio_requerido": "Escribe lo que costó este envío. Si todavía no lo sabes, escribe 0 y corrígelo después."
     },
+    "devolucion": {
+      "titulo": "Recibir la devolución",
+      "ayuda": "Cuando el paquete rechazado vuelva a la bodega: la unidad vuelve a estar a la venta y, si el pedido había cobrado, queda la constancia del reintegro y se le avisa al comprador.",
+      "por_devolver": "Se devuelve entero, producto y envío:",
+      "sin_dinero": "Este pedido no había cobrado nada, así que no hay dinero que devolver.",
+      "medio": "Por dónde se devuelve",
+      "comprobante": "Comprobante",
+      "recibir": "Recibir devolución"
+    },
     "cancelacion": {
       "titulo": "Cancelar el pedido",
       "ayuda": "Por causa nuestra y antes de despachar: el producto dejo de estar disponible, o no lo entregamos dentro del plazo.",
@@ -488,6 +497,7 @@
     "medios": {
       "transferencia_bancaria": "Transferencia bancaria",
       "wompi": "Wompi",
+      "sistecredito": "Sistecrédito (anular el crédito)",
       "efectivo": "Efectivo",
       "otro": "Otro"
     },

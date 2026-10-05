@@ -41,6 +41,7 @@ import {
   MODALIDADES_RECAUDO,
   ModalidadRecaudo,
   MOTIVOS_CANCELACION,
+  MetodoPago,
   MotivoCancelacion,
   PedidoAdmin,
 } from '../../domain/pedido-admin.model';
@@ -103,6 +104,36 @@ interface FormularioRecaudo {
   modalidadRecaudo: FormControl<ModalidadRecaudo>;
   comisionRecaudo: FormControl<number | null>;
 }
+
+interface FormularioDevolucion {
+  medio: FormControl<string>;
+  comprobante: FormControl<string>;
+}
+
+/** Por dónde se devuelve, por omisión: por donde entró. Se puede cambiar —los términos permiten
+ * "el medio que acordemos contigo"—, pero el punto de partida no debería ser Wompi para todo. */
+const MEDIO_POR_METODO: Record<MetodoPago, MedioReintegro> = {
+  WOMPI: 'WOMPI',
+  SISTECREDITO: 'SISTECREDITO',
+  TRANSFERENCIA_MANUAL: 'TRANSFERENCIA_BANCARIA',
+  CONTRAENTREGA: 'EFECTIVO',
+};
+
+const MEDIOS_DEVOLUCION: readonly MedioReintegro[] = [
+  'WOMPI',
+  'SISTECREDITO',
+  'TRANSFERENCIA_BANCARIA',
+  'EFECTIVO',
+  'OTRO',
+];
+
+const CLAVE_MEDIO: Record<MedioReintegro, string> = {
+  WOMPI: 'admin.retractos.medios.wompi',
+  SISTECREDITO: 'admin.retractos.medios.sistecredito',
+  TRANSFERENCIA_BANCARIA: 'admin.retractos.medios.transferencia_bancaria',
+  EFECTIVO: 'admin.retractos.medios.efectivo',
+  OTRO: 'admin.retractos.medios.otro',
+};
 
 interface FormularioCancelacion {
   motivo: FormControl<string>;
@@ -205,6 +236,7 @@ export class ListaPedidosAdminPage {
   private readonly formulariosDespacho = new Map<string, FormGroup<FormularioDespacho>>();
   private readonly formulariosRecaudo = new Map<string, FormGroup<FormularioRecaudo>>();
   private readonly formulariosCancelacion = new Map<string, FormGroup<FormularioCancelacion>>();
+  private readonly formulariosDevolucion = new Map<string, FormGroup<FormularioDevolucion>>();
 
   constructor() {
     effect(() => {
@@ -321,6 +353,53 @@ export class ListaPedidosAdminPage {
       this.formulariosCancelacion.set(pedidoId, form);
     }
     return form;
+  }
+
+  protected formularioDevolucion(pedido: PedidoAdmin): FormGroup<FormularioDevolucion> {
+    let form = this.formulariosDevolucion.get(pedido.id);
+    if (!form) {
+      form = new FormGroup({
+        medio: new FormControl<string>(MEDIO_POR_METODO[pedido.metodoPago], { nonNullable: true }),
+        comprobante: new FormControl('', { nonNullable: true }),
+      });
+      this.formulariosDevolucion.set(pedido.id, form);
+    }
+    return form;
+  }
+
+  protected readonly opcionesMedioDevolucion = computed<OpcionSelect[]>(() =>
+    MEDIOS_DEVOLUCION.map((medio) => ({
+      valor: medio,
+      etiqueta: this.traducir()(CLAVE_MEDIO[medio]),
+    })),
+  );
+
+  /**
+   * Lo que falta devolver de un pedido rechazado, con las dos cifras que manda el servidor. Es solo
+   * para mostrarlo: el monto que se registra lo calcula el backend, y este no viaja.
+   */
+  protected porDevolver(pedido: PedidoAdmin): number {
+    return Math.max(0, pedido.dineroRecibido.valor - pedido.yaDevuelto.valor);
+  }
+
+  protected async recibirDevolucion(pedido: PedidoAdmin): Promise<void> {
+    const form = this.formularioDevolucion(pedido);
+    const hayDinero = this.porDevolver(pedido) > 0;
+    const comprobante = form.controls.comprobante.value.trim();
+    await this.ejecutar(() =>
+      this.acciones.recibirDevolucion.mutateAsync({
+        pedidoId: pedido.id,
+        medio: hayDinero ? (form.controls.medio.value as MedioReintegro) : null,
+        comprobante: hayDinero && comprobante !== '' ? comprobante : null,
+      }),
+    );
+  }
+
+  protected recibiendoDevolucion(pedidoId: string): boolean {
+    return (
+      this.acciones.recibirDevolucion.isPending() &&
+      this.acciones.recibirDevolucion.variables()?.pedidoId === pedidoId
+    );
   }
 
   protected readonly opcionesModalidadRecaudo = computed<OpcionSelect[]>(() =>

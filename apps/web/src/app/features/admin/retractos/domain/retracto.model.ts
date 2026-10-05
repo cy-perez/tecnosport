@@ -7,12 +7,10 @@
 export type VerdictoPlazo = 'EN_PLAZO' | 'VENCIDO' | 'INDETERMINADO';
 
 export type EstadoSolicitudRetracto =
-  | 'RADICADA'
-  | 'PRODUCTO_RECIBIDO'
-  | 'REEMBOLSADA'
-  | 'RECHAZADA';
+  'RADICADA' | 'PRODUCTO_RECIBIDO' | 'REEMBOLSADA' | 'RECHAZADA';
 
-export type MedioReintegro = 'WOMPI' | 'TRANSFERENCIA_BANCARIA' | 'EFECTIVO' | 'OTRO';
+export type MedioReintegro =
+  'WOMPI' | 'SISTECREDITO' | 'TRANSFERENCIA_BANCARIA' | 'EFECTIVO' | 'OTRO';
 
 export interface Reintegro {
   readonly monto: number;

@@ -28,6 +28,14 @@ export interface RepositorioPedidosAdmin {
 
   rechazarEnEntrega(pedidoId: string, motivo: string): Promise<PedidoAdmin>;
 
+  /** La mercancía de un pedido rechazado volvió. Sin monto: lo calcula el servidor. `medio` solo
+   * cuando el pedido había cobrado; el servidor rechaza si falta. */
+  recibirDevolucion(entrada: {
+    pedidoId: string;
+    medio: MedioReintegro | null;
+    comprobante: string | null;
+  }): Promise<PedidoAdmin>;
+
   conciliarRecaudo(
     pedidoId: string,
     modalidadRecaudo: ModalidadRecaudo,
