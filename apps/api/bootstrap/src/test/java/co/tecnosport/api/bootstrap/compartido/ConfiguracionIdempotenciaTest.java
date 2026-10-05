@@ -67,5 +67,10 @@ class ConfiguracionIdempotenciaTest {
     public void liberar(String llave) {
       // sin efecto
     }
+
+    @Override
+    public int purgarVencidas(Instant ahora) {
+      return 0;
+    }
   }
 }
