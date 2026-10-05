@@ -59,13 +59,26 @@
         sobre `#0E1217`. Un valor por omisión correcto vale más que la
         disciplina de no olvidarse.
 
-     No se toca `color-scheme`: cambiaría cómo el navegador dibuja los
-     controles nativos y la barra de desplazamiento, y eso es una decisión
-     visual aparte de este arreglo. */
+     `color-scheme` va aparte, abajo. */
   body {
     margin: 0;
     background-color: var(--color-fondo);
     color: var(--color-texto);
+  }
+
+  /* `color-scheme` sigue a `data-tema`, desde el 4 de octubre de 2026. Sin
+     él, en tema oscuro el navegador seguía pintando los controles nativos
+     —la lista de un `<select>`, el calendario de un campo de fecha, la
+     barra de desplazamiento, el autocompletado— en claro: una lista blanca
+     desplegándose sobre el lienzo `#0E1217`. El atributo lo pone el
+     servidor o el script de `index.html` antes del primer pintado, así que
+     no hay destello. */
+  :root {
+    color-scheme: light;
+  }
+
+  [data-tema='oscuro'] {
+    color-scheme: dark;
   }
 }
 
