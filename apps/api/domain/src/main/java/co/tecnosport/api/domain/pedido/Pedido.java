@@ -4,6 +4,7 @@ import co.tecnosport.api.domain.compartido.CorreoElectronico;
 import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.compartido.ExcepcionDeDominio;
 import co.tecnosport.api.domain.compartido.GeneradorIdentificador;
+import co.tecnosport.api.domain.compartido.VerdictoPlazo;
 import co.tecnosport.api.domain.envio.TarifaEnvio;
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -470,6 +471,20 @@ public final class Pedido {
    * <p>Vacío mientras el pago siga pendiente, que es lo que distingue "el plazo todavía no empezó a
    * correr" de "empezó tal día". Un pedido que nunca se pagó no puede incumplir una entrega.
    */
+  /**
+   * Si el plazo de entrega se cumple. Un pedido entregado se juzga contra su fecha de entrega —la
+   * pregunta de un pedido cerrado es "¿llegó a tiempo?"—; uno sin entregar, contra {@code ahora},
+   * que es cuando el incumplimiento corre. Vacío si el plazo no ha empezado.
+   *
+   * <p>La regla vivía en el mapeador de presentación, que es el único sitio que la conocía: un
+   * correo o la app móvil que necesitaran el veredicto habrían tenido que copiarla.
+   */
+  public Optional<VerdictoPlazo> verdictoDelPlazoDeEntrega(Instant ahora) {
+    Objects.requireNonNull(ahora, "La fecha no puede ser nula.");
+    return fechaDeInicioDelPlazoDeEntrega()
+        .map(inicio -> PlazoDeEntrega.verdicto(inicio, fechaDeEntrega().orElse(ahora)));
+  }
+
   public Optional<Instant> fechaDeInicioDelPlazoDeEntrega() {
     EstadoPedido cuandoArranca =
         metodoPago == MetodoPago.CONTRAENTREGA
