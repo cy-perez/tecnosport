@@ -1,5 +1,26 @@
 <section class="mx-auto max-w-contenido px-16 py-32">
-  <h1 class="m-0 mb-24 font-display text-2xl">{{ 'carrito.titulo' | transloco }}</h1>
+  <h1 #titulo class="m-0 mb-24 font-display text-2xl" tabindex="-1">
+    {{ 'carrito.titulo' | transloco }}
+  </h1>
+
+  <!-- Lo que acaba de pasar con una línea —la cantidad nueva y el total, o que se quitó, o que
+       falló—. Siempre en el DOM y fuera de la cadena de `@if`: una región `status` que nace llena no
+       la anuncia NVDA (`docs/06-testing.md`). `sr-only` porque lo que dice ya se ve en la línea y
+       en el total; lo que faltaba era oírlo. -->
+  <p class="sr-only" role="status">
+    @let anuncio = anuncioLinea();
+    @if (anuncio?.tipo === 'cantidad') {
+      {{
+        'carrito.anuncio_cantidad'
+          | transloco: { nombre: anuncio.nombre, cantidad: anuncio.cantidad }
+      }}
+      {{ 'carrito.total' | transloco }}: <ts-precio [valor]="total()" moneda="COP" />
+    } @else if (anuncio?.tipo === 'eliminada') {
+      {{ 'carrito.anuncio_eliminada' | transloco: { nombre: anuncio.nombre } }}
+    } @else if (anuncio?.tipo === 'error') {
+      {{ 'carrito.anuncio_error' | transloco }}
+    }
+  </p>
 
   @if (store.carritoId() === null) {
     <p class="mb-16 text-ts-texto-suave">{{ 'carrito.vacio' | transloco }}</p>
@@ -23,8 +44,8 @@
             [linea]="item.linea"
             [snapshot]="item.snapshot"
             [precioUnitario]="item.precio"
-            (cantidadCambio)="cambiarCantidad(item.linea.id, $event)"
-            (eliminar)="eliminarLinea(item.linea.id)"
+            (cantidadCambio)="cambiarCantidad(item.linea.id, $event, item.snapshot?.nombreProducto)"
+            (eliminar)="eliminarLinea(item.linea.id, $index, item.snapshot?.nombreProducto)"
           />
         }
       </div>

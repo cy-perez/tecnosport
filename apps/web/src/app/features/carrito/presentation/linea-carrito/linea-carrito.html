@@ -7,7 +7,14 @@
      eso caen en la columna de la foto, que mide 96 px fijos: el selector de
      cantidad son dos botones de 60 px más el número, así que se desbordaba de
      su propia celda. Con la columna 2 tiene 219 px. -->
+<!-- `tabindex="-1"` y `data-linea`: al eliminar la línea de encima, la página lleva el foco aquí
+     —o al título si no queda ninguna—. El botón pulsado desaparece con su línea, y sin eso el
+     navegador mandaba el foco a `<body>`. -->
+@let nombre = snapshot()?.nombreProducto ?? ('carrito.producto_sin_foto' | transloco);
 <article
+  tabindex="-1"
+  data-linea
+  [attr.aria-label]="nombre"
   class="grid grid-cols-[var(--esp-96)_1fr] items-center gap-16 border-b border-ts-borde py-16 desde-movil:grid-cols-[var(--esp-96)_1fr_auto_auto_auto]"
 >
   @if (snapshot(); as foto) {
@@ -17,7 +24,7 @@
         [ngSrc]="foto.imagenUrl"
         width="96"
         height="96"
-        [alt]="foto.imagenAlt"
+        [alt]="'carrito.foto_de' | transloco: { nombre: foto.nombreProducto }"
         disableOptimizedSrcset
       />
     } @else {
@@ -38,10 +45,15 @@
   }
 
   <div class="col-start-2 flex items-center gap-8 desde-movil:col-start-auto">
+    <!-- En cantidad 1, `inactivo` (aria-disabled) y no deshabilitado: deshabilitado salía del
+         orden de tabulación justo después de pulsarlo —de 2 a 1— y el foco caía en `<body>`.
+         `restar()` ya ignora el clic. El nombre del producto va en la etiqueta: con tres líneas,
+         tres "Disminuir cantidad" iguales no dicen de cuál. -->
     <ts-boton
       variante="secundario"
-      [deshabilitado]="deshabilitado() || linea().cantidad <= 1"
-      [etiquetaAccesible]="'carrito.disminuir' | transloco"
+      [deshabilitado]="deshabilitado()"
+      [inactivo]="linea().cantidad <= 1"
+      [etiquetaAccesible]="'carrito.disminuir_de' | transloco: { nombre }"
       (click)="restar()"
     >
       −
@@ -50,7 +62,7 @@
     <ts-boton
       variante="secundario"
       [deshabilitado]="deshabilitado()"
-      [etiquetaAccesible]="'carrito.aumentar' | transloco"
+      [etiquetaAccesible]="'carrito.aumentar_de' | transloco: { nombre }"
       (click)="sumar()"
     >
       +
@@ -69,6 +81,7 @@
     class="col-start-2 desde-movil:col-start-auto"
     variante="texto"
     [deshabilitado]="deshabilitado()"
+    [etiquetaAccesible]="'carrito.eliminar_de' | transloco: { nombre }"
     (click)="eliminar.emit()"
   >
     {{ 'carrito.eliminar' | transloco }}

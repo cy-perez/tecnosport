@@ -179,11 +179,56 @@ describe('CarritoPage', () => {
     await renderCarrito(new RepositorioCarritoFalso(carrito));
     await screen.findByText('Morral urbano');
 
-    fireEvent.click(screen.getByRole('button', { name: 'Eliminar' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Eliminar Morral urbano del carrito' }));
     await vi.waitFor(() => expect(screen.queryByText('Morral urbano')).toBeNull());
 
     expect(screen.queryByText('Morral urbano')).toBeFalsy();
     expect(await screen.findByText('Tu carrito está vacío.')).toBeTruthy();
+  });
+
+  /**
+   * Quitar una línea no decía nada, y el botón pulsado desaparecía con ella. Ahora la región
+   * `status` —siempre en el DOM— lo anuncia, y el foco va al título cuando ya no queda ninguna.
+   */
+  it('al quitar la última línea lo anuncia y lleva el foco al título', async () => {
+    sembrarCarritoId('carrito-1');
+    sembrarSnapshotLinea(snapshotDePrueba('variante-1'));
+    const carrito: Carrito = {
+      id: 'carrito-1',
+      usuarioId: null,
+      creadoEn: '2026-01-01T00:00:00Z',
+      lineas: [{ id: 'linea-1', varianteId: 'variante-1', cantidad: 1 }],
+    };
+    await renderCarrito(new RepositorioCarritoFalso(carrito));
+    await screen.findByText('Morral urbano');
+    const region = screen.getByRole('status');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Eliminar Morral urbano del carrito' }));
+
+    await vi.waitFor(() => {
+      expect(region.textContent).toContain('Morral urbano se quitó del carrito.');
+      expect(document.activeElement).toBe(screen.getByRole('heading', { name: 'Carrito' }));
+    });
+  });
+
+  it('si cambiar la cantidad falla, lo dice en vez de quedarse callado', async () => {
+    sembrarCarritoId('carrito-1');
+    sembrarSnapshotLinea(snapshotDePrueba('variante-1'));
+    const carrito: Carrito = {
+      id: 'carrito-1',
+      usuarioId: null,
+      creadoEn: '2026-01-01T00:00:00Z',
+      lineas: [{ id: 'linea-1', varianteId: 'variante-1', cantidad: 1 }],
+    };
+    // El doble rechaza `actualizarCantidad`, como un backend caído.
+    await renderCarrito(new RepositorioCarritoFalso(carrito));
+    await screen.findByText('Morral urbano');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Aumentar cantidad de Morral urbano' }));
+
+    await vi.waitFor(() =>
+      expect(screen.getByRole('status').textContent).toContain('No pudimos actualizar el carrito'),
+    );
   });
 
   it('con un carrito vacío en el servidor, muestra el mensaje de vacío', async () => {
