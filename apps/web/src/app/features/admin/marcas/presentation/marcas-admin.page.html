@@ -11,6 +11,7 @@
     (submit)="$event.preventDefault(); enviar()"
   >
     <ts-campo
+      [obligatorio]="true"
       idCampo="crear-marca-nombre"
       [label]="'admin.marcas.nombre' | transloco"
       formControlName="nombre"

@@ -57,6 +57,7 @@
             (change)="alCambiarDesenlace()"
           />
           <ts-campo
+            [obligatorio]="true"
             [idCampo]="'garantia-resumen-' + reclamacion.id"
             [label]="'admin.garantias.acciones.resumen' | transloco"
             formControlName="resumenParaElComprador"
@@ -87,6 +88,7 @@
       <form [formGroup]="formularioRadicar" (submit)="$event.preventDefault(); radicar()">
         <p class="mb-8 text-ts-texto-suave">{{ 'admin.garantias.ayuda_radicar' | transloco }}</p>
         <ts-select
+          [obligatorio]="true"
           [idCampo]="'garantia-linea-' + pedidoId()"
           [label]="'admin.garantias.acciones.linea' | transloco"
           [opciones]="opcionesLinea()"
@@ -94,6 +96,7 @@
           formControlName="varianteId"
         />
         <ts-campo
+          [obligatorio]="true"
           [idCampo]="'garantia-fallo-' + pedidoId()"
           [label]="'admin.garantias.acciones.fallo' | transloco"
           formControlName="descripcionDelFallo"

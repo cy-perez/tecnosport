@@ -113,6 +113,22 @@ describe('MedidasAdminPage', () => {
     ).toBe('13');
   });
 
+  // Las cuatro son `Validators.required` y ninguna lo declaraba: "Peso, editar" sin "obligatorio".
+  it('las cuatro medidas se declaran obligatorias', async () => {
+    await renderPagina([sinMedir()]);
+    await abrirFormulario(esAdmin.productos.medidas.medirVariante, 'TS-MOTO-G17');
+    await screen.findByLabelText(esAdmin.productos.agregarVariante.pesoGramos);
+
+    for (const etiqueta of [
+      esAdmin.productos.agregarVariante.pesoGramos,
+      esAdmin.productos.agregarVariante.largoCm,
+      esAdmin.productos.agregarVariante.anchoCm,
+      esAdmin.productos.agregarVariante.altoCm,
+    ]) {
+      expect(screen.getByLabelText(etiqueta).getAttribute('aria-required'), etiqueta).toBe('true');
+    }
+  });
+
   it('medir una que no tenía medidas deja el formulario en blanco', async () => {
     await renderPagina([sinMedir()]);
     await abrirFormulario(esAdmin.productos.medidas.medirVariante, 'TS-MOTO-G17');

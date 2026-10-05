@@ -26,6 +26,7 @@ import {
 } from '../../domain/reversion.model';
 import { mensajeDeError } from '../../../../../core/errores/mensaje-de-error';
 import { TsCargando } from '../../../../../shared/ui/cargando/ts-cargando';
+import { usarFocoEnPrimerInvalido } from '../../../../../shared/foco/foco';
 
 const CLAVE_CAUSAL: Record<CausalReversion, string> = {
   FRAUDE: 'admin.reversiones.causales.fraude',
@@ -75,6 +76,8 @@ const CLAVE_VERDICTO: Record<VerdictoPlazo, string> = {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class PanelReversion {
+  /** Al fallar el envío, el foco va al primer campo con error y no se queda en el botón. */
+  private readonly enfocarPrimerInvalido = usarFocoEnPrimerInvalido();
   readonly pedidoId = input.required<string>();
   /** El total del pedido: techo del reintegro cuando el comercio devuelve directamente. */
   readonly totalPedido = input.required<number>();
@@ -196,6 +199,7 @@ export class PanelReversion {
   protected async radicar(): Promise<void> {
     if (this.formularioRadicar.invalid) {
       this.formularioRadicar.markAllAsTouched();
+      this.enfocarPrimerInvalido();
       return;
     }
     const valores = this.formularioRadicar.getRawValue();
@@ -217,6 +221,7 @@ export class PanelReversion {
   protected async gestionar(reversion: SolicitudReversion): Promise<void> {
     if (this.formularioGestion.invalid) {
       this.formularioGestion.markAllAsTouched();
+      this.enfocarPrimerInvalido();
       return;
     }
     await this.ejecutar(() =>
@@ -232,6 +237,7 @@ export class PanelReversion {
   protected async resolver(reversion: SolicitudReversion): Promise<void> {
     if (this.formularioResolver.invalid) {
       this.formularioResolver.markAllAsTouched();
+      this.enfocarPrimerInvalido();
       return;
     }
     const valores = this.formularioResolver.getRawValue();

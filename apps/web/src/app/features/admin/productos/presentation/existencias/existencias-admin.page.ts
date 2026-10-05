@@ -23,6 +23,7 @@ import {
   ExistenciaAjustada,
   ExistenciaDeVariante,
 } from '../../domain/producto-admin.model';
+import { usarFocoEnPrimerInvalido } from '../../../../../shared/foco/foco';
 
 const CLAVE_ETIQUETA_ESTADO: Record<EstadoProducto, string> = {
   BORRADOR: 'admin.productos.estados.borrador',
@@ -45,6 +46,8 @@ const CLAVE_ETIQUETA_ESTADO: Record<EstadoProducto, string> = {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ExistenciasAdminPage {
+  /** Al fallar el envío, el foco va al primer campo con error y no se queda en el botón. */
+  private readonly enfocarPrimerInvalido = usarFocoEnPrimerInvalido();
   protected readonly migas = usarMigasAdmin([
     { clave: 'admin.productos.titulo', ruta: ['productos'] },
     { clave: 'admin.productos.existencias.titulo' },
@@ -140,6 +143,7 @@ export class ExistenciasAdminPage {
     }
     if (this.form.invalid) {
       this.form.markAllAsTouched();
+      this.enfocarPrimerInvalido();
       // Decir qué falta en vez de solo marcar, y sin deshabilitar el botón: un `<button disabled>`
       // sale del orden de tabulación y quien navega con teclado no llega a enterarse de por qué no
       // pasa nada. Mismo criterio que la pantalla de sin-medir.

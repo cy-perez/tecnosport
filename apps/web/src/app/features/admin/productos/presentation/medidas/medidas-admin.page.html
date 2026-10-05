@@ -138,6 +138,7 @@
                         }
 
                         <ts-campo
+                          [obligatorio]="true"
                           [idCampo]="'medida-peso-' + variante.varianteId"
                           tipo="number"
                           [label]="'admin.productos.agregarVariante.pesoGramos' | transloco"
@@ -145,6 +146,7 @@
                         />
 
                         <ts-campo
+                          [obligatorio]="true"
                           [idCampo]="'medida-largo-' + variante.varianteId"
                           tipo="number"
                           [label]="'admin.productos.agregarVariante.largoCm' | transloco"
@@ -152,6 +154,7 @@
                         />
 
                         <ts-campo
+                          [obligatorio]="true"
                           [idCampo]="'medida-ancho-' + variante.varianteId"
                           tipo="number"
                           [label]="'admin.productos.agregarVariante.anchoCm' | transloco"
@@ -159,6 +162,7 @@
                         />
 
                         <ts-campo
+                          [obligatorio]="true"
                           [idCampo]="'medida-alto-' + variante.varianteId"
                           tipo="number"
                           [label]="'admin.productos.agregarVariante.altoCm' | transloco"
