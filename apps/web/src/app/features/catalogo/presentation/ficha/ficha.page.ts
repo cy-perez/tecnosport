@@ -77,6 +77,17 @@ export class FichaPage {
   private readonly transloco = inject(TranslocoService);
   private readonly traducir = usarTraductor();
   protected readonly carrito = inject(CarritoStore);
+
+  /**
+   * Lo que pasó la última vez que se pulsó "Agregar al carrito", para la región viva de la barra de
+   * compra. Antes no se decía nada: el botón se deshabilitaba mientras agregaba —el foco caía en
+   * `<body>`— y al terminar no había ni un "listo" ni un "falló", y el fallo se tragaba con `void`.
+   * El nombre se guarda aquí y no se lee del producto al pintar: si el anuncio es por la camiseta,
+   * dice camiseta aunque la pantalla ya enseñe otra cosa.
+   */
+  protected readonly resultadoAgregar = signal<
+    { readonly tipo: 'agregado'; readonly nombre: string } | { readonly tipo: 'error' } | null
+  >(null);
   /** Para el enlace de vuelta al catálogo cuando el producto no existe. */
   protected readonly idioma = this.transloco.activeLang;
 
@@ -288,6 +299,9 @@ export class FichaPage {
       // `untracked`: leer el producto aquí volvería a atar el efecto a su identidad, que es
       // justamente lo que se quiere evitar.
       const producto = untracked(() => this.producto());
+      // Otro producto, otro anuncio: el "Agregado" del anterior ya no habla de lo que hay en
+      // pantalla.
+      untracked(() => this.resultadoAgregar.set(null));
       if (!producto) {
         return;
       }
@@ -314,24 +328,36 @@ export class FichaPage {
   protected agregarAlCarrito(): void {
     const producto = this.producto();
     const variante = this.varianteActiva();
-    if (!producto || !variante) {
+    // Guarda de reentrada en vez de deshabilitar el botón (`[ocupado]`): deshabilitarlo bajo el
+    // dedo mandaba el foco a `<body>`. Y agotada no agrega: el botón la anuncia con
+    // `aria-disabled`, pero sigue recibiendo el clic.
+    if (!producto || !variante || !variante.disponible || this.carrito.agregando()) {
       return;
     }
+    this.resultadoAgregar.set(null);
     const idioma = this.transloco.activeLang();
     // La foto del color que se lleva, no la principal: en el carrito se ve lo que eligió.
     const eje = ejeDeColor(producto);
     const imagen = imagenDelColor(producto, eje ? (this.seleccion()[eje] ?? null) : null);
     const detalle = detalleDeVariante(variante);
-    void this.carrito.agregarAlCarrito(variante.id, 1, {
-      varianteId: variante.id,
-      nombreProducto: producto.nombre,
-      slugProducto: producto.slug,
-      sku: variante.sku,
-      imagenUrl: imagen?.url ?? null,
-      imagenAlt: (imagen ? (idioma === 'en' ? imagen.altEn : imagen.altEs) : '') || producto.nombre,
-      precioValor: variante.precio.valor,
-      precioMoneda: variante.precio.moneda,
-      detalleVariante: detalle || null,
-    });
+    this.carrito
+      .agregarAlCarrito(variante.id, 1, {
+        varianteId: variante.id,
+        nombreProducto: producto.nombre,
+        slugProducto: producto.slug,
+        sku: variante.sku,
+        imagenUrl: imagen?.url ?? null,
+        imagenAlt:
+          (imagen ? (idioma === 'en' ? imagen.altEn : imagen.altEs) : '') || producto.nombre,
+        precioValor: variante.precio.valor,
+        precioMoneda: variante.precio.moneda,
+        detalleVariante: detalle || null,
+      })
+      .then(
+        () => this.resultadoAgregar.set({ tipo: 'agregado', nombre: producto.nombre }),
+        // El rechazo se atrapa aquí y se dice. Antes el `void` lo dejaba como una promesa
+        // rechazada sin dueño: la persona pulsaba, no pasaba nada y nadie le decía por qué.
+        () => this.resultadoAgregar.set({ tipo: 'error' }),
+      );
   }
 }

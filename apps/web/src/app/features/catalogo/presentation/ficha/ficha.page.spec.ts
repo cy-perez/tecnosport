@@ -62,6 +62,21 @@ class RepositorioCarritoFalso implements RepositorioCarrito {
   }
 }
 
+/** Un carrito que sí acepta la línea: el camino feliz de "Agregar al carrito". */
+class RepositorioCarritoQueAgrega extends RepositorioCarritoFalso {
+  override crear(): Promise<Carrito> {
+    return Promise.resolve({ id: 'c1', usuarioId: null, lineas: [], creadoEn: '2026-10-04' });
+  }
+  override agregarLinea(): Promise<Carrito> {
+    return Promise.resolve({
+      id: 'c1',
+      usuarioId: null,
+      lineas: [{ id: 'l1', varianteId: 'variante-1', cantidad: 1 }],
+      creadoEn: '2026-10-04',
+    });
+  }
+}
+
 function productoDePrueba(): Producto {
   return {
     slug: 'morral-urbano',
@@ -169,7 +184,11 @@ function activatedRouteConSlug(slug: string) {
   return { paramMap: of(paramMap), snapshot: { paramMap } };
 }
 
-async function renderFicha(repositorio: RepositorioProductos, slug = 'morral-urbano') {
+async function renderFicha(
+  repositorio: RepositorioProductos,
+  slug = 'morral-urbano',
+  repositorioCarrito: new () => RepositorioCarrito = RepositorioCarritoFalso,
+) {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   const resultado = await render(FichaPage, {
     imports: [
@@ -185,7 +204,7 @@ async function renderFicha(repositorio: RepositorioProductos, slug = 'morral-urb
       proveerPaletaDePrueba(),
       provideTanStackQuery(queryClient),
       { provide: REPOSITORIO_PRODUCTOS, useValue: repositorio },
-      { provide: REPOSITORIO_CARRITO, useClass: RepositorioCarritoFalso },
+      { provide: REPOSITORIO_CARRITO, useClass: repositorioCarrito },
       { provide: ActivatedRoute, useValue: activatedRouteConSlug(slug) },
     ],
   });
@@ -606,6 +625,46 @@ describe('FichaPage', () => {
     fireEvent.click(screen.getByRole('button', { name: '256GB, no disponible' }));
 
     expect(await screen.findByText(/1\.100\.000/)).toBeTruthy();
+  });
+
+  /**
+   * Agregar al carrito no decía nada: ni "listo" ni "falló". La región `status` vive siempre en el
+   * DOM —NVDA calla si nace llena— y lo que cambia es el texto. Y el botón no se deshabilita
+   * mientras agrega: deshabilitado, el foco se iba a `<body>`.
+   */
+  it('anuncia lo que se agregó al carrito, sin sacar el foco del botón', async () => {
+    const repositorio: RepositorioProductos = {
+      buscar: () =>
+        Promise.resolve<ResultadoPaginado<Producto>>({ items: [], cursorSiguiente: null }),
+      buscarPorSlug: () => Promise.resolve(productoDePrueba()),
+    };
+    await renderFicha(repositorio, 'morral-urbano', RepositorioCarritoQueAgrega);
+    const boton = await screen.findByRole('button', { name: 'Agregar al carrito' });
+    const region = screen.getByRole('status');
+    expect(region.textContent?.trim()).toBe('');
+
+    fireEvent.click(boton);
+
+    await vi.waitFor(() =>
+      expect(region.textContent?.trim()).toBe('Agregado al carrito: Morral urbano'),
+    );
+    expect((boton as HTMLButtonElement).disabled).toBe(false);
+  });
+
+  it('dice que no se pudo agregar cuando el carrito rechaza, en vez de tragárselo', async () => {
+    const repositorio: RepositorioProductos = {
+      buscar: () =>
+        Promise.resolve<ResultadoPaginado<Producto>>({ items: [], cursorSiguiente: null }),
+      buscarPorSlug: () => Promise.resolve(productoDePrueba()),
+    };
+    await renderFicha(repositorio);
+    const boton = await screen.findByRole('button', { name: 'Agregar al carrito' });
+
+    fireEvent.click(boton);
+
+    await vi.waitFor(() =>
+      expect(screen.getByRole('status').textContent).toMatch(/no pudimos agregarlo/i),
+    );
   });
 
   // `docs/06-testing.md`: axe automatizado en las pantallas clave. La ficha es
