@@ -99,13 +99,19 @@
 
   /* Y por abajo, mientras la barra de compra de la ficha está pegada al
      borde inferior (por debajo de tableta): un control enfocado al fondo de
-     la ficha quedaba tapado por ella. Su alto es el botón —objetivo
-     táctil— más su relleno vertical, y un respiro de `--esp-16` por la fila
-     del anuncio cuando aparece. `:has` y no una clase puesta desde
-     TypeScript: la barra solo existe en la ficha, y es ella la que lo dice. */
+     la ficha quedaba tapado por ella. `:has` y no una clase puesta desde
+     TypeScript: la barra solo existe en la ficha, y es ella la que lo dice.
+     El alto es el **medido** (`--alto-barra-compra`, que publica la
+     directiva `appAltoEnVariable`), más `--esp-16` para el anillo de foco. La
+     fórmula de antes —una fila: el botón y su relleno— queda como respaldo
+     para el servidor y para un navegador sin `ResizeObserver`; la barra se
+     parte en dos o tres filas según el ancho, el idioma y el mensaje, y a
+     390 px medía 128 contra los 84 de la fórmula. */
   html:has([data-barra-compra]) {
     @variant max-desde-tableta {
-      scroll-padding-bottom: calc(var(--control-tactil) + 2 * var(--esp-12) + var(--esp-16));
+      scroll-padding-bottom: calc(
+        var(--alto-barra-compra, calc(var(--control-tactil) + 2 * var(--esp-12))) + var(--esp-16)
+      );
     }
   }
 }
