@@ -113,10 +113,9 @@ export class RejillaPage {
       return;
     }
     this.masCargados.set(ahora - antes);
-    this.enfocarDespuesDePintar(() =>
-      this.anfitrion.nativeElement
-        .querySelectorAll('ts-tarjeta-producto')
-        [antes]?.querySelector<HTMLElement>('a'),
-    );
+    this.enfocarDespuesDePintar(() => {
+      const tarjetas = this.anfitrion.nativeElement.querySelectorAll('ts-tarjeta-producto');
+      return tarjetas[antes]?.querySelector<HTMLElement>('a');
+    });
   }
 }
