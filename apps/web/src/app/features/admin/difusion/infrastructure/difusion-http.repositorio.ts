@@ -42,9 +42,11 @@ export class DifusionHttpRepositorio implements RepositorioDifusion {
         return { tipo: 'YA_EN_MARCHA' };
       }
       if (codigo === 'PRODUCTO_NO_DIFUNDIBLE') {
-        // El mensaje del backend dice cuál de las tres cosas falta —imagen, precio o publicar—, y
-        // eso no se puede reconstruir desde un código: se pasa entero a la pantalla.
-        return { tipo: 'NO_DIFUNDIBLE', motivo: detalleDe(respuesta.error) };
+        // Solo el código, no el `detail`. El `detail` lo escribe el backend en español, con el UUID
+        // del producto dentro, y se pintaba tal cual: en inglés el panel enseñaba un párrafo en
+        // español. La pantalla traduce el código; el motivo exacto entre los cuatro posibles se
+        // pierde, y por eso el texto traducido nombra los cuatro.
+        return { tipo: 'NO_DIFUNDIBLE' };
       }
     }
 
@@ -103,13 +105,4 @@ function codigoDe(cuerpo: unknown): keyof typeof CODIGOS | undefined {
   return typeof codigo === 'string' && codigo in CODIGOS
     ? (codigo as keyof typeof CODIGOS)
     : undefined;
-}
-
-/** El `detail` del ProblemDetail, que es donde el backend escribe qué le falta al producto. */
-function detalleDe(cuerpo: unknown): string {
-  if (cuerpo === null || typeof cuerpo !== 'object' || !('detail' in cuerpo)) {
-    return '';
-  }
-  const detalle = (cuerpo as { detail?: unknown }).detail;
-  return typeof detalle === 'string' ? detalle : '';
 }

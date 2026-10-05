@@ -24,7 +24,7 @@
         <span class="text-sm text-ts-texto-suave">
           @if (opcion.ultima; as ultima) {
             {{
-              'admin.difusion.ultimaVez' | transloco: { fecha: ultima.solicitadaEn | date: 'short' }
+              'admin.difusion.ultimaVez' | transloco: { fecha: fechaConHora(ultima.solicitadaEn) }
             }}
           } @else {
             {{ 'admin.difusion.nuncaDifundido' | transloco }}
@@ -91,7 +91,7 @@
               <p class="m-0">
                 {{ 'admin.difusion.red.' + publicacion.red | transloco }}
                 <span class="text-sm text-ts-texto-suave">
-                  {{ publicacion.solicitadaEn | date: 'short' }} ·
+                  {{ fechaConHora(publicacion.solicitadaEn) }} ·
                   {{ 'admin.difusion.estado.' + publicacion.estado | transloco }}
                 </span>
               </p>

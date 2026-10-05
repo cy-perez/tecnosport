@@ -781,6 +781,7 @@
     "restaurar": "Back to the drafted text",
     "faltaPie": "Write the post text before sending it.",
     "yaEnMarcha": "That post was just sent. Wait for it to finish before trying again.",
+    "noDifundible": "This product can't be shared yet. It has to be published in the store, have at least one active variant and a main image with a JPEG preview; if the image predates that preview, upload it again.",
     "fallo": "The network rejected it: {{motivo}}",
     "error": "We could not post. Try again.",
     "publicado": "Posted to {{red}}.",

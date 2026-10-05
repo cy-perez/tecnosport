@@ -781,6 +781,7 @@
     "restaurar": "Volver al texto propuesto",
     "faltaPie": "Escribe el texto de la publicación antes de enviarla.",
     "yaEnMarcha": "Esa publicación se acaba de enviar. Espera a que termine antes de volver a intentarlo.",
+    "noDifundible": "Este producto todavía no se puede difundir. Necesita estar publicado en la tienda, tener al menos una variante activa y una imagen principal con vista previa en JPEG; si la imagen es anterior a esa vista previa, vuelve a subirla.",
     "fallo": "La red no la aceptó: {{motivo}}",
     "error": "No pudimos publicar. Vuelve a intentarlo.",
     "publicado": "Publicado en {{red}}.",

@@ -7,7 +7,6 @@ import {
   input,
   signal,
 } from '@angular/core';
-import { DatePipe } from '@angular/common';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { TsBoton } from '../../../../shared/ui/boton/ts-boton';
@@ -18,6 +17,7 @@ import {
   usarPropuestaDePie,
 } from '../application/difundir-producto.mutacion';
 import { REDES, RedSocial } from '../domain/difusion.model';
+import { fechaConHora } from '../../../../core/i18n/fecha-colombia';
 
 /**
  * Difundir un producto en Facebook e Instagram desde su ficha.
@@ -39,13 +39,22 @@ import { REDES, RedSocial } from '../domain/difusion.model';
 @Component({
   selector: 'app-panel-de-difusion',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [DatePipe, ReactiveFormsModule, TranslocoPipe, TsBoton, TsCampo],
+  imports: [ReactiveFormsModule, TranslocoPipe, TsBoton, TsCampo],
   templateUrl: './panel-de-difusion.html',
 })
 export class PanelDeDifusion {
   readonly productoId = input.required<string>();
 
   private readonly transloco = inject(TranslocoService);
+
+  /**
+   * Fecha y hora en el idioma de quien lee y en hora de Colombia. Era `DatePipe` con `'short'`: sin
+   * `LOCALE_ID` registrado cae a `en-US` —"9/29/26, 3:00 PM" también en español— y sin zona usa la
+   * del entorno. Mismo formateador que la bandeja de envíos (`core/i18n/fecha-colombia.ts`).
+   */
+  protected fechaConHora(iso: string): string {
+    return fechaConHora(iso, this.transloco.activeLang());
+  }
 
   protected readonly redes = REDES;
   protected readonly red = signal<RedSocial>('INSTAGRAM');
@@ -131,9 +140,9 @@ export class PanelDeDifusion {
             return;
           }
           if (resultado.tipo === 'NO_DIFUNDIBLE') {
-            // El motivo lo escribe el backend y dice cuál de las tres cosas falta. No se traduce:
-            // reconstruirlo aquí exigiría tres códigos distintos para enseñar el mismo cartel.
-            this.error.set(resultado.motivo);
+            // Por el código y traducido. Era el `detail` del backend tal cual: en español siempre,
+            // con el UUID del producto dentro.
+            this.error.set(this.transloco.translate('admin.difusion.noDifundible'));
             return;
           }
           const fallida = resultado.publicaciones.find((p) => p.estado === 'FALLIDA');
