@@ -10,6 +10,7 @@ import { join } from 'node:path';
 import { crearClienteContratos } from '@tecnosport/contratos';
 import { baseUrl } from './app/core/http/base-url';
 import { origenPublico } from './app/core/seo/origen-publico';
+import { cabeceraDeCache } from './cache-estaticos';
 import { crearProxyApi } from './proxy-api';
 import { construirRobots, construirSitemap, PaginaDelSitio } from './sitemap/constructor';
 import legalesEs from './assets/i18n/scopes/legales/es.json';
@@ -75,13 +76,16 @@ if (apiPublica) {
 }
 
 /**
- * Serve static files from /browser
+ * Los archivos de `browser/`. La caché va por archivo (`cache-estaticos.ts`): un año solo para lo
+ * que lleva el hash en el nombre, y revalidar todo lo demás. Un `maxAge` global de un año dejaba a
+ * quien ya había visitado con las traducciones viejas después de cada despliegue.
  */
 app.use(
   express.static(browserDistFolder, {
-    maxAge: '1y',
     index: false,
     redirect: false,
+    setHeaders: (res, ruta) =>
+      res.setHeader('Cache-Control', cabeceraDeCache(ruta, browserDistFolder)),
   }),
 );
 
