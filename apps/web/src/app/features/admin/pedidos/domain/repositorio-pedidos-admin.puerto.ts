@@ -5,6 +5,7 @@ import {
   FiltroPedidosAdmin,
   ModalidadRecaudo,
   MotivoCancelacion,
+  PagoSinPedidoAdmin,
   PedidoAdmin,
   PedidosPaginadosAdmin,
 } from './pedido-admin.model';
@@ -41,6 +42,16 @@ export interface RepositorioPedidosAdmin {
     modalidadRecaudo: ModalidadRecaudo,
     comisionRecaudo: number,
   ): Promise<PedidoAdmin>;
+
+  /** Pagos aprobados sin pedido que los esperara y todavía sin devolver. */
+  listarPagosSinPedido(): Promise<PagoSinPedidoAdmin[]>;
+
+  /** Sin monto: es el del pago, entero, y lo pone el servidor. */
+  registrarReintegroDePagoSinPedido(entrada: {
+    pagoId: string;
+    medio: MedioReintegro;
+    comprobante: string | null;
+  }): Promise<void>;
 
   /** `monto` y `medio` solo cuando el dinero ya habia entrado; el servidor rechaza si faltan. */
   cancelar(entrada: {

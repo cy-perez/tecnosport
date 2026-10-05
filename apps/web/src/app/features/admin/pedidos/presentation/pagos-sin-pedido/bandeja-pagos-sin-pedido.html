@@ -1,0 +1,48 @@
+@if (pagos().length > 0) {
+  <section
+    class="mb-24 border border-ts-borde bg-ts-superficie p-16 rounded-md"
+    aria-labelledby="titulo-pagos-sin-pedido"
+  >
+    <h2 id="titulo-pagos-sin-pedido" class="mt-0 mb-8 text-base font-medio">
+      {{ 'admin.pedidos.pagos_sin_pedido.titulo' | transloco: { cuantos: pagos().length } }}
+    </h2>
+    <p class="mt-0 mb-16 text-ts-texto-suave">
+      {{ 'admin.pedidos.pagos_sin_pedido.ayuda' | transloco }}
+    </p>
+    <ul class="m-0 list-none p-0">
+      @for (pago of pagos(); track pago.pagoId) {
+        <li class="mb-16">
+          <p class="mt-0 mb-8">
+            {{
+              'admin.pedidos.pagos_sin_pedido.resumen'
+                | transloco
+                  : {
+                      numero: pago.numeroPedido,
+                      correo: pago.correo,
+                      fecha: formatearFecha(pago.desde),
+                    }
+            }}
+            <ts-precio [valor]="pago.monto.valor" [moneda]="pago.monto.moneda" />
+          </p>
+          <form [formGroup]="formulario(pago)" (submit)="$event.preventDefault(); registrar(pago)">
+            <ts-select
+              [idCampo]="'pago-sin-pedido-medio-' + pago.pagoId"
+              [label]="'admin.pedidos.pagos_sin_pedido.medio' | transloco"
+              [opciones]="opcionesMedio()"
+              formControlName="medio"
+            />
+            <ts-campo
+              [idCampo]="'pago-sin-pedido-comprobante-' + pago.pagoId"
+              [label]="'admin.pedidos.pagos_sin_pedido.comprobante' | transloco"
+              formControlName="comprobante"
+            />
+            <ts-boton tipo="submit" [ocupado]="registrando(pago.pagoId)">
+              {{ 'admin.pedidos.pagos_sin_pedido.registrar' | transloco }}
+            </ts-boton>
+          </form>
+        </li>
+      }
+    </ul>
+    <p role="status" class="m-0 text-ts-error">{{ error() ?? '' }}</p>
+  </section>
+}

@@ -3,6 +3,8 @@
 
   <h1 class="m-0 mb-24 font-display text-2xl">{{ 'admin.pedidos.titulo' | transloco }}</h1>
 
+  <app-bandeja-pagos-sin-pedido />
+
   <div class="mb-24 max-w-filtro">
     <ts-select
       idCampo="filtro-estado"
@@ -529,7 +531,7 @@
                   @if (puedeCancelar(pedido)) {
                     <form
                       class="mt-16"
-                      [formGroup]="formularioCancelacion(pedido.id)"
+                      [formGroup]="formularioCancelacion(pedido)"
                       (submit)="$event.preventDefault(); cancelar(pedido)"
                     >
                       <h2 class="mt-0 mb-8 text-base font-medio">
@@ -551,6 +553,12 @@
                           [label]="'admin.pedidos.cancelacion.monto' | transloco"
                           [ayuda]="'admin.pedidos.cancelacion.dinero_ayuda' | transloco"
                           formControlName="monto"
+                        />
+                        <ts-select
+                          [idCampo]="'cancelacion-medio-' + pedido.id"
+                          [label]="'admin.pedidos.devolucion.medio' | transloco"
+                          [opciones]="opcionesMedioDevolucion()"
+                          formControlName="medio"
                         />
                         <ts-campo
                           [idCampo]="'cancelacion-comprobante-' + pedido.id"

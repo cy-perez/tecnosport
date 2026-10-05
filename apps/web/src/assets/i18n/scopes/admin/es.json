@@ -44,7 +44,8 @@
     "foto_no_es_del_borrador": "Una de las fotos no pertenece a esta publicación. Recarga la página.",
     "imagen_de_proveedor_ilegible": "Una de las fotos no se pudo procesar. Recházalo o pídele al proveedor la foto de nuevo.",
     "producto_de_proveedor_ya_existe": "Este anuncio ya es un producto del catálogo: es el mismo título al mismo precio. Rechaza el borrador.",
-    "lote_en_curso": "La ingesta todavía se está procesando. Espera a que termine para eliminarla."
+    "lote_en_curso": "La ingesta todavía se está procesando. Espera a que termine para eliminarla.",
+    "pago_sin_pedido_ya_devuelto": "Ese pago ya tiene registrada su devolución."
   },
   "iniciarSesion": {
     "titulo": "Panel administrativo",
@@ -179,6 +180,14 @@
       "transportadora_requerida": "Escribe la transportadora de esta guía.",
       "guia_requerida": "Escribe el número de guía.",
       "costo_envio_requerido": "Escribe lo que costó este envío. Si todavía no lo sabes, escribe 0 y corrígelo después."
+    },
+    "pagos_sin_pedido": {
+      "titulo": "Pagos por devolver ({{cuantos}})",
+      "ayuda": "Pagos aprobados cuando su pedido ya no los esperaba: el comprador pagó dos veces, o el pedido ya estaba cancelado o fallido. Ese dinero no es de ninguna venta y se devuelve entero. Devuélvelo en la pasarela (o pide a Sistecrédito anular el crédito) y registra aquí la constancia.",
+      "resumen": "Pedido {{numero}} · {{correo}} · desde {{fecha}} ·",
+      "medio": "Por dónde se devolvió",
+      "comprobante": "Comprobante",
+      "registrar": "Registrar devolución"
     },
     "devolucion": {
       "titulo": "Recibir la devolución",

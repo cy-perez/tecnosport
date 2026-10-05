@@ -44,7 +44,8 @@
     "foto_no_es_del_borrador": "One of the photos does not belong to this post. Reload the page.",
     "imagen_de_proveedor_ilegible": "One of the photos could not be processed. Reject it or ask the supplier for the photo again.",
     "producto_de_proveedor_ya_existe": "This post is already a product in the catalogue: same title at the same price. Reject the draft.",
-    "lote_en_curso": "The import is still being processed. Wait for it to finish before deleting it."
+    "lote_en_curso": "The import is still being processed. Wait for it to finish before deleting it.",
+    "pago_sin_pedido_ya_devuelto": "That payment already has its refund recorded."
   },
   "iniciarSesion": {
     "titulo": "Admin panel",
@@ -179,6 +180,14 @@
       "transportadora_requerida": "Enter the carrier for this shipment.",
       "guia_requerida": "Enter the tracking number.",
       "costo_envio_requerido": "Enter what this shipment cost. If you do not know yet, enter 0 and fix it later."
+    },
+    "pagos_sin_pedido": {
+      "titulo": "Payments to refund ({{cuantos}})",
+      "ayuda": "Payments approved when their order no longer expected them: the buyer paid twice, or the order was already cancelled or failed. That money belongs to no sale and is refunded in full. Refund it in the gateway (or ask Sistecrédito to cancel the credit) and record the receipt here.",
+      "resumen": "Order {{numero}} · {{correo}} · since {{fecha}} ·",
+      "medio": "Refund method",
+      "comprobante": "Receipt",
+      "registrar": "Record refund"
     },
     "devolucion": {
       "titulo": "Receive the return",

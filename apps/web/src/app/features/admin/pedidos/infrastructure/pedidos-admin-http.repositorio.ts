@@ -1,14 +1,17 @@
 import { Injectable, inject } from '@angular/core';
 import { crearClienteAutenticado } from '../../../../core/http/cliente-autenticado';
 import { baseUrl } from '../../../../core/http/base-url';
-import { desempaquetar } from '../../../../core/http/respuesta-http';
+import { desempaquetar, exigirExito } from '../../../../core/http/respuesta-http';
 import { SesionStore } from '../../../../core/autenticacion/sesion.store';
 import { MedioReintegro } from '../../retractos/domain/retracto.model';
 import {
   EmisionDeGuiaAdmin,
   FiltroPedidosAdmin,
   ModalidadRecaudo,
+  EstadoPedido,
+  MetodoPago,
   MotivoCancelacion,
+  PagoSinPedidoAdmin,
   PedidoAdmin,
   PedidosPaginadosAdmin,
 } from '../domain/pedido-admin.model';
@@ -82,6 +85,33 @@ export class PedidosAdminHttpRepositorio implements RepositorioPedidosAdmin {
       body: { motivo },
     });
     return aPedidoAdmin(desempaquetar(respuesta, 'no se pudo registrar el rechazo en la entrega'));
+  }
+
+  async listarPagosSinPedido(): Promise<PagoSinPedidoAdmin[]> {
+    const respuesta = await this.cliente.GET('/api/v1/admin/pagos/sin-pedido');
+    return desempaquetar(respuesta, 'no se pudieron cargar los pagos sin pedido').map((p) => ({
+      pagoId: p.pagoId,
+      referencia: p.referencia,
+      metodoPago: p.metodoPago as MetodoPago,
+      monto: { valor: p.monto.valor, moneda: p.monto.moneda },
+      desde: p.desde,
+      pedidoId: p.pedidoId,
+      numeroPedido: p.numeroPedido,
+      estadoPedido: p.estadoPedido as EstadoPedido,
+      correo: p.correo,
+    }));
+  }
+
+  async registrarReintegroDePagoSinPedido(entrada: {
+    pagoId: string;
+    medio: MedioReintegro;
+    comprobante: string | null;
+  }): Promise<void> {
+    const respuesta = await this.cliente.POST('/api/v1/admin/pagos/{id}/reintegro', {
+      params: { path: { id: entrada.pagoId } },
+      body: { medio: entrada.medio, comprobante: entrada.comprobante ?? undefined },
+    });
+    exigirExito(respuesta, 'no se pudo registrar el reintegro del pago');
   }
 
   async recibirDevolucion(entrada: {

@@ -11,6 +11,7 @@ import {
   EmisionDeGuiaAdmin,
   ModalidadRecaudo,
   MotivoCancelacion,
+  PagoSinPedidoAdmin,
   PedidoAdmin,
   PedidosPaginadosAdmin,
 } from '../../domain/pedido-admin.model';
@@ -183,6 +184,21 @@ class RepositorioPedidosAdminFalso implements RepositorioPedidosAdmin {
     return this.items[0];
   }
 
+  pagosSinPedido: PagoSinPedidoAdmin[] = [];
+  reintegrosDePagos: { pagoId: string; medio: MedioReintegro; comprobante: string | null }[] = [];
+
+  async listarPagosSinPedido(): Promise<PagoSinPedidoAdmin[]> {
+    return this.pagosSinPedido;
+  }
+
+  async registrarReintegroDePagoSinPedido(entrada: {
+    pagoId: string;
+    medio: MedioReintegro;
+    comprobante: string | null;
+  }): Promise<void> {
+    this.reintegrosDePagos.push(entrada);
+  }
+
   devoluciones: { pedidoId: string; medio: MedioReintegro | null; comprobante: string | null }[] =
     [];
 
@@ -235,7 +251,13 @@ async function renderLista(
   queryParams: Record<string, string> = {},
   totalPaginas = 1,
 ) {
-  const repositorio = new RepositorioPedidosAdminFalso(items, totalPaginas);
+  return renderListaCon(new RepositorioPedidosAdminFalso(items, totalPaginas), queryParams);
+}
+
+async function renderListaCon(
+  repositorio: RepositorioPedidosAdminFalso,
+  queryParams: Record<string, string> = {},
+) {
   const resultado = await render(ListaPedidosAdminPage, {
     imports: [
       TranslocoTestingModule.forRoot({
@@ -572,7 +594,8 @@ describe('ListaPedidosAdminPage', () => {
     await vi.waitFor(() => expect(repositorio.cancelaciones.length).toBe(1));
     expect(repositorio.cancelaciones[0].motivo).toBe('NO_DISPONIBILIDAD');
     expect(repositorio.cancelaciones[0].monto).toBe(50_000);
-    expect(repositorio.cancelaciones[0].medio).toBe('WOMPI');
+    // El pedido de prueba se pagó por transferencia: se devuelve por transferencia, no por Wompi.
+    expect(repositorio.cancelaciones[0].medio).toBe('TRANSFERENCIA_BANCARIA');
   });
 
   /**
@@ -696,6 +719,60 @@ describe('ListaPedidosAdminPage', () => {
 
     await vi.waitFor(() => expect(repositorio.devoluciones.length).toBe(1));
     expect(repositorio.devoluciones[0].medio).toBeNull();
+  });
+
+  /**
+   * El hallazgo del 4 de octubre: el formulario mandaba siempre WOMPI y sin selector. Un pedido de
+   * Sistecrédito cancelado quedaba "devuelto por Wompi" y nadie anulaba el crédito.
+   */
+  it('cancelar un pedido de Sistecrédito propone devolver por Sistecrédito', async () => {
+    const { repositorio } = await renderLista([
+      pedidoDePrueba({ estado: 'PAGADO', metodoPago: 'SISTECREDITO' }),
+    ]);
+    fireEvent.click(await screen.findByRole('button', { name: 'Ver detalle' }));
+    fireEvent.input(await screen.findByLabelText('Monto a devolver'), {
+      target: { value: '50000' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Cancelar pedido' }));
+
+    await vi.waitFor(() => expect(repositorio.cancelaciones.length).toBe(1));
+    expect(repositorio.cancelaciones[0].medio).toBe('SISTECREDITO');
+  });
+
+  it('sin pagos por devolver, la bandeja no ocupa nada', async () => {
+    await renderLista([pedidoDePrueba()]);
+    await screen.findByRole('button', { name: 'Ver detalle' });
+
+    expect(screen.queryByText(/Pagos por devolver/)).toBeNull();
+  });
+
+  /** La bandeja nueva: el monto se muestra, no viaja, y el medio arranca por donde entró. */
+  it('un pago sin pedido se lista y su devolución viaja sin monto', async () => {
+    const repositorio = new RepositorioPedidosAdminFalso([pedidoDePrueba()]);
+    repositorio.pagosSinPedido = [
+      {
+        pagoId: 'pago-9',
+        referencia: 'TS-2026-000123-2',
+        metodoPago: 'SISTECREDITO',
+        monto: { valor: 61_200, moneda: 'COP' },
+        desde: '2026-10-04T12:00:00Z',
+        pedidoId: 'p1',
+        numeroPedido: 'TS-2026-000123',
+        estadoPedido: 'CANCELADO',
+        correo: 'cliente@example.com',
+      },
+    ];
+    await renderListaCon(repositorio);
+
+    await screen.findByText('Pagos por devolver (1)');
+    fireEvent.click(screen.getByRole('button', { name: 'Registrar devolución' }));
+
+    await vi.waitFor(() => expect(repositorio.reintegrosDePagos.length).toBe(1));
+    expect(repositorio.reintegrosDePagos[0]).toEqual({
+      pagoId: 'pago-9',
+      medio: 'SISTECREDITO',
+      comprobante: null,
+    });
   });
 
   /** Despues de despachar ya existen los caminos que corresponden: no se ofrece cancelar. */
