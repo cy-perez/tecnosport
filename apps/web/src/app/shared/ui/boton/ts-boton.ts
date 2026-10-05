@@ -14,12 +14,14 @@ export type VarianteBoton = 'primario' | 'secundario' | 'texto' | 'peligro' | 'a
  * variante y el `disabled:` de la base compiten con la misma especificidad y
  * gana el que el compilador haya puesto último — un botón deshabilitado que
  * se aclara al pasar el ratón. El SCSS lo resolvía con `&:hover:not(:disabled)`.
+ *
+ * `not-aria-disabled:` por lo mismo con `inactivo`: un botón inactivo tampoco se aclara.
  */
 const VARIANTES: Record<VarianteBoton, string> = {
   primario:
-    'min-h-tactil bg-ts-primario text-ts-sobre-primario not-disabled:hover:bg-ts-primario-hover not-disabled:active:bg-ts-primario-pressed',
+    'min-h-tactil bg-ts-primario text-ts-sobre-primario not-disabled:not-aria-disabled:hover:bg-ts-primario-hover not-disabled:not-aria-disabled:active:bg-ts-primario-pressed',
   secundario:
-    'min-h-tactil bg-transparent text-ts-primario border-ts-borde-control not-disabled:hover:bg-ts-superficie-alt',
+    'min-h-tactil bg-transparent text-ts-primario border-ts-borde-control not-disabled:not-aria-disabled:hover:bg-ts-superficie-alt',
   // `min-h-tactil` también aquí, y esto **revierte** lo que hacía el SCSS.
   // El SCSS ponía el mínimo en la base y lo anulaba con `min-height: auto` en
   // esta variante; al traducirlo se conservó la exención. Medido en el
@@ -28,8 +30,10 @@ const VARIANTES: Record<VarianteBoton, string> = {
   // `docs/04-ui-marca.md` exige **sin distinguir variantes**. Un botón de texto
   // se pulsa igual que uno con fondo; que no pinte relleno no lo hace más
   // fácil de acertar con el pulgar. Las cuatro variantes lo llevan ahora.
-  texto: 'min-h-tactil bg-transparent text-ts-primario px-12 py-8 not-disabled:hover:underline',
-  peligro: 'min-h-tactil bg-ts-error text-ts-sobre-primario not-disabled:hover:brightness-110',
+  texto:
+    'min-h-tactil bg-transparent text-ts-primario px-12 py-8 not-disabled:not-aria-disabled:hover:underline',
+  peligro:
+    'min-h-tactil bg-ts-error text-ts-sobre-primario not-disabled:not-aria-disabled:hover:brightness-110',
   // El ámbar de marca como relleno, con grafito encima — la única forma en que
   // `docs/04-ui-marca.md` admite este color. Existe como variante y no como un
   // `clase="bg-ts-acento"` de quien llama por el anillo de foco: en tema oscuro
@@ -50,7 +54,7 @@ const VARIANTES: Record<VarianteBoton, string> = {
   acento:
     'min-h-tactil bg-ts-acento text-ts-sobre-acento focus-visible:outline-ts-sobre-acento ' +
     'focus-visible:outline-offset-foco-dentro ' +
-    'not-disabled:hover:bg-ts-acento-hover not-disabled:active:bg-ts-acento-pressed',
+    'not-disabled:not-aria-disabled:hover:bg-ts-acento-hover not-disabled:not-aria-disabled:active:bg-ts-acento-pressed',
   // La baldosa de "Nuestras líneas" de la portada, convertida en variante porque desde el 28 de
   // septiembre de 2026 la usa una segunda pantalla —el selector de método de pago— y una firma
   // visual repetida a mano en dos sitios se despega en el tercero.
@@ -76,7 +80,7 @@ const VARIANTES: Record<VarianteBoton, string> = {
   baldosa:
     'min-h-tactil border-2 border-ts-borde-control/50 bg-ts-primario-suave text-ts-sobre-acento ' +
     'oscuro:border-ts-acento oscuro:bg-ts-acento-2 ' +
-    'not-disabled:hover:brightness-95 not-disabled:active:brightness-90',
+    'not-disabled:not-aria-disabled:hover:brightness-95 not-disabled:not-aria-disabled:active:brightness-90',
 };
 
 /**
@@ -116,7 +120,13 @@ const BASE =
   // `outline-2` y `outline-offset-2`, dos píxeles sueltos.
   'focus-visible:outline-foco focus-visible:outline-ts-foco focus-visible:outline-offset-foco ' +
   'disabled:bg-ts-deshabilitado disabled:text-ts-sobre-deshabilitado ' +
-  'disabled:border-ts-deshabilitado disabled:cursor-not-allowed';
+  'disabled:border-ts-deshabilitado disabled:cursor-not-allowed ' +
+  // `inactivo` (`aria-disabled`) se ve igual que deshabilitado. Sin esto solo lo sabía el lector
+  // de pantalla: en dev, con una sola página de pedidos, «Anterior» y «Siguiente» se veían tan
+  // activos como cualquier botón, y lo mismo la talla agotada, el «−» en cantidad 1 y el
+  // disparador de la captura sin nivelar. Pulsarlos no hacía nada y nada decía por qué.
+  'aria-disabled:bg-ts-deshabilitado aria-disabled:text-ts-sobre-deshabilitado ' +
+  'aria-disabled:border-ts-deshabilitado aria-disabled:cursor-not-allowed';
 
 @Component({
   selector: 'ts-boton',
