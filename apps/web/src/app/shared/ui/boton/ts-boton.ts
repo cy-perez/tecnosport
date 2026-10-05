@@ -37,10 +37,19 @@ const VARIANTES: Record<VarianteBoton, string> = {
   // que trae `BASE` sería invisible justo sobre este fondo. Aquí se cambia a
   // `--color-sobre-acento`, que es grafito en los dos temas; `cn` descarta el
   // de `BASE` porque `tailwind-merge` agrupa `outline-*` por prefijo.
+  //
+  // **Y el anillo va por dentro** (`outline-offset-foco-dentro`), desde el 4 de
+  // octubre de 2026. Con la separación hacia fuera de `BASE` el grafito se
+  // pintaba fuera del botón, sobre lo que hubiera detrás: en el carrusel de
+  // portada eso es el velo grafito de la fotografía (~1,1:1), y en el panel en
+  // tema oscuro es el lienzo `#0E1217`. Dentro, el anillo tiene ámbar a los dos
+  // lados y el contraste es el del par `sobre-acento`/`acento`, que no depende
+  // de dónde se ponga el botón.
   // Y sigue rigiendo "una sola cosa por pantalla": esta variante es para *la*
   // acción de la pantalla, no para repartir ámbar por ella.
   acento:
     'min-h-tactil bg-ts-acento text-ts-sobre-acento focus-visible:outline-ts-sobre-acento ' +
+    'focus-visible:outline-offset-foco-dentro ' +
     'not-disabled:hover:bg-ts-acento-hover not-disabled:active:bg-ts-acento-pressed',
   // La baldosa de "Nuestras líneas" de la portada, convertida en variante porque desde el 28 de
   // septiembre de 2026 la usa una segunda pantalla —el selector de método de pago— y una firma
@@ -103,7 +112,9 @@ const BASE =
   // correcto por tenerlo en un solo sitio. La variante `texto` subraya al
   // pasar el ratón y sigue funcionando: `hover:` gana por orden de capa.
   'font-texto font-medio text-base cursor-pointer chaflan no-underline ' +
-  'focus-visible:outline-2 focus-visible:outline-ts-foco focus-visible:outline-offset-2 ' +
+  // Ancho y separación desde tokens (`--foco-ancho`, `--foco-separacion`): eran
+  // `outline-2` y `outline-offset-2`, dos píxeles sueltos.
+  'focus-visible:outline-foco focus-visible:outline-ts-foco focus-visible:outline-offset-foco ' +
   'disabled:bg-ts-deshabilitado disabled:text-ts-sobre-deshabilitado ' +
   'disabled:border-ts-deshabilitado disabled:cursor-not-allowed';
 

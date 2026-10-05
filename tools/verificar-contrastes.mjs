@@ -135,11 +135,29 @@ const PARES = [
   ["--color-sobre-deshabilitado", "--color-deshabilitado", UMBRAL_TEXTO, "botón deshabilitado"],
   // Componentes de interfaz: borde y anillo de foco. Umbral de 3:1.
   ["--color-borde-control", "--color-superficie", UMBRAL_GRANDE, "borde de un campo"],
-  ["--color-foco", "--color-fondo", UMBRAL_GRANDE, "anillo de foco sobre el lienzo"],
-  ["--color-foco", "--color-superficie", UMBRAL_GRANDE, "anillo de foco sobre tarjeta"],
-  ["--color-sobre-marca", "--color-marca", UMBRAL_GRANDE, "anillo de foco sobre el pie"],
-  ["--color-sobre-acento", "--color-acento", UMBRAL_GRANDE, "anillo de foco sobre ámbar"],
+  //
+  // **El fondo de un anillo es lo que hay DETRÁS de él, no el control que rodea.** Un anillo
+  // exterior se pinta fuera del control; uno interior, dentro. Hasta el 4 de octubre de 2026 esta
+  // tabla medía el anillo del CTA ámbar contra el ámbar —"anillo de foco sobre ámbar", 10:1—
+  // mientras el anillo se pintaba FUERA del botón, sobre el velo grafito de la fotografía del
+  // carrusel: ~1,1:1 en la pantalla y un "ok" aquí. El par era correcto y describía otra cosa.
+  //
+  // Por eso cada par de anillo dice ahora dónde cae. Los exteriores (`anillo-foco`,
+  // `anillo-foco-sobre-*`) se miden contra la superficie sobre la que se pone el control; los
+  // interiores (`anillo-foco-dentro-*` y la variante `acento` de `ts-boton`) contra el relleno
+  // del propio control, que es lo único que tienen detrás.
+  ["--color-foco", "--color-fondo", UMBRAL_GRANDE, "anillo exterior sobre el lienzo"],
+  ["--color-foco", "--color-superficie", UMBRAL_GRANDE, "anillo exterior sobre tarjeta"],
+  ["--color-foco", "--color-superficie-alt", UMBRAL_GRANDE, "anillo exterior sobre superficie elevada"],
+  ["--color-sobre-marca", "--color-marca", UMBRAL_GRANDE, "anillo exterior de los enlaces del pie (detrás: la franja de marca)"],
+  ["--color-sobre-acento", "--color-acento", UMBRAL_GRANDE, "anillo INTERIOR del CTA ámbar y del enlace de salto (detrás: su propio relleno)"],
+  ["--color-sobre-marca", "--color-marca", UMBRAL_GRANDE, "anillo INTERIOR del botón de WhatsApp (detrás: su propio relleno)"],
 ];
+
+// Lo que **no** se puede declarar como par, y por eso se anota: un anillo exterior sobre una
+// fotografía. No hay color de detrás que medir, y la única salida es no pintarlo ahí — de ahí los
+// anillos interiores. Si aparece un control nuevo que flota sobre una imagen o sobre una superficie
+// que cambia, su anillo va por dentro o no cabe en esta tabla.
 
 let fallos = 0;
 for (const [nombre, tema] of [["claro", claro], ["oscuro", oscuro]]) {

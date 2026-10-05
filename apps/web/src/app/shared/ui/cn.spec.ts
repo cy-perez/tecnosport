@@ -102,4 +102,18 @@ describe('cn con los nombres de token del proyecto', () => {
   it('el tamaño de fuente sigue compitiendo por separado del color', () => {
     expect(cn('text-xs', 'text-4xl')).toBe('text-4xl');
   });
+
+  // El anillo de foco desde tokens: `outline-foco` es un ancho. Sin registrarlo, `tailwind-merge`
+  // lo toma por un color y se queda con uno solo de los dos.
+  it('el ancho del anillo no compite con su color', () => {
+    expect(cn('focus-visible:outline-foco', 'focus-visible:outline-ts-foco')).toBe(
+      'focus-visible:outline-foco focus-visible:outline-ts-foco',
+    );
+  });
+
+  it('la separación hacia dentro reemplaza a la de fuera', () => {
+    expect(cn('outline-offset-foco', 'outline-offset-foco-dentro')).toBe(
+      'outline-offset-foco-dentro',
+    );
+  });
 });
