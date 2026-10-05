@@ -89,14 +89,15 @@
 
             <dt class="text-ts-texto-suave">{{ 'admin.atencion.limite' | transloco }}</dt>
             <dd class="m-0 mb-8">
-              {{ solicitud.limiteDeRespuesta | date: 'medium' }}
-              @if (solicitud.estado !== 'RESPONDIDA') {
+              {{ formatearFecha(solicitud.limiteDeRespuesta) }}
+              <!-- INDETERMINADO no afirma ni que venció ni cuánto queda: lo explica el veredicto. -->
+              @if (solicitud.estado !== 'RESPONDIDA' && solicitud.verdicto !== 'INDETERMINADO') {
                 <span
                   class="block"
-                  [class.text-ts-error]="diasRestantes(solicitud) < 0"
-                  [class.text-ts-texto-suave]="diasRestantes(solicitud) >= 0"
+                  [class.text-ts-error]="plazoVencido(solicitud)"
+                  [class.text-ts-texto-suave]="!plazoVencido(solicitud)"
                 >
-                  @if (diasRestantes(solicitud) < 0) {
+                  @if (plazoVencido(solicitud)) {
                     {{ 'admin.atencion.plazo_pasado' | transloco }}
                   } @else {
                     {{
@@ -120,11 +121,11 @@
 
             <dt class="text-ts-texto-suave">{{ 'admin.atencion.recibida_en' | transloco }}</dt>
             <dd class="m-0 mb-8">
-              {{ solicitud.recibidaEn | date: 'medium' }}
+              {{ formatearFecha(solicitud.recibidaEn) }}
               <span class="block text-ts-texto-suave">
                 {{
                   'admin.atencion.radicada_en'
-                    | transloco: { fecha: solicitud.radicadaEn | date: 'medium' }
+                    | transloco: { fecha: formatearFecha(solicitud.radicadaEn) }
                 }}
               </span>
             </dd>

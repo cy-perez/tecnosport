@@ -1,9 +1,9 @@
-import { DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { correoValido } from '../../../../../shared/formularios/validadores';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { usarTraductor } from '../../../../../core/i18n/traductor';
+import { fechaConHora } from '../../../../../core/i18n/fecha-colombia';
 import { TsMigas } from '../../../../../shared/ts-migas/ts-migas';
 import { usarMigasAdmin } from '../../../migas-admin';
 import { TsBoton } from '../../../../../shared/ui/boton/ts-boton';
@@ -59,7 +59,6 @@ const CLAVE_VERDICTO: Record<VerdictoPlazo, string> = {
 @Component({
   selector: 'app-bandeja-atencion',
   imports: [
-    DatePipe,
     ReactiveFormsModule,
     TranslocoPipe,
     TsBoton,
@@ -131,15 +130,32 @@ export class BandejaAtencionPage {
   }
 
   /**
-   * Dias que faltan para que venza el plazo. Se calcula en el navegador **solo para decidir el
-   * enfasis visual**: el limite lo manda el servidor ya resuelto, y esta cuenta nunca decide nada
-   * que el backend no haya decidido antes.
+   * Si el plazo legal venció lo decide el servidor (`verdicto`), con su calendario y su reloj. Lo
+   * decidía esta pantalla con `Math.ceil(...) < 0`, y en las primeras 24 horas de incumplimiento
+   * `Math.ceil` daba `-0`, que no es menor que cero: la bandeja decía "quedan 0 días" en gris sobre
+   * una PQR ya vencida. El mismo defecto que `panel-retracto` ya había corregido.
    */
+  protected plazoVencido(solicitud: SolicitudAtencion): boolean {
+    return solicitud.verdicto === 'VENCIDO';
+  }
+
+  /** Solo el número que se muestra mientras corre el plazo; nunca negativo. */
   protected diasRestantes(solicitud: SolicitudAtencion): number {
     const milisegundosPorDia = 86_400_000;
-    return Math.ceil(
-      (new Date(solicitud.limiteDeRespuesta).getTime() - Date.now()) / milisegundosPorDia,
+    return Math.max(
+      0,
+      Math.ceil(
+        (new Date(solicitud.limiteDeRespuesta).getTime() - Date.now()) / milisegundosPorDia,
+      ),
     );
+  }
+
+  /**
+   * Con la zona de Colombia y el idioma activo. El `DatePipe` sin `LOCALE_ID` caía a `en-US` y a la
+   * zona del navegador: el plazo legal de una PQR salía como "Oct 4, 2026, 3:15:00 PM".
+   */
+  protected formatearFecha(iso: string): string {
+    return fechaConHora(iso, this.transloco.activeLang());
   }
 
   protected filtrar(estado: EstadoSolicitudAtencion | null): void {
