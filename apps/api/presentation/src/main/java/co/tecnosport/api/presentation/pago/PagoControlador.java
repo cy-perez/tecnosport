@@ -163,6 +163,12 @@ public class PagoControlador {
                   + " estado={}",
               comando.referencia(),
               comando.estadoWompi());
+      case APROBADO_SIN_PEDIDO_QUE_LO_ESPERE ->
+          log.error(
+              "Wompi aprobó un pago cuyo pedido ya no lo esperaba (otro intento lo pagó, o estaba"
+                  + " cancelado o fallido). Hay que devolverlo: aparece en el panel de pedidos."
+                  + " referencia={}",
+              comando.referencia());
     }
   }
 }

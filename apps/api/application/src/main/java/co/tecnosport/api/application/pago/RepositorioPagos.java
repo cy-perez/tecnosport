@@ -31,5 +31,14 @@ public interface RepositorioPagos {
    */
   List<Pago> buscarPendientesParaConciliar(Instant creadosAntesDe);
 
+  Optional<Pago> buscarPorId(UUID id);
+
+  /**
+   * Los pagos aprobados que entraron sin un pedido que los esperara, del más viejo al más nuevo.
+   * Incluye los que ya tienen su reintegro: filtrarlos es cosa de quien pregunta, que sabe dónde se
+   * registra eso.
+   */
+  List<Pago> buscarSinPedidoQueLosEspere();
+
   void guardar(Pago pago);
 }

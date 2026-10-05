@@ -59,7 +59,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["listar_15"];
+        get: operations["listar_16"];
         put?: never;
         post?: never;
         delete?: never;
@@ -171,7 +171,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["listar_14"];
+        get: operations["listar_15"];
         put?: never;
         post?: never;
         delete?: never;
@@ -251,7 +251,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["listar_13"];
+        get: operations["listar_14"];
         put?: never;
         post?: never;
         delete?: never;
@@ -286,6 +286,38 @@ export interface paths {
         get: operations["listar_5"];
         put?: never;
         post: operations["crear_7"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/pagos/sin-pedido": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listar_13"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/pagos/{id}/reintegro": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["registrarReintegro"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1861,9 +1893,9 @@ export interface components {
             redes: string[];
         };
         DineroRespuesta: {
-            moneda?: string;
+            moneda: string;
             /** Format: int64 */
-            valor?: number;
+            valor: number;
         };
         DireccionRequest: {
             barrio?: string;
@@ -2235,6 +2267,20 @@ export interface components {
             lineas?: components["schemas"]["LineaRequest"][];
             tipoEntrega?: string;
         };
+        PagoSinPedidoRespuesta: {
+            correo: string;
+            /** Format: date-time */
+            desde: string;
+            estadoPedido: string;
+            metodoPago: string;
+            monto: components["schemas"]["DineroRespuesta"];
+            numeroPedido: string;
+            /** Format: uuid */
+            pagoId: string;
+            /** Format: uuid */
+            pedidoId: string;
+            referencia: string;
+        };
         ParteDeMuestraRespuesta: {
             colores?: string[];
             patron?: string;
@@ -2476,6 +2522,10 @@ export interface components {
         };
         RegistrarIdTransaccionWompiRequest: {
             idTransaccionWompi?: string;
+        };
+        RegistrarReintegroDePagoSinPedidoRequest: {
+            comprobante?: string;
+            medio: string;
         };
         RegistrarReintegroRequest: {
             comprobante?: string;
@@ -2884,7 +2934,7 @@ export interface operations {
             };
         };
     };
-    listar_15: {
+    listar_16: {
         parameters: {
             query?: {
                 estado?: string;
@@ -3140,7 +3190,7 @@ export interface operations {
             };
         };
     };
-    listar_14: {
+    listar_15: {
         parameters: {
             query?: {
                 maximo?: number;
@@ -3266,7 +3316,7 @@ export interface operations {
             };
         };
     };
-    listar_13: {
+    listar_14: {
         parameters: {
             query?: {
                 proveedorId?: string;
@@ -3375,6 +3425,50 @@ export interface operations {
                 content: {
                     "*/*": components["schemas"]["MarcaRespuesta"];
                 };
+            };
+        };
+    };
+    listar_13: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PagoSinPedidoRespuesta"][];
+                };
+            };
+        };
+    };
+    registrarReintegro: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RegistrarReintegroDePagoSinPedidoRequest"];
+            };
+        };
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

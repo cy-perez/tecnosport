@@ -829,6 +829,10 @@
             "type" : "integer"
           }
         },
+        "required" : [
+          "moneda",
+          "valor"
+        ],
         "type" : "object"
       },
       "DireccionRequest" : {
@@ -1785,6 +1789,52 @@
         },
         "type" : "object"
       },
+      "PagoSinPedidoRespuesta" : {
+        "properties" : {
+          "correo" : {
+            "type" : "string"
+          },
+          "desde" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "estadoPedido" : {
+            "type" : "string"
+          },
+          "metodoPago" : {
+            "type" : "string"
+          },
+          "monto" : {
+            "$ref" : "#/components/schemas/DineroRespuesta"
+          },
+          "numeroPedido" : {
+            "type" : "string"
+          },
+          "pagoId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "pedidoId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "referencia" : {
+            "type" : "string"
+          }
+        },
+        "required" : [
+          "correo",
+          "desde",
+          "estadoPedido",
+          "metodoPago",
+          "monto",
+          "numeroPedido",
+          "pagoId",
+          "pedidoId",
+          "referencia"
+        ],
+        "type" : "object"
+      },
       "ParteDeMuestraRespuesta" : {
         "properties" : {
           "colores" : {
@@ -2465,6 +2515,20 @@
             "type" : "string"
           }
         },
+        "type" : "object"
+      },
+      "RegistrarReintegroDePagoSinPedidoRequest" : {
+        "properties" : {
+          "comprobante" : {
+            "type" : "string"
+          },
+          "medio" : {
+            "type" : "string"
+          }
+        },
+        "required" : [
+          "medio"
+        ],
         "type" : "object"
       },
       "RegistrarReintegroRequest" : {
@@ -3443,7 +3507,7 @@
     },
     "/api/v1/admin/borradores" : {
       "get" : {
-        "operationId" : "listar_15",
+        "operationId" : "listar_16",
         "parameters" : [
           {
             "in" : "query",
@@ -3820,7 +3884,7 @@
     },
     "/api/v1/admin/envios/revision" : {
       "get" : {
-        "operationId" : "listar_14",
+        "operationId" : "listar_15",
         "parameters" : [
           {
             "in" : "query",
@@ -4015,7 +4079,7 @@
     },
     "/api/v1/admin/ingestas" : {
       "get" : {
-        "operationId" : "listar_13",
+        "operationId" : "listar_14",
         "parameters" : [
           {
             "in" : "query",
@@ -4169,6 +4233,63 @@
         },
         "tags" : [
           "admin-marca-controlador"
+        ]
+      }
+    },
+    "/api/v1/admin/pagos/sin-pedido" : {
+      "get" : {
+        "operationId" : "listar_13",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/PagoSinPedidoRespuesta"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "admin-pagos-controlador"
+        ]
+      }
+    },
+    "/api/v1/admin/pagos/{id}/reintegro" : {
+      "post" : {
+        "operationId" : "registrarReintegro",
+        "parameters" : [
+          {
+            "in" : "path",
+            "name" : "id",
+            "required" : true,
+            "schema" : {
+              "format" : "uuid",
+              "type" : "string"
+            }
+          }
+        ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/RegistrarReintegroDePagoSinPedidoRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "204" : {
+            "description" : "No Content"
+          }
+        },
+        "tags" : [
+          "admin-pagos-controlador"
         ]
       }
     },

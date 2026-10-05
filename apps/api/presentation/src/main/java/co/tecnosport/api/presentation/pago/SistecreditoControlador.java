@@ -170,6 +170,12 @@ public class SistecreditoControlador {
               comando.idTransaccion(),
               comando.referencia(),
               comando.estado());
+      case APROBADO_SIN_PEDIDO_QUE_LO_ESPERE ->
+          log.error(
+              "Sistecrédito aprobó un pago cuyo pedido ya no lo esperaba. Hay que anular el"
+                  + " crédito: aparece en el panel de pedidos. referencia={}, transaccion={}",
+              comando.referencia(),
+              comando.idTransaccion());
       case APLICADO_SIN_CONFIRMAR_INVENTARIO ->
           log.error(
               "Pago de Sistecrédito aplicado pero no se pudo confirmar/liberar la reserva de"

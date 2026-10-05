@@ -23,6 +23,7 @@ import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 
@@ -339,5 +340,80 @@ class ProcesarEventoDePagoTest {
     assertEquals(
         EstadoPago.RECHAZADO, pagos.buscarPorReferencia(REFERENCIA).orElseThrow().estado());
     assertEquals(EstadoPedido.PAGADO, pedidos.buscarPorId(pedido.id()).orElseThrow().estado());
+  }
+
+  /**
+   * El comprador pagó dos intentos: el pedido ya está pagado por el primero cuando llega la
+   * aprobación del segundo. Antes esto devolvía APLICADO y el dinero quedaba cobrado sin venta.
+   */
+  @Test
+  void unaAprobacionSobreUnPedidoYaPagadoQuedaMarcadaParaDevolver() {
+    ProcesarEventoDePago caso = crear();
+    Pedido pedido = pedidoConMetodo(MetodoPago.WOMPI);
+    pagoPendienteParaElPedido(pedido);
+    pedido.transicionar(EstadoPedido.PAGADO, "webhook-wompi", "otro intento aprobado", AHORA);
+    pedidos.guardar(pedido);
+    int movimientosAntes =
+        inventarios.buscarPorVarianteId(varianteId).orElseThrow().movimientos().size();
+
+    ResultadoEventoDePago resultado = caso.ejecutar(comando("APPROVED"));
+
+    assertEquals(ResultadoEventoDePago.APROBADO_SIN_PEDIDO_QUE_LO_ESPERE, resultado);
+    Pago guardado = pagos.buscarPorReferencia(REFERENCIA).orElseThrow();
+    assertEquals(EstadoPago.APROBADO, guardado.estado());
+    assertEquals(Optional.of(AHORA), guardado.sinPedidoQueLoEspereDesde());
+    assertEquals(EstadoPedido.PAGADO, pedidos.buscarPorId(pedido.id()).orElseThrow().estado());
+    assertEquals(
+        movimientosAntes,
+        inventarios.buscarPorVarianteId(varianteId).orElseThrow().movimientos().size());
+  }
+
+  /** Cancelado antes de que entrara el dinero: el pago aprobado tarde se devuelve, no se pierde. */
+  @Test
+  void unaAprobacionSobreUnPedidoCanceladoQuedaMarcadaParaDevolver() {
+    ProcesarEventoDePago caso = crear();
+    Pedido pedido = pedidoConMetodo(MetodoPago.WOMPI);
+    pagoPendienteParaElPedido(pedido);
+    pedido.transicionar(EstadoPedido.CANCELADO, "admin:1", "sin existencia", AHORA);
+    pedidos.guardar(pedido);
+
+    assertEquals(
+        ResultadoEventoDePago.APROBADO_SIN_PEDIDO_QUE_LO_ESPERE,
+        caso.ejecutar(comando("APPROVED")));
+    assertEquals(EstadoPedido.CANCELADO, pedidos.buscarPorId(pedido.id()).orElseThrow().estado());
+    assertTrue(
+        pagos
+            .buscarPorReferencia(REFERENCIA)
+            .orElseThrow()
+            .sinPedidoQueLoEspereDesde()
+            .isPresent());
+  }
+
+  /** Un intento falló, el pedido quedó en PAGO_FALLIDO, y después otro intento vivo se aprobó. */
+  @Test
+  void unaAprobacionSobreUnPedidoConPagoFallidoQuedaMarcadaParaDevolver() {
+    ProcesarEventoDePago caso = crear();
+    Pedido pedido = pedidoConMetodo(MetodoPago.WOMPI);
+    pagoPendienteParaElPedido(pedido);
+    pedido.transicionar(EstadoPedido.PAGO_FALLIDO, "webhook-wompi", "otro intento falló", AHORA);
+    pedidos.guardar(pedido);
+
+    assertEquals(
+        ResultadoEventoDePago.APROBADO_SIN_PEDIDO_QUE_LO_ESPERE,
+        caso.ejecutar(comando("APPROVED")));
+    assertEquals(
+        EstadoPedido.PAGO_FALLIDO, pedidos.buscarPorId(pedido.id()).orElseThrow().estado());
+  }
+
+  /** Lo normal no cambia: el pedido que sí esperaba el pago no queda marcado. */
+  @Test
+  void unaAprobacionQueSiEsperabaSuPedidoNoSeMarca() {
+    ProcesarEventoDePago caso = crear();
+    pagoPendienteParaElPedido(pedidoConMetodo(MetodoPago.WOMPI));
+
+    caso.ejecutar(comando("APPROVED"));
+
+    assertTrue(
+        pagos.buscarPorReferencia(REFERENCIA).orElseThrow().sinPedidoQueLoEspereDesde().isEmpty());
   }
 }

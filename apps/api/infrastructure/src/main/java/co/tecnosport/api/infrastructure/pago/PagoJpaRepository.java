@@ -17,6 +17,8 @@ public interface PagoJpaRepository extends JpaRepository<PagoJpaEntity, UUID> {
   // IncorrectResultSizeDataAccessException, que es una excepcion de JPA saliendo de infrastructure.
   List<PagoJpaEntity> findByIdTransaccionPasarela(String idTransaccionPasarela);
 
+  List<PagoJpaEntity> findBySinPedidoQueLoEspereDesdeIsNotNullOrderBySinPedidoQueLoEspereDesdeAsc();
+
   List<PagoJpaEntity> findByEstadoAndIdTransaccionPasarelaIsNotNullAndCreadoEnBefore(
       String estado, Instant creadoEn);
 }

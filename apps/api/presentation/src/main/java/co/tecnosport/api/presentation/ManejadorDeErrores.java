@@ -41,7 +41,9 @@ import co.tecnosport.api.application.garantia.LineaNoEsDelPedidoException;
 import co.tecnosport.api.application.garantia.ReclamacionGarantiaNoEncontradaException;
 import co.tecnosport.api.application.pago.MetodoDePagoNoEsDeSistecreditoException;
 import co.tecnosport.api.application.pago.MetodoDePagoNoSoportadoPorWompiException;
+import co.tecnosport.api.application.pago.PagoConPedidoQueLoEsperaException;
 import co.tecnosport.api.application.pago.PagoNoEncontradoException;
+import co.tecnosport.api.application.pago.PagoSinPedidoYaDevueltoException;
 import co.tecnosport.api.application.pago.PedidoNoEstaEnPagoPendienteException;
 import co.tecnosport.api.application.pago.ReferenciaDePagoYaExisteException;
 import co.tecnosport.api.application.pago.SistecreditoNoEntregoLaUrlDePagoException;
@@ -465,6 +467,16 @@ public class ManejadorDeErrores {
   @ExceptionHandler(PedidoNoEncontradoException.class)
   public ProblemDetail pedidoNoEncontrado(PedidoNoEncontradoException excepcion) {
     return problema(HttpStatus.NOT_FOUND, "Pedido no encontrado", excepcion);
+  }
+
+  @ExceptionHandler(PagoConPedidoQueLoEsperaException.class)
+  public ProblemDetail pagoConPedidoQueLoEspera(PagoConPedidoQueLoEsperaException excepcion) {
+    return problema(HttpStatus.UNPROCESSABLE_CONTENT, "El pago pertenece a su pedido", excepcion);
+  }
+
+  @ExceptionHandler(PagoSinPedidoYaDevueltoException.class)
+  public ProblemDetail pagoSinPedidoYaDevuelto(PagoSinPedidoYaDevueltoException excepcion) {
+    return problema(HttpStatus.CONFLICT, "El pago ya se devolvió", excepcion);
   }
 
   @ExceptionHandler(PagoNoEncontradoException.class)

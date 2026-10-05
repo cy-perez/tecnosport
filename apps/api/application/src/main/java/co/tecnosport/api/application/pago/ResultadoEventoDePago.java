@@ -16,6 +16,13 @@ public enum ResultadoEventoDePago {
    */
   APLICADO_SIN_CONFIRMAR_INVENTARIO,
 
+  /**
+   * El pago se aprobó, pero su pedido ya no lo esperaba: otro intento ya lo había pagado, o estaba
+   * cancelado o fallido. El dinero entró y no pertenece a ninguna venta; el pago queda marcado y
+   * aparece en el panel hasta que se registre su reintegro.
+   */
+  APROBADO_SIN_PEDIDO_QUE_LO_ESPERE,
+
   YA_PROCESADO,
   FIRMA_INVALIDA,
   PAGO_NO_ENCONTRADO,

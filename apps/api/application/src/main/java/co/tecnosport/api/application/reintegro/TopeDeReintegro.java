@@ -2,6 +2,7 @@ package co.tecnosport.api.application.reintegro;
 
 import co.tecnosport.api.application.reversion.RepositorioSolicitudesReversion;
 import co.tecnosport.api.domain.compartido.Dinero;
+import co.tecnosport.api.domain.reintegro.MotivoReintegro;
 import java.math.BigDecimal;
 import java.util.Objects;
 import java.util.UUID;
@@ -88,8 +89,11 @@ public final class TopeDeReintegro {
    */
   public Dinero yaDevuelto(UUID pedidoId) {
     Objects.requireNonNull(pedidoId, "El pedido no puede ser nulo.");
+    // Un pago que entró sin pedido que lo esperara no fue dinero de esta venta: devolverlo no
+    // descuenta nada de lo que el pedido puede devolver.
     BigDecimal deNuestraCaja =
         repositorio.buscarPorPedido(pedidoId).stream()
+            .filter(reintegro -> reintegro.motivo() != MotivoReintegro.PAGO_SIN_PEDIDO)
             .map(reintegro -> reintegro.monto().valor())
             .reduce(BigDecimal.ZERO, BigDecimal::add);
     BigDecimal delEmisor =

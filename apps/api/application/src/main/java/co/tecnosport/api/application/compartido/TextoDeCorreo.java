@@ -37,6 +37,8 @@ public enum TextoDeCorreo {
   PEDIDO_DEVUELTO_ASUNTO("pedido.devuelto.asunto"),
   PEDIDO_DEVUELTO_CUERPO("pedido.devuelto.cuerpo"),
   PEDIDO_DEVUELTO_REINTEGRO_SISTECREDITO("pedido.devuelto.reintegro_sistecredito"),
+  PAGO_SIN_PEDIDO_ASUNTO("pago.sin_pedido.asunto"),
+  PAGO_SIN_PEDIDO_CUERPO("pago.sin_pedido.cuerpo"),
   PEDIDO_DESPACHO_ASUNTO("pedido.despacho.asunto"),
   PEDIDO_DESPACHO_CUERPO("pedido.despacho.cuerpo"),
   PEDIDO_DESPACHO_CUERPO_VARIAS("pedido.despacho.cuerpo_varias"),

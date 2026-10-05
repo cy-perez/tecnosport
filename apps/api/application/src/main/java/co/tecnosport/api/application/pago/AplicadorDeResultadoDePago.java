@@ -6,6 +6,7 @@ import co.tecnosport.api.application.pedido.RepositorioPedidos;
 import co.tecnosport.api.domain.inventario.Inventario;
 import co.tecnosport.api.domain.inventario.ReservaNoEncontradaException;
 import co.tecnosport.api.domain.inventario.ReservaYaProcesadaException;
+import co.tecnosport.api.domain.pago.EstadoPago;
 import co.tecnosport.api.domain.pago.EventoPago;
 import co.tecnosport.api.domain.pago.Pago;
 import co.tecnosport.api.domain.pedido.EstadoPedido;
@@ -46,8 +47,26 @@ final class AplicadorDeResultadoDePago {
       return ResultadoEventoDePago.YA_PROCESADO;
     }
     pago.registrarMedioReportadoPorLaPasarela(medioReportadoPorLaPasarela);
+    if (evento.estado() == EstadoPago.APROBADO
+        && !hayUnPedidoQueLoEspera(pago, repositorioPedidos)) {
+      pago.marcarSinPedidoQueLoEspere(evento.recibidoEn());
+      repositorioPagos.guardar(pago);
+      return ResultadoEventoDePago.APROBADO_SIN_PEDIDO_QUE_LO_ESPERE;
+    }
     repositorioPagos.guardar(pago);
     return propagarAlPedido(pago, evento, actor, repositorioPedidos, repositorioInventario);
+  }
+
+  /**
+   * Un pedido espera un pago solo en {@code PAGO_PENDIENTE}. En cualquier otro estado la aprobación
+   * llega de más: otro intento ya lo pagó, o se canceló o falló antes. Antes eso se devolvía como
+   * {@code APLICADO} y el dinero quedaba cobrado sin venta y sin devolución.
+   */
+  private static boolean hayUnPedidoQueLoEspera(Pago pago, RepositorioPedidos repositorioPedidos) {
+    return repositorioPedidos
+        .buscarPorId(pago.pedidoId())
+        .map(pedido -> pedido.estado() == EstadoPedido.PAGO_PENDIENTE)
+        .orElse(false);
   }
 
   private static ResultadoEventoDePago propagarAlPedido(

@@ -106,6 +106,7 @@ public final class ConciliarPagosPendientes {
             repositorioPedidos,
             repositorioInventario);
     return resultado == ResultadoEventoDePago.APLICADO
-        || resultado == ResultadoEventoDePago.APLICADO_SIN_CONFIRMAR_INVENTARIO;
+        || resultado == ResultadoEventoDePago.APLICADO_SIN_CONFIRMAR_INVENTARIO
+        || resultado == ResultadoEventoDePago.APROBADO_SIN_PEDIDO_QUE_LO_ESPERE;
   }
 }

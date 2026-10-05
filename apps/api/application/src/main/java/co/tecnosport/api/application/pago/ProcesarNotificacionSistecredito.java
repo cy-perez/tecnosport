@@ -221,6 +221,8 @@ public final class ProcesarNotificacionSistecredito {
       case APLICADO -> ResultadoNotificacionSistecredito.APLICADO;
       case APLICADO_SIN_CONFIRMAR_INVENTARIO ->
           ResultadoNotificacionSistecredito.APLICADO_SIN_CONFIRMAR_INVENTARIO;
+      case APROBADO_SIN_PEDIDO_QUE_LO_ESPERE ->
+          ResultadoNotificacionSistecredito.APROBADO_SIN_PEDIDO_QUE_LO_ESPERE;
       case YA_PROCESADO -> ResultadoNotificacionSistecredito.YA_PROCESADO;
       case PAGO_NO_ENCONTRADO -> ResultadoNotificacionSistecredito.PAGO_NO_ENCONTRADO;
       case ESTADO_NO_SOPORTADO -> ResultadoNotificacionSistecredito.ESTADO_NO_SOPORTADO;

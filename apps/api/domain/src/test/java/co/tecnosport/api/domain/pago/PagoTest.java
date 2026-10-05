@@ -164,4 +164,24 @@ class PagoTest {
 
     assertEquals("CARD", pago.medioReportadoPorLaPasarela().orElseThrow());
   }
+
+  @Test
+  void unPagoAprobadoQuedaMarcadoSinPedidoConLaPrimeraFecha() {
+    Pago pago = crear();
+    pago.aplicarEvento(new EventoPago("evt-1", EstadoPago.APROBADO, AHORA));
+
+    pago.marcarSinPedidoQueLoEspere(AHORA.plusSeconds(10));
+    pago.marcarSinPedidoQueLoEspere(AHORA.plusSeconds(99));
+
+    assertEquals(AHORA.plusSeconds(10), pago.sinPedidoQueLoEspereDesde().orElseThrow());
+  }
+
+  /** Solo el dinero que entró puede quedar sin pedido: un pendiente o rechazado no cobró nada. */
+  @Test
+  void unPagoQueNoSeAproboNoPuedeQuedarSinPedido() {
+    Pago pago = crear();
+
+    assertThrows(ExcepcionDeDominio.class, () -> pago.marcarSinPedidoQueLoEspere(AHORA));
+    assertTrue(pago.sinPedidoQueLoEspereDesde().isEmpty());
+  }
 }
