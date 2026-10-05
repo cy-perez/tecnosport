@@ -498,6 +498,17 @@ export class ListaPedidosAdminPage {
     );
   }
 
+  protected async confirmarInventario(pedidoId: string): Promise<void> {
+    await this.ejecutar(() => this.acciones.confirmarInventario.mutateAsync(pedidoId));
+  }
+
+  protected confirmandoInventario(pedidoId: string): boolean {
+    return (
+      this.acciones.confirmarInventario.isPending() &&
+      this.acciones.confirmarInventario.variables() === pedidoId
+    );
+  }
+
   protected async marcarEntregado(pedidoId: string): Promise<void> {
     await this.ejecutar(() => this.acciones.marcarEntregado.mutateAsync(pedidoId));
   }

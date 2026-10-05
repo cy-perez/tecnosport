@@ -180,6 +180,13 @@ class RepositorioPedidosAdminFalso implements RepositorioPedidosAdmin {
     return this.items[0];
   }
 
+  confirmacionesDeInventario: string[] = [];
+
+  async confirmarInventario(pedidoId: string): Promise<PedidoAdmin> {
+    this.confirmacionesDeInventario.push(pedidoId);
+    return this.items[0];
+  }
+
   async rechazarEnEntrega(): Promise<PedidoAdmin> {
     return this.items[0];
   }
@@ -737,6 +744,16 @@ describe('ListaPedidosAdminPage', () => {
 
     await vi.waitFor(() => expect(repositorio.cancelaciones.length).toBe(1));
     expect(repositorio.cancelaciones[0].medio).toBe('SISTECREDITO');
+  });
+
+  /** El pedido pagado sin inventario ya no queda sin salida: tiene su acción. */
+  it('un pedido pagado ofrece confirmar el inventario y lo pide', async () => {
+    const { repositorio } = await renderLista([pedidoDePrueba({ estado: 'PAGADO' })]);
+    fireEvent.click(await screen.findByRole('button', { name: 'Ver detalle' }));
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Confirmar inventario y preparar' }));
+
+    await vi.waitFor(() => expect(repositorio.confirmacionesDeInventario).toEqual(['p1']));
   });
 
   it('sin pagos por devolver, la bandeja no ocupa nada', async () => {

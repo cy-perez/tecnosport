@@ -27,6 +27,9 @@ export interface RepositorioPedidosAdmin {
 
   marcarEntregado(pedidoId: string): Promise<PedidoAdmin>;
 
+  /** Un pedido pagado cuya reserva venció sin existencia: lo lleva a preparación si ya la hay. */
+  confirmarInventario(pedidoId: string): Promise<PedidoAdmin>;
+
   rechazarEnEntrega(pedidoId: string, motivo: string): Promise<PedidoAdmin>;
 
   /** La mercancía de un pedido rechazado volvió. Sin monto: lo calcula el servidor. `medio` solo

@@ -45,7 +45,8 @@
     "imagen_de_proveedor_ilegible": "Una de las fotos no se pudo procesar. Recházalo o pídele al proveedor la foto de nuevo.",
     "producto_de_proveedor_ya_existe": "Este anuncio ya es un producto del catálogo: es el mismo título al mismo precio. Rechaza el borrador.",
     "lote_en_curso": "La ingesta todavía se está procesando. Espera a que termine para eliminarla.",
-    "pago_sin_pedido_ya_devuelto": "Ese pago ya tiene registrada su devolución."
+    "pago_sin_pedido_ya_devuelto": "Ese pago ya tiene registrada su devolución.",
+    "inventario_sin_confirmar": "No hay existencia para todas las líneas: repón y vuelve a intentarlo, o cancela con reintegro."
   },
   "iniciarSesion": {
     "titulo": "Panel administrativo",
@@ -179,7 +180,9 @@
       "motivo_requerido": "Escribe el motivo: queda en el historial del pedido.",
       "transportadora_requerida": "Escribe la transportadora de esta guía.",
       "guia_requerida": "Escribe el número de guía.",
-      "costo_envio_requerido": "Escribe lo que costó este envío. Si todavía no lo sabes, escribe 0 y corrígelo después."
+      "costo_envio_requerido": "Escribe lo que costó este envío. Si todavía no lo sabes, escribe 0 y corrígelo después.",
+      "pagado_sin_inventario": "El pago entró cuando la reserva ya había vencido y no había existencia. Cuando repongas, confírmalo para prepararlo; si no va a haber, cancélalo con reintegro.",
+      "confirmar_inventario": "Confirmar inventario y preparar"
     },
     "pagos_sin_pedido": {
       "titulo": "Pagos por devolver ({{cuantos}})",

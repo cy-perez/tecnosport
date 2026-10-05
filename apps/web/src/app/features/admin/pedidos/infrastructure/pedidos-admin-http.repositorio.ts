@@ -72,6 +72,13 @@ export class PedidosAdminHttpRepositorio implements RepositorioPedidosAdmin {
     return aEmisionDeGuia(desempaquetar(respuesta, 'no se pudo emitir la guía'));
   }
 
+  async confirmarInventario(pedidoId: string): Promise<PedidoAdmin> {
+    const respuesta = await this.cliente.POST('/api/v1/admin/pedidos/{id}/confirmar-inventario', {
+      params: { path: { id: pedidoId } },
+    });
+    return aPedidoAdmin(desempaquetar(respuesta, 'no se pudo confirmar el inventario'));
+  }
+
   async marcarEntregado(pedidoId: string): Promise<PedidoAdmin> {
     const respuesta = await this.cliente.POST('/api/v1/admin/pedidos/{id}/entrega', {
       params: { path: { id: pedidoId } },

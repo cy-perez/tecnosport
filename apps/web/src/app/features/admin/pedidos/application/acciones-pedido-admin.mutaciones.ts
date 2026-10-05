@@ -55,6 +55,12 @@ export function usarAccionesPedidoAdmin() {
     onSuccess: invalidarLista,
   }));
 
+  const confirmarInventario = injectMutation(() => ({
+    mutationFn: (pedidoId: string): Promise<PedidoAdmin> =>
+      repositorio.confirmarInventario(pedidoId),
+    onSuccess: invalidarLista,
+  }));
+
   const rechazarEnEntrega = injectMutation(() => ({
     mutationFn: (variables: { pedidoId: string; motivo: string }): Promise<PedidoAdmin> =>
       repositorio.rechazarEnEntrega(variables.pedidoId, variables.motivo),
@@ -101,6 +107,7 @@ export function usarAccionesPedidoAdmin() {
     despachar,
     emitirGuia,
     marcarEntregado,
+    confirmarInventario,
     rechazarEnEntrega,
     recibirDevolucion,
     conciliarRecaudo,

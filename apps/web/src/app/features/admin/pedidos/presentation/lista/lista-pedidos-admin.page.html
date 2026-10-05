@@ -293,6 +293,17 @@
                         }}</span>
                       }
                     }
+                    @case ('PAGADO') {
+                      <p class="mt-0 mb-8 text-ts-texto-suave">
+                        {{ 'admin.pedidos.acciones.pagado_sin_inventario' | transloco }}
+                      </p>
+                      <ts-boton
+                        [ocupado]="confirmandoInventario(pedido.id)"
+                        (click)="confirmarInventario(pedido.id)"
+                      >
+                        {{ 'admin.pedidos.acciones.confirmar_inventario' | transloco }}
+                      </ts-boton>
+                    }
                     @case ('CONFIRMADO_CONTRAENTREGA') {
                       <form
                         [formGroup]="formularioMotivo(pedido.id)"
