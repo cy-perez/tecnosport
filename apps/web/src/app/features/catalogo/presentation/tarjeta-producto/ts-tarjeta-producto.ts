@@ -27,7 +27,13 @@ const MUESTRAS_VISIBLES = 5;
 
 const MUESTRA_BASE = 'block size-[var(--control-muestra-tarjeta)] overflow-hidden rounded-completo';
 const MUESTRA = `${MUESTRA_BASE} border border-ts-borde-control`;
-const MUESTRA_ACTIVA = `${MUESTRA_BASE} border-2 border-ts-primario`;
+// La elegida conserva su borde fino y gana un anillo **exterior y separado** (`outline` con
+// `--foco-separacion`), del color primario. Era un `border-2` del mismo color: sobre una muestra
+// oscura —negro, azul marino— el borde grafito se fundía con el color en tema claro y no se sabía
+// cuál estaba elegida. Con la separación el anillo se pinta sobre la superficie de la tarjeta, que
+// es contra lo que está medido `primario` (`npm run contrastes`), sea cual sea el color de la
+// muestra. Y el borde no cambia de ancho, así que elegir no mueve nada.
+const MUESTRA_ACTIVA = `${MUESTRA} outline-foco outline-offset-foco outline-ts-primario`;
 
 /**
  * Vive en `features/catalogo/presentation` y no en `shared/`, que es de donde
@@ -108,14 +114,4 @@ export class TsTarjetaProducto {
   protected claseMuestra(activa: boolean): string {
     return activa ? MUESTRA_ACTIVA : MUESTRA;
   }
-
-  protected readonly alt = computed(() => {
-    const producto = this.producto();
-    const imagen = this.imagenMostrada()[0] ?? null;
-    if (!imagen) {
-      return producto.nombre;
-    }
-    const idioma = this.transloco.activeLang();
-    return (idioma === 'en' ? imagen.altEn : imagen.altEs) || producto.nombre;
-  });
 }

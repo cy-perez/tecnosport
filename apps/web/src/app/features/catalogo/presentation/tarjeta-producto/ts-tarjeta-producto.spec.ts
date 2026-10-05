@@ -174,14 +174,42 @@ describe('TsTarjetaProducto', () => {
     const { container } = await renderBodi();
     const enlace = screen.getByRole('link', { name: /bodi herraje/i });
 
-    expect(container.querySelector('img')!.getAttribute('alt')).toBe('Bodi negro');
+    expect(container.querySelector('img')!.getAttribute('src')).toContain('negro');
     const vino = screen.getByRole('button', { name: 'Ver en Vino' });
     expect(enlace.contains(vino)).toBe(false);
 
     fireEvent.click(vino);
 
     expect(vino.getAttribute('aria-pressed')).toBe('true');
-    expect(container.querySelector('img')!.getAttribute('alt')).toBe('Bodi vino');
+    expect(container.querySelector('img')!.getAttribute('src')).toContain('vino');
+  });
+
+  /**
+   * La foto va dentro del enlace, y el enlace ya se nombra con el producto: con el alt, el lector
+   * de pantalla decía el nombre dos veces por tarjeta.
+   */
+  it('la foto es decorativa dentro del enlace y el nombre lo da el texto', async () => {
+    const { container } = await renderBodi();
+
+    expect(container.querySelector('img')!.getAttribute('alt')).toBe('');
+    const enlace = screen.getByRole('link', { name: /Bodi herraje/ });
+    expect(enlace.textContent).toContain('Bodi herraje');
+    // El alt de la foto ("Bodi negro") ya no entra en el nombre del enlace.
+    expect(screen.queryByRole('link', { name: /Bodi negro/ })).toBeNull();
+  });
+
+  // La elegida se marca con un anillo separado, no con un borde más grueso del mismo color, que se
+  // fundía con una muestra oscura. El borde fino no cambia: elegir no mueve nada.
+  it('la muestra elegida lleva un anillo exterior separado y conserva su borde', async () => {
+    await renderBodi();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Ver en Vino' }));
+
+    const muestra = screen.getByRole('button', { name: 'Ver en Vino' }).firstElementChild!;
+    expect(muestra.className).toContain('outline-offset-foco');
+    expect(muestra.className).toContain('outline-ts-primario');
+    expect(muestra.className).toContain('border-ts-borde-control');
+    expect(muestra.className).not.toContain('border-2');
   });
 
   it('si quedan más de cinco colores, cuenta los que no caben, en singular si es uno', async () => {
@@ -249,7 +277,8 @@ describe('TsTarjetaProducto', () => {
     // poner `width`/`height`, Angular lanza en seco y esta prueba lo dice.
     await renderTarjeta();
 
-    const imagen = screen.getByRole('img', { name: 'Morral urbano negro' });
+    // Por el elemento y no por el rol: la foto es decorativa (`alt=""`) dentro del enlace.
+    const imagen = document.querySelector('img')!;
     expect(imagen.hasAttribute('width')).toBe(false);
     expect(imagen.hasAttribute('height')).toBe(false);
     expect((imagen as HTMLElement).style.position).toBe('absolute');
@@ -258,7 +287,8 @@ describe('TsTarjetaProducto', () => {
   it('sin marcar, la imagen es perezosa', async () => {
     await renderTarjeta();
 
-    const imagen = screen.getByRole('img', { name: 'Morral urbano negro' });
+    // Por el elemento y no por el rol: la foto es decorativa (`alt=""`) dentro del enlace.
+    const imagen = document.querySelector('img')!;
     expect(imagen.getAttribute('loading')).toBe('lazy');
     expect(imagen.getAttribute('fetchpriority')).toBe('auto');
   });
@@ -268,7 +298,8 @@ describe('TsTarjetaProducto', () => {
     // hero, así que su LCP es la primera tarjeta y nadie la estaba priorizando.
     await renderTarjeta(true);
 
-    const imagen = screen.getByRole('img', { name: 'Morral urbano negro' });
+    // Por el elemento y no por el rol: la foto es decorativa (`alt=""`) dentro del enlace.
+    const imagen = document.querySelector('img')!;
     expect(imagen.getAttribute('loading')).toBe('eager');
     expect(imagen.getAttribute('fetchpriority')).toBe('high');
   });
