@@ -289,19 +289,19 @@ describe('RegistroClientePage', () => {
   });
 
   /**
-   * Los campos dejaron de enseñar su etiqueta el 24 de septiembre de 2026: el nombre vive en el
-   * placeholder y la etiqueta se fue a `sr-only`. Lo que hay que vigilar es justo el filo de esa
-   * decisión — que la etiqueta siga existiendo para quien no la ve, y que el placeholder de verdad
-   * esté puesto, porque sin él el campo se queda sin nada legible en cuanto se esconde la
-   * etiqueta—. La prueba de axe de más abajo cubre lo demás.
+   * La etiqueta se ve desde el 4 de octubre de 2026. Estuvo escondida (`sr-only`) con el nombre en
+   * el placeholder, que desaparece al primer carácter: quien volvía al campo a medio llenar no
+   * tenía en pantalla qué estaba escribiendo (WCAG 3.3.2). Se fija que no vuelva a esconderse.
    */
   it.each([['Correo electrónico'], ['Clave'], ['Confirmar clave']])(
-    '%s conserva su etiqueta y lleva placeholder',
+    '%s tiene la etiqueta a la vista y no la repite como placeholder',
     async (etiqueta) => {
       await renderPagina(new RepositorioCuentaFalso());
 
       const campo = await screen.findByLabelText(etiqueta);
-      expect(campo.getAttribute('placeholder')).toBe(etiqueta);
+      const rotulo = document.querySelector(`label[for="${campo.id}"]`);
+      expect(rotulo?.closest('.sr-only')).toBeNull();
+      expect(campo.hasAttribute('placeholder')).toBe(false);
     },
   );
 

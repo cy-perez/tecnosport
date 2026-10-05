@@ -9,20 +9,15 @@
       [formGroup]="form"
       (submit)="$event.preventDefault(); enviar()"
     >
-      <!-- Los tres campos con el nombre dentro y un ancla a la izquierda: tres etiquetas apiladas
-           sobre un formulario de 384 px eran mas texto que campos. El `placeholder` repite la
-           **misma clave** que el `label` a proposito — son el mismo texto y dos claves para un
-           solo texto es garantizar que un dia digan cosas distintas. Lo que se paga con
-           `etiquetaOculta` esta escrito en `ts-campo`: al primer caracter el nombre desaparece y
-           solo queda el ancla. Se acepta aqui porque son tres campos evidentes; en el checkout y
-           en el panel las etiquetas se siguen viendo. -->
+      <!-- La etiqueta se ve, desde el 4 de octubre de 2026. Estuvo escondida con el nombre en el
+           `placeholder`, y lo que se pagaba lo decía `ts-campo`: al primer carácter el nombre
+           desaparecía y solo quedaba el ancla. Con dos claves que se parecen —clave y confirmar
+           clave— eso es justo donde alguien se pierde (WCAG 3.3.2). El ancla se queda. -->
       <ts-campo
         idCampo="registro-correo"
         tipo="email"
         [label]="'cuenta.registro.correo' | transloco"
-        [placeholder]="'cuenta.registro.correo' | transloco"
         [icono]="iconoCorreo"
-        [etiquetaOculta]="true"
         [obligatorio]="true"
         [error]="errorCorreo()"
         formControlName="correo"
@@ -32,9 +27,7 @@
         idCampo="registro-clave"
         tipo="password"
         [label]="'cuenta.registro.clave' | transloco"
-        [placeholder]="'cuenta.registro.clave' | transloco"
         [icono]="iconoClave"
-        [etiquetaOculta]="true"
         [obligatorio]="true"
         [error]="errorClave()"
         formControlName="clave"
@@ -44,9 +37,7 @@
         idCampo="registro-confirmar-clave"
         tipo="password"
         [label]="'cuenta.registro.confirmarClave' | transloco"
-        [placeholder]="'cuenta.registro.confirmarClave' | transloco"
         [icono]="iconoClave"
-        [etiquetaOculta]="true"
         [obligatorio]="true"
         formControlName="confirmarClave"
         [error]="
@@ -90,7 +81,7 @@
       <ts-boton
         variante="primario"
         tipo="submit"
-        [cargando]="enviando()"
+        [ocupado]="enviando()"
         [etiquetaCargando]="'cuenta.registro.enviando' | transloco"
       >
         {{ 'cuenta.registro.crear_cuenta' | transloco }}

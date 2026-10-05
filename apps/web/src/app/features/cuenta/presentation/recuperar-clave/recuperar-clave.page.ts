@@ -8,6 +8,7 @@ import { REPOSITORIO_CUENTA } from '../../domain/repositorio-cuenta.puerto';
 import { TsBoton } from '../../../../shared/ui/boton/ts-boton';
 import { TsPaginaFormulario } from '../../../../shared/ui/pagina-formulario/ts-pagina-formulario';
 import { TsCampo } from '../../../../shared/ui/campo/ts-campo';
+import { usarFocoEnPrimerInvalido } from '../../../../shared/foco/foco';
 
 /**
  * Un solo campo (correo). El mensaje de éxito es siempre el mismo, exista o no una cuenta con ese
@@ -22,6 +23,8 @@ import { TsCampo } from '../../../../shared/ui/campo/ts-campo';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class RecuperarClavePage {
+  /** Al fallar el envío, el foco va al primer campo con error. */
+  private readonly enfocarPrimerInvalido = usarFocoEnPrimerInvalido();
   private readonly repositorio = inject(REPOSITORIO_CUENTA);
   protected readonly transloco = inject(TranslocoService);
 
@@ -67,8 +70,15 @@ export class RecuperarClavePage {
   });
 
   protected async enviar(): Promise<void> {
+    // Guarda de reentrada: el botón va con `[ocupado]` y ya no se deshabilita, porque
+    // deshabilitado bajo el dedo mandaba el foco a `<body>` y, si el envío fallaba, quien
+    // navega con teclado volvía al principio del documento sin oír el error.
+    if (this.enviando()) {
+      return;
+    }
     if (this.form.invalid) {
       this.form.markAllAsTouched();
+      this.enfocarPrimerInvalido();
       return;
     }
     this.error.set(null);

@@ -20,6 +20,7 @@ import { RouterLink } from '@angular/router';
 import { DemasiadosIntentosError } from '../../../../core/autenticacion/sesion.errores';
 import { CorreoYaRegistradoError } from '../../domain/cuenta.errores';
 import { REPOSITORIO_CUENTA } from '../../domain/repositorio-cuenta.puerto';
+import { usarFocoEnPrimerInvalido } from '../../../../shared/foco/foco';
 
 function clavesCoincidenValidador(control: AbstractControl): ValidationErrors | null {
   const clave = control.get('clave')?.value;
@@ -42,6 +43,8 @@ function clavesCoincidenValidador(control: AbstractControl): ValidationErrors | 
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class RegistroClientePage {
+  /** Al fallar el envío, el foco va al primer campo con error. */
+  private readonly enfocarPrimerInvalido = usarFocoEnPrimerInvalido();
   private readonly repositorio = inject(REPOSITORIO_CUENTA);
   private readonly transloco = inject(TranslocoService);
 
@@ -162,8 +165,15 @@ export class RegistroClientePage {
   });
 
   protected async enviar(): Promise<void> {
+    // Guarda de reentrada: el botón va con `[ocupado]` y ya no se deshabilita, porque
+    // deshabilitado bajo el dedo mandaba el foco a `<body>` y, si el envío fallaba, quien
+    // navega con teclado volvía al principio del documento sin oír el error.
+    if (this.enviando()) {
+      return;
+    }
     if (this.form.invalid) {
       this.form.markAllAsTouched();
+      this.enfocarPrimerInvalido();
       return;
     }
     this.error.set(null);

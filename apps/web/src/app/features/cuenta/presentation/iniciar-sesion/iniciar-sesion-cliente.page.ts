@@ -14,6 +14,7 @@ import { TsBoton } from '../../../../shared/ui/boton/ts-boton';
 import { TsPaginaFormulario } from '../../../../shared/ui/pagina-formulario/ts-pagina-formulario';
 import { TsCampo } from '../../../../shared/ui/campo/ts-campo';
 import { iconoClave, iconoCorreo } from '../../../../shared/ui/icono/iconos';
+import { usarFocoEnPrimerInvalido } from '../../../../shared/foco/foco';
 
 /**
  * Solo para `CLIENTE` — el login de `ADMIN` es `features/admin/`. Un correo/clave válidos pero de
@@ -27,6 +28,8 @@ import { iconoClave, iconoCorreo } from '../../../../shared/ui/icono/iconos';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class IniciarSesionClientePage {
+  /** Al fallar el envío, el foco va al primer campo con error. */
+  private readonly enfocarPrimerInvalido = usarFocoEnPrimerInvalido();
   private readonly router = inject(Router);
   private readonly transloco = inject(TranslocoService);
   protected readonly sesionStore = inject(SesionStore);
@@ -89,8 +92,15 @@ export class IniciarSesionClientePage {
   });
 
   protected async enviar(): Promise<void> {
+    // Guarda de reentrada: el botón va con `[ocupado]` y ya no se deshabilita, porque
+    // deshabilitado bajo el dedo mandaba el foco a `<body>` y, si el envío fallaba, quien
+    // navega con teclado volvía al principio del documento sin oír el error.
+    if (this.enviando()) {
+      return;
+    }
     if (this.form.invalid) {
       this.form.markAllAsTouched();
+      this.enfocarPrimerInvalido();
       return;
     }
     this.error.set(null);

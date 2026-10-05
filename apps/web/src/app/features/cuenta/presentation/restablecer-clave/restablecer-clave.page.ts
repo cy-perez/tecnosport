@@ -16,6 +16,7 @@ import { REPOSITORIO_CUENTA } from '../../domain/repositorio-cuenta.puerto';
 import { TsBoton } from '../../../../shared/ui/boton/ts-boton';
 import { TsPaginaFormulario } from '../../../../shared/ui/pagina-formulario/ts-pagina-formulario';
 import { TsCampo } from '../../../../shared/ui/campo/ts-campo';
+import { usarFocoEnPrimerInvalido } from '../../../../shared/foco/foco';
 
 function clavesCoincidenValidador(control: AbstractControl): ValidationErrors | null {
   const clave = control.get('claveNueva')?.value;
@@ -35,6 +36,8 @@ function clavesCoincidenValidador(control: AbstractControl): ValidationErrors | 
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class RestablecerClavePage {
+  /** Al fallar el envío, el foco va al primer campo con error. */
+  private readonly enfocarPrimerInvalido = usarFocoEnPrimerInvalido();
   private readonly route = inject(ActivatedRoute);
   private readonly repositorio = inject(REPOSITORIO_CUENTA);
   protected readonly transloco = inject(TranslocoService);
@@ -110,8 +113,15 @@ export class RestablecerClavePage {
   }
 
   protected async enviar(): Promise<void> {
+    // Guarda de reentrada: el botón va con `[ocupado]` y ya no se deshabilita, porque
+    // deshabilitado bajo el dedo mandaba el foco a `<body>` y, si el envío fallaba, quien
+    // navega con teclado volvía al principio del documento sin oír el error.
+    if (this.enviando()) {
+      return;
+    }
     if (this.form.invalid || !this.token) {
       this.form.markAllAsTouched();
+      this.enfocarPrimerInvalido();
       return;
     }
     this.error.set(null);
