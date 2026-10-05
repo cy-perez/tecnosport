@@ -349,14 +349,20 @@ describe('MenuLateral', () => {
    * 216 px.
    */
   it('con movimiento reducido, el ancho cambia sin transición', async () => {
-    document.documentElement.setAttribute('data-movimiento', 'reducido');
+    // La preferencia del sistema, fingida: jsdom no trae `matchMedia`. El atributo
+    // `data-movimiento` que usaba esta prueba ya no lo lee nadie.
+    vi.stubGlobal('matchMedia', () => ({
+      matches: true,
+      addEventListener: () => undefined,
+      removeEventListener: () => undefined,
+    }));
     try {
       await renderMenu();
       // `afterNextRender` rellena la señal después del primer pintado, así que se espera por el
       // resultado y no con un `esperar(ms)` fijo.
       await vi.waitFor(() => expect(panel().style.transitionDuration).toBe('0ms'));
     } finally {
-      document.documentElement.removeAttribute('data-movimiento');
+      vi.unstubAllGlobals();
     }
   });
 });

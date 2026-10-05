@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, DOCUMENT, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
@@ -9,6 +9,7 @@ import { TsIcono } from '../../shared/ui/icono/ts-icono';
 import { TsAlternadorIdioma } from '../../shared/ts-alternador-idioma/ts-alternador-idioma';
 import { TsAlternadorTema } from '../../shared/ts-alternador-tema/ts-alternador-tema';
 import { MenuLateralStore } from '../menu-lateral/menu-lateral.store';
+import { PreferenciaDeMovimiento } from '../../core/movimiento/preferencia-de-movimiento';
 
 /**
  * Red de seguridad, no la duración de la animación: esa la decide el CSS
@@ -76,7 +77,6 @@ const TIEMPO_MAXIMO_DE_SALIDA_MS = 400;
   host: { class: 'sticky top-0 z-encabezado block', '(keydown.escape)': 'cerrarMenu()' },
 })
 export class Encabezado {
-  private readonly documento = inject(DOCUMENT);
   private readonly router = inject(Router);
   private readonly transloco = inject(TranslocoService);
   protected readonly carrito = inject(CarritoStore);
@@ -93,18 +93,11 @@ export class Encabezado {
   protected readonly menuAbierto = signal(false);
 
   /**
-   * Las dos vías del proyecto: la preferencia del sistema operativo y el
-   * atributo `data-movimiento` de `<html>`. El atributo hoy **no lo escribe nadie**: la casilla del pie que lo ponía se quitó el 25 de
-   * septiembre de 2026. La lectura se queda porque es lo que haría falta el día que el control
-   * vuelva; `prefers-reduced-motion` sigue funcionando igual.
+   * La preferencia del sistema, escuchada en vivo por `PreferenciaDeMovimiento`. Aquí se leía con
+   * `matchMedia` en cada cierre, junto con el atributo `data-movimiento` que no escribe nadie desde
+   * el 25 de septiembre de 2026.
    */
-  private prefiereMenosMovimiento(): boolean {
-    const documento = this.documento;
-    return (
-      documento.documentElement.getAttribute('data-movimiento') === 'reducido' ||
-      (documento.defaultView?.matchMedia('(prefers-reduced-motion: reduce)').matches ?? false)
-    );
-  }
+  private readonly movimiento = inject(PreferenciaDeMovimiento);
 
   protected alternarMenu(): void {
     this.menuAbierto.update((abierto) => !abierto);
@@ -143,7 +136,7 @@ export class Encabezado {
     // corriendo, y con ciclos rápidos de abrir y cerrar el panel llegó a
     // quedarse montado — comprobado en el navegador. Aquí se sale por lo
     // directo: sin clase, sin espera, sin carrera.
-    if (this.prefiereMenosMovimiento()) {
+    if (this.movimiento.reducido()) {
       animationComplete();
       return;
     }

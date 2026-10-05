@@ -195,7 +195,13 @@ describe('Encabezado', () => {
   // animación real corriendo, y con ciclos rápidos el panel llegó a quedarse
   // montado — un menú que no se cierra es peor que uno sin animación.
   it('con movimiento reducido, el panel se elimina sin animarse', async () => {
-    document.documentElement.setAttribute('data-movimiento', 'reducido');
+    // La preferencia del sistema, fingida: jsdom no trae `matchMedia`. El atributo
+    // `data-movimiento` que usaba esta prueba ya no lo lee nadie.
+    vi.stubGlobal('matchMedia', () => ({
+      matches: true,
+      addEventListener: () => undefined,
+      removeEventListener: () => undefined,
+    }));
     try {
       const { fixture } = await renderEncabezado();
       fireEvent.click(botonMenu());
@@ -207,7 +213,7 @@ describe('Encabezado', () => {
 
       expect(document.getElementById('menu-movil')).toBeNull();
     } finally {
-      document.documentElement.removeAttribute('data-movimiento');
+      vi.unstubAllGlobals();
     }
   });
 });
