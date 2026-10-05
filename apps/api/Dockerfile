@@ -53,14 +53,27 @@ WORKDIR /app
 # entrenado con base — dentro del ruido entre corridas. A cambio, esta imagen se sigue
 # construyendo con un solo `docker build` y sin servicios alrededor.
 #
+# **Sin secretos**, por la misma razón. Desde que application.yml dejó de darles valor por omisión
+# fuera del perfil `local`, la aplicación se niega a arrancar si falta uno —es lo que se quería en un
+# despliegue— y esta corrida, que no tiene perfil, caía en la validación de `PropiedadesJwt`. Se le
+# pasan valores que solo sirven para que el contexto refresque: no firman nada que alguien vaya a
+# verificar, porque la corrida sale en cuanto el contexto está listo y nunca atiende una petición.
+# No se activa `local` para conseguirlos: ese perfil trae el sembrador y el resto del comportamiento
+# de desarrollo, y el archivo se entrenaría con clases que en un despliegue no se cargan.
+#
 # Ninguna de estas propiedades sobrevive a la etapa siguiente: son argumentos de esta corrida, no
-# configuración de la aplicación.
+# configuración de la aplicación. Un despliegue que arranque sin su JWT_SECRETO sigue fallando.
 RUN java -XX:ArchiveClassesAtExit=aplicacion.jsa \
       -Dspring.context.exit=onRefresh \
       -Dspring.flyway.enabled=false \
       -Dspring.jpa.hibernate.ddl-auto=none \
       -Dspring.jpa.database-platform=org.hibernate.dialect.PostgreSQLDialect \
       -Dspring.datasource.hikari.initialization-fail-timeout=-1 \
+      -Dtecnosport.jwt.secreto=solo-para-entrenar-cds-no-firma-nada-real \
+      -Dtecnosport.wompi.secreto-integridad=solo-para-entrenar-cds \
+      -Dtecnosport.wompi.secreto-eventos=solo-para-entrenar-cds \
+      -Dtecnosport.skydropx.webhook.secreto=solo-para-entrenar-cds \
+      -Dtecnosport.admin-semilla.clave=solo-para-entrenar-cds \
       -jar app.jar
 
 FROM eclipse-temurin:21-jre AS ejecucion
