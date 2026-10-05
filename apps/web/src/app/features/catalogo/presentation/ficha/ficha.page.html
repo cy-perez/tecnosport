@@ -72,7 +72,10 @@
              pegada. Los 64 px de relleno al final son el sitio que se le reserva para que no tape
              nada de lo que haya en esta fila. Desde tableta se anula con todo lo demás
              (`desde-tableta:px-0`), porque ahí la barra ya no se pega. -->
+        <!-- `data-barra-compra`: es lo que `src/tailwind.css` busca para reservar su alto al pie
+             del documento (`scroll-padding-bottom`) mientras la barra está pegada. -->
         <div
+          data-barra-compra
           class="sticky bottom-0 z-pegada -mx-16 my-16 flex flex-wrap items-center gap-16 border-t border-ts-borde bg-ts-fondo py-12 ps-16 pe-64 desde-tableta:static desde-tableta:mx-0 desde-tableta:border-0 desde-tableta:px-0 desde-tableta:py-0"
         >
           @if (varianteActiva(); as variante) {

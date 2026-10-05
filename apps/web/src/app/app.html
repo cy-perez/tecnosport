@@ -35,18 +35,10 @@
      Medido: `<main>` 1104 px con `app-root` en 363. Con `min-w-0`, 363 y una
      sola columna. Ninguna prueba lo veía —jsdom no hace layout— y en escritorio
      no se nota, porque ahí sí caben las seis columnas. -->
-<!-- `scroll-mt-*` es lo que hace que el enlace de salto siga funcionando con el encabezado fijo:
-     sin él, el navegador deja `#contenido` pegado al borde superior de la ventana y los primeros
-     60 px (72 en escritorio) del contenido quedan **debajo** de la barra. El foco va al sitio
-     correcto y lo que se ve es otra cosa, que es la peor de las dos mitades.
-
-     Valor arbitrario apuntando a la variable, que es la escapatoria que la regla dura #2 permite:
-     `scroll-mt-[72px]` no. -->
-<main
-  id="contenido"
-  class="min-w-0 scroll-mt-[var(--header-alto-movil)] focus:outline-none desde-movil:scroll-mt-[var(--header-alto-escritorio)]"
-  tabindex="-1"
->
+<!-- Sin `scroll-mt-*` desde el 4 de octubre de 2026: el alto del encabezado fijo lo descuenta el
+     `scroll-padding-top` de `html` (`src/tailwind.css`), que vale para el enlace de salto y para
+     cualquier cosa que reciba el foco. Con los dos a la vez, el salto se pasaría el doble. -->
+<main id="contenido" class="min-w-0 focus:outline-none" tabindex="-1">
   <router-outlet />
 </main>
 <!-- El pie se pinta en el servidor como siempre —el HTML sale entero, y con él los

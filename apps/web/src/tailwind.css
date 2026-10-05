@@ -80,6 +80,34 @@
   [data-tema='oscuro'] {
     color-scheme: dark;
   }
+
+  /* El encabezado es fijo, así que todo lo que el navegador desplaza a la
+     vista —el destino de un ancla, el enlace de salto, el campo que recibe
+     el foco con Tab— quedaba con sus primeros 60 px (72 en escritorio)
+     **debajo** de la barra. `scroll-padding-top` en el desplazador del
+     documento lo corrige para todo de una vez; antes solo lo tenía
+     `#contenido`, con un `scroll-mt`, y un campo enfocado a media página
+     seguía escondido. Sale de los tokens del encabezado, y el punto de
+     quiebre es el `desde-movil` de la barra. */
+  html {
+    scroll-padding-top: var(--header-alto-movil);
+
+    @variant desde-movil {
+      scroll-padding-top: var(--header-alto-escritorio);
+    }
+  }
+
+  /* Y por abajo, mientras la barra de compra de la ficha está pegada al
+     borde inferior (por debajo de tableta): un control enfocado al fondo de
+     la ficha quedaba tapado por ella. Su alto es el botón —objetivo
+     táctil— más su relleno vertical, y un respiro de `--esp-16` por la fila
+     del anuncio cuando aparece. `:has` y no una clase puesta desde
+     TypeScript: la barra solo existe en la ficha, y es ella la que lo dice. */
+  html:has([data-barra-compra]) {
+    @variant max-desde-tableta {
+      scroll-padding-bottom: calc(var(--control-tactil) + 2 * var(--esp-12) + var(--esp-16));
+    }
+  }
 }
 
 /* El tema oscuro NO se conmuta con `.dark`. Ya existe `data-tema` en <html>,
