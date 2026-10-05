@@ -271,11 +271,33 @@ class ProcesarEventoDePagoTest {
     assertEquals(10, inventario.saldoDisponible(AHORA));
   }
 
+  /**
+   * La reserva venció antes del pago, pero nadie compró la unidad mientras tanto: se vende igual.
+   * Antes quedaba PAGADO sin salida, y la única opción del panel era cancelar.
+   */
   @Test
-  void eventoAprobadoConReservaYaVencidaQuedaSinConfirmarInventarioPeroElPedidoQuedaPagado() {
+  void eventoAprobadoConReservaVencidaYExistenciaSeConfirmaTardeYPasaAPreparacion() {
     ProcesarEventoDePago caso = crear();
     Pedido pedido = pedidoConLinea(lineaConReservaVencida(2));
     pagoPendienteParaElPedido(pedido);
+
+    ResultadoEventoDePago resultado = caso.ejecutar(comando("APPROVED"));
+
+    assertEquals(ResultadoEventoDePago.APLICADO, resultado);
+    assertEquals(
+        EstadoPedido.EN_PREPARACION, pedidos.buscarPorId(pedido.id()).orElseThrow().estado());
+    assertEquals(8, inventarios.buscarPorVarianteId(varianteId).orElseThrow().saldoTotal());
+  }
+
+  /** Si la unidad ya se vendió a otro, el pedido queda pagado y esperando: no hay sobreventa. */
+  @Test
+  void eventoAprobadoConReservaVencidaYSinExistenciaQuedaPagadoSinConfirmar() {
+    ProcesarEventoDePago caso = crear();
+    Pedido pedido = pedidoConLinea(lineaConReservaVencida(2));
+    pagoPendienteParaElPedido(pedido);
+    Inventario inventario = inventarios.buscarPorVarianteId(varianteId).orElseThrow();
+    inventario.reservar(10, null, AHORA);
+    inventarios.guardar(inventario);
 
     ResultadoEventoDePago resultado = caso.ejecutar(comando("APPROVED"));
 

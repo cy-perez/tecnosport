@@ -8,6 +8,7 @@ import co.tecnosport.api.application.pedido.ConciliarRecaudo;
 import co.tecnosport.api.application.pedido.ConciliarRecaudoComando;
 import co.tecnosport.api.application.pedido.ConciliarTransferencia;
 import co.tecnosport.api.application.pedido.ConciliarTransferenciaComando;
+import co.tecnosport.api.application.pedido.ConfirmarInventarioDePedidoPagado;
 import co.tecnosport.api.application.pedido.DespacharPedido;
 import co.tecnosport.api.application.pedido.DespacharPedidoComando;
 import co.tecnosport.api.application.pedido.GuiaDespachada;
@@ -83,6 +84,7 @@ public class AdminPedidosControlador {
   private final RechazarEnEntrega rechazarEnEntrega;
   private final RecibirPedidoRechazado recibirPedidoRechazado;
   private final ConciliarRecaudo conciliarRecaudo;
+  private final ConfirmarInventarioDePedidoPagado confirmarInventario;
   private final MapeadorRespuestasPedido mapeador;
   private final TransactionTemplate transaccion;
 
@@ -97,6 +99,7 @@ public class AdminPedidosControlador {
       RechazarEnEntrega rechazarEnEntrega,
       RecibirPedidoRechazado recibirPedidoRechazado,
       ConciliarRecaudo conciliarRecaudo,
+      ConfirmarInventarioDePedidoPagado confirmarInventario,
       MapeadorRespuestasPedido mapeador,
       PlatformTransactionManager transactionManager) {
     this.listarPedidosAdmin = Objects.requireNonNull(listarPedidosAdmin);
@@ -109,6 +112,7 @@ public class AdminPedidosControlador {
     this.rechazarEnEntrega = Objects.requireNonNull(rechazarEnEntrega);
     this.recibirPedidoRechazado = Objects.requireNonNull(recibirPedidoRechazado);
     this.conciliarRecaudo = Objects.requireNonNull(conciliarRecaudo);
+    this.confirmarInventario = Objects.requireNonNull(confirmarInventario);
     this.mapeador = Objects.requireNonNull(mapeador);
     this.transaccion = new TransactionTemplate(Objects.requireNonNull(transactionManager));
   }
@@ -247,6 +251,17 @@ public class AdminPedidosControlador {
                         cuerpo.medio() == null ? null : MedioReintegro.valueOf(cuerpo.medio()),
                         cuerpo.comprobante(),
                         actor)));
+    return mapeador.aRespuesta(pedido);
+  }
+
+  /**
+   * Un pedido pagado cuya reserva venció antes del pago y que no encontró existencia: con la
+   * mercancía de vuelta, esto lo lleva a preparación. Sin esto, su única salida era cancelarlo.
+   */
+  @PostMapping("/{id}/confirmar-inventario")
+  public PedidoRespuesta confirmarInventario(@PathVariable UUID id) {
+    String actor = "admin:" + actorId();
+    Pedido pedido = transaccion.execute(estado -> confirmarInventario.ejecutar(id, actor));
     return mapeador.aRespuesta(pedido);
   }
 

@@ -283,4 +283,56 @@ class InventarioTest {
         ReservaNoEncontradaException.class,
         () -> inventario.devolver(UUID.randomUUID(), "retracto", AHORA));
   }
+
+  /** El pago llegó tarde pero la unidad sigue ahí: se vende igual. */
+  @Test
+  void confirmarTardeUnaReservaVencidaConExistenciaLaConvierteEnSalida() {
+    Inventario inventario = Inventario.crear(UUID.randomUUID());
+    inventario.registrarEntrada(3, "siembra", AHORA);
+    MovimientoInventario reserva = inventario.reservar(2, Duration.ofMinutes(30), AHORA);
+    Instant tarde = AHORA.plus(Duration.ofHours(1));
+
+    inventario.confirmarTarde(reserva.id(), tarde);
+
+    assertEquals(1, inventario.saldoTotal());
+    assertTrue(inventario.estaConfirmada(reserva.id()));
+  }
+
+  /** Si otro se llevó las unidades mientras la reserva no contaba, no hay sobreventa. */
+  @Test
+  void confirmarTardeSinExistenciaLanzaYNoTocaElSaldo() {
+    Inventario inventario = Inventario.crear(UUID.randomUUID());
+    inventario.registrarEntrada(2, "siembra", AHORA);
+    MovimientoInventario reserva = inventario.reservar(2, Duration.ofMinutes(30), AHORA);
+    Instant tarde = AHORA.plus(Duration.ofHours(1));
+    inventario.reservar(1, null, tarde);
+
+    assertThrows(
+        ExistenciaInsuficienteException.class,
+        () -> inventario.confirmarTarde(reserva.id(), tarde));
+    assertEquals(2, inventario.saldoTotal());
+    assertFalse(inventario.estaConfirmada(reserva.id()));
+  }
+
+  @Test
+  void confirmarTardeUnaReservaVigenteEsUnaConfirmacionNormal() {
+    Inventario inventario = Inventario.crear(UUID.randomUUID());
+    inventario.registrarEntrada(2, "siembra", AHORA);
+    MovimientoInventario reserva = inventario.reservar(1, Duration.ofMinutes(30), AHORA);
+
+    inventario.confirmarTarde(reserva.id(), AHORA.plusSeconds(60));
+
+    assertEquals(1, inventario.saldoTotal());
+  }
+
+  @Test
+  void confirmarTardeUnaReservaLiberadaLanza() {
+    Inventario inventario = Inventario.crear(UUID.randomUUID());
+    inventario.registrarEntrada(2, "siembra", AHORA);
+    MovimientoInventario reserva = inventario.reservar(1, Duration.ofMinutes(30), AHORA);
+    inventario.liberar(reserva.id(), "pago rechazado", AHORA);
+
+    assertThrows(
+        ReservaYaProcesadaException.class, () -> inventario.confirmarTarde(reserva.id(), AHORA));
+  }
 }

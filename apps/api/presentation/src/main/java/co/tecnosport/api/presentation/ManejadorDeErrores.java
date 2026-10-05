@@ -50,6 +50,7 @@ import co.tecnosport.api.application.pago.SistecreditoNoEntregoLaUrlDePagoExcept
 import co.tecnosport.api.application.pago.SistecreditoNoRespondeException;
 import co.tecnosport.api.application.pago.TransaccionDeOtroPagoException;
 import co.tecnosport.api.application.pedido.ContraentregaNoDisponibleException;
+import co.tecnosport.api.application.pedido.InventarioSinConfirmarException;
 import co.tecnosport.api.application.pedido.MetodoDePagoNoEsTransferenciaManualException;
 import co.tecnosport.api.application.pedido.MetodoDePagoNoHabilitadoException;
 import co.tecnosport.api.application.pedido.PedidoNoEncontradoException;
@@ -478,6 +479,11 @@ public class ManejadorDeErrores {
   @ExceptionHandler(PagoSinPedidoYaDevueltoException.class)
   public ProblemDetail pagoSinPedidoYaDevuelto(PagoSinPedidoYaDevueltoException excepcion) {
     return problema(HttpStatus.CONFLICT, "El pago ya se devolvió", excepcion);
+  }
+
+  @ExceptionHandler(InventarioSinConfirmarException.class)
+  public ProblemDetail inventarioSinConfirmar(InventarioSinConfirmarException excepcion) {
+    return problema(HttpStatus.CONFLICT, "No hay existencia para preparar el pedido", excepcion);
   }
 
   @ExceptionHandler(TransaccionDeOtroPagoException.class)

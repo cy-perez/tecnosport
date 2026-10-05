@@ -16,6 +16,7 @@ import co.tecnosport.api.application.pedido.AvisarPlazosDeEntregaVencidos;
 import co.tecnosport.api.application.pedido.CancelarPedido;
 import co.tecnosport.api.application.pedido.ConciliarRecaudo;
 import co.tecnosport.api.application.pedido.ConciliarTransferencia;
+import co.tecnosport.api.application.pedido.ConfirmarInventarioDePedidoPagado;
 import co.tecnosport.api.application.pedido.ConsultarSeguimientoPedido;
 import co.tecnosport.api.application.pedido.ConsultarSeguimientoPorNumero;
 import co.tecnosport.api.application.pedido.CrearPedido;
@@ -178,6 +179,14 @@ public class ConfiguracionPedido {
   @Bean
   public RechazarEnEntrega rechazarEnEntrega(RepositorioPedidos repositorioPedidos, Reloj reloj) {
     return new RechazarEnEntrega(repositorioPedidos, reloj);
+  }
+
+  @Bean
+  public ConfirmarInventarioDePedidoPagado confirmarInventarioDePedidoPagado(
+      RepositorioPedidos repositorioPedidos,
+      RepositorioInventario repositorioInventario,
+      Reloj reloj) {
+    return new ConfirmarInventarioDePedidoPagado(repositorioPedidos, repositorioInventario, reloj);
   }
 
   @Bean

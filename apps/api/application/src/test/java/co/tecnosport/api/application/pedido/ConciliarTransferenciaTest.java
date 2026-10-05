@@ -99,6 +99,8 @@ class ConciliarTransferenciaTest {
     // Vence antes de AHORA: al conciliar, la unidad pudo haberse vendido a otro comprador.
     MovimientoInventario reservaVencida =
         inventario.reservar(1, Duration.ofMinutes(30), AHORA.minus(Duration.ofHours(1)));
+    // Y otro comprador se llevó la unidad cuando la reserva dejó de contar.
+    inventario.reservar(1, null, AHORA.minus(Duration.ofMinutes(10)));
     inventarios.conInventario(inventario);
     Pedido pedido =
         pedidoConMetodo(MetodoPago.TRANSFERENCIA_MANUAL, varianteId, reservaVencida.id());
@@ -107,6 +109,25 @@ class ConciliarTransferenciaTest {
 
     assertEquals(EstadoPedido.PAGADO, conciliado.estado());
     assertEquals(2, conciliado.historial().size());
+  }
+
+  /** La reserva venció pero la unidad sigue ahí: la transferencia conciliada se vende igual. */
+  @Test
+  void siLaReservaVencioPeroLaUnidadSigueSePrepara() {
+    ConciliarTransferencia caso = crear();
+    UUID varianteId = UUID.randomUUID();
+    Inventario inventario = Inventario.crear(varianteId);
+    inventario.registrarEntrada(1, "stock inicial de prueba", AHORA.minus(Duration.ofHours(2)));
+    MovimientoInventario reservaVencida =
+        inventario.reservar(1, Duration.ofMinutes(30), AHORA.minus(Duration.ofHours(1)));
+    inventarios.conInventario(inventario);
+    Pedido pedido =
+        pedidoConMetodo(MetodoPago.TRANSFERENCIA_MANUAL, varianteId, reservaVencida.id());
+
+    Pedido conciliado = caso.ejecutar(new ConciliarTransferenciaComando(pedido.id(), "admin:test"));
+
+    assertEquals(EstadoPedido.EN_PREPARACION, conciliado.estado());
+    assertEquals(0, inventarios.buscarPorVarianteId(varianteId).orElseThrow().saldoTotal());
   }
 
   @Test

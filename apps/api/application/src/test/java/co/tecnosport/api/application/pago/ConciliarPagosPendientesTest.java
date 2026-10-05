@@ -247,6 +247,8 @@ class ConciliarPagosPendientesTest {
     // Reservada mucho antes del umbral de conciliación: para cuando se revisa, ya venció.
     MovimientoInventario reserva =
         inventario.reservar(1, Duration.ofMinutes(30), AHORA.minus(Duration.ofHours(2)));
+    // Y la unidad se la llevó otro comprador mientras tanto: no hay con qué confirmar tarde.
+    inventario.reservar(10, null, AHORA);
     inventarios.conInventario(inventario);
     LineaPedido linea =
         new LineaPedido(

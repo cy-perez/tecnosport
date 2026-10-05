@@ -1,6 +1,7 @@
 package co.tecnosport.api.application.pedido;
 
 import co.tecnosport.api.application.inventario.RepositorioInventario;
+import co.tecnosport.api.domain.inventario.ExistenciaInsuficienteException;
 import co.tecnosport.api.domain.inventario.Inventario;
 import co.tecnosport.api.domain.inventario.ReservaNoEncontradaException;
 import co.tecnosport.api.domain.inventario.ReservaYaProcesadaException;
@@ -19,7 +20,12 @@ public final class ConfirmarReservasDeLineas {
 
   private ConfirmarReservasDeLineas() {}
 
-  /** {@code true} solo si todas las líneas confirmaron su reserva. */
+  /**
+   * {@code true} solo si todas las líneas quedaron confirmadas. Es idempotente —una línea ya
+   * confirmada cuenta como confirmada— y tolera la reserva vencida si la unidad sigue disponible
+   * ({@code Inventario.confirmarTarde}), así que se puede volver a llamar sobre un pedido que se
+   * quedó a medias.
+   */
   public static boolean confirmar(
       List<LineaPedido> lineas, Instant ahora, RepositorioInventario repositorioInventario) {
     boolean todoBien = true;
@@ -30,10 +36,15 @@ public final class ConfirmarReservasDeLineas {
         todoBien = false;
         continue;
       }
+      if (inventario.estaConfirmada(linea.idReserva())) {
+        continue;
+      }
       try {
-        inventario.confirmar(linea.idReserva(), ahora);
+        inventario.confirmarTarde(linea.idReserva(), ahora);
         repositorioInventario.guardar(inventario);
-      } catch (ReservaYaProcesadaException | ReservaNoEncontradaException excepcion) {
+      } catch (ReservaYaProcesadaException
+          | ReservaNoEncontradaException
+          | ExistenciaInsuficienteException excepcion) {
         todoBien = false;
       }
     }
