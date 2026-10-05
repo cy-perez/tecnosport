@@ -73,7 +73,7 @@ const SECCIONES_DEL_PANEL: readonly SeccionDelPanel[] = [
     // hijo que queda es el `<nav>`, que es `fixed` y por tanto está fuera del flujo. El hueco de
     // 72 px lo reserva el `ps-menu-riel` de `app-root`, no este elemento.
     class: 'hidden desde-movil:contents',
-    '(keydown.escape)': 'cerrar()',
+    '(keydown.escape)': 'alPulsarEscape()',
   },
 })
 export class MenuLateral {
@@ -171,6 +171,25 @@ export class MenuLateral {
    */
   protected cerrar(): void {
     this.menu.cerrarPorElGesto();
+  }
+
+  /**
+   * Escape recoge el panel, y al recogerlo las ramas quedan `inert`: si el foco estaba en una fila
+   * de dentro, el navegador lo suelta en `<body>` y quien navega con teclado vuelve al principio
+   * del documento. Antes de recoger se lleva el foco al botón del grupo, que sigue en el riel.
+   *
+   * Con el panel fijado no se recoge nada, así que tampoco se mueve el foco.
+   */
+  protected alPulsarEscape(): void {
+    if (!this.menu.fijado()) {
+      const activo = this.documento.activeElement;
+      const grupo = activo instanceof Element ? activo.closest('[id^="menu-grupo-"]') : null;
+      if (grupo !== null) {
+        const boton = this.documento.querySelector<HTMLElement>(`[aria-controls="${grupo.id}"]`);
+        boton?.focus();
+      }
+    }
+    this.cerrar();
   }
 
   /**

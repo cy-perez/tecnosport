@@ -260,6 +260,45 @@ describe('MenuLateral', () => {
     expect(document.getElementById(regionId!)).toBeTruthy();
   });
 
+  /**
+   * Una región plegada no se ve —`0fr` y transparente— pero sus enlaces seguían en el orden de
+   * tabulación: Tab entraba en filas invisibles. `inert` las saca mientras están plegadas.
+   */
+  it('las ramas plegadas salen del orden de tabulación', async () => {
+    const { fixture } = await renderMenu();
+    const grupo = document.getElementById('menu-grupo-catalogo')!;
+    const ropa = document.getElementById('menu-linea-ROPA')!;
+
+    // Recogido: el grupo entero, aunque esté marcado como abierto.
+    expect(grupo.hasAttribute('inert')).toBe(true);
+
+    fireEvent.mouseEnter(panel());
+    await fixture.whenStable();
+    expect(grupo.hasAttribute('inert')).toBe(false);
+    expect(ropa.hasAttribute('inert')).toBe(true);
+
+    fireEvent.click(botonDe('Ropa'));
+    await fixture.whenStable();
+    expect(ropa.hasAttribute('inert')).toBe(false);
+  });
+
+  /**
+   * Escape recoge el panel y las ramas pasan a `inert`: si el foco estaba en una fila, el navegador
+   * lo soltaría en `<body>`. Se lleva antes al botón del grupo, que sigue en el riel.
+   */
+  it('Escape devuelve el foco al botón del grupo', async () => {
+    const { fixture } = await renderMenu();
+    fireEvent.mouseEnter(panel());
+    await fixture.whenStable();
+
+    const verTodo = screen.getByRole('link', { name: /ver todo/i });
+    verTodo.focus();
+    fireEvent.keyDown(verTodo, { key: 'Escape' });
+    await fixture.whenStable();
+
+    expect(document.activeElement).toBe(botonDe('Catálogo'));
+  });
+
   it('el botón de una rama la pliega y la despliega', async () => {
     const { fixture } = await renderMenu();
 

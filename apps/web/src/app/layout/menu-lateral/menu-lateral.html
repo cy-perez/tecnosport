@@ -136,10 +136,15 @@
        una rama invisible seguía ocupando su alto y empujaba el icono de "Panel" media pantalla
        hacia abajo — el riel tiene que leerse como una columna de iconos, no como dos iconos
        separados por un hueco que nadie explica. `estaAbierto` no se toca: quien vuelve a acercar el
-       puntero encuentra la rama donde la dejó. -->
+       puntero encuentra la rama donde la dejó.
+
+       **Y plegada es `inert`.** Recortada a `0fr` y transparente no se ve, pero sus enlaces seguían
+       en el orden de tabulación: Tab entraba en filas invisibles y el foco desaparecía de la
+       pantalla. `inert` las saca del orden y del árbol de accesibilidad mientras están plegadas. -->
   <div
     class="grid w-menu-lateral shrink-0 transition-[grid-template-rows,opacity] ease-[var(--curva-suave)]"
     [id]="'menu-grupo-' + clave"
+    [attr.inert]="desplegado() && estaAbierto(clave) ? null : ''"
     [class.opacity-0]="!desplegado()"
     [style.gridTemplateRows]="desplegado() && estaAbierto(clave) ? '1fr' : '0fr'"
     [style.transitionDuration]="sinMovimiento() ? '0ms' : 'var(--mov-media)'"
@@ -186,6 +191,7 @@
     <div
       class="grid transition-[grid-template-rows] ease-[var(--curva-suave)]"
       [id]="'menu-linea-' + rama.linea"
+      [attr.inert]="estaAbierto(rama.linea) ? null : ''"
       [style.gridTemplateRows]="estaAbierto(rama.linea) ? '1fr' : '0fr'"
       [style.transitionDuration]="sinMovimiento() ? '0ms' : 'var(--mov-media)'"
     >
@@ -215,6 +221,7 @@
             <div
               class="grid transition-[grid-template-rows] ease-[var(--curva-suave)]"
               [id]="'menu-rama-' + nodo.categoria.id"
+              [attr.inert]="estaAbierto(nodo.categoria.id) ? null : ''"
               [style.gridTemplateRows]="estaAbierto(nodo.categoria.id) ? '1fr' : '0fr'"
               [style.transitionDuration]="sinMovimiento() ? '0ms' : 'var(--mov-media)'"
             >
