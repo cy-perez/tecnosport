@@ -2,11 +2,13 @@ package co.tecnosport.api.bootstrap.carrito;
 
 import co.tecnosport.api.application.carrito.ActualizarCantidadDeLinea;
 import co.tecnosport.api.application.carrito.AgregarLineaAlCarrito;
+import co.tecnosport.api.application.carrito.CotizarCarrito;
 import co.tecnosport.api.application.carrito.CrearCarrito;
 import co.tecnosport.api.application.carrito.EliminarLineaDelCarrito;
 import co.tecnosport.api.application.carrito.PurgarCarritosVencidos;
 import co.tecnosport.api.application.carrito.RepositorioCarrito;
 import co.tecnosport.api.application.carrito.VerCarrito;
+import co.tecnosport.api.application.catalogo.RepositorioProductos;
 import co.tecnosport.api.application.compartido.Reloj;
 import java.time.Duration;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -26,6 +28,12 @@ public class ConfiguracionCarrito {
   @Bean
   public VerCarrito verCarrito(RepositorioCarrito repositorioCarrito) {
     return new VerCarrito(repositorioCarrito);
+  }
+
+  @Bean
+  public CotizarCarrito cotizarCarrito(
+      RepositorioCarrito repositorioCarrito, RepositorioProductos repositorioProductos) {
+    return new CotizarCarrito(repositorioCarrito, repositorioProductos);
   }
 
   @Bean

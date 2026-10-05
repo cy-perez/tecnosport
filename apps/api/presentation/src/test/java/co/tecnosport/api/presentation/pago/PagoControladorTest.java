@@ -202,6 +202,8 @@ class PagoControladorTest {
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.referencia").value(matchesPattern("TS-2026-\\d{6}-1")))
         .andExpect(jsonPath("$.monto.valor").value(100_000))
+        // El mismo número que firma el servidor; el navegador ya no lo calcula.
+        .andExpect(jsonPath("$.montoEnCentavos").value(10_000_000))
         .andExpect(jsonPath("$.firmaIntegridad").exists())
         .andExpect(jsonPath("$.llavePublica").value("pub_test"))
         .andExpect(jsonPath("$.ambiente").value("sandbox"));

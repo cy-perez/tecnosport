@@ -442,6 +442,24 @@
         },
         "type" : "object"
       },
+      "CarritoCotizadoRespuesta" : {
+        "properties" : {
+          "lineas" : {
+            "items" : {
+              "$ref" : "#/components/schemas/Linea"
+            },
+            "type" : "array"
+          },
+          "subtotal" : {
+            "$ref" : "#/components/schemas/DineroRespuesta"
+          }
+        },
+        "required" : [
+          "lineas",
+          "subtotal"
+        ],
+        "type" : "object"
+      },
       "CarritoRespuesta" : {
         "properties" : {
           "creadoEn" : {
@@ -1503,10 +1521,17 @@
           "monto" : {
             "$ref" : "#/components/schemas/DineroRespuesta"
           },
+          "montoEnCentavos" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
           "referencia" : {
             "type" : "string"
           }
         },
+        "required" : [
+          "montoEnCentavos"
+        ],
         "type" : "object"
       },
       "IntentoSistecreditoRespuesta" : {
@@ -1521,6 +1546,38 @@
             "type" : "string"
           }
         },
+        "type" : "object"
+      },
+      "Linea" : {
+        "properties" : {
+          "cantidad" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "disponible" : {
+            "type" : "boolean"
+          },
+          "lineaId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "precioUnitario" : {
+            "$ref" : "#/components/schemas/DineroRespuesta"
+          },
+          "subtotal" : {
+            "$ref" : "#/components/schemas/DineroRespuesta"
+          },
+          "varianteId" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        },
+        "required" : [
+          "cantidad",
+          "disponible",
+          "lineaId",
+          "varianteId"
+        ],
         "type" : "object"
       },
       "LineaCarritoRespuesta" : {
@@ -6632,6 +6689,37 @@
               "*/*" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/CarritoRespuesta"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "carrito-controlador"
+        ]
+      }
+    },
+    "/api/v1/carritos/{id}/cotizacion" : {
+      "get" : {
+        "operationId" : "cotizacion",
+        "parameters" : [
+          {
+            "in" : "path",
+            "name" : "id",
+            "required" : true,
+            "schema" : {
+              "format" : "uuid",
+              "type" : "string"
+            }
+          }
+        ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/CarritoCotizadoRespuesta"
                 }
               }
             },

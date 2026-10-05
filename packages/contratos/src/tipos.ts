@@ -1268,6 +1268,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/carritos/{id}/cotizacion": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["cotizacion"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/carritos/{id}/lineas": {
         parameters: {
             query?: never;
@@ -1782,6 +1798,10 @@ export interface components {
             monto?: number;
             motivo?: string;
         };
+        CarritoCotizadoRespuesta: {
+            lineas: components["schemas"]["Linea"][];
+            subtotal: components["schemas"]["DineroRespuesta"];
+        };
         CarritoRespuesta: {
             /** Format: date-time */
             creadoEn?: string;
@@ -2166,12 +2186,25 @@ export interface components {
             firmaIntegridad?: string;
             llavePublica?: string;
             monto?: components["schemas"]["DineroRespuesta"];
+            /** Format: int64 */
+            montoEnCentavos: number;
             referencia?: string;
         };
         IntentoSistecreditoRespuesta: {
             monto?: components["schemas"]["DineroRespuesta"];
             referencia?: string;
             urlRedireccion?: string;
+        };
+        Linea: {
+            /** Format: int32 */
+            cantidad: number;
+            disponible: boolean;
+            /** Format: uuid */
+            lineaId: string;
+            precioUnitario?: components["schemas"]["DineroRespuesta"];
+            subtotal?: components["schemas"]["DineroRespuesta"];
+            /** Format: uuid */
+            varianteId: string;
         };
         LineaCarritoRespuesta: {
             /** Format: int32 */
@@ -5134,6 +5167,28 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["CarritoRespuesta"];
+                };
+            };
+        };
+    };
+    cotizacion: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["CarritoCotizadoRespuesta"];
                 };
             };
         };

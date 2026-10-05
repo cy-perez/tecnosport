@@ -10,6 +10,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import co.tecnosport.api.application.carrito.ActualizarCantidadDeLinea;
 import co.tecnosport.api.application.carrito.AgregarLineaAlCarrito;
+import co.tecnosport.api.application.carrito.CotizarCarrito;
 import co.tecnosport.api.application.carrito.CrearCarrito;
 import co.tecnosport.api.application.carrito.EliminarLineaDelCarrito;
 import co.tecnosport.api.application.carrito.RepositorioCarrito;
@@ -46,6 +47,25 @@ class CarritoControladorTest {
         .andExpect(jsonPath("$.id").exists())
         .andExpect(jsonPath("$.usuarioId").isEmpty())
         .andExpect(jsonPath("$.lineas", hasSize(0)));
+  }
+
+  /** Un carrito vacío cotiza en cero: la ruta existe y responde con el mismo carrito. */
+  @Test
+  void laCotizacionDeUnCarritoVacioEsCero() throws Exception {
+    String id =
+        com.jayway.jsonpath.JsonPath.read(
+            mockMvc
+                .perform(post("/api/v1/carritos"))
+                .andReturn()
+                .getResponse()
+                .getContentAsString(),
+            "$.id");
+
+    mockMvc
+        .perform(get("/api/v1/carritos/{id}/cotizacion", id))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.lineas", hasSize(0)))
+        .andExpect(jsonPath("$.subtotal.valor").value(0));
   }
 
   @Test
@@ -171,6 +191,17 @@ class CarritoControladorTest {
     @Bean
     VerCarrito verCarrito(RepositorioCarrito repositorio) {
       return new VerCarrito(repositorio);
+    }
+
+    @Bean
+    RepositorioProductosDobleDePrueba repositorioProductos() {
+      return new RepositorioProductosDobleDePrueba();
+    }
+
+    @Bean
+    CotizarCarrito cotizarCarrito(
+        RepositorioCarrito repositorio, RepositorioProductosDobleDePrueba productos) {
+      return new CotizarCarrito(repositorio, productos);
     }
 
     @Bean
