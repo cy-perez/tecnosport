@@ -1,12 +1,14 @@
 package co.tecnosport.api.infrastructure.catalogo;
 
 import co.tecnosport.api.application.catalogo.AlmacenDeImagenes;
+import co.tecnosport.api.application.catalogo.AlmacenDeImagenesNoDisponibleException;
 import co.tecnosport.api.application.catalogo.UrlFirmada;
 import com.google.cloud.storage.Blob;
 import com.google.cloud.storage.BlobId;
 import com.google.cloud.storage.BlobInfo;
 import com.google.cloud.storage.HttpMethod;
 import com.google.cloud.storage.Storage;
+import com.google.cloud.storage.StorageException;
 import java.net.URL;
 import java.util.Map;
 import java.util.Objects;
@@ -40,19 +42,21 @@ public class AlmacenDeImagenesGcs implements AlmacenDeImagenes {
   public UrlFirmada generarUrlDeSubida(String objectKey, String contentType) {
     BlobInfo blobInfo = BlobInfo.newBuilder(BlobId.of(bucket, objectKey)).build();
     URL url =
-        storage.signUrl(
-            blobInfo,
-            minutosUrlFirmada,
-            TimeUnit.MINUTES,
-            Storage.SignUrlOption.httpMethod(HttpMethod.PUT),
-            Storage.SignUrlOption.withExtHeaders(Map.of("Content-Type", contentType)),
-            Storage.SignUrlOption.withV4Signature());
+        llamar(
+            () ->
+                storage.signUrl(
+                    blobInfo,
+                    minutosUrlFirmada,
+                    TimeUnit.MINUTES,
+                    Storage.SignUrlOption.httpMethod(HttpMethod.PUT),
+                    Storage.SignUrlOption.withExtHeaders(Map.of("Content-Type", contentType)),
+                    Storage.SignUrlOption.withV4Signature()));
     return new UrlFirmada(url.toString());
   }
 
   @Override
   public Optional<Long> tamanoBytes(String objectKey) {
-    Blob blob = storage.get(bucket, objectKey);
+    Blob blob = llamar(() -> storage.get(bucket, objectKey));
     return blob == null ? Optional.empty() : Optional.of(blob.getSize());
   }
 
@@ -75,14 +79,14 @@ public class AlmacenDeImagenesGcs implements AlmacenDeImagenes {
   public void subir(String objectKey, String contentType, byte[] bytes) {
     BlobInfo blobInfo =
         BlobInfo.newBuilder(BlobId.of(bucket, objectKey)).setContentType(contentType).build();
-    storage.create(blobInfo, bytes);
+    llamar(() -> storage.create(blobInfo, bytes));
   }
 
   @Override
   public boolean eliminar(String objectKey) {
     // Por nombre, sin generación, por lo mismo que explica eliminarPorPrefijo: con la generación
     // concreta el borrado se salta el versionado del bucket y no queda nada que restaurar.
-    return storage.delete(BlobId.of(bucket, objectKey));
+    return llamar(() -> storage.delete(BlobId.of(bucket, objectKey)));
   }
 
   @Override
@@ -101,5 +105,14 @@ public class AlmacenDeImagenesGcs implements AlmacenDeImagenes {
       borrados++;
     }
     return borrados;
+  }
+
+  /** El error del SDK no sale de esta capa con su nombre: sale como el tercero caído que es. */
+  private static <T> T llamar(java.util.function.Supplier<T> operacion) {
+    try {
+      return operacion.get();
+    } catch (StorageException e) {
+      throw new AlmacenDeImagenesNoDisponibleException(e);
+    }
   }
 }

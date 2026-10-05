@@ -2,6 +2,7 @@ package co.tecnosport.api.presentation;
 
 import co.tecnosport.api.application.atencion.SolicitudAtencionNoEncontradaException;
 import co.tecnosport.api.application.carrito.CarritoNoEncontradoException;
+import co.tecnosport.api.application.catalogo.AlmacenDeImagenesNoDisponibleException;
 import co.tecnosport.api.application.catalogo.AtributoNoEncontradoException;
 import co.tecnosport.api.application.catalogo.CategoriaConHijasException;
 import co.tecnosport.api.application.catalogo.CategoriaConProductosException;
@@ -102,9 +103,12 @@ import java.util.Locale;
 import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.web.HttpMediaTypeNotSupportedException;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -697,7 +701,14 @@ public class ManejadorDeErrores {
    */
   @ExceptionHandler(SistecreditoNoRespondeException.class)
   public ProblemDetail sistecreditoNoResponde(SistecreditoNoRespondeException excepcion) {
-    log.error("Sistecrédito no respondió.", excepcion);
+    // Sin el mensaje: lleva el texto del proveedor, que puede describir el estado crediticio de la
+    // persona consultada (Ley 1266). La clase y la de su causa bastan para saber qué falló.
+    log.error(
+        "Sistecrédito no respondió ({}{})",
+        excepcion.getClass().getSimpleName(),
+        excepcion.getCause() == null
+            ? ""
+            : ", causa " + excepcion.getCause().getClass().getSimpleName());
     ProblemDetail problema =
         ProblemDetail.forStatusAndDetail(
             HttpStatus.SERVICE_UNAVAILABLE,
@@ -808,8 +819,74 @@ public class ManejadorDeErrores {
   public ProblemDetail solicitudInvalida(Exception excepcion) {
     ProblemDetail problema =
         problema(HttpStatus.UNPROCESSABLE_CONTENT, "Solicitud inválida", excepcion);
+    // Las nuestras traen un mensaje escrito para leerse. El {@code valueOf} de un enum no: dice
+    // "No enum constant co.tecnosport.api.application...", y eso es la estructura interna del
+    // servidor para quien mande {@code ?orden=x}. Se tapa como el de Jackson.
+    if (describeNuestrasClases(excepcion.getMessage())) {
+      problema.setDetail("Un valor de la solicitud no es válido.");
+    }
     problema.setProperty("campos", List.of());
     return problema;
+  }
+
+  private static boolean describeNuestrasClases(String mensaje) {
+    return mensaje == null
+        || mensaje.startsWith("No enum constant")
+        || mensaje.contains("co.tecnosport.");
+  }
+
+  /**
+   * Una restricción de la base que la aplicación no consultó antes: un doble envío que choca contra
+   * un índice único, sobre todo. Salía como 500, y el {@code log.error} de abajo escribía el
+   * mensaje de Postgres, que trae la fila: {@code Key (correo)=(alguien@correo.com) already
+   * exists}. Se responde como el conflicto que es y se registra sin el detalle.
+   */
+  @ExceptionHandler(DataIntegrityViolationException.class)
+  public ProblemDetail conflictoDeDatos(DataIntegrityViolationException excepcion) {
+    log.warn(
+        "Restricción de la base violada ({}); detalle omitido por datos personales",
+        excepcion.getMostSpecificCause().getClass().getSimpleName());
+    ProblemDetail problema =
+        ProblemDetail.forStatusAndDetail(
+            HttpStatus.CONFLICT, "La operación choca con datos que ya existen.");
+    problema.setTitle("Conflicto");
+    problema.setProperty("codigo", "CONFLICTO_DE_DATOS");
+    problema.setType(URI.create("https://tecnosport.co/errores/conflicto-de-datos"));
+    return problema;
+  }
+
+  /**
+   * Un método o un tipo de contenido que la ruta no admite. Caían en el manejador genérico como 500
+   * con traza —el mismo defecto que {@code NoResourceFoundException} tuvo hasta el 23 de
+   * septiembre—, y una pasarela que llamara con el método equivocado reintentaba ante el 5xx.
+   */
+  @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
+  public ProblemDetail metodoNoAdmitido(HttpRequestMethodNotSupportedException excepcion) {
+    ProblemDetail problema =
+        ProblemDetail.forStatusAndDetail(
+            HttpStatus.METHOD_NOT_ALLOWED, "Esta dirección no admite ese método.");
+    problema.setTitle("Método no admitido");
+    problema.setProperty("codigo", "METODO_NO_ADMITIDO");
+    problema.setType(URI.create("https://tecnosport.co/errores/metodo-no-admitido"));
+    return problema;
+  }
+
+  @ExceptionHandler(HttpMediaTypeNotSupportedException.class)
+  public ProblemDetail tipoDeContenidoNoAdmitido(HttpMediaTypeNotSupportedException excepcion) {
+    ProblemDetail problema =
+        ProblemDetail.forStatusAndDetail(
+            HttpStatus.UNSUPPORTED_MEDIA_TYPE, "Esta dirección no admite ese tipo de contenido.");
+    problema.setTitle("Tipo de contenido no admitido");
+    problema.setProperty("codigo", "TIPO_DE_CONTENIDO_NO_ADMITIDO");
+    problema.setType(URI.create("https://tecnosport.co/errores/tipo-de-contenido-no-admitido"));
+    return problema;
+  }
+
+  @ExceptionHandler(AlmacenDeImagenesNoDisponibleException.class)
+  public ProblemDetail almacenDeImagenesNoDisponible(
+      AlmacenDeImagenesNoDisponibleException excepcion) {
+    log.error("El almacén de imágenes no respondió", excepcion);
+    return problema(HttpStatus.SERVICE_UNAVAILABLE, "Almacén de imágenes no disponible", excepcion);
   }
 
   /**
@@ -831,7 +908,9 @@ public class ManejadorDeErrores {
     HttpMessageNotReadableException.class
   })
   public ProblemDetail solicitudMalFormada(Exception excepcion) {
-    log.warn("Solicitud mal formada: {}", excepcion.toString());
+    // Solo la clase: el mensaje de Jackson trae el valor rechazado —"from String ..."—, y ese valor
+    // puede ser un correo o un teléfono.
+    log.warn("Solicitud mal formada: {}", excepcion.getClass().getSimpleName());
     ProblemDetail problema =
         ProblemDetail.forStatusAndDetail(
             HttpStatus.UNPROCESSABLE_CONTENT,
