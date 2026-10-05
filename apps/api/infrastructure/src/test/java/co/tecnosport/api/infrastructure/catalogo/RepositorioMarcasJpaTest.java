@@ -149,6 +149,40 @@ class RepositorioMarcasJpaTest {
   }
 
   /**
+   * Una marca cuyos productos publicados están todos ocultos por vencimiento no se lista: llevaría
+   * a una rejilla vacía. La vitrina pide publicado y disponible, y el filtro de marcas también.
+   */
+  @Test
+  void unaMarcaConSoloProductosOcultosNoSeLista() {
+    CategoriaJpaEntity categoria =
+        categorias.save(
+            new CategoriaJpaEntity(
+                UUID.randomUUID(), "Relojes TC", "relojes-tc-marcas", "TECNOLOGIA", null, AHORA));
+    MarcaJpaEntity oculta = marcas.save(new MarcaJpaEntity(UUID.randomUUID(), "Oculta", AHORA));
+    productos.save(
+        new ProductoJpaEntity(
+            UUID.randomUUID(),
+            "oculto-marca",
+            "oculto-marca",
+            "Descripción",
+            oculta.getId(),
+            categoria.getId(),
+            "PUBLICADO",
+            AHORA,
+            AHORA,
+            "MANUAL",
+            null,
+            null,
+            null,
+            null,
+            "OCULTO_POR_VENCIMIENTO"));
+
+    assertThat(repositorio.listarConProductosPublicados())
+        .extracting(Marca::nombre)
+        .doesNotContain("Oculta");
+  }
+
+  /**
    * Dos productos publicados de la misma marca no la duplican: es un {@code exists}, no un join.
    */
   @Test
