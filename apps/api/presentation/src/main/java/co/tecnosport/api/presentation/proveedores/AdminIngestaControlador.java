@@ -1,10 +1,8 @@
 package co.tecnosport.api.presentation.proveedores;
 
 import co.tecnosport.api.application.catalogo.SolicitudDeSubida;
-import co.tecnosport.api.application.compartido.Reloj;
-import co.tecnosport.api.application.proveedores.ColaDeIngestasLlenaException;
-import co.tecnosport.api.application.proveedores.EjecutorDeIngestas;
 import co.tecnosport.api.application.proveedores.EliminarLoteDeIngesta;
+import co.tecnosport.api.application.proveedores.EncolarIngesta;
 import co.tecnosport.api.application.proveedores.IniciarIngesta;
 import co.tecnosport.api.application.proveedores.IniciarIngestaComando;
 import co.tecnosport.api.application.proveedores.LoteEliminado;
@@ -52,25 +50,22 @@ public class AdminIngestaControlador {
 
   private final SolicitarSubidaDeExportacion solicitarSubida;
   private final IniciarIngesta iniciarIngesta;
-  private final EjecutorDeIngestas ejecutor;
+  private final EncolarIngesta encolarIngesta;
   private final RepositorioLotesIngesta repositorioLotes;
-  private final Reloj reloj;
   private final TransactionTemplate transaccion;
   private final EliminarLoteDeIngesta eliminarLote;
 
   public AdminIngestaControlador(
       SolicitarSubidaDeExportacion solicitarSubida,
       IniciarIngesta iniciarIngesta,
-      EjecutorDeIngestas ejecutor,
+      EncolarIngesta encolarIngesta,
       RepositorioLotesIngesta repositorioLotes,
-      Reloj reloj,
       PlatformTransactionManager transactionManager,
       EliminarLoteDeIngesta eliminarLote) {
     this.solicitarSubida = Objects.requireNonNull(solicitarSubida);
     this.iniciarIngesta = Objects.requireNonNull(iniciarIngesta);
-    this.ejecutor = Objects.requireNonNull(ejecutor);
+    this.encolarIngesta = Objects.requireNonNull(encolarIngesta);
     this.repositorioLotes = Objects.requireNonNull(repositorioLotes);
-    this.reloj = Objects.requireNonNull(reloj);
     this.transaccion = new TransactionTemplate(Objects.requireNonNull(transactionManager));
     this.eliminarLote = Objects.requireNonNull(eliminarLote);
   }
@@ -89,19 +84,8 @@ public class AdminIngestaControlador {
     LoteIngesta lote =
         transaccion.execute(
             estado -> iniciarIngesta.ejecutar(new IniciarIngestaComando(id, cuerpo.objectKey())));
-    try {
-      ejecutor.encolar(lote.id());
-    } catch (ColaDeIngestasLlenaException e) {
-      // El lote ya está confirmado en RECIBIDO y nadie lo va a tomar: la cola vive en memoria y
-      // solo entra lo que se encola. Se cierra con su motivo para que el panel diga la verdad.
-      transaccion.executeWithoutResult(
-          estado -> {
-            lote.fallar(
-                "La cola de ingestas estaba llena. Vuelve a subir la exportación.", reloj.ahora());
-            repositorioLotes.actualizar(lote);
-          });
-      throw e;
-    }
+    // Si la cola está llena, EncolarIngesta cierra el lote con su motivo y relanza (409).
+    encolarIngesta.ejecutar(lote);
     log.info(
         "Lote de ingesta {} del proveedor {} encolado desde {}", lote.id(), id, cuerpo.objectKey());
     return LoteIngestaRespuesta.de(lote);
