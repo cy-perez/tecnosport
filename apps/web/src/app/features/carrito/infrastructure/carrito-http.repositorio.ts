@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { crearClienteContratos } from '@tecnosport/contratos';
 import { baseUrl } from '../../../core/http/base-url';
 import { desempaquetar } from '../../../core/http/respuesta-http';
+import { CarritoInexistenteError } from '../domain/carrito.errores';
 import { Carrito, CarritoCotizado } from '../domain/carrito.model';
 import { RepositorioCarrito } from '../domain/repositorio-carrito.puerto';
 import { aCarrito, aCarritoCotizado } from './mapeador-carrito';
@@ -40,6 +41,7 @@ export class CarritoHttpRepositorio implements RepositorioCarrito {
       params: { path: { id: carritoId } },
       body: { varianteId, cantidad },
     });
+    siElCarritoNoExiste(respuesta);
     return aCarrito(desempaquetar(respuesta, 'no se pudo agregar la línea al carrito'));
   }
 
@@ -48,6 +50,7 @@ export class CarritoHttpRepositorio implements RepositorioCarrito {
       params: { path: { id: carritoId, lineaId } },
       body: { cantidad },
     });
+    siElCarritoNoExiste(respuesta);
     return aCarrito(desempaquetar(respuesta, 'no se pudo actualizar la cantidad'));
   }
 
@@ -55,6 +58,18 @@ export class CarritoHttpRepositorio implements RepositorioCarrito {
     const respuesta = await this.cliente.DELETE('/api/v1/carritos/{id}/lineas/{lineaId}', {
       params: { path: { id: carritoId, lineaId } },
     });
+    siElCarritoNoExiste(respuesta);
     return aCarrito(desempaquetar(respuesta, 'no se pudo eliminar la línea'));
+  }
+}
+
+/**
+ * Por el `codigo` y no solo por el 404: en las rutas de una línea, un 404 también puede ser la
+ * línea que ya no está, y ese caso no se arregla con un carrito nuevo.
+ */
+function siElCarritoNoExiste(respuesta: { response: Response; error?: unknown }): void {
+  const codigo = (respuesta.error as { codigo?: unknown } | undefined)?.codigo;
+  if (respuesta.response.status === 404 && codigo === 'CARRITO_NO_ENCONTRADO') {
+    throw new CarritoInexistenteError();
   }
 }

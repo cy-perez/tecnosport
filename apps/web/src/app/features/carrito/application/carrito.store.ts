@@ -1,5 +1,6 @@
 import { afterNextRender, computed, inject, Injectable, signal } from '@angular/core';
 import { injectMutation, injectQuery, QueryClient } from '@tanstack/angular-query-experimental';
+import { CarritoInexistenteError } from '../domain/carrito.errores';
 import { Carrito, CarritoCotizado } from '../domain/carrito.model';
 import { REPOSITORIO_CARRITO } from '../domain/repositorio-carrito.puerto';
 import { SnapshotLinea } from '../domain/snapshot-linea.model';
@@ -44,7 +45,17 @@ export class CarritoStore {
   // pelear con una escritura que ya sabemos que es la más fresca posible.
   readonly consulta = injectQuery(() => ({
     queryKey: ['carrito', this.carritoId()] as const,
-    queryFn: () => this.repositorio.ver(this.carritoId() as string),
+    queryFn: async () => {
+      const id = this.carritoId() as string;
+      const carrito = await this.repositorio.ver(id);
+      if (carrito === null) {
+        // El id guardado ya no existe en el servidor (purga de inactivos, base reiniciada). Se
+        // suelta: con él puesto, el encabezado y la página del carrito seguían preguntando por un
+        // carrito muerto, y agregar fallaba para siempre.
+        this.soltarId(id);
+      }
+      return carrito;
+    },
     enabled: this.carritoId() !== null,
     staleTime: 60_000,
   }));
@@ -130,11 +141,19 @@ export class CarritoStore {
    */
   limpiar(): void {
     const id = this.carritoId();
-    this.almacenCarritoId.borrar();
-    this.carritoId.set(null);
+    this.soltarId(id);
     if (id) {
       this.queryClient.removeQueries({ queryKey: ['carrito', id] });
     }
+  }
+
+  /** Olvida el id solo si sigue siendo el activo: otra mutación pudo haber creado uno nuevo. */
+  private soltarId(id: string | null): void {
+    if (this.carritoId() !== id) {
+      return;
+    }
+    this.almacenCarritoId.borrar();
+    this.carritoId.set(null);
   }
 
   async actualizarCantidad(lineaId: string, cantidad: number): Promise<void> {
@@ -146,6 +165,21 @@ export class CarritoStore {
   }
 
   private async agregarInterno(varianteId: string, cantidad: number): Promise<Carrito> {
+    const guardado = this.carritoId();
+    if (guardado) {
+      try {
+        const actualizado = await this.repositorio.agregarLinea(guardado, varianteId, cantidad);
+        this.actualizarCache(actualizado);
+        return actualizado;
+      } catch (error) {
+        // El carrito se purgó entre que la página lo cargó y este clic. Lo que la persona quiere es
+        // su producto en un carrito, no un error: se suelta el viejo y se sigue con uno nuevo.
+        if (!(error instanceof CarritoInexistenteError)) {
+          throw error;
+        }
+        this.limpiar();
+      }
+    }
     let id = this.carritoId();
     if (!id) {
       const nuevo = await this.repositorio.crear();
@@ -165,19 +199,34 @@ export class CarritoStore {
   }
 
   private async actualizarInterno(lineaId: string, cantidad: number): Promise<Carrito> {
-    const actualizado = await this.repositorio.actualizarCantidad(
-      this.idOForzar(),
-      lineaId,
-      cantidad,
+    const actualizado = await this.soltandoSiNoExiste(() =>
+      this.repositorio.actualizarCantidad(this.idOForzar(), lineaId, cantidad),
     );
     this.actualizarCache(actualizado);
     return actualizado;
   }
 
   private async eliminarInterno(lineaId: string): Promise<Carrito> {
-    const actualizado = await this.repositorio.eliminarLinea(this.idOForzar(), lineaId);
+    const actualizado = await this.soltandoSiNoExiste(() =>
+      this.repositorio.eliminarLinea(this.idOForzar(), lineaId),
+    );
     this.actualizarCache(actualizado);
     return actualizado;
+  }
+
+  /**
+   * Cambiar una línea de un carrito que ya no existe no tiene arreglo —la línea se fue con él—,
+   * pero el id sí se suelta, para que la pantalla pase a "carrito vacío" en vez de seguir fallando.
+   */
+  private async soltandoSiNoExiste(operacion: () => Promise<Carrito>): Promise<Carrito> {
+    try {
+      return await operacion();
+    } catch (error) {
+      if (error instanceof CarritoInexistenteError) {
+        this.limpiar();
+      }
+      throw error;
+    }
   }
 
   private actualizarCache(carrito: Carrito): void {

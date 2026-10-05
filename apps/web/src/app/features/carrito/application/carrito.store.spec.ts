@@ -1,6 +1,7 @@
 import { Component, inject } from '@angular/core';
 import { provideTanStackQuery, QueryClient } from '@tanstack/angular-query-experimental';
 import { render } from '@testing-library/angular';
+import { CarritoInexistenteError } from '../domain/carrito.errores';
 import { Carrito, CarritoCotizado } from '../domain/carrito.model';
 import { REPOSITORIO_CARRITO, RepositorioCarrito } from '../domain/repositorio-carrito.puerto';
 import { SnapshotLinea } from '../domain/snapshot-linea.model';
@@ -28,6 +29,12 @@ class RepositorioCarritoFalso implements RepositorioCarrito {
     return { lineas, subtotal: lineas.reduce((suma, linea) => suma + linea.subtotal, 0) };
   }
   llamadasCrear = 0;
+  /**
+   * Ids que el servidor ya purgó. `ver` los sigue reconociendo solo si están en
+   * {@link vistosAntesDePurgar}: es el carrito que la página cargó y se purgó antes del clic.
+   */
+  readonly purgados = new Set<string>();
+  readonly vistosAntesDePurgar = new Set<string>();
   private carrito: Carrito = {
     id: 'carrito-1',
     usuarioId: null,
@@ -41,10 +48,16 @@ class RepositorioCarritoFalso implements RepositorioCarrito {
   }
 
   async ver(carritoId: string): Promise<Carrito | null> {
+    if (this.vistosAntesDePurgar.has(carritoId)) {
+      return { id: carritoId, usuarioId: null, lineas: [], creadoEn: '2026-01-01T00:00:00Z' };
+    }
     return carritoId === this.carrito.id ? this.carrito : null;
   }
 
   async agregarLinea(carritoId: string, varianteId: string, cantidad: number): Promise<Carrito> {
+    if (this.purgados.has(carritoId)) {
+      throw new CarritoInexistenteError();
+    }
     const existente = this.carrito.lineas.find((l) => l.varianteId === varianteId);
     const lineas = existente
       ? this.carrito.lineas.map((l) =>
@@ -163,5 +176,49 @@ describe('CarritoStore', () => {
     expect(store.carritoId()).toBeNull();
     expect(store.cantidadTotal()).toBe(0);
     expect(new CarritoIdLocalStorageAlmacen().leer()).toBeNull();
+  });
+
+  /**
+   * Encontrado en dev: el id guardado era de un carrito que la purga de inactivos ya había borrado,
+   * y "Agregar al carrito" respondía 404 cada vez, sin salida salvo borrar `localStorage` a mano.
+   */
+  it('si el carrito guardado se purgó antes del clic, agregar sigue con uno nuevo', async () => {
+    new CarritoIdLocalStorageAlmacen().guardar('carrito-purgado');
+    const repositorio = new RepositorioCarritoFalso();
+    repositorio.purgados.add('carrito-purgado');
+    repositorio.vistosAntesDePurgar.add('carrito-purgado');
+    const { store } = await renderConRepositorio(repositorio);
+    await vi.waitFor(() => expect(store.carritoId()).toBe('carrito-purgado'));
+
+    await store.agregarAlCarrito('variante-1', 1, snapshotDePrueba('variante-1'));
+
+    await vi.waitFor(() => expect(store.cantidadTotal()).toBe(1));
+    expect(store.carritoId()).toBe('carrito-1');
+    expect(repositorio.llamadasCrear).toBe(1);
+    expect(new CarritoIdLocalStorageAlmacen().leer()).toBe('carrito-1');
+  });
+
+  it('un id guardado que el servidor ya no conoce se suelta al cargar', async () => {
+    new CarritoIdLocalStorageAlmacen().guardar('carrito-purgado');
+    const { store } = await renderConRepositorio(new RepositorioCarritoFalso());
+
+    await vi.waitFor(() => expect(new CarritoIdLocalStorageAlmacen().leer()).toBeNull());
+    expect(store.carritoId()).toBeNull();
+  });
+
+  it('otro error al agregar no suelta el carrito', async () => {
+    const repositorio = new RepositorioCarritoFalso();
+    const { store } = await renderConRepositorio(repositorio);
+    await store.agregarAlCarrito('variante-1', 1, snapshotDePrueba('variante-1'));
+    await vi.waitFor(() => expect(store.carritoId()).toBe('carrito-1'));
+    repositorio.agregarLinea = async () => {
+      throw new Error('sin existencias');
+    };
+
+    await expect(
+      store.agregarAlCarrito('variante-2', 1, snapshotDePrueba('variante-2')),
+    ).rejects.toThrow('sin existencias');
+    expect(store.carritoId()).toBe('carrito-1');
+    expect(repositorio.llamadasCrear).toBe(1);
   });
 });
