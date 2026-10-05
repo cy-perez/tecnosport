@@ -88,12 +88,17 @@
      documento lo corrige para todo de una vez; antes solo lo tenía
      `#contenido`, con un `scroll-mt`, y un campo enfocado a media página
      seguía escondido. Sale de los tokens del encabezado, y el punto de
-     quiebre es el `desde-movil` de la barra. */
+     quiebre es el `desde-movil` de la barra.
+     Más un respiro de `--esp-16`, como abajo: el alto del token es el de la
+     caja sin su borde inferior —la barra mide un píxel más— y el anillo de
+     foco se dibuja por fuera del control, con su ancho más su separación.
+     Medido en dev el 4 de octubre de 2026: con el alto exacto, el control
+     enfocado quedaba justo al borde y su anillo, debajo de la barra. */
   html {
-    scroll-padding-top: var(--header-alto-movil);
+    scroll-padding-top: calc(var(--header-alto-movil) + var(--esp-16));
 
     @variant desde-movil {
-      scroll-padding-top: var(--header-alto-escritorio);
+      scroll-padding-top: calc(var(--header-alto-escritorio) + var(--esp-16));
     }
   }
 
