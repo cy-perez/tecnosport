@@ -61,6 +61,14 @@ describe('PreguntasFrecuentesPage', () => {
    * siendo `<details>`/`<summary>` — el día que alguien lo "mejore" con divs y un `(click)`, esas
    * cuatro cosas se pierden en silencio.
    */
+  // Con el encabezado, el menú y el pie, un `<nav>` más sin nombre era una "navegación" más,
+  // indistinguible en la lista de puntos de referencia.
+  it('la navegación de salida se nombra con su título', async () => {
+    await renderPreguntas();
+
+    expect(screen.getByRole('navigation', { name: 'También te puede servir' })).toBeTruthy();
+  });
+
   it('cada pregunta es un details con su summary, y nace cerrada', async () => {
     const { container } = await renderPreguntas();
 

@@ -51,9 +51,18 @@
       </section>
     }
 
-    <!-- La salida: quien no encontró su pregunta tiene que poder preguntarla. -->
-    <nav class="flex flex-col gap-8 border-t border-ts-borde pt-24">
-      <h2 class="m-0 font-texto text-base font-medio text-ts-texto">
+    <!-- La salida: quien no encontró su pregunta tiene que poder preguntarla.
+         `aria-labelledby` a su propio título: la página ya tiene la navegación del encabezado, la
+         del menú y la del pie, y un `<nav>` sin nombre se anunciaba como "navegación" a secas,
+         indistinguible de las otras en la lista de puntos de referencia. -->
+    <nav
+      class="flex flex-col gap-8 border-t border-ts-borde pt-24"
+      aria-labelledby="preguntas-frecuentes-salida"
+    >
+      <h2
+        id="preguntas-frecuentes-salida"
+        class="m-0 font-texto text-base font-medio text-ts-texto"
+      >
         {{ t('ayuda.contacto.enlaces_titulo') }}
       </h2>
       <a
