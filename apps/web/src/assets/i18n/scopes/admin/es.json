@@ -148,7 +148,7 @@
       "acciones": "Acciones",
       "contacto": "Quien recibe",
       "costo_total": "Costo total del despacho",
-      "imprimir_etiqueta": "Imprimir etiqueta"
+      "imprimir_etiqueta": "Imprimir etiqueta (se abre en otra pestaña)"
     },
     "acciones": {
       "sin_accion": "Sin acciones disponibles.",

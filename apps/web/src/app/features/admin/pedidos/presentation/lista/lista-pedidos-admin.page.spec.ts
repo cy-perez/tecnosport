@@ -543,7 +543,9 @@ describe('ListaPedidosAdminPage', () => {
     ]);
     fireEvent.click(await screen.findByRole('button', { name: 'Ver detalle' }));
 
-    const enlaces = await screen.findAllByRole('link', { name: 'Imprimir etiqueta' });
+    const enlaces = await screen.findAllByRole('link', {
+      name: 'Imprimir etiqueta (se abre en otra pestaña)',
+    });
     expect(enlaces).toHaveLength(1);
     expect(enlaces[0].getAttribute('href')).toBe('https://sb-pro.skydropx.com/s/s?id=ABC');
   });

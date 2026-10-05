@@ -148,7 +148,7 @@
       "acciones": "Actions",
       "contacto": "Recipient",
       "costo_total": "Total shipping cost",
-      "imprimir_etiqueta": "Print label"
+      "imprimir_etiqueta": "Print label (opens in a new tab)"
     },
     "acciones": {
       "sin_accion": "No actions available.",
