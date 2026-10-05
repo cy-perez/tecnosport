@@ -25,6 +25,7 @@ import { MetadatosPagina } from '../../../../core/seo/metadatos.model';
 import { origenPublico } from '../../../../core/seo/origen-publico';
 import { resumirDescripcion } from '../../../../core/seo/resumen-descripcion';
 import { usarDatosEstructurados, usarMetadatos } from '../../../../core/seo/usar-metadatos';
+import { AltoEnVariable } from '../../../../shared/alto-en-variable/alto-en-variable';
 import { TsBoton } from '../../../../shared/ui/boton/ts-boton';
 import { TsEsqueleto } from '../../../../shared/ts-esqueleto/ts-esqueleto';
 import { TsEtiquetaStock } from '../etiqueta-stock/ts-etiqueta-stock';
@@ -59,6 +60,7 @@ import {
 @Component({
   selector: 'app-ficha',
   imports: [
+    AltoEnVariable,
     TranslocoPipe,
     TsGaleria,
     TsSelectorVariante,
