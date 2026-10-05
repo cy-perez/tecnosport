@@ -1,5 +1,6 @@
 import { ViewportScroller } from '@angular/common';
 import { Component } from '@angular/core';
+import { DeferBlockState } from '@angular/core/testing';
 import { Router, provideRouter } from '@angular/router';
 import { TranslocoTestingModule } from '@jsverse/transloco';
 import { render, screen } from '@testing-library/angular';
@@ -7,8 +8,12 @@ import en from '../../../assets/i18n/en.json';
 import es from '../../../assets/i18n/es.json';
 import { Pie } from './pie';
 
+/**
+ * Con la columna de medios de pago pintada: va en un `@defer` (`pie.html`), y en las pruebas un
+ * bloque diferido no avanza solo —se lleva a su estado final a mano—.
+ */
 async function renderPie() {
-  return render(Pie, {
+  const resultado = await render(Pie, {
     imports: [
       TranslocoTestingModule.forRoot({
         langs: { es, en } as never,
@@ -18,6 +23,10 @@ async function renderPie() {
     ],
     providers: [provideRouter([])],
   });
+  for (const bloque of await resultado.fixture.getDeferBlocks()) {
+    await bloque.render(DeferBlockState.Complete);
+  }
+  return resultado;
 }
 
 @Component({ template: '' })
