@@ -2,6 +2,7 @@ package co.tecnosport.api.infrastructure.catalogo;
 
 import co.tecnosport.api.infrastructure.catalogo.entidad.MarcaJpaEntity;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -37,4 +38,9 @@ public interface MarcaJpaRepository extends JpaRepository<MarcaJpaEntity, UUID> 
    * único de {@code V56} — así que además de responder la pregunta, la consulta lo usa.
    */
   boolean existsByNombreIgnoreCase(String nombre);
+
+  /**
+   * La marca con ese nombre sin distinguir mayúsculas: la que el índice de {@code V56} deja una.
+   */
+  Optional<MarcaJpaEntity> findFirstByNombreIgnoreCase(String nombre);
 }

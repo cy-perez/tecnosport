@@ -1,0 +1,78 @@
+<!--
+  Los medios de pago que el checkout ofrece de verdad, y solo esos. Entró el 26 de septiembre
+  de 2026.
+
+  **Los logos van desnudos sobre la franja, en blanco, como los de las redes.** Estuvieron
+  sobre una pastilla clara hasta el 28 de septiembre de 2026, y la pastilla no era estética:
+  eran archivos a todo color, y tres son negro puro o casi —Addi, BBVA y Bancolombia— que
+  sobre `--color-marca`, grafito en los dos temas, no se veían. El argumento para dejarlos así
+  era que un logo de marca no se recolorea para que quepa en una paleta ajena. Sigue siendo
+  cierto en general, y aun así se cambió: **todas estas marcas publican versión monocroma**,
+  así que esto es el uso que su dueño previó para un fondo oscuro, no una licencia que nos
+  tomamos. Lo que se pierde es reconocimiento —el magenta de Nequi encuentra el ojo antes que
+  cualquier palabra— y lo que se gana es una columna que se lee como las otras cuatro.
+
+  **Los archivos dejaron de servirse.** Un `<img>` es opaco al CSS de la página y no puede
+  heredar `currentColor`, así que todos pasaron a SVG en línea: ahora siguen a
+  `--color-sobre-marca` igual que Facebook, Instagram y WhatsApp, y valdrían también sobre una
+  superficie clara. El porqué largo, y lo que cuesta en peso, están en `ts-logo-pago`.
+
+  **Quien tiene logo no lleva nombre a la vista.** Los logos se explican solos, y once nombres
+  repitiendo lo que el dibujo dice era ruido; por eso fluyen en una rejilla que envuelve en vez
+  de ir uno por renglón. La contraentrega es la excepción y va al final, que es donde una
+  excepción estorba menos: **es la única sin logo**, así que su nombre es lo único que tiene.
+  Tuvo símbolo propio —dos manos y una caja en 512×512— unas horas del 28 de septiembre de
+  2026, con el nombre al lado, y se quitó a pedido; el archivo se fue con él, que es la regla
+  del generador.
+
+  No hace falta una bandera que diga cuál enseña el nombre: **se deduce de si hay logo**, y
+  así las dos mitades no pueden desincronizarse.
+
+  Lo que **no** se fue con el texto es el nombre accesible. El logo es `aria-hidden` —igual
+  que en la columna de redes— así que sin el `sr-only` de al lado esta columna quedaría casi
+  muda: nueve elementos de lista vacíos bajo el título y un décimo que sí se lee. Va con su
+  prueba.
+
+  **Los logos van pegados al borde izquierdo de su caja, no centrados, y no hay excepciones.**
+  Una lista se lee por su borde izquierdo y ese borde era un zigzag: cada dibujo se apartaba la
+  mitad de lo que le sobraba en la caja de 64 px —Visa 14, Daviplata 17,4, Mastercard 12,
+  BBVA 0—. Lo resuelve el `preserveAspectRatio` de `ts-logo-pago`, salvo en Bancolombia, cuyo
+  aire vivía dentro del archivo y hubo que ceñir en el generador.
+
+  Daviplata estuvo centrado unos minutos ese mismo día —es el dibujo más cuadrado y a ras deja
+  el hueco más grande de la columna a su derecha— y se descartó: un borde recto con un hueco
+  se lee mejor que un borde con una sangría sin regla.
+
+  **Las tres franquicias son las que Wompi acepta, no las que existen**: Visa, Mastercard y
+  American Express, nacionales e internacionales, según su documentación y su centro de
+  soporte, consultados el 28 de septiembre de 2026. Diners Club no aparece en ninguna de las
+  dos. Hasta ese día aquí había un icono genérico que decía "Tarjeta de crédito y débito" sin
+  decir cuáles. Salen de `simple-icons`, pinneadas, como las redes.
+
+  No son enlaces: un medio de pago no es un destino.
+
+  **Addi ya no dice "próximamente" a la vista, y es una decisión tomada a sabiendas.**
+  `MetodoPago` lo tuvo y lo quitó a propósito (`V61__sin_addi.sql`, 22 de septiembre de 2026),
+  y el checkout no lo ofrece. Su nombre accesible sí sigue diciéndolo, porque sale de la misma
+  clave `pie.pagos.addi`: quien escucha se entera, quien mira no. Si esto se revisa alguna vez,
+  el motivo es que anunciar un medio de pago que no existe es lo que la Ley 1480 llama
+  información engañosa — y las dos salidas son sacarlo del pie o marcarlo a la vista.
+-->
+<p class="m-0 mb-4 font-medio text-sm" id="pie-columna-pagos">
+  {{ 'pie.pagos.titulo' | transloco }}
+</p>
+<ul
+  class="m-0 flex list-none flex-wrap items-center gap-x-16 gap-y-8 p-0"
+  aria-labelledby="pie-columna-pagos"
+>
+  @for (medio of mediosDePago; track medio.clave) {
+    <li class="flex items-center gap-8 text-sm">
+      @if (medio.logo; as logo) {
+        <ts-logo-pago [logo]="logo" [clase]="medio.clase ?? ''" />
+        <span class="sr-only">{{ medio.clave | transloco }}</span>
+      } @else {
+        <span>{{ medio.clave | transloco }}</span>
+      }
+    </li>
+  }
+</ul>
