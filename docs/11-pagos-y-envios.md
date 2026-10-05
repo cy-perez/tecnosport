@@ -660,6 +660,11 @@ confirmación cuando ya no puede cambiar de opinión.
 3. Verificación antes de despachar: contacto por WhatsApp o llamada. Queda
    registrado quién verificó y cuándo. Un pedido contraentrega no verificado no
    se despacha. Esta regla no la toca el proveedor: es la que más pérdida evita.
+   Desde el 4 de octubre de 2026 la verificación tiene plazo: un pedido que sigue
+   en `CONFIRMADO_CONTRAENTREGA` 48 horas después de creado
+   (`CONTRAENTREGA_HORAS_PARA_VERIFICAR`) se cancela solo, libera su mercancía y
+   se le avisa al comprador. Sin plazo, la reserva de contraentrega —que no
+   vence— permitía bloquear existencia sin pagar nada.
 4. Se despacha con recaudo. La guía la emite Skydropx y lleva el valor a cobrar.
 5. Entregado: pasa a `RECAUDO_PENDIENTE`. Devuelto: pasa a
    `RECHAZADO_EN_ENTREGA` y se registra el motivo. La unidad se libera cuando el

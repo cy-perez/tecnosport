@@ -56,6 +56,17 @@ final class RepositorioPedidosFalso implements RepositorioPedidos {
   }
 
   @Override
+  public List<UUID> buscarIdsEnEstadoCreadosAntesDe(
+      EstadoPedido estado, Instant creadosAntesDe, int maximo) {
+    return pedidos.values().stream()
+        .filter(p -> p.estado() == estado && p.creadoEn().isBefore(creadosAntesDe))
+        .sorted(java.util.Comparator.comparing(Pedido::creadoEn))
+        .limit(maximo)
+        .map(Pedido::id)
+        .toList();
+  }
+
+  @Override
   public void guardar(Pedido pedido) {
     pedidos.put(pedido.id(), pedido);
   }

@@ -203,6 +203,12 @@ tecnosport:
       intervalo-minutos: ${SISTECREDITO_CONCILIACION_INTERVALO_MINUTOS:10}
       antiguedad-minima-minutos: ${SISTECREDITO_CONCILIACION_ANTIGUEDAD_MINIMA_MINUTOS:5}
   contraentrega:
+    vencimiento:
+      # Decisión de negocio del 4 de octubre de 2026: un pedido contraentrega que nadie verificó en
+      # 48 horas se cancela y libera su mercancía. Sin plazo, cualquiera bloqueaba existencia sin
+      # pagar nada confirmando pedidos con correos distintos.
+      horas-para-verificar: ${CONTRAENTREGA_HORAS_PARA_VERIFICAR:48}
+      intervalo-minutos: ${CONTRAENTREGA_VENCIMIENTO_INTERVALO_MINUTOS:60}
     # Dato de negocio real, no inventado (regla dura #5): arranca deshabilitada a proposito.
     # Se activa explicito cuando el negocio confirme la cobertura.
     habilitada: ${CONTRAENTREGA_HABILITADA:false}

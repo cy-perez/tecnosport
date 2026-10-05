@@ -28,6 +28,7 @@ import co.tecnosport.api.application.pedido.RechazarEnEntrega;
 import co.tecnosport.api.application.pedido.RecibirPedidoRechazado;
 import co.tecnosport.api.application.pedido.ReintentarPago;
 import co.tecnosport.api.application.pedido.RepositorioPedidos;
+import co.tecnosport.api.application.pedido.VencerContraentregaSinVerificar;
 import co.tecnosport.api.application.pedido.VerificarContraentrega;
 import co.tecnosport.api.application.reintegro.RepositorioReintegros;
 import co.tecnosport.api.application.reintegro.TopeDeReintegro;
@@ -36,6 +37,7 @@ import co.tecnosport.api.bootstrap.compartido.PropiedadesLimitePedidos;
 import co.tecnosport.api.bootstrap.legal.PropiedadesLegal;
 import co.tecnosport.api.presentation.pedido.PropiedadesTransferenciaManual;
 import java.time.Duration;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -179,6 +181,23 @@ public class ConfiguracionPedido {
   @Bean
   public RechazarEnEntrega rechazarEnEntrega(RepositorioPedidos repositorioPedidos, Reloj reloj) {
     return new RechazarEnEntrega(repositorioPedidos, reloj);
+  }
+
+  @Bean
+  public VencerContraentregaSinVerificar vencerContraentregaSinVerificar(
+      RepositorioPedidos repositorioPedidos,
+      RepositorioInventario repositorioInventario,
+      EnviadorDeCorreo enviadorDeCorreo,
+      TextosDeCorreo textos,
+      Reloj reloj,
+      @Value("${tecnosport.contraentrega.vencimiento.horas-para-verificar}") long horas) {
+    return new VencerContraentregaSinVerificar(
+        repositorioPedidos,
+        repositorioInventario,
+        enviadorDeCorreo,
+        textos,
+        reloj,
+        Duration.ofHours(horas));
   }
 
   @Bean

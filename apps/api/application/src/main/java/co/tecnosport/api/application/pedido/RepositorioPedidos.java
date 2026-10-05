@@ -104,6 +104,15 @@ public interface RepositorioPedidos {
   List<Pedido> buscarSinAvisoDePlazo(Collection<EstadoPedido> estados, Instant creadosAntesDe);
 
   /**
+   * Los ids de los pedidos en ese estado creados antes del corte, del más viejo al más nuevo y como
+   * mucho {@code maximo}. Solo ids: quien los procese los relee uno a uno con bloqueo.
+   */
+  default List<UUID> buscarIdsEnEstadoCreadosAntesDe(
+      EstadoPedido estado, Instant creadosAntesDe, int maximo) {
+    return List.of();
+  }
+
+  /**
    * Reclama el derecho a avisarle a un pedido que su plazo de entrega venció. Devuelve {@code true}
    * si lo ganó quien llama, {@code false} si ya estaba reclamado.
    *

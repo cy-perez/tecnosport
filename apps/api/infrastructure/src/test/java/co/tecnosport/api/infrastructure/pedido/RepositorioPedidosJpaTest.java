@@ -724,4 +724,23 @@ class RepositorioPedidosJpaTest {
     assertThat(repositorio.tieneRechazoEnEntregaPorTelefono("+57 3138816711")).isTrue();
     assertThat(repositorio.tieneRechazoEnEntregaPorTelefono("3000000000")).isFalse();
   }
+
+  /** La consulta de la tarea que vence contraentregas: por estado, por antigüedad y con tope. */
+  @Test
+  void buscarIdsEnEstadoCreadosAntesDeFiltraPorEstadoYFecha() {
+    Pedido viejo = pedidoAlDomicilio(MetodoPago.CONTRAENTREGA);
+    repositorio.guardar(viejo);
+    Instant despues = Instant.now().plusSeconds(3600);
+
+    assertThat(
+            repositorio.buscarIdsEnEstadoCreadosAntesDe(
+                EstadoPedido.CONFIRMADO_CONTRAENTREGA, despues, 10))
+        .contains(viejo.id());
+    assertThat(
+            repositorio.buscarIdsEnEstadoCreadosAntesDe(
+                EstadoPedido.CONFIRMADO_CONTRAENTREGA, Instant.now().minusSeconds(3600), 10))
+        .doesNotContain(viejo.id());
+    assertThat(repositorio.buscarIdsEnEstadoCreadosAntesDe(EstadoPedido.PAGADO, despues, 10))
+        .doesNotContain(viejo.id());
+  }
 }

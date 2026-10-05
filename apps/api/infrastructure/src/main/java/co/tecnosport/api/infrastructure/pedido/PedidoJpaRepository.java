@@ -25,6 +25,12 @@ public interface PedidoJpaRepository extends JpaRepository<PedidoJpaEntity, UUID
   boolean existsByCorreoAndEstado(String correo, String estado);
 
   @Query(
+      "select p.id from PedidoJpaEntity p where p.estado = :estado and p.creadoEn < :corte"
+          + " order by p.creadoEn asc")
+  List<UUID> findIdsByEstadoAndCreadoEnBefore(
+      @Param("estado") String estado, @Param("corte") Instant corte, Pageable pagina);
+
+  @Query(
       nativeQuery = true,
       value =
           "select exists (select 1 from pedido p join historial_pedido h on h.pedido_id = p.id"
