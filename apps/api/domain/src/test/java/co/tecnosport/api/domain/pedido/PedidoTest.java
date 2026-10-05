@@ -1,6 +1,7 @@
 package co.tecnosport.api.domain.pedido;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -431,6 +432,36 @@ class PedidoTest {
         Instant.parse("2026-09-12T09:00:00Z"));
 
     assertEquals(entrega, pedido.fechaDeEntrega().orElseThrow());
+  }
+
+  /**
+   * Un pedido entregado a tiempo sigue "a tiempo" un año después: se juzga contra su fecha de
+   * entrega. La regla vivía en el mapeador de presentación.
+   */
+  @Test
+  void unPedidoEntregadoSeJuzgaContraSuFechaDeEntregaYNoContraHoy() {
+    Instant entrega = AHORA.plusSeconds(86_400);
+    Pedido pedido = entregado(MetodoPago.WOMPI, entrega);
+    Instant inicio = pedido.fechaDeInicioDelPlazoDeEntrega().orElseThrow();
+    Instant dentroDeUnAnio = AHORA.plus(java.time.Duration.ofDays(365));
+
+    assertEquals(
+        PlazoDeEntrega.verdicto(inicio, entrega),
+        pedido.verdictoDelPlazoDeEntrega(dentroDeUnAnio).orElseThrow());
+    assertNotEquals(
+        PlazoDeEntrega.verdicto(inicio, dentroDeUnAnio),
+        pedido.verdictoDelPlazoDeEntrega(dentroDeUnAnio).orElseThrow());
+  }
+
+  @Test
+  void unPedidoSinEntregarSeJuzgaContraHoy() {
+    Pedido pedido = crearAlDomicilio(MetodoPago.WOMPI);
+    pedido.transicionar(EstadoPedido.PAGADO, "sistema", "pago aprobado", AHORA);
+    Instant dentroDeUnAnio = AHORA.plus(java.time.Duration.ofDays(365));
+
+    assertEquals(
+        PlazoDeEntrega.verdicto(AHORA, dentroDeUnAnio),
+        pedido.verdictoDelPlazoDeEntrega(dentroDeUnAnio).orElseThrow());
   }
 
   @Test

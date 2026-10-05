@@ -9,7 +9,7 @@ import { OrdenDeDifusion, PublicacionEnRed, RedSocial } from './difusion.model';
  */
 export type ResultadoDifusion =
   | { readonly tipo: 'OK'; readonly publicaciones: readonly PublicacionEnRed[] }
-  | { readonly tipo: 'NO_DIFUNDIBLE'; readonly motivo: string }
+  | { readonly tipo: 'NO_DIFUNDIBLE' }
   | { readonly tipo: 'YA_EN_MARCHA' };
 
 export interface RepositorioDifusion {

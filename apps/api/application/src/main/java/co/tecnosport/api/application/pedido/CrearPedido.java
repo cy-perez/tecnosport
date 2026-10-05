@@ -299,7 +299,8 @@ public final class CrearPedido {
         comando.correo(),
         comando.tipoEntrega(),
         comando.direccion(),
-        tarifa);
+        tarifa,
+        comando.contacto() == null ? null : comando.contacto().telefono());
   }
 
   private LineaPedido congelarLinea(

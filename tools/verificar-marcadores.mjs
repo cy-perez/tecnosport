@@ -8,8 +8,10 @@
 // contenido del texto. Un documento así informa peor que uno que no prometa nada, y encima deja
 // por escrito que el comerciante sabía que le faltaba el dato.
 //
-// Solo mira `src/assets/i18n`: los marcadores en comentarios de código son correctos y útiles, y
-// `dist/` es salida de compilación. Ver .claude/skills/vacios-legales-del-sitio/references/
+// Mira `src/assets/i18n` y los textos de los correos transaccionales (`correos_*.properties`), que
+// la regla dura #4 pone en el mismo saco: también se publican, en la bandeja de quien compró. Los
+// correos estuvieron fuera hasta el 4 de octubre de 2026. Los marcadores en comentarios de código
+// son correctos y útiles, y `dist/` es salida de compilación. Ver .claude/skills/vacios-legales-del-sitio/references/
 // cerrar-marcadores.md para qué hacer con uno cuando aparece — no se borra, se cierra.
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
@@ -17,6 +19,7 @@ import { fileURLToPath } from "node:url";
 
 const RAIZ = fileURLToPath(new URL("..", import.meta.url));
 const TEXTOS = join(RAIZ, "apps/web/src/assets/i18n");
+const CORREOS = join(RAIZ, "apps/api/infrastructure/src/main/resources");
 const MARCADOR = /\[\[[^\]\n]+\]\]/g;
 
 function jsons(directorio) {
@@ -30,7 +33,11 @@ function jsons(directorio) {
 }
 
 const hallazgos = [];
-for (const ruta of jsons(TEXTOS)) {
+const correos = readdirSync(CORREOS)
+  .filter((nombre) => /^correos_.*\.properties$/.test(nombre))
+  .map((nombre) => join(CORREOS, nombre));
+
+for (const ruta of [...jsons(TEXTOS), ...correos]) {
   readFileSync(ruta, "utf8")
     .split("\n")
     .forEach((linea, indice) => {

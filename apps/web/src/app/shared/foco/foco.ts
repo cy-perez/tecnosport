@@ -1,5 +1,39 @@
 import { isPlatformBrowser } from '@angular/common';
-import { inject, PLATFORM_ID } from '@angular/core';
+import {
+  afterNextRender,
+  ChangeDetectorRef,
+  ElementRef,
+  inject,
+  Injector,
+  PLATFORM_ID,
+} from '@angular/core';
+
+/**
+ * Llevar el foco al primer campo inválido del componente, después de que se pinten los errores.
+ *
+ * Un formulario que falla al enviar marca todo como tocado y pinta los `[error]`, pero el foco se
+ * queda en el botón de enviar: quien usa lector de pantalla oye "Continuar" y nada más, y tiene
+ * que recorrer el formulario entero para encontrar qué falló. Se busca `[aria-invalid="true"]`
+ * —lo ponen `ts-campo`, `ts-select`, `ts-area-texto` y `ts-checkbox` cuando tienen error— dentro
+ * del propio componente.
+ *
+ * `afterNextRender` y no `requestAnimationFrame`: el `aria-invalid` aparece en el repintado que
+ * provoca `markAllAsTouched()`, y hay que esperar a ese repintado y no a un fotograma cualquiera.
+ * El `markForCheck()` garantiza que ese repintado ocurra aunque los errores ya estuvieran a la
+ * vista; sin él, el foco saltaría en el siguiente repintado, que puede llegar mucho después.
+ */
+export function usarFocoEnPrimerInvalido(): () => void {
+  const injector = inject(Injector);
+  const anfitrion = inject<ElementRef<HTMLElement>>(ElementRef);
+  const deteccion = inject(ChangeDetectorRef);
+  return () => {
+    deteccion.markForCheck();
+    afterNextRender(
+      () => anfitrion.nativeElement.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus(),
+      { injector },
+    );
+  };
+}
 
 /**
  * Mover el foco después de que Angular haya repintado.

@@ -36,6 +36,11 @@ public class SistecreditoNoEntregoLaUrlDePagoException extends RuntimeException 
     this.descripcion = descripcion;
   }
 
+  /** La clasificación que el comprador necesita, sin el vocabulario de la pasarela. */
+  public MotivoRechazoSistecredito motivo() {
+    return MotivoRechazoSistecredito.de(codigo, estado);
+  }
+
   public String estado() {
     return estado;
   }

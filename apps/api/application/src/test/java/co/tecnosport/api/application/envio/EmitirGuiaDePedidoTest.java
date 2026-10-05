@@ -302,6 +302,26 @@ class EmitirGuiaDePedidoTest {
   }
 
   /**
+   * Una emisión PARCIAL tiene guías pagadas y vivas para parte del pedido. Emitir otra encima
+   * compraba de nuevo también esas: saldo gastado dos veces. Lo que sigue lo decide una persona.
+   */
+  @Test
+  void una_emision_parcial_no_deja_emitir_otra_encima() {
+    Pedido pedido = pedido(EstadoPedido.EN_PREPARACION, TipoEntrega.ENVIO_A_DOMICILIO, 1);
+    cotizador.devolver(tarifaDeHoy());
+    emisor.responde(new ResultadoEmision.Aceptada(List.of("177d1939")));
+    caso.ejecutar(new EmitirGuiaDePedidoComando(pedido.id(), "admin:1"));
+    EmisionDeGuia primera = emisiones.todas().getFirst();
+    primera.resolver(EstadoEmision.PARCIAL, "una guía viva: 2269401763", AHORA);
+    emisiones.guardar(primera);
+
+    assertThrows(
+        EmisionYaEnCursoException.class,
+        () -> caso.ejecutar(new EmitirGuiaDePedidoComando(pedido.id(), "admin:1")));
+    assertEquals(1, emisor.solicitudes().size());
+  }
+
+  /**
    * Una emisión resuelta no bloquea —un fallo se reintenta y la plataforma reembolsó—, pero el
    * reintento <strong>no repite transportadora</strong>. El fallo más caro que se ha medido es
    * determinista: el contador de remisiones de Coordinadora está atascado y falla siempre, y es la

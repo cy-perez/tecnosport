@@ -21,6 +21,8 @@ import {
 } from './core/consultas/transferencia-estado-consultas';
 import { ALMACEN_CARRITO_ID } from './features/carrito/domain/almacen-carrito-id.puerto';
 import { ALMACEN_SNAPSHOT_LINEAS } from './features/carrito/domain/almacen-snapshot-lineas.puerto';
+import { ALMACEN_CORREO_DE_PEDIDO } from './features/checkout/domain/almacen-correo-de-pedido.puerto';
+import { CorreoDePedidoSessionStorage } from './features/checkout/infrastructure/correo-de-pedido.session-storage';
 import { REPOSITORIO_CARRITO } from './features/carrito/domain/repositorio-carrito.puerto';
 import { CarritoIdLocalStorageAlmacen } from './features/carrito/infrastructure/carrito-id.almacen';
 import { SnapshotLineasLocalStorageAlmacen } from './features/carrito/infrastructure/snapshot-lineas.almacen';
@@ -70,6 +72,7 @@ export const appConfig: ApplicationConfig = {
     // a invertir la dependencia, ahora escondida dentro de `domain`.
     { provide: ALMACEN_CARRITO_ID, useClass: CarritoIdLocalStorageAlmacen },
     { provide: ALMACEN_SNAPSHOT_LINEAS, useClass: SnapshotLineasLocalStorageAlmacen },
+    { provide: ALMACEN_CORREO_DE_PEDIDO, useClass: CorreoDePedidoSessionStorage },
     // El puerto de categorías sube aquí desde `catalogo.routes.ts` por el mismo motivo que el
     // carrito, y esta vez el motivo es estructural y no de comodidad: `app-menu-lateral` se pinta
     // en `app.html`, **fuera** del `<router-outlet>`, así que el inyector de una ruta no lo

@@ -198,8 +198,10 @@ public final class SistecreditoClient implements PasarelaSistecredito {
    * tampoco hay nada más que sondear — lo atrapa el tope de intentos.
    */
   private static boolean esTerminal(String estado) {
-    return switch (estado == null ? "" : estado.trim()) {
-      case "Rejected", "Cancelled", "Expired", "Abandoned", "Failed" -> true;
+    // Sin distinguir mayúsculas, como EstadosSistecredito: un "REJECTED" no se reconocía aquí y el
+    // sondeo seguía hasta el tope de intentos mientras el caso de uso ya lo daba por rechazado.
+    return switch (estado == null ? "" : estado.trim().toLowerCase(java.util.Locale.ROOT)) {
+      case "rejected", "cancelled", "expired", "abandoned", "failed" -> true;
       default -> false;
     };
   }

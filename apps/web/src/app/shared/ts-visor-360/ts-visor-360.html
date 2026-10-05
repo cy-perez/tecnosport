@@ -54,10 +54,17 @@
         ‹
       </ts-boton>
 
-      <!-- `aria-live` por el mismo motivo que en ts-paginador: al girar con el teclado el foco se
-           queda donde estaba y nada más anunciaría el cambio. -->
-      <span class="min-w-[12ch] text-center text-sm text-ts-texto-suave" aria-live="polite">
+      <!-- El contador visible ya no es región viva: sigue al dedo, y al arrastrar cambiaba decenas de
+           veces por segundo —"fotograma 3 de 24", "4 de 24", "5 de 24"…—, una cola de anuncios que
+           el lector leía mucho después de soltar. Lo anuncia la región de abajo, que solo cambia
+           al terminar un gesto o al girar con botones y teclado. -->
+      <span class="min-w-[12ch] text-center text-sm text-ts-texto-suave">
         {{ 'visor360.posicion' | transloco: { actual: indiceActual() + 1, total: total() } }}
+      </span>
+      <span class="sr-only" aria-live="polite">
+        @if (posicionAnunciada(); as posicion) {
+          {{ 'visor360.anuncio_posicion' | transloco: { actual: posicion, total: total() } }}
+        }
       </span>
 
       <ts-boton

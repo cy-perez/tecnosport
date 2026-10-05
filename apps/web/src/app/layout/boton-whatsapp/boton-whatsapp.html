@@ -7,7 +7,7 @@
      `end-24 bottom-24` y no `right`: el sitio se sirve en español y en inglés hoy, pero las
      propiedades lógicas son lo que ya usa el resto del proyecto (`start-0`, `border-e`, `ms-auto`)
      y cuestan lo mismo. -->
-<div class="fixed end-24 bottom-24 z-30 inline-flex">
+<div class="fixed end-24 bottom-24 z-flotante inline-flex">
   <!-- El latido. `--color-marca-alt` y **no** ámbar, que era lo primero que pedía el cuerpo: el
        ámbar es el color señal del kit y la regla es que sea una sola cosa por pantalla
        (`docs/04-ui-marca.md`, `ADR-0064`). Un halo ámbar latiendo en **todas** las pantallas del
@@ -32,10 +32,12 @@
        accesibilidad —se colapsa con `grid-template-columns`, no con `display:none`— y dice a dónde
        lleva el enlace. Un `aria-label` encima lo pisaría y sería una segunda copia del mismo texto.
 
-       `anillo-foco-sobre-marca` y no `anillo-foco`: el botón es `--color-marca`, y en tema claro
-       `--color-foco` es ese mismo grafito, así que el anillo normal sería invisible. -->
+       `anillo-foco-dentro-marca` y no `anillo-foco`: el botón es `--color-marca`, y en tema claro
+       `--color-foco` es ese mismo grafito, así que el anillo normal sería invisible. **Dentro** y
+       no `sobre-marca`, que lo pintaba fuera: un anillo blanco alrededor del botón, sobre el lienzo
+       claro, no se ve. Por dentro tiene el grafito del botón a los dos lados. -->
   <a
-    class="group anillo-foco-sobre-marca relative inline-flex min-h-tactil min-w-tactil items-center justify-center rounded-completo bg-ts-marca p-12 text-ts-sobre-marca no-underline shadow-lg transition-colors ease-[var(--curva-suave)] hover:bg-ts-marca-alt"
+    class="group anillo-foco-dentro-marca relative inline-flex min-h-tactil min-w-tactil items-center justify-center rounded-completo bg-ts-marca p-12 text-ts-sobre-marca no-underline shadow-lg transition-colors ease-[var(--curva-suave)] hover:bg-ts-marca-alt"
     [style.transitionDuration]="'var(--mov-media)'"
     [href]="enlace()"
   >
@@ -75,7 +77,9 @@
            izquierda del centro. Medido en el navegador: 68 px de enlace con el icono centrado en
            1843 contra un centro real en 1847. -->
       <span class="min-w-0 overflow-hidden">
-        <span class="block ps-8 text-sm whitespace-nowrap">{{ 'whatsapp.etiqueta' | transloco }}</span>
+        <span class="block ps-8 text-sm whitespace-nowrap">{{
+          'whatsapp.etiqueta' | transloco
+        }}</span>
       </span>
     </span>
   </a>

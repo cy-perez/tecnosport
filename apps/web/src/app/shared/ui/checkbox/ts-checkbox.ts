@@ -72,6 +72,13 @@ export class TsCheckbox {
   readonly marcado = input.required<boolean>();
   readonly deshabilitado = input(false);
   /**
+   * Si hay que marcarla para seguir —la autorización de datos del checkout—. Va al `aria-required`
+   * del `<input>` real, como en `ts-campo`: sin él, "Autorizo el tratamiento de mis datos, casilla,
+   * no marcada" no dice que sin marcarla no se puede pagar. Sin asterisco: la etiqueta envuelve la
+   * casilla entera y un asterisco dentro se colaría en su nombre accesible.
+   */
+  readonly obligatorio = input(false);
+  /**
    * El mensaje de error de la casilla, atado al `<input>` real.
    *
    * <p>Entró el 18 de septiembre de 2026 porque faltaba donde más pesa: la autorización de datos

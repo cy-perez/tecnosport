@@ -3,11 +3,13 @@ package co.tecnosport.api.application.pago;
 import co.tecnosport.api.application.compartido.Reloj;
 import co.tecnosport.api.application.inventario.RepositorioInventario;
 import co.tecnosport.api.application.pedido.RepositorioPedidos;
+import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.pago.EstadoPago;
 import co.tecnosport.api.domain.pago.EventoPago;
 import co.tecnosport.api.domain.pago.Pago;
 import co.tecnosport.api.domain.pago.ReferenciaPago;
 import co.tecnosport.api.domain.pedido.Pedido;
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.Objects;
 import java.util.Optional;
@@ -20,6 +22,9 @@ import java.util.Optional;
  * quien llame decide qué registrar con cada uno.
  */
 public final class ProcesarEventoDePago {
+
+  private static final String PROPIEDAD_ESTADO = "transaction.status";
+  private static final BigDecimal CENTAVOS_POR_PESO = BigDecimal.valueOf(100);
 
   private final RepositorioPagos repositorioPagos;
   private final RepositorioPedidos repositorioPedidos;
@@ -49,6 +54,11 @@ public final class ProcesarEventoDePago {
     if (!firmaValida) {
       return ResultadoEventoDePago.FIRMA_INVALIDA;
     }
+    // La firma solo autentica las propiedades que el evento declara firmadas. Si el estado no está
+    // entre ellas, el APPROVED que se leería no lo respalda nadie.
+    if (!comando.propiedadesFirmadas().contains(PROPIEDAD_ESTADO)) {
+      return ResultadoEventoDePago.ESTADO_SIN_FIRMAR;
+    }
 
     Optional<Pago> pagoEncontrado =
         repositorioPagos.buscarPorReferencia(new ReferenciaPago(comando.referencia()));
@@ -74,16 +84,50 @@ public final class ProcesarEventoDePago {
     if (nuevoEstado == null) {
       return ResultadoEventoDePago.ESTADO_NO_SOPORTADO;
     }
+    Pago pago = pagoEncontrado.get();
+    if (!elMontoEsElDelPago(comando, pago)) {
+      return ResultadoEventoDePago.MONTO_NO_COINCIDE;
+    }
+    registrarIdTransaccion(pago, comando.idTransaccion());
 
     Instant ahora = reloj.ahora();
     EventoPago evento = new EventoPago(comando.checksum(), nuevoEstado, ahora);
     return AplicadorDeResultadoDePago.aplicar(
-        pagoEncontrado.get(),
+        pago,
         evento,
         comando.medioWompi(),
         "webhook-wompi",
         repositorioPagos,
         repositorioPedidos,
         repositorioInventario);
+  }
+
+  /**
+   * El monto del evento contra el del pago, en centavos y en pesos colombianos. Sin esto, el
+   * webhook aplicaba el estado de cualquier evento firmado con la referencia del pago; la
+   * conciliación sí comparaba ({@code TransaccionDePasarela.correspondeA}). Un evento sin monto no
+   * se aplica: la conciliación lo resolverá consultando a la pasarela.
+   */
+  private static boolean elMontoEsElDelPago(ProcesarEventoDePagoComando comando, Pago pago) {
+    if (comando.montoEnCentavos() == null || !Dinero.MONEDA.equals(comando.moneda())) {
+      return false;
+    }
+    BigDecimal esperado = pago.monto().valor().multiply(CENTAVOS_POR_PESO);
+    return esperado.compareTo(BigDecimal.valueOf(comando.montoEnCentavos())) == 0;
+  }
+
+  /**
+   * El webhook trae el id de la transacción, y es la fuente fiable: viene firmado por la pasarela.
+   * Antes solo lo traía el {@code PATCH} del navegador al volver del checkout, así que un comprador
+   * que cerrara la pestaña dejaba el pago sin id y la conciliación sin con qué consultar. Si ya
+   * había uno distinto no se pisa: el que registró el {@code PATCH} se verificó contra la pasarela.
+   */
+  private static void registrarIdTransaccion(Pago pago, String idTransaccion) {
+    if (idTransaccion == null || idTransaccion.isBlank()) {
+      return;
+    }
+    if (pago.idTransaccionPasarela().isEmpty()) {
+      pago.registrarIdTransaccionPasarela(idTransaccion);
+    }
   }
 }

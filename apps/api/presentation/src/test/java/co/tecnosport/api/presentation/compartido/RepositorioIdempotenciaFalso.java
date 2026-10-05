@@ -34,6 +34,11 @@ final class RepositorioIdempotenciaFalso implements RepositorioIdempotencia {
   }
 
   @Override
+  public int purgarVencidas(Instant ahora) {
+    return 0;
+  }
+
+  @Override
   public void liberar(String llave) {
     reclamadas.remove(llave);
     completadas.remove(llave);

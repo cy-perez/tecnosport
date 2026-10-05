@@ -12,6 +12,7 @@ export function aIntentoDePago(dto: IntentoDePagoDto): IntentoDePago {
     firmaIntegridad: dto.firmaIntegridad ?? '',
     llavePublica: dto.llavePublica ?? '',
     ambiente: dto.ambiente ?? '',
+    montoEnCentavos: dto.montoEnCentavos,
   };
 }
 

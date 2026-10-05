@@ -33,6 +33,9 @@ export class TsPaginador {
   protected readonly haySiguiente = computed(() => this.pagina() + 1 < this.total());
 
   protected irA(pagina: number): void {
+    if (pagina < 0 || pagina >= this.total()) {
+      return;
+    }
     this.paginaCambiada.emit(pagina);
   }
 }

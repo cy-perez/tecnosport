@@ -18,6 +18,7 @@ import { Marca } from '../../../catalogo/domain/producto.model';
 import { usarMigasAdmin } from '../../migas-admin';
 import { usarCrearMarca } from '../application/crear-marca.mutacion';
 import { usarMarcasAdmin } from '../application/listar-marcas-admin.consulta';
+import { usarFocoEnPrimerInvalido } from '../../../../shared/foco/foco';
 
 /**
  * Las marcas del catálogo, y el formulario para dar de alta una.
@@ -37,6 +38,8 @@ import { usarMarcasAdmin } from '../application/listar-marcas-admin.consulta';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class MarcasAdminPage {
+  /** Al fallar el envío, el foco va al primer campo con error y no se queda en el botón. */
+  private readonly enfocarPrimerInvalido = usarFocoEnPrimerInvalido();
   protected readonly migas = usarMigasAdmin([{ clave: 'admin.marcas.titulo' }]);
 
   private readonly transloco = inject(TranslocoService);
@@ -66,6 +69,7 @@ export class MarcasAdminPage {
     }
     if (this.form.invalid) {
       this.form.markAllAsTouched();
+      this.enfocarPrimerInvalido();
       // Se dice qué falta en vez de deshabilitar el botón: un `<button disabled>` sale del orden de
       // tabulación y quien navega con teclado no llega a enterarse de por qué no pasa nada. Mismo
       // criterio que la pantalla de variantes sin medir.

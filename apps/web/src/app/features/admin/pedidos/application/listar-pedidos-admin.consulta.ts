@@ -1,5 +1,5 @@
 import { inject } from '@angular/core';
-import { injectQuery } from '@tanstack/angular-query-experimental';
+import { injectQuery, keepPreviousData } from '@tanstack/angular-query-experimental';
 import { FiltroPedidosAdmin, PedidosPaginadosAdmin } from '../domain/pedido-admin.model';
 import { REPOSITORIO_PEDIDOS_ADMIN } from '../domain/repositorio-pedidos-admin.puerto';
 
@@ -19,5 +19,8 @@ export function usarListarPedidosAdmin(filtro: () => FiltroPedidosAdmin) {
     queryKey: claveListaPedidosAdmin(filtro()),
     queryFn: (): Promise<PedidosPaginadosAdmin> => repositorio.listar(filtro()),
     staleTime: 15_000,
+    // Al cambiar de página o de filtro la tabla sigue en pantalla hasta que llega la nueva: sin
+    // esto se desmontaba, con el paginador dentro, y el foco caía a <body>.
+    placeholderData: keepPreviousData,
   }));
 }

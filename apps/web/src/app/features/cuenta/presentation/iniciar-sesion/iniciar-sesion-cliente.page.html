@@ -4,16 +4,14 @@
     [formGroup]="form"
     (submit)="$event.preventDefault(); enviar()"
   >
-    <!-- Mismo tratamiento que crear cuenta, y por el mismo motivo: dos campos evidentes en una
-         columna de 384 px. El `placeholder` reusa la clave del `label`; el precio de esconder la
-         etiqueta esta escrito en `ts-campo`. -->
+    <!-- La etiqueta se ve, desde el 4 de octubre de 2026. Estuvo escondida con el nombre en el
+         `placeholder`, y el placeholder desaparece al primer carácter: quien volvía al campo a
+         medio llenar no tenía en pantalla qué estaba escribiendo (WCAG 3.3.2). -->
     <ts-campo
       idCampo="cuenta-correo"
       tipo="email"
       [label]="'cuenta.iniciarSesion.correo' | transloco"
-      [placeholder]="'cuenta.iniciarSesion.correo' | transloco"
       [icono]="iconoCorreo"
-      [etiquetaOculta]="true"
       [obligatorio]="true"
       [error]="errorCorreo()"
       formControlName="correo"
@@ -23,9 +21,7 @@
       idCampo="cuenta-clave"
       tipo="password"
       [label]="'cuenta.iniciarSesion.clave' | transloco"
-      [placeholder]="'cuenta.iniciarSesion.clave' | transloco"
       [icono]="iconoClave"
-      [etiquetaOculta]="true"
       [obligatorio]="true"
       [error]="errorClave()"
       formControlName="clave"
@@ -48,7 +44,7 @@
       <ts-boton
         variante="primario"
         tipo="submit"
-        [cargando]="enviando()"
+        [ocupado]="enviando()"
         [etiquetaCargando]="'cuenta.iniciarSesion.enviando' | transloco"
       >
         {{ 'cuenta.iniciarSesion.entrar' | transloco }}

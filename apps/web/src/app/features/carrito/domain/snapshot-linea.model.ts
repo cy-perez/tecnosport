@@ -9,7 +9,11 @@ export interface SnapshotLinea {
   readonly slugProducto: string;
   readonly sku: string;
   readonly imagenUrl: string | null;
-  readonly imagenAlt: string;
+  /**
+   * Legado: lo traen los carritos guardados antes del 4 de octubre de 2026 y ya no se lee ni se
+   * escribe. Congelaba el `alt` en el idioma en que se agregó; la línea lo compone al pintar.
+   */
+  readonly imagenAlt?: string;
   readonly precioValor: number;
   readonly precioMoneda: string;
   /**

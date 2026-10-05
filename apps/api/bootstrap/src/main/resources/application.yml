@@ -14,9 +14,22 @@ spring:
     url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PUERTO:5432}/${DB_NOMBRE:tecnosport}${DB_PARAMS:}
     username: ${DB_USUARIO:tecnosport}
     password: ${DB_CLAVE:tecnosport}
+    hikari:
+      data-source-properties:
+        # Sin esto, el mensaje de una violación de restricción trae la fila —"Key (correo)=(...)
+        # already exists"— y termina en los registros. Propiedad de pgjdbc, comprobada en el
+        # 42.7.11 que usa el proyecto.
+        logServerErrorDetail: false
   flyway:
     enabled: true
     locations: classpath:db/migration
+  task:
+    scheduling:
+      pool:
+        # Boot 4.1 trae un solo hilo para todas las tareas @Scheduled (lo dice su metadata, valor
+        # por omisión 1): una que se colgara —un tercero sin responder— detenía a las demás. Con
+        # varios hilos, una tarea lenta deja de bloquear la conciliación de pagos.
+        size: ${PLANIFICADOR_HILOS:4}
   jpa:
     open-in-view: false
     hibernate:
@@ -41,6 +54,12 @@ spring:
           auth: ${SMTP_AUTH:false}
           starttls:
             enable: true
+          # Jakarta Mail espera sin límite por omisión. Las tareas programadas comparten hilos, y un
+          # servidor SMTP que dejara colgada una conexión detenía también, sin un solo error, la
+          # conciliación de pagos y de envíos. En milisegundos.
+          connectiontimeout: ${SMTP_TIMEOUT_CONEXION_MS:10000}
+          timeout: ${SMTP_TIMEOUT_LECTURA_MS:10000}
+          writetimeout: ${SMTP_TIMEOUT_ESCRITURA_MS:10000}
 
 tecnosport:
   siembra:
@@ -203,6 +222,12 @@ tecnosport:
       intervalo-minutos: ${SISTECREDITO_CONCILIACION_INTERVALO_MINUTOS:10}
       antiguedad-minima-minutos: ${SISTECREDITO_CONCILIACION_ANTIGUEDAD_MINIMA_MINUTOS:5}
   contraentrega:
+    vencimiento:
+      # Decisión de negocio del 4 de octubre de 2026: un pedido contraentrega que nadie verificó en
+      # 48 horas se cancela y libera su mercancía. Sin plazo, cualquiera bloqueaba existencia sin
+      # pagar nada confirmando pedidos con correos distintos.
+      horas-para-verificar: ${CONTRAENTREGA_HORAS_PARA_VERIFICAR:48}
+      intervalo-minutos: ${CONTRAENTREGA_VENCIMIENTO_INTERVALO_MINUTOS:60}
     # Dato de negocio real, no inventado (regla dura #5): arranca deshabilitada a proposito.
     # Se activa explicito cuando el negocio confirme la cobertura.
     habilitada: ${CONTRAENTREGA_HABILITADA:false}
@@ -508,6 +533,11 @@ tecnosport:
     # vive en application-local.yml.
     correo: ${ADMIN_CORREO:admin@tecnosport.co}
     clave: ${ADMIN_CLAVE}
+  idempotencia:
+    purga:
+      # Cada cuánto se borran las respuestas vencidas (24 horas) y las reclamaciones abandonadas.
+      # Guardan datos personales del pedido, así que no pueden quedarse indefinidamente.
+      intervalo-minutos: ${IDEMPOTENCIA_PURGA_INTERVALO_MINUTOS:60}
   carrito:
     purga:
       # docs/02-modelo-datos.md: "el carrito vive 30 días". Se cuentan desde la última actividad,

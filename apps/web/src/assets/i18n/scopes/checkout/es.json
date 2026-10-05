@@ -1,5 +1,6 @@
 {
   "resumen": {
+    "foto_de": "Foto de {{nombre}}",
     "titulo": "Resumen del pedido",
     "carrito_vacio": "Tu carrito está vacío.",
     "ir_al_catalogo": "Ir al catálogo",
@@ -70,6 +71,7 @@
     "error": "No se pudieron consultar los métodos de pago disponibles. Intenta de nuevo.",
     "sin_opciones": "No hay métodos de pago disponibles para este pedido.",
     "continuar": "Continuar",
+    "elige_metodo": "Elige un método de pago para continuar.",
     "contraentrega_efectivo": "Contra entrega: pagas el total, envío incluido, y solo en efectivo",
     "documento": {
       "titulo": "Tus datos para el crédito",

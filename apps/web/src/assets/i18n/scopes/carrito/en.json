@@ -9,8 +9,17 @@
   "disminuir": "Decrease quantity",
   "aumentar": "Increase quantity",
   "eliminar": "Remove",
+  "disminuir_de": "Decrease quantity of {{nombre}}",
+  "aumentar_de": "Increase quantity of {{nombre}}",
+  "eliminar_de": "Remove {{nombre}} from cart",
+  "foto_de": "Photo of {{nombre}}",
+  "anuncio_cantidad": "{{nombre}}: {{cantidad}} in your cart.",
+  "anuncio_eliminada": "{{nombre}} was removed from your cart.",
+  "anuncio_error": "We couldn't update your cart. Please try again.",
   "agregar_al_carrito": "Add to cart",
   "agregando": "Adding…",
+  "agregado": "Added to cart: {{nombre}}",
+  "error_agregar": "We couldn't add it to your cart. Check your connection and try again.",
   "envio_aparte": "Shipping is quoted at checkout, based on your destination. Pickup at our store is free.",
   "seguir_comprando": "Continue shopping"
 }

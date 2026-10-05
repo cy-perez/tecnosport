@@ -135,6 +135,34 @@ describe('RejillaPage', () => {
     expect(repositorio.llamadas).toBe(2);
   });
 
+  /**
+   * Filtrar y «Cargar más» cambiaban la rejilla sin decir nada. La región `status` vive siempre y
+   * dice cuántos hay, y luego cuántos más llegaron; el foco va a la primera tarjeta nueva y el botón
+   * no se deshabilita mientras carga (el foco caía en `<body>`).
+   */
+  it('anuncia cuántos hay y cuántos llegaron, y lleva el foco a la primera tarjeta nueva', async () => {
+    await renderRejilla(new RepositorioProductosFalso());
+    const region = screen.getByRole('status');
+
+    await vi.waitFor(() => expect(region.textContent?.trim()).toBe('2 productos.'));
+
+    const boton = screen.getByRole('button', { name: /cargar más/i });
+    fireEvent.click(boton);
+
+    await vi.waitFor(() => {
+      expect(region.textContent?.trim()).toBe('1 producto más.');
+      expect(document.activeElement).toBe(screen.getByRole('link', { name: /Producto c/ }));
+    });
+  });
+
+  it('entre el título de la página y las tarjetas hay un h2: la lista no salta del 1 al 3', async () => {
+    await renderRejilla(new RepositorioProductosFalso());
+    await screen.findByText('Producto a');
+
+    expect(screen.getByRole('heading', { level: 2, name: 'Productos' })).toBeTruthy();
+    expect(screen.getAllByRole('heading', { level: 3 }).length).toBe(2);
+  });
+
   it('sin resultados y con filtros activos, lo dice y sugiere quitar alguno', async () => {
     await renderRejilla(new RepositorioVacioFalso(), { texto: 'zapatilla-que-no-existe' });
 

@@ -4,7 +4,6 @@ import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.matchesPattern;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -619,8 +618,9 @@ class PedidoControladorTest {
 
     mockMvc
         .perform(
-            get("/api/v1/pedidos/{id}/seguimiento", pedido.id())
-                .param("correo", "cliente@tecnosport.co"))
+            post("/api/v1/pedidos/{id}/seguimiento", pedido.id())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"correo\":\"" + "cliente@tecnosport.co" + "\"}"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.id").value(pedido.id().toString()));
   }
@@ -695,8 +695,9 @@ class PedidoControladorTest {
 
     mockMvc
         .perform(
-            get("/api/v1/pedidos/{id}/seguimiento", pedido.id())
-                .param("correo", "cliente@tecnosport.co"))
+            post("/api/v1/pedidos/{id}/seguimiento", pedido.id())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"correo\":\"" + "cliente@tecnosport.co" + "\"}"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.id").value(pedido.id().toString()))
         .andExpect(jsonPath("$.estado").value("CONFIRMADO_CONTRAENTREGA"))
@@ -752,8 +753,9 @@ class PedidoControladorTest {
     String cuerpo =
         mockMvc
             .perform(
-                get("/api/v1/pedidos/{id}/seguimiento", pedido.id())
-                    .param("correo", "cliente@tecnosport.co"))
+                post("/api/v1/pedidos/{id}/seguimiento", pedido.id())
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("{\"correo\":\"" + "cliente@tecnosport.co" + "\"}"))
             .andExpect(status().isOk())
             // El bloque del envio lleva estos dos campos y ni uno mas, y cada guia otros dos.
             // La cuenta sobre el mapa entero y no un `exists` por campo: lo que hay que impedir
@@ -840,8 +842,9 @@ class PedidoControladorTest {
 
     mockMvc
         .perform(
-            get("/api/v1/pedidos/{id}/seguimiento", pedido.id())
-                .param("correo", "cliente@tecnosport.co"))
+            post("/api/v1/pedidos/{id}/seguimiento", pedido.id())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"correo\":\"" + "cliente@tecnosport.co" + "\"}"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.subtotal.valor").value(50_000))
         .andExpect(jsonPath("$.costoEnvio.valor").value(14_500))
@@ -855,7 +858,9 @@ class PedidoControladorTest {
 
     mockMvc
         .perform(
-            get("/api/v1/pedidos/{id}/seguimiento", pedido.id()).param("correo", "otro@correo.co"))
+            post("/api/v1/pedidos/{id}/seguimiento", pedido.id())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"correo\":\"otro@correo.co\"}"))
         .andExpect(status().isNotFound())
         .andExpect(jsonPath("$.codigo").value("PEDIDO_NO_ENCONTRADO"));
   }
@@ -864,8 +869,9 @@ class PedidoControladorTest {
   void seguimientoDeUnPedidoInexistenteDevuelve404() throws Exception {
     mockMvc
         .perform(
-            get("/api/v1/pedidos/{id}/seguimiento", java.util.UUID.randomUUID())
-                .param("correo", "cliente@tecnosport.co"))
+            post("/api/v1/pedidos/{id}/seguimiento", java.util.UUID.randomUUID())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"correo\":\"" + "cliente@tecnosport.co" + "\"}"))
         .andExpect(status().isNotFound())
         .andExpect(jsonPath("$.codigo").value("PEDIDO_NO_ENCONTRADO"));
   }

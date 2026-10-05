@@ -1,5 +1,6 @@
 {
   "resumen": {
+    "foto_de": "Photo of {{nombre}}",
     "titulo": "Order summary",
     "carrito_vacio": "Your cart is empty.",
     "ir_al_catalogo": "Go to catalog",
@@ -70,6 +71,7 @@
     "error": "We couldn't check the available payment methods. Please try again.",
     "sin_opciones": "No payment methods are available for this order.",
     "continuar": "Continue",
+    "elige_metodo": "Choose a payment method to continue.",
     "contraentrega_efectivo": "Cash on delivery: you pay the total, shipping included, in cash only",
     "documento": {
       "titulo": "Your details for the credit",

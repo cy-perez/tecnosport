@@ -7,6 +7,7 @@ import {
   signal,
   viewChild,
   ElementRef,
+  untracked,
 } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute } from '@angular/router';
@@ -18,6 +19,7 @@ import { usarMigasAdmin } from '../../admin/migas-admin';
 import { TsIndicadorNivel } from './indicador-nivel/ts-indicador-nivel';
 import { TsSuperposicionGuia } from './superposicion-guia/ts-superposicion-guia';
 import { CapturaStore } from '../application/captura.store';
+import { usarFoco } from '../../../shared/foco/foco';
 import { claveDeToma, FOTOGRAMAS_POSIBLES, gradosDeToma } from '../domain/sesion-captura.model';
 
 /**
@@ -61,7 +63,54 @@ export class Captura360Page {
     gradosDeToma(this.store.siguienteOrden(), this.store.fotogramasPrometidos()),
   );
 
+  private readonly anfitrion = inject<ElementRef<HTMLElement>>(ElementRef);
+  private readonly enfocarDespuesDePintar = usarFoco();
+
+  /**
+   * En qué paso del asistente se está: la fase, y dentro de la captura, si toca disparar, decidir
+   * sobre la toma o subir. Cada paso cambia los botones de abajo, y el que se acaba de pulsar
+   * desaparece con el paso anterior.
+   */
+  private readonly paso = computed(() => {
+    const fase = this.store.fase();
+    if (fase !== 'CAPTURANDO') {
+      return fase;
+    }
+    if (this.store.termino()) {
+      return 'TERMINO';
+    }
+    return this.store.pendiente() !== null ? 'PENDIENTE' : 'DISPARAR';
+  });
+
   constructor() {
+    // En cada cambio de paso el foco va a la acción principal del nuevo —«Aceptar» tras disparar,
+    // «Disparar» tras aceptar, «Procesar y subir» al terminar, «Publicar» al revisar— o al título
+    // si el paso no tiene ninguna (procesando, subiendo, publicado). Sin esto, cada toma dejaba el
+    // foco en `<body>`: con un set de 24 fotogramas eran 48 viajes al principio de la página.
+    // Solo si el foco se perdió de verdad: a quien lo tiene en otro control no se le arranca.
+    let anterior: string | null = null;
+    effect(() => {
+      const actual = this.paso();
+      const cambio = anterior !== null && actual !== anterior;
+      anterior = actual;
+      if (!cambio) {
+        return;
+      }
+      untracked(() =>
+        this.enfocarDespuesDePintar(() => {
+          const raiz = this.anfitrion.nativeElement;
+          const activo = raiz.ownerDocument.activeElement;
+          if (activo !== null && activo !== raiz.ownerDocument.body && activo.isConnected) {
+            return null;
+          }
+          return (
+            raiz.querySelector<HTMLElement>('[data-accion-principal] button') ??
+            raiz.querySelector<HTMLElement>('h1')
+          );
+        }),
+      );
+    });
+
     // Qué producto se captura, y si quedó una captura suya a medias en disco. No toca la red.
     effect(() => {
       const productoId = this.paramMap().get('productoId') ?? '';
@@ -87,7 +136,7 @@ export class Captura360Page {
 
   protected async capturar(): Promise<void> {
     const elemento = this.video()?.nativeElement;
-    if (elemento === undefined) {
+    if (elemento === undefined || !this.store.nivel().puedeDisparar) {
       return;
     }
 

@@ -12,8 +12,9 @@
 // propósito — se lee entero en un minuto y se prueba metiendo una violación.
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join, relative, resolve, dirname, sep } from "node:path";
+import { fileURLToPath } from "node:url";
 
-const RAIZ = "apps/web/src/app";
+const RAIZ_POR_OMISION = "apps/web/src/app";
 
 // Dos excepciones, y las dos están en el propio enunciado de las reglas.
 //
@@ -31,7 +32,12 @@ const ES_PRUEBA = /\.spec\.ts$/;
 /** A qué capa pertenece un archivo, por su ruta. */
 function capaDe(rutaRelativa) {
   const p = rutaRelativa.split(sep).join("/");
-  const m = p.match(/^features\/[^/]+\/(domain|application|infrastructure|presentation)\//);
+  // `admin/` agrupa las funcionalidades del panel un nivel más abajo —features/admin/pedidos/domain—
+  // y la expresión de antes solo admitía un nivel: las 14 del panel, 128 archivos, quedaban fuera
+  // del grafo sin que nada lo dijera. Mismo agujero que tuvo core/ hasta el 24 de septiembre.
+  const m = p.match(
+    /^features\/(?:admin\/)?[^/]+\/(domain|application|infrastructure|presentation)\//,
+  );
   if (m) return m[1];
   if (p.startsWith("shared/")) return "shared";
   // core/ es transversal: lo usa la aplicación entera, así que no puede depender de una
@@ -84,47 +90,62 @@ function* archivosTs(dir) {
   }
 }
 
-const IMPORT = /(?:^|\n)\s*(?:import|export)\s[^;]*?from\s+['"](\.[^'"]+)['"]/g;
+// Tres formas de importar un relativo, y las tres cuentan: `import ... from`, `export ... from`, el
+// `import '...'` sin nada que importar y el `import('...')` dinámico. Solo se miraba la primera.
+const IMPORTS = [
+  /(?:^|\n)\s*(?:import|export)\s[^;]*?from\s+['"](\.[^'"]+)['"]/g,
+  /(?:^|\n)\s*import\s+['"](\.[^'"]+)['"]/g,
+  /\bimport\(\s*['"](\.[^'"]+)['"]\s*\)/g,
+];
 
-const violaciones = [];
-const enPruebas = [];
-for (const archivo of archivosTs(RAIZ)) {
-  const rel = relative(RAIZ, archivo);
-  const desde = capaDe(rel);
-  const regla = desde && PROHIBIDO[desde];
-  if (!regla) continue;
-  if (ES_RUTAS.test(archivo)) continue;
+/** Las dependencias invertidas de un árbol, separadas entre código y pruebas. */
+export function revisar(raiz) {
+  const violaciones = [];
+  const enPruebas = [];
+  for (const archivo of archivosTs(raiz)) {
+    const rel = relative(raiz, archivo);
+    const desde = capaDe(rel);
+    const regla = desde && PROHIBIDO[desde];
+    if (!regla) continue;
+    if (ES_RUTAS.test(archivo)) continue;
 
-  const fuente = readFileSync(archivo, "utf8");
-  for (const m of fuente.matchAll(IMPORT)) {
-    const destino = capaDe(relative(RAIZ, resolve(dirname(archivo), m[1])));
-    if (destino && regla.capas.includes(destino)) {
-      (ES_PRUEBA.test(archivo) ? enPruebas : violaciones).push({
-        archivo: relative(".", archivo).split(sep).join("/"),
-        desde,
-        destino,
-        especificador: m[1],
-        motivo: regla.motivo,
-      });
+    const fuente = readFileSync(archivo, "utf8");
+    for (const expresion of IMPORTS) {
+      for (const m of fuente.matchAll(expresion)) {
+        const destino = capaDe(relative(raiz, resolve(dirname(archivo), m[1])));
+        if (destino && regla.capas.includes(destino)) {
+          (ES_PRUEBA.test(archivo) ? enPruebas : violaciones).push({
+            archivo: relative(".", archivo).split(sep).join("/"),
+            desde,
+            destino,
+            especificador: m[1],
+            motivo: regla.motivo,
+          });
+        }
+      }
     }
   }
+  return { violaciones, enPruebas };
 }
 
-if (enPruebas.length > 0) {
-  console.log(`aviso: ${enPruebas.length} import(s) de este tipo en archivos de prueba, que no fallan el build:`);
-  for (const v of enPruebas) {
-    console.log(`  ${v.archivo}  ${v.desde} -> ${v.destino} (${v.especificador})`);
+if (process.argv[1] && fileURLToPath(import.meta.url) === resolve(process.argv[1])) {
+  const { violaciones, enPruebas } = revisar(RAIZ_POR_OMISION);
+  if (enPruebas.length > 0) {
+    console.log(`aviso: ${enPruebas.length} import(s) de este tipo en archivos de prueba, que no fallan el build:`);
+    for (const v of enPruebas) {
+      console.log(`  ${v.archivo}  ${v.desde} -> ${v.destino} (${v.especificador})`);
+    }
+    console.log("");
   }
-  console.log("");
-}
 
-if (violaciones.length === 0) {
-  console.log("capas: ninguna dependencia invertida en codigo de produccion");
-  process.exit(0);
-}
+  if (violaciones.length === 0) {
+    console.log("capas: ninguna dependencia invertida en codigo de produccion");
+    process.exit(0);
+  }
 
-for (const v of violaciones) {
-  console.log(`${v.archivo}\n  ${v.desde} -> ${v.destino}  (${v.especificador})\n  ${v.motivo}\n`);
+  for (const v of violaciones) {
+    console.log(`${v.archivo}\n  ${v.desde} -> ${v.destino}  (${v.especificador})\n  ${v.motivo}\n`);
+  }
+  console.log(`dependencias invertidas: ${violaciones.length}`);
+  process.exit(1);
 }
-console.log(`dependencias invertidas: ${violaciones.length}`);
-process.exit(1);

@@ -1,14 +1,22 @@
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ElementRef, computed, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { TranslocoService } from '@jsverse/transloco';
 import { usarTraductor } from '../../core/i18n/traductor';
 import { urlEnOtroIdioma } from '../../core/idioma/idioma.servicio';
+import { usarFoco } from '../foco/foco';
 
 const IDIOMAS = ['es', 'en'] as const;
 
 type Idioma = (typeof IDIOMAS)[number];
 
-/** El nombre accesible de cada segmento. El código de dos letras no lo da. */
+/**
+ * El nombre accesible de cada segmento. El código de dos letras no lo da.
+ *
+ * El texto **empieza por el código visible** ("EN, ver el sitio en inglés"), y no es estilo: WCAG
+ * 2.5.3 pide que el nombre accesible contenga lo que se ve. Quien usa control por voz dice "pulsa
+ * EN" porque eso es lo que lee en pantalla, y con el nombre "Ver el sitio en inglés" la orden no
+ * encontraba el botón.
+ */
 const CLAVE_DE_ACCION: Record<Idioma, string> = {
   es: 'idioma.ver_en_espanol',
   en: 'idioma.ver_en_ingles',
@@ -48,6 +56,8 @@ const CLAVE_DE_ACCION: Record<Idioma, string> = {
 export class TsAlternadorIdioma {
   private readonly router = inject(Router);
   private readonly transloco = inject(TranslocoService);
+  private readonly anfitrion = inject<ElementRef<HTMLElement>>(ElementRef);
+  private readonly enfocarDespuesDePintar = usarFoco();
 
   // `usarTraductor()` y no el pipe `| transloco`: en el entorno de pruebas el
   // pipe no reacciona a un cambio de idioma, así que no hay forma de fijar el
@@ -68,7 +78,19 @@ export class TsAlternadorIdioma {
     return this.traducir()(CLAVE_DE_ACCION[idioma]);
   }
 
+  /**
+   * Al navegar, el botón pulsado se convierte en el `<span>` del activo y el navegador manda el
+   * foco a `<body>`. Se lleva al segmento activo, que tiene `tabindex="-1"` para poder recibirlo
+   * sin entrar en el orden de tabulación: quien navega con teclado sigue donde estaba, y oye en
+   * qué idioma quedó.
+   */
   protected navegarA(idioma: Idioma): void {
-    void this.router.navigateByUrl(urlEnOtroIdioma(this.router.url, idioma));
+    void this.router.navigateByUrl(urlEnOtroIdioma(this.router.url, idioma)).then((navego) => {
+      if (navego) {
+        this.enfocarDespuesDePintar(() =>
+          this.anfitrion.nativeElement.querySelector<HTMLElement>('[aria-current="true"]'),
+        );
+      }
+    });
   }
 }

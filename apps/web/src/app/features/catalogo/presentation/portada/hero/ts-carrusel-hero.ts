@@ -1,13 +1,16 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  DOCUMENT,
   DestroyRef,
   ElementRef,
   afterNextRender,
   computed,
+  effect,
   inject,
   input,
   signal,
+  untracked,
   viewChild,
 } from '@angular/core';
 import { TranslocoPipe } from '@jsverse/transloco';
@@ -15,6 +18,8 @@ import { iconoPausar, iconoReanudar } from '../../../../../shared/ui/icono/icono
 import { TsBoton } from '../../../../../shared/ui/boton/ts-boton';
 import { TsIcono } from '../../../../../shared/ui/icono/ts-icono';
 import { MEDIA_HERO_VERTICAL } from '../../../../../core/imagenes/tamanos-de-imagen';
+import { PreferenciaDeMovimiento } from '../../../../../core/movimiento/preferencia-de-movimiento';
+import { aMilisegundos, leerToken } from '../../../../../core/tokens/leer-token';
 import { Linea } from '../../../domain/filtro-productos.model';
 
 /**
@@ -32,14 +37,18 @@ interface DiapositivaHero {
 }
 
 /**
- * Cada cuánto pasa sola.
+ * Cada cuánto pasa sola: el token `--mov-carrusel` del kit, leído al hidratar.
  *
  * <p>Fueron cinco segundos, que es lo que hace el carrusel de referencia; son cuatro desde el 25 de
  * septiembre de 2026, a petición del negocio. <b>El botón de pausa no se va con el segundo que se
  * quitó</b>: WCAG 2.2.2 habla de movimiento automático que <i>dure</i> más de cinco segundos, y el
  * de un carrusel que rota solo no termina nunca — lo que dura cuatro segundos es cada paso.
+ *
+ * <p>Fue el literal `4000` aquí hasta el 4 de octubre de 2026. Si el token no se puede leer —una
+ * prueba sin `tokens.css`, un nombre mal escrito— el carrusel <b>no rota</b>: inventarse un valor
+ * por omisión sería volver a escribir el literal, y quedarse quieto es el fallo que no molesta.
  */
-const MS_AUTOPLAY = 4000;
+const TOKEN_PERMANENCIA = '--mov-carrusel';
 
 /**
  * Cuánto hay que arrastrar para que el carrusel pase de pieza: la sexta parte del ancho visible.
@@ -211,6 +220,14 @@ export class TsCarruselHero {
   protected readonly pausadoPorLaPersona = signal(false);
 
   private readonly destroyRef = inject(DestroyRef);
+  private readonly documento = inject(DOCUMENT);
+  private readonly movimiento = inject(PreferenciaDeMovimiento);
+
+  /** Los milisegundos de `--mov-carrusel`, o `null` hasta hidratar o si el token no está. */
+  private permanencia: number | null = null;
+
+  /** Ya corrió `afterNextRender`: hay navegador, y el temporizador se puede programar. */
+  private readonly hidratado = signal(false);
 
   private temporizador: ReturnType<typeof setInterval> | null = null;
 
@@ -255,11 +272,18 @@ export class TsCarruselHero {
   constructor() {
     afterNextRender(() => {
       this.vigilarElClicDeUnArrastre();
-      if (this.sistemaPideMenosMovimiento()) {
-        return;
-      }
-      this.puedeRotar.set(true);
-      this.reprogramar();
+      this.permanencia = aMilisegundos(leerToken(this.documento, TOKEN_PERMANENCIA));
+      this.hidratado.set(true);
+    });
+    // **Se escucha, no se lee una vez.** Quien activa "reducir movimiento" con la portada abierta
+    // tiene que ver el carrusel pararse en ese momento, no al recargar; y al revés, quitarlo lo
+    // vuelve a poner en marcha. La preferencia la sigue `PreferenciaDeMovimiento`.
+    effect(() => {
+      const puede = this.hidratado() && !this.movimiento.reducido() && this.permanencia !== null;
+      untracked(() => {
+        this.puedeRotar.set(puede);
+        this.reprogramar();
+      });
     });
     this.destroyRef.onDestroy(() => this.apagar());
   }
@@ -436,23 +460,6 @@ export class TsCarruselHero {
     return `portada.hero.slides.${diapositiva.clave}.${campo}`;
   }
 
-  /**
-   * Las dos preferencias de menos movimiento que el sitio respeta: la del sistema operativo y el
-   * atributo `data-movimiento` de `<html>`. Es el mismo par que `src/tailwind.css` apaga para el
-   * brillo de carga; aquí no basta con acortar la animación, hay que no programar el temporizador.
-   *
-   * <p><b>Hoy nada del sitio escribe ese atributo</b>: la casilla del pie que lo ponía se quitó el
-   * 25 de septiembre de 2026. La lectura se queda —igual que los ganchos de CSS— porque es lo que
-   * haría falta el día que el control vuelva, y porque una prueba de este componente la ejercita
-   * poniendo el atributo a mano. Si estás depurando por qué el carrusel no se detiene, mira
-   * `prefers-reduced-motion` antes que esta rama.
-   */
-  private sistemaPideMenosMovimiento(): boolean {
-    const delSistema = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
-    const delSitio = document.documentElement.getAttribute('data-movimiento') === 'reducido';
-    return delSistema || delSitio;
-  }
-
   /** Deja la tira quieta y suelta la captura del puntero. No decide nada: solo cierra el gesto. */
   private soltar(evento: PointerEvent): void {
     this.arrastrando.set(false);
@@ -505,10 +512,10 @@ export class TsCarruselHero {
    */
   private reprogramar(): void {
     this.apagar();
-    if (!this.rotando()) {
+    if (!this.rotando() || this.permanencia === null) {
       return;
     }
-    this.temporizador = setInterval(() => this.siguiente(), MS_AUTOPLAY);
+    this.temporizador = setInterval(() => this.siguiente(), this.permanencia);
   }
 
   private apagar(): void {

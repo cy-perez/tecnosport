@@ -57,6 +57,25 @@ public class RepositorioPagosJpa implements RepositorioPagos {
   }
 
   @Override
+  public Optional<Pago> buscarPorReferenciaParaModificar(ReferenciaPago referencia) {
+    return pagos.findByReferenciaParaModificar(referencia.valor()).map(this::aPago);
+  }
+
+  @Override
+  public Optional<Pago> buscarPorId(UUID id) {
+    return pagos.findById(id).map(this::aPago);
+  }
+
+  @Override
+  public List<Pago> buscarSinPedidoQueLosEspere() {
+    return pagos
+        .findBySinPedidoQueLoEspereDesdeIsNotNullOrderBySinPedidoQueLoEspereDesdeAsc()
+        .stream()
+        .map(this::aPago)
+        .toList();
+  }
+
+  @Override
   public Optional<Pago> buscarPorIdTransaccionPasarela(String idTransaccionPasarela) {
     if (idTransaccionPasarela == null || idTransaccionPasarela.isBlank()) {
       return Optional.empty();
@@ -129,7 +148,8 @@ public class RepositorioPagosJpa implements RepositorioPagos {
         entidad.getCreadoEn(),
         entidad.getActualizadoEn(),
         entidad.getIdTransaccionPasarela(),
-        entidad.getMedioReportadoPasarela());
+        entidad.getMedioReportadoPasarela(),
+        entidad.getSinPedidoQueLoEspereDesde());
   }
 
   private EventoPago aEvento(EventoPagoJpaEntity e) {
@@ -147,7 +167,8 @@ public class RepositorioPagosJpa implements RepositorioPagos {
         pago.creadoEn(),
         pago.actualizadoEn(),
         pago.idTransaccionPasarela().orElse(null),
-        pago.medioReportadoPorLaPasarela().orElse(null));
+        pago.medioReportadoPorLaPasarela().orElse(null),
+        pago.sinPedidoQueLoEspereDesde().orElse(null));
   }
 
   private EventoPagoJpaEntity aEntidadEvento(UUID pagoId, EventoPago e) {

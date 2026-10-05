@@ -18,6 +18,7 @@ import {
 } from '../../domain/garantia.model';
 import { mensajeDeError } from '../../../../../core/errores/mensaje-de-error';
 import { TsCargando } from '../../../../../shared/ui/cargando/ts-cargando';
+import { usarFocoEnPrimerInvalido } from '../../../../../shared/foco/foco';
 
 /** Una linea del pedido, con lo minimo para elegir sobre cual se reclama. */
 export interface LineaParaGarantia {
@@ -60,6 +61,8 @@ const CLAVE_DESENLACE: Record<DesenlaceGarantia, string> = {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class PanelGarantia {
+  /** Al fallar el envío, el foco va al primer campo con error y no se queda en el botón. */
+  private readonly enfocarPrimerInvalido = usarFocoEnPrimerInvalido();
   readonly pedidoId = input.required<string>();
   readonly estadoPedido = input.required<string>();
   readonly lineas = input.required<readonly LineaParaGarantia[]>();
@@ -139,6 +142,7 @@ export class PanelGarantia {
   protected async radicar(): Promise<void> {
     if (this.formularioRadicar.invalid) {
       this.formularioRadicar.markAllAsTouched();
+      this.enfocarPrimerInvalido();
       return;
     }
     const valores = this.formularioRadicar.getRawValue();
@@ -155,6 +159,7 @@ export class PanelGarantia {
   protected async resolver(reclamacion: ReclamacionGarantia): Promise<void> {
     if (this.formularioResolver.invalid) {
       this.formularioResolver.markAllAsTouched();
+      this.enfocarPrimerInvalido();
       return;
     }
     const valores = this.formularioResolver.getRawValue();

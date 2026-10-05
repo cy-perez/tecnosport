@@ -104,6 +104,18 @@ public class RepositorioPedidosJpa implements RepositorioPedidos {
    * no existe, y esa diferencia es medible desde fuera aunque las dos respondan el mismo 404.
    */
   @Override
+  public Optional<Pedido> buscarPorIdParaModificar(UUID id) {
+    return pedidos
+        .findByIdParaModificar(id)
+        .map(
+            entidad ->
+                aPedido(
+                    entidad,
+                    lineas.findByPedidoId(entidad.getId()),
+                    historial.findByPedidoIdOrderByFechaAsc(entidad.getId())));
+  }
+
+  @Override
   public Optional<Pedido> buscarPorNumeroYCorreo(NumeroPedido numero, String correoNormalizado) {
     return pedidos
         .findByNumeroPedidoAndCorreo(numero.valor(), correoNormalizado)
@@ -148,7 +160,22 @@ public class RepositorioPedidosJpa implements RepositorioPedidos {
 
   @Override
   public boolean tieneRechazoEnEntrega(String correo) {
-    return pedidos.existsByCorreoAndEstado(correo, EstadoPedido.RECHAZADO_EN_ENTREGA.name());
+    return correo != null && pedidos.algunaVezRechazadoPorCorreo(correo.trim().toLowerCase());
+  }
+
+  @Override
+  public boolean tieneRechazoEnEntregaPorTelefono(String telefono) {
+    if (telefono == null || telefono.replaceAll("[^0-9]", "").length() < 7) {
+      return false;
+    }
+    return pedidos.algunaVezRechazadoPorTelefono(telefono);
+  }
+
+  @Override
+  public List<UUID> buscarIdsEnEstadoCreadosAntesDe(
+      EstadoPedido estado, Instant creadosAntesDe, int maximo) {
+    return pedidos.findIdsByEstadoAndCreadoEnBefore(
+        estado.name(), creadosAntesDe, PageRequest.of(0, maximo));
   }
 
   @Override

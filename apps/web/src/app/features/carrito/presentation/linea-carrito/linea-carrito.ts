@@ -21,9 +21,16 @@ export class LineaCarritoComponent {
   readonly cantidadCambio = output<number>();
   readonly eliminar = output<void>();
 
+  /**
+   * El precio de hoy, del servidor (`CarritoStore.precioDeLinea`). `null` mientras llega o si la
+   * variante ya no se vende. La foto guardada solo da el nombre y la imagen: su precio podía estar
+   * viejo.
+   */
+  readonly precioUnitario = input<number | null>(null);
+
   protected readonly subtotal = computed(() => {
-    const snapshot = this.snapshot();
-    return snapshot ? snapshot.precioValor * this.linea().cantidad : null;
+    const precio = this.precioUnitario();
+    return precio === null ? null : precio * this.linea().cantidad;
   });
 
   protected restar(): void {

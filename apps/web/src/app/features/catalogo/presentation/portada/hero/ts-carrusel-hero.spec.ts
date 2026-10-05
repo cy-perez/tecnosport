@@ -5,6 +5,45 @@ import en from '../../../../../../assets/i18n/en.json';
 import es from '../../../../../../assets/i18n/es.json';
 import { TsCarruselHero } from './ts-carrusel-hero';
 
+/**
+ * Lo que el navegador real lee de `tokens.css`. jsdom no carga la hoja, así que el token se pone
+ * en el estilo de `<html>`: sin él el carrusel no rota, y eso también se prueba (abajo).
+ */
+function ponerPermanencia(valor: string | null): void {
+  if (valor === null) {
+    document.documentElement.style.removeProperty('--mov-carrusel');
+  } else {
+    document.documentElement.style.setProperty('--mov-carrusel', valor);
+  }
+}
+
+/**
+ * Un `matchMedia` de mentira para `prefers-reduced-motion`, con su evento `change`: jsdom no trae
+ * ninguno. Devuelve la función que cambia la preferencia «con la pestaña abierta».
+ */
+function fingirPreferencia(reducido: boolean): (nuevo: boolean) => void {
+  const oyentes = new Set<(evento: MediaQueryListEvent) => void>();
+  const consulta = {
+    matches: reducido,
+    media: '(prefers-reduced-motion: reduce)',
+    addEventListener: (_tipo: string, oyente: (evento: MediaQueryListEvent) => void) =>
+      oyentes.add(oyente),
+    removeEventListener: (_tipo: string, oyente: (evento: MediaQueryListEvent) => void) =>
+      oyentes.delete(oyente),
+  };
+  vi.stubGlobal('matchMedia', () => consulta);
+  return (nuevo) => {
+    consulta.matches = nuevo;
+    oyentes.forEach((oyente) => oyente({ matches: nuevo } as MediaQueryListEvent));
+  };
+}
+
+beforeEach(() => ponerPermanencia('4000ms'));
+afterEach(() => {
+  ponerPermanencia(null);
+  vi.unstubAllGlobals();
+});
+
 async function renderCarrusel() {
   const resultado = await render(TsCarruselHero, {
     inputs: { idioma: 'es' },
@@ -412,12 +451,12 @@ describe('TsCarruselHero', () => {
 
   /**
    * La APG lo exige de todo carrusel que rota solo, y aquí no basta con acortar la animación: hay
-   * que no programar el temporizador. Se prueba con el interruptor del propio sitio
-   * (`data-movimiento`) porque es el que se puede fijar desde una prueba; la preferencia del
-   * sistema entra por el mismo `if`.
+   * que no programar el temporizador. Se prueba con la preferencia del sistema, fingida: el
+   * atributo `data-movimiento` que probaba esta prueba antes no lo escribe nadie desde el 25 de
+   * septiembre de 2026, y el carrusel ya no lo lee.
    */
   it('no rota sola cuando se pidió menos movimiento', async () => {
-    document.documentElement.setAttribute('data-movimiento', 'reducido');
+    fingirPreferencia(true);
     vi.useFakeTimers({ shouldAdvanceTime: true });
     try {
       const { fixture } = await renderCarrusel();
@@ -428,7 +467,65 @@ describe('TsCarruselHero', () => {
       expect(indiceVisible()).toBe(0);
     } finally {
       vi.useRealTimers();
-      document.documentElement.removeAttribute('data-movimiento');
+    }
+  });
+
+  /**
+   * La preferencia se leía una sola vez, al hidratar: quien activaba "reducir movimiento" con la
+   * portada abierta seguía viéndola rotar hasta recargar. Ahora se escucha el `change`, en los dos
+   * sentidos.
+   */
+  it('se detiene si se pide menos movimiento con la página abierta, y vuelve si se quita', async () => {
+    const cambiarPreferencia = fingirPreferencia(false);
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    try {
+      const { fixture } = await renderCarrusel();
+
+      cambiarPreferencia(true);
+      await fixture.whenStable();
+      await vi.advanceTimersByTimeAsync(15000);
+      await fixture.whenStable();
+      expect(indiceVisible()).toBe(0);
+
+      cambiarPreferencia(false);
+      await fixture.whenStable();
+      await vi.advanceTimersByTimeAsync(4000);
+      await fixture.whenStable();
+      expect(indiceVisible()).toBe(1);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  /**
+   * Cada cuánto pasa sale de `--mov-carrusel`. Sin el token no hay valor por omisión que inventar:
+   * se queda quieto, que es el fallo que no molesta. Y con otro valor manda el token, no un literal.
+   */
+  it('la permanencia sale del token del kit', async () => {
+    ponerPermanencia('2s');
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    try {
+      const { fixture } = await renderCarrusel();
+
+      await vi.advanceTimersByTimeAsync(2000);
+      await fixture.whenStable();
+      expect(indiceVisible()).toBe(1);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('sin el token de permanencia no rota', async () => {
+    ponerPermanencia(null);
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    try {
+      const { fixture } = await renderCarrusel();
+
+      await vi.advanceTimersByTimeAsync(15000);
+      await fixture.whenStable();
+      expect(indiceVisible()).toBe(0);
+    } finally {
+      vi.useRealTimers();
     }
   });
 

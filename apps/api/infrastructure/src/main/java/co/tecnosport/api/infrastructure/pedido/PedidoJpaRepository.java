@@ -1,6 +1,7 @@
 package co.tecnosport.api.infrastructure.pedido;
 
 import co.tecnosport.api.infrastructure.pedido.entidad.PedidoJpaEntity;
+import jakarta.persistence.LockModeType;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
@@ -9,13 +10,46 @@ import java.util.UUID;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 public interface PedidoJpaRepository extends JpaRepository<PedidoJpaEntity, UUID> {
 
+  /** {@code select ... for update}: ver {@code RepositorioPedidos.buscarPorIdParaModificar}. */
+  @Lock(LockModeType.PESSIMISTIC_WRITE)
+  @Query("select p from PedidoJpaEntity p where p.id = :id")
+  Optional<PedidoJpaEntity> findByIdParaModificar(@Param("id") UUID id);
+
   boolean existsByCorreoAndEstado(String correo, String estado);
+
+  @Query(
+      "select p.id from PedidoJpaEntity p where p.estado = :estado and p.creadoEn < :corte"
+          + " order by p.creadoEn asc")
+  List<UUID> findIdsByEstadoAndCreadoEnBefore(
+      @Param("estado") String estado, @Param("corte") Instant corte, Pageable pagina);
+
+  @Query(
+      nativeQuery = true,
+      value =
+          "select exists (select 1 from pedido p join historial_pedido h on h.pedido_id = p.id"
+              + " where p.correo = :correo and h.estado = 'RECHAZADO_EN_ENTREGA')")
+  boolean algunaVezRechazadoPorCorreo(@Param("correo") String correo);
+
+  /**
+   * Por los últimos diez dígitos: el mismo celular llega como {@code 300 123 4567}, {@code +57
+   * 3001234567} o {@code 573001234567}.
+   */
+  @Query(
+      nativeQuery = true,
+      value =
+          "select exists (select 1 from pedido p join historial_pedido h on h.pedido_id = p.id"
+              + " where p.telefono_contacto is not null"
+              + " and right(regexp_replace(p.telefono_contacto, '[^0-9]', '', 'g'), 10)"
+              + " = right(regexp_replace(:telefono, '[^0-9]', '', 'g'), 10)"
+              + " and h.estado = 'RECHAZADO_EN_ENTREGA')")
+  boolean algunaVezRechazadoPorTelefono(@Param("telefono") String telefono);
 
   Optional<PedidoJpaEntity> findByNumeroPedidoAndCorreo(String numeroPedido, String correo);
 

@@ -14,6 +14,18 @@ public interface RepositorioPedidos {
   Optional<Pedido> buscarPorId(UUID id);
 
   /**
+   * Lo mismo que {@link #buscarPorId}, bloqueando la fila hasta que termine la transacción. Lo usan
+   * los casos de uso que cambian el pedido: el webhook, la conciliación y el panel podían leer el
+   * mismo pedido a la vez y el último en guardar pisaba al otro sin aviso —el pedido se guarda
+   * borrando y reinsertando líneas e historial—. Exige una transacción abierta.
+   *
+   * <p>Por omisión delega en {@link #buscarPorId}: en memoria no hay concurrencia que serializar.
+   */
+  default Optional<Pedido> buscarPorIdParaModificar(UUID id) {
+    return buscarPorId(id);
+  }
+
+  /**
    * Por el número legible ({@code TS-2026-000123}) <b>y el correo a la vez</b>. El número es el
    * único identificador del pedido que el comprador conoce: es el que lleva su comprobante y el que
    * anuncia el correo de despacho. El id es un UUID y no aparece en nada que una persona lea.
@@ -60,12 +72,20 @@ public interface RepositorioPedidos {
   PedidosPaginados buscarTodosPaginado(int pagina, int tamanoPagina, EstadoPedido estado);
 
   /**
-   * Historial de rechazos en la entrega (docs/11-pagos-y-envios.md: "si un correo... ya rechazó
-   * pedidos en la entrega, no se le ofrece más"). Sin teléfono en el dominio todavía, solo por
-   * correo. {@code RECHAZADO_EN_ENTREGA} es terminal (ver {@code EstadoPedido}), así que basta con
-   * el estado actual del pedido, sin recorrer su historial.
+   * Historial de rechazos en la entrega (docs/11-pagos-y-envios.md: "si un correo o un teléfono ya
+   * rechazó pedidos en la entrega, no se le ofrece más"), con el correo ya normalizado.
+   *
+   * <p><b>Se mira el historial, no el estado actual.</b> {@code RECHAZADO_EN_ENTREGA} era terminal
+   * y bastaba el estado; desde el 4 de octubre de 2026 sale a {@code DEVUELTO} cuando la mercancía
+   * vuelve, y con el criterio viejo el comprador que rechazó dejaba de contar en cuanto alguien
+   * recibía el paquete.
    */
   boolean tieneRechazoEnEntrega(String correo);
+
+  /** Lo mismo, por el teléfono de contacto. Por omisión no encuentra nada. */
+  default boolean tieneRechazoEnEntregaPorTelefono(String telefono) {
+    return false;
+  }
 
   /**
    * Los pedidos que el vigilante del plazo de entrega tiene que mirar: en alguno de {@code
@@ -82,6 +102,15 @@ public interface RepositorioPedidos {
    * grande, el problema no es la consulta.
    */
   List<Pedido> buscarSinAvisoDePlazo(Collection<EstadoPedido> estados, Instant creadosAntesDe);
+
+  /**
+   * Los ids de los pedidos en ese estado creados antes del corte, del más viejo al más nuevo y como
+   * mucho {@code maximo}. Solo ids: quien los procese los relee uno a uno con bloqueo.
+   */
+  default List<UUID> buscarIdsEnEstadoCreadosAntesDe(
+      EstadoPedido estado, Instant creadosAntesDe, int maximo) {
+    return List.of();
+  }
 
   /**
    * Reclama el derecho a avisarle a un pedido que su plazo de entrega venció. Devuelve {@code true}

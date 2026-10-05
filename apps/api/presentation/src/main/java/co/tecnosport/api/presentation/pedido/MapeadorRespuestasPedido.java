@@ -73,22 +73,16 @@ public class MapeadorRespuestasPedido {
         plazoDeEntrega(pedido));
   }
 
-  /**
-   * Un pedido ya entregado se juzga contra <b>su fecha de entrega</b>, no contra el reloj de hoy:
-   * la pregunta que el panel hace de un pedido cerrado es "¿se entregó a tiempo?", y medirlo contra
-   * ahora pintaría como incumplido cualquier pedido viejo entregado en plazo. Los que siguen sin
-   * entregar sí se miden contra ahora, que es cuando el incumplimiento está corriendo.
-   */
+  /** El veredicto lo decide el pedido (`Pedido.verdictoDelPlazoDeEntrega`); aquí solo se mapea. */
   private PlazoDeEntregaRespuesta plazoDeEntrega(Pedido pedido) {
     Instant inicio = pedido.fechaDeInicioDelPlazoDeEntrega().orElse(null);
     if (inicio == null) {
       return null;
     }
-    Instant referencia = pedido.fechaDeEntrega().orElseGet(reloj::ahora);
     return new PlazoDeEntregaRespuesta(
         inicio,
         PlazoDeEntrega.limite(inicio),
-        PlazoDeEntrega.verdicto(inicio, referencia).name(),
+        pedido.verdictoDelPlazoDeEntrega(reloj.ahora()).orElseThrow().name(),
         pedido.avisoDePlazoEnviadoEn().orElse(null));
   }
 

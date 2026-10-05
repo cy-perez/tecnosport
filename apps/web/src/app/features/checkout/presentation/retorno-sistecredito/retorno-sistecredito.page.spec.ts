@@ -8,11 +8,39 @@ import en from '../../../../../assets/i18n/en.json';
 import es from '../../../../../assets/i18n/es.json';
 import esCheckout from '../../../../../assets/i18n/scopes/checkout/es.json';
 import { RetornoSistecreditoPage } from './retorno-sistecredito.page';
+import {
+  ALMACEN_CORREO_DE_PEDIDO,
+  AlmacenCorreoDePedido,
+} from '../../domain/almacen-correo-de-pedido.puerto';
+
+/** El navegador que recordó el correo antes de ir a la pasarela, en memoria. */
+class AlmacenCorreoEnMemoria implements AlmacenCorreoDePedido {
+  readonly guardados = new Map<string, string>();
+  recordar(pedidoId: string, correo: string): void {
+    this.guardados.set(pedidoId, correo);
+  }
+  correoDe(pedidoId: string): string | null {
+    return this.guardados.get(pedidoId) ?? null;
+  }
+}
+
+/** Lo que antes venía en la URL —pedido y correo— ahora lo recuerda el navegador. */
+function almacenDesde(query: Record<string, string> = {}): AlmacenCorreoEnMemoria {
+  const almacen = new AlmacenCorreoEnMemoria();
+  if (query['pedidoId'] && query['correo']) {
+    almacen.recordar(query['pedidoId'], query['correo']);
+  }
+  return almacen;
+}
 
 @Component({ selector: 'app-ruta-muda', template: '' })
 class RutaMuda {}
 
-const RUTA_RETORNO = 'sistecredito/retorno/:pedidoId/:correo';
+const RUTA_RETORNO = 'sistecredito/retorno/:pedidoId';
+/** La de antes, para los pagos que salieron cuando el backend todavía ponía el correo. */
+const RUTA_RETORNO_VIEJA = 'sistecredito/retorno/:pedidoId/:correo';
+
+let almacen = almacenDesde();
 
 /**
  * <b>El árbol de rutas de verdad, y no una ruta suelta.</b> La prueba anterior espiaba
@@ -23,6 +51,7 @@ const RUTA_RETORNO = 'sistecredito/retorno/:pedidoId/:correo';
  * navega de verdad y se mira dónde termina el navegador.
  */
 async function navegarAlRetorno(url: string) {
+  almacen = almacenDesde();
   TestBed.configureTestingModule({
     imports: [
       TranslocoTestingModule.forRoot({
@@ -32,6 +61,7 @@ async function navegarAlRetorno(url: string) {
       }),
     ],
     providers: [
+      { provide: ALMACEN_CORREO_DE_PEDIDO, useValue: almacen },
       provideRouter([
         {
           path: ':idioma',
@@ -45,6 +75,7 @@ async function navegarAlRetorno(url: string) {
                   path: '',
                   children: [
                     { path: RUTA_RETORNO, component: RetornoSistecreditoPage },
+                    { path: RUTA_RETORNO_VIEJA, component: RetornoSistecreditoPage },
                     { path: 'estado', component: RutaMuda },
                   ],
                 },
@@ -76,7 +107,21 @@ describe('RetornoSistecreditoPage', () => {
    * navegación subía un segmento de menos y dejaba al comprador en `/es`, con la prueba vieja en
    * verde.
    */
-  it('lleva a la pantalla de estado con el pedido y el correo que trae la ruta', async () => {
+  it('lleva a la pantalla de estado con el pedido y sin el correo en la URL', async () => {
+    const router = await navegarAlRetorno('/es/checkout/sistecredito/retorno/pedido-1');
+
+    await vi.waitFor(() => {
+      const destino = router.parseUrl(router.url);
+      expect(destino.toString().split('?')[0]).toBe('/es/checkout/estado');
+      expect(destino.queryParams).toEqual({ pedidoId: 'pedido-1' });
+    });
+  });
+
+  /**
+   * Un pago que salió antes de que el backend dejara de poner el correo vuelve por la ruta vieja.
+   * Llega igual, el correo se recuerda en el navegador y no pasa a la URL de estado.
+   */
+  it('por la ruta vieja recuerda el correo y tampoco lo pasa a la URL', async () => {
     const router = await navegarAlRetorno(
       '/es/checkout/sistecredito/retorno/pedido-1/cliente%40tecnosport.co',
     );
@@ -84,11 +129,9 @@ describe('RetornoSistecreditoPage', () => {
     await vi.waitFor(() => {
       const destino = router.parseUrl(router.url);
       expect(destino.toString().split('?')[0]).toBe('/es/checkout/estado');
-      expect(destino.queryParams).toEqual({
-        pedidoId: 'pedido-1',
-        correo: 'cliente@tecnosport.co',
-      });
+      expect(destino.queryParams).toEqual({ pedidoId: 'pedido-1' });
     });
+    expect(almacen.correoDe('pedido-1')).toBe('cliente@tecnosport.co');
   });
 
   /** El idioma del comprador sobrevive el viaje: la pantalla de estado vive bajo su prefijo. */
@@ -136,6 +179,7 @@ describe('RetornoSistecreditoPage', () => {
         }),
       ],
       providers: [
+        { provide: ALMACEN_CORREO_DE_PEDIDO, useValue: almacenDesde() },
         provideRouter([]),
         {
           provide: ActivatedRoute,

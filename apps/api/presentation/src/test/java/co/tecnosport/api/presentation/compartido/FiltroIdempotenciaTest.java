@@ -48,15 +48,20 @@ class FiltroIdempotenciaTest {
     };
   }
 
+  /**
+   * Sin llave no pasa: era opcional, y un cliente que no la mandara no tenía ninguna protección
+   * contra el doble envío en las rutas que mueven dinero.
+   */
   @Test
-  void sinCabeceraDejaPasarSinReclamarNada() throws Exception {
+  void sinCabeceraSeRechazaConUn400SinLlegarAlControlador() throws Exception {
     AtomicInteger llamadasACadena = new AtomicInteger();
+    MockHttpServletResponse respuesta = new MockHttpServletResponse();
 
-    filtro.doFilter(
-        peticion(null), new MockHttpServletResponse(), cadenaContando(llamadasACadena, 200));
+    filtro.doFilter(peticion(null), respuesta, cadenaContando(llamadasACadena, 200));
 
-    assertThat(llamadasACadena.get()).isEqualTo(1);
-    assertThat(repositorio.buscarCompletada("cualquiera", AHORA)).isEmpty();
+    assertThat(llamadasACadena.get()).isZero();
+    assertThat(respuesta.getStatus()).isEqualTo(400);
+    assertThat(respuesta.getContentAsString()).contains("LLAVE_DE_IDEMPOTENCIA_REQUERIDA");
   }
 
   @Test
@@ -93,16 +98,22 @@ class FiltroIdempotenciaTest {
     assertThat(segundaRespuesta.getContentAsString()).isEqualTo("{\"id\":\"primero\"}");
   }
 
+  /**
+   * Un 4xx no deja efecto —la transacción revirtió—, y el frontend reutiliza la llave hasta que la
+   * creación sale bien. Cachearlo devolvía el mismo error 24 horas a quien ya lo había corregido.
+   */
   @Test
-  void unErrorDeNegocioMenorA500TambienSeCachea() throws Exception {
+  void unErrorDeNegocioNoSeCacheaYElReintentoCorregidoEntra() throws Exception {
     filtro.doFilter(
         peticion("llave-3"),
         new MockHttpServletResponse(),
-        cadenaQueResponde(
-            409, "application/problem+json", "{\"codigo\":\"EXISTENCIA_INSUFICIENTE\"}"));
+        cadenaQueResponde(422, "application/problem+json", "{\"codigo\":\"TELEFONO_INVALIDO\"}"));
 
-    RespuestaIdempotente cacheada = repositorio.buscarCompletada("llave-3", AHORA).orElseThrow();
-    assertThat(cacheada.estadoHttp()).isEqualTo(409);
+    assertThat(repositorio.buscarCompletada("llave-3", AHORA)).isEmpty();
+    MockHttpServletResponse corregida = new MockHttpServletResponse();
+    filtro.doFilter(
+        peticion("llave-3"), corregida, cadenaQueResponde(201, "application/json", "{}"));
+    assertThat(corregida.getStatus()).isEqualTo(201);
   }
 
   @Test

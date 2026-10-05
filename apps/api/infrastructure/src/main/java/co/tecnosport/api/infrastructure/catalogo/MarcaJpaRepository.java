@@ -18,12 +18,19 @@ public interface MarcaJpaRepository extends JpaRepository<MarcaJpaEntity, UUID> 
    * <p>El estado llega por parámetro y no escrito en la consulta para que quede atado al enum del
    * dominio: si algún día {@code PUBLICADO} se llama de otra forma, esto falla al compilar en vez
    * de devolver cero marcas en silencio.
+   *
+   * <p>Con la disponibilidad también, desde el 4 de octubre de 2026: la vitrina lista lo publicado
+   * <b>y</b> disponible (V71), y esta consulta solo pedía publicado. Una marca cuyos productos
+   * publicados estaban todos vencidos u ocultos aparecía en el filtro y llevaba a una rejilla
+   * vacía, que es el "filtro que lleva a nada" contra el que ya advierte {@code ListarCategorias}.
    */
   @Query(
       "select m from MarcaJpaEntity m where exists "
-          + "(select 1 from ProductoJpaEntity p where p.marcaId = m.id and p.estado = :estado) "
+          + "(select 1 from ProductoJpaEntity p where p.marcaId = m.id and p.estado = :estado"
+          + " and p.estadoDisponibilidad = :disponibilidad) "
           + "order by m.nombre")
-  List<MarcaJpaEntity> findConProductosEnEstado(@Param("estado") String estado);
+  List<MarcaJpaEntity> findConProductosEnEstado(
+      @Param("estado") String estado, @Param("disponibilidad") String disponibilidad);
 
   /**
    * Spring Data la traduce a {@code where lower(nombre) = lower(?)}, que es literalmente el índice

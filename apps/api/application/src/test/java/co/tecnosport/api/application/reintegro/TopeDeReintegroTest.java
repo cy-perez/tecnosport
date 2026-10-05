@@ -99,6 +99,18 @@ class TopeDeReintegroTest {
     assertEquals(Dinero.deCop(BigDecimal.valueOf(30_000)), tope.yaDevuelto(pedidoId));
   }
 
+  /**
+   * Un pago que entró sin pedido que lo esperara no fue dinero de la venta: devolverlo no puede
+   * comerse lo que el comprador tiene derecho a recibir por un retracto del pedido de verdad.
+   */
+  @Test
+  void devolverUnPagoSinPedidoNoConsumeElTope() {
+    devolver(MotivoReintegro.PAGO_SIN_PEDIDO, 50_000);
+
+    assertEquals(Dinero.deCop(BigDecimal.ZERO), tope.yaDevuelto(pedidoId));
+    assertDoesNotThrow(() -> tope.exigirQueQuepa(pedidoId, TOTAL, TOTAL));
+  }
+
   /** Lo devuelto por otro pedido no consume este tope. */
   @Test
   void loDevueltoPorOtroPedidoNoCuenta() {

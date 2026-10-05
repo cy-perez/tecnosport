@@ -12,6 +12,9 @@ public enum ResultadoNotificacionSistecredito {
   /** Ver {@link ResultadoEventoDePago#APLICADO_SIN_CONFIRMAR_INVENTARIO}. */
   APLICADO_SIN_CONFIRMAR_INVENTARIO,
 
+  /** Ver {@link ResultadoEventoDePago#APROBADO_SIN_PEDIDO_QUE_LO_ESPERE}. */
+  APROBADO_SIN_PEDIDO_QUE_LO_ESPERE,
+
   YA_PROCESADO,
 
   /**

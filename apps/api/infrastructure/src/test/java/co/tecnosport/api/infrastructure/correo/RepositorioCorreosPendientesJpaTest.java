@@ -178,6 +178,26 @@ class RepositorioCorreosPendientesJpaTest {
     correos.deleteById(id);
   }
 
+  /**
+   * Una fila con un destinatario que ya no pasa la validación reventaba al mapearse, antes del
+   * bucle del drenaje: ningún correo salía mientras existiera. Ahora se rinde y las demás salen.
+   */
+  @Test
+  void unaFilaIlegibleSeRindeYNoTapaALasDemas() {
+    UUID buena = encolar(AHORA, 0);
+    UUID mala = UUID.randomUUID();
+    correos.save(
+        new CorreoPendienteJpaEntity(
+            mala, "no es un correo", "Asunto", "<p>x</p>", AHORA, AHORA, 0, null, null));
+
+    List<CorreoPendiente> enviables = repositorio.buscarEnviables(5, AHORA, 10);
+
+    assertThat(enviables).extracting(CorreoPendiente::id).containsExactly(buena);
+    assertThat(repositorio.buscarEnviables(5, AHORA, 10))
+        .extracting(CorreoPendiente::id)
+        .doesNotContain(mala);
+  }
+
   private UUID encolar(Instant proximoIntentoEn, int intentos) {
     UUID id = UUID.randomUUID();
     correos.save(

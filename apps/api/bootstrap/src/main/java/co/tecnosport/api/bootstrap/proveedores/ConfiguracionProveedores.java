@@ -12,6 +12,7 @@ import co.tecnosport.api.application.proveedores.EliminacionDeProductos;
 import co.tecnosport.api.application.proveedores.EliminacionDeProductosDelCatalogo;
 import co.tecnosport.api.application.proveedores.EliminarLoteDeIngesta;
 import co.tecnosport.api.application.proveedores.EliminarProveedor;
+import co.tecnosport.api.application.proveedores.EncolarIngesta;
 import co.tecnosport.api.application.proveedores.ExtraerProductoDePublicacion;
 import co.tecnosport.api.application.proveedores.FuenteDeMensajes;
 import co.tecnosport.api.application.proveedores.IniciarIngesta;
@@ -97,6 +98,15 @@ public class ConfiguracionProveedores {
       PropiedadesProveedores propiedades) {
     return new IniciarIngesta(
         proveedores, lotes, almacen, reloj, propiedades.exportacionMaximaBytes());
+  }
+
+  @Bean
+  public EncolarIngesta encolarIngesta(
+      EjecutorDeIngestas ejecutor,
+      RepositorioLotesIngesta lotes,
+      EnTransaccionPropia enTransaccionPropia,
+      Reloj reloj) {
+    return new EncolarIngesta(ejecutor, lotes, enTransaccionPropia, reloj);
   }
 
   @Bean

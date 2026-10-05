@@ -19,11 +19,17 @@ import org.springframework.web.util.ContentCachingResponseWrapper;
  * rutas que mueven dinero o inventario ({@code ConfiguracionIdempotencia} en {@code bootstrap}), no
  * para todos los POST del contrato.
  *
- * <p>Sin cabecera, no hace nada: la llave es aceptada, no exigida. Con cabecera: si ya hay una
- * respuesta completada y vigente, la repite sin tocar el controlador; si no, reclama la llave
- * (comprometida de inmediato, ver {@code RepositorioIdempotencia}) y deja pasar la petición,
- * guardando la respuesta al terminar — salvo que sea un 500, que libera la llave en vez de cachear
- * un error de infraestructura por 24 horas.
+ * <p><b>La llave es obligatoria</b> en esas rutas: sin ella, 400. Era opcional, y un cliente que no
+ * la mandara —la app móvil que viene, o cualquier script— no tenía ninguna protección contra el
+ * doble envío. Con la llave: si ya hay una respuesta completada y vigente, la repite sin tocar el
+ * controlador; si no, reclama la llave (comprometida de inmediato, ver {@code
+ * RepositorioIdempotencia}) y deja pasar la petición.
+ *
+ * <p><b>Solo se guarda una respuesta exitosa.</b> Se guardaba todo lo que no fuera un 500, y el
+ * frontend reutiliza la llave hasta que la creación sale bien: un comprador que recibía un 422 por
+ * un teléfono mal escrito, o un 409 porque la contraentrega no aplicaba, lo corregía y volvía a
+ * recibir el mismo error durante 24 horas. Un 4xx no dejó ningún efecto —la transacción revirtió—,
+ * así que la llave se libera y el reintento corregido entra.
  */
 public class FiltroIdempotencia extends OncePerRequestFilter {
 
@@ -43,7 +49,7 @@ public class FiltroIdempotencia extends OncePerRequestFilter {
       throws ServletException, IOException {
     String llave = request.getHeader(CABECERA);
     if (llave == null || llave.isBlank()) {
-      filterChain.doFilter(request, response);
+      sinLlave(response);
       return;
     }
 
@@ -76,7 +82,7 @@ public class FiltroIdempotencia extends OncePerRequestFilter {
     ContentCachingResponseWrapper envoltorio = new ContentCachingResponseWrapper(response);
     try {
       filterChain.doFilter(request, envoltorio);
-      if (envoltorio.getStatus() < 500) {
+      if (envoltorio.getStatus() < 300) {
         repositorio.completar(llave, respuestaDe(envoltorio), reloj.ahora());
       } else {
         repositorio.liberar(llave);
@@ -117,6 +123,20 @@ public class FiltroIdempotencia extends OncePerRequestFilter {
                 + "\"detail\":\"Esa misma petición todavía se está procesando."
                 + " Vuelve a intentarlo en un momento.\","
                 + "\"codigo\":\"PETICION_EN_CURSO\"}");
+  }
+
+  private void sinLlave(HttpServletResponse response) throws IOException {
+    response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+    response.setContentType("application/problem+json");
+    response.setCharacterEncoding(StandardCharsets.UTF_8.name());
+    response
+        .getWriter()
+        .write(
+            "{\"type\":\"https://tecnosport.co/errores/llave-de-idempotencia-requerida\","
+                + "\"title\":\"Falta la llave de idempotencia\","
+                + "\"status\":400,"
+                + "\"detail\":\"Esta operación exige la cabecera Idempotency-Key.\","
+                + "\"codigo\":\"LLAVE_DE_IDEMPOTENCIA_REQUERIDA\"}");
   }
 
   private void repetir(HttpServletResponse response, RespuestaIdempotente respuesta)

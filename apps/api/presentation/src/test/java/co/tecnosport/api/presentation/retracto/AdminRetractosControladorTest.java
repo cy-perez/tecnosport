@@ -350,7 +350,7 @@ class AdminRetractosControladorTest {
 
     @Bean
     MapeadorRespuestasRetracto mapeador() {
-      return new MapeadorRespuestasRetracto();
+      return new MapeadorRespuestasRetracto(Instant::now);
     }
 
     @Bean

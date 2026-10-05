@@ -1,8 +1,13 @@
 <ts-pagina-formulario [titulo]="'admin.clave.titulo' | transloco">
   <p>{{ 'admin.clave.explicacion' | transloco }}</p>
 
-  <form class="flex flex-col gap-16" [formGroup]="form" (submit)="$event.preventDefault(); enviar()">
+  <form
+    class="flex flex-col gap-16"
+    [formGroup]="form"
+    (submit)="$event.preventDefault(); enviar()"
+  >
     <ts-campo
+      [obligatorio]="true"
       idCampo="admin-clave-actual"
       tipo="password"
       [label]="'admin.clave.claveActual' | transloco"
@@ -10,6 +15,7 @@
     />
 
     <ts-campo
+      [obligatorio]="true"
       idCampo="admin-clave-nueva"
       tipo="password"
       [label]="'admin.clave.claveNueva' | transloco"
@@ -17,6 +23,7 @@
     />
 
     <ts-campo
+      [obligatorio]="true"
       idCampo="admin-clave-confirmar"
       tipo="password"
       [label]="'admin.clave.confirmarClave' | transloco"

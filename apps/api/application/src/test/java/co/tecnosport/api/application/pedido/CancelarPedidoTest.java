@@ -285,6 +285,30 @@ class CancelarPedidoTest {
                         "admin:1")));
   }
 
+  /**
+   * Un monto que no cabe no puede dejar anulada una guía que el pedido sigue necesitando: la base
+   * revierte, la plataforma no. Se validaba después de anular.
+   */
+  @Test
+  void unMontoQueNoCabeNoAnulaNingunaGuia() {
+    Pedido pedido = pedidoEn(EstadoPedido.EN_PREPARACION, MetodoPago.WOMPI);
+    emisionEmitidaDe(pedido, "envio-1");
+
+    assertThrows(
+        co.tecnosport.api.application.reintegro.MontoDeReintegroInvalidoException.class,
+        () ->
+            casoDeUso()
+                .ejecutar(
+                    new CancelarPedidoComando(
+                        pedido.id(),
+                        MotivoCancelacion.NO_DISPONIBILIDAD,
+                        BigDecimal.valueOf(50_001),
+                        MedioReintegro.WOMPI,
+                        null,
+                        "admin:1")));
+    assertTrue(emisor.cancelados().isEmpty());
+  }
+
   @Test
   void unPedidoInexistenteFalla() {
     assertThrows(

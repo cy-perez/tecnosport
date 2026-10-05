@@ -4,7 +4,11 @@ import { REPOSITORIO_SESION, RepositorioSesion } from './repositorio-sesion.puer
 import { Sesion } from './sesion.model';
 import { SesionStore } from './sesion.store';
 
-const SESION_DE_PRUEBA: Sesion = { usuarioId: 'usuario-1', rol: 'ADMIN', accessToken: 'jwt.valido' };
+const SESION_DE_PRUEBA: Sesion = {
+  usuarioId: 'usuario-1',
+  rol: 'ADMIN',
+  accessToken: 'jwt.valido',
+};
 const SESION_TRAS_CAMBIAR: Sesion = {
   usuarioId: 'usuario-1',
   rol: 'ADMIN',
@@ -28,7 +32,10 @@ class RepositorioSesionFalso implements RepositorioSesion {
     return SESION_TRAS_CAMBIAR;
   }
 
+  llamadasRefrescar = 0;
+
   async refrescar(): Promise<Sesion | null> {
+    this.llamadasRefrescar++;
     return this.sesionAlRefrescar;
   }
 
@@ -92,6 +99,20 @@ describe('SesionStore', () => {
     await store.listo;
 
     expect(store.sesion()).toBeNull();
+  });
+
+  /**
+   * Varias consultas del panel reciben su 401 a la vez. Un refresco por cada una hacía que el
+   * servidor viera reutilizado el token y revocara la familia entera: el admin quedaba fuera.
+   */
+  it('dos refrescos a la vez comparten la misma llamada', async () => {
+    const repositorio = new RepositorioSesionFalso(SESION_DE_PRUEBA);
+    const { store } = await renderConRepositorio(repositorio);
+    await vi.waitFor(() => expect(repositorio.llamadasRefrescar).toBe(1));
+
+    await Promise.all([store.intentarRefrescar(), store.intentarRefrescar()]);
+
+    expect(repositorio.llamadasRefrescar).toBe(2);
   });
 
   it('iniciarSesion llama al repositorio y deja la sesión', async () => {

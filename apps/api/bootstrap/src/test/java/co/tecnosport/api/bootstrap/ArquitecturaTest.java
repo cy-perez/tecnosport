@@ -57,7 +57,6 @@ class ArquitecturaTest {
             RAIZ + ".infrastructure..",
             RAIZ + ".presentation..",
             RAIZ + ".bootstrap..")
-        .allowEmptyShould(true)
         .check(clases);
   }
 
@@ -69,7 +68,6 @@ class ArquitecturaTest {
         .should()
         .dependOnClassesThat()
         .resideInAnyPackage(RAIZ + ".infrastructure..", RAIZ + ".presentation..")
-        .allowEmptyShould(true)
         .check(clases);
   }
 
@@ -81,8 +79,65 @@ class ArquitecturaTest {
         .should()
         .dependOnClassesThat()
         .resideInAPackage(RAIZ + ".infrastructure..")
-        .allowEmptyShould(true)
         .check(clases);
+  }
+
+  /**
+   * Las reglas de arriba ya no llevan {@code allowEmptyShould(true)}, y fue a propósito: con él, un
+   * paquete mal escrito o una importación que fallara las dejaba pasar sin haber mirado una sola
+   * clase. Sin él, una regla cuyo {@code that()} no encuentra nada falla, que es lo que tiene que
+   * pasar. Esta comprueba además que lo importado no esté vacío.
+   */
+  @Test
+  void lasReglasMiranClasesDeVerdad() {
+    for (String capa : new String[] {"domain", "application", "infrastructure", "presentation"}) {
+      long cuantas =
+          clases.stream().filter(c -> c.getPackageName().startsWith(RAIZ + "." + capa)).count();
+      org.junit.jupiter.api.Assertions.assertTrue(
+          cuantas > 10, "La capa " + capa + " importó " + cuantas + " clases: ¿cambió el paquete?");
+    }
+  }
+
+  /** La flecha que faltaba: infrastructure implementa puertos, nunca usa la presentación. */
+  @Test
+  void infraestructuraNoDependeDePresentacion() {
+    noClasses()
+        .that()
+        .resideInAPackage(RAIZ + ".infrastructure..")
+        .should()
+        .dependOnClassesThat()
+        .resideInAPackage(RAIZ + ".presentation..")
+        .check(clases);
+  }
+
+  /**
+   * Todo controlador del panel cuelga de {@code /api/v1/admin}, que es lo único que la cadena de
+   * seguridad protege: termina en {@code anyRequest().permitAll()}. Un {@code Admin*Controlador}
+   * nuevo montado en otra ruta nacería público y ninguna prueba lo habría notado.
+   */
+  @Test
+  void losControladoresDelPanelCuelganDeLaRutaProtegida() {
+    java.util.List<String> fuera = new java.util.ArrayList<>();
+    for (com.tngtech.archunit.core.domain.JavaClass clase : clases) {
+      if (!clase.getPackageName().startsWith(RAIZ + ".presentation")
+          || !clase.getSimpleName().startsWith("Admin")
+          || !clase.isAnnotatedWith(org.springframework.web.bind.annotation.RestController.class)) {
+        continue;
+      }
+      org.springframework.web.bind.annotation.RequestMapping mapeo =
+          clase
+              .reflect()
+              .getAnnotation(org.springframework.web.bind.annotation.RequestMapping.class);
+      boolean protegido =
+          mapeo != null
+              && java.util.Arrays.stream(mapeo.value())
+                  .allMatch(r -> r.startsWith("/api/v1/admin"));
+      if (!protegido) {
+        fuera.add(clase.getSimpleName());
+      }
+    }
+    org.junit.jupiter.api.Assertions.assertEquals(
+        java.util.List.of(), fuera, "Controladores del panel fuera de /api/v1/admin");
   }
 
   /** La otra mitad de la regla dura #1, la que el documento prometía y nadie comprobaba. */
@@ -94,7 +149,6 @@ class ArquitecturaTest {
         .should()
         .dependOnClassesThat()
         .resideInAnyPackage(FRAMEWORKS)
-        .allowEmptyShould(true)
         .check(clases);
   }
 
@@ -110,7 +164,6 @@ class ArquitecturaTest {
         .should()
         .dependOnClassesThat()
         .resideInAnyPackage(FRAMEWORKS)
-        .allowEmptyShould(true)
         .check(clases);
   }
 

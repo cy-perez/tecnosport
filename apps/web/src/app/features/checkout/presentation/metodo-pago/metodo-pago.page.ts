@@ -7,6 +7,7 @@ import {
   signal,
 } from '@angular/core';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { usarFocoEnPrimerInvalido } from '../../../../shared/foco/foco';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { TranslocoPipe } from '@jsverse/transloco';
@@ -107,6 +108,7 @@ function posicionDe(metodo: MetodoPago): number {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class MetodoPagoPage {
+  private readonly enfocarPrimerInvalido = usarFocoEnPrimerInvalido();
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly traducir = usarTraductor();
@@ -231,18 +233,24 @@ export class MetodoPagoPage {
     });
   }
 
+  /** Se pulsó «Continuar» sin elegir método: el botón ya no se deshabilita, así que lo dice. */
+  protected readonly faltaMetodo = signal(false);
+
   protected elegir(metodo: MetodoPago): void {
     this.checkout.elegirMetodoPago(metodo);
+    this.faltaMetodo.set(false);
   }
 
   protected continuar(): void {
     if (!this.checkout.metodoPago()) {
+      this.faltaMetodo.set(true);
       return;
     }
     if (this.pideDocumento()) {
       this.intentoContinuar.set(true);
       this.formularioDocumento.markAllAsTouched();
       if (this.formularioDocumento.invalid) {
+        this.enfocarPrimerInvalido();
         return;
       }
       const { tipoDocumento, documento } = this.formularioDocumento.getRawValue();

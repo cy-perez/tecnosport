@@ -85,6 +85,19 @@ export class TsAreaTexto implements ControlValueAccessor {
     return tope === null ? '' : this.textoContador()(tope - this.valorMostrado().length);
   });
 
+  /**
+   * El contador, pero solo cuando queda menos de la décima parte del tope: es cuando importa. Lejos
+   * del tope vale la cadena vacía y la región viva no dice nada.
+   */
+  protected readonly avisoCercaDelTope = computed(() => {
+    const tope = this.maximo();
+    if (tope === null) {
+      return '';
+    }
+    const restantes = tope - this.valorMostrado().length;
+    return restantes <= Math.ceil(tope / 10) ? this.contador() : '';
+  });
+
   /** La ayuda, el contador y el error a la vez cuando los hay: los tres describen el control. */
   protected readonly descripcion = computed(() => {
     const partes: string[] = [];

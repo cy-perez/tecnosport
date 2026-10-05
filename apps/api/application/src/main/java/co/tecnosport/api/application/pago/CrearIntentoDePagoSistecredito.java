@@ -9,8 +9,6 @@ import co.tecnosport.api.domain.pago.ReferenciaPago;
 import co.tecnosport.api.domain.pedido.EstadoPedido;
 import co.tecnosport.api.domain.pedido.Pedido;
 import co.tecnosport.api.domain.pedido.ProveedorDePago;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
@@ -121,13 +119,12 @@ public final class CrearIntentoDePagoSistecredito {
    * este pedido" después de haber pagado: la pantalla de estado devuelve vacío sin esos dos datos y
    * no tiene forma de pedirlos.
    */
-  private String urlRespuestaPara(String idioma, java.util.UUID pedidoId, String correo) {
+  private String urlRespuestaPara(String idioma, java.util.UUID pedidoId) {
     String elegido = IDIOMAS.contains(idioma) ? idioma : IDIOMA_POR_OMISION;
-    return urlRespuesta.replace(MARCADOR_IDIOMA, elegido)
-        + "/"
-        + pedidoId
-        + "/"
-        + URLEncoder.encode(correo, StandardCharsets.UTF_8);
+    // Sin el correo, desde el 4 de octubre de 2026: iba como segmento de la ruta, y con él a los
+    // registros de la web, a Sistecrédito y al historial del navegador. El navegador lo guardó
+    // antes de salir hacia la pasarela, y si no lo tiene la pantalla se lo pide al comprador.
+    return urlRespuesta.replace(MARCADOR_IDIOMA, elegido) + "/" + pedidoId;
   }
 
   public IntentoDePagoSistecredito ejecutar(CrearIntentoDePagoSistecreditoComando comando) {
@@ -151,7 +148,7 @@ public final class CrearIntentoDePagoSistecredito {
                   "Pedido " + pago.referencia().valor(),
                   pago.monto(),
                   comando.documento(),
-                  urlRespuestaPara(comando.idioma(), abierto.pedidoId(), abierto.correo()),
+                  urlRespuestaPara(comando.idioma(), abierto.pedidoId()),
                   urlConfirmacion,
                   sandbox,
                   estadoSimulado));

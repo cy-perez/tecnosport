@@ -18,6 +18,7 @@ import {
 import { TsBoton } from '../../../shared/ui/boton/ts-boton';
 import { TsCampo } from '../../../shared/ui/campo/ts-campo';
 import { TsPaginaFormulario } from '../../../shared/ui/pagina-formulario/ts-pagina-formulario';
+import { usarFocoEnPrimerInvalido } from '../../../shared/foco/foco';
 
 function clavesCoincidenValidador(control: AbstractControl): ValidationErrors | null {
   const clave = control.get('claveNueva')?.value;
@@ -40,6 +41,8 @@ function clavesCoincidenValidador(control: AbstractControl): ValidationErrors | 
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CambiarClaveAdminPage {
+  /** Al fallar el envío, el foco va al primer campo con error y no se queda en el botón. */
+  private readonly enfocarPrimerInvalido = usarFocoEnPrimerInvalido();
   private readonly sesionStore = inject(SesionStore);
   protected readonly transloco = inject(TranslocoService);
 
@@ -71,6 +74,7 @@ export class CambiarClaveAdminPage {
     // orden de tabulación y nadie se entera de por qué no pasa nada. Se valida al pulsar.
     if (this.form.invalid) {
       this.form.markAllAsTouched();
+      this.enfocarPrimerInvalido();
       this.error.set(this.transloco.translate('admin.clave.error_formulario'));
       return;
     }

@@ -420,6 +420,9 @@ public final class SkydropxClient
     try {
       return consultarOFallarCerrado(codigoTransportadora, guia);
     } catch (IOException | RuntimeException e) {
+      // Sigue devolviendo vacío —la conciliación reintenta—, pero ya no en silencio: con una
+      // credencial rota la tarea decía "sin novedad" para siempre, igual que en un día tranquilo.
+      log.warn("No se pudo consultar el rastreo de la guía {}: {}", guia, e.toString());
       return List.of();
     } catch (InterruptedException e) {
       Thread.currentThread().interrupt();
@@ -443,6 +446,14 @@ public final class SkydropxClient
             + URLEncoder.encode(codigoTransportadora, StandardCharsets.UTF_8);
     HttpResponse<String> respuesta = enviar(peticion(ruta, token).GET().build());
     if (respuesta.statusCode() / 100 != 2) {
+      // El 404 es lo normal en una guía que todavía no se mueve (ver arriba). Cualquier otro
+      // código es un fallo que no se puede confundir con "sin novedad".
+      if (respuesta.statusCode() != 404) {
+        log.warn(
+            "Skydropx respondió {} al consultar el rastreo de la guía {}",
+            respuesta.statusCode(),
+            guia);
+      }
       return List.of();
     }
     return mapeadorSeguimiento.eventos(json.readTree(respuesta.body()), guia);

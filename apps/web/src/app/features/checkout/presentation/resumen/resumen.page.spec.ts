@@ -8,7 +8,7 @@ import es from '../../../../../assets/i18n/es.json';
 import esCarrito from '../../../../../assets/i18n/scopes/carrito/es.json';
 import esCheckout from '../../../../../assets/i18n/scopes/checkout/es.json';
 import { CheckoutStore } from '../../application/checkout.store';
-import { Carrito } from '../../../carrito/domain/carrito.model';
+import { Carrito, CarritoCotizado } from '../../../carrito/domain/carrito.model';
 import { SnapshotLinea } from '../../../carrito/domain/snapshot-linea.model';
 import {
   REPOSITORIO_CARRITO,
@@ -47,7 +47,25 @@ class RepositorioPagosFalso implements RepositorioPagos {
   }
 }
 
+/** El precio que el servidor da hoy en estas pruebas. */
+const PRECIO_DE_HOY = 150_000;
+
 class RepositorioCarritoFalso implements RepositorioCarrito {
+  /** Los precios de hoy, como el servidor: {@link PRECIO_DE_HOY} por unidad. */
+  async cotizar(carritoId: string): Promise<CarritoCotizado | null> {
+    const carrito = await this.ver(carritoId);
+    if (!carrito) {
+      return null;
+    }
+    const lineas = carrito.lineas.map((linea) => ({
+      lineaId: linea.id,
+      varianteId: linea.varianteId,
+      cantidad: linea.cantidad,
+      precioUnitario: PRECIO_DE_HOY,
+      subtotal: PRECIO_DE_HOY * linea.cantidad,
+    }));
+    return { lineas, subtotal: lineas.reduce((suma, linea) => suma + linea.subtotal, 0) };
+  }
   constructor(private carrito: Carrito | null) {}
 
   async crear(): Promise<Carrito> {
@@ -165,7 +183,6 @@ function snapshotDePrueba(varianteId: string): SnapshotLinea {
     slugProducto: 'morral-urbano',
     sku: 'SKU-1',
     imagenUrl: null,
-    imagenAlt: 'Morral urbano',
     precioValor: 150_000,
     precioMoneda: 'COP',
   };
@@ -590,7 +607,7 @@ describe('ResumenPage', () => {
     await renderResumen(new RepositorioCarritoFalso(CARRITO_CON_LINEAS));
 
     expect(await screen.findByText('Morral urbano')).toBeTruthy();
-    expect(screen.getAllByText(/300\.000/).length).toBeGreaterThan(0);
+    expect((await screen.findAllByText(/300\.000/)).length).toBeGreaterThan(0);
     expect(screen.getByLabelText('Correo electrónico')).toBeTruthy();
     expect(screen.getByLabelText('Dirección')).toBeTruthy();
   });
@@ -624,6 +641,41 @@ describe('ResumenPage', () => {
     expect(screen.getByText('Elige una ciudad.')).toBeTruthy();
     expect(screen.getByText('La dirección es obligatoria.')).toBeTruthy();
     expect(checkout.datosEntrega()).toBeNull();
+  });
+
+  /**
+   * Siete `Validators.required` y ningún campo lo declaraba: con lector de pantalla, "Correo,
+   * editar" no decía que hiciera falta. Y al fallar el envío el foco se quedaba en «Continuar».
+   */
+  // El costo de envío y el total cambian solos al tocar la dirección, lejos del campo que se está
+  // llenando. El desglose es una región viva que vive siempre, no solo mientras se cotiza.
+  it('el desglose de envío y total se anuncia al cambiar', async () => {
+    sembrarCarritoId('carrito-1');
+    sembrarSnapshotLinea(snapshotDePrueba('variante-1'));
+    await renderResumen(new RepositorioCarritoFalso(CARRITO_CON_LINEAS));
+    await screen.findByText('Morral urbano');
+
+    const desglose = screen.getByText('Subtotal').closest('dl');
+    expect(desglose?.getAttribute('aria-live')).toBe('polite');
+    expect(desglose?.getAttribute('aria-atomic')).toBe('true');
+  });
+
+  it('declara los obligatorios y al fallar lleva el foco al primer campo con error', async () => {
+    sembrarCarritoId('carrito-1');
+    sembrarSnapshotLinea(snapshotDePrueba('variante-1'));
+    await renderResumen(new RepositorioCarritoFalso(CARRITO_CON_LINEAS));
+    await screen.findByText('Morral urbano');
+
+    for (const etiqueta of ['Nombre de quien recibe', 'Correo electrónico', 'Dirección']) {
+      expect(screen.getByLabelText(etiqueta).getAttribute('aria-required'), etiqueta).toBe('true');
+    }
+    expect(screen.getByRole('checkbox').getAttribute('aria-required')).toBe('true');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Continuar' }));
+
+    await vi.waitFor(() =>
+      expect(document.activeElement).toBe(screen.getByLabelText('Nombre de quien recibe')),
+    );
   });
 
   /**
@@ -702,7 +754,11 @@ describe('ResumenPage', () => {
       '@#$%',
       'Escribe una dirección válida. Se admiten letras, números y los signos # - . , ° / ( ).',
     ],
-    ['Barrio (opcional)', '<b>Laureles</b>', 'Escribe un barrio válido: letras y números, sin símbolos.'],
+    [
+      'Barrio (opcional)',
+      '<b>Laureles</b>',
+      'Escribe un barrio válido: letras y números, sin símbolos.',
+    ],
   ])('%s con "%s" no pasa y dice por qué', async (etiqueta, valor, mensaje) => {
     sembrarCarritoId('carrito-1');
     sembrarSnapshotLinea(snapshotDePrueba('variante-1'));

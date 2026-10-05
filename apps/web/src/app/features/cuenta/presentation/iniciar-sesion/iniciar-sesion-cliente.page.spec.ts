@@ -95,6 +95,41 @@ describe('IniciarSesionClientePage', () => {
     expect(await screen.findByText('Escribe tu correo.')).toBeTruthy();
   });
 
+  it('al fallar por campos vacíos lleva el foco al primero con error', async () => {
+    await renderPagina(new RepositorioSesionFalso());
+
+    fireEvent.click(screen.getByRole('button', { name: 'Entrar' }));
+
+    await vi.waitFor(() =>
+      expect(document.activeElement).toBe(screen.getByLabelText('Correo electrónico')),
+    );
+  });
+
+  /**
+   * Mientras se envía, el botón dice que está ocupado pero **no** se deshabilita: deshabilitado
+   * bajo el dedo, el foco caía en `<body>` y, si el envío fallaba, el error se oía desde el
+   * principio del documento. La guarda de reentrada evita el doble envío.
+   */
+  it('mientras envía no se deshabilita ni manda dos veces', async () => {
+    let llamadas = 0;
+    const repositorio = new RepositorioSesionFalso();
+    // Una respuesta que no llega: el envío se queda en vuelo durante toda la prueba.
+    repositorio.iniciarSesion = () => {
+      llamadas++;
+      return new Promise(() => undefined);
+    };
+    const { fixture } = await renderPagina(repositorio);
+
+    await llenarYEnviar();
+    await fixture.whenStable();
+    const boton = screen.getByRole('button', { name: /entrar|entrando/i });
+    expect(boton.hasAttribute('disabled')).toBe(false);
+    expect(boton.getAttribute('aria-busy')).toBe('true');
+
+    fireEvent.click(boton);
+    expect(llamadas).toBe(1);
+  });
+
   it('con credenciales válidas de CLIENTE, navega a la portada', async () => {
     const { fixture } = await renderPagina(
       new RepositorioSesionFalso({ usuarioId: 'u1', rol: 'CLIENTE', accessToken: 'jwt' }),
@@ -176,19 +211,19 @@ describe('IniciarSesionClientePage', () => {
   });
 
   /**
-   * Los campos dejaron de enseñar su etiqueta el 24 de septiembre de 2026: el nombre vive en el
-   * placeholder y la etiqueta se fue a `sr-only`. Lo que hay que vigilar es justo el filo de esa
-   * decisión — que la etiqueta siga existiendo para quien no la ve, y que el placeholder de verdad
-   * esté puesto, porque sin él el campo se queda sin nada legible en cuanto se esconde la
-   * etiqueta—. La prueba de axe de más abajo cubre lo demás.
+   * La etiqueta se ve desde el 4 de octubre de 2026. Estuvo escondida (`sr-only`) con el nombre en
+   * el placeholder, que desaparece al primer carácter: quien volvía al campo a medio llenar no
+   * tenía en pantalla qué estaba escribiendo (WCAG 3.3.2). Se fija que no vuelva a esconderse.
    */
   it.each([['Correo electrónico'], ['Clave']])(
-    '%s conserva su etiqueta y lleva placeholder',
+    '%s tiene la etiqueta a la vista y no la repite como placeholder',
     async (etiqueta) => {
       await renderPagina(new RepositorioSesionFalso());
 
       const campo = await screen.findByLabelText(etiqueta);
-      expect(campo.getAttribute('placeholder')).toBe(etiqueta);
+      const rotulo = document.querySelector(`label[for="${campo.id}"]`);
+      expect(rotulo?.closest('.sr-only')).toBeNull();
+      expect(campo.hasAttribute('placeholder')).toBe(false);
     },
   );
 

@@ -16,6 +16,10 @@
 
          `relative` en el marco no es decoración: Angular posiciona el <img> en
          absoluto, y sin un ancestro posicionado se saldría de la tarjeta. -->
+      <!-- `alt=""`: la imagen va dentro del enlace, y el enlace ya se nombra con el nombre del
+           producto que lleva debajo. Con el alt, el lector de pantalla leía el nombre dos veces
+           por tarjeta —"Morral urbano, Morral urbano, Marca TecnoSport…"—. La ficha, donde la
+           foto es el contenido, sí lo lleva. -->
       <div class="relative aspect-square bg-ts-superficie-alt">
         <img
           class="object-cover"
@@ -23,7 +27,7 @@
           [ngSrcset]="descriptores(imagen)"
           [loaderParams]="parametros(imagen)"
           [sizes]="TAMANOS"
-          [alt]="alt()"
+          alt=""
           [priority]="prioritaria()"
           fill
         />

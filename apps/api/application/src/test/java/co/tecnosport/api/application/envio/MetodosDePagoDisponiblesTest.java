@@ -528,6 +528,26 @@ class MetodosDePagoDisponiblesTest {
     assertFalse(disponibles.contains(MetodoPago.CONTRAENTREGA));
   }
 
+  /**
+   * Otra mayúscula o un espacio no son otro comprador: el correo se normaliza antes de preguntar.
+   */
+  @Test
+  void elRechazoPrevioNoSeEsquivaCambiandoLasMayusculasDelCorreo() {
+    MetodosDePagoDisponibles caso = crear(CRITERIOS_PERMISIVOS);
+    cotizador.conTarifaQueRecauda();
+    pedidos.conRechazoEnEntrega("cliente@tecnosport.co");
+
+    Set<MetodoPago> disponibles =
+        caso.ejecutar(
+            new MetodosDePagoDisponiblesComando(
+                List.of(new MetodosDePagoDisponiblesComando.LineaComando(variante.id(), 1)),
+                " Cliente@TecnoSport.co",
+                TipoEntrega.ENVIO_A_DOMICILIO,
+                DIRECCION_MEDELLIN));
+
+    assertFalse(disponibles.contains(MetodoPago.CONTRAENTREGA));
+  }
+
   @Test
   void contraentregaNoDisponibleSiElTotalSuperaElMontoMaximo() {
     CriteriosContraentrega montoBajo =

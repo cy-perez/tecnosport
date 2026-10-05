@@ -156,6 +156,7 @@
                         <p>{{ 'admin.productos.existencias.conteoAyuda' | transloco }}</p>
 
                         <ts-campo
+                          [obligatorio]="true"
                           [idCampo]="'contar-cantidad-' + variante.varianteId"
                           tipo="number"
                           [label]="'admin.productos.existencias.cantidadContada' | transloco"
@@ -163,6 +164,7 @@
                         />
 
                         <ts-campo
+                          [obligatorio]="true"
                           [idCampo]="'contar-motivo-' + variante.varianteId"
                           tipo="text"
                           [label]="'admin.productos.existencias.motivo' | transloco"

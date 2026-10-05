@@ -8,7 +8,6 @@ function snapshotDePrueba(varianteId: string): SnapshotLinea {
     slugProducto: 'morral-urbano',
     sku: 'SKU-1',
     imagenUrl: 'https://x/img.jpg',
-    imagenAlt: 'Morral urbano',
     precioValor: 150_000,
     precioMoneda: 'COP',
   };

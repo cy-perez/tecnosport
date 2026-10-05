@@ -1,5 +1,5 @@
 import { inject } from '@angular/core';
-import { injectQuery } from '@tanstack/angular-query-experimental';
+import { injectQuery, keepPreviousData } from '@tanstack/angular-query-experimental';
 import { BorradoresPaginados, FiltroBorradores } from '../domain/borrador.model';
 import { REPOSITORIO_BORRADORES_ADMIN } from '../domain/repositorio-borradores-admin.puerto';
 
@@ -16,6 +16,11 @@ export function usarListarBorradores(filtro: () => FiltroBorradores) {
   return injectQuery(() => ({
     queryKey: claveListaBorradores(filtro()),
     queryFn: (): Promise<BorradoresPaginados> => repositorio.listar(filtro()),
+    // Al pasar de página la llave cambia, y sin esto la consulta volvía a `pending`: la plantilla
+    // pintaba el esqueleto, el paginador desaparecía con el botón pulsado dentro y el foco caía
+    // en `<body>`. Con los datos de la página anterior a la vista mientras llega la nueva, el
+    // paginador no se desmonta.
+    placeholderData: keepPreviousData,
     staleTime: 15_000,
   }));
 }

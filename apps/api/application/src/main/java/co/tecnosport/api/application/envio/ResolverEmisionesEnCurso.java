@@ -115,7 +115,8 @@ public final class ResolverEmisionesEnCurso {
         contador.errores.add(emision.id() + ": " + e);
       }
     }
-    contador.abandonadas = abandonarSolicitudesSinRespuesta() + darPorEstancadasLasQueNoResuelven();
+    contador.abandonadas =
+        abandonarSolicitudesSinRespuesta(contador) + darPorEstancadasLasQueNoResuelven(contador);
     return contador.aResultado();
   }
 
@@ -127,7 +128,7 @@ public final class ResolverEmisionesEnCurso {
    * —pudo cobrarse—, así que la única salida honesta es marcarla para que la mire una persona. Sin
    * esto se quedaría abierta para siempre, bloqueando toda emisión nueva de ese pedido en silencio.
    */
-  private int abandonarSolicitudesSinRespuesta() {
+  private int abandonarSolicitudesSinRespuesta(Contador contador) {
     Instant corte = reloj.ahora().minus(ESPERA_MAXIMA_DE_RESPUESTA);
     int abandonadas = 0;
     for (EmisionDeGuia emision :
@@ -145,7 +146,10 @@ public final class ResolverEmisionesEnCurso {
             });
         abandonadas++;
       } catch (RuntimeException e) {
-        // Que una no se pueda marcar no puede impedir marcar las otras.
+        // Que una no se pueda marcar no puede impedir marcar las otras. Pero el motivo sube a
+        // quien registra: se perdía en silencio.
+        contador.conError++;
+        contador.errores.add(emision.id() + ": " + e);
       }
     }
     return abandonadas;
@@ -158,7 +162,7 @@ public final class ResolverEmisionesEnCurso {
    * <p>No se dan por fallidas: el envío existe en la plataforma y puede estar cobrado. Lo que se
    * dice es "esto necesita a una persona", que es lo único honesto.
    */
-  private int darPorEstancadasLasQueNoResuelven() {
+  private int darPorEstancadasLasQueNoResuelven(Contador contador) {
     Instant corte = reloj.ahora().minus(ESPERA_MAXIMA_EN_CURSO);
     int estancadas = 0;
     for (EmisionDeGuia emision :
@@ -175,7 +179,10 @@ public final class ResolverEmisionesEnCurso {
             });
         estancadas++;
       } catch (RuntimeException e) {
-        // Que una no se pueda marcar no puede impedir marcar las otras.
+        // Que una no se pueda marcar no puede impedir marcar las otras. Pero el motivo sube a
+        // quien registra: se perdía en silencio.
+        contador.conError++;
+        contador.errores.add(emision.id() + ": " + e);
       }
     }
     return estancadas;

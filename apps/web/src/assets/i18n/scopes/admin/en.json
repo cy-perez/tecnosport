@@ -44,7 +44,9 @@
     "foto_no_es_del_borrador": "One of the photos does not belong to this post. Reload the page.",
     "imagen_de_proveedor_ilegible": "One of the photos could not be processed. Reject it or ask the supplier for the photo again.",
     "producto_de_proveedor_ya_existe": "This post is already a product in the catalogue: same title at the same price. Reject the draft.",
-    "lote_en_curso": "The import is still being processed. Wait for it to finish before deleting it."
+    "lote_en_curso": "The import is still being processed. Wait for it to finish before deleting it.",
+    "pago_sin_pedido_ya_devuelto": "That payment already has its refund recorded.",
+    "inventario_sin_confirmar": "There is no stock for every line: restock and try again, or cancel with a refund."
   },
   "iniciarSesion": {
     "titulo": "Admin panel",
@@ -146,7 +148,7 @@
       "acciones": "Actions",
       "contacto": "Recipient",
       "costo_total": "Total shipping cost",
-      "imprimir_etiqueta": "Print label"
+      "imprimir_etiqueta": "Print label (opens in a new tab)"
     },
     "acciones": {
       "sin_accion": "No actions available.",
@@ -178,7 +180,17 @@
       "motivo_requerido": "Enter the reason: it stays in the order history.",
       "transportadora_requerida": "Enter the carrier for this shipment.",
       "guia_requerida": "Enter the tracking number.",
-      "costo_envio_requerido": "Enter what this shipment cost. If you do not know yet, enter 0 and fix it later."
+      "costo_envio_requerido": "Enter what this shipment cost. If you do not know yet, enter 0 and fix it later.",
+      "pagado_sin_inventario": "The payment arrived after the reservation expired and there was no stock. Once you restock, confirm it to prepare it; if there will be none, cancel it with a refund.",
+      "confirmar_inventario": "Confirm stock and prepare"
+    },
+    "pagos_sin_pedido": {
+      "titulo": "Payments to refund ({{cuantos}})",
+      "ayuda": "Payments approved when their order no longer expected them: the buyer paid twice, or the order was already cancelled or failed. That money belongs to no sale and is refunded in full. Refund it in the gateway (or ask Sistecrédito to cancel the credit) and record the receipt here.",
+      "resumen": "Order {{numero}} · {{correo}} · since {{fecha}} ·",
+      "medio": "Refund method",
+      "comprobante": "Receipt",
+      "registrar": "Record refund"
     },
     "devolucion": {
       "titulo": "Receive the return",
@@ -769,6 +781,7 @@
     "restaurar": "Back to the drafted text",
     "faltaPie": "Write the post text before sending it.",
     "yaEnMarcha": "That post was just sent. Wait for it to finish before trying again.",
+    "noDifundible": "This product can't be shared yet. It has to be published in the store, have at least one active variant and a main image with a JPEG preview; if the image predates that preview, upload it again.",
     "fallo": "The network rejected it: {{motivo}}",
     "error": "We could not post. Try again.",
     "publicado": "Posted to {{red}}.",

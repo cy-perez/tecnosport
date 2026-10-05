@@ -53,6 +53,16 @@ public interface CorreoPendienteJpaRepository
   @Query("update CorreoPendienteJpaEntity c set c.ultimoError = :detalle where c.id = :id")
   int registrarFallo(@Param("id") UUID id, @Param("detalle") String detalle);
 
+  /** Agota los intentos de una fila que no se puede mandar nunca, con el motivo escrito. */
+  @Modifying(flushAutomatically = true, clearAutomatically = true)
+  @Query(
+      "update CorreoPendienteJpaEntity c set c.intentos = :maxIntentos, c.ultimoError = :detalle"
+          + " where c.id = :id")
+  int rendir(
+      @Param("id") UUID id,
+      @Param("maxIntentos") int maxIntentos,
+      @Param("detalle") String detalle);
+
   @Modifying(flushAutomatically = true, clearAutomatically = true)
   @Query(
       "delete from CorreoPendienteJpaEntity c where c.enviadoEn is not null and c.enviadoEn <"

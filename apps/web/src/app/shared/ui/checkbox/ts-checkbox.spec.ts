@@ -11,6 +11,7 @@ import { TsCheckbox } from './ts-checkbox';
       [marcado]="marcado()"
       [deshabilitado]="deshabilitado()"
       [sobreMarca]="sobreMarca()"
+      [obligatorio]="obligatorio()"
       (marcadoCambio)="ultimoEmitido.set($event)"
     />
   `,
@@ -19,10 +20,12 @@ class Anfitrion {
   readonly marcado = signal(false);
   readonly deshabilitado = signal(false);
   readonly sobreMarca = signal(false);
+  readonly obligatorio = signal(false);
   readonly ultimoEmitido = signal<boolean | null>(null);
 }
 
-const casilla = () => screen.getByRole('checkbox', { name: 'Reducir movimiento' }) as HTMLInputElement;
+const casilla = () =>
+  screen.getByRole('checkbox', { name: 'Reducir movimiento' }) as HTMLInputElement;
 
 describe('TsCheckbox', () => {
   it('es una casilla nativa cuyo nombre accesible es su etiqueta', async () => {
@@ -31,6 +34,18 @@ describe('TsCheckbox', () => {
     expect(casilla().tagName).toBe('INPUT');
     expect(casilla().type).toBe('checkbox');
     expect(casilla().id).toBe('reducir');
+  });
+
+  it('declara que es obligatoria con aria-required, y solo cuando lo es', async () => {
+    const { fixture } = await render(Anfitrion);
+    expect(casilla().hasAttribute('aria-required')).toBe(false);
+
+    fixture.componentInstance.obligatorio.set(true);
+    await fixture.whenStable();
+
+    expect(casilla().getAttribute('aria-required')).toBe('true');
+    // Sin asterisco dentro de la etiqueta: el nombre accesible no cambia.
+    expect(screen.getByRole('checkbox', { name: 'Reducir movimiento' })).toBeTruthy();
   });
 
   it('informa el estado nuevo, no un simple aviso de cambio', async () => {

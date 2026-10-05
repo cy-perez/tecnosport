@@ -1,5 +1,6 @@
 package co.tecnosport.api.application.pago;
 
+import co.tecnosport.api.application.compartido.EnTransaccionPropia;
 import co.tecnosport.api.application.compartido.Reloj;
 import co.tecnosport.api.application.inventario.RepositorioInventario;
 import co.tecnosport.api.application.pedido.RepositorioPedidos;
@@ -34,13 +35,15 @@ public final class ProcesarNotificacionSistecredito {
   private final RepositorioInventario repositorioInventario;
   private final PasarelaSistecredito pasarela;
   private final Reloj reloj;
+  private final EnTransaccionPropia enTransaccionPropia;
 
   public ProcesarNotificacionSistecredito(
       RepositorioPagos repositorioPagos,
       RepositorioPedidos repositorioPedidos,
       RepositorioInventario repositorioInventario,
       PasarelaSistecredito pasarela,
-      Reloj reloj) {
+      Reloj reloj,
+      EnTransaccionPropia enTransaccionPropia) {
     this.repositorioPagos =
         Objects.requireNonNull(repositorioPagos, "El repositorio de pagos no puede ser nulo.");
     this.repositorioPedidos =
@@ -50,6 +53,7 @@ public final class ProcesarNotificacionSistecredito {
             repositorioInventario, "El repositorio de inventario no puede ser nulo.");
     this.pasarela = Objects.requireNonNull(pasarela, "La pasarela no puede ser nula.");
     this.reloj = Objects.requireNonNull(reloj, "El reloj no puede ser nulo.");
+    this.enTransaccionPropia = Objects.requireNonNull(enTransaccionPropia);
   }
 
   public ResultadoNotificacionSistecredito ejecutar(
@@ -100,18 +104,25 @@ public final class ProcesarNotificacionSistecredito {
     // repetida.
     EventoPago evento = new EventoPago(verdad.id() + ":" + verdad.estado(), estado, reloj.ahora());
 
+    // La consulta a la pasarela de arriba va fuera de toda transacción; la escritura, en la suya.
+    // El controlador envolvía todo, y una conexión de la base quedaba retenida mientras
+    // Sistecrédito contestaba.
     return traducir(
-        AplicadorDeResultadoDePago.aplicar(
-            pago,
-            evento,
-            // Sistecredito es el medio: no hay una lista donde el comprador vuelva a elegir, como
-            // en el checkout hospedado de Wompi. Se registra igual, para que el dato exista con la
-            // misma forma en los dos caminos.
-            "SISTECREDITO",
-            "sistecredito",
-            repositorioPagos,
-            repositorioPedidos,
-            repositorioInventario));
+        enTransaccionPropia.ejecutar(
+            () ->
+                AplicadorDeResultadoDePago.aplicar(
+                    pago,
+                    evento,
+                    // Sistecredito es el medio: no hay una lista donde el comprador vuelva a
+                    // elegir, como
+                    // en el checkout hospedado de Wompi. Se registra igual, para que el dato exista
+                    // con la
+                    // misma forma en los dos caminos.
+                    "SISTECREDITO",
+                    "sistecredito",
+                    repositorioPagos,
+                    repositorioPedidos,
+                    repositorioInventario)));
   }
 
   /**
@@ -221,12 +232,16 @@ public final class ProcesarNotificacionSistecredito {
       case APLICADO -> ResultadoNotificacionSistecredito.APLICADO;
       case APLICADO_SIN_CONFIRMAR_INVENTARIO ->
           ResultadoNotificacionSistecredito.APLICADO_SIN_CONFIRMAR_INVENTARIO;
+      case APROBADO_SIN_PEDIDO_QUE_LO_ESPERE ->
+          ResultadoNotificacionSistecredito.APROBADO_SIN_PEDIDO_QUE_LO_ESPERE;
       case YA_PROCESADO -> ResultadoNotificacionSistecredito.YA_PROCESADO;
       case PAGO_NO_ENCONTRADO -> ResultadoNotificacionSistecredito.PAGO_NO_ENCONTRADO;
       case ESTADO_NO_SOPORTADO -> ResultadoNotificacionSistecredito.ESTADO_NO_SOPORTADO;
       // No puede llegar: aquí no hay firma que validar. Se nombra en vez de caer en un `default`
       // para que, si algún día el aplicador devuelve algo nuevo, esto no compile.
-      case FIRMA_INVALIDA -> ResultadoNotificacionSistecredito.DISCREPANCIA_CON_LA_PASARELA;
+      case FIRMA_INVALIDA, ESTADO_SIN_FIRMAR ->
+          ResultadoNotificacionSistecredito.DISCREPANCIA_CON_LA_PASARELA;
+      case MONTO_NO_COINCIDE -> ResultadoNotificacionSistecredito.MONTO_NO_COINCIDE;
     };
   }
 }

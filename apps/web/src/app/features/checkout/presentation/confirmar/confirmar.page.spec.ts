@@ -7,7 +7,7 @@ import { fireEvent, render, screen } from '@testing-library/angular';
 import en from '../../../../../assets/i18n/en.json';
 import es from '../../../../../assets/i18n/es.json';
 import esCheckout from '../../../../../assets/i18n/scopes/checkout/es.json';
-import { Carrito } from '../../../carrito/domain/carrito.model';
+import { Carrito, CarritoCotizado } from '../../../carrito/domain/carrito.model';
 import {
   REPOSITORIO_CARRITO,
   RepositorioCarrito,
@@ -30,8 +30,50 @@ import {
   sembrarCarritoId,
   sembrarSnapshotLinea,
 } from '../../../../../testing/carrito';
+import {
+  ALMACEN_CORREO_DE_PEDIDO,
+  AlmacenCorreoDePedido,
+} from '../../domain/almacen-correo-de-pedido.puerto';
+
+/** El navegador que recordó el correo antes de ir a la pasarela, en memoria. */
+class AlmacenCorreoEnMemoria implements AlmacenCorreoDePedido {
+  readonly guardados = new Map<string, string>();
+  recordar(pedidoId: string, correo: string): void {
+    this.guardados.set(pedidoId, correo);
+  }
+  correoDe(pedidoId: string): string | null {
+    return this.guardados.get(pedidoId) ?? null;
+  }
+}
+
+/** Lo que antes venía en la URL —pedido y correo— ahora lo recuerda el navegador. */
+function almacenDesde(query: Record<string, string> = {}): AlmacenCorreoEnMemoria {
+  const almacen = new AlmacenCorreoEnMemoria();
+  if (query['pedidoId'] && query['correo']) {
+    almacen.recordar(query['pedidoId'], query['correo']);
+  }
+  return almacen;
+}
+
+/** El precio que el servidor da hoy en estas pruebas. */
+const PRECIO_DE_HOY = 150_000;
 
 class RepositorioCarritoFalso implements RepositorioCarrito {
+  /** Los precios de hoy, como el servidor: {@link PRECIO_DE_HOY} por unidad. */
+  async cotizar(carritoId: string): Promise<CarritoCotizado | null> {
+    const carrito = await this.ver(carritoId);
+    if (!carrito) {
+      return null;
+    }
+    const lineas = carrito.lineas.map((linea) => ({
+      lineaId: linea.id,
+      varianteId: linea.varianteId,
+      cantidad: linea.cantidad,
+      precioUnitario: PRECIO_DE_HOY,
+      subtotal: PRECIO_DE_HOY * linea.cantidad,
+    }));
+    return { lineas, subtotal: lineas.reduce((suma, linea) => suma + linea.subtotal, 0) };
+  }
   constructor(private carrito: Carrito | null) {}
 
   async crear(): Promise<Carrito> {
@@ -140,10 +182,9 @@ class RepositorioPagosQueFalla implements RepositorioPagos {
 }
 
 /**
- * La pasarela rechazando el credito, con la forma exacta que el backend traduce: un 409 con
- * `estadoSistecredito` y `codigoSistecredito` en el cuerpo. El codigo es `4` y no `801` ni `802`
- * a proposito — es el que devolvio de verdad la prueba con rechazo simulado contra dev el 23 de
- * septiembre de 2026, y es el que caia en el mensaje generico.
+ * La pasarela rechazando el credito, con la forma exacta que manda el backend: un 409 con el
+ * `motivoSistecredito` ya clasificado. Es el rechazo con codigo `4` de la prueba contra dev del 23
+ * de septiembre de 2026, que caia en el mensaje generico; ahora el servidor lo clasifica.
  */
 class RepositorioPagosQueRechazaElCredito implements RepositorioPagos {
   async crearIntento(): Promise<IntentoDePago> {
@@ -152,8 +193,7 @@ class RepositorioPagosQueRechazaElCredito implements RepositorioPagos {
 
   async crearIntentoSistecredito(): Promise<IntentoSistecredito> {
     throw new ErrorHttp(409, 'sin url de pago', 'SISTECREDITO_NO_ENTREGO_LA_URL_DE_PAGO', {
-      codigoSistecredito: '4',
-      estadoSistecredito: 'Rejected',
+      motivoSistecredito: 'CREDITO_NEGADO',
     });
   }
 
@@ -173,6 +213,7 @@ class RepositorioPagosFalso implements RepositorioPagos {
       firmaIntegridad: 'firma',
       llavePublica: 'pub_test_xyz',
       ambiente: 'sandbox',
+      montoEnCentavos: 18_990_000,
     };
   }
 
@@ -223,7 +264,6 @@ function snapshotDePrueba(varianteId: string) {
     slugProducto: 'morral-urbano',
     sku: 'SKU-1',
     imagenUrl: null,
-    imagenAlt: 'Morral urbano',
     precioValor: 150_000,
     precioMoneda: 'COP',
   };
@@ -309,6 +349,7 @@ async function renderConDatos(
       }),
     ],
     providers: [
+      { provide: ALMACEN_CORREO_DE_PEDIDO, useValue: almacenDesde() },
       ...proveerAlmacenesCarrito(),
       provideRouter([
         { path: 'metodo-pago', component: RutaMuda },
@@ -487,7 +528,7 @@ describe('ConfirmarPage', () => {
     expect(navegar).toHaveBeenCalledWith(
       ['../transferencia'],
       expect.objectContaining({
-        queryParams: { pedidoId: 'pedido-1', correo: 'compra@ejemplo.co' },
+        queryParams: { pedidoId: 'pedido-1' },
       }),
     );
     expect(pagos.llamadasCrearIntento).toBe(0);

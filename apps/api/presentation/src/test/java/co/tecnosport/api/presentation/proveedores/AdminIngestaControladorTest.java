@@ -16,6 +16,7 @@ import co.tecnosport.api.application.proveedores.DependenciasDeProveedor;
 import co.tecnosport.api.application.proveedores.EjecutorDeIngestas;
 import co.tecnosport.api.application.proveedores.EliminacionDeProductos;
 import co.tecnosport.api.application.proveedores.EliminarLoteDeIngesta;
+import co.tecnosport.api.application.proveedores.EncolarIngesta;
 import co.tecnosport.api.application.proveedores.IniciarIngesta;
 import co.tecnosport.api.application.proveedores.LotesPaginados;
 import co.tecnosport.api.application.proveedores.RepositorioLotesIngesta;
@@ -326,6 +327,21 @@ class AdminIngestaControladorTest {
     @Bean
     Reloj reloj() {
       return () -> AHORA;
+    }
+
+    /** La compensación de la cola llena, en una transacción de verdad del espía. */
+    @Bean
+    EncolarIngesta encolarIngesta(
+        EjecutorDoble ejecutor, RepositorioLotesDoble lotes, TransaccionEspia transaccion) {
+      co.tecnosport.api.application.compartido.EnTransaccionPropia enTransaccion =
+          new co.tecnosport.api.application.compartido.EnTransaccionPropia() {
+            @Override
+            public <T> T ejecutar(java.util.function.Supplier<T> trabajo) {
+              return new org.springframework.transaction.support.TransactionTemplate(transaccion)
+                  .execute(estado -> trabajo.get());
+            }
+          };
+      return new EncolarIngesta(ejecutor, lotes, enTransaccion, () -> AHORA);
     }
 
     @Bean

@@ -21,6 +21,7 @@ import {
   usarEliminarCategoria,
 } from '../application/escribir-categoria.mutacion';
 import { ResultadoEscritura } from '../domain/repositorio-categorias-admin.puerto';
+import { usarFocoEnPrimerInvalido } from '../../../../shared/foco/foco';
 
 /** Una fila de la lista: la categoría, y a qué profundidad se pinta. */
 export interface FilaDeArbol {
@@ -61,6 +62,8 @@ export interface FilaDeArbol {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CategoriasAdminPage {
+  /** Al fallar el envío, el foco va al primer campo con error y no se queda en el botón. */
+  private readonly enfocarPrimerInvalido = usarFocoEnPrimerInvalido();
   protected readonly migas = usarMigasAdmin([{ clave: 'admin.categorias.titulo' }]);
 
   private readonly transloco = inject(TranslocoService);
@@ -183,6 +186,7 @@ export class CategoriasAdminPage {
     }
     if (this.form.invalid) {
       this.form.markAllAsTouched();
+      this.enfocarPrimerInvalido();
       this.error.set(this.transloco.translate('admin.categorias.faltaNombre'));
       return;
     }

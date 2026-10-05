@@ -3,6 +3,12 @@
 
   <app-filtros-productos />
 
+  <!-- Lo que pasó con la lista: cuántos productos hay tras filtrar, o cuántos más llegaron con
+       «Cargar más». Vive siempre en el DOM, fuera de la cadena de `@if` —una región `status` que nace
+       llena no la anuncia NVDA (`docs/06-testing.md`)— y lo que cambia es el texto. `sr-only`: lo
+       que dice ya se ve en la rejilla; lo que faltaba era oírlo. -->
+  <p class="sr-only" role="status">{{ anuncio() }}</p>
+
   @if (consulta.isPending()) {
     <div class="grid grid-cols-2 gap-16 desde-movil:grid-cols-3 desde-tableta:grid-cols-4">
       @for (marcador of marcadoresDeCarga; track marcador) {
@@ -19,6 +25,9 @@
       {{ (hayFiltros() ? 'catalogo.sin_resultados' : 'catalogo.sin_productos') | transloco }}
     </p>
   } @else {
+    <!-- El h2 que faltaba entre el h1 de la página y el h3 de cada tarjeta: sin él, la lista de
+         encabezados saltaba del 1 al 3. Oculto a la vista, que el título de arriba ya lo dice. -->
+    <h2 class="sr-only">{{ 'catalogo.resultados' | transloco }}</h2>
     <div class="grid grid-cols-2 gap-16 desde-movil:grid-cols-3 desde-tableta:grid-cols-4">
       <!-- La primera fila, por el mismo motivo que la franja de la portada:
            entre tarjetas del mismo tamaño el LCP es cualquiera de ellas (medido
@@ -32,9 +41,12 @@
 
     @if (consulta.hasNextPage()) {
       <div class="mt-32 flex justify-center">
+        <!-- `ocupado` y no `cargando`: deshabilitado bajo el dedo, el foco caía en `<body>` y quien
+             navega con teclado volvía al principio de la página. Al llegar los nuevos, el foco va a
+             la primera tarjeta nueva (`cargarMas()`). -->
         <ts-boton
-          (click)="consulta.fetchNextPage()"
-          [cargando]="consulta.isFetchingNextPage()"
+          (click)="cargarMas()"
+          [ocupado]="consulta.isFetchingNextPage()"
           [etiquetaCargando]="'catalogo.cargando' | transloco"
         >
           {{ 'catalogo.cargar_mas' | transloco }}

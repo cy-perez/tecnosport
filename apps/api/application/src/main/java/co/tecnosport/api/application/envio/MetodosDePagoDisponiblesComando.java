@@ -25,12 +25,22 @@ public record MetodosDePagoDisponiblesComando(
     String correo,
     TipoEntrega tipoEntrega,
     Direccion direccion,
-    TarifaEnvio tarifaConRecaudoYaCotizada) {
+    TarifaEnvio tarifaConRecaudoYaCotizada,
+    String telefono) {
 
   /** Lo que manda el endpoint: no ha cotizado nada, así que el caso de uso lo hace por él. */
   public MetodosDePagoDisponiblesComando(
       List<LineaComando> lineas, String correo, TipoEntrega tipoEntrega, Direccion direccion) {
-    this(lineas, correo, tipoEntrega, direccion, null);
+    this(lineas, correo, tipoEntrega, direccion, null, null);
+  }
+
+  public MetodosDePagoDisponiblesComando(
+      List<LineaComando> lineas,
+      String correo,
+      TipoEntrega tipoEntrega,
+      Direccion direccion,
+      TarifaEnvio tarifaConRecaudoYaCotizada) {
+    this(lineas, correo, tipoEntrega, direccion, tarifaConRecaudoYaCotizada, null);
   }
 
   public record LineaComando(UUID varianteId, int cantidad) {}

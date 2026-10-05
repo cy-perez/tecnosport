@@ -350,6 +350,13 @@ def css(d, tip, esp, rad, tipo, extra=None, fuentes_ok=False):
         L.append("  --control-{}: {}px;".format(k.replace("_", "-"), v))
     for k, v in (extra.get("imagenes_px") or {}).items():
         L.append("  --imagen-{}: {}px;".format(k.replace("_", "-"), v))
+    for k, v in (extra.get("foco_px") or {}).items():
+        L.append("  --foco-{}: {}px;".format(k.replace("_", "-"), v))
+    for k, v in (extra.get("trazo_px") or {}).items():
+        L.append("  --trazo-{}: {}px;".format(k.replace("_", "-"), v))
+    # Sin unidad: un z-index es un orden, no una medida.
+    for k, v in (extra.get("capas") or {}).items():
+        L.append("  --capa-{}: {};".format(k.replace("_", "-"), v))
     mov = extra.get("movimiento") or {}
     for k, v in (mov.get("duracion_ms") or {}).items():
         L.append("  --mov-{}: {}ms;".format(k.replace("_", "-"), v))
@@ -680,6 +687,9 @@ def main():
              "anchos_min_px": t.get("anchos_min_px") or {},
              "controles_px": t.get("controles_px") or {},
              "imagenes_px": t.get("imagenes_px") or {},
+             "foco_px": t.get("foco_px") or {},
+             "trazo_px": t.get("trazo_px") or {},
+             "capas": t.get("capas") or {},
              "movimiento": t.get("movimiento") or {},
              "mono": bool((t.get("tipografia") or {}).get("mono"))}
     extra["chaflan_px"] = {k: v for k, v in extra["chaflan_px"].items()

@@ -28,7 +28,13 @@ const TALLA = 'min-h-compacto px-16 py-8 text-sm';
 
 const MUESTRA_BASE = 'block size-24 overflow-hidden rounded-completo';
 const MUESTRA = `${MUESTRA_BASE} border border-ts-borde-control`;
-const MUESTRA_ACTIVA = `${MUESTRA_BASE} border-2 border-ts-primario`;
+// La elegida conserva su borde fino y gana un anillo **exterior y separado** (`outline` con
+// `--foco-separacion`), del color primario. Era un `border-2` del mismo color: sobre una muestra
+// oscura —negro, azul marino— el borde grafito se fundía con el color en tema claro y no se sabía
+// cuál estaba elegida. Con la separación el anillo se pinta sobre la superficie de la tarjeta, que
+// es contra lo que está medido `primario` (`npm run contrastes`), sea cual sea el color de la
+// muestra. Y el borde no cambia de ancho, así que elegir no mueve nada.
+const MUESTRA_ACTIVA = `${MUESTRA} outline-foco outline-offset-foco outline-ts-primario`;
 
 @Component({
   selector: 'ts-selector-variante',

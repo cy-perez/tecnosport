@@ -212,4 +212,27 @@ class SolicitudRetractoTest {
     assertEquals(EstadoSolicitudRetracto.PRODUCTO_RECIBIDO, solicitud.estado());
     assertEquals(enBogota(9, 16), solicitud.productoRecibidoEn().orElseThrow());
   }
+
+  /** El veredicto del plazo de reintegro, que el panel decidía con el reloj del navegador. */
+  @Test
+  void elReintegroVenceAlAgotarseElPlazoYNoAntes() {
+    SolicitudRetracto solicitud = radicadaEl(enBogota(9, 14));
+    solicitud.recibirProducto(enBogota(9, 16));
+    java.time.Instant limite = solicitud.limiteDeReintegro().orElseThrow();
+
+    assertFalse(solicitud.reintegroVencido(limite.minusSeconds(1)));
+    assertTrue(solicitud.reintegroVencido(limite));
+  }
+
+  /** Ya reembolsada no hay incumplimiento que señalar, aunque la fecha haya pasado. */
+  @Test
+  void unaSolicitudReembolsadaNoTieneElReintegroVencido() {
+    SolicitudRetracto solicitud = radicadaEl(enBogota(9, 14));
+    solicitud.recibirProducto(enBogota(9, 16));
+    solicitud.transicionar(EstadoSolicitudRetracto.REEMBOLSADA);
+
+    assertFalse(
+        solicitud.reintegroVencido(
+            solicitud.limiteDeReintegro().orElseThrow().plusSeconds(86_400)));
+  }
 }

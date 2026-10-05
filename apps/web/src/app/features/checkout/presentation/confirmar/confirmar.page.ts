@@ -25,6 +25,7 @@ import { MetodoPago, Pedido } from '../../domain/pedido.model';
 import { ErrorHttp } from '../../../../core/http/respuesta-http';
 import { esMetodoPagoSistecredito, esMetodoPagoWompi } from '../../domain/reglas-pedido';
 import { urlWebCheckoutWompi } from '../../domain/wompi';
+import { ALMACEN_CORREO_DE_PEDIDO } from '../../domain/almacen-correo-de-pedido.puerto';
 
 const CLAVE_ETIQUETA: Record<MetodoPago, string> = {
   WOMPI: 'checkout.metodoPago.wompi',
@@ -38,7 +39,12 @@ const CLAVE_ETIQUETA: Record<MetodoPago, string> = {
  * lo mismo para quien compra: ese credito no se abrio y reintentar el mismo no lleva a ninguna
  * parte. La lista es la misma que `SistecreditoClient` trata como terminal.
  */
-const ESTADOS_DE_RECHAZO = new Set(['Rejected', 'Cancelled', 'Expired', 'Abandoned', 'Failed']);
+/** El motivo que clasifica el servidor, con su texto. Sin vocabulario de la pasarela aquí. */
+const CLAVE_MOTIVO_SISTECREDITO: Record<string, string> = {
+  SOLICITUD_EN_CURSO: 'checkout.confirmar.sistecredito_801',
+  MONTO_INSUFICIENTE: 'checkout.confirmar.sistecredito_802',
+  CREDITO_NEGADO: 'checkout.confirmar.sistecredito_rechazado',
+};
 
 /**
  * Tercer y último paso antes de que exista el pedido (Fase 3, paso 4c de
@@ -70,6 +76,7 @@ export class ConfirmarPage {
   private readonly traducir = usarTraductor();
   protected readonly carrito = inject(CarritoStore);
   protected readonly checkout = inject(CheckoutStore);
+  private readonly correosDePedido = inject(ALMACEN_CORREO_DE_PEDIDO);
 
   protected readonly error = signal<string | null>(null);
 
@@ -236,16 +243,12 @@ export class ConfirmarPage {
   /** Solo mientras `confirmar()` espera la cotización, para que el botón lo diga. */
   protected readonly esperandoCotizacion = signal(false);
 
-  protected readonly subtotal = computed(() => {
-    const datosCarrito = this.carrito.consulta.data();
-    if (!datosCarrito) {
-      return 0;
-    }
-    return datosCarrito.lineas.reduce((suma, linea) => {
-      const snapshot = this.carrito.snapshotDeLinea(linea.varianteId);
-      return suma + (snapshot ? snapshot.precioValor * linea.cantidad : 0);
-    }, 0);
-  });
+  /**
+   * El subtotal del servidor (`GET /carritos/{id}/cotizacion`). Sumaba el precio que el navegador
+   * guardó al agregar: si cambió, el comprador aceptaba un total y se le cobraba otro, y una línea
+   * sin foto guardada sumaba cero.
+   */
+  protected readonly subtotal = computed(() => this.carrito.subtotal());
 
   protected readonly etiquetaMetodoPago = computed(() => {
     const metodo = this.checkout.metodoPago();
@@ -272,6 +275,12 @@ export class ConfirmarPage {
   }
 
   protected async confirmar(): Promise<void> {
+    // Guarda de reentrada: con el botón en `ocupado` —que no se deshabilita, para no tirar el foco
+    // a `<body>`— un segundo clic llegaría hasta aquí. La llave de idempotencia evita el pedido
+    // doble en el servidor, pero no hace falta mandarlo.
+    if (this.enviando()) {
+      return;
+    }
     const datos = this.checkout.datosEntrega();
     const metodoPago = this.checkout.metodoPago();
     const datosCarrito = this.carrito.consulta.data();
@@ -365,14 +374,13 @@ export class ConfirmarPage {
    */
   private mensajeDeError(error: unknown): string {
     const datos = error instanceof ErrorHttp ? error.datos : {};
-    const codigo = datos['codigoSistecredito'] ?? null;
-    if (codigo === '801' || codigo === '802') {
+    // El servidor ya clasificó el rechazo (`motivoSistecredito`); aquí solo se elige el texto. La
+    // tabla de códigos y estados de la pasarela vivía en este componente, distinta de la del
+    // backend: un `REJECTED` en mayúsculas lo dejaba sondeando con el consejo falso de revisar datos.
+    const clave = CLAVE_MOTIVO_SISTECREDITO[datos['motivoSistecredito'] ?? ''];
+    if (clave) {
       this.rechazoDeCredito.set(true);
-      return this.transloco.translate(`checkout.confirmar.sistecredito_${codigo}`);
-    }
-    if (ESTADOS_DE_RECHAZO.has(datos['estadoSistecredito'] ?? '')) {
-      this.rechazoDeCredito.set(true);
-      return this.transloco.translate('checkout.confirmar.sistecredito_rechazado');
+      return this.transloco.translate(clave);
     }
     this.rechazoDeCredito.set(false);
     return this.transloco.translate('checkout.confirmar.error');
@@ -385,6 +393,8 @@ export class ConfirmarPage {
   }
 
   private async continuarSegunMetodoPago(pedido: Pedido): Promise<boolean> {
+    // Antes de cualquier salida: la pasarela, la transferencia o el estado lo leen de aquí.
+    this.correosDePedido.recordar(pedido.id, pedido.correo);
     if (esMetodoPagoSistecredito(pedido.metodoPago)) {
       const documento = this.checkout.documentoComprador();
       if (!documento) {
@@ -415,10 +425,11 @@ export class ConfirmarPage {
       // `CheckoutStore` no sobrevive ese viaje. `id` lo agrega Wompi mismo;
       // `correo` hace falta para `GET /pedidos/{id}/seguimiento` en la
       // pantalla de estado (docs/03-api.md: "con token del correo").
+      // El correo NO va en la URL: la recuerda el navegador (`AlmacenCorreoDePedido`) y la
+      // pantalla de retorno la lee de ahí. En la URL quedaba en los registros y en Wompi.
       const parametrosRetorno = new URLSearchParams({
         referencia: intento.referencia,
         pedidoId: pedido.id,
-        correo: pedido.correo,
       });
       const urlRetorno = `${window.location.origin}/${idioma}/checkout/retorno-wompi?${parametrosRetorno.toString()}`;
       window.location.href = urlWebCheckoutWompi(intento, urlRetorno);
@@ -431,7 +442,7 @@ export class ConfirmarPage {
       // cuenta con calma) no debería perder los datos de la cuenta.
       void this.router.navigate(['../transferencia'], {
         relativeTo: this.route,
-        queryParams: { pedidoId: pedido.id, correo: pedido.correo },
+        queryParams: { pedidoId: pedido.id },
       });
       return true;
     }

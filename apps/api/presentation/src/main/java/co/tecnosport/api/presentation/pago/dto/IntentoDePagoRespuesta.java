@@ -1,6 +1,7 @@
 package co.tecnosport.api.presentation.pago.dto;
 
 import co.tecnosport.api.presentation.compartido.dto.DineroRespuesta;
+import io.swagger.v3.oas.annotations.media.Schema;
 
 /**
  * Lo que el frontend necesita para abrir el Web Checkout hospedado de Wompi
@@ -15,4 +16,10 @@ public record IntentoDePagoRespuesta(
     DineroRespuesta monto,
     String firmaIntegridad,
     String llavePublica,
-    String ambiente) {}
+    String ambiente,
+    /**
+     * El {@code amount-in-cents} que Wompi exige, ya calculado: es el mismo número que entra en la
+     * firma de integridad. El navegador lo calculaba multiplicando un {@code number} por 100, y
+     * cualquier diferencia con lo firmado hacía que Wompi rechazara el pago.
+     */
+    @Schema(requiredMode = Schema.RequiredMode.REQUIRED) long montoEnCentavos) {}

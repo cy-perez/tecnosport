@@ -18,7 +18,6 @@ function snapshotDePrueba(): SnapshotLinea {
     slugProducto: 'morral-urbano',
     sku: 'SKU-1',
     imagenUrl: null,
-    imagenAlt: 'Morral urbano',
     precioValor: 150_000,
     precioMoneda: 'COP',
   };
@@ -75,7 +74,7 @@ describe('LineaCarritoComponent', () => {
       { cantidadCambio: (valor: number) => (emitido = valor) },
     );
 
-    fireEvent.click(screen.getByRole('button', { name: 'Aumentar cantidad' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Aumentar cantidad de Morral urbano' }));
 
     expect(emitido).toBe(3);
   });
@@ -87,7 +86,7 @@ describe('LineaCarritoComponent', () => {
       { cantidadCambio: (valor: number) => (emitido = valor) },
     );
 
-    fireEvent.click(screen.getByRole('button', { name: 'Disminuir cantidad' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Disminuir cantidad de Morral urbano' }));
 
     expect(emitido).toBe(1);
   });
@@ -102,9 +101,53 @@ describe('LineaCarritoComponent', () => {
       { cantidadCambio: (valor: number) => (emitido = valor) },
     );
 
-    fireEvent.click(screen.getByRole('button', { name: 'Disminuir cantidad' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Disminuir cantidad de Morral urbano' }));
 
     expect(emitido).toBeUndefined();
+  });
+
+  /**
+   * En cantidad 1 el "−" no hace nada, pero se queda en el orden de tabulación: deshabilitado, el
+   * foco caía en `<body>` justo después de bajar de 2 a 1.
+   */
+  it('en cantidad 1 el botón de restar queda inactivo, no deshabilitado', async () => {
+    await renderLinea({
+      linea: { id: 'linea-1', varianteId: 'variante-1', cantidad: 1 },
+      snapshot: snapshotDePrueba(),
+    });
+
+    const restar = screen.getByRole('button', {
+      name: 'Disminuir cantidad de Morral urbano',
+    }) as HTMLButtonElement;
+    expect(restar.disabled).toBe(false);
+    expect(restar.getAttribute('aria-disabled')).toBe('true');
+  });
+
+  it('los tres botones dicen de qué producto son', async () => {
+    await renderLinea({ linea: lineaDePrueba(), snapshot: snapshotDePrueba() });
+
+    expect(screen.getByRole('button', { name: 'Aumentar cantidad de Morral urbano' })).toBeTruthy();
+    expect(
+      screen.getByRole('button', { name: 'Disminuir cantidad de Morral urbano' }),
+    ).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Eliminar Morral urbano del carrito' })).toBeTruthy();
+  });
+
+  /**
+   * El `alt` guardado en la foto de la línea se congelaba en el idioma en que se agregó: quien
+   * agregaba en inglés y volvía en español oía "Backpack, front". Se compone al pintar.
+   */
+  it('el alt de la foto se compone al pintar, no se lee del texto guardado', async () => {
+    await renderLinea({
+      linea: lineaDePrueba(),
+      snapshot: {
+        ...snapshotDePrueba(),
+        imagenUrl: 'https://imagenes.test/morral.jpg',
+        imagenAlt: 'Backpack, front',
+      },
+    });
+
+    expect(screen.getByRole('img').getAttribute('alt')).toBe('Foto de Morral urbano');
   });
 
   it('eliminar emite el evento', async () => {

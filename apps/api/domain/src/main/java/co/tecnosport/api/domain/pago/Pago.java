@@ -31,6 +31,7 @@ public final class Pago {
   private Instant actualizadoEn;
   private String idTransaccionPasarela;
   private String medioReportadoPorLaPasarela;
+  private Instant sinPedidoQueLoEspereDesde;
 
   public Pago(
       UUID id,
@@ -43,7 +44,8 @@ public final class Pago {
       Instant creadoEn,
       Instant actualizadoEn,
       String idTransaccionPasarela,
-      String medioReportadoPorLaPasarela) {
+      String medioReportadoPorLaPasarela,
+      Instant sinPedidoQueLoEspereDesde) {
     this.id = Objects.requireNonNull(id, "El id del pago no puede ser nulo.");
     this.pedidoId = Objects.requireNonNull(pedidoId, "El id del pedido no puede ser nulo.");
     this.referencia =
@@ -57,6 +59,10 @@ public final class Pago {
         Objects.requireNonNull(actualizadoEn, "La fecha de actualización no puede ser nula.");
     this.idTransaccionPasarela = idTransaccionPasarela;
     this.medioReportadoPorLaPasarela = normalizar(medioReportadoPorLaPasarela);
+    if (sinPedidoQueLoEspereDesde != null && estado != EstadoPago.APROBADO) {
+      throw new ExcepcionDeDominio("Solo un pago aprobado puede quedar sin pedido que lo espere.");
+    }
+    this.sinPedidoQueLoEspereDesde = sinPedidoQueLoEspereDesde;
   }
 
   /** Nace {@code PENDIENTE}: crear el pago es crear el intento, antes de conocer su resultado. */
@@ -76,6 +82,7 @@ public final class Pago {
         List.of(),
         ahora,
         ahora,
+        null,
         null,
         null);
   }
@@ -174,6 +181,31 @@ public final class Pago {
     estado = evento.estado();
     actualizadoEn = evento.recibidoEn();
     return true;
+  }
+
+  /**
+   * Desde cuándo este pago está aprobado sin un pedido que lo esperara: el comprador pagó dos
+   * intentos, o el pedido ya estaba cancelado o fallido cuando entró la aprobación. El dinero entró
+   * y no pertenece a ninguna venta, así que se debe devolver entero; mientras no exista ese
+   * reintegro, el panel lo muestra.
+   */
+  public Optional<Instant> sinPedidoQueLoEspereDesde() {
+    return Optional.ofNullable(sinPedidoQueLoEspereDesde);
+  }
+
+  /**
+   * Hasta el 4 de octubre de 2026 esto pasaba en silencio: el pago quedaba {@code APROBADO}, el
+   * pedido no se tocaba y solo quedaba una línea de registro. Ese dinero se cobraba y nadie lo
+   * devolvía. Marcarlo dos veces conserva la primera fecha.
+   */
+  public void marcarSinPedidoQueLoEspere(Instant ahora) {
+    Objects.requireNonNull(ahora, "La fecha no puede ser nula.");
+    if (estado != EstadoPago.APROBADO) {
+      throw new ExcepcionDeDominio("Solo un pago aprobado puede quedar sin pedido que lo espere.");
+    }
+    if (sinPedidoQueLoEspereDesde == null) {
+      sinPedidoQueLoEspereDesde = ahora;
+    }
   }
 
   /**

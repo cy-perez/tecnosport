@@ -13,6 +13,30 @@ import { MetodoPago, Pedido, Seguimiento } from '../../domain/pedido.model';
 import { REPOSITORIO_PAGOS, RepositorioPagos } from '../../domain/repositorio-pagos.puerto';
 import { REPOSITORIO_PEDIDOS, RepositorioPedidos } from '../../domain/repositorio-pedidos.puerto';
 import { TransferenciaPage } from './transferencia.page';
+import {
+  ALMACEN_CORREO_DE_PEDIDO,
+  AlmacenCorreoDePedido,
+} from '../../domain/almacen-correo-de-pedido.puerto';
+
+/** El navegador que recordó el correo antes de ir a la pasarela, en memoria. */
+class AlmacenCorreoEnMemoria implements AlmacenCorreoDePedido {
+  readonly guardados = new Map<string, string>();
+  recordar(pedidoId: string, correo: string): void {
+    this.guardados.set(pedidoId, correo);
+  }
+  correoDe(pedidoId: string): string | null {
+    return this.guardados.get(pedidoId) ?? null;
+  }
+}
+
+/** Lo que antes venía en la URL —pedido y correo— ahora lo recuerda el navegador. */
+function almacenDesde(query: Record<string, string> = {}): AlmacenCorreoEnMemoria {
+  const almacen = new AlmacenCorreoEnMemoria();
+  if (query['pedidoId'] && query['correo']) {
+    almacen.recordar(query['pedidoId'], query['correo']);
+  }
+  return almacen;
+}
 
 function pedidoDePrueba(overrides: Partial<Pedido> = {}): Pedido {
   return {
@@ -119,6 +143,7 @@ async function renderConProviders(
       }),
     ],
     providers: [
+      { provide: ALMACEN_CORREO_DE_PEDIDO, useValue: almacenDesde(query) },
       provideTanStackQuery(new QueryClient()),
       { provide: REPOSITORIO_PEDIDOS, useValue: pedidos },
       { provide: REPOSITORIO_PAGOS, useValue: new RepositorioPagosFalso() },

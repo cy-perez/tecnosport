@@ -112,6 +112,7 @@
           (submit)="$event.preventDefault(); registrarReintegro(solicitud)"
         >
           <ts-campo
+            [obligatorio]="true"
             [idCampo]="'reintegro-monto-' + solicitud.id"
             tipo="number"
             [label]="'admin.retractos.acciones.monto' | transloco"

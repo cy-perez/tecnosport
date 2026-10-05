@@ -211,3 +211,20 @@ export const ESTADOS_QUE_ADMITEN_CANCELACION = [
   'CONFIRMADO_CONTRAENTREGA',
   'EN_PREPARACION',
 ] as const;
+
+/**
+ * Un pago aprobado sin pedido que lo esperara: el comprador pagó dos intentos, o el pedido ya
+ * estaba cancelado o fallido cuando entró. `monto` es lo que se devuelve, entero; lo decide el
+ * servidor y el panel solo lo muestra.
+ */
+export interface PagoSinPedidoAdmin {
+  readonly pagoId: string;
+  readonly referencia: string;
+  readonly metodoPago: MetodoPago;
+  readonly monto: Dinero;
+  readonly desde: string;
+  readonly pedidoId: string;
+  readonly numeroPedido: string;
+  readonly estadoPedido: EstadoPedido;
+  readonly correo: string;
+}

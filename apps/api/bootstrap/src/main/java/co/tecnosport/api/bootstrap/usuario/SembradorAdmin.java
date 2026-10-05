@@ -53,6 +53,7 @@ public class SembradorAdmin implements ApplicationRunner {
     // verificado.
     admin.verificarCorreo(ahora);
     repositorioUsuarios.guardar(admin);
-    log.info("Usuario ADMIN inicial creado: {}", correo.valor());
+    // Sin el correo: docs/08 no admite datos personales en los registros.
+    log.info("Usuario ADMIN inicial creado");
   }
 }

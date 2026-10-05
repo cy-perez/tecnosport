@@ -35,4 +35,9 @@ public interface RepositorioIdempotencia {
    * sí podría funcionar la próxima vez.
    */
   void liberar(String llave);
+
+  /**
+   * Borra las respuestas vencidas y las reclamaciones abandonadas. Devuelve cuántas filas borró.
+   */
+  int purgarVencidas(Instant ahora);
 }

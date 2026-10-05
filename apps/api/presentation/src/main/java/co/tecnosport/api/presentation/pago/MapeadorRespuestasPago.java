@@ -22,7 +22,9 @@ public class MapeadorRespuestasPago {
         aRespuesta(intento.monto()),
         intento.firmaIntegridad(),
         propiedadesWompi.llavePublica(),
-        propiedadesWompi.ambiente());
+        propiedadesWompi.ambiente(),
+        // Escala 0 siempre (el peso no se fracciona), así que esto es exacto.
+        intento.monto().valor().movePointRight(2).longValueExact());
   }
 
   private DineroRespuesta aRespuesta(Dinero dinero) {

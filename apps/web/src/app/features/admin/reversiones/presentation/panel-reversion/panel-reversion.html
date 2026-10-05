@@ -57,6 +57,7 @@
             {{ 'admin.reversiones.acciones.gestion_ayuda' | transloco }}
           </p>
           <ts-campo
+            [obligatorio]="true"
             [idCampo]="'reversion-gestion-' + reversion.id"
             [label]="'admin.reversiones.acciones.gestion' | transloco"
             formControlName="gestion"
@@ -81,6 +82,7 @@
             (change)="alCambiarDesenlace()"
           />
           <ts-campo
+            [obligatorio]="true"
             [idCampo]="'reversion-resumen-' + reversion.id"
             [label]="'admin.reversiones.acciones.resumen' | transloco"
             formControlName="resumenParaElComprador"
@@ -130,6 +132,7 @@
         formControlName="causal"
       />
       <ts-campo
+        [obligatorio]="true"
         [idCampo]="'reversion-fecha-' + pedidoId()"
         tipo="datetime-local"
         [label]="'admin.reversiones.acciones.fecha_de_noticia' | transloco"

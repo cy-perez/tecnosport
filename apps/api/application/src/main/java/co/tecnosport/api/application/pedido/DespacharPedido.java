@@ -63,7 +63,7 @@ public final class DespacharPedido {
     Objects.requireNonNull(comando, "El comando no puede ser nulo.");
     Pedido pedido =
         repositorioPedidos
-            .buscarPorId(comando.pedidoId())
+            .buscarPorIdParaModificar(comando.pedidoId())
             .orElseThrow(() -> new PedidoNoEncontradoException(comando.pedidoId()));
     Instant ahora = reloj.ahora();
     pedido.transicionar(
@@ -167,7 +167,11 @@ public final class DespacharPedido {
     return urlBaseEstado
         + "?pedidoId="
         + URLEncoder.encode(pedido.id().toString(), StandardCharsets.UTF_8)
-        + "&correo="
+        // En el fragmento y no en la consulta: el navegador nunca manda lo que va después del #,
+        // así
+        // que el correo no queda en los registros del servidor ni en el Referer. La pantalla de
+        // estado lo lee de ahí.
+        + "#correo="
         + URLEncoder.encode(pedido.correo().valor(), StandardCharsets.UTF_8);
   }
 }

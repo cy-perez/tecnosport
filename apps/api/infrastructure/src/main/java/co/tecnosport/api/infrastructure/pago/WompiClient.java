@@ -19,6 +19,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import tools.jackson.core.JacksonException;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
@@ -55,6 +57,8 @@ import tools.jackson.databind.json.JsonMapper;
  * leídos juntos parecen contradecirse.
  */
 public final class WompiClient implements PasarelaDePagos {
+
+  private static final Logger log = LoggerFactory.getLogger(WompiClient.class);
 
   private static final String URL_BASE_SANDBOX = "https://sandbox.wompi.co/v1";
   private static final String URL_BASE_PRODUCCION = "https://production.wompi.co/v1";
@@ -132,6 +136,12 @@ public final class WompiClient implements PasarelaDePagos {
       HttpResponse<String> respuesta =
           httpClient.send(peticion, HttpResponse.BodyHandlers.ofString());
       if (respuesta.statusCode() != 200) {
+        // Un 401 por una llave mala y un 5xx de Wompi se trataban igual que "sin novedad": la
+        // conciliación reportaba cero conciliados para siempre, igual que en un día tranquilo.
+        log.warn(
+            "Wompi respondió {} al consultar la transacción {}",
+            respuesta.statusCode(),
+            idTransaccionPasarela);
         return Optional.empty();
       }
       JsonNode raiz = json.readTree(respuesta.body());
@@ -155,17 +165,28 @@ public final class WompiClient implements PasarelaDePagos {
       if (referencia.isBlank() || !centavos.isNumber()) {
         return Optional.empty();
       }
-      // Dividir por 100 es exacto siempre —corre la coma, no aproxima— y `Dinero` normaliza a
-      // escala 0. Nada de `double` por el camino (regla dura #6).
-      Dinero monto = Dinero.deCop(new BigDecimal(centavos.asString()).divide(CENTAVOS_POR_PESO));
+      // Dividir por 100 es exacto siempre —corre la coma, no aproxima—, pero `Dinero` redondea a
+      // escala 0, y redondear antes de comparar dejaba pasar hasta 50 centavos de faltante. Un
+      // monto en pesos colombianos que no sea múltiplo de 100 centavos no es uno que hayamos
+      // cobrado: se trata como no poder consultar. Nada de `double` (regla dura #6).
+      BigDecimal enPesos = new BigDecimal(centavos.asString()).divide(CENTAVOS_POR_PESO);
+      if (enPesos.stripTrailingZeros().scale() > 0) {
+        return Optional.empty();
+      }
+      Dinero monto = Dinero.deCop(enPesos);
       return Optional.of(
           new TransaccionDePasarela(estado, medio.isBlank() ? null : medio, referencia, monto));
     } catch (IOException e) {
+      log.warn(
+          "No se pudo consultar la transacción {} en Wompi: {}",
+          idTransaccionPasarela,
+          e.toString());
       return Optional.empty();
     } catch (InterruptedException e) {
       Thread.currentThread().interrupt();
       return Optional.empty();
     } catch (JacksonException e) {
+      log.warn("Wompi devolvió un cuerpo ilegible para la transacción {}", idTransaccionPasarela);
       // Un cuerpo de Wompi que no se puede parsear es, para la conciliación, lo mismo que no
       // poder consultar: se reintenta en la próxima corrida, no es un error de negocio.
       return Optional.empty();

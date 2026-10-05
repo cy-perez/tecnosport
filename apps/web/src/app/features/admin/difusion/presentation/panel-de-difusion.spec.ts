@@ -113,12 +113,10 @@ describe('PanelDeDifusion', () => {
     });
   });
 
+  // Por el código y traducido: antes se pintaba el `detail` del backend, en español siempre.
   it('enseña el motivo cuando el producto no se puede difundir', async () => {
     const repositorio = new RepositorioDoble();
-    repositorio.resultado = {
-      tipo: 'NO_DIFUNDIBLE',
-      motivo: 'El producto no tiene imagen principal.',
-    };
+    repositorio.resultado = { tipo: 'NO_DIFUNDIBLE' };
     await montar(repositorio);
     const caja = (await screen.findByLabelText(/texto de la publicación/i)) as HTMLTextAreaElement;
     await vi.waitFor(() => expect(caja.value).not.toBe(''));
@@ -127,7 +125,7 @@ describe('PanelDeDifusion', () => {
 
     // Por texto y no por `role="alert"`: `ts-campo` monta el suyo siempre —vacío— para que el
     // lector de pantalla lo anuncie al llenarse, así que `findByRole('alert')` encuentra ese.
-    expect(await screen.findByText(/no tiene imagen principal/i)).toBeTruthy();
+    expect(await screen.findByText(/todavía no se puede difundir/i)).toBeTruthy();
   });
 
   it('avisa cuando la difusión ya está en marcha en vez de repetirla', async () => {
@@ -162,5 +160,31 @@ describe('PanelDeDifusion', () => {
 
     expect(await screen.findByRole('button', { name: /instagram.*última vez/is })).toBeTruthy();
     expect(screen.getByRole('button', { name: /facebook.*nunca/is })).toBeTruthy();
+  });
+
+  // Era `DatePipe` sin `LOCALE_ID`: "9/29/26, 3:00 PM" en un panel en español, y en la hora del
+  // entorno. 15:00 UTC son las 10:00 en Bogotá.
+  it('la fecha va en el idioma del panel y en hora de Colombia', async () => {
+    const repositorio = new RepositorioDoble();
+    repositorio.publicaciones = [
+      {
+        id: '1',
+        red: 'INSTAGRAM',
+        estado: 'PUBLICADA',
+        idPublicacionExterna: '181961',
+        pieDeFoto: 'JBL Grip — $299.900',
+        urlImagen: 'https://storage.googleapis.com/b/principal.jpg',
+        solicitadaEn: '2026-09-29T15:00:00Z',
+        publicadaEn: '2026-09-29T15:00:04Z',
+        detalleDelFallo: null,
+      },
+    ];
+
+    await montar(repositorio);
+
+    const boton = await screen.findByRole('button', { name: /instagram.*última vez/is });
+    expect(boton.textContent).toMatch(/29\/09\/2026/);
+    expect(boton.textContent).toMatch(/10:00/);
+    expect(boton.textContent).not.toMatch(/PM|AM/);
   });
 });

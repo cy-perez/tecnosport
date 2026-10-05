@@ -44,7 +44,9 @@
     "foto_no_es_del_borrador": "Una de las fotos no pertenece a esta publicación. Recarga la página.",
     "imagen_de_proveedor_ilegible": "Una de las fotos no se pudo procesar. Recházalo o pídele al proveedor la foto de nuevo.",
     "producto_de_proveedor_ya_existe": "Este anuncio ya es un producto del catálogo: es el mismo título al mismo precio. Rechaza el borrador.",
-    "lote_en_curso": "La ingesta todavía se está procesando. Espera a que termine para eliminarla."
+    "lote_en_curso": "La ingesta todavía se está procesando. Espera a que termine para eliminarla.",
+    "pago_sin_pedido_ya_devuelto": "Ese pago ya tiene registrada su devolución.",
+    "inventario_sin_confirmar": "No hay existencia para todas las líneas: repón y vuelve a intentarlo, o cancela con reintegro."
   },
   "iniciarSesion": {
     "titulo": "Panel administrativo",
@@ -146,7 +148,7 @@
       "acciones": "Acciones",
       "contacto": "Quien recibe",
       "costo_total": "Costo total del despacho",
-      "imprimir_etiqueta": "Imprimir etiqueta"
+      "imprimir_etiqueta": "Imprimir etiqueta (se abre en otra pestaña)"
     },
     "acciones": {
       "sin_accion": "Sin acciones disponibles.",
@@ -178,7 +180,17 @@
       "motivo_requerido": "Escribe el motivo: queda en el historial del pedido.",
       "transportadora_requerida": "Escribe la transportadora de esta guía.",
       "guia_requerida": "Escribe el número de guía.",
-      "costo_envio_requerido": "Escribe lo que costó este envío. Si todavía no lo sabes, escribe 0 y corrígelo después."
+      "costo_envio_requerido": "Escribe lo que costó este envío. Si todavía no lo sabes, escribe 0 y corrígelo después.",
+      "pagado_sin_inventario": "El pago entró cuando la reserva ya había vencido y no había existencia. Cuando repongas, confírmalo para prepararlo; si no va a haber, cancélalo con reintegro.",
+      "confirmar_inventario": "Confirmar inventario y preparar"
+    },
+    "pagos_sin_pedido": {
+      "titulo": "Pagos por devolver ({{cuantos}})",
+      "ayuda": "Pagos aprobados cuando su pedido ya no los esperaba: el comprador pagó dos veces, o el pedido ya estaba cancelado o fallido. Ese dinero no es de ninguna venta y se devuelve entero. Devuélvelo en la pasarela (o pide a Sistecrédito anular el crédito) y registra aquí la constancia.",
+      "resumen": "Pedido {{numero}} · {{correo}} · desde {{fecha}} ·",
+      "medio": "Por dónde se devolvió",
+      "comprobante": "Comprobante",
+      "registrar": "Registrar devolución"
     },
     "devolucion": {
       "titulo": "Recibir la devolución",
@@ -769,6 +781,7 @@
     "restaurar": "Volver al texto propuesto",
     "faltaPie": "Escribe el texto de la publicación antes de enviarla.",
     "yaEnMarcha": "Esa publicación se acaba de enviar. Espera a que termine antes de volver a intentarlo.",
+    "noDifundible": "Este producto todavía no se puede difundir. Necesita estar publicado en la tienda, tener al menos una variante activa y una imagen principal con vista previa en JPEG; si la imagen es anterior a esa vista previa, vuelve a subirla.",
     "fallo": "La red no la aceptó: {{motivo}}",
     "error": "No pudimos publicar. Vuelve a intentarlo.",
     "publicado": "Publicado en {{red}}.",

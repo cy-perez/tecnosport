@@ -674,4 +674,73 @@ class RepositorioPedidosJpaTest {
 
     assertThat(repositorio.reclamarComprobante(pedido.id(), Instant.now())).isFalse();
   }
+
+  /**
+   * La lectura con bloqueo reconstruye el mismo agregado que la normal. Que bloquee de verdad lo
+   * decide Postgres con el {@code for update}; aquí se comprueba que la consulta existe, corre y no
+   * pierde nada por el camino.
+   */
+  @Test
+  void buscarParaModificarDevuelveElMismoPedidoQueBuscarPorId() {
+    Pedido pedido = pedidoAlDomicilio(MetodoPago.WOMPI);
+    repositorio.guardar(pedido);
+
+    Pedido bloqueado = repositorio.buscarPorIdParaModificar(pedido.id()).orElseThrow();
+
+    assertThat(bloqueado.id()).isEqualTo(pedido.id());
+    assertThat(bloqueado.lineas()).hasSize(pedido.lineas().size());
+    assertThat(bloqueado.historial()).hasSize(pedido.historial().size());
+    assertThat(bloqueado.estado()).isEqualTo(pedido.estado());
+  }
+
+  /**
+   * Un rechazo cuenta aunque el paquete ya haya vuelto (DEVUELTO), y el correo se compara
+   * normalizado. Con el criterio de antes —el estado actual, el correo tal cual— el comprador que
+   * rechazó dejaba de contar en cuanto alguien recibía el paquete, o al escribir una mayúscula.
+   */
+  @Test
+  void unRechazoSigueContandoDespuesDeDevueltoYSinImportarLasMayusculas() {
+    Pedido pedido =
+        Pedido.crear(
+            NUMERO,
+            null,
+            new CorreoElectronico("cliente@tecnosport.co"),
+            List.of(linea()),
+            TipoEntrega.ENVIO_A_DOMICILIO,
+            DIRECCION_MEDELLIN,
+            MetodoPago.CONTRAENTREGA,
+            "cliente@tecnosport.co",
+            Instant.now(),
+            null,
+            new Contacto("Ana Pérez", "313 881 6711"));
+    Instant ahora = Instant.now();
+    pedido.transicionar(EstadoPedido.EN_PREPARACION, "sistema", "preparación", ahora);
+    pedido.transicionar(EstadoPedido.DESPACHADO, "sistema", "despacho", ahora);
+    pedido.transicionar(EstadoPedido.RECHAZADO_EN_ENTREGA, "sistema", "no recibió", ahora);
+    pedido.transicionar(EstadoPedido.DEVUELTO, "admin:1", "volvió a bodega", ahora);
+    repositorio.guardar(pedido);
+
+    assertThat(repositorio.tieneRechazoEnEntrega("  Cliente@TecnoSport.co ")).isTrue();
+    assertThat(repositorio.tieneRechazoEnEntregaPorTelefono("+57 3138816711")).isTrue();
+    assertThat(repositorio.tieneRechazoEnEntregaPorTelefono("3000000000")).isFalse();
+  }
+
+  /** La consulta de la tarea que vence contraentregas: por estado, por antigüedad y con tope. */
+  @Test
+  void buscarIdsEnEstadoCreadosAntesDeFiltraPorEstadoYFecha() {
+    Pedido viejo = pedidoAlDomicilio(MetodoPago.CONTRAENTREGA);
+    repositorio.guardar(viejo);
+    Instant despues = Instant.now().plusSeconds(3600);
+
+    assertThat(
+            repositorio.buscarIdsEnEstadoCreadosAntesDe(
+                EstadoPedido.CONFIRMADO_CONTRAENTREGA, despues, 10))
+        .contains(viejo.id());
+    assertThat(
+            repositorio.buscarIdsEnEstadoCreadosAntesDe(
+                EstadoPedido.CONFIRMADO_CONTRAENTREGA, Instant.now().minusSeconds(3600), 10))
+        .doesNotContain(viejo.id());
+    assertThat(repositorio.buscarIdsEnEstadoCreadosAntesDe(EstadoPedido.PAGADO, despues, 10))
+        .doesNotContain(viejo.id());
+  }
 }

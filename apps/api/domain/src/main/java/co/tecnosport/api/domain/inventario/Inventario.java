@@ -134,6 +134,45 @@ public final class Inventario {
   }
 
   /**
+   * Confirma una reserva aunque haya vencido, si la unidad sigue sin venderse.
+   *
+   * <p>El pago en línea reserva 30 minutos, y un PSE lento o un checkout reabierto puede aprobarse
+   * después. Hasta el 4 de octubre de 2026 eso dejaba el pedido {@code PAGADO} con la reserva sin
+   * confirmar y sin salida operativa: ningún camino del panel lo llevaba a preparación. Una reserva
+   * vencida deja de descontar del disponible, así que si la unidad sigue ahí —nadie más la compró—
+   * se vende igual; si ya no está, lanza {@link ExistenciaInsuficienteException} y el pedido se
+   * queda esperando reposición o una cancelación con reintegro.
+   */
+  public void confirmarTarde(UUID idReserva, Instant ahora) {
+    MovimientoInventario reserva = encontrarReserva(idReserva);
+    if (estaResuelta(idReserva)) {
+      throw new ReservaYaProcesadaException(idReserva);
+    }
+    if (reservaVigente(reserva, ahora)) {
+      confirmar(idReserva, ahora);
+      return;
+    }
+    int disponible = saldoDisponible(ahora);
+    if (reserva.cantidad() > disponible) {
+      throw new ExistenciaInsuficienteException(varianteId, disponible, reserva.cantidad());
+    }
+    agregar(
+        new MovimientoInventario(
+            GeneradorIdentificador.nuevo(),
+            TipoMovimientoInventario.SALIDA,
+            -reserva.cantidad(),
+            ahora,
+            null,
+            idReserva,
+            null));
+  }
+
+  /** Si la reserva ya se convirtió en venta. */
+  public boolean estaConfirmada(UUID idReserva) {
+    return tieneSalida(idReserva);
+  }
+
+  /**
    * Libera aunque la reserva ya haya vencido por tiempo: venció sola o se libera explícito, el
    * efecto en el saldo es el mismo, pero el motivo queda igual en el histórico.
    */

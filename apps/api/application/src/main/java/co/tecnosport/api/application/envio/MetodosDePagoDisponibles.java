@@ -188,7 +188,14 @@ public final class MetodosDePagoDisponibles {
     if (!elRecaudoCuadra(comando.lineas(), aRecaudar)) {
       return false;
     }
-    boolean rechazoPrevio = repositorioPedidos.tieneRechazoEnEntrega(comando.correo());
+    // Por correo normalizado y por teléfono, como promete docs/11: "si un correo o un teléfono ya
+    // rechazó pedidos en la entrega". Se comparaba el correo tal cual llegaba, y bastaba escribirlo
+    // con otra mayúscula para volver a ver la contraentrega; el teléfono no se miraba.
+    String correo = comando.correo() == null ? "" : comando.correo().trim().toLowerCase();
+    boolean rechazoPrevio =
+        repositorioPedidos.tieneRechazoEnEntrega(correo)
+            || (comando.telefono() != null
+                && repositorioPedidos.tieneRechazoEnEntregaPorTelefono(comando.telefono()));
     return PoliticaContraentrega.disponible(
         criteriosContraentrega,
         // Lo que el transportador recauda es el total, flete incluido (adr/0023), así que el tope

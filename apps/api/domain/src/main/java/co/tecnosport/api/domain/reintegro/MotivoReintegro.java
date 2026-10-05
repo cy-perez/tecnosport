@@ -35,5 +35,13 @@ public enum MotivoReintegro {
    * lo que pagó se le devuelve entero —producto y flete—: no hay contrato cumplido del que
    * descontar.
    */
-  RECHAZO_EN_ENTREGA
+  RECHAZO_EN_ENTREGA,
+
+  /**
+   * Un pago aprobado que no correspondía a ningún pedido pendiente: el comprador pagó dos intentos,
+   * o el pedido ya estaba cancelado o fallido cuando entró la aprobación. No es dinero de una venta
+   * —{@code Pedido.dineroRecibido} no lo cuenta—, así que tampoco cuenta contra el tope del pedido:
+   * devolverlo no puede comerse lo que el comprador tenga derecho a recibir por un retracto.
+   */
+  PAGO_SIN_PEDIDO
 }

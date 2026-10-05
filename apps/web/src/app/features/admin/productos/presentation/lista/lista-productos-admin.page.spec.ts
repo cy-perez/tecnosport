@@ -400,12 +400,17 @@ describe('ListaProductosAdminPage', () => {
     expect(screen.getByRole('link', { name: 'Nuevo producto' })).toBeTruthy();
   });
 
-  it('la paginación deshabilita "Anterior" y "Siguiente" en una sola página', async () => {
+  // Inactivos (aria-disabled) y no deshabilitados: ver `ts-paginador.spec.ts`.
+  it('la paginación deja inactivos "Anterior" y "Siguiente" en una sola página', async () => {
     await renderLista([productoDePrueba()]);
     await screen.findByText('Morral urbano');
 
-    expect(screen.getByRole('button', { name: 'Anterior' }).hasAttribute('disabled')).toBe(true);
-    expect(screen.getByRole('button', { name: 'Siguiente' }).hasAttribute('disabled')).toBe(true);
+    expect(screen.getByRole('button', { name: 'Anterior' }).getAttribute('aria-disabled')).toBe(
+      'true',
+    );
+    expect(screen.getByRole('button', { name: 'Siguiente' }).getAttribute('aria-disabled')).toBe(
+      'true',
+    );
   });
 
   it('"Siguiente" queda habilitado cuando hay más páginas y navega con el query param', async () => {

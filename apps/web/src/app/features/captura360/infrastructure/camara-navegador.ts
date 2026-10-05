@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import { Camara, FotogramaCrudo } from '../domain/camara.puerto';
+import { codificarFotograma } from './codificar-lienzo';
 
 /**
  * `getUserMedia` de verdad. Pide la cámara trasera y la mayor resolución que el dispositivo dé:
@@ -50,9 +51,9 @@ export class CamaraNavegador implements Camara {
     }
     contexto.drawImage(video, 0, 0, ancho, alto);
 
-    const blob = await new Promise<Blob | null>((resolver) =>
-      lienzo.toBlob(resolver, 'image/webp', 0.92),
-    );
+    // WebP con respaldo JPEG: `toBlob` con WebP entrega PNG sin avisar en el Safari que no lo
+    // codifica, y un PNG de cámara pesa varias veces lo mismo en JPEG.
+    const blob = await codificarFotograma(lienzo, 0.92);
     if (blob === null) {
       throw new Error('El navegador no pudo convertir el fotograma.');
     }

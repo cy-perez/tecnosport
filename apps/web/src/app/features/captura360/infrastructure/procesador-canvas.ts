@@ -9,8 +9,9 @@ import {
   Rectangulo,
   recorteDeFotograma,
 } from '../domain/recorte-360';
+import { codificarFotograma } from './codificar-lienzo';
 
-/** WebP con calidad 82 (`docs/10-captura-360.md`). */
+/** WebP con calidad 82 (`docs/10-captura-360.md`); la misma para el respaldo JPEG. */
 const CALIDAD_WEBP = 0.82;
 
 /**
@@ -100,14 +101,15 @@ export class ProcesadorCanvas implements ProcesadorDeFotogramas {
     return contexto;
   }
 
-  private aBlob(lienzo: HTMLCanvasElement): Promise<Blob> {
-    return new Promise((resolver, rechazar) => {
-      lienzo.toBlob(
-        (blob) =>
-          blob === null ? rechazar(new Error('El lienzo no produjo imagen.')) : resolver(blob),
-        'image/webp',
-        CALIDAD_WEBP,
-      );
-    });
+  /**
+   * WebP, o JPEG si el navegador no codifica WebP: el tipo real queda en `blob.type`, y es el que
+   * decide con qué tipo se piden las URL firmadas (`domain/formato-de-fotograma.ts`).
+   */
+  private async aBlob(lienzo: HTMLCanvasElement): Promise<Blob> {
+    const blob = await codificarFotograma(lienzo, CALIDAD_WEBP);
+    if (blob === null) {
+      throw new Error('El lienzo no produjo imagen.');
+    }
+    return blob;
   }
 }

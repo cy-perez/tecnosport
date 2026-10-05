@@ -1,16 +1,18 @@
 <!-- `-translate-y-[200%]` lo saca de la vista sin quitarlo del orden de
      tabulación, que es el punto: el primer Tab de la página lo trae de vuelta
-     con `focus-visible:translate-y-0`. `anillo-foco-sobre-acento` y no
+     con `focus-visible:translate-y-0`. `anillo-foco-dentro-acento` y no
      `anillo-foco`: el enlace es ámbar, y en tema oscuro `--color-foco` también
-     es ámbar (src/tailwind.css).
+     es ámbar (src/tailwind.css). **Dentro** y no `sobre-acento`, que lo pintaba
+     fuera: el enlace aparece encima del encabezado, y un anillo grafito sobre la
+     barra oscura no se veía. Por dentro tiene ámbar a los dos lados.
 
-     `z-50` y no `z-10`, y es consecuencia directa del encabezado fijo: desde que `app-encabezado`
-     es `sticky z-30`, este enlace —que se pinta justo encima de la barra, en `top-8 left-8`—
+     `z-superior` y no `z-pegada`, y es consecuencia directa del encabezado fijo: desde que
+     `app-encabezado` es `sticky z-encabezado`, este enlace —que se pinta justo encima de la barra, en `top-8 left-8`—
      quedaba **detrás** de ella al recibir el foco. Un enlace de salto invisible es un enlace de
      salto que no existe. Va al mismo nivel que el diálogo porque no compite con él: solo se ve
      enfocado, y un diálogo abierto atrapa el foco. -->
 <a
-  class="anillo-foco-sobre-acento chaflan absolute top-8 left-8 z-50 inline-flex min-h-tactil -translate-y-[200%] items-center bg-ts-acento px-16 py-8 text-sm text-ts-sobre-acento no-underline focus-visible:translate-y-0"
+  class="anillo-foco-dentro-acento chaflan absolute top-8 left-8 z-superior inline-flex min-h-tactil -translate-y-[200%] items-center bg-ts-acento px-16 py-8 text-sm text-ts-sobre-acento no-underline focus-visible:translate-y-0"
   href="#contenido"
   >{{ 'app.saltar_al_contenido' | transloco }}</a
 >
@@ -33,18 +35,10 @@
      Medido: `<main>` 1104 px con `app-root` en 363. Con `min-w-0`, 363 y una
      sola columna. Ninguna prueba lo veía —jsdom no hace layout— y en escritorio
      no se nota, porque ahí sí caben las seis columnas. -->
-<!-- `scroll-mt-*` es lo que hace que el enlace de salto siga funcionando con el encabezado fijo:
-     sin él, el navegador deja `#contenido` pegado al borde superior de la ventana y los primeros
-     60 px (72 en escritorio) del contenido quedan **debajo** de la barra. El foco va al sitio
-     correcto y lo que se ve es otra cosa, que es la peor de las dos mitades.
-
-     Valor arbitrario apuntando a la variable, que es la escapatoria que la regla dura #2 permite:
-     `scroll-mt-[72px]` no. -->
-<main
-  id="contenido"
-  class="min-w-0 scroll-mt-[var(--header-alto-movil)] focus:outline-none desde-movil:scroll-mt-[var(--header-alto-escritorio)]"
-  tabindex="-1"
->
+<!-- Sin `scroll-mt-*` desde el 4 de octubre de 2026: el alto del encabezado fijo lo descuenta el
+     `scroll-padding-top` de `html` (`src/tailwind.css`), que vale para el enlace de salto y para
+     cualquier cosa que reciba el foco. Con los dos a la vez, el salto se pasaría el doble. -->
+<main id="contenido" class="min-w-0 focus:outline-none" tabindex="-1">
   <router-outlet />
 </main>
 <!-- El pie se pinta en el servidor como siempre —el HTML sale entero, y con él los

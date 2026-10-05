@@ -9,6 +9,7 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { usarFocoEnPrimerInvalido } from '../../../../shared/foco/foco';
 import { RouterLink } from '@angular/router';
 import { filter, firstValueFrom } from 'rxjs';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -71,6 +72,7 @@ interface ValoresDireccion {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ResumenPage {
+  private readonly enfocarPrimerInvalido = usarFocoEnPrimerInvalido();
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly transloco = inject(TranslocoService);
@@ -81,16 +83,12 @@ export class ResumenPage {
   protected readonly carrito = inject(CarritoStore);
   private readonly checkout = inject(CheckoutStore);
 
-  protected readonly subtotal = computed(() => {
-    const datos = this.carrito.consulta.data();
-    if (!datos) {
-      return 0;
-    }
-    return datos.lineas.reduce((suma, linea) => {
-      const snapshot = this.carrito.snapshotDeLinea(linea.varianteId);
-      return suma + (snapshot ? snapshot.precioValor * linea.cantidad : 0);
-    }, 0);
-  });
+  /**
+   * El subtotal del servidor (`GET /carritos/{id}/cotizacion`). Sumaba el precio que el navegador
+   * guardó al agregar: si cambió, el comprador aceptaba un total y se le cobraba otro, y una línea
+   * sin foto guardada sumaba cero.
+   */
+  protected readonly subtotal = computed(() => this.carrito.subtotal());
 
   /**
    * La cotización de envío se pide aquí y no en un paso aparte porque aquí es
@@ -535,6 +533,9 @@ export class ResumenPage {
   protected async enviar(): Promise<void> {
     this.form.markAllAsTouched();
     if (this.form.invalid) {
+      // Al primer campo con error: el foco se quedaba en «Continuar» y quien usa lector de
+      // pantalla no oía qué faltaba.
+      this.enfocarPrimerInvalido();
       return;
     }
 

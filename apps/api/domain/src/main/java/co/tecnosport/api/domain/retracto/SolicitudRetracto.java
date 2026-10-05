@@ -232,6 +232,16 @@ public final class SolicitudRetracto {
    * modificado por la Ley 2439 de 2024). Vacío mientras el producto no haya vuelto: antes de eso no
    * hay plazo corriendo contra el negocio.
    */
+  /**
+   * Si el negocio ya incumplió el plazo de reintegro: el producto volvió, el dinero no ha salido y
+   * el límite pasó. Lo decidía el panel con el reloj del navegador, y con un reloj desfasado
+   * afirmaba un incumplimiento legal que no existía, o callaba uno que sí.
+   */
+  public boolean reintegroVencido(Instant ahora) {
+    return estado == EstadoSolicitudRetracto.PRODUCTO_RECIBIDO
+        && limiteDeReintegro().map(limite -> !ahora.isBefore(limite)).orElse(false);
+  }
+
   public Optional<Instant> limiteDeReintegro() {
     if (productoRecibidoEn == null) {
       return Optional.empty();

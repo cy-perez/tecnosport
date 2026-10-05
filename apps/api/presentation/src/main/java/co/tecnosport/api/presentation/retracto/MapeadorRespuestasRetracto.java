@@ -1,9 +1,11 @@
 package co.tecnosport.api.presentation.retracto;
 
+import co.tecnosport.api.application.compartido.Reloj;
 import co.tecnosport.api.domain.reintegro.Reintegro;
 import co.tecnosport.api.domain.retracto.SolicitudRetracto;
 import co.tecnosport.api.presentation.retracto.dto.ReintegroRespuesta;
 import co.tecnosport.api.presentation.retracto.dto.SolicitudRetractoRespuesta;
+import java.util.Objects;
 import org.springframework.stereotype.Component;
 
 /**
@@ -12,6 +14,12 @@ import org.springframework.stereotype.Component;
  */
 @Component
 public class MapeadorRespuestasRetracto {
+
+  private final Reloj reloj;
+
+  public MapeadorRespuestasRetracto(Reloj reloj) {
+    this.reloj = Objects.requireNonNull(reloj);
+  }
 
   public SolicitudRetractoRespuesta aRespuesta(SolicitudRetracto solicitud, Reintegro reintegro) {
     return new SolicitudRetractoRespuesta(
@@ -24,6 +32,7 @@ public class MapeadorRespuestasRetracto {
         solicitud.estado().name(),
         solicitud.productoRecibidoEn().orElse(null),
         solicitud.limiteDeReintegro().orElse(null),
+        solicitud.reintegroVencido(reloj.ahora()),
         solicitud.medioPreferido().map(Enum::name).orElse(null),
         reintegro == null ? null : solicitud.respetaLaPreferencia(reintegro.medio()),
         reintegro == null ? null : aRespuesta(reintegro));

@@ -20,10 +20,14 @@
  * sumaría por fuera del 100 %. Y sin `w-full`, un `<input>` toma su ancho del
  * atributo `size` y un `<select>` del texto de su opción más larga, así que dos
  * columnas de la misma rejilla terminaban de tamaños distintos.
+ *
+ * `placeholder:text-ts-texto-suave` porque el gris del navegador no es un token: en tema oscuro
+ * quedaba por debajo de 4,5:1 sobre `--color-superficie`, y `texto-suave` está medido en los dos
+ * temas (`npm run contrastes`, "marca y SKU en la tarjeta").
  */
 export const CLASES_CONTROL =
   'box-border w-full min-h-tactil p-12 rounded-md border border-ts-borde-control ' +
-  'bg-ts-superficie text-ts-texto font-texto text-base ' +
+  'bg-ts-superficie text-ts-texto font-texto text-base placeholder:text-ts-texto-suave ' +
   'anillo-foco ' +
   'disabled:bg-ts-superficie-alt disabled:text-ts-deshabilitado disabled:cursor-not-allowed ' +
   'aria-invalid:border-ts-error';

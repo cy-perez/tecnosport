@@ -120,11 +120,29 @@ describe('BandejaAtencionPage', () => {
    * lista donde todo se ve igual no sirve para lo unico que hace falta mirar.
    */
   it('marca lo que ya paso de plazo', async () => {
+    await renderBandeja([solicitud({ limiteDeRespuesta: HACE_UNA_SEMANA, verdicto: 'VENCIDO' })]);
+
+    expect(await screen.findByText('El plazo para responder ya pasó.')).toBeTruthy();
+  });
+
+  /**
+   * Vencida hace unas horas. La pantalla decidía con `Math.ceil(...) < 0`, que en las primeras 24
+   * horas da `-0`: decía "quedan 0 días" sobre una PQR ya incumplida. Ahora decide el servidor.
+   */
+  it('una PQR vencida hace horas se marca vencida, no con cero días', async () => {
+    const haceTresHoras = new Date(Date.now() - 3 * 3_600_000).toISOString();
+    await renderBandeja([solicitud({ limiteDeRespuesta: haceTresHoras, verdicto: 'VENCIDO' })]);
+
+    expect(await screen.findByText('El plazo para responder ya pasó.')).toBeTruthy();
+  });
+
+  it('con veredicto indeterminado no afirma que el plazo pasó', async () => {
     await renderBandeja([
       solicitud({ limiteDeRespuesta: HACE_UNA_SEMANA, verdicto: 'INDETERMINADO' }),
     ]);
+    await screen.findByText(esAdmin.atencion.verdicto.indeterminado_ayuda);
 
-    expect(await screen.findByText('El plazo para responder ya pasó.')).toBeTruthy();
+    expect(screen.queryByText('El plazo para responder ya pasó.')).toBeNull();
   });
 
   /**

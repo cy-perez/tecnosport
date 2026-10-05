@@ -10,7 +10,9 @@ import co.tecnosport.api.domain.pedido.Pedido;
 import co.tecnosport.api.domain.pedido.TransicionDeEstadoInvalidaException;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
@@ -53,7 +55,7 @@ public final class ReintentarPago {
     Objects.requireNonNull(comando, "El comando no puede ser nulo.");
     Pedido pedido =
         repositorioPedidos
-            .buscarPorId(comando.pedidoId())
+            .buscarPorIdParaModificar(comando.pedidoId())
             .orElseThrow(() -> new PedidoNoEncontradoException(comando.pedidoId()));
     // El correo autoriza, y un correo que no es el del pedido se trata como si el pedido no
     // existiera —mismo criterio que `ConsultarSeguimientoPedido`—: un 403 confirmaría que ese id
@@ -79,7 +81,12 @@ public final class ReintentarPago {
 
   private Map<UUID, UUID> reReservar(Pedido pedido, Instant ahora) {
     Map<UUID, UUID> nuevasReservasPorLineaId = new LinkedHashMap<>();
-    for (LineaPedido linea : pedido.lineas()) {
+    // En orden de `varianteId`, como CrearPedido: cada `buscarPorVarianteId` toma un bloqueo
+    // pesimista, y dos transacciones que bloquean las mismas variantes en órdenes distintos se
+    // interbloquean (40P01). El comprador lo veía como un 500 al reintentar el pago.
+    List<LineaPedido> enOrden =
+        pedido.lineas().stream().sorted(Comparator.comparing(LineaPedido::varianteId)).toList();
+    for (LineaPedido linea : enOrden) {
       Inventario inventario =
           repositorioInventario
               .buscarPorVarianteId(linea.varianteId())

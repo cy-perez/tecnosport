@@ -8,8 +8,8 @@
   },
   "idioma": {
     "etiqueta": "Idioma",
-    "ver_en_espanol": "Ver el sitio en español",
-    "ver_en_ingles": "Ver el sitio en inglés"
+    "ver_en_espanol": "ES, ver el sitio en español",
+    "ver_en_ingles": "EN, ver el sitio en inglés"
   },
   "encabezado": {
     "carrito_cantidad": "Carrito, {{cantidad}} artículos",
@@ -175,7 +175,8 @@
     "pista": "Arrastra para girar",
     "girar_izquierda": "Girar a la izquierda",
     "girar_derecha": "Girar a la derecha",
-    "posicion": "Fotograma {{actual}} de {{total}}"
+    "posicion": "Fotograma {{actual}} de {{total}}",
+    "anuncio_posicion": "Girado al fotograma {{actual}} de {{total}}"
   },
   "seo": {
     "portada": {

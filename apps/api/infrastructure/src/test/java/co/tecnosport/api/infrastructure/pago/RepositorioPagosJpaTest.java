@@ -213,7 +213,8 @@ class RepositorioPagosJpaTest {
             Instant.now(),
             Instant.now(),
             "6ab40fd77705464e7c900c70",
-            "sistecredito");
+            "sistecredito",
+            null);
 
     assertThatThrownBy(() -> repositorio.guardar(pagoConElEventoDosVeces))
         .isInstanceOf(EventoDePagoYaRegistradoException.class)
@@ -248,6 +249,7 @@ class RepositorioPagosJpaTest {
             Instant.now(),
             Instant.now(),
             null,
+            null,
             null));
 
     // El segundo intento: otro pago, del mismo pedido, con la referencia que el otro ya ocupó.
@@ -262,6 +264,7 @@ class RepositorioPagosJpaTest {
             List.of(),
             Instant.now(),
             Instant.now(),
+            null,
             null,
             null);
 
@@ -336,5 +339,26 @@ class RepositorioPagosJpaTest {
     assertThat(pendientes)
         .extracting(p -> p.referencia().valor())
         .containsExactly(califica.referencia().valor());
+  }
+
+  /** V81: la marca de un pago sin pedido sobrevive la ida y vuelta, y la bandeja la encuentra. */
+  @Test
+  void unPagoSinPedidoQueLoEspereSeGuardaYSeEncuentra() {
+    UUID pedidoId = crearYGuardarPedido();
+    Pago pago =
+        Pago.crear(
+            pedidoId,
+            new ReferenciaPago("TS-" + UUID.randomUUID()),
+            MetodoPago.WOMPI,
+            Dinero.deCop(100_000),
+            Instant.now());
+    pago.aplicarEvento(new EventoPago("evt-huerfano", EstadoPago.APROBADO, Instant.now()));
+    Instant desde = Instant.parse("2026-10-04T12:00:00Z");
+    pago.marcarSinPedidoQueLoEspere(desde);
+    repositorio.guardar(pago);
+
+    assertThat(repositorio.buscarPorId(pago.id()).orElseThrow().sinPedidoQueLoEspereDesde())
+        .contains(desde);
+    assertThat(repositorio.buscarSinPedidoQueLosEspere()).extracting(Pago::id).contains(pago.id());
   }
 }

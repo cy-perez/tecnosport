@@ -1,5 +1,6 @@
 package co.tecnosport.api.application.pago;
 
+import co.tecnosport.api.application.compartido.EnTransaccionPropia;
 import co.tecnosport.api.application.compartido.Reloj;
 import co.tecnosport.api.application.inventario.RepositorioInventario;
 import co.tecnosport.api.application.pedido.RepositorioPedidos;
@@ -9,6 +10,7 @@ import co.tecnosport.api.domain.pago.Pago;
 import co.tecnosport.api.domain.pedido.ProveedorDePago;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -30,6 +32,7 @@ public final class ConciliarPagosPendientes {
   private final PasarelaDePagos pasarelaDePagos;
   private final Reloj reloj;
   private final Duration antiguedadMinima;
+  private final EnTransaccionPropia enTransaccionPropia;
 
   public ConciliarPagosPendientes(
       RepositorioPagos repositorioPagos,
@@ -37,13 +40,15 @@ public final class ConciliarPagosPendientes {
       RepositorioInventario repositorioInventario,
       PasarelaDePagos pasarelaDePagos,
       Reloj reloj,
-      Duration antiguedadMinima) {
+      Duration antiguedadMinima,
+      EnTransaccionPropia enTransaccionPropia) {
     this.repositorioPagos = Objects.requireNonNull(repositorioPagos);
     this.repositorioPedidos = Objects.requireNonNull(repositorioPedidos);
     this.repositorioInventario = Objects.requireNonNull(repositorioInventario);
     this.pasarelaDePagos = Objects.requireNonNull(pasarelaDePagos);
     this.reloj = Objects.requireNonNull(reloj);
     this.antiguedadMinima = Objects.requireNonNull(antiguedadMinima);
+    this.enTransaccionPropia = Objects.requireNonNull(enTransaccionPropia);
   }
 
   public ResultadoConciliacion ejecutar() {
@@ -62,12 +67,22 @@ public final class ConciliarPagosPendientes {
             .toList();
 
     int conciliados = 0;
+    List<String> errores = new ArrayList<>();
     for (Pago pago : deWompi) {
-      if (conciliar(pago, ahora)) {
-        conciliados++;
+      // Uno que revienta no se lleva por delante a los demás: corría todo en una transacción, y
+      // una excepción revertía lo ya conciliado. La consulta al tercero va fuera de cualquier
+      // transacción y la escritura en la suya propia, así que una pasarela lenta tampoco retiene
+      // una conexión de la base mientras contesta.
+      try {
+        if (conciliar(pago, ahora)) {
+          conciliados++;
+        }
+      } catch (RuntimeException e) {
+        errores.add(pago.referencia().valor() + ": " + e);
       }
     }
-    return new ResultadoConciliacion(deWompi.size(), conciliados, deWompi.size() - conciliados);
+    return new ResultadoConciliacion(
+        deWompi.size(), conciliados, deWompi.size() - conciliados, errores);
   }
 
   private boolean conciliar(Pago pago, Instant ahora) {
@@ -97,15 +112,18 @@ public final class ConciliarPagosPendientes {
         new EventoPago(
             "conciliacion:" + idTransaccionPasarela + ":" + estadoWompi, nuevoEstado, ahora);
     ResultadoEventoDePago resultado =
-        AplicadorDeResultadoDePago.aplicar(
-            pago,
-            evento,
-            transaccion.get().medio(),
-            "conciliacion-wompi",
-            repositorioPagos,
-            repositorioPedidos,
-            repositorioInventario);
+        enTransaccionPropia.ejecutar(
+            () ->
+                AplicadorDeResultadoDePago.aplicar(
+                    pago,
+                    evento,
+                    transaccion.get().medio(),
+                    "conciliacion-wompi",
+                    repositorioPagos,
+                    repositorioPedidos,
+                    repositorioInventario));
     return resultado == ResultadoEventoDePago.APLICADO
-        || resultado == ResultadoEventoDePago.APLICADO_SIN_CONFIRMAR_INVENTARIO;
+        || resultado == ResultadoEventoDePago.APLICADO_SIN_CONFIRMAR_INVENTARIO
+        || resultado == ResultadoEventoDePago.APROBADO_SIN_PEDIDO_QUE_LO_ESPERE;
   }
 }

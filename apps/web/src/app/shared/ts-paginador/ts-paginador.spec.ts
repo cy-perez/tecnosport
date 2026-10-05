@@ -8,7 +8,11 @@ import { TsPaginador } from './ts-paginador';
 @Component({
   imports: [TsPaginador],
   template: `
-    <ts-paginador [pagina]="pagina()" [totalPaginas]="totalPaginas()" (paginaCambiada)="destino.set($event)" />
+    <ts-paginador
+      [pagina]="pagina()"
+      [totalPaginas]="totalPaginas()"
+      (paginaCambiada)="destino.set($event)"
+    />
   `,
 })
 class AnfitrionDePrueba {
@@ -48,30 +52,55 @@ describe('TsPaginador', () => {
     await renderPaginador(0, 0);
 
     expect(screen.getByText('Página 1 de 1')).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Siguiente' }).hasAttribute('disabled')).toBe(true);
+    expect(screen.getByRole('button', { name: 'Siguiente' }).getAttribute('aria-disabled')).toBe(
+      'true',
+    );
   });
 
-  it('con una sola página los dos botones quedan deshabilitados', async () => {
+  it('con una sola página los dos botones quedan inactivos', async () => {
     await renderPaginador(0, 1);
 
-    expect(screen.getByRole('button', { name: 'Anterior' }).hasAttribute('disabled')).toBe(true);
-    expect(screen.getByRole('button', { name: 'Siguiente' }).hasAttribute('disabled')).toBe(true);
+    expect(screen.getByRole('button', { name: 'Anterior' }).getAttribute('aria-disabled')).toBe(
+      'true',
+    );
+    expect(screen.getByRole('button', { name: 'Siguiente' }).getAttribute('aria-disabled')).toBe(
+      'true',
+    );
   });
 
   it('en la primera página solo se puede avanzar', async () => {
     const { fixture } = await renderPaginador(0, 3);
 
-    expect(screen.getByRole('button', { name: 'Anterior' }).hasAttribute('disabled')).toBe(true);
+    expect(screen.getByRole('button', { name: 'Anterior' }).getAttribute('aria-disabled')).toBe(
+      'true',
+    );
 
     fireEvent.click(screen.getByRole('button', { name: 'Siguiente' }));
 
     expect(fixture.componentInstance.destino()).toBe(1);
   });
 
+  /**
+   * Inactivos y no deshabilitados: deshabilitar «Siguiente» al llegar a la última página lo sacaba
+   * del orden de tabulación justo después de pulsarlo, y el foco caía en `<body>`. Siguen
+   * enfocables y el clic no emite nada.
+   */
+  it('un botón sin destino sigue enfocable y no emite nada', async () => {
+    const { fixture } = await renderPaginador(2, 3);
+    const siguiente = screen.getByRole('button', { name: 'Siguiente' }) as HTMLButtonElement;
+
+    expect(siguiente.disabled).toBe(false);
+    fireEvent.click(siguiente);
+
+    expect(fixture.componentInstance.destino()).toBeNull();
+  });
+
   it('en la última página solo se puede retroceder', async () => {
     const { fixture } = await renderPaginador(2, 3);
 
-    expect(screen.getByRole('button', { name: 'Siguiente' }).hasAttribute('disabled')).toBe(true);
+    expect(screen.getByRole('button', { name: 'Siguiente' }).getAttribute('aria-disabled')).toBe(
+      'true',
+    );
 
     fireEvent.click(screen.getByRole('button', { name: 'Anterior' }));
 

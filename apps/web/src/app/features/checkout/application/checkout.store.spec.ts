@@ -74,6 +74,7 @@ class RepositorioPagosFalso implements RepositorioPagos {
       firmaIntegridad: 'firma',
       llavePublica: 'pub_test_xyz',
       ambiente: 'sandbox',
+      montoEnCentavos: 18_990_000,
     };
   }
 

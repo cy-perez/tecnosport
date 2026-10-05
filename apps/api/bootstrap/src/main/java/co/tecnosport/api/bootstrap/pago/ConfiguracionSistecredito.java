@@ -117,9 +117,15 @@ public class ConfiguracionSistecredito {
       RepositorioPedidos repositorioPedidos,
       RepositorioInventario repositorioInventario,
       PasarelaSistecredito pasarelaSistecredito,
-      Reloj reloj) {
+      Reloj reloj,
+      EnTransaccionPropia enTransaccionPropia) {
     return new ProcesarNotificacionSistecredito(
-        repositorioPagos, repositorioPedidos, repositorioInventario, pasarelaSistecredito, reloj);
+        repositorioPagos,
+        repositorioPedidos,
+        repositorioInventario,
+        pasarelaSistecredito,
+        reloj,
+        enTransaccionPropia);
   }
 
   @Bean
@@ -129,6 +135,7 @@ public class ConfiguracionSistecredito {
       RepositorioInventario repositorioInventario,
       PasarelaSistecredito pasarelaSistecredito,
       Reloj reloj,
+      EnTransaccionPropia enTransaccionPropia,
       PropiedadesConciliacionSistecredito propiedades) {
     return new ConciliarPagosSistecredito(
         repositorioPagos,
@@ -136,7 +143,8 @@ public class ConfiguracionSistecredito {
         repositorioInventario,
         pasarelaSistecredito,
         reloj,
-        Duration.ofMinutes(propiedades.antiguedadMinimaMinutos()));
+        Duration.ofMinutes(propiedades.antiguedadMinimaMinutos()),
+        enTransaccionPropia);
   }
 
   /**

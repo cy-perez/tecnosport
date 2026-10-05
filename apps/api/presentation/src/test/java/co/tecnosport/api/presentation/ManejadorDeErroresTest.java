@@ -3,6 +3,7 @@ package co.tecnosport.api.presentation;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.not;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -110,12 +111,45 @@ class ManejadorDeErroresTest {
    * `confirmar.page.ts:366-367`, y se descubrió en la primera compra real con Sistecrédito.
    */
   @Test
-  void elCodigoYElEstadoDeSistecreditoViajanAlCliente() throws Exception {
+  void viajaElMotivoClasificadoYNoElVocabularioDeLaPasarela() throws Exception {
     mockMvc
         .perform(get("/api/v1/prueba-de-errores/sistecredito-sin-url"))
         .andExpect(status().isConflict())
-        .andExpect(jsonPath("$.codigoSistecredito").value("801"))
-        .andExpect(jsonPath("$.estadoSistecredito").value("Rejected"));
+        .andExpect(jsonPath("$.motivoSistecredito").value("SOLICITUD_EN_CURSO"))
+        .andExpect(jsonPath("$.codigoSistecredito").doesNotExist())
+        .andExpect(jsonPath("$.estadoSistecredito").doesNotExist());
+  }
+
+  /** Un método que la ruta no admite es un 405, no un 500 con traza. */
+  @Test
+  void unMetodoNoAdmitidoEsUn405() throws Exception {
+    mockMvc
+        .perform(post("/api/v1/prueba-de-errores/con-parametro"))
+        .andExpect(status().isMethodNotAllowed())
+        .andExpect(jsonPath("$.codigo").value("METODO_NO_ADMITIDO"));
+  }
+
+  /** El {@code valueOf} de un enum no publica el nombre de nuestras clases. */
+  @Test
+  void unEnumInvalidoNoPublicaElPaqueteInterno() throws Exception {
+    mockMvc
+        .perform(get("/api/v1/prueba-de-errores/enum").param("valor", "x"))
+        .andExpect(status().isUnprocessableContent())
+        .andExpect(jsonPath("$.detail").value(not(containsString("co.tecnosport"))))
+        .andExpect(jsonPath("$.detail").value(not(containsString("enum"))));
+  }
+
+  /**
+   * Un índice único que la aplicación no consultó antes es un conflicto, no un error nuestro, y su
+   * detalle —la fila, con el correo— no llega al cliente.
+   */
+  @Test
+  void unaRestriccionDeLaBaseEsUn409SinElDetalleDeLaFila() throws Exception {
+    mockMvc
+        .perform(get("/api/v1/prueba-de-errores/duplicado"))
+        .andExpect(status().isConflict())
+        .andExpect(jsonPath("$.codigo").value("CONFLICTO_DE_DATOS"))
+        .andExpect(jsonPath("$.detail").value(not(containsString("alguien@"))));
   }
 
   @TestConfiguration
@@ -143,6 +177,17 @@ class ManejadorDeErroresTest {
     String sistecreditoSinUrl() {
       throw new SistecreditoNoEntregoLaUrlDePagoException(
           "Rejected", "801", "El cliente ya tiene una solicitud de credito en curso");
+    }
+
+    @GetMapping("/api/v1/prueba-de-errores/enum")
+    String conEnum(@RequestParam String valor) {
+      return co.tecnosport.api.domain.pedido.EstadoPedido.valueOf(valor).name();
+    }
+
+    @GetMapping("/api/v1/prueba-de-errores/duplicado")
+    String duplicado() {
+      throw new org.springframework.dao.DataIntegrityViolationException(
+          "Key (correo)=(alguien@correo.com) already exists");
     }
 
     /** Con el mensaje tal como lo compone `SistecreditoClient`, texto del proveedor incluido. */

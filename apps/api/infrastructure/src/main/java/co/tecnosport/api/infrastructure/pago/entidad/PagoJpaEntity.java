@@ -45,6 +45,10 @@ public class PagoJpaEntity {
   @Column(name = "medio_reportado_pasarela")
   private String medioReportadoPasarela;
 
+  /** Ver V81: aprobado cuando su pedido ya no lo esperaba. */
+  @Column(name = "sin_pedido_que_lo_espere_desde")
+  private Instant sinPedidoQueLoEspereDesde;
+
   protected PagoJpaEntity() {}
 
   public PagoJpaEntity(
@@ -57,7 +61,8 @@ public class PagoJpaEntity {
       Instant creadoEn,
       Instant actualizadoEn,
       String idTransaccionPasarela,
-      String medioReportadoPasarela) {
+      String medioReportadoPasarela,
+      Instant sinPedidoQueLoEspereDesde) {
     this.id = id;
     this.pedidoId = pedidoId;
     this.referencia = referencia;
@@ -68,6 +73,11 @@ public class PagoJpaEntity {
     this.actualizadoEn = actualizadoEn;
     this.idTransaccionPasarela = idTransaccionPasarela;
     this.medioReportadoPasarela = medioReportadoPasarela;
+    this.sinPedidoQueLoEspereDesde = sinPedidoQueLoEspereDesde;
+  }
+
+  public Instant getSinPedidoQueLoEspereDesde() {
+    return sinPedidoQueLoEspereDesde;
   }
 
   public UUID getId() {

@@ -16,8 +16,28 @@ public enum ResultadoEventoDePago {
    */
   APLICADO_SIN_CONFIRMAR_INVENTARIO,
 
+  /**
+   * El pago se aprobó, pero su pedido ya no lo esperaba: otro intento ya lo había pagado, o estaba
+   * cancelado o fallido. El dinero entró y no pertenece a ninguna venta; el pago queda marcado y
+   * aparece en el panel hasta que se registre su reintegro.
+   */
+  APROBADO_SIN_PEDIDO_QUE_LO_ESPERE,
+
   YA_PROCESADO,
   FIRMA_INVALIDA,
+
+  /**
+   * La firma es válida pero no cubre el estado: lo que mueve el pedido no estaría autenticado. No
+   * se aplica; la conciliación, que consulta a la pasarela, lo resuelve.
+   */
+  ESTADO_SIN_FIRMAR,
+
+  /**
+   * El evento es de esta referencia, pero el monto o la moneda no son los del pago. No se aplica:
+   * despacharlo sería entregar la mercancía por otro importe. Es la contraprueba que la
+   * conciliación ya hacía y el webhook no.
+   */
+  MONTO_NO_COINCIDE,
   PAGO_NO_ENCONTRADO,
   ESTADO_NO_SOPORTADO
 }

@@ -31,6 +31,8 @@ export interface SolicitudRetracto {
   readonly productoRecibidoEn: string | null;
   /** Lo calcula el servidor: es el plazo del artículo 47 y no puede depender del reloj del navegador. */
   readonly limiteDeReintegro: string | null;
+  /** Lo decide el servidor con su reloj: el del navegador puede estar desfasado. */
+  readonly plazoDeReintegroVencido: boolean;
   /**
    * Por dónde pidió el comprador que le devolvieran el dinero (Ley 2439 de 2024). `null` cuando no
    * lo dijo, que es distinto de "da igual": sin preferencia no hay nada que incumplir, con

@@ -36,6 +36,29 @@ final class LectorEventoWompi {
     return cuerpo.path("data").path("transaction").path("payment_method_type").asString();
   }
 
+  static String idTransaccion(JsonNode cuerpo) {
+    return cuerpo.path("data").path("transaction").path("id").asString();
+  }
+
+  /** Nulo si no viene como número: un monto ausente no se adivina. */
+  static Long montoEnCentavos(JsonNode cuerpo) {
+    JsonNode monto = cuerpo.path("data").path("transaction").path("amount_in_cents");
+    return monto.isIntegralNumber() ? monto.asLong() : null;
+  }
+
+  static String moneda(JsonNode cuerpo) {
+    return cuerpo.path("data").path("transaction").path("currency").asString();
+  }
+
+  /** Los nombres, no los valores, de lo que el evento declara firmado. */
+  static List<String> propiedadesFirmadas(JsonNode cuerpo) {
+    List<String> nombres = new ArrayList<>();
+    for (JsonNode propiedad : cuerpo.path("signature").path("properties")) {
+      nombres.add(propiedad.asString());
+    }
+    return nombres;
+  }
+
   static long timestamp(JsonNode cuerpo) {
     return cuerpo.path("timestamp").asLong();
   }

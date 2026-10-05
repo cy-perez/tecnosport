@@ -8,8 +8,8 @@
   },
   "idioma": {
     "etiqueta": "Language",
-    "ver_en_espanol": "View the site in Spanish",
-    "ver_en_ingles": "View the site in English"
+    "ver_en_espanol": "ES, view the site in Spanish",
+    "ver_en_ingles": "EN, view the site in English"
   },
   "encabezado": {
     "carrito_cantidad": "Cart, {{cantidad}} items",
@@ -175,7 +175,8 @@
     "pista": "Drag to turn",
     "girar_izquierda": "Turn left",
     "girar_derecha": "Turn right",
-    "posicion": "Frame {{actual}} of {{total}}"
+    "posicion": "Frame {{actual}} of {{total}}",
+    "anuncio_posicion": "Turned to frame {{actual}} of {{total}}"
   },
   "seo": {
     "portada": {

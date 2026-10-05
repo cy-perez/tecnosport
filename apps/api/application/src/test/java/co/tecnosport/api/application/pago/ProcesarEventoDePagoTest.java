@@ -23,6 +23,7 @@ import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 
@@ -36,6 +37,9 @@ class ProcesarEventoDePagoTest {
   private static final List<String> VALORES_FIRMA = List.of("wompi-tx-1", "APPROVED", "100000");
   private static final long TIMESTAMP_FIRMA = 1_700_000_000L;
   private static final String CHECKSUM = "checksum-del-evento-1";
+  private static final String ID_TRANSACCION = "wompi-tx-1";
+  private static final List<String> PROPIEDADES_FIRMADAS =
+      List.of("transaction.id", "transaction.status", "transaction.amount_in_cents");
 
   private RepositorioPedidosFalso pedidos;
   private RepositorioPagosFalso pagos;
@@ -143,8 +147,36 @@ class ProcesarEventoDePagoTest {
    */
   private ProcesarEventoDePagoComando comandoConChecksum(
       String estadoWompi, String medioWompi, String checksum) {
+    return comandoCompleto(
+        estadoWompi, medioWompi, checksum, PROPIEDADES_FIRMADAS, centavosDelPago(), "COP");
+  }
+
+  /** Lo que de verdad cobra el pago sembrado: el evento normal trae ese monto. */
+  private Long centavosDelPago() {
+    return pagos
+        .buscarPorReferencia(REFERENCIA)
+        .map(p -> p.monto().valor().longValueExact() * 100)
+        .orElse(0L);
+  }
+
+  private ProcesarEventoDePagoComando comandoCompleto(
+      String estadoWompi,
+      String medioWompi,
+      String checksum,
+      List<String> propiedadesFirmadas,
+      Long centavos,
+      String moneda) {
     return new ProcesarEventoDePagoComando(
-        REFERENCIA.valor(), estadoWompi, medioWompi, VALORES_FIRMA, TIMESTAMP_FIRMA, checksum);
+        REFERENCIA.valor(),
+        estadoWompi,
+        medioWompi,
+        VALORES_FIRMA,
+        TIMESTAMP_FIRMA,
+        checksum,
+        propiedadesFirmadas,
+        ID_TRANSACCION,
+        centavos,
+        moneda);
   }
 
   /**
@@ -239,11 +271,33 @@ class ProcesarEventoDePagoTest {
     assertEquals(10, inventario.saldoDisponible(AHORA));
   }
 
+  /**
+   * La reserva venció antes del pago, pero nadie compró la unidad mientras tanto: se vende igual.
+   * Antes quedaba PAGADO sin salida, y la única opción del panel era cancelar.
+   */
   @Test
-  void eventoAprobadoConReservaYaVencidaQuedaSinConfirmarInventarioPeroElPedidoQuedaPagado() {
+  void eventoAprobadoConReservaVencidaYExistenciaSeConfirmaTardeYPasaAPreparacion() {
     ProcesarEventoDePago caso = crear();
     Pedido pedido = pedidoConLinea(lineaConReservaVencida(2));
     pagoPendienteParaElPedido(pedido);
+
+    ResultadoEventoDePago resultado = caso.ejecutar(comando("APPROVED"));
+
+    assertEquals(ResultadoEventoDePago.APLICADO, resultado);
+    assertEquals(
+        EstadoPedido.EN_PREPARACION, pedidos.buscarPorId(pedido.id()).orElseThrow().estado());
+    assertEquals(8, inventarios.buscarPorVarianteId(varianteId).orElseThrow().saldoTotal());
+  }
+
+  /** Si la unidad ya se vendió a otro, el pedido queda pagado y esperando: no hay sobreventa. */
+  @Test
+  void eventoAprobadoConReservaVencidaYSinExistenciaQuedaPagadoSinConfirmar() {
+    ProcesarEventoDePago caso = crear();
+    Pedido pedido = pedidoConLinea(lineaConReservaVencida(2));
+    pagoPendienteParaElPedido(pedido);
+    Inventario inventario = inventarios.buscarPorVarianteId(varianteId).orElseThrow();
+    inventario.reservar(10, null, AHORA);
+    inventarios.guardar(inventario);
 
     ResultadoEventoDePago resultado = caso.ejecutar(comando("APPROVED"));
 
@@ -339,5 +393,161 @@ class ProcesarEventoDePagoTest {
     assertEquals(
         EstadoPago.RECHAZADO, pagos.buscarPorReferencia(REFERENCIA).orElseThrow().estado());
     assertEquals(EstadoPedido.PAGADO, pedidos.buscarPorId(pedido.id()).orElseThrow().estado());
+  }
+
+  /**
+   * El comprador pagó dos intentos: el pedido ya está pagado por el primero cuando llega la
+   * aprobación del segundo. Antes esto devolvía APLICADO y el dinero quedaba cobrado sin venta.
+   */
+  @Test
+  void unaAprobacionSobreUnPedidoYaPagadoQuedaMarcadaParaDevolver() {
+    ProcesarEventoDePago caso = crear();
+    Pedido pedido = pedidoConMetodo(MetodoPago.WOMPI);
+    pagoPendienteParaElPedido(pedido);
+    pedido.transicionar(EstadoPedido.PAGADO, "webhook-wompi", "otro intento aprobado", AHORA);
+    pedidos.guardar(pedido);
+    int movimientosAntes =
+        inventarios.buscarPorVarianteId(varianteId).orElseThrow().movimientos().size();
+
+    ResultadoEventoDePago resultado = caso.ejecutar(comando("APPROVED"));
+
+    assertEquals(ResultadoEventoDePago.APROBADO_SIN_PEDIDO_QUE_LO_ESPERE, resultado);
+    Pago guardado = pagos.buscarPorReferencia(REFERENCIA).orElseThrow();
+    assertEquals(EstadoPago.APROBADO, guardado.estado());
+    assertEquals(Optional.of(AHORA), guardado.sinPedidoQueLoEspereDesde());
+    assertEquals(EstadoPedido.PAGADO, pedidos.buscarPorId(pedido.id()).orElseThrow().estado());
+    assertEquals(
+        movimientosAntes,
+        inventarios.buscarPorVarianteId(varianteId).orElseThrow().movimientos().size());
+  }
+
+  /** Cancelado antes de que entrara el dinero: el pago aprobado tarde se devuelve, no se pierde. */
+  @Test
+  void unaAprobacionSobreUnPedidoCanceladoQuedaMarcadaParaDevolver() {
+    ProcesarEventoDePago caso = crear();
+    Pedido pedido = pedidoConMetodo(MetodoPago.WOMPI);
+    pagoPendienteParaElPedido(pedido);
+    pedido.transicionar(EstadoPedido.CANCELADO, "admin:1", "sin existencia", AHORA);
+    pedidos.guardar(pedido);
+
+    assertEquals(
+        ResultadoEventoDePago.APROBADO_SIN_PEDIDO_QUE_LO_ESPERE,
+        caso.ejecutar(comando("APPROVED")));
+    assertEquals(EstadoPedido.CANCELADO, pedidos.buscarPorId(pedido.id()).orElseThrow().estado());
+    assertTrue(
+        pagos
+            .buscarPorReferencia(REFERENCIA)
+            .orElseThrow()
+            .sinPedidoQueLoEspereDesde()
+            .isPresent());
+  }
+
+  /** Un intento falló, el pedido quedó en PAGO_FALLIDO, y después otro intento vivo se aprobó. */
+  @Test
+  void unaAprobacionSobreUnPedidoConPagoFallidoQuedaMarcadaParaDevolver() {
+    ProcesarEventoDePago caso = crear();
+    Pedido pedido = pedidoConMetodo(MetodoPago.WOMPI);
+    pagoPendienteParaElPedido(pedido);
+    pedido.transicionar(EstadoPedido.PAGO_FALLIDO, "webhook-wompi", "otro intento falló", AHORA);
+    pedidos.guardar(pedido);
+
+    assertEquals(
+        ResultadoEventoDePago.APROBADO_SIN_PEDIDO_QUE_LO_ESPERE,
+        caso.ejecutar(comando("APPROVED")));
+    assertEquals(
+        EstadoPedido.PAGO_FALLIDO, pedidos.buscarPorId(pedido.id()).orElseThrow().estado());
+  }
+
+  /** Lo normal no cambia: el pedido que sí esperaba el pago no queda marcado. */
+  @Test
+  void unaAprobacionQueSiEsperabaSuPedidoNoSeMarca() {
+    ProcesarEventoDePago caso = crear();
+    pagoPendienteParaElPedido(pedidoConMetodo(MetodoPago.WOMPI));
+
+    caso.ejecutar(comando("APPROVED"));
+
+    assertTrue(
+        pagos.buscarPorReferencia(REFERENCIA).orElseThrow().sinPedidoQueLoEspereDesde().isEmpty());
+  }
+
+  /**
+   * La contraprueba que el webhook no hacía: un evento firmado con la referencia del pago pero otro
+   * importe no se aplica. La conciliación ya comparaba; el camino principal se fiaba.
+   */
+  @Test
+  void unEventoConOtroMontoNoAplicaNada() {
+    ProcesarEventoDePago caso = crear();
+    Pedido pedido = pedidoConMetodo(MetodoPago.WOMPI);
+    pagoPendienteParaElPedido(pedido);
+
+    ResultadoEventoDePago resultado =
+        caso.ejecutar(
+            comandoCompleto("APPROVED", null, CHECKSUM, PROPIEDADES_FIRMADAS, 2_000_000L, "COP"));
+
+    assertEquals(ResultadoEventoDePago.MONTO_NO_COINCIDE, resultado);
+    assertEquals(
+        EstadoPago.PENDIENTE, pagos.buscarPorReferencia(REFERENCIA).orElseThrow().estado());
+    assertEquals(
+        EstadoPedido.PAGO_PENDIENTE, pedidos.buscarPorId(pedido.id()).orElseThrow().estado());
+  }
+
+  @Test
+  void unEventoEnOtraMonedaNoAplicaNada() {
+    ProcesarEventoDePago caso = crear();
+    pagoPendienteParaElPedido(pedidoConMetodo(MetodoPago.WOMPI));
+
+    assertEquals(
+        ResultadoEventoDePago.MONTO_NO_COINCIDE,
+        caso.ejecutar(
+            comandoCompleto(
+                "APPROVED", null, CHECKSUM, PROPIEDADES_FIRMADAS, centavosDelPago(), "USD")));
+  }
+
+  @Test
+  void unEventoSinMontoNoSeAplicaYQuedaParaLaConciliacion() {
+    ProcesarEventoDePago caso = crear();
+    pagoPendienteParaElPedido(pedidoConMetodo(MetodoPago.WOMPI));
+
+    assertEquals(
+        ResultadoEventoDePago.MONTO_NO_COINCIDE,
+        caso.ejecutar(
+            comandoCompleto("APPROVED", null, CHECKSUM, PROPIEDADES_FIRMADAS, null, "COP")));
+  }
+
+  /** Una firma válida que no cubre el estado no autentica el APPROVED que se leería. */
+  @Test
+  void unaFirmaQueNoCubreElEstadoNoAplicaNada() {
+    ProcesarEventoDePago caso = crear();
+    pagoPendienteParaElPedido(pedidoConMetodo(MetodoPago.WOMPI));
+
+    ResultadoEventoDePago resultado =
+        caso.ejecutar(
+            comandoCompleto(
+                "APPROVED",
+                null,
+                CHECKSUM,
+                List.of("transaction.id", "transaction.amount_in_cents"),
+                centavosDelPago(),
+                "COP"));
+
+    assertEquals(ResultadoEventoDePago.ESTADO_SIN_FIRMAR, resultado);
+    assertEquals(
+        EstadoPago.PENDIENTE, pagos.buscarPorReferencia(REFERENCIA).orElseThrow().estado());
+  }
+
+  /**
+   * El webhook deja el id de la transacción: un comprador que cerró la pestaña sin volver del
+   * checkout ya no deja el pago sin id para la conciliación.
+   */
+  @Test
+  void elWebhookRegistraElIdDeLaTransaccion() {
+    ProcesarEventoDePago caso = crear();
+    pagoPendienteParaElPedido(pedidoConMetodo(MetodoPago.WOMPI));
+
+    caso.ejecutar(comando("APPROVED"));
+
+    assertEquals(
+        Optional.of(ID_TRANSACCION),
+        pagos.buscarPorReferencia(REFERENCIA).orElseThrow().idTransaccionPasarela());
   }
 }

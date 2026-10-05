@@ -37,6 +37,16 @@ final class RepositorioPagosDobleDePrueba implements RepositorioPagos {
     return pagos.stream().filter(p -> p.referencia().equals(referencia)).findFirst();
   }
 
+  @Override
+  public Optional<Pago> buscarPorId(UUID id) {
+    return pagos.stream().filter(p -> p.id().equals(id)).findFirst();
+  }
+
+  @Override
+  public List<Pago> buscarSinPedidoQueLosEspere() {
+    return pagos.stream().filter(p -> p.sinPedidoQueLoEspereDesde().isPresent()).toList();
+  }
+
   /** Como el real: exactamente uno o ninguno, porque la columna no lleva `unique`. */
   @Override
   public Optional<Pago> buscarPorIdTransaccionPasarela(String idTransaccionPasarela) {

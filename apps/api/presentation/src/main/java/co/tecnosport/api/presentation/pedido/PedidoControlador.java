@@ -21,6 +21,7 @@ import co.tecnosport.api.presentation.pedido.dto.MetodosDePagoDisponiblesRequest
 import co.tecnosport.api.presentation.pedido.dto.PedidoRespuesta;
 import co.tecnosport.api.presentation.pedido.dto.PedidoSeguimientoRespuesta;
 import co.tecnosport.api.presentation.pedido.dto.ReintentarPagoRequest;
+import co.tecnosport.api.presentation.pedido.dto.SeguimientoPorIdRequest;
 import co.tecnosport.api.presentation.pedido.dto.SeguimientoPorNumeroRequest;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.Comparator;
@@ -29,12 +30,10 @@ import java.util.Objects;
 import java.util.UUID;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
-import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
@@ -116,11 +115,17 @@ public class PedidoControlador {
     return mapeador.aRespuesta(pedido);
   }
 
-  @GetMapping("/{id}/seguimiento")
+  /**
+   * {@code POST} y no {@code GET}, desde el 4 de octubre de 2026: el correo que autoriza viajaba
+   * como {@code ?correo=} y quedaba en los registros de la web y de la API. No crea nada; el método
+   * es por el cuerpo, como el seguimiento por número.
+   */
+  @PostMapping("/{id}/seguimiento")
   public PedidoSeguimientoRespuesta seguimiento(
-      @PathVariable UUID id, @RequestParam String correo) {
+      @PathVariable UUID id, @RequestBody SeguimientoPorIdRequest cuerpo) {
     Pedido pedido =
-        consultarSeguimientoPedido.ejecutar(new ConsultarSeguimientoPedidoComando(id, correo));
+        consultarSeguimientoPedido.ejecutar(
+            new ConsultarSeguimientoPedidoComando(id, cuerpo.correo()));
     return mapeadorSeguimiento.aRespuesta(pedido);
   }
 

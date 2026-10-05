@@ -22,6 +22,7 @@ import {
   MAXIMO_CARACTERES_SUGERENCIA,
   REPOSITORIO_SUGERENCIAS,
 } from '../../domain/repositorio-sugerencias.puerto';
+import { usarFocoEnPrimerInvalido } from '../../../../shared/foco/foco';
 
 /**
  * La autorización de datos hace falta <b>solo si se dejó el correo</b>.
@@ -76,6 +77,8 @@ function autorizacionSoloConCorreo(control: AbstractControl): ValidationErrors |
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SugerenciasPage {
+  /** Al fallar el envío, el foco va al primer campo con error. */
+  private readonly enfocarPrimerInvalido = usarFocoEnPrimerInvalido();
   private readonly repositorio = inject(REPOSITORIO_SUGERENCIAS);
   private readonly transloco = inject(TranslocoService);
 
@@ -188,8 +191,15 @@ export class SugerenciasPage {
   });
 
   protected async enviar(): Promise<void> {
+    // Guarda de reentrada: el botón va con `[ocupado]` y ya no se deshabilita, porque
+    // deshabilitado bajo el dedo mandaba el foco a `<body>` y, si el envío fallaba, quien
+    // navega con teclado volvía al principio del documento sin oír el error.
+    if (this.enviando()) {
+      return;
+    }
     if (this.form.invalid) {
       this.form.markAllAsTouched();
+      this.enfocarPrimerInvalido();
       return;
     }
     this.error.set(null);

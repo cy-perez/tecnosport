@@ -59,13 +59,54 @@
         sobre `#0E1217`. Un valor por omisión correcto vale más que la
         disciplina de no olvidarse.
 
-     No se toca `color-scheme`: cambiaría cómo el navegador dibuja los
-     controles nativos y la barra de desplazamiento, y eso es una decisión
-     visual aparte de este arreglo. */
+     `color-scheme` va aparte, abajo. */
   body {
     margin: 0;
     background-color: var(--color-fondo);
     color: var(--color-texto);
+  }
+
+  /* `color-scheme` sigue a `data-tema`, desde el 4 de octubre de 2026. Sin
+     él, en tema oscuro el navegador seguía pintando los controles nativos
+     —la lista de un `<select>`, el calendario de un campo de fecha, la
+     barra de desplazamiento, el autocompletado— en claro: una lista blanca
+     desplegándose sobre el lienzo `#0E1217`. El atributo lo pone el
+     servidor o el script de `index.html` antes del primer pintado, así que
+     no hay destello. */
+  :root {
+    color-scheme: light;
+  }
+
+  [data-tema='oscuro'] {
+    color-scheme: dark;
+  }
+
+  /* El encabezado es fijo, así que todo lo que el navegador desplaza a la
+     vista —el destino de un ancla, el enlace de salto, el campo que recibe
+     el foco con Tab— quedaba con sus primeros 60 px (72 en escritorio)
+     **debajo** de la barra. `scroll-padding-top` en el desplazador del
+     documento lo corrige para todo de una vez; antes solo lo tenía
+     `#contenido`, con un `scroll-mt`, y un campo enfocado a media página
+     seguía escondido. Sale de los tokens del encabezado, y el punto de
+     quiebre es el `desde-movil` de la barra. */
+  html {
+    scroll-padding-top: var(--header-alto-movil);
+
+    @variant desde-movil {
+      scroll-padding-top: var(--header-alto-escritorio);
+    }
+  }
+
+  /* Y por abajo, mientras la barra de compra de la ficha está pegada al
+     borde inferior (por debajo de tableta): un control enfocado al fondo de
+     la ficha quedaba tapado por ella. Su alto es el botón —objetivo
+     táctil— más su relleno vertical, y un respiro de `--esp-16` por la fila
+     del anuncio cuando aparece. `:has` y no una clase puesta desde
+     TypeScript: la barra solo existe en la ficha, y es ella la que lo dice. */
+  html:has([data-barra-compra]) {
+    @variant max-desde-tableta {
+      scroll-padding-bottom: calc(var(--control-tactil) + 2 * var(--esp-12) + var(--esp-16));
+    }
   }
 }
 
@@ -265,6 +306,38 @@
   --radius-lg: var(--radio-lg);
   --radius-completo: var(--radio-completo);
 
+  /* EL TRAZO FINO — 1 px que no es un borde: las guías de tercios del asistente
+     de captura 360. `w-trazo` y `h-trazo`, en vez de `w-px`, que es un píxel
+     suelto aunque Tailwind lo traiga de serie. */
+  --spacing-trazo: var(--trazo-fino);
+
+  /* EL ANILLO DE FOCO, desde tokens (`--foco-ancho`, `--foco-separacion`).
+     `outline-foco` es el ancho; `outline-offset-foco` la separación hacia
+     fuera, y `outline-offset-foco-dentro` la misma separación hacia dentro:
+     el anillo queda dentro del control, a ancho + separación del borde, con
+     una franja del propio relleno a cada lado. Es la variante de los
+     controles con relleno que flotan sobre cualquier cosa —el CTA ámbar
+     sobre la fotografía del carrusel—, donde un anillo exterior contrasta o
+     no según lo que haya detrás, y eso no lo controla nadie.
+
+     Hay que registrarlos en `cn.ts`: `tailwind-merge` no sabe que
+     `outline-foco` es un ancho y lo fusionaría con `outline-ts-foco`. */
+  --outline-width-foco: var(--foco-ancho);
+  --outline-offset-foco: var(--foco-separacion);
+  --outline-offset-foco-dentro: calc(-1 * (var(--foco-ancho) + var(--foco-separacion)));
+
+  /* CAPAS — la escala de z-index del kit (`--capa-*`), sin unidad. Los
+     `z-10`…`z-50` numéricos siguen compilando porque Tailwind los acepta como
+     valor desnudo, y la regla dura #2 los prohíbe igual: el orden de las capas
+     es una decisión del sistema, no de cada plantilla. */
+  --z-index-pegada: var(--capa-pegada);
+  --z-index-desplegable: var(--capa-desplegable);
+  --z-index-encabezado: var(--capa-encabezado);
+  --z-index-flotante: var(--capa-flotante);
+  --z-index-lateral: var(--capa-lateral);
+  --z-index-velo: var(--capa-velo);
+  --z-index-superior: var(--capa-superior);
+
   /* SOMBRA */
   --shadow-sm: var(--sombra-sm);
   --shadow-md: var(--sombra-md);
@@ -302,14 +375,16 @@
    cien por ciento de los elementos enfocables y nunca se elimina sin
    reemplazo; repetir tres utilidades en cada control es la forma más fácil de
    que a alguien se le olvide una. Mismo resultado que
-   `focus-visible:outline-2 focus-visible:outline-ts-foco focus-visible:outline-offset-2`.
+   `focus-visible:outline-foco focus-visible:outline-ts-foco focus-visible:outline-offset-foco`.
+   El ancho y la separación salen de `--foco-ancho` y `--foco-separacion`
+   desde el 4 de octubre de 2026; antes eran `2px` escritos aquí tres veces.
 
    El chaflán se desactiva solo al enfocar, resuelto en `tokens.css`, porque
    `clip-path` recortaría este anillo. */
 @utility anillo-foco {
   &:focus-visible {
-    outline: 2px solid var(--color-foco);
-    outline-offset: 2px;
+    outline: var(--foco-ancho) solid var(--color-foco);
+    outline-offset: var(--foco-separacion);
   }
 }
 
@@ -322,8 +397,8 @@
    `--color-sobre-marca`. */
 @utility anillo-foco-sobre-marca {
   &:focus-visible {
-    outline: 2px solid var(--color-sobre-marca);
-    outline-offset: 2px;
+    outline: var(--foco-ancho) solid var(--color-sobre-marca);
+    outline-offset: var(--foco-separacion);
   }
 }
 
@@ -335,11 +410,44 @@
 
    La regla general, por si aparece un cuarto caso: el color del anillo tiene
    que contrastar con la superficie sobre la que se pinta, y el sistema ya
-   tiene un token para eso en cada pareja `--color-sobre-*`. */
+   tiene un token para eso en cada pareja `--color-sobre-*`.
+
+   **Y "la superficie sobre la que se pinta" es la de detrás, no la del
+   control.** Un anillo exterior se pinta fuera, sobre lo que rodea al
+   control. Para un enlace de texto sobre ámbar eso es ámbar; para un botón
+   ámbar que flota sobre otra cosa, no: el enlace de salto cae sobre el
+   encabezado, el CTA del carrusel sobre el velo grafito de la fotografía. Un
+   anillo grafito ahí da ~1,1:1 en tema oscuro y no se ve. Para eso están las
+   dos de abajo. */
 @utility anillo-foco-sobre-acento {
   &:focus-visible {
-    outline: 2px solid var(--color-sobre-acento);
-    outline-offset: 2px;
+    outline: var(--foco-ancho) solid var(--color-sobre-acento);
+    outline-offset: var(--foco-separacion);
+  }
+}
+
+/* EL ANILLO POR DENTRO, para un control con relleno propio que flota sobre
+   cualquier cosa: el enlace de salto (ámbar, sobre el encabezado), el botón de
+   WhatsApp (grafito, sobre el lienzo y sobre lo que pase por debajo) y la
+   variante `acento` de `ts-boton` (sobre la fotografía del carrusel y sobre el
+   lienzo oscuro del panel).
+
+   El anillo se mete dentro del control, a `--foco-ancho + --foco-separacion`
+   del borde, así que tiene relleno a los dos lados y lo que hay detrás deja de
+   importar: el contraste que cuenta es `sobre-*` contra el relleno, que es un
+   par declarado y medido en `tools/verificar-contrastes.mjs`. Un anillo
+   exterior no puede prometer nada sobre una fotografía. */
+@utility anillo-foco-dentro-acento {
+  &:focus-visible {
+    outline: var(--foco-ancho) solid var(--color-sobre-acento);
+    outline-offset: calc(-1 * (var(--foco-ancho) + var(--foco-separacion)));
+  }
+}
+
+@utility anillo-foco-dentro-marca {
+  &:focus-visible {
+    outline: var(--foco-ancho) solid var(--color-sobre-marca);
+    outline-offset: calc(-1 * (var(--foco-ancho) + var(--foco-separacion)));
   }
 }
 

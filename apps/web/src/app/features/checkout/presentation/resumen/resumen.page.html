@@ -29,7 +29,7 @@
                 [ngSrc]="snapshot!.imagenUrl!"
                 width="64"
                 height="64"
-                [alt]="snapshot!.imagenAlt"
+                [alt]="'checkout.resumen.foto_de' | transloco: { nombre: snapshot!.nombreProducto }"
                 disableOptimizedSrcset
               />
             } @else {
@@ -46,8 +46,9 @@
                 {{ 'checkout.resumen.cantidad' | transloco: { cantidad: linea.cantidad } }}
               </p>
             </div>
-            @if (snapshot; as foto) {
-              <ts-precio [valor]="foto.precioValor * linea.cantidad" [moneda]="foto.precioMoneda" />
+            <!-- El precio de hoy, del servidor: la foto guardada al agregar solo da nombre e imagen. -->
+            @if (carrito.precioDeLinea(linea.id); as precio) {
+              <ts-precio [valor]="precio * linea.cantidad" moneda="COP" />
             }
           </article>
         }
@@ -58,7 +59,15 @@
         artículo 50 de la Ley 1480 de 2011, y hasta la Fase 7 aquí solo había un "Subtotal" — que
         además era el total, porque el flete iba escondido en cada precio.
       -->
-      <dl class="m-0 mt-24 flex flex-col gap-8 border-t-2 border-ts-borde pt-16">
+      <!-- `aria-live` en el `<dl>` entero, que vive siempre: al cambiar la dirección el costo de
+           envío y el total cambian solos, más abajo del campo que se está tocando, y quien usa
+           lector de pantalla no se enteraba. `aria-atomic` para que lea el desglose completo —el
+           envío sin el total nuevo es medio dato— y no solo el nodo que cambió. -->
+      <dl
+        class="m-0 mt-24 flex flex-col gap-8 border-t-2 border-ts-borde pt-16"
+        aria-live="polite"
+        aria-atomic="true"
+      >
         <div class="flex items-baseline justify-between">
           <dt>{{ 'checkout.resumen.subtotal' | transloco }}</dt>
           <dd class="m-0"><ts-precio [valor]="subtotal()" moneda="COP" /></dd>
@@ -80,7 +89,7 @@
             <dt>{{ 'checkout.resumen.costo_envio' | transloco }}</dt>
             <dd class="m-0 flex flex-col items-end gap-4 text-right">
               @if (cotizando()) {
-                <span class="text-ts-texto-suave" aria-live="polite">
+                <span class="text-ts-texto-suave">
                   {{ 'checkout.resumen.envio_calculando' | transloco }}
                 </span>
               } @else if (tarifa(); as envio) {
@@ -177,6 +186,7 @@
              comentario de la casilla de autorización ya los daba por recogidos. -->
         <ts-campo
           idCampo="resumen-nombre"
+          [obligatorio]="true"
           [label]="'checkout.resumen.nombre' | transloco"
           [error]="errorNombre()"
           formControlName="nombre"
@@ -184,6 +194,7 @@
 
         <ts-campo
           idCampo="resumen-correo"
+          [obligatorio]="true"
           [label]="'checkout.resumen.correo' | transloco"
           [error]="errorCorreo()"
           formControlName="correo"
@@ -191,6 +202,7 @@
 
         <ts-campo
           idCampo="resumen-telefono"
+          [obligatorio]="true"
           tipo="tel"
           [label]="'checkout.resumen.telefono' | transloco"
           [ayuda]="'checkout.resumen.telefono_ayuda' | transloco"
@@ -214,6 +226,7 @@
 
             <ts-select
               idCampo="resumen-departamento"
+              [obligatorio]="true"
               [label]="'checkout.resumen.departamento' | transloco"
               [placeholder]="'checkout.resumen.elegir' | transloco"
               [opciones]="opcionesDepartamento()"
@@ -223,6 +236,7 @@
 
             <ts-select
               idCampo="resumen-ciudad"
+              [obligatorio]="true"
               [label]="'checkout.resumen.ciudad' | transloco"
               [placeholder]="'checkout.resumen.elegir' | transloco"
               [opciones]="opcionesCiudad()"
@@ -232,6 +246,7 @@
 
             <ts-campo
               idCampo="resumen-direccion"
+              [obligatorio]="true"
               [label]="'checkout.resumen.direccion' | transloco"
               [error]="errorDireccion()"
               formControlName="direccion"
@@ -262,6 +277,7 @@
         <div class="flex flex-col gap-4">
           <ts-checkbox
             idCasilla="resumen-autoriza-datos"
+            [obligatorio]="true"
             [etiqueta]="'checkout.resumen.autoriza_datos' | transloco"
             [marcado]="form.controls.autorizaDatos.value"
             [error]="errorAutorizacion()"

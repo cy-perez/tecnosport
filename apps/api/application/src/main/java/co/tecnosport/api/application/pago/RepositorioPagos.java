@@ -11,6 +11,15 @@ public interface RepositorioPagos {
 
   Optional<Pago> buscarPorReferencia(ReferenciaPago referencia);
 
+  /**
+   * Lo mismo que {@link #buscarPorReferencia}, bloqueando la fila hasta que termine la transacción:
+   * el webhook y la conciliación podían aplicar el mismo pago a la vez, con ids de evento distintos
+   * que el índice único de {@code evento_pago} no separa. Exige una transacción abierta.
+   */
+  default Optional<Pago> buscarPorReferenciaParaModificar(ReferenciaPago referencia) {
+    return buscarPorReferencia(referencia);
+  }
+
   /** Todos los intentos de pago de un pedido, para numerar el siguiente tras un reintento. */
   List<Pago> buscarPorPedidoId(UUID pedidoId);
 
@@ -30,6 +39,15 @@ public interface RepositorioPagos {
    * pago sin ese id no aparece aquí: no hay cómo consultarlo en la API de Wompi.
    */
   List<Pago> buscarPendientesParaConciliar(Instant creadosAntesDe);
+
+  Optional<Pago> buscarPorId(UUID id);
+
+  /**
+   * Los pagos aprobados que entraron sin un pedido que los esperara, del más viejo al más nuevo.
+   * Incluye los que ya tienen su reintegro: filtrarlos es cosa de quien pregunta, que sabe dónde se
+   * registra eso.
+   */
+  List<Pago> buscarSinPedidoQueLosEspere();
 
   void guardar(Pago pago);
 }

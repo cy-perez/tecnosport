@@ -233,6 +233,17 @@ public final class EmitirGuiaDePedido {
             emision -> {
               throw new EmisionYaEnCursoException(pedido.id(), emision.id(), emision.estado());
             });
+    // Una emisión PARCIAL tiene guías pagadas y vivas para parte del pedido. No cuenta como abierta
+    // —si contara, el índice único bloquearía el pedido para siempre—, pero emitir otra encima
+    // compraba de nuevo también las guías que ya estaban vivas: saldo de la plataforma gastado dos
+    // veces. Lo que sigue es decisión humana; el despacho a mano queda disponible.
+    repositorioEmisiones.buscarDePedido(pedido.id()).stream()
+        .filter(emision -> emision.estado() == EstadoEmision.PARCIAL)
+        .findFirst()
+        .ifPresent(
+            emision -> {
+              throw new EmisionYaEnCursoException(pedido.id(), emision.id(), emision.estado());
+            });
   }
 
   /**

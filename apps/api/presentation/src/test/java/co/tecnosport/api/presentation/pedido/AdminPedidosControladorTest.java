@@ -23,6 +23,7 @@ import co.tecnosport.api.application.inventario.RepositorioInventario;
 import co.tecnosport.api.application.pedido.CancelarPedido;
 import co.tecnosport.api.application.pedido.ConciliarRecaudo;
 import co.tecnosport.api.application.pedido.ConciliarTransferencia;
+import co.tecnosport.api.application.pedido.ConfirmarInventarioDePedidoPagado;
 import co.tecnosport.api.application.pedido.DespacharPedido;
 import co.tecnosport.api.application.pedido.ListarPedidosAdmin;
 import co.tecnosport.api.application.pedido.MarcarEntregado;
@@ -619,6 +620,65 @@ class AdminPedidosControladorTest {
     return pedido;
   }
 
+  /** Pagado con la reserva vencida y sin existencia; con {@code reponer}, la unidad vuelve. */
+  private Pedido pagadoSinInventario(UUID varianteId, boolean reponer) {
+    Inventario inventario = Inventario.crear(varianteId);
+    inventario.registrarEntrada(1, "siembra", Instant.now().minusSeconds(7200));
+    MovimientoInventario reserva =
+        inventario.reservar(1, java.time.Duration.ofMinutes(30), Instant.now().minusSeconds(7200));
+    inventario.reservar(1, null, Instant.now().minusSeconds(60));
+    if (reponer) {
+      inventario.registrarEntrada(1, "reposición", Instant.now());
+    }
+    inventarios.conInventario(inventario);
+    Pedido pedido =
+        Pedido.crear(
+            siguienteNumeroDePrueba(),
+            null,
+            new CorreoElectronico("cliente@tecnosport.co"),
+            List.of(
+                new LineaPedido(
+                    UUID.randomUUID(),
+                    varianteId,
+                    new Sku("TS-CAM-AZ-M"),
+                    "Camiseta running Dry-Fit",
+                    1,
+                    Dinero.deCop(50_000),
+                    BigDecimal.ZERO,
+                    null,
+                    reserva.id())),
+            TipoEntrega.ENVIO_A_DOMICILIO,
+            DIRECCION_MEDELLIN,
+            MetodoPago.WOMPI,
+            "cliente@tecnosport.co",
+            Instant.now());
+    pedido.transicionar(EstadoPedido.PAGADO, "webhook", "aprobado tarde", Instant.now());
+    pedidos.guardar(pedido);
+    return pedido;
+  }
+
+  @Test
+  void confirmarInventarioSinExistenciaEsUn409() throws Exception {
+    Pedido pedido = pagadoSinInventario(UUID.randomUUID(), false);
+    autenticarComoAdmin();
+
+    mockMvc
+        .perform(post("/api/v1/admin/pedidos/{id}/confirmar-inventario", pedido.id()))
+        .andExpect(status().isConflict())
+        .andExpect(jsonPath("$.codigo").value("INVENTARIO_SIN_CONFIRMAR"));
+  }
+
+  @Test
+  void confirmarInventarioConReposicionLoLlevaAPreparacion() throws Exception {
+    Pedido pedido = pagadoSinInventario(UUID.randomUUID(), true);
+    autenticarComoAdmin();
+
+    mockMvc
+        .perform(post("/api/v1/admin/pedidos/{id}/confirmar-inventario", pedido.id()))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.estado").value("EN_PREPARACION"));
+  }
+
   @Test
   void recibirUnPedidoPagadoYRechazadoLoDevuelveYReingresaLaUnidad() throws Exception {
     UUID varianteId = UUID.randomUUID();
@@ -881,6 +941,13 @@ class AdminPedidosControladorTest {
           (destinatario, asunto, cuerpo) -> {},
           new TextosDeCorreoDobleDePrueba(),
           Instant::now);
+    }
+
+    @Bean
+    ConfirmarInventarioDePedidoPagado confirmarInventarioDePedidoPagado(
+        RepositorioPedidos repositorioPedidos, RepositorioInventario repositorioInventario) {
+      return new ConfirmarInventarioDePedidoPagado(
+          repositorioPedidos, repositorioInventario, Instant::now);
     }
 
     @Bean

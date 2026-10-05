@@ -1,5 +1,8 @@
 <nav class="mt-24 flex items-center gap-16" [attr.aria-label]="'paginador.navegacion' | transloco">
-  <ts-boton variante="secundario" [deshabilitado]="!hayAnterior()" (click)="irA(pagina() - 1)">
+  <!-- `inactivo` (aria-disabled) y no `deshabilitado`: al llegar a la última página con
+       «Siguiente», el botón pulsado se deshabilitaba bajo el dedo y el foco caía en `<body>`.
+       `irA()` ignora el clic que no lleva a ninguna parte. -->
+  <ts-boton variante="secundario" [inactivo]="!hayAnterior()" (click)="irA(pagina() - 1)">
     {{ 'paginador.anterior' | transloco }}
   </ts-boton>
 
@@ -9,7 +12,7 @@
     {{ 'paginador.info' | transloco: { actual: pagina() + 1, total: total() } }}
   </span>
 
-  <ts-boton variante="secundario" [deshabilitado]="!haySiguiente()" (click)="irA(pagina() + 1)">
+  <ts-boton variante="secundario" [inactivo]="!haySiguiente()" (click)="irA(pagina() + 1)">
     {{ 'paginador.siguiente' | transloco }}
   </ts-boton>
 </nav>

@@ -72,16 +72,22 @@
              pegada. Los 64 px de relleno al final son el sitio que se le reserva para que no tape
              nada de lo que haya en esta fila. Desde tableta se anula con todo lo demás
              (`desde-tableta:px-0`), porque ahí la barra ya no se pega. -->
+        <!-- `data-barra-compra`: es lo que `src/tailwind.css` busca para reservar su alto al pie
+             del documento (`scroll-padding-bottom`) mientras la barra está pegada. -->
         <div
-          class="sticky bottom-0 z-10 -mx-16 my-16 flex flex-wrap items-center gap-16 border-t border-ts-borde bg-ts-fondo py-12 ps-16 pe-64 desde-tableta:static desde-tableta:mx-0 desde-tableta:border-0 desde-tableta:px-0 desde-tableta:py-0"
+          data-barra-compra
+          class="sticky bottom-0 z-pegada -mx-16 my-16 flex flex-wrap items-center gap-16 border-t border-ts-borde bg-ts-fondo py-12 ps-16 pe-64 desde-tableta:static desde-tableta:mx-0 desde-tableta:border-0 desde-tableta:px-0 desde-tableta:py-0"
         >
           @if (varianteActiva(); as variante) {
             <ts-precio [valor]="variante.precio.valor" [moneda]="variante.precio.moneda" />
             <ts-etiqueta-stock [disponible]="variante.disponible" />
+            <!-- `ocupado` y no `cargando`, e `inactivo` y no `deshabilitado` para la agotada: las dos
+                 versiones anteriores sacaban al botón del orden de tabulación justo al pulsarlo, y
+                 el foco caía en `<body>`. Las guardas están en `agregarAlCarrito()`. -->
             <ts-boton
               variante="primario"
-              [deshabilitado]="!variante.disponible || carrito.agregando()"
-              [cargando]="carrito.agregando()"
+              [inactivo]="!variante.disponible"
+              [ocupado]="carrito.agregando()"
               [etiquetaCargando]="'carrito.agregando' | transloco"
               (click)="agregarAlCarrito()"
             >
@@ -92,6 +98,22 @@
               {{ 'catalogo.ficha.combinacion_no_disponible' | transloco }}
             </p>
           }
+          <!-- El resultado de agregar. Vive siempre en el DOM —fuera del `@if`— y lo que cambia es
+               el texto: una región `status` que nace ya llena no la anuncia NVDA
+               (`docs/06-testing.md`). Visible también, que el "listo" no es solo para el lector. -->
+          <p
+            class="m-0 basis-full text-sm"
+            [class.text-ts-exito]="resultadoAgregar()?.tipo === 'agregado'"
+            [class.text-ts-error]="resultadoAgregar()?.tipo === 'error'"
+            role="status"
+          >
+            @let resultado = resultadoAgregar();
+            @if (resultado?.tipo === 'agregado') {
+              {{ 'carrito.agregado' | transloco: { nombre: resultado.nombre } }}
+            } @else if (resultado?.tipo === 'error') {
+              {{ 'carrito.error_agregar' | transloco }}
+            }
+          </p>
         </div>
 
         <p class="text-ts-texto">{{ p.descripcion }}</p>

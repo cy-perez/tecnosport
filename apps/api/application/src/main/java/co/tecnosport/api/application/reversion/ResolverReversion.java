@@ -107,7 +107,7 @@ public final class ResolverReversion {
       SolicitudReversion reversion, ResolverReversionComando comando) {
     Pedido pedido =
         repositorioPedidos
-            .buscarPorId(reversion.pedidoId())
+            .buscarPorIdParaModificar(reversion.pedidoId())
             .orElseThrow(() -> new PedidoNoEncontradoException(reversion.pedidoId()));
     Dinero monto = Dinero.deCop(comando.monto());
     tope.exigirQueQuepa(pedido.id(), pedido.total(), monto);

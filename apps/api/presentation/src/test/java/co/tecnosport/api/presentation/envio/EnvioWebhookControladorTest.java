@@ -193,7 +193,10 @@ class EnvioWebhookControladorTest {
     /** El rastreo no se consulta en estas pruebas: el lector descarta antes de llegar ahí. */
     @Bean
     ConciliarGuia conciliarGuia(AplicarEventoDeEnvio aplicar) {
-      return new ConciliarGuia((codigoTransportadora, guia) -> java.util.List.of(), aplicar);
+      return new ConciliarGuia(
+          (codigoTransportadora, guia) -> java.util.List.of(),
+          aplicar,
+          new co.tecnosport.api.presentation.pedido.EnTransaccionPropiaDobleDePrueba());
     }
 
     @Bean

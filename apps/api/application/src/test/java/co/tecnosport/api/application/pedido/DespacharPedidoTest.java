@@ -230,7 +230,7 @@ class DespacharPedidoTest {
     // va codificada — sin eso, el enlace se rompe en los clientes de correo que lo reescriben.
     assertTrue(
         cuerpo.contains(
-            URL_ESTADO + "?pedidoId=" + pedido.id() + "&correo=cliente%40tecnosport.co"),
+            URL_ESTADO + "?pedidoId=" + pedido.id() + "#correo=cliente%40tecnosport.co"),
         cuerpo);
   }
 }

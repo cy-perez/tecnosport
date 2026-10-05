@@ -1,4 +1,5 @@
-import { DOCUMENT, Injectable, afterNextRender, computed, inject, signal } from '@angular/core';
+import { Injectable, computed, inject, signal } from '@angular/core';
+import { PreferenciaDeMovimiento } from '../../core/movimiento/preferencia-de-movimiento';
 
 /**
  * El estado del menú lateral, compartido.
@@ -17,33 +18,17 @@ import { DOCUMENT, Injectable, afterNextRender, computed, inject, signal } from 
  */
 @Injectable({ providedIn: 'root' })
 export class MenuLateralStore {
-  private readonly documento = inject(DOCUMENT);
-
   /**
-   * ¿Quien mira pidió menos movimiento? Las dos vías del proyecto: la preferencia del sistema
-   * operativo y el atributo `data-movimiento` de `<html>`. El atributo hoy **no lo escribe nadie**: la casilla del pie que lo ponía se quitó el 25 de
-   * septiembre de 2026. La lectura se queda porque es lo que haría falta el día que el control
-   * vuelva; `prefers-reduced-motion` sigue funcionando igual. Quien la pide recibe
-   * el cambio de ancho de golpe, no una versión acelerada del mismo barrido — y aquí pesa más que
-   * en el panel móvil porque la distancia es de 216 px.
+   * ¿Quien mira pidió menos movimiento? Quien lo pide recibe el cambio de ancho de golpe, no una
+   * versión acelerada del mismo barrido — y aquí pesa más que en el panel móvil porque la distancia
+   * es de 216 px.
    *
    * Vive en el store y no en el componente porque la miran los dos elementos que animan: el panel y
-   * el relleno de `app-root`. Y es una señal rellenada en `afterNextRender` y **no** un `computed`:
-   * un `computed` que lee el DOM no lee ninguna señal, así que se evalúa una sola vez y no se
-   * recalcula nunca (`apps/web/CLAUDE.md`). En el servidor no hay `matchMedia`, así que arranca en
-   * `false`: el valor inicial tiene que ser el que no rompe nada si nadie lo corrige.
+   * el relleno de `app-root`. La pregunta la contesta `PreferenciaDeMovimiento`, que la escucha en
+   * vivo: hasta el 4 de octubre de 2026 se leía aquí una sola vez, al hidratar, junto con el
+   * atributo `data-movimiento` que no escribe nadie.
    */
-  readonly sinMovimiento = signal(false);
-
-  constructor() {
-    afterNextRender(() => {
-      const documento = this.documento;
-      this.sinMovimiento.set(
-        documento.documentElement.getAttribute('data-movimiento') === 'reducido' ||
-          (documento.defaultView?.matchMedia('(prefers-reduced-motion: reduce)').matches ?? false),
-      );
-    });
-  }
+  readonly sinMovimiento = inject(PreferenciaDeMovimiento).reducido;
 
   /** El gesto: el puntero encima o el foco dentro. Se apaga al retirarse. */
   private readonly desplegadoPorElGesto = signal(false);

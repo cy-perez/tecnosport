@@ -173,4 +173,55 @@ class ReintentarPagoTest {
     Inventario inventario = inventarios.buscarPorVarianteId(varianteId).orElseThrow();
     assertEquals(5, inventario.saldoDisponible(AHORA));
   }
+
+  /**
+   * Los bloqueos en orden de variante, como CrearPedido: en el orden de las líneas, dos reintentos
+   * con las mismas variantes al revés se interbloqueaban. Lo que importa es que sea el mismo orden
+   * que CrearPedido —{@code UUID.compareTo}, que compara con signo—, así que lo esperado se calcula
+   * con él y las líneas van en el orden contrario.
+   */
+  @Test
+  void reservaEnOrdenDeVarianteYNoEnElDeLasLineas() {
+    ReintentarPago caso = crear();
+    UUID a = UUID.fromString("00000000-0000-7000-8000-000000000000");
+    UUID b = UUID.fromString("ffffffff-0000-7000-8000-000000000000");
+    List<UUID> enOrdenDeVariante = java.util.stream.Stream.of(a, b).sorted().toList();
+    UUID primeraEnLineas = enOrdenDeVariante.get(1);
+    UUID segundaEnLineas = enOrdenDeVariante.get(0);
+    for (UUID variante : enOrdenDeVariante) {
+      Inventario inventario = Inventario.crear(variante);
+      inventario.registrarEntrada(5, "siembra de prueba", AHORA);
+      inventarios.conInventario(inventario);
+    }
+    Pedido pedido =
+        Pedido.crear(
+            NumeroPedido.de(2026, 2),
+            null,
+            new CorreoElectronico("cliente@tecnosport.co"),
+            List.of(linea(primeraEnLineas), linea(segundaEnLineas)),
+            TipoEntrega.ENVIO_A_DOMICILIO,
+            DIRECCION_MEDELLIN,
+            MetodoPago.WOMPI,
+            "cliente@tecnosport.co",
+            AHORA);
+    pedido.transicionar(EstadoPedido.PAGO_FALLIDO, "webhook-wompi", "pago rechazado", AHORA);
+    pedidos.guardar(pedido);
+
+    caso.ejecutar(new ReintentarPagoComando(pedido.id(), "cliente@tecnosport.co"));
+
+    assertEquals(enOrdenDeVariante, inventarios.ordenDeConsultas());
+  }
+
+  private static LineaPedido linea(UUID variante) {
+    return new LineaPedido(
+        UUID.randomUUID(),
+        variante,
+        new Sku("TS-CAM-AZ-M"),
+        "Camiseta",
+        1,
+        Dinero.deCop(50_000),
+        BigDecimal.ZERO,
+        null,
+        UUID.randomUUID());
+  }
 }

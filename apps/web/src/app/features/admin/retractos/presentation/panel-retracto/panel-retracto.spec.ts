@@ -24,6 +24,7 @@ function solicitud(overrides: Partial<SolicitudRetracto> = {}): SolicitudRetract
     estado: 'RADICADA',
     productoRecibidoEn: null,
     limiteDeReintegro: null,
+    plazoDeReintegroVencido: false,
     medioPreferido: null,
     preferenciaRespetada: null,
     reintegro: null,
@@ -290,6 +291,7 @@ describe('PanelRetracto', () => {
         estado: 'PRODUCTO_RECIBIDO',
         productoRecibidoEn: '2020-01-01T15:00:00Z',
         limiteDeReintegro: '2020-01-16T05:00:00Z',
+        plazoDeReintegroVencido: true,
       }),
     ]);
 
@@ -308,6 +310,24 @@ describe('PanelRetracto', () => {
    * veinticuatro horas de incumplimiento el panel no decía nada. La prueba de arriba usa el año
    * 2020, o sea miles de días negativos, y pasaba tan tranquila.
    */
+  /**
+   * Quien decide es el servidor. Con el reloj del equipo adelantado, la fecha límite ya "pasó" para
+   * el navegador; si el servidor dice que no, el panel no afirma un incumplimiento que no existe.
+   */
+  it('si el servidor dice que no venció, no lo pinta aunque el reloj del equipo diga otra cosa', async () => {
+    await renderPanel([
+      solicitud({
+        estado: 'PRODUCTO_RECIBIDO',
+        productoRecibidoEn: '2020-01-01T05:00:00Z',
+        limiteDeReintegro: '2020-01-16T05:00:00Z',
+        plazoDeReintegroVencido: false,
+      }),
+    ]);
+    await screen.findByText(/Producto recibido|recibido/i);
+
+    expect(screen.queryByText(esAdmin.retractos.plazo_vencido)).toBeNull();
+  });
+
   it('un plazo vencido hace horas también lo dice', async () => {
     const haceCincoHoras = new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString();
     await renderPanel([
@@ -315,6 +335,7 @@ describe('PanelRetracto', () => {
         estado: 'PRODUCTO_RECIBIDO',
         productoRecibidoEn: new Date(Date.now() - 16 * 24 * 60 * 60 * 1000).toISOString(),
         limiteDeReintegro: haceCincoHoras,
+        plazoDeReintegroVencido: true,
       }),
     ]);
 

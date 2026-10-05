@@ -226,7 +226,11 @@ describe('TsBoton', () => {
   it('conserva el anillo de foco y el chaflán', async () => {
     await render(Anfitrion);
 
-    expect(boton().className).toContain('focus-visible:outline-2');
+    // Las tres piezas del anillo, y las tres desde tokens: si `cn` fusionara el ancho con el color
+    // —que es lo que hace sin registrar `outline-foco`—, una de las dos primeras desaparecería.
+    expect(boton().className).toContain('focus-visible:outline-foco');
+    expect(boton().className).toContain('focus-visible:outline-ts-foco');
+    expect(boton().className).toContain('focus-visible:outline-offset-foco');
     expect(boton().className).toContain('chaflan');
   });
 
@@ -263,6 +267,23 @@ describe('TsBoton', () => {
 
     expect(boton().className).toContain('focus-visible:outline-ts-sobre-acento');
     expect(boton().className).not.toContain('focus-visible:outline-ts-foco');
+  });
+
+  /**
+   * El anillo del CTA ámbar va **por dentro**. Por fuera se pintaba sobre lo que hubiera detrás:
+   * el velo grafito de la fotografía del carrusel o el lienzo oscuro del panel, ~1,1:1. Por dentro
+   * tiene ámbar a los dos lados. Que se vea de verdad se mira en el navegador con Tab; aquí se fija
+   * que `cn` deja la separación hacia dentro y descarta la de la base.
+   */
+  it('la variante de acento pinta el anillo por dentro del botón', async () => {
+    const { fixture } = await render(Anfitrion);
+    fixture.componentInstance.variante.set('acento');
+    await fixture.whenStable();
+
+    const clases = boton().className.split(' ');
+    expect(clases).toContain('focus-visible:outline-offset-foco-dentro');
+    expect(clases).not.toContain('focus-visible:outline-offset-foco');
+    expect(clases).toContain('focus-visible:outline-foco');
   });
 
   it('la variante secundaria pinta el borde con el color de control', async () => {

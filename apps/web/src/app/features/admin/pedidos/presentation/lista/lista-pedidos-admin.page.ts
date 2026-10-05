@@ -32,6 +32,9 @@ import { PanelReversion } from '../../../reversiones/presentation/panel-reversio
 import { usarMigasAdmin } from '../../../migas-admin';
 import { usarAccionesPedidoAdmin } from '../../application/acciones-pedido-admin.mutaciones';
 import { usarListarPedidosAdmin } from '../../application/listar-pedidos-admin.consulta';
+import { MEDIO_POR_METODO, MEDIOS_DE_REINTEGRO } from '../../domain/medio-de-reintegro';
+import { CLAVE_MEDIO } from '../clave-medio';
+import { BandejaPagosSinPedido } from '../pagos-sin-pedido/bandeja-pagos-sin-pedido';
 import { MedioReintegro } from '../../../retractos/domain/retracto.model';
 import {
   EmisionDeGuiaAdmin,
@@ -41,7 +44,6 @@ import {
   MODALIDADES_RECAUDO,
   ModalidadRecaudo,
   MOTIVOS_CANCELACION,
-  MetodoPago,
   MotivoCancelacion,
   PedidoAdmin,
 } from '../../domain/pedido-admin.model';
@@ -110,31 +112,6 @@ interface FormularioDevolucion {
   comprobante: FormControl<string>;
 }
 
-/** Por dónde se devuelve, por omisión: por donde entró. Se puede cambiar —los términos permiten
- * "el medio que acordemos contigo"—, pero el punto de partida no debería ser Wompi para todo. */
-const MEDIO_POR_METODO: Record<MetodoPago, MedioReintegro> = {
-  WOMPI: 'WOMPI',
-  SISTECREDITO: 'SISTECREDITO',
-  TRANSFERENCIA_MANUAL: 'TRANSFERENCIA_BANCARIA',
-  CONTRAENTREGA: 'EFECTIVO',
-};
-
-const MEDIOS_DEVOLUCION: readonly MedioReintegro[] = [
-  'WOMPI',
-  'SISTECREDITO',
-  'TRANSFERENCIA_BANCARIA',
-  'EFECTIVO',
-  'OTRO',
-];
-
-const CLAVE_MEDIO: Record<MedioReintegro, string> = {
-  WOMPI: 'admin.retractos.medios.wompi',
-  SISTECREDITO: 'admin.retractos.medios.sistecredito',
-  TRANSFERENCIA_BANCARIA: 'admin.retractos.medios.transferencia_bancaria',
-  EFECTIVO: 'admin.retractos.medios.efectivo',
-  OTRO: 'admin.retractos.medios.otro',
-};
-
 interface FormularioCancelacion {
   motivo: FormControl<string>;
   monto: FormControl<number | null>;
@@ -161,6 +138,7 @@ const CLAVE_MOTIVO_CANCELACION: Record<MotivoCancelacion, string> = {
 @Component({
   selector: 'app-lista-pedidos-admin',
   imports: [
+    BandejaPagosSinPedido,
     PanelGarantia,
     PanelRetracto,
     PanelReversion,
@@ -341,13 +319,18 @@ export class ListaPedidosAdminPage {
     return form;
   }
 
-  protected formularioCancelacion(pedidoId: string): FormGroup<FormularioCancelacion> {
+  /**
+   * El medio arranca por donde entró el dinero. Era `WOMPI` fijo y sin selector: cancelar un pedido
+   * de Sistecrédito dejaba constancia de una devolución "por Wompi" y nadie anulaba el crédito.
+   */
+  protected formularioCancelacion(pedido: PedidoAdmin): FormGroup<FormularioCancelacion> {
+    const pedidoId = pedido.id;
     let form = this.formulariosCancelacion.get(pedidoId);
     if (!form) {
       form = new FormGroup({
         motivo: new FormControl<string>('NO_DISPONIBILIDAD', { nonNullable: true }),
         monto: new FormControl<number | null>(null),
-        medio: new FormControl<string>('WOMPI', { nonNullable: true }),
+        medio: new FormControl<string>(MEDIO_POR_METODO[pedido.metodoPago], { nonNullable: true }),
         comprobante: new FormControl('', { nonNullable: true }),
       });
       this.formulariosCancelacion.set(pedidoId, form);
@@ -368,7 +351,7 @@ export class ListaPedidosAdminPage {
   }
 
   protected readonly opcionesMedioDevolucion = computed<OpcionSelect[]>(() =>
-    MEDIOS_DEVOLUCION.map((medio) => ({
+    MEDIOS_DE_REINTEGRO.map((medio) => ({
       valor: medio,
       etiqueta: this.traducir()(CLAVE_MEDIO[medio]),
     })),
@@ -425,15 +408,17 @@ export class ListaPedidosAdminPage {
    * demas metodos, llegar a PAGADO o EN_PREPARACION significa que el pago se aplico. La misma regla
    * que aplica el servidor, aqui solo para decidir que campos mostrar: quien manda es el.
    */
+  /**
+   * Lo que dice el servidor (`dineroRecibido`, de `Pedido.dineroRecibido()`), y no una tercera
+   * formulación por estado. Eran tres —dominio, `CancelarPedido` y esta—, y si una cambiaba el panel
+   * escondía los campos del reintegro mientras el backend respondía 422 por faltar.
+   */
   protected elDineroYaEntro(pedido: PedidoAdmin): boolean {
-    if (pedido.metodoPago === 'CONTRAENTREGA') {
-      return false;
-    }
-    return pedido.estado === 'PAGADO' || pedido.estado === 'EN_PREPARACION';
+    return pedido.dineroRecibido.valor > 0;
   }
 
   protected async cancelar(pedido: PedidoAdmin): Promise<void> {
-    const form = this.formularioCancelacion(pedido.id);
+    const form = this.formularioCancelacion(pedido);
     if (form.invalid) {
       form.markAllAsTouched();
       return;
@@ -512,6 +497,17 @@ export class ListaPedidosAdminPage {
   protected emitiendoGuia(pedidoId: string): boolean {
     return (
       this.acciones.emitirGuia.isPending() && this.acciones.emitirGuia.variables() === pedidoId
+    );
+  }
+
+  protected async confirmarInventario(pedidoId: string): Promise<void> {
+    await this.ejecutar(() => this.acciones.confirmarInventario.mutateAsync(pedidoId));
+  }
+
+  protected confirmandoInventario(pedidoId: string): boolean {
+    return (
+      this.acciones.confirmarInventario.isPending() &&
+      this.acciones.confirmarInventario.variables() === pedidoId
     );
   }
 

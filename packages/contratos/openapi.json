@@ -442,6 +442,24 @@
         },
         "type" : "object"
       },
+      "CarritoCotizadoRespuesta" : {
+        "properties" : {
+          "lineas" : {
+            "items" : {
+              "$ref" : "#/components/schemas/Linea"
+            },
+            "type" : "array"
+          },
+          "subtotal" : {
+            "$ref" : "#/components/schemas/DineroRespuesta"
+          }
+        },
+        "required" : [
+          "lineas",
+          "subtotal"
+        ],
+        "type" : "object"
+      },
       "CarritoRespuesta" : {
         "properties" : {
           "creadoEn" : {
@@ -829,6 +847,10 @@
             "type" : "integer"
           }
         },
+        "required" : [
+          "moneda",
+          "valor"
+        ],
         "type" : "object"
       },
       "DireccionRequest" : {
@@ -1499,10 +1521,17 @@
           "monto" : {
             "$ref" : "#/components/schemas/DineroRespuesta"
           },
+          "montoEnCentavos" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
           "referencia" : {
             "type" : "string"
           }
         },
+        "required" : [
+          "montoEnCentavos"
+        ],
         "type" : "object"
       },
       "IntentoSistecreditoRespuesta" : {
@@ -1517,6 +1546,38 @@
             "type" : "string"
           }
         },
+        "type" : "object"
+      },
+      "Linea" : {
+        "properties" : {
+          "cantidad" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "disponible" : {
+            "type" : "boolean"
+          },
+          "lineaId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "precioUnitario" : {
+            "$ref" : "#/components/schemas/DineroRespuesta"
+          },
+          "subtotal" : {
+            "$ref" : "#/components/schemas/DineroRespuesta"
+          },
+          "varianteId" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        },
+        "required" : [
+          "cantidad",
+          "disponible",
+          "lineaId",
+          "varianteId"
+        ],
         "type" : "object"
       },
       "LineaCarritoRespuesta" : {
@@ -1783,6 +1844,52 @@
             "type" : "string"
           }
         },
+        "type" : "object"
+      },
+      "PagoSinPedidoRespuesta" : {
+        "properties" : {
+          "correo" : {
+            "type" : "string"
+          },
+          "desde" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "estadoPedido" : {
+            "type" : "string"
+          },
+          "metodoPago" : {
+            "type" : "string"
+          },
+          "monto" : {
+            "$ref" : "#/components/schemas/DineroRespuesta"
+          },
+          "numeroPedido" : {
+            "type" : "string"
+          },
+          "pagoId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "pedidoId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "referencia" : {
+            "type" : "string"
+          }
+        },
+        "required" : [
+          "correo",
+          "desde",
+          "estadoPedido",
+          "metodoPago",
+          "monto",
+          "numeroPedido",
+          "pagoId",
+          "pedidoId",
+          "referencia"
+        ],
         "type" : "object"
       },
       "ParteDeMuestraRespuesta" : {
@@ -2467,6 +2574,20 @@
         },
         "type" : "object"
       },
+      "RegistrarReintegroDePagoSinPedidoRequest" : {
+        "properties" : {
+          "comprobante" : {
+            "type" : "string"
+          },
+          "medio" : {
+            "type" : "string"
+          }
+        },
+        "required" : [
+          "medio"
+        ],
+        "type" : "object"
+      },
       "RegistrarReintegroRequest" : {
         "properties" : {
           "comprobante" : {
@@ -2784,6 +2905,17 @@
         },
         "type" : "object"
       },
+      "SeguimientoPorIdRequest" : {
+        "properties" : {
+          "correo" : {
+            "type" : "string"
+          }
+        },
+        "required" : [
+          "correo"
+        ],
+        "type" : "object"
+      },
       "SeguimientoPorNumeroRequest" : {
         "properties" : {
           "correo" : {
@@ -2968,6 +3100,9 @@
           "pedidoId" : {
             "type" : "string"
           },
+          "plazoDeReintegroVencido" : {
+            "type" : "boolean"
+          },
           "preferenciaRespetada" : {
             "type" : "boolean"
           },
@@ -2989,6 +3124,9 @@
             "type" : "string"
           }
         },
+        "required" : [
+          "plazoDeReintegroVencido"
+        ],
         "type" : "object"
       },
       "SolicitudReversionRespuesta" : {
@@ -3443,7 +3581,7 @@
     },
     "/api/v1/admin/borradores" : {
       "get" : {
-        "operationId" : "listar_15",
+        "operationId" : "listar_16",
         "parameters" : [
           {
             "in" : "query",
@@ -3820,7 +3958,7 @@
     },
     "/api/v1/admin/envios/revision" : {
       "get" : {
-        "operationId" : "listar_14",
+        "operationId" : "listar_15",
         "parameters" : [
           {
             "in" : "query",
@@ -4015,7 +4153,7 @@
     },
     "/api/v1/admin/ingestas" : {
       "get" : {
-        "operationId" : "listar_13",
+        "operationId" : "listar_14",
         "parameters" : [
           {
             "in" : "query",
@@ -4172,6 +4310,63 @@
         ]
       }
     },
+    "/api/v1/admin/pagos/sin-pedido" : {
+      "get" : {
+        "operationId" : "listar_13",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/PagoSinPedidoRespuesta"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "admin-pagos-controlador"
+        ]
+      }
+    },
+    "/api/v1/admin/pagos/{id}/reintegro" : {
+      "post" : {
+        "operationId" : "registrarReintegro",
+        "parameters" : [
+          {
+            "in" : "path",
+            "name" : "id",
+            "required" : true,
+            "schema" : {
+              "format" : "uuid",
+              "type" : "string"
+            }
+          }
+        ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/RegistrarReintegroDePagoSinPedidoRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "204" : {
+            "description" : "No Content"
+          }
+        },
+        "tags" : [
+          "admin-pagos-controlador"
+        ]
+      }
+    },
     "/api/v1/admin/pedidos" : {
       "get" : {
         "operationId" : "listar_12",
@@ -4266,6 +4461,37 @@
     "/api/v1/admin/pedidos/{id}/conciliar-transferencia" : {
       "post" : {
         "operationId" : "conciliar",
+        "parameters" : [
+          {
+            "in" : "path",
+            "name" : "id",
+            "required" : true,
+            "schema" : {
+              "format" : "uuid",
+              "type" : "string"
+            }
+          }
+        ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PedidoRespuesta"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "admin-pedidos-controlador"
+        ]
+      }
+    },
+    "/api/v1/admin/pedidos/{id}/confirmar-inventario" : {
+      "post" : {
+        "operationId" : "confirmarInventario",
         "parameters" : [
           {
             "in" : "path",
@@ -6480,6 +6706,37 @@
         ]
       }
     },
+    "/api/v1/carritos/{id}/cotizacion" : {
+      "get" : {
+        "operationId" : "cotizacion",
+        "parameters" : [
+          {
+            "in" : "path",
+            "name" : "id",
+            "required" : true,
+            "schema" : {
+              "format" : "uuid",
+              "type" : "string"
+            }
+          }
+        ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/CarritoCotizadoRespuesta"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "carrito-controlador"
+        ]
+      }
+    },
     "/api/v1/carritos/{id}/lineas" : {
       "post" : {
         "operationId" : "agregarLinea",
@@ -7030,7 +7287,7 @@
       }
     },
     "/api/v1/pedidos/{id}/seguimiento" : {
-      "get" : {
+      "post" : {
         "operationId" : "seguimiento",
         "parameters" : [
           {
@@ -7041,16 +7298,18 @@
               "format" : "uuid",
               "type" : "string"
             }
-          },
-          {
-            "in" : "query",
-            "name" : "correo",
-            "required" : true,
-            "schema" : {
-              "type" : "string"
-            }
           }
         ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/SeguimientoPorIdRequest"
+              }
+            }
+          },
+          "required" : true
+        },
         "responses" : {
           "200" : {
             "content" : {

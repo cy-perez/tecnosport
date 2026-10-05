@@ -48,6 +48,13 @@ const fusionar = extendTailwindMerge({
       leading: [{ leading: INTERLINEADOS }],
       'max-w': [{ 'max-w': ANCHOS }],
       'min-h': [{ 'min-h': ['tactil', 'compacto'] }],
+      // El anillo de foco desde tokens. Sin esto `outline-foco` —que es un
+      // **ancho**— cae en el grupo de color por descarte, compite con
+      // `outline-ts-foco` y uno de los dos desaparece. Y `outline-offset-foco`
+      // con `outline-offset-foco-dentro` tienen que competir entre sí: es lo que
+      // deja a la variante `acento` de `ts-boton` meter el anillo por dentro.
+      'outline-w': [{ outline: ['foco'] }],
+      'outline-offset': [{ 'outline-offset': ['foco', 'foco-dentro'] }],
     },
   },
 });

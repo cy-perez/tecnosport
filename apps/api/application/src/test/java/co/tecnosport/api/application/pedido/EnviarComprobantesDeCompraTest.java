@@ -246,6 +246,8 @@ class EnviarComprobantesDeCompraTest {
 
     String cuerpo = cuerpoUnico();
     assertTrue(cuerpo.contains(URL_ESTADO + "?pedidoId=" + pedido.id()), cuerpo);
-    assertTrue(cuerpo.contains("correo=cliente%40tecnosport.co"), cuerpo);
+    assertTrue(cuerpo.contains("#correo=cliente%40tecnosport.co"), cuerpo);
+    // Nunca en la consulta: lo que va antes del # llega al servidor y queda en sus registros.
+    assertFalse(cuerpo.contains("&correo="), cuerpo);
   }
 }

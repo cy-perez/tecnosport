@@ -6,6 +6,7 @@ import co.tecnosport.api.application.pedido.RepositorioPedidos;
 import co.tecnosport.api.domain.inventario.Inventario;
 import co.tecnosport.api.domain.inventario.ReservaNoEncontradaException;
 import co.tecnosport.api.domain.inventario.ReservaYaProcesadaException;
+import co.tecnosport.api.domain.pago.EstadoPago;
 import co.tecnosport.api.domain.pago.EventoPago;
 import co.tecnosport.api.domain.pago.Pago;
 import co.tecnosport.api.domain.pedido.EstadoPedido;
@@ -41,13 +42,45 @@ final class AplicadorDeResultadoDePago {
       RepositorioPagos repositorioPagos,
       RepositorioPedidos repositorioPedidos,
       RepositorioInventario repositorioInventario) {
+    // Se relee con bloqueo: quien llama lo leyó sin él, y el webhook y la conciliación pueden
+    // llegar a la vez con ids de evento distintos. El segundo espera aquí y encuentra el pago ya
+    // resuelto.
+    Pago bloqueado =
+        repositorioPagos.buscarPorReferenciaParaModificar(pago.referencia()).orElse(pago);
+    if (bloqueado.estado() != EstadoPago.PENDIENTE) {
+      return ResultadoEventoDePago.YA_PROCESADO;
+    }
+    // Lo que quien llama ya anotó en su copia —el id de transacción que trae el webhook— pasa a la
+    // copia bloqueada, que es la que se guarda.
+    if (bloqueado != pago && bloqueado.idTransaccionPasarela().isEmpty()) {
+      pago.idTransaccionPasarela().ifPresent(bloqueado::registrarIdTransaccionPasarela);
+    }
+    pago = bloqueado;
     boolean aplicado = pago.aplicarEvento(evento);
     if (!aplicado) {
       return ResultadoEventoDePago.YA_PROCESADO;
     }
     pago.registrarMedioReportadoPorLaPasarela(medioReportadoPorLaPasarela);
+    if (evento.estado() == EstadoPago.APROBADO
+        && !hayUnPedidoQueLoEspera(pago, repositorioPedidos)) {
+      pago.marcarSinPedidoQueLoEspere(evento.recibidoEn());
+      repositorioPagos.guardar(pago);
+      return ResultadoEventoDePago.APROBADO_SIN_PEDIDO_QUE_LO_ESPERE;
+    }
     repositorioPagos.guardar(pago);
     return propagarAlPedido(pago, evento, actor, repositorioPedidos, repositorioInventario);
+  }
+
+  /**
+   * Un pedido espera un pago solo en {@code PAGO_PENDIENTE}. En cualquier otro estado la aprobación
+   * llega de más: otro intento ya lo pagó, o se canceló o falló antes. Antes eso se devolvía como
+   * {@code APLICADO} y el dinero quedaba cobrado sin venta y sin devolución.
+   */
+  private static boolean hayUnPedidoQueLoEspera(Pago pago, RepositorioPedidos repositorioPedidos) {
+    return repositorioPedidos
+        .buscarPorIdParaModificar(pago.pedidoId())
+        .map(pedido -> pedido.estado() == EstadoPedido.PAGO_PENDIENTE)
+        .orElse(false);
   }
 
   private static ResultadoEventoDePago propagarAlPedido(
@@ -65,7 +98,7 @@ final class AplicadorDeResultadoDePago {
     if (siguienteEstadoPedido == null) {
       return ResultadoEventoDePago.APLICADO;
     }
-    Pedido pedido = repositorioPedidos.buscarPorId(pago.pedidoId()).orElse(null);
+    Pedido pedido = repositorioPedidos.buscarPorIdParaModificar(pago.pedidoId()).orElse(null);
     // Un pedido ya resuelto por otro intento de pago no se toca: EstadoPedido ya rechazaría la
     // transición, pero comprobarlo antes evita depender de esa excepción como control de flujo.
     if (pedido == null || pedido.estado() != EstadoPedido.PAGO_PENDIENTE) {

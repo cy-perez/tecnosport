@@ -2,9 +2,9 @@ import { Injectable } from '@angular/core';
 import { crearClienteContratos } from '@tecnosport/contratos';
 import { baseUrl } from '../../../core/http/base-url';
 import { desempaquetar } from '../../../core/http/respuesta-http';
-import { Carrito } from '../domain/carrito.model';
+import { Carrito, CarritoCotizado } from '../domain/carrito.model';
 import { RepositorioCarrito } from '../domain/repositorio-carrito.puerto';
-import { aCarrito } from './mapeador-carrito';
+import { aCarrito, aCarritoCotizado } from './mapeador-carrito';
 
 @Injectable()
 export class CarritoHttpRepositorio implements RepositorioCarrito {
@@ -23,6 +23,16 @@ export class CarritoHttpRepositorio implements RepositorioCarrito {
       return null;
     }
     return aCarrito(desempaquetar(respuesta, 'no se pudo cargar el carrito'));
+  }
+
+  async cotizar(carritoId: string): Promise<CarritoCotizado | null> {
+    const respuesta = await this.cliente.GET('/api/v1/carritos/{id}/cotizacion', {
+      params: { path: { id: carritoId } },
+    });
+    if (respuesta.response.status === 404) {
+      return null;
+    }
+    return aCarritoCotizado(desempaquetar(respuesta, 'no se pudo cotizar el carrito'));
   }
 
   async agregarLinea(carritoId: string, varianteId: string, cantidad: number): Promise<Carrito> {

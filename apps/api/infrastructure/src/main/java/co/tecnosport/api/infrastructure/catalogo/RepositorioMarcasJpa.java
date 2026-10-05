@@ -2,6 +2,7 @@ package co.tecnosport.api.infrastructure.catalogo;
 
 import co.tecnosport.api.application.catalogo.MarcaYaExisteException;
 import co.tecnosport.api.application.catalogo.RepositorioMarcas;
+import co.tecnosport.api.domain.catalogo.EstadoDisponibilidad;
 import co.tecnosport.api.domain.catalogo.EstadoProducto;
 import co.tecnosport.api.domain.catalogo.Marca;
 import co.tecnosport.api.infrastructure.catalogo.entidad.MarcaJpaEntity;
@@ -30,7 +31,10 @@ public class RepositorioMarcasJpa implements RepositorioMarcas {
 
   @Override
   public List<Marca> listarConProductosPublicados() {
-    return marcaJpaRepository.findConProductosEnEstado(EstadoProducto.PUBLICADO.name()).stream()
+    return marcaJpaRepository
+        .findConProductosEnEstado(
+            EstadoProducto.PUBLICADO.name(), EstadoDisponibilidad.DISPONIBLE.name())
+        .stream()
         .map(this::aMarca)
         .toList();
   }

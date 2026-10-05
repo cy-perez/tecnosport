@@ -1,14 +1,32 @@
 import { Component, inject } from '@angular/core';
 import { provideTanStackQuery, QueryClient } from '@tanstack/angular-query-experimental';
 import { render } from '@testing-library/angular';
-import { Carrito } from '../domain/carrito.model';
+import { Carrito, CarritoCotizado } from '../domain/carrito.model';
 import { REPOSITORIO_CARRITO, RepositorioCarrito } from '../domain/repositorio-carrito.puerto';
 import { SnapshotLinea } from '../domain/snapshot-linea.model';
 import { CarritoIdLocalStorageAlmacen } from '../infrastructure/carrito-id.almacen';
 import { CarritoStore } from './carrito.store';
 import { proveerAlmacenesCarrito } from '../../../../testing/carrito';
 
+/** El precio que el servidor da hoy en estas pruebas. */
+const PRECIO_DE_HOY = 150_000;
+
 class RepositorioCarritoFalso implements RepositorioCarrito {
+  /** Los precios de hoy, como el servidor: {@link PRECIO_DE_HOY} por unidad. */
+  async cotizar(carritoId: string): Promise<CarritoCotizado | null> {
+    const carrito = await this.ver(carritoId);
+    if (!carrito) {
+      return null;
+    }
+    const lineas = carrito.lineas.map((linea) => ({
+      lineaId: linea.id,
+      varianteId: linea.varianteId,
+      cantidad: linea.cantidad,
+      precioUnitario: PRECIO_DE_HOY,
+      subtotal: PRECIO_DE_HOY * linea.cantidad,
+    }));
+    return { lineas, subtotal: lineas.reduce((suma, linea) => suma + linea.subtotal, 0) };
+  }
   llamadasCrear = 0;
   private carrito: Carrito = {
     id: 'carrito-1',
@@ -58,7 +76,6 @@ function snapshotDePrueba(varianteId: string): SnapshotLinea {
     slugProducto: 'morral-urbano',
     sku: 'SKU-1',
     imagenUrl: null,
-    imagenAlt: 'Morral urbano',
     precioValor: 150_000,
     precioMoneda: 'COP',
   };

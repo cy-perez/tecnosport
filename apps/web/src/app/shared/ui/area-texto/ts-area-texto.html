@@ -35,14 +35,16 @@
     (input)="manejarEntrada($any($event.target).value)"
     (blur)="manejarSalida()"
   ></textarea>
-  <!-- El contador. `aria-live="polite"` y no `off`: quien no ve la caja tiene que poder enterarse
-       de que se está quedando sin sitio, y `polite` lo dice cuando hace una pausa en vez de
-       interrumpir cada tecla. Va atado al control por `aria-describedby`, como la ayuda y el
-       error. -->
+  <!-- El contador. Va atado al control por `aria-describedby`, como la ayuda y el error, y **ya no
+       es región viva**: lo era entero y anunciaba "quedan 498", "quedan 497"… en cada pausa de
+       quien escribe, para un tope que está lejísimos. Quien no ve la caja tiene que enterarse de
+       que se está quedando sin sitio, no de cada carácter: eso lo dice la región de al lado, que
+       solo habla cuando quedan pocos (`avisoCercaDelTope`). -->
   @if (maximo(); as tope) {
-    <p class="m-0 text-sm text-ts-texto-suave" [id]="idCampo() + '-contador'" aria-live="polite">
+    <p class="m-0 text-sm text-ts-texto-suave" [id]="idCampo() + '-contador'">
       {{ contador() }}
     </p>
+    <p class="sr-only" aria-live="polite">{{ avisoCercaDelTope() }}</p>
   }
   <p [class]="clasesError" [id]="idCampo() + '-error'" role="alert">{{ error() }}</p>
 </div>

@@ -1,5 +1,5 @@
 import { InjectionToken } from '@angular/core';
-import { Carrito } from './carrito.model';
+import { Carrito, CarritoCotizado } from './carrito.model';
 
 export interface RepositorioCarrito {
   crear(): Promise<Carrito>;
@@ -8,6 +8,8 @@ export interface RepositorioCarrito {
   agregarLinea(carritoId: string, varianteId: string, cantidad: number): Promise<Carrito>;
   actualizarCantidad(carritoId: string, lineaId: string, cantidad: number): Promise<Carrito>;
   eliminarLinea(carritoId: string, lineaId: string): Promise<Carrito>;
+  /** Los precios de hoy del servidor; `null` si el carrito ya no existe. */
+  cotizar(carritoId: string): Promise<CarritoCotizado | null>;
 }
 
 export const REPOSITORIO_CARRITO = new InjectionToken<RepositorioCarrito>('RepositorioCarrito');
