@@ -668,8 +668,9 @@ public class ManejadorDeErrores {
         ProblemDetail.forStatusAndDetail(
             HttpStatus.CONFLICT, "Sistecrédito no entregó una URL de pago para este pedido.");
     detalle.setTitle("Sistecrédito no entregó la URL de pago");
-    detalle.setProperty("codigoSistecredito", excepcion.codigo());
-    detalle.setProperty("estadoSistecredito", excepcion.estado());
+    // El motivo ya clasificado y no el código crudo de la pasarela: el cliente decide qué decirle
+    // al comprador con esto, y la clasificación vive en un solo sitio.
+    detalle.setProperty("motivoSistecredito", excepcion.motivo().name());
     return detalle;
   }
 

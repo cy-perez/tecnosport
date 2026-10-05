@@ -182,10 +182,9 @@ class RepositorioPagosQueFalla implements RepositorioPagos {
 }
 
 /**
- * La pasarela rechazando el credito, con la forma exacta que el backend traduce: un 409 con
- * `estadoSistecredito` y `codigoSistecredito` en el cuerpo. El codigo es `4` y no `801` ni `802`
- * a proposito — es el que devolvio de verdad la prueba con rechazo simulado contra dev el 23 de
- * septiembre de 2026, y es el que caia en el mensaje generico.
+ * La pasarela rechazando el credito, con la forma exacta que manda el backend: un 409 con el
+ * `motivoSistecredito` ya clasificado. Es el rechazo con codigo `4` de la prueba contra dev del 23
+ * de septiembre de 2026, que caia en el mensaje generico; ahora el servidor lo clasifica.
  */
 class RepositorioPagosQueRechazaElCredito implements RepositorioPagos {
   async crearIntento(): Promise<IntentoDePago> {
@@ -194,8 +193,7 @@ class RepositorioPagosQueRechazaElCredito implements RepositorioPagos {
 
   async crearIntentoSistecredito(): Promise<IntentoSistecredito> {
     throw new ErrorHttp(409, 'sin url de pago', 'SISTECREDITO_NO_ENTREGO_LA_URL_DE_PAGO', {
-      codigoSistecredito: '4',
-      estadoSistecredito: 'Rejected',
+      motivoSistecredito: 'CREDITO_NEGADO',
     });
   }
 

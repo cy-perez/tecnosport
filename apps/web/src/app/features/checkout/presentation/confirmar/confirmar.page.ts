@@ -39,7 +39,12 @@ const CLAVE_ETIQUETA: Record<MetodoPago, string> = {
  * lo mismo para quien compra: ese credito no se abrio y reintentar el mismo no lleva a ninguna
  * parte. La lista es la misma que `SistecreditoClient` trata como terminal.
  */
-const ESTADOS_DE_RECHAZO = new Set(['Rejected', 'Cancelled', 'Expired', 'Abandoned', 'Failed']);
+/** El motivo que clasifica el servidor, con su texto. Sin vocabulario de la pasarela aquí. */
+const CLAVE_MOTIVO_SISTECREDITO: Record<string, string> = {
+  SOLICITUD_EN_CURSO: 'checkout.confirmar.sistecredito_801',
+  MONTO_INSUFICIENTE: 'checkout.confirmar.sistecredito_802',
+  CREDITO_NEGADO: 'checkout.confirmar.sistecredito_rechazado',
+};
 
 /**
  * Tercer y último paso antes de que exista el pedido (Fase 3, paso 4c de
@@ -369,14 +374,13 @@ export class ConfirmarPage {
    */
   private mensajeDeError(error: unknown): string {
     const datos = error instanceof ErrorHttp ? error.datos : {};
-    const codigo = datos['codigoSistecredito'] ?? null;
-    if (codigo === '801' || codigo === '802') {
+    // El servidor ya clasificó el rechazo (`motivoSistecredito`); aquí solo se elige el texto. La
+    // tabla de códigos y estados de la pasarela vivía en este componente, distinta de la del
+    // backend: un `REJECTED` en mayúsculas lo dejaba sondeando con el consejo falso de revisar datos.
+    const clave = CLAVE_MOTIVO_SISTECREDITO[datos['motivoSistecredito'] ?? ''];
+    if (clave) {
       this.rechazoDeCredito.set(true);
-      return this.transloco.translate(`checkout.confirmar.sistecredito_${codigo}`);
-    }
-    if (ESTADOS_DE_RECHAZO.has(datos['estadoSistecredito'] ?? '')) {
-      this.rechazoDeCredito.set(true);
-      return this.transloco.translate('checkout.confirmar.sistecredito_rechazado');
+      return this.transloco.translate(clave);
     }
     this.rechazoDeCredito.set(false);
     return this.transloco.translate('checkout.confirmar.error');

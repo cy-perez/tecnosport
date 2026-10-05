@@ -111,12 +111,13 @@ class ManejadorDeErroresTest {
    * `confirmar.page.ts:366-367`, y se descubrió en la primera compra real con Sistecrédito.
    */
   @Test
-  void elCodigoYElEstadoDeSistecreditoViajanAlCliente() throws Exception {
+  void viajaElMotivoClasificadoYNoElVocabularioDeLaPasarela() throws Exception {
     mockMvc
         .perform(get("/api/v1/prueba-de-errores/sistecredito-sin-url"))
         .andExpect(status().isConflict())
-        .andExpect(jsonPath("$.codigoSistecredito").value("801"))
-        .andExpect(jsonPath("$.estadoSistecredito").value("Rejected"));
+        .andExpect(jsonPath("$.motivoSistecredito").value("SOLICITUD_EN_CURSO"))
+        .andExpect(jsonPath("$.codigoSistecredito").doesNotExist())
+        .andExpect(jsonPath("$.estadoSistecredito").doesNotExist());
   }
 
   /** Un método que la ruta no admite es un 405, no un 500 con traza. */
