@@ -1,10 +1,12 @@
 package co.tecnosport.api.application.envio;
 
+import co.tecnosport.api.application.compartido.EnTransaccionPropia;
 import co.tecnosport.api.application.compartido.Reloj;
 import co.tecnosport.api.domain.envio.Envio;
 import co.tecnosport.api.domain.envio.GuiaEnvio;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
@@ -33,6 +35,14 @@ import java.util.Objects;
  * idéntico al de una guía sin eventos todavía, así que se registraría como "sin novedad" algo que
  * en realidad nadie miró.
  *
+ * <p><strong>Una guía que revienta tampoco.</strong> Cada guía se aplica en su propia transacción
+ * ({@link EnTransaccionPropia}): hay un tercero en la mitad —la consulta a la plataforma—, así que
+ * el lote nunca fue atómico de verdad, y agruparlo solo conseguía que una excepción revirtiera lo
+ * ya conciliado. Pasó: un pedido pagado y devuelto hacía reventar el rechazo en cada vuelta, la
+ * corrida entera se revertía, y como ese envío era de los más viejos volvía a ser el primero en la
+ * siguiente. Ningún otro envío registró su entrega mientras tanto. La guía que falla se cuenta y su
+ * motivo sube a quien registra; las demás siguen.
+ *
  * <p><strong>Un proveedor caído no puede tumbar el lote.</strong> Una consulta que falla devuelve
  * lista vacía y ese envío queda para la próxima corrida; los demás se revisan igual. Es el mismo
  * criterio de {@code ConciliarPagosPendientes}: el mecanismo es idempotente, así que reintentar es
@@ -42,6 +52,7 @@ public final class ConciliarEnvios {
 
   private final RepositorioEnvios repositorioEnvios;
   private final ConciliarGuia conciliarGuia;
+  private final EnTransaccionPropia enTransaccionPropia;
   private final Reloj reloj;
   private final Duration antiguedadMinima;
   private final int maximoPorCorrida;
@@ -49,11 +60,13 @@ public final class ConciliarEnvios {
   public ConciliarEnvios(
       RepositorioEnvios repositorioEnvios,
       ConciliarGuia conciliarGuia,
+      EnTransaccionPropia enTransaccionPropia,
       Reloj reloj,
       Duration antiguedadMinima,
       int maximoPorCorrida) {
     this.repositorioEnvios = Objects.requireNonNull(repositorioEnvios);
     this.conciliarGuia = Objects.requireNonNull(conciliarGuia);
+    this.enTransaccionPropia = Objects.requireNonNull(enTransaccionPropia);
     this.reloj = Objects.requireNonNull(reloj);
     this.antiguedadMinima = Objects.requireNonNull(antiguedadMinima);
     if (maximoPorCorrida <= 0) {
@@ -70,6 +83,8 @@ public final class ConciliarEnvios {
     int consultadas = 0;
     int conEventosNuevos = 0;
     int sinCodigo = 0;
+    int conError = 0;
+    List<String> errores = new ArrayList<>();
     for (Envio envio : callados) {
       boolean alguno = false;
       for (GuiaEnvio guia : envio.guias()) {
@@ -85,7 +100,16 @@ public final class ConciliarEnvios {
         // Quién puede consultarse y quién no lo decide ConciliarGuia, que es el que sabe qué le
         // hace falta para preguntar. Aquí solo se cuenta: una guía sin código no gastó ninguna de
         // las dos peticiones por segundo, así que tampoco cuenta contra el tope.
-        ResultadoEventoDeEnvio resultado = conciliarGuia.ejecutar(guia);
+        ResultadoEventoDeEnvio resultado;
+        try {
+          resultado = enTransaccionPropia.ejecutar(() -> conciliarGuia.ejecutar(guia));
+        } catch (RuntimeException e) {
+          // Gastó su consulta igual, así que cuenta contra el tope.
+          consultadas++;
+          conError++;
+          errores.add(guia.numero() + ": " + e);
+          continue;
+        }
         if (resultado == ResultadoEventoDeEnvio.SIN_CODIGO_DE_TRANSPORTADORA) {
           sinCodigo++;
           continue;
@@ -98,7 +122,12 @@ public final class ConciliarEnvios {
       }
     }
     return new ResultadoConciliacionEnvios(
-        callados.size(), conEventosNuevos, callados.size() - conEventosNuevos, sinCodigo);
+        callados.size(),
+        conEventosNuevos,
+        callados.size() - conEventosNuevos,
+        sinCodigo,
+        conError,
+        errores);
   }
 
   private static boolean huboNovedad(ResultadoEventoDeEnvio resultado) {

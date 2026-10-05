@@ -1,7 +1,9 @@
 package co.tecnosport.api.application.envio;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import co.tecnosport.api.application.compartido.EnTransaccionPropiaFalsa;
 import co.tecnosport.api.application.pedido.MarcarEntregado;
 import co.tecnosport.api.application.pedido.RechazarEnEntrega;
 import co.tecnosport.api.domain.compartido.Dinero;
@@ -31,11 +33,13 @@ class ConciliarEnviosTest {
 
   private RepositorioEnviosFalso envios;
   private List<String> guiasConsultadas;
+  private EnTransaccionPropiaFalsa transacciones;
 
   @BeforeEach
   void preparar() {
     envios = new RepositorioEnviosFalso();
     guiasConsultadas = new ArrayList<>();
+    transacciones = new EnTransaccionPropiaFalsa();
   }
 
   private ConciliarEnvios conConsultor(ConsultorDeSeguimiento consultor) {
@@ -49,7 +53,12 @@ class ConciliarEnviosTest {
             new RechazarEnEntrega(pedidos, inventarios, () -> AHORA),
             () -> AHORA);
     return new ConciliarEnvios(
-        envios, new ConciliarGuia(consultor, aplicar), () -> AHORA, ANTIGUEDAD, MAXIMO);
+        envios,
+        new ConciliarGuia(consultor, aplicar),
+        transacciones,
+        () -> AHORA,
+        ANTIGUEDAD,
+        MAXIMO);
   }
 
   /** Los eventos de una guía concreta: con varias por envío, preguntar por el envío no basta. */
@@ -210,5 +219,35 @@ class ConciliarEnviosTest {
     assertEquals(new ResultadoConciliacionEnvios(1, 0, 1, 1), resultado);
     assertEquals(List.of(), guiasConsultadas);
     assertEquals(0, eventosDe("SE-1").size());
+  }
+
+  /**
+   * Lo que pasaba antes con un pedido pagado y devuelto: una guía que revienta revertía la corrida
+   * entera, en cada vuelta, y ningún otro envío registraba su entrega. Ahora se salta, se cuenta y
+   * su motivo sube a quien registra; las demás se aplican igual, cada una en su transacción.
+   */
+  @Test
+  void unaGuiaQueRevientaNoSeLlevaPorDelanteALasDemas() {
+    sembrarEnvioCallado("NN-1");
+    sembrarEnvioCallado("NN-2");
+    ConciliarEnvios caso =
+        conConsultor(
+            (codigoTransportadora, guia) -> {
+              guiasConsultadas.add(guia);
+              if ("NN-1".equals(guia)) {
+                throw new IllegalStateException("reserva ya procesada");
+              }
+              return List.of(evento(guia, "ev-" + guia));
+            });
+
+    ResultadoConciliacionEnvios resultado = caso.ejecutar();
+
+    assertEquals(1, resultado.guiasConError());
+    assertEquals(1, resultado.conEventosNuevos());
+    assertTrue(resultado.errores().get(0).startsWith("NN-1: "), resultado.errores().toString());
+    assertTrue(resultado.errores().get(0).contains("reserva ya procesada"));
+    assertEquals(1, eventosDe("NN-2").size());
+    assertEquals(0, eventosDe("NN-1").size());
+    assertEquals(2, transacciones.veces());
   }
 }

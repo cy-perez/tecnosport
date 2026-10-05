@@ -209,11 +209,13 @@ public class ConfiguracionEnvio {
   public ConciliarEnvios conciliarEnvios(
       RepositorioEnvios repositorioEnvios,
       ConciliarGuia conciliarGuia,
+      EnTransaccionPropia enTransaccionPropia,
       Reloj reloj,
       PropiedadesSeguimientoEnvios propiedades) {
     return new ConciliarEnvios(
         repositorioEnvios,
         conciliarGuia,
+        enTransaccionPropia,
         reloj,
         Duration.ofHours(propiedades.antiguedadMinimaHoras()),
         propiedades.maximoPorCorrida());

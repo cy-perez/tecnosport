@@ -8,13 +8,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.PlatformTransactionManager;
-import org.springframework.transaction.support.TransactionTemplate;
 
 /**
- * Tercera tarea programada del proyecto, con el mismo patrón que {@code TareaConciliacionWompi}:
- * corre dentro de su propia transacción, y un lote fallido simplemente se reintenta en la siguiente
- * vuelta porque el mecanismo es idempotente por diseño (adr/0022).
+ * Tercera tarea programada del proyecto. <b>No abre una transacción para el lote</b>, y la abría
+ * hasta el 4 de octubre de 2026: cada guía abre la suya dentro de {@code ConciliarEnvios}, porque
+ * una sola guía que reventaba revertía la corrida entera en cada vuelta, siempre la misma. El
+ * mecanismo sigue siendo idempotente (adr/0022): lo que falle se reintenta en la vuelta siguiente.
  *
  * <p>Existe porque los webhooks se pierden. Un paquete entregado hace cinco días con el pedido
  * todavía en {@code DESPACHADO} es un retracto que empieza a correr sin que el sistema lo sepa, y
@@ -30,12 +29,9 @@ public class TareaConciliacionEnvios {
   private static final Logger log = LoggerFactory.getLogger(TareaConciliacionEnvios.class);
 
   private final ConciliarEnvios conciliarEnvios;
-  private final TransactionTemplate transaccion;
 
-  public TareaConciliacionEnvios(
-      ConciliarEnvios conciliarEnvios, PlatformTransactionManager transactionManager) {
+  public TareaConciliacionEnvios(ConciliarEnvios conciliarEnvios) {
     this.conciliarEnvios = Objects.requireNonNull(conciliarEnvios);
-    this.transaccion = new TransactionTemplate(Objects.requireNonNull(transactionManager));
   }
 
   @Scheduled(
@@ -43,8 +39,7 @@ public class TareaConciliacionEnvios {
       initialDelayString = "${tecnosport.skydropx.seguimiento.intervalo-minutos}",
       timeUnit = TimeUnit.MINUTES)
   public void conciliar() {
-    ResultadoConciliacionEnvios resultado =
-        transaccion.execute(estado -> conciliarEnvios.ejecutar());
+    ResultadoConciliacionEnvios resultado = conciliarEnvios.ejecutar();
     log.info(
         "Conciliación de envíos: {} revisados, {} con eventos nuevos, {} sin novedad,"
             + " {} guías sin código de transportadora",
@@ -52,5 +47,11 @@ public class TareaConciliacionEnvios {
         resultado.conEventosNuevos(),
         resultado.sinNovedad(),
         resultado.guiasSinCodigo());
+    if (resultado.guiasConError() > 0) {
+      log.error(
+          "Conciliación de envíos: {} guías fallaron y se reintentan en la vuelta siguiente: {}",
+          resultado.guiasConError(),
+          resultado.errores());
+    }
   }
 }
