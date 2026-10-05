@@ -46,6 +46,18 @@ export const checkoutRoutes: Routes = [
         // concatena los suyos a esta URL y las guías no dicen si lo hace con `?` o con `&`.
         // Como parámetros, una concatenación con `?` habría dejado dos signos de interrogación
         // y el navegador no habría leído ninguno de los dos lados.
+        //
+        // Desde el 4 de octubre de 2026 el backend ya no pone el correo: viajaba en la ruta y con
+        // ella a los registros. La ruta vieja se queda para los pagos que salieron antes y todavía
+        // no han vuelto; la página ignora el correo de la URL salvo para recordarlo.
+        path: 'sistecredito/retorno/:pedidoId',
+        data: { seo: { clave: 'seo.checkout.retorno_sistecredito' } },
+        loadComponent: () =>
+          import('./retorno-sistecredito/retorno-sistecredito.page').then(
+            (m) => m.RetornoSistecreditoPage,
+          ),
+      },
+      {
         path: 'sistecredito/retorno/:pedidoId/:correo',
         data: { seo: { clave: 'seo.checkout.retorno_sistecredito' } },
         loadComponent: () =>

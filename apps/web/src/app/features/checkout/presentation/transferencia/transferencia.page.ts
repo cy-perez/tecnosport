@@ -11,6 +11,8 @@ import {
 } from '../../application/seguimiento-pedido.consulta';
 import { Pedido } from '../../domain/pedido.model';
 import { datosTransferenciaDelPedido } from '../../domain/reglas-pedido';
+import { ALMACEN_CORREO_DE_PEDIDO } from '../../domain/almacen-correo-de-pedido.puerto';
+import { correoDelPedido } from '../../application/correo-del-pedido';
 
 /**
  * Paso 4e de `docs/09-plan-de-arranque.md`. Mismo patrón de doble fuente que
@@ -30,14 +32,16 @@ import { datosTransferenciaDelPedido } from '../../domain/reglas-pedido';
 export class TransferenciaPage {
   private readonly route = inject(ActivatedRoute);
   protected readonly checkout = inject(CheckoutStore);
+  private readonly correosDePedido = inject(ALMACEN_CORREO_DE_PEDIDO);
 
   protected readonly criteriosSeguimiento = computed<CriteriosSeguimiento | null>(() => {
     if (this.checkout.pedido() !== null) {
       return null;
     }
-    const parametros = this.route.snapshot.queryParamMap;
-    const pedidoId = parametros.get('pedidoId');
-    const correo = parametros.get('correo');
+    const pedidoId = this.route.snapshot.queryParamMap.get('pedidoId');
+    const correo = pedidoId
+      ? correoDelPedido(pedidoId, this.route.snapshot.fragment, this.correosDePedido)
+      : null;
     return pedidoId && correo ? { tipo: 'ID', pedidoId, correo } : null;
   });
 

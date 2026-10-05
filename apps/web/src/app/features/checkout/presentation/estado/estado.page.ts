@@ -26,6 +26,8 @@ import {
 } from '../../domain/reglas-pedido';
 import { urlWebCheckoutWompi } from '../../domain/wompi';
 import { fechaLarga } from '../../../../core/i18n/fecha-colombia';
+import { ALMACEN_CORREO_DE_PEDIDO } from '../../domain/almacen-correo-de-pedido.puerto';
+import { correoDelPedido } from '../../application/correo-del-pedido';
 
 const CLAVE_ETIQUETA_ESTADO: Record<EstadoPedido, string> = {
   PAGO_PENDIENTE: 'checkout.estado.estados.pago_pendiente',
@@ -93,6 +95,8 @@ export class EstadoPage {
    * consulta arrancaría con el formulario en blanco y la pantalla diría "no encontramos tu pedido"
    * antes de que nadie escribiera nada.
    */
+  private readonly correosDePedido = inject(ALMACEN_CORREO_DE_PEDIDO);
+
   private readonly consultado = signal<{ numeroPedido: string; correo: string } | null>(null);
 
   protected readonly form = inject(FormBuilder).nonNullable.group({
@@ -111,9 +115,12 @@ export class EstadoPage {
     if (this.checkout.pedido() !== null) {
       return null;
     }
-    const parametros = this.route.snapshot.queryParamMap;
-    const pedidoId = parametros.get('pedidoId');
-    const correo = parametros.get('correo');
+    const pedidoId = this.route.snapshot.queryParamMap.get('pedidoId');
+    // El correo ya no viene en la consulta: del fragmento del enlace de los correos, o de lo que
+    // el navegador recordó antes de ir a la pasarela. Sin ninguno, cae al formulario.
+    const correo = pedidoId
+      ? correoDelPedido(pedidoId, this.route.snapshot.fragment, this.correosDePedido)
+      : null;
     if (pedidoId && correo) {
       return { tipo: 'ID', pedidoId, correo };
     }

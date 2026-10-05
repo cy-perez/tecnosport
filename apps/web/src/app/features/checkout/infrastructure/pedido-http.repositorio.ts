@@ -97,8 +97,10 @@ export class PedidoHttpRepositorio implements RepositorioPedidos {
   }
 
   async consultarSeguimiento(pedidoId: string, correo: string): Promise<Seguimiento | null> {
-    const respuesta = await this.cliente.GET('/api/v1/pedidos/{id}/seguimiento', {
-      params: { path: { id: pedidoId }, query: { correo } },
+    // POST y con el correo en el cuerpo: en la consulta quedaba en los registros del servidor.
+    const respuesta = await this.cliente.POST('/api/v1/pedidos/{id}/seguimiento', {
+      params: { path: { id: pedidoId } },
+      body: { correo },
     });
     if (respuesta.response.status === 404) {
       return null;

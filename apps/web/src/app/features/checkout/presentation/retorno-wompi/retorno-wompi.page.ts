@@ -37,21 +37,19 @@ export class RetornoWompiPage {
     const idTransaccionWompi = parametros.get('id');
     const referencia = parametros.get('referencia');
     const pedidoId = parametros.get('pedidoId');
-    const correo = parametros.get('correo');
 
-    if (!idTransaccionWompi || !referencia || !pedidoId || !correo) {
+    if (!idTransaccionWompi || !referencia || !pedidoId) {
       this.sinDatos.set(true);
       return;
     }
 
-    void this.procesarRetorno(referencia, idTransaccionWompi, pedidoId, correo);
+    void this.procesarRetorno(referencia, idTransaccionWompi, pedidoId);
   }
 
   private async procesarRetorno(
     referencia: string,
     idTransaccionWompi: string,
     pedidoId: string,
-    correo: string,
   ): Promise<void> {
     try {
       await this.checkout.registrarIdTransaccionWompi(referencia, idTransaccionWompi);
@@ -60,7 +58,8 @@ export class RetornoWompiPage {
     }
     void this.router.navigate(['../estado'], {
       relativeTo: this.route,
-      queryParams: { pedidoId, correo },
+      // Sin el correo: la pantalla de estado lo lee de lo que el navegador recordó al salir.
+      queryParams: { pedidoId },
     });
   }
 }

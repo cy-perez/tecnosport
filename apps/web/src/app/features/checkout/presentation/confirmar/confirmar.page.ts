@@ -25,6 +25,7 @@ import { MetodoPago, Pedido } from '../../domain/pedido.model';
 import { ErrorHttp } from '../../../../core/http/respuesta-http';
 import { esMetodoPagoSistecredito, esMetodoPagoWompi } from '../../domain/reglas-pedido';
 import { urlWebCheckoutWompi } from '../../domain/wompi';
+import { ALMACEN_CORREO_DE_PEDIDO } from '../../domain/almacen-correo-de-pedido.puerto';
 
 const CLAVE_ETIQUETA: Record<MetodoPago, string> = {
   WOMPI: 'checkout.metodoPago.wompi',
@@ -70,6 +71,7 @@ export class ConfirmarPage {
   private readonly traducir = usarTraductor();
   protected readonly carrito = inject(CarritoStore);
   protected readonly checkout = inject(CheckoutStore);
+  private readonly correosDePedido = inject(ALMACEN_CORREO_DE_PEDIDO);
 
   protected readonly error = signal<string | null>(null);
 
@@ -385,6 +387,8 @@ export class ConfirmarPage {
   }
 
   private async continuarSegunMetodoPago(pedido: Pedido): Promise<boolean> {
+    // Antes de cualquier salida: la pasarela, la transferencia o el estado lo leen de aquí.
+    this.correosDePedido.recordar(pedido.id, pedido.correo);
     if (esMetodoPagoSistecredito(pedido.metodoPago)) {
       const documento = this.checkout.documentoComprador();
       if (!documento) {
@@ -415,10 +419,11 @@ export class ConfirmarPage {
       // `CheckoutStore` no sobrevive ese viaje. `id` lo agrega Wompi mismo;
       // `correo` hace falta para `GET /pedidos/{id}/seguimiento` en la
       // pantalla de estado (docs/03-api.md: "con token del correo").
+      // El correo NO va en la URL: la recuerda el navegador (`AlmacenCorreoDePedido`) y la
+      // pantalla de retorno la lee de ahí. En la URL quedaba en los registros y en Wompi.
       const parametrosRetorno = new URLSearchParams({
         referencia: intento.referencia,
         pedidoId: pedido.id,
-        correo: pedido.correo,
       });
       const urlRetorno = `${window.location.origin}/${idioma}/checkout/retorno-wompi?${parametrosRetorno.toString()}`;
       window.location.href = urlWebCheckoutWompi(intento, urlRetorno);
@@ -431,7 +436,7 @@ export class ConfirmarPage {
       // cuenta con calma) no debería perder los datos de la cuenta.
       void this.router.navigate(['../transferencia'], {
         relativeTo: this.route,
-        queryParams: { pedidoId: pedido.id, correo: pedido.correo },
+        queryParams: { pedidoId: pedido.id },
       });
       return true;
     }

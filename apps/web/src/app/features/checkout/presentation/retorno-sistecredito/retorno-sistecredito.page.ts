@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/cor
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { TsEsqueleto } from '../../../../shared/ts-esqueleto/ts-esqueleto';
+import { ALMACEN_CORREO_DE_PEDIDO } from '../../domain/almacen-correo-de-pedido.puerto';
 
 /**
  * Adónde vuelve el navegador tras la experiencia de pago de Sistecrédito (`adr/0048`).
@@ -33,17 +34,22 @@ import { TsEsqueleto } from '../../../../shared/ts-esqueleto/ts-esqueleto';
 export class RetornoSistecreditoPage {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
+  private readonly correosDePedido = inject(ALMACEN_CORREO_DE_PEDIDO);
 
   protected readonly sinDatos = signal(false);
 
   constructor() {
     const parametros = this.route.snapshot.paramMap;
     const pedidoId = parametros.get('pedidoId');
+    // Solo la ruta vieja lo trae, de pagos que salieron antes de que el backend dejara de ponerlo.
     const correo = parametros.get('correo');
 
-    if (!pedidoId || !correo) {
+    if (!pedidoId) {
       this.sinDatos.set(true);
       return;
+    }
+    if (correo) {
+      this.correosDePedido.recordar(pedidoId, correo);
     }
 
     // A la pantalla de estado, que es la que consulta la verdad. Lo que trae la pasarela en la
@@ -59,7 +65,7 @@ export class RetornoSistecreditoPage {
     // idioma viaja solo porque ya está en su URL.
     void this.router.navigate(['estado'], {
       relativeTo: this.route.parent,
-      queryParams: { pedidoId, correo },
+      queryParams: { pedidoId },
     });
   }
 }
