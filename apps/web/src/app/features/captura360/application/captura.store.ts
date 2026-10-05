@@ -9,6 +9,7 @@ import {
   SetRotacionAdmin,
 } from '../domain/repositorio-sets-rotacion.puerto';
 import { LADO_SALIDA_PX } from '../domain/recorte-360';
+import { formatoComun } from '../domain/formato-de-fotograma';
 import { procesarSet } from './procesar-set';
 import {
   ANUNCIO_EN_BLANCO,
@@ -355,6 +356,15 @@ export class CapturaStore {
       return;
     }
 
+    // El tipo con el que se firman las URL sale de los blobs, no se supone: en el Safari que no
+    // codifica WebP el procesador entrega JPEG, y una URL firmada para WebP rechaza ese `PUT`.
+    const formato = formatoComun(resultado.fotogramas.map((fotograma) => fotograma.blob));
+    if (formato === null) {
+      this.errorDelCierre.set('captura360.error_formato');
+      this.fase.set('CAPTURANDO');
+      return;
+    }
+
     this.fase.set('SUBIENDO');
     this.avance.set({ hechos: 0, total: resultado.fotogramas.length });
     try {
@@ -368,7 +378,7 @@ export class CapturaStore {
         }));
       this.setAbierto = set;
 
-      const subidas = await this.repositorio.urlsDeSubida(set.id, 'image/webp');
+      const subidas = await this.repositorio.urlsDeSubida(set.id, formato);
       const subidos = [];
       for (const fotograma of resultado.fotogramas) {
         const destino = subidas.find((subida) => subida.orden === fotograma.orden);

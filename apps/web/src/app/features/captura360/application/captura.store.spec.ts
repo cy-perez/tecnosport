@@ -38,13 +38,16 @@ describe('CapturaStore: el cierre del set', () => {
   const FONDO: ColorRgb = { r: 240, g: 240, b: 240 };
 
   class ProcesadorFalso implements ProcesadorDeFotogramas {
+    /** El tipo que «codificó» el navegador. WebP salvo que la prueba finja un Safari sin WebP. */
+    tipo = 'image/webp';
+
     async medir(): Promise<DeteccionDeRecorte> {
       const rectangulo: Rectangulo = { x: 500, y: 400, ancho: 800, alto: 700 };
       return { ok: true, rectangulo, fondo: FONDO };
     }
 
     async renderizar(): Promise<Blob> {
-      return new Blob(['procesado']);
+      return new Blob(['procesado'], { type: this.tipo });
     }
   }
 
@@ -53,6 +56,7 @@ describe('CapturaStore: el cierre del set', () => {
     abiertos = 0;
     fallarSubidas: Error | null = null;
     completados: string[] = [];
+    tiposPedidos: string[] = [];
 
     async abrir(comando: AbrirSetRotacion): Promise<SetRotacionAdmin> {
       this.abiertos++;
@@ -65,7 +69,8 @@ describe('CapturaStore: el cierre del set', () => {
       };
     }
 
-    async urlsDeSubida(setId: string): Promise<SubidaDeFotograma[]> {
+    async urlsDeSubida(setId: string, contentType: string): Promise<SubidaDeFotograma[]> {
+      this.tiposPedidos.push(contentType);
       return [0, 1, 2, 3].map((orden) => ({
         orden,
         url: `https://bucket.test/${setId}/${orden}`,
@@ -157,14 +162,17 @@ describe('CapturaStore: el cierre del set', () => {
     };
   }
 
-  function montar(): { store: CapturaStore; repositorio: RepositorioEspia } {
+  function montar(procesador = new ProcesadorFalso()): {
+    store: CapturaStore;
+    repositorio: RepositorioEspia;
+  } {
     const repositorio = new RepositorioEspia();
     TestBed.configureTestingModule({
       providers: [
         CapturaStore,
         { provide: CAMARA, useValue: camaraFalsa },
         { provide: ALMACEN_LOCAL_DE_CAPTURAS, useValue: almacenFalso },
-        { provide: PROCESADOR_DE_FOTOGRAMAS, useValue: new ProcesadorFalso() },
+        { provide: PROCESADOR_DE_FOTOGRAMAS, useValue: procesador },
         { provide: REPOSITORIO_SETS_ROTACION, useValue: repositorio },
         { provide: SENSOR_ORIENTACION, useValue: sensorFalso },
         { provide: PANTALLA_DESPIERTA, useValue: pantallaFalsa },
@@ -193,6 +201,39 @@ describe('CapturaStore: el cierre del set', () => {
     expect(repositorio.abiertos).toBe(1);
     expect(repositorio.completados).toEqual(['set-1']);
     expect(store.fase()).toBe('REVISANDO');
+  });
+
+  /**
+   * Safari de iOS anterior al 17 no codifica WebP y el procesador cae a JPEG. La URL firmada tiene
+   * que pedirse con el tipo que de verdad se va a subir: con `'image/webp'` fijo, Cloud Storage
+   * rechazaba el `PUT` porque el `Content-Type` no era el firmado.
+   */
+  it('pide las URL firmadas con el tipo que de verdad produjo el navegador', async () => {
+    const { store, repositorio } = montar();
+    await store.procesarYSubir();
+    expect(repositorio.tiposPedidos).toEqual(['image/webp']);
+
+    const sinWebp = new ProcesadorFalso();
+    sinWebp.tipo = 'image/jpeg';
+    TestBed.resetTestingModule();
+    const otro = montar(sinWebp);
+    await otro.store.procesarYSubir();
+
+    expect(otro.repositorio.tiposPedidos).toEqual(['image/jpeg']);
+    expect(otro.store.fase()).toBe('REVISANDO');
+  });
+
+  it('no pide URL ni abre set si los fotogramas salieron en un formato que no se sube', async () => {
+    const procesador = new ProcesadorFalso();
+    procesador.tipo = 'image/png';
+    const { store, repositorio } = montar(procesador);
+
+    await store.procesarYSubir();
+
+    expect(repositorio.abiertos).toBe(0);
+    expect(repositorio.tiposPedidos).toEqual([]);
+    expect(store.errorDelCierre()).toBe('captura360.error_formato');
+    expect(store.fase()).toBe('CAPTURANDO');
   });
 
   it('abre un set nuevo para la captura siguiente, cuando la anterior sí se completó', async () => {
