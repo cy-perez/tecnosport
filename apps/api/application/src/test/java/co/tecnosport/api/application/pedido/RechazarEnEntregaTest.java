@@ -36,7 +36,7 @@ class RechazarEnEntregaTest {
   private RechazarEnEntrega crear() {
     pedidos = new RepositorioPedidosFalso();
     inventarios = new RepositorioInventarioFalso();
-    return new RechazarEnEntrega(pedidos, inventarios, new RelojFalso(AHORA));
+    return new RechazarEnEntrega(pedidos, new RelojFalso(AHORA));
   }
 
   private Pedido pedidoDespachadoConReservaPendiente() {
@@ -73,12 +73,17 @@ class RechazarEnEntregaTest {
     return pedido;
   }
 
+  /**
+   * El paquete viene de vuelta, no ha llegado: la unidad sigue fuera de la venta hasta que alguien
+   * la recibe ({@code RecibirPedidoRechazado}). Antes se liberaba aquí, y en un pedido pagado eso
+   * reventaba contra una reserva que ya tenía salida.
+   */
   @Test
-  void rechazaUnPedidoDespachadoYLiberaElInventario() {
+  void rechazaUnPedidoDespachadoSinTocarElInventario() {
     RechazarEnEntrega caso = crear();
     Pedido pedido = pedidoDespachadoConReservaPendiente();
-    assertEquals(
-        4, inventarios.buscarPorVarianteId(varianteId).orElseThrow().saldoDisponible(AHORA));
+    int movimientosAntes =
+        inventarios.buscarPorVarianteId(varianteId).orElseThrow().movimientos().size();
 
     Pedido rechazado =
         caso.ejecutar(
@@ -87,8 +92,9 @@ class RechazarEnEntregaTest {
     assertEquals(EstadoPedido.RECHAZADO_EN_ENTREGA, rechazado.estado());
     assertEquals(
         "cliente no recibió", rechazado.historial().get(rechazado.historial().size() - 1).motivo());
-    assertEquals(
-        5, inventarios.buscarPorVarianteId(varianteId).orElseThrow().saldoDisponible(AHORA));
+    Inventario despues = inventarios.buscarPorVarianteId(varianteId).orElseThrow();
+    assertEquals(movimientosAntes, despues.movimientos().size());
+    assertEquals(4, despues.saldoDisponible(AHORA));
   }
 
   @Test

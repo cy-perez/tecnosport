@@ -1,33 +1,31 @@
 package co.tecnosport.api.application.pedido;
 
 import co.tecnosport.api.application.compartido.Reloj;
-import co.tecnosport.api.application.inventario.RepositorioInventario;
-import co.tecnosport.api.domain.inventario.Inventario;
 import co.tecnosport.api.domain.pedido.EstadoPedido;
-import co.tecnosport.api.domain.pedido.LineaPedido;
 import co.tecnosport.api.domain.pedido.Pedido;
 import java.time.Instant;
 import java.util.Objects;
 
 /**
- * Un pedido rechazado en la entrega libera cada línea reservada (docs/11-pagos-y-envios.md; {@code
- * LineaPedido.idReserva} identifica cuál movimiento liberar, sin adivinar por variante y cantidad).
- * La transición se aplica primero, igual que {@code DespacharPedido}: un segundo intento sobre un
- * pedido ya rechazado ({@code RECHAZADO_EN_ENTREGA} es terminal) se bloquea antes de tocar
- * inventario de nuevo.
+ * La transportadora no pudo entregar y el paquete viene de vuelta (docs/11-pagos-y-envios.md).
+ *
+ * <p><b>No toca el inventario, y hasta el 4 de octubre de 2026 sí lo hacía.</b> Liberaba cada
+ * reserva en el acto, y eso estaba mal de dos maneras. En un pedido pagado la reserva ya tenía
+ * {@code SALIDA}, así que {@code Inventario.liberar} lanzaba; como esto corre dentro de la
+ * conciliación de envíos, la excepción revertía la corrida entera en cada vuelta y ningún otro
+ * envío volvía a registrar su entrega. Y en contraentrega, donde sí liberaba, ponía a la venta una
+ * unidad que seguía en el camión.
+ *
+ * <p>La unidad vuelve cuando vuelve: {@link RecibirPedidoRechazado} la reingresa y, si el dinero ya
+ * había entrado, deja la constancia del reintegro.
  */
 public final class RechazarEnEntrega {
 
   private final RepositorioPedidos repositorioPedidos;
-  private final RepositorioInventario repositorioInventario;
   private final Reloj reloj;
 
-  public RechazarEnEntrega(
-      RepositorioPedidos repositorioPedidos,
-      RepositorioInventario repositorioInventario,
-      Reloj reloj) {
+  public RechazarEnEntrega(RepositorioPedidos repositorioPedidos, Reloj reloj) {
     this.repositorioPedidos = Objects.requireNonNull(repositorioPedidos);
-    this.repositorioInventario = Objects.requireNonNull(repositorioInventario);
     this.reloj = Objects.requireNonNull(reloj);
   }
 
@@ -40,19 +38,7 @@ public final class RechazarEnEntrega {
     Instant ahora = reloj.ahora();
     pedido.transicionar(
         EstadoPedido.RECHAZADO_EN_ENTREGA, comando.actor(), comando.motivo(), ahora);
-    for (LineaPedido linea : pedido.lineas()) {
-      liberarReserva(linea, comando.motivo(), ahora);
-    }
     repositorioPedidos.guardar(pedido);
     return pedido;
-  }
-
-  private void liberarReserva(LineaPedido linea, String motivo, Instant ahora) {
-    Inventario inventario =
-        repositorioInventario
-            .buscarPorVarianteId(linea.varianteId())
-            .orElseThrow(() -> new VarianteNoEncontradaException(linea.varianteId()));
-    inventario.liberar(linea.idReserva(), motivo, ahora);
-    repositorioInventario.guardar(inventario);
   }
 }

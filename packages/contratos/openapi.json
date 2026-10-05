@@ -2377,6 +2377,17 @@
         },
         "type" : "object"
       },
+      "RecibirPedidoRechazadoRequest" : {
+        "properties" : {
+          "comprobante" : {
+            "type" : "string"
+          },
+          "medio" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
       "ReclamacionGarantiaRespuesta" : {
         "properties" : {
           "descripcionDelFallo" : {
@@ -4302,6 +4313,47 @@
             "application/json" : {
               "schema" : {
                 "$ref" : "#/components/schemas/DespacharPedidoRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PedidoRespuesta"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "admin-pedidos-controlador"
+        ]
+      }
+    },
+    "/api/v1/admin/pedidos/{id}/devolucion-rechazo" : {
+      "post" : {
+        "operationId" : "recibirPedidoRechazado",
+        "parameters" : [
+          {
+            "in" : "path",
+            "name" : "id",
+            "required" : true,
+            "schema" : {
+              "format" : "uuid",
+              "type" : "string"
+            }
+          }
+        ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/RecibirPedidoRechazadoRequest"
               }
             }
           },

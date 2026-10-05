@@ -35,6 +35,7 @@ const MEDIOS: readonly MedioReintegro[] = ['TRANSFERENCIA_BANCARIA', 'WOMPI', 'E
 const CLAVE_MEDIO: Record<MedioReintegro, string> = {
   TRANSFERENCIA_BANCARIA: 'admin.retractos.medios.transferencia_bancaria',
   WOMPI: 'admin.retractos.medios.wompi',
+  SISTECREDITO: 'admin.retractos.medios.sistecredito',
   EFECTIVO: 'admin.retractos.medios.efectivo',
   OTRO: 'admin.retractos.medios.otro',
 };

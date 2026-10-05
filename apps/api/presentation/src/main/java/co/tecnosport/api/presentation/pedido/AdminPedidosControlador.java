@@ -18,6 +18,8 @@ import co.tecnosport.api.application.pedido.MarcarEntregadoComando;
 import co.tecnosport.api.application.pedido.PedidosPaginados;
 import co.tecnosport.api.application.pedido.RechazarEnEntrega;
 import co.tecnosport.api.application.pedido.RechazarEnEntregaComando;
+import co.tecnosport.api.application.pedido.RecibirPedidoRechazado;
+import co.tecnosport.api.application.pedido.RecibirPedidoRechazadoComando;
 import co.tecnosport.api.application.pedido.ResultadoEntrega;
 import co.tecnosport.api.application.pedido.VerificarContraentrega;
 import co.tecnosport.api.application.pedido.VerificarContraentregaComando;
@@ -34,6 +36,7 @@ import co.tecnosport.api.presentation.pedido.dto.EmisionDeGuiaRespuesta;
 import co.tecnosport.api.presentation.pedido.dto.PedidoRespuesta;
 import co.tecnosport.api.presentation.pedido.dto.PedidosPaginadosRespuesta;
 import co.tecnosport.api.presentation.pedido.dto.RechazarEnEntregaRequest;
+import co.tecnosport.api.presentation.pedido.dto.RecibirPedidoRechazadoRequest;
 import co.tecnosport.api.presentation.pedido.dto.VerificarContraentregaRequest;
 import java.util.Objects;
 import java.util.UUID;
@@ -78,6 +81,7 @@ public class AdminPedidosControlador {
   private final MarcarEntregado marcarEntregado;
   private final CancelarPedido cancelarPedido;
   private final RechazarEnEntrega rechazarEnEntrega;
+  private final RecibirPedidoRechazado recibirPedidoRechazado;
   private final ConciliarRecaudo conciliarRecaudo;
   private final MapeadorRespuestasPedido mapeador;
   private final TransactionTemplate transaccion;
@@ -91,6 +95,7 @@ public class AdminPedidosControlador {
       MarcarEntregado marcarEntregado,
       CancelarPedido cancelarPedido,
       RechazarEnEntrega rechazarEnEntrega,
+      RecibirPedidoRechazado recibirPedidoRechazado,
       ConciliarRecaudo conciliarRecaudo,
       MapeadorRespuestasPedido mapeador,
       PlatformTransactionManager transactionManager) {
@@ -102,6 +107,7 @@ public class AdminPedidosControlador {
     this.marcarEntregado = Objects.requireNonNull(marcarEntregado);
     this.cancelarPedido = Objects.requireNonNull(cancelarPedido);
     this.rechazarEnEntrega = Objects.requireNonNull(rechazarEnEntrega);
+    this.recibirPedidoRechazado = Objects.requireNonNull(recibirPedidoRechazado);
     this.conciliarRecaudo = Objects.requireNonNull(conciliarRecaudo);
     this.mapeador = Objects.requireNonNull(mapeador);
     this.transaccion = new TransactionTemplate(Objects.requireNonNull(transactionManager));
@@ -221,6 +227,26 @@ public class AdminPedidosControlador {
             estado ->
                 rechazarEnEntrega.ejecutar(
                     new RechazarEnEntregaComando(id, cuerpo.motivo(), actor)));
+    return mapeador.aRespuesta(pedido);
+  }
+
+  /**
+   * La mercancía de un pedido rechazado volvió al almacén. Reingresa las unidades y, si el pedido
+   * había cobrado, registra el reintegro por lo que falte devolver: el monto no viene del cliente.
+   */
+  @PostMapping("/{id}/devolucion-rechazo")
+  public PedidoRespuesta recibirPedidoRechazado(
+      @PathVariable UUID id, @RequestBody RecibirPedidoRechazadoRequest cuerpo) {
+    String actor = "admin:" + actorId();
+    Pedido pedido =
+        transaccion.execute(
+            estado ->
+                recibirPedidoRechazado.ejecutar(
+                    new RecibirPedidoRechazadoComando(
+                        id,
+                        cuerpo.medio() == null ? null : MedioReintegro.valueOf(cuerpo.medio()),
+                        cuerpo.comprobante(),
+                        actor)));
     return mapeador.aRespuesta(pedido);
   }
 

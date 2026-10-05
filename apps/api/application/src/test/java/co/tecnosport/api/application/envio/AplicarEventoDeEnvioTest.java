@@ -60,7 +60,7 @@ class AplicarEventoDeEnvioTest {
             envios,
             pedidos,
             new MarcarEntregado(pedidos, inventarios, () -> AHORA),
-            new RechazarEnEntrega(pedidos, inventarios, () -> AHORA),
+            new RechazarEnEntrega(pedidos, () -> AHORA),
             () -> AHORA);
   }
 
@@ -229,11 +229,18 @@ class AplicarEventoDeEnvioTest {
         EstadoPedido.RECAUDO_PENDIENTE, pedidos.buscarPorId(pedido.id()).orElseThrow().estado());
   }
 
+  /**
+   * El caso que tumbaba la conciliación entera: un pedido pagado tiene la reserva confirmada, y el
+   * rechazo de antes intentaba liberarla y reventaba. Ahora el rechazo no toca el inventario —el
+   * paquete viene en camino— y la unidad vuelve cuando alguien la recibe.
+   */
   @Test
-  void enDevolucionRechazaElPedidoYLiberaElInventario() {
+  void enDevolucionRechazaUnPedidoPagadoSinTocarElInventario() {
     Pedido pedido = sembrarPedidoDespachado(MetodoPago.WOMPI);
-    int disponibleAntes =
-        inventarios.buscarPorVarianteId(varianteId).orElseThrow().saldoDisponible(AHORA);
+    Inventario inventario = inventarios.buscarPorVarianteId(varianteId).orElseThrow();
+    inventario.confirmar(pedido.lineas().get(0).idReserva(), DESPACHO);
+    inventarios.guardar(inventario);
+    int movimientosAntes = inventario.movimientos().size();
 
     ResultadoEventoDeEnvio resultado = caso.ejecutar(evento(EstadoEnvio.EN_DEVOLUCION, "ev-1"));
 
@@ -241,8 +248,8 @@ class AplicarEventoDeEnvioTest {
     assertEquals(
         EstadoPedido.RECHAZADO_EN_ENTREGA, pedidos.buscarPorId(pedido.id()).orElseThrow().estado());
     assertEquals(
-        disponibleAntes + 1,
-        inventarios.buscarPorVarianteId(varianteId).orElseThrow().saldoDisponible(AHORA));
+        movimientosAntes,
+        inventarios.buscarPorVarianteId(varianteId).orElseThrow().movimientos().size());
   }
 
   /**

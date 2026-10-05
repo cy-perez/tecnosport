@@ -542,7 +542,7 @@ Los dos caminos no se parecen: son el mismo código con distinto disparador.
 |---|---|
 | `picked_up` | Confirma `DESPACHADO` si no lo estaba |
 | `delivered` | `ENTREGADO`, y encadena `RECAUDO_PENDIENTE` si es contraentrega |
-| `in_return` | `RECHAZADO_EN_ENTREGA`, libera inventario, registra el motivo |
+| `in_return` | `RECHAZADO_EN_ENTREGA` y registra el motivo; el inventario vuelve al recibir el paquete en el panel |
 
 `created`, `in_transit`, `last_mile`, `delivery_attempt`, `delivered_to_branch`,
 `retained`, `exception`, `canceled`, `destroyed` y `error` se registran como
@@ -662,7 +662,8 @@ confirmación cuando ya no puede cambiar de opinión.
    se despacha. Esta regla no la toca el proveedor: es la que más pérdida evita.
 4. Se despacha con recaudo. La guía la emite Skydropx y lleva el valor a cobrar.
 5. Entregado: pasa a `RECAUDO_PENDIENTE`. Devuelto: pasa a
-   `RECHAZADO_EN_ENTREGA`, se libera el inventario y se registra el motivo.
+   `RECHAZADO_EN_ENTREGA` y se registra el motivo. La unidad se libera cuando el
+   paquete vuelve y se recibe en el panel (`DEVUELTO`).
 6. La plataforma reporta el dinero cobrado y dispersado, y pasa a
    `RECAUDO_CONCILIADO`.
 

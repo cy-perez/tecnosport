@@ -33,6 +33,17 @@ public class ReintegroRequeridoException extends RuntimeException {
   }
 
   /**
+   * Un pedido pagado que la transportadora devolvió exige devolver lo que cobró. El monto lo
+   * calcula el sistema; lo que falta es por dónde salió.
+   */
+  public static ReintegroRequeridoException porqueElPedidoRechazadoYaHabiaCobrado(UUID pedidoId) {
+    return new ReintegroRequeridoException(
+        "El pedido "
+            + pedidoId
+            + " ya tenía el dinero recibido: recibirlo de vuelta exige el medio del reintegro.");
+  }
+
+  /**
    * Registrar un reintegro es, por definición, devolver dinero: sin monto ni medio no hay
    * constancia.
    */

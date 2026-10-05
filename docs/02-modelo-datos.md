@@ -362,8 +362,14 @@ contra existencia real (`ADR-0014`), y actualiza ese id.
 
 Ciclo con contraentrega: la reserva se crea al confirmar el pedido y **no vence
 por tiempo**: se mantiene hasta el despacho, porque no hay pago que esperar. Si el
-pedido se cancela o el cliente rechaza en la entrega, se libera con un movimiento
-de `LIBERACION` que registra el motivo.
+pedido se cancela, se libera con un movimiento de `LIBERACION` que registra el
+motivo. Si el cliente rechaza en la entrega, **no** se libera todavía: el paquete
+viene de vuelta, y la unidad vuelve a la venta cuando alguien la recibe en el
+panel (`RecibirPedidoRechazado`, `RECHAZADO_EN_ENTREGA -> DEVUELTO`). Eso vale
+para todos los métodos de pago, y en uno pagado además deja la constancia del
+reintegro por lo que el pedido cobró, producto y flete (desde el 4 de octubre de
+2026; antes el rechazo liberaba en el acto, y en un pedido pagado eso reventaba
+contra una reserva que ya tenía salida).
 
 La reserva se toma con bloqueo pesimista sobre la variante para que dos
 compradores simultáneos no vendan la misma última unidad.
@@ -400,8 +406,10 @@ CREADO
                                        |                             |
                                   ENTREGADO                 RECHAZADO_EN_ENTREGA
                                        |                             |
-                              RECAUDO_PENDIENTE              (libera inventario)
-                                       |
+                              RECAUDO_PENDIENTE               (vuelve a bodega)
+                                       |                             |
+                                       |                         DEVUELTO
+                                       |                (reingresa; si cobró, reintegro)
                                  RECAUDO_CONCILIADO
                                        |
                                    DEVUELTO

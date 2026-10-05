@@ -61,6 +61,15 @@ export function usarAccionesPedidoAdmin() {
     onSuccess: invalidarLista,
   }));
 
+  const recibirDevolucion = injectMutation(() => ({
+    mutationFn: (variables: {
+      pedidoId: string;
+      medio: MedioReintegro | null;
+      comprobante: string | null;
+    }): Promise<PedidoAdmin> => repositorio.recibirDevolucion(variables),
+    onSuccess: invalidarLista,
+  }));
+
   const conciliarRecaudo = injectMutation(() => ({
     mutationFn: (variables: {
       pedidoId: string;
@@ -93,6 +102,7 @@ export function usarAccionesPedidoAdmin() {
     emitirGuia,
     marcarEntregado,
     rechazarEnEntrega,
+    recibirDevolucion,
     conciliarRecaudo,
     cancelar,
   };

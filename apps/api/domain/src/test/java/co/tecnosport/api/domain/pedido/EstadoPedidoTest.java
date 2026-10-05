@@ -34,6 +34,17 @@ class EstadoPedidoTest {
     assertTrue(EstadoPedido.DESPACHADO.puedeTransicionarA(EstadoPedido.RECHAZADO_EN_ENTREGA));
   }
 
+  /**
+   * Un pedido rechazado en la entrega tiene una sola salida: la mercancía vuelve. Sin ella, un
+   * pedido pagado y devuelto no tenía camino ni de reintegro ni de reingreso.
+   */
+  @Test
+  void unRechazadoEnLaEntregaSoloSaleCuandoLaMercanciaVuelve() {
+    assertTrue(EstadoPedido.RECHAZADO_EN_ENTREGA.puedeTransicionarA(EstadoPedido.DEVUELTO));
+    assertFalse(EstadoPedido.RECHAZADO_EN_ENTREGA.puedeTransicionarA(EstadoPedido.ENTREGADO));
+    assertFalse(EstadoPedido.RECHAZADO_EN_ENTREGA.puedeTransicionarA(EstadoPedido.CANCELADO));
+  }
+
   @Test
   void losEstadosTerminalesNoTienenSalida() {
     assertFalse(EstadoPedido.RECHAZADO_EN_ENTREGA.puedeTransicionarA(EstadoPedido.EN_PREPARACION));

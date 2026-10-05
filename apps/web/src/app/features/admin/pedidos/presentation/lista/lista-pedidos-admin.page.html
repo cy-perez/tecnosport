@@ -456,6 +456,46 @@
                         </ts-boton>
                       </form>
                     }
+                    @case ('RECHAZADO_EN_ENTREGA') {
+                      <form
+                        [formGroup]="formularioDevolucion(pedido)"
+                        (submit)="$event.preventDefault(); recibirDevolucion(pedido)"
+                      >
+                        <h2 class="mt-0 mb-8 text-base font-medio">
+                          {{ 'admin.pedidos.devolucion.titulo' | transloco }}
+                        </h2>
+                        <p class="mt-0 mb-8 text-ts-texto-suave">
+                          {{ 'admin.pedidos.devolucion.ayuda' | transloco }}
+                        </p>
+                        @if (porDevolver(pedido) > 0) {
+                          <p class="mt-0 mb-8">
+                            {{ 'admin.pedidos.devolucion.por_devolver' | transloco }}
+                            <ts-precio
+                              [valor]="porDevolver(pedido)"
+                              [moneda]="pedido.dineroRecibido.moneda"
+                            />
+                          </p>
+                          <ts-select
+                            [idCampo]="'devolucion-medio-' + pedido.id"
+                            [label]="'admin.pedidos.devolucion.medio' | transloco"
+                            [opciones]="opcionesMedioDevolucion()"
+                            formControlName="medio"
+                          />
+                          <ts-campo
+                            [idCampo]="'devolucion-comprobante-' + pedido.id"
+                            [label]="'admin.pedidos.devolucion.comprobante' | transloco"
+                            formControlName="comprobante"
+                          />
+                        } @else {
+                          <p class="mt-0 mb-8 text-ts-texto-suave">
+                            {{ 'admin.pedidos.devolucion.sin_dinero' | transloco }}
+                          </p>
+                        }
+                        <ts-boton tipo="submit" [cargando]="recibiendoDevolucion(pedido.id)">
+                          {{ 'admin.pedidos.devolucion.recibir' | transloco }}
+                        </ts-boton>
+                      </form>
+                    }
                     @case ('RECAUDO_PENDIENTE') {
                       <form
                         [formGroup]="formularioRecaudo(pedido.id)"

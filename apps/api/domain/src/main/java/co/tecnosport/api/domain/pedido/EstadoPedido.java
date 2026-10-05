@@ -16,6 +16,12 @@ import java.util.Set;
  * así que un contraentrega ya entregado y recaudado puede devolverse igual que uno pagado en línea.
  * Sin esa arista, el único camino de vuelta era el de pago en línea y la mitad de las compras no
  * tenía a dónde ir.
+ *
+ * <p>{@code RECHAZADO_EN_ENTREGA} sale hacia {@code DEVUELTO} cuando la mercancía vuelve al
+ * almacén. Era terminal hasta el 4 de octubre de 2026, y con eso un pedido <b>pagado</b> y
+ * rechazado se quedaba sin reintegro y su unidad sin reingreso: el rechazo liberaba una reserva que
+ * ya tenía salida, el inventario lo rechazaba, y la excepción tumbaba la conciliación de todos los
+ * envíos.
  */
 public enum EstadoPedido {
   CREADO,
@@ -55,7 +61,7 @@ public enum EstadoPedido {
     TRANSICIONES_VALIDAS.put(EN_PREPARACION, EnumSet.of(DESPACHADO, CANCELADO));
     TRANSICIONES_VALIDAS.put(DESPACHADO, EnumSet.of(ENTREGADO, RECHAZADO_EN_ENTREGA));
     TRANSICIONES_VALIDAS.put(ENTREGADO, EnumSet.of(DEVUELTO, RECAUDO_PENDIENTE));
-    TRANSICIONES_VALIDAS.put(RECHAZADO_EN_ENTREGA, EnumSet.noneOf(EstadoPedido.class));
+    TRANSICIONES_VALIDAS.put(RECHAZADO_EN_ENTREGA, EnumSet.of(DEVUELTO));
     TRANSICIONES_VALIDAS.put(DEVUELTO, EnumSet.noneOf(EstadoPedido.class));
     TRANSICIONES_VALIDAS.put(RECAUDO_PENDIENTE, EnumSet.of(RECAUDO_CONCILIADO));
     TRANSICIONES_VALIDAS.put(RECAUDO_CONCILIADO, EnumSet.of(DEVUELTO));

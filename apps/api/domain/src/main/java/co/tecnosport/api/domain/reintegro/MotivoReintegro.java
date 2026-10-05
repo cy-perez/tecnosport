@@ -28,5 +28,12 @@ public enum MotivoReintegro {
   NO_DISPONIBILIDAD,
 
   /** No se entregó dentro del plazo pactado y el comprador terminó el contrato. */
-  PLAZO_INCUMPLIDO
+  PLAZO_INCUMPLIDO,
+
+  /**
+   * La transportadora no pudo entregar y la mercancía volvió. El comprador no recibió nada, así que
+   * lo que pagó se le devuelve entero —producto y flete—: no hay contrato cumplido del que
+   * descontar.
+   */
+  RECHAZO_EN_ENTREGA
 }
