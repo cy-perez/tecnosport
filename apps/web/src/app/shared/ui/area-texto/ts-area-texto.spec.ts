@@ -74,6 +74,23 @@ describe('TsAreaTexto', () => {
   });
 
   /**
+   * El contador entero era región viva y anunciaba cada carácter. Ahora la región solo habla cuando
+   * queda menos de la décima parte del tope (2 de 20).
+   */
+  it('solo anuncia lo que queda cuando se acerca al tope', async () => {
+    const { container } = await render(Anfitrion);
+    const region = container.querySelector('[aria-live]')!;
+    const campo = screen.getByLabelText('Tu mensaje');
+
+    fireEvent.input(campo, { target: { value: 'hola' } });
+    expect(region.textContent?.trim()).toBe('');
+
+    fireEvent.input(campo, { target: { value: 'dieciocho letras..' } });
+    expect(region.textContent?.trim()).toBe('Quedan 2');
+    expect(screen.getByText('Quedan 2', { selector: '[id="prueba-contador"]' })).toBeTruthy();
+  });
+
+  /**
    * Los tres textos de apoyo describen el control a la vez. Sin esto, enseñar un error dejaba el
    * contador fuera del nombre accesible justo cuando más falta hace.
    */

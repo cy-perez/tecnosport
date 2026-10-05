@@ -16,7 +16,12 @@ import {
 } from '@angular/core';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { TsBoton } from '../ui/boton/ts-boton';
-import { indiceCircular, indiceDesdeDesplazamiento, indiceOpuesto, ordenDePrecarga } from './rotacion-360';
+import {
+  indiceCircular,
+  indiceDesdeDesplazamiento,
+  indiceOpuesto,
+  ordenDePrecarga,
+} from './rotacion-360';
 
 /** `navigator.connection` no está en la librería DOM de TypeScript; solo lo que se lee de él. */
 interface NavegadorConConexion extends Navigator {
@@ -211,7 +216,12 @@ export class TsVisor360 {
     // Solo el eje horizontal gira. El vertical lo maneja el navegador como desplazamiento de
     // página, gracias a `touch-action: pan-y`.
     this.indiceActual.set(
-      indiceDesdeDesplazamiento(evento.clientX - this.inicioX, this.anchoAlIniciar, this.total(), this.indiceAlIniciar),
+      indiceDesdeDesplazamiento(
+        evento.clientX - this.inicioX,
+        this.anchoAlIniciar,
+        this.total(),
+        this.indiceAlIniciar,
+      ),
     );
   }
 
@@ -220,6 +230,8 @@ export class TsVisor360 {
       return;
     }
     this.arrastrando.set(false);
+    // Se anuncia al soltar, una vez, y no en cada `pointermove`.
+    this.anunciarPosicion();
     const marco = this.marco().nativeElement;
     if (marco.hasPointerCapture?.(evento.pointerId)) {
       marco.releasePointerCapture(evento.pointerId);
@@ -254,6 +266,18 @@ export class TsVisor360 {
   private irA(indice: number): void {
     this.indiceActual.set(indice);
     this.ocultarPista();
+    this.anunciarPosicion();
+  }
+
+  /**
+   * La posición que dice la región viva, en base 1, o `null` antes del primer gesto. Separada de
+   * `indiceActual` porque esa sigue al dedo en cada `pointermove`, y anunciarla ahí saturaba al
+   * lector de pantalla.
+   */
+  protected readonly posicionAnunciada = signal<number | null>(null);
+
+  private anunciarPosicion(): void {
+    this.posicionAnunciada.set(this.indiceActual() + 1);
   }
 
   private ocultarPista(): void {
@@ -340,7 +364,9 @@ export class TsVisor360 {
     // falta una foto es una decisión de producto, no una deuda de este componente.
     imagen.onerror = () => {
       const indice = this.imagenes().indexOf(url);
-      console.warn(`[ts-visor-360] El fotograma ${indice + 1} de ${this.total()} no cargó y se omite: ${url}`);
+      console.warn(
+        `[ts-visor-360] El fotograma ${indice + 1} de ${this.total()} no cargó y se omite: ${url}`,
+      );
       alTerminar?.();
     };
     imagen.src = url;

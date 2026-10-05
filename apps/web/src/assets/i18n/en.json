@@ -175,7 +175,8 @@
     "pista": "Drag to turn",
     "girar_izquierda": "Turn left",
     "girar_derecha": "Turn right",
-    "posicion": "Frame {{actual}} of {{total}}"
+    "posicion": "Frame {{actual}} of {{total}}",
+    "anuncio_posicion": "Turned to frame {{actual}} of {{total}}"
   },
   "seo": {
     "portada": {

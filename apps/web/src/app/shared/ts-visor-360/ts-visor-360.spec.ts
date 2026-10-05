@@ -5,10 +5,16 @@ import en from '../../../assets/i18n/en.json';
 import es from '../../../assets/i18n/es.json';
 import { TsVisor360 } from './ts-visor-360';
 
-const OCHO_FOTOGRAMAS = Array.from({ length: 8 }, (_, orden) => `https://imagenes.test/f${orden}.webp`);
+const OCHO_FOTOGRAMAS = Array.from(
+  { length: 8 },
+  (_, orden) => `https://imagenes.test/f${orden}.webp`,
+);
 
 /** Un set distinto, para las pruebas de qué pasa cuando el visor cambia de producto. */
-const OTROS_OCHO = Array.from({ length: 8 }, (_, orden) => `https://imagenes.test/otro-f${orden}.webp`);
+const OTROS_OCHO = Array.from(
+  { length: 8 },
+  (_, orden) => `https://imagenes.test/otro-f${orden}.webp`,
+);
 
 const ANCHO_MARCO = 400;
 /** Un octavo del ancho con ocho fotogramas: exactamente un paso. */
@@ -243,6 +249,25 @@ describe('TsVisor360', () => {
     expect(screen.getByText('Fotograma 3 de 8')).toBeTruthy();
   });
 
+  /**
+   * El contador sigue al dedo y era región viva: un arrastre encolaba decenas de anuncios. La
+   * región de anuncio es otra, y solo cambia al soltar.
+   */
+  it('al arrastrar no anuncia cada fotograma: solo dice dónde quedó al soltar', async () => {
+    const { fixture } = await renderVisor();
+    const region = document.querySelector('span[aria-live]')!;
+
+    puntero('pointerdown', { x: 200, y: 100 });
+    puntero('pointermove', { x: 200 - UN_PASO, y: 100 });
+    puntero('pointermove', { x: 200 - UN_PASO * 2, y: 100 });
+    await fixture.whenStable();
+    expect(region.textContent?.trim()).toBe('');
+
+    puntero('pointerup', { x: 200 - UN_PASO * 2, y: 100 });
+    await fixture.whenStable();
+    expect(region.textContent?.trim()).toBe('Girado al fotograma 3 de 8');
+  });
+
   it('arrastrar hacia la derecha gira al otro lado, dando la vuelta', async () => {
     const { fixture } = await renderVisor();
 
@@ -313,7 +338,9 @@ describe('TsVisor360', () => {
 
     await vi.waitFor(() => {
       const mensajes = aviso.mock.calls.map(([mensaje]) => String(mensaje));
-      expect(mensajes.some((mensaje) => mensaje.includes('https://imagenes.test/f1.webp'))).toBe(true);
+      expect(mensajes.some((mensaje) => mensaje.includes('https://imagenes.test/f1.webp'))).toBe(
+        true,
+      );
       expect(mensajes.some((mensaje) => mensaje.includes('no cargó'))).toBe(true);
     });
   });
@@ -398,7 +425,9 @@ describe('TsVisor360', () => {
 
     expect(marco().getAttribute('tabindex')).toBe('0');
     expect(
-      screen.getByText('Arrastra sobre la imagen, o usa las flechas izquierda y derecha, para girar el producto.'),
+      screen.getByText(
+        'Arrastra sobre la imagen, o usa las flechas izquierda y derecha, para girar el producto.',
+      ),
     ).toBeTruthy();
   });
 
@@ -522,7 +551,9 @@ describe('TsVisor360', () => {
     await fixture.whenStable();
 
     expect(ImagenManual.solicitadas.filter(esDelViejo)).toHaveLength(pedidasDelViejo);
-    expect(ImagenManual.solicitadas.filter((url) => OTROS_OCHO.includes(url)).length).toBeGreaterThan(0);
+    expect(
+      ImagenManual.solicitadas.filter((url) => OTROS_OCHO.includes(url)).length,
+    ).toBeGreaterThan(0);
   });
 
   it('un set nuevo vuelve al frontal', async () => {
