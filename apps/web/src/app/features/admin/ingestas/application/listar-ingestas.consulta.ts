@@ -1,5 +1,5 @@
 import { inject } from '@angular/core';
-import { injectQuery } from '@tanstack/angular-query-experimental';
+import { injectQuery, keepPreviousData } from '@tanstack/angular-query-experimental';
 import { FiltroLotes, loteAbierto, LotesPaginados } from '../domain/ingesta.model';
 import { REPOSITORIO_INGESTAS_ADMIN } from '../domain/repositorio-ingestas-admin.puerto';
 
@@ -24,6 +24,11 @@ export function usarListarIngestas(filtro: () => FiltroLotes) {
   return injectQuery(() => ({
     queryKey: claveListaIngestas(filtro()),
     queryFn: (): Promise<LotesPaginados> => repositorio.listar(filtro()),
+    // Al pasar de página la llave cambia, y sin esto la consulta volvía a `pending`: la plantilla
+    // pintaba el esqueleto, el paginador desaparecía con el botón pulsado dentro y el foco caía
+    // en `<body>`. Con los datos de la página anterior a la vista mientras llega la nueva, el
+    // paginador no se desmonta.
+    placeholderData: keepPreviousData,
     staleTime: 5_000,
     refetchInterval: (consulta) => {
       const datos = consulta.state.data as LotesPaginados | undefined;
