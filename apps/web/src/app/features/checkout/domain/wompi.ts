@@ -23,7 +23,9 @@ export function urlWebCheckoutWompi(intento: IntentoDePago, urlRetorno: string):
   const parametros = new URLSearchParams({
     'public-key': intento.llavePublica,
     currency: intento.monto.moneda,
-    'amount-in-cents': String(Math.round(intento.monto.valor * 100)),
+    // El que firmó el servidor: calcularlo aquí con un `number` por 100 era aritmética de dinero en
+    // el navegador, y cualquier diferencia con lo firmado hacía que Wompi rechazara el pago.
+    'amount-in-cents': String(intento.montoEnCentavos),
     reference: intento.referencia,
     'signature:integrity': intento.firmaIntegridad,
     'redirect-url': urlRetorno,

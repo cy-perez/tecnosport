@@ -28,15 +28,12 @@ export class CarritoPage {
     return carrito.lineas.map((linea) => ({
       linea,
       snapshot: this.store.snapshotDeLinea(linea.varianteId),
+      precio: this.store.precioDeLinea(linea.id),
     }));
   });
 
-  protected readonly total = computed(() =>
-    this.lineas().reduce(
-      (suma, { linea, snapshot }) => suma + (snapshot ? snapshot.precioValor * linea.cantidad : 0),
-      0,
-    ),
-  );
+  /** El del servidor (`CarritoStore.subtotal`), no la suma de los precios guardados al agregar. */
+  protected readonly total = computed(() => this.store.subtotal());
 
   protected cambiarCantidad(lineaId: string, cantidad: number): void {
     void this.store.actualizarCantidad(lineaId, cantidad);

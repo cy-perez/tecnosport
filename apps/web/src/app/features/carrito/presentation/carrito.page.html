@@ -22,6 +22,7 @@
           <app-linea-carrito
             [linea]="item.linea"
             [snapshot]="item.snapshot"
+            [precioUnitario]="item.precio"
             (cantidadCambio)="cambiarCantidad(item.linea.id, $event)"
             (eliminar)="eliminarLinea(item.linea.id)"
           />

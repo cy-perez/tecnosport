@@ -8,6 +8,7 @@ describe('aIntentoDePago', () => {
       firmaIntegridad: 'abc123firma',
       llavePublica: 'pub_test_xyz',
       ambiente: 'sandbox',
+      montoEnCentavos: 18_990_000,
     });
 
     expect(intento).toEqual({
@@ -16,16 +17,18 @@ describe('aIntentoDePago', () => {
       firmaIntegridad: 'abc123firma',
       llavePublica: 'pub_test_xyz',
       ambiente: 'sandbox',
+      montoEnCentavos: 18_990_000,
     });
   });
 
   it('campos ausentes se rellenan con valores por defecto, nunca undefined', () => {
-    expect(aIntentoDePago({})).toEqual({
+    expect(aIntentoDePago({ montoEnCentavos: 100 })).toEqual({
       referencia: '',
       monto: { valor: 0, moneda: 'COP' },
       firmaIntegridad: '',
       llavePublica: '',
       ambiente: '',
+      montoEnCentavos: 100,
     });
   });
 });

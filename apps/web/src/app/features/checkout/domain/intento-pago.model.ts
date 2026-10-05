@@ -12,4 +12,6 @@ export interface IntentoDePago {
   readonly firmaIntegridad: string;
   readonly llavePublica: string;
   readonly ambiente: string;
+  /** El `amount-in-cents` que el servidor firmó. El navegador ya no lo calcula. */
+  readonly montoEnCentavos: number;
 }

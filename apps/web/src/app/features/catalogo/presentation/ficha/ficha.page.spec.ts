@@ -10,7 +10,7 @@ import en from '../../../../../assets/i18n/en.json';
 import es from '../../../../../assets/i18n/es.json';
 import esCarrito from '../../../../../assets/i18n/scopes/carrito/es.json';
 import esCatalogo from '../../../../../assets/i18n/scopes/catalogo/es.json';
-import { Carrito } from '../../../carrito/domain/carrito.model';
+import { Carrito, CarritoCotizado } from '../../../carrito/domain/carrito.model';
 import {
   REPOSITORIO_CARRITO,
   RepositorioCarrito,
@@ -25,7 +25,26 @@ import { FichaPage } from './ficha.page';
 import { esperarSinViolaciones } from '../../../../../testing/axe';
 import { proveerAlmacenesCarrito } from '../../../../../testing/carrito';
 
+/** El precio que el servidor da hoy en estas pruebas. */
+const PRECIO_DE_HOY = 150_000;
+
 class RepositorioCarritoFalso implements RepositorioCarrito {
+  /** Los precios de hoy, como el servidor: {@link PRECIO_DE_HOY} por unidad. */
+  async cotizar(carritoId: string): Promise<CarritoCotizado | null> {
+    const carrito = await this.ver();
+    void carritoId;
+    if (!carrito) {
+      return null;
+    }
+    const lineas = carrito.lineas.map((linea) => ({
+      lineaId: linea.id,
+      varianteId: linea.varianteId,
+      cantidad: linea.cantidad,
+      precioUnitario: PRECIO_DE_HOY,
+      subtotal: PRECIO_DE_HOY * linea.cantidad,
+    }));
+    return { lineas, subtotal: lineas.reduce((suma, linea) => suma + linea.subtotal, 0) };
+  }
   crear(): Promise<Carrito> {
     return Promise.reject(new Error('no usado en esta prueba'));
   }

@@ -8,7 +8,7 @@ import es from '../../../../../assets/i18n/es.json';
 import esCarrito from '../../../../../assets/i18n/scopes/carrito/es.json';
 import esCheckout from '../../../../../assets/i18n/scopes/checkout/es.json';
 import { CheckoutStore } from '../../application/checkout.store';
-import { Carrito } from '../../../carrito/domain/carrito.model';
+import { Carrito, CarritoCotizado } from '../../../carrito/domain/carrito.model';
 import { SnapshotLinea } from '../../../carrito/domain/snapshot-linea.model';
 import {
   REPOSITORIO_CARRITO,
@@ -47,7 +47,25 @@ class RepositorioPagosFalso implements RepositorioPagos {
   }
 }
 
+/** El precio que el servidor da hoy en estas pruebas. */
+const PRECIO_DE_HOY = 150_000;
+
 class RepositorioCarritoFalso implements RepositorioCarrito {
+  /** Los precios de hoy, como el servidor: {@link PRECIO_DE_HOY} por unidad. */
+  async cotizar(carritoId: string): Promise<CarritoCotizado | null> {
+    const carrito = await this.ver(carritoId);
+    if (!carrito) {
+      return null;
+    }
+    const lineas = carrito.lineas.map((linea) => ({
+      lineaId: linea.id,
+      varianteId: linea.varianteId,
+      cantidad: linea.cantidad,
+      precioUnitario: PRECIO_DE_HOY,
+      subtotal: PRECIO_DE_HOY * linea.cantidad,
+    }));
+    return { lineas, subtotal: lineas.reduce((suma, linea) => suma + linea.subtotal, 0) };
+  }
   constructor(private carrito: Carrito | null) {}
 
   async crear(): Promise<Carrito> {
@@ -590,7 +608,7 @@ describe('ResumenPage', () => {
     await renderResumen(new RepositorioCarritoFalso(CARRITO_CON_LINEAS));
 
     expect(await screen.findByText('Morral urbano')).toBeTruthy();
-    expect(screen.getAllByText(/300\.000/).length).toBeGreaterThan(0);
+    expect((await screen.findAllByText(/300\.000/)).length).toBeGreaterThan(0);
     expect(screen.getByLabelText('Correo electrónico')).toBeTruthy();
     expect(screen.getByLabelText('Dirección')).toBeTruthy();
   });
@@ -702,7 +720,11 @@ describe('ResumenPage', () => {
       '@#$%',
       'Escribe una dirección válida. Se admiten letras, números y los signos # - . , ° / ( ).',
     ],
-    ['Barrio (opcional)', '<b>Laureles</b>', 'Escribe un barrio válido: letras y números, sin símbolos.'],
+    [
+      'Barrio (opcional)',
+      '<b>Laureles</b>',
+      'Escribe un barrio válido: letras y números, sin símbolos.',
+    ],
   ])('%s con "%s" no pasa y dice por qué', async (etiqueta, valor, mensaje) => {
     sembrarCarritoId('carrito-1');
     sembrarSnapshotLinea(snapshotDePrueba('variante-1'));

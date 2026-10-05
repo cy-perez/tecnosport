@@ -5,7 +5,7 @@ import { fireEvent, render, screen } from '@testing-library/angular';
 import en from '../../../../assets/i18n/en.json';
 import es from '../../../../assets/i18n/es.json';
 import esCarrito from '../../../../assets/i18n/scopes/carrito/es.json';
-import { Carrito } from '../domain/carrito.model';
+import { Carrito, CarritoCotizado } from '../domain/carrito.model';
 import { SnapshotLinea } from '../domain/snapshot-linea.model';
 import { REPOSITORIO_CARRITO, RepositorioCarrito } from '../domain/repositorio-carrito.puerto';
 import { CarritoStore } from '../application/carrito.store';
@@ -17,7 +17,25 @@ import {
   sembrarSnapshotLinea,
 } from '../../../../testing/carrito';
 
+/** El precio que el servidor da hoy en estas pruebas. */
+const PRECIO_DE_HOY = 150_000;
+
 class RepositorioCarritoFalso implements RepositorioCarrito {
+  /** Los precios de hoy, como el servidor: {@link PRECIO_DE_HOY} por unidad. */
+  async cotizar(carritoId: string): Promise<CarritoCotizado | null> {
+    const carrito = await this.ver(carritoId);
+    if (!carrito) {
+      return null;
+    }
+    const lineas = carrito.lineas.map((linea) => ({
+      lineaId: linea.id,
+      varianteId: linea.varianteId,
+      cantidad: linea.cantidad,
+      precioUnitario: PRECIO_DE_HOY,
+      subtotal: PRECIO_DE_HOY * linea.cantidad,
+    }));
+    return { lineas, subtotal: lineas.reduce((suma, linea) => suma + linea.subtotal, 0) };
+  }
   constructor(private carrito: Carrito | null) {}
 
   async crear(): Promise<Carrito> {
@@ -105,9 +123,29 @@ describe('CarritoPage', () => {
     await renderCarrito(new RepositorioCarritoFalso(carrito));
 
     expect(await screen.findByText('Morral urbano')).toBeTruthy();
-    expect(screen.getAllByText(/300\.000/).length).toBeGreaterThan(0);
+    expect((await screen.findAllByText(/300\.000/)).length).toBeGreaterThan(0);
     expect(screen.getByRole('link', { name: 'Ir a pagar' })).toBeTruthy();
     expect(screen.getByRole('link', { name: 'Seguir comprando' })).toBeTruthy();
+  });
+
+  /**
+   * El precio guardado al agregar puede estar viejo: el total que se muestra es el del servidor.
+   * Antes se sumaba el guardado, y el comprador aceptaba un total y se le cobraba otro.
+   */
+  it('el total sale de la cotización del servidor, no del precio guardado al agregar', async () => {
+    sembrarCarritoId('carrito-1');
+    sembrarSnapshotLinea({ ...snapshotDePrueba('variante-1'), precioValor: 99_000 });
+    const carrito: Carrito = {
+      id: 'carrito-1',
+      usuarioId: null,
+      creadoEn: '2026-01-01T00:00:00Z',
+      lineas: [{ id: 'linea-1', varianteId: 'variante-1', cantidad: 2 }],
+    };
+
+    await renderCarrito(new RepositorioCarritoFalso(carrito));
+
+    expect((await screen.findAllByText(/300\.000/)).length).toBeGreaterThan(0);
+    expect(screen.queryByText(/198\.000/)).toBeNull();
   });
 
   // El total del carrito es sin flete (docs/00-producto.md): el envío se

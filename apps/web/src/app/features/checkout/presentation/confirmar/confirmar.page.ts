@@ -238,16 +238,12 @@ export class ConfirmarPage {
   /** Solo mientras `confirmar()` espera la cotización, para que el botón lo diga. */
   protected readonly esperandoCotizacion = signal(false);
 
-  protected readonly subtotal = computed(() => {
-    const datosCarrito = this.carrito.consulta.data();
-    if (!datosCarrito) {
-      return 0;
-    }
-    return datosCarrito.lineas.reduce((suma, linea) => {
-      const snapshot = this.carrito.snapshotDeLinea(linea.varianteId);
-      return suma + (snapshot ? snapshot.precioValor * linea.cantidad : 0);
-    }, 0);
-  });
+  /**
+   * El subtotal del servidor (`GET /carritos/{id}/cotizacion`). Sumaba el precio que el navegador
+   * guardó al agregar: si cambió, el comprador aceptaba un total y se le cobraba otro, y una línea
+   * sin foto guardada sumaba cero.
+   */
+  protected readonly subtotal = computed(() => this.carrito.subtotal());
 
   protected readonly etiquetaMetodoPago = computed(() => {
     const metodo = this.checkout.metodoPago();
@@ -274,6 +270,12 @@ export class ConfirmarPage {
   }
 
   protected async confirmar(): Promise<void> {
+    // Guarda de reentrada: con el botón en `ocupado` —que no se deshabilita, para no tirar el foco
+    // a `<body>`— un segundo clic llegaría hasta aquí. La llave de idempotencia evita el pedido
+    // doble en el servidor, pero no hace falta mandarlo.
+    if (this.enviando()) {
+      return;
+    }
     const datos = this.checkout.datosEntrega();
     const metodoPago = this.checkout.metodoPago();
     const datosCarrito = this.carrito.consulta.data();

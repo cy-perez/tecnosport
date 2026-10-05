@@ -46,8 +46,9 @@
                 {{ 'checkout.resumen.cantidad' | transloco: { cantidad: linea.cantidad } }}
               </p>
             </div>
-            @if (snapshot; as foto) {
-              <ts-precio [valor]="foto.precioValor * linea.cantidad" [moneda]="foto.precioMoneda" />
+            <!-- El precio de hoy, del servidor: la foto guardada al agregar solo da nombre e imagen. -->
+            @if (carrito.precioDeLinea(linea.id); as precio) {
+              <ts-precio [valor]="precio * linea.cantidad" moneda="COP" />
             }
           </article>
         }

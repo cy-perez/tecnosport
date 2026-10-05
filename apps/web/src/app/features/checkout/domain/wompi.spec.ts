@@ -8,6 +8,7 @@ function intentoDePrueba(overrides: Partial<IntentoDePago> = {}): IntentoDePago 
     firmaIntegridad: 'abc123firma',
     llavePublica: 'pub_test_xyz',
     ambiente: 'sandbox',
+    montoEnCentavos: 18_990_000,
     ...overrides,
   };
 }
@@ -21,9 +22,16 @@ describe('urlWebCheckoutWompi', () => {
     expect(url.origin + url.pathname).toBe('https://checkout.wompi.co/p/');
   });
 
-  it('multiplica el monto por 100, aunque el peso no se fraccione (ejemplo de Wompi: 10000 = $100 COP)', () => {
+  /**
+   * El monto en centavos es el que firmó el servidor, no uno recalculado aquí: si el navegador lo
+   * calculara distinto, Wompi rechazaría la firma.
+   */
+  it('usa el monto en centavos que firmó el servidor, sin recalcularlo', () => {
     const url = new URL(
-      urlWebCheckoutWompi(intentoDePrueba({ monto: { valor: 100, moneda: 'COP' } }), 'https://x'),
+      urlWebCheckoutWompi(
+        intentoDePrueba({ monto: { valor: 100, moneda: 'COP' }, montoEnCentavos: 10_000 }),
+        'https://x',
+      ),
     );
 
     expect(url.searchParams.get('amount-in-cents')).toBe('10000');

@@ -7,7 +7,7 @@ import { esperarSinViolaciones } from '../../../../../testing/axe';
 import en from '../../../../../assets/i18n/en.json';
 import es from '../../../../../assets/i18n/es.json';
 import esCheckout from '../../../../../assets/i18n/scopes/checkout/es.json';
-import { Carrito } from '../../../carrito/domain/carrito.model';
+import { Carrito, CarritoCotizado } from '../../../carrito/domain/carrito.model';
 import {
   REPOSITORIO_CARRITO,
   RepositorioCarrito,
@@ -36,7 +36,25 @@ class RepositorioPagosFalso implements RepositorioPagos {
   }
 }
 
+/** El precio que el servidor da hoy en estas pruebas. */
+const PRECIO_DE_HOY = 150_000;
+
 class RepositorioCarritoFalso implements RepositorioCarrito {
+  /** Los precios de hoy, como el servidor: {@link PRECIO_DE_HOY} por unidad. */
+  async cotizar(carritoId: string): Promise<CarritoCotizado | null> {
+    const carrito = await this.ver(carritoId);
+    if (!carrito) {
+      return null;
+    }
+    const lineas = carrito.lineas.map((linea) => ({
+      lineaId: linea.id,
+      varianteId: linea.varianteId,
+      cantidad: linea.cantidad,
+      precioUnitario: PRECIO_DE_HOY,
+      subtotal: PRECIO_DE_HOY * linea.cantidad,
+    }));
+    return { lineas, subtotal: lineas.reduce((suma, linea) => suma + linea.subtotal, 0) };
+  }
   constructor(private carrito: Carrito | null) {}
 
   async crear(): Promise<Carrito> {

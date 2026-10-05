@@ -1,6 +1,6 @@
 import { afterNextRender, computed, inject, Injectable, signal } from '@angular/core';
 import { injectMutation, injectQuery, QueryClient } from '@tanstack/angular-query-experimental';
-import { Carrito } from '../domain/carrito.model';
+import { Carrito, CarritoCotizado } from '../domain/carrito.model';
 import { REPOSITORIO_CARRITO } from '../domain/repositorio-carrito.puerto';
 import { SnapshotLinea } from '../domain/snapshot-linea.model';
 import { ALMACEN_CARRITO_ID } from '../domain/almacen-carrito-id.puerto';
@@ -49,6 +49,41 @@ export class CarritoStore {
     staleTime: 60_000,
   }));
 
+  /**
+   * Los precios de hoy, del servidor. Se invalida con cada cambio del carrito, porque la llave
+   * incluye las líneas y sus cantidades: otra combinación es otra cotización.
+   */
+  readonly cotizacion = injectQuery(() => {
+    const carrito = this.consulta.data();
+    return {
+      queryKey: [
+        'carrito',
+        this.carritoId(),
+        'cotizacion',
+        carrito?.lineas.map((linea) => `${linea.id}:${linea.cantidad}`).join(',') ?? '',
+      ] as const,
+      queryFn: (): Promise<CarritoCotizado | null> =>
+        this.repositorio.cotizar(this.carritoId() as string),
+      enabled: this.carritoId() !== null && (carrito?.lineas.length ?? 0) > 0,
+      staleTime: 30_000,
+    };
+  });
+
+  /**
+   * Lo que el comprador ve como subtotal: el del servidor. Antes cada pantalla sumaba el precio
+   * guardado en el navegador al agregar, que podía estar viejo o faltar (y entonces sumaba cero).
+   * Cero solo con el carrito vacío o mientras la cotización llega.
+   */
+  readonly subtotal = computed(() => this.cotizacion.data()?.subtotal ?? 0);
+
+  /** El precio de hoy de una línea; `null` si todavía no llegó o si ya no se vende. */
+  precioDeLinea(lineaId: string): number | null {
+    return (
+      this.cotizacion.data()?.lineas.find((linea) => linea.lineaId === lineaId)?.precioUnitario ??
+      null
+    );
+  }
+
   readonly cantidadTotal = computed(
     () => this.consulta.data()?.lineas.reduce((total, linea) => total + linea.cantidad, 0) ?? 0,
   );
@@ -76,7 +111,11 @@ export class CarritoStore {
 
   readonly agregando = computed(() => this.mutacionAgregar.isPending());
 
-  async agregarAlCarrito(varianteId: string, cantidad: number, snapshot: SnapshotLinea): Promise<void> {
+  async agregarAlCarrito(
+    varianteId: string,
+    cantidad: number,
+    snapshot: SnapshotLinea,
+  ): Promise<void> {
     this.almacenSnapshots.guardar(snapshot);
     await this.mutacionAgregar.mutateAsync({ varianteId, cantidad });
   }
@@ -126,7 +165,11 @@ export class CarritoStore {
   }
 
   private async actualizarInterno(lineaId: string, cantidad: number): Promise<Carrito> {
-    const actualizado = await this.repositorio.actualizarCantidad(this.idOForzar(), lineaId, cantidad);
+    const actualizado = await this.repositorio.actualizarCantidad(
+      this.idOForzar(),
+      lineaId,
+      cantidad,
+    );
     this.actualizarCache(actualizado);
     return actualizado;
   }
