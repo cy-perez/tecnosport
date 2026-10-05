@@ -24,7 +24,14 @@ import org.springframework.transaction.annotation.Transactional;
 public class RepositorioIdempotenciaJpa implements RepositorioIdempotencia {
 
   private static final Duration VIGENCIA = Duration.ofHours(24);
-  private static final String PENDIENTE = "PENDIENTE";
+
+  /**
+   * Una reclamación sin completar más vieja que esto es de un proceso que murió a mitad de la
+   * petición: ninguna de las rutas protegidas tarda tanto. Antes no vencía nunca, y esa llave
+   * respondía 409 "petición en curso" para siempre.
+   */
+  private static final Duration ABANDONO = Duration.ofMinutes(10);
+
   private static final String COMPLETADA = "COMPLETADA";
 
   private final IdempotenciaJpaRepository idempotencias;
@@ -46,21 +53,20 @@ public class RepositorioIdempotenciaJpa implements RepositorioIdempotencia {
   @Override
   @Transactional
   public boolean reclamar(String llave, String metodo, String ruta, Instant ahora) {
-    Optional<IdempotenciaJpaEntity> existente = idempotencias.findById(llave);
-    if (existente.isPresent()) {
-      IdempotenciaJpaEntity entidad = existente.get();
-      boolean vencida =
-          COMPLETADA.equals(entidad.getEstado())
-              && entidad.getCompletadoEn() != null
-              && vencida(entidad.getCompletadoEn(), ahora);
-      if (!vencida) {
-        return false;
-      }
-      idempotencias.deleteById(llave);
-    }
-    idempotencias.save(
-        new IdempotenciaJpaEntity(llave, metodo, ruta, PENDIENTE, null, null, null, ahora, null));
-    return true;
+    idempotencias.borrarVencidas(llave, ahora.minus(VIGENCIA), ahora.minus(ABANDONO));
+    return idempotencias.reclamarSiEstaLibre(llave, metodo, ruta, ahora) == 1;
+  }
+
+  /**
+   * La tabla guarda el cuerpo de la respuesta —el de crear un pedido lleva nombre, teléfono,
+   * dirección y correo— y nadie la purgaba: una llave es un UUID que no se repite, así que la fila
+   * solo se borraba si alguien reutilizaba esa misma llave. Datos personales retenidos sin plazo, y
+   * que la eliminación de cuenta no alcanzaba.
+   */
+  @Override
+  @Transactional
+  public int purgarVencidas(Instant ahora) {
+    return idempotencias.borrarVencidas(null, ahora.minus(VIGENCIA), ahora.minus(ABANDONO));
   }
 
   @Override

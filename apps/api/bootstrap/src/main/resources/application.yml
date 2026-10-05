@@ -508,6 +508,11 @@ tecnosport:
     # vive en application-local.yml.
     correo: ${ADMIN_CORREO:admin@tecnosport.co}
     clave: ${ADMIN_CLAVE}
+  idempotencia:
+    purga:
+      # Cada cuánto se borran las respuestas vencidas (24 horas) y las reclamaciones abandonadas.
+      # Guardan datos personales del pedido, así que no pueden quedarse indefinidamente.
+      intervalo-minutos: ${IDEMPOTENCIA_PURGA_INTERVALO_MINUTOS:60}
   carrito:
     purga:
       # docs/02-modelo-datos.md: "el carrito vive 30 días". Se cuentan desde la última actividad,

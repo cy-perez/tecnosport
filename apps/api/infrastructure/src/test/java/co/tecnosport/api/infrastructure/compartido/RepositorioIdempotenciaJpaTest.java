@@ -113,4 +113,36 @@ class RepositorioIdempotenciaJpaTest {
     boolean reclamadaDeNuevo = repositorio.reclamar(llave, "POST", "/api/v1/pedidos", AHORA);
     assertThat(reclamadaDeNuevo).isTrue();
   }
+
+  /** Un proceso que murió a mitad de la petición no deja la llave en "en curso" para siempre. */
+  @Test
+  void unaReclamacionAbandonadaSePuedeVolverAReclamar() {
+    String llave = llaveNueva();
+    repositorio.reclamar(llave, "POST", "/api/v1/pedidos", AHORA);
+
+    assertThat(repositorio.reclamar(llave, "POST", "/api/v1/pedidos", AHORA.plusSeconds(60)))
+        .isFalse();
+    assertThat(
+            repositorio.reclamar(
+                llave, "POST", "/api/v1/pedidos", AHORA.plus(Duration.ofMinutes(11))))
+        .isTrue();
+  }
+
+  /** La purga borra lo vencido y lo abandonado, y deja lo vigente. */
+  @Test
+  void purgarBorraLoVencidoYDejaLoVigente() {
+    String vencida = llaveNueva();
+    repositorio.reclamar(vencida, "POST", "/api/v1/pedidos", AHORA);
+    repositorio.completar(vencida, new RespuestaIdempotente(201, "application/json", "{}"), AHORA);
+    String vigente = llaveNueva();
+    Instant despues = AHORA.plus(Duration.ofHours(25));
+    repositorio.reclamar(vigente, "POST", "/api/v1/pedidos", despues);
+    repositorio.completar(
+        vigente, new RespuestaIdempotente(201, "application/json", "{}"), despues);
+
+    repositorio.purgarVencidas(despues);
+
+    assertThat(repositorio.buscarCompletada(vigente, despues)).isPresent();
+    assertThat(repositorio.reclamar(vencida, "POST", "/api/v1/pedidos", despues)).isTrue();
+  }
 }
