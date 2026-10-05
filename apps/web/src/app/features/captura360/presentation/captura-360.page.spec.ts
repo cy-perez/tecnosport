@@ -373,9 +373,9 @@ describe('Captura360Page', () => {
     await asentar(fixture);
 
     expect(screen.getByText(/Sin nivel: este dispositivo no da la inclinación/)).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Tomar la foto' }).hasAttribute('disabled')).toBe(
-      false,
-    );
+    expect(
+      screen.getByRole('button', { name: 'Tomar la foto' }).hasAttribute('aria-disabled'),
+    ).toBe(false);
   });
 
   it('una toma se acepta y el contador avanza', async () => {
@@ -387,6 +387,28 @@ describe('Captura360Page', () => {
     await asentar(fixture);
 
     expect(screen.getByText(/Toma 2 de 8/)).toBeTruthy();
+  });
+
+  /**
+   * Cada paso destruye el botón que se acaba de pulsar: «Tomar la foto» da paso a «Aceptar y
+   * seguir», y aceptar trae de vuelta «Tomar la foto». Sin mover el foco a mano, caía en `<body>`
+   * en cada toma.
+   */
+  it('en cada paso el foco va a la acción siguiente', async () => {
+    const { fixture } = await conCamaraAbierta();
+
+    const disparar = screen.getByRole('button', { name: 'Tomar la foto' });
+    disparar.focus();
+    fireEvent.click(disparar);
+    await asentar(fixture);
+    const aceptar = await screen.findByRole('button', { name: 'Aceptar y seguir' });
+    await waitFor(() => expect(document.activeElement).toBe(aceptar));
+
+    fireEvent.click(aceptar);
+    await asentar(fixture);
+    await waitFor(() =>
+      expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Tomar la foto' })),
+    );
   });
 
   it('repetir una toma no reinicia la secuencia ni deja la imagen colgada', async () => {
@@ -437,11 +459,18 @@ describe('Captura360Page', () => {
     }
     await asentar(fixture);
 
+    // Inactivo (aria-disabled) y no deshabilitado: sigue en el orden de tabulación, y el clic no
+    // dispara.
     await waitFor(() =>
-      expect(screen.getByRole('button', { name: 'Tomar la foto' }).hasAttribute('disabled')).toBe(
-        true,
-      ),
+      expect(
+        screen.getByRole('button', { name: 'Tomar la foto' }).getAttribute('aria-disabled'),
+      ).toBe('true'),
     );
+    const tomasAntes = screen.getByText(/Toma 2 de/).textContent;
+    fireEvent.click(screen.getByRole('button', { name: 'Tomar la foto' }));
+    await asentar(fixture);
+    expect(screen.queryByRole('button', { name: 'Aceptar y seguir' })).toBeNull();
+    expect(screen.getByText(/Toma 2 de/).textContent).toBe(tomasAntes);
     expect(screen.getByText(/El obturador se habilita cuando el teléfono vuelve/)).toBeTruthy();
   });
 

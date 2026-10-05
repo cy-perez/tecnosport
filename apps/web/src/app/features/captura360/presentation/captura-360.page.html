@@ -1,7 +1,7 @@
 <section class="mx-auto flex max-w-formulario-lg flex-col gap-16 p-16">
   <ts-migas [ruta]="migas()" />
 
-  <h1 class="m-0 font-display font-fuerte">{{ 'captura360.titulo' | transloco }}</h1>
+  <h1 class="m-0 font-display font-fuerte" tabindex="-1">{{ 'captura360.titulo' | transloco }}</h1>
 
   <!-- La region viva es este envoltorio permanente y no la caja de adentro: un `role="status"`
        que nace ya lleno no se anuncia (medido con NVDA el 22 de septiembre de 2026, ver
@@ -71,7 +71,7 @@
           <p>{{ 'captura360.revision.ayuda' | transloco }}</p>
           <ts-visor-360 [imagenes]="store.rotacionParaRevisar()" />
           <div class="flex flex-wrap gap-8">
-            <ts-boton (click)="store.publicar()">{{
+            <ts-boton data-accion-principal (click)="store.publicar()">{{
               'captura360.revision.publicar' | transloco
             }}</ts-boton>
           </div>
@@ -195,20 +195,29 @@
 
         @if (store.termino()) {
           <div class="flex flex-wrap gap-8">
-            <ts-boton (click)="store.procesarYSubir()">
+            <ts-boton data-accion-principal (click)="store.procesarYSubir()">
               {{ 'captura360.procesar_y_subir' | transloco }}
             </ts-boton>
           </div>
         } @else if (store.pendiente() !== null) {
           <div class="flex flex-wrap gap-8">
-            <ts-boton (click)="store.aceptar()">{{ 'captura360.aceptar' | transloco }}</ts-boton>
+            <ts-boton data-accion-principal (click)="store.aceptar()">{{
+              'captura360.aceptar' | transloco
+            }}</ts-boton>
             <ts-boton variante="secundario" (click)="store.repetir()">
               {{ 'captura360.repetir' | transloco }}
             </ts-boton>
           </div>
         } @else {
           <div class="flex flex-wrap gap-8">
-            <ts-boton [deshabilitado]="!store.nivel().puedeDisparar" (click)="capturar()">
+            <!-- `inactivo` y no `deshabilitado`: el nivel cambia con cada temblor del pulso, y un
+                 botón que se deshabilita entra y sale del orden de tabulación —y suelta el foco— al
+                 ritmo del acelerómetro. `capturar()` ignora el clic mientras no está nivelado. -->
+            <ts-boton
+              data-accion-principal
+              [inactivo]="!store.nivel().puedeDisparar"
+              (click)="capturar()"
+            >
               {{ 'captura360.disparar' | transloco }}
             </ts-boton>
 
