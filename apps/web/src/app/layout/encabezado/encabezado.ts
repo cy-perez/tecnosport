@@ -59,7 +59,8 @@ const TIEMPO_MAXIMO_DE_SALIDA_MS = 400;
   // píxel de recorrido y se quedaría quieto. Pegado al item de la rejilla, el recorrido es toda la
   // altura de `app-root`, que es `min-h-screen` y crece con el contenido.
   //
-  // `z-30` y no más alto: el menú lateral y el velo del diálogo son `z-40`, y el diálogo `z-50`.
+  // `z-encabezado` y no más alto: el menú lateral y el velo del diálogo son `z-lateral` y `z-velo`,
+  // y el diálogo `z-superior` (la escala `--capa-*` del kit).
   // El encabezado tiene que quedar por debajo de los tres — un panel de menú o un diálogo que
   // aparecieran *detrás* de la barra serían peor que no tener barra fija. Y por encima de todo lo
   // demás, que es lo que `sticky` sin `z-index` no garantiza: el contenido que pasa por debajo
@@ -72,7 +73,7 @@ const TIEMPO_MAXIMO_DE_SALIDA_MS = 400;
   // contenedor que no es un control es peor que no tenerlo. En el host, el
   // evento llega por burbujeo desde cualquier hijo, que es exactamente lo que
   // hace falta: el foco está en el botón o dentro del panel.
-  host: { class: 'sticky top-0 z-30 block', '(keydown.escape)': 'cerrarMenu()' },
+  host: { class: 'sticky top-0 z-encabezado block', '(keydown.escape)': 'cerrarMenu()' },
 })
 export class Encabezado {
   private readonly documento = inject(DOCUMENT);

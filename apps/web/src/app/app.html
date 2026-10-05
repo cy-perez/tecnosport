@@ -6,13 +6,13 @@
      fuera: el enlace aparece encima del encabezado, y un anillo grafito sobre la
      barra oscura no se veía. Por dentro tiene ámbar a los dos lados.
 
-     `z-50` y no `z-10`, y es consecuencia directa del encabezado fijo: desde que `app-encabezado`
-     es `sticky z-30`, este enlace —que se pinta justo encima de la barra, en `top-8 left-8`—
+     `z-superior` y no `z-pegada`, y es consecuencia directa del encabezado fijo: desde que
+     `app-encabezado` es `sticky z-encabezado`, este enlace —que se pinta justo encima de la barra, en `top-8 left-8`—
      quedaba **detrás** de ella al recibir el foco. Un enlace de salto invisible es un enlace de
      salto que no existe. Va al mismo nivel que el diálogo porque no compite con él: solo se ve
      enfocado, y un diálogo abierto atrapa el foco. -->
 <a
-  class="anillo-foco-dentro-acento chaflan absolute top-8 left-8 z-50 inline-flex min-h-tactil -translate-y-[200%] items-center bg-ts-acento px-16 py-8 text-sm text-ts-sobre-acento no-underline focus-visible:translate-y-0"
+  class="anillo-foco-dentro-acento chaflan absolute top-8 left-8 z-superior inline-flex min-h-tactil -translate-y-[200%] items-center bg-ts-acento px-16 py-8 text-sm text-ts-sobre-acento no-underline focus-visible:translate-y-0"
   href="#contenido"
   >{{ 'app.saltar_al_contenido' | transloco }}</a
 >
