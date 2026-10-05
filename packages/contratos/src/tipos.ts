@@ -2760,6 +2760,7 @@ export interface components {
             medioPreferido?: string;
             motivo?: string;
             pedidoId?: string;
+            plazoDeReintegroVencido: boolean;
             preferenciaRespetada?: boolean;
             /** Format: date-time */
             productoRecibidoEn?: string;

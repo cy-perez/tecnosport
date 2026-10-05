@@ -1,5 +1,6 @@
 package co.tecnosport.api.presentation.retracto.dto;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.Instant;
 
 /**
@@ -25,6 +26,8 @@ public record SolicitudRetractoRespuesta(
     String estado,
     Instant productoRecibidoEn,
     Instant limiteDeReintegro,
+    /** El servidor decide si el plazo de reintegro ya se incumplió; el panel solo lo pinta. */
+    @Schema(requiredMode = Schema.RequiredMode.REQUIRED) boolean plazoDeReintegroVencido,
     String medioPreferido,
     Boolean preferenciaRespetada,
     ReintegroRespuesta reintegro) {}

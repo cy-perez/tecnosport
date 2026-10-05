@@ -221,11 +221,15 @@ export class PanelRetracto {
     return Date.now();
   });
 
-  /** Vencido se decide comparando instantes. Nunca días, nunca signos. */
-  protected readonly plazoVencido = computed(() => {
-    const limite = this.limiteDeReintegro();
-    return limite !== null && limite <= this.ahora();
-  });
+  /**
+   * Vencido lo decide el servidor (`plazoDeReintegroVencido`). El comentario de esta clase decía
+   * que nunca decidía nada que el backend no hubiera decidido, y aquí lo hacía con el reloj del
+   * navegador: con un equipo desfasado, el panel afirmaba un incumplimiento legal que no existía, o
+   * callaba uno que sí.
+   */
+  protected readonly plazoVencido = computed(
+    () => this.enCurso()?.plazoDeReintegroVencido ?? false,
+  );
 
   /**
    * Días que faltan para agotar el plazo. Se calcula en el navegador **solo para decidir el énfasis
@@ -238,7 +242,7 @@ export class PanelRetracto {
     if (limite === null) {
       return null;
     }
-    return Math.ceil((limite - this.ahora()) / MILISEGUNDOS_POR_DIA);
+    return Math.max(1, Math.ceil((limite - this.ahora()) / MILISEGUNDOS_POR_DIA));
   });
 
   protected async radicar(): Promise<void> {

@@ -3100,6 +3100,9 @@
           "pedidoId" : {
             "type" : "string"
           },
+          "plazoDeReintegroVencido" : {
+            "type" : "boolean"
+          },
           "preferenciaRespetada" : {
             "type" : "boolean"
           },
@@ -3121,6 +3124,9 @@
             "type" : "string"
           }
         },
+        "required" : [
+          "plazoDeReintegroVencido"
+        ],
         "type" : "object"
       },
       "SolicitudReversionRespuesta" : {
