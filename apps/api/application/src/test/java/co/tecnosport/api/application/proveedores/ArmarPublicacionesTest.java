@@ -7,6 +7,7 @@ import co.tecnosport.api.application.proveedores.ApoyoDeIngesta.RepositorioLotes
 import co.tecnosport.api.application.proveedores.ApoyoDeIngesta.RepositorioMensajesEnMemoria;
 import co.tecnosport.api.application.proveedores.ApoyoDeIngesta.RepositorioProveedoresEnMemoria;
 import co.tecnosport.api.application.proveedores.ApoyoDeIngesta.RepositorioPublicacionesEnMemoria;
+import co.tecnosport.api.domain.catalogo.LineaCatalogo;
 import co.tecnosport.api.domain.proveedores.AgrupadorDePublicaciones;
 import co.tecnosport.api.domain.proveedores.IdExternoDeMensaje;
 import co.tecnosport.api.domain.proveedores.LoteIngesta;
@@ -104,6 +105,15 @@ class ArmarPublicacionesTest {
         MensajeProveedor.texto(
             proveedorId, lote.id(), new IdExternoDeMensaje("blanco"), T, "Jeans blanco 🤑$68.000");
     mensajes.guardarTodos(List.of(cuero, foto, blanco));
+    // Otro proveedor, con el orden contrario y primero en la lista: el que manda es el del lote.
+    proveedores.guardar(
+        Proveedor.crear(
+            "A otro proveedor",
+            LineaCatalogo.ROPA,
+            "+57 310",
+            "Otro",
+            null,
+            OrdenDePublicacion.FOTOS_PRIMERO));
 
     editarOrden(OrdenDePublicacion.TEXTO_PRIMERO);
     AgrupadorDePublicaciones.Resultado textoPrimero = caso.ejecutar(lote.id());
