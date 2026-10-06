@@ -1,4 +1,4 @@
-import { aAprobarPeticion, aBorrador, aEditarPeticion } from './mapeador-borrador';
+import { aAprobarPeticion, aBorrador, aEditarPeticion, aFoto } from './mapeador-borrador';
 
 describe('mapeador-borrador', () => {
   /**
@@ -13,6 +13,12 @@ describe('mapeador-borrador', () => {
     expect(borrador.precioVentaSugerido).toBeNull();
     expect(borrador.alertas).toEqual(['SIN_PRECIO']);
     expect(borrador.tallas).toEqual({ tipo: 'DESCONOCIDA', sirveHasta: null, valores: [] });
+  });
+
+  /** Del origen depende qué promete eliminarla: que el archivo se queda, o que se borra. */
+  it('conserva el origen de cada foto', () => {
+    expect(aFoto({ mensajeId: 'f1', url: 'u', origen: 'PANEL' }).origen).toBe('PANEL');
+    expect(aFoto({ mensajeId: 'f2', url: 'u', origen: 'PROVEEDOR' }).origen).toBe('PROVEEDOR');
   });
 
   /**

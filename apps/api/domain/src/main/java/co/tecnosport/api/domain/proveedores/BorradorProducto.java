@@ -7,6 +7,7 @@ import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.compartido.ExcepcionDeDominio;
 import co.tecnosport.api.domain.compartido.GeneradorIdentificador;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -49,6 +50,7 @@ public final class BorradorProducto {
   private PHash pHash;
   private final Set<AlertaBorrador> alertas;
   private final Set<UUID> fotosDescartadas;
+  private final List<FotoSubida> fotosSubidas;
   private EstadoBorrador estado;
   private UUID productoId;
   private String motivoRechazo;
@@ -74,6 +76,7 @@ public final class BorradorProducto {
       PHash pHash,
       Set<AlertaBorrador> alertas,
       Set<UUID> fotosDescartadas,
+      List<FotoSubida> fotosSubidas,
       EstadoBorrador estado,
       UUID productoId,
       String motivoRechazo,
@@ -105,6 +108,10 @@ public final class BorradorProducto {
     this.fotosDescartadas = new LinkedHashSet<>();
     if (fotosDescartadas != null) {
       this.fotosDescartadas.addAll(fotosDescartadas);
+    }
+    this.fotosSubidas = new ArrayList<>();
+    if (fotosSubidas != null) {
+      this.fotosSubidas.addAll(fotosSubidas);
     }
     this.estado = Objects.requireNonNull(estado, "El estado del borrador no puede ser nulo.");
     this.productoId = productoId;
@@ -152,6 +159,7 @@ public final class BorradorProducto {
         pHash,
         alertas,
         Set.of(),
+        List.of(),
         EstadoBorrador.EN_REVISION,
         null,
         null,
@@ -195,6 +203,7 @@ public final class BorradorProducto {
         pHash,
         alertas,
         Set.of(),
+        List.of(),
         EstadoBorrador.RENOVACION_APLICADA,
         productoId,
         null,
@@ -252,6 +261,47 @@ public final class BorradorProducto {
   public void descartarFoto(UUID mensajeId) {
     exigirEnRevision("descartar fotos de");
     fotosDescartadas.add(Objects.requireNonNull(mensajeId, "La foto no puede ser nula."));
+  }
+
+  /**
+   * Quien revisa sube una foto porque la ingesta no trajo ninguna, o no las que sirven. Con ella el
+   * borrador deja de estar {@link AlertaBorrador#SIN_FOTOS}: la alerta decía que no había con qué
+   * publicarlo, y eso ya no es cierto.
+   */
+  public void agregarFotoSubida(FotoSubida foto) {
+    exigirEnRevision("subir fotos a");
+    Objects.requireNonNull(foto, "La foto no puede ser nula.");
+    if (fotosSubidas.stream().anyMatch(f -> f.id().equals(foto.id()))) {
+      throw new ExcepcionDeDominio("Esa foto ya está en el borrador.");
+    }
+    fotosSubidas.add(foto);
+    alertas.remove(AlertaBorrador.SIN_FOTOS);
+  }
+
+  /**
+   * El borrador se quedó sin ninguna foto con la que aprobarlo: quien revisa quitó la última. Es la
+   * misma alerta que deja la ingesta, y la quita la próxima foto que se suba.
+   */
+  public void alertarSinFotos() {
+    exigirEnRevision("alertar");
+    alertas.add(AlertaBorrador.SIN_FOTOS);
+  }
+
+  /**
+   * Quita una foto que se subió desde el panel. A diferencia de {@link #descartarFoto}, esta sí es
+   * solo del borrador: quien llama borra el archivo con la referencia que se devuelve.
+   */
+  public FotoSubida quitarFotoSubida(UUID fotoId) {
+    exigirEnRevision("quitar fotos de");
+    FotoSubida foto =
+        buscarFotoSubida(fotoId)
+            .orElseThrow(() -> new ExcepcionDeDominio("Esa foto no se subió a este borrador."));
+    fotosSubidas.remove(foto);
+    return foto;
+  }
+
+  public Optional<FotoSubida> buscarFotoSubida(UUID fotoId) {
+    return fotosSubidas.stream().filter(f -> f.id().equals(fotoId)).findFirst();
   }
 
   /**
@@ -386,6 +436,11 @@ public final class BorradorProducto {
   /** Las fotos de la publicación que quien revisa sacó de este borrador, por mensaje. */
   public Set<UUID> fotosDescartadas() {
     return Set.copyOf(fotosDescartadas);
+  }
+
+  /** Las que quien revisa subió desde el panel, en el orden en que llegaron. */
+  public List<FotoSubida> fotosSubidas() {
+    return List.copyOf(fotosSubidas);
   }
 
   public EstadoBorrador estado() {

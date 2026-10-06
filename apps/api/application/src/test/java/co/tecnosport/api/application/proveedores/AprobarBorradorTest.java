@@ -34,6 +34,7 @@ import co.tecnosport.api.domain.catalogo.Variante;
 import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.proveedores.BorradorProducto;
 import co.tecnosport.api.domain.proveedores.EstadoBorrador;
+import co.tecnosport.api.domain.proveedores.FotoSubida;
 import co.tecnosport.api.domain.proveedores.HuellaProveedor;
 import co.tecnosport.api.domain.proveedores.IdExternoDeMensaje;
 import co.tecnosport.api.domain.proveedores.LoteIngesta;
@@ -451,6 +452,39 @@ class AprobarBorradorTest {
         FotoNoEsDelBorradorException.class,
         () ->
             caso().ejecutar(comando(List.of(new FotoAprobada(UUID.randomUUID(), "Negro", null)))));
+  }
+
+  /**
+   * Una foto subida desde el panel se aprueba como las del proveedor: puede ser la principal, lleva
+   * tono y se copia al bucket público desde su archivo.
+   */
+  @Test
+  void unaFotoSubidaDesdeElPanelSeApruebaComoLasDelProveedor() {
+    String referencia = "proveedores/" + proveedor.id() + "/borradores/" + borrador.id() + "/a.png";
+    almacenPrivado.guardar(referencia, "image/png", "foto-subida".getBytes(StandardCharsets.UTF_8));
+    FotoSubida subida = new FotoSubida(UUID.randomUUID(), referencia, AHORA);
+    borrador.agregarFotoSubida(subida);
+    borradores.actualizar(borrador);
+
+    Producto producto =
+        caso()
+            .ejecutar(
+                comando(
+                    List.of(
+                        new FotoAprobada(subida.id(), "Negro", "#000000"),
+                        new FotoAprobada(foto2.id(), "Vino", null))));
+
+    assertTrue(
+        producto
+            .imagenPrincipal()
+            .orElseThrow()
+            .url()
+            .startsWith("https://publico.local/productos/" + producto.id() + "/principal-"));
+    assertTrue(
+        almacenPublico.objetos.values().stream()
+            .anyMatch(b -> new String(b, StandardCharsets.UTF_8).equals("foto-subida")),
+        "la subida se copió al bucket público");
+    assertEquals(1, producto.galeria().size());
   }
 
   /** Lo que quien revisa sacó no vuelve a entrar por la aprobación. */

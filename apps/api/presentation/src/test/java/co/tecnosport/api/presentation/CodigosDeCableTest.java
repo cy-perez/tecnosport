@@ -36,6 +36,7 @@ import co.tecnosport.api.application.proveedores.BorradorSinTituloException;
 import co.tecnosport.api.application.proveedores.ColaDeIngestasLlenaException;
 import co.tecnosport.api.application.proveedores.ExportacionDemasiadoGrandeException;
 import co.tecnosport.api.application.proveedores.ExportacionNoEncontradaException;
+import co.tecnosport.api.application.proveedores.FotoDemasiadoGrandeException;
 import co.tecnosport.api.application.proveedores.FotoNoEsDelBorradorException;
 import co.tecnosport.api.application.proveedores.ImagenDeProveedorIlegibleException;
 import co.tecnosport.api.application.proveedores.LoteNoEncontradoException;
@@ -160,6 +161,7 @@ class CodigosDeCableTest {
               AtributoDeCatalogoNoDefinidoException.class, "ATRIBUTO_DE_CATALOGO_NO_DEFINIDO"),
           Map.entry(FotoNoEsDelBorradorException.class, "FOTO_NO_ES_DEL_BORRADOR"),
           Map.entry(ImagenDeProveedorIlegibleException.class, "IMAGEN_DE_PROVEEDOR_ILEGIBLE"),
+          Map.entry(FotoDemasiadoGrandeException.class, "FOTO_DEMASIADO_GRANDE"),
           Map.entry(ProductoDeProveedorYaExisteException.class, "PRODUCTO_DE_PROVEEDOR_YA_EXISTE"));
 
   @Test

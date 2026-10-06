@@ -118,6 +118,56 @@ class BorradorProductoTest {
   }
 
   @Test
+  void subirUnaFotoLaAgregaEnOrdenYQuitaLaAlertaDeSinFotos() {
+    BorradorProducto borrador =
+        nuevo(Set.of(AlertaBorrador.SIN_FOTOS, AlertaBorrador.CONFIANZA_BAJA));
+    FotoSubida primera = new FotoSubida(UUID.randomUUID(), "proveedores/x/a.jpg", T);
+    FotoSubida segunda = new FotoSubida(UUID.randomUUID(), "proveedores/x/b.png", T);
+
+    borrador.agregarFotoSubida(primera);
+    borrador.agregarFotoSubida(segunda);
+
+    assertEquals(List.of(primera, segunda), borrador.fotosSubidas());
+    assertEquals(Set.of(AlertaBorrador.CONFIANZA_BAJA), borrador.alertas());
+    assertThrows(ExcepcionDeDominio.class, () -> borrador.agregarFotoSubida(primera));
+  }
+
+  @Test
+  void quitarUnaFotoSubidaDevuelveSuArchivoYSoloSiEsDelBorrador() {
+    BorradorProducto borrador = nuevo(Set.of());
+    FotoSubida foto = new FotoSubida(UUID.randomUUID(), "proveedores/x/a.jpg", T);
+    borrador.agregarFotoSubida(foto);
+
+    assertThrows(ExcepcionDeDominio.class, () -> borrador.quitarFotoSubida(UUID.randomUUID()));
+    assertEquals(foto, borrador.quitarFotoSubida(foto.id()));
+    assertEquals(List.of(), borrador.fotosSubidas());
+  }
+
+  @Test
+  void laAlertaDeSinFotosVuelveYSeVaConLaSiguienteSubida() {
+    BorradorProducto borrador = nuevo(Set.of());
+
+    borrador.alertarSinFotos();
+    assertEquals(Set.of(AlertaBorrador.SIN_FOTOS), borrador.alertas());
+
+    borrador.agregarFotoSubida(new FotoSubida(UUID.randomUUID(), "k.jpg", T));
+    assertEquals(Set.of(), borrador.alertas());
+  }
+
+  @Test
+  void noSeSubenNiSeQuitanFotosFueraDeRevision() {
+    BorradorProducto borrador = nuevo(Set.of());
+    FotoSubida foto = new FotoSubida(UUID.randomUUID(), "proveedores/x/a.jpg", T);
+    borrador.agregarFotoSubida(foto);
+    borrador.rechazar("no es nuestro");
+
+    assertThrows(
+        ExcepcionDeDominio.class,
+        () -> borrador.agregarFotoSubida(new FotoSubida(UUID.randomUUID(), "k", T)));
+    assertThrows(ExcepcionDeDominio.class, () -> borrador.quitarFotoSubida(foto.id()));
+  }
+
+  @Test
   void aprobarApuntaAlProductoYCierraElBorrador() {
     BorradorProducto borrador = nuevo(Set.of());
     UUID producto = UUID.randomUUID();
@@ -226,6 +276,7 @@ class BorradorProductoTest {
               null,
               null,
               null,
+              null,
               estado,
               null,
               null,
@@ -246,6 +297,7 @@ class BorradorProductoTest {
                 PROVEEDOR,
                 "{}",
                 "t",
+                null,
                 null,
                 null,
                 null,

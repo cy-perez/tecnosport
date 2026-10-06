@@ -100,6 +100,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/borradores/{id}/fotos": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["confirmarFoto"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/borradores/{id}/fotos/url-subida": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["urlDeSubidaDeFoto"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/borradores/{id}/fotos/{mensajeId}": {
         parameters: {
             query?: never;
@@ -1840,6 +1872,9 @@ export interface components {
             /** @enum {string} */
             modalidadRecaudo: "CREDITOS" | "BANCO";
         };
+        ConfirmarFotoPeticion: {
+            objectKey: string;
+        };
         ConfirmarImagenPrincipalPeticion: {
             altEn?: string;
             altEs?: string;
@@ -2084,6 +2119,8 @@ export interface components {
         FotoRespuesta: {
             /** Format: uuid */
             mensajeId?: string;
+            /** @enum {string} */
+            origen: "PROVEEDOR" | "PANEL";
             pieDeFoto?: string;
             url?: string;
         };
@@ -2726,6 +2763,9 @@ export interface components {
         SolicitarSubidaDeExportacionPeticion: {
             contentType: string;
         };
+        SolicitarSubidaDeFotoPeticion: {
+            contentType: string;
+        };
         SolicitarSubidaDeImagenDeGaleriaPeticion: {
             contentType?: string;
         };
@@ -2793,6 +2833,10 @@ export interface components {
             verdictoAlRadicar?: string;
         };
         SubidaDeExportacionRespuesta: {
+            objectKey?: string;
+            url?: string;
+        };
+        SubidaDeFotoRespuesta: {
             objectKey?: string;
             url?: string;
         };
@@ -3104,6 +3148,58 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["ProductoAdminRespuesta"];
+                };
+            };
+        };
+    };
+    confirmarFoto: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConfirmarFotoPeticion"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["FotoRespuesta"];
+                };
+            };
+        };
+    };
+    urlDeSubidaDeFoto: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SolicitarSubidaDeFotoPeticion"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SubidaDeFotoRespuesta"];
                 };
             };
         };

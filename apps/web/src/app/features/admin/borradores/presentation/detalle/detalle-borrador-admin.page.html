@@ -101,7 +101,14 @@
       }
     </p>
     @if (fotos().length === 0) {
-      <p class="mb-24 text-ts-texto-suave">{{ 'admin.borradores.detalle.sinFotos' | transloco }}</p>
+      <p class="mb-24 text-ts-texto-suave">
+        {{
+          (editable()
+            ? 'admin.borradores.detalle.sinFotosEditable'
+            : 'admin.borradores.detalle.sinFotos'
+          ) | transloco
+        }}
+      </p>
     } @else {
       <ul class="m-0 mb-24 grid list-none grid-cols-2 gap-12 p-0 desde-tableta:grid-cols-4">
         @for (foto of fotos(); track foto.mensajeId; let i = $index) {
@@ -118,6 +125,11 @@
             />
             @if (foto.pieDeFoto) {
               <p class="m-0 text-xs text-ts-texto-suave">{{ foto.pieDeFoto }}</p>
+            }
+            @if (foto.origen === 'PANEL') {
+              <p class="m-0 text-xs text-ts-texto-suave">
+                {{ 'admin.borradores.detalle.fotoSubida' | transloco }}
+              </p>
             }
             @if (editable()) {
               <ts-checkbox
@@ -172,7 +184,12 @@
                     {{ 'admin.borradores.eliminarFoto.pregunta' | transloco: { numero: i + 1 } }}
                   </p>
                   <p class="m-0 text-sm text-ts-texto-suave" [id]="'implica-eliminar-foto-' + i">
-                    {{ 'admin.borradores.eliminarFoto.loQueImplica' | transloco }}
+                    {{
+                      (foto.origen === 'PANEL'
+                        ? 'admin.borradores.eliminarFoto.loQueImplicaSubida'
+                        : 'admin.borradores.eliminarFoto.loQueImplica'
+                      ) | transloco
+                    }}
                   </p>
                   @if (errorEliminarFoto(); as mensaje) {
                     <p class="m-0 text-ts-error" role="alert">{{ mensaje }}</p>
@@ -206,6 +223,45 @@
           </li>
         }
       </ul>
+    }
+
+    @if (editable()) {
+      <div class="mb-24 flex flex-col gap-8">
+        <label for="subir-fotos-borrador">
+          {{ 'admin.borradores.subirFotos.etiqueta' | transloco }}
+        </label>
+        <p id="ayuda-subir-fotos-borrador" class="m-0 text-sm text-ts-texto-suave">
+          {{ 'admin.borradores.subirFotos.ayuda' | transloco }}
+        </p>
+        <input
+          class="anillo-foco min-h-tactil"
+          id="subir-fotos-borrador"
+          type="file"
+          accept="image/jpeg,image/png"
+          multiple
+          aria-describedby="ayuda-subir-fotos-borrador"
+          [attr.aria-busy]="subiendoFotos() !== null"
+          (change)="subirFotos($event)"
+        />
+        <!-- Siempre en el DOM: la region viva cambia de contenido, no de existencia. -->
+        <p class="m-0 text-ts-exito" role="status">
+          @if (subiendoFotos(); as avance) {
+            {{
+              'admin.borradores.subirFotos.subiendo'
+                | transloco: { hechas: avance.hechas, total: avance.total }
+            }}
+          } @else if (fotosSubidas(); as cantidad) {
+            {{ 'admin.borradores.subirFotos.hecho' | transloco: { cantidad: cantidad } }}
+          }
+        </p>
+        @if (erroresSubida().length > 0) {
+          <ul class="m-0 list-none p-0 text-ts-error" role="alert">
+            @for (mensaje of erroresSubida(); track $index) {
+              <li>{{ mensaje }}</li>
+            }
+          </ul>
+        }
+      </div>
     }
 
     <h2 class="m-0 mb-8 font-display text-lg">

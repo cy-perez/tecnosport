@@ -1,6 +1,7 @@
 package co.tecnosport.api.application.proveedores;
 
 import co.tecnosport.api.domain.proveedores.BorradorProducto;
+import co.tecnosport.api.domain.proveedores.FotoSubida;
 import co.tecnosport.api.domain.proveedores.MensajeProveedor;
 import co.tecnosport.api.domain.proveedores.PublicacionProveedor;
 import java.util.ArrayList;
@@ -14,7 +15,7 @@ import java.util.stream.Collectors;
 /**
  * El borrador con lo que hace falta para revisarlo: el texto original del proveedor y sus fotos,
  * cada una con una URL firmada de lectura porque el bucket es privado. Las que quien revisa
- * descartó no vienen.
+ * descartó no vienen. Las que se subieron desde el panel van después de las del proveedor.
  */
 public final class VerBorrador {
 
@@ -71,7 +72,16 @@ public final class VerBorrador {
           new FotoDeBorrador(
               mensaje.id(),
               mensaje.referenciaArchivo().map(r -> almacen.urlDeLectura(r).url()).orElse(null),
-              mensaje.pieDeFoto().orElse(null)));
+              mensaje.pieDeFoto().orElse(null),
+              OrigenDeFoto.PROVEEDOR));
+    }
+    for (FotoSubida subida : borrador.fotosSubidas()) {
+      fotos.add(
+          new FotoDeBorrador(
+              subida.id(),
+              almacen.urlDeLectura(subida.referenciaArchivo()).url(),
+              null,
+              OrigenDeFoto.PANEL));
     }
     return new DetalleDeBorrador(borrador, publicacion, textos, fotos);
   }
@@ -82,8 +92,17 @@ public final class VerBorrador {
       List<String> textos,
       List<FotoDeBorrador> fotos) {}
 
+  /** De dónde salió la foto: del mensaje del proveedor o de quien revisa, desde el panel. */
+  public enum OrigenDeFoto {
+    PROVEEDOR,
+    PANEL
+  }
+
   /**
+   * @param mensajeId el id de la foto: el del mensaje si la mandó el proveedor, el de la {@link
+   *     FotoSubida} si se subió desde el panel. Se llama así por el contrato que ya usaba la
+   *     aprobación; los dos son UUID generados aquí y no chocan.
    * @param url firmada y de vida corta; nula cuando la exportación omitió el archivo
    */
-  public record FotoDeBorrador(UUID mensajeId, String url, String pieDeFoto) {}
+  public record FotoDeBorrador(UUID mensajeId, String url, String pieDeFoto, OrigenDeFoto origen) {}
 }

@@ -1,6 +1,7 @@
 package co.tecnosport.api.application.proveedores;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -11,6 +12,7 @@ import co.tecnosport.api.application.proveedores.ApoyoDeIngesta.RepositorioMensa
 import co.tecnosport.api.application.proveedores.ApoyoDeIngesta.RepositorioPublicacionesEnMemoria;
 import co.tecnosport.api.domain.catalogo.LineaCatalogo;
 import co.tecnosport.api.domain.compartido.Dinero;
+import co.tecnosport.api.domain.proveedores.AlertaBorrador;
 import co.tecnosport.api.domain.proveedores.BorradorProducto;
 import co.tecnosport.api.domain.proveedores.EstadoBorrador;
 import co.tecnosport.api.domain.proveedores.IdExternoDeMensaje;
@@ -154,7 +156,8 @@ class RevisarBorradorTest {
     UUID primera = publicacion.medios().getFirst();
     assertTrue(borrador.pHash().isPresent(), "el borrador nace con huella visual");
 
-    new DescartarFotoDeBorrador(borradores, publicaciones).ejecutar(borrador.id(), primera);
+    new DescartarFotoDeBorrador(borradores, publicaciones, mensajes, almacen)
+        .ejecutar(borrador.id(), primera);
 
     assertEquals(Optional.empty(), borradores.buscarPorId(borrador.id()).orElseThrow().pHash());
   }
@@ -162,7 +165,8 @@ class RevisarBorradorTest {
   /** La foto descartada deja de verse en la revisión, y su archivo se queda en el bucket. */
   @Test
   void descartarUnaFotoLaSacaDeLaRevision() {
-    new DescartarFotoDeBorrador(borradores, publicaciones).ejecutar(borrador.id(), foto.id());
+    new DescartarFotoDeBorrador(borradores, publicaciones, mensajes, almacen)
+        .ejecutar(borrador.id(), foto.id());
 
     VerBorrador.DetalleDeBorrador detalle =
         new VerBorrador(borradores, publicaciones, mensajes, almacen).ejecutar(borrador.id());
@@ -171,12 +175,37 @@ class RevisarBorradorTest {
         Set.of(foto.id()), borradores.buscarPorId(borrador.id()).orElseThrow().fotosDescartadas());
   }
 
+  /** La omitida no tiene archivo: descartar la única que sí lo tenía deja el borrador sin fotos. */
+  @Test
+  void descartarLaUltimaFotoConArchivoDevuelveLaAlertaDeSinFotos() {
+    assertFalse(borrador.alertas().contains(AlertaBorrador.SIN_FOTOS));
+
+    new DescartarFotoDeBorrador(borradores, publicaciones, mensajes, almacen)
+        .ejecutar(borrador.id(), omitida.id());
+    assertFalse(
+        borradores
+            .buscarPorId(borrador.id())
+            .orElseThrow()
+            .alertas()
+            .contains(AlertaBorrador.SIN_FOTOS),
+        "queda la que tiene archivo");
+
+    new DescartarFotoDeBorrador(borradores, publicaciones, mensajes, almacen)
+        .ejecutar(borrador.id(), foto.id());
+    assertTrue(
+        borradores
+            .buscarPorId(borrador.id())
+            .orElseThrow()
+            .alertas()
+            .contains(AlertaBorrador.SIN_FOTOS));
+  }
+
   @Test
   void noSeDescartaUnaFotoQueNoEsDeLaPublicacion() {
     assertThrows(
         FotoNoEsDelBorradorException.class,
         () ->
-            new DescartarFotoDeBorrador(borradores, publicaciones)
+            new DescartarFotoDeBorrador(borradores, publicaciones, mensajes, almacen)
                 .ejecutar(borrador.id(), UUID.randomUUID()));
   }
 

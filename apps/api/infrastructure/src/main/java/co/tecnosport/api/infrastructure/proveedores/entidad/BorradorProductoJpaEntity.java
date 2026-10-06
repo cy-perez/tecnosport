@@ -1,11 +1,18 @@
 package co.tecnosport.api.infrastructure.proveedores.entidad;
 
+import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
+import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.OrderBy;
 import jakarta.persistence.Table;
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 @Entity
@@ -68,6 +75,11 @@ public class BorradorProductoJpaEntity {
   @Column(name = "fotos_descartadas")
   private String fotosDescartadas;
 
+  @ElementCollection(fetch = FetchType.EAGER)
+  @CollectionTable(name = "borrador_foto_subida", joinColumns = @JoinColumn(name = "borrador_id"))
+  @OrderBy("subidaEn ASC, id ASC")
+  private List<FotoSubidaJpaEmbeddable> fotosSubidas = new ArrayList<>();
+
   @Column(nullable = false)
   private String estado;
 
@@ -107,6 +119,7 @@ public class BorradorProductoJpaEntity {
       String phash,
       String alertas,
       String fotosDescartadas,
+      List<FotoSubidaJpaEmbeddable> fotosSubidas,
       String estado,
       UUID productoId,
       String motivoRechazo,
@@ -133,6 +146,7 @@ public class BorradorProductoJpaEntity {
     this.phash = phash;
     this.alertas = alertas;
     this.fotosDescartadas = fotosDescartadas;
+    this.fotosSubidas = new ArrayList<>(fotosSubidas);
     this.estado = estado;
     this.productoId = productoId;
     this.motivoRechazo = motivoRechazo;
@@ -218,6 +232,10 @@ public class BorradorProductoJpaEntity {
 
   public String getFotosDescartadas() {
     return fotosDescartadas;
+  }
+
+  public List<FotoSubidaJpaEmbeddable> getFotosSubidas() {
+    return fotosSubidas;
   }
 
   public String getAlertas() {

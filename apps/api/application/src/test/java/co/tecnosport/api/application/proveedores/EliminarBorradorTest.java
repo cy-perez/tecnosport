@@ -13,6 +13,7 @@ import co.tecnosport.api.domain.catalogo.LineaCatalogo;
 import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.proveedores.BorradorProducto;
 import co.tecnosport.api.domain.proveedores.EstadoBorrador;
+import co.tecnosport.api.domain.proveedores.FotoSubida;
 import co.tecnosport.api.domain.proveedores.IdExternoDeMensaje;
 import co.tecnosport.api.domain.proveedores.LoteIngesta;
 import co.tecnosport.api.domain.proveedores.MensajeProveedor;
@@ -180,6 +181,7 @@ class EliminarBorradorTest {
         null,
         null,
         null,
+        null,
         estado,
         null,
         null,
@@ -199,6 +201,33 @@ class EliminarBorradorTest {
     assertTrue(publicaciones.buscarPorId(publicacion.id()).isPresent());
     assertEquals(5, mensajes.listarDeLote(lote.id()).size());
     assertTrue(almacen.objetos.containsKey(CLAVE_FOTO));
+  }
+
+  @Test
+  void lasFotosSubidasDesdeElPanelSeVanConElBorrador() {
+    String clave = "proveedores/x/borradores/b/subida.jpg";
+    almacen.guardar(clave, "image/jpeg", bytes("subida"));
+    borrador.agregarFotoSubida(new FotoSubida(UUID.randomUUID(), clave, T));
+
+    int objetos = eliminar.ejecutar(borrador.id());
+
+    assertEquals(2, objetos, "la del proveedor y la subida");
+    assertFalse(almacen.objetos.containsKey(clave));
+  }
+
+  /** Aunque la publicación se quede por el hermano, la subida es solo de este borrador. */
+  @Test
+  void conUnHermanoSeQuedaLaPublicacionPeroSeVaLaFotoSubida() {
+    borradores.guardar(borradorDe(publicacion));
+    String clave = "proveedores/x/borradores/b/subida.jpg";
+    almacen.guardar(clave, "image/jpeg", bytes("subida"));
+    borrador.agregarFotoSubida(new FotoSubida(UUID.randomUUID(), clave, T));
+
+    int objetos = eliminar.ejecutar(borrador.id());
+
+    assertEquals(1, objetos);
+    assertFalse(almacen.objetos.containsKey(clave));
+    assertTrue(almacen.objetos.containsKey(CLAVE_FOTO), "la del proveedor es del hermano también");
   }
 
   @Test

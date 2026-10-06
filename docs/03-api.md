@@ -409,6 +409,9 @@ GET /api/v1/admin/borradores                                 paginado; ?estado= 
 GET/PATCH /api/v1/admin/borradores/{id}                      detalle —con las fotos firmadas y los textos— y corrección de lo extraído; 409 si ya se decidió
 POST /api/v1/admin/borradores/{id}/aprobar                   crea el producto publicado con sus variantes, fotos e inventario inicial; 422 sin fotos, precio o título; 409 si el mismo anuncio ya es un producto
 POST /api/v1/admin/borradores/{id}/rechazar                  lo cierra con un motivo; 409 si ya se decidió
+POST /api/v1/admin/borradores/{id}/fotos/url-subida          URL firmada para subir una foto al bucket privado; 422 si no es JPEG ni PNG, 409 si ya se decidió
+POST /api/v1/admin/borradores/{id}/fotos                     confirma la key subida y la cuelga del borrador; 201. 404 si el objeto no está; 413 si pasa del tope y 422 si no abre como imagen (en los dos casos se borra)
+DELETE /api/v1/admin/borradores/{id}/fotos/{mensajeId}       la saca de la revisión; si se subió desde el panel, borra también su archivo. 204
 GET /api/v1/admin/pedidos                                   paginado; ?estado= filtra y ordena por más antiguo primero
 POST /api/v1/admin/pedidos/{id}/verificar-contraentrega     contacto por WhatsApp o llamada
 POST /api/v1/admin/pedidos/{id}/emitir-guia                 le pide las guías a Skydropx; 202, no despacha todavía

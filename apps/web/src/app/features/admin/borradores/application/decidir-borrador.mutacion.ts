@@ -1,6 +1,6 @@
 import { inject } from '@angular/core';
 import { injectMutation, QueryClient } from '@tanstack/angular-query-experimental';
-import { AprobarBorrador, Borrador, EditarBorrador } from '../domain/borrador.model';
+import { AprobarBorrador, Borrador, EditarBorrador, FotoBorrador } from '../domain/borrador.model';
 import { REPOSITORIO_BORRADORES_ADMIN } from '../domain/repositorio-borradores-admin.puerto';
 import { CLAVE_BORRADORES_ADMIN } from './listar-borradores.consulta';
 
@@ -20,6 +20,11 @@ export interface AprobarBorradorComando {
 export interface DescartarFotoComando {
   readonly id: string;
   readonly mensajeId: string;
+}
+
+export interface SubirFotoComando {
+  readonly id: string;
+  readonly archivo: File;
 }
 
 export interface RechazarBorradorComando {
@@ -76,6 +81,21 @@ export function usarDescartarFotoBorrador() {
   return injectMutation(() => ({
     mutationFn: (comando: DescartarFotoComando): Promise<void> =>
       repositorio.descartarFoto(comando.id, comando.mensajeId),
+    onSuccess: () => void queryClient.invalidateQueries({ queryKey: CLAVE_BORRADORES_ADMIN }),
+  }));
+}
+
+/**
+ * Una foto por llamada: la pantalla sube las elegidas una tras otra para decir cuál falló. Cada una
+ * invalida el detalle, que vuelve con ella y con las alertas ya sin `SIN_FOTOS`.
+ */
+export function usarSubirFotoBorrador() {
+  const repositorio = inject(REPOSITORIO_BORRADORES_ADMIN);
+  const queryClient = inject(QueryClient);
+
+  return injectMutation(() => ({
+    mutationFn: (comando: SubirFotoComando): Promise<FotoBorrador> =>
+      repositorio.subirFoto(comando.id, comando.archivo),
     onSuccess: () => void queryClient.invalidateQueries({ queryKey: CLAVE_BORRADORES_ADMIN }),
   }));
 }

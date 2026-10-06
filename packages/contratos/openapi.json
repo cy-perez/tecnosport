@@ -574,6 +574,17 @@
         ],
         "type" : "object"
       },
+      "ConfirmarFotoPeticion" : {
+        "properties" : {
+          "objectKey" : {
+            "type" : "string"
+          }
+        },
+        "required" : [
+          "objectKey"
+        ],
+        "type" : "object"
+      },
       "ConfirmarImagenPrincipalPeticion" : {
         "properties" : {
           "altEn" : {
@@ -1256,6 +1267,13 @@
             "format" : "uuid",
             "type" : "string"
           },
+          "origen" : {
+            "enum" : [
+              "PROVEEDOR",
+              "PANEL"
+            ],
+            "type" : "string"
+          },
           "pieDeFoto" : {
             "type" : "string"
           },
@@ -1263,6 +1281,9 @@
             "type" : "string"
           }
         },
+        "required" : [
+          "origen"
+        ],
         "type" : "object"
       },
       "FotogramaPeticion" : {
@@ -3012,6 +3033,17 @@
         ],
         "type" : "object"
       },
+      "SolicitarSubidaDeFotoPeticion" : {
+        "properties" : {
+          "contentType" : {
+            "type" : "string"
+          }
+        },
+        "required" : [
+          "contentType"
+        ],
+        "type" : "object"
+      },
       "SolicitarSubidaDeImagenDeGaleriaPeticion" : {
         "properties" : {
           "contentType" : {
@@ -3188,6 +3220,17 @@
         "type" : "object"
       },
       "SubidaDeExportacionRespuesta" : {
+        "properties" : {
+          "objectKey" : {
+            "type" : "string"
+          },
+          "url" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "SubidaDeFotoRespuesta" : {
         "properties" : {
           "objectKey" : {
             "type" : "string"
@@ -3767,6 +3810,88 @@
               "*/*" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/ProductoAdminRespuesta"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "admin-borrador-controlador"
+        ]
+      }
+    },
+    "/api/v1/admin/borradores/{id}/fotos" : {
+      "post" : {
+        "operationId" : "confirmarFoto",
+        "parameters" : [
+          {
+            "in" : "path",
+            "name" : "id",
+            "required" : true,
+            "schema" : {
+              "format" : "uuid",
+              "type" : "string"
+            }
+          }
+        ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ConfirmarFotoPeticion"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/FotoRespuesta"
+                }
+              }
+            },
+            "description" : "Created"
+          }
+        },
+        "tags" : [
+          "admin-borrador-controlador"
+        ]
+      }
+    },
+    "/api/v1/admin/borradores/{id}/fotos/url-subida" : {
+      "post" : {
+        "operationId" : "urlDeSubidaDeFoto",
+        "parameters" : [
+          {
+            "in" : "path",
+            "name" : "id",
+            "required" : true,
+            "schema" : {
+              "format" : "uuid",
+              "type" : "string"
+            }
+          }
+        ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/SolicitarSubidaDeFotoPeticion"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SubidaDeFotoRespuesta"
                 }
               }
             },

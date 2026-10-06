@@ -121,11 +121,30 @@ export interface Borrador {
   readonly creadoEn: string;
 }
 
+/** De dónde salió la foto: del mensaje del proveedor, o de quien revisa, desde el panel. */
+export type OrigenFoto = 'PROVEEDOR' | 'PANEL';
+
 export interface FotoBorrador {
+  /**
+   * El id de la foto, venga de donde venga: el del mensaje del proveedor o el de la subida. Es el
+   * que se manda al aprobar y al eliminarla; se llama así por el contrato de la API.
+   */
   readonly mensajeId: string;
   /** URL de lectura firmada: caduca, y por eso no se guarda. */
   readonly url: string;
   readonly pieDeFoto: string | null;
+  /** La del panel es solo de este borrador: eliminarla borra el archivo. */
+  readonly origen: OrigenFoto;
+}
+
+/**
+ * Lo que se admite al subir una foto a un borrador: lo que la API sabe abrir para medirla al
+ * aprobar. Un WebP pasaría la subida y fallaría con el formulario de aprobación ya lleno.
+ */
+export const TIPOS_DE_FOTO_ADMITIDOS: readonly string[] = ['image/jpeg', 'image/png'];
+
+export function fotoAdmitida(archivo: File): boolean {
+  return TIPOS_DE_FOTO_ADMITIDOS.includes(archivo.type);
 }
 
 export interface BorradorDetalle {

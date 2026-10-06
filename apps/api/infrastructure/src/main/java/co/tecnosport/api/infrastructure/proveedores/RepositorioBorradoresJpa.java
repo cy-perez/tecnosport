@@ -9,12 +9,14 @@ import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.proveedores.AlertaBorrador;
 import co.tecnosport.api.domain.proveedores.BorradorProducto;
 import co.tecnosport.api.domain.proveedores.EstadoBorrador;
+import co.tecnosport.api.domain.proveedores.FotoSubida;
 import co.tecnosport.api.domain.proveedores.HuellaProveedor;
 import co.tecnosport.api.domain.proveedores.PHash;
 import co.tecnosport.api.domain.proveedores.Tallas;
 import co.tecnosport.api.domain.proveedores.TipoDeTalla;
 import co.tecnosport.api.domain.proveedores.TipoProductoProveedor;
 import co.tecnosport.api.infrastructure.proveedores.entidad.BorradorProductoJpaEntity;
+import co.tecnosport.api.infrastructure.proveedores.entidad.FotoSubidaJpaEmbeddable;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.EnumSet;
@@ -60,6 +62,11 @@ public class RepositorioBorradoresJpa implements RepositorioBorradores {
   @Override
   public Optional<BorradorProducto> buscarPorId(UUID id) {
     return jpa.findById(id).map(RepositorioBorradoresJpa::aDominio);
+  }
+
+  @Override
+  public Optional<BorradorProducto> buscarPorIdParaActualizar(UUID id) {
+    return jpa.buscarConBloqueo(id).map(RepositorioBorradoresJpa::aDominio);
   }
 
   @Override
@@ -132,6 +139,9 @@ public class RepositorioBorradoresJpa implements RepositorioBorradores {
         b.pHash().map(PHash::hex).orElse(null),
         b.alertas().stream().map(Enum::name).sorted().collect(Collectors.joining(",")),
         unir(b.fotosDescartadas().stream().map(UUID::toString).sorted().toList()),
+        b.fotosSubidas().stream()
+            .map(f -> new FotoSubidaJpaEmbeddable(f.id(), f.referenciaArchivo(), f.subidaEn()))
+            .toList(),
         b.estado().name(),
         b.productoId().orElse(null),
         b.motivoRechazo().orElse(null),
@@ -171,6 +181,9 @@ public class RepositorioBorradoresJpa implements RepositorioBorradores {
         f.getPhash() == null ? null : PHash.deHex(f.getPhash()),
         alertas,
         partir(f.getFotosDescartadas()).stream().map(UUID::fromString).collect(Collectors.toSet()),
+        f.getFotosSubidas().stream()
+            .map(s -> new FotoSubida(s.getId(), s.getReferenciaArchivo(), s.getSubidaEn()))
+            .toList(),
         EstadoBorrador.valueOf(f.getEstado()),
         f.getProductoId(),
         f.getMotivoRechazo(),

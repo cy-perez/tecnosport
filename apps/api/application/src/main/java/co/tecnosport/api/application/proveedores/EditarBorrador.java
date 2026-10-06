@@ -17,7 +17,7 @@ public final class EditarBorrador {
     Objects.requireNonNull(comando, "El comando no puede ser nulo.");
     BorradorProducto borrador =
         repositorioBorradores
-            .buscarPorId(comando.borradorId())
+            .buscarPorIdParaActualizar(comando.borradorId())
             .orElseThrow(() -> new BorradorNoEncontradoException(comando.borradorId()));
     if (borrador.estado() != EstadoBorrador.EN_REVISION) {
       throw new BorradorNoEditableException(borrador.estado());

@@ -67,11 +67,12 @@ export function aBorrador(dto: BorradorDto): Borrador {
   };
 }
 
-function aFoto(dto: FotoDto): FotoBorrador {
+export function aFoto(dto: FotoDto): FotoBorrador {
   return {
     mensajeId: dto.mensajeId ?? '',
     url: dto.url ?? '',
     pieDeFoto: dto.pieDeFoto ?? null,
+    origen: dto.origen,
   };
 }
 

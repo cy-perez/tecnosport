@@ -34,7 +34,12 @@ export function borradorDePrueba(overrides: Partial<Borrador> = {}): Borrador {
 }
 
 export function fotoDePrueba(mensajeId: string): FotoBorrador {
-  return { mensajeId, url: 'https://storage.local/' + mensajeId + '.jpg', pieDeFoto: null };
+  return {
+    mensajeId,
+    url: 'https://storage.local/' + mensajeId + '.jpg',
+    pieDeFoto: null,
+    origen: 'PROVEEDOR',
+  };
 }
 
 /** Doble escrito a mano. Aprobar deja el borrador APROBADO con un producto, como el servidor. */
@@ -44,6 +49,9 @@ export class RepositorioBorradoresAdminFalso implements RepositorioBorradoresAdm
   readonly rechazos: { id: string; motivo: string }[] = [];
   readonly eliminados: string[] = [];
   readonly fotosDescartadas: { id: string; mensajeId: string }[] = [];
+  readonly fotosSubidas: { id: string; archivo: File }[] = [];
+  /** Por nombre de archivo: si se pone, subir ese revienta con esto. */
+  readonly fallosAlSubir = new Map<string, unknown>();
   /** Si se pone, `eliminar` revienta con esto: el 409 de un borrador que no se borra. */
   falloAlEliminar: unknown = null;
 
@@ -88,6 +96,27 @@ export class RepositorioBorradoresAdminFalso implements RepositorioBorradoresAdm
   async descartarFoto(id: string, mensajeId: string): Promise<void> {
     this.fotosDescartadas.push({ id, mensajeId });
     this.fotos = this.fotos.filter((foto) => foto.mensajeId !== mensajeId);
+  }
+
+  /** Como el servidor: la foto queda al final, del panel, y el borrador deja de estar sin fotos. */
+  async subirFoto(id: string, archivo: File): Promise<FotoBorrador> {
+    const fallo = this.fallosAlSubir.get(archivo.name);
+    if (fallo) {
+      throw fallo;
+    }
+    this.fotosSubidas.push({ id, archivo });
+    const foto: FotoBorrador = {
+      mensajeId: 'subida-' + this.fotosSubidas.length,
+      url: 'https://storage.local/subida-' + this.fotosSubidas.length + '.jpg',
+      pieDeFoto: null,
+      origen: 'PANEL',
+    };
+    this.fotos = [...this.fotos, foto];
+    const actual = this.borradores.find((b) => b.id === id);
+    if (actual) {
+      this.reemplazar(id, { alertas: actual.alertas.filter((a) => a !== 'SIN_FOTOS') });
+    }
+    return foto;
   }
 
   async eliminar(id: string): Promise<void> {

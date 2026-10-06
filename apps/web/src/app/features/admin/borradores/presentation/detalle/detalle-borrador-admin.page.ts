@@ -22,6 +22,7 @@ import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { mensajeDeError } from '../../../../../core/errores/mensaje-de-error';
+import { ErrorHttp } from '../../../../../core/http/respuesta-http';
 import { usarIdiomaActivo, usarTraductor } from '../../../../../core/i18n/traductor';
 import { usarFoco } from '../../../../../shared/foco/foco';
 import { formatearPrecio } from '../../../../../shared/ts-precio/formato-precio';
@@ -45,6 +46,7 @@ import {
   usarEditarBorrador,
   usarEliminarBorrador,
   usarRechazarBorrador,
+  usarSubirFotoBorrador,
 } from '../../application/decidir-borrador.mutacion';
 import { usarVerBorrador } from '../../application/ver-borrador.consulta';
 import {
@@ -54,6 +56,7 @@ import {
   borradorEditable,
   CATEGORIA_SUGERIDA_POR_TIPO,
   EstadoBorrador,
+  fotoAdmitida,
   MARCA_DE_REPLICAS,
   MAXIMO_FOTOS_POR_PRODUCTO,
   Tallas,
@@ -139,6 +142,7 @@ export class DetalleBorradorAdminPage {
   private readonly rechazar = usarRechazarBorrador();
   private readonly eliminar = usarEliminarBorrador();
   private readonly descartarFoto = usarDescartarFotoBorrador();
+  private readonly subirFoto = usarSubirFotoBorrador();
 
   protected readonly borrador = computed<Borrador | null>(
     () => this.consulta.data()?.borrador ?? null,
@@ -192,6 +196,12 @@ export class DetalleBorradorAdminPage {
   protected readonly errorEliminarFoto = signal<string | null>(null);
   protected readonly fotoEliminada = signal(false);
   protected readonly errorBorrar = signal<string | null>(null);
+  /** El avance de la subida en curso; nulo si no se está subiendo nada. */
+  protected readonly subiendoFotos = signal<{ hechas: number; total: number } | null>(null);
+  /** Cuántas entraron en la última subida; nulo antes de la primera. */
+  protected readonly fotosSubidas = signal<number | null>(null);
+  /** Un mensaje por archivo que no entró, con su nombre: de varios, puede fallar uno solo. */
+  protected readonly erroresSubida = signal<readonly string[]>([]);
 
   private readonly enfocarDespuesDePintar = usarFoco();
   private readonly avisoDatosRef = viewChild<ElementRef<HTMLElement>>('avisoDatosRef');
@@ -399,6 +409,9 @@ export class DetalleBorradorAdminPage {
       this.confirmandoEliminarFoto.set(null);
       this.errorEliminarFoto.set(null);
       this.fotoEliminada.set(false);
+      this.subiendoFotos.set(null);
+      this.fotosSubidas.set(null);
+      this.erroresSubida.set([]);
       this.avisoDatos.set(null);
       this.errorDatos.set(null);
       this.errorDecision.set(null);
@@ -635,6 +648,71 @@ export class DetalleBorradorAdminPage {
     );
   }
 
+  /**
+   * Sube los archivos elegidos uno tras otro, en el orden en que llegaron, para poder decir cuál
+   * falló: de cinco, puede fallar uno. Lo que no es JPEG ni PNG ni sale del navegador, porque la
+   * API lo rechazaría igual.
+   *
+   * <p>Las fotos nuevas entran incluidas: `fotosExcluidas` guarda las que se sacan, no las que se
+   * eligen. El foco se queda en el selector de archivos, que no se va de la página.
+   *
+   * <p>El id se fija al empezar: navegar a otro borrador a mitad de la subida colgaría las fotos
+   * que faltan del borrador nuevo. Si cambia, se para, y lo de esta pantalla ya no se pinta.
+   */
+  protected async subirFotos(evento: Event): Promise<void> {
+    const selector = evento.target as HTMLInputElement;
+    const archivos = Array.from(selector.files ?? []);
+    if (archivos.length === 0 || this.subiendoFotos() !== null) {
+      return;
+    }
+    const id = this.id();
+    this.fotosSubidas.set(null);
+    this.erroresSubida.set([]);
+    const errores: string[] = [];
+    let subidas = 0;
+    this.subiendoFotos.set({ hechas: 0, total: archivos.length });
+    for (const archivo of archivos) {
+      if (this.id() !== id) {
+        return;
+      }
+      if (!fotoAdmitida(archivo)) {
+        errores.push(
+          this.transloco.translate('admin.borradores.subirFotos.tipoNoAdmitido', {
+            nombre: archivo.name,
+          }),
+        );
+      } else {
+        try {
+          await this.subirFoto.mutateAsync({ id, archivo });
+          subidas++;
+        } catch (error: unknown) {
+          errores.push(this.mensajeDeSubidaFallida(error, archivo.name));
+        }
+      }
+      this.subiendoFotos.update((avance) => avance && { ...avance, hechas: avance.hechas + 1 });
+    }
+    // Vacío, para que elegir otra vez el mismo archivo vuelva a disparar `change`.
+    selector.value = '';
+    if (this.id() !== id) {
+      return;
+    }
+    this.subiendoFotos.set(null);
+    this.fotosSubidas.set(subidas);
+    this.erroresSubida.set(errores);
+  }
+
+  /** Por qué no entró, con el nombre del archivo: de varios, la persona tiene que saber cuál. */
+  private mensajeDeSubidaFallida(error: unknown, nombre: string): string {
+    const codigo = error instanceof ErrorHttp ? error.codigo : undefined;
+    const clave =
+      codigo === 'IMAGEN_DE_PROVEEDOR_ILEGIBLE'
+        ? 'admin.borradores.subirFotos.ilegible'
+        : codigo === 'FOTO_DEMASIADO_GRANDE'
+          ? 'admin.borradores.subirFotos.demasiadoGrande'
+          : 'admin.borradores.subirFotos.error';
+    return this.transloco.translate(clave, { nombre });
+  }
+
   protected guardarDatos(): void {
     if (this.guardando()) {
       return;
@@ -684,6 +762,12 @@ export class DetalleBorradorAdminPage {
 
   protected aprobarBorrador(): void {
     if (this.decidiendo()) {
+      return;
+    }
+    // Las fotos que faltan por confirmar no entrarían, y la que se confirme después encontraría el
+    // borrador ya aprobado.
+    if (this.subiendoFotos() !== null) {
+      this.errorDecision.set(this.transloco.translate('admin.borradores.aprobar.esperaSubida'));
       return;
     }
     const valores = this.formAprobar.getRawValue();

@@ -17,7 +17,7 @@ public final class RechazarBorrador {
   public BorradorProducto ejecutar(UUID borradorId, String motivo) {
     BorradorProducto borrador =
         repositorioBorradores
-            .buscarPorId(borradorId)
+            .buscarPorIdParaActualizar(borradorId)
             .orElseThrow(() -> new BorradorNoEncontradoException(borradorId));
     if (borrador.estado() != EstadoBorrador.EN_REVISION) {
       throw new BorradorNoEditableException(borrador.estado());

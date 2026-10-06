@@ -28,6 +28,7 @@ import co.tecnosport.api.domain.compartido.HashContenido;
 import co.tecnosport.api.domain.compartido.Slug;
 import co.tecnosport.api.domain.proveedores.BorradorProducto;
 import co.tecnosport.api.domain.proveedores.EstadoBorrador;
+import co.tecnosport.api.domain.proveedores.FotoSubida;
 import co.tecnosport.api.domain.proveedores.HuellaProveedor;
 import co.tecnosport.api.domain.proveedores.MensajeProveedor;
 import co.tecnosport.api.domain.proveedores.PHash;
@@ -48,7 +49,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -128,7 +128,7 @@ public final class AprobarBorrador {
     Objects.requireNonNull(comando, "El comando no puede ser nulo.");
     BorradorProducto borrador =
         repositorioBorradores
-            .buscarPorId(comando.borradorId())
+            .buscarPorIdParaActualizar(comando.borradorId())
             .orElseThrow(() -> new BorradorNoEncontradoException(comando.borradorId()));
     if (borrador.estado() != EstadoBorrador.EN_REVISION) {
       throw new BorradorNoEditableException(borrador.estado());
@@ -170,9 +170,9 @@ public final class AprobarBorrador {
     if (!repositorioCategorias.hijasDe(categoria.id()).isEmpty()) {
       throw new CategoriaNoEsHojaException(categoria.nombre());
     }
-    Map<UUID, MensajeProveedor> fotosDeLaPublicacion = fotosDe(publicacion);
+    Map<UUID, String> archivoPorFoto = archivosDe(publicacion, borrador);
     for (AprobarBorradorComando.FotoAprobada foto : comando.fotos()) {
-      if (!fotosDeLaPublicacion.containsKey(foto.mensajeId())
+      if (!archivoPorFoto.containsKey(foto.mensajeId())
           || borrador.fotosDescartadas().contains(foto.mensajeId())) {
         throw new FotoNoEsDelBorradorException(foto.mensajeId());
       }
@@ -227,11 +227,7 @@ public final class AprobarBorrador {
     Producto conVariantes = repositorioProductos.buscarPorId(producto.id()).orElseThrow();
     PHash pHashDeLaPrincipal =
         publicarFotos(
-            conVariantes,
-            comando,
-            fotosDeLaPublicacion,
-            variantePorTono,
-            borrador.pHash().isEmpty());
+            conVariantes, comando, archivoPorFoto, variantePorTono, borrador.pHash().isEmpty());
     conVariantes.publicar();
     repositorioProductos.actualizar(conVariantes);
 
@@ -312,7 +308,7 @@ public final class AprobarBorrador {
   private PHash publicarFotos(
       Producto producto,
       AprobarBorradorComando comando,
-      Map<UUID, MensajeProveedor> fotos,
+      Map<UUID, String> fotos,
       Map<String, UUID> variantePorTono,
       boolean conHuellaVisual) {
     List<String> subidas = new ArrayList<>();
@@ -329,15 +325,14 @@ public final class AprobarBorrador {
   private PHash publicarFotos(
       Producto producto,
       AprobarBorradorComando comando,
-      Map<UUID, MensajeProveedor> fotos,
+      Map<UUID, String> fotos,
       Map<String, UUID> variantePorTono,
       boolean conHuellaVisual,
       List<String> subidas) {
     PHash pHashDeLaPrincipal = null;
     int orden = 0;
     for (AprobarBorradorComando.FotoAprobada foto : comando.fotos()) {
-      MensajeProveedor mensaje = fotos.get(foto.mensajeId());
-      String referencia = mensaje.referenciaArchivo().orElseThrow();
+      String referencia = fotos.get(foto.mensajeId());
       byte[] original =
           almacenPrivado
               .leer(referencia)
@@ -381,11 +376,26 @@ public final class AprobarBorrador {
     return pHashDeLaPrincipal;
   }
 
-  private Map<UUID, MensajeProveedor> fotosDe(PublicacionProveedor publicacion) {
-    return repositorioMensajes.listarDeLote(publicacion.loteId()).stream()
-        .filter(m -> publicacion.medios().contains(m.id()))
-        .filter(m -> m.referenciaArchivo().isPresent())
-        .collect(Collectors.toMap(MensajeProveedor::id, Function.identity()));
+  /**
+   * El archivo de cada foto que se puede aprobar, por su id: las de la publicación que traen
+   * archivo y las que se subieron al borrador desde el panel.
+   */
+  private Map<UUID, String> archivosDe(
+      PublicacionProveedor publicacion, BorradorProducto borrador) {
+    Map<UUID, String> archivos =
+        repositorioMensajes.listarDeLote(publicacion.loteId()).stream()
+            .filter(m -> publicacion.medios().contains(m.id()))
+            .filter(m -> m.referenciaArchivo().isPresent())
+            .collect(
+                Collectors.toMap(
+                    MensajeProveedor::id,
+                    m -> m.referenciaArchivo().orElseThrow(),
+                    (a, b) -> a,
+                    LinkedHashMap::new));
+    for (FotoSubida subida : borrador.fotosSubidas()) {
+      archivos.put(subida.id(), subida.referenciaArchivo());
+    }
+    return archivos;
   }
 
   private Atributo atributo(String nombre, TipoAtributo tipo) {

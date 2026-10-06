@@ -1024,14 +1024,16 @@
       "errorCarga": "No se pudo cargar el borrador.",
       "de": "De {{proveedor}} · precio del proveedor: {{precio}}",
       "alertasTitulo": "Antes de aprobar, revisa",
-      "fotos": "Fotos de la publicación",
+      "fotos": "Fotos del borrador",
       "sinFotos": "La publicación no trajo fotos.",
-      "fotoAlt": "Foto {{numero}} de la publicación",
+      "sinFotosEditable": "La publicación no trajo fotos. Súbelas aquí abajo para poder aprobarlo.",
+      "fotoAlt": "Foto {{numero}} del borrador",
       "textos": "Lo que escribió el proveedor",
       "sinTextos": "La publicación no trajo texto.",
       "motivoRechazo": "Rechazado: {{motivo}}",
       "verProducto": "Ver el producto que creó",
-      "cerrado": "Este borrador ya se decidió."
+      "cerrado": "Este borrador ya se decidió.",
+      "fotoSubida": "Subida en la revisión"
     },
     "datos": {
       "titulo": "Datos extraídos",
@@ -1089,7 +1091,8 @@
       "fotosCompartidas": "Estas fotos son de un mensaje con varios productos: algunas pueden ser del otro. Destilda las que no sean de este y marca la principal.",
       "marcarPrincipal": "Marcar como principal",
       "marcarPrincipalFoto": "Marcar la foto {{numero}} como principal",
-      "marcaLaPrincipal": "Marca la foto principal de este producto: las fotos venían compartidas con otro."
+      "marcaLaPrincipal": "Marca la foto principal de este producto: las fotos venían compartidas con otro.",
+      "esperaSubida": "Espera a que terminen de subir las fotos para aprobar."
     },
     "eliminarFoto": {
       "accion": "Eliminar foto",
@@ -1100,7 +1103,18 @@
       "eliminando": "Eliminando…",
       "cancelar": "Cancelar",
       "hecho": "Foto eliminada del borrador.",
-      "error": "No se pudo eliminar la foto. Intenta de nuevo."
+      "error": "No se pudo eliminar la foto. Intenta de nuevo.",
+      "loQueImplicaSubida": "Deja de verse aquí, no entra al producto y el archivo se borra."
+    },
+    "subirFotos": {
+      "etiqueta": "Subir fotos",
+      "ayuda": "JPEG o PNG, una o varias. Entran con las demás: puedes marcarlas como principal, ponerles tono o eliminarlas.",
+      "subiendo": "Subiendo fotos ({{hechas}} de {{total}})…",
+      "hecho": "Fotos agregadas al borrador: {{cantidad}}.",
+      "tipoNoAdmitido": "«{{nombre}}» no es JPEG ni PNG y no se subió.",
+      "ilegible": "«{{nombre}}» no se pudo abrir como imagen y no se subió.",
+      "demasiadoGrande": "«{{nombre}}» pesa más de lo que se admite y no se subió. Redúcela y vuelve a intentarlo.",
+      "error": "No se pudo subir «{{nombre}}». Intenta de nuevo."
     },
     "rechazar": {
       "titulo": "Rechazar",
