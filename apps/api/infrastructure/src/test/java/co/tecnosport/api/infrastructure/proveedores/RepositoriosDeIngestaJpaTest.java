@@ -9,6 +9,7 @@ import co.tecnosport.api.domain.proveedores.EstadoLote;
 import co.tecnosport.api.domain.proveedores.IdExternoDeMensaje;
 import co.tecnosport.api.domain.proveedores.LoteIngesta;
 import co.tecnosport.api.domain.proveedores.MensajeProveedor;
+import co.tecnosport.api.domain.proveedores.OrdenDePublicacion;
 import co.tecnosport.api.domain.proveedores.Proveedor;
 import co.tecnosport.api.domain.proveedores.ResumenIngesta;
 import co.tecnosport.api.domain.proveedores.TipoMensaje;
@@ -55,7 +56,12 @@ class RepositoriosDeIngestaJpaTest {
   private Proveedor proveedorGuardado(BigDecimal factor) {
     Proveedor proveedor =
         Proveedor.crear(
-            "Bolsos del Centro", LineaCatalogo.BOLSOS, "+57 300", "Bolsos Centro", factor);
+            "Bolsos del Centro",
+            LineaCatalogo.BOLSOS,
+            "+57 300",
+            "Bolsos Centro",
+            factor,
+            OrdenDePublicacion.FOTOS_PRIMERO);
     proveedores.guardar(proveedor);
     return proveedor;
   }
@@ -70,7 +76,26 @@ class RepositoriosDeIngestaJpaTest {
     assertThat(leido.linea()).isEqualTo(LineaCatalogo.BOLSOS);
     assertThat(leido.factorDeMargen()).contains(new BigDecimal("1.350"));
     assertThat(leido.activo()).isTrue();
+    assertThat(leido.ordenDePublicacion()).isEqualTo(OrdenDePublicacion.FOTOS_PRIMERO);
     assertThat(proveedores.buscarPorId(sinFactor.id()).orElseThrow().factorDeMargen()).isEmpty();
+  }
+
+  /**
+   * El valor por omisión de V82 solo rellenó las filas que ya existían: después se quitó, y un
+   * insert a mano que no diga el orden falla en vez de recibir uno que nadie eligió.
+   */
+  @Test
+  void unInsertSinOrdenDePublicacionNoEntra() {
+    assertThatThrownBy(
+            () ->
+                jdbc.update(
+                    "insert into proveedor (id, nombre, linea, telefono_whatsapp,"
+                        + " nombre_en_exportacion, activo, publicacion_automatica, creado_en,"
+                        + " actualizado_en)"
+                        + " values (?, 'Sin orden', 'ROPA', '+57 300', 'Sin orden', true, false,"
+                        + " now(), now())",
+                    UUID.randomUUID()))
+        .isInstanceOf(DataIntegrityViolationException.class);
   }
 
   @Test
@@ -85,13 +110,15 @@ class RepositoriosDeIngestaJpaTest {
         "Meraki Cúcuta",
         false,
         true,
-        new BigDecimal("1.3"));
+        new BigDecimal("1.3"),
+        OrdenDePublicacion.TEXTO_PRIMERO);
     proveedores.actualizar(proveedor);
 
     Proveedor leido = proveedores.buscarPorId(proveedor.id()).orElseThrow();
     assertThat(leido.nombre()).isEqualTo("Meraki");
     assertThat(leido.activo()).isFalse();
     assertThat(leido.publicacionAutomatica()).isTrue();
+    assertThat(leido.ordenDePublicacion()).isEqualTo(OrdenDePublicacion.TEXTO_PRIMERO);
     assertThat(filasDeProveedor.findById(proveedor.id()).orElseThrow().getCreadoEn())
         .isEqualTo(creadoEn);
     assertThat(proveedores.listar()).extracting(Proveedor::nombre).containsExactly("Meraki");

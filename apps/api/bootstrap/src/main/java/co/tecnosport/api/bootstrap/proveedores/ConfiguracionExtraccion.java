@@ -5,6 +5,7 @@ import co.tecnosport.api.application.proveedores.ExtractorDeProductos;
 import co.tecnosport.api.application.proveedores.ExtraerProductoDePublicacion;
 import co.tecnosport.api.application.proveedores.RepositorioLotesIngesta;
 import co.tecnosport.api.application.proveedores.RepositorioMensajesProveedor;
+import co.tecnosport.api.application.proveedores.RepositorioProveedores;
 import co.tecnosport.api.application.proveedores.RepositorioPublicacionesProveedor;
 import co.tecnosport.api.domain.proveedores.AgrupadorDePublicaciones;
 import co.tecnosport.api.infrastructure.proveedores.extraccion.ExtractorClaude;
@@ -62,10 +63,11 @@ public class ConfiguracionExtraccion {
   @Bean
   public ArmarPublicaciones armarPublicaciones(
       RepositorioLotesIngesta lotes,
+      RepositorioProveedores proveedores,
       RepositorioMensajesProveedor mensajes,
       RepositorioPublicacionesProveedor publicaciones,
       AgrupadorDePublicaciones agrupador) {
-    return new ArmarPublicaciones(lotes, mensajes, publicaciones, agrupador);
+    return new ArmarPublicaciones(lotes, proveedores, mensajes, publicaciones, agrupador);
   }
 
   @Bean

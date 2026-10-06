@@ -1,5 +1,8 @@
 package co.tecnosport.api.presentation.proveedores;
 
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.not;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -14,6 +17,7 @@ import co.tecnosport.api.application.proveedores.DependenciasDeProveedor;
 import co.tecnosport.api.application.proveedores.EditarProveedor;
 import co.tecnosport.api.application.proveedores.EliminarProveedor;
 import co.tecnosport.api.application.proveedores.RepositorioProveedores;
+import co.tecnosport.api.domain.proveedores.OrdenDePublicacion;
 import co.tecnosport.api.domain.proveedores.Proveedor;
 import co.tecnosport.api.presentation.ManejadorDeErrores;
 import java.util.ArrayList;
@@ -56,8 +60,10 @@ class AdminProveedorControladorTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
                     "{\"nombre\":\"Meraki\",\"linea\":\"ROPA\",\"telefonoWhatsApp\":\"+57 321\","
-                        + "\"nombreEnExportacion\":\"Meraki Cúcuta\",\"factorDeMargen\":1.30}"))
+                        + "\"nombreEnExportacion\":\"Meraki Cúcuta\",\"factorDeMargen\":1.30,"
+                        + "\"ordenDePublicacion\":\"TEXTO_PRIMERO\"}"))
         .andExpect(status().isCreated())
+        .andExpect(jsonPath("$.ordenDePublicacion").value("TEXTO_PRIMERO"))
         .andExpect(jsonPath("$.activo").value(true))
         .andExpect(jsonPath("$.publicacionAutomatica").value(false))
         .andExpect(jsonPath("$.factorDeMargen").value(1.30));
@@ -72,9 +78,37 @@ class AdminProveedorControladorTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
                     "{\"nombre\":\"Cel\",\"linea\":\"TECNOLOGIA\",\"telefonoWhatsApp\":\"+57\","
-                        + "\"nombreEnExportacion\":\"Cel\"}"))
+                        + "\"nombreEnExportacion\":\"Cel\",\"ordenDePublicacion\":\"FOTOS_PRIMERO\"}"))
         .andExpect(status().isUnprocessableContent())
         .andExpect(jsonPath("$.codigo").value("EXCEPCION_DE_DOMINIO"));
+  }
+
+  /**
+   * El orden no tiene un valor que el servidor pueda suponer: sin él, el cuerpo no se lee. Y un
+   * valor que no existe tampoco pasa, sin enseñar el nombre de la clase del enum.
+   */
+  @Test
+  void sinOrdenDePublicacionOConUnoQueNoExisteEs422() throws Exception {
+    mockMvc
+        .perform(
+            post("/api/v1/admin/proveedores")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    "{\"nombre\":\"Meraki\",\"linea\":\"ROPA\",\"telefonoWhatsApp\":\"+57 321\","
+                        + "\"nombreEnExportacion\":\"Meraki\"}"))
+        .andExpect(status().isUnprocessableContent())
+        .andExpect(jsonPath("$.codigo").value("HTTP_MESSAGE_NOT_READABLE"));
+
+    mockMvc
+        .perform(
+            post("/api/v1/admin/proveedores")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    "{\"nombre\":\"Meraki\",\"linea\":\"ROPA\",\"telefonoWhatsApp\":\"+57 321\","
+                        + "\"nombreEnExportacion\":\"Meraki\",\"ordenDePublicacion\":\"AL_REVES\"}"))
+        .andExpect(status().isUnprocessableContent())
+        .andExpect(jsonPath("$.detail").value(not(containsString("OrdenDePublicacion"))));
+    assertTrue(proveedores.porId.isEmpty());
   }
 
   @Test
@@ -85,7 +119,8 @@ class AdminProveedorControladorTest {
             co.tecnosport.api.domain.catalogo.LineaCatalogo.BOLSOS,
             "+57 300",
             "Bolsos",
-            null);
+            null,
+            OrdenDePublicacion.FOTOS_PRIMERO);
     proveedores.porId.put(proveedor.id(), proveedor);
 
     mockMvc
@@ -94,8 +129,10 @@ class AdminProveedorControladorTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
                     "{\"nombre\":\"Bolsos del Centro\",\"linea\":\"BOLSOS\",\"telefonoWhatsApp\":\"+57 300\","
-                        + "\"nombreEnExportacion\":\"Bolsos Centro\",\"activo\":false}"))
+                        + "\"nombreEnExportacion\":\"Bolsos Centro\",\"activo\":false,"
+                        + "\"ordenDePublicacion\":\"TEXTO_PRIMERO\"}"))
         .andExpect(status().isOk())
+        .andExpect(jsonPath("$.ordenDePublicacion").value("TEXTO_PRIMERO"))
         .andExpect(jsonPath("$.nombre").value("Bolsos del Centro"))
         .andExpect(jsonPath("$.activo").value(false))
         .andExpect(jsonPath("$.publicacionAutomatica").value(false));
@@ -114,7 +151,7 @@ class AdminProveedorControladorTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
                     "{\"nombre\":\"X\",\"linea\":\"BOLSOS\",\"telefonoWhatsApp\":\"+57\","
-                        + "\"nombreEnExportacion\":\"X\"}"))
+                        + "\"nombreEnExportacion\":\"X\",\"ordenDePublicacion\":\"FOTOS_PRIMERO\"}"))
         .andExpect(status().isNotFound())
         .andExpect(jsonPath("$.codigo").value("PROVEEDOR_NO_ENCONTRADO"));
   }
@@ -169,7 +206,8 @@ class AdminProveedorControladorTest {
             co.tecnosport.api.domain.catalogo.LineaCatalogo.BOLSOS,
             "+57 300",
             "Bolsos",
-            null);
+            null,
+            OrdenDePublicacion.FOTOS_PRIMERO);
     proveedores.porId.put(proveedor.id(), proveedor);
     return proveedor;
   }

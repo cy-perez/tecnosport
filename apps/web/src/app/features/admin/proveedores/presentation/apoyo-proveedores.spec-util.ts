@@ -9,6 +9,7 @@ export function proveedorDePrueba(overrides: Partial<Proveedor> = {}): Proveedor
     telefonoWhatsApp: '573001234567',
     linea: 'BOLSOS',
     factorDeMargen: 1.35,
+    ordenDePublicacion: 'FOTOS_PRIMERO',
     publicacionAutomatica: false,
     activo: true,
     ...overrides,

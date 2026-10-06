@@ -397,7 +397,8 @@ POST /api/v1/admin/productos/{id}/imagen-principal            confirma la subida
 POST /api/v1/admin/productos/{id}/galeria/url-subida         igual que la principal, con su propio prefijo: la limpieza de una no toca a la otra
 POST /api/v1/admin/productos/{id}/galeria                    confirma y suma a la galería; 409 si la foto ya está o si no caben más (adr/0052)
 DELETE /api/v1/admin/productos/{id}/galeria/{imagenId}       la saca de la ficha y borra su objeto; 204, y 404 si no era de ese producto
-GET/POST /api/v1/admin/proveedores                           los proveedores de WhatsApp, y crear uno; la línea es BOLSOS o ROPA
+GET/POST /api/v1/admin/proveedores                           los proveedores de WhatsApp, y crear uno; la línea es BOLSOS o ROPA y ordenDePublicacion
+                                                             (FOTOS_PRIMERO o TEXTO_PRIMERO) es obligatorio, también al editar
 GET/PUT /api/v1/admin/proveedores/{id}                       ficha y edición; desactivarlo es lo que impide subirle exportaciones
 DELETE /api/v1/admin/proveedores/{id}                        con su historial de ingesta; 409 si algún producto salió de él (`productos` dice cuántos) o si tiene un lote abierto
 POST /api/v1/admin/proveedores/{id}/ingestas/url-subida      URL firmada para subir el zip de la exportación al bucket privado

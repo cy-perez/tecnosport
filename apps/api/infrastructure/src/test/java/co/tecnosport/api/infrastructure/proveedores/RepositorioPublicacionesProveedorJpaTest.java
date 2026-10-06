@@ -7,6 +7,7 @@ import co.tecnosport.api.domain.proveedores.EstadoPublicacionProveedor;
 import co.tecnosport.api.domain.proveedores.IdExternoDeMensaje;
 import co.tecnosport.api.domain.proveedores.LoteIngesta;
 import co.tecnosport.api.domain.proveedores.MensajeProveedor;
+import co.tecnosport.api.domain.proveedores.OrdenDePublicacion;
 import co.tecnosport.api.domain.proveedores.Proveedor;
 import co.tecnosport.api.domain.proveedores.PublicacionProveedor;
 import java.time.Instant;
@@ -40,7 +41,13 @@ class RepositorioPublicacionesProveedorJpaTest {
   @Test
   void unaPublicacionConTextosYMediosVaYVuelveEnOrden() {
     Proveedor proveedor =
-        Proveedor.crear("Bolsos", LineaCatalogo.BOLSOS, "+57 300", "Bolsos Centro", null);
+        Proveedor.crear(
+            "Bolsos",
+            LineaCatalogo.BOLSOS,
+            "+57 300",
+            "Bolsos Centro",
+            null,
+            OrdenDePublicacion.FOTOS_PRIMERO);
     proveedores.guardar(proveedor);
     LoteIngesta lote = LoteIngesta.recibirExportacion(proveedor.id(), "p/exportaciones/a.zip", T);
     lotes.guardar(lote);

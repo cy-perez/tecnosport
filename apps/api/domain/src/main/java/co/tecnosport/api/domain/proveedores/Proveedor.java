@@ -31,6 +31,12 @@ import java.util.UUID;
  * <p>Vacío quiere decir «el de su línea», que vive en configuración. Un factor por debajo de uno no
  * es una decisión sino un error al teclear —0,35 donde iba 1,35—, y venderlo por debajo del costo
  * no lo arregla ningún borrador: se rechaza aquí.
+ *
+ * <h2>El orden en que publica</h2>
+ *
+ * <p>Si manda primero las fotos o primero el texto con el precio. Es obligatorio y no tiene un
+ * valor que el dominio suponga: lo decide quien registra al proveedor mirando su chat, y solo
+ * cambia cómo se reparten las fotos de un mismo minuto ({@link OrdenDePublicacion}).
  */
 public final class Proveedor {
 
@@ -50,6 +56,7 @@ public final class Proveedor {
   private boolean activo;
   private boolean publicacionAutomatica;
   private BigDecimal factorDeMargen;
+  private OrdenDePublicacion ordenDePublicacion;
 
   public Proveedor(
       UUID id,
@@ -59,7 +66,8 @@ public final class Proveedor {
       String nombreEnExportacion,
       boolean activo,
       boolean publicacionAutomatica,
-      BigDecimal factorDeMargen) {
+      BigDecimal factorDeMargen,
+      OrdenDePublicacion ordenDePublicacion) {
     this.id = Objects.requireNonNull(id, "El id del proveedor no puede ser nulo.");
     this.nombre = exigirTexto(nombre, "El proveedor necesita un nombre.");
     this.linea = exigirLinea(linea);
@@ -72,6 +80,7 @@ public final class Proveedor {
     this.activo = activo;
     this.publicacionAutomatica = publicacionAutomatica;
     this.factorDeMargen = exigirFactor(factorDeMargen);
+    this.ordenDePublicacion = exigirOrden(ordenDePublicacion);
   }
 
   /** Nace activo y sin publicación automática: publicar solo lo decide una persona por ahora. */
@@ -80,7 +89,8 @@ public final class Proveedor {
       LineaCatalogo linea,
       String telefonoWhatsApp,
       String nombreEnExportacion,
-      BigDecimal factorDeMargen) {
+      BigDecimal factorDeMargen,
+      OrdenDePublicacion ordenDePublicacion) {
     return new Proveedor(
         GeneradorIdentificador.nuevo(),
         nombre,
@@ -89,7 +99,8 @@ public final class Proveedor {
         nombreEnExportacion,
         true,
         false,
-        factorDeMargen);
+        factorDeMargen,
+        ordenDePublicacion);
   }
 
   public void editar(
@@ -99,7 +110,8 @@ public final class Proveedor {
       String nombreEnExportacion,
       boolean activo,
       boolean publicacionAutomatica,
-      BigDecimal factorDeMargen) {
+      BigDecimal factorDeMargen,
+      OrdenDePublicacion ordenDePublicacion) {
     this.nombre = exigirTexto(nombre, "El proveedor necesita un nombre.");
     this.linea = exigirLinea(linea);
     this.telefonoWhatsApp =
@@ -111,6 +123,7 @@ public final class Proveedor {
     this.activo = activo;
     this.publicacionAutomatica = publicacionAutomatica;
     this.factorDeMargen = exigirFactor(factorDeMargen);
+    this.ordenDePublicacion = exigirOrden(ordenDePublicacion);
   }
 
   /**
@@ -173,6 +186,14 @@ public final class Proveedor {
     return linea;
   }
 
+  private static OrdenDePublicacion exigirOrden(OrdenDePublicacion orden) {
+    if (orden == null) {
+      throw new ExcepcionDeDominio(
+          "El proveedor necesita el orden en que publica: primero las fotos o primero el texto.");
+    }
+    return orden;
+  }
+
   private static BigDecimal exigirFactor(BigDecimal factor) {
     if (factor == null) {
       return null;
@@ -215,5 +236,9 @@ public final class Proveedor {
   /** Vacío cuando manda el factor de la línea. */
   public Optional<BigDecimal> factorDeMargen() {
     return Optional.ofNullable(factorDeMargen);
+  }
+
+  public OrdenDePublicacion ordenDePublicacion() {
+    return ordenDePublicacion;
   }
 }

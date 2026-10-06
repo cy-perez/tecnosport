@@ -1,5 +1,7 @@
 package co.tecnosport.api.domain.proveedores;
 
+import static co.tecnosport.api.domain.proveedores.OrdenDePublicacion.FOTOS_PRIMERO;
+import static co.tecnosport.api.domain.proveedores.OrdenDePublicacion.TEXTO_PRIMERO;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -52,7 +54,7 @@ class AgrupadorDePublicacionesTest {
 
     AgrupadorDePublicaciones.Resultado resultado =
         new AgrupadorDePublicaciones(QUINCE_MINUTOS)
-            .agrupar(List.of(bolso, foto1, foto2, morral, foto3));
+            .agrupar(List.of(bolso, foto1, foto2, morral, foto3), FOTOS_PRIMERO);
 
     assertEquals(2, resultado.publicaciones().size());
     assertEquals(0, resultado.sueltos());
@@ -73,7 +75,7 @@ class AgrupadorDePublicacionesTest {
 
     PublicacionProveedor publicacion =
         new AgrupadorDePublicaciones(QUINCE_MINUTOS)
-            .agrupar(List.of(bolso, nota, omitida))
+            .agrupar(List.of(bolso, nota, omitida), FOTOS_PRIMERO)
             .publicaciones()
             .get(0);
 
@@ -89,7 +91,7 @@ class AgrupadorDePublicacionesTest {
 
     PublicacionProveedor publicacion =
         new AgrupadorDePublicaciones(QUINCE_MINUTOS)
-            .agrupar(List.of(conPie, otra))
+            .agrupar(List.of(conPie, otra), FOTOS_PRIMERO)
             .publicaciones()
             .get(0);
 
@@ -106,7 +108,8 @@ class AgrupadorDePublicacionesTest {
     MensajeProveedor tarde = foto(50 * 60, null);
 
     AgrupadorDePublicaciones.Resultado resultado =
-        new AgrupadorDePublicaciones(QUINCE_MINUTOS).agrupar(List.of(bolso, foto1, foto2, tarde));
+        new AgrupadorDePublicaciones(QUINCE_MINUTOS)
+            .agrupar(List.of(bolso, foto1, foto2, tarde), FOTOS_PRIMERO);
 
     assertEquals(List.of(foto1.id(), foto2.id()), resultado.publicaciones().get(0).medios());
     assertEquals(1, resultado.sueltos());
@@ -127,7 +130,7 @@ class AgrupadorDePublicacionesTest {
 
     AgrupadorDePublicaciones.Resultado resultado =
         new AgrupadorDePublicaciones(QUINCE_MINUTOS)
-            .agrupar(List.of(foto1, foto2, bolso, foto3, foto4, manosLibres));
+            .agrupar(List.of(foto1, foto2, bolso, foto3, foto4, manosLibres), FOTOS_PRIMERO);
 
     assertEquals(2, resultado.publicaciones().size());
     assertEquals(0, resultado.sueltos());
@@ -147,7 +150,7 @@ class AgrupadorDePublicacionesTest {
 
     AgrupadorDePublicaciones.Resultado resultado =
         new AgrupadorDePublicaciones(QUINCE_MINUTOS)
-            .agrupar(List.of(bolso, delBolso, delMorral, tambienDelMorral, morral));
+            .agrupar(List.of(bolso, delBolso, delMorral, tambienDelMorral, morral), FOTOS_PRIMERO);
 
     // 60 s: a un minuto del bolso y a cinco del morral. 240 s: a cuatro del bolso y a dos del
     // morral. La distancia se mide al precio de cada lado, no a la última foto anexada.
@@ -170,7 +173,7 @@ class AgrupadorDePublicacionesTest {
 
     AgrupadorDePublicaciones.Resultado resultado =
         new AgrupadorDePublicaciones(QUINCE_MINUTOS)
-            .agrupar(List.of(caballero, laSuperstar, superstar));
+            .agrupar(List.of(caballero, laSuperstar, superstar), FOTOS_PRIMERO);
 
     assertEquals(List.of(), resultado.publicaciones().get(0).medios());
     assertEquals(superstar.id(), resultado.publicaciones().get(1).mensajePrincipalId());
@@ -185,10 +188,90 @@ class AgrupadorDePublicacionesTest {
     MensajeProveedor morral = texto(360, "Morral 💰 52.000");
 
     AgrupadorDePublicaciones.Resultado resultado =
-        new AgrupadorDePublicaciones(QUINCE_MINUTOS).agrupar(List.of(bolso, enMedio, morral));
+        new AgrupadorDePublicaciones(QUINCE_MINUTOS)
+            .agrupar(List.of(bolso, enMedio, morral), FOTOS_PRIMERO);
 
     assertEquals(List.of(), resultado.publicaciones().get(0).medios());
     assertEquals(List.of(enMedio.id()), resultado.publicaciones().get(1).medios());
+  }
+
+  /**
+   * La forma de la exportación de La Riverah (5 de octubre de 2026): el texto con el precio y un
+   * «👇👇👇», y después sus fotos, dos productos en el mismo minuto. Con el orden del proveedor,
+   * cada foto es del precio que la precede.
+   */
+  @Test
+  void conElTextoPrimeroLaFotoDelMismoMinutoEsDelPrecioDeAntes() {
+    MensajeProveedor cuero = texto(0, "*Jeans Efecto cuero negro para dama* 🤑$68.000 🥳");
+    MensajeProveedor delCuero = foto(0, null);
+    MensajeProveedor blanco = texto(0, "*Jeans blanco para dama* 🤑$68.000 🥳");
+    MensajeProveedor delBlanco = foto(0, null);
+    MensajeProveedor overol = texto(14 * 60, "*Overol Licrado DAMA* 🤑$ 68.000🥳🥳");
+
+    AgrupadorDePublicaciones.Resultado resultado =
+        new AgrupadorDePublicaciones(QUINCE_MINUTOS)
+            .agrupar(List.of(cuero, delCuero, blanco, delBlanco, overol), TEXTO_PRIMERO);
+
+    assertEquals(List.of(delCuero.id()), resultado.publicaciones().get(0).medios());
+    assertEquals(List.of(delBlanco.id()), resultado.publicaciones().get(1).medios());
+    assertEquals(List.of(), resultado.publicaciones().get(2).medios());
+  }
+
+  /** Los mismos mensajes con el orden contrario: es el orden lo que decide, no la casualidad. */
+  @Test
+  void conLasFotosPrimeroLosMismosMensajesSeRepartenAlReves() {
+    MensajeProveedor cuero = texto(0, "*Jeans Efecto cuero negro para dama* 🤑$68.000 🥳");
+    MensajeProveedor primera = foto(0, null);
+    MensajeProveedor blanco = texto(0, "*Jeans blanco para dama* 🤑$68.000 🥳");
+    MensajeProveedor segunda = foto(0, null);
+
+    AgrupadorDePublicaciones.Resultado resultado =
+        new AgrupadorDePublicaciones(QUINCE_MINUTOS)
+            .agrupar(List.of(cuero, primera, blanco, segunda), FOTOS_PRIMERO);
+
+    assertEquals(List.of(), resultado.publicaciones().get(0).medios());
+    assertEquals(List.of(primera.id(), segunda.id()), resultado.publicaciones().get(1).medios());
+  }
+
+  /** El empate a la misma distancia sin ser cero sigue al orden igual que el de cero. */
+  @Test
+  void conElTextoPrimeroAIgualDistanciaLaFotoEsDelDeAntes() {
+    MensajeProveedor bolso = texto(0, "Bolso 💰 53.000");
+    MensajeProveedor enMedio = foto(180, null);
+    MensajeProveedor morral = texto(360, "Morral 💰 52.000");
+
+    AgrupadorDePublicaciones.Resultado resultado =
+        new AgrupadorDePublicaciones(QUINCE_MINUTOS)
+            .agrupar(List.of(bolso, enMedio, morral), TEXTO_PRIMERO);
+
+    assertEquals(List.of(enMedio.id()), resultado.publicaciones().get(0).medios());
+    assertEquals(List.of(), resultado.publicaciones().get(1).medios());
+  }
+
+  /**
+   * Fuera del empate el orden no cuenta: la foto a un minuto del precio siguiente y a cinco del
+   * anterior es del siguiente aunque el proveedor publique primero el texto. «Siempre al anterior»,
+   * probado contra la exportación real de Imperio Wicho, dejaba dos publicaciones sin foto.
+   */
+  @Test
+  void conElTextoPrimeroFueraDelEmpateGanaElMasCercano() {
+    MensajeProveedor bolso = texto(0, "Bolso 💰 53.000");
+    MensajeProveedor cercaDelMorral = foto(300, null);
+    MensajeProveedor morral = texto(360, "Morral 💰 52.000");
+
+    AgrupadorDePublicaciones.Resultado resultado =
+        new AgrupadorDePublicaciones(QUINCE_MINUTOS)
+            .agrupar(List.of(bolso, cercaDelMorral, morral), TEXTO_PRIMERO);
+
+    assertEquals(List.of(), resultado.publicaciones().get(0).medios());
+    assertEquals(List.of(cercaDelMorral.id()), resultado.publicaciones().get(1).medios());
+  }
+
+  @Test
+  void elOrdenEsObligatorio() {
+    AgrupadorDePublicaciones agrupador = new AgrupadorDePublicaciones(QUINCE_MINUTOS);
+
+    assertThrows(NullPointerException.class, () -> agrupador.agrupar(List.of(), null));
   }
 
   @Test
@@ -199,7 +282,8 @@ class AgrupadorDePublicacionesTest {
     MensajeProveedor foto = foto(3620, null);
 
     AgrupadorDePublicaciones.Resultado resultado =
-        new AgrupadorDePublicaciones(QUINCE_MINUTOS).agrupar(List.of(huerfana, bolso, nota, foto));
+        new AgrupadorDePublicaciones(QUINCE_MINUTOS)
+            .agrupar(List.of(huerfana, bolso, nota, foto), FOTOS_PRIMERO);
 
     assertEquals(1, resultado.publicaciones().size());
     assertEquals(2, resultado.sueltos());
@@ -213,7 +297,10 @@ class AgrupadorDePublicacionesTest {
     List<MensajeProveedor> desordenados = new ArrayList<>(List.of(foto, bolso));
 
     PublicacionProveedor publicacion =
-        new AgrupadorDePublicaciones(QUINCE_MINUTOS).agrupar(desordenados).publicaciones().get(0);
+        new AgrupadorDePublicaciones(QUINCE_MINUTOS)
+            .agrupar(desordenados, FOTOS_PRIMERO)
+            .publicaciones()
+            .get(0);
 
     assertEquals(bolso.id(), publicacion.mensajePrincipalId());
     assertEquals(List.of(foto.id()), publicacion.medios());
@@ -226,11 +313,11 @@ class AgrupadorDePublicacionesTest {
     AgrupadorDePublicaciones agrupador = new AgrupadorDePublicaciones(QUINCE_MINUTOS);
 
     List<UUID> una =
-        agrupador.agrupar(mensajes).publicaciones().stream()
+        agrupador.agrupar(mensajes, FOTOS_PRIMERO).publicaciones().stream()
             .map(PublicacionProveedor::mensajePrincipalId)
             .toList();
     List<UUID> otra =
-        agrupador.agrupar(mensajes).publicaciones().stream()
+        agrupador.agrupar(mensajes, FOTOS_PRIMERO).publicaciones().stream()
             .map(PublicacionProveedor::mensajePrincipalId)
             .toList();
 
@@ -242,7 +329,7 @@ class AgrupadorDePublicacionesTest {
     assertThrows(IllegalArgumentException.class, () -> new AgrupadorDePublicaciones(Duration.ZERO));
     assertTrue(
         new AgrupadorDePublicaciones(Duration.ofSeconds(1))
-            .agrupar(List.of())
+            .agrupar(List.of(), FOTOS_PRIMERO)
             .publicaciones()
             .isEmpty());
   }

@@ -25,7 +25,8 @@ public final class EditarProveedor {
         comando.nombreEnExportacion(),
         comando.activo(),
         comando.publicacionAutomatica(),
-        comando.factorDeMargen());
+        comando.factorDeMargen(),
+        comando.ordenDePublicacion());
     repositorioProveedores.actualizar(proveedor);
     return proveedor;
   }

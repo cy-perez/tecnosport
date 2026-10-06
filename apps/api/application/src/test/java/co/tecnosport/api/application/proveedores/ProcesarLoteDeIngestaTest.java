@@ -95,7 +95,11 @@ class ProcesarLoteDeIngestaTest {
         new RegistrarMensajesDeProveedor(proveedores, lotes, mensajes, almacen);
     ArmarPublicaciones armar =
         new ArmarPublicaciones(
-            lotes, mensajes, publicaciones, new AgrupadorDePublicaciones(Duration.ofMinutes(15)));
+            lotes,
+            proveedores,
+            mensajes,
+            publicaciones,
+            new AgrupadorDePublicaciones(Duration.ofMinutes(15)));
     ExtraerProductoDePublicacion extraer =
         new ExtraerProductoDePublicacion(extractor, new BigDecimal("0.75"));
     ResolverBorrador resolver =

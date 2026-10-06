@@ -7,6 +7,19 @@ export type LineaProveedor = 'BOLSOS' | 'ROPA';
 
 export const LINEAS_PROVEEDOR: readonly LineaProveedor[] = ['BOLSOS', 'ROPA'];
 
+/**
+ * En qué orden manda el proveedor las fotos y el texto con el precio de un producto. Solo decide
+ * de quién es una foto que cae en el mismo minuto que dos precios —la exportación de Android no
+ * trae segundos—: con `FOTOS_PRIMERO` es del precio de después y con `TEXTO_PRIMERO` del de antes.
+ * No tiene valor por omisión: se elige mirando el chat del proveedor.
+ */
+export type OrdenDePublicacion = 'FOTOS_PRIMERO' | 'TEXTO_PRIMERO';
+
+export const ORDENES_DE_PUBLICACION: readonly OrdenDePublicacion[] = [
+  'FOTOS_PRIMERO',
+  'TEXTO_PRIMERO',
+];
+
 export interface Proveedor {
   readonly id: string;
   readonly nombre: string;
@@ -20,6 +33,7 @@ export interface Proveedor {
   readonly linea: LineaProveedor;
   /** Multiplica el precio del proveedor para sugerir el de venta. Por lo menos 1. */
   readonly factorDeMargen: number;
+  readonly ordenDePublicacion: OrdenDePublicacion;
   readonly publicacionAutomatica: boolean;
   readonly activo: boolean;
 }

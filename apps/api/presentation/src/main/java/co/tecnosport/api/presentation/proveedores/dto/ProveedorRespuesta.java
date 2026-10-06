@@ -12,7 +12,8 @@ public record ProveedorRespuesta(
     String nombreEnExportacion,
     boolean activo,
     boolean publicacionAutomatica,
-    BigDecimal factorDeMargen) {
+    BigDecimal factorDeMargen,
+    String ordenDePublicacion) {
 
   public static ProveedorRespuesta de(Proveedor p) {
     return new ProveedorRespuesta(
@@ -23,6 +24,7 @@ public record ProveedorRespuesta(
         p.nombreEnExportacion(),
         p.activo(),
         p.publicacionAutomatica(),
-        p.factorDeMargen().orElse(null));
+        p.factorDeMargen().orElse(null),
+        p.ordenDePublicacion().name());
   }
 }

@@ -35,6 +35,8 @@ import {
   DatosProveedor,
   LINEAS_PROVEEDOR,
   LineaProveedor,
+  ORDENES_DE_PUBLICACION,
+  OrdenDePublicacion,
   Proveedor,
 } from '../../domain/proveedor.model';
 
@@ -46,6 +48,9 @@ import {
  * contacto, tal cual sale en cada línea del chat exportado. Si no coincide, la ingesta ignora
  * todos los mensajes del proveedor y el lote termina con cero publicaciones —sin error, porque
  * técnicamente no hubo ninguno—. La ayuda del campo lo dice.
+ *
+ * El orden de publicación nace vacío a propósito, igual que la línea: es una decisión que sale de
+ * mirar el chat del proveedor, y un valor puesto de antemano se guardaría sin que nadie lo mirara.
  *
  * Al editar, debajo va eliminarlo, con la misma confirmación en dos pasos que borrar un borrador.
  * El servidor lo rechaza si algún producto del catálogo salió de él, y la pantalla dice cuántos.
@@ -113,6 +118,10 @@ export class FormularioProveedorAdminPage {
       nonNullable: true,
       validators: [Validators.required],
     }),
+    ordenDePublicacion: new FormControl<OrdenDePublicacion | ''>('', {
+      nonNullable: true,
+      validators: [Validators.required],
+    }),
     factorDeMargen: new FormControl('1.30', {
       nonNullable: true,
       validators: [Validators.required],
@@ -125,6 +134,13 @@ export class FormularioProveedorAdminPage {
     LINEAS_PROVEEDOR.map((linea) => ({
       valor: linea,
       etiqueta: this.traducir()('admin.proveedores.lineas.' + linea),
+    })),
+  );
+
+  protected readonly opcionesOrden = computed<OpcionSelect[]>(() =>
+    ORDENES_DE_PUBLICACION.map((orden) => ({
+      valor: orden,
+      etiqueta: this.traducir()('admin.proveedores.ordenesDePublicacion.' + orden),
     })),
   );
 
@@ -148,6 +164,7 @@ export class FormularioProveedorAdminPage {
       nombreEnExportacion: proveedor.nombreEnExportacion,
       telefonoWhatsApp: proveedor.telefonoWhatsApp,
       linea: proveedor.linea,
+      ordenDePublicacion: proveedor.ordenDePublicacion,
       factorDeMargen: String(proveedor.factorDeMargen),
       publicacionAutomatica: proveedor.publicacionAutomatica,
       activo: proveedor.activo,
@@ -173,6 +190,7 @@ export class FormularioProveedorAdminPage {
       nombreEnExportacion: valores.nombreEnExportacion.trim(),
       telefonoWhatsApp: valores.telefonoWhatsApp.trim(),
       linea: valores.linea as LineaProveedor,
+      ordenDePublicacion: valores.ordenDePublicacion as OrdenDePublicacion,
       factorDeMargen: factor,
       publicacionAutomatica: valores.publicacionAutomatica,
       activo: valores.activo,

@@ -25,6 +25,7 @@ import co.tecnosport.api.domain.proveedores.HuellaProveedor;
 import co.tecnosport.api.domain.proveedores.IdExternoDeMensaje;
 import co.tecnosport.api.domain.proveedores.LoteIngesta;
 import co.tecnosport.api.domain.proveedores.MensajeProveedor;
+import co.tecnosport.api.domain.proveedores.OrdenDePublicacion;
 import co.tecnosport.api.domain.proveedores.PHash;
 import co.tecnosport.api.domain.proveedores.ProductoExtraido;
 import co.tecnosport.api.domain.proveedores.Proveedor;
@@ -194,7 +195,8 @@ class ResolverBorradorTest {
         "Bolsos Centro",
         true,
         false,
-        new BigDecimal("1.5"));
+        new BigDecimal("1.5"),
+        OrdenDePublicacion.FOTOS_PRIMERO);
     PublicacionProveedor publicacion = publicacion("Bolso 💰 53.000", null);
 
     resolver(publicacion, evaluada("Bolso", 53000, true, false, Set.of()));

@@ -25,6 +25,7 @@ import co.tecnosport.api.application.proveedores.SolicitarSubidaDeExportacion;
 import co.tecnosport.api.domain.catalogo.LineaCatalogo;
 import co.tecnosport.api.domain.proveedores.EstadoLote;
 import co.tecnosport.api.domain.proveedores.LoteIngesta;
+import co.tecnosport.api.domain.proveedores.OrdenDePublicacion;
 import co.tecnosport.api.domain.proveedores.Proveedor;
 import co.tecnosport.api.domain.proveedores.ResumenIngesta;
 import co.tecnosport.api.presentation.ManejadorDeErrores;
@@ -88,7 +89,12 @@ class AdminIngestaControladorTest {
 
     proveedor =
         Proveedor.crear(
-            "Bolsos del Centro", LineaCatalogo.BOLSOS, "+57 300", "Bolsos Centro", null);
+            "Bolsos del Centro",
+            LineaCatalogo.BOLSOS,
+            "+57 300",
+            "Bolsos Centro",
+            null,
+            OrdenDePublicacion.FOTOS_PRIMERO);
     proveedores.porId.put(proveedor.id(), proveedor);
     key = "proveedores/" + proveedor.id() + "/exportaciones/abc.zip";
     almacen.objetos.put(key, new byte[500]);
@@ -170,7 +176,14 @@ class AdminIngestaControladorTest {
   @Test
   void unProveedorInactivoEs409() throws Exception {
     proveedor.editar(
-        proveedor.nombre(), LineaCatalogo.BOLSOS, "+57 300", "Bolsos Centro", false, false, null);
+        proveedor.nombre(),
+        LineaCatalogo.BOLSOS,
+        "+57 300",
+        "Bolsos Centro",
+        false,
+        false,
+        null,
+        OrdenDePublicacion.FOTOS_PRIMERO);
 
     mockMvc
         .perform(

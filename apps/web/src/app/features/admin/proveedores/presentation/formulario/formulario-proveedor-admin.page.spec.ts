@@ -73,7 +73,25 @@ describe('FormularioProveedorAdminPage', () => {
     expect(repositorio.creados).toEqual([]);
   });
 
-  it('crea el proveedor con la línea elegida y vuelve a la lista', async () => {
+  /**
+   * El orden no tiene valor por omisión: un valor puesto de antemano se guardaría sin que nadie
+   * mirara el chat del proveedor. Sin elegirlo, no se crea.
+   */
+  it('sin el orden en que publica no se crea', async () => {
+    const { repositorio } = await renderPagina();
+
+    escribir(f.nombre, 'La Riverah');
+    escribir(f.remitente, 'La Riverah');
+    escribir(f.telefono, '573024697047');
+    fireEvent.change(screen.getByLabelText(f.linea), { target: { value: 'ROPA' } });
+    escribir(f.margen, '1,38');
+    fireEvent.click(screen.getByRole('button', { name: f.crear }));
+
+    expect(await screen.findByText(f.faltanCampos)).toBeTruthy();
+    expect(repositorio.creados).toEqual([]);
+  });
+
+  it('crea el proveedor con la línea y el orden elegidos y vuelve a la lista', async () => {
     const { repositorio, fixture } = await renderPagina();
     const router = fixture.debugElement.injector.get(Router);
     const navegar = vi.spyOn(router, 'navigate').mockResolvedValue(true);
@@ -82,6 +100,7 @@ describe('FormularioProveedorAdminPage', () => {
     escribir(f.remitente, 'Bolsos Medellín');
     escribir(f.telefono, '573001234567');
     fireEvent.change(screen.getByLabelText(f.linea), { target: { value: 'BOLSOS' } });
+    fireEvent.change(screen.getByLabelText(f.orden), { target: { value: 'TEXTO_PRIMERO' } });
     escribir(f.margen, '1,35');
     fireEvent.click(screen.getByRole('button', { name: f.crear }));
 
@@ -92,9 +111,19 @@ describe('FormularioProveedorAdminPage', () => {
     expect(repositorio.creados[0]).toMatchObject({
       nombre: 'Bolsos Medellín',
       linea: 'BOLSOS',
+      ordenDePublicacion: 'TEXTO_PRIMERO',
       factorDeMargen: 1.35,
       activo: true,
     });
+  });
+
+  it('las opciones del orden se leen en palabras, no como el valor del enum', async () => {
+    await renderPagina();
+
+    const orden = (await screen.findByLabelText(f.orden)) as HTMLSelectElement;
+    const etiquetas = Array.from(orden.options).map((opcion) => opcion.textContent?.trim());
+    expect(etiquetas).toContain(esAdmin.proveedores.ordenesDePublicacion.FOTOS_PRIMERO);
+    expect(etiquetas).toContain(esAdmin.proveedores.ordenesDePublicacion.TEXTO_PRIMERO);
   });
 
   it('al editar prellena el formulario y guarda con el id de la ruta', async () => {
@@ -102,14 +131,20 @@ describe('FormularioProveedorAdminPage', () => {
 
     const nombre = (await screen.findByLabelText(f.nombre)) as HTMLInputElement;
     await vi.waitFor(() => expect(nombre.value).toBe('Bolsos Medellín'));
+    expect((screen.getByLabelText(f.orden) as HTMLSelectElement).value).toBe('FOTOS_PRIMERO');
 
     escribir(f.nombre, 'Bolsos del Valle');
+    fireEvent.change(screen.getByLabelText(f.orden), { target: { value: 'TEXTO_PRIMERO' } });
     fireEvent.click(screen.getByRole('button', { name: f.guardar }));
 
     expect(await screen.findByText(/Bolsos del Valle quedó guardado/)).toBeTruthy();
     expect(repositorio.editados[0]).toMatchObject({
       id: 'prov-1',
-      datos: { nombre: 'Bolsos del Valle', linea: 'BOLSOS' },
+      datos: {
+        nombre: 'Bolsos del Valle',
+        linea: 'BOLSOS',
+        ordenDePublicacion: 'TEXTO_PRIMERO',
+      },
     });
   });
 
