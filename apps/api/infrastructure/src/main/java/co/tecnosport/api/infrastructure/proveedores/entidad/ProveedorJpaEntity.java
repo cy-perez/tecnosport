@@ -35,6 +35,9 @@ public class ProveedorJpaEntity {
   @Column(name = "factor_de_margen")
   private BigDecimal factorDeMargen;
 
+  @Column(name = "orden_de_publicacion", nullable = false)
+  private String ordenDePublicacion;
+
   @Column(name = "creado_en", nullable = false)
   private Instant creadoEn;
 
@@ -52,6 +55,7 @@ public class ProveedorJpaEntity {
       boolean activo,
       boolean publicacionAutomatica,
       BigDecimal factorDeMargen,
+      String ordenDePublicacion,
       Instant creadoEn,
       Instant actualizadoEn) {
     this.id = id;
@@ -62,6 +66,7 @@ public class ProveedorJpaEntity {
     this.activo = activo;
     this.publicacionAutomatica = publicacionAutomatica;
     this.factorDeMargen = factorDeMargen;
+    this.ordenDePublicacion = ordenDePublicacion;
     this.creadoEn = creadoEn;
     this.actualizadoEn = actualizadoEn;
   }
@@ -96,6 +101,10 @@ public class ProveedorJpaEntity {
 
   public BigDecimal getFactorDeMargen() {
     return factorDeMargen;
+  }
+
+  public String getOrdenDePublicacion() {
+    return ordenDePublicacion;
   }
 
   public Instant getCreadoEn() {

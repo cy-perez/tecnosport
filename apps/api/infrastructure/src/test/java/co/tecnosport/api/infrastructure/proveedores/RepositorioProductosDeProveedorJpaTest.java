@@ -20,6 +20,7 @@ import co.tecnosport.api.domain.compartido.HashContenido;
 import co.tecnosport.api.domain.compartido.Sku;
 import co.tecnosport.api.domain.compartido.Slug;
 import co.tecnosport.api.domain.proveedores.HuellaProveedor;
+import co.tecnosport.api.domain.proveedores.OrdenDePublicacion;
 import co.tecnosport.api.domain.proveedores.Proveedor;
 import co.tecnosport.api.infrastructure.catalogo.CategoriaJpaRepository;
 import co.tecnosport.api.infrastructure.catalogo.MarcaJpaRepository;
@@ -83,7 +84,14 @@ class RepositorioProductosDeProveedorJpaTest {
     categoria =
         new Categoria(
             c.getId(), c.getNombre(), new Slug(c.getSlug()), LineaCatalogo.BOLSOS, null, List.of());
-    proveedor = Proveedor.crear("Bolsos", LineaCatalogo.BOLSOS, "+57 300", "Bolsos Centro", null);
+    proveedor =
+        Proveedor.crear(
+            "Bolsos",
+            LineaCatalogo.BOLSOS,
+            "+57 300",
+            "Bolsos Centro",
+            null,
+            OrdenDePublicacion.FOTOS_PRIMERO);
     proveedores.guardar(proveedor);
   }
 

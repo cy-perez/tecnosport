@@ -15,6 +15,7 @@ import co.tecnosport.api.domain.proveedores.HuellaProveedor;
 import co.tecnosport.api.domain.proveedores.IdExternoDeMensaje;
 import co.tecnosport.api.domain.proveedores.LoteIngesta;
 import co.tecnosport.api.domain.proveedores.MensajeProveedor;
+import co.tecnosport.api.domain.proveedores.OrdenDePublicacion;
 import co.tecnosport.api.domain.proveedores.PHash;
 import co.tecnosport.api.domain.proveedores.ProductoExtraido;
 import co.tecnosport.api.domain.proveedores.Proveedor;
@@ -61,7 +62,14 @@ class RepositorioBorradoresJpaTest {
   private PublicacionProveedor publicacion;
 
   private void unaPublicacion() {
-    proveedor = Proveedor.crear("Bolsos", LineaCatalogo.BOLSOS, "+57 300", "Bolsos Centro", null);
+    proveedor =
+        Proveedor.crear(
+            "Bolsos",
+            LineaCatalogo.BOLSOS,
+            "+57 300",
+            "Bolsos Centro",
+            null,
+            OrdenDePublicacion.FOTOS_PRIMERO);
     proveedores.guardar(proveedor);
     LoteIngesta lote = LoteIngesta.recibirExportacion(proveedor.id(), "p/exportaciones/a.zip", T);
     lotes.guardar(lote);
@@ -271,7 +279,14 @@ class RepositorioBorradoresJpaTest {
    */
   @Test
   void seBorraLaPublicacionConSusMensajesYSeSabeCualesUsanOtras() {
-    proveedor = Proveedor.crear("Bolsos", LineaCatalogo.BOLSOS, "+57 300", "Bolsos Centro", null);
+    proveedor =
+        Proveedor.crear(
+            "Bolsos",
+            LineaCatalogo.BOLSOS,
+            "+57 300",
+            "Bolsos Centro",
+            null,
+            OrdenDePublicacion.FOTOS_PRIMERO);
     proveedores.guardar(proveedor);
     LoteIngesta lote = LoteIngesta.recibirExportacion(proveedor.id(), "p/exportaciones/a.zip", T);
     lotes.guardar(lote);
@@ -374,7 +389,9 @@ class RepositorioBorradoresJpaTest {
             null,
             Set.of(),
             T));
-    Proveedor ajeno = Proveedor.crear("Otro", LineaCatalogo.ROPA, "+57 301", "Otro", null);
+    Proveedor ajeno =
+        Proveedor.crear(
+            "Otro", LineaCatalogo.ROPA, "+57 301", "Otro", null, OrdenDePublicacion.FOTOS_PRIMERO);
     proveedores.guardar(ajeno);
     lotes.guardar(LoteIngesta.recibirExportacion(ajeno.id(), "o/exportaciones/b.zip", T));
 

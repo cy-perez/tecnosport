@@ -4,6 +4,7 @@ import co.tecnosport.api.application.compartido.Reloj;
 import co.tecnosport.api.application.proveedores.DependenciasDeProveedor;
 import co.tecnosport.api.application.proveedores.RepositorioProveedores;
 import co.tecnosport.api.domain.catalogo.LineaCatalogo;
+import co.tecnosport.api.domain.proveedores.OrdenDePublicacion;
 import co.tecnosport.api.domain.proveedores.Proveedor;
 import co.tecnosport.api.infrastructure.proveedores.entidad.ProveedorJpaEntity;
 import jakarta.persistence.EntityManager;
@@ -121,6 +122,7 @@ public class RepositorioProveedoresJpa implements RepositorioProveedores {
         p.activo(),
         p.publicacionAutomatica(),
         p.factorDeMargen().orElse(null),
+        p.ordenDePublicacion().name(),
         creadoEn,
         actualizadoEn);
   }
@@ -134,6 +136,7 @@ public class RepositorioProveedoresJpa implements RepositorioProveedores {
         fila.getNombreEnExportacion(),
         fila.isActivo(),
         fila.isPublicacionAutomatica(),
-        fila.getFactorDeMargen());
+        fila.getFactorDeMargen(),
+        OrdenDePublicacion.valueOf(fila.getOrdenDePublicacion()));
   }
 }
