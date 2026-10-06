@@ -2479,6 +2479,7 @@ export interface components {
             linea: string;
             nombre: string;
             nombreEnExportacion: string;
+            ordenDePublicacion: string;
             publicacionAutomatica?: boolean;
             telefonoWhatsApp: string;
         };
@@ -2490,6 +2491,7 @@ export interface components {
             linea?: string;
             nombre?: string;
             nombreEnExportacion?: string;
+            ordenDePublicacion?: string;
             publicacionAutomatica?: boolean;
             telefonoWhatsApp?: string;
         };

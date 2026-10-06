@@ -2328,6 +2328,9 @@
           "nombreEnExportacion" : {
             "type" : "string"
           },
+          "ordenDePublicacion" : {
+            "type" : "string"
+          },
           "publicacionAutomatica" : {
             "type" : "boolean"
           },
@@ -2339,6 +2342,7 @@
           "linea",
           "nombre",
           "nombreEnExportacion",
+          "ordenDePublicacion",
           "telefonoWhatsApp"
         ],
         "type" : "object"
@@ -2362,6 +2366,9 @@
             "type" : "string"
           },
           "nombreEnExportacion" : {
+            "type" : "string"
+          },
+          "ordenDePublicacion" : {
             "type" : "string"
           },
           "publicacionAutomatica" : {

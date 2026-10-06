@@ -10,6 +10,8 @@ import java.util.Objects;
  * boolean} ausente no cae en {@code false}: revienta la deserialización (apps/api/CLAUDE.md).
  *
  * @param factorDeMargen nulo para usar el de la línea
+ * @param ordenDePublicacion {@code FOTOS_PRIMERO} o {@code TEXTO_PRIMERO}; obligatorio también al
+ *     editar, porque no hay un valor que el servidor pueda suponer
  */
 public record ProveedorPeticion(
     @Schema(requiredMode = Schema.RequiredMode.REQUIRED) String nombre,
@@ -18,12 +20,14 @@ public record ProveedorPeticion(
     @Schema(requiredMode = Schema.RequiredMode.REQUIRED) String nombreEnExportacion,
     Boolean activo,
     Boolean publicacionAutomatica,
-    BigDecimal factorDeMargen) {
+    BigDecimal factorDeMargen,
+    @Schema(requiredMode = Schema.RequiredMode.REQUIRED) String ordenDePublicacion) {
 
   public ProveedorPeticion {
     Objects.requireNonNull(nombre, "El nombre es obligatorio.");
     Objects.requireNonNull(linea, "La línea es obligatoria.");
     Objects.requireNonNull(telefonoWhatsApp, "El teléfono de WhatsApp es obligatorio.");
     Objects.requireNonNull(nombreEnExportacion, "El nombre en la exportación es obligatorio.");
+    Objects.requireNonNull(ordenDePublicacion, "El orden de publicación es obligatorio.");
   }
 }

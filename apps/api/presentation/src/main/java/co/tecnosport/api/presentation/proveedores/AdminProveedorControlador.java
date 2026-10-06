@@ -8,6 +8,7 @@ import co.tecnosport.api.application.proveedores.EliminarProveedor;
 import co.tecnosport.api.application.proveedores.ProveedorNoEncontradoException;
 import co.tecnosport.api.application.proveedores.RepositorioProveedores;
 import co.tecnosport.api.domain.catalogo.LineaCatalogo;
+import co.tecnosport.api.domain.proveedores.OrdenDePublicacion;
 import co.tecnosport.api.domain.proveedores.Proveedor;
 import co.tecnosport.api.presentation.proveedores.dto.ProveedorPeticion;
 import co.tecnosport.api.presentation.proveedores.dto.ProveedorRespuesta;
@@ -79,7 +80,8 @@ public class AdminProveedorControlador {
                         LineaCatalogo.valueOf(cuerpo.linea()),
                         cuerpo.telefonoWhatsApp(),
                         cuerpo.nombreEnExportacion(),
-                        cuerpo.factorDeMargen())));
+                        cuerpo.factorDeMargen(),
+                        OrdenDePublicacion.valueOf(cuerpo.ordenDePublicacion()))));
     return ProveedorRespuesta.de(proveedor);
   }
 
@@ -104,7 +106,8 @@ public class AdminProveedorControlador {
                         cuerpo.publicacionAutomatica() != null
                             ? cuerpo.publicacionAutomatica()
                             : actual.publicacionAutomatica(),
-                        cuerpo.factorDeMargen())));
+                        cuerpo.factorDeMargen(),
+                        OrdenDePublicacion.valueOf(cuerpo.ordenDePublicacion()))));
     return ProveedorRespuesta.de(proveedor);
   }
 
