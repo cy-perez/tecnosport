@@ -1,6 +1,7 @@
 package co.tecnosport.api.application.proveedores;
 
 import co.tecnosport.api.domain.catalogo.LineaCatalogo;
+import co.tecnosport.api.domain.proveedores.OrdenDePublicacion;
 import java.math.BigDecimal;
 import java.util.UUID;
 
@@ -15,4 +16,5 @@ public record EditarProveedorComando(
     String nombreEnExportacion,
     boolean activo,
     boolean publicacionAutomatica,
-    BigDecimal factorDeMargen) {}
+    BigDecimal factorDeMargen,
+    OrdenDePublicacion ordenDePublicacion) {}

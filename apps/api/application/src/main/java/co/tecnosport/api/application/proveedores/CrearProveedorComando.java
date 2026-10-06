@@ -1,6 +1,7 @@
 package co.tecnosport.api.application.proveedores;
 
 import co.tecnosport.api.domain.catalogo.LineaCatalogo;
+import co.tecnosport.api.domain.proveedores.OrdenDePublicacion;
 import java.math.BigDecimal;
 
 /**
@@ -11,4 +12,5 @@ public record CrearProveedorComando(
     LineaCatalogo linea,
     String telefonoWhatsApp,
     String nombreEnExportacion,
-    BigDecimal factorDeMargen) {}
+    BigDecimal factorDeMargen,
+    OrdenDePublicacion ordenDePublicacion) {}

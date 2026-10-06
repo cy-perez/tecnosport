@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import co.tecnosport.api.application.proveedores.ApoyoDeIngesta.RepositorioProveedoresEnMemoria;
 import co.tecnosport.api.domain.catalogo.LineaCatalogo;
+import co.tecnosport.api.domain.proveedores.OrdenDePublicacion;
 import co.tecnosport.api.domain.proveedores.Proveedor;
 import java.math.BigDecimal;
 import java.util.Optional;
@@ -23,9 +24,15 @@ class EditarProveedorTest {
         new CrearProveedor(proveedores)
             .ejecutar(
                 new CrearProveedorComando(
-                    "Meraki", LineaCatalogo.ROPA, "+57 321 942 7252", "Meraki Cúcuta", null));
+                    "Meraki",
+                    LineaCatalogo.ROPA,
+                    "+57 321 942 7252",
+                    "Meraki Cúcuta",
+                    null,
+                    OrdenDePublicacion.FOTOS_PRIMERO));
     assertEquals(Optional.of(creado), proveedores.buscarPorId(creado.id()));
     assertTrue(creado.activo());
+    assertEquals(OrdenDePublicacion.FOTOS_PRIMERO, creado.ordenDePublicacion());
 
     Proveedor editado =
         new EditarProveedor(proveedores)
@@ -38,11 +45,15 @@ class EditarProveedorTest {
                     "M E R A K I",
                     false,
                     false,
-                    new BigDecimal("1.30")));
+                    new BigDecimal("1.30"),
+                    OrdenDePublicacion.TEXTO_PRIMERO));
 
     assertEquals("Meraki Cúcuta", editado.nombre());
     assertFalse(editado.activo());
     assertEquals(Optional.of(new BigDecimal("1.30")), editado.factorDeMargen());
+    assertEquals(
+        OrdenDePublicacion.TEXTO_PRIMERO,
+        proveedores.buscarPorId(creado.id()).orElseThrow().ordenDePublicacion());
     assertEquals(
         "M E R A K I", proveedores.buscarPorId(creado.id()).orElseThrow().nombreEnExportacion());
   }
@@ -62,6 +73,7 @@ class EditarProveedorTest {
                         "X",
                         true,
                         false,
-                        null)));
+                        null,
+                        OrdenDePublicacion.FOTOS_PRIMERO)));
   }
 }

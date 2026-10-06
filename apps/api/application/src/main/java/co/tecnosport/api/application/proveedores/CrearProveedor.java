@@ -20,7 +20,8 @@ public final class CrearProveedor {
             comando.linea(),
             comando.telefonoWhatsApp(),
             comando.nombreEnExportacion(),
-            comando.factorDeMargen());
+            comando.factorDeMargen(),
+            comando.ordenDePublicacion());
     repositorioProveedores.guardar(proveedor);
     return proveedor;
   }

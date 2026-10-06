@@ -5,6 +5,7 @@ import co.tecnosport.api.domain.catalogo.LineaCatalogo;
 import co.tecnosport.api.domain.proveedores.IdExternoDeMensaje;
 import co.tecnosport.api.domain.proveedores.LoteIngesta;
 import co.tecnosport.api.domain.proveedores.MensajeProveedor;
+import co.tecnosport.api.domain.proveedores.OrdenDePublicacion;
 import co.tecnosport.api.domain.proveedores.ProductoExtraido;
 import co.tecnosport.api.domain.proveedores.Proveedor;
 import co.tecnosport.api.domain.proveedores.PublicacionProveedor;
@@ -32,7 +33,12 @@ final class ApoyoDeIngesta {
 
   static Proveedor proveedorDeBolsos() {
     return Proveedor.crear(
-        "Bolsos del Centro", LineaCatalogo.BOLSOS, "+57 300 123 4567", REMITENTE, null);
+        "Bolsos del Centro",
+        LineaCatalogo.BOLSOS,
+        "+57 300 123 4567",
+        REMITENTE,
+        null,
+        OrdenDePublicacion.FOTOS_PRIMERO);
   }
 
   static MensajeCrudo.Adjunto foto(String nombre) {

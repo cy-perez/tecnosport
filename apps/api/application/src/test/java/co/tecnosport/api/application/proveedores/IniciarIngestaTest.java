@@ -11,6 +11,7 @@ import co.tecnosport.api.application.proveedores.ApoyoDeIngesta.RepositorioProve
 import co.tecnosport.api.domain.catalogo.LineaCatalogo;
 import co.tecnosport.api.domain.proveedores.EstadoLote;
 import co.tecnosport.api.domain.proveedores.LoteIngesta;
+import co.tecnosport.api.domain.proveedores.OrdenDePublicacion;
 import co.tecnosport.api.domain.proveedores.Proveedor;
 import java.util.Optional;
 import java.util.UUID;
@@ -108,7 +109,14 @@ class IniciarIngestaTest {
   @Test
   void unProveedorInactivoNoRecibeLotes() {
     proveedor.editar(
-        proveedor.nombre(), LineaCatalogo.BOLSOS, "+57 300", "Bolsos Centro", false, false, null);
+        proveedor.nombre(),
+        LineaCatalogo.BOLSOS,
+        "+57 300",
+        "Bolsos Centro",
+        false,
+        false,
+        null,
+        OrdenDePublicacion.FOTOS_PRIMERO);
 
     assertThrows(
         ProveedorInactivoException.class,

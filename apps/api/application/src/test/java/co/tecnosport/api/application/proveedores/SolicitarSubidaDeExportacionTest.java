@@ -8,6 +8,7 @@ import co.tecnosport.api.application.catalogo.SolicitudDeSubida;
 import co.tecnosport.api.application.proveedores.ApoyoDeIngesta.AlmacenEnMemoria;
 import co.tecnosport.api.application.proveedores.ApoyoDeIngesta.RepositorioProveedoresEnMemoria;
 import co.tecnosport.api.domain.catalogo.LineaCatalogo;
+import co.tecnosport.api.domain.proveedores.OrdenDePublicacion;
 import co.tecnosport.api.domain.proveedores.Proveedor;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
@@ -60,7 +61,14 @@ class SolicitarSubidaDeExportacionTest {
   void unProveedorInactivoNoRecibeIngestas() {
     Proveedor proveedor = ApoyoDeIngesta.proveedorDeBolsos();
     proveedor.editar(
-        proveedor.nombre(), LineaCatalogo.BOLSOS, "+57 300", "Bolsos Centro", false, false, null);
+        proveedor.nombre(),
+        LineaCatalogo.BOLSOS,
+        "+57 300",
+        "Bolsos Centro",
+        false,
+        false,
+        null,
+        OrdenDePublicacion.FOTOS_PRIMERO);
     proveedores.guardar(proveedor);
 
     assertThrows(
