@@ -5,8 +5,12 @@
 -- y D'Osman (el album primero); La Riverah manda primero el texto, y su jean de cuero negro salio
 -- sin fotos. Es un valor de OrdenDePublicacion: FOTOS_PRIMERO o TEXTO_PRIMERO.
 --
--- El valor por omision es solo para las filas que ya existen, y es el comportamiento que tenian:
--- nadie cambia de reparto sin que alguien lo decida en el panel. Sin `check`, como `linea`: los
--- valores los cuida el dominio.
+-- El valor por omision es solo para rellenar las filas que ya existen, y es el comportamiento que
+-- tenian: nadie cambia de reparto sin que alguien lo decida en el panel. Despues se quita, porque
+-- el orden es obligatorio y no tiene un valor que se pueda suponer: un insert a mano (Adminer, un
+-- script) que no lo diga tiene que fallar, no recibir uno sin que nadie lo eligiera. Sin `check`,
+-- como `linea`: los valores los cuida el dominio.
 alter table proveedor
     add column orden_de_publicacion varchar(20) not null default 'FOTOS_PRIMERO';
+
+alter table proveedor alter column orden_de_publicacion drop default;

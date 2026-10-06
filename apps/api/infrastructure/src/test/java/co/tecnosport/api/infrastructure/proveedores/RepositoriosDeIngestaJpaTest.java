@@ -81,20 +81,21 @@ class RepositoriosDeIngestaJpaTest {
   }
 
   /**
-   * Una fila de antes de V82 no tiene orden escrito: la columna le pone el reparto que ya tenía, y
-   * nadie cambia de comportamiento sin que alguien lo decida en el panel.
+   * El valor por omisión de V82 solo rellenó las filas que ya existían: después se quitó, y un
+   * insert a mano que no diga el orden falla en vez de recibir uno que nadie eligió.
    */
   @Test
-  void unProveedorDeAntesDelOrdenSeLeeConLasFotosPrimero() {
-    UUID id = UUID.randomUUID();
-    jdbc.update(
-        "insert into proveedor (id, nombre, linea, telefono_whatsapp, nombre_en_exportacion,"
-            + " activo, publicacion_automatica, creado_en, actualizado_en)"
-            + " values (?, 'Viejo', 'ROPA', '+57 300', 'Viejo', true, false, now(), now())",
-        id);
-
-    assertThat(proveedores.buscarPorId(id).orElseThrow().ordenDePublicacion())
-        .isEqualTo(OrdenDePublicacion.FOTOS_PRIMERO);
+  void unInsertSinOrdenDePublicacionNoEntra() {
+    assertThatThrownBy(
+            () ->
+                jdbc.update(
+                    "insert into proveedor (id, nombre, linea, telefono_whatsapp,"
+                        + " nombre_en_exportacion, activo, publicacion_automatica, creado_en,"
+                        + " actualizado_en)"
+                        + " values (?, 'Sin orden', 'ROPA', '+57 300', 'Sin orden', true, false,"
+                        + " now(), now())",
+                    UUID.randomUUID()))
+        .isInstanceOf(DataIntegrityViolationException.class);
   }
 
   @Test
