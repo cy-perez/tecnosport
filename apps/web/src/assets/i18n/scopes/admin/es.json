@@ -852,8 +852,8 @@
       "ROPA": "Ropa"
     },
     "ordenesDePublicacion": {
-      "FOTOS_PRIMERO": "Primero las fotos y después el texto con el precio",
-      "TEXTO_PRIMERO": "Primero el texto con el precio y después las fotos"
+      "FOTOS_PRIMERO": "Primero las fotos, después el precio",
+      "TEXTO_PRIMERO": "Primero el precio, después las fotos"
     },
     "columnas": {
       "nombre": "Proveedor",

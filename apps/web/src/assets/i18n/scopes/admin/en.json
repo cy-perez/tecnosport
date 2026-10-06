@@ -852,8 +852,8 @@
       "ROPA": "Clothing"
     },
     "ordenesDePublicacion": {
-      "FOTOS_PRIMERO": "Photos first, then the text with the price",
-      "TEXTO_PRIMERO": "Text with the price first, then the photos"
+      "FOTOS_PRIMERO": "Photos first, then the price",
+      "TEXTO_PRIMERO": "Price first, then the photos"
     },
     "columnas": {
       "nombre": "Supplier",
