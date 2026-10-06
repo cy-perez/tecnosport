@@ -267,6 +267,9 @@ tecnosport:
     # porque un zip que infle a gigas no es una exportacion de WhatsApp.
     exportacion-maxima-bytes: ${PROVEEDORES_EXPORTACION_MAXIMA_BYTES:31457280}
     descomprimido-maximo-bytes: ${PROVEEDORES_DESCOMPRIMIDO_MAXIMO_BYTES:209715200}
+    # La foto que se sube a un borrador desde el panel: confirmarla y aprobarla la abren entera en
+    # memoria. 10 MB cubre la foto de un telefono sin recortar; una de WhatsApp pesa menos de uno.
+    foto-maxima-bytes: ${PROVEEDORES_FOTO_MAXIMA_BYTES:10485760}
     # Cuantos lotes caben esperando. Corta a proposito: un lote tarda minutos y el panel lo usa una
     # persona, asi que una cola llena no es carga, es alguien pulsando muchas veces.
     cola-de-ingestas: ${PROVEEDORES_COLA_DE_INGESTAS:20}

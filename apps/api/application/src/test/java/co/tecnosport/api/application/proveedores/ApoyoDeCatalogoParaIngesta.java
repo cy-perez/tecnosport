@@ -215,6 +215,13 @@ final class ApoyoDeCatalogoParaIngesta {
       return Optional.ofNullable(porId.get(id));
     }
 
+    /** Sin concurrencia en la prueba, bloquear es buscar. */
+    @Override
+    public Optional<BorradorProducto> buscarPorIdParaActualizar(UUID id) {
+
+      return buscarPorId(id);
+    }
+
     @Override
     public BorradoresPaginados listar(
         EstadoBorrador estado, UUID proveedorId, int pagina, int tamanoPagina) {

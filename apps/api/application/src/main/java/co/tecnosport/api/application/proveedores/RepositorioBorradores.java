@@ -16,6 +16,15 @@ public interface RepositorioBorradores {
 
   Optional<BorradorProducto> buscarPorId(UUID id);
 
+  /**
+   * El mismo borrador, con la fila bloqueada hasta que termine la transacción ({@code FOR UPDATE}).
+   * Lo usa todo caso de uso que lo cambia: {@link #actualizar} reescribe la fila entera, y sin el
+   * bloqueo una confirmación de foto que leyó el borrador en revisión pisaba la aprobación que
+   * terminó mientras tanto —el producto publicado y el borrador otra vez en revisión—. Con él, el
+   * segundo espera y lee lo que dejó el primero. Exige una transacción abierta.
+   */
+  Optional<BorradorProducto> buscarPorIdParaActualizar(UUID id);
+
   /** Del más reciente al más antiguo. Los dos filtros son opcionales. */
   BorradoresPaginados listar(EstadoBorrador estado, UUID proveedorId, int pagina, int tamanoPagina);
 

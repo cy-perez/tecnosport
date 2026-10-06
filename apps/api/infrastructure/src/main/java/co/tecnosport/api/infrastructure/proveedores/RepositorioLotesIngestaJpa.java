@@ -66,7 +66,14 @@ public class RepositorioLotesIngestaJpa implements RepositorioLotesIngesta {
                     + " where o.referencia_archivo = l.referencia_archivo and o.id <> l.id)"
                     + " union"
                     + " select referencia_archivo from mensaje_proveedor"
-                    + " where lote_id = ?1 and referencia_archivo is not null")
+                    + " where lote_id = ?1 and referencia_archivo is not null"
+                    // Las que se subieron desde el panel a los borradores del lote: la fila se va
+                    // en cascada con el borrador, y el archivo no lo nombraría nadie más.
+                    + " union"
+                    + " select f.referencia_archivo from borrador_foto_subida f"
+                    + " join borrador_producto b on b.id = f.borrador_id"
+                    + " join publicacion_proveedor p on p.id = b.publicacion_id"
+                    + " where p.lote_id = ?1")
             .setParameter(1, loteId)
             .getResultList();
     return new DependenciasDeLote(

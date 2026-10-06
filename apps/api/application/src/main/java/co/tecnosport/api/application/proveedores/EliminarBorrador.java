@@ -2,6 +2,7 @@ package co.tecnosport.api.application.proveedores;
 
 import co.tecnosport.api.domain.proveedores.BorradorProducto;
 import co.tecnosport.api.domain.proveedores.EstadoBorrador;
+import co.tecnosport.api.domain.proveedores.FotoSubida;
 import co.tecnosport.api.domain.proveedores.MensajeProveedor;
 import co.tecnosport.api.domain.proveedores.PublicacionProveedor;
 import java.util.EnumSet;
@@ -61,16 +62,24 @@ public final class EliminarBorrador {
   public int ejecutar(UUID borradorId) {
     BorradorProducto borrador =
         repositorioBorradores
-            .buscarPorId(borradorId)
+            .buscarPorIdParaActualizar(borradorId)
             .orElseThrow(() -> new BorradorNoEncontradoException(borradorId));
     if (!ELIMINABLES.contains(borrador.estado()) && borrador.productoId().isPresent()) {
       throw new BorradorNoEliminableException(borrador.estado());
     }
 
+    // Las que se subieron desde el panel son solo de este borrador: se van con él, también cuando
+    // la publicación se queda porque otro borrador salió de ella.
+    int subidas = 0;
+    for (FotoSubida foto : borrador.fotosSubidas()) {
+      almacen.borrar(foto.referenciaArchivo());
+      subidas++;
+    }
+
     UUID publicacionId = borrador.publicacionId();
     if (repositorioBorradores.contarDePublicacion(publicacionId) > 1) {
       repositorioBorradores.eliminar(borradorId);
-      return 0;
+      return subidas;
     }
 
     PublicacionProveedor publicacion =
@@ -90,7 +99,7 @@ public final class EliminarBorrador {
         repositorioMensajes.listarDeLote(publicacion.loteId()).stream()
             .filter(m -> propios.contains(m.id()))
             .toList();
-    int objetos = 0;
+    int objetos = subidas;
     for (MensajeProveedor mensaje : aBorrar) {
       if (mensaje.referenciaArchivo().isPresent()) {
         almacen.borrar(mensaje.referenciaArchivo().get());

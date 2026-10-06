@@ -24,6 +24,7 @@ public record PropiedadesProveedores(
     long minutosUrlFirmada,
     long exportacionMaximaBytes,
     long descomprimidoMaximoBytes,
+    long fotoMaximaBytes,
     int colaDeIngestas,
     Map<LineaCatalogo, BigDecimal> margenPorLinea,
     Ganancia ganancia,
@@ -92,6 +93,10 @@ public record PropiedadesProveedores(
       throw new IllegalStateException(
           "tecnosport.proveedores.descomprimido-maximo-bytes no puede ser menor que el tope del"
               + " zip: un zip nunca infla a menos de lo que pesa.");
+    }
+    if (fotoMaximaBytes <= 0) {
+      throw new IllegalStateException(
+          "tecnosport.proveedores.foto-maxima-bytes debe ser mayor que cero.");
     }
     if (colaDeIngestas <= 0) {
       throw new IllegalStateException(

@@ -1,13 +1,16 @@
 package co.tecnosport.api.presentation.proveedores;
 
+import co.tecnosport.api.application.catalogo.SolicitudDeSubida;
 import co.tecnosport.api.application.proveedores.AprobarBorrador;
 import co.tecnosport.api.application.proveedores.AprobarBorradorComando;
+import co.tecnosport.api.application.proveedores.ConfirmarFotoDeBorrador;
 import co.tecnosport.api.application.proveedores.DescartarFotoDeBorrador;
 import co.tecnosport.api.application.proveedores.EditarBorrador;
 import co.tecnosport.api.application.proveedores.EditarBorradorComando;
 import co.tecnosport.api.application.proveedores.EliminarBorrador;
 import co.tecnosport.api.application.proveedores.RechazarBorrador;
 import co.tecnosport.api.application.proveedores.RepositorioBorradores;
+import co.tecnosport.api.application.proveedores.SolicitarSubidaDeFotoDeBorrador;
 import co.tecnosport.api.application.proveedores.VerBorrador;
 import co.tecnosport.api.domain.catalogo.Producto;
 import co.tecnosport.api.domain.compartido.Dinero;
@@ -19,8 +22,11 @@ import co.tecnosport.api.presentation.proveedores.dto.AprobarBorradorPeticion;
 import co.tecnosport.api.presentation.proveedores.dto.BorradorDetalleRespuesta;
 import co.tecnosport.api.presentation.proveedores.dto.BorradorRespuesta;
 import co.tecnosport.api.presentation.proveedores.dto.BorradoresPaginadosRespuesta;
+import co.tecnosport.api.presentation.proveedores.dto.ConfirmarFotoPeticion;
 import co.tecnosport.api.presentation.proveedores.dto.EditarBorradorPeticion;
 import co.tecnosport.api.presentation.proveedores.dto.RechazarBorradorPeticion;
+import co.tecnosport.api.presentation.proveedores.dto.SolicitarSubidaDeFotoPeticion;
+import co.tecnosport.api.presentation.proveedores.dto.SubidaDeFotoRespuesta;
 import java.util.Objects;
 import java.util.UUID;
 import org.slf4j.Logger;
@@ -40,7 +46,8 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * La bandeja de borradores: listar, ver, editar, descartar una foto, aprobar, rechazar y borrar.
+ * La bandeja de borradores: listar, ver, editar, subir y descartar fotos, aprobar, rechazar y
+ * borrar.
  *
  * <p>Aprobar corre en una transacción del controlador aunque copie fotos al bucket en la mitad: si
  * algo falla después de copiar, quedan objetos sueltos en el bucket y ningún producto a medias en
@@ -61,6 +68,8 @@ public class AdminBorradorControlador {
   private final RechazarBorrador rechazarBorrador;
   private final EliminarBorrador eliminarBorrador;
   private final DescartarFotoDeBorrador descartarFotoDeBorrador;
+  private final SolicitarSubidaDeFotoDeBorrador solicitarSubidaDeFoto;
+  private final ConfirmarFotoDeBorrador confirmarFoto;
   private final MapeadorRespuestasProductoAdmin mapeadorProducto;
   private final TransactionTemplate transaccion;
 
@@ -72,6 +81,8 @@ public class AdminBorradorControlador {
       RechazarBorrador rechazarBorrador,
       EliminarBorrador eliminarBorrador,
       DescartarFotoDeBorrador descartarFotoDeBorrador,
+      SolicitarSubidaDeFotoDeBorrador solicitarSubidaDeFoto,
+      ConfirmarFotoDeBorrador confirmarFoto,
       MapeadorRespuestasProductoAdmin mapeadorProducto,
       PlatformTransactionManager transactionManager) {
     this.repositorioBorradores = Objects.requireNonNull(repositorioBorradores);
@@ -81,6 +92,8 @@ public class AdminBorradorControlador {
     this.rechazarBorrador = Objects.requireNonNull(rechazarBorrador);
     this.eliminarBorrador = Objects.requireNonNull(eliminarBorrador);
     this.descartarFotoDeBorrador = Objects.requireNonNull(descartarFotoDeBorrador);
+    this.solicitarSubidaDeFoto = Objects.requireNonNull(solicitarSubidaDeFoto);
+    this.confirmarFoto = Objects.requireNonNull(confirmarFoto);
     this.mapeadorProducto = Objects.requireNonNull(mapeadorProducto);
     this.transaccion = new TransactionTemplate(Objects.requireNonNull(transactionManager));
   }
@@ -164,7 +177,30 @@ public class AdminBorradorControlador {
         transaccion.execute(estado -> rechazarBorrador.ejecutar(id, cuerpo.motivo())));
   }
 
-  /** Saca una foto de la revisión; el archivo se queda, porque es de la publicación. */
+  /**
+   * El primer paso para subir una foto al borrador: la URL firmada para que el navegador la suba
+   * directo al bucket privado.
+   */
+  @PostMapping("/{id}/fotos/url-subida")
+  public SubidaDeFotoRespuesta urlDeSubidaDeFoto(
+      @PathVariable UUID id, @RequestBody SolicitarSubidaDeFotoPeticion cuerpo) {
+    SolicitudDeSubida solicitud = solicitarSubidaDeFoto.ejecutar(id, cuerpo.contentType());
+    return new SubidaDeFotoRespuesta(solicitud.url(), solicitud.objectKey());
+  }
+
+  /** El segundo: el servidor comprueba lo que se subió y lo cuelga del borrador. */
+  @PostMapping("/{id}/fotos")
+  @ResponseStatus(HttpStatus.CREATED)
+  public BorradorDetalleRespuesta.FotoRespuesta confirmarFoto(
+      @PathVariable UUID id, @RequestBody ConfirmarFotoPeticion cuerpo) {
+    return BorradorDetalleRespuesta.FotoRespuesta.de(
+        transaccion.execute(estado -> confirmarFoto.ejecutar(id, cuerpo.objectKey())));
+  }
+
+  /**
+   * Saca una foto de la revisión. La del proveedor deja su archivo, porque es de la publicación; la
+   * que se subió desde el panel se borra con el suyo.
+   */
   @DeleteMapping("/{id}/fotos/{mensajeId}")
   @ResponseStatus(HttpStatus.NO_CONTENT)
   public void descartarFoto(@PathVariable UUID id, @PathVariable UUID mensajeId) {

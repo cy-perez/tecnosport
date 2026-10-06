@@ -95,7 +95,11 @@ public class RepositorioProveedoresJpa implements RepositorioProveedores {
                     + " where proveedor_id = ?1 and referencia_archivo is not null"
                     + " union"
                     + " select referencia_archivo from mensaje_proveedor"
-                    + " where proveedor_id = ?1 and referencia_archivo is not null")
+                    + " where proveedor_id = ?1 and referencia_archivo is not null"
+                    + " union"
+                    + " select f.referencia_archivo from borrador_foto_subida f"
+                    + " join borrador_producto b on b.id = f.borrador_id"
+                    + " where b.proveedor_id = ?1")
             .setParameter(1, id)
             .getResultList();
     return new DependenciasDeProveedor(

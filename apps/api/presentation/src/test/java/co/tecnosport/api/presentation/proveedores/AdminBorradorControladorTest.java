@@ -21,10 +21,12 @@ import co.tecnosport.api.application.proveedores.AlmacenDeArchivosDeProveedor;
 import co.tecnosport.api.application.proveedores.AprobarBorrador;
 import co.tecnosport.api.application.proveedores.BorradoresPaginados;
 import co.tecnosport.api.application.proveedores.CalculadorDePHash;
+import co.tecnosport.api.application.proveedores.ConfirmarFotoDeBorrador;
 import co.tecnosport.api.application.proveedores.DescartarFotoDeBorrador;
 import co.tecnosport.api.application.proveedores.EditarBorrador;
 import co.tecnosport.api.application.proveedores.EliminarBorrador;
 import co.tecnosport.api.application.proveedores.HuellaVisual;
+import co.tecnosport.api.application.proveedores.ImagenProcesada;
 import co.tecnosport.api.application.proveedores.ProcesadorDeImagenes;
 import co.tecnosport.api.application.proveedores.RechazarBorrador;
 import co.tecnosport.api.application.proveedores.RepositorioBorradores;
@@ -32,6 +34,7 @@ import co.tecnosport.api.application.proveedores.RepositorioMensajesProveedor;
 import co.tecnosport.api.application.proveedores.RepositorioProductosDeProveedor;
 import co.tecnosport.api.application.proveedores.RepositorioProveedores;
 import co.tecnosport.api.application.proveedores.RepositorioPublicacionesProveedor;
+import co.tecnosport.api.application.proveedores.SolicitarSubidaDeFotoDeBorrador;
 import co.tecnosport.api.application.proveedores.VerBorrador;
 import co.tecnosport.api.domain.catalogo.LineaCatalogo;
 import co.tecnosport.api.domain.compartido.Dinero;
@@ -52,6 +55,7 @@ import java.lang.reflect.Proxy;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -87,6 +91,7 @@ import org.springframework.transaction.support.DefaultTransactionStatus;
 class AdminBorradorControladorTest {
 
   private static final Instant T = Instant.parse("2026-09-28T15:15:00Z");
+  private static final long TOPE_DE_FOTO = 16;
 
   @Autowired private MockMvc mockMvc;
   @Autowired private RepositorioBorradoresDoble borradores;
@@ -101,6 +106,7 @@ class AdminBorradorControladorTest {
   void unBorradorEnRevision() {
     borradores.porId.clear();
     objetosBorrados.claves.clear();
+    objetosBorrados.subidos.clear();
     UUID proveedorId = UUID.randomUUID();
     UUID loteId = UUID.randomUUID();
     MensajeProveedor principal =
@@ -175,7 +181,8 @@ class AdminBorradorControladorTest {
         .andExpect(jsonPath("$.textos[0]").value("Bolso 💰 53.000"))
         .andExpect(jsonPath("$.fotos[0].mensajeId").value(foto.id().toString()))
         .andExpect(jsonPath("$.fotos[0].url").value("https://firmada.local/leer/p/f.jpg"))
-        .andExpect(jsonPath("$.fotos[0].pieDeFoto").value("el vino"));
+        .andExpect(jsonPath("$.fotos[0].pieDeFoto").value("el vino"))
+        .andExpect(jsonPath("$.fotos[0].origen").value("PROVEEDOR"));
 
     mockMvc
         .perform(get("/api/v1/admin/borradores/{id}", UUID.randomUUID()))
@@ -248,6 +255,85 @@ class AdminBorradorControladorTest {
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.fotos").isEmpty());
     assertThat(objetosBorrados.claves).isEmpty();
+  }
+
+  /** Pedir la URL, subir, confirmar: la foto aparece con las demás y la alerta se va. */
+  @Test
+  void subirUnaFotoEnDosPasosLaDejaEnLaRevision() throws Exception {
+    String respuesta =
+        mockMvc
+            .perform(
+                post("/api/v1/admin/borradores/{id}/fotos/url-subida", borrador.id())
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("{\"contentType\":\"image/jpeg\"}"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.url").exists())
+            .andReturn()
+            .getResponse()
+            .getContentAsString();
+    String objectKey = respuesta.replaceAll(".*\"objectKey\":\"([^\"]+)\".*", "$1");
+    assertThat(objectKey)
+        .startsWith("proveedores/" + borrador.proveedorId() + "/borradores/" + borrador.id() + "/")
+        .endsWith(".jpg");
+    objetosBorrados.subidos.put(objectKey, new byte[] {1, 2, 3});
+
+    mockMvc
+        .perform(
+            post("/api/v1/admin/borradores/{id}/fotos", borrador.id())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"objectKey\":\"" + objectKey + "\"}"))
+        .andExpect(status().isCreated())
+        .andExpect(jsonPath("$.origen").value("PANEL"))
+        .andExpect(jsonPath("$.url").value("https://firmada.local/leer/" + objectKey));
+
+    mockMvc
+        .perform(get("/api/v1/admin/borradores/{id}", borrador.id()))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.fotos.length()").value(2))
+        .andExpect(jsonPath("$.fotos[1].origen").value("PANEL"))
+        .andExpect(jsonPath("$.borrador.alertas").isEmpty());
+  }
+
+  @Test
+  void unaFotoQuePasaDelTopeEs413() throws Exception {
+    String objectKey =
+        "proveedores/" + borrador.proveedorId() + "/borradores/" + borrador.id() + "/x.jpg";
+    objetosBorrados.subidos.put(objectKey, new byte[(int) TOPE_DE_FOTO + 1]);
+
+    mockMvc
+        .perform(
+            post("/api/v1/admin/borradores/{id}/fotos", borrador.id())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"objectKey\":\"" + objectKey + "\"}"))
+        .andExpect(status().isContentTooLarge())
+        .andExpect(jsonPath("$.codigo").value("FOTO_DEMASIADO_GRANDE"));
+    assertThat(objetosBorrados.claves).containsExactly(objectKey);
+  }
+
+  @Test
+  void unaFotoQueNoEsJpegNiPngEs422() throws Exception {
+    mockMvc
+        .perform(
+            post("/api/v1/admin/borradores/{id}/fotos/url-subida", borrador.id())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"contentType\":\"image/webp\"}"))
+        .andExpect(status().isUnprocessableContent())
+        .andExpect(jsonPath("$.codigo").value("TIPO_DE_FOTO_NO_ADMITIDO"));
+  }
+
+  /** El navegador nunca terminó el PUT: no hay qué colgar del borrador. */
+  @Test
+  void confirmarUnaFotoQueNoSeSubioEs404() throws Exception {
+    String objectKey =
+        "proveedores/" + borrador.proveedorId() + "/borradores/" + borrador.id() + "/x.jpg";
+
+    mockMvc
+        .perform(
+            post("/api/v1/admin/borradores/{id}/fotos", borrador.id())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"objectKey\":\"" + objectKey + "\"}"))
+        .andExpect(status().isNotFound());
+    assertThat(borrador.fotosSubidas()).isEmpty();
   }
 
   @Test
@@ -326,12 +412,13 @@ class AdminBorradorControladorTest {
       return new AlmacenDeArchivosDeProveedor() {
         @Override
         public UrlFirmada generarUrlDeSubida(String objectKey, String contentType) {
-          throw new UnsupportedOperationException();
+          return new UrlFirmada("https://firmada.local/subir/" + objectKey);
         }
 
         @Override
         public Optional<Long> tamanoBytes(String objectKey) {
-          throw new UnsupportedOperationException();
+          return Optional.ofNullable(objetosBorrados.subidos.get(objectKey))
+              .map(bytes -> (long) bytes.length);
         }
 
         @Override
@@ -341,7 +428,7 @@ class AdminBorradorControladorTest {
 
         @Override
         public Optional<byte[]> leer(String objectKey) {
-          return Optional.empty();
+          return Optional.ofNullable(objetosBorrados.subidos.get(objectKey));
         }
 
         @Override
@@ -376,8 +463,29 @@ class AdminBorradorControladorTest {
 
     @Bean
     DescartarFotoDeBorrador descartarFotoDeBorrador(
-        RepositorioBorradoresDoble borradores, RepositorioPublicacionesDoble publicaciones) {
-      return new DescartarFotoDeBorrador(borradores, publicaciones);
+        RepositorioBorradoresDoble borradores,
+        RepositorioPublicacionesDoble publicaciones,
+        RepositorioMensajesDoble mensajes,
+        AlmacenDeArchivosDeProveedor almacen) {
+      return new DescartarFotoDeBorrador(borradores, publicaciones, mensajes, almacen);
+    }
+
+    @Bean
+    SolicitarSubidaDeFotoDeBorrador solicitarSubidaDeFotoDeBorrador(
+        RepositorioBorradoresDoble borradores, AlmacenDeArchivosDeProveedor almacen) {
+      return new SolicitarSubidaDeFotoDeBorrador(borradores, almacen);
+    }
+
+    /** El procesador abre cualquier cosa: lo ilegible se prueba en la capa de aplicación. */
+    @Bean
+    ConfirmarFotoDeBorrador confirmarFotoDeBorrador(
+        RepositorioBorradoresDoble borradores, AlmacenDeArchivosDeProveedor almacen) {
+      return new ConfirmarFotoDeBorrador(
+          borradores,
+          almacen,
+          (bytes, contentType) -> new ImagenProcesada(bytes, contentType, 1200, 1500),
+          () -> T,
+          TOPE_DE_FOTO);
     }
 
     @Bean
@@ -460,6 +568,9 @@ class AdminBorradorControladorTest {
   /** Lo que el almacén borró, en un bean propio: un {@code Set<String>} inyectado junta Strings. */
   static final class ObjetosBorrados {
     final Set<String> claves = new HashSet<>();
+
+    /** Lo que el navegador habría subido con la URL firmada. */
+    final Map<String, byte[]> subidos = new HashMap<>();
   }
 
   static final class RepositorioBorradoresDoble implements RepositorioBorradores {
@@ -478,6 +589,13 @@ class AdminBorradorControladorTest {
     @Override
     public Optional<BorradorProducto> buscarPorId(UUID id) {
       return Optional.ofNullable(porId.get(id));
+    }
+
+    /** Sin concurrencia en la prueba, bloquear es buscar. */
+    @Override
+    public Optional<BorradorProducto> buscarPorIdParaActualizar(UUID id) {
+
+      return buscarPorId(id);
     }
 
     @Override

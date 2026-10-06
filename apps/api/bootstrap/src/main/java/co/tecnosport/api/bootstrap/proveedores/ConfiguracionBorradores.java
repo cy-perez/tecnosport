@@ -10,6 +10,7 @@ import co.tecnosport.api.application.compartido.Reloj;
 import co.tecnosport.api.application.proveedores.AlmacenDeArchivosDeProveedor;
 import co.tecnosport.api.application.proveedores.AprobarBorrador;
 import co.tecnosport.api.application.proveedores.CalculadorDePHash;
+import co.tecnosport.api.application.proveedores.ConfirmarFotoDeBorrador;
 import co.tecnosport.api.application.proveedores.DescartarFotoDeBorrador;
 import co.tecnosport.api.application.proveedores.EditarBorrador;
 import co.tecnosport.api.application.proveedores.EliminarBorrador;
@@ -22,6 +23,7 @@ import co.tecnosport.api.application.proveedores.RepositorioProductosDeProveedor
 import co.tecnosport.api.application.proveedores.RepositorioProveedores;
 import co.tecnosport.api.application.proveedores.RepositorioPublicacionesProveedor;
 import co.tecnosport.api.application.proveedores.ResolverBorrador;
+import co.tecnosport.api.application.proveedores.SolicitarSubidaDeFotoDeBorrador;
 import co.tecnosport.api.application.proveedores.VerBorrador;
 import co.tecnosport.api.infrastructure.proveedores.imagenes.CalculadorDePHashAwt;
 import co.tecnosport.api.infrastructure.proveedores.imagenes.ProcesadorDeImagenesNulo;
@@ -125,8 +127,28 @@ public class ConfiguracionBorradores {
 
   @Bean
   public DescartarFotoDeBorrador descartarFotoDeBorrador(
-      RepositorioBorradores borradores, RepositorioPublicacionesProveedor publicaciones) {
-    return new DescartarFotoDeBorrador(borradores, publicaciones);
+      RepositorioBorradores borradores,
+      RepositorioPublicacionesProveedor publicaciones,
+      RepositorioMensajesProveedor mensajes,
+      AlmacenDeArchivosDeProveedor almacen) {
+    return new DescartarFotoDeBorrador(borradores, publicaciones, mensajes, almacen);
+  }
+
+  @Bean
+  public SolicitarSubidaDeFotoDeBorrador solicitarSubidaDeFotoDeBorrador(
+      RepositorioBorradores borradores, AlmacenDeArchivosDeProveedor almacen) {
+    return new SolicitarSubidaDeFotoDeBorrador(borradores, almacen);
+  }
+
+  @Bean
+  public ConfirmarFotoDeBorrador confirmarFotoDeBorrador(
+      RepositorioBorradores borradores,
+      AlmacenDeArchivosDeProveedor almacen,
+      ProcesadorDeImagenes procesador,
+      Reloj reloj,
+      PropiedadesProveedores propiedades) {
+    return new ConfirmarFotoDeBorrador(
+        borradores, almacen, procesador, reloj, propiedades.fotoMaximaBytes());
   }
 
   @Bean

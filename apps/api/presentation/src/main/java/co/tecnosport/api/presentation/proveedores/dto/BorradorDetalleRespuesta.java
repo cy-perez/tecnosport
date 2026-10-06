@@ -1,6 +1,7 @@
 package co.tecnosport.api.presentation.proveedores.dto;
 
 import co.tecnosport.api.application.proveedores.VerBorrador;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
 import java.util.UUID;
 
@@ -15,13 +16,27 @@ public record BorradorDetalleRespuesta(
     return new BorradorDetalleRespuesta(
         BorradorRespuesta.de(detalle.borrador()),
         detalle.textos(),
-        detalle.fotos().stream()
-            .map(f -> new FotoRespuesta(f.mensajeId(), f.url(), f.pieDeFoto()))
-            .toList());
+        detalle.fotos().stream().map(FotoRespuesta::de).toList());
   }
 
   /**
+   * @param mensajeId el id de la foto, venga del proveedor o del panel: es el que se manda al
+   *     aprobar y al quitarla
    * @param url nula cuando la exportación omitió el archivo: la foto existió y no está
+   * @param origen {@code PROVEEDOR} o {@code PANEL}
    */
-  public record FotoRespuesta(UUID mensajeId, String url, String pieDeFoto) {}
+  public record FotoRespuesta(
+      UUID mensajeId,
+      String url,
+      String pieDeFoto,
+      @Schema(
+              requiredMode = Schema.RequiredMode.REQUIRED,
+              allowableValues = {"PROVEEDOR", "PANEL"})
+          String origen) {
+
+    public static FotoRespuesta de(VerBorrador.FotoDeBorrador foto) {
+      return new FotoRespuesta(
+          foto.mensajeId(), foto.url(), foto.pieDeFoto(), foto.origen().name());
+    }
+  }
 }

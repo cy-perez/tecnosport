@@ -11,6 +11,7 @@ import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.proveedores.AlertaBorrador;
 import co.tecnosport.api.domain.proveedores.BorradorProducto;
 import co.tecnosport.api.domain.proveedores.EstadoBorrador;
+import co.tecnosport.api.domain.proveedores.FotoSubida;
 import co.tecnosport.api.domain.proveedores.HuellaProveedor;
 import co.tecnosport.api.domain.proveedores.IdExternoDeMensaje;
 import co.tecnosport.api.domain.proveedores.LoteIngesta;
@@ -120,10 +121,19 @@ class RepositorioBorradoresJpaTest {
 
     UUID descartada = UUID.randomUUID();
     borrador.descartarFoto(descartada);
+    FotoSubida primera = new FotoSubida(UUID.randomUUID(), "p/borradores/b/1.jpg", T);
+    FotoSubida segunda =
+        new FotoSubida(UUID.randomUUID(), "p/borradores/b/2.png", T.plusSeconds(1));
+    borrador.agregarFotoSubida(segunda);
+    borrador.agregarFotoSubida(primera);
     borradores.actualizar(borrador);
+    em.flush();
+    em.clear();
     BorradorProducto leido = borradores.buscarPorId(borrador.id()).orElseThrow();
 
     assertThat(leido.fotosDescartadas()).containsExactly(descartada);
+    // En el orden en que se subieron, no en el que se agregaron a la lista.
+    assertThat(leido.fotosSubidas()).containsExactly(primera, segunda);
     assertThat(leido.titulo()).contains("Conjunto pantalón");
     assertThat(leido.linea()).contains(LineaCatalogo.ROPA);
     assertThat(leido.tipo()).isEqualTo(TipoProductoProveedor.CONJUNTO_PANTALON);
@@ -139,11 +149,32 @@ class RepositorioBorradoresJpaTest {
     assertThat(leido.altEn()).contains("Pants set");
     assertThat(leido.huella()).isEqualTo(borrador.huella());
     assertThat(leido.pHash()).contains(pHash);
-    assertThat(leido.alertas())
-        .containsExactlyInAnyOrder(AlertaBorrador.CONFIANZA_BAJA, AlertaBorrador.SIN_FOTOS);
+    // Subir una foto quitó la de sin fotos.
+    assertThat(leido.alertas()).containsExactly(AlertaBorrador.CONFIANZA_BAJA);
     assertThat(leido.estado()).isEqualTo(EstadoBorrador.EN_REVISION);
     assertThat(leido.extraccionCruda()).isEqualTo("{\"es_producto\":true}");
     assertThat(leido.creadoEn()).isEqualTo(T);
+  }
+
+  @Test
+  void quitarUnaFotoSubidaBorraSuFila() {
+    unaPublicacion();
+    BorradorProducto borrador = unBorrador("Bolso");
+    FotoSubida foto = new FotoSubida(UUID.randomUUID(), "p/borradores/b/1.jpg", T);
+    borrador.agregarFotoSubida(foto);
+    borradores.guardar(borrador);
+    em.flush();
+
+    borrador.quitarFotoSubida(foto.id());
+    borradores.actualizar(borrador);
+    em.flush();
+    em.clear();
+
+    assertThat(borradores.buscarPorId(borrador.id()).orElseThrow().fotosSubidas()).isEmpty();
+    assertThat(
+            contar(
+                "select count(*) from borrador_foto_subida where borrador_id = ?1", borrador.id()))
+        .isZero();
   }
 
   @Test
@@ -190,6 +221,7 @@ class RepositorioBorradoresJpaTest {
     assertThat(leido.descripcion()).isEmpty();
     assertThat(leido.altEn()).isEmpty();
     assertThat(leido.fotosDescartadas()).isEmpty();
+    assertThat(leido.fotosSubidas()).isEmpty();
     assertThat(leido.huella()).isEmpty();
     assertThat(leido.pHash()).isEmpty();
     assertThat(leido.alertas()).isEmpty();
@@ -377,7 +409,7 @@ class RepositorioBorradoresJpaTest {
                 T.plusSeconds(5),
                 null,
                 "p/fotos/1.jpg")));
-    borradores.guardar(
+    BorradorProducto conFotoSubida =
         BorradorProducto.nuevo(
             publicacion.id(),
             proveedor.id(),
@@ -388,7 +420,9 @@ class RepositorioBorradoresJpaTest {
             HuellaProveedor.calcular(proveedor.id(), "Bolso", Dinero.deCop(53000)),
             null,
             Set.of(),
-            T));
+            T);
+    conFotoSubida.agregarFotoSubida(new FotoSubida(UUID.randomUUID(), "p/borradores/b/1.jpg", T));
+    borradores.guardar(conFotoSubida);
     Proveedor ajeno =
         Proveedor.crear(
             "Otro", LineaCatalogo.ROPA, "+57 301", "Otro", null, OrdenDePublicacion.FOTOS_PRIMERO);
@@ -398,7 +432,8 @@ class RepositorioBorradoresJpaTest {
     DependenciasDeProveedor abiertas = proveedores.dependenciasDe(proveedor.id());
     assertThat(abiertas.productos()).isZero();
     assertThat(abiertas.ingestaEnCurso()).isTrue();
-    assertThat(abiertas.archivos()).containsExactly("p/exportaciones/a.zip", "p/fotos/1.jpg");
+    assertThat(abiertas.archivos())
+        .containsExactly("p/borradores/b/1.jpg", "p/exportaciones/a.zip", "p/fotos/1.jpg");
 
     lote.fallar("se cayó", T.plusSeconds(10));
     lotes.actualizar(lote);
@@ -417,6 +452,11 @@ class RepositorioBorradoresJpaTest {
                   .getSingleResult();
       assertThat(filas.longValue()).as(tabla).isZero();
     }
+    assertThat(
+            contar(
+                "select count(*) from borrador_foto_subida where borrador_id = ?1",
+                conFotoSubida.id()))
+        .isZero();
     assertThat(proveedores.buscarPorId(ajeno.id())).isPresent();
     assertThat(proveedores.dependenciasDe(ajeno.id()).archivos())
         .containsExactly("o/exportaciones/b.zip");
@@ -446,7 +486,9 @@ class RepositorioBorradoresJpaTest {
     BorradorProducto aprobado = unBorrador("Bolso");
     aprobado.aprobar(productoId, null);
     borradores.guardar(aprobado);
-    borradores.guardar(unBorrador("Morral"));
+    BorradorProducto morral = unBorrador("Morral");
+    morral.agregarFotoSubida(new FotoSubida(UUID.randomUUID(), "p/borradores/m/1.jpg", T));
+    borradores.guardar(morral);
 
     // Otro lote del mismo proveedor, con todo lo suyo y el mismo ZIP: un envío repetido.
     LoteIngesta otro =
@@ -470,13 +512,14 @@ class RepositorioBorradoresJpaTest {
     PublicacionProveedor propia = publicacion;
     publicacion = publicacionDelOtro;
     BorradorProducto borradorDelOtro = unBorrador("Morral del otro");
+    borradorDelOtro.agregarFotoSubida(new FotoSubida(UUID.randomUUID(), "p/borradores/o/1.jpg", T));
     borradores.guardar(borradorDelOtro);
     publicacion = propia;
 
     DependenciasDeLote dependencias = lotes.dependenciasDe(lote.id());
     assertThat(dependencias.productos()).containsExactly(productoId);
     // El ZIP lo nombra también el otro lote: no se ofrece para borrar.
-    assertThat(dependencias.archivos()).containsExactly("p/fotos/1.jpg");
+    assertThat(dependencias.archivos()).containsExactly("p/borradores/m/1.jpg", "p/fotos/1.jpg");
 
     lotes.eliminarConSuHistorial(lote.id());
 
@@ -490,6 +533,9 @@ class RepositorioBorradoresJpaTest {
           .isPositive();
     }
     assertThat(borradores.buscarPorId(aprobado.id())).isEmpty();
+    assertThat(
+            contar("select count(*) from borrador_foto_subida where borrador_id = ?1", morral.id()))
+        .isZero();
     assertThat(borradores.buscarPorId(borradorDelOtro.id())).isPresent();
     assertThat(
             contar(
@@ -497,7 +543,7 @@ class RepositorioBorradoresJpaTest {
                 publicacionDelOtro.id()))
         .isPositive();
     assertThat(lotes.dependenciasDe(otro.id()).archivos())
-        .containsExactly("p/exportaciones/a.zip", "p/fotos/2.jpg");
+        .containsExactly("p/borradores/o/1.jpg", "p/exportaciones/a.zip", "p/fotos/2.jpg");
   }
 
   private long contar(String sql, UUID id) {

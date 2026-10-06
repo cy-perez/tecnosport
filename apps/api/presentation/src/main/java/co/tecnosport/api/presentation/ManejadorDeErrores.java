@@ -68,6 +68,7 @@ import co.tecnosport.api.application.proveedores.BorradorSinTituloException;
 import co.tecnosport.api.application.proveedores.ColaDeIngestasLlenaException;
 import co.tecnosport.api.application.proveedores.ExportacionDemasiadoGrandeException;
 import co.tecnosport.api.application.proveedores.ExportacionNoEncontradaException;
+import co.tecnosport.api.application.proveedores.FotoDemasiadoGrandeException;
 import co.tecnosport.api.application.proveedores.FotoNoEsDelBorradorException;
 import co.tecnosport.api.application.proveedores.ImagenDeProveedorIlegibleException;
 import co.tecnosport.api.application.proveedores.LoteEnCursoException;
@@ -78,6 +79,7 @@ import co.tecnosport.api.application.proveedores.ProveedorConProductosException;
 import co.tecnosport.api.application.proveedores.ProveedorInactivoException;
 import co.tecnosport.api.application.proveedores.ProveedorNoEncontradoException;
 import co.tecnosport.api.application.proveedores.TipoDeExportacionNoAdmitidoException;
+import co.tecnosport.api.application.proveedores.TipoDeFotoNoAdmitidoException;
 import co.tecnosport.api.application.reintegro.MontoDeReintegroInvalidoException;
 import co.tecnosport.api.application.reintegro.ReintegroRequeridoException;
 import co.tecnosport.api.application.retracto.PedidoSinEntregarException;
@@ -250,8 +252,11 @@ public class ManejadorDeErrores {
     return problema(HttpStatus.UNPROCESSABLE_CONTENT, "Exportación no encontrada", excepcion);
   }
 
-  @ExceptionHandler(TipoDeExportacionNoAdmitidoException.class)
-  public ProblemDetail tipoDeExportacionNoAdmitido(TipoDeExportacionNoAdmitidoException excepcion) {
+  @ExceptionHandler({
+    TipoDeExportacionNoAdmitidoException.class,
+    TipoDeFotoNoAdmitidoException.class
+  })
+  public ProblemDetail tipoDeArchivoNoAdmitido(RuntimeException excepcion) {
     return problema(HttpStatus.UNPROCESSABLE_CONTENT, "Tipo de archivo no admitido", excepcion);
   }
 
@@ -260,6 +265,11 @@ public class ManejadorDeErrores {
   @ExceptionHandler(ExportacionDemasiadoGrandeException.class)
   public ProblemDetail exportacionDemasiadoGrande(ExportacionDemasiadoGrandeException excepcion) {
     return problema(HttpStatus.CONTENT_TOO_LARGE, "La exportación pesa demasiado", excepcion);
+  }
+
+  @ExceptionHandler(FotoDemasiadoGrandeException.class)
+  public ProblemDetail fotoDemasiadoGrande(FotoDemasiadoGrandeException excepcion) {
+    return problema(HttpStatus.CONTENT_TOO_LARGE, "La foto pesa demasiado", excepcion);
   }
 
   // 503: el lote quedó escrito, y el controlador lo cierra en ERROR antes de responder, porque la
