@@ -851,6 +851,10 @@
       "BOLSOS": "Bolsos",
       "ROPA": "Ropa"
     },
+    "ordenesDePublicacion": {
+      "FOTOS_PRIMERO": "Primero las fotos y después el texto con el precio",
+      "TEXTO_PRIMERO": "Primero el texto con el precio y después las fotos"
+    },
     "columnas": {
       "nombre": "Proveedor",
       "linea": "Línea",
@@ -874,9 +878,11 @@
       "seleccionar": "Selecciona una opción",
       "margen": "Factor de margen",
       "margenAyuda": "Multiplica el precio del proveedor para sugerir el de venta. 1,30 es un 30 % sobre el costo; no puede ser menor que 1.",
+      "orden": "Orden en que publica",
+      "ordenAyuda": "Mira cómo manda cada producto en su chat. Solo decide de cuál producto es una foto que llega en el mismo minuto que dos precios, porque el chat exportado no trae los segundos.",
       "publicacionAutomatica": "Publicar sin revisar (todavía no aplica: todo borrador pasa por el panel)",
       "activo": "Activo. Desmarcado, no se le pueden subir exportaciones.",
-      "faltanCampos": "Faltan datos: nombre, nombre en el chat, teléfono, línea y un margen de por lo menos 1.",
+      "faltanCampos": "Faltan datos: nombre, nombre en el chat, teléfono, línea, orden en que publica y un margen de por lo menos 1.",
       "guardado": "Listo: {{nombre}} quedó guardado.",
       "enviando": "Guardando…",
       "guardar": "Guardar cambios",
