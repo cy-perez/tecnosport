@@ -451,6 +451,144 @@ describe('DetalleBorradorAdminPage', () => {
     );
   });
 
+  /**
+   * El caso que motivó la subida: la ingesta dejó el borrador sin fotos. La que se sube entra con
+   * las mismas opciones que una del proveedor —incluida, principal, tono— y viaja al aprobar.
+   */
+  it('un borrador sin fotos deja subirlas y la subida se aprueba como las demás', async () => {
+    const { repositorio } = await renderPagina(borradorDePrueba({ alertas: ['SIN_FOTOS'] }), []);
+    const s = esAdmin.borradores.subirFotos;
+
+    expect(await screen.findByText(esAdmin.borradores.detalle.sinFotosEditable)).toBeTruthy();
+    const archivo = new File(['x'], 'bolso.jpg', { type: 'image/jpeg' });
+    fireEvent.change(screen.getByLabelText(s.etiqueta), { target: { files: [archivo] } });
+
+    expect(await screen.findByText('Fotos agregadas al borrador: 1.')).toBeTruthy();
+    expect(repositorio.fotosSubidas).toEqual([{ id: 'b-1', archivo }]);
+    expect(await screen.findByText(esAdmin.borradores.detalle.fotoSubida)).toBeTruthy();
+    await vi.waitFor(() =>
+      expect(screen.queryByText(esAdmin.borradores.alertas.SIN_FOTOS)).toBeNull(),
+    );
+    expect(screen.getByRole('button', { name: 'Eliminar la foto 1' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: /Color de la foto 1/ })).toBeTruthy();
+
+    await llenarAprobacion();
+    fireEvent.click(screen.getByRole('button', { name: a.accion }));
+
+    expect(await screen.findByRole('link', { name: a.verProducto })).toBeTruthy();
+    expect(repositorio.aprobaciones[0].aprobacion.fotos).toEqual([
+      { mensajeId: 'subida-1', tono: null, colorHex: null },
+    ]);
+  });
+
+  /** La confirmación que llegue después encontraría el borrador aprobado, y la foto no entraría. */
+  it('no aprueba mientras se suben fotos y dice que hay que esperar', async () => {
+    const { repositorio } = await renderPagina();
+    let terminar: () => void = () => undefined;
+    const pendiente = new Promise<void>((resolver) => (terminar = resolver));
+    const subirFoto = repositorio.subirFoto.bind(repositorio);
+    repositorio.subirFoto = async (id, archivo) => {
+      await pendiente;
+      return subirFoto(id, archivo);
+    };
+    await llenarAprobacion();
+
+    fireEvent.change(screen.getByLabelText(esAdmin.borradores.subirFotos.etiqueta), {
+      target: { files: [new File(['x'], 'bolso.jpg', { type: 'image/jpeg' })] },
+    });
+    fireEvent.click(screen.getByRole('button', { name: a.accion }));
+
+    expect(await screen.findByText(a.esperaSubida)).toBeTruthy();
+    expect(repositorio.aprobaciones).toEqual([]);
+    terminar();
+    expect(await screen.findByText('Fotos agregadas al borrador: 1.')).toBeTruthy();
+  });
+
+  /**
+   * El componente se reutiliza al navegar entre borradores: lo que faltaba por subir no puede caer
+   * en el borrador nuevo.
+   */
+  it('si se navega a otro borrador a mitad de la subida, el resto no se sube', async () => {
+    const { repositorio, fixture } = await renderPagina();
+    let terminar: () => void = () => undefined;
+    const pendiente = new Promise<void>((resolver) => (terminar = resolver));
+    const subirFoto = repositorio.subirFoto.bind(repositorio);
+    repositorio.subirFoto = async (id, archivo) => {
+      await pendiente;
+      return subirFoto(id, archivo);
+    };
+
+    fireEvent.change(await screen.findByLabelText(esAdmin.borradores.subirFotos.etiqueta), {
+      target: {
+        files: [
+          new File(['x'], 'uno.jpg', { type: 'image/jpeg' }),
+          new File(['x'], 'dos.jpg', { type: 'image/jpeg' }),
+        ],
+      },
+    });
+    const pagina = fixture.componentInstance as unknown as { id: () => string };
+    const original = pagina.id;
+    pagina.id = () => 'b-2';
+    terminar();
+
+    await vi.waitFor(() => expect(repositorio.fotosSubidas).toHaveLength(1));
+    await new Promise((resolver) => setTimeout(resolver, 50));
+    expect(repositorio.fotosSubidas.map((s) => [s.id, s.archivo.name])).toEqual([
+      ['b-1', 'uno.jpg'],
+    ]);
+    pagina.id = original;
+  });
+
+  it('de varios archivos sube los que puede y dice cuál no entró y por qué', async () => {
+    const { repositorio } = await renderPagina();
+    const s = esAdmin.borradores.subirFotos;
+    repositorio.fallosAlSubir.set(
+      'roto.png',
+      new ErrorHttp(422, 'no abre', 'IMAGEN_DE_PROVEEDOR_ILEGIBLE'),
+    );
+    repositorio.fallosAlSubir.set(
+      'enorme.jpg',
+      new ErrorHttp(413, 'pesa', 'FOTO_DEMASIADO_GRANDE'),
+    );
+
+    fireEvent.change(await screen.findByLabelText(s.etiqueta), {
+      target: {
+        files: [
+          new File(['x'], 'foto.webp', { type: 'image/webp' }),
+          new File(['x'], 'roto.png', { type: 'image/png' }),
+          new File(['x'], 'enorme.jpg', { type: 'image/jpeg' }),
+          new File(['x'], 'bien.jpg', { type: 'image/jpeg' }),
+        ],
+      },
+    });
+
+    expect(await screen.findByText('Fotos agregadas al borrador: 1.')).toBeTruthy();
+    expect(screen.getByText('«foto.webp» no es JPEG ni PNG y no se subió.')).toBeTruthy();
+    expect(screen.getByText('«roto.png» no se pudo abrir como imagen y no se subió.')).toBeTruthy();
+    expect(
+      screen.getByText(
+        '«enorme.jpg» pesa más de lo que se admite y no se subió. Redúcela y vuelve a intentarlo.',
+      ),
+    ).toBeTruthy();
+    expect(repositorio.fotosSubidas.map((subida) => subida.archivo.name)).toEqual(['bien.jpg']);
+  });
+
+  /** La del proveedor deja su archivo; la subida es solo de este borrador y se borra. */
+  it('eliminar una foto subida avisa que su archivo se borra', async () => {
+    await renderPagina(borradorDePrueba(), [
+      fotoDePrueba('f-1'),
+      { ...fotoDePrueba('s-1'), origen: 'PANEL' },
+    ]);
+    const e = esAdmin.borradores.eliminarFoto;
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Eliminar la foto 2' }));
+    expect(screen.getByText(e.loQueImplicaSubida)).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: e.cancelar }));
+
+    fireEvent.click(screen.getByRole('button', { name: 'Eliminar la foto 1' }));
+    expect(screen.getByText(e.loQueImplica)).toBeTruthy();
+  });
+
   it('cancelar la eliminación de una foto no toca nada', async () => {
     const { repositorio } = await renderPagina();
     const e = esAdmin.borradores.eliminarFoto;
@@ -512,6 +650,7 @@ describe('DetalleBorradorAdminPage', () => {
     expect(screen.queryByRole('button', { name: a.accion })).toBeNull();
     expect(screen.queryByRole('button', { name: d.guardar })).toBeNull();
     expect(screen.queryByRole('button', { name: esAdmin.borradores.borrar.accion })).toBeNull();
+    expect(screen.queryByLabelText(esAdmin.borradores.subirFotos.etiqueta)).toBeNull();
     await vi.waitFor(() =>
       expect((screen.getByLabelText(d.tituloProducto) as HTMLInputElement).disabled).toBe(true),
     );

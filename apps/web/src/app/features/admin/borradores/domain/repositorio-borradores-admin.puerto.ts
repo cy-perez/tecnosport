@@ -6,6 +6,7 @@ import {
   BorradoresPaginados,
   EditarBorrador,
   FiltroBorradores,
+  FotoBorrador,
 } from './borrador.model';
 
 /**
@@ -24,6 +25,12 @@ export interface RepositorioBorradoresAdmin {
    * mismo mensaje puede usarlo.
    */
   descartarFoto(id: string, mensajeId: string): Promise<void>;
+  /**
+   * Sube una foto al borrador. Una sola operación aunque sean tres viajes —pedir la URL firmada,
+   * subir el archivo al bucket y confirmarlo—, como la exportación de una ingesta. Devuelve la foto
+   * ya colgada del borrador, con su `mensajeId` para tratarla como a las demás.
+   */
+  subirFoto(id: string, archivo: File): Promise<FotoBorrador>;
   /** Sin vuelta atrás: el borrador, la publicación, los mensajes y las fotos del bucket. */
   eliminar(id: string): Promise<void>;
 }

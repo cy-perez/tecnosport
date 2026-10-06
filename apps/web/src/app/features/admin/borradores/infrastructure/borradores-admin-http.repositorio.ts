@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { SesionStore } from '../../../../core/autenticacion/sesion.store';
 import { baseUrl } from '../../../../core/http/base-url';
 import { crearClienteAutenticado } from '../../../../core/http/cliente-autenticado';
-import { desempaquetar, exigirExito } from '../../../../core/http/respuesta-http';
+import { ErrorHttp, desempaquetar, exigirExito } from '../../../../core/http/respuesta-http';
 import {
   AprobarBorrador,
   Borrador,
@@ -10,6 +10,7 @@ import {
   BorradoresPaginados,
   EditarBorrador,
   FiltroBorradores,
+  FotoBorrador,
 } from '../domain/borrador.model';
 import { RepositorioBorradoresAdmin } from '../domain/repositorio-borradores-admin.puerto';
 import {
@@ -18,6 +19,7 @@ import {
   aBorradorDetalle,
   aBorradoresPaginados,
   aEditarPeticion,
+  aFoto,
 } from './mapeador-borrador';
 
 const TAMANO_PAGINA = 20;
@@ -76,6 +78,39 @@ export class BorradoresAdminHttpRepositorio implements RepositorioBorradoresAdmi
       params: { path: { id, mensajeId } },
     });
     exigirExito(respuesta, 'no se pudo eliminar la foto del borrador');
+  }
+
+  /**
+   * El `Content-Type` del `PUT` tiene que ser el mismo con que se firmó la URL, o Cloud Storage
+   * responde 403: por eso se manda `archivo.type` en los dos lados.
+   */
+  async subirFoto(id: string, archivo: File): Promise<FotoBorrador> {
+    const respuestaSolicitud = await this.cliente.POST(
+      '/api/v1/admin/borradores/{id}/fotos/url-subida',
+      {
+        params: { path: { id } },
+        body: { contentType: archivo.type },
+      },
+    );
+    const solicitud = desempaquetar(respuestaSolicitud, 'no se pudo solicitar la URL de subida');
+    if (!solicitud.url || !solicitud.objectKey) {
+      throw new ErrorHttp(respuestaSolicitud.response.status, 'la URL de subida llegó incompleta');
+    }
+
+    const respuestaSubida = await fetch(solicitud.url, {
+      method: 'PUT',
+      headers: { 'Content-Type': archivo.type },
+      body: archivo,
+    });
+    if (!respuestaSubida.ok) {
+      throw new Error('No se pudo subir la foto a Cloud Storage.');
+    }
+
+    const respuesta = await this.cliente.POST('/api/v1/admin/borradores/{id}/fotos', {
+      params: { path: { id } },
+      body: { objectKey: solicitud.objectKey },
+    });
+    return aFoto(desempaquetar(respuesta, 'no se pudo confirmar la foto del borrador'));
   }
 
   async eliminar(id: string): Promise<void> {

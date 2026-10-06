@@ -1024,14 +1024,16 @@
       "errorCarga": "The draft could not be loaded.",
       "de": "From {{proveedor}} · supplier price: {{precio}}",
       "alertasTitulo": "Before approving, check",
-      "fotos": "Post photos",
+      "fotos": "Draft photos",
       "sinFotos": "The post had no photos.",
-      "fotoAlt": "Photo {{numero}} of the post",
+      "sinFotosEditable": "The post had no photos. Upload them below to be able to approve it.",
+      "fotoAlt": "Photo {{numero}} of the draft",
       "textos": "What the supplier wrote",
       "sinTextos": "The post had no text.",
       "motivoRechazo": "Rejected: {{motivo}}",
       "verProducto": "See the product it created",
-      "cerrado": "This draft has already been decided."
+      "cerrado": "This draft has already been decided.",
+      "fotoSubida": "Uploaded during review"
     },
     "datos": {
       "titulo": "Extracted data",
@@ -1089,7 +1091,8 @@
       "fotosCompartidas": "These photos come from a message with several products: some may belong to the other one. Untick the ones that are not of this product and mark the main one.",
       "marcarPrincipal": "Mark as main photo",
       "marcarPrincipalFoto": "Mark photo {{numero}} as the main photo",
-      "marcaLaPrincipal": "Mark the main photo of this product: the photos were shared with another one."
+      "marcaLaPrincipal": "Mark the main photo of this product: the photos were shared with another one.",
+      "esperaSubida": "Wait for the photos to finish uploading before approving."
     },
     "eliminarFoto": {
       "accion": "Remove photo",
@@ -1100,7 +1103,18 @@
       "eliminando": "Removing…",
       "cancelar": "Cancel",
       "hecho": "Photo removed from the draft.",
-      "error": "The photo could not be removed. Try again."
+      "error": "The photo could not be removed. Try again.",
+      "loQueImplicaSubida": "It stops showing here, does not go into the product, and the file is deleted."
+    },
+    "subirFotos": {
+      "etiqueta": "Upload photos",
+      "ayuda": "JPEG or PNG, one or several. They join the others: you can make them the main photo, set their color or remove them.",
+      "subiendo": "Uploading photos ({{hechas}} of {{total}})…",
+      "hecho": "Photos added to the draft: {{cantidad}}.",
+      "tipoNoAdmitido": "“{{nombre}}” is not a JPEG or PNG and was not uploaded.",
+      "ilegible": "“{{nombre}}” could not be opened as an image and was not uploaded.",
+      "demasiadoGrande": "“{{nombre}}” is larger than allowed and was not uploaded. Make it smaller and try again.",
+      "error": "“{{nombre}}” could not be uploaded. Try again."
     },
     "rechazar": {
       "titulo": "Reject",
