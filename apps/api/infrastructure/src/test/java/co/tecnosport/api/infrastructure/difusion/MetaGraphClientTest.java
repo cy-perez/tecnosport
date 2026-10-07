@@ -36,10 +36,14 @@ class MetaGraphClientTest {
 
   private static final String PIE = "JBL Grip — $299.900";
 
+  /** El que la Graph API devuelve al preguntarle a la página por su `access_token`. */
+  private static final String TOKEN_DE_PAGINA = "TOKEN-DE-LA-PAGINA";
+
   private HttpServer servidor;
   private final List<String> rutasPedidas = new ArrayList<>();
   private final List<String> cuerposRecibidos = new ArrayList<>();
   private final List<String> autorizaciones = new ArrayList<>();
+  private int vecesQueSePidioElTokenDePagina;
 
   @AfterEach
   void apagar() {
@@ -170,14 +174,96 @@ class MetaGraphClientTest {
     assertTrue(resultado.motivoDelFallo().contains("500"), resultado.toString());
   }
 
-  /** El token va en la cabecera: una URL con el token dentro acaba en cualquier registro. */
+  /**
+   * <b>Escribir en el muro va con el token de la página, no con el del usuario del sistema.</b>
+   *
+   * <p>Medido contra la cuenta real el 7 de octubre de 2026: al subir la primera foto sin publicar,
+   * Meta contestó {@code (#200) Unpublished posts must be posted to a page as the page itself}. El
+   * token configurado es el de un usuario del sistema; con él se lee la página y se publica en
+   * Instagram, pero no se escribe como la página. El token de página se le pide a la Graph API con
+   * el que ya hay.
+   */
+  @Test
+  void escribirEnElMuroVaConElTokenDeLaPagina() throws IOException {
+    levantar(intercambio -> responder(intercambio, 200, "{\"id\":\"1\",\"post_id\":\"333_444\"}"));
+
+    cliente().publicar(RedSocial.FACEBOOK, UNA, PIE);
+
+    assertEquals(1, vecesQueSePidioElTokenDePagina);
+    assertEquals("Bearer " + TOKEN_DE_PAGINA, autorizaciones.get(0));
+  }
+
+  /** Y se pide una sola vez aunque el carrusel sean varias subidas más el post. */
+  @Test
+  void elTokenDeLaPaginaSePideUnaSolaVezPorCarrusel() throws IOException {
+    levantar(intercambio -> responder(intercambio, 200, "{\"id\":\"1\",\"post_id\":\"333_444\"}"));
+
+    cliente().publicar(RedSocial.FACEBOOK, DOS, PIE);
+
+    assertEquals(3, rutasPedidas.size(), "dos subidas y un post");
+    assertEquals(1, vecesQueSePidioElTokenDePagina);
+  }
+
+  /**
+   * Instagram <b>no</b> usa el de la página: su endpoint cuelga de la cuenta de Instagram y el
+   * usuario del sistema sí puede publicar ahí — es lo que se midió el 29 de septiembre.
+   */
+  @Test
+  void instagramSigueConElTokenDelUsuarioDelSistema() throws IOException {
+    levantar(
+        intercambio -> {
+          String ruta = intercambio.getRequestURI().getPath();
+          if (ruta.endsWith("/media") || ruta.endsWith("/media_publish")) {
+            responder(intercambio, 200, "{\"id\":\"C1\"}");
+          } else {
+            responder(intercambio, 200, "{\"status_code\":\"FINISHED\"}");
+          }
+        });
+
+    cliente().publicar(RedSocial.INSTAGRAM, UNA, PIE);
+
+    assertEquals(0, vecesQueSePidioElTokenDePagina);
+    assertEquals("Bearer TOKEN", autorizaciones.get(0));
+  }
+
+  /**
+   * Si la página no contesta su token, se sigue con el que hay. Así el motivo que acaba en la ficha
+   * del panel es el que dé Meta al publicar —que dice qué falta— y no un error nuestro sobre un
+   * token que quien lo lee no sabe que existe.
+   */
+  @Test
+  void siLaPaginaNoDaSuTokenSeSigueConElDelUsuario() throws IOException {
+    servidor = HttpServer.create(new InetSocketAddress(0), 0);
+    servidor.createContext(
+        "/",
+        intercambio -> {
+          if (esLaConsultaDelTokenDePagina(intercambio)) {
+            responder(intercambio, 403, "{\"error\":{\"message\":\"No\"}}");
+            return;
+          }
+          autorizaciones.add(intercambio.getRequestHeaders().getFirst("Authorization"));
+          responder(intercambio, 200, "{\"post_id\":\"333_444\"}");
+        });
+    servidor.start();
+
+    assertTrue(cliente().publicar(RedSocial.FACEBOOK, UNA, PIE).salioBien());
+    assertEquals("Bearer TOKEN", autorizaciones.get(0));
+  }
+
+  /**
+   * El token va en la cabecera: una URL con el token dentro acaba en cualquier registro.
+   *
+   * <p>En el muro el que viaja es el de la página (ver arriba); lo que esta prueba fija es
+   * <b>dónde</b> viaja, no cuál.
+   */
   @Test
   void elTokenViajaEnLaCabeceraYNoEnLaUrl() throws IOException {
     levantar(intercambio -> responder(intercambio, 200, "{\"id\":\"1\"}"));
 
     cliente().publicar(RedSocial.FACEBOOK, UNA, PIE);
 
-    assertEquals("Bearer TOKEN", autorizaciones.get(0));
+    assertEquals("Bearer " + TOKEN_DE_PAGINA, autorizaciones.get(0));
+    assertFalse(rutasPedidas.get(0).contains(TOKEN_DE_PAGINA), rutasPedidas.get(0));
     assertFalse(rutasPedidas.get(0).contains("TOKEN"), rutasPedidas.get(0));
   }
 
@@ -319,11 +405,23 @@ class MetaGraphClientTest {
         Duration.ofMillis(5));
   }
 
+  /**
+   * Levanta el servidor falso. <b>La consulta del token de la página la contesta él</b>, antes de
+   * pasarle nada al manejador de cada prueba, y no cuenta en {@code rutasPedidas}: es un viaje de
+   * infraestructura que ninguna prueba de protocolo quiere ver, y contarlo obligaría a sumarle uno
+   * a cada aserción sobre las rutas. Lo que sí se comprueba, en su propia prueba, es que se pide y
+   * que el token que devuelve es el que se usa para escribir en el muro.
+   */
   private void levantar(Manejador manejador) throws IOException {
     servidor = HttpServer.create(new InetSocketAddress(0), 0);
     servidor.createContext(
         "/",
         intercambio -> {
+          if (esLaConsultaDelTokenDePagina(intercambio)) {
+            vecesQueSePidioElTokenDePagina++;
+            responder(intercambio, 200, "{\"access_token\":\"" + TOKEN_DE_PAGINA + "\"}");
+            return;
+          }
           rutasPedidas.add(intercambio.getRequestURI().getPath());
           autorizaciones.add(intercambio.getRequestHeaders().getFirst("Authorization"));
           cuerposRecibidos.add(
@@ -331,6 +429,11 @@ class MetaGraphClientTest {
           manejador.atender(intercambio);
         });
     servidor.start();
+  }
+
+  private static boolean esLaConsultaDelTokenDePagina(HttpExchange intercambio) {
+    return "GET".equals(intercambio.getRequestMethod())
+        && String.valueOf(intercambio.getRequestURI().getQuery()).contains("access_token");
   }
 
   private static void responder(HttpExchange intercambio, int codigo, String cuerpo)
