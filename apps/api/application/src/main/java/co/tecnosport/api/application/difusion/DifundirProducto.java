@@ -16,6 +16,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.OptionalDouble;
 import java.util.Set;
 import java.util.UUID;
 
@@ -59,6 +60,7 @@ public final class DifundirProducto {
   private final RepositorioProductos repositorioProductos;
   private final RepositorioPublicaciones repositorioPublicaciones;
   private final PublicadorEnRedSocial publicador;
+  private final AjustadorDeImagenes ajustador;
   private final ArmadorDePieDeFoto armador;
   private final EnTransaccionPropia enTransaccionPropia;
   private final Reloj reloj;
@@ -67,6 +69,7 @@ public final class DifundirProducto {
       RepositorioProductos repositorioProductos,
       RepositorioPublicaciones repositorioPublicaciones,
       PublicadorEnRedSocial publicador,
+      AjustadorDeImagenes ajustador,
       ArmadorDePieDeFoto armador,
       EnTransaccionPropia enTransaccionPropia,
       Reloj reloj) {
@@ -76,6 +79,7 @@ public final class DifundirProducto {
         Objects.requireNonNull(
             repositorioPublicaciones, "El repositorio de publicaciones es obligatorio.");
     this.publicador = Objects.requireNonNull(publicador, "El publicador es obligatorio.");
+    this.ajustador = Objects.requireNonNull(ajustador, "El ajustador de imágenes es obligatorio.");
     this.armador = Objects.requireNonNull(armador, "El armador del pie es obligatorio.");
     this.enTransaccionPropia =
         Objects.requireNonNull(enTransaccionPropia, "La transacción propia es obligatoria.");
@@ -128,10 +132,15 @@ public final class DifundirProducto {
       throw new DifusionRepetidaException(producto.id(), red);
     }
 
+    // Primero se encajan a la proporción que pida la red, y después se pregunta cuáles admite.
+    // En ese orden: encajando antes, lo que el filtro descarta es solo lo que no se pudo encajar,
+    // y no una foto que el carrusel sí podía llevar.
+    List<ImagenAPublicar> encajadas = encajarPara(producto, red, candidatas);
+
     // Se pregunta antes de escribir la fila para que la constancia diga exactamente lo que salió:
-    // Instagram deja fuera las fotos cuya proporción no admite, y guardarlas como publicadas sería
-    // dejar la base afirmando algo que no pasó.
-    List<ImagenAPublicar> imagenes = publicador.admitidasPor(red, candidatas);
+    // lo que la red no admita se queda fuera, y guardarlo como publicado sería dejar la base
+    // afirmando algo que no pasó.
+    List<ImagenAPublicar> imagenes = publicador.admitidasPor(red, encajadas);
     if (imagenes.isEmpty()) {
       throw ProductoNoDifundibleException.sinImagenQueLaRedAdmita(producto.id(), red);
     }
@@ -206,6 +215,27 @@ public final class DifundirProducto {
       aImagenAPublicar(deGaleria).ifPresent(imagenes::add);
     }
     return List.copyOf(imagenes);
+  }
+
+  /**
+   * Las fotos llevadas a la proporción que la red pide, si pide alguna.
+   *
+   * <p>La que no se pueda encajar sigue adelante tal como está: será {@code admitidasPor} quien
+   * decida si cabe. Dejarla fuera aquí convertiría un fallo al leer el bucket en una foto menos sin
+   * que nadie se entere, y hay un caso donde eso pasa a diario — el catálogo sembrado de {@code
+   * local} y {@code dev} trae imágenes de picsum.photos, que no son de nuestro bucket.
+   */
+  private List<ImagenAPublicar> encajarPara(
+      Producto producto, RedSocial red, List<ImagenAPublicar> imagenes) {
+    OptionalDouble proporcion = publicador.proporcionDelCarrusel(red, imagenes);
+    if (proporcion.isEmpty()) {
+      return imagenes;
+    }
+    return imagenes.stream()
+        .map(
+            imagen ->
+                ajustador.ajustarA(producto.id(), imagen, proporcion.getAsDouble()).orElse(imagen))
+        .toList();
   }
 
   private static Optional<ImagenAPublicar> aImagenAPublicar(ImagenProducto imagen) {

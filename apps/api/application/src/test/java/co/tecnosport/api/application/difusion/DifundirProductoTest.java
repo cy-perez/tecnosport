@@ -16,6 +16,8 @@ import co.tecnosport.api.domain.difusion.RedSocial;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
+import java.util.OptionalDouble;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 
@@ -26,6 +28,7 @@ class DifundirProductoTest {
 
   private final RepositorioPublicacionesFalso publicaciones = new RepositorioPublicacionesFalso();
   private final PublicadorFalso publicador = new PublicadorFalso();
+  private final AjustadorFalso ajustador = new AjustadorFalso();
 
   @Test
   void publicaEnLaRedPedidaYDejaLaConstanciaEnPublicada() {
@@ -273,6 +276,55 @@ class DifundirProductoTest {
     assertEquals(List.of(ApoyoDeDifusion.PRINCIPAL_JPEG), resultado.get(0).urlsImagen());
   }
 
+  /**
+   * Cuando la red pide una proporción, las fotos se encajan <b>antes</b> de preguntarle cuáles
+   * admite. En ese orden, y no al revés: encajando después, el filtro ya habría descartado justo
+   * las que el encaje iba a salvar, y el carrusel saldría corto sin que nada lo dijera.
+   */
+  @Test
+  void lasFotosSeEncajanAntesDePreguntarCualesAdmiteLaRed() {
+    Producto conGaleria =
+        ApoyoDeDifusion.jblGripConGaleria(
+            List.of(ApoyoDeDifusion.deGaleria(0, "https://b/alta.jpg", 600, 1200)));
+    publicador.proporcionPedida = OptionalDouble.of(0.8);
+    DifundirProducto caso = casoDeUso(conGaleria);
+
+    caso.ejecutar(new DifundirProductoComando(conGaleria.id(), List.of(RedSocial.INSTAGRAM), null));
+
+    assertEquals(List.of(0.8, 0.8), ajustador.proporcionesPedidas, "las dos, principal incluida");
+    assertTrue(
+        publicador.ultimasUrls.stream().allMatch(url -> url.endsWith("?encajada")),
+        publicador.ultimasUrls.toString());
+  }
+
+  /** Sin proporción pedida —Facebook— no se encaja nada: serían objetos en el bucket para nada. */
+  @Test
+  void sinProporcionPedidaNoSeEncajaNinguna() {
+    Producto producto = publicado();
+    DifundirProducto caso = casoDeUso(producto);
+
+    caso.ejecutar(new DifundirProductoComando(producto.id(), List.of(RedSocial.FACEBOOK), null));
+
+    assertTrue(ajustador.proporcionesPedidas.isEmpty());
+  }
+
+  /**
+   * Y la que no se pudo encajar sigue adelante tal como está: será la red quien diga si cabe.
+   * Dejarla fuera aquí convertiría un fallo al leer el bucket en una foto menos sin que nadie se
+   * entere, y eso pasa a diario con el catálogo sembrado de picsum.photos.
+   */
+  @Test
+  void laQueNoSePudoEncajarSigueComoEstaba() {
+    Producto producto = publicado();
+    publicador.proporcionPedida = OptionalDouble.of(0.8);
+    ajustador.noPuede = true;
+    DifundirProducto caso = casoDeUso(producto);
+
+    caso.ejecutar(new DifundirProductoComando(producto.id(), List.of(RedSocial.INSTAGRAM), null));
+
+    assertEquals(List.of(VISTA_PREVIA), publicador.ultimasUrls);
+  }
+
   /** Si la red no admite ni una, no se escribe una fila que diga que se publicó algo. */
   @Test
   void siLaRedNoAdmiteNingunaFotoNoSePublicaNiSeGuarda() {
@@ -325,6 +377,7 @@ class DifundirProductoTest {
         new ApoyoDeDifusion.RepositorioProductosFalso(producto),
         publicaciones,
         publicador,
+        ajustador,
         new ArmadorDePieDeFoto("https://www.tecnosport.co", List.of()),
         // La transacción propia, en una prueba, es simplemente ejecutar: lo que se comprueba aquí
         // es el orden de las escrituras, no que Postgres confirme.
@@ -346,6 +399,12 @@ class DifundirProductoTest {
     private int veces;
     private boolean soloAdmiteLaPrimera;
     private boolean noAdmiteNinguna;
+    private OptionalDouble proporcionPedida = OptionalDouble.empty();
+
+    @Override
+    public OptionalDouble proporcionDelCarrusel(RedSocial red, List<ImagenAPublicar> imagenes) {
+      return proporcionPedida;
+    }
 
     @Override
     public List<ImagenAPublicar> admitidasPor(RedSocial red, List<ImagenAPublicar> imagenes) {
@@ -365,6 +424,27 @@ class DifundirProductoTest {
       return red == fallaEn
           ? ResultadoPublicacion.fallida("La imagen no se pudo descargar.")
           : ResultadoPublicacion.publicada("18196134166390376");
+    }
+  }
+
+  /**
+   * Encaja marcando la URL, que es lo que la prueba necesita ver. El ajuste de verdad —abrir los
+   * bytes y redibujarlos— lo cubre {@code AjustadorDeImagenesJava2DTest} contra imágenes reales.
+   */
+  private static final class AjustadorFalso implements AjustadorDeImagenes {
+    private boolean noPuede;
+    private final List<Double> proporcionesPedidas = new ArrayList<>();
+
+    @Override
+    public Optional<ImagenAPublicar> ajustarA(
+        UUID productoId, ImagenAPublicar imagen, double proporcionObjetivo) {
+      proporcionesPedidas.add(proporcionObjetivo);
+      if (noPuede) {
+        return Optional.empty();
+      }
+      int alto = 1000;
+      int ancho = (int) Math.round(alto * proporcionObjetivo);
+      return Optional.of(new ImagenAPublicar(imagen.url() + "?encajada", ancho, alto));
     }
   }
 

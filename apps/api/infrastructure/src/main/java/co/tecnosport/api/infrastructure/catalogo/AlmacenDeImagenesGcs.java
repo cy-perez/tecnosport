@@ -82,6 +82,16 @@ public class AlmacenDeImagenesGcs implements AlmacenDeImagenes {
     llamar(() -> storage.create(blobInfo, bytes));
   }
 
+  /**
+   * {@code readAllBytes} y no un canal: las imágenes del catálogo son de cientos de kilobytes y
+   * quien llama necesita el arreglo entero para abrirlo con {@code ImageIO}.
+   */
+  @Override
+  public Optional<byte[]> leer(String objectKey) {
+    Blob blob = llamar(() -> storage.get(BlobId.of(bucket, objectKey)));
+    return blob == null ? Optional.empty() : Optional.of(llamar(blob::getContent));
+  }
+
   @Override
   public boolean eliminar(String objectKey) {
     // Por nombre, sin generación, por lo mismo que explica eliminarPorPrefijo: con la generación

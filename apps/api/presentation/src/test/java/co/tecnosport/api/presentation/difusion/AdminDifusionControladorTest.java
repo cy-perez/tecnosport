@@ -44,6 +44,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.OptionalDouble;
 import java.util.UUID;
 import java.util.function.Supplier;
 import org.junit.jupiter.api.BeforeEach;
@@ -241,6 +242,12 @@ class AdminDifusionControladorTest {
   }
 
   static final class PublicadorDoble implements PublicadorEnRedSocial {
+    /** Vacío: a este controlador le da igual la proporción, lo suyo es el código HTTP. */
+    @Override
+    public OptionalDouble proporcionDelCarrusel(RedSocial red, List<ImagenAPublicar> imagenes) {
+      return OptionalDouble.empty();
+    }
+
     @Override
     public List<ImagenAPublicar> admitidasPor(RedSocial red, List<ImagenAPublicar> imagenes) {
       return List.copyOf(imagenes);
@@ -401,6 +408,8 @@ class AdminDifusionControladorTest {
           productos,
           publicaciones,
           new PublicadorDoble(),
+          // Nunca se le pide nada: el doble de publicador no exige ninguna proporción.
+          (producto, imagen, proporcion) -> Optional.of(imagen),
           new ArmadorDePieDeFoto("https://www.tecnosport.co", List.of()),
           new EnTransaccionPropia() {
             @Override

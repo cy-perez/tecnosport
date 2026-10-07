@@ -301,6 +301,11 @@ final class ApoyoDeCatalogoParaIngesta {
     }
 
     @Override
+    public Optional<byte[]> leer(String objectKey) {
+      return Optional.ofNullable(objetos.get(objectKey));
+    }
+
+    @Override
     public String urlPublica(String objectKey) {
       return "https://publico.local/" + objectKey;
     }

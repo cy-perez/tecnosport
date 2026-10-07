@@ -5,6 +5,7 @@ import co.tecnosport.api.application.difusion.PublicadorEnRedSocial;
 import co.tecnosport.api.application.difusion.ResultadoPublicacion;
 import co.tecnosport.api.domain.difusion.RedSocial;
 import java.util.List;
+import java.util.OptionalDouble;
 import java.util.concurrent.atomic.AtomicLong;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,6 +28,12 @@ public final class PublicadorSembrado implements PublicadorEnRedSocial {
   private static final Logger log = LoggerFactory.getLogger(PublicadorSembrado.class);
 
   private final AtomicLong contador = new AtomicLong(1);
+
+  /** Vacío: sin red de verdad detrás, encajar las fotos solo gastaría objetos en el bucket. */
+  @Override
+  public OptionalDouble proporcionDelCarrusel(RedSocial red, List<ImagenAPublicar> imagenes) {
+    return OptionalDouble.empty();
+  }
 
   /**
    * Las admite todas. Simular también el filtro de proporciones de Instagram escondería en

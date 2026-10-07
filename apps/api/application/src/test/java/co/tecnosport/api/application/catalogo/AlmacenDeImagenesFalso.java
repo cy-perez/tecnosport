@@ -13,6 +13,7 @@ final class AlmacenDeImagenesFalso implements AlmacenDeImagenes {
   private static final String BASE_PUBLICA = "https://storage.googleapis.com/bucket-falso/";
 
   private final Map<String, Long> objetos = new HashMap<>();
+  private final Map<String, byte[]> contenidos = new HashMap<>();
   final List<String> prefijosEliminados = new ArrayList<>();
   final List<String> objetosEliminados = new ArrayList<>();
   boolean fallarAlEliminar;
@@ -64,6 +65,12 @@ final class AlmacenDeImagenesFalso implements AlmacenDeImagenes {
   @Override
   public void subir(String objectKey, String contentType, byte[] bytes) {
     objetos.put(objectKey, (long) bytes.length);
+    contenidos.put(objectKey, bytes);
+  }
+
+  @Override
+  public java.util.Optional<byte[]> leer(String objectKey) {
+    return java.util.Optional.ofNullable(contenidos.get(objectKey));
   }
 
   @Override

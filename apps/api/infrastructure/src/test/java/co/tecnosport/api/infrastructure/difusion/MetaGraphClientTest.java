@@ -351,6 +351,43 @@ class MetaGraphClientTest {
   // --- qué admite cada red ---
 
   /**
+   * Instagram pide una sola proporción para todo el carrusel: la de su primera foto.
+   *
+   * <p>No es solo que rechace lo que se sale de 4:5 a 1,91:1 — en un carrusel <b>recorta las demás
+   * a la proporción de la primera</b>. Mandarlas distintas significa que Instagram corta por su
+   * cuenta justo lo que el ajustador tiene cuidado de no cortar.
+   */
+  @Test
+  void instagramPideLaProporcionDeSuPrimeraFoto() throws IOException {
+    levantar(intercambio -> responder(intercambio, 200, "{\"id\":\"1\"}"));
+    List<ImagenAPublicar> imagenes =
+        List.of(
+            new ImagenAPublicar("https://b/uno.jpg", 1183, 1280),
+            new ImagenAPublicar("https://b/dos.jpg", 600, 1200));
+
+    assertEquals(
+        1183d / 1280, cliente().proporcionDelCarrusel(RedSocial.INSTAGRAM, imagenes).getAsDouble());
+  }
+
+  /** Si la primera también se sale del rango, la proporción se lleva al borde admitido. */
+  @Test
+  void unaPrimeraFueraDeRangoSeLlevaAlBorde() throws IOException {
+    levantar(intercambio -> responder(intercambio, 200, "{\"id\":\"1\"}"));
+    List<ImagenAPublicar> muyAlta = List.of(new ImagenAPublicar("https://b/alta.jpg", 600, 1200));
+
+    assertEquals(
+        0.8, cliente().proporcionDelCarrusel(RedSocial.INSTAGRAM, muyAlta).getAsDouble(), 0.0001);
+  }
+
+  /** Facebook no pide ninguna: acepta cualquier mezcla y encajar sería gastar objetos de más. */
+  @Test
+  void facebookNoPideNingunaProporcion() throws IOException {
+    levantar(intercambio -> responder(intercambio, 200, "{\"id\":\"1\"}"));
+
+    assertTrue(cliente().proporcionDelCarrusel(RedSocial.FACEBOOK, DOS).isEmpty());
+  }
+
+  /**
    * Instagram rechaza lo que se sale de 4:5 a 1,91:1, y en un carrusel eso tumba el post entero por
    * una sola foto. Se descartan antes de crear nada, y el caso de uso guarda en la constancia las
    * que quedaron.
