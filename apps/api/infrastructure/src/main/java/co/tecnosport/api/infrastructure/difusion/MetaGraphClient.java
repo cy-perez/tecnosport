@@ -82,6 +82,9 @@ public final class MetaGraphClient implements PublicadorEnRedSocial {
   private final int sondeosDelContenedor;
   private final Duration esperaEntreSondeos;
 
+  /** El token de la página, resuelto la primera vez que hace falta. Ver {@code tokenDeLaPagina}. */
+  private volatile String tokenDePagina;
+
   public MetaGraphClient(
       URI urlBase,
       String pageId,
@@ -183,7 +186,8 @@ public final class MetaGraphClient implements PublicadorEnRedSocial {
   private ResultadoPublicacion publicarUnaEnFacebook(String urlImagen, String pieDeFoto)
       throws IOException, InterruptedException {
     HttpResponse<String> respuesta =
-        postear("/" + pageId + "/photos", formulario("url", urlImagen, "caption", pieDeFoto));
+        postearComoLaPagina(
+            "/" + pageId + "/photos", formulario("url", urlImagen, "caption", pieDeFoto));
 
     if (noEsExitosa(respuesta)) {
       return ResultadoPublicacion.fallida(motivoDe(respuesta));
@@ -214,7 +218,8 @@ public final class MetaGraphClient implements PublicadorEnRedSocial {
     List<String> idsDeFoto = new ArrayList<>();
     for (ImagenAPublicar imagen : imagenes) {
       HttpResponse<String> subida =
-          postear("/" + pageId + "/photos", formulario("url", imagen.url(), "published", "false"));
+          postearComoLaPagina(
+              "/" + pageId + "/photos", formulario("url", imagen.url(), "published", "false"));
       if (noEsExitosa(subida)) {
         return ResultadoPublicacion.fallida(motivoDe(subida));
       }
@@ -234,7 +239,7 @@ public final class MetaGraphClient implements PublicadorEnRedSocial {
     }
 
     HttpResponse<String> publicacion =
-        postear("/" + pageId + "/feed", formulario(campos.toArray(String[]::new)));
+        postearComoLaPagina("/" + pageId + "/feed", formulario(campos.toArray(String[]::new)));
     if (noEsExitosa(publicacion)) {
       return ResultadoPublicacion.fallida(motivoDe(publicacion));
     }
@@ -388,11 +393,71 @@ public final class MetaGraphClient implements PublicadorEnRedSocial {
    * en cualquier traza que alguien pegue en un ticket.
    */
   private HttpRequest.Builder peticion(String ruta) {
+    return peticion(ruta, token);
+  }
+
+  private HttpRequest.Builder peticion(String ruta, String tokenDeLaPeticion) {
     return HttpRequest.newBuilder()
         .uri(urlBase.resolve(ruta))
         .timeout(timeoutHttp)
-        .header("Authorization", "Bearer " + token)
+        .header("Authorization", "Bearer " + tokenDeLaPeticion)
         .header("Accept", "application/json");
+  }
+
+  /**
+   * El token <b>de la página</b>, que no es el que trae la configuración.
+   *
+   * <p>Lo que hay configurado es el token de un usuario del sistema. Con él se puede leer la página
+   * y publicar en Instagram, pero <b>no escribir en el muro como la página</b>: Meta contesta
+   * {@code (#200) Unpublished posts must be posted to a page as the page itself}. Medido contra la
+   * cuenta real el 7 de octubre de 2026, al publicar el primer carrusel de verdad — la comprobación
+   * del 29 de septiembre solo había creado un contenedor de Instagram, así que este camino nunca se
+   * había ejercido.
+   *
+   * <p>Se pide a la Graph API en vez de configurarse aparte, que era la otra vía: un token de
+   * página más en Secret Manager son dos secretos que caducan por separado y que alguien tiene que
+   * acordarse de rotar juntos. Este sale del que ya hay, y si el de la página cambia porque
+   * cambiaron los permisos, se recoge solo en el siguiente arranque.
+   *
+   * <p>Se guarda en memoria tras la primera vez: es el mismo para toda la vida del proceso y
+   * pedirlo en cada foto de un carrusel serían cinco viajes de más. {@code volatile} y sin
+   * sincronizar porque dos hilos que lo pidan a la vez obtienen el mismo valor — lo peor que pasa
+   * es una petición repetida.
+   */
+  private String tokenDeLaPagina() throws IOException, InterruptedException {
+    String enCache = tokenDePagina;
+    if (enCache != null) {
+      return enCache;
+    }
+    HttpResponse<String> respuesta =
+        httpClient.send(
+            peticion("/" + pageId + "?fields=access_token").GET().build(),
+            HttpResponse.BodyHandlers.ofString());
+    if (noEsExitosa(respuesta)) {
+      // Se sigue con el del usuario del sistema en vez de cortar aquí: así el motivo que acaba en
+      // la ficha del panel es el que dé Meta al publicar, que dice qué falta, y no un error
+      // nuestro sobre un token que quien lo lee no sabe que existe.
+      log.warn("No se pudo obtener el token de la página: {}", motivoDe(respuesta));
+      return token;
+    }
+    String deLaPagina = json.readTree(respuesta.body()).path("access_token").asString();
+    if (deLaPagina == null || deLaPagina.isBlank()) {
+      log.warn("La Graph API devolvió la página sin token de acceso.");
+      return token;
+    }
+    tokenDePagina = deLaPagina;
+    return deLaPagina;
+  }
+
+  /** Igual que {@link #postear}, pero como la página y no como el usuario del sistema. */
+  private HttpResponse<String> postearComoLaPagina(String ruta, String cuerpo)
+      throws IOException, InterruptedException {
+    return httpClient.send(
+        peticion(ruta, tokenDeLaPagina())
+            .header("Content-Type", "application/x-www-form-urlencoded")
+            .POST(HttpRequest.BodyPublishers.ofString(cuerpo, StandardCharsets.UTF_8))
+            .build(),
+        HttpResponse.BodyHandlers.ofString());
   }
 
   private static boolean noEsExitosa(HttpResponse<String> respuesta) {

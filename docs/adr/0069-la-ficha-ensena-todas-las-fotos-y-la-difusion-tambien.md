@@ -92,6 +92,41 @@ la vista previa si la hay y, si no, la propia imagen cuando su formato lo
 permite (JPEG o PNG). AVIF y WebP siguen necesitándola, que es el caso para el
 que se inventó (`ADR-0056`).
 
+### Escribir en el muro de Facebook va con el token de la página
+
+Lo destapó la validación real del 7 de octubre de 2026, publicando el primer
+carrusel de verdad: Meta contestó `(#200) Unpublished posts must be posted to a
+page as the page itself`.
+
+Lo que hay configurado es el token de un **usuario del sistema**. Con él se lee
+la página y se publica en Instagram —que es lo único que la comprobación del 29
+de septiembre había ejercido, creando un contenedor— pero no se escribe en el
+muro como la página. O sea que **el camino de Facebook nunca había salido de
+verdad**, ni el de una foto ni el del carrusel.
+
+El token de página se le pide a la Graph API con el que ya hay
+(`GET /{page-id}?fields=access_token`) y se guarda en memoria. Configurarlo
+aparte era la otra vía: dos secretos que caducan por separado y que alguien
+tiene que acordarse de rotar juntos.
+
+## Lo que la validación real midió
+
+Contra la cuenta del negocio, el 7 de octubre de 2026:
+
+- **Instagram publica el carrusel.** Cinco fotos del pantalón Americanino,
+  publicación `18123936253914127`. De las nueve que tiene, cuatro se quedaron
+  fuera por proporción y el post salió igual — que es justo lo que
+  `admitidasPor` existe para conseguir.
+- **El pie se propone**, que antes era imposible para todo producto de
+  proveedor.
+- **La guarda de proporciones responde 409 con el motivo** en un producto cuyas
+  fotos son todas 1086×1448 (0,75): «no admite fotos más altas que 4:5».
+- **Facebook falla**, y de ahí salió lo del token de página.
+
+Y en la vitrina desplegada: la ficha sirve las nueve fotos, el filtro con
+`?linea=CALZADO` ofrece solo las tres hojas de calzado, y `V86` dejó el
+pantalón con «Azul oscuro 1» y «Azul oscuro 2».
+
 ## Consecuencias
 
 - **`fotosGeneralesEnCadaColor` ya no cambia nada en la vitrina.** La casilla
