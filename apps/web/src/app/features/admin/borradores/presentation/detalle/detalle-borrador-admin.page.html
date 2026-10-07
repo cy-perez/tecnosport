@@ -219,10 +219,51 @@
                 [textos]="textosColores()"
                 (seleccionCambio)="elegirColores(foto.mensajeId, $event)"
               />
+              <ts-select
+                [idCampo]="'prenda-foto-' + i"
+                [label]="'admin.borradores.aprobar.prendaDeFoto' | transloco: { numero: i + 1 }"
+                [opciones]="opcionesPrenda()[foto.mensajeId] ?? []"
+                [placeholder]="'admin.borradores.aprobar.sinPrenda' | transloco"
+                [valor]="prendaDe(foto.mensajeId)"
+                (cambio)="moverAPrenda(foto.mensajeId, $event)"
+              />
             }
           </li>
         }
       </ul>
+      @if (editable() && opcionesTono().length > 0) {
+        <section class="mb-24 flex flex-col gap-8" aria-labelledby="titulo-variantes-que-se-crean">
+          <h3 id="titulo-variantes-que-se-crean" class="m-0 font-display text-base">
+            {{ 'admin.borradores.aprobar.variantesTitulo' | transloco }}
+          </h3>
+          <p class="m-0 text-sm text-ts-texto-suave">
+            {{ 'admin.borradores.aprobar.prendasAyuda' | transloco }}
+          </p>
+          @if (variantesQueSeCrean().length === 0) {
+            <p class="m-0">{{ 'admin.borradores.aprobar.sinVariantesDeColor' | transloco }}</p>
+          } @else {
+            <ul class="m-0 flex list-none flex-col gap-4 p-0">
+              @for (variante of variantesQueSeCrean(); track variante.prenda) {
+                <li>
+                  {{
+                    (variante.fotos.length === 1
+                      ? 'admin.borradores.aprobar.varianteConUnaFoto'
+                      : 'admin.borradores.aprobar.varianteConFotos'
+                    ) | transloco: { valor: variante.valor, fotos: variante.numeros }
+                  }}
+                </li>
+              }
+            </ul>
+          }
+          @if (fotosElegidas().length > 1) {
+            <div>
+              <ts-boton variante="secundario" (click)="unaSolaPrenda()">
+                {{ 'admin.borradores.aprobar.unaSolaPrenda' | transloco }}
+              </ts-boton>
+            </div>
+          }
+        </section>
+      }
     }
 
     @if (editable()) {

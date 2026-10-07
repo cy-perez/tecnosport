@@ -1,7 +1,7 @@
 import { ActivatedRoute, convertToParamMap, provideRouter, Router } from '@angular/router';
 import { TranslocoTestingModule } from '@jsverse/transloco';
 import { QueryClient, provideTanStackQuery } from '@tanstack/angular-query-experimental';
-import { fireEvent, render, screen } from '@testing-library/angular';
+import { fireEvent, render, screen, within } from '@testing-library/angular';
 import { of } from 'rxjs';
 import en from '../../../../../../assets/i18n/en.json';
 import es from '../../../../../../assets/i18n/es.json';
@@ -146,6 +146,29 @@ async function llenarAprobacion() {
   fireEvent.input(screen.getByLabelText(a.altEn), { target: { value: 'Medium tote bag' } });
 }
 
+/** Abre el selector de color de la foto y marca uno, dentro de su propia lista. */
+async function marcarColor(numero: number, color: string) {
+  const boton = await screen.findByRole('button', {
+    name: new RegExp(`Color de la foto ${numero}\\b`),
+  });
+  fireEvent.click(boton);
+  const lista = document.getElementById(boton.getAttribute('aria-controls') ?? '') as HTMLElement;
+  // Uno marcado se lee con su orden en la combinación: «Negro (1)».
+  fireEvent.click(within(lista).getByLabelText(new RegExp(`^${color}( [(][0-9][)])?$`)));
+  fireEvent.click(boton);
+}
+
+function elegirPrenda(numero: number, valor: string) {
+  fireEvent.change(screen.getByLabelText(`Prenda de la foto ${numero}`), {
+    target: { value: valor },
+  });
+}
+
+async function aprobarCon75000() {
+  fireEvent.input(screen.getByLabelText(a.precioVenta), { target: { value: '75.000' } });
+  fireEvent.click(screen.getByRole('button', { name: a.accion }));
+}
+
 describe('DetalleBorradorAdminPage', () => {
   it('muestra lo que escribió el proveedor, las fotos y las alertas', async () => {
     await renderPagina(borradorDePrueba({ alertas: ['CONFIANZA_BAJA'] }));
@@ -236,8 +259,8 @@ describe('DetalleBorradorAdminPage', () => {
       existenciaInicial: 2,
       altEs: 'Bolso tote en cuero sintético',
       fotos: [
-        { mensajeId: 'f-1', tono: 'Negro / Vino', colorHex: '#111111' },
-        { mensajeId: 'f-2', tono: null, colorHex: null },
+        { mensajeId: 'f-1', tono: 'Negro / Vino', colorHex: '#111111', prenda: 1 },
+        { mensajeId: 'f-2', tono: null, colorHex: null, prenda: null },
       ],
     });
   });
@@ -323,6 +346,88 @@ describe('DetalleBorradorAdminPage', () => {
 
     expect(await screen.findByText(a.fotoConTonoFuera.replace('{{numero}}', '10'))).toBeTruthy();
     expect(repositorio.aprobaciones).toEqual([]);
+  });
+
+  /**
+   * Las prendas (ADR-0070). Dos ángulos de la misma prenda son una variante con dos fotos; el color
+   * no lo deduce, porque dos prendas del mismo color también existen.
+   */
+  describe('prendas', () => {
+    it('juntar dos fotos en una prenda manda una sola variante con las dos', async () => {
+      const { repositorio } = await renderPagina();
+      await llenarAprobacion();
+
+      await marcarColor(1, 'Negro');
+      elegirPrenda(2, '1');
+
+      expect(await screen.findByText('Negro: las fotos 1, 2')).toBeTruthy();
+      await aprobarCon75000();
+      await screen.findByRole('link', { name: a.verProducto });
+      expect(repositorio.aprobaciones[0].aprobacion.fotos).toEqual([
+        { mensajeId: 'f-1', tono: 'Negro', colorHex: '#111111', prenda: 1 },
+        { mensajeId: 'f-2', tono: 'Negro', colorHex: '#111111', prenda: 1 },
+      ]);
+    });
+
+    /** El jean del 7 de octubre de 2026: el mismo color en dos fotos sin juntar son dos prendas. */
+    it('el mismo color en dos fotos sueltas son dos prendas numeradas', async () => {
+      const { repositorio } = await renderPagina();
+      await llenarAprobacion();
+
+      await marcarColor(1, 'Negro');
+      await marcarColor(2, 'Negro');
+
+      expect(await screen.findByText('Negro 1: la foto 1')).toBeTruthy();
+      expect(screen.getByText('Negro 2: la foto 2')).toBeTruthy();
+      await aprobarCon75000();
+      await screen.findByRole('link', { name: a.verProducto });
+      expect(repositorio.aprobaciones[0].aprobacion.fotos.map((f) => f.prenda)).toEqual([1, 2]);
+    });
+
+    it('el atajo junta todas las fotos en una prenda con el color que ya había', async () => {
+      const { repositorio } = await renderPagina();
+      await llenarAprobacion();
+
+      await marcarColor(2, 'Vino');
+      fireEvent.click(screen.getByRole('button', { name: a.unaSolaPrenda }));
+
+      expect(await screen.findByText('Vino: las fotos 1, 2')).toBeTruthy();
+      await aprobarCon75000();
+      await screen.findByRole('link', { name: a.verProducto });
+      expect(repositorio.aprobaciones[0].aprobacion.fotos).toEqual([
+        { mensajeId: 'f-1', tono: 'Vino', colorHex: '#722F37', prenda: 1 },
+        { mensajeId: 'f-2', tono: 'Vino', colorHex: '#722F37', prenda: 1 },
+      ]);
+    });
+
+    it('cambiar el color de una foto de la prenda lo cambia en todas', async () => {
+      await renderPagina();
+      await llenarAprobacion();
+
+      await marcarColor(1, 'Negro');
+      elegirPrenda(2, '1');
+      await marcarColor(2, 'Negro');
+      await marcarColor(2, 'Café');
+
+      expect(await screen.findByText('Café: las fotos 1, 2')).toBeTruthy();
+    });
+
+    it('una prenda sin color no se aprueba, y dice cuál', async () => {
+      const { repositorio } = await renderPagina();
+      await llenarAprobacion();
+
+      elegirPrenda(1, 'nueva');
+      await aprobarCon75000();
+
+      expect(await screen.findByText(a.prendaSinColor.replace('{{prenda}}', '1'))).toBeTruthy();
+      expect(repositorio.aprobaciones).toEqual([]);
+    });
+
+    it('sin colores dice que sale una sola variante sin color', async () => {
+      await renderPagina();
+
+      expect(await screen.findByText(a.sinVariantesDeColor)).toBeTruthy();
+    });
   });
 
   /** Una blusa siempre cae en Dama › Blusas: la categoría llega puesta y se puede cambiar. */
@@ -513,7 +618,7 @@ describe('DetalleBorradorAdminPage', () => {
 
     expect(await screen.findByRole('link', { name: a.verProducto })).toBeTruthy();
     expect(repositorio.aprobaciones[0].aprobacion.fotos).toEqual([
-      { mensajeId: 'subida-1', tono: null, colorHex: null },
+      { mensajeId: 'subida-1', tono: null, colorHex: null, prenda: null },
     ]);
   });
 

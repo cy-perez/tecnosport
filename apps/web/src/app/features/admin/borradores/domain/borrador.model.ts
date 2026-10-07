@@ -187,6 +187,11 @@ export interface FotoAprobada {
   /** El tono que muestra la foto, si el producto viene en varios. Sin tono = vale para todos. */
   readonly tono: string | null;
   readonly colorHex: string | null;
+  /**
+   * La prenda de la foto (`prendas.ts`): las del mismo número son una sola variante. Nula en la
+   * que vale para todas.
+   */
+  readonly prenda: number | null;
 }
 
 export interface AprobarBorrador {

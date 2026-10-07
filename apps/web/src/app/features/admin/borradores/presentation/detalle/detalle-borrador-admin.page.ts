@@ -64,6 +64,18 @@ import {
   TipoDeTalla,
   TipoProductoProveedor,
 } from '../../domain/borrador.model';
+import {
+  AsignacionDePrendas,
+  elegirTonoDeFoto,
+  moverFotoAPrenda,
+  olvidarFotoDePrendas,
+  prendasEnUso,
+  problemaDePrendas,
+  SIN_PRENDAS,
+  tonoDeFoto,
+  unaSolaPrenda,
+  variantesQueSeCrean,
+} from '../../domain/prendas';
 import { clasesDeEstadoBorrador } from '../estado-borrador';
 
 const TIPOS_DE_TALLA: readonly TipoDeTalla[] = ['DESCONOCIDA', 'UNICA', 'LISTA'];
@@ -251,8 +263,11 @@ export class DetalleBorradorAdminPage {
 
   protected readonly motivoRechazo = new FormControl('', { nonNullable: true });
 
-  /** El tono elegido por foto, por `mensajeId`. Vacío = la foto vale para todos los tonos. */
-  protected readonly tonoPorFoto = signal<Readonly<Record<string, string>>>({});
+  /**
+   * Qué fotos son la misma prenda y de qué color es cada una (`prendas.ts`). Una foto sin prenda
+   * vale para todos los tonos; marcarle un color la vuelve una prenda ella sola.
+   */
+  protected readonly prendas = signal<AsignacionDePrendas>(SIN_PRENDAS);
 
   /**
    * Las fotos que alguien desmarcó, por `mensajeId`. Se guardan las excluidas y no las elegidas
@@ -432,7 +447,7 @@ export class DetalleBorradorAdminPage {
       this.cargado = borrador.id;
       // Todo lo que es de la decisión anterior se va con ella: navegar de un borrador a otro por
       // la URL reutiliza el componente.
-      this.tonoPorFoto.set({});
+      this.prendas.set(SIN_PRENDAS);
       this.principalMarcada.set(null);
       this.fotosExcluidas.set(new Set());
       this.fotosIncluidasAMano.set(new Set());
@@ -576,22 +591,79 @@ export class DetalleBorradorAdminPage {
     this.formDatos.controls.tallas.setValue(ordenadas.join(', '));
   }
 
-  protected tonoDe(mensajeId: string): string {
-    return this.tonoPorFoto()[mensajeId] ?? '';
-  }
-
-  protected elegirTono(mensajeId: string, tono: string): void {
-    this.tonoPorFoto.update((actual) => ({ ...actual, [mensajeId]: tono }));
-  }
-
-  /** Los colores marcados de una foto, en orden: «Negro / Rojo» → ['Negro', 'Rojo']. */
+  /** Los colores marcados de una foto —los de su prenda—, en orden: «Negro / Rojo» → ['Negro', 'Rojo']. */
   protected coloresDe(mensajeId: string): string[] {
-    return separarColores(this.tonoDe(mensajeId));
+    return separarColores(tonoDeFoto(this.prendas(), mensajeId));
   }
 
+  /** En una foto de una prenda el color lo cambia la prenda entera: son la misma. */
   protected elegirColores(mensajeId: string, colores: readonly string[]): void {
-    this.elegirTono(mensajeId, unirColores(colores));
+    this.prendas.update((actual) => elegirTonoDeFoto(actual, mensajeId, unirColores(colores)));
   }
+
+  /** El valor del selector de prenda de una foto: su número, o vacío si vale para todas. */
+  protected prendaDe(mensajeId: string): string {
+    const prenda = this.prendas().prendaPorFoto[mensajeId];
+    return prenda === undefined ? '' : String(prenda);
+  }
+
+  /**
+   * Las prendas a las que se puede pasar cada foto, por `mensajeId`: las que ya existen, con su
+   * color si lo tienen, y una nueva. La nueva no se ofrece a la foto que ya está sola en la suya,
+   * porque sacarla de ahí para meterla en otra vacía no cambia nada.
+   */
+  protected readonly opcionesPrenda = computed<Readonly<Record<string, OpcionSelect[]>>>(() => {
+    const traducir = this.traducir();
+    const asignacion = this.prendas();
+    const existentes = prendasEnUso(asignacion).map((numero) => ({
+      valor: String(numero),
+      etiqueta: asignacion.tonoPorPrenda[numero]
+        ? traducir('admin.borradores.aprobar.prendaConColor', {
+            numero,
+            color: asignacion.tonoPorPrenda[numero],
+          })
+        : traducir('admin.borradores.aprobar.prenda', { numero }),
+    }));
+    const nueva = { valor: 'nueva', etiqueta: traducir('admin.borradores.aprobar.prendaNueva') };
+    const porFoto: Record<string, OpcionSelect[]> = {};
+    for (const foto of this.fotos()) {
+      const suya = asignacion.prendaPorFoto[foto.mensajeId];
+      const sola =
+        suya !== undefined &&
+        Object.values(asignacion.prendaPorFoto).filter((p) => p === suya).length === 1;
+      porFoto[foto.mensajeId] = sola ? existentes : [...existentes, nueva];
+    }
+    return porFoto;
+  });
+
+  protected moverAPrenda(mensajeId: string, valor: string): void {
+    const destino = valor === '' ? null : valor === 'nueva' ? 'nueva' : Number(valor);
+    this.prendas.update((actual) => moverFotoAPrenda(actual, mensajeId, destino));
+  }
+
+  /** El atajo del producto que viene en una sola prenda fotografiada desde varios ángulos. */
+  protected unaSolaPrenda(): void {
+    const elegidas = this.fotosElegidas().map((foto) => foto.mensajeId);
+    this.prendas.update((actual) => unaSolaPrenda(actual, elegidas));
+  }
+
+  /**
+   * Las variantes de color que va a crear la aprobación, con el número de cada foto como se ve en
+   * la lista: lo que permite revisar la agrupación antes de que exista.
+   */
+  protected readonly variantesQueSeCrean = computed(() => {
+    const numeroDe = new Map(this.fotos().map((foto, i) => [foto.mensajeId, i + 1]));
+    return variantesQueSeCrean(
+      this.prendas(),
+      this.fotosElegidas().map((foto) => foto.mensajeId),
+    ).map((variante) => ({
+      ...variante,
+      numeros: variante.fotos
+        .map((id) => numeroDe.get(id) ?? 0)
+        .sort((a, b) => a - b)
+        .join(', '),
+    }));
+  });
 
   protected fotoIncluida(mensajeId: string): boolean {
     return this.fotosQueEntran().has(mensajeId);
@@ -670,9 +742,7 @@ export class DetalleBorradorAdminPage {
         onSuccess: () => {
           this.confirmandoEliminarFoto.set(null);
           this.olvidarFoto(mensajeId);
-          this.tonoPorFoto.update((actual) =>
-            Object.fromEntries(Object.entries(actual).filter(([id]) => id !== mensajeId)),
-          );
+          this.prendas.update((actual) => olvidarFotoDePrendas(actual, mensajeId));
           if (this.principalMarcada() === mensajeId) {
             this.principalMarcada.set(null);
           }
@@ -839,16 +909,26 @@ export class DetalleBorradorAdminPage {
       this.errorDecision.set(this.transloco.translate('admin.borradores.aprobar.marcaLaPrincipal'));
       return;
     }
-    // Un color en una foto que no entra es una variante que no se crea: quien lo marcó cuenta con
-    // ese tono en la ficha. Se para y se dice cuál, en vez de aprobar sin ella.
-    const tonos = this.tonoPorFoto();
-    const conTonoFuera = this.fotos().findIndex(
-      (foto) => !this.fotoIncluida(foto.mensajeId) && tonos[foto.mensajeId],
+    // Una prenda con color cuyas fotos no entran es una variante que no se crea: quien la armó
+    // cuenta con ese tono en la ficha. Y una prenda sin color no tiene variante que crear. En los
+    // dos casos se para y se dice cuál, en vez de aprobar sin ella.
+    const prendas = this.prendas();
+    const problema = problemaDePrendas(
+      prendas,
+      elegidas.map((foto) => foto.mensajeId),
     );
-    if (conTonoFuera >= 0) {
+    if (problema?.tipo === 'FUERA') {
       this.errorDecision.set(
         this.transloco.translate('admin.borradores.aprobar.fotoConTonoFuera', {
-          numero: conTonoFuera + 1,
+          numero: this.fotos().findIndex((foto) => foto.mensajeId === problema.mensajeId) + 1,
+        }),
+      );
+      return;
+    }
+    if (problema?.tipo === 'SIN_COLOR') {
+      this.errorDecision.set(
+        this.transloco.translate('admin.borradores.aprobar.prendaSinColor', {
+          prenda: problema.prenda,
         }),
       );
       return;
@@ -877,11 +957,15 @@ export class DetalleBorradorAdminPage {
           descripcion: datos.descripcion.trim(),
           altEs: valores.altEs.trim(),
           altEn: valores.altEn.trim(),
-          fotos: elegidas.map((foto) => ({
-            mensajeId: foto.mensajeId,
-            tono: tonos[foto.mensajeId] || null,
-            colorHex: this.hexDe(tonos[foto.mensajeId]),
-          })),
+          fotos: elegidas.map((foto) => {
+            const tono = tonoDeFoto(prendas, foto.mensajeId) || null;
+            return {
+              mensajeId: foto.mensajeId,
+              tono,
+              colorHex: this.hexDe(tono),
+              prenda: prendas.prendaPorFoto[foto.mensajeId] ?? null,
+            };
+          }),
         },
       },
       {
@@ -898,7 +982,7 @@ export class DetalleBorradorAdminPage {
   }
 
   /** El HEX del primer color de la combinación. El servidor arma la muestra entera con la paleta. */
-  private hexDe(tono: string | undefined): string | null {
+  private hexDe(tono: string | null): string | null {
     const primero = tono ? separarColores(tono)[0] : undefined;
     if (!primero) {
       return null;
