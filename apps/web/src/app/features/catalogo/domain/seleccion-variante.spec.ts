@@ -10,6 +10,7 @@ import {
   opcionDisponible,
   tallaUnicaDe,
   seleccionDeVariante,
+  soloTallasElegibles,
   variantePorDefecto,
   varianteSeleccionada,
   etiquetaDeOpcion,
@@ -185,6 +186,76 @@ describe('opcionDisponible', () => {
 
   it('una talla que no existe en el producto, tampoco', () => {
     expect(opcionDisponible(producto, { Color: 'Azul marino' }, 'Talla', 'XS')).toBe(false);
+  });
+});
+
+describe('soloTallasElegibles', () => {
+  const tallas = (eje: { opciones: readonly { valor: string }[] }) =>
+    eje.opciones.map((opcion) => opcion.valor);
+  const prenda = (color: string, hex: string, talla: string, disponible = true) =>
+    variante(`${color}-${talla}`, disponible, [
+      { nombre: 'Color', valor: color, colorHex: hex, unidad: null },
+      { nombre: 'Talla', valor: talla, colorHex: null, unidad: null },
+    ]);
+
+  /** El caso de la falda short: tallas 8 a 16 en una categoría de escala XS–XXXL. */
+  it('quita las tallas de la escala que el producto no trae', () => {
+    const falda = productoDePrueba(
+      ['8', '10', '12'].map((talla) => prenda('Azul cielo', '#87CEEB', talla)),
+    );
+    const ejes = ejesDeAtributos(falda, ['XS', 'S', 'M', 'L']);
+
+    const [color, talla] = soloTallasElegibles(falda, ejes, { Color: 'Azul cielo', Talla: '8' });
+
+    expect(tallas(talla)).toEqual(['8', '10', '12']);
+    expect(color).toBe(ejes[0]);
+  });
+
+  it('quita las agotadas y las que el color elegido no trae, y conserva el orden de la escala', () => {
+    const producto = productoDePrueba([
+      prenda('Negro', '#111111', 'L'),
+      prenda('Negro', '#111111', 'M', false),
+      prenda('Negro', '#111111', 'S'),
+      prenda('Vino', '#722F37', 'XL'),
+    ]);
+    const ejes = ejesDeAtributos(producto, ['S', 'M', 'L', 'XL']);
+
+    const [, talla] = soloTallasElegibles(producto, ejes, { Color: 'Negro', Talla: 'S' });
+
+    expect(tallas(talla)).toEqual(['S', 'L']);
+  });
+
+  it('nunca esconde la talla elegida', () => {
+    const producto = productoDePrueba([
+      prenda('Negro', '#111111', 'S'),
+      prenda('Negro', '#111111', 'M', false),
+    ]);
+    const ejes = ejesDeAtributos(producto, ['S', 'M']);
+
+    const [, talla] = soloTallasElegibles(producto, ejes, { Color: 'Negro', Talla: 'M' });
+
+    expect(tallas(talla)).toEqual(['S', 'M']);
+  });
+
+  it('con todo agotado dice las tallas que el producto trae, no las de la escala', () => {
+    const producto = productoDePrueba([
+      prenda('Negro', '#111111', 'S', false),
+      prenda('Negro', '#111111', 'M', false),
+    ]);
+    const ejes = ejesDeAtributos(producto, ['XS', 'S', 'M', 'L']);
+
+    const [, talla] = soloTallasElegibles(producto, ejes, { Color: 'Negro' });
+
+    expect(tallas(talla)).toEqual(['S', 'M']);
+  });
+
+  it('no toca los ejes que no son de talla', () => {
+    const producto = productoDePrueba([azulM, negroL]);
+    const ejes = ejesDeAtributos(producto);
+
+    const [color] = soloTallasElegibles(producto, ejes, { Color: 'Azul marino', Talla: 'M' });
+
+    expect(color.opciones.map((opcion) => opcion.valor)).toEqual(['Azul marino', 'Negro']);
   });
 });
 
@@ -401,9 +472,7 @@ describe('nombreDeColor', () => {
 
   /** El número no se puede perder: es lo único que distingue una variante de la otra. */
   it('sin el número las dos variantes se leerían igual', () => {
-    expect(nombreDeColor('Negro 1', paleta, 'en')).not.toBe(
-      nombreDeColor('Negro 2', paleta, 'en'),
-    );
+    expect(nombreDeColor('Negro 1', paleta, 'en')).not.toBe(nombreDeColor('Negro 2', paleta, 'en'));
   });
 });
 
