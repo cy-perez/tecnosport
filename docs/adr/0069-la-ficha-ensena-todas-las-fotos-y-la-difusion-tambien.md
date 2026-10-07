@@ -109,6 +109,33 @@ El token de página se le pide a la Graph API con el que ya hay
 aparte era la otra vía: dos secretos que caducan por separado y que alguien
 tiene que acordarse de rotar juntos.
 
+### Las fotos se encajan, no se recortan
+
+La validación dejó cuatro de las nueve fotos del pantalón fuera del carrusel de
+Instagram por proporción, y un producto entero sin poder publicarse allí. Desde
+el 7 de octubre de 2026 se encajan antes de mandarlas (`AjustadorDeImagenes`).
+
+**Se añade lienzo, no se corta, y eso es lo contrario de lo que se pidió.** La
+petición fue «que se recorten»; recortando una foto de 0,62 para llevarla a 0,8
+se va el 22 % del alto, que en un pantalón de cuerpo entero es el ruedo o la
+pretina. Ensanchando no se pierde nada de lo que se vende: aparecen dos franjas
+a los lados. Si algún día se prefiere cortar, el cambio está en un método.
+
+**Las franjas llevan el color del borde de la propia foto, no blanco.** Las del
+catálogo procesado sí tienen fondo blanco, pero las del proveedor llegan como
+las mandó — la muestra que destapó esto tenía #DDDCD8 arriba y blanco abajo.
+
+**Y se igualan todas a una sola proporción, la de la primera.** No es solo que
+Instagram rechace lo que se sale del rango: en un carrusel **recorta las demás a
+la proporción del primer elemento**, así que mandarlas distintas significa que
+Instagram corta por su cuenta justo lo que aquí se cuida de no cortar.
+
+Con `ImageIO` y `Graphics2D`, los dos del JDK: sin dependencia nueva. El
+resultado se guarda bajo `productos/{id}/redes/` con la key derivada del
+contenido y de la proporción, así que difundir dos veces no sube nada nuevo. El
+informe de huérfanos las declara **no juzgables**, como las de `rotacion/`: las
+reclama `publicacion_en_red.urls_imagenes` y ninguna API las expone.
+
 ## Lo que la validación real midió
 
 Contra la cuenta del negocio, el 7 de octubre de 2026:
