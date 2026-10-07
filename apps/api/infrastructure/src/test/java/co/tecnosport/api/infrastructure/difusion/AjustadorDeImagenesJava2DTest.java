@@ -45,6 +45,22 @@ class AjustadorDeImagenesJava2DTest {
     assertEquals(0.8, encajada.proporcion(), 0.001);
   }
 
+  /**
+   * <b>El encaje tiene que caer DENTRO del rango, no en su borde por redondeo.</b> La proporción
+   * que se pide suele ser justo el límite que la red admite, y con {@code Math.round} una foto de
+   * 1086x1448 salía a 1158 de ancho — 0,79972, un pelo por debajo de 4:5. Medido contra la cuenta
+   * real: el ajustador subió las dos fotos al bucket y el filtro las descartó igual.
+   */
+  @Test
+  void elEncajeNoSeQuedaUnPeloPorDebajoDelMinimo() {
+    ImagenAPublicar original = sembrar("real.jpg", 1086, 1448, Color.WHITE);
+
+    ImagenAPublicar encajada = ajustador.ajustarA(PRODUCTO, original, 0.8).orElseThrow();
+
+    assertEquals(1159, encajada.ancho(), "1158 daría 0,79972 y la red la rechaza");
+    assertTrue(encajada.proporcion() >= 0.8, "proporción: " + encajada.proporcion());
+  }
+
   /** Y al revés: una apaisada de más crece de alto, tampoco se recorta. */
   @Test
   void unaFotoDemasiadoAnchaCreceDeAlto() {

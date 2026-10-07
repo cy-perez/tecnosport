@@ -46,6 +46,53 @@ previsualización: abrir en otra foto se lee como haber entrado a otro producto.
 Por lo mismo, la ficha **abre en la principal aunque haya un color elegido**, y
 solo sigue al color cuando alguien lo pulsa (`colorElegidoAMano`).
 
+### La principal entra en la ficha solo si retrata un color
+
+Pedido el 7 de octubre de 2026, y es el que cierra la forma de la galería:
+
+- La principal marcada **«Vale para todos los tonos»** encabeza la tarjeta del
+  catálogo y **no entra en la galería de la ficha**. Es la portada: no retrata
+  ninguna de las prendas que se pueden elegir, así que en la tira sería una
+  miniatura que no corresponde a ningún color y que al pulsarla no cambia nada
+  de lo que se compra.
+- La principal **con un color asignado** sale en las dos: encabeza la tarjeta y
+  abre la ficha. Entonces sí es la foto de ese tono, y además es la que quien
+  viene de la rejilla acaba de ver.
+
+**Para distinguir los dos casos la principal tiene que poder llevar su
+variante, y no podía.** Tres cosas lo impedían, y las tres eran deliberadas:
+
+1. `AprobarBorrador` forzaba `variante_id` nulo en la principal, y con eso
+   **descartaba el tono que quien revisa le había marcado a esa foto**.
+2. El índice único de `V1` era `(producto_id) where tipo = 'PRINCIPAL' and
+   variante_id is null`. Eso no solo impedía el color: dejaba un hueco por el
+   que un producto podía tener varias filas `PRINCIPAL` con tal de que todas
+   menos una llevaran variante.
+3. El repositorio la buscaba con `findByProductoIdAndTipoAndVarianteIdIsNull`,
+   así que una principal con color **no se habría encontrado** y el producto
+   habría cargado sin imagen principal.
+
+`V87` ensancha el índice a `where tipo = 'PRINCIPAL'`: además de permitir el
+color, **la invariante queda más fuerte que antes**. Es seguro porque hoy no
+existe ninguna fila `PRINCIPAL` con variante — la única vía que las crea es la
+aprobación, que hasta ahora ponía nulo siempre.
+
+**Y el intercambio con la galería conserva el color.** `comoPrincipal()` y
+`comoGaleria()` lo soltaban. Soltarlo ahora tiene un efecto que nadie pediría:
+ascender la foto de un tono la volvería genérica y **desaparecería de la
+galería** — quien la asciende vería una foto menos en la ficha y nada lo
+explicaría.
+
+**El respaldo que hace falta:** si la galería está vacía, la principal entra
+aunque sea genérica. Una ficha sin una sola foto no le sirve a nadie, y es el
+mismo respaldo que ya tenía el recorte por color. La regla distingue la portada
+de las fotos de cada prenda cuando hay prendas que distinguir.
+
+**Consecuencia para lo que ya está cargado:** la principal del pantalón
+Americanino vale para todos los tonos, así que su ficha pasa de nueve fotos a
+ocho. Para que salgan las nueve hay que asignarle un color a esa principal
+desde el panel.
+
 ### Un tono que se repite se numera
 
 Dos fotos marcadas con el mismo color son dos variantes, y el valor del
@@ -136,6 +183,15 @@ contenido y de la proporción, así que difundir dos veces no sube nada nuevo. E
 informe de huérfanos las declara **no juzgables**, como las de `rotacion/`: las
 reclama `publicacion_en_red.urls_imagenes` y ninguna API las expone.
 
+**El encaje tiene que caer dentro del rango, no en su borde.** La proporción que
+se pide suele ser justo el límite que la red admite, así que redondear al entero
+más cercano deja la foto fuera por milésimas: `Math.round(1448 × 0,8)` da 1158
+de ancho, o sea 0,79972, y la red la rechaza **después** de haberla encajado.
+Lo midió la validación del 7 de octubre de 2026 contra la cuenta real — el
+ajustador subió las dos fotos al bucket y el filtro las descartó igual, sin un
+solo registro que lo explicara. Va `Math.ceil`: un píxel de más no lo ve nadie;
+uno de menos cuesta el post.
+
 ## Lo que la validación real midió
 
 Contra la cuenta del negocio, el 7 de octubre de 2026:
@@ -158,9 +214,11 @@ pantalón con «Azul oscuro 1» y «Azul oscuro 2».
 
 - **`fotosGeneralesEnCadaColor` ya no cambia nada en la vitrina.** La casilla
   sigue en el panel —en la revisión del borrador y en editar producto— y el
-  dato sigue viajando en la API, pero ninguna pantalla lo lee. Es un control
-  que no hace nada y hay que decidir si se retira; no se retiró aquí porque
-  quitar una casilla del panel es una decisión de producto, no de este cambio.
+  dato sigue viajando en la API, pero ninguna pantalla lo lee. Lo que decidía
+  —si la principal acompañaba a cada color— lo decide ahora **el color de la propia
+  principal**, que es un dato de la foto y no una casilla aparte. Queda pendiente
+  retirarla; no se retiró aquí porque quitar un control del panel es una decisión
+  de producto, no de este cambio.
 - Los productos **ya aprobados** conservan su forma: `AprobarBorrador` numera
   de ahora en adelante. El pantalón que destapó esto se arregla con `V86`, una
   migración puntual y guardada.

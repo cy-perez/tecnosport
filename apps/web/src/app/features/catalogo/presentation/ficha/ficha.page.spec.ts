@@ -167,11 +167,10 @@ function foto(url: string, varianteId: string | null) {
 }
 
 /**
- * El caso del pantalón Americanino en pequeño: una principal que no cuelga de ningún color, una
- * foto por color, y la casilla de "las generales acompañan a cada color" apagada —que es como
- * sale de la revisión cuando cada color trae la suya—.
+ * Una principal que «vale para todos los tonos» —sin color— y una foto por color. Es como sale de
+ * la revisión cuando la portada es una toma de catálogo y cada color trae la suya.
  */
-function productoConFotoPorColor(): Producto {
+function productoConPrincipalGenerica(): Producto {
   return {
     ...productoConVariantes(),
     imagenPrincipal: foto('https://imagenes.test/principal.jpg', null),
@@ -180,6 +179,14 @@ function productoConFotoPorColor(): Producto {
       foto('https://imagenes.test/negro.jpg', 'variante-ng'),
     ],
     fotosGeneralesEnCadaColor: false,
+  };
+}
+
+/** Y la misma, con la principal retratando el azul: entonces sí encabeza la ficha. */
+function productoConPrincipalDeUnColor(): Producto {
+  return {
+    ...productoConPrincipalGenerica(),
+    imagenPrincipal: foto('https://imagenes.test/principal.jpg', 'variante-az'),
   };
 }
 
@@ -335,20 +342,57 @@ describe('FichaPage', () => {
    * principal. Un pantalón con nueve fotos y una por color abría con <b>una</b> foto y sin tira
    * de miniaturas: nada decía que hubiera más, y a la principal no se llegaba con ningún color.
    */
-  it('la galería enseña todas las fotos, con la principal primero', async () => {
+  it('la galería enseña las fotos de color, sin la principal genérica', async () => {
     const repositorio: RepositorioProductos = {
       buscar: () =>
         Promise.resolve<ResultadoPaginado<Producto>>({ items: [], cursorSiguiente: null }),
-      buscarPorSlug: () => Promise.resolve(productoConFotoPorColor()),
+      buscarPorSlug: () => Promise.resolve(productoConPrincipalGenerica()),
     };
 
     await renderFicha(repositorio);
     await screen.findByRole('heading', { name: 'Camiseta running Dry-Fit' });
 
-    // Las tres: la principal y la foto de cada color. Antes salía una sola y sin tira.
-    expect(screen.getAllByRole('button', { name: /imagenes\.test/ })).toHaveLength(3);
-    // Y abre en la principal, que es la que la tarjeta del catálogo usa de previsualización:
-    // abrir en otra se lee como haber entrado a otro producto.
+    // Las dos de color. Antes salía una sola y sin tira; la principal genérica se queda fuera:
+    // es la portada del catálogo y no retrata ninguna de las prendas que se pueden elegir.
+    expect(screen.getAllByRole('button', { name: /imagenes[.]test/ })).toHaveLength(2);
+    expect(screen.queryByRole('img', { name: 'https://imagenes.test/principal.jpg' })).toBeNull();
+  });
+
+  /**
+   * Y si no hay galería, la principal entra aunque sea genérica: una ficha sin una sola foto no le
+   * sirve a nadie. Es el mismo respaldo que tenía el recorte por color, y el caso existe —un
+   * producto cargado a mano con su portada y nada más.
+   */
+  it('sin galería, la principal genérica entra igual', async () => {
+    const repositorio: RepositorioProductos = {
+      buscar: () =>
+        Promise.resolve<ResultadoPaginado<Producto>>({ items: [], cursorSiguiente: null }),
+      buscarPorSlug: () =>
+        Promise.resolve({ ...productoConPrincipalGenerica(), galeria: [] }),
+    };
+
+    await renderFicha(repositorio);
+    await screen.findByRole('heading', { name: 'Camiseta running Dry-Fit' });
+
+    const grande = screen.getByRole('img', { name: 'https://imagenes.test/principal.jpg' });
+    expect(grande.getAttribute('src')).toContain('principal.jpg');
+  });
+
+  /**
+   * Y con color sí encabeza: entonces es la foto de ese tono, y además es la que quien viene de
+   * la rejilla acaba de ver en la tarjeta.
+   */
+  it('una principal con color encabeza la ficha', async () => {
+    const repositorio: RepositorioProductos = {
+      buscar: () =>
+        Promise.resolve<ResultadoPaginado<Producto>>({ items: [], cursorSiguiente: null }),
+      buscarPorSlug: () => Promise.resolve(productoConPrincipalDeUnColor()),
+    };
+
+    await renderFicha(repositorio);
+    await screen.findByRole('heading', { name: 'Camiseta running Dry-Fit' });
+
+    expect(screen.getAllByRole('button', { name: /imagenes[.]test/ })).toHaveLength(3);
     const grande = screen.getByRole('img', { name: 'https://imagenes.test/principal.jpg' });
     expect(grande.getAttribute('src')).toContain('principal.jpg');
   });
@@ -358,7 +402,7 @@ describe('FichaPage', () => {
     const repositorio: RepositorioProductos = {
       buscar: () =>
         Promise.resolve<ResultadoPaginado<Producto>>({ items: [], cursorSiguiente: null }),
-      buscarPorSlug: () => Promise.resolve(productoConFotoPorColor()),
+      buscarPorSlug: () => Promise.resolve(productoConPrincipalGenerica()),
     };
 
     await renderFicha(repositorio);
@@ -370,8 +414,8 @@ describe('FichaPage', () => {
       const grande = document.querySelector('.aspect-square img') as HTMLImageElement;
       expect(grande.getAttribute('src')).toContain('negro.jpg');
     });
-    // Las tres siguen en la tira: lo que cambió es cuál está activa, no cuántas hay.
-    expect(screen.getAllByRole('button', { name: /imagenes\.test/ })).toHaveLength(3);
+    // Las dos siguen en la tira: lo que cambió es cuál está activa, no cuántas hay.
+    expect(screen.getAllByRole('button', { name: /imagenes\.test/ })).toHaveLength(2);
   });
 
   it('un producto sin set de rotación no muestra el visor 360', async () => {

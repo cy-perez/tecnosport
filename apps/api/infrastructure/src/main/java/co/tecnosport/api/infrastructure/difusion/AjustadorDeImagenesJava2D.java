@@ -99,14 +99,26 @@ public final class AjustadorDeImagenesJava2D implements AjustadorDeImagenes {
    * La foto centrada en un lienzo de la proporcion pedida. Solo crece: si hace falta mas ancho se
    * ensancha, y si hace falta mas alto se estira hacia arriba y abajo. Nunca se reduce, que seria
    * cortar.
+   *
+   * <p><b>Se redondea hacia arriba, y con `Math.round` esto no servia para nada.</b> La proporcion
+   * que se pide suele ser justo el borde de lo que la red admite — Instagram no acepta nada mas
+   * alto que 4:5, asi que a una foto demasiado alta se le pide exactamente 0,8. Con
+   * `Math.round(1448 * 0.8)` salen 1158 pixeles de ancho, o sea 0,79972: un pelo <b>por debajo</b>
+   * del minimo, y la red la rechaza despues de haberla encajado. Medido contra la cuenta real el 7
+   * de octubre de 2026 — el ajustador subio las dos fotos al bucket y el filtro las descarto igual,
+   * sin un solo registro que lo explicara.
+   *
+   * <p>Con `ceil` el resultado cae siempre <b>dentro</b>: ensanchando, el ancho queda en {@code >=
+   * alto * proporcion}, y estirando el alto queda en {@code >= ancho / proporcion}, que es lo mismo
+   * por el otro lado. Un pixel de mas no lo ve nadie; uno de menos cuesta el post.
    */
   private static BufferedImage conLienzoDe(BufferedImage fuente, double proporcion) {
     int ancho = fuente.getWidth();
     int alto = fuente.getHeight();
     if ((double) ancho / alto < proporcion) {
-      ancho = (int) Math.round(alto * proporcion);
+      ancho = (int) Math.ceil(alto * proporcion);
     } else {
-      alto = (int) Math.round(fuente.getWidth() / proporcion);
+      alto = (int) Math.ceil(fuente.getWidth() / proporcion);
     }
 
     BufferedImage lienzo = new BufferedImage(ancho, alto, BufferedImage.TYPE_INT_RGB);

@@ -422,7 +422,7 @@ class ProductoTest {
   }
 
   @Test
-  void laFotoDeUnTonoPasaAPrincipalSinVariante() {
+  void laFotoDeUnTonoConservaSuVarianteAlPasarAPrincipal() {
     Producto producto = productoDePrueba();
     Variante negra = variante("SKU-NEGRO");
     producto.agregarVariante(negra);
@@ -432,7 +432,10 @@ class ProductoTest {
 
     producto.usarImagenDeGaleriaComoPrincipal(elegida.id());
 
-    assertTrue(producto.imagenPrincipal().orElseThrow().varianteId().isEmpty());
+    // Afirmaba lo contrario hasta el 7 de octubre de 2026. Desde que el color de la principal
+    // decide si la ficha la enseña, soltarlo al ascenderla la volvería genérica y la foto
+    // desaparecería de la galería: quien la asciende vería una foto menos y nada lo explicaría.
+    assertEquals(Optional.of(negra.id()), producto.imagenPrincipal().orElseThrow().varianteId());
   }
 
   @Test

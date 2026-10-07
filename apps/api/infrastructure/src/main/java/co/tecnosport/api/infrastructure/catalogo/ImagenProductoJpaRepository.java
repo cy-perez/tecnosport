@@ -11,9 +11,16 @@ public interface ImagenProductoJpaRepository extends JpaRepository<ImagenProduct
 
   List<ImagenProductoJpaEntity> findByProductoIdIn(Collection<UUID> productoIds);
 
-  /** A lo sumo una fila por producto (constraint única en BD, {@code variante_id is null}). */
-  Optional<ImagenProductoJpaEntity> findByProductoIdAndTipoAndVarianteIdIsNull(
-      UUID productoId, String tipo);
+  /**
+   * A lo sumo una fila por producto, lo garantice o no esta consulta: el índice único de {@code
+   * imagen_producto} es {@code (producto_id) where tipo = 'PRINCIPAL'} desde {@code V87}.
+   *
+   * <p><b>Sin {@code AndVarianteIdIsNull}, y ese filtro no sobraba: estorbaba.</b> La principal
+   * puede llevar color desde el 7 de octubre de 2026 —es lo que distingue la que vale para todos
+   * los tonos de la que retrata uno—, y buscarla exigiendo variante nula devolvía vacío justamente
+   * para las que sí lo llevan: el producto cargaba sin imagen principal.
+   */
+  Optional<ImagenProductoJpaEntity> findByProductoIdAndTipo(UUID productoId, String tipo);
 
   /**
    * Por id <b>y</b> producto: un id de imagen suelto no puede borrar la foto de otro producto, ni
