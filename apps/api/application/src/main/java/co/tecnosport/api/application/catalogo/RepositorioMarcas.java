@@ -23,8 +23,11 @@ public interface RepositorioMarcas {
    * vacía es una promesa rota en dos clics, y la vitrina filtra por {@code p.estado = 'PUBLICADO'}
    * sin mirar variantes. Si algún día la rejilla exige además variante activa, este criterio se
    * mueve con ella o vuelve el mismo defecto.
+   *
+   * <p>Cada una con las líneas en las que tiene algo así, para que el filtro pueda acotarse cuando
+   * la URL trae una ({@link MarcaConLineas}).
    */
-  List<Marca> listarConProductosPublicados();
+  List<MarcaConLineas> listarConProductosPublicados();
 
   Optional<Marca> buscarPorId(UUID id);
 

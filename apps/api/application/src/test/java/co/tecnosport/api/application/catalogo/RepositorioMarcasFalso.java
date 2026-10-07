@@ -1,9 +1,12 @@
 package co.tecnosport.api.application.catalogo;
 
+import co.tecnosport.api.domain.catalogo.LineaCatalogo;
 import co.tecnosport.api.domain.catalogo.Marca;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -22,15 +25,25 @@ import java.util.UUID;
 final class RepositorioMarcasFalso implements RepositorioMarcas {
 
   private final List<Marca> todas = new ArrayList<>();
-  private List<Marca> conProductos = List.of();
+  private List<MarcaConLineas> conProductos = List.of();
 
   void conMarcas(Marca... marcas) {
     this.todas.clear();
     this.todas.addAll(List.of(marcas));
   }
 
+  /** Con todas en la misma línea: a la mayoría de las pruebas la línea les da igual. */
   void conMarcasConProductosPublicados(Marca... marcas) {
-    this.conProductos = List.of(marcas);
+    this.conProductos =
+        Arrays.stream(marcas)
+            .map(marca -> new MarcaConLineas(marca, Set.of(LineaCatalogo.TECNOLOGIA)))
+            .toList();
+  }
+
+  void conMarcaEnLineas(Marca marca, LineaCatalogo... lineas) {
+    List<MarcaConLineas> nuevas = new ArrayList<>(conProductos);
+    nuevas.add(new MarcaConLineas(marca, Set.of(lineas)));
+    this.conProductos = List.copyOf(nuevas);
   }
 
   List<Marca> guardadas() {
@@ -43,7 +56,7 @@ final class RepositorioMarcasFalso implements RepositorioMarcas {
   }
 
   @Override
-  public List<Marca> listarConProductosPublicados() {
+  public List<MarcaConLineas> listarConProductosPublicados() {
     return conProductos;
   }
 

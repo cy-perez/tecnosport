@@ -6,10 +6,14 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import co.tecnosport.api.application.catalogo.ListarMarcas;
+import co.tecnosport.api.application.catalogo.MarcaConLineas;
 import co.tecnosport.api.application.catalogo.RepositorioMarcas;
+import co.tecnosport.api.domain.catalogo.LineaCatalogo;
 import co.tecnosport.api.domain.catalogo.Marca;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,6 +40,23 @@ class MarcaControladorTest {
         .andExpect(jsonPath("$.items", hasSize(1)))
         .andExpect(jsonPath("$.items[0].nombre").value("TecnoSport"))
         .andExpect(jsonPath("$.cursorSiguiente").isEmpty());
+  }
+
+  /**
+   * Las líneas de cada marca viajan en la respuesta, y en el orden del enum y no en el que las
+   * devolvió la base. Es lo que el filtro necesita para acotar el desplegable de marcas cuando la
+   * URL trae {@code ?linea=}: sin esto ofrecía todas y elegir una llevaba a una rejilla vacía.
+   */
+  @Test
+  void cadaMarcaDiceEnQueLineasTieneAlgoPublicado() throws Exception {
+    repositorio.conMarcaEnLineas(Marca.crear("Nike"), LineaCatalogo.ROPA, LineaCatalogo.CALZADO);
+
+    mockMvc
+        .perform(get("/api/v1/marcas"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.items[0].lineas", hasSize(2)))
+        .andExpect(jsonPath("$.items[0].lineas[0]").value("ROPA"))
+        .andExpect(jsonPath("$.items[0].lineas[1]").value("CALZADO"));
   }
 
   /**
@@ -75,14 +96,23 @@ class MarcaControladorTest {
   static class RepositorioMarcasDobleDePrueba implements RepositorioMarcas {
 
     private List<Marca> todas = List.of();
-    private List<Marca> conProductos = List.of();
+    private List<MarcaConLineas> conProductos = List.of();
 
     void conMarcas(Marca... marcas) {
       this.todas = List.of(marcas);
     }
 
     void conMarcasConProductosPublicados(Marca... marcas) {
-      this.conProductos = List.of(marcas);
+      this.conProductos =
+          List.of(marcas).stream()
+              .map(marca -> new MarcaConLineas(marca, Set.of(LineaCatalogo.TECNOLOGIA)))
+              .toList();
+    }
+
+    void conMarcaEnLineas(Marca marca, LineaCatalogo... lineas) {
+      List<MarcaConLineas> nuevas = new ArrayList<>(conProductos);
+      nuevas.add(new MarcaConLineas(marca, Set.of(lineas)));
+      this.conProductos = List.copyOf(nuevas);
     }
 
     @Override
@@ -91,7 +121,7 @@ class MarcaControladorTest {
     }
 
     @Override
-    public List<Marca> listarConProductosPublicados() {
+    public List<MarcaConLineas> listarConProductosPublicados() {
       return conProductos;
     }
 

@@ -8,11 +8,14 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import co.tecnosport.api.application.catalogo.CrearMarca;
 import co.tecnosport.api.application.catalogo.ListarMarcasAdmin;
+import co.tecnosport.api.application.catalogo.MarcaConLineas;
 import co.tecnosport.api.application.catalogo.RepositorioMarcas;
+import co.tecnosport.api.domain.catalogo.LineaCatalogo;
 import co.tecnosport.api.domain.catalogo.Marca;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -165,8 +168,10 @@ class AdminMarcaControladorTest {
     }
 
     @Override
-    public List<Marca> listarConProductosPublicados() {
-      return conProductos;
+    public List<MarcaConLineas> listarConProductosPublicados() {
+      return conProductos.stream()
+          .map(marca -> new MarcaConLineas(marca, Set.of(LineaCatalogo.TECNOLOGIA)))
+          .toList();
     }
 
     @Override

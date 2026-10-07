@@ -2,8 +2,10 @@ package co.tecnosport.api.application.catalogo;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import co.tecnosport.api.domain.catalogo.LineaCatalogo;
 import co.tecnosport.api.domain.catalogo.Marca;
 import java.util.List;
+import java.util.Set;
 import org.junit.jupiter.api.Test;
 
 class ListarMarcasTest {
@@ -16,9 +18,25 @@ class ListarMarcasTest {
     repositorio.conMarcas(conProductos, vacia);
     repositorio.conMarcasConProductosPublicados(conProductos);
 
-    List<Marca> resultado = new ListarMarcas(repositorio).ejecutar();
+    List<MarcaConLineas> resultado = new ListarMarcas(repositorio).ejecutar();
 
-    assertEquals(List.of(conProductos), resultado);
+    assertEquals(List.of(conProductos), resultado.stream().map(MarcaConLineas::marca).toList());
+  }
+
+  /**
+   * Las líneas viajan con la marca: es lo que el filtro necesita para acotarse cuando la URL trae
+   * {@code ?linea=}, y sin ellas el desplegable de marcas ofrecía las cuatro líneas enteras.
+   */
+  @Test
+  void cadaMarcaDiceEnQueLineasTieneAlgo() {
+    RepositorioMarcasFalso repositorio = new RepositorioMarcasFalso();
+    Marca nike = Marca.crear("Nike");
+    repositorio.conMarcas(nike);
+    repositorio.conMarcaEnLineas(nike, LineaCatalogo.CALZADO, LineaCatalogo.ROPA);
+
+    assertEquals(
+        List.of(new MarcaConLineas(nike, Set.of(LineaCatalogo.CALZADO, LineaCatalogo.ROPA))),
+        new ListarMarcas(repositorio).ejecutar());
   }
 
   /**

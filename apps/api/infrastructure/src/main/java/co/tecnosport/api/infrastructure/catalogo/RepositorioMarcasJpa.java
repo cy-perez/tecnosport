@@ -1,15 +1,21 @@
 package co.tecnosport.api.infrastructure.catalogo;
 
+import co.tecnosport.api.application.catalogo.MarcaConLineas;
 import co.tecnosport.api.application.catalogo.MarcaYaExisteException;
 import co.tecnosport.api.application.catalogo.RepositorioMarcas;
 import co.tecnosport.api.domain.catalogo.EstadoDisponibilidad;
 import co.tecnosport.api.domain.catalogo.EstadoProducto;
+import co.tecnosport.api.domain.catalogo.LineaCatalogo;
 import co.tecnosport.api.domain.catalogo.Marca;
 import co.tecnosport.api.infrastructure.catalogo.entidad.MarcaJpaEntity;
 import java.time.Instant;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Sort;
@@ -29,13 +35,36 @@ public class RepositorioMarcasJpa implements RepositorioMarcas {
     return marcaJpaRepository.findAll(Sort.by("nombre")).stream().map(this::aMarca).toList();
   }
 
+  /**
+   * Las filas vienen una por marca y línea, ordenadas por nombre, y se pliegan aquí a una entrada
+   * por marca.
+   *
+   * <p>{@code LinkedHashMap} y {@code LinkedHashSet} y no los normales: el orden por nombre lo pone
+   * la consulta y plegarlo con un {@code HashMap} lo tiraría — el desplegable de marcas del filtro
+   * quedaría en el orden arbitrario del hash. Y una marca sin ninguna línea no puede salir de aquí:
+   * si tiene fila, tiene producto publicado, y ese producto cuelga de una categoría que tiene
+   * línea.
+   */
   @Override
-  public List<Marca> listarConProductosPublicados() {
-    return marcaJpaRepository
-        .findConProductosEnEstado(
-            EstadoProducto.PUBLICADO.name(), EstadoDisponibilidad.DISPONIBLE.name())
-        .stream()
-        .map(this::aMarca)
+  public List<MarcaConLineas> listarConProductosPublicados() {
+    Map<UUID, String> nombrePorId = new LinkedHashMap<>();
+    Map<UUID, Set<LineaCatalogo>> lineasPorId = new LinkedHashMap<>();
+
+    for (MarcaJpaRepository.MarcaYLinea fila :
+        marcaJpaRepository.findLineasConProductosEnEstado(
+            EstadoProducto.PUBLICADO.name(), EstadoDisponibilidad.DISPONIBLE.name())) {
+      nombrePorId.putIfAbsent(fila.getMarcaId(), fila.getNombre());
+      lineasPorId
+          .computeIfAbsent(fila.getMarcaId(), id -> new LinkedHashSet<>())
+          .add(LineaCatalogo.valueOf(fila.getLinea()));
+    }
+
+    return nombrePorId.entrySet().stream()
+        .map(
+            entrada ->
+                new MarcaConLineas(
+                    new Marca(entrada.getKey(), entrada.getValue()),
+                    lineasPorId.get(entrada.getKey())))
         .toList();
   }
 

@@ -3,7 +3,9 @@ package co.tecnosport.api.infrastructure.catalogo;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import co.tecnosport.api.application.catalogo.MarcaConLineas;
 import co.tecnosport.api.application.catalogo.MarcaYaExisteException;
+import co.tecnosport.api.domain.catalogo.LineaCatalogo;
 import co.tecnosport.api.domain.catalogo.Marca;
 import co.tecnosport.api.infrastructure.catalogo.entidad.CategoriaJpaEntity;
 import co.tecnosport.api.infrastructure.catalogo.entidad.MarcaJpaEntity;
@@ -11,6 +13,7 @@ import co.tecnosport.api.infrastructure.catalogo.entidad.ProductoJpaEntity;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -97,7 +100,7 @@ class RepositorioMarcasJpaTest {
   @Test
   void lasMarcasRecienMigradasNoLleganALaVitrina() {
     assertThat(repositorio.listarConProductosPublicados())
-        .extracting(Marca::nombre)
+        .extracting(marca -> marca.marca().nombre())
         .doesNotContain("Xiaomi", "Samsung", "JBL");
   }
 
@@ -143,9 +146,11 @@ class RepositorioMarcasJpaTest {
     guardarProducto(conPublicado.getId(), categoria.getId(), "PUBLICADO", "pub-marca");
     guardarProducto(soloBorrador.getId(), categoria.getId(), "BORRADOR", "bor-marca");
 
-    List<Marca> resultado = repositorio.listarConProductosPublicados();
+    List<MarcaConLineas> resultado = repositorio.listarConProductosPublicados();
 
-    assertThat(resultado).extracting(Marca::nombre).containsExactly("Con publicado");
+    assertThat(resultado)
+        .extracting(marca -> marca.marca().nombre())
+        .containsExactly("Con publicado");
   }
 
   /**
@@ -178,12 +183,14 @@ class RepositorioMarcasJpaTest {
             "OCULTO_POR_VENCIMIENTO"));
 
     assertThat(repositorio.listarConProductosPublicados())
-        .extracting(Marca::nombre)
+        .extracting(marca -> marca.marca().nombre())
         .doesNotContain("Oculta");
   }
 
   /**
-   * Dos productos publicados de la misma marca no la duplican: es un {@code exists}, no un join.
+   * Dos productos publicados de la misma marca <b>en la misma línea</b> no la duplican: la consulta
+   * es un join y lo que la pliega es el {@code group by}. Esto es lo que protege de volver al
+   * defecto que tenía el join antes de agruparlo — una marca repetida una vez por producto.
    */
   @Test
   void listarConProductosPublicadosNoRepiteLaMarcaConVariosProductos() {
@@ -201,7 +208,63 @@ class RepositorioMarcasJpaTest {
     guardarProducto(marca.getId(), categoria.getId(), "PUBLICADO", "rep-uno");
     guardarProducto(marca.getId(), categoria.getId(), "PUBLICADO", "rep-dos");
 
-    assertThat(repositorio.listarConProductosPublicados()).hasSize(1);
+    assertThat(repositorio.listarConProductosPublicados())
+        .filteredOn(m -> m.marca().nombre().equals("Repetida"))
+        .hasSize(1);
+  }
+
+  /**
+   * Y la marca que vende en dos líneas las dice las dos. Es el dato con el que el filtro de la
+   * vitrina acota el desplegable de marcas: sin él ofrecía todas con {@code ?linea=} puesto, y
+   * elegir una que en esa línea no tiene nada llevaba a una rejilla vacía.
+   *
+   * <p>La línea sale de la <b>categoría</b> del producto, no de la marca: la marca no tiene línea,
+   * y por eso esto no podía resolverse en el navegador con la respuesta que había.
+   */
+  @Test
+  void unaMarcaDiceLasLineasEnLasQueTieneAlgoPublicado() {
+    CategoriaJpaEntity deRopa =
+        categorias.save(
+            new CategoriaJpaEntity(
+                UUID.randomUUID(), "Camisas TC", "camisas-tc-marcas", "ROPA", null, AHORA));
+    CategoriaJpaEntity deCalzado =
+        categorias.save(
+            new CategoriaJpaEntity(
+                UUID.randomUUID(), "Tenis TC", "tenis-tc-marcas", "CALZADO", null, AHORA));
+    MarcaJpaEntity dosLineas =
+        marcas.save(new MarcaJpaEntity(UUID.randomUUID(), "Dos lineas", AHORA));
+
+    guardarProducto(dosLineas.getId(), deRopa.getId(), "PUBLICADO", "dos-lineas-ropa");
+    guardarProducto(dosLineas.getId(), deCalzado.getId(), "PUBLICADO", "dos-lineas-calzado");
+
+    assertThat(repositorio.listarConProductosPublicados())
+        .filteredOn(m -> m.marca().nombre().equals("Dos lineas"))
+        .singleElement()
+        .extracting(MarcaConLineas::lineas)
+        .isEqualTo(Set.of(LineaCatalogo.ROPA, LineaCatalogo.CALZADO));
+  }
+
+  /** Un borrador no asoma la línea: el mismo criterio que decide si la marca sale siquiera. */
+  @Test
+  void unaLineaSoloConBorradoresNoSeDice() {
+    CategoriaJpaEntity deBolsos =
+        categorias.save(
+            new CategoriaJpaEntity(
+                UUID.randomUUID(), "Morrales TC", "morrales-tc-marcas", "BOLSOS", null, AHORA));
+    CategoriaJpaEntity deRopa =
+        categorias.save(
+            new CategoriaJpaEntity(
+                UUID.randomUUID(), "Busos TC", "busos-tc-marcas", "ROPA", null, AHORA));
+    MarcaJpaEntity marca = marcas.save(new MarcaJpaEntity(UUID.randomUUID(), "Una linea", AHORA));
+
+    guardarProducto(marca.getId(), deRopa.getId(), "PUBLICADO", "una-linea-ropa");
+    guardarProducto(marca.getId(), deBolsos.getId(), "BORRADOR", "una-linea-bolsos");
+
+    assertThat(repositorio.listarConProductosPublicados())
+        .filteredOn(m -> m.marca().nombre().equals("Una linea"))
+        .singleElement()
+        .extracting(MarcaConLineas::lineas)
+        .isEqualTo(Set.of(LineaCatalogo.ROPA));
   }
 
   private void guardarProducto(UUID marcaId, UUID categoriaId, String estado, String slug) {

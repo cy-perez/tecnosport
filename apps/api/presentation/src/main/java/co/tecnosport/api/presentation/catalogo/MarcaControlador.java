@@ -1,7 +1,7 @@
 package co.tecnosport.api.presentation.catalogo;
 
 import co.tecnosport.api.application.catalogo.ListarMarcas;
-import co.tecnosport.api.presentation.catalogo.dto.MarcaRespuesta;
+import co.tecnosport.api.presentation.catalogo.dto.MarcaDeVitrinaRespuesta;
 import co.tecnosport.api.presentation.catalogo.dto.ResultadoPaginadoRespuesta;
 import java.util.Objects;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -20,8 +20,15 @@ public class MarcaControlador {
     this.mapeador = Objects.requireNonNull(mapeador);
   }
 
+  /**
+   * Cada marca dice en qué líneas tiene algo publicado, y el filtro las usa para acotarse.
+   *
+   * <p>Viajan en la respuesta en vez de aceptar un {@code ?linea=}: son pocas marcas y cuatro
+   * líneas, el navegador se trae la lista una vez por sesión, y así cambiar de línea no cuesta una
+   * petición ni obliga al SSR a adivinar qué línea se va a pedir para precargarla.
+   */
   @GetMapping
-  public ResultadoPaginadoRespuesta<MarcaRespuesta> listar() {
-    return mapeador.aRespuestaDeMarcas(listarMarcas.ejecutar());
+  public ResultadoPaginadoRespuesta<MarcaDeVitrinaRespuesta> listar() {
+    return mapeador.aRespuestaDeMarcasDeVitrina(listarMarcas.ejecutar());
   }
 }
