@@ -73,6 +73,7 @@ import co.tecnosport.api.application.proveedores.FotoNoEsDelBorradorException;
 import co.tecnosport.api.application.proveedores.ImagenDeProveedorIlegibleException;
 import co.tecnosport.api.application.proveedores.LoteEnCursoException;
 import co.tecnosport.api.application.proveedores.LoteNoEncontradoException;
+import co.tecnosport.api.application.proveedores.PrendaIncoherenteException;
 import co.tecnosport.api.application.proveedores.ProductoDeProveedorYaExisteException;
 import co.tecnosport.api.application.proveedores.ProveedorConIngestaEnCursoException;
 import co.tecnosport.api.application.proveedores.ProveedorConProductosException;
@@ -316,9 +317,13 @@ public class ManejadorDeErrores {
     return problema(HttpStatus.CONFLICT, "El borrador no se puede borrar", excepcion);
   }
 
-  // 422: lo que no cuadra está en el cuerpo, una foto que no es de este borrador o una que no
-  // se puede abrir.
-  @ExceptionHandler({FotoNoEsDelBorradorException.class, ImagenDeProveedorIlegibleException.class})
+  // 422: lo que no cuadra está en el cuerpo, una foto que no es de este borrador, una que no
+  // se puede abrir o una prenda que no se puede volver variante.
+  @ExceptionHandler({
+    FotoNoEsDelBorradorException.class,
+    ImagenDeProveedorIlegibleException.class,
+    PrendaIncoherenteException.class
+  })
   public ProblemDetail fotoDeBorradorInvalida(RuntimeException excepcion) {
     return problema(HttpStatus.UNPROCESSABLE_CONTENT, "Foto del borrador inválida", excepcion);
   }

@@ -384,6 +384,29 @@ class AdminBorradorControladorTest {
         .andExpect(status().isUnprocessableContent());
   }
 
+  /**
+   * La prenda llega al comando: una prenda cero se rechaza al armarlo, antes de tocar nada. Si el
+   * controlador dejara el campo atrás, la petición seguiría y moriría más adelante por otra razón.
+   */
+  @Test
+  void laPrendaDeCadaFotoLlegaAlComando() throws Exception {
+    mockMvc
+        .perform(
+            post("/api/v1/admin/borradores/{id}/aprobar", borrador.id())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    "{\"categoriaId\":\""
+                        + UUID.randomUUID()
+                        + "\",\"marcaId\":\""
+                        + UUID.randomUUID()
+                        + "\",\"precioVenta\":71600,\"existenciaInicial\":1,\"altEs\":\"Bolso\","
+                        + "\"altEn\":\"Bag\",\"fotos\":[{\"mensajeId\":\""
+                        + foto.id()
+                        + "\",\"tono\":\"Rojo\",\"prenda\":0}]}"))
+        .andExpect(status().isUnprocessableContent())
+        .andExpect(jsonPath("$.detail").value("Las prendas se numeran desde 1."));
+  }
+
   @TestConfiguration
   static class Configuracion {
 

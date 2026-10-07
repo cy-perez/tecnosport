@@ -2112,6 +2112,8 @@ export interface components {
             colorHex?: string;
             /** Format: uuid */
             mensajeId: string;
+            /** Format: int32 */
+            prenda?: number;
             tono?: string;
         };
         FotoRespuesta: {

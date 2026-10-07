@@ -159,7 +159,7 @@ public class AdminBorradorControlador {
                             .map(
                                 f ->
                                     new AprobarBorradorComando.FotoAprobada(
-                                        f.mensajeId(), f.tono(), f.colorHex()))
+                                        f.mensajeId(), f.tono(), f.colorHex(), f.prenda()))
                             .toList())));
     log.info(
         "Borrador {} aprobado: producto {} publicado con {} variante(s)",
