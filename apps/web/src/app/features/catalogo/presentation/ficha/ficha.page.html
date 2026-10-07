@@ -21,6 +21,7 @@
           <ts-visor-360 [imagenes]="fotogramas360()" />
           <ts-galeria
             [imagenes]="imagenesGaleria()"
+            [indiceInicial]="indiceEnLaGaleria()"
             [nombreProducto]="p.nombre"
             [prioritaria]="false"
           />
@@ -28,6 +29,7 @@
       } @else {
         <ts-galeria
           [imagenes]="imagenesGaleria()"
+          [indiceInicial]="indiceEnLaGaleria()"
           [nombreProducto]="p.nombre"
           [prioritaria]="true"
         />

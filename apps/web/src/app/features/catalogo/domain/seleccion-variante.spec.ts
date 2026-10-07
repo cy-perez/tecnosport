@@ -1,7 +1,7 @@
 import { muestraDe, Producto, Variante } from './producto.model';
 import {
   detalleDeVariante,
-  imagenesDelColor,
+  indiceDeLaPrimeraDelColor,
   nombreDeColor,
   seleccionAlElegir,
   tallaNormalizada,
@@ -296,7 +296,7 @@ describe('seleccionAlElegir', () => {
   });
 });
 
-describe('imagenesDelColor', () => {
+describe('indiceDeLaPrimeraDelColor', () => {
   const imagen = (url: string, varianteId: string | null) => ({
     url,
     variantes: [{ ancho: 800, url }],
@@ -317,26 +317,32 @@ describe('imagenesDelColor', () => {
   const principal = imagen('principal', null);
   const deVino = imagen('vino', vino.id);
 
-  it('el color con fotos propias las enseña primero, con las que valen para todos', () => {
-    expect(imagenesDelColor(producto, [principal, deVino], 'Vino')).toEqual([deVino, principal]);
+  it('elegir un color se para en su primera foto', () => {
+    expect(indiceDeLaPrimeraDelColor(producto, [principal, deVino], 'Vino')).toBe(1);
   });
 
-  /** Sin fotos propias, las de todos —la principal—, y no las de los otros colores. */
-  it('un color sin fotos propias no enseña las de los otros colores', () => {
-    expect(imagenesDelColor(producto, [principal, deVino], 'Negro')).toEqual([principal]);
+  /**
+   * Antes esto recortaba la lista y un color sin foto propia se quedaba con la principal sola.
+   * Ahora la lista no cambia: lo que cambia es dónde se para, y sin foto propia se para en la
+   * primera, que es la principal.
+   */
+  it('un color sin foto propia se queda en la primera', () => {
+    expect(indiceDeLaPrimeraDelColor(producto, [principal, deVino], 'Negro')).toBe(0);
   });
 
-  /** La casilla de la revisión: cada color trae sus fotos y la principal no se cuela en los demás. */
-  describe('sin las fotos generales en cada color', () => {
-    const soloPorColor = { ...producto, fotosGeneralesEnCadaColor: false };
+  it('sin color elegido, la primera', () => {
+    expect(indiceDeLaPrimeraDelColor(producto, [principal, deVino], null)).toBe(0);
+  });
 
-    it('el color con fotos propias enseña solo las suyas', () => {
-      expect(imagenesDelColor(soloPorColor, [principal, deVino], 'Vino')).toEqual([deVino]);
-    });
-
-    it('un color sin fotos propias sigue enseñando las generales: la galería no queda vacía', () => {
-      expect(imagenesDelColor(soloPorColor, [principal, deVino], 'Negro')).toEqual([principal]);
-    });
+  /**
+   * Y lo que de verdad arregla el defecto: las fotos de los demás colores <b>siguen en la lista</b>.
+   * La función ya no decide cuántas se ven, solo en cuál se empieza — un producto de nueve fotos
+   * enseñaba una.
+   */
+  it('no esconde ninguna foto: solo dice por dónde empezar', () => {
+    const todas = [principal, deVino];
+    expect(indiceDeLaPrimeraDelColor(producto, todas, 'Negro')).toBeLessThan(todas.length);
+    expect(todas).toHaveLength(2);
   });
 });
 
@@ -381,6 +387,24 @@ describe('nombreDeColor', () => {
     expect(nombreDeColor('Negro / Rojo', conRojo, 'en')).toBe('Black / Red');
     expect(nombreDeColor('Negro / Fucsia', conRojo, 'en')).toBe('Black / Fucsia');
     expect(nombreDeColor('Negro / Rojo', conRojo, 'es')).toBe('Negro / Rojo');
+  });
+
+  /**
+   * Cuando el proveedor manda dos prendas distintas con el mismo color, la aprobación las numera
+   * —«Negro 1», «Negro 2»— para que el pedido pueda distinguirlas. La paleta guarda el nombre
+   * sin número, así que hay que apartarlo antes de buscar: sin esto, en inglés se leía
+   * «Negro 2» en medio de «Black» y «Red».
+   */
+  it('un color numerado se traduce y conserva su número', () => {
+    expect(nombreDeColor('Negro 2', paleta, 'en')).toBe('Black 2');
+    expect(nombreDeColor('Negro 2', paleta, 'es')).toBe('Negro 2');
+  });
+
+  /** El número no se puede perder: es lo único que distingue una variante de la otra. */
+  it('sin el número las dos variantes se leerían igual', () => {
+    expect(nombreDeColor('Negro 1', paleta, 'en')).not.toBe(
+      nombreDeColor('Negro 2', paleta, 'en'),
+    );
   });
 });
 
