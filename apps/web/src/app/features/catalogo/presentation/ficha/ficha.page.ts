@@ -115,22 +115,34 @@ export class FichaPage {
   });
 
   /**
-   * Todas las fotos del producto, con la principal delante.
+   * Las fotos de la ficha: la galería entera, y la principal delante <b>solo si retrata un
+   * color</b>.
    *
    * <b>No se recortan por color, y antes sí.</b> La galería enseñaba solo las del tono elegido,
    * así que un pantalón con nueve fotos y una por color salía con <b>una</b> foto y sin tira de
-   * miniaturas: nada decía que hubiera más, y a la principal no se llegaba nunca. La principal
-   * va primera porque es la que la tarjeta del catálogo usa de previsualización, y abrir la
-   * ficha en otra foto se lee como haber entrado a otro producto.
+   * miniaturas: nada decía que hubiera más.
+   *
+   * <b>Y la principal que «vale para todos los tonos» no entra.</b> Esa foto es la portada del
+   * catálogo —la que la tarjeta de la rejilla usa de previsualización— y no retrata ninguna de
+   * las prendas que se pueden elegir: metida en la tira es una miniatura que no corresponde a
+   * ningún color y que al pulsarla no cambia nada de lo que se compra. Cuando sí lleva color es
+   * otra cosa: entonces es la foto de ese tono y además abre la ficha, porque es la que quien
+   * viene de la rejilla acaba de ver.
    */
   protected readonly imagenesGaleria = computed<Imagen[]>(() => {
     const producto = this.producto();
     if (!producto) {
       return [];
     }
-    return [producto.imagenPrincipal, ...producto.galeria].filter(
-      (imagen): imagen is Imagen => imagen !== null,
-    );
+    const principal = producto.imagenPrincipal;
+    if (principal === null) {
+      return [...producto.galeria];
+    }
+    // Y si la galería está vacía, la principal entra aunque sea genérica: una ficha sin una sola
+    // foto no le sirve a nadie, y es el mismo respaldo que ya tenía el recorte por color. La
+    // regla distingue la portada de las fotos de cada prenda cuando hay prendas que distinguir.
+    const encabeza = principal.varianteId !== null || producto.galeria.length === 0;
+    return [...(encabeza ? [principal] : []), ...producto.galeria];
   });
 
   /**
