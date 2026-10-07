@@ -49,7 +49,6 @@ public final class Producto {
   private Instant vistoPorUltimaVez;
   private EstadoDisponibilidad estadoDisponibilidad;
   private String tallaSirveHasta;
-  private boolean fotosGeneralesEnCadaColor = true;
 
   /** Un producto creado a mano o reconstruido sin datos de proveedor: origen {@code MANUAL}. */
   public Producto(
@@ -675,19 +674,6 @@ public final class Producto {
           "«Sirve hasta» es una talla, no una frase: hasta 20 caracteres.");
     }
     this.tallaSirveHasta = limpia;
-  }
-
-  /**
-   * Si las fotos sin tono —las que valen para todos los colores, casi siempre la principal—
-   * acompañan a las de cada color en la ficha. Por omisión sí. Se apaga en el producto que solo
-   * trae fotos por color: ahí la general es la foto de uno de ellos y se colaría en los demás.
-   */
-  public boolean fotosGeneralesEnCadaColor() {
-    return fotosGeneralesEnCadaColor;
-  }
-
-  public void definirFotosGeneralesEnCadaColor(boolean acompanan) {
-    this.fotosGeneralesEnCadaColor = acompanan;
   }
 
   @Override

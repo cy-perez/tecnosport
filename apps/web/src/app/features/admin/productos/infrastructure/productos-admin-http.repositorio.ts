@@ -85,9 +85,6 @@ export class ProductosAdminHttpRepositorio implements RepositorioProductosAdmin 
         ...(comando.tallaSirveHasta !== undefined
           ? { tallaSirveHasta: comando.tallaSirveHasta }
           : {}),
-        ...(comando.fotosGeneralesEnCadaColor !== undefined
-          ? { fotosGeneralesEnCadaColor: comando.fotosGeneralesEnCadaColor }
-          : {}),
       },
     });
     return aProductoAdmin(desempaquetar(respuesta, 'no se pudo editar el producto'));

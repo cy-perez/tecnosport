@@ -49,9 +49,6 @@ public final class EditarProducto {
     if (comando.tallaSirveHasta() != null) {
       producto.definirTallaSirveHasta(comando.tallaSirveHasta());
     }
-    if (comando.fotosGeneralesEnCadaColor() != null) {
-      producto.definirFotosGeneralesEnCadaColor(comando.fotosGeneralesEnCadaColor());
-    }
     repositorioProductos.actualizar(producto);
     return producto;
   }

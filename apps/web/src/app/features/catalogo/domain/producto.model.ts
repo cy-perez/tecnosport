@@ -172,7 +172,6 @@ export interface Producto {
    * galería. Falso en el producto que solo trae fotos por color: ahí la general es la de uno de
    * ellos y se colaría en los demás.
    */
-  readonly fotosGeneralesEnCadaColor: boolean;
 }
 
 /**

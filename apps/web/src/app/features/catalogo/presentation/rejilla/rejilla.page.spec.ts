@@ -56,7 +56,6 @@ function productoDePrueba(slug: string): Producto {
     rotacion: null,
     escalaTallas: [],
     tallaSirveHasta: null,
-    fotosGeneralesEnCadaColor: true,
     variantes: [
       {
         id: `id-${slug}`,

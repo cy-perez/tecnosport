@@ -1,0 +1,13 @@
+-- Se retira `producto.fotos_generales_en_cada_color` (7 de octubre de 2026).
+--
+-- `V79` la creo para decidir si las fotos sin tono -- la principal, casi siempre -- acompaniaban a
+-- las de cada color en la galeria de la ficha. Esa pregunta ya no existe: la galeria no recorta
+-- por color, y si la principal sale o no en la ficha lo decide **su propio color** (`ADR-0069`) --
+-- un dato de la foto, no una casilla aparte del producto.
+--
+-- Desde que la ficha dejo de leerla, la columna no decidia nada y la casilla del panel tampoco: un
+-- control que no hace nada es peor que no tenerlo, porque quien lo marca cree que marco algo.
+--
+-- **Esto borra el dato, y no hay vuelta atras.** Es lo que se quiere: lo que guardaba era la
+-- respuesta a una pregunta que el modelo ya no hace, y conservarla invitaria a volver a leerla.
+alter table producto drop column fotos_generales_en_cada_color;
