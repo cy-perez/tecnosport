@@ -86,6 +86,17 @@ function enteroPositivo(texto: string): number | null {
   return Number.isInteger(valor) && valor > 0 ? valor : null;
 }
 
+/** Una copia del conjunto con la foto dentro o fuera: las señales no se mutan en su sitio. */
+function conSinFoto(fotos: ReadonlySet<string>, mensajeId: string, dentro: boolean): Set<string> {
+  const siguiente = new Set(fotos);
+  if (dentro) {
+    siguiente.add(mensajeId);
+  } else {
+    siguiente.delete(mensajeId);
+  }
+  return siguiente;
+}
+
 /**
  * La revisión de un borrador: lo que el proveedor escribió, las fotos, lo que la extracción
  * entendió, y las tres salidas —corregir, aprobar, rechazar—.
@@ -244,12 +255,41 @@ export class DetalleBorradorAdminPage {
   protected readonly tonoPorFoto = signal<Readonly<Record<string, string>>>({});
 
   /**
-   * Las fotos que NO entran al producto, por `mensajeId`. Se guardan las excluidas y no las
-   * elegidas para que una foto nueva en una revalidación entre por omisión. Al cargar, las que
-   * sobrepasan el máximo quedan fuera: una publicación de ropa trae doce o catorce.
+   * Las fotos que alguien desmarcó, por `mensajeId`. Se guardan las excluidas y no las elegidas
+   * para que una foto nueva en una revalidación entre por omisión.
    */
   protected readonly fotosExcluidas = signal<ReadonlySet<string>>(new Set());
+
+  /** Las que alguien marcó a mano: entran aunque pasen del tope. */
+  protected readonly fotosIncluidasAMano = signal<ReadonlySet<string>>(new Set());
   protected readonly maximoFotos = MAXIMO_FOTOS_POR_PRODUCTO;
+
+  /**
+   * Las que entran, por `mensajeId`: las marcadas a mano y, hasta llenar el tope, las demás no
+   * desmarcadas en el orden de la publicación. Una publicación de ropa trae doce o catorce.
+   *
+   * <p><b>El tope se aplica sobre la lista de ahora, no sobre la del momento de cargar</b>, y hasta
+   * el 7 de octubre de 2026 no era así: las que pasaban de nueve se apuntaban como excluidas al
+   * abrir el borrador, y eliminar una foto después no las devolvía. Un borrador de diez fotos al
+   * que se le borró una se aprobó con ocho, y la novena —con su color marcado— no llegó al
+   * producto.
+   */
+  private readonly fotosQueEntran = computed(() => {
+    const aMano = this.fotosIncluidasAMano();
+    const candidatas = this.fotos().filter((foto) => !this.fotosExcluidas().has(foto.mensajeId));
+    let libres =
+      MAXIMO_FOTOS_POR_PRODUCTO - candidatas.filter((foto) => aMano.has(foto.mensajeId)).length;
+    const entran = new Set<string>();
+    for (const foto of candidatas) {
+      if (aMano.has(foto.mensajeId)) {
+        entran.add(foto.mensajeId);
+      } else if (libres > 0) {
+        entran.add(foto.mensajeId);
+        libres--;
+      }
+    }
+    return entran;
+  });
 
   /**
    * La foto que la persona marcó como principal, por `mensajeId`; nula si no marcó ninguna, y
@@ -261,7 +301,7 @@ export class DetalleBorradorAdminPage {
 
   /** Las elegidas, en el orden de la publicación salvo la principal marcada, que va primero. */
   protected readonly fotosElegidas = computed(() => {
-    const elegidas = this.fotos().filter((foto) => !this.fotosExcluidas().has(foto.mensajeId));
+    const elegidas = this.fotos().filter((foto) => this.fotosQueEntran().has(foto.mensajeId));
     const marcada = this.principalMarcada();
     const principal = elegidas.find((foto) => foto.mensajeId === marcada);
     return principal ? [principal, ...elegidas.filter((foto) => foto !== principal)] : elegidas;
@@ -394,13 +434,8 @@ export class DetalleBorradorAdminPage {
       // la URL reutiliza el componente.
       this.tonoPorFoto.set({});
       this.principalMarcada.set(null);
-      this.fotosExcluidas.set(
-        new Set(
-          this.fotos()
-            .slice(MAXIMO_FOTOS_POR_PRODUCTO)
-            .map((foto) => foto.mensajeId),
-        ),
-      );
+      this.fotosExcluidas.set(new Set());
+      this.fotosIncluidasAMano.set(new Set());
       this.aprobado.set(null);
       this.rechazado.set(false);
       this.confirmandoBorrar.set(false);
@@ -559,22 +594,25 @@ export class DetalleBorradorAdminPage {
   }
 
   protected fotoIncluida(mensajeId: string): boolean {
-    return !this.fotosExcluidas().has(mensajeId);
+    return this.fotosQueEntran().has(mensajeId);
   }
 
+  /**
+   * Marcar una foto que pasa del tope la mete y saca la última de las que entraban solo por él;
+   * desmarcar una deja entrar a la siguiente que esperaba.
+   */
   protected incluirFoto(mensajeId: string, incluir: boolean): void {
-    this.fotosExcluidas.update((actual) => {
-      const siguiente = new Set(actual);
-      if (incluir) {
-        siguiente.delete(mensajeId);
-      } else {
-        siguiente.add(mensajeId);
-      }
-      return siguiente;
-    });
+    this.fotosExcluidas.update((actual) => conSinFoto(actual, mensajeId, !incluir));
+    this.fotosIncluidasAMano.update((actual) => conSinFoto(actual, mensajeId, incluir));
     if (!incluir && this.principalMarcada() === mensajeId) {
       this.principalMarcada.set(null);
     }
+  }
+
+  /** Una foto eliminada no deja rastro en ninguna de las dos listas. */
+  private olvidarFoto(mensajeId: string): void {
+    this.fotosExcluidas.update((actual) => conSinFoto(actual, mensajeId, false));
+    this.fotosIncluidasAMano.update((actual) => conSinFoto(actual, mensajeId, false));
   }
 
   /**
@@ -595,6 +633,8 @@ export class DetalleBorradorAdminPage {
    * la misma foto, que ahora dice que es la principal.
    */
   protected marcarPrincipal(mensajeId: string, indice: number): void {
+    // Elegirla es elegirla a mano: si no, marcar después otra que pasa del tope podría sacarla.
+    this.incluirFoto(mensajeId, true);
     this.principalMarcada.set(mensajeId);
     this.enfocarDespuesDePintar(() =>
       this.host.nativeElement.querySelector<HTMLElement>('#incluir-foto-' + indice),
@@ -629,7 +669,7 @@ export class DetalleBorradorAdminPage {
       {
         onSuccess: () => {
           this.confirmandoEliminarFoto.set(null);
-          this.incluirFoto(mensajeId, true);
+          this.olvidarFoto(mensajeId);
           this.tonoPorFoto.update((actual) =>
             Object.fromEntries(Object.entries(actual).filter(([id]) => id !== mensajeId)),
           );
@@ -652,8 +692,8 @@ export class DetalleBorradorAdminPage {
    * falló: de cinco, puede fallar uno. Lo que no es JPEG ni PNG ni sale del navegador, porque la
    * API lo rechazaría igual.
    *
-   * <p>Las fotos nuevas entran incluidas: `fotosExcluidas` guarda las que se sacan, no las que se
-   * eligen. El foco se queda en el selector de archivos, que no se va de la página.
+   * <p>Las fotos nuevas entran incluidas mientras quepan: `fotosExcluidas` guarda las que se sacan,
+   * no las que se eligen. El foco se queda en el selector de archivos, que no se va de la página.
    *
    * <p>El id se fija al empezar: navegar a otro borrador a mitad de la subida colgaría las fotos
    * que faltan del borrador nuevo. Si cambia, se para, y lo de esta pantalla ya no se pinta.
@@ -799,6 +839,20 @@ export class DetalleBorradorAdminPage {
       this.errorDecision.set(this.transloco.translate('admin.borradores.aprobar.marcaLaPrincipal'));
       return;
     }
+    // Un color en una foto que no entra es una variante que no se crea: quien lo marcó cuenta con
+    // ese tono en la ficha. Se para y se dice cuál, en vez de aprobar sin ella.
+    const tonos = this.tonoPorFoto();
+    const conTonoFuera = this.fotos().findIndex(
+      (foto) => !this.fotoIncluida(foto.mensajeId) && tonos[foto.mensajeId],
+    );
+    if (conTonoFuera >= 0) {
+      this.errorDecision.set(
+        this.transloco.translate('admin.borradores.aprobar.fotoConTonoFuera', {
+          numero: conTonoFuera + 1,
+        }),
+      );
+      return;
+    }
     const datos = this.formDatos.getRawValue();
     if (!datos.descripcion.trim()) {
       this.formDatos.controls.descripcion.markAsTouched();
@@ -808,7 +862,6 @@ export class DetalleBorradorAdminPage {
     }
     this.errorDecision.set(null);
 
-    const tonos = this.tonoPorFoto();
     this.aprobar.mutate(
       {
         id: this.id(),

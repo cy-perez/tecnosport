@@ -273,6 +273,58 @@ describe('DetalleBorradorAdminPage', () => {
     ]);
   });
 
+  /**
+   * El caso del jean plus, el 7 de octubre de 2026: diez fotos, una eliminada, y la que quedó
+   * novena seguía fuera porque el tope se había aplicado al cargar. Se aprobó con ocho.
+   */
+  it('eliminar una foto deja entrar a la que esperaba fuera del tope', async () => {
+    const fotos = Array.from({ length: 10 }, (_, i) => fotoDePrueba('f-' + (i + 1)));
+    const { repositorio } = await renderPagina(borradorDePrueba(), fotos);
+    await llenarAprobacion();
+    expect((screen.getByLabelText('Incluir la foto 10') as HTMLInputElement).checked).toBe(false);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Eliminar la foto 2' }));
+    fireEvent.click(
+      screen.getByRole('button', { name: esAdmin.borradores.eliminarFoto.confirmar }),
+    );
+    await vi.waitFor(() =>
+      expect(screen.queryByRole('button', { name: 'Eliminar la foto 10' })).toBeNull(),
+    );
+
+    expect((screen.getByLabelText('Incluir la foto 9') as HTMLInputElement).checked).toBe(true);
+    expect(screen.getByText(/9 de 9 fotos elegidas/)).toBeTruthy();
+    fireEvent.input(screen.getByLabelText(a.precioVenta), { target: { value: '75.000' } });
+    fireEvent.click(screen.getByRole('button', { name: a.accion }));
+
+    await screen.findByRole('link', { name: a.verProducto });
+    expect(repositorio.aprobaciones[0].aprobacion.fotos.map((f) => f.mensajeId)).toEqual([
+      'f-1',
+      'f-3',
+      'f-4',
+      'f-5',
+      'f-6',
+      'f-7',
+      'f-8',
+      'f-9',
+      'f-10',
+    ]);
+  });
+
+  /** El selector de color sigue en las que no entran: el color se recuerda si se vuelve a tildar. */
+  it('no aprueba si una foto que no entra tiene un color marcado, y dice cuál', async () => {
+    const fotos = Array.from({ length: 10 }, (_, i) => fotoDePrueba('f-' + (i + 1)));
+    const { repositorio } = await renderPagina(borradorDePrueba(), fotos);
+    await llenarAprobacion();
+
+    fireEvent.click(await screen.findByRole('button', { name: /Color de la foto 10/ }));
+    fireEvent.click(await screen.findByLabelText('Negro'));
+    fireEvent.input(screen.getByLabelText(a.precioVenta), { target: { value: '75.000' } });
+    fireEvent.click(screen.getByRole('button', { name: a.accion }));
+
+    expect(await screen.findByText(a.fotoConTonoFuera.replace('{{numero}}', '10'))).toBeTruthy();
+    expect(repositorio.aprobaciones).toEqual([]);
+  });
+
   /** Una blusa siempre cae en Dama › Blusas: la categoría llega puesta y se puede cambiar. */
   it('una blusa llega con su categoría preseleccionada', async () => {
     await renderPagina(borradorDePrueba({ tipo: 'BLUSA' }));

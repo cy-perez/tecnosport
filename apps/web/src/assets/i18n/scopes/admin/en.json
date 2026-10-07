@@ -1090,6 +1090,7 @@
       "marcarPrincipal": "Mark as main photo",
       "marcarPrincipalFoto": "Mark photo {{numero}} as the main photo",
       "marcaLaPrincipal": "Mark the main photo of this product: the photos were shared with another one.",
+      "fotoConTonoFuera": "Photo {{numero}} has a colour set but is not included in the product: tick it to include it, or clear its colour.",
       "esperaSubida": "Wait for the photos to finish uploading before approving."
     },
     "eliminarFoto": {
