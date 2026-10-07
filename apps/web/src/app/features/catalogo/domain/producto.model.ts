@@ -83,6 +83,20 @@ export interface Marca {
   readonly nombre: string;
 }
 
+/**
+ * Una marca del filtro de la vitrina: la marca, más las líneas en las que tiene algo publicado.
+ *
+ * <b>Un tipo aparte y no un campo opcional en `Marca`</b>, por lo mismo que el backend no se lo
+ * puso al DTO que comparte con el panel: la marca que viene dentro de un producto no sabe nada de
+ * esto y tendría que llevar una lista vacía, que no significa "no vende nada" sino "nadie se lo
+ * preguntó". Un campo que en la mitad de los usos solo puede mentir no es un campo compartido.
+ *
+ * Las líneas son los nombres de `LINEAS`, igual que `Categoria.linea`.
+ */
+export interface MarcaDeVitrina extends Marca {
+  readonly lineas: readonly string[];
+}
+
 export type TipoAtributo = 'TEXTO' | 'NUMERO' | 'COLOR';
 
 /** Catálogo global de ejes de variación (talla, color...) — sin asociación a categoría en el

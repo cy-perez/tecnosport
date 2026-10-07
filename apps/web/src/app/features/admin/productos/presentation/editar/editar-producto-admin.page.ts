@@ -16,7 +16,7 @@ import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { usarIdiomaActivo } from '../../../../../core/i18n/traductor';
-import { usarOpcionesFiltro } from '../../../../catalogo/application/listar-opciones-filtro.consulta';
+import { usarOpcionesDeFormulario } from '../../../../catalogo/application/listar-opciones-filtro.consulta';
 import { TsBoton } from '../../../../../shared/ui/boton/ts-boton';
 import { TsPaginaFormulario } from '../../../../../shared/ui/pagina-formulario/ts-pagina-formulario';
 import { TsCampo } from '../../../../../shared/ui/campo/ts-campo';
@@ -102,7 +102,7 @@ export class EditarProductoAdminPage {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly transloco = inject(TranslocoService);
-  private readonly opciones = usarOpcionesFiltro();
+  private readonly opciones = usarOpcionesDeFormulario();
   private readonly mutacion = usarEditarProductoAdmin();
   private readonly mutacionImagen = usarSubirImagenPrincipalAdmin();
   private readonly mutacionGaleria = usarSubirImagenDeGaleriaAdmin();

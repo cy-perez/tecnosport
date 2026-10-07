@@ -10,7 +10,7 @@ import {
 import { FILTRO_NOVEDADES } from './domain/filtro-productos.model';
 import { filtroDesdeQueryParams } from './domain/query-params-filtro';
 import { REPOSITORIO_CATEGORIAS } from './domain/repositorio-categorias.puerto';
-import { REPOSITORIO_MARCAS } from './domain/repositorio-marcas.puerto';
+import { REPOSITORIO_MARCAS_DE_VITRINA } from './domain/repositorio-marcas.puerto';
 import { REPOSITORIO_PRODUCTOS } from './domain/repositorio-productos.puerto';
 import { CategoriasHttpRepositorio } from './infrastructure/categorias-http.repositorio';
 import { MarcasHttpRepositorio } from './infrastructure/marcas-http.repositorio';
@@ -26,7 +26,7 @@ export const catalogoRoutes: Routes = [
     providers: [
       { provide: REPOSITORIO_PRODUCTOS, useClass: ProductosHttpRepositorio },
       { provide: REPOSITORIO_CATEGORIAS, useClass: CategoriasHttpRepositorio },
-      { provide: REPOSITORIO_MARCAS, useClass: MarcasHttpRepositorio },
+      { provide: REPOSITORIO_MARCAS_DE_VITRINA, useClass: MarcasHttpRepositorio },
       provideTranslocoScope('catalogo'),
     ],
     children: [

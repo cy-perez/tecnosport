@@ -7,12 +7,15 @@ import { of } from 'rxjs';
 import en from '../../../../../assets/i18n/en.json';
 import es from '../../../../../assets/i18n/es.json';
 import esCatalogo from '../../../../../assets/i18n/scopes/catalogo/es.json';
-import { Categoria, Marca, Producto } from '../../domain/producto.model';
+import { Categoria, MarcaDeVitrina, Producto } from '../../domain/producto.model';
 import {
   REPOSITORIO_CATEGORIAS,
   RepositorioCategorias,
 } from '../../domain/repositorio-categorias.puerto';
-import { REPOSITORIO_MARCAS, RepositorioMarcas } from '../../domain/repositorio-marcas.puerto';
+import {
+  REPOSITORIO_MARCAS_DE_VITRINA,
+  RepositorioMarcasDeVitrina,
+} from '../../domain/repositorio-marcas.puerto';
 import {
   REPOSITORIO_PRODUCTOS,
   RepositorioProductos,
@@ -27,8 +30,8 @@ class RepositorioCategoriasFalso implements RepositorioCategorias {
   }
 }
 
-class RepositorioMarcasFalso implements RepositorioMarcas {
-  async listarTodas(): Promise<Marca[]> {
+class RepositorioMarcasFalso implements RepositorioMarcasDeVitrina {
+  async listarDeVitrina(): Promise<MarcaDeVitrina[]> {
     return [];
   }
 }
@@ -113,7 +116,7 @@ function renderRejilla(repositorio: RepositorioProductos, queryParams: Params = 
       },
       { provide: REPOSITORIO_PRODUCTOS, useValue: repositorio },
       { provide: REPOSITORIO_CATEGORIAS, useClass: RepositorioCategoriasFalso },
-      { provide: REPOSITORIO_MARCAS, useClass: RepositorioMarcasFalso },
+      { provide: REPOSITORIO_MARCAS_DE_VITRINA, useClass: RepositorioMarcasFalso },
     ],
   });
 }
