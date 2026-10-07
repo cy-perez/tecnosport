@@ -6,6 +6,7 @@ import {
   inject,
   input,
   linkedSignal,
+  output,
 } from '@angular/core';
 import { TranslocoService } from '@jsverse/transloco';
 import { descriptoresDe, Imagen, parametrosDe } from '../../domain/producto.model';
@@ -96,8 +97,20 @@ export class TsGaleria {
     () => this.imagenes()[this.indiceActivo()] ?? this.imagenes()[0] ?? null,
   );
 
+  /**
+   * La foto que tocó quien mira, para que la pantalla decida qué significa. En la ficha, una foto
+   * de un color elige ese color: sin este aviso la galería enseñaba el azul cielo mientras el
+   * carrito recibía el beige que seguía elegido. La galería no sabe de colores; solo cuenta qué se
+   * tocó.
+   */
+  readonly fotoElegida = output<Imagen>();
+
   protected elegir(indice: number): void {
     this.indiceActivo.set(indice);
+    const imagen = this.imagenes()[indice];
+    if (imagen) {
+      this.fotoElegida.emit(imagen);
+    }
   }
 
   protected readonly descriptores = descriptoresDe;

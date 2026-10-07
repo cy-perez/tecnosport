@@ -65,6 +65,21 @@ describe('TsGaleria', () => {
   });
 
   /**
+   * La galería no sabe de colores, pero la ficha sí necesita saber qué foto se tocó: sin el aviso,
+   * la miniatura del azul cielo se veía y lo que se agregaba al carrito era el beige.
+   */
+  it('avisa qué foto se tocó en las miniaturas', async () => {
+    const fotoB = imagen('b', 'Foto B');
+    const { fixture } = await renderGaleria([imagen('a', 'Foto A'), fotoB]);
+    const avisos: Imagen[] = [];
+    fixture.componentInstance.fotoElegida.subscribe((aviso) => avisos.push(aviso));
+
+    fireEvent.click(screen.getByRole('button', { name: 'Foto B' }));
+
+    expect(avisos).toEqual([fotoB]);
+  });
+
+  /**
    * Al elegir otro color la ficha cambia las fotos. Con el índice fijo, la tercera foto de un color
    * con tres apuntaba a nada en uno con dos y la galería desaparecía entera, miniaturas incluidas.
    */

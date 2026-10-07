@@ -40,6 +40,7 @@ import { hayExistencia, Imagen } from '../../domain/producto.model';
 import { usarPaletaDeColores } from '../../application/listar-paleta-colores.consulta';
 import { usarIdiomaActivo } from '../../../../core/i18n/traductor';
 import {
+  colorDeImagen,
   coloresDe,
   detalleDeVariante,
   ejeDeColor,
@@ -158,11 +159,28 @@ export class FichaPage {
   private readonly colorElegidoAMano = signal(false);
 
   /**
-   * En qué foto se para la galería: la primera del color que se eligió, o la principal mientras
-   * nadie haya elegido ninguno. Elegir un color mueve la foto activa; no cambia cuántas hay.
+   * La URL de la última miniatura que se tocó, hasta que se pulse un círculo de color o se cambie
+   * de producto. Tocar la segunda foto del azul cielo elige el azul cielo, y sin esto ese cambio de
+   * color devolvía la galería a la <i>primera</i> foto del azul cielo: la foto que se tocó se
+   * escapaba bajo el dedo. Es la URL y no el índice porque una revalidación puede traer la lista
+   * en otro orden.
+   */
+  private readonly fotoTocada = signal<string | null>(null);
+
+  /**
+   * En qué foto se para la galería: la que se tocó en las miniaturas; si no, la primera del color
+   * que se eligió, o la principal mientras nadie haya elegido ninguno. Elegir un color mueve la
+   * foto activa; no cambia cuántas hay.
    */
   protected readonly indiceEnLaGaleria = computed<number>(() => {
     const producto = this.producto();
+    const tocada = this.fotoTocada();
+    if (tocada !== null) {
+      const indice = this.imagenesGaleria().findIndex((imagen) => imagen.url === tocada);
+      if (indice !== -1) {
+        return indice;
+      }
+    }
     if (!producto || !this.colorElegidoAMano()) {
       return 0;
     }
@@ -359,7 +377,10 @@ export class FichaPage {
       const variante = variantePorDefecto(producto);
       this.seleccion.set(variante ? seleccionDeVariante(variante) : {});
       // Otro producto, otra galería: vuelve a abrir en la principal.
-      untracked(() => this.colorElegidoAMano.set(false));
+      untracked(() => {
+        this.colorElegidoAMano.set(false);
+        this.fotoTocada.set(null);
+      });
     });
   }
 
@@ -373,11 +394,30 @@ export class FichaPage {
     const cambiado = Object.keys(seleccion).find((eje) => seleccion[eje] !== anterior[eje]);
     // Desde aquí la galería sigue al color: esto solo lo llama el selector, o sea una persona.
     this.colorElegidoAMano.set(true);
+    // El círculo manda sobre la miniatura que se tocó antes: lleva a la primera foto de su color.
+    this.fotoTocada.set(null);
     if (!producto || !cambiado) {
       this.seleccion.set(seleccion);
       return;
     }
     this.seleccion.set(seleccionAlElegir(producto, anterior, cambiado, seleccion[cambiado]));
+  }
+
+  /**
+   * Tocar la miniatura de un color es elegir ese color, igual que su círculo: lo que se agrega al
+   * carrito tiene que ser lo que se está mirando. La talla se conserva si existe en ese color; si
+   * no, se salta a la más parecida, como con el círculo (`seleccionAlElegir`). Una foto general no
+   * cambia nada de lo que se compra.
+   */
+  protected elegirFoto(imagen: Imagen): void {
+    this.fotoTocada.set(imagen.url);
+    const producto = this.producto();
+    const eje = producto ? ejeDeColor(producto) : null;
+    const color = producto ? colorDeImagen(producto, imagen) : null;
+    if (!producto || !eje || !color || this.seleccion()[eje] === color) {
+      return;
+    }
+    this.seleccion.set(seleccionAlElegir(producto, this.seleccion(), eje, color));
   }
 
   protected agregarAlCarrito(): void {
