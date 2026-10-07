@@ -95,11 +95,13 @@ class ArbolDeCategoriasTest {
           // surtido que hay. El morral de caballero no cuelga de Dama porque un morral de hombre
           // no es una subcategoria de la rama de mujer.
           "bolsos-caballero", List.of("bolsos-caballero-morrales"),
-          // `V75`, 3 de octubre de 2026: Jeans en las dos ramas de ropa, y las de calzado dejan de
-          // ser hojas para tener la suya, Deportivo, que es lo que el negocio vende en calzado.
-          "calzado-dama", List.of("calzado-dama-deportivo"),
-          "calzado-caballero", List.of("calzado-caballero-deportivo"),
-          "calzado-unisex", List.of("calzado-unisex-deportivo"));
+          // `V75`, 3 de octubre de 2026, puso Jeans en las dos ramas de ropa y le colgo a cada
+          // rama de calzado una hoja "Deportivo". `V84` quito las tres: una hoja que repite lo que
+          // ya dice su rama no separa nada, y el filtro decia "Calzado deportivo > Dama >
+          // Deportivo". Las tres ramas de calzado vuelven a ser hojas y Jeans se queda.
+          "calzado-dama", List.of(),
+          "calzado-caballero", List.of(),
+          "calzado-unisex", List.of());
 
   @Test
   void cadaLineaTieneExactamenteSusCategoriasDePrimerNivel() {
@@ -174,6 +176,14 @@ class ArbolDeCategoriasTest {
     assertThat(categorias.findBySlug("ropa-deportiva")).isEmpty();
     assertThat(categorias.findBySlug("calzado-deportivo")).isEmpty();
     assertThat(categorias.findBySlug("bolsos")).isEmpty();
+  }
+
+  /** Y las tres hojas que `V84` retiró de calzado, por el mismo motivo: que el fallo las nombre. */
+  @Test
+  void calzadoNoConservaLaHojaDeportivo() {
+    assertThat(categorias.findBySlug("calzado-dama-deportivo")).isEmpty();
+    assertThat(categorias.findBySlug("calzado-caballero-deportivo")).isEmpty();
+    assertThat(categorias.findBySlug("calzado-unisex-deportivo")).isEmpty();
   }
 
   /**
