@@ -206,9 +206,9 @@ public class RepositorioProductosJpa implements RepositorioProductos {
     // Hibernate ejecuta los EntityDeleteAction después de los EntityInsertAction dentro de un
     // mismo flush (orden fijo del ActionQueue), así que sin forzar el flush aquí el borrado de la
     // fila existente llegaría después del insert de la nueva y violaría el índice único parcial
-    // (producto_id) where tipo = 'PRINCIPAL' and variante_id is null.
+    // (producto_id) where tipo = 'PRINCIPAL' (V87).
     imagenProductoJpaRepository
-        .findByProductoIdAndTipoAndVarianteIdIsNull(productoId, imagen.tipo().name())
+        .findByProductoIdAndTipo(productoId, imagen.tipo().name())
         .ifPresent(
             existente -> {
               imagenProductoJpaRepository.delete(existente);
@@ -325,7 +325,7 @@ public class RepositorioProductosJpa implements RepositorioProductos {
   @Transactional
   public void guardarIntercambioDePrincipal(UUID productoId, IntercambioDePrincipal intercambio) {
     imagenProductoJpaRepository
-        .findByProductoIdAndTipoAndVarianteIdIsNull(productoId, TipoImagen.PRINCIPAL.name())
+        .findByProductoIdAndTipo(productoId, TipoImagen.PRINCIPAL.name())
         .ifPresent(imagenProductoJpaRepository::delete);
     if (imagenProductoJpaRepository.deleteByIdAndProductoId(
             intercambio.imagenDeGaleriaQuitada(), productoId)

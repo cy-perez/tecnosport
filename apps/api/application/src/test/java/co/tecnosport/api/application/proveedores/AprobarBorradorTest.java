@@ -211,9 +211,11 @@ class AprobarBorradorTest {
 
     ImagenProducto principal = producto.imagenPrincipal().orElseThrow();
     assertEquals(TipoImagen.PRINCIPAL, principal.tipo());
-    // La principal no cuelga de ninguna variante aunque su foto sea la negra: el reemplazo desde
-    // el panel y el índice único solo conocen la que tiene variante_id nulo.
-    assertEquals(Optional.empty(), principal.varianteId(), "la principal vale para todos");
+    // La principal cuelga de la variante de su tono —la negra— desde el 7 de octubre de 2026.
+    // Antes se le forzaba el nulo por el índice único, y con eso se descartaba el color que quien
+    // revisa le había marcado a esa foto; `V87` ensanchó el índice y ya no hace falta.
+    assertEquals(
+        Optional.of(variantes.get(0).id()), principal.varianteId(), "la principal es la negra");
     assertEquals("Bolso de dama mediano", principal.altEs());
     assertEquals(1, producto.galeria().size());
     assertEquals(Optional.of(variantes.get(1).id()), producto.galeria().get(0).varianteId());
@@ -387,10 +389,15 @@ class AprobarBorradorTest {
   }
 
   /**
-   * La principal no cuelga de ninguna variante aunque su foto tenga tono: el panel la reemplaza.
+   * La principal conserva el tono que se le marcó, y <b>eso afirmaba lo contrario</b> hasta el 7 de
+   * octubre de 2026: se le forzaba el nulo y el color se perdía.
+   *
+   * <p>Ahora ese color decide algo. Una principal que vale para todos los tonos encabeza la tarjeta
+   * del catálogo y se queda fuera de la galería de la ficha —no retrata ninguna de las prendas que
+   * se pueden elegir—; una con color, además abre la ficha.
    */
   @Test
-  void laFotoPrincipalNoCuelgaDeUnaVarianteAunqueTengaTono() {
+  void laFotoPrincipalConservaElTonoQueSeLeMarco() {
     Producto producto =
         caso()
             .ejecutar(
@@ -399,8 +406,18 @@ class AprobarBorradorTest {
                         new FotoAprobada(foto1.id(), "Negro", "#000000"),
                         new FotoAprobada(foto2.id(), "Vino", null))));
 
-    assertEquals(Optional.empty(), producto.imagenPrincipal().orElseThrow().varianteId());
+    assertEquals(
+        Optional.of(producto.variantes().get(0).id()),
+        producto.imagenPrincipal().orElseThrow().varianteId());
     assertTrue(producto.galeria().get(0).varianteId().isPresent(), "la galería sí lleva su tono");
+  }
+
+  /** Y sin tono marcado se queda sin variante: es la que vale para todos. */
+  @Test
+  void laFotoPrincipalSinTonoValeParaTodosLosTonos() {
+    Producto producto = caso().ejecutar(comando(List.of(new FotoAprobada(foto1.id(), null, null))));
+
+    assertEquals(Optional.empty(), producto.imagenPrincipal().orElseThrow().varianteId());
   }
 
   /**

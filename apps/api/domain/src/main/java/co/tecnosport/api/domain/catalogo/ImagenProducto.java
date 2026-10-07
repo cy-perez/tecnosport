@@ -158,8 +158,14 @@ public final class ImagenProducto {
   }
 
   /**
-   * Esta foto de la galería convertida en la principal: otro id —es otra fila—, orden 0 y sin
-   * variante, porque la principal es la del producto entero. Los objetos del bucket son los mismos.
+   * Esta foto de la galería convertida en la principal: otro id —es otra fila— y orden 0. Los
+   * objetos del bucket son los mismos.
+   *
+   * <p><b>Conserva su variante, y hasta el 7 de octubre de 2026 la perdía.</b> La soltaba porque la
+   * principal era, por definición, la del producto entero. Desde que el color de la principal
+   * decide si la ficha la enseña, soltarla tiene un efecto que nadie pediría: ascender la foto de
+   * un tono la convierte en genérica y <b>desaparece de la galería</b> — quien la asciende ve una
+   * foto menos en la ficha, sin que nada lo explique.
    */
   ImagenProducto comoPrincipal() {
     return new ImagenProducto(
@@ -172,10 +178,14 @@ public final class ImagenProducto {
         hash,
         altEs,
         altEn,
-        null);
+        varianteId);
   }
 
-  /** La principal convertida en una foto de la galería, en el puesto que se le indique. */
+  /**
+   * La principal convertida en una foto de la galería, en el puesto que se le indique. Conserva su
+   * variante por lo mismo que {@link #comoPrincipal()}: intercambiar las dos no puede perder de qué
+   * tono es cada foto.
+   */
   ImagenProducto comoGaleria(int nuevoOrden) {
     return new ImagenProducto(
         GeneradorIdentificador.nuevo(),
@@ -187,7 +197,7 @@ public final class ImagenProducto {
         hash,
         altEs,
         altEn,
-        null);
+        varianteId);
   }
 
   ImagenProducto conOrden(int nuevoOrden) {

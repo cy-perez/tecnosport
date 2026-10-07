@@ -401,14 +401,18 @@ public final class AprobarBorrador {
       String key = keyDe(producto.id(), principal, procesada.contentType());
       almacenDeImagenes.subir(key, procesada.contentType(), procesada.bytes());
       subidas.add(key);
-      // La principal nunca cuelga de una variante: el índice único de PRINCIPAL y el reemplazo
-      // desde el panel solo conocen la que tiene variante_id nulo. El tono de esa foto se pierde,
-      // y es el precio de que el panel pueda reemplazarla.
       // Por el tono **numerado** de esta foto, no por el que trae el comando: dos fotos marcadas
       // con el mismo color son dos variantes distintas desde el 6 de octubre de 2026, y buscar
       // por el nombre sin numerar las devolvería a colgar las dos de la misma.
+      //
+      // <b>La principal también cuelga de su tono, y hasta el 7 de octubre de 2026 no.</b> Se le
+      // forzaba el nulo porque el índice único de PRINCIPAL solo cubría las de variante nula, y
+      // con eso se descartaba el color que quien revisa le había marcado a esa foto. Ahora ese
+      // color decide algo: una principal que vale para todos los tonos encabeza la tarjeta del
+      // catálogo y se queda fuera de la galería de la ficha; una con color, además la abre.
+      // `V87` ensanchó el índice a todas las PRINCIPAL, así que la invariante no se afloja.
       String tono = tonoPorFoto.get(orden);
-      UUID varianteId = principal || tono == null ? null : variantePorTono.get(tono);
+      UUID varianteId = tono == null ? null : variantePorTono.get(tono);
       ImagenProducto imagen =
           ImagenProducto.crearDeVariante(
               principal ? TipoImagen.PRINCIPAL : TipoImagen.GALERIA,
