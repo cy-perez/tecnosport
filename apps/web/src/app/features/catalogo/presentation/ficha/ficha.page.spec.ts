@@ -77,6 +77,17 @@ class RepositorioCarritoQueAgrega extends RepositorioCarritoFalso {
   }
 }
 
+/** El que acepta la línea y anota qué variante le llegó: qué se compró, no solo que se compró. */
+const variantesAgregadas: string[] = [];
+class RepositorioCarritoQueAnota extends RepositorioCarritoQueAgrega {
+  // Con resto y no con la firma del puerto: la base la declara sin parámetros, y una sobrescritura
+  // que los exija no le es asignable.
+  override agregarLinea(...argumentos: unknown[]): Promise<Carrito> {
+    variantesAgregadas.push(argumentos[1] as string);
+    return super.agregarLinea();
+  }
+}
+
 function productoDePrueba(): Producto {
   return {
     slug: 'morral-urbano',
@@ -175,6 +186,22 @@ function productoConPrincipalGenerica(): Producto {
     galeria: [
       foto('https://imagenes.test/azul.jpg', 'variante-az'),
       foto('https://imagenes.test/negro.jpg', 'variante-ng'),
+    ],
+  };
+}
+
+/**
+ * Dos fotos del negro y una general sin color: para ver que la galería se queda en la foto que se
+ * tocó —no salta a la primera del color— y que una foto sin color no cambia lo que se compra.
+ */
+function productoConVariasFotosPorColor(): Producto {
+  return {
+    ...productoConPrincipalGenerica(),
+    galeria: [
+      foto('https://imagenes.test/azul.jpg', 'variante-az'),
+      foto('https://imagenes.test/negro.jpg', 'variante-ng'),
+      foto('https://imagenes.test/negro-espalda.jpg', 'variante-ng'),
+      foto('https://imagenes.test/detalle.jpg', null),
     ],
   };
 }
@@ -792,6 +819,84 @@ describe('FichaPage', () => {
    * DOM —NVDA calla si nace llena— y lo que cambia es el texto. Y el botón no se deshabilita
    * mientras agrega: deshabilitado, el foco se iba a `<body>`.
    */
+  describe('tocar una miniatura', () => {
+    const repositorio: RepositorioProductos = {
+      buscar: () =>
+        Promise.resolve<ResultadoPaginado<Producto>>({ items: [], cursorSiguiente: null }),
+      buscarPorSlug: () => Promise.resolve(productoConVariasFotosPorColor()),
+    };
+    const fotoGrande = () =>
+      (document.querySelector('.aspect-square img') as HTMLImageElement).getAttribute('src');
+    const pulsado = (nombre: string) =>
+      screen.getByRole('button', { name: nombre }).getAttribute('aria-pressed');
+
+    beforeEach(() => {
+      variantesAgregadas.length = 0;
+    });
+
+    /**
+     * El defecto: la miniatura del azul cielo se veía y lo que se agregaba era el beige de la
+     * variante por defecto, porque solo el círculo de color cambiaba lo elegido.
+     */
+    it('elige el color de la foto, y es ese el que se agrega al carrito', async () => {
+      await renderFicha(repositorio, 'camiseta', RepositorioCarritoQueAnota);
+      await screen.findByRole('heading', { name: 'Camiseta running Dry-Fit' });
+      expect(pulsado('Azul marino')).toBe('true');
+
+      fireEvent.click(screen.getByRole('button', { name: 'https://imagenes.test/negro.jpg' }));
+      await vi.waitFor(() => expect(pulsado('Negro')).toBe('true'));
+      expect(pulsado('Azul marino')).toBe('false');
+
+      fireEvent.click(screen.getByRole('button', { name: 'Agregar al carrito' }));
+      await vi.waitFor(() => expect(variantesAgregadas).toEqual(['variante-ng']));
+    });
+
+    /**
+     * Con un círculo ya pulsado la galería sigue al color elegido, y elegir el negro desde su
+     * segunda foto la devolvía a la primera: la foto tocada se escapaba bajo el dedo.
+     */
+    it('se queda en la foto que se tocó, aunque no sea la primera de su color', async () => {
+      await renderFicha(repositorio);
+      await screen.findByRole('heading', { name: 'Camiseta running Dry-Fit' });
+      fireEvent.click(screen.getByRole('button', { name: 'Azul marino' }));
+      await vi.waitFor(() => expect(fotoGrande()).toContain('azul.jpg'));
+
+      fireEvent.click(
+        screen.getByRole('button', { name: 'https://imagenes.test/negro-espalda.jpg' }),
+      );
+
+      await vi.waitFor(() => expect(pulsado('Negro')).toBe('true'));
+      expect(fotoGrande()).toContain('negro-espalda.jpg');
+    });
+
+    it('una foto sin color no cambia lo que se compra', async () => {
+      await renderFicha(repositorio);
+      await screen.findByRole('heading', { name: 'Camiseta running Dry-Fit' });
+      fireEvent.click(screen.getByRole('button', { name: 'Negro' }));
+      await vi.waitFor(() => expect(pulsado('Negro')).toBe('true'));
+
+      fireEvent.click(screen.getByRole('button', { name: 'https://imagenes.test/detalle.jpg' }));
+
+      await vi.waitFor(() => expect(fotoGrande()).toContain('detalle.jpg'));
+      expect(pulsado('Negro')).toBe('true');
+    });
+
+    it('un círculo de color después vuelve a llevar a la primera foto de su color', async () => {
+      await renderFicha(repositorio);
+      await screen.findByRole('heading', { name: 'Camiseta running Dry-Fit' });
+      fireEvent.click(
+        screen.getByRole('button', { name: 'https://imagenes.test/negro-espalda.jpg' }),
+      );
+      await vi.waitFor(() => expect(fotoGrande()).toContain('negro-espalda.jpg'));
+
+      fireEvent.click(screen.getByRole('button', { name: 'Azul marino' }));
+      await vi.waitFor(() => expect(fotoGrande()).toContain('azul.jpg'));
+
+      fireEvent.click(screen.getByRole('button', { name: 'Negro' }));
+      await vi.waitFor(() => expect(fotoGrande()).toMatch(/\/negro\.jpg/));
+    });
+  });
+
   it('anuncia lo que se agregó al carrito, sin sacar el foco del botón', async () => {
     const repositorio: RepositorioProductos = {
       buscar: () =>

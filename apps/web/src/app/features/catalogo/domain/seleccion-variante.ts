@@ -316,6 +316,22 @@ export function indiceDeLaPrimeraDelColor(
 }
 
 /**
+ * El color que retrata una foto: el de la variante de la que cuelga, o `null` si es una foto
+ * general —la principal, o una que no se asoció a ninguna prenda— o su variante no tiene color.
+ *
+ * Es el camino de vuelta de `indiceDeLaPrimeraDelColor`. Sin él, tocar la miniatura del azul
+ * cielo enseñaba el azul cielo y dejaba elegido el beige de la variante por defecto: lo que se
+ * agregaba al carrito no era lo que se estaba mirando.
+ */
+export function colorDeImagen(producto: Producto, imagen: Imagen): string | null {
+  if (imagen.varianteId === null) {
+    return null;
+  }
+  const variante = producto.variantes.find((candidata) => candidata.id === imagen.varianteId);
+  return variante?.atributos.find((valor) => valor.colorHex !== null)?.valor ?? null;
+}
+
+/**
  * La foto de la tarjeta para un color: la primera de ese tono, o la principal. La principal no
  * cuelga de ninguna variante —el panel la reemplaza como la del producto—, así que el color que
  * muestra es el que no tiene otra foto propia.

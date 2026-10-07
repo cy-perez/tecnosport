@@ -1,5 +1,6 @@
 import { muestraDe, Producto, Variante } from './producto.model';
 import {
+  colorDeImagen,
   detalleDeVariante,
   indiceDeLaPrimeraDelColor,
   nombreDeColor,
@@ -413,6 +414,39 @@ describe('indiceDeLaPrimeraDelColor', () => {
     const todas = [principal, deVino];
     expect(indiceDeLaPrimeraDelColor(producto, todas, 'Negro')).toBeLessThan(todas.length);
     expect(todas).toHaveLength(2);
+  });
+});
+
+describe('colorDeImagen', () => {
+  const imagen = (url: string, varianteId: string | null) => ({
+    url,
+    variantes: [{ ancho: 800, url }],
+    urlVistaPrevia: null,
+    ancho: 800,
+    alto: 800,
+    altEs: url,
+    altEn: url,
+    varianteId,
+  });
+  const producto = productoDePrueba([azulM, negroL]);
+
+  it('una foto de una prenda dice el color de esa prenda', () => {
+    expect(colorDeImagen(producto, imagen('negra', negroL.id))).toBe('Negro');
+  });
+
+  it('una foto general no tiene color', () => {
+    expect(colorDeImagen(producto, imagen('principal', null))).toBeNull();
+  });
+
+  it('una foto de una variante que ya no existe no tiene color', () => {
+    expect(colorDeImagen(producto, imagen('huerfana', 'id-borrada'))).toBeNull();
+  });
+
+  it('una foto de una variante sin color no tiene color', () => {
+    const memoria = variante('SKU-128', true, [
+      { nombre: 'Almacenamiento', valor: '128', colorHex: null, unidad: 'GB' },
+    ]);
+    expect(colorDeImagen(productoDePrueba([memoria]), imagen('128', memoria.id))).toBeNull();
   });
 });
 
