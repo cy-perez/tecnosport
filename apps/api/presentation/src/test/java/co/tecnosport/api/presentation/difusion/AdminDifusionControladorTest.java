@@ -16,6 +16,7 @@ import co.tecnosport.api.application.compartido.Reloj;
 import co.tecnosport.api.application.compartido.ResultadoPaginado;
 import co.tecnosport.api.application.difusion.ArmadorDePieDeFoto;
 import co.tecnosport.api.application.difusion.DifundirProducto;
+import co.tecnosport.api.application.difusion.ImagenAPublicar;
 import co.tecnosport.api.application.difusion.PublicadorEnRedSocial;
 import co.tecnosport.api.application.difusion.RepositorioPublicaciones;
 import co.tecnosport.api.application.difusion.ResultadoPublicacion;
@@ -168,7 +169,7 @@ class AdminDifusionControladorTest {
             productos.producto.id(),
             RedSocial.INSTAGRAM,
             "JBL Grip — $299.900",
-            "https://storage.googleapis.com/b/principal.jpg",
+            List.of("https://storage.googleapis.com/b/principal.jpg"),
             co.tecnosport.api.domain.difusion.EstadoPublicacion.PUBLICADA,
             "181961",
             AHORA,
@@ -241,7 +242,13 @@ class AdminDifusionControladorTest {
 
   static final class PublicadorDoble implements PublicadorEnRedSocial {
     @Override
-    public ResultadoPublicacion publicar(RedSocial red, String urlImagen, String pieDeFoto) {
+    public List<ImagenAPublicar> admitidasPor(RedSocial red, List<ImagenAPublicar> imagenes) {
+      return List.copyOf(imagenes);
+    }
+
+    @Override
+    public ResultadoPublicacion publicar(
+        RedSocial red, List<ImagenAPublicar> imagenes, String pieDeFoto) {
       return ResultadoPublicacion.publicada("ID-EXTERNO");
     }
   }

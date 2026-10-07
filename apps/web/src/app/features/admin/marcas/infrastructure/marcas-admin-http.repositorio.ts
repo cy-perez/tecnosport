@@ -20,8 +20,12 @@ const MARCA_YA_EXISTE = 'MARCA_YA_EXISTE';
  * la vitrina. Si el panel usara aquel, la marca recién creada no aparecería en el desplegable y no
  * habría forma de cargarle su primer producto.
  *
- * Cumple los dos puertos: el de la vitrina (`listarTodas`, que es lo que el formulario de producto
- * necesita) y el del panel, que además crea. Se provee bajo los dos tokens.
+ * Cumple los dos puertos: `RepositorioMarcas` (`listarTodas`, que es lo que el formulario de
+ * producto necesita) y el del panel, que además crea. Se provee bajo los dos tokens.
+ *
+ * El que **no** cumple es `RepositorioMarcasDeVitrina`, y es la razón de que ese exista aparte:
+ * pide las líneas en las que cada marca tiene algo publicado, y de una marca recién creada —la que
+ * este adaptador existe para ofrecer— no hay ninguna respuesta honesta a esa pregunta.
  *
  * Con cliente **autenticado**, y esto era un defecto real hasta hoy: `/api/v1/admin/**` exige rol
  * ADMIN y este adaptador usaba el cliente sin token, así que el desplegable de marcas del

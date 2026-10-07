@@ -1,19 +1,19 @@
 import { Injectable } from '@angular/core';
 import { crearClienteContratos } from '@tecnosport/contratos';
-import { Marca } from '../domain/producto.model';
-import { RepositorioMarcas } from '../domain/repositorio-marcas.puerto';
+import { MarcaDeVitrina } from '../domain/producto.model';
+import { RepositorioMarcasDeVitrina } from '../domain/repositorio-marcas.puerto';
 import { baseUrl } from '../../../core/http/base-url';
 import { desempaquetar } from '../../../core/http/respuesta-http';
-import { aMarca } from './mapeador-productos';
+import { aMarcaDeVitrina } from './mapeador-productos';
 
 @Injectable()
-export class MarcasHttpRepositorio implements RepositorioMarcas {
+export class MarcasHttpRepositorio implements RepositorioMarcasDeVitrina {
   private readonly cliente = crearClienteContratos(baseUrl());
 
-  async listarTodas(): Promise<Marca[]> {
+  async listarDeVitrina(): Promise<MarcaDeVitrina[]> {
     const respuesta = await this.cliente.GET('/api/v1/marcas');
     const datos = desempaquetar(respuesta, 'no se pudieron cargar las marcas');
 
-    return (datos.items ?? []).map(aMarca);
+    return (datos.items ?? []).map(aMarcaDeVitrina);
   }
 }

@@ -2,6 +2,7 @@ package co.tecnosport.api.application.proveedores;
 
 import co.tecnosport.api.application.catalogo.AlmacenDeImagenes;
 import co.tecnosport.api.application.catalogo.FiltroProductos;
+import co.tecnosport.api.application.catalogo.MarcaConLineas;
 import co.tecnosport.api.application.catalogo.MedidaDeVariante;
 import co.tecnosport.api.application.catalogo.OrdenProductos;
 import co.tecnosport.api.application.catalogo.ProductosPaginados;
@@ -342,7 +343,7 @@ final class ApoyoDeCatalogoParaIngesta {
     }
 
     @Override
-    public List<Marca> listarConProductosPublicados() {
+    public List<MarcaConLineas> listarConProductosPublicados() {
       throw new UnsupportedOperationException();
     }
 

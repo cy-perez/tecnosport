@@ -2305,6 +2305,12 @@ export interface components {
         MapaDelSitioRespuesta: {
             productos?: components["schemas"]["Producto"][];
         };
+        MarcaDeVitrinaRespuesta: {
+            /** Format: uuid */
+            id?: string;
+            lineas?: string[];
+            nombre?: string;
+        };
         MarcaRespuesta: {
             /** Format: uuid */
             id?: string;
@@ -2545,6 +2551,7 @@ export interface components {
             /** Format: date-time */
             solicitadaEn?: string;
             urlImagen?: string;
+            urlesImagen?: string[];
         };
         RadicarGarantiaRequest: {
             descripcionDelFallo?: string;
@@ -2681,6 +2688,10 @@ export interface components {
         ResultadoPaginadoRespuestaCategoriaRespuesta: {
             cursorSiguiente?: string;
             items?: components["schemas"]["CategoriaRespuesta"][];
+        };
+        ResultadoPaginadoRespuestaMarcaDeVitrinaRespuesta: {
+            cursorSiguiente?: string;
+            items?: components["schemas"]["MarcaDeVitrinaRespuesta"][];
         };
         ResultadoPaginadoRespuestaMarcaRespuesta: {
             cursorSiguiente?: string;
@@ -5489,7 +5500,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ResultadoPaginadoRespuestaMarcaRespuesta"];
+                    "*/*": components["schemas"]["ResultadoPaginadoRespuestaMarcaDeVitrinaRespuesta"];
                 };
             };
         };

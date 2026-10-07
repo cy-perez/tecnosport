@@ -22,6 +22,7 @@ import co.tecnosport.api.application.catalogo.DespublicarProducto;
 import co.tecnosport.api.application.catalogo.EditarProducto;
 import co.tecnosport.api.application.catalogo.EliminarProducto;
 import co.tecnosport.api.application.catalogo.ListarProductosAdmin;
+import co.tecnosport.api.application.catalogo.MarcaConLineas;
 import co.tecnosport.api.application.catalogo.ProductosPaginados;
 import co.tecnosport.api.application.catalogo.PublicarProducto;
 import co.tecnosport.api.application.catalogo.QuitarImagenDeGaleria;
@@ -50,6 +51,7 @@ import co.tecnosport.api.domain.compartido.Slug;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -970,8 +972,10 @@ class AdminProductoControladorTest {
 
     /** Este controlador no lo usa; aquí solo cumple el contrato del puerto. */
     @Override
-    public List<Marca> listarConProductosPublicados() {
-      return marcas;
+    public List<MarcaConLineas> listarConProductosPublicados() {
+      return marcas.stream()
+          .map(marca -> new MarcaConLineas(marca, Set.of(LineaCatalogo.TECNOLOGIA)))
+          .toList();
     }
 
     @Override

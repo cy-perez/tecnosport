@@ -150,6 +150,39 @@ function productoConVariantes(): Producto {
   };
 }
 
+/**
+ * Una foto publicada, con lo justo para la galería.
+ */
+function foto(url: string, varianteId: string | null) {
+  return {
+    url,
+    variantes: [{ ancho: 800, url }],
+    urlVistaPrevia: null,
+    ancho: 800,
+    alto: 800,
+    altEs: url,
+    altEn: url,
+    varianteId,
+  };
+}
+
+/**
+ * El caso del pantalón Americanino en pequeño: una principal que no cuelga de ningún color, una
+ * foto por color, y la casilla de "las generales acompañan a cada color" apagada —que es como
+ * sale de la revisión cuando cada color trae la suya—.
+ */
+function productoConFotoPorColor(): Producto {
+  return {
+    ...productoConVariantes(),
+    imagenPrincipal: foto('https://imagenes.test/principal.jpg', null),
+    galeria: [
+      foto('https://imagenes.test/azul.jpg', 'variante-az'),
+      foto('https://imagenes.test/negro.jpg', 'variante-ng'),
+    ],
+    fotosGeneralesEnCadaColor: false,
+  };
+}
+
 function productoConRotacion(): Producto {
   return {
     ...productoDePrueba(),
@@ -294,6 +327,51 @@ describe('FichaPage', () => {
       'textContent',
       'No se pudo cargar el producto. Intenta de nuevo.',
     );
+  });
+
+  /**
+   * <b>El defecto del 7 de octubre de 2026.</b> La galería enseñaba solo las fotos del color
+   * elegido y, con la casilla de "las generales acompañan a cada color" apagada, ni siquiera la
+   * principal. Un pantalón con nueve fotos y una por color abría con <b>una</b> foto y sin tira
+   * de miniaturas: nada decía que hubiera más, y a la principal no se llegaba con ningún color.
+   */
+  it('la galería enseña todas las fotos, con la principal primero', async () => {
+    const repositorio: RepositorioProductos = {
+      buscar: () =>
+        Promise.resolve<ResultadoPaginado<Producto>>({ items: [], cursorSiguiente: null }),
+      buscarPorSlug: () => Promise.resolve(productoConFotoPorColor()),
+    };
+
+    await renderFicha(repositorio);
+    await screen.findByRole('heading', { name: 'Camiseta running Dry-Fit' });
+
+    // Las tres: la principal y la foto de cada color. Antes salía una sola y sin tira.
+    expect(screen.getAllByRole('button', { name: /imagenes\.test/ })).toHaveLength(3);
+    // Y abre en la principal, que es la que la tarjeta del catálogo usa de previsualización:
+    // abrir en otra se lee como haber entrado a otro producto.
+    const grande = screen.getByRole('img', { name: 'https://imagenes.test/principal.jpg' });
+    expect(grande.getAttribute('src')).toContain('principal.jpg');
+  });
+
+  /** Y elegir un color mueve la foto activa; no recorta la lista. */
+  it('elegir un color salta a su foto sin esconder las demás', async () => {
+    const repositorio: RepositorioProductos = {
+      buscar: () =>
+        Promise.resolve<ResultadoPaginado<Producto>>({ items: [], cursorSiguiente: null }),
+      buscarPorSlug: () => Promise.resolve(productoConFotoPorColor()),
+    };
+
+    await renderFicha(repositorio);
+    await screen.findByRole('heading', { name: 'Camiseta running Dry-Fit' });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Negro' }));
+
+    await vi.waitFor(() => {
+      const grande = document.querySelector('.aspect-square img') as HTMLImageElement;
+      expect(grande.getAttribute('src')).toContain('negro.jpg');
+    });
+    // Las tres siguen en la tira: lo que cambió es cuál está activa, no cuántas hay.
+    expect(screen.getAllByRole('button', { name: /imagenes\.test/ })).toHaveLength(3);
   });
 
   it('un producto sin set de rotación no muestra el visor 360', async () => {

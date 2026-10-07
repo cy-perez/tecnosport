@@ -46,7 +46,7 @@ import {
   ejesDeAtributos,
   esEjeDeTalla,
   imagenDelColor,
-  imagenesDelColor,
+  indiceDeLaPrimeraDelColor,
   nombreDeColor,
   opcionDisponible,
   Seleccion,
@@ -114,17 +114,51 @@ export class FichaPage {
     ];
   });
 
+  /**
+   * Todas las fotos del producto, con la principal delante.
+   *
+   * <b>No se recortan por color, y antes sí.</b> La galería enseñaba solo las del tono elegido,
+   * así que un pantalón con nueve fotos y una por color salía con <b>una</b> foto y sin tira de
+   * miniaturas: nada decía que hubiera más, y a la principal no se llegaba nunca. La principal
+   * va primera porque es la que la tarjeta del catálogo usa de previsualización, y abrir la
+   * ficha en otra foto se lee como haber entrado a otro producto.
+   */
   protected readonly imagenesGaleria = computed<Imagen[]>(() => {
     const producto = this.producto();
     if (!producto) {
       return [];
     }
-    const todas = [producto.imagenPrincipal, ...producto.galeria].filter(
+    return [producto.imagenPrincipal, ...producto.galeria].filter(
       (imagen): imagen is Imagen => imagen !== null,
     );
-    // Al elegir un color, las fotos de ese tono primero y las que valen para todos detrás.
+  });
+
+  /**
+   * Si quien mira ya eligió un color con el dedo, o si lo que hay elegido es solo la variante por
+   * defecto que puso la pantalla al cargar.
+   *
+   * La diferencia decide dónde abre la galería, y no es un matiz: al cargar siempre hay una
+   * variante elegida —la primera disponible—, así que sin esto la ficha abriría en la foto de
+   * ese color y no en la principal. Quien viene de la rejilla acaba de pulsar una tarjeta que
+   * enseñaba la principal; abrir en otra foto se lee como haber entrado a otro producto.
+   */
+  private readonly colorElegidoAMano = signal(false);
+
+  /**
+   * En qué foto se para la galería: la primera del color que se eligió, o la principal mientras
+   * nadie haya elegido ninguno. Elegir un color mueve la foto activa; no cambia cuántas hay.
+   */
+  protected readonly indiceEnLaGaleria = computed<number>(() => {
+    const producto = this.producto();
+    if (!producto || !this.colorElegidoAMano()) {
+      return 0;
+    }
     const eje = ejeDeColor(producto);
-    return imagenesDelColor(producto, todas, eje ? (this.seleccion()[eje] ?? null) : null);
+    return indiceDeLaPrimeraDelColor(
+      producto,
+      this.imagenesGaleria(),
+      eje ? (this.seleccion()[eje] ?? null) : null,
+    );
   });
 
   /** El visor recibe URL y nada más. Llegan ya ordenadas por `orden` desde el mapeador. */
@@ -309,6 +343,8 @@ export class FichaPage {
       }
       const variante = variantePorDefecto(producto);
       this.seleccion.set(variante ? seleccionDeVariante(variante) : {});
+      // Otro producto, otra galería: vuelve a abrir en la principal.
+      untracked(() => this.colorElegidoAMano.set(false));
     });
   }
 
@@ -320,6 +356,8 @@ export class FichaPage {
     const producto = this.producto();
     const anterior = this.seleccion();
     const cambiado = Object.keys(seleccion).find((eje) => seleccion[eje] !== anterior[eje]);
+    // Desde aquí la galería sigue al color: esto solo lo llama el selector, o sea una persona.
+    this.colorElegidoAMano.set(true);
     if (!producto || !cambiado) {
       this.seleccion.set(seleccion);
       return;

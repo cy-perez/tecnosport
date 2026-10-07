@@ -127,7 +127,11 @@ class RepositorioCategoriasJpaTest {
         .containsExactly("26", "28", "30", "32", "34", "36", "38", "40", "42");
     assertThat(repositorio.buscarPorSlug(new Slug("calzado-unisex")).orElseThrow().escalaTallas())
         .containsExactly("34", "35", "36", "37", "38", "39", "40", "41", "42", "43");
-    assertThat(repositorio.buscarPorSlug(new Slug("calzado-dama-deportivo"))).isPresent();
+    // `calzado-dama` es hoja otra vez desde `V84`, asi que su escala es la que ella misma lleva.
+    assertThat(
+            repositorio.hijasDe(
+                repositorio.buscarPorSlug(new Slug("calzado-dama")).orElseThrow().id()))
+        .isEmpty();
   }
 
   /** Una categoría de primer nivel no tiene padre, y eso también se afirma. */

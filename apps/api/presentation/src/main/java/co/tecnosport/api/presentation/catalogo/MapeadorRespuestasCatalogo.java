@@ -2,12 +2,14 @@ package co.tecnosport.api.presentation.catalogo;
 
 import co.tecnosport.api.application.catalogo.CatalogoPaginado;
 import co.tecnosport.api.application.catalogo.FichaDeProducto;
+import co.tecnosport.api.application.catalogo.MarcaConLineas;
 import co.tecnosport.api.application.compartido.ResultadoPaginado;
 import co.tecnosport.api.application.inventario.VariantesDisponibles;
 import co.tecnosport.api.domain.catalogo.Atributo;
 import co.tecnosport.api.domain.catalogo.Categoria;
 import co.tecnosport.api.domain.catalogo.EstadoSetRotacion;
 import co.tecnosport.api.domain.catalogo.ImagenProducto;
+import co.tecnosport.api.domain.catalogo.LineaCatalogo;
 import co.tecnosport.api.domain.catalogo.Marca;
 import co.tecnosport.api.domain.catalogo.Producto;
 import co.tecnosport.api.domain.catalogo.SetRotacion;
@@ -20,6 +22,7 @@ import co.tecnosport.api.presentation.catalogo.dto.AtributoValorRespuesta;
 import co.tecnosport.api.presentation.catalogo.dto.CategoriaRespuesta;
 import co.tecnosport.api.presentation.catalogo.dto.ImagenRespuesta;
 import co.tecnosport.api.presentation.catalogo.dto.ImagenRotacionRespuesta;
+import co.tecnosport.api.presentation.catalogo.dto.MarcaDeVitrinaRespuesta;
 import co.tecnosport.api.presentation.catalogo.dto.MarcaRespuesta;
 import co.tecnosport.api.presentation.catalogo.dto.ParteDeMuestraRespuesta;
 import co.tecnosport.api.presentation.catalogo.dto.ProductoRespuesta;
@@ -28,6 +31,7 @@ import co.tecnosport.api.presentation.catalogo.dto.RotacionRespuesta;
 import co.tecnosport.api.presentation.catalogo.dto.VarianteDeImagenRespuesta;
 import co.tecnosport.api.presentation.catalogo.dto.VarianteRespuesta;
 import co.tecnosport.api.presentation.compartido.dto.DineroRespuesta;
+import java.util.Arrays;
 import java.util.List;
 import org.springframework.stereotype.Component;
 
@@ -84,6 +88,12 @@ public class MapeadorRespuestasCatalogo {
     return new ResultadoPaginadoRespuesta<>(marcas.stream().map(this::aRespuesta).toList(), null);
   }
 
+  /** Las de la vitrina, que además dicen en qué líneas tienen algo. */
+  public ResultadoPaginadoRespuesta<MarcaDeVitrinaRespuesta> aRespuestaDeMarcasDeVitrina(
+      List<MarcaConLineas> marcas) {
+    return new ResultadoPaginadoRespuesta<>(marcas.stream().map(this::aRespuesta).toList(), null);
+  }
+
   public ResultadoPaginadoRespuesta<CategoriaRespuesta> aRespuestaDeCategorias(
       List<Categoria> categorias) {
     return new ResultadoPaginadoRespuesta<>(
@@ -92,6 +102,21 @@ public class MapeadorRespuestasCatalogo {
 
   public MarcaRespuesta aRespuesta(Marca marca) {
     return new MarcaRespuesta(marca.id(), marca.nombre());
+  }
+
+  /**
+   * Las líneas van en el orden del enum y no en el que las devolvió la base: así dos marcas con el
+   * mismo surtido se leen igual en la respuesta, y una diferencia en el JSON significa una
+   * diferencia de verdad.
+   */
+  public MarcaDeVitrinaRespuesta aRespuesta(MarcaConLineas marca) {
+    return new MarcaDeVitrinaRespuesta(
+        marca.marca().id(),
+        marca.marca().nombre(),
+        Arrays.stream(LineaCatalogo.values())
+            .filter(marca.lineas()::contains)
+            .map(LineaCatalogo::name)
+            .toList());
   }
 
   public CategoriaRespuesta aRespuesta(Categoria categoria) {

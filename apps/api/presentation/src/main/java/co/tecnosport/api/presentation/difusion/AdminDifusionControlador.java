@@ -99,6 +99,7 @@ public class AdminDifusionControlador {
         publicacion.idPublicacionExterna().orElse(null),
         publicacion.pieDeFoto(),
         publicacion.urlImagen(),
+        publicacion.urlsImagen(),
         publicacion.solicitadaEn(),
         publicacion.publicadaEn().orElse(null),
         publicacion.detalleDelFallo().orElse(null));

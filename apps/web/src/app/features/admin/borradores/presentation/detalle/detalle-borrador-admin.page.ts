@@ -33,7 +33,7 @@ import { OpcionSelect, TsSelect } from '../../../../../shared/ui/select/ts-selec
 import { TsSelectControl } from '../../../../../shared/ui/select/ts-select-control';
 import { TsEsqueleto } from '../../../../../shared/ts-esqueleto/ts-esqueleto';
 import { TsMigas } from '../../../../../shared/ts-migas/ts-migas';
-import { usarOpcionesFiltro } from '../../../../catalogo/application/listar-opciones-filtro.consulta';
+import { usarOpcionesDeFormulario } from '../../../../catalogo/application/listar-opciones-filtro.consulta';
 import { usarPaletaDeColores } from '../../../../catalogo/application/listar-paleta-colores.consulta';
 import { escalaDeTallasDe, hojasConRuta } from '../../../../catalogo/domain/arbol-categorias';
 import { tallaNormalizada } from '../../../../catalogo/domain/seleccion-variante';
@@ -135,7 +135,7 @@ export class DetalleBorradorAdminPage {
 
   protected readonly consulta = usarVerBorrador(this.id);
   private readonly proveedores = usarProveedoresAdmin();
-  private readonly opciones = usarOpcionesFiltro();
+  private readonly opciones = usarOpcionesDeFormulario();
   private readonly paleta = usarPaletaDeColores();
   private readonly editar = usarEditarBorrador();
   private readonly aprobar = usarAprobarBorrador();

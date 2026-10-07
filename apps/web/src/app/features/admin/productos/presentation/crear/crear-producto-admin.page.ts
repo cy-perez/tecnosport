@@ -3,7 +3,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
-import { usarOpcionesFiltro } from '../../../../catalogo/application/listar-opciones-filtro.consulta';
+import { usarOpcionesDeFormulario } from '../../../../catalogo/application/listar-opciones-filtro.consulta';
 import { TsBoton } from '../../../../../shared/ui/boton/ts-boton';
 import { TsPaginaFormulario } from '../../../../../shared/ui/pagina-formulario/ts-pagina-formulario';
 import { TsCampo } from '../../../../../shared/ui/campo/ts-campo';
@@ -40,7 +40,7 @@ export class CrearProductoAdminPage {
 
   private readonly router = inject(Router);
   private readonly transloco = inject(TranslocoService);
-  private readonly opciones = usarOpcionesFiltro();
+  private readonly opciones = usarOpcionesDeFormulario();
   private readonly mutacion = usarCrearProductoAdmin();
 
   protected readonly error = signal<string | null>(null);

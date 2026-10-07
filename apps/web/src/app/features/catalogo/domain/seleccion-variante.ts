@@ -258,27 +258,33 @@ function variantesDelColor(producto: Producto, color: string): Set<string> {
 }
 
 /**
- * Las fotos de la ficha para el color elegido: las de ese tono y las que valen para todos, salvo
- * que el producto diga que las generales no acompañan a cada color —entonces solo las de ese tono—.
- * Sin color, o si ninguna foto es de ese tono, todas — una galería vacía no le sirve a nadie.
+ * Dónde se para la galería al elegir un color: en la primera foto de ese tono, o en la primera
+ * de todas si ese tono no tiene ninguna propia.
+ *
+ * <b>Esto era un filtro y ahora es un índice, y el cambio es el arreglo.</b> `imagenesDelColor`
+ * devolvía <i>solo</i> las fotos del color elegido —y, con `fotosGeneralesEnCadaColor` en falso,
+ * ni siquiera la principal—. En un pantalón de siete colores con una foto por color eso dejaba la
+ * ficha enseñando <b>una</b> foto de las nueve que el producto tiene, sin tira de miniaturas que
+ * insinuara que hay más: para llegar a las otras ocho había que ir tocando círculos de color a
+ * ciegas, y a la principal no se llegaba nunca.
+ *
+ * Ahora la galería las enseña todas siempre —la principal primero, que es la que la tarjeta ya
+ * usa de previsualización, y detrás la galería en su orden— y elegir un color mueve la foto
+ * activa en vez de recortar la lista. Lo que el color decide es dónde mirar, no cuánto se ve.
  */
-export function imagenesDelColor(
+export function indiceDeLaPrimeraDelColor(
   producto: Producto,
   imagenes: readonly Imagen[],
   color: string | null,
-): Imagen[] {
+): number {
   if (!color) {
-    return [...imagenes];
+    return 0;
   }
   const delColor = variantesDelColor(producto, color);
-  const propias = imagenes.filter((imagen) => imagen.varianteId && delColor.has(imagen.varianteId));
-  const deTodos = imagenes.filter((imagen) => imagen.varianteId === null);
-  if (propias.length === 0) {
-    // Sin fotos propias, las que valen para todos —la principal casi siempre—, y no las de los
-    // otros colores. Solo si tampoco hay de esas, todas: una galería vacía no le sirve a nadie.
-    return deTodos.length > 0 ? deTodos : [...imagenes];
-  }
-  return producto.fotosGeneralesEnCadaColor ? [...propias, ...deTodos] : propias;
+  const indice = imagenes.findIndex(
+    (imagen) => imagen.varianteId !== null && delColor.has(imagen.varianteId),
+  );
+  return indice === -1 ? 0 : indice;
 }
 
 /**
@@ -310,11 +316,30 @@ export function nombreDeColor(
   if (idioma !== 'en') {
     return valor;
   }
-  return valor
+  const { nombre, sufijo } = sinNumeroDeRepetido(valor);
+  const traducido = nombre
     .split('/')
     .map((parte) => parte.trim())
     .map((parte) => paleta.find((color) => plano(color.nombre) === plano(parte))?.nombreEn ?? parte)
     .join(' / ');
+  return traducido + sufijo;
+}
+
+/**
+ * Aparta el número con que la aprobación distingue dos fotos del mismo color —«Azul oscuro 2»—
+ * para poder buscar el nombre en la paleta, que lo guarda sin número.
+ *
+ * Sin esto, un color numerado no se encontraba y en inglés se leía «Azul oscuro 2» en medio de
+ * «Black» y «Red». El número se devuelve detrás de lo traducido —«Dark blue 2»— porque es lo
+ * que distingue una variante de la otra y quitarlo las haría indistinguibles también en inglés.
+ *
+ * Solo cuenta un número al final tras un espacio. Un color de la paleta que acabe en dígito no
+ * existe, y si algún día existe, el peor caso es que su nombre se busque sin el dígito y no se
+ * encuentre — que es lo que ya pasa hoy con cualquier color que no esté en la paleta.
+ */
+function sinNumeroDeRepetido(valor: string): { nombre: string; sufijo: string } {
+  const partido = /^(.*\S)\s+(\d+)$/.exec(valor);
+  return partido ? { nombre: partido[1], sufijo: ' ' + partido[2] } : { nombre: valor, sufijo: '' };
 }
 
 /** El nombre del eje de color del producto, si lo tiene: «Color». */

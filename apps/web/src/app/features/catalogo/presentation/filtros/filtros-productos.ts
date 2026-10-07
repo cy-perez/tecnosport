@@ -119,9 +119,23 @@ export class FiltrosProductos {
     orden: new FormControl<string>(ORDEN_POR_DEFECTO, { nonNullable: true }),
   });
 
-  private readonly lineaSeleccionada = toSignal(this.form.controls.linea.valueChanges, {
-    initialValue: this.form.controls.linea.value,
-  });
+  /**
+   * La línea que acota los otros dos desplegables.
+   *
+   * <b>Era `toSignal(this.form.controls.linea.valueChanges)`, y así no acotaba nada al llegar
+   * desde un botón de la portada.</b> El efecto que vuelca la URL en el formulario usa
+   * `patchValue(..., { emitEvent: false })` —y tiene que usarlo, o cada navegación dispararía la
+   * siguiente—, así que ese observable solo emite cuando alguien toca el control con el ratón.
+   * Entrando por `/productos?linea=CALZADO` la señal se quedaba en cadena vacía y el desplegable
+   * de categorías ofrecía las treinta y una de las cuatro líneas.
+   *
+   * Ahora es una señal escribible que actualizan los dos caminos que de verdad cambian la línea:
+   * el efecto de la URL y la suscripción al control. La del control va **sin** el `debounceTime`
+   * de la navegación: los desplegables se reacomodan en el momento, no 300 ms después.
+   */
+  private readonly lineaSeleccionada = signal(
+    filtroDesdeQueryParams(this.route.snapshot.queryParams).linea ?? '',
+  );
 
   // Diccionarios del scope perezoso `catalogo`, no `transloco.translate()`
   // dentro del computed: ese se evalúa una sola vez, antes de que el JSON del
@@ -180,12 +194,21 @@ export class FiltrosProductos {
       .map((hoja) => ({ valor: hoja.categoria.slug, etiqueta: hoja.ruta }));
   });
 
-  protected readonly opcionesMarca = computed<OpcionSelect[]>(() =>
-    (this.opciones.marcas.data() ?? []).map((marca) => ({
-      valor: marca.id,
-      etiqueta: marca.nombre,
-    })),
-  );
+  /**
+   * Solo las marcas que tienen algo publicado <b>en la línea que se está mirando</b>.
+   *
+   * Esto no se podía hacer en el navegador hasta el 6 de octubre de 2026: la respuesta de
+   * `/api/v1/marcas` traía el id y el nombre, y una marca no tiene línea —la tiene la categoría de
+   * cada uno de sus productos—. Ahora viaja la lista de líneas con cada marca y el filtro aplica
+   * el mismo criterio que ya aplicaba a las categorías: ofrecer una marca que en esta línea no
+   * tiene nada es mandar a quien compra a una rejilla vacía.
+   */
+  protected readonly opcionesMarca = computed<OpcionSelect[]>(() => {
+    const linea = this.lineaSeleccionada();
+    return (this.opciones.marcas.data() ?? [])
+      .filter((marca) => !linea || marca.lineas.includes(linea))
+      .map((marca) => ({ valor: marca.id, etiqueta: marca.nombre }));
+  });
 
   protected readonly opcionesOrden = computed<OpcionSelect[]>(() => {
     const etiquetas = this.etiquetasOrden();
@@ -203,15 +226,58 @@ export class FiltrosProductos {
     effect(() => {
       const filtro = filtroDesdeQueryParams(queryParams());
       this.form.patchValue(datosFormularioDesdeFiltro(filtro), { emitEvent: false });
+      this.lineaSeleccionada.set(filtro.linea ?? '');
     });
 
-    this.form.valueChanges.pipe(debounceTime(300), takeUntilDestroyed()).subscribe((valores) => {
-      const filtro = filtroDesdeFormulario(valores as ValoresFormularioFiltros);
+    // Sin `debounceTime`: esta no navega, solo reacomoda los otros dos desplegables, y hacerlo
+    // 300 ms después del clic se ve como un salto.
+    this.form.controls.linea.valueChanges
+      .pipe(takeUntilDestroyed())
+      .subscribe((linea) => this.alCambiarDeLinea(linea));
+
+    // El valor se lee del formulario y no de lo que emitió `valueChanges`, y la diferencia
+    // importa: `alCambiarDeLinea` puede haber limpiado la categoría o la marca en el intervalo, y
+    // la emisión es una foto de antes de esa limpieza. Navegar con ella reescribiría en la URL
+    // justo el filtro que se acaba de quitar.
+    this.form.valueChanges.pipe(debounceTime(300), takeUntilDestroyed()).subscribe(() => {
+      const filtro = filtroDesdeFormulario(this.form.getRawValue());
       this.router.navigate([], {
         relativeTo: this.route,
         queryParams: queryParamsDesdeFiltro(filtro),
       });
     });
+  }
+
+  /**
+   * Al cambiar de línea, lo que ya no pertenece a ella se cae.
+   *
+   * Sin esto el formulario queda con una categoría que no está entre sus opciones —el `<select>`
+   * se pinta en blanco, sin nada que quitar— y la rejilla sale vacía: la URL pide calzado y una
+   * categoría de tecnología a la vez, que es una combinación sin resultados. Es la misma trampa
+   * que `FiltroProductos` describe para el rango de precio que se evaporaba solo.
+   *
+   * <b>Solo se limpia lo que consta que no pertenece.</b> Mientras las listas no hayan cargado no
+   * se sabe, y borrar por no saber perdería el filtro que traía la URL.
+   */
+  private alCambiarDeLinea(linea: string): void {
+    this.lineaSeleccionada.set(linea);
+    if (!linea) {
+      return;
+    }
+
+    const categoria = (this.opciones.categorias.data() ?? []).find(
+      (opcion) => opcion.slug === this.form.controls.categoria.value,
+    );
+    if (categoria && categoria.linea !== linea) {
+      this.form.controls.categoria.setValue('', { emitEvent: false });
+    }
+
+    const marca = (this.opciones.marcas.data() ?? []).find(
+      (opcion) => opcion.id === this.form.controls.marca.value,
+    );
+    if (marca && !marca.lineas.includes(linea)) {
+      this.form.controls.marca.setValue('', { emitEvent: false });
+    }
   }
 
   protected alternar(): void {

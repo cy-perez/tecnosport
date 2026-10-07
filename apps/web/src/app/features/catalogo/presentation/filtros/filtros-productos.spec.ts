@@ -15,12 +15,15 @@ import { firstValueFrom } from 'rxjs';
 import en from '../../../../../assets/i18n/en.json';
 import es from '../../../../../assets/i18n/es.json';
 import esCatalogo from '../../../../../assets/i18n/scopes/catalogo/es.json';
-import { Categoria, Marca } from '../../domain/producto.model';
+import { Categoria, MarcaDeVitrina } from '../../domain/producto.model';
 import {
   REPOSITORIO_CATEGORIAS,
   RepositorioCategorias,
 } from '../../domain/repositorio-categorias.puerto';
-import { REPOSITORIO_MARCAS, RepositorioMarcas } from '../../domain/repositorio-marcas.puerto';
+import {
+  REPOSITORIO_MARCAS_DE_VITRINA,
+  RepositorioMarcasDeVitrina,
+} from '../../domain/repositorio-marcas.puerto';
 import { FiltrosProductos } from './filtros-productos';
 
 /**
@@ -96,9 +99,19 @@ class RepositorioCategoriasSoloTecnologia implements RepositorioCategorias {
   }
 }
 
-class RepositorioMarcasFalso implements RepositorioMarcas {
-  async listarTodas(): Promise<Marca[]> {
-    return [{ id: 'm1', nombre: 'TecnoSport' }];
+/**
+ * Tres marcas repartidas como en la tienda real: una solo de tecnología, una solo de calzado y una
+ * que vende en las dos. La tercera es la que importa — con una marca por línea, un filtro que
+ * devolviera la lista entera y uno que acotara bien darían lo mismo en cuanto hubiera una sola
+ * línea cargada.
+ */
+class RepositorioMarcasFalso implements RepositorioMarcasDeVitrina {
+  async listarDeVitrina(): Promise<MarcaDeVitrina[]> {
+    return [
+      { id: 'm1', nombre: 'TecnoSport', lineas: ['TECNOLOGIA'] },
+      { id: 'm2', nombre: 'Under Trail', lineas: ['CALZADO'] },
+      { id: 'm3', nombre: 'Andes Wear', lineas: ['TECNOLOGIA', 'CALZADO'] },
+    ];
   }
 }
 
@@ -119,7 +132,7 @@ async function renderFiltros(categorias: Type<RepositorioCategorias> = Repositor
       provideRouter([]),
       provideTanStackQuery(new QueryClient()),
       { provide: REPOSITORIO_CATEGORIAS, useClass: categorias },
-      { provide: REPOSITORIO_MARCAS, useClass: RepositorioMarcasFalso },
+      { provide: REPOSITORIO_MARCAS_DE_VITRINA, useClass: RepositorioMarcasFalso },
     ],
   });
 }
@@ -155,7 +168,7 @@ function proveedoresConScopePerezoso() {
     provideRouter([]),
     provideTanStackQuery(new QueryClient()),
     { provide: REPOSITORIO_CATEGORIAS, useClass: RepositorioCategoriasFalso },
-    { provide: REPOSITORIO_MARCAS, useClass: RepositorioMarcasFalso },
+    { provide: REPOSITORIO_MARCAS_DE_VITRINA, useClass: RepositorioMarcasFalso },
   ];
 }
 
@@ -243,6 +256,102 @@ describe('FiltrosProductos', () => {
     expect(etiquetas).not.toContain('Ropa › Dama');
   });
 
+  /**
+   * El defecto del 6 de octubre de 2026, que es el que paga esta prueba: los botones de la portada
+   * llevan a `/productos?linea=X`, y al llegar así los dos desplegables ofrecían el catálogo
+   * entero. La línea se leía de `form.controls.linea.valueChanges` y el efecto que vuelca la URL
+   * usa `patchValue(..., { emitEvent: false })`, así que ese observable no emitía nunca: la línea
+   * solo contaba si alguien tocaba el control con el ratón.
+   *
+   * Por eso la prueba entra por la URL y **no** cambiando el `<select>`: cambiándolo pasaba en
+   * verde con el defecto puesto.
+   */
+  it('llegando con una línea en la URL, los desplegables ya vienen acotados', async () => {
+    TestBed.configureTestingModule({
+      imports: [
+        TranslocoTestingModule.forRoot({
+          langs: { es, en, 'catalogo/es': esCatalogo } as never,
+          translocoConfig: { availableLangs: ['es', 'en'], defaultLang: 'es' },
+          preloadLangs: true,
+        }),
+      ],
+      providers: [
+        provideRouter([]),
+        provideTanStackQuery(new QueryClient()),
+        { provide: REPOSITORIO_CATEGORIAS, useClass: RepositorioCategoriasFalso },
+        { provide: REPOSITORIO_MARCAS_DE_VITRINA, useClass: RepositorioMarcasFalso },
+      ],
+    });
+    await TestBed.inject(Router).navigateByUrl('/?linea=CALZADO');
+
+    const fixture = TestBed.createComponent(FiltrosProductos);
+    fixture.detectChanges();
+
+    const categoria = fixture.nativeElement.querySelector('#filtro-categoria') as HTMLElement;
+    const marca = fixture.nativeElement.querySelector('#filtro-marca') as HTMLElement;
+
+    await vi.waitFor(() => {
+      fixture.detectChanges();
+      expect(etiquetasDe(categoria).length).toBeGreaterThan(1);
+    });
+
+    // Sin el placeholder: solo lo de calzado.
+    expect(etiquetasDe(categoria).slice(1)).toEqual(['Calzado deportivo › Unisex']);
+    // Y las marcas igual: la de pura tecnología se cae, la que vende en las dos se queda.
+    expect(etiquetasDe(marca).slice(1)).toEqual(['Under Trail', 'Andes Wear']);
+  });
+
+  /**
+   * Cambiar de línea se lleva por delante la categoría y la marca que ya no pertenecen a ella. Sin
+   * esto el `<select>` queda con un valor que no está entre sus opciones —se pinta en blanco, sin
+   * nada que quitar— y la URL pide calzado y una categoría de tecnología a la vez, que no devuelve
+   * un solo producto.
+   */
+  it('al cambiar de línea se cae la categoría que era de otra', async () => {
+    TestBed.configureTestingModule({
+      imports: [
+        TranslocoTestingModule.forRoot({
+          langs: { es, en, 'catalogo/es': esCatalogo } as never,
+          translocoConfig: { availableLangs: ['es', 'en'], defaultLang: 'es' },
+          preloadLangs: true,
+        }),
+      ],
+      providers: [
+        provideRouter([]),
+        provideTanStackQuery(new QueryClient()),
+        { provide: REPOSITORIO_CATEGORIAS, useClass: RepositorioCategoriasFalso },
+        { provide: REPOSITORIO_MARCAS_DE_VITRINA, useClass: RepositorioMarcasFalso },
+      ],
+    });
+    await TestBed.inject(Router).navigateByUrl('/?linea=TECNOLOGIA&categoria=celulares&marca=m1');
+
+    const fixture = TestBed.createComponent(FiltrosProductos);
+    fixture.detectChanges();
+    const router = fixture.debugElement.injector.get(Router);
+    const navegar = vi.spyOn(router, 'navigate');
+
+    // Se espera por las **categorías**, no por las líneas: las cuatro líneas salen de una
+    // constante del modelo y están desde el primer render, así que esperarlas a ellas no dice
+    // nada sobre si la lista que `alCambiarDeLinea` consulta ya llegó.
+    const categoria = fixture.nativeElement.querySelector('#filtro-categoria') as HTMLElement;
+    const marca = fixture.nativeElement.querySelector('#filtro-marca') as HTMLElement;
+    await vi.waitFor(() => {
+      fixture.detectChanges();
+      expect(etiquetasDe(categoria).length).toBeGreaterThan(1);
+      expect(etiquetasDe(marca).length).toBeGreaterThan(1);
+    });
+
+    const linea = fixture.nativeElement.querySelector('#filtro-linea') as HTMLElement;
+    fireEvent.change(linea, { target: { value: 'CALZADO' } });
+    await esperar(350);
+
+    // Ni `categoria` ni `marca` sobreviven: las dos eran de tecnología.
+    expect(navegar).toHaveBeenCalledWith(
+      [],
+      expect.objectContaining({ queryParams: { linea: 'CALZADO', orden: 'RELEVANCIA' } }),
+    );
+  });
+
   it('sin filtros en la URL, arranca plegado y el botón lo despliega', async () => {
     await renderFiltros();
 
@@ -270,7 +379,7 @@ describe('FiltrosProductos', () => {
         provideRouter([]),
         provideTanStackQuery(new QueryClient()),
         { provide: REPOSITORIO_CATEGORIAS, useClass: RepositorioCategoriasFalso },
-        { provide: REPOSITORIO_MARCAS, useClass: RepositorioMarcasFalso },
+        { provide: REPOSITORIO_MARCAS_DE_VITRINA, useClass: RepositorioMarcasFalso },
       ],
     });
     await TestBed.inject(Router).navigateByUrl('/?linea=BOLSOS');

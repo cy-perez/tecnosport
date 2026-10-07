@@ -403,6 +403,50 @@ class AprobarBorradorTest {
     assertTrue(producto.galeria().get(0).varianteId().isPresent(), "la galería sí lleva su tono");
   }
 
+  /**
+   * Dos fotos marcadas con el mismo color son <b>dos variantes</b>, y el valor del atributo las
+   * numera para distinguirlas.
+   *
+   * <p>Hasta el 6 de octubre de 2026 los tonos se agrupaban con {@code distinct()}, así que las dos
+   * colapsaban en una variante con las dos fotos colgando: quien compra veía un solo círculo y no
+   * podía elegir cuál de las dos prendas quería. Numerar es feo y es lo correcto -- el valor del
+   * atributo es lo que el pedido congela y lo que lee quien empaca, y dos variantes con el mismo
+   * texto se leen igual en el carrito, en el correo y en la guía.
+   */
+  @Test
+  void dosFotosDelMismoTonoSonDosVariantesNumeradas() {
+    Producto producto =
+        caso()
+            .ejecutar(
+                comando(
+                    List.of(
+                        new FotoAprobada(foto1.id(), "Azul oscuro", "#1B2A4A"),
+                        new FotoAprobada(foto2.id(), "Azul oscuro", "#1B2A4A"))));
+
+    assertEquals(2, producto.variantes().size());
+    assertEquals("Azul oscuro 1", producto.variantes().get(0).atributos().get(0).valor());
+    assertEquals("Azul oscuro 2", producto.variantes().get(1).atributos().get(0).valor());
+    // Y cada foto cuelga de la suya: con el defecto, la de galería apuntaba a la única que
+    // había y las dos variantes compartían foto.
+    assertEquals(
+        Optional.of(producto.variantes().get(1).id()), producto.galeria().get(0).varianteId());
+  }
+
+  /** Un tono que sale una sola vez no se numera: el número solo aparece cuando hace falta. */
+  @Test
+  void unTonoQueNoSeRepiteSeQuedaConSuNombre() {
+    Producto producto =
+        caso()
+            .ejecutar(
+                comando(
+                    List.of(
+                        new FotoAprobada(foto1.id(), "Negro", "#000000"),
+                        new FotoAprobada(foto2.id(), "Vino", null))));
+
+    assertEquals("Negro", producto.variantes().get(0).atributos().get(0).valor());
+    assertEquals("Vino", producto.variantes().get(1).atributos().get(0).valor());
+  }
+
   @Test
   void sinFotosNoSeAprueba() {
     assertThrows(BorradorSinFotosException.class, () -> caso().ejecutar(comando(List.of())));

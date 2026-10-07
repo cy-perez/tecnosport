@@ -4,6 +4,7 @@ import {
   Categoria,
   Imagen,
   Marca,
+  MarcaDeVitrina,
   PatronDeColor,
   Producto,
   Rotacion,
@@ -16,6 +17,7 @@ import {
 type ProductoDto = components['schemas']['ProductoRespuesta'];
 type ImagenDto = components['schemas']['ImagenRespuesta'];
 type MarcaDto = components['schemas']['MarcaRespuesta'];
+type MarcaDeVitrinaDto = components['schemas']['MarcaDeVitrinaRespuesta'];
 type CategoriaDto = components['schemas']['CategoriaRespuesta'];
 type VarianteDto = components['schemas']['VarianteRespuesta'];
 type ValorAtributoDto = components['schemas']['AtributoValorRespuesta'];
@@ -43,6 +45,18 @@ export function aProducto(dto: ProductoDto): Producto {
 
 export function aMarca(dto?: MarcaDto): Marca {
   return { id: dto?.id ?? '', nombre: dto?.nombre ?? '' };
+}
+
+/**
+ * La del listado del filtro, que además dice en qué líneas tiene algo publicado.
+ *
+ * Sin líneas —una respuesta de antes de que viajaran— la marca queda sin ninguna, y el filtro la
+ * esconde en cuanto se elige una línea. Es lo correcto de las dos salidas posibles: enseñarla
+ * siempre sería volver al defecto que esto arregla, y el caso solo puede darse contra un backend
+ * viejo.
+ */
+export function aMarcaDeVitrina(dto?: MarcaDeVitrinaDto): MarcaDeVitrina {
+  return { ...aMarca(dto), lineas: dto?.lineas ?? [] };
 }
 
 export function aCategoria(dto?: CategoriaDto): Categoria {

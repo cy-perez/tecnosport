@@ -1750,6 +1750,24 @@
         },
         "type" : "object"
       },
+      "MarcaDeVitrinaRespuesta" : {
+        "properties" : {
+          "id" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "lineas" : {
+            "items" : {
+              "type" : "string"
+            },
+            "type" : "array"
+          },
+          "nombre" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
       "MarcaRespuesta" : {
         "properties" : {
           "id" : {
@@ -2432,6 +2450,12 @@
           },
           "urlImagen" : {
             "type" : "string"
+          },
+          "urlesImagen" : {
+            "items" : {
+              "type" : "string"
+            },
+            "type" : "array"
           }
         },
         "type" : "object"
@@ -2813,6 +2837,20 @@
           "items" : {
             "items" : {
               "$ref" : "#/components/schemas/CategoriaRespuesta"
+            },
+            "type" : "array"
+          }
+        },
+        "type" : "object"
+      },
+      "ResultadoPaginadoRespuestaMarcaDeVitrinaRespuesta" : {
+        "properties" : {
+          "cursorSiguiente" : {
+            "type" : "string"
+          },
+          "items" : {
+            "items" : {
+              "$ref" : "#/components/schemas/MarcaDeVitrinaRespuesta"
             },
             "type" : "array"
           }
@@ -7123,7 +7161,7 @@
             "content" : {
               "*/*" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/ResultadoPaginadoRespuestaMarcaRespuesta"
+                  "$ref" : "#/components/schemas/ResultadoPaginadoRespuestaMarcaDeVitrinaRespuesta"
                 }
               }
             },

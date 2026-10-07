@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import co.tecnosport.api.domain.compartido.HashContenido;
 import java.util.List;
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
 
 class ImagenProductoTest {
@@ -128,6 +129,76 @@ class ImagenProductoTest {
             "alt en");
 
     assertTrue(imagen.urlVistaPrevia().isEmpty());
+  }
+
+  // --- la URL para quien no negocia formatos (Meta, los previsualizadores de enlaces) ---
+
+  @Test
+  void conVistaPreviaManalaVistaPrevia() {
+    ImagenProducto imagen =
+        ImagenProducto.crear(
+            TipoImagen.PRINCIPAL,
+            0,
+            List.of(new VarianteDeImagen(800, "https://x/800.avif", 1000)),
+            "https://x/previa.jpg",
+            600,
+            new HashContenido("%064x".formatted(1)),
+            "alt es",
+            "alt en");
+
+    assertEquals(Optional.of("https://x/previa.jpg"), imagen.urlParaTercerosQueNoNegocianFormato());
+  }
+
+  /**
+   * <b>El caso que faltaba y tenía la difusión en redes rota para medio catálogo.</b> Una foto
+   * aprobada desde un borrador de proveedor se publica tal como llegó -- JPEG -- y nunca genera
+   * vista previa, así que exigirla rechazaba, por no tener una conversión a JPEG, fotos que ya eran
+   * JPEG.
+   */
+  @Test
+  void sinVistaPreviaValeLaPropiaImagenCuandoYaEsJpeg() {
+    assertEquals(
+        Optional.of("https://x/800.jpg"),
+        conVariantes(new VarianteDeImagen(800, "https://x/800.jpg", 1000))
+            .urlParaTercerosQueNoNegocianFormato());
+    assertEquals(
+        Optional.of("https://x/800.png"),
+        conVariantes(new VarianteDeImagen(800, "https://x/800.png", 1000))
+            .urlParaTercerosQueNoNegocianFormato());
+  }
+
+  /** AVIF y WebP no: son justo los que el sitio sirve y los que estos terceros no muestran. */
+  @Test
+  void sinVistaPreviaUnAvifOUnWebpNoSirven() {
+    assertTrue(
+        conVariantes(new VarianteDeImagen(800, "https://x/800.avif", 1000))
+            .urlParaTercerosQueNoNegocianFormato()
+            .isEmpty());
+    assertTrue(
+        conVariantes(new VarianteDeImagen(800, "https://x/800.webp", 1000))
+            .urlParaTercerosQueNoNegocianFormato()
+            .isEmpty());
+  }
+
+  /**
+   * Una URL sin extensión reconocible se trata como no publicable, que es el lado seguro: vale más
+   * no publicar que publicar un post sin foto.
+   */
+  @Test
+  void unaUrlSinExtensionConocidaNoSePublica() {
+    assertTrue(
+        conVariantes(new VarianteDeImagen(800, "https://x/800", 1000))
+            .urlParaTercerosQueNoNegocianFormato()
+            .isEmpty());
+  }
+
+  /** La cadena de consulta no cuenta: lo que decide el formato es la ruta. */
+  @Test
+  void laCadenaDeConsultaNoEscondeElFormato() {
+    assertEquals(
+        Optional.of("https://x/800.jpg?v=2"),
+        conVariantes(new VarianteDeImagen(800, "https://x/800.jpg?v=2", 1000))
+            .urlParaTercerosQueNoNegocianFormato());
   }
 
   private static ImagenProducto conVariantes(VarianteDeImagen... variantes) {

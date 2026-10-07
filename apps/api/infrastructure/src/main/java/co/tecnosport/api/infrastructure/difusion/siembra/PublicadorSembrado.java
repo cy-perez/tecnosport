@@ -1,8 +1,10 @@
 package co.tecnosport.api.infrastructure.difusion.siembra;
 
+import co.tecnosport.api.application.difusion.ImagenAPublicar;
 import co.tecnosport.api.application.difusion.PublicadorEnRedSocial;
 import co.tecnosport.api.application.difusion.ResultadoPublicacion;
 import co.tecnosport.api.domain.difusion.RedSocial;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,13 +28,25 @@ public final class PublicadorSembrado implements PublicadorEnRedSocial {
 
   private final AtomicLong contador = new AtomicLong(1);
 
+  /**
+   * Las admite todas. Simular también el filtro de proporciones de Instagram escondería en
+   * desarrollo justo la foto que en producción se va a caer, y el sentido de este doble es enseñar
+   * lo que se habría mandado, no adivinar lo que Meta habría contestado.
+   */
   @Override
-  public ResultadoPublicacion publicar(RedSocial red, String urlImagen, String pieDeFoto) {
+  public List<ImagenAPublicar> admitidasPor(RedSocial red, List<ImagenAPublicar> imagenes) {
+    return List.copyOf(imagenes);
+  }
+
+  @Override
+  public ResultadoPublicacion publicar(
+      RedSocial red, List<ImagenAPublicar> imagenes, String pieDeFoto) {
     String id = "SEMBRADO-" + red + "-" + contador.getAndIncrement();
     log.info(
-        "Publicación SIMULADA en {} (nada salió a Meta). Imagen: {}. Pie:\n{}",
+        "Publicación SIMULADA en {} (nada salió a Meta). {} imagen(es): {}. Pie:\n{}",
         red,
-        urlImagen,
+        imagenes.size(),
+        imagenes.stream().map(ImagenAPublicar::url).toList(),
         pieDeFoto);
     return ResultadoPublicacion.publicada(id);
   }

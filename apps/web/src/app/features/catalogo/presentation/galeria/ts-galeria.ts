@@ -65,14 +65,31 @@ export class TsGaleria {
   readonly prioritaria = input(false);
 
   /**
-   * Vuelve a la primera foto cuando cambian las fotos —al elegir otro color en la ficha—: con un
-   * `signal` suelto, el índice de la cuarta foto de un color con cuatro se quedaba apuntando a nada
-   * en uno con dos, y la galería desaparecía entera. La fuente son las URL y no el arreglo: una
-   * revalidación que devuelve las mismas fotos no tiene por qué mover a quien está mirando.
+   * En qué foto se para la galería cuando la pantalla la mueve: la ficha la usa para saltar a la
+   * foto del color elegido. Por omisión, la primera.
+   */
+  readonly indiceInicial = input(0);
+
+  /**
+   * Vuelve a la foto que diga la pantalla cuando cambian las fotos o cambia esa indicación —al
+   * elegir otro color en la ficha—: con un `signal` suelto, el índice de la cuarta foto se quedaba
+   * apuntando a nada en una lista de dos y la galería desaparecía entera. La fuente son las URL y
+   * no el arreglo: una revalidación que devuelve las mismas fotos no tiene por qué mover a quien
+   * está mirando.
+   *
+   * <b>El índice entra en la fuente, y hace falta.</b> Desde que la galería enseña todas las
+   * fotos siempre, elegir un color ya no cambia la lista —solo cuál es la activa—, así que con
+   * las URL por única fuente el salto al color elegido no ocurriría nunca. Y sigue siendo un
+   * `linkedSignal` y no un `effect`: entre dos cambios, quien toca una miniatura manda.
    */
   protected readonly indiceActivo = linkedSignal({
-    source: () => this.imagenes().map((imagen) => imagen.url).join('|'),
-    computation: () => 0,
+    source: () => ({
+      urls: this.imagenes()
+        .map((imagen) => imagen.url)
+        .join('|'),
+      inicial: this.indiceInicial(),
+    }),
+    computation: (fuente: { urls: string; inicial: number }) => fuente.inicial,
   });
 
   protected readonly activa = computed<Imagen | null>(
