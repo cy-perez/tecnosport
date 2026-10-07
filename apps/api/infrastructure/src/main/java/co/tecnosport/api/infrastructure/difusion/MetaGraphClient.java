@@ -1,5 +1,6 @@
 package co.tecnosport.api.infrastructure.difusion;
 
+import co.tecnosport.api.application.difusion.ImagenAPublicar;
 import co.tecnosport.api.application.difusion.PublicadorEnRedSocial;
 import co.tecnosport.api.application.difusion.ResultadoPublicacion;
 import co.tecnosport.api.domain.difusion.RedSocial;
@@ -11,6 +12,8 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,6 +42,24 @@ import tools.jackson.databind.json.JsonMapper;
  * Meta procesa de forma asíncrona descargando la imagen, y solo cuando ese contenedor está {@code
  * FINISHED} se publica. Entre medias hay que sondear. Sin el sondeo, publicar un contenedor todavía
  * en {@code IN_PROGRESS} devuelve un error que parece de permisos y no lo es.
+ *
+ * <h2>Y con varias fotos, cada una por su lado otra vez</h2>
+ *
+ * <p>Desde el 6 de octubre de 2026 se publica el carrusel entero de la ficha. Las dos redes lo
+ * hacen distinto, y ninguna de las dos formas se parece a la de una foto suelta:
+ *
+ * <ul>
+ *   <li><b>Facebook</b>: cada foto se sube a {@code /photos} con {@code published=false}, que
+ *       devuelve un id, y luego un solo {@code /feed} con el mensaje y los ids en {@code
+ *       attached_media}. Subirlas publicadas dejaría N posts de una foto en vez de uno con N.
+ *   <li><b>Instagram</b>: un contenedor hijo por foto con {@code is_carousel_item=true}, un
+ *       contenedor padre con {@code media_type=CAROUSEL} y los hijos en {@code children}, y el
+ *       {@code media_publish} del padre. Se sondea el <b>padre</b>, que es el que agrupa el
+ *       procesamiento de todos.
+ * </ul>
+ *
+ * <p>Con una sola foto se usa el camino de siempre en las dos: un carrusel de uno no existe en
+ * Instagram —el padre lo rechaza— y en Facebook sería un post peor a cambio de nada.
  *
  * <h2>Por qué casi nada de aquí lanza</h2>
  *
@@ -79,12 +100,63 @@ public final class MetaGraphClient implements PublicadorEnRedSocial {
     this.httpClient = HttpClient.newBuilder().connectTimeout(timeoutHttp).build();
   }
 
+  /**
+   * Cuántas fotos caben en un carrusel de Instagram. Es un número de Meta, igual que el tope de
+   * caracteres del pie: por eso vive aquí y no en el agregado ({@code PublicacionEnRed} lo razona).
+   * Facebook admite más, pero diez ya son más de las que nadie desliza.
+   */
+  private static final int TOPE_DEL_CARRUSEL = 10;
+
+  /**
+   * El rango de proporciones que Instagram acepta: de 4:5 (0,8 — vertical) a 1,91:1 (apaisada).
+   *
+   * <p>Una foto fuera de ese rango deja el contenedor en {@code ERROR}, y en un carrusel eso tumba
+   * el post entero por una sola foto. Por eso se descartan <b>antes</b> de crear nada, y por eso el
+   * puerto tiene un {@code admitidasPor}: el caso de uso necesita saber cuáles quedaron para
+   * guardar en la constancia lo que de verdad salió.
+   *
+   * <p>Facebook no tiene este límite: recorta o enmarca lo que le llegue.
+   */
+  private static final double PROPORCION_MINIMA_INSTAGRAM = 0.8;
+
+  private static final double PROPORCION_MAXIMA_INSTAGRAM = 1.91;
+
   @Override
-  public ResultadoPublicacion publicar(RedSocial red, String urlImagen, String pieDeFoto) {
+  public List<ImagenAPublicar> admitidasPor(RedSocial red, List<ImagenAPublicar> imagenes) {
+    List<ImagenAPublicar> admitidas =
+        switch (red) {
+          case FACEBOOK -> List.copyOf(imagenes);
+          case INSTAGRAM -> imagenes.stream().filter(MetaGraphClient::cabeEnInstagram).toList();
+        };
+    if (admitidas.size() > TOPE_DEL_CARRUSEL) {
+      admitidas = List.copyOf(admitidas.subList(0, TOPE_DEL_CARRUSEL));
+    }
+    if (admitidas.size() < imagenes.size()) {
+      log.info(
+          "De las {} fotos ofrecidas, en {} salen {}: el resto no cumple sus límites de proporción"
+              + " o no cabe en el carrusel.",
+          imagenes.size(),
+          red,
+          admitidas.size());
+    }
+    return admitidas;
+  }
+
+  private static boolean cabeEnInstagram(ImagenAPublicar imagen) {
+    double proporcion = imagen.proporcion();
+    return proporcion >= PROPORCION_MINIMA_INSTAGRAM && proporcion <= PROPORCION_MAXIMA_INSTAGRAM;
+  }
+
+  @Override
+  public ResultadoPublicacion publicar(
+      RedSocial red, List<ImagenAPublicar> imagenes, String pieDeFoto) {
+    if (imagenes.isEmpty()) {
+      return ResultadoPublicacion.fallida("No se mandó ninguna imagen que publicar.");
+    }
     try {
       return switch (red) {
-        case FACEBOOK -> publicarEnFacebook(urlImagen, pieDeFoto);
-        case INSTAGRAM -> publicarEnInstagram(urlImagen, pieDeFoto);
+        case FACEBOOK -> publicarEnFacebook(imagenes, pieDeFoto);
+        case INSTAGRAM -> publicarEnInstagram(imagenes, pieDeFoto);
       };
     } catch (InterruptedException e) {
       // Restaurar la bandera y no tragársela: quien interrumpió quiere que el hilo termine.
@@ -96,12 +168,19 @@ public final class MetaGraphClient implements PublicadorEnRedSocial {
     }
   }
 
+  private ResultadoPublicacion publicarEnFacebook(List<ImagenAPublicar> imagenes, String pieDeFoto)
+      throws IOException, InterruptedException {
+    return imagenes.size() == 1
+        ? publicarUnaEnFacebook(imagenes.get(0).url(), pieDeFoto)
+        : publicarVariasEnFacebook(imagenes, pieDeFoto);
+  }
+
   /**
    * Una sola llamada. Se usa {@code /photos} y no {@code /feed} porque lo que se publica es una
    * foto con pie: por {@code /feed} con un enlace, Facebook decide él la miniatura a partir de las
    * etiquetas {@code og:} de la ficha, y entonces la imagen del post deja de ser la que se eligió.
    */
-  private ResultadoPublicacion publicarEnFacebook(String urlImagen, String pieDeFoto)
+  private ResultadoPublicacion publicarUnaEnFacebook(String urlImagen, String pieDeFoto)
       throws IOException, InterruptedException {
     HttpResponse<String> respuesta =
         postear("/" + pageId + "/photos", formulario("url", urlImagen, "caption", pieDeFoto));
@@ -118,17 +197,72 @@ public final class MetaGraphClient implements PublicadorEnRedSocial {
         : ResultadoPublicacion.publicada(id);
   }
 
-  private ResultadoPublicacion publicarEnInstagram(String urlImagen, String pieDeFoto)
-      throws IOException, InterruptedException {
-    HttpResponse<String> creacion =
-        postear(
-            "/" + igUserId + "/media", formulario("image_url", urlImagen, "caption", pieDeFoto));
-    if (noEsExitosa(creacion)) {
-      return ResultadoPublicacion.fallida(motivoDe(creacion));
+  /**
+   * Primero las fotos sin publicar, después el post que las lleva.
+   *
+   * <p>{@code published=false} es lo único que separa esto de N posts sueltos: una foto subida así
+   * queda en la página sin asomar al muro, y el {@code /feed} de después la reclama por su id en
+   * {@code attached_media}. Si una subida falla no se sigue: el post saldría con menos fotos de las
+   * que alguien eligió y sin decirlo en ninguna parte.
+   *
+   * <p>Las que ya se subieron se quedan ahí, sin publicar, y no se borran. Es deliberado, y es la
+   * misma postura del informe de huérfanos del bucket: borrar dentro de un camino de error es donde
+   * se cometen los errores caros, y una foto sin publicar no la ve nadie.
+   */
+  private ResultadoPublicacion publicarVariasEnFacebook(
+      List<ImagenAPublicar> imagenes, String pieDeFoto) throws IOException, InterruptedException {
+    List<String> idsDeFoto = new ArrayList<>();
+    for (ImagenAPublicar imagen : imagenes) {
+      HttpResponse<String> subida =
+          postear("/" + pageId + "/photos", formulario("url", imagen.url(), "published", "false"));
+      if (noEsExitosa(subida)) {
+        return ResultadoPublicacion.fallida(motivoDe(subida));
+      }
+      String idDeFoto = json.readTree(subida.body()).path("id").asString();
+      if (idDeFoto == null || idDeFoto.isBlank()) {
+        return ResultadoPublicacion.fallida("Facebook subió una foto sin devolver su id.");
+      }
+      idsDeFoto.add(idDeFoto);
     }
-    String contenedor = json.readTree(creacion.body()).path("id").asString();
-    if (contenedor == null || contenedor.isBlank()) {
-      return ResultadoPublicacion.fallida("Instagram no devolvió el id del contenedor.");
+
+    // `attached_media[i]` con un objeto JSON dentro de un campo de formulario: así lo pide la Graph
+    // API, no es una rareza nuestra. `formulario` lo codifica entero.
+    List<String> campos = new ArrayList<>(List.of("message", pieDeFoto));
+    for (int i = 0; i < idsDeFoto.size(); i++) {
+      campos.add("attached_media[" + i + "]");
+      campos.add(jsonDeMediaFbid(idsDeFoto.get(i)));
+    }
+
+    HttpResponse<String> publicacion =
+        postear("/" + pageId + "/feed", formulario(campos.toArray(String[]::new)));
+    if (noEsExitosa(publicacion)) {
+      return ResultadoPublicacion.fallida(motivoDe(publicacion));
+    }
+    JsonNode raiz = json.readTree(publicacion.body());
+    String idDelPost = primeroNoVacio(raiz.path("post_id").asString(), raiz.path("id").asString());
+    return idDelPost == null
+        ? ResultadoPublicacion.fallida("Facebook respondió 200 sin identificador de publicación.")
+        : ResultadoPublicacion.publicada(idDelPost);
+  }
+
+  private ResultadoPublicacion publicarEnInstagram(List<ImagenAPublicar> imagenes, String pieDeFoto)
+      throws IOException, InterruptedException {
+    // El contenedor que se va a publicar: el de la foto única, o el padre del carrusel. De ahí en
+    // adelante los dos caminos son el mismo — sondear y publicar.
+    String contenedor;
+    if (imagenes.size() == 1) {
+      ResultadoDeContenedor unico =
+          crearContenedor(formulario("image_url", imagenes.get(0).url(), "caption", pieDeFoto));
+      if (unico.motivoDelFallo() != null) {
+        return ResultadoPublicacion.fallida(unico.motivoDelFallo());
+      }
+      contenedor = unico.id();
+    } else {
+      ResultadoDeContenedor padre = crearCarrusel(imagenes, pieDeFoto);
+      if (padre.motivoDelFallo() != null) {
+        return ResultadoPublicacion.fallida(padre.motivoDelFallo());
+      }
+      contenedor = padre.id();
     }
 
     String problema = esperarAQueElContenedorEsteListo(contenedor);
@@ -145,6 +279,58 @@ public final class MetaGraphClient implements PublicadorEnRedSocial {
     return id == null || id.isBlank()
         ? ResultadoPublicacion.fallida("Instagram publicó sin devolver identificador.")
         : ResultadoPublicacion.publicada(id);
+  }
+
+  /**
+   * Un contenedor hijo por foto y uno padre que los agrupa.
+   *
+   * <p><b>El pie va en el padre y no en los hijos</b>: un carrusel tiene un solo texto. Y los hijos
+   * llevan {@code is_carousel_item=true}, que es lo que impide que Meta los trate como publicables
+   * por su cuenta.
+   *
+   * <p>Solo se sondea el padre, después. Los hijos también se procesan de forma asíncrona, pero el
+   * padre no queda {@code FINISHED} hasta que todos lo están, así que sondear los hijos uno a uno
+   * sería hacer el mismo trabajo N veces y tardar N veces más en publicar.
+   */
+  private ResultadoDeContenedor crearCarrusel(List<ImagenAPublicar> imagenes, String pieDeFoto)
+      throws IOException, InterruptedException {
+    List<String> hijos = new ArrayList<>();
+    for (ImagenAPublicar imagen : imagenes) {
+      ResultadoDeContenedor hijo =
+          crearContenedor(formulario("image_url", imagen.url(), "is_carousel_item", "true"));
+      if (hijo.motivoDelFallo() != null) {
+        return hijo;
+      }
+      hijos.add(hijo.id());
+    }
+    return crearContenedor(
+        formulario(
+            "media_type", "CAROUSEL", "children", String.join(",", hijos), "caption", pieDeFoto));
+  }
+
+  /** Crea un contenedor de Instagram con los campos que se le den y devuelve su id, o el motivo. */
+  private ResultadoDeContenedor crearContenedor(String cuerpo)
+      throws IOException, InterruptedException {
+    HttpResponse<String> respuesta = postear("/" + igUserId + "/media", cuerpo);
+    if (noEsExitosa(respuesta)) {
+      return new ResultadoDeContenedor(null, motivoDe(respuesta));
+    }
+    String id = json.readTree(respuesta.body()).path("id").asString();
+    return id == null || id.isBlank()
+        ? new ResultadoDeContenedor(null, "Instagram no devolvió el id del contenedor.")
+        : new ResultadoDeContenedor(id, null);
+  }
+
+  /** El id del contenedor, o el motivo por el que no se pudo crear. Nunca los dos. */
+  private record ResultadoDeContenedor(String id, String motivoDelFallo) {}
+
+  /**
+   * El objeto que Facebook espera dentro de cada {@code attached_media[i]}: {@code
+   * {"media_fbid":"..."}}. Se arma a mano y no con Jackson porque es un literal de dos campos
+   * fijos, y el id que va dentro lo acaba de emitir Meta — dígitos, nada que escapar.
+   */
+  private static String jsonDeMediaFbid(String idDeFoto) {
+    return "{\"media_fbid\":\"" + idDeFoto + "\"}";
   }
 
   /**

@@ -30,8 +30,9 @@ public class PublicacionEnRedJpaEntity {
   @Column(name = "pie_de_foto", nullable = false)
   private String pieDeFoto;
 
-  @Column(name = "url_imagen", nullable = false)
-  private String urlImagen;
+  /** Las fotos que salieron, una URL por línea (V85). Texto, como `categoria.escala_tallas`. */
+  @Column(name = "urls_imagenes", nullable = false)
+  private String urlsImagenes;
 
   @Column(name = "solicitada_en", nullable = false)
   private Instant solicitadaEn;
@@ -51,7 +52,7 @@ public class PublicacionEnRedJpaEntity {
       String estado,
       String idPublicacionExterna,
       String pieDeFoto,
-      String urlImagen,
+      String urlsImagenes,
       Instant solicitadaEn,
       Instant publicadaEn,
       String detalleDelFallo) {
@@ -61,7 +62,7 @@ public class PublicacionEnRedJpaEntity {
     this.estado = estado;
     this.idPublicacionExterna = idPublicacionExterna;
     this.pieDeFoto = pieDeFoto;
-    this.urlImagen = urlImagen;
+    this.urlsImagenes = urlsImagenes;
     this.solicitadaEn = solicitadaEn;
     this.publicadaEn = publicadaEn;
     this.detalleDelFallo = detalleDelFallo;
@@ -91,8 +92,8 @@ public class PublicacionEnRedJpaEntity {
     return pieDeFoto;
   }
 
-  public String getUrlImagen() {
-    return urlImagen;
+  public String getUrlsImagenes() {
+    return urlsImagenes;
   }
 
   public Instant getSolicitadaEn() {

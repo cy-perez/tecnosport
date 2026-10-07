@@ -38,36 +38,109 @@ final class ApoyoDeDifusion {
   }
 
   static Producto jblGrip(EstadoProducto estado, String urlVistaPrevia, boolean conImagen) {
-    Categoria categoria =
-        new Categoria(
-            UUID.randomUUID(),
-            "Parlantes",
-            new Slug("parlantes"),
-            LineaCatalogo.TECNOLOGIA,
-            null,
-            List.of(new Hashtag("Parlantes")));
+    return jblGrip(estado, urlVistaPrevia, conImagen, List.of());
+  }
 
+  /**
+   * La principal de un producto aprobado desde un borrador de proveedor: la foto se publica tal
+   * como llegó, en JPEG, y nunca se genera vista previa. Meta la sabe descargar igual, y eso es
+   * justo lo que la difusión no reconocía.
+   */
+  static final String PRINCIPAL_JPEG = "https://storage.googleapis.com/b/principal-abc.jpg";
+
+  static Producto jblGripConPrincipalJpeg() {
+    return jblGripConGaleria(List.of());
+  }
+
+  /**
+   * Con la principal en JPEG y la galería que acaba en el carrusel. Cada entrada lleva sus medidas:
+   * la proporción importa, porque Instagram descarta las que se salen de su rango.
+   */
+  static Producto jblGripConGaleria(List<ImagenProducto> galeria) {
     return new Producto(
         UUID.randomUUID(),
         "JBL Grip",
         new Slug("jbl-grip"),
         "Un parlante portátil de 385 gramos.",
         new Marca(UUID.randomUUID(), "JBL"),
-        categoria,
-        estado,
-        conImagen ? imagenPrincipal(urlVistaPrevia) : null,
-        List.of(),
+        categoriaDeParlantes(),
+        EstadoProducto.PUBLICADO,
+        imagen(PRINCIPAL_JPEG, 1183, 1280),
+        galeria,
         null,
-        List.of(
-            Variante.crear(
-                new Sku("JBL-GRIP"),
-                new Dinero(BigDecimal.valueOf(299900)),
-                BigDecimal.ZERO,
-                null,
-                null,
-                List.of())));
+        List.of(varianteUnica()));
   }
 
+  /** Una imagen ya publicada, con su URL tal cual y sin vista previa aparte. */
+  static ImagenProducto imagen(String url, int ancho, int alto) {
+    return ImagenProducto.crear(
+        TipoImagen.PRINCIPAL,
+        0,
+        List.of(new VarianteDeImagen(ancho, url, 900)),
+        null,
+        alto,
+        new HashContenido("%064x".formatted(0)),
+        "Parlante JBL Grip",
+        "JBL Grip speaker");
+  }
+
+  /** Una foto de galería ya publicada: la URL tal cual, sin vista previa aparte. */
+  static ImagenProducto deGaleria(int orden, String url, int ancho, int alto) {
+    return ImagenProducto.crear(
+        TipoImagen.GALERIA,
+        orden,
+        List.of(new VarianteDeImagen(ancho, url, 900)),
+        null,
+        alto,
+        new HashContenido("%064x".formatted(orden + 1)),
+        "Parlante JBL Grip",
+        "JBL Grip speaker");
+  }
+
+  static Producto jblGrip(
+      EstadoProducto estado,
+      String urlVistaPrevia,
+      boolean conImagen,
+      List<ImagenProducto> galeria) {
+    return new Producto(
+        UUID.randomUUID(),
+        "JBL Grip",
+        new Slug("jbl-grip"),
+        "Un parlante portátil de 385 gramos.",
+        new Marca(UUID.randomUUID(), "JBL"),
+        categoriaDeParlantes(),
+        estado,
+        conImagen ? imagenPrincipal(urlVistaPrevia) : null,
+        galeria,
+        null,
+        List.of(varianteUnica()));
+  }
+
+  private static Categoria categoriaDeParlantes() {
+    return new Categoria(
+        UUID.randomUUID(),
+        "Parlantes",
+        new Slug("parlantes"),
+        LineaCatalogo.TECNOLOGIA,
+        null,
+        List.of(new Hashtag("Parlantes")));
+  }
+
+  private static Variante varianteUnica() {
+    return Variante.crear(
+        new Sku("JBL-GRIP"),
+        new Dinero(BigDecimal.valueOf(299900)),
+        BigDecimal.ZERO,
+        null,
+        null,
+        List.of());
+  }
+
+  /**
+   * La principal del sitio es <b>AVIF</b>, que es lo que sirve el catálogo desde {@code ADR-0056} y
+   * lo que Meta no sabe descargar. Con {@code urlVistaPrevia} en nulo, este producto no es
+   * difundible, y así es como lo usan las pruebas del caso que falta.
+   */
   private static ImagenProducto imagenPrincipal(String urlVistaPrevia) {
     return ImagenProducto.crear(
         TipoImagen.PRINCIPAL,

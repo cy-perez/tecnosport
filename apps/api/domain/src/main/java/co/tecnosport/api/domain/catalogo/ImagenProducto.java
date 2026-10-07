@@ -5,6 +5,7 @@ import co.tecnosport.api.domain.compartido.HashContenido;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
@@ -268,6 +269,45 @@ public final class ImagenProducto {
   /** El JPEG para los previsualizadores de enlaces. Vacío mientras no se haya subido. */
   public Optional<String> urlVistaPrevia() {
     return Optional.ofNullable(urlVistaPrevia);
+  }
+
+  /**
+   * La URL que se le puede dar a un tercero que descarga la imagen y no negocia formatos —Meta al
+   * publicar en Facebook o Instagram, los previsualizadores de enlaces—. Vacía cuando no hay
+   * ninguna que ese tercero sepa leer.
+   *
+   * <p><b>La vista previa si la hay y, si no, la propia imagen cuando su formato lo permite.</b>
+   * Ese segundo caso es el que faltaba, y costó que la difusión en redes estuviera rota del todo
+   * para una parte entera del catálogo: {@code DifundirProducto} exigía la vista previa, y las
+   * fotos que entran aprobando un borrador de proveedor se publican tal como llegaron —JPEG— y
+   * nunca tuvieron una. O sea que exigirla rechazaba, por no tener una conversión a JPEG, fotos que
+   * <b>ya son</b> JPEG.
+   *
+   * <p>La vista previa manda cuando existe porque es cuadrada y de 1200 px como mucho, que es lo
+   * que estos terceros quieren; la imagen del sitio puede ser de cualquier tamaño.
+   *
+   * <p>El formato se deduce de la extensión de la URL, que es lo único que hay: el agregado no
+   * guarda el tipo de contenido de cada variante. Es suficiente porque las URL las escribe el
+   * almacén a partir de una key que él mismo nombra con la extensión del tipo ({@code
+   * AlmacenDeImagenes}). Una URL sin extensión reconocible se trata como no publicable, que es el
+   * lado seguro: vale más no publicar que publicar un post sin foto.
+   */
+  public Optional<String> urlParaTercerosQueNoNegocianFormato() {
+    if (urlVistaPrevia != null) {
+      return Optional.of(urlVistaPrevia);
+    }
+    return Optional.ofNullable(url()).filter(ImagenProducto::esFormatoUniversal);
+  }
+
+  /**
+   * Los tres formatos que entiende cualquiera. Quedan fuera AVIF y WebP, que son justo los que el
+   * sitio sirve desde {@code ADR-0056} y los que no muestran nada en un previsualizador.
+   */
+  private static boolean esFormatoUniversal(String url) {
+    String sinConsulta = url.split("[?#]", 2)[0].toLowerCase(Locale.ROOT);
+    return sinConsulta.endsWith(".jpg")
+        || sinConsulta.endsWith(".jpeg")
+        || sinConsulta.endsWith(".png");
   }
 
   public int alto() {

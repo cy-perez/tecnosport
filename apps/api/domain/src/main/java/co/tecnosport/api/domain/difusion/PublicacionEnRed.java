@@ -3,6 +3,7 @@ package co.tecnosport.api.domain.difusion;
 import co.tecnosport.api.domain.compartido.ExcepcionDeDominio;
 import co.tecnosport.api.domain.compartido.GeneradorIdentificador;
 import java.time.Instant;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
@@ -48,7 +49,7 @@ public final class PublicacionEnRed {
   private final UUID productoId;
   private final RedSocial red;
   private final String pieDeFoto;
-  private final String urlImagen;
+  private final List<String> urlsImagen;
   private final Instant solicitadaEn;
 
   private EstadoPublicacion estado;
@@ -61,7 +62,7 @@ public final class PublicacionEnRed {
       UUID productoId,
       RedSocial red,
       String pieDeFoto,
-      String urlImagen,
+      List<String> urlsImagen,
       EstadoPublicacion estado,
       String idPublicacionExterna,
       Instant solicitadaEn,
@@ -71,7 +72,7 @@ public final class PublicacionEnRed {
     this.productoId = productoId;
     this.red = Objects.requireNonNull(red, "La red social no puede ser nula.");
     this.pieDeFoto = exigirPie(pieDeFoto);
-    this.urlImagen = exigirImagen(urlImagen);
+    this.urlsImagen = exigirImagenes(urlsImagen);
     this.estado = Objects.requireNonNull(estado, "El estado de la publicación no puede ser nulo.");
     this.idPublicacionExterna = enBlancoEsNulo(idPublicacionExterna);
     this.solicitadaEn =
@@ -92,7 +93,7 @@ public final class PublicacionEnRed {
    * red conteste, y nacer en cualquier otro estado sería adivinarlo.
    */
   public static PublicacionEnRed solicitar(
-      UUID productoId, RedSocial red, String pieDeFoto, String urlImagen, Instant ahora) {
+      UUID productoId, RedSocial red, String pieDeFoto, List<String> urlsImagen, Instant ahora) {
     if (productoId == null) {
       throw new ExcepcionDeDominio("No se difunde un producto sin decir cuál.");
     }
@@ -101,7 +102,7 @@ public final class PublicacionEnRed {
         productoId,
         red,
         pieDeFoto,
-        urlImagen,
+        urlsImagen,
         EstadoPublicacion.PENDIENTE,
         null,
         ahora,
@@ -163,11 +164,20 @@ public final class PublicacionEnRed {
     return limpio;
   }
 
-  private static String exigirImagen(String url) {
-    if (url == null || url.isBlank()) {
+  /**
+   * Al menos una, y todas con algo escrito. <b>Son varias desde el 6 de octubre de 2026</b>: lo que
+   * se publica es el carrusel entero de la ficha, no solo la principal, y la constancia tiene que
+   * decir qué fotos salieron —no las que el producto tiene hoy, que pueden ser otras.
+   */
+  private static List<String> exigirImagenes(List<String> urls) {
+    if (urls == null || urls.isEmpty()) {
       throw new ExcepcionDeDominio("No se publica un producto sin imagen.");
     }
-    return url.strip();
+    List<String> limpias = urls.stream().filter(Objects::nonNull).map(String::strip).toList();
+    if (limpias.size() != urls.size() || limpias.stream().anyMatch(String::isEmpty)) {
+      throw new ExcepcionDeDominio("No se publica un producto sin imagen.");
+    }
+    return limpias;
   }
 
   private static String enBlancoEsNulo(String valor) {
@@ -191,8 +201,17 @@ public final class PublicacionEnRed {
     return pieDeFoto;
   }
 
+  /**
+   * La primera de las que salieron: la que encabeza el carrusel y la que el panel enseña como
+   * miniatura de la difusión.
+   */
   public String urlImagen() {
-    return urlImagen;
+    return urlsImagen.get(0);
+  }
+
+  /** Todas las que salieron, en el orden en que se publicaron. */
+  public List<String> urlsImagen() {
+    return urlsImagen;
   }
 
   public EstadoPublicacion estado() {

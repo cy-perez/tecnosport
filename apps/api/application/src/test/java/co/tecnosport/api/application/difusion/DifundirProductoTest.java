@@ -39,7 +39,7 @@ class DifundirProductoTest {
     assertEquals(1, resultado.size());
     assertEquals(EstadoPublicacion.PUBLICADA, resultado.get(0).estado());
     assertEquals("18196134166390376", resultado.get(0).idPublicacionExterna().orElseThrow());
-    assertEquals(VISTA_PREVIA, publicador.ultimaUrlImagen);
+    assertEquals(List.of(VISTA_PREVIA), publicador.ultimasUrls);
   }
 
   /**
@@ -188,6 +188,111 @@ class DifundirProductoTest {
     assertTrue(error.getMessage().contains("AVIF"), error.getMessage());
   }
 
+  /**
+   * <b>El defecto que tenía la difusión rota para medio catálogo.</b> Un producto aprobado desde un
+   * borrador de proveedor publica la foto tal como llegó -- JPEG -- y nunca genera vista previa.
+   * Aquí se exigía la vista previa y punto, así que esos productos se rechazaban por no tener una
+   * conversión a JPEG de algo que ya era JPEG: ni se podían difundir ni se podía siquiera proponer
+   * el pie, y el panel solo decía que revisaras que el producto estuviera publicado y tuviera
+   * imagen principal, que era falso en las dos mitades.
+   */
+  @Test
+  void unaPrincipalQueYaEsJpegNoNecesitaVistaPrevia() {
+    Producto deProveedor = ApoyoDeDifusion.jblGripConPrincipalJpeg();
+    DifundirProducto caso = casoDeUso(deProveedor);
+
+    caso.ejecutar(new DifundirProductoComando(deProveedor.id(), List.of(RedSocial.FACEBOOK), null));
+
+    assertEquals(List.of(ApoyoDeDifusion.PRINCIPAL_JPEG), publicador.ultimasUrls);
+  }
+
+  /** Y proponer el pie pasa por la misma guarda, que es donde el panel se atascaba. */
+  @Test
+  void elPieSePuedeProponerParaUnProductoDeProveedor() {
+    Producto deProveedor = ApoyoDeDifusion.jblGripConPrincipalJpeg();
+
+    assertTrue(
+        casoDeUso(deProveedor)
+            .proponerPie(deProveedor.id(), RedSocial.INSTAGRAM)
+            .startsWith("JBL Grip"));
+  }
+
+  /** El post es el carrusel de la ficha: la principal primero y detrás la galería, en su orden. */
+  @Test
+  void seMandaLaGaleriaEnteraConLaPrincipalDelante() {
+    Producto conGaleria =
+        ApoyoDeDifusion.jblGripConGaleria(
+            List.of(
+                ApoyoDeDifusion.deGaleria(0, "https://b/uno.jpg", 1000, 1000),
+                ApoyoDeDifusion.deGaleria(1, "https://b/dos.jpg", 1000, 1000)));
+    DifundirProducto caso = casoDeUso(conGaleria);
+
+    caso.ejecutar(new DifundirProductoComando(conGaleria.id(), List.of(RedSocial.FACEBOOK), null));
+
+    assertEquals(
+        List.of(ApoyoDeDifusion.PRINCIPAL_JPEG, "https://b/uno.jpg", "https://b/dos.jpg"),
+        publicador.ultimasUrls);
+  }
+
+  /**
+   * Una foto de galería que Meta no sabe leer se cae del carrusel y ya; con la principal sería otra
+   * cosa, porque esa encabeza el post. Una foto menos no es motivo para no publicar.
+   */
+  @Test
+  void unaFotoDeGaleriaIlegibleSeQuedaFueraSinTumbarElPost() {
+    Producto conGaleria =
+        ApoyoDeDifusion.jblGripConGaleria(
+            List.of(
+                ApoyoDeDifusion.deGaleria(0, "https://b/uno.avif", 1000, 1000),
+                ApoyoDeDifusion.deGaleria(1, "https://b/dos.jpg", 1000, 1000)));
+    DifundirProducto caso = casoDeUso(conGaleria);
+
+    caso.ejecutar(new DifundirProductoComando(conGaleria.id(), List.of(RedSocial.FACEBOOK), null));
+
+    assertEquals(
+        List.of(ApoyoDeDifusion.PRINCIPAL_JPEG, "https://b/dos.jpg"), publicador.ultimasUrls);
+  }
+
+  /**
+   * Y la constancia guarda <b>lo que la red admitió</b>, no lo que se le ofreció. Si guardara lo
+   * ofrecido, la fila diría que salió una foto que Instagram nunca publicó, y esa fila es justo lo
+   * que alguien mira para saber qué vio la gente.
+   */
+  @Test
+  void laConstanciaGuardaSoloLasFotosQueLaRedAdmitio() {
+    Producto conGaleria =
+        ApoyoDeDifusion.jblGripConGaleria(
+            List.of(ApoyoDeDifusion.deGaleria(0, "https://b/uno.jpg", 1000, 1000)));
+    publicador.soloAdmiteLaPrimera = true;
+    DifundirProducto caso = casoDeUso(conGaleria);
+
+    List<PublicacionEnRed> resultado =
+        caso.ejecutar(
+            new DifundirProductoComando(conGaleria.id(), List.of(RedSocial.INSTAGRAM), null));
+
+    assertEquals(List.of(ApoyoDeDifusion.PRINCIPAL_JPEG), resultado.get(0).urlsImagen());
+  }
+
+  /** Si la red no admite ni una, no se escribe una fila que diga que se publicó algo. */
+  @Test
+  void siLaRedNoAdmiteNingunaFotoNoSePublicaNiSeGuarda() {
+    Producto producto = publicado();
+    publicador.noAdmiteNinguna = true;
+    DifundirProducto caso = casoDeUso(producto);
+
+    ProductoNoDifundibleException error =
+        assertThrows(
+            ProductoNoDifundibleException.class,
+            () ->
+                caso.ejecutar(
+                    new DifundirProductoComando(
+                        producto.id(), List.of(RedSocial.INSTAGRAM), null)));
+
+    assertTrue(error.getMessage().contains("INSTAGRAM"), error.getMessage());
+    assertEquals(0, publicador.veces);
+    assertTrue(publicaciones.guardadas.isEmpty());
+  }
+
   @Test
   void unProductoQueNoExisteNoSeDifunde() {
     DifundirProducto caso = casoDeUso(null);
@@ -232,19 +337,30 @@ class DifundirProductoTest {
         (Reloj) () -> AHORA);
   }
 
-  /** Doble escrito a mano: diez líneas hacen el trabajo y no hace falta Mockito. */
+  /** Doble escrito a mano: unas líneas hacen el trabajo y no hace falta Mockito. */
   private static final class PublicadorFalso implements PublicadorEnRedSocial {
     private RedSocial fallaEn;
     private Runnable alPublicar = () -> {};
     private String ultimoPie;
-    private String ultimaUrlImagen;
+    private List<String> ultimasUrls = List.of();
     private int veces;
+    private boolean soloAdmiteLaPrimera;
+    private boolean noAdmiteNinguna;
 
     @Override
-    public ResultadoPublicacion publicar(RedSocial red, String urlImagen, String pieDeFoto) {
+    public List<ImagenAPublicar> admitidasPor(RedSocial red, List<ImagenAPublicar> imagenes) {
+      if (noAdmiteNinguna) {
+        return List.of();
+      }
+      return soloAdmiteLaPrimera ? List.of(imagenes.get(0)) : List.copyOf(imagenes);
+    }
+
+    @Override
+    public ResultadoPublicacion publicar(
+        RedSocial red, List<ImagenAPublicar> imagenes, String pieDeFoto) {
       veces++;
       ultimoPie = pieDeFoto;
-      ultimaUrlImagen = urlImagen;
+      ultimasUrls = imagenes.stream().map(ImagenAPublicar::url).toList();
       alPublicar.run();
       return red == fallaEn
           ? ResultadoPublicacion.fallida("La imagen no se pudo descargar.")

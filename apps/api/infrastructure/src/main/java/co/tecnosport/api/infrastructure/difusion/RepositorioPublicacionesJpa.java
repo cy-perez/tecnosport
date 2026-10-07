@@ -39,7 +39,7 @@ public class RepositorioPublicacionesJpa implements RepositorioPublicaciones {
             publicacion.estado().name(),
             publicacion.idPublicacionExterna().orElse(null),
             publicacion.pieDeFoto(),
-            publicacion.urlImagen(),
+            UrlsEnTexto.unir(publicacion.urlsImagen()),
             publicacion.solicitadaEn(),
             publicacion.publicadaEn().orElse(null),
             publicacion.detalleDelFallo().orElse(null)));
@@ -71,7 +71,7 @@ public class RepositorioPublicacionesJpa implements RepositorioPublicaciones {
         fila.getProductoId(),
         RedSocial.valueOf(fila.getRed()),
         fila.getPieDeFoto(),
-        fila.getUrlImagen(),
+        UrlsEnTexto.partir(fila.getUrlsImagenes()),
         EstadoPublicacion.valueOf(fila.getEstado()),
         fila.getIdPublicacionExterna(),
         fila.getSolicitadaEn(),
