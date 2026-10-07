@@ -136,6 +136,15 @@ contenido y de la proporción, así que difundir dos veces no sube nada nuevo. E
 informe de huérfanos las declara **no juzgables**, como las de `rotacion/`: las
 reclama `publicacion_en_red.urls_imagenes` y ninguna API las expone.
 
+**El encaje tiene que caer dentro del rango, no en su borde.** La proporción que
+se pide suele ser justo el límite que la red admite, así que redondear al entero
+más cercano deja la foto fuera por milésimas: `Math.round(1448 × 0,8)` da 1158
+de ancho, o sea 0,79972, y la red la rechaza **después** de haberla encajado.
+Lo midió la validación del 7 de octubre de 2026 contra la cuenta real — el
+ajustador subió las dos fotos al bucket y el filtro las descartó igual, sin un
+solo registro que lo explicara. Va `Math.ceil`: un píxel de más no lo ve nadie;
+uno de menos cuesta el post.
+
 ## Lo que la validación real midió
 
 Contra la cuenta del negocio, el 7 de octubre de 2026:
