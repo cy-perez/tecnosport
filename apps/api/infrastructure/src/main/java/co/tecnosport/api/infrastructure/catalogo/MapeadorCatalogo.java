@@ -234,7 +234,6 @@ public class MapeadorCatalogo {
             p.getVistoPorUltimaVez(),
             EstadoDisponibilidad.valueOf(p.getEstadoDisponibilidad()));
     producto.definirTallaSirveHasta(p.getTallaSirveHasta());
-    producto.definirFotosGeneralesEnCadaColor(p.isFotosGeneralesEnCadaColor());
     return producto;
   }
 

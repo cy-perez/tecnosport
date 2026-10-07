@@ -77,7 +77,6 @@ function productoDePrueba(galeria: readonly ImagenDeGaleriaAdmin[] = []): Produc
     totalVariantes: 0,
     galeria,
     tallaSirveHasta: null,
-    fotosGeneralesEnCadaColor: true,
     variantes: [],
   };
 }
@@ -393,7 +392,6 @@ describe('EditarProductoAdminPage', () => {
           descripcion: 'Descripción original',
           marcaId: 'm1',
           categoriaId: 'c1',
-          fotosGeneralesEnCadaColor: true,
         },
       },
     ]);
@@ -415,23 +413,6 @@ describe('EditarProductoAdminPage', () => {
       ),
     ).toBeTruthy();
     expect(repositorio.llamadasEditar).toEqual([]);
-  });
-
-  /** La misma casilla de la revisión del borrador: el producto aprobado se corrige aquí. */
-  it('apaga las fotos generales en cada color', async () => {
-    const repositorio = new RepositorioProductosAdminFalso(bodiDePrueba());
-    const { fixture } = await renderPagina(repositorio);
-    vi.spyOn(fixture.debugElement.injector.get(Router), 'navigate').mockResolvedValue(true);
-    const casilla = (await screen.findByLabelText(
-      esAdmin.productos.editar.fotosGeneralesEnCadaColor,
-    )) as HTMLInputElement;
-    await vi.waitFor(() => expect(casilla.checked).toBe(true));
-
-    fireEvent.click(casilla);
-    fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
-
-    await vi.waitFor(() => expect(repositorio.llamadasEditar).toHaveLength(1));
-    expect(repositorio.llamadasEditar[0].comando.fotosGeneralesEnCadaColor).toBe(false);
   });
 
   it('una prenda de talla única edita hasta dónde sirve', async () => {

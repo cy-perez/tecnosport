@@ -54,7 +54,6 @@ public class MapeadorRespuestasProductoAdmin {
         producto.variantes().size(),
         producto.galeria().stream().map(this::aRespuestaDeGaleria).toList(),
         producto.tallaSirveHasta().orElse(null),
-        producto.fotosGeneralesEnCadaColor(),
         producto.variantes().stream()
             .map(
                 variante ->

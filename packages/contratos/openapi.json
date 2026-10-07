@@ -186,9 +186,6 @@
             },
             "type" : "array"
           },
-          "fotosGeneralesEnCadaColor" : {
-            "type" : "boolean"
-          },
           "marcaId" : {
             "format" : "uuid",
             "type" : "string"
@@ -985,9 +982,6 @@
           },
           "descripcion" : {
             "type" : "string"
-          },
-          "fotosGeneralesEnCadaColor" : {
-            "type" : "boolean"
           },
           "marcaId" : {
             "format" : "uuid",
@@ -2164,9 +2158,6 @@
           "estado" : {
             "type" : "string"
           },
-          "fotosGeneralesEnCadaColor" : {
-            "type" : "boolean"
-          },
           "galeria" : {
             "items" : {
               "$ref" : "#/components/schemas/ImagenDeGaleriaRespuesta"
@@ -2255,9 +2246,6 @@
           },
           "estadoDisponibilidad" : {
             "type" : "string"
-          },
-          "fotosGeneralesEnCadaColor" : {
-            "type" : "boolean"
           },
           "galeria" : {
             "items" : {

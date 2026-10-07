@@ -262,8 +262,8 @@ function variantesDelColor(producto: Producto, color: string): Set<string> {
  * de todas si ese tono no tiene ninguna propia.
  *
  * <b>Esto era un filtro y ahora es un índice, y el cambio es el arreglo.</b> `imagenesDelColor`
- * devolvía <i>solo</i> las fotos del color elegido —y, con `fotosGeneralesEnCadaColor` en falso,
- * ni siquiera la principal—. En un pantalón de siete colores con una foto por color eso dejaba la
+ * devolvía <i>solo</i> las fotos del color elegido —y, con la casilla de las fotos generales en
+ * falso, ni siquiera la principal—. En un pantalón de siete colores con una foto por color eso dejaba la
  * ficha enseñando <b>una</b> foto de las nueve que el producto tiene, sin tira de miniaturas que
  * insinuara que hay más: para llegar a las otras ocho había que ir tocando círculos de color a
  * ciegas, y a la principal no se llegaba nunca.

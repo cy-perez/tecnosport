@@ -205,7 +205,6 @@ export interface AprobarBorrador {
    * Si las fotos sin tono —la principal casi siempre— acompañan a las de cada color en la ficha.
    * Se apaga cuando cada color trae sus propias fotos.
    */
-  readonly fotosGeneralesEnCadaColor: boolean;
 }
 
 /**

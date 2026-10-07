@@ -219,7 +219,6 @@ public final class AprobarBorrador {
     if (tallasAprobadas.tipo() == TipoDeTalla.UNICA) {
       producto.definirTallaSirveHasta(tallasAprobadas.sirveHasta());
     }
-    producto.definirFotosGeneralesEnCadaColor(comando.fotosGeneralesEnCadaColor());
     repositorioProductos.guardar(producto);
 
     // El tono que le toca a cada foto, por posición. Se calcula una vez y lo usan las dos mitades

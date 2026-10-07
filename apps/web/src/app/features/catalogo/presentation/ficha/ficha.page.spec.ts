@@ -97,7 +97,6 @@ function productoDePrueba(): Producto {
     rotacion: null,
     escalaTallas: [],
     tallaSirveHasta: null,
-    fotosGeneralesEnCadaColor: true,
     variantes: [
       {
         id: 'variante-1',
@@ -130,7 +129,6 @@ function productoConVariantes(): Producto {
     rotacion: null,
     escalaTallas: [],
     tallaSirveHasta: null,
-    fotosGeneralesEnCadaColor: true,
     variantes: [
       {
         id: 'variante-az',
@@ -178,7 +176,6 @@ function productoConPrincipalGenerica(): Producto {
       foto('https://imagenes.test/azul.jpg', 'variante-az'),
       foto('https://imagenes.test/negro.jpg', 'variante-ng'),
     ],
-    fotosGeneralesEnCadaColor: false,
   };
 }
 

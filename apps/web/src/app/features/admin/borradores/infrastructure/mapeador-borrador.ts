@@ -126,7 +126,6 @@ export function aAprobarPeticion(aprobacion: AprobarBorrador): AprobarPeticionDt
       ...(foto.colorHex ? { colorHex: foto.colorHex } : {}),
     })),
     altEs: aprobacion.altEs,
-    fotosGeneralesEnCadaColor: aprobacion.fotosGeneralesEnCadaColor,
     altEn: aprobacion.altEn,
     existenciaInicial: aprobacion.existenciaInicial,
   };

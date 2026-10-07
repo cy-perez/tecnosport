@@ -60,10 +60,6 @@ public class ProductoJpaEntity {
   @Column(name = "talla_sirve_hasta")
   private String tallaSirveHasta;
 
-  /** Si las fotos sin tono acompañan a las de cada color en la ficha (V79). */
-  @Column(name = "fotos_generales_en_cada_color", nullable = false)
-  private boolean fotosGeneralesEnCadaColor = true;
-
   protected ProductoJpaEntity() {}
 
   public ProductoJpaEntity(
@@ -190,15 +186,6 @@ public class ProductoJpaEntity {
 
   public ProductoJpaEntity conTallaSirveHasta(String tallaSirveHasta) {
     this.tallaSirveHasta = tallaSirveHasta;
-    return this;
-  }
-
-  public boolean isFotosGeneralesEnCadaColor() {
-    return fotosGeneralesEnCadaColor;
-  }
-
-  public ProductoJpaEntity conFotosGeneralesEnCadaColor(boolean fotosGeneralesEnCadaColor) {
-    this.fotosGeneralesEnCadaColor = fotosGeneralesEnCadaColor;
     return this;
   }
 

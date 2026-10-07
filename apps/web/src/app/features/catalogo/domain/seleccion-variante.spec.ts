@@ -40,7 +40,6 @@ function productoDePrueba(variantes: Variante[]): Producto {
     variantes,
     escalaTallas: [],
     tallaSirveHasta: null,
-    fotosGeneralesEnCadaColor: true,
   };
 }
 

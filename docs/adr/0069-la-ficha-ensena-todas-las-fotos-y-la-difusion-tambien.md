@@ -212,13 +212,9 @@ pantalón con «Azul oscuro 1» y «Azul oscuro 2».
 
 ## Consecuencias
 
-- **`fotosGeneralesEnCadaColor` ya no cambia nada en la vitrina.** La casilla
-  sigue en el panel —en la revisión del borrador y en editar producto— y el
-  dato sigue viajando en la API, pero ninguna pantalla lo lee. Lo que decidía
-  —si la principal acompañaba a cada color— lo decide ahora **el color de la propia
-  principal**, que es un dato de la foto y no una casilla aparte. Queda pendiente
-  retirarla; no se retiró aquí porque quitar un control del panel es una decisión
-  de producto, no de este cambio.
+- **`fotosGeneralesEnCadaColor` se retiró**, y la sección del final lo cuenta:
+  lo que decidía —si la principal acompaña a cada color— lo decide ahora el
+  color de la propia principal.
 - Los productos **ya aprobados** conservan su forma: `AprobarBorrador` numera
   de ahora en adelante. El pantalón que destapó esto se arregla con `V86`, una
   migración puntual y guardada.
@@ -229,3 +225,31 @@ pantalón con «Azul oscuro 1» y «Azul oscuro 2».
 - `publicacion_en_red.url_imagen` pasa a `urls_imagenes`, una URL por línea
   (`V85`). Un `rename` y no una columna nueva: una fila vieja es exactamente un
   carrusel de una foto.
+
+## Lo que se retiró después
+
+### `fotosGeneralesEnCadaColor` se va entero (7 de octubre de 2026)
+
+La casilla decidía si las fotos sin tono —la principal, casi siempre—
+acompañaban a las de cada color en la galería. Esa pregunta ya no existe: la
+galería no recorta por color, y si la principal sale o no en la ficha lo decide
+**su propio color**, que es un dato de la foto y no un control aparte del
+producto.
+
+Desde que la ficha dejó de leerla, la columna no decidía nada y la casilla
+tampoco. **Un control que no hace nada es peor que no tenerlo**, porque quien lo
+marca cree que marcó algo.
+
+Se va de los dos lados: el campo del agregado y sus accesores, el componente de
+`EditarProductoComando`, `AprobarBorradorComando`, `EditarProductoPeticion`,
+`AprobarBorradorPeticion`, `ProductoRespuesta` y `ProductoAdminDetalleRespuesta`,
+la columna (`V88`), la casilla en las dos pantallas del panel y sus dos claves de
+Transloco.
+
+**`V88` borra el dato y no hay vuelta atrás.** Es lo que se quiere: lo que
+guardaba era la respuesta a una pregunta que el modelo ya no hace, y conservarla
+invitaría a volver a leerla.
+
+Y dos constructores de conveniencia desaparecen con ella: existían solo para
+poner el valor por omisión del indicador, así que al quitar el componente se
+volvieron copias del canónico.

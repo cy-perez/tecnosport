@@ -70,14 +70,6 @@
         />
       }
 
-      <!-- La misma casilla que la revisión del borrador: un producto aprobado se corrige aquí. -->
-      <ts-checkbox
-        idCasilla="editar-producto-fotos-generales"
-        [etiqueta]="'admin.productos.editar.fotosGeneralesEnCadaColor' | transloco"
-        [marcado]="form.controls.fotosGeneralesEnCadaColor.value"
-        (marcadoCambio)="form.controls.fotosGeneralesEnCadaColor.setValue($event)"
-      />
-
       <p class="m-0 text-ts-error" role="alert">{{ error() }}</p>
 
       <ts-boton
