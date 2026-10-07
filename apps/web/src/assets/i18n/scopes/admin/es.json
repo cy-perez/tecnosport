@@ -1092,6 +1092,7 @@
       "marcarPrincipal": "Marcar como principal",
       "marcarPrincipalFoto": "Marcar la foto {{numero}} como principal",
       "marcaLaPrincipal": "Marca la foto principal de este producto: las fotos venían compartidas con otro.",
+      "fotoConTonoFuera": "La foto {{numero}} tiene un color marcado pero no entra al producto: tíldala para que entre, o quítale el color.",
       "esperaSubida": "Espera a que terminen de subir las fotos para aprobar."
     },
     "eliminarFoto": {
