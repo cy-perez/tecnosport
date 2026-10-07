@@ -341,7 +341,13 @@ for (const producto of productos) {
 const { ruta: rutaRegistro, porProducto } = ambientesPorProducto();
 
 const deRotacion = objetos.filter((o) => o.key.includes("/rotacion/"));
-const juzgables = objetos.filter((o) => !o.key.includes("/rotacion/"));
+// Las fotos encajadas para redes (ADR-0069) tampoco se juzgan, y por la misma razón que las de
+// rotación: las reclama `publicacion_en_red.urls_imagenes`, que ninguna API expone. Desde aquí
+// saldrían como huérfanas — o sea, en una lista de cosas que alguien puede borrar, y borrarlas
+// deja sin miniatura las difusiones que el panel ya enseña.
+const deRedes = objetos.filter((o) => o.key.includes("/redes/"));
+const noJuzgable = (o) => o.key.includes("/rotacion/") || o.key.includes("/redes/");
+const juzgables = objetos.filter((o) => !noJuzgable(o));
 const sinReclamarAqui = juzgables.filter((o) => !reclamadas.has(o.key));
 
 /**
@@ -429,5 +435,13 @@ if (deRotacion.length > 0) {
     `\nY ${deRotacion.length} fotogramas de 'rotacion/' (${enMiB(sumar(deRotacion))}) que este` +
       " informe no juzga:\nun set sin publicar no expone sus imágenes por ninguna API, así que" +
       " desde aquí no se distingue\nun set en preparación de un resto que nadie reclama.",
+  );
+}
+
+if (deRedes.length > 0) {
+  console.log(
+    `\nY ${deRedes.length} fotos encajadas en 'redes/' (${enMiB(sumar(deRedes))}), que tampoco:` +
+      "\nlas reclama la constancia de cada difusión y ninguna API las expone. Se van con el" +
+      " producto\ncuando se borra por prefijo.",
   );
 }
