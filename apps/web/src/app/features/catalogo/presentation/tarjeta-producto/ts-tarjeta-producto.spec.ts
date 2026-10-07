@@ -242,10 +242,43 @@ describe('TsTarjetaProducto', () => {
     expect(screen.getByText('y 1 color más')).toBeTruthy();
   });
 
-  it('un producto de un solo color no pinta muestras', async () => {
+  it('un producto sin color no pinta muestras', async () => {
     await renderTarjeta();
 
     expect(screen.queryByRole('button', { name: /Ver en/ })).toBeNull();
+    expect(screen.queryByRole('img', { name: /Color:/ })).toBeNull();
+  });
+
+  /**
+   * La falda short, en un solo color, no lo decía en la tarjeta: la fila de muestras solo salía con
+   * dos o más, porque cada muestra es un botón para cambiar la foto. Con uno no hay a qué cambiar,
+   * pero el color sigue siendo información.
+   */
+  it('un producto de un solo color lo muestra, sin botón y a la altura de los demás', async () => {
+    const bodi = bodiDePrueba();
+    await render(TsTarjetaProducto, {
+      inputs: { producto: { ...bodi, variantes: [bodi.variantes[1]] } },
+      imports: [
+        TranslocoTestingModule.forRoot({
+          langs: { es, en, 'catalogo/es': esCatalogo } as never,
+          translocoConfig: { availableLangs: ['es', 'en'], defaultLang: 'es' },
+          preloadLangs: true,
+        }),
+      ],
+      providers: [
+        provideRouter([]),
+        provideTanStackQuery(new QueryClient()),
+        proveerPaletaDePrueba(),
+      ],
+    });
+
+    expect(screen.queryByRole('button', { name: /Ver en/ })).toBeNull();
+    const caja = screen.getByRole('img', { name: 'Color: Vino' });
+    expect(caja.className).toContain('size-tactil');
+    const muestra = caja.firstElementChild!;
+    expect(muestra.className).toContain('size-[var(--control-muestra-tarjeta)]');
+    expect(muestra.className).toContain('border-ts-borde-control');
+    expect(muestra.className).not.toContain('outline-ts-primario');
   });
 
   it('enlaza a la ficha del producto por su slug', async () => {

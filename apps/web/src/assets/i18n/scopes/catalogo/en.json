@@ -43,7 +43,8 @@
   "colores": {
     "mas_uno": "and 1 more colour",
     "elegir": "View in {{color}}",
-    "mas": "and {{cantidad}} more colours"
+    "mas": "and {{cantidad}} more colours",
+    "unico": "Colour: {{color}}"
   },
   "ficha": {
     "no_encontrado": "We couldn't find this product.",

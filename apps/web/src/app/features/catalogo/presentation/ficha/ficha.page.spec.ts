@@ -364,8 +364,7 @@ describe('FichaPage', () => {
     const repositorio: RepositorioProductos = {
       buscar: () =>
         Promise.resolve<ResultadoPaginado<Producto>>({ items: [], cursorSiguiente: null }),
-      buscarPorSlug: () =>
-        Promise.resolve({ ...productoConPrincipalGenerica(), galeria: [] }),
+      buscarPorSlug: () => Promise.resolve({ ...productoConPrincipalGenerica(), galeria: [] }),
     };
 
     await renderFicha(repositorio);
@@ -661,8 +660,11 @@ describe('FichaPage', () => {
     expect(screen.queryByRole('button', { name: /^XS/ })).toBeNull();
   });
 
-  /** Como en la tienda de referencia: la escala entera, con lo que no se puede comprar tachado. */
-  it('la escala de la categoría enseña todas las tallas y tacha las que no hay', async () => {
+  /**
+   * Solo lo que se puede elegir. La escala entera con lo que no se podía comprar tachado llenaba la
+   * ficha de la falda short —tallas 8 a 16 en una categoría XS–XXXL— de botones que no servían.
+   */
+  it('enseña solo las tallas que se pueden comprar', async () => {
     const talla = (valor: string) => [{ nombre: 'Talla', valor, colorHex: null, unidad: null }];
     const camiseta: Producto = {
       ...productoDePrueba(),
@@ -694,13 +696,52 @@ describe('FichaPage', () => {
     await renderFicha(repositorio, 'camiseta-escala');
 
     expect(await screen.findByRole('button', { name: 'M' })).toBeTruthy();
-    expect(
-      screen.getByRole('button', { name: 'S, no disponible' }).getAttribute('aria-disabled'),
-    ).toBe('true');
-    // L existe pero está agotada: tachada, y se puede elegir para ver que no hay.
-    expect(
-      screen.getByRole('button', { name: 'L, no disponible' }).getAttribute('aria-disabled'),
-    ).toBeNull();
+    // S es de la escala y el producto no la trae; L la trae, pero agotada.
+    expect(screen.queryByRole('button', { name: /^S(,|$)/ })).toBeNull();
+    expect(screen.queryByRole('button', { name: /^L(,|$)/ })).toBeNull();
+  });
+
+  /** Las tallas son las del color elegido: al cambiar de color, cambian. */
+  it('al cambiar de color enseña las tallas que hay en ese color', async () => {
+    const atributos = (color: string, hex: string, talla: string) => [
+      { nombre: 'Color', valor: color, colorHex: hex, unidad: null },
+      { nombre: 'Talla', valor: talla, colorHex: null, unidad: null },
+    ];
+    const variante = (id: string, disponible: boolean, color: string, hex: string, t: string) => ({
+      id,
+      sku: id,
+      precio: { valor: 50_000, moneda: 'COP' as const },
+      disponible,
+      atributos: atributos(color, hex, t),
+    });
+    const camiseta: Producto = {
+      ...productoDePrueba(),
+      slug: 'camiseta-colores',
+      escalaTallas: ['S', 'M', 'L'],
+      variantes: [
+        variante('negro-s', true, 'Negro', '#111111', 'S'),
+        variante('negro-m', false, 'Negro', '#111111', 'M'),
+        variante('vino-m', true, 'Vino', '#722F37', 'M'),
+        variante('vino-l', true, 'Vino', '#722F37', 'L'),
+      ],
+    };
+    const repositorio: RepositorioProductos = {
+      buscar: () =>
+        Promise.resolve<ResultadoPaginado<Producto>>({ items: [], cursorSiguiente: null }),
+      buscarPorSlug: () => Promise.resolve(camiseta),
+    };
+
+    await renderFicha(repositorio, 'camiseta-colores');
+
+    expect(await screen.findByRole('button', { name: 'S' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: /^M(,|$)/ })).toBeNull();
+    expect(screen.queryByRole('button', { name: /^L(,|$)/ })).toBeNull();
+
+    fireEvent.click(screen.getByRole('button', { name: /Vino/ }));
+
+    expect(await screen.findByRole('button', { name: /^M(,|$)/ })).toBeTruthy();
+    expect(screen.getByRole('button', { name: /^L(,|$)/ })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: /^S(,|$)/ })).toBeNull();
   });
 
   /**

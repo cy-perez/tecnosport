@@ -103,5 +103,22 @@
         </span>
       }
     </div>
+  } @else if (colores().length === 1) {
+    <!-- Un solo color no tiene a qué cambiar la foto, así que no es botón; pero quien compra
+         sigue necesitando saber el color. La caja mide lo mismo que el botón de 44 px para que el
+         círculo quede a la altura de los de las tarjetas vecinas. -->
+    <div class="flex items-center px-12 pb-12">
+      <span
+        class="grid size-tactil place-items-center"
+        role="img"
+        [attr.aria-label]="
+          'catalogo.colores.unico' | transloco: { color: nombreDeColor(colores()[0].valor) }
+        "
+      >
+        <span [class]="claseMuestra(false)">
+          <ts-muestra-color [partes]="colores()[0].muestra" />
+        </span>
+      </span>
+    </div>
   }
 </div>

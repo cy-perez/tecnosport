@@ -7,8 +7,7 @@ export interface OpcionEje {
   readonly muestra?: readonly ParteDeMuestra[];
   /**
    * Si alguna variante del producto la tiene. Falso en las tallas que la escala de la categoría
-   * enseña aunque este producto no venga en ellas: se pintan tachadas, como las agotadas, para que
-   * quien compra vea la escala entera y no tenga que adivinar si su talla existe.
+   * trae y este producto no; la ficha las quita con `soloTallasElegibles`, junto con las agotadas.
    */
   readonly existe: boolean;
 }
@@ -180,6 +179,35 @@ export function opcionDisponible(
     return Object.entries(seleccion).every(
       ([nombre, elegido]) => nombre === nombreEje || valores[nombre] === elegido,
     );
+  });
+}
+
+/**
+ * Los ejes con solo las tallas que se pueden comprar con lo demás elegido: ni las de la escala que
+ * el producto no trae ni las agotadas en el color elegido. La falda short, de tallas 8 a 16 en una
+ * categoría de escala XS–XXXL, enseñaba doce botones y siete tachados; quien compra solo necesita
+ * ver lo que puede elegir. La elegida se queda aunque no esté, para que la selección nunca quede
+ * fuera de la vista; y si no queda ninguna —todo agotado—, se dicen las que el producto trae, que
+ * siguen tachadas.
+ */
+export function soloTallasElegibles(
+  producto: Producto,
+  ejes: readonly EjeAtributo[],
+  seleccion: Seleccion,
+): EjeAtributo[] {
+  return ejes.map((eje) => {
+    if (!esEjeDeTalla(eje.nombre)) {
+      return eje;
+    }
+    const elegibles = eje.opciones.filter(
+      (opcion) =>
+        opcion.valor === seleccion[eje.nombre] ||
+        (opcion.existe && opcionDisponible(producto, seleccion, eje.nombre, opcion.valor)),
+    );
+    return {
+      ...eje,
+      opciones: elegibles.length > 0 ? elegibles : eje.opciones.filter((opcion) => opcion.existe),
+    };
   });
 }
 

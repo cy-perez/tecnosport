@@ -52,6 +52,7 @@ import {
   Seleccion,
   seleccionAlElegir,
   seleccionDeVariante,
+  soloTallasElegibles,
   tallaUnicaDe,
   variantePorDefecto,
   varianteSeleccionada,
@@ -180,7 +181,8 @@ export class FichaPage {
 
   /**
    * La talla única no es una elección: no sale en el selector, se dice al lado del nombre. El eje de
-   * talla sigue la escala de la categoría, con las tallas que este producto no trae tachadas.
+   * talla sigue el orden de la escala de la categoría y enseña solo las tallas que se pueden comprar
+   * con lo demás elegido: cambia al cambiar de color.
    */
   protected readonly ejes = computed(() => {
     const producto = this.producto();
@@ -188,9 +190,10 @@ export class FichaPage {
       return [];
     }
     const unica = tallaUnicaDe(producto) !== null;
-    return ejesDeAtributos(producto, producto.escalaTallas).filter(
+    const ejes = ejesDeAtributos(producto, producto.escalaTallas).filter(
       (eje) => !(unica && esEjeDeTalla(eje.nombre)),
     );
+    return soloTallasElegibles(producto, ejes, this.seleccion());
   });
 
   protected readonly tallaUnica = computed(() => {
