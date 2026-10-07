@@ -33,15 +33,15 @@ describe('mapeador-borrador', () => {
     expect('titulo' in peticion).toBe(false);
   });
 
-  it('al aprobar traduce las tallas y omite el tono de una foto que vale para todos', () => {
+  it('al aprobar traduce las tallas y omite el tono y la prenda de una foto que vale para todos', () => {
     const peticion = aAprobarPeticion({
       marcaId: 'm1',
       categoriaId: 'c1',
       precioVenta: 60000,
       tallas: { tipo: 'UNICA', sirveHasta: 'L', valores: [] },
       fotos: [
-        { mensajeId: 'f1', tono: 'Negro', colorHex: null },
-        { mensajeId: 'f2', tono: null, colorHex: null },
+        { mensajeId: 'f1', tono: 'Negro', colorHex: null, prenda: 1 },
+        { mensajeId: 'f2', tono: null, colorHex: null, prenda: null },
       ],
       altEs: 'Bolso negro',
       altEn: 'Black bag',
@@ -49,7 +49,10 @@ describe('mapeador-borrador', () => {
     });
 
     expect(peticion.tallas).toEqual({ tipo: 'UNICA', sirveHasta: 'L', valores: [] });
-    expect(peticion.fotos).toEqual([{ mensajeId: 'f1', tono: 'Negro' }, { mensajeId: 'f2' }]);
+    expect(peticion.fotos).toEqual([
+      { mensajeId: 'f1', tono: 'Negro', prenda: 1 },
+      { mensajeId: 'f2' },
+    ]);
     expect(peticion.existenciaInicial).toBe(2);
   });
 });

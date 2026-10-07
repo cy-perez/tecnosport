@@ -27,11 +27,14 @@ public record AprobarBorradorPeticion(
 
   /**
    * @param tono el color que muestra la foto; nulo si es del producto entero
+   * @param prenda a qué prenda pertenece, desde 1: las fotos con el mismo número son una sola
+   *     variante y llevan el mismo tono. Nulo = una foto con tono es una prenda ella sola
    */
   public record FotoAprobadaPeticion(
       @Schema(requiredMode = Schema.RequiredMode.REQUIRED) UUID mensajeId,
       String tono,
-      String colorHex) {
+      String colorHex,
+      Integer prenda) {
     public FotoAprobadaPeticion {
       Objects.requireNonNull(mensajeId, "La foto se nombra por su mensaje.");
     }

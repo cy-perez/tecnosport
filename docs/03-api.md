@@ -408,6 +408,8 @@ GET /api/v1/admin/ingestas/{id}                              un lote con su esta
 GET /api/v1/admin/borradores                                 paginado; ?estado= y ?proveedorId= filtran
 GET/PATCH /api/v1/admin/borradores/{id}                      detalle —con las fotos firmadas y los textos— y corrección de lo extraído; 409 si ya se decidió
 POST /api/v1/admin/borradores/{id}/aprobar                   crea el producto publicado con sus variantes, fotos e inventario inicial; 422 sin fotos, precio o título; 409 si el mismo anuncio ya es un producto
+                                                             cada foto dice su `prenda` (desde 1): las del mismo número son una variante; un color repetido
+                                                             entre prendas se numera. 422 PRENDA_INCOHERENTE si una prenda no tiene color o trae dos (ADR-0070)
 POST /api/v1/admin/borradores/{id}/rechazar                  lo cierra con un motivo; 409 si ya se decidió
 POST /api/v1/admin/borradores/{id}/fotos/url-subida          URL firmada para subir una foto al bucket privado; 422 si no es JPEG ni PNG, 409 si ya se decidió
 POST /api/v1/admin/borradores/{id}/fotos                     confirma la key subida y la cuelga del borrador; 201. 404 si el objeto no está; 413 si pasa del tope y 422 si no abre como imagen (en los dos casos se borra)

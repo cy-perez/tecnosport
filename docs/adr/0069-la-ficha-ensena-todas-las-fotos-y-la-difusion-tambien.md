@@ -95,6 +95,10 @@ desde el panel.
 
 ### Un tono que se repite se numera
 
+> **Afinado por `ADR-0070` el mismo día:** lo que se numera son las **prendas**,
+> no las fotos. Dos ángulos de la misma prenda son una variante con dos fotos;
+> la prenda la dice quien revisa, porque el color no la distingue.
+
 Dos fotos marcadas con el mismo color son dos variantes, y el valor del
 atributo las distingue: «Azul oscuro 1», «Azul oscuro 2». Un tono que sale una
 sola vez se queda como está.

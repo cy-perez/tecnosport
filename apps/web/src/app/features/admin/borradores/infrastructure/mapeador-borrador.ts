@@ -124,6 +124,7 @@ export function aAprobarPeticion(aprobacion: AprobarBorrador): AprobarPeticionDt
       mensajeId: foto.mensajeId,
       ...(foto.tono ? { tono: foto.tono } : {}),
       ...(foto.colorHex ? { colorHex: foto.colorHex } : {}),
+      ...(foto.prenda ? { prenda: foto.prenda } : {}),
     })),
     altEs: aprobacion.altEs,
     altEn: aprobacion.altEn,

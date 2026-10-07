@@ -420,8 +420,9 @@ class AprobarBorradorTest {
   }
 
   /**
-   * Dos fotos marcadas con el mismo color son <b>dos variantes</b>, y el valor del atributo las
-   * numera para distinguirlas.
+   * Dos fotos marcadas con el mismo color <b>y sin prenda</b> son <b>dos variantes</b>, y el valor
+   * del atributo las numera para distinguirlas: es lo que el contrato hacía antes de tener el campo
+   * {@code prenda}, y un cliente que no lo manda sigue obteniendo lo mismo.
    *
    * <p>Hasta el 6 de octubre de 2026 los tonos se agrupaban con {@code distinct()}, así que las dos
    * colapsaban en una variante con las dos fotos colgando: quien compra veía un solo círculo y no
@@ -446,6 +447,197 @@ class AprobarBorradorTest {
     // había y las dos variantes compartían foto.
     assertEquals(
         Optional.of(producto.variantes().get(1).id()), producto.galeria().get(0).varianteId());
+  }
+
+  /**
+   * Una foto más en el borrador, subida desde el panel: el fixture trae dos de la publicación, y
+   * las prendas de varias fotos piden más.
+   */
+  private UUID otraFoto(String nombre) {
+    String referencia =
+        "proveedores/" + proveedor.id() + "/borradores/" + borrador.id() + "/" + nombre + ".jpg";
+    almacenPrivado.guardar(referencia, "image/jpeg", nombre.getBytes(StandardCharsets.UTF_8));
+    FotoSubida subida = new FotoSubida(UUID.randomUUID(), referencia, AHORA);
+    borrador.agregarFotoSubida(subida);
+    borradores.actualizar(borrador);
+    return subida.id();
+  }
+
+  private static List<String> coloresDe(Producto producto) {
+    return producto.variantes().stream().map(v -> v.atributos().get(0).valor()).toList();
+  }
+
+  /**
+   * Dos fotos de la misma prenda —dos ángulos del mismo bolso— son <b>una</b> variante con las dos
+   * fotos, y su color no se numera: no hay otra prenda de la que distinguirlo. Del 6 al 7 de
+   * octubre de 2026 salían «Rojo 1» y «Rojo 2», dos círculos para una sola prenda.
+   */
+  @Test
+  void lasFotosDeUnaMismaPrendaSonUnaSolaVariante() {
+    Producto producto =
+        caso()
+            .ejecutar(
+                comando(
+                    List.of(
+                        new FotoAprobada(foto1.id(), "Rojo", "#C0392B", 1),
+                        new FotoAprobada(foto2.id(), "Rojo", "#C0392B", 1))));
+
+    assertEquals(List.of("Rojo"), coloresDe(producto));
+    UUID roja = producto.variantes().get(0).id();
+    // La principal también: es una foto de esa prenda, y con color abre la ficha (ADR-0069).
+    assertEquals(Optional.of(roja), producto.imagenPrincipal().orElseThrow().varianteId());
+    assertEquals(Optional.of(roja), producto.galeria().get(0).varianteId());
+  }
+
+  /** Seis fotos, tres prendas de dos fotos cada una: tres variantes, cada una con sus dos fotos. */
+  @Test
+  void variasPrendasConVariasFotosCadaUna() {
+    UUID foto3 = otraFoto("blanca-1");
+    UUID foto4 = otraFoto("blanca-2");
+    UUID foto5 = otraFoto("negra-1");
+    UUID foto6 = otraFoto("negra-2");
+
+    Producto producto =
+        caso()
+            .ejecutar(
+                comando(
+                    List.of(
+                        new FotoAprobada(foto1.id(), "Rojo", "#C0392B", 1),
+                        new FotoAprobada(foto2.id(), "Rojo", "#C0392B", 1),
+                        new FotoAprobada(foto3, "Blanco", "#FFFFFF", 2),
+                        new FotoAprobada(foto4, "Blanco", "#FFFFFF", 2),
+                        new FotoAprobada(foto5, "Negro", "#000000", 3),
+                        new FotoAprobada(foto6, "Negro", "#000000", 3))));
+
+    assertEquals(List.of("Rojo", "Blanco", "Negro"), coloresDe(producto));
+    List<UUID> variantes = producto.variantes().stream().map(Variante::id).toList();
+    assertEquals(
+        Optional.of(variantes.get(0)), producto.imagenPrincipal().orElseThrow().varianteId());
+    List<Optional<UUID>> deLaGaleria =
+        producto.galeria().stream().map(ImagenProducto::varianteId).toList();
+    assertEquals(
+        List.of(
+            Optional.of(variantes.get(0)),
+            Optional.of(variantes.get(1)),
+            Optional.of(variantes.get(1)),
+            Optional.of(variantes.get(2)),
+            Optional.of(variantes.get(2))),
+        deLaGaleria);
+  }
+
+  /**
+   * El caso que impide agrupar por color: un jean con cuatro diseños negros son cuatro prendas, y
+   * se numeran. Con la prenda explícita el mismo color ya no decide nada solo.
+   */
+  @Test
+  void prendasDistintasDelMismoColorSeNumeran() {
+    UUID foto3 = otraFoto("negro-3");
+    UUID foto4 = otraFoto("negro-4");
+
+    Producto producto =
+        caso()
+            .ejecutar(
+                comando(
+                    List.of(
+                        new FotoAprobada(foto1.id(), "Negro", "#000000", 1),
+                        new FotoAprobada(foto2.id(), "Negro", "#000000", 2),
+                        new FotoAprobada(foto3, "Negro", "#000000", 3),
+                        new FotoAprobada(foto4, "Negro", "#000000", 4))));
+
+    assertEquals(List.of("Negro 1", "Negro 2", "Negro 3", "Negro 4"), coloresDe(producto));
+  }
+
+  /**
+   * Dos prendas negras de dos fotos cada una: el número distingue las prendas, no las fotos. Y el
+   * orden de las prendas es el de su primera foto, no el número que traen.
+   */
+  @Test
+  void elNumeroDistinguePrendasNoFotos() {
+    UUID foto3 = otraFoto("negro-b");
+    UUID foto4 = otraFoto("negro-a-2");
+
+    Producto producto =
+        caso()
+            .ejecutar(
+                comando(
+                    List.of(
+                        new FotoAprobada(foto1.id(), "Negro", "#000000", 7),
+                        new FotoAprobada(foto2.id(), null, null, null),
+                        new FotoAprobada(foto3, "Negro", "#000000", 2),
+                        new FotoAprobada(foto4, "Negro", "#000000", 7))));
+
+    assertEquals(List.of("Negro 1", "Negro 2"), coloresDe(producto));
+    UUID primera = producto.variantes().get(0).id();
+    assertEquals(Optional.of(primera), producto.imagenPrincipal().orElseThrow().varianteId());
+    assertEquals(
+        List.of(
+            Optional.empty(), Optional.of(producto.variantes().get(1).id()), Optional.of(primera)),
+        producto.galeria().stream().map(ImagenProducto::varianteId).toList(),
+        "la foto sin prenda vale para todas");
+  }
+
+  /** Las prendas se combinan con las tallas igual que los tonos sueltos: prenda por talla. */
+  @Test
+  void cadaPrendaSeCombinaConCadaTalla() {
+    Producto producto =
+        caso()
+            .ejecutar(
+                new AprobarBorradorComando(
+                    borrador.id(),
+                    null,
+                    null,
+                    ApoyoDeCatalogoParaIngesta.BOLSOS_DE_MANO.id(),
+                    ApoyoDeCatalogoParaIngesta.MARCA.id(),
+                    70000,
+                    Tallas.lista(List.of("S", "M")),
+                    1,
+                    "Bolso",
+                    "Bag",
+                    List.of(
+                        new FotoAprobada(foto1.id(), "Rojo", "#C0392B", 1),
+                        new FotoAprobada(foto2.id(), "Rojo", "#C0392B", 1))));
+
+    assertEquals(2, producto.variantes().size(), "una prenda por dos tallas");
+    assertEquals(List.of("Rojo", "Rojo"), coloresDe(producto));
+  }
+
+  /** Una prenda es una variante y una variante tiene un color: sin él no hay qué ofrecer. */
+  @Test
+  void unaPrendaSinColorNoSeAprueba() {
+    assertThrows(
+        PrendaIncoherenteException.class,
+        () ->
+            caso()
+                .ejecutar(
+                    comando(
+                        List.of(
+                            new FotoAprobada(foto1.id(), "Rojo", "#C0392B", 1),
+                            new FotoAprobada(foto2.id(), null, null, 2)))));
+    assertTrue(productos.porId.isEmpty(), "ni producto a medias");
+    assertTrue(almacenPublico.objetos.isEmpty(), "ni fotos en el bucket público");
+    assertEquals(EstadoBorrador.EN_REVISION, borrador.estado());
+  }
+
+  /** Dos colores en una misma prenda no caben en una variante: se rechaza antes de subir nada. */
+  @Test
+  void unaPrendaConDosColoresNoSeAprueba() {
+    assertThrows(
+        PrendaIncoherenteException.class,
+        () ->
+            caso()
+                .ejecutar(
+                    comando(
+                        List.of(
+                            new FotoAprobada(foto1.id(), "Rojo", "#C0392B", 1),
+                            new FotoAprobada(foto2.id(), "Blanco", "#FFFFFF", 1)))));
+    assertTrue(productos.porId.isEmpty());
+    assertTrue(almacenPublico.objetos.isEmpty());
+  }
+
+  @Test
+  void lasPrendasSeNumeranDesdeUno() {
+    assertThrows(
+        IllegalArgumentException.class, () -> new FotoAprobada(foto1.id(), "Rojo", null, 0));
   }
 
   /** Un tono que sale una sola vez no se numera: el número solo aparece cuando hace falta. */

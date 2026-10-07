@@ -8,7 +8,8 @@ import java.util.UUID;
 /**
  * Lo que una persona decide al aprobar: el título y la descripción finales, dónde cuelga en el
  * catálogo, a cuánto se vende, cómo talla, con cuánta existencia inicial nace cada variante, los
- * textos alternativos de la foto principal y qué tono muestra cada foto.
+ * textos alternativos de la foto principal, qué tono muestra cada foto y cuáles son la misma
+ * prenda.
  *
  * @param fotos en el orden en que van a publicarse; la primera es la principal
  * @param existenciaInicial por variante; el checkout no vende lo que el libro no tiene
@@ -41,12 +42,23 @@ public record AprobarBorradorComando(
 
   /**
    * @param tono el color que muestra la foto, o nulo si es del producto entero
+   * @param prenda a qué prenda del borrador pertenece la foto, desde 1: las fotos con el mismo
+   *     número son la misma variante —vistas distintas de una prenda— y llevan el mismo tono. Nulo
+   *     = una foto con tono es una prenda ella sola, que es lo que pasaba antes de existir el campo
    */
-  public record FotoAprobada(UUID mensajeId, String tono, String colorHex) {
+  public record FotoAprobada(UUID mensajeId, String tono, String colorHex, Integer prenda) {
     public FotoAprobada {
       Objects.requireNonNull(mensajeId, "La foto se nombra por su mensaje.");
       tono = tono == null || tono.isBlank() ? null : tono.strip();
       colorHex = colorHex == null || colorHex.isBlank() ? null : colorHex.strip();
+      if (prenda != null && prenda < 1) {
+        throw new IllegalArgumentException("Las prendas se numeran desde 1.");
+      }
+    }
+
+    /** Una foto que no dice de qué prenda es: con tono, es una prenda ella sola. */
+    public FotoAprobada(UUID mensajeId, String tono, String colorHex) {
+      this(mensajeId, tono, colorHex, null);
     }
   }
 }
