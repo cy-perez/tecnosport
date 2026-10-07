@@ -68,6 +68,12 @@ class AlmacenDeImagenesDobleDePrueba implements AlmacenDeImagenes {
     throw new UnsupportedOperationException();
   }
 
+  /** Ningún controlador lee del bucket; aquí solo cumple el contrato del puerto. */
+  @Override
+  public java.util.Optional<byte[]> leer(String objectKey) {
+    throw new UnsupportedOperationException();
+  }
+
   @Override
   public boolean eliminar(String objectKey) {
     objetosEliminados.add(objectKey);

@@ -15,6 +15,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.OptionalDouble;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import tools.jackson.databind.JsonNode;
@@ -123,6 +124,24 @@ public final class MetaGraphClient implements PublicadorEnRedSocial {
   private static final double PROPORCION_MINIMA_INSTAGRAM = 0.8;
 
   private static final double PROPORCION_MAXIMA_INSTAGRAM = 1.91;
+
+  /**
+   * Facebook: vacío, le da igual la proporción. Instagram: la de su primera foto, llevada al rango
+   * que admite.
+   *
+   * <p>La de la primera y no una fija porque <b>Instagram recorta el carrusel entero a la
+   * proporción del primer elemento</b>. Elegir cualquier otra obligaría a encajar también la
+   * principal, que es la que ya está bien y la que encabeza el post.
+   */
+  @Override
+  public OptionalDouble proporcionDelCarrusel(RedSocial red, List<ImagenAPublicar> imagenes) {
+    if (red != RedSocial.INSTAGRAM || imagenes.isEmpty()) {
+      return OptionalDouble.empty();
+    }
+    double primera = imagenes.get(0).proporcion();
+    return OptionalDouble.of(
+        Math.min(PROPORCION_MAXIMA_INSTAGRAM, Math.max(PROPORCION_MINIMA_INSTAGRAM, primera)));
+  }
 
   @Override
   public List<ImagenAPublicar> admitidasPor(RedSocial red, List<ImagenAPublicar> imagenes) {

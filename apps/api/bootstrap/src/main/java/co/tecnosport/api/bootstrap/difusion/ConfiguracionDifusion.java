@@ -1,13 +1,16 @@
 package co.tecnosport.api.bootstrap.difusion;
 
+import co.tecnosport.api.application.catalogo.AlmacenDeImagenes;
 import co.tecnosport.api.application.catalogo.RepositorioProductos;
 import co.tecnosport.api.application.compartido.EnTransaccionPropia;
 import co.tecnosport.api.application.compartido.Reloj;
+import co.tecnosport.api.application.difusion.AjustadorDeImagenes;
 import co.tecnosport.api.application.difusion.ArmadorDePieDeFoto;
 import co.tecnosport.api.application.difusion.DifundirProducto;
 import co.tecnosport.api.application.difusion.PublicadorEnRedSocial;
 import co.tecnosport.api.application.difusion.RepositorioPublicaciones;
 import co.tecnosport.api.domain.compartido.Hashtag;
+import co.tecnosport.api.infrastructure.difusion.AjustadorDeImagenesJava2D;
 import co.tecnosport.api.infrastructure.difusion.MetaGraphClient;
 import co.tecnosport.api.infrastructure.difusion.siembra.PublicadorSembrado;
 import java.net.URI;
@@ -73,11 +76,22 @@ public class ConfiguracionDifusion {
     return new ArmadorDePieDeFoto(propiedades.urlBaseDelSitio(), deMarca);
   }
 
+  /**
+   * Encaja las fotos en la proporción que pida la red, con {@code ImageIO} y {@code Graphics2D} del
+   * JDK. No hay interruptor para apagarlo: una foto que la red no admite se queda fuera del
+   * carrusel, y eso no se arregla solo.
+   */
+  @Bean
+  public AjustadorDeImagenes ajustadorDeImagenes(AlmacenDeImagenes almacenDeImagenes) {
+    return new AjustadorDeImagenesJava2D(almacenDeImagenes);
+  }
+
   @Bean
   public DifundirProducto difundirProducto(
       RepositorioProductos repositorioProductos,
       RepositorioPublicaciones repositorioPublicaciones,
       PublicadorEnRedSocial publicador,
+      AjustadorDeImagenes ajustador,
       ArmadorDePieDeFoto armador,
       EnTransaccionPropia enTransaccionPropia,
       Reloj reloj) {
@@ -85,6 +99,7 @@ public class ConfiguracionDifusion {
         repositorioProductos,
         repositorioPublicaciones,
         publicador,
+        ajustador,
         armador,
         enTransaccionPropia,
         reloj);

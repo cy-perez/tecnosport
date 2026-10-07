@@ -46,6 +46,15 @@ public interface AlmacenDeImagenes {
    */
   void subir(String objectKey, String contentType, byte[] bytes);
 
+  /**
+   * Los bytes de un objeto ya subido. Vacío si no existe.
+   *
+   * <p>Existe para el ajuste de las fotos que salen a redes: hay que abrir la imagen publicada para
+   * encajarla en la proporción que Instagram admite. Es la única lectura que el servidor hace del
+   * bucket público — todo lo demás lo lee el navegador por la URL.
+   */
+  Optional<byte[]> leer(String objectKey);
+
   boolean eliminar(String objectKey);
 
   /**

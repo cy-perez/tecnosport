@@ -2,6 +2,7 @@ package co.tecnosport.api.application.difusion;
 
 import co.tecnosport.api.domain.difusion.RedSocial;
 import java.util.List;
+import java.util.OptionalDouble;
 
 /**
  * Publicar una imagen con su pie en una red social.
@@ -29,6 +30,20 @@ public interface PublicadorEnRedSocial {
    * <p>Qué admite cada red es cosa del adaptador: Instagram mira la proporción de cada imagen y
    * tiene un tope de cuántas caben en un carrusel; Facebook no pone ninguna de las dos.
    */
+  /**
+   * La proporción a la que hay que llevar todas las fotos de este post, o vacío si a la red le da
+   * igual.
+   *
+   * <p>Se pregunta <b>antes</b> de publicar y quien llama encaja las fotos con {@code
+   * AjustadorDeImagenes}, para que lleguen aquí ya en esa proporción.
+   *
+   * <p><b>Es una sola proporción para todo el carrusel, y no un rango.</b> Instagram no solo
+   * rechaza lo que se sale de 4:5 a 1,91:1: en un carrusel recorta todas las demás a la proporción
+   * de la primera, así que mandarlas distintas significa que Instagram corta por su cuenta justo lo
+   * que aquí se tiene cuidado de no cortar. Igualándolas antes, lo que se ve es lo que se mandó.
+   */
+  OptionalDouble proporcionDelCarrusel(RedSocial red, List<ImagenAPublicar> imagenes);
+
   List<ImagenAPublicar> admitidasPor(RedSocial red, List<ImagenAPublicar> imagenes);
 
   /**
