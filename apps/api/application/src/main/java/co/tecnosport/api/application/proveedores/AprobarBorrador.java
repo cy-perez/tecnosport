@@ -41,6 +41,8 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.HexFormat;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -220,14 +222,22 @@ public final class AprobarBorrador {
     producto.definirFotosGeneralesEnCadaColor(comando.fotosGeneralesEnCadaColor());
     repositorioProductos.guardar(producto);
 
-    Map<String, UUID> variantePorTono = crearVariantes(producto, comando, borrador);
+    // El tono que le toca a cada foto, por posición. Se calcula una vez y lo usan las dos mitades
+    // —crear las variantes y publicar las fotos—, porque tienen que coincidir exactamente.
+    List<String> tonoPorFoto = tonosNumerados(comando.fotos());
+    Map<String, UUID> variantePorTono = crearVariantes(producto, comando, borrador, tonoPorFoto);
 
     // Las fotos se releen del repositorio: agregarVariante las dejó ya guardadas y el agregado en
     // memoria tiene que verlas para poder publicar.
     Producto conVariantes = repositorioProductos.buscarPorId(producto.id()).orElseThrow();
     PHash pHashDeLaPrincipal =
         publicarFotos(
-            conVariantes, comando, archivoPorFoto, variantePorTono, borrador.pHash().isEmpty());
+            conVariantes,
+            comando,
+            archivoPorFoto,
+            variantePorTono,
+            tonoPorFoto,
+            borrador.pHash().isEmpty());
     conVariantes.publicar();
     repositorioProductos.actualizar(conVariantes);
 
@@ -236,19 +246,62 @@ public final class AprobarBorrador {
     return conVariantes;
   }
 
-  /** Una variante por tono; y por talla cuando el borrador trae una lista. Sin tonos, una sola. */
-  private Map<String, UUID> crearVariantes(
-      Producto producto, AprobarBorradorComando comando, BorradorProducto borrador) {
-    List<String> tonos =
-        comando.fotos().stream()
+  /**
+   * El valor del atributo Color que le toca a cada foto, por posición; nulo donde la foto no lleva
+   * tono. <b>Un tono que se repite se numera</b>: dos fotos marcadas «Azul oscuro» salen como «Azul
+   * oscuro 1» y «Azul oscuro 2»; el que sale una sola vez se queda como está.
+   *
+   * <p>Hasta el 6 de octubre de 2026 los tonos se agrupaban con {@code distinct()}, así que dos
+   * fotos del mismo color colapsaban en <b>una</b> variante con las dos fotos colgando. Eso está
+   * bien cuando son dos vistas de la misma prenda y mal cuando son dos prendas distintas que el
+   * proveedor llamó igual, que es lo normal en ropa — y entonces quien compra no puede elegir cuál
+   * quiere, porque la ficha solo ofrece un círculo.
+   *
+   * <p><b>Numerar es feo y es lo correcto</b>: la variante se identifica por el valor del atributo,
+   * y ese valor es lo que el pedido congela ({@code LineaPedido.detalleVariante}) y lo que lee
+   * quien empaca. Dos variantes con el mismo texto se leen igual en el carrito, en el correo y en
+   * la guía, y nadie sabría cuál de las dos prendas meter en la caja. El número no dice nada de la
+   * prenda, pero distingue, que es lo que hace falta.
+   */
+  private static List<String> tonosNumerados(List<AprobarBorradorComando.FotoAprobada> fotos) {
+    Map<String, Long> veces =
+        fotos.stream()
             .map(AprobarBorradorComando.FotoAprobada::tono)
             .filter(Objects::nonNull)
-            .distinct()
-            .toList();
-    Map<String, String> hexPorTono =
-        comando.fotos().stream()
-            .filter(f -> f.tono() != null && f.colorHex() != null)
-            .collect(Collectors.toMap(f -> f.tono(), f -> f.colorHex(), (a, b) -> a));
+            .collect(Collectors.groupingBy(tono -> tono, Collectors.counting()));
+    Map<String, Integer> vistos = new HashMap<>();
+    List<String> porFoto = new ArrayList<>(fotos.size());
+    for (AprobarBorradorComando.FotoAprobada foto : fotos) {
+      if (foto.tono() == null) {
+        porFoto.add(null);
+        continue;
+      }
+      int cual = vistos.merge(foto.tono(), 1, Integer::sum);
+      porFoto.add(veces.get(foto.tono()) == 1 ? foto.tono() : foto.tono() + " " + cual);
+    }
+    // `Collections.unmodifiableList` y no `List.copyOf`: la lista lleva nulos en las fotos sin
+    // tono, y `List.copyOf` los rechaza.
+    return Collections.unmodifiableList(porFoto);
+  }
+
+  /**
+   * Una variante por tono —uno por foto con color, ya numerados—; y por talla cuando el borrador
+   * trae una lista. Sin tonos, una sola.
+   */
+  private Map<String, UUID> crearVariantes(
+      Producto producto,
+      AprobarBorradorComando comando,
+      BorradorProducto borrador,
+      List<String> tonoPorFoto) {
+    List<String> tonos = tonoPorFoto.stream().filter(Objects::nonNull).distinct().toList();
+    Map<String, String> hexPorTono = new LinkedHashMap<>();
+    for (int i = 0; i < comando.fotos().size(); i++) {
+      String tono = tonoPorFoto.get(i);
+      String hex = comando.fotos().get(i).colorHex();
+      if (tono != null && hex != null) {
+        hexPorTono.putIfAbsent(tono, hex);
+      }
+    }
     Tallas tallas = comando.tallas() == null ? borrador.tallas() : comando.tallas();
     List<String> valoresDeTalla =
         switch (tallas.tipo()) {
@@ -310,10 +363,12 @@ public final class AprobarBorrador {
       AprobarBorradorComando comando,
       Map<UUID, String> fotos,
       Map<String, UUID> variantePorTono,
+      List<String> tonoPorFoto,
       boolean conHuellaVisual) {
     List<String> subidas = new ArrayList<>();
     try {
-      return publicarFotos(producto, comando, fotos, variantePorTono, conHuellaVisual, subidas);
+      return publicarFotos(
+          producto, comando, fotos, variantePorTono, tonoPorFoto, conHuellaVisual, subidas);
     } catch (RuntimeException e) {
       for (String key : subidas) {
         almacenDeImagenes.eliminar(key);
@@ -327,6 +382,7 @@ public final class AprobarBorrador {
       AprobarBorradorComando comando,
       Map<UUID, String> fotos,
       Map<String, UUID> variantePorTono,
+      List<String> tonoPorFoto,
       boolean conHuellaVisual,
       List<String> subidas) {
     PHash pHashDeLaPrincipal = null;
@@ -348,7 +404,11 @@ public final class AprobarBorrador {
       // La principal nunca cuelga de una variante: el índice único de PRINCIPAL y el reemplazo
       // desde el panel solo conocen la que tiene variante_id nulo. El tono de esa foto se pierde,
       // y es el precio de que el panel pueda reemplazarla.
-      UUID varianteId = principal || foto.tono() == null ? null : variantePorTono.get(foto.tono());
+      // Por el tono **numerado** de esta foto, no por el que trae el comando: dos fotos marcadas
+      // con el mismo color son dos variantes distintas desde el 6 de octubre de 2026, y buscar
+      // por el nombre sin numerar las devolvería a colgar las dos de la misma.
+      String tono = tonoPorFoto.get(orden);
+      UUID varianteId = principal || tono == null ? null : variantePorTono.get(tono);
       ImagenProducto imagen =
           ImagenProducto.crearDeVariante(
               principal ? TipoImagen.PRINCIPAL : TipoImagen.GALERIA,
