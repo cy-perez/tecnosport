@@ -1,5 +1,6 @@
+import { ConfiguracionGoogle } from '../../domain/boton-google.puerto';
 import { vi } from 'vitest';
-import { provideRouter } from '@angular/router';
+import { provideRouter, Router } from '@angular/router';
 import { TranslocoTestingModule } from '@jsverse/transloco';
 import { fireEvent, render, screen } from '@testing-library/angular';
 import { esperarSinViolaciones } from '../../../../../testing/axe';
@@ -12,8 +13,24 @@ import { ErrorHttp } from '../../../../core/http/respuesta-http';
 import { CorreoYaRegistradoError } from '../../domain/cuenta.errores';
 import { REPOSITORIO_CUENTA, RepositorioCuenta } from '../../domain/repositorio-cuenta.puerto';
 import { RegistroClientePage } from './registro-cliente.page';
+import {
+  REPOSITORIO_SESION,
+  RepositorioSesion,
+} from '../../../../core/autenticacion/repositorio-sesion.puerto';
+import { Sesion } from '../../../../core/autenticacion/sesion.model';
+import {
+  BotonGoogleFalso,
+  GOOGLE_HABILITADO,
+  proveedoresDeGoogle,
+} from '../../../../../testing/google';
 
 class RepositorioCuentaFalso implements RepositorioCuenta {
+  configuracion: ConfiguracionGoogle = { habilitado: false, clienteId: '', urlScript: '' };
+
+  async configuracionGoogle(): Promise<ConfiguracionGoogle> {
+    return this.configuracion;
+  }
+
   llamadasRegistrar: { correo: string; clave: string; autorizaDatos: boolean }[] = [];
 
   constructor(
@@ -62,7 +79,36 @@ class RepositorioCuentaFalso implements RepositorioCuenta {
   async reenviarVerificacion(): Promise<void> {}
 }
 
-async function renderPagina(repositorio: RepositorioCuenta) {
+/** La sesión, para la cuenta que nace con Google: anota con qué autorización llegó. */
+class SesionConGoogleFalsa implements RepositorioSesion {
+  llamadasGoogle: { credencial: string; autorizaDatos: boolean }[] = [];
+
+  async iniciarSesionConGoogle(credencial: string, autorizaDatos: boolean): Promise<Sesion> {
+    this.llamadasGoogle.push({ credencial, autorizaDatos });
+    return { usuarioId: 'u1', rol: 'CLIENTE', accessToken: 'jwt' };
+  }
+
+  async iniciarSesion(): Promise<Sesion> {
+    throw new Error('no usado en esta prueba');
+  }
+
+  async cambiarClave(): Promise<Sesion> {
+    throw new Error('no usado en esta prueba');
+  }
+
+  async refrescar(): Promise<Sesion | null> {
+    return null;
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-empty-function -- no usado en estas pruebas
+  async cerrarSesion(): Promise<void> {}
+}
+
+async function renderPagina(
+  repositorio: RepositorioCuenta,
+  sesion: RepositorioSesion = new SesionConGoogleFalsa(),
+  boton = new BotonGoogleFalso(),
+) {
   return render(RegistroClientePage, {
     imports: [
       TranslocoTestingModule.forRoot({
@@ -71,7 +117,12 @@ async function renderPagina(repositorio: RepositorioCuenta) {
         preloadLangs: true,
       }),
     ],
-    providers: [provideRouter([]), { provide: REPOSITORIO_CUENTA, useValue: repositorio }],
+    providers: [
+      provideRouter([]),
+      { provide: REPOSITORIO_CUENTA, useValue: repositorio },
+      { provide: REPOSITORIO_SESION, useValue: sesion },
+      ...proveedoresDeGoogle(boton),
+    ],
   });
 }
 
@@ -310,5 +361,53 @@ describe('RegistroClientePage', () => {
     await screen.findByLabelText('Correo electrónico');
 
     await esperarSinViolaciones(container);
+  });
+
+  describe('con Google (ADR-0074)', () => {
+    /**
+     * Ley 1581: sin la casilla no hay cuenta, tampoco con Google. El botón oficial no se puede
+     * deshabilitar, así que se comprueba al volver: no se llama al servidor y se dice qué falta.
+     */
+    it('sin marcar la autorización no crea la cuenta y dice qué falta', async () => {
+      const cuenta = new RepositorioCuentaFalso();
+      cuenta.configuracion = GOOGLE_HABILITADO;
+      const sesion = new SesionConGoogleFalsa();
+      const boton = new BotonGoogleFalso();
+      await renderPagina(cuenta, sesion, boton);
+      await vi.waitFor(() => expect(boton.pintado).toBe(true));
+
+      boton.entregar('credencial-de-google');
+
+      expect(
+        await screen.findByText(
+          'Para crear la cuenta hay que autorizar el tratamiento de los datos.',
+        ),
+      ).toBeTruthy();
+      expect(sesion.llamadasGoogle).toEqual([]);
+    });
+
+    it('con la autorización marcada crea la cuenta y la autorización viaja', async () => {
+      const cuenta = new RepositorioCuentaFalso();
+      cuenta.configuracion = GOOGLE_HABILITADO;
+      const sesion = new SesionConGoogleFalsa();
+      const boton = new BotonGoogleFalso();
+      const { fixture } = await renderPagina(cuenta, sesion, boton);
+      const navegar = vi
+        .spyOn(fixture.debugElement.injector.get(Router), 'navigate')
+        .mockResolvedValue(true);
+      await vi.waitFor(() => expect(boton.pintado).toBe(true));
+
+      fireEvent.click(screen.getByLabelText(ETIQUETA_AUTORIZACION));
+      boton.entregar('credencial-de-google');
+
+      await vi.waitFor(() =>
+        expect(sesion.llamadasGoogle).toEqual([
+          { credencial: 'credencial-de-google', autorizaDatos: true },
+        ]),
+      );
+      expect(cuenta.llamadasRegistrar).toEqual([]);
+      // Nace verificada y con la sesión abierta: no hay correo que confirmar, se va a la portada.
+      await vi.waitFor(() => expect(navegar).toHaveBeenCalledWith(['/es']));
+    });
   });
 });

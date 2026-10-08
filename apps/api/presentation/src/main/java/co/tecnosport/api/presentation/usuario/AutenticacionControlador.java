@@ -231,20 +231,11 @@ public class AutenticacionControlador {
   }
 
   private ResponseEntity<SesionRespuesta> respuestaConCookie(TokensDeSesion tokens) {
-    ResponseCookie cookie = cookieDeRefresco(tokens.refreshTokenId().toString(), VIGENCIA_REFRESCO);
-    SesionRespuesta cuerpo =
-        new SesionRespuesta(tokens.usuarioId(), tokens.rol().name(), tokens.accessToken());
-    return ResponseEntity.ok().header(HttpHeaders.SET_COOKIE, cookie.toString()).body(cuerpo);
+    return SesionConCookie.respuesta(tokens);
   }
 
   private ResponseCookie cookieDeRefresco(String valor, Duration vigencia) {
-    return ResponseCookie.from(COOKIE_REFRESCO, valor)
-        .httpOnly(true)
-        .secure(true)
-        .sameSite("Lax")
-        .path("/api/v1/auth")
-        .maxAge(vigencia)
-        .build();
+    return SesionConCookie.cookie(valor, vigencia);
   }
 
   private UUID idObligatorioDesdeCookie(String valor) {

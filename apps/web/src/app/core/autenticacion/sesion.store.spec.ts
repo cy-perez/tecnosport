@@ -16,6 +16,10 @@ const SESION_TRAS_CAMBIAR: Sesion = {
 };
 
 class RepositorioSesionFalso implements RepositorioSesion {
+  async iniciarSesionConGoogle(): Promise<Sesion> {
+    return { usuarioId: 'u-google', rol: 'CLIENTE', accessToken: 'jwt-google' };
+  }
+
   llamadasIniciar = 0;
   llamadasCerrar = 0;
   tokenRecibido: string | null = null;
@@ -45,6 +49,10 @@ class RepositorioSesionFalso implements RepositorioSesion {
 }
 
 class RepositorioSesionQueFalla implements RepositorioSesion {
+  async iniciarSesionConGoogle(): Promise<Sesion> {
+    throw new Error('no usado en esta prueba');
+  }
+
   async iniciarSesion(): Promise<Sesion> {
     throw new Error('correo o clave incorrectos');
   }
@@ -125,6 +133,20 @@ describe('SesionStore', () => {
     expect(repositorio.llamadasIniciar).toBe(1);
     expect(store.sesion()).toEqual(sesion);
     expect(store.esAdmin()).toBe(true);
+  });
+
+  /** ADR-0074: entrar con Google deja la sesión igual que entrar con clave. */
+  it('iniciarSesionConGoogle deja la sesión que devuelve el servidor', async () => {
+    const { store } = await renderConRepositorio(new RepositorioSesionFalso(null));
+    await store.listo;
+
+    await store.iniciarSesionConGoogle('credencial', true);
+
+    expect(store.sesion()).toEqual({
+      usuarioId: 'u-google',
+      rol: 'CLIENTE',
+      accessToken: 'jwt-google',
+    });
   });
 
   it('al cambiar la clave, reemplaza la sesión por la que devuelve el servidor', async () => {

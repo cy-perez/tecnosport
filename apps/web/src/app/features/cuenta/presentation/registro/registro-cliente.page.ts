@@ -16,8 +16,13 @@ import { TsPaginaFormulario } from '../../../../shared/ui/pagina-formulario/ts-p
 import { TsCampo } from '../../../../shared/ui/campo/ts-campo';
 import { TsCheckbox } from '../../../../shared/ui/checkbox/ts-checkbox';
 import { iconoClave, iconoCorreo } from '../../../../shared/ui/icono/iconos';
-import { RouterLink } from '@angular/router';
-import { DemasiadosIntentosError } from '../../../../core/autenticacion/sesion.errores';
+import { Router, RouterLink } from '@angular/router';
+import {
+  CuentaExistenteRequiereClaveError,
+  DemasiadosIntentosError,
+} from '../../../../core/autenticacion/sesion.errores';
+import { SesionStore } from '../../../../core/autenticacion/sesion.store';
+import { TsEntrarConGoogle } from '../entrar-con-google/ts-entrar-con-google';
 import { CorreoYaRegistradoError } from '../../domain/cuenta.errores';
 import { REPOSITORIO_CUENTA } from '../../domain/repositorio-cuenta.puerto';
 import { usarFocoEnPrimerInvalido } from '../../../../shared/foco/foco';
@@ -38,6 +43,7 @@ function clavesCoincidenValidador(control: AbstractControl): ValidationErrors | 
     TsCampo,
     TsCheckbox,
     RouterLink,
+    TsEntrarConGoogle,
   ],
   templateUrl: './registro-cliente.page.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -202,6 +208,47 @@ export class RegistroClientePage {
         // cuenta. Intenta de nuevo."—, que no dice qué corregir y manda a repetir lo que va a
         // fallar igual. Un código sin traducir sigue cayendo al genérico, que es lo correcto.
         this.error.set(mensajeDeError(error, this.transloco, 'cuenta.registro.error_generico'));
+      }
+    } finally {
+      this.enviando.set(false);
+    }
+  }
+
+  private readonly sesionStore = inject(SesionStore);
+  private readonly router = inject(Router);
+
+  /**
+   * Crear la cuenta con Google (ADR-0074). La casilla de los datos se exige igual que con la clave
+   * —sin ese sí no hay cuenta (Ley 1581 de 2012)—, y se comprueba al volver de Google porque el
+   * botón oficial no se puede deshabilitar ni interceptar antes. La cuenta nace verificada y con la
+   * sesión abierta: no hay correo que confirmar, Google ya lo hizo.
+   */
+  protected async registrarConGoogle(credencial: string): Promise<void> {
+    if (this.enviando()) {
+      return;
+    }
+    const autorizacion = this.form.controls.autorizaDatos;
+    if (!autorizacion.value) {
+      // Un solo aviso, el de la casilla, y el foco en ella: dos alertas seguidas con casi la
+      // misma frase solo cansan a quien las escucha.
+      autorizacion.markAsTouched();
+      autorizacion.updateValueAndValidity();
+      this.error.set(null);
+      this.enfocarPrimerInvalido();
+      return;
+    }
+    this.error.set(null);
+    this.enviando.set(true);
+    try {
+      await this.sesionStore.iniciarSesionConGoogle(credencial, true);
+      void this.router.navigate(['/' + this.transloco.activeLang()]);
+    } catch (error) {
+      if (error instanceof DemasiadosIntentosError) {
+        this.error.set(this.transloco.translate('cuenta.google.demasiados_intentos'));
+      } else if (error instanceof CuentaExistenteRequiereClaveError) {
+        this.error.set(this.transloco.translate('cuenta.google.requiere_clave'));
+      } else {
+        this.error.set(mensajeDeError(error, this.transloco, 'cuenta.google.error'));
       }
     } finally {
       this.enviando.set(false);

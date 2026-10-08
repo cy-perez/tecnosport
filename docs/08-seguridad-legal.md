@@ -28,7 +28,10 @@ el panel administrativo, el asistente de captura y la cuenta opcional del client
   recuperación y creación de pedidos.
 - El asistente de captura exige rol `ADMIN` y una sesión activa; las URL firmadas
   de subida se emiten con vencimiento corto y para un objeto específico.
-- Login con Google: no en la fase 1. El diseño lo permite después sin migración.
+- **Entrar con Google, desde el 8 de octubre de 2026** (`ADR-0074`). Google prueba
+  la identidad y la sesión sigue siendo la nuestra: el mismo token y la misma
+  cookie de refresco. Esta línea decía "no en la fase 1; el diseño lo permite
+  después sin migración", y lo segundo era falso: hizo falta `V90`.
 
 ## Pagos
 

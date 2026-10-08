@@ -131,4 +131,15 @@ class IniciarSesionTest {
         LimiteDeIntentosExcedidoException.class,
         () -> caso.ejecutar(new IniciarSesionComando("admin@tecnosport.co", "clave-correcta")));
   }
+
+  /** ADR-0074: una cuenta que solo entra con Google no tiene clave que adivinar. */
+  @Test
+  void unaCuentaSinClaveNoEntraConNingunaClave() {
+    IniciarSesion caso = crear();
+    usuarios.conUsuario(Usuario.crearConGoogle(CORREO, "sub-1", AHORA));
+
+    assertThrows(
+        CredencialesInvalidasException.class,
+        () -> caso.ejecutar(new IniciarSesionComando("admin@tecnosport.co", "")));
+  }
 }

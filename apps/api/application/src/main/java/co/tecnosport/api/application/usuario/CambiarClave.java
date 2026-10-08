@@ -75,7 +75,10 @@ public final class CambiarClave {
         repositorioUsuarios
             .buscarPorId(comando.usuarioId())
             .filter(
-                u -> codificadorDeClaves.verificar(comando.claveActualTextoPlano(), u.claveHash()))
+                u ->
+                    u.tieneClave()
+                        && codificadorDeClaves.verificar(
+                            comando.claveActualTextoPlano(), u.claveHash()))
             .orElseThrow(CredencialesInvalidasException::new);
 
     // Intentos fallidos seguidos, igual que en IniciarSesion y por el mismo motivo.

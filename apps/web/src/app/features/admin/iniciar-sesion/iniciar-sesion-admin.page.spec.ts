@@ -15,6 +15,10 @@ import { Sesion } from '../../../core/autenticacion/sesion.model';
 import { IniciarSesionAdminPage } from './iniciar-sesion-admin.page';
 
 class RepositorioSesionFalso implements RepositorioSesion {
+  async iniciarSesionConGoogle(): Promise<Sesion> {
+    throw new Error('no usado en esta prueba');
+  }
+
   llamadasCerrar = 0;
 
   constructor(

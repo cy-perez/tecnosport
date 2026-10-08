@@ -76,6 +76,10 @@ class RepositorioCategoriasFalso implements RepositorioCategorias {
 // El encabezado ahora refleja la sesión: sin este doble, `SesionStore` no
 // se puede construir.
 class RepositorioSesionFalso implements RepositorioSesion {
+  async iniciarSesionConGoogle(): Promise<Sesion> {
+    throw new Error('no usado en esta prueba');
+  }
+
   async iniciarSesion(): Promise<Sesion> {
     throw new Error('no usado en esta prueba');
   }

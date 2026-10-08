@@ -63,6 +63,9 @@ public final class IniciarSesion {
     Usuario usuario =
         repositorioUsuarios
             .buscarPorCorreo(correo)
+            // Una cuenta que solo entra con Google no tiene clave que comparar: es el mismo
+            // error genérico, sin decir que la cuenta existe (ADR-0074).
+            .filter(u -> u.tieneClave())
             .filter(u -> codificadorDeClaves.verificar(comando.claveTextoPlano(), u.claveHash()))
             .orElseThrow(CredencialesInvalidasException::new);
 

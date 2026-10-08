@@ -592,6 +592,25 @@
         ],
         "type" : "object"
       },
+      "ConfiguracionGoogleRespuesta" : {
+        "properties" : {
+          "clienteId" : {
+            "type" : "string"
+          },
+          "habilitado" : {
+            "type" : "boolean"
+          },
+          "urlScript" : {
+            "type" : "string"
+          }
+        },
+        "required" : [
+          "clienteId",
+          "habilitado",
+          "urlScript"
+        ],
+        "type" : "object"
+      },
       "ConfirmarFotoPeticion" : {
         "properties" : {
           "objectKey" : {
@@ -1579,6 +1598,21 @@
         },
         "required" : [
           "objectKey"
+        ],
+        "type" : "object"
+      },
+      "IniciarSesionConGoogleRequest" : {
+        "properties" : {
+          "autorizaDatos" : {
+            "type" : "boolean"
+          },
+          "credencial" : {
+            "type" : "string"
+          }
+        },
+        "required" : [
+          "autorizaDatos",
+          "credencial"
         ],
         "type" : "object"
       },
@@ -7021,6 +7055,56 @@
         },
         "tags" : [
           "autenticacion-controlador"
+        ]
+      }
+    },
+    "/api/v1/auth/google" : {
+      "post" : {
+        "operationId" : "iniciarSesionConGoogle",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/IniciarSesionConGoogleRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SesionRespuesta"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "autenticacion-google-controlador"
+        ]
+      }
+    },
+    "/api/v1/auth/google/configuracion" : {
+      "get" : {
+        "operationId" : "configuracion",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ConfiguracionGoogleRespuesta"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "autenticacion-google-controlador"
         ]
       }
     },

@@ -7,6 +7,8 @@ import { RepositorioSesion } from './repositorio-sesion.puerto';
 import {
   ClaveActualIncorrectaError,
   CorreoSinVerificarError,
+  CuentaExistenteRequiereClaveError,
+  CuentaGoogleSinRegistroError,
   DemasiadosIntentosError,
   SesionExpiradaError,
 } from './sesion.errores';
@@ -41,6 +43,31 @@ export class SesionHttpRepositorio implements RepositorioSesion {
       throw new DemasiadosIntentosError();
     }
     return aSesion(desempaquetar(respuesta, 'no se pudo iniciar sesión'));
+  }
+
+  /**
+   * Los dos 409 de negocio se distinguen por el `codigo` y no por el estado: el mismo endpoint
+   * puede responder otro 409 —dos primeras entradas a la vez chocan con el índice único— y
+   * decirle a esa persona "no hay una cuenta con ese correo" sería mentirle.
+   */
+  async iniciarSesionConGoogle(credencial: string, autorizaDatos: boolean): Promise<Sesion> {
+    const respuesta = await this.cliente.POST('/api/v1/auth/google', {
+      body: { credencial, autorizaDatos },
+    });
+    if (respuesta.response.status === 429) {
+      throw new DemasiadosIntentosError();
+    }
+    try {
+      return aSesion(desempaquetar(respuesta, 'no se pudo iniciar sesión con Google'));
+    } catch (error) {
+      if (error instanceof ErrorHttp && error.codigo === 'CUENTA_GOOGLE_SIN_REGISTRO') {
+        throw new CuentaGoogleSinRegistroError();
+      }
+      if (error instanceof ErrorHttp && error.codigo === 'CUENTA_EXISTENTE_REQUIERE_CLAVE') {
+        throw new CuentaExistenteRequiereClaveError();
+      }
+      throw error;
+    }
   }
 
   /**

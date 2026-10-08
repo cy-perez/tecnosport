@@ -1236,6 +1236,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/auth/google": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["iniciarSesionConGoogle"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/google/configuracion": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["configuracion"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/auth/recuperacion": {
         parameters: {
             query?: never;
@@ -1975,6 +2007,11 @@ export interface components {
             /** @enum {string} */
             modalidadRecaudo: "CREDITOS" | "BANCO";
         };
+        ConfiguracionGoogleRespuesta: {
+            clienteId: string;
+            habilitado: boolean;
+            urlScript: string;
+        };
         ConfirmarFotoPeticion: {
             objectKey: string;
         };
@@ -2331,6 +2368,10 @@ export interface components {
         };
         IniciarIngestaPeticion: {
             objectKey: string;
+        };
+        IniciarSesionConGoogleRequest: {
+            autorizaDatos: boolean;
+            credencial: string;
         };
         IniciarSesionRequest: {
             clave?: string;
@@ -5370,6 +5411,50 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["SesionRespuesta"];
+                };
+            };
+        };
+    };
+    iniciarSesionConGoogle: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["IniciarSesionConGoogleRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SesionRespuesta"];
+                };
+            };
+        };
+    };
+    configuracion: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ConfiguracionGoogleRespuesta"];
                 };
             };
         };

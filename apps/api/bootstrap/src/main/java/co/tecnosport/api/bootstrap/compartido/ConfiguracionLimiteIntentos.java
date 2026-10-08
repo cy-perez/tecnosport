@@ -45,7 +45,10 @@ public class ConfiguracionLimiteIntentos {
         // cotizando contra Skydropx, que levantó la revisión adversarial de los 122 commits.
         "/api/v1/auth/verificacion/reenviar",
         "/api/v1/auth/recuperacion",
-        "/api/v1/auth/recuperacion/confirmar");
+        "/api/v1/auth/recuperacion/confirmar",
+        // ADR-0074: crear cuentas con Google también se frena por IP en el filtro, como el
+        // registro.
+        "/api/v1/auth/google");
     return registro;
   }
 

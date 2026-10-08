@@ -1,3 +1,4 @@
+import { ConfiguracionGoogle } from '../../domain/boton-google.puerto';
 import { TranslocoTestingModule } from '@jsverse/transloco';
 import { fireEvent, render, screen } from '@testing-library/angular';
 import en from '../../../../../assets/i18n/en.json';
@@ -8,6 +9,10 @@ import { REPOSITORIO_CUENTA, RepositorioCuenta } from '../../domain/repositorio-
 import { RecuperarClavePage } from './recuperar-clave.page';
 
 class RepositorioCuentaFalso implements RepositorioCuenta {
+  async configuracionGoogle(): Promise<ConfiguracionGoogle> {
+    return { habilitado: false, clienteId: '', urlScript: '' };
+  }
+
   llamadasSolicitar: string[] = [];
 
   constructor(private falla = false) {}

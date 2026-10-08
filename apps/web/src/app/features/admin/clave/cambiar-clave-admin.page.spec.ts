@@ -21,6 +21,10 @@ const SESION: Sesion = { usuarioId: 'u1', rol: 'ADMIN', accessToken: 'jwt.viejo'
 const SESION_NUEVA: Sesion = { usuarioId: 'u1', rol: 'ADMIN', accessToken: 'jwt.nuevo' };
 
 class RepositorioSesionFalso implements RepositorioSesion {
+  async iniciarSesionConGoogle(): Promise<Sesion> {
+    throw new Error('no usado en esta prueba');
+  }
+
   claveActualRecibida: string | null = null;
   claveNuevaRecibida: string | null = null;
 

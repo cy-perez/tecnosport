@@ -369,6 +369,8 @@ El frontend no calcula ni adivina el orden. Si el set está incompleto, el campo
 
 ```
 POST /api/v1/auth/registro | /sesion | /refresco | /cierre
+POST /api/v1/auth/google                     entrar o crear la cuenta con Google (adr/0074); 409 CUENTA_GOOGLE_SIN_REGISTRO sin autorización
+GET  /api/v1/auth/google/configuracion       si este ambiente tiene cliente de Google, cuál, y de dónde se carga su script
 POST /api/v1/auth/verificacion | /verificacion/reenviar
 POST /api/v1/auth/recuperacion | /recuperacion/confirmar
 GET  /api/v1/cuenta/pedidos

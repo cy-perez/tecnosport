@@ -5,6 +5,8 @@ import { DemasiadosIntentosError } from '../../../core/autenticacion/sesion.erro
 import { ErrorHttp, exigirExito } from '../../../core/http/respuesta-http';
 import { CorreoYaRegistradoError } from '../domain/cuenta.errores';
 import { RepositorioCuenta } from '../domain/repositorio-cuenta.puerto';
+import { ConfiguracionGoogle } from '../domain/boton-google.puerto';
+import { desempaquetar } from '../../../core/http/respuesta-http';
 
 /**
  * Los fallos salen de aquí como `ErrorHttp` —vía `exigirExito`— y no como un `Error` a secas, y esa
@@ -92,5 +94,13 @@ export class CuentaHttpRepositorio implements RepositorioCuenta {
       throw new DemasiadosIntentosError();
     }
     exigirExito(resultado, 'no se pudo restablecer la clave');
+  }
+
+  async configuracionGoogle(): Promise<ConfiguracionGoogle> {
+    const dto = desempaquetar(
+      await this.cliente.GET('/api/v1/auth/google/configuracion'),
+      'no se pudo consultar la configuración de Google',
+    );
+    return { habilitado: dto.habilitado, clienteId: dto.clienteId, urlScript: dto.urlScript };
   }
 }

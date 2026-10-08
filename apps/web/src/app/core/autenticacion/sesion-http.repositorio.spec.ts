@@ -1,6 +1,8 @@
 import { ErrorHttp } from '../http/respuesta-http';
 import {
   ClaveActualIncorrectaError,
+  CuentaGoogleSinRegistroError,
+  CuentaExistenteRequiereClaveError,
   DemasiadosIntentosError,
   SesionExpiradaError,
 } from './sesion.errores';
@@ -24,7 +26,10 @@ describe('SesionHttpRepositorio.refrescar', () => {
     // exige un origen y revienta al construir la petición, antes de llegar al doble. La base
     // absoluta es lo que aporta el navegador de verdad; aquí se aporta a mano.
     vi.stubGlobal('window', undefined);
-    vi.stubGlobal('fetch', vi.fn(async () => respuesta));
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => respuesta),
+    );
     return new SesionHttpRepositorio();
   }
 
@@ -84,7 +89,10 @@ describe('SesionHttpRepositorio.iniciarSesion', () => {
 
   function conRespuesta(respuesta: Response): SesionHttpRepositorio {
     vi.stubGlobal('window', undefined);
-    vi.stubGlobal('fetch', vi.fn(async () => respuesta));
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => respuesta),
+    );
     return new SesionHttpRepositorio();
   }
 
@@ -98,9 +106,9 @@ describe('SesionHttpRepositorio.iniciarSesion', () => {
       }),
     );
 
-    await expect(repositorio.iniciarSesion('admin@tecnosport.co', 'la-buena')).rejects.toBeInstanceOf(
-      DemasiadosIntentosError,
-    );
+    await expect(
+      repositorio.iniciarSesion('admin@tecnosport.co', 'la-buena'),
+    ).rejects.toBeInstanceOf(DemasiadosIntentosError);
   });
 
   it('el 401 de verdad sigue siendo un ErrorHttp', async () => {
@@ -124,7 +132,10 @@ describe('SesionHttpRepositorio.cambiarClave', () => {
 
   function conRespuesta(respuesta: Response): SesionHttpRepositorio {
     vi.stubGlobal('window', undefined);
-    vi.stubGlobal('fetch', vi.fn(async () => respuesta));
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => respuesta),
+    );
     return new SesionHttpRepositorio();
   }
 
@@ -180,5 +191,54 @@ describe('SesionHttpRepositorio.cambiarClave', () => {
     await expect(repositorio.cambiarClave('jwt', 'vieja', 'nueva')).rejects.toBeInstanceOf(
       ErrorHttp,
     );
+  });
+});
+
+/**
+ * ADR-0074: los dos 409 de negocio se distinguen por el `codigo`. Otro 409 del mismo endpoint —dos
+ * primeras entradas a la vez contra el índice único— no puede leerse como "no hay cuenta".
+ */
+describe('SesionHttpRepositorio.iniciarSesionConGoogle', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  function conProblema(status: number, codigo: string): SesionHttpRepositorio {
+    vi.stubGlobal('window', undefined);
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(
+        async () =>
+          new Response(JSON.stringify({ status, codigo }), {
+            status,
+            headers: { 'Content-Type': 'application/problem+json' },
+          }),
+      ),
+    );
+    return new SesionHttpRepositorio();
+  }
+
+  it('sin cuenta y sin autorización es CuentaGoogleSinRegistroError', async () => {
+    await expect(
+      conProblema(409, 'CUENTA_GOOGLE_SIN_REGISTRO').iniciarSesionConGoogle('c', false),
+    ).rejects.toBeInstanceOf(CuentaGoogleSinRegistroError);
+  });
+
+  it('una cuenta que se entra con clave es CuentaExistenteRequiereClaveError', async () => {
+    await expect(
+      conProblema(409, 'CUENTA_EXISTENTE_REQUIERE_CLAVE').iniciarSesionConGoogle('c', false),
+    ).rejects.toBeInstanceOf(CuentaExistenteRequiereClaveError);
+  });
+
+  it('otro 409 no se disfraza de "no hay cuenta"', async () => {
+    await expect(
+      conProblema(409, 'CONFLICTO_DE_DATOS').iniciarSesionConGoogle('c', false),
+    ).rejects.toBeInstanceOf(ErrorHttp);
+  });
+
+  it('el 429 es DemasiadosIntentosError', async () => {
+    await expect(
+      conProblema(429, 'LIMITE_DE_INTENTOS_EXCEDIDO').iniciarSesionConGoogle('c', false),
+    ).rejects.toBeInstanceOf(DemasiadosIntentosError);
   });
 });

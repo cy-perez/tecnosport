@@ -85,4 +85,33 @@ class UsuarioTest {
 
     assertThrows(ExcepcionDeDominio.class, () -> usuario.cambiarClave(null));
   }
+
+  /** ADR-0074: la cuenta que nace con Google está verificada y no tiene clave. */
+  @Test
+  void laCuentaQueNaceConGoogleEstaVerificadaYSinClave() {
+    Usuario usuario = Usuario.crearConGoogle(CORREO, "sub-1", AHORA);
+
+    assertTrue(usuario.correoVerificado());
+    assertFalse(usuario.tieneClave());
+    assertEquals(java.util.Optional.of("sub-1"), usuario.googleSub());
+    assertEquals(Rol.CLIENTE, usuario.rol());
+  }
+
+  /** Sin clave y sin Google no hay forma de entrar: la cuenta no se construye. */
+  @Test
+  void sinClaveNiGoogleNoHayCuenta() {
+    assertThrows(
+        ExcepcionDeDominio.class,
+        () ->
+            new Usuario(java.util.UUID.randomUUID(), CORREO, null, Rol.CLIENTE, AHORA, null, null));
+  }
+
+  /** Una cuenta ya unida a otra cuenta de Google no se cambia en silencio. */
+  @Test
+  void noSeUneAUnaSegundaCuentaDeGoogle() {
+    Usuario usuario = Usuario.crearConGoogle(CORREO, "sub-1", AHORA);
+
+    usuario.vincularGoogle("sub-1", AHORA);
+    assertThrows(ExcepcionDeDominio.class, () -> usuario.vincularGoogle("sub-2", AHORA));
+  }
 }

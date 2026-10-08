@@ -16,7 +16,7 @@ public class UsuarioJpaEntity {
   @Column(nullable = false, unique = true)
   private String correo;
 
-  @Column(name = "clave_hash", nullable = false)
+  @Column(name = "clave_hash")
   private String claveHash;
 
   @Column(nullable = false)
@@ -28,6 +28,9 @@ public class UsuarioJpaEntity {
   @Column(name = "correo_verificado_en")
   private Instant correoVerificadoEn;
 
+  @Column(name = "google_sub", unique = true)
+  private String googleSub;
+
   protected UsuarioJpaEntity() {}
 
   public UsuarioJpaEntity(
@@ -36,13 +39,15 @@ public class UsuarioJpaEntity {
       String claveHash,
       String rol,
       Instant creadoEn,
-      Instant correoVerificadoEn) {
+      Instant correoVerificadoEn,
+      String googleSub) {
     this.id = id;
     this.correo = correo;
     this.claveHash = claveHash;
     this.rol = rol;
     this.creadoEn = creadoEn;
     this.correoVerificadoEn = correoVerificadoEn;
+    this.googleSub = googleSub;
   }
 
   public UUID getId() {
@@ -67,5 +72,9 @@ public class UsuarioJpaEntity {
 
   public Instant getCorreoVerificadoEn() {
     return correoVerificadoEn;
+  }
+
+  public String getGoogleSub() {
+    return googleSub;
   }
 }

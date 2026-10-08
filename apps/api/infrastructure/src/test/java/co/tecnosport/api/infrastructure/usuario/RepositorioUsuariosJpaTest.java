@@ -42,6 +42,21 @@ class RepositorioUsuariosJpaTest {
     assertThat(encontrado.rol()).isEqualTo(Rol.ADMIN);
   }
 
+  /** ADR-0074: la cuenta que nace con Google se guarda sin clave y se encuentra por su `sub`. */
+  @Test
+  void unaCuentaDeGoogleSeGuardaSinClaveYSeEncuentraPorSuSub() {
+    Usuario usuario =
+        Usuario.crearConGoogle(
+            new CorreoElectronico("google@tecnosport.co"), "sub-123", Instant.now());
+
+    repositorio.guardar(usuario);
+
+    Usuario encontrado = repositorio.buscarPorGoogleSub("sub-123").orElseThrow();
+    assertThat(encontrado.id()).isEqualTo(usuario.id());
+    assertThat(encontrado.tieneClave()).isFalse();
+    assertThat(encontrado.correoVerificado()).isTrue();
+  }
+
   @Test
   void buscarPorIdFunciona() {
     Usuario usuario =

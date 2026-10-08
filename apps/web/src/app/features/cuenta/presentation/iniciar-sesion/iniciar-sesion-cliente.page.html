@@ -27,7 +27,15 @@
       formControlName="clave"
     />
 
-    <p class="m-0 text-ts-error" role="alert">{{ error() }}</p>
+    <p class="m-0 text-ts-error" role="alert">
+      {{ error() }}
+      @if (sinRegistroConGoogle()) {
+        {{ 'cuenta.google.sin_registro' | transloco }}
+        <a class="anillo-foco text-ts-primario underline" [routerLink]="['../registro']">{{
+          'cuenta.google.ir_a_registro' | transloco
+        }}</a>
+      }
+    </p>
 
     <!-- El enlace de recuperar y el boton comparten fila, que es la forma que tiene la fila de
          cierre de la referencia (alli la ocupan una casilla y el boton; aqui no hay casilla). Con
@@ -50,6 +58,10 @@
         {{ 'cuenta.iniciarSesion.entrar' | transloco }}
       </ts-boton>
     </div>
+
+    <!-- Entrar con Google (ADR-0074), fuera del `<form>` de la clave en el sentido que importa: no
+         lo envía, entrega su propia credencial. Sin cliente configurado no pinta nada. -->
+    <ts-entrar-con-google modo="iniciar" (credencial)="entrarConGoogle($event)" />
 
     <!-- Quien llega aquí sin cuenta no tenía por dónde crearla: el enlace de
          registro solo estaba en el encabezado. Los dos formularios se apuntan

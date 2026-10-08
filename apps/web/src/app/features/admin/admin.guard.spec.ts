@@ -16,6 +16,10 @@ import { Sesion } from '../../core/autenticacion/sesion.model';
 import { adminGuard } from './admin.guard';
 
 class RepositorioSesionFalso implements RepositorioSesion {
+  async iniciarSesionConGoogle(): Promise<Sesion> {
+    throw new Error('no usado en esta prueba');
+  }
+
   constructor(private sesionAlRefrescar: Sesion | null) {}
 
   async iniciarSesion(): Promise<Sesion> {

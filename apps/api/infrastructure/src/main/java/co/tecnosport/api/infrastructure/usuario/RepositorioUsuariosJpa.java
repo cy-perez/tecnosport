@@ -30,6 +30,11 @@ public class RepositorioUsuariosJpa implements RepositorioUsuarios {
   }
 
   @Override
+  public Optional<Usuario> buscarPorGoogleSub(String googleSub) {
+    return usuarios.findByGoogleSub(googleSub).map(this::aUsuario);
+  }
+
+  @Override
   public void guardar(Usuario usuario) {
     usuarios.save(aEntidad(usuario));
   }
@@ -41,7 +46,8 @@ public class RepositorioUsuariosJpa implements RepositorioUsuarios {
         entidad.getClaveHash(),
         Rol.valueOf(entidad.getRol()),
         entidad.getCreadoEn(),
-        entidad.getCorreoVerificadoEn());
+        entidad.getCorreoVerificadoEn(),
+        entidad.getGoogleSub());
   }
 
   private UsuarioJpaEntity aEntidad(Usuario usuario) {
@@ -51,6 +57,7 @@ public class RepositorioUsuariosJpa implements RepositorioUsuarios {
         usuario.claveHash(),
         usuario.rol().name(),
         usuario.creadoEn(),
-        usuario.correoVerificadoEn().orElse(null));
+        usuario.correoVerificadoEn().orElse(null),
+        usuario.googleSub().orElse(null));
   }
 }

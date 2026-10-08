@@ -11,6 +11,7 @@ import co.tecnosport.api.application.usuario.CodificadorDeClaves;
 import co.tecnosport.api.application.usuario.ConfirmarRecuperacion;
 import co.tecnosport.api.application.usuario.GeneradorDeTokens;
 import co.tecnosport.api.application.usuario.IniciarSesion;
+import co.tecnosport.api.application.usuario.IniciarSesionConGoogle;
 import co.tecnosport.api.application.usuario.ReenviarVerificacion;
 import co.tecnosport.api.application.usuario.RefrescarToken;
 import co.tecnosport.api.application.usuario.RegistrarUsuario;
@@ -19,6 +20,7 @@ import co.tecnosport.api.application.usuario.RepositorioTokensRecuperacion;
 import co.tecnosport.api.application.usuario.RepositorioTokensVerificacion;
 import co.tecnosport.api.application.usuario.RepositorioUsuarios;
 import co.tecnosport.api.application.usuario.SolicitarRecuperacion;
+import co.tecnosport.api.application.usuario.VerificadorDeCredencialGoogle;
 import co.tecnosport.api.application.usuario.VerificadorDeTokens;
 import co.tecnosport.api.application.usuario.VerificarCorreo;
 import co.tecnosport.api.bootstrap.compartido.PropiedadesApp;
@@ -26,7 +28,9 @@ import co.tecnosport.api.bootstrap.compartido.PropiedadesLimiteAuth;
 import co.tecnosport.api.bootstrap.legal.PropiedadesLegal;
 import co.tecnosport.api.infrastructure.usuario.CodificadorDeClavesBCrypt;
 import co.tecnosport.api.infrastructure.usuario.GeneradorDeTokensJwt;
+import co.tecnosport.api.infrastructure.usuario.VerificadorDeCredencialGoogleJwt;
 import co.tecnosport.api.infrastructure.usuario.VerificadorDeTokensJwt;
+import co.tecnosport.api.presentation.usuario.AutenticacionGoogleControlador;
 import co.tecnosport.api.presentation.usuario.FiltroAutenticacionJwt;
 import java.time.Duration;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -40,7 +44,8 @@ import org.springframework.context.annotation.Configuration;
   PropiedadesLegal.class,
   PropiedadesAdminSemilla.class,
   PropiedadesVerificacionCorreo.class,
-  PropiedadesRecuperacionClave.class
+  PropiedadesRecuperacionClave.class,
+  PropiedadesGoogle.class
 })
 public class ConfiguracionUsuario {
 
@@ -85,6 +90,48 @@ public class ConfiguracionUsuario {
         limitadorDeIntentos,
         propiedadesLimite.cuentaMaximo(),
         Duration.ofMinutes(propiedadesLimite.cuentaMinutos()));
+  }
+
+  @Bean
+  public VerificadorDeCredencialGoogle verificadorDeCredencialGoogle(
+      PropiedadesGoogle propiedades) {
+    return VerificadorDeCredencialGoogleJwt.contraLlavesDeGoogle(
+        propiedades.urlLlaves(), propiedades.clienteId());
+  }
+
+  /** Los límites por IP del login: antes de verificar la credencial no se sabe de quién es. */
+  @Bean
+  public IniciarSesionConGoogle iniciarSesionConGoogle(
+      VerificadorDeCredencialGoogle verificador,
+      RepositorioUsuarios repositorioUsuarios,
+      RepositorioSesiones repositorioSesiones,
+      GeneradorDeTokens generadorDeTokens,
+      RepositorioAutorizaciones repositorioAutorizaciones,
+      Reloj reloj,
+      PropiedadesJwt propiedades,
+      LimitadorDeIntentos limitadorDeIntentos,
+      PropiedadesLimiteAuth propiedadesLimite,
+      PropiedadesLegal propiedadesLegal,
+      PropiedadesGoogle propiedadesGoogle) {
+    return new IniciarSesionConGoogle(
+        verificador,
+        repositorioUsuarios,
+        repositorioSesiones,
+        generadorDeTokens,
+        repositorioAutorizaciones,
+        reloj,
+        Duration.ofDays(propiedades.diasRefresco()),
+        limitadorDeIntentos,
+        propiedadesLimite.ipMaximo(),
+        Duration.ofMinutes(propiedadesLimite.ipMinutos()),
+        propiedadesLegal.politicaDatosVersion(),
+        propiedadesGoogle.clienteId());
+  }
+
+  @Bean
+  public AutenticacionGoogleControlador.ScriptDeGoogle scriptDeGoogle(
+      PropiedadesGoogle propiedades) {
+    return new AutenticacionGoogleControlador.ScriptDeGoogle(propiedades.urlScript());
   }
 
   /**

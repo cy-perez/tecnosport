@@ -6,6 +6,10 @@ import { SesionStore } from '../autenticacion/sesion.store';
 import { crearClienteAutenticado } from './cliente-autenticado';
 
 class RepositorioSesionFalso implements RepositorioSesion {
+  async iniciarSesionConGoogle(): Promise<Sesion> {
+    throw new Error('no usado en esta prueba');
+  }
+
   llamadasRefrescar = 0;
 
   constructor(private sesionAlRefrescar: Sesion | null = null) {}
@@ -28,6 +32,10 @@ class RepositorioSesionFalso implements RepositorioSesion {
 }
 
 class RepositorioSesionQueFalla implements RepositorioSesion {
+  async iniciarSesionConGoogle(): Promise<Sesion> {
+    throw new Error('no usado en esta prueba');
+  }
+
   async iniciarSesion(): Promise<Sesion> {
     throw new Error('no usado en estas pruebas');
   }
@@ -119,7 +127,9 @@ describe('crearClienteAutenticado', () => {
       'fetch',
       vi.fn(async (peticion: Request) => {
         cabecerasVistas.push(peticion.headers.get('Authorization'));
-        return cabecerasVistas.length === 1 ? new Response(null, { status: 401 }) : respuestaJson({ items: [] });
+        return cabecerasVistas.length === 1
+          ? new Response(null, { status: 401 })
+          : respuestaJson({ items: [] });
       }),
     );
 

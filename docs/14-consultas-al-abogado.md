@@ -472,6 +472,30 @@ que se probó el día de la compra es el texto de esa versión—.
 
 ---
 
+## 7. Cargar el botón de Google en nuestras páginas
+
+> Nació el 8 de octubre de 2026 con `ADR-0074`.
+
+**El hecho.** Las páginas de iniciar sesión y crear cuenta cargan el script del
+botón de Google desde `accounts.google.com`. Al cargarlo, el navegador de quien
+visita le entrega a Google su IP y las cookies que Google tenga, **aunque no
+pulse el botón**. Nosotros no le enviamos datos a Google; si la persona elige
+entrar con Google, es Google quien nos entrega a nosotros el correo, su
+verificación y un identificador.
+
+**Qué dice el texto publicado (versión `2026-10-08.2`).** La política lo cuenta en
+§5 y §8, y la de cookies dice que Google puede usar allí sus propias cookies bajo
+su política. Informa el hecho sin calificarlo.
+
+**La pregunta.** Si esa carga, que ocurre por estar en nuestra página y antes de
+cualquier decisión de la persona, es un tratamiento que nos toca autorizar o
+informar de otra forma (por ejemplo, cargando el botón solo después de un clic),
+o si basta con el aviso.
+
+**Qué cambia según la respuesta:** si basta, nada. Si no, cambia
+`ts-entrar-con-google` —cargar el script tras un clic previo— y, con él, el
+párrafo de cookies en los dos idiomas y la versión de la política.
+
 ## Antes de la consulta
 
 - [x] ~~Leer el contrato y la documentación de Resend y anotar la región de

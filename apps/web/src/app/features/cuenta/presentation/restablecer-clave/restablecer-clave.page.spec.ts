@@ -1,3 +1,4 @@
+import { ConfiguracionGoogle } from '../../domain/boton-google.puerto';
 import { ActivatedRoute } from '@angular/router';
 import { TranslocoTestingModule } from '@jsverse/transloco';
 import { fireEvent, render, screen } from '@testing-library/angular';
@@ -10,6 +11,10 @@ import { REPOSITORIO_CUENTA, RepositorioCuenta } from '../../domain/repositorio-
 import { RestablecerClavePage } from './restablecer-clave.page';
 
 class RepositorioCuentaFalso implements RepositorioCuenta {
+  async configuracionGoogle(): Promise<ConfiguracionGoogle> {
+    return { habilitado: false, clienteId: '', urlScript: '' };
+  }
+
   llamadasRestablecer: { token: string; claveNueva: string }[] = [];
 
   /** El código con el que falla, no un booleano: la pantalla distingue el 4xx del enlace
