@@ -270,6 +270,17 @@ export class ProductosAdminHttpRepositorio implements RepositorioProductosAdmin 
   }
 
   async asignarColorAImagen(comando: AsignarColorAImagenAdmin): Promise<void> {
+    if (comando.imagenId === null) {
+      const respuesta = await this.cliente.PUT(
+        '/api/v1/admin/productos/{id}/imagen-principal/variante',
+        {
+          params: { path: { id: comando.productoId } },
+          body: { varianteId: comando.varianteId ?? undefined },
+        },
+      );
+      exigirExito(respuesta, 'no se pudo marcar el color de la foto principal');
+      return;
+    }
     const respuesta = await this.cliente.PUT(
       '/api/v1/admin/productos/{id}/galeria/{imagenId}/variante',
       {
