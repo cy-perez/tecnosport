@@ -20,7 +20,8 @@ import {
   ResultadoCotizacion,
 } from '../../domain/envio.model';
 import { REPOSITORIO_ENVIOS, RepositorioEnvios } from '../../domain/repositorio-envios.puerto';
-import { DatosEntrega } from '../../domain/pedido.comandos';
+import { DatosEntrega, MetodosDePagoDisponiblesComando } from '../../domain/pedido.comandos';
+import { MetodoPago } from '../../domain/pedido.model';
 import { REPOSITORIO_PAGOS } from '../../domain/repositorio-pagos.puerto';
 import { REPOSITORIO_PEDIDOS } from '../../domain/repositorio-pedidos.puerto';
 import { TransportadoraPage } from './transportadora.page';
@@ -131,11 +132,22 @@ class AnfitrionDePrueba {
 @Component({ selector: 'app-ruta-muda', template: '' })
 class RutaMuda {}
 
+/** Solo lo que esta página usa: la precarga de los métodos de pago. */
+class PedidosQueCuentan {
+  readonly consultas: MetodosDePagoDisponiblesComando[] = [];
+
+  async metodosDePagoDisponibles(comando: MetodosDePagoDisponiblesComando): Promise<MetodoPago[]> {
+    this.consultas.push(comando);
+    return ['WOMPI'];
+  }
+}
+
 async function renderPagina(
   envios: RepositorioEnvios = new RepositorioEnviosFalso({
     tipo: 'TARIFA',
     cotizacion: COTIZACION,
   }),
+  pedidos: PedidosQueCuentan = new PedidosQueCuentan(),
 ) {
   return render(AnfitrionDePrueba, {
     imports: [
@@ -154,8 +166,8 @@ async function renderPagina(
       provideTanStackQuery(new QueryClient({ defaultOptions: { queries: { retry: false } } })),
       { provide: REPOSITORIO_CARRITO, useValue: new RepositorioCarritoFalso(CARRITO_CON_LINEAS) },
       { provide: REPOSITORIO_ENVIOS, useValue: envios },
-      // `CheckoutStore` los pide al construirse; esta página no crea pedidos ni cobra.
-      { provide: REPOSITORIO_PEDIDOS, useValue: {} },
+      { provide: REPOSITORIO_PEDIDOS, useValue: pedidos },
+      // `CheckoutStore` lo pide al construirse; esta página no cobra.
       { provide: REPOSITORIO_PAGOS, useValue: {} },
     ],
   });
@@ -188,6 +200,27 @@ describe('TransportadoraPage (ADR-0073)', () => {
     expect(screen.getByRole('button', { name: '99 minutes' }).getAttribute('aria-pressed')).toBe(
       'false',
     );
+  });
+
+  /**
+   * ADR-0021, punto 5: elegir ya pide los métodos de pago de la página siguiente, con la
+   * transportadora elegida y la misma forma que usa esa página, para que ella encuentre la respuesta
+   * en la caché o se sume a la petición en vuelo.
+   */
+  it('elegir precarga los métodos de pago con la elegida', async () => {
+    const pedidos = new PedidosQueCuentan();
+    await renderPagina(undefined, pedidos);
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Servientrega' }));
+
+    await vi.waitFor(() => expect(pedidos.consultas).toHaveLength(1));
+    expect(pedidos.consultas[0]).toEqual({
+      correo: 'compra@ejemplo.co',
+      lineas: [{ varianteId: 'variante-1', cantidad: 1 }],
+      tipoEntrega: 'ENVIO_A_DOMICILIO',
+      direccion: A_DOMICILIO.direccion,
+      transportadora: 'Servientrega',
+    });
   });
 
   it('continuar sin elegir lo dice y no sigue', async () => {
