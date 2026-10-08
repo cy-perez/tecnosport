@@ -330,6 +330,15 @@
                            emitirlas por API: se dice dónde se crean y se registran con el formulario
                            de abajo. Con la emisión automática, la transportadora emite la guía y el
                            sistema despacha solo cuando el número existe. -->
+                      <!-- Con quién crear la guía: la que eligió y pagó el comprador (ADR-0073). -->
+                      @if (pedido.transportadora; as transportadora) {
+                        <p class="mt-0 mb-8 font-medio">
+                          {{
+                            'admin.pedidos.acciones.transportadora_elegida'
+                              | transloco: { transportadora: transportadora }
+                          }}
+                        </p>
+                      }
                       @if (pedido.tipoEntrega === 'ENVIO_A_DOMICILIO' && !emisionAutomatica) {
                         <p class="mt-0 mb-16 text-ts-texto-suave">
                           {{ 'admin.pedidos.acciones.guia_en_plataforma' | transloco }}

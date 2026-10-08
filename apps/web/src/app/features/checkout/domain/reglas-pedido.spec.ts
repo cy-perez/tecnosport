@@ -24,6 +24,7 @@ function pedidoDePrueba(overrides: Partial<Pedido>): Pedido {
     creadoEn: '2026-09-04T00:00:00Z',
     contacto: null,
     datosTransferencia: null,
+    transportadora: null,
     ...overrides,
   };
 }
@@ -104,6 +105,7 @@ describe('datosTransferenciaDelPedido', () => {
     const pedido = pedidoDePrueba({
       metodoPago: 'TRANSFERENCIA_MANUAL',
       datosTransferencia: datos,
+      transportadora: null,
     });
 
     expect(datosTransferenciaDelPedido(pedido)).toEqual(datos);

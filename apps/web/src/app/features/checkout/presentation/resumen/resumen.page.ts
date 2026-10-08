@@ -4,8 +4,10 @@ import {
   Component,
   computed,
   effect,
+  ElementRef,
   inject,
   signal,
+  viewChild,
 } from '@angular/core';
 import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -34,6 +36,7 @@ import { CheckoutStore } from '../../application/checkout.store';
 import { usarCotizacionEnvio } from '../../application/cotizacion-envio.consulta';
 import { usarModalidadesDeEntrega } from '../../application/modalidades-entrega.consulta';
 import { TsSalidaSinEnvio } from '../salida-sin-envio/ts-salida-sin-envio';
+import { TsPopoverTransportadora } from '../selector-transportadora/ts-popover-transportadora';
 import { CotizacionEnvio, CotizarEnvioComando } from '../../domain/envio.model';
 import { DEPARTAMENTOS, municipiosDeDepartamento } from '../../domain/geografia-co';
 import { Direccion, TipoEntrega } from '../../domain/pedido.model';
@@ -69,6 +72,7 @@ interface ValoresDireccion {
     TsSelect,
     TsSelectControl,
     TsSalidaSinEnvio,
+    TsPopoverTransportadora,
     RouterLink,
   ],
   templateUrl: './resumen.page.html',
@@ -505,6 +509,15 @@ export class ResumenPage {
    */
   protected readonly esperandoCotizacion = signal(false);
 
+  /**
+   * El popover de transportadoras (ADR-0073) se abre al pulsar «Continuar» con un envío a domicilio
+   * ya cotizado, anclado a ese botón. Elegir es lo que guarda los datos y sigue: cerrarlo sin
+   * elegir deja al comprador donde estaba.
+   */
+  protected readonly eligiendoTransportadora = signal(false);
+  protected readonly botonContinuar = viewChild('continuar', { read: ElementRef });
+  protected readonly opcionesDeEnvio = computed(() => this.tarifa()?.opciones ?? []);
+
   constructor() {
     // Recordar la última cotización buena para poder decir cuánto se ahorra
     // quien cambia a recogida. Se guarda al llegar, no se recalcula después:
@@ -590,6 +603,21 @@ export class ResumenPage {
       return;
     }
 
+    // A domicilio se elige transportadora antes de seguir. Una tarifa sin opciones —un servidor
+    // anterior a ADR-0073— sigue como antes, con la más económica.
+    if (this.requiereDireccion() && this.opcionesDeEnvio().length > 0) {
+      this.eligiendoTransportadora.set(true);
+      return;
+    }
+    this.continuarCon(null);
+  }
+
+  protected elegirTransportadora(transportadora: string): void {
+    this.eligiendoTransportadora.set(false);
+    this.continuarCon(transportadora);
+  }
+
+  private continuarCon(transportadora: string | null): void {
     const valores = this.form.getRawValue();
     const direccion = this.direccionDesdeFormulario(valores.direccion);
 
@@ -599,6 +627,7 @@ export class ResumenPage {
       tipoEntrega: valores.tipoEntrega,
       direccion,
       autorizaDatos: valores.autorizaDatos,
+      transportadora: this.requiereDireccion() ? transportadora : null,
     });
 
     void this.router.navigate(['../metodo-pago'], { relativeTo: this.route });

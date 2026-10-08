@@ -37,6 +37,7 @@ describe('aPedido', () => {
       costoEnvio: { valor: 0, moneda: 'COP' },
       total: { valor: 160_000, moneda: 'COP' },
       creadoEn: '2026-09-04T12:00:00Z',
+      transportadora: 'Servientrega',
       datosTransferencia: {
         cuentas: [
           {
@@ -85,6 +86,7 @@ describe('aPedido', () => {
       costoEnvio: { valor: 0, moneda: 'COP' },
       total: { valor: 160_000, moneda: 'COP' },
       creadoEn: '2026-09-04T12:00:00Z',
+      transportadora: 'Servientrega',
       datosTransferencia: {
         cuentas: [
           {
@@ -139,6 +141,7 @@ describe('aPedido', () => {
       total: { valor: 0, moneda: 'COP' },
       creadoEn: '',
       datosTransferencia: null,
+      transportadora: null,
     });
   });
 

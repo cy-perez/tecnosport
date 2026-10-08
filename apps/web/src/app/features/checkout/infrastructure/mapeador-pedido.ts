@@ -64,6 +64,7 @@ export function aPedido(dto: PedidoDto): Pedido {
     total: { valor: dto.total?.valor ?? 0, moneda: dto.total?.moneda ?? 'COP' },
     creadoEn: dto.creadoEn ?? '',
     datosTransferencia: dto.datosTransferencia ? aDatosTransferencia(dto.datosTransferencia) : null,
+    transportadora: dto.transportadora ?? null,
   };
 }
 
@@ -141,6 +142,7 @@ export function aSeguimiento(dto: SeguimientoDto): Seguimiento {
     total: { valor: dto.total?.valor ?? 0, moneda: dto.total?.moneda ?? 'COP' },
     creadoEn: dto.creadoEn ?? '',
     datosTransferencia: dto.datosTransferencia ? aDatosTransferencia(dto.datosTransferencia) : null,
+    transportadora: dto.transportadora ?? null,
     envio: dto.envio ? aEnvioPublico(dto.envio) : null,
     retractos: (dto.retractos ?? []).map(aRetracto),
   };

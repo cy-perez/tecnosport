@@ -129,6 +129,7 @@ export class MetodoPagoPage {
       })),
       tipoEntrega: datos.tipoEntrega,
       direccion: datos.direccion,
+      transportadora: datos.transportadora,
     };
   });
 

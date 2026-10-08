@@ -167,6 +167,11 @@ export interface PedidoAdmin {
   readonly historial: readonly HistorialPedidoAdmin[];
   /** Nulo mientras el plazo no haya arrancado: un pago pendiente no tiene contrato que incumplir. */
   readonly plazoDeEntrega: PlazoDeEntregaAdmin | null;
+  /**
+   * La transportadora que eligió y pagó el comprador (ADR-0073); `null` en recogida o en pedidos de
+   * antes. Las guías se crean a mano (ADR-0071): es con la que hay que crearla.
+   */
+  readonly transportadora: string | null;
 }
 
 export interface PedidosPaginadosAdmin {

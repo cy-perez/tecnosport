@@ -68,6 +68,7 @@ function pedidoDePrueba(overrides: Partial<Pedido> = {}): Pedido {
     creadoEn: '2026-01-01T00:00:00Z',
     contacto: null,
     datosTransferencia: null,
+    transportadora: null,
     ...overrides,
   };
 }

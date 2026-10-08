@@ -172,6 +172,7 @@
       "emitir_guia": "Create label with the carrier",
       "emision_en_curso": "We asked {{transportadora}} for {{paquetes}} label(s). There is no tracking number yet: the order only moves to shipped once the carrier answers, in a few minutes.",
       "guia_por_fuera": "Or record a tracking number created elsewhere",
+      "transportadora_elegida": "The buyer chose {{transportadora}}: create the label with that carrier.",
       "marcar_entregado": "Mark delivered",
       "rechazar_en_entrega": "Reject on delivery",
       "comision_recaudo": "Collection fee",

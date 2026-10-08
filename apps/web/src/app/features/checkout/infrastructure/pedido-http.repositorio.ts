@@ -63,6 +63,7 @@ export class PedidoHttpRepositorio implements RepositorioPedidos {
         direccion: aDireccionRequest(comando.direccion),
         metodoPago: comando.metodoPago,
         autorizaDatos: comando.autorizaDatos,
+        transportadora: comando.transportadora ?? undefined,
       },
     });
     const pedido = aPedido(desempaquetar(respuesta, 'no se pudo crear el pedido'));
@@ -82,6 +83,7 @@ export class PedidoHttpRepositorio implements RepositorioPedidos {
         })),
         tipoEntrega: comando.tipoEntrega,
         direccion: aDireccionRequest(comando.direccion),
+        transportadora: comando.transportadora ?? undefined,
       },
     });
     // Sin afirmación de tipo: el endpoint publica el enum en el OpenAPI y el cliente generado

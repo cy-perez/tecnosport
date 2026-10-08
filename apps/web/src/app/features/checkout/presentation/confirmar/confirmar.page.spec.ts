@@ -118,17 +118,20 @@ function pedidoDePrueba(overrides: Partial<Pedido> = {}): Pedido {
     creadoEn: '2026-01-01T00:00:00Z',
     contacto: null,
     datosTransferencia: null,
+    transportadora: null,
     ...overrides,
   };
 }
 
 class RepositorioPedidosFalso implements RepositorioPedidos {
   llamadasCrear = 0;
+  ultimoComando: CrearPedidoComando | null = null;
 
   constructor(private pedido: Pedido = pedidoDePrueba()) {}
 
   async crear(_comando: CrearPedidoComando): Promise<Pedido> {
     this.llamadasCrear++;
+    this.ultimoComando = _comando;
     return { ...this.pedido, metodoPago: _comando.metodoPago };
   }
 
@@ -250,6 +253,7 @@ const DATOS_ENTREGA: DatosEntrega = {
   direccion: null,
   contacto: { nombre: 'Ana Pérez', telefono: '3138816711' },
   autorizaDatos: true,
+  transportadora: null,
 };
 
 const DATOS_ENTREGA_A_DOMICILIO: DatosEntrega = {
@@ -266,6 +270,7 @@ const DATOS_ENTREGA_A_DOMICILIO: DatosEntrega = {
   },
   contacto: { nombre: 'Ana Pérez', telefono: '3138816711' },
   autorizaDatos: true,
+  transportadora: null,
 };
 
 function snapshotDePrueba(varianteId: string) {
@@ -346,6 +351,7 @@ const COTIZACION: CotizacionEnvio = {
   transportadora: '99 minutes',
   diasEstimados: 2,
   venceEn: '2026-09-14T12:00:00Z',
+  opciones: [],
 };
 
 async function renderConDatos(
@@ -659,6 +665,68 @@ describe('ConfirmarPage', () => {
     expect(pedidos.llamadasCrear).toBe(0);
   });
 
+  describe('con la transportadora elegida (ADR-0073)', () => {
+    const CON_OPCIONES = {
+      ...COTIZACION,
+      opciones: [
+        { transportadora: '99 minutes', costoEnvio: 9_540, moneda: 'COP', diasEstimados: 2 },
+        { transportadora: 'Servientrega', costoEnvio: 12_300, moneda: 'COP', diasEstimados: 1 },
+      ],
+    };
+
+    /** Se cobra y se muestra la elegida, no la más barata, y el pedido la lleva por nombre. */
+    it('muestra su costo y su nombre, y el pedido la lleva', async () => {
+      sembrarCarritoId('carrito-1');
+      sembrarSnapshotLinea(snapshotDePrueba('variante-1'));
+      const pedidos = new RepositorioPedidosFalso();
+
+      const { fixture } = await renderConDatos(
+        'TRANSFERENCIA_MANUAL',
+        new RepositorioCarritoFalso(CARRITO_CON_LINEAS),
+        pedidos,
+        new RepositorioPagosFalso(),
+        { ...DATOS_ENTREGA_A_DOMICILIO, transportadora: 'Servientrega' },
+        new RepositorioEnviosFalso(CON_OPCIONES),
+      );
+      await esperarCarritoCargado(fixture);
+
+      expect(await screen.findByText('Con Servientrega')).toBeTruthy();
+      expect(screen.getAllByText(/12\.300/).length).toBeGreaterThan(0);
+
+      fireEvent.click(screen.getByRole('button', { name: 'Confirmar pedido' }));
+      await vi.waitFor(() => expect(pedidos.llamadasCrear).toBe(1));
+      expect(pedidos.ultimoComando?.transportadora).toBe('Servientrega');
+    });
+
+    it('si la elegida ya no cotiza, no deja confirmar y pide elegir otra', async () => {
+      sembrarCarritoId('carrito-1');
+      sembrarSnapshotLinea(snapshotDePrueba('variante-1'));
+      const pedidos = new RepositorioPedidosFalso();
+
+      const { fixture } = await renderConDatos(
+        'TRANSFERENCIA_MANUAL',
+        new RepositorioCarritoFalso(CARRITO_CON_LINEAS),
+        pedidos,
+        new RepositorioPagosFalso(),
+        { ...DATOS_ENTREGA_A_DOMICILIO, transportadora: 'Coordinadora' },
+        new RepositorioEnviosFalso(CON_OPCIONES),
+      );
+      await esperarCarritoCargado(fixture);
+      expect(
+        await screen.findAllByText(esCheckout.confirmar.transportadora_no_disponible),
+      ).not.toHaveLength(0);
+
+      fireEvent.click(screen.getByRole('button', { name: 'Confirmar pedido' }));
+
+      await vi.waitFor(() =>
+        expect(
+          screen.getAllByText(esCheckout.confirmar.transportadora_no_disponible).length,
+        ).toBeGreaterThan(1),
+      );
+      expect(pedidos.llamadasCrear).toBe(0);
+    });
+  });
+
   /** El motivo que el mensaje de bloqueo no tenía: caía en el de la cotización caída. */
   it('un artículo sin medidas bloquea el pedido y se nombra en el aviso', async () => {
     sembrarCarritoId('carrito-1');
@@ -809,6 +877,7 @@ describe('ConfirmarPage', () => {
       metodoPago: 'CONTRAENTREGA',
       contacto: { nombre: 'Ana Pérez', telefono: '3138816711' },
       autorizaDatos: true,
+      transportadora: null,
     });
     expect(pedidos.llamadasCrear).toBe(1);
 

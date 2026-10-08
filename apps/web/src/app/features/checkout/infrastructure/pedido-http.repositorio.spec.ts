@@ -33,6 +33,7 @@ describe('PedidoHttpRepositorio: la llave de idempotencia', () => {
     },
     metodoPago: 'WOMPI',
     autorizaDatos: true,
+    transportadora: null,
   };
 
   const PEDIDO_CREADO = {

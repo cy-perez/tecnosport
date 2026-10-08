@@ -53,6 +53,18 @@ describe('EnvioHttpRepositorio.cotizar', () => {
           diasEstimados: 2,
           venceEn: '2026-09-12T12:00:00Z',
           admiteContraentrega: false,
+          opciones: [
+            {
+              transportadora: '99 minutes',
+              costoEnvio: { valor: 9540, moneda: 'COP' },
+              diasEstimados: 2,
+            },
+            {
+              transportadora: 'Servientrega',
+              costoEnvio: { valor: 12_000, moneda: 'COP' },
+              diasEstimados: 1,
+            },
+          ],
         },
         200,
       ),
@@ -66,6 +78,10 @@ describe('EnvioHttpRepositorio.cotizar', () => {
         transportadora: '99 minutes',
         diasEstimados: 2,
         venceEn: '2026-09-12T12:00:00Z',
+        opciones: [
+          { transportadora: '99 minutes', costoEnvio: 9540, moneda: 'COP', diasEstimados: 2 },
+          { transportadora: 'Servientrega', costoEnvio: 12_000, moneda: 'COP', diasEstimados: 1 },
+        ],
       },
     });
   });

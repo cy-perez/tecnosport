@@ -26,6 +26,7 @@ function pedidoDePrueba(overrides: Partial<Pedido> = {}): Pedido {
     creadoEn: '2026-01-01T00:00:00Z',
     contacto: null,
     datosTransferencia: null,
+    transportadora: null,
     ...overrides,
   };
 }
@@ -96,6 +97,7 @@ function comandoDePrueba(): CrearPedidoComando {
     metodoPago: 'WOMPI',
     contacto: { nombre: 'Ana Pérez', telefono: '3138816711' },
     autorizaDatos: true,
+    transportadora: null,
   };
 }
 
@@ -170,6 +172,7 @@ describe('CheckoutStore', () => {
       direccion: null,
       contacto: { nombre: 'Ana Pérez', telefono: '3138816711' },
       autorizaDatos: true,
+      transportadora: null,
     });
 
     expect(store.metodoPago()).toBeNull();

@@ -93,7 +93,14 @@
     "whatsapp_enlace": "message us on WhatsApp",
     "whatsapp_despues": " and we will find a way to get it to you."
   },
+  "transportadora": {
+    "titulo": "Choose the carrier",
+    "descripcion": "The shipping cost depends on the company that delivers your order. Choose one to continue.",
+    "cerrar": "Close"
+  },
   "confirmar": {
+    "con_transportadora": "With {{transportadora}}",
+    "transportadora_no_disponible": "The carrier you chose is no longer available for this shipment. Go back and choose another one.",
     "retiro_no_disponible": "Pickup at our location is no longer available. Go back and choose home delivery.",
     "titulo": "Confirm order",
     "volver": "‹ Change payment method",

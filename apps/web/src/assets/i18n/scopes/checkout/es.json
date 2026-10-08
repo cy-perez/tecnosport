@@ -93,7 +93,14 @@
     "whatsapp_enlace": "escríbenos por WhatsApp",
     "whatsapp_despues": " y buscamos cómo entregártelo."
   },
+  "transportadora": {
+    "titulo": "Elige la transportadora",
+    "descripcion": "El costo del envío depende de la empresa que lleve tu pedido. Elige una para continuar.",
+    "cerrar": "Cerrar"
+  },
   "confirmar": {
+    "con_transportadora": "Con {{transportadora}}",
+    "transportadora_no_disponible": "La transportadora que elegiste ya no está disponible para este envío. Vuelve atrás y elige otra.",
     "retiro_no_disponible": "La recogida en el punto ya no está disponible. Vuelve atrás y elige el envío a domicilio.",
     "titulo": "Confirmar pedido",
     "volver": "‹ Cambiar método de pago",
