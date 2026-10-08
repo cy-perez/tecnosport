@@ -2,6 +2,7 @@
 
 - Fecha de la lista: 2026-09-12
 - Productos para publicar: 37
+- Modelos distintos: 37
 - Descartados: 96
 - Duplicados fusionados: 0
 - Productos con algún supuesto aplicado: 19
