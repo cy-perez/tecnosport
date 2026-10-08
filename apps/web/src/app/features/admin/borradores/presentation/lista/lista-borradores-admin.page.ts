@@ -115,7 +115,7 @@ export class ListaBorradoresAdminPage {
   }
 
   protected precio(valor: number | null): string {
-    return valor === null ? '—' : formatearPrecio(valor, 'COP', this.transloco.activeLang());
+    return valor === null ? '-' : formatearPrecio(valor, 'COP', this.transloco.activeLang());
   }
 
   protected formatearFecha(iso: string): string {

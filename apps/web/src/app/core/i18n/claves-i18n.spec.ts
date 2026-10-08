@@ -82,3 +82,54 @@ describe('claves de i18n', () => {
     expect(clavesOrdenadas(esAyuda)).toEqual(clavesOrdenadas(enAyuda));
   });
 });
+
+function valores(objeto: Record<string, unknown>, prefijo = ''): [string, string][] {
+  return Object.entries(objeto).flatMap(([clave, valor]): [string, string][] => {
+    const ruta = prefijo ? `${prefijo}.${clave}` : clave;
+    if (typeof valor === 'string') return [[ruta, valor]];
+    if (Array.isArray(valor)) {
+      return valor.flatMap((item, i) =>
+        typeof item === 'string'
+          ? ([[`${ruta}.${i}`, item]] as [string, string][])
+          : valores(item as Record<string, unknown>, `${ruta}.${i}`),
+      );
+    }
+    return typeof valor === 'object' && valor !== null
+      ? valores(valor as Record<string, unknown>, ruta)
+      : [];
+  });
+}
+
+// La raya (—) se leía demasiado larga en pantalla, y el 8 de octubre de 2026 se cambió en todos los
+// textos por un guion simple o, si era un inciso, por paréntesis. Esto es lo que impide que vuelva.
+describe('textos de i18n', () => {
+  const archivos = {
+    es,
+    en,
+    esAdmin,
+    enAdmin,
+    esAyuda,
+    enAyuda,
+    esCarrito,
+    enCarrito,
+    esCatalogo,
+    enCatalogo,
+    esCheckout,
+    enCheckout,
+    esCaptura360,
+    enCaptura360,
+    esCuenta,
+    enCuenta,
+    esLegales,
+    enLegales,
+  };
+
+  it('ningún texto usa la raya (—)', () => {
+    const conRaya = Object.entries(archivos).flatMap(([nombre, contenido]) =>
+      valores(contenido as Record<string, unknown>)
+        .filter(([, texto]) => texto.includes('—'))
+        .map(([ruta]) => `${nombre}: ${ruta}`),
+    );
+    expect(conRaya).toEqual([]);
+  });
+});

@@ -792,14 +792,14 @@
     "publicado": "Publicado en {{red}}.",
     "verHistorial": "Ver las {{total}} difusiones anteriores",
     "estado": {
-      "PENDIENTE": "Sin confirmar — revisa la cuenta antes de reintentar",
+      "PENDIENTE": "Sin confirmar - revisa la cuenta antes de reintentar",
       "PUBLICADA": "Publicada",
       "FALLIDA": "No salió"
     }
   },
   "categorias": {
     "titulo": "Categorías",
-    "explicacion": "El árbol del catálogo. Cada línea de negocio abre hasta dos niveles: una rama —Dama, Caballero— y sus prendas. Los productos cuelgan siempre de una hoja, nunca de una rama.",
+    "explicacion": "El árbol del catálogo. Cada línea de negocio abre hasta dos niveles: una rama (Dama, Caballero) y sus prendas. Los productos cuelgan siempre de una hoja, nunca de una rama.",
     "crearTitulo": "Crear una categoría",
     "editandoTitulo": "Editando «{{nombre}}»",
     "nombre": "Nombre",
@@ -844,7 +844,7 @@
   },
   "proveedores": {
     "titulo": "Proveedores",
-    "explicacion": "Los proveedores que mandan su catálogo por WhatsApp. De cada uno se guarda cómo aparece en el chat exportado —eso decide qué mensajes son suyos— y el margen con el que se sugiere el precio de venta. Un proveedor con productos en el catálogo no se elimina: se desactiva.",
+    "explicacion": "Los proveedores que mandan su catálogo por WhatsApp. De cada uno se guarda cómo aparece en el chat exportado (eso decide qué mensajes son suyos) y el margen con el que se sugiere el precio de venta. Un proveedor con productos en el catálogo no se elimina: se desactiva.",
     "errorLista": "No se pudo cargar la lista de proveedores.",
     "total": "{{total}} proveedor(es)",
     "nuevo": "Nuevo proveedor",

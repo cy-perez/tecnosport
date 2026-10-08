@@ -107,7 +107,7 @@ class DifundirProductoTest {
 
     caso.ejecutar(new DifundirProductoComando(producto.id(), List.of(RedSocial.FACEBOOK), "   "));
 
-    assertTrue(publicador.ultimoPie.startsWith("JBL Grip — $299.900"), publicador.ultimoPie);
+    assertTrue(publicador.ultimoPie.startsWith("JBL Grip - $299.900"), publicador.ultimoPie);
   }
 
   @Test

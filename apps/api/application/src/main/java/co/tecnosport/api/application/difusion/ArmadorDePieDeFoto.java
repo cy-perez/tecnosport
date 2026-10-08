@@ -69,7 +69,7 @@ public final class ArmadorDePieDeFoto {
     Objects.requireNonNull(red, "La red social no puede ser nula.");
 
     List<String> bloques = new ArrayList<>();
-    bloques.add(producto.nombre() + " — " + precioDe(producto));
+    bloques.add(producto.nombre() + " - " + precioDe(producto));
 
     primerParrafoDe(producto.descripcion()).ifPresent(bloques::add);
     atributosDe(producto).ifPresent(bloques::add);

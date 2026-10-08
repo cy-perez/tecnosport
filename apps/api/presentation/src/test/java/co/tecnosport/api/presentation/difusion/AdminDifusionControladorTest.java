@@ -169,7 +169,7 @@ class AdminDifusionControladorTest {
             UUID.randomUUID(),
             productos.producto.id(),
             RedSocial.INSTAGRAM,
-            "JBL Grip — $299.900",
+            "JBL Grip - $299.900",
             List.of("https://storage.googleapis.com/b/principal.jpg"),
             co.tecnosport.api.domain.difusion.EstadoPublicacion.PUBLICADA,
             "181961",
@@ -180,7 +180,7 @@ class AdminDifusionControladorTest {
     mockMvc
         .perform(get("/api/v1/admin/productos/{id}/difusion", productos.producto.id()))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$[0].pieDeFoto").value("JBL Grip — $299.900"));
+        .andExpect(jsonPath("$[0].pieDeFoto").value("JBL Grip - $299.900"));
   }
 
   /** El pie lo propone el servidor porque lleva el precio, y el precio no lo decide el cliente. */

@@ -20,8 +20,8 @@ class RepositorioDoble implements RepositorioDifusion {
   resultado: ResultadoDifusion = { tipo: 'OK', publicaciones: [] };
   publicaciones: PublicacionEnRed[] = [];
   pies: Record<RedSocial, string> = {
-    FACEBOOK: 'JBL Grip — $299.900\n\nhttps://www.tecnosport.co/es/productos/jbl-grip',
-    INSTAGRAM: 'JBL Grip — $299.900\n\nEnlace en la bio 🔗',
+    FACEBOOK: 'JBL Grip - $299.900\n\nhttps://www.tecnosport.co/es/productos/jbl-grip',
+    INSTAGRAM: 'JBL Grip - $299.900\n\nEnlace en la bio 🔗',
   };
 
   async difundir(orden: OrdenDeDifusion): Promise<ResultadoDifusion> {
@@ -148,7 +148,7 @@ describe('PanelDeDifusion', () => {
         red: 'INSTAGRAM',
         estado: 'PUBLICADA',
         idPublicacionExterna: '181961',
-        pieDeFoto: 'JBL Grip — $299.900',
+        pieDeFoto: 'JBL Grip - $299.900',
         urlImagen: 'https://storage.googleapis.com/b/principal.jpg',
         solicitadaEn: '2026-09-29T15:00:00Z',
         publicadaEn: '2026-09-29T15:00:04Z',
@@ -172,7 +172,7 @@ describe('PanelDeDifusion', () => {
         red: 'INSTAGRAM',
         estado: 'PUBLICADA',
         idPublicacionExterna: '181961',
-        pieDeFoto: 'JBL Grip — $299.900',
+        pieDeFoto: 'JBL Grip - $299.900',
         urlImagen: 'https://storage.googleapis.com/b/principal.jpg',
         solicitadaEn: '2026-09-29T15:00:00Z',
         publicadaEn: '2026-09-29T15:00:04Z',

@@ -41,7 +41,7 @@
             "pregunta": "How does cash on delivery work?",
             "respuesta": [
               "The system enables it based on the delivery city, the order value and the kind of product, and we tell you before you choose a payment method.",
-              "The carrier collects the order total — the goods plus the shipping cost — and carriers only take cash, so have the exact amount ready.",
+              "The carrier collects the order total (the goods plus the shipping cost) and carriers only take cash, so have the exact amount ready.",
               "Refusing delivery is not the same as withdrawing from the purchase: the sale never completed, so there is no money to return because none was received. Repeatedly refusing deliveries may lead us to stop offering this method on later purchases."
             ]
           }
@@ -110,7 +110,7 @@
             "respuesta": [
               "The statutory warranty runs for one (1) year from delivery, unless the producer announces a longer one, in which case the longer one applies. It covers every new product we sell, tech included.",
               "If the product fails, does not do what it was offered to do, or does not match what you bought, you are entitled to have it repaired, replaced or refunded, as the case may be. Claiming it costs you nothing: the repair and the transport of the product for repair are on us.",
-              "The warranty does not cover damage arising from force majeure or a fortuitous event, from the act of a third party, from improper use of the product — including unauthorised modification — or from failure to follow the installation, use or maintenance instructions where the product was delivered with a manual in Spanish. Proving that the damage comes from one of those causes is on us, not on you.",
+              "The warranty does not cover damage arising from force majeure or a fortuitous event, from the act of a third party, from improper use of the product (including unauthorised modification) or from failure to follow the installation, use or maintenance instructions where the product was delivered with a manual in Spanish. Proving that the damage comes from one of those causes is on us, not on you.",
               "To claim it, write to us with your order number and a description of the problem."
             ]
           },
@@ -137,7 +137,7 @@
             "pregunta": "How long do you take to answer a petition, complaint or claim?",
             "respuesta": [
               "Fifteen (15) business days at most.",
-              "Requests about your personal data — enquiries and claims — have their own terms, shorter in the case of an enquiry, and they are in clause 12 of our personal data processing policy."
+              "Requests about your personal data (enquiries and claims) have their own terms, shorter in the case of an enquiry, and they are in clause 12 of our personal data processing policy."
             ]
           },
           {

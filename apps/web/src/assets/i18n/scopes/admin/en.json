@@ -60,7 +60,7 @@
     "enviando": "Signing in…",
     "error": "Incorrect email or password.",
     "no_es_admin": "This account doesn't have access to the panel.",
-    "error_demasiados_intentos": "Too many attempts in a row. Wait a few minutes and try again — your password is not the problem.",
+    "error_demasiados_intentos": "Too many attempts in a row. Wait a few minutes and try again - your password is not the problem.",
     "errores": {
       "correo_requerido": "Enter the email.",
       "correo_invalido": "That email address isn't valid.",
@@ -792,14 +792,14 @@
     "publicado": "Posted to {{red}}.",
     "verHistorial": "See the {{total}} previous posts",
     "estado": {
-      "PENDIENTE": "Unconfirmed — check the account before retrying",
+      "PENDIENTE": "Unconfirmed - check the account before retrying",
       "PUBLICADA": "Posted",
       "FALLIDA": "Did not go out"
     }
   },
   "categorias": {
     "titulo": "Categories",
-    "explicacion": "The catalogue tree. Each business line opens up to two levels: a branch —Women, Men— and its garments. Products always hang from a leaf, never from a branch.",
+    "explicacion": "The catalogue tree. Each business line opens up to two levels: a branch (Women, Men) and its garments. Products always hang from a leaf, never from a branch.",
     "crearTitulo": "Create a category",
     "editandoTitulo": "Editing “{{nombre}}”",
     "nombre": "Name",
@@ -844,7 +844,7 @@
   },
   "proveedores": {
     "titulo": "Suppliers",
-    "explicacion": "The suppliers who send their catalogue over WhatsApp. For each one we keep how they appear in the exported chat —that decides which messages are theirs— and the margin used to suggest the sale price. A supplier with products in the catalogue is not deleted: it is deactivated.",
+    "explicacion": "The suppliers who send their catalogue over WhatsApp. For each one we keep how they appear in the exported chat (that decides which messages are theirs) and the margin used to suggest the sale price. A supplier with products in the catalogue is not deleted: it is deactivated.",
     "errorLista": "The supplier list could not be loaded.",
     "total": "{{total}} supplier(s)",
     "nuevo": "New supplier",
