@@ -221,6 +221,15 @@ tecnosport:
       # que no se pudo verificar no aplica nada y queda esperando aqui.
       intervalo-minutos: ${SISTECREDITO_CONCILIACION_INTERVALO_MINUTOS:10}
       antiguedad-minima-minutos: ${SISTECREDITO_CONCILIACION_ANTIGUEDAD_MINIMA_MINUTOS:5}
+  google:
+    # ADR-0074. El identificador público del cliente OAuth "Iniciar sesión con Google" de este
+    # ambiente (Google Cloud Console > Credenciales). Vacío apaga la puerta: el sitio no pinta el
+    # botón. No es un secreto, pero es de un ambiente: Google comprueba el origen.
+    cliente-id: ${GOOGLE_CLIENT_ID:}
+    # Las llaves con que Google firma sus ID tokens, y el script del botón. Públicas y estables;
+    # aquí y no en el código por la regla 5.
+    url-llaves: ${GOOGLE_URL_LLAVES:https://www.googleapis.com/oauth2/v3/certs}
+    url-script: ${GOOGLE_URL_SCRIPT:https://accounts.google.com/gsi/client}
   retiro-en-punto:
     # Decision de negocio del 8 de octubre de 2026: la recogida en el punto de Medellin se apaga.
     # El servidor rechaza RETIRO_EN_PUNTO con 409 y el checkout deja de ofrecerla; los carritos que
@@ -575,7 +584,7 @@ tecnosport:
     # en los JSON de Transloco de este mismo repositorio: cambiar el texto y cambiar esta fecha son
     # el mismo commit. La variable existe para poder corregirla sin redesplegar, no para tener que
     # fijarla en cada entorno.
-    politica-datos-version: ${POLITICA_DATOS_VERSION:2026-10-08}
+    politica-datos-version: ${POLITICA_DATOS_VERSION:2026-10-08.2}
   verificacion-correo:
     # Ningún doc especifica esta duración (solo la de recuperación, 30 min) — parámetro técnico,
     # no un dato de negocio.

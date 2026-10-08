@@ -1,7 +1,7 @@
 {
   "comun": {
     "version_etiqueta": "Version",
-    "version": "2026-10-08",
+    "version": "2026-10-08.2",
     "vigencia": "In force since 8 October 2026.",
     "otros_documentos": "Other legal documents",
     "titular_aviso": "This site is operated by Cristhian Yurday Pérez Hoyos, NIT 1054994043-9, Carrera 26C # 38B-31, Medellín, Antioquia, Colombia.",
@@ -54,7 +54,7 @@
           "Identification and contact: name, email address, phone number, and delivery address.",
           "Transactional: products purchased, amounts, chosen payment method, order status, and purchase history.",
           "Identity document type and number, only if you choose to pay in instalments with Sistecrédito: it is the data they use to look up your credit limit. We send it to Sistecrédito for that purchase and we do not keep it.",
-          "Account data, if you choose to create one: email and password, which is stored using a one-way hash and never in plain text.",
+          "Account data, if you choose to create one: email and password, which is stored using a one-way hash and never in plain text. If you create it or sign in with your Google account, there is no password: Google gives us your email, confirmation that it is verified, and an identifier for your Google account. We never receive your Google password.",
           "Technical: IP address and the date and time of relevant actions, such as granting this authorisation or sign-in attempts.",
           "Browsing: only what is strictly necessary for the site to work. See the cookie policy."
         ]
@@ -91,6 +91,7 @@
           "Wompi (Bancolombia S.A.), as payment gateway, to process and confirm the payment.",
           "Sistecrédito, as the credit provider, only if you choose to pay in instalments with them: they receive your identity document type and number, your order number, and the amount to be financed. Sistecrédito assesses and grants the credit under its own data processing policy and its own contract with you.",
           "Google Cloud Platform, as the infrastructure provider hosting the application and the database.",
+          "Google, only if you choose to create your account or sign in with your Google account: Google confirms your identity and gives us the data in section 5. We do not send Google any of your data, but when you open the sign-in and create-account pages your browser loads the Google button from Google's servers, and Google processes what it receives under its own privacy policy.",
           "Skydropx S.A.S., a Colombian company with tax ID (NIT) 901.508.804-5 and registered office in Bogotá D.C., as our logistics and shipping platform, and the carrier companies it engages to deliver your order; they receive your name, phone number, delivery address and city, and the amount to be collected when you pay on delivery.",
           "Resend, as our transactional email provider, to send you account verification, password recovery, and order status emails."
         ],
@@ -317,7 +318,8 @@
           "Theme preference: remembers whether you chose light mode, dark mode, or the system setting.",
           "Reduced motion preference: remembers whether you asked to reduce animations.",
           "Cart identifier: stored in the browser's local storage so your cart is still there if you close the tab. It does not identify a person on its own.",
-          "Language: taken from the page address, not from a cookie."
+          "Language: taken from the page address, not from a cookie.",
+          "Google button: on the sign-in and create-account pages, your browser loads the Google button from Google's servers, and Google may use its own cookies there under its policy. We neither read nor use them."
         ]
       },
       {

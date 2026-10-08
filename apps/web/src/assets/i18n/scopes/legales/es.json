@@ -1,7 +1,7 @@
 {
   "comun": {
     "version_etiqueta": "Versión",
-    "version": "2026-10-08",
+    "version": "2026-10-08.2",
     "vigencia": "Vigente desde el 8 de octubre de 2026.",
     "otros_documentos": "Otros documentos legales",
     "titular_aviso": "Este sitio lo opera Cristhian Yurday Pérez Hoyos, NIT 1054994043-9, Carrera 26C # 38B-31, Medellín, Antioquia, Colombia.",
@@ -54,7 +54,7 @@
           "De identificación y contacto: nombre, correo electrónico, teléfono y dirección de entrega.",
           "Transaccionales: productos comprados, valores, método de pago elegido, estado del pedido e historial de compras.",
           "Tipo y número de documento de identidad, únicamente si eliges pagar a cuotas con Sistecrédito: es el dato con el que ellos consultan tu cupo. Se lo enviamos a Sistecrédito para esa compra y no lo conservamos.",
-          "De la cuenta, si decides crearla: correo y contraseña, que se almacena cifrada con un algoritmo de un solo sentido y nunca en texto claro.",
+          "De la cuenta, si decides crearla: correo y contraseña, que se almacena cifrada con un algoritmo de un solo sentido y nunca en texto claro. Si la creas o entras con tu cuenta de Google, no hay contraseña: Google nos entrega tu correo, la confirmación de que está verificado y un identificador de tu cuenta de Google. Nunca recibimos tu contraseña de Google.",
           "Técnicos: dirección IP y fecha y hora de las acciones relevantes, como el otorgamiento de esta autorización o los intentos de inicio de sesión.",
           "De navegación: los estrictamente necesarios para que el sitio funcione. Ver la política de cookies."
         ]
@@ -91,6 +91,7 @@
           "Wompi (Bancolombia S.A.), como pasarela de pagos, para procesar el pago y confirmarlo.",
           "Sistecrédito, como otorgante del crédito, únicamente si eliges pagar a cuotas con ellos: recibe tu tipo y número de documento de identidad, el número de tu pedido y el valor a financiar. Sistecrédito estudia y otorga el crédito bajo su propia política de tratamiento de datos y su propio contrato contigo.",
           "Google Cloud Platform, como proveedor de infraestructura donde se alojan la aplicación y la base de datos.",
+          "Google, únicamente si eliges crear tu cuenta o entrar con tu cuenta de Google: Google confirma tu identidad y nos entrega los datos de la sección 5. Nosotros no le enviamos datos tuyos, pero al abrir las páginas de iniciar sesión y crear cuenta tu navegador carga el botón de Google desde sus servidores, y Google trata lo que recibe bajo su propia política de privacidad.",
           "Skydropx S.A.S., sociedad colombiana con NIT 901.508.804-5 y domicilio en Bogotá D.C., como plataforma de logística y envíos, y las empresas de transporte que ella contrata para entregar tu pedido; reciben tu nombre, teléfono, dirección de entrega y ciudad, y el valor a recaudar cuando pagas contra entrega.",
           "Resend, como proveedor de correo transaccional, para enviarte los correos de verificación de cuenta, recuperación de contraseña y estado del pedido."
         ],
@@ -317,7 +318,8 @@
           "Preferencia de tema: recuerda si elegiste el modo claro, el oscuro o el del sistema.",
           "Preferencia de movimiento reducido: recuerda si pediste reducir las animaciones.",
           "Identificador del carrito: se guarda en el almacenamiento local del navegador para que tu carrito siga ahí si cierras la pestaña. No identifica a una persona por sí solo.",
-          "Idioma: se toma de la dirección de la página, no de una cookie."
+          "Idioma: se toma de la dirección de la página, no de una cookie.",
+          "Botón de Google: en las páginas de iniciar sesión y crear cuenta, tu navegador carga el botón de Google desde sus servidores, y Google puede usar allí sus propias cookies bajo su política. Nosotros no las leemos ni las usamos."
         ]
       },
       {
