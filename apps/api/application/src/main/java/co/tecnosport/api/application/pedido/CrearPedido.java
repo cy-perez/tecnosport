@@ -370,7 +370,11 @@ public final class CrearPedido {
         repositorioProductos
             .buscarPorVarianteId(varianteId)
             .orElseThrow(() -> new VarianteNoEncontradaException(varianteId));
-    if (producto.estado() != EstadoProducto.PUBLICADO) {
+    // Publicado no basta: un producto de proveedor que el proveedor ya no tiene sale de la vitrina
+    // (oculto por vencimiento o agotado, ADR-0066) y hasta el 08/10/2026 se podía comprar igual
+    // desde un carrito viejo o llamando a la API. `estaEnVitrina` es la misma pregunta que se hace
+    // el catálogo público, así que lo que no se lista tampoco se vende.
+    if (producto.estado() != EstadoProducto.PUBLICADO || !producto.estaEnVitrina()) {
       throw new VarianteNoEncontradaException(varianteId);
     }
     return producto;
