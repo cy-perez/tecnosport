@@ -23,6 +23,7 @@ export function comandoMetodosDePago(
     tipoEntrega: datos.tipoEntrega,
     direccion: datos.direccion,
     transportadora: datos.transportadora,
+    telefono: datos.contacto.telefono,
   };
 }
 

@@ -26,6 +26,19 @@ final class RepositorioPedidosDobleDePrueba implements RepositorioPedidos {
   void limpiar() {
     pedidos.clear();
     secuenciasPorAnio.clear();
+    telefonosConRechazo.clear();
+  }
+
+  /** Los teléfonos que ya rechazaron un pedido en la entrega, como los vería la consulta real. */
+  private final java.util.Set<String> telefonosConRechazo = new java.util.HashSet<>();
+
+  void sembrarRechazoPorTelefono(String telefono) {
+    telefonosConRechazo.add(telefono);
+  }
+
+  @Override
+  public boolean tieneRechazoEnEntregaPorTelefono(String telefono) {
+    return telefono != null && telefonosConRechazo.contains(telefono);
   }
 
   /**

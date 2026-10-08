@@ -2524,6 +2524,7 @@ export interface components {
             correo?: string;
             direccion?: components["schemas"]["DireccionRequest"];
             lineas?: components["schemas"]["LineaRequest"][];
+            telefono?: string;
             tipoEntrega?: string;
             transportadora?: string;
         };

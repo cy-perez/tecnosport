@@ -1995,6 +1995,9 @@
             },
             "type" : "array"
           },
+          "telefono" : {
+            "type" : "string"
+          },
           "tipoEntrega" : {
             "type" : "string"
           },

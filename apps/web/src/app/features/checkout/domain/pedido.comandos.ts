@@ -31,6 +31,8 @@ export interface MetodosDePagoDisponiblesComando {
   readonly tipoEntrega: TipoEntrega;
   readonly direccion: Direccion | null;
   readonly transportadora: string | null;
+  /** El de quien recibe: un número que ya rechazó un pedido en la entrega no ve la contraentrega. */
+  readonly telefono: string | null;
 }
 
 /**
