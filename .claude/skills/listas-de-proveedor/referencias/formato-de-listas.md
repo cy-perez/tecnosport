@@ -34,6 +34,13 @@ Las viñetas ✔️, ⚠️ y 📲 solo indican la condición: la categoría la 
 | ✔️ 🚀 📲 en sección de tablets | tablet: la sección manda sobre la viñeta |
 | 📺 📡 🔊 🖨️ 🫟 🥶 🛴 | TV, router, parlante, impresora, tinta, variedad → fuera |
 
+**El proveedor cambia de viñeta con la temporada.** La lista del 08/10/2026 trajo
+🎃 en todo el bloque Android, y como no estaba en la tabla se perdieron 52 líneas.
+Desde entonces, cualquier emoji al inicio de una línea con precio cuenta como
+viñeta aunque no esté en la tabla: no decide categoría ni condición, eso lo
+siguen poniendo la sección y el texto. Los emojis de color quedan fuera, porque
+al inicio de la línea son el color del equipo.
+
 ## Convenciones que hay que conocer
 
 - **Precios acotados**: `$1.850` son 1.850.000 COP y `$85` son 85.000 COP. Siempre
@@ -63,14 +70,20 @@ Las listas de equipos económicos usan otras convenciones:
   precios distintos. La red entra al título.
 - **Anotaciones en la línea siguiente**: `*1 SIM*`, `*DUAL SIM*`, `*SIM / ESIM*`,
   `*INCLUYE MOUSE*` van debajo del producto al que pertenecen y se pegan a él.
+  La SIM también llega al final de la misma línea (`A17 5G (8+256)$675 *1 SIM*`),
+  y vale igual: `1 SIM` y `DUAL SIM` del mismo equipo son dos productos.
+- **Precio sin `$`**: a veces se les olvida el signo, `MOTO G77 5G (8+256) 760`.
+  Un número de 3 o 4 cifras justo después del paréntesis de la memoria y al final
+  de la línea se lee como precio y queda en `supuestos`. En cualquier otra parte,
+  un número suelto es un modelo o una capacidad.
 - **Precios completos**: en los anuncios sueltos escriben `$1.960.000` en vez de
   `$1.960`. Se distingue por la cantidad de dígitos: seis o más ya son pesos.
 - **Anuncios de llegada**: `*LLEGANDO INFINIX GT50 PRO*` con el precio dos líneas
   más abajo. El nombre está en el encabezado, no en una línea de producto.
 - **Líneas sin viñeta ni sección**: bajo `*LLEGANDO MERCANCÍA*` escriben
   `Poco x8 pro Max 256 $1.830` en minúscula y sin emoji. Se reconocen por la marca.
-- **Marcas abreviadas**: bajo `*XIAOMI*` escriben `NOTE 15` por Redmi Note 15 y
-  `X8 PRO` por POCO X8 Pro. Las dos se completan solas y quedan anotadas en
+- **Marcas abreviadas**: bajo `*XIAOMI*` escriben `NOTE 15` por Redmi Note 15, y
+  `X8 PRO` y `F8 ULTRA` por POCO X8 Pro y POCO F8 Ultra. Se completan solas y quedan anotadas en
   `supuestos`, para que se pueda rastrear de dónde salió el nombre del título.
 - **Flecha** es el nombre del oficio para los celulares básicos de teclado.
 - **Chat exportado**: si en vez de copiar el mensaje exportan la conversación,
@@ -85,6 +98,11 @@ Nada se descarta en silencio. `productos.json` trae cuatro listas: `productos`,
 Cada producto lleva `texto_origen` y el número de línea para poder rastrearlo, y
 un arreglo `revisar` con lo que necesita confirmación humana.
 
-Si una lista nueva trae una sección o una viñeta que no está en los mapas, no la
-adivines en el momento: agrégala a `ENCABEZADOS` o `VINETAS` en el script para que
-la próxima lista ya la reconozca.
+Si una lista nueva trae una sección que no está en los mapas, no la adivines en el
+momento: agrégala a `ENCABEZADOS` en el script para que la próxima lista ya la
+reconozca. Una viñeta nueva solo hace falta agregarla a `VINETAS_CATEGORIA` si
+decide la categoría; si no, la viñeta genérica ya la lee.
+
+**Cada lista que destape un defecto entra a `ejemplo/` con su revisión**, y la
+corrección lleva una prueba en `pruebas/` con la línea real. `npm run listas`
+las corre, y `npm run verificar` también.

@@ -394,6 +394,12 @@ de partners si la tienda es revendedor autorizado, o fotos propias.
 
 No hay que volver a hacerlo a mano en cada lista:
 
+- **Viñetas de temporada.** Cualquier emoji al inicio de una línea con precio es
+  una viñeta, esté o no en las tablas. La lista del 08/10/2026 trajo 🎃 y, antes
+  de esto, perdió 52 líneas —23 equipos publicables— en `sin_clasificar`. Con
+  ella llegaron otros tres defectos que ya no se repiten: la SIM escrita en la
+  misma línea (`*1 SIM*`) se ignoraba y fusionaba dos referencias, un precio sin
+  `$` descartaba el equipo, y la serie F de POCO salía como Xiaomi.
 - **Prefijos de exportación de WhatsApp** (`[10:05, 12/09/2026] +57 300 123 4567:`)
   se quitan antes de leer la línea.
 - **Encabezados sin la negrita de WhatsApp.** El parser reconocía la sección
@@ -516,6 +522,8 @@ referencias/fichas-tecnicas.md    de dónde sale la ficha oficial de cada marca
 referencias/precios.md            método de investigación de precios
 referencias/colores.md            emojis → colores publicables
 referencias/imagenes.md           estándar de fotos; fuera del flujo, ver la regla 16
+pruebas/test_parsear_lista.py     las listas de ejemplo contra su revisión, y un caso por
+                                  defecto corregido. `npm run listas`, y dentro de verificar
 plantillas/producto.txt           plantilla del archivo de cada producto
 plantillas/env.ejemplo            plantilla de credenciales de Icecat
 ```
