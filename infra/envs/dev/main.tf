@@ -410,6 +410,7 @@ module "api" {
     # recaudo (ADR-0023). La recogida en el punto, en cambio, va apagada en todos los ambientes:
     # su valor por omisión ya es `false` y no se repite aquí.
     CONTRAENTREGA_HABILITADA = "true"
+    GOOGLE_CLIENT_ID="2132674273-64m082sb4vfika599ja818f2eubnpfdi.apps.googleusercontent.com"
     }, !var.sistecredito_listo ? {} : {
     # Sistecrédito encendido en dev, y el freno explícito al lado.
     #
