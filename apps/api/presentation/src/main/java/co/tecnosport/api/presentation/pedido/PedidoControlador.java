@@ -98,7 +98,7 @@ public class PedidoControlador {
             TipoEntrega.valueOf(cuerpo.tipoEntrega()),
             cuerpo.direccion() == null ? null : aDireccion(cuerpo.direccion()),
             null,
-            null,
+            cuerpo.telefono(),
             cuerpo.transportadora());
     // Por NOMBRE y no por el orden del enum. Es lo que hacia `map(Enum::name).sorted()` cuando
     // la lista viajaba como cadenas, y este es el orden en que el checkout pinta los botones:
