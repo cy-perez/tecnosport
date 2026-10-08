@@ -108,6 +108,26 @@ public final class AutorizacionDatos {
         ahora);
   }
 
+  /** El registro entrando con Google (ADR-0074): como {@link #enRegistro}, con su propio origen. */
+  public static AutorizacionDatos enRegistroConGoogle(
+      boolean autoriza,
+      CorreoElectronico correo,
+      UUID usuarioId,
+      String versionPolitica,
+      String direccionIp,
+      Instant ahora) {
+    exigirAutorizacion(autoriza);
+    Objects.requireNonNull(usuarioId, "El registro siempre tiene un usuario detrás.");
+    return new AutorizacionDatos(
+        GeneradorIdentificador.nuevo(),
+        correo,
+        usuarioId,
+        versionPolitica,
+        direccionIp,
+        OrigenAutorizacion.GOOGLE,
+        ahora);
+  }
+
   /**
    * En el buzón de sugerencias nunca hay cuenta detrás —no hace falta para escribir—, así que no
    * recibe id de usuario: es la diferencia real con {@link #enCheckout}, donde el id es opcional

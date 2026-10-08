@@ -90,7 +90,10 @@ import co.tecnosport.api.application.retracto.PedidoSinEntregarException;
 import co.tecnosport.api.application.retracto.RetractoYaRadicadoException;
 import co.tecnosport.api.application.retracto.SolicitudRetractoNoEncontradaException;
 import co.tecnosport.api.application.reversion.SolicitudReversionNoEncontradaException;
+import co.tecnosport.api.application.usuario.CredencialGoogleInvalidaException;
 import co.tecnosport.api.application.usuario.CredencialesInvalidasException;
+import co.tecnosport.api.application.usuario.CuentaGoogleSinRegistroException;
+import co.tecnosport.api.application.usuario.GoogleNoHabilitadoException;
 import co.tecnosport.api.application.usuario.SesionDeRefrescoComprometidaException;
 import co.tecnosport.api.application.usuario.SesionDeRefrescoInvalidaException;
 import co.tecnosport.api.domain.carrito.LineaCarritoNoEncontradaException;
@@ -753,6 +756,25 @@ public class ManejadorDeErrores {
   @ExceptionHandler(TransportadoraNoDisponibleException.class)
   public ProblemDetail transportadoraNoDisponible(TransportadoraNoDisponibleException excepcion) {
     return problema(HttpStatus.CONFLICT, "Transportadora no disponible", excepcion);
+  }
+
+  // ADR-0074. La credencial de Google no pasó la verificación: 401, como una clave equivocada.
+  @ExceptionHandler(CredencialGoogleInvalidaException.class)
+  public ProblemDetail credencialGoogleInvalida(CredencialGoogleInvalidaException excepcion) {
+    return problema(HttpStatus.UNAUTHORIZED, "Credencial de Google inválida", excepcion);
+  }
+
+  // Entró con Google sin cuenta y sin autorizar los datos: el sitio lo manda a «Crear cuenta».
+  // 409: la credencial está bien, lo que falta es un sí que solo puede dar la persona.
+  @ExceptionHandler(CuentaGoogleSinRegistroException.class)
+  public ProblemDetail cuentaGoogleSinRegistro(CuentaGoogleSinRegistroException excepcion) {
+    return problema(HttpStatus.CONFLICT, "Cuenta sin registrar", excepcion);
+  }
+
+  // El ambiente no tiene GOOGLE_CLIENT_ID. 404: para ese ambiente la puerta no existe.
+  @ExceptionHandler(GoogleNoHabilitadoException.class)
+  public ProblemDetail googleNoHabilitado(GoogleNoHabilitadoException excepcion) {
+    return problema(HttpStatus.NOT_FOUND, "Entrar con Google no está habilitado", excepcion);
   }
 
   // Un cliente que no leyó GET /envios/modalidades —uno viejo, o hecho a mano— y pide recoger con

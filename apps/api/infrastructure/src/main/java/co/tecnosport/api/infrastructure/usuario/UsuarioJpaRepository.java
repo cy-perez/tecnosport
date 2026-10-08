@@ -8,4 +8,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface UsuarioJpaRepository extends JpaRepository<UsuarioJpaEntity, UUID> {
 
   Optional<UsuarioJpaEntity> findByCorreo(String correo);
+
+  Optional<UsuarioJpaEntity> findByGoogleSub(String googleSub);
 }

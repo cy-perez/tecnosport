@@ -96,6 +96,12 @@ class CodigosDeCableTest {
           Map.entry(CotizacionRechazadaException.class, "COTIZACION_RECHAZADA"),
           Map.entry(RetiroEnPuntoNoDisponibleException.class, "RETIRO_EN_PUNTO_NO_DISPONIBLE"),
           Map.entry(TransportadoraNoDisponibleException.class, "TRANSPORTADORA_NO_DISPONIBLE"),
+          Map.entry(
+              co.tecnosport.api.application.usuario.CredencialGoogleInvalidaException.class,
+              "CREDENCIAL_GOOGLE_INVALIDA"),
+          Map.entry(
+              co.tecnosport.api.application.usuario.CuentaGoogleSinRegistroException.class,
+              "CUENTA_GOOGLE_SIN_REGISTRO"),
           Map.entry(ExistenciaInsuficienteException.class, "EXISTENCIA_INSUFICIENTE"),
           Map.entry(CredencialesInvalidasException.class, "CREDENCIALES_INVALIDAS"),
           Map.entry(SesionDeRefrescoInvalidaException.class, "SESION_DE_REFRESCO_INVALIDA"),

@@ -32,6 +32,13 @@ final class RepositorioUsuariosDobleDePrueba implements RepositorioUsuarios {
   }
 
   @Override
+  public Optional<Usuario> buscarPorGoogleSub(String googleSub) {
+    return usuarios.values().stream()
+        .filter(u -> u.googleSub().filter(googleSub::equals).isPresent())
+        .findFirst();
+  }
+
+  @Override
   public void guardar(Usuario usuario) {
     rechazarSiElCorreoYaEsDeOtro(usuario);
     usuarios.put(usuario.id(), usuario);

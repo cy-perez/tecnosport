@@ -17,5 +17,12 @@ public enum OrigenAutorizacion {
    * absoluto</b>: una sugerencia sin correo no trata ningún dato personal, así que no hay nada que
    * autorizar. Cuando hay correo, esto marca de dónde salió ese sí.
    */
-  SUGERENCIA
+  SUGERENCIA,
+
+  /**
+   * El registro entrando con Google, desde el 8 de octubre de 2026 (ADR-0074). Como {@code
+   * REGISTRO}, siempre tiene usuario detrás; se distingue porque los datos no los escribió la
+   * persona sino que los entregó Google cuando ella lo autorizó.
+   */
+  GOOGLE
 }

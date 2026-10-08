@@ -11,5 +11,8 @@ public interface RepositorioUsuarios {
 
   Optional<Usuario> buscarPorId(UUID id);
 
+  /** La cuenta unida a esa cuenta de Google (ADR-0074), por su identificador estable. */
+  Optional<Usuario> buscarPorGoogleSub(String googleSub);
+
   void guardar(Usuario usuario);
 }

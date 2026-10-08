@@ -27,6 +27,13 @@ final class RepositorioUsuariosFalso implements RepositorioUsuarios {
   }
 
   @Override
+  public Optional<Usuario> buscarPorGoogleSub(String googleSub) {
+    return usuarios.values().stream()
+        .filter(u -> u.googleSub().filter(googleSub::equals).isPresent())
+        .findFirst();
+  }
+
+  @Override
   public void guardar(Usuario usuario) {
     usuarios.put(usuario.id(), usuario);
   }
