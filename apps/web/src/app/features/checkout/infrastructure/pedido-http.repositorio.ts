@@ -84,6 +84,7 @@ export class PedidoHttpRepositorio implements RepositorioPedidos {
         tipoEntrega: comando.tipoEntrega,
         direccion: aDireccionRequest(comando.direccion),
         transportadora: comando.transportadora ?? undefined,
+        telefono: comando.telefono ?? undefined,
       },
     });
     // Sin afirmación de tipo: el endpoint publica el enum en el OpenAPI y el cliente generado

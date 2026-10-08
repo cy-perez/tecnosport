@@ -8,9 +8,28 @@ public record MetodosDePagoDisponiblesRequest(
     String tipoEntrega,
     CrearPedidoRequest.DireccionRequest direccion,
     /** La transportadora elegida: la contraentrega solo se ofrece si esa recauda (ADR-0073). */
-    String transportadora) {
+    String transportadora,
+    /**
+     * El teléfono de quien recibe. Opcional, y con él la consulta mira también si ese número ya
+     * rechazó un pedido en la entrega (docs/11): sin él la pantalla ofrecía la contraentrega y la
+     * negaba al confirmar, porque crear el pedido sí lo mira.
+     */
+    String telefono) {
 
   private static final int LARGO_MAXIMO_TRANSPORTADORA = 60;
+
+  /** Lo mismo que acepta {@code Contacto}, con holgura para espacios y signos. */
+  private static final int LARGO_MAXIMO_TELEFONO = 30;
+
+  /** Sin teléfono. */
+  public MetodosDePagoDisponiblesRequest(
+      List<CrearPedidoRequest.LineaRequest> lineas,
+      String correo,
+      String tipoEntrega,
+      CrearPedidoRequest.DireccionRequest direccion,
+      String transportadora) {
+    this(lineas, correo, tipoEntrega, direccion, transportadora, null);
+  }
 
   /** Sin transportadora elegida. */
   public MetodosDePagoDisponiblesRequest(
@@ -18,7 +37,7 @@ public record MetodosDePagoDisponiblesRequest(
       String correo,
       String tipoEntrega,
       CrearPedidoRequest.DireccionRequest direccion) {
-    this(lineas, correo, tipoEntrega, direccion, null);
+    this(lineas, correo, tipoEntrega, direccion, null, null);
   }
 
   public MetodosDePagoDisponiblesRequest {
@@ -35,6 +54,9 @@ public record MetodosDePagoDisponiblesRequest(
     // cotiza: sin tope, la respuesta reflejaría cualquier texto que mande el cliente.
     if (transportadora != null && transportadora.length() > LARGO_MAXIMO_TRANSPORTADORA) {
       throw new IllegalArgumentException("transportadora es demasiado larga.");
+    }
+    if (telefono != null && telefono.length() > LARGO_MAXIMO_TELEFONO) {
+      throw new IllegalArgumentException("telefono es demasiado largo.");
     }
   }
 }

@@ -523,6 +523,33 @@ class PedidoControladorTest {
         .andExpect(jsonPath("$", not(hasItem("CONTRAENTREGA"))));
   }
 
+  /**
+   * El teléfono del cuerpo llega a la consulta: un número que ya rechazó un pedido en la entrega no
+   * ve la contraentrega en el checkout. Antes no viajaba, la pantalla la ofrecía y crear el pedido
+   * la negaba al confirmar. El control —el mismo cuerpo sin teléfono— es la prueba de arriba.
+   */
+  @Test
+  void metodosDePagoDisponiblesNoOfreceContraentregaAUnTelefonoQueYaRechazo() throws Exception {
+    Variante variante = publicarProductoConVarianteYExistencia(5);
+    pedidos.sembrarRechazoPorTelefono("3138816711");
+    MetodosDePagoDisponiblesRequest cuerpo =
+        new MetodosDePagoDisponiblesRequest(
+            List.of(new CrearPedidoRequest.LineaRequest(variante.id(), 1)),
+            "cliente@tecnosport.co",
+            "ENVIO_A_DOMICILIO",
+            DIRECCION_MEDELLIN,
+            null,
+            "3138816711");
+
+    mockMvc
+        .perform(
+            post("/api/v1/pedidos/metodos-de-pago-disponibles")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(json.writeValueAsString(cuerpo)))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$", not(hasItem("CONTRAENTREGA"))));
+  }
+
   @Test
   void metodosDePagoDisponiblesExcluyeContraentregaSiNadieRecaudaAhi() throws Exception {
     Variante variante = publicarProductoConVarianteYExistencia(5);

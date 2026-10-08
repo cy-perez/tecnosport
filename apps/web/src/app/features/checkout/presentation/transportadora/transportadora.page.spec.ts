@@ -220,6 +220,7 @@ describe('TransportadoraPage (ADR-0073)', () => {
       tipoEntrega: 'ENVIO_A_DOMICILIO',
       direccion: A_DOMICILIO.direccion,
       transportadora: 'Servientrega',
+      telefono: '3138816711',
     });
   });
 
