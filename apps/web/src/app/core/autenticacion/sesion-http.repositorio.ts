@@ -7,6 +7,7 @@ import { RepositorioSesion } from './repositorio-sesion.puerto';
 import {
   ClaveActualIncorrectaError,
   CorreoSinVerificarError,
+  CuentaExistenteRequiereClaveError,
   CuentaGoogleSinRegistroError,
   DemasiadosIntentosError,
   SesionExpiradaError,
@@ -45,24 +46,36 @@ export class SesionHttpRepositorio implements RepositorioSesion {
   }
 
   /**
-   * `204` es la respuesta normal de una visita anónima: no llegó cookie de refresco, así que no
-   * hay sesión que refrescar. El servidor la distingue a propósito del `401` —cookie que llega
-   * pero no sirve— porque el navegador registra en la consola todo 4xx de una petición, y esta
-   * sale en cada primera carga de cualquier visitante.
+   * Los dos 409 de negocio se distinguen por el `codigo` y no por el estado: el mismo endpoint
+   * puede responder otro 409 —dos primeras entradas a la vez chocan con el índice único— y
+   * decirle a esa persona "no hay una cuenta con ese correo" sería mentirle.
    */
   async iniciarSesionConGoogle(credencial: string, autorizaDatos: boolean): Promise<Sesion> {
     const respuesta = await this.cliente.POST('/api/v1/auth/google', {
       body: { credencial, autorizaDatos },
     });
-    if (respuesta.response.status === 409) {
-      throw new CuentaGoogleSinRegistroError();
-    }
     if (respuesta.response.status === 429) {
       throw new DemasiadosIntentosError();
     }
-    return aSesion(desempaquetar(respuesta, 'no se pudo iniciar sesión con Google'));
+    try {
+      return aSesion(desempaquetar(respuesta, 'no se pudo iniciar sesión con Google'));
+    } catch (error) {
+      if (error instanceof ErrorHttp && error.codigo === 'CUENTA_GOOGLE_SIN_REGISTRO') {
+        throw new CuentaGoogleSinRegistroError();
+      }
+      if (error instanceof ErrorHttp && error.codigo === 'CUENTA_EXISTENTE_REQUIERE_CLAVE') {
+        throw new CuentaExistenteRequiereClaveError();
+      }
+      throw error;
+    }
   }
 
+  /**
+   * `204` es la respuesta normal de una visita anónima: no llegó cookie de refresco, así que no
+   * hay sesión que refrescar. El servidor la distingue a propósito del `401` —cookie que llega
+   * pero no sirve— porque el navegador registra en la consola todo 4xx de una petición, y esta
+   * sale en cada primera carga de cualquier visitante.
+   */
   async refrescar(): Promise<Sesion | null> {
     const respuesta = await this.cliente.POST('/api/v1/auth/refresco');
     if (respuesta.response.status === 204 || respuesta.response.status === 401) {

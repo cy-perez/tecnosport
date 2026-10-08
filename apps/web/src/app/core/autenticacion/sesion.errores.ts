@@ -25,3 +25,9 @@ export class SesionExpiradaError extends Error {}
  * manda a «Crear cuenta», donde está la casilla.
  */
 export class CuentaGoogleSinRegistroError extends Error {}
+
+/**
+ * Hay una cuenta con ese correo, y Google no manda sobre ese buzón: se entra con la contraseña
+ * (ADR-0074).
+ */
+export class CuentaExistenteRequiereClaveError extends Error {}

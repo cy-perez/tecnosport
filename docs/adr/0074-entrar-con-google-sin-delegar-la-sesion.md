@@ -30,8 +30,12 @@ probar quién es la persona.
    - si ya está unida a esa cuenta de Google (por el `sub`, que no cambia aunque
      cambie el correo), entra;
    - si hay una cuenta con ese correo creada con clave, se une y queda
-     verificada, porque Google solo entrega correos verificados (si no lo
-     estuviera, la credencial se rechaza);
+     verificada (la credencial tiene que traer `email_verified`), **solo si
+     Google manda sobre ese buzón**: un `@gmail.com` o un dominio administrado
+     por Google (`hd`). Si no, `409 CUENTA_EXISTENTE_REQUIERE_CLAVE` y se entra
+     con la contraseña. **Si esa cuenta no estaba verificada, su clave se
+     descarta** y sus sesiones se revocan: pudo crearla otro con el correo ajeno
+     y una clave suya, esperando a que la dueña entrara con Google;
    - si no hay cuenta, se crea ya verificada, **solo si se autorizó el
      tratamiento de datos** (Ley 1581 de 2012). Desde «Iniciar sesión» no se
      autoriza nada: el servidor responde `409 CUENTA_GOOGLE_SIN_REGISTRO` y el
@@ -49,6 +53,18 @@ probar quién es la persona.
    ambiente: Google comprueba el origen.
 
 ## Consecuencias
+
+- **La revisión de seguridad encontró una toma de cuenta**, y está cerrada: la
+  vinculación de una cuenta sin verificar conservaba la clave de quien la creó.
+  La prueba original afirmaba ese comportamiento; ahora afirma lo contrario.
+  De la misma revisión salen dos endurecimientos: las URL de las llaves y del
+  script solo pueden ser de Google y por https (`PropiedadesGoogle`), y el
+  límite por IP ya no se borra con cada credencial válida. Quedan aceptados y
+  anotados: no hay `nonce` (el modo popup y la falta de CORS lo mitigan), el
+  JWKS se refresca sin límite ante un `kid` desconocido, y `X-Forwarded-For` lo
+  pone el cliente.
+- El botón de Google no cambia de idioma ni de tema si se cambian con la
+  pantalla abierta: se pinta una vez, al montar. Recargar lo corrige.
 
 - **Falta crear el cliente OAuth** en Google Cloud Console: la pantalla de
   consentimiento y los orígenes autorizados de cada ambiente. Después hay que

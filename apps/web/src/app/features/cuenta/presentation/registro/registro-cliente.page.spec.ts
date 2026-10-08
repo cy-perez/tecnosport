@@ -378,7 +378,11 @@ describe('RegistroClientePage', () => {
 
       boton.entregar('credencial-de-google');
 
-      expect(await screen.findByText(/primero marca la casilla de autorización/)).toBeTruthy();
+      expect(
+        await screen.findByText(
+          'Para crear la cuenta hay que autorizar el tratamiento de los datos.',
+        ),
+      ).toBeTruthy();
       expect(sesion.llamadasGoogle).toEqual([]);
     });
 

@@ -6,6 +6,7 @@ import { Router, RouterLink } from '@angular/router';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import {
   CorreoSinVerificarError,
+  CuentaExistenteRequiereClaveError,
   CuentaGoogleSinRegistroError,
   DemasiadosIntentosError,
 } from '../../../../core/autenticacion/sesion.errores';
@@ -116,6 +117,7 @@ export class IniciarSesionClientePage {
       return;
     }
     this.error.set(null);
+    this.sinRegistroConGoogle.set(false);
     this.enviando.set(true);
 
     try {
@@ -164,8 +166,11 @@ export class IniciarSesionClientePage {
     } catch (error) {
       if (error instanceof CuentaGoogleSinRegistroError) {
         this.sinRegistroConGoogle.set(true);
+      } else if (error instanceof CuentaExistenteRequiereClaveError) {
+        this.error.set(this.transloco.translate('cuenta.google.requiere_clave'));
       } else if (error instanceof DemasiadosIntentosError) {
-        this.error.set(this.transloco.translate('cuenta.iniciarSesion.error_demasiados_intentos'));
+        // Su propio texto: el del login dice "tu clave no es el problema" a quien no usó clave.
+        this.error.set(this.transloco.translate('cuenta.google.demasiados_intentos'));
       } else if (esFalloDelServidor(error)) {
         this.error.set(this.transloco.translate('comun.error_servidor'));
       } else {

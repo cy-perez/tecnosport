@@ -30,9 +30,9 @@ import { BOTON_GOOGLE } from '../../domain/boton-google.puerto';
     @if (configuracion.data()?.habilitado && !fallo()) {
       <div class="flex flex-col gap-12">
         <p class="m-0 flex items-center gap-12 text-sm text-ts-texto-suave" aria-hidden="true">
-          <span class="h-px flex-1 bg-ts-borde"></span>
+          <span class="h-[var(--trazo-fino)] flex-1 bg-ts-borde"></span>
           {{ 'cuenta.google.separador' | transloco }}
-          <span class="h-px flex-1 bg-ts-borde"></span>
+          <span class="h-[var(--trazo-fino)] flex-1 bg-ts-borde"></span>
         </p>
         <div #contenedor class="min-h-tactil w-full"></div>
       </div>

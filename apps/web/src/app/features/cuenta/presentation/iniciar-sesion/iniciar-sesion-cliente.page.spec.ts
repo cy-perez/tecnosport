@@ -76,10 +76,15 @@ class RepositorioSesionFalso implements RepositorioSesion {
 }
 
 /** Solo lo que la pantalla pregunta a la cuenta: si hay Google en este ambiente. */
+let configuracionesPedidas = 0;
+
 function cuentaConGoogle(configuracion: ConfiguracionGoogle): RepositorioCuenta {
   const noUsado = () => Promise.reject(new Error('no usado en esta prueba'));
   return {
-    configuracionGoogle: async () => configuracion,
+    configuracionGoogle: async () => {
+      configuracionesPedidas++;
+      return configuracion;
+    },
     registrar: noUsado,
     verificarCorreo: noUsado,
     reenviarVerificacion: noUsado,
@@ -277,8 +282,12 @@ describe('IniciarSesionClientePage', () => {
   describe('con Google (ADR-0074)', () => {
     it('sin cliente de Google en el ambiente no pinta el botón', async () => {
       const boton = new BotonGoogleFalso();
+      configuracionesPedidas = 0;
       await renderPagina(new RepositorioSesionFalso(), boton);
-      await screen.findByLabelText('Correo electrónico');
+      // Se espera a que la configuración haya llegado: antes de eso tampoco habría botón, y la
+      // prueba pasaría aunque se quitara la guarda de `habilitado`.
+      await vi.waitFor(() => expect(configuracionesPedidas).toBe(1));
+      await new Promise((resolver) => setTimeout(resolver, 0));
 
       expect(boton.pintado).toBe(false);
     });

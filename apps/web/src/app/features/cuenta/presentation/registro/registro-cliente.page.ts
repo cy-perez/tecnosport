@@ -16,10 +16,12 @@ import { TsPaginaFormulario } from '../../../../shared/ui/pagina-formulario/ts-p
 import { TsCampo } from '../../../../shared/ui/campo/ts-campo';
 import { TsCheckbox } from '../../../../shared/ui/checkbox/ts-checkbox';
 import { iconoClave, iconoCorreo } from '../../../../shared/ui/icono/iconos';
-import { RouterLink } from '@angular/router';
-import { DemasiadosIntentosError } from '../../../../core/autenticacion/sesion.errores';
+import { Router, RouterLink } from '@angular/router';
+import {
+  CuentaExistenteRequiereClaveError,
+  DemasiadosIntentosError,
+} from '../../../../core/autenticacion/sesion.errores';
 import { SesionStore } from '../../../../core/autenticacion/sesion.store';
-import { Router } from '@angular/router';
 import { TsEntrarConGoogle } from '../entrar-con-google/ts-entrar-con-google';
 import { CorreoYaRegistradoError } from '../../domain/cuenta.errores';
 import { REPOSITORIO_CUENTA } from '../../domain/repositorio-cuenta.puerto';
@@ -227,9 +229,12 @@ export class RegistroClientePage {
     }
     const autorizacion = this.form.controls.autorizaDatos;
     if (!autorizacion.value) {
+      // Un solo aviso, el de la casilla, y el foco en ella: dos alertas seguidas con casi la
+      // misma frase solo cansan a quien las escucha.
       autorizacion.markAsTouched();
       autorizacion.updateValueAndValidity();
-      this.error.set(this.transloco.translate('cuenta.google.autoriza_primero'));
+      this.error.set(null);
+      this.enfocarPrimerInvalido();
       return;
     }
     this.error.set(null);
@@ -239,7 +244,9 @@ export class RegistroClientePage {
       void this.router.navigate(['/' + this.transloco.activeLang()]);
     } catch (error) {
       if (error instanceof DemasiadosIntentosError) {
-        this.error.set(this.transloco.translate('cuenta.registro.error_demasiados_intentos'));
+        this.error.set(this.transloco.translate('cuenta.google.demasiados_intentos'));
+      } else if (error instanceof CuentaExistenteRequiereClaveError) {
+        this.error.set(this.transloco.translate('cuenta.google.requiere_clave'));
       } else {
         this.error.set(mensajeDeError(error, this.transloco, 'cuenta.google.error'));
       }

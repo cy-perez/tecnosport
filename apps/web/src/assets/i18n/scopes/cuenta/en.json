@@ -1,10 +1,11 @@
 {
   "google": {
+    "requiere_clave": "You already have an account with that email. Sign in with your password.",
+    "demasiados_intentos": "There were too many attempts in a row from here. Wait a few minutes and try again.",
     "separador": "or",
     "error": "We couldn't sign you in with Google. Try again, or use your email and password.",
     "sin_registro": "There is no account with that Google email.",
-    "ir_a_registro": "Create your account with Google here.",
-    "autoriza_primero": "To create your account with Google, first tick the data authorization box and press the Google button again."
+    "ir_a_registro": "Create your account with Google here."
   },
   "iniciarSesion": {
     "titulo": "Sign in",
