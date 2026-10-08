@@ -1,5 +1,6 @@
 package co.tecnosport.api.bootstrap.usuario;
 
+import java.net.URI;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 /**
@@ -17,11 +18,25 @@ public record PropiedadesGoogle(String clienteId, String urlLlaves, String urlSc
 
   public PropiedadesGoogle {
     clienteId = clienteId == null ? "" : clienteId.trim();
-    if (urlLlaves == null || urlLlaves.isBlank()) {
-      throw new IllegalStateException("tecnosport.google.url-llaves no puede estar vacía.");
+    exigirDeGoogle("url-llaves", urlLlaves, "www.googleapis.com");
+    exigirDeGoogle("url-script", urlScript, "accounts.google.com");
+  }
+
+  /**
+   * Las dos URL deciden qué se cree: con las llaves de otro, cualquiera firma un token que pasa;
+   * con el script de otro, se le sirve código ajeno a quien compra. Configurables para corregirlas
+   * sin redesplegar, pero solo dentro de Google y por https (revisión de seguridad del ADR-0074).
+   */
+  private static void exigirDeGoogle(String nombre, String url, String host) {
+    URI uri;
+    try {
+      uri = URI.create(url == null ? "" : url.trim());
+    } catch (IllegalArgumentException e) {
+      throw new IllegalStateException("tecnosport.google." + nombre + " no es una URL: " + url);
     }
-    if (urlScript == null || urlScript.isBlank()) {
-      throw new IllegalStateException("tecnosport.google.url-script no puede estar vacía.");
+    if (!"https".equals(uri.getScheme()) || !host.equals(uri.getHost())) {
+      throw new IllegalStateException(
+          "tecnosport.google." + nombre + " tiene que ser https://" + host + "/...: " + url);
     }
   }
 }

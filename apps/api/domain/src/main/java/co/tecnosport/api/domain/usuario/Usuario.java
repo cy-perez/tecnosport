@@ -53,7 +53,8 @@ public final class Usuario {
     boolean sinClave = claveHash == null || claveHash.isBlank();
     boolean sinGoogle = googleSub == null || googleSub.isBlank();
     if (sinClave && sinGoogle) {
-      throw new ExcepcionDeDominio("La clave del usuario no puede estar vacía.");
+      throw new ExcepcionDeDominio(
+          "La cuenta necesita una forma de entrar: una clave o una cuenta de Google.");
     }
     this.claveHash = sinClave ? null : claveHash;
     this.googleSub = sinGoogle ? null : googleSub;
@@ -69,7 +70,8 @@ public final class Usuario {
   /**
    * Una cuenta que nace entrando con Google (ADR-0074). Siempre {@code CLIENTE}, como el registro
    * con clave, y <b>ya verificada</b>: lo que el registro con clave comprueba con un enlace —que el
-   * correo es de quien se registra— aquí lo comprobó Google, que solo entrega correos verificados.
+   * correo es de quien se registra— aquí lo comprobó Google: el caso de uso exige que la credencial
+   * traiga el correo verificado.
    */
   public static Usuario crearConGoogle(CorreoElectronico correo, String googleSub, Instant ahora) {
     if (googleSub == null || googleSub.isBlank()) {
@@ -112,6 +114,14 @@ public final class Usuario {
     }
     if (googleSub != null && !googleSub.equals(nuevoGoogleSub)) {
       throw new ExcepcionDeDominio("La cuenta ya está unida a otra cuenta de Google.");
+    }
+    // Una cuenta sin verificar es una cuenta que nadie demostró que fuera de quien la creó: pudo
+    // crearla un tercero con el correo ajeno y una clave suya, esperando a que la dueña entrara con
+    // Google para que la cuenta quedara verificada y su clave siguiera sirviendo. Al unirla, esa
+    // clave se descarta. Lo encontró la revisión de seguridad del ADR-0074; la prueba afirmaba lo
+    // contrario.
+    if (correoVerificadoEn == null) {
+      this.claveHash = null;
     }
     this.googleSub = nuevoGoogleSub;
     verificarCorreo(ahora);

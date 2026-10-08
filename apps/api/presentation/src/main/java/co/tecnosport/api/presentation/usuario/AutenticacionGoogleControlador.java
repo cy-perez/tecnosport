@@ -47,7 +47,7 @@ public class AutenticacionGoogleControlador {
   }
 
   @PostMapping
-  public ResponseEntity<SesionRespuesta> iniciarSesion(
+  public ResponseEntity<SesionRespuesta> iniciarSesionConGoogle(
       @RequestBody IniciarSesionConGoogleRequest cuerpo, HttpServletRequest peticion) {
     String ip = IpDelCliente.de(peticion);
     TokensDeSesion tokens =

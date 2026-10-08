@@ -1245,7 +1245,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: operations["iniciarSesion_1"];
+        post: operations["iniciarSesionConGoogle"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2370,8 +2370,8 @@ export interface components {
             objectKey: string;
         };
         IniciarSesionConGoogleRequest: {
-            autorizaDatos?: boolean;
-            credencial?: string;
+            autorizaDatos: boolean;
+            credencial: string;
         };
         IniciarSesionRequest: {
             clave?: string;
@@ -5415,7 +5415,7 @@ export interface operations {
             };
         };
     };
-    iniciarSesion_1: {
+    iniciarSesionConGoogle: {
         parameters: {
             query?: never;
             header?: never;

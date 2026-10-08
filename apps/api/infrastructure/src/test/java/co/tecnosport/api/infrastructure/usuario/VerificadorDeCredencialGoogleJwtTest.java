@@ -67,7 +67,7 @@ class VerificadorDeCredencialGoogleJwtTest {
   void unTokenDeGoogleParaEsteClienteDaLaIdentidad() throws Exception {
     IdentidadGoogle identidad = verificador.verificar(valido());
 
-    assertThat(identidad).isEqualTo(new IdentidadGoogle("112233", "ana@gmail.com", true));
+    assertThat(identidad).isEqualTo(new IdentidadGoogle("112233", "ana@gmail.com", true, true));
   }
 
   @Test

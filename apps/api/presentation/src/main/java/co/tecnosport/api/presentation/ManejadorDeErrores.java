@@ -92,6 +92,7 @@ import co.tecnosport.api.application.retracto.SolicitudRetractoNoEncontradaExcep
 import co.tecnosport.api.application.reversion.SolicitudReversionNoEncontradaException;
 import co.tecnosport.api.application.usuario.CredencialGoogleInvalidaException;
 import co.tecnosport.api.application.usuario.CredencialesInvalidasException;
+import co.tecnosport.api.application.usuario.CuentaExistenteRequiereClaveException;
 import co.tecnosport.api.application.usuario.CuentaGoogleSinRegistroException;
 import co.tecnosport.api.application.usuario.GoogleNoHabilitadoException;
 import co.tecnosport.api.application.usuario.SesionDeRefrescoComprometidaException;
@@ -769,6 +770,13 @@ public class ManejadorDeErrores {
   @ExceptionHandler(CuentaGoogleSinRegistroException.class)
   public ProblemDetail cuentaGoogleSinRegistro(CuentaGoogleSinRegistroException excepcion) {
     return problema(HttpStatus.CONFLICT, "Cuenta sin registrar", excepcion);
+  }
+
+  // Hay cuenta con ese correo y Google no manda sobre el buzón: se entra con la contraseña.
+  @ExceptionHandler(CuentaExistenteRequiereClaveException.class)
+  public ProblemDetail cuentaExistenteRequiereClave(
+      CuentaExistenteRequiereClaveException excepcion) {
+    return problema(HttpStatus.CONFLICT, "Entra con tu contraseña", excepcion);
   }
 
   // El ambiente no tiene GOOGLE_CLIENT_ID. 404: para ese ambiente la puerta no existe.

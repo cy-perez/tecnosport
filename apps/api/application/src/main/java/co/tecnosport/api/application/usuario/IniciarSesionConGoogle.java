@@ -24,8 +24,10 @@ import java.util.Optional;
  *
  * <ol>
  *   <li>Ya hay una cuenta unida a esa cuenta de Google: entra.
- *   <li>Hay una cuenta con ese correo, creada con clave: se une a Google y entra. Google entrega
- *       solo correos verificados, así que es la misma persona que recibe el correo de esa cuenta.
+ *   <li>Hay una cuenta con ese correo, creada con clave: se une a Google y entra, si Google manda
+ *       sobre ese buzón ({@code @gmail.com} o un dominio suyo). Si la cuenta no estaba verificada,
+ *       su clave se descarta: pudo crearla otro con el correo ajeno. Si Google no manda sobre el
+ *       buzón, se pide entrar con la contraseña.
  *   <li>No hay cuenta: se crea, ya verificada, si autorizó el tratamiento de datos. Sin ese sí no
  *       hay cuenta (Ley 1581 de 2012) y se le pide pasar por «Crear cuenta».
  * </ol>
@@ -109,7 +111,9 @@ public final class IniciarSesionConGoogle {
       // existente por ese correo sería entregársela a otro.
       throw new CredencialGoogleInvalidaException();
     }
-    limitadorDeIntentos.olvidar(llave);
+    // Sin `olvidar` al acertar, a diferencia del login con clave: aquí la llave es la IP y no una
+    // cuenta, y una IP con varias cuentas de Google podría crear cuentas sin tope si cada acierto
+    // borrara el conteo (revisión de arquitectura del ADR-0074).
 
     Usuario usuario =
         repositorioUsuarios
@@ -138,7 +142,13 @@ public final class IniciarSesionConGoogle {
               if (usuario.rol() != Rol.CLIENTE) {
                 throw new CredencialesInvalidasException();
               }
+              if (!identidad.googleEsAutoridad()) {
+                throw new CuentaExistenteRequiereClaveException();
+              }
               usuario.vincularGoogle(identidad.sub(), ahora);
+              // Cualquier sesión abierta antes de unirla se cierra: si la cuenta no era de quien
+              // la creó, la clave ya se descartó y ahora tampoco le queda una cookie viva.
+              repositorioSesiones.revocarTodasDeUsuario(usuario.id(), ahora);
               repositorioUsuarios.guardar(usuario);
               return usuario;
             });

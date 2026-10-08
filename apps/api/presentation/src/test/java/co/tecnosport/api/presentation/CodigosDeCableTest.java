@@ -102,6 +102,9 @@ class CodigosDeCableTest {
           Map.entry(
               co.tecnosport.api.application.usuario.CuentaGoogleSinRegistroException.class,
               "CUENTA_GOOGLE_SIN_REGISTRO"),
+          Map.entry(
+              co.tecnosport.api.application.usuario.CuentaExistenteRequiereClaveException.class,
+              "CUENTA_EXISTENTE_REQUIERE_CLAVE"),
           Map.entry(ExistenciaInsuficienteException.class, "EXISTENCIA_INSUFICIENTE"),
           Map.entry(CredencialesInvalidasException.class, "CREDENCIALES_INVALIDAS"),
           Map.entry(SesionDeRefrescoInvalidaException.class, "SESION_DE_REFRESCO_INVALIDA"),

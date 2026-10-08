@@ -1610,6 +1610,10 @@
             "type" : "string"
           }
         },
+        "required" : [
+          "autorizaDatos",
+          "credencial"
+        ],
         "type" : "object"
       },
       "IniciarSesionRequest" : {
@@ -7056,7 +7060,7 @@
     },
     "/api/v1/auth/google" : {
       "post" : {
-        "operationId" : "iniciarSesion_1",
+        "operationId" : "iniciarSesionConGoogle",
         "requestBody" : {
           "content" : {
             "application/json" : {

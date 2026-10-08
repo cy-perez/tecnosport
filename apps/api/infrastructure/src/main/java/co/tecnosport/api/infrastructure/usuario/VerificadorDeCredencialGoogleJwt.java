@@ -4,6 +4,7 @@ import co.tecnosport.api.application.usuario.CredencialGoogleInvalidaException;
 import co.tecnosport.api.application.usuario.IdentidadGoogle;
 import co.tecnosport.api.application.usuario.VerificadorDeCredencialGoogle;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.Set;
 import org.springframework.security.oauth2.core.OAuth2TokenValidator;
@@ -72,7 +73,12 @@ public final class VerificadorDeCredencialGoogleJwt implements VerificadorDeCred
     if (sub == null || correo == null) {
       throw new CredencialGoogleInvalidaException();
     }
-    return new IdentidadGoogle(
-        sub, correo, Boolean.TRUE.equals(jwt.getClaimAsBoolean("email_verified")));
+    boolean verificado = Boolean.TRUE.equals(jwt.getClaimAsBoolean("email_verified"));
+    // Google manda sobre el buzón si es @gmail.com o si trae `hd`, el dominio que administra
+    // (guía de Google para verificar el ID token).
+    boolean autoridad =
+        correo.toLowerCase(Locale.ROOT).endsWith("@gmail.com")
+            || jwt.getClaimAsString("hd") != null;
+    return new IdentidadGoogle(sub, correo, verificado, verificado && autoridad);
   }
 }

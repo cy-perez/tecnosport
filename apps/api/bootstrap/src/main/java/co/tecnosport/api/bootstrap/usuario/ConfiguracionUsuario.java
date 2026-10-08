@@ -99,7 +99,7 @@ public class ConfiguracionUsuario {
         propiedades.urlLlaves(), propiedades.clienteId());
   }
 
-  /** Mismos límites que el login, pero por IP: antes de verificar no se sabe de quién es. */
+  /** Los límites por IP del login: antes de verificar la credencial no se sabe de quién es. */
   @Bean
   public IniciarSesionConGoogle iniciarSesionConGoogle(
       VerificadorDeCredencialGoogle verificador,
@@ -122,8 +122,8 @@ public class ConfiguracionUsuario {
         reloj,
         Duration.ofDays(propiedades.diasRefresco()),
         limitadorDeIntentos,
-        propiedadesLimite.cuentaMaximo(),
-        Duration.ofMinutes(propiedadesLimite.cuentaMinutos()),
+        propiedadesLimite.ipMaximo(),
+        Duration.ofMinutes(propiedadesLimite.ipMinutos()),
         propiedadesLegal.politicaDatosVersion(),
         propiedadesGoogle.clienteId());
   }

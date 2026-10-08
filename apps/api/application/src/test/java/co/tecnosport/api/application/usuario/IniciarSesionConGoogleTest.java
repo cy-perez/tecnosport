@@ -98,21 +98,64 @@ class IniciarSesionConGoogleTest {
     assertTrue(autorizaciones.todas().isEmpty());
   }
 
-  /**
-   * La cuenta creada con clave y sin verificar se une a Google, que acaba de verificar el correo.
-   */
+  /** La cuenta con clave y verificada se une a Google y conserva su clave. */
   @Test
-  void unaCuentaConClaveDelMismoCorreoSeUneYQuedaVerificada() {
+  void unaCuentaVerificadaDelMismoCorreoSeUneYConservaSuClave() {
     Usuario conClave =
         Usuario.crear(new CorreoElectronico(CORREO), "hash", Rol.CLIENTE, AHORA.minusSeconds(60));
+    conClave.verificarCorreo(AHORA.minusSeconds(30));
     usuarios.conUsuario(conClave);
 
     crear().ejecutar(comando(false));
 
     Usuario unido = usuarios.buscarPorId(conClave.id()).orElseThrow();
     assertEquals(Optional.of(SUB), unido.googleSub());
-    assertTrue(unido.correoVerificado());
     assertTrue(unido.tieneClave());
+  }
+
+  /**
+   * La toma de cuenta que encontró la revisión de seguridad: alguien registra el correo ajeno con
+   * una clave suya, sin poder verificarlo, y espera. Cuando la dueña entra con Google, la cuenta se
+   * une y queda verificada — y la clave del que la creó tiene que dejar de servir.
+   */
+  @Test
+  void unaCuentaSinVerificarQueSeUnePierdeLaClaveDeQuienLaCreo() {
+    Usuario delAtacante =
+        Usuario.crear(new CorreoElectronico(CORREO), "hash", Rol.CLIENTE, AHORA.minusSeconds(60));
+    usuarios.conUsuario(delAtacante);
+
+    crear().ejecutar(comando(false));
+
+    Usuario unido = usuarios.buscarPorId(delAtacante.id()).orElseThrow();
+    assertEquals(Optional.of(SUB), unido.googleSub());
+    assertTrue(unido.correoVerificado());
+    assertFalse(unido.tieneClave());
+  }
+
+  /**
+   * Un correo que no es de Gmail ni de un dominio de Google: Google no manda sobre ese buzón y no
+   * se une por el correo. Crear una cuenta nueva con él sí, porque eso no le entrega nada a nadie.
+   */
+  @Test
+  void sinAutoridadDeGoogleSobreElBuzonNoSeUnePorCorreo() {
+    identidad = new IdentidadGoogle(SUB, "ana@empresa.co", true, false);
+    Usuario existente =
+        Usuario.crear(new CorreoElectronico("ana@empresa.co"), "hash", Rol.CLIENTE, AHORA);
+    existente.verificarCorreo(AHORA);
+    usuarios.conUsuario(existente);
+
+    assertThrows(
+        CuentaExistenteRequiereClaveException.class, () -> crear().ejecutar(comando(true)));
+    assertTrue(usuarios.buscarPorId(existente.id()).orElseThrow().googleSub().isEmpty());
+  }
+
+  @Test
+  void sinAutoridadDeGoogleSiSeCreaUnaCuentaNueva() {
+    identidad = new IdentidadGoogle(SUB, "ana@empresa.co", true, false);
+
+    crear().ejecutar(comando(true));
+
+    assertTrue(usuarios.buscarPorGoogleSub(SUB).isPresent());
   }
 
   /**
