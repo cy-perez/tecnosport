@@ -548,6 +548,35 @@ describe('ListaPedidosAdminPage', () => {
     );
   });
 
+  /**
+   * La transportadora elegida se ve desde que el pedido existe, no solo al preparar el despacho:
+   * un pedido recién confirmado está todavía por pagar, y ahí no aparecía en ninguna parte.
+   */
+  it.each(['PAGO_PENDIENTE', 'PAGADO', 'CONFIRMADO_CONTRAENTREGA'] as const)(
+    'en %s el detalle dice qué transportadora eligió el comprador',
+    async (estado) => {
+      await renderLista([
+        pedidoDePrueba({
+          estado,
+          tipoEntrega: 'ENVIO_A_DOMICILIO',
+          transportadora: 'Coordinadora',
+        }),
+      ]);
+      fireEvent.click(await screen.findByRole('button', { name: 'Ver detalle' }));
+
+      const titulo = await screen.findByRole('heading', { name: 'Transportadora elegida' });
+      expect(titulo.nextElementSibling?.textContent?.trim()).toBe('Coordinadora');
+    },
+  );
+
+  it('sin transportadora elegida no pinta la sección', async () => {
+    await renderLista([pedidoDePrueba({ estado: 'PAGO_PENDIENTE', transportadora: null })]);
+    fireEvent.click(await screen.findByRole('button', { name: 'Ver detalle' }));
+
+    await screen.findByRole('heading', { name: 'Líneas' });
+    expect(screen.queryByRole('heading', { name: 'Transportadora elegida' })).toBeNull();
+  });
+
   /** El retiro en punto no tiene a dónde despachar, así que no se le ofrece emitir nada. */
   it('un retiro en punto no ofrece emitir guía', async () => {
     await renderLista([

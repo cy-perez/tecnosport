@@ -145,6 +145,7 @@
     "detalle": {
       "lineas": "Items",
       "direccion": "Shipping address",
+      "transportadora": "Chosen carrier",
       "transferencia": "Manual transfer",
       "referencia": "Reference",
       "envio": "Shipment",
