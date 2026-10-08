@@ -326,10 +326,17 @@
                       </form>
                     }
                     @case ('EN_PREPARACION') {
-                      <!-- La vía normal: la transportadora emite la guía y el sistema despacha solo
-                           cuando el número existe. El formulario de abajo se queda para la guía que
-                           se emitió por fuera, que sigue siendo posible. -->
-                      @if (pedido.tipoEntrega === 'ENVIO_A_DOMICILIO') {
+                      <!-- Mientras las guías se crean a mano en Skydropx (adr/0071), no se ofrece
+                           emitirlas por API: se dice dónde se crean y se registran con el formulario
+                           de abajo. Con la emisión automática, la transportadora emite la guía y el
+                           sistema despacha solo cuando el número existe. -->
+                      @if (pedido.tipoEntrega === 'ENVIO_A_DOMICILIO' && !emisionAutomatica) {
+                        <p class="mt-0 mb-16 text-ts-texto-suave">
+                          {{ 'admin.pedidos.acciones.guia_en_plataforma' | transloco }}
+                        </p>
+                        <app-paquetes-para-guia [pedidoId]="pedido.id" />
+                      }
+                      @if (pedido.tipoEntrega === 'ENVIO_A_DOMICILIO' && emisionAutomatica) {
                         <ts-boton
                           [cargando]="emitiendoGuia(pedido.id)"
                           (click)="emitirGuia(pedido.id)"

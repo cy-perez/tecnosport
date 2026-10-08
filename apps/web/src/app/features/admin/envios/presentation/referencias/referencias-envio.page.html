@@ -1,0 +1,199 @@
+<section class="mx-auto max-w-contenido px-16 py-32">
+  <ts-migas [ruta]="migas()" />
+
+  <h1 class="m-0 mb-16 font-display text-2xl">
+    {{ 'admin.referencias_envio.titulo' | transloco }}
+  </h1>
+
+  <p class="mb-24 text-ts-texto-suave">{{ 'admin.referencias_envio.explicacion' | transloco }}</p>
+
+  @if (consulta.isPending()) {
+    <ts-esqueleto />
+  } @else if (consulta.isError()) {
+    <p class="mb-16 text-ts-error" role="alert">
+      {{ 'admin.referencias_envio.error_lista' | transloco }}
+    </p>
+  } @else {
+    <!-- Siempre en el DOM: una región viva montada ya llena con un `@if` se anuncia mal. -->
+    <p
+      #aviso
+      class="text-ts-exito"
+      role="status"
+      tabindex="-1"
+      [class.mb-16]="avisoGuardado() !== null"
+    >
+      {{ avisoGuardado() }}
+    </p>
+
+    <h2 class="mt-0 mb-8 text-xl">{{ 'admin.referencias_envio.medidas_titulo' | transloco }}</h2>
+    <p class="mb-16">{{ 'admin.referencias_envio.medidas_ayuda' | transloco }}</p>
+
+    @if (sinMedidas()) {
+      <p class="mb-16 text-ts-error">{{ 'admin.referencias_envio.sin_medidas' | transloco }}</p>
+    }
+
+    <form
+      class="mb-32 flex max-w-formulario flex-col gap-16"
+      [formGroup]="formMedidas"
+      (submit)="$event.preventDefault(); guardarMedidas()"
+    >
+      <fieldset class="flex flex-col gap-16 border border-ts-borde-control p-16">
+        <legend>{{ 'admin.referencias_envio.medidas_leyenda' | transloco }}</legend>
+
+        <ts-campo
+          [obligatorio]="true"
+          idCampo="medidas-largo"
+          tipo="number"
+          [label]="'admin.referencias_envio.largo' | transloco"
+          formControlName="largoCm"
+        />
+        <ts-campo
+          [obligatorio]="true"
+          idCampo="medidas-ancho"
+          tipo="number"
+          [label]="'admin.referencias_envio.ancho' | transloco"
+          formControlName="anchoCm"
+        />
+        <ts-campo
+          [obligatorio]="true"
+          idCampo="medidas-alto"
+          tipo="number"
+          [label]="'admin.referencias_envio.alto' | transloco"
+          formControlName="altoCm"
+        />
+      </fieldset>
+
+      @if (errorMedidas(); as mensaje) {
+        <p class="text-ts-error" role="alert">{{ mensaje }}</p>
+      }
+
+      <div>
+        <ts-boton tipo="submit" [ocupado]="guardandoMedidas()">
+          {{ 'admin.referencias_envio.guardar_medidas' | transloco }}
+        </ts-boton>
+      </div>
+    </form>
+
+    <h2 class="mt-0 mb-8 text-xl">{{ 'admin.referencias_envio.pesos_titulo' | transloco }}</h2>
+    <p class="mb-16">{{ 'admin.referencias_envio.pesos_ayuda' | transloco }}</p>
+
+    @if (categorias().length === 0) {
+      <p class="text-ts-texto-suave">{{ 'admin.referencias_envio.ninguna' | transloco }}</p>
+    } @else {
+      <p class="mb-16">
+        {{
+          'admin.referencias_envio.resumen'
+            | transloco: { total: categorias().length, sinPeso: sinPeso() }
+        }}
+      </p>
+
+      <div class="overflow-x-auto">
+        <table
+          class="w-full border-collapse [&_:is(th,td)]:border-b [&_:is(th,td)]:border-ts-borde [&_:is(th,td)]:px-16 [&_:is(th,td)]:py-8 [&_:is(th,td)]:text-left"
+        >
+          <thead>
+            <tr>
+              <th scope="col">{{ 'admin.referencias_envio.columnas.linea' | transloco }}</th>
+              <th scope="col">{{ 'admin.referencias_envio.columnas.categoria' | transloco }}</th>
+              <th scope="col">{{ 'admin.referencias_envio.columnas.peso' | transloco }}</th>
+              <th scope="col">
+                <span class="sr-only">{{
+                  'admin.referencias_envio.columnas.acciones' | transloco
+                }}</span>
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (categoria of categorias(); track categoria.categoriaId) {
+              <tr>
+                <td>{{ etiquetaLinea(categoria.linea) }}</td>
+                <td>{{ nombreCompleto(categoria) }}</td>
+                @if (categoria.pesoGramos === null) {
+                  <!-- "Sin peso" con palabras: un guion se lee igual que un cero, y no es lo
+                       mismo — sin peso, esos productos solo se venden con recogida. -->
+                  <td class="text-ts-error">
+                    {{ 'admin.referencias_envio.sin_peso' | transloco }}
+                  </td>
+                } @else {
+                  <td>
+                    {{
+                      'admin.referencias_envio.gramos' | transloco: { peso: categoria.pesoGramos }
+                    }}
+                  </td>
+                }
+                <td>
+                  <ts-boton
+                    [attr.data-abrir]="categoria.categoriaId"
+                    variante="secundario"
+                    [expandido]="editando() === categoria.categoriaId"
+                    [controla]="'formulario-peso-' + categoria.categoriaId"
+                    [etiquetaAccesible]="
+                      (categoria.pesoGramos === null
+                        ? 'admin.referencias_envio.poner_peso_de'
+                        : 'admin.referencias_envio.cambiar_peso_de'
+                      ) | transloco: { categoria: nombreCompleto(categoria) }
+                    "
+                    (click)="abrir(categoria)"
+                  >
+                    {{
+                      (categoria.pesoGramos === null
+                        ? 'admin.referencias_envio.poner_peso'
+                        : 'admin.referencias_envio.cambiar_peso'
+                      ) | transloco
+                    }}
+                  </ts-boton>
+                </td>
+              </tr>
+
+              @if (editando() === categoria.categoriaId) {
+                <tr [id]="'formulario-peso-' + categoria.categoriaId">
+                  <td colspan="4">
+                    <form
+                      class="flex flex-col gap-16"
+                      [formGroup]="formPeso"
+                      (submit)="$event.preventDefault(); guardarPeso(categoria)"
+                      (keydown.escape)="cancelar(categoria.categoriaId)"
+                    >
+                      <ts-campo
+                        [obligatorio]="true"
+                        [idCampo]="'peso-' + categoria.categoriaId"
+                        tipo="number"
+                        [label]="
+                          'admin.referencias_envio.peso_de'
+                            | transloco: { categoria: nombreCompleto(categoria) }
+                        "
+                        formControlName="pesoGramos"
+                      />
+
+                      @if (errorPeso(); as mensaje) {
+                        <p class="text-ts-error" role="alert">{{ mensaje }}</p>
+                      }
+
+                      <div class="flex flex-wrap gap-16">
+                        <ts-boton tipo="submit" [ocupado]="ocupado()">
+                          {{ 'admin.referencias_envio.guardar_peso' | transloco }}
+                        </ts-boton>
+                        @if (categoria.pesoGramos !== null) {
+                          <ts-boton
+                            variante="secundario"
+                            [ocupado]="ocupado()"
+                            (click)="quitarPeso(categoria)"
+                          >
+                            {{ 'admin.referencias_envio.quitar_peso' | transloco }}
+                          </ts-boton>
+                        }
+                        <ts-boton variante="secundario" (click)="cancelar(categoria.categoriaId)">
+                          {{ 'admin.referencias_envio.cancelar' | transloco }}
+                        </ts-boton>
+                      </div>
+                    </form>
+                  </td>
+                </tr>
+              }
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  }
+</section>

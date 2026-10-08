@@ -127,6 +127,15 @@ cuatro juntas o ninguna, y otro de positividad —que también está en el domin
 pero el sembrador escribe entidades JPA directo y no pasa por él—, y el panel
 pidiéndolos al crear una variante.
 
+**Desde el 7 de octubre de 2026 (`adr/0071`) una prenda sin medir sí se cotiza**,
+si es de ropa, calzado o bolsos. Dos tablas fuera del catálogo, creadas por la
+`V89`: `envio_peso_referencia` —un peso en gramos por categoría hoja, con
+`on delete cascade` sobre `categoria`— y `envio_medidas_referencia` —una sola
+fila, impuesta por `check (id = 1)`, con el largo, el ancho y el alto de la
+bolsa—. Las dos se editan desde el panel. Viven aparte de `categoria` a
+propósito: son datos del envío, no del árbol, y `Categoria` tiene más de cien
+usos que no tienen por qué enterarse.
+
 El catálogo sembrado quedó con **medidas de demostración, declaradas como tales**
 en `SembradorCatalogo` y en la migración. No es inventar un dato de negocio: ese
 catálogo es ficción completa —ni "Under Trail" ni el "Celular TecnoSport Aurora"

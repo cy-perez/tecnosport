@@ -53,4 +53,35 @@ class PaqueteTest {
     assertEquals(25, paquete.anchoCm());
     assertEquals(4, paquete.altoCm());
   }
+
+  /** Lo que el formulario de la plataforma acepta: kilos enteros, y hacia arriba (adr/0071). */
+  @Test
+  void unaFraccionDeKiloSubeAlKiloEntero() {
+    assertEquals(1000, new Paquete(190, 30, 25, 4).alKiloSiguiente().pesoGramos());
+    assertEquals(2000, new Paquete(1600, 30, 25, 4).alKiloSiguiente().pesoGramos());
+    assertEquals(2000, new Paquete(1001, 30, 25, 4).alKiloSiguiente().pesoGramos());
+  }
+
+  @Test
+  void unKiloExactoNoSube() {
+    assertEquals(1000, new Paquete(1000, 30, 25, 4).alKiloSiguiente().pesoGramos());
+    assertEquals(3000, new Paquete(3000, 30, 25, 4).alKiloSiguiente().pesoGramos());
+  }
+
+  @Test
+  void redondearElPesoNoTocaLasMedidas() {
+    Paquete redondeado = new Paquete(190, 30, 25, 4).alKiloSiguiente();
+
+    assertEquals(30, redondeado.largoCm());
+    assertEquals(25, redondeado.anchoCm());
+    assertEquals(4, redondeado.altoCm());
+  }
+
+  /** Cerca del tope de un int, sumar antes de dividir daría la vuelta a un peso negativo. */
+  @Test
+  void redondearCercaDelTopeNoDesborda() {
+    Paquete enorme = new Paquete(Integer.MAX_VALUE, 40, 30, 10).alKiloSiguiente();
+
+    assertEquals(2_147_483_000, enorme.pesoGramos());
+  }
 }

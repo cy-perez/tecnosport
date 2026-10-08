@@ -15,11 +15,34 @@ import co.tecnosport.api.domain.compartido.ExcepcionDeDominio;
  */
 public record Paquete(int pesoGramos, int largoCm, int anchoCm, int altoCm) {
 
+  private static final int GRAMOS_POR_KILO = 1000;
+
   public Paquete {
     exigirPositivo(pesoGramos, "El peso del paquete");
     exigirPositivo(largoCm, "El largo del paquete");
     exigirPositivo(anchoCm, "El ancho del paquete");
     exigirPositivo(altoCm, "El alto del paquete");
+  }
+
+  /**
+   * El mismo paquete con el peso redondeado <strong>hacia arriba</strong> al kilo entero: 190 g son
+   * 1 kg y 1.600 g son 2 kg ({@code adr/0071}).
+   *
+   * <p>No es una aproximación de este dominio sino la del formulario de la plataforma: "Cotizar y
+   * crear" solo acepta kilos enteros, y como la guía se crea ahí a mano, el flete que paga el
+   * comprador tiene que salir del mismo peso que se va a escribir en ese formulario. Hacia arriba y
+   * no al más cercano porque es lo que hace quien lo llena —1.200 g no se declaran como 1 kg— y
+   * porque declarar de menos es lo que cobra fletes de menos.
+   */
+  public Paquete alKiloSiguiente() {
+    // En long: cerca del tope de un int, sumar 999 antes de dividir daría la vuelta a negativo.
+    long kilos = ((long) pesoGramos + GRAMOS_POR_KILO - 1) / GRAMOS_POR_KILO;
+    int gramos =
+        (int)
+            Math.min(
+                kilos * GRAMOS_POR_KILO,
+                (Integer.MAX_VALUE / GRAMOS_POR_KILO) * (long) GRAMOS_POR_KILO);
+    return new Paquete(gramos, largoCm, anchoCm, altoCm);
   }
 
   private static void exigirPositivo(int valor, String queEs) {

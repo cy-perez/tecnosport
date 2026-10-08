@@ -28,6 +28,10 @@ import { PantallaDespiertaNavegador } from '../captura360/infrastructure/pantall
 import { SensorOrientacionNavegador } from '../captura360/infrastructure/sensor-orientacion-navegador';
 import { REPOSITORIO_REVISION_ENVIOS } from './envios/domain/repositorio-revision-envios.puerto';
 import { RevisionEnviosHttpRepositorio } from './envios/infrastructure/revision-envios-http.repositorio';
+import { REPOSITORIO_REFERENCIAS_ENVIO } from './envios/domain/repositorio-referencias-envio.puerto';
+import { ReferenciasEnvioHttpRepositorio } from './envios/infrastructure/referencias-envio-http.repositorio';
+import { REPOSITORIO_PAQUETES_PEDIDO } from './envios/domain/repositorio-paquetes-pedido.puerto';
+import { PaquetesPedidoHttpRepositorio } from './envios/infrastructure/paquetes-pedido-http.repositorio';
 import { REPOSITORIO_GARANTIAS } from './garantias/domain/repositorio-garantias.puerto';
 import { GarantiasHttpRepositorio } from './garantias/infrastructure/garantias-http.repositorio';
 import { REPOSITORIO_PEDIDOS_ADMIN } from './pedidos/domain/repositorio-pedidos-admin.puerto';
@@ -106,6 +110,8 @@ export const adminRoutes: Routes = [
               { provide: REPOSITORIO_RETRACTOS, useClass: RetractosHttpRepositorio },
               { provide: REPOSITORIO_GARANTIAS, useClass: GarantiasHttpRepositorio },
               { provide: REPOSITORIO_REVERSIONES, useClass: ReversionesHttpRepositorio },
+              // Los paquetes para crear la guía a mano (ADR-0071), también en la fila expandida.
+              { provide: REPOSITORIO_PAQUETES_PEDIDO, useClass: PaquetesPedidoHttpRepositorio },
             ],
             loadComponent: () =>
               import('./pedidos/presentation/lista/lista-pedidos-admin.page').then(
@@ -128,6 +134,22 @@ export const adminRoutes: Routes = [
             loadComponent: () =>
               import('./envios/presentation/bandeja/bandeja-revision.page').then(
                 (m) => m.BandejaRevisionPage,
+              ),
+          },
+          {
+            // Los pesos y las medidas con los que se cotiza lo que no se ha medido (ADR-0071).
+            // Ruta propia bajo `envios` y no una pestaña dentro de la bandeja: aquella es lo que pide
+            // ojo humano hoy, y esto es configuración que se toca de vez en cuando.
+            path: 'envios/referencias',
+            providers: [
+              {
+                provide: REPOSITORIO_REFERENCIAS_ENVIO,
+                useClass: ReferenciasEnvioHttpRepositorio,
+              },
+            ],
+            loadComponent: () =>
+              import('./envios/presentation/referencias/referencias-envio.page').then(
+                (m) => m.ReferenciasEnvioPage,
               ),
           },
           {

@@ -926,7 +926,8 @@ class PedidoControladorTest {
         CriteriosContraentrega criteriosContraentrega) {
       return new MetodosDePagoDisponibles(
           repositorioProductos,
-          new ArmadorDeBultos(repositorioProductos, Dinero.deCop(10_000), Dinero.deCop(5_000_000)),
+          ArmadorDeBultos.sinPromedios(
+              repositorioProductos, Dinero.deCop(10_000), Dinero.deCop(5_000_000)),
           cotizarEnvio,
           repositorioPedidos,
           criteriosContraentrega,
@@ -1003,7 +1004,8 @@ class PedidoControladorTest {
     CotizarEnvio cotizarEnvio(
         RepositorioProductos repositorioProductos, CotizadorEnvio cotizadorEnvio, Reloj reloj) {
       return new CotizarEnvio(
-          new ArmadorDeBultos(repositorioProductos, Dinero.deCop(10_000), Dinero.deCop(5_000_000)),
+          ArmadorDeBultos.sinPromedios(
+              repositorioProductos, Dinero.deCop(10_000), Dinero.deCop(5_000_000)),
           cotizadorEnvio,
           reloj);
     }

@@ -32,6 +32,7 @@ const PESTANAS: readonly PestanaAdmin[] = [
   { clave: 'admin.panel.ir_a_borradores', segmentos: ['borradores'] },
   { clave: 'admin.panel.ir_a_atencion', segmentos: ['atencion'] },
   { clave: 'admin.panel.ir_a_envios', segmentos: ['envios'] },
+  { clave: 'admin.panel.ir_a_referencias_envio', segmentos: ['envios', 'referencias'] },
   { clave: 'admin.panel.ir_a_clave', segmentos: ['clave'] },
 ];
 

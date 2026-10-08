@@ -1,7 +1,9 @@
 # ADR-0046: una variante sin medir se vende, pero solo con recogida
 
 Fecha: 2026-09-19
-Estado: aceptada
+Estado: aceptada, **reemplazada en parte por `ADR-0071`** (7 de octubre de 2026): la
+ropa, el calzado y los bolsos sin medir ya no van solo con recogida, se cotizan con
+promedios en una bolsa. La tecnología sin medir sigue exactamente como dice este ADR.
 Reemplaza en parte a: `ADR-0021`
 
 ## Contexto

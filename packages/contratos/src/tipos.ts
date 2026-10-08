@@ -196,6 +196,70 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/envios/paquetes/{pedidoId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["consultarPaquetes"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/envios/referencias": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["consultar"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/envios/referencias/medidas": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["fijarMedidas"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/envios/referencias/pesos/{categoriaId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["fijarPeso"];
+        post?: never;
+        delete: operations["quitarPeso"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/envios/revision": {
         parameters: {
             query?: never;
@@ -1842,6 +1906,14 @@ export interface components {
             /** Format: uuid */
             usuarioId?: string;
         };
+        CategoriaConPesoRespuesta: {
+            categoriaId?: string;
+            linea?: string;
+            nombre?: string;
+            /** Format: int32 */
+            pesoGramos?: number;
+            rama?: string;
+        };
         CategoriaRespuesta: {
             escalaTallas?: string[];
             hashtags?: string[];
@@ -2108,6 +2180,18 @@ export interface components {
             /** Format: int32 */
             totalSinExistenciaEnPublicados?: number;
         };
+        FijarMedidasDeReferenciaRequest: {
+            /** Format: int32 */
+            altoCm: number;
+            /** Format: int32 */
+            anchoCm: number;
+            /** Format: int32 */
+            largoCm: number;
+        };
+        FijarPesoDeReferenciaRequest: {
+            /** Format: int32 */
+            pesoGramos: number;
+        };
         FotoAprobadaPeticion: {
             colorHex?: string;
             /** Format: uuid */
@@ -2334,6 +2418,14 @@ export interface components {
             /** Format: uuid */
             varianteId?: string;
         };
+        MedidasDeReferenciaRespuesta: {
+            /** Format: int32 */
+            altoCm?: number;
+            /** Format: int32 */
+            anchoCm?: number;
+            /** Format: int32 */
+            largoCm?: number;
+        };
         MedidasRespuesta: {
             items?: components["schemas"]["MedidaDeVarianteRespuesta"][];
             /** Format: int32 */
@@ -2372,6 +2464,22 @@ export interface components {
             /** Format: uuid */
             pedidoId: string;
             referencia: string;
+        };
+        PaqueteRespuesta: {
+            /** Format: int32 */
+            altoCm: number;
+            /** Format: int32 */
+            anchoCm: number;
+            contenido: string;
+            /** Format: int32 */
+            largoCm: number;
+            /** Format: int32 */
+            pesoKg: number;
+            valorDeclarado: components["schemas"]["DineroRespuesta"];
+        };
+        PaquetesDePedidoRespuesta: {
+            conRecaudo: boolean;
+            paquetes: components["schemas"]["PaqueteRespuesta"][];
         };
         ParteDeMuestraRespuesta: {
             colores?: string[];
@@ -2433,6 +2541,11 @@ export interface components {
             totalPaginas?: number;
             /** Format: int64 */
             totalPedidos?: number;
+        };
+        PesoDeReferenciaRespuesta: {
+            categoriaId?: string;
+            /** Format: int32 */
+            pesoGramos?: number;
         };
         PlazoDeEntregaRespuesta: {
             /** Format: date-time */
@@ -2609,6 +2722,10 @@ export interface components {
         };
         ReenviarVerificacionRequest: {
             correo?: string;
+        };
+        ReferenciasDeEnvioRespuesta: {
+            categorias?: components["schemas"]["CategoriaConPesoRespuesta"][];
+            medidas?: components["schemas"]["MedidasDeReferenciaRespuesta"];
         };
         RegistrarGestionRequest: {
             gestion?: string;
@@ -3336,6 +3453,118 @@ export interface operations {
             header?: never;
             path: {
                 id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    consultarPaquetes: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                pedidoId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PaquetesDePedidoRespuesta"];
+                };
+            };
+        };
+    };
+    consultar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ReferenciasDeEnvioRespuesta"];
+                };
+            };
+        };
+    };
+    fijarMedidas: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FijarMedidasDeReferenciaRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["MedidasDeReferenciaRespuesta"];
+                };
+            };
+        };
+    };
+    fijarPeso: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                categoriaId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FijarPesoDeReferenciaRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PesoDeReferenciaRespuesta"];
+                };
+            };
+        };
+    };
+    quitarPeso: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                categoriaId: string;
             };
             cookie?: never;
         };

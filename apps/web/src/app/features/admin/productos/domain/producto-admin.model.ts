@@ -69,8 +69,9 @@ export interface AgregarVarianteAdmin {
   readonly existenciaInicial: number;
   /** El paquete: sin peso ni dimensiones no hay cotización de envío (adr/0021). */
   /**
-   * Las cuatro medidas van juntas o no van (`ADR-0046`). Ausentes, la variante se vende solo con
-   * recogida en el punto — el servidor lo traduce a `ARTICULO_SIN_MEDIDAS` al cotizar.
+   * Las cuatro medidas van juntas o no van (`ADR-0046`). Ausentes, la ropa, el calzado y los bolsos
+   * se cotizan con el peso promedio de su categoría (`ADR-0071`); la tecnología, o una categoría sin
+   * peso, se vende solo con recogida — el servidor lo traduce a `ARTICULO_SIN_MEDIDAS` al cotizar.
    */
   readonly pesoGramos: number | null;
   readonly largoCm: number | null;

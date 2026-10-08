@@ -27,6 +27,7 @@ import { TsPrecio } from '../../../../../shared/ts-precio/ts-precio';
 import { OpcionSelect, TsSelect } from '../../../../../shared/ui/select/ts-select';
 import { TsSelectControl } from '../../../../../shared/ui/select/ts-select-control';
 import { PanelGarantia } from '../../../garantias/presentation/panel-garantia/panel-garantia';
+import { PaquetesParaGuia } from '../../../envios/presentation/paquetes/paquetes-para-guia';
 import { PanelRetracto } from '../../../retractos/presentation/panel-retracto/panel-retracto';
 import { PanelReversion } from '../../../reversiones/presentation/panel-reversion/panel-reversion';
 import { usarMigasAdmin } from '../../../migas-admin';
@@ -50,6 +51,18 @@ import {
 import { filtroDesdeQueryParams, queryParamsDesdeFiltro } from '../../domain/query-params-filtro';
 import { mensajeDeError } from '../../../../../core/errores/mensaje-de-error';
 import { fechaConHora, ultimoDia } from '../../../../../core/i18n/fecha-colombia';
+
+/**
+ * ¿Se ofrece el botón "Emitir guía con la transportadora"? **No, desde el 7 de octubre de 2026**
+ * (`ADR-0071`): mientras el negocio crea las guías a mano en el panel de Skydropx ("Cotizar y
+ * crear"), un botón que las emite por API es la forma de terminar con dos guías pagadas para el
+ * mismo pedido. La guía se registra con el formulario de "guía emitida por fuera", que sigue igual.
+ *
+ * Es una constante y no se borra el camino entero porque la intención es volver a él: el día que
+ * el flujo con Skydropx se automatice, esto vuelve a `true` y el botón, su aviso y la mutación ya
+ * están escritos y probados del lado del servidor.
+ */
+const EMISION_AUTOMATICA = false;
 
 const ESTADOS: readonly EstadoPedido[] = [
   'PAGO_PENDIENTE',
@@ -140,6 +153,7 @@ const CLAVE_MOTIVO_CANCELACION: Record<MotivoCancelacion, string> = {
   imports: [
     BandejaPagosSinPedido,
     PanelGarantia,
+    PaquetesParaGuia,
     PanelRetracto,
     PanelReversion,
     ReactiveFormsModule,
@@ -158,6 +172,8 @@ const CLAVE_MOTIVO_CANCELACION: Record<MotivoCancelacion, string> = {
 })
 export class ListaPedidosAdminPage {
   protected readonly migas = usarMigasAdmin([{ clave: 'admin.pedidos.titulo' }]);
+
+  protected readonly emisionAutomatica = EMISION_AUTOMATICA;
 
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);

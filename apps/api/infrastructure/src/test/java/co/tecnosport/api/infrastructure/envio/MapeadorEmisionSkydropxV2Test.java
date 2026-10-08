@@ -158,7 +158,8 @@ class MapeadorEmisionSkydropxV2Test {
     assertEquals(2, paquetes.size());
     assertEquals("1", paquetes.get(0).path("package_number").asString());
     assertEquals("Electrónica y accesorios", paquetes.get(0).path("package_content").asString());
-    assertEquals("4G", paquetes.get(0).path("package_type").asString());
+    // Bolsa plástica y no caja de cartón desde el 7 de octubre de 2026 (adr/0071).
+    assertEquals("5H4", paquetes.get(0).path("package_type").asString());
     assertEquals("2", paquetes.get(1).path("package_number").asString());
     assertEquals("Ropa y calzado deportivo", paquetes.get(1).path("package_content").asString());
   }

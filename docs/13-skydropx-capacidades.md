@@ -517,7 +517,12 @@ recortadas, no reescritas— viven como fixtures en
   leer sin emitir una guía.~~ **El catálogo se leyó el 15 de septiembre sin emitir
   nada (§6.5)**: son 59 códigos de embalaje de la ONU y el que aplica es **`4G`,
   caja de cartón**. Sigue sin ser un dato de negocio; es una elección de operación,
-  y ya está tomada.
+  y ya está tomada. ~~`4G`~~ **`5H4`, bolsa plástica, desde el 7 de octubre de 2026
+  (`ADR-0071`)**, sin probar todavía contra la plataforma.
+
+  Y `package_content` dejó de ser una línea sola: la bolsa de lo que no se mide
+  junta varias y las declara todas, separadas por coma ("Ropa deportiva, Calzado
+  deportivo"). Tampoco se ha probado cuánto texto acepta el campo.
 
   **Por qué el mapa de `package_content` ya no se escribe aquí.** Esta tabla lo
   tuvo, y decía `CELULARES` → "Equipo de telefonía móvil". Ese mismo 14 de
@@ -1467,7 +1472,8 @@ valor declarado se sale del rango. Ya se puede poner precio a la decisión.
   checkout lo dice nombrándolo** (`ADR-0036`).
 - ~~**`package_type`**: pedir el catálogo a `GET /shipments/packagings` y elegir.~~
   Catálogo leído (§6.5): 59 códigos de embalaje de la ONU, y el que aplica es `4G`,
-  caja de cartón. Queda como elección de operación, no como incógnita.
+  caja de cartón. Queda como elección de operación, no como incógnita. Desde el 7 de
+  octubre de 2026 es `5H4`, bolsa plástica (`ADR-0071`).
 - ~~**Por qué la tarifa de 99 minutes exige `declared_amount` al emitir** (§6.3).~~
   Resuelto el mismo día (§6.5): era el mismo valor declarado mal puesto. Con la
   cotización corregida, esa tarifa emite `202`.
@@ -1584,6 +1590,14 @@ de embalaje de la ONU, no una lista de Skydropx. Los que le sirven al negocio so
 El resto son bidones de acero, jaulas, cajas de madera contrachapada y envases compuestos.
 **Deja de ser una incógnita de la API y pasa a ser una elección de operación**: lo que
 TecnoSport despacha va en caja de cartón, salvo que alguien decida mandar algo en bolsa.
+
+> **Y alguien lo decidió el 7 de octubre de 2026 (`ADR-0071`): todo va en `5H4`, bolsa
+> plástica.** La constante de `MapeadorEmisionSkydropxV2` cambió de `4G` a `5H4`. Ese mismo
+> día las guías pasaron a crearse a mano en "Cotizar y crear", cuyo formulario pide el
+> peso en **kilos enteros** —igual que `POST /pickups` en §6.6—, así que el armador de
+> bultos redondea todo peso hacia arriba al kilo antes de cotizar. La cotización por API
+> sí acepta decimales; se redondea para que el sitio cotice con lo mismo que se escribe a
+> mano.
 
 ### 6.6 La recolección, ejercida a medias (2026-09-15, quinta parte)
 

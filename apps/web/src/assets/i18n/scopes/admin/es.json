@@ -47,7 +47,10 @@
     "producto_de_proveedor_ya_existe": "Este anuncio ya es un producto del catálogo: es el mismo título al mismo precio. Rechaza el borrador.",
     "lote_en_curso": "La ingesta todavía se está procesando. Espera a que termine para eliminarla.",
     "pago_sin_pedido_ya_devuelto": "Ese pago ya tiene registrada su devolución.",
-    "inventario_sin_confirmar": "No hay existencia para todas las líneas: repón y vuelve a intentarlo, o cancela con reintegro."
+    "inventario_sin_confirmar": "No hay existencia para todas las líneas: repón y vuelve a intentarlo, o cancela con reintegro.",
+    "peso_de_referencia_no_admitido": "Esa categoría no lleva peso de referencia: es de tecnología, que se mide producto por producto, o tiene subcategorías, y el peso va en cada una de ellas.",
+    "articulo_sin_medidas": "Un artículo de este pedido no tiene medidas ni peso de referencia en su categoría. Mídelo, o ponle peso a su categoría en \"Pesos y medidas de envío\".",
+    "articulo_no_asegurable": "Un paquete de este pedido vale más de lo que la transportadora asegura, así que no se puede despachar a domicilio."
   },
   "iniciarSesion": {
     "titulo": "Panel administrativo",
@@ -74,7 +77,7 @@
     "ir_a_envios": "Revisión de envíos",
     "ir_a_existencias": "Existencias",
     "sinMedir": {
-      "aviso": "{{total}} variante(s) del catálogo están sin medir, {{publicados}} de ellas en productos publicados. Sin peso ni dimensiones no se puede cotizar el envío: solo se entregan con recogida en el punto.",
+      "aviso": "{{total}} variante(s) del catálogo están sin medir, {{publicados}} de ellas en productos publicados. Las de ropa, calzado y bolsos se cotizan con el peso promedio de su categoría; las de tecnología, y las de una categoría sin peso, solo se entregan con recogida en el punto.",
       "enlace": "Ver y medir"
     },
     "ir_a_marcas": "Marcas",
@@ -89,7 +92,8 @@
     "navegacion": "Secciones del panel",
     "ir_a_proveedores": "Proveedores",
     "ir_a_ingestas": "Ingestas",
-    "ir_a_borradores": "Borradores"
+    "ir_a_borradores": "Borradores",
+    "ir_a_referencias_envio": "Pesos y medidas de envío"
   },
   "pedidos": {
     "titulo": "Pedidos",
@@ -183,7 +187,8 @@
       "guia_requerida": "Escribe el número de guía.",
       "costo_envio_requerido": "Escribe lo que costó este envío. Si todavía no lo sabes, escribe 0 y corrígelo después.",
       "pagado_sin_inventario": "El pago entró cuando la reserva ya había vencido y no había existencia. Cuando repongas, confírmalo para prepararlo; si no va a haber, cancélalo con reintegro.",
-      "confirmar_inventario": "Confirmar inventario y preparar"
+      "confirmar_inventario": "Confirmar inventario y preparar",
+      "guia_en_plataforma": "La guía se crea a mano en Skydropx (Cotizar y crear) con los paquetes de abajo, y se registra aquí con su número."
     },
     "pagos_sin_pedido": {
       "titulo": "Pagos por devolver ({{cuantos}})",
@@ -365,7 +370,7 @@
     "capturar360": "Capturar 360",
     "sinMedir": {
       "titulo": "Variantes sin medir",
-      "explicacion": "Una variante sin peso ni dimensiones se vende, pero solo con recogida en el punto: cotizar su envío a domicilio se rechaza nombrándola. Las medidas son las del producto ya empacado, no las del producto desnudo.",
+      "explicacion": "Una variante sin peso ni dimensiones se vende igual. Si es de ropa, calzado o bolsos, su envío se cotiza con el peso promedio de su categoría (\"Pesos y medidas de envío\"); si es de tecnología, o su categoría no tiene peso, solo se entrega con recogida en el punto. Las medidas son las del producto ya empacado, no las del producto desnudo.",
       "resumen": "{{total}} sin medir, {{publicados}} en productos ya publicados.",
       "ninguna": "No queda ninguna variante sin medir.",
       "medida": "Listo: {{sku}} ya tiene sus medidas y se puede cotizar su envío a domicilio.",
@@ -415,7 +420,7 @@
     },
     "medidas": {
       "titulo": "Medidas del paquete",
-      "explicacion": "Cada variante activa con el peso y las medidas de su caja, las tenga o no. Sin las cuatro cifras no se puede cotizar el envío y el producto solo se entrega con recogida en el punto. Una medida ya tomada se puede corregir aquí: si está mal, se cobra el flete equivocado en cada pedido de esa variante.",
+      "explicacion": "Cada variante activa con el peso y las medidas de su caja, las tenga o no. Sin las cuatro cifras, la tecnología no se puede cotizar y solo se entrega con recogida en el punto; la ropa, el calzado y los bolsos se cotizan con los promedios de \"Pesos y medidas de envío\", y medirlos aquí solo afina el flete. Una medida ya tomada se puede corregir: si está mal, se cobra el flete equivocado en cada pedido de esa variante.",
       "resumen": "{{total}} variante(s) activas, {{sinMedir}} sin medir.",
       "ninguna": "Todavía no hay variantes activas en el catálogo.",
       "errorLista": "No pudimos cargar las medidas. Vuelve a intentarlo.",
@@ -1149,5 +1154,68 @@
       "error": "No se pudo borrar el borrador. Intenta de nuevo.",
       "explicacionSinProducto": "Su producto ya se borró: este borrador ya no reconoce nada y solo guarda los mensajes y las fotos del proveedor. Borrarlo los libera del bucket."
     }
+  },
+  "referencias_envio": {
+    "titulo": "Pesos y medidas de envío",
+    "explicacion": "La ropa, el calzado deportivo y los bolsos que no se han medido uno por uno se cotizan con estos promedios: van todos en una bolsa con las medidas de abajo, y el peso es la suma del promedio de cada producto, redondeada al kilo siguiente. La tecnología no usa promedios: se mide con la ficha del fabricante. Los cambios valen desde la siguiente cotización.",
+    "error_lista": "No se pudieron cargar los pesos y las medidas. Recarga la página.",
+    "medidas_titulo": "Medidas de la bolsa",
+    "medidas_ayuda": "Son las mismas para las tres líneas. La transportadora cobra por peso volumétrico, así que estas medidas suelen pesar más que la prenda: con 40 × 30 × 10 cm, cualquier bolsa se cotiza como de unos 5 kg.",
+    "sin_medidas": "No hay medidas guardadas: mientras falten, ningún producto sin medir se cotiza, y solo se vende con recogida en el punto.",
+    "medidas_leyenda": "Medidas de la bolsa, en centímetros",
+    "largo": "Largo (cm)",
+    "ancho": "Ancho (cm)",
+    "alto": "Alto (cm)",
+    "guardar_medidas": "Guardar las medidas",
+    "faltan_medidas": "Faltan medidas, o alguna está en cero. Escribe el largo, el ancho y el alto en centímetros.",
+    "error_medidas": "No se pudieron guardar las medidas.",
+    "medidas_guardadas": "Medidas guardadas. La siguiente cotización ya las usa.",
+    "pesos_titulo": "Peso promedio por tipo de producto",
+    "pesos_ayuda": "Un peso por cada categoría, en gramos. Una categoría sin peso no se cotiza: sus productos sin medir solo se venden con recogida en el punto. Un producto medido usa siempre su propia medida.",
+    "ninguna": "No hay categorías de ropa, calzado ni bolsos todavía.",
+    "resumen": "{{total}} categoría(s), {{sinPeso}} sin peso.",
+    "columnas": {
+      "linea": "Línea",
+      "categoria": "Categoría",
+      "peso": "Peso promedio",
+      "acciones": "Acciones"
+    },
+    "lineas": {
+      "ROPA": "Ropa",
+      "CALZADO": "Calzado deportivo",
+      "BOLSOS": "Bolsos"
+    },
+    "sin_peso": "Sin peso: solo recogida",
+    "gramos": "{{peso}} g",
+    "poner_peso": "Poner peso",
+    "cambiar_peso": "Cambiar",
+    "poner_peso_de": "Poner el peso de {{categoria}}",
+    "cambiar_peso_de": "Cambiar el peso de {{categoria}}",
+    "peso_de": "Peso promedio de {{categoria}} (gramos)",
+    "guardar_peso": "Guardar el peso",
+    "quitar_peso": "Quitar el peso",
+    "cancelar": "Cancelar",
+    "falta_peso": "Falta el peso, o está en cero. Escríbelo en gramos.",
+    "error_peso": "No se pudo guardar el cambio.",
+    "peso_guardado": "Peso de {{categoria}} guardado: {{peso}} g.",
+    "peso_quitado": "{{categoria}} quedó sin peso: sus productos sin medir solo se venden con recogida."
+  },
+  "paquetes_guia": {
+    "titulo": "Paquetes para crear la guía",
+    "cargando": "Calculando los paquetes…",
+    "error": "No se pudieron calcular los paquetes de este pedido.",
+    "ayuda": "Crea {{cuantos}} paquete(s) en Skydropx con estos datos, tal cual: son los mismos con los que se le cotizó el envío al comprador.",
+    "con_recaudo": "Contraentrega: cada valor declarado ya lleva repartido el flete, y la suma es lo que la transportadora cobra en la puerta. Escribe cada uno como aparece; no pongas el total del pedido en cada paquete.",
+    "columnas": {
+      "paquete": "Paquete",
+      "empaque": "Empaque",
+      "medidas": "Largo × ancho × alto",
+      "peso": "Peso",
+      "valor_declarado": "Valor declarado",
+      "contenido": "Contenido"
+    },
+    "bolsa_plastica": "Saco (bolsa) de película de plástico",
+    "centimetros": "{{largo}} × {{ancho}} × {{alto}} cm",
+    "kilos": "{{peso}} kg"
   }
 }

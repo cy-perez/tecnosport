@@ -1,5 +1,6 @@
 package co.tecnosport.api.bootstrap.envio;
 
+import co.tecnosport.api.application.catalogo.RepositorioCategorias;
 import co.tecnosport.api.application.catalogo.RepositorioProductos;
 import co.tecnosport.api.application.compartido.EnTransaccionPropia;
 import co.tecnosport.api.application.compartido.EnviadorDeCorreo;
@@ -14,6 +15,8 @@ import co.tecnosport.api.application.envio.AvisarSaldoBajo;
 import co.tecnosport.api.application.envio.AvisarSobrecostoDeEnvio;
 import co.tecnosport.api.application.envio.ConciliarEnvios;
 import co.tecnosport.api.application.envio.ConciliarGuia;
+import co.tecnosport.api.application.envio.ConsultarPaquetesDePedido;
+import co.tecnosport.api.application.envio.ConsultarReferenciasDeEnvio;
 import co.tecnosport.api.application.envio.ConsultorDeSaldo;
 import co.tecnosport.api.application.envio.ConsultorDeSeguimiento;
 import co.tecnosport.api.application.envio.ConsultorDeSobrecostos;
@@ -21,15 +24,19 @@ import co.tecnosport.api.application.envio.CotizadorEnvio;
 import co.tecnosport.api.application.envio.CotizarEnvio;
 import co.tecnosport.api.application.envio.EmisorDeGuias;
 import co.tecnosport.api.application.envio.EmitirGuiaDePedido;
+import co.tecnosport.api.application.envio.FijarMedidasDeReferencia;
+import co.tecnosport.api.application.envio.FijarPesoDeReferencia;
 import co.tecnosport.api.application.envio.LectorEventoDeEnvio;
 import co.tecnosport.api.application.envio.ListarEnviosEnRevision;
 import co.tecnosport.api.application.envio.MetodosDePagoDisponibles;
+import co.tecnosport.api.application.envio.QuitarPesoDeReferencia;
 import co.tecnosport.api.application.envio.RecibirEventoDeEnvio;
 import co.tecnosport.api.application.envio.RepositorioAcusesDeRevision;
 import co.tecnosport.api.application.envio.RepositorioAvisosDeRevision;
 import co.tecnosport.api.application.envio.RepositorioAvisosDeSobrecosto;
 import co.tecnosport.api.application.envio.RepositorioEmisiones;
 import co.tecnosport.api.application.envio.RepositorioEnvios;
+import co.tecnosport.api.application.envio.RepositorioReferenciasDeEnvio;
 import co.tecnosport.api.application.envio.ResolverEmisionIndeterminada;
 import co.tecnosport.api.application.envio.ResolverEmisionesEnCurso;
 import co.tecnosport.api.application.envio.VerificadorFirmaEnvio;
@@ -59,6 +66,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 import java.util.stream.Collectors;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -251,11 +259,47 @@ public class ConfiguracionEnvio {
    */
   @Bean
   public ArmadorDeBultos armadorDeBultos(
-      RepositorioProductos repositorioProductos, PropiedadesSkydropx propiedades) {
+      RepositorioProductos repositorioProductos,
+      RepositorioReferenciasDeEnvio referenciasDeEnvio,
+      PropiedadesSkydropx propiedades) {
     return new ArmadorDeBultos(
         repositorioProductos,
+        referenciasDeEnvio,
         Dinero.deCop(propiedades.valorDeclaradoMinimo()),
         Dinero.deCop(propiedades.valorDeclaradoMaximo()));
+  }
+
+  // Las referencias de envío del panel (adr/0071): el peso promedio por categoría y las medidas de
+  // la bolsa en la que se despachan la ropa, el calzado y los bolsos sin medir.
+
+  @Bean
+  public ConsultarReferenciasDeEnvio consultarReferenciasDeEnvio(
+      RepositorioReferenciasDeEnvio referenciasDeEnvio, RepositorioCategorias categorias) {
+    return new ConsultarReferenciasDeEnvio(referenciasDeEnvio, categorias);
+  }
+
+  @Bean
+  public FijarPesoDeReferencia fijarPesoDeReferencia(
+      RepositorioReferenciasDeEnvio referenciasDeEnvio, RepositorioCategorias categorias) {
+    return new FijarPesoDeReferencia(referenciasDeEnvio, categorias);
+  }
+
+  @Bean
+  public QuitarPesoDeReferencia quitarPesoDeReferencia(
+      RepositorioReferenciasDeEnvio referenciasDeEnvio) {
+    return new QuitarPesoDeReferencia(referenciasDeEnvio);
+  }
+
+  @Bean
+  public FijarMedidasDeReferencia fijarMedidasDeReferencia(
+      RepositorioReferenciasDeEnvio referenciasDeEnvio) {
+    return new FijarMedidasDeReferencia(referenciasDeEnvio);
+  }
+
+  @Bean
+  public ConsultarPaquetesDePedido consultarPaquetesDePedido(
+      RepositorioPedidos repositorioPedidos, ArmadorDeBultos armadorDeBultos) {
+    return new ConsultarPaquetesDePedido(repositorioPedidos, armadorDeBultos);
   }
 
   @Bean
@@ -276,7 +320,8 @@ public class ConfiguracionEnvio {
       CotizarEnvio cotizarEnvio,
       EmisorDeGuias emisorDeGuias,
       EnTransaccionPropia enTransaccionPropia,
-      Reloj reloj) {
+      Reloj reloj,
+      @Value("${tecnosport.skydropx.emision.automatica}") boolean emisionAutomatica) {
     return new EmitirGuiaDePedido(
         repositorioPedidos,
         repositorioEmisiones,
@@ -284,7 +329,8 @@ public class ConfiguracionEnvio {
         cotizarEnvio,
         emisorDeGuias,
         enTransaccionPropia,
-        reloj);
+        reloj,
+        emisionAutomatica);
   }
 
   /**
