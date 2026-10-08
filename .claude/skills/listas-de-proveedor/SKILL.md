@@ -208,20 +208,55 @@ Copia el mensaje completo a `lista.txt` **sin corregir nada**: los emojis, los
 espacios raros y los saltos de línea son justamente las señales que usa el parser.
 Si llegaron dos mensajes (gama alta y variedad), pégalos en el mismo archivo.
 
-### 2. Parsear
+### 2. Parsear y comparar con lo conocido
 
 ```bash
 python3 scripts/parsear_lista.py lista.txt --salida productos.json --reporte revision.md
+python3 scripts/comparar_lista.py productos.json
 ```
 
-Deja `productos.json` (productos, repetidos que se fusionaron, descartados y
-líneas sin clasificar) y `revision.md`, un resumen legible. Lee `revision.md`
-antes de seguir.
+El parser deja `productos.json` (productos, repetidos que se fusionaron,
+descartados y líneas sin clasificar) y `revision.md`, un resumen legible.
+
+La comparación, que se corre **una vez por lista y antes del paso 4**, cruza cada
+producto con `referencias/conocidos.json` y lo clasifica:
+
+| Estado | Qué hereda de la base | Qué queda pendiente para el paso 4 |
+|---|---|---|
+| nuevo | nada | todo: precio, ficha y descripción |
+| sin precio vigente | descripción, metadatos, colores | solo el precio (venció a los 7 días o nunca lo tuvo) |
+| costo cambiado | todo, con el margen recalculado al costo de hoy | nada |
+| sin cambios | todo | nada |
+
+**Los colores se heredan solo si la lista marca hoy los mismos emojis** que la vez
+en que se decidieron. Si marca otros —o ninguno, cuando antes marcaba—, el
+producto queda sin colores, sin la sección de colores en la descripción y con la
+tarea `colores` pendiente: confírmalos contra la paleta oficial (regla 13) y
+escribe `colores_oficiales`; la sección se rehace al consolidar. Ningún script
+hace esta tarea.
+
+Y anota:
+
+- los **desaparecidos** —conocidos que vinieron en la última lista de su mensaje
+  y hoy no, aunque el mensaje llegó—, que son los que hay que dejar de ofrecer.
+  Los que ya faltaban antes quedan como ausentes y no se repiten;
+- los **posibles el mismo**: un nuevo y un desaparecido que solo difieren en la
+  SIM. Casi siempre es la anotación `*1 SIM*` pegada a otra línea. Si es el
+  mismo equipo, agrega la equivalencia que propone el reporte y vuelve a parsear;
+- los conocidos que vinieron pero **no entran** (sin precio, bajo el mínimo).
+
+Escribe `cambios.md` junto a `productos.json`. Lee los dos reportes antes de
+seguir.
+
+Con la lista del 08/10/2026 fueron 18 nuevos, 7 sin precio vigente, 19 con otro
+costo y 46 sin cambios: al paso 4 llegaron 25 de 90 productos.
 
 ### 3. Revisar con la persona antes de investigar
 
 Muéstrale en el chat, en pocas líneas: cuántos productos entraron, cuántos se
-descartaron y por qué, y la lista de alertas `revisar`. Pregunta solo lo que
+descartaron y por qué, la lista de alertas `revisar`, y de `cambios.md` cuántos
+son nuevos, qué costos cambiaron —en especial los que quedan **por debajo del
+costo**— y cuáles desaparecieron, que son los que hay que dejar de ofrecer. Pregunta solo lo que
 realmente bloquea —un modelo irreconocible, una marca ambigua— y no lo que puedes
 verificar tú mismo buscando. Si algo quedó en `sin_clasificar`, resuélvelo aquí:
 esas líneas son productos que se perderían en silencio.
@@ -242,7 +277,11 @@ que vas a necesitar en la extensión del navegador**. Un dominio sin autorizar
 corta el lote entero a mitad de camino. La lista de los que hicieron falta la
 última vez está en `referencias/fichas-tecnicas.md`.
 
-Para cada producto incluido, en una sola pasada de búsquedas:
+Para cada producto con algo `pendiente` —los nuevos, entero; los de precio
+vencido, solo el precio—, en una sola pasada de búsquedas. Lo que se heredó de la
+base no se vuelve a investigar. **El aviso de retiro (regla 15) sí se revisa para
+todas las marcas de la lista**, conocidas o no: un retiro puede publicarse después
+de la primera vez que se investigó el producto.
 
 - **Nombre comercial oficial** — confirma la referencia real antes de titular.
   Las listas abrevian ("SAMSUNG BAND FIT 3" es la Galaxy Fit3, "WACH 8" es Galaxy
@@ -276,7 +315,9 @@ Para cada producto incluido, en una sola pasada de búsquedas:
 #### Cómo se corre el paso 4
 
 Cuatro scripts, en este orden. Ninguno decide por su cuenta lo que exige
-criterio.
+criterio, y los cuatro procesan solo lo que el producto tiene `pendiente`
+(`scripts/pendientes.py`): un precio, una ficha o una descripción heredados no se
+tocan. Sin la comparación procesan todo, como antes.
 
 ```bash
 # 1. Cosecha de precios: Éxito, Olímpica y Jumbo por su catálogo VTEX.
@@ -322,6 +363,11 @@ Escribe los resultados de vuelta en `productos.json` (`precio_mercado_cop`,
 `colores_oficiales`, `titulo` corregido). Guarda cada búsqueda con su fuente: el
 Excel lleva una columna de fuentes y sin ellas el precio no es verificable.
 
+**Cada título que corrijas va también a `referencias/equivalencias.json`**, con el
+`id_lista` del producto como clave. Si no, la lista siguiente lo vuelve a traer
+crudo y se investiga otra vez como si fuera nuevo. Formato y reglas en
+`referencias/titulos.md`.
+
 **Un producto sin ficha oficial no se queda sin descripción, pero tampoco se la
 inventa.** Se escribe una corta con lo que el nombre comercial y la línea del
 proveedor establecen, y una nota que diga qué falta y que se le pidió al
@@ -348,11 +394,37 @@ El ZIP sale sin fotos y sin ningún `FOTOS-PENDIENTES.md`: es lo esperado
 (regla 16), no un entregable a medias. `--imagenes` sigue existiendo para el
 caso del apéndice.
 
-### 6. Entregar
+### 6. Guardar lo investigado
+
+```bash
+python3 scripts/conocidos.py consolidar catalogo/productos.json            # simula
+python3 scripts/conocidos.py consolidar catalogo/productos.json --escribir
+```
+
+Lleva a `referencias/conocidos.json` cada producto terminado (con descripción):
+el precio de mercado con sus fuentes y su fecha, la descripción, los metadatos,
+los colores y los supuestos que escribiste al investigar; y el costo y la fecha
+de la lista. Es lo que evita investigar otra vez, en la lista siguiente, lo que
+ya se investigó: contra la del 08/10/2026 la base reconoce 72 de 90 productos.
+
+La base va en el repositorio y no se edita a mano. Un precio de mercado vale
+**7 días** desde la fecha de su consulta (decisión del negocio, 08/10/2026), que
+escribe `asignar_precios.py`; un precio que se copió de la base conserva la fecha
+que traía, y consolidar días después no lo rejuvenece. Lo que salga «sin
+terminar» no se guarda: dilo en la entrega.
+
+Consolidar se niega a correr sobre una corrida que no pasó por la comparación,
+y no guarda los supuestos que hablan del precio o citan una línea —«precio
+tomado del bloque PRECIOS DE VENTA (línea 530…)»—: son de esa lista y serían
+falsos en la siguiente. Si escribes un supuesto que sí vale para el producto,
+no lo ates a una línea ni a un precio.
+
+### 7. Entregar
 
 Preséntale los dos archivos y, en dos o tres líneas, lo que necesita saber:
-productos listos, productos que quedaron con pendientes y cualquier caso donde el
-promedio del mercado esté por debajo del precio de lista. Ese caso significa que a
+productos listos, productos que quedaron con pendientes, los desaparecidos —la
+hoja del mismo nombre en el Excel— y cualquier caso donde el promedio del
+mercado esté por debajo del precio de lista. Ese caso significa que a
 ese precio se pierde plata: márcalo, no lo publiques callado.
 
 ## Si algún día hay fotos
@@ -394,6 +466,17 @@ de partners si la tienda es revendedor autorizado, o fotos propias.
 
 No hay que volver a hacerlo a mano en cada lista:
 
+- **Viñetas de temporada.** Cualquier emoji al inicio de una línea con precio es
+  una viñeta, esté o no en las tablas. La lista del 08/10/2026 trajo 🎃 y, antes
+  de esto, perdió 52 líneas —23 equipos publicables— en `sin_clasificar`. Con
+  ella llegaron otros tres defectos que ya no se repiten: la SIM escrita en la
+  misma línea (`*1 SIM*`) se ignoraba y fusionaba dos referencias, un precio sin
+  `$` descartaba el equipo, y la serie F de POCO salía como Xiaomi.
+- **Títulos ya confirmados.** Lo que se corrigió en una lista anterior está en
+  `referencias/equivalencias.json` y se aplica solo: el producto sale con su id y
+  su título definitivos, el id de la lista queda en `id_lista` y la alerta de
+  confirmar el nombre no vuelve a aparecer. En la lista del 08/10/2026 fueron 29
+  de 90 productos.
 - **Prefijos de exportación de WhatsApp** (`[10:05, 12/09/2026] +57 300 123 4567:`)
   se quitan antes de leer la línea.
 - **Encabezados sin la negrita de WhatsApp.** El parser reconocía la sección
@@ -417,8 +500,12 @@ No hay que volver a hacerlo a mano en cada lista:
   producto marcado `por_llegar`, para no publicar como disponible algo que no está.
 - **El mismo equipo repetido** entre el aviso del día y la lista larga se fusiona
   en un solo producto, quedándose con el registro más completo. Solo se fusionan
-  si coinciden marca, capacidad, RAM y precio; ante la duda quedan separados,
-  porque juntar un Pro con un Pro Max es peor que tener dos fichas.
+  si coinciden el modelo, la capacidad y lo que se sabe de marca, red, RAM y SIM;
+  ante la duda quedan separados, porque juntar un Pro con un Pro Max es peor que
+  tener dos fichas. El precio **no** separa: si difiere, vale el menor (regla 7).
+  Una línea que no menciona la SIM no contradice a la que sí, así que el
+  `X5D 4G (4+128)` sin SIM a $380 se fusiona con el de `*1 SIM*` a $370 (lista
+  del 08/10/2026, confirmado por el negocio ese día).
 - **SIM y eSIM**: `SIM/ESIM`, `DUAL SIM`, `1 SIM` y `ESIM` salen como atributo, no
   como parte del nombre.
 - **RAM virtual** (`8+8`): se publica solo la física y queda la nota de que el
@@ -501,21 +588,28 @@ colores es un producto con cuatro variantes.
 
 ```
 scripts/parsear_lista.py          paso 2  lista.txt → productos.json + revision.md
+scripts/comparar_lista.py         paso 2  productos.json contra conocidos.json → pendientes + cambios.md
+scripts/pendientes.py             paso 4  qué le toca a cada script según lo pendiente
 scripts/precios.py                paso 4  cosecha precios VTEX de Éxito, Olímpica y Jumbo
 scripts/asignar_precios.py        paso 4  decide el precio de mercado y el margen
 scripts/icecat_local.py           paso 4  trae la ficha técnica oficial de Open Icecat
 scripts/redactar_fichas.py        paso 4  prosa + ficha oficial → descripción y metadatos
 scripts/construir_entregables.py  paso 5  productos.json → ZIP + Excel
+scripts/conocidos.py              paso 6  guarda lo investigado en referencias/conocidos.json
 scripts/preparar_fotos.py         FUERA DEL FLUJO desde el 25/09/2026: regla 16
 scripts/filtrar_fotos.py          FUERA DEL FLUJO desde el 25/09/2026: regla 16
 scripts/organizar_imagenes.py     FUERA DEL FLUJO desde el 19/09/2026: ver la nota de abajo
 referencias/formato-de-listas.md  anatomía de los mensajes de proveedor
 referencias/titulos.md            fórmula de títulos y nombres ya confirmados
+referencias/equivalencias.json    id de la lista → id y título definitivos; lo aplica el parser
+referencias/conocidos.json        productos ya investigados; lo escribe conocidos.py, no a mano
 referencias/descripciones.md      estructura de la descripción y metadatos
 referencias/fichas-tecnicas.md    de dónde sale la ficha oficial de cada marca
 referencias/precios.md            método de investigación de precios
 referencias/colores.md            emojis → colores publicables
 referencias/imagenes.md           estándar de fotos; fuera del flujo, ver la regla 16
+pruebas/test_parsear_lista.py     las listas de ejemplo contra su revisión, y un caso por
+                                  defecto corregido. `npm run listas`, y dentro de verificar
 plantillas/producto.txt           plantilla del archivo de cada producto
 plantillas/env.ejemplo            plantilla de credenciales de Icecat
 ```

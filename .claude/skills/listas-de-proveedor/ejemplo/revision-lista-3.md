@@ -1,0 +1,373 @@
+# Revisión de la lista
+
+- Fecha de la lista: 2026-10-08
+- Productos para publicar: 90
+- Descartados: 168
+- Duplicados fusionados: 9
+- Productos con algún supuesto aplicado: 51
+- Títulos confirmados en una lista anterior: 23
+- Líneas sin clasificar: 0
+- Mensajes de la lista: ANDROID, VARIEDAD, GAMA ALTA
+
+## Productos para publicar
+- **OPPO A6c 4GB RAM 64GB** — celulares — 500.000 COP
+  - · asumido: título confirmado el 02/10/2026: la lista lo trae como «Oppo A6C 4GB RAM 64GB»
+- **OPPO A6c 4GB RAM 128GB** — celulares — 575.000 COP
+  - · asumido: título confirmado el 02/10/2026: la lista lo trae como «Oppo A6C 4GB RAM 128GB»
+- **OPPO A6k 4GB RAM 256GB** — celulares — 850.000 COP
+  - · asumido: título confirmado el 02/10/2026: la lista lo trae como «Oppo A6K 4GB RAM 256GB»
+- **Samsung Galaxy A17 4G 8GB RAM 256GB** — celulares — 620.000 COP
+- **Samsung Galaxy A17 5G 8GB RAM 256GB 1 SIM** — celulares — 675.000 COP
+- **Samsung Galaxy A17 5G 8GB RAM 256GB Dual SIM** — celulares — 690.000 COP
+- **Samsung Galaxy A27 5G 8GB RAM 256GB 1 SIM** — celulares — 870.000 COP
+- **Samsung Galaxy A37 5G 6GB RAM 128GB** — celulares — 810.000 COP
+- **Samsung Galaxy A57 5G 8GB RAM 256GB** — celulares — 1.290.000 COP
+- **Samsung Galaxy A57 5G 12GB RAM 512GB** — celulares — 1.700.000 COP
+- **Motorola Moto G67 8GB RAM 256GB** — celulares — 730.000 COP
+  - · asumido: título confirmado el 02/10/2026: la lista lo trae como «Motorola Moto G67 4G 8GB RAM 256GB»
+- **Motorola Moto G17 4G 4GB RAM 256GB 1 SIM** — celulares — 505.000 COP
+  - ⚠️ la lista suma RAM virtual (4GB+4GB): publicar la RAM física y mencionar la extendida aparte
+- **Motorola Moto G17 Power 4G 4GB RAM 256GB** — celulares — 550.000 COP
+  - ⚠️ la lista suma RAM virtual (4GB+4GB): publicar la RAM física y mencionar la extendida aparte
+- **Motorola Moto G77 5G 8GB RAM 256GB** — celulares — 760.000 COP
+  - · asumido: la lista escribe el precio sin «$» (760): se leyó como 760.000 COP
+- **Motorola Edge 50 Fusion 5G 8GB RAM 256GB SIM + eSIM** — celulares — 735.000 COP
+- **Honor X7D 4G 6GB RAM 256GB** — celulares — 650.000 COP
+- **Honor Magic 8 Lite 5G 8GB RAM 512GB** — celulares — 1.190.000 COP
+- **Xiaomi Redmi 15C 4G 8GB RAM 256GB** — celulares — 545.000 COP
+  - ⚠️ la lista suma RAM virtual (8GB+8GB): publicar la RAM física y mencionar la extendida aparte
+- **Xiaomi Redmi 15 4G 8GB RAM 256GB** — celulares — 585.000 COP
+- **Xiaomi Redmi 17 4G 4GB RAM 256GB** — celulares — 540.000 COP
+  - ⚠️ la lista suma RAM virtual (4GB+4GB): publicar la RAM física y mencionar la extendida aparte
+- **Xiaomi Redmi Note 17 4G 6GB RAM 256GB** — celulares — 685.000 COP
+  - · asumido: la sección Xiaomi abrevia 'NOTE': se leyó como Redmi Note
+  - ⚠️ la lista suma RAM virtual (6GB+6GB): publicar la RAM física y mencionar la extendida aparte
+- **Xiaomi Redmi Note 17 5G 6GB RAM 256GB** — celulares — 790.000 COP
+  - · asumido: la sección Xiaomi abrevia 'NOTE': se leyó como Redmi Note
+  - ⚠️ la lista suma RAM virtual (6GB+6GB): publicar la RAM física y mencionar la extendida aparte
+- **Xiaomi Redmi Note 15 Pro 4G 8GB RAM 256GB** — celulares — 860.000 COP
+  - · asumido: la sección Xiaomi abrevia 'NOTE': se leyó como Redmi Note
+- **Xiaomi Redmi Note 17 Pro 5G 6GB RAM 256GB** — celulares — 995.000 COP
+  - · asumido: la sección Xiaomi abrevia 'NOTE': se leyó como Redmi Note
+  - ⚠️ la lista suma RAM virtual (6GB+6GB): publicar la RAM física y mencionar la extendida aparte
+- **Xiaomi Redmi Note 17 Pro 5G 8GB RAM 256GB** — celulares — 1.010.000 COP
+  - · asumido: la sección Xiaomi abrevia 'NOTE': se leyó como Redmi Note
+  - ⚠️ la lista suma RAM virtual (8GB+8GB): publicar la RAM física y mencionar la extendida aparte
+- **Xiaomi Redmi Note 15 Pro+ 5G 8GB RAM 256GB** — celulares — 1.310.000 COP
+  - · asumido: la sección Xiaomi abrevia 'NOTE': se leyó como Redmi Note
+  - · asumido: título confirmado el 02/10/2026: la lista lo trae como «Xiaomi Redmi Note 15 Pro + Plus 8GB RAM 256GB»
+- **Xiaomi Redmi Note 17 Pro Max 8GB RAM 256GB** — celulares — 1.290.000 COP
+  - · asumido: la sección Xiaomi abrevia 'NOTE': se leyó como Redmi Note
+- **Xiaomi Redmi Note 17 Pro Max 8GB RAM 512GB** — celulares — 1.690.000 COP
+  - · asumido: la sección Xiaomi abrevia 'NOTE': se leyó como Redmi Note
+- **Xiaomi POCO X8 Pro 5G 8GB RAM 256GB** — celulares — 1.400.000 COP
+- **Xiaomi POCO X8 Pro Max 5G 12GB RAM 256GB** — celulares — 1.800.000 COP
+  - · asumido: la sección Xiaomi abrevia la serie X: se leyó como POCO
+- **Xiaomi POCO X8 Pro Max 5G 12GB RAM 512GB** — celulares — 1.950.000 COP
+  - · asumido: la sección Xiaomi abrevia la serie X: se leyó como POCO
+- **Xiaomi POCO F8 Pro 5G 12GB RAM 256GB** — celulares — 1.770.000 COP
+  - · asumido: título confirmado el 02/10/2026: la lista lo trae como «Xiaomi POCO F8 Pro 12GB RAM 256GB»
+- **Xiaomi 17T Pro 5G 12GB RAM 512GB** — celulares — 2.750.000 COP
+- **Xiaomi POCO F8 Ultra 5G 12GB RAM 256GB** — celulares — 2.250.000 COP
+  - · asumido: la sección Xiaomi abrevia la serie F: se leyó como POCO
+- **Xiaomi POCO F9 Ultra 5G 16GB RAM 512GB** — celulares — 2.900.000 COP
+  - · asumido: la sección Xiaomi abrevia la serie F: se leyó como POCO
+- **Fly Go Pad 10" 4G 4GB RAM 64GB con teclado y mouse** — tablets — 430.000 COP
+  - · asumido: título confirmado el 02/10/2026: la lista lo trae como «Fly Go Pad Mouse + Teclado 10" 4G 4GB RAM 64GB»
+  - ⚠️ la lista suma RAM virtual (4GB+4GB): publicar la RAM física y mencionar la extendida aparte
+- **Fly Go Pad 10" 4G 4GB RAM 128GB con teclado y mouse** — tablets — 470.000 COP
+  - · asumido: título confirmado el 02/10/2026: la lista lo trae como «Fly Go Pad Mouse + Teclado 10" 4G 4GB RAM 128GB»
+  - ⚠️ la lista suma RAM virtual (4GB+6GB): publicar la RAM física y mencionar la extendida aparte
+- **Samsung Galaxy Tab A11 8.7" WiFi 8GB RAM 128GB** — tablets — 455.000 COP
+  - · asumido: título confirmado el 02/10/2026: la lista lo trae como «Samsung A11 7" WiFi 8GB RAM 128GB»
+- **Samsung Galaxy Tab A11+ 11" WiFi 6GB RAM 128GB** — tablets — 700.000 COP
+  - · asumido: título confirmado el 02/10/2026: la lista lo trae como «Samsung A11+ Plus 11" WiFi 6GB RAM 128GB»
+- **Honor Pad X8b 11" WiFi 4GB RAM 128GB** — tablets — 565.000 COP
+  - · asumido: título confirmado el 02/10/2026: la lista lo trae como «Honor X8B 11" WiFi 4GB RAM 128GB»
+- **Xiaomi Redmi Pad 2 9.7" WiFi 4GB RAM 128GB** — tablets — 460.000 COP
+  - · asumido: el proveedor lo escribe bajo Xiaomi, pero el fabricante publica esta referencia en la línea Redmi: el título usa el nombre comercial real
+  - · asumido: título confirmado el 02/10/2026: la lista lo trae como «Xiaomi Redmi Pad 2 9.7" 4GB RAM 128GB»
+- **Xiaomi Redmi Pad 2 11" 4GB RAM 128GB (bundle)** — tablets — 580.000 COP
+  - · asumido: el proveedor lo escribe bajo Xiaomi, pero el fabricante publica esta referencia en la línea Redmi: el título usa el nombre comercial real
+  - · asumido: título confirmado el 02/10/2026: la lista lo trae como «Xiaomi Redmi Pad 2 Bundle 11" 4GB RAM 128GB»
+- **Xiaomi Redmi Pad 2 11" 4G 4GB RAM 128GB** — tablets — 610.000 COP
+  - · asumido: título confirmado el 02/10/2026: la lista lo trae como «Xiaomi Pad 2" 4G 4GB RAM 128GB»
+- **Xiaomi Redmi Pad 2 11" WiFi 8GB RAM 256GB** — tablets — 690.000 COP
+  - · asumido: título confirmado el 02/10/2026: la lista lo trae como «Xiaomi Pad 2" WiFi 8GB RAM 256GB»
+- **Xiaomi Redmi Pad 2 Pro 12.1" WiFi 8GB RAM 256GB** — tablets — 920.000 COP
+  - · asumido: el proveedor lo escribe bajo Xiaomi, pero el fabricante publica esta referencia en la línea Redmi: el título usa el nombre comercial real
+  - · asumido: título confirmado el 02/10/2026: la lista lo trae como «Xiaomi Redmi Pad 2 Pro 11" WiFi 8GB RAM 256GB»
+- **Lenovo Tab One 8.7" 4G 4GB RAM 128GB con mouse** — tablets — 530.000 COP
+  - · asumido: título confirmado el 02/10/2026: la lista lo trae como «Lenovo Tab One 7" 4G 4GB RAM 128GB Incluye Mouse»
+- **TCL Tab 11 FE 11" WiFi 4GB RAM 128GB** — tablets — 595.000 COP
+  - ⚠️ tablets: confirmar la línea comercial completa (ej. Galaxy Tab A11)
+- **TCL Pad Lugh 10" WiFi 4GB RAM 128GB** — tablets — 420.000 COP
+  - ⚠️ tablets: confirmar la línea comercial completa (ej. Galaxy Tab A11)
+- **Samsung Galaxy Fit3** — relojes — 125.000 COP
+  - · asumido: título confirmado el 02/10/2026: la lista lo trae como «Samsung Band Fit 3»
+- **Honor Watch Choice 2i** — relojes — 130.000 COP
+  - · asumido: título confirmado el 02/10/2026: la lista lo trae como «Honor 2i»
+- **Honor 5i** — relojes — 145.000 COP
+  - ⚠️ confirmar nombre comercial oficial del modelo
+- **Xiaomi Smart Band 9 Active** — relojes — 85.000 COP
+  - ⚠️ confirmar nombre comercial oficial del modelo
+- **Xiaomi Smart Band 10** — relojes — 160.000 COP
+  - · asumido: Xiaomi publica esta banda como «Smart Band»; la lista omitía «Smart»
+  - ⚠️ confirmar nombre comercial oficial del modelo
+- **Xiaomi Smart Band 11 Active** — relojes — 110.000 COP
+  - · asumido: Xiaomi publica esta banda como «Smart Band»; la lista omitía «Smart»
+  - ⚠️ confirmar nombre comercial oficial del modelo
+- **Xiaomi Smart Band 10 Pro** — relojes — 245.000 COP
+  - ⚠️ confirmar nombre comercial oficial del modelo
+- **Xiaomi Redmi Watch 6 Lite** — relojes — 195.000 COP
+  - · asumido: el proveedor lo escribe bajo Xiaomi, pero el fabricante publica esta referencia en la línea Redmi: el título usa el nombre comercial real
+  - ⚠️ confirmar nombre comercial oficial del modelo
+- **Xiaomi Redmi Watch 6 Active** — relojes — 135.000 COP
+  - · asumido: el proveedor lo escribe bajo Xiaomi, pero el fabricante publica esta referencia en la línea Redmi: el título usa el nombre comercial real
+  - ⚠️ confirmar nombre comercial oficial del modelo
+- **Xiaomi Redmi Watch 5 Active** — relojes — 125.000 COP
+  - · asumido: el proveedor lo escribe bajo Xiaomi, pero el fabricante publica esta referencia en la línea Redmi: el título usa el nombre comercial real
+  - ⚠️ confirmar nombre comercial oficial del modelo
+- **Xiaomi Redmi Watch 5 Lite** — relojes — 175.000 COP
+  - · asumido: el proveedor lo escribe bajo Xiaomi, pero el fabricante publica esta referencia en la línea Redmi: el título usa el nombre comercial real
+  - ⚠️ confirmar nombre comercial oficial del modelo
+- **Xiaomi Watch S4 41mm** — relojes — 490.000 COP
+  - ⚠️ confirmar nombre comercial oficial del modelo
+- **Samsung Galaxy Watch 8 40mm** — relojes — 750.000 COP
+  - ⚠️ confirmar nombre comercial oficial del modelo
+- **Xiaomi Redmi Buds 6 Play** — audifonos — 45.000 COP
+  - · asumido: el proveedor lo escribe bajo Xiaomi, pero el fabricante publica esta referencia en la línea Redmi: el título usa el nombre comercial real
+  - ⚠️ confirmar nombre comercial oficial del modelo
+- **Xiaomi Redmi Buds 6 Active** — audifonos — 65.000 COP
+  - · asumido: el proveedor lo escribe bajo Xiaomi, pero el fabricante publica esta referencia en la línea Redmi: el título usa el nombre comercial real
+  - ⚠️ confirmar nombre comercial oficial del modelo
+- **Xiaomi Redmi Buds 8 Active** — audifonos — 70.000 COP
+  - · asumido: el proveedor lo escribe bajo Xiaomi, pero el fabricante publica esta referencia en la línea Redmi: el título usa el nombre comercial real
+  - ⚠️ confirmar nombre comercial oficial del modelo
+- **Xiaomi Redmi Buds 8 Lite** — audifonos — 75.000 COP
+  - · asumido: el proveedor lo escribe bajo Xiaomi, pero el fabricante publica esta referencia en la línea Redmi: el título usa el nombre comercial real
+  - ⚠️ confirmar nombre comercial oficial del modelo
+- **JBL Tune 730BT** — audifonos — 210.000 COP
+  - · asumido: título confirmado el 02/10/2026: la lista lo trae como «JBL Diadema Tune 730»
+- **Honor Choice Earbuds X7e** — audifonos — 75.000 COP
+  - · asumido: título confirmado el 02/10/2026: la lista lo trae como «Honor Choice X7E»
+- **Samsung Galaxy Buds4** — audifonos — 480.000 COP
+  - · asumido: título confirmado el 02/10/2026: la lista lo trae como «Samsung Buds 4»
+- **Sony PlayStation 5 Disco 1 TB** — consolas — 2.550.000 COP
+  - ⚠️ confirmar nombre comercial oficial del modelo
+- **JBL Clip 5** — parlantes — 220.000 COP
+  - ⚠️ confirmar nombre comercial oficial del modelo
+- **JBL Grip** — parlantes — 290.000 COP
+  - ⚠️ confirmar nombre comercial oficial del modelo
+- **JBL Flip 7** — parlantes — 450.000 COP
+  - ⚠️ confirmar nombre comercial oficial del modelo
+- **JBL Charge 6** — parlantes — 650.000 COP
+  - ⚠️ confirmar nombre comercial oficial del modelo
+- **JBL Cinema SB180** — parlantes — 750.000 COP
+  - · asumido: título confirmado el 02/10/2026: la lista lo trae como «JBL Barra De Sonido Cinema Sb 180»
+- **JBL PartyBox Encore 2** — parlantes — 1.000.000 COP
+  - · asumido: título confirmado el 02/10/2026: la lista lo trae como «JBL Party Box Encore 2»
+- **JBL Xtreme 4** — parlantes — 1.100.000 COP
+  - · asumido: título confirmado el 02/10/2026: la lista lo trae como «JBL Extreme 4»
+- **JBL Xtreme 5** — parlantes — 1.200.000 COP
+  - · asumido: título confirmado el 02/10/2026: la lista lo trae como «JBL Extreme 5»
+- **JBL Boombox 4** — parlantes — 1.700.000 COP
+  - ⚠️ confirmar nombre comercial oficial del modelo
+- **JBL PartyBox 330** — parlantes — 2.000.000 COP
+  - · asumido: título confirmado el 02/10/2026: la lista lo trae como «JBL Partybox 330»
+- **Amazon Echo Dot 5ª generación** — parlantes — 220.000 COP
+  - · asumido: título confirmado el 02/10/2026: la lista lo trae como «Amazon Echo Dot 5ª Generación»
+- **Xiaomi Smart Projector L1** — proyectores — 750.000 COP
+  - · asumido: la lista no trae marca; «Proyector L1» se toma como Xiaomi Smart Projector L1, referencia confirmada por el negocio (REFERENCIAS_SIN_MARCA)
+  - ⚠️ confirmar nombre comercial oficial del modelo
+- **Apple iPhone 18 Pro 512GB eSIM** — celulares — 5.000.000 COP — colores: Negro, Blanco
+- **Apple iPhone 18 Pro 256GB eSIM** — celulares — 4.300.000 COP — colores: Azul, Negro
+- **Apple iPhone 18 Pro Max 256GB eSIM** — celulares — 4.980.000 COP — colores: Negro, Blanco
+- **Apple iPhone 17 Pro Max 512GB eSIM** — celulares — 4.650.000 COP — colores: Azul, Naranja, Blanco
+- **Apple iPhone 17 Pro Max 256GB eSIM** — celulares — 4.080.000 COP — colores: Azul, Naranja, Blanco
+- **Apple iPhone 17 Pro 512GB eSIM** — celulares — 4.050.000 COP — colores: Azul
+- **Apple iPhone 17 Pro 256GB eSIM** — celulares — 3.700.000 COP — colores: Naranja
+- **Apple iPhone 16e 128GB eSIM** — celulares — 1.500.000 COP — colores: Negro
+- **Apple Watch Se 44mm** — relojes — 1.080.000 COP — colores: Negro
+  - ⚠️ confirmar nombre comercial oficial del modelo
+
+## Descartados
+- TV FLY 24" $350 — categoría no publicable: televisores
+- TV FLY 32"$420 — categoría no publicable: televisores
+- TV FLY 40" $620 — categoría no publicable: televisores
+- TV FLY 43" $750 — categoría no publicable: televisores
+- TV FLY 50" $1.000 — categoría no publicable: televisores
+- TV FLY 55" $1.250 — categoría no publicable: televisores
+- TV FLY 65" $1.700 — categoría no publicable: televisores
+- TV CORN 40" $620 — categoría no publicable: televisores
+- TV CORN 32"$420 — categoría no publicable: televisores
+- TV CORN 43" $750 — categoría no publicable: televisores
+- TV CORN 50" $1.000 — categoría no publicable: televisores
+- TV CORN 65" $1.700 — categoría no publicable: televisores
+- CUBO BECLAD (SAMSUNG)$30 — categoría no publicable: cargadores
+- CUBO SAMSUNG 25W $60 — categoría no publicable: cargadores
+- CARGADOR SAMSUNG 25W $100 — categoría no publicable: cargadores
+- CARGADOR SAMSUNG 45W $140 — categoría no publicable: cargadores
+- CUBO IPHONE 20W$90 — categoría no publicable: cargadores
+- CUBO IPHONE 40W $190 — categoría no publicable: cargadores
+- CUBO XIAOMI 33W $60 — categoría no publicable: cargadores
+- *CABLE* XIAOMI TIPO C - USB $45 — categoría no publicable: cables
+- *CABLE* IPHONE LIGHTNING -C $45 — categoría no publicable: cables
+- *CABLE* IPHONE TPC-C  $55 — categoría no publicable: cables
+- 10.000mAh 165W $155 — categoría no publicable: power_bank
+- CONTROL $300 — categoría no publicable: accesorios_consola
+- TENDA AC8 120 $95 — categoría no publicable: routers
+- MERCURYS AC 1200 $90 — categoría no publicable: routers
+- MERCUSYS MR80X AX3000 $145 — categoría no publicable: routers
+- MERCUSYS MR50G AC1900 $135 — categoría no publicable: routers
+- TP-LINK AX12 $125 — categoría no publicable: routers
+- TP-LINK AC64 $110 — categoría no publicable: routers
+- REPETIDOR DE WIFI MERCURY MW300 $60 — categoría no publicable: routers
+- REPETIDOR DE WIFI MERCURY AC1200 $80 — categoría no publicable: routers
+- *VAPER* — categoría no publicable: routers
+- 50.000 PUFF $35 — categoría no publicable: routers
+- AIRE ACONDICIONADO CORN TIPO D CONVENCIONAL 12.000BTU/110V $ — categoría no publicable: variedad
+- AIRE ACONDICIONADO CORN TIPO D CONVENCIONAL 12.000BTU/220V $ — categoría no publicable: variedad
+- XIAOMI TAG $55 — categoría no publicable: variedad
+- LAVADORA MABE 11KG $550 — categoría no publicable: variedad
+- 🏽PENCIL TÁCTIL XIAOMI $140 — categoría no publicable: variedad
+- SCOOTER CORN ECO RIDER $720 — categoría no publicable: variedad
+- SCOOTER XIAOMI 4 LITE 2 GEN $1.000 — categoría no publicable: variedad
+- SCOOTER XIAOMI 6 ESSENTIAL $1.050 — categoría no publicable: variedad
+- SCOOTER XIAOMI 6 LITE $1.200 — categoría no publicable: variedad
+- SCOOTER XIAOMI 6 $1.650 — categoría no publicable: variedad
+- SCOOTER XIAOMI 5 PLUS + SILLA $2.500 — categoría no publicable: variedad
+- SCOOTER DT10 DUAL MOTOR $2.950 — categoría no publicable: variedad
+- SCOOTER DT10 SINGLE MOTOR $2.550 — categoría no publicable: variedad
+- SCOOTER M9 $2.750 — categoría no publicable: variedad
+- *UPS*🪫 — categoría no publicable: power_bank
+- 10.400mah $170 — categoría no publicable: variedad
+- JALTECH INALÁMBRICOS $150 — categoría no publicable: lectores
+- JALTECH PLUS 01 $100 — categoría no publicable: lectores
+- POS SAT $190 — categoría no publicable: impresoras
+- EPSON L3210 $655 — categoría no publicable: impresoras
+- EPSON 3351 $795 — categoría no publicable: impresoras
+- EPSON 5590 $1.140 — categoría no publicable: impresoras
+- CANON G2170 $550 — categoría no publicable: impresoras
+- EPSON 544 $40 — categoría no publicable: tintas
+- EPSON 524 70 ML $80 — categoría no publicable: tintas
+- EPSON 524 127ML $100 — categoría no publicable: tintas
+- CANON 11$50 NEGRO — categoría no publicable: tintas
+- CANON 11$45 COLORES — categoría no publicable: tintas
+- MACBOOK NEO 512 $2.700🩶 — condición no publicable: nuevo_activado
+- *ACTIVO* — condición no publicable: nuevo_activado
+- 17 256 *ACTIVO* 🤍💚🖤 — condición no publicable: nuevo_activado
+- 16 128 *ACTIVO* 💚🤍💙🖤 — condición no publicable: nuevo_activado
+- 15 128 *ACTIVO* 💙 — condición no publicable: nuevo_activado
+- 14 128 *ACTIVO*🖤 — condición no publicable: nuevo_activado
+- 13 128 *ACTIVO*🖤 — condición no publicable: nuevo_activado
+- 16 PM 256 *ESIM* 💛🖤🤍$3.450 — condición no publicable: con_caja
+- 15 PM 256 *ESIM* 🩶🖤$2.850 — condición no publicable: con_caja
+- 14 PM 256 *ESIM* 💜🖤$2.550 — condición no publicable: con_caja
+- 13 PM 128 💙$1.850 — condición no publicable: con_caja
+- 13 128 🤍$1.350 — condición no publicable: con_caja
+- 12 128 🖤💚💜🤍$1.150 — condición no publicable: con_caja
+- AIRTAG X4 PACK $330 — categoría no publicable: variedad
+- 16 PRO MAX *ESIM* 256 $2.780 — condición no publicable: usado
+- 16 PRO 256 *ESIM* $2.550 — condición no publicable: usado
+- 16 128 *ESIM* $1.980 — condición no publicable: usado
+- 15 PRO 256 *ESIM* $2.000 — condición no publicable: usado
+- 15 128 *ESIM* $1.470 — condición no publicable: usado
+- 14 PRO MAX 256 *ESIM* $1.950 — condición no publicable: usado
+- 14 PRO MAX 128 *ESIM*  $1.850 — condición no publicable: usado
+- 14 PRO 256 $1.800 — condición no publicable: usado
+- 14 256 $1.350 — condición no publicable: usado
+- 14 128 $1.180 — condición no publicable: usado
+- 13 PM 128 $1.650 — condición no publicable: usado
+- 13 PRO 256 $1.450 — condición no publicable: usado
+- 13 128 $1.100 — condición no publicable: usado
+- 12 PRO MAX 256 $1.390 — condición no publicable: usado
+- 12 PRO 128 $1.050 — condición no publicable: usado
+- 1041 $86 — celular por debajo del mínimo de 500.000 COP
+- ALCATEL 1 4G (2+16) $105 — celular por debajo del mínimo de 500.000 COP
+- ALCATEL 1V 4G (2+16)$125 — celular por debajo del mínimo de 500.000 COP
+- ALCATEL 1S (2+32) $145 — celular por debajo del mínimo de 500.000 COP
+- A200 4G (3+5+64) $300 — celular por debajo del mínimo de 500.000 COP
+- A200 4G (3+5+128)$330 — celular por debajo del mínimo de 500.000 COP
+- SMART 20 4G (4+4+128)$480 — celular por debajo del mínimo de 500.000 COP
+- SMART 20 4G (4+4+64)$380 — celular por debajo del mínimo de 500.000 COP
+- HOT 70 4G (4+4+256) $580 — marca excluida (Infinix): sin precio de mercado admisible en Colombia
+- HOT 70 PRO 5G (6+6+256) $960 — marca excluida (Infinix): sin precio de mercado admisible en Colombia
+- HOT 60 PRO 4G (8+8+256)$700 *ULTIMA UNIDAD* — marca excluida (Infinix): sin precio de mercado admisible en Colombia
+- NOTE 60 PRO 5G (8+8+256) $1.310 — marca excluida (Infinix): sin precio de mercado admisible en Colombia
+- GT 50 PRO 5G(12+256) $1.960 — marca excluida (Infinix): sin precio de mercado admisible en Colombia
+- NOTE 60 ULTRA 5G (12+512)$2.990 — marca excluida (Infinix): sin precio de mercado admisible en Colombia
+- A07 4G (4+64)$315 — celular por debajo del mínimo de 500.000 COP
+- A07 4G (4+128)$370 — celular por debajo del mínimo de 500.000 COP
+- A07 4G (6+128)$385 — celular por debajo del mínimo de 500.000 COP
+- A17 4G (4+128)$420 — celular por debajo del mínimo de 500.000 COP
+- MOTO G05 4G (4+4+256) $395 — celular por debajo del mínimo de 500.000 COP
+- MOTO G06 4G (4+4+128) $390 — celular por debajo del mínimo de 500.000 COP
+- MOTO G06 4G (4+4+256) $415 — celular por debajo del mínimo de 500.000 COP
+- PLAY 10 4G (3+64)$300 — celular por debajo del mínimo de 500.000 COP
+- PLAY 10 4G(4+128) $360 — celular por debajo del mínimo de 500.000 COP
+- X5D 4G (4+128)$370 *1 SIM* — celular por debajo del mínimo de 500.000 COP
+- X5D 4G (4+256)$440 — celular por debajo del mínimo de 500.000 COP
+- X5C PLUS (4+256)$465 — celular por debajo del mínimo de 500.000 COP
+- REDMI A7 PRO 4G (4+4+64)$310 — celular por debajo del mínimo de 500.000 COP
+- REDMI A7 PRO 4G (4+4+128)$365 — celular por debajo del mínimo de 500.000 COP
+- REDMI 15C 4G (4+4+128)$425 — celular por debajo del mínimo de 500.000 COP
+- REDMI 17 4G (4+4+128)$455 — celular por debajo del mínimo de 500.000 COP
+- POCO C71 4G (3+64)$300 — celular por debajo del mínimo de 500.000 COP
+- POCO C71 4G (4+128)$360 — celular por debajo del mínimo de 500.000 COP
+- SPARK GO 3 4G(4+4+64)$340 — celular por debajo del mínimo de 500.000 COP
+- SPARK GO 3 4G (4+4+128)$385 — celular por debajo del mínimo de 500.000 COP
+- SPARK 50 4G (4+4+256)$590 — marca excluida (Tecno): sin precio de mercado admisible en Colombia
+- SPARK 50 5G (8+16+256)$805 — marca excluida (Tecno): sin precio de mercado admisible en Colombia
+- POVA SLIM 5G (8+8+256)$890 — marca excluida (Tecno): sin precio de mercado admisible en Colombia
+- POVA CURVE 2 5G (8+8+256)$910 — marca excluida (Tecno): sin precio de mercado admisible en Colombia
+- CAMON 50 PRO  4G (8+8+256) $1.140 — marca excluida (Tecno): sin precio de mercado admisible en Colombia
+- ZTE BLADE 130 3G(1+32)$85 — celular por debajo del mínimo de 500.000 COP
+- A31 LITE 4G (1+32)$110 — celular por debajo del mínimo de 500.000 COP
+- A31 PLUS 4G (2+32)$175 — celular por debajo del mínimo de 500.000 COP
+- A35E 4G (2+4+64)$275 — celular por debajo del mínimo de 500.000 COP
+- A56 4G (4+8+128)$340 — celular por debajo del mínimo de 500.000 COP
+- A56 PRO 4G (4+8/128)$350 — celular por debajo del mínimo de 500.000 COP
+- NUBIA MUSIC 4G (4+10+256) $365 — celular por debajo del mínimo de 500.000 COP
+- V80 MAX 4G (4+10+256)$460 — celular por debajo del mínimo de 500.000 COP
+- V80 PRO 4G (4+10+256)$580 — marca excluida (ZTE): sin precio de mercado admisible en Colombia
+- NUBIA AIR 4G(8+256)$730 — marca excluida (ZTE): sin precio de mercado admisible en Colombia
+- NUBIA NEO 5 5G (8+12+256)$890 — marca excluida (ZTE): sin precio de mercado admisible en Colombia
+- FY-100...$75 — celular por debajo del mínimo de 500.000 COP
+- FY-200...$65 — celular por debajo del mínimo de 500.000 COP
+- FY-300...$95 — celular por debajo del mínimo de 500.000 COP
+- FY-400...$95 — celular por debajo del mínimo de 500.000 COP
+- FY-500 $100 — celular por debajo del mínimo de 500.000 COP
+- NOKIA 105 $125 — celular por debajo del mínimo de 500.000 COP
+- NOKIA 110 $135 — celular por debajo del mínimo de 500.000 COP
+- CORN FLIP K $95 — celular por debajo del mínimo de 500.000 COP
+- CORN POWER K PRO $85 — celular por debajo del mínimo de 500.000 COP
+- CORN POWER K $95 — celular por debajo del mínimo de 500.000 COP
+- CORN ECONOMICA $60 — celular por debajo del mínimo de 500.000 COP
+- CORN GT50 $75 — celular por debajo del mínimo de 500.000 COP
+- KRONO KIDS PLAY 7" WIFI (4+4+64)$270 — marca excluida (Krono): sin precio de mercado admisible en Colombia
+- NET X2 SIM 4G 10" AGENDA (4+4+64) $330 — marca excluida (Krono): sin precio de mercado admisible en Colombia
+- NET X2 4G 10" FORRO KIDS (4+4+64) $340 — marca excluida (Krono): sin precio de mercado admisible en Colombia
+- NET G 4G LAPIZ TACTIL (6+6+128)$430 — marca excluida (Krono): sin precio de mercado admisible en Colombia
+- *BMAX* 10"WIFI(4+64GB)$335 — marca excluida (BMAX): sin precio de mercado admisible en Colombia
+- XPAD 30E 4G 11"(4+4+128) $565 — marca excluida (Infinix): sin precio de mercado admisible en Colombia
+- *LAPTO HP* *ATHLON 7120U* *(8+512) 14" $1.150* — computador sin referencia en la lista
+- *LAPTOP ASUS  RYZEN 3 7520U (8 RAM DDR5 + 512 GB SSD) 15.6"  — computador sin referencia en la lista
+- *LAPTOP ASUS  RYZEN 5 7520U (8 RAM DDR5 + 512 GB SSD) 15.6"  — computador sin referencia en la lista
+- *LAPTOP ASUS RYZEN 5 7520U (8 RAM DDR5 +512GB SSD)  $1.700 + — computador sin referencia en la lista
+- *COMPUTADOR TODO EN UNO RYZEN 3 7520U (8 RAM + 512 SSD) 24"  — computador sin marca ni referencia en la lista
+- *COMPUTADOR TODO EN UNO RYZEN 5 7520U (8 RAM + 512 SSD) 24"  — computador sin marca ni referencia en la lista
+- S25 ULTRA 12/512 🩶💙 — sin precio de proveedor
+- S25 ULTRA 12/256💙🩶 — sin precio de proveedor
+- S25 FE  8/256 🖤💙 — sin precio de proveedor
+
+## Duplicados fusionados
+- L64: Honor X5D 4G 4GB RAM 128GB → Honor X5D 4G 4GB RAM 128GB 1 SIM
+- L493: Apple iPhone 18 Pro 512GB eSIM → Apple iPhone 18 Pro 512GB eSIM
+- L494: Apple iPhone 18 Pro 256GB eSIM → Apple iPhone 18 Pro 256GB eSIM
+- L495: Apple iPhone 18 Pro Max 256GB eSIM → Apple iPhone 18 Pro Max 256GB eSIM
+- L496: Apple iPhone 17 Pro Max 512GB eSIM → Apple iPhone 17 Pro Max 512GB eSIM
+- L497: Apple iPhone 17 Pro Max 256GB eSIM → Apple iPhone 17 Pro Max 256GB eSIM
+- L498: Apple iPhone 17 Pro 512GB eSIM → Apple iPhone 17 Pro 512GB eSIM
+- L499: Apple iPhone 17 Pro 256GB eSIM → Apple iPhone 17 Pro 256GB eSIM
+- L500: Apple iPhone 16e 128GB eSIM → Apple iPhone 16e 128GB eSIM

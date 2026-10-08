@@ -1,0 +1,231 @@
+{
+  "_leeme": [
+    "Id que produce el parser -> id y título definitivos del producto.",
+    "Cada entrada es una corrección confirmada una vez: el parser la aplica en cada lista y la deja en `supuestos`.",
+    "El id es el título en minúsculas, sin tildes y con guiones; un «+» pegado a una palabra (Pro+, A11+) se escribe «plus». Ninguna entrada puede apuntar a otra clave del archivo."
+  ],
+  "equivalencias": {
+    "amazon-echo-dot-5a-generacion": {
+      "id": "amazon-echo-dot-5a-generacion",
+      "titulo": "Amazon Echo Dot 5ª generación",
+      "fecha": "2026-10-02",
+      "motivo": "título corregido a mano en la corrida del 02/10/2026"
+    },
+    "apple-ipad-a16-128gb": {
+      "id": "apple-ipad-11-a16-128gb",
+      "titulo": "Apple iPad 11\" A16 128GB",
+      "fecha": "2026-10-02",
+      "motivo": "título corregido a mano en la corrida del 02/10/2026"
+    },
+    "apple-iphone-16e-128gb-esim": {
+      "id": "apple-iphone-16e-128gb-esim",
+      "titulo": "Apple iPhone 16e 128GB eSIM",
+      "fecha": "2026-10-02",
+      "motivo": "título corregido a mano en la corrida del 02/10/2026"
+    },
+    "fly-go-pad-mouse-teclado-10-4g-4gb-ram-128gb": {
+      "id": "fly-go-pad-10-4g-4gb-ram-128gb-con-teclado-y-mouse",
+      "titulo": "Fly Go Pad 10\" 4G 4GB RAM 128GB con teclado y mouse",
+      "fecha": "2026-10-02",
+      "motivo": "título corregido a mano en la corrida del 02/10/2026"
+    },
+    "fly-go-pad-mouse-teclado-10-4g-4gb-ram-64gb": {
+      "id": "fly-go-pad-10-4g-4gb-ram-64gb-con-teclado-y-mouse",
+      "titulo": "Fly Go Pad 10\" 4G 4GB RAM 64GB con teclado y mouse",
+      "fecha": "2026-10-02",
+      "motivo": "título corregido a mano en la corrida del 02/10/2026"
+    },
+    "honor-2i": {
+      "id": "honor-watch-choice-2i",
+      "titulo": "Honor Watch Choice 2i",
+      "fecha": "2026-10-02",
+      "motivo": "título corregido a mano en la corrida del 02/10/2026"
+    },
+    "honor-choice-x7e": {
+      "id": "honor-choice-earbuds-x7e",
+      "titulo": "Honor Choice Earbuds X7e",
+      "fecha": "2026-10-02",
+      "motivo": "título corregido a mano en la corrida del 02/10/2026"
+    },
+    "honor-x8b-11-wifi-4gb-ram-128gb": {
+      "id": "honor-pad-x8b-11-wifi-4gb-ram-128gb",
+      "titulo": "Honor Pad X8b 11\" WiFi 4GB RAM 128GB",
+      "fecha": "2026-10-02",
+      "motivo": "título corregido a mano en la corrida del 02/10/2026"
+    },
+    "jbl-barra-de-sonido-cinema-sb-180": {
+      "id": "jbl-cinema-sb180",
+      "titulo": "JBL Cinema SB180",
+      "fecha": "2026-10-02",
+      "motivo": "título corregido a mano en la corrida del 02/10/2026"
+    },
+    "jbl-barra-de-sonido-cinema-sb580": {
+      "id": "jbl-cinema-sb580",
+      "titulo": "JBL Cinema SB580",
+      "fecha": "2026-10-02",
+      "motivo": "título corregido a mano en la corrida del 02/10/2026"
+    },
+    "jbl-diadema-tune-730": {
+      "id": "jbl-tune-730bt",
+      "titulo": "JBL Tune 730BT",
+      "fecha": "2026-10-02",
+      "motivo": "título corregido a mano en la corrida del 02/10/2026"
+    },
+    "jbl-extreme-4": {
+      "id": "jbl-xtreme-4",
+      "titulo": "JBL Xtreme 4",
+      "fecha": "2026-10-02",
+      "motivo": "título corregido a mano en la corrida del 02/10/2026"
+    },
+    "jbl-extreme-5": {
+      "id": "jbl-xtreme-5",
+      "titulo": "JBL Xtreme 5",
+      "fecha": "2026-10-02",
+      "motivo": "título corregido a mano en la corrida del 02/10/2026"
+    },
+    "jbl-party-box-encore-2": {
+      "id": "jbl-partybox-encore-2",
+      "titulo": "JBL PartyBox Encore 2",
+      "fecha": "2026-10-02",
+      "motivo": "título corregido a mano en la corrida del 02/10/2026"
+    },
+    "jbl-partybox-330": {
+      "id": "jbl-partybox-330",
+      "titulo": "JBL PartyBox 330",
+      "fecha": "2026-10-02",
+      "motivo": "título corregido a mano en la corrida del 02/10/2026"
+    },
+    "lenovo-tab-one-7-4g-4gb-ram-128gb-incluye-mouse": {
+      "id": "lenovo-tab-one-8-7-4g-4gb-ram-128gb-con-mouse",
+      "titulo": "Lenovo Tab One 8.7\" 4G 4GB RAM 128GB con mouse",
+      "fecha": "2026-10-02",
+      "motivo": "título corregido a mano en la corrida del 02/10/2026"
+    },
+    "motorola-edge-50-fusion-5g-8gb-ram-256gb-sim-esim": {
+      "id": "motorola-edge-50-fusion-5g-8gb-ram-256gb-sim-esim",
+      "titulo": "Motorola Edge 50 Fusion 5G 8GB RAM 256GB SIM + eSIM",
+      "fecha": "2026-10-02",
+      "motivo": "título corregido a mano en la corrida del 02/10/2026"
+    },
+    "motorola-moto-g67-4g-8gb-ram-256gb": {
+      "id": "motorola-moto-g67-8gb-ram-256gb",
+      "titulo": "Motorola Moto G67 8GB RAM 256GB",
+      "fecha": "2026-10-02",
+      "motivo": "título corregido a mano en la corrida del 02/10/2026"
+    },
+    "nintendo-switch-2-mario-kart": {
+      "id": "nintendo-switch-2-mario-kart-world",
+      "titulo": "Nintendo Switch 2 + Mario Kart World",
+      "fecha": "2026-10-02",
+      "motivo": "título corregido a mano en la corrida del 02/10/2026"
+    },
+    "oppo-a6c-4gb-ram-128gb": {
+      "id": "oppo-a6c-4gb-ram-128gb",
+      "titulo": "OPPO A6c 4GB RAM 128GB",
+      "fecha": "2026-10-02",
+      "motivo": "título corregido a mano en la corrida del 02/10/2026"
+    },
+    "oppo-a6c-4gb-ram-64gb": {
+      "id": "oppo-a6c-4gb-ram-64gb",
+      "titulo": "OPPO A6c 4GB RAM 64GB",
+      "fecha": "2026-10-02",
+      "motivo": "título corregido a mano en la corrida del 02/10/2026"
+    },
+    "oppo-a6k-4gb-ram-256gb": {
+      "id": "oppo-a6k-4gb-ram-256gb",
+      "titulo": "OPPO A6k 4GB RAM 256GB",
+      "fecha": "2026-10-02",
+      "motivo": "título corregido a mano en la corrida del 02/10/2026"
+    },
+    "realme-note-70-4g-8gb-ram-256gb": {
+      "id": "realme-note-70-4g-8gb-ram-256gb",
+      "titulo": "realme Note 70 4G 8GB RAM 256GB",
+      "fecha": "2026-10-02",
+      "motivo": "título corregido a mano en la corrida del 02/10/2026"
+    },
+    "samsung-a11-7-wifi-8gb-ram-128gb": {
+      "id": "samsung-galaxy-tab-a11-8-7-wifi-8gb-ram-128gb",
+      "titulo": "Samsung Galaxy Tab A11 8.7\" WiFi 8GB RAM 128GB",
+      "fecha": "2026-10-02",
+      "motivo": "título corregido a mano en la corrida del 02/10/2026"
+    },
+    "samsung-a11-plus-11-wifi-6gb-ram-128gb": {
+      "id": "samsung-galaxy-tab-a11-plus-11-wifi-6gb-ram-128gb",
+      "titulo": "Samsung Galaxy Tab A11+ 11\" WiFi 6GB RAM 128GB",
+      "fecha": "2026-10-02",
+      "motivo": "título corregido a mano en la corrida del 02/10/2026"
+    },
+    "samsung-band-fit-3": {
+      "id": "samsung-galaxy-fit3",
+      "titulo": "Samsung Galaxy Fit3",
+      "fecha": "2026-10-02",
+      "motivo": "título corregido a mano en la corrida del 02/10/2026"
+    },
+    "samsung-buds-4": {
+      "id": "samsung-galaxy-buds4",
+      "titulo": "Samsung Galaxy Buds4",
+      "fecha": "2026-10-02",
+      "motivo": "título corregido a mano en la corrida del 02/10/2026"
+    },
+    "xiaomi-pad-2-4g-4gb-ram-128gb": {
+      "id": "xiaomi-redmi-pad-2-11-4g-4gb-ram-128gb",
+      "titulo": "Xiaomi Redmi Pad 2 11\" 4G 4GB RAM 128GB",
+      "fecha": "2026-10-02",
+      "motivo": "título corregido a mano en la corrida del 02/10/2026"
+    },
+    "xiaomi-pad-2-wifi-8gb-ram-256gb": {
+      "id": "xiaomi-redmi-pad-2-11-wifi-8gb-ram-256gb",
+      "titulo": "Xiaomi Redmi Pad 2 11\" WiFi 8GB RAM 256GB",
+      "fecha": "2026-10-02",
+      "motivo": "título corregido a mano en la corrida del 02/10/2026"
+    },
+    "xiaomi-poco-f8-pro-12gb-ram-256gb": {
+      "id": "xiaomi-poco-f8-pro-5g-12gb-ram-256gb",
+      "titulo": "Xiaomi POCO F8 Pro 5G 12GB RAM 256GB",
+      "fecha": "2026-10-02",
+      "motivo": "título corregido a mano en la corrida del 02/10/2026"
+    },
+    "xiaomi-poco-x8-pro-256gb": {
+      "id": "xiaomi-poco-x8-pro-5g-8gb-ram-256gb",
+      "titulo": "Xiaomi POCO X8 Pro 5G 8GB RAM 256GB",
+      "fecha": "2026-10-02",
+      "motivo": "título corregido a mano en la corrida del 02/10/2026"
+    },
+    "xiaomi-poco-x8-pro-512gb": {
+      "id": "xiaomi-poco-x8-pro-5g-512gb",
+      "titulo": "Xiaomi POCO X8 Pro 5G 512GB",
+      "fecha": "2026-10-02",
+      "motivo": "título corregido a mano en la corrida del 02/10/2026"
+    },
+    "xiaomi-redmi-note-15-128gb": {
+      "id": "xiaomi-redmi-note-15-4g-6gb-ram-128gb",
+      "titulo": "Xiaomi Redmi Note 15 4G 6GB RAM 128GB",
+      "fecha": "2026-10-02",
+      "motivo": "título corregido a mano en la corrida del 02/10/2026"
+    },
+    "xiaomi-redmi-note-15-pro-plus-8gb-ram-256gb": {
+      "id": "xiaomi-redmi-note-15-pro-plus-5g-8gb-ram-256gb",
+      "titulo": "Xiaomi Redmi Note 15 Pro+ 5G 8GB RAM 256GB",
+      "fecha": "2026-10-02",
+      "motivo": "título corregido a mano en la corrida del 02/10/2026"
+    },
+    "xiaomi-redmi-pad-2-9-7-4gb-ram-128gb": {
+      "id": "xiaomi-redmi-pad-2-9-7-wifi-4gb-ram-128gb",
+      "titulo": "Xiaomi Redmi Pad 2 9.7\" WiFi 4GB RAM 128GB",
+      "fecha": "2026-10-02",
+      "motivo": "título corregido a mano en la corrida del 02/10/2026"
+    },
+    "xiaomi-redmi-pad-2-bundle-11-4gb-ram-128gb": {
+      "id": "xiaomi-redmi-pad-2-11-4gb-ram-128gb-bundle",
+      "titulo": "Xiaomi Redmi Pad 2 11\" 4GB RAM 128GB (bundle)",
+      "fecha": "2026-10-02",
+      "motivo": "título corregido a mano en la corrida del 02/10/2026"
+    },
+    "xiaomi-redmi-pad-2-pro-11-wifi-8gb-ram-256gb": {
+      "id": "xiaomi-redmi-pad-2-pro-12-1-wifi-8gb-ram-256gb",
+      "titulo": "Xiaomi Redmi Pad 2 Pro 12.1\" WiFi 8GB RAM 256GB",
+      "fecha": "2026-10-02",
+      "motivo": "título corregido a mano en la corrida del 02/10/2026"
+    }
+  }
+}

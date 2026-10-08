@@ -32,7 +32,11 @@ Sin dependencias: solo biblioteca estándar.
 import argparse
 import json
 import re
+import sys
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from pendientes import necesita  # noqa: E402
 
 LIMITE_META_TITULO = 60
 LIMITE_META_DESCRIPCION = 155
@@ -244,6 +248,11 @@ def main():
 
     hechas, sin_prosa = 0, []
     for p in datos["productos"]:
+        # La descripción de un conocido la copió comparar_lista.py de la base: no
+        # tiene prosa en esta corrida, y sin este filtro salía marcado «sin
+        # descripcion» aunque la tuviera.
+        if not necesita(p, "descripcion"):
+            continue
         prosa = prosas.get(p["id"])
         if not prosa or not prosa.get("apertura"):
             sin_prosa.append(p["titulo"])

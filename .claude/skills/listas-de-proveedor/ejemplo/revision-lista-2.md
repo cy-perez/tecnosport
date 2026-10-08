@@ -4,8 +4,10 @@
 - Productos para publicar: 52
 - Descartados: 65
 - Duplicados fusionados: 12
-- Productos con algún supuesto aplicado: 18
+- Productos con algún supuesto aplicado: 24
+- Títulos confirmados en una lista anterior: 9
 - Líneas sin clasificar: 0
+- Mensajes de la lista: ANDROID
 
 ## Productos para publicar
 - **Xiaomi Redmi Note 15 Pro 4G 12GB RAM 512GB** — celulares — 950.000 COP
@@ -39,18 +41,19 @@
 - **Samsung Galaxy S25 Ultra 256GB** — celulares — 2.700.000 COP
   - ⚠️ línea sin viñeta: verificar que sea un producto
 - **Samsung Galaxy A17 4G 8GB RAM 256GB** — celulares — 630.000 COP
-- **Samsung Galaxy A17 5G 8GB RAM 256GB** — celulares — 700.000 COP
+- **Samsung Galaxy A17 5G 8GB RAM 256GB Dual SIM** — celulares — 700.000 COP
 - **Samsung Galaxy A37 5G 6GB RAM 128GB** — celulares — 885.000 COP
 - **Samsung Galaxy A37 5G 8GB RAM 256GB** — celulares — 995.000 COP
 - **Samsung Galaxy A56 5G 8GB RAM 256GB** — celulares — 1.230.000 COP
 - **Samsung Galaxy A57 5G 12GB RAM 512GB** — celulares — 1.750.000 COP
 - **Motorola Moto G17 4G 4GB RAM 256GB 1 SIM** — celulares — 505.000 COP
 - **Motorola Moto G17 4G 4GB RAM 256GB Dual SIM** — celulares — 535.000 COP
-- **Motorola Moto G67 4G 8GB RAM 256GB** — celulares — 730.000 COP
+- **Motorola Moto G67 8GB RAM 256GB** — celulares — 730.000 COP
+  - · asumido: título confirmado el 02/10/2026: la lista lo trae como «Motorola Moto G67 4G 8GB RAM 256GB»
 - **Motorola Moto G17 Power 4G 4GB RAM 256GB 1 SIM** — celulares — 550.000 COP
   - ⚠️ la lista suma RAM virtual (4GB+4GB): publicar la RAM física y mencionar la extendida aparte
-- **Motorola Edge 50 Fusion 5G 8GB RAM 256GB SIM / eSIM** — celulares — 735.000 COP
-- **Motorola Edge 50 Fusion 5G 8GB RAM 512GB SIM / eSIM** — celulares — 920.000 COP
+- **Motorola Edge 50 Fusion 5G 8GB RAM 256GB SIM + eSIM** — celulares — 735.000 COP
+- **Motorola Edge 50 Fusion 5G 8GB RAM 512GB SIM + eSIM** — celulares — 920.000 COP
 - **Honor X7D 4G 6GB RAM 256GB** — celulares — 650.000 COP
 - **Honor X9D 8GB RAM 256GB** — celulares — 960.000 COP
 - **Xiaomi Redmi 15C 4G 8GB RAM 256GB** — celulares — 505.000 COP
@@ -71,39 +74,41 @@
   - · asumido: la sección Xiaomi abrevia 'NOTE': se leyó como Redmi Note
 - **Xiaomi Redmi Note 15 Pro 5G 8GB RAM 512GB** — celulares — 1.050.000 COP
   - · asumido: la sección Xiaomi abrevia 'NOTE': se leyó como Redmi Note
-- **Xiaomi Redmi Note 15 Pro+ Plus 8GB RAM 256GB** — celulares — 1.310.000 COP
+- **Xiaomi Redmi Note 15 Pro+ 5G 8GB RAM 256GB** — celulares — 1.310.000 COP
   - · asumido: la sección Xiaomi abrevia 'NOTE': se leyó como Redmi Note
+  - · asumido: título confirmado el 02/10/2026: la lista lo trae como «Xiaomi Redmi Note 15 Pro+ Plus 8GB RAM 256GB»
 - **Xiaomi POCO F8 Ultra 5G 12GB RAM 256GB** — celulares — 2.250.000 COP
 - **Xiaomi POCO F8 Pro 5G 12GB RAM 256GB** — celulares — 1.850.000 COP
 - **Xiaomi POCO F8 Pro 5G 12GB RAM 512GB** — celulares — 2.050.000 COP
-- **Realme Note 70 4G 8GB RAM 256GB** — celulares — 520.000 COP
-- **Samsung A11 7" WiFi 8GB RAM 128GB** — tablets — 465.000 COP
-  - ⚠️ tablets: confirmar la línea comercial completa (ej. Galaxy Tab A11)
-- **Samsung A11+ Plus 11" WiFi 6GB RAM 128GB** — tablets — 735.000 COP
-  - ⚠️ tablets: confirmar la línea comercial completa (ej. Galaxy Tab A11)
+- **realme Note 70 4G 8GB RAM 256GB** — celulares — 520.000 COP
+  - · asumido: título confirmado el 02/10/2026: la lista lo trae como «Realme Note 70 4G 8GB RAM 256GB»
+- **Samsung Galaxy Tab A11 8.7" WiFi 8GB RAM 128GB** — tablets — 465.000 COP
+  - · asumido: título confirmado el 02/10/2026: la lista lo trae como «Samsung A11 7" WiFi 8GB RAM 128GB»
+- **Samsung Galaxy Tab A11+ 11" WiFi 6GB RAM 128GB** — tablets — 735.000 COP
+  - · asumido: título confirmado el 02/10/2026: la lista lo trae como «Samsung A11+ Plus 11" WiFi 6GB RAM 128GB»
 - **Samsung A11+ Plus 11" WiFi 8GB RAM 256GB** — tablets — 770.000 COP
   - ⚠️ tablets: confirmar la línea comercial completa (ej. Galaxy Tab A11)
-- **Honor X8B 11" WiFi 4GB RAM 128GB** — tablets — 565.000 COP
-  - ⚠️ tablets: confirmar la línea comercial completa (ej. Galaxy Tab A11)
-- **Xiaomi Redmi Pad 2 9.7" 4GB RAM 128GB** — tablets — 585.000 COP
+- **Honor Pad X8b 11" WiFi 4GB RAM 128GB** — tablets — 565.000 COP
+  - · asumido: título confirmado el 02/10/2026: la lista lo trae como «Honor X8B 11" WiFi 4GB RAM 128GB»
+- **Xiaomi Redmi Pad 2 9.7" WiFi 4GB RAM 128GB** — tablets — 585.000 COP
   - · asumido: el proveedor lo escribe bajo Xiaomi, pero el fabricante publica esta referencia en la línea Redmi: el título usa el nombre comercial real
-  - ⚠️ tablets: confirmar la línea comercial completa (ej. Galaxy Tab A11)
-- **Xiaomi Redmi Pad 2 Bundle 11" 4GB RAM 128GB** — tablets — 620.000 COP
+  - · asumido: título confirmado el 02/10/2026: la lista lo trae como «Xiaomi Redmi Pad 2 9.7" 4GB RAM 128GB»
+- **Xiaomi Redmi Pad 2 11" 4GB RAM 128GB (bundle)** — tablets — 620.000 COP
   - · asumido: el proveedor lo escribe bajo Xiaomi, pero el fabricante publica esta referencia en la línea Redmi: el título usa el nombre comercial real
-  - ⚠️ tablets: confirmar la línea comercial completa (ej. Galaxy Tab A11)
+  - · asumido: título confirmado el 02/10/2026: la lista lo trae como «Xiaomi Redmi Pad 2 Bundle 11" 4GB RAM 128GB»
 - **Xiaomi Redmi Pad 2 11" 4G 4GB RAM 128GB** — tablets — 660.000 COP
   - · asumido: el proveedor lo escribe bajo Xiaomi, pero el fabricante publica esta referencia en la línea Redmi: el título usa el nombre comercial real
   - ⚠️ tablets: confirmar la línea comercial completa (ej. Galaxy Tab A11)
 - **Xiaomi Redmi Pad 2 11" WiFi 8GB RAM 256GB** — tablets — 715.000 COP
   - · asumido: el proveedor lo escribe bajo Xiaomi, pero el fabricante publica esta referencia en la línea Redmi: el título usa el nombre comercial real
   - ⚠️ tablets: confirmar la línea comercial completa (ej. Galaxy Tab A11)
-- **Xiaomi Redmi Pad 2 Pro 11" WiFi 8GB RAM 256GB** — tablets — 935.000 COP
+- **Xiaomi Redmi Pad 2 Pro 12.1" WiFi 8GB RAM 256GB** — tablets — 935.000 COP
   - · asumido: el proveedor lo escribe bajo Xiaomi, pero el fabricante publica esta referencia en la línea Redmi: el título usa el nombre comercial real
-  - ⚠️ tablets: confirmar la línea comercial completa (ej. Galaxy Tab A11)
+  - · asumido: título confirmado el 02/10/2026: la lista lo trae como «Xiaomi Redmi Pad 2 Pro 11" WiFi 8GB RAM 256GB»
 - **Lenovo Tab Plus 11" WiFi 8GB RAM 256GB** — tablets — 950.000 COP
   - ⚠️ tablets: confirmar la línea comercial completa (ej. Galaxy Tab A11)
-- **Lenovo Tab One 7" 4G 4GB RAM 128GB Incluye Mouse** — tablets — 530.000 COP
-  - ⚠️ tablets: confirmar la línea comercial completa (ej. Galaxy Tab A11)
+- **Lenovo Tab One 8.7" 4G 4GB RAM 128GB con mouse** — tablets — 530.000 COP
+  - · asumido: título confirmado el 02/10/2026: la lista lo trae como «Lenovo Tab One 7" 4G 4GB RAM 128GB Incluye Mouse»
 - **TCL Tab 11 FE 11" WiFi 4GB RAM 128GB** — tablets — 595.000 COP
   - ⚠️ tablets: confirmar la línea comercial completa (ej. Galaxy Tab A11)
 - **TCL Pad Lugh 10" WiFi 4GB RAM 128GB** — tablets — 420.000 COP

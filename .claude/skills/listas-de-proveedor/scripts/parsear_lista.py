@@ -18,6 +18,7 @@ import argparse
 import json
 import re
 import unicodedata
+from collections import Counter
 from pathlib import Path
 
 VS16 = "\ufe0f"
@@ -267,6 +268,15 @@ CASING = {
 }
 
 RE_PRECIO = re.compile(r"\$\s*([\d][\d.,]*)")
+# El precio que el proveedor escribió sin «$»: 3 o 4 cifras justo después del
+# paréntesis de la memoria y al final de la línea —`MOTO G77 5G (8+256) 760`,
+# 08/10/2026—. Tan acotado a propósito: un número suelto en cualquier otra parte
+# de la línea es un modelo o una capacidad. El paréntesis tiene que ser el de la
+# memoria, con su «+»: con cualquier «)» valía `(M4) 2025` o `(DICIEMBRE) 2026`,
+# y un año salía como precio. Detrás solo puede venir la SIM.
+RE_PRECIO_SIN_SIGNO = re.compile(
+    r"\(\s*\d{1,2}\s*\+[^)]*\)\s*(\d{1,2}\.\d{3}|\d{3,4})"
+    r"(?=\s*(?:1\s*SIM|DUAL\s*SIM|SIM\s*/\s*ESIM|ESIM)?\s*$)")
 RE_PORCENTAJE = re.compile(r"\d{2,3}\s*%")
 RE_FECHA = re.compile(r"(\d{1,2})\s*[/ ]\s*([A-ZÁÉÍÓÚ]{3,}|\d{1,2})\s*/\s*(\d{4})", re.I)
 RE_TELEFONO = re.compile(r"^\D*\d{7,12}\D*$")
@@ -298,6 +308,18 @@ MESES = {
 
 TITULOS_LISTA = ("LISTA DE", "LISTADO DE", "LISTA ", "LISTADO ")
 
+# La lista del día llega en mensajes separados —Android, variedad, gama alta— y
+# un producto que no aparece solo dice algo si llegó el mensaje en que suele
+# venir. El título del de Android llega a veces trunco, «12 SEPTIEMBRE/2026
+# LISTADO DE», sin nombre: así vino el 12/09 y el 02/10, y la lista del 08/10
+# lo nombra completo. Un título que se queda sin nombre se lee como ese bloque.
+BLOQUE_SIN_NOMBRE = "ANDROID"
+# Los mensajes que manda este proveedor. Un título que contenga uno de estos
+# nombres es ese bloque, diga lo que diga alrededor —«ANDROID ACTUALIZADO»—; uno
+# que no contenga ninguno se avisa en la revisión, porque un nombre que cambia de
+# un día a otro hace que nada se reporte como desaparecido.
+BLOQUES_CONOCIDOS = ("GAMA ALTA", "VARIEDAD", "ANDROID")
+
 # Ancho máximo, en palabras, de un encabezado que llega sin marcadores de negrita.
 # Un encabezado es corto; la frase de cortesía con que el proveedor cierra la
 # lista —"TE BRINDAMOS UNA AMPLIA VARIEDAD DE TECNOLOGÍA…"— contiene VARIEDAD y
@@ -318,6 +340,72 @@ def sin_emojis(texto: str) -> str:
         ch for ch in texto
         if unicodedata.category(ch) not in ("So", "Sk", "Cf") and ch not in "🏻🏼🏽🏾🏿"
     )
+
+
+# Un emoji que abre al menos estas líneas con precio es la viñeta del día: se
+# acepta también en la línea que trae el precio abajo, y no pide verificación.
+# Uno que aparece menos veces entra, pero con alerta: así se coló un domicilio con
+# 🚚 como si fuera un producto (revisión del 08/10/2026).
+USOS_VINETA_DEL_DIA = 3
+
+
+def vinetas_del_dia(lineas) -> set:
+    usos = Counter()
+    for cruda in lineas:
+        t = limpiar(RE_EXPORTADO.sub("", cruda.strip()).strip()).lstrip()
+        if not tiene_precio(t) or any(t.startswith(e) for e in VINETAS_CATEGORIA.keys() | VINETAS_CONDICION.keys()):
+            continue
+        vineta = vineta_generica(t)
+        if vineta:
+            usos[vineta] += 1
+    return {v for v, n in usos.items() if n >= USOS_VINETA_DEL_DIA}
+
+
+# La SIM llega escrita de muchas formas —`1 SIM`, `1SIM`, `DUAL SIM`, `SIM/ESIM`,
+# `SIM / ESIM`—, en la misma línea o debajo. Tiene que salir siempre igual: dos
+# textos para la misma SIM son dos ids, y dos referencias que no se fusionan.
+RE_SIM = re.compile(r"\bSIM\s*[/+]\s*E\s*SIM\b|\bDUAL\s*SIM\b|\b1\s*SIM\b")
+
+
+def atributo_sim(texto: str):
+    """El atributo de SIM canónico para un texto en mayúsculas, o None."""
+    compacto = re.sub(r"\s+", "", texto.upper())
+    if compacto.startswith("SIM") and "ESIM" in compacto:
+        return "SIM + eSIM"   # como quedó publicado el Edge 50 Fusion el 02/10/2026
+    if compacto.startswith("DUAL"):
+        return "Dual SIM"
+    if compacto.startswith("1SIM"):
+        return "1 SIM"
+    return None
+
+
+def plano(texto: str) -> str:
+    """La línea sin emojis ni marcas de WhatsApp, en mayúsculas."""
+    return normalizar(sin_emojis(texto).replace("*", " ").replace("_", " "))
+
+
+def tiene_precio(linea: str) -> bool:
+    return bool(RE_PRECIO.search(linea) or RE_PRECIO_SIN_SIGNO.search(plano(linea)))
+
+
+def vineta_generica(texto: str):
+    """El emoji con que abre la línea, si no es un color: una viñeta que las tablas no conocen.
+
+    El proveedor cambia de viñeta con la temporada —la lista del 08/10/2026 trajo
+    🎃 en todo el bloque Android— y una tabla de emojis siempre va un día atrás.
+    Cualquier emoji al inicio de una línea con precio es una viñeta; no fija
+    categoría ni condición, eso lo siguen poniendo la sección y el texto. Los
+    corazones y círculos de COLORES quedan fuera: al inicio de la línea son el
+    color del equipo, como en el bloque de usados.
+    """
+    i = 0
+    while i < len(texto) and (unicodedata.category(texto[i]) in ("So", "Sk", "Cf")
+                              or texto[i] in "🏻🏼🏽🏾🏿"):
+        i += 1
+    prefijo = texto[:i]
+    if not prefijo or any(ch in COLORES for ch in prefijo):
+        return None
+    return prefijo
 
 
 def normalizar(texto: str) -> str:
@@ -445,8 +533,20 @@ def construir_producto(texto, categoria, marca, condicion, seccion, linea):
     original = texto
     texto_plano = normalizar(sin_emojis(texto).replace("*", " ").replace("_", " ").replace("°", " "))
     texto_plano = separar_pegados(texto_plano)
+    # Un «+» pegado a un nombre es parte del nombre: PRO+ es el Pro Plus, no el
+    # Pro. Sin esto el Pro+ se fundía con el Pro de la misma lista y tomaba su id.
+    # Solo detrás de un token que empieza por letra, para no tocar la memoria
+    # (8+256), y no cuando ya dice PLUS (A11+ PLUS).
+    texto_plano = re.sub(r"\b([A-Z][A-Z0-9]*)\+(?!\s*PLUS\b)", r"\1 PLUS ", texto_plano)
     emojis_color, colores = extraer_colores(texto)
     precio, precio_ambiguo = parsear_precio(texto)
+    sin_signo = None
+    if precio is None:
+        m = RE_PRECIO_SIN_SIGNO.search(texto_plano)
+        if m:
+            sin_signo = m.group(1)
+            precio, precio_ambiguo = parsear_precio("$" + sin_signo)
+            texto_plano = (texto_plano[:m.start(1)] + " " + texto_plano[m.end(1):]).strip()
 
     prod = {
         "id": None, "categoria": categoria, "marca": marca, "modelo": None,
@@ -461,6 +561,10 @@ def construir_producto(texto, categoria, marca, condicion, seccion, linea):
     }
     if precio_ambiguo:
         prod["revisar"].append("precio de 5 dígitos: confirmar si es acotado o completo")
+    if sin_signo:
+        prod["supuestos"].append(
+            f"la lista escribe el precio sin «$» ({sin_signo}): se leyó como "
+            f"{precio:,} COP".replace(",", "."))
 
     # Marca escrita en la línea (manda sobre la de la sección)
     for mk in MARCAS:
@@ -481,6 +585,14 @@ def construir_producto(texto, categoria, marca, condicion, seccion, linea):
                 prod["marca"] = madre
                 break
 
+    # La SIM escrita en la misma línea es un atributo, igual que cuando llega en la
+    # línea siguiente: «1 SIM» y «DUAL SIM» son dos referencias, y sin el atributo
+    # se fusionaban en una. «SIM / ESIM» va antes que el «ESIM» suelto de abajo,
+    # que si no se come la mitad y deja «SIM» pegado al modelo.
+    m = RE_SIM.search(texto_plano)
+    if m:
+        prod["atributos"].append(atributo_sim(m.group(0)))
+        texto_plano = texto_plano[:m.start()] + " " + texto_plano[m.end():]
     if "ESIM" in texto_plano:
         prod["atributos"].append("eSIM")
         texto_plano = texto_plano.replace("ESIM", " ")
@@ -521,9 +633,11 @@ def construir_producto(texto, categoria, marca, condicion, seccion, linea):
             if modelo.upper().startswith("NOTE"):
                 prod["modelo"] = "Redmi " + modelo
                 prod["supuestos"].append("la sección Xiaomi abrevia 'NOTE': se leyó como Redmi Note")
-            elif re.match(r"^X\d", modelo):
+            elif re.match(r"^[XF]\d", modelo):
+                # Las series X y F son de POCO; el número a secas (17T Pro) sí es Xiaomi.
                 prod["modelo"] = "POCO " + modelo
-                prod["supuestos"].append("la sección Xiaomi abrevia la serie X: se leyó como POCO")
+                prod["supuestos"].append(
+                    f"la sección Xiaomi abrevia la serie {modelo[0]}: se leyó como POCO")
         if prod["ram_virtual"]:
             prod["revisar"].append(
                 f"la lista suma RAM virtual ({prod['ram']}+{prod['ram_virtual']}): "
@@ -713,6 +827,20 @@ def atributos_sim(prod):
 # Recorrido del mensaje
 # --------------------------------------------------------------------------
 
+def nombre_de_bloque(encabezado: str) -> str:
+    """«‼️*LISTADO DE ANDROID*‼️» → ANDROID; «*LISTA DE GAMA ALTA* 🍎» → GAMA ALTA."""
+    # Sin tildes, sin números y sin meses: la fecha llega escrita de mil formas
+    # («08 OCTUBRE 2026», «08/10/26», «OCTUBRE 08/2026») y no es parte del nombre.
+    nombre = unicodedata.normalize("NFKD", encabezado).encode("ascii", "ignore").decode()
+    nombre = re.sub(r"\b(LISTADO|LISTA)\b(\s+DE\b)?", " ", nombre)
+    nombre = re.sub(r"[^A-Z ]", " ", nombre)
+    nombre = " ".join(w for w in nombre.split() if w not in MESES)
+    for conocido in BLOQUES_CONOCIDOS:
+        if conocido in nombre:
+            return conocido
+    return nombre or BLOQUE_SIN_NOMBRE
+
+
 def es_encabezado(texto: str) -> bool:
     """
     WhatsApp marca los encabezados en *negrita*, pero el mensaje llega sin los
@@ -758,7 +886,7 @@ def es_ruido(linea: str) -> bool:
     return False
 
 
-def parsear(texto: str):
+def parsear(texto: str, equivalencias=None):
     lineas = texto.splitlines()
     productos, descartados, sin_clasificar = [], [], []
     categoria = marca = condicion = None
@@ -766,9 +894,12 @@ def parsear(texto: str):
     fecha = None
     pendiente = None
     ultimo = None
+    del_dia = vinetas_del_dia(lineas)
+    bloque, bloques, en_aviso = None, [], False
 
     def clasificar(prod):
         nonlocal ultimo
+        prod["bloques"] = [bloque] if bloque and not en_aviso else []
         if prod["categoria"] not in CATEGORIAS_INCLUIDAS:
             descartados.append({**prod, "motivo": f"categoría no publicable: {prod['categoria']}"})
         elif prod["condicion"] not in CONDICIONES_PUBLICABLES:
@@ -803,13 +934,26 @@ def parsear(texto: str):
                 cat_vineta = VINETAS_CATEGORIA.get(e)
                 cond_vineta = VINETAS_CONDICION.get(e)
                 break
+        generica = None
+        if emoji is None:
+            vineta = vineta_generica(t)
+            if vineta and (tiene_precio(linea) or vineta in del_dia):
+                emoji = generica = vineta
+                resto = t[len(emoji):].strip()
 
         if es_encabezado(linea):
             cerrar_pendiente()
             enc = normalizar(sin_emojis(linea).replace("*", " ").replace("_", " "))
             if any(x in enc for x in TITULOS_LISTA) and not enc.startswith("LLEGANDO"):
+                bloque, en_aviso = nombre_de_bloque(enc), False
+                if bloque not in bloques:
+                    bloques.append(bloque)
                 continue
             if enc.startswith("LLEGANDO"):
+                # Lo que viene debajo de un aviso es anuncio, no inventario de un
+                # bloque. La sección siguiente que no sea aviso devuelve el bloque
+                # que había: un aviso en medio del de Android no lo cierra.
+                en_aviso = True
                 anuncio = enc.replace("LLEGANDO", "", 1).strip()
                 if any(re.search(rf"\b{mk}\b", anuncio) for mk in MARCAS) or \
                    any(re.search(rf"\b{sub}\b", anuncio) for sub in SUBMARCAS):
@@ -821,6 +965,7 @@ def parsear(texto: str):
                 seccion = enc.title()
                 continue
             seccion = enc.title()
+            en_aviso = False
             aplicado = False
             for clave, (c, mk, cond) in ENCABEZADOS:
                 if clave in enc:
@@ -842,7 +987,7 @@ def parsear(texto: str):
 
         limpio = normalizar(sin_emojis(resto).replace("*", " ").replace("_", " "))
         if RE_ANOTACION.match(limpio) and ultimo is not None and not emoji:
-            nota = titulo_bonito(limpio)
+            nota = atributo_sim(separar_pegados(limpio)) or titulo_bonito(limpio)
             if nota not in ultimo["atributos"]:
                 ultimo["atributos"].append(nota)
                 armar_titulo(ultimo)
@@ -856,6 +1001,8 @@ def parsear(texto: str):
             cat = cat_vineta or categoria_por_palabras(resto) or categoria or "celulares"
             cond = cond_vineta or condicion or "nuevo"
             prod = construir_producto(resto, cat, marca, cond, seccion, i)
+            if generica and generica not in del_dia:
+                prod["revisar"].append(f"viñeta no reconocida ({generica}): verificar que sea un producto")
             if prod["precio_proveedor_cop"] is None:
                 pendiente = prod
             else:
@@ -889,8 +1036,10 @@ def parsear(texto: str):
     cerrar_pendiente()
     productos, duplicados = fusionar_duplicados(productos)
     productos = filtrar_por_precio(productos, descartados)
+    aplicar_equivalencias(productos, equivalencias or {}, descartados, duplicados)
     return {
         "fecha_lista": fecha,
+        "bloques": bloques,
         "categorias_incluidas": sorted(CATEGORIAS_INCLUIDAS),
         "productos": productos,
         "descartados": descartados,
@@ -926,7 +1075,7 @@ def fusionar_duplicados(productos):
         for a in p["atributos"]:
             if a not in base["atributos"]:
                 base["atributos"].append(a)
-        for campo in ("supuestos", "revisar", "colores_familia", "colores_emoji"):
+        for campo in ("supuestos", "revisar", "colores_familia", "colores_emoji", "bloques"):
             base[campo] = list(dict.fromkeys(base[campo] + p[campo]))
         precios = [x for x in (base["precio_proveedor_cop"], p["precio_proveedor_cop"]) if x]
         if precios:
@@ -958,7 +1107,7 @@ def fusionar_duplicados(productos):
             # contradice ni en precio: no hay duda, es el mismo equipo.
             destino = con_cap[0]
             for g in sin_cap:
-                for campo in ("supuestos", "revisar", "colores_familia", "colores_emoji"):
+                for campo in ("supuestos", "revisar", "colores_familia", "colores_emoji", "bloques"):
                     destino[campo] = list(dict.fromkeys(destino[campo] + g[campo]))
                 destino["supuestos"].append(
                     f"el aviso «{g['texto_origen'][:50]}» no trae capacidad; se unió a la única variante de la lista")
@@ -968,6 +1117,104 @@ def fusionar_duplicados(productos):
             for g in grupo:
                 g["revisar"].append("posible duplicado: el mismo modelo aparece con y sin capacidad")
     return salida, fusionados
+
+
+# --------------------------------------------------------------------------
+# Equivalencias: títulos confirmados una vez y aplicados en cada lista
+# --------------------------------------------------------------------------
+
+EQUIVALENCIAS = Path(__file__).resolve().parent.parent / "referencias" / "equivalencias.json"
+
+# Lo que una equivalencia ya confirmó: el nombre comercial. Se quitan para que el
+# paso 3 no vuelva a pedir lo que se resolvió en una lista anterior.
+ALERTAS_DE_NOMBRE = (
+    "confirmar nombre comercial oficial del modelo",
+    "tablets: confirmar la línea comercial completa (ej. Galaxy Tab A11)",
+)
+
+
+def id_de_titulo(titulo: str) -> str:
+    """El id que corresponde a un título definitivo.
+
+    Un «+» pegado a una palabra es parte del nombre —Redmi Note 15 Pro+, Galaxy
+    Tab A11+— y se escribe «plus»; entre espacios solo separa («Switch 2 + Mario
+    Kart World»). Es como quedaron los ids que se entregaron el 02/10/2026.
+    """
+    return slug(re.sub(r"(?<=\w)\+", " plus ", titulo))
+
+
+def validar_equivalencias(equivalencias: dict) -> dict:
+    """Se niega a cargar un archivo que renombraría productos mal y en silencio."""
+    errores = []
+    for clave, e in equivalencias.items():
+        faltan = [c for c in ("id", "titulo", "fecha", "motivo") if not e.get(c)]
+        if faltan:
+            errores.append(f"{clave}: faltan {', '.join(faltan)}")
+            continue
+        esperado = id_de_titulo(e["titulo"])
+        if e["id"] != esperado:
+            errores.append(f"{clave}: el id {e['id']} no corresponde al título «{e['titulo']}» "
+                           f"(sería {esperado})")
+        if e["id"] != clave and e["id"] in equivalencias:
+            errores.append(f"{clave}: apunta a {e['id']}, que también es una clave; "
+                           "la cadena se resuelve en el archivo, no al aplicarlo")
+    if errores:
+        raise ValueError("equivalencias.json no es válido:\n- " + "\n- ".join(errores))
+    return equivalencias
+
+
+def cargar_equivalencias(ruta=EQUIVALENCIAS) -> dict:
+    datos = json.loads(Path(ruta).read_text(encoding="utf-8"))
+    return validar_equivalencias(datos["equivalencias"])
+
+
+def aplicar_equivalencias(productos, equivalencias, descartados=(), duplicados=None):
+    """Pone el id y el título definitivos, y deja el id que produjo la lista en `id_lista`.
+
+    `id_lista` va en todos los productos, tengan equivalencia o no: es lo que
+    permite, cuando un título nuevo se confirme, saber qué escribir en el archivo.
+    """
+    for p in productos:
+        p["id_lista"] = p["id"]
+        e = equivalencias.get(p["id"])
+        if not e:
+            continue
+        if e["titulo"] != p["titulo"]:
+            fecha = "/".join(reversed(e["fecha"].split("-")))
+            p["supuestos"].append(f"título confirmado el {fecha}: la lista lo trae como «{p['titulo']}»")
+        p["id"], p["titulo"] = e["id"], e["titulo"]
+        p["revisar"] = [r for r in p["revisar"] if r not in ALERTAS_DE_NOMBRE]
+
+    # Los descartados solo toman el id: la comparación tiene que reconocer a un
+    # conocido que hoy vino pero no entra (sin precio, bajo el mínimo).
+    for d in descartados:
+        d["id_lista"] = d["id"]
+        if d["id"] in equivalencias:
+            d["id"] = equivalencias[d["id"]]["id"]
+
+    # Dos líneas que terminan con el mismo id definitivo son el mismo producto para
+    # todo lo que viene después —la base y la comparación van por id, y uno pisaba
+    # al otro—. Se fusionan al menor precio, como cualquier repetido (regla 7), y
+    # queda la alerta por si la que está mal es la equivalencia.
+    por_id = {}
+    for p in productos:
+        por_id.setdefault(p["id"], []).append(p)
+    for pid, grupo in por_id.items():
+        if len(grupo) < 2:
+            continue
+        base, otros = grupo[0], grupo[1:]
+        lineas = ", ".join(str(g["linea"]) for g in grupo)
+        for g in otros:
+            for campo in ("supuestos", "revisar", "colores_familia", "colores_emoji", "bloques"):
+                base[campo] = list(dict.fromkeys(base[campo] + g.get(campo, [])))
+            productos.remove(g)
+            if duplicados is not None:
+                duplicados.append({"titulo": g["titulo"], "linea": g["linea"], "fusionado_en": base["titulo"]})
+        precios = [g["precio_proveedor_cop"] for g in grupo if g["precio_proveedor_cop"]]
+        base["precio_proveedor_cop"] = min(precios) if precios else None
+        base["revisar"].append(
+            f"dos líneas de la lista quedaron con el mismo id ({pid}) —líneas {lineas}— y se "
+            "fusionaron al menor precio: si no son el mismo equipo, la equivalencia está mal")
 
 
 def filtrar_por_precio(productos, descartados):
@@ -999,7 +1246,14 @@ def reporte(datos: dict) -> str:
     L.append(f"- Duplicados fusionados: {len(datos['duplicados_fusionados'])}")
     L.append(f"- Productos con algún supuesto aplicado: "
              f"{sum(1 for p in datos['productos'] if p.get('supuestos'))}")
+    L.append(f"- Títulos confirmados en una lista anterior: "
+             f"{sum(1 for p in datos['productos'] if p.get('id_lista') not in (None, p['id']))}")
     L.append(f"- Líneas sin clasificar: {len(datos['sin_clasificar'])}")
+    L.append(f"- Mensajes de la lista: {', '.join(datos.get('bloques') or []) or 'ninguno reconocido'}")
+    for b in datos.get("bloques") or []:
+        if b not in BLOQUES_CONOCIDOS:
+            L.append(f"  - ⚠️ mensaje de la lista no reconocido: {b}. Si es uno de los de siempre con "
+                     "otro nombre, agrégalo a BLOQUES_CONOCIDOS; si no, sus desaparecidos no se verán")
     L.append("")
     L.append("## Productos para publicar")
     for p in datos["productos"]:
@@ -1032,9 +1286,12 @@ def main():
     ap.add_argument("entrada")
     ap.add_argument("--salida", default="productos.json")
     ap.add_argument("--reporte", default="revision.md")
+    ap.add_argument("--equivalencias", default=str(EQUIVALENCIAS),
+                    help="títulos confirmados (por omisión, referencias/equivalencias.json de la skill)")
     args = ap.parse_args()
 
-    datos = parsear(Path(args.entrada).read_text(encoding="utf-8"))
+    datos = parsear(Path(args.entrada).read_text(encoding="utf-8"),
+                    cargar_equivalencias(args.equivalencias))
     Path(args.salida).write_text(json.dumps(datos, ensure_ascii=False, indent=2), encoding="utf-8")
     Path(args.reporte).write_text(reporte(datos), encoding="utf-8")
     print(f"{len(datos['productos'])} productos | {len(datos['descartados'])} descartados "

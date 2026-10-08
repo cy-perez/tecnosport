@@ -28,6 +28,7 @@ Sin dependencias: solo biblioteca estándar.
 """
 
 import argparse
+import datetime
 import importlib.util
 import json
 import pathlib
@@ -42,6 +43,10 @@ _spec = importlib.util.spec_from_file_location(
 _precios = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(_precios)
 coincide = _precios.coincide
+
+import sys  # noqa: E402
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+from pendientes import necesita  # noqa: E402
 
 DESVIACION_MAXIMA = 0.35
 FUENTES_MINIMAS = 3
@@ -90,6 +95,32 @@ def resumir(filas):
     return int(statistics.median([f["precio_cop"] for f in usadas])), usadas, fuera
 
 
+def aplicar_margen(p):
+    """Ganancia y margen sobre el costo, con las dos alertas de siempre.
+
+    La usa también `comparar_lista.py` con el precio heredado de la base y el
+    costo del día: un margen no puede tener dos fórmulas según de dónde salió el
+    precio.
+    """
+    precio = p.get("precio_mercado_cop")
+    if precio is None:
+        p["ganancia_cop"] = None
+        p["margen"] = None
+        return
+    p["ganancia_cop"] = precio - p["precio_proveedor_cop"]
+    p["margen"] = round(p["ganancia_cop"] / p["precio_proveedor_cop"], 4)
+    if p["margen"] < 0:
+        p["revisar"].append(
+            f"POR DEBAJO DEL COSTO: el mercado paga {precio:,} COP y el "
+            f"proveedor cobra {p['precio_proveedor_cop']:,} COP "
+            f"({p['margen']:.1%}). No publicar sin decision del negocio")
+    elif p["margen"] > MARGEN_SOSPECHOSO:
+        p["revisar"].append(
+            f"margen inusual de {p['margen']:.1%}: revisar que el precio de "
+            "lista no tenga un error de lectura (el x1.000) y que la "
+            "referencia comparada sea la misma")
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -99,8 +130,10 @@ def main():
     ap.add_argument("--descartar",
                     help="JSON de id -> motivo: referencias que una revision a mano "
                          "rechazo pese a pasar el emparejador")
-    ap.add_argument("--fecha", default="2026-09-19",
-                    help="fecha de consulta, que queda en cada fuente")
+    # Hasta el 08/10/2026 valía "2026-09-19" por omisión: cada corrida sellaba
+    # sus fuentes con la fecha de la primera.
+    ap.add_argument("--fecha", default=datetime.date.today().isoformat(),
+                    help="fecha de consulta, que queda en cada fuente (por omisión, hoy)")
     args = ap.parse_args()
 
     datos = json.loads(open(args.productos, encoding="utf-8").read())
@@ -117,7 +150,14 @@ def main():
             bases.setdefault(base_sin_red(p["titulo"]), set()).add(red.upper())
     ambiguas = {b for b, redes in bases.items() if len(redes) > 1}
 
+    # Solo los que tienen el precio pendiente: el de un conocido con el precio
+    # vigente lo copió comparar_lista.py de la base, y aquí no hay con qué
+    # reemplazarlo —no se cosechó—, así que pasarlo por la mediana lo borraba.
+    # Las redes ambiguas de arriba sí se miran con todos: el A17 4G conocido
+    # sigue haciendo ambiguo al A17 5G nuevo.
     for p in datos["productos"]:
+        if not necesita(p, "precio"):
+            continue
         pid = p["id"]
         fuentes, notas = [], []
 
@@ -211,26 +251,16 @@ def main():
             p["revisar"].append(
                 "sin precio de mercado: no se encontro la referencia en ninguna "
                 "tienda admisible; el margen no se puede calcular")
-            p["ganancia_cop"] = None
-            p["margen"] = None
         else:
-            p["ganancia_cop"] = precio - p["precio_proveedor_cop"]
-            p["margen"] = round(p["ganancia_cop"] / p["precio_proveedor_cop"], 4)
             tiendas = {f["tienda"] for f in usadas}
             if len(tiendas) < FUENTES_MINIMAS:
                 notas.append(f"precio con poca evidencia: {len(tiendas)} tienda(s)")
-            if p["margen"] < 0:
-                p["revisar"].append(
-                    f"POR DEBAJO DEL COSTO: el mercado paga {precio:,} COP y el "
-                    f"proveedor cobra {p['precio_proveedor_cop']:,} COP "
-                    f"({p['margen']:.1%}). No publicar sin decision del negocio")
-            elif p["margen"] > MARGEN_SOSPECHOSO:
-                p["revisar"].append(
-                    f"margen inusual de {p['margen']:.1%}: revisar que el precio de "
-                    "lista no tenga un error de lectura (el x1.000) y que la "
-                    "referencia comparada sea la misma")
+        aplicar_margen(p)
 
         p["notas_precio"] = notas
+        # La fecha de la consulta, no la del día en que se consolide: consolidar
+        # días después rejuvenecía el precio (revisión del 08/10/2026).
+        p["fecha_precio"] = args.fecha if precio else None
 
     json.dump(datos, open(args.productos, "w", encoding="utf-8"),
               ensure_ascii=False, indent=2)

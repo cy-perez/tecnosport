@@ -28,6 +28,7 @@ import { spawnSync } from "node:child_process";
 import { tmpdir } from "node:os";
 import { join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
+import { buscarPython } from "./buscar-python.mjs";
 
 const RAIZ = fileURLToPath(new URL("..", import.meta.url));
 const KIT = join(RAIZ, "packages/marca");
@@ -51,16 +52,6 @@ const ENTRADAS = ["tokens.json", "generador", "fuentes.css", "fuentes", "logo"];
  * `--fuentes` —sin la bandera el generador lo conserva, que es por lo que entra como entrada— y
  * `dist/` tampoco: sale de otro camino que este guardián no corre. */
 const GENERADOS = ["LEEME.md", "contraste.md", "index.html", "tipografia.md", "tokens.css"];
-
-/** El intérprete que exista. En Windows `python3` es el alias de la tienda, que no es Python:
- * responde con un cartel y un código de salida distinto de cero, así que se pregunta antes. */
-function buscarPython() {
-  for (const candidato of ["python3", "python"]) {
-    const prueba = spawnSync(candidato, ["-c", "print(40 + 2)"], { encoding: "utf8" });
-    if (prueba.status === 0 && prueba.stdout.trim() === "42") return candidato;
-  }
-  return null;
-}
 
 /**
  * Iguales **como los compara git**, que es lo que decide si hay o no un cambio que confirmar.
