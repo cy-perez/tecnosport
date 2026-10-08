@@ -117,6 +117,17 @@ def fecha_corta(iso) -> str:
     return "/".join(reversed(iso.split("-"))) if iso else "—"
 
 
+def texto_de_cambio(p: dict) -> str:
+    """La columna «Cambio» del Excel. Vive aquí y no en construir_entregables.py
+    porque aquel importa openpyxl, que integración continua no instala."""
+    estado = p.get("estado_lista")
+    if estado == "costo_cambio":
+        delta = p["precio_proveedor_cop"] - p["costo_anterior_cop"]
+        return f"costo {'+' if delta > 0 else '−'}{pesos(abs(delta))}"
+    return {"nuevo": "nuevo", "sin_cambios": "igual",
+            "sin_precio_vigente": "precio por investigar"}.get(estado, "")
+
+
 def reporte(datos: dict) -> str:
     r = datos["comparacion"]["resumen"]
     por = {estado: [p for p in datos["productos"] if p["estado_lista"] == estado] for estado in ESTADOS}

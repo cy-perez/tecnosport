@@ -31,6 +31,10 @@ from openpyxl import Workbook
 from openpyxl.styles import Alignment, Font, PatternFill
 from openpyxl.utils import get_column_letter
 
+import sys  # noqa: E402
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from comparar_lista import texto_de_cambio  # noqa: E402
+
 EXT_IMAGEN = (".jpg", ".jpeg", ".png", ".webp", ".avif")
 
 
@@ -168,6 +172,11 @@ def escribir_excel(datos: dict, ruta: Path, fecha: str):
         "Precio promedio mercado Colombia (COP)",
         "Ganancia (COP)",
     ]
+    # Con la comparación corrida, una quinta columna dice qué cambió frente a lo
+    # que ya se conocía; sin ella, el comparativo queda como siempre.
+    comparada = bool(datos.get("comparacion"))
+    if comparada:
+        encabezados.append("Cambio frente a lo conocido")
     ws.append(encabezados)
     relleno = PatternFill("solid", fgColor="1F3A5F")
     for c in ws[1]:
@@ -179,12 +188,13 @@ def escribir_excel(datos: dict, ruta: Path, fecha: str):
         costo = p.get("precio_proveedor_cop")
         mercado = p.get("precio_mercado_cop")
         ganancia = (mercado - costo) if (costo and mercado) else None
-        ws.append([p["titulo"], costo, mercado, ganancia])
+        fila = [p["titulo"], costo, mercado, ganancia]
+        ws.append(fila + [texto_de_cambio(p)] if comparada else fila)
 
     for fila in ws.iter_rows(min_row=2, min_col=2, max_col=4):
         for c in fila:
             c.number_format = '#,##0'
-    for col, ancho in zip("ABCD", (52, 26, 32, 20)):
+    for col, ancho in zip("ABCDE", (52, 26, 32, 20, 24)):
         ws.column_dimensions[col].width = ancho
     ws.freeze_panes = "A2"
 
@@ -215,6 +225,21 @@ def escribir_excel(datos: dict, ruta: Path, fecha: str):
         ws3.append([p.get("texto_origen", ""), p.get("motivo", "")])
     ws3.column_dimensions["A"].width = 50
     ws3.column_dimensions["B"].width = 40
+
+    if comparada:
+        # Lo que el proveedor tenía y hoy no trae, aunque llegó el mensaje en
+        # que suele venir: es la señal para dejar de ofrecerlo.
+        ws4 = wb.create_sheet("Desaparecidos")
+        ws4.append(["Título", "Visto por última vez", "Último costo (COP)", "Mensaje de la lista"])
+        for c in ws4[1]:
+            c.font = Font(bold=True)
+        for d in datos.get("desaparecidos", []):
+            ws4.append([d["titulo"], d.get("visto_por_ultima_vez"), d.get("ultimo_costo_cop"),
+                        ", ".join(d.get("bloques") or [])])
+        for c in ws4["C"][1:]:
+            c.number_format = '#,##0'
+        for col, ancho in zip("ABCD", (52, 20, 20, 20)):
+            ws4.column_dimensions[col].width = ancho
 
     wb.save(ruta)
 

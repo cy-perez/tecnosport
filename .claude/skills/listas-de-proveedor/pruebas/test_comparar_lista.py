@@ -182,6 +182,26 @@ class Resumen(unittest.TestCase):
         self.assertIn("POR DEBAJO DEL COSTO", texto)
 
 
+class TextoDeCambio(unittest.TestCase):
+    """Lo que dice la columna «Cambio» del Excel comparativo."""
+
+    def texto(self, base, p):
+        [p] = comparar(lista(p), base)["productos"]
+        return comparar_lista.texto_de_cambio(p)
+
+    def test_cada_estado_en_una_palabra_o_dos(self):
+        base = {"jbl-xtreme-4": conocido()}
+        self.assertEqual("nuevo", self.texto(base, producto("jbl-grip", "JBL Grip")))
+        self.assertEqual("igual", self.texto(base, producto()))
+        self.assertEqual("costo −100.000", self.texto(base, producto(costo=1_000_000)))
+        self.assertEqual("costo +50.000", self.texto(base, producto(costo=1_150_000)))
+        self.assertEqual("precio por investigar",
+                         self.texto({"jbl-xtreme-4": conocido(fecha_precio="2026-09-01")}, producto()))
+
+    def test_sin_comparacion_no_dice_nada(self):
+        self.assertEqual("", comparar_lista.texto_de_cambio({"titulo": "JBL Grip"}))
+
+
 class PasoCuatroRespetaLoPendiente(unittest.TestCase):
     """Los scripts del paso 4 reescribían todos los productos: un precio heredado
     se perdía al pasar por la mediana de un corpus que no lo traía."""
