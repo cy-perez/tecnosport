@@ -33,12 +33,21 @@
 //
 // Correr `npm run logos-pago` al reemplazar un archivo de `apps/web/logos-pago/`, o al subir la
 // versión de `simple-icons`.
+//
+// **Desde el 8 de octubre de 2026 también escribe los logos de las transportadoras** (ADR-0073), en
+// su propio archivo: los ve el checkout al elegir con quién se envía, no el pie. Salen de
+// `apps/web/logos-transportadora/`, que son los archivos del dueño del negocio ya limpiados para
+// este generador —un solo grupo, sin estilos ni placas—, y pasan por los mismos guardianes.
 import { readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const RAIZ = fileURLToPath(new URL("..", import.meta.url));
 const DESTINO = join(RAIZ, "apps/web/src/app/shared/ui/icono/logos-pago.generado.ts");
+const DESTINO_TRANSPORTADORAS = join(
+  RAIZ,
+  "apps/web/src/app/shared/ui/icono/logos-transportadora.generado.ts",
+);
 
 /**
  * De dónde sale cada archivo.
@@ -62,6 +71,7 @@ const DESTINO = join(RAIZ, "apps/web/src/app/shared/ui/icono/logos-pago.generado
 const ORIGENES = {
   propio: join(RAIZ, "apps/web/logos-pago"),
   "simple-icons": join(RAIZ, "node_modules/simple-icons/icons"),
+  transportadoras: join(RAIZ, "apps/web/logos-transportadora"),
 };
 
 /**
@@ -122,6 +132,23 @@ const LOGOS = [
     origen: "propio",
   },
   { constante: "logoAddi", archivo: "addi.svg", titulo: "Addi", origen: "propio" },
+];
+
+/**
+ * Las transportadoras que Skydropx cotiza en Colombia (docs/13 §6), con el nombre con que las
+ * devuelve la plataforma. `vista` ciñe el lienzo donde el archivo trae aire que no es del dibujo,
+ * medido en el navegador con `getBBox()` el 8 de octubre de 2026: Coordinadora declara 243×80 y el
+ * símbolo ocupa 76×40; el de Envía es un trazado de bitmap de 1200×1200 cuyo logo mide 918×408, y
+ * Servientrega trae 69 unidades de aire a la izquierda. Sin ceñir, los dos últimos se veían como un
+ * garabato de 8 px dentro de la caja del botón. Inter Rapidísimo dejaba un margen de 8 alrededor de
+ * la placa que aquí ya no está.
+ */
+const LOGOS_TRANSPORTADORA = [
+  { constante: "logoServientrega", archivo: "servientrega.svg", titulo: "Servientrega", origen: "transportadoras", vista: "63 6 136 129" },
+  { constante: "logoCoordinadora", archivo: "coordinadora.svg", titulo: "Coordinadora", origen: "transportadoras", vista: "0 20 76 40" },
+  { constante: "logoInterRapidisimo", archivo: "interrapidisimo.svg", titulo: "Inter Rapidísimo", origen: "transportadoras", vista: "8 8 32 32" },
+  { constante: "logoEnvia", archivo: "envia.svg", titulo: "Envía", origen: "transportadoras", vista: "176 418 918 408" },
+  { constante: "logo99Minutos", archivo: "99minutos.svg", titulo: "99 minutos", origen: "transportadoras" },
 ];
 
 /**
@@ -381,17 +408,23 @@ function extraer({ archivo, origen, aColor = false, vista: vistaDeclarada = null
 
 // Solo se barre la carpeta propia: `node_modules/simple-icons/icons` tiene miles y ahí lo normal es
 // que sobren. Un archivo sin usar en la nuestra, en cambio, es un archivo que nadie revisa.
-const sobrantes = readdirSync(ORIGENES.propio)
-  .filter((f) => f.endsWith(".svg"))
-  .filter((f) => !LOGOS.some((l) => l.origen === "propio" && l.archivo === f));
-if (sobrantes.length > 0) {
-  throw new Error(
-    `Hay logos en ${ORIGENES.propio} que nadie usa: ${sobrantes.join(", ")}. ` +
-      `O entran en LOGOS, o se borran: un archivo que nadie dibuja es un archivo que nadie revisa.`,
-  );
+for (const [origen, lista] of [
+  ["propio", LOGOS],
+  ["transportadoras", LOGOS_TRANSPORTADORA],
+]) {
+  const sobrantes = readdirSync(ORIGENES[origen])
+    .filter((f) => f.endsWith(".svg"))
+    .filter((f) => !lista.some((l) => l.archivo === f));
+  if (sobrantes.length > 0) {
+    throw new Error(
+      `Hay logos en ${ORIGENES[origen]} que nadie usa: ${sobrantes.join(", ")}. ` +
+        `O entran en la lista, o se borran: un archivo que nadie dibuja es un archivo que nadie revisa.`,
+    );
+  }
 }
 
 const logos = LOGOS.map((logo) => ({ ...logo, ...extraer(logo) }));
+const logosTransportadora = LOGOS_TRANSPORTADORA.map((logo) => ({ ...logo, ...extraer(logo) }));
 
 /** `null` o la cadena entre comillas simples, que es como se escribe el campo en el generado. */
 const valor = (v) => (v === null ? "null" : `'${v.replace(/'/g, "\\'")}'`);
@@ -448,7 +481,11 @@ export interface LogoPago {
   readonly trazos: readonly TrazoDeLogo[];
 }
 
-${logos
+${constantes(logos)}
+`;
+
+function constantes(lista) {
+  return lista
   .map(
     ({ constante, titulo, vista, transformacion, trazos }) =>
       `export const ${constante}: LogoPago = {\n` +
@@ -474,10 +511,29 @@ ${logos
         .join("\n") +
       `\n  ],\n};`,
   )
-  .join("\n\n")}
-`;
+  .join("\n\n");
+}
 
 writeFileSync(DESTINO, contenido);
+
+const contenidoTransportadoras = `// GENERADO por tools/generar-logos-pago.mjs - no editar a mano.
+//
+// Los logos de las transportadoras que el checkout ofrece al elegir con quién se envía (ADR-0073).
+// Monocromos como los de pago, con el mismo \`ts-logo-pago\` que los pinta: heredan el color del
+// botón en los dos temas. Salen de \`apps/web/logos-transportadora/\`.
+//
+// Las marcas registradas siguen siendo propiedad de sus titulares; aquí se usan para identificar
+// con qué empresa va el envío, no como respaldo de nadie.
+//
+// Para actualizarlos, reemplaza el archivo en \`apps/web/logos-transportadora/\` y corre
+// \`npm run logos-pago\`.
+
+import type { LogoPago } from './logos-pago.generado';
+
+${constantes(logosTransportadora)}
+`;
+
+writeFileSync(DESTINO_TRANSPORTADORAS, contenidoTransportadoras);
 
 const kb = (n) => `${(n / 1024).toFixed(1)} kB`;
 const peso = (l) => l.trazos.reduce((s, t) => s + t.d.length, 0);
