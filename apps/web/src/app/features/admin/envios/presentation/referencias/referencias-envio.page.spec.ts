@@ -106,7 +106,7 @@ describe('ReferenciasEnvioPage', () => {
     expect(screen.getAllByText('700 g')).toHaveLength(2);
   });
 
-  /** Las que no tienen peso son las que importan: sus productos solo se venden con recogida. */
+  /** Las que no tienen peso son las que importan: sus productos sin medir no van a domicilio. */
   it('una categoría sin peso lo dice con palabras, y el resumen las cuenta', async () => {
     await renderReferencias();
 
@@ -193,7 +193,7 @@ describe('ReferenciasEnvioPage', () => {
     expect(screen.getByText(esAdmin.referencias_envio.peso_invalido)).toBeTruthy();
   });
 
-  it('quitar el peso lo manda y avisa de que queda solo con recogida', async () => {
+  it('quitar el peso lo manda y avisa de que sus productos sin medir ya no van a domicilio', async () => {
     const { repositorio } = await renderReferencias();
 
     fireEvent.click(await screen.findByRole('button', { name: 'Cambiar el peso de Dama › Jeans' }));

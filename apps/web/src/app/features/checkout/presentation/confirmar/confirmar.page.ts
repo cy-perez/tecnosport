@@ -322,16 +322,12 @@ export class ConfirmarPage {
     // Sin tarifa no se manda el pedido. Antes se mandaba, el servidor respondía 409 —con razón— y
     // aquí se traducía a "revisa tus datos e intenta de nuevo": un mensaje que culpa al comprador
     // de algo que no es suyo y que reintentar no arregla. El texto ahora dice qué pasó y qué
-    // puede hacer: volver y elegir la recogida, o escribirnos por WhatsApp si la recogida está
-    // apagada.
+    // puede hacer. La otra salida —recoger, o escribirnos por WhatsApp— no se repite aquí: ya la
+    // dice la fila del costo de envío, con el enlace, y dos alertas seguidas con la misma frase
+    // solo cansan a quien las escucha.
     if (this.bloqueadoPorCobertura()) {
       const [clave, parametros] = this.claveYParametrosDelBloqueo();
-      const salida = this.retiroDisponible()
-        ? 'checkout.confirmar.salida_retiro'
-        : 'checkout.confirmar.salida_whatsapp';
-      this.error.set(
-        `${this.transloco.translate(clave, parametros)} ${this.transloco.translate(salida)}`,
-      );
+      this.error.set(this.transloco.translate(clave, parametros));
       return;
     }
 

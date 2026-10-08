@@ -526,14 +526,6 @@ export class ResumenPage {
       }
     });
 
-    // Si la recogida no se ofrece, el control no puede quedarse en ella: el selector desaparece y
-    // nadie podría cambiarla, y el pedido volvería del servidor con un 409.
-    effect(() => {
-      if (!this.retiroDisponible() && this.tipoEntregaElegido() === 'RETIRO_EN_PUNTO') {
-        this.form.controls.tipoEntrega.setValue('ENVIO_A_DOMICILIO');
-      }
-    });
-
     // La ciudad depende del departamento elegido: si cambia el departamento,
     // la ciudad ya elegida puede no pertenecerle.
     this.form.controls.direccion.controls.codigoDaneDepartamento.valueChanges

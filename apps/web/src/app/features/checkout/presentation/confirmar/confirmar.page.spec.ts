@@ -626,9 +626,8 @@ describe('ConfirmarPage', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Confirmar pedido' }));
 
-    expect(
-      await screen.findByText(/no podemos crear este pedido[\s\S]*recoger en nuestro punto/),
-    ).toBeTruthy();
+    expect(await screen.findByText(esCheckout.confirmar.sin_cobertura)).toBeTruthy();
+    expect(screen.getByText(/Puedes recoger tu pedido en nuestro punto/)).toBeTruthy();
     expect(pedidos.llamadasCrear).toBe(0);
   });
 
@@ -652,10 +651,40 @@ describe('ConfirmarPage', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Confirmar pedido' }));
 
-    expect(
-      await screen.findByText(/no podemos crear este pedido[\s\S]*escríbenos por WhatsApp/),
-    ).toBeTruthy();
+    expect(await screen.findByText(esCheckout.confirmar.sin_cobertura)).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'escríbenos por WhatsApp' })).toBeTruthy();
+    // Una sola vez: la frase con el enlace está en la fila del envío y no se repite en el aviso.
+    expect(screen.getAllByText(/escríbenos por WhatsApp/)).toHaveLength(1);
     expect(screen.queryByText(/recoger/i)).toBeNull();
+    expect(pedidos.llamadasCrear).toBe(0);
+  });
+
+  /** El motivo que el mensaje de bloqueo no tenía: caía en el de la cotización caída. */
+  it('un artículo sin medidas bloquea el pedido y se nombra en el aviso', async () => {
+    sembrarCarritoId('carrito-1');
+    sembrarSnapshotLinea(snapshotDePrueba('variante-1'));
+    const pedidos = new RepositorioPedidosFalso();
+
+    const { fixture } = await renderConDatos(
+      'TRANSFERENCIA_MANUAL',
+      new RepositorioCarritoFalso(CARRITO_CON_LINEAS),
+      pedidos,
+      new RepositorioPagosFalso(),
+      DATOS_ENTREGA_A_DOMICILIO,
+      new RepositorioEnviosFalso({
+        tipo: 'ARTICULO_SIN_MEDIDAS',
+        articulos: [{ varianteId: 'variante-1', nombre: 'Proyector portátil' }],
+      }),
+    );
+    await esperarCarritoCargado(fixture);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Confirmar pedido' }));
+
+    expect(
+      await screen.findByText(
+        'Todavía no podemos calcular el envío a domicilio de Proyector portátil. Vuelve atrás y quítalo del carrito.',
+      ),
+    ).toBeTruthy();
     expect(pedidos.llamadasCrear).toBe(0);
   });
 
@@ -699,11 +728,7 @@ describe('ConfirmarPage', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Confirmar pedido' }));
 
-    expect(
-      await screen.findByText(
-        /No podemos enviar este pedido a domicilio[\s\S]*recoger en nuestro punto/,
-      ),
-    ).toBeTruthy();
+    expect(await screen.findByText(esCheckout.confirmar.envio_rechazado)).toBeTruthy();
     expect(screen.queryByText(/Inténtalo de nuevo en unos minutos/)).toBeNull();
     expect(pedidos.llamadasCrear).toBe(0);
   });

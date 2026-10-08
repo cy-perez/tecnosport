@@ -375,14 +375,6 @@ describe('ResumenPage', () => {
     expect(checkout.datosEntrega()).toBeNull();
   });
 
-  /**
-   * Sin cobertura no se puede continuar: el pedido respondería el mismo 409 dos pantallas
-   * después. Se dice aquí, con la salida —recoger en el punto— en el mismo texto.
-   *
-   * El botón **no** se deshabilita, y eso es deliberado: un control deshabilitado sale del orden
-   * de tabulación, así que quien navega con teclado llega y no puede enfocarlo para entender por
-   * qué. Queda alcanzable y es el envío el que no pasa.
-   */
   describe('con la recogida en el punto apagada', () => {
     function enviosSinRetiro(respuesta: CotizacionEnvio | ResultadoCotizacion | null) {
       const envios = new RepositorioEnviosFalso(respuesta);
@@ -455,6 +447,14 @@ describe('ResumenPage', () => {
     expect(screen.queryByRole('link', { name: 'escríbenos por WhatsApp' })).toBeNull();
   });
 
+  /**
+   * Sin cobertura no se puede continuar: el pedido respondería el mismo 409 dos pantallas
+   * después. Se dice aquí, y la salida —recoger o WhatsApp— va al lado.
+   *
+   * El botón **no** se deshabilita, y eso es deliberado: un control deshabilitado sale del orden
+   * de tabulación, así que quien navega con teclado llega y no puede enfocarlo para entender por
+   * qué. Queda alcanzable y es el envío el que no pasa.
+   */
   it('sin cobertura lo explica, deja el botón alcanzable y no deja continuar', async () => {
     sembrarCarritoId('carrito-1');
     sembrarSnapshotLinea(snapshotDePrueba('variante-1'));
