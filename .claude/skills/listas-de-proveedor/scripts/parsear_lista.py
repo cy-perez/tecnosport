@@ -267,6 +267,11 @@ CASING = {
 }
 
 RE_PRECIO = re.compile(r"\$\s*([\d][\d.,]*)")
+# El precio que el proveedor escribió sin «$»: 3 o 4 cifras justo después del
+# paréntesis de la memoria y al final de la línea —`MOTO G77 5G (8+256) 760`,
+# 08/10/2026—. Tan acotado a propósito: un número suelto en cualquier otra parte
+# de la línea es un modelo o una capacidad.
+RE_PRECIO_SIN_SIGNO = re.compile(r"\)\s*(\d{3,4})$")
 RE_PORCENTAJE = re.compile(r"\d{2,3}\s*%")
 RE_FECHA = re.compile(r"(\d{1,2})\s*[/ ]\s*([A-ZÁÉÍÓÚ]{3,}|\d{1,2})\s*/\s*(\d{4})", re.I)
 RE_TELEFONO = re.compile(r"^\D*\d{7,12}\D*$")
@@ -318,6 +323,15 @@ def sin_emojis(texto: str) -> str:
         ch for ch in texto
         if unicodedata.category(ch) not in ("So", "Sk", "Cf") and ch not in "🏻🏼🏽🏾🏿"
     )
+
+
+def plano(texto: str) -> str:
+    """La línea sin emojis ni marcas de WhatsApp, en mayúsculas."""
+    return normalizar(sin_emojis(texto).replace("*", " ").replace("_", " "))
+
+
+def tiene_precio(linea: str) -> bool:
+    return bool(RE_PRECIO.search(linea) or RE_PRECIO_SIN_SIGNO.search(plano(linea)))
 
 
 def vineta_generica(texto: str):
@@ -467,6 +481,13 @@ def construir_producto(texto, categoria, marca, condicion, seccion, linea):
     texto_plano = separar_pegados(texto_plano)
     emojis_color, colores = extraer_colores(texto)
     precio, precio_ambiguo = parsear_precio(texto)
+    sin_signo = None
+    if precio is None:
+        m = RE_PRECIO_SIN_SIGNO.search(texto_plano)
+        if m:
+            sin_signo = m.group(1)
+            precio = int(sin_signo) * MULTIPLICADOR_PRECIO
+            texto_plano = texto_plano[:m.start(1)].strip()
 
     prod = {
         "id": None, "categoria": categoria, "marca": marca, "modelo": None,
@@ -481,6 +502,10 @@ def construir_producto(texto, categoria, marca, condicion, seccion, linea):
     }
     if precio_ambiguo:
         prod["revisar"].append("precio de 5 dígitos: confirmar si es acotado o completo")
+    if sin_signo:
+        prod["supuestos"].append(
+            f"la lista escribe el precio sin «$» ({sin_signo}): se leyó como "
+            f"{precio:,} COP".replace(",", "."))
 
     # Marca escrita en la línea (manda sobre la de la sección)
     for mk in MARCAS:
@@ -831,7 +856,7 @@ def parsear(texto: str):
                 cat_vineta = VINETAS_CATEGORIA.get(e)
                 cond_vineta = VINETAS_CONDICION.get(e)
                 break
-        if emoji is None and RE_PRECIO.search(linea):
+        if emoji is None and tiene_precio(linea):
             emoji = vineta_generica(t)
             if emoji:
                 resto = t[len(emoji):].strip()

@@ -1,10 +1,10 @@
 # Revisión de la lista
 
 - Fecha de la lista: 2026-10-08
-- Productos para publicar: 89
-- Descartados: 169
+- Productos para publicar: 90
+- Descartados: 168
 - Duplicados fusionados: 9
-- Productos con algún supuesto aplicado: 24
+- Productos con algún supuesto aplicado: 25
 - Líneas sin clasificar: 0
 
 ## Productos para publicar
@@ -23,6 +23,8 @@
   - ⚠️ la lista suma RAM virtual (4GB+4GB): publicar la RAM física y mencionar la extendida aparte
 - **Motorola Moto G17 Power 4G 4GB RAM 256GB** — celulares — 550.000 COP
   - ⚠️ la lista suma RAM virtual (4GB+4GB): publicar la RAM física y mencionar la extendida aparte
+- **Motorola Moto G77 5G 8GB RAM 256GB** — celulares — 760.000 COP
+  - · asumido: la lista escribe el precio sin «$» (760): se leyó como 760.000 COP
 - **Motorola Edge 50 Fusion 5G 8GB RAM 256GB SIM / eSIM** — celulares — 735.000 COP
 - **Honor X7D 4G 6GB RAM 256GB** — celulares — 650.000 COP
 - **Honor Magic 8 Lite 5G 8GB RAM 512GB** — celulares — 1.190.000 COP
@@ -292,7 +294,6 @@
 - MOTO G05 4G (4+4+256) $395 — celular por debajo del mínimo de 500.000 COP
 - MOTO G06 4G (4+4+128) $390 — celular por debajo del mínimo de 500.000 COP
 - MOTO G06 4G (4+4+256) $415 — celular por debajo del mínimo de 500.000 COP
-- 🎃MOTO G77 5G (8+256) 760 — sin precio de proveedor
 - PLAY 10 4G (3+64)$300 — celular por debajo del mínimo de 500.000 COP
 - PLAY 10 4G(4+128) $360 — celular por debajo del mínimo de 500.000 COP
 - X5D 4G (4+128)$370 *1 SIM* — celular por debajo del mínimo de 500.000 COP
