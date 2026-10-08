@@ -314,8 +314,11 @@ TITULOS_LISTA = ("LISTA DE", "LISTADO DE", "LISTA ", "LISTADO ")
 # LISTADO DE», sin nombre: así vino el 12/09 y el 02/10, y la lista del 08/10
 # lo nombra completo. Un título que se queda sin nombre se lee como ese bloque.
 BLOQUE_SIN_NOMBRE = "ANDROID"
-# Los avisos de llegada no son un bloque: anuncian, no dicen qué hay.
-AVISO_DE_LLEGADA = "LLEGANDO"
+# Los mensajes que manda este proveedor. Un título que contenga uno de estos
+# nombres es ese bloque, diga lo que diga alrededor —«ANDROID ACTUALIZADO»—; uno
+# que no contenga ninguno se avisa en la revisión, porque un nombre que cambia de
+# un día a otro hace que nada se reporte como desaparecido.
+BLOQUES_CONOCIDOS = ("GAMA ALTA", "VARIEDAD", "ANDROID")
 
 # Ancho máximo, en palabras, de un encabezado que llega sin marcadores de negrita.
 # Un encabezado es corto; la frase de cortesía con que el proveedor cierra la
@@ -821,10 +824,16 @@ def atributos_sim(prod):
 
 def nombre_de_bloque(encabezado: str) -> str:
     """«‼️*LISTADO DE ANDROID*‼️» → ANDROID; «*LISTA DE GAMA ALTA* 🍎» → GAMA ALTA."""
-    nombre = RE_FECHA.sub(" ", encabezado)
+    # Sin tildes, sin números y sin meses: la fecha llega escrita de mil formas
+    # («08 OCTUBRE 2026», «08/10/26», «OCTUBRE 08/2026») y no es parte del nombre.
+    nombre = unicodedata.normalize("NFKD", encabezado).encode("ascii", "ignore").decode()
     nombre = re.sub(r"\b(LISTADO|LISTA)\b(\s+DE\b)?", " ", nombre)
-    nombre = re.sub(r"[^A-ZÁÉÍÓÚÑ0-9 ]", " ", nombre)
-    return re.sub(r"\s+", " ", nombre).strip() or BLOQUE_SIN_NOMBRE
+    nombre = re.sub(r"[^A-Z ]", " ", nombre)
+    nombre = " ".join(w for w in nombre.split() if w not in MESES)
+    for conocido in BLOQUES_CONOCIDOS:
+        if conocido in nombre:
+            return conocido
+    return nombre or BLOQUE_SIN_NOMBRE
 
 
 def es_encabezado(texto: str) -> bool:
@@ -881,11 +890,11 @@ def parsear(texto: str, equivalencias=None):
     pendiente = None
     ultimo = None
     del_dia = vinetas_del_dia(lineas)
-    bloque, bloques = None, []
+    bloque, bloques, en_aviso = None, [], False
 
     def clasificar(prod):
         nonlocal ultimo
-        prod["bloques"] = [bloque] if bloque and bloque != AVISO_DE_LLEGADA else []
+        prod["bloques"] = [bloque] if bloque and not en_aviso else []
         if prod["categoria"] not in CATEGORIAS_INCLUIDAS:
             descartados.append({**prod, "motivo": f"categoría no publicable: {prod['categoria']}"})
         elif prod["condicion"] not in CONDICIONES_PUBLICABLES:
@@ -931,12 +940,15 @@ def parsear(texto: str, equivalencias=None):
             cerrar_pendiente()
             enc = normalizar(sin_emojis(linea).replace("*", " ").replace("_", " "))
             if any(x in enc for x in TITULOS_LISTA) and not enc.startswith("LLEGANDO"):
-                bloque = nombre_de_bloque(enc)
+                bloque, en_aviso = nombre_de_bloque(enc), False
                 if bloque not in bloques:
                     bloques.append(bloque)
                 continue
             if enc.startswith("LLEGANDO"):
-                bloque = AVISO_DE_LLEGADA
+                # Lo que viene debajo de un aviso es anuncio, no inventario de un
+                # bloque. La sección siguiente que no sea aviso devuelve el bloque
+                # que había: un aviso en medio del de Android no lo cierra.
+                en_aviso = True
                 anuncio = enc.replace("LLEGANDO", "", 1).strip()
                 if any(re.search(rf"\b{mk}\b", anuncio) for mk in MARCAS) or \
                    any(re.search(rf"\b{sub}\b", anuncio) for sub in SUBMARCAS):
@@ -948,6 +960,7 @@ def parsear(texto: str, equivalencias=None):
                 seccion = enc.title()
                 continue
             seccion = enc.title()
+            en_aviso = False
             aplicado = False
             for clave, (c, mk, cond) in ENCABEZADOS:
                 if clave in enc:
@@ -1089,7 +1102,7 @@ def fusionar_duplicados(productos):
             # contradice ni en precio: no hay duda, es el mismo equipo.
             destino = con_cap[0]
             for g in sin_cap:
-                for campo in ("supuestos", "revisar", "colores_familia", "colores_emoji"):
+                for campo in ("supuestos", "revisar", "colores_familia", "colores_emoji", "bloques"):
                     destino[campo] = list(dict.fromkeys(destino[campo] + g[campo]))
                 destino["supuestos"].append(
                     f"el aviso «{g['texto_origen'][:50]}» no trae capacidad; se unió a la única variante de la lista")
@@ -1216,6 +1229,11 @@ def reporte(datos: dict) -> str:
     L.append(f"- Títulos confirmados en una lista anterior: "
              f"{sum(1 for p in datos['productos'] if p.get('id_lista') not in (None, p['id']))}")
     L.append(f"- Líneas sin clasificar: {len(datos['sin_clasificar'])}")
+    L.append(f"- Mensajes de la lista: {', '.join(datos.get('bloques') or []) or 'ninguno reconocido'}")
+    for b in datos.get("bloques") or []:
+        if b not in BLOQUES_CONOCIDOS:
+            L.append(f"  - ⚠️ mensaje de la lista no reconocido: {b}. Si es uno de los de siempre con "
+                     "otro nombre, agrégalo a BLOQUES_CONOCIDOS; si no, sus desaparecidos no se verán")
     L.append("")
     L.append("## Productos para publicar")
     for p in datos["productos"]:

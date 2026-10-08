@@ -7,6 +7,7 @@
 - Productos con algún supuesto aplicado: 51
 - Títulos confirmados en una lista anterior: 23
 - Líneas sin clasificar: 0
+- Mensajes de la lista: ANDROID, VARIEDAD, GAMA ALTA
 
 ## Productos para publicar
 - **OPPO A6c 4GB RAM 64GB** — celulares — 500.000 COP

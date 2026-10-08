@@ -7,6 +7,7 @@
 - Productos con algún supuesto aplicado: 19
 - Títulos confirmados en una lista anterior: 11
 - Líneas sin clasificar: 0
+- Mensajes de la lista: GAMA ALTA, VARIEDAD
 
 ## Productos para publicar
 - **Apple Watch Ultra 3 49mm** — relojes — 2.700.000 COP

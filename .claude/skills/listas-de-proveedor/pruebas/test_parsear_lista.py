@@ -260,6 +260,37 @@ class Bloques(unittest.TestCase):
         self.assertEqual([], datos["bloques"])
         self.assertEqual([[]], [p["bloques"] for p in datos["productos"]])
 
+    def test_el_nombre_del_bloque_no_depende_de_como_se_escriba_la_fecha(self):
+        # Revisión del 08/10/2026: cada variación daba otro nombre, y un nombre
+        # nuevo cada día hace que nada se reporte como desaparecido.
+        casos = {
+            "*08 OCTUBRE 2026 LISTADO DE*": "ANDROID",
+            "*08/10/26 LISTADO DE*": "ANDROID",
+            "*OCTUBRE 08/2026 LISTADO DE*": "ANDROID",
+            "‼️*LISTADO DE ANDROID* ACTUALIZADO": "ANDROID",
+            "*LISTA DE GAMA ALTA* 🍎": "GAMA ALTA",
+            "*LISTADO DE VARIEDAD*": "VARIEDAD",
+            "*LISTA DE TECNOLOGÍA*": "TECNOLOGIA",
+        }
+        for encabezado, nombre in casos.items():
+            with self.subTest(encabezado=encabezado):
+                self.assertEqual([nombre], parsear(encabezado + "\n")["bloques"])
+
+    def test_un_bloque_que_no_se_conoce_se_avisa_en_la_revision(self):
+        datos = parsear("*LISTA DE TECNOLOGÍA*\n")
+        self.assertIn("mensaje de la lista no reconocido: TECNOLOGIA", parsear_lista.reporte(datos))
+
+    def test_despues_de_un_aviso_la_seccion_siguiente_vuelve_al_bloque(self):
+        datos = parsear("*LISTADO DE ANDROID*\n *SAMSUNG*\n🎃A57 5G (8+256)$1.290\n"
+                        "*LLEGANDO MERCANCÍA*\n *SAMSUNG*\n📲A37 5G (6+128)$810\n")
+        self.assertEqual([["ANDROID"], ["ANDROID"]], [p["bloques"] for p in datos["productos"]])
+
+    def test_la_fusion_por_capacidad_faltante_tambien_suma_los_bloques(self):
+        datos = parsear("*LLEGANDO MERCANCÍA*\nPoco x8 pro 256 $1.250\n"
+                        "*LISTADO DE ANDROID*\n *XIAOMI* \n✔️POCO X8 PRO 5G $1.250\n")
+        self.assertEqual(1, len(datos["productos"]), titulos(datos))
+        self.assertEqual(["ANDROID"], datos["productos"][0]["bloques"])
+
     def test_al_fusionar_se_suman_los_bloques(self):
         # Como el 02/10: el aviso de llegada y la lista traen el mismo equipo.
         datos = parsear("*LLEGANDO MERCANCÍA*\nPoco x8 pro Max 256 $1.830\n"

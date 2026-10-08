@@ -7,6 +7,7 @@
 - Productos con algún supuesto aplicado: 24
 - Títulos confirmados en una lista anterior: 9
 - Líneas sin clasificar: 0
+- Mensajes de la lista: ANDROID
 
 ## Productos para publicar
 - **Xiaomi Redmi Note 15 Pro 4G 12GB RAM 512GB** — celulares — 950.000 COP
