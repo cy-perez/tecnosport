@@ -63,5 +63,52 @@ class ListasDeEjemplo(unittest.TestCase):
                     "regenera la revisión y revisa el diff producto por producto.")
 
 
+class VinetaDeTemporada(unittest.TestCase):
+    """08/10/2026: la lista llegó con 🎃 de viñeta y se perdieron 52 líneas.
+
+    Bajo un encabezado de solo marca (`*SAMSUNG*`), una línea sin viñeta
+    reconocida y sin la marca escrita caía en `sin_clasificar`: el A57, los Oppo
+    A6 y el Magic 8 Lite no llegaban ni a la hoja de descartados.
+    """
+
+    LISTA = (
+        "*SAMSUNG*\n"
+        "🎃A57 5G (8+256)$1.290\n"
+        "\n"
+        " *OPPO* \n"
+        "🎃A6C (4+128)$575 \n"
+        "\n"
+        " *HONOR*\n"
+        "🎃MAGIC 8 LITE 5G (8+512)$1.190\n"
+    )
+
+    def test_un_emoji_que_no_esta_en_las_tablas_es_una_vineta(self):
+        datos = parsear(self.LISTA)
+        self.assertEqual([], datos["sin_clasificar"])
+        self.assertEqual(
+            ["Samsung Galaxy A57 5G 8GB RAM 256GB",
+             "Oppo A6C 4GB RAM 128GB",
+             "Honor Magic 8 Lite 5G 8GB RAM 512GB"],
+            titulos(datos))
+
+    def test_la_vineta_generica_no_pide_verificar_que_sea_un_producto(self):
+        # Esa alerta es para la línea que llega sin viñeta; esta sí la trae.
+        productos = parsear(self.LISTA)["productos"]
+        self.assertEqual(3, len(productos))
+        for p in productos:
+            self.assertNotIn("línea sin viñeta: verificar que sea un producto", p["revisar"])
+
+    def test_la_vineta_generica_no_decide_categoria_ni_condicion(self):
+        datos = parsear("*RELOJES ORIGINALES*\n🎃XIAOMI WATCH S4 41MM $490\n")
+        self.assertEqual(["relojes"], [p["categoria"] for p in datos["productos"]])
+        self.assertEqual(["nuevo"], [p["condicion"] for p in datos["productos"]])
+
+    def test_un_corazon_al_inicio_es_un_color_y_no_una_vineta(self):
+        # En el bloque de usados los corazones abren la línea; son el color.
+        datos = parsear("*SAMSUNG*\n💙A57 5G (8+256)$1.290\n")
+        self.assertEqual([], datos["productos"])
+        self.assertEqual(1, len(datos["sin_clasificar"]))
+
+
 if __name__ == "__main__":
     unittest.main()

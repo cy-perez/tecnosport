@@ -1,37 +1,65 @@
 # Revisión de la lista
 
 - Fecha de la lista: 2026-10-08
-- Productos para publicar: 65
-- Descartados: 142
-- Duplicados fusionados: 8
-- Productos con algún supuesto aplicado: 14
-- Líneas sin clasificar: 52
+- Productos para publicar: 88
+- Descartados: 170
+- Duplicados fusionados: 9
+- Productos con algún supuesto aplicado: 25
+- Líneas sin clasificar: 0
 
 ## Productos para publicar
+- **Oppo A6C 4GB RAM 64GB** — celulares — 500.000 COP
+- **Oppo A6C 4GB RAM 128GB** — celulares — 575.000 COP
+- **Oppo A6K 4GB RAM 256GB** — celulares — 850.000 COP
+- **Samsung Galaxy A17 4G 8GB RAM 256GB** — celulares — 620.000 COP
+- **Samsung Galaxy A17 5G 8GB RAM 256GB** — celulares — 675.000 COP
+  - · asumido: aparece repetido con precios distintos (675.000 y 690.000): se tomó el menor, como está decidido
+- **Samsung Galaxy A27 5G 8GB RAM 256GB** — celulares — 870.000 COP
+- **Samsung Galaxy A37 5G 6GB RAM 128GB** — celulares — 810.000 COP
+- **Samsung Galaxy A57 5G 8GB RAM 256GB** — celulares — 1.290.000 COP
+- **Samsung Galaxy A57 5G 12GB RAM 512GB** — celulares — 1.700.000 COP
 - **Motorola Moto G67 4G 8GB RAM 256GB** — celulares — 730.000 COP
-  - ⚠️ línea sin viñeta: verificar que sea un producto
 - **Motorola Moto G17 4G 4GB RAM 256GB 1 SIM** — celulares — 505.000 COP
   - ⚠️ la lista suma RAM virtual (4GB+4GB): publicar la RAM física y mencionar la extendida aparte
-  - ⚠️ línea sin viñeta: verificar que sea un producto
 - **Motorola Moto G17 Power 4G 4GB RAM 256GB** — celulares — 550.000 COP
   - ⚠️ la lista suma RAM virtual (4GB+4GB): publicar la RAM física y mencionar la extendida aparte
-  - ⚠️ línea sin viñeta: verificar que sea un producto
 - **Motorola Edge 50 Fusion 5G 8GB RAM 256GB SIM / eSIM** — celulares — 735.000 COP
-  - ⚠️ línea sin viñeta: verificar que sea un producto
 - **Honor X7D 4G 6GB RAM 256GB** — celulares — 650.000 COP
-  - ⚠️ línea sin viñeta: verificar que sea un producto
+- **Honor Magic 8 Lite 5G 8GB RAM 512GB** — celulares — 1.190.000 COP
 - **Xiaomi Redmi 15C 4G 8GB RAM 256GB** — celulares — 545.000 COP
   - ⚠️ la lista suma RAM virtual (8GB+8GB): publicar la RAM física y mencionar la extendida aparte
-  - ⚠️ línea sin viñeta: verificar que sea un producto
 - **Xiaomi Redmi 15 4G 8GB RAM 256GB** — celulares — 585.000 COP
-  - ⚠️ línea sin viñeta: verificar que sea un producto
 - **Xiaomi Redmi 17 4G 4GB RAM 256GB** — celulares — 540.000 COP
   - ⚠️ la lista suma RAM virtual (4GB+4GB): publicar la RAM física y mencionar la extendida aparte
-  - ⚠️ línea sin viñeta: verificar que sea un producto
+- **Xiaomi Redmi Note 17 4G 6GB RAM 256GB** — celulares — 685.000 COP
+  - · asumido: la sección Xiaomi abrevia 'NOTE': se leyó como Redmi Note
+  - ⚠️ la lista suma RAM virtual (6GB+6GB): publicar la RAM física y mencionar la extendida aparte
+- **Xiaomi Redmi Note 17 5G 6GB RAM 256GB** — celulares — 790.000 COP
+  - · asumido: la sección Xiaomi abrevia 'NOTE': se leyó como Redmi Note
+  - ⚠️ la lista suma RAM virtual (6GB+6GB): publicar la RAM física y mencionar la extendida aparte
+- **Xiaomi Redmi Note 15 Pro 4G 8GB RAM 256GB** — celulares — 860.000 COP
+  - · asumido: la sección Xiaomi abrevia 'NOTE': se leyó como Redmi Note
+- **Xiaomi Redmi Note 17 Pro 5G 6GB RAM 256GB** — celulares — 995.000 COP
+  - · asumido: la sección Xiaomi abrevia 'NOTE': se leyó como Redmi Note
+  - ⚠️ la lista suma RAM virtual (6GB+6GB): publicar la RAM física y mencionar la extendida aparte
+- **Xiaomi Redmi Note 17 Pro 5G 8GB RAM 256GB** — celulares — 1.010.000 COP
+  - · asumido: la sección Xiaomi abrevia 'NOTE': se leyó como Redmi Note
+  - ⚠️ la lista suma RAM virtual (8GB+8GB): publicar la RAM física y mencionar la extendida aparte
+- **Xiaomi Redmi Note 15 Pro + Plus 8GB RAM 256GB** — celulares — 1.310.000 COP
+  - · asumido: la sección Xiaomi abrevia 'NOTE': se leyó como Redmi Note
+- **Xiaomi Redmi Note 17 Pro Max 8GB RAM 256GB** — celulares — 1.290.000 COP
+  - · asumido: la sección Xiaomi abrevia 'NOTE': se leyó como Redmi Note
+- **Xiaomi Redmi Note 17 Pro Max 8GB RAM 512GB** — celulares — 1.690.000 COP
+  - · asumido: la sección Xiaomi abrevia 'NOTE': se leyó como Redmi Note
 - **Xiaomi POCO X8 Pro 5G 8GB RAM 256GB** — celulares — 1.400.000 COP
-  - ⚠️ línea sin viñeta: verificar que sea un producto
+- **Xiaomi POCO X8 Pro Max 5G 12GB RAM 256GB** — celulares — 1.800.000 COP
+  - · asumido: la sección Xiaomi abrevia la serie X: se leyó como POCO
+- **Xiaomi POCO X8 Pro Max 5G 12GB RAM 512GB** — celulares — 1.950.000 COP
+  - · asumido: la sección Xiaomi abrevia la serie X: se leyó como POCO
 - **Xiaomi POCO F8 Pro 12GB RAM 256GB** — celulares — 1.770.000 COP
-  - ⚠️ línea sin viñeta: verificar que sea un producto
+- **Xiaomi 17T Pro 5G 12GB RAM 512GB** — celulares — 2.750.000 COP
+- **Xiaomi F8 Ultra 5G 12GB RAM 256GB** — celulares — 2.250.000 COP
+- **Xiaomi F9 Ultra 5G 16GB RAM 512GB** — celulares — 2.900.000 COP
 - **Fly Go Pad Mouse + Teclado 10" 4G 4GB RAM 64GB** — tablets — 430.000 COP
   - ⚠️ la lista suma RAM virtual (4GB+4GB): publicar la RAM física y mencionar la extendida aparte
   - ⚠️ tablets: confirmar la línea comercial completa (ej. Galaxy Tab A11)
@@ -243,30 +271,58 @@
 - 13 128 $1.100 — condición no publicable: usado
 - 12 PRO MAX 256 $1.390 — condición no publicable: usado
 - 12 PRO 128 $1.050 — condición no publicable: usado
-- 🎃ALCATEL 1 4G (2+16) $105 — celular por debajo del mínimo de 500.000 COP
-- 🎃ALCATEL 1V 4G (2+16)$125 — celular por debajo del mínimo de 500.000 COP
-- 🎃ALCATEL 1S (2+32) $145 — celular por debajo del mínimo de 500.000 COP
-- 🎃MOTO G05 4G (4+4+256) $395 — celular por debajo del mínimo de 500.000 COP
-- 🎃MOTO G06 4G (4+4+128) $390 — celular por debajo del mínimo de 500.000 COP
-- 🎃MOTO G06 4G (4+4+256) $415 — celular por debajo del mínimo de 500.000 COP
+- 1041 $86 — celular por debajo del mínimo de 500.000 COP
+- ALCATEL 1 4G (2+16) $105 — celular por debajo del mínimo de 500.000 COP
+- ALCATEL 1V 4G (2+16)$125 — celular por debajo del mínimo de 500.000 COP
+- ALCATEL 1S (2+32) $145 — celular por debajo del mínimo de 500.000 COP
+- A200 4G (3+5+64) $300 — celular por debajo del mínimo de 500.000 COP
+- A200 4G (3+5+128)$330 — celular por debajo del mínimo de 500.000 COP
+- SMART 20 4G (4+4+128)$480 — celular por debajo del mínimo de 500.000 COP
+- SMART 20 4G (4+4+64)$380 — celular por debajo del mínimo de 500.000 COP
+- HOT 70 4G (4+4+256) $580 — marca excluida (Infinix): sin precio de mercado admisible en Colombia
+- HOT 70 PRO 5G (6+6+256) $960 — marca excluida (Infinix): sin precio de mercado admisible en Colombia
+- HOT 60 PRO 4G (8+8+256)$700 *ULTIMA UNIDAD* — marca excluida (Infinix): sin precio de mercado admisible en Colombia
+- NOTE 60 PRO 5G (8+8+256) $1.310 — marca excluida (Infinix): sin precio de mercado admisible en Colombia
+- GT 50 PRO 5G(12+256) $1.960 — marca excluida (Infinix): sin precio de mercado admisible en Colombia
+- NOTE 60 ULTRA 5G (12+512)$2.990 — marca excluida (Infinix): sin precio de mercado admisible en Colombia
+- A07 4G (4+64)$315 — celular por debajo del mínimo de 500.000 COP
+- A07 4G (4+128)$370 — celular por debajo del mínimo de 500.000 COP
+- A07 4G (6+128)$385 — celular por debajo del mínimo de 500.000 COP
+- A17 4G (4+128)$420 — celular por debajo del mínimo de 500.000 COP
+- MOTO G05 4G (4+4+256) $395 — celular por debajo del mínimo de 500.000 COP
+- MOTO G06 4G (4+4+128) $390 — celular por debajo del mínimo de 500.000 COP
+- MOTO G06 4G (4+4+256) $415 — celular por debajo del mínimo de 500.000 COP
 - 🎃MOTO G77 5G (8+256) 760 — sin precio de proveedor
-- 🎃REDMI A7 PRO 4G (4+4+64)$310 — celular por debajo del mínimo de 500.000 COP
-- 🎃REDMI A7 PRO 4G (4+4+128)$365 — celular por debajo del mínimo de 500.000 COP
-- 🎃REDMI 15C 4G (4+4+128)$425 — celular por debajo del mínimo de 500.000 COP
-- 🎃REDMI 17 4G (4+4+128)$455 — celular por debajo del mínimo de 500.000 COP
-- 🎃POCO C71 4G (3+64)$300 — celular por debajo del mínimo de 500.000 COP
-- 🎃POCO C71 4G (4+128)$360 — celular por debajo del mínimo de 500.000 COP
-- 🎃SPARK GO 3 4G(4+4+64)$340 — celular por debajo del mínimo de 500.000 COP
-- 🎃SPARK GO 3 4G (4+4+128)$385 — celular por debajo del mínimo de 500.000 COP
-- 🎃SPARK 50 4G (4+4+256)$590 — marca excluida (Tecno): sin precio de mercado admisible en Colombia
-- 🎃SPARK 50 5G (8+16+256)$805 — marca excluida (Tecno): sin precio de mercado admisible en Colombia
-- 🎃POVA SLIM 5G (8+8+256)$890 — marca excluida (Tecno): sin precio de mercado admisible en Colombia
-- 🎃POVA CURVE 2 5G (8+8+256)$910 — marca excluida (Tecno): sin precio de mercado admisible en Colombia
-- 🎃CAMON 50 PRO  4G (8+8+256) $1.140 — marca excluida (Tecno): sin precio de mercado admisible en Colombia
-- 🎃ZTE BLADE 130 3G(1+32)$85 — celular por debajo del mínimo de 500.000 COP
-- 🎃NUBIA MUSIC 4G (4+10+256) $365 — celular por debajo del mínimo de 500.000 COP
-- 🎃NUBIA AIR 4G(8+256)$730 — marca excluida (ZTE): sin precio de mercado admisible en Colombia
-- 🎃NUBIA NEO 5 5G (8+12+256)$890 — marca excluida (ZTE): sin precio de mercado admisible en Colombia
+- PLAY 10 4G (3+64)$300 — celular por debajo del mínimo de 500.000 COP
+- PLAY 10 4G(4+128) $360 — celular por debajo del mínimo de 500.000 COP
+- X5D 4G (4+128)$370 *1 SIM* — celular por debajo del mínimo de 500.000 COP
+- X5D 4G (4+128)$380 — celular por debajo del mínimo de 500.000 COP
+- X5D 4G (4+256)$440 — celular por debajo del mínimo de 500.000 COP
+- X5C PLUS (4+256)$465 — celular por debajo del mínimo de 500.000 COP
+- REDMI A7 PRO 4G (4+4+64)$310 — celular por debajo del mínimo de 500.000 COP
+- REDMI A7 PRO 4G (4+4+128)$365 — celular por debajo del mínimo de 500.000 COP
+- REDMI 15C 4G (4+4+128)$425 — celular por debajo del mínimo de 500.000 COP
+- REDMI 17 4G (4+4+128)$455 — celular por debajo del mínimo de 500.000 COP
+- POCO C71 4G (3+64)$300 — celular por debajo del mínimo de 500.000 COP
+- POCO C71 4G (4+128)$360 — celular por debajo del mínimo de 500.000 COP
+- SPARK GO 3 4G(4+4+64)$340 — celular por debajo del mínimo de 500.000 COP
+- SPARK GO 3 4G (4+4+128)$385 — celular por debajo del mínimo de 500.000 COP
+- SPARK 50 4G (4+4+256)$590 — marca excluida (Tecno): sin precio de mercado admisible en Colombia
+- SPARK 50 5G (8+16+256)$805 — marca excluida (Tecno): sin precio de mercado admisible en Colombia
+- POVA SLIM 5G (8+8+256)$890 — marca excluida (Tecno): sin precio de mercado admisible en Colombia
+- POVA CURVE 2 5G (8+8+256)$910 — marca excluida (Tecno): sin precio de mercado admisible en Colombia
+- CAMON 50 PRO  4G (8+8+256) $1.140 — marca excluida (Tecno): sin precio de mercado admisible en Colombia
+- ZTE BLADE 130 3G(1+32)$85 — celular por debajo del mínimo de 500.000 COP
+- A31 LITE 4G (1+32)$110 — celular por debajo del mínimo de 500.000 COP
+- A31 PLUS 4G (2+32)$175 — celular por debajo del mínimo de 500.000 COP
+- A35E 4G (2+4+64)$275 — celular por debajo del mínimo de 500.000 COP
+- A56 4G (4+8+128)$340 — celular por debajo del mínimo de 500.000 COP
+- A56 PRO 4G (4+8/128)$350 — celular por debajo del mínimo de 500.000 COP
+- NUBIA MUSIC 4G (4+10+256) $365 — celular por debajo del mínimo de 500.000 COP
+- V80 MAX 4G (4+10+256)$460 — celular por debajo del mínimo de 500.000 COP
+- V80 PRO 4G (4+10+256)$580 — marca excluida (ZTE): sin precio de mercado admisible en Colombia
+- NUBIA AIR 4G(8+256)$730 — marca excluida (ZTE): sin precio de mercado admisible en Colombia
+- NUBIA NEO 5 5G (8+12+256)$890 — marca excluida (ZTE): sin precio de mercado admisible en Colombia
 - FY-100...$75 — celular por debajo del mínimo de 500.000 COP
 - FY-200...$65 — celular por debajo del mínimo de 500.000 COP
 - FY-300...$95 — celular por debajo del mínimo de 500.000 COP
@@ -296,6 +352,7 @@
 - S25 FE  8/256 🖤💙 — sin precio de proveedor
 
 ## Duplicados fusionados
+- L40: Samsung Galaxy A17 5G 8GB RAM 256GB → Samsung Galaxy A17 5G 8GB RAM 256GB
 - L493: Apple iPhone 18 Pro 512GB eSIM → Apple iPhone 18 Pro 512GB eSIM
 - L494: Apple iPhone 18 Pro 256GB eSIM → Apple iPhone 18 Pro 256GB eSIM
 - L495: Apple iPhone 18 Pro Max 256GB eSIM → Apple iPhone 18 Pro Max 256GB eSIM
@@ -304,57 +361,3 @@
 - L498: Apple iPhone 17 Pro 512GB eSIM → Apple iPhone 17 Pro 512GB eSIM
 - L499: Apple iPhone 17 Pro 256GB eSIM → Apple iPhone 17 Pro 256GB eSIM
 - L500: Apple iPhone 16e 128GB eSIM → Apple iPhone 16e 128GB eSIM
-
-## Sin clasificar (revisar a mano)
-- L6: 🎃A6C (4+64)$500 — no se pudo clasificar
-- L7: 🎃A6C (4+128)$575 — no se pudo clasificar
-- L8: 🎃A6K (4+256)$850 — no se pudo clasificar
-- L12: 🎃1041 $86 — no se pudo clasificar
-- L18: 🎃A200 4G (3+5+64) $300 — no se pudo clasificar
-- L19: 🎃A200 4G (3+5+128)$330 — no se pudo clasificar
-- L23: 🎃SMART 20 4G (4+4+128)$480 — no se pudo clasificar
-- L24: 🎃SMART 20 4G (4+4+64)$380 — no se pudo clasificar
-- L25: 🎃HOT 70 4G (4+4+256) $580 — no se pudo clasificar
-- L26: 🎃HOT 70 PRO 5G (6+6+256) $960 — no se pudo clasificar
-- L27: 🎃HOT 60 PRO 4G (8+8+256)$700 *ULTIMA UNIDAD* — no se pudo clasificar
-- L28: 🎃NOTE 60 PRO 5G (8+8+256) $1.310 — no se pudo clasificar
-- L29: 🎃GT 50 PRO 5G(12+256) $1.960 — no se pudo clasificar
-- L30: 🎃NOTE 60 ULTRA 5G (12+512)$2.990 — no se pudo clasificar
-- L34: 🎃A07 4G (4+64)$315 — no se pudo clasificar
-- L35: 🎃A07 4G (4+128)$370 — no se pudo clasificar
-- L36: 🎃A07 4G (6+128)$385 — no se pudo clasificar
-- L37: 🎃A17 4G (4+128)$420 — no se pudo clasificar
-- L38: 🎃A17 4G (8+256)$620 — no se pudo clasificar
-- L39: 🎃A17 5G (8+256)$675 *1 SIM* — no se pudo clasificar
-- L40: 🎃A17 5G (8+256)$690 *DUAL SIM* — no se pudo clasificar
-- L41: 🎃A27 5G (8+256)$870 *1 SIM* — no se pudo clasificar
-- L42: 🎃A37 5G (6+128)$810 — no se pudo clasificar
-- L43: 🎃A57 5G (8+256)$1.290 — no se pudo clasificar
-- L44: 🎃A57 5G (12+512)$1.700 — no se pudo clasificar
-- L61: 🎃PLAY 10 4G (3+64)$300 — no se pudo clasificar
-- L62: 🎃PLAY 10 4G(4+128) $360 — no se pudo clasificar
-- L63: 🎃X5D 4G (4+128)$370 *1 SIM* — no se pudo clasificar
-- L64: 🎃X5D 4G (4+128)$380 — no se pudo clasificar
-- L65: 🎃X5D 4G (4+256)$440 — no se pudo clasificar
-- L66: 🎃X5C PLUS (4+256)$465 — no se pudo clasificar
-- L68: 🎃MAGIC 8 LITE 5G (8+512)$1.190 — no se pudo clasificar
-- L78: 🎃NOTE 17 4G (6+6+256) $685 — no se pudo clasificar
-- L79: 🎃NOTE 17 5G (6+6+256) $790 — no se pudo clasificar
-- L80: 🎃NOTE 15 PRO 4G (8+256) $860 — no se pudo clasificar
-- L81: 🎃NOTE 17 PRO 5G(6+6+256)$995 — no se pudo clasificar
-- L82: 🎃NOTE 17 PRO 5G (8+8+256)$1010 — no se pudo clasificar
-- L83: 🎃NOTE 15 PRO + PLUS (8+256)$1.310 — no se pudo clasificar
-- L84: 🎃NOTE 17 PRO MAX (8+256)$1.290 — no se pudo clasificar
-- L85: 🎃NOTE 17 PRO MAX (8+512)$1.690 — no se pudo clasificar
-- L89: 🎃X8 PRO MAX 5G (12+256GB) $1.800 — no se pudo clasificar
-- L90: 🎃X8 PRO MAX 5G (12+512) $1.950 — no se pudo clasificar
-- L92: 🎃17T PRO 5G(12+512)$2.750 — no se pudo clasificar
-- L93: 🎃F8 ULTRA 5G (12+256)$2.250 — no se pudo clasificar
-- L94: 🎃F9 ULTRA 5G (16+512)$2.900 — no se pudo clasificar
-- L107: 🎃A31 LITE 4G (1+32)$110 — no se pudo clasificar
-- L108: 🎃A31 PLUS 4G (2+32)$175 — no se pudo clasificar
-- L109: 🎃A35E 4G (2+4+64)$275 — no se pudo clasificar
-- L110: 🎃A56 4G (4+8+128)$340 — no se pudo clasificar
-- L111: 🎃A56 PRO 4G (4+8/128)$350 — no se pudo clasificar
-- L113: 🎃V80 MAX 4G (4+10+256)$460 — no se pudo clasificar
-- L114: 🎃V80 PRO 4G (4+10+256)$580 — no se pudo clasificar

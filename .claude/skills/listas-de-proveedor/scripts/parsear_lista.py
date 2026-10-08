@@ -320,6 +320,26 @@ def sin_emojis(texto: str) -> str:
     )
 
 
+def vineta_generica(texto: str):
+    """El emoji con que abre la línea, si no es un color: una viñeta que las tablas no conocen.
+
+    El proveedor cambia de viñeta con la temporada —la lista del 08/10/2026 trajo
+    🎃 en todo el bloque Android— y una tabla de emojis siempre va un día atrás.
+    Cualquier emoji al inicio de una línea con precio es una viñeta; no fija
+    categoría ni condición, eso lo siguen poniendo la sección y el texto. Los
+    corazones y círculos de COLORES quedan fuera: al inicio de la línea son el
+    color del equipo, como en el bloque de usados.
+    """
+    i = 0
+    while i < len(texto) and (unicodedata.category(texto[i]) in ("So", "Sk", "Cf")
+                              or texto[i] in "🏻🏼🏽🏾🏿"):
+        i += 1
+    prefijo = texto[:i]
+    if not prefijo or any(ch in COLORES for ch in prefijo):
+        return None
+    return prefijo
+
+
 def normalizar(texto: str) -> str:
     t = " " + texto.upper() + " "
     for malo, bueno in TYPOS.items():
@@ -803,6 +823,10 @@ def parsear(texto: str):
                 cat_vineta = VINETAS_CATEGORIA.get(e)
                 cond_vineta = VINETAS_CONDICION.get(e)
                 break
+        if emoji is None and RE_PRECIO.search(linea):
+            emoji = vineta_generica(t)
+            if emoji:
+                resto = t[len(emoji):].strip()
 
         if es_encabezado(linea):
             cerrar_pendiente()
