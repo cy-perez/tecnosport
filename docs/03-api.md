@@ -394,6 +394,7 @@ GET /api/v1/admin/variantes/existencias                      las activas con lo 
 PATCH /api/v1/admin/variantes/{id}/existencia                registra un conteo físico como movimiento de AJUSTE; 422 sin motivo
 POST /api/v1/admin/productos/{id}/imagen-principal/url-subida  pide una URL firmada V4 de subida a Cloud Storage
 POST /api/v1/admin/productos/{id}/imagen-principal            confirma la subida, reemplaza la principal y borra la anterior del bucket
+PUT /api/v1/admin/productos/{id}/imagen-principal/variante   de qué color es la principal ({varianteId} o null); 204, 400 si no hay principal o la variante es ajena
 POST /api/v1/admin/productos/{id}/galeria/url-subida         igual que la principal, con su propio prefijo: la limpieza de una no toca a la otra
 POST /api/v1/admin/productos/{id}/galeria                    confirma y suma a la galería; 409 si la foto ya está o si no caben más (adr/0052)
 DELETE /api/v1/admin/productos/{id}/galeria/{imagenId}       la saca de la ficha y borra su objeto; 204, y 404 si no era de ese producto

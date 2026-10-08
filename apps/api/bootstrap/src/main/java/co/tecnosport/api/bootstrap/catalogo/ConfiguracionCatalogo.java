@@ -5,6 +5,7 @@ import co.tecnosport.api.application.catalogo.AgregarImagenDeGaleria;
 import co.tecnosport.api.application.catalogo.AgregarVariante;
 import co.tecnosport.api.application.catalogo.AlmacenDeImagenes;
 import co.tecnosport.api.application.catalogo.AsignarColorAImagenDeGaleria;
+import co.tecnosport.api.application.catalogo.AsignarColorAImagenPrincipal;
 import co.tecnosport.api.application.catalogo.BuscarProductos;
 import co.tecnosport.api.application.catalogo.CompletarSetRotacion;
 import co.tecnosport.api.application.catalogo.ConfirmarImagenPrincipal;
@@ -141,6 +142,12 @@ public class ConfiguracionCatalogo {
   public AsignarColorAImagenDeGaleria asignarColorAImagenDeGaleria(
       RepositorioProductos repositorioProductos) {
     return new AsignarColorAImagenDeGaleria(repositorioProductos);
+  }
+
+  @Bean
+  public AsignarColorAImagenPrincipal asignarColorAImagenPrincipal(
+      RepositorioProductos repositorioProductos) {
+    return new AsignarColorAImagenPrincipal(repositorioProductos);
   }
 
   @Bean

@@ -16,6 +16,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import co.tecnosport.api.application.catalogo.AgregarImagenDeGaleria;
 import co.tecnosport.api.application.catalogo.AlmacenDeImagenes;
 import co.tecnosport.api.application.catalogo.AsignarColorAImagenDeGaleria;
+import co.tecnosport.api.application.catalogo.AsignarColorAImagenPrincipal;
 import co.tecnosport.api.application.catalogo.ConfirmarImagenPrincipal;
 import co.tecnosport.api.application.catalogo.CrearProducto;
 import co.tecnosport.api.application.catalogo.DespublicarProducto;
@@ -428,6 +429,41 @@ class AdminProductoControladorTest {
 
     org.junit.jupiter.api.Assertions.assertEquals(foto.id(), repositorio.imagenConVariante);
     org.junit.jupiter.api.Assertions.assertEquals(vino.id(), repositorio.varianteDeLaImagen);
+  }
+
+  /** El color de la principal: el mismo contrato que el de una foto de la galería. */
+  @Test
+  void marcarElColorDeLaPrincipalDevuelve204YLoGraba() throws Exception {
+    Producto producto = productoConImagen();
+    Variante vino =
+        Variante.crear(
+            new Sku("PRV-VINO"), Dinero.deCop(60000), BigDecimal.ZERO, null, null, List.of());
+    producto.agregarVariante(vino);
+    repositorio.conProductos(producto);
+
+    mockMvc
+        .perform(
+            put("/api/v1/admin/productos/{id}/imagen-principal/variante", producto.id())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"varianteId\":\"%s\"}".formatted(vino.id())))
+        .andExpect(status().isNoContent());
+
+    org.junit.jupiter.api.Assertions.assertEquals(
+        producto.imagenPrincipal().orElseThrow().id(), repositorio.imagenConVariante);
+    org.junit.jupiter.api.Assertions.assertEquals(vino.id(), repositorio.varianteDeLaImagen);
+  }
+
+  @Test
+  void marcarElColorDeLaPrincipalSinPrincipalEsUnaPeticionInvalida() throws Exception {
+    Producto producto = productoEnBorrador();
+    repositorio.conProductos(producto);
+
+    mockMvc
+        .perform(
+            put("/api/v1/admin/productos/{id}/imagen-principal/variante", producto.id())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"varianteId\":null}"))
+        .andExpect(status().is4xxClientError());
   }
 
   @Test
@@ -890,6 +926,12 @@ class AdminProductoControladorTest {
     AsignarColorAImagenDeGaleria asignarColorAImagenDeGaleria(
         RepositorioProductos repositorioProductos) {
       return new AsignarColorAImagenDeGaleria(repositorioProductos);
+    }
+
+    @Bean
+    AsignarColorAImagenPrincipal asignarColorAImagenPrincipal(
+        RepositorioProductos repositorioProductos) {
+      return new AsignarColorAImagenPrincipal(repositorioProductos);
     }
 
     @Bean

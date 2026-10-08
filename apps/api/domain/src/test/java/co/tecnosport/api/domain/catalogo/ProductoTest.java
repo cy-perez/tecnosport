@@ -439,6 +439,36 @@ class ProductoTest {
   }
 
   @Test
+  void laPrincipalSeMarcaConElColorDeUnaVarianteYSeSuelta() {
+    Producto producto = productoDePrueba();
+    Variante negra = variante("SKU-NEGRO");
+    producto.agregarVariante(negra);
+    producto.asignarImagenPrincipal(imagenPrincipal());
+
+    producto.asignarVarianteAImagenPrincipal(negra.id());
+    assertEquals(Optional.of(negra.id()), producto.imagenPrincipal().orElseThrow().varianteId());
+
+    producto.asignarVarianteAImagenPrincipal(null);
+    assertEquals(Optional.empty(), producto.imagenPrincipal().orElseThrow().varianteId());
+  }
+
+  @Test
+  void laPrincipalNoSeMarcaConUnaVarianteAjenaNiSiNoHayPrincipal() {
+    Producto producto = productoDePrueba();
+    Variante negra = variante("SKU-NEGRO");
+    producto.agregarVariante(negra);
+
+    assertThrows(
+        ImagenProductoInvalidaException.class,
+        () -> producto.asignarVarianteAImagenPrincipal(negra.id()));
+
+    producto.asignarImagenPrincipal(imagenPrincipal());
+    assertThrows(
+        ImagenProductoInvalidaException.class,
+        () -> producto.asignarVarianteAImagenPrincipal(UUID.randomUUID()));
+  }
+
+  @Test
   void laPrincipalAnteriorNoVuelveALaGaleriaSiYaHayOtraFotoIgual() {
     Producto producto = productoDePrueba();
     producto.asignarImagenPrincipal(imagenPrincipal());

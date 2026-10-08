@@ -93,6 +93,11 @@ Americanino vale para todos los tonos, así que su ficha pasa de nueve fotos a
 ocho. Para que salgan las nueve hay que asignarle un color a esa principal
 desde el panel.
 
+> **8 de octubre de 2026:** hasta esta fecha el panel no podía hacerlo; solo la
+> aprobación de un borrador le daba color a la principal. Desde entonces la
+> sección «Imagen principal» de Productos > Editar tiene su selector de color
+> (`PUT /admin/productos/{id}/imagen-principal/variante`).
+
 ### Un tono que se repite se numera
 
 > **Afinado por `ADR-0070` el mismo día:** lo que se numera son las **prendas**,

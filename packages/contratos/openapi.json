@@ -6080,6 +6080,40 @@
         ]
       }
     },
+    "/api/v1/admin/productos/{id}/imagen-principal/variante" : {
+      "put" : {
+        "operationId" : "asignarColorAImagenPrincipal",
+        "parameters" : [
+          {
+            "in" : "path",
+            "name" : "id",
+            "required" : true,
+            "schema" : {
+              "format" : "uuid",
+              "type" : "string"
+            }
+          }
+        ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/AsignarColorPeticion"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "204" : {
+            "description" : "No Content"
+          }
+        },
+        "tags" : [
+          "admin-producto-controlador"
+        ]
+      }
+    },
     "/api/v1/admin/productos/{id}/publicacion" : {
       "delete" : {
         "operationId" : "despublicar",
