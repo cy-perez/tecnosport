@@ -34,7 +34,11 @@ import { BOTON_GOOGLE } from '../../domain/boton-google.puerto';
           {{ 'cuenta.google.separador' | transloco }}
           <span class="h-[var(--trazo-fino)] flex-1 bg-ts-borde"></span>
         </p>
-        <div #contenedor class="min-h-tactil w-full"></div>
+        <!-- scheme-light: el iframe de Google hereda el color-scheme: dark del sitio y su documento
+             es claro, y cuando los dos no coinciden Chrome le pinta al iframe un fondo opaco: era el
+             marco blanco alrededor del botón en tema oscuro. El color del botón no cambia: lo sigue
+             decidiendo la opción oscuro que se le pasa a Google. -->
+        <div #contenedor class="min-h-tactil w-full scheme-light"></div>
       </div>
     }
   `,
