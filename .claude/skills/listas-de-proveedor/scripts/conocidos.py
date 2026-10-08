@@ -4,18 +4,24 @@
 Hasta el 08/10/2026 cada lista se procesaba desde cero. El precio de mercado, la
 descripción y los colores de un producto vivían en el productos.json de la
 corrida en que se investigaron, y la lista siguiente —que trae casi los mismos
-equipos— los volvía a pedir. Con la del 08/10/2026, 69 de 88 productos ya
-estaban investigados.
+equipos— los volvía a pedir.
 
-La base guarda, por id definitivo (el de `equivalencias.json`):
+La base tiene dos partes, porque lo que se investiga no es de la misma unidad:
 
-- lo que se investiga una vez: título, precio de mercado con sus fuentes, nivel,
-  notas y **fecha**, descripción, metadatos, colores oficiales y los supuestos
-  que escribió quien investigó;
-- lo que mueve cada lista: el último costo del proveedor y la última fecha en
-  que el producto apareció.
+- **modelos** (por id del modelo, `parsear_lista.titulo_de_modelo`): lo que es del
+  equipo y no cambia con la memoria —título, categoría, marca, descripción,
+  metadatos, la paleta oficial de colores, los supuestos de la investigación, de
+  dónde salió la ficha y las fotos—. Se investiga una vez por modelo: el Galaxy
+  A57 de 256 GB y el de 512 GB comparten ficha.
+- **configuraciones** (por id del SKU): lo que es de cada combinación de memoria y
+  SIM —el precio de mercado con sus fuentes y su **fecha**, que el mercado paga
+  distinto el de 256 y el de 512— y lo que mueve cada lista: el último costo, los
+  colores que marcó, el mensaje en que vino y la última vez que se vio.
 
 Ganancia y margen no se guardan: dependen del costo del día y se recalculan.
+
+La descripción del modelo no lleva colores ni memoria: las dos son variantes que
+el cliente elige al comprar (decisión del 08/10/2026), no texto de la ficha.
 
 Uso, al terminar el paso 5:
 
@@ -38,15 +44,9 @@ from parsear_lista import id_de_titulo  # noqa: E402
 BASE = Path(__file__).resolve().parent.parent / "referencias" / "conocidos.json"
 
 # Decisión del negocio, 08/10/2026: un precio de mercado vale siete días. Pasado
-# eso, el producto se vuelve a investigar aunque sea conocido.
+# eso, la configuración se vuelve a investigar aunque sea conocida.
 VIGENCIA_PRECIO_DIAS = 7
 
-# Lo que se investiga una vez y se copia tal cual.
-INVESTIGADO = (
-    "titulo", "categoria", "marca",
-    "precio_mercado_cop", "nivel_precio", "fuentes_precio", "notas_precio",
-    "descripcion", "meta_titulo", "meta_descripcion", "colores_oficiales",
-)
 PRECIO = ("precio_mercado_cop", "nivel_precio", "fuentes_precio", "notas_precio", "fecha_precio")
 DINERO = ("precio_mercado_cop", "ultimo_costo_cop")
 
@@ -55,35 +55,23 @@ DINERO = ("precio_mercado_cop", "ultimo_costo_cop")
 # la lista siguiente. Se queda en la corrida y no entra a la base.
 RE_SUPUESTO_DE_LA_LISTA = re.compile(r"l[ií]nea\s+\d|precio|\$", re.I)
 
-# La sección de colores que redactar_fichas.py escribe en la descripción.
-SECCIONES_DESPUES_DE_COLORES = ("## Contenido de la caja", "## Garantía")
+# Lo que una descripción por SKU traía y una descripción de modelo no puede
+# llevar: la sección de colores, la fila de memoria y las notas de la RAM
+# virtual y de la SIM, que cambian de una configuración a otra.
 RE_SECCION_COLORES = re.compile(r"## Colores\n\nDisponible en [^\n]*\.\n(?:\n|$)")
+RE_FILA_MEMORIA = re.compile(r"^\| Memoria \|[^\n]*\n", re.M)
+RE_NOTAS_DE_CONFIGURACION = re.compile(
+    r"^- (?:La memoria RAM física es de [^\n]*|Admite una SIM física y una eSIM\.|"
+    r"Este equipo funciona con eSIM: no tiene bandeja para SIM física\.)\n", re.M)
 
 
-def con_colores(descripcion: str, colores) -> str:
-    """La descripción con la sección de colores que corresponde a `colores`.
-
-    La descripción lleva los colores escritos dentro; si cambian, la sección tiene
-    que cambiar con ellos o se publica un color que no hay. Si la sección está,
-    se reemplaza en su sitio; sin colores, se va. Si no estaba, entra antes de la
-    primera sección que redactar_fichas.py escribe después de ella.
-    """
-    descripcion = descripcion or ""
-    bloque = ("## Colores\n\nDisponible en " + ", ".join(colores) + ".\n\n") if colores else ""
-    m = RE_SECCION_COLORES.search(descripcion)
-    if m:
-        if not descripcion[m.end():]:
-            # Era la última sección: un solo salto al final, con o sin colores.
-            antes = descripcion[:m.start()]
-            return antes + bloque[:-1] if bloque else antes.rstrip("\n") + "\n"
-        return descripcion[:m.start()] + bloque + descripcion[m.end():]
-    if not bloque:
-        return descripcion
-    for siguiente in SECCIONES_DESPUES_DE_COLORES:
-        i = descripcion.find(siguiente)
-        if i >= 0:
-            return descripcion[:i] + bloque + descripcion[i:]
-    return descripcion.rstrip("\n") + "\n\n" + bloque[:-1]
+def descripcion_de_modelo(descripcion: str) -> str:
+    """La descripción sin lo que depende de la configuración o del color."""
+    d = descripcion or ""
+    d = RE_SECCION_COLORES.sub("", d)
+    d = RE_FILA_MEMORIA.sub("", d)
+    d = RE_NOTAS_DE_CONFIGURACION.sub("", d)
+    return d.rstrip("\n") + "\n" if d.strip() else d
 
 
 def precio_vigente(entrada: dict, hoy: date) -> bool:
@@ -91,6 +79,10 @@ def precio_vigente(entrada: dict, hoy: date) -> bool:
         return False
     edad = hoy - date.fromisoformat(entrada["fecha_precio"])
     return edad <= timedelta(days=VIGENCIA_PRECIO_DIAS)
+
+
+def base_vacia() -> dict:
+    return {"modelos": {}, "configuraciones": {}}
 
 
 def consolidar(base: dict, datos: dict, hoy: date):
@@ -110,70 +102,116 @@ def consolidar(base: dict, datos: dict, hoy: date):
         raise ValueError("Esta corrida no pasó por comparar_lista.py: sin eso no se pueden separar "
                          "los supuestos del parser de los de la investigación. Córrelo antes del paso 4.")
     nueva = deepcopy(base)
-    resumen = {"altas": 0, "actualizados": 0, "sin_terminar": []}
+    modelos, configuraciones = nueva["modelos"], nueva["configuraciones"]
+    resumen = {"modelos_altas": 0, "modelos_actualizados": 0,
+               "configuraciones_altas": 0, "configuraciones_actualizadas": 0, "sin_terminar": []}
     fecha_lista = datos.get("fecha_lista") or hoy.isoformat()
+    vistos_en_esta_corrida = set()
 
     for p in datos["productos"]:
         if not p.get("descripcion"):
             resumen["sin_terminar"].append(p["id"])
             continue
-        anterior = nueva.get(p["id"])
-        entrada = {campo: deepcopy(p.get(campo)) for campo in INVESTIGADO}
-        entrada["fecha_precio"] = (
-            (p.get("fecha_precio") or hoy.isoformat()) if p.get("precio_mercado_cop") else None)
+
+        # --- el modelo
+        mid = p["id_modelo"]
+        anterior_m = modelos.get(mid)
+        de_la_lista = set(p.get("supuestos_lista") or [])
+        investigados = [s for s in p.get("supuestos") or [] if s not in de_la_lista]
+        paleta = list(dict.fromkeys(((anterior_m or {}).get("paleta") or []) + (p.get("colores_oficiales") or [])))
+        modelo = {
+            "titulo": p["titulo_modelo"],
+            "categoria": p.get("categoria"),
+            "marca": p.get("marca"),
+            "descripcion": descripcion_de_modelo(p["descripcion"]),
+            "meta_titulo": p["titulo_modelo"],
+            "meta_descripcion": p.get("meta_descripcion"),
+            "paleta": paleta,
+            "supuestos_paleta": list(dict.fromkeys(
+                ((anterior_m or {}).get("supuestos_paleta") or []) + [s for s in investigados if s.startswith("colores")])),
+            "supuestos_investigacion": list(dict.fromkeys(
+                ((anterior_m or {}).get("supuestos_investigacion") or [])
+                + [s for s in investigados
+                   if not s.startswith("colores") and not RE_SUPUESTO_DE_LA_LISTA.search(s)])),
+            "fuentes_ficha": deepcopy(p.get("fuentes_ficha") or (anterior_m or {}).get("fuentes_ficha") or []),
+            "fotos": deepcopy((anterior_m or {}).get("fotos") or []),
+            "fecha_alta": anterior_m["fecha_alta"] if anterior_m else fecha_lista,
+        }
+        modelos[mid] = modelo
+        if mid not in vistos_en_esta_corrida:
+            resumen["modelos_actualizados" if anterior_m else "modelos_altas"] += 1
+            vistos_en_esta_corrida.add(mid)
+
+        # --- la configuración
+        anterior = configuraciones.get(p["id"])
+        conf = {
+            "id_modelo": mid,
+            "titulo": p["titulo"],
+            **{campo: deepcopy(p.get(campo)) for campo in PRECIO if campo != "fecha_precio"},
+        }
+        conf["fecha_precio"] = (p.get("fecha_precio") or hoy.isoformat()) if p.get("precio_mercado_cop") else None
         if not p.get("precio_mercado_cop") and anterior and anterior.get("precio_mercado_cop"):
             # El paso 4 no encontró precio: se conserva el anterior, con su fecha,
             # como referencia. Ya está vencido, así que la lista siguiente lo pide.
             for campo in PRECIO:
-                entrada[campo] = deepcopy(anterior.get(campo))
-        entrada["descripcion"] = con_colores(entrada["descripcion"], entrada["colores_oficiales"])
-
-        de_la_lista = set(p.get("supuestos_lista") or [])
-        investigados = [s for s in p.get("supuestos") or [] if s not in de_la_lista]
-        entrada["supuestos_colores"] = [s for s in investigados if s.startswith("colores")]
-        entrada["supuestos_investigacion"] = [
-            s for s in investigados if not s.startswith("colores") and not RE_SUPUESTO_DE_LA_LISTA.search(s)]
-        # Los colores que marcaba la lista: los oficiales solo se heredan mientras
-        # la lista marque los mismos (ver comparar_lista.py).
-        entrada["colores_de_la_lista"] = list(p.get("colores_familia") or [])
-
+                conf[campo] = deepcopy(anterior.get(campo))
+        conf["fuentes_precio"] = conf.get("fuentes_precio") or []
+        conf["notas_precio"] = conf.get("notas_precio") or []
+        conf["colores_de_la_lista"] = list(p.get("colores_familia") or [])
         # El mensaje de la lista en que suele venir: es lo que permite decir que
         # desapareció. Un producto que hoy llegó solo en un aviso no lo pierde.
-        entrada["bloques"] = p.get("bloques") or (anterior or {}).get("bloques") or []
-        entrada["ultimo_costo_cop"] = p.get("precio_proveedor_cop")
-        entrada["visto_por_ultima_vez"] = fecha_lista
-        entrada["fecha_alta"] = anterior["fecha_alta"] if anterior else fecha_lista
+        conf["bloques"] = p.get("bloques") or (anterior or {}).get("bloques") or []
+        conf["ultimo_costo_cop"] = p.get("precio_proveedor_cop")
+        conf["visto_por_ultima_vez"] = fecha_lista
+        conf["fecha_alta"] = anterior["fecha_alta"] if anterior else fecha_lista
         if anterior and fecha_lista < anterior["visto_por_ultima_vez"]:
             # Una lista más vieja que la última vista —se volvió a consolidar para
             # corregir una descripción— no hace retroceder lo que mueve la lista.
             for campo in ("bloques", "ultimo_costo_cop", "visto_por_ultima_vez", "colores_de_la_lista"):
-                entrada[campo] = deepcopy(anterior.get(campo))
-        nueva[p["id"]] = entrada
-        resumen["actualizados" if anterior else "altas"] += 1
+                conf[campo] = deepcopy(anterior.get(campo))
+        configuraciones[p["id"]] = conf
+        resumen["configuraciones_actualizadas" if anterior else "configuraciones_altas"] += 1
     return nueva, resumen
+
+
+def _dinero(errores, clave, e):
+    for campo in DINERO:
+        valor = e.get(campo)
+        if valor is not None and (not isinstance(valor, int) or isinstance(valor, bool)):
+            errores.append(f"{clave}: {campo} tiene que ser pesos enteros, no {valor!r}")
 
 
 def validar(base: dict) -> dict:
     """Se niega a cargar una base que daría por bueno un dato que no lo es."""
     errores = []
-    for clave, e in base.items():
-        if not e.get("titulo") or id_de_titulo(e["titulo"]) != clave:
-            errores.append(f"{clave}: no corresponde al título «{e.get('titulo')}»")
-        for campo in DINERO:
-            valor = e.get(campo)
-            if valor is not None and (not isinstance(valor, int) or isinstance(valor, bool)):
-                errores.append(f"{clave}: {campo} tiene que ser pesos enteros, no {valor!r}")
-        if e.get("precio_mercado_cop"):
-            if not e.get("fecha_precio"):
+    modelos, configuraciones = base.get("modelos"), base.get("configuraciones")
+    if not isinstance(modelos, dict) or not isinstance(configuraciones, dict):
+        raise ValueError("conocidos.json no es válido: tiene que tener «modelos» y «configuraciones»")
+    for clave, m in modelos.items():
+        if not m.get("titulo") or id_de_titulo(m["titulo"]) != clave:
+            errores.append(f"modelo {clave}: no corresponde al título «{m.get('titulo')}»")
+        for campo in ("paleta", "supuestos_paleta", "supuestos_investigacion", "fuentes_ficha", "fotos"):
+            if not isinstance(m.get(campo), list):
+                errores.append(f"modelo {clave}: {campo} tiene que ser una lista")
+        if not m.get("fecha_alta"):
+            errores.append(f"modelo {clave}: falta fecha_alta")
+    for clave, c in configuraciones.items():
+        if not c.get("titulo") or id_de_titulo(c["titulo"]) != clave:
+            errores.append(f"configuración {clave}: no corresponde al título «{c.get('titulo')}»")
+        if c.get("id_modelo") not in modelos:
+            errores.append(f"configuración {clave}: su modelo «{c.get('id_modelo')}» no está en la base")
+        _dinero(errores, clave, c)
+        if c.get("precio_mercado_cop"):
+            if not c.get("fecha_precio"):
                 errores.append(f"{clave}: precio de mercado sin fecha_precio; no se sabría si venció")
-            if not e.get("fuentes_precio"):
+            if not c.get("fuentes_precio"):
                 errores.append(f"{clave}: precio de mercado sin fuentes; no se podría defender")
-        for campo in ("bloques", "colores_de_la_lista", "supuestos_colores", "supuestos_investigacion"):
-            if not isinstance(e.get(campo), list):
-                errores.append(f"{clave}: {campo} tiene que ser una lista")
+        for campo in ("bloques", "colores_de_la_lista", "fuentes_precio", "notas_precio"):
+            if not isinstance(c.get(campo), list):
+                errores.append(f"configuración {clave}: {campo} tiene que ser una lista")
         for campo in ("visto_por_ultima_vez", "fecha_alta"):
-            if not e.get(campo):
-                errores.append(f"{clave}: falta {campo}")
+            if not c.get(campo):
+                errores.append(f"configuración {clave}: falta {campo}")
     if errores:
         raise ValueError("conocidos.json no es válido:\n- " + "\n- ".join(errores))
     return base
@@ -182,8 +220,9 @@ def validar(base: dict) -> dict:
 def cargar(ruta=BASE) -> dict:
     ruta = Path(ruta)
     if not ruta.exists():
-        return {}
-    return validar(json.loads(ruta.read_text(encoding="utf-8"))["productos"])
+        return base_vacia()
+    documento = json.loads(ruta.read_text(encoding="utf-8"))
+    return validar({"modelos": documento.get("modelos"), "configuraciones": documento.get("configuraciones")})
 
 
 def guardar(base: dict, ruta=BASE):
@@ -191,11 +230,12 @@ def guardar(base: dict, ruta=BASE):
     validar(base)
     documento = {
         "_leeme": [
-            "Productos ya investigados, por id definitivo. Lo escribe `scripts/conocidos.py consolidar`;",
-            "no se edita a mano. El precio de mercado vence a los "
-            f"{VIGENCIA_PRECIO_DIAS} días de su fecha_precio.",
+            "Productos ya investigados. Lo escribe `scripts/conocidos.py consolidar`; no se edita a mano.",
+            "modelos: lo que es del equipo (ficha, paleta, fotos). configuraciones: lo que es de cada SKU",
+            f"(precio de mercado, que vence a los {VIGENCIA_PRECIO_DIAS} días de su fecha_precio, y lo que mueve la lista).",
         ],
-        "productos": dict(sorted(base.items())),
+        "modelos": dict(sorted(base["modelos"].items())),
+        "configuraciones": dict(sorted(base["configuraciones"].items())),
     }
     Path(ruta).write_text(json.dumps(documento, ensure_ascii=False, indent=2) + "\n",
                           encoding="utf-8", newline="")
@@ -208,13 +248,15 @@ def main():
     c.add_argument("productos", help="productos.json al terminar el paso 5")
     c.add_argument("--base", default=str(BASE))
     c.add_argument("--fecha", default=date.today().isoformat(),
-                   help="fecha de la investigación (por omisión, hoy)")
+                   help="último recurso para un precio sin fecha (por omisión, hoy)")
     c.add_argument("--escribir", action="store_true", help="sin esto, solo informa")
     args = ap.parse_args()
 
     datos = json.loads(Path(args.productos).read_text(encoding="utf-8"))
     base, resumen = consolidar(cargar(args.base), datos, date.fromisoformat(args.fecha))
-    print(f"{resumen['altas']} altas · {resumen['actualizados']} actualizados · "
+    print(f"modelos: {resumen['modelos_altas']} altas, {resumen['modelos_actualizados']} actualizados · "
+          f"configuraciones: {resumen['configuraciones_altas']} altas, "
+          f"{resumen['configuraciones_actualizadas']} actualizadas · "
           f"{len(resumen['sin_terminar'])} sin terminar (sin descripción)")
     for pid in resumen["sin_terminar"]:
         print(f"  sin terminar: {pid}")
