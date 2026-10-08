@@ -423,8 +423,12 @@ No hay que volver a hacerlo a mano en cada lista:
   producto marcado `por_llegar`, para no publicar como disponible algo que no está.
 - **El mismo equipo repetido** entre el aviso del día y la lista larga se fusiona
   en un solo producto, quedándose con el registro más completo. Solo se fusionan
-  si coinciden marca, capacidad, RAM y precio; ante la duda quedan separados,
-  porque juntar un Pro con un Pro Max es peor que tener dos fichas.
+  si coinciden el modelo, la capacidad y lo que se sabe de marca, red, RAM y SIM;
+  ante la duda quedan separados, porque juntar un Pro con un Pro Max es peor que
+  tener dos fichas. El precio **no** separa: si difiere, vale el menor (regla 7).
+  Una línea que no menciona la SIM no contradice a la que sí, así que el
+  `X5D 4G (4+128)` sin SIM a $380 se fusiona con el de `*1 SIM*` a $370 (lista
+  del 08/10/2026, confirmado por el negocio ese día).
 - **SIM y eSIM**: `SIM/ESIM`, `DUAL SIM`, `1 SIM` y `ESIM` salen como atributo, no
   como parte del nombre.
 - **RAM virtual** (`8+8`): se publica solo la física y queda la nota de que el
