@@ -117,7 +117,8 @@ public final class EmitirGuiaDePedido {
     // armador para que el panel, que muestra estos mismos bultos, no pueda enseñar otros.
     List<BultoDespachable> bultos = armador.armarParaDespachar(pedido);
     TarifaEnvio tarifa =
-        cotizarEnvio.deBultos(
+        laElegidaOLaMasEconomica(
+            pedido,
             destino,
             bultos.stream().map(BultoDespachable::bulto).toList(),
             conRecaudo,
@@ -255,6 +256,22 @@ public final class EmitirGuiaDePedido {
             emision -> {
               throw new EmisionYaEnCursoException(pedido.id(), emision.id(), emision.estado());
             });
+  }
+
+  /**
+   * La transportadora que eligió el comprador, si todavía cotiza y no ha fallado ya para este
+   * pedido (ADR-0073). Si no, la más económica, que es lo que se hacía antes de que se pudiera
+   * elegir: un pedido pagado no se queda sin despachar porque la elegida dejó de cotizar. Una
+   * elegida que ya falló está en las excluidas y por eso no aparece entre las vigentes.
+   */
+  private TarifaEnvio laElegidaOLaMasEconomica(
+      Pedido pedido,
+      Direccion destino,
+      List<Bulto> bultos,
+      boolean conRecaudo,
+      Set<String> excluidas) {
+    String elegida = pedido.tarifaEnvio().map(TarifaEnvio::transportadora).orElse(null);
+    return cotizarEnvio.deBultosPrefiriendo(destino, bultos, conRecaudo, excluidas, elegida);
   }
 
   /**

@@ -2,10 +2,36 @@ import { LineaComando } from './pedido.comandos';
 import { Direccion } from './pedido.model';
 
 /**
- * Lo que cuesta enviar este carrito a esta dirección. Una sola opción, la más
- * económica: la elige el servidor (`ADR-0021`), y ni la lista de tarifas ni el
- * identificador del proveedor llegan hasta aquí — si viajaran al navegador,
- * alguien podría devolverlos alterados al crear el pedido.
+ * Una transportadora con su tarifa más económica para este carrito y destino (`ADR-0073`). Lo que
+ * el comprador elige es la transportadora, y es lo único que vuelve al servidor: el costo lo fija
+ * otra vez quien crea el pedido.
+ */
+export interface OpcionEnvio {
+  /** Nombre propio, tal como lo da la plataforma: no pasa por Transloco. */
+  readonly transportadora: string;
+  readonly costoEnvio: number;
+  readonly moneda: string;
+  /** Cero es **sin estimado**, como en `CotizacionEnvio`. */
+  readonly diasEstimados: number;
+}
+
+/**
+ * La opción de la transportadora elegida, comparando el nombre como lo hace el servidor
+ * (`TarifaEnvio.esDe`): sin mayúsculas ni espacios de sobra. `undefined` si ya no cotizó.
+ */
+export function opcionDeTransportadora(
+  opciones: readonly OpcionEnvio[],
+  transportadora: string,
+): OpcionEnvio | undefined {
+  const clave = transportadora.trim().toLowerCase();
+  return opciones.find((opcion) => opcion.transportadora.trim().toLowerCase() === clave);
+}
+
+/**
+ * Lo que cuesta enviar este carrito a esta dirección. Arriba, la opción más económica; en
+ * `opciones`, una por transportadora para que el comprador elija (`ADR-0073`). El identificador del
+ * proveedor no llega hasta aquí — si viajara al navegador, alguien podría devolverlo alterado al
+ * crear el pedido.
  *
  * No dice nada de contraentrega: esta cotización se pide sin recaudo —el comprador todavía no ha
  * elegido cómo paga— y la cobertura de recaudo solo se sabe pidiéndola con recaudo. Eso lo responde
@@ -25,6 +51,8 @@ export interface CotizacionEnvio {
    * declaran plazo y no se les inventa uno. */
   readonly diasEstimados: number;
   readonly venceEn: string;
+  /** De la más económica a la más cara. La primera es la de arriba. */
+  readonly opciones: readonly OpcionEnvio[];
 }
 
 /**

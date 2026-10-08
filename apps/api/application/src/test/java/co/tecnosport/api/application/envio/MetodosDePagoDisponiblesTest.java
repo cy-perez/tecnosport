@@ -365,6 +365,31 @@ class MetodosDePagoDisponiblesTest {
   }
 
   /**
+   * ADR-0073: la contraentrega se ofrece con la transportadora que el comprador eligió, no con
+   * otra. Aquí solo Coordinadora recauda y el comprador eligió Servientrega: ofrecerla cambiaría el
+   * flete que ya vio y aceptó.
+   */
+  @Test
+  void contraentregaNoSeOfreceSiLaTransportadoraElegidaNoRecauda() {
+    MetodosDePagoDisponibles caso = crear(CRITERIOS_PERMISIVOS);
+    cotizador.conTarifaQueRecauda();
+
+    Set<MetodoPago> disponibles =
+        caso.ejecutar(
+            new MetodosDePagoDisponiblesComando(
+                List.of(new MetodosDePagoDisponiblesComando.LineaComando(variante.id(), 1)),
+                "cliente@tecnosport.co",
+                TipoEntrega.ENVIO_A_DOMICILIO,
+                DIRECCION_MEDELLIN,
+                null,
+                null,
+                "Servientrega"));
+
+    assertFalse(disponibles.contains(MetodoPago.CONTRAENTREGA));
+    assertFalse(disponibles.isEmpty());
+  }
+
+  /**
    * Un artículo que supera el máximo asegurable no puede tumbar esta consulta. Es el punto donde
    * {@code adr/0036} se rompería en silencio: el comprador vería el checkout caído en vez de la
    * recogida en el punto, que es justo la salida que esa decisión le deja.

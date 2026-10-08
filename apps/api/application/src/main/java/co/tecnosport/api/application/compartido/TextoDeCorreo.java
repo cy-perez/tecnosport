@@ -49,6 +49,8 @@ public enum TextoDeCorreo {
   PEDIDO_COMPROBANTE_LINEA("pedido.comprobante.linea"),
   PEDIDO_COMPROBANTE_TOTALES("pedido.comprobante.totales"),
   PEDIDO_COMPROBANTE_ENTREGA_DOMICILIO("pedido.comprobante.entrega_domicilio"),
+  PEDIDO_COMPROBANTE_ENTREGA_DOMICILIO_CON_TRANSPORTADORA(
+      "pedido.comprobante.entrega_domicilio_con_transportadora"),
   PEDIDO_COMPROBANTE_ENTREGA_RETIRO("pedido.comprobante.entrega_retiro"),
   PEDIDO_COMPROBANTE_PAGO_CONTRAENTREGA("pedido.comprobante.pago_contraentrega"),
   PEDIDO_COMPROBANTE_PAGO_TRANSFERENCIA("pedido.comprobante.pago_transferencia"),

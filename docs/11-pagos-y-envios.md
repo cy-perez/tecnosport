@@ -430,10 +430,12 @@ ese día**. Va en `SKYDROPX_URL_BASE`, nunca incrustado.
    carrito y pide la cotización. Lo medido va en un paquete por unidad; la ropa, el
    calzado y los bolsos sin medir, juntos en una bolsa de referencia, y todo peso
    redondeado hacia arriba al kilo (`ADR-0071`, abajo).
-3. **El servidor elige la tarifa más económica** de las que cubren el destino. El
-   comprador no elige transportadora: ve un costo y un plazo estimado. Un
-   selector de tarifas es un paso más de checkout y una tarifa más que blindar
-   contra manipulación del cliente.
+3. **El comprador elige la transportadora** (`ADR-0073`, desde el 8 de octubre de
+   2026; antes el servidor tomaba la más económica). Ve una opción por
+   transportadora con su costo, en un popover al pulsar «Continuar», y lo único
+   que viaja al crear el pedido es el nombre: el servidor vuelve a cotizar y toma
+   la tarifa de esa, o responde 409 `TRANSPORTADORA_NO_DISPONIBLE` si ya no
+   cotiza. Sin elección, la más económica.
 4. La tarifa elegida **se congela en el pedido** con su identificador, la
    transportadora, el servicio, el valor cobrado, el plazo estimado y su
    vencimiento — igual que se congelan precio, nombre y SKU de cada línea.

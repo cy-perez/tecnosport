@@ -115,6 +115,7 @@ const DATOS_ENTREGA: DatosEntrega = {
   direccion: null,
   contacto: { nombre: 'Ana Pérez', telefono: '3138816711' },
   autorizaDatos: true,
+  transportadora: null,
 };
 
 /** Ya con `CheckoutStore.datosEntrega` poblado antes de que `MetodoPagoPage`

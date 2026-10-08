@@ -311,13 +311,23 @@
              entender por qué. Se deja alcanzable y es `enviar()` quien no deja pasar; el motivo
              ya está arriba, en un `role="alert"`. -->
         <ts-boton
+          #continuar
           variante="primario"
           tipo="submit"
           [cargando]="esperandoCotizacion()"
           [etiquetaCargando]="'checkout.resumen.envio_calculando' | transloco"
+          [expandido]="requiereDireccion() ? eligiendoTransportadora() : null"
+          [controla]="requiereDireccion() ? idPopoverTransportadora : null"
         >
           {{ 'checkout.resumen.continuar' | transloco }}
         </ts-boton>
+        <ts-popover-transportadora
+          [abierto]="eligiendoTransportadora()"
+          [origen]="botonContinuar() ?? null"
+          [opciones]="opcionesDeEnvio()"
+          (elegir)="elegirTransportadora($event)"
+          (cerrar)="eligiendoTransportadora.set(false)"
+        />
       </form>
     }
   }

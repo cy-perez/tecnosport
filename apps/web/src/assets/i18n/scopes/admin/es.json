@@ -172,6 +172,7 @@
       "emitir_guia": "Emitir guía con la transportadora",
       "emision_en_curso": "Se le pidió la guía a {{transportadora}} para {{paquetes}} paquete(s). Todavía no existe el número: el pedido pasa a despachado solo cuando la transportadora responda, en unos minutos.",
       "guia_por_fuera": "O registrar una guía emitida por fuera",
+      "transportadora_elegida": "El comprador eligió {{transportadora}}: crea la guía con esa transportadora.",
       "marcar_entregado": "Marcar entregado",
       "rechazar_en_entrega": "Rechazar en la entrega",
       "comision_recaudo": "Comisión de recaudo",

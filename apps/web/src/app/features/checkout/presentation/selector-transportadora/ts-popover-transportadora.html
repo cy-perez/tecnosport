@@ -1,0 +1,72 @@
+<brn-popover
+  [id]="idDelPanel"
+  [state]="abierto() ? 'open' : 'closed'"
+  [attachTo]="origen()"
+  [role]="null"
+  align="center"
+  sideOffset="8"
+  (stateChanged)="alCambiarEstado($event)"
+>
+  <ng-template brnPopoverContent>
+    <div
+      class="rounded-lg border border-ts-borde bg-ts-superficie p-16 font-texto text-ts-texto shadow-lg"
+      role="dialog"
+      aria-labelledby="transportadora-titulo"
+      aria-describedby="transportadora-descripcion"
+    >
+      <div class="mb-8 flex items-start justify-between gap-16">
+        <h2 id="transportadora-titulo" class="m-0 font-display text-lg leading-titulares">
+          {{ 'checkout.transportadora.titulo' | transloco }}
+        </h2>
+        <ts-boton
+          variante="texto"
+          [etiquetaAccesible]="'checkout.transportadora.cerrar' | transloco"
+          clase="shrink-0 px-8 py-8"
+          (click)="cerrar.emit()"
+        >
+          <ts-icono [icono]="iconoCerrar" clase="size-24" />
+        </ts-boton>
+      </div>
+      <p id="transportadora-descripcion" class="mt-0 mb-16 text-sm text-ts-texto-suave">
+        {{ 'checkout.transportadora.descripcion' | transloco }}
+      </p>
+
+      <!-- Columnas iguales y cada botón a `w-full`: el más largo fija el ancho de todos. En el
+           teléfono, una columna; desde tableta, dos, cada una de al menos `max-content` —con
+           `grid-cols-2` a secas y un ancho máximo en la tarjeta, las columnas se encogían por
+           debajo del contenido y "Coordinadora" se salía de su botón, visto en el navegador—.
+
+           `font-texto` en la tarjeta porque el panel del popover vive en el contenedor del CDK, al
+           final del `<body>` y fuera de la raíz de la aplicación: no hereda la fuente, y la
+           descripción y los costos salían en la serif del navegador. -->
+      <ul
+        class="m-0 grid list-none grid-cols-1 gap-16 p-0 desde-tableta:grid-cols-[repeat(2,minmax(max-content,1fr))]"
+      >
+        @for (opcion of opciones(); track opcion.transportadora; let i = $index) {
+          <li class="flex flex-col gap-8">
+            <ts-boton
+              variante="baldosa"
+              clase="w-full justify-start"
+              [descritoPor]="idDePrecio(i)"
+              (click)="elegir.emit(opcion.transportadora)"
+            >
+              <!-- La caja del logo es fija: así los nombres arrancan todos a la misma altura de
+                   línea, tenga cada logo la proporción que tenga. Sin logo, el camión genérico. -->
+              @if (logoDe(opcion.transportadora); as logo) {
+                <ts-logo-pago [logo]="logo" clase="h-24 w-48" />
+              } @else {
+                <span class="inline-flex h-24 w-48 shrink-0 items-center" aria-hidden="true">
+                  <ts-icono [icono]="iconoEnvio" clase="size-24" />
+                </span>
+              }
+              {{ opcion.transportadora }}
+            </ts-boton>
+            <p [id]="idDePrecio(i)" class="m-0 text-base font-fuerte text-ts-texto">
+              {{ precio(opcion) }}
+            </p>
+          </li>
+        }
+      </ul>
+    </div>
+  </ng-template>
+</brn-popover>

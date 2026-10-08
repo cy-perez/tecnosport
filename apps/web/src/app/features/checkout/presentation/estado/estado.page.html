@@ -108,6 +108,13 @@
         </span>
       </dd>
 
+      <!-- La que eligió al comprar (ADR-0073), desde antes del despacho: es la empresa que va a ver
+           en la puerta. Nombre propio, no pasa por Transloco. -->
+      @if (p.transportadora; as transportadora) {
+        <dt>{{ 'checkout.estado.envio.transportadora' | transloco }}</dt>
+        <dd>{{ transportadora }}</dd>
+      }
+
       @if (p.direccion; as direccion) {
         <dt>{{ 'checkout.resumen.direccion' | transloco }}</dt>
         <dd>{{ direccion.direccion }}, {{ direccion.ciudad }}, {{ direccion.departamento }}</dd>

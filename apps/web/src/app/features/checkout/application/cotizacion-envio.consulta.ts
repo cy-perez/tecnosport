@@ -1,5 +1,5 @@
 import { inject } from '@angular/core';
-import { injectQuery } from '@tanstack/angular-query-experimental';
+import { injectQuery, QueryClient } from '@tanstack/angular-query-experimental';
 import { CotizarEnvioComando, ResultadoCotizacion } from '../domain/envio.model';
 import { REPOSITORIO_ENVIOS } from '../domain/repositorio-envios.puerto';
 
@@ -42,4 +42,14 @@ export function usarCotizacionEnvio(criterios: () => CotizarEnvioComando | null)
       retry: 1,
     };
   });
+}
+
+/**
+ * Descarta las cotizaciones guardadas. Lo usa la confirmación cuando el servidor responde que la
+ * transportadora elegida ya no cotiza (ADR-0073): sin esto, durante el minuto de `staleTime` la
+ * pantalla seguiría mostrándola con su costo y el resumen la volvería a ofrecer.
+ */
+export function usarOlvidarCotizacionEnvio(): () => Promise<void> {
+  const queryClient = inject(QueryClient);
+  return () => queryClient.invalidateQueries({ queryKey: ['checkout', 'cotizacion-envio'] });
 }

@@ -9,6 +9,7 @@ import co.tecnosport.api.application.envio.CotizarEnvioComando;
 import co.tecnosport.api.application.envio.EnvioSinCoberturaException;
 import co.tecnosport.api.application.envio.MetodosDePagoDisponibles;
 import co.tecnosport.api.application.envio.MetodosDePagoDisponiblesComando;
+import co.tecnosport.api.application.envio.TransportadoraNoDisponibleException;
 import co.tecnosport.api.application.inventario.RepositorioInventario;
 import co.tecnosport.api.application.legal.RepositorioAutorizaciones;
 import co.tecnosport.api.domain.catalogo.EstadoProducto;
@@ -261,16 +262,20 @@ public final class CrearPedido {
                 .map(l -> new CotizarEnvioComando.LineaComando(l.varianteId(), l.cantidad()))
                 .toList(),
             comando.direccion(),
-            conRecaudo);
+            conRecaudo,
+            comando.transportadora());
     if (!conRecaudo) {
       return cotizarEnvio.ejecutar(cotizacion);
     }
     // Pedida con recaudo, quedarse sin tarifa no significa que no haya cómo enviar: puede haber
     // transportadoras de sobra y ninguna que cobre en la puerta. Decirle al comprador "no tenemos
     // transporte hasta esta dirección" sería mandarlo a cambiar una dirección que estaba bien.
+    //
+    // Por lo mismo, si la transportadora elegida no cotiza con recaudo, lo que falta es la
+    // contraentrega y no la transportadora: el comprador la vio cotizada sin recaudo hace un rato.
     try {
       return cotizarEnvio.ejecutar(cotizacion);
-    } catch (EnvioSinCoberturaException e) {
+    } catch (EnvioSinCoberturaException | TransportadoraNoDisponibleException e) {
       throw new ContraentregaNoDisponibleException();
     }
   }
@@ -307,7 +312,8 @@ public final class CrearPedido {
         comando.tipoEntrega(),
         comando.direccion(),
         tarifa,
-        comando.contacto() == null ? null : comando.contacto().telefono());
+        comando.contacto() == null ? null : comando.contacto().telefono(),
+        comando.transportadora());
   }
 
   private LineaPedido congelarLinea(

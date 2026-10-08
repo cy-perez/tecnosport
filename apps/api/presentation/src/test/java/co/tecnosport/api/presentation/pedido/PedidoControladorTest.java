@@ -190,6 +190,59 @@ class PedidoControladorTest {
         .andExpect(jsonPath("$.direccion.ciudad").value("Medellín"));
   }
 
+  /**
+   * ADR-0073, por HTTP: la transportadora del cuerpo llega a `CrearPedido`. Con la que cotiza se
+   * congela y vuelve en la respuesta; con una que no cotiza es 409 — si el campo se perdiera en el
+   * controlador, el pedido saldría con la más económica y esta prueba caería.
+   */
+  @Test
+  void crearPedidoCongelaLaTransportadoraElegida() throws Exception {
+    Variante variante = publicarProductoConVarianteYExistencia(5);
+    CrearPedidoRequest cuerpo =
+        new CrearPedidoRequest(
+            "cliente@tecnosport.co",
+            "Ana Pérez",
+            "313 881 6711",
+            List.of(new CrearPedidoRequest.LineaRequest(variante.id(), 2)),
+            "ENVIO_A_DOMICILIO",
+            DIRECCION_MEDELLIN,
+            MetodoPago.WOMPI,
+            true,
+            TARIFA.transportadora().toUpperCase(java.util.Locale.ROOT));
+
+    mockMvc
+        .perform(
+            post("/api/v1/pedidos")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(json.writeValueAsString(cuerpo)))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.transportadora").value(TARIFA.transportadora()));
+  }
+
+  @Test
+  void crearPedidoConUnaTransportadoraQueNoCotizaEs409() throws Exception {
+    Variante variante = publicarProductoConVarianteYExistencia(5);
+    CrearPedidoRequest cuerpo =
+        new CrearPedidoRequest(
+            "cliente@tecnosport.co",
+            "Ana Pérez",
+            "313 881 6711",
+            List.of(new CrearPedidoRequest.LineaRequest(variante.id(), 2)),
+            "ENVIO_A_DOMICILIO",
+            DIRECCION_MEDELLIN,
+            MetodoPago.WOMPI,
+            true,
+            "Otra transportadora");
+
+    mockMvc
+        .perform(
+            post("/api/v1/pedidos")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(json.writeValueAsString(cuerpo)))
+        .andExpect(status().isConflict())
+        .andExpect(jsonPath("$.codigo").value("TRANSPORTADORA_NO_DISPONIBLE"));
+  }
+
   @Test
   void crearPedidoConLimiteDeIntentosExcedidoDevuelve429() throws Exception {
     Variante variante = publicarProductoConVarianteYExistencia(5);
@@ -443,6 +496,31 @@ class PedidoControladorTest {
                 .content(json.writeValueAsString(cuerpo)))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$", hasItem("CONTRAENTREGA")));
+  }
+
+  /**
+   * ADR-0073, por HTTP: la transportadora del cuerpo llega a la consulta. En Medellín recauda la
+   * del doble, pero el comprador eligió otra, así que no hay contraentrega. Si el campo se perdiera
+   * en el controlador, se ofrecería con la que sí recauda y esta prueba caería.
+   */
+  @Test
+  void metodosDePagoDisponiblesMiraLaTransportadoraElegida() throws Exception {
+    Variante variante = publicarProductoConVarianteYExistencia(5);
+    MetodosDePagoDisponiblesRequest cuerpo =
+        new MetodosDePagoDisponiblesRequest(
+            List.of(new CrearPedidoRequest.LineaRequest(variante.id(), 1)),
+            "cliente@tecnosport.co",
+            "ENVIO_A_DOMICILIO",
+            DIRECCION_MEDELLIN,
+            "Otra transportadora");
+
+    mockMvc
+        .perform(
+            post("/api/v1/pedidos/metodos-de-pago-disponibles")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(json.writeValueAsString(cuerpo)))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$", not(hasItem("CONTRAENTREGA"))));
   }
 
   @Test
@@ -768,8 +846,10 @@ class PedidoControladorTest {
             .andExpect(jsonPath("$.envio.guias[0].*", org.hamcrest.Matchers.hasSize(2)))
             .andExpect(jsonPath("$.envio.despachadoEn").exists())
             .andExpect(jsonPath("$.envio.*", org.hamcrest.Matchers.hasSize(2)))
-            // El juego de llaves de la raiz: los diecisiete campos de PedidoSeguimientoRespuesta.
-            .andExpect(jsonPath("$.*", org.hamcrest.Matchers.hasSize(17)))
+            // El juego de llaves de la raiz: los dieciocho campos de PedidoSeguimientoRespuesta.
+            // Dieciocho desde el 8 de octubre de 2026: `transportadora` es el nombre de la que el
+            // comprador eligio (ADR-0073), no un costo — es un dato suyo, como el metodo de pago.
+            .andExpect(jsonPath("$.*", org.hamcrest.Matchers.hasSize(18)))
             // Y el de la linea, que es un objeto que este mapeador NO escribe a mano: lo copia
             // entero del panel. Un campo nuevo ahi sale bajo $.lineas[0] y la cuenta de la raiz
             // ni se entera — comprobado agregandolo a proposito. Nueve desde el 3 de octubre de

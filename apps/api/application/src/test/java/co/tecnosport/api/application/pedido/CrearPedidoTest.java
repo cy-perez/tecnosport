@@ -15,6 +15,7 @@ import co.tecnosport.api.application.envio.CotizarEnvio;
 import co.tecnosport.api.application.envio.EnvioSinCoberturaException;
 import co.tecnosport.api.application.envio.MetodosDePagoDisponibles;
 import co.tecnosport.api.application.envio.ResultadoCotizacion;
+import co.tecnosport.api.application.envio.TransportadoraNoDisponibleException;
 import co.tecnosport.api.application.legal.RepositorioAutorizacionesFalso;
 import co.tecnosport.api.domain.catalogo.Atributo;
 import co.tecnosport.api.domain.catalogo.Categoria;
@@ -381,6 +382,84 @@ class CrearPedidoTest {
 
     assertEquals(TARIFA, pedido.tarifaEnvio().orElseThrow());
     assertEquals(Dinero.deCop(14_900), pedido.costoEnvio());
+  }
+
+  private CrearPedidoComando comandoConTransportadora(String transportadora) {
+    return new CrearPedidoComando(
+        null,
+        "cliente@tecnosport.co",
+        CONTACTO,
+        List.of(new CrearPedidoComando.LineaComando(variante.id(), 1)),
+        TipoEntrega.ENVIO_A_DOMICILIO,
+        DIRECCION_MEDELLIN,
+        MetodoPago.WOMPI,
+        true,
+        IP,
+        transportadora);
+  }
+
+  private static final TarifaEnvio TARIFA_SERVIENTREGA =
+      new TarifaEnvio(
+          "rate_2", "Servientrega", "Standard", Dinero.deCop(19_900), 1, false, TARIFA.venceEn());
+
+  /**
+   * ADR-0073: el pedido congela la tarifa de la transportadora que eligió el comprador aunque haya
+   * una más barata, y el costo sale de la cotización de aquí, no de lo que dijo el checkout.
+   */
+  @Test
+  void congelaLaTarifaDeLaTransportadoraElegida() {
+    CrearPedido caso = crear();
+    cotizador.conTarifas(TARIFA, TARIFA_SERVIENTREGA);
+    publicarProductoConVarianteYExistencia(5);
+
+    Pedido pedido = caso.ejecutar(comandoConTransportadora("Servientrega"));
+
+    assertEquals(TARIFA_SERVIENTREGA, pedido.tarifaEnvio().orElseThrow());
+    assertEquals(Dinero.deCop(19_900), pedido.costoEnvio());
+  }
+
+  /**
+   * Con contraentrega, si la elegida no recauda lo que falta es la contraentrega y no la
+   * transportadora: el comprador la vio cotizada sin recaudo hace un rato, y pedirle que elija otra
+   * transportadora lo mandaría a resolver un problema que no es ese.
+   */
+  @Test
+  void conContraentregaLaElegidaQueNoRecaudaEsContraentregaNoDisponible() {
+    CrearPedido caso = crear(CRITERIOS_CONTRAENTREGA_PERMISIVOS, true);
+    publicarProductoConVarianteYExistencia(5);
+
+    assertThrows(
+        ContraentregaNoDisponibleException.class,
+        () ->
+            caso.ejecutar(
+                new CrearPedidoComando(
+                    null,
+                    "cliente@tecnosport.co",
+                    CONTACTO,
+                    List.of(new CrearPedidoComando.LineaComando(variante.id(), 1)),
+                    TipoEntrega.ENVIO_A_DOMICILIO,
+                    DIRECCION_MEDELLIN,
+                    MetodoPago.CONTRAENTREGA,
+                    true,
+                    IP,
+                    "Servientrega")));
+
+    assertTrue(pedidos.todos().isEmpty());
+  }
+
+  /** Si la elegida dejó de cotizar no se cambia por otra: 409, y sin reservar nada. */
+  @Test
+  void laTransportadoraElegidaQueYaNoCotizaNoCreaElPedidoNiReserva() {
+    CrearPedido caso = crear();
+    publicarProductoConVarianteYExistencia(5);
+
+    assertThrows(
+        TransportadoraNoDisponibleException.class,
+        () -> caso.ejecutar(comandoConTransportadora("Servientrega")));
+
+    assertEquals(
+        5, inventarios.buscarPorVarianteId(variante.id()).orElseThrow().saldoDisponible(AHORA));
+    assertTrue(pedidos.todos().isEmpty());
   }
 
   /**

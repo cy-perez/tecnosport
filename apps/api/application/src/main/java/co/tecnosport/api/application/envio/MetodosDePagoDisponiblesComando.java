@@ -26,12 +26,27 @@ public record MetodosDePagoDisponiblesComando(
     TipoEntrega tipoEntrega,
     Direccion direccion,
     TarifaEnvio tarifaConRecaudoYaCotizada,
-    String telefono) {
+    String telefono,
+    String transportadora) {
+
+  /**
+   * Sin transportadora elegida. Con ella (ADR-0073), la contraentrega solo se ofrece si esa
+   * transportadora recauda: la tarifa con recaudo tiene que ser de la misma que se va a cobrar.
+   */
+  public MetodosDePagoDisponiblesComando(
+      List<LineaComando> lineas,
+      String correo,
+      TipoEntrega tipoEntrega,
+      Direccion direccion,
+      TarifaEnvio tarifaConRecaudoYaCotizada,
+      String telefono) {
+    this(lineas, correo, tipoEntrega, direccion, tarifaConRecaudoYaCotizada, telefono, null);
+  }
 
   /** Lo que manda el endpoint: no ha cotizado nada, así que el caso de uso lo hace por él. */
   public MetodosDePagoDisponiblesComando(
       List<LineaComando> lineas, String correo, TipoEntrega tipoEntrega, Direccion direccion) {
-    this(lineas, correo, tipoEntrega, direccion, null, null);
+    this(lineas, correo, tipoEntrega, direccion, null, null, null);
   }
 
   public MetodosDePagoDisponiblesComando(
@@ -40,7 +55,7 @@ public record MetodosDePagoDisponiblesComando(
       TipoEntrega tipoEntrega,
       Direccion direccion,
       TarifaEnvio tarifaConRecaudoYaCotizada) {
-    this(lineas, correo, tipoEntrega, direccion, tarifaConRecaudoYaCotizada, null);
+    this(lineas, correo, tipoEntrega, direccion, tarifaConRecaudoYaCotizada, null, null);
   }
 
   public record LineaComando(UUID varianteId, int cantidad) {}

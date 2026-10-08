@@ -8,6 +8,7 @@ import co.tecnosport.api.domain.pedido.Direccion;
 import co.tecnosport.api.presentation.compartido.dto.DineroRespuesta;
 import co.tecnosport.api.presentation.envio.dto.CotizacionEnvioRequest;
 import co.tecnosport.api.presentation.envio.dto.CotizacionEnvioRespuesta;
+import co.tecnosport.api.presentation.envio.dto.OpcionEnvioRespuesta;
 import co.tecnosport.api.presentation.pedido.dto.CrearPedidoRequest;
 import java.util.List;
 import java.util.Objects;
@@ -32,11 +33,26 @@ public class CotizacionEnvioControlador {
     this.cotizarEnvio = Objects.requireNonNull(cotizarEnvio);
   }
 
+  /**
+   * Una sola llamada al proveedor para las dos cosas: la más económica es la primera de las
+   * opciones, que vienen ordenadas. Cotizar dos veces podría dar dos respuestas distintas a la
+   * misma pregunta.
+   */
   @PostMapping
   public CotizacionEnvioRespuesta cotizar(@RequestBody CotizacionEnvioRequest cuerpo) {
-    TarifaEnvio tarifa = cotizarEnvio.ejecutar(aComando(cuerpo));
+    List<TarifaEnvio> opciones = cotizarEnvio.opciones(aComando(cuerpo));
+    TarifaEnvio masEconomica = opciones.getFirst();
     return new CotizacionEnvioRespuesta(
-        aDinero(tarifa.costo()), tarifa.transportadora(), tarifa.diasEstimados(), tarifa.venceEn());
+        aDinero(masEconomica.costo()),
+        masEconomica.transportadora(),
+        masEconomica.diasEstimados(),
+        masEconomica.venceEn(),
+        opciones.stream()
+            .map(
+                tarifa ->
+                    new OpcionEnvioRespuesta(
+                        tarifa.transportadora(), aDinero(tarifa.costo()), tarifa.diasEstimados()))
+            .toList());
   }
 
   private CotizarEnvioComando aComando(CotizacionEnvioRequest cuerpo) {

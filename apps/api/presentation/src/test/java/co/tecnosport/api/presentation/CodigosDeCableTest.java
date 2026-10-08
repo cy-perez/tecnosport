@@ -22,6 +22,7 @@ import co.tecnosport.api.application.envio.EmisionNoEncontradaException;
 import co.tecnosport.api.application.envio.EnvioSinCoberturaException;
 import co.tecnosport.api.application.envio.GuiaNoEncontradaException;
 import co.tecnosport.api.application.envio.PesoDeReferenciaNoAdmitidoException;
+import co.tecnosport.api.application.envio.TransportadoraNoDisponibleException;
 import co.tecnosport.api.application.garantia.LineaNoEsDelPedidoException;
 import co.tecnosport.api.application.pago.SistecreditoNoEntregoLaUrlDePagoException;
 import co.tecnosport.api.application.pedido.ContraentregaNoDisponibleException;
@@ -94,6 +95,7 @@ class CodigosDeCableTest {
           Map.entry(EnvioSinCoberturaException.class, "ENVIO_SIN_COBERTURA"),
           Map.entry(CotizacionRechazadaException.class, "COTIZACION_RECHAZADA"),
           Map.entry(RetiroEnPuntoNoDisponibleException.class, "RETIRO_EN_PUNTO_NO_DISPONIBLE"),
+          Map.entry(TransportadoraNoDisponibleException.class, "TRANSPORTADORA_NO_DISPONIBLE"),
           Map.entry(ExistenciaInsuficienteException.class, "EXISTENCIA_INSUFICIENTE"),
           Map.entry(CredencialesInvalidasException.class, "CREDENCIALES_INVALIDAS"),
           Map.entry(SesionDeRefrescoInvalidaException.class, "SESION_DE_REFRESCO_INVALIDA"),

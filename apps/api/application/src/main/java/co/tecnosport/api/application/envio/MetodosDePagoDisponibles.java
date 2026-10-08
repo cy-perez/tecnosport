@@ -249,14 +249,20 @@ public final class MetodosDePagoDisponibles {
                       .map(l -> new CotizarEnvioComando.LineaComando(l.varianteId(), l.cantidad()))
                       .toList(),
                   comando.direccion(),
-                  true)));
+                  true,
+                  comando.transportadora())));
     } catch (EnvioSinCoberturaException
         | ArticuloNoAsegurableException
         | ArticuloSinMedidasException
-        | CotizacionRechazadaException e) {
-      // Las tres significan lo mismo para esta consulta —no hay envío a domicilio— y ninguna es un
-      // error que deba salir por aquí: quien pregunta por los medios de pago se quedaría sin
-      // respuesta y vería el checkout roto en vez de la recogida (adr/0036).
+        | CotizacionRechazadaException
+        | TransportadoraNoDisponibleException e) {
+      // Las cuatro primeras significan lo mismo para esta consulta —no hay envío a domicilio— y
+      // ninguna es un error que deba salir por aquí: quien pregunta por los medios de pago se
+      // quedaría sin respuesta y vería el checkout roto (adr/0036).
+      //
+      // La quinta, desde ADR-0073, significa otra cosa: la transportadora que eligió el comprador
+      // no recauda en ese destino. Hay envío, pero no contraentrega con esa, y ofrecerla con otra
+      // cambiaría el flete que ya vio y aceptó.
       //
       // La tercera se suma el 17 de septiembre de 2026 y es la que más falta hacía: un cuerpo que
       // el proveedor rechaza tumbaba esta consulta entera con un 503, así que el comprador no se

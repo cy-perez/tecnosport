@@ -18,10 +18,13 @@ import { TsEsqueleto } from '../../../../shared/ts-esqueleto/ts-esqueleto';
 import { TsPrecio } from '../../../../shared/ts-precio/ts-precio';
 import { CarritoStore } from '../../../carrito/application/carrito.store';
 import { CheckoutStore } from '../../application/checkout.store';
-import { usarCotizacionEnvio } from '../../application/cotizacion-envio.consulta';
+import {
+  usarCotizacionEnvio,
+  usarOlvidarCotizacionEnvio,
+} from '../../application/cotizacion-envio.consulta';
 import { usarModalidadesDeEntrega } from '../../application/modalidades-entrega.consulta';
 import { TsSalidaSinEnvio } from '../salida-sin-envio/ts-salida-sin-envio';
-import { CotizarEnvioComando } from '../../domain/envio.model';
+import { CotizarEnvioComando, OpcionEnvio, opcionDeTransportadora } from '../../domain/envio.model';
 import { CrearPedidoComando } from '../../domain/pedido.comandos';
 import { MetodoPago, Pedido } from '../../domain/pedido.model';
 import { ErrorHttp } from '../../../../core/http/respuesta-http';
@@ -100,6 +103,7 @@ export class ConfirmarPage {
    * botón, no el de hace dos pantallas.
    */
   protected readonly cotizacion = usarCotizacionEnvio(() => this.criteriosCotizacion());
+  private readonly olvidarCotizacion = usarOlvidarCotizacionEnvio();
 
   protected readonly criteriosCotizacion = computed<CotizarEnvioComando | null>(() => {
     const datos = this.checkout.datosEntrega();
@@ -119,7 +123,34 @@ export class ConfirmarPage {
     return resultado?.tipo === 'TARIFA' ? resultado.cotizacion : null;
   });
 
-  protected readonly costoEnvio = computed(() => this.tarifa()?.costoEnvio ?? 0);
+  /**
+   * El envío que se va a cobrar: el de la transportadora que el comprador eligió en el resumen
+   * (ADR-0073), o el más económico si no eligió ninguna. `null` si la elegida ya no aparece en la
+   * cotización —el pedido respondería 409— y entonces no hay total que mostrar.
+   */
+  protected readonly envioElegido = computed<OpcionEnvio | null>(() => {
+    const cotizada = this.tarifa();
+    if (!cotizada) {
+      return null;
+    }
+    const elegida = this.checkout.datosEntrega()?.transportadora;
+    if (!elegida) {
+      return {
+        transportadora: cotizada.transportadora,
+        costoEnvio: cotizada.costoEnvio,
+        moneda: cotizada.moneda,
+        diasEstimados: cotizada.diasEstimados,
+      };
+    }
+    return opcionDeTransportadora(cotizada.opciones, elegida) ?? null;
+  });
+
+  /** Hay cotización, pero la transportadora elegida ya no está en ella. */
+  protected readonly transportadoraYaNoCotiza = computed(
+    () => this.tarifa() !== null && this.envioElegido() === null,
+  );
+
+  protected readonly costoEnvio = computed(() => this.envioElegido()?.costoEnvio ?? 0);
 
   protected readonly total = computed(() => this.subtotal() + this.costoEnvio());
 
@@ -192,7 +223,9 @@ export class ConfirmarPage {
    * respuestas que llegan en `success` y no traen tarifa, y las dos dejarían
    * pasar el total falso si aquí se preguntara solo si hay datos.
    */
-  protected readonly totalConocido = computed(() => !this.muestraEnvio() || this.tarifa() != null);
+  protected readonly totalConocido = computed(
+    () => !this.muestraEnvio() || this.envioElegido() != null,
+  );
 
   /**
    * Sin tarifa no hay pedido: el servidor responde 409 y hace bien. El resumen ya
@@ -224,6 +257,9 @@ export class ConfirmarPage {
    * una adivinanza, y el comprador está mirando una lista de productos.
    */
   private claveYParametrosDelBloqueo(): [string, Record<string, unknown>?] {
+    if (this.transportadoraYaNoCotiza()) {
+      return ['checkout.confirmar.transportadora_no_disponible'];
+    }
     if (this.sinCobertura()) {
       return ['checkout.confirmar.sin_cobertura'];
     }
@@ -342,6 +378,7 @@ export class ConfirmarPage {
       direccion: datos.direccion,
       metodoPago,
       autorizaDatos: datos.autorizaDatos,
+      transportadora: datos.transportadora,
     };
 
     try {
@@ -398,6 +435,12 @@ export class ConfirmarPage {
     if (error instanceof ErrorHttp && error.codigo === 'RETIRO_EN_PUNTO_NO_DISPONIBLE') {
       this.rechazoDeCredito.set(false);
       return this.transloco.translate('checkout.confirmar.retiro_no_disponible');
+    }
+    // La elegida dejó de cotizar entre esta pantalla y el servidor (ADR-0073): se elige otra.
+    if (error instanceof ErrorHttp && error.codigo === 'TRANSPORTADORA_NO_DISPONIBLE') {
+      this.rechazoDeCredito.set(false);
+      void this.olvidarCotizacion();
+      return this.transloco.translate('checkout.confirmar.transportadora_no_disponible');
     }
     const datos = error instanceof ErrorHttp ? error.datos : {};
     // El servidor ya clasificó el rechazo (`motivoSistecredito`); aquí solo se elige el texto. La

@@ -116,6 +116,8 @@ export interface Pedido {
   readonly total: Dinero;
   readonly creadoEn: string;
   readonly datosTransferencia: DatosTransferencia | null;
+  /** La transportadora que eligió el comprador (`ADR-0073`); `null` en recogida o en pedidos de antes. */
+  readonly transportadora: string | null;
 }
 
 export type EstadoRetracto = 'RADICADA' | 'PRODUCTO_RECIBIDO' | 'REEMBOLSADA' | 'RECHAZADA';

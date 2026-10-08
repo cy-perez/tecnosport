@@ -73,6 +73,7 @@ export function aPedidoAdmin(dto: PedidoDto): PedidoAdmin {
     envio: dto.envio ? aEnvio(dto.envio) : null,
     historial: (dto.historial ?? []).map(aHistorial),
     plazoDeEntrega: dto.plazoDeEntrega ? aPlazoDeEntrega(dto.plazoDeEntrega) : null,
+    transportadora: dto.transportadora ?? null,
   };
 }
 

@@ -48,4 +48,10 @@ public record PedidoRespuesta(
      * panel no tenía forma de ver un incumplimiento que el sistema ya conoce: lo calculaba el
      * vigilante cada doce horas y no lo sabía nadie más.
      */
-    PlazoDeEntregaRespuesta plazoDeEntrega) {}
+    PlazoDeEntregaRespuesta plazoDeEntrega,
+    /**
+     * La transportadora del flete cobrado, la que eligió el comprador (ADR-0073). Nula en recogida.
+     * Las guías se crean a mano en la plataforma (ADR-0071): sin este dato, quien despacha no sabe
+     * con cuál crearla.
+     */
+    String transportadora) {}

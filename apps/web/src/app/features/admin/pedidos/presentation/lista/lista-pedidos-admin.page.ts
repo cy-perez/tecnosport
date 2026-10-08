@@ -279,8 +279,11 @@ export class ListaPedidosAdminPage {
   protected formularioDespacho(pedidoId: string): FormGroup<FormularioDespacho> {
     let form = this.formulariosDespacho.get(pedidoId);
     if (!form) {
+      // La primera guía arranca con la transportadora que eligió el comprador (ADR-0073): es con
+      // la que hay que crearla en la plataforma, y la que el panel pide escribir a mano.
+      const elegida = this.pedidos().find((pedido) => pedido.id === pedidoId)?.transportadora;
       form = new FormGroup<FormularioDespacho>({
-        guias: new FormArray([grupoDeGuia()]),
+        guias: new FormArray([grupoDeGuia(elegida ?? '')]),
       });
       this.formulariosDespacho.set(pedidoId, form);
     }
@@ -664,9 +667,12 @@ export class ListaPedidosAdminPage {
   }
 }
 
-function grupoDeGuia(): FormGroup<FormularioGuia> {
+function grupoDeGuia(transportadora = ''): FormGroup<FormularioGuia> {
   return new FormGroup<FormularioGuia>({
-    transportadora: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
+    transportadora: new FormControl(transportadora, {
+      nonNullable: true,
+      validators: [Validators.required],
+    }),
     guia: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
     costoEnvio: new FormControl<number | null>(null, [Validators.required, Validators.min(0)]),
   });

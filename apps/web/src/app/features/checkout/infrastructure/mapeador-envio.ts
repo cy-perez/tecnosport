@@ -11,5 +11,11 @@ export function aCotizacionEnvio(dto: CotizacionDto): CotizacionEnvio {
     transportadora: dto.transportadora ?? '',
     diasEstimados: dto.diasEstimados ?? 0,
     venceEn: dto.venceEn ?? '',
+    opciones: (dto.opciones ?? []).map((opcion) => ({
+      transportadora: opcion.transportadora,
+      costoEnvio: opcion.costoEnvio.valor ?? 0,
+      moneda: opcion.costoEnvio.moneda ?? 'COP',
+      diasEstimados: opcion.diasEstimados,
+    })),
   };
 }

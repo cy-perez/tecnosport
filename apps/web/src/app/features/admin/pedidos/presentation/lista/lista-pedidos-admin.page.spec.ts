@@ -131,6 +131,7 @@ function pedidoDePrueba(overrides: Partial<PedidoAdmin> = {}): PedidoAdmin {
     envio: null,
     historial: [],
     plazoDeEntrega: null,
+    transportadora: null,
     ...overrides,
   };
 }
@@ -525,6 +526,26 @@ describe('ListaPedidosAdminPage', () => {
     expect(screen.queryByRole('button', { name: 'Emitir guía con la transportadora' })).toBeNull();
     expect(screen.getByRole('button', { name: 'Despachar' })).toBeTruthy();
     expect(repositorio.emisiones).toEqual([]);
+  });
+
+  /**
+   * ADR-0073: el comprador eligió la transportadora y la pagó. Quien crea la guía a mano tiene que
+   * verla, y el formulario la trae escrita.
+   */
+  it('dice con qué transportadora crear la guía y la trae escrita en el formulario', async () => {
+    await renderLista([
+      pedidoDePrueba({
+        estado: 'EN_PREPARACION',
+        tipoEntrega: 'ENVIO_A_DOMICILIO',
+        transportadora: 'Servientrega',
+      }),
+    ]);
+    fireEvent.click(await screen.findByRole('button', { name: 'Ver detalle' }));
+
+    expect(await screen.findByText(/El comprador eligió Servientrega/)).toBeTruthy();
+    expect((screen.getByLabelText('Transportadora') as HTMLInputElement).value).toBe(
+      'Servientrega',
+    );
   });
 
   /** El retiro en punto no tiene a dónde despachar, así que no se le ofrece emitir nada. */

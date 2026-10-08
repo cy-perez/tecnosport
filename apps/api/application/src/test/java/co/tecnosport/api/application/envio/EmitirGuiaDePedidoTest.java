@@ -371,9 +371,25 @@ class EmitirGuiaDePedidoTest {
     emisor.responde(new ResultadoEmision.Aceptada(List.of("177d1939")));
     caso.ejecutar(new EmitirGuiaDePedidoComando(pedido.id(), "admin:1"));
 
+    // Desde ADR-0073 el primer intento es con la que eligió el comprador —Envía, la congelada—
+    // aunque Servientrega sea más barata; el reintento ya no la repite y cae en la más económica.
     assertEquals(2, emisiones.todas().size());
-    assertEquals("Servientrega", emisiones.todas().get(0).transportadora());
-    assertEquals("Envía", emisiones.todas().get(1).transportadora());
+    assertEquals("Envía", emisiones.todas().get(0).transportadora());
+    assertEquals("Servientrega", emisiones.todas().get(1).transportadora());
+  }
+
+  /**
+   * ADR-0073: la guía sale con la transportadora que el comprador eligió y pagó, no la más barata.
+   */
+  @Test
+  void emite_con_la_transportadora_que_eligio_el_comprador() {
+    Pedido pedido = pedido(EstadoPedido.EN_PREPARACION, TipoEntrega.ENVIO_A_DOMICILIO, 1);
+    cotizador.devolver(tarifaDeHoy(), otraTarifa());
+    emisor.responde(new ResultadoEmision.Aceptada(List.of("e47c61d3")));
+
+    caso.ejecutar(new EmitirGuiaDePedidoComando(pedido.id(), "admin:1"));
+
+    assertEquals("Envía", emisiones.todas().getFirst().transportadora());
   }
 
   /** Si la única que queda es la que ya falló, no hay con qué emitir y se dice así. */

@@ -2,7 +2,7 @@ import { Component } from '@angular/core';
 import { provideRouter } from '@angular/router';
 import { TranslocoTestingModule } from '@jsverse/transloco';
 import { provideTanStackQuery, QueryClient } from '@tanstack/angular-query-experimental';
-import { fireEvent, render, screen } from '@testing-library/angular';
+import { fireEvent, render, screen, within } from '@testing-library/angular';
 import en from '../../../../../assets/i18n/en.json';
 import es from '../../../../../assets/i18n/es.json';
 import esCarrito from '../../../../../assets/i18n/scopes/carrito/es.json';
@@ -193,6 +193,7 @@ const COTIZACION: CotizacionEnvio = {
   transportadora: '99 minutes',
   diasEstimados: 2,
   venceEn: '2026-09-12T12:00:00Z',
+  opciones: [],
 };
 
 function snapshotDePrueba(varianteId: string): SnapshotLinea {
@@ -960,6 +961,121 @@ describe('ResumenPage', () => {
     expect(checkout.datosEntrega()?.direccion).toBeNull();
   });
 
+  describe('elegir la transportadora (ADR-0073)', () => {
+    const CON_OPCIONES: CotizacionEnvio = {
+      ...COTIZACION,
+      opciones: [
+        { transportadora: '99 minutes', costoEnvio: 9_540, moneda: 'COP', diasEstimados: 2 },
+        { transportadora: 'Servientrega', costoEnvio: 12_300, moneda: 'COP', diasEstimados: 1 },
+      ],
+    };
+
+    async function llenarTodo() {
+      fireEvent.input(screen.getByLabelText('Correo electrónico'), {
+        target: { value: 'compra@ejemplo.co' },
+      });
+      llenarContacto();
+      await llenarDireccionEnMedellin();
+      fireEvent.click(
+        screen.getByLabelText(
+          'Autorizo el tratamiento de mis datos personales para procesar y entregar este pedido.',
+        ),
+      );
+    }
+
+    /**
+     * «Continuar» no sigue: abre las transportadoras, cada una con su costo debajo, y la elección es
+     * la que guarda los datos — con el nombre y nunca con el costo.
+     */
+    it('continuar abre las transportadoras y elegir una guarda su nombre y sigue', async () => {
+      sembrarCarritoId('carrito-1');
+      sembrarSnapshotLinea(snapshotDePrueba('variante-1'));
+      const { fixture } = await renderResumen(
+        new RepositorioCarritoFalso(CARRITO_CON_LINEAS),
+        new RepositorioEnviosFalso(CON_OPCIONES),
+      );
+      await screen.findByText('Morral urbano');
+      const checkout = fixture.debugElement.injector.get(CheckoutStore);
+      await llenarTodo();
+
+      fireEvent.click(screen.getByRole('button', { name: 'Continuar' }));
+
+      const dialogo = await screen.findByRole('dialog', { name: 'Elige la transportadora' });
+      expect(checkout.datosEntrega()).toBeNull();
+      const servientrega = within(dialogo).getByRole('button', { name: 'Servientrega' });
+      // El costo va debajo del botón y lo describe: el lector lo anuncia con la opción.
+      const precio = document.getElementById(servientrega.getAttribute('aria-describedby')!);
+      expect(precio?.textContent).toMatch(/12\.300/);
+
+      fireEvent.click(servientrega);
+
+      await vi.waitFor(() => expect(checkout.datosEntrega()?.transportadora).toBe('Servientrega'));
+    });
+
+    /**
+     * Escape cierra por el camino de Spartan (`stateChanged`), no por la equis. Si ese camino no
+     * apagara la señal, el popover quedaría «abierto» para la pantalla y «Continuar» ya no lo
+     * volvería a abrir, sin que nada fallara.
+     */
+    it('escape cierra el popover y continuar lo vuelve a abrir', async () => {
+      sembrarCarritoId('carrito-1');
+      sembrarSnapshotLinea(snapshotDePrueba('variante-1'));
+      await renderResumen(
+        new RepositorioCarritoFalso(CARRITO_CON_LINEAS),
+        new RepositorioEnviosFalso(CON_OPCIONES),
+      );
+      await screen.findByText('Morral urbano');
+      await llenarTodo();
+
+      fireEvent.click(screen.getByRole('button', { name: 'Continuar' }));
+      const dialogo = await screen.findByRole('dialog', { name: 'Elige la transportadora' });
+      fireEvent.keyDown(dialogo, { key: 'Escape' });
+      await vi.waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+
+      fireEvent.click(screen.getByRole('button', { name: 'Continuar' }));
+      expect(await screen.findByRole('dialog', { name: 'Elige la transportadora' })).toBeTruthy();
+    });
+
+    /** El `aria-controls` de «Continuar» apunta al panel, y es el único elemento con ese id. */
+    it('continuar controla el panel por un id que no se repite', async () => {
+      sembrarCarritoId('carrito-1');
+      sembrarSnapshotLinea(snapshotDePrueba('variante-1'));
+      await renderResumen(
+        new RepositorioCarritoFalso(CARRITO_CON_LINEAS),
+        new RepositorioEnviosFalso(CON_OPCIONES),
+      );
+      await screen.findByText('Morral urbano');
+      await llenarTodo();
+
+      const continuar = screen.getByRole('button', { name: 'Continuar' });
+      fireEvent.click(continuar);
+      const dialogo = await screen.findByRole('dialog', { name: 'Elige la transportadora' });
+
+      const id = continuar.getAttribute('aria-controls')!;
+      expect(document.querySelectorAll(`[id="${id}"]`)).toHaveLength(1);
+      expect(document.getElementById(id)?.contains(dialogo)).toBe(true);
+    });
+
+    it('cerrar el popover sin elegir no guarda nada', async () => {
+      sembrarCarritoId('carrito-1');
+      sembrarSnapshotLinea(snapshotDePrueba('variante-1'));
+      const { fixture } = await renderResumen(
+        new RepositorioCarritoFalso(CARRITO_CON_LINEAS),
+        new RepositorioEnviosFalso(CON_OPCIONES),
+      );
+      await screen.findByText('Morral urbano');
+      const checkout = fixture.debugElement.injector.get(CheckoutStore);
+      await llenarTodo();
+
+      fireEvent.click(screen.getByRole('button', { name: 'Continuar' }));
+      const dialogo = await screen.findByRole('dialog', { name: 'Elige la transportadora' });
+      fireEvent.click(within(dialogo).getByRole('button', { name: 'Cerrar' }));
+
+      await vi.waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+      expect(checkout.datosEntrega()).toBeNull();
+    });
+  });
+
   it('con datos válidos, guarda el borrador con la dirección resuelta', async () => {
     sembrarCarritoId('carrito-1');
     sembrarSnapshotLinea(snapshotDePrueba('variante-1'));
@@ -1004,6 +1120,7 @@ describe('ResumenPage', () => {
       },
       contacto: { nombre: 'Ana Pérez', telefono: '3138816711' },
       autorizaDatos: true,
+      transportadora: null,
     });
   });
 

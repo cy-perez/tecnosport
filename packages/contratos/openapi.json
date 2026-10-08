@@ -675,6 +675,12 @@
             "format" : "int32",
             "type" : "integer"
           },
+          "opciones" : {
+            "items" : {
+              "$ref" : "#/components/schemas/OpcionEnvioRespuesta"
+            },
+            "type" : "array"
+          },
           "transportadora" : {
             "type" : "string"
           },
@@ -683,6 +689,9 @@
             "type" : "string"
           }
         },
+        "required" : [
+          "opciones"
+        ],
         "type" : "object"
       },
       "CrearCategoriaPeticion" : {
@@ -783,6 +792,9 @@
             "type" : "string"
           },
           "tipoEntrega" : {
+            "type" : "string"
+          },
+          "transportadora" : {
             "type" : "string"
           }
         },
@@ -1951,6 +1963,9 @@
           },
           "tipoEntrega" : {
             "type" : "string"
+          },
+          "transportadora" : {
+            "type" : "string"
           }
         },
         "type" : "object"
@@ -1967,6 +1982,26 @@
         "required" : [
           "envioADomicilio",
           "retiroEnPunto"
+        ],
+        "type" : "object"
+      },
+      "OpcionEnvioRespuesta" : {
+        "properties" : {
+          "costoEnvio" : {
+            "$ref" : "#/components/schemas/DineroRespuesta"
+          },
+          "diasEstimados" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "transportadora" : {
+            "type" : "string"
+          }
+        },
+        "required" : [
+          "costoEnvio",
+          "diasEstimados",
+          "transportadora"
         ],
         "type" : "object"
       },
@@ -2153,6 +2188,9 @@
           "total" : {
             "$ref" : "#/components/schemas/DineroRespuesta"
           },
+          "transportadora" : {
+            "type" : "string"
+          },
           "usuarioId" : {
             "format" : "uuid",
             "type" : "string"
@@ -2232,6 +2270,9 @@
           },
           "total" : {
             "$ref" : "#/components/schemas/DineroRespuesta"
+          },
+          "transportadora" : {
+            "type" : "string"
           }
         },
         "type" : "object"

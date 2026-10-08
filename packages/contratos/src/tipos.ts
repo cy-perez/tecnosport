@@ -2003,6 +2003,7 @@ export interface components {
             costoEnvio?: components["schemas"]["DineroRespuesta"];
             /** Format: int32 */
             diasEstimados?: number;
+            opciones: components["schemas"]["OpcionEnvioRespuesta"][];
             transportadora?: string;
             /** Format: date-time */
             venceEn?: string;
@@ -2040,6 +2041,7 @@ export interface components {
             nombre?: string;
             telefono?: string;
             tipoEntrega?: string;
+            transportadora?: string;
         };
         CrearProductoPeticion: {
             /** Format: uuid */
@@ -2482,10 +2484,17 @@ export interface components {
             direccion?: components["schemas"]["DireccionRequest"];
             lineas?: components["schemas"]["LineaRequest"][];
             tipoEntrega?: string;
+            transportadora?: string;
         };
         ModalidadesDeEntregaRespuesta: {
             envioADomicilio: boolean;
             retiroEnPunto: boolean;
+        };
+        OpcionEnvioRespuesta: {
+            costoEnvio: components["schemas"]["DineroRespuesta"];
+            /** Format: int32 */
+            diasEstimados: number;
+            transportadora: string;
         };
         PagoSinPedidoRespuesta: {
             correo: string;
@@ -2543,6 +2552,7 @@ export interface components {
             subtotal?: components["schemas"]["DineroRespuesta"];
             tipoEntrega?: string;
             total?: components["schemas"]["DineroRespuesta"];
+            transportadora?: string;
             /** Format: uuid */
             usuarioId?: string;
             yaDevuelto?: components["schemas"]["DineroRespuesta"];
@@ -2568,6 +2578,7 @@ export interface components {
             subtotal?: components["schemas"]["DineroRespuesta"];
             tipoEntrega?: string;
             total?: components["schemas"]["DineroRespuesta"];
+            transportadora?: string;
         };
         PedidosPaginadosRespuesta: {
             items?: components["schemas"]["PedidoRespuesta"][];

@@ -72,8 +72,20 @@
                lado de un total ya sumado con ese mismo flete. Visto en el navegador: costo
                "calculando", total $ 99.440. Si hay cotización se muestra; si llega otra, se
                reemplaza. -->
-          @if (tarifa(); as envio) {
+          @if (envioElegido(); as envio) {
             <ts-precio [valor]="envio.costoEnvio" [moneda]="envio.moneda" />
+            <!-- La transportadora que eligió en el resumen (ADR-0073), al lado de lo que cuesta:
+                 es lo que está aceptando pagar. Nombre propio, no pasa por Transloco. -->
+            <span class="block text-sm text-ts-texto-suave">
+              {{
+                'checkout.confirmar.con_transportadora'
+                  | transloco: { transportadora: envio.transportadora }
+              }}
+            </span>
+          } @else if (transportadoraYaNoCotiza()) {
+            <span class="text-ts-error" role="alert">{{
+              'checkout.confirmar.transportadora_no_disponible' | transloco
+            }}</span>
           } @else if (cotizacion.isFetching()) {
             <span aria-live="polite">{{ 'checkout.resumen.envio_calculando' | transloco }}</span>
           } @else if (sinCobertura()) {
