@@ -110,5 +110,36 @@ class VinetaDeTemporada(unittest.TestCase):
         self.assertEqual(1, len(datos["sin_clasificar"]))
 
 
+class SimEnLaMismaLinea(unittest.TestCase):
+    """08/10/2026: «1 SIM» y «DUAL SIM» al final de la línea se ignoraban.
+
+    Solo se leían cuando venían en la línea siguiente. Sin el atributo, los dos
+    A17 5G no se contradecían en nada y se fusionaban en uno, al menor precio:
+    se perdía una referencia y el título del que quedaba no decía cuál era.
+    """
+
+    LISTA = (
+        "*SAMSUNG*\n"
+        "🎃A17 5G (8+256)$675 *1 SIM*\n"
+        "🎃A17 5G (8+256)$690 *DUAL SIM* \n"
+    )
+
+    def test_una_sim_y_dos_sim_son_dos_referencias(self):
+        datos = parsear(self.LISTA)
+        self.assertEqual([], datos["duplicados_fusionados"])
+        self.assertEqual(
+            [("Samsung Galaxy A17 5G 8GB RAM 256GB 1 SIM", 675_000),
+             ("Samsung Galaxy A17 5G 8GB RAM 256GB Dual SIM", 690_000)],
+            [(p["titulo"], p["precio_proveedor_cop"]) for p in datos["productos"]])
+
+    def test_sim_y_esim_en_la_linea_no_deja_un_sim_suelto_en_el_modelo(self):
+        datos = parsear("*MOTOROLA*\n🎃EDGE 50 FUSIÓN 5G (8+256)$735 *SIM / ESIM*\n")
+        self.assertEqual(["Motorola Edge 50 Fusion 5G 8GB RAM 256GB SIM / eSIM"], titulos(datos))
+
+    def test_la_sim_en_la_linea_siguiente_sigue_leyendose(self):
+        datos = parsear("*MOTOROLA*\n🎃MOTO G17 4G (4+4+256)$505\n*1 SIM*\n")
+        self.assertEqual(["Motorola Moto G17 4G 4GB RAM 256GB 1 SIM"], titulos(datos))
+
+
 if __name__ == "__main__":
     unittest.main()

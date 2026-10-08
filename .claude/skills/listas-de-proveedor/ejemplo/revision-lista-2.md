@@ -39,7 +39,7 @@
 - **Samsung Galaxy S25 Ultra 256GB** — celulares — 2.700.000 COP
   - ⚠️ línea sin viñeta: verificar que sea un producto
 - **Samsung Galaxy A17 4G 8GB RAM 256GB** — celulares — 630.000 COP
-- **Samsung Galaxy A17 5G 8GB RAM 256GB** — celulares — 700.000 COP
+- **Samsung Galaxy A17 5G 8GB RAM 256GB Dual SIM** — celulares — 700.000 COP
 - **Samsung Galaxy A37 5G 6GB RAM 128GB** — celulares — 885.000 COP
 - **Samsung Galaxy A37 5G 8GB RAM 256GB** — celulares — 995.000 COP
 - **Samsung Galaxy A56 5G 8GB RAM 256GB** — celulares — 1.230.000 COP

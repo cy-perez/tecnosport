@@ -1,10 +1,10 @@
 # Revisión de la lista
 
 - Fecha de la lista: 2026-10-08
-- Productos para publicar: 88
-- Descartados: 170
+- Productos para publicar: 89
+- Descartados: 169
 - Duplicados fusionados: 9
-- Productos con algún supuesto aplicado: 25
+- Productos con algún supuesto aplicado: 24
 - Líneas sin clasificar: 0
 
 ## Productos para publicar
@@ -12,9 +12,9 @@
 - **Oppo A6C 4GB RAM 128GB** — celulares — 575.000 COP
 - **Oppo A6K 4GB RAM 256GB** — celulares — 850.000 COP
 - **Samsung Galaxy A17 4G 8GB RAM 256GB** — celulares — 620.000 COP
-- **Samsung Galaxy A17 5G 8GB RAM 256GB** — celulares — 675.000 COP
-  - · asumido: aparece repetido con precios distintos (675.000 y 690.000): se tomó el menor, como está decidido
-- **Samsung Galaxy A27 5G 8GB RAM 256GB** — celulares — 870.000 COP
+- **Samsung Galaxy A17 5G 8GB RAM 256GB 1 SIM** — celulares — 675.000 COP
+- **Samsung Galaxy A17 5G 8GB RAM 256GB Dual SIM** — celulares — 690.000 COP
+- **Samsung Galaxy A27 5G 8GB RAM 256GB 1 SIM** — celulares — 870.000 COP
 - **Samsung Galaxy A37 5G 6GB RAM 128GB** — celulares — 810.000 COP
 - **Samsung Galaxy A57 5G 8GB RAM 256GB** — celulares — 1.290.000 COP
 - **Samsung Galaxy A57 5G 12GB RAM 512GB** — celulares — 1.700.000 COP
@@ -296,7 +296,6 @@
 - PLAY 10 4G (3+64)$300 — celular por debajo del mínimo de 500.000 COP
 - PLAY 10 4G(4+128) $360 — celular por debajo del mínimo de 500.000 COP
 - X5D 4G (4+128)$370 *1 SIM* — celular por debajo del mínimo de 500.000 COP
-- X5D 4G (4+128)$380 — celular por debajo del mínimo de 500.000 COP
 - X5D 4G (4+256)$440 — celular por debajo del mínimo de 500.000 COP
 - X5C PLUS (4+256)$465 — celular por debajo del mínimo de 500.000 COP
 - REDMI A7 PRO 4G (4+4+64)$310 — celular por debajo del mínimo de 500.000 COP
@@ -352,7 +351,7 @@
 - S25 FE  8/256 🖤💙 — sin precio de proveedor
 
 ## Duplicados fusionados
-- L40: Samsung Galaxy A17 5G 8GB RAM 256GB → Samsung Galaxy A17 5G 8GB RAM 256GB
+- L64: Honor X5D 4G 4GB RAM 128GB → Honor X5D 4G 4GB RAM 128GB 1 SIM
 - L493: Apple iPhone 18 Pro 512GB eSIM → Apple iPhone 18 Pro 512GB eSIM
 - L494: Apple iPhone 18 Pro 256GB eSIM → Apple iPhone 18 Pro 256GB eSIM
 - L495: Apple iPhone 18 Pro Max 256GB eSIM → Apple iPhone 18 Pro Max 256GB eSIM

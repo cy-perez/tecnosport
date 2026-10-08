@@ -501,6 +501,14 @@ def construir_producto(texto, categoria, marca, condicion, seccion, linea):
                 prod["marca"] = madre
                 break
 
+    # La SIM escrita en la misma línea es un atributo, igual que cuando llega en la
+    # línea siguiente: «1 SIM» y «DUAL SIM» son dos referencias, y sin el atributo
+    # se fusionaban en una. «SIM / ESIM» va antes que el «ESIM» suelto de abajo,
+    # que si no se come la mitad y deja «SIM» pegado al modelo.
+    m = re.search(r"\bSIM\s*/\s*ESIM\b|\bDUAL\s*SIM\b|\b1\s*SIM\b", texto_plano)
+    if m:
+        prod["atributos"].append(titulo_bonito(re.sub(r"\s*/\s*", " / ", m.group(0))))
+        texto_plano = texto_plano[:m.start()] + " " + texto_plano[m.end():]
     if "ESIM" in texto_plano:
         prod["atributos"].append("eSIM")
         texto_plano = texto_plano.replace("ESIM", " ")
