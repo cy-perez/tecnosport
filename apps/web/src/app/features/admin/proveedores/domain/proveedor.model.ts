@@ -1,11 +1,12 @@
 /**
- * La línea del catálogo que surte el proveedor. Solo las dos que hoy llegan por WhatsApp: el
- * backend (`Proveedor.LINEAS_ADMITIDAS`) rechaza cualquier otra, y un proveedor que mande bolsos y
- * ropa se registra dos veces, una por línea, porque el margen y la extracción son distintos.
+ * La línea del catálogo que surte el proveedor. El backend (`Proveedor.LINEAS_ADMITIDAS`) rechaza
+ * cualquier otra, y un proveedor que mande bolsos y ropa se registra dos veces, una por línea,
+ * porque el margen y la extracción son distintos. Bolsos y ropa llegan por la exportación del chat;
+ * la tecnología, por la lista de precios que procesa la skill (`ADR-0075`).
  */
-export type LineaProveedor = 'BOLSOS' | 'ROPA';
+export type LineaProveedor = 'BOLSOS' | 'ROPA' | 'TECNOLOGIA';
 
-export const LINEAS_PROVEEDOR: readonly LineaProveedor[] = ['BOLSOS', 'ROPA'];
+export const LINEAS_PROVEEDOR: readonly LineaProveedor[] = ['BOLSOS', 'ROPA', 'TECNOLOGIA'];
 
 /**
  * En qué orden manda el proveedor las fotos y el texto con el precio de un producto. Solo decide

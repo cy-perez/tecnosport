@@ -25,6 +25,7 @@
     "producto_con_ventas": "Tiene ventas, así que no se puede eliminar. Retíralo de la vitrina: los pedidos, las garantías y los retractos siguen necesitándolo.",
     "proveedor_no_encontrado": "Ese proveedor ya no existe. Recarga la lista.",
     "proveedor_inactivo": "El proveedor está inactivo. Actívalo desde su ficha antes de subirle una exportación.",
+    "proveedor_de_listas": "Este proveedor es de tecnología: su catálogo entra por la lista de precios, no por la exportación del chat.",
     "proveedor_con_productos": "El proveedor tiene productos en el catálogo. Desactívalo en vez de eliminarlo.",
     "proveedor_con_ingesta_en_curso": "El proveedor tiene una exportación en proceso. Espera a que termine e inténtalo de nuevo.",
     "exportacion_no_encontrada": "El archivo no llegó al bucket. Vuelve a elegirlo y súbelo de nuevo.",
@@ -859,7 +860,8 @@
     "inactivo": "Inactivo",
     "lineas": {
       "BOLSOS": "Bolsos",
-      "ROPA": "Ropa"
+      "ROPA": "Ropa",
+      "TECNOLOGIA": "Tecnología"
     },
     "ordenesDePublicacion": {
       "FOTOS_PRIMERO": "Primero las fotos, después el precio",

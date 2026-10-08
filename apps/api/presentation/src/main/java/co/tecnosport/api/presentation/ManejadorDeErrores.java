@@ -80,6 +80,7 @@ import co.tecnosport.api.application.proveedores.PrendaIncoherenteException;
 import co.tecnosport.api.application.proveedores.ProductoDeProveedorYaExisteException;
 import co.tecnosport.api.application.proveedores.ProveedorConIngestaEnCursoException;
 import co.tecnosport.api.application.proveedores.ProveedorConProductosException;
+import co.tecnosport.api.application.proveedores.ProveedorDeListasException;
 import co.tecnosport.api.application.proveedores.ProveedorInactivoException;
 import co.tecnosport.api.application.proveedores.ProveedorNoEncontradoException;
 import co.tecnosport.api.application.proveedores.TipoDeExportacionNoAdmitidoException;
@@ -251,6 +252,12 @@ public class ManejadorDeErrores {
   @ExceptionHandler(ProveedorInactivoException.class)
   public ProblemDetail proveedorInactivo(ProveedorInactivoException excepcion) {
     return problema(HttpStatus.CONFLICT, "El proveedor está inactivo", excepcion);
+  }
+
+  // 409 por lo mismo: el proveedor existe, pero su catálogo entra por la lista de precios.
+  @ExceptionHandler(ProveedorDeListasException.class)
+  public ProblemDetail proveedorDeListas(ProveedorDeListasException excepcion) {
+    return problema(HttpStatus.CONFLICT, "El proveedor es de listas de precios", excepcion);
   }
 
   // 422 y no 404: la key viene en el cuerpo, y una key que no es de ese proveedor o que no apunta

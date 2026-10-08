@@ -11,6 +11,7 @@ import { LineaProveedor, Proveedor } from '../../domain/proveedor.model';
 const CLAVE_LINEA: Record<LineaProveedor, string> = {
   BOLSOS: 'admin.proveedores.lineas.BOLSOS',
   ROPA: 'admin.proveedores.lineas.ROPA',
+  TECNOLOGIA: 'admin.proveedores.lineas.TECNOLOGIA',
 };
 
 /** Contorno y no relleno, como la insignia de estado de la lista de productos. */

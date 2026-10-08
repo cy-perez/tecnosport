@@ -25,6 +25,7 @@
     "producto_con_ventas": "It has sales, so it cannot be deleted. Take it off the storefront instead: orders, warranties and withdrawals still need it.",
     "proveedor_no_encontrado": "That supplier no longer exists. Reload the list.",
     "proveedor_inactivo": "The supplier is inactive. Activate it from its page before uploading an export.",
+    "proveedor_de_listas": "This is a technology supplier: its catalog comes in through the price list, not through the chat export.",
     "proveedor_con_productos": "The supplier has products in the catalogue. Deactivate it instead of deleting it.",
     "proveedor_con_ingesta_en_curso": "The supplier has an export being processed. Wait for it to finish and try again.",
     "exportacion_no_encontrada": "The file did not reach the bucket. Pick it again and upload once more.",
@@ -859,7 +860,8 @@
     "inactivo": "Inactive",
     "lineas": {
       "BOLSOS": "Bags",
-      "ROPA": "Clothing"
+      "ROPA": "Clothing",
+      "TECNOLOGIA": "Technology"
     },
     "ordenesDePublicacion": {
       "FOTOS_PRIMERO": "Photos first, then the price",
