@@ -186,6 +186,11 @@ describe('ReferenciasEnvioPage', () => {
 
     expect(await screen.findByText(esAdmin.referencias_envio.falta_peso)).toBeTruthy();
     expect(repositorio.pesosGuardados).toEqual([]);
+    // El campo queda marcado, no solo el mensaje general: con lector de pantalla es lo que se oye.
+    expect(
+      screen.getByLabelText('Peso promedio de Dama › Polos (gramos)').getAttribute('aria-invalid'),
+    ).toBe('true');
+    expect(screen.getByText(esAdmin.referencias_envio.peso_invalido)).toBeTruthy();
   });
 
   it('quitar el peso lo manda y avisa de que queda solo con recogida', async () => {

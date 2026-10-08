@@ -45,6 +45,7 @@
           idCampo="medidas-largo"
           tipo="number"
           [label]="'admin.referencias_envio.largo' | transloco"
+          [error]="errorDe(formMedidas.controls.largoCm, 'admin.referencias_envio.medida_invalida')"
           formControlName="largoCm"
         />
         <ts-campo
@@ -52,6 +53,7 @@
           idCampo="medidas-ancho"
           tipo="number"
           [label]="'admin.referencias_envio.ancho' | transloco"
+          [error]="errorDe(formMedidas.controls.anchoCm, 'admin.referencias_envio.medida_invalida')"
           formControlName="anchoCm"
         />
         <ts-campo
@@ -59,6 +61,7 @@
           idCampo="medidas-alto"
           tipo="number"
           [label]="'admin.referencias_envio.alto' | transloco"
+          [error]="errorDe(formMedidas.controls.altoCm, 'admin.referencias_envio.medida_invalida')"
           formControlName="altoCm"
         />
       </fieldset>
@@ -155,12 +158,19 @@
                       (keydown.escape)="cancelar(categoria.categoriaId)"
                     >
                       <ts-campo
+                        class="block max-w-formulario"
                         [obligatorio]="true"
                         [idCampo]="'peso-' + categoria.categoriaId"
                         tipo="number"
                         [label]="
                           'admin.referencias_envio.peso_de'
                             | transloco: { categoria: nombreCompleto(categoria) }
+                        "
+                        [error]="
+                          errorDe(
+                            formPeso.controls.pesoGramos,
+                            'admin.referencias_envio.peso_invalido'
+                          )
                         "
                         formControlName="pesoGramos"
                       />

@@ -1198,7 +1198,9 @@
     "falta_peso": "The weight is missing or set to zero. Enter it in grams.",
     "error_peso": "The change could not be saved.",
     "peso_guardado": "Weight of {{categoria}} saved: {{peso}} g.",
-    "peso_quitado": "{{categoria}} has no weight now: its unmeasured products are sold for pickup only."
+    "peso_quitado": "{{categoria}} has no weight now: its unmeasured products are sold for pickup only.",
+    "medida_invalida": "Enter the size in centimeters, greater than zero.",
+    "peso_invalido": "Enter the weight in grams, greater than zero."
   },
   "paquetes_guia": {
     "titulo": "Packages for the shipping label",

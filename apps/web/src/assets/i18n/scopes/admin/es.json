@@ -1198,7 +1198,9 @@
     "falta_peso": "Falta el peso, o está en cero. Escríbelo en gramos.",
     "error_peso": "No se pudo guardar el cambio.",
     "peso_guardado": "Peso de {{categoria}} guardado: {{peso}} g.",
-    "peso_quitado": "{{categoria}} quedó sin peso: sus productos sin medir solo se venden con recogida."
+    "peso_quitado": "{{categoria}} quedó sin peso: sus productos sin medir solo se venden con recogida.",
+    "medida_invalida": "Escribe la medida en centímetros, mayor que cero.",
+    "peso_invalido": "Escribe el peso en gramos, mayor que cero."
   },
   "paquetes_guia": {
     "titulo": "Paquetes para crear la guía",
