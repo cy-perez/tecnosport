@@ -81,7 +81,7 @@ export interface RepositorioProductosAdmin {
    * último sin que nadie se entere.
    */
   reordenarGaleria(comando: ReordenarGaleriaAdmin): Promise<void>;
-  /** De qué color es una foto de la galería: la cuelga de una variante de ese color. */
+  /** De qué color es una foto de la galería o la principal: la cuelga de una variante de ese color. */
   asignarColorAImagen(comando: AsignarColorAImagenAdmin): Promise<void>;
 
   /** Intercambia la principal con una foto de la galería, sin subir nada. */

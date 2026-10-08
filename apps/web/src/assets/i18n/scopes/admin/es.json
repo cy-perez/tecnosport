@@ -276,6 +276,7 @@
         "faltanCampos": "Falta el archivo o alguno de los dos textos alternativos.",
         "titulo": "Imagen principal",
         "actual": "Imagen principal actual",
+        "color": "Color de la foto principal",
         "previsualizacion": "Vista previa de la nueva imagen",
         "archivo": "Selecciona una imagen (JPEG, PNG o WebP)",
         "altEs": "Texto alternativo (español)",

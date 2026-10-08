@@ -388,6 +388,8 @@ export class EditarProductoAdminPage {
   });
 
   protected readonly errorColor = signal<string | null>(null);
+  protected readonly errorColorPrincipal = signal<string | null>(null);
+  protected readonly avisoColorPrincipal = signal(false);
 
   private readonly valorFormulario = toSignal(this.form.valueChanges, {
     initialValue: this.form.getRawValue(),
@@ -581,7 +583,7 @@ export class EditarProductoAdminPage {
    * El color que muestra una foto: el de la variante de la que cuelga. Se compara por color y no
    * por variante, porque la opción del selector es la primera variante de ese color.
    */
-  protected colorDeImagen(imagen: ImagenDeGaleriaAdmin): string {
+  protected colorDeImagen(imagen: Pick<ImagenDeGaleriaAdmin, 'varianteId'>): string {
     if (!imagen.varianteId) {
       return '';
     }
@@ -590,6 +592,27 @@ export class EditarProductoAdminPage {
       .find((variante) => variante.id === imagen.varianteId)
       ?.atributos.find((atributo) => atributo.colorHex)?.valor;
     return this.opcionesColor().find((opcion) => opcion.etiqueta === color)?.valor ?? '';
+  }
+
+  /**
+   * El color de la principal, con sus propios avisos: los de la galería quedan una sección más
+   * abajo y quien cambia el de la principal no los vería.
+   */
+  protected asignarColorPrincipal(varianteId: string): void {
+    this.errorColorPrincipal.set(null);
+    this.avisoColorPrincipal.set(false);
+    this.mutacionColor.mutate(
+      { productoId: this.id(), imagenId: null, varianteId: varianteId || null },
+      {
+        onSuccess: () => this.avisoColorPrincipal.set(true),
+        onError: (error: unknown) => {
+          this.errorColorPrincipal.set(
+            mensajeDeError(error, this.transloco, 'admin.productos.editar.galeria.errorColor'),
+          );
+          this.versionDeColores.update((n) => n + 1);
+        },
+      },
+    );
   }
 
   protected asignarColor(imagen: ImagenDeGaleriaAdmin, varianteId: string): void {

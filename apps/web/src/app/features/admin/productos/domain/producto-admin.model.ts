@@ -117,7 +117,8 @@ export interface VarianteResumenAdmin {
 
 export interface AsignarColorAImagenAdmin {
   readonly productoId: string;
-  readonly imagenId: string;
+  /** Una foto de la galería, o `null` para la principal. */
+  readonly imagenId: string | null;
   /** Una variante del color que muestra la foto, o `null` para que valga para todos. */
   readonly varianteId: string | null;
 }
@@ -133,6 +134,8 @@ export interface UsarImagenComoPrincipalAdmin {
  * hasta ocho imágenes cada uno engordarían la lista para que la pantalla que las usa no sea esa.
  */
 export interface ProductoAdminDetalle extends ProductoAdmin {
+  /** La variante cuyo tono muestra la principal; `null` si vale para todos o no hay principal. */
+  readonly imagenPrincipalVarianteId: string | null;
   readonly galeria: readonly ImagenDeGaleriaAdmin[];
   readonly tallaSirveHasta: string | null;
   readonly variantes: readonly VarianteResumenAdmin[];

@@ -276,6 +276,7 @@
         "faltanCampos": "The file or one of the two alternative texts is missing.",
         "titulo": "Main image",
         "actual": "Current main image",
+        "color": "Colour of the main photo",
         "previsualizacion": "Preview of the new image",
         "archivo": "Choose an image (JPEG, PNG or WebP)",
         "altEs": "Alt text (Spanish)",

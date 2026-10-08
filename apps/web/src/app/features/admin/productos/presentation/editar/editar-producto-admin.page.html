@@ -102,6 +102,31 @@
         />
       }
 
+      <!-- Con un solo color también: desde ADR-0069 la ficha solo enseña la principal en su
+           galería si tiene color, y a diferencia de la galería no hay otra foto que la supla. -->
+      @if (consulta.data(); as producto) {
+        @if (producto.imagenPrincipalUrl && opcionesColor().length > 0) {
+          @for (version of [versionDeColores()]; track version) {
+            <ts-select
+              idCampo="color-foto-principal"
+              [label]="'admin.productos.editar.imagenPrincipal.color' | transloco"
+              [opciones]="opcionesColor()"
+              [placeholder]="'admin.productos.editar.galeria.todosLosColores' | transloco"
+              [valor]="colorDeImagen({ varianteId: producto.imagenPrincipalVarianteId })"
+              (cambio)="asignarColorPrincipal($event)"
+            />
+          }
+          @if (errorColorPrincipal(); as mensaje) {
+            <p class="m-0 text-ts-error" role="alert">{{ mensaje }}</p>
+          }
+          <p class="m-0 text-ts-exito" role="status">
+            @if (avisoColorPrincipal()) {
+              {{ 'admin.productos.editar.galeria.colorGuardado' | transloco }}
+            }
+          </p>
+        }
+      }
+
       @if (previsualizacionUrl(); as previsualizacion) {
         <img
           class="size-[var(--ancho-min-vista-previa)] object-cover"

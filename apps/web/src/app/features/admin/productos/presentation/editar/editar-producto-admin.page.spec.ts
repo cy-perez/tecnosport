@@ -74,6 +74,7 @@ function productoDePrueba(galeria: readonly ImagenDeGaleriaAdmin[] = []): Produc
     marca: MARCA,
     categoria: CATEGORIA,
     imagenPrincipalUrl: null,
+    imagenPrincipalVarianteId: null,
     totalVariantes: 0,
     galeria,
     tallaSirveHasta: null,
@@ -457,6 +458,37 @@ describe('EditarProductoAdminPage', () => {
         { productoId: 'p1', imagenId: 'img1', varianteId: 'v-negro' },
       ]),
     );
+  });
+
+  /** ADR-0069: sin color, la ficha no enseña la principal en su galería. */
+  it('la foto principal dice su color y se puede cambiar', async () => {
+    const repositorio = new RepositorioProductosAdminFalso({
+      ...bodiDePrueba(),
+      imagenPrincipalUrl: 'https://storage.googleapis.com/tecnosport-imagenes-de-prueba/p.jpg',
+      imagenPrincipalVarianteId: 'v-negro',
+    });
+    await renderPagina(repositorio);
+
+    const principal = (await screen.findByLabelText(
+      'Color de la foto principal',
+    )) as HTMLSelectElement;
+    await vi.waitFor(() => expect(principal.value).toBe('v-negro'));
+
+    fireEvent.change(principal, { target: { value: 'v-vino' } });
+
+    await vi.waitFor(() =>
+      expect(repositorio.llamadasAsignarColor).toEqual([
+        { productoId: 'p1', imagenId: null, varianteId: 'v-vino' },
+      ]),
+    );
+    expect(await screen.findAllByText('Color de la foto guardado.')).not.toHaveLength(0);
+  });
+
+  it('sin foto principal no hay color que elegir para ella', async () => {
+    await renderPagina(new RepositorioProductosAdminFalso(bodiDePrueba()));
+    await screen.findByLabelText('Color de la foto 1');
+
+    expect(screen.queryByLabelText('Color de la foto principal')).toBeNull();
   });
 
   it('con un error del servidor al guardar, muestra el mensaje genérico', async () => {

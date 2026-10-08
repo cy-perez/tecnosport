@@ -493,8 +493,7 @@ public final class Producto {
   /**
    * Marca de qué tono es una foto de la galería: la cuelga de una variante de este producto, o de
    * ninguna si vale para todos. Es lo que la tarjeta y la ficha usan para cambiar la foto al elegir
-   * un color. La principal no se marca: el reemplazo desde el panel solo conoce la que no tiene
-   * variante.
+   * un color. La principal se marca con {@link #asignarVarianteAImagenPrincipal}.
    *
    * @return la foto ya marcada
    */
@@ -517,12 +516,31 @@ public final class Producto {
   }
 
   /**
+   * Marca de qué tono es la foto principal, o de ninguno. Desde ADR-0069 importa: la ficha solo
+   * enseña la principal en su galería si tiene color, así que una principal sin marcar es una foto
+   * que el comprador no ve al elegir ese tono.
+   *
+   * @return la principal ya marcada
+   */
+  public ImagenProducto asignarVarianteAImagenPrincipal(UUID varianteId) {
+    if (imagenPrincipal == null) {
+      throw new ImagenProductoInvalidaException("'" + nombre + "' no tiene foto principal.");
+    }
+    if (varianteId != null && variantes.stream().noneMatch(v -> v.id().equals(varianteId))) {
+      throw new ImagenProductoInvalidaException(
+          "La variante '" + varianteId + "' no es de '" + nombre + "'.");
+    }
+    this.imagenPrincipal = imagenPrincipal.conVariante(varianteId);
+    return imagenPrincipal;
+  }
+
+  /**
    * Usa una foto de la galería como principal, que es lo que la revisión de un borrador permite al
    * elegir la foto principal entre las del proveedor. <b>Es un intercambio y no una copia</b>: la
    * elegida sale de la galería y la principal anterior, si la había, ocupa su puesto. Así no se
    * pierde ninguna foto, el tope de la galería no se rebasa y nada se sube dos veces.
    *
-   * <p>Si la elegida mostraba un tono, deja de hacerlo: la principal es del producto entero.
+   * <p>Si la elegida mostraba un tono, lo conserva: ver {@code ImagenProducto.comoPrincipal}.
    *
    * @return la nueva principal y, si la había, la anterior ya convertida en foto de la galería
    */
