@@ -164,5 +164,31 @@ class PrecioSinSigno(unittest.TestCase):
         self.assertEqual(["sin precio de proveedor"], [d["motivo"] for d in datos["descartados"]])
 
 
+class SerieFDePoco(unittest.TestCase):
+    """08/10/2026: `F8 ULTRA` y `F9 ULTRA` salían como «Xiaomi F8 Ultra».
+
+    La serie X ya se leía como POCO; la F es de la misma línea y el proveedor la
+    abrevia igual. El 02/10/2026 hubo que corregir el título a mano.
+    """
+
+    LISTA = (
+        " *XIAOMI* \n"
+        "🎃F8 ULTRA 5G (12+256)$2.250 \n"
+        "🎃POCO F8 PRO 12+256 $1.770\n"
+        "🎃17T PRO 5G(12+512)$2.750 \n"
+    )
+
+    def test_la_serie_f_bajo_xiaomi_es_poco(self):
+        self.assertEqual(
+            ["Xiaomi POCO F8 Ultra 5G 12GB RAM 256GB",
+             "Xiaomi POCO F8 Pro 12GB RAM 256GB",
+             "Xiaomi 17T Pro 5G 12GB RAM 512GB"],
+            titulos(parsear(self.LISTA)))
+
+    def test_queda_el_rastro_en_supuestos(self):
+        [ultra, *_] = parsear(self.LISTA)["productos"]
+        self.assertIn("la sección Xiaomi abrevia la serie F: se leyó como POCO", ultra["supuestos"])
+
+
 if __name__ == "__main__":
     unittest.main()

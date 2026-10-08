@@ -574,9 +574,11 @@ def construir_producto(texto, categoria, marca, condicion, seccion, linea):
             if modelo.upper().startswith("NOTE"):
                 prod["modelo"] = "Redmi " + modelo
                 prod["supuestos"].append("la sección Xiaomi abrevia 'NOTE': se leyó como Redmi Note")
-            elif re.match(r"^X\d", modelo):
+            elif re.match(r"^[XF]\d", modelo):
+                # Las series X y F son de POCO; el número a secas (17T Pro) sí es Xiaomi.
                 prod["modelo"] = "POCO " + modelo
-                prod["supuestos"].append("la sección Xiaomi abrevia la serie X: se leyó como POCO")
+                prod["supuestos"].append(
+                    f"la sección Xiaomi abrevia la serie {modelo[0]}: se leyó como POCO")
         if prod["ram_virtual"]:
             prod["revisar"].append(
                 f"la lista suma RAM virtual ({prod['ram']}+{prod['ram_virtual']}): "

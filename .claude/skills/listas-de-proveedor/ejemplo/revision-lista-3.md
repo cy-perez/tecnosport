@@ -4,7 +4,7 @@
 - Productos para publicar: 90
 - Descartados: 168
 - Duplicados fusionados: 9
-- Productos con algún supuesto aplicado: 25
+- Productos con algún supuesto aplicado: 27
 - Líneas sin clasificar: 0
 
 ## Productos para publicar
@@ -60,8 +60,10 @@
   - · asumido: la sección Xiaomi abrevia la serie X: se leyó como POCO
 - **Xiaomi POCO F8 Pro 12GB RAM 256GB** — celulares — 1.770.000 COP
 - **Xiaomi 17T Pro 5G 12GB RAM 512GB** — celulares — 2.750.000 COP
-- **Xiaomi F8 Ultra 5G 12GB RAM 256GB** — celulares — 2.250.000 COP
-- **Xiaomi F9 Ultra 5G 16GB RAM 512GB** — celulares — 2.900.000 COP
+- **Xiaomi POCO F8 Ultra 5G 12GB RAM 256GB** — celulares — 2.250.000 COP
+  - · asumido: la sección Xiaomi abrevia la serie F: se leyó como POCO
+- **Xiaomi POCO F9 Ultra 5G 16GB RAM 512GB** — celulares — 2.900.000 COP
+  - · asumido: la sección Xiaomi abrevia la serie F: se leyó como POCO
 - **Fly Go Pad Mouse + Teclado 10" 4G 4GB RAM 64GB** — tablets — 430.000 COP
   - ⚠️ la lista suma RAM virtual (4GB+4GB): publicar la RAM física y mencionar la extendida aparte
   - ⚠️ tablets: confirmar la línea comercial completa (ej. Galaxy Tab A11)
