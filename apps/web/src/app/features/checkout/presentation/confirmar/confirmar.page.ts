@@ -19,6 +19,8 @@ import { TsPrecio } from '../../../../shared/ts-precio/ts-precio';
 import { CarritoStore } from '../../../carrito/application/carrito.store';
 import { CheckoutStore } from '../../application/checkout.store';
 import { usarCotizacionEnvio } from '../../application/cotizacion-envio.consulta';
+import { usarModalidadesDeEntrega } from '../../application/modalidades-entrega.consulta';
+import { TsSalidaSinEnvio } from '../salida-sin-envio/ts-salida-sin-envio';
 import { CotizarEnvioComando } from '../../domain/envio.model';
 import { CrearPedidoComando } from '../../domain/pedido.comandos';
 import { MetodoPago, Pedido } from '../../domain/pedido.model';
@@ -62,7 +64,7 @@ const CLAVE_MOTIVO_SISTECREDITO: Record<string, string> = {
  */
 @Component({
   selector: 'app-confirmar',
-  imports: [RouterLink, TranslocoPipe, TsBoton, TsEsqueleto, TsIcono, TsPrecio],
+  imports: [RouterLink, TranslocoPipe, TsBoton, TsEsqueleto, TsIcono, TsPrecio, TsSalidaSinEnvio],
   templateUrl: './confirmar.page.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -169,6 +171,13 @@ export class ConfirmarPage {
       .join(', '),
   );
 
+  private readonly modalidades = usarModalidadesDeEntrega();
+
+  /** Mismo criterio que en el resumen: mientras no se sabe, como si estuviera apagada. */
+  protected readonly retiroDisponible = computed(
+    () => this.modalidades.data()?.retiroEnPunto === true,
+  );
+
   protected readonly errorCotizacion = computed(
     () => this.muestraEnvio() && this.cotizacion.isError(),
   );
@@ -225,6 +234,15 @@ export class ConfirmarPage {
           ? 'checkout.confirmar.articulo_no_asegurable'
           : 'checkout.confirmar.articulos_no_asegurables',
         { articulos: this.nombresNoAsegurables() },
+      ];
+    }
+    const sinMedidas = this.articulosSinMedidas();
+    if (sinMedidas.length > 0) {
+      return [
+        sinMedidas.length === 1
+          ? 'checkout.confirmar.articulo_sin_medidas'
+          : 'checkout.confirmar.articulos_sin_medidas',
+        { articulos: this.nombresSinMedidas() },
       ];
     }
     if (this.cotizacionRechazada()) {
@@ -304,10 +322,16 @@ export class ConfirmarPage {
     // Sin tarifa no se manda el pedido. Antes se mandaba, el servidor respondía 409 —con razón— y
     // aquí se traducía a "revisa tus datos e intenta de nuevo": un mensaje que culpa al comprador
     // de algo que no es suyo y que reintentar no arregla. El texto ahora dice qué pasó y qué
-    // puede hacer, que es volver y elegir la recogida en el punto.
+    // puede hacer: volver y elegir la recogida, o escribirnos por WhatsApp si la recogida está
+    // apagada.
     if (this.bloqueadoPorCobertura()) {
       const [clave, parametros] = this.claveYParametrosDelBloqueo();
-      this.error.set(this.transloco.translate(clave, parametros));
+      const salida = this.retiroDisponible()
+        ? 'checkout.confirmar.salida_retiro'
+        : 'checkout.confirmar.salida_whatsapp';
+      this.error.set(
+        `${this.transloco.translate(clave, parametros)} ${this.transloco.translate(salida)}`,
+      );
       return;
     }
 
@@ -373,6 +397,12 @@ export class ConfirmarPage {
    * esta rama era código muerto. Ver `core/http/respuesta-http.ts`.
    */
   private mensajeDeError(error: unknown): string {
+    // Quien eligió recoger antes de que la recogida se apagara, con la pestaña abierta: el servidor
+    // ya no la acepta, y "revisa tus datos" no le diría qué cambiar.
+    if (error instanceof ErrorHttp && error.codigo === 'RETIRO_EN_PUNTO_NO_DISPONIBLE') {
+      this.rechazoDeCredito.set(false);
+      return this.transloco.translate('checkout.confirmar.retiro_no_disponible');
+    }
     const datos = error instanceof ErrorHttp ? error.datos : {};
     // El servidor ya clasificó el rechazo (`motivoSistecredito`); aquí solo se elige el texto. La
     // tabla de códigos y estados de la pasarela vivía en este componente, distinta de la del

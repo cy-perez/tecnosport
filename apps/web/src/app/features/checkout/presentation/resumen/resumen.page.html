@@ -115,11 +115,12 @@
               } @else if (sinCobertura()) {
                 <span class="text-ts-error" role="alert">
                   {{ 'checkout.resumen.envio_sin_cobertura' | transloco }}
+                  <ts-salida-sin-envio [retiroDisponible]="retiroDisponible()" />
                 </span>
               } @else if (articulosNoAsegurables().length > 0) {
                 <!-- La tercera respuesta posible, y la única que no se arregla con nada: el
                      artículo vale más de lo que la transportadora asegura. Se nombra, porque la
-                     salida es quitarlo o recogerlo en el punto. -->
+                     salida la ofrece `ts-salida-sin-envio`. -->
                 <span class="text-ts-error" role="alert">
                   {{
                     (articulosNoAsegurables().length === 1
@@ -127,19 +128,32 @@
                       : 'checkout.resumen.articulos_no_asegurables'
                     ) | transloco: { articulos: nombresNoAsegurables() }
                   }}
+                  <ts-salida-sin-envio [retiroDisponible]="retiroDisponible()" />
+                </span>
+              } @else if (articulosSinMedidas().length > 0) {
+                <span class="text-ts-error" role="alert">
+                  {{
+                    (articulosSinMedidas().length === 1
+                      ? 'checkout.resumen.articulo_sin_medidas'
+                      : 'checkout.resumen.articulos_sin_medidas'
+                    ) | transloco: { articulos: nombresSinMedidas() }
+                  }}
+                  <ts-salida-sin-envio [retiroDisponible]="retiroDisponible()" />
                 </span>
               } @else if (cotizacionRechazada()) {
                 <!-- La cuarta, y la única que no dice "vuelve a intentarlo": la plataforma rechazó
                      los datos del envío y el reintento trae el mismo rechazo, porque las
-                     cotizaciones se deduplican por contenido. La salida es la recogida. -->
+                     cotizaciones se deduplican por contenido. La salida la ofrece `ts-salida-sin-envio`. -->
                 <span class="text-ts-error" role="alert">
                   {{ 'checkout.resumen.envio_rechazado' | transloco }}
+                  <ts-salida-sin-envio [retiroDisponible]="retiroDisponible()" />
                 </span>
               } @else if (errorCotizacion()) {
                 <!-- Otro texto, y a propósito: "no llegamos a esa dirección" manda a corregir una
                      dirección que puede estar bien. Esto es una caída nuestra y se dice como tal. -->
                 <span class="text-ts-error" role="alert">
                   {{ 'checkout.resumen.envio_no_calculado' | transloco }}
+                  <ts-salida-sin-envio [retiroDisponible]="retiroDisponible()" />
                 </span>
               }
             </dd>
@@ -210,12 +224,14 @@
           formControlName="telefono"
         />
 
-        <ts-select
-          idCampo="resumen-tipo-entrega"
-          [label]="'checkout.resumen.tipo_entrega' | transloco"
-          [opciones]="opcionesTipoEntrega()"
-          formControlName="tipoEntrega"
-        />
+        @if (opcionesTipoEntrega().length > 1) {
+          <ts-select
+            idCampo="resumen-tipo-entrega"
+            [label]="'checkout.resumen.tipo_entrega' | transloco"
+            [opciones]="opcionesTipoEntrega()"
+            formControlName="tipoEntrega"
+          />
+        }
 
         @if (requiereDireccion()) {
           <fieldset

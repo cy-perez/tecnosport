@@ -23,6 +23,7 @@ import {
   CotizacionEnvio,
   CotizarEnvioComando,
   ResultadoCotizacion,
+  ModalidadesDeEntrega,
 } from '../../domain/envio.model';
 import { REPOSITORIO_ENVIOS, RepositorioEnvios } from '../../domain/repositorio-envios.puerto';
 import { ResumenPage } from './resumen.page';
@@ -112,6 +113,12 @@ class RepositorioPedidosFalso implements RepositorioPedidos {
 }
 
 class RepositorioEnviosFalso implements RepositorioEnvios {
+  retiroEnPunto = true;
+
+  async modalidades(): Promise<ModalidadesDeEntrega> {
+    return { envioADomicilio: true, retiroEnPunto: this.retiroEnPunto };
+  }
+
   llamadas = 0;
 
   constructor(
@@ -138,6 +145,12 @@ class RepositorioEnviosFalso implements RepositorioEnvios {
  * cotización todavía en vuelo. Un doble que responde de inmediato nunca la ve.
  */
 class RepositorioEnviosDiferido implements RepositorioEnvios {
+  retiroEnPunto = true;
+
+  async modalidades(): Promise<ModalidadesDeEntrega> {
+    return { envioADomicilio: true, retiroEnPunto: this.retiroEnPunto };
+  }
+
   private responder!: (resultado: ResultadoCotizacion) => void;
   private readonly enVuelo = new Promise<ResultadoCotizacion>((resolver) => {
     this.responder = resolver;
@@ -153,6 +166,12 @@ class RepositorioEnviosDiferido implements RepositorioEnvios {
 }
 
 class RepositorioEnviosPorCiudad implements RepositorioEnvios {
+  retiroEnPunto = true;
+
+  async modalidades(): Promise<ModalidadesDeEntrega> {
+    return { envioADomicilio: true, retiroEnPunto: this.retiroEnPunto };
+  }
+
   constructor(private readonly porCiudad: Record<string, CotizacionEnvio | null>) {}
 
   async cotizar(comando: CotizarEnvioComando): Promise<ResultadoCotizacion> {
@@ -364,6 +383,78 @@ describe('ResumenPage', () => {
    * de tabulación, así que quien navega con teclado llega y no puede enfocarlo para entender por
    * qué. Queda alcanzable y es el envío el que no pasa.
    */
+  describe('con la recogida en el punto apagada', () => {
+    function enviosSinRetiro(respuesta: CotizacionEnvio | ResultadoCotizacion | null) {
+      const envios = new RepositorioEnviosFalso(respuesta);
+      envios.retiroEnPunto = false;
+      return envios;
+    }
+
+    it('no ofrece elegir el tipo de entrega: solo hay envío a domicilio', async () => {
+      sembrarCarritoId('carrito-1');
+      sembrarSnapshotLinea(snapshotDePrueba('variante-1'));
+
+      await renderResumen(new RepositorioCarritoFalso(CARRITO_CON_LINEAS), enviosSinRetiro(null));
+      await screen.findByText('Morral urbano');
+
+      expect(screen.queryByLabelText('Tipo de entrega')).toBeNull();
+      expect(screen.getByLabelText('Dirección')).toBeTruthy();
+    });
+
+    /** La salida deja de ser la recogida: es WhatsApp, y no se promete un punto que ya no hay. */
+    it('sin cobertura remite a WhatsApp y no promete recoger', async () => {
+      sembrarCarritoId('carrito-1');
+      sembrarSnapshotLinea(snapshotDePrueba('variante-1'));
+
+      await renderResumen(new RepositorioCarritoFalso(CARRITO_CON_LINEAS), enviosSinRetiro(null));
+      await screen.findByText('Morral urbano');
+      llenarContacto();
+      await llenarDireccionEnMedellin();
+
+      expect(await screen.findByText(/No tenemos transporte hasta esta dirección/)).toBeTruthy();
+      const enlace = screen.getByRole('link', { name: 'escríbenos por WhatsApp' });
+      expect(enlace.getAttribute('href')).toBe('https://wa.me/573138816711');
+      expect(screen.queryByText(/recoger/i)).toBeNull();
+    });
+
+    it('un artículo sin medidas se nombra y remite a WhatsApp', async () => {
+      sembrarCarritoId('carrito-1');
+      sembrarSnapshotLinea(snapshotDePrueba('variante-1'));
+
+      await renderResumen(
+        new RepositorioCarritoFalso(CARRITO_CON_LINEAS),
+        enviosSinRetiro({
+          tipo: 'ARTICULO_SIN_MEDIDAS',
+          articulos: [{ varianteId: 'variante-1', nombre: 'Proyector portátil' }],
+        }),
+      );
+      await screen.findByText('Morral urbano');
+      llenarContacto();
+      await llenarDireccionEnMedellin();
+
+      expect(
+        await screen.findByText(/calcular el envío a domicilio de Proyector portátil/),
+      ).toBeTruthy();
+      expect(screen.getByRole('link', { name: 'escríbenos por WhatsApp' })).toBeTruthy();
+    });
+  });
+
+  it('con la recogida encendida, sin cobertura ofrece recoger en el punto', async () => {
+    sembrarCarritoId('carrito-1');
+    sembrarSnapshotLinea(snapshotDePrueba('variante-1'));
+
+    await renderResumen(
+      new RepositorioCarritoFalso(CARRITO_CON_LINEAS),
+      new RepositorioEnviosFalso(null),
+    );
+    await screen.findByText('Morral urbano');
+    llenarContacto();
+    await llenarDireccionEnMedellin();
+
+    expect(await screen.findByText(/Puedes recoger tu pedido en nuestro punto/)).toBeTruthy();
+    expect(screen.queryByRole('link', { name: 'escríbenos por WhatsApp' })).toBeNull();
+  });
+
   it('sin cobertura lo explica, deja el botón alcanzable y no deja continuar', async () => {
     sembrarCarritoId('carrito-1');
     sembrarSnapshotLinea(snapshotDePrueba('variante-1'));

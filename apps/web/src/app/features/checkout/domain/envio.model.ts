@@ -28,6 +28,15 @@ export interface CotizacionEnvio {
 }
 
 /**
+ * Qué formas de entrega ofrece hoy el negocio. La recogida en el punto se apagó el 8 de octubre de
+ * 2026 y la decide el servidor (`RETIRO_EN_PUNTO_HABILITADO`): la pantalla solo la deja de ofrecer.
+ */
+export interface ModalidadesDeEntrega {
+  readonly envioADomicilio: boolean;
+  readonly retiroEnPunto: boolean;
+}
+
+/**
  * Un artículo que no se puede despachar a domicilio porque vale más de lo que la transportadora
  * asegura (`ADR-0036`). El nombre viene del servidor: es un nombre propio de producto, no un texto
  * de interfaz, así que no pasa por Transloco — la frase que lo rodea sí.

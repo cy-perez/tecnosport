@@ -21,7 +21,11 @@ import { CrearPedidoComando, DatosEntrega } from '../../domain/pedido.comandos';
 import { MetodoPago, Pedido, Seguimiento } from '../../domain/pedido.model';
 import { REPOSITORIO_PAGOS, RepositorioPagos } from '../../domain/repositorio-pagos.puerto';
 import { REPOSITORIO_PEDIDOS, RepositorioPedidos } from '../../domain/repositorio-pedidos.puerto';
-import { CotizacionEnvio, ResultadoCotizacion } from '../../domain/envio.model';
+import {
+  CotizacionEnvio,
+  ResultadoCotizacion,
+  ModalidadesDeEntrega,
+} from '../../domain/envio.model';
 import { REPOSITORIO_ENVIOS, RepositorioEnvios } from '../../domain/repositorio-envios.puerto';
 import { ConfirmarPage } from './confirmar.page';
 import { CarritoIdLocalStorageAlmacen } from '../../../carrito/infrastructure/carrito-id.almacen';
@@ -142,6 +146,13 @@ class RepositorioPedidosFalso implements RepositorioPedidos {
 
   async consultarSeguimientoPorNumero(): Promise<Seguimiento | null> {
     throw new Error('no usado en esta prueba');
+  }
+}
+
+/** El servidor ya no acepta la recogida: la pestaña se abrió antes de que se apagara. */
+class RepositorioPedidosSinRetiro extends RepositorioPedidosFalso {
+  override async crear(): Promise<Pedido> {
+    throw new ErrorHttp(409, 'recogida apagada', 'RETIRO_EN_PUNTO_NO_DISPONIBLE');
   }
 }
 
@@ -301,6 +312,12 @@ class RutaMuda {}
 
 /** Doble de prueba escrito a mano, sin Mockito, ver docs/06-testing.md. */
 class RepositorioEnviosFalso implements RepositorioEnvios {
+  retiroEnPunto = true;
+
+  async modalidades(): Promise<ModalidadesDeEntrega> {
+    return { envioADomicilio: true, retiroEnPunto: this.retiroEnPunto };
+  }
+
   constructor(
     private readonly respuesta: CotizacionEnvio | ResultadoCotizacion | null | Error = COTIZACION,
   ) {}
@@ -613,6 +630,49 @@ describe('ConfirmarPage', () => {
       await screen.findByText(/no podemos crear este pedido[\s\S]*recoger en nuestro punto/),
     ).toBeTruthy();
     expect(pedidos.llamadasCrear).toBe(0);
+  });
+
+  it('con la recogida apagada, sin cobertura remite a WhatsApp y no a un punto que no existe', async () => {
+    sembrarCarritoId('carrito-1');
+    sembrarSnapshotLinea(snapshotDePrueba('variante-1'));
+    const pedidos = new RepositorioPedidosFalso();
+    const envios = new RepositorioEnviosFalso(null);
+    envios.retiroEnPunto = false;
+
+    const { fixture } = await renderConDatos(
+      'TRANSFERENCIA_MANUAL',
+      new RepositorioCarritoFalso(CARRITO_CON_LINEAS),
+      pedidos,
+      new RepositorioPagosFalso(),
+      DATOS_ENTREGA_A_DOMICILIO,
+      envios,
+    );
+    await esperarCarritoCargado(fixture);
+    expect(await screen.findByText(/No tenemos transporte hasta esta dirección/)).toBeTruthy();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Confirmar pedido' }));
+
+    expect(
+      await screen.findByText(/no podemos crear este pedido[\s\S]*escríbenos por WhatsApp/),
+    ).toBeTruthy();
+    expect(screen.queryByText(/recoger/i)).toBeNull();
+    expect(pedidos.llamadasCrear).toBe(0);
+  });
+
+  it('si el servidor ya no acepta la recogida, lo dice y manda a elegir el envío a domicilio', async () => {
+    sembrarCarritoId('carrito-1');
+    sembrarSnapshotLinea(snapshotDePrueba('variante-1'));
+
+    const { fixture } = await renderConDatos(
+      'WOMPI',
+      new RepositorioCarritoFalso(CARRITO_CON_LINEAS),
+      new RepositorioPedidosSinRetiro(),
+    );
+    await esperarCarritoCargado(fixture);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Confirmar pedido' }));
+
+    expect(await screen.findByText(esCheckout.confirmar.retiro_no_disponible)).toBeTruthy();
   });
 
   /**

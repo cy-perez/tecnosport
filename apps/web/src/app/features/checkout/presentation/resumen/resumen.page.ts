@@ -32,6 +32,8 @@ import { TsSelectControl } from '../../../../shared/ui/select/ts-select-control'
 import { CarritoStore } from '../../../carrito/application/carrito.store';
 import { CheckoutStore } from '../../application/checkout.store';
 import { usarCotizacionEnvio } from '../../application/cotizacion-envio.consulta';
+import { usarModalidadesDeEntrega } from '../../application/modalidades-entrega.consulta';
+import { TsSalidaSinEnvio } from '../salida-sin-envio/ts-salida-sin-envio';
 import { CotizacionEnvio, CotizarEnvioComando } from '../../domain/envio.model';
 import { DEPARTAMENTOS, municipiosDeDepartamento } from '../../domain/geografia-co';
 import { Direccion, TipoEntrega } from '../../domain/pedido.model';
@@ -66,6 +68,7 @@ interface ValoresDireccion {
     TsPrecio,
     TsSelect,
     TsSelectControl,
+    TsSalidaSinEnvio,
     RouterLink,
   ],
   templateUrl: './resumen.page.html',
@@ -153,9 +156,28 @@ export class ResumenPage {
     tipoEntregaRequiereDireccion(this.tipoEntregaElegido()),
   );
 
+  private readonly modalidades = usarModalidadesDeEntrega();
+
+  /**
+   * Si hoy se ofrece la recogida en el punto. Mientras la respuesta no llega vale `false`: el
+   * servidor la rechaza si está apagada, y ofrecerla para que falle dos pantallas después es peor
+   * que no ofrecerla un instante.
+   */
+  protected readonly retiroDisponible = computed(
+    () => this.modalidades.data()?.retiroEnPunto === true,
+  );
+
+  /** Con una sola opción no hay nada que elegir, y la plantilla no pinta el selector. */
   protected readonly opcionesTipoEntrega = computed<OpcionSelect[]>(() => [
     { valor: 'ENVIO_A_DOMICILIO', etiqueta: this.traducir()('checkout.resumen.envio_a_domicilio') },
-    { valor: 'RETIRO_EN_PUNTO', etiqueta: this.traducir()('checkout.resumen.retiro_en_punto') },
+    ...(this.retiroDisponible()
+      ? [
+          {
+            valor: 'RETIRO_EN_PUNTO',
+            etiqueta: this.traducir()('checkout.resumen.retiro_en_punto'),
+          },
+        ]
+      : []),
   ]);
 
   protected readonly opcionesDepartamento = computed<OpcionSelect[]>(() =>
@@ -368,6 +390,22 @@ export class ResumenPage {
   );
 
   /**
+   * Los artículos que todavía no se han medido y por eso no se pueden cotizar (`ADR-0046`). El
+   * adaptador ya los traducía y esta pantalla no los miraba: la fila del costo se quedaba vacía, sin
+   * motivo, y solo el total decía que faltaba algo.
+   */
+  protected readonly articulosSinMedidas = computed(() => {
+    const resultado = this.cotizacion.data();
+    return resultado?.tipo === 'ARTICULO_SIN_MEDIDAS' ? resultado.articulos : [];
+  });
+
+  protected readonly nombresSinMedidas = computed(() =>
+    this.articulosSinMedidas()
+      .map((articulo) => articulo.nombre)
+      .join(', '),
+  );
+
+  /**
    * La cuarta respuesta: la plataforma rechazó los datos de este envío. Se cuenta aparte de
    * `errorCotizacion()` porque ahí el texto invita a volver a intentar y aquí eso sería mentira —
    * Skydropx deduplica las cotizaciones por contenido, así que el reintento trae el mismo rechazo.
@@ -485,6 +523,14 @@ export class ResumenPage {
       const cotizada = this.tarifa();
       if (cotizada) {
         this.ultimaCotizacion.set(cotizada);
+      }
+    });
+
+    // Si la recogida no se ofrece, el control no puede quedarse en ella: el selector desaparece y
+    // nadie podría cambiarla, y el pedido volvería del servidor con un 409.
+    effect(() => {
+      if (!this.retiroDisponible() && this.tipoEntregaElegido() === 'RETIRO_EN_PUNTO') {
+        this.form.controls.tipoEntrega.setValue('ENVIO_A_DOMICILIO');
       }
     });
 

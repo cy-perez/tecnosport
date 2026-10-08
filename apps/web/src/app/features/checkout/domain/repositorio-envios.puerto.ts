@@ -1,5 +1,5 @@
 import { InjectionToken } from '@angular/core';
-import { CotizarEnvioComando, ResultadoCotizacion } from './envio.model';
+import { CotizarEnvioComando, ModalidadesDeEntrega, ResultadoCotizacion } from './envio.model';
 
 export interface RepositorioEnvios {
   /**
@@ -16,6 +16,9 @@ export interface RepositorioEnvios {
    * diferencia es justo la que el 503 y el 409 marcan.
    */
   cotizar(comando: CotizarEnvioComando): Promise<ResultadoCotizacion>;
+
+  /** Qué formas de entrega se ofrecen hoy. */
+  modalidades(): Promise<ModalidadesDeEntrega>;
 }
 
 export const REPOSITORIO_ENVIOS = new InjectionToken<RepositorioEnvios>('RepositorioEnvios');
