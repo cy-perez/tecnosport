@@ -971,7 +971,7 @@ def parsear(texto: str, equivalencias=None):
     cerrar_pendiente()
     productos, duplicados = fusionar_duplicados(productos)
     productos = filtrar_por_precio(productos, descartados)
-    aplicar_equivalencias(productos, equivalencias or {})
+    aplicar_equivalencias(productos, equivalencias or {}, descartados)
     return {
         "fecha_lista": fecha,
         "bloques": bloques,
@@ -1103,7 +1103,7 @@ def cargar_equivalencias(ruta=EQUIVALENCIAS) -> dict:
     return validar_equivalencias(datos["equivalencias"])
 
 
-def aplicar_equivalencias(productos, equivalencias):
+def aplicar_equivalencias(productos, equivalencias, descartados=()):
     """Pone el id y el título definitivos, y deja el id que produjo la lista en `id_lista`.
 
     `id_lista` va en todos los productos, tengan equivalencia o no: es lo que
@@ -1119,6 +1119,13 @@ def aplicar_equivalencias(productos, equivalencias):
             p["supuestos"].append(f"título confirmado el {fecha}: la lista lo trae como «{p['titulo']}»")
         p["id"], p["titulo"] = e["id"], e["titulo"]
         p["revisar"] = [r for r in p["revisar"] if r not in ALERTAS_DE_NOMBRE]
+
+    # Los descartados solo toman el id: la comparación tiene que reconocer a un
+    # conocido que hoy vino pero no entra (sin precio, bajo el mínimo).
+    for d in descartados:
+        d["id_lista"] = d["id"]
+        if d["id"] in equivalencias:
+            d["id"] = equivalencias[d["id"]]["id"]
 
     por_id = {}
     for p in productos:

@@ -31,6 +31,9 @@ import urllib.error
 import urllib.parse
 import urllib.request
 
+sys.path.insert(0, str(__import__('pathlib').Path(__file__).resolve().parent))
+from pendientes import necesita  # noqa: E402
+
 # El catálogo VTEX de estas tres responde sin credenciales.
 TIENDAS = [
     ("Éxito", "https://www.exito.com"),
@@ -278,7 +281,9 @@ def main():
     args = ap.parse_args()
 
     datos = json.loads(open(args.productos, encoding="utf-8").read())
-    items = datos["productos"]
+    # Solo los que tienen el precio pendiente (ver pendientes.py): un conocido con
+    # el precio vigente no se vuelve a consultar en las tiendas.
+    items = [p for p in datos["productos"] if necesita(p, "precio")]
     if args.solo:
         aguja = normalizar(args.solo)
         items = [p for p in items if aguja in normalizar(p["titulo"])]

@@ -267,6 +267,12 @@ class Equivalencias(unittest.TestCase):
     def test_sin_equivalencias_el_parser_sigue_igual(self):
         self.assertEqual(["JBL Extreme 4", "JBL Flip 7"], titulos(parsear(self.LISTA)))
 
+    def test_los_descartados_tambien_toman_el_id_definitivo(self):
+        # Para que la comparación reconozca a un conocido que hoy quedó fuera.
+        eq = {"jbl-extreme-4": equivalencia("jbl-xtreme-4", "JBL Xtreme 4")}
+        datos = parsear("*PARLANTE ORIGINALES*🔊\n🔊JBL EXTREME 4\n", eq)
+        self.assertEqual(["jbl-xtreme-4"], [d["id"] for d in datos["descartados"]])
+
     def test_dos_productos_con_el_mismo_id_final_se_marcan(self):
         eq = {"jbl-extreme-4": equivalencia("jbl-flip-7", "JBL Flip 7")}
         for p in parsear(self.LISTA, eq)["productos"]:

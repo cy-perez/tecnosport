@@ -54,6 +54,9 @@ import xml.etree.ElementTree as ET
 from difflib import SequenceMatcher
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from pendientes import necesita  # noqa: E402
+
 BASE = "https://data.icecat.biz"
 INDICE_URL = f"{BASE}/export/freexml/EN/files.index.xml.gz"
 PROVEEDORES_URL = f"{BASE}/export/freexml/refs/SuppliersList.xml.gz"
@@ -271,7 +274,9 @@ def tokens_modelo(p):
 
 
 def cargar_productos(ruta):
-    return json.loads(Path(ruta).read_text(encoding="utf-8"))["productos"]
+    """Los productos que necesitan ficha (ver pendientes.py); sin comparación, todos."""
+    productos = json.loads(Path(ruta).read_text(encoding="utf-8"))["productos"]
+    return [p for p in productos if necesita(p, "ficha")]
 
 
 # --------------------------------------------------------------------------
