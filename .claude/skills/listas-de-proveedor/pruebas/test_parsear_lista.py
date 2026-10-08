@@ -148,7 +148,20 @@ class SimEnLaMismaLinea(unittest.TestCase):
 
     def test_sim_y_esim_en_la_linea_no_deja_un_sim_suelto_en_el_modelo(self):
         datos = parsear("*MOTOROLA*\n🎃EDGE 50 FUSIÓN 5G (8+256)$735 *SIM / ESIM*\n")
-        self.assertEqual(["Motorola Edge 50 Fusion 5G 8GB RAM 256GB SIM / eSIM"], titulos(datos))
+        self.assertEqual(["Motorola Edge 50 Fusion 5G 8GB RAM 256GB SIM + eSIM"], titulos(datos))
+
+    def test_la_sim_dice_lo_mismo_en_la_linea_o_debajo(self):
+        # Revisión del 08/10/2026: `*1SIM*` pegado daba «1Sim» debajo y «1 SIM»
+        # en la línea, dos ids para el mismo equipo. `*1SIM*` existe en la lista 2.
+        for texto in ("🎃A27 5G (8+256)$870 *1SIM*\n", "🎃A27 5G (8+256)$870\n*1SIM*\n"):
+            with self.subTest(texto=texto):
+                self.assertEqual(["Samsung Galaxy A27 5G 8GB RAM 256GB 1 SIM"],
+                                 titulos(parsear("*SAMSUNG*\n" + texto)))
+        for texto in ("🎃EDGE 50 FUSIÓN 5G (8+256)$735 *SIM/ESIM*\n",
+                      "🎃EDGE 50 FUSIÓN 5G (8+256)$735\n*SIM / ESIM*\n"):
+            with self.subTest(texto=texto):
+                self.assertEqual(["Motorola Edge 50 Fusion 5G 8GB RAM 256GB SIM + eSIM"],
+                                 titulos(parsear("*MOTOROLA*\n" + texto)))
 
     def test_la_sim_en_la_linea_siguiente_sigue_leyendose(self):
         datos = parsear("*MOTOROLA*\n🎃MOTO G17 4G (4+4+256)$505\n*1 SIM*\n")

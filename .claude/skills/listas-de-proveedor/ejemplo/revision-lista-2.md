@@ -4,7 +4,7 @@
 - Productos para publicar: 52
 - Descartados: 65
 - Duplicados fusionados: 12
-- Productos con algún supuesto aplicado: 25
+- Productos con algún supuesto aplicado: 24
 - Títulos confirmados en una lista anterior: 9
 - Líneas sin clasificar: 0
 
@@ -52,8 +52,7 @@
 - **Motorola Moto G17 Power 4G 4GB RAM 256GB 1 SIM** — celulares — 550.000 COP
   - ⚠️ la lista suma RAM virtual (4GB+4GB): publicar la RAM física y mencionar la extendida aparte
 - **Motorola Edge 50 Fusion 5G 8GB RAM 256GB SIM + eSIM** — celulares — 735.000 COP
-  - · asumido: título confirmado el 02/10/2026: la lista lo trae como «Motorola Edge 50 Fusion 5G 8GB RAM 256GB SIM / eSIM»
-- **Motorola Edge 50 Fusion 5G 8GB RAM 512GB SIM / eSIM** — celulares — 920.000 COP
+- **Motorola Edge 50 Fusion 5G 8GB RAM 512GB SIM + eSIM** — celulares — 920.000 COP
 - **Honor X7D 4G 6GB RAM 256GB** — celulares — 650.000 COP
 - **Honor X9D 8GB RAM 256GB** — celulares — 960.000 COP
 - **Xiaomi Redmi 15C 4G 8GB RAM 256GB** — celulares — 505.000 COP

@@ -358,6 +358,24 @@ def vinetas_del_dia(lineas) -> set:
     return {v for v, n in usos.items() if n >= USOS_VINETA_DEL_DIA}
 
 
+# La SIM llega escrita de muchas formas —`1 SIM`, `1SIM`, `DUAL SIM`, `SIM/ESIM`,
+# `SIM / ESIM`—, en la misma línea o debajo. Tiene que salir siempre igual: dos
+# textos para la misma SIM son dos ids, y dos referencias que no se fusionan.
+RE_SIM = re.compile(r"\bSIM\s*[/+]\s*E\s*SIM\b|\bDUAL\s*SIM\b|\b1\s*SIM\b")
+
+
+def atributo_sim(texto: str):
+    """El atributo de SIM canónico para un texto en mayúsculas, o None."""
+    compacto = re.sub(r"\s+", "", texto.upper())
+    if compacto.startswith("SIM") and "ESIM" in compacto:
+        return "SIM + eSIM"   # como quedó publicado el Edge 50 Fusion el 02/10/2026
+    if compacto.startswith("DUAL"):
+        return "Dual SIM"
+    if compacto.startswith("1SIM"):
+        return "1 SIM"
+    return None
+
+
 def plano(texto: str) -> str:
     """La línea sin emojis ni marcas de WhatsApp, en mayúsculas."""
     return normalizar(sin_emojis(texto).replace("*", " ").replace("_", " "))
@@ -563,9 +581,9 @@ def construir_producto(texto, categoria, marca, condicion, seccion, linea):
     # línea siguiente: «1 SIM» y «DUAL SIM» son dos referencias, y sin el atributo
     # se fusionaban en una. «SIM / ESIM» va antes que el «ESIM» suelto de abajo,
     # que si no se come la mitad y deja «SIM» pegado al modelo.
-    m = re.search(r"\bSIM\s*/\s*ESIM\b|\bDUAL\s*SIM\b|\b1\s*SIM\b", texto_plano)
+    m = RE_SIM.search(texto_plano)
     if m:
-        prod["atributos"].append(titulo_bonito(re.sub(r"\s*/\s*", " / ", m.group(0))))
+        prod["atributos"].append(atributo_sim(m.group(0)))
         texto_plano = texto_plano[:m.start()] + " " + texto_plano[m.end():]
     if "ESIM" in texto_plano:
         prod["atributos"].append("eSIM")
@@ -951,7 +969,7 @@ def parsear(texto: str, equivalencias=None):
 
         limpio = normalizar(sin_emojis(resto).replace("*", " ").replace("_", " "))
         if RE_ANOTACION.match(limpio) and ultimo is not None and not emoji:
-            nota = titulo_bonito(limpio)
+            nota = atributo_sim(separar_pegados(limpio)) or titulo_bonito(limpio)
             if nota not in ultimo["atributos"]:
                 ultimo["atributos"].append(nota)
                 armar_titulo(ultimo)

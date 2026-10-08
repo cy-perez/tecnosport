@@ -4,7 +4,7 @@
 - Productos para publicar: 90
 - Descartados: 168
 - Duplicados fusionados: 9
-- Productos con algún supuesto aplicado: 52
+- Productos con algún supuesto aplicado: 51
 - Títulos confirmados en una lista anterior: 23
 - Líneas sin clasificar: 0
 
@@ -31,7 +31,6 @@
 - **Motorola Moto G77 5G 8GB RAM 256GB** — celulares — 760.000 COP
   - · asumido: la lista escribe el precio sin «$» (760): se leyó como 760.000 COP
 - **Motorola Edge 50 Fusion 5G 8GB RAM 256GB SIM + eSIM** — celulares — 735.000 COP
-  - · asumido: título confirmado el 02/10/2026: la lista lo trae como «Motorola Edge 50 Fusion 5G 8GB RAM 256GB SIM / eSIM»
 - **Honor X7D 4G 6GB RAM 256GB** — celulares — 650.000 COP
 - **Honor Magic 8 Lite 5G 8GB RAM 512GB** — celulares — 1.190.000 COP
 - **Xiaomi Redmi 15C 4G 8GB RAM 256GB** — celulares — 545.000 COP
