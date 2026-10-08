@@ -17,6 +17,7 @@ import comparar_lista  # noqa: E402
 from pendientes import necesita  # noqa: E402
 
 HOY = date(2026, 10, 8)
+DESCRIPCION = "El JBL Xtreme 4 es un parlante portátil.\n\n## Colores\n\nDisponible en Negro, Azul.\n"
 
 
 def conocido(**cambios):
@@ -25,10 +26,10 @@ def conocido(**cambios):
         "precio_mercado_cop": 1_260_400, "nivel_precio": "inventario propio",
         "fuentes_precio": [{"tienda": "Alkosto", "precio_cop": 1_260_400}],
         "notas_precio": [], "fecha_precio": "2026-10-02",
-        "descripcion": "El JBL Xtreme 4 es un parlante portátil.",
+        "descripcion": DESCRIPCION,
         "meta_titulo": "JBL Xtreme 4", "meta_descripcion": "Parlante portátil.",
-        "colores_oficiales": ["Negro", "Azul"],
-        "supuestos_investigacion": ["colores: jbl.com"],
+        "colores_oficiales": ["Negro", "Azul"], "colores_de_la_lista": [],
+        "supuestos_investigacion": [], "supuestos_colores": ["colores: jbl.com"],
         "bloques": ["VARIEDAD"], "ultimo_costo_cop": 1_100_000,
         "visto_por_ultima_vez": "2026-10-02", "fecha_alta": "2026-10-02",
     }
@@ -40,7 +41,7 @@ def producto(id_="jbl-xtreme-4", titulo="JBL Xtreme 4", costo=1_100_000, **cambi
     p = {
         "id": id_, "titulo": titulo, "categoria": "parlantes", "marca": "JBL",
         "precio_proveedor_cop": costo, "precio_mercado_cop": None, "fuentes_precio": [],
-        "descripcion": None, "colores_oficiales": [], "revisar": [],
+        "descripcion": None, "colores_oficiales": [], "colores_familia": [], "revisar": [],
         "supuestos": ["título confirmado el 02/10/2026"], "bloques": ["VARIEDAD"],
     }
     p.update(cambios)
@@ -82,7 +83,7 @@ class Estados(unittest.TestCase):
         self.assertEqual("sin_precio_vigente", p["estado_lista"])
         self.assertEqual(["precio"], p["pendiente"])
         self.assertIsNone(p["precio_mercado_cop"])
-        self.assertEqual("El JBL Xtreme 4 es un parlante portátil.", p["descripcion"])
+        self.assertEqual(DESCRIPCION, p["descripcion"])
 
     def test_un_conocido_que_nunca_tuvo_precio_tambien_lo_pide(self):
         base = {"jbl-xtreme-4": conocido(precio_mercado_cop=None, fecha_precio=None,
@@ -122,6 +123,53 @@ class Herencia(unittest.TestCase):
         self.assertEqual(una, dos)
 
 
+class Colores(unittest.TestCase):
+    """Revisión del 08/10/2026: los colores se heredaban aunque la lista de hoy
+    marcara otros —el iPhone 17 Pro 256 salía en Azul cuando la línea solo traía 🧡—,
+    y la descripción heredada los llevaba escritos."""
+
+    BASE = {"jbl-xtreme-4": conocido(colores_de_la_lista=["Negro", "Azul"])}
+
+    def test_con_los_mismos_emojis_se_heredan(self):
+        [p] = comparar(lista(producto(colores_familia=["Azul", "Negro"])), self.BASE)["productos"]
+        self.assertEqual(["Negro", "Azul"], p["colores_oficiales"])
+        self.assertEqual(DESCRIPCION, p["descripcion"])
+        self.assertIn("colores: jbl.com", p["supuestos"])
+        self.assertNotIn("colores", p["pendiente"])
+
+    def test_si_la_lista_marca_otros_no_se_hereda_ninguno(self):
+        [p] = comparar(lista(producto(colores_familia=["Naranja"])), self.BASE)["productos"]
+        self.assertEqual([], p["colores_oficiales"])
+        self.assertEqual("El JBL Xtreme 4 es un parlante portátil.\n", p["descripcion"])
+        self.assertNotIn("colores: jbl.com", p["supuestos"])
+        self.assertIn("colores", p["pendiente"])
+        self.assertTrue(any(r.startswith("los colores de la lista cambiaron") for r in p["revisar"]), p["revisar"])
+
+    def test_si_hoy_no_marca_ninguno_tampoco_se_hereda_un_subconjunto(self):
+        # La premisa sin emojis es «todos los de la ficha» (regla 13), y lo
+        # heredado eran solo los que marcó otra lista.
+        [p] = comparar(lista(producto(colores_familia=[])), self.BASE)["productos"]
+        self.assertEqual([], p["colores_oficiales"])
+        self.assertIn("colores", p["pendiente"])
+
+
+class PosiblesMismos(unittest.TestCase):
+    """Revisión del 08/10/2026: el Moto G17 Power salió como nuevo y como
+    desaparecido a la vez, porque el «1 SIM» de la lista anterior era parte del id."""
+
+    def test_un_nuevo_y_un_desaparecido_que_solo_difieren_en_la_sim_se_juntan(self):
+        base = {"motorola-moto-g17-power-4g-4gb-ram-256gb-1-sim":
+                conocido(titulo="Motorola Moto G17 Power 4G 4GB RAM 256GB 1 SIM", bloques=["ANDROID"])}
+        datos = comparar(lista(producto("motorola-moto-g17-power-4g-4gb-ram-256gb",
+                                        "Motorola Moto G17 Power 4G 4GB RAM 256GB", bloques=["ANDROID"]),
+                               bloques=("ANDROID",)), base)
+        self.assertEqual([], datos["desaparecidos"])
+        self.assertEqual([{"nuevo": "motorola-moto-g17-power-4g-4gb-ram-256gb",
+                           "conocido": "motorola-moto-g17-power-4g-4gb-ram-256gb-1-sim"}],
+                         [{k: d[k] for k in ("nuevo", "conocido")} for d in datos["posibles_mismos"]])
+        self.assertIn("Posibles el mismo", comparar_lista.reporte(datos))
+
+
 class Desaparecidos(unittest.TestCase):
     def test_falta_un_conocido_de_un_bloque_que_llego(self):
         base = {"jbl-xtreme-4": conocido(), "jbl-flip-7": conocido(titulo="JBL Flip 7")}
@@ -150,6 +198,15 @@ class Desaparecidos(unittest.TestCase):
         self.assertEqual([{"id": "jbl-flip-7", "titulo": "JBL Flip 7", "motivo": "sin precio de proveedor"}],
                          datos["conocidos_descartados"])
 
+    def test_un_desaparecido_se_reporta_una_vez_y_despues_queda_como_ausente(self):
+        # Revisión del 08/10/2026: los mismos 15 volvían en cada lista.
+        base = {"jbl-xtreme-4": conocido(visto_por_ultima_vez="2026-10-08"),
+                "jbl-flip-7": conocido(titulo="JBL Flip 7", visto_por_ultima_vez="2026-10-08"),
+                "jbl-grip": conocido(titulo="JBL Grip", visto_por_ultima_vez="2026-10-02")}
+        datos = comparar(lista(producto()), base, date(2026, 10, 12))
+        self.assertEqual(["jbl-flip-7"], [d["id"] for d in datos["desaparecidos"]])
+        self.assertEqual(["jbl-grip"], [d["id"] for d in datos["ausentes"]])
+
     def test_dice_cuando_se_vio_por_ultima_vez_y_a_que_costo(self):
         base = {"jbl-flip-7": conocido(titulo="JBL Flip 7")}
         [d] = comparar(lista(), base)["desaparecidos"]
@@ -162,7 +219,8 @@ class Resumen(unittest.TestCase):
         base = {"jbl-xtreme-4": conocido(), "jbl-flip-7": conocido(titulo="JBL Flip 7")}
         datos = comparar(lista(producto(), producto("jbl-grip", "JBL Grip")), base)
         self.assertEqual({"nuevo": 1, "costo_cambio": 0, "sin_cambios": 1,
-                          "sin_precio_vigente": 0, "desaparecidos": 1},
+                          "sin_precio_vigente": 0, "desaparecidos": 1, "ausentes": 0,
+                          "posibles_mismos": 0},
                          datos["comparacion"]["resumen"])
         self.assertEqual("2026-10-08", datos["comparacion"]["fecha"])
 
@@ -216,15 +274,19 @@ class PasoCuatroRespetaLoPendiente(unittest.TestCase):
             tmp = Path(tmp)
             (tmp / "p.json").write_text(json.dumps(datos), encoding="utf-8")
             (tmp / "vtex.json").write_text("{}", encoding="utf-8")
-            (tmp / "alk.json").write_text("{}", encoding="utf-8")
+            (tmp / "alk.json").write_text(json.dumps({"jbl-grip": {"precio": 300_000, "nombre": "JBL Grip"}}),
+                                          encoding="utf-8")
             subprocess.run([sys.executable, "-B", str(SCRIPTS / "asignar_precios.py"), str(tmp / "p.json"),
-                            "--vtex", str(tmp / "vtex.json"), "--alkosto", str(tmp / "alk.json")],
+                            "--vtex", str(tmp / "vtex.json"), "--alkosto", str(tmp / "alk.json"),
+                            "--fecha", "2026-10-09"],
                            check=True, capture_output=True)
             xtreme, grip = json.loads((tmp / "p.json").read_text(encoding="utf-8"))["productos"]
         self.assertEqual(1_260_400, xtreme["precio_mercado_cop"])
         self.assertEqual("2026-10-02", xtreme["fecha_precio"])
-        self.assertIsNone(grip["precio_mercado_cop"])
-        self.assertTrue(any("sin precio de mercado" in r for r in grip["revisar"]))
+        self.assertEqual(300_000, grip["precio_mercado_cop"])
+        # Revisión del 08/10/2026: la fecha es la de la consulta, no la del día
+        # en que se consolide.
+        self.assertEqual("2026-10-09", grip["fecha_precio"])
 
     def test_redactar_fichas_no_marca_sin_descripcion_a_un_heredado(self):
         base = {"jbl-xtreme-4": conocido()}
@@ -236,7 +298,7 @@ class PasoCuatroRespetaLoPendiente(unittest.TestCase):
             subprocess.run([sys.executable, "-B", str(SCRIPTS / "redactar_fichas.py"), str(tmp / "p.json"),
                             "--prosa", str(tmp / "prosa.json")], check=True, capture_output=True)
             [p] = json.loads((tmp / "p.json").read_text(encoding="utf-8"))["productos"]
-        self.assertEqual("El JBL Xtreme 4 es un parlante portátil.", p["descripcion"])
+        self.assertEqual(DESCRIPCION, p["descripcion"])
         self.assertFalse(any("sin descripcion" in r for r in p["revisar"]), p["revisar"])
 
     def test_la_cosecha_no_consulta_las_tiendas_por_un_heredado(self):

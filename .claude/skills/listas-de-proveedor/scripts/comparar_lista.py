@@ -27,6 +27,7 @@ del paso 4 leen `pendiente` (ver pendientes.py) y no tocan lo que no les toca.
 
 import argparse
 import json
+import re
 import sys
 from copy import deepcopy
 from datetime import date
@@ -37,13 +38,19 @@ import conocidos  # noqa: E402
 from asignar_precios import aplicar_margen  # noqa: E402
 from pendientes import TAREAS  # noqa: E402
 
-# Lo que se hereda siempre de un conocido, y lo que solo se hereda con el precio vigente.
-HEREDADO = ("descripcion", "meta_titulo", "meta_descripcion", "colores_oficiales")
+# Lo que se hereda siempre de un conocido, y lo que solo se hereda con el precio
+# vigente. Los colores van aparte: solo se heredan si la lista marca los mismos.
+HEREDADO = ("descripcion", "meta_titulo", "meta_descripcion")
 PRECIO = ("precio_mercado_cop", "nivel_precio", "fuentes_precio", "notas_precio", "fecha_precio")
 # Las alertas que pone aplicar_margen: se quitan antes de recalcular para que
 # correr esto dos veces no las duplique.
 ALERTAS_DE_MARGEN = ("POR DEBAJO DEL COSTO", "margen inusual")
 ESTADOS = ("nuevo", "costo_cambio", "sin_cambios", "sin_precio_vigente")
+# La tarea de colores no la hace ningún script: es confirmar contra la paleta
+# oficial y escribir `colores_oficiales` a mano (regla 13).
+COLORES = "colores"
+# El sufijo de SIM del id: sin él, dos ids pueden ser el mismo equipo.
+RE_SUFIJO_SIM = re.compile(r"-(1-sim|dual-sim|sim-esim|esim)$")
 
 
 def comparar(datos: dict, base: dict, hoy: date) -> dict:
@@ -59,24 +66,42 @@ def comparar(datos: dict, base: dict, hoy: date) -> dict:
 
         for campo in HEREDADO:
             p[campo] = deepcopy(e.get(campo))
-        p["supuestos"] = list(dict.fromkeys(p["supuestos_lista"] + (e.get("supuestos_investigacion") or [])))
         p["costo_anterior_cop"] = e.get("ultimo_costo_cop")
+
+        # Los colores dependen de la lista: se heredan solo si hoy marca los mismos
+        # que la vez en que se decidieron. Si no, ni los oficiales ni la sección
+        # de la descripción: el iPhone 17 Pro 256 salía en Azul con la línea en 🧡.
+        hoy_marca = sorted(p.get("colores_familia") or [])
+        mismos_colores = hoy_marca == sorted(e.get("colores_de_la_lista") or [])
+        p["colores_oficiales"] = deepcopy(e.get("colores_oficiales")) if mismos_colores else []
+        p["descripcion"] = conocidos.con_colores(p["descripcion"], p["colores_oficiales"])
+        p["supuestos"] = list(dict.fromkeys(
+            p["supuestos_lista"] + (e.get("supuestos_investigacion") or [])
+            + ((e.get("supuestos_colores") or []) if mismos_colores else [])))
+        p["revisar"] = [r for r in p.get("revisar") or [] if not r.startswith("los colores de la lista cambiaron")]
+        if not mismos_colores:
+            p["revisar"].append(
+                f"los colores de la lista cambiaron (hoy: {', '.join(hoy_marca) or 'sin marcar'}; "
+                f"la última vez: {', '.join(sorted(e.get('colores_de_la_lista') or [])) or 'sin marcar'}): "
+                "confirmar contra la paleta oficial y escribir colores_oficiales; la sección de "
+                "colores de la descripción se rehace al consolidar")
 
         if conocidos.precio_vigente(e, hoy):
             for campo in PRECIO:
                 p[campo] = deepcopy(e.get(campo))
-            p["pendiente"] = []
+            p["pendiente"] = [] if mismos_colores else [COLORES]
             p["estado_lista"] = ("sin_cambios" if e.get("ultimo_costo_cop") == p["precio_proveedor_cop"]
                                  else "costo_cambio")
         else:
-            # Un precio investigado en esta corrida no trae fecha todavía (se la
-            # pone conocidos.py al consolidar). Si ya está, no se borra: volver a
-            # correr esto después del paso 4 no puede deshacer el paso 4.
-            fresco = p.get("precio_mercado_cop") and not p.get("fecha_precio")
+            # Un precio investigado en esta corrida trae la fecha de su consulta,
+            # distinta de la de la base. Si ya está, no se borra: volver a correr
+            # esto después del paso 4 no puede deshacer el paso 4.
+            fresco = bool(p.get("precio_mercado_cop") and p.get("fecha_precio")
+                          and p.get("fecha_precio") != e.get("fecha_precio"))
             if not fresco:
                 for campo in PRECIO:
                     p[campo] = [] if campo in ("fuentes_precio", "notas_precio") else None
-            p["pendiente"] = [] if fresco else ["precio"]
+            p["pendiente"] = ([] if fresco else ["precio"]) + ([] if mismos_colores else [COLORES])
             p["estado_lista"] = "sin_precio_vigente"
 
         p["revisar"] = [r for r in p.get("revisar") or [] if not r.startswith(ALERTAS_DE_MARGEN)]
@@ -92,19 +117,46 @@ def comparar(datos: dict, base: dict, hoy: date) -> dict:
     ]
     presentes |= set(descartados)
     llegaron = set(datos.get("bloques") or [])
-    desaparecidos = [
+    faltan = [
         {"id": pid, "titulo": e["titulo"], "bloques": e.get("bloques") or [],
          "visto_por_ultima_vez": e.get("visto_por_ultima_vez"),
          "ultimo_costo_cop": e.get("ultimo_costo_cop")}
         for pid, e in base.items()
         if pid not in presentes and set(e.get("bloques") or []) & llegaron
     ]
-    desaparecidos.sort(key=lambda d: (d["visto_por_ultima_vez"] or "", d["id"]), reverse=True)
-    datos["desaparecidos"] = desaparecidos
+    faltan.sort(key=lambda d: (d["visto_por_ultima_vez"] or "", d["id"]), reverse=True)
+
+    # Un nuevo y un faltante que solo difieren en la SIM son, casi siempre, el
+    # mismo equipo con la anotación de la SIM pegada a otra línea: el Moto G17
+    # Power salió como nuevo y como desaparecido el 08/10/2026. No se juntan
+    # solos —puede ser otra referencia—: se muestran juntos para decidirlo.
+    sin_sim = lambda pid: RE_SUFIJO_SIM.sub("", pid)  # noqa: E731
+    datos["posibles_mismos"] = []
+    for p in datos["productos"]:
+        if p["estado_lista"] != "nuevo":
+            continue
+        pareja = next((d for d in faltan if sin_sim(d["id"]) == sin_sim(p["id"])), None)
+        if pareja:
+            faltan.remove(pareja)
+            datos["posibles_mismos"].append({"nuevo": p["id"], "titulo_nuevo": p["titulo"],
+                                             "conocido": pareja["id"], "titulo_conocido": pareja["titulo"]})
+
+    # Desaparecido es el que vino en la última lista de su bloque y hoy no. El
+    # que ya faltaba entonces se reportó esa vez: queda como ausente, para que la
+    # sección no repita en cada lista a todos los que alguna vez faltaron.
+    ultima_vez = {}
+    for e in base.values():
+        for b in e.get("bloques") or []:
+            ultima_vez[b] = max(ultima_vez.get(b, ""), e.get("visto_por_ultima_vez") or "")
+    datos["desaparecidos"] = [d for d in faltan
+                              if any(d["visto_por_ultima_vez"] == ultima_vez.get(b) for b in d["bloques"])]
+    datos["ausentes"] = [d for d in faltan if d not in datos["desaparecidos"]]
 
     resumen = {estado: sum(1 for p in datos["productos"] if p["estado_lista"] == estado)
                for estado in ESTADOS}
-    resumen["desaparecidos"] = len(desaparecidos)
+    resumen["desaparecidos"] = len(datos["desaparecidos"])
+    resumen["ausentes"] = len(datos["ausentes"])
+    resumen["posibles_mismos"] = len(datos["posibles_mismos"])
     datos["comparacion"] = {"fecha": hoy.isoformat(), "resumen": resumen}
     return datos
 
@@ -166,6 +218,14 @@ def reporte(datos: dict) -> str:
     L += [f"- **{d['titulo']}** — visto el {fecha_corta(d['visto_por_ultima_vez'])} "
           f"a {pesos(d['ultimo_costo_cop'])} ({', '.join(d['bloques'])})"
           for d in datos["desaparecidos"]] or ["Ninguno."]
+
+    L += ["", "## Posibles el mismo — cambió solo la SIM", ""]
+    L += [f"- **{d['titulo_nuevo']}** (nuevo) y **{d['titulo_conocido']}** (conocido): si es el mismo "
+          f"equipo, agrega la equivalencia `{d['nuevo']}` → `{d['conocido']}` y vuelve a parsear"
+          for d in datos["posibles_mismos"]] or ["Ninguno."]
+    if datos["ausentes"]:
+        L += ["", f"{len(datos['ausentes'])} conocidos siguen ausentes desde antes (ya se reportaron como "
+              "desaparecidos en su momento)."]
 
     L += ["", "## Conocidos que vinieron pero no entran", ""]
     L += [f"- **{d['titulo']}** — {d['motivo']}" for d in datos["conocidos_descartados"]] or ["Ninguno."]

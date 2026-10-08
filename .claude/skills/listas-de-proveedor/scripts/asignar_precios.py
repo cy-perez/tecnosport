@@ -258,9 +258,9 @@ def main():
         aplicar_margen(p)
 
         p["notas_precio"] = notas
-        # Precio de esta corrida: la base de conocidos le pone la fecha al
-        # consolidar. Uno heredado y vencido no puede conservar la fecha vieja.
-        p["fecha_precio"] = None
+        # La fecha de la consulta, no la del día en que se consolide: consolidar
+        # días después rejuvenecía el precio (revisión del 08/10/2026).
+        p["fecha_precio"] = args.fecha if precio else None
 
     json.dump(datos, open(args.productos, "w", encoding="utf-8"),
               ensure_ascii=False, indent=2)

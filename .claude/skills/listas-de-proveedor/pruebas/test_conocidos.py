@@ -18,6 +18,9 @@ sys.path.insert(0, str(SKILL / "scripts"))
 import conocidos  # noqa: E402
 
 
+DESCRIPCION = "El JBL Xtreme 4 es un parlante portátil.\n\n## Colores\n\nDisponible en Negro, Azul.\n"
+
+
 def producto(**cambios):
     base = {
         "id": "jbl-xtreme-4", "titulo": "JBL Xtreme 4", "categoria": "parlantes", "marca": "JBL",
@@ -25,7 +28,7 @@ def producto(**cambios):
         "nivel_precio": "marketplace",
         "fuentes_precio": [{"tienda": "Éxito", "precio_cop": 1_289_900}],
         "notas_precio": ["sin vitrina en Alkosto"],
-        "descripcion": "El JBL Xtreme 4 es un parlante portátil.",
+        "descripcion": DESCRIPCION,
         "meta_titulo": "JBL Xtreme 4", "meta_descripcion": "Parlante portátil.",
         "colores_oficiales": ["Negro", "Azul"],
         "supuestos": ["título confirmado el 02/10/2026", "colores: jbl.com"],
@@ -36,7 +39,8 @@ def producto(**cambios):
 
 
 def lista(*productos, fecha="2026-10-08"):
-    return {"fecha_lista": fecha, "productos": list(productos)}
+    return {"fecha_lista": fecha, "productos": list(productos),
+            "comparacion": {"fecha": fecha, "resumen": {}}}
 
 
 class Consolidar(unittest.TestCase):
@@ -48,13 +52,35 @@ class Consolidar(unittest.TestCase):
         self.assertEqual("JBL Xtreme 4", e["titulo"])
         self.assertEqual(1_260_400, e["precio_mercado_cop"])
         self.assertEqual([{"tienda": "Éxito", "precio_cop": 1_289_900}], e["fuentes_precio"])
-        self.assertEqual("El JBL Xtreme 4 es un parlante portátil.", e["descripcion"])
+        self.assertEqual(DESCRIPCION, e["descripcion"])
         self.assertEqual(["Negro", "Azul"], e["colores_oficiales"])
         self.assertEqual({"altas": 1, "actualizados": 0, "sin_terminar": []}, resumen)
 
     def test_la_fecha_del_precio_es_la_de_la_investigacion(self):
         base, _ = conocidos.consolidar({}, lista(producto()), self.HOY)
         self.assertEqual("2026-10-08", base["jbl-xtreme-4"]["fecha_precio"])
+
+    def test_la_fecha_del_precio_es_la_de_la_consulta_y_no_la_de_consolidar(self):
+        # Revisión del 08/10/2026: consolidar días después rejuvenecía el precio.
+        p = producto(fecha_precio="2026-10-08")
+        base, _ = conocidos.consolidar({}, lista(p), date(2026, 10, 20))
+        self.assertEqual("2026-10-08", base["jbl-xtreme-4"]["fecha_precio"])
+
+    def test_consolidar_una_lista_vieja_no_retrocede_el_costo_ni_el_visto(self):
+        base, _ = conocidos.consolidar({}, lista(producto(precio_proveedor_cop=990_000,
+                                                          bloques=["VARIEDAD"])), self.HOY)
+        vieja = lista(producto(precio_proveedor_cop=1_100_000, bloques=[]), fecha="2026-10-02")
+        base, _ = conocidos.consolidar(base, vieja, self.HOY)
+        e = base["jbl-xtreme-4"]
+        self.assertEqual((990_000, "2026-10-08", ["VARIEDAD"]),
+                         (e["ultimo_costo_cop"], e["visto_por_ultima_vez"], e["bloques"]))
+
+    def test_si_el_paso_4_no_encuentra_precio_se_conserva_el_anterior(self):
+        base, _ = conocidos.consolidar({}, lista(producto(fecha_precio="2026-10-02")), self.HOY)
+        sin = producto(precio_mercado_cop=None, nivel_precio=None, fuentes_precio=[], fecha_precio=None)
+        base, _ = conocidos.consolidar(base, lista(sin), self.HOY)
+        e = base["jbl-xtreme-4"]
+        self.assertEqual((1_260_400, "2026-10-02"), (e["precio_mercado_cop"], e["fecha_precio"]))
 
     def test_un_precio_heredado_de_la_base_conserva_su_fecha(self):
         # comparar_lista copia el precio con su fecha; consolidar no puede
@@ -70,8 +96,45 @@ class Consolidar(unittest.TestCase):
 
     def test_solo_se_guardan_los_supuestos_de_la_investigacion(self):
         # Los del parser se repiten solos en cada lista; guardarlos los duplicaría.
-        base, _ = conocidos.consolidar({}, lista(producto()), self.HOY)
-        self.assertEqual(["colores: jbl.com"], base["jbl-xtreme-4"]["supuestos_investigacion"])
+        # Los de colores van aparte: solo valen mientras la lista marque lo mismo.
+        p = producto(supuestos=["título confirmado el 02/10/2026", "colores: jbl.com",
+                                "la marca escribe «Xtreme», no «Extreme»"])
+        base, _ = conocidos.consolidar({}, lista(p), self.HOY)
+        self.assertEqual(["la marca escribe «Xtreme», no «Extreme»"],
+                         base["jbl-xtreme-4"]["supuestos_investigacion"])
+        self.assertEqual(["colores: jbl.com"], base["jbl-xtreme-4"]["supuestos_colores"])
+
+    def test_un_supuesto_sobre_el_precio_o_una_linea_es_de_esa_lista_y_no_se_guarda(self):
+        # Revisión del 08/10/2026: la base sembrada traía «precio tomado del bloque
+        # PRECIOS DE VENTA (línea 530 …)» y se reinyectaba en la lista siguiente.
+        p = producto(supuestos=[
+            "precio tomado del bloque «PRECIOS DE VENTA» (línea 530: «17 PRO 256 ESIM *$3.750*»)",
+            "dos precios para el mismo equipo: 2.700.000 (línea 2) y 2.550.000 (línea 519)",
+            "la línea trae «760» sin el signo $: se leyó como 760.000 COP",
+            "la lista dice 7\"; la Galaxy Tab A11 es de 8,7\"",
+        ])
+        base, _ = conocidos.consolidar({}, lista(p), self.HOY)
+        self.assertEqual(["la lista dice 7\"; la Galaxy Tab A11 es de 8,7\""],
+                         base["jbl-xtreme-4"]["supuestos_investigacion"])
+
+    def test_sin_la_comparacion_no_se_consolida(self):
+        # Sin `supuestos_lista` no hay cómo separar los supuestos del parser, y
+        # quedarían en la base para siempre.
+        datos = lista(producto())
+        del datos["comparacion"]
+        with self.assertRaisesRegex(ValueError, "comparar_lista"):
+            conocidos.consolidar({}, datos, self.HOY)
+
+    def test_guarda_los_colores_que_marcaba_la_lista(self):
+        base, _ = conocidos.consolidar({}, lista(producto(colores_familia=["Negro"])), self.HOY)
+        self.assertEqual(["Negro"], base["jbl-xtreme-4"]["colores_de_la_lista"])
+
+    def test_la_seccion_de_colores_de_la_descripcion_sigue_a_los_colores(self):
+        p = producto(colores_oficiales=["Negro"],
+                     descripcion="Intro.\n\n## Colores\n\nDisponible en Negro, Azul.\n\n## Contenido de la caja\n\n- Parlante\n")
+        base, _ = conocidos.consolidar({}, lista(p), self.HOY)
+        self.assertEqual("Intro.\n\n## Colores\n\nDisponible en Negro.\n\n## Contenido de la caja\n\n- Parlante\n",
+                         base["jbl-xtreme-4"]["descripcion"])
 
     def test_un_producto_sin_descripcion_no_entra(self):
         base, resumen = conocidos.consolidar({}, lista(producto(descripcion=None)), self.HOY)
@@ -98,6 +161,27 @@ class Consolidar(unittest.TestCase):
         original = {}
         conocidos.consolidar(original, lista(producto()), self.HOY)
         self.assertEqual({}, original)
+
+
+class SeccionDeColores(unittest.TestCase):
+    DESCRIPCION = ("Intro.\n\n## Colores\n\nDisponible en Negro, Azul.\n\n"
+                   "## Contenido de la caja\n\n- Parlante\n")
+
+    def test_con_los_mismos_colores_no_cambia_nada(self):
+        self.assertEqual(self.DESCRIPCION, conocidos.con_colores(self.DESCRIPCION, ["Negro", "Azul"]))
+
+    def test_sin_colores_la_seccion_se_va(self):
+        self.assertEqual("Intro.\n\n## Contenido de la caja\n\n- Parlante\n",
+                         conocidos.con_colores(self.DESCRIPCION, []))
+
+    def test_si_no_estaba_entra_antes_del_contenido_de_la_caja(self):
+        sin = conocidos.con_colores(self.DESCRIPCION, [])
+        self.assertEqual(self.DESCRIPCION, conocidos.con_colores(sin, ["Negro", "Azul"]))
+
+    def test_las_descripciones_de_la_base_ya_cuadran_con_sus_colores(self):
+        for pid, e in conocidos.cargar().items():
+            with self.subTest(pid=pid):
+                self.assertEqual(e["descripcion"], conocidos.con_colores(e["descripcion"], e["colores_oficiales"]))
 
 
 class VigenciaDelPrecio(unittest.TestCase):

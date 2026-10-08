@@ -33,15 +33,17 @@
         "Azul marino"
       ],
       "fecha_precio": "2026-10-02",
-      "supuestos_investigacion": [
-        "colores: amazon.com, página del Echo Dot (ASIN B09B8V1LZ3), sin contar las ediciones infantiles. La línea no trae colores: se asume la paleta completa y se confirma con el proveedor."
-      ],
       "ultimo_costo_cop": 220000,
       "visto_por_ultima_vez": "2026-10-02",
       "fecha_alta": "2026-10-02",
       "bloques": [
         "VARIEDAD"
-      ]
+      ],
+      "supuestos_colores": [
+        "colores: amazon.com, página del Echo Dot (ASIN B09B8V1LZ3), sin contar las ediciones infantiles. La línea no trae colores: se asume la paleta completa y se confirma con el proveedor."
+      ],
+      "supuestos_investigacion": [],
+      "colores_de_la_lista": []
     },
     "apple-ipad-11-a16-128gb": {
       "titulo": "Apple iPad 11\" A16 128GB",
@@ -74,15 +76,17 @@
         "Amarillo"
       ],
       "fecha_precio": "2026-10-02",
-      "supuestos_investigacion": [
-        "colores: apple.com/co/ipad-11/specs/ (acabado). La línea no trae colores: se asume la paleta completa y se confirma con el proveedor."
-      ],
       "ultimo_costo_cop": 1500000,
       "visto_por_ultima_vez": "2026-10-02",
       "fecha_alta": "2026-10-02",
       "bloques": [
         "GAMA ALTA"
-      ]
+      ],
+      "supuestos_colores": [
+        "colores: apple.com/co/ipad-11/specs/ (acabado). La línea no trae colores: se asume la paleta completa y se confirma con el proveedor."
+      ],
+      "supuestos_investigacion": [],
+      "colores_de_la_lista": []
     },
     "apple-iphone-16-128gb": {
       "titulo": "Apple iPhone 16 128GB",
@@ -127,13 +131,15 @@
         "Ultramarino"
       ],
       "fecha_precio": "2026-10-02",
-      "supuestos_investigacion": [
-        "colores: apple.com/co/iphone-16/specs/ (acabado del iPhone 16). La línea del proveedor no trae colores: se asume la paleta completa y las cantidades por color se confirman con el proveedor."
-      ],
       "ultimo_costo_cop": 2300000,
       "visto_por_ultima_vez": "2026-10-02",
       "fecha_alta": "2026-10-02",
-      "bloques": []
+      "bloques": [],
+      "supuestos_colores": [
+        "colores: apple.com/co/iphone-16/specs/ (acabado del iPhone 16). La línea del proveedor no trae colores: se asume la paleta completa y las cantidades por color se confirman con el proveedor."
+      ],
+      "supuestos_investigacion": [],
+      "colores_de_la_lista": []
     },
     "apple-iphone-16e-128gb-esim": {
       "titulo": "Apple iPhone 16e 128GB eSIM",
@@ -178,14 +184,18 @@
         "Negro"
       ],
       "fecha_precio": "2026-10-02",
-      "supuestos_investigacion": [
-        "colores: La línea del proveedor marca ⚫ (negro); cruzado con la paleta oficial del iPhone 16e (Negro, Blanco) en support.apple.com/es-lamr/122208."
-      ],
       "ultimo_costo_cop": 1500000,
       "visto_por_ultima_vez": "2026-10-02",
       "fecha_alta": "2026-10-02",
       "bloques": [
         "GAMA ALTA"
+      ],
+      "supuestos_colores": [
+        "colores: La línea del proveedor marca ⚫ (negro); cruzado con la paleta oficial del iPhone 16e (Negro, Blanco) en support.apple.com/es-lamr/122208."
+      ],
+      "supuestos_investigacion": [],
+      "colores_de_la_lista": [
+        "Negro"
       ]
     },
     "apple-iphone-17-pro-256gb-esim": {
@@ -238,15 +248,19 @@
         "Azul profundo"
       ],
       "fecha_precio": "2026-10-02",
-      "supuestos_investigacion": [
-        "precio tomado del bloque «PRECIOS DE VENTA», que la persona confirmó como precio del proveedor para los «IPH NUEVOS» (línea 530: «17 PRO 256 ESIM *$3.750*»)",
-        "colores: La línea marca 🧡💙; cruzado con la paleta oficial del iPhone 17 Pro (plata, naranja cósmico, azul profundo) en support.apple.com/es-lamr/125090."
-      ],
       "ultimo_costo_cop": 3750000,
       "visto_por_ultima_vez": "2026-10-02",
       "fecha_alta": "2026-10-02",
       "bloques": [
         "GAMA ALTA"
+      ],
+      "supuestos_colores": [
+        "colores: La línea marca 🧡💙; cruzado con la paleta oficial del iPhone 17 Pro (plata, naranja cósmico, azul profundo) en support.apple.com/es-lamr/125090."
+      ],
+      "supuestos_investigacion": [],
+      "colores_de_la_lista": [
+        "Naranja",
+        "Azul"
       ]
     },
     "apple-iphone-17-pro-512gb-esim": {
@@ -305,15 +319,18 @@
         "Azul profundo"
       ],
       "fecha_precio": "2026-10-02",
-      "supuestos_investigacion": [
-        "precio tomado del bloque «PRECIOS DE VENTA», que la persona confirmó como precio del proveedor para los «IPH NUEVOS» (línea 529: «17 PRO 512 ESIM *$4.250*»)",
-        "colores: La línea marca 💙; cruzado con la paleta oficial del iPhone 17 Pro (plata, naranja cósmico, azul profundo) en support.apple.com/es-lamr/125090."
-      ],
       "ultimo_costo_cop": 4250000,
       "visto_por_ultima_vez": "2026-10-02",
       "fecha_alta": "2026-10-02",
       "bloques": [
         "GAMA ALTA"
+      ],
+      "supuestos_colores": [
+        "colores: La línea marca 💙; cruzado con la paleta oficial del iPhone 17 Pro (plata, naranja cósmico, azul profundo) en support.apple.com/es-lamr/125090."
+      ],
+      "supuestos_investigacion": [],
+      "colores_de_la_lista": [
+        "Azul"
       ]
     },
     "apple-iphone-17-pro-max-1tb-esim": {
@@ -384,15 +401,18 @@
         "Naranja cósmico"
       ],
       "fecha_precio": "2026-10-02",
-      "supuestos_investigacion": [
-        "precio tomado del bloque «PRECIOS DE VENTA», que la persona confirmó como precio del proveedor para los «IPH NUEVOS» (línea 527: «17 PM 1 TERA *$5.300*»)",
-        "colores: La línea marca 🧡; cruzado con la paleta oficial del iPhone 17 Pro Max (plata, naranja cósmico, azul profundo) en support.apple.com/es-lamr/125091."
-      ],
       "ultimo_costo_cop": 5300000,
       "visto_por_ultima_vez": "2026-10-02",
       "fecha_alta": "2026-10-02",
       "bloques": [
         "GAMA ALTA"
+      ],
+      "supuestos_colores": [
+        "colores: La línea marca 🧡; cruzado con la paleta oficial del iPhone 17 Pro Max (plata, naranja cósmico, azul profundo) en support.apple.com/es-lamr/125091."
+      ],
+      "supuestos_investigacion": [],
+      "colores_de_la_lista": [
+        "Naranja"
       ]
     },
     "apple-iphone-17-pro-max-256gb-esim": {
@@ -457,15 +477,19 @@
         "Naranja cósmico"
       ],
       "fecha_precio": "2026-10-02",
-      "supuestos_investigacion": [
-        "precio tomado del bloque «PRECIOS DE VENTA», que la persona confirmó como precio del proveedor para los «IPH NUEVOS» (línea 528: «17 PM 256 ESIM *$4.150*»)",
-        "colores: La línea marca 💙🧡; cruzado con la paleta oficial del iPhone 17 Pro Max (plata, naranja cósmico, azul profundo) en support.apple.com/es-lamr/125091."
-      ],
       "ultimo_costo_cop": 4150000,
       "visto_por_ultima_vez": "2026-10-02",
       "fecha_alta": "2026-10-02",
       "bloques": [
         "GAMA ALTA"
+      ],
+      "supuestos_colores": [
+        "colores: La línea marca 💙🧡; cruzado con la paleta oficial del iPhone 17 Pro Max (plata, naranja cósmico, azul profundo) en support.apple.com/es-lamr/125091."
+      ],
+      "supuestos_investigacion": [],
+      "colores_de_la_lista": [
+        "Azul",
+        "Naranja"
       ]
     },
     "apple-iphone-18-pro-max-256gb-esim": {
@@ -496,15 +520,19 @@
         "Glaciar"
       ],
       "fecha_precio": "2026-10-02",
-      "supuestos_investigacion": [
-        "precio tomado del bloque «PRECIOS DE VENTA», que la persona confirmó como precio del proveedor para los «IPH NUEVOS» (línea 525: «18 PM 256 *$5.400*»)",
-        "colores: La línea marca 🖤💙; cruzado con la paleta oficial del iPhone 18 Pro Max en apple.com/co/iphone-18-pro/specs/ (negro, plata, glaciar, borgoña). Glaciar es el único azul de la paleta, un azul claro según la foto oficial de apple.com."
-      ],
       "ultimo_costo_cop": 5400000,
       "visto_por_ultima_vez": "2026-10-02",
       "fecha_alta": "2026-10-02",
       "bloques": [
         "GAMA ALTA"
+      ],
+      "supuestos_colores": [
+        "colores: La línea marca 🖤💙; cruzado con la paleta oficial del iPhone 18 Pro Max en apple.com/co/iphone-18-pro/specs/ (negro, plata, glaciar, borgoña). Glaciar es el único azul de la paleta, un azul claro según la foto oficial de apple.com."
+      ],
+      "supuestos_investigacion": [],
+      "colores_de_la_lista": [
+        "Negro",
+        "Azul"
       ]
     },
     "apple-iphone-18-pro-max-512gb": {
@@ -537,16 +565,17 @@
         "Borgoña"
       ],
       "fecha_precio": "2026-10-02",
-      "supuestos_investigacion": [
-        "precio tomado del bloque «PRECIOS DE VENTA», que la persona confirmó como precio del proveedor para los «IPH NUEVOS»; esta capacidad no aparecía en «IPH NUEVOS»",
-        "colores: apple.com/co/iphone-18-pro/specs/ (negro, color plata, color glaciar, color borgoña). La línea no trae colores: se asume la paleta completa y se confirma con el proveedor."
-      ],
       "ultimo_costo_cop": 6000000,
       "visto_por_ultima_vez": "2026-10-02",
       "fecha_alta": "2026-10-02",
       "bloques": [
         "GAMA ALTA"
-      ]
+      ],
+      "supuestos_colores": [
+        "colores: apple.com/co/iphone-18-pro/specs/ (negro, color plata, color glaciar, color borgoña). La línea no trae colores: se asume la paleta completa y se confirma con el proveedor."
+      ],
+      "supuestos_investigacion": [],
+      "colores_de_la_lista": []
     },
     "apple-watch-ultra-3-49mm": {
       "titulo": "Apple Watch Ultra 3 49mm",
@@ -576,15 +605,17 @@
         "Negro"
       ],
       "fecha_precio": "2026-10-02",
-      "supuestos_investigacion": [
-        "colores: support.apple.com/es-lamr/125095 (caja de titanio en natural y negro). La línea no trae colores: se asume la paleta completa y se confirma con el proveedor."
-      ],
       "ultimo_costo_cop": 2550000,
       "visto_por_ultima_vez": "2026-10-02",
       "fecha_alta": "2026-10-02",
       "bloques": [
         "GAMA ALTA"
-      ]
+      ],
+      "supuestos_colores": [
+        "colores: support.apple.com/es-lamr/125095 (caja de titanio en natural y negro). La línea no trae colores: se asume la paleta completa y se confirma con el proveedor."
+      ],
+      "supuestos_investigacion": [],
+      "colores_de_la_lista": []
     },
     "fly-go-pad-10-4g-4gb-ram-128gb-con-teclado-y-mouse": {
       "titulo": "Fly Go Pad 10\" 4G 4GB RAM 128GB con teclado y mouse",
@@ -601,15 +632,17 @@
       "meta_descripcion": "Fly Go Pad de 10 pulgadas con 4G, 4 GB de RAM y 128 GB de almacenamiento, con teclado y mouse incluidos según el proveedor.",
       "colores_oficiales": [],
       "fecha_precio": null,
-      "supuestos_investigacion": [
-        "colores: Ninguna: Fly no publica la paleta de este modelo y la línea del proveedor no trae colores."
-      ],
       "ultimo_costo_cop": 490000,
       "visto_por_ultima_vez": "2026-10-02",
       "fecha_alta": "2026-10-02",
       "bloques": [
         "ANDROID"
-      ]
+      ],
+      "supuestos_colores": [
+        "colores: Ninguna: Fly no publica la paleta de este modelo y la línea del proveedor no trae colores."
+      ],
+      "supuestos_investigacion": [],
+      "colores_de_la_lista": []
     },
     "fly-go-pad-10-4g-4gb-ram-64gb-con-teclado-y-mouse": {
       "titulo": "Fly Go Pad 10\" 4G 4GB RAM 64GB con teclado y mouse",
@@ -626,15 +659,17 @@
       "meta_descripcion": "Fly Go Pad de 10 pulgadas con 4G, 4 GB de RAM y 64 GB de almacenamiento, con teclado y mouse incluidos según el proveedor.",
       "colores_oficiales": [],
       "fecha_precio": null,
-      "supuestos_investigacion": [
-        "colores: Ninguna: Fly no publica la paleta de este modelo y la línea del proveedor no trae colores."
-      ],
       "ultimo_costo_cop": 450000,
       "visto_por_ultima_vez": "2026-10-02",
       "fecha_alta": "2026-10-02",
       "bloques": [
         "ANDROID"
-      ]
+      ],
+      "supuestos_colores": [
+        "colores: Ninguna: Fly no publica la paleta de este modelo y la línea del proveedor no trae colores."
+      ],
+      "supuestos_investigacion": [],
+      "colores_de_la_lista": []
     },
     "honor-5i": {
       "titulo": "Honor 5i",
@@ -651,15 +686,17 @@
       "meta_descripcion": "Dispositivo vestible Honor de la línea 5i. Referencia exacta por confirmar con el proveedor.",
       "colores_oficiales": [],
       "fecha_precio": null,
-      "supuestos_investigacion": [
-        "colores: Sin modelo identificado no hay paleta oficial que consultar."
-      ],
       "ultimo_costo_cop": 145000,
       "visto_por_ultima_vez": "2026-10-02",
       "fecha_alta": "2026-10-02",
       "bloques": [
         "VARIEDAD"
-      ]
+      ],
+      "supuestos_colores": [
+        "colores: Sin modelo identificado no hay paleta oficial que consultar."
+      ],
+      "supuestos_investigacion": [],
+      "colores_de_la_lista": []
     },
     "honor-choice-earbuds-x7e": {
       "titulo": "Honor Choice Earbuds X7e",
@@ -693,15 +730,17 @@
         "Blanco"
       ],
       "fecha_precio": "2026-10-02",
-      "supuestos_investigacion": [
-        "colores: honor.com/co/honor-choice/earbuds-x7e/ (la especificación publica solo Blanco)."
-      ],
       "ultimo_costo_cop": 75000,
       "visto_por_ultima_vez": "2026-10-02",
       "fecha_alta": "2026-10-02",
       "bloques": [
         "VARIEDAD"
-      ]
+      ],
+      "supuestos_colores": [
+        "colores: honor.com/co/honor-choice/earbuds-x7e/ (la especificación publica solo Blanco)."
+      ],
+      "supuestos_investigacion": [],
+      "colores_de_la_lista": []
     },
     "honor-magic-8-lite-5g-8gb-ram-512gb": {
       "titulo": "Honor Magic 8 Lite 5G 8GB RAM 512GB",
@@ -845,15 +884,17 @@
         "Verde Bosque"
       ],
       "fecha_precio": "2026-10-02",
-      "supuestos_investigacion": [
-        "colores: honor.com/co, ficha de especificaciones del HONOR Magic8 Lite."
-      ],
       "ultimo_costo_cop": 1190000,
       "visto_por_ultima_vez": "2026-10-02",
       "fecha_alta": "2026-10-02",
       "bloques": [
         "ANDROID"
-      ]
+      ],
+      "supuestos_colores": [
+        "colores: honor.com/co, ficha de especificaciones del HONOR Magic8 Lite."
+      ],
+      "supuestos_investigacion": [],
+      "colores_de_la_lista": []
     },
     "honor-pad-x8b-11-wifi-4gb-ram-128gb": {
       "titulo": "Honor Pad X8b 11\" WiFi 4GB RAM 128GB",
@@ -882,15 +923,17 @@
         "Gris Espacial"
       ],
       "fecha_precio": "2026-10-02",
-      "supuestos_investigacion": [
-        "colores: honor.com/co, ficha de especificaciones de la HONOR Pad X8b."
-      ],
       "ultimo_costo_cop": 565000,
       "visto_por_ultima_vez": "2026-10-02",
       "fecha_alta": "2026-10-02",
       "bloques": [
         "ANDROID"
-      ]
+      ],
+      "supuestos_colores": [
+        "colores: honor.com/co, ficha de especificaciones de la HONOR Pad X8b."
+      ],
+      "supuestos_investigacion": [],
+      "colores_de_la_lista": []
     },
     "honor-watch-choice-2i": {
       "titulo": "Honor Watch Choice 2i",
@@ -920,15 +963,17 @@
         "Blanco claro de luna"
       ],
       "fecha_precio": "2026-10-02",
-      "supuestos_investigacion": [
-        "colores: honor.com/co/honor-choice/watch-2i/ (especificación). La línea no trae colores: se asume la paleta completa y se confirma con el proveedor."
-      ],
       "ultimo_costo_cop": 130000,
       "visto_por_ultima_vez": "2026-10-02",
       "fecha_alta": "2026-10-02",
       "bloques": [
         "VARIEDAD"
-      ]
+      ],
+      "supuestos_colores": [
+        "colores: honor.com/co/honor-choice/watch-2i/ (especificación). La línea no trae colores: se asume la paleta completa y se confirma con el proveedor."
+      ],
+      "supuestos_investigacion": [],
+      "colores_de_la_lista": []
     },
     "honor-x7d-4g-6gb-ram-256gb": {
       "titulo": "Honor X7D 4G 6GB RAM 256GB",
@@ -975,15 +1020,17 @@
         "Plata Meteoro"
       ],
       "fecha_precio": "2026-10-02",
-      "supuestos_investigacion": [
-        "colores: honor.com/co, ficha de especificaciones del HONOR X7d. La ficha de Icecat trae Desert Gold, que no aparece en Colombia."
-      ],
       "ultimo_costo_cop": 650000,
       "visto_por_ultima_vez": "2026-10-02",
       "fecha_alta": "2026-10-02",
       "bloques": [
         "ANDROID"
-      ]
+      ],
+      "supuestos_colores": [
+        "colores: honor.com/co, ficha de especificaciones del HONOR X7d. La ficha de Icecat trae Desert Gold, que no aparece en Colombia."
+      ],
+      "supuestos_investigacion": [],
+      "colores_de_la_lista": []
     },
     "jbl-boombox-4": {
       "titulo": "JBL Boombox 4",
@@ -1017,15 +1064,17 @@
         "Squad (camuflado)"
       ],
       "fecha_precio": "2026-10-02",
-      "supuestos_investigacion": [
-        "colores: jbl.com (tienda de EE. UU., variantes del Boombox 4); JBL no tiene tienda en Colombia. La línea no trae colores: se asume la paleta completa y se confirma con el proveedor."
-      ],
       "ultimo_costo_cop": 1700000,
       "visto_por_ultima_vez": "2026-10-02",
       "fecha_alta": "2026-10-02",
       "bloques": [
         "VARIEDAD"
-      ]
+      ],
+      "supuestos_colores": [
+        "colores: jbl.com (tienda de EE. UU., variantes del Boombox 4); JBL no tiene tienda en Colombia. La línea no trae colores: se asume la paleta completa y se confirma con el proveedor."
+      ],
+      "supuestos_investigacion": [],
+      "colores_de_la_lista": []
     },
     "jbl-charge-6": {
       "titulo": "JBL Charge 6",
@@ -1076,15 +1125,17 @@
         "Squad (camuflado)"
       ],
       "fecha_precio": "2026-10-02",
-      "supuestos_investigacion": [
-        "colores: jbl.com (tienda de EE. UU., variantes del Charge 6); JBL no tiene tienda en Colombia. La línea no trae colores: se asume la paleta completa y se confirma con el proveedor."
-      ],
       "ultimo_costo_cop": 650000,
       "visto_por_ultima_vez": "2026-10-02",
       "fecha_alta": "2026-10-02",
       "bloques": [
         "VARIEDAD"
-      ]
+      ],
+      "supuestos_colores": [
+        "colores: jbl.com (tienda de EE. UU., variantes del Charge 6); JBL no tiene tienda en Colombia. La línea no trae colores: se asume la paleta completa y se confirma con el proveedor."
+      ],
+      "supuestos_investigacion": [],
+      "colores_de_la_lista": []
     },
     "jbl-cinema-sb180": {
       "titulo": "JBL Cinema SB180",
@@ -1113,15 +1164,17 @@
         "Negro"
       ],
       "fecha_precio": "2026-10-02",
-      "supuestos_investigacion": [
-        "colores: jbl.com (ficha de la Cinema SB180, que se vende solo en negro)."
-      ],
       "ultimo_costo_cop": 750000,
       "visto_por_ultima_vez": "2026-10-02",
       "fecha_alta": "2026-10-02",
       "bloques": [
         "VARIEDAD"
-      ]
+      ],
+      "supuestos_colores": [
+        "colores: jbl.com (ficha de la Cinema SB180, que se vende solo en negro)."
+      ],
+      "supuestos_investigacion": [],
+      "colores_de_la_lista": []
     },
     "jbl-cinema-sb580": {
       "titulo": "JBL Cinema SB580",
@@ -1150,15 +1203,17 @@
         "Negro"
       ],
       "fecha_precio": "2026-10-02",
-      "supuestos_investigacion": [
-        "colores: jbl.com (ficha de la Cinema SB580, que se vende solo en negro)."
-      ],
       "ultimo_costo_cop": 1100000,
       "visto_por_ultima_vez": "2026-10-02",
       "fecha_alta": "2026-10-02",
       "bloques": [
         "VARIEDAD"
-      ]
+      ],
+      "supuestos_colores": [
+        "colores: jbl.com (ficha de la Cinema SB580, que se vende solo en negro)."
+      ],
+      "supuestos_investigacion": [],
+      "colores_de_la_lista": []
     },
     "jbl-clip-5": {
       "titulo": "JBL Clip 5",
@@ -1195,15 +1250,17 @@
         "Squad (camuflado)"
       ],
       "fecha_precio": "2026-10-02",
-      "supuestos_investigacion": [
-        "colores: jbl.com (tienda de EE. UU., variantes del Clip 5); JBL no tiene tienda en Colombia. La línea no trae colores: se asume la paleta completa y se confirma con el proveedor."
-      ],
       "ultimo_costo_cop": 220000,
       "visto_por_ultima_vez": "2026-10-02",
       "fecha_alta": "2026-10-02",
       "bloques": [
         "VARIEDAD"
-      ]
+      ],
+      "supuestos_colores": [
+        "colores: jbl.com (tienda de EE. UU., variantes del Clip 5); JBL no tiene tienda en Colombia. La línea no trae colores: se asume la paleta completa y se confirma con el proveedor."
+      ],
+      "supuestos_investigacion": [],
+      "colores_de_la_lista": []
     },
     "jbl-flip-7": {
       "titulo": "JBL Flip 7",
@@ -1241,15 +1298,17 @@
         "Funky Black"
       ],
       "fecha_precio": "2026-10-02",
-      "supuestos_investigacion": [
-        "colores: jbl.com (tienda de EE. UU., variantes del Flip 7); JBL no tiene tienda en Colombia. La línea no trae colores: se asume la paleta completa y se confirma con el proveedor."
-      ],
       "ultimo_costo_cop": 450000,
       "visto_por_ultima_vez": "2026-10-02",
       "fecha_alta": "2026-10-02",
       "bloques": [
         "VARIEDAD"
-      ]
+      ],
+      "supuestos_colores": [
+        "colores: jbl.com (tienda de EE. UU., variantes del Flip 7); JBL no tiene tienda en Colombia. La línea no trae colores: se asume la paleta completa y se confirma con el proveedor."
+      ],
+      "supuestos_investigacion": [],
+      "colores_de_la_lista": []
     },
     "jbl-grip": {
       "titulo": "JBL Grip",
@@ -1640,15 +1699,17 @@
         "Squad (camuflado)"
       ],
       "fecha_precio": "2026-10-02",
-      "supuestos_investigacion": [
-        "colores: jbl.com (tienda de EE. UU., variantes del Grip); JBL no tiene tienda en Colombia. La línea no trae colores: se asume la paleta completa y se confirma con el proveedor."
-      ],
       "ultimo_costo_cop": 290000,
       "visto_por_ultima_vez": "2026-10-02",
       "fecha_alta": "2026-10-02",
       "bloques": [
         "VARIEDAD"
-      ]
+      ],
+      "supuestos_colores": [
+        "colores: jbl.com (tienda de EE. UU., variantes del Grip); JBL no tiene tienda en Colombia. La línea no trae colores: se asume la paleta completa y se confirma con el proveedor."
+      ],
+      "supuestos_investigacion": [],
+      "colores_de_la_lista": []
     },
     "jbl-partybox-330": {
       "titulo": "JBL PartyBox 330",
@@ -1678,15 +1739,17 @@
         "Blanco"
       ],
       "fecha_precio": "2026-10-02",
-      "supuestos_investigacion": [
-        "colores: jbl.com (tienda de EE. UU., variantes del PartyBox 330); JBL no tiene tienda en Colombia. La línea no trae colores: se asume la paleta completa y se confirma con el proveedor."
-      ],
       "ultimo_costo_cop": 2000000,
       "visto_por_ultima_vez": "2026-10-02",
       "fecha_alta": "2026-10-02",
       "bloques": [
         "VARIEDAD"
-      ]
+      ],
+      "supuestos_colores": [
+        "colores: jbl.com (tienda de EE. UU., variantes del PartyBox 330); JBL no tiene tienda en Colombia. La línea no trae colores: se asume la paleta completa y se confirma con el proveedor."
+      ],
+      "supuestos_investigacion": [],
+      "colores_de_la_lista": []
     },
     "jbl-partybox-encore-2": {
       "titulo": "JBL PartyBox Encore 2",
@@ -1715,15 +1778,17 @@
         "Negro"
       ],
       "fecha_precio": "2026-10-02",
-      "supuestos_investigacion": [
-        "colores: jbl.com (ficha del PartyBox Encore 2 de dos micrófonos, publicado solo en negro)."
-      ],
       "ultimo_costo_cop": 1000000,
       "visto_por_ultima_vez": "2026-10-02",
       "fecha_alta": "2026-10-02",
       "bloques": [
         "VARIEDAD"
-      ]
+      ],
+      "supuestos_colores": [
+        "colores: jbl.com (ficha del PartyBox Encore 2 de dos micrófonos, publicado solo en negro)."
+      ],
+      "supuestos_investigacion": [],
+      "colores_de_la_lista": []
     },
     "jbl-tune-730bt": {
       "titulo": "JBL Tune 730BT",
@@ -1880,15 +1945,17 @@
         "Lavanda"
       ],
       "fecha_precio": "2026-10-02",
-      "supuestos_investigacion": [
-        "colores: jbl.com (tienda de EE. UU., variantes del Tune 730BT); JBL no tiene tienda en Colombia. La línea no trae colores: se asume la paleta completa y se confirma con el proveedor."
-      ],
       "ultimo_costo_cop": 210000,
       "visto_por_ultima_vez": "2026-10-02",
       "fecha_alta": "2026-10-02",
       "bloques": [
         "VARIEDAD"
-      ]
+      ],
+      "supuestos_colores": [
+        "colores: jbl.com (tienda de EE. UU., variantes del Tune 730BT); JBL no tiene tienda en Colombia. La línea no trae colores: se asume la paleta completa y se confirma con el proveedor."
+      ],
+      "supuestos_investigacion": [],
+      "colores_de_la_lista": []
     },
     "jbl-xtreme-4": {
       "titulo": "JBL Xtreme 4",
@@ -2106,16 +2173,19 @@
         "Negro camuflado"
       ],
       "fecha_precio": "2026-10-02",
-      "supuestos_investigacion": [
-        "la marca escribe «Xtreme», no «Extreme»",
-        "colores: jbl.com (tienda de EE. UU., variantes del Xtreme 4: Black, Blue y Black Camo); JBL no tiene tienda en Colombia. La línea no trae colores: se asume la paleta completa y se confirma con el proveedor."
-      ],
       "ultimo_costo_cop": 1100000,
       "visto_por_ultima_vez": "2026-10-02",
       "fecha_alta": "2026-10-02",
       "bloques": [
         "VARIEDAD"
-      ]
+      ],
+      "supuestos_colores": [
+        "colores: jbl.com (tienda de EE. UU., variantes del Xtreme 4: Black, Blue y Black Camo); JBL no tiene tienda en Colombia. La línea no trae colores: se asume la paleta completa y se confirma con el proveedor."
+      ],
+      "supuestos_investigacion": [
+        "la marca escribe «Xtreme», no «Extreme»"
+      ],
+      "colores_de_la_lista": []
     },
     "jbl-xtreme-5": {
       "titulo": "JBL Xtreme 5",
@@ -2146,16 +2216,19 @@
         "Squad (camuflado)"
       ],
       "fecha_precio": "2026-10-02",
-      "supuestos_investigacion": [
-        "la marca escribe «Xtreme», no «Extreme»",
-        "colores: jbl.com (tienda de EE. UU., variantes del Xtreme 5); JBL no tiene tienda en Colombia. La línea no trae colores: se asume la paleta completa y se confirma con el proveedor."
-      ],
       "ultimo_costo_cop": 1200000,
       "visto_por_ultima_vez": "2026-10-02",
       "fecha_alta": "2026-10-02",
       "bloques": [
         "VARIEDAD"
-      ]
+      ],
+      "supuestos_colores": [
+        "colores: jbl.com (tienda de EE. UU., variantes del Xtreme 5); JBL no tiene tienda en Colombia. La línea no trae colores: se asume la paleta completa y se confirma con el proveedor."
+      ],
+      "supuestos_investigacion": [
+        "la marca escribe «Xtreme», no «Extreme»"
+      ],
+      "colores_de_la_lista": []
     },
     "lenovo-tab-one-8-7-4g-4gb-ram-128gb-con-mouse": {
       "titulo": "Lenovo Tab One 8.7\" 4G 4GB RAM 128GB con mouse",
@@ -2185,16 +2258,19 @@
         "Gris (Luna Grey)"
       ],
       "fecha_precio": "2026-10-02",
-      "supuestos_investigacion": [
-        "la lista dice 7\"; la Lenovo Tab One es de 8,7\"",
-        "colores: Ficha de Open Icecat (un solo color). lenovo.com/co redirige al listado general de tablets y no publica una página del modelo."
-      ],
       "ultimo_costo_cop": 530000,
       "visto_por_ultima_vez": "2026-10-02",
       "fecha_alta": "2026-10-02",
       "bloques": [
         "ANDROID"
-      ]
+      ],
+      "supuestos_colores": [
+        "colores: Ficha de Open Icecat (un solo color). lenovo.com/co redirige al listado general de tablets y no publica una página del modelo."
+      ],
+      "supuestos_investigacion": [
+        "la lista dice 7\"; la Lenovo Tab One es de 8,7\""
+      ],
+      "colores_de_la_lista": []
     },
     "motorola-edge-50-fusion-5g-8gb-ram-256gb-sim-esim": {
       "titulo": "Motorola Edge 50 Fusion 5G 8GB RAM 256GB SIM + eSIM",
@@ -2227,15 +2303,17 @@
         "Azul (Forest Blue)"
       ],
       "fecha_precio": "2026-10-02",
-      "supuestos_investigacion": [
-        "colores: Ficha de Open Icecat (un solo color). El modelo ya no figura en motorola.com/co, así que no hay paleta completa publicada."
-      ],
       "ultimo_costo_cop": 735000,
       "visto_por_ultima_vez": "2026-10-02",
       "fecha_alta": "2026-10-02",
       "bloques": [
         "ANDROID"
-      ]
+      ],
+      "supuestos_colores": [
+        "colores: Ficha de Open Icecat (un solo color). El modelo ya no figura en motorola.com/co, así que no hay paleta completa publicada."
+      ],
+      "supuestos_investigacion": [],
+      "colores_de_la_lista": []
     },
     "motorola-edge-60-fusion-5g-8gb-ram-256gb": {
       "titulo": "Motorola Edge 60 Fusion 5G 8GB RAM 256GB",
@@ -2307,15 +2385,17 @@
         "Rosa (PANTONE Zephyr)"
       ],
       "fecha_precio": "2026-10-02",
-      "supuestos_investigacion": [
-        "colores: motorola.com/co, página del motorola edge 60 fusion: variantes Verde (AZ), Azul (SS) y Rosa (ZP), que corresponden a PANTONE Amazonite, Slipstream y Zephyr."
-      ],
       "ultimo_costo_cop": 895000,
       "visto_por_ultima_vez": "2026-10-02",
       "fecha_alta": "2026-10-02",
       "bloques": [
         "ANDROID"
-      ]
+      ],
+      "supuestos_colores": [
+        "colores: motorola.com/co, página del motorola edge 60 fusion: variantes Verde (AZ), Azul (SS) y Rosa (ZP), que corresponden a PANTONE Amazonite, Slipstream y Zephyr."
+      ],
+      "supuestos_investigacion": [],
+      "colores_de_la_lista": []
     },
     "motorola-moto-g17-4g-4gb-ram-256gb-1-sim": {
       "titulo": "Motorola Moto G17 4G 4GB RAM 256GB 1 SIM",
@@ -2397,15 +2477,17 @@
         "Púrpura (PANTONE Evening Blue)"
       ],
       "fecha_precio": "2026-10-02",
-      "supuestos_investigacion": [
-        "colores: Ficha de Open Icecat (un solo color). El modelo no figura en motorola.com/co, así que no hay paleta completa publicada."
-      ],
       "ultimo_costo_cop": 505000,
       "visto_por_ultima_vez": "2026-10-02",
       "fecha_alta": "2026-10-02",
       "bloques": [
         "ANDROID"
-      ]
+      ],
+      "supuestos_colores": [
+        "colores: Ficha de Open Icecat (un solo color). El modelo no figura en motorola.com/co, así que no hay paleta completa publicada."
+      ],
+      "supuestos_investigacion": [],
+      "colores_de_la_lista": []
     },
     "motorola-moto-g17-power-4g-4gb-ram-256gb-1-sim": {
       "titulo": "Motorola Moto G17 Power 4G 4GB RAM 256GB 1 SIM",
@@ -2457,15 +2539,17 @@
         "Celeste"
       ],
       "fecha_precio": "2026-10-02",
-      "supuestos_investigacion": [
-        "colores: motorola.com/co, página del moto g17 power (variantes PBBN0011CO y PBBN0012CO)."
-      ],
       "ultimo_costo_cop": 550000,
       "visto_por_ultima_vez": "2026-10-02",
       "fecha_alta": "2026-10-02",
       "bloques": [
         "ANDROID"
-      ]
+      ],
+      "supuestos_colores": [
+        "colores: motorola.com/co, página del moto g17 power (variantes PBBN0011CO y PBBN0012CO)."
+      ],
+      "supuestos_investigacion": [],
+      "colores_de_la_lista": []
     },
     "motorola-moto-g67-8gb-ram-256gb": {
       "titulo": "Motorola Moto G67 8GB RAM 256GB",
@@ -2519,15 +2603,17 @@
         "Lima (PANTONE Nile)"
       ],
       "fecha_precio": "2026-10-02",
-      "supuestos_investigacion": [
-        "colores: motorola.com/co, página del moto g67: variantes Gris y Lima, rotuladas PANTONE Arctic Seal y PANTONE Nile."
-      ],
       "ultimo_costo_cop": 730000,
       "visto_por_ultima_vez": "2026-10-02",
       "fecha_alta": "2026-10-02",
       "bloques": [
         "ANDROID"
-      ]
+      ],
+      "supuestos_colores": [
+        "colores: motorola.com/co, página del moto g67: variantes Gris y Lima, rotuladas PANTONE Arctic Seal y PANTONE Nile."
+      ],
+      "supuestos_investigacion": [],
+      "colores_de_la_lista": []
     },
     "motorola-moto-g77-5g-8gb-ram-256gb": {
       "titulo": "Motorola Moto G77 5G 8GB RAM 256GB",
@@ -2585,16 +2671,17 @@
         "Negro (PANTONE Black Olive)"
       ],
       "fecha_precio": "2026-10-02",
-      "supuestos_investigacion": [
-        "la línea trae «760» sin el signo $: se leyó como 760.000 COP",
-        "colores: Ficha de Open Icecat (un solo color). El modelo no figura en motorola.com/co, así que no hay paleta completa publicada."
-      ],
       "ultimo_costo_cop": 760000,
       "visto_por_ultima_vez": "2026-10-02",
       "fecha_alta": "2026-10-02",
       "bloques": [
         "ANDROID"
-      ]
+      ],
+      "supuestos_colores": [
+        "colores: Ficha de Open Icecat (un solo color). El modelo no figura en motorola.com/co, así que no hay paleta completa publicada."
+      ],
+      "supuestos_investigacion": [],
+      "colores_de_la_lista": []
     },
     "nintendo-switch-2-mario-kart-world": {
       "titulo": "Nintendo Switch 2 + Mario Kart World",
@@ -2625,16 +2712,19 @@
       "meta_descripcion": "Nintendo Switch 2 con Mario Kart World: pantalla de 7,9 pulgadas a 1080p con HDR, hasta 4K en el televisor y 256 GB de almacenamiento.",
       "colores_oficiales": [],
       "fecha_precio": "2026-10-02",
-      "supuestos_investigacion": [
-        "«MARIO KART» se lee como el paquete de la consola con el juego Mario Kart World",
-        "colores: nintendo.com no publica variantes de color para la consola Nintendo Switch 2."
-      ],
       "ultimo_costo_cop": 2150000,
       "visto_por_ultima_vez": "2026-10-02",
       "fecha_alta": "2026-10-02",
       "bloques": [
         "VARIEDAD"
-      ]
+      ],
+      "supuestos_colores": [
+        "colores: nintendo.com no publica variantes de color para la consola Nintendo Switch 2."
+      ],
+      "supuestos_investigacion": [
+        "«MARIO KART» se lee como el paquete de la consola con el juego Mario Kart World"
+      ],
+      "colores_de_la_lista": []
     },
     "oppo-a6c-4gb-ram-128gb": {
       "titulo": "OPPO A6c 4GB RAM 128GB",
@@ -2676,15 +2766,17 @@
         "Blanco"
       ],
       "fecha_precio": "2026-10-02",
-      "supuestos_investigacion": [
-        "colores: oppo.com/co, ficha de especificaciones del OPPO A6c (CPH2895)."
-      ],
       "ultimo_costo_cop": 575000,
       "visto_por_ultima_vez": "2026-10-02",
       "fecha_alta": "2026-10-02",
       "bloques": [
         "ANDROID"
-      ]
+      ],
+      "supuestos_colores": [
+        "colores: oppo.com/co, ficha de especificaciones del OPPO A6c (CPH2895)."
+      ],
+      "supuestos_investigacion": [],
+      "colores_de_la_lista": []
     },
     "oppo-a6c-4gb-ram-64gb": {
       "titulo": "OPPO A6c 4GB RAM 64GB",
@@ -2731,15 +2823,17 @@
         "Blanco"
       ],
       "fecha_precio": "2026-10-02",
-      "supuestos_investigacion": [
-        "colores: oppo.com/co, ficha de especificaciones del OPPO A6c (CPH2895)."
-      ],
       "ultimo_costo_cop": 500000,
       "visto_por_ultima_vez": "2026-10-02",
       "fecha_alta": "2026-10-02",
       "bloques": [
         "ANDROID"
-      ]
+      ],
+      "supuestos_colores": [
+        "colores: oppo.com/co, ficha de especificaciones del OPPO A6c (CPH2895)."
+      ],
+      "supuestos_investigacion": [],
+      "colores_de_la_lista": []
     },
     "oppo-a6k-4gb-ram-256gb": {
       "titulo": "OPPO A6k 4GB RAM 256GB",
@@ -2781,15 +2875,17 @@
         "Azul"
       ],
       "fecha_precio": "2026-10-02",
-      "supuestos_investigacion": [
-        "colores: oppo.com/co, ficha de especificaciones del OPPO A6k (CPH2891). La ficha de Icecat trae solo Crystal Blue."
-      ],
       "ultimo_costo_cop": 850000,
       "visto_por_ultima_vez": "2026-10-02",
       "fecha_alta": "2026-10-02",
       "bloques": [
         "ANDROID"
-      ]
+      ],
+      "supuestos_colores": [
+        "colores: oppo.com/co, ficha de especificaciones del OPPO A6k (CPH2891). La ficha de Icecat trae solo Crystal Blue."
+      ],
+      "supuestos_investigacion": [],
+      "colores_de_la_lista": []
     },
     "realme-note-70-4g-8gb-ram-256gb": {
       "titulo": "realme Note 70 4G 8GB RAM 256GB",
@@ -2823,15 +2919,17 @@
         "Negro Obsidiana (Obsidian Black)"
       ],
       "fecha_precio": "2026-10-02",
-      "supuestos_investigacion": [
-        "colores: realme.com/co publica Sea Blue y Obsidian Black; la traducción al español es nuestra."
-      ],
       "ultimo_costo_cop": 520000,
       "visto_por_ultima_vez": "2026-10-02",
       "fecha_alta": "2026-10-02",
       "bloques": [
         "ANDROID"
-      ]
+      ],
+      "supuestos_colores": [
+        "colores: realme.com/co publica Sea Blue y Obsidian Black; la traducción al español es nuestra."
+      ],
+      "supuestos_investigacion": [],
+      "colores_de_la_lista": []
     },
     "samsung-galaxy-a17-4g-8gb-ram-256gb": {
       "titulo": "Samsung Galaxy A17 4G 8GB RAM 256GB",
@@ -2875,15 +2973,17 @@
         "Azul claro"
       ],
       "fecha_precio": "2026-10-02",
-      "supuestos_investigacion": [
-        "colores: samsung.com/co, página del Galaxy A17 (SM-A175F): «disponible en negro, gris y azul claro»."
-      ],
       "ultimo_costo_cop": 610000,
       "visto_por_ultima_vez": "2026-10-02",
       "fecha_alta": "2026-10-02",
       "bloques": [
         "ANDROID"
-      ]
+      ],
+      "supuestos_colores": [
+        "colores: samsung.com/co, página del Galaxy A17 (SM-A175F): «disponible en negro, gris y azul claro»."
+      ],
+      "supuestos_investigacion": [],
+      "colores_de_la_lista": []
     },
     "samsung-galaxy-a17-5g-8gb-ram-256gb-1-sim": {
       "titulo": "Samsung Galaxy A17 5G 8GB RAM 256GB 1 SIM",
@@ -3112,15 +3212,17 @@
         "Azul"
       ],
       "fecha_precio": "2026-10-02",
-      "supuestos_investigacion": [
-        "colores: samsung.com/cl, página del Galaxy A17 5G (SM-A176B): Black, Gray y Blue. El modelo no se vende en samsung.com/co."
-      ],
       "ultimo_costo_cop": 675000,
       "visto_por_ultima_vez": "2026-10-02",
       "fecha_alta": "2026-10-02",
       "bloques": [
         "ANDROID"
-      ]
+      ],
+      "supuestos_colores": [
+        "colores: samsung.com/cl, página del Galaxy A17 5G (SM-A176B): Black, Gray y Blue. El modelo no se vende en samsung.com/co."
+      ],
+      "supuestos_investigacion": [],
+      "colores_de_la_lista": []
     },
     "samsung-galaxy-a37-5g-6gb-ram-128gb": {
       "titulo": "Samsung Galaxy A37 5G 6GB RAM 128GB",
@@ -3433,15 +3535,17 @@
         "Blanco Asombroso"
       ],
       "fecha_precio": "2026-10-02",
-      "supuestos_investigacion": [
-        "colores: samsung.com/co, preguntas frecuentes del Galaxy A37 5G."
-      ],
       "ultimo_costo_cop": 810000,
       "visto_por_ultima_vez": "2026-10-02",
       "fecha_alta": "2026-10-02",
       "bloques": [
         "ANDROID"
-      ]
+      ],
+      "supuestos_colores": [
+        "colores: samsung.com/co, preguntas frecuentes del Galaxy A37 5G."
+      ],
+      "supuestos_investigacion": [],
+      "colores_de_la_lista": []
     },
     "samsung-galaxy-a57-5g-12gb-ram-512gb": {
       "titulo": "Samsung Galaxy A57 5G 12GB RAM 512GB",
@@ -3463,15 +3567,17 @@
         "Lila Asombroso"
       ],
       "fecha_precio": null,
-      "supuestos_investigacion": [
-        "colores: samsung.com/co, preguntas frecuentes del Galaxy A57 5G."
-      ],
       "ultimo_costo_cop": 1700000,
       "visto_por_ultima_vez": "2026-10-02",
       "fecha_alta": "2026-10-02",
       "bloques": [
         "ANDROID"
-      ]
+      ],
+      "supuestos_colores": [
+        "colores: samsung.com/co, preguntas frecuentes del Galaxy A57 5G."
+      ],
+      "supuestos_investigacion": [],
+      "colores_de_la_lista": []
     },
     "samsung-galaxy-buds4": {
       "titulo": "Samsung Galaxy Buds4",
@@ -3501,15 +3607,17 @@
         "Blanco"
       ],
       "fecha_precio": "2026-10-02",
-      "supuestos_investigacion": [
-        "colores: samsung.com/co (referencias SM-R540NZKALTA negro y SM-R540NZWALTA blanco). La línea no trae colores: se asume la paleta completa y se confirma con el proveedor."
-      ],
       "ultimo_costo_cop": 500000,
       "visto_por_ultima_vez": "2026-10-02",
       "fecha_alta": "2026-10-02",
       "bloques": [
         "VARIEDAD"
-      ]
+      ],
+      "supuestos_colores": [
+        "colores: samsung.com/co (referencias SM-R540NZKALTA negro y SM-R540NZWALTA blanco). La línea no trae colores: se asume la paleta completa y se confirma con el proveedor."
+      ],
+      "supuestos_investigacion": [],
+      "colores_de_la_lista": []
     },
     "samsung-galaxy-fit3": {
       "titulo": "Samsung Galaxy Fit3",
@@ -3552,15 +3660,17 @@
         "Oro rosa"
       ],
       "fecha_precio": "2026-10-02",
-      "supuestos_investigacion": [
-        "colores: Paleta de la Galaxy Fit3 en samsung.com/mx y samsung.com/es; Samsung Colombia solo publica la versión Rosado en paquete con correa deportiva. La línea no trae colores: se asume la paleta completa y se confirma con el proveedor."
-      ],
       "ultimo_costo_cop": 125000,
       "visto_por_ultima_vez": "2026-10-02",
       "fecha_alta": "2026-10-02",
       "bloques": [
         "VARIEDAD"
-      ]
+      ],
+      "supuestos_colores": [
+        "colores: Paleta de la Galaxy Fit3 en samsung.com/mx y samsung.com/es; Samsung Colombia solo publica la versión Rosado en paquete con correa deportiva. La línea no trae colores: se asume la paleta completa y se confirma con el proveedor."
+      ],
+      "supuestos_investigacion": [],
+      "colores_de_la_lista": []
     },
     "samsung-galaxy-s25-ultra-12gb-ram-256gb": {
       "titulo": "Samsung Galaxy S25 Ultra 12GB RAM 256GB",
@@ -3607,15 +3717,19 @@
         "Gris Titanio"
       ],
       "fecha_precio": "2026-10-02",
-      "supuestos_investigacion": [
-        "dos precios para el mismo equipo: 2.700.000 (línea 2) y 2.550.000 (línea 519, «SÚPER PRECIO», nuevo confirmado); vale el menor",
-        "colores: Familias azul y gris de la entrada del proveedor, cruzadas con la paleta de samsung.com/co (Gris Azulado Titanio, Gris Titanio, Negro Titanio y Blanco Plata Titanio)."
-      ],
       "ultimo_costo_cop": 2550000,
       "visto_por_ultima_vez": "2026-10-02",
       "fecha_alta": "2026-10-02",
       "bloques": [
         "GAMA ALTA"
+      ],
+      "supuestos_colores": [
+        "colores: Familias azul y gris de la entrada del proveedor, cruzadas con la paleta de samsung.com/co (Gris Azulado Titanio, Gris Titanio, Negro Titanio y Blanco Plata Titanio)."
+      ],
+      "supuestos_investigacion": [],
+      "colores_de_la_lista": [
+        "Azul",
+        "Gris"
       ]
     },
     "samsung-galaxy-s25-ultra-12gb-ram-512gb": {
@@ -4109,15 +4223,19 @@
         "Gris Azulado Titanio"
       ],
       "fecha_precio": "2026-10-02",
-      "supuestos_investigacion": [
-        "«SÚPER PRECIO» confirmado como nuevo sellado por la persona (línea 520: «SAMSUNG S25 ULTRA 512 *$2.880*»)",
-        "colores: Emojis de la línea del proveedor (gris y azul), cruzados con la paleta de samsung.com/co (Gris Azulado Titanio, Gris Titanio, Negro Titanio y Blanco Plata Titanio)."
-      ],
       "ultimo_costo_cop": 2880000,
       "visto_por_ultima_vez": "2026-10-02",
       "fecha_alta": "2026-10-02",
       "bloques": [
         "GAMA ALTA"
+      ],
+      "supuestos_colores": [
+        "colores: Emojis de la línea del proveedor (gris y azul), cruzados con la paleta de samsung.com/co (Gris Azulado Titanio, Gris Titanio, Negro Titanio y Blanco Plata Titanio)."
+      ],
+      "supuestos_investigacion": [],
+      "colores_de_la_lista": [
+        "Gris",
+        "Azul"
       ]
     },
     "samsung-galaxy-tab-a11-8-7-wifi-8gb-ram-128gb": {
@@ -4160,16 +4278,19 @@
         "Plata"
       ],
       "fecha_precio": "2026-10-02",
-      "supuestos_investigacion": [
-        "la lista dice 7\"; la Galaxy Tab A11 es de 8,7\"",
-        "colores: samsung.com/co, página del Galaxy Tab A11: «disponible en dos colores: gris y plata»."
-      ],
       "ultimo_costo_cop": 465000,
       "visto_por_ultima_vez": "2026-10-02",
       "fecha_alta": "2026-10-02",
       "bloques": [
         "ANDROID"
-      ]
+      ],
+      "supuestos_colores": [
+        "colores: samsung.com/co, página del Galaxy Tab A11: «disponible en dos colores: gris y plata»."
+      ],
+      "supuestos_investigacion": [
+        "la lista dice 7\"; la Galaxy Tab A11 es de 8,7\""
+      ],
+      "colores_de_la_lista": []
     },
     "samsung-galaxy-tab-a11-plus-11-wifi-6gb-ram-128gb": {
       "titulo": "Samsung Galaxy Tab A11+ 11\" WiFi 6GB RAM 128GB",
@@ -4203,15 +4324,17 @@
         "Plata"
       ],
       "fecha_precio": "2026-10-02",
-      "supuestos_investigacion": [
-        "colores: samsung.com/co, página del Galaxy Tab A11+: «disponible en dos colores: gris y plata»."
-      ],
       "ultimo_costo_cop": 735000,
       "visto_por_ultima_vez": "2026-10-02",
       "fecha_alta": "2026-10-02",
       "bloques": [
         "ANDROID"
-      ]
+      ],
+      "supuestos_colores": [
+        "colores: samsung.com/co, página del Galaxy Tab A11+: «disponible en dos colores: gris y plata»."
+      ],
+      "supuestos_investigacion": [],
+      "colores_de_la_lista": []
     },
     "samsung-galaxy-watch-8-40mm": {
       "titulo": "Samsung Galaxy Watch 8 40mm",
@@ -4242,15 +4365,17 @@
         "Plateado"
       ],
       "fecha_precio": "2026-10-02",
-      "supuestos_investigacion": [
-        "colores: samsung.com/co (comparador del Galaxy Watch8: grafito y plateado). La línea no trae colores: se asume la paleta completa y se confirma con el proveedor."
-      ],
       "ultimo_costo_cop": 900000,
       "visto_por_ultima_vez": "2026-10-02",
       "fecha_alta": "2026-10-02",
       "bloques": [
         "VARIEDAD"
-      ]
+      ],
+      "supuestos_colores": [
+        "colores: samsung.com/co (comparador del Galaxy Watch8: grafito y plateado). La línea no trae colores: se asume la paleta completa y se confirma con el proveedor."
+      ],
+      "supuestos_investigacion": [],
+      "colores_de_la_lista": []
     },
     "samsung-galaxy-watch-8-classic-46mm": {
       "titulo": "Samsung Galaxy Watch 8 Classic 46mm",
@@ -4297,15 +4422,17 @@
         "Blanco"
       ],
       "fecha_precio": "2026-10-02",
-      "supuestos_investigacion": [
-        "colores: samsung.com/co (comparador del Galaxy Watch8 Classic de 46 mm: negro y blanco; la tienda de Colombia publica el negro). La línea no trae colores: se asume la paleta completa y se confirma con el proveedor."
-      ],
       "ultimo_costo_cop": 1050000,
       "visto_por_ultima_vez": "2026-10-02",
       "fecha_alta": "2026-10-02",
       "bloques": [
         "VARIEDAD"
-      ]
+      ],
+      "supuestos_colores": [
+        "colores: samsung.com/co (comparador del Galaxy Watch8 Classic de 46 mm: negro y blanco; la tienda de Colombia publica el negro). La línea no trae colores: se asume la paleta completa y se confirma con el proveedor."
+      ],
+      "supuestos_investigacion": [],
+      "colores_de_la_lista": []
     },
     "tcl-pad-lugh-10-wifi-4gb-ram-128gb": {
       "titulo": "TCL Pad Lugh 10\" WiFi 4GB RAM 128GB",
@@ -4322,15 +4449,17 @@
       "meta_descripcion": "Tablet TCL de 10 pulgadas con WiFi, 4 GB de RAM y 128 GB de almacenamiento.",
       "colores_oficiales": [],
       "fecha_precio": null,
-      "supuestos_investigacion": [
-        "colores: Ninguna: el modelo no está identificado y la línea del proveedor no trae colores."
-      ],
       "ultimo_costo_cop": 420000,
       "visto_por_ultima_vez": "2026-10-02",
       "fecha_alta": "2026-10-02",
       "bloques": [
         "ANDROID"
-      ]
+      ],
+      "supuestos_colores": [
+        "colores: Ninguna: el modelo no está identificado y la línea del proveedor no trae colores."
+      ],
+      "supuestos_investigacion": [],
+      "colores_de_la_lista": []
     },
     "tcl-tab-11-fe-11-wifi-4gb-ram-128gb": {
       "titulo": "TCL Tab 11 FE 11\" WiFi 4GB RAM 128GB",
@@ -4376,15 +4505,17 @@
         "Gris"
       ],
       "fecha_precio": "2026-10-02",
-      "supuestos_investigacion": [
-        "colores: Ficha de Open Icecat. tcl.com/co no publica la paleta del modelo en texto."
-      ],
       "ultimo_costo_cop": 595000,
       "visto_por_ultima_vez": "2026-10-02",
       "fecha_alta": "2026-10-02",
       "bloques": [
         "ANDROID"
-      ]
+      ],
+      "supuestos_colores": [
+        "colores: Ficha de Open Icecat. tcl.com/co no publica la paleta del modelo en texto."
+      ],
+      "supuestos_investigacion": [],
+      "colores_de_la_lista": []
     },
     "xiaomi-17t-5g-12gb-ram-256gb": {
       "titulo": "Xiaomi 17T 5G 12GB RAM 256GB",
@@ -4406,15 +4537,17 @@
         "Violeta"
       ],
       "fecha_precio": null,
-      "supuestos_investigacion": [
-        "colores: Paleta oficial de mi.com/co; la lista no marcaba color: se asumen todos los de la ficha (regla 13)."
-      ],
       "ultimo_costo_cop": 1900000,
       "visto_por_ultima_vez": "2026-10-02",
       "fecha_alta": "2026-10-02",
       "bloques": [
         "ANDROID"
-      ]
+      ],
+      "supuestos_colores": [
+        "colores: Paleta oficial de mi.com/co; la lista no marcaba color: se asumen todos los de la ficha (regla 13)."
+      ],
+      "supuestos_investigacion": [],
+      "colores_de_la_lista": []
     },
     "xiaomi-17t-5g-12gb-ram-512gb": {
       "titulo": "Xiaomi 17T 5G 12GB RAM 512GB",
@@ -4462,15 +4595,17 @@
         "Violeta"
       ],
       "fecha_precio": "2026-10-02",
-      "supuestos_investigacion": [
-        "colores: Paleta oficial de mi.com/co; la lista no marcaba color: se asumen todos los de la ficha (regla 13)."
-      ],
       "ultimo_costo_cop": 2100000,
       "visto_por_ultima_vez": "2026-10-02",
       "fecha_alta": "2026-10-02",
       "bloques": [
         "ANDROID"
-      ]
+      ],
+      "supuestos_colores": [
+        "colores: Paleta oficial de mi.com/co; la lista no marcaba color: se asumen todos los de la ficha (regla 13)."
+      ],
+      "supuestos_investigacion": [],
+      "colores_de_la_lista": []
     },
     "xiaomi-poco-f8-pro-5g-12gb-ram-256gb": {
       "titulo": "Xiaomi POCO F8 Pro 5G 12GB RAM 256GB",
@@ -4506,15 +4641,17 @@
         "Azul"
       ],
       "fecha_precio": "2026-10-02",
-      "supuestos_investigacion": [
-        "colores: Paleta oficial de mi.com/co; la lista no marcaba color: se asumen todos los de la ficha (regla 13)."
-      ],
       "ultimo_costo_cop": 1850000,
       "visto_por_ultima_vez": "2026-10-02",
       "fecha_alta": "2026-10-02",
       "bloques": [
         "ANDROID"
-      ]
+      ],
+      "supuestos_colores": [
+        "colores: Paleta oficial de mi.com/co; la lista no marcaba color: se asumen todos los de la ficha (regla 13)."
+      ],
+      "supuestos_investigacion": [],
+      "colores_de_la_lista": []
     },
     "xiaomi-poco-f8-ultra-5g-12gb-ram-256gb": {
       "titulo": "Xiaomi POCO F8 Ultra 5G 12GB RAM 256GB",
@@ -4549,16 +4686,19 @@
         "Negro"
       ],
       "fecha_precio": "2026-10-02",
-      "supuestos_investigacion": [
-        "la sección Xiaomi abrevia la serie F: es el POCO F8 Ultra de mi.com/co",
-        "colores: Paleta oficial de mi.com/co; la lista no marcaba color: se asumen todos los de la ficha (regla 13)."
-      ],
       "ultimo_costo_cop": 2250000,
       "visto_por_ultima_vez": "2026-10-02",
       "fecha_alta": "2026-10-02",
       "bloques": [
         "ANDROID"
-      ]
+      ],
+      "supuestos_colores": [
+        "colores: Paleta oficial de mi.com/co; la lista no marcaba color: se asumen todos los de la ficha (regla 13)."
+      ],
+      "supuestos_investigacion": [
+        "la sección Xiaomi abrevia la serie F: es el POCO F8 Ultra de mi.com/co"
+      ],
+      "colores_de_la_lista": []
     },
     "xiaomi-poco-x8-pro-5g-512gb": {
       "titulo": "Xiaomi POCO X8 Pro 5G 512GB",
@@ -4918,13 +5058,15 @@
         "Negro"
       ],
       "fecha_precio": "2026-10-02",
-      "supuestos_investigacion": [
-        "colores: Paleta oficial de mi.com/co, publicada en inglés (Mint Green, White, Black) y traducida; la lista no marcaba color: se asumen todos los de la ficha (regla 13)."
-      ],
       "ultimo_costo_cop": 1400000,
       "visto_por_ultima_vez": "2026-10-02",
       "fecha_alta": "2026-10-02",
-      "bloques": []
+      "bloques": [],
+      "supuestos_colores": [
+        "colores: Paleta oficial de mi.com/co, publicada en inglés (Mint Green, White, Black) y traducida; la lista no marcaba color: se asumen todos los de la ficha (regla 13)."
+      ],
+      "supuestos_investigacion": [],
+      "colores_de_la_lista": []
     },
     "xiaomi-poco-x8-pro-5g-8gb-ram-256gb": {
       "titulo": "Xiaomi POCO X8 Pro 5G 8GB RAM 256GB",
@@ -4960,14 +5102,17 @@
         "Negro"
       ],
       "fecha_precio": "2026-10-02",
-      "supuestos_investigacion": [
-        "la lista no traía la RAM; la ficha oficial en mi.com/co solo vende 256GB en 8GB+256GB",
-        "colores: Paleta oficial de mi.com/co, publicada en inglés (Mint Green, White, Black) y traducida; la lista no marcaba color: se asumen todos los de la ficha (regla 13)."
-      ],
       "ultimo_costo_cop": 1250000,
       "visto_por_ultima_vez": "2026-10-02",
       "fecha_alta": "2026-10-02",
-      "bloques": []
+      "bloques": [],
+      "supuestos_colores": [
+        "colores: Paleta oficial de mi.com/co, publicada en inglés (Mint Green, White, Black) y traducida; la lista no marcaba color: se asumen todos los de la ficha (regla 13)."
+      ],
+      "supuestos_investigacion": [
+        "la lista no traía la RAM; la ficha oficial en mi.com/co solo vende 256GB en 8GB+256GB"
+      ],
+      "colores_de_la_lista": []
     },
     "xiaomi-poco-x8-pro-max-5g-12gb-ram-256gb": {
       "titulo": "Xiaomi POCO X8 Pro Max 5G 12GB RAM 256GB",
@@ -5003,15 +5148,17 @@
         "Negro"
       ],
       "fecha_precio": "2026-10-02",
-      "supuestos_investigacion": [
-        "colores: Paleta oficial de mi.com/co, publicada en inglés (Blue, White, Black) y traducida; la lista no marcaba color: se asumen todos los de la ficha (regla 13)."
-      ],
       "ultimo_costo_cop": 1830000,
       "visto_por_ultima_vez": "2026-10-02",
       "fecha_alta": "2026-10-02",
       "bloques": [
         "ANDROID"
-      ]
+      ],
+      "supuestos_colores": [
+        "colores: Paleta oficial de mi.com/co, publicada en inglés (Blue, White, Black) y traducida; la lista no marcaba color: se asumen todos los de la ficha (regla 13)."
+      ],
+      "supuestos_investigacion": [],
+      "colores_de_la_lista": []
     },
     "xiaomi-poco-x8-pro-max-5g-12gb-ram-512gb": {
       "titulo": "Xiaomi POCO X8 Pro Max 5G 12GB RAM 512GB",
@@ -5047,15 +5194,17 @@
         "Negro"
       ],
       "fecha_precio": "2026-10-02",
-      "supuestos_investigacion": [
-        "colores: Paleta oficial de mi.com/co, publicada en inglés (Blue, White, Black) y traducida; la lista no marcaba color: se asumen todos los de la ficha (regla 13)."
-      ],
       "ultimo_costo_cop": 1980000,
       "visto_por_ultima_vez": "2026-10-02",
       "fecha_alta": "2026-10-02",
       "bloques": [
         "ANDROID"
-      ]
+      ],
+      "supuestos_colores": [
+        "colores: Paleta oficial de mi.com/co, publicada en inglés (Blue, White, Black) y traducida; la lista no marcaba color: se asumen todos los de la ficha (regla 13)."
+      ],
+      "supuestos_investigacion": [],
+      "colores_de_la_lista": []
     },
     "xiaomi-redmi-15-4g-8gb-ram-256gb": {
       "titulo": "Xiaomi Redmi 15 4G 8GB RAM 256GB",
@@ -5126,15 +5275,17 @@
         "Negro Ocaso"
       ],
       "fecha_precio": "2026-10-02",
-      "supuestos_investigacion": [
-        "colores: Paleta oficial de mi.com/co; la lista no marcaba color: se asumen todos los de la ficha (regla 13)."
-      ],
       "ultimo_costo_cop": 595000,
       "visto_por_ultima_vez": "2026-10-02",
       "fecha_alta": "2026-10-02",
       "bloques": [
         "ANDROID"
-      ]
+      ],
+      "supuestos_colores": [
+        "colores: Paleta oficial de mi.com/co; la lista no marcaba color: se asumen todos los de la ficha (regla 13)."
+      ],
+      "supuestos_investigacion": [],
+      "colores_de_la_lista": []
     },
     "xiaomi-redmi-15c-4g-8gb-ram-256gb": {
       "titulo": "Xiaomi Redmi 15C 4G 8GB RAM 256GB",
@@ -5182,15 +5333,17 @@
         "Verde Menta"
       ],
       "fecha_precio": "2026-10-02",
-      "supuestos_investigacion": [
-        "colores: Paleta oficial de mi.com/co; la lista no marcaba color: se asumen todos los de la ficha (regla 13)."
-      ],
       "ultimo_costo_cop": 525000,
       "visto_por_ultima_vez": "2026-10-02",
       "fecha_alta": "2026-10-02",
       "bloques": [
         "ANDROID"
-      ]
+      ],
+      "supuestos_colores": [
+        "colores: Paleta oficial de mi.com/co; la lista no marcaba color: se asumen todos los de la ficha (regla 13)."
+      ],
+      "supuestos_investigacion": [],
+      "colores_de_la_lista": []
     },
     "xiaomi-redmi-17-4g-6gb-ram-256gb": {
       "titulo": "Xiaomi Redmi 17 4G 6GB RAM 256GB",
@@ -5245,15 +5398,17 @@
         "Verde roble"
       ],
       "fecha_precio": "2026-10-02",
-      "supuestos_investigacion": [
-        "colores: Paleta oficial de mi.com/co; la lista no marcaba color: se asumen todos los de la ficha (regla 13)."
-      ],
       "ultimo_costo_cop": 635000,
       "visto_por_ultima_vez": "2026-10-02",
       "fecha_alta": "2026-10-02",
       "bloques": [
         "ANDROID"
-      ]
+      ],
+      "supuestos_colores": [
+        "colores: Paleta oficial de mi.com/co; la lista no marcaba color: se asumen todos los de la ficha (regla 13)."
+      ],
+      "supuestos_investigacion": [],
+      "colores_de_la_lista": []
     },
     "xiaomi-redmi-buds-6-active": {
       "titulo": "Xiaomi Redmi Buds 6 Active",
@@ -5302,15 +5457,17 @@
         "Rosa"
       ],
       "fecha_precio": "2026-10-02",
-      "supuestos_investigacion": [
-        "colores: Paleta oficial publicada en la ficha de especificaciones de mi.com/co (https://www.mi.com/co/product/redmi-buds-6-active/specs/); la línea del proveedor no trae colores, así que se asumen disponibles los de la ficha y hay que confirmarlos con el proveedor."
-      ],
       "ultimo_costo_cop": 65000,
       "visto_por_ultima_vez": "2026-10-02",
       "fecha_alta": "2026-10-02",
       "bloques": [
         "VARIEDAD"
-      ]
+      ],
+      "supuestos_colores": [
+        "colores: Paleta oficial publicada en la ficha de especificaciones de mi.com/co (https://www.mi.com/co/product/redmi-buds-6-active/specs/); la línea del proveedor no trae colores, así que se asumen disponibles los de la ficha y hay que confirmarlos con el proveedor."
+      ],
+      "supuestos_investigacion": [],
+      "colores_de_la_lista": []
     },
     "xiaomi-redmi-buds-6-play": {
       "titulo": "Xiaomi Redmi Buds 6 Play",
@@ -5343,15 +5500,17 @@
         "Rosado"
       ],
       "fecha_precio": "2026-10-02",
-      "supuestos_investigacion": [
-        "colores: Paleta oficial publicada en la ficha de especificaciones de mi.com/co (https://www.mi.com/co/product/redmi-buds-6-play/specs/); la línea del proveedor no trae colores, así que se asumen disponibles los de la ficha y hay que confirmarlos con el proveedor."
-      ],
       "ultimo_costo_cop": 45000,
       "visto_por_ultima_vez": "2026-10-02",
       "fecha_alta": "2026-10-02",
       "bloques": [
         "VARIEDAD"
-      ]
+      ],
+      "supuestos_colores": [
+        "colores: Paleta oficial publicada en la ficha de especificaciones de mi.com/co (https://www.mi.com/co/product/redmi-buds-6-play/specs/); la línea del proveedor no trae colores, así que se asumen disponibles los de la ficha y hay que confirmarlos con el proveedor."
+      ],
+      "supuestos_investigacion": [],
+      "colores_de_la_lista": []
     },
     "xiaomi-redmi-buds-8-active": {
       "titulo": "Xiaomi Redmi Buds 8 Active",
@@ -5383,15 +5542,17 @@
         "Blanco"
       ],
       "fecha_precio": "2026-10-02",
-      "supuestos_investigacion": [
-        "colores: Paleta oficial publicada en la página del producto en mi.com/co (https://www.mi.com/co/product/redmi-buds-8-active/); la línea del proveedor no trae colores, así que se asumen disponibles los de la ficha y hay que confirmarlos con el proveedor. La ficha de especificaciones los trae en inglés (Blue, Black, White)."
-      ],
       "ultimo_costo_cop": 70000,
       "visto_por_ultima_vez": "2026-10-02",
       "fecha_alta": "2026-10-02",
       "bloques": [
         "VARIEDAD"
-      ]
+      ],
+      "supuestos_colores": [
+        "colores: Paleta oficial publicada en la página del producto en mi.com/co (https://www.mi.com/co/product/redmi-buds-8-active/); la línea del proveedor no trae colores, así que se asumen disponibles los de la ficha y hay que confirmarlos con el proveedor. La ficha de especificaciones los trae en inglés (Blue, Black, White)."
+      ],
+      "supuestos_investigacion": [],
+      "colores_de_la_lista": []
     },
     "xiaomi-redmi-buds-8-lite": {
       "titulo": "Xiaomi Redmi Buds 8 Lite",
@@ -5422,15 +5583,17 @@
         "Blanco"
       ],
       "fecha_precio": "2026-10-02",
-      "supuestos_investigacion": [
-        "colores: Paleta oficial publicada en la ficha de especificaciones de mi.com/co (https://www.mi.com/co/product/redmi-buds-8-lite/specs/); la línea del proveedor no trae colores, así que se asumen disponibles los de la ficha y hay que confirmarlos con el proveedor."
-      ],
       "ultimo_costo_cop": 75000,
       "visto_por_ultima_vez": "2026-10-02",
       "fecha_alta": "2026-10-02",
       "bloques": [
         "VARIEDAD"
-      ]
+      ],
+      "supuestos_colores": [
+        "colores: Paleta oficial publicada en la ficha de especificaciones de mi.com/co (https://www.mi.com/co/product/redmi-buds-8-lite/specs/); la línea del proveedor no trae colores, así que se asumen disponibles los de la ficha y hay que confirmarlos con el proveedor."
+      ],
+      "supuestos_investigacion": [],
+      "colores_de_la_lista": []
     },
     "xiaomi-redmi-note-15-4g-6gb-ram-128gb": {
       "titulo": "Xiaomi Redmi Note 15 4G 6GB RAM 128GB",
@@ -5467,14 +5630,17 @@
         "Verde Bosque"
       ],
       "fecha_precio": "2026-10-02",
-      "supuestos_investigacion": [
-        "la lista no traía RAM ni red; la ficha oficial en mi.com/co solo vende 128GB en el Note 15 4G de 6GB+128GB (el 5G es solo 8GB+256GB)",
-        "colores: Paleta oficial de mi.com/co; la lista no marcaba color: se asumen todos los de la ficha (regla 13)."
-      ],
       "ultimo_costo_cop": 575000,
       "visto_por_ultima_vez": "2026-10-02",
       "fecha_alta": "2026-10-02",
-      "bloques": []
+      "bloques": [],
+      "supuestos_colores": [
+        "colores: Paleta oficial de mi.com/co; la lista no marcaba color: se asumen todos los de la ficha (regla 13)."
+      ],
+      "supuestos_investigacion": [
+        "la lista no traía RAM ni red; la ficha oficial en mi.com/co solo vende 128GB en el Note 15 4G de 6GB+128GB (el 5G es solo 8GB+256GB)"
+      ],
+      "colores_de_la_lista": []
     },
     "xiaomi-redmi-note-15-4g-8gb-ram-256gb": {
       "titulo": "Xiaomi Redmi Note 15 4G 8GB RAM 256GB",
@@ -5511,15 +5677,17 @@
         "Verde Bosque"
       ],
       "fecha_precio": "2026-10-02",
-      "supuestos_investigacion": [
-        "colores: Paleta oficial de mi.com/co; la lista no marcaba color: se asumen todos los de la ficha (regla 13)."
-      ],
       "ultimo_costo_cop": 685000,
       "visto_por_ultima_vez": "2026-10-02",
       "fecha_alta": "2026-10-02",
       "bloques": [
         "ANDROID"
-      ]
+      ],
+      "supuestos_colores": [
+        "colores: Paleta oficial de mi.com/co; la lista no marcaba color: se asumen todos los de la ficha (regla 13)."
+      ],
+      "supuestos_investigacion": [],
+      "colores_de_la_lista": []
     },
     "xiaomi-redmi-note-15-pro-4g-12gb-ram-512gb": {
       "titulo": "Xiaomi Redmi Note 15 Pro 4G 12GB RAM 512GB",
@@ -5555,13 +5723,15 @@
         "Gris titanio"
       ],
       "fecha_precio": "2026-10-02",
-      "supuestos_investigacion": [
-        "colores: Paleta oficial de mi.com/co; la lista no marcaba color: se asumen todos los de la ficha (regla 13)."
-      ],
       "ultimo_costo_cop": 950000,
       "visto_por_ultima_vez": "2026-10-02",
       "fecha_alta": "2026-10-02",
-      "bloques": []
+      "bloques": [],
+      "supuestos_colores": [
+        "colores: Paleta oficial de mi.com/co; la lista no marcaba color: se asumen todos los de la ficha (regla 13)."
+      ],
+      "supuestos_investigacion": [],
+      "colores_de_la_lista": []
     },
     "xiaomi-redmi-note-15-pro-plus-5g-8gb-ram-256gb": {
       "titulo": "Xiaomi Redmi Note 15 Pro+ 5G 8GB RAM 256GB",
@@ -5583,15 +5753,17 @@
         "Café moca"
       ],
       "fecha_precio": null,
-      "supuestos_investigacion": [
-        "colores: Paleta oficial de mi.com/co; la lista no marcaba color: se asumen todos los de la ficha (regla 13)."
-      ],
       "ultimo_costo_cop": 1310000,
       "visto_por_ultima_vez": "2026-10-02",
       "fecha_alta": "2026-10-02",
       "bloques": [
         "ANDROID"
-      ]
+      ],
+      "supuestos_colores": [
+        "colores: Paleta oficial de mi.com/co; la lista no marcaba color: se asumen todos los de la ficha (regla 13)."
+      ],
+      "supuestos_investigacion": [],
+      "colores_de_la_lista": []
     },
     "xiaomi-redmi-note-17-4g-6gb-ram-256gb": {
       "titulo": "Xiaomi Redmi Note 17 4G 6GB RAM 256GB",
@@ -5647,16 +5819,19 @@
         "Morado celestial"
       ],
       "fecha_precio": "2026-10-02",
-      "supuestos_investigacion": [
-        "la línea dice (6+6+256), pero la ficha oficial de mi.com/co no declara RAM extendida: no se publica",
-        "colores: Paleta oficial de mi.com/co; la lista no marcaba color: se asumen todos los de la ficha (regla 13)."
-      ],
       "ultimo_costo_cop": 690000,
       "visto_por_ultima_vez": "2026-10-02",
       "fecha_alta": "2026-10-02",
       "bloques": [
         "ANDROID"
-      ]
+      ],
+      "supuestos_colores": [
+        "colores: Paleta oficial de mi.com/co; la lista no marcaba color: se asumen todos los de la ficha (regla 13)."
+      ],
+      "supuestos_investigacion": [
+        "la línea dice (6+6+256), pero la ficha oficial de mi.com/co no declara RAM extendida: no se publica"
+      ],
+      "colores_de_la_lista": []
     },
     "xiaomi-redmi-pad-2-11-4g-4gb-ram-128gb": {
       "titulo": "Xiaomi Redmi Pad 2 11\" 4G 4GB RAM 128GB",
@@ -5691,16 +5866,19 @@
         "Gris grafito"
       ],
       "fecha_precio": "2026-10-02",
-      "supuestos_investigacion": [
-        "la línea dice «PAD 2\"» sin pulgadas: el Redmi Pad 2 4G es de 11\"",
-        "colores: Paleta oficial publicada en la ficha de especificaciones de mi.com/co (https://www.mi.com/co/product/redmi-pad-2-4g/specs/); la línea del proveedor no trae colores, así que se asumen disponibles los de la ficha y hay que confirmarlos con el proveedor."
-      ],
       "ultimo_costo_cop": 660000,
       "visto_por_ultima_vez": "2026-10-02",
       "fecha_alta": "2026-10-02",
       "bloques": [
         "ANDROID"
-      ]
+      ],
+      "supuestos_colores": [
+        "colores: Paleta oficial publicada en la ficha de especificaciones de mi.com/co (https://www.mi.com/co/product/redmi-pad-2-4g/specs/); la línea del proveedor no trae colores, así que se asumen disponibles los de la ficha y hay que confirmarlos con el proveedor."
+      ],
+      "supuestos_investigacion": [
+        "la línea dice «PAD 2\"» sin pulgadas: el Redmi Pad 2 4G es de 11\""
+      ],
+      "colores_de_la_lista": []
     },
     "xiaomi-redmi-pad-2-11-4gb-ram-128gb-bundle": {
       "titulo": "Xiaomi Redmi Pad 2 11\" 4GB RAM 128GB (bundle)",
@@ -5720,15 +5898,17 @@
         "Gris grafito"
       ],
       "fecha_precio": null,
-      "supuestos_investigacion": [
-        "colores: Colores comunes a las dos versiones de 11 pulgadas en mi.com/co (https://www.mi.com/co/product/redmi-pad-2/specs/ y https://www.mi.com/co/product/redmi-pad-2-4g/specs/): la Wi-Fi suma Púrpura lavanda, pero no se sabe cuál versión trae el paquete. La línea del proveedor no trae colores: hay que confirmarlos con él."
-      ],
       "ultimo_costo_cop": 620000,
       "visto_por_ultima_vez": "2026-10-02",
       "fecha_alta": "2026-10-02",
       "bloques": [
         "ANDROID"
-      ]
+      ],
+      "supuestos_colores": [
+        "colores: Colores comunes a las dos versiones de 11 pulgadas en mi.com/co (https://www.mi.com/co/product/redmi-pad-2/specs/ y https://www.mi.com/co/product/redmi-pad-2-4g/specs/): la Wi-Fi suma Púrpura lavanda, pero no se sabe cuál versión trae el paquete. La línea del proveedor no trae colores: hay que confirmarlos con él."
+      ],
+      "supuestos_investigacion": [],
+      "colores_de_la_lista": []
     },
     "xiaomi-redmi-pad-2-11-wifi-8gb-ram-256gb": {
       "titulo": "Xiaomi Redmi Pad 2 11\" WiFi 8GB RAM 256GB",
@@ -5772,16 +5952,19 @@
         "Gris grafito"
       ],
       "fecha_precio": "2026-10-02",
-      "supuestos_investigacion": [
-        "la línea dice «PAD 2\"» sin pulgadas: el Redmi Pad 2 WiFi de 8GB+256GB es de 11\"",
-        "colores: Paleta oficial publicada en la ficha de especificaciones de mi.com/co (https://www.mi.com/co/product/redmi-pad-2/specs/); la línea del proveedor no trae colores, así que se asumen disponibles los de la ficha y hay que confirmarlos con el proveedor."
-      ],
       "ultimo_costo_cop": 690000,
       "visto_por_ultima_vez": "2026-10-02",
       "fecha_alta": "2026-10-02",
       "bloques": [
         "ANDROID"
-      ]
+      ],
+      "supuestos_colores": [
+        "colores: Paleta oficial publicada en la ficha de especificaciones de mi.com/co (https://www.mi.com/co/product/redmi-pad-2/specs/); la línea del proveedor no trae colores, así que se asumen disponibles los de la ficha y hay que confirmarlos con el proveedor."
+      ],
+      "supuestos_investigacion": [
+        "la línea dice «PAD 2\"» sin pulgadas: el Redmi Pad 2 WiFi de 8GB+256GB es de 11\""
+      ],
+      "colores_de_la_lista": []
     },
     "xiaomi-redmi-pad-2-9-7-wifi-4gb-ram-128gb": {
       "titulo": "Xiaomi Redmi Pad 2 9.7\" WiFi 4GB RAM 128GB",
@@ -5811,16 +5994,19 @@
         "Gris grafito"
       ],
       "fecha_precio": "2026-10-02",
-      "supuestos_investigacion": [
-        "la lista no dice la red; mi.com/co solo publica el Redmi Pad 2 9.7 en WiFi",
-        "colores: Paleta oficial publicada en la ficha de especificaciones de mi.com/co (https://www.mi.com/co/product/redmi-pad-2-9-7-inch/specs/); la línea del proveedor no trae colores, así que se asumen disponibles los de la ficha y hay que confirmarlos con el proveedor."
-      ],
       "ultimo_costo_cop": 460000,
       "visto_por_ultima_vez": "2026-10-02",
       "fecha_alta": "2026-10-02",
       "bloques": [
         "ANDROID"
-      ]
+      ],
+      "supuestos_colores": [
+        "colores: Paleta oficial publicada en la ficha de especificaciones de mi.com/co (https://www.mi.com/co/product/redmi-pad-2-9-7-inch/specs/); la línea del proveedor no trae colores, así que se asumen disponibles los de la ficha y hay que confirmarlos con el proveedor."
+      ],
+      "supuestos_investigacion": [
+        "la lista no dice la red; mi.com/co solo publica el Redmi Pad 2 9.7 en WiFi"
+      ],
+      "colores_de_la_lista": []
     },
     "xiaomi-redmi-pad-2-pro-12-1-wifi-8gb-ram-256gb": {
       "titulo": "Xiaomi Redmi Pad 2 Pro 12.1\" WiFi 8GB RAM 256GB",
@@ -5862,16 +6048,19 @@
         "Gris grafito"
       ],
       "fecha_precio": "2026-10-02",
-      "supuestos_investigacion": [
-        "la lista dice 11\"; el Redmi Pad 2 Pro es de 12,1\"",
-        "colores: Paleta oficial publicada en la ficha de especificaciones de mi.com/co (https://www.mi.com/co/product/redmi-pad-2-pro/specs/); la línea del proveedor no trae colores, así que se asumen disponibles los de la ficha y hay que confirmarlos con el proveedor."
-      ],
       "ultimo_costo_cop": 935000,
       "visto_por_ultima_vez": "2026-10-02",
       "fecha_alta": "2026-10-02",
       "bloques": [
         "ANDROID"
-      ]
+      ],
+      "supuestos_colores": [
+        "colores: Paleta oficial publicada en la ficha de especificaciones de mi.com/co (https://www.mi.com/co/product/redmi-pad-2-pro/specs/); la línea del proveedor no trae colores, así que se asumen disponibles los de la ficha y hay que confirmarlos con el proveedor."
+      ],
+      "supuestos_investigacion": [
+        "la lista dice 11\"; el Redmi Pad 2 Pro es de 12,1\""
+      ],
+      "colores_de_la_lista": []
     },
     "xiaomi-redmi-watch-5-active": {
       "titulo": "Xiaomi Redmi Watch 5 Active",
@@ -5918,15 +6107,17 @@
         "Plateado mate"
       ],
       "fecha_precio": "2026-10-02",
-      "supuestos_investigacion": [
-        "colores: Paleta oficial publicada en la ficha de especificaciones de mi.com/co (https://www.mi.com/co/product/redmi-watch-5-active/specs/); la línea del proveedor no trae colores, así que se asumen disponibles los de la ficha y hay que confirmarlos con el proveedor."
-      ],
       "ultimo_costo_cop": 125000,
       "visto_por_ultima_vez": "2026-10-02",
       "fecha_alta": "2026-10-02",
       "bloques": [
         "VARIEDAD"
-      ]
+      ],
+      "supuestos_colores": [
+        "colores: Paleta oficial publicada en la ficha de especificaciones de mi.com/co (https://www.mi.com/co/product/redmi-watch-5-active/specs/); la línea del proveedor no trae colores, así que se asumen disponibles los de la ficha y hay que confirmarlos con el proveedor."
+      ],
+      "supuestos_investigacion": [],
+      "colores_de_la_lista": []
     },
     "xiaomi-redmi-watch-5-lite": {
       "titulo": "Xiaomi Redmi Watch 5 Lite",
@@ -5956,15 +6147,17 @@
         "Dorado claro"
       ],
       "fecha_precio": "2026-10-02",
-      "supuestos_investigacion": [
-        "colores: Paleta oficial publicada en la ficha de especificaciones de mi.com/co (https://www.mi.com/co/product/redmi-watch-5-lite/specs/); la línea del proveedor no trae colores, así que se asumen disponibles los de la ficha y hay que confirmarlos con el proveedor."
-      ],
       "ultimo_costo_cop": 175000,
       "visto_por_ultima_vez": "2026-10-02",
       "fecha_alta": "2026-10-02",
       "bloques": [
         "VARIEDAD"
-      ]
+      ],
+      "supuestos_colores": [
+        "colores: Paleta oficial publicada en la ficha de especificaciones de mi.com/co (https://www.mi.com/co/product/redmi-watch-5-lite/specs/); la línea del proveedor no trae colores, así que se asumen disponibles los de la ficha y hay que confirmarlos con el proveedor."
+      ],
+      "supuestos_investigacion": [],
+      "colores_de_la_lista": []
     },
     "xiaomi-redmi-watch-6": {
       "titulo": "Xiaomi Redmi Watch 6",
@@ -5995,16 +6188,19 @@
         "Azul Glaciar"
       ],
       "fecha_precio": "2026-10-02",
-      "supuestos_investigacion": [
-        "el proveedor lo escribe bajo Xiaomi, pero mi.com/co lo publica en la línea Redmi",
-        "colores: Paleta oficial publicada en la ficha de especificaciones de mi.com/co (https://www.mi.com/co/product/redmi-watch-6/specs/); la línea del proveedor no trae colores, así que se asumen disponibles los de la ficha y hay que confirmarlos con el proveedor."
-      ],
       "ultimo_costo_cop": 275000,
       "visto_por_ultima_vez": "2026-10-02",
       "fecha_alta": "2026-10-02",
       "bloques": [
         "VARIEDAD"
-      ]
+      ],
+      "supuestos_colores": [
+        "colores: Paleta oficial publicada en la ficha de especificaciones de mi.com/co (https://www.mi.com/co/product/redmi-watch-6/specs/); la línea del proveedor no trae colores, así que se asumen disponibles los de la ficha y hay que confirmarlos con el proveedor."
+      ],
+      "supuestos_investigacion": [
+        "el proveedor lo escribe bajo Xiaomi, pero mi.com/co lo publica en la línea Redmi"
+      ],
+      "colores_de_la_lista": []
     },
     "xiaomi-redmi-watch-6-active": {
       "titulo": "Xiaomi Redmi Watch 6 Active",
@@ -6035,16 +6231,19 @@
         "Naranja atardecer"
       ],
       "fecha_precio": "2026-10-02",
-      "supuestos_investigacion": [
-        "el proveedor lo escribe bajo Xiaomi, pero mi.com/co lo publica en la línea Redmi",
-        "colores: Paleta oficial publicada en la ficha de especificaciones de mi.com/co (https://www.mi.com/co/product/redmi-watch-6-active/specs/); la línea del proveedor no trae colores, así que se asumen disponibles los de la ficha y hay que confirmarlos con el proveedor."
-      ],
       "ultimo_costo_cop": 135000,
       "visto_por_ultima_vez": "2026-10-02",
       "fecha_alta": "2026-10-02",
       "bloques": [
         "VARIEDAD"
-      ]
+      ],
+      "supuestos_colores": [
+        "colores: Paleta oficial publicada en la ficha de especificaciones de mi.com/co (https://www.mi.com/co/product/redmi-watch-6-active/specs/); la línea del proveedor no trae colores, así que se asumen disponibles los de la ficha y hay que confirmarlos con el proveedor."
+      ],
+      "supuestos_investigacion": [
+        "el proveedor lo escribe bajo Xiaomi, pero mi.com/co lo publica en la línea Redmi"
+      ],
+      "colores_de_la_lista": []
     },
     "xiaomi-redmi-watch-6-lite": {
       "titulo": "Xiaomi Redmi Watch 6 Lite",
@@ -6074,16 +6273,19 @@
         "Gris acero"
       ],
       "fecha_precio": "2026-10-02",
-      "supuestos_investigacion": [
-        "el proveedor lo escribe bajo Xiaomi, pero mi.com/co lo publica en la línea Redmi",
-        "colores: Paleta oficial publicada en la ficha de especificaciones de mi.com/co (https://www.mi.com/co/product/redmi-watch-6-lite/specs/); la línea del proveedor no trae colores, así que se asumen disponibles los de la ficha y hay que confirmarlos con el proveedor."
-      ],
       "ultimo_costo_cop": 195000,
       "visto_por_ultima_vez": "2026-10-02",
       "fecha_alta": "2026-10-02",
       "bloques": [
         "VARIEDAD"
-      ]
+      ],
+      "supuestos_colores": [
+        "colores: Paleta oficial publicada en la ficha de especificaciones de mi.com/co (https://www.mi.com/co/product/redmi-watch-6-lite/specs/); la línea del proveedor no trae colores, así que se asumen disponibles los de la ficha y hay que confirmarlos con el proveedor."
+      ],
+      "supuestos_investigacion": [
+        "el proveedor lo escribe bajo Xiaomi, pero mi.com/co lo publica en la línea Redmi"
+      ],
+      "colores_de_la_lista": []
     },
     "xiaomi-smart-band-10": {
       "titulo": "Xiaomi Smart Band 10",
@@ -6126,15 +6328,17 @@
         "Rosa Místico"
       ],
       "fecha_precio": "2026-10-02",
-      "supuestos_investigacion": [
-        "colores: Paleta de la versión estándar de la Band 10 publicada en la ficha de mi.com/co (https://www.mi.com/co/product/xiaomi-smart-band-10/specs/); se excluyen Oro Glimmer y Blanco Perla, que son de otras ediciones. La línea del proveedor no trae colores: hay que confirmarlos con él."
-      ],
       "ultimo_costo_cop": 160000,
       "visto_por_ultima_vez": "2026-10-02",
       "fecha_alta": "2026-10-02",
       "bloques": [
         "VARIEDAD"
-      ]
+      ],
+      "supuestos_colores": [
+        "colores: Paleta de la versión estándar de la Band 10 publicada en la ficha de mi.com/co (https://www.mi.com/co/product/xiaomi-smart-band-10/specs/); se excluyen Oro Glimmer y Blanco Perla, que son de otras ediciones. La línea del proveedor no trae colores: hay que confirmarlos con él."
+      ],
+      "supuestos_investigacion": [],
+      "colores_de_la_lista": []
     },
     "xiaomi-smart-band-10-pro": {
       "titulo": "Xiaomi Smart Band 10 Pro",
@@ -6177,15 +6381,17 @@
         "Rosa"
       ],
       "fecha_precio": "2026-10-02",
-      "supuestos_investigacion": [
-        "colores: Paleta de la versión estándar publicada en la página del producto en mi.com/co (https://www.mi.com/co/product/xiaomi-smart-band-10-pro/), que la ficha de especificaciones no trae; se excluye la edición de cerámica. La línea del proveedor no trae colores: hay que confirmarlos con él."
-      ],
       "ultimo_costo_cop": 245000,
       "visto_por_ultima_vez": "2026-10-02",
       "fecha_alta": "2026-10-02",
       "bloques": [
         "VARIEDAD"
-      ]
+      ],
+      "supuestos_colores": [
+        "colores: Paleta de la versión estándar publicada en la página del producto en mi.com/co (https://www.mi.com/co/product/xiaomi-smart-band-10-pro/), que la ficha de especificaciones no trae; se excluye la edición de cerámica. La línea del proveedor no trae colores: hay que confirmarlos con él."
+      ],
+      "supuestos_investigacion": [],
+      "colores_de_la_lista": []
     },
     "xiaomi-smart-band-11-active": {
       "titulo": "Xiaomi Smart Band 11 Active",
@@ -6216,15 +6422,17 @@
         "Rosa Pomelo"
       ],
       "fecha_precio": "2026-10-02",
-      "supuestos_investigacion": [
-        "colores: Paleta oficial publicada en la ficha de especificaciones de mi.com/co (https://www.mi.com/co/product/xiaomi-smart-band-11-active/specs/); la línea del proveedor no trae colores, así que se asumen disponibles los de la ficha y hay que confirmarlos con el proveedor."
-      ],
       "ultimo_costo_cop": 110000,
       "visto_por_ultima_vez": "2026-10-02",
       "fecha_alta": "2026-10-02",
       "bloques": [
         "VARIEDAD"
-      ]
+      ],
+      "supuestos_colores": [
+        "colores: Paleta oficial publicada en la ficha de especificaciones de mi.com/co (https://www.mi.com/co/product/xiaomi-smart-band-11-active/specs/); la línea del proveedor no trae colores, así que se asumen disponibles los de la ficha y hay que confirmarlos con el proveedor."
+      ],
+      "supuestos_investigacion": [],
+      "colores_de_la_lista": []
     },
     "xiaomi-smart-band-9-active": {
       "titulo": "Xiaomi Smart Band 9 Active",
@@ -6270,15 +6478,17 @@
         "Verde"
       ],
       "fecha_precio": "2026-10-02",
-      "supuestos_investigacion": [
-        "colores: Paleta oficial publicada en la ficha de especificaciones de mi.com/co (https://www.mi.com/co/product/xiaomi-smart-band-9-active/specs/); la línea del proveedor no trae colores, así que se asumen disponibles los de la ficha y hay que confirmarlos con el proveedor."
-      ],
       "ultimo_costo_cop": 85000,
       "visto_por_ultima_vez": "2026-10-02",
       "fecha_alta": "2026-10-02",
       "bloques": [
         "VARIEDAD"
-      ]
+      ],
+      "supuestos_colores": [
+        "colores: Paleta oficial publicada en la ficha de especificaciones de mi.com/co (https://www.mi.com/co/product/xiaomi-smart-band-9-active/specs/); la línea del proveedor no trae colores, así que se asumen disponibles los de la ficha y hay que confirmarlos con el proveedor."
+      ],
+      "supuestos_investigacion": [],
+      "colores_de_la_lista": []
     },
     "xiaomi-smart-projector-l1": {
       "titulo": "Xiaomi Smart Projector L1",
@@ -6310,15 +6520,17 @@
       "meta_descripcion": "Xiaomi Smart Projector L1: proyector Full HD con Android TV, Google Cast, enfoque automático e imagen de hasta 120 pulgadas.",
       "colores_oficiales": [],
       "fecha_precio": "2026-10-02",
-      "supuestos_investigacion": [
-        "colores: Ni la ficha ni la página del producto en mi.com/co (https://www.mi.com/co/product/xiaomi-smart-projector-l1/) publican una paleta de colores: se vende en un solo acabado y la línea del proveedor no trae colores."
-      ],
       "ultimo_costo_cop": 750000,
       "visto_por_ultima_vez": "2026-10-02",
       "fecha_alta": "2026-10-02",
       "bloques": [
         "VARIEDAD"
-      ]
+      ],
+      "supuestos_colores": [
+        "colores: Ni la ficha ni la página del producto en mi.com/co (https://www.mi.com/co/product/xiaomi-smart-projector-l1/) publican una paleta de colores: se vende en un solo acabado y la línea del proveedor no trae colores."
+      ],
+      "supuestos_investigacion": [],
+      "colores_de_la_lista": []
     },
     "xiaomi-watch-s4-41mm": {
       "titulo": "Xiaomi Watch S4 41mm",
@@ -6375,15 +6587,17 @@
         "Dorado atardecer"
       ],
       "fecha_precio": "2026-10-02",
-      "supuestos_investigacion": [
-        "colores: Paleta oficial publicada en la ficha de especificaciones de mi.com/co (https://www.mi.com/co/product/xiaomi-watch-s4-41mm/specs/); la línea del proveedor no trae colores, así que se asumen disponibles los de la ficha y hay que confirmarlos con el proveedor."
-      ],
       "ultimo_costo_cop": 510000,
       "visto_por_ultima_vez": "2026-10-02",
       "fecha_alta": "2026-10-02",
       "bloques": [
         "VARIEDAD"
-      ]
+      ],
+      "supuestos_colores": [
+        "colores: Paleta oficial publicada en la ficha de especificaciones de mi.com/co (https://www.mi.com/co/product/xiaomi-watch-s4-41mm/specs/); la línea del proveedor no trae colores, así que se asumen disponibles los de la ficha y hay que confirmarlos con el proveedor."
+      ],
+      "supuestos_investigacion": [],
+      "colores_de_la_lista": []
     }
   }
 }

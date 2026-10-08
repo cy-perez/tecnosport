@@ -26,6 +26,7 @@ Sin `--escribir` solo dice qué cambiaría.
 
 import argparse
 import json
+import re
 import sys
 from copy import deepcopy
 from datetime import date, timedelta
@@ -46,7 +47,43 @@ INVESTIGADO = (
     "precio_mercado_cop", "nivel_precio", "fuentes_precio", "notas_precio",
     "descripcion", "meta_titulo", "meta_descripcion", "colores_oficiales",
 )
+PRECIO = ("precio_mercado_cop", "nivel_precio", "fuentes_precio", "notas_precio", "fecha_precio")
 DINERO = ("precio_mercado_cop", "ultimo_costo_cop")
+
+# Un supuesto que habla del precio o cita una línea es de esa lista, no del
+# producto: «precio tomado del bloque PRECIOS DE VENTA (línea 530 …)» es falso en
+# la lista siguiente. Se queda en la corrida y no entra a la base.
+RE_SUPUESTO_DE_LA_LISTA = re.compile(r"l[ií]nea\s+\d|precio|\$", re.I)
+
+# La sección de colores que redactar_fichas.py escribe en la descripción.
+SECCIONES_DESPUES_DE_COLORES = ("## Contenido de la caja", "## Garantía")
+RE_SECCION_COLORES = re.compile(r"## Colores\n\nDisponible en [^\n]*\.\n(?:\n|$)")
+
+
+def con_colores(descripcion: str, colores) -> str:
+    """La descripción con la sección de colores que corresponde a `colores`.
+
+    La descripción lleva los colores escritos dentro; si cambian, la sección tiene
+    que cambiar con ellos o se publica un color que no hay. Si la sección está,
+    se reemplaza en su sitio; sin colores, se va. Si no estaba, entra antes de la
+    primera sección que redactar_fichas.py escribe después de ella.
+    """
+    descripcion = descripcion or ""
+    bloque = ("## Colores\n\nDisponible en " + ", ".join(colores) + ".\n\n") if colores else ""
+    m = RE_SECCION_COLORES.search(descripcion)
+    if m:
+        if not descripcion[m.end():]:
+            # Era la última sección: un solo salto al final, con o sin colores.
+            antes = descripcion[:m.start()]
+            return antes + bloque[:-1] if bloque else antes.rstrip("\n") + "\n"
+        return descripcion[:m.start()] + bloque + descripcion[m.end():]
+    if not bloque:
+        return descripcion
+    for siguiente in SECCIONES_DESPUES_DE_COLORES:
+        i = descripcion.find(siguiente)
+        if i >= 0:
+            return descripcion[:i] + bloque + descripcion[i:]
+    return descripcion.rstrip("\n") + "\n\n" + bloque[:-1]
 
 
 def precio_vigente(entrada: dict, hoy: date) -> bool:
@@ -62,10 +99,16 @@ def consolidar(base: dict, datos: dict, hoy: date):
     Terminado es con descripción: es lo último que se escribe en el paso 4. Lo
     demás queda fuera y se informa, para que no se pierda en silencio.
 
-    La fecha del precio es `hoy` solo si el precio se investigó en esta corrida.
-    Si `comparar_lista` lo heredó de la base, el producto trae su `fecha_precio`
-    y se conserva: rejuvenecerlo haría que un precio no venciera nunca.
+    La fecha del precio es la de la consulta, que asignar_precios.py escribe en
+    el producto, o la que heredó de la base. `hoy` es solo el último recurso, para
+    un precio que llegó sin fecha: consolidar días después no puede rejuvenecerlo.
+
+    Se niega a correr sin la comparación: sin `supuestos_lista` no hay cómo
+    separar los supuestos del parser de los de la investigación.
     """
+    if not datos.get("comparacion"):
+        raise ValueError("Esta corrida no pasó por comparar_lista.py: sin eso no se pueden separar "
+                         "los supuestos del parser de los de la investigación. Córrelo antes del paso 4.")
     nueva = deepcopy(base)
     resumen = {"altas": 0, "actualizados": 0, "sin_terminar": []}
     fecha_lista = datos.get("fecha_lista") or hoy.isoformat()
@@ -78,14 +121,33 @@ def consolidar(base: dict, datos: dict, hoy: date):
         entrada = {campo: deepcopy(p.get(campo)) for campo in INVESTIGADO}
         entrada["fecha_precio"] = (
             (p.get("fecha_precio") or hoy.isoformat()) if p.get("precio_mercado_cop") else None)
+        if not p.get("precio_mercado_cop") and anterior and anterior.get("precio_mercado_cop"):
+            # El paso 4 no encontró precio: se conserva el anterior, con su fecha,
+            # como referencia. Ya está vencido, así que la lista siguiente lo pide.
+            for campo in PRECIO:
+                entrada[campo] = deepcopy(anterior.get(campo))
+        entrada["descripcion"] = con_colores(entrada["descripcion"], entrada["colores_oficiales"])
+
         de_la_lista = set(p.get("supuestos_lista") or [])
-        entrada["supuestos_investigacion"] = [s for s in p.get("supuestos") or [] if s not in de_la_lista]
+        investigados = [s for s in p.get("supuestos") or [] if s not in de_la_lista]
+        entrada["supuestos_colores"] = [s for s in investigados if s.startswith("colores")]
+        entrada["supuestos_investigacion"] = [
+            s for s in investigados if not s.startswith("colores") and not RE_SUPUESTO_DE_LA_LISTA.search(s)]
+        # Los colores que marcaba la lista: los oficiales solo se heredan mientras
+        # la lista marque los mismos (ver comparar_lista.py).
+        entrada["colores_de_la_lista"] = list(p.get("colores_familia") or [])
+
         # El mensaje de la lista en que suele venir: es lo que permite decir que
         # desapareció. Un producto que hoy llegó solo en un aviso no lo pierde.
         entrada["bloques"] = p.get("bloques") or (anterior or {}).get("bloques") or []
         entrada["ultimo_costo_cop"] = p.get("precio_proveedor_cop")
         entrada["visto_por_ultima_vez"] = fecha_lista
         entrada["fecha_alta"] = anterior["fecha_alta"] if anterior else fecha_lista
+        if anterior and fecha_lista < anterior["visto_por_ultima_vez"]:
+            # Una lista más vieja que la última vista —se volvió a consolidar para
+            # corregir una descripción— no hace retroceder lo que mueve la lista.
+            for campo in ("bloques", "ultimo_costo_cop", "visto_por_ultima_vez", "colores_de_la_lista"):
+                entrada[campo] = deepcopy(anterior.get(campo))
         nueva[p["id"]] = entrada
         resumen["actualizados" if anterior else "altas"] += 1
     return nueva, resumen
@@ -106,8 +168,9 @@ def validar(base: dict) -> dict:
                 errores.append(f"{clave}: precio de mercado sin fecha_precio; no se sabría si venció")
             if not e.get("fuentes_precio"):
                 errores.append(f"{clave}: precio de mercado sin fuentes; no se podría defender")
-        if not isinstance(e.get("bloques"), list):
-            errores.append(f"{clave}: bloques tiene que ser una lista")
+        for campo in ("bloques", "colores_de_la_lista", "supuestos_colores", "supuestos_investigacion"):
+            if not isinstance(e.get(campo), list):
+                errores.append(f"{clave}: {campo} tiene que ser una lista")
         for campo in ("visto_por_ultima_vez", "fecha_alta"):
             if not e.get(campo):
                 errores.append(f"{clave}: falta {campo}")
