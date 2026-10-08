@@ -68,6 +68,7 @@
     "transferencia_manual_detalle": "Available for Nequi, DaviPlata or a BBVA savings account. You send the receipt and we confirm the payment.",
     "contraentrega": "Pay on delivery",
     "volver": "‹ Edit address",
+    "volver_transportadora": "‹ Change carrier",
     "error": "We couldn't check the available payment methods. Please try again.",
     "sin_opciones": "No payment methods are available for this order.",
     "continuar": "Continue",
@@ -95,8 +96,12 @@
   },
   "transportadora": {
     "titulo": "Choose the carrier",
-    "descripcion": "The shipping cost depends on the company that delivers your order. Choose one to continue.",
-    "cerrar": "Close"
+    "descripcion": "The shipping cost depends on the company that delivers your order.",
+    "volver": "‹ Edit address",
+    "error": "We couldn't check the carriers. Please try again.",
+    "sin_opciones": "No carrier quotes this shipment right now. Go back to the summary and check the address.",
+    "elige": "Choose a carrier to continue.",
+    "continuar": "Continue"
   },
   "confirmar": {
     "con_transportadora": "With {{transportadora}}",

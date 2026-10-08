@@ -432,7 +432,8 @@ ese día**. Va en `SKYDROPX_URL_BASE`, nunca incrustado.
    redondeado hacia arriba al kilo (`ADR-0071`, abajo).
 3. **El comprador elige la transportadora** (`ADR-0073`, desde el 8 de octubre de
    2026; antes el servidor tomaba la más económica). Ve una opción por
-   transportadora con su costo, en un popover al pulsar «Continuar», y lo único
+   transportadora con su costo, en su propia página entre el resumen y el método
+   de pago, y lo único
    que viaja al crear el pedido es el nombre: el servidor vuelve a cotizar y toma
    la tarifa de esa, o responde 409 `TRANSPORTADORA_NO_DISPONIBLE` si ya no
    cotiza. Sin elección, la más económica.

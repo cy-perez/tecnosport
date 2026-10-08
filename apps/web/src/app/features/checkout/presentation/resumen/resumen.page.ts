@@ -4,10 +4,8 @@ import {
   Component,
   computed,
   effect,
-  ElementRef,
   inject,
   signal,
-  viewChild,
 } from '@angular/core';
 import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -37,10 +35,10 @@ import { usarCotizacionEnvio } from '../../application/cotizacion-envio.consulta
 import { usarModalidadesDeEntrega } from '../../application/modalidades-entrega.consulta';
 import { TsSalidaSinEnvio } from '../salida-sin-envio/ts-salida-sin-envio';
 import {
-  ID_POPOVER_TRANSPORTADORA,
-  TsPopoverTransportadora,
-} from '../selector-transportadora/ts-popover-transportadora';
-import { CotizacionEnvio, CotizarEnvioComando } from '../../domain/envio.model';
+  CotizacionEnvio,
+  CotizarEnvioComando,
+  opcionDeTransportadora,
+} from '../../domain/envio.model';
 import { DEPARTAMENTOS, municipiosDeDepartamento } from '../../domain/geografia-co';
 import { Direccion, TipoEntrega } from '../../domain/pedido.model';
 import { requiereDireccion as tipoEntregaRequiereDireccion } from '../../domain/reglas-pedido';
@@ -75,7 +73,6 @@ interface ValoresDireccion {
     TsSelect,
     TsSelectControl,
     TsSalidaSinEnvio,
-    TsPopoverTransportadora,
     RouterLink,
   ],
   templateUrl: './resumen.page.html',
@@ -512,15 +509,8 @@ export class ResumenPage {
    */
   protected readonly esperandoCotizacion = signal(false);
 
-  /**
-   * El popover de transportadoras (ADR-0073) se abre al pulsar «Continuar» con un envío a domicilio
-   * ya cotizado, anclado a ese botón. Elegir es lo que guarda los datos y sigue: cerrarlo sin
-   * elegir deja al comprador donde estaba.
-   */
-  protected readonly eligiendoTransportadora = signal(false);
-  protected readonly botonContinuar = viewChild('continuar', { read: ElementRef });
-  protected readonly opcionesDeEnvio = computed(() => this.tarifa()?.opciones ?? []);
-  protected readonly idPopoverTransportadora = ID_POPOVER_TRANSPORTADORA;
+  /** Las transportadoras que cotizaron, para decidir si hace falta el paso de elegir una. */
+  private readonly opcionesDeEnvio = computed(() => this.tarifa()?.opciones ?? []);
 
   constructor() {
     // Recordar la última cotización buena para poder decir cuánto se ahorra
@@ -607,26 +597,27 @@ export class ResumenPage {
       return;
     }
 
-    // A domicilio se elige transportadora antes de seguir. Una tarifa sin opciones —un servidor
-    // anterior a ADR-0073— sigue como antes, con la más económica.
+    // A domicilio, el siguiente paso es elegir la transportadora, en su propia página (ADR-0073).
+    // Una tarifa sin opciones —un servidor anterior a ese ADR— sigue como antes, con la más
+    // económica y directo al método de pago.
     if (this.requiereDireccion() && this.opcionesDeEnvio().length > 0) {
-      // Si se pulsó mientras cotizaba, el botón estuvo deshabilitado (`cargando`) y el foco se fue
-      // al `<body>`. Spartan recuerda el elemento con foco al abrir para devolverlo al cerrar, y el
-      // `<body>` no lo acepta: quien cierra con Escape se quedaba sin foco en ninguna parte. Se
-      // devuelve al botón antes de abrir, que es donde tiene que volver.
-      this.botonContinuar()?.nativeElement.querySelector('button')?.focus();
-      this.eligiendoTransportadora.set(true);
+      this.continuarA('../transportadora', this.transportadoraQueSigueCotizando());
       return;
     }
-    this.continuarCon(null);
+    this.continuarA('../metodo-pago', null);
   }
 
-  protected elegirTransportadora(transportadora: string): void {
-    this.eligiendoTransportadora.set(false);
-    this.continuarCon(transportadora);
+  /**
+   * La que ya se había elegido, si quien vuelve desde la página de transportadoras a corregir algo
+   * la sigue teniendo entre las opciones. Si la dirección nueva ya no la cotiza, se suelta: dejarla
+   * marcada sería ofrecer como elegida una que el servidor va a rechazar.
+   */
+  private transportadoraQueSigueCotizando(): string | null {
+    const previa = this.checkout.datosEntrega()?.transportadora;
+    return previa && opcionDeTransportadora(this.opcionesDeEnvio(), previa) ? previa : null;
   }
 
-  private continuarCon(transportadora: string | null): void {
+  private continuarA(destino: string, transportadora: string | null): void {
     const valores = this.form.getRawValue();
     const direccion = this.direccionDesdeFormulario(valores.direccion);
 
@@ -639,7 +630,7 @@ export class ResumenPage {
       transportadora: this.requiereDireccion() ? transportadora : null,
     });
 
-    void this.router.navigate(['../metodo-pago'], { relativeTo: this.route });
+    void this.router.navigate([destino], { relativeTo: this.route });
   }
 
   private direccionDesdeFormulario(valores: ValoresDireccion): Direccion | null {

@@ -53,6 +53,20 @@ export class CheckoutStore {
     this.pedido.set(null);
   }
 
+  /**
+   * La transportadora que se eligió en su propia página (ADR-0073), sobre los datos de entrega que
+   * el resumen ya guardó. Descarta el método de pago y el pedido por lo mismo que
+   * `guardarDatosEntrega`: la contraentrega depende de si la elegida recauda, y un pedido creado
+   * con otra ya no sirve. Sin datos de entrega no hay a qué ponérsela, y no hace nada.
+   */
+  elegirTransportadora(transportadora: string): void {
+    const datos = this.datosEntrega();
+    if (!datos) {
+      return;
+    }
+    this.guardarDatosEntrega({ ...datos, transportadora });
+  }
+
   /** Mismo criterio que `datosEntrega`: en memoria, poblado por la página de
    * selección de método de pago para que la de creación del pedido lo lea. */
   readonly metodoPago = signal<MetodoPago | null>(null);

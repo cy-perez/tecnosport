@@ -1,0 +1,36 @@
+<section class="mx-auto max-w-contenido px-16 py-32">
+  <h1 class="m-0 mb-16 font-display text-2xl">
+    {{ 'checkout.transportadora.titulo' | transloco }}
+  </h1>
+
+  <a class="anillo-foco mb-24 inline-block text-ts-texto-suave" [routerLink]="['../resumen']">
+    {{ 'checkout.transportadora.volver' | transloco }}
+  </a>
+
+  @if (consulta.isPending()) {
+    <ts-esqueleto />
+  } @else if (consulta.isError()) {
+    <p class="text-ts-error" role="alert">{{ 'checkout.transportadora.error' | transloco }}</p>
+  } @else if (opciones().length === 0) {
+    <p class="text-ts-error" role="alert">
+      {{ 'checkout.transportadora.sin_opciones' | transloco }}
+    </p>
+  } @else {
+    <ts-selector-transportadora
+      [opciones]="opciones()"
+      [seleccionada]="seleccionada()"
+      [etiquetaGrupo]="'checkout.transportadora.descripcion' | transloco"
+      (seleccionCambio)="elegir($event)"
+    />
+
+    <!-- Región siempre presente, como en el método de pago: lo que cambia es el texto. -->
+    <p class="mt-16 mb-0 text-ts-error" role="status">
+      @if (faltaTransportadora()) {
+        {{ 'checkout.transportadora.elige' | transloco }}
+      }
+    </p>
+    <ts-boton class="mt-24 block" variante="primario" (click)="continuar()">
+      {{ 'checkout.transportadora.continuar' | transloco }}
+    </ts-boton>
+  }
+</section>
