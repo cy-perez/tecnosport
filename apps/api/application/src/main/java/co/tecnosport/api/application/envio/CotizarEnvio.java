@@ -63,7 +63,7 @@ public final class CotizarEnvio {
     List<Bulto> bultos =
         armador.armar(aEmpacar(comando)).stream().map(BultoDespachable::bulto).toList();
     return TarifaEnvio.unaPorTransportadora(
-        vigentes(destino, bultos, comando.conRecaudo(), Set.of()));
+        vigentes(destino, bultos, comando.conRecaudo(), Set.of(), null));
   }
 
   /**
@@ -97,7 +97,9 @@ public final class CotizarEnvio {
       boolean conRecaudo,
       Set<String> transportadorasExcluidas,
       String transportadora) {
-    List<TarifaEnvio> vigentes = vigentes(destino, bultos, conRecaudo, transportadorasExcluidas);
+    // Con una elegida, al cotizador le basta con esa: no espera a las demás (ADR-0021, punto 5).
+    List<TarifaEnvio> vigentes =
+        vigentes(destino, bultos, conRecaudo, transportadorasExcluidas, transportadora);
     if (transportadora == null || transportadora.isBlank()) {
       return TarifaEnvio.masEconomica(vigentes).orElseThrow();
     }
@@ -118,7 +120,9 @@ public final class CotizarEnvio {
       boolean conRecaudo,
       Set<String> transportadorasExcluidas,
       String preferida) {
-    List<TarifaEnvio> vigentes = vigentes(destino, bultos, conRecaudo, transportadorasExcluidas);
+    // Aquí se esperan todas: si la preferida no cotiza, la siguiente tiene que estar en la lista.
+    List<TarifaEnvio> vigentes =
+        vigentes(destino, bultos, conRecaudo, transportadorasExcluidas, null);
     List<TarifaEnvio> deLaPreferida =
         preferida == null
             ? List.of()
@@ -132,14 +136,15 @@ public final class CotizarEnvio {
       Direccion destino,
       List<Bulto> bultos,
       boolean conRecaudo,
-      Set<String> transportadorasExcluidas) {
+      Set<String> transportadorasExcluidas,
+      String transportadoraElegida) {
     Objects.requireNonNull(destino, "El destino de la cotización es obligatorio.");
     Objects.requireNonNull(transportadorasExcluidas, "Las excluidas no pueden ser nulas.");
     if (bultos == null || bultos.isEmpty()) {
       throw new IllegalArgumentException("Una cotización necesita al menos un bulto.");
     }
     ResultadoCotizacion resultado =
-        cotizador.cotizar(new CotizacionEnvio(destino, bultos, conRecaudo));
+        cotizador.cotizar(new CotizacionEnvio(destino, bultos, conRecaudo, transportadoraElegida));
 
     // Sin `default`: una respuesta nueva del proveedor tiene que romper la compilación aquí, que es
     // donde se decide qué se le dice al comprador.

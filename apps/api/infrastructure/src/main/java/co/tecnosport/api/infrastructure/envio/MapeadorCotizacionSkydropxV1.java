@@ -12,6 +12,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
@@ -192,6 +193,42 @@ final class MapeadorCotizacionSkydropxV1 implements MapeadorCotizacionSkydropx {
       tarifa(rate, ahora, conRecaudo).ifPresent(tarifas::add);
     }
     return Optional.of(List.copyOf(tarifas));
+  }
+
+  /**
+   * Medido el 7 de octubre de 2026 (docs/13 §6.5): Envía, Coordinadora y Servientrega tienen precio
+   * a los ~7 s, e Inter Rapidísimo se queda en {@code pending_to_zone} hasta los ~33 s para
+   * terminar sin cotizar. Quien ya eligió una de las tres no tiene por qué esperarlo.
+   *
+   * <p>"Pendiente" es cualquier {@code status} que empiece por {@code pending}, que son los que se
+   * han visto ({@code pending}, {@code pending_to_zone}). Uno desconocido sin precio no detiene
+   * nada, pero tampoco adelanta nada: hace falta al menos una tarifa con precio de la elegida.
+   */
+  @Override
+  public Optional<List<TarifaEnvio>> tarifasSiResuelta(
+      JsonNode respuestaDeSondeo, Instant ahora, String transportadoraElegida) {
+    Optional<List<TarifaEnvio>> completas = tarifasSiCompleto(respuestaDeSondeo, ahora);
+    if (completas.isPresent() || transportadoraElegida == null) {
+      return completas;
+    }
+
+    boolean conRecaudo = esVerdadero(respuestaDeSondeo.path("cash_on_delivery"));
+    List<TarifaEnvio> conPrecio = new ArrayList<>();
+    boolean laElegidaTienePrecio = false;
+    for (JsonNode rate : respuestaDeSondeo.path("rates")) {
+      String transportadora = primeroNoVacio(rate, "provider_display_name", "provider_name");
+      boolean esDeLaElegida =
+          transportadora
+              .toLowerCase(Locale.ROOT)
+              .equals(transportadoraElegida.trim().toLowerCase(Locale.ROOT));
+      if (esDeLaElegida && texto(rate.path("status")).startsWith("pending")) {
+        return Optional.empty();
+      }
+      Optional<TarifaEnvio> tarifa = tarifa(rate, ahora, conRecaudo);
+      tarifa.ifPresent(conPrecio::add);
+      laElegidaTienePrecio |= esDeLaElegida && tarifa.isPresent();
+    }
+    return laElegidaTienePrecio ? Optional.of(List.copyOf(conPrecio)) : Optional.empty();
   }
 
   /**

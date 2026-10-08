@@ -235,3 +235,25 @@ del tope, así que la espera real era la mitad de la escrita. Ahora es un intent
 segundo y 50 intentos, de modo que manda el tope; lo vigila
 `OrigenEnApplicationYmlTest.elTopeDeSondeoMandaSobreLosIntentos`. El checkout avisa
 mientras tanto que las transportadoras pueden tardar hasta un minuto.
+
+**Matizado el 8 de octubre de 2026: se espera a todas cuando hay que enseñarlas.**
+Desde `ADR-0073` el comprador elige la transportadora en el resumen, y desde ahí las
+dos cotizaciones que siguen —la de los métodos de pago, que se pide con recaudo para
+saber si hay contraentrega, y la de crear el pedido— solo usan la tarifa de la
+elegida. Esperar a Inter Rapidísimo para eso no protegía a nadie de una tarifa más
+barata, y costaba otros ~33 s por pantalla: medido en los registros de dev, las dos
+tardaban 32–36 s.
+
+- **Con una elegida, al adaptador le basta con esa** (`CotizacionEnvio.transportadoraElegida`).
+  El sondeo para en cuanto la elegida tiene precio y ninguna de sus tarifas sigue en
+  un estado `pending*`, aunque la cotización no haya completado. Si la elegida no
+  cotiza, no se adelanta nada y se espera a que complete: "no cotiza" sale siempre de
+  una respuesta final.
+- **Sin elegida se espera a todas, como antes**: las opciones del resumen, donde una
+  lenta puede ser la más barata, y la emisión de la guía, que si la preferida ya no
+  cotiza tiene que tener a la siguiente.
+- **El frontend adelanta la consulta**: elegir una transportadora ya pide los métodos
+  de pago, y la página siguiente encuentra la respuesta en la caché o se suma a la
+  petición en vuelo.
+
+Lo que sigue tardando lo mismo es la primera cotización, la del resumen.

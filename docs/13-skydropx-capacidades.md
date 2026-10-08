@@ -1556,6 +1556,11 @@ más. **Va al ADR**, con el tope de segundos que el checkout tolere.
 > Servientrega tenían precio a los ~7 s, e **Inter Rapidísimo se quedaba en `pending_to_zone`**
 > hasta los ~33 s, para terminar en `not_applicable`. `is_completed` llegaba a los 32,6–33,4 s,
 > y con la ventana de entonces (~5 s reales) ninguna cotización completaba.
+>
+> **Matizado el 8 de octubre de 2026 (`ADR-0021`, mismo punto):** con una transportadora ya
+> elegida —métodos de pago y crear el pedido— el sondeo para en cuanto esa tiene precio y
+> ninguna de sus tarifas sigue en `pending*`. Las opciones del resumen y la emisión siguen
+> esperando a todas.
 
 #### El `422` de 99 minutes era el mismo bug
 

@@ -40,4 +40,14 @@ interface MapeadorCotizacionSkydropx {
    * respuesta final.
    */
   Optional<List<TarifaEnvio>> tarifasSiCompleto(JsonNode respuestaDeSondeo, Instant ahora);
+
+  /**
+   * Como {@link #tarifasSiCompleto}, pero dándola por buena antes si a quien pregunta le basta con
+   * {@code transportadoraElegida} ({@code CotizacionEnvio#transportadoraElegida}): en cuanto esa
+   * tiene precio y ninguna de sus tarifas sigue pendiente, devuelve las que tengan precio hasta ese
+   * momento. Si la elegida no cotiza, no se adelanta nada y se espera a que la cotización complete:
+   * es el camino raro, y así "no cotiza" sale de una respuesta final y no de una a medias.
+   */
+  Optional<List<TarifaEnvio>> tarifasSiResuelta(
+      JsonNode respuestaDeSondeo, Instant ahora, String transportadoraElegida);
 }
