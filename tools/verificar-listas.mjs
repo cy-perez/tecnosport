@@ -17,7 +17,12 @@ import { fileURLToPath } from "node:url";
 import { buscarPython } from "./buscar-python.mjs";
 
 const RAIZ = fileURLToPath(new URL("..", import.meta.url));
-const PRUEBAS = join(RAIZ, ".claude/skills/listas-de-proveedor/pruebas");
+// Las dos skills que arman el catálogo de tecnología. La de fotos solo prueba aquí lo que
+// no pide OpenCV: preparar las carpetas de modelo y devolver los resultados a ellas.
+const PRUEBAS = [
+  join(RAIZ, ".claude/skills/listas-de-proveedor/pruebas"),
+  join(RAIZ, ".claude/skills/fotos-estudio-degradado/pruebas"),
+];
 
 const python = buscarPython();
 if (!python) {
@@ -33,8 +38,12 @@ if (!python) {
 }
 
 // `-B` para no dejar __pycache__ junto a los scripts de la skill en cada corrida.
-const resultado = spawnSync(python, ["-B", "-m", "unittest", "discover", "-s", PRUEBAS], {
-  stdio: "inherit",
-  env: { ...process.env, PYTHONIOENCODING: "utf-8" },
-});
-process.exit(resultado.status ?? 1);
+let estado = 0;
+for (const carpeta of PRUEBAS) {
+  const resultado = spawnSync(python, ["-B", "-m", "unittest", "discover", "-s", carpeta], {
+    stdio: "inherit",
+    env: { ...process.env, PYTHONIOENCODING: "utf-8" },
+  });
+  if (resultado.status !== 0) estado = resultado.status ?? 1;
+}
+process.exit(estado);
