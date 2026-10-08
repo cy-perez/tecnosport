@@ -4,7 +4,7 @@
 - Productos para publicar: 37
 - Descartados: 96
 - Duplicados fusionados: 0
-- Productos con algún supuesto aplicado: 7
+- Productos con algún supuesto aplicado: 8
 - Líneas sin clasificar: 0
 
 ## Productos para publicar
@@ -87,7 +87,8 @@
   - ⚠️ confirmar nombre comercial oficial del modelo
 - **Bose S1 Pro** — parlantes — 2.750.000 COP
   - ⚠️ confirmar nombre comercial oficial del modelo
-- **Proyector L1** — proyectores — 750.000 COP
+- **Xiaomi Smart Projector L1** — proyectores — 750.000 COP
+  - · asumido: la lista no trae marca; «Proyector L1» se toma como Xiaomi Smart Projector L1, referencia confirmada por el negocio (REFERENCIAS_SIN_MARCA)
   - ⚠️ confirmar nombre comercial oficial del modelo
 
 ## Descartados
