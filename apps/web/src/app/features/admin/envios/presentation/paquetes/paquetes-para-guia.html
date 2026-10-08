@@ -1,0 +1,57 @@
+<section class="mb-16" [attr.aria-labelledby]="'paquetes-' + pedidoId()">
+  <h3 class="mt-0 mb-8 text-base font-medio" [id]="'paquetes-' + pedidoId()">
+    {{ 'admin.paquetes_guia.titulo' | transloco }}
+  </h3>
+
+  @if (consulta.isPending()) {
+    <p class="text-ts-texto-suave">{{ 'admin.paquetes_guia.cargando' | transloco }}</p>
+  } @else if (error(); as mensaje) {
+    <p class="text-ts-error" role="alert">{{ mensaje }}</p>
+  } @else if (consulta.data(); as datos) {
+    <p class="mt-0 mb-8 text-ts-texto-suave">
+      {{ 'admin.paquetes_guia.ayuda' | transloco: { cuantos: datos.paquetes.length } }}
+    </p>
+    @if (datos.conRecaudo) {
+      <p class="mt-0 mb-8 font-medio">{{ 'admin.paquetes_guia.con_recaudo' | transloco }}</p>
+    }
+    <div class="overflow-x-auto">
+      <table
+        class="w-full border-collapse [&_:is(th,td)]:border-b [&_:is(th,td)]:border-ts-borde [&_:is(th,td)]:px-8 [&_:is(th,td)]:py-8 [&_:is(th,td)]:text-left"
+      >
+        <thead>
+          <tr>
+            <th scope="col">{{ 'admin.paquetes_guia.columnas.paquete' | transloco }}</th>
+            <th scope="col">{{ 'admin.paquetes_guia.columnas.empaque' | transloco }}</th>
+            <th scope="col">{{ 'admin.paquetes_guia.columnas.medidas' | transloco }}</th>
+            <th scope="col">{{ 'admin.paquetes_guia.columnas.peso' | transloco }}</th>
+            <th scope="col">{{ 'admin.paquetes_guia.columnas.valor_declarado' | transloco }}</th>
+            <th scope="col">{{ 'admin.paquetes_guia.columnas.contenido' | transloco }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (paquete of datos.paquetes; track $index) {
+            <tr>
+              <td>{{ $index + 1 }}</td>
+              <td>{{ 'admin.paquetes_guia.bolsa_plastica' | transloco }}</td>
+              <td>
+                {{
+                  'admin.paquetes_guia.centimetros'
+                    | transloco
+                      : { largo: paquete.largoCm, ancho: paquete.anchoCm, alto: paquete.altoCm }
+                }}
+              </td>
+              <td>{{ 'admin.paquetes_guia.kilos' | transloco: { peso: paquete.pesoKg } }}</td>
+              <td>
+                <ts-precio
+                  [valor]="paquete.valorDeclarado.valor"
+                  [moneda]="paquete.valorDeclarado.moneda"
+                />
+              </td>
+              <td>{{ paquete.contenido }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</section>

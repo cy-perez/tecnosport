@@ -1,3 +1,8 @@
+import {
+  REPOSITORIO_PAQUETES_PEDIDO,
+  RepositorioPaquetesPedido,
+} from '../../../envios/domain/repositorio-paquetes-pedido.puerto';
+import { PaquetesDePedido } from '../../../envios/domain/paquetes-de-pedido.model';
 import { ActivatedRoute, provideRouter, Router } from '@angular/router';
 import { TranslocoTestingModule } from '@jsverse/transloco';
 import { provideTanStackQuery, QueryClient } from '@tanstack/angular-query-experimental';
@@ -253,6 +258,26 @@ class RepositorioPedidosAdminFalso implements RepositorioPedidosAdmin {
 // El filtro de estado vive en la URL (ADR-0011): para distinguir "no hay
 // pedidos en ese estado" de "todavía no hay pedidos" hay que poder fijarlo,
 // mismo recurso que ya usa rejilla.page.spec.ts.
+
+/** Un solo paquete, el de un pedido contraentrega: lo que importa es que la fila los enseñe. */
+class RepositorioPaquetesFalso implements RepositorioPaquetesPedido {
+  async consultar(): Promise<PaquetesDePedido> {
+    return {
+      conRecaudo: true,
+      paquetes: [
+        {
+          pesoKg: 1,
+          largoCm: 40,
+          anchoCm: 30,
+          altoCm: 10,
+          valorDeclarado: { valor: 62_000, moneda: 'COP' },
+          contenido: 'Ropa deportiva',
+        },
+      ],
+    };
+  }
+}
+
 async function renderLista(
   items: PedidoAdmin[],
   queryParams: Record<string, string> = {},
@@ -284,6 +309,7 @@ async function renderListaCon(
       { provide: REPOSITORIO_RETRACTOS, useValue: new RepositorioRetractosVacio() },
       { provide: REPOSITORIO_GARANTIAS, useValue: new RepositorioGarantiasVacio() },
       { provide: REPOSITORIO_REVERSIONES, useValue: new RepositorioReversionesVacio() },
+      { provide: REPOSITORIO_PAQUETES_PEDIDO, useValue: new RepositorioPaquetesFalso() },
     ],
   });
   return { ...resultado, repositorio };
@@ -482,22 +508,23 @@ describe('ListaPedidosAdminPage', () => {
   });
 
   /**
-   * El botón pide la guía y **no despacha**: lo que vuelve es una emisión en curso. El aviso tiene
-   * que decirlo, porque si no quien despacha se queda esperando un número que no va a aparecer en
-   * esta pantalla.
+   * Mientras las guías se crean a mano en Skydropx (adr/0071), el botón de emitir por API no se
+   * ofrece: sería la forma de terminar con dos guías pagadas para el mismo pedido. En su lugar, la
+   * pantalla dice dónde se crea la guía y deja el formulario para registrarla.
    */
-  it('emitir la guía avisa de que el número todavía no existe', async () => {
+  it('mientras la guía se crea a mano no ofrece emitirla, y dice dónde se crea', async () => {
     const { repositorio } = await renderLista([
       pedidoDePrueba({ estado: 'EN_PREPARACION', tipoEntrega: 'ENVIO_A_DOMICILIO' }),
     ]);
     fireEvent.click(await screen.findByRole('button', { name: 'Ver detalle' }));
 
-    fireEvent.click(
-      await screen.findByRole('button', { name: 'Emitir guía con la transportadora' }),
-    );
-
-    expect(await screen.findByText(/Se le pidió la guía a Servientrega/)).toBeTruthy();
-    expect(repositorio.emisiones).toEqual([pedidoDePrueba().id]);
+    expect(await screen.findByText(/La guía se crea a mano en Skydropx/)).toBeTruthy();
+    // Y con qué crearla: los paquetes tal como se cotizaron, para copiarlos en la plataforma.
+    expect(await screen.findByText('40 × 30 × 10 cm')).toBeTruthy();
+    expect(screen.getByText('Ropa deportiva')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Emitir guía con la transportadora' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Despachar' })).toBeTruthy();
+    expect(repositorio.emisiones).toEqual([]);
   });
 
   /** El retiro en punto no tiene a dónde despachar, así que no se le ofrece emitir nada. */
@@ -509,6 +536,7 @@ describe('ListaPedidosAdminPage', () => {
 
     expect(await screen.findByRole('button', { name: 'Despachar' })).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Emitir guía con la transportadora' })).toBeNull();
+    expect(screen.queryByText(/La guía se crea a mano en Skydropx/)).toBeNull();
   });
 
   /**

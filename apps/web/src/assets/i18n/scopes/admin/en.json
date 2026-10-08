@@ -47,7 +47,10 @@
     "producto_de_proveedor_ya_existe": "This post is already a product in the catalogue: same title at the same price. Reject the draft.",
     "lote_en_curso": "The import is still being processed. Wait for it to finish before deleting it.",
     "pago_sin_pedido_ya_devuelto": "That payment already has its refund recorded.",
-    "inventario_sin_confirmar": "There is no stock for every line: restock and try again, or cancel with a refund."
+    "inventario_sin_confirmar": "There is no stock for every line: restock and try again, or cancel with a refund.",
+    "peso_de_referencia_no_admitido": "That category does not take a reference weight: it is electronics, which is measured product by product, or it has subcategories, and the weight goes on each of them.",
+    "articulo_sin_medidas": "An item in this order has no measurements and its category has no reference weight. Measure it, or set a weight for its category in \"Shipping weights and sizes\".",
+    "articulo_no_asegurable": "A package in this order is worth more than the carrier insures, so it cannot be shipped."
   },
   "iniciarSesion": {
     "titulo": "Admin panel",
@@ -74,7 +77,7 @@
     "ir_a_envios": "Shipment review",
     "ir_a_existencias": "Stock",
     "sinMedir": {
-      "aviso": "{{total}} catalog variant(s) have no package measurements, {{publicados}} of them on published products. Without weight and dimensions shipping cannot be quoted: they can only be handed over at the pickup point.",
+      "aviso": "{{total}} catalog variant(s) have no package measurements, {{publicados}} of them on published products. Clothing, footwear and bags are quoted with their category's average weight; electronics, and anything in a category without a weight, can only be handed over at the pickup point.",
       "enlace": "Review and measure"
     },
     "ir_a_marcas": "Brands",
@@ -89,7 +92,8 @@
     "navegacion": "Panel sections",
     "ir_a_proveedores": "Suppliers",
     "ir_a_ingestas": "Imports",
-    "ir_a_borradores": "Drafts"
+    "ir_a_borradores": "Drafts",
+    "ir_a_referencias_envio": "Shipping weights and sizes"
   },
   "pedidos": {
     "titulo": "Orders",
@@ -183,7 +187,8 @@
       "guia_requerida": "Enter the tracking number.",
       "costo_envio_requerido": "Enter what this shipment cost. If you do not know yet, enter 0 and fix it later.",
       "pagado_sin_inventario": "The payment arrived after the reservation expired and there was no stock. Once you restock, confirm it to prepare it; if there will be none, cancel it with a refund.",
-      "confirmar_inventario": "Confirm stock and prepare"
+      "confirmar_inventario": "Confirm stock and prepare",
+      "guia_en_plataforma": "The label is created by hand in Skydropx (Quote and create) with the packages below, and recorded here with its number."
     },
     "pagos_sin_pedido": {
       "titulo": "Payments to refund ({{cuantos}})",
@@ -365,7 +370,7 @@
     "capturar360": "Capture 360",
     "sinMedir": {
       "titulo": "Variants without measurements",
-      "explicacion": "A variant without weight and dimensions can still be sold, but only with pickup at the point: quoting home delivery is rejected and names it. Measurements are those of the packaged product, not the bare one.",
+      "explicacion": "A variant without weight and dimensions is still sold. If it is clothing, footwear or a bag, its shipping is quoted with its category's average weight (\"Shipping weights and sizes\"); if it is electronics, or its category has no weight, it can only be handed over at the pickup point. Measurements are those of the packed product, not the bare product.",
       "resumen": "{{total}} without measurements, {{publicados}} on already published products.",
       "ninguna": "Every variant has its measurements.",
       "medida": "Done: {{sku}} now has its measurements and home delivery can be quoted.",
@@ -415,7 +420,7 @@
     },
     "medidas": {
       "titulo": "Package measurements",
-      "explicacion": "Every active variant with the weight and dimensions of its box, whether it has them or not. Without all four figures shipping cannot be quoted and the product can only be handed over at the pickup point. A measurement already taken can be corrected here: if it is wrong, the wrong shipping cost is charged on every order of that variant.",
+      "explicacion": "Every active variant with the weight and dimensions of its box, whether it has them or not. Without all four figures, electronics cannot be quoted and can only be handed over at the pickup point; clothing, footwear and bags are quoted with the averages in \"Shipping weights and sizes\", and measuring them here only refines the shipping cost. A measurement already taken can be corrected: if it is wrong, the wrong shipping cost is charged on every order of that variant.",
       "resumen": "{{total}} active variant(s), {{sinMedir}} not measured.",
       "ninguna": "There are no active variants in the catalogue yet.",
       "errorLista": "We could not load the measurements. Please try again.",
@@ -1149,5 +1154,68 @@
       "error": "The draft could not be deleted. Try again.",
       "explicacionSinProducto": "Its product was already deleted: this draft no longer recognizes anything and only keeps the supplier's messages and photos. Deleting it frees them from the bucket."
     }
+  },
+  "referencias_envio": {
+    "titulo": "Shipping weights and sizes",
+    "explicacion": "Clothing, sports footwear and bags that have not been measured one by one are quoted with these averages: they all go in one bag with the sizes below, and the weight is the sum of each product’s average, rounded up to the next kilogram. Electronics do not use averages: they are measured from the manufacturer’s spec sheet. Changes apply from the next quote.",
+    "error_lista": "Weights and sizes could not be loaded. Reload the page.",
+    "medidas_titulo": "Bag size",
+    "medidas_ayuda": "The same for all three lines. The carrier charges by volumetric weight, so these sizes usually weigh more than the garment: at 40 × 30 × 10 cm, any bag is quoted as roughly 5 kg.",
+    "sin_medidas": "No sizes saved: until they are, no unmeasured product is quoted, and it is sold for store pickup only.",
+    "medidas_leyenda": "Bag size, in centimeters",
+    "largo": "Length (cm)",
+    "ancho": "Width (cm)",
+    "alto": "Height (cm)",
+    "guardar_medidas": "Save sizes",
+    "faltan_medidas": "A size is missing or set to zero. Enter the length, width and height in centimeters.",
+    "error_medidas": "The sizes could not be saved.",
+    "medidas_guardadas": "Sizes saved. The next quote already uses them.",
+    "pesos_titulo": "Average weight per product type",
+    "pesos_ayuda": "One weight per category, in grams. A category without a weight is not quoted: its unmeasured products are sold for store pickup only. A measured product always uses its own measurements.",
+    "ninguna": "There are no clothing, footwear or bag categories yet.",
+    "resumen": "{{total}} category(ies), {{sinPeso}} without a weight.",
+    "columnas": {
+      "linea": "Line",
+      "categoria": "Category",
+      "peso": "Average weight",
+      "acciones": "Actions"
+    },
+    "lineas": {
+      "ROPA": "Clothing",
+      "CALZADO": "Sports footwear",
+      "BOLSOS": "Bags"
+    },
+    "sin_peso": "No weight: pickup only",
+    "gramos": "{{peso}} g",
+    "poner_peso": "Set weight",
+    "cambiar_peso": "Change",
+    "poner_peso_de": "Set the weight of {{categoria}}",
+    "cambiar_peso_de": "Change the weight of {{categoria}}",
+    "peso_de": "Average weight of {{categoria}} (grams)",
+    "guardar_peso": "Save weight",
+    "quitar_peso": "Remove weight",
+    "cancelar": "Cancel",
+    "falta_peso": "The weight is missing or set to zero. Enter it in grams.",
+    "error_peso": "The change could not be saved.",
+    "peso_guardado": "Weight of {{categoria}} saved: {{peso}} g.",
+    "peso_quitado": "{{categoria}} has no weight now: its unmeasured products are sold for pickup only."
+  },
+  "paquetes_guia": {
+    "titulo": "Packages for the shipping label",
+    "cargando": "Working out the packages…",
+    "error": "The packages for this order could not be worked out.",
+    "ayuda": "Create {{cuantos}} package(s) in Skydropx with exactly these figures: they are the same ones the buyer's shipping was quoted with.",
+    "con_recaudo": "Cash on delivery: each declared value already includes its share of the shipping cost, and the sum is what the carrier collects at the door. Enter each one as shown; do not put the order total on every package.",
+    "columnas": {
+      "paquete": "Package",
+      "empaque": "Packaging",
+      "medidas": "Length × width × height",
+      "peso": "Weight",
+      "valor_declarado": "Declared value",
+      "contenido": "Contents"
+    },
+    "bolsa_plastica": "Plastic film bag",
+    "centimetros": "{{largo}} × {{ancho}} × {{alto}} cm",
+    "kilos": "{{peso}} kg"
   }
 }
