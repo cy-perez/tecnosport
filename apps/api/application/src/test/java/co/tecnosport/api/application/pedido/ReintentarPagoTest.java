@@ -35,11 +35,13 @@ class ReintentarPagoTest {
   private RepositorioPedidosFalso pedidos;
   private RepositorioInventarioFalso inventarios;
   private UUID varianteId;
+  private ModalidadesDeEntrega modalidadesDeEntrega = new ModalidadesDeEntrega(true);
 
   private ReintentarPago crear() {
     pedidos = new RepositorioPedidosFalso();
     inventarios = new RepositorioInventarioFalso();
-    return new ReintentarPago(pedidos, inventarios, new RelojFalso(AHORA), RESERVA_PAGO_EN_LINEA);
+    return new ReintentarPago(
+        pedidos, inventarios, new RelojFalso(AHORA), RESERVA_PAGO_EN_LINEA, modalidadesDeEntrega);
   }
 
   private Pedido pedidoFallidoConInventario(int existencia) {
@@ -210,6 +212,42 @@ class ReintentarPagoTest {
     caso.ejecutar(new ReintentarPagoComando(pedido.id(), "cliente@tecnosport.co"));
 
     assertEquals(enOrdenDeVariante, inventarios.ordenDeConsultas());
+  }
+
+  /**
+   * Un pedido de recogida que falló antes de que la recogida se apagara: reintentarlo hoy sería
+   * cobrar una recogida que los términos vigentes ya no ofrecen, y no reserva nada antes de
+   * negarse.
+   */
+  @Test
+  void conLaRecogidaApagadaUnRetiroFallidoNoSeReintentaNiReserva() {
+    modalidadesDeEntrega = new ModalidadesDeEntrega(false);
+    ReintentarPago caso = crear();
+    UUID variante = UUID.randomUUID();
+    Inventario inventario = Inventario.crear(variante);
+    inventario.registrarEntrada(5, "siembra de prueba", AHORA);
+    inventarios.conInventario(inventario);
+    Pedido pedido =
+        Pedido.crear(
+            NumeroPedido.de(2026, 3),
+            null,
+            new CorreoElectronico("cliente@tecnosport.co"),
+            List.of(linea(variante)),
+            TipoEntrega.RETIRO_EN_PUNTO,
+            null,
+            MetodoPago.WOMPI,
+            "cliente@tecnosport.co",
+            AHORA);
+    pedido.transicionar(EstadoPedido.PAGO_FALLIDO, "webhook-wompi", "pago rechazado", AHORA);
+    pedidos.guardar(pedido);
+
+    org.junit.jupiter.api.Assertions.assertThrows(
+        RetiroEnPuntoNoDisponibleException.class,
+        () -> caso.ejecutar(new ReintentarPagoComando(pedido.id(), "cliente@tecnosport.co")));
+
+    assertEquals(
+        EstadoPedido.PAGO_FALLIDO, pedidos.buscarPorId(pedido.id()).orElseThrow().estado());
+    assertEquals(5, inventarios.buscarPorVarianteId(variante).orElseThrow().saldoDisponible(AHORA));
   }
 
   private static LineaPedido linea(UUID variante) {

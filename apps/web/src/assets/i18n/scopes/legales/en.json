@@ -1,8 +1,8 @@
 {
   "comun": {
     "version_etiqueta": "Version",
-    "version": "2026-09-28",
-    "vigencia": "In force since 28 September 2026.",
+    "version": "2026-10-08",
+    "vigencia": "In force since 8 October 2026.",
     "otros_documentos": "Other legal documents",
     "titular_aviso": "This site is operated by Cristhian Yurday Pérez Hoyos, NIT 1054994043-9, Carrera 26C # 38B-31, Medellín, Antioquia, Colombia.",
     "traduccion_cortesia": "This is a courtesy translation and has no legal effect. These documents are governed by Colombian law, and the Spanish version available on this site is the one that governs; in case of any discrepancy, the Spanish text prevails."
@@ -185,7 +185,7 @@
         "titulo": "4. Products, images, and prices",
         "parrafos": [
           "Product photographs are our own and correspond to the unit we sell. Images and rotation viewers are to-scale representations of the actual product; colour may vary slightly depending on your screen.",
-          "All prices are shown in Colombian pesos (COP) and are the final price of each product: Tecno Sport is not a VAT (IVA) taxpayer in Colombia, so no tax is added to the published price. The price of each product does not include the shipping cost: that amount depends on the destination city and on the size and weight of your order, and is calculated at the time of purchase. Before you pay, we show you the full breakdown: the price of each product, the subtotal, the shipping cost listed separately, and the total you will pay. If you choose to pick up your order at our Medellín location, you pay no shipping cost.",
+          "All prices are shown in Colombian pesos (COP) and are the final price of each product: Tecno Sport is not a VAT (IVA) taxpayer in Colombia, so no tax is added to the published price. The price of each product does not include the shipping cost: that amount depends on the destination city and on the size and weight of your order, and is calculated at the time of purchase. Before you pay, we show you the full breakdown: the price of each product, the subtotal, the shipping cost listed separately, and the total you will pay.",
           "If an obvious system or typing error shows a product at a manifestly wrong price, we will tell you before shipping and you may either confirm the purchase at the correct price or cancel it at no cost.",
           "Check the use and care restrictions on each product page; for footwear and sportswear, use other than intended may affect the warranty."
         ]
@@ -212,12 +212,11 @@
       {
         "titulo": "8. Shipping and delivery",
         "parrafos": [
-          "We ship nationwide through carrier companies, and you may also pick up your order at no cost at our Medellín location.",
-          "The shipping cost is calculated using the destination city you give us and the weight and dimensions of your order. We show it to you before you pay, as an amount separate from the price of the products. If no carrier covers the address you provided, we will tell you at that moment and you may pick the order up at our location.",
+          "We ship nationwide through carrier companies. All orders are delivered to your address: there is no pickup at our premises.",
+          "The shipping cost is calculated using the destination city you give us and the weight and dimensions of your order. We show it to you before you pay, as an amount separate from the price of the products. If no carrier covers the address you provided, or if a product in your order cannot be delivered to your address, we will tell you at that moment, before you pay: that order cannot be placed on this site, and you may message us on WhatsApp to look for another way to deliver it.",
           "We do not agree with you on a delivery term other than the statutory one, so the term of thirty (30) calendar days from payment confirmation applies. If we announce a shorter term for a specific order, that announced term is the one that binds us. The estimated date shown by the carrier at the time of purchase is its own estimate, not a term different from the one stated here.",
           "When we ship your order we will send you an email with the carrier company handling it and the tracking number, along with a link where you can check your order status whenever you want. Tracking the package on its way is done by the carrier company using that tracking number; we do not display it on this site.",
-          "If we do not deliver within the applicable term, you may terminate the contract and recover your money, including any shipping cost you paid.",
-          "You may also pick up your order in Medellín, at Cra. 26C # 38B-31, barrio La Milagrosa, apto. 401, Medellín, by choosing that option at checkout. The handover is arranged with you by WhatsApp or email once we confirm the order; there is no walk-in counter."
+          "If we do not deliver within the applicable term, you may terminate the contract and recover your money, including any shipping cost you paid."
         ]
       },
       {

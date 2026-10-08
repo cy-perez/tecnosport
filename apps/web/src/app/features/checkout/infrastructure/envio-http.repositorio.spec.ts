@@ -142,4 +142,13 @@ describe('EnvioHttpRepositorio.cotizar', () => {
 
     await expect(repositorio.cotizar(COMANDO)).rejects.toBeInstanceOf(ErrorHttp);
   });
+
+  it('las modalidades de entrega se leen tal como las dice el servidor', async () => {
+    const repositorio = conRespuesta(json({ envioADomicilio: true, retiroEnPunto: false }, 200));
+
+    await expect(repositorio.modalidades()).resolves.toEqual({
+      envioADomicilio: true,
+      retiroEnPunto: false,
+    });
+  });
 });

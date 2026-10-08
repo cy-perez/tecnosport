@@ -27,7 +27,7 @@
             "pregunta": "Is any tax or shipping added to the published price?",
             "respuesta": [
               "The published price is the final value of each product and no tax is added to it: Tecno Sport is not a VAT taxpayer.",
-              "Shipping is charged separately. Its cost depends on the destination city and on the size and weight of what you buy, it is calculated at the time of your purchase, and we show it to you before you pay along with the price of each product, the subtotal and the total. If you choose to pick your order up at our point in Medellín, you pay no shipping."
+              "Shipping is charged separately. Its cost depends on the destination city and on the size and weight of what you buy, it is calculated at the time of your purchase, and we show it to you before you pay along with the price of each product, the subtotal and the total."
             ]
           },
           {
@@ -54,14 +54,13 @@
             "pregunta": "Where do you ship?",
             "respuesta": [
               "We ship anywhere in Colombia through carriers.",
-              "If no carrier covers the address you gave us, we tell you right then, and you can pick your order up at our point in Medellín."
+              "If no carrier covers the address you gave us, we tell you right then, before you pay. Message us on WhatsApp and we will look for another way to deliver it."
             ]
           },
           {
             "pregunta": "How much is shipping?",
             "respuesta": [
-              "It is calculated from the destination city you give us and from the weight and dimensions of your order. We show it before you pay, as a value separate from the price of the products.",
-              "Picking your order up at our point in Medellín is free."
+              "It is calculated from the destination city you give us and from the weight and dimensions of your order. We show it before you pay, as a value separate from the price of the products."
             ]
           },
           {
@@ -74,8 +73,7 @@
           {
             "pregunta": "Can I pick my order up instead of having it shipped?",
             "respuesta": [
-              "Yes. You choose that option when you buy, and you pay no shipping cost.",
-              "We arrange the handover with you over WhatsApp or email once we confirm the order; there is no walk-in counter."
+              "No. All orders are delivered to your address through a carrier, and there is no walk-in counter."
             ]
           },
           {
@@ -154,7 +152,7 @@
     "titulo": "Contact us",
     "entradilla": "These are all of our channels, with the hours we are available.",
     "canales_titulo": "Support channels",
-    "whatsapp_nota": "The fastest way. We also use it to arrange pickups in Medellín.",
+    "whatsapp_nota": "The fastest way.",
     "correo_nota": "For warranties, withdrawals, and to file petitions, complaints and claims.",
     "telefono_nota": "During the same support hours.",
     "plazos_titulo": "What to expect",
@@ -164,8 +162,8 @@
       "To withdraw from a purchase you have five (5) business days from delivery, and writing to us within that term is enough."
     ],
     "vendedor_titulo": "Who sells",
-    "punto_titulo": "Pickup point in Medellín",
-    "punto_nota": "You can choose pickup when you buy, and you pay no shipping cost. We arrange the handover with you over WhatsApp or email once we confirm the order; there is no walk-in counter.",
+    "punto_titulo": "Deliveries",
+    "punto_nota": "All orders are delivered to your address through a carrier. There is no walk-in counter and no pickup at our premises.",
     "enlaces_titulo": "You may also need",
     "enlace_preguntas": "Frequently asked questions",
     "enlace_estado": "Check the status of an order",

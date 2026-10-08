@@ -212,7 +212,7 @@ describe('AgregarVarianteAdminPage', () => {
    * variante sin medir es un estado legítimo: se vende, pero solo con recogida en el punto, y el
    * panel tiene que dejar cargarla — si no, el catálogo se queda esperando una báscula.
    */
-  it('sin el paquete sí se crea la variante: se venderá solo con recogida', async () => {
+  it('sin el paquete sí se crea la variante, aunque no se pueda cotizar su envío', async () => {
     const repositorio = new RepositorioProductosAdminFalso();
     const { fixture } = await renderPagina(repositorio, 'p1');
     // El espía va como en la prueba de éxito de más abajo, y no es decoración: el router de esta

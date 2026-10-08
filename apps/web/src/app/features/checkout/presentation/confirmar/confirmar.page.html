@@ -77,40 +77,49 @@
           } @else if (cotizacion.isFetching()) {
             <span aria-live="polite">{{ 'checkout.resumen.envio_calculando' | transloco }}</span>
           } @else if (sinCobertura()) {
-            <span class="text-ts-error" role="alert">{{
-              'checkout.resumen.envio_sin_cobertura' | transloco
-            }}</span>
+            <span class="text-ts-error" role="alert"
+              >{{ 'checkout.resumen.envio_sin_cobertura' | transloco }}
+              <ts-salida-sin-envio [retiroDisponible]="retiroDisponible()"
+            /></span>
           } @else if (articulosNoAsegurables().length > 0) {
             <!-- Nombra el artículo: la salida es quitarlo del carrito o recogerlo en el punto, y
                  sin el nombre el comprador no sabe cuál de sus productos lo dejó sin envío. -->
-            <span class="text-ts-error" role="alert">{{
-              (articulosNoAsegurables().length === 1
-                ? 'checkout.resumen.articulo_no_asegurable'
-                : 'checkout.resumen.articulos_no_asegurables'
-              ) | transloco: { articulos: nombresNoAsegurables() }
-            }}</span>
+            <span class="text-ts-error" role="alert"
+              >{{
+                (articulosNoAsegurables().length === 1
+                  ? 'checkout.resumen.articulo_no_asegurable'
+                  : 'checkout.resumen.articulos_no_asegurables'
+                ) | transloco: { articulos: nombresNoAsegurables() }
+              }}
+              <ts-salida-sin-envio [retiroDisponible]="retiroDisponible()"
+            /></span>
           } @else if (articulosSinMedidas().length > 0) {
             <!-- Mismo trato que el no asegurable y texto propio: al comprador no se le cuenta que
                  nos falta pesarlo, se le da la opción que sí tiene. -->
-            <span class="text-ts-error" role="alert">{{
-              (articulosSinMedidas().length === 1
-                ? 'checkout.resumen.articulo_sin_medidas'
-                : 'checkout.resumen.articulos_sin_medidas'
-              ) | transloco: { articulos: nombresSinMedidas() }
-            }}</span>
+            <span class="text-ts-error" role="alert"
+              >{{
+                (articulosSinMedidas().length === 1
+                  ? 'checkout.resumen.articulo_sin_medidas'
+                  : 'checkout.resumen.articulos_sin_medidas'
+                ) | transloco: { articulos: nombresSinMedidas() }
+              }}
+              <ts-salida-sin-envio [retiroDisponible]="retiroDisponible()"
+            /></span>
           } @else if (cotizacionRechazada()) {
             <!-- Rechazo de la plataforma: no se dice "intenta de nuevo" porque el reintento trae el
                  mismo rechazo — las cotizaciones se deduplican por contenido. -->
-            <span class="text-ts-error" role="alert">{{
-              'checkout.resumen.envio_rechazado' | transloco
-            }}</span>
+            <span class="text-ts-error" role="alert"
+              >{{ 'checkout.resumen.envio_rechazado' | transloco }}
+              <ts-salida-sin-envio [retiroDisponible]="retiroDisponible()"
+            /></span>
           } @else {
             <!-- Un `@else` solo, como estaba, le decía "no llegamos a esa dirección" también a
                  quien se topó con una caída nuestra: lo mandaba a corregir una dirección que
                  estaba bien. Son dos cosas distintas y se dicen distinto. -->
-            <span class="text-ts-error" role="alert">{{
-              'checkout.resumen.envio_no_calculado' | transloco
-            }}</span>
+            <span class="text-ts-error" role="alert"
+              >{{ 'checkout.resumen.envio_no_calculado' | transloco }}
+              <ts-salida-sin-envio [retiroDisponible]="retiroDisponible()"
+            /></span>
           }
         </dd>
       }

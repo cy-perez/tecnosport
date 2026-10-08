@@ -120,11 +120,12 @@ identifica al comprador, aunque sea solo por correo.
   cotiza contra el destino real con Skydropx y se cobra aparte, informado por
   separado en el resumen del pedido antes de pagar (`adr/0021`). Lo exige el
   artículo 50 de la Ley 1480 de 2011, además de ser lo que el negocio decidió.
-- **La recogida en el punto no paga envío**, y el checkout lo dice: es la única
-  forma de comprar sin flete, así que el ahorro se muestra junto a la opción.
+- **La recogida en el punto está apagada desde el 8 de octubre de 2026**
+  (`adr/0072`): todos los pedidos van a domicilio. Cuando estaba encendida no
+  pagaba envío, y el checkout mostraba el ahorro junto a la opción.
 - **Sin tarifa cotizada no hay envío a domicilio.** Si el destino no tiene
-  cobertura o el proveedor no responde, se ofrece solo la recogida. No se inventa
-  un flete ni se aplica una tarifa de respaldo.
+  cobertura o el proveedor no responde, el pedido no se toma en el sitio y se
+  remite a WhatsApp. No se inventa un flete ni se aplica una tarifa de respaldo.
 - **Una variante sin peso ni dimensiones no se publica.** Sin paquete no hay
   cotización.
 - **No se vende lo que no hay.** El inventario se reserva al iniciar el pago y se

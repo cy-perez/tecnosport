@@ -1955,6 +1955,21 @@
         },
         "type" : "object"
       },
+      "ModalidadesDeEntregaRespuesta" : {
+        "properties" : {
+          "envioADomicilio" : {
+            "type" : "boolean"
+          },
+          "retiroEnPunto" : {
+            "type" : "boolean"
+          }
+        },
+        "required" : [
+          "envioADomicilio",
+          "retiroEnPunto"
+        ],
+        "type" : "object"
+      },
       "PagoSinPedidoRespuesta" : {
         "properties" : {
           "correo" : {
@@ -7427,6 +7442,26 @@
         },
         "tags" : [
           "cotizacion-envio-controlador"
+        ]
+      }
+    },
+    "/api/v1/envios/modalidades" : {
+      "get" : {
+        "operationId" : "consultarModalidades",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ModalidadesDeEntregaRespuesta"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "modalidades-de-entrega-controlador"
         ]
       }
     },

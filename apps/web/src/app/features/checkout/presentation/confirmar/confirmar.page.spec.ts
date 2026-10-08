@@ -21,7 +21,11 @@ import { CrearPedidoComando, DatosEntrega } from '../../domain/pedido.comandos';
 import { MetodoPago, Pedido, Seguimiento } from '../../domain/pedido.model';
 import { REPOSITORIO_PAGOS, RepositorioPagos } from '../../domain/repositorio-pagos.puerto';
 import { REPOSITORIO_PEDIDOS, RepositorioPedidos } from '../../domain/repositorio-pedidos.puerto';
-import { CotizacionEnvio, ResultadoCotizacion } from '../../domain/envio.model';
+import {
+  CotizacionEnvio,
+  ResultadoCotizacion,
+  ModalidadesDeEntrega,
+} from '../../domain/envio.model';
 import { REPOSITORIO_ENVIOS, RepositorioEnvios } from '../../domain/repositorio-envios.puerto';
 import { ConfirmarPage } from './confirmar.page';
 import { CarritoIdLocalStorageAlmacen } from '../../../carrito/infrastructure/carrito-id.almacen';
@@ -142,6 +146,13 @@ class RepositorioPedidosFalso implements RepositorioPedidos {
 
   async consultarSeguimientoPorNumero(): Promise<Seguimiento | null> {
     throw new Error('no usado en esta prueba');
+  }
+}
+
+/** El servidor ya no acepta la recogida: la pestaña se abrió antes de que se apagara. */
+class RepositorioPedidosSinRetiro extends RepositorioPedidosFalso {
+  override async crear(): Promise<Pedido> {
+    throw new ErrorHttp(409, 'recogida apagada', 'RETIRO_EN_PUNTO_NO_DISPONIBLE');
   }
 }
 
@@ -301,6 +312,12 @@ class RutaMuda {}
 
 /** Doble de prueba escrito a mano, sin Mockito, ver docs/06-testing.md. */
 class RepositorioEnviosFalso implements RepositorioEnvios {
+  retiroEnPunto = true;
+
+  async modalidades(): Promise<ModalidadesDeEntrega> {
+    return { envioADomicilio: true, retiroEnPunto: this.retiroEnPunto };
+  }
+
   constructor(
     private readonly respuesta: CotizacionEnvio | ResultadoCotizacion | null | Error = COTIZACION,
   ) {}
@@ -609,10 +626,82 @@ describe('ConfirmarPage', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Confirmar pedido' }));
 
+    expect(await screen.findByText(esCheckout.confirmar.sin_cobertura)).toBeTruthy();
+    expect(screen.getByText(/Puedes recoger tu pedido en nuestro punto/)).toBeTruthy();
+    expect(pedidos.llamadasCrear).toBe(0);
+  });
+
+  it('con la recogida apagada, sin cobertura remite a WhatsApp y no a un punto que no existe', async () => {
+    sembrarCarritoId('carrito-1');
+    sembrarSnapshotLinea(snapshotDePrueba('variante-1'));
+    const pedidos = new RepositorioPedidosFalso();
+    const envios = new RepositorioEnviosFalso(null);
+    envios.retiroEnPunto = false;
+
+    const { fixture } = await renderConDatos(
+      'TRANSFERENCIA_MANUAL',
+      new RepositorioCarritoFalso(CARRITO_CON_LINEAS),
+      pedidos,
+      new RepositorioPagosFalso(),
+      DATOS_ENTREGA_A_DOMICILIO,
+      envios,
+    );
+    await esperarCarritoCargado(fixture);
+    expect(await screen.findByText(/No tenemos transporte hasta esta dirección/)).toBeTruthy();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Confirmar pedido' }));
+
+    expect(await screen.findByText(esCheckout.confirmar.sin_cobertura)).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'escríbenos por WhatsApp' })).toBeTruthy();
+    // Una sola vez: la frase con el enlace está en la fila del envío y no se repite en el aviso.
+    expect(screen.getAllByText(/escríbenos por WhatsApp/)).toHaveLength(1);
+    expect(screen.queryByText(/recoger/i)).toBeNull();
+    expect(pedidos.llamadasCrear).toBe(0);
+  });
+
+  /** El motivo que el mensaje de bloqueo no tenía: caía en el de la cotización caída. */
+  it('un artículo sin medidas bloquea el pedido y se nombra en el aviso', async () => {
+    sembrarCarritoId('carrito-1');
+    sembrarSnapshotLinea(snapshotDePrueba('variante-1'));
+    const pedidos = new RepositorioPedidosFalso();
+
+    const { fixture } = await renderConDatos(
+      'TRANSFERENCIA_MANUAL',
+      new RepositorioCarritoFalso(CARRITO_CON_LINEAS),
+      pedidos,
+      new RepositorioPagosFalso(),
+      DATOS_ENTREGA_A_DOMICILIO,
+      new RepositorioEnviosFalso({
+        tipo: 'ARTICULO_SIN_MEDIDAS',
+        articulos: [{ varianteId: 'variante-1', nombre: 'Proyector portátil' }],
+      }),
+    );
+    await esperarCarritoCargado(fixture);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Confirmar pedido' }));
+
     expect(
-      await screen.findByText(/no podemos crear este pedido[\s\S]*recoger en nuestro punto/),
+      await screen.findByText(
+        'Todavía no podemos calcular el envío a domicilio de Proyector portátil. Vuelve atrás y quítalo del carrito.',
+      ),
     ).toBeTruthy();
     expect(pedidos.llamadasCrear).toBe(0);
+  });
+
+  it('si el servidor ya no acepta la recogida, lo dice y manda a elegir el envío a domicilio', async () => {
+    sembrarCarritoId('carrito-1');
+    sembrarSnapshotLinea(snapshotDePrueba('variante-1'));
+
+    const { fixture } = await renderConDatos(
+      'WOMPI',
+      new RepositorioCarritoFalso(CARRITO_CON_LINEAS),
+      new RepositorioPedidosSinRetiro(),
+    );
+    await esperarCarritoCargado(fixture);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Confirmar pedido' }));
+
+    expect(await screen.findByText(esCheckout.confirmar.retiro_no_disponible)).toBeTruthy();
   });
 
   /**
@@ -639,11 +728,7 @@ describe('ConfirmarPage', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Confirmar pedido' }));
 
-    expect(
-      await screen.findByText(
-        /No podemos enviar este pedido a domicilio[\s\S]*recoger en nuestro punto/,
-      ),
-    ).toBeTruthy();
+    expect(await screen.findByText(esCheckout.confirmar.envio_rechazado)).toBeTruthy();
     expect(screen.queryByText(/Inténtalo de nuevo en unos minutos/)).toBeNull();
     expect(pedidos.llamadasCrear).toBe(0);
   });

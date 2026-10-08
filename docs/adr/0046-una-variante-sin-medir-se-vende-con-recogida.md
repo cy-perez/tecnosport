@@ -6,6 +6,10 @@ ropa, el calzado y los bolsos sin medir ya no van solo con recogida, se cotizan 
 promedios en una bolsa. La tecnología sin medir sigue exactamente como dice este ADR.
 Reemplaza en parte a: `ADR-0021`
 
+> **8 de octubre de 2026 (`ADR-0072`):** la recogida en el punto se apagó con una
+> bandera de servidor. Lo que aquí "va con recogida" hoy no se vende en el sitio: el
+> checkout lo bloquea y remite a WhatsApp.
+
 ## Contexto
 
 `ADR-0021` hizo obligatorio el paquete de la variante —peso y tres medidas— y la

@@ -42,6 +42,7 @@ import co.tecnosport.api.application.envio.ResolverEmisionesEnCurso;
 import co.tecnosport.api.application.envio.VerificadorFirmaEnvio;
 import co.tecnosport.api.application.pedido.DespacharPedido;
 import co.tecnosport.api.application.pedido.MarcarEntregado;
+import co.tecnosport.api.application.pedido.ModalidadesDeEntrega;
 import co.tecnosport.api.application.pedido.RechazarEnEntrega;
 import co.tecnosport.api.application.pedido.RepositorioPedidos;
 import co.tecnosport.api.bootstrap.pago.PropiedadesMetodosDeWompi;
@@ -76,6 +77,7 @@ import org.springframework.context.annotation.Profile;
 @Configuration
 @EnableConfigurationProperties({
   PropiedadesContraentrega.class,
+  PropiedadesRetiroEnPunto.class,
   PropiedadesSkydropx.class,
   PropiedadesSeguimientoEnvios.class,
   PropiedadesSaldoEnvios.class,
@@ -358,6 +360,11 @@ public class ConfiguracionEnvio {
         enTransaccionPropia,
         reloj,
         propiedades.maximoPorCorrida());
+  }
+
+  @Bean
+  public ModalidadesDeEntrega modalidadesDeEntrega(PropiedadesRetiroEnPunto propiedades) {
+    return new ModalidadesDeEntrega(propiedades.habilitado());
   }
 
   @Bean

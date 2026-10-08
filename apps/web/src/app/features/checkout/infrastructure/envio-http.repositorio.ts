@@ -5,6 +5,7 @@ import { desempaquetar, ErrorHttp } from '../../../core/http/respuesta-http';
 import {
   ArticuloNoAsegurable,
   CotizarEnvioComando,
+  ModalidadesDeEntrega,
   ResultadoCotizacion,
 } from '../domain/envio.model';
 import { RepositorioEnvios } from '../domain/repositorio-envios.puerto';
@@ -106,5 +107,13 @@ export class EnvioHttpRepositorio implements RepositorioEnvios {
       }
       throw error;
     }
+  }
+
+  async modalidades(): Promise<ModalidadesDeEntrega> {
+    const dto = desempaquetar(
+      await this.cliente.GET('/api/v1/envios/modalidades'),
+      'no se pudieron consultar las formas de entrega',
+    );
+    return { envioADomicilio: dto.envioADomicilio, retiroEnPunto: dto.retiroEnPunto };
   }
 }

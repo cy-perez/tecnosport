@@ -77,7 +77,7 @@
     "ir_a_envios": "Revisión de envíos",
     "ir_a_existencias": "Existencias",
     "sinMedir": {
-      "aviso": "{{total}} variante(s) del catálogo están sin medir, {{publicados}} de ellas en productos publicados. Las de ropa, calzado y bolsos se cotizan con el peso promedio de su categoría; las de tecnología, y las de una categoría sin peso, solo se entregan con recogida en el punto.",
+      "aviso": "{{total}} variante(s) del catálogo están sin medir, {{publicados}} de ellas en productos publicados. Las de ropa, calzado y bolsos se cotizan con el peso promedio de su categoría; las de tecnología, y las de una categoría sin peso, no se pueden enviar a domicilio, y sin recogida en el punto no se venden en el sitio.",
       "enlace": "Ver y medir"
     },
     "ir_a_marcas": "Marcas",
@@ -371,7 +371,7 @@
     "capturar360": "Capturar 360",
     "sinMedir": {
       "titulo": "Variantes sin medir",
-      "explicacion": "Una variante sin peso ni dimensiones se vende igual. Si es de ropa, calzado o bolsos, su envío se cotiza con el peso promedio de su categoría (\"Pesos y medidas de envío\"); si es de tecnología, o su categoría no tiene peso, solo se entrega con recogida en el punto. Las medidas son las del producto ya empacado, no las del producto desnudo.",
+      "explicacion": "Una variante sin peso ni dimensiones se vende igual. Si es de ropa, calzado o bolsos, su envío se cotiza con el peso promedio de su categoría (\"Pesos y medidas de envío\"); si es de tecnología, o su categoría no tiene peso, no se puede enviar a domicilio, y sin recogida en el punto no se vende en el sitio. Las medidas son las del producto ya empacado, no las del producto desnudo.",
       "resumen": "{{total}} sin medir, {{publicados}} en productos ya publicados.",
       "ninguna": "No queda ninguna variante sin medir.",
       "medida": "Listo: {{sku}} ya tiene sus medidas y se puede cotizar su envío a domicilio.",
@@ -421,7 +421,7 @@
     },
     "medidas": {
       "titulo": "Medidas del paquete",
-      "explicacion": "Cada variante activa con el peso y las medidas de su caja, las tenga o no. Sin las cuatro cifras, la tecnología no se puede cotizar y solo se entrega con recogida en el punto; la ropa, el calzado y los bolsos se cotizan con los promedios de \"Pesos y medidas de envío\", y medirlos aquí solo afina el flete. Una medida ya tomada se puede corregir: si está mal, se cobra el flete equivocado en cada pedido de esa variante.",
+      "explicacion": "Cada variante activa con el peso y las medidas de su caja, las tenga o no. Sin las cuatro cifras, la tecnología no se puede cotizar ni enviar a domicilio, y sin recogida en el punto no se vende en el sitio; la ropa, el calzado y los bolsos se cotizan con los promedios de \"Pesos y medidas de envío\", y medirlos aquí solo afina el flete. Una medida ya tomada se puede corregir: si está mal, se cobra el flete equivocado en cada pedido de esa variante.",
       "resumen": "{{total}} variante(s) activas, {{sinMedir}} sin medir.",
       "ninguna": "Todavía no hay variantes activas en el catálogo.",
       "errorLista": "No pudimos cargar las medidas. Vuelve a intentarlo.",
@@ -1162,7 +1162,7 @@
     "error_lista": "No se pudieron cargar los pesos y las medidas. Recarga la página.",
     "medidas_titulo": "Medidas de la bolsa",
     "medidas_ayuda": "Son las mismas para las tres líneas. La transportadora cobra por peso volumétrico, así que estas medidas suelen pesar más que la prenda: con 40 × 30 × 10 cm, cualquier bolsa se cotiza como de unos 5 kg.",
-    "sin_medidas": "No hay medidas guardadas: mientras falten, ningún producto sin medir se cotiza, y solo se vende con recogida en el punto.",
+    "sin_medidas": "No hay medidas guardadas: mientras falten, ningún producto sin medir se cotiza, y no se vende a domicilio.",
     "medidas_leyenda": "Medidas de la bolsa, en centímetros",
     "largo": "Largo (cm)",
     "ancho": "Ancho (cm)",
@@ -1172,7 +1172,7 @@
     "error_medidas": "No se pudieron guardar las medidas.",
     "medidas_guardadas": "Medidas guardadas. La siguiente cotización ya las usa.",
     "pesos_titulo": "Peso promedio por tipo de producto",
-    "pesos_ayuda": "Un peso por cada categoría, en gramos. Una categoría sin peso no se cotiza: sus productos sin medir solo se venden con recogida en el punto. Un producto medido usa siempre su propia medida.",
+    "pesos_ayuda": "Un peso por cada categoría, en gramos. Una categoría sin peso no se cotiza: sus productos sin medir no se venden a domicilio. Un producto medido usa siempre su propia medida.",
     "ninguna": "No hay categorías de ropa, calzado ni bolsos todavía.",
     "resumen": "{{total}} categoría(s), {{sinPeso}} sin peso.",
     "columnas": {
@@ -1186,7 +1186,7 @@
       "CALZADO": "Calzado deportivo",
       "BOLSOS": "Bolsos"
     },
-    "sin_peso": "Sin peso: solo recogida",
+    "sin_peso": "Sin peso: no va a domicilio",
     "gramos": "{{peso}} g",
     "poner_peso": "Poner peso",
     "cambiar_peso": "Cambiar",
@@ -1199,7 +1199,7 @@
     "falta_peso": "Falta el peso, o está en cero. Escríbelo en gramos.",
     "error_peso": "No se pudo guardar el cambio.",
     "peso_guardado": "Peso de {{categoria}} guardado: {{peso}} g.",
-    "peso_quitado": "{{categoria}} quedó sin peso: sus productos sin medir solo se venden con recogida.",
+    "peso_quitado": "{{categoria}} quedó sin peso: sus productos sin medir ya no se venden a domicilio.",
     "medida_invalida": "Escribe la medida en centímetros, mayor que cero.",
     "peso_invalido": "Escribe el peso en gramos, mayor que cero."
   },

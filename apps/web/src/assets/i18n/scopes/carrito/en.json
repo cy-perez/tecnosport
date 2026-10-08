@@ -20,6 +20,6 @@
   "agregando": "Adding…",
   "agregado": "Added to cart: {{nombre}}",
   "error_agregar": "We couldn't add it to your cart. Check your connection and try again.",
-  "envio_aparte": "Shipping is quoted at checkout, based on your destination. Pickup at our store is free.",
+  "envio_aparte": "Shipping is quoted at checkout, based on your destination.",
   "seguir_comprando": "Continue shopping"
 }

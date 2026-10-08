@@ -1476,6 +1476,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/envios/modalidades": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["consultarModalidades"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/envios/webhook": {
         parameters: {
             query?: never;
@@ -2466,6 +2482,10 @@ export interface components {
             direccion?: components["schemas"]["DireccionRequest"];
             lineas?: components["schemas"]["LineaRequest"][];
             tipoEntrega?: string;
+        };
+        ModalidadesDeEntregaRespuesta: {
+            envioADomicilio: boolean;
+            retiroEnPunto: boolean;
         };
         PagoSinPedidoRespuesta: {
             correo: string;
@@ -5706,6 +5726,26 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["CotizacionEnvioRespuesta"];
+                };
+            };
+        };
+    };
+    consultarModalidades: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ModalidadesDeEntregaRespuesta"];
                 };
             };
         };
