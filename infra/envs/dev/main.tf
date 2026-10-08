@@ -405,6 +405,11 @@ module "api" {
     # que pasó en el primer despliegue: la API respondía 200 y la tienda estaba vacía. Los
     # sembradores son idempotentes, así que sobrevive a los arranques en frío.
     SPRING_PROFILES_ACTIVE = "dev"
+    # Contraentrega encendida solo en dev desde el 8 de octubre de 2026, para probar el flujo
+    # completo. Producción espera a que Skydropx confirme comisión, tope y plazo de giro del
+    # recaudo (ADR-0023). La recogida en el punto, en cambio, va apagada en todos los ambientes:
+    # su valor por omisión ya es `false` y no se repite aquí.
+    CONTRAENTREGA_HABILITADA = "true"
     }, !var.sistecredito_listo ? {} : {
     # Sistecrédito encendido en dev, y el freno explícito al lado.
     #
