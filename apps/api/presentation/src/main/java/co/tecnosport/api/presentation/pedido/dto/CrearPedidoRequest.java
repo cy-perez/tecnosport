@@ -32,6 +32,8 @@ public record CrearPedidoRequest(
      */
     String transportadora) {
 
+  private static final int LARGO_MAXIMO_TRANSPORTADORA = 60;
+
   /** Sin transportadora elegida. */
   public CrearPedidoRequest(
       String correo,
@@ -68,6 +70,11 @@ public record CrearPedidoRequest(
     // HTTP_MESSAGE_NOT_READABLE, que es como ya responde cualquier otro enum de esta API.
     if (metodoPago == null) {
       throw new IllegalArgumentException("metodoPago es obligatorio.");
+    }
+    // Es un nombre de transportadora ("Inter Rapidísimo"), y vuelve en el `detail` del 409 si ya no
+    // cotiza: sin tope, la respuesta reflejaría cualquier texto que mande el cliente.
+    if (transportadora != null && transportadora.length() > LARGO_MAXIMO_TRANSPORTADORA) {
+      throw new IllegalArgumentException("transportadora es demasiado larga.");
     }
   }
 

@@ -259,15 +259,10 @@ public final class EmitirGuiaDePedido {
   }
 
   /**
-   * Las que ya se intentaron y no salieron. No es una lista negra permanente —es por pedido y por
-   * intento— y existe porque el fallo más probable es determinista: el contador de remisiones de
-   * Coordinadora está atascado, falla siempre, y es la tarifa más barata de la cuenta. Sin
-   * excluirla, cada reintento la vuelve a elegir y vuelve a morir igual.
-   */
-  /**
    * La transportadora que eligió el comprador, si todavía cotiza y no ha fallado ya para este
    * pedido (ADR-0073). Si no, la más económica, que es lo que se hacía antes de que se pudiera
-   * elegir: un pedido pagado no se queda sin despachar porque la elegida dejó de cotizar.
+   * elegir: un pedido pagado no se queda sin despachar porque la elegida dejó de cotizar. Una
+   * elegida que ya falló está en las excluidas y por eso no aparece entre las vigentes.
    */
   private TarifaEnvio laElegidaOLaMasEconomica(
       Pedido pedido,
@@ -276,16 +271,15 @@ public final class EmitirGuiaDePedido {
       boolean conRecaudo,
       Set<String> excluidas) {
     String elegida = pedido.tarifaEnvio().map(TarifaEnvio::transportadora).orElse(null);
-    if (elegida != null && !excluidas.contains(elegida.toLowerCase(Locale.ROOT))) {
-      try {
-        return cotizarEnvio.deBultos(destino, bultos, conRecaudo, excluidas, elegida);
-      } catch (TransportadoraNoDisponibleException e) {
-        // Sigue abajo con la más económica: la emisión que queda registrada dice cuál salió.
-      }
-    }
-    return cotizarEnvio.deBultos(destino, bultos, conRecaudo, excluidas);
+    return cotizarEnvio.deBultosPrefiriendo(destino, bultos, conRecaudo, excluidas, elegida);
   }
 
+  /**
+   * Las que ya se intentaron y no salieron. No es una lista negra permanente —es por pedido y por
+   * intento— y existe porque el fallo más probable es determinista: el contador de remisiones de
+   * Coordinadora está atascado, falla siempre, y es la tarifa más barata de la cuenta. Sin
+   * excluirla, cada reintento la vuelve a elegir y vuelve a morir igual.
+   */
   private static Set<String> transportadorasQueYaFallaron(List<EmisionDeGuia> anteriores) {
     return anteriores.stream()
         .filter(emision -> emision.estado() != EstadoEmision.EMITIDA)

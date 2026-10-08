@@ -418,6 +418,35 @@ class CrearPedidoTest {
     assertEquals(Dinero.deCop(19_900), pedido.costoEnvio());
   }
 
+  /**
+   * Con contraentrega, si la elegida no recauda lo que falta es la contraentrega y no la
+   * transportadora: el comprador la vio cotizada sin recaudo hace un rato, y pedirle que elija otra
+   * transportadora lo mandaría a resolver un problema que no es ese.
+   */
+  @Test
+  void conContraentregaLaElegidaQueNoRecaudaEsContraentregaNoDisponible() {
+    CrearPedido caso = crear(CRITERIOS_CONTRAENTREGA_PERMISIVOS, true);
+    publicarProductoConVarianteYExistencia(5);
+
+    assertThrows(
+        ContraentregaNoDisponibleException.class,
+        () ->
+            caso.ejecutar(
+                new CrearPedidoComando(
+                    null,
+                    "cliente@tecnosport.co",
+                    CONTACTO,
+                    List.of(new CrearPedidoComando.LineaComando(variante.id(), 1)),
+                    TipoEntrega.ENVIO_A_DOMICILIO,
+                    DIRECCION_MEDELLIN,
+                    MetodoPago.CONTRAENTREGA,
+                    true,
+                    IP,
+                    "Servientrega")));
+
+    assertTrue(pedidos.todos().isEmpty());
+  }
+
   /** Si la elegida dejó de cotizar no se cambia por otra: 409, y sin reservar nada. */
   @Test
   void laTransportadoraElegidaQueYaNoCotizaNoCreaElPedidoNiReserva() {

@@ -153,10 +153,6 @@ class ManejadorDeErroresTest {
         .andExpect(jsonPath("$.detail").value(not(containsString("alguien@"))));
   }
 
-  /**
-   * El 409 que la confirmación del checkout traduce a "la recogida ya no está disponible". Sin su
-   * manejador caería en el genérico —un 500— y el comprador vería "revisa tus datos".
-   */
   /** El que el checkout traduce a "esa transportadora ya no está disponible, elige otra". */
   @Test
   void laTransportadoraQueYaNoCotizaEsUnConflictoConSuCodigo() throws Exception {
@@ -166,6 +162,10 @@ class ManejadorDeErroresTest {
         .andExpect(jsonPath("$.codigo").value("TRANSPORTADORA_NO_DISPONIBLE"));
   }
 
+  /**
+   * El 409 que la confirmación del checkout traduce a "la recogida ya no está disponible". Sin su
+   * manejador caería en el genérico —un 500— y el comprador vería "revisa tus datos".
+   */
   @Test
   void laRecogidaApagadaEsUnConflictoConSuCodigo() throws Exception {
     mockMvc
@@ -212,7 +212,6 @@ class ManejadorDeErroresTest {
           "Key (correo)=(alguien@correo.com) already exists");
     }
 
-    /** Con el mensaje tal como lo compone `SistecreditoClient`, texto del proveedor incluido. */
     @GetMapping("/api/v1/prueba-de-errores/transportadora-que-ya-no-cotiza")
     String transportadoraQueYaNoCotiza() {
       throw new co.tecnosport.api.application.envio.TransportadoraNoDisponibleException(
@@ -224,6 +223,7 @@ class ManejadorDeErroresTest {
       throw new RetiroEnPuntoNoDisponibleException();
     }
 
+    /** Con el mensaje tal como lo compone `SistecreditoClient`, texto del proveedor incluido. */
     @GetMapping("/api/v1/prueba-de-errores/sistecredito-caido")
     String sistecreditoCaido() {
       throw new SistecreditoNoRespondeException(

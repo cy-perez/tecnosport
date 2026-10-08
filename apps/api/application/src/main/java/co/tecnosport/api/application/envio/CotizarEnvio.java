@@ -106,6 +106,27 @@ public final class CotizarEnvio {
         .orElseThrow(() -> new TransportadoraNoDisponibleException(transportadora));
   }
 
+  /**
+   * La de {@code preferida} si está entre las vigentes, y si no la más económica — sobre una sola
+   * cotización. Es lo que usa la emisión de la guía (ADR-0073): un pedido pagado no se queda sin
+   * despachar porque la elegida dejó de cotizar, y preguntar dos veces al proveedor gastaría cuota
+   * y podría traer dos respuestas distintas a la misma pregunta.
+   */
+  public TarifaEnvio deBultosPrefiriendo(
+      Direccion destino,
+      List<Bulto> bultos,
+      boolean conRecaudo,
+      Set<String> transportadorasExcluidas,
+      String preferida) {
+    List<TarifaEnvio> vigentes = vigentes(destino, bultos, conRecaudo, transportadorasExcluidas);
+    List<TarifaEnvio> deLaPreferida =
+        preferida == null
+            ? List.of()
+            : vigentes.stream().filter(tarifa -> tarifa.esDe(preferida)).toList();
+    return TarifaEnvio.masEconomica(deLaPreferida.isEmpty() ? vigentes : deLaPreferida)
+        .orElseThrow();
+  }
+
   /** Las tarifas que se pueden ofrecer: al menos una, o la excepción que dice por qué no. */
   private List<TarifaEnvio> vigentes(
       Direccion destino,

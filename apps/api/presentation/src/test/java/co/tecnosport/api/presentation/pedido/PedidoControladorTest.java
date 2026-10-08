@@ -190,6 +190,59 @@ class PedidoControladorTest {
         .andExpect(jsonPath("$.direccion.ciudad").value("Medellín"));
   }
 
+  /**
+   * ADR-0073, por HTTP: la transportadora del cuerpo llega a `CrearPedido`. Con la que cotiza se
+   * congela y vuelve en la respuesta; con una que no cotiza es 409 — si el campo se perdiera en el
+   * controlador, el pedido saldría con la más económica y esta prueba caería.
+   */
+  @Test
+  void crearPedidoCongelaLaTransportadoraElegida() throws Exception {
+    Variante variante = publicarProductoConVarianteYExistencia(5);
+    CrearPedidoRequest cuerpo =
+        new CrearPedidoRequest(
+            "cliente@tecnosport.co",
+            "Ana Pérez",
+            "313 881 6711",
+            List.of(new CrearPedidoRequest.LineaRequest(variante.id(), 2)),
+            "ENVIO_A_DOMICILIO",
+            DIRECCION_MEDELLIN,
+            MetodoPago.WOMPI,
+            true,
+            TARIFA.transportadora().toUpperCase(java.util.Locale.ROOT));
+
+    mockMvc
+        .perform(
+            post("/api/v1/pedidos")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(json.writeValueAsString(cuerpo)))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.transportadora").value(TARIFA.transportadora()));
+  }
+
+  @Test
+  void crearPedidoConUnaTransportadoraQueNoCotizaEs409() throws Exception {
+    Variante variante = publicarProductoConVarianteYExistencia(5);
+    CrearPedidoRequest cuerpo =
+        new CrearPedidoRequest(
+            "cliente@tecnosport.co",
+            "Ana Pérez",
+            "313 881 6711",
+            List.of(new CrearPedidoRequest.LineaRequest(variante.id(), 2)),
+            "ENVIO_A_DOMICILIO",
+            DIRECCION_MEDELLIN,
+            MetodoPago.WOMPI,
+            true,
+            "Otra transportadora");
+
+    mockMvc
+        .perform(
+            post("/api/v1/pedidos")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(json.writeValueAsString(cuerpo)))
+        .andExpect(status().isConflict())
+        .andExpect(jsonPath("$.codigo").value("TRANSPORTADORA_NO_DISPONIBLE"));
+  }
+
   @Test
   void crearPedidoConLimiteDeIntentosExcedidoDevuelve429() throws Exception {
     Variante variante = publicarProductoConVarianteYExistencia(5);
@@ -443,6 +496,31 @@ class PedidoControladorTest {
                 .content(json.writeValueAsString(cuerpo)))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$", hasItem("CONTRAENTREGA")));
+  }
+
+  /**
+   * ADR-0073, por HTTP: la transportadora del cuerpo llega a la consulta. En Medellín recauda la
+   * del doble, pero el comprador eligió otra, así que no hay contraentrega. Si el campo se perdiera
+   * en el controlador, se ofrecería con la que sí recauda y esta prueba caería.
+   */
+  @Test
+  void metodosDePagoDisponiblesMiraLaTransportadoraElegida() throws Exception {
+    Variante variante = publicarProductoConVarianteYExistencia(5);
+    MetodosDePagoDisponiblesRequest cuerpo =
+        new MetodosDePagoDisponiblesRequest(
+            List.of(new CrearPedidoRequest.LineaRequest(variante.id(), 1)),
+            "cliente@tecnosport.co",
+            "ENVIO_A_DOMICILIO",
+            DIRECCION_MEDELLIN,
+            "Otra transportadora");
+
+    mockMvc
+        .perform(
+            post("/api/v1/pedidos/metodos-de-pago-disponibles")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(json.writeValueAsString(cuerpo)))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$", not(hasItem("CONTRAENTREGA"))));
   }
 
   @Test
