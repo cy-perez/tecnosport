@@ -2,7 +2,11 @@ import {
   REPOSITORIO_PALETA_COLORES,
   RepositorioPaletaColores,
 } from '../../../../catalogo/domain/repositorio-paleta-colores.puerto';
-import { ColorDePaleta } from '../../../../catalogo/domain/producto.model';
+import { Categoria, ColorDePaleta } from '../../../../catalogo/domain/producto.model';
+import {
+  REPOSITORIO_CATEGORIAS,
+  RepositorioCategorias,
+} from '../../../../catalogo/domain/repositorio-categorias.puerto';
 import { vi } from 'vitest';
 import { ActivatedRoute, convertToParamMap, provideRouter, Router } from '@angular/router';
 import { TranslocoTestingModule } from '@jsverse/transloco';
@@ -56,10 +60,30 @@ class RepositorioAtributosFalso implements RepositorioAtributos {
   }
 }
 
+/** Ropa › Dama tiene la escala; Conjuntos la hereda. Bolsos no talla. */
+const ESCALA_ROPA = ['XS', 'XS-S', 'S', 'S-M', 'M', 'M-L', 'L'];
+
+function categoria(id: string, padreId: string | null, escalaTallas: string[]): Categoria {
+  return { id, nombre: id, slug: id, linea: 'ropa', padreId, hashtags: [], escalaTallas };
+}
+
+class RepositorioCategoriasFalso implements RepositorioCategorias {
+  async listarTodas(): Promise<Categoria[]> {
+    return [
+      categoria('ropa-dama', null, ESCALA_ROPA),
+      categoria('conjuntos', 'ropa-dama', []),
+      categoria('bolsos', null, []),
+    ];
+  }
+}
+
 class RepositorioProductosAdminFalso implements RepositorioProductosAdmin {
   llamadasAgregarVariante: AgregarVarianteAdmin[] = [];
 
-  constructor(private errorAlAgregar = false) {}
+  constructor(
+    private errorAlAgregar = false,
+    private categoriaId = 'conjuntos',
+  ) {}
 
   async listar(): Promise<ProductosPaginadosAdmin> {
     throw new Error('No usado en estas pruebas.');
@@ -70,7 +94,8 @@ class RepositorioProductosAdminFalso implements RepositorioProductosAdmin {
   }
 
   async obtener(): Promise<ProductoAdminDetalle> {
-    throw new Error('No usado en estas pruebas.');
+    // Solo la categoría: es lo único que la pantalla lee del producto.
+    return { categoria: { id: this.categoriaId } } as unknown as ProductoAdminDetalle;
   }
 
   async editar(): Promise<ProductoAdmin> {
@@ -161,6 +186,7 @@ async function renderPagina(repositorioProductos: RepositorioProductosAdmin, pro
       { provide: REPOSITORIO_PRODUCTOS_ADMIN, useValue: repositorioProductos },
       { provide: REPOSITORIO_ATRIBUTOS, useValue: new RepositorioAtributosFalso() },
       { provide: REPOSITORIO_PALETA_COLORES, useValue: new RepositorioPaletaFalso() },
+      { provide: REPOSITORIO_CATEGORIAS, useValue: new RepositorioCategoriasFalso() },
       { provide: ActivatedRoute, useValue: activatedRouteConProductoId(productoId) },
     ],
   });
@@ -294,6 +320,71 @@ describe('AgregarVarianteAdminPage', () => {
     expect(repositorio.llamadasAgregarVariante[0].atributos).toEqual([
       { atributoId: 'a1', valor: 'Negro / Vino', colorHex: '#111111' },
     ]);
+  });
+
+  /**
+   * La talla se elige de la escala de la categoría —heredada de la rama—, con las agrupadas en su
+   * sitio, y llega escrita como la escala: «S-M», igual que la escribe la revisión de un borrador.
+   */
+  it('una talla se elige de la escala de la categoría, con las agrupadas', async () => {
+    const repositorio = new RepositorioProductosAdminFalso();
+    const { fixture } = await renderPagina(repositorio, 'p1');
+    vi.spyOn(fixture.debugElement.injector.get(Router), 'navigate').mockResolvedValue(true);
+
+    fireEvent.input(screen.getByLabelText('SKU'), { target: { value: 'TS-1' } });
+    fireEvent.input(screen.getByLabelText('Precio'), { target: { value: '1000' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Agregar atributo' }));
+    await screen.findByRole('option', { name: 'Talla' });
+    fireEvent.change(screen.getByLabelText('Atributo'), { target: { value: 'a2' } });
+
+    const talla = (await screen.findByLabelText('Talla', {
+      selector: 'select',
+    })) as HTMLSelectElement;
+    const opciones = [...talla.options].map((opcion) => opcion.textContent?.trim());
+    expect(opciones).toEqual(['Selecciona una opción', ...ESCALA_ROPA, 'Otra talla…']);
+    expect(screen.queryByLabelText('Valor')).toBeNull();
+
+    fireEvent.change(talla, { target: { value: 'S-M' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Crear variante' }));
+
+    await vi.waitFor(() => expect(repositorio.llamadasAgregarVariante).toHaveLength(1));
+    expect(repositorio.llamadasAgregarVariante[0].atributos).toEqual([
+      { atributoId: 'a2', valor: 'S-M', colorHex: null },
+    ]);
+  });
+
+  it('«Otra talla» abre el campo para escribir la que no está en la escala', async () => {
+    const repositorio = new RepositorioProductosAdminFalso();
+    const { fixture } = await renderPagina(repositorio, 'p1');
+    vi.spyOn(fixture.debugElement.injector.get(Router), 'navigate').mockResolvedValue(true);
+
+    fireEvent.input(screen.getByLabelText('SKU'), { target: { value: 'TS-1' } });
+    fireEvent.input(screen.getByLabelText('Precio'), { target: { value: '1000' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Agregar atributo' }));
+    await screen.findByRole('option', { name: 'Talla' });
+    fireEvent.change(screen.getByLabelText('Atributo'), { target: { value: 'a2' } });
+    const talla = await screen.findByLabelText('Talla', { selector: 'select' });
+    await screen.findByRole('option', { name: 'Otra talla…' });
+
+    fireEvent.change(talla, { target: { value: '__otra__' } });
+    fireEvent.input(await screen.findByLabelText('Valor'), { target: { value: '14' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Crear variante' }));
+
+    await vi.waitFor(() => expect(repositorio.llamadasAgregarVariante).toHaveLength(1));
+    expect(repositorio.llamadasAgregarVariante[0].atributos).toEqual([
+      { atributoId: 'a2', valor: '14', colorHex: null },
+    ]);
+  });
+
+  it('en una categoría sin escala, la talla se escribe como antes', async () => {
+    await renderPagina(new RepositorioProductosAdminFalso(false, 'bolsos'));
+
+    fireEvent.click(screen.getByRole('button', { name: 'Agregar atributo' }));
+    await screen.findByRole('option', { name: 'Talla' });
+    fireEvent.change(screen.getByLabelText('Atributo'), { target: { value: 'a2' } });
+
+    expect(await screen.findByLabelText('Valor')).toBeTruthy();
+    expect(screen.queryByLabelText('Talla', { selector: 'select' })).toBeNull();
   });
 
   it('al enviar exitosamente, agrega la variante y navega de vuelta a editar producto', async () => {

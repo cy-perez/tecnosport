@@ -343,7 +343,12 @@ export const adminRoutes: Routes = [
               },
               {
                 path: ':productoId/variantes/crear',
-                providers: [{ provide: REPOSITORIO_ATRIBUTOS, useClass: AtributosHttpRepositorio }],
+                providers: [
+                  { provide: REPOSITORIO_ATRIBUTOS, useClass: AtributosHttpRepositorio },
+                  // Por la escala de tallas de la categoría del producto: la talla se elige de
+                  // ella. Las del panel, como en `editar`, porque son las que ve la revisión.
+                  { provide: REPOSITORIO_CATEGORIAS, useClass: CategoriasAdminHttpRepositorio },
+                ],
                 loadComponent: () =>
                   import('./productos/presentation/variantes/agregar-variante-admin.page').then(
                     (m) => m.AgregarVarianteAdminPage,

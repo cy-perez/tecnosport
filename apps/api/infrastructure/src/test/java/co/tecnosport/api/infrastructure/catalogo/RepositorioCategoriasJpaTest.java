@@ -114,11 +114,29 @@ class RepositorioCategoriasJpaTest {
     assertThat(repositorio.buscarPorId(sinEscala.id()).orElseThrow().escalaTallas()).isEmpty();
   }
 
-  /** V75 deja las escalas que dio el negocio en las ramas de ropa, en Jeans y en calzado. */
+  /**
+   * V75 deja las escalas que dio el negocio en las ramas de ropa, en Jeans y en calzado; V91
+   * intercala en las dos de ropa las tallas agrupadas, cada una entre las dos que junta.
+   */
   @Test
   void laMigracionDejaLasEscalasDelNegocio() {
-    assertThat(repositorio.buscarPorSlug(new Slug("ropa-dama")).orElseThrow().escalaTallas())
-        .containsExactly("XS", "S", "M", "L", "XL", "XXL", "XXXL");
+    for (String rama : List.of("ropa-dama", "ropa-caballero")) {
+      assertThat(repositorio.buscarPorSlug(new Slug(rama)).orElseThrow().escalaTallas())
+          .containsExactly(
+              "XS",
+              "XS-S",
+              "S",
+              "S-M",
+              "M",
+              "M-L",
+              "L",
+              "L-XL",
+              "XL",
+              "XL-XXL",
+              "XXL",
+              "XXL-XXXL",
+              "XXXL");
+    }
     assertThat(
             repositorio
                 .buscarPorSlug(new Slug("ropa-caballero-jeans"))

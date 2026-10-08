@@ -92,11 +92,29 @@ export function ejesDeAtributos(
 /**
  * Una talla como se compara: sin tildes, en mayúsculas y con «2XL» escrito «XXL». El proveedor y la
  * extracción no la escriben siempre como la escala, y sin esto «m» y «M» eran dos tallas.
+ *
+ * <p>Una talla agrupada se compara parte por parte y con guion: «s/m», «S - M» y «S-M» son la
+ * casilla «S-M», y «2XL-3XL» la de «XXL-XXXL».
  */
 export function tallaNormalizada(talla: string): string {
   const plana = plano(talla).toUpperCase().replace(/\s+/g, '');
-  const conNumero = /^([2-5])XL$/.exec(plana);
-  return conNumero ? 'X'.repeat(Number(conNumero[1])) + 'L' : plana;
+  return plana.split(/[-/]/).map(unaTalla).join('-');
+}
+
+/**
+ * «S, M, L» o «S M L»: una lista de tallas tecleada, separada por coma o espacio. Los espacios
+ * alrededor de un guion o una barra no separan: «S - M, L / XL» son dos tallas agrupadas y no seis.
+ */
+export function separarTallas(texto: string): string[] {
+  return texto
+    .replace(/\s*([-/])\s*/g, '$1')
+    .split(/[,\s]+/)
+    .filter((parte) => parte.length > 0);
+}
+
+function unaTalla(parte: string): string {
+  const conNumero = /^([2-5])XL$/.exec(parte);
+  return conNumero ? 'X'.repeat(Number(conNumero[1])) + 'L' : parte;
 }
 
 function segunLaEscala(presentes: OpcionEje[], escala: readonly string[]): OpcionEje[] {

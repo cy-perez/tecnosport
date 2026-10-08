@@ -36,7 +36,7 @@ import { TsMigas } from '../../../../../shared/ts-migas/ts-migas';
 import { usarOpcionesDeFormulario } from '../../../../catalogo/application/listar-opciones-filtro.consulta';
 import { usarPaletaDeColores } from '../../../../catalogo/application/listar-paleta-colores.consulta';
 import { escalaDeTallasDe, hojasConRuta } from '../../../../catalogo/domain/arbol-categorias';
-import { tallaNormalizada } from '../../../../catalogo/domain/seleccion-variante';
+import { separarTallas, tallaNormalizada } from '../../../../catalogo/domain/seleccion-variante';
 import { claveDeLinea } from '../../../../catalogo/domain/filtro-productos.model';
 import { usarMigasAdmin } from '../../../migas-admin';
 import { usarProveedoresAdmin } from '../../../proveedores/application/listar-proveedores.consulta';
@@ -80,7 +80,7 @@ import { clasesDeEstadoBorrador } from '../estado-borrador';
 
 const TIPOS_DE_TALLA: readonly TipoDeTalla[] = ['DESCONOCIDA', 'UNICA', 'LISTA'];
 
-/** «S, M, L» o «S M L»: la lista de tallas y los tonos se teclean separados por coma o espacio. */
+/** «Negro, Rojo» o «Negro Rojo»: los tonos se teclean separados por coma o espacio. */
 function separar(texto: string): string[] {
   return texto
     .split(/[,\s]+/)
@@ -414,7 +414,7 @@ export class DetalleBorradorAdminPage {
 
   /** Las tallas escritas, normalizadas: «m» marca la casilla «M» y «2XL» la de «XXL». */
   protected readonly tallasMarcadas = computed(
-    () => new Set(separar(this.tallasEscritas()).map(tallaNormalizada)),
+    () => new Set(separarTallas(this.tallasEscritas()).map(tallaNormalizada)),
   );
 
   protected tallaMarcada(talla: string): boolean {
@@ -427,7 +427,9 @@ export class DetalleBorradorAdminPage {
     if (escala.size === 0) {
       return [];
     }
-    return separar(this.tallasEscritas()).filter((talla) => !escala.has(tallaNormalizada(talla)));
+    return separarTallas(this.tallasEscritas()).filter(
+      (talla) => !escala.has(tallaNormalizada(talla)),
+    );
   });
 
   protected readonly esReplica = computed(
@@ -548,7 +550,7 @@ export class DetalleBorradorAdminPage {
       case 'UNICA':
         return { tipo: 'UNICA', sirveHasta: valores.sirveHasta.trim() || null, valores: [] };
       case 'LISTA':
-        return { tipo: 'LISTA', sirveHasta: null, valores: separar(valores.tallas) };
+        return { tipo: 'LISTA', sirveHasta: null, valores: separarTallas(valores.tallas) };
       default:
         return { tipo: 'DESCONOCIDA', sirveHasta: null, valores: [] };
     }
@@ -583,7 +585,7 @@ export class DetalleBorradorAdminPage {
     const deLaEscala = new Set(escala.map(tallaNormalizada));
     const ordenadas = [
       ...escala.filter((valor) => actuales.has(tallaNormalizada(valor))),
-      ...separar(this.tallasEscritas()).filter(
+      ...separarTallas(this.tallasEscritas()).filter(
         (valor) =>
           !deLaEscala.has(tallaNormalizada(valor)) && actuales.has(tallaNormalizada(valor)),
       ),

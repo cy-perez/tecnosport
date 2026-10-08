@@ -5,6 +5,7 @@ import {
   indiceDeLaPrimeraDelColor,
   nombreDeColor,
   seleccionAlElegir,
+  separarTallas,
   tallaNormalizada,
   coloresDe,
   ejesDeAtributos,
@@ -456,6 +457,24 @@ describe('tallaNormalizada', () => {
     expect(tallaNormalizada('2XL')).toBe('XXL');
     expect(tallaNormalizada('3xl')).toBe('XXXL');
     expect(tallaNormalizada(' 38 ')).toBe('38');
+  });
+
+  it('una talla agrupada es la misma con guion, con barra o con espacios', () => {
+    expect(tallaNormalizada('s/m')).toBe('S-M');
+    expect(tallaNormalizada('S - M')).toBe('S-M');
+    expect(tallaNormalizada('2XL-3XL')).toBe('XXL-XXXL');
+    expect(tallaNormalizada('xl/2xl')).toBe('XL-XXL');
+  });
+
+  it('al separar una lista, los espacios junto al guion o la barra no parten la talla', () => {
+    expect(separarTallas('S - M, L / XL  XXL-XXXL')).toEqual(['S-M', 'L/XL', 'XXL-XXXL']);
+    expect(separarTallas('S M, L')).toEqual(['S', 'M', 'L']);
+    expect(separarTallas('  ')).toEqual([]);
+  });
+
+  it('una talla agrupada no es ninguna de sus dos partes', () => {
+    expect(tallaNormalizada('S-M')).not.toBe(tallaNormalizada('S'));
+    expect(tallaNormalizada('S-M')).not.toBe(tallaNormalizada('M'));
   });
 
   it('con la escala, «m» y «2XL» caen en su casilla y no se duplican', () => {
