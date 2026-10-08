@@ -145,6 +145,7 @@ npm run nivel-360                        reproduce una grabación del sensor con
 npm run marcadores                       ¿quedó algún [[ ]] en un texto que se publica?
 npm run kit                              ¿el kit se regenera igual, y sus tipografías aún escriben
                                          lo que el sitio escribe? (pide pip install fonttools brotli)
+npm run listas                           ¿el parser de la skill de listas de proveedor sigue leyendo igual?
 npm run datos-negocio                    ¿el teléfono, el NIT y la versión legal dicen lo mismo en todas sus copias?
 npm run cruce-catalogo                   ¿qué productos de la lista están listos para publicar?
 npm run huerfanos -- --bucket X --api Y  ¿qué objetos del bucket no los reclama nadie? (informa, no borra)

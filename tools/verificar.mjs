@@ -46,6 +46,9 @@ if (!soloApi) {
   // el repositorio peor que antes de ejecutarlo durante días, y nada lo miraba porque el kit no
   // tiene ninguna prueba.
   ejecutar("node tools/verificar-kit.mjs");
+  // Y el parser de listas de proveedor, en menos de un segundo. Una lista con una viñeta que no
+  // conocía le hizo perder 23 equipos sin un error, y la skill no tenía ninguna prueba.
+  ejecutar("node tools/verificar-listas.mjs");
   // Y por el mismo motivo y en menos de dos segundos: que las clases de Tailwind que usa el
   // frontend existan. Una que no existe no falla, no hace nada, y hasta hoy la regla dura #8 la
   // sostenia que alguien se acordara de preguntar por ella a mano, clase por clase.

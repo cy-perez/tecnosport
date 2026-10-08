@@ -20,6 +20,7 @@
     "capas": "node tools/verificar-capas.mjs",
     "marcadores": "node tools/verificar-marcadores.mjs",
     "kit": "node tools/verificar-kit.mjs",
+    "listas": "node tools/verificar-listas.mjs",
     "iconos-marca": "node tools/generar-iconos-marca.mjs",
     "logos-pago": "node tools/generar-logos-pago.mjs",
     "lighthouse": "node tools/medir-lighthouse.mjs",
