@@ -813,7 +813,7 @@ def es_ruido(linea: str) -> bool:
     return False
 
 
-def parsear(texto: str):
+def parsear(texto: str, equivalencias=None):
     lineas = texto.splitlines()
     productos, descartados, sin_clasificar = [], [], []
     categoria = marca = condicion = None
@@ -948,6 +948,7 @@ def parsear(texto: str):
     cerrar_pendiente()
     productos, duplicados = fusionar_duplicados(productos)
     productos = filtrar_por_precio(productos, descartados)
+    aplicar_equivalencias(productos, equivalencias or {})
     return {
         "fecha_lista": fecha,
         "categorias_incluidas": sorted(CATEGORIAS_INCLUIDAS),
@@ -1029,6 +1030,82 @@ def fusionar_duplicados(productos):
     return salida, fusionados
 
 
+# --------------------------------------------------------------------------
+# Equivalencias: títulos confirmados una vez y aplicados en cada lista
+# --------------------------------------------------------------------------
+
+EQUIVALENCIAS = Path(__file__).resolve().parent.parent / "referencias" / "equivalencias.json"
+
+# Lo que una equivalencia ya confirmó: el nombre comercial. Se quitan para que el
+# paso 3 no vuelva a pedir lo que se resolvió en una lista anterior.
+ALERTAS_DE_NOMBRE = (
+    "confirmar nombre comercial oficial del modelo",
+    "tablets: confirmar la línea comercial completa (ej. Galaxy Tab A11)",
+)
+
+
+def id_de_titulo(titulo: str) -> str:
+    """El id que corresponde a un título definitivo.
+
+    Un «+» pegado a una palabra es parte del nombre —Redmi Note 15 Pro+, Galaxy
+    Tab A11+— y se escribe «plus»; entre espacios solo separa («Switch 2 + Mario
+    Kart World»). Es como quedaron los ids que se entregaron el 02/10/2026.
+    """
+    return slug(re.sub(r"(?<=\w)\+", " plus ", titulo))
+
+
+def validar_equivalencias(equivalencias: dict) -> dict:
+    """Se niega a cargar un archivo que renombraría productos mal y en silencio."""
+    errores = []
+    for clave, e in equivalencias.items():
+        faltan = [c for c in ("id", "titulo", "fecha", "motivo") if not e.get(c)]
+        if faltan:
+            errores.append(f"{clave}: faltan {', '.join(faltan)}")
+            continue
+        esperado = id_de_titulo(e["titulo"])
+        if e["id"] != esperado:
+            errores.append(f"{clave}: el id {e['id']} no corresponde al título «{e['titulo']}» "
+                           f"(sería {esperado})")
+        if e["id"] != clave and e["id"] in equivalencias:
+            errores.append(f"{clave}: apunta a {e['id']}, que también es una clave; "
+                           "la cadena se resuelve en el archivo, no al aplicarlo")
+    if errores:
+        raise ValueError("equivalencias.json no es válido:\n- " + "\n- ".join(errores))
+    return equivalencias
+
+
+def cargar_equivalencias(ruta=EQUIVALENCIAS) -> dict:
+    datos = json.loads(Path(ruta).read_text(encoding="utf-8"))
+    return validar_equivalencias(datos["equivalencias"])
+
+
+def aplicar_equivalencias(productos, equivalencias):
+    """Pone el id y el título definitivos, y deja el id que produjo la lista en `id_lista`.
+
+    `id_lista` va en todos los productos, tengan equivalencia o no: es lo que
+    permite, cuando un título nuevo se confirme, saber qué escribir en el archivo.
+    """
+    for p in productos:
+        p["id_lista"] = p["id"]
+        e = equivalencias.get(p["id"])
+        if not e:
+            continue
+        if e["titulo"] != p["titulo"]:
+            fecha = "/".join(reversed(e["fecha"].split("-")))
+            p["supuestos"].append(f"título confirmado el {fecha}: la lista lo trae como «{p['titulo']}»")
+        p["id"], p["titulo"] = e["id"], e["titulo"]
+        p["revisar"] = [r for r in p["revisar"] if r not in ALERTAS_DE_NOMBRE]
+
+    por_id = {}
+    for p in productos:
+        por_id.setdefault(p["id"], []).append(p)
+    for pid, grupo in por_id.items():
+        if len(grupo) > 1:
+            for p in grupo:
+                p["revisar"].append(
+                    f"otro producto de la lista quedó con el mismo id ({pid}): revisar las equivalencias")
+
+
 def filtrar_por_precio(productos, descartados):
     """Se aplica después de fusionar: el aviso de llegada puede traer el precio que la lista no trae."""
     salida = []
@@ -1058,6 +1135,8 @@ def reporte(datos: dict) -> str:
     L.append(f"- Duplicados fusionados: {len(datos['duplicados_fusionados'])}")
     L.append(f"- Productos con algún supuesto aplicado: "
              f"{sum(1 for p in datos['productos'] if p.get('supuestos'))}")
+    L.append(f"- Títulos confirmados en una lista anterior: "
+             f"{sum(1 for p in datos['productos'] if p.get('id_lista') not in (None, p['id']))}")
     L.append(f"- Líneas sin clasificar: {len(datos['sin_clasificar'])}")
     L.append("")
     L.append("## Productos para publicar")
@@ -1091,9 +1170,12 @@ def main():
     ap.add_argument("entrada")
     ap.add_argument("--salida", default="productos.json")
     ap.add_argument("--reporte", default="revision.md")
+    ap.add_argument("--equivalencias", default=str(EQUIVALENCIAS),
+                    help="títulos confirmados (por omisión, referencias/equivalencias.json de la skill)")
     args = ap.parse_args()
 
-    datos = parsear(Path(args.entrada).read_text(encoding="utf-8"))
+    datos = parsear(Path(args.entrada).read_text(encoding="utf-8"),
+                    cargar_equivalencias(args.equivalencias))
     Path(args.salida).write_text(json.dumps(datos, ensure_ascii=False, indent=2), encoding="utf-8")
     Path(args.reporte).write_text(reporte(datos), encoding="utf-8")
     print(f"{len(datos['productos'])} productos | {len(datos['descartados'])} descartados "

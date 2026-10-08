@@ -4,16 +4,17 @@
 - Productos para publicar: 37
 - Descartados: 96
 - Duplicados fusionados: 0
-- Productos con algún supuesto aplicado: 8
+- Productos con algún supuesto aplicado: 19
+- Títulos confirmados en una lista anterior: 11
 - Líneas sin clasificar: 0
 
 ## Productos para publicar
 - **Apple Watch Ultra 3 49mm** — relojes — 2.700.000 COP
   - ⚠️ confirmar nombre comercial oficial del modelo
-- **Samsung Band Fit 3** — relojes — 125.000 COP
-  - ⚠️ confirmar nombre comercial oficial del modelo
-- **Honor 2i** — relojes — 130.000 COP
-  - ⚠️ confirmar nombre comercial oficial del modelo
+- **Samsung Galaxy Fit3** — relojes — 125.000 COP
+  - · asumido: título confirmado el 02/10/2026: la lista lo trae como «Samsung Band Fit 3»
+- **Honor Watch Choice 2i** — relojes — 130.000 COP
+  - · asumido: título confirmado el 02/10/2026: la lista lo trae como «Honor 2i»
 - **Honor 5i** — relojes — 155.000 COP
   - ⚠️ confirmar nombre comercial oficial del modelo
 - **Xiaomi Smart Band 9 Active** — relojes — 85.000 COP
@@ -49,16 +50,16 @@
   - ⚠️ confirmar nombre comercial oficial del modelo
 - **JBL Endurance Pace** — audifonos — 210.000 COP
   - ⚠️ confirmar nombre comercial oficial del modelo
-- **JBL Diadema Tune 730** — audifonos — 210.000 COP
-  - ⚠️ confirmar nombre comercial oficial del modelo
-- **Honor Choice X7E** — audifonos — 75.000 COP
-  - ⚠️ confirmar nombre comercial oficial del modelo
+- **JBL Tune 730BT** — audifonos — 210.000 COP
+  - · asumido: título confirmado el 02/10/2026: la lista lo trae como «JBL Diadema Tune 730»
+- **Honor Choice Earbuds X7e** — audifonos — 75.000 COP
+  - · asumido: título confirmado el 02/10/2026: la lista lo trae como «Honor Choice X7E»
 - **Samsung Buds Core** — audifonos — 130.000 COP
   - ⚠️ confirmar nombre comercial oficial del modelo
-- **Samsung Buds 4** — audifonos — 600.000 COP
-  - ⚠️ confirmar nombre comercial oficial del modelo
-- **Nintendo Switch 2 Mario Kart** — consolas — 2.150.000 COP
-  - ⚠️ confirmar nombre comercial oficial del modelo
+- **Samsung Galaxy Buds4** — audifonos — 600.000 COP
+  - · asumido: título confirmado el 02/10/2026: la lista lo trae como «Samsung Buds 4»
+- **Nintendo Switch 2 + Mario Kart World** — consolas — 2.150.000 COP
+  - · asumido: título confirmado el 02/10/2026: la lista lo trae como «Nintendo Switch 2 Mario Kart»
 - **Sony PlayStation 5 1TB** — consolas — 2.550.000 COP
   - ⚠️ confirmar nombre comercial oficial del modelo
 - **JBL Go 5** — parlantes — 190.000 COP
@@ -69,18 +70,18 @@
   - ⚠️ confirmar nombre comercial oficial del modelo
 - **JBL Charge 6** — parlantes — 650.000 COP
   - ⚠️ confirmar nombre comercial oficial del modelo
-- **JBL Barra De Sonido Cinema Sb 180** — parlantes — 750.000 COP
-  - ⚠️ confirmar nombre comercial oficial del modelo
-- **JBL Barra De Sonido Cinema Sb580** — parlantes — 1.100.000 COP
-  - ⚠️ confirmar nombre comercial oficial del modelo
-- **JBL Party Box Encore 2** — parlantes — 1.000.000 COP
-  - ⚠️ confirmar nombre comercial oficial del modelo
+- **JBL Cinema SB180** — parlantes — 750.000 COP
+  - · asumido: título confirmado el 02/10/2026: la lista lo trae como «JBL Barra De Sonido Cinema Sb 180»
+- **JBL Cinema SB580** — parlantes — 1.100.000 COP
+  - · asumido: título confirmado el 02/10/2026: la lista lo trae como «JBL Barra De Sonido Cinema Sb580»
+- **JBL PartyBox Encore 2** — parlantes — 1.000.000 COP
+  - · asumido: título confirmado el 02/10/2026: la lista lo trae como «JBL Party Box Encore 2»
 - **JBL On The Go Essential + Mic** — parlantes — 1.200.000 COP
   - ⚠️ confirmar nombre comercial oficial del modelo
-- **JBL Extreme 4** — parlantes — 1.100.000 COP
-  - ⚠️ confirmar nombre comercial oficial del modelo
-- **JBL Extreme 5** — parlantes — 1.200.000 COP
-  - ⚠️ confirmar nombre comercial oficial del modelo
+- **JBL Xtreme 4** — parlantes — 1.100.000 COP
+  - · asumido: título confirmado el 02/10/2026: la lista lo trae como «JBL Extreme 4»
+- **JBL Xtreme 5** — parlantes — 1.200.000 COP
+  - · asumido: título confirmado el 02/10/2026: la lista lo trae como «JBL Extreme 5»
 - **JBL Boombox 4** — parlantes — 1.700.000 COP
   - ⚠️ confirmar nombre comercial oficial del modelo
 - **JBL Partybox 320** — parlantes — 1.900.000 COP

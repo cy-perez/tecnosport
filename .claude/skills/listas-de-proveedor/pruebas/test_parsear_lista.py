@@ -42,8 +42,8 @@ def leer(ruta: Path) -> str:
     return ruta.read_text(encoding="utf-8")
 
 
-def parsear(texto: str) -> dict:
-    return parsear_lista.parsear(texto)
+def parsear(texto: str, equivalencias=None) -> dict:
+    return parsear_lista.parsear(texto, equivalencias)
 
 
 def titulos(datos: dict) -> list:
@@ -54,7 +54,9 @@ class ListasDeEjemplo(unittest.TestCase):
     def test_cada_lista_produce_su_revision_guardada(self):
         for lista, revision in LISTAS.items():
             with self.subTest(lista=lista):
-                datos = parsear(leer(EJEMPLOS / lista))
+                # Con las equivalencias de verdad: la revisión es lo que se ve al
+                # correr el parser, y un cambio en el archivo también se ve aquí.
+                datos = parsear(leer(EJEMPLOS / lista), parsear_lista.cargar_equivalencias())
                 generada = parsear_lista.reporte(datos).rstrip("\n")
                 guardada = leer(EJEMPLOS / revision).rstrip("\n")
                 self.assertEqual(
@@ -188,6 +190,82 @@ class SerieFDePoco(unittest.TestCase):
     def test_queda_el_rastro_en_supuestos(self):
         [ultra, *_] = parsear(self.LISTA)["productos"]
         self.assertIn("la sección Xiaomi abrevia la serie F: se leyó como POCO", ultra["supuestos"])
+
+
+def equivalencia(id_, titulo, fecha="2026-10-02"):
+    return {"id": id_, "titulo": titulo, "fecha": fecha, "motivo": "prueba"}
+
+
+class Equivalencias(unittest.TestCase):
+    """La corrección de un título se escribe una vez y vale para todas las listas.
+
+    Hasta el 08/10/2026 vivía solo en el productos.json de la corrida en que se
+    hizo: la lista siguiente volvía a traer `jbl-extreme-4` y había que volver a
+    descubrir que es `jbl-xtreme-4`, investigarlo y redactarlo como si fuera nuevo.
+    """
+
+    LISTA = "*PARLANTE ORIGINALES*🔊\n🔊JBL EXTREME 4 $1.100\n🔊JBL FLIP 7 $450\n"
+    EQUIVALENCIAS = {"jbl-extreme-4": equivalencia("jbl-xtreme-4", "JBL Xtreme 4")}
+
+    def test_el_producto_toma_el_id_y_el_titulo_definitivos(self):
+        xtreme, flip = parsear(self.LISTA, self.EQUIVALENCIAS)["productos"]
+        self.assertEqual(("jbl-xtreme-4", "JBL Xtreme 4"), (xtreme["id"], xtreme["titulo"]))
+        self.assertEqual(("jbl-flip-7", "JBL Flip 7"), (flip["id"], flip["titulo"]))
+
+    def test_el_id_que_produjo_la_lista_queda_a_la_vista(self):
+        xtreme, flip = parsear(self.LISTA, self.EQUIVALENCIAS)["productos"]
+        self.assertEqual("jbl-extreme-4", xtreme["id_lista"])
+        self.assertEqual("jbl-flip-7", flip["id_lista"])
+
+    def test_queda_dicho_de_donde_salio_el_titulo(self):
+        [xtreme, _] = parsear(self.LISTA, self.EQUIVALENCIAS)["productos"]
+        self.assertIn("título confirmado el 02/10/2026: la lista lo trae como «JBL Extreme 4»",
+                      xtreme["supuestos"])
+
+    def test_un_nombre_confirmado_no_se_vuelve_a_pedir_confirmar(self):
+        xtreme, flip = parsear(self.LISTA, self.EQUIVALENCIAS)["productos"]
+        self.assertNotIn("confirmar nombre comercial oficial del modelo", xtreme["revisar"])
+        self.assertIn("confirmar nombre comercial oficial del modelo", flip["revisar"])
+
+    def test_sin_equivalencias_el_parser_sigue_igual(self):
+        self.assertEqual(["JBL Extreme 4", "JBL Flip 7"], titulos(parsear(self.LISTA)))
+
+    def test_dos_productos_con_el_mismo_id_final_se_marcan(self):
+        eq = {"jbl-extreme-4": equivalencia("jbl-flip-7", "JBL Flip 7")}
+        for p in parsear(self.LISTA, eq)["productos"]:
+            self.assertIn("otro producto de la lista quedó con el mismo id (jbl-flip-7): "
+                          "revisar las equivalencias", p["revisar"])
+
+
+class ValidacionDeEquivalencias(unittest.TestCase):
+    """El archivo se valida al cargarlo: un error ahí renombra productos en silencio."""
+
+    def validar(self, eq):
+        return parsear_lista.validar_equivalencias(eq)
+
+    def test_el_archivo_guardado_es_valido(self):
+        self.assertGreater(len(parsear_lista.cargar_equivalencias()), 0)
+
+    def test_el_id_tiene_que_salir_del_titulo(self):
+        # Así se colaron dos entradas viejas de catalogo/ids.json: apuntaban a un
+        # id que ya no correspondía al título que se entregó.
+        with self.assertRaisesRegex(ValueError, "no corresponde al título"):
+            self.validar({"x": equivalencia("samsung-galaxy-tab-a11-11-wifi",
+                                            "Samsung Galaxy Tab A11+ 11\" WiFi")})
+
+    def test_el_mas_pegado_se_escribe_plus_y_el_suelto_separa(self):
+        self.validar({
+            "a": equivalencia("samsung-galaxy-tab-a11-plus-11-wifi", "Samsung Galaxy Tab A11+ 11\" WiFi"),
+            "b": equivalencia("nintendo-switch-2-mario-kart-world", "Nintendo Switch 2 + Mario Kart World"),
+        })
+
+    def test_una_entrada_no_puede_apuntar_a_otra_clave(self):
+        with self.assertRaisesRegex(ValueError, "también es una clave"):
+            self.validar({"a": equivalencia("b", "B"), "b": equivalencia("c", "C")})
+
+    def test_cada_entrada_dice_cuando_y_por_que(self):
+        with self.assertRaisesRegex(ValueError, "faltan motivo"):
+            self.validar({"a": {"id": "b", "titulo": "B", "fecha": "2026-10-02"}})
 
 
 if __name__ == "__main__":

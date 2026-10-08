@@ -4,13 +4,17 @@
 - Productos para publicar: 90
 - Descartados: 168
 - Duplicados fusionados: 9
-- Productos con algún supuesto aplicado: 27
+- Productos con algún supuesto aplicado: 52
+- Títulos confirmados en una lista anterior: 23
 - Líneas sin clasificar: 0
 
 ## Productos para publicar
-- **Oppo A6C 4GB RAM 64GB** — celulares — 500.000 COP
-- **Oppo A6C 4GB RAM 128GB** — celulares — 575.000 COP
-- **Oppo A6K 4GB RAM 256GB** — celulares — 850.000 COP
+- **OPPO A6c 4GB RAM 64GB** — celulares — 500.000 COP
+  - · asumido: título confirmado el 02/10/2026: la lista lo trae como «Oppo A6C 4GB RAM 64GB»
+- **OPPO A6c 4GB RAM 128GB** — celulares — 575.000 COP
+  - · asumido: título confirmado el 02/10/2026: la lista lo trae como «Oppo A6C 4GB RAM 128GB»
+- **OPPO A6k 4GB RAM 256GB** — celulares — 850.000 COP
+  - · asumido: título confirmado el 02/10/2026: la lista lo trae como «Oppo A6K 4GB RAM 256GB»
 - **Samsung Galaxy A17 4G 8GB RAM 256GB** — celulares — 620.000 COP
 - **Samsung Galaxy A17 5G 8GB RAM 256GB 1 SIM** — celulares — 675.000 COP
 - **Samsung Galaxy A17 5G 8GB RAM 256GB Dual SIM** — celulares — 690.000 COP
@@ -18,14 +22,16 @@
 - **Samsung Galaxy A37 5G 6GB RAM 128GB** — celulares — 810.000 COP
 - **Samsung Galaxy A57 5G 8GB RAM 256GB** — celulares — 1.290.000 COP
 - **Samsung Galaxy A57 5G 12GB RAM 512GB** — celulares — 1.700.000 COP
-- **Motorola Moto G67 4G 8GB RAM 256GB** — celulares — 730.000 COP
+- **Motorola Moto G67 8GB RAM 256GB** — celulares — 730.000 COP
+  - · asumido: título confirmado el 02/10/2026: la lista lo trae como «Motorola Moto G67 4G 8GB RAM 256GB»
 - **Motorola Moto G17 4G 4GB RAM 256GB 1 SIM** — celulares — 505.000 COP
   - ⚠️ la lista suma RAM virtual (4GB+4GB): publicar la RAM física y mencionar la extendida aparte
 - **Motorola Moto G17 Power 4G 4GB RAM 256GB** — celulares — 550.000 COP
   - ⚠️ la lista suma RAM virtual (4GB+4GB): publicar la RAM física y mencionar la extendida aparte
 - **Motorola Moto G77 5G 8GB RAM 256GB** — celulares — 760.000 COP
   - · asumido: la lista escribe el precio sin «$» (760): se leyó como 760.000 COP
-- **Motorola Edge 50 Fusion 5G 8GB RAM 256GB SIM / eSIM** — celulares — 735.000 COP
+- **Motorola Edge 50 Fusion 5G 8GB RAM 256GB SIM + eSIM** — celulares — 735.000 COP
+  - · asumido: título confirmado el 02/10/2026: la lista lo trae como «Motorola Edge 50 Fusion 5G 8GB RAM 256GB SIM / eSIM»
 - **Honor X7D 4G 6GB RAM 256GB** — celulares — 650.000 COP
 - **Honor Magic 8 Lite 5G 8GB RAM 512GB** — celulares — 1.190.000 COP
 - **Xiaomi Redmi 15C 4G 8GB RAM 256GB** — celulares — 545.000 COP
@@ -47,8 +53,9 @@
 - **Xiaomi Redmi Note 17 Pro 5G 8GB RAM 256GB** — celulares — 1.010.000 COP
   - · asumido: la sección Xiaomi abrevia 'NOTE': se leyó como Redmi Note
   - ⚠️ la lista suma RAM virtual (8GB+8GB): publicar la RAM física y mencionar la extendida aparte
-- **Xiaomi Redmi Note 15 Pro + Plus 8GB RAM 256GB** — celulares — 1.310.000 COP
+- **Xiaomi Redmi Note 15 Pro+ 5G 8GB RAM 256GB** — celulares — 1.310.000 COP
   - · asumido: la sección Xiaomi abrevia 'NOTE': se leyó como Redmi Note
+  - · asumido: título confirmado el 02/10/2026: la lista lo trae como «Xiaomi Redmi Note 15 Pro + Plus 8GB RAM 256GB»
 - **Xiaomi Redmi Note 17 Pro Max 8GB RAM 256GB** — celulares — 1.290.000 COP
   - · asumido: la sección Xiaomi abrevia 'NOTE': se leyó como Redmi Note
 - **Xiaomi Redmi Note 17 Pro Max 8GB RAM 512GB** — celulares — 1.690.000 COP
@@ -58,47 +65,48 @@
   - · asumido: la sección Xiaomi abrevia la serie X: se leyó como POCO
 - **Xiaomi POCO X8 Pro Max 5G 12GB RAM 512GB** — celulares — 1.950.000 COP
   - · asumido: la sección Xiaomi abrevia la serie X: se leyó como POCO
-- **Xiaomi POCO F8 Pro 12GB RAM 256GB** — celulares — 1.770.000 COP
+- **Xiaomi POCO F8 Pro 5G 12GB RAM 256GB** — celulares — 1.770.000 COP
+  - · asumido: título confirmado el 02/10/2026: la lista lo trae como «Xiaomi POCO F8 Pro 12GB RAM 256GB»
 - **Xiaomi 17T Pro 5G 12GB RAM 512GB** — celulares — 2.750.000 COP
 - **Xiaomi POCO F8 Ultra 5G 12GB RAM 256GB** — celulares — 2.250.000 COP
   - · asumido: la sección Xiaomi abrevia la serie F: se leyó como POCO
 - **Xiaomi POCO F9 Ultra 5G 16GB RAM 512GB** — celulares — 2.900.000 COP
   - · asumido: la sección Xiaomi abrevia la serie F: se leyó como POCO
-- **Fly Go Pad Mouse + Teclado 10" 4G 4GB RAM 64GB** — tablets — 430.000 COP
+- **Fly Go Pad 10" 4G 4GB RAM 64GB con teclado y mouse** — tablets — 430.000 COP
+  - · asumido: título confirmado el 02/10/2026: la lista lo trae como «Fly Go Pad Mouse + Teclado 10" 4G 4GB RAM 64GB»
   - ⚠️ la lista suma RAM virtual (4GB+4GB): publicar la RAM física y mencionar la extendida aparte
-  - ⚠️ tablets: confirmar la línea comercial completa (ej. Galaxy Tab A11)
-- **Fly Go Pad Mouse + Teclado 10" 4G 4GB RAM 128GB** — tablets — 470.000 COP
+- **Fly Go Pad 10" 4G 4GB RAM 128GB con teclado y mouse** — tablets — 470.000 COP
+  - · asumido: título confirmado el 02/10/2026: la lista lo trae como «Fly Go Pad Mouse + Teclado 10" 4G 4GB RAM 128GB»
   - ⚠️ la lista suma RAM virtual (4GB+6GB): publicar la RAM física y mencionar la extendida aparte
-  - ⚠️ tablets: confirmar la línea comercial completa (ej. Galaxy Tab A11)
-- **Samsung A11 7" WiFi 8GB RAM 128GB** — tablets — 455.000 COP
-  - ⚠️ tablets: confirmar la línea comercial completa (ej. Galaxy Tab A11)
-- **Samsung A11+ Plus 11" WiFi 6GB RAM 128GB** — tablets — 700.000 COP
-  - ⚠️ tablets: confirmar la línea comercial completa (ej. Galaxy Tab A11)
-- **Honor X8B 11" WiFi 4GB RAM 128GB** — tablets — 565.000 COP
-  - ⚠️ tablets: confirmar la línea comercial completa (ej. Galaxy Tab A11)
-- **Xiaomi Redmi Pad 2 9.7" 4GB RAM 128GB** — tablets — 460.000 COP
+- **Samsung Galaxy Tab A11 8.7" WiFi 8GB RAM 128GB** — tablets — 455.000 COP
+  - · asumido: título confirmado el 02/10/2026: la lista lo trae como «Samsung A11 7" WiFi 8GB RAM 128GB»
+- **Samsung Galaxy Tab A11+ 11" WiFi 6GB RAM 128GB** — tablets — 700.000 COP
+  - · asumido: título confirmado el 02/10/2026: la lista lo trae como «Samsung A11+ Plus 11" WiFi 6GB RAM 128GB»
+- **Honor Pad X8b 11" WiFi 4GB RAM 128GB** — tablets — 565.000 COP
+  - · asumido: título confirmado el 02/10/2026: la lista lo trae como «Honor X8B 11" WiFi 4GB RAM 128GB»
+- **Xiaomi Redmi Pad 2 9.7" WiFi 4GB RAM 128GB** — tablets — 460.000 COP
   - · asumido: el proveedor lo escribe bajo Xiaomi, pero el fabricante publica esta referencia en la línea Redmi: el título usa el nombre comercial real
-  - ⚠️ tablets: confirmar la línea comercial completa (ej. Galaxy Tab A11)
-- **Xiaomi Redmi Pad 2 Bundle 11" 4GB RAM 128GB** — tablets — 580.000 COP
+  - · asumido: título confirmado el 02/10/2026: la lista lo trae como «Xiaomi Redmi Pad 2 9.7" 4GB RAM 128GB»
+- **Xiaomi Redmi Pad 2 11" 4GB RAM 128GB (bundle)** — tablets — 580.000 COP
   - · asumido: el proveedor lo escribe bajo Xiaomi, pero el fabricante publica esta referencia en la línea Redmi: el título usa el nombre comercial real
-  - ⚠️ tablets: confirmar la línea comercial completa (ej. Galaxy Tab A11)
-- **Xiaomi Pad 2" 4G 4GB RAM 128GB** — tablets — 610.000 COP
-  - ⚠️ tablets: confirmar la línea comercial completa (ej. Galaxy Tab A11)
-- **Xiaomi Pad 2" WiFi 8GB RAM 256GB** — tablets — 690.000 COP
-  - ⚠️ tablets: confirmar la línea comercial completa (ej. Galaxy Tab A11)
-- **Xiaomi Redmi Pad 2 Pro 11" WiFi 8GB RAM 256GB** — tablets — 920.000 COP
+  - · asumido: título confirmado el 02/10/2026: la lista lo trae como «Xiaomi Redmi Pad 2 Bundle 11" 4GB RAM 128GB»
+- **Xiaomi Redmi Pad 2 11" 4G 4GB RAM 128GB** — tablets — 610.000 COP
+  - · asumido: título confirmado el 02/10/2026: la lista lo trae como «Xiaomi Pad 2" 4G 4GB RAM 128GB»
+- **Xiaomi Redmi Pad 2 11" WiFi 8GB RAM 256GB** — tablets — 690.000 COP
+  - · asumido: título confirmado el 02/10/2026: la lista lo trae como «Xiaomi Pad 2" WiFi 8GB RAM 256GB»
+- **Xiaomi Redmi Pad 2 Pro 12.1" WiFi 8GB RAM 256GB** — tablets — 920.000 COP
   - · asumido: el proveedor lo escribe bajo Xiaomi, pero el fabricante publica esta referencia en la línea Redmi: el título usa el nombre comercial real
-  - ⚠️ tablets: confirmar la línea comercial completa (ej. Galaxy Tab A11)
-- **Lenovo Tab One 7" 4G 4GB RAM 128GB Incluye Mouse** — tablets — 530.000 COP
-  - ⚠️ tablets: confirmar la línea comercial completa (ej. Galaxy Tab A11)
+  - · asumido: título confirmado el 02/10/2026: la lista lo trae como «Xiaomi Redmi Pad 2 Pro 11" WiFi 8GB RAM 256GB»
+- **Lenovo Tab One 8.7" 4G 4GB RAM 128GB con mouse** — tablets — 530.000 COP
+  - · asumido: título confirmado el 02/10/2026: la lista lo trae como «Lenovo Tab One 7" 4G 4GB RAM 128GB Incluye Mouse»
 - **TCL Tab 11 FE 11" WiFi 4GB RAM 128GB** — tablets — 595.000 COP
   - ⚠️ tablets: confirmar la línea comercial completa (ej. Galaxy Tab A11)
 - **TCL Pad Lugh 10" WiFi 4GB RAM 128GB** — tablets — 420.000 COP
   - ⚠️ tablets: confirmar la línea comercial completa (ej. Galaxy Tab A11)
-- **Samsung Band Fit 3** — relojes — 125.000 COP
-  - ⚠️ confirmar nombre comercial oficial del modelo
-- **Honor 2i** — relojes — 130.000 COP
-  - ⚠️ confirmar nombre comercial oficial del modelo
+- **Samsung Galaxy Fit3** — relojes — 125.000 COP
+  - · asumido: título confirmado el 02/10/2026: la lista lo trae como «Samsung Band Fit 3»
+- **Honor Watch Choice 2i** — relojes — 130.000 COP
+  - · asumido: título confirmado el 02/10/2026: la lista lo trae como «Honor 2i»
 - **Honor 5i** — relojes — 145.000 COP
   - ⚠️ confirmar nombre comercial oficial del modelo
 - **Xiaomi Smart Band 9 Active** — relojes — 85.000 COP
@@ -139,12 +147,12 @@
 - **Xiaomi Redmi Buds 8 Lite** — audifonos — 75.000 COP
   - · asumido: el proveedor lo escribe bajo Xiaomi, pero el fabricante publica esta referencia en la línea Redmi: el título usa el nombre comercial real
   - ⚠️ confirmar nombre comercial oficial del modelo
-- **JBL Diadema Tune 730** — audifonos — 210.000 COP
-  - ⚠️ confirmar nombre comercial oficial del modelo
-- **Honor Choice X7E** — audifonos — 75.000 COP
-  - ⚠️ confirmar nombre comercial oficial del modelo
-- **Samsung Buds 4** — audifonos — 480.000 COP
-  - ⚠️ confirmar nombre comercial oficial del modelo
+- **JBL Tune 730BT** — audifonos — 210.000 COP
+  - · asumido: título confirmado el 02/10/2026: la lista lo trae como «JBL Diadema Tune 730»
+- **Honor Choice Earbuds X7e** — audifonos — 75.000 COP
+  - · asumido: título confirmado el 02/10/2026: la lista lo trae como «Honor Choice X7E»
+- **Samsung Galaxy Buds4** — audifonos — 480.000 COP
+  - · asumido: título confirmado el 02/10/2026: la lista lo trae como «Samsung Buds 4»
 - **Sony PlayStation 5 Disco 1 TB** — consolas — 2.550.000 COP
   - ⚠️ confirmar nombre comercial oficial del modelo
 - **JBL Clip 5** — parlantes — 220.000 COP
@@ -155,20 +163,20 @@
   - ⚠️ confirmar nombre comercial oficial del modelo
 - **JBL Charge 6** — parlantes — 650.000 COP
   - ⚠️ confirmar nombre comercial oficial del modelo
-- **JBL Barra De Sonido Cinema Sb 180** — parlantes — 750.000 COP
-  - ⚠️ confirmar nombre comercial oficial del modelo
-- **JBL Party Box Encore 2** — parlantes — 1.000.000 COP
-  - ⚠️ confirmar nombre comercial oficial del modelo
-- **JBL Extreme 4** — parlantes — 1.100.000 COP
-  - ⚠️ confirmar nombre comercial oficial del modelo
-- **JBL Extreme 5** — parlantes — 1.200.000 COP
-  - ⚠️ confirmar nombre comercial oficial del modelo
+- **JBL Cinema SB180** — parlantes — 750.000 COP
+  - · asumido: título confirmado el 02/10/2026: la lista lo trae como «JBL Barra De Sonido Cinema Sb 180»
+- **JBL PartyBox Encore 2** — parlantes — 1.000.000 COP
+  - · asumido: título confirmado el 02/10/2026: la lista lo trae como «JBL Party Box Encore 2»
+- **JBL Xtreme 4** — parlantes — 1.100.000 COP
+  - · asumido: título confirmado el 02/10/2026: la lista lo trae como «JBL Extreme 4»
+- **JBL Xtreme 5** — parlantes — 1.200.000 COP
+  - · asumido: título confirmado el 02/10/2026: la lista lo trae como «JBL Extreme 5»
 - **JBL Boombox 4** — parlantes — 1.700.000 COP
   - ⚠️ confirmar nombre comercial oficial del modelo
-- **JBL Partybox 330** — parlantes — 2.000.000 COP
-  - ⚠️ confirmar nombre comercial oficial del modelo
-- **Amazon Echo Dot 5ª Generación** — parlantes — 220.000 COP
-  - ⚠️ confirmar nombre comercial oficial del modelo
+- **JBL PartyBox 330** — parlantes — 2.000.000 COP
+  - · asumido: título confirmado el 02/10/2026: la lista lo trae como «JBL Partybox 330»
+- **Amazon Echo Dot 5ª generación** — parlantes — 220.000 COP
+  - · asumido: título confirmado el 02/10/2026: la lista lo trae como «Amazon Echo Dot 5ª Generación»
 - **Xiaomi Smart Projector L1** — proyectores — 750.000 COP
   - · asumido: la lista no trae marca; «Proyector L1» se toma como Xiaomi Smart Projector L1, referencia confirmada por el negocio (REFERENCIAS_SIN_MARCA)
   - ⚠️ confirmar nombre comercial oficial del modelo
