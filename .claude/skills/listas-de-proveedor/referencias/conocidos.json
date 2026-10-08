@@ -38,7 +38,10 @@
       ],
       "ultimo_costo_cop": 220000,
       "visto_por_ultima_vez": "2026-10-02",
-      "fecha_alta": "2026-10-02"
+      "fecha_alta": "2026-10-02",
+      "bloques": [
+        "VARIEDAD"
+      ]
     },
     "apple-ipad-11-a16-128gb": {
       "titulo": "Apple iPad 11\" A16 128GB",
@@ -76,7 +79,10 @@
       ],
       "ultimo_costo_cop": 1500000,
       "visto_por_ultima_vez": "2026-10-02",
-      "fecha_alta": "2026-10-02"
+      "fecha_alta": "2026-10-02",
+      "bloques": [
+        "GAMA ALTA"
+      ]
     },
     "apple-iphone-16-128gb": {
       "titulo": "Apple iPhone 16 128GB",
@@ -126,7 +132,8 @@
       ],
       "ultimo_costo_cop": 2300000,
       "visto_por_ultima_vez": "2026-10-02",
-      "fecha_alta": "2026-10-02"
+      "fecha_alta": "2026-10-02",
+      "bloques": []
     },
     "apple-iphone-16e-128gb-esim": {
       "titulo": "Apple iPhone 16e 128GB eSIM",
@@ -176,7 +183,10 @@
       ],
       "ultimo_costo_cop": 1500000,
       "visto_por_ultima_vez": "2026-10-02",
-      "fecha_alta": "2026-10-02"
+      "fecha_alta": "2026-10-02",
+      "bloques": [
+        "GAMA ALTA"
+      ]
     },
     "apple-iphone-17-pro-256gb-esim": {
       "titulo": "Apple iPhone 17 Pro 256GB eSIM",
@@ -234,7 +244,10 @@
       ],
       "ultimo_costo_cop": 3750000,
       "visto_por_ultima_vez": "2026-10-02",
-      "fecha_alta": "2026-10-02"
+      "fecha_alta": "2026-10-02",
+      "bloques": [
+        "GAMA ALTA"
+      ]
     },
     "apple-iphone-17-pro-512gb-esim": {
       "titulo": "Apple iPhone 17 Pro 512GB eSIM",
@@ -298,7 +311,10 @@
       ],
       "ultimo_costo_cop": 4250000,
       "visto_por_ultima_vez": "2026-10-02",
-      "fecha_alta": "2026-10-02"
+      "fecha_alta": "2026-10-02",
+      "bloques": [
+        "GAMA ALTA"
+      ]
     },
     "apple-iphone-17-pro-max-1tb-esim": {
       "titulo": "Apple iPhone 17 Pro Max 1TB eSIM",
@@ -374,7 +390,10 @@
       ],
       "ultimo_costo_cop": 5300000,
       "visto_por_ultima_vez": "2026-10-02",
-      "fecha_alta": "2026-10-02"
+      "fecha_alta": "2026-10-02",
+      "bloques": [
+        "GAMA ALTA"
+      ]
     },
     "apple-iphone-17-pro-max-256gb-esim": {
       "titulo": "Apple iPhone 17 Pro Max 256GB eSIM",
@@ -444,7 +463,10 @@
       ],
       "ultimo_costo_cop": 4150000,
       "visto_por_ultima_vez": "2026-10-02",
-      "fecha_alta": "2026-10-02"
+      "fecha_alta": "2026-10-02",
+      "bloques": [
+        "GAMA ALTA"
+      ]
     },
     "apple-iphone-18-pro-max-256gb-esim": {
       "titulo": "Apple iPhone 18 Pro Max 256GB eSIM",
@@ -480,7 +502,10 @@
       ],
       "ultimo_costo_cop": 5400000,
       "visto_por_ultima_vez": "2026-10-02",
-      "fecha_alta": "2026-10-02"
+      "fecha_alta": "2026-10-02",
+      "bloques": [
+        "GAMA ALTA"
+      ]
     },
     "apple-iphone-18-pro-max-512gb": {
       "titulo": "Apple iPhone 18 Pro Max 512GB",
@@ -518,7 +543,10 @@
       ],
       "ultimo_costo_cop": 6000000,
       "visto_por_ultima_vez": "2026-10-02",
-      "fecha_alta": "2026-10-02"
+      "fecha_alta": "2026-10-02",
+      "bloques": [
+        "GAMA ALTA"
+      ]
     },
     "apple-watch-ultra-3-49mm": {
       "titulo": "Apple Watch Ultra 3 49mm",
@@ -553,7 +581,10 @@
       ],
       "ultimo_costo_cop": 2550000,
       "visto_por_ultima_vez": "2026-10-02",
-      "fecha_alta": "2026-10-02"
+      "fecha_alta": "2026-10-02",
+      "bloques": [
+        "GAMA ALTA"
+      ]
     },
     "fly-go-pad-10-4g-4gb-ram-128gb-con-teclado-y-mouse": {
       "titulo": "Fly Go Pad 10\" 4G 4GB RAM 128GB con teclado y mouse",
@@ -575,7 +606,10 @@
       ],
       "ultimo_costo_cop": 490000,
       "visto_por_ultima_vez": "2026-10-02",
-      "fecha_alta": "2026-10-02"
+      "fecha_alta": "2026-10-02",
+      "bloques": [
+        "ANDROID"
+      ]
     },
     "fly-go-pad-10-4g-4gb-ram-64gb-con-teclado-y-mouse": {
       "titulo": "Fly Go Pad 10\" 4G 4GB RAM 64GB con teclado y mouse",
@@ -597,7 +631,10 @@
       ],
       "ultimo_costo_cop": 450000,
       "visto_por_ultima_vez": "2026-10-02",
-      "fecha_alta": "2026-10-02"
+      "fecha_alta": "2026-10-02",
+      "bloques": [
+        "ANDROID"
+      ]
     },
     "honor-5i": {
       "titulo": "Honor 5i",
@@ -619,7 +656,10 @@
       ],
       "ultimo_costo_cop": 145000,
       "visto_por_ultima_vez": "2026-10-02",
-      "fecha_alta": "2026-10-02"
+      "fecha_alta": "2026-10-02",
+      "bloques": [
+        "VARIEDAD"
+      ]
     },
     "honor-choice-earbuds-x7e": {
       "titulo": "Honor Choice Earbuds X7e",
@@ -658,7 +698,10 @@
       ],
       "ultimo_costo_cop": 75000,
       "visto_por_ultima_vez": "2026-10-02",
-      "fecha_alta": "2026-10-02"
+      "fecha_alta": "2026-10-02",
+      "bloques": [
+        "VARIEDAD"
+      ]
     },
     "honor-magic-8-lite-5g-8gb-ram-512gb": {
       "titulo": "Honor Magic 8 Lite 5G 8GB RAM 512GB",
@@ -807,7 +850,10 @@
       ],
       "ultimo_costo_cop": 1190000,
       "visto_por_ultima_vez": "2026-10-02",
-      "fecha_alta": "2026-10-02"
+      "fecha_alta": "2026-10-02",
+      "bloques": [
+        "ANDROID"
+      ]
     },
     "honor-pad-x8b-11-wifi-4gb-ram-128gb": {
       "titulo": "Honor Pad X8b 11\" WiFi 4GB RAM 128GB",
@@ -841,7 +887,10 @@
       ],
       "ultimo_costo_cop": 565000,
       "visto_por_ultima_vez": "2026-10-02",
-      "fecha_alta": "2026-10-02"
+      "fecha_alta": "2026-10-02",
+      "bloques": [
+        "ANDROID"
+      ]
     },
     "honor-watch-choice-2i": {
       "titulo": "Honor Watch Choice 2i",
@@ -876,7 +925,10 @@
       ],
       "ultimo_costo_cop": 130000,
       "visto_por_ultima_vez": "2026-10-02",
-      "fecha_alta": "2026-10-02"
+      "fecha_alta": "2026-10-02",
+      "bloques": [
+        "VARIEDAD"
+      ]
     },
     "honor-x7d-4g-6gb-ram-256gb": {
       "titulo": "Honor X7D 4G 6GB RAM 256GB",
@@ -928,7 +980,10 @@
       ],
       "ultimo_costo_cop": 650000,
       "visto_por_ultima_vez": "2026-10-02",
-      "fecha_alta": "2026-10-02"
+      "fecha_alta": "2026-10-02",
+      "bloques": [
+        "ANDROID"
+      ]
     },
     "jbl-boombox-4": {
       "titulo": "JBL Boombox 4",
@@ -967,7 +1022,10 @@
       ],
       "ultimo_costo_cop": 1700000,
       "visto_por_ultima_vez": "2026-10-02",
-      "fecha_alta": "2026-10-02"
+      "fecha_alta": "2026-10-02",
+      "bloques": [
+        "VARIEDAD"
+      ]
     },
     "jbl-charge-6": {
       "titulo": "JBL Charge 6",
@@ -1023,7 +1081,10 @@
       ],
       "ultimo_costo_cop": 650000,
       "visto_por_ultima_vez": "2026-10-02",
-      "fecha_alta": "2026-10-02"
+      "fecha_alta": "2026-10-02",
+      "bloques": [
+        "VARIEDAD"
+      ]
     },
     "jbl-cinema-sb180": {
       "titulo": "JBL Cinema SB180",
@@ -1057,7 +1118,10 @@
       ],
       "ultimo_costo_cop": 750000,
       "visto_por_ultima_vez": "2026-10-02",
-      "fecha_alta": "2026-10-02"
+      "fecha_alta": "2026-10-02",
+      "bloques": [
+        "VARIEDAD"
+      ]
     },
     "jbl-cinema-sb580": {
       "titulo": "JBL Cinema SB580",
@@ -1091,7 +1155,10 @@
       ],
       "ultimo_costo_cop": 1100000,
       "visto_por_ultima_vez": "2026-10-02",
-      "fecha_alta": "2026-10-02"
+      "fecha_alta": "2026-10-02",
+      "bloques": [
+        "VARIEDAD"
+      ]
     },
     "jbl-clip-5": {
       "titulo": "JBL Clip 5",
@@ -1133,7 +1200,10 @@
       ],
       "ultimo_costo_cop": 220000,
       "visto_por_ultima_vez": "2026-10-02",
-      "fecha_alta": "2026-10-02"
+      "fecha_alta": "2026-10-02",
+      "bloques": [
+        "VARIEDAD"
+      ]
     },
     "jbl-flip-7": {
       "titulo": "JBL Flip 7",
@@ -1176,7 +1246,10 @@
       ],
       "ultimo_costo_cop": 450000,
       "visto_por_ultima_vez": "2026-10-02",
-      "fecha_alta": "2026-10-02"
+      "fecha_alta": "2026-10-02",
+      "bloques": [
+        "VARIEDAD"
+      ]
     },
     "jbl-grip": {
       "titulo": "JBL Grip",
@@ -1572,7 +1645,10 @@
       ],
       "ultimo_costo_cop": 290000,
       "visto_por_ultima_vez": "2026-10-02",
-      "fecha_alta": "2026-10-02"
+      "fecha_alta": "2026-10-02",
+      "bloques": [
+        "VARIEDAD"
+      ]
     },
     "jbl-partybox-330": {
       "titulo": "JBL PartyBox 330",
@@ -1607,7 +1683,10 @@
       ],
       "ultimo_costo_cop": 2000000,
       "visto_por_ultima_vez": "2026-10-02",
-      "fecha_alta": "2026-10-02"
+      "fecha_alta": "2026-10-02",
+      "bloques": [
+        "VARIEDAD"
+      ]
     },
     "jbl-partybox-encore-2": {
       "titulo": "JBL PartyBox Encore 2",
@@ -1641,7 +1720,10 @@
       ],
       "ultimo_costo_cop": 1000000,
       "visto_por_ultima_vez": "2026-10-02",
-      "fecha_alta": "2026-10-02"
+      "fecha_alta": "2026-10-02",
+      "bloques": [
+        "VARIEDAD"
+      ]
     },
     "jbl-tune-730bt": {
       "titulo": "JBL Tune 730BT",
@@ -1803,7 +1885,10 @@
       ],
       "ultimo_costo_cop": 210000,
       "visto_por_ultima_vez": "2026-10-02",
-      "fecha_alta": "2026-10-02"
+      "fecha_alta": "2026-10-02",
+      "bloques": [
+        "VARIEDAD"
+      ]
     },
     "jbl-xtreme-4": {
       "titulo": "JBL Xtreme 4",
@@ -2027,7 +2112,10 @@
       ],
       "ultimo_costo_cop": 1100000,
       "visto_por_ultima_vez": "2026-10-02",
-      "fecha_alta": "2026-10-02"
+      "fecha_alta": "2026-10-02",
+      "bloques": [
+        "VARIEDAD"
+      ]
     },
     "jbl-xtreme-5": {
       "titulo": "JBL Xtreme 5",
@@ -2064,7 +2152,10 @@
       ],
       "ultimo_costo_cop": 1200000,
       "visto_por_ultima_vez": "2026-10-02",
-      "fecha_alta": "2026-10-02"
+      "fecha_alta": "2026-10-02",
+      "bloques": [
+        "VARIEDAD"
+      ]
     },
     "lenovo-tab-one-8-7-4g-4gb-ram-128gb-con-mouse": {
       "titulo": "Lenovo Tab One 8.7\" 4G 4GB RAM 128GB con mouse",
@@ -2100,7 +2191,10 @@
       ],
       "ultimo_costo_cop": 530000,
       "visto_por_ultima_vez": "2026-10-02",
-      "fecha_alta": "2026-10-02"
+      "fecha_alta": "2026-10-02",
+      "bloques": [
+        "ANDROID"
+      ]
     },
     "motorola-edge-50-fusion-5g-8gb-ram-256gb-sim-esim": {
       "titulo": "Motorola Edge 50 Fusion 5G 8GB RAM 256GB SIM + eSIM",
@@ -2138,7 +2232,10 @@
       ],
       "ultimo_costo_cop": 735000,
       "visto_por_ultima_vez": "2026-10-02",
-      "fecha_alta": "2026-10-02"
+      "fecha_alta": "2026-10-02",
+      "bloques": [
+        "ANDROID"
+      ]
     },
     "motorola-edge-60-fusion-5g-8gb-ram-256gb": {
       "titulo": "Motorola Edge 60 Fusion 5G 8GB RAM 256GB",
@@ -2215,7 +2312,10 @@
       ],
       "ultimo_costo_cop": 895000,
       "visto_por_ultima_vez": "2026-10-02",
-      "fecha_alta": "2026-10-02"
+      "fecha_alta": "2026-10-02",
+      "bloques": [
+        "ANDROID"
+      ]
     },
     "motorola-moto-g17-4g-4gb-ram-256gb-1-sim": {
       "titulo": "Motorola Moto G17 4G 4GB RAM 256GB 1 SIM",
@@ -2302,7 +2402,10 @@
       ],
       "ultimo_costo_cop": 505000,
       "visto_por_ultima_vez": "2026-10-02",
-      "fecha_alta": "2026-10-02"
+      "fecha_alta": "2026-10-02",
+      "bloques": [
+        "ANDROID"
+      ]
     },
     "motorola-moto-g17-power-4g-4gb-ram-256gb-1-sim": {
       "titulo": "Motorola Moto G17 Power 4G 4GB RAM 256GB 1 SIM",
@@ -2359,7 +2462,10 @@
       ],
       "ultimo_costo_cop": 550000,
       "visto_por_ultima_vez": "2026-10-02",
-      "fecha_alta": "2026-10-02"
+      "fecha_alta": "2026-10-02",
+      "bloques": [
+        "ANDROID"
+      ]
     },
     "motorola-moto-g67-8gb-ram-256gb": {
       "titulo": "Motorola Moto G67 8GB RAM 256GB",
@@ -2418,7 +2524,10 @@
       ],
       "ultimo_costo_cop": 730000,
       "visto_por_ultima_vez": "2026-10-02",
-      "fecha_alta": "2026-10-02"
+      "fecha_alta": "2026-10-02",
+      "bloques": [
+        "ANDROID"
+      ]
     },
     "motorola-moto-g77-5g-8gb-ram-256gb": {
       "titulo": "Motorola Moto G77 5G 8GB RAM 256GB",
@@ -2482,7 +2591,10 @@
       ],
       "ultimo_costo_cop": 760000,
       "visto_por_ultima_vez": "2026-10-02",
-      "fecha_alta": "2026-10-02"
+      "fecha_alta": "2026-10-02",
+      "bloques": [
+        "ANDROID"
+      ]
     },
     "nintendo-switch-2-mario-kart-world": {
       "titulo": "Nintendo Switch 2 + Mario Kart World",
@@ -2519,7 +2631,10 @@
       ],
       "ultimo_costo_cop": 2150000,
       "visto_por_ultima_vez": "2026-10-02",
-      "fecha_alta": "2026-10-02"
+      "fecha_alta": "2026-10-02",
+      "bloques": [
+        "VARIEDAD"
+      ]
     },
     "oppo-a6c-4gb-ram-128gb": {
       "titulo": "OPPO A6c 4GB RAM 128GB",
@@ -2566,7 +2681,10 @@
       ],
       "ultimo_costo_cop": 575000,
       "visto_por_ultima_vez": "2026-10-02",
-      "fecha_alta": "2026-10-02"
+      "fecha_alta": "2026-10-02",
+      "bloques": [
+        "ANDROID"
+      ]
     },
     "oppo-a6c-4gb-ram-64gb": {
       "titulo": "OPPO A6c 4GB RAM 64GB",
@@ -2618,7 +2736,10 @@
       ],
       "ultimo_costo_cop": 500000,
       "visto_por_ultima_vez": "2026-10-02",
-      "fecha_alta": "2026-10-02"
+      "fecha_alta": "2026-10-02",
+      "bloques": [
+        "ANDROID"
+      ]
     },
     "oppo-a6k-4gb-ram-256gb": {
       "titulo": "OPPO A6k 4GB RAM 256GB",
@@ -2665,7 +2786,10 @@
       ],
       "ultimo_costo_cop": 850000,
       "visto_por_ultima_vez": "2026-10-02",
-      "fecha_alta": "2026-10-02"
+      "fecha_alta": "2026-10-02",
+      "bloques": [
+        "ANDROID"
+      ]
     },
     "realme-note-70-4g-8gb-ram-256gb": {
       "titulo": "realme Note 70 4G 8GB RAM 256GB",
@@ -2704,7 +2828,10 @@
       ],
       "ultimo_costo_cop": 520000,
       "visto_por_ultima_vez": "2026-10-02",
-      "fecha_alta": "2026-10-02"
+      "fecha_alta": "2026-10-02",
+      "bloques": [
+        "ANDROID"
+      ]
     },
     "samsung-galaxy-a17-4g-8gb-ram-256gb": {
       "titulo": "Samsung Galaxy A17 4G 8GB RAM 256GB",
@@ -2753,7 +2880,10 @@
       ],
       "ultimo_costo_cop": 610000,
       "visto_por_ultima_vez": "2026-10-02",
-      "fecha_alta": "2026-10-02"
+      "fecha_alta": "2026-10-02",
+      "bloques": [
+        "ANDROID"
+      ]
     },
     "samsung-galaxy-a17-5g-8gb-ram-256gb-1-sim": {
       "titulo": "Samsung Galaxy A17 5G 8GB RAM 256GB 1 SIM",
@@ -2987,7 +3117,10 @@
       ],
       "ultimo_costo_cop": 675000,
       "visto_por_ultima_vez": "2026-10-02",
-      "fecha_alta": "2026-10-02"
+      "fecha_alta": "2026-10-02",
+      "bloques": [
+        "ANDROID"
+      ]
     },
     "samsung-galaxy-a37-5g-6gb-ram-128gb": {
       "titulo": "Samsung Galaxy A37 5G 6GB RAM 128GB",
@@ -3305,7 +3438,10 @@
       ],
       "ultimo_costo_cop": 810000,
       "visto_por_ultima_vez": "2026-10-02",
-      "fecha_alta": "2026-10-02"
+      "fecha_alta": "2026-10-02",
+      "bloques": [
+        "ANDROID"
+      ]
     },
     "samsung-galaxy-a57-5g-12gb-ram-512gb": {
       "titulo": "Samsung Galaxy A57 5G 12GB RAM 512GB",
@@ -3332,7 +3468,10 @@
       ],
       "ultimo_costo_cop": 1700000,
       "visto_por_ultima_vez": "2026-10-02",
-      "fecha_alta": "2026-10-02"
+      "fecha_alta": "2026-10-02",
+      "bloques": [
+        "ANDROID"
+      ]
     },
     "samsung-galaxy-buds4": {
       "titulo": "Samsung Galaxy Buds4",
@@ -3367,7 +3506,10 @@
       ],
       "ultimo_costo_cop": 500000,
       "visto_por_ultima_vez": "2026-10-02",
-      "fecha_alta": "2026-10-02"
+      "fecha_alta": "2026-10-02",
+      "bloques": [
+        "VARIEDAD"
+      ]
     },
     "samsung-galaxy-fit3": {
       "titulo": "Samsung Galaxy Fit3",
@@ -3415,7 +3557,10 @@
       ],
       "ultimo_costo_cop": 125000,
       "visto_por_ultima_vez": "2026-10-02",
-      "fecha_alta": "2026-10-02"
+      "fecha_alta": "2026-10-02",
+      "bloques": [
+        "VARIEDAD"
+      ]
     },
     "samsung-galaxy-s25-ultra-12gb-ram-256gb": {
       "titulo": "Samsung Galaxy S25 Ultra 12GB RAM 256GB",
@@ -3468,7 +3613,10 @@
       ],
       "ultimo_costo_cop": 2550000,
       "visto_por_ultima_vez": "2026-10-02",
-      "fecha_alta": "2026-10-02"
+      "fecha_alta": "2026-10-02",
+      "bloques": [
+        "GAMA ALTA"
+      ]
     },
     "samsung-galaxy-s25-ultra-12gb-ram-512gb": {
       "titulo": "Samsung Galaxy S25 Ultra 12GB RAM 512GB",
@@ -3967,7 +4115,10 @@
       ],
       "ultimo_costo_cop": 2880000,
       "visto_por_ultima_vez": "2026-10-02",
-      "fecha_alta": "2026-10-02"
+      "fecha_alta": "2026-10-02",
+      "bloques": [
+        "GAMA ALTA"
+      ]
     },
     "samsung-galaxy-tab-a11-8-7-wifi-8gb-ram-128gb": {
       "titulo": "Samsung Galaxy Tab A11 8.7\" WiFi 8GB RAM 128GB",
@@ -4015,7 +4166,10 @@
       ],
       "ultimo_costo_cop": 465000,
       "visto_por_ultima_vez": "2026-10-02",
-      "fecha_alta": "2026-10-02"
+      "fecha_alta": "2026-10-02",
+      "bloques": [
+        "ANDROID"
+      ]
     },
     "samsung-galaxy-tab-a11-plus-11-wifi-6gb-ram-128gb": {
       "titulo": "Samsung Galaxy Tab A11+ 11\" WiFi 6GB RAM 128GB",
@@ -4054,7 +4208,10 @@
       ],
       "ultimo_costo_cop": 735000,
       "visto_por_ultima_vez": "2026-10-02",
-      "fecha_alta": "2026-10-02"
+      "fecha_alta": "2026-10-02",
+      "bloques": [
+        "ANDROID"
+      ]
     },
     "samsung-galaxy-watch-8-40mm": {
       "titulo": "Samsung Galaxy Watch 8 40mm",
@@ -4090,7 +4247,10 @@
       ],
       "ultimo_costo_cop": 900000,
       "visto_por_ultima_vez": "2026-10-02",
-      "fecha_alta": "2026-10-02"
+      "fecha_alta": "2026-10-02",
+      "bloques": [
+        "VARIEDAD"
+      ]
     },
     "samsung-galaxy-watch-8-classic-46mm": {
       "titulo": "Samsung Galaxy Watch 8 Classic 46mm",
@@ -4142,7 +4302,10 @@
       ],
       "ultimo_costo_cop": 1050000,
       "visto_por_ultima_vez": "2026-10-02",
-      "fecha_alta": "2026-10-02"
+      "fecha_alta": "2026-10-02",
+      "bloques": [
+        "VARIEDAD"
+      ]
     },
     "tcl-pad-lugh-10-wifi-4gb-ram-128gb": {
       "titulo": "TCL Pad Lugh 10\" WiFi 4GB RAM 128GB",
@@ -4164,7 +4327,10 @@
       ],
       "ultimo_costo_cop": 420000,
       "visto_por_ultima_vez": "2026-10-02",
-      "fecha_alta": "2026-10-02"
+      "fecha_alta": "2026-10-02",
+      "bloques": [
+        "ANDROID"
+      ]
     },
     "tcl-tab-11-fe-11-wifi-4gb-ram-128gb": {
       "titulo": "TCL Tab 11 FE 11\" WiFi 4GB RAM 128GB",
@@ -4215,7 +4381,10 @@
       ],
       "ultimo_costo_cop": 595000,
       "visto_por_ultima_vez": "2026-10-02",
-      "fecha_alta": "2026-10-02"
+      "fecha_alta": "2026-10-02",
+      "bloques": [
+        "ANDROID"
+      ]
     },
     "xiaomi-17t-5g-12gb-ram-256gb": {
       "titulo": "Xiaomi 17T 5G 12GB RAM 256GB",
@@ -4242,7 +4411,10 @@
       ],
       "ultimo_costo_cop": 1900000,
       "visto_por_ultima_vez": "2026-10-02",
-      "fecha_alta": "2026-10-02"
+      "fecha_alta": "2026-10-02",
+      "bloques": [
+        "ANDROID"
+      ]
     },
     "xiaomi-17t-5g-12gb-ram-512gb": {
       "titulo": "Xiaomi 17T 5G 12GB RAM 512GB",
@@ -4295,7 +4467,10 @@
       ],
       "ultimo_costo_cop": 2100000,
       "visto_por_ultima_vez": "2026-10-02",
-      "fecha_alta": "2026-10-02"
+      "fecha_alta": "2026-10-02",
+      "bloques": [
+        "ANDROID"
+      ]
     },
     "xiaomi-poco-f8-pro-5g-12gb-ram-256gb": {
       "titulo": "Xiaomi POCO F8 Pro 5G 12GB RAM 256GB",
@@ -4336,7 +4511,10 @@
       ],
       "ultimo_costo_cop": 1850000,
       "visto_por_ultima_vez": "2026-10-02",
-      "fecha_alta": "2026-10-02"
+      "fecha_alta": "2026-10-02",
+      "bloques": [
+        "ANDROID"
+      ]
     },
     "xiaomi-poco-f8-ultra-5g-12gb-ram-256gb": {
       "titulo": "Xiaomi POCO F8 Ultra 5G 12GB RAM 256GB",
@@ -4377,7 +4555,10 @@
       ],
       "ultimo_costo_cop": 2250000,
       "visto_por_ultima_vez": "2026-10-02",
-      "fecha_alta": "2026-10-02"
+      "fecha_alta": "2026-10-02",
+      "bloques": [
+        "ANDROID"
+      ]
     },
     "xiaomi-poco-x8-pro-5g-512gb": {
       "titulo": "Xiaomi POCO X8 Pro 5G 512GB",
@@ -4742,7 +4923,8 @@
       ],
       "ultimo_costo_cop": 1400000,
       "visto_por_ultima_vez": "2026-10-02",
-      "fecha_alta": "2026-10-02"
+      "fecha_alta": "2026-10-02",
+      "bloques": []
     },
     "xiaomi-poco-x8-pro-5g-8gb-ram-256gb": {
       "titulo": "Xiaomi POCO X8 Pro 5G 8GB RAM 256GB",
@@ -4784,7 +4966,8 @@
       ],
       "ultimo_costo_cop": 1250000,
       "visto_por_ultima_vez": "2026-10-02",
-      "fecha_alta": "2026-10-02"
+      "fecha_alta": "2026-10-02",
+      "bloques": []
     },
     "xiaomi-poco-x8-pro-max-5g-12gb-ram-256gb": {
       "titulo": "Xiaomi POCO X8 Pro Max 5G 12GB RAM 256GB",
@@ -4825,7 +5008,10 @@
       ],
       "ultimo_costo_cop": 1830000,
       "visto_por_ultima_vez": "2026-10-02",
-      "fecha_alta": "2026-10-02"
+      "fecha_alta": "2026-10-02",
+      "bloques": [
+        "ANDROID"
+      ]
     },
     "xiaomi-poco-x8-pro-max-5g-12gb-ram-512gb": {
       "titulo": "Xiaomi POCO X8 Pro Max 5G 12GB RAM 512GB",
@@ -4866,7 +5052,10 @@
       ],
       "ultimo_costo_cop": 1980000,
       "visto_por_ultima_vez": "2026-10-02",
-      "fecha_alta": "2026-10-02"
+      "fecha_alta": "2026-10-02",
+      "bloques": [
+        "ANDROID"
+      ]
     },
     "xiaomi-redmi-15-4g-8gb-ram-256gb": {
       "titulo": "Xiaomi Redmi 15 4G 8GB RAM 256GB",
@@ -4942,7 +5131,10 @@
       ],
       "ultimo_costo_cop": 595000,
       "visto_por_ultima_vez": "2026-10-02",
-      "fecha_alta": "2026-10-02"
+      "fecha_alta": "2026-10-02",
+      "bloques": [
+        "ANDROID"
+      ]
     },
     "xiaomi-redmi-15c-4g-8gb-ram-256gb": {
       "titulo": "Xiaomi Redmi 15C 4G 8GB RAM 256GB",
@@ -4995,7 +5187,10 @@
       ],
       "ultimo_costo_cop": 525000,
       "visto_por_ultima_vez": "2026-10-02",
-      "fecha_alta": "2026-10-02"
+      "fecha_alta": "2026-10-02",
+      "bloques": [
+        "ANDROID"
+      ]
     },
     "xiaomi-redmi-17-4g-6gb-ram-256gb": {
       "titulo": "Xiaomi Redmi 17 4G 6GB RAM 256GB",
@@ -5055,7 +5250,10 @@
       ],
       "ultimo_costo_cop": 635000,
       "visto_por_ultima_vez": "2026-10-02",
-      "fecha_alta": "2026-10-02"
+      "fecha_alta": "2026-10-02",
+      "bloques": [
+        "ANDROID"
+      ]
     },
     "xiaomi-redmi-buds-6-active": {
       "titulo": "Xiaomi Redmi Buds 6 Active",
@@ -5109,7 +5307,10 @@
       ],
       "ultimo_costo_cop": 65000,
       "visto_por_ultima_vez": "2026-10-02",
-      "fecha_alta": "2026-10-02"
+      "fecha_alta": "2026-10-02",
+      "bloques": [
+        "VARIEDAD"
+      ]
     },
     "xiaomi-redmi-buds-6-play": {
       "titulo": "Xiaomi Redmi Buds 6 Play",
@@ -5147,7 +5348,10 @@
       ],
       "ultimo_costo_cop": 45000,
       "visto_por_ultima_vez": "2026-10-02",
-      "fecha_alta": "2026-10-02"
+      "fecha_alta": "2026-10-02",
+      "bloques": [
+        "VARIEDAD"
+      ]
     },
     "xiaomi-redmi-buds-8-active": {
       "titulo": "Xiaomi Redmi Buds 8 Active",
@@ -5184,7 +5388,10 @@
       ],
       "ultimo_costo_cop": 70000,
       "visto_por_ultima_vez": "2026-10-02",
-      "fecha_alta": "2026-10-02"
+      "fecha_alta": "2026-10-02",
+      "bloques": [
+        "VARIEDAD"
+      ]
     },
     "xiaomi-redmi-buds-8-lite": {
       "titulo": "Xiaomi Redmi Buds 8 Lite",
@@ -5220,7 +5427,10 @@
       ],
       "ultimo_costo_cop": 75000,
       "visto_por_ultima_vez": "2026-10-02",
-      "fecha_alta": "2026-10-02"
+      "fecha_alta": "2026-10-02",
+      "bloques": [
+        "VARIEDAD"
+      ]
     },
     "xiaomi-redmi-note-15-4g-6gb-ram-128gb": {
       "titulo": "Xiaomi Redmi Note 15 4G 6GB RAM 128GB",
@@ -5263,7 +5473,8 @@
       ],
       "ultimo_costo_cop": 575000,
       "visto_por_ultima_vez": "2026-10-02",
-      "fecha_alta": "2026-10-02"
+      "fecha_alta": "2026-10-02",
+      "bloques": []
     },
     "xiaomi-redmi-note-15-4g-8gb-ram-256gb": {
       "titulo": "Xiaomi Redmi Note 15 4G 8GB RAM 256GB",
@@ -5305,7 +5516,10 @@
       ],
       "ultimo_costo_cop": 685000,
       "visto_por_ultima_vez": "2026-10-02",
-      "fecha_alta": "2026-10-02"
+      "fecha_alta": "2026-10-02",
+      "bloques": [
+        "ANDROID"
+      ]
     },
     "xiaomi-redmi-note-15-pro-4g-12gb-ram-512gb": {
       "titulo": "Xiaomi Redmi Note 15 Pro 4G 12GB RAM 512GB",
@@ -5346,7 +5560,8 @@
       ],
       "ultimo_costo_cop": 950000,
       "visto_por_ultima_vez": "2026-10-02",
-      "fecha_alta": "2026-10-02"
+      "fecha_alta": "2026-10-02",
+      "bloques": []
     },
     "xiaomi-redmi-note-15-pro-plus-5g-8gb-ram-256gb": {
       "titulo": "Xiaomi Redmi Note 15 Pro+ 5G 8GB RAM 256GB",
@@ -5373,7 +5588,10 @@
       ],
       "ultimo_costo_cop": 1310000,
       "visto_por_ultima_vez": "2026-10-02",
-      "fecha_alta": "2026-10-02"
+      "fecha_alta": "2026-10-02",
+      "bloques": [
+        "ANDROID"
+      ]
     },
     "xiaomi-redmi-note-17-4g-6gb-ram-256gb": {
       "titulo": "Xiaomi Redmi Note 17 4G 6GB RAM 256GB",
@@ -5435,7 +5653,10 @@
       ],
       "ultimo_costo_cop": 690000,
       "visto_por_ultima_vez": "2026-10-02",
-      "fecha_alta": "2026-10-02"
+      "fecha_alta": "2026-10-02",
+      "bloques": [
+        "ANDROID"
+      ]
     },
     "xiaomi-redmi-pad-2-11-4g-4gb-ram-128gb": {
       "titulo": "Xiaomi Redmi Pad 2 11\" 4G 4GB RAM 128GB",
@@ -5476,7 +5697,10 @@
       ],
       "ultimo_costo_cop": 660000,
       "visto_por_ultima_vez": "2026-10-02",
-      "fecha_alta": "2026-10-02"
+      "fecha_alta": "2026-10-02",
+      "bloques": [
+        "ANDROID"
+      ]
     },
     "xiaomi-redmi-pad-2-11-4gb-ram-128gb-bundle": {
       "titulo": "Xiaomi Redmi Pad 2 11\" 4GB RAM 128GB (bundle)",
@@ -5501,7 +5725,10 @@
       ],
       "ultimo_costo_cop": 620000,
       "visto_por_ultima_vez": "2026-10-02",
-      "fecha_alta": "2026-10-02"
+      "fecha_alta": "2026-10-02",
+      "bloques": [
+        "ANDROID"
+      ]
     },
     "xiaomi-redmi-pad-2-11-wifi-8gb-ram-256gb": {
       "titulo": "Xiaomi Redmi Pad 2 11\" WiFi 8GB RAM 256GB",
@@ -5551,7 +5778,10 @@
       ],
       "ultimo_costo_cop": 690000,
       "visto_por_ultima_vez": "2026-10-02",
-      "fecha_alta": "2026-10-02"
+      "fecha_alta": "2026-10-02",
+      "bloques": [
+        "ANDROID"
+      ]
     },
     "xiaomi-redmi-pad-2-9-7-wifi-4gb-ram-128gb": {
       "titulo": "Xiaomi Redmi Pad 2 9.7\" WiFi 4GB RAM 128GB",
@@ -5587,7 +5817,10 @@
       ],
       "ultimo_costo_cop": 460000,
       "visto_por_ultima_vez": "2026-10-02",
-      "fecha_alta": "2026-10-02"
+      "fecha_alta": "2026-10-02",
+      "bloques": [
+        "ANDROID"
+      ]
     },
     "xiaomi-redmi-pad-2-pro-12-1-wifi-8gb-ram-256gb": {
       "titulo": "Xiaomi Redmi Pad 2 Pro 12.1\" WiFi 8GB RAM 256GB",
@@ -5635,7 +5868,10 @@
       ],
       "ultimo_costo_cop": 935000,
       "visto_por_ultima_vez": "2026-10-02",
-      "fecha_alta": "2026-10-02"
+      "fecha_alta": "2026-10-02",
+      "bloques": [
+        "ANDROID"
+      ]
     },
     "xiaomi-redmi-watch-5-active": {
       "titulo": "Xiaomi Redmi Watch 5 Active",
@@ -5687,7 +5923,10 @@
       ],
       "ultimo_costo_cop": 125000,
       "visto_por_ultima_vez": "2026-10-02",
-      "fecha_alta": "2026-10-02"
+      "fecha_alta": "2026-10-02",
+      "bloques": [
+        "VARIEDAD"
+      ]
     },
     "xiaomi-redmi-watch-5-lite": {
       "titulo": "Xiaomi Redmi Watch 5 Lite",
@@ -5722,7 +5961,10 @@
       ],
       "ultimo_costo_cop": 175000,
       "visto_por_ultima_vez": "2026-10-02",
-      "fecha_alta": "2026-10-02"
+      "fecha_alta": "2026-10-02",
+      "bloques": [
+        "VARIEDAD"
+      ]
     },
     "xiaomi-redmi-watch-6": {
       "titulo": "Xiaomi Redmi Watch 6",
@@ -5759,7 +6001,10 @@
       ],
       "ultimo_costo_cop": 275000,
       "visto_por_ultima_vez": "2026-10-02",
-      "fecha_alta": "2026-10-02"
+      "fecha_alta": "2026-10-02",
+      "bloques": [
+        "VARIEDAD"
+      ]
     },
     "xiaomi-redmi-watch-6-active": {
       "titulo": "Xiaomi Redmi Watch 6 Active",
@@ -5796,7 +6041,10 @@
       ],
       "ultimo_costo_cop": 135000,
       "visto_por_ultima_vez": "2026-10-02",
-      "fecha_alta": "2026-10-02"
+      "fecha_alta": "2026-10-02",
+      "bloques": [
+        "VARIEDAD"
+      ]
     },
     "xiaomi-redmi-watch-6-lite": {
       "titulo": "Xiaomi Redmi Watch 6 Lite",
@@ -5832,7 +6080,10 @@
       ],
       "ultimo_costo_cop": 195000,
       "visto_por_ultima_vez": "2026-10-02",
-      "fecha_alta": "2026-10-02"
+      "fecha_alta": "2026-10-02",
+      "bloques": [
+        "VARIEDAD"
+      ]
     },
     "xiaomi-smart-band-10": {
       "titulo": "Xiaomi Smart Band 10",
@@ -5880,7 +6131,10 @@
       ],
       "ultimo_costo_cop": 160000,
       "visto_por_ultima_vez": "2026-10-02",
-      "fecha_alta": "2026-10-02"
+      "fecha_alta": "2026-10-02",
+      "bloques": [
+        "VARIEDAD"
+      ]
     },
     "xiaomi-smart-band-10-pro": {
       "titulo": "Xiaomi Smart Band 10 Pro",
@@ -5928,7 +6182,10 @@
       ],
       "ultimo_costo_cop": 245000,
       "visto_por_ultima_vez": "2026-10-02",
-      "fecha_alta": "2026-10-02"
+      "fecha_alta": "2026-10-02",
+      "bloques": [
+        "VARIEDAD"
+      ]
     },
     "xiaomi-smart-band-11-active": {
       "titulo": "Xiaomi Smart Band 11 Active",
@@ -5964,7 +6221,10 @@
       ],
       "ultimo_costo_cop": 110000,
       "visto_por_ultima_vez": "2026-10-02",
-      "fecha_alta": "2026-10-02"
+      "fecha_alta": "2026-10-02",
+      "bloques": [
+        "VARIEDAD"
+      ]
     },
     "xiaomi-smart-band-9-active": {
       "titulo": "Xiaomi Smart Band 9 Active",
@@ -6015,7 +6275,10 @@
       ],
       "ultimo_costo_cop": 85000,
       "visto_por_ultima_vez": "2026-10-02",
-      "fecha_alta": "2026-10-02"
+      "fecha_alta": "2026-10-02",
+      "bloques": [
+        "VARIEDAD"
+      ]
     },
     "xiaomi-smart-projector-l1": {
       "titulo": "Xiaomi Smart Projector L1",
@@ -6052,7 +6315,10 @@
       ],
       "ultimo_costo_cop": 750000,
       "visto_por_ultima_vez": "2026-10-02",
-      "fecha_alta": "2026-10-02"
+      "fecha_alta": "2026-10-02",
+      "bloques": [
+        "VARIEDAD"
+      ]
     },
     "xiaomi-watch-s4-41mm": {
       "titulo": "Xiaomi Watch S4 41mm",
@@ -6114,7 +6380,10 @@
       ],
       "ultimo_costo_cop": 510000,
       "visto_por_ultima_vez": "2026-10-02",
-      "fecha_alta": "2026-10-02"
+      "fecha_alta": "2026-10-02",
+      "bloques": [
+        "VARIEDAD"
+      ]
     }
   }
 }

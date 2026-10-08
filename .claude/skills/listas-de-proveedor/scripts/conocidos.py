@@ -80,6 +80,9 @@ def consolidar(base: dict, datos: dict, hoy: date):
             (p.get("fecha_precio") or hoy.isoformat()) if p.get("precio_mercado_cop") else None)
         de_la_lista = set(p.get("supuestos_lista") or [])
         entrada["supuestos_investigacion"] = [s for s in p.get("supuestos") or [] if s not in de_la_lista]
+        # El mensaje de la lista en que suele venir: es lo que permite decir que
+        # desapareció. Un producto que hoy llegó solo en un aviso no lo pierde.
+        entrada["bloques"] = p.get("bloques") or (anterior or {}).get("bloques") or []
         entrada["ultimo_costo_cop"] = p.get("precio_proveedor_cop")
         entrada["visto_por_ultima_vez"] = fecha_lista
         entrada["fecha_alta"] = anterior["fecha_alta"] if anterior else fecha_lista
@@ -103,6 +106,8 @@ def validar(base: dict) -> dict:
                 errores.append(f"{clave}: precio de mercado sin fecha_precio; no se sabría si venció")
             if not e.get("fuentes_precio"):
                 errores.append(f"{clave}: precio de mercado sin fuentes; no se podría defender")
+        if not isinstance(e.get("bloques"), list):
+            errores.append(f"{clave}: bloques tiene que ser una lista")
         for campo in ("visto_por_ultima_vez", "fecha_alta"):
             if not e.get(campo):
                 errores.append(f"{clave}: falta {campo}")

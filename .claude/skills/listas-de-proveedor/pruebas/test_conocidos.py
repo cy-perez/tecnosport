@@ -85,6 +85,15 @@ class Consolidar(unittest.TestCase):
         self.assertEqual("2026-10-08", base["jbl-xtreme-4"]["visto_por_ultima_vez"])
         self.assertEqual(1, resumen["actualizados"])
 
+    def test_guarda_de_que_bloque_viene(self):
+        base, _ = conocidos.consolidar({}, lista(producto(bloques=["VARIEDAD"])), self.HOY)
+        self.assertEqual(["VARIEDAD"], base["jbl-xtreme-4"]["bloques"])
+
+    def test_un_aviso_de_llegada_no_le_borra_el_bloque(self):
+        base, _ = conocidos.consolidar({}, lista(producto(bloques=["VARIEDAD"])), self.HOY)
+        base, _ = conocidos.consolidar(base, lista(producto(bloques=[])), self.HOY)
+        self.assertEqual(["VARIEDAD"], base["jbl-xtreme-4"]["bloques"])
+
     def test_no_toca_la_base_que_recibe(self):
         original = {}
         conocidos.consolidar(original, lista(producto()), self.HOY)
