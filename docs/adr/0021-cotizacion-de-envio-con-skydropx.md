@@ -216,6 +216,21 @@ enterarse de que se le ofreció la segunda mejor tarifa. Hoy son ocho intentos c
 un techo de diez segundos, elegido por lo que alguien tolera mirando un resumen de
 pedido sin total, no por lo que el proveedor tarda en contestar.
 
-`TODO (dato de negocio): cuántos segundos de más tolera el checkout con tal de no
+~~`TODO (dato de negocio): cuántos segundos de más tolera el checkout con tal de no
 perder una tarifa que todavía no ha contestado. Es el único número que falta para
-cerrar esto, y no se inventa aquí.`
+cerrar esto, y no se inventa aquí.`~~
+
+**Decidido el 7 de octubre de 2026: se espera a todas.** Ese día Inter Rapidísimo
+empezó a quedarse unos 33 segundos en `pending_to_zone` antes de responder "no
+aplica", mientras las demás tenían precio a los 7, y la cotización no completaba
+dentro de la ventana: **ningún comprador podía pedir a domicilio**. Se le ofrecieron
+al negocio tres salidas —cotizar con las que ya respondieron, esperar a todas, o
+excluir a la lenta— y eligió esperar: siempre se ofrece la más barata, a cambio de
+que el comprador pueda mirar el resumen sin total hasta medio minuto.
+
+Con eso el tope pasó de 10 a **45 segundos**, y se corrigió de paso algo que el número
+escondía: con 8 intentos a medio segundo, **los intentos se acababan a los ~5 s**, antes
+del tope, así que la espera real era la mitad de la escrita. Ahora es un intento por
+segundo y 50 intentos, de modo que manda el tope; lo vigila
+`OrigenEnApplicationYmlTest.elTopeDeSondeoMandaSobreLosIntentos`. El checkout avisa
+mientras tanto que las transportadoras pueden tardar hasta un minuto.

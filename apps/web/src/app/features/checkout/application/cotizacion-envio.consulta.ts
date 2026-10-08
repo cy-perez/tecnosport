@@ -36,8 +36,9 @@ export function usarCotizacionEnvio(criterios: () => CotizarEnvioComando | null)
       // Un solo reintento, no los tres de la configuración por omisión. Desde que el checkout
       // **espera** esta consulta antes de dejar continuar, sus reintentos son tiempo que el
       // comprador pasa mirando un botón que carga; y del otro lado el backend ya sondea al
-      // proveedor hasta diez segundos por llamada, así que tres intentos encadenados son medio
-      // minuto largo para llegar a la misma conclusión. Uno cubre el corte de red pasajero.
+      // proveedor hasta 45 segundos por llamada (ADR-0021, punto 5), así que tres intentos
+      // encadenados serían más de dos minutos para llegar a la misma conclusión. Uno cubre el
+      // corte de red pasajero.
       retry: 1,
     };
   });

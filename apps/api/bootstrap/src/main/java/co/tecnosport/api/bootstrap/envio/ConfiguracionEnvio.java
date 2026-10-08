@@ -175,8 +175,13 @@ public class ConfiguracionEnvio {
   /**
    * Entre sondeo y sondeo. Por debajo del medio segundo no tiene sentido: el limitador de 2
    * peticiones por segundo lo frenaría igual, y el hilo esperaría en otro sitio.
+   *
+   * <p>Un segundo y no medio desde el 7 de octubre de 2026, cuando la espera pasó de 10 a 45 s para
+   * no perder a la transportadora lenta (ADR-0021, punto 5): a medio segundo serían noventa
+   * consultas por cotización contra un límite de dos por segundo que comparten todos los
+   * compradores. Un segundo de más en la respuesta no se nota en una espera de treinta.
    */
-  private static final Duration INTERVALO_SONDEO = Duration.ofMillis(500);
+  private static final Duration INTERVALO_SONDEO = Duration.ofSeconds(1);
 
   /**
    * La firma del webhook, con el algoritmo confirmado en la documentación oficial el 14 de
