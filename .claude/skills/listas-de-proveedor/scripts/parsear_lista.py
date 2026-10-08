@@ -533,6 +533,11 @@ def construir_producto(texto, categoria, marca, condicion, seccion, linea):
     original = texto
     texto_plano = normalizar(sin_emojis(texto).replace("*", " ").replace("_", " ").replace("°", " "))
     texto_plano = separar_pegados(texto_plano)
+    # Un «+» pegado a un nombre es parte del nombre: PRO+ es el Pro Plus, no el
+    # Pro. Sin esto el Pro+ se fundía con el Pro de la misma lista y tomaba su id.
+    # Solo detrás de un token que empieza por letra, para no tocar la memoria
+    # (8+256), y no cuando ya dice PLUS (A11+ PLUS).
+    texto_plano = re.sub(r"\b([A-Z][A-Z0-9]*)\+(?!\s*PLUS\b)", r"\1 PLUS ", texto_plano)
     emojis_color, colores = extraer_colores(texto)
     precio, precio_ambiguo = parsear_precio(texto)
     sin_signo = None
@@ -1031,7 +1036,7 @@ def parsear(texto: str, equivalencias=None):
     cerrar_pendiente()
     productos, duplicados = fusionar_duplicados(productos)
     productos = filtrar_por_precio(productos, descartados)
-    aplicar_equivalencias(productos, equivalencias or {}, descartados)
+    aplicar_equivalencias(productos, equivalencias or {}, descartados, duplicados)
     return {
         "fecha_lista": fecha,
         "bloques": bloques,
@@ -1163,7 +1168,7 @@ def cargar_equivalencias(ruta=EQUIVALENCIAS) -> dict:
     return validar_equivalencias(datos["equivalencias"])
 
 
-def aplicar_equivalencias(productos, equivalencias, descartados=()):
+def aplicar_equivalencias(productos, equivalencias, descartados=(), duplicados=None):
     """Pone el id y el título definitivos, y deja el id que produjo la lista en `id_lista`.
 
     `id_lista` va en todos los productos, tengan equivalencia o no: es lo que
@@ -1187,14 +1192,29 @@ def aplicar_equivalencias(productos, equivalencias, descartados=()):
         if d["id"] in equivalencias:
             d["id"] = equivalencias[d["id"]]["id"]
 
+    # Dos líneas que terminan con el mismo id definitivo son el mismo producto para
+    # todo lo que viene después —la base y la comparación van por id, y uno pisaba
+    # al otro—. Se fusionan al menor precio, como cualquier repetido (regla 7), y
+    # queda la alerta por si la que está mal es la equivalencia.
     por_id = {}
     for p in productos:
         por_id.setdefault(p["id"], []).append(p)
     for pid, grupo in por_id.items():
-        if len(grupo) > 1:
-            for p in grupo:
-                p["revisar"].append(
-                    f"otro producto de la lista quedó con el mismo id ({pid}): revisar las equivalencias")
+        if len(grupo) < 2:
+            continue
+        base, otros = grupo[0], grupo[1:]
+        lineas = ", ".join(str(g["linea"]) for g in grupo)
+        for g in otros:
+            for campo in ("supuestos", "revisar", "colores_familia", "colores_emoji", "bloques"):
+                base[campo] = list(dict.fromkeys(base[campo] + g.get(campo, [])))
+            productos.remove(g)
+            if duplicados is not None:
+                duplicados.append({"titulo": g["titulo"], "linea": g["linea"], "fusionado_en": base["titulo"]})
+        precios = [g["precio_proveedor_cop"] for g in grupo if g["precio_proveedor_cop"]]
+        base["precio_proveedor_cop"] = min(precios) if precios else None
+        base["revisar"].append(
+            f"dos líneas de la lista quedaron con el mismo id ({pid}) —líneas {lineas}— y se "
+            "fusionaron al menor precio: si no son el mismo equipo, la equivalencia está mal")
 
 
 def filtrar_por_precio(productos, descartados):

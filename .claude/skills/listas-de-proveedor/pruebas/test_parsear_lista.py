@@ -343,11 +343,30 @@ class Equivalencias(unittest.TestCase):
         datos = parsear("*PARLANTE ORIGINALES*🔊\n🔊JBL EXTREME 4\n", eq)
         self.assertEqual(["jbl-xtreme-4"], [d["id"] for d in datos["descartados"]])
 
-    def test_dos_productos_con_el_mismo_id_final_se_marcan(self):
+    def test_dos_lineas_con_el_mismo_id_final_se_fusionan_al_menor_precio_y_avisan(self):
+        # Revisión del 08/10/2026: quedaban dos productos con el mismo id, y en la
+        # base y en la comparación uno pisaba al otro.
         eq = {"jbl-extreme-4": equivalencia("jbl-flip-7", "JBL Flip 7")}
-        for p in parsear(self.LISTA, eq)["productos"]:
-            self.assertIn("otro producto de la lista quedó con el mismo id (jbl-flip-7): "
-                          "revisar las equivalencias", p["revisar"])
+        datos = parsear(self.LISTA, eq)
+        [p] = datos["productos"]
+        self.assertEqual(450_000, p["precio_proveedor_cop"])
+        self.assertTrue(any(r.startswith("dos líneas de la lista quedaron con el mismo id (jbl-flip-7)")
+                            for r in p["revisar"]), p["revisar"])
+        self.assertEqual(1, len(datos["duplicados_fusionados"]))
+
+
+class MasPegado(unittest.TestCase):
+    """Revisión del 08/10/2026: `PRO+` pegado se fundía con el Pro de la misma lista."""
+
+    def test_el_pro_y_el_pro_mas_son_dos_productos(self):
+        datos = parsear(" *XIAOMI* \n✔️NOTE 15 PRO 4G (8+256) $860\n✔️NOTE 15 PRO+ (8+256) $1.310\n")
+        self.assertEqual([("xiaomi-redmi-note-15-pro-4g-8gb-ram-256gb", 860_000),
+                          ("xiaomi-redmi-note-15-pro-plus-8gb-ram-256gb", 1_310_000)],
+                         [(p["id"], p["precio_proveedor_cop"]) for p in datos["productos"]])
+
+    def test_la_memoria_no_se_toca(self):
+        datos = parsear(" *XIAOMI* \n✔️NOTE 15 PRO 4G (8+256) $860\n")
+        self.assertEqual(["Xiaomi Redmi Note 15 Pro 4G 8GB RAM 256GB"], titulos(datos))
 
 
 class ValidacionDeEquivalencias(unittest.TestCase):
