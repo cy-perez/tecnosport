@@ -9,7 +9,13 @@ import {
   untracked,
   viewChild,
 } from '@angular/core';
-import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import {
+  AbstractControl,
+  FormControl,
+  FormGroup,
+  ReactiveFormsModule,
+  Validators,
+} from '@angular/forms';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { mensajeDeError } from '../../../../../core/errores/mensaje-de-error';
 import { usarTraductor } from '../../../../../core/i18n/traductor';
@@ -161,6 +167,15 @@ export class ReferenciasEnvioPage {
       validators: [Validators.required, Validators.min(1)],
     }),
   });
+
+  /**
+   * El error de un campo, pegado al campo: con él `ts-campo` pinta el borde, pone `aria-invalid` y
+   * lo ata con `aria-describedby`. El mensaje del formulario dice qué falta en general; sin este, el
+   * `markAllAsTouched()` no marcaba ningún campo.
+   */
+  protected errorDe(control: AbstractControl, clave: string): string | null {
+    return control.touched && control.invalid ? this.traducir()(clave) : null;
+  }
 
   protected etiquetaLinea(linea: LineaConPromedio): string {
     return this.traducir()(CLAVE_LINEA[linea]);
