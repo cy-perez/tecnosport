@@ -42,6 +42,32 @@ llegan a una ficha. Su nombre se deja tal como lo escribió el proveedor, que es
 como se le muestra en la hoja de descartados para que sepa de qué línea se está
 hablando. Ver las reglas 5, 14 y 17 del `SKILL.md`.
 
+## Una corrección se escribe una vez
+
+Cada título que se corrige en el paso 4 entra a `referencias/equivalencias.json`,
+con el id que produjo el parser como clave (`id_lista` en `productos.json`) y el
+id y el título definitivos, la fecha y de dónde salió:
+
+```json
+"jbl-extreme-4": {
+  "id": "jbl-xtreme-4",
+  "titulo": "JBL Xtreme 4",
+  "fecha": "2026-10-02",
+  "motivo": "Icecat: la marca escribe Xtreme"
+}
+```
+
+Desde ahí el parser lo aplica en cada lista, sin que nadie lo vuelva a descubrir.
+Hasta el 08/10/2026 la corrección vivía solo en el `productos.json` de esa corrida,
+y la lista siguiente traía `jbl-extreme-4` como si fuera un producto nuevo.
+
+El id es el título en minúsculas, sin tildes y con guiones, y un «+» pegado a
+una palabra se escribe «plus» (`Redmi Note 15 Pro+` → `…-pro-plus-…`). El parser
+valida el archivo al cargarlo y se niega a arrancar si un id no corresponde a su
+título, o si una entrada apunta a otra clave: las dos cosas renombrarían
+productos en silencio. Las tablas de abajo explican **por qué** se corrigió cada
+nombre; el archivo es lo que se aplica.
+
 ## Confirmar el nombre antes de titular
 
 Las listas abrevian y se equivocan. Verifica siempre contra el sitio del

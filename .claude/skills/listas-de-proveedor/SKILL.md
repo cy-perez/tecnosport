@@ -322,6 +322,11 @@ Escribe los resultados de vuelta en `productos.json` (`precio_mercado_cop`,
 `colores_oficiales`, `titulo` corregido). Guarda cada búsqueda con su fuente: el
 Excel lleva una columna de fuentes y sin ellas el precio no es verificable.
 
+**Cada título que corrijas va también a `referencias/equivalencias.json`**, con el
+`id_lista` del producto como clave. Si no, la lista siguiente lo vuelve a traer
+crudo y se investiga otra vez como si fuera nuevo. Formato y reglas en
+`referencias/titulos.md`.
+
 **Un producto sin ficha oficial no se queda sin descripción, pero tampoco se la
 inventa.** Se escribe una corta con lo que el nombre comercial y la línea del
 proveedor establecen, y una nota que diga qué falta y que se le pidió al
@@ -400,6 +405,11 @@ No hay que volver a hacerlo a mano en cada lista:
   ella llegaron otros tres defectos que ya no se repiten: la SIM escrita en la
   misma línea (`*1 SIM*`) se ignoraba y fusionaba dos referencias, un precio sin
   `$` descartaba el equipo, y la serie F de POCO salía como Xiaomi.
+- **Títulos ya confirmados.** Lo que se corrigió en una lista anterior está en
+  `referencias/equivalencias.json` y se aplica solo: el producto sale con su id y
+  su título definitivos, el id de la lista queda en `id_lista` y la alerta de
+  confirmar el nombre no vuelve a aparecer. En la lista del 08/10/2026 fueron 29
+  de 90 productos.
 - **Prefijos de exportación de WhatsApp** (`[10:05, 12/09/2026] +57 300 123 4567:`)
   se quitan antes de leer la línea.
 - **Encabezados sin la negrita de WhatsApp.** El parser reconocía la sección
@@ -521,6 +531,7 @@ scripts/filtrar_fotos.py          FUERA DEL FLUJO desde el 25/09/2026: regla 16
 scripts/organizar_imagenes.py     FUERA DEL FLUJO desde el 19/09/2026: ver la nota de abajo
 referencias/formato-de-listas.md  anatomía de los mensajes de proveedor
 referencias/titulos.md            fórmula de títulos y nombres ya confirmados
+referencias/equivalencias.json    id de la lista → id y título definitivos; lo aplica el parser
 referencias/descripciones.md      estructura de la descripción y metadatos
 referencias/fichas-tecnicas.md    de dónde sale la ficha oficial de cada marca
 referencias/precios.md            método de investigación de precios
