@@ -224,6 +224,40 @@ class EnviarComprobantesDeCompraTest {
         cuerpo.contains(TextoDeCorreo.PEDIDO_COMPROBANTE_TOTALES.clave() + "|179800"), cuerpo);
   }
 
+  /** ADR-0073: el comprobante dice con qué transportadora va, que es la que el comprador eligió. */
+  @Test
+  void aDomicilioNombraLaTransportadoraDelFlete() {
+    Pedido pedido =
+        Pedido.crear(
+            NumeroPedido.de(2026, 1),
+            null,
+            new CorreoElectronico("cliente@tecnosport.co"),
+            List.of(linea("Camiseta running Dry-Fit", 1, 89_900)),
+            TipoEntrega.ENVIO_A_DOMICILIO,
+            Direccion.sinBarrio("05", "Antioquia", "05001", "Medellín", "Cra. 26C #38B-31", null),
+            MetodoPago.CONTRAENTREGA,
+            "cliente@tecnosport.co",
+            COMPRADO,
+            new co.tecnosport.api.domain.envio.TarifaEnvio(
+                "rate_1",
+                "Inter Rapidísimo",
+                "Standard",
+                co.tecnosport.api.domain.compartido.Dinero.deCop(12_000),
+                2,
+                true,
+                COMPRADO.plusSeconds(86_400)));
+    pedidos.guardar(pedido);
+
+    casoDeUso().ejecutar();
+
+    String cuerpo = cuerpoUnico();
+    assertTrue(
+        cuerpo.contains(
+            TextoDeCorreo.PEDIDO_COMPROBANTE_ENTREGA_DOMICILIO_CON_TRANSPORTADORA.clave()
+                + "|Inter Rapidísimo"),
+        cuerpo);
+  }
+
   /** Quien recoge en el punto no paga flete, y el comprobante no puede decir otra cosa. */
   @Test
   void elRetiroEnPuntoLlevaSuPropioTextoDeEntrega() {

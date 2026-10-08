@@ -137,7 +137,7 @@ public final class EnviarComprobantesDeCompra {
             textos.dinero(pedido.subtotal()),
             textos.dinero(pedido.costoEnvio()),
             textos.dinero(pedido.total())));
-    cuerpo.append(textos.texto(entrega(pedido)));
+    cuerpo.append(entrega(pedido));
     cuerpo.append(textos.texto(pago(pedido)));
     cuerpo.append(textos.texto(TextoDeCorreo.PEDIDO_COMPROBANTE_VENDEDOR));
     cuerpo.append(textos.texto(TextoDeCorreo.PEDIDO_COMPROBANTE_CIERRE, enlaceDeEstado(pedido)));
@@ -148,10 +148,23 @@ public final class EnviarComprobantesDeCompra {
         cuerpo.toString());
   }
 
-  private static TextoDeCorreo entrega(Pedido pedido) {
-    return pedido.tipoEntrega() == TipoEntrega.RETIRO_EN_PUNTO
-        ? TextoDeCorreo.PEDIDO_COMPROBANTE_ENTREGA_RETIRO
-        : TextoDeCorreo.PEDIDO_COMPROBANTE_ENTREGA_DOMICILIO;
+  /**
+   * A domicilio dice con qué transportadora, que es la que el comprador eligió (ADR-0073) y la que
+   * va a ver en la puerta. Un pedido sin tarifa congelada —anterior a que el pedido la guardara— se
+   * queda con el texto sin nombre.
+   */
+  private String entrega(Pedido pedido) {
+    if (pedido.tipoEntrega() == TipoEntrega.RETIRO_EN_PUNTO) {
+      return textos.texto(TextoDeCorreo.PEDIDO_COMPROBANTE_ENTREGA_RETIRO);
+    }
+    return pedido
+        .tarifaEnvio()
+        .map(
+            tarifa ->
+                textos.texto(
+                    TextoDeCorreo.PEDIDO_COMPROBANTE_ENTREGA_DOMICILIO_CON_TRANSPORTADORA,
+                    tarifa.transportadora()))
+        .orElseGet(() -> textos.texto(TextoDeCorreo.PEDIDO_COMPROBANTE_ENTREGA_DOMICILIO));
   }
 
   /**

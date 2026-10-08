@@ -97,7 +97,8 @@ public class MapeadorSeguimiento {
             .toList(),
         repositorioSolicitudes.buscarPorPedidoId(pedido.id()).stream()
             .map(this::aRespuesta)
-            .toList());
+            .toList(),
+        completa.transportadora());
   }
 
   private EnvioPublicoRespuesta aRespuesta(Envio envio) {

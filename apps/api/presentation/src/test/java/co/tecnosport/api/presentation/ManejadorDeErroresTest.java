@@ -157,6 +157,15 @@ class ManejadorDeErroresTest {
    * El 409 que la confirmación del checkout traduce a "la recogida ya no está disponible". Sin su
    * manejador caería en el genérico —un 500— y el comprador vería "revisa tus datos".
    */
+  /** El que el checkout traduce a "esa transportadora ya no está disponible, elige otra". */
+  @Test
+  void laTransportadoraQueYaNoCotizaEsUnConflictoConSuCodigo() throws Exception {
+    mockMvc
+        .perform(get("/api/v1/prueba-de-errores/transportadora-que-ya-no-cotiza"))
+        .andExpect(status().isConflict())
+        .andExpect(jsonPath("$.codigo").value("TRANSPORTADORA_NO_DISPONIBLE"));
+  }
+
   @Test
   void laRecogidaApagadaEsUnConflictoConSuCodigo() throws Exception {
     mockMvc
@@ -204,6 +213,12 @@ class ManejadorDeErroresTest {
     }
 
     /** Con el mensaje tal como lo compone `SistecreditoClient`, texto del proveedor incluido. */
+    @GetMapping("/api/v1/prueba-de-errores/transportadora-que-ya-no-cotiza")
+    String transportadoraQueYaNoCotiza() {
+      throw new co.tecnosport.api.application.envio.TransportadoraNoDisponibleException(
+          "Servientrega");
+    }
+
     @GetMapping("/api/v1/prueba-de-errores/recogida-apagada")
     String recogidaApagada() {
       throw new RetiroEnPuntoNoDisponibleException();

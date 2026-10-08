@@ -117,7 +117,8 @@ public final class EmitirGuiaDePedido {
     // armador para que el panel, que muestra estos mismos bultos, no pueda enseñar otros.
     List<BultoDespachable> bultos = armador.armarParaDespachar(pedido);
     TarifaEnvio tarifa =
-        cotizarEnvio.deBultos(
+        laElegidaOLaMasEconomica(
+            pedido,
             destino,
             bultos.stream().map(BultoDespachable::bulto).toList(),
             conRecaudo,
@@ -263,6 +264,28 @@ public final class EmitirGuiaDePedido {
    * Coordinadora está atascado, falla siempre, y es la tarifa más barata de la cuenta. Sin
    * excluirla, cada reintento la vuelve a elegir y vuelve a morir igual.
    */
+  /**
+   * La transportadora que eligió el comprador, si todavía cotiza y no ha fallado ya para este
+   * pedido (ADR-0073). Si no, la más económica, que es lo que se hacía antes de que se pudiera
+   * elegir: un pedido pagado no se queda sin despachar porque la elegida dejó de cotizar.
+   */
+  private TarifaEnvio laElegidaOLaMasEconomica(
+      Pedido pedido,
+      Direccion destino,
+      List<Bulto> bultos,
+      boolean conRecaudo,
+      Set<String> excluidas) {
+    String elegida = pedido.tarifaEnvio().map(TarifaEnvio::transportadora).orElse(null);
+    if (elegida != null && !excluidas.contains(elegida.toLowerCase(Locale.ROOT))) {
+      try {
+        return cotizarEnvio.deBultos(destino, bultos, conRecaudo, excluidas, elegida);
+      } catch (TransportadoraNoDisponibleException e) {
+        // Sigue abajo con la más económica: la emisión que queda registrada dice cuál salió.
+      }
+    }
+    return cotizarEnvio.deBultos(destino, bultos, conRecaudo, excluidas);
+  }
+
   private static Set<String> transportadorasQueYaFallaron(List<EmisionDeGuia> anteriores) {
     return anteriores.stream()
         .filter(emision -> emision.estado() != EstadoEmision.EMITIDA)

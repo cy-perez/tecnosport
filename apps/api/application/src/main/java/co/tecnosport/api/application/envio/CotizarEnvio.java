@@ -10,8 +10,10 @@ import java.util.Objects;
 import java.util.Set;
 
 /**
- * El costo de envío para un carrito y un destino: una sola opción, la más económica, elegida por el
- * servidor (adr/0021).
+ * El costo de envío para un carrito y un destino. Hasta el 8 de octubre de 2026 era una sola
+ * opción, la más económica, elegida por el servidor (adr/0021); desde ADR-0073 el comprador elige
+ * la transportadora entre {@link #opciones}, y {@link #ejecutar} cobra la tarifa de esa — o la más
+ * económica si no eligió ninguna.
  *
  * <p>Lo que el cliente manda es <strong>qué</strong> lleva y <strong>a dónde</strong>, nunca cuánto
  * pesa ni cuánto vale: eso sale del catálogo. Un comprador que pudiera declarar el peso podría
@@ -43,7 +45,25 @@ public final class CotizarEnvio {
 
     List<Bulto> bultos =
         armador.armar(aEmpacar(comando)).stream().map(BultoDespachable::bulto).toList();
-    return deBultos(destino, bultos, comando.conRecaudo(), Set.of());
+    return deBultos(destino, bultos, comando.conRecaudo(), Set.of(), comando.transportadora());
+  }
+
+  /**
+   * Lo que el checkout le ofrece al comprador: una opción por transportadora, de la más económica a
+   * la más cara (ADR-0073). Las mismas reglas que {@link #ejecutar} —vigentes, sin cobertura si no
+   * queda ninguna— porque son las mismas tarifas; esto solo no elige.
+   */
+  public List<TarifaEnvio> opciones(CotizarEnvioComando comando) {
+    Objects.requireNonNull(comando, "El comando no puede ser nulo.");
+    Direccion destino =
+        Objects.requireNonNull(comando.direccion(), "El destino de la cotización es obligatorio.");
+    if (comando.lineas() == null || comando.lineas().isEmpty()) {
+      throw new IllegalArgumentException("Una cotización necesita al menos una línea.");
+    }
+    List<Bulto> bultos =
+        armador.armar(aEmpacar(comando)).stream().map(BultoDespachable::bulto).toList();
+    return TarifaEnvio.unaPorTransportadora(
+        vigentes(destino, bultos, comando.conRecaudo(), Set.of()));
   }
 
   /**
@@ -63,6 +83,35 @@ public final class CotizarEnvio {
       List<Bulto> bultos,
       boolean conRecaudo,
       Set<String> transportadorasExcluidas) {
+    return deBultos(destino, bultos, conRecaudo, transportadorasExcluidas, null);
+  }
+
+  /**
+   * La misma, quedándose con la tarifa de {@code transportadora} si viene: la que eligió el
+   * comprador (ADR-0073). Si esa ya no cotiza, no se cambia por otra: {@link
+   * TransportadoraNoDisponibleException}.
+   */
+  public TarifaEnvio deBultos(
+      Direccion destino,
+      List<Bulto> bultos,
+      boolean conRecaudo,
+      Set<String> transportadorasExcluidas,
+      String transportadora) {
+    List<TarifaEnvio> vigentes = vigentes(destino, bultos, conRecaudo, transportadorasExcluidas);
+    if (transportadora == null || transportadora.isBlank()) {
+      return TarifaEnvio.masEconomica(vigentes).orElseThrow();
+    }
+    return TarifaEnvio.masEconomica(
+            vigentes.stream().filter(tarifa -> tarifa.esDe(transportadora)).toList())
+        .orElseThrow(() -> new TransportadoraNoDisponibleException(transportadora));
+  }
+
+  /** Las tarifas que se pueden ofrecer: al menos una, o la excepción que dice por qué no. */
+  private List<TarifaEnvio> vigentes(
+      Direccion destino,
+      List<Bulto> bultos,
+      boolean conRecaudo,
+      Set<String> transportadorasExcluidas) {
     Objects.requireNonNull(destino, "El destino de la cotización es obligatorio.");
     Objects.requireNonNull(transportadorasExcluidas, "Las excluidas no pueden ser nulas.");
     if (bultos == null || bultos.isEmpty()) {
@@ -74,11 +123,15 @@ public final class CotizarEnvio {
     // Sin `default`: una respuesta nueva del proveedor tiene que romper la compilación aquí, que es
     // donde se decide qué se le dice al comprador.
     return switch (resultado) {
-      case ResultadoCotizacion.ConTarifas(List<TarifaEnvio> tarifas) ->
-          TarifaEnvio.masEconomica(elegibles(tarifas, transportadorasExcluidas))
-              // Todas vencidas es sin cobertura y no un fallo: el proveedor respondió, y lo que
-              // respondió no se puede ofrecer.
-              .orElseThrow(() -> new EnvioSinCoberturaException(destino.codigoDaneCiudad()));
+      case ResultadoCotizacion.ConTarifas(List<TarifaEnvio> tarifas) -> {
+        List<TarifaEnvio> elegibles = elegibles(tarifas, transportadorasExcluidas);
+        // Todas vencidas es sin cobertura y no un fallo: el proveedor respondió, y lo que
+        // respondió no se puede ofrecer.
+        if (elegibles.isEmpty()) {
+          throw new EnvioSinCoberturaException(destino.codigoDaneCiudad());
+        }
+        yield elegibles;
+      }
       case ResultadoCotizacion.SinCobertura ignorado ->
           throw new EnvioSinCoberturaException(destino.codigoDaneCiudad());
       // Y aquí tampoco hay `default`, por lo mismo: los cinco motivos no piden lo mismo del

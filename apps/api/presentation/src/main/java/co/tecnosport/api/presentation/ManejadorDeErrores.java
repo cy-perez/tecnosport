@@ -39,6 +39,7 @@ import co.tecnosport.api.application.envio.EnvioSinCoberturaException;
 import co.tecnosport.api.application.envio.GuiaNoEncontradaException;
 import co.tecnosport.api.application.envio.PesoDeReferenciaNoAdmitidoException;
 import co.tecnosport.api.application.envio.ResultadoEmision;
+import co.tecnosport.api.application.envio.TransportadoraNoDisponibleException;
 import co.tecnosport.api.application.garantia.LineaNoEsDelPedidoException;
 import co.tecnosport.api.application.garantia.ReclamacionGarantiaNoEncontradaException;
 import co.tecnosport.api.application.pago.MetodoDePagoNoEsDeSistecreditoException;
@@ -744,6 +745,14 @@ public class ManejadorDeErrores {
     problema.setProperty("codigo", "SISTECREDITO_NO_RESPONDE");
     problema.setType(URI.create("https://tecnosport.co/errores/sistecredito-no-responde"));
     return problema;
+  }
+
+  // La transportadora que eligió el comprador dejó de cotizar entre el resumen y la confirmación
+  // (ADR-0073). 409 y no 503: el proveedor respondió, y lo que respondió no la incluye. El checkout
+  // vuelve a cotizar y le pide elegir otra.
+  @ExceptionHandler(TransportadoraNoDisponibleException.class)
+  public ProblemDetail transportadoraNoDisponible(TransportadoraNoDisponibleException excepcion) {
+    return problema(HttpStatus.CONFLICT, "Transportadora no disponible", excepcion);
   }
 
   // Un cliente que no leyó GET /envios/modalidades —uno viejo, o hecho a mano— y pide recoger con

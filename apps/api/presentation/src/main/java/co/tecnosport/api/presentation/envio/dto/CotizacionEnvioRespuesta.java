@@ -1,11 +1,14 @@
 package co.tecnosport.api.presentation.envio.dto;
 
 import co.tecnosport.api.presentation.compartido.dto.DineroRespuesta;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.Instant;
+import java.util.List;
 
 /**
- * Una sola opción, la más económica: el servidor elige (adr/0021). No viaja la lista de tarifas ni
- * el identificador del proveedor — si el {@code rate_id} llegara al navegador, alguien podría
+ * La opción más económica arriba —la que se cobra si el comprador no elige— y, desde ADR-0073,
+ * {@code opciones}: una por transportadora, de la más económica a la más cara, para que elija. No
+ * viaja el identificador del proveedor — si el {@code rate_id} llegara al navegador, alguien podría
  * devolverlo alterado al crear el pedido.
  *
  * <p>{@code diasEstimados} en cero significa <strong>sin estimado</strong>, no "llega hoy": hay
@@ -23,4 +26,8 @@ import java.time.Instant;
  * /pedidos/metodos-de-pago-disponibles}, que es donde docs/03-api.md dice que se resuelve.
  */
 public record CotizacionEnvioRespuesta(
-    DineroRespuesta costoEnvio, String transportadora, int diasEstimados, Instant venceEn) {}
+    DineroRespuesta costoEnvio,
+    String transportadora,
+    int diasEstimados,
+    Instant venceEn,
+    @Schema(requiredMode = Schema.RequiredMode.REQUIRED) List<OpcionEnvioRespuesta> opciones) {}

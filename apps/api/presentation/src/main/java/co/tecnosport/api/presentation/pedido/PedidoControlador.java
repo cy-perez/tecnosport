@@ -96,7 +96,10 @@ public class PedidoControlador {
                 .toList(),
             cuerpo.correo(),
             TipoEntrega.valueOf(cuerpo.tipoEntrega()),
-            cuerpo.direccion() == null ? null : aDireccion(cuerpo.direccion()));
+            cuerpo.direccion() == null ? null : aDireccion(cuerpo.direccion()),
+            null,
+            null,
+            cuerpo.transportadora());
     // Por NOMBRE y no por el orden del enum. Es lo que hacia `map(Enum::name).sorted()` cuando
     // la lista viajaba como cadenas, y este es el orden en que el checkout pinta los botones:
     // dejar que Jackson serialice el enum en su orden de declaracion los habria movido de sitio
@@ -172,7 +175,8 @@ public class PedidoControlador {
         direccion,
         cuerpo.metodoPago(),
         cuerpo.autorizaDatos(),
-        direccionIp);
+        direccionIp,
+        cuerpo.transportadora());
   }
 
   private Direccion aDireccion(CrearPedidoRequest.DireccionRequest d) {

@@ -6,7 +6,18 @@ public record MetodosDePagoDisponiblesRequest(
     List<CrearPedidoRequest.LineaRequest> lineas,
     String correo,
     String tipoEntrega,
-    CrearPedidoRequest.DireccionRequest direccion) {
+    CrearPedidoRequest.DireccionRequest direccion,
+    /** La transportadora elegida: la contraentrega solo se ofrece si esa recauda (ADR-0073). */
+    String transportadora) {
+
+  /** Sin transportadora elegida. */
+  public MetodosDePagoDisponiblesRequest(
+      List<CrearPedidoRequest.LineaRequest> lineas,
+      String correo,
+      String tipoEntrega,
+      CrearPedidoRequest.DireccionRequest direccion) {
+    this(lineas, correo, tipoEntrega, direccion, null);
+  }
 
   public MetodosDePagoDisponiblesRequest {
     if (lineas == null || lineas.isEmpty()) {

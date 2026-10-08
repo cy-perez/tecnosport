@@ -127,6 +127,31 @@ class CotizacionEnvioControladorTest {
   }
 
   /**
+   * ADR-0073: una opción por transportadora, de la más barata a la más cara, sin el id del
+   * proveedor.
+   */
+  @Test
+  void devuelveUnaOpcionPorTransportadoraOrdenadas() throws Exception {
+    cotizador.conTarifas(
+        new TarifaEnvio("cara", "Servientrega", "Standard", Dinero.deCop(19_616), 2, false, VENCE),
+        new TarifaEnvio(
+            "barata", "Coordinadora", "Standard", Dinero.deCop(10_540), 1, false, VENCE));
+
+    mockMvc
+        .perform(
+            post("/api/v1/envios/cotizacion")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(cuerpo()))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.opciones.length()").value(2))
+        .andExpect(jsonPath("$.opciones[0].transportadora").value("Coordinadora"))
+        .andExpect(jsonPath("$.opciones[0].costoEnvio.valor").value(10540))
+        .andExpect(jsonPath("$.opciones[1].transportadora").value("Servientrega"))
+        .andExpect(jsonPath("$.opciones[1].diasEstimados").value(2))
+        .andExpect(jsonPath("$.opciones[0].idTarifa").doesNotExist());
+  }
+
+  /**
    * No viaja el identificador de la tarifa del proveedor. Si llegara al navegador, alguien podría
    * devolverlo alterado al crear el pedido (docs/03-api.md).
    */

@@ -25,7 +25,25 @@ public record CrearPedidoRequest(
     String tipoEntrega,
     DireccionRequest direccion,
     MetodoPago metodoPago,
-    boolean autorizaDatos) {
+    boolean autorizaDatos,
+    /**
+     * La transportadora que eligió el comprador, por su nombre (ADR-0073). Opcional: sin ella se
+     * cobra la más económica. Nunca el costo: ese lo vuelve a cotizar el servidor.
+     */
+    String transportadora) {
+
+  /** Sin transportadora elegida. */
+  public CrearPedidoRequest(
+      String correo,
+      String nombre,
+      String telefono,
+      List<LineaRequest> lineas,
+      String tipoEntrega,
+      DireccionRequest direccion,
+      MetodoPago metodoPago,
+      boolean autorizaDatos) {
+    this(correo, nombre, telefono, lineas, tipoEntrega, direccion, metodoPago, autorizaDatos, null);
+  }
 
   public CrearPedidoRequest {
     if (correo == null || correo.isBlank()) {

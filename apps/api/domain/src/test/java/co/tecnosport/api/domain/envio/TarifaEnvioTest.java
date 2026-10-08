@@ -82,4 +82,33 @@ class TarifaEnvioTest {
   void masEconomicaDeUnaListaVaciaEsVacio() {
     assertEquals(Optional.empty(), TarifaEnvio.masEconomica(List.of()));
   }
+
+  private static TarifaEnvio de(String transportadora, String id, long costo, int dias) {
+    return new TarifaEnvio(id, transportadora, "Estándar", Dinero.deCop(costo), dias, false, VENCE);
+  }
+
+  /**
+   * ADR-0073: el comprador elige una transportadora, no un servicio. Envía cotiza dos y se ofrece
+   * solo la más económica de las suyas; el orden es de la más barata a la más cara.
+   */
+  @Test
+  void unaPorTransportadoraConSuTarifaMasEconomicaYDeLaMasBarataALaMasCara() {
+    List<TarifaEnvio> opciones =
+        TarifaEnvio.unaPorTransportadora(
+            List.of(
+                de("Servientrega", "s", 18_000, 2),
+                de("Envía", "envia-mercancia", 16_000, 4),
+                de("Envía", "envia-paquete", 14_000, 5),
+                de("Coordinadora", "c", 12_000, 3)));
+
+    assertEquals(
+        List.of("c", "envia-paquete", "s"), opciones.stream().map(TarifaEnvio::idTarifa).toList());
+  }
+
+  @Test
+  void esDeComparaElNombreSinMayusculasNiEspacios() {
+    assertTrue(de("Inter Rapidísimo", "i", 9_000, 2).esDe(" inter rapidísimo "));
+    assertFalse(de("Inter Rapidísimo", "i", 9_000, 2).esDe("Servientrega"));
+    assertFalse(de("Inter Rapidísimo", "i", 9_000, 2).esDe(null));
+  }
 }

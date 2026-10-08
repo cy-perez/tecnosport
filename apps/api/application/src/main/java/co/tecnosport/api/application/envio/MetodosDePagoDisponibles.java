@@ -249,11 +249,15 @@ public final class MetodosDePagoDisponibles {
                       .map(l -> new CotizarEnvioComando.LineaComando(l.varianteId(), l.cantidad()))
                       .toList(),
                   comando.direccion(),
-                  true)));
+                  true,
+                  comando.transportadora())));
     } catch (EnvioSinCoberturaException
         | ArticuloNoAsegurableException
         | ArticuloSinMedidasException
-        | CotizacionRechazadaException e) {
+        | CotizacionRechazadaException
+        | TransportadoraNoDisponibleException e) {
+      // La quinta, desde ADR-0073: la transportadora que eligió el comprador no recauda en ese
+      // destino. Ofrecer contraentrega con otra cambiaría el flete que ya vio y aceptó.
       // Las tres significan lo mismo para esta consulta —no hay envío a domicilio— y ninguna es un
       // error que deba salir por aquí: quien pregunta por los medios de pago se quedaría sin
       // respuesta y vería el checkout roto en vez de la recogida (adr/0036).

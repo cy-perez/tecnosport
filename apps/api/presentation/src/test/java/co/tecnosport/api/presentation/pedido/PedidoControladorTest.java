@@ -768,8 +768,10 @@ class PedidoControladorTest {
             .andExpect(jsonPath("$.envio.guias[0].*", org.hamcrest.Matchers.hasSize(2)))
             .andExpect(jsonPath("$.envio.despachadoEn").exists())
             .andExpect(jsonPath("$.envio.*", org.hamcrest.Matchers.hasSize(2)))
-            // El juego de llaves de la raiz: los diecisiete campos de PedidoSeguimientoRespuesta.
-            .andExpect(jsonPath("$.*", org.hamcrest.Matchers.hasSize(17)))
+            // El juego de llaves de la raiz: los dieciocho campos de PedidoSeguimientoRespuesta.
+            // Dieciocho desde el 8 de octubre de 2026: `transportadora` es el nombre de la que el
+            // comprador eligio (ADR-0073), no un costo — es un dato suyo, como el metodo de pago.
+            .andExpect(jsonPath("$.*", org.hamcrest.Matchers.hasSize(18)))
             // Y el de la linea, que es un objeto que este mapeador NO escribe a mano: lo copia
             // entero del panel. Un campo nuevo ahi sale bajo $.lineas[0] y la cuenta de la raiz
             // ni se entera — comprobado agregandolo a proposito. Nueve desde el 3 de octubre de

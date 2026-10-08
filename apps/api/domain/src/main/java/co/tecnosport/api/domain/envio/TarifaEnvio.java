@@ -4,7 +4,10 @@ import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.compartido.ExcepcionDeDominio;
 import java.time.Instant;
 import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -57,10 +60,41 @@ public record TarifaEnvio(
    */
   public static Optional<TarifaEnvio> masEconomica(List<TarifaEnvio> tarifas) {
     Objects.requireNonNull(tarifas, "La lista de tarifas no puede ser nula.");
-    return tarifas.stream()
-        .min(
-            Comparator.comparing((TarifaEnvio t) -> t.costo().valor())
-                .thenComparingInt(TarifaEnvio::diasEstimados));
+    return tarifas.stream().min(DE_LA_MAS_ECONOMICA);
+  }
+
+  /**
+   * Una opción por transportadora —su tarifa más económica— y de la más económica a la más cara. Es
+   * lo que el comprador elige desde el 8 de octubre de 2026 (ADR-0073): una transportadora, no un
+   * servicio. Envía cotiza dos —mercancía y paquete terrestre— y ofrecerle las dos sería pedirle
+   * que distinga algo que la plataforma no le explica.
+   */
+  public static List<TarifaEnvio> unaPorTransportadora(List<TarifaEnvio> tarifas) {
+    Objects.requireNonNull(tarifas, "La lista de tarifas no puede ser nula.");
+    Map<String, TarifaEnvio> porTransportadora = new LinkedHashMap<>();
+    for (TarifaEnvio tarifa : tarifas.stream().sorted(DE_LA_MAS_ECONOMICA).toList()) {
+      porTransportadora.putIfAbsent(clave(tarifa.transportadora()), tarifa);
+    }
+    return List.copyOf(porTransportadora.values());
+  }
+
+  /**
+   * Si esta tarifa es de la transportadora que el comprador eligió. Por nombre, sin distinguir
+   * mayúsculas: es lo único que el checkout conoce de la opción, y es a propósito — el {@code
+   * idTarifa} no sale del servidor (adr/0021) y el costo lo vuelve a fijar quien crea el pedido.
+   */
+  public boolean esDe(String nombreDeTransportadora) {
+    return nombreDeTransportadora != null
+        && clave(transportadora).equals(clave(nombreDeTransportadora));
+  }
+
+  /** Empate a costo: gana la de menor plazo, no el orden en que el proveedor las devolvió. */
+  private static final Comparator<TarifaEnvio> DE_LA_MAS_ECONOMICA =
+      Comparator.comparing((TarifaEnvio t) -> t.costo().valor())
+          .thenComparingInt(TarifaEnvio::diasEstimados);
+
+  private static String clave(String nombre) {
+    return nombre.trim().toLowerCase(Locale.ROOT);
   }
 
   private static void exigirTexto(String valor, String queEs) {

@@ -38,4 +38,6 @@ public record PedidoSeguimientoRespuesta(
     DatosTransferenciaRespuesta datosTransferencia,
     EnvioPublicoRespuesta envio,
     List<HistorialPedidoRespuesta> historial,
-    List<RetractoPublicoRespuesta> retractos) {}
+    List<RetractoPublicoRespuesta> retractos,
+    /** La transportadora que eligió el comprador (ADR-0073); nula en recogida. */
+    String transportadora) {}

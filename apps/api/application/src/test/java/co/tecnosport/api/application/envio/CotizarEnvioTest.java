@@ -103,6 +103,64 @@ class CotizarEnvioTest {
     assertEquals("barata", caso.ejecutar(comando(1)).idTarifa());
   }
 
+  private static TarifaEnvio de(String transportadora, String id, long costo) {
+    return new TarifaEnvio(
+        id, transportadora, "Standard", Dinero.deCop(costo), 2, false, AHORA.plusSeconds(3600));
+  }
+
+  /** ADR-0073: con una transportadora elegida se cobra la suya, aunque no sea la más barata. */
+  @Test
+  void conTransportadoraElegidaCobraLaSuya() {
+    cotizador.devolver(de("Coordinadora", "barata", 10_540), de("Servientrega", "elegida", 15_000));
+
+    TarifaEnvio tarifa =
+        caso.ejecutar(
+            new CotizarEnvioComando(
+                List.of(new CotizarEnvioComando.LineaComando(camiseta.id(), 1)),
+                BOGOTA,
+                false,
+                "servientrega"));
+
+    assertEquals("elegida", tarifa.idTarifa());
+  }
+
+  /** Si la elegida ya no cotiza no se cambia por otra en silencio: se dice. */
+  @Test
+  void laTransportadoraElegidaQueYaNoCotizaNoSeCambiaPorOtra() {
+    cotizador.devolver(de("Coordinadora", "barata", 10_540));
+
+    TransportadoraNoDisponibleException error =
+        assertThrows(
+            TransportadoraNoDisponibleException.class,
+            () ->
+                caso.ejecutar(
+                    new CotizarEnvioComando(
+                        List.of(new CotizarEnvioComando.LineaComando(camiseta.id(), 1)),
+                        BOGOTA,
+                        false,
+                        "Servientrega")));
+
+    assertEquals("Servientrega", error.transportadora());
+  }
+
+  /** Lo que ve el comprador: una por transportadora, de la más barata a la más cara. */
+  @Test
+  void lasOpcionesSonUnaPorTransportadoraOrdenadas() {
+    cotizador.devolver(
+        de("Servientrega", "s", 15_000), de("Coordinadora", "c", 10_540), de("Envía", "e", 12_000));
+
+    assertEquals(
+        List.of("Coordinadora", "Envía", "Servientrega"),
+        caso.opciones(comando(1)).stream().map(TarifaEnvio::transportadora).toList());
+  }
+
+  @Test
+  void sinTarifasNoHayOpcionesSinoSinCobertura() {
+    cotizador.devolver();
+
+    assertThrows(EnvioSinCoberturaException.class, () -> caso.opciones(comando(1)));
+  }
+
   /** Sin tarifa no hay envío a domicilio, y eso es un caso de negocio, no una falla. */
   @Test
   void sinTarifasLanzaEnvioSinCobertura() {

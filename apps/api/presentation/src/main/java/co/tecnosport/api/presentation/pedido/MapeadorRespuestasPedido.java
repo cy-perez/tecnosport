@@ -5,6 +5,7 @@ import co.tecnosport.api.application.envio.RepositorioEnvios;
 import co.tecnosport.api.application.reintegro.TopeDeReintegro;
 import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.envio.Envio;
+import co.tecnosport.api.domain.envio.TarifaEnvio;
 import co.tecnosport.api.domain.pedido.Contacto;
 import co.tecnosport.api.domain.pedido.Direccion;
 import co.tecnosport.api.domain.pedido.HistorialPedido;
@@ -70,7 +71,8 @@ public class MapeadorRespuestasPedido {
         // y
         // dos sumas del mismo dinero en dos capas distintas se separan el día que una cambie.
         aRespuesta(tope.yaDevuelto(pedido.id())),
-        plazoDeEntrega(pedido));
+        plazoDeEntrega(pedido),
+        pedido.tarifaEnvio().map(TarifaEnvio::transportadora).orElse(null));
   }
 
   /** El veredicto lo decide el pedido (`Pedido.verdictoDelPlazoDeEntrega`); aquí solo se mapea. */

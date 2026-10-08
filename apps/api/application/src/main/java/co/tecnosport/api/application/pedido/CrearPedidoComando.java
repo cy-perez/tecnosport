@@ -20,6 +20,9 @@ import java.util.UUID;
  * transportadora y el mensajero de contraentrega, y también el retiro en punto, donde alguien
  * reclama el paquete con un nombre. Va aparte del correo porque el correo identifica al comprador y
  * el contacto a quien recibe, que no siempre son la misma persona.
+ *
+ * <p>{@code transportadora} es la que eligió el comprador en el checkout (ADR-0073), por nombre, o
+ * nulo para la más económica. El costo no viaja: lo fija la cotización de este caso de uso.
  */
 public record CrearPedidoComando(
     UUID usuarioId,
@@ -30,7 +33,32 @@ public record CrearPedidoComando(
     Direccion direccion,
     MetodoPago metodoPago,
     boolean autorizaDatos,
-    String direccionIp) {
+    String direccionIp,
+    String transportadora) {
+
+  /** Sin transportadora elegida: el pedido congela la más económica, como antes de ADR-0073. */
+  public CrearPedidoComando(
+      UUID usuarioId,
+      String correo,
+      Contacto contacto,
+      List<LineaComando> lineas,
+      TipoEntrega tipoEntrega,
+      Direccion direccion,
+      MetodoPago metodoPago,
+      boolean autorizaDatos,
+      String direccionIp) {
+    this(
+        usuarioId,
+        correo,
+        contacto,
+        lineas,
+        tipoEntrega,
+        direccion,
+        metodoPago,
+        autorizaDatos,
+        direccionIp,
+        null);
+  }
 
   public record LineaComando(UUID varianteId, int cantidad) {}
 }
