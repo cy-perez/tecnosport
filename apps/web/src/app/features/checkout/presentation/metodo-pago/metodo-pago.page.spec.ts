@@ -275,7 +275,9 @@ describe('MetodoPagoPage', () => {
     );
 
     expect(
-      await screen.findByText('Contra entrega: pagas el total, envío incluido, y solo en efectivo'),
+      await screen.findByText(
+        'Contra entrega: pagas el total, envío incluido, y solo en efectivo.',
+      ),
     ).toBeTruthy();
   });
 
