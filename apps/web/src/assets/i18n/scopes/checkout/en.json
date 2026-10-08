@@ -73,7 +73,7 @@
     "sin_opciones": "No payment methods are available for this order.",
     "continuar": "Continue",
     "elige_metodo": "Choose a payment method to continue.",
-    "contraentrega_efectivo": "Cash on delivery: you pay the total, shipping included, in cash only",
+    "contraentrega_efectivo": "Cash on delivery: you pay the total, shipping included, in cash only.",
     "documento": {
       "titulo": "Your details for the credit",
       "explicacion": "Sistecrédito needs your ID number to find your credit limit. We send it to them for this purchase and we do not store it.",
