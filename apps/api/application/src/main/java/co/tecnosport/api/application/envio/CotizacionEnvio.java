@@ -17,12 +17,25 @@ import java.util.Objects;
  * cotizaciones, y vive en la configuración del adaptador ({@code ORIGEN_*} de
  * docs/07-infra-gcp.md). Pasarlo en cada llamada sería repetir un dato fijo y abrir la puerta a que
  * dos sitios del código discrepen sobre desde dónde se despacha.
+ *
+ * <p>{@code transportadoraElegida} no filtra nada: le dice al adaptador que <strong>basta con
+ * esa</strong>. Quien la manda solo va a usar la tarifa de la transportadora que eligió el
+ * comprador (ADR-0073), así que no tiene por qué esperar a que contesten las demás — y alguna tarda
+ * más de medio minuto en decir que no cotiza (ADR-0021, punto 5). El adaptador puede devolver en
+ * cuanto la elegida tenga precio, con las tarifas que haya hasta ese momento. Nula, se espera a
+ * todas, que es lo que necesita quien enseña las opciones o quien puede cambiar de transportadora.
  */
-public record CotizacionEnvio(Direccion destino, List<Bulto> bultos, boolean conRecaudo) {
+public record CotizacionEnvio(
+    Direccion destino, List<Bulto> bultos, boolean conRecaudo, String transportadoraElegida) {
 
   /** Sin recaudo, que es el caso normal: el comprador paga antes de que salga el paquete. */
   public CotizacionEnvio(Direccion destino, List<Bulto> bultos) {
     this(destino, bultos, false);
+  }
+
+  /** Esperando a todas las transportadoras. */
+  public CotizacionEnvio(Direccion destino, List<Bulto> bultos, boolean conRecaudo) {
+    this(destino, bultos, conRecaudo, null);
   }
 
   public CotizacionEnvio {
@@ -31,6 +44,9 @@ public record CotizacionEnvio(Direccion destino, List<Bulto> bultos, boolean con
     bultos = List.copyOf(bultos);
     if (bultos.isEmpty()) {
       throw new IllegalArgumentException("Una cotización necesita al menos un bulto.");
+    }
+    if (transportadoraElegida != null && transportadoraElegida.isBlank()) {
+      transportadoraElegida = null;
     }
   }
 }

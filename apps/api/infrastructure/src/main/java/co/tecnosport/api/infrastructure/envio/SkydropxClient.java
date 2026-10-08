@@ -269,7 +269,7 @@ public final class SkydropxClient
           "la cotizacion creada llego sin identificador");
     }
 
-    return sondear(id.get(), token);
+    return sondear(id.get(), token, cotizacion.transportadoraElegida());
   }
 
   /**
@@ -346,7 +346,8 @@ public final class SkydropxClient
    *
    * <p>Agotado cualquiera de los dos, es cotización fallida. No se espera "un poco más".
    */
-  private ResultadoCotizacion sondear(String idCotizacion, String token)
+  private ResultadoCotizacion sondear(
+      String idCotizacion, String token, String transportadoraElegida)
       throws IOException, InterruptedException {
     Instant limite = reloj.ahora().plus(topeDeSondeo);
 
@@ -373,7 +374,8 @@ public final class SkydropxClient
       }
 
       Optional<List<TarifaEnvio>> tarifas =
-          mapeador.tarifasSiCompleto(json.readTree(respuesta.body()), reloj.ahora());
+          mapeador.tarifasSiResuelta(
+              json.readTree(respuesta.body()), reloj.ahora(), transportadoraElegida);
       if (tarifas.isPresent()) {
         // Completo: aqui si sabemos que no hay cobertura, y es lo unico que lo sabe.
         return tarifas.get().isEmpty()

@@ -19,7 +19,10 @@ import {
 import { TsBoton } from '../../../../shared/ui/boton/ts-boton';
 import { TsEsqueleto } from '../../../../shared/ts-esqueleto/ts-esqueleto';
 import { CarritoStore } from '../../../carrito/application/carrito.store';
-import { usarMetodosDePagoDisponibles } from '../../application/metodos-de-pago-disponibles.consulta';
+import {
+  comandoMetodosDePago,
+  usarMetodosDePagoDisponibles,
+} from '../../application/metodos-de-pago-disponibles.consulta';
 import { CheckoutStore } from '../../application/checkout.store';
 import { MetodosDePagoDisponiblesComando } from '../../domain/pedido.comandos';
 import { TsCampo } from '../../../../shared/ui/campo/ts-campo';
@@ -121,16 +124,7 @@ export class MetodoPagoPage {
     if (!datos || !datosCarrito || datosCarrito.lineas.length === 0) {
       return null;
     }
-    return {
-      correo: datos.correo,
-      lineas: datosCarrito.lineas.map((linea) => ({
-        varianteId: linea.varianteId,
-        cantidad: linea.cantidad,
-      })),
-      tipoEntrega: datos.tipoEntrega,
-      direccion: datos.direccion,
-      transportadora: datos.transportadora,
-    };
+    return comandoMetodosDePago(datos, datosCarrito.lineas);
   });
 
   protected readonly consulta = usarMetodosDePagoDisponibles(() => this.comando());

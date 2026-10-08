@@ -13,6 +13,10 @@ import { TsBoton } from '../../../../shared/ui/boton/ts-boton';
 import { CarritoStore } from '../../../carrito/application/carrito.store';
 import { CheckoutStore } from '../../application/checkout.store';
 import { usarCotizacionEnvio } from '../../application/cotizacion-envio.consulta';
+import {
+  comandoMetodosDePago,
+  usarPrecargarMetodosDePago,
+} from '../../application/metodos-de-pago-disponibles.consulta';
 import { CotizarEnvioComando, opcionDeTransportadora } from '../../domain/envio.model';
 import { requiereDireccion } from '../../domain/reglas-pedido';
 import { TsSelectorTransportadora } from '../selector-transportadora/ts-selector-transportadora';
@@ -41,6 +45,7 @@ export class TransportadoraPage {
   private readonly router = inject(Router);
   private readonly carrito = inject(CarritoStore);
   protected readonly checkout = inject(CheckoutStore);
+  private readonly precargarMetodosDePago = usarPrecargarMetodosDePago();
 
   private readonly criterios = computed<CotizarEnvioComando | null>(() => {
     const datos = this.checkout.datosEntrega();
@@ -79,9 +84,20 @@ export class TransportadoraPage {
     });
   }
 
+  /**
+   * Elegir ya pide los métodos de pago de la página siguiente: el servidor los decide cotizando con
+   * recaudo, y así esos segundos corren mientras el comprador pulsa «Continuar» (ADR-0021, punto 5).
+   * Quien cambia de opción deja una petición por cada una, y no se cancelan: cada una es la pregunta
+   * correcta para su transportadora.
+   */
   protected elegir(transportadora: string): void {
     this.checkout.elegirTransportadora(transportadora);
     this.faltaTransportadora.set(false);
+    const datos = this.checkout.datosEntrega();
+    const lineas = this.carrito.consulta.data()?.lineas ?? [];
+    if (datos && lineas.length > 0) {
+      this.precargarMetodosDePago(comandoMetodosDePago(datos, lineas));
+    }
   }
 
   /**

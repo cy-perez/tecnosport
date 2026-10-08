@@ -132,6 +132,36 @@ class SkydropxClientTest {
       }
       return Optional.of(List.copyOf(tarifas));
     }
+
+    /**
+     * Sin completar, basta con que la elegida aparezca entre las tarifas. Lo que cuenta como
+     * "resuelta" en la plataforma real lo prueba {@code MapeadorCotizacionSkydropxV1Test}; aquí
+     * solo importa que el cliente pase la elegida y deje de sondear cuando el mapeador la da por
+     * buena.
+     */
+    @Override
+    public Optional<List<TarifaEnvio>> tarifasSiResuelta(
+        JsonNode respuesta, Instant ahora, String transportadoraElegida) {
+      Optional<List<TarifaEnvio>> completas = tarifasSiCompleto(respuesta, ahora);
+      if (completas.isPresent() || transportadoraElegida == null) {
+        return completas;
+      }
+      for (JsonNode rate : respuesta.path("rates")) {
+        if (transportadoraElegida.equals(rate.path("provider").asString())) {
+          return Optional.of(
+              List.of(
+                  new TarifaEnvio(
+                      rate.path("id").asString(),
+                      transportadoraElegida,
+                      rate.path("service_level").asString(),
+                      Dinero.deCop(rate.path("total_pricing").asLong()),
+                      rate.path("days").asInt(),
+                      false,
+                      ahora.plus(Duration.ofHours(24)))));
+        }
+      }
+      return Optional.empty();
+    }
   }
 
   /**
@@ -274,6 +304,47 @@ class SkydropxClientTest {
     assertEquals(Dinero.deCop(15_000), tarifa.costo());
     assertEquals(3, tarifa.diasEstimados());
     assertTrue(tarifa.admiteContraentrega());
+  }
+
+  /**
+   * ADR-0021, punto 5, matizado el 8 de octubre de 2026: con una elegida, el sondeo para en cuanto
+   * el mapeador la da por resuelta, aunque la cotización no haya completado. Sin elegida, la misma
+   * respuesta a medias sigue sondeándose hasta agotar los intentos.
+   */
+  @Test
+  void conUnaElegidaElSondeoParaEnCuantoEsaTienePrecio() throws IOException {
+    String aMedias =
+        """
+        {"is_completed":false,"rates":[
+          {"id":"r1","provider":"Servientrega","service_level":"Estándar",
+           "total_pricing":15000,"days":3}]}
+        """;
+    SkydropxClient cliente =
+        clienteContra(
+            token(7200), 200, "{\"id\":\"q1\"}", numero -> aMedias, new MapeadorDePrueba(), 4);
+
+    CotizacionEnvio conElegida =
+        new CotizacionEnvio(COTIZACION.destino(), COTIZACION.bultos(), true, "Servientrega");
+    List<TarifaEnvio> tarifas = tarifasDe(cliente.cotizar(conElegida));
+
+    assertEquals("Servientrega", tarifas.get(0).transportadora());
+    assertEquals(1, sondeos.get());
+  }
+
+  @Test
+  void sinElegidaLaMismaRespuestaAMediasSigueSondeandose() throws IOException {
+    String aMedias =
+        """
+        {"is_completed":false,"rates":[
+          {"id":"r1","provider":"Servientrega","service_level":"Estándar",
+           "total_pricing":15000,"days":3}]}
+        """;
+    SkydropxClient cliente =
+        clienteContra(
+            token(7200), 200, "{\"id\":\"q1\"}", numero -> aMedias, new MapeadorDePrueba(), 4);
+
+    assertEquals(ResultadoCotizacion.Motivo.SONDEO_AGOTADO, motivoDe(cliente.cotizar(COTIZACION)));
+    assertEquals(4, sondeos.get());
   }
 
   /** La prueba que pedía el plan de la fase: la cotización que nunca termina. */
@@ -502,6 +573,12 @@ class SkydropxClientTest {
 
     @Override
     public Optional<List<TarifaEnvio>> tarifasSiCompleto(JsonNode respuesta, Instant ahora) {
+      throw new IllegalStateException("No se llega aquí.");
+    }
+
+    @Override
+    public Optional<List<TarifaEnvio>> tarifasSiResuelta(
+        JsonNode respuesta, Instant ahora, String transportadoraElegida) {
       throw new IllegalStateException("No se llega aquí.");
     }
   }

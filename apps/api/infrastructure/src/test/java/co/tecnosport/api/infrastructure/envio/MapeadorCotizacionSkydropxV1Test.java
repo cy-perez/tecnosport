@@ -575,4 +575,102 @@ class MapeadorCotizacionSkydropxV1Test {
 
     assertEquals("La Milagrosa", quotation.path("address_from").path("area_level3").asString());
   }
+
+  // --- dar la cotización por buena con la elegida (ADR-0021, punto 5) ----------------------
+
+  /** Una tarifa con precio, con la forma de las reales de arriba. */
+  private static String conPrecio(String id, String nombre, String servicio, int total) {
+    return """
+        {"success": true, "id": "%s", "provider_name": "%s", "provider_display_name": "%s",
+         "provider_service_name": "%s", "status": "price_found_external", "currency_code": "COP",
+         "total": "%d", "days": 2}
+        """
+        .formatted(id, nombre.toLowerCase(), nombre, servicio, total);
+  }
+
+  private static String sinPrecio(String nombre, String estado) {
+    return """
+        {"success": false, "id": "x-%s", "provider_name": "%s", "provider_display_name": "%s",
+         "provider_service_name": "Standard", "status": "%s", "total": null}
+        """
+        .formatted(estado, nombre.toLowerCase(), nombre, estado);
+  }
+
+  private JsonNode aMedias(String... rates) {
+    return json.readTree(
+        "{\"is_completed\": false, \"cash_on_delivery\": true, \"rates\": ["
+            + String.join(",", rates)
+            + "]}");
+  }
+
+  /**
+   * El caso medido: Coordinadora con precio a los ~7 s e Inter Rapidísimo todavía en {@code
+   * pending_to_zone}, que tardaba hasta los ~33 s en terminar sin cotizar. A quien eligió
+   * Coordinadora le basta.
+   */
+  @Test
+  void conLaElegidaConPrecioNoEsperaALasPendientesDeOtras() {
+    JsonNode respuesta =
+        aMedias(
+            conPrecio("r1", "Coordinadora", "Standard", 14_271),
+            sinPrecio("Inter Rapidísimo", "pending_to_zone"));
+
+    Optional<List<TarifaEnvio>> tarifas =
+        mapeador.tarifasSiResuelta(respuesta, AHORA, "coordinadora");
+
+    assertTrue(tarifas.isPresent());
+    assertEquals(1, tarifas.get().size());
+    assertTrue(tarifas.get().get(0).esDe("Coordinadora"));
+    assertTrue(tarifas.get().get(0).admiteContraentrega());
+  }
+
+  @Test
+  void siLaElegidaEsLaPendienteSeSigueEsperando() {
+    JsonNode respuesta =
+        aMedias(
+            conPrecio("r1", "Coordinadora", "Standard", 14_271),
+            sinPrecio("Inter Rapidísimo", "pending_to_zone"));
+
+    assertTrue(mapeador.tarifasSiResuelta(respuesta, AHORA, "Inter Rapidísimo").isEmpty());
+  }
+
+  /** Un servicio con precio no basta si otro de la misma transportadora sigue pendiente. */
+  @Test
+  void unServicioDeLaElegidaTodaviaPendienteHaceEsperar() {
+    JsonNode respuesta =
+        aMedias(conPrecio("r1", "Envía", "Paquete", 8_950), sinPrecio("Envía", "pending"));
+
+    assertTrue(mapeador.tarifasSiResuelta(respuesta, AHORA, "Envía").isEmpty());
+  }
+
+  /** "No cotiza" sale de una cotización completa, nunca de una a medias. */
+  @Test
+  void siLaElegidaNoCotizaNoSeAdelantaNada() {
+    JsonNode respuesta =
+        aMedias(
+            conPrecio("r1", "Coordinadora", "Standard", 14_271),
+            sinPrecio("Servientrega", "tariff_price_not_found"),
+            sinPrecio("Inter Rapidísimo", "pending_to_zone"));
+
+    assertTrue(mapeador.tarifasSiResuelta(respuesta, AHORA, "Servientrega").isEmpty());
+  }
+
+  @Test
+  void sinElegidaSeEsperaALaCotizacionCompleta() {
+    JsonNode respuesta =
+        aMedias(
+            conPrecio("r1", "Coordinadora", "Standard", 14_271),
+            sinPrecio("Inter Rapidísimo", "pending_to_zone"));
+
+    assertTrue(mapeador.tarifasSiResuelta(respuesta, AHORA, null).isEmpty());
+  }
+
+  @Test
+  void completaDevuelveLoMismoQueSinElegida() {
+    JsonNode completa = json.readTree(RESPUESTA_CON_EXITO);
+
+    assertEquals(
+        mapeador.tarifasSiCompleto(completa, AHORA),
+        mapeador.tarifasSiResuelta(completa, AHORA, "Servientrega"));
+  }
 }

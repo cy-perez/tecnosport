@@ -1,6 +1,7 @@
 package co.tecnosport.api.application.envio;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import co.tecnosport.api.application.pedido.VarianteNoEncontradaException;
@@ -22,6 +23,7 @@ import co.tecnosport.api.domain.pedido.Direccion;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -122,6 +124,39 @@ class CotizarEnvioTest {
                 "servientrega"));
 
     assertEquals("elegida", tarifa.idTarifa());
+  }
+
+  /**
+   * ADR-0021, punto 5: con una elegida, al cotizador se le dice que basta con esa, y no espera a
+   * las transportadoras lentas. Es lo que baja el método de pago y la confirmación de ~33 s a ~7.
+   */
+  @Test
+  void conTransportadoraElegidaLeDiceAlCotizadorQueBastaConEsa() {
+    cotizador.devolver(de("Servientrega", "elegida", 15_000));
+
+    caso.ejecutar(
+        new CotizarEnvioComando(
+            List.of(new CotizarEnvioComando.LineaComando(camiseta.id(), 1)),
+            BOGOTA,
+            true,
+            "Servientrega"));
+
+    assertEquals("Servientrega", cotizador.ultima().transportadoraElegida());
+  }
+
+  /**
+   * Las opciones del resumen se esperan todas: ahí se enseñan, y una lenta podría ser la más
+   * barata. La emisión también, porque si la preferida no cotiza tiene que tener a la siguiente.
+   */
+  @Test
+  void lasOpcionesYLaEmisionEsperanATodas() {
+    cotizador.devolver(de("Servientrega", "elegida", 15_000));
+
+    caso.opciones(comando(1));
+    assertNull(cotizador.ultima().transportadoraElegida());
+
+    caso.deBultosPrefiriendo(BOGOTA, cotizador.ultima().bultos(), false, Set.of(), "Servientrega");
+    assertNull(cotizador.ultima().transportadoraElegida());
   }
 
   /** Si la elegida ya no cotiza no se cambia por otra en silencio: se dice. */
