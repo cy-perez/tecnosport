@@ -360,6 +360,8 @@
       "color": "Colour",
       "colorAyuda": "Tick up to three, in order: the first one you tick goes on the left of the circle. “Black” then “Red” is “Black / Red”.",
       "elegirColor": "Choose the colour",
+      "talla": "Size",
+      "otraTalla": "Another size…",
       "seleccionar": "Select an option",
       "agregarAtributo": "Add attribute",
       "quitarAtributo": "Remove",

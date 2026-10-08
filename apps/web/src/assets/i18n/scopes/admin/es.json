@@ -360,6 +360,8 @@
       "color": "Color",
       "colorAyuda": "Marca hasta tres, en orden: el primero que marques va a la izquierda del círculo. «Negro» y luego «Rojo» es «Negro / Rojo».",
       "elegirColor": "Elige el color",
+      "talla": "Talla",
+      "otraTalla": "Otra talla…",
       "seleccionar": "Selecciona una opción",
       "agregarAtributo": "Agregar atributo",
       "quitarAtributo": "Quitar",

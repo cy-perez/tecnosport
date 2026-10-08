@@ -22,6 +22,10 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { usarIdiomaActivo, usarTraductor } from '../../../../../core/i18n/traductor';
 import { usarAtributos } from '../../../../catalogo/application/listar-atributos.consulta';
+import { usarCategorias } from '../../../../catalogo/application/listar-opciones-filtro.consulta';
+import { escalaDeTallasDe } from '../../../../catalogo/domain/arbol-categorias';
+import { esEjeDeTalla } from '../../../../catalogo/domain/seleccion-variante';
+import { usarVerProductoAdmin } from '../../application/ver-producto-admin.consulta';
 import { usarPaletaDeColores } from '../../../../catalogo/application/listar-paleta-colores.consulta';
 import { Atributo } from '../../../../catalogo/domain/producto.model';
 import { TsBoton } from '../../../../../shared/ui/boton/ts-boton';
@@ -36,14 +40,20 @@ import { usarAgregarVarianteAdmin } from '../../application/agregar-variante-adm
 type GrupoAtributo = FormGroup<{
   atributoId: FormControl<string>;
   valor: FormControl<string>;
+  /** Una talla que no está en la escala de la categoría: se escribe en vez de elegirse. */
+  otraTalla: FormControl<boolean>;
 }>;
 
 function grupoAtributo(): GrupoAtributo {
   return new FormGroup({
     atributoId: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
     valor: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
+    otraTalla: new FormControl(false, { nonNullable: true }),
   });
 }
+
+/** El valor de la opción «Otra talla» de la lista; ninguna escala tiene una talla así. */
+const OTRA_TALLA = '__otra__';
 
 /**
  * Las cuatro medidas van juntas o no van. Es la misma regla que el constructor compacto del DTO y
@@ -84,6 +94,7 @@ export class AgregarVarianteAdminPage {
   private readonly router = inject(Router);
   private readonly transloco = inject(TranslocoService);
   private readonly atributos = usarAtributos();
+  private readonly categorias = usarCategorias();
   private readonly paleta = usarPaletaDeColores();
   private readonly idioma = usarIdiomaActivo();
   private readonly traducir = usarTraductor();
@@ -93,6 +104,7 @@ export class AgregarVarianteAdminPage {
     initialValue: this.route.snapshot.paramMap,
   });
   protected readonly productoId = computed(() => this.paramMap().get('productoId') ?? '');
+  private readonly producto = usarVerProductoAdmin(this.productoId);
 
   protected readonly error = signal<string | null>(null);
 
@@ -184,6 +196,43 @@ export class AgregarVarianteAdminPage {
       sinResultados: traducir('admin.colores.sinResultados'),
     };
   });
+
+  /**
+   * La escala de tallas de la categoría del producto —la suya o la de su rama—, la misma que la
+   * revisión de un borrador da a marcar: así una variante agregada a mano escribe «S-M» igual que
+   * una aprobada, y la ficha la pone en su sitio. Vacía mientras carga o si la categoría no talla,
+   * y entonces la talla se escribe como antes.
+   */
+  protected readonly escalaTallas = computed(() => {
+    const categorias = this.categorias.data() ?? [];
+    const categoriaId = this.producto.data()?.categoria.id;
+    return escalaDeTallasDe(
+      categorias.find((categoria) => categoria.id === categoriaId),
+      categorias,
+    );
+  });
+
+  protected readonly opcionesTalla = computed<OpcionSelect[]>(() => [
+    ...this.escalaTallas().map((talla) => ({ valor: talla, etiqueta: talla })),
+    { valor: OTRA_TALLA, etiqueta: this.traducir()('admin.productos.agregarVariante.otraTalla') },
+  ]);
+
+  /** Si la fila se elige de la escala: una talla, con una escala que ofrecer. */
+  protected esTallaDeEscala(atributoId: string): boolean {
+    const atributo = (this.atributos.data() ?? []).find((a: Atributo) => a.id === atributoId);
+    return !!atributo && esEjeDeTalla(atributo.nombre) && this.escalaTallas().length > 0;
+  }
+
+  protected tallaDeFila(fila: GrupoAtributo): string {
+    return fila.controls.otraTalla.value ? OTRA_TALLA : fila.controls.valor.value;
+  }
+
+  protected elegirTalla(fila: GrupoAtributo, talla: string): void {
+    const otra = talla === OTRA_TALLA;
+    fila.controls.otraTalla.setValue(otra);
+    fila.controls.valor.setValue(otra ? '' : talla);
+    fila.controls.valor.markAsTouched();
+  }
 
   /** Los colores de la fila, en orden: el valor «Negro / Rojo» guarda la combinación. */
   protected coloresDeFila(valor: string): string[] {

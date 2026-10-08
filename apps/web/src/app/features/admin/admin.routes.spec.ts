@@ -2,6 +2,7 @@ import { Route, Routes } from '@angular/router';
 import { describe, expect, it } from 'vitest';
 import { adminRoutes } from './admin.routes';
 import { REPOSITORIO_DIFUSION } from './difusion/domain/repositorio-difusion.puerto';
+import { REPOSITORIO_CATEGORIAS } from '../catalogo/domain/repositorio-categorias.puerto';
 
 /**
  * Lo que los specs de página **no** pueden ver.
@@ -26,6 +27,13 @@ describe('adminRoutes', () => {
     const crear = buscarRuta(adminRoutes, 'crear');
 
     expect(proveeTokens(crear)).not.toContain(REPOSITORIO_DIFUSION);
+  });
+
+  /** La talla de una variante se elige de la escala de la categoría, y la escala viene de ahí. */
+  it('agregar una variante provee las categorías', () => {
+    const agregar = buscarRuta(adminRoutes, ':productoId/variantes/crear');
+
+    expect(proveeTokens(agregar)).toContain(REPOSITORIO_CATEGORIAS);
   });
 });
 

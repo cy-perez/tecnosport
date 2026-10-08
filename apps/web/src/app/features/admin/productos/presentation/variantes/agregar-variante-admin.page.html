@@ -111,6 +111,25 @@
               [textos]="textosColores()"
               (seleccionCambio)="elegirColores(fila, $event)"
             />
+          } @else if (esTallaDeEscala(fila.controls.atributoId.value)) {
+            <!-- La talla se elige de la escala de la categoria, con las agrupadas en su sitio
+                 (S-M entre S y M), y «Otra talla» abre el campo para la que no esta. -->
+            <ts-select
+              [idCampo]="'variante-talla-' + $index"
+              [label]="'admin.productos.agregarVariante.talla' | transloco"
+              [opciones]="opcionesTalla()"
+              [placeholder]="'admin.productos.agregarVariante.seleccionar' | transloco"
+              [obligatorio]="true"
+              [valor]="tallaDeFila(fila)"
+              (cambio)="elegirTalla(fila, $event)"
+            />
+            @if (fila.controls.otraTalla.value) {
+              <ts-campo
+                [idCampo]="'variante-valor-' + $index"
+                [label]="'admin.productos.agregarVariante.valor' | transloco"
+                formControlName="valor"
+              />
+            }
           } @else {
             <ts-campo
               [idCampo]="'variante-valor-' + $index"
