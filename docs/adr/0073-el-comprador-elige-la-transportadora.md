@@ -44,12 +44,27 @@ el negocio prefiere dar la opción.
 
 ## La interfaz
 
-Un popover anclado a «Continuar», con el popover de Spartan Brain, el mismo
-proveedor que el diálogo. Trae el foco al abrir, lo devuelve al cerrar y se cierra
-con Escape o al pulsar fuera.
+Una página propia, `/checkout/transportadora`, entre el resumen y el método de
+pago, con la misma forma que la de métodos de pago: las opciones, un «Continuar»
+que dice qué falta si no se eligió ninguna, y el enlace para volver. Solo existe
+para el envío a domicilio; sin datos de entrega o con recogida, devuelve al
+resumen.
 
-- **Botones:** variante `baldosa`, la de los métodos de pago, con el logo de la
-  transportadora a la izquierda.
+**Fue un popover anclado a «Continuar» del resumen hasta el mismo 8 de octubre**
+(Spartan Brain). El negocio lo pidió como página después de verlo. La página
+además arregla lo que el popover hacía mal sin que nadie lo notara: elegir era
+también avanzar, así que no había forma de cambiar de transportadora sin volver a
+llenar el resumen. Ahora la elegida se marca, se puede volver desde el método de
+pago («Cambiar transportadora») y el resumen la conserva si la dirección nueva
+la sigue cotizando.
+
+- **Las opciones no se piden dos veces.** La página usa la misma consulta que el
+  resumen, con la misma clave (ciudad y líneas), así que llega con la respuesta
+  en la caché. Pasado el minuto de `staleTime`, se vuelve a cotizar. Si la
+  elegida ya no está entre las opciones, «Continuar» no deja seguir.
+
+- **Botones:** variante `baldosa`, la de los métodos de pago, con el disco de
+  elegido y el logo de la transportadora a la izquierda.
 - **Costo:** en negrita y del mismo tamaño de letra, debajo de cada botón y
   enlazado con `aria-describedby`.
 - **Tamaño:** columnas iguales, así que todos los botones toman el ancho del más

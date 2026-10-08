@@ -139,12 +139,14 @@ const LOGOS = [
  * devuelve la plataforma. `vista` ciñe el lienzo donde el archivo trae aire que no es del dibujo,
  * medido en el navegador con `getBBox()` el 8 de octubre de 2026: Coordinadora declara 243×80 y el
  * símbolo ocupa 76×40; el de Envía es un trazado de bitmap de 1200×1200 cuyo logo mide 918×408, y
- * Servientrega trae 69 unidades de aire a la izquierda. Sin ceñir, los dos últimos se veían como un
+ * el de Servientrega, también trazado de un bitmap (240×240), deja solo el símbolo: el archivo
+ * traía el cuadrado de fondo, 20 motas del trazador y una línea vertical suelta de 1×116 en la
+ * esquina inferior izquierda, que se quitaron al copiarlo. Sin ceñir, los dos últimos se veían como un
  * garabato de 8 px dentro de la caja del botón. Inter Rapidísimo dejaba un margen de 8 alrededor de
  * la placa que aquí ya no está.
  */
 const LOGOS_TRANSPORTADORA = [
-  { constante: "logoServientrega", archivo: "servientrega.svg", titulo: "Servientrega", origen: "transportadoras", vista: "63 6 136 129" },
+  { constante: "logoServientrega", archivo: "servientrega.svg", titulo: "Servientrega", origen: "transportadoras", vista: "41 32 157 165" },
   { constante: "logoCoordinadora", archivo: "coordinadora.svg", titulo: "Coordinadora", origen: "transportadoras", vista: "0 20 76 40" },
   { constante: "logoInterRapidisimo", archivo: "interrapidisimo.svg", titulo: "Inter Rapidísimo", origen: "transportadoras", vista: "8 8 32 32" },
   { constante: "logoEnvia", archivo: "envia.svg", titulo: "Envía", origen: "transportadoras", vista: "176 418 918 408" },

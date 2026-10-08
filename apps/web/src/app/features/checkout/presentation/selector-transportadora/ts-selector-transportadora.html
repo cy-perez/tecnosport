@@ -1,0 +1,51 @@
+<fieldset class="m-0 border-0 p-0">
+  <legend class="mb-16 p-0 text-sm text-ts-texto-suave">{{ etiquetaGrupo() }}</legend>
+
+  <!-- `w-fit` y columnas `fr`: así se igualan al botón más ancho (ver la clase). En el teléfono, una
+       columna; desde tableta, dos. -->
+  <ul
+    class="m-0 grid w-fit list-none grid-cols-1 gap-16 p-0 desde-tableta:grid-cols-[repeat(2,minmax(max-content,1fr))]"
+  >
+    @for (opcion of opciones(); track opcion.transportadora; let i = $index) {
+      <li class="flex flex-col gap-8">
+        <ts-boton
+          variante="baldosa"
+          [clase]="claseDeBoton(opcion)"
+          [presionado]="estaSeleccionada(opcion)"
+          [descritoPor]="idDePrecio(i)"
+          (click)="seleccionCambio.emit(opcion.transportadora)"
+        >
+          <!-- El disco de un radio, como en los métodos de pago: el hueco está siempre, así que
+               elegir no cambia el ancho de nada. `aria-hidden` porque el estado lo anuncia el
+               `aria-pressed` del botón. -->
+          <span
+            class="grid size-24 shrink-0 place-items-center rounded-completo border-2 border-current"
+            [class.bg-current]="estaSeleccionada(opcion)"
+            aria-hidden="true"
+          >
+            @if (estaSeleccionada(opcion)) {
+              <ts-icono
+                class="text-ts-primario-suave oscuro:text-ts-acento-2"
+                [icono]="iconoVisto"
+                clase="size-16"
+              />
+            }
+          </span>
+          <!-- La caja del logo es fija: así los nombres arrancan todos en el mismo sitio, tenga cada
+               logo la proporción que tenga. Sin logo, el camión genérico. -->
+          @if (logoDe(opcion.transportadora); as logo) {
+            <ts-logo-pago [logo]="logo" clase="h-24 w-48" />
+          } @else {
+            <span class="inline-flex h-24 w-48 shrink-0 items-center" aria-hidden="true">
+              <ts-icono [icono]="iconoEnvio" clase="size-24" />
+            </span>
+          }
+          {{ opcion.transportadora }}
+        </ts-boton>
+        <p [id]="idDePrecio(i)" class="m-0 text-base font-fuerte text-ts-texto">
+          {{ precio(opcion) }}
+        </p>
+      </li>
+    }
+  </ul>
+</fieldset>

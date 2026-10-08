@@ -179,6 +179,35 @@ describe('CheckoutStore', () => {
     expect(store.pedido()).toBeNull();
   });
 
+  it('elegirTransportadora cambia solo la transportadora y descarta método y pedido', async () => {
+    const { store } = await renderConRepositorio(new RepositorioPedidosFalso());
+    const datos = {
+      correo: 'compra@ejemplo.co',
+      tipoEntrega: 'ENVIO_A_DOMICILIO' as const,
+      direccion: null,
+      contacto: { nombre: 'Ana Pérez', telefono: '3138816711' },
+      autorizaDatos: true,
+      transportadora: null,
+    };
+    store.guardarDatosEntrega(datos);
+    store.elegirMetodoPago('CONTRAENTREGA');
+    await store.crearPedido(comandoDePrueba());
+
+    store.elegirTransportadora('Servientrega');
+
+    expect(store.datosEntrega()).toEqual({ ...datos, transportadora: 'Servientrega' });
+    expect(store.metodoPago()).toBeNull();
+    expect(store.pedido()).toBeNull();
+  });
+
+  it('elegirTransportadora sin datos de entrega no inventa unos', async () => {
+    const { store } = await renderConRepositorio(new RepositorioPedidosFalso());
+
+    store.elegirTransportadora('Servientrega');
+
+    expect(store.datosEntrega()).toBeNull();
+  });
+
   it('elegirMetodoPago descarta el pedido ya creado con el método anterior', async () => {
     const { store } = await renderConRepositorio(new RepositorioPedidosFalso());
     store.elegirMetodoPago('WOMPI');

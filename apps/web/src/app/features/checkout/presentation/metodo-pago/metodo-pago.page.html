@@ -1,9 +1,18 @@
 <section class="mx-auto max-w-contenido px-16 py-32">
   <h1 class="m-0 mb-16 font-display text-2xl">{{ 'checkout.metodoPago.titulo' | transloco }}</h1>
 
-  <a class="anillo-foco mb-24 inline-block text-ts-texto-suave" [routerLink]="['../resumen']">
-    {{ 'checkout.metodoPago.volver' | transloco }}
-  </a>
+  @if (checkout.datosEntrega()?.transportadora) {
+    <a
+      class="anillo-foco mb-24 inline-block text-ts-texto-suave"
+      [routerLink]="['../transportadora']"
+    >
+      {{ 'checkout.metodoPago.volver_transportadora' | transloco }}
+    </a>
+  } @else {
+    <a class="anillo-foco mb-24 inline-block text-ts-texto-suave" [routerLink]="['../resumen']">
+      {{ 'checkout.metodoPago.volver' | transloco }}
+    </a>
+  }
 
   @if (consulta.isPending()) {
     <ts-esqueleto />

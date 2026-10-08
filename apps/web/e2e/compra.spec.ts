@@ -54,6 +54,12 @@ test('de la portada al pedido creado, pagando por transferencia', async ({ page 
   await page.getByLabel(/Autorizo el tratamiento de mis datos/).check();
   await continuar.click();
 
+  // Transportadora (ADR-0073): el cotizador del perfil `e2e` responde con una sola.
+  const transportadora = page.getByRole('button', { name: 'Transportadora de escenario' });
+  await expect(transportadora).toBeVisible();
+  await transportadora.click();
+  await page.getByRole('button', { name: 'Continuar' }).click();
+
   // Método de pago.
   const transferencia = page.getByRole('button', { name: 'Transferencia bancaria' });
   await expect(transferencia).toBeVisible();

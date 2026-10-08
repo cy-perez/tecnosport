@@ -190,6 +190,9 @@
       "resumen": {
         "titulo": "Resumen del pedido · Tecno Sport"
       },
+      "transportadora": {
+        "titulo": "Envío · Tecno Sport"
+      },
       "metodo_pago": {
         "titulo": "Método de pago · Tecno Sport"
       },

@@ -23,6 +23,12 @@ export const checkoutRoutes: Routes = [
         loadComponent: () => import('./resumen/resumen.page').then((m) => m.ResumenPage),
       },
       {
+        path: 'transportadora',
+        data: { seo: { clave: 'seo.checkout.transportadora' } },
+        loadComponent: () =>
+          import('./transportadora/transportadora.page').then((m) => m.TransportadoraPage),
+      },
+      {
         path: 'metodo-pago',
         data: { seo: { clave: 'seo.checkout.metodo_pago' } },
         loadComponent: () => import('./metodo-pago/metodo-pago.page').then((m) => m.MetodoPagoPage),

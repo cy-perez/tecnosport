@@ -68,6 +68,7 @@
     "transferencia_manual_detalle": "Disponible para Nequi, DaviPlata o cuenta de ahorros del BBVA. Envías el comprobante y confirmamos el pago.",
     "contraentrega": "Pago contraentrega",
     "volver": "‹ Editar dirección",
+    "volver_transportadora": "‹ Cambiar transportadora",
     "error": "No se pudieron consultar los métodos de pago disponibles. Intenta de nuevo.",
     "sin_opciones": "No hay métodos de pago disponibles para este pedido.",
     "continuar": "Continuar",
@@ -95,8 +96,12 @@
   },
   "transportadora": {
     "titulo": "Elige la transportadora",
-    "descripcion": "El costo del envío depende de la empresa que lleve tu pedido. Elige una para continuar.",
-    "cerrar": "Cerrar"
+    "descripcion": "El costo del envío depende de la empresa que lleve tu pedido.",
+    "volver": "‹ Editar dirección",
+    "error": "No se pudieron consultar las transportadoras. Intenta de nuevo.",
+    "sin_opciones": "Ninguna transportadora cotiza este envío ahora. Vuelve al resumen y revisa la dirección.",
+    "elige": "Elige una transportadora para continuar.",
+    "continuar": "Continuar"
   },
   "confirmar": {
     "con_transportadora": "Con {{transportadora}}",
