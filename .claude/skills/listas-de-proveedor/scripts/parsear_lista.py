@@ -18,6 +18,7 @@ import argparse
 import json
 import re
 import unicodedata
+from collections import Counter
 from pathlib import Path
 
 VS16 = "\ufe0f"
@@ -336,6 +337,25 @@ def sin_emojis(texto: str) -> str:
         ch for ch in texto
         if unicodedata.category(ch) not in ("So", "Sk", "Cf") and ch not in "🏻🏼🏽🏾🏿"
     )
+
+
+# Un emoji que abre al menos estas líneas con precio es la viñeta del día: se
+# acepta también en la línea que trae el precio abajo, y no pide verificación.
+# Uno que aparece menos veces entra, pero con alerta: así se coló un domicilio con
+# 🚚 como si fuera un producto (revisión del 08/10/2026).
+USOS_VINETA_DEL_DIA = 3
+
+
+def vinetas_del_dia(lineas) -> set:
+    usos = Counter()
+    for cruda in lineas:
+        t = limpiar(RE_EXPORTADO.sub("", cruda.strip()).strip()).lstrip()
+        if not tiene_precio(t) or any(t.startswith(e) for e in VINETAS_CATEGORIA.keys() | VINETAS_CONDICION.keys()):
+            continue
+        vineta = vineta_generica(t)
+        if vineta:
+            usos[vineta] += 1
+    return {v for v, n in usos.items() if n >= USOS_VINETA_DEL_DIA}
 
 
 def plano(texto: str) -> str:
@@ -842,6 +862,7 @@ def parsear(texto: str, equivalencias=None):
     fecha = None
     pendiente = None
     ultimo = None
+    del_dia = vinetas_del_dia(lineas)
     bloque, bloques = None, []
 
     def clasificar(prod):
@@ -881,9 +902,11 @@ def parsear(texto: str, equivalencias=None):
                 cat_vineta = VINETAS_CATEGORIA.get(e)
                 cond_vineta = VINETAS_CONDICION.get(e)
                 break
-        if emoji is None and tiene_precio(linea):
-            emoji = vineta_generica(t)
-            if emoji:
+        generica = None
+        if emoji is None:
+            vineta = vineta_generica(t)
+            if vineta and (tiene_precio(linea) or vineta in del_dia):
+                emoji = generica = vineta
                 resto = t[len(emoji):].strip()
 
         if es_encabezado(linea):
@@ -942,6 +965,8 @@ def parsear(texto: str, equivalencias=None):
             cat = cat_vineta or categoria_por_palabras(resto) or categoria or "celulares"
             cond = cond_vineta or condicion or "nuevo"
             prod = construir_producto(resto, cat, marca, cond, seccion, i)
+            if generica and generica not in del_dia:
+                prod["revisar"].append(f"viñeta no reconocida ({generica}): verificar que sea un producto")
             if prod["precio_proveedor_cop"] is None:
                 pendiente = prod
             else:

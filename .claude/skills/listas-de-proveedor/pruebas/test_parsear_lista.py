@@ -105,6 +105,18 @@ class VinetaDeTemporada(unittest.TestCase):
         self.assertEqual(["relojes"], [p["categoria"] for p in datos["productos"]])
         self.assertEqual(["nuevo"], [p["condicion"] for p in datos["productos"]])
 
+    def test_un_emoji_suelto_entra_pero_pide_verificar(self):
+        # Revisión del 08/10/2026: un domicilio con 🚚 se publicaba como producto.
+        datos = parsear("*AUDIFONOS ORIGINALES*🎧\n🚚 DOMICILIO EN MEDELLIN $10.000\n")
+        [p] = datos["productos"]
+        self.assertIn("viñeta no reconocida (🚚): verificar que sea un producto", p["revisar"])
+
+    def test_la_vineta_del_dia_tambien_vale_con_el_precio_abajo(self):
+        datos = parsear(self.LISTA.replace("*SAMSUNG*\n", "*SAMSUNG*\n🎃A37 5G (6+128)\n$810\n"))
+        self.assertIn(("Samsung Galaxy A37 5G 6GB RAM 128GB", 810_000),
+                      [(p["titulo"], p["precio_proveedor_cop"]) for p in datos["productos"]])
+        self.assertEqual([], datos["sin_clasificar"])
+
     def test_un_corazon_al_inicio_es_un_color_y_no_una_vineta(self):
         # En el bloque de usados los corazones abren la línea; son el color.
         datos = parsear("*SAMSUNG*\n💙A57 5G (8+256)$1.290\n")
