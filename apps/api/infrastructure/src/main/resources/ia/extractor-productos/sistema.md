@@ -47,7 +47,9 @@ Reglas, en orden de importancia:
    mensaje escribe «sirve hasta»: «sirve hasta la L» → `"L"`. Si no lo escribe, `null`,
    aunque la talla única se vea grande o pequeña en la foto. En un pantalón, un jean o un short,
    un rango numérico se cuenta de 2 en 2 con sus dos extremos: «Tallas 30 a la 36» →
-   `["30","32","34","36"]`. En calzado no: «34 al 40» va de 1 en 1.
+   `["30","32","34","36"]`. En calzado no: «34 al 40» va de 1 en 1. Una talla agrupada de
+   letras es **una** talla, no dos: «S-M», «S/M» o «2XL-3XL» → `"S-M"` y `"XXL-XXXL"`, con
+   guion y sin espacios; «Tallas S-M y L-XL» → `["S-M","L-XL"]`.
 10. `cantidad_tonos` es el número de tonos, colores o combinaciones que anuncia («4 tonos
     disponibles» → `4`). `tonos_nombrados` solo con los colores que nombre explícitamente.
 11. `descripcion` es el texto que la ficha del producto va a mostrar: dos a cuatro frases en
