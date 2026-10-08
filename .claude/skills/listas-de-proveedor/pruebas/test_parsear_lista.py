@@ -161,6 +161,20 @@ class PrecioSinSigno(unittest.TestCase):
         datos = parsear("*COMPUTADORES*\n💻 *COMPUTADOR TODO EN UNO RYZEN 3 7520U (8 RAM + 512 SSD) 24\"*\n")
         self.assertIsNone((datos["productos"] + datos["descartados"])[0]["precio_proveedor_cop"])
 
+    def test_un_ano_despues_de_otro_parentesis_no_es_un_precio(self):
+        # Revisión del 08/10/2026: el patrón aceptaba cualquier «)».
+        datos = parsear("*AUDIFONOS ORIGINALES*🎧\n🎄 *PROMOS (DICIEMBRE) 2026*\n")
+        self.assertEqual([], datos["productos"])
+        datos = parsear("*COMPUTADORES*\n💻MACBOOK AIR 13 (M4) 2025\n$4.500\n")
+        self.assertEqual([4_500_000], [p["precio_proveedor_cop"]
+                                       for p in datos["productos"] + datos["descartados"]])
+
+    def test_con_la_sim_detras_o_con_punto_de_miles_tambien_es_el_precio(self):
+        datos = parsear("*MOTOROLA*\n🎃MOTO G77 5G (8+256) 760 *1 SIM*\n🎃MOTO G86 5G (8+512) 1.690\n")
+        self.assertEqual([("Motorola Moto G77 5G 8GB RAM 256GB 1 SIM", 760_000),
+                          ("Motorola Moto G86 5G 8GB RAM 512GB", 1_690_000)],
+                         [(p["titulo"], p["precio_proveedor_cop"]) for p in datos["productos"]])
+
     def test_sin_numero_al_final_sigue_sin_precio(self):
         datos = parsear("*XIAOMI*\n🎃POCO F8 PRO 12+256\n")
         self.assertEqual(["sin precio de proveedor"], [d["motivo"] for d in datos["descartados"]])

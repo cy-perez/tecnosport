@@ -270,8 +270,12 @@ RE_PRECIO = re.compile(r"\$\s*([\d][\d.,]*)")
 # El precio que el proveedor escribió sin «$»: 3 o 4 cifras justo después del
 # paréntesis de la memoria y al final de la línea —`MOTO G77 5G (8+256) 760`,
 # 08/10/2026—. Tan acotado a propósito: un número suelto en cualquier otra parte
-# de la línea es un modelo o una capacidad.
-RE_PRECIO_SIN_SIGNO = re.compile(r"\)\s*(\d{3,4})$")
+# de la línea es un modelo o una capacidad. El paréntesis tiene que ser el de la
+# memoria, con su «+»: con cualquier «)» valía `(M4) 2025` o `(DICIEMBRE) 2026`,
+# y un año salía como precio. Detrás solo puede venir la SIM.
+RE_PRECIO_SIN_SIGNO = re.compile(
+    r"\(\s*\d{1,2}\s*\+[^)]*\)\s*(\d{1,2}\.\d{3}|\d{3,4})"
+    r"(?=\s*(?:1\s*SIM|DUAL\s*SIM|SIM\s*/\s*ESIM|ESIM)?\s*$)")
 RE_PORCENTAJE = re.compile(r"\d{2,3}\s*%")
 RE_FECHA = re.compile(r"(\d{1,2})\s*[/ ]\s*([A-ZÁÉÍÓÚ]{3,}|\d{1,2})\s*/\s*(\d{4})", re.I)
 RE_TELEFONO = re.compile(r"^\D*\d{7,12}\D*$")
@@ -495,8 +499,8 @@ def construir_producto(texto, categoria, marca, condicion, seccion, linea):
         m = RE_PRECIO_SIN_SIGNO.search(texto_plano)
         if m:
             sin_signo = m.group(1)
-            precio = int(sin_signo) * MULTIPLICADOR_PRECIO
-            texto_plano = texto_plano[:m.start(1)].strip()
+            precio, precio_ambiguo = parsear_precio("$" + sin_signo)
+            texto_plano = (texto_plano[:m.start(1)] + " " + texto_plano[m.end(1):]).strip()
 
     prod = {
         "id": None, "categoria": categoria, "marca": marca, "modelo": None,
