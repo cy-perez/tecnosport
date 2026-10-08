@@ -37,6 +37,7 @@ import co.tecnosport.api.application.envio.EmisionRechazadaException;
 import co.tecnosport.api.application.envio.EmisionYaEnCursoException;
 import co.tecnosport.api.application.envio.EnvioSinCoberturaException;
 import co.tecnosport.api.application.envio.GuiaNoEncontradaException;
+import co.tecnosport.api.application.envio.PesoDeReferenciaNoAdmitidoException;
 import co.tecnosport.api.application.envio.ResultadoEmision;
 import co.tecnosport.api.application.garantia.LineaNoEsDelPedidoException;
 import co.tecnosport.api.application.garantia.ReclamacionGarantiaNoEncontradaException;
@@ -431,6 +432,15 @@ public class ManejadorDeErrores {
   @ExceptionHandler(CategoriaNoEsHojaException.class)
   public ProblemDetail categoriaNoEsHoja(CategoriaNoEsHojaException excepcion) {
     return problema(HttpStatus.CONFLICT, "La categoría no es una hoja", excepcion);
+  }
+
+  /**
+   * {@code 409} por lo mismo que los rechazos del árbol de arriba: la categoría existe y lo que
+   * rechaza el peso es lo que la categoría es —tecnología, o una rama— ({@code adr/0071}).
+   */
+  @ExceptionHandler(PesoDeReferenciaNoAdmitidoException.class)
+  public ProblemDetail pesoDeReferenciaNoAdmitido(PesoDeReferenciaNoAdmitidoException excepcion) {
+    return problema(HttpStatus.CONFLICT, "La categoría no admite peso de referencia", excepcion);
   }
 
   @ExceptionHandler(CategoriaConProductosException.class)

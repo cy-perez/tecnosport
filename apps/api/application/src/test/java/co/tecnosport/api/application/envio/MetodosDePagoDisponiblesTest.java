@@ -68,7 +68,7 @@ class MetodosDePagoDisponiblesTest {
     pedidos = new RepositorioPedidosFalso();
     publicarProductoConVariante();
     ArmadorDeBultos armador =
-        new ArmadorDeBultos(productos, Dinero.deCop(10_000), Dinero.deCop(5_000_000));
+        ArmadorDeBultos.sinPromedios(productos, Dinero.deCop(10_000), Dinero.deCop(5_000_000));
     return new MetodosDePagoDisponibles(
         productos,
         armador,
@@ -275,7 +275,7 @@ class MetodosDePagoDisponiblesTest {
     conSistecredito.add(MetodoPago.SISTECREDITO);
     productos = new RepositorioProductosFalso();
     ArmadorDeBultos armador =
-        new ArmadorDeBultos(productos, Dinero.deCop(10_000), Dinero.deCop(5_000_000));
+        ArmadorDeBultos.sinPromedios(productos, Dinero.deCop(10_000), Dinero.deCop(5_000_000));
 
     IllegalArgumentException error =
         assertThrows(

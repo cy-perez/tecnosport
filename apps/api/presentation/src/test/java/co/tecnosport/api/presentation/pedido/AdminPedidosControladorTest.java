@@ -911,7 +911,8 @@ class AdminPedidosControladorTest {
         CotizadorEnvio cotizadorEnvio,
         EmisorDeGuias emisorDeGuias) {
       ArmadorDeBultos armador =
-          new ArmadorDeBultos(repositorioProductos, Dinero.deCop(10_000), Dinero.deCop(5_000_000));
+          ArmadorDeBultos.sinPromedios(
+              repositorioProductos, Dinero.deCop(10_000), Dinero.deCop(5_000_000));
       return new EmitirGuiaDePedido(
           repositorioPedidos,
           repositorioEmisiones,
@@ -921,7 +922,8 @@ class AdminPedidosControladorTest {
           // Sin transacciones que separar en un @WebMvcTest: lo que aquí se prueba es el cableado
           // HTTP, y el orden de las escrituras alrededor del cobro se prueba en su caso de uso.
           new EnTransaccionPropiaDobleDePrueba(),
-          Instant::now);
+          Instant::now,
+          true);
     }
 
     @Bean

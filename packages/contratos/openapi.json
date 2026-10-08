@@ -480,6 +480,27 @@
         },
         "type" : "object"
       },
+      "CategoriaConPesoRespuesta" : {
+        "properties" : {
+          "categoriaId" : {
+            "type" : "string"
+          },
+          "linea" : {
+            "type" : "string"
+          },
+          "nombre" : {
+            "type" : "string"
+          },
+          "pesoGramos" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "rama" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
       "CategoriaRespuesta" : {
         "properties" : {
           "escalaTallas" : {
@@ -1237,6 +1258,40 @@
         },
         "type" : "object"
       },
+      "FijarMedidasDeReferenciaRequest" : {
+        "properties" : {
+          "altoCm" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "anchoCm" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "largoCm" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        },
+        "required" : [
+          "altoCm",
+          "anchoCm",
+          "largoCm"
+        ],
+        "type" : "object"
+      },
+      "FijarPesoDeReferenciaRequest" : {
+        "properties" : {
+          "pesoGramos" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        },
+        "required" : [
+          "pesoGramos"
+        ],
+        "type" : "object"
+      },
       "FotoAprobadaPeticion" : {
         "properties" : {
           "colorHex" : {
@@ -1819,6 +1874,23 @@
         },
         "type" : "object"
       },
+      "MedidasDeReferenciaRespuesta" : {
+        "properties" : {
+          "altoCm" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "anchoCm" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "largoCm" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        },
+        "type" : "object"
+      },
       "MedidasRespuesta" : {
         "properties" : {
           "items" : {
@@ -1926,6 +1998,59 @@
           "pagoId",
           "pedidoId",
           "referencia"
+        ],
+        "type" : "object"
+      },
+      "PaqueteRespuesta" : {
+        "properties" : {
+          "altoCm" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "anchoCm" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "contenido" : {
+            "type" : "string"
+          },
+          "largoCm" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "pesoKg" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "valorDeclarado" : {
+            "$ref" : "#/components/schemas/DineroRespuesta"
+          }
+        },
+        "required" : [
+          "altoCm",
+          "anchoCm",
+          "contenido",
+          "largoCm",
+          "pesoKg",
+          "valorDeclarado"
+        ],
+        "type" : "object"
+      },
+      "PaquetesDePedidoRespuesta" : {
+        "properties" : {
+          "conRecaudo" : {
+            "type" : "boolean"
+          },
+          "paquetes" : {
+            "items" : {
+              "$ref" : "#/components/schemas/PaqueteRespuesta"
+            },
+            "type" : "array"
+          }
+        },
+        "required" : [
+          "conRecaudo",
+          "paquetes"
         ],
         "type" : "object"
       },
@@ -2114,6 +2239,18 @@
           },
           "totalPedidos" : {
             "format" : "int64",
+            "type" : "integer"
+          }
+        },
+        "type" : "object"
+      },
+      "PesoDeReferenciaRespuesta" : {
+        "properties" : {
+          "categoriaId" : {
+            "type" : "string"
+          },
+          "pesoGramos" : {
+            "format" : "int32",
             "type" : "integer"
           }
         },
@@ -2598,6 +2735,20 @@
         "properties" : {
           "correo" : {
             "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "ReferenciasDeEnvioRespuesta" : {
+        "properties" : {
+          "categorias" : {
+            "items" : {
+              "$ref" : "#/components/schemas/CategoriaConPesoRespuesta"
+            },
+            "type" : "array"
+          },
+          "medidas" : {
+            "$ref" : "#/components/schemas/MedidasDeReferenciaRespuesta"
           }
         },
         "type" : "object"
@@ -4115,6 +4266,150 @@
         },
         "tags" : [
           "admin-categoria-controlador"
+        ]
+      }
+    },
+    "/api/v1/admin/envios/paquetes/{pedidoId}" : {
+      "get" : {
+        "operationId" : "consultarPaquetes",
+        "parameters" : [
+          {
+            "in" : "path",
+            "name" : "pedidoId",
+            "required" : true,
+            "schema" : {
+              "format" : "uuid",
+              "type" : "string"
+            }
+          }
+        ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PaquetesDePedidoRespuesta"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "admin-paquetes-de-pedido-controlador"
+        ]
+      }
+    },
+    "/api/v1/admin/envios/referencias" : {
+      "get" : {
+        "operationId" : "consultar",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ReferenciasDeEnvioRespuesta"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "admin-referencias-envio-controlador"
+        ]
+      }
+    },
+    "/api/v1/admin/envios/referencias/medidas" : {
+      "put" : {
+        "operationId" : "fijarMedidas",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/FijarMedidasDeReferenciaRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/MedidasDeReferenciaRespuesta"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "admin-referencias-envio-controlador"
+        ]
+      }
+    },
+    "/api/v1/admin/envios/referencias/pesos/{categoriaId}" : {
+      "delete" : {
+        "operationId" : "quitarPeso",
+        "parameters" : [
+          {
+            "in" : "path",
+            "name" : "categoriaId",
+            "required" : true,
+            "schema" : {
+              "format" : "uuid",
+              "type" : "string"
+            }
+          }
+        ],
+        "responses" : {
+          "204" : {
+            "description" : "No Content"
+          }
+        },
+        "tags" : [
+          "admin-referencias-envio-controlador"
+        ]
+      },
+      "put" : {
+        "operationId" : "fijarPeso",
+        "parameters" : [
+          {
+            "in" : "path",
+            "name" : "categoriaId",
+            "required" : true,
+            "schema" : {
+              "format" : "uuid",
+              "type" : "string"
+            }
+          }
+        ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/FijarPesoDeReferenciaRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PesoDeReferenciaRespuesta"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "admin-referencias-envio-controlador"
         ]
       }
     },

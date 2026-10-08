@@ -10,8 +10,6 @@ import co.tecnosport.api.domain.envio.TarifaEnvio;
 import co.tecnosport.api.domain.pedido.Contacto;
 import co.tecnosport.api.domain.pedido.Direccion;
 import co.tecnosport.api.domain.pedido.EstadoPedido;
-import co.tecnosport.api.domain.pedido.LineaPedido;
-import co.tecnosport.api.domain.pedido.MetodoPago;
 import co.tecnosport.api.domain.pedido.Pedido;
 import co.tecnosport.api.domain.pedido.TipoEntrega;
 import java.util.List;
@@ -56,6 +54,15 @@ public final class EmitirGuiaDePedido {
   private final EnTransaccionPropia enTransaccionPropia;
   private final Reloj reloj;
 
+  /**
+   * ¿Se emiten guías por API? {@code false} mientras el negocio las crea a mano en el panel de la
+   * plataforma ({@code adr/0071}): con las dos vías abiertas, un clic de más paga dos guías para el
+   * mismo pedido. Se apaga <strong>aquí</strong> y no solo en el botón del panel, porque una
+   * pestaña con el código anterior, un {@code curl} con token o la app móvil llegan igual a este
+   * endpoint.
+   */
+  private final boolean emisionAutomatica;
+
   public EmitirGuiaDePedido(
       RepositorioPedidos repositorioPedidos,
       RepositorioEmisiones repositorioEmisiones,
@@ -63,7 +70,9 @@ public final class EmitirGuiaDePedido {
       CotizarEnvio cotizarEnvio,
       EmisorDeGuias emisor,
       EnTransaccionPropia enTransaccionPropia,
-      Reloj reloj) {
+      Reloj reloj,
+      boolean emisionAutomatica) {
+    this.emisionAutomatica = emisionAutomatica;
     this.repositorioPedidos = Objects.requireNonNull(repositorioPedidos);
     this.repositorioEmisiones = Objects.requireNonNull(repositorioEmisiones);
     this.armador = Objects.requireNonNull(armador);
@@ -80,6 +89,12 @@ public final class EmitirGuiaDePedido {
             .buscarPorId(comando.pedidoId())
             .orElseThrow(() -> new PedidoNoEncontradoException(comando.pedidoId()));
 
+    if (!emisionAutomatica) {
+      throw new EmisionNoAplicableException(
+          pedido.id(),
+          "la emisión de guías por API está apagada: la guía se crea en la plataforma y se registra"
+              + " a mano con su número");
+    }
     exigirQueSePuedaEmitir(pedido);
 
     // Presentes por construcción: un pedido a domicilio sin dirección o sin a quién entregarle no
@@ -96,15 +111,11 @@ public final class EmitirGuiaDePedido {
                 () -> new EmisionNoAplicableException(pedido.id(), "el pedido no tiene contacto"));
 
     List<EmisionDeGuia> anteriores = repositorioEmisiones.buscarDePedido(pedido.id());
-    boolean conRecaudo = pedido.metodoPago() == MetodoPago.CONTRAENTREGA;
-    // En contraentrega el valor declarado es además lo que la transportadora cobra en la puerta, y
-    // la plataforma no tiene ningún campo donde declarar ese monto: lo calcula sumando lo declarado
-    // (adr/0037). Por eso el flete se reparte aquí, donde el costoEnvio del pedido ya está
-    // congelado, y no en la cotización del checkout, donde todavía se está calculando.
-    List<BultoDespachable> bultos =
-        conRecaudo
-            ? armador.armarParaRecaudo(aEmpacar(pedido), pedido.total())
-            : armador.armar(aEmpacar(pedido));
+    boolean conRecaudo = ArmadorDeBultos.llevaRecaudo(pedido);
+    // En contraentrega el flete se reparte aquí, donde el costoEnvio del pedido ya está congelado,
+    // y no en la cotización del checkout, donde todavía se está calculando (adr/0037). Lo decide el
+    // armador para que el panel, que muestra estos mismos bultos, no pueda enseñar otros.
+    List<BultoDespachable> bultos = armador.armarParaDespachar(pedido);
     TarifaEnvio tarifa =
         cotizarEnvio.deBultos(
             destino,
@@ -257,20 +268,5 @@ public final class EmitirGuiaDePedido {
         .filter(emision -> emision.estado() != EstadoEmision.EMITIDA)
         .map(emision -> emision.transportadora().toLowerCase(Locale.ROOT))
         .collect(Collectors.toSet());
-  }
-
-  private static List<LineaAEmpacar> aEmpacar(Pedido pedido) {
-    return pedido.lineas().stream().map(EmitirGuiaDePedido::aEmpacar).toList();
-  }
-
-  /**
-   * El valor declarado sale del <strong>precio congelado de la línea</strong> y no del catálogo
-   * vivo, que es de donde lo sacaba antes. Es el monto que la transportadora paga si pierde el
-   * paquete, y tiene que ser el mismo que el comprador pagó y que aparece en la factura: contra ese
-   * documento se reclama. Si el precio del catálogo cambió entre la compra y el despacho, el que
-   * vale es el de la compra.
-   */
-  private static LineaAEmpacar aEmpacar(LineaPedido linea) {
-    return new LineaAEmpacar(linea.varianteId(), linea.cantidad(), linea.precioUnitario());
   }
 }

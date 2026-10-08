@@ -47,7 +47,7 @@ class CotizarEnvioTest {
     cotizador = new CotizadorEnvioFalso();
     caso =
         new CotizarEnvio(
-            new ArmadorDeBultos(productos, Dinero.deCop(10_000), Dinero.deCop(5_000_000)),
+            ArmadorDeBultos.sinPromedios(productos, Dinero.deCop(10_000), Dinero.deCop(5_000_000)),
             cotizador,
             () -> AHORA);
 
@@ -196,7 +196,8 @@ class CotizarEnvioTest {
   /**
    * El peso, las medidas y el valor salen del catálogo. El cliente manda qué variante y cuántas, y
    * nada más: si pudiera declarar el peso, pagaría el flete de una camiseta por una caja de tenis
-   * (regla dura #7).
+   * (regla dura #7). El peso, redondeado al kilo entero como lo pide el formulario de la plataforma
+   * (adr/0071).
    */
   @Test
   void elPaqueteYElValorDeclaradoSalenDelCatalogo() {
@@ -205,7 +206,7 @@ class CotizarEnvioTest {
     caso.ejecutar(comando(2));
 
     for (Bulto bulto : cotizador.ultima().bultos()) {
-      assertEquals(PAQUETE_CAMISETA, bulto.paquete());
+      assertEquals(PAQUETE_CAMISETA.alKiloSiguiente(), bulto.paquete());
       assertEquals(PRECIO_CAMISETA, bulto.valorDeclarado());
     }
   }

@@ -21,6 +21,7 @@ import co.tecnosport.api.application.envio.CotizacionRechazadaException;
 import co.tecnosport.api.application.envio.EmisionNoEncontradaException;
 import co.tecnosport.api.application.envio.EnvioSinCoberturaException;
 import co.tecnosport.api.application.envio.GuiaNoEncontradaException;
+import co.tecnosport.api.application.envio.PesoDeReferenciaNoAdmitidoException;
 import co.tecnosport.api.application.garantia.LineaNoEsDelPedidoException;
 import co.tecnosport.api.application.pago.SistecreditoNoEntregoLaUrlDePagoException;
 import co.tecnosport.api.application.pedido.ContraentregaNoDisponibleException;
@@ -127,6 +128,7 @@ class CodigosDeCableTest {
               MetodoDePagoNoEsTransferenciaManualException.class,
               "METODO_DE_PAGO_NO_ES_TRANSFERENCIA_MANUAL"),
           Map.entry(PedidoSinEntregarException.class, "PEDIDO_SIN_ENTREGAR"),
+          Map.entry(PesoDeReferenciaNoAdmitidoException.class, "PESO_DE_REFERENCIA_NO_ADMITIDO"),
           Map.entry(ProductoSinImagenPrincipalException.class, "PRODUCTO_SIN_IMAGEN_PRINCIPAL"),
           // Los dos rechazos del borrado de un producto: el panel los traduce a "retíralo primero"
           // y a "tiene ventas, retíralo en vez de borrarlo", que son instrucciones distintas. Con

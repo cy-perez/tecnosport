@@ -126,13 +126,13 @@ class CrearPedidoTest {
     cotizador.recaudaEnElDestino(recaudaEnElDestino);
     CotizarEnvio cotizarEnvio =
         new CotizarEnvio(
-            new ArmadorDeBultos(productos, Dinero.deCop(10_000), Dinero.deCop(5_000_000)),
+            ArmadorDeBultos.sinPromedios(productos, Dinero.deCop(10_000), Dinero.deCop(5_000_000)),
             cotizador,
             () -> AHORA);
     MetodosDePagoDisponibles metodosDePagoDisponibles =
         new MetodosDePagoDisponibles(
             productos,
-            new ArmadorDeBultos(productos, Dinero.deCop(10_000), Dinero.deCop(5_000_000)),
+            ArmadorDeBultos.sinPromedios(productos, Dinero.deCop(10_000), Dinero.deCop(5_000_000)),
             cotizarEnvio,
             pedidos,
             criterios,

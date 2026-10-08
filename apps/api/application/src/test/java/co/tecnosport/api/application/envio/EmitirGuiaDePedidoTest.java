@@ -83,7 +83,7 @@ class EmitirGuiaDePedidoTest {
     productos.conProductos(producto);
 
     ArmadorDeBultos armador =
-        new ArmadorDeBultos(productos, Dinero.deCop(10_000), Dinero.deCop(5_000_000));
+        ArmadorDeBultos.sinPromedios(productos, Dinero.deCop(10_000), Dinero.deCop(5_000_000));
     caso =
         new EmitirGuiaDePedido(
             pedidos,
@@ -92,7 +92,8 @@ class EmitirGuiaDePedidoTest {
             new CotizarEnvio(armador, cotizador, () -> AHORA),
             emisor,
             transacciones,
-            () -> AHORA);
+            () -> AHORA,
+            true);
   }
 
   private Pedido pedido(EstadoPedido estado, TipoEntrega tipoEntrega, int cantidad) {
@@ -180,6 +181,37 @@ class EmitirGuiaDePedidoTest {
     // Lo que de verdad importa: el pedido no se movió. Si la guía muere, no hay nada que devolver.
     assertEquals(
         EstadoPedido.EN_PREPARACION, pedidos.buscarPorId(pedido.id()).orElseThrow().estado());
+  }
+
+  /**
+   * Con la emisión apagada (adr/0071) la guía se crea a mano en la plataforma: emitir por API
+   * pagaría una segunda. Se rechaza antes de cotizar y sin escribir nada, venga de donde venga la
+   * petición.
+   */
+  @Test
+  void con_la_emision_apagada_no_cotiza_ni_emite_nada() {
+    Pedido pedido = pedido(EstadoPedido.EN_PREPARACION, TipoEntrega.ENVIO_A_DOMICILIO, 1);
+    cotizador.devolver(tarifaDeHoy());
+    emisor.responde(new ResultadoEmision.Aceptada(List.of("177d1939")));
+    ArmadorDeBultos armador =
+        ArmadorDeBultos.sinPromedios(productos, Dinero.deCop(10_000), Dinero.deCop(5_000_000));
+    EmitirGuiaDePedido apagado =
+        new EmitirGuiaDePedido(
+            pedidos,
+            emisiones,
+            armador,
+            new CotizarEnvio(armador, cotizador, () -> AHORA),
+            emisor,
+            transacciones,
+            () -> AHORA,
+            false);
+
+    assertThrows(
+        EmisionNoAplicableException.class,
+        () -> apagado.ejecutar(new EmitirGuiaDePedidoComando(pedido.id(), "admin:1")));
+
+    assertTrue(emisor.solicitudes().isEmpty());
+    assertTrue(emisiones.todas().isEmpty());
   }
 
   /**
@@ -569,5 +601,59 @@ class EmitirGuiaDePedidoTest {
     caso.ejecutar(new EmitirGuiaDePedidoComando(pedido.id(), "admin:1"));
 
     assertEquals(Dinero.deCop(99_000), cotizador.ultima().bultos().getFirst().valorDeclarado());
+  }
+
+  // --- los paquetes para crear la guía a mano (adr/0071) ----------------------------------------
+
+  /**
+   * En contraentrega la plataforma cobra en la puerta la suma de lo declarado. Lo que el panel
+   * enseña tiene que sumar el total del pedido, con el flete ya repartido, para que nadie escriba
+   * "el total" en cada paquete.
+   */
+  @Test
+  void los_paquetes_de_un_pedido_contraentrega_suman_el_total() {
+    Pedido pedido = pedidoContraentrega();
+    ArmadorDeBultos armador =
+        ArmadorDeBultos.sinPromedios(productos, Dinero.deCop(10_000), Dinero.deCop(5_000_000));
+
+    ConsultarPaquetesDePedido.PaquetesDePedido resultado =
+        new ConsultarPaquetesDePedido(pedidos, armador).ejecutar(pedido.id());
+
+    assertTrue(resultado.conRecaudo());
+    assertEquals(
+        pedido.total().valor(),
+        resultado.paquetes().stream()
+            .map(paquete -> paquete.bulto().valorDeclarado().valor())
+            .reduce(BigDecimal.ZERO, BigDecimal::add));
+  }
+
+  /** Lo que el panel enseña es lo que la emisión mandaría: los mismos bultos, en el mismo orden. */
+  @Test
+  void los_paquetes_son_los_mismos_que_cotiza_la_emision() {
+    Pedido pedido = pedido(EstadoPedido.EN_PREPARACION, TipoEntrega.ENVIO_A_DOMICILIO, 2);
+    cotizador.devolver(tarifaDeHoy());
+    emisor.responde(new ResultadoEmision.Aceptada(List.of("8bf880c9", "da585a66")));
+    ArmadorDeBultos armador =
+        ArmadorDeBultos.sinPromedios(productos, Dinero.deCop(10_000), Dinero.deCop(5_000_000));
+
+    caso.ejecutar(new EmitirGuiaDePedidoComando(pedido.id(), "admin:1"));
+    ConsultarPaquetesDePedido.PaquetesDePedido resultado =
+        new ConsultarPaquetesDePedido(pedidos, armador).ejecutar(pedido.id());
+
+    assertFalse(resultado.conRecaudo());
+    assertEquals(
+        cotizador.ultima().bultos(),
+        resultado.paquetes().stream().map(BultoDespachable::bulto).toList());
+  }
+
+  @Test
+  void un_retiro_en_punto_no_tiene_paquetes_que_mostrar() {
+    Pedido pedido = pedido(EstadoPedido.EN_PREPARACION, TipoEntrega.RETIRO_EN_PUNTO, 1);
+    ArmadorDeBultos armador =
+        ArmadorDeBultos.sinPromedios(productos, Dinero.deCop(10_000), Dinero.deCop(5_000_000));
+
+    assertThrows(
+        EmisionNoAplicableException.class,
+        () -> new ConsultarPaquetesDePedido(pedidos, armador).ejecutar(pedido.id()));
   }
 }

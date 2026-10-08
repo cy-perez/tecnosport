@@ -71,11 +71,15 @@ final class MapeadorEmisionSkydropxV2 {
   private static final Logger log = LoggerFactory.getLogger(MapeadorEmisionSkydropxV2.class);
 
   /**
-   * "Caja de cartón" en el catálogo de {@code GET /api/v1/shipments/packagings}, que son los 59
-   * códigos de embalaje de la ONU. Es lo que el negocio despacha; el día que se empaque en sobre o
-   * en bolsa, esto pasa a ser una elección por bulto y no una constante.
+   * "Saco (bolsa) de película de plástico" en el catálogo de {@code GET
+   * /api/v1/shipments/packagings}, que son los 59 códigos de embalaje de la ONU.
+   *
+   * <p>Fue {@code 4G}, caja de cartón, hasta el 7 de octubre de 2026: ese día el negocio decidió
+   * que <strong>todo</strong> se despacha en bolsa plástica, también la tecnología con su caja
+   * dentro ({@code adr/0071}). Sigue siendo una constante porque sigue siendo una sola elección; el
+   * día que unos bultos vayan en caja y otros en bolsa, pasa a ser un dato del bulto.
    */
-  private static final String TIPO_DE_EMPAQUE = "4G";
+  private static final String TIPO_DE_EMPAQUE = "5H4";
 
   /**
    * Lo que se escribe en {@code reference} del destino cuando el comprador no dejó indicaciones. El

@@ -44,7 +44,7 @@ class ArmadorDeBultosTest {
   void prepararCatalogo() {
     productos = new RepositorioProductosFalso();
     catalogo = new ArrayList<>();
-    armador = new ArmadorDeBultos(productos, MINIMO, MAXIMO);
+    armador = ArmadorDeBultos.sinPromedios(productos, MINIMO, MAXIMO);
   }
 
   @Test
@@ -222,13 +222,23 @@ class ArmadorDeBultosTest {
 
   private Variante agregarVarianteAlCatalogo(
       String nombre, String sku, Dinero precio, Paquete paquete) {
+    return agregarVarianteAlCatalogo(
+        nombre,
+        sku,
+        precio,
+        paquete,
+        Categoria.crear("Cables", new Slug("cables"), LineaCatalogo.TECNOLOGIA));
+  }
+
+  private Variante agregarVarianteAlCatalogo(
+      String nombre, String sku, Dinero precio, Paquete paquete, Categoria categoria) {
     Producto producto =
         Producto.crear(
             nombre,
             new Slug(sku.toLowerCase(Locale.ROOT)),
             "Descripción",
             Marca.crear("TecnoSport"),
-            Categoria.crear("Cables", new Slug("cables"), LineaCatalogo.TECNOLOGIA));
+            categoria);
     producto.asignarImagenPrincipal(
         ImagenProducto.crear(
             TipoImagen.PRINCIPAL,
@@ -356,5 +366,300 @@ class ArmadorDeBultosTest {
 
     assertEquals(
         List.of(Dinero.deCop(50_000)), declarados(armador.armar(List.of(linea(camiseta, 1)))));
+  }
+
+  // --- el peso redondeado y la bolsa de referencia (adr/0071) -----------------------------------
+
+  private static final Categoria CAMISETAS =
+      Categoria.crear("Camisetas", new Slug("ropa-caballero-camisetas"), LineaCatalogo.ROPA);
+  private static final Categoria JEANS =
+      Categoria.crear("Jeans", new Slug("ropa-dama-jeans"), LineaCatalogo.ROPA);
+  private static final Categoria TENIS =
+      Categoria.crear("Unisex", new Slug("calzado-unisex"), LineaCatalogo.CALZADO);
+  private static final Categoria PARLANTES =
+      Categoria.crear("Parlantes", new Slug("parlantes"), LineaCatalogo.TECNOLOGIA);
+
+  private RepositorioReferenciasDeEnvioFalso referencias;
+
+  /** Las cifras que dio el negocio el 7 de octubre de 2026: bolsa de 40 × 30 × 10 cm. */
+  private ArmadorDeBultos armadorConReferencias() {
+    referencias =
+        new RepositorioReferenciasDeEnvioFalso()
+            .conMedidas(40, 30, 10)
+            .conPeso(CAMISETAS.id(), 300)
+            .conPeso(JEANS.id(), 700)
+            .conPeso(TENIS.id(), 700);
+    return new ArmadorDeBultos(productos, referencias, MINIMO, MAXIMO);
+  }
+
+  private Variante prenda(Categoria categoria, String sku, Dinero precio) {
+    return agregarVarianteAlCatalogo(sku, sku, precio, null, categoria);
+  }
+
+  /** El formulario de la plataforma pide kilos enteros: 90 gramos de cable son 1 kg. */
+  @Test
+  void el_peso_de_un_bulto_medido_sube_al_kilo_entero() {
+    Variante cable = catalogoCon(Dinero.deCop(50_000));
+
+    Paquete paquete = armador.armar(List.of(linea(cable, 1))).getFirst().bulto().paquete();
+
+    assertEquals(new Paquete(1000, 12, 10, 3), paquete);
+  }
+
+  @Test
+  void una_prenda_sin_medir_viaja_en_la_bolsa_de_referencia() {
+    ArmadorDeBultos conReferencias = armadorConReferencias();
+    Variante camiseta = prenda(CAMISETAS, "TS-CAM-1", Dinero.deCop(50_000));
+
+    List<BultoDespachable> bultos = conReferencias.armar(List.of(linea(camiseta, 1)));
+
+    assertEquals(1, bultos.size());
+    assertEquals(new Paquete(1000, 40, 30, 10), bultos.getFirst().bulto().paquete());
+    assertEquals(Dinero.deCop(50_000), bultos.getFirst().bulto().valorDeclarado());
+    assertEquals("Ropa deportiva", bultos.getFirst().contenido());
+  }
+
+  /**
+   * Se suma y <em>después</em> se redondea: dos prendas de 700 g son 1.400 g y una bolsa de 2 kg,
+   * no dos kilos por prenda. Y todo va en una sola bolsa, que declara la suma de lo que lleva.
+   */
+  @Test
+  void varias_prendas_van_en_una_sola_bolsa_con_el_peso_sumado() {
+    ArmadorDeBultos conReferencias = armadorConReferencias();
+    Variante jean = prenda(JEANS, "TS-JEAN-1", Dinero.deCop(90_000));
+    Variante camiseta = prenda(CAMISETAS, "TS-CAM-1", Dinero.deCop(50_000));
+
+    List<BultoDespachable> bultos =
+        conReferencias.armar(List.of(linea(jean, 1), linea(camiseta, 2)));
+
+    assertEquals(1, bultos.size());
+    assertEquals(2000, bultos.getFirst().bulto().paquete().pesoGramos());
+    assertEquals(Dinero.deCop(190_000), bultos.getFirst().bulto().valorDeclarado());
+  }
+
+  @Test
+  void una_suma_que_cae_justo_en_el_kilo_no_sube_al_siguiente() {
+    ArmadorDeBultos conReferencias = armadorConReferencias();
+    Variante jean = prenda(JEANS, "TS-JEAN-1", Dinero.deCop(90_000));
+    Variante camiseta = prenda(CAMISETAS, "TS-CAM-1", Dinero.deCop(50_000));
+
+    List<BultoDespachable> bultos =
+        conReferencias.armar(List.of(linea(jean, 1), linea(camiseta, 1)));
+
+    assertEquals(1000, bultos.getFirst().bulto().paquete().pesoGramos());
+  }
+
+  /** Lo que el negocio llena en la plataforma con un pedido mixto: la caja medida y la bolsa. */
+  @Test
+  void un_pedido_mixto_son_dos_bultos_y_la_bolsa_va_al_final() {
+    ArmadorDeBultos conReferencias = armadorConReferencias();
+    Variante tenis = prenda(TENIS, "TS-TEN-1", Dinero.deCop(250_000));
+    Variante parlante =
+        agregarVarianteAlCatalogo(
+            "Parlante",
+            "TS-PAR-1",
+            Dinero.deCop(400_000),
+            new Paquete(1_500, 25, 20, 15),
+            PARLANTES);
+
+    List<BultoDespachable> bultos =
+        conReferencias.armar(List.of(linea(tenis, 1), linea(parlante, 1)));
+
+    assertEquals(2, bultos.size());
+    assertEquals(new Paquete(2000, 25, 20, 15), bultos.get(0).bulto().paquete());
+    assertEquals("Electrónica y accesorios", bultos.get(0).contenido());
+    assertEquals(new Paquete(1000, 40, 30, 10), bultos.get(1).bulto().paquete());
+    assertEquals("Calzado deportivo", bultos.get(1).contenido());
+  }
+
+  /** La medida real manda: una prenda que alguien pesó no viaja con el promedio de su categoría. */
+  @Test
+  void una_prenda_medida_viaja_con_sus_medidas_y_fuera_de_la_bolsa() {
+    ArmadorDeBultos conReferencias = armadorConReferencias();
+    Variante medida =
+        agregarVarianteAlCatalogo(
+            "Jean medido", "TS-JEAN-M", Dinero.deCop(90_000), new Paquete(650, 35, 25, 5), JEANS);
+    Variante sinMedir = prenda(CAMISETAS, "TS-CAM-1", Dinero.deCop(50_000));
+
+    List<BultoDespachable> bultos =
+        conReferencias.armar(List.of(linea(medida, 1), linea(sinMedir, 1)));
+
+    assertEquals(2, bultos.size());
+    assertEquals(new Paquete(1000, 35, 25, 5), bultos.get(0).bulto().paquete());
+    assertEquals(new Paquete(1000, 40, 30, 10), bultos.get(1).bulto().paquete());
+  }
+
+  /** Una bolsa con dos líneas las declara las dos: declarar una dejaría la otra sin reclamación. */
+  @Test
+  void la_bolsa_declara_cada_linea_que_lleva() {
+    ArmadorDeBultos conReferencias = armadorConReferencias();
+    Variante camiseta = prenda(CAMISETAS, "TS-CAM-1", Dinero.deCop(50_000));
+    Variante tenis = prenda(TENIS, "TS-TEN-1", Dinero.deCop(250_000));
+
+    List<BultoDespachable> bultos =
+        conReferencias.armar(List.of(linea(camiseta, 1), linea(tenis, 1)));
+
+    assertEquals("Ropa deportiva, Calzado deportivo", bultos.getFirst().contenido());
+  }
+
+  /** El piso es por bulto: dos prendas de 6.000 declaran 12.000, no dos veces el mínimo. */
+  @Test
+  void el_piso_de_la_bolsa_se_mira_sobre_la_suma() {
+    ArmadorDeBultos conReferencias = armadorConReferencias();
+    Variante barata = prenda(CAMISETAS, "TS-CAM-B", Dinero.deCop(6_000));
+
+    assertEquals(
+        List.of(Dinero.deCop(12_000)), declarados(conReferencias.armar(List.of(linea(barata, 2)))));
+    assertEquals(List.of(MINIMO), declarados(conReferencias.armar(List.of(linea(barata, 1)))));
+  }
+
+  /** Una categoría a la que nadie le puso peso sigue el adr/0046: solo recogida. */
+  @Test
+  void una_prenda_de_una_categoria_sin_peso_no_se_puede_empacar() {
+    ArmadorDeBultos conReferencias = armadorConReferencias();
+    Categoria faldas = Categoria.crear("Faldas", new Slug("ropa-dama-faldas"), LineaCatalogo.ROPA);
+    Variante falda = prenda(faldas, "TS-FAL-1", Dinero.deCop(60_000));
+
+    ArticuloSinMedidasException error =
+        assertThrows(
+            ArticuloSinMedidasException.class,
+            () -> conReferencias.armar(List.of(linea(falda, 1))));
+
+    assertEquals(falda.id(), error.articulos().getFirst().varianteId());
+  }
+
+  /** Sin medidas de la bolsa no hay bolsa, aunque cada prenda tenga su peso. */
+  @Test
+  void sin_medidas_de_referencia_ninguna_prenda_sin_medir_se_empaca() {
+    referencias = new RepositorioReferenciasDeEnvioFalso().conPeso(CAMISETAS.id(), 300);
+    ArmadorDeBultos sinMedidas = new ArmadorDeBultos(productos, referencias, MINIMO, MAXIMO);
+    Variante camiseta = prenda(CAMISETAS, "TS-CAM-1", Dinero.deCop(50_000));
+
+    assertThrows(
+        ArticuloSinMedidasException.class, () -> sinMedidas.armar(List.of(linea(camiseta, 1))));
+  }
+
+  /**
+   * La tecnología no se promedia aunque alguien haya dejado un peso en su categoría: el panel no lo
+   * permite, pero la regla tiene que sostenerse también aquí.
+   */
+  @Test
+  void la_tecnologia_sin_medir_no_entra_en_la_bolsa_aunque_tenga_peso() {
+    ArmadorDeBultos conReferencias = armadorConReferencias();
+    referencias.conPeso(PARLANTES.id(), 900);
+    Variante parlante =
+        agregarVarianteAlCatalogo("Parlante", "TS-PAR-1", Dinero.deCop(400_000), null, PARLANTES);
+
+    assertThrows(
+        ArticuloSinMedidasException.class, () -> conReferencias.armar(List.of(linea(parlante, 1))));
+  }
+
+  /** Un carrito de puros productos medidos no va a la base a preguntar cuánto pesa una camiseta. */
+  @Test
+  void si_todo_esta_medido_las_referencias_no_se_leen() {
+    ArmadorDeBultos conReferencias = armadorConReferencias();
+    Variante cable = catalogoCon(Dinero.deCop(50_000));
+
+    conReferencias.armar(List.of(linea(cable, 2)));
+
+    assertEquals(0, referencias.lecturas());
+  }
+
+  /** La bolsa entra al reparto del flete como un bulto más, y la suma sigue siendo el recaudo. */
+  @Test
+  void con_bolsa_la_suma_declarada_sigue_siendo_lo_que_se_recauda() {
+    ArmadorDeBultos conReferencias = armadorConReferencias();
+    Variante camiseta = prenda(CAMISETAS, "TS-CAM-1", Dinero.deCop(50_000));
+    Variante cable = catalogoCon(Dinero.deCop(30_000));
+
+    List<BultoDespachable> bultos =
+        conReferencias.armarParaRecaudo(
+            List.of(linea(camiseta, 2), linea(cable, 1)), Dinero.deCop(143_700));
+
+    assertEquals(2, bultos.size());
+    assertEquals(Dinero.deCop(143_700), suma(bultos));
+  }
+
+  /**
+   * El techo es por bulto, y antes de la bolsa doce pares de 450.000 eran doce bultos asegurables.
+   * Metidos en una sola bolsa serían 5.400.000 y el pedido quedaría solo con recogida: la bolsa se
+   * parte para que ninguna pase del techo.
+   */
+  @Test
+  void una_bolsa_que_pasaria_del_techo_se_parte_en_varias() {
+    ArmadorDeBultos conReferencias = armadorConReferencias();
+    Variante tenis = prenda(TENIS, "TS-TEN-1", Dinero.deCop(450_000));
+
+    List<BultoDespachable> bultos = conReferencias.armar(List.of(linea(tenis, 12)));
+
+    assertEquals(2, bultos.size());
+    assertEquals(List.of(Dinero.deCop(4_950_000), Dinero.deCop(450_000)), declarados(bultos));
+    assertEquals(8000, bultos.get(0).bulto().paquete().pesoGramos(), "11 pares de 700 g");
+    assertEquals(1000, bultos.get(1).bulto().paquete().pesoGramos());
+  }
+
+  @Test
+  void con_las_bolsas_partidas_el_recaudo_sigue_cuadrando() {
+    ArmadorDeBultos conReferencias = armadorConReferencias();
+    Variante tenis = prenda(TENIS, "TS-TEN-1", Dinero.deCop(450_000));
+
+    List<BultoDespachable> bultos =
+        conReferencias.armarParaRecaudo(List.of(linea(tenis, 12)), Dinero.deCop(5_430_000));
+
+    assertEquals(Dinero.deCop(5_430_000), suma(bultos));
+  }
+
+  /**
+   * Una prenda que sola ya pasa del techo no se esconde dentro de la bolsa: el techo la rechaza.
+   */
+  @Test
+  void una_prenda_que_sola_pasa_del_techo_no_se_despacha() {
+    ArmadorDeBultos conReferencias = armadorConReferencias();
+    Variante cara = prenda(JEANS, "TS-JEAN-ORO", Dinero.deCop(6_000_000));
+    Variante camiseta = prenda(CAMISETAS, "TS-CAM-1", Dinero.deCop(50_000));
+
+    ArticuloNoAsegurableException error =
+        assertThrows(
+            ArticuloNoAsegurableException.class,
+            () -> conReferencias.armar(List.of(linea(camiseta, 1), linea(cara, 1))));
+
+    assertEquals(
+        List.of(cara.id()),
+        error.articulos().stream()
+            .map(ArticuloNoAsegurableException.Articulo::varianteId)
+            .toList());
+  }
+
+  /**
+   * El carrito público no limita la cantidad: la suma de los pesos no puede dar la vuelta a un
+   * número negativo y reventar con un error que no explica nada.
+   */
+  @Test
+  void una_cantidad_enorme_no_desborda_el_peso_de_la_bolsa() {
+    ArmadorDeBultos conReferencias = armadorConReferencias();
+    Variante barata = prenda(JEANS, "TS-JEAN-B", Dinero.deCop(1));
+
+    List<BultoDespachable> bultos = conReferencias.armar(List.of(linea(barata, 3_100_000)));
+
+    assertEquals(1, bultos.size());
+    assertEquals(2_147_483_000, bultos.getFirst().bulto().paquete().pesoGramos());
+  }
+
+  /**
+   * Lo que una bolsa con tecnología sin medir no puede hacer es esconderla: todo sale a recogida.
+   */
+  @Test
+  void la_bolsa_junto_a_tecnologia_sin_medir_no_se_despacha() {
+    ArmadorDeBultos conReferencias = armadorConReferencias();
+    Variante camiseta = prenda(CAMISETAS, "TS-CAM-1", Dinero.deCop(50_000));
+    Variante parlante =
+        agregarVarianteAlCatalogo("Parlante", "TS-PAR-1", Dinero.deCop(400_000), null, PARLANTES);
+
+    ArticuloSinMedidasException error =
+        assertThrows(
+            ArticuloSinMedidasException.class,
+            () -> conReferencias.armar(List.of(linea(camiseta, 1), linea(parlante, 1))));
+
+    assertEquals(parlante.id(), error.articulos().getFirst().varianteId());
   }
 }
