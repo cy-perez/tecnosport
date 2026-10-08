@@ -228,10 +228,25 @@ producto con `referencias/conocidos.json` y lo clasifica:
 | costo cambiado | todo, con el margen recalculado al costo de hoy | nada |
 | sin cambios | todo | nada |
 
-Y anota los **desaparecidos** —conocidos que no vinieron aunque llegó el mensaje
-de la lista en que suelen venir—, aparte de los conocidos que vinieron pero
-quedaron descartados (sin precio, bajo el mínimo). Escribe `cambios.md` junto a
-`productos.json`. Lee los dos reportes antes de seguir.
+**Los colores se heredan solo si la lista marca hoy los mismos emojis** que la vez
+en que se decidieron. Si marca otros —o ninguno, cuando antes marcaba—, el
+producto queda sin colores, sin la sección de colores en la descripción y con la
+tarea `colores` pendiente: confírmalos contra la paleta oficial (regla 13) y
+escribe `colores_oficiales`; la sección se rehace al consolidar. Ningún script
+hace esta tarea.
+
+Y anota:
+
+- los **desaparecidos** —conocidos que vinieron en la última lista de su mensaje
+  y hoy no, aunque el mensaje llegó—, que son los que hay que dejar de ofrecer.
+  Los que ya faltaban antes quedan como ausentes y no se repiten;
+- los **posibles el mismo**: un nuevo y un desaparecido que solo difieren en la
+  SIM. Casi siempre es la anotación `*1 SIM*` pegada a otra línea. Si es el
+  mismo equipo, agrega la equivalencia que propone el reporte y vuelve a parsear;
+- los conocidos que vinieron pero **no entran** (sin precio, bajo el mínimo).
+
+Escribe `cambios.md` junto a `productos.json`. Lee los dos reportes antes de
+seguir.
 
 Con la lista del 08/10/2026 fueron 18 nuevos, 7 sin precio vigente, 19 con otro
 costo y 46 sin cambios: al paso 4 llegaron 25 de 90 productos.
@@ -393,9 +408,16 @@ de la lista. Es lo que evita investigar otra vez, en la lista siguiente, lo que
 ya se investigó: contra la del 08/10/2026 la base reconoce 72 de 90 productos.
 
 La base va en el repositorio y no se edita a mano. Un precio de mercado vale
-**7 días** desde su fecha (decisión del negocio, 08/10/2026); un precio que se
-copió de la base conserva la fecha que traía. Lo que salga «sin terminar» no se
-guarda: dilo en la entrega.
+**7 días** desde la fecha de su consulta (decisión del negocio, 08/10/2026), que
+escribe `asignar_precios.py`; un precio que se copió de la base conserva la fecha
+que traía, y consolidar días después no lo rejuvenece. Lo que salga «sin
+terminar» no se guarda: dilo en la entrega.
+
+Consolidar se niega a correr sobre una corrida que no pasó por la comparación,
+y no guarda los supuestos que hablan del precio o citan una línea —«precio
+tomado del bloque PRECIOS DE VENTA (línea 530…)»—: son de esa lista y serían
+falsos en la siguiente. Si escribes un supuesto que sí vale para el producto,
+no lo ates a una línea ni a un precio.
 
 ### 7. Entregar
 
