@@ -14,8 +14,27 @@ import {
 } from '../../../../core/autenticacion/repositorio-sesion.puerto';
 import { Sesion } from '../../../../core/autenticacion/sesion.model';
 import { IniciarSesionClientePage } from './iniciar-sesion-cliente.page';
+import { CuentaGoogleSinRegistroError } from '../../../../core/autenticacion/sesion.errores';
+import { ConfiguracionGoogle } from '../../domain/boton-google.puerto';
+import { REPOSITORIO_CUENTA, RepositorioCuenta } from '../../domain/repositorio-cuenta.puerto';
+import {
+  BotonGoogleFalso,
+  GOOGLE_HABILITADO,
+  proveedoresDeGoogle,
+} from '../../../../../testing/google';
 
 class RepositorioSesionFalso implements RepositorioSesion {
+  llamadasGoogle: { credencial: string; autorizaDatos: boolean }[] = [];
+  errorConGoogle: Error | null = null;
+
+  async iniciarSesionConGoogle(credencial: string, autorizaDatos: boolean): Promise<Sesion> {
+    this.llamadasGoogle.push({ credencial, autorizaDatos });
+    if (this.errorConGoogle) {
+      throw this.errorConGoogle;
+    }
+    return { usuarioId: 'u1', rol: 'CLIENTE', accessToken: 'jwt' };
+  }
+
   llamadasCerrar = 0;
 
   constructor(
@@ -56,7 +75,24 @@ class RepositorioSesionFalso implements RepositorioSesion {
   }
 }
 
-async function renderPagina(repositorio: RepositorioSesion) {
+/** Solo lo que la pantalla pregunta a la cuenta: si hay Google en este ambiente. */
+function cuentaConGoogle(configuracion: ConfiguracionGoogle): RepositorioCuenta {
+  const noUsado = () => Promise.reject(new Error('no usado en esta prueba'));
+  return {
+    configuracionGoogle: async () => configuracion,
+    registrar: noUsado,
+    verificarCorreo: noUsado,
+    reenviarVerificacion: noUsado,
+    solicitarRecuperacion: noUsado,
+    restablecerClave: noUsado,
+  };
+}
+
+async function renderPagina(
+  repositorio: RepositorioSesion,
+  boton = new BotonGoogleFalso(),
+  configuracion: ConfiguracionGoogle = { habilitado: false, clienteId: '', urlScript: '' },
+) {
   return render(IniciarSesionClientePage, {
     imports: [
       TranslocoTestingModule.forRoot({
@@ -65,7 +101,12 @@ async function renderPagina(repositorio: RepositorioSesion) {
         preloadLangs: true,
       }),
     ],
-    providers: [provideRouter([]), { provide: REPOSITORIO_SESION, useValue: repositorio }],
+    providers: [
+      provideRouter([]),
+      { provide: REPOSITORIO_SESION, useValue: repositorio },
+      { provide: REPOSITORIO_CUENTA, useValue: cuentaConGoogle(configuracion) },
+      ...proveedoresDeGoogle(boton),
+    ],
   });
 }
 
@@ -231,5 +272,47 @@ describe('IniciarSesionClientePage', () => {
     const { container } = await renderPagina(new RepositorioSesionFalso());
 
     await esperarSinViolaciones(container);
+  });
+
+  describe('con Google (ADR-0074)', () => {
+    it('sin cliente de Google en el ambiente no pinta el botón', async () => {
+      const boton = new BotonGoogleFalso();
+      await renderPagina(new RepositorioSesionFalso(), boton);
+      await screen.findByLabelText('Correo electrónico');
+
+      expect(boton.pintado).toBe(false);
+    });
+
+    /** Desde aquí no se autoriza nada: la credencial viaja con `autorizaDatos` en false. */
+    it('entra con la credencial de Google y no autoriza nada desde aquí', async () => {
+      const repositorio = new RepositorioSesionFalso();
+      const boton = new BotonGoogleFalso();
+      const { fixture } = await renderPagina(repositorio, boton, GOOGLE_HABILITADO);
+      const router = fixture.debugElement.injector.get(Router);
+      const navegar = vi.spyOn(router, 'navigate');
+      await vi.waitFor(() => expect(boton.pintado).toBe(true));
+
+      boton.entregar('credencial-de-google');
+
+      await vi.waitFor(() =>
+        expect(repositorio.llamadasGoogle).toEqual([
+          { credencial: 'credencial-de-google', autorizaDatos: false },
+        ]),
+      );
+      await vi.waitFor(() => expect(navegar).toHaveBeenCalledWith(['/es']));
+    });
+
+    it('sin cuenta, manda a crearla con un enlace', async () => {
+      const repositorio = new RepositorioSesionFalso();
+      repositorio.errorConGoogle = new CuentaGoogleSinRegistroError();
+      const boton = new BotonGoogleFalso();
+      await renderPagina(repositorio, boton, GOOGLE_HABILITADO);
+      await vi.waitFor(() => expect(boton.pintado).toBe(true));
+
+      boton.entregar('credencial-de-google');
+
+      expect(await screen.findByText(/No hay una cuenta con ese correo de Google/)).toBeTruthy();
+      expect(screen.getByRole('link', { name: 'Crea tu cuenta con Google aquí.' })).toBeTruthy();
+    });
   });
 });

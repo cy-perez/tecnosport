@@ -1,4 +1,11 @@
 {
+  "google": {
+    "separador": "or",
+    "error": "We couldn't sign you in with Google. Try again, or use your email and password.",
+    "sin_registro": "There is no account with that Google email.",
+    "ir_a_registro": "Create your account with Google here.",
+    "autoriza_primero": "To create your account with Google, first tick the data authorization box and press the Google button again."
+  },
   "iniciarSesion": {
     "titulo": "Sign in",
     "correo": "Email address",

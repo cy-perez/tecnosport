@@ -101,7 +101,11 @@ app.use(
  * El catálogo no está aquí: sus categorías son parámetros de consulta sobre `/productos`, no rutas
  * propias, y `rutaCanonica` las poda a propósito (ver `core/seo/enlaces-alternativos.ts`).
  */
-const VIGENCIA_LEGAL = new Date(`${legalesEs.comun.version}T00:00:00Z`).toISOString();
+// La fecha y no la versión entera: dos versiones del mismo día se distinguen con un sufijo
+// (`2026-10-08.2`, ADR-0074) porque cada constancia de autorización guarda cuál aceptó, y el
+// sufijo no es parte de la fecha. `new Date` con él dentro daba `Invalid time value` y tumbaba el
+// prerender entero.
+const VIGENCIA_LEGAL = new Date(`${legalesEs.comun.version.slice(0, 10)}T00:00:00Z`).toISOString();
 
 const PAGINAS_FIJAS: readonly PaginaDelSitio[] = [
   { ruta: '' },

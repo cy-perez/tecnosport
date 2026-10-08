@@ -6,8 +6,10 @@ import { Router, RouterLink } from '@angular/router';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import {
   CorreoSinVerificarError,
+  CuentaGoogleSinRegistroError,
   DemasiadosIntentosError,
 } from '../../../../core/autenticacion/sesion.errores';
+import { TsEntrarConGoogle } from '../entrar-con-google/ts-entrar-con-google';
 import { esFalloDelServidor } from '../../../../core/http/respuesta-http';
 import { SesionStore } from '../../../../core/autenticacion/sesion.store';
 import { TsBoton } from '../../../../shared/ui/boton/ts-boton';
@@ -23,7 +25,15 @@ import { usarFocoEnPrimerInvalido } from '../../../../shared/foco/foco';
  */
 @Component({
   selector: 'app-iniciar-sesion-cliente',
-  imports: [TsPaginaFormulario, ReactiveFormsModule, RouterLink, TranslocoPipe, TsBoton, TsCampo],
+  imports: [
+    TsPaginaFormulario,
+    ReactiveFormsModule,
+    RouterLink,
+    TranslocoPipe,
+    TsBoton,
+    TsCampo,
+    TsEntrarConGoogle,
+  ],
   templateUrl: './iniciar-sesion-cliente.page.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -39,6 +49,8 @@ export class IniciarSesionClientePage {
   protected readonly iconoClave = iconoClave;
 
   protected readonly error = signal<string | null>(null);
+  /** Entró con Google sin cuenta: el aviso lleva un enlace a «Crear cuenta», por eso no es `error`. */
+  protected readonly sinRegistroConGoogle = signal(false);
   protected readonly enviando = signal(false);
 
   protected readonly form = new FormGroup({
@@ -129,6 +141,35 @@ export class IniciarSesionClientePage {
         this.error.set(this.transloco.translate('comun.error_servidor'));
       } else {
         this.error.set(this.transloco.translate('cuenta.iniciarSesion.error'));
+      }
+    } finally {
+      this.enviando.set(false);
+    }
+  }
+
+  /**
+   * Entrar con Google (ADR-0074). Desde aquí no se autoriza nada: si la cuenta no existe, el servidor
+   * responde que hay que pasar por «Crear cuenta», donde está la casilla de los datos.
+   */
+  protected async entrarConGoogle(credencial: string): Promise<void> {
+    if (this.enviando()) {
+      return;
+    }
+    this.error.set(null);
+    this.sinRegistroConGoogle.set(false);
+    this.enviando.set(true);
+    try {
+      await this.sesionStore.iniciarSesionConGoogle(credencial, false);
+      void this.router.navigate(['/' + this.transloco.activeLang()]);
+    } catch (error) {
+      if (error instanceof CuentaGoogleSinRegistroError) {
+        this.sinRegistroConGoogle.set(true);
+      } else if (error instanceof DemasiadosIntentosError) {
+        this.error.set(this.transloco.translate('cuenta.iniciarSesion.error_demasiados_intentos'));
+      } else if (esFalloDelServidor(error)) {
+        this.error.set(this.transloco.translate('comun.error_servidor'));
+      } else {
+        this.error.set(this.transloco.translate('cuenta.google.error'));
       }
     } finally {
       this.enviando.set(false);

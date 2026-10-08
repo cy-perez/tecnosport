@@ -60,6 +60,13 @@ export class SesionStore {
     return sesion;
   }
 
+  /** La misma sesión, abierta con Google (ADR-0074). */
+  async iniciarSesionConGoogle(credencial: string, autorizaDatos: boolean): Promise<Sesion> {
+    const sesion = await this.repositorio.iniciarSesionConGoogle(credencial, autorizaDatos);
+    this.sesion.set(sesion);
+    return sesion;
+  }
+
   /**
    * La sesión que vuelve reemplaza a la de antes: el servidor revocó todas las del usuario -la
    * cookie de refresco incluida- y abrió una nueva en el mismo acto. Sin este `set`, la pantalla

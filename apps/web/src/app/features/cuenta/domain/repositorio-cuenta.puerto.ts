@@ -1,4 +1,5 @@
 import { InjectionToken } from '@angular/core';
+import { ConfiguracionGoogle } from './boton-google.puerto';
 
 export interface RepositorioCuenta {
   /** `POST /auth/registro`: nunca abre sesión — la cuenta nace sin verificar. */
@@ -20,6 +21,8 @@ export interface RepositorioCuenta {
   solicitarRecuperacion(correo: string): Promise<void>;
   /** `POST /auth/recuperacion/confirmar`. */
   restablecerClave(token: string, claveNueva: string): Promise<void>;
+  /** `GET /auth/google/configuracion`: si este ambiente ofrece entrar con Google (ADR-0074). */
+  configuracionGoogle(): Promise<ConfiguracionGoogle>;
 }
 
 export const REPOSITORIO_CUENTA = new InjectionToken<RepositorioCuenta>('RepositorioCuenta');

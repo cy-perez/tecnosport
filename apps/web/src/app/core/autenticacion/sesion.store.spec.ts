@@ -16,6 +16,10 @@ const SESION_TRAS_CAMBIAR: Sesion = {
 };
 
 class RepositorioSesionFalso implements RepositorioSesion {
+  async iniciarSesionConGoogle(): Promise<Sesion> {
+    throw new Error('no usado en esta prueba');
+  }
+
   llamadasIniciar = 0;
   llamadasCerrar = 0;
   tokenRecibido: string | null = null;
@@ -45,6 +49,10 @@ class RepositorioSesionFalso implements RepositorioSesion {
 }
 
 class RepositorioSesionQueFalla implements RepositorioSesion {
+  async iniciarSesionConGoogle(): Promise<Sesion> {
+    throw new Error('no usado en esta prueba');
+  }
+
   async iniciarSesion(): Promise<Sesion> {
     throw new Error('correo o clave incorrectos');
   }

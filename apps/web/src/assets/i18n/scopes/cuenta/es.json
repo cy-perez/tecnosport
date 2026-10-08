@@ -1,4 +1,11 @@
 {
+  "google": {
+    "separador": "o",
+    "error": "No pudimos entrar con Google. Intenta de nuevo, o usa tu correo y contraseña.",
+    "sin_registro": "No hay una cuenta con ese correo de Google.",
+    "ir_a_registro": "Crea tu cuenta con Google aquí.",
+    "autoriza_primero": "Para crear tu cuenta con Google, primero marca la casilla de autorización de datos y vuelve a pulsar el botón de Google."
+  },
   "iniciarSesion": {
     "titulo": "Iniciar sesión",
     "correo": "Correo electrónico",

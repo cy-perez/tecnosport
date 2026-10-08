@@ -4,6 +4,11 @@ import { Sesion } from './sesion.model';
 export interface RepositorioSesion {
   iniciarSesion(correo: string, clave: string): Promise<Sesion>;
   /**
+   * `POST /auth/google` (ADR-0074): la misma sesión que la de la clave, abierta con la credencial
+   * que entregó el botón de Google. `autorizaDatos` solo cuenta si la cuenta no existe todavía.
+   */
+  iniciarSesionConGoogle(credencial: string, autorizaDatos: boolean): Promise<Sesion>;
+  /**
    * `POST /auth/clave`: cambia la clave de quien ya tiene sesión y devuelve una **nueva**, porque
    * el servidor revoca todas las anteriores. Es el único camino que no depende del correo.
    *

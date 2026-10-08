@@ -7,6 +7,7 @@ import { RepositorioSesion } from './repositorio-sesion.puerto';
 import {
   ClaveActualIncorrectaError,
   CorreoSinVerificarError,
+  CuentaGoogleSinRegistroError,
   DemasiadosIntentosError,
   SesionExpiradaError,
 } from './sesion.errores';
@@ -49,6 +50,19 @@ export class SesionHttpRepositorio implements RepositorioSesion {
    * pero no sirve— porque el navegador registra en la consola todo 4xx de una petición, y esta
    * sale en cada primera carga de cualquier visitante.
    */
+  async iniciarSesionConGoogle(credencial: string, autorizaDatos: boolean): Promise<Sesion> {
+    const respuesta = await this.cliente.POST('/api/v1/auth/google', {
+      body: { credencial, autorizaDatos },
+    });
+    if (respuesta.response.status === 409) {
+      throw new CuentaGoogleSinRegistroError();
+    }
+    if (respuesta.response.status === 429) {
+      throw new DemasiadosIntentosError();
+    }
+    return aSesion(desempaquetar(respuesta, 'no se pudo iniciar sesión con Google'));
+  }
+
   async refrescar(): Promise<Sesion | null> {
     const respuesta = await this.cliente.POST('/api/v1/auth/refresco');
     if (respuesta.response.status === 204 || respuesta.response.status === 401) {

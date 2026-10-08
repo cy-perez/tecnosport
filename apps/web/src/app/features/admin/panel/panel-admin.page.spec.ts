@@ -22,6 +22,10 @@ import { esperarSinViolaciones } from '../../../../testing/axe';
 import { PanelAdminPage } from './panel-admin.page';
 
 class RepositorioSesionFalso implements RepositorioSesion {
+  async iniciarSesionConGoogle(): Promise<Sesion> {
+    throw new Error('no usado en esta prueba');
+  }
+
   llamadasCerrar = 0;
 
   async iniciarSesion(): Promise<Sesion> {

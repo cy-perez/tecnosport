@@ -87,6 +87,10 @@
         {{ 'cuenta.registro.crear_cuenta' | transloco }}
       </ts-boton>
 
+      <!-- Registrarse con Google (ADR-0074): la misma casilla de arriba se exige al volver de
+           Google, y la cuenta nace verificada. Sin cliente configurado no pinta nada. -->
+      <ts-entrar-con-google modo="registrar" (credencial)="registrarConGoogle($event)" />
+
       <p class="m-0 flex flex-wrap items-center gap-8 text-sm text-ts-texto-suave">
         {{ 'cuenta.registro.ya_tienes_cuenta' | transloco }}
         <a

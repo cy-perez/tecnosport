@@ -2,6 +2,8 @@ import { Routes } from '@angular/router';
 import { provideTranslocoScope } from '@jsverse/transloco';
 import { REPOSITORIO_CUENTA } from '../domain/repositorio-cuenta.puerto';
 import { CuentaHttpRepositorio } from '../infrastructure/cuenta-http.repositorio';
+import { BOTON_GOOGLE } from '../domain/boton-google.puerto';
+import { BotonGoogleGis } from '../infrastructure/boton-google-gis';
 import { precargarScopeI18n } from '../../../core/i18n/precargar-scope';
 
 // El binding puerto -> implementación vive aquí, no en presentation/: "el
@@ -12,6 +14,7 @@ export const cuentaRoutes: Routes = [
     path: '',
     providers: [
       { provide: REPOSITORIO_CUENTA, useClass: CuentaHttpRepositorio },
+      { provide: BOTON_GOOGLE, useClass: BotonGoogleGis },
       provideTranslocoScope('cuenta'),
     ],
     // El scope de i18n se precarga como cualquier otro dato de la primera
