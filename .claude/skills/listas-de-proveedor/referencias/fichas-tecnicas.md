@@ -6,11 +6,26 @@ tiene que venir de la ficha oficial del fabricante, y no todos los fabricantes
 la publican en Colombia.
 
 El orden es siempre el mismo: sitio oficial del fabricante en Colombia → Open
-Icecat → preguntarle al proveedor. Nunca al revés, y nunca "de memoria".
+Icecat (solo por código: la prosa no se escribe a partir de él) → la caja del
+producto. Nunca al revés, y nunca "de memoria". Decisión del negocio del
+08/10/2026, después de leer los términos de cada sitio: todos prohíben el uso
+comercial del contenido y casi todos el acceso automatizado, y el negocio asume
+ese riesgo por lo esporádico de la consulta —las fichas iniciales y después solo
+los modelos nuevos—. Lo que no se asume es eludir una barrera técnica: ver
+«Qué marcas se leen de forma automática».
 
 ---
 
 ## Xiaomi: mi.com/co es la mejor fuente del catálogo
+
+> **Desde el 08/10/2026, mi.com no se lee de forma automática.** Responde 403 a
+> los agentes de IA (Claude-User, ClaudeBot, GPTBot) aunque su robots.txt no lo
+> diga, y sus términos para Colombia (cláusulas 15 y 16) prohíben extraer datos
+> para reutilizarlos y eludir las medidas que restringen el acceso. Las corridas
+> anteriores lo leían a través de la extensión del navegador, que es justamente
+> eludir esa medida. Ahora la persona guarda la página de especificaciones en la
+> carpeta «Fuente de la marca» del modelo y se lee de ahí. Lo que sigue vale para
+> saber qué buscar en esa página.
 
 Es el hallazgo más útil de la corrida del 15/09/2026, y resolvió 39 de los 98
 productos de esa lista. El sitio oficial de Xiaomi Colombia publica, en español,
@@ -101,9 +116,10 @@ Recorta desde `Comprar ahora` hasta el pie de página (`Suscríbete`, `Síguenos
 `scripts/icecat_local.py` trae fichas completas en español. Cubrió 34 de 98
 productos en la misma corrida.
 
-Traía también los enlaces de las fotos, y esa parte ya no se usa: las fotos
-salieron del flujo el 25/09/2026 (regla 16 del `SKILL.md`). Lo que se conserva
-de este paso es la ficha.
+Trae también los enlaces de las fotos (`fotos/urls-icecat.csv`): desde el
+08/10/2026 sirven como lista de dónde descargar a mano lo que falte en
+«Fotos originales» de cada modelo. La ficha de Icecat es segunda opción, después
+del sitio de la marca, y solo la usa el código.
 
 ### Cobertura real
 
@@ -222,18 +238,29 @@ Para Apple, entonces, lo normal es pedirle la ficha al proveedor.
 
 ---
 
-## Dominios que hay que autorizar en la extensión del navegador
+## Qué marcas se leen de forma automática
 
-La extensión pide permiso por sitio. En la corrida del 15/09/2026 estaban
-autorizados `mi.com`, `apple.com` y `alkosto.com`, y **no** lo estaban
-`samsung.com`, `honor.com`, `realme.com`, `playstation.com`, `bose.com`,
-`jbl.com` ni `ktronix.com`. Eso dejó once productos sin ficha oficial.
+Verificado el 08/10/2026 (respuesta real del servidor, robots.txt y términos
+citados en el expediente del abogado, `docs/14-consultas-al-abogado.md`):
 
-Conviene pedir los permisos **antes** de arrancar el paso 4, mirando qué marcas
-trae la lista. Un dominio sin autorizar corta el lote entero: `browser_batch`
-se detiene en el primer error.
+| Marca | Dónde está la ficha | ¿Se lee? |
+|---|---|---|
+| Samsung | página de cada SKU en samsung.com/co; colores y caja en sus preguntas frecuentes | Sí |
+| Apple | apple.com/co/<modelo>/specs/; los modelos que salen de línea, en support.apple.com/es-co | Sí |
+| Honor | honor.com/co/…/spec/ (los valores vienen en atributos del HTML) | Sí |
+| Motorola | motorola.com/co/es/p/… (la tabla viene en un JSON del HTML) | Sí |
+| OPPO, realme | oppo.com/co/…/specs/, realme.com/co/…/specs | Sí |
+| TCL | tcl.com/co/es/…; la tabla la pinta el navegador | Sí, cargando la página |
+| Lenovo | el PDF de PSREF (psref.lenovo.com) | Sí |
+| JBL | la ficha técnica en PDF de jbl.com | Sí; **la página no** (captcha) |
+| Sony (PS5) | direct.playstation.com; sus términos prohíben la minería de datos | Sí, con ese riesgo anotado |
+| **Xiaomi** | mi.com/co/product/<slug>/specs/ | **No**: 403 a los agentes de IA |
+| **Amazon, Nintendo** | — | **No**: su robots.txt excluye a Claude |
 
----
+En las tres marcas de **No** la persona guarda la página en «Fuente de la
+marca». No se cambia el agente de usuario, no se pasa por el navegador de la
+persona y no se resuelve un captcha: son barreras puestas para impedir
+exactamente esto.
 
 ## Lo que no se inventa nunca
 
