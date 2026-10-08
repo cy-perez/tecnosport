@@ -426,8 +426,10 @@ ese día**. Va en `SKYDROPX_URL_BASE`, nunca incrustado.
 
 1. El comprador escribe la dirección de entrega. Sin ciudad no hay cotización, y
    por eso ese paso va **antes** del método de pago.
-2. El servidor arma el paquete con el peso y las dimensiones de las variantes del
-   carrito y pide la cotización.
+2. El servidor arma los paquetes con el peso y las dimensiones de las variantes del
+   carrito y pide la cotización. Lo medido va en un paquete por unidad; la ropa, el
+   calzado y los bolsos sin medir, juntos en una bolsa de referencia, y todo peso
+   redondeado hacia arriba al kilo (`ADR-0071`, abajo).
 3. **El servidor elige la tarifa más económica** de las que cubren el destino. El
    comprador no elige transportadora: ve un costo y un plazo estimado. Un
    selector de tarifas es un paso más de checkout y una tarifa más que blindar
@@ -470,6 +472,46 @@ que `ARTICULO_NO_ASEGURABLE`.
 ~~Una variante sin esos datos no se publica, y el catálogo ya sembrado necesita
 relleno antes de encender la cotización.~~ Lo primero dejó de ser cierto; lo
 segundo se hizo en la `V32`.
+
+### Lo que no se mide se cotiza con promedios
+
+**Desde el 7 de octubre de 2026 (`ADR-0071`) lo de arriba vale solo para la
+tecnología.** La ropa, el calzado y los bolsos sin medir se cotizan con
+**referencias** que el negocio fija en el panel (**Pesos y medidas de envío**,
+`/admin/envios/referencias`):
+
+- **Un peso promedio por categoría hoja**, en gramos: Ropa › Dama › Jeans 700 g,
+  Calzado › Unisex 700 g, Bolsos › Caballero › Morrales 1 kg… Sembrados por la
+  `V89` por slug; la tecnología no admite peso (`409
+  PESO_DE_REFERENCIA_NO_ADMITIDO`).
+- **Unas medidas transversales de la bolsa**: 40 × 30 × 10 cm.
+
+Todo lo promediado de un pedido va en **una sola bolsa** —al final de la lista
+de bultos— con esas medidas, la suma de los pesos y la suma de los precios como
+valor declarado; en varias solo si una pasaría del techo asegurable. Lo medido sigue en un bulto por unidad, así que **un pedido
+mixto son dos paquetes**. La medida real de una variante manda sobre el
+promedio de su categoría. Una categoría sin peso, o una base sin medidas de la
+bolsa, sigue el `ADR-0046`: solo recogida.
+
+**Todo peso sale redondeado hacia arriba al kilo entero**, lo medido incluido:
+las guías se crean a mano en el formulario "Cotizar y crear" de Skydropx, que
+solo acepta kilos enteros, y la cotización del sitio tiene que salir de los
+mismos datos que se escriben ahí. La suma va antes del redondeo: dos jeans son
+1.400 g y una bolsa de 2 kg.
+
+**Ojo con el volumen.** La plataforma cobra peso volumétrico, y con 40 × 30 ×
+10 cm cualquier bolsa se cotiza como de unos 5 kg aunque lleve una camiseta de
+300 g. Las medidas deciden la tarifa mucho más que el peso.
+
+**La guía se crea a mano mientras tanto.** La emisión por API está apagada en el
+servidor (`SKYDROPX_EMISION_AUTOMATICA=false`, `409` antes de cotizar) y su botón
+oculto en el panel, para no terminar con dos guías pagadas. La fila del pedido
+muestra los paquetes listos para copiar en la plataforma —peso en kilos,
+medidas, valor declarado y contenido—, y la guía se registra con el formulario
+de "guía emitida por fuera". Cómo llenar el formulario de la plataforma para que
+cuadre con lo cotizado —empaque `5H4`, bolsa de plástico; peso redondeado; y en
+contraentrega **el total del pedido** como valor declarado— está en la tabla del
+`ADR-0071`.
 
 Cuando las cuatro cifras vienen, siguen siendo mayores que cero y van **las
 cuatro o ninguna**: "no lo sé todavía" y "mide cero" no son lo mismo, y la

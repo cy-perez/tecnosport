@@ -432,6 +432,11 @@ GET /api/v1/admin/envios/revision                   lo que pide ojo humano: guí
 POST /api/v1/admin/envios/revision/guias/{numero}/acuse      deja constancia de que alguien miró esa guía
 POST /api/v1/admin/envios/revision/emisiones/{id}/acuse      lo mismo para una emisión con saldo comprometido
 POST /api/v1/admin/envios/revision/emisiones/{id}/resolucion lo que la persona vio en el panel: desbloquea el pedido
+GET /api/v1/admin/envios/referencias                  medidas de la bolsa y peso promedio de cada categoría hoja (adr/0071)
+PUT /api/v1/admin/envios/referencias/medidas          fija largo, ancho y alto de la bolsa; un cero es 422
+PUT /api/v1/admin/envios/referencias/pesos/{id}       fija el peso de esa categoría; tecnología o rama es 409 PESO_DE_REFERENCIA_NO_ADMITIDO
+DELETE /api/v1/admin/envios/referencias/pesos/{id}    le quita el peso: sus variantes sin medir vuelven a solo recogida; 204
+GET /api/v1/admin/envios/paquetes/{pedidoId}          los paquetes de un pedido a domicilio para crear su guía a mano: peso en kg, medidas, declarado y contenido
 
 POST /api/v1/admin/sets-rotacion                    abre un set vacío en BORRADOR
 POST /api/v1/admin/sets-rotacion/{id}/subidas       N URL firmadas, una por fotograma
