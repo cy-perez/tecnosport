@@ -16,7 +16,7 @@ class PublicacionEnRedTest {
   private static final Instant AHORA = Instant.parse("2026-09-29T15:00:00Z");
   private static final Instant LUEGO = Instant.parse("2026-09-29T15:00:04Z");
   private static final UUID PRODUCTO = UUID.fromString("01a0ca12-ce7f-7ae2-95e8-e6e0127dc7a6");
-  private static final String PIE = "JBL Grip — $299.900\n\nUn parlante portátil de 385 gramos.";
+  private static final String PIE = "JBL Grip - $299.900\n\nUn parlante portátil de 385 gramos.";
   private static final String IMAGEN = "https://storage.googleapis.com/bucket/principal.jpg";
 
   /** Lo que se publica es el carrusel de la ficha, así que la constancia guarda una lista. */

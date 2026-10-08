@@ -115,7 +115,7 @@ public final class AvisarSobrecostoDeEnvio {
         cobro.monto().valor().toPlainString(),
         cobro.tipo(),
         cobro.numeroDeGuia().orElseGet(() -> textos.texto(TextoDeCorreo.ENVIO_SOBRECOSTO_SIN_GUIA)),
-        cobro.nombreDeTransportadora().orElse("—"),
+        cobro.nombreDeTransportadora().orElse("-"),
         cobro
             .detectado()
             .map(Instant::toString)

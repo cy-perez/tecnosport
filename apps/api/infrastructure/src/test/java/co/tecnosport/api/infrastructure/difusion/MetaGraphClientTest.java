@@ -34,7 +34,7 @@ class MetaGraphClientTest {
           new ImagenAPublicar("https://b/uno.jpg", 1000, 1000),
           new ImagenAPublicar("https://b/dos.jpg", 1000, 1000));
 
-  private static final String PIE = "JBL Grip — $299.900";
+  private static final String PIE = "JBL Grip - $299.900";
 
   /** El que la Graph API devuelve al preguntarle a la página por su `access_token`. */
   private static final String TOKEN_DE_PAGINA = "TOKEN-DE-LA-PAGINA";

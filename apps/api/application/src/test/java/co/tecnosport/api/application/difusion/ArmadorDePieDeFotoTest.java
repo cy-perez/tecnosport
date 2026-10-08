@@ -40,7 +40,7 @@ class ArmadorDePieDeFotoTest {
 
     assertEquals(
         """
-        JBL Grip — $299.900
+        JBL Grip - $299.900
 
         El JBL Grip es un parlante portátil de 385 gramos con certificación IP68.
 
@@ -67,7 +67,7 @@ class ArmadorDePieDeFotoTest {
   void unaSolaVarianteLlevaElPrecioFijo() {
     String pie = ARMADOR.armar(jblGrip(List.of(variante("A", 299900))), RedSocial.FACEBOOK);
 
-    assertTrue(pie.startsWith("JBL Grip — $299.900"), pie);
+    assertTrue(pie.startsWith("JBL Grip - $299.900"), pie);
   }
 
   /**
@@ -79,7 +79,7 @@ class ArmadorDePieDeFotoTest {
 
     String pie = ARMADOR.armar(producto, RedSocial.FACEBOOK);
 
-    assertTrue(pie.startsWith("JBL Grip — $89.900"), pie);
+    assertTrue(pie.startsWith("JBL Grip - $89.900"), pie);
     assertFalse(pie.contains("desde"), pie);
   }
 
@@ -89,7 +89,7 @@ class ArmadorDePieDeFotoTest {
 
     String pie = ARMADOR.armar(producto, RedSocial.FACEBOOK);
 
-    assertTrue(pie.startsWith("JBL Grip — desde $79.900"), pie);
+    assertTrue(pie.startsWith("JBL Grip - desde $79.900"), pie);
   }
 
   /**
@@ -102,7 +102,7 @@ class ArmadorDePieDeFotoTest {
 
     String pie = ARMADOR.armar(producto, RedSocial.FACEBOOK);
 
-    assertTrue(pie.startsWith("JBL Grip — $129.900"), pie);
+    assertTrue(pie.startsWith("JBL Grip - $129.900"), pie);
   }
 
   @Test
