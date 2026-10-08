@@ -69,7 +69,7 @@ const DAMA: Categoria = {
   linea: 'ROPA',
   padreId: null,
   hashtags: [],
-  escalaTallas: ['XS', 'S', 'M', 'L'],
+  escalaTallas: ['XS', 'S', 'S-M', 'M', 'L'],
 };
 
 const CAMISAS: Categoria = {
@@ -762,6 +762,31 @@ describe('DetalleBorradorAdminPage', () => {
       tipo: 'LISTA',
       sirveHasta: null,
       valores: ['S', 'M', 'XXL'],
+    });
+  });
+
+  /** La extracción o quien revisa puede escribir «s/m»: es la casilla «S-M», no la «S» ni la «M». */
+  it('una talla agrupada escrita distinto marca su casilla y se guarda como la escala', async () => {
+    const { repositorio } = await renderPagina(
+      borradorDePrueba({ tallas: { tipo: 'LISTA', sirveHasta: null, valores: ['s/m'] } }),
+    );
+    await screen.findByRole('option', { name: /Camisas/ });
+    fireEvent.change(screen.getByLabelText(a.categoria), { target: { value: 'c4' } });
+
+    const agrupada = (await screen.findByLabelText('S-M')) as HTMLInputElement;
+    expect(agrupada.checked).toBe(true);
+    expect((screen.getByLabelText('S') as HTMLInputElement).checked).toBe(false);
+    expect((screen.getByLabelText('M') as HTMLInputElement).checked).toBe(false);
+    expect(screen.queryByText(/Fuera de la escala de la categoría/)).toBeNull();
+
+    fireEvent.click(screen.getByLabelText('L'));
+    fireEvent.click(screen.getByRole('button', { name: d.guardar }));
+
+    expect(await screen.findByText(d.guardado)).toBeTruthy();
+    expect(repositorio.ediciones[0].cambios.tallas).toEqual({
+      tipo: 'LISTA',
+      sirveHasta: null,
+      valores: ['S-M', 'L'],
     });
   });
 
