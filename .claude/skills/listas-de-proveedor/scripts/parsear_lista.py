@@ -303,6 +303,15 @@ MESES = {
 
 TITULOS_LISTA = ("LISTA DE", "LISTADO DE", "LISTA ", "LISTADO ")
 
+# La lista del día llega en mensajes separados —Android, variedad, gama alta— y
+# un producto que no aparece solo dice algo si llegó el mensaje en que suele
+# venir. El título del de Android llega a veces trunco, «12 SEPTIEMBRE/2026
+# LISTADO DE», sin nombre: así vino el 12/09 y el 02/10, y la lista del 08/10
+# lo nombra completo. Un título que se queda sin nombre se lee como ese bloque.
+BLOQUE_SIN_NOMBRE = "ANDROID"
+# Los avisos de llegada no son un bloque: anuncian, no dicen qué hay.
+AVISO_DE_LLEGADA = "LLEGANDO"
+
 # Ancho máximo, en palabras, de un encabezado que llega sin marcadores de negrita.
 # Un encabezado es corto; la frase de cortesía con que el proveedor cierra la
 # lista —"TE BRINDAMOS UNA AMPLIA VARIEDAD DE TECNOLOGÍA…"— contiene VARIEDAD y
@@ -768,6 +777,14 @@ def atributos_sim(prod):
 # Recorrido del mensaje
 # --------------------------------------------------------------------------
 
+def nombre_de_bloque(encabezado: str) -> str:
+    """«‼️*LISTADO DE ANDROID*‼️» → ANDROID; «*LISTA DE GAMA ALTA* 🍎» → GAMA ALTA."""
+    nombre = RE_FECHA.sub(" ", encabezado)
+    nombre = re.sub(r"\b(LISTADO|LISTA)\b(\s+DE\b)?", " ", nombre)
+    nombre = re.sub(r"[^A-ZÁÉÍÓÚÑ0-9 ]", " ", nombre)
+    return re.sub(r"\s+", " ", nombre).strip() or BLOQUE_SIN_NOMBRE
+
+
 def es_encabezado(texto: str) -> bool:
     """
     WhatsApp marca los encabezados en *negrita*, pero el mensaje llega sin los
@@ -821,9 +838,11 @@ def parsear(texto: str, equivalencias=None):
     fecha = None
     pendiente = None
     ultimo = None
+    bloque, bloques = None, []
 
     def clasificar(prod):
         nonlocal ultimo
+        prod["bloques"] = [bloque] if bloque and bloque != AVISO_DE_LLEGADA else []
         if prod["categoria"] not in CATEGORIAS_INCLUIDAS:
             descartados.append({**prod, "motivo": f"categoría no publicable: {prod['categoria']}"})
         elif prod["condicion"] not in CONDICIONES_PUBLICABLES:
@@ -867,8 +886,12 @@ def parsear(texto: str, equivalencias=None):
             cerrar_pendiente()
             enc = normalizar(sin_emojis(linea).replace("*", " ").replace("_", " "))
             if any(x in enc for x in TITULOS_LISTA) and not enc.startswith("LLEGANDO"):
+                bloque = nombre_de_bloque(enc)
+                if bloque not in bloques:
+                    bloques.append(bloque)
                 continue
             if enc.startswith("LLEGANDO"):
+                bloque = AVISO_DE_LLEGADA
                 anuncio = enc.replace("LLEGANDO", "", 1).strip()
                 if any(re.search(rf"\b{mk}\b", anuncio) for mk in MARCAS) or \
                    any(re.search(rf"\b{sub}\b", anuncio) for sub in SUBMARCAS):
@@ -951,6 +974,7 @@ def parsear(texto: str, equivalencias=None):
     aplicar_equivalencias(productos, equivalencias or {})
     return {
         "fecha_lista": fecha,
+        "bloques": bloques,
         "categorias_incluidas": sorted(CATEGORIAS_INCLUIDAS),
         "productos": productos,
         "descartados": descartados,
@@ -986,7 +1010,7 @@ def fusionar_duplicados(productos):
         for a in p["atributos"]:
             if a not in base["atributos"]:
                 base["atributos"].append(a)
-        for campo in ("supuestos", "revisar", "colores_familia", "colores_emoji"):
+        for campo in ("supuestos", "revisar", "colores_familia", "colores_emoji", "bloques"):
             base[campo] = list(dict.fromkeys(base[campo] + p[campo]))
         precios = [x for x in (base["precio_proveedor_cop"], p["precio_proveedor_cop"]) if x]
         if precios:

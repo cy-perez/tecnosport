@@ -192,6 +192,43 @@ class SerieFDePoco(unittest.TestCase):
         self.assertIn("la sección Xiaomi abrevia la serie F: se leyó como POCO", ultra["supuestos"])
 
 
+class Bloques(unittest.TestCase):
+    """La lista llega en tres mensajes, y la ausencia de un producto solo dice algo
+    si llegó el mensaje en que suele venir."""
+
+    def test_cada_producto_sabe_de_que_bloque_viene(self):
+        datos = parsear(leer(EJEMPLOS / "lista-ejemplo-3.txt"))
+        bloque = {p["titulo"]: p["bloques"] for p in datos["productos"]}
+        self.assertEqual(["ANDROID"], bloque["Samsung Galaxy A57 5G 8GB RAM 256GB"])
+        self.assertEqual(["VARIEDAD"], bloque["JBL Flip 7"])
+        self.assertEqual(["GAMA ALTA"], bloque["Apple iPhone 17 Pro 256GB eSIM"])
+
+    def test_la_lista_dice_que_bloques_llegaron(self):
+        self.assertEqual(["ANDROID", "VARIEDAD", "GAMA ALTA"],
+                         parsear(leer(EJEMPLOS / "lista-ejemplo-3.txt"))["bloques"])
+        self.assertEqual(["GAMA ALTA", "VARIEDAD"],
+                         parsear(leer(EJEMPLOS / "lista-ejemplo.txt"))["bloques"])
+
+    def test_el_titulo_trunco_es_el_bloque_android(self):
+        # «12 SEPTIEMBRE/2026 LISTADO DE» y nada más: así llegó el de Android el
+        # 12/09 y el 02/10, y la lista del 08/10 lo nombra.
+        datos = parsear("🙏🏼  *12 SEPTIEMBRE/2026 LISTADO DE*\n *SAMSUNG*\n🎃A57 5G (8+256)$1.290\n")
+        self.assertEqual(["ANDROID"], datos["bloques"])
+        self.assertEqual([["ANDROID"]], [p["bloques"] for p in datos["productos"]])
+
+    def test_un_aviso_de_llegada_no_es_un_bloque(self):
+        datos = parsear("*LLEGANDO MERCANCÍA*\nPoco x8 pro Max 256 $1.830\n")
+        self.assertEqual([], datos["bloques"])
+        self.assertEqual([[]], [p["bloques"] for p in datos["productos"]])
+
+    def test_al_fusionar_se_suman_los_bloques(self):
+        # Como el 02/10: el aviso de llegada y la lista traen el mismo equipo.
+        datos = parsear("*LLEGANDO MERCANCÍA*\nPoco x8 pro Max 256 $1.830\n"
+                        "*LISTADO DE ANDROID*\n *XIAOMI* \n🎃X8 PRO MAX 5G (12+256GB) $1.830\n")
+        self.assertEqual(1, len(datos["duplicados_fusionados"]))
+        self.assertEqual([["ANDROID"]], [p["bloques"] for p in datos["productos"]])
+
+
 def equivalencia(id_, titulo, fecha="2026-10-02"):
     return {"id": id_, "titulo": titulo, "fecha": fecha, "motivo": "prueba"}
 
