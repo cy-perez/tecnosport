@@ -176,8 +176,9 @@ describe('PedidoHttpRepositorio: la transportadora elegida', () => {
       tipoEntrega: 'ENVIO_A_DOMICILIO',
       direccion: DIRECCION,
       transportadora: 'Servientrega',
+      telefono: '3138816711',
     });
 
-    expect(cuerpos[0]).toMatchObject({ transportadora: 'Servientrega' });
+    expect(cuerpos[0]).toMatchObject({ transportadora: 'Servientrega', telefono: '3138816711' });
   });
 });
