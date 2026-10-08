@@ -11,7 +11,7 @@
     "correo": "Email address",
     "tipo_entrega": "Delivery type",
     "envio_a_domicilio": "Home delivery",
-    "retiro_en_punto": "Pick up at our location (Medellín) — no shipping cost",
+    "retiro_en_punto": "Pick up at our location (Medellín) - no shipping cost",
     "retiro_direccion_titulo": "Pickup point",
     "retiro_direccion": "Cra. 26C # 38B-31, barrio La Milagrosa, apto. 401, Medellín. We arrange the handover with you by WhatsApp or email once we confirm your order.",
     "direccion_titulo": "Delivery address",
@@ -176,7 +176,7 @@
   },
   "transferencia": {
     "titulo": "Transfer to this account",
-    "instrucciones": "Transfer to whichever of these accounts you prefer. Your order is on hold for 24 hours. Once you make the transfer, send us the receipt — we'll reconcile it and confirm your order.",
+    "instrucciones": "Transfer to whichever of these accounts you prefer. Your order is on hold for 24 hours. Once you make the transfer, send us the receipt - we'll reconcile it and confirm your order.",
     "entidad": "Entity",
     "tipo_cuenta": "Account type",
     "numero_cuenta": "Account number",

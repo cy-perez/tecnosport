@@ -41,7 +41,7 @@
             "pregunta": "¿Cómo funciona el pago contraentrega?",
             "respuesta": [
               "Lo habilita el sistema según la ciudad de entrega, el valor del pedido y el tipo de producto, y te lo informamos antes de que elijas el método de pago.",
-              "La transportadora cobra el total del pedido —la mercancía más el costo del envío— y solo recibe efectivo, así que ten a mano el valor exacto.",
+              "La transportadora cobra el total del pedido (la mercancía más el costo del envío) y solo recibe efectivo, así que ten a mano el valor exacto.",
               "Rechazar la entrega no es lo mismo que retractarse: es una compra que no llegó a perfeccionarse, y en ese caso no hay dinero que devolver porque no se recibió. El rechazo reiterado de entregas puede llevarnos a no habilitar este método en compras posteriores."
             ]
           }
@@ -110,7 +110,7 @@
             "respuesta": [
               "El término de la garantía legal es de un (1) año contado desde la entrega, salvo que el productor anuncie uno mayor, y en ese caso rige el mayor. Aplica a todos los productos nuevos que vendemos, equipos tecnológicos incluidos.",
               "Si el producto falla, no sirve para lo que se ofreció o no corresponde a lo que compraste, tienes derecho a que lo reparemos, lo repongamos o te devolvamos el dinero, según el caso. Hacerla efectiva no te cuesta: la reparación y el transporte del producto para repararlo corren por nuestra cuenta.",
-              "La garantía no cubre el daño que provenga de fuerza mayor o caso fortuito, del hecho de un tercero, del uso indebido del producto —incluida la modificación no autorizada— o del incumplimiento de las instrucciones de instalación, uso o mantenimiento cuando el producto se entregó con manual en castellano. Demostrar que el daño viene de una de esas causas nos corresponde a nosotros, no a ti.",
+              "La garantía no cubre el daño que provenga de fuerza mayor o caso fortuito, del hecho de un tercero, del uso indebido del producto (incluida la modificación no autorizada) o del incumplimiento de las instrucciones de instalación, uso o mantenimiento cuando el producto se entregó con manual en castellano. Demostrar que el daño viene de una de esas causas nos corresponde a nosotros, no a ti.",
               "Para hacerla efectiva, escríbenos con tu número de pedido y una descripción del problema."
             ]
           },
@@ -137,7 +137,7 @@
             "pregunta": "¿En cuánto responden una petición, queja o reclamo?",
             "respuesta": [
               "En un plazo máximo de quince (15) días hábiles.",
-              "Las solicitudes sobre tus datos personales —consultas y reclamos— tienen sus propios plazos, más cortos en el caso de la consulta, y están en el numeral 12 de nuestra política de tratamiento de datos personales."
+              "Las solicitudes sobre tus datos personales (consultas y reclamos) tienen sus propios plazos, más cortos en el caso de la consulta, y están en el numeral 12 de nuestra política de tratamiento de datos personales."
             ]
           },
           {

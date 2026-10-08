@@ -90,7 +90,7 @@ export class TsIndicadorNivel {
       case 'FUERA_DE_RANGO':
         return '○';
       default:
-        return '—';
+        return '-';
     }
   });
 

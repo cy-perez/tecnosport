@@ -11,7 +11,7 @@
     "correo": "Correo electrónico",
     "tipo_entrega": "Tipo de entrega",
     "envio_a_domicilio": "Envío a domicilio",
-    "retiro_en_punto": "Recoger en el punto (Medellín) — sin costo de envío",
+    "retiro_en_punto": "Recoger en el punto (Medellín) - sin costo de envío",
     "retiro_direccion_titulo": "Punto de retiro",
     "retiro_direccion": "Cra. 26C # 38B-31, barrio La Milagrosa, apto. 401, Medellín. Coordinamos la entrega contigo por WhatsApp o correo cuando confirmemos el pedido.",
     "direccion_titulo": "Dirección de entrega",
@@ -176,7 +176,7 @@
   },
   "transferencia": {
     "titulo": "Transfiere a esta cuenta",
-    "instrucciones": "Transfiere a una de estas cuentas, la que prefieras. Tu pedido queda reservado 24 horas. Cuando hagas la transferencia, envíanos el comprobante — lo conciliamos y confirmamos tu pedido.",
+    "instrucciones": "Transfiere a una de estas cuentas, la que prefieras. Tu pedido queda reservado 24 horas. Cuando hagas la transferencia, envíanos el comprobante - lo conciliamos y confirmamos tu pedido.",
     "entidad": "Entidad",
     "tipo_cuenta": "Tipo de cuenta",
     "numero_cuenta": "Número de cuenta",

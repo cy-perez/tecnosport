@@ -567,7 +567,7 @@ export class DetalleBorradorAdminPage {
   }
 
   protected precio(valor: number | null): string {
-    return valor === null ? '—' : formatearPrecio(valor, 'COP', this.transloco.activeLang());
+    return valor === null ? '-' : formatearPrecio(valor, 'COP', this.transloco.activeLang());
   }
 
   /** Marcar o desmarcar una talla escribe la lista en el orden de la escala, y lo de fuera al final. */

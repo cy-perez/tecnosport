@@ -11,7 +11,7 @@
     "olvidaste_clave": "Forgot your password?",
     "sin_cuenta": "Don't have an account?",
     "crear_cuenta": "Create account",
-    "error_demasiados_intentos": "Too many attempts in a row. Wait a few minutes and try again — your password is not the problem.",
+    "error_demasiados_intentos": "Too many attempts in a row. Wait a few minutes and try again - your password is not the problem.",
     "errores": {
       "correo_requerido": "Enter your email.",
       "correo_invalido": "That email address isn't valid.",
@@ -58,7 +58,7 @@
     "reenvio_exito": "If that email has an unverified account, we have just sent it a new link. Check your inbox and your spam folder.",
     "reenvio_error": "We could not send the link. Please try again in a moment.",
     "limitado_titulo": "Too many attempts",
-    "limitado_mensaje": "There were too many attempts in a row from this connection. Wait a few minutes and open the link again — the one you have still works.",
+    "limitado_mensaje": "There were too many attempts in a row from this connection. Wait a few minutes and open the link again - the one you have still works.",
     "reenvio_error_demasiados_intentos": "Too many attempts in a row. Wait a few minutes and ask again."
   },
   "recuperarClave": {
@@ -87,7 +87,7 @@
     "exito_mensaje": "You can now sign in with your new password.",
     "error_titulo": "Invalid link",
     "error_token_invalido": "The link is invalid or expired. Request a new one.",
-    "error_demasiados_intentos": "Too many attempts in a row. Wait a few minutes and try again — your link still works.",
+    "error_demasiados_intentos": "Too many attempts in a row. Wait a few minutes and try again - your link still works.",
     "errores": {
       "clave_requerida": "Enter the new password.",
       "confirmar_requerida": "Repeat the new password."
