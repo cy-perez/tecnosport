@@ -65,7 +65,6 @@ probar quién es la persona.
   pone el cliente.
 - El botón de Google no cambia de idioma ni de tema si se cambian con la
   pantalla abierta: se pinta una vez, al montar. Recargar lo corrige.
-
 - **Falta crear el cliente OAuth** en Google Cloud Console: la pantalla de
   consentimiento y los orígenes autorizados de cada ambiente. Después hay que
   poner `GOOGLE_CLIENT_ID` en el ambiente. Hasta entonces la función existe y no
