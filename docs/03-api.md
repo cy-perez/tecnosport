@@ -56,6 +56,8 @@ POST /api/v1/carritos/{id}/lineas
 PATCH /api/v1/carritos/{id}/lineas/{lineaId}
 DELETE /api/v1/carritos/{id}/lineas/{lineaId}
 POST /api/v1/envios/cotizacion              costo de envío y plazo para este carrito y destino
+GET /api/v1/envios/modalidades              qué formas de entrega se ofrecen hoy: {envioADomicilio, retiroEnPunto} (adr/0072)
+                                             POST /pedidos con RETIRO_EN_PUNTO y la recogida apagada: 409 RETIRO_EN_PUNTO_NO_DISPONIBLE
 POST /api/v1/pedidos/metodos-de-pago-disponibles   qué métodos ofrece el negocio hoy y aplican a este carrito y destino
 POST /api/v1/pedidos                        revalida precios, existencias y costo de envío, reserva
 POST /api/v1/pagos/intentos                 crea el intento en la pasarela
@@ -194,15 +196,16 @@ destino:
   distinguen en el registro y no en la respuesta: al comprador se le dice lo mismo
   en los cuatro y publicar la forma en que falla un proveedor no le sirve a nadie.
   **El cliente puede reintentar**, y el checkout ya lo hace una vez. Lo que no
-  cambia es el criterio *fail-closed*: sin tarifa no se inventa un flete, y la
-  recogida en el punto sigue disponible.
+  cambia es el criterio *fail-closed*: sin tarifa no se inventa un flete. La
+  salida es la recogida en el punto si está encendida, y WhatsApp si no (`adr/0072`).
 - **Y el quinto motivo no es un 503: `409` con `codigo:
   "COTIZACION_RECHAZADA"`.** El proveedor respondió, y respondió que **nuestro
   cuerpo está mal** — un peso imposible, un valor declarado fuera de rango, un
   campo de la dirección que no le sirve. Reintentar **no** lo arregla: Skydropx
   deduplica las cotizaciones por contenido, así que la misma pregunta trae el
   mismo rechazo, y un `503` le prometería al cliente lo contrario. Se trata como
-  sus dos hermanos de negocio —el checkout ofrece la recogida en el punto— y se
+  sus dos hermanos de negocio —el checkout ofrece la recogida, o WhatsApp si está
+  apagada (`adr/0072`)— y se
   diferencia de ellos en quién tiene que hacer algo: `ENVIO_SIN_COBERTURA` lo
   arregla el comprador cambiando la dirección, `ARTICULO_NO_ASEGURABLE` no lo
   arregla nadie, y esto **lo arreglamos nosotros**. Por eso es el único de los

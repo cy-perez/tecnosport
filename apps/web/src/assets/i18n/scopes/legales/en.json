@@ -67,7 +67,9 @@
       },
       {
         "titulo": "7. Purposes",
-        "parrafos": ["We process your data in order to:"],
+        "parrafos": [
+          "We process your data in order to:"
+        ],
         "lista": [
           "Process, confirm, and ship your order, quote the shipping cost using your destination city, generate the shipping label, and keep you informed of the shipment status.",
           "Check whether cash on delivery is available in your city and coordinate the delivery.",
@@ -82,7 +84,9 @@
       },
       {
         "titulo": "8. Processors and third parties",
-        "parrafos": ["In order to sell and deliver, we share strictly necessary data with:"],
+        "parrafos": [
+          "In order to sell and deliver, we share strictly necessary data with:"
+        ],
         "lista": [
           "Wompi (Bancolombia S.A.), as payment gateway, to process and confirm the payment.",
           "Sistecrédito, as the credit provider, only if you choose to pay in instalments with them: they receive your identity document type and number, your order number, and the amount to be financed. Sistecrédito assesses and grants the credit under its own data processing policy and its own contract with you.",
@@ -108,7 +112,9 @@
       },
       {
         "titulo": "11. Your rights",
-        "parrafos": ["As a data subject you have the right to:"],
+        "parrafos": [
+          "As a data subject you have the right to:"
+        ],
         "lista": [
           "Access, update, and correct your data.",
           "Request proof of the authorisation you granted.",
@@ -303,7 +309,9 @@
       },
       {
         "titulo": "2. What we use today",
-        "parrafos": ["Today tecnosport.co uses only what is strictly necessary to work:"],
+        "parrafos": [
+          "Today tecnosport.co uses only what is strictly necessary to work:"
+        ],
         "lista": [
           "Refresh session cookie: created only if you sign in, it keeps your session open without retyping your password, and lasts thirty (30) days. It is accessible only to the server.",
           "Theme preference: remembers whether you chose light mode, dark mode, or the system setting.",

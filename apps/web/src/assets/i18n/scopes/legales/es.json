@@ -67,7 +67,9 @@
       },
       {
         "titulo": "7. Finalidades",
-        "parrafos": ["Tratamos tus datos para:"],
+        "parrafos": [
+          "Tratamos tus datos para:"
+        ],
         "lista": [
           "Procesar, confirmar y despachar tu pedido, cotizar el costo del envío con tu ciudad de destino, generar la guía de transporte y mantenerte informado del estado del envío.",
           "Verificar la disponibilidad del pago contraentrega en tu ciudad y coordinar la entrega.",
@@ -110,7 +112,9 @@
       },
       {
         "titulo": "11. Tus derechos",
-        "parrafos": ["Como titular tienes derecho a:"],
+        "parrafos": [
+          "Como titular tienes derecho a:"
+        ],
         "lista": [
           "Conocer, actualizar y rectificar tus datos.",
           "Solicitar prueba de la autorización que otorgaste.",
@@ -305,7 +309,9 @@
       },
       {
         "titulo": "2. Qué usamos hoy",
-        "parrafos": ["Hoy tecnosport.co usa únicamente lo estrictamente necesario para funcionar:"],
+        "parrafos": [
+          "Hoy tecnosport.co usa únicamente lo estrictamente necesario para funcionar:"
+        ],
         "lista": [
           "Cookie de sesión de refresco: se crea solo si inicias sesión, permite mantenerla abierta sin volver a escribir la contraseña, y dura treinta (30) días. Es de acceso exclusivo del servidor.",
           "Preferencia de tema: recuerda si elegiste el modo claro, el oscuro o el del sistema.",

@@ -48,6 +48,13 @@ dejar la recogida como respaldo escondido o bloquearlos sin salida.
 - La contraentrega se encendió el mismo día, **solo en dev**
   (`infra/envs/dev/main.tf`). Producción espera la confirmación de Skydropx sobre
   comisión, tope y plazo de giro del recaudo (`ADR-0023`).
+- **Los pedidos de recogida que ya existían se atienden como se contrataron.** Se
+  aceptaron con los términos de su día, que sí ofrecían el punto, y la guía, los
+  paquetes y el comprobante ya los trataban aparte. Lo único que se cierra es
+  **reintentar el pago** de uno que había fallado: `ReintentarPago` vuelve a
+  reservar existencias, así que con la recogida apagada responde el mismo 409 que
+  `CrearPedido`. Cobrar hoy una recogida que los términos vigentes ya no ofrecen
+  es contratarla de nuevo.
 - De paso se cerró un hueco: el resumen no tenía rama para
   `ARTICULO_SIN_MEDIDAS` y la confirmación no lo tenía en su mensaje de bloqueo.
   La fila del costo quedaba vacía, sin motivo.

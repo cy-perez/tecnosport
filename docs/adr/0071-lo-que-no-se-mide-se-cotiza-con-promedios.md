@@ -5,6 +5,10 @@
 bolsos sin medir ya no van solo con recogida) y a la decisión del 11 de
 septiembre de 2026 de "un bulto por unidad" (lo promediado viaja junto).
 
+> **8 de octubre de 2026 (`ADR-0072`):** la recogida en el punto se apagó con una
+> bandera de servidor. Lo que aquí "va con recogida" hoy no se vende en el sitio: el
+> checkout lo bloquea y remite a WhatsApp.
+
 ## Contexto
 
 Desde el `ADR-0046`, una variante sin peso ni medidas se vende, pero solo con

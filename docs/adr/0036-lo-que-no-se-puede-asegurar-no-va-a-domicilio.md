@@ -4,6 +4,10 @@ Fecha: 2026-09-17
 Estado: aceptado
 Relacionados: `adr/0021`, `adr/0035`, `docs/13-skydropx-capacidades.md` §6.13
 
+> **8 de octubre de 2026 (`ADR-0072`):** la recogida en el punto se apagó con una
+> bandera de servidor. Lo que aquí "va con recogida" hoy no se vende en el sitio: el
+> checkout lo bloquea y remite a WhatsApp.
+
 ## Contexto
 
 `ADR-0035` cerró el extremo de abajo del valor declarado. La medición de `docs/13` §6.13 cerró el
