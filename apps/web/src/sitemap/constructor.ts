@@ -100,12 +100,31 @@ function entradaXml(origen: string, ruta: string, lastmod: string | undefined): 
  * (`app.routes.server.ts`), así que el HTML que recibe un rastreador sin JavaScript no lleva su
  * `noindex`. Ahí `Disallow` es lo único que queda.
  */
+/**
+ * Los rastreadores que descargan contenido para entrenar modelos de IA. La política de uso justo de
+ * Open Icecat (02/05/2026) pide excluirlos en el robots.txt, y el catálogo de tecnología publica
+ * fichas de Icecat como segunda fuente (decisión del 08/10/2026). Los buscadores —también los de
+ * respuestas con IA, que leen una página para citarla— no están aquí: esa política apunta al
+ * entrenamiento y a la agregación de contenido, no a la búsqueda.
+ */
+const RASTREADORES_DE_ENTRENAMIENTO = [
+  'GPTBot',
+  'ClaudeBot',
+  'anthropic-ai',
+  'CCBot',
+  'Google-Extended',
+  'Applebot-Extended',
+  'Bytespider',
+  'meta-externalagent',
+];
+
 export function construirRobots(origen: string): string {
   return [
     'User-agent: *',
     'Allow: /',
     ...IDIOMAS.map((idioma) => `Disallow: /${idioma}/admin`),
     '',
+    ...RASTREADORES_DE_ENTRENAMIENTO.flatMap((agente) => [`User-agent: ${agente}`, 'Disallow: /', '']),
     `Sitemap: ${urlAbsoluta(origen, '/sitemap.xml')}`,
     '',
   ].join('\n');
