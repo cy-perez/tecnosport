@@ -317,7 +317,7 @@
           [cargando]="esperandoCotizacion()"
           [etiquetaCargando]="'checkout.resumen.envio_calculando' | transloco"
           [expandido]="requiereDireccion() ? eligiendoTransportadora() : null"
-          [controla]="requiereDireccion() ? 'popover-transportadora' : null"
+          [controla]="requiereDireccion() ? idPopoverTransportadora : null"
         >
           {{ 'checkout.resumen.continuar' | transloco }}
         </ts-boton>

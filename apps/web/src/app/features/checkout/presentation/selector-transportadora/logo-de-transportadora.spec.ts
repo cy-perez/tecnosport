@@ -27,5 +27,7 @@ describe('logoDeTransportadora', () => {
   /** Una que no tenemos se pinta con el camión genérico y su nombre, no con el logo de otra. */
   it('una transportadora desconocida no tiene logo', () => {
     expect(logoDeTransportadora('DHL Express')).toBeNull();
+    // Ni una que solo empiece igual: no se le presta el logo de Inter Rapidísimo.
+    expect(logoDeTransportadora('Interenvíos')).toBeNull();
   });
 });

@@ -36,7 +36,10 @@ import { CheckoutStore } from '../../application/checkout.store';
 import { usarCotizacionEnvio } from '../../application/cotizacion-envio.consulta';
 import { usarModalidadesDeEntrega } from '../../application/modalidades-entrega.consulta';
 import { TsSalidaSinEnvio } from '../salida-sin-envio/ts-salida-sin-envio';
-import { TsPopoverTransportadora } from '../selector-transportadora/ts-popover-transportadora';
+import {
+  ID_POPOVER_TRANSPORTADORA,
+  TsPopoverTransportadora,
+} from '../selector-transportadora/ts-popover-transportadora';
 import { CotizacionEnvio, CotizarEnvioComando } from '../../domain/envio.model';
 import { DEPARTAMENTOS, municipiosDeDepartamento } from '../../domain/geografia-co';
 import { Direccion, TipoEntrega } from '../../domain/pedido.model';
@@ -517,6 +520,7 @@ export class ResumenPage {
   protected readonly eligiendoTransportadora = signal(false);
   protected readonly botonContinuar = viewChild('continuar', { read: ElementRef });
   protected readonly opcionesDeEnvio = computed(() => this.tarifa()?.opciones ?? []);
+  protected readonly idPopoverTransportadora = ID_POPOVER_TRANSPORTADORA;
 
   constructor() {
     // Recordar la última cotización buena para poder decir cuánto se ahorra
@@ -606,6 +610,11 @@ export class ResumenPage {
     // A domicilio se elige transportadora antes de seguir. Una tarifa sin opciones —un servidor
     // anterior a ADR-0073— sigue como antes, con la más económica.
     if (this.requiereDireccion() && this.opcionesDeEnvio().length > 0) {
+      // Si se pulsó mientras cotizaba, el botón estuvo deshabilitado (`cargando`) y el foco se fue
+      // al `<body>`. Spartan recuerda el elemento con foco al abrir para devolverlo al cerrar, y el
+      // `<body>` no lo acepta: quien cierra con Escape se quedaba sin foco en ninguna parte. Se
+      // devuelve al botón antes de abrir, que es donde tiene que volver.
+      this.botonContinuar()?.nativeElement.querySelector('button')?.focus();
       this.eligiendoTransportadora.set(true);
       return;
     }

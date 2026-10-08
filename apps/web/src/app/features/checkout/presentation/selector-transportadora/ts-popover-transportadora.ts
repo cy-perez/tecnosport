@@ -17,6 +17,14 @@ import { OpcionEnvio } from '../../domain/envio.model';
 import { logoDeTransportadora } from './logo-de-transportadora';
 
 /**
+ * El `id` del panel, para el `aria-controls` de quien lo abre. Va al **input** `id` de Spartan,
+ * nunca como atributo: escrito como atributo estático, Angular lo pone también en el host vacío de
+ * `<brn-popover>` y quedaban dos elementos con el mismo id — el `aria-controls` apuntaba al primero,
+ * que es el host, y no al panel (la trampa de `apps/web/CLAUDE.md` con los `input()` llamados `id`).
+ */
+export const ID_POPOVER_TRANSPORTADORA = 'popover-transportadora';
+
+/**
  * Las transportadoras que cotizaron este envío, para que el comprador elija con cuál (ADR-0073). Se
  * abre al pulsar «Continuar» en el resumen, anclado a ese botón, y se cierra con Escape, al pulsar
  * fuera o con la equis.
@@ -60,6 +68,7 @@ export class TsPopoverTransportadora {
   readonly elegir = output<string>();
   readonly cerrar = output<void>();
 
+  protected readonly idDelPanel = ID_POPOVER_TRANSPORTADORA;
   protected readonly iconoCerrar = iconoCerrar;
   protected readonly iconoEnvio = iconoEnvio;
   protected readonly logoDe = logoDeTransportadora;

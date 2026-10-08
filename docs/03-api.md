@@ -126,17 +126,31 @@ cambió es qué se acepta, y pudo cambiar entre las dos llamadas (`ADR-0029`).
 ### Cotización de envío
 
 `POST /api/v1/envios/cotizacion` recibe **las líneas del carrito** —variante y
-cantidad— y el destino, y devuelve **una** opción, la más económica que cubre el
-destino:
+cantidad— y el destino. Devuelve arriba la opción más económica que cubre el
+destino y, desde el 8 de octubre de 2026 (`ADR-0073`), en `opciones` una por
+transportadora —su tarifa más económica—, de la más barata a la más cara, para que
+el comprador elija:
 
 ```json
 {
   "costoEnvio": { "valor": 14900, "moneda": "COP" },
   "transportadora": "Coordinadora",
   "diasEstimados": 3,
-  "venceEn": "2026-09-09T14:05:00Z"
+  "venceEn": "2026-09-09T14:05:00Z",
+  "opciones": [
+    { "transportadora": "Coordinadora", "costoEnvio": { "valor": 14900, "moneda": "COP" }, "diasEstimados": 3 },
+    { "transportadora": "Servientrega", "costoEnvio": { "valor": 15900, "moneda": "COP" }, "diasEstimados": 1 }
+  ]
 }
 ```
+
+- **Lo que vuelve del cliente es el nombre de la elegida, nunca el costo.**
+  `POST /api/v1/pedidos` y `/pedidos/metodos-de-pago-disponibles` aceptan un
+  `transportadora` opcional (hasta 60 caracteres). El servidor vuelve a cotizar y
+  toma la tarifa de esa; si ya no cotiza, `409` con `codigo:
+  "TRANSPORTADORA_NO_DISPONIBLE"`, antes de reservar nada. Sin `transportadora`,
+  la más económica. En los métodos de pago, la contraentrega solo se ofrece si la
+  elegida recauda.
 
 - **Líneas y no el id del carrito**, decidido al construirlo el 11 de septiembre
   de 2026. Es lo mismo que reciben `POST /api/v1/pedidos` y
@@ -167,9 +181,10 @@ destino:
 - **`POST` y no `GET`** aunque no cree nada persistente para el cliente: el cuerpo
   lleva el carrito y la dirección, y una dirección de entrega no va en una URL que
   se registra en los logs del balanceador.
-- **No devuelve la lista de tarifas ni el `rate_id`.** El servidor elige la más
-  económica (`ADR-0021`) y el identificador del proveedor es interno: si viajara
-  al navegador, alguien podría devolverlo alterado al crear el pedido.
+- **No devuelve el `rate_id`.** Hasta `ADR-0073` tampoco devolvía la lista de
+  tarifas, porque el servidor elegía la más económica (`ADR-0021`). La lista viaja
+  ahora como `opciones`, sin identificador: si el del proveedor viajara al
+  navegador, alguien podría devolverlo alterado al crear el pedido.
 - **Cuando no hay tarifa, no es un error del sistema.** Responde `409` con
   `codigo: "ENVIO_SIN_COBERTURA"` y el checkout ofrece solo la recogida en el
   punto. Un `502` sería mentir sobre de quién es el problema; el destino

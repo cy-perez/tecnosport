@@ -1012,6 +1012,50 @@ describe('ResumenPage', () => {
       await vi.waitFor(() => expect(checkout.datosEntrega()?.transportadora).toBe('Servientrega'));
     });
 
+    /**
+     * Escape cierra por el camino de Spartan (`stateChanged`), no por la equis. Si ese camino no
+     * apagara la señal, el popover quedaría «abierto» para la pantalla y «Continuar» ya no lo
+     * volvería a abrir, sin que nada fallara.
+     */
+    it('escape cierra el popover y continuar lo vuelve a abrir', async () => {
+      sembrarCarritoId('carrito-1');
+      sembrarSnapshotLinea(snapshotDePrueba('variante-1'));
+      await renderResumen(
+        new RepositorioCarritoFalso(CARRITO_CON_LINEAS),
+        new RepositorioEnviosFalso(CON_OPCIONES),
+      );
+      await screen.findByText('Morral urbano');
+      await llenarTodo();
+
+      fireEvent.click(screen.getByRole('button', { name: 'Continuar' }));
+      const dialogo = await screen.findByRole('dialog', { name: 'Elige la transportadora' });
+      fireEvent.keyDown(dialogo, { key: 'Escape' });
+      await vi.waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+
+      fireEvent.click(screen.getByRole('button', { name: 'Continuar' }));
+      expect(await screen.findByRole('dialog', { name: 'Elige la transportadora' })).toBeTruthy();
+    });
+
+    /** El `aria-controls` de «Continuar» apunta al panel, y es el único elemento con ese id. */
+    it('continuar controla el panel por un id que no se repite', async () => {
+      sembrarCarritoId('carrito-1');
+      sembrarSnapshotLinea(snapshotDePrueba('variante-1'));
+      await renderResumen(
+        new RepositorioCarritoFalso(CARRITO_CON_LINEAS),
+        new RepositorioEnviosFalso(CON_OPCIONES),
+      );
+      await screen.findByText('Morral urbano');
+      await llenarTodo();
+
+      const continuar = screen.getByRole('button', { name: 'Continuar' });
+      fireEvent.click(continuar);
+      const dialogo = await screen.findByRole('dialog', { name: 'Elige la transportadora' });
+
+      const id = continuar.getAttribute('aria-controls')!;
+      expect(document.querySelectorAll(`[id="${id}"]`)).toHaveLength(1);
+      expect(document.getElementById(id)?.contains(dialogo)).toBe(true);
+    });
+
     it('cerrar el popover sin elegir no guarda nada', async () => {
       sembrarCarritoId('carrito-1');
       sembrarSnapshotLinea(snapshotDePrueba('variante-1'));

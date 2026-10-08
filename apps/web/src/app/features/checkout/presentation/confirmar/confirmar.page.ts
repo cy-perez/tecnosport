@@ -18,7 +18,10 @@ import { TsEsqueleto } from '../../../../shared/ts-esqueleto/ts-esqueleto';
 import { TsPrecio } from '../../../../shared/ts-precio/ts-precio';
 import { CarritoStore } from '../../../carrito/application/carrito.store';
 import { CheckoutStore } from '../../application/checkout.store';
-import { usarCotizacionEnvio } from '../../application/cotizacion-envio.consulta';
+import {
+  usarCotizacionEnvio,
+  usarOlvidarCotizacionEnvio,
+} from '../../application/cotizacion-envio.consulta';
 import { usarModalidadesDeEntrega } from '../../application/modalidades-entrega.consulta';
 import { TsSalidaSinEnvio } from '../salida-sin-envio/ts-salida-sin-envio';
 import { CotizarEnvioComando, OpcionEnvio, opcionDeTransportadora } from '../../domain/envio.model';
@@ -100,6 +103,7 @@ export class ConfirmarPage {
    * botón, no el de hace dos pantallas.
    */
   protected readonly cotizacion = usarCotizacionEnvio(() => this.criteriosCotizacion());
+  private readonly olvidarCotizacion = usarOlvidarCotizacionEnvio();
 
   protected readonly criteriosCotizacion = computed<CotizarEnvioComando | null>(() => {
     const datos = this.checkout.datosEntrega();
@@ -435,6 +439,7 @@ export class ConfirmarPage {
     // La elegida dejó de cotizar entre esta pantalla y el servidor (ADR-0073): se elige otra.
     if (error instanceof ErrorHttp && error.codigo === 'TRANSPORTADORA_NO_DISPONIBLE') {
       this.rechazoDeCredito.set(false);
+      void this.olvidarCotizacion();
       return this.transloco.translate('checkout.confirmar.transportadora_no_disponible');
     }
     const datos = error instanceof ErrorHttp ? error.datos : {};

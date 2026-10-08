@@ -55,7 +55,7 @@ con Escape o al pulsar fuera.
 - **Tamaño:** columnas iguales, así que todos los botones toman el ancho del más
   grande.
 
-Los logos los entregó el negocio (`svg_transportadoras/`). Se limpiaron a
+Los logos los entregó el dueño del negocio. Se limpiaron a
 `apps/web/logos-transportadora/` y los genera `npm run logos-pago`, monocromos
 como los de pago. Una transportadora sin logo se pinta con el camión genérico y
 su nombre.
@@ -67,6 +67,26 @@ su nombre.
   la elección se hace al continuar. La confirmación muestra el de la elegida
   antes de pagar: el desglose del artículo 50 de la Ley 1480 de 2011 se cumple
   en la pantalla donde se finaliza.
+- **Con contraentrega, lo que se cobra puede no ser lo que se mostró.** La
+  confirmación muestra la tarifa más económica **sin** recaudo de la elegida, y el
+  pedido congela la más económica **con** recaudo de esa misma transportadora.
+  Hoy las tarifas que sobreviven con recaudo cuestan lo mismo (`docs/13`), pero si
+  el servicio más barato de una transportadora se cae con recaudo y sobrevive uno
+  más caro, se cobraría más de lo mostrado. El problema ya existía con la más
+  económica global; aquí se nota más, porque la pantalla dice "Con X" y un costo.
+  Es un pendiente: la confirmación debería pedir la cotización con recaudo cuando
+  el método es contraentrega.
+- **Si la emisión automática cae en otra transportadora**, el seguimiento y el
+  comprobante siguen nombrando la elegida hasta el despacho; desde ahí, el bloque
+  de la guía dice la real. Hoy no pasa, porque la emisión automática está apagada
+  (`ADR-0071`).
+- **Tras un 409 de transportadora, la confirmación olvida la cotización
+  guardada**, para que la que dejó de cotizar no se siga mostrando ni se vuelva a
+  ofrecer durante el minuto de caché.
+- **Con contraentrega y la elegida desaparecida de la cotización entera**, el
+  comprador ve "contraentrega no disponible" y, si cambia a pago en línea, el 409
+  de transportadora. Son dos rechazos para el mismo problema, y se aceptan porque
+  distinguirlos exigiría una segunda cotización.
 - El seguimiento público suma un campo, el nombre de la transportadora. No es un
   costo ni un margen, es un dato del comprador como su método de pago. La prueba
   que cuenta los campos se actualizó diciéndolo.

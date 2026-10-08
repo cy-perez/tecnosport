@@ -28,7 +28,7 @@ export function logoDeTransportadora(nombre: string): LogoPago | null {
   if (clave.startsWith('coordinadora')) {
     return logoCoordinadora;
   }
-  if (clave.startsWith('interrapidisimo') || clave.startsWith('inter')) {
+  if (clave.startsWith('interrapidisimo')) {
     return logoInterRapidisimo;
   }
   if (clave.startsWith('envia')) {

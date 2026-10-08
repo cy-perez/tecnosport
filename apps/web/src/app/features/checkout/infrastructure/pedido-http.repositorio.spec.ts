@@ -114,3 +114,70 @@ describe('PedidoHttpRepositorio: la llave de idempotencia', () => {
     expect(llaves[1]).not.toBe(llaves[0]);
   });
 });
+
+/**
+ * ADR-0073: la transportadora elegida viaja en el cuerpo de las dos peticiones. Si el adaptador la
+ * perdiera, el servidor cobraría la más económica mientras la confirmación mostraba la elegida.
+ */
+describe('PedidoHttpRepositorio: la transportadora elegida', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  function capturarCuerpos(respuesta: unknown): unknown[] {
+    const cuerpos: unknown[] = [];
+    vi.stubGlobal('window', undefined);
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (entrada: Request) => {
+        cuerpos.push(await entrada.clone().json());
+        return new Response(JSON.stringify(respuesta), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }),
+    );
+    return cuerpos;
+  }
+
+  const DIRECCION = {
+    codigoDaneDepartamento: '05',
+    departamento: 'Antioquia',
+    codigoDaneCiudad: '05001',
+    ciudad: 'Medellín',
+    direccion: 'Circular 4 # 70-20',
+    indicaciones: null,
+    barrio: null,
+  };
+
+  it('va en el cuerpo al crear el pedido', async () => {
+    const cuerpos = capturarCuerpos({ id: 'pedido-1', lineas: [], historial: [] });
+
+    await new PedidoHttpRepositorio().crear({
+      correo: 'cliente@tecnosport.co',
+      contacto: { nombre: 'Cliente de prueba', telefono: '3001234567' },
+      lineas: [{ varianteId: 'variante-1', cantidad: 1 }],
+      tipoEntrega: 'ENVIO_A_DOMICILIO',
+      direccion: DIRECCION,
+      metodoPago: 'WOMPI',
+      autorizaDatos: true,
+      transportadora: 'Servientrega',
+    });
+
+    expect(cuerpos[0]).toMatchObject({ transportadora: 'Servientrega' });
+  });
+
+  it('va en el cuerpo al pedir los métodos de pago', async () => {
+    const cuerpos = capturarCuerpos(['WOMPI']);
+
+    await new PedidoHttpRepositorio().metodosDePagoDisponibles({
+      correo: 'cliente@tecnosport.co',
+      lineas: [{ varianteId: 'variante-1', cantidad: 1 }],
+      tipoEntrega: 'ENVIO_A_DOMICILIO',
+      direccion: DIRECCION,
+      transportadora: 'Servientrega',
+    });
+
+    expect(cuerpos[0]).toMatchObject({ transportadora: 'Servientrega' });
+  });
+});
