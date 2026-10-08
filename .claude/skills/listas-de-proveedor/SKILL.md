@@ -353,7 +353,25 @@ El ZIP sale sin fotos y sin ningún `FOTOS-PENDIENTES.md`: es lo esperado
 (regla 16), no un entregable a medias. `--imagenes` sigue existiendo para el
 caso del apéndice.
 
-### 6. Entregar
+### 6. Guardar lo investigado
+
+```bash
+python3 scripts/conocidos.py consolidar catalogo/productos.json            # simula
+python3 scripts/conocidos.py consolidar catalogo/productos.json --escribir
+```
+
+Lleva a `referencias/conocidos.json` cada producto terminado (con descripción):
+el precio de mercado con sus fuentes y su fecha, la descripción, los metadatos,
+los colores y los supuestos que escribiste al investigar; y el costo y la fecha
+de la lista. Es lo que evita investigar otra vez, en la lista siguiente, lo que
+ya se investigó: contra la del 08/10/2026 la base reconoce 72 de 90 productos.
+
+La base va en el repositorio y no se edita a mano. Un precio de mercado vale
+**7 días** desde su fecha (decisión del negocio, 08/10/2026); un precio que se
+copió de la base conserva la fecha que traía. Lo que salga «sin terminar» no se
+guarda: dilo en la entrega.
+
+### 7. Entregar
 
 Preséntale los dos archivos y, en dos o tres líneas, lo que necesita saber:
 productos listos, productos que quedaron con pendientes y cualquier caso donde el
@@ -526,12 +544,14 @@ scripts/asignar_precios.py        paso 4  decide el precio de mercado y el marge
 scripts/icecat_local.py           paso 4  trae la ficha técnica oficial de Open Icecat
 scripts/redactar_fichas.py        paso 4  prosa + ficha oficial → descripción y metadatos
 scripts/construir_entregables.py  paso 5  productos.json → ZIP + Excel
+scripts/conocidos.py              paso 6  guarda lo investigado en referencias/conocidos.json
 scripts/preparar_fotos.py         FUERA DEL FLUJO desde el 25/09/2026: regla 16
 scripts/filtrar_fotos.py          FUERA DEL FLUJO desde el 25/09/2026: regla 16
 scripts/organizar_imagenes.py     FUERA DEL FLUJO desde el 19/09/2026: ver la nota de abajo
 referencias/formato-de-listas.md  anatomía de los mensajes de proveedor
 referencias/titulos.md            fórmula de títulos y nombres ya confirmados
 referencias/equivalencias.json    id de la lista → id y título definitivos; lo aplica el parser
+referencias/conocidos.json        productos ya investigados; lo escribe conocidos.py, no a mano
 referencias/descripciones.md      estructura de la descripción y metadatos
 referencias/fichas-tecnicas.md    de dónde sale la ficha oficial de cada marca
 referencias/precios.md            método de investigación de precios
