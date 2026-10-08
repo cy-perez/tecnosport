@@ -31,15 +31,18 @@ Sin `--escribir` solo dice qué cambiaría.
 """
 
 import argparse
+import hashlib
 import json
 import re
 import sys
+import unicodedata
 from copy import deepcopy
 from datetime import date, timedelta
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from parsear_lista import id_de_titulo  # noqa: E402
+import fichas  # noqa: E402
 
 BASE = Path(__file__).resolve().parent.parent / "referencias" / "conocidos.json"
 
@@ -195,6 +198,9 @@ def validar(base: dict) -> dict:
                 errores.append(f"modelo {clave}: {campo} tiene que ser una lista")
         if not m.get("fecha_alta"):
             errores.append(f"modelo {clave}: falta fecha_alta")
+        for foto in m.get("fotos") or []:
+            if not foto.get("nombre") or not foto.get("huella"):
+                errores.append(f"modelo {clave}: una foto registrada sin nombre o sin huella")
     for clave, c in configuraciones.items():
         if not c.get("titulo") or id_de_titulo(c["titulo"]) != clave:
             errores.append(f"configuración {clave}: no corresponde al título «{c.get('titulo')}»")
@@ -241,6 +247,57 @@ def guardar(base: dict, ruta=BASE):
                           encoding="utf-8", newline="")
 
 
+def _slug(texto: str) -> str:
+    """El slug con que fotos-estudio-degradado nombra cada salida (procesar.py)."""
+    t = unicodedata.normalize("NFKD", texto).encode("ascii", "ignore").decode()
+    return re.sub(r"[^A-Za-z0-9]+", "-", t).strip("-").lower() or "foto"
+
+
+def registrar_fotos(base: dict, raiz: Path):
+    """Anota en cada modelo las fotos procesadas de su carpeta, con su huella.
+
+    El registro es lo que permite notar que una foto se perdió: las carpetas
+    viven fuera del repositorio (`catalogo/` está ignorado), y la de estudio de
+    las primeras cargas ya se perdió sin que nada lo dijera. El estado sale del
+    reporte de fotos-estudio-degradado: LISTA o REVISAR.
+
+    Devuelve (base nueva, resumen). Un modelo que todavía no está en la base se
+    informa y no se anota: entra al consolidar su corrida.
+    """
+    nueva = deepcopy(base)
+    raiz = Path(raiz)
+    estados = {}
+    reporte = raiz / "_estudio" / "salida" / "reporte.json"
+    if reporte.is_file():
+        for f in json.loads(reporte.read_text(encoding="utf-8")).get("fotos", []):
+            estados[(f.get("grupo"), f.get("nombre"))] = f.get("estado")
+    resumen = {"modelos": 0, "fotos": 0, "fuera_de_la_base": [], "perdidas": []}
+    for carpeta in sorted(c for c in raiz.iterdir() if c.is_dir() and not c.name.startswith("_")) if raiz.is_dir() else []:
+        mid = fichas.id_de_carpeta(carpeta)
+        procesadas = carpeta / fichas.PROCESADAS
+        if not mid or not procesadas.is_dir():
+            continue
+        if mid not in nueva["modelos"]:
+            resumen["fuera_de_la_base"].append(carpeta.name)
+            continue
+        originales = {f.stem: f.name for f in (carpeta / fichas.ORIGINALES).glob("*") if f.is_file()}
+        registro = []
+        for f in sorted(procesadas.glob("*.jpg")):
+            registro.append({
+                "nombre": f.stem,
+                "original": originales.get(f.stem),
+                "procesada": f.name,
+                "huella": hashlib.sha256(f.read_bytes()).hexdigest(),
+                "estado": estados.get((mid, _slug(f.stem))),
+            })
+        anteriores = {r["nombre"] for r in nueva["modelos"][mid].get("fotos") or []}
+        resumen["perdidas"] += [f"{carpeta.name}/{n}" for n in sorted(anteriores - {r['nombre'] for r in registro})]
+        nueva["modelos"][mid]["fotos"] = registro
+        resumen["modelos"] += 1
+        resumen["fotos"] += len(registro)
+    return nueva, resumen
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     sub = ap.add_subparsers(dest="orden", required=True)
@@ -250,7 +307,25 @@ def main():
     c.add_argument("--fecha", default=date.today().isoformat(),
                    help="último recurso para un precio sin fecha (por omisión, hoy)")
     c.add_argument("--escribir", action="store_true", help="sin esto, solo informa")
+    f = sub.add_parser("fotos", help="anota en la base las fotos procesadas de las carpetas de modelo")
+    f.add_argument("fichas", nargs="?", default="catalogo/entregables/fichas")
+    f.add_argument("--base", default=str(BASE))
+    f.add_argument("--escribir", action="store_true", help="sin esto, solo informa")
     args = ap.parse_args()
+
+    if args.orden == "fotos":
+        base, r = registrar_fotos(cargar(args.base), Path(args.fichas))
+        print(f"{r['fotos']} fotos procesadas en {r['modelos']} modelos")
+        for nombre in r["fuera_de_la_base"]:
+            print(f"  todavía no está en la base: {nombre}")
+        for nombre in r["perdidas"]:
+            print(f"  ⚠️ estaba registrada y ya no está: {nombre}")
+        if args.escribir:
+            guardar(base, args.base)
+            print(f"Escrito {args.base}")
+        else:
+            print("Simulación: agrega --escribir para guardar.")
+        return
 
     datos = json.loads(Path(args.productos).read_text(encoding="utf-8"))
     base, resumen = consolidar(cargar(args.base), datos, date.fromisoformat(args.fecha))

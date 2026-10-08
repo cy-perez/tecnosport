@@ -228,6 +228,52 @@ class Validacion(unittest.TestCase):
             conocidos.validar(b)
 
 
+class RegistroDeFotos(unittest.TestCase):
+    """Las carpetas viven fuera del repositorio: el registro es lo que nota una pérdida."""
+
+    def armar(self, tmp):
+        raiz = Path(tmp)
+        carpeta = raiz / "Samsung Galaxy A57 5G"
+        (carpeta / "Fotos originales").mkdir(parents=True)
+        (carpeta / "Fotos procesadas").mkdir()
+        (carpeta / "samsung-galaxy-a57-5g-ficha.txt").write_text("MODELO", encoding="utf-8")
+        (carpeta / "Fotos originales" / "samsung-galaxy-a57-5g_1.png").write_bytes(b"original")
+        (carpeta / "Fotos procesadas" / "samsung-galaxy-a57-5g_1.jpg").write_bytes(b"procesada")
+        (raiz / "_estudio" / "salida").mkdir(parents=True)
+        (raiz / "_estudio" / "salida" / "reporte.json").write_text(json.dumps({"fotos": [
+            {"grupo": "samsung-galaxy-a57-5g", "nombre": "samsung-galaxy-a57-5g-1", "estado": "LISTA"}]}),
+            encoding="utf-8")
+        return raiz, carpeta
+
+    def test_anota_cada_foto_con_su_original_su_huella_y_su_estado(self):
+        base, _ = consolidar(conocidos.base_vacia(), lista(producto()))
+        with tempfile.TemporaryDirectory() as tmp:
+            raiz, _ = self.armar(tmp)
+            base, r = conocidos.registrar_fotos(base, raiz)
+        [foto] = base["modelos"]["samsung-galaxy-a57-5g"]["fotos"]
+        self.assertEqual(("samsung-galaxy-a57-5g_1", "samsung-galaxy-a57-5g_1.png", "LISTA"),
+                         (foto["nombre"], foto["original"], foto["estado"]))
+        self.assertEqual(64, len(foto["huella"]))
+        self.assertEqual(1, r["fotos"])
+        conocidos.validar(base)
+
+    def test_una_foto_registrada_que_ya_no_esta_se_informa(self):
+        base, _ = consolidar(conocidos.base_vacia(), lista(producto()))
+        with tempfile.TemporaryDirectory() as tmp:
+            raiz, carpeta = self.armar(tmp)
+            base, _ = conocidos.registrar_fotos(base, raiz)
+            (carpeta / "Fotos procesadas" / "samsung-galaxy-a57-5g_1.jpg").unlink()
+            _, r = conocidos.registrar_fotos(base, raiz)
+        self.assertEqual(["Samsung Galaxy A57 5G/samsung-galaxy-a57-5g_1"], r["perdidas"])
+
+    def test_un_modelo_que_no_esta_en_la_base_se_informa_y_no_se_anota(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            raiz, _ = self.armar(tmp)
+            base, r = conocidos.registrar_fotos(conocidos.base_vacia(), raiz)
+        self.assertEqual(conocidos.base_vacia(), base)
+        self.assertEqual(["Samsung Galaxy A57 5G"], r["fuera_de_la_base"])
+
+
 class Guardar(unittest.TestCase):
     def test_guardar_y_cargar_es_estable(self):
         base, _ = consolidar(conocidos.base_vacia(), lista(producto(), otra_memoria()))
