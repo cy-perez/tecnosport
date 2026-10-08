@@ -105,7 +105,9 @@ public record PropiedadesProveedores(
     if (margenPorLinea == null) {
       throw new IllegalStateException("Falta tecnosport.proveedores.margen-por-linea.");
     }
-    for (LineaCatalogo linea : Proveedor.LINEAS_ADMITIDAS) {
+    // Solo las líneas que entran por la exportación del chat llevan factor de margen: el precio de
+    // la tecnología lo decide una persona en el panel, con el precio de mercado a la vista.
+    for (LineaCatalogo linea : Proveedor.LINEAS_POR_EXPORTACION) {
       BigDecimal factor = margenPorLinea.get(linea);
       if (factor == null || factor.compareTo(BigDecimal.ONE) < 0) {
         throw new IllegalStateException(

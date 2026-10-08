@@ -45,8 +45,20 @@ public final class Proveedor {
 
   static final String ESPACIO_ANGOSTO = String.valueOf((char) 0x202F);
 
-  public static final Set<LineaCatalogo> LINEAS_ADMITIDAS =
+  /**
+   * Las líneas que llegan por la exportación del chat: el extractor, el factor de margen y la
+   * huella visual son de bolsos y de ropa. La tecnología no entra por ahí.
+   */
+  public static final Set<LineaCatalogo> LINEAS_POR_EXPORTACION =
       EnumSet.of(LineaCatalogo.BOLSOS, LineaCatalogo.ROPA);
+
+  /**
+   * Las líneas de un proveedor. La tecnología se sumó el 08/10/2026: su proveedor manda listas de
+   * precios, que procesa la skill `listas-de-proveedor` y se importan como borradores de
+   * tecnología, no como exportaciones del chat.
+   */
+  public static final Set<LineaCatalogo> LINEAS_ADMITIDAS =
+      EnumSet.of(LineaCatalogo.BOLSOS, LineaCatalogo.ROPA, LineaCatalogo.TECNOLOGIA);
 
   private final UUID id;
   private String nombre;
@@ -179,11 +191,14 @@ public final class Proveedor {
 
   private static LineaCatalogo exigirLinea(LineaCatalogo linea) {
     if (linea == null || !LINEAS_ADMITIDAS.contains(linea)) {
-      throw new ExcepcionDeDominio(
-          "Un proveedor por WhatsApp solo puede ser de bolsos o de ropa; la tecnología entra por"
-              + " listas.");
+      throw new ExcepcionDeDominio("Un proveedor puede ser de bolsos, de ropa o de tecnología.");
     }
     return linea;
+  }
+
+  /** Si sus productos llegan por la exportación del chat; los de tecnología llegan por listas. */
+  public boolean entraPorExportacion() {
+    return LINEAS_POR_EXPORTACION.contains(linea);
   }
 
   private static OrdenDePublicacion exigirOrden(OrdenDePublicacion orden) {

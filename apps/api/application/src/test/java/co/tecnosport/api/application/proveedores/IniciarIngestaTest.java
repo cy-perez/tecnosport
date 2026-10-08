@@ -123,6 +123,28 @@ class IniciarIngestaTest {
         () -> caso.ejecutar(new IniciarIngestaComando(proveedor.id(), key)));
   }
 
+  /**
+   * Un proveedor de tecnología manda listas de precios, que se importan como borradores de
+   * tecnología. Su chat no pasa por el extractor de prendas, que no sabe leerlo (08/10/2026).
+   */
+  @Test
+  void unProveedorDeTecnologiaNoRecibeExportaciones() {
+    proveedor.editar(
+        proveedor.nombre(),
+        LineaCatalogo.TECNOLOGIA,
+        "+57 300",
+        "Bolsos Centro",
+        true,
+        false,
+        null,
+        OrdenDePublicacion.FOTOS_PRIMERO);
+
+    assertThrows(
+        ProveedorDeListasException.class,
+        () -> caso.ejecutar(new IniciarIngestaComando(proveedor.id(), key)));
+    assertTrue(lotes.buscarPorId(UUID.randomUUID()).isEmpty());
+  }
+
   @Test
   void sinProveedorNoHayLote() {
     assertThrows(

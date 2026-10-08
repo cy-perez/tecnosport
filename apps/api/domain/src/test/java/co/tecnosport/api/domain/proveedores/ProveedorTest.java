@@ -35,31 +35,48 @@ class ProveedorTest {
     assertEquals("Bolsos del Centro", proveedor.nombre());
   }
 
+  /**
+   * La tecnología se admite desde el 08/10/2026, pero no entra por la exportación del chat: su
+   * proveedor manda listas que se importan como borradores de tecnología.
+   */
   @Test
-  void soloBolsosYRopaEntranPorWhatsApp() {
+  void laTecnologiaSeAdmitePeroNoEntraPorLaExportacion() {
+    Proveedor celulares =
+        Proveedor.crear(
+            "Celulares",
+            LineaCatalogo.TECNOLOGIA,
+            "+57 300",
+            "Celulares",
+            null,
+            OrdenDePublicacion.FOTOS_PRIMERO);
+
+    assertFalse(celulares.entraPorExportacion());
+    assertTrue(
+        Proveedor.crear(
+                "Bolsos",
+                LineaCatalogo.BOLSOS,
+                "+57 300",
+                "Bolsos",
+                null,
+                OrdenDePublicacion.FOTOS_PRIMERO)
+            .entraPorExportacion());
+  }
+
+  @Test
+  void elCalzadoNoTieneProveedor() {
     ExcepcionDeDominio error =
         assertThrows(
             ExcepcionDeDominio.class,
             () ->
                 Proveedor.crear(
-                    "Celulares",
-                    LineaCatalogo.TECNOLOGIA,
+                    "Tenis",
+                    LineaCatalogo.CALZADO,
                     "+57 300",
-                    "Celulares",
+                    "Tenis",
                     null,
                     OrdenDePublicacion.FOTOS_PRIMERO));
 
-    assertTrue(error.getMessage().contains("bolsos o de ropa"), error.getMessage());
-    assertThrows(
-        ExcepcionDeDominio.class,
-        () ->
-            Proveedor.crear(
-                "Tenis",
-                LineaCatalogo.CALZADO,
-                "+57 300",
-                "Tenis",
-                null,
-                OrdenDePublicacion.FOTOS_PRIMERO));
+    assertTrue(error.getMessage().contains("bolsos, de ropa o de tecnología"), error.getMessage());
   }
 
   /** 0,35 donde iba 1,35 es un error al teclear, y vendería por debajo del costo. */
@@ -186,7 +203,7 @@ class ProveedorTest {
         () ->
             proveedor.editar(
                 "Meraki",
-                LineaCatalogo.TECNOLOGIA,
+                LineaCatalogo.CALZADO,
                 "+57",
                 "Meraki",
                 true,
