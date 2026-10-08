@@ -24,6 +24,7 @@ import co.tecnosport.api.application.pedido.DespacharPedido;
 import co.tecnosport.api.application.pedido.EnviarComprobantesDeCompra;
 import co.tecnosport.api.application.pedido.ListarPedidosAdmin;
 import co.tecnosport.api.application.pedido.MarcarEntregado;
+import co.tecnosport.api.application.pedido.ModalidadesDeEntrega;
 import co.tecnosport.api.application.pedido.RechazarEnEntrega;
 import co.tecnosport.api.application.pedido.RecibirPedidoRechazado;
 import co.tecnosport.api.application.pedido.ReintentarPago;
@@ -70,7 +71,8 @@ public class ConfiguracionPedido {
       LimitadorDeIntentos limitadorDeIntentos,
       PropiedadesLimitePedidos propiedadesLimite,
       RepositorioAutorizaciones repositorioAutorizaciones,
-      PropiedadesLegal propiedadesLegal) {
+      PropiedadesLegal propiedadesLegal,
+      ModalidadesDeEntrega modalidadesDeEntrega) {
     return new CrearPedido(
         repositorioProductos,
         repositorioInventario,
@@ -84,7 +86,8 @@ public class ConfiguracionPedido {
         propiedadesLimite.cuentaMaximo(),
         Duration.ofMinutes(propiedadesLimite.cuentaMinutos()),
         repositorioAutorizaciones,
-        propiedadesLegal.politicaDatosVersion());
+        propiedadesLegal.politicaDatosVersion(),
+        modalidadesDeEntrega);
   }
 
   @Bean

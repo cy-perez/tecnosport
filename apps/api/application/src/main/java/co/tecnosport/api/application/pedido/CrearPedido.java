@@ -73,6 +73,8 @@ public final class CrearPedido {
   private final RepositorioAutorizaciones repositorioAutorizaciones;
   private final String versionPolitica;
 
+  private final ModalidadesDeEntrega modalidadesDeEntrega;
+
   public CrearPedido(
       RepositorioProductos repositorioProductos,
       RepositorioInventario repositorioInventario,
@@ -86,7 +88,8 @@ public final class CrearPedido {
       int maximoIntentosPorCuenta,
       Duration ventanaIntentosPorCuenta,
       RepositorioAutorizaciones repositorioAutorizaciones,
-      String versionPolitica) {
+      String versionPolitica,
+      ModalidadesDeEntrega modalidadesDeEntrega) {
     this.repositorioProductos =
         Objects.requireNonNull(
             repositorioProductos, "El repositorio de productos no puede ser nulo.");
@@ -119,6 +122,9 @@ public final class CrearPedido {
     this.cotizarEnvio = Objects.requireNonNull(cotizarEnvio, "El cotizador no puede ser nulo.");
     this.versionPolitica =
         Objects.requireNonNull(versionPolitica, "La versión de la política no puede ser nula.");
+    this.modalidadesDeEntrega =
+        Objects.requireNonNull(
+            modalidadesDeEntrega, "Las modalidades de entrega no pueden ser nulas.");
   }
 
   public Pedido ejecutar(CrearPedidoComando comando) {
@@ -131,6 +137,7 @@ public final class CrearPedido {
     if (comando.contacto() == null) {
       throw new ExcepcionDeDominio("Un pedido exige el nombre y el teléfono de quien recibe.");
     }
+    modalidadesDeEntrega.exigirDisponible(comando.tipoEntrega());
     Instant ahora = reloj.ahora();
     CorreoElectronico correoComprador = new CorreoElectronico(comando.correo());
     if (!limitadorDeIntentos.permitir(

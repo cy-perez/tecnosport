@@ -56,6 +56,7 @@ import co.tecnosport.api.application.pedido.InventarioSinConfirmarException;
 import co.tecnosport.api.application.pedido.MetodoDePagoNoEsTransferenciaManualException;
 import co.tecnosport.api.application.pedido.MetodoDePagoNoHabilitadoException;
 import co.tecnosport.api.application.pedido.PedidoNoEncontradoException;
+import co.tecnosport.api.application.pedido.RetiroEnPuntoNoDisponibleException;
 import co.tecnosport.api.application.pedido.SistecreditoNoDisponibleException;
 import co.tecnosport.api.application.pedido.VarianteNoEncontradaException;
 import co.tecnosport.api.application.proveedores.AtributoDeCatalogoNoDefinidoException;
@@ -747,6 +748,14 @@ public class ManejadorDeErrores {
 
   // contraentrega ya no es elegible para este pedido (cobertura, monto, categoría o rechazo
   // previo) — el cliente pudo haber consultado /metodos-de-pago-disponibles hace un rato.
+  // Un cliente que no leyó GET /envios/modalidades —uno viejo, o hecho a mano— y pide recoger con
+  // la
+  // recogida apagada. 409 como contraentrega: el pedido está bien formado, el negocio no lo ofrece.
+  @ExceptionHandler(RetiroEnPuntoNoDisponibleException.class)
+  public ProblemDetail retiroEnPuntoNoDisponible(RetiroEnPuntoNoDisponibleException excepcion) {
+    return problema(HttpStatus.CONFLICT, "Recogida en el punto no disponible", excepcion);
+  }
+
   @ExceptionHandler(ContraentregaNoDisponibleException.class)
   public ProblemDetail contraentregaNoDisponible(ContraentregaNoDisponibleException excepcion) {
     return problema(HttpStatus.CONFLICT, "Contraentrega no disponible", excepcion);

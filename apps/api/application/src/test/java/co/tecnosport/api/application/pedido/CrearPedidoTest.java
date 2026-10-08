@@ -100,6 +100,7 @@ class CrearPedidoTest {
 
   private Variante variante;
   private Producto primerProducto;
+  private ModalidadesDeEntrega modalidadesDeEntrega = new ModalidadesDeEntrega(true);
 
   private CrearPedido crear() {
     return crear(CRITERIOS_CONTRAENTREGA_PERMISIVOS, true);
@@ -151,7 +152,8 @@ class CrearPedidoTest {
         MAXIMO_INTENTOS_POR_CUENTA,
         VENTANA_INTENTOS_POR_CUENTA,
         autorizaciones,
-        VERSION_POLITICA);
+        VERSION_POLITICA,
+        modalidadesDeEntrega);
   }
 
   /**
@@ -277,6 +279,36 @@ class CrearPedidoTest {
         metodoPago,
         true,
         IP);
+  }
+
+  /**
+   * Con la recogida apagada, un {@code RETIRO_EN_PUNTO} no crea pedido aunque lo mande un cliente
+   * que no lee la bandera, y no reserva nada antes de rechazarlo.
+   */
+  @Test
+  void conLaRecogidaApagadaUnRetiroNoCreaElPedidoNiReservaNada() {
+    modalidadesDeEntrega = new ModalidadesDeEntrega(false);
+    CrearPedido caso = crear();
+    publicarProductoConVarianteYExistencia(5);
+
+    assertThrows(
+        RetiroEnPuntoNoDisponibleException.class,
+        () -> caso.ejecutar(comandoRetiroEnPunto(MetodoPago.WOMPI, 1)));
+
+    assertEquals(
+        5, inventarios.buscarPorVarianteId(variante.id()).orElseThrow().saldoDisponible(AHORA));
+    assertTrue(pedidos.todos().isEmpty());
+  }
+
+  @Test
+  void conLaRecogidaApagadaElEnvioADomicilioSigue() {
+    modalidadesDeEntrega = new ModalidadesDeEntrega(false);
+    CrearPedido caso = crear();
+    publicarProductoConVarianteYExistencia(5);
+
+    caso.ejecutar(comando(MetodoPago.WOMPI, 1));
+
+    assertEquals(1, pedidos.todos().size());
   }
 
   /**

@@ -22,6 +22,7 @@ import co.tecnosport.api.application.legal.RepositorioAutorizaciones;
 import co.tecnosport.api.application.pedido.ConsultarSeguimientoPedido;
 import co.tecnosport.api.application.pedido.ConsultarSeguimientoPorNumero;
 import co.tecnosport.api.application.pedido.CrearPedido;
+import co.tecnosport.api.application.pedido.ModalidadesDeEntrega;
 import co.tecnosport.api.application.pedido.ReintentarPago;
 import co.tecnosport.api.application.pedido.RepositorioPedidos;
 import co.tecnosport.api.application.reintegro.RepositorioReintegros;
@@ -1033,7 +1034,8 @@ class PedidoControladorTest {
           5,
           Duration.ofMinutes(60),
           repositorioAutorizaciones,
-          "2026-09-07");
+          "2026-09-07",
+          new ModalidadesDeEntrega(true));
     }
 
     @Bean

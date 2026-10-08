@@ -219,7 +219,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["consultar"];
+        get: operations["consultar_1"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1476,6 +1476,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/envios/modalidades": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["consultar"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/envios/webhook": {
         parameters: {
             query?: never;
@@ -2466,6 +2482,10 @@ export interface components {
             direccion?: components["schemas"]["DireccionRequest"];
             lineas?: components["schemas"]["LineaRequest"][];
             tipoEntrega?: string;
+        };
+        ModalidadesDeEntregaRespuesta: {
+            envioADomicilio: boolean;
+            retiroEnPunto: boolean;
         };
         PagoSinPedidoRespuesta: {
             correo: string;
@@ -3505,7 +3525,7 @@ export interface operations {
             };
         };
     };
-    consultar: {
+    consultar_1: {
         parameters: {
             query?: never;
             header?: never;
@@ -5706,6 +5726,26 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["CotizacionEnvioRespuesta"];
+                };
+            };
+        };
+    };
+    consultar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ModalidadesDeEntregaRespuesta"];
                 };
             };
         };
