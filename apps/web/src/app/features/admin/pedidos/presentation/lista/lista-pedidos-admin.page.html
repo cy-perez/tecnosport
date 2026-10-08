@@ -203,6 +203,16 @@
                     </p>
                   }
 
+                  <!-- En todos los estados, y no solo al preparar el despacho: quien revisa un
+                       pedido recién confirmado —todavía por pagar o por verificar— también tiene
+                       que saber con qué transportadora lo pidió el comprador (ADR-0073). -->
+                  @if (pedido.transportadora; as transportadora) {
+                    <h2 class="mt-16 mb-8 text-base font-medio">
+                      {{ 'admin.pedidos.detalle.transportadora' | transloco }}
+                    </h2>
+                    <p>{{ transportadora }}</p>
+                  }
+
                   @if (pedido.datosTransferencia; as transferencia) {
                     <h2 class="mt-16 mb-8 text-base font-medio">
                       {{ 'admin.pedidos.detalle.transferencia' | transloco }}

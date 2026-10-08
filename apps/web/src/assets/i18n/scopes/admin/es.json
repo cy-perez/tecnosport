@@ -145,6 +145,7 @@
     "detalle": {
       "lineas": "Líneas",
       "direccion": "Dirección de envío",
+      "transportadora": "Transportadora elegida",
       "transferencia": "Transferencia manual",
       "referencia": "Referencia",
       "envio": "Envío",
