@@ -9,6 +9,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import co.tecnosport.api.application.pago.SistecreditoNoEntregoLaUrlDePagoException;
 import co.tecnosport.api.application.pago.SistecreditoNoRespondeException;
+import co.tecnosport.api.application.pedido.RetiroEnPuntoNoDisponibleException;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.TestConfiguration;
@@ -152,6 +153,18 @@ class ManejadorDeErroresTest {
         .andExpect(jsonPath("$.detail").value(not(containsString("alguien@"))));
   }
 
+  /**
+   * El 409 que la confirmación del checkout traduce a "la recogida ya no está disponible". Sin su
+   * manejador caería en el genérico —un 500— y el comprador vería "revisa tus datos".
+   */
+  @Test
+  void laRecogidaApagadaEsUnConflictoConSuCodigo() throws Exception {
+    mockMvc
+        .perform(get("/api/v1/prueba-de-errores/recogida-apagada"))
+        .andExpect(status().isConflict())
+        .andExpect(jsonPath("$.codigo").value("RETIRO_EN_PUNTO_NO_DISPONIBLE"));
+  }
+
   @TestConfiguration
   static class Configuracion {
 
@@ -191,6 +204,11 @@ class ManejadorDeErroresTest {
     }
 
     /** Con el mensaje tal como lo compone `SistecreditoClient`, texto del proveedor incluido. */
+    @GetMapping("/api/v1/prueba-de-errores/recogida-apagada")
+    String recogidaApagada() {
+      throw new RetiroEnPuntoNoDisponibleException();
+    }
+
     @GetMapping("/api/v1/prueba-de-errores/sistecredito-caido")
     String sistecreditoCaido() {
       throw new SistecreditoNoRespondeException(

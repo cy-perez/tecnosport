@@ -15,6 +15,14 @@ import co.tecnosport.api.domain.pedido.TipoEntrega;
  */
 public record ModalidadesDeEntrega(boolean retiroEnPunto) {
 
+  /**
+   * Siempre, hoy. Vive aquí y no en el controlador que lo publica para que, el día que deje de ser
+   * siempre, el sitio donde cambiarlo sea el mismo donde se decide la recogida.
+   */
+  public boolean envioADomicilio() {
+    return true;
+  }
+
   public void exigirDisponible(TipoEntrega tipoEntrega) {
     if (tipoEntrega == TipoEntrega.RETIRO_EN_PUNTO && !retiroEnPunto) {
       throw new RetiroEnPuntoNoDisponibleException();

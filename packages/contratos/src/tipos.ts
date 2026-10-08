@@ -219,7 +219,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["consultar_1"];
+        get: operations["consultar"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1483,7 +1483,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["consultar"];
+        get: operations["consultarModalidades"];
         put?: never;
         post?: never;
         delete?: never;
@@ -3525,7 +3525,7 @@ export interface operations {
             };
         };
     };
-    consultar_1: {
+    consultar: {
         parameters: {
             query?: never;
             header?: never;
@@ -5730,7 +5730,7 @@ export interface operations {
             };
         };
     };
-    consultar: {
+    consultarModalidades: {
         parameters: {
             query?: never;
             header?: never;

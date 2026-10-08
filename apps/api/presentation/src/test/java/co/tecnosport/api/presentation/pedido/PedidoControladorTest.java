@@ -955,7 +955,11 @@ class PedidoControladorTest {
         RepositorioInventario repositorioInventario,
         Reloj reloj) {
       return new ReintentarPago(
-          repositorioPedidos, repositorioInventario, reloj, Duration.ofMinutes(30));
+          repositorioPedidos,
+          repositorioInventario,
+          reloj,
+          Duration.ofMinutes(30),
+          new ModalidadesDeEntrega(true));
     }
 
     @Bean

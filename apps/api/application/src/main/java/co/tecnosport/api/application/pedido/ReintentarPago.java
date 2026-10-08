@@ -39,16 +39,19 @@ public final class ReintentarPago {
   private final RepositorioInventario repositorioInventario;
   private final Reloj reloj;
   private final Duration duracionReservaPagoEnLinea;
+  private final ModalidadesDeEntrega modalidadesDeEntrega;
 
   public ReintentarPago(
       RepositorioPedidos repositorioPedidos,
       RepositorioInventario repositorioInventario,
       Reloj reloj,
-      Duration duracionReservaPagoEnLinea) {
+      Duration duracionReservaPagoEnLinea,
+      ModalidadesDeEntrega modalidadesDeEntrega) {
     this.repositorioPedidos = Objects.requireNonNull(repositorioPedidos);
     this.repositorioInventario = Objects.requireNonNull(repositorioInventario);
     this.reloj = Objects.requireNonNull(reloj);
     this.duracionReservaPagoEnLinea = Objects.requireNonNull(duracionReservaPagoEnLinea);
+    this.modalidadesDeEntrega = Objects.requireNonNull(modalidadesDeEntrega);
   }
 
   public Pedido ejecutar(ReintentarPagoComando comando) {
@@ -70,6 +73,11 @@ public final class ReintentarPago {
     if (!pedido.estado().puedeTransicionarA(EstadoPedido.PAGO_PENDIENTE)) {
       throw new TransicionDeEstadoInvalidaException(pedido.estado(), EstadoPedido.PAGO_PENDIENTE);
     }
+    // Un pedido de recogida que falló en la pasarela antes de que la recogida se apagara no vence:
+    // se puede reintentar cuando sea. Cobrarlo hoy es contratar una recogida que los términos
+    // vigentes ya no ofrecen (ADR-0072), así que responde lo mismo que `CrearPedido` — y antes de
+    // reservar, por lo mismo que la comprobación de arriba.
+    modalidadesDeEntrega.exigirDisponible(pedido.tipoEntrega());
     Instant ahora = reloj.ahora();
     Map<UUID, UUID> nuevasReservasPorLineaId = reReservar(pedido, ahora);
     pedido.actualizarReservas(nuevasReservasPorLineaId);

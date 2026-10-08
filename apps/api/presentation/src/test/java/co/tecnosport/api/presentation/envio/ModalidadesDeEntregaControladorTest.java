@@ -29,6 +29,15 @@ class ModalidadesDeEntregaControladorTest {
         .andExpect(jsonPath("$.retiroEnPunto").value(false));
   }
 
+  /** La otra cara: un controlador que devolviera `false` fijo pasaría la prueba de arriba. */
+  @Test
+  void conLaRecogidaEncendidaLaOfrece() {
+    ModalidadesDeEntregaControlador controlador =
+        new ModalidadesDeEntregaControlador(new ModalidadesDeEntrega(true));
+
+    org.junit.jupiter.api.Assertions.assertTrue(controlador.consultarModalidades().retiroEnPunto());
+  }
+
   @TestConfiguration
   static class Configuracion {
     @Bean

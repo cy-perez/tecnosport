@@ -23,7 +23,8 @@ public class ModalidadesDeEntregaControlador {
   }
 
   @GetMapping
-  public ModalidadesDeEntregaRespuesta consultar() {
-    return new ModalidadesDeEntregaRespuesta(true, modalidadesDeEntrega.retiroEnPunto());
+  public ModalidadesDeEntregaRespuesta consultarModalidades() {
+    return new ModalidadesDeEntregaRespuesta(
+        modalidadesDeEntrega.envioADomicilio(), modalidadesDeEntrega.retiroEnPunto());
   }
 }

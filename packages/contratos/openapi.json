@@ -4317,7 +4317,7 @@
     },
     "/api/v1/admin/envios/referencias" : {
       "get" : {
-        "operationId" : "consultar_1",
+        "operationId" : "consultar",
         "responses" : {
           "200" : {
             "content" : {
@@ -7447,7 +7447,7 @@
     },
     "/api/v1/envios/modalidades" : {
       "get" : {
-        "operationId" : "consultar",
+        "operationId" : "consultarModalidades",
         "responses" : {
           "200" : {
             "content" : {
