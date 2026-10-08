@@ -43,7 +43,7 @@
     "costo_envio": "Costo de envío",
     "total": "Total a pagar",
     "envio_estimado": "Entrega estimada: {{dias}} días",
-    "envio_calculando": "Calculando el costo de envío…",
+    "envio_calculando": "Calculando el costo de envío… Las transportadoras pueden tardar hasta un minuto en responder.",
     "envio_sin_cobertura": "No tenemos transporte hasta esta dirección. Puedes recoger tu pedido en nuestro punto de Medellín.",
     "articulo_no_asegurable": "{{articulos}} solo está disponible para recogida en nuestro punto, porque su valor supera el máximo que la transportadora puede asegurar.",
     "articulos_no_asegurables": "{{articulos}} solo están disponibles para recogida en nuestro punto, porque su valor supera el máximo que la transportadora puede asegurar.",

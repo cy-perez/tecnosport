@@ -365,11 +365,15 @@ tecnosport:
     # sobrescribe desde Secret Manager.
     client-id: ${SKYDROPX_CLIENT_ID:client_id_pendiente_de_configurar}
     client-secret: ${SKYDROPX_CLIENT_SECRET:client_secret_pendiente_de_configurar}
-    # Parámetros técnicos del sondeo, no datos de negocio: la cotización es asíncrona y hay que
-    # decidir cuánto se espera antes de darla por fallida. Diez segundos es lo que un comprador
-    # tolera mirando un resumen de pedido sin total.
-    cotizacion-timeout-segundos: ${SKYDROPX_COTIZACION_TIMEOUT_SEGUNDOS:10}
-    cotizacion-intentos: ${SKYDROPX_COTIZACION_INTENTOS:8}
+    # Cuánto se espera a que la cotización asíncrona termine. Fue 10 s con 8 intentos —y los
+    # intentos se acababan a los ~5 s, antes del tope—. El 7 de octubre de 2026 Inter Rapidísimo
+    # empezó a quedarse ~33 s en `pending_to_zone` antes de responder "no aplica", y la cotización
+    # entera no completaba: ningún comprador podía pedir a domicilio. El negocio decidió esperar a
+    # todas las transportadoras antes que cotizar sin las lentas (ADR-0021, punto 5), así que manda
+    # el tope: 45 s, con margen sobre los 33 medidos. Los intentos, uno por segundo, alcanzan para
+    # cubrirlo; solo están para no martillar al proveedor si un día responde al instante.
+    cotizacion-timeout-segundos: ${SKYDROPX_COTIZACION_TIMEOUT_SEGUNDOS:45}
+    cotizacion-intentos: ${SKYDROPX_COTIZACION_INTENTOS:50}
     # El minimo asegurable POR BULTO que exige la plataforma, medido contra la cuenta: un bulto
     # declarado por debajo responde 422 y tumba la cotizacion ENTERA, no ese bulto
     # (docs/13-skydropx-capacidades.md §6.4). Los bultos que quedan por debajo se elevan hasta aqui

@@ -43,7 +43,7 @@
     "costo_envio": "Shipping cost",
     "total": "Total to pay",
     "envio_estimado": "Estimated delivery: {{dias}} days",
-    "envio_calculando": "Calculating shipping cost…",
+    "envio_calculando": "Calculating the shipping cost… Carriers can take up to a minute to respond.",
     "envio_sin_cobertura": "We have no carrier for this address. You can pick up your order at our Medellín location.",
     "articulo_no_asegurable": "{{articulos}} is only available for pickup at our location, because its value is above the maximum the carrier can insure.",
     "articulos_no_asegurables": "{{articulos}} are only available for pickup at our location, because their value is above the maximum the carrier can insure.",

@@ -1,6 +1,5 @@
 package co.tecnosport.api.bootstrap.envio;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
@@ -129,11 +128,14 @@ class OrigenEnApplicationYmlTest {
   }
 
   /**
-   * El retraso del sondeo tiene que caber en el tope, o el tope no sirve de nada. Con 8 intentos y
-   * medio segundo entre ellos hacen falta ~4 segundos, y el tope son 10.
+   * Manda el tope, no los intentos. Hasta el 7 de octubre de 2026 esta prueba exigía lo contrario
+   * —que los intentos cupieran en el tope— y con eso los 8 intentos a medio segundo se acababan a
+   * los ~5 s mientras el tope decía 10: la espera real era la mitad de la escrita, y cuando una
+   * transportadora empezó a tardar 33 s ningún comprador pudo cotizar a domicilio. Con un intento
+   * por segundo, los intentos tienen que alcanzar para cubrir el tope entero (ADR-0021, punto 5).
    */
   @Test
-  void losIntentosDeSondeoCabenEnElTope() throws IOException {
+  void elTopeDeSondeoMandaSobreLosIntentos() throws IOException {
     PropertySource<?> yml = applicationYml();
     int intentos =
         Integer.parseInt(
@@ -142,10 +144,18 @@ class OrigenEnApplicationYmlTest {
         Integer.parseInt(
             valorPorOmision(yml.getProperty("tecnosport.skydropx.cotizacion-timeout-segundos")));
 
-    assertEquals(8, intentos);
     assertTrue(
-        intentos * 0.5 < topeSegundos,
-        "Los " + intentos + " intentos no caben en " + topeSegundos + " segundos.");
+        topeSegundos >= 40,
+        "Inter Rapidísimo tardó ~33 s en completar; un tope de "
+            + topeSegundos
+            + " s no la espera.");
+    assertTrue(
+        intentos * 1.0 >= topeSegundos,
+        "Con un intento por segundo, "
+            + intentos
+            + " intentos se acaban antes de los "
+            + topeSegundos
+            + " s del tope.");
   }
 
   /** Extrae el valor por omisión de un marcador {@code ${VAR:valor}}. */

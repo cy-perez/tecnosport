@@ -1551,6 +1551,12 @@ No se arregla aquí. Es una decisión con dos filos: esperar a que no quede ning
 `pending` alarga el checkout contra un proveedor que ya es lento, y no esperar cobra de
 más. **Va al ADR**, con el tope de segundos que el checkout tolere.
 
+> **Decidido el 7 de octubre de 2026 (`ADR-0021`, punto 5): se espera a todas, hasta 45 s.**
+> Medido ese día contra el host de pruebas, a Bogotá, Cali y Medellín: Envía, Coordinadora y
+> Servientrega tenían precio a los ~7 s, e **Inter Rapidísimo se quedaba en `pending_to_zone`**
+> hasta los ~33 s, para terminar en `not_applicable`. `is_completed` llegaba a los 32,6–33,4 s,
+> y con la ventana de entonces (~5 s reales) ninguna cotización completaba.
+
 #### El `422` de 99 minutes era el mismo bug
 
 Probado con permiso, porque emitir cuesta: se cotizó con el valor declarado en el mínimo
