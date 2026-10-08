@@ -27,7 +27,7 @@
             "pregunta": "¿Al precio publicado se le suma algún impuesto o el envío?",
             "respuesta": [
               "El precio publicado es el valor final de cada producto y no se le suma ningún impuesto: Tecno Sport no es responsable del impuesto sobre las ventas (IVA).",
-              "El envío va aparte. Su costo depende de la ciudad de destino y del tamaño y peso de lo que compras, se calcula al momento de tu compra y te lo mostramos antes de pagar, junto con el precio de cada producto, el subtotal y el total. Si eliges recoger tu pedido en nuestro punto de Medellín, no pagas costo de envío."
+              "El envío va aparte. Su costo depende de la ciudad de destino y del tamaño y peso de lo que compras, se calcula al momento de tu compra y te lo mostramos antes de pagar, junto con el precio de cada producto, el subtotal y el total."
             ]
           },
           {
@@ -54,14 +54,13 @@
             "pregunta": "¿A dónde envían?",
             "respuesta": [
               "Despachamos a todo el territorio nacional a través de empresas de transporte.",
-              "Si no hay empresa de transporte que cubra la dirección que indicaste, te lo decimos en ese momento y podrás recoger el pedido en nuestro punto de Medellín."
+              "Si no hay empresa de transporte que cubra la dirección que indicaste, te lo decimos en ese momento, antes de pagar. Escríbenos por WhatsApp y buscamos otra forma de entregártelo."
             ]
           },
           {
             "pregunta": "¿Cuánto cuesta el envío?",
             "respuesta": [
-              "Se calcula con la ciudad de destino que nos indiques y con el peso y las dimensiones de tu pedido. Te lo mostramos antes de pagar, como un valor separado del precio de los productos.",
-              "Recoger el pedido en nuestro punto de Medellín no tiene costo."
+              "Se calcula con la ciudad de destino que nos indiques y con el peso y las dimensiones de tu pedido. Te lo mostramos antes de pagar, como un valor separado del precio de los productos."
             ]
           },
           {
@@ -74,8 +73,7 @@
           {
             "pregunta": "¿Puedo recoger el pedido en vez de que me lo envíen?",
             "respuesta": [
-              "Sí. Eliges esa opción al comprar y no pagas costo de envío.",
-              "La entrega se coordina contigo por WhatsApp o correo cuando confirmemos el pedido; no hay atención en mostrador."
+              "No. Todos los pedidos se entregan a domicilio a través de una empresa de transporte, y no hay atención en mostrador."
             ]
           },
           {
@@ -154,7 +152,7 @@
     "titulo": "Contáctanos",
     "entradilla": "Estos son todos nuestros canales, con el horario en el que atendemos.",
     "canales_titulo": "Canales de atención",
-    "whatsapp_nota": "La vía más rápida. También la usamos para coordinar las recogidas en Medellín.",
+    "whatsapp_nota": "La vía más rápida.",
     "correo_nota": "Para garantías, retractos y para radicar peticiones, quejas y reclamos.",
     "telefono_nota": "En el mismo horario de atención.",
     "plazos_titulo": "Qué esperar",
@@ -164,8 +162,8 @@
       "Para retractarte tienes cinco (5) días hábiles desde la entrega, y basta con que nos escribas dentro de ese plazo."
     ],
     "vendedor_titulo": "Quién vende",
-    "punto_titulo": "Punto de recogida en Medellín",
-    "punto_nota": "Puedes elegir la recogida al comprar y no pagas costo de envío. La entrega se coordina contigo por WhatsApp o correo cuando confirmemos el pedido; no hay atención en mostrador.",
+    "punto_titulo": "Entregas",
+    "punto_nota": "Todos los pedidos se entregan a domicilio a través de una empresa de transporte. No hay atención en mostrador ni recogida en nuestra dirección.",
     "enlaces_titulo": "También te puede servir",
     "enlace_preguntas": "Preguntas frecuentes",
     "enlace_estado": "Consultar el estado de un pedido",

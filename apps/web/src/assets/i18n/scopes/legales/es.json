@@ -1,8 +1,8 @@
 {
   "comun": {
     "version_etiqueta": "Versión",
-    "version": "2026-09-28",
-    "vigencia": "Vigente desde el 28 de septiembre de 2026.",
+    "version": "2026-10-08",
+    "vigencia": "Vigente desde el 8 de octubre de 2026.",
     "otros_documentos": "Otros documentos legales",
     "titular_aviso": "Este sitio lo opera Cristhian Yurday Pérez Hoyos, NIT 1054994043-9, Carrera 26C # 38B-31, Medellín, Antioquia, Colombia.",
     "traduccion_cortesia": "Este documento está redactado en castellano, que es el idioma en el que rige. La versión en inglés de este sitio es una traducción de cortesía y no produce efectos legales; en caso de discrepancia, prevalece el texto en castellano."
@@ -67,9 +67,7 @@
       },
       {
         "titulo": "7. Finalidades",
-        "parrafos": [
-          "Tratamos tus datos para:"
-        ],
+        "parrafos": ["Tratamos tus datos para:"],
         "lista": [
           "Procesar, confirmar y despachar tu pedido, cotizar el costo del envío con tu ciudad de destino, generar la guía de transporte y mantenerte informado del estado del envío.",
           "Verificar la disponibilidad del pago contraentrega en tu ciudad y coordinar la entrega.",
@@ -112,9 +110,7 @@
       },
       {
         "titulo": "11. Tus derechos",
-        "parrafos": [
-          "Como titular tienes derecho a:"
-        ],
+        "parrafos": ["Como titular tienes derecho a:"],
         "lista": [
           "Conocer, actualizar y rectificar tus datos.",
           "Solicitar prueba de la autorización que otorgaste.",
@@ -185,7 +181,7 @@
         "titulo": "4. Productos, imágenes y precios",
         "parrafos": [
           "Las fotografías de los productos son propias y corresponden a la unidad que vendemos. Las imágenes y los visores de rotación son representaciones a escala del producto real; el color puede variar levemente según la pantalla con la que las mires.",
-          "Todos los precios se muestran en pesos colombianos (COP) y son el valor final de cada producto: Tecno Sport no es responsable del impuesto sobre las ventas (IVA), así que al precio publicado no se le suma ningún impuesto. El precio de cada producto no incluye el costo del envío: ese valor depende de la ciudad de destino y del tamaño y peso de lo que compras, y se calcula al momento de tu compra. Antes de pagar te mostramos el detalle completo: el precio de cada producto, el subtotal, el costo del envío por separado y el total que vas a pagar. Si eliges recoger tu pedido en nuestro punto de Medellín, no pagas costo de envío.",
+          "Todos los precios se muestran en pesos colombianos (COP) y son el valor final de cada producto: Tecno Sport no es responsable del impuesto sobre las ventas (IVA), así que al precio publicado no se le suma ningún impuesto. El precio de cada producto no incluye el costo del envío: ese valor depende de la ciudad de destino y del tamaño y peso de lo que compras, y se calcula al momento de tu compra. Antes de pagar te mostramos el detalle completo: el precio de cada producto, el subtotal, el costo del envío por separado y el total que vas a pagar.",
           "Si por un error evidente de sistema o de digitación un producto aparece con un precio manifiestamente equivocado, te lo informaremos antes de despachar y podrás confirmar la compra al precio correcto o cancelarla sin costo.",
           "Consulta las restricciones de uso y cuidado en la ficha de cada producto; en calzado y ropa deportiva, el uso distinto del previsto puede afectar la garantía."
         ]
@@ -212,12 +208,11 @@
       {
         "titulo": "8. Envío y entrega",
         "parrafos": [
-          "Despachamos a todo el territorio nacional a través de empresas de transporte, y también puedes recoger tu pedido sin costo en nuestro punto de Medellín.",
-          "El costo del envío se calcula con la ciudad de destino que nos indiques y con el peso y las dimensiones de tu pedido. Te lo mostramos antes de pagar, como un valor separado del precio de los productos. Si no hay empresa de transporte que cubra la dirección que indicaste, te lo decimos en ese momento y podrás recoger el pedido en nuestro punto.",
+          "Despachamos a todo el territorio nacional a través de empresas de transporte. Todos los pedidos se entregan a domicilio: no hay recogida en nuestra dirección.",
+          "El costo del envío se calcula con la ciudad de destino que nos indiques y con el peso y las dimensiones de tu pedido. Te lo mostramos antes de pagar, como un valor separado del precio de los productos. Si no hay empresa de transporte que cubra la dirección que indicaste, o si algún producto de tu pedido no se puede enviar a domicilio, te lo decimos en ese momento, antes de pagar: ese pedido no se puede hacer en este sitio, y puedes escribirnos por WhatsApp para buscar otra forma de entregártelo.",
           "No pactamos contigo un plazo de entrega distinto del legal, así que aplica el término de treinta (30) días calendario contados desde la confirmación del pago. Si para un pedido concreto te anunciamos un plazo menor, ese plazo anunciado es el que nos obliga. La fecha estimada que muestra la empresa de transporte al momento de la compra es una estimación suya, no un plazo distinto del que acabamos de indicar.",
           "Cuando despachemos tu pedido te enviaremos un correo con la empresa de transporte que lo lleva y el número de guía, junto con un enlace para consultar el estado de tu pedido cuando quieras. El seguimiento del recorrido del paquete lo hace la empresa de transporte con ese número de guía; nosotros no lo mostramos en este sitio.",
-          "Si no entregamos dentro del plazo aplicable, puedes terminar el contrato y recuperar tu dinero, incluido el costo del envío que hayas pagado.",
-          "También puedes retirar tu pedido en Medellín, en Cra. 26C # 38B-31, barrio La Milagrosa, apto. 401, Medellín, eligiendo esa opción al comprar. La entrega se coordina contigo por WhatsApp o correo cuando confirmemos el pedido; no hay atención en mostrador."
+          "Si no entregamos dentro del plazo aplicable, puedes terminar el contrato y recuperar tu dinero, incluido el costo del envío que hayas pagado."
         ]
       },
       {
@@ -310,9 +305,7 @@
       },
       {
         "titulo": "2. Qué usamos hoy",
-        "parrafos": [
-          "Hoy tecnosport.co usa únicamente lo estrictamente necesario para funcionar:"
-        ],
+        "parrafos": ["Hoy tecnosport.co usa únicamente lo estrictamente necesario para funcionar:"],
         "lista": [
           "Cookie de sesión de refresco: se crea solo si inicias sesión, permite mantenerla abierta sin volver a escribir la contraseña, y dura treinta (30) días. Es de acceso exclusivo del servidor.",
           "Preferencia de tema: recuerda si elegiste el modo claro, el oscuro o el del sistema.",
