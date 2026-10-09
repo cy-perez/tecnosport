@@ -755,9 +755,14 @@ precio**: el costo cambia con cada lista. La variante es configuración × color
 con los atributos RAM, Almacenamiento, SIM y Color, y su SKU es el comienzo del
 id de configuración más ocho caracteres del SHA-256 de configuración y color.
 Una lista repone la existencia **libre** de cada variante que vino a
-`PROVEEDORES_TECNOLOGIA_EXISTENCIA` (2) y deja en cero la libre de las
-configuraciones desaparecidas, sin tocar nunca lo reservado; lo de tecnología
-vence a los `PROVEEDORES_TECNOLOGIA_VENTANA_DISPONIBILIDAD` (7 días).
+`PROVEEDORES_TECNOLOGIA_EXISTENCIA` (2) —si la lista dice colores, solo la de
+esos— y deja en cero la libre de las configuraciones desaparecidas, sin tocar
+nunca lo reservado; lo de tecnología vence a los
+`PROVEEDORES_TECNOLOGIA_VENTANA_DISPONIBILIDAD` (7 días). Una cuarta tabla,
+`lista_tecnologia_importada` (proveedor, SHA-256 del contenido, fecha), hace que
+una lista no entre dos veces ni más vieja que la última. Las configuraciones de
+un borrador no llevan un único por sku: Hibernate las reescribe por posición, y
+lo sostiene el agregado.
 
 ## Convenciones de base de datos
 

@@ -46,8 +46,9 @@ Decisiones del negocio del 08/10/2026:
    siguiente actualiza ese y conserva lo elegido.
 4. **Qué hace una lista** (`ImportarListaDeTecnologia`, en una transacción):
    - modelo que ya se vende → se renueva, cada configuración que vino actualiza
-     su costo y su existencia **libre** vuelve a 2; las configuraciones que el
-     producto no tiene van a un borrador de ese producto;
+     su costo y su existencia **libre** vuelve a 2 por color —solo los colores
+     que la lista dice tener, si los dice; el que no viene queda en 0—; las
+     configuraciones que el producto no tiene van a un borrador de ese producto;
    - modelo que no se vende → su borrador en revisión, sin lo que alguien ya
      rechazó o dejó sin colores al aprobar;
    - configuración desaparecida → pierde lo libre, **nunca lo reservado**;
@@ -55,6 +56,9 @@ Decisiones del negocio del 08/10/2026:
    Qué desapareció lo decide la skill y no la API: solo ella sabe qué bloques
    trae la lista, y una lista parcial no dice que lo que falta se acabó.
    Los libros de inventario se bloquean en orden de id de variante.
+   **Una lista entra una vez y nunca hacia atrás** (`lista_tecnologia_importada`):
+   la misma otra vez repondría lo vendido entre las dos, y una más vieja
+   desharía la de hoy. Una corregida el mismo día, con otro contenido, sí entra.
 5. **La tecnología vence con su propia ventana**, 7 días
    (`PROVEEDORES_TECNOLOGIA_VENTANA_DISPONIBILIDAD`): con los 3 días de los
    mensajes, todo lo de una lista se ocultaría antes de la siguiente.
@@ -67,8 +71,10 @@ Decisiones del negocio del 08/10/2026:
    agotarlo ni renovarlo.
 8. **Las fotos son de referencia, y se dice.** Son del modelo, no de cada color
    ni de la unidad: la ficha de un producto de tecnología lo avisa, y los
-   términos (numerales 4 y 13, versión `2026-10-08.3`) distinguen las fotos
-   propias de ropa, calzado y bolsos de las de referencia de tecnología.
+   términos (numerales 4 y 13, versión `2026-10-08.3`) dicen que las de ropa,
+   calzado y bolsos muestran el producto —tomadas por nosotros o por el
+   proveedor— y que las de tecnología son de referencia, y que lo que no es
+   nuestro pertenece a sus titulares.
 9. **Un proveedor es de una cosa o de la otra.** `Proveedor.entraPorExportacion()`:
    bolsos y ropa por el chat (`PROVEEDOR_DE_LISTAS` si no), tecnología por la
    lista (`PROVEEDOR_SIN_LISTAS` si no).
@@ -78,13 +84,14 @@ Decisiones del negocio del 08/10/2026:
 - El flujo de una lista es: skill (pasos 1-6) → `exportar_lista.py` →
   `importar-lista-tecnologia.mjs` → revisión en `/admin/tecnologia` →
   `importar-lista-tecnologia.mjs --fotos --publicar`.
-- **Los colores de una variante se fijan al aprobar.** Si mañana el proveedor
-  ya no tiene el negro de una configuración pero sí el azul, la lista repone las
-  dos: la disponibilidad es por configuración, no por color. Partirla por color
-  exige que la skill entregue los colores por configuración con la confianza
-  suficiente para retirar uno, y hoy los emojis no la dan.
+- **Los colores que se venden se fijan al aprobar, y la lista los enciende o los
+  apaga.** Si la lista de mañana dice azul y no negro, el negro queda sin
+  existencia libre. Si no dice colores, repone todos: no hay con qué retirar
+  uno. Un color nuevo de una configuración que ya se vende no se propone solo:
+  la importación lo informa (`coloresSinVariante`) y se añade desde el panel.
 - **La lista no mueve el precio de venta.** Avisa cuando el costo nuevo alcanza
-  el precio (`sinMargen`), y alguien decide.
+  el precio (`sinMargen`), y alguien decide. Aprobar exige un precio que supere
+  el costo.
 - Un modelo rechazado no vuelve a proponerse con las mismas configuraciones; una
   configuración nueva del mismo modelo sí.
 - El uso de las fotos y fichas de las marcas y de Icecat queda como punto para

@@ -515,8 +515,11 @@ y el `robots.txt` cierra el sitio a los rastreadores que entrenan IA.
 
 **Qué dice el texto publicado (versión `2026-10-08.3`).** Términos, numerales 4
 y 13: las fotos de tecnología son imágenes de referencia del modelo, tomadas de
-lo que publica la marca o un catálogo de fichas técnicas, y pertenecen a sus
-titulares. No afirma tener licencia ni permiso de las marcas.
+lo que publica la marca o un catálogo de fichas técnicas; las que no tomamos ni
+escribimos nosotros —también las de los proveedores de prendas— pertenecen a
+sus titulares. No afirma tener licencia ni permiso de las marcas, y decir que
+son de sus titulares es reconocer que no son nuestras: es parte de lo que se
+pregunta.
 
 **Las preguntas.**
 
