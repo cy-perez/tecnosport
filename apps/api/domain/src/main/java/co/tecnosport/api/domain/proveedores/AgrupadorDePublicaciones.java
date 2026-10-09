@@ -3,6 +3,7 @@ package co.tecnosport.api.domain.proveedores;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
@@ -35,10 +36,30 @@ import java.util.Objects;
  * de octubre de 2026) la foto del jean de cuero cayó en el jean blanco del mismo minuto. Fuera del
  * empate el orden no cuenta.
  *
+ * <h2>El álbum que llega lejos de su precio</h2>
+ *
+ * <p>Un precio que terminó el reparto <b>sin una sola foto</b> recoge el álbum suelto que tiene
+ * pegado: las fotos que nadie se quedó y que van seguidas, sin otro mensaje en medio, justo antes o
+ * justo después de él. La ventana corta el silencio entre fotos de un mismo envío; no puede cortar
+ * el que hay entre un álbum y su texto cuando no hay nada más en el chat. En la exportación de
+ * D'Osman del 7 de octubre de 2026 el álbum del bolso ejecutivo salió a las 14:24 y el texto a las
+ * 15:01: con la ventana de quince minutos las cinco fotos quedaban sueltas y el borrador salía con
+ * {@code SIN_FOTOS}. Las fotos del álbum siguen pidiendo la ventana entre ellas, el álbum tiene que
+ * llegar a {@link #RESCATE_DE_ALBUM} o menos del precio, y si hay uno a cada lado decide el {@link
+ * OrdenDePublicacion}. Un precio que ya tiene fotos no recoge nada: ahí las sueltas son de otro
+ * anuncio o de ninguno.
+ *
  * <p>Lo que queda fuera —un texto sin precio lejos de todo, una foto huérfana, un audio— no es de
  * ninguna publicación. Se cuenta, y no se inventa un producto para darle sitio.
  */
 public final class AgrupadorDePublicaciones {
+
+  /**
+   * Hasta dónde un precio sin fotos va a buscar su álbum suelto. Parámetro técnico, no de negocio:
+   * cubre los 37 minutos de D'Osman con holgura, y más allá ya no es un álbum que se demoró sino
+   * fotos de otra cosa.
+   */
+  static final Duration RESCATE_DE_ALBUM = Duration.ofHours(1);
 
   private final Duration ventana;
 
@@ -71,6 +92,7 @@ public final class AgrupadorDePublicaciones {
       ultimoAnexado.add(enOrden.get(ancla).enviadoEn());
     }
 
+    boolean[] suelto = new boolean[enOrden.size()];
     int sueltos = 0;
     int anterior = -1; // posición en `anclas` del último precio ya visto
     for (int i = 0; i < enOrden.size(); i++) {
@@ -80,6 +102,7 @@ public final class AgrupadorDePublicaciones {
       }
       MensajeProveedor mensaje = enOrden.get(i);
       if (mensaje.tipo() == TipoMensaje.OTRO) {
+        suelto[i] = true;
         sueltos++;
         continue;
       }
@@ -107,6 +130,7 @@ public final class AgrupadorDePublicaciones {
       } else if (cabeAdelante) {
         elegida = siguiente;
       } else {
+        suelto[i] = true;
         sueltos++;
         continue;
       }
@@ -115,7 +139,54 @@ public final class AgrupadorDePublicaciones {
         ultimoAnexado.set(anterior, cuando);
       }
     }
+
+    for (int k = 0; k < anclas.size(); k++) {
+      PublicacionProveedor publicacion = publicaciones.get(k);
+      if (!publicacion.medios().isEmpty()) {
+        continue;
+      }
+      List<Integer> atras = albumSuelto(enOrden, suelto, anclas.get(k), -1);
+      List<Integer> adelante = albumSuelto(enOrden, suelto, anclas.get(k), 1);
+      List<Integer> album;
+      if (!atras.isEmpty() && !adelante.isEmpty()) {
+        album = orden == OrdenDePublicacion.FOTOS_PRIMERO ? atras : adelante;
+      } else {
+        album = atras.isEmpty() ? adelante : atras;
+      }
+      for (int i : album) {
+        publicacion.anexar(enOrden.get(i));
+        suelto[i] = false;
+        sueltos--;
+      }
+    }
     return new Resultado(publicaciones, sueltos);
+  }
+
+  /**
+   * Las fotos sueltas seguidas que hay pegadas al precio en la dirección dada, en orden de fecha:
+   * la más cercana a {@link #RESCATE_DE_ALBUM} o menos del precio, y cada una de las demás a la
+   * ventana o menos de su vecina. Cualquier otro mensaje en medio corta el álbum.
+   */
+  private List<Integer> albumSuelto(
+      List<MensajeProveedor> enOrden, boolean[] suelto, int ancla, int direccion) {
+    List<Integer> album = new ArrayList<>();
+    Instant vecina = enOrden.get(ancla).enviadoEn();
+    for (int i = ancla + direccion; i >= 0 && i < enOrden.size(); i += direccion) {
+      MensajeProveedor mensaje = enOrden.get(i);
+      if (!suelto[i] || mensaje.tipo() != TipoMensaje.IMAGEN) {
+        break;
+      }
+      Duration tope = album.isEmpty() ? RESCATE_DE_ALBUM : ventana;
+      if (Duration.between(mensaje.enviadoEn(), vecina).abs().compareTo(tope) > 0) {
+        break;
+      }
+      album.add(i);
+      vecina = mensaje.enviadoEn();
+    }
+    if (direccion < 0) {
+      Collections.reverse(album);
+    }
+    return album;
   }
 
   /**
