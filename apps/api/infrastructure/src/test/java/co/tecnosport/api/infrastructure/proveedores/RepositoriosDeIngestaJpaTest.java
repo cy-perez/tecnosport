@@ -10,6 +10,7 @@ import co.tecnosport.api.domain.proveedores.IdExternoDeMensaje;
 import co.tecnosport.api.domain.proveedores.LoteIngesta;
 import co.tecnosport.api.domain.proveedores.MensajeProveedor;
 import co.tecnosport.api.domain.proveedores.OrdenDePublicacion;
+import co.tecnosport.api.domain.proveedores.PHash;
 import co.tecnosport.api.domain.proveedores.Proveedor;
 import co.tecnosport.api.domain.proveedores.ResumenIngesta;
 import co.tecnosport.api.domain.proveedores.TipoMensaje;
@@ -375,5 +376,44 @@ class RepositoriosDeIngestaJpaTest {
     assertThat(leido.estado()).isEqualTo(EstadoLote.DETENIDO);
     assertThat(leido.resumen()).contains(parcial);
     assertThat(lotes.buscarPorId(enCola.id()).orElseThrow().resumen()).isEmpty();
+  }
+
+  /** La marca del chat de caballero sobrevive a guardar y leer, también después de terminar. */
+  @Test
+  void elLoteDelChatDeCaballeroVaYVuelveConSuMarca() {
+    Proveedor proveedor = proveedorGuardado(null);
+    LoteIngesta lote = LoteIngesta.recibirExportacion(proveedor.id(), "p/exportaciones/m.zip", T);
+    lote.marcarChatDeCaballero();
+    lotes.guardar(lote);
+    LoteIngesta otro = LoteIngesta.recibirExportacion(proveedor.id(), "p/exportaciones/g.zip", T);
+    lotes.guardar(otro);
+
+    assertThat(lotes.buscarPorId(lote.id()).orElseThrow().esChatDeCaballero()).isTrue();
+    assertThat(lotes.buscarPorId(otro.id()).orElseThrow().esChatDeCaballero()).isFalse();
+  }
+
+  /** El pHash de una foto se guarda con el mensaje y vuelve igual. */
+  @Test
+  void elPHashDeLaFotoVaYVuelveConElMensaje() {
+    Proveedor proveedor = proveedorGuardado(null);
+    LoteIngesta lote = LoteIngesta.recibirExportacion(proveedor.id(), "p/exportaciones/a.zip", T);
+    lotes.guardar(lote);
+    PHash pHash = PHash.deHex("0123456789abcdef");
+    MensajeProveedor foto =
+        new MensajeProveedor(
+            UUID.randomUUID(),
+            proveedor.id(),
+            lote.id(),
+            new IdExternoDeMensaje("f"),
+            T,
+            TipoMensaje.IMAGEN,
+            null,
+            null,
+            "proveedores/x/f.jpg",
+            false,
+            pHash);
+    mensajes.guardarTodos(List.of(foto));
+
+    assertThat(mensajes.listarDeLote(lote.id()).getFirst().pHash()).contains(pHash);
   }
 }

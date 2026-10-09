@@ -111,7 +111,10 @@ public class RepositorioBorradoresJpa implements RepositorioBorradores {
   @Override
   public List<AnuncioEnRevision> anunciosEnRevision(UUID proveedorId) {
     return jpa.anunciosEnRevision(proveedorId).stream()
-        .map(f -> new AnuncioEnRevision(f.getBorradorId(), f.getTexto(), fotosDe(f)))
+        .map(
+            f ->
+                new AnuncioEnRevision(
+                    f.getBorradorId(), f.getTexto(), fotosDe(f), f.getDeChatDeCaballero()))
         .toList();
   }
 

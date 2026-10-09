@@ -1,9 +1,9 @@
 package co.tecnosport.api.infrastructure.proveedores.whatsapp;
 
 import co.tecnosport.api.application.proveedores.AlmacenDeArchivosDeProveedor;
+import co.tecnosport.api.application.proveedores.ChatExportado;
 import co.tecnosport.api.application.proveedores.ExportacionIlegibleException;
 import co.tecnosport.api.application.proveedores.FuenteDeMensajes;
-import co.tecnosport.api.application.proveedores.MensajeCrudo;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
@@ -16,6 +16,8 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
@@ -35,6 +37,12 @@ import java.util.zip.ZipFile;
  */
 public final class ExportacionChatWhatsApp implements FuenteDeMensajes {
 
+  private static final List<String> PREFIJOS_DEL_NOMBRE =
+      List.of("Chat de WhatsApp con ", "WhatsApp Chat with ", "WhatsApp Chat - ");
+
+  /** «[2/10/26, 4:32:25 p. m.] MERAKI • FICUS 1C-14 & 1C-13 #COMUNIDAD: …» */
+  private static final Pattern REMITENTE_DE_IOS = Pattern.compile("^\\[[^\\]]*\\]\\s*([^:]+):");
+
   private final AlmacenDeArchivosDeProveedor almacen;
   private final long maximoBytesDescomprimidos;
 
@@ -48,7 +56,7 @@ public final class ExportacionChatWhatsApp implements FuenteDeMensajes {
   }
 
   @Override
-  public List<MensajeCrudo> leer(String referenciaArchivo) {
+  public ChatExportado leer(String referenciaArchivo) {
     byte[] zip =
         almacen
             .leer(referenciaArchivo)
@@ -60,11 +68,37 @@ public final class ExportacionChatWhatsApp implements FuenteDeMensajes {
     AnalizadorDeExportacionWhatsApp analizador =
         new AnalizadorDeExportacionWhatsApp(
             nombre -> Optional.ofNullable(contenido.archivos().get(nombre)));
-    return analizador.analizar(contenido.texto());
+    return new ChatExportado(
+        nombreDelChat(contenido.nombreDelTexto(), contenido.texto()),
+        analizador.analizar(contenido.texto()));
+  }
+
+  /**
+   * El nombre del chat. Android lo pone en el del archivo —«Chat de WhatsApp con • M͟E͟R͟A͟K͟I͟
+   * ͟M͟E͟N͟ •….txt»—; iPhone lo llama siempre {@code _chat.txt}, y en un grupo el nombre es el
+   * remitente de la primera línea, la del aviso de cifrado. Nulo si no se puede saber.
+   */
+  static String nombreDelChat(String nombreDelTexto, String texto) {
+    String base =
+        nombreDelTexto.toLowerCase(Locale.ROOT).endsWith(".txt")
+            ? nombreDelTexto.substring(0, nombreDelTexto.length() - 4)
+            : nombreDelTexto;
+    for (String prefijo : PREFIJOS_DEL_NOMBRE) {
+      if (base.regionMatches(true, 0, prefijo, 0, prefijo.length())) {
+        return base.substring(prefijo.length()).strip();
+      }
+    }
+    if (!base.equalsIgnoreCase("_chat")) {
+      return base.strip();
+    }
+    String primera = texto.lines().findFirst().orElse("").replace("‎", "").strip();
+    Matcher m = REMITENTE_DE_IOS.matcher(primera);
+    return m.find() ? m.group(1).strip() : null;
   }
 
   private Contenido descomprimir(byte[] zip) {
     String texto = null;
+    String nombreDelTexto = null;
     int largoDelTexto = -1;
     Map<String, byte[]> archivos = new HashMap<>();
     long total = 0;
@@ -96,6 +130,7 @@ public final class ExportacionChatWhatsApp implements FuenteDeMensajes {
             // Si hubiera más de un .txt —no debería—, se queda el más largo: el chat es el grande.
             if (bytes.length > largoDelTexto) {
               texto = new String(bytes, StandardCharsets.UTF_8);
+              nombreDelTexto = nombre;
               largoDelTexto = bytes.length;
             }
           } else {
@@ -113,7 +148,7 @@ public final class ExportacionChatWhatsApp implements FuenteDeMensajes {
           "El zip no trae ningún archivo .txt con el chat. Exporta el chat de nuevo desde"
               + " WhatsApp, con o sin archivos.");
     }
-    return new Contenido(texto, archivos);
+    return new Contenido(nombreDelTexto, texto, archivos);
   }
 
   private static void borrar(Path temporal) {
@@ -133,5 +168,5 @@ public final class ExportacionChatWhatsApp implements FuenteDeMensajes {
     return barra < 0 ? ruta : ruta.substring(barra + 1);
   }
 
-  private record Contenido(String texto, Map<String, byte[]> archivos) {}
+  private record Contenido(String nombreDelTexto, String texto, Map<String, byte[]> archivos) {}
 }

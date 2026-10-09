@@ -216,7 +216,7 @@ final class ApoyoDeCatalogoParaIngesta {
      * borrador. La prueba que necesita el texto lo conecta con sus publicaciones.
      */
     java.util.function.Function<BorradorProducto, AnuncioEnRevision> comoAnuncio =
-        b -> new AnuncioEnRevision(b.id(), null, b.pHash().stream().toList());
+        b -> new AnuncioEnRevision(b.id(), null, b.pHash().stream().toList(), false);
 
     @Override
     public void guardar(BorradorProducto borrador) {

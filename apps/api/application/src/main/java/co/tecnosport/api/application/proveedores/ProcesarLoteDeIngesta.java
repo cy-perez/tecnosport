@@ -7,6 +7,7 @@ import co.tecnosport.api.domain.proveedores.AgrupadorDePublicaciones;
 import co.tecnosport.api.domain.proveedores.EstadoLote;
 import co.tecnosport.api.domain.proveedores.LoteIngesta;
 import co.tecnosport.api.domain.proveedores.MensajeProveedor;
+import co.tecnosport.api.domain.proveedores.NombreDeChat;
 import co.tecnosport.api.domain.proveedores.PHash;
 import co.tecnosport.api.domain.proveedores.Proveedor;
 import co.tecnosport.api.domain.proveedores.PublicacionProveedor;
@@ -99,7 +100,18 @@ public final class ProcesarLoteDeIngesta {
           lote.referenciaArchivo()
               .orElseThrow(
                   () -> new ExportacionIlegibleException("El lote no tiene archivo que leer."));
-      List<MensajeCrudo> crudos = fuente.leer(referencia);
+      ChatExportado chat = fuente.leer(referencia);
+      List<MensajeCrudo> crudos = chat.mensajes();
+      boolean deCaballero = NombreDeChat.esDeCaballero(chat.nombre());
+      if (deCaballero) {
+        enTransaccionPropia.ejecutar(
+            () -> {
+              LoteIngesta fresco = paraActualizar(lote.id());
+              fresco.marcarChatDeCaballero();
+              repositorioLotes.actualizar(fresco);
+              return fresco;
+            });
+      }
       puntoDeControl(lote.id());
       // Sin transacción a propósito: registrar sube cada foto al bucket, y un lote con dos mil
       // fotos sostendría una conexión durante minutos. Lo único que escribe en la base es un solo
@@ -122,10 +134,18 @@ public final class ProcesarLoteDeIngesta {
 
       // Una consulta por lote y no una por publicación: la lista crece con cada renovación.
       List<HuellaVisual> huellasVisuales = resolver.huellasVisualesDe(proveedor.id());
+      // Los textos del chat de caballero, una vez por lote: con ellos el chat general descarta lo
+      // que ese ya trajo. El propio chat de caballero no los necesita.
+      ChatDelLote chatDelLote =
+          new ChatDelLote(
+              deCaballero,
+              deCaballero
+                  ? List.of()
+                  : repositorioPublicaciones.textosDelChatDeCaballero(proveedor.id()));
       Contador contador = progreso.contador;
       for (PublicacionProveedor publicacion : agrupado.publicaciones()) {
         puntoDeControl(lote.id());
-        resolverUna(publicacion, mensajes, proveedor, huellasVisuales, contador);
+        resolverUna(publicacion, mensajes, proveedor, huellasVisuales, chatDelLote, contador);
       }
 
       ResumenIngesta resumen = progreso.resumen();
@@ -198,6 +218,7 @@ public final class ProcesarLoteDeIngesta {
       Map<UUID, MensajeProveedor> mensajes,
       Proveedor proveedor,
       List<HuellaVisual> huellasVisuales,
+      ChatDelLote chatDelLote,
       Contador contador) {
     List<ExtraccionEvaluada> evaluadas;
     try {
@@ -216,7 +237,13 @@ public final class ProcesarLoteDeIngesta {
           enTransaccionPropia.ejecutar(
               () ->
                   resolver.ejecutar(
-                      publicacion, mensajes, proveedor, evaluadas, pHashes, huellasVisuales));
+                      publicacion,
+                      mensajes,
+                      proveedor,
+                      evaluadas,
+                      pHashes,
+                      huellasVisuales,
+                      chatDelLote));
       for (ResolverBorrador.Resolucion resolucion : resoluciones) {
         switch (resolucion.tipo()) {
           case NUEVO -> contador.nuevos++;

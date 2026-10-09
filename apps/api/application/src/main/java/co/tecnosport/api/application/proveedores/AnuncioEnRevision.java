@@ -11,8 +11,10 @@ import java.util.UUID;
  * saber si un anuncio nuevo es el mismo otra vez.
  *
  * @param texto el del mensaje principal de la publicación; nulo si no tenía
+ * @param deChatDeCaballero si su lote es el chat de caballero del proveedor
  */
-public record AnuncioEnRevision(UUID borradorId, String texto, List<PHash> fotos) {
+public record AnuncioEnRevision(
+    UUID borradorId, String texto, List<PHash> fotos, boolean deChatDeCaballero) {
 
   public AnuncioEnRevision {
     Objects.requireNonNull(borradorId, "Un anuncio en revisión es de un borrador.");

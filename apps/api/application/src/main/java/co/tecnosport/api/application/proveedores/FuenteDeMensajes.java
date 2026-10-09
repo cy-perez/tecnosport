@@ -1,7 +1,5 @@
 package co.tecnosport.api.application.proveedores;
 
-import java.util.List;
-
 /**
  * De dónde salen los mensajes de un lote.
  *
@@ -13,9 +11,10 @@ import java.util.List;
 public interface FuenteDeMensajes {
 
   /**
-   * Todos los mensajes del archivo, en orden de aparición, de cualquier remitente.
+   * El nombre del chat y todos los mensajes del archivo, en orden de aparición, de cualquier
+   * remitente.
    *
    * @throws ExportacionIlegibleException si el archivo no es lo que se esperaba
    */
-  List<MensajeCrudo> leer(String referenciaArchivo);
+  ChatExportado leer(String referenciaArchivo);
 }

@@ -263,6 +263,29 @@ día, y por dos razones distintas:
   comparan **todas contra todas**. Los mensajes de antes no lo tienen; por ellos
   responde la principal que guardó su borrador.
 
+## El chat de caballero (9 de octubre de 2026)
+
+Meraki publica desde el mismo número en dos chats, el general y el de caballero
+(«• M͟E͟R͟A͟K͟I͟ ͟M͟E͟N͟ •»). Los dos se exportan con el mismo contacto, se suben al
+mismo proveedor, y el general repite anuncios del de caballero: la polo Prada
+salió dos veces. El negocio decidió que **lo que el general repite del de
+caballero se descarta, sin comparar fotos**.
+
+- **Cuál es cuál lo dice el nombre del chat**, porque el panel guarda el zip con
+  un nombre aleatorio. Android lo pone en el nombre del `.txt`; el iPhone lo
+  llama `_chat.txt`, y en un grupo el nombre es el remitente de la primera línea.
+  `NombreDeChat` quita los adornos —esas letras subrayadas son caracteres
+  combinados— y busca la palabra suelta «MEN», «CABALLERO» u «HOMBRE», para que
+  «WOMEN» no cuente. El lote queda marcado (`lote_ingesta.chat_de_caballero`,
+  `V94`).
+- **El mismo anuncio es el mismo texto del proveedor**, normalizado como en la
+  regla del repetido.
+- **No depende del orden de subida.** Se suben primero `MerakiMen.zip` y luego
+  `Meraki.zip`, y así el general descarta al llegar lo que el de caballero ya
+  trajo. Si llegan al revés, el borrador del general que siga en revisión se
+  **rechaza** cuando llega el de caballero, con el motivo escrito, y queda el del
+  chat de caballero.
+
 ## Pendientes que este ADR deja escritos
 
 - **La confirmación con el proveedor en los pedidos.** Aprobar un borrador

@@ -165,7 +165,8 @@ public class RepositorioLotesIngestaJpa implements RepositorioLotesIngesta {
         lote.detalleError().orElse(null),
         lote.creadoEn(),
         lote.iniciadoEn().orElse(null),
-        lote.terminadoEn().orElse(null));
+        lote.terminadoEn().orElse(null),
+        lote.esChatDeCaballero());
   }
 
   private static LoteIngesta aDominio(LoteIngestaJpaEntity fila) {
@@ -182,16 +183,21 @@ public class RepositorioLotesIngestaJpa implements RepositorioLotesIngesta {
                 fila.getResumenAgotados(),
                 fila.getResumenDescartes(),
                 fila.getResumenAlertas());
-    return new LoteIngesta(
-        fila.getId(),
-        OrigenIngesta.valueOf(fila.getOrigen()),
-        fila.getProveedorId(),
-        fila.getReferenciaArchivo(),
-        EstadoLote.valueOf(fila.getEstado()),
-        resumen,
-        fila.getDetalleError(),
-        fila.getCreadoEn(),
-        fila.getIniciadoEn(),
-        fila.getTerminadoEn());
+    LoteIngesta lote =
+        new LoteIngesta(
+            fila.getId(),
+            OrigenIngesta.valueOf(fila.getOrigen()),
+            fila.getProveedorId(),
+            fila.getReferenciaArchivo(),
+            EstadoLote.valueOf(fila.getEstado()),
+            resumen,
+            fila.getDetalleError(),
+            fila.getCreadoEn(),
+            fila.getIniciadoEn(),
+            fila.getTerminadoEn());
+    if (fila.isChatDeCaballero()) {
+      lote.marcarChatDeCaballero();
+    }
+    return lote;
   }
 }

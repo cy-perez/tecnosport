@@ -53,10 +53,12 @@ public interface BorradorProductoJpaRepository
                     join mensaje_proveedor mm on mm.id = pm.mensaje_id
                    where pm.publicacion_id = p.id
                      and pm.rol = 'MEDIO'
-                     and mm.phash is not null) as phashes
+                     and mm.phash is not null) as phashes,
+                 l.chat_de_caballero as deChatDeCaballero
             from borrador_producto b
             join publicacion_proveedor p on p.id = b.publicacion_id
             join mensaje_proveedor m on m.id = p.mensaje_principal_id
+            join lote_ingesta l on l.id = p.lote_id
            where b.proveedor_id = :proveedorId
              and b.estado = 'EN_REVISION'
           """,
@@ -72,6 +74,8 @@ public interface BorradorProductoJpaRepository
     String getPhashPrincipal();
 
     String getPhashes();
+
+    boolean getDeChatDeCaballero();
   }
 
   /** Lo que el pHash necesita de un borrador que ya es producto. */

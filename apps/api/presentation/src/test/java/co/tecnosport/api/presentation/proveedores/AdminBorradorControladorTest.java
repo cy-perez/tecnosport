@@ -661,6 +661,12 @@ class AdminBorradorControladorTest {
   }
 
   static final class RepositorioPublicacionesDoble implements RepositorioPublicacionesProveedor {
+
+    @Override
+    public List<String> textosDelChatDeCaballero(UUID proveedorId) {
+      return List.of();
+    }
+
     final Map<UUID, PublicacionProveedor> porId = new LinkedHashMap<>();
 
     @Override

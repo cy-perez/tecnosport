@@ -376,6 +376,7 @@ class RepositorioBorradoresJpaTest {
     assertThat(anuncios.getFirst().borradorId()).isEqualTo(enRevision.id());
     assertThat(anuncios.getFirst().texto()).isEqualTo("*BUSO NAVIDEÑO* $45.000");
     assertThat(anuncios.getFirst().fotos()).containsExactlyInAnyOrder(principal, otra);
+    assertThat(anuncios.getFirst().deChatDeCaballero()).isFalse();
     assertThat(borradores.anunciosEnRevision(UUID.randomUUID())).isEmpty();
 
     enRevision.rechazar("Repetido.");
@@ -664,5 +665,61 @@ class RepositorioBorradoresJpaTest {
         .setParameter(3, categoria)
         .executeUpdate();
     return producto;
+  }
+
+  /**
+   * Los textos del chat de caballero: los del mensaje principal de las publicaciones de esos lotes,
+   * y no los del chat general. Y el anuncio en revisión dice de qué chat viene.
+   */
+  @Test
+  void losTextosDelChatDeCaballeroSonLosDeSusLotes() {
+    proveedor =
+        Proveedor.crear(
+            "Meraki",
+            LineaCatalogo.ROPA,
+            "+57 350",
+            "Meraki",
+            null,
+            OrdenDePublicacion.FOTOS_PRIMERO);
+    proveedores.guardar(proveedor);
+    LoteIngesta deCaballero =
+        LoteIngesta.recibirExportacion(proveedor.id(), "p/exportaciones/men.zip", T);
+    deCaballero.marcarChatDeCaballero();
+    lotes.guardar(deCaballero);
+    LoteIngesta general =
+        LoteIngesta.recibirExportacion(proveedor.id(), "p/exportaciones/g.zip", T);
+    lotes.guardar(general);
+    MensajeProveedor polo =
+        MensajeProveedor.texto(
+            proveedor.id(),
+            deCaballero.id(),
+            new IdExternoDeMensaje("m"),
+            T,
+            "*POLO PRADA* $50.000");
+    MensajeProveedor falda =
+        MensajeProveedor.texto(
+            proveedor.id(), general.id(), new IdExternoDeMensaje("g"), T, "*FALDA* $40.000");
+    mensajes.guardarTodos(List.of(polo, falda));
+    PublicacionProveedor dePolo = PublicacionProveedor.abrir(polo);
+    PublicacionProveedor deFalda = PublicacionProveedor.abrir(falda);
+    publicaciones.guardarTodas(List.of(dePolo, deFalda));
+    borradores.guardar(
+        BorradorProducto.nuevo(
+            dePolo.id(),
+            proveedor.id(),
+            extraido("Camiseta estilo Prada", null),
+            "{}",
+            Dinero.deCop(50000),
+            null,
+            null,
+            null,
+            Set.of(),
+            T));
+
+    assertThat(publicaciones.textosDelChatDeCaballero(proveedor.id()))
+        .containsExactly("*POLO PRADA* $50.000");
+    assertThat(publicaciones.textosDelChatDeCaballero(UUID.randomUUID())).isEmpty();
+    assertThat(borradores.anunciosEnRevision(proveedor.id()).getFirst().deChatDeCaballero())
+        .isTrue();
   }
 }

@@ -53,6 +53,15 @@ import java.util.stream.Collectors;
  * descarta: un borrador de más se elimina en el panel; una prenda descartada no vuelve. Con código
  * de referencia el código basta.
  *
+ * <h2>El chat de caballero (9 de octubre de 2026)</h2>
+ *
+ * <p>Meraki publica desde el mismo número en dos chats, el general y el de caballero, y el general
+ * repite anuncios del otro. Lo que llega en el general con el mismo texto que un anuncio del de
+ * caballero se descarta, sin mirar fotos: es el mismo anuncio y su lugar es el de caballero. Si el
+ * general se procesó primero y ese anuncio ya espera revisión, cuando llega el de caballero aquel
+ * se rechaza con el motivo escrito, y queda el de caballero. Se suben en ese orden —primero el de
+ * caballero— para no tener que rechazar nada, pero el resultado no depende del orden.
+ *
  * <p>Una renovación no crea un borrador para revisar: actualiza la última vista, reactiva el
  * producto si estaba oculto y deja una constancia {@code RENOVACION_APLICADA}. Un agotado sobre un
  * producto existente lo agota de inmediato. Un agotado sobre algo que no está en el catálogo no es
@@ -61,6 +70,9 @@ import java.util.stream.Collectors;
 public final class ResolverBorrador {
 
   private static final String SIN_PRODUCTO = "El extractor no reconoció un producto en el mensaje.";
+
+  static final String VIENE_EN_EL_CHAT_DE_CABALLERO =
+      "El anuncio viene en el chat de caballero del proveedor; se procesa desde ese archivo.";
 
   private final RepositorioBorradores repositorioBorradores;
   private final RepositorioProductosDeProveedor productosDeProveedor;
@@ -142,6 +154,22 @@ public final class ResolverBorrador {
       List<ExtraccionEvaluada> evaluadas,
       List<PHash> pHashes,
       List<HuellaVisual> huellasVisuales) {
+    return ejecutar(
+        publicacion, mensajes, proveedor, evaluadas, pHashes, huellasVisuales, ChatDelLote.unico());
+  }
+
+  /**
+   * Como la de arriba, sabiendo de qué chat viene el lote: la de un proveedor que publica en un
+   * chat general y uno de caballero.
+   */
+  public List<Resolucion> ejecutar(
+      PublicacionProveedor publicacion,
+      Map<UUID, MensajeProveedor> mensajes,
+      Proveedor proveedor,
+      List<ExtraccionEvaluada> evaluadas,
+      List<PHash> pHashes,
+      List<HuellaVisual> huellasVisuales,
+      ChatDelLote chat) {
     if (evaluadas.isEmpty()) {
       return List.of(descartar(publicacion, SIN_PRODUCTO));
     }
@@ -151,9 +179,19 @@ public final class ResolverBorrador {
             .flatMap(MensajeProveedor::textoLegible)
             .orElse(null);
     List<Resolucion> resoluciones = new ArrayList<>(evaluadas.size());
+    boolean vieneEnElDeCaballero =
+        !chat.deCaballero()
+            && chat.textosDeCaballero().stream()
+                .anyMatch(t -> TextoDeAnuncio.mismoAnuncio(t, textoDelAnuncio));
     for (ExtraccionEvaluada evaluada : evaluadas) {
       resoluciones.add(
-          resolverUno(publicacion, proveedor, evaluada, textoDelAnuncio, fotos, huellasVisuales));
+          vieneEnElDeCaballero
+              ? Resolucion.descartada(VIENE_EN_EL_CHAT_DE_CABALLERO)
+              : resolverUno(
+                  publicacion, proveedor, evaluada, textoDelAnuncio, fotos, huellasVisuales));
+    }
+    if (chat.deCaballero()) {
+      rechazarLosDelChatGeneral(proveedor, textoDelAnuncio);
     }
     boolean algunoSeQuedo =
         resoluciones.stream().anyMatch(r -> r.tipo() != TipoDeResolucion.DESCARTADA);
@@ -253,6 +291,25 @@ public final class ResolverBorrador {
     return repositorioBorradores.anunciosEnRevision(proveedor.id()).stream()
         .filter(a -> TextoDeAnuncio.mismoAnuncio(a.texto(), textoDelAnuncio))
         .anyMatch(a -> compartenFoto(a.fotos(), fotos));
+  }
+
+  /**
+   * Los borradores del chat general que esperan revisión con el mismo texto de este anuncio del de
+   * caballero: el general se procesó antes, y ese anuncio es de aquí.
+   */
+  private void rechazarLosDelChatGeneral(Proveedor proveedor, String textoDelAnuncio) {
+    repositorioBorradores.anunciosEnRevision(proveedor.id()).stream()
+        .filter(a -> !a.deChatDeCaballero())
+        .filter(a -> TextoDeAnuncio.mismoAnuncio(a.texto(), textoDelAnuncio))
+        .forEach(
+            a ->
+                repositorioBorradores
+                    .buscarPorIdParaActualizar(a.borradorId())
+                    .ifPresent(
+                        borrador -> {
+                          borrador.rechazar(VIENE_EN_EL_CHAT_DE_CABALLERO);
+                          repositorioBorradores.actualizar(borrador);
+                        }));
   }
 
   /** Si alguna foto de un lado está a la distancia del umbral o menos de alguna del otro. */

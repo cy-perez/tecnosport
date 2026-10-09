@@ -64,6 +64,9 @@ public class LoteIngestaJpaEntity {
   @Column(name = "terminado_en")
   private Instant terminadoEn;
 
+  @Column(name = "chat_de_caballero", nullable = false)
+  private boolean chatDeCaballero;
+
   protected LoteIngestaJpaEntity() {}
 
   public LoteIngestaJpaEntity(
@@ -84,7 +87,8 @@ public class LoteIngestaJpaEntity {
       String detalleError,
       Instant creadoEn,
       Instant iniciadoEn,
-      Instant terminadoEn) {
+      Instant terminadoEn,
+      boolean chatDeCaballero) {
     this.id = id;
     this.origen = origen;
     this.proveedorId = proveedorId;
@@ -103,6 +107,11 @@ public class LoteIngestaJpaEntity {
     this.creadoEn = creadoEn;
     this.iniciadoEn = iniciadoEn;
     this.terminadoEn = terminadoEn;
+    this.chatDeCaballero = chatDeCaballero;
+  }
+
+  public boolean isChatDeCaballero() {
+    return chatDeCaballero;
   }
 
   public UUID getId() {

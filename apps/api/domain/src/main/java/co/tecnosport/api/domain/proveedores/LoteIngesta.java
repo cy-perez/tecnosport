@@ -36,6 +36,12 @@ public final class LoteIngesta {
   private Instant iniciadoEn;
   private Instant terminadoEn;
 
+  /**
+   * Si la exportación es el chat de caballero de un proveedor que publica en dos ({@link
+   * NombreDeChat}). Se sabe al leer el archivo, no al recibirlo: el nombre del chat viene adentro.
+   */
+  private boolean chatDeCaballero;
+
   public LoteIngesta(
       UUID id,
       OrigenIngesta origen,
@@ -136,6 +142,19 @@ public final class LoteIngesta {
    * Solo desde {@code PROCESANDO}: un lote en la cola no tiene trabajo que pausar, y si se pausara
    * ahí retendría la cola en cuanto el hilo llegara a él, sin que nadie lo hubiera visto empezar.
    */
+  /**
+   * Lo marca como el chat de caballero del proveedor: lo que el chat general repita de él se
+   * descarta, y lo que el general ya dejó en revisión se rechaza (9 de octubre de 2026). Marcarlo
+   * otra vez no cambia nada; el adaptador lo usa también para devolverlo como estaba guardado.
+   */
+  public void marcarChatDeCaballero() {
+    this.chatDeCaballero = true;
+  }
+
+  public boolean esChatDeCaballero() {
+    return chatDeCaballero;
+  }
+
   public void pausar() {
     if (estado != EstadoLote.PROCESANDO) {
       throw new ExcepcionDeDominio(

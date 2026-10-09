@@ -77,7 +77,8 @@ class ResolverBorradorTest {
           return new AnuncioEnRevision(
               b.id(),
               mensajes.get(publicacion.mensajePrincipalId()).textoLegible().orElse(null),
-              caso().pHashesDe(publicacion, mensajes));
+              caso().pHashesDe(publicacion, mensajes),
+              false);
         };
   }
 
