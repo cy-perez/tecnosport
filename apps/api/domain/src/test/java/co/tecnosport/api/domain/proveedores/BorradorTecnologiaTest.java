@@ -200,4 +200,60 @@ class BorradorTecnologiaTest {
         Dinero.deCop(650_000),
         hoy.conCosto(Dinero.deCop(650_000), JUEVES.plusSeconds(86_400)).costo());
   }
+
+  @Test
+  void noSeApruebaAlCostoNiPorDebajo() {
+    BorradorTecnologia borrador = nuevo();
+    borrador.elegir(
+        List.of(
+            new BorradorTecnologia.Eleccion("a17-256", List.of("Negro"), Dinero.deCop(67_500))));
+    assertThrows(ExcepcionDeDominio.class, () -> borrador.aprobar(UUID.randomUUID()));
+
+    borrador.elegir(
+        List.of(
+            new BorradorTecnologia.Eleccion("a17-256", List.of("Negro"), Dinero.deCop(675_000))));
+    assertThrows(ExcepcionDeDominio.class, () -> borrador.aprobar(UUID.randomUUID()));
+  }
+
+  @Test
+  void unColorEscritoDosVecesConOtrasMayusculasEsUnoSolo() {
+    BorradorTecnologia borrador =
+        BorradorTecnologia.nuevo(
+            PROVEEDOR, a17(List.of()), List.of(config("a17-256", 660_000)), null, LUNES, LUNES);
+    borrador.elegir(
+        List.of(
+            new BorradorTecnologia.Eleccion(
+                "a17-256", List.of("Negro", " negro", "NEGRO"), Dinero.deCop(849_900))));
+    assertEquals(List.of("Negro"), borrador.configuraciones().getFirst().coloresElegidos());
+  }
+
+  @Test
+  void unColorQueSalioDeLaPaletaSeSueltaDeLaEleccion() {
+    BorradorTecnologia borrador = nuevo();
+    borrador.elegir(
+        List.of(
+            new BorradorTecnologia.Eleccion(
+                "a17-256", List.of("Negro", "Gris"), Dinero.deCop(849_900))));
+
+    borrador.actualizarConLista(
+        a17(List.of("Negro", "Azul")), List.of(config("a17-256", 660_000)), JUEVES);
+
+    assertEquals(List.of("Negro"), borrador.configuraciones().getFirst().coloresElegidos());
+  }
+
+  @Test
+  void unDatoMasLargoQueSuColumnaSeRechazaConMotivo() {
+    assertThrows(
+        ExcepcionDeDominio.class,
+        () ->
+            ConfiguracionTecnologia.deLista(
+                "a17",
+                "Galaxy",
+                "8GB",
+                "256GB",
+                "1 SIM",
+                Dinero.deCop(1),
+                null,
+                List.of("x".repeat(81))));
+  }
 }

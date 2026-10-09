@@ -121,7 +121,7 @@ public final class BorradorTecnologia {
     List<ConfiguracionTecnologia> nuevas = new ArrayList<>();
     for (ConfiguracionTecnologia hoy : configuracionesValidas(deLaLista)) {
       ConfiguracionTecnologia anterior = anteriores.get(hoy.sku());
-      nuevas.add(anterior == null ? hoy : hoy.conLaEleccionDe(anterior));
+      nuevas.add(anterior == null ? hoy : hoy.conLaEleccionDe(anterior, deHoy.paleta()));
     }
     this.modelo = deHoy;
     this.configuraciones.clear();
@@ -155,7 +155,8 @@ public final class BorradorTecnologia {
       List<String> colores = ConfiguracionTecnologia.limpiar(eleccion.colores());
       if (!modelo.paleta().isEmpty()) {
         for (String color : colores) {
-          if (!modelo.paleta().contains(color)) {
+          if (modelo.paleta().stream()
+              .noneMatch(p -> ConfiguracionTecnologia.mismoColor(p, color))) {
             throw new ExcepcionDeDominio(
                 "El color '" + color + "' no está en la paleta de " + modelo.titulo() + ".");
           }
@@ -193,6 +194,12 @@ public final class BorradorTecnologia {
     for (ConfiguracionTecnologia c : vendibles) {
       if (c.precioVenta() == null) {
         throw new ExcepcionDeDominio("Falta el precio de venta de " + c.titulo() + ".");
+      }
+      // Vender al costo no es vender (tools/cargar-catalogo.mjs): un cero de menos al teclear se
+      // publicaría y se vendería con pérdida en cada unidad.
+      if (c.precioVenta().valor().compareTo(c.costoProveedor().valor()) <= 0) {
+        throw new ExcepcionDeDominio(
+            "El precio de venta de " + c.titulo() + " no supera su costo.");
       }
     }
   }

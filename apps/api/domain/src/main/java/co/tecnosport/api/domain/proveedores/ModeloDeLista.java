@@ -2,7 +2,6 @@ package co.tecnosport.api.domain.proveedores;
 
 import co.tecnosport.api.domain.compartido.ExcepcionDeDominio;
 import java.util.List;
-import java.util.Objects;
 
 /**
  * Lo que la skill de listas ya decidió de un modelo de tecnología: el título sin memoria ni SIM, la
@@ -34,21 +33,15 @@ public record ModeloDeLista(
       throw new ExcepcionDeDominio(
           "Un modelo sin descripción no se importa: la skill todavía no terminó su ficha.");
     }
-    idModelo = idModelo.strip();
-    titulo = titulo.strip();
-    marca = enBlancoEsNulo(marca);
-    categoria = enBlancoEsNulo(categoria);
+    idModelo = ConfiguracionTecnologia.exigirLargo(idModelo.strip(), 120, "El id del modelo");
+    titulo = ConfiguracionTecnologia.exigirLargo(titulo.strip(), 200, "El título del modelo");
+    marca = ConfiguracionTecnologia.exigirLargo(enBlancoEsNulo(marca), 80, "La marca");
+    categoria = ConfiguracionTecnologia.exigirLargo(enBlancoEsNulo(categoria), 80, "La categoría");
     descripcion = descripcion.strip();
-    metaDescripcion = enBlancoEsNulo(metaDescripcion);
-    paleta =
-        paleta == null
-            ? List.of()
-            : paleta.stream()
-                .filter(Objects::nonNull)
-                .map(String::strip)
-                .filter(c -> !c.isEmpty())
-                .distinct()
-                .toList();
+    metaDescripcion =
+        ConfiguracionTecnologia.exigirLargo(
+            enBlancoEsNulo(metaDescripcion), 320, "La meta descripción");
+    paleta = ConfiguracionTecnologia.limpiar(paleta);
   }
 
   private static String enBlancoEsNulo(String valor) {

@@ -201,6 +201,15 @@ public final class Proveedor {
     return LINEAS_POR_EXPORTACION.contains(linea);
   }
 
+  /**
+   * Si su catálogo llega por la lista de precios que procesa la skill (ADR-0075). Es lo contrario
+   * de {@link #entraPorExportacion()}, dicho aparte para que quien pregunta por la lista no tenga
+   * que saber qué líneas existen.
+   */
+  public boolean entraPorLista() {
+    return !entraPorExportacion();
+  }
+
   private static OrdenDePublicacion exigirOrden(OrdenDePublicacion orden) {
     if (orden == null) {
       throw new ExcepcionDeDominio(
