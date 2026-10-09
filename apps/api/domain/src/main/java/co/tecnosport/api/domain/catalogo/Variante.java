@@ -5,6 +5,7 @@ import co.tecnosport.api.domain.compartido.ExcepcionDeDominio;
 import co.tecnosport.api.domain.compartido.GeneradorIdentificador;
 import co.tecnosport.api.domain.compartido.Sku;
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -98,6 +99,32 @@ public final class Variante {
     Objects.requireNonNull(paquete, "No se puede medir una variante con un paquete nulo.");
     return new Variante(
         id, sku, precio, tasaIva, codigoBarras, paquete, estado, atributos, setRotacionPropio);
+  }
+
+  /**
+   * La misma variante con un atributo más. Copia, como {@link #medida}, y por lo mismo. No admite
+   * un segundo valor del mismo atributo: una variante es negra o es vino, no las dos.
+   */
+  public Variante conAtributo(ValorAtributo atributo) {
+    Objects.requireNonNull(atributo, "El atributo no puede ser nulo.");
+    if (atributos.stream().anyMatch(a -> a.atributo().id().equals(atributo.atributo().id()))) {
+      throw new ExcepcionDeDominio(
+          "La variante '" + sku.valor() + "' ya tiene " + atributo.atributo().nombre() + ".");
+    }
+    List<ValorAtributo> con = new ArrayList<>(atributos);
+    con.add(atributo);
+    return new Variante(
+        id, sku, precio, tasaIva, codigoBarras, paquete, estado, con, setRotacionPropio);
+  }
+
+  /** Su color, si tiene: el valor del atributo de tipo COLOR. */
+  public Optional<ValorAtributo> color() {
+    return atributos.stream().filter(a -> a.atributo().tipo() == TipoAtributo.COLOR).findFirst();
+  }
+
+  /** Todo lo que la distingue menos el color: la talla, el material. */
+  public List<ValorAtributo> atributosSinColor() {
+    return atributos.stream().filter(a -> a.atributo().tipo() != TipoAtributo.COLOR).toList();
   }
 
   private static BigDecimal validarTasaIva(BigDecimal tasaIva) {

@@ -28,6 +28,7 @@ import {
   ProductosPaginadosAdmin,
   QuitarImagenDeGaleriaAdmin,
   ReordenarGaleriaAdmin,
+  AgregarColorDesdeLaPrincipalAdmin,
   AsignarColorAImagenAdmin,
   UsarImagenComoPrincipalAdmin,
   SubirImagenDeGaleriaAdmin,
@@ -274,6 +275,16 @@ class RepositorioProductosAdminFalso implements RepositorioProductosAdmin {
     this.llamadasAsignarColor.push(comando);
   }
 
+  coloresNuevos: AgregarColorDesdeLaPrincipalAdmin[] = [];
+  falloAlAgregarColor = false;
+
+  async agregarColorDesdeLaPrincipal(comando: AgregarColorDesdeLaPrincipalAdmin): Promise<void> {
+    this.coloresNuevos.push(comando);
+    if (this.falloAlAgregarColor) {
+      throw new Error('falló');
+    }
+  }
+
   async quitarImagenDeGaleria(comando: QuitarImagenDeGaleriaAdmin): Promise<void> {
     this.llamadasQuitarDeGaleria.push(comando);
     if (this.errorAlTocarLaGaleria) {
@@ -482,6 +493,176 @@ describe('EditarProductoAdminPage', () => {
       ]),
     );
     expect(await screen.findAllByText('Color de la foto guardado.')).not.toHaveLength(0);
+  });
+
+  describe('un color nuevo para la foto principal', () => {
+    const URL_PRINCIPAL = 'https://storage.googleapis.com/tecnosport-imagenes-de-prueba/p.jpg';
+
+    /** Un conjunto negro en dos tallas: la paleta de prueba deja Vino como color nuevo. */
+    function conjuntoNegro(): ProductoAdminDetalle {
+      const atributos = (talla: string) => [
+        { nombre: 'Color', valor: 'Negro', colorHex: '#111111' },
+        { nombre: 'Talla', valor: talla, colorHex: null },
+      ];
+      return {
+        ...productoDePrueba(),
+        imagenPrincipalUrl: URL_PRINCIPAL,
+        variantes: [
+          { id: 'v-s', sku: 'PRV-S', atributos: atributos('S-M') },
+          { id: 'v-l', sku: 'PRV-L', atributos: atributos('L-XL') },
+        ],
+      };
+    }
+
+    /** El borrador aprobado sin tono: tallas, ningún color. */
+    function conjuntoSinColor(): ProductoAdminDetalle {
+      return {
+        ...productoDePrueba(),
+        imagenPrincipalUrl: URL_PRINCIPAL,
+        variantes: [
+          {
+            id: 'v-s',
+            sku: 'PRV-S',
+            atributos: [{ nombre: 'Talla', valor: 'S-M', colorHex: null }],
+          },
+        ],
+      };
+    }
+
+    async function abrirColorNuevo(): Promise<HTMLSelectElement> {
+      const principal = (await screen.findByLabelText(
+        'Color de la foto principal',
+      )) as HTMLSelectElement;
+      await screen.findByRole('option', { name: 'Un color nuevo…' });
+      fireEvent.change(principal, { target: { value: '__otro__' } });
+      await screen.findByRole('group', { name: 'Color nuevo para la foto principal' });
+      return principal;
+    }
+
+    async function elegirColor(nombre: string): Promise<void> {
+      fireEvent.click(await screen.findByRole('button', { name: /^Color Elige el color/ }));
+      fireEvent.click(await screen.findByLabelText(nombre));
+    }
+
+    /**
+     * El caso que lo pidió: la principal muestra un color que ninguna otra foto tiene. Se empieza a
+     * vender en él, talla por talla y con las unidades que se escriben.
+     */
+    it('con colores, pide las unidades de cada talla y agrega el color', async () => {
+      const repositorio = new RepositorioProductosAdminFalso(conjuntoNegro());
+      await renderPagina(repositorio);
+      await abrirColorNuevo();
+
+      await elegirColor('Vino');
+      // Negro ya se vende: se elige en el selector de arriba, no aquí.
+      expect(screen.queryByRole('checkbox', { name: 'Negro' })).toBeNull();
+      // Una unidad por talla de entrada, como al aprobar un borrador; se cambia si hay más.
+      expect(
+        (screen.getByLabelText('Unidades disponibles en L-XL') as HTMLInputElement).value,
+      ).toBe('1');
+      fireEvent.input(screen.getByLabelText('Unidades disponibles en S-M'), {
+        target: { value: '4' },
+      });
+      fireEvent.click(screen.getByRole('button', { name: 'Agregar el color' }));
+
+      await vi.waitFor(() =>
+        expect(repositorio.coloresNuevos).toEqual([
+          {
+            productoId: 'p1',
+            color: 'Vino',
+            existencias: [
+              { modeloId: 'v-s', existencia: 4 },
+              { modeloId: 'v-l', existencia: 1 },
+            ],
+          },
+        ]),
+      );
+      expect(await screen.findAllByText('Color de la foto guardado.')).not.toHaveLength(0);
+      expect(
+        screen.queryByRole('group', { name: 'Color nuevo para la foto principal' }),
+      ).toBeNull();
+    });
+
+    it('sin ningún color, sus variantes lo toman y no se piden unidades', async () => {
+      const repositorio = new RepositorioProductosAdminFalso(conjuntoSinColor());
+      await renderPagina(repositorio);
+      await abrirColorNuevo();
+
+      expect(screen.getByText(/todavía no tiene color/)).toBeTruthy();
+      expect(screen.queryByLabelText(/Unidades disponibles/)).toBeNull();
+      await elegirColor('Negro');
+      fireEvent.click(screen.getByRole('button', { name: 'Agregar el color' }));
+
+      await vi.waitFor(() =>
+        expect(repositorio.coloresNuevos).toEqual([
+          { productoId: 'p1', color: 'Negro', existencias: [] },
+        ]),
+      );
+    });
+
+    it('con la caja de una talla vacía no agrega nada y dice qué falta', async () => {
+      const repositorio = new RepositorioProductosAdminFalso(conjuntoNegro());
+      await renderPagina(repositorio);
+      await abrirColorNuevo();
+
+      await elegirColor('Vino');
+      fireEvent.input(screen.getByLabelText('Unidades disponibles en S-M'), {
+        target: { value: '' },
+      });
+      fireEvent.click(screen.getByRole('button', { name: 'Agregar el color' }));
+
+      expect(
+        await screen.findByText('Falta el color o las unidades de alguna talla.'),
+      ).toBeTruthy();
+      expect(repositorio.coloresNuevos).toEqual([]);
+    });
+
+    it('sin color elegido tampoco', async () => {
+      const repositorio = new RepositorioProductosAdminFalso(conjuntoSinColor());
+      await renderPagina(repositorio);
+      await abrirColorNuevo();
+
+      fireEvent.click(screen.getByRole('button', { name: 'Agregar el color' }));
+
+      expect(
+        await screen.findByText('Falta el color o las unidades de alguna talla.'),
+      ).toBeTruthy();
+      expect(repositorio.coloresNuevos).toEqual([]);
+    });
+
+    it('cancelar cierra la caja y el selector vuelve al color que tenía', async () => {
+      const repositorio = new RepositorioProductosAdminFalso(conjuntoNegro());
+      await renderPagina(repositorio);
+      await abrirColorNuevo();
+
+      fireEvent.click(screen.getByRole('button', { name: 'Cancelar' }));
+
+      await vi.waitFor(() =>
+        expect(
+          screen.queryByRole('group', { name: 'Color nuevo para la foto principal' }),
+        ).toBeNull(),
+      );
+      const principal = screen.getByLabelText('Color de la foto principal') as HTMLSelectElement;
+      expect(principal.value).toBe('');
+      expect(repositorio.coloresNuevos).toEqual([]);
+    });
+
+    it('si el servidor lo rechaza, lo dice y deja la caja abierta', async () => {
+      const repositorio = new RepositorioProductosAdminFalso(conjuntoSinColor());
+      repositorio.falloAlAgregarColor = true;
+      await renderPagina(repositorio);
+      await abrirColorNuevo();
+
+      await elegirColor('Negro');
+      fireEvent.click(screen.getByRole('button', { name: 'Agregar el color' }));
+
+      expect(
+        await screen.findByText('No se pudo agregar el color. Intenta de nuevo.'),
+      ).toBeTruthy();
+      expect(
+        screen.getByRole('group', { name: 'Color nuevo para la foto principal' }),
+      ).toBeTruthy();
+    });
   });
 
   it('sin foto principal no hay color que elegir para ella', async () => {

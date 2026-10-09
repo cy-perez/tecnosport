@@ -103,18 +103,69 @@
       }
 
       <!-- Con un solo color también: desde ADR-0069 la ficha solo enseña la principal en su
-           galería si tiene color, y a diferencia de la galería no hay otra foto que la supla. -->
+           galería si tiene color, y a diferencia de la galería no hay otra foto que la supla.
+           Y sin ninguno: un borrador aprobado sin tono deja la principal sin color que elegir, y
+           «Un color nuevo» es la salida — con colores, también, para uno que todavia no se vende. -->
       @if (consulta.data(); as producto) {
-        @if (producto.imagenPrincipalUrl && opcionesColor().length > 0) {
+        @if (producto.imagenPrincipalUrl) {
           @for (version of [versionDeColores()]; track version) {
             <ts-select
               idCampo="color-foto-principal"
               [label]="'admin.productos.editar.imagenPrincipal.color' | transloco"
-              [opciones]="opcionesColor()"
+              [opciones]="opcionesColorPrincipal()"
               [placeholder]="'admin.productos.editar.galeria.todosLosColores' | transloco"
-              [valor]="colorDeImagen({ varianteId: producto.imagenPrincipalVarianteId })"
-              (cambio)="asignarColorPrincipal($event)"
+              [valor]="valorColorPrincipal(producto.imagenPrincipalVarianteId)"
+              (cambio)="elegirOpcionColorPrincipal($event)"
             />
+          }
+          @if (colorNuevoAbierto()) {
+            <fieldset class="flex flex-col gap-12 border border-ts-borde p-16">
+              <legend>{{ 'admin.productos.editar.colorNuevo.titulo' | transloco }}</legend>
+              <p class="m-0 text-ts-texto-suave">
+                {{
+                  (modelosColorNuevo().length > 0
+                    ? 'admin.productos.editar.colorNuevo.ayudaConColores'
+                    : 'admin.productos.editar.colorNuevo.ayudaSinColores'
+                  ) | transloco
+                }}
+              </p>
+              <ts-selector-colores
+                idCampo="color-nuevo-principal"
+                [label]="'admin.productos.editar.colorNuevo.color' | transloco"
+                [ayuda]="'admin.productos.agregarVariante.colorAyuda' | transloco"
+                [obligatorio]="true"
+                [opciones]="paletaColorNuevo()"
+                [seleccion]="colorNuevo()"
+                [textos]="textosColorNuevo()"
+                (seleccionCambio)="elegirColorNuevo($event)"
+              />
+              @for (modelo of modelosColorNuevo(); track modelo.modeloId; let i = $index) {
+                <ts-campo
+                  [idCampo]="'unidades-color-nuevo-' + i"
+                  tipo="number"
+                  [label]="
+                    (modelo.etiqueta
+                      ? 'admin.productos.editar.colorNuevo.unidadesDe'
+                      : 'admin.productos.editar.colorNuevo.unidades'
+                    ) | transloco: { talla: modelo.etiqueta }
+                  "
+                  [obligatorio]="true"
+                  [error]="errorExistencia(i)"
+                  [formControl]="existenciasColorNuevo.at(i)"
+                />
+              }
+              @if (errorColorNuevo(); as mensaje) {
+                <p class="m-0 text-ts-error" role="alert">{{ mensaje }}</p>
+              }
+              <div class="flex flex-wrap gap-8">
+                <ts-boton [ocupado]="guardandoColorNuevo()" (click)="guardarColorNuevo()">
+                  {{ 'admin.productos.editar.colorNuevo.guardar' | transloco }}
+                </ts-boton>
+                <ts-boton variante="secundario" (click)="cancelarColorNuevo()">
+                  {{ 'admin.productos.editar.colorNuevo.cancelar' | transloco }}
+                </ts-boton>
+              </div>
+            </fieldset>
           }
           @if (errorColorPrincipal(); as mensaje) {
             <p class="m-0 text-ts-error" role="alert">{{ mensaje }}</p>

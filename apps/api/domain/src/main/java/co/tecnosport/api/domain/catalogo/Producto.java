@@ -534,6 +534,59 @@ public final class Producto {
     return imagenPrincipal;
   }
 
+  /** Si alguna de sus variantes tiene color. */
+  public boolean tieneColor() {
+    return variantes.stream().anyMatch(v -> v.color().isPresent());
+  }
+
+  /** Si ya se vende en ese color: «negro» es «Negro», y «Negro / Vino» no es «Negro». */
+  public boolean tieneElColor(String color) {
+    return color != null
+        && variantes.stream()
+            .flatMap(v -> v.color().stream())
+            .anyMatch(c -> c.valor().equalsIgnoreCase(color.strip()));
+  }
+
+  /**
+   * Una variante por cada combinación distinta de lo que no es color —en una prenda, una por
+   * talla—, la primera que aparece de cada una. Es el molde de un color nuevo: Rojo S-M copia el
+   * precio y el empaque de la S-M que ya existe, y así un color nuevo trae todas las tallas.
+   */
+  public List<Variante> modelosSinColor() {
+    Map<Set<List<String>>, Variante> porCombinacion = new LinkedHashMap<>();
+    for (Variante variante : variantes) {
+      Set<List<String>> combinacion = new LinkedHashSet<>();
+      for (ValorAtributo atributo : variante.atributosSinColor()) {
+        combinacion.add(List.of(atributo.atributo().id().toString(), atributo.valor()));
+      }
+      porCombinacion.putIfAbsent(combinacion, variante);
+    }
+    return List.copyOf(porCombinacion.values());
+  }
+
+  /**
+   * Le da color a un producto que no tiene ninguno: el mismo a todas sus variantes, que no se
+   * duplican porque ya existen —con su precio y su existencia—. Es el caso de un borrador aprobado
+   * sin tono. Si ya tiene color, un color nuevo son variantes nuevas, y eso no lo hace este método.
+   *
+   * @return las variantes ya coloreadas
+   */
+  public List<Variante> colorearVariantesSinColor(ValorAtributo color) {
+    Objects.requireNonNull(color, "El color no puede ser nulo.");
+    if (color.atributo().tipo() != TipoAtributo.COLOR) {
+      throw new ExcepcionDeDominio("'" + color.atributo().nombre() + "' no es un color.");
+    }
+    if (variantes.isEmpty()) {
+      throw new ExcepcionDeDominio("'" + nombre + "' no tiene variantes a las que dar color.");
+    }
+    if (tieneColor()) {
+      throw new ProductoConColorException(
+          "'" + nombre + "' ya tiene color: uno nuevo se agrega con sus propias variantes.");
+    }
+    variantes.replaceAll(v -> v.conAtributo(color));
+    return List.copyOf(variantes);
+  }
+
   /**
    * Usa una foto de la galería como principal, que es lo que la revisión de un borrador permite al
    * elegir la foto principal entre las del proveedor. <b>Es un intercambio y no una copia</b>: la

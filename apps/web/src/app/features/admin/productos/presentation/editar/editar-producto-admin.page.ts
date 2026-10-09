@@ -12,7 +12,7 @@ import {
   viewChildren,
 } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormArray, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { usarIdiomaActivo } from '../../../../../core/i18n/traductor';
@@ -39,6 +39,12 @@ import { mensajeDeError } from '../../../../../core/errores/mensaje-de-error';
 import { ImagenDeGaleriaAdmin } from '../../domain/producto-admin.model';
 import { esEjeDeTalla, esTallaUnica } from '../../../../catalogo/domain/seleccion-variante';
 import { usarAsignarColorAImagenAdmin } from '../../application/asignar-color-imagen-admin.mutacion';
+import { usarAgregarColorDesdeLaPrincipal } from '../../application/agregar-color-desde-la-principal.mutacion';
+import { coloresDelProducto, modelosSinColor, tieneColor } from '../../domain/colores-del-producto';
+import {
+  TextosSelectorColores,
+  TsSelectorColores,
+} from '../../../../../shared/ui/selector-colores/ts-selector-colores';
 import { usarVerProductoAdmin } from '../../application/ver-producto-admin.consulta';
 import { usarUsarImagenComoPrincipalAdmin } from '../../application/usar-imagen-como-principal-admin.mutacion';
 import {
@@ -50,8 +56,13 @@ import { TsMuestraColor } from '../../../../../shared/ui/muestra-color/ts-muestr
 import {
   ParteDeMuestra,
   separarColores,
+  unirColores,
 } from '../../../../../shared/ui/muestra-color/muestra-color.model';
-import { parteDeColor } from '../../../../catalogo/domain/producto.model';
+import {
+  ColorParaElegir,
+  paletaParaElegir,
+  parteDeColor,
+} from '../../../../catalogo/domain/producto.model';
 import { usarPaletaDeColores } from '../../../../catalogo/application/listar-paleta-colores.consulta';
 import {
   AccionDeProducto,
@@ -87,6 +98,7 @@ import { PanelDeDifusion } from '../../../difusion/presentation/panel-de-difusio
     TsMuestraColor,
     TsSelect,
     TsSelectControl,
+    TsSelectorColores,
   ],
   templateUrl: './editar-producto-admin.page.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -107,6 +119,7 @@ export class EditarProductoAdminPage {
   private readonly mutacionQuitarDeGaleria = usarQuitarImagenDeGaleriaAdmin();
   private readonly mutacionReordenarGaleria = usarReordenarGaleriaAdmin();
   private readonly mutacionColor = usarAsignarColorAImagenAdmin();
+  private readonly mutacionColorNuevo = usarAgregarColorDesdeLaPrincipal();
   private readonly esNavegador = isPlatformBrowser(inject(PLATFORM_ID));
   protected readonly idioma = usarIdiomaActivo();
 
@@ -613,6 +626,150 @@ export class EditarProductoAdminPage {
         },
       },
     );
+  }
+
+  /**
+   * La opción del selector de la principal que abre el color nuevo. Ninguna variante tiene un id
+   * así, y el valor vacío ya es «vale para todos los colores».
+   */
+  protected readonly otroColor = '__otro__';
+
+  /**
+   * Las opciones de la principal: los colores del producto y, al final, uno nuevo. Solo en la
+   * principal: es la foto que el borrador pudo dejar sin color, y un color que ninguna variante
+   * tiene no se puede comprar, así que elegirlo es empezar a venderlo (ver
+   * `AgregarColorDesdeLaPrincipal` en la API).
+   */
+  protected readonly opcionesColorPrincipal = computed<OpcionSelect[]>(() => [
+    ...this.opcionesColor(),
+    {
+      valor: this.otroColor,
+      etiqueta: this.traducir()('admin.productos.editar.colorNuevo.opcion'),
+    },
+  ]);
+
+  protected readonly colorNuevoAbierto = signal(false);
+  protected readonly colorNuevo = signal<readonly string[]>([]);
+  protected readonly errorColorNuevo = signal<string | null>(null);
+  protected readonly guardandoColorNuevo = computed(() => this.mutacionColorNuevo.isPending());
+
+  /** Una caja por talla con las unidades del color nuevo; ninguna si el producto no tiene color. */
+  protected readonly existenciasColorNuevo = new FormArray<FormControl<number | null>>([]);
+
+  /**
+   * Con colores, el nuevo trae una variante por talla y hay que decir cuántas unidades hay de
+   * cada una. Sin ninguno, las variantes que ya existen toman el color con la existencia que ya
+   * tienen, y no se pregunta nada.
+   */
+  protected readonly modelosColorNuevo = computed(() => {
+    const variantes = this.consulta.data()?.variantes ?? [];
+    return tieneColor(variantes) ? modelosSinColor(variantes) : [];
+  });
+
+  /** La paleta, sin los colores en que ya se vende: esos se eligen en el selector de arriba. */
+  protected readonly paletaColorNuevo = computed<ColorParaElegir[]>(() => {
+    const yaEstan = new Set(coloresDelProducto(this.consulta.data()?.variantes ?? []));
+    return paletaParaElegir(this.paleta.data() ?? [], this.idioma()).filter(
+      (color) => !yaEstan.has(color.valor),
+    );
+  });
+
+  protected readonly textosColorNuevo = computed<TextosSelectorColores>(() => {
+    const traducir = this.traducir();
+    return {
+      ninguno: traducir('admin.productos.editar.colorNuevo.elegir'),
+      buscar: traducir('admin.colores.buscar'),
+      maximo: traducir('admin.colores.maximo'),
+      sinResultados: traducir('admin.colores.sinResultados'),
+    };
+  });
+
+  /** Lo que muestra el selector de la principal: «un color nuevo» mientras su caja esté abierta. */
+  protected valorColorPrincipal(varianteId: string | null): string {
+    return this.colorNuevoAbierto() ? this.otroColor : this.colorDeImagen({ varianteId });
+  }
+
+  protected elegirOpcionColorPrincipal(valor: string): void {
+    if (valor === this.otroColor) {
+      this.abrirColorNuevo();
+      return;
+    }
+    this.colorNuevoAbierto.set(false);
+    this.asignarColorPrincipal(valor);
+  }
+
+  private abrirColorNuevo(): void {
+    this.colorNuevo.set([]);
+    this.errorColorNuevo.set(null);
+    this.avisoColorPrincipal.set(false);
+    this.existenciasColorNuevo.clear();
+    // Una caja por talla, en el mismo orden: el índice de la caja es el del modelo. Arranca en una
+    // unidad, como la existencia inicial al aprobar un borrador: el negocio carga de a una prenda
+    // por variante, y la que se vende queda agotada sin tocar las demás.
+    this.modelosColorNuevo().forEach(() =>
+      this.existenciasColorNuevo.push(
+        new FormControl<number | null>(1, [Validators.required, Validators.min(0)]),
+      ),
+    );
+    this.colorNuevoAbierto.set(true);
+  }
+
+  protected elegirColorNuevo(colores: readonly string[]): void {
+    this.colorNuevo.set(colores);
+  }
+
+  /** Cancelar destruye la caja con el botón dentro: el foco vuelve al selector que la abrió. */
+  protected cancelarColorNuevo(): void {
+    this.colorNuevoAbierto.set(false);
+    this.errorColorNuevo.set(null);
+    this.versionDeColores.update((n) => n + 1);
+    this.enfocarDespuesDePintar(() => document.getElementById('color-foto-principal'));
+  }
+
+  protected guardarColorNuevo(): void {
+    if (this.guardandoColorNuevo()) {
+      return;
+    }
+    const enteras = this.existenciasColorNuevo.controls.every((control) =>
+      Number.isInteger(control.value),
+    );
+    if (this.colorNuevo().length === 0 || this.existenciasColorNuevo.invalid || !enteras) {
+      this.existenciasColorNuevo.markAllAsTouched();
+      this.errorColorNuevo.set(this.traducir()('admin.productos.editar.colorNuevo.faltanDatos'));
+      return;
+    }
+    this.errorColorNuevo.set(null);
+    const modelos = this.modelosColorNuevo();
+    this.mutacionColorNuevo.mutate(
+      {
+        productoId: this.id(),
+        color: unirColores(this.colorNuevo()),
+        existencias: modelos.map((modelo, i) => ({
+          modeloId: modelo.modeloId,
+          existencia: this.existenciasColorNuevo.at(i).value ?? 0,
+        })),
+      },
+      {
+        onSuccess: () => {
+          this.colorNuevoAbierto.set(false);
+          this.avisoColorPrincipal.set(true);
+          this.versionDeColores.update((n) => n + 1);
+          this.enfocarDespuesDePintar(() => document.getElementById('color-foto-principal'));
+        },
+        onError: (error: unknown) =>
+          this.errorColorNuevo.set(
+            mensajeDeError(error, this.transloco, 'admin.productos.editar.colorNuevo.error'),
+          ),
+      },
+    );
+  }
+
+  /** El error de una caja de unidades, cuando ya se intentó guardar sin ella. */
+  protected errorExistencia(indice: number): string | null {
+    const control = this.existenciasColorNuevo.at(indice);
+    return control.invalid && control.touched
+      ? this.traducir()('admin.productos.editar.colorNuevo.unidadesInvalidas')
+      : null;
   }
 
   protected asignarColor(imagen: ImagenDeGaleriaAdmin, varianteId: string): void {

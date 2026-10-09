@@ -6,6 +6,7 @@ import { crearClienteAutenticado } from '../../../../core/http/cliente-autentica
 import { SesionStore } from '../../../../core/autenticacion/sesion.store';
 import {
   AgregarVarianteAdmin,
+  AgregarColorDesdeLaPrincipalAdmin,
   AsignarColorAImagenAdmin,
   UsarImagenComoPrincipalAdmin,
   CrearProductoAdmin,
@@ -289,6 +290,23 @@ export class ProductosAdminHttpRepositorio implements RepositorioProductosAdmin 
       },
     );
     exigirExito(respuesta, 'no se pudo marcar el color de la foto');
+  }
+
+  async agregarColorDesdeLaPrincipal(comando: AgregarColorDesdeLaPrincipalAdmin): Promise<void> {
+    const respuesta = await this.cliente.POST(
+      '/api/v1/admin/productos/{id}/imagen-principal/color-nuevo',
+      {
+        params: { path: { id: comando.productoId } },
+        body: {
+          color: comando.color,
+          existencias: comando.existencias.map((e) => ({
+            modeloId: e.modeloId,
+            existencia: e.existencia,
+          })),
+        },
+      },
+    );
+    exigirExito(respuesta, 'no se pudo agregar el color de la foto principal');
   }
 
   async usarImagenComoPrincipal(comando: UsarImagenComoPrincipalAdmin): Promise<void> {

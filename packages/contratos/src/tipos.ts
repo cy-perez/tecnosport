@@ -900,6 +900,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/productos/{id}/imagen-principal/color-nuevo": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["agregarColorDesdeLaPrincipal"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/productos/{id}/imagen-principal/url-subida": {
         parameters: {
             query?: never;
@@ -1904,6 +1920,10 @@ export interface components {
             revisadoEn?: string;
             tipo?: string;
         };
+        AgregarColorDesdeLaPrincipalPeticion: {
+            color: string;
+            existencias: components["schemas"]["ExistenciaPorTalla"][];
+        };
         AgregarImagenDeGaleriaPeticion: {
             altEn?: string;
             altEs?: string;
@@ -2384,6 +2404,12 @@ export interface components {
             sku?: string;
             /** Format: uuid */
             varianteId?: string;
+        };
+        ExistenciaPorTalla: {
+            /** Format: int32 */
+            existencia: number;
+            /** Format: uuid */
+            modeloId: string;
         };
         ExistenciasRespuesta: {
             items?: components["schemas"]["ExistenciaDeVarianteRespuesta"][];
@@ -5037,6 +5063,30 @@ export interface operations {
                 content: {
                     "*/*": components["schemas"]["ImagenRespuesta"];
                 };
+            };
+        };
+    };
+    agregarColorDesdeLaPrincipal: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AgregarColorDesdeLaPrincipalPeticion"];
+            };
+        };
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

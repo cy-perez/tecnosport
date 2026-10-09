@@ -1,5 +1,7 @@
 {
   "errores": {
+    "producto_con_color": "El producto ya se vende en ese color: elígelo en la lista de colores.",
+    "atributo_invalido": "Uno de los valores no sirve para su atributo: un color que no está en la paleta, o un valor fuera de los permitidos.",
     "imagen_producto_invalida": "La galería cambió mientras tanto: recarga la página y vuelve a moverla.",
     "monto_de_reintegro_invalido": "El monto no cabe en lo que queda por devolver de este pedido.",
     "reintegro_requerido": "Falta el monto o el medio del reintegro, y este desenlace devuelve dinero.",
@@ -293,6 +295,21 @@
         "tipoNoSoportado": "Ese tipo de archivo no está soportado. Usa JPEG, PNG o WebP.",
         "subida": "Imagen principal actualizada.",
         "error": "No se pudo subir la imagen. Intenta de nuevo."
+      },
+      "colorNuevo": {
+        "opcion": "Un color nuevo…",
+        "titulo": "Color nuevo para la foto principal",
+        "ayudaConColores": "El producto empieza a venderse en este color: se crea una variante por cada talla, con el precio y el empaque de la que ya existe en esa talla. Cada talla arranca con una unidad; cámbiala si hay más, o pon cero para que se vea agotada.",
+        "ayudaSinColores": "El producto todavía no tiene color: sus variantes toman el que elijas, con las unidades que ya tienen.",
+        "color": "Color",
+        "elegir": "Elige el color",
+        "unidades": "Unidades disponibles",
+        "unidadesDe": "Unidades disponibles en {{talla}}",
+        "unidadesInvalidas": "Escribe un número entero, cero o más.",
+        "faltanDatos": "Falta el color o las unidades de alguna talla.",
+        "guardar": "Agregar el color",
+        "cancelar": "Cancelar",
+        "error": "No se pudo agregar el color. Intenta de nuevo."
       },
       "galeria": {
         "colorGuardado": "Color de la foto guardado.",

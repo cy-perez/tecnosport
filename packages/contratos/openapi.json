@@ -61,6 +61,24 @@
         },
         "type" : "object"
       },
+      "AgregarColorDesdeLaPrincipalPeticion" : {
+        "properties" : {
+          "color" : {
+            "type" : "string"
+          },
+          "existencias" : {
+            "items" : {
+              "$ref" : "#/components/schemas/ExistenciaPorTalla"
+            },
+            "type" : "array"
+          }
+        },
+        "required" : [
+          "color",
+          "existencias"
+        ],
+        "type" : "object"
+      },
       "AgregarImagenDeGaleriaPeticion" : {
         "properties" : {
           "altEn" : {
@@ -1473,6 +1491,23 @@
             "type" : "string"
           }
         },
+        "type" : "object"
+      },
+      "ExistenciaPorTalla" : {
+        "properties" : {
+          "existencia" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "modeloId" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        },
+        "required" : [
+          "existencia",
+          "modeloId"
+        ],
         "type" : "object"
       },
       "ExistenciasRespuesta" : {
@@ -6645,6 +6680,40 @@
               }
             },
             "description" : "OK"
+          }
+        },
+        "tags" : [
+          "admin-producto-controlador"
+        ]
+      }
+    },
+    "/api/v1/admin/productos/{id}/imagen-principal/color-nuevo" : {
+      "post" : {
+        "operationId" : "agregarColorDesdeLaPrincipal",
+        "parameters" : [
+          {
+            "in" : "path",
+            "name" : "id",
+            "required" : true,
+            "schema" : {
+              "format" : "uuid",
+              "type" : "string"
+            }
+          }
+        ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/AgregarColorDesdeLaPrincipalPeticion"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "204" : {
+            "description" : "No Content"
           }
         },
         "tags" : [
