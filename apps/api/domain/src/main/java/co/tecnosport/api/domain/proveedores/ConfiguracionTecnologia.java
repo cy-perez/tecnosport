@@ -42,6 +42,9 @@ public record ConfiguracionTecnologia(
   /** El SKU de una variante cabe en 60 caracteres; deja sitio al guion y a los ocho del resumen. */
   static final int LARGO_DEL_PREFIJO_DE_SKU = 39;
 
+  /** El de la columna, igual que el de un SKU. Los de la skill no pasan de 50. */
+  static final int LARGO_MAXIMO_DEL_ID = 60;
+
   public ConfiguracionTecnologia {
     if (sku == null || sku.isBlank()) {
       throw new ExcepcionDeDominio("Una configuración de tecnología tiene su id.");
@@ -51,6 +54,10 @@ public record ConfiguracionTecnologia(
     }
     Objects.requireNonNull(costoProveedor, "Una configuración de la lista trae su costo.");
     sku = sku.strip();
+    if (sku.length() > LARGO_MAXIMO_DEL_ID) {
+      throw new ExcepcionDeDominio(
+          "El id de configuración '" + sku + "' pasa de " + LARGO_MAXIMO_DEL_ID + " caracteres.");
+    }
     titulo = titulo.strip();
     ram = enBlancoEsNulo(ram);
     almacenamiento = enBlancoEsNulo(almacenamiento);

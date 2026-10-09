@@ -25,6 +25,9 @@ public class RepositorioProveedoresJpa implements RepositorioProveedores {
   private static final List<String> BORRAR_HISTORIAL =
       List.of(
           "delete from borrador_producto where proveedor_id = ?1",
+          // Sus configuraciones se van en cascada. Los vínculos de variante no: sin productos,
+          // que es lo único que deja borrar un proveedor, no queda ninguno.
+          "delete from borrador_tecnologia where proveedor_id = ?1",
           "delete from publicacion_proveedor where proveedor_id = ?1",
           "delete from mensaje_proveedor where proveedor_id = ?1",
           "delete from lote_ingesta where proveedor_id = ?1",
