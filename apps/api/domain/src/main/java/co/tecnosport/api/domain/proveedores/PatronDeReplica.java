@@ -14,6 +14,11 @@ import java.util.regex.Pattern;
  * como «Camiseta estilo Puma - BMW» (decidido por el negocio el 3 de octubre de 2026). El extractor
  * lo detecta también; esto no depende de que lo haga. No confunde un precio ni una medida: «1.100»,
  * «11», «21.1» o «1.15» no son la marca.
+ *
+ * <p>Cuando el mensaje marca la réplica pero no nombra marca ni modelo —«Pantalón Jogger para dama
+ * ✨Calidad 1.1»—, no hay «estilo» que escribir: el título dice «importado», «Pantalón jogger para
+ * dama importado» (decidido por el negocio el 9 de octubre de 2026). Antes el título quedaba
+ * colgando, «Pantalón jogger para dama estilo» ({@link #tituloDeReplica}).
  */
 public final class PatronDeReplica {
 
@@ -43,6 +48,16 @@ public final class PatronDeReplica {
 
   private static final Pattern DIACRITICOS = Pattern.compile("\\p{M}+");
 
+  /** «estilo» al final, sin la marca que debía seguirle. */
+  private static final Pattern ESTILO_COLGANDO =
+      Pattern.compile("\\s*\\bestilo\\W*$", Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE);
+
+  private static final Pattern ESTILO =
+      Pattern.compile("(?<!\\p{L})estilo(?!\\p{L})", Pattern.CASE_INSENSITIVE);
+
+  private static final Pattern IMPORTADO =
+      Pattern.compile("(?<!\\p{L})importad[oa]s?(?!\\p{L})", Pattern.CASE_INSENSITIVE);
+
   private PatronDeReplica() {}
 
   public static boolean esReplica(String texto) {
@@ -65,6 +80,25 @@ public final class PatronDeReplica {
     m.appendTail(sinTripleA);
     String sinUnoAUno = UNO_A_UNO.matcher(sinTripleA).replaceAll(" ");
     return sinUnoAUno.replaceAll("\\s+", " ").strip();
+  }
+
+  /**
+   * El título de una réplica: si nombra la marca —«Tenis estilo Superstar»— queda igual; si no,
+   * termina en «importado», y un «estilo» que quedó colgando al final se cambia por esa palabra.
+   * Nulo si llegó nulo.
+   */
+  public static String tituloDeReplica(String titulo) {
+    if (titulo == null) {
+      return null;
+    }
+    String sinColgar = ESTILO_COLGANDO.matcher(titulo).replaceFirst("").strip();
+    if (sinColgar.isEmpty()) {
+      return titulo;
+    }
+    if (ESTILO.matcher(sinColgar).find() || IMPORTADO.matcher(sinColgar).find()) {
+      return sinColgar;
+    }
+    return sinColgar + " importado";
   }
 
   private static boolean tieneTripleA(String texto) {

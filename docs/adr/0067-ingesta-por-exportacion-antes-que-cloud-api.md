@@ -217,9 +217,9 @@ el «BUSO NAVIDEÑO» de Meraki también pasa a «Buzo».
   propósito: quitar un «-ito» suelto convertiría «bonito» en «bon». Un diminutivo
   nuevo se agrega a la lista con su ejemplo.
 
-## Falda y sudadera (9 de octubre de 2026)
+## Falda y sudadera; la réplica sin marca es «importado» (9 de octubre de 2026)
 
-El lote de La Riverah dejó dos borradores que había que corregir a mano:
+El lote de La Riverah dejó tres borradores que había que corregir a mano:
 
 - **La «Falda plisada» salió con tipo `OTRO`** y la **«Sudadera jogger» como
   buzo**. Los dos tienen categoría en el catálogo, y el tipo no tenía dónde
@@ -227,6 +227,13 @@ El lote de La Riverah dejó dos borradores que había que corregir a mano:
   deportivo —jogger o de sudadera—, no la prenda de arriba, y el prompt lo dice.
   La falda propone «Dama › Faldas» en el panel. La sudadera no propone nada,
   porque hay de dama y de caballero. Una falda short sigue siendo `short`.
+- **«Pantalón jogger para dama estilo»**: el «Calidad 1.1» la marcó como
+  réplica, y la regla de titular «artículo estilo marca» quedó esperando una marca
+  que el mensaje no trae. El negocio decidió que **una réplica sin marca se
+  titula con «importado»**: «Pantalón jogger para dama importado». Lo pide el
+  prompt, y `PatronDeReplica.tituloDeReplica` lo asegura al contrastar con el
+  texto: cambia un «estilo» colgando por «importado», o lo agrega si el título no
+  nombra marca. Un título con marca, o que ya dice «importado», no se toca.
 
 ## Pendientes que este ADR deja escritos
 

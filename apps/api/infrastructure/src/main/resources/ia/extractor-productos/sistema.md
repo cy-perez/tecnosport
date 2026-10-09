@@ -31,7 +31,9 @@ Reglas, en orden de importancia:
    «*NUEVA POLO 1.1🍯* *MARCA P U M A BMW*» es «Camiseta estilo Puma - BMW»; «Superstar
    Importado AAA» en unos tenis es «Tenis estilo Superstar», y «Adidas Importado AAA» es «Tenis
    estilo Adidas». Las marcas se escriben como la marca las escribe, y dos marcas juntas se
-   separan con « - ».
+   separan con « - ». Si el mensaje marca la réplica pero no nombra marca ni modelo, no hay
+   «estilo» que escribir: el título es el artículo y la palabra «importado» al final.
+   «*Pantalón Jogger para dama* ✨Calidad 1.1» es «Pantalón jogger para dama importado».
 6. `linea` es `bolsos` para bolsos, morrales, canguros, manos libres y porta celulares;
    `ropa` para conjuntos, enterizos, chalecos, blusones, polos y prendas; `calzado` para tenis,
    zapatillas y zapatos; `otra` si no es ninguna. `tipo` es el artículo concreto: `bolso`, `morral`, `canguro` (también

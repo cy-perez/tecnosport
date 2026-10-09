@@ -108,14 +108,17 @@ public record ProductoExtraido(
   /**
    * Lo que el texto del mensaje confirma, aunque el extractor no lo haya dicho o lo haya dicho de
    * más: el «sirve hasta» solo si el texto lo escribe, el rango de tallas de un pantalón contado de
-   * 2 en 2, la réplica si el texto trae «1.1» o «AAA», y el código de referencia solo si está
-   * escrito en el texto: identifica el producto, y uno inventado lo confundiría con otro.
+   * 2 en 2, la réplica si el texto trae «1.1» o «AAA» —y entonces el título de una réplica sin
+   * marca dice «importado» ({@link PatronDeReplica#tituloDeReplica})—, y el código de referencia
+   * solo si está escrito en el texto: identifica el producto, y uno inventado lo confundiría con
+   * otro.
    */
   public ProductoExtraido contrastadoCon(String texto) {
+    boolean replica = esReplica || PatronDeReplica.esReplica(texto);
     return new ProductoExtraido(
         esProducto,
         estaAgotado,
-        titulo,
+        replica ? PatronDeReplica.tituloDeReplica(titulo) : titulo,
         linea,
         tipo,
         precioProveedor,
@@ -125,7 +128,7 @@ public record ProductoExtraido(
         material,
         descripcion,
         altEn,
-        esReplica || PatronDeReplica.esReplica(texto),
+        replica,
         confianza,
         notas,
         codigoEscritoEn(texto));
