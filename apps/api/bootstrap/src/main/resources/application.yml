@@ -294,6 +294,8 @@ tecnosport:
     margen-por-linea:
       BOLSOS: ${PROVEEDORES_MARGEN_BOLSOS:1.35}
       ROPA: ${PROVEEDORES_MARGEN_ROPA:1.30}
+      # El de la ropa mientras el negocio no defina uno propio para el calzado (08/10/2026).
+      CALZADO: ${PROVEEDORES_MARGEN_CALZADO:${PROVEEDORES_MARGEN_ROPA:1.30}}
     # Despues del factor, lo que el precio sugerido le gana a cada unidad se lleva a estos topes,
     # en pesos: para todas las lineas y tambien con el factor propio del proveedor (3 de octubre
     # de 2026). Ajustan la sugerencia; quien aprueba puede poner otro precio.

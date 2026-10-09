@@ -71,16 +71,29 @@ class AdminProveedorControladorTest {
 
   /** La regla del dominio llega como 422 y con su mensaje: es lo que el panel enseña. */
   @Test
-  void unaLineaQueNoSeAdmiteEs422() throws Exception {
+  void unaLineaQueNoExisteEs422() throws Exception {
     mockMvc
         .perform(
             post("/api/v1/admin/proveedores")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
-                    "{\"nombre\":\"Tenis\",\"linea\":\"CALZADO\",\"telefonoWhatsApp\":\"+57\","
-                        + "\"nombreEnExportacion\":\"Cel\",\"ordenDePublicacion\":\"FOTOS_PRIMERO\"}"))
-        .andExpect(status().isUnprocessableContent())
-        .andExpect(jsonPath("$.codigo").value("EXCEPCION_DE_DOMINIO"));
+                    "{\"nombre\":\"Juguetes\",\"linea\":\"JUGUETES\",\"telefonoWhatsApp\":\"+57\","
+                        + "\"nombreEnExportacion\":\"Jug\",\"ordenDePublicacion\":\"FOTOS_PRIMERO\"}"))
+        .andExpect(status().isUnprocessableContent());
+  }
+
+  /** El calzado deportivo entra por el chat como la ropa: el extractor ya lo reconoce. */
+  @Test
+  void unProveedorDeCalzadoSeCrea() throws Exception {
+    mockMvc
+        .perform(
+            post("/api/v1/admin/proveedores")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    "{\"nombre\":\"Tenis\",\"linea\":\"CALZADO\",\"telefonoWhatsApp\":\"+57 300\","
+                        + "\"nombreEnExportacion\":\"Tenis\",\"ordenDePublicacion\":\"FOTOS_PRIMERO\"}"))
+        .andExpect(status().is2xxSuccessful())
+        .andExpect(jsonPath("$.linea").value("CALZADO"));
   }
 
   /**

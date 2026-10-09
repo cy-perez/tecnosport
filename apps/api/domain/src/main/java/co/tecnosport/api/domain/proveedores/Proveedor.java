@@ -47,10 +47,14 @@ public final class Proveedor {
 
   /**
    * Las líneas que llegan por la exportación del chat: el extractor, el factor de margen y la
-   * huella visual son de bolsos y de ropa. La tecnología no entra por ahí.
+   * huella visual son de bolsos, de ropa y de calzado. La tecnología no entra por ahí.
+   *
+   * <p>El calzado entró el 08/10/2026: el extractor ya lo reconocía —tenis, tallas de 1 en 1— pero
+   * no había cómo registrar a quien lo surte. Su factor de margen por omisión es el de la ropa
+   * mientras el negocio no defina uno propio ({@code PROVEEDORES_MARGEN_CALZADO}).
    */
   public static final Set<LineaCatalogo> LINEAS_POR_EXPORTACION =
-      EnumSet.of(LineaCatalogo.BOLSOS, LineaCatalogo.ROPA);
+      EnumSet.of(LineaCatalogo.BOLSOS, LineaCatalogo.ROPA, LineaCatalogo.CALZADO);
 
   /**
    * Las líneas de un proveedor. La tecnología se sumó el 08/10/2026: su proveedor manda listas de
@@ -58,7 +62,11 @@ public final class Proveedor {
    * tecnología, no como exportaciones del chat.
    */
   public static final Set<LineaCatalogo> LINEAS_ADMITIDAS =
-      EnumSet.of(LineaCatalogo.BOLSOS, LineaCatalogo.ROPA, LineaCatalogo.TECNOLOGIA);
+      EnumSet.of(
+          LineaCatalogo.BOLSOS,
+          LineaCatalogo.ROPA,
+          LineaCatalogo.CALZADO,
+          LineaCatalogo.TECNOLOGIA);
 
   private final UUID id;
   private String nombre;
@@ -191,7 +199,8 @@ public final class Proveedor {
 
   private static LineaCatalogo exigirLinea(LineaCatalogo linea) {
     if (linea == null || !LINEAS_ADMITIDAS.contains(linea)) {
-      throw new ExcepcionDeDominio("Un proveedor puede ser de bolsos, de ropa o de tecnología.");
+      throw new ExcepcionDeDominio(
+          "Un proveedor puede ser de bolsos, de ropa, de calzado o de tecnología.");
     }
     return linea;
   }

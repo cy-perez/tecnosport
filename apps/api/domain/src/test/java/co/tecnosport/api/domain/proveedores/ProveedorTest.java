@@ -62,21 +62,38 @@ class ProveedorTest {
             .entraPorExportacion());
   }
 
+  /** El calzado deportivo llega por el chat, como la ropa: el extractor ya lo reconoce. */
   @Test
-  void elCalzadoNoTieneProveedor() {
+  void elCalzadoSeAdmiteYEntraPorLaExportacion() {
+    Proveedor tenis =
+        Proveedor.crear(
+            "Tenis",
+            LineaCatalogo.CALZADO,
+            "+57 300",
+            "Tenis",
+            null,
+            OrdenDePublicacion.FOTOS_PRIMERO);
+
+    assertTrue(tenis.entraPorExportacion());
+  }
+
+  @Test
+  void unaLineaSinProveedorSeRechazaNombrandoLasQueSi() {
     ExcepcionDeDominio error =
         assertThrows(
             ExcepcionDeDominio.class,
             () ->
                 Proveedor.crear(
-                    "Tenis",
-                    LineaCatalogo.CALZADO,
+                    "Sin línea",
+                    null,
                     "+57 300",
-                    "Tenis",
+                    "Sin línea",
                     null,
                     OrdenDePublicacion.FOTOS_PRIMERO));
 
-    assertTrue(error.getMessage().contains("bolsos, de ropa o de tecnología"), error.getMessage());
+    assertTrue(
+        error.getMessage().contains("bolsos, de ropa, de calzado o de tecnología"),
+        error.getMessage());
   }
 
   /** 0,35 donde iba 1,35 es un error al teclear, y vendería por debajo del costo. */
@@ -203,7 +220,7 @@ class ProveedorTest {
         () ->
             proveedor.editar(
                 "Meraki",
-                LineaCatalogo.CALZADO,
+                null,
                 "+57",
                 "Meraki",
                 true,
