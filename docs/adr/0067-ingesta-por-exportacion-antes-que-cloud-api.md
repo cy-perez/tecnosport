@@ -140,6 +140,13 @@ El mismo día, el patrón de precio aprendió las formas de La Riverah
 tres de los ocho productos de La Riverah no abrían publicación y sus fotos
 terminaban en el producto vecino, y de Violeta no salía ninguno.
 
+El 9 de octubre aprendió además a **no leer lo tachado**: La Riverah tachó el
+precio por mayor (`~~ PRECIO x MAYOR🤑99.900🥳~~~`) y escribió debajo el que vale
+(`Súper descuento $69.900`), y el borrador habría salido con el tachado. Un tramo
+que abre con virgulillas al principio de la línea o tras un espacio, y cierra en
+la misma línea, se borra antes de buscar; el cierre `55.000~~` va pegado al
+número y no abre nada.
+
 ## El álbum que llega lejos de su precio (9 de octubre de 2026)
 
 La exportación de D'Osman del 7 de octubre trajo el álbum del bolso ejecutivo a
