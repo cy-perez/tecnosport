@@ -897,6 +897,7 @@
     "lineas": {
       "BOLSOS": "Bags",
       "ROPA": "Clothing",
+      "CALZADO": "Sports footwear",
       "TECNOLOGIA": "Technology"
     },
     "ordenesDePublicacion": {

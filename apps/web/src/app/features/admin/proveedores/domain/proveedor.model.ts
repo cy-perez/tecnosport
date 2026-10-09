@@ -1,12 +1,17 @@
 /**
  * La línea del catálogo que surte el proveedor. El backend (`Proveedor.LINEAS_ADMITIDAS`) rechaza
  * cualquier otra, y un proveedor que mande bolsos y ropa se registra dos veces, una por línea,
- * porque el margen y la extracción son distintos. Bolsos y ropa llegan por la exportación del chat;
- * la tecnología, por la lista de precios que procesa la skill (`ADR-0075`).
+ * porque el margen y la extracción son distintos. Bolsos, ropa y calzado llegan por la exportación
+ * del chat; la tecnología, por la lista de precios que procesa la skill (`ADR-0075`).
  */
-export type LineaProveedor = 'BOLSOS' | 'ROPA' | 'TECNOLOGIA';
+export type LineaProveedor = 'BOLSOS' | 'ROPA' | 'CALZADO' | 'TECNOLOGIA';
 
-export const LINEAS_PROVEEDOR: readonly LineaProveedor[] = ['BOLSOS', 'ROPA', 'TECNOLOGIA'];
+export const LINEAS_PROVEEDOR: readonly LineaProveedor[] = [
+  'BOLSOS',
+  'ROPA',
+  'CALZADO',
+  'TECNOLOGIA',
+];
 
 /**
  * En qué orden manda el proveedor las fotos y el texto con el precio de un producto. Solo decide
