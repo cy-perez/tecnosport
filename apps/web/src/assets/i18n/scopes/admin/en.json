@@ -95,6 +95,7 @@
     "ir_a_proveedores": "Suppliers",
     "ir_a_ingestas": "Imports",
     "ir_a_borradores": "Drafts",
+    "ir_a_tecnologia": "Technology",
     "ir_a_referencias_envio": "Shipping weights and sizes"
   },
   "pedidos": {
@@ -969,6 +970,71 @@
       "cancelar": "Cancel",
       "hecho": "Import deleted. Products deleted: {{eliminados}}. Kept because they are published or sold: {{conservados}}.",
       "error": "We could not delete the import. Please try again."
+    }
+  },
+  "tecnologia": {
+    "titulo": "Technology",
+    "explicacion": "The models brought in by the technology supplier's price list. Choose which colors are sold for each configuration and at what price; tomorrow's list will only move the cost and the stock.",
+    "filtroEstado": "Status",
+    "errorLista": "The models could not be loaded. Try again.",
+    "total": "{{total}} model(s)",
+    "ninguno": "There are no models in this status.",
+    "completaProducto": "New configurations of a product already on sale",
+    "revisar": "Review",
+    "revisarModelo": "Review {{modelo}}",
+    "columnas": {
+      "modelo": "Model",
+      "configuraciones": "Configurations",
+      "estado": "Status",
+      "acciones": "Actions"
+    },
+    "detalle": {
+      "miga": "Review",
+      "errorCarga": "The model could not be loaded. Reload the page.",
+      "de": "From {{proveedor}} · model {{modelo}}",
+      "completaProducto": "This model is already on sale: what you approve here is added to its product.",
+      "verProducto": "See the product",
+      "motivoRechazo": "Rejected: {{motivo}}",
+      "ficha": "Product sheet prepared by the skill",
+      "configuraciones": "Configurations",
+      "explicacion": "Check the colors the supplier has for each configuration: each one becomes a variant. A configuration without colors is not sold.",
+      "explicacionSinPaleta": "The official palette of this model is unknown: type the colors the supplier has, separated by commas. A configuration without colors is not sold.",
+      "sugeridos": "The list suggests: {{colores}}",
+      "coloresDe": "Colors of {{configuracion}}",
+      "coloresEscritos": "Colors",
+      "coloresEscritosAyuda": "For example: Black, Light blue",
+      "precioVenta": "Sale price",
+      "ayudaPrecio": "Cost {{costo}} · market price {{mercado}}",
+      "guardar": "Save the selection",
+      "guardando": "Saving…",
+      "guardado": "Selection saved.",
+      "errorGuardar": "The selection could not be saved. Try again."
+    },
+    "aprobar": {
+      "titulo": "Approve",
+      "explicacion": "Creates the product with one variant per checked color. It stays as a draft until it has photos: they come from the model's product sheet folder.",
+      "explicacionExistente": "Adds one variant per checked color to the product.",
+      "marca": "Brand",
+      "categoria": "Category",
+      "sugerida": "The list says: {{valor}}",
+      "seleccionar": "Select an option",
+      "accion": "Save and approve",
+      "aprobando": "Approving…",
+      "hecho": "Approved.",
+      "nadaQueVender": "Check the colors of at least one configuration: otherwise there is nothing to sell.",
+      "faltaPrecio": "Every configuration on sale needs its sale price, in pesos and without decimals.",
+      "faltanMarcaYCategoria": "Choose the catalog brand and category.",
+      "error": "It could not be approved. Try again."
+    },
+    "rechazar": {
+      "titulo": "Reject",
+      "explicacion": "Future lists will not propose these configurations again.",
+      "motivo": "Reason",
+      "accion": "Reject",
+      "rechazando": "Rejecting…",
+      "hecho": "Rejected.",
+      "faltaMotivo": "Write the reason for the rejection.",
+      "error": "It could not be rejected. Try again."
     }
   },
   "borradores": {

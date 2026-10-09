@@ -1,0 +1,239 @@
+<section class="mx-auto max-w-contenido px-16 py-32">
+  <ts-migas [ruta]="migas()" />
+
+  @if (consulta.isPending()) {
+    <ts-esqueleto />
+  } @else if (consulta.isError() || !borrador()) {
+    <p class="text-ts-error" role="alert">
+      {{ 'admin.tecnologia.detalle.errorCarga' | transloco }}
+    </p>
+  } @else if (borrador(); as borrador) {
+    <div class="mb-16 flex flex-wrap items-center gap-12">
+      <h1 class="m-0 font-display text-2xl">{{ borrador.titulo }}</h1>
+      <span [class]="clasesEstado(borrador)">{{ etiquetaEstado(borrador) }}</span>
+    </div>
+
+    <p class="mb-8 text-ts-texto-suave">
+      {{
+        'admin.tecnologia.detalle.de'
+          | transloco: { proveedor: nombreDelProveedor(), modelo: borrador.idModelo }
+      }}
+    </p>
+    @if (completaExistente()) {
+      <p class="mb-24 text-ts-texto-suave">
+        {{ 'admin.tecnologia.detalle.completaProducto' | transloco }}
+        <a
+          class="anillo-foco text-ts-primario"
+          [routerLink]="['/', idioma(), 'admin', 'productos', borrador.productoId, 'editar']"
+          >{{ 'admin.tecnologia.detalle.verProducto' | transloco }}</a
+        >
+      </p>
+    }
+
+    <!-- Siempre en el DOM: la región viva cambia de contenido, no de existencia. -->
+    <p #avisoDecisionRef class="m-0 mb-16 text-ts-exito" role="status" tabindex="-1">
+      @if (aprobado(); as productoId) {
+        {{ 'admin.tecnologia.aprobar.hecho' | transloco }}
+        <a
+          class="anillo-foco text-ts-primario"
+          [routerLink]="['/', idioma(), 'admin', 'productos', productoId, 'editar']"
+          >{{ 'admin.tecnologia.detalle.verProducto' | transloco }}</a
+        >
+      } @else if (rechazado()) {
+        {{ 'admin.tecnologia.rechazar.hecho' | transloco }}
+      }
+    </p>
+
+    @if (borrador.motivoRechazo; as motivo) {
+      <p class="mb-24 rounded-lg border border-ts-borde bg-ts-superficie p-16">
+        {{ 'admin.tecnologia.detalle.motivoRechazo' | transloco: { motivo: motivo } }}
+      </p>
+    }
+
+    <details class="mb-24 rounded-lg border border-ts-borde bg-ts-superficie p-16">
+      <summary class="anillo-foco cursor-pointer font-medio">
+        {{ 'admin.tecnologia.detalle.ficha' | transloco }}
+      </summary>
+      <p class="m-0 mt-12 whitespace-pre-line text-sm">{{ borrador.descripcion }}</p>
+    </details>
+
+    @if (listo()) {
+      <form class="mb-32 flex flex-col gap-16" (submit)="$event.preventDefault(); guardar()">
+        <h2 class="m-0 font-display text-lg">
+          {{ 'admin.tecnologia.detalle.configuraciones' | transloco }}
+        </h2>
+        <p class="m-0 text-sm text-ts-texto-suave">
+          {{
+            (borrador.paleta.length === 0
+              ? 'admin.tecnologia.detalle.explicacionSinPaleta'
+              : 'admin.tecnologia.detalle.explicacion'
+            ) | transloco
+          }}
+        </p>
+
+        @for (configuracion of borrador.configuraciones; track configuracion.sku; let c = $index) {
+          <fieldset
+            class="m-0 flex flex-col gap-12 rounded-lg border border-ts-borde bg-ts-superficie p-16"
+            [disabled]="!editable()"
+          >
+            <legend class="px-4 font-medio">{{ configuracion.titulo }}</legend>
+
+            @if (configuracion.coloresSugeridos.length > 0) {
+              <p class="m-0 text-xs text-ts-texto-suave">
+                {{
+                  'admin.tecnologia.detalle.sugeridos'
+                    | transloco: { colores: configuracion.coloresSugeridos.join(', ') }
+                }}
+              </p>
+            }
+
+            @if (borrador.paleta.length > 0) {
+              <div
+                class="flex flex-wrap gap-16"
+                role="group"
+                [attr.aria-label]="
+                  'admin.tecnologia.detalle.coloresDe'
+                    | transloco: { configuracion: configuracion.titulo }
+                "
+              >
+                @for (color of borrador.paleta; track color; let k = $index) {
+                  <ts-checkbox
+                    [idCasilla]="'color-' + c + '-' + k"
+                    [etiqueta]="color"
+                    [marcado]="marcado(configuracion.sku, color)"
+                    [deshabilitado]="!editable()"
+                    (marcadoCambio)="marcar(configuracion.sku, color, $event)"
+                  />
+                }
+              </div>
+            } @else {
+              <ts-campo
+                [idCampo]="'colores-' + c"
+                [label]="'admin.tecnologia.detalle.coloresEscritos' | transloco"
+                [ayuda]="'admin.tecnologia.detalle.coloresEscritosAyuda' | transloco"
+                [formControl]="controlesDe(configuracion.sku).coloresEscritos"
+              />
+            }
+
+            <ts-campo
+              [idCampo]="'precio-' + c"
+              [label]="'admin.tecnologia.detalle.precioVenta' | transloco"
+              [ayuda]="ayudaDePrecio(configuracion)"
+              [formControl]="controlesDe(configuracion.sku).precio"
+            />
+          </fieldset>
+        }
+
+        @if (editable()) {
+          <p class="m-0 text-ts-exito" role="status">
+            @if (avisoGuardado()) {
+              {{ 'admin.tecnologia.detalle.guardado' | transloco }}
+            }
+          </p>
+          <p class="m-0 text-ts-error" role="alert">{{ errorGuardar() }}</p>
+          <div>
+            <ts-boton
+              variante="secundario"
+              tipo="submit"
+              [ocupado]="guardando()"
+              [etiquetaCargando]="'admin.tecnologia.detalle.guardando' | transloco"
+            >
+              {{ 'admin.tecnologia.detalle.guardar' | transloco }}
+            </ts-boton>
+          </div>
+        }
+      </form>
+    }
+
+    @if (editable()) {
+      <form
+        class="mb-32 flex flex-col gap-16 rounded-lg border border-ts-borde bg-ts-superficie p-16"
+        (submit)="$event.preventDefault(); aprobarBorrador()"
+      >
+        <h2 class="m-0 font-display text-lg">
+          {{ 'admin.tecnologia.aprobar.titulo' | transloco }}
+        </h2>
+        <p class="m-0 text-sm text-ts-texto-suave">
+          {{
+            (completaExistente()
+              ? 'admin.tecnologia.aprobar.explicacionExistente'
+              : 'admin.tecnologia.aprobar.explicacion'
+            ) | transloco
+          }}
+        </p>
+
+        @if (!completaExistente()) {
+          <ts-select
+            idCampo="tecnologia-marca"
+            [label]="'admin.tecnologia.aprobar.marca' | transloco"
+            [ayuda]="
+              borrador.marcaSugerida
+                ? ('admin.tecnologia.aprobar.sugerida'
+                  | transloco: { valor: borrador.marcaSugerida })
+                : null
+            "
+            [opciones]="opcionesMarca()"
+            [placeholder]="'admin.tecnologia.aprobar.seleccionar' | transloco"
+            [obligatorio]="true"
+            [formControl]="marca"
+          />
+          <ts-select
+            idCampo="tecnologia-categoria"
+            [label]="'admin.tecnologia.aprobar.categoria' | transloco"
+            [ayuda]="
+              borrador.categoriaSugerida
+                ? ('admin.tecnologia.aprobar.sugerida'
+                  | transloco: { valor: borrador.categoriaSugerida })
+                : null
+            "
+            [opciones]="opcionesCategoria()"
+            [placeholder]="'admin.tecnologia.aprobar.seleccionar' | transloco"
+            [obligatorio]="true"
+            [formControl]="categoria"
+          />
+        }
+
+        <p class="m-0 text-ts-error" role="alert">{{ errorAprobar() }}</p>
+        <div>
+          <ts-boton
+            variante="primario"
+            tipo="submit"
+            [ocupado]="aprobando()"
+            [etiquetaCargando]="'admin.tecnologia.aprobar.aprobando' | transloco"
+          >
+            {{ 'admin.tecnologia.aprobar.accion' | transloco }}
+          </ts-boton>
+        </div>
+      </form>
+
+      <form
+        class="mb-32 flex flex-col gap-16 rounded-lg border border-ts-borde bg-ts-superficie p-16"
+        (submit)="$event.preventDefault(); rechazarBorrador()"
+      >
+        <h2 class="m-0 font-display text-lg">
+          {{ 'admin.tecnologia.rechazar.titulo' | transloco }}
+        </h2>
+        <p class="m-0 text-sm text-ts-texto-suave">
+          {{ 'admin.tecnologia.rechazar.explicacion' | transloco }}
+        </p>
+        <ts-campo
+          idCampo="tecnologia-motivo"
+          [label]="'admin.tecnologia.rechazar.motivo' | transloco"
+          [obligatorio]="true"
+          [formControl]="motivoRechazo"
+        />
+        <p class="m-0 text-ts-error" role="alert">{{ errorRechazo() }}</p>
+        <div>
+          <ts-boton
+            variante="secundario"
+            tipo="submit"
+            [ocupado]="rechazando()"
+            [etiquetaCargando]="'admin.tecnologia.rechazar.rechazando' | transloco"
+          >
+            {{ 'admin.tecnologia.rechazar.accion' | transloco }}
+          </ts-boton>
+        </div>
+      </form>
+    }
+  }
+</section>
