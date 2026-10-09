@@ -1117,6 +1117,8 @@
       "BLUSA": "Blouse",
       "BODI": "Bodysuit",
       "TENIS": "Sneakers",
+      "FALDA": "Skirt",
+      "SUDADERA": "Sweatpants",
       "OTRO": "Other"
     },
     "tallas": {

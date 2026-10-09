@@ -37,9 +37,11 @@ Reglas, en orden de importancia:
    zapatillas y zapatos; `otra` si no es ninguna. `tipo` es el artículo concreto: `bolso`, `morral`, `canguro` (también
    «manos libres»), `conjunto_pantalon`, `conjunto_short`, `enterizo`, `polo`, `camiseta`,
    `buso`, `chaqueta`, `pantalon`, `short`, `vestido`, `blusa`, `bodi` (también «body»), `tenis`
-   (también zapatillas deportivas); `otro` solo si no encaja en ninguno. Un diminutivo es su
-   artículo: «busito» es `buso`, «blusita» es `blusa`. Un chaleco o un blazer son `otro`: no
-   son ni chaqueta ni blusa.
+   (también zapatillas deportivas), `falda`, `sudadera`; `otro` solo si no encaja en ninguno.
+   Una sudadera, en Colombia, es el pantalón deportivo —jogger o de sudadera—: «Sudadera Jogger
+   para dama» es `sudadera`, no `buso`, que es la prenda de arriba. Una falda short o una
+   faldashort es `short`. Un diminutivo es su artículo: «busito» es `buso`, «blusita» es
+   `blusa`. Un chaleco o un blazer son `otro`: no son ni chaqueta ni blusa.
 7. El precio es un entero en pesos colombianos: «53.000» es `53000`, «$45.000» es `45000`,
    «🤑🤑*55.000*» es `55000`. Dos o tres cifras pegadas a 💲 están en miles: «💲124» es
    `124000` y «💲52» es `52000`; «💲119900» ya viene completo. Si un producto tiene dos

@@ -217,6 +217,17 @@ el «BUSO NAVIDEÑO» de Meraki también pasa a «Buzo».
   propósito: quitar un «-ito» suelto convertiría «bonito» en «bon». Un diminutivo
   nuevo se agrega a la lista con su ejemplo.
 
+## Falda y sudadera (9 de octubre de 2026)
+
+El lote de La Riverah dejó dos borradores que había que corregir a mano:
+
+- **La «Falda plisada» salió con tipo `OTRO`** y la **«Sudadera jogger» como
+  buzo**. Los dos tienen categoría en el catálogo, y el tipo no tenía dónde
+  ponerlos. Entran `FALDA` y `SUDADERA`. En Colombia la sudadera es el pantalón
+  deportivo —jogger o de sudadera—, no la prenda de arriba, y el prompt lo dice.
+  La falda propone «Dama › Faldas» en el panel. La sudadera no propone nada,
+  porque hay de dama y de caballero. Una falda short sigue siendo `short`.
+
 ## Pendientes que este ADR deja escritos
 
 - **La confirmación con el proveedor en los pedidos.** Aprobar un borrador

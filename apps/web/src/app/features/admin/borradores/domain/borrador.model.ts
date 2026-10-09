@@ -28,6 +28,8 @@ export type TipoProductoProveedor =
   | 'BLUSA'
   | 'BODI'
   | 'TENIS'
+  | 'FALDA'
+  | 'SUDADERA'
   | 'OTRO';
 
 export const TIPOS_PRODUCTO_PROVEEDOR: readonly TipoProductoProveedor[] = [
@@ -47,6 +49,8 @@ export const TIPOS_PRODUCTO_PROVEEDOR: readonly TipoProductoProveedor[] = [
   'BLUSA',
   'BODI',
   'TENIS',
+  'FALDA',
+  'SUDADERA',
   'OTRO',
 ];
 
@@ -59,6 +63,7 @@ export const CATEGORIA_SUGERIDA_POR_TIPO: Readonly<Partial<Record<TipoProductoPr
   {
     BLUSA: 'ropa-dama-blusas',
     BODI: 'ropa-dama-bodis',
+    FALDA: 'ropa-dama-faldas',
   };
 
 /**
