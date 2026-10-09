@@ -731,7 +731,9 @@ huella_proveedor)` es lo que hace que la renovación encuentre su producto.
 
 El precio de venta que se sugiere es `precio_proveedor × factor de margen`,
 redondeado a la centena con `HALF_UP`; el factor sale del proveedor y, si no lo
-tiene, de la línea (`PROVEEDORES_MARGEN_BOLSOS`, `PROVEEDORES_MARGEN_ROPA`).
+tiene, de la línea (`PROVEEDORES_MARGEN_BOLSOS`, `PROVEEDORES_MARGEN_ROPA`,
+`PROVEEDORES_MARGEN_CALZADO`; el del calzado es el de la ropa mientras el
+negocio no defina uno propio).
 Aprobar crea el producto **con una variante por cada tono y talla**, copia las
 fotos del bucket privado al público y registra la existencia inicial que el
 panel indique como un movimiento de `ENTRADA`. Lo que deja de verse es asunto de
@@ -741,8 +743,8 @@ panel indique como un movimiento de `ENTRADA`. Lo que deja de verse es asunto de
 
 Desde el 8 de octubre de 2026 el proveedor de tecnología no entra por el chat:
 su lista la procesa la skill `listas-de-proveedor` y se importa por la API
-(`ADR-0075`). `Proveedor` admite la línea `TECNOLOGIA`, pero solo bolsos y ropa
-entran por la exportación (`entraPorExportacion()`). Tres tablas (`V92`):
+(`ADR-0075`). `Proveedor` admite la línea `TECNOLOGIA`, pero solo bolsos, ropa y
+calzado entran por la exportación (`entraPorExportacion()`). Tres tablas (`V92`):
 
 | Tabla | Contenido | Nota |
 |---|---|---|

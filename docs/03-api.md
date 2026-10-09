@@ -415,10 +415,12 @@ PATCH /api/v1/admin/variantes/{id}/existencia                registra un conteo 
 POST /api/v1/admin/productos/{id}/imagen-principal/url-subida  pide una URL firmada V4 de subida a Cloud Storage
 POST /api/v1/admin/productos/{id}/imagen-principal            confirma la subida, reemplaza la principal y borra la anterior del bucket
 PUT /api/v1/admin/productos/{id}/imagen-principal/variante   de qué color es la principal ({varianteId} o null); 204, 400 si no hay principal o la variante es ajena
+PUT /api/v1/admin/productos/{id}/tallas/{modeloId}           corrige la talla ({talla}) del modelo de esa variante en todos sus colores; el SKU no cambia;
+                                                             204, 422 TALLA_REPETIDA si algún color ya la tiene
 POST /api/v1/admin/productos/{id}/galeria/url-subida         igual que la principal, con su propio prefijo: la limpieza de una no toca a la otra
 POST /api/v1/admin/productos/{id}/galeria                    confirma y suma a la galería; 409 si la foto ya está o si no caben más (adr/0052)
 DELETE /api/v1/admin/productos/{id}/galeria/{imagenId}       la saca de la ficha y borra su objeto; 204, y 404 si no era de ese producto
-GET/POST /api/v1/admin/proveedores                           los proveedores de WhatsApp, y crear uno; la línea es BOLSOS o ROPA y ordenDePublicacion
+GET/POST /api/v1/admin/proveedores                           los proveedores de WhatsApp, y crear uno; la línea es BOLSOS, ROPA, CALZADO o TECNOLOGIA y ordenDePublicacion
                                                              (FOTOS_PRIMERO o TEXTO_PRIMERO) es obligatorio, también al editar
 GET/PUT /api/v1/admin/proveedores/{id}                       ficha y edición; desactivarlo es lo que impide subirle exportaciones
 DELETE /api/v1/admin/proveedores/{id}                        con su historial de ingesta; 409 si algún producto salió de él (`productos` dice cuántos) o si tiene un lote abierto
