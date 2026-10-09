@@ -12,7 +12,9 @@ producto. Nunca al revés, y nunca "de memoria". Decisión del negocio del
 comercial del contenido y casi todos el acceso automatizado, y el negocio asume
 ese riesgo por lo esporádico de la consulta —las fichas iniciales y después solo
 los modelos nuevos—. Lo que no se asume es eludir una barrera técnica: ver
-«Qué marcas se leen de forma automática».
+«Qué marcas se leen de forma automática». Si ese riesgo es defendible es el
+numeral 8 de `docs/14-consultas-al-abogado.md`, junto con las cláusulas de
+Icecat que más pesan.
 
 ---
 

@@ -443,6 +443,35 @@ tomado del bloque PRECIOS DE VENTA (línea 530…)»—: son de esa lista y ser�
 falsos en la siguiente. Si escribes un supuesto que sí vale para el producto,
 no lo ates a una línea ni a un precio.
 
+### 6b. Llevarla al catálogo
+
+La lista mueve el catálogo por la API, no a mano (`docs/adr/0075`):
+
+```bash
+python3 scripts/exportar_lista.py catalogo/productos.json --salida catalogo/lista-api.json
+node tools/importar-lista-tecnologia.mjs catalogo/lista-api.json --proveedor <id>             # simula
+node tools/importar-lista-tecnologia.mjs catalogo/lista-api.json --proveedor <id> --escribir
+```
+
+Solo se exportan los modelos con descripción; los demás se dicen. Lo que ya se
+vende se renueva —costo del día y 2 unidades libres por color—, lo desaparecido
+deja de ofrecerse, y lo nuevo queda como borrador en `/admin/tecnologia`, donde
+la persona marca los colores que hay de cada configuración y fija el precio de
+venta. **La lista no toca el precio de venta**: si la salida avisa que el costo
+alcanzó el precio, dilo en la entrega.
+
+Cuando la persona haya aprobado en el panel:
+
+```bash
+node tools/importar-lista-tecnologia.mjs --fotos --publicar             # simula
+node tools/importar-lista-tecnologia.mjs --fotos --publicar --escribir
+```
+
+Sube la principal y la galería de cada modelo aprobado que todavía no tiene
+imagen, desde `Fotos procesadas/` de su carpeta, y lo publica. Un modelo sin
+fotos procesadas se queda en borrador y se dice. La sesión es `--token` o
+`TS_TOKEN_ADMIN`; no la pidas por terminal.
+
 ### 7. Entregar
 
 Preséntale los dos archivos y, en dos o tres líneas, lo que necesita saber:
