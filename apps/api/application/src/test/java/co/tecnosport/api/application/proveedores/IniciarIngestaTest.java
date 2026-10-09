@@ -9,10 +9,12 @@ import co.tecnosport.api.application.proveedores.ApoyoDeIngesta.AlmacenEnMemoria
 import co.tecnosport.api.application.proveedores.ApoyoDeIngesta.RepositorioLotesEnMemoria;
 import co.tecnosport.api.application.proveedores.ApoyoDeIngesta.RepositorioProveedoresEnMemoria;
 import co.tecnosport.api.domain.catalogo.LineaCatalogo;
+import co.tecnosport.api.domain.proveedores.ChatDelZip;
 import co.tecnosport.api.domain.proveedores.EstadoLote;
 import co.tecnosport.api.domain.proveedores.LoteIngesta;
 import co.tecnosport.api.domain.proveedores.OrdenDePublicacion;
 import co.tecnosport.api.domain.proveedores.Proveedor;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
@@ -150,5 +152,32 @@ class IniciarIngestaTest {
     assertThrows(
         ProveedorNoEncontradoException.class,
         () -> caso.ejecutar(new IniciarIngestaComando(UUID.randomUUID(), key)));
+  }
+
+  /**
+   * Meraki sube sus dos chats en un zip: dos lotes sobre el mismo archivo, el de caballero primero
+   * y un milisegundo antes, para que el orden sobreviva a un reinicio.
+   */
+  @Test
+  void conDosChatsEnUnZipNacenDosLotesElDeCaballeroPrimero() {
+    proveedor.definirDosChatsEnUnZip(true);
+
+    List<LoteIngesta> creados = caso.ejecutarTodos(new IniciarIngestaComando(proveedor.id(), key));
+
+    assertEquals(2, creados.size());
+    assertEquals(Optional.of(ChatDelZip.CABALLERO), creados.get(0).chatDelZip());
+    assertTrue(creados.get(0).esChatDeCaballero());
+    assertEquals(Optional.of(ChatDelZip.GENERAL), creados.get(1).chatDelZip());
+    assertTrue(creados.get(0).creadoEn().isBefore(creados.get(1).creadoEn()));
+    assertEquals(creados.get(0).referenciaArchivo(), creados.get(1).referenciaArchivo());
+    assertEquals(Optional.of(creados.get(1)), lotes.buscarPorId(creados.get(1).id()));
+  }
+
+  @Test
+  void conUnSoloChatNaceUnLoteSinChatDelZip() {
+    List<LoteIngesta> creados = caso.ejecutarTodos(new IniciarIngestaComando(proveedor.id(), key));
+
+    assertEquals(1, creados.size());
+    assertTrue(creados.getFirst().chatDelZip().isEmpty());
   }
 }

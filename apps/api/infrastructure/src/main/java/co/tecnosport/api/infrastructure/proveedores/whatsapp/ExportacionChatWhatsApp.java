@@ -4,13 +4,17 @@ import co.tecnosport.api.application.proveedores.AlmacenDeArchivosDeProveedor;
 import co.tecnosport.api.application.proveedores.ChatExportado;
 import co.tecnosport.api.application.proveedores.ExportacionIlegibleException;
 import co.tecnosport.api.application.proveedores.FuenteDeMensajes;
+import co.tecnosport.api.domain.compartido.ExcepcionDeDominio;
+import co.tecnosport.api.domain.proveedores.ChatDelZip;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Comparator;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -56,7 +60,7 @@ public final class ExportacionChatWhatsApp implements FuenteDeMensajes {
   }
 
   @Override
-  public ChatExportado leer(String referenciaArchivo) {
+  public ChatExportado leer(String referenciaArchivo, ChatDelZip chat) {
     byte[] zip =
         almacen
             .leer(referenciaArchivo)
@@ -64,7 +68,7 @@ public final class ExportacionChatWhatsApp implements FuenteDeMensajes {
                 () ->
                     new ExportacionIlegibleException(
                         "La exportación ya no está en el almacén: " + referenciaArchivo));
-    Contenido contenido = descomprimir(zip);
+    Contenido contenido = descomprimir(zip, chat);
     AnalizadorDeExportacionWhatsApp analizador =
         new AnalizadorDeExportacionWhatsApp(
             nombre -> Optional.ofNullable(contenido.archivos().get(nombre)));
@@ -96,10 +100,12 @@ public final class ExportacionChatWhatsApp implements FuenteDeMensajes {
     return m.find() ? m.group(1).strip() : null;
   }
 
-  private Contenido descomprimir(byte[] zip) {
-    String texto = null;
-    String nombreDelTexto = null;
-    int largoDelTexto = -1;
+  /**
+   * @param chat cuál de los dos {@code .txt} leer en un zip de dos chats; nulo en uno de un solo
+   *     chat, donde se queda el más largo si hubiera más de uno —no debería—: el chat es el grande
+   */
+  private Contenido descomprimir(byte[] zip, ChatDelZip chat) {
+    Map<String, byte[]> textos = new LinkedHashMap<>();
     Map<String, byte[]> archivos = new HashMap<>();
     long total = 0;
     Path temporal = null;
@@ -127,12 +133,7 @@ public final class ExportacionChatWhatsApp implements FuenteDeMensajes {
           }
           String nombre = nombreBase(entry.getName());
           if (nombre.toLowerCase(Locale.ROOT).endsWith(".txt")) {
-            // Si hubiera más de un .txt —no debería—, se queda el más largo: el chat es el grande.
-            if (bytes.length > largoDelTexto) {
-              texto = new String(bytes, StandardCharsets.UTF_8);
-              nombreDelTexto = nombre;
-              largoDelTexto = bytes.length;
-            }
+            textos.put(nombre, bytes);
           } else {
             archivos.put(nombre, bytes);
           }
@@ -143,12 +144,29 @@ public final class ExportacionChatWhatsApp implements FuenteDeMensajes {
     } finally {
       borrar(temporal);
     }
-    if (texto == null) {
+    if (textos.isEmpty()) {
       throw new ExportacionIlegibleException(
           "El zip no trae ningún archivo .txt con el chat. Exporta el chat de nuevo desde"
               + " WhatsApp, con o sin archivos.");
     }
-    return new Contenido(nombreDelTexto, texto, archivos);
+    String elegido = chat == null ? elMasLargo(textos) : delChat(chat, textos);
+    return new Contenido(
+        elegido, new String(textos.get(elegido), StandardCharsets.UTF_8), archivos);
+  }
+
+  private static String elMasLargo(Map<String, byte[]> textos) {
+    return textos.entrySet().stream()
+        .max(Comparator.comparingInt(e -> e.getValue().length))
+        .orElseThrow()
+        .getKey();
+  }
+
+  private static String delChat(ChatDelZip chat, Map<String, byte[]> textos) {
+    try {
+      return chat.elegir(List.copyOf(textos.keySet()));
+    } catch (ExcepcionDeDominio e) {
+      throw new ExportacionIlegibleException(e.getMessage(), e);
+    }
   }
 
   private static void borrar(Path temporal) {

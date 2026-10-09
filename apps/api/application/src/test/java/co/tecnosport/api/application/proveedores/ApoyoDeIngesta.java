@@ -2,6 +2,7 @@ package co.tecnosport.api.application.proveedores;
 
 import co.tecnosport.api.application.catalogo.UrlFirmada;
 import co.tecnosport.api.domain.catalogo.LineaCatalogo;
+import co.tecnosport.api.domain.proveedores.ChatDelZip;
 import co.tecnosport.api.domain.proveedores.IdExternoDeMensaje;
 import co.tecnosport.api.domain.proveedores.LoteIngesta;
 import co.tecnosport.api.domain.proveedores.MensajeProveedor;
@@ -285,9 +286,13 @@ final class ApoyoDeIngesta {
       this.nombreDelChat = null;
     }
 
+    /** El chat del zip que se le pidió la última vez; nulo si se leyó como un solo chat. */
+    ChatDelZip ultimoChat;
+
     @Override
-    public ChatExportado leer(String referenciaArchivo) {
+    public ChatExportado leer(String referenciaArchivo, ChatDelZip chat) {
       ultimaReferencia = referenciaArchivo;
+      ultimoChat = chat;
       lecturas++;
       if (fallo != null) {
         throw fallo;

@@ -24,6 +24,7 @@ import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.proveedores.AgrupadorDePublicaciones;
 import co.tecnosport.api.domain.proveedores.AlertaBorrador;
 import co.tecnosport.api.domain.proveedores.BorradorProducto;
+import co.tecnosport.api.domain.proveedores.ChatDelZip;
 import co.tecnosport.api.domain.proveedores.EstadoBorrador;
 import co.tecnosport.api.domain.proveedores.EstadoLote;
 import co.tecnosport.api.domain.proveedores.EstadoPublicacionProveedor;
@@ -769,5 +770,20 @@ class ProcesarLoteDeIngestaTest {
         procesar(CHAT_GENERAL, poloPrada("00000200-PHOTO.jpg", T.plusSeconds(3 * 3600)));
 
     assertEquals(1, uno.resumen().orElseThrow().borradoresNuevos());
+  }
+
+  /** El lote del chat de caballero de un zip le pide a la fuente ese chat, y queda marcado. */
+  @Test
+  void elLoteDeUnChatDelZipLeeSoloEseChat() {
+    lote.leerSoloElChat(ChatDelZip.CABALLERO);
+    FuenteFija fuente = new FuenteFija("MerakiMen", poloPrada("IMG-MEN-0159.jpg", T));
+
+    LoteIngesta resultado =
+        casoCon(fuente, ExtractorFalso.porTexto(texto -> prenda("Camiseta estilo Prada", 50000)))
+            .ejecutar(lote.id());
+
+    assertEquals(ChatDelZip.CABALLERO, fuente.ultimoChat);
+    assertTrue(resultado.esChatDeCaballero());
+    assertEquals(1, resultado.resumen().orElseThrow().borradoresNuevos());
   }
 }

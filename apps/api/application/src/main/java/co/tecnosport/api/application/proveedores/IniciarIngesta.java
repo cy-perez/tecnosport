@@ -1,8 +1,11 @@
 package co.tecnosport.api.application.proveedores;
 
 import co.tecnosport.api.application.compartido.Reloj;
+import co.tecnosport.api.domain.proveedores.ChatDelZip;
 import co.tecnosport.api.domain.proveedores.LoteIngesta;
 import co.tecnosport.api.domain.proveedores.Proveedor;
+import java.time.Instant;
+import java.util.List;
 import java.util.Objects;
 
 /**
@@ -40,7 +43,19 @@ public final class IniciarIngesta {
     this.maximoBytes = maximoBytes;
   }
 
+  /** El primero de los lotes que deja la exportación; con un solo chat, el único. */
   public LoteIngesta ejecutar(IniciarIngestaComando comando) {
+    return ejecutarTodos(comando).getFirst();
+  }
+
+  /**
+   * Los lotes que deja la exportación, en el orden en que se tienen que procesar. Uno, salvo el de
+   * un proveedor que sube sus dos chats en un zip: entonces dos sobre el mismo archivo, el del chat
+   * de caballero primero y el general después, para que el general descarte lo que aquel ya trajo
+   * (9 de octubre de 2026). El segundo nace un milisegundo después: al reiniciar, los lotes
+   * abiertos vuelven a la cola por fecha de creación, y el orden tiene que sobrevivir a eso.
+   */
+  public List<LoteIngesta> ejecutarTodos(IniciarIngestaComando comando) {
     Objects.requireNonNull(comando, "El comando no puede ser nulo.");
     Proveedor proveedor =
         repositorioProveedores
@@ -64,9 +79,20 @@ public final class IniciarIngesta {
       throw new ExportacionDemasiadoGrandeException(tamano, maximoBytes);
     }
 
-    LoteIngesta lote =
-        LoteIngesta.recibirExportacion(proveedor.id(), comando.objectKey(), reloj.ahora());
-    repositorioLotes.guardar(lote);
-    return lote;
+    Instant ahora = reloj.ahora();
+    if (!proveedor.subeDosChatsEnUnZip()) {
+      LoteIngesta lote = LoteIngesta.recibirExportacion(proveedor.id(), comando.objectKey(), ahora);
+      repositorioLotes.guardar(lote);
+      return List.of(lote);
+    }
+    LoteIngesta deCaballero =
+        LoteIngesta.recibirExportacion(proveedor.id(), comando.objectKey(), ahora);
+    deCaballero.leerSoloElChat(ChatDelZip.CABALLERO);
+    LoteIngesta general =
+        LoteIngesta.recibirExportacion(proveedor.id(), comando.objectKey(), ahora.plusMillis(1));
+    general.leerSoloElChat(ChatDelZip.GENERAL);
+    repositorioLotes.guardar(deCaballero);
+    repositorioLotes.guardar(general);
+    return List.of(deCaballero, general);
   }
 }

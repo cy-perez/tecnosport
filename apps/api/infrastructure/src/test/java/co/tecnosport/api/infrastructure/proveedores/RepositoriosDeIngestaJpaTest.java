@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import co.tecnosport.api.application.proveedores.LotesPaginados;
 import co.tecnosport.api.domain.catalogo.LineaCatalogo;
+import co.tecnosport.api.domain.proveedores.ChatDelZip;
 import co.tecnosport.api.domain.proveedores.EstadoLote;
 import co.tecnosport.api.domain.proveedores.IdExternoDeMensaje;
 import co.tecnosport.api.domain.proveedores.LoteIngesta;
@@ -425,5 +426,28 @@ class RepositoriosDeIngestaJpaTest {
 
     assertThat(proveedores.buscarPorId(proveedor.id()).orElseThrow().subeDosChatsEnUnZip())
         .isTrue();
+  }
+
+  /** El chat del zip que lee cada lote va y vuelve, y el de caballero conserva su marca. */
+  @Test
+  void elChatDelZipDeCadaLoteVaYVuelve() {
+    Proveedor proveedor = proveedorGuardado(null);
+    LoteIngesta deCaballero =
+        LoteIngesta.recibirExportacion(proveedor.id(), "p/exportaciones/m.zip", T);
+    deCaballero.leerSoloElChat(ChatDelZip.CABALLERO);
+    LoteIngesta general =
+        LoteIngesta.recibirExportacion(proveedor.id(), "p/exportaciones/m.zip", T.plusMillis(1));
+    general.leerSoloElChat(ChatDelZip.GENERAL);
+    lotes.guardar(deCaballero);
+    lotes.guardar(general);
+
+    LoteIngesta leido = lotes.buscarPorId(deCaballero.id()).orElseThrow();
+    assertThat(leido.chatDelZip()).contains(ChatDelZip.CABALLERO);
+    assertThat(leido.esChatDeCaballero()).isTrue();
+    assertThat(lotes.buscarPorId(general.id()).orElseThrow().chatDelZip())
+        .contains(ChatDelZip.GENERAL);
+    assertThat(lotes.abiertos())
+        .extracting(LoteIngesta::id)
+        .containsExactly(deCaballero.id(), general.id());
   }
 }

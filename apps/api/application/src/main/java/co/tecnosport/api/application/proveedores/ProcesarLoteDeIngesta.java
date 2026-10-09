@@ -100,10 +100,11 @@ public final class ProcesarLoteDeIngesta {
           lote.referenciaArchivo()
               .orElseThrow(
                   () -> new ExportacionIlegibleException("El lote no tiene archivo que leer."));
-      ChatExportado chat = fuente.leer(referencia);
+      ChatExportado chat = fuente.leer(referencia, lote.chatDelZip().orElse(null));
       List<MensajeCrudo> crudos = chat.mensajes();
-      boolean deCaballero = NombreDeChat.esDeCaballero(chat.nombre());
-      if (deCaballero) {
+      // El de un zip de dos chats ya nace marcado; el de un chat suelto se sabe por su nombre.
+      boolean deCaballero = lote.esChatDeCaballero() || NombreDeChat.esDeCaballero(chat.nombre());
+      if (deCaballero && !lote.esChatDeCaballero()) {
         enTransaccionPropia.ejecutar(
             () -> {
               LoteIngesta fresco = paraActualizar(lote.id());

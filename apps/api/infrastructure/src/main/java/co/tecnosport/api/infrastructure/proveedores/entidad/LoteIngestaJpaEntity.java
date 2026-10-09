@@ -67,6 +67,10 @@ public class LoteIngestaJpaEntity {
   @Column(name = "chat_de_caballero", nullable = false)
   private boolean chatDeCaballero;
 
+  /** {@code CABALLERO} o {@code GENERAL} en un zip de dos chats; nulo en uno de un solo chat. */
+  @Column(name = "chat_del_zip")
+  private String chatDelZip;
+
   protected LoteIngestaJpaEntity() {}
 
   public LoteIngestaJpaEntity(
@@ -88,7 +92,8 @@ public class LoteIngestaJpaEntity {
       Instant creadoEn,
       Instant iniciadoEn,
       Instant terminadoEn,
-      boolean chatDeCaballero) {
+      boolean chatDeCaballero,
+      String chatDelZip) {
     this.id = id;
     this.origen = origen;
     this.proveedorId = proveedorId;
@@ -108,6 +113,11 @@ public class LoteIngestaJpaEntity {
     this.iniciadoEn = iniciadoEn;
     this.terminadoEn = terminadoEn;
     this.chatDeCaballero = chatDeCaballero;
+    this.chatDelZip = chatDelZip;
+  }
+
+  public String getChatDelZip() {
+    return chatDelZip;
   }
 
   public boolean isChatDeCaballero() {

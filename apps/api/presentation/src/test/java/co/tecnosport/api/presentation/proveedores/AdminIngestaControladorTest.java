@@ -130,6 +130,23 @@ class AdminIngestaControladorTest {
         .andExpect(jsonPath("$.codigo").value("TIPO_DE_EXPORTACION_NO_ADMITIDO"));
   }
 
+  /** Con dos chats en un zip se encolan dos lotes, el de caballero primero, y responde ese. */
+  @Test
+  void conDosChatsEnUnZipEncolaLosDosLotesElDeCaballeroPrimero() throws Exception {
+    proveedor.definirDosChatsEnUnZip(true);
+
+    mockMvc
+        .perform(
+            post("/api/v1/admin/proveedores/{id}/ingestas", proveedor.id())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"objectKey\":\"" + key + "\"}"))
+        .andExpect(status().isAccepted());
+
+    assertThat(ejecutor.encolados).hasSize(2);
+    assertThat(lotes.porId.get(ejecutor.encolados.get(0)).esChatDeCaballero()).isTrue();
+    assertThat(lotes.porId.get(ejecutor.encolados.get(1)).esChatDeCaballero()).isFalse();
+  }
+
   @Test
   void iniciarResponde202ConElLoteYLoEncolaDespuesDeConfirmar() throws Exception {
     mockMvc

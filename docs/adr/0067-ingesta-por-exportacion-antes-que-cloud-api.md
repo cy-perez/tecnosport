@@ -286,6 +286,26 @@ caballero se descarta, sin comparar fotos**.
   **rechaza** cuando llega el de caballero, con el motivo escrito, y queda el del
   chat de caballero.
 
+## Los dos chats de Meraki en un solo zip (9 de octubre de 2026)
+
+Subir dos zips y confiar en el orden dejaba el resultado en manos de quien sube.
+El negocio decidió que Meraki suba **un solo zip**, `Meraki.zip`, con dos `.txt`
+—`Meraki.txt` el general y `MerakiMen.txt` el de caballero— y las fotos de los
+dos al lado. El proveedor lleva el ajuste `dos_chats_en_un_zip` (`V95`).
+
+- **Una subida, dos lotes en la cola**, sobre el mismo archivo: el de caballero
+  primero y el general después (`lote_ingesta.chat_del_zip`, `V96`). La cola
+  procesa uno a la vez y en orden, así que cuando el general corre, lo del chat
+  de caballero ya está registrado y la regla del chat de caballero lo descarta.
+  El general nace un milisegundo después: al reiniciar, los lotes abiertos
+  vuelven a la cola por fecha de creación, y el orden tiene que sobrevivir a eso.
+- **La estructura se valida dos veces.** El panel no deja subir un archivo que no
+  sea exactamente esa, y el servidor la vuelve a validar al leerlo
+  (`ChatDelZip.elegir`): un zip de dos chats sin los dos `.txt` acordados termina
+  en `ERROR` con el motivo, en vez de leerse a medias.
+- Borrar uno de los dos lotes no borra el zip mientras el otro lo nombre: eso ya
+  lo cuidaba el cálculo de dependencias del lote.
+
 ## Pendientes que este ADR deja escritos
 
 - **La confirmación con el proveedor en los pedidos.** Aprobar un borrador

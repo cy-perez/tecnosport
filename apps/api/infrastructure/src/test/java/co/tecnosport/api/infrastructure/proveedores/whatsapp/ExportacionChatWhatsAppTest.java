@@ -5,8 +5,10 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import co.tecnosport.api.application.catalogo.UrlFirmada;
 import co.tecnosport.api.application.proveedores.AlmacenDeArchivosDeProveedor;
+import co.tecnosport.api.application.proveedores.ChatExportado;
 import co.tecnosport.api.application.proveedores.ExportacionIlegibleException;
 import co.tecnosport.api.application.proveedores.MensajeCrudo;
+import co.tecnosport.api.domain.proveedores.ChatDelZip;
 import co.tecnosport.api.domain.proveedores.TipoMensaje;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -236,5 +238,43 @@ class ExportacionChatWhatsAppTest {
     assertThat(ExportacionChatWhatsApp.nombreDelChat("_chat.txt", chat))
         .isEqualTo("MERAKI • FICUS 1C-14 & 1C-13 #COMUNIDAD");
     assertThat(ExportacionChatWhatsApp.nombreDelChat("_chat.txt", "sin cabecera")).isNull();
+  }
+
+  /** El zip de Meraki con sus dos chats: cada lote lee el suyo, y las fotos son de los dos. */
+  @Test
+  void enUnZipDeDosChatsCadaLoteLeeElSuyo() {
+    String general = CHAT.replace("Bolsos Centro", "Meraki");
+    String deCaballero = CHAT.replace("Bolsos Centro", "Meraki Men");
+    almacen.objetos.put(
+        "p/exportaciones/m.zip",
+        zip(
+            Map.of(
+                "Meraki.txt", general.getBytes(StandardCharsets.UTF_8),
+                "MerakiMen.txt", deCaballero.getBytes(StandardCharsets.UTF_8),
+                "IMG-20260928-WA0012.jpg", "foto-12".getBytes(StandardCharsets.UTF_8))));
+    ExportacionChatWhatsApp fuente = new ExportacionChatWhatsApp(almacen, 1_000_000);
+
+    ChatExportado caballero = fuente.leer("p/exportaciones/m.zip", ChatDelZip.CABALLERO);
+    ChatExportado delGeneral = fuente.leer("p/exportaciones/m.zip", ChatDelZip.GENERAL);
+
+    assertThat(caballero.nombre()).isEqualTo("MerakiMen");
+    assertThat(caballero.mensajes().getFirst().remitente()).isEqualTo("Meraki Men");
+    assertThat(delGeneral.nombre()).isEqualTo("Meraki");
+    assertThat(delGeneral.mensajes().getFirst().remitente()).isEqualTo("Meraki");
+    assertThat(delGeneral.mensajes().get(1).adjunto().bytes()).isEqualTo("foto-12".getBytes());
+  }
+
+  /** Un zip de dos chats sin la estructura acordada no se lee: falla con el motivo. */
+  @Test
+  void unZipDeDosChatsSinLaEstructuraAcordadaNoSeLee() {
+    almacen.objetos.put(
+        "p/exportaciones/m.zip", zip(Map.of("_chat.txt", CHAT.getBytes(StandardCharsets.UTF_8))));
+
+    assertThatThrownBy(
+            () ->
+                new ExportacionChatWhatsApp(almacen, 1_000_000)
+                    .leer("p/exportaciones/m.zip", ChatDelZip.GENERAL))
+        .isInstanceOf(ExportacionIlegibleException.class)
+        .hasMessageStartingWith("La estructura del archivo no es la acordada");
   }
 }

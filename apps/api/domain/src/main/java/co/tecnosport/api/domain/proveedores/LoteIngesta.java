@@ -42,6 +42,12 @@ public final class LoteIngesta {
    */
   private boolean chatDeCaballero;
 
+  /**
+   * Cuál de los dos chats del zip lee el lote, cuando el proveedor los sube juntos; nulo cuando el
+   * zip es de un solo chat.
+   */
+  private ChatDelZip chatDelZip;
+
   public LoteIngesta(
       UUID id,
       OrigenIngesta origen,
@@ -153,6 +159,22 @@ public final class LoteIngesta {
 
   public boolean esChatDeCaballero() {
     return chatDeCaballero;
+  }
+
+  /**
+   * Le dice al lote cuál de los dos chats del zip le toca leer. El de caballero queda marcado como
+   * tal desde ya: su nombre de archivo, «MerakiMen», no dice «MEN» como palabra suelta. El
+   * adaptador lo usa también para devolverlo como estaba guardado.
+   */
+  public void leerSoloElChat(ChatDelZip chat) {
+    this.chatDelZip = Objects.requireNonNull(chat, "El chat del zip no puede ser nulo.");
+    if (chat == ChatDelZip.CABALLERO) {
+      marcarChatDeCaballero();
+    }
+  }
+
+  public Optional<ChatDelZip> chatDelZip() {
+    return Optional.ofNullable(chatDelZip);
   }
 
   public void pausar() {
