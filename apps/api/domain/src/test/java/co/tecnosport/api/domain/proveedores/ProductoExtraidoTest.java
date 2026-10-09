@@ -1,6 +1,7 @@
 package co.tecnosport.api.domain.proveedores;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -143,7 +144,8 @@ class ProductoExtraidoTest {
         true,
         bodi(Tallas.desconocida(), false).contrastadoCon("*NUEVA COLECCIÓN 1.1*").esReplica());
     assertEquals(false, bodi(Tallas.desconocida(), false).contrastadoCon("Bodi 💲30").esReplica());
-    assertEquals(true, bodi(Tallas.desconocida(), true).contrastadoCon("Bodi 💲30").esReplica());
+    // Desde el 9 de octubre de 2026 el extractor solo no basta: el texto tiene que respaldarlo.
+    assertEquals(false, bodi(Tallas.desconocida(), true).contrastadoCon("Bodi 💲30").esReplica());
   }
 
   /** La AAA cuenta como la 1.1 desde el 4 de octubre de 2026; las pilas AAA, no. */
@@ -293,5 +295,48 @@ class ProductoExtraidoTest {
             .contrastadoCon("*Pantalón Jogger para dama*\n🤑75.000🥳");
 
     assertEquals(Optional.of("Pantalón jogger para dama"), contrastado.tituloOpcional());
+  }
+
+  private static ProductoExtraido tenis(String titulo, boolean esReplica) {
+    return new ProductoExtraido(
+        true,
+        false,
+        titulo,
+        LineaCatalogo.CALZADO,
+        TipoProductoProveedor.TENIS,
+        Dinero.deCop(65000),
+        Tallas.desconocida(),
+        null,
+        List.of(),
+        null,
+        null,
+        null,
+        esReplica,
+        new BigDecimal("0.9"),
+        null);
+  }
+
+  /**
+   * Imperio Wicho, 9 de octubre de 2026: «Importado» sin «1.1» ni «AAA». El modelo lo marcó como
+   * réplica, y no se le cree: el texto no lo respalda.
+   */
+  @Test
+  void importadoNoEsReplicaAunqueElExtractorLoDiga() {
+    String texto =
+        "Nueva Colección Cab 👨🏻👨🏻\nImportado Tipo Media Ultraliviano🔥\nTallas disponibles 40 a la 44\n💰*$65,000*";
+
+    ProductoExtraido contrastado =
+        tenis("Tenis para caballero tipo media ultraliviano", true).contrastadoCon(texto);
+
+    assertFalse(contrastado.esReplica());
+    assertEquals(
+        Optional.of("Tenis para caballero tipo media ultraliviano"), contrastado.tituloOpcional());
+  }
+
+  /** Cuando el texto escribe «réplica», al extractor sí se le cree. */
+  @Test
+  void laPalabraReplicaRespaldaAlExtractor() {
+    assertTrue(tenis("Tenis estilo Jordan", true).contrastadoCon("Réplica Jordan").esReplica());
+    assertFalse(tenis("Tenis", false).contrastadoCon("Réplica Jordan").esReplica());
   }
 }

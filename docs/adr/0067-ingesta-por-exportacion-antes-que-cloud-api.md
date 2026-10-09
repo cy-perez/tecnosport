@@ -235,6 +235,16 @@ El lote de La Riverah dejó tres borradores que había que corregir a mano:
   texto: cambia un «estilo» colgando por «importado», o lo agrega si el título no
   nombra marca. Un título con marca, o que ya dice «importado», no se toca.
 
+## «Importado» no es réplica (9 de octubre de 2026)
+
+Con la regla de «importado» en el prompt, el modelo empezó a marcar como réplica
+todo lo que Imperio Wicho anuncia como «IMPORTADO»: los once borradores de su
+lote salieron con la alerta y uno con el título «Tenis estilo **Cab** importado»
+—«Cab» es caballero—. Desde entonces **al extractor no se le cree la réplica**
+si el texto no la respalda: cuenta si el texto trae «1.1» o «AAA», o si el
+modelo la marcó y el texto escribe la palabra «réplica»
+(`PatronDeReplica.diceReplica`). El prompt aclara las dos cosas.
+
 ## Pendientes que este ADR deja escritos
 
 - **La confirmación con el proveedor en los pedidos.** Aprobar un borrador
