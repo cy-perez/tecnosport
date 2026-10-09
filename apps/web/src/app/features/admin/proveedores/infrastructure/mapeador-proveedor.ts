@@ -25,6 +25,7 @@ export function aProveedor(dto: ProveedorDto): Proveedor {
     ordenDePublicacion: (dto.ordenDePublicacion ?? 'FOTOS_PRIMERO') as OrdenDePublicacion,
     publicacionAutomatica: dto.publicacionAutomatica ?? false,
     activo: dto.activo ?? true,
+    dosChatsEnUnZip: dto.dosChatsEnUnZip ?? false,
   };
 }
 
@@ -38,5 +39,6 @@ export function aProveedorPeticion(datos: DatosProveedor): ProveedorPeticionDto 
     ordenDePublicacion: datos.ordenDePublicacion,
     publicacionAutomatica: datos.publicacionAutomatica,
     activo: datos.activo,
+    dosChatsEnUnZip: datos.dosChatsEnUnZip,
   };
 }

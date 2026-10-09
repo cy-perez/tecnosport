@@ -21,7 +21,8 @@ public record ProveedorPeticion(
     Boolean activo,
     Boolean publicacionAutomatica,
     BigDecimal factorDeMargen,
-    @Schema(requiredMode = Schema.RequiredMode.REQUIRED) String ordenDePublicacion) {
+    @Schema(requiredMode = Schema.RequiredMode.REQUIRED) String ordenDePublicacion,
+    Boolean dosChatsEnUnZip) {
 
   public ProveedorPeticion {
     Objects.requireNonNull(nombre, "El nombre es obligatorio.");

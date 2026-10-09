@@ -42,6 +42,12 @@ export interface Proveedor {
   readonly ordenDePublicacion: OrdenDePublicacion;
   readonly publicacionAutomatica: boolean;
   readonly activo: boolean;
+  /**
+   * Si sube sus dos chats —el general y el de caballero— en un solo zip: `{nombre}.zip` con
+   * `{nombre}.txt` y `{nombre}Men.txt`. Meraki lo hace (9 de octubre de 2026); el panel valida esa
+   * estructura antes de dejar subir el archivo. Solo para quien entra por el chat.
+   */
+  readonly dosChatsEnUnZip: boolean;
 }
 
 /** Lo que se escribe al crear o al editar. El `id` lo pone el servidor. */

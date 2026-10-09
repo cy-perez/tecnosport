@@ -11,6 +11,7 @@ describe('mapeador de proveedores', () => {
       factorDeMargen: 1.38,
       ordenDePublicacion: 'TEXTO_PRIMERO',
       publicacionAutomatica: false,
+      dosChatsEnUnZip: false,
       activo: true,
     });
 
@@ -27,6 +28,7 @@ describe('mapeador de proveedores', () => {
       factorDeMargen: 1.38,
       ordenDePublicacion: 'FOTOS_PRIMERO',
       publicacionAutomatica: false,
+      dosChatsEnUnZip: false,
       activo: true,
     });
 

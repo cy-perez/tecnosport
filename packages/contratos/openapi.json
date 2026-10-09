@@ -2968,6 +2968,9 @@
           "activo" : {
             "type" : "boolean"
           },
+          "dosChatsEnUnZip" : {
+            "type" : "boolean"
+          },
           "factorDeMargen" : {
             "type" : "number"
           },
@@ -3002,6 +3005,9 @@
       "ProveedorRespuesta" : {
         "properties" : {
           "activo" : {
+            "type" : "boolean"
+          },
+          "dosChatsEnUnZip" : {
             "type" : "boolean"
           },
           "factorDeMargen" : {

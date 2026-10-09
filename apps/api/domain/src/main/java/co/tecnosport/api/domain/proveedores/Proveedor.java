@@ -78,6 +78,13 @@ public final class Proveedor {
   private BigDecimal factorDeMargen;
   private OrdenDePublicacion ordenDePublicacion;
 
+  /**
+   * Si sube sus dos chats —el general y el de caballero— en un solo zip, con un {@code .txt} por
+   * chat. Meraki publica desde el mismo número en los dos (9 de octubre de 2026): con un solo zip
+   * el chat de caballero se procesa siempre primero, y el general descarta lo que aquel ya trajo.
+   */
+  private boolean dosChatsEnUnZip;
+
   public Proveedor(
       UUID id,
       String nombre,
@@ -217,6 +224,22 @@ public final class Proveedor {
    */
   public boolean entraPorLista() {
     return !entraPorExportacion();
+  }
+
+  /**
+   * Marca o desmarca que sube sus dos chats en un solo zip. Solo quien entra por la exportación del
+   * chat tiene chats que subir; el adaptador lo usa también para devolverlo como estaba guardado.
+   */
+  public void definirDosChatsEnUnZip(boolean dosChats) {
+    if (dosChats && !entraPorExportacion()) {
+      throw new ExcepcionDeDominio(
+          "Solo un proveedor que entra por la exportación del chat sube sus chats en un zip.");
+    }
+    this.dosChatsEnUnZip = dosChats;
+  }
+
+  public boolean subeDosChatsEnUnZip() {
+    return dosChatsEnUnZip;
   }
 
   private static OrdenDePublicacion exigirOrden(OrdenDePublicacion orden) {

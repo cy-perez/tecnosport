@@ -38,6 +38,9 @@ public class ProveedorJpaEntity {
   @Column(name = "orden_de_publicacion", nullable = false)
   private String ordenDePublicacion;
 
+  @Column(name = "dos_chats_en_un_zip", nullable = false)
+  private boolean dosChatsEnUnZip;
+
   @Column(name = "creado_en", nullable = false)
   private Instant creadoEn;
 
@@ -56,6 +59,7 @@ public class ProveedorJpaEntity {
       boolean publicacionAutomatica,
       BigDecimal factorDeMargen,
       String ordenDePublicacion,
+      boolean dosChatsEnUnZip,
       Instant creadoEn,
       Instant actualizadoEn) {
     this.id = id;
@@ -67,6 +71,7 @@ public class ProveedorJpaEntity {
     this.publicacionAutomatica = publicacionAutomatica;
     this.factorDeMargen = factorDeMargen;
     this.ordenDePublicacion = ordenDePublicacion;
+    this.dosChatsEnUnZip = dosChatsEnUnZip;
     this.creadoEn = creadoEn;
     this.actualizadoEn = actualizadoEn;
   }
@@ -105,6 +110,10 @@ public class ProveedorJpaEntity {
 
   public String getOrdenDePublicacion() {
     return ordenDePublicacion;
+  }
+
+  public boolean isDosChatsEnUnZip() {
+    return dosChatsEnUnZip;
   }
 
   public Instant getCreadoEn() {

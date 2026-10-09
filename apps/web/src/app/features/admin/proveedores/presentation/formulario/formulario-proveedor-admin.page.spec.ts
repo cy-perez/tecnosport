@@ -117,6 +117,33 @@ describe('FormularioProveedorAdminPage', () => {
     });
   });
 
+  /** Meraki sube sus dos chats en un solo zip: la casilla viaja en lo que se crea. */
+  it('manda que sube sus dos chats en un zip cuando se marca', async () => {
+    const { repositorio, fixture } = await renderPagina();
+    vi.spyOn(fixture.debugElement.injector.get(Router), 'navigate').mockResolvedValue(true);
+
+    escribir(f.nombre, 'Meraki');
+    escribir(f.remitente, 'Meraki');
+    escribir(f.telefono, '573504597870');
+    fireEvent.change(screen.getByLabelText(f.linea), { target: { value: 'ROPA' } });
+    fireEvent.change(screen.getByLabelText(f.orden), { target: { value: 'FOTOS_PRIMERO' } });
+    escribir(f.margen, '1,38');
+    fireEvent.click(await screen.findByLabelText(f.dosChatsEnUnZip));
+    fireEvent.click(screen.getByRole('button', { name: f.crear }));
+
+    await vi.waitFor(() => expect(repositorio.creados).toHaveLength(1));
+    expect(repositorio.creados[0]).toMatchObject({ nombre: 'Meraki', dosChatsEnUnZip: true });
+  });
+
+  /** La tecnología llega por listas: no tiene chats que subir y la casilla no aparece. */
+  it('no ofrece los dos chats a un proveedor de tecnología', async () => {
+    await renderPagina();
+
+    fireEvent.change(await screen.findByLabelText(f.linea), { target: { value: 'TECNOLOGIA' } });
+
+    await vi.waitFor(() => expect(screen.queryByLabelText(f.dosChatsEnUnZip)).toBeNull());
+  });
+
   /** Faltaba: el extractor ya reconocía el calzado, pero no había cómo registrar a quien lo surte. */
   it('ofrece el calzado deportivo como línea y lo manda como CALZADO', async () => {
     const { repositorio, fixture } = await renderPagina();

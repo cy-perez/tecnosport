@@ -955,6 +955,7 @@
       "margenAyuda": "Multiplies the supplier price to suggest the sale price. 1.30 is 30% over cost; it cannot be less than 1.",
       "orden": "Posting order",
       "ordenAyuda": "Check how they post each product in their chat. It only decides which product a photo belongs to when it arrives in the same minute as two prices, because the exported chat has no seconds.",
+      "dosChatsEnUnZip": "Uploads both chats in one zip: “{name}.zip” with “{name}.txt” (the general one) and “{name}Men.txt” (the menswear one), plus the photos of both",
       "publicacionAutomatica": "Publish without review (not in effect yet: every draft goes through the panel)",
       "activo": "Active. Unchecked, no exports can be uploaded for it.",
       "faltanCampos": "Missing data: name, name in the chat, phone, line, posting order and a margin of at least 1.",

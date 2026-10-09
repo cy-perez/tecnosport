@@ -13,4 +13,24 @@ public record CrearProveedorComando(
     String telefonoWhatsApp,
     String nombreEnExportacion,
     BigDecimal factorDeMargen,
-    OrdenDePublicacion ordenDePublicacion) {}
+    OrdenDePublicacion ordenDePublicacion,
+    boolean dosChatsEnUnZip) {
+
+  /** Con un solo chat, que es lo de casi todos. */
+  public CrearProveedorComando(
+      String nombre,
+      LineaCatalogo linea,
+      String telefonoWhatsApp,
+      String nombreEnExportacion,
+      BigDecimal factorDeMargen,
+      OrdenDePublicacion ordenDePublicacion) {
+    this(
+        nombre,
+        linea,
+        telefonoWhatsApp,
+        nombreEnExportacion,
+        factorDeMargen,
+        ordenDePublicacion,
+        false);
+  }
+}

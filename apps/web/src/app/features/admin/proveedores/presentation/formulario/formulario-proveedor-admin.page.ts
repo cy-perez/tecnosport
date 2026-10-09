@@ -128,6 +128,7 @@ export class FormularioProveedorAdminPage {
     }),
     publicacionAutomatica: new FormControl(false, { nonNullable: true }),
     activo: new FormControl(true, { nonNullable: true }),
+    dosChatsEnUnZip: new FormControl(false, { nonNullable: true }),
   });
 
   protected readonly opcionesLinea = computed<OpcionSelect[]>(() =>
@@ -168,6 +169,7 @@ export class FormularioProveedorAdminPage {
       factorDeMargen: String(proveedor.factorDeMargen),
       publicacionAutomatica: proveedor.publicacionAutomatica,
       activo: proveedor.activo,
+      dosChatsEnUnZip: proveedor.dosChatsEnUnZip,
     };
   }
 
@@ -194,6 +196,8 @@ export class FormularioProveedorAdminPage {
       factorDeMargen: factor,
       publicacionAutomatica: valores.publicacionAutomatica,
       activo: valores.activo,
+      // La tecnología llega por listas: no tiene chats que subir, aunque la casilla quedara marcada.
+      dosChatsEnUnZip: valores.linea !== 'TECNOLOGIA' && valores.dosChatsEnUnZip,
     };
 
     const manejadores = {

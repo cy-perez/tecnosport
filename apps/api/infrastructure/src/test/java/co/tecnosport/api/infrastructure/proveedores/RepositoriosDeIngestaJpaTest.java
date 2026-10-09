@@ -416,4 +416,14 @@ class RepositoriosDeIngestaJpaTest {
 
     assertThat(mensajes.listarDeLote(lote.id()).getFirst().pHash()).contains(pHash);
   }
+
+  @Test
+  void losDosChatsEnUnZipVanYVuelven() {
+    Proveedor proveedor = proveedorGuardado(null);
+    proveedor.definirDosChatsEnUnZip(true);
+    proveedores.actualizar(proveedor);
+
+    assertThat(proveedores.buscarPorId(proveedor.id()).orElseThrow().subeDosChatsEnUnZip())
+        .isTrue();
+  }
 }
