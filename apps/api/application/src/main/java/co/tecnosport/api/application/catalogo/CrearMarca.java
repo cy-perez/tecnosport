@@ -13,9 +13,8 @@ import java.util.Objects;
  * poder cargar un producto convierte un dato operativo en un cambio de esquema. Ver {@code
  * ADR-0047}.
  *
- * <p>No hay renombrar ni borrar, y es deliberado: renombrar cambia lo que ve el comprador en la
- * ficha y en el filtro, y borrar tiene que decidir qué pasa con los productos que cuelgan de la
- * marca. Ninguna de las dos hace falta para cargar catálogo.
+ * <p>Renombrar y borrar llegaron después, cada uno con su caso de uso: {@link RenombrarMarca} y
+ * {@link EliminarMarca}, que solo borra una marca sin productos ({@code ADR-0076}).
  */
 public final class CrearMarca {
 

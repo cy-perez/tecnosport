@@ -329,4 +329,51 @@ class RepositoriosDeIngestaJpaTest {
   void unProveedorDesconocidoNoSeEncuentra() {
     assertThat(proveedores.buscarPorId(UUID.randomUUID())).isEqualTo(Optional.empty());
   }
+
+  /**
+   * Un reinicio se lleva el hilo que retenía a los pausados y a los que se estaban deteniendo: si
+   * {@code abiertos} no los devolviera, el arranque no los cerraría y quedarían abiertos —sin poder
+   * eliminarse— para siempre.
+   */
+  @Test
+  void losPausadosYLosQueSeDetienenTambienEstanAbiertos() {
+    Proveedor uno = proveedorGuardado(null);
+    LoteIngesta pausado = LoteIngesta.recibirExportacion(uno.id(), "p/exportaciones/1.zip", T);
+    pausado.iniciar(T.plusSeconds(1));
+    pausado.pausar();
+    LoteIngesta deteniendo =
+        LoteIngesta.recibirExportacion(uno.id(), "p/exportaciones/2.zip", T.plusSeconds(5));
+    deteniendo.iniciar(T.plusSeconds(6));
+    deteniendo.pedirDetencion(T.plusSeconds(7));
+    LoteIngesta detenido =
+        LoteIngesta.recibirExportacion(uno.id(), "p/exportaciones/3.zip", T.plusSeconds(10));
+    detenido.pedirDetencion(T.plusSeconds(11));
+    lotes.guardar(pausado);
+    lotes.guardar(deteniendo);
+    lotes.guardar(detenido);
+
+    assertThat(lotes.abiertos())
+        .extracting(LoteIngesta::estado)
+        .containsExactly(EstadoLote.PAUSADO, EstadoLote.DETENIENDO);
+  }
+
+  /** Detenido a la mitad: vuelve con el resumen parcial; detenido en la cola, sin resumen. */
+  @Test
+  void unLoteDetenidoVaYVuelveConLoQueAlcanzo() {
+    Proveedor uno = proveedorGuardado(null);
+    LoteIngesta aMedias = LoteIngesta.recibirExportacion(uno.id(), "p/exportaciones/1.zip", T);
+    aMedias.iniciar(T.plusSeconds(1));
+    aMedias.pedirDetencion(T.plusSeconds(2));
+    ResumenIngesta parcial = new ResumenIngesta(40, 5, 35, 9, 3, 0, 0, 0, 0);
+    aMedias.detener(parcial, T.plusSeconds(3));
+    LoteIngesta enCola = LoteIngesta.recibirExportacion(uno.id(), "p/exportaciones/2.zip", T);
+    enCola.pedirDetencion(T.plusSeconds(1));
+    lotes.guardar(aMedias);
+    lotes.guardar(enCola);
+
+    LoteIngesta leido = lotes.buscarPorIdParaActualizar(aMedias.id()).orElseThrow();
+    assertThat(leido.estado()).isEqualTo(EstadoLote.DETENIDO);
+    assertThat(leido.resumen()).contains(parcial);
+    assertThat(lotes.buscarPorId(enCola.id()).orElseThrow().resumen()).isEmpty();
+  }
 }

@@ -140,5 +140,25 @@ class MarcaControladorTest {
     public Optional<Marca> buscarPorId(UUID id) {
       return todas.stream().filter(marca -> marca.id().equals(id)).findFirst();
     }
+
+    @Override
+    public boolean existeOtraConNombre(String nombre, UUID excepto) {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void actualizar(Marca marca) {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public long contarProductos(UUID marcaId) {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void eliminar(Marca marca) {
+      throw new UnsupportedOperationException();
+    }
   }
 }

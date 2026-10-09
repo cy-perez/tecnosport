@@ -2,13 +2,14 @@ import { Injectable, inject } from '@angular/core';
 import { SesionStore } from '../../../../core/autenticacion/sesion.store';
 import { baseUrl } from '../../../../core/http/base-url';
 import { crearClienteAutenticado } from '../../../../core/http/cliente-autenticado';
-import { desempaquetar } from '../../../../core/http/respuesta-http';
+import { desempaquetar, exigirExito } from '../../../../core/http/respuesta-http';
 import { Marca } from '../../../catalogo/domain/producto.model';
 import { RepositorioMarcas } from '../../../catalogo/domain/repositorio-marcas.puerto';
 import { aMarca } from '../../../catalogo/infrastructure/mapeador-productos';
 import {
   RepositorioMarcasAdmin,
   ResultadoCrearMarca,
+  ResultadoRenombrarMarca,
 } from '../domain/repositorio-marcas-admin.puerto';
 
 /** El `codigo` del ProblemDetail que manda el backend cuando el nombre ya está tomado. */
@@ -50,6 +51,29 @@ export class MarcasAdminHttpRepositorio implements RepositorioMarcas, Repositori
     }
 
     return { tipo: 'CREADA', marca: aMarca(desempaquetar(respuesta, 'no se pudo crear la marca')) };
+  }
+
+  async renombrar(id: string, nombre: string): Promise<ResultadoRenombrarMarca> {
+    const respuesta = await this.cliente.PUT('/api/v1/admin/marcas/{id}', {
+      params: { path: { id } },
+      body: { nombre },
+    });
+
+    if (!respuesta.response.ok && codigoDe(respuesta.error) === MARCA_YA_EXISTE) {
+      return { tipo: 'YA_EXISTE' };
+    }
+
+    return {
+      tipo: 'RENOMBRADA',
+      marca: aMarca(desempaquetar(respuesta, 'no se pudo renombrar la marca')),
+    };
+  }
+
+  async eliminar(id: string): Promise<void> {
+    const respuesta = await this.cliente.DELETE('/api/v1/admin/marcas/{id}', {
+      params: { path: { id } },
+    });
+    exigirExito(respuesta, 'no se pudo eliminar la marca');
   }
 }
 

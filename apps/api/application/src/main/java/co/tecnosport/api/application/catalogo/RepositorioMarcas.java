@@ -42,4 +42,27 @@ public interface RepositorioMarcas {
   boolean existeConNombre(String nombre);
 
   void guardar(Marca marca);
+
+  /**
+   * Como {@link #existeConNombre}, sin contar a la marca {@code excepto}: renombrar "xiaomi" a
+   * "Xiaomi" no choca consigo misma, y el índice de {@code V56} tampoco la dejaría chocar.
+   */
+  boolean existeOtraConNombre(String nombre, UUID excepto);
+
+  /**
+   * Cambia el nombre. Si el índice único lo rechaza —otra petición se coló entre la lectura y la
+   * escritura—, {@link MarcaYaExisteException}.
+   */
+  void actualizar(Marca marca);
+
+  /**
+   * Los productos que cuelgan de la marca, en cualquier estado: también borradores y archivados.
+   */
+  long contarProductos(UUID marcaId);
+
+  /**
+   * Borra la marca. Si la llave de {@code producto.marca_id} lo impide —se cargó un producto entre
+   * la cuenta y el borrado—, {@link MarcaConProductosException}.
+   */
+  void eliminar(Marca marca);
 }

@@ -1,7 +1,6 @@
 package co.tecnosport.api.application.proveedores;
 
 import co.tecnosport.api.application.compartido.Reloj;
-import co.tecnosport.api.domain.proveedores.EstadoLote;
 import co.tecnosport.api.domain.proveedores.LoteIngesta;
 import java.util.Objects;
 
@@ -19,8 +18,9 @@ import java.util.Objects;
 public final class ReanudarLotesDeIngesta {
 
   static final String MOTIVO_REINICIO =
-      "La aplicación se reinició mientras se procesaba. Vuelve a subir la exportación: lo que"
-          + " ya se leyó no se repite.";
+      "La aplicación se reinició mientras se procesaba o estaba en pausa. Para procesarla entera,"
+          + " elimina la ingesta y vuelve a subir la exportación: subirla sin eliminarla no vuelve"
+          + " a leer lo que ya se registró.";
   static final String MOTIVO_COLA_LLENA =
       "La cola de ingestas estaba llena al reanudar. Vuelve a subir la exportación.";
 
@@ -38,8 +38,16 @@ public final class ReanudarLotesDeIngesta {
   public Resultado ejecutar() {
     int reencolados = 0;
     int fallidos = 0;
-    for (LoteIngesta lote : repositorioLotes.abiertos()) {
-      if (lote.estado() == EstadoLote.PROCESANDO) {
+    for (LoteIngesta leido : repositorioLotes.abiertos()) {
+      // Se relee bloqueado: otra instancia viva puede estar cerrándolo en este momento, y escribir
+      // sobre la lectura de arriba pisaría su TERMINADO con un ERROR sin resumen.
+      LoteIngesta lote = repositorioLotes.buscarPorIdParaActualizar(leido.id()).orElse(null);
+      if (lote == null || !lote.estaAbierto()) {
+        continue;
+      }
+      // También los pausados y los que se estaban deteniendo: el hilo que los retenía se fue con el
+      // reinicio, y lo que iba a medias no se puede retomar.
+      if (lote.enManosDelTrabajador()) {
         fallar(lote, MOTIVO_REINICIO);
         fallidos++;
         continue;

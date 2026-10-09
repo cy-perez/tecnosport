@@ -30,12 +30,17 @@ import { usarProveedoresAdmin } from '../../../proveedores/application/listar-pr
 import { usarListarIngestas } from '../../application/listar-ingestas.consulta';
 import { usarSubirExportacion } from '../../application/subir-exportacion.mutacion';
 import { usarEliminarIngesta } from '../../application/eliminar-ingesta.mutacion';
+import { usarOrdenarIngesta } from '../../application/ordenar-ingesta.mutacion';
 import {
   EstadoLote,
   FiltroLotes,
   LoteEliminado,
   LoteIngesta,
   loteAbierto,
+  sePuedeDetener,
+  sePuedePausar,
+  sePuedeReanudar,
+  tieneResumen,
 } from '../../domain/ingesta.model';
 import {
   filtroLotesDesdeQueryParams,
@@ -45,7 +50,10 @@ import {
 const CLAVE_ESTADO: Record<EstadoLote, string> = {
   RECIBIDO: 'admin.ingestas.estados.RECIBIDO',
   PROCESANDO: 'admin.ingestas.estados.PROCESANDO',
+  PAUSADO: 'admin.ingestas.estados.PAUSADO',
+  DETENIENDO: 'admin.ingestas.estados.DETENIENDO',
   TERMINADO: 'admin.ingestas.estados.TERMINADO',
+  DETENIDO: 'admin.ingestas.estados.DETENIDO',
   ERROR: 'admin.ingestas.estados.ERROR',
 };
 
@@ -55,7 +63,10 @@ const CLASES_INSIGNIA =
 const CLASES_ESTADO: Record<EstadoLote, string> = {
   RECIBIDO: 'border-ts-borde text-ts-texto-suave',
   PROCESANDO: 'border-ts-primario text-ts-primario',
+  PAUSADO: 'border-ts-aviso text-ts-aviso',
+  DETENIENDO: 'border-ts-aviso text-ts-aviso',
   TERMINADO: 'border-ts-exito text-ts-exito',
+  DETENIDO: 'border-ts-borde text-ts-texto-suave',
   ERROR: 'border-ts-error text-ts-error',
 };
 
@@ -246,6 +257,7 @@ export class ListaIngestasAdminPage {
   protected preguntarSiEliminar(lote: LoteIngesta): void {
     this.errorEliminar.set(null);
     this.avisoEliminado.set(null);
+    this.confirmandoDetener.set(null);
     this.confirmandoEliminar.set(lote.id);
     this.enfocarDespuesDePintar(() => this.cajaEliminar()?.nativeElement);
   }
@@ -288,6 +300,90 @@ export class ListaIngestasAdminPage {
         }
       },
     });
+  }
+
+  // --- Pausar, reanudar y detener. Detener pregunta antes, en su fila, como eliminar. ---
+
+  private readonly ordenes = usarOrdenarIngesta();
+  private ordenEnVuelo = false;
+  protected readonly ordenando = computed(() => this.ordenes.isPending());
+  /** El lote cuya orden va en camino, para marcar ocupado solo su botón. */
+  protected readonly loteOrdenando = signal<string | null>(null);
+  protected readonly errorOrden = signal<string | null>(null);
+  protected readonly confirmandoDetener = signal<string | null>(null);
+  /** El proveedor del lote que se acaba de detener, para decirlo cuando el botón ya no está. */
+  protected readonly avisoDetenido = signal<string | null>(null);
+  private readonly cajaDetener = viewChild<ElementRef<HTMLElement>>('cajaDetener');
+  private readonly avisoDetenidoRef = viewChild<ElementRef<HTMLElement>>('avisoDetenidoRef');
+
+  protected readonly sePuedePausar = sePuedePausar;
+  protected readonly sePuedeReanudar = sePuedeReanudar;
+  protected readonly sePuedeDetener = sePuedeDetener;
+  protected readonly tieneResumen = tieneResumen;
+
+  /**
+   * Un solo botón que alterna: pausar y reanudar ocupan el mismo sitio, así que el foco se queda
+   * en él cuando la fila cambia de estado en vez de caer en `<body>`.
+   */
+  protected alternarPausa(lote: LoteIngesta): void {
+    this.ordenar(lote, sePuedeReanudar(lote) ? 'reanudar' : 'pausar');
+  }
+
+  protected preguntarSiDetener(lote: LoteIngesta): void {
+    this.errorOrden.set(null);
+    this.avisoDetenido.set(null);
+    this.confirmandoEliminar.set(null);
+    this.confirmandoDetener.set(lote.id);
+    this.enfocarDespuesDePintar(() => this.cajaDetener()?.nativeElement);
+  }
+
+  protected cancelarDetener(): void {
+    const id = this.confirmandoDetener();
+    this.confirmandoDetener.set(null);
+    this.errorOrden.set(null);
+    this.enfocarDespuesDePintar(() =>
+      this.raiz.nativeElement.querySelector<HTMLElement>(`[data-detener="${id}"] button`),
+    );
+  }
+
+  protected detener(lote: LoteIngesta): void {
+    this.ordenar(lote, 'detener');
+  }
+
+  private ordenar(lote: LoteIngesta, orden: 'pausar' | 'reanudar' | 'detener'): void {
+    // Marca propia por lo mismo que en eliminar: `isPending` no cambia en el mismo tic del `mutate`.
+    if (this.ordenEnVuelo) {
+      return;
+    }
+    this.ordenEnVuelo = true;
+    this.loteOrdenando.set(lote.id);
+    this.errorOrden.set(null);
+    this.ordenes.mutate(
+      { id: lote.id, orden },
+      {
+        onSettled: () => {
+          this.ordenEnVuelo = false;
+          this.loteOrdenando.set(null);
+        },
+        onSuccess: () => {
+          if (orden !== 'detener') {
+            return;
+          }
+          this.confirmandoDetener.set(null);
+          this.avisoDetenido.set(this.nombreDelProveedor(lote));
+          // El botón de detener ya no se ofrece: el foco va al aviso, que dice lo que pasó.
+          this.enfocarDespuesDePintar(() => this.avisoDetenidoRef()?.nativeElement);
+        },
+        onError: (error: unknown) => {
+          this.errorOrden.set(
+            mensajeDeError(error, this.transloco, `admin.ingestas.ordenes.error.${orden}`),
+          );
+          // La fila cambió mientras se pulsaba —terminó, o la detuvo otra pestaña—: se vuelve a
+          // pedir para que los botones digan lo que de verdad se puede hacer.
+          void this.queryClient.invalidateQueries({ queryKey: CLAVE_INGESTAS_ADMIN });
+        },
+      },
+    );
   }
 
   protected filtrarPorProveedor(proveedorId: string): void {

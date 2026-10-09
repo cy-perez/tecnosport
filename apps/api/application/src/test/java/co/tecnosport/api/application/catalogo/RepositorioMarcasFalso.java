@@ -26,6 +26,12 @@ final class RepositorioMarcasFalso implements RepositorioMarcas {
 
   private final List<Marca> todas = new ArrayList<>();
   private List<MarcaConLineas> conProductos = List.of();
+  private final java.util.Map<UUID, Long> productosPorMarca = new java.util.HashMap<>();
+
+  /** Productos en cualquier estado: lo que {@code contarProductos} responde. */
+  void conProductosEn(Marca marca, long cuantos) {
+    productosPorMarca.put(marca.id(), cuantos);
+  }
 
   void conMarcas(Marca... marcas) {
     this.todas.clear();
@@ -73,5 +79,26 @@ final class RepositorioMarcasFalso implements RepositorioMarcas {
   @Override
   public void guardar(Marca marca) {
     todas.add(marca);
+  }
+
+  @Override
+  public boolean existeOtraConNombre(String nombre, UUID excepto) {
+    return todas.stream()
+        .anyMatch(marca -> !marca.id().equals(excepto) && marca.nombre().equalsIgnoreCase(nombre));
+  }
+
+  @Override
+  public void actualizar(Marca marca) {
+    todas.replaceAll(m -> m.id().equals(marca.id()) ? marca : m);
+  }
+
+  @Override
+  public long contarProductos(UUID marcaId) {
+    return productosPorMarca.getOrDefault(marcaId, 0L);
+  }
+
+  @Override
+  public void eliminar(Marca marca) {
+    todas.removeIf(m -> m.id().equals(marca.id()));
   }
 }

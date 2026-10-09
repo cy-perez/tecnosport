@@ -1,12 +1,15 @@
 package co.tecnosport.api.presentation.proveedores;
 
 import co.tecnosport.api.application.catalogo.SolicitudDeSubida;
+import co.tecnosport.api.application.proveedores.DetenerIngesta;
 import co.tecnosport.api.application.proveedores.EliminarLoteDeIngesta;
 import co.tecnosport.api.application.proveedores.EncolarIngesta;
 import co.tecnosport.api.application.proveedores.IniciarIngesta;
 import co.tecnosport.api.application.proveedores.IniciarIngestaComando;
 import co.tecnosport.api.application.proveedores.LoteEliminado;
 import co.tecnosport.api.application.proveedores.LoteNoEncontradoException;
+import co.tecnosport.api.application.proveedores.PausarIngesta;
+import co.tecnosport.api.application.proveedores.ReanudarIngesta;
 import co.tecnosport.api.application.proveedores.RepositorioLotesIngesta;
 import co.tecnosport.api.application.proveedores.SolicitarSubidaDeExportacion;
 import co.tecnosport.api.domain.proveedores.LoteIngesta;
@@ -54,6 +57,9 @@ public class AdminIngestaControlador {
   private final RepositorioLotesIngesta repositorioLotes;
   private final TransactionTemplate transaccion;
   private final EliminarLoteDeIngesta eliminarLote;
+  private final PausarIngesta pausarIngesta;
+  private final ReanudarIngesta reanudarIngesta;
+  private final DetenerIngesta detenerIngesta;
 
   public AdminIngestaControlador(
       SolicitarSubidaDeExportacion solicitarSubida,
@@ -61,13 +67,19 @@ public class AdminIngestaControlador {
       EncolarIngesta encolarIngesta,
       RepositorioLotesIngesta repositorioLotes,
       PlatformTransactionManager transactionManager,
-      EliminarLoteDeIngesta eliminarLote) {
+      EliminarLoteDeIngesta eliminarLote,
+      PausarIngesta pausarIngesta,
+      ReanudarIngesta reanudarIngesta,
+      DetenerIngesta detenerIngesta) {
     this.solicitarSubida = Objects.requireNonNull(solicitarSubida);
     this.iniciarIngesta = Objects.requireNonNull(iniciarIngesta);
     this.encolarIngesta = Objects.requireNonNull(encolarIngesta);
     this.repositorioLotes = Objects.requireNonNull(repositorioLotes);
     this.transaccion = new TransactionTemplate(Objects.requireNonNull(transactionManager));
     this.eliminarLote = Objects.requireNonNull(eliminarLote);
+    this.pausarIngesta = Objects.requireNonNull(pausarIngesta);
+    this.reanudarIngesta = Objects.requireNonNull(reanudarIngesta);
+    this.detenerIngesta = Objects.requireNonNull(detenerIngesta);
   }
 
   @PostMapping("/proveedores/{id}/ingestas/url-subida")
@@ -115,6 +127,36 @@ public class AdminIngestaControlador {
         resultado.archivosBorrados());
     return new LoteEliminadoRespuesta(
         resultado.productosEliminados(), resultado.productosConservados());
+  }
+
+  /**
+   * El trabajador espera entre una publicación y otra hasta que se reanude o se detenga, y la cola
+   * espera con él. Solo un lote en proceso; si ya no lo está —terminó mientras se pulsaba—, {@code
+   * 422} con el estado en que quedó.
+   */
+  @PostMapping("/ingestas/{id}/pausar")
+  public LoteIngestaRespuesta pausar(@PathVariable UUID id) {
+    LoteIngesta lote = transaccion.execute(estado -> pausarIngesta.ejecutar(id));
+    log.info("Lote de ingesta {} en pausa.", id);
+    return LoteIngestaRespuesta.de(lote);
+  }
+
+  @PostMapping("/ingestas/{id}/reanudar")
+  public LoteIngestaRespuesta reanudar(@PathVariable UUID id) {
+    LoteIngesta lote = transaccion.execute(estado -> reanudarIngesta.ejecutar(id));
+    log.info("Lote de ingesta {} reanudado.", id);
+    return LoteIngestaRespuesta.de(lote);
+  }
+
+  /**
+   * En la cola, el lote queda {@code DETENIDO} en el acto; en curso o en pausa, {@code DETENIENDO}
+   * hasta que el trabajador lo suelte y siga con el siguiente. Ver {@link DetenerIngesta}.
+   */
+  @PostMapping("/ingestas/{id}/detener")
+  public LoteIngestaRespuesta detener(@PathVariable UUID id) {
+    LoteIngesta lote = transaccion.execute(estado -> detenerIngesta.ejecutar(id));
+    log.info("Lote de ingesta {}: detención pedida, queda {}.", id, lote.estado());
+    return LoteIngestaRespuesta.de(lote);
   }
 
   @GetMapping("/ingestas")

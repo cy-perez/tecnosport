@@ -10,6 +10,7 @@ import co.tecnosport.api.application.catalogo.CategoriaNoEncontradaException;
 import co.tecnosport.api.application.catalogo.CategoriaNoEsHojaException;
 import co.tecnosport.api.application.catalogo.CategoriaSlugYaExisteException;
 import co.tecnosport.api.application.catalogo.CicloDeCategoriasException;
+import co.tecnosport.api.application.catalogo.MarcaConProductosException;
 import co.tecnosport.api.application.catalogo.MarcaNoEncontradaException;
 import co.tecnosport.api.application.catalogo.MarcaYaExisteException;
 import co.tecnosport.api.application.catalogo.ObjetoDeImagenNoEncontradoException;
@@ -75,6 +76,7 @@ import co.tecnosport.api.application.proveedores.FotoDemasiadoGrandeException;
 import co.tecnosport.api.application.proveedores.FotoNoEsDelBorradorException;
 import co.tecnosport.api.application.proveedores.ImagenDeProveedorIlegibleException;
 import co.tecnosport.api.application.proveedores.LoteEnCursoException;
+import co.tecnosport.api.application.proveedores.LoteEnOtroEstadoException;
 import co.tecnosport.api.application.proveedores.LoteNoEncontradoException;
 import co.tecnosport.api.application.proveedores.PrendaIncoherenteException;
 import co.tecnosport.api.application.proveedores.ProductoDeProveedorYaExisteException;
@@ -241,6 +243,11 @@ public class ManejadorDeErrores {
   }
 
   // 409: se arregla solo, esperando a que el lote termine.
+  @ExceptionHandler(LoteEnOtroEstadoException.class)
+  public ProblemDetail loteEnOtroEstado(LoteEnOtroEstadoException excepcion) {
+    return problema(HttpStatus.CONFLICT, "La ingesta cambió de estado", excepcion);
+  }
+
   @ExceptionHandler(LoteEnCursoException.class)
   public ProblemDetail loteEnCurso(LoteEnCursoException excepcion) {
     return problema(HttpStatus.CONFLICT, "La ingesta está en curso", excepcion);
@@ -430,6 +437,11 @@ public class ManejadorDeErrores {
   @ExceptionHandler(MontoDeReintegroInvalidoException.class)
   public ProblemDetail montoDeReintegroInvalido(MontoDeReintegroInvalidoException excepcion) {
     return problema(HttpStatus.UNPROCESSABLE_CONTENT, "Monto de reintegro invalido", excepcion);
+  }
+
+  @ExceptionHandler(MarcaConProductosException.class)
+  public ProblemDetail marcaConProductos(MarcaConProductosException excepcion) {
+    return problema(HttpStatus.CONFLICT, "La marca tiene productos", excepcion);
   }
 
   /**

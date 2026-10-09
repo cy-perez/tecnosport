@@ -16,6 +16,7 @@ import {
   LoteEliminado,
   LoteIngesta,
   LotesPaginados,
+  OrdenIngesta,
   SubirExportacion,
 } from '../../domain/ingesta.model';
 import {
@@ -76,6 +77,29 @@ class RepositorioIngestasAdminFalso implements RepositorioIngestasAdmin {
     }
     this.lotes = this.lotes.filter((l) => l.id !== id);
     return { productosEliminados: 3, productosConservados: 1 };
+  }
+
+  readonly ordenes: { id: string; orden: OrdenIngesta }[] = [];
+  errorAlOrdenar: Error | null = null;
+
+  /** Hace lo que haría el servidor con el estado, para que la lista refrescada lo muestre. */
+  async ordenar(id: string, orden: OrdenIngesta): Promise<LoteIngesta> {
+    this.ordenes.push({ id, orden });
+    if (this.errorAlOrdenar) {
+      throw this.errorAlOrdenar;
+    }
+    const actual = this.lotes.find((l) => l.id === id) ?? loteDePrueba({ id });
+    const estado =
+      orden === 'pausar'
+        ? 'PAUSADO'
+        : orden === 'reanudar'
+          ? 'PROCESANDO'
+          : actual.estado === 'RECIBIDO'
+            ? 'DETENIDO'
+            : 'DETENIENDO';
+    const nuevo: LoteIngesta = { ...actual, estado };
+    this.lotes = this.lotes.map((l) => (l.id === id ? nuevo : l));
+    return nuevo;
   }
 
   async subir(comando: SubirExportacion): Promise<LoteIngesta> {
@@ -306,6 +330,107 @@ describe('ListaIngestasAdminPage', () => {
       await screen.findByRole('table');
 
       expect(screen.queryByRole('button', { name: new RegExp(accion) })).toBeNull();
+    });
+  });
+
+  describe('pausar, reanudar y detener', () => {
+    const o = esAdmin.ingestas.ordenes;
+    const enCurso = () =>
+      loteDePrueba({ estado: 'PROCESANDO', terminadoEn: null, iniciadoEn: '2026-09-30T15:00:01Z' });
+
+    it('pausa un lote en proceso y el mismo botón pasa a reanudar', async () => {
+      const { repositorio } = await renderPagina([enCurso()]);
+
+      fireEvent.click(await screen.findByRole('button', { name: /Pausar la ingesta de Bolsos/ }));
+
+      expect(
+        await screen.findByRole('button', { name: /Reanudar la ingesta de Bolsos/ }),
+      ).toBeTruthy();
+      expect(screen.getByText(esAdmin.ingestas.estados.PAUSADO)).toBeTruthy();
+      expect(screen.getByText(esAdmin.ingestas.enPausa)).toBeTruthy();
+      expect(repositorio.ordenes).toEqual([{ id: 'lote-1', orden: 'pausar' }]);
+
+      fireEvent.click(screen.getByRole('button', { name: /Reanudar la ingesta de Bolsos/ }));
+      expect(
+        await screen.findByRole('button', { name: /Pausar la ingesta de Bolsos/ }),
+      ).toBeTruthy();
+      expect(repositorio.ordenes.at(-1)).toEqual({ id: 'lote-1', orden: 'reanudar' });
+    });
+
+    it('en la cola no ofrece pausar, pero sí detener', async () => {
+      await renderPagina([
+        loteDePrueba({ estado: 'RECIBIDO', terminadoEn: null, iniciadoEn: null }),
+      ]);
+      await screen.findByRole('table');
+
+      expect(screen.queryByRole('button', { name: /Pausar la ingesta/ })).toBeNull();
+      expect(screen.getByRole('button', { name: /Detener la ingesta/ })).toBeTruthy();
+    });
+
+    it('detener pregunta, avisa lo que no se retoma y confirma', async () => {
+      const { repositorio } = await renderPagina([enCurso()]);
+
+      fireEvent.click(await screen.findByRole('button', { name: /Detener la ingesta de Bolsos/ }));
+      expect(screen.getByText(o.loQueImplica)).toBeTruthy();
+      expect(repositorio.ordenes).toEqual([]);
+      fireEvent.click(screen.getByRole('button', { name: o.confirmar }));
+
+      expect(await screen.findByText(/Se detuvo la ingesta de Bolsos Medellín/)).toBeTruthy();
+      expect(repositorio.ordenes).toEqual([{ id: 'lote-1', orden: 'detener' }]);
+      expect(await screen.findByText(esAdmin.ingestas.estados.DETENIENDO)).toBeTruthy();
+      // Deteniéndose sigue abierto: ni detener otra vez ni eliminar.
+      expect(screen.queryByRole('button', { name: /Detener la ingesta/ })).toBeNull();
+      expect(screen.queryByRole('button', { name: /Eliminar la ingesta/ })).toBeNull();
+    });
+
+    it('cancelar detener no manda nada', async () => {
+      const { repositorio } = await renderPagina([enCurso()]);
+
+      fireEvent.click(await screen.findByRole('button', { name: /Detener la ingesta de Bolsos/ }));
+      fireEvent.click(screen.getByRole('button', { name: o.cancelar }));
+
+      expect(screen.queryByRole('button', { name: o.confirmar })).toBeNull();
+      expect(repositorio.ordenes).toEqual([]);
+    });
+
+    it('si pausar falla, lo dice', async () => {
+      const { repositorio } = await renderPagina([enCurso()]);
+      repositorio.errorAlOrdenar = new Error('falló');
+
+      fireEvent.click(await screen.findByRole('button', { name: /Pausar la ingesta de Bolsos/ }));
+
+      expect(await screen.findByText(o.error.pausar)).toBeTruthy();
+    });
+
+    it('si el lote cambió mientras tanto, lo dice con el texto del código', async () => {
+      const { repositorio } = await renderPagina([enCurso()]);
+      repositorio.errorAlOrdenar = new ErrorHttp(409, 'otro estado', 'LOTE_EN_OTRO_ESTADO');
+
+      fireEvent.click(await screen.findByRole('button', { name: /Pausar la ingesta de Bolsos/ }));
+
+      expect(await screen.findByText(esAdmin.errores.lote_en_otro_estado)).toBeTruthy();
+    });
+
+    it('un lote detenido a la mitad muestra lo que alcanzó y se puede eliminar', async () => {
+      await renderPagina([loteDePrueba({ estado: 'DETENIDO' })]);
+
+      expect(await screen.findByText(esAdmin.ingestas.resumen.parcial)).toBeTruthy();
+      expect(screen.getByText('9 publicaciones')).toBeTruthy();
+      expect(screen.getByRole('button', { name: /Eliminar la ingesta/ })).toBeTruthy();
+    });
+
+    it('un lote detenido en la cola no muestra cifras', async () => {
+      await renderPagina([loteDePrueba({ estado: 'DETENIDO', iniciadoEn: null })]);
+
+      expect(await screen.findByText(esAdmin.ingestas.detenidaEnCola)).toBeTruthy();
+      expect(screen.queryByText('9 publicaciones')).toBeNull();
+    });
+
+    it('con las acciones abiertas no tiene violaciones de accesibilidad', async () => {
+      const { container } = await renderPagina([enCurso()]);
+
+      fireEvent.click(await screen.findByRole('button', { name: /Detener la ingesta de Bolsos/ }));
+      await esperarSinViolaciones(container);
     });
   });
 });

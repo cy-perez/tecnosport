@@ -51,13 +51,17 @@
     "prenda_incoherente": "Una prenda quedó sin color o con fotos de dos colores. Revisa las prendas de las fotos.",
     "imagen_de_proveedor_ilegible": "Una de las fotos no se pudo procesar. Recházalo o pídele al proveedor la foto de nuevo.",
     "producto_de_proveedor_ya_existe": "Este anuncio ya es un producto del catálogo: es el mismo título al mismo precio. Rechaza el borrador.",
-    "lote_en_curso": "La ingesta todavía se está procesando. Espera a que termine para eliminarla.",
+    "lote_en_curso": "La ingesta todavía está en curso o en pausa. Detenla, o espera a que termine, para eliminarla.",
     "pago_sin_pedido_ya_devuelto": "Ese pago ya tiene registrada su devolución.",
     "inventario_sin_confirmar": "No hay existencia para todas las líneas: repón y vuelve a intentarlo, o cancela con reintegro.",
     "peso_de_referencia_no_admitido": "Esa categoría no lleva peso de referencia: es de tecnología, que se mide producto por producto, o tiene subcategorías, y el peso va en cada una de ellas.",
     "articulo_sin_medidas": "Un artículo de este pedido no tiene medidas ni peso de referencia en su categoría. Mídelo, o ponle peso a su categoría en \"Pesos y medidas de envío\".",
     "articulo_no_asegurable": "Un paquete de este pedido vale más de lo que la transportadora asegura, así que no se puede despachar a domicilio.",
-    "talla_repetida": "Ese modelo ya tiene esa talla en alguno de sus colores: quedarían dos variantes iguales."
+    "talla_repetida": "Ese modelo ya tiene esa talla en alguno de sus colores: quedarían dos variantes iguales.",
+    "marca_con_productos": "Esta marca tiene productos. Muévelos a otra marca desde su formulario antes de eliminarla.",
+    "marca_ya_existe": "Ya hay una marca con ese nombre. Escribirlo con otras mayúsculas no la hace distinta.",
+    "marca_no_encontrada": "Esa marca ya no existe: la lista se acaba de actualizar.",
+    "lote_en_otro_estado": "La ingesta cambió de estado mientras tanto (terminó, falló o la detuvieron). La lista se acaba de actualizar."
   },
   "iniciarSesion": {
     "titulo": "Panel administrativo",
@@ -782,7 +786,7 @@
   },
   "marcas": {
     "titulo": "Marcas",
-    "explicacion": "Las marcas del catálogo. Una marca nueva se puede crear aquí y queda disponible de inmediato en el formulario de producto. No se pueden renombrar ni borrar: el nombre es lo que ve quien compra, en la ficha y en el filtro de la tienda.",
+    "explicacion": "Las marcas del catálogo. Una marca nueva queda disponible de inmediato en el formulario de producto. Renombrar una marca cambia lo que ve quien compra, en la ficha y en el filtro de la tienda. Solo se puede eliminar una marca que no tiene productos.",
     "nombre": "Nombre de la marca",
     "crear": "Crear marca",
     "enviando": "Creando…",
@@ -792,7 +796,29 @@
     "error": "No se pudo crear la marca. Intenta de nuevo.",
     "errorLista": "No se pudo cargar la lista de marcas.",
     "ninguna": "Todavía no hay ninguna marca.",
-    "listaTitulo": "En el catálogo ({{total}})"
+    "listaTitulo": "En el catálogo ({{total}})",
+    "editar": {
+      "accion": "Editar",
+      "accionMarca": "Editar la marca {{nombre}}",
+      "nombre": "Nuevo nombre de {{nombre}}",
+      "guardar": "Guardar",
+      "guardando": "Guardando…",
+      "cancelar": "Cancelar",
+      "faltaNombre": "Escribe el nombre de la marca.",
+      "hecho": "Listo: la marca ahora se llama {{nombre}}, también en la tienda.",
+      "error": "No pudimos renombrar la marca. Vuelve a intentarlo."
+    },
+    "eliminar": {
+      "accion": "Eliminar",
+      "accionMarca": "Eliminar la marca {{nombre}}",
+      "pregunta": "¿Eliminar la marca {{nombre}}?",
+      "loQueImplica": "Solo se elimina si no tiene ningún producto, en ningún estado. No tiene vuelta.",
+      "confirmar": "Sí, eliminar",
+      "eliminando": "Eliminando…",
+      "cancelar": "Cancelar",
+      "hecho": "La marca {{nombre}} se eliminó.",
+      "error": "No pudimos eliminar la marca. Vuelve a intentarlo."
+    }
   },
   "clave": {
     "titulo": "Cambiar mi clave",
@@ -953,7 +979,7 @@
   },
   "ingestas": {
     "titulo": "Ingestas",
-    "explicacion": "Cada lote es una exportación del chat de un proveedor. Se sube el zip que genera WhatsApp (Exportar chat, con archivos), el servidor lee los mensajes, los agrupa en publicaciones y deja un borrador por cada producto nuevo. Subir dos veces el mismo chat es seguro: lo que ya se leyó no se repite.",
+    "explicacion": "Cada lote es una exportación del chat de un proveedor. Se sube el zip que genera WhatsApp (Exportar chat, con archivos), el servidor lee los mensajes, los agrupa en publicaciones y deja un borrador por cada producto nuevo. Subir dos veces el mismo chat es seguro: lo que ya se leyó no se repite. Las ingestas se procesan de una en una: mientras una corre se puede pausar (las demás esperan con ella) o detener, y la cola sigue con la siguiente.",
     "errorLista": "No se pudo cargar la lista de ingestas.",
     "total": "{{total}} lote(s)",
     "ninguna": "Todavía no se ha subido ninguna exportación.",
@@ -965,7 +991,10 @@
       "RECIBIDO": "En cola",
       "PROCESANDO": "Procesando",
       "TERMINADO": "Terminado",
-      "ERROR": "Con error"
+      "ERROR": "Con error",
+      "PAUSADO": "En pausa",
+      "DETENIENDO": "Deteniéndose",
+      "DETENIDO": "Detenida"
     },
     "columnas": {
       "proveedor": "Proveedor",
@@ -978,7 +1007,8 @@
       "mensajes": "{{leidos}} mensajes leídos, {{nuevos}} nuevos",
       "publicaciones": "{{total}} publicaciones",
       "borradores": "{{nuevos}} borradores nuevos, {{renovaciones}} renovaciones, {{agotados}} agotados",
-      "alertas": "{{alertas}} con alertas, {{descartes}} descartadas"
+      "alertas": "{{alertas}} con alertas, {{descartes}} descartadas",
+      "parcial": "Se detuvo antes de terminar. Alcanzó a hacer esto:"
     },
     "subir": {
       "titulo": "Subir una exportación",
@@ -1005,6 +1035,29 @@
       "cancelar": "Cancelar",
       "hecho": "Ingesta eliminada. Productos borrados: {{eliminados}}. Se quedaron por estar publicados o vendidos: {{conservados}}.",
       "error": "No pudimos eliminar la ingesta. Vuelve a intentarlo."
+    },
+    "enPausa": "En pausa. Las ingestas en cola esperan hasta que la reanudes o la detengas. Una pausa no sobrevive a un reinicio del servidor: si se reinicia, la ingesta se cierra con error.",
+    "deteniendo": "Termina la publicación en curso y suelta la cola.",
+    "detenidaEnCola": "Se detuvo antes de empezar: no se leyó nada.",
+    "ordenes": {
+      "pausar": "Pausar",
+      "reanudar": "Reanudar",
+      "detener": "Detener",
+      "pausarLote": "Pausar la ingesta de {{proveedor}} del {{fecha}}",
+      "reanudarLote": "Reanudar la ingesta de {{proveedor}} del {{fecha}}",
+      "detenerLote": "Detener la ingesta de {{proveedor}} del {{fecha}}",
+      "pregunta": "¿Detener esta ingesta de {{proveedor}}?",
+      "loQueImplica": "La cola sigue con la siguiente ingesta. Lo que ya se procesó se queda; lo que falta no se retoma: volver a subir el mismo archivo no lo procesa, porque esos mensajes ya se leyeron. Para procesarlo entero, elimina la ingesta y súbelo otra vez.",
+      "loQueImplicaEnCola": "Todavía no ha empezado: sale de la cola sin que se lea nada.",
+      "confirmar": "Sí, detener",
+      "deteniendo": "Deteniendo…",
+      "cancelar": "Cancelar",
+      "detenida": "Se detuvo la ingesta de {{proveedor}}. Si estaba corriendo, termina la publicación en curso y la cola sigue con la siguiente.",
+      "error": {
+        "pausar": "No pudimos pausar la ingesta. Vuelve a intentarlo.",
+        "reanudar": "No pudimos reanudar la ingesta. Vuelve a intentarlo.",
+        "detener": "No pudimos detener la ingesta. Vuelve a intentarlo."
+      }
     }
   },
   "tecnologia": {

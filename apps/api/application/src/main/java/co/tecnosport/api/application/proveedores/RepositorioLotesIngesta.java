@@ -15,6 +15,13 @@ public interface RepositorioLotesIngesta {
   Optional<LoteIngesta> buscarPorId(UUID id);
 
   /**
+   * Lo mismo, pero bloqueando la fila hasta que la transacción de quien llama termine. Lo usan las
+   * dos manos que escriben un lote abierto —el panel que pausa o detiene, y el trabajador que lo
+   * toma o lo suelta—: sin el bloqueo, la que confirma de última pisa a la otra en silencio.
+   */
+  Optional<LoteIngesta> buscarPorIdParaActualizar(UUID id);
+
+  /**
    * Del más reciente al más antiguo, paginado por página como todo el panel. {@code proveedorId}
    * nulo lista los de todos los proveedores.
    */

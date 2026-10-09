@@ -6,6 +6,7 @@ import co.tecnosport.api.application.compartido.Reloj;
 import co.tecnosport.api.application.proveedores.AlmacenDeArchivosDeProveedor;
 import co.tecnosport.api.application.proveedores.ArmarPublicaciones;
 import co.tecnosport.api.application.proveedores.CrearProveedor;
+import co.tecnosport.api.application.proveedores.DetenerIngesta;
 import co.tecnosport.api.application.proveedores.EditarProveedor;
 import co.tecnosport.api.application.proveedores.EjecutorDeIngestas;
 import co.tecnosport.api.application.proveedores.EliminacionDeProductos;
@@ -16,7 +17,9 @@ import co.tecnosport.api.application.proveedores.EncolarIngesta;
 import co.tecnosport.api.application.proveedores.ExtraerProductoDePublicacion;
 import co.tecnosport.api.application.proveedores.FuenteDeMensajes;
 import co.tecnosport.api.application.proveedores.IniciarIngesta;
+import co.tecnosport.api.application.proveedores.PausarIngesta;
 import co.tecnosport.api.application.proveedores.ProcesarLoteDeIngesta;
+import co.tecnosport.api.application.proveedores.ReanudarIngesta;
 import co.tecnosport.api.application.proveedores.ReanudarLotesDeIngesta;
 import co.tecnosport.api.application.proveedores.RegistrarMensajesDeProveedor;
 import co.tecnosport.api.application.proveedores.RepositorioLotesIngesta;
@@ -28,6 +31,7 @@ import co.tecnosport.api.application.proveedores.SolicitarSubidaDeExportacion;
 import co.tecnosport.api.infrastructure.proveedores.AlmacenDeArchivosDeProveedorGcs;
 import co.tecnosport.api.infrastructure.proveedores.whatsapp.ExportacionChatWhatsApp;
 import com.google.cloud.storage.Storage;
+import java.time.Duration;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -39,6 +43,12 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 @EnableConfigurationProperties(PropiedadesProveedores.class)
 public class ConfiguracionProveedores {
+
+  /**
+   * Cada cuánto vuelve a mirar el trabajador un lote en pausa. Es lo que tarda en notarse
+   * "Reanudar" o "Detener" desde el panel, y una lectura de una fila por vuelta.
+   */
+  private static final Duration ESPERA_EN_PAUSA = Duration.ofSeconds(2);
 
   /** Sobre el mismo {@code Storage} del catálogo: misma cuenta, otro bucket. */
   @Bean
@@ -75,6 +85,21 @@ public class ConfiguracionProveedores {
       EliminacionDeProductos eliminacionDeProductos,
       AlmacenDeArchivosDeProveedor almacen) {
     return new EliminarLoteDeIngesta(repositorio, eliminacionDeProductos, almacen);
+  }
+
+  @Bean
+  public PausarIngesta pausarIngesta(RepositorioLotesIngesta repositorio) {
+    return new PausarIngesta(repositorio);
+  }
+
+  @Bean
+  public ReanudarIngesta reanudarIngesta(RepositorioLotesIngesta repositorio) {
+    return new ReanudarIngesta(repositorio);
+  }
+
+  @Bean
+  public DetenerIngesta detenerIngesta(RepositorioLotesIngesta repositorio, Reloj reloj) {
+    return new DetenerIngesta(repositorio, reloj);
   }
 
   @Bean
@@ -142,6 +167,7 @@ public class ConfiguracionProveedores {
         extraer,
         resolver,
         enTransaccionPropia,
+        new EsperaDeIngestaConPausa(ESPERA_EN_PAUSA),
         reloj);
   }
 

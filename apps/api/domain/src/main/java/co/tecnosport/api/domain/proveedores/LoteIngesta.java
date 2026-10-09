@@ -100,7 +100,10 @@ public final class LoteIngesta {
    * con otras cifras, porque las cifras son lo que alguien ya leyó en el panel.
    */
   public void terminar(ResumenIngesta resumen, Instant ahora) {
-    if (estado != EstadoLote.PROCESANDO) {
+    // Desde la pausa o la detención pedida también: si el trabajador llegó al final antes de
+    // verlas,
+    // el trabajo está hecho entero y el resumen lo dice. Esconderlo como "detenido" sería mentir.
+    if (!enManosDelTrabajador()) {
       throw new ExcepcionDeDominio(
           "Solo se puede terminar un lote que se está procesando; este está " + estado + ".");
     }
@@ -116,7 +119,7 @@ public final class LoteIngesta {
    * alguien leyó no se convierte en un error después.
    */
   public void fallar(String detalle, Instant ahora) {
-    if (estado == EstadoLote.TERMINADO || estado == EstadoLote.ERROR) {
+    if (!estaAbierto()) {
       throw new ExcepcionDeDominio("Un lote " + estado + " ya no puede fallar.");
     }
     String motivo = enBlancoEsNulo(detalle);
@@ -128,8 +131,75 @@ public final class LoteIngesta {
     this.terminadoEn = Objects.requireNonNull(ahora, "La fecha de fin no puede ser nula.");
   }
 
+  /**
+   * El trabajador espera aquí, entre una publicación y otra, hasta que se reanude o se detenga.
+   * Solo desde {@code PROCESANDO}: un lote en la cola no tiene trabajo que pausar, y si se pausara
+   * ahí retendría la cola en cuanto el hilo llegara a él, sin que nadie lo hubiera visto empezar.
+   */
+  public void pausar() {
+    if (estado != EstadoLote.PROCESANDO) {
+      throw new ExcepcionDeDominio(
+          "Solo se puede pausar un lote en proceso; este está " + estado + ".");
+    }
+    this.estado = EstadoLote.PAUSADO;
+  }
+
+  public void reanudar() {
+    if (estado != EstadoLote.PAUSADO) {
+      throw new ExcepcionDeDominio(
+          "Solo se puede reanudar un lote pausado; este está " + estado + ".");
+    }
+    this.estado = EstadoLote.PROCESANDO;
+  }
+
+  /**
+   * El panel pide detenerlo. Si nadie lo ha tomado, queda {@code DETENIDO} en el acto y el
+   * trabajador lo salta al llegar a él; si ya se está procesando, queda {@code DETENIENDO} hasta
+   * que el trabajador lo suelte con {@link #detener}.
+   *
+   * <p><b>Lo que faltó no se retoma.</b> Los mensajes que alcanzaron a registrarse ya no se vuelven
+   * a registrar si se sube otra vez la misma exportación, así que sus publicaciones pendientes no
+   * vuelven a armarse. Para procesarlo entero hay que eliminar la ingesta y subir el archivo otra
+   * vez.
+   */
+  public void pedirDetencion(Instant ahora) {
+    if (estado == EstadoLote.RECIBIDO) {
+      this.estado = EstadoLote.DETENIDO;
+      this.terminadoEn = Objects.requireNonNull(ahora, "La fecha de fin no puede ser nula.");
+      return;
+    }
+    if (estado != EstadoLote.PROCESANDO && estado != EstadoLote.PAUSADO) {
+      throw new ExcepcionDeDominio("Un lote " + estado + " no se puede detener.");
+    }
+    this.estado = EstadoLote.DETENIENDO;
+  }
+
+  /** El trabajador lo suelta, con lo que alcanzó a hacer. */
+  public void detener(ResumenIngesta resumenParcial, Instant ahora) {
+    if (estado != EstadoLote.DETENIENDO) {
+      throw new ExcepcionDeDominio(
+          "Solo se suelta un lote al que se le pidió detenerse; este está " + estado + ".");
+    }
+    this.resumen = Objects.requireNonNull(resumenParcial, "Un lote detenido dice qué alcanzó.");
+    this.estado = EstadoLote.DETENIDO;
+    this.terminadoEn = Objects.requireNonNull(ahora, "La fecha de fin no puede ser nula.");
+  }
+
+  /**
+   * Abierto es lo que todavía puede cambiar: en la cola o en manos del trabajador. Mientras lo esté
+   * no se elimina, porque el hilo puede estar escribiendo en él.
+   */
   public boolean estaAbierto() {
-    return estado == EstadoLote.RECIBIDO || estado == EstadoLote.PROCESANDO;
+    return estado == EstadoLote.RECIBIDO || enManosDelTrabajador();
+  }
+
+  /**
+   * Lo tomó el trabajador y todavía no lo ha soltado, sea cual sea la orden que tenga pendiente.
+   */
+  public boolean enManosDelTrabajador() {
+    return estado == EstadoLote.PROCESANDO
+        || estado == EstadoLote.PAUSADO
+        || estado == EstadoLote.DETENIENDO;
   }
 
   private static String enBlancoEsNulo(String valor) {

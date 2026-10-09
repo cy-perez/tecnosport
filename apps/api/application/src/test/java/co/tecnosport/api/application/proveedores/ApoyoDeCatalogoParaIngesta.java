@@ -385,6 +385,26 @@ final class ApoyoDeCatalogoParaIngesta {
     public void guardar(Marca marca) {
       throw new UnsupportedOperationException();
     }
+
+    @Override
+    public boolean existeOtraConNombre(String nombre, UUID excepto) {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void actualizar(Marca marca) {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public long contarProductos(UUID marcaId) {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void eliminar(Marca marca) {
+      throw new UnsupportedOperationException();
+    }
   }
 
   static final class RepositorioCategoriasFijo implements RepositorioCategorias {

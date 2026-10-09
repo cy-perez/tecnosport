@@ -158,4 +158,93 @@ class LoteIngestaTest {
 
     assertTrue(error.getMessage().contains("más mensajes de los que leyó"), error.getMessage());
   }
+
+  private static LoteIngesta procesando() {
+    LoteIngesta lote = recibido();
+    lote.iniciar(T1);
+    return lote;
+  }
+
+  @Test
+  void pausaYReanudaSinSalirDeLasManosDelTrabajador() {
+    LoteIngesta lote = procesando();
+
+    lote.pausar();
+    assertEquals(EstadoLote.PAUSADO, lote.estado());
+    assertTrue(lote.estaAbierto(), "pausado no se elimina: el hilo lo retiene");
+    assertTrue(lote.enManosDelTrabajador());
+
+    lote.reanudar();
+    assertEquals(EstadoLote.PROCESANDO, lote.estado());
+  }
+
+  /** En la cola no hay trabajo que pausar; pausarlo ahí retendría la cola sin aviso. */
+  @Test
+  void soloSePausaLoQueSeEstaProcesando() {
+    assertThrows(ExcepcionDeDominio.class, () -> recibido().pausar());
+    assertThrows(ExcepcionDeDominio.class, () -> recibido().reanudar());
+    LoteIngesta pausado = procesando();
+    pausado.pausar();
+    assertThrows(ExcepcionDeDominio.class, pausado::pausar);
+  }
+
+  @Test
+  void detenerEnLaColaLoCierraEnElActoSinResumen() {
+    LoteIngesta lote = recibido();
+
+    lote.pedirDetencion(T1);
+
+    assertEquals(EstadoLote.DETENIDO, lote.estado());
+    assertEquals(Optional.of(T1), lote.terminadoEn());
+    assertEquals(Optional.empty(), lote.resumen());
+    assertFalse(lote.estaAbierto());
+    assertThrows(ExcepcionDeDominio.class, () -> lote.iniciar(T2), "el trabajador lo salta");
+  }
+
+  /** Detener en curso es una orden: el lote sigue abierto hasta que el trabajador lo suelte. */
+  @Test
+  void detenerEnCursoEsperaAQueElTrabajadorLoSuelte() {
+    LoteIngesta lote = procesando();
+    lote.pausar();
+
+    lote.pedirDetencion(T2);
+    assertEquals(EstadoLote.DETENIENDO, lote.estado());
+    assertTrue(lote.estaAbierto(), "con el hilo escribiendo en él no se puede eliminar");
+    assertEquals(Optional.empty(), lote.terminadoEn());
+
+    ResumenIngesta parcial = new ResumenIngesta(40, 5, 35, 9, 3, 0, 0, 0, 0);
+    lote.detener(parcial, T2);
+    assertEquals(EstadoLote.DETENIDO, lote.estado());
+    assertEquals(Optional.of(parcial), lote.resumen());
+    assertEquals(Optional.of(T2), lote.terminadoEn());
+    assertFalse(lote.estaAbierto());
+  }
+
+  @Test
+  void loCerradoNoSeDetieneYLoQueNoSePidioNoSeSuelta() {
+    LoteIngesta terminado = procesando();
+    terminado.terminar(RESUMEN, T2);
+    assertThrows(ExcepcionDeDominio.class, () -> terminado.pedirDetencion(T2));
+
+    LoteIngesta detenido = recibido();
+    detenido.pedirDetencion(T1);
+    assertThrows(ExcepcionDeDominio.class, () -> detenido.pedirDetencion(T2));
+    assertThrows(ExcepcionDeDominio.class, () -> detenido.fallar("tarde", T2));
+
+    assertThrows(ExcepcionDeDominio.class, () -> procesando().detener(RESUMEN, T2));
+  }
+
+  /** Si el trabajador llegó al final antes de ver la orden, el trabajo está hecho entero. */
+  @Test
+  void terminaAunqueLeHayanPedidoPausarODetener() {
+    LoteIngesta pausado = procesando();
+    pausado.pausar();
+    pausado.terminar(RESUMEN, T2);
+    assertEquals(EstadoLote.TERMINADO, pausado.estado());
+
+    LoteIngesta deteniendo = procesando();
+    deteniendo.pedirDetencion(T2);
+    deteniendo.terminar(RESUMEN, T2);
+    assertEquals(EstadoLote.TERMINADO, deteniendo.estado());
+  }
 }

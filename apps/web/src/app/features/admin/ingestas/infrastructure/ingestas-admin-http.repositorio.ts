@@ -8,6 +8,7 @@ import {
   LoteEliminado,
   LoteIngesta,
   LotesPaginados,
+  OrdenIngesta,
   SubirExportacion,
 } from '../domain/ingesta.model';
 import { RepositorioIngestasAdmin } from '../domain/repositorio-ingestas-admin.puerto';
@@ -62,6 +63,34 @@ export class IngestasAdminHttpRepositorio implements RepositorioIngestasAdmin {
       productosEliminados: cuerpo.productosEliminados ?? 0,
       productosConservados: cuerpo.productosConservados ?? 0,
     };
+  }
+
+  /** Un `switch` y no una ruta armada: el cliente tipado solo acepta rutas literales del contrato. */
+  async ordenar(id: string, orden: OrdenIngesta): Promise<LoteIngesta> {
+    const params = { path: { id } };
+    switch (orden) {
+      case 'pausar':
+        return aLoteIngesta(
+          desempaquetar(
+            await this.cliente.POST('/api/v1/admin/ingestas/{id}/pausar', { params }),
+            'no se pudo pausar la ingesta',
+          ),
+        );
+      case 'reanudar':
+        return aLoteIngesta(
+          desempaquetar(
+            await this.cliente.POST('/api/v1/admin/ingestas/{id}/reanudar', { params }),
+            'no se pudo reanudar la ingesta',
+          ),
+        );
+      case 'detener':
+        return aLoteIngesta(
+          desempaquetar(
+            await this.cliente.POST('/api/v1/admin/ingestas/{id}/detener', { params }),
+            'no se pudo detener la ingesta',
+          ),
+        );
+    }
   }
 
   async subir(comando: SubirExportacion): Promise<LoteIngesta> {

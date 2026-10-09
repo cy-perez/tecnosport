@@ -11,6 +11,7 @@ import co.tecnosport.api.application.proveedores.ApoyoDeCatalogoParaIngesta.Repo
 import co.tecnosport.api.application.proveedores.ApoyoDeCatalogoParaIngesta.RepositorioProductosDeProveedorEnMemoria;
 import co.tecnosport.api.application.proveedores.ApoyoDeCatalogoParaIngesta.RepositorioProductosEnMemoria;
 import co.tecnosport.api.application.proveedores.ApoyoDeIngesta.AlmacenEnMemoria;
+import co.tecnosport.api.application.proveedores.ApoyoDeIngesta.EsperaGuionada;
 import co.tecnosport.api.application.proveedores.ApoyoDeIngesta.ExtractorFalso;
 import co.tecnosport.api.application.proveedores.ApoyoDeIngesta.FuenteFija;
 import co.tecnosport.api.application.proveedores.ApoyoDeIngesta.RepositorioLotesEnMemoria;
@@ -78,6 +79,7 @@ class ProcesarLoteDeIngestaTest {
   private final AlmacenEnMemoria almacen = new AlmacenEnMemoria();
   private final EnTransaccionPropiaFalsa transacciones = new EnTransaccionPropiaFalsa();
 
+  private EsperaGuionada espera = new EsperaGuionada();
   private Proveedor proveedor;
   private LoteIngesta lote;
 
@@ -129,6 +131,7 @@ class ProcesarLoteDeIngestaTest {
         extraer,
         resolver,
         transacciones,
+        espera,
         reloj);
   }
 
@@ -482,5 +485,180 @@ class ProcesarLoteDeIngestaTest {
         new BigDecimal("0.9"),
         null,
         codigo);
+  }
+
+  // --- Pausar y detener desde el panel ---
+
+  /**
+   * Lo que haría el panel, en el momento en que la prueba lo diga: leer, cambiar y guardar su
+   * propia copia. Con {@code devolverCopias}, la que tiene el trabajador no se entera hasta que
+   * relee, que es justo lo que hay que probar.
+   */
+  private void enElPanel(java.util.function.Consumer<LoteIngesta> accion) {
+    LoteIngesta delPanel = lotes.buscarPorId(lote.id()).orElseThrow();
+    accion.accept(delPanel);
+    lotes.actualizar(delPanel);
+  }
+
+  /** Las pruebas de pausar y detener leen copias, como la base. */
+  private void conCopias() {
+    lotes.devolverCopias = true;
+    lotes.guardar(lote);
+  }
+
+  /** Un extractor que, en la llamada n, hace algo en el panel antes de responder. */
+  private ExtractorDeProductos extractorQueEnLaLlamada(int n, Runnable accion) {
+    ExtractorFalso delAnexo = extractorDelAnexo();
+    int[] llamadas = {0};
+    return texto -> {
+      if (++llamadas[0] == n) {
+        accion.run();
+      }
+      return delAnexo.extraer(texto);
+    };
+  }
+
+  /** La pausa retiene el hilo donde iba y, al reanudar, sigue sin repetir ni saltarse nada. */
+  @Test
+  void enPausaEsperaYAlReanudarTerminaEntero() {
+    conCopias();
+    espera.luego(() -> {}).luego(() -> enElPanel(LoteIngesta::reanudar));
+    ExtractorDeProductos extractor =
+        extractorQueEnLaLlamada(3, () -> enElPanel(LoteIngesta::pausar));
+
+    LoteIngesta resultado =
+        casoCon(new FuenteFija(comoChat(losNueveDelCriterio())), extractor).ejecutar(lote.id());
+
+    assertEquals(EstadoLote.TERMINADO, resultado.estado());
+    assertEquals(2, espera.esperas, "esperó mientras siguió en pausa, no una sola vez");
+    assertEquals(9, resultado.resumen().orElseThrow().borradoresNuevos());
+    assertEquals(9, borradores.porId.size());
+  }
+
+  /**
+   * Detener a la mitad suelta el hilo con lo que alcanzó: las publicaciones que faltan no se tocan.
+   */
+  @Test
+  void detenerEnCursoCierraConLoQueAlcanzoYNoSigue() {
+    conCopias();
+    ExtractorDeProductos extractor =
+        extractorQueEnLaLlamada(3, () -> enElPanel(l -> l.pedirDetencion(AHORA)));
+
+    LoteIngesta resultado =
+        casoCon(new FuenteFija(comoChat(losNueveDelCriterio())), extractor).ejecutar(lote.id());
+
+    assertEquals(EstadoLote.DETENIDO, resultado.estado());
+    ResumenIngesta resumen = resultado.resumen().orElseThrow();
+    assertEquals(28, resumen.mensajesLeidos());
+    assertEquals(9, resumen.publicaciones());
+    assertEquals(3, resumen.borradoresNuevos(), "la que estaba en curso termina; las demás no");
+    assertEquals(3, borradores.porId.size());
+    assertEquals(Optional.of(AHORA), resultado.terminadoEn());
+    assertEquals(0, espera.esperas);
+  }
+
+  @Test
+  void detenerEnPausaSueltaElHiloSinVolverATrabajar() {
+    conCopias();
+    espera.luego(() -> enElPanel(l -> l.pedirDetencion(AHORA)));
+    ExtractorDeProductos extractor =
+        extractorQueEnLaLlamada(1, () -> enElPanel(LoteIngesta::pausar));
+
+    LoteIngesta resultado =
+        casoCon(new FuenteFija(comoChat(losNueveDelCriterio())), extractor).ejecutar(lote.id());
+
+    assertEquals(EstadoLote.DETENIDO, resultado.estado());
+    assertEquals(1, resultado.resumen().orElseThrow().borradoresNuevos());
+  }
+
+  /** El que se detuvo en la cola se salta: ni se lee el archivo. */
+  @Test
+  void elDetenidoEnLaColaSeSaltaSinLeerElArchivo() {
+    conCopias();
+    enElPanel(l -> l.pedirDetencion(AHORA));
+    FuenteFija fuente = new FuenteFija(comoChat(losNueveDelCriterio()));
+
+    LoteIngesta resultado = casoCon(fuente, extractorDelAnexo()).ejecutar(lote.id());
+
+    assertEquals(EstadoLote.DETENIDO, resultado.estado());
+    assertEquals(0, fuente.lecturas);
+    assertTrue(mensajes.guardados.isEmpty());
+  }
+
+  /** Si la aplicación se apaga con el lote en pausa, el lote no se queda abierto para siempre. */
+  @Test
+  void unaPausaInterrumpidaDejaElLoteEnErrorConSuMotivo() {
+    conCopias();
+    espera.luego(
+        () -> {
+          throw new IngestaInterrumpidaException();
+        });
+    ExtractorDeProductos extractor =
+        extractorQueEnLaLlamada(1, () -> enElPanel(LoteIngesta::pausar));
+
+    assertThrows(
+        IngestaInterrumpidaException.class,
+        () ->
+            casoCon(new FuenteFija(comoChat(losNueveDelCriterio())), extractor)
+                .ejecutar(lote.id()));
+
+    LoteIngesta guardado = lotes.buscarPorId(lote.id()).orElseThrow();
+    assertEquals(EstadoLote.ERROR, guardado.estado());
+    assertTrue(guardado.detalleError().orElseThrow().contains("en pausa"));
+  }
+
+  /**
+   * El final se escribe sobre el lote releído y bloqueado, no sobre el que se tomó al empezar: el
+   * panel lo pausó después del último punto de control, y terminar sobre la copia vieja —que dice
+   * PROCESANDO— no se habría enterado. Lo que importa es que el resultado salga del lote releído.
+   */
+  @Test
+  void elFinalSeEscribeSobreElLoteBloqueado() {
+    conCopias();
+    List<String> uno = losNueveDelCriterio().subList(0, 1);
+    ExtractorDeProductos extractor =
+        extractorQueEnLaLlamada(1, () -> enElPanel(LoteIngesta::pausar));
+    // Pausado después del último punto de control: el trabajador no espera, termina.
+    LoteIngesta resultado = casoCon(new FuenteFija(comoChat(uno)), extractor).ejecutar(lote.id());
+
+    assertEquals(EstadoLote.TERMINADO, resultado.estado());
+    assertEquals(EstadoLote.TERMINADO, lotes.buscarPorId(lote.id()).orElseThrow().estado());
+    assertEquals(2, lotes.bloqueos, "uno al tomarlo y otro al soltarlo");
+  }
+
+  /**
+   * Otra instancia arrancó y cerró con error el lote que este hilo tenía en pausa
+   * (ReanudarLotesDeIngesta): el hilo no sigue creando borradores ni escribe encima.
+   */
+  @Test
+  void unLoteQueOtraInstanciaCerroNoSigueNiSeEscribe() {
+    conCopias();
+    espera.luego(() -> enElPanel(l -> l.fallar("reinicio", AHORA)));
+    ExtractorDeProductos extractor =
+        extractorQueEnLaLlamada(1, () -> enElPanel(LoteIngesta::pausar));
+
+    LoteIngesta resultado =
+        casoCon(new FuenteFija(comoChat(losNueveDelCriterio())), extractor).ejecutar(lote.id());
+
+    assertEquals(EstadoLote.ERROR, resultado.estado());
+    assertEquals(Optional.of("reinicio"), resultado.detalleError());
+    assertEquals(1, borradores.porId.size(), "la publicación en curso y ninguna más");
+  }
+
+  /** Y si además se eliminó, no se vuelve a insertar desde la copia que tenía el hilo. */
+  @Test
+  void unLoteEliminadoMientrasEsperabaNoSeReinserta() {
+    conCopias();
+    espera.luego(
+        () -> {
+          enElPanel(l -> l.fallar("reinicio", AHORA));
+          lotes.eliminarConSuHistorial(lote.id());
+        });
+    ExtractorDeProductos extractor =
+        extractorQueEnLaLlamada(1, () -> enElPanel(LoteIngesta::pausar));
+
+    casoCon(new FuenteFija(comoChat(losNueveDelCriterio())), extractor).ejecutar(lote.id());
+
+    assertEquals(Optional.empty(), lotes.buscarPorId(lote.id()));
   }
 }

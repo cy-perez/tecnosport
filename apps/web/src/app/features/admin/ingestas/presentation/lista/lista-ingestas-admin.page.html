@@ -99,6 +99,23 @@
     }
   </p>
 
+  <p
+    #avisoDetenidoRef
+    class="m-0 text-ts-exito"
+    [class.mb-16]="avisoDetenido()"
+    role="status"
+    tabindex="-1"
+  >
+    @if (avisoDetenido(); as proveedor) {
+      {{ 'admin.ingestas.ordenes.detenida' | transloco: { proveedor: proveedor } }}
+    }
+  </p>
+
+  <!-- Los errores de pausar y reanudar; los de detener se dicen dentro de su pregunta. -->
+  @if (errorOrden() && !confirmandoDetener()) {
+    <p class="m-0 mb-16 text-ts-error" role="alert">{{ errorOrden() }}</p>
+  }
+
   @if (consulta.isPending()) {
     <ts-esqueleto />
   } @else if (consulta.isError()) {
@@ -163,8 +180,13 @@
                     }
                   </td>
                   <td>
-                    @if (lote.estado === 'TERMINADO' || lote.estado === 'ERROR') {
+                    @if (tieneResumen(lote)) {
                       <ul class="m-0 list-none p-0 text-xs">
+                        @if (lote.estado === 'DETENIDO') {
+                          <li class="text-ts-texto-suave">
+                            {{ 'admin.ingestas.resumen.parcial' | transloco }}
+                          </li>
+                        }
                         <li>
                           {{
                             'admin.ingestas.resumen.mensajes'
@@ -205,6 +227,18 @@
                           </li>
                         }
                       </ul>
+                    } @else if (lote.estado === 'PAUSADO') {
+                      <span class="text-xs text-ts-texto-suave">{{
+                        'admin.ingestas.enPausa' | transloco
+                      }}</span>
+                    } @else if (lote.estado === 'DETENIENDO') {
+                      <span class="text-xs text-ts-texto-suave">{{
+                        'admin.ingestas.deteniendo' | transloco
+                      }}</span>
+                    } @else if (lote.estado === 'DETENIDO') {
+                      <span class="text-xs text-ts-texto-suave">{{
+                        'admin.ingestas.detenidaEnCola' | transloco
+                      }}</span>
                     } @else {
                       <span class="text-xs text-ts-texto-suave">{{
                         'admin.ingestas.enCurso' | transloco
@@ -212,28 +246,125 @@
                     }
                   </td>
                   <td>
-                    @if (sePuedeEliminar(lote)) {
-                      <ts-boton
-                        variante="secundario"
-                        tipo="button"
-                        [attr.data-eliminar]="lote.id"
-                        [etiquetaAccesible]="
-                          'admin.ingestas.eliminar.accionLote'
-                            | transloco
-                              : {
-                                  proveedor: nombreDelProveedor(lote),
-                                  fecha: formatearFecha(lote.creadoEn),
-                                }
-                        "
-                        [expandido]="confirmandoEliminar() === lote.id"
-                        [controla]="'eliminar-lote-' + lote.id"
-                        (click)="preguntarSiEliminar(lote)"
-                      >
-                        {{ 'admin.ingestas.eliminar.accion' | transloco }}
-                      </ts-boton>
-                    }
+                    <div class="flex flex-wrap gap-8">
+                      @if (sePuedePausar(lote) || sePuedeReanudar(lote)) {
+                        <ts-boton
+                          variante="secundario"
+                          tipo="button"
+                          [attr.data-pausa]="lote.id"
+                          [ocupado]="loteOrdenando() === lote.id"
+                          [etiquetaAccesible]="
+                            (sePuedeReanudar(lote)
+                              ? 'admin.ingestas.ordenes.reanudarLote'
+                              : 'admin.ingestas.ordenes.pausarLote'
+                            )
+                              | transloco
+                                : {
+                                    proveedor: nombreDelProveedor(lote),
+                                    fecha: formatearFecha(lote.creadoEn),
+                                  }
+                          "
+                          (click)="alternarPausa(lote)"
+                        >
+                          {{
+                            (sePuedeReanudar(lote)
+                              ? 'admin.ingestas.ordenes.reanudar'
+                              : 'admin.ingestas.ordenes.pausar'
+                            ) | transloco
+                          }}
+                        </ts-boton>
+                      }
+                      @if (sePuedeDetener(lote)) {
+                        <ts-boton
+                          variante="secundario"
+                          tipo="button"
+                          [attr.data-detener]="lote.id"
+                          [etiquetaAccesible]="
+                            'admin.ingestas.ordenes.detenerLote'
+                              | transloco
+                                : {
+                                    proveedor: nombreDelProveedor(lote),
+                                    fecha: formatearFecha(lote.creadoEn),
+                                  }
+                          "
+                          [expandido]="confirmandoDetener() === lote.id"
+                          [controla]="'detener-lote-' + lote.id"
+                          (click)="preguntarSiDetener(lote)"
+                        >
+                          {{ 'admin.ingestas.ordenes.detener' | transloco }}
+                        </ts-boton>
+                      }
+                      @if (sePuedeEliminar(lote)) {
+                        <ts-boton
+                          variante="secundario"
+                          tipo="button"
+                          [attr.data-eliminar]="lote.id"
+                          [etiquetaAccesible]="
+                            'admin.ingestas.eliminar.accionLote'
+                              | transloco
+                                : {
+                                    proveedor: nombreDelProveedor(lote),
+                                    fecha: formatearFecha(lote.creadoEn),
+                                  }
+                          "
+                          [expandido]="confirmandoEliminar() === lote.id"
+                          [controla]="'eliminar-lote-' + lote.id"
+                          (click)="preguntarSiEliminar(lote)"
+                        >
+                          {{ 'admin.ingestas.eliminar.accion' | transloco }}
+                        </ts-boton>
+                      }
+                    </div>
                   </td>
                 </tr>
+
+                @if (confirmandoDetener() === lote.id) {
+                  <tr class="border-b border-ts-borde last:border-b-0">
+                    <td colspan="5">
+                      <div
+                        #cajaDetener
+                        class="flex flex-col gap-12 rounded-md border border-ts-borde-control p-12"
+                        role="group"
+                        tabindex="-1"
+                        [id]="'detener-lote-' + lote.id"
+                        [attr.aria-labelledby]="'detener-lote-pregunta-' + lote.id"
+                        [attr.aria-describedby]="'detener-lote-implica-' + lote.id"
+                        (keydown.escape)="cancelarDetener()"
+                      >
+                        <p class="m-0" [id]="'detener-lote-pregunta-' + lote.id">
+                          {{
+                            'admin.ingestas.ordenes.pregunta'
+                              | transloco: { proveedor: nombreDelProveedor(lote) }
+                          }}
+                        </p>
+                        <p class="m-0 text-ts-texto-suave" [id]="'detener-lote-implica-' + lote.id">
+                          {{
+                            (lote.estado === 'RECIBIDO'
+                              ? 'admin.ingestas.ordenes.loQueImplicaEnCola'
+                              : 'admin.ingestas.ordenes.loQueImplica'
+                            ) | transloco
+                          }}
+                        </p>
+                        @if (errorOrden(); as mensaje) {
+                          <p class="m-0 text-ts-error" role="alert">{{ mensaje }}</p>
+                        }
+                        <div class="flex flex-wrap gap-12">
+                          <ts-boton
+                            variante="peligro"
+                            [ocupado]="ordenando()"
+                            [etiquetaCargando]="'admin.ingestas.ordenes.deteniendo' | transloco"
+                            (click)="detener(lote)"
+                          >
+                            {{ 'admin.ingestas.ordenes.confirmar' | transloco }}
+                          </ts-boton>
+                          <ts-boton variante="secundario" (click)="cancelarDetener()">
+                            {{ 'admin.ingestas.ordenes.cancelar' | transloco }}
+                          </ts-boton>
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
+                }
 
                 <!-- En su propia fila y a todo lo ancho, como la lista de productos: dentro de la
                      celda ensanchaba la columna y empujaba la tabla al abrirse. -->

@@ -51,9 +51,117 @@
     <h2 class="m-0 mb-16 font-display text-xl">
       {{ 'admin.marcas.listaTitulo' | transloco: { total: marcas().length } }}
     </h2>
+  }
+
+  <!-- Fuera del @if de la lista: si la última marca se elimina, el aviso sigue ahí para decirlo. -->
+  <p
+    #avisoListaRef
+    class="m-0 text-ts-exito"
+    [class.mb-16]="avisoLista()"
+    role="status"
+    tabindex="-1"
+  >
+    {{ avisoLista() }}
+  </p>
+
+  @if (consulta.isSuccess() && marcas().length > 0) {
     <ul class="m-0 list-none p-0">
       @for (marca of marcas(); track marca.id) {
-        <li class="border-b border-ts-borde px-16 py-8">{{ marca.nombre }}</li>
+        <li class="border-b border-ts-borde px-16 py-8">
+          @if (editando() === marca.id) {
+            <form
+              class="flex flex-col gap-12"
+              [formGroup]="formEditar"
+              (submit)="$event.preventDefault(); guardarEdicion(marca)"
+              (keydown.escape)="cancelarEdicion()"
+            >
+              <ts-campo
+                [obligatorio]="true"
+                idCampo="editar-marca-nombre"
+                [label]="'admin.marcas.editar.nombre' | transloco: { nombre: marca.nombre }"
+                formControlName="nombre"
+              />
+              @if (errorEdicion(); as mensaje) {
+                <p class="m-0 text-ts-error" role="alert">{{ mensaje }}</p>
+              }
+              <div class="flex flex-wrap gap-12">
+                <ts-boton
+                  variante="primario"
+                  tipo="submit"
+                  [ocupado]="guardandoEdicion()"
+                  [etiquetaCargando]="'admin.marcas.editar.guardando' | transloco"
+                >
+                  {{ 'admin.marcas.editar.guardar' | transloco }}
+                </ts-boton>
+                <ts-boton variante="secundario" (click)="cancelarEdicion()">
+                  {{ 'admin.marcas.editar.cancelar' | transloco }}
+                </ts-boton>
+              </div>
+            </form>
+          } @else {
+            <div class="flex flex-wrap items-center gap-12">
+              <span class="flex-1">{{ marca.nombre }}</span>
+              <ts-boton
+                variante="secundario"
+                [attr.data-editar]="marca.id"
+                [etiquetaAccesible]="
+                  'admin.marcas.editar.accionMarca' | transloco: { nombre: marca.nombre }
+                "
+                (click)="empezarEdicion(marca)"
+              >
+                {{ 'admin.marcas.editar.accion' | transloco }}
+              </ts-boton>
+              <ts-boton
+                variante="secundario"
+                [attr.data-eliminar]="marca.id"
+                [etiquetaAccesible]="
+                  'admin.marcas.eliminar.accionMarca' | transloco: { nombre: marca.nombre }
+                "
+                [expandido]="confirmandoEliminar() === marca.id"
+                [controla]="'eliminar-marca-' + marca.id"
+                (click)="preguntarSiEliminar(marca)"
+              >
+                {{ 'admin.marcas.eliminar.accion' | transloco }}
+              </ts-boton>
+            </div>
+          }
+
+          @if (confirmandoEliminar() === marca.id) {
+            <div
+              #cajaEliminar
+              class="mt-12 flex flex-col gap-12 rounded-md border border-ts-borde-control p-12"
+              role="group"
+              tabindex="-1"
+              [id]="'eliminar-marca-' + marca.id"
+              [attr.aria-labelledby]="'eliminar-marca-pregunta-' + marca.id"
+              [attr.aria-describedby]="'eliminar-marca-implica-' + marca.id"
+              (keydown.escape)="cancelarEliminar()"
+            >
+              <p class="m-0" [id]="'eliminar-marca-pregunta-' + marca.id">
+                {{ 'admin.marcas.eliminar.pregunta' | transloco: { nombre: marca.nombre } }}
+              </p>
+              <p class="m-0 text-ts-texto-suave" [id]="'eliminar-marca-implica-' + marca.id">
+                {{ 'admin.marcas.eliminar.loQueImplica' | transloco }}
+              </p>
+              @if (errorEliminar(); as mensaje) {
+                <p class="m-0 text-ts-error" role="alert">{{ mensaje }}</p>
+              }
+              <div class="flex flex-wrap gap-12">
+                <ts-boton
+                  variante="peligro"
+                  [ocupado]="eliminando()"
+                  [etiquetaCargando]="'admin.marcas.eliminar.eliminando' | transloco"
+                  (click)="eliminar(marca)"
+                >
+                  {{ 'admin.marcas.eliminar.confirmar' | transloco }}
+                </ts-boton>
+                <ts-boton variante="secundario" (click)="cancelarEliminar()">
+                  {{ 'admin.marcas.eliminar.cancelar' | transloco }}
+                </ts-boton>
+              </div>
+            </div>
+          }
+        </li>
       }
     </ul>
   }

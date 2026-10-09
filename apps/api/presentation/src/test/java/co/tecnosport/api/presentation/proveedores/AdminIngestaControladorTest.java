@@ -13,12 +13,15 @@ import co.tecnosport.api.application.proveedores.AlmacenDeArchivosDeProveedor;
 import co.tecnosport.api.application.proveedores.ColaDeIngestasLlenaException;
 import co.tecnosport.api.application.proveedores.DependenciasDeLote;
 import co.tecnosport.api.application.proveedores.DependenciasDeProveedor;
+import co.tecnosport.api.application.proveedores.DetenerIngesta;
 import co.tecnosport.api.application.proveedores.EjecutorDeIngestas;
 import co.tecnosport.api.application.proveedores.EliminacionDeProductos;
 import co.tecnosport.api.application.proveedores.EliminarLoteDeIngesta;
 import co.tecnosport.api.application.proveedores.EncolarIngesta;
 import co.tecnosport.api.application.proveedores.IniciarIngesta;
 import co.tecnosport.api.application.proveedores.LotesPaginados;
+import co.tecnosport.api.application.proveedores.PausarIngesta;
+import co.tecnosport.api.application.proveedores.ReanudarIngesta;
 import co.tecnosport.api.application.proveedores.RepositorioLotesIngesta;
 import co.tecnosport.api.application.proveedores.RepositorioProveedores;
 import co.tecnosport.api.application.proveedores.SolicitarSubidaDeExportacion;
@@ -298,8 +301,85 @@ class AdminIngestaControladorTest {
         .andExpect(jsonPath("$.codigo").value("LOTE_NO_ENCONTRADO"));
   }
 
+  private LoteIngesta enCurso() {
+    LoteIngesta lote = LoteIngesta.recibirExportacion(proveedor.id(), key, AHORA);
+    lote.iniciar(AHORA.plusSeconds(1));
+    lotes.porId.put(lote.id(), lote);
+    return lote;
+  }
+
+  @Test
+  void pausarYReanudarDevuelvenElLoteEnSuNuevoEstado() throws Exception {
+    LoteIngesta lote = enCurso();
+
+    mockMvc
+        .perform(post("/api/v1/admin/ingestas/{id}/pausar", lote.id()))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.estado").value("PAUSADO"));
+    assertThat(lotes.porId.get(lote.id()).estado()).isEqualTo(EstadoLote.PAUSADO);
+
+    mockMvc
+        .perform(post("/api/v1/admin/ingestas/{id}/reanudar", lote.id()))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.estado").value("PROCESANDO"));
+    assertThat(transaccion.abiertas).as("la transacción se cerró").isZero();
+  }
+
+  @Test
+  void detenerEnCursoDejaLaOrdenYEnLaColaCierra() throws Exception {
+    LoteIngesta enCurso = enCurso();
+    LoteIngesta enCola = LoteIngesta.recibirExportacion(proveedor.id(), key, AHORA);
+    lotes.porId.put(enCola.id(), enCola);
+
+    mockMvc
+        .perform(post("/api/v1/admin/ingestas/{id}/detener", enCurso.id()))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.estado").value("DETENIENDO"));
+    mockMvc
+        .perform(post("/api/v1/admin/ingestas/{id}/detener", enCola.id()))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.estado").value("DETENIDO"))
+        .andExpect(jsonPath("$.terminadoEn").value("2026-09-28T15:15:00Z"));
+  }
+
+  /** El lote cambió mientras se pulsaba: la orden no aplica, se dice así y no se escribe nada. */
+  @Test
+  void pausarUnLoteQueYaNoEstaEnProcesoEs409ConSuCodigo() throws Exception {
+    LoteIngesta lote = LoteIngesta.recibirExportacion(proveedor.id(), key, AHORA);
+    lotes.porId.put(lote.id(), lote);
+
+    mockMvc
+        .perform(post("/api/v1/admin/ingestas/{id}/pausar", lote.id()))
+        .andExpect(status().isConflict())
+        .andExpect(jsonPath("$.codigo").value("LOTE_EN_OTRO_ESTADO"));
+    assertThat(lote.estado()).isEqualTo(EstadoLote.RECIBIDO);
+  }
+
+  @Test
+  void ordenarSobreUnLoteQueNoExisteEs404() throws Exception {
+    mockMvc
+        .perform(post("/api/v1/admin/ingestas/{id}/detener", UUID.randomUUID()))
+        .andExpect(status().isNotFound())
+        .andExpect(jsonPath("$.codigo").value("LOTE_NO_ENCONTRADO"));
+  }
+
   @TestConfiguration
   static class Configuracion {
+
+    @Bean
+    PausarIngesta pausarIngesta(RepositorioLotesDoble lotes) {
+      return new PausarIngesta(lotes);
+    }
+
+    @Bean
+    ReanudarIngesta reanudarIngesta(RepositorioLotesDoble lotes) {
+      return new ReanudarIngesta(lotes);
+    }
+
+    @Bean
+    DetenerIngesta detenerIngesta(RepositorioLotesDoble lotes) {
+      return new DetenerIngesta(lotes, () -> AHORA);
+    }
 
     @Bean
     RepositorioProveedoresDoble repositorioProveedores() {
@@ -422,6 +502,11 @@ class AdminIngestaControladorTest {
     @Override
     public Optional<LoteIngesta> buscarPorId(UUID id) {
       return Optional.ofNullable(porId.get(id));
+    }
+
+    @Override
+    public Optional<LoteIngesta> buscarPorIdParaActualizar(UUID id) {
+      return buscarPorId(id);
     }
 
     @Override

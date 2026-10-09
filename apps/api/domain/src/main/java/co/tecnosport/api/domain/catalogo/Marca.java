@@ -41,6 +41,14 @@ public final class Marca {
     return new Marca(GeneradorIdentificador.nuevo(), nombre);
   }
 
+  /**
+   * La misma marca con otro nombre, con las mismas reglas que al crearla. El id no cambia: los
+   * productos cuelgan de él, y renombrar no los mueve.
+   */
+  public Marca renombrar(String nuevoNombre) {
+    return new Marca(id, nuevoNombre);
+  }
+
   public UUID id() {
     return id;
   }

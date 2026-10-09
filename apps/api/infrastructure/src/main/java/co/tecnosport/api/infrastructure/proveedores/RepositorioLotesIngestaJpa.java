@@ -34,6 +34,14 @@ public class RepositorioLotesIngestaJpa implements RepositorioLotesIngesta {
           "delete from mensaje_proveedor where lote_id = ?1",
           "delete from lote_ingesta where id = ?1");
 
+  /** Los mismos estados que {@code LoteIngesta.estaAbierto}: lo prueba el test de abiertos. */
+  private static final List<String> ESTADOS_ABIERTOS =
+      List.of(
+          EstadoLote.RECIBIDO.name(),
+          EstadoLote.PROCESANDO.name(),
+          EstadoLote.PAUSADO.name(),
+          EstadoLote.DETENIENDO.name());
+
   private final LoteIngestaJpaRepository jpa;
   private final EntityManager entityManager;
 
@@ -113,11 +121,13 @@ public class RepositorioLotesIngestaJpa implements RepositorioLotesIngesta {
   }
 
   @Override
+  public Optional<LoteIngesta> buscarPorIdParaActualizar(UUID id) {
+    return jpa.findParaActualizarById(id).map(RepositorioLotesIngestaJpa::aDominio);
+  }
+
+  @Override
   public List<LoteIngesta> abiertos() {
-    return jpa
-        .findByEstadoInOrderByCreadoEnAsc(
-            List.of(EstadoLote.RECIBIDO.name(), EstadoLote.PROCESANDO.name()))
-        .stream()
+    return jpa.findByEstadoInOrderByCreadoEnAsc(ESTADOS_ABIERTOS).stream()
         .map(RepositorioLotesIngestaJpa::aDominio)
         .toList();
   }

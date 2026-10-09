@@ -79,4 +79,21 @@ class ReanudarLotesDeIngestaTest {
     assertEquals(new ReanudarLotesDeIngesta.Resultado(0, 1), resultado);
     assertEquals(EstadoLote.ERROR, enCola.estado());
   }
+
+  /** El hilo que los retenía se fue con el reinicio: no hay quién los reanude ni los suelte. */
+  @Test
+  void losPausadosYLosQueSeDeteniaSeCierranComoLosQueIbanAMedias() {
+    LoteIngesta pausado = lote(EstadoLote.PROCESANDO);
+    pausado.pausar();
+    LoteIngesta deteniendo = lote(EstadoLote.PROCESANDO);
+    deteniendo.pedirDetencion(AHORA);
+    EjecutorAnotador ejecutor = new EjecutorAnotador();
+
+    ReanudarLotesDeIngesta.Resultado resultado =
+        new ReanudarLotesDeIngesta(lotes, ejecutor, new RelojFalso(AHORA)).ejecutar();
+
+    assertEquals(new ReanudarLotesDeIngesta.Resultado(0, 2), resultado);
+    assertEquals(EstadoLote.ERROR, pausado.estado());
+    assertEquals(EstadoLote.ERROR, deteniendo.estado());
+  }
 }
