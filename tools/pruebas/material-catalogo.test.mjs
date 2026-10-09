@@ -3,7 +3,7 @@
 // subir. Hasta esa fecha se leían de `catalogo/fotos/estudio/<id>/`, que ya no existe.
 import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { basename, join } from "node:path";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { fotosDeCarpeta } from "../material-catalogo.mjs";
@@ -48,6 +48,23 @@ test("un modelo sin carpeta o sin fotos procesadas no tiene tomas", () => {
   const raiz = mkdtempSync(join(tmpdir(), "fichas-"));
   try {
     assert.deepEqual(fotosDeCarpeta(join(raiz, "Sin fotos")), { archivos: [], ladoMenor: 0 });
+  } finally {
+    rmSync(raiz, { recursive: true, force: true });
+  }
+});
+
+test("las tomas van en orden natural: la _10 después de la _2", () => {
+  const { raiz, modelo } = carpetaDePrueba();
+  try {
+    const procesadas = join(modelo, "Fotos procesadas");
+    writeFileSync(join(procesadas, "samsung-galaxy-a57-5g_10.jpg"), jpeg(2000, 2000));
+    writeFileSync(join(procesadas, "samsung-galaxy-a57-5g_2.jpg"), jpeg(2000, 2000));
+    const nombres = fotosDeCarpeta(modelo).archivos.map((f) => basename(f.ruta));
+    assert.deepEqual(nombres, [
+      "samsung-galaxy-a57-5g_1.jpg",
+      "samsung-galaxy-a57-5g_2.jpg",
+      "samsung-galaxy-a57-5g_10.jpg",
+    ]);
   } finally {
     rmSync(raiz, { recursive: true, force: true });
   }

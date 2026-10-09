@@ -99,6 +99,10 @@ export function informeDeImportacion(r) {
     lineas.push("OJO, el costo alcanzó el precio de venta y la lista no lo mueve:");
     lineas.push(...r.sinMargen.map((s) => `  - ${s}`));
   }
+  if (r.coloresSinVariante?.length) {
+    lineas.push("La lista trae colores que el producto no tiene; se añaden desde su ficha en el panel:");
+    lineas.push(...r.coloresSinVariante.map((s) => `  - ${s}`));
+  }
   return lineas.join("\n");
 }
 
@@ -119,7 +123,10 @@ async function importar(ruta) {
   console.log(informeDeImportacion(resultado));
 }
 
-/** Los modelos aprobados cuyo producto todavía no tiene imagen principal. */
+/**
+ * Los modelos aprobados que siguen en borrador: sin imagen principal, o con ella pero sin publicar
+ * —una corrida anterior sin `--publicar`, o una que se cayó a mitad de la galería—.
+ */
 async function pendientesDeFotos() {
   const aprobados = await pedir("/api/v1/admin/borradores-tecnologia?estado=APROBADO");
   const porProducto = new Map();
@@ -129,7 +136,9 @@ async function pendientesDeFotos() {
   const pendientes = [];
   for (const [productoId, borrador] of porProducto) {
     const producto = await pedir(`/api/v1/admin/productos/${productoId}`);
-    if (!producto.imagenPrincipal) pendientes.push({ producto, borrador });
+    if (!producto.imagenPrincipal || producto.estado === "BORRADOR") {
+      pendientes.push({ producto, borrador });
+    }
   }
   return pendientes;
 }
@@ -144,6 +153,18 @@ async function subirFotos() {
     return;
   }
   for (const { producto, borrador } of pendientes) {
+    if (producto.imagenPrincipal) {
+      // Ya tiene fotos: solo falta publicarlo. La galería no se completa aquí; si quedó a medias,
+      // se termina desde el panel.
+      console.log(
+        `${ESCRIBIR && PUBLICAR ? "publicando" : "simulado"}   ${producto.nombre}: ya tiene fotos` +
+          (PUBLICAR ? " · se publica" : " · queda en borrador (falta --publicar)"),
+      );
+      if (ESCRIBIR && PUBLICAR) {
+        await pedir(`/api/v1/admin/productos/${producto.id}/publicacion`, { method: "POST" });
+      }
+      continue;
+    }
     const { archivos } = fotosDeCarpeta(carpetaDeModelo(borrador.idModelo));
     if (!archivos.length) {
       console.log(`sin fotos    ${producto.nombre}: no hay "Fotos procesadas" en su carpeta de fichas`);

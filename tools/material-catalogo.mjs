@@ -171,7 +171,8 @@ export function fotosDeCarpeta(carpetaModelo) {
   if (!procesadas || !existsSync(procesadas)) return { archivos: [], ladoMenor: 0 };
   const archivos = readdirSync(procesadas)
     .filter((f) => f.toLowerCase().endsWith(".jpg"))
-    .sort()
+    // En orden natural: `_10` va después de `_2`, no antes. La primera es la principal.
+    .sort((a, b) => a.localeCompare(b, "es", { numeric: true }))
     .map((f) => ({ ruta: join(procesadas, f), ...dimensionesJpeg(join(procesadas, f)) }))
     .filter((f) => f.ancho)
     .map((f) => ({

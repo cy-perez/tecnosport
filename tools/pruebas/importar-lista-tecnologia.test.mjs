@@ -28,11 +28,13 @@ test("el informe avisa lo que quedó sin margen y lo que ya estaba decidido", ()
     borradoresActualizados: 0,
     modelosYaDecididos: ["JBL Go 4"],
     sinMargen: ["Samsung Galaxy A17 5G 8GB RAM 256GB 1 SIM · Negro"],
+    coloresSinVariante: ["Samsung Galaxy A17 5G 8GB RAM 256GB 1 SIM · Azul"],
   });
   assert.match(informe, /3 productos renovados, 7 variantes repuestas/);
   assert.match(informe, /ya rechazados\): JBL Go 4/);
   assert.match(informe, /OJO, el costo alcanzó el precio de venta/);
   assert.match(informe, /- Samsung Galaxy A17 5G 8GB RAM 256GB 1 SIM · Negro/);
+  assert.match(informe, /colores que el producto no tiene[\s\S]*· Azul/);
 });
 
 test("sin avisos no hay líneas de aviso", () => {
