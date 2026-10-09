@@ -6,11 +6,15 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import co.tecnosport.api.application.compartido.Reloj;
 import co.tecnosport.api.application.proveedores.ApoyoDeCatalogoParaIngesta.RepositorioProductosDeProveedorEnMemoria;
 import co.tecnosport.api.application.proveedores.ApoyoDeCatalogoParaIngesta.RepositorioProductosEnMemoria;
+import co.tecnosport.api.application.proveedores.ApoyoDeIngesta.RepositorioProveedoresEnMemoria;
 import co.tecnosport.api.domain.catalogo.EstadoDisponibilidad;
+import co.tecnosport.api.domain.catalogo.LineaCatalogo;
 import co.tecnosport.api.domain.catalogo.Producto;
 import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.compartido.Slug;
 import co.tecnosport.api.domain.proveedores.HuellaProveedor;
+import co.tecnosport.api.domain.proveedores.OrdenDePublicacion;
+import co.tecnosport.api.domain.proveedores.Proveedor;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Map;
@@ -26,6 +30,7 @@ class ExpirarDisponibilidadDeProductosTest {
   private final RepositorioProductosEnMemoria productos = new RepositorioProductosEnMemoria();
   private final UUID proveedorA = UUID.randomUUID();
   private final UUID proveedorB = UUID.randomUUID();
+  private final RepositorioProveedoresEnMemoria proveedores = new RepositorioProveedoresEnMemoria();
 
   /** Un reloj que se adelanta desde la prueba. */
   private static final class RelojAjustable implements Reloj {
@@ -54,8 +59,18 @@ class ExpirarDisponibilidadDeProductosTest {
   }
 
   private ExpirarDisponibilidadDeProductos caso(RelojAjustable reloj, Duration ventana) {
+    return caso(reloj, ventana, Duration.ofDays(7));
+  }
+
+  private ExpirarDisponibilidadDeProductos caso(
+      RelojAjustable reloj, Duration ventana, Duration ventanaTecnologia) {
     return new ExpirarDisponibilidadDeProductos(
-        new RepositorioProductosDeProveedorEnMemoria(productos), productos, reloj, ventana);
+        new RepositorioProductosDeProveedorEnMemoria(productos),
+        productos,
+        proveedores,
+        reloj,
+        ventana,
+        ventanaTecnologia);
   }
 
   /** El quinto criterio de aceptación: ventana de un minuto y el reloj dos minutos adelante. */
@@ -121,6 +136,37 @@ class ExpirarDisponibilidadDeProductosTest {
 
     assertEquals(EstadoDisponibilidad.DISPONIBLE, producto.estadoDisponibilidad());
     assertEquals(0, caso.ejecutar().ocultados());
+  }
+
+  /**
+   * Una lista de tecnología vale hasta la siguiente, que llega cada varios días: con la ventana de
+   * los mensajes, lo que trajo se ocultaría a los tres días aunque el proveedor lo siguiera
+   * teniendo.
+   */
+  @Test
+  void loDeUnProveedorDeTecnologiaVenceConSuPropiaVentana() {
+    Proveedor tecnologia =
+        Proveedor.crear(
+            "Tecnología Medellín",
+            LineaCatalogo.TECNOLOGIA,
+            "+57 300 765 4321",
+            "Tecno",
+            null,
+            OrdenDePublicacion.FOTOS_PRIMERO);
+    proveedores.guardar(tecnologia);
+    Producto celular = deProveedor(tecnologia.id(), "Galaxy A17");
+    Producto bolso = deProveedor(proveedorA, "Bolso");
+    RelojAjustable reloj = new RelojAjustable();
+    reloj.ahora = VISTO.plus(Duration.ofMinutes(5));
+    ExpirarDisponibilidadDeProductos caso = caso(reloj, UN_MINUTO, Duration.ofMinutes(10));
+
+    assertEquals(1, caso.ejecutar().ocultados());
+    assertEquals(EstadoDisponibilidad.OCULTO_POR_VENCIMIENTO, bolso.estadoDisponibilidad());
+    assertEquals(EstadoDisponibilidad.DISPONIBLE, celular.estadoDisponibilidad());
+
+    reloj.ahora = VISTO.plus(Duration.ofMinutes(11));
+    assertEquals(1, caso.ejecutar().ocultados());
+    assertEquals(EstadoDisponibilidad.OCULTO_POR_VENCIMIENTO, celular.estadoDisponibilidad());
   }
 
   @Test
