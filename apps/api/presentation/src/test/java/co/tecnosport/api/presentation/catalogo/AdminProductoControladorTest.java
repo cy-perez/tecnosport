@@ -582,17 +582,25 @@ class AdminProductoControladorTest {
     org.junit.jupiter.api.Assertions.assertTrue(repositorio.atributosReemplazados.isEmpty());
   }
 
+  /** Con una variante válida: el 422 tiene que salir de la petición sin talla, no de otra cosa. */
   @Test
   void cambiarLaTallaSinTallaEs422() throws Exception {
+    Atributo color = Atributo.crear("Color", TipoAtributo.COLOR, List.of());
+    Atributo talla = Atributo.crear("Talla", TipoAtributo.TEXTO, List.of());
     Producto producto = productoEnBorrador();
+    Variante s = varianteDeTalla("TS-N-S", color, "Negro", talla, "S");
+    producto.agregarVariante(s);
     repositorio.conProductos(producto);
 
     mockMvc
         .perform(
-            put("/api/v1/admin/productos/{id}/tallas/{modeloId}", producto.id(), UUID.randomUUID())
+            put("/api/v1/admin/productos/{id}/tallas/{modeloId}", producto.id(), s.id())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{}"))
-        .andExpect(status().isUnprocessableContent());
+        .andExpect(status().isUnprocessableContent())
+        .andExpect(jsonPath("$.codigo").value("HTTP_MESSAGE_NOT_READABLE"));
+
+    org.junit.jupiter.api.Assertions.assertTrue(repositorio.atributosReemplazados.isEmpty());
   }
 
   private static Variante varianteDeTalla(

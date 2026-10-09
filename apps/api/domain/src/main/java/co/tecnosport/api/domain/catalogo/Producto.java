@@ -575,8 +575,9 @@ public final class Producto {
    * pedidos y en el libro de inventario. Los pedidos tampoco: cada línea congeló su talla.
    *
    * <p>No deja dos variantes iguales: si la talla nueva ya existe en alguno de esos colores, se
-   * rechaza entera, sin tocar ninguna. La comparación no distingue mayúsculas, porque la vitrina
-   * tampoco: «m» y «M» se enseñarían como la misma talla.
+   * rechaza entera, sin tocar ninguna. La talla se compara como la compara la vitrina ({@link
+   * Atributo#tallaNormalizada}): «2XL» y «XXL», o «S - M» y «S-M», ocupan la misma casilla del
+   * selector, y dos variantes ahí dejarían una de ellas sin forma de elegirse.
    *
    * @return las variantes que cambiaron, ya con la talla nueva; vacía si la talla era la misma
    */
@@ -614,7 +615,7 @@ public final class Producto {
       for (Variante otra : variantes) {
         if (!otra.id().equals(cambiada.id())
             && cambiadas.stream().noneMatch(c -> c.id().equals(otra.id()))
-            && mismaCombinacionSinMayusculas(cambiada, otra)) {
+            && mismaCombinacionParaLaVitrina(cambiada, otra)) {
           throw new TallaRepetidaException(
               "'"
                   + nombre
@@ -631,15 +632,19 @@ public final class Producto {
     return List.copyOf(cambiadas);
   }
 
-  private static boolean mismaCombinacionSinMayusculas(Variante una, Variante otra) {
-    return clavesSinMayusculas(una).equals(clavesSinMayusculas(otra));
+  private static boolean mismaCombinacionParaLaVitrina(Variante una, Variante otra) {
+    return clavesComoLasCompara(una).equals(clavesComoLasCompara(otra));
   }
 
-  private static Set<List<String>> clavesSinMayusculas(Variante variante) {
+  /** La talla, normalizada como la compara la vitrina; lo demás, sin mayúsculas. */
+  private static Set<List<String>> clavesComoLasCompara(Variante variante) {
     Set<List<String>> claves = new LinkedHashSet<>();
     for (ValorAtributo atributo : variante.atributos()) {
-      claves.add(
-          List.of(atributo.atributo().id().toString(), atributo.valor().toLowerCase(Locale.ROOT)));
+      String valor =
+          atributo.atributo().esTalla()
+              ? Atributo.tallaNormalizada(atributo.valor())
+              : atributo.valor().toLowerCase(Locale.ROOT);
+      claves.add(List.of(atributo.atributo().id().toString(), valor));
     }
     return claves;
   }

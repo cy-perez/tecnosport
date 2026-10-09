@@ -1327,6 +1327,9 @@ class RepositorioProductosJpaTest {
     Variante leidaS = leidas.stream().filter(v -> v.id().equals(negraS.id())).findFirst().get();
     Variante leidaL = leidas.stream().filter(v -> v.id().equals(negraL.id())).findFirst().get();
     assertThat(leidaS.atributos()).hasSize(2);
+    // En el orden en que se escribieron, aunque el update haya movido la fila de la talla.
+    assertThat(leidaS.atributos().stream().map(a -> a.atributo().nombre()))
+        .containsExactly("Color", "Talla");
     assertThat(leidaS.talla().orElseThrow().valor()).isEqualTo("M");
     assertThat(leidaS.color().orElseThrow().valor()).isEqualTo("Negro");
     assertThat(leidaS.sku()).isEqualTo(new Sku("TS-TALLA-S"));

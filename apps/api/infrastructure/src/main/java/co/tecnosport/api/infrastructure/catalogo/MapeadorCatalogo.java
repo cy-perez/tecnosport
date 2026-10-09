@@ -254,6 +254,12 @@ public class MapeadorCatalogo {
                         val.getValor(),
                         val.getColorHex(),
                         CodecDeMuestra.deTexto(val.getMuestra(), val.getColorHex())))
+            // Por el nombre del atributo —Color antes que Talla—, como `CrearPedido.detalleDe`, y
+            // no por el orden físico de la tabla: corregir una talla es un `update` que mueve la
+            // fila, y la etiqueta «M · Algodón» pasaba a leerse «Algodón · M», o un mismo modelo se
+            // partía en dos para el panel, que compara los atributos en orden. El id no sirve: dos
+            // filas del mismo milisegundo no ordenan por UUID v7.
+            .sorted(Comparator.comparing(valor -> valor.atributo().nombre()))
             .toList();
 
     SetRotacion setRotacionPropio =
