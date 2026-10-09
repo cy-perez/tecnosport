@@ -103,6 +103,27 @@ class PatronDePrecioTest {
         Optional.of(Dinero.deCop(125000)), PatronDePrecio.extraer("*PRECIO X MAYOR* $125.000"));
   }
 
+  /**
+   * La Riverah, 7 de octubre de 2026: el precio por mayor tachado y el descuento debajo. Vale el de
+   * debajo, y el tachado no aparece entre los precios del texto.
+   */
+  @Test
+  void elPrecioTachadoNoCuenta() {
+    String texto =
+        "~~ PRECIO x MAYOR🤑99.900🥳~~~\nSúper descuento $69.900\n\n*LÍNEA EXCLUSIVA PARA PEDIDO*";
+
+    assertEquals(Optional.of(Dinero.deCop(69900)), PatronDePrecio.extraer(texto));
+    assertEquals(List.of(Dinero.deCop(69900)), PatronDePrecio.extraerTodos(texto));
+  }
+
+  /** Una virgulilla suelta delante del precio no es una tachadura: no cierra en ninguna parte. */
+  @Test
+  void unaVirgulillaSinCierreNoTachaNada() {
+    assertEquals(
+        Optional.of(Dinero.deCop(110000)),
+        PatronDePrecio.extraer(" Precio x mayor🤑~$110.000🥳\nSúper promo 10x $990.000"));
+  }
+
   /** Violeta escribe el precio en miles detrás de 💲, y a veces completo. */
   @Test
   void lasFormasDeVioleta() {

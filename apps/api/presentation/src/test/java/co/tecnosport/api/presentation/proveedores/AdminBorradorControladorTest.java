@@ -18,6 +18,7 @@ import co.tecnosport.api.application.catalogo.UrlFirmada;
 import co.tecnosport.api.application.compartido.Reloj;
 import co.tecnosport.api.application.inventario.RepositorioInventario;
 import co.tecnosport.api.application.proveedores.AlmacenDeArchivosDeProveedor;
+import co.tecnosport.api.application.proveedores.AnuncioEnRevision;
 import co.tecnosport.api.application.proveedores.AprobarBorrador;
 import co.tecnosport.api.application.proveedores.BorradoresPaginados;
 import co.tecnosport.api.application.proveedores.CalculadorDePHash;
@@ -641,6 +642,11 @@ class AdminBorradorControladorTest {
     @Override
     public boolean existeEnRevisionConHuella(UUID proveedorId, HuellaProveedor huella) {
       return false;
+    }
+
+    @Override
+    public List<AnuncioEnRevision> anunciosEnRevision(UUID proveedorId, Dinero precioProveedor) {
+      return List.of();
     }
 
     @Override

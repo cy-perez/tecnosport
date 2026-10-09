@@ -34,6 +34,15 @@ import java.util.regex.Pattern;
  *
  * <p>{@code ~~} cierra el precio igual que {@code _}, y solo doble: una virgulilla sola es la
  * tachadura de WhatsApp ({@code ~70.000~}), que marca justo el precio que ya no vale.
+ *
+ * <h2>Lo tachado no se lee</h2>
+ *
+ * <p>La Riverah tacha el precio por mayor y escribe debajo el que vale: {@code ~~ PRECIO x
+ * MAYOR🤑99.900🥳~~~} y luego {@code Súper descuento $69.900} (exportación del 9 de octubre de
+ * 2026). Leído tal cual, el primer precio era el tachado. Por eso, antes de buscar, se borra todo
+ * tramo tachado: el que abre con virgulillas al principio de la línea o detrás de un espacio, como
+ * abre WhatsApp, y cierra con virgulillas en la misma línea. El cierre doble de arriba no se
+ * confunde con eso porque va pegado al número: {@code 🎽55.000~~} no abre nada.
  */
 public final class PatronDePrecio {
 
@@ -63,6 +72,9 @@ public final class PatronDePrecio {
               + "\\s*\\*?\\s*(?:💰|_|~~))",
           Pattern.CASE_INSENSITIVE);
 
+  /** Un tramo tachado de WhatsApp con alguna cifra dentro, sin salir de su línea. */
+  private static final Pattern TACHADO = Pattern.compile("(?<!\\S)~+[^~\\n]*\\d[^~\\n]*~+");
+
   private static final BigDecimal MINIMO = BigDecimal.valueOf(1_000);
 
   private static final BigDecimal MIL = BigDecimal.valueOf(1_000);
@@ -73,7 +85,7 @@ public final class PatronDePrecio {
     if (texto == null || texto.isBlank()) {
       return Optional.empty();
     }
-    Matcher m = CANDIDATO.matcher(texto);
+    Matcher m = CANDIDATO.matcher(sinTachado(texto));
     while (m.find()) {
       BigDecimal valor = valorDe(m);
       if (valor.compareTo(MINIMO) >= 0) {
@@ -92,7 +104,7 @@ public final class PatronDePrecio {
       return List.of();
     }
     List<Dinero> precios = new ArrayList<>();
-    Matcher m = CANDIDATO.matcher(texto);
+    Matcher m = CANDIDATO.matcher(sinTachado(texto));
     while (m.find()) {
       BigDecimal valor = valorDe(m);
       if (valor.compareTo(MINIMO) >= 0) {
@@ -104,6 +116,10 @@ public final class PatronDePrecio {
 
   public static boolean tienePrecio(String texto) {
     return extraer(texto).isPresent();
+  }
+
+  private static String sinTachado(String texto) {
+    return TACHADO.matcher(texto).replaceAll(" ");
   }
 
   private static BigDecimal valorDe(Matcher m) {

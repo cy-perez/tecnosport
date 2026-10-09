@@ -196,9 +196,13 @@ public final class AprobarBorrador {
     HuellaProveedor huella =
         borrador
             .huella()
-            .orElseGet(() -> HuellaProveedor.calcular(proveedor.id(), titulo, precioProveedor));
-    // El mismo anuncio repetido deja dos borradores en revisión; aprobar el segundo chocaría con
-    // el índice único de la huella. Se consulta antes, no se atrapa después (apps/api/CLAUDE.md).
+            .orElseGet(
+                () ->
+                    HuellaProveedor.deAnuncio(
+                        proveedor.id(), titulo, precioProveedor, publicacion.fecha()));
+    // Dos borradores con la misma huella pueden quedar en revisión —la misma referencia desde dos
+    // lotes que corren antes de aprobar ninguno—; aprobar el segundo chocaría con el índice único.
+    // Se consulta antes, no se atrapa después (apps/api/CLAUDE.md).
     productosDeProveedor
         .buscarPorHuella(proveedor.id(), huella)
         .ifPresent(

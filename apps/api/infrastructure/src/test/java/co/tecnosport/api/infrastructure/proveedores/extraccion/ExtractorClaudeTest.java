@@ -260,6 +260,25 @@ class ExtractorClaudeTest {
   }
 
   /**
+   * El código de referencia de Violeta viaja normalizado; una respuesta sin el campo —una
+   * extracción anterior al 9 de octubre de 2026— llega sin código.
+   */
+  @Test
+  void elCodigoDeReferenciaLlegaNormalizadoYSuAusenciaEsNulo() {
+    String jean =
+        BOLSO
+            .replace("Bolso de dama mediano", "Jean costuras contrastadas")
+            .replace("\"notas\":null}", "\"notas\":null,\"codigo_referencia\":\" q339\"}");
+    respuestas.add(
+        new Respuesta(200, exito("{\"productos\":[" + jean + "," + BOLSO + "]}", "end_turn")));
+
+    ResultadoExtraccion resultado = extractor(1).extraer(texto());
+
+    assertThat(resultado.productos().get(0).codigoReferenciaOpcional()).contains("Q339");
+    assertThat(resultado.productos().get(1).codigoReferenciaOpcional()).isEmpty();
+  }
+
+  /**
    * Las prendas de dama de Violeta tienen tipo propio; el chaleco no (lo cubre la de arriba). El
    * bodi se llamaba «body» hasta el 3 de octubre de 2026, y una extracción vieja todavía lo dice.
    */

@@ -22,7 +22,8 @@
           "alt_en",
           "es_replica",
           "confianza",
-          "notas"
+          "notas",
+          "codigo_referencia"
         ],
         "properties": {
           "esta_agotado": { "type": "boolean" },
@@ -68,7 +69,8 @@
           "alt_en": { "type": ["string", "null"] },
           "es_replica": { "type": "boolean" },
           "confianza": { "type": "number" },
-          "notas": { "type": ["string", "null"] }
+          "notas": { "type": ["string", "null"] },
+          "codigo_referencia": { "type": ["string", "null"] }
         }
       }
     }

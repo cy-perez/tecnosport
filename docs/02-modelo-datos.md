@@ -719,9 +719,15 @@ huella_proveedor)` es lo que hace que la renovación encuentre su producto.
 
 **Dos formas de reconocer que un mensaje es un producto que ya existe:**
 
-- **La huella**: `sha256(proveedor | título normalizado | precio)`. Si coincide,
-  es el mismo bolso al mismo precio: se renueva `visto_por_ultima_vez` y no se
-  crea borrador.
+- **La huella**, que desde el 9 de octubre de 2026 es una de dos (`ADR-0067`):
+  si el producto trae código de referencia —«(Q339)» en Violeta—,
+  `sha256(proveedor | "referencia" | código)`, y el código lo identifica a
+  cualquier hora y a cualquier precio; si no, la del anuncio,
+  `sha256(sha256(proveedor | título normalizado | precio) | "anuncio" | fecha del
+  mensaje)`: el mismo texto a otra hora es otra prenda. Si coincide, se renueva
+  `visto_por_ultima_vez` y no se crea borrador. Los productos aprobados antes
+  conservan la huella vieja, `sha256(proveedor | título normalizado | precio)`,
+  y se renuevan por la foto.
 - **El parecido visual**: el pHash de la primera foto (DCT 32×32 reducida a 8×8,
   bits contra la mediana) contra los de los borradores aprobados del mismo
   proveedor, con distancia de Hamming hasta `PROVEEDORES_UMBRAL_HAMMING` (6).

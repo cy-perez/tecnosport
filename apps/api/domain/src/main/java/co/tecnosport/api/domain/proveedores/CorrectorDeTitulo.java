@@ -6,9 +6,10 @@ import java.util.regex.Pattern;
 /**
  * Lo que el título de un producto de proveedor corrige sin depender del modelo: los espacios de
  * más, la palabra «body», que en español se escribe «bodi» —«bodis» en plural— (decidido por el
- * negocio el 3 de octubre de 2026), y la marca de réplica —«AAA», «1.1»—, que nunca es parte del
- * nombre ({@link PatronDeReplica#sinMarca}, 4 de octubre de 2026). El prompt pide lo mismo; esto
- * existe para que no dependa de que el modelo lo recuerde.
+ * negocio el 3 de octubre de 2026), la marca de réplica —«AAA», «1.1»—, que nunca es parte del
+ * nombre ({@link PatronDeReplica#sinMarca}, 4 de octubre de 2026), y los diminutivos, que se
+ * escriben con el nombre de su categoría ({@link NombreDeCategoria}, 9 de octubre de 2026). El
+ * prompt pide lo mismo; esto existe para que no dependa de que el modelo lo recuerde.
  *
  * <p>Conserva la mayúscula inicial de la palabra que corrige, y nada más: «Body Herraje» queda
  * «Bodi Herraje», y la capitalización del resto la decide el extractor, que sabe qué es marca.
@@ -28,7 +29,10 @@ public final class CorrectorDeTitulo {
     if (titulo == null) {
       return null;
     }
-    String unEspacio = ESPACIOS.matcher(PatronDeReplica.sinMarca(titulo)).replaceAll(" ");
+    String unEspacio =
+        ESPACIOS
+            .matcher(NombreDeCategoria.corregir(PatronDeReplica.sinMarca(titulo)))
+            .replaceAll(" ");
     Matcher m = BODY.matcher(unEspacio);
     StringBuilder corregido = new StringBuilder();
     while (m.find()) {

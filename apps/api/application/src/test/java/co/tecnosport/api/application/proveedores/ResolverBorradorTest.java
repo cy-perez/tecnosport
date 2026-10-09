@@ -1,6 +1,7 @@
 package co.tecnosport.api.application.proveedores;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import co.tecnosport.api.application.compartido.RelojFalso;
@@ -85,13 +86,13 @@ class ResolverBorradorTest {
   }
 
   private PublicacionProveedor publicacion(String texto, String fotoContenido) {
+    return publicacion(texto, fotoContenido, FECHA_DEL_MENSAJE);
+  }
+
+  private PublicacionProveedor publicacion(String texto, String fotoContenido, Instant fecha) {
     MensajeProveedor principal =
         MensajeProveedor.texto(
-            proveedor.id(),
-            lote.id(),
-            new IdExternoDeMensaje("t" + (++contador)),
-            FECHA_DEL_MENSAJE,
-            texto);
+            proveedor.id(), lote.id(), new IdExternoDeMensaje("t" + (++contador)), fecha, texto);
     mensajes.put(principal.id(), principal);
     PublicacionProveedor publicacion = PublicacionProveedor.abrir(principal);
     if (fotoContenido != null) {
@@ -102,7 +103,7 @@ class ResolverBorradorTest {
               proveedor.id(),
               lote.id(),
               new IdExternoDeMensaje("f" + contador),
-              FECHA_DEL_MENSAJE.plusSeconds(10),
+              fecha.plusSeconds(10),
               null,
               referencia);
       mensajes.put(foto.id(), foto);
@@ -118,6 +119,21 @@ class ResolverBorradorTest {
       boolean esProducto,
       boolean agotado,
       Set<AlertaBorrador> alertas) {
+    return evaluada(titulo, precio, esProducto, agotado, alertas, null);
+  }
+
+  /** Con el código de referencia que el proveedor escribió, como los de Violeta. */
+  private static ExtraccionEvaluada conCodigo(String titulo, long precio, String codigo) {
+    return evaluada(titulo, precio, true, false, Set.of(), codigo);
+  }
+
+  private static ExtraccionEvaluada evaluada(
+      String titulo,
+      long precio,
+      boolean esProducto,
+      boolean agotado,
+      Set<AlertaBorrador> alertas,
+      String codigo) {
     ProductoExtraido extraido =
         new ProductoExtraido(
             esProducto,
@@ -134,12 +150,29 @@ class ResolverBorradorTest {
             null,
             false,
             new BigDecimal("0.9"),
-            null);
+            null,
+            codigo);
     return new ExtraccionEvaluada(
         extraido, "{}", Dinero.deCop(precio), alertas, new UsoDelExtractor("falso", 1, 1, 1));
   }
 
+  /** Un producto aprobado antes del 9 de octubre de 2026: su huella es la del texto. */
   private Producto productoExistente(String titulo, long precio, EstadoDisponibilidad estado) {
+    return productoExistente(
+        titulo,
+        precio,
+        HuellaProveedor.calcular(proveedor.id(), titulo, Dinero.deCop(precio)),
+        estado);
+  }
+
+  private Producto productoConCodigo(
+      String titulo, long precio, String codigo, EstadoDisponibilidad estado) {
+    return productoExistente(
+        titulo, precio, HuellaProveedor.deReferencia(proveedor.id(), codigo), estado);
+  }
+
+  private Producto productoExistente(
+      String titulo, long precio, HuellaProveedor huella, EstadoDisponibilidad estado) {
     Producto producto =
         Producto.crearDeProveedor(
             titulo,
@@ -149,7 +182,7 @@ class ResolverBorradorTest {
             ApoyoDeCatalogoParaIngesta.BOLSOS_DE_MANO,
             proveedor.id(),
             Dinero.deCop(precio),
-            HuellaProveedor.calcular(proveedor.id(), titulo, Dinero.deCop(precio)),
+            huella,
             ANTES);
     if (estado == EstadoDisponibilidad.OCULTO_POR_VENCIMIENTO) {
       producto.ocultarPorVencimiento();
@@ -206,31 +239,133 @@ class ResolverBorradorTest {
         borradores.enEstado(EstadoBorrador.EN_REVISION).get(0).precioVentaSugerido());
   }
 
-  /** El cuarto criterio de aceptación: misma huella, no hay borrador nuevo y se reactiva. */
-  /** El proveedor repite el anuncio antes de que alguien apruebe el primero: un solo borrador. */
+  /**
+   * Meraki repite el «Buso navideño» con el mismo texto y las mismas fotos horas después, antes de
+   * que alguien apruebe el primero: es el mismo anuncio, y queda un solo borrador.
+   */
   @Test
-  void elMismoAnuncioRepetidoAntesDeAprobarNoAbreOtroBorrador() {
-    PublicacionProveedor primera = publicacion("Bolso de dama mediano 💰 53.000", null);
-    PublicacionProveedor repetida = publicacion("Bolso de dama mediano 💰 53.000", null);
-    ExtraccionEvaluada evaluada = evaluada("Bolso de dama mediano", 53000, true, false, Set.of());
+  void elMismoAnuncioConLaMismaFotoAntesDeAprobarNoAbreOtroBorrador() {
+    PublicacionProveedor primera =
+        publicacion("Buso navideño 💰 45.000", "foto-buso", FECHA_DEL_MENSAJE);
+    PublicacionProveedor repetida =
+        publicacion(
+            "Buso navideño 💰 45.000", "foto-buso", FECHA_DEL_MENSAJE.plusSeconds(3 * 3600));
+    ExtraccionEvaluada evaluada = evaluada("Buso navideño", 45000, true, false, Set.of());
 
     Resolucion primero = resolver(primera, evaluada);
     Resolucion segundo = resolver(repetida, evaluada);
 
     assertEquals(TipoDeResolucion.NUEVO, primero.tipo());
     assertEquals(TipoDeResolucion.DESCARTADA, segundo.tipo());
+    assertTrue(segundo.motivo().contains("misma foto"));
     assertEquals(1, borradores.enEstado(EstadoBorrador.EN_REVISION).size());
   }
 
+  /**
+   * La Riverah, 8 de octubre de 2026: el «Busito manga larga» a 58.000 salió azul a las 12:06 y
+   * gris a las 19:32, con el mismo texto. Son dos prendas, y cada una abre su borrador con su
+   * propia huella, para que las dos puedan aprobarse.
+   */
   @Test
-  void laMismaHuellaRenuevaElProductoYLoReactiva() {
-    Producto oculto =
-        productoExistente(
-            "Bolso de dama mediano", 53000, EstadoDisponibilidad.OCULTO_POR_VENCIMIENTO);
-    PublicacionProveedor publicacion = publicacion("Bolso de dama mediano 💰 53.000", null);
+  void elMismoTextoConOtraFotoEsOtraPrenda() {
+    PublicacionProveedor azul =
+        publicacion("Busito manga larga 🤑$58.000", "busito-azul", FECHA_DEL_MENSAJE);
+    PublicacionProveedor gris =
+        publicacion(
+            "Busito manga larga 🤑$58.000",
+            "busito-gris-otra-prenda",
+            FECHA_DEL_MENSAJE.plusSeconds(7 * 3600));
+    ExtraccionEvaluada evaluada = evaluada("Busito manga larga", 58000, true, false, Set.of());
+
+    Resolucion primero = resolver(azul, evaluada);
+    Resolucion segundo = resolver(gris, evaluada);
+
+    assertEquals(TipoDeResolucion.NUEVO, primero.tipo());
+    assertEquals(TipoDeResolucion.NUEVO, segundo.tipo());
+    List<BorradorProducto> enRevision = borradores.enEstado(EstadoBorrador.EN_REVISION);
+    assertEquals(2, enRevision.size());
+    assertNotEquals(enRevision.get(0).huella(), enRevision.get(1).huella());
+  }
+
+  /** Sin foto con la que comparar no hay cómo saber que es el mismo: no se descarta nada. */
+  @Test
+  void elMismoTextoSinFotoNoSeDescarta() {
+    ExtraccionEvaluada evaluada = evaluada("Bolso de dama mediano", 53000, true, false, Set.of());
+
+    resolver(publicacion("Bolso de dama mediano 💰 53.000", null, FECHA_DEL_MENSAJE), evaluada);
+    Resolucion segundo =
+        resolver(
+            publicacion(
+                "Bolso de dama mediano 💰 53.000", null, FECHA_DEL_MENSAJE.plusSeconds(3600)),
+            evaluada);
+
+    assertEquals(TipoDeResolucion.NUEVO, segundo.tipo());
+    assertEquals(2, borradores.enEstado(EstadoBorrador.EN_REVISION).size());
+  }
+
+  /** La misma foto con otro texto no es un repetido en revisión: el texto también cuenta. */
+  @Test
+  void laMismaFotoConOtroTextoEnRevisionNoSeDescarta() {
+    resolver(
+        publicacion("Bolso de dama mediano 💰 53.000", "foto-compartida"),
+        evaluada("Bolso de dama mediano", 53000, true, false, Set.of()));
+
+    Resolucion segundo =
+        resolver(
+            publicacion("Morral fino 💰 53.000", "foto-compartida"),
+            evaluada("Morral fino", 53000, true, false, Set.of()));
+
+    assertEquals(TipoDeResolucion.NUEVO, segundo.tipo());
+  }
+
+  /** Violeta repite el jean Q339 a otra hora: el código dice que es el mismo, foto o no. */
+  @Test
+  void laMismaReferenciaEnRevisionSeDescartaAOtraHora() {
+    resolver(
+        publicacion("Jean costuras contrastadas (Q339) 💲124", "foto-uno", FECHA_DEL_MENSAJE),
+        conCodigo("Jean costuras contrastadas", 124000, "Q339"));
+
+    Resolucion segundo =
+        resolver(
+            publicacion(
+                "Jean costuras contrastadas (Q339) 💲124",
+                "otra-foto-del-conjunto",
+                FECHA_DEL_MENSAJE.plusSeconds(2 * 3600)),
+            conCodigo("Jean costuras contrastadas", 124000, "Q339"));
+
+    assertEquals(TipoDeResolucion.DESCARTADA, segundo.tipo());
+    assertTrue(segundo.motivo().contains("misma referencia"));
+    assertEquals(1, borradores.enEstado(EstadoBorrador.EN_REVISION).size());
+  }
+
+  /**
+   * Un producto aprobado con este texto, y un anuncio nuevo con el mismo texto y sin su foto: es
+   * otra prenda, no una renovación (9 de octubre de 2026).
+   */
+  @Test
+  void elMismoTextoDeUnProductoAprobadoNoLoRenuevaSinSuFoto() {
+    Producto existente =
+        productoExistente("Bolso de dama mediano", 53000, EstadoDisponibilidad.DISPONIBLE);
 
     Resolucion resolucion =
-        resolver(publicacion, evaluada("BOLSO DE DAMA MEDIANO", 53000, true, false, Set.of()));
+        resolver(
+            publicacion("Bolso de dama mediano 💰 53.000", "otra-prenda"),
+            evaluada("Bolso de dama mediano", 53000, true, false, Set.of()));
+
+    assertEquals(TipoDeResolucion.NUEVO, resolucion.tipo());
+    assertEquals(Optional.of(ANTES), existente.vistoPorUltimaVez());
+  }
+
+  /** El cuarto criterio de aceptación: la misma referencia renueva el producto y lo reactiva. */
+  @Test
+  void laMismaReferenciaRenuevaElProductoYLoReactiva() {
+    Producto oculto =
+        productoConCodigo(
+            "Bolso de dama mediano", 53000, "B204", EstadoDisponibilidad.OCULTO_POR_VENCIMIENTO);
+    PublicacionProveedor publicacion = publicacion("Bolso de dama mediano (B204) 💰 53.000", null);
+
+    Resolucion resolucion =
+        resolver(publicacion, conCodigo("BOLSO DE DAMA MEDIANO", 53000, "B204"));
 
     assertEquals(TipoDeResolucion.RENOVACION, resolucion.tipo());
     assertEquals(EstadoDisponibilidad.DISPONIBLE, oculto.estadoDisponibilidad());
@@ -244,10 +379,11 @@ class ResolverBorradorTest {
   @Test
   void laMismaFotoRenuevaAunqueElTextoYElPrecioCambienYAvisaDelPrecio() {
     Producto existente =
-        productoExistente("Bolso de dama mediano", 53000, EstadoDisponibilidad.DISPONIBLE);
-    PublicacionProveedor anterior = publicacion("Bolso de dama mediano 💰 53.000", "misma-foto");
-    resolver(anterior, evaluada("Bolso de dama mediano", 53000, true, false, Set.of()));
-    // Esa resolución fue una renovación por huella; dejó la huella visual apuntando al producto.
+        productoConCodigo("Bolso de dama mediano", 53000, "B204", EstadoDisponibilidad.DISPONIBLE);
+    PublicacionProveedor anterior =
+        publicacion("Bolso de dama mediano (B204) 💰 53.000", "misma-foto");
+    resolver(anterior, conCodigo("Bolso de dama mediano", 53000, "B204"));
+    // Esa resolución fue una renovación por referencia; dejó la huella visual en el producto.
     PublicacionProveedor reescrita = publicacion("Bolso mediano elegante 💰 55.000", "misma-foto");
 
     Resolucion resolucion =
@@ -275,11 +411,13 @@ class ResolverBorradorTest {
   @Test
   void agotadoSobreUnProductoExistenteLoAgotaDeInmediato() {
     Producto existente =
-        productoExistente("Bolso de dama mediano", 53000, EstadoDisponibilidad.DISPONIBLE);
-    PublicacionProveedor publicacion = publicacion("Bolso de dama mediano 💰 53.000 AGOTADO", null);
+        productoConCodigo("Bolso de dama mediano", 53000, "B204", EstadoDisponibilidad.DISPONIBLE);
+    PublicacionProveedor publicacion =
+        publicacion("Bolso de dama mediano (B204) 💰 53.000 AGOTADO", null);
 
     Resolucion resolucion =
-        resolver(publicacion, evaluada("Bolso de dama mediano", 53000, true, true, Set.of()));
+        resolver(
+            publicacion, evaluada("Bolso de dama mediano", 53000, true, true, Set.of(), "B204"));
 
     assertEquals(TipoDeResolucion.AGOTADO, resolucion.tipo());
     assertEquals(EstadoDisponibilidad.AGOTADO_POR_PROVEEDOR, existente.estadoDisponibilidad());
@@ -374,11 +512,12 @@ class ResolverBorradorTest {
    */
   @Test
   void conVariosProductosLaFotoNoReconoceAUnoComoOtro() {
-    productoExistente("Chaqueta Denim corta", 108000, EstadoDisponibilidad.DISPONIBLE);
+    productoConCodigo("Chaqueta Denim corta", 108000, "Q377", EstadoDisponibilidad.DISPONIBLE);
     resolver(
-        publicacion("Chaqueta Denim corta 💲108", "foto-conjunto"),
-        evaluada("Chaqueta Denim corta", 108000, true, false, Set.of()));
-    PublicacionProveedor conjunto = publicacion("Chaqueta 💲108 Jean 💲124", "foto-conjunto");
+        publicacion("Chaqueta Denim corta (Q377) 💲108", "foto-conjunto"),
+        conCodigo("Chaqueta Denim corta", 108000, "Q377"));
+    PublicacionProveedor conjunto =
+        publicacion("Chaqueta (Q377) 💲108 Jean 💲124", "foto-conjunto");
 
     List<Resolucion> resoluciones =
         caso()
@@ -388,20 +527,23 @@ class ResolverBorradorTest {
                 proveedor,
                 List.of(
                     evaluada("Jean wide leg", 124000, true, false, COMPARTIDAS),
-                    evaluada("Chaqueta Denim corta", 108000, true, false, COMPARTIDAS)));
+                    evaluada("Chaqueta Denim corta", 108000, true, false, COMPARTIDAS, "Q377")));
 
     assertEquals(TipoDeResolucion.NUEVO, resoluciones.get(0).tipo());
     assertEquals(
-        TipoDeResolucion.RENOVACION, resoluciones.get(1).tipo(), "la chaqueta sí, por su huella");
+        TipoDeResolucion.RENOVACION,
+        resoluciones.get(1).tipo(),
+        "la chaqueta sí, por su referencia");
   }
 
   /** El jean ya está en revisión por otro mensaje: se descarta él, no la publicación. */
   @Test
   void unProductoRepetidoSeDescartaSinDescartarLaPublicacion() {
     resolver(
-        publicacion("Jean wide leg 💲124", null),
-        evaluada("Jean wide leg", 124000, true, false, Set.of()));
-    PublicacionProveedor conjunto = publicacion("Blusa 💲28 Jean 💲124", "foto-conjunto");
+        publicacion("Jean wide leg (Q343) 💲124", null),
+        conCodigo("Jean wide leg", 124000, "Q343"));
+    PublicacionProveedor conjunto =
+        publicacion("Blusa (VY2719) 💲28 Jean (Q343) 💲124", "foto-conjunto");
 
     List<Resolucion> resoluciones =
         caso()
@@ -410,8 +552,8 @@ class ResolverBorradorTest {
                 mensajes,
                 proveedor,
                 List.of(
-                    evaluada("Blusa Rib larga", 28000, true, false, COMPARTIDAS),
-                    evaluada("Jean wide leg", 124000, true, false, COMPARTIDAS)));
+                    evaluada("Blusa Rib larga", 28000, true, false, COMPARTIDAS, "VY2719"),
+                    evaluada("Jean wide leg", 124000, true, false, COMPARTIDAS, "Q343")));
 
     assertEquals(TipoDeResolucion.NUEVO, resoluciones.get(0).tipo());
     assertEquals(TipoDeResolucion.DESCARTADA, resoluciones.get(1).tipo());

@@ -1,5 +1,6 @@
 package co.tecnosport.api.application.proveedores;
 
+import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.proveedores.BorradorProducto;
 import co.tecnosport.api.domain.proveedores.EstadoBorrador;
 import co.tecnosport.api.domain.proveedores.HuellaProveedor;
@@ -40,6 +41,13 @@ public interface RepositorioBorradores {
    * anuncio repetido antes de que alguien lo apruebe: no se abre otro.
    */
   boolean existeEnRevisionConHuella(UUID proveedorId, HuellaProveedor huella);
+
+  /**
+   * Los borradores de este proveedor que esperan revisión con este precio: su título y el pHash de
+   * su foto principal. Con eso se decide si un anuncio sin código es el mismo de otra vez —el mismo
+   * texto y la misma foto— o la misma plantilla con otra prenda.
+   */
+  List<AnuncioEnRevision> anunciosEnRevision(UUID proveedorId, Dinero precioProveedor);
 
   /** Cuántos borradores salieron de esta publicación, en cualquier estado. */
   long contarDePublicacion(UUID publicacionId);

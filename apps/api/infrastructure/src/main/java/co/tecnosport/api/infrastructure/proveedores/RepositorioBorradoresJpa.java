@@ -1,6 +1,7 @@
 package co.tecnosport.api.infrastructure.proveedores;
 
 import co.tecnosport.api.application.compartido.Reloj;
+import co.tecnosport.api.application.proveedores.AnuncioEnRevision;
 import co.tecnosport.api.application.proveedores.BorradoresPaginados;
 import co.tecnosport.api.application.proveedores.HuellaVisual;
 import co.tecnosport.api.application.proveedores.RepositorioBorradores;
@@ -104,6 +105,19 @@ public class RepositorioBorradoresJpa implements RepositorioBorradores {
   public boolean existeEnRevisionConHuella(UUID proveedorId, HuellaProveedor huella) {
     return jpa.existsByProveedorIdAndEstadoAndHuella(
         proveedorId, EstadoBorrador.EN_REVISION.name(), huella.valor());
+  }
+
+  @Override
+  public List<AnuncioEnRevision> anunciosEnRevision(UUID proveedorId, Dinero precioProveedor) {
+    return jpa
+        .findByProveedorIdAndEstadoAndPrecioProveedorAndTituloIsNotNull(
+            proveedorId, EstadoBorrador.EN_REVISION.name(), precioProveedor.valor())
+        .stream()
+        .map(
+            f ->
+                new AnuncioEnRevision(
+                    f.getTitulo(), f.getPhash() == null ? null : PHash.deHex(f.getPhash())))
+        .toList();
   }
 
   @Override

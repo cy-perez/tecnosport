@@ -33,10 +33,21 @@ import java.util.stream.Collectors;
  *
  * <h2>Cómo se reconoce un producto que ya existe</h2>
  *
- * <p>Primero por la huella —proveedor, título normalizado y precio—, que es exacta. Si no cae, por
- * la foto: el pHash de la primera foto contra los de los productos del mismo proveedor, dentro del
- * umbral de Hamming. <b>La foto reconoce aunque el precio cambie</b>, y ahí es donde nace {@code
- * PRECIO_CAMBIO}: la huella no puede dar ese aviso porque lleva el precio dentro.
+ * <p>Primero por la huella, que es exacta: la del código de referencia cuando el proveedor marca la
+ * prenda —«(Q339)»—, y si no la del anuncio, que lleva la fecha del mensaje ({@link
+ * HuellaProveedor}). Si no cae, por la foto: el pHash de la primera foto contra los de los
+ * productos del mismo proveedor, dentro del umbral de Hamming. <b>La foto reconoce aunque el texto
+ * o el precio cambien</b>, y ahí es donde nace {@code PRECIO_CAMBIO}.
+ *
+ * <h2>El mismo texto no es el mismo producto (9 de octubre de 2026)</h2>
+ *
+ * <p>La Riverah repite el texto de un anuncio con otra prenda: el «Busito manga larga» a 58.000
+ * salió azul y, horas después, gris. Por eso un anuncio sin código solo se descarta por repetido
+ * cuando hay un borrador en revisión con <b>el mismo texto y la misma foto</b>: alguna de sus fotos
+ * a la distancia de Hamming del umbral o menos de la principal de aquel. Con el texto igual y otra
+ * foto es otra prenda, y abre su propio borrador. Si uno de los dos no tiene foto con la que
+ * comparar, no hay cómo saber que es el mismo, y tampoco se descarta: un borrador de más se elimina
+ * en el panel; una prenda descartada no vuelve. Con código de referencia el código basta.
  *
  * <p>Una renovación no crea un borrador para revisar: actualiza la última vista, reactiva el
  * producto si estaba oculto y deja una constancia {@code RENOVACION_APLICADA}. Un agotado sobre un
@@ -85,7 +96,7 @@ public final class ResolverBorrador {
   }
 
   /**
-   * La forma cómoda: calcula el pHash y carga las huellas visuales aquí mismo. Lee del bucket y
+   * La forma cómoda: calcula los pHash y carga las huellas visuales aquí mismo. Lee del bucket y
    * consulta al repositorio, así que <b>no se llama dentro de una transacción</b>; el lote usa la
    * otra sobrecarga con las dos cosas ya preparadas fuera.
    */
@@ -99,7 +110,7 @@ public final class ResolverBorrador {
         mensajes,
         proveedor,
         evaluadas,
-        evaluadas.size() == 1 ? pHashDe(publicacion, mensajes).orElse(null) : null,
+        evaluadas.size() == 1 ? pHashesDe(publicacion, mensajes) : List.of(),
         huellasVisualesDe(proveedor.id()));
   }
 
@@ -113,8 +124,8 @@ public final class ResolverBorrador {
    * después como la chaqueta. Esos borradores nacen sin huella visual y la reciben al aprobarse, de
    * la foto que la persona marque como principal.
    *
-   * @param pHash el de la primera foto de la publicación, ya calculado fuera de la transacción, o
-   *     nulo si no hay foto legible
+   * @param pHashes los de las fotos legibles de la publicación, en orden, ya calculados fuera de la
+   *     transacción; el primero es el de la principal. Vacía si no hay ninguna
    * @param huellasVisuales las de los productos que ya existen del proveedor, cargadas una vez por
    *     lote
    * @return una resolución por producto, en el orden del mensaje; una sola, descartada, si el
@@ -125,15 +136,15 @@ public final class ResolverBorrador {
       Map<UUID, MensajeProveedor> mensajes,
       Proveedor proveedor,
       List<ExtraccionEvaluada> evaluadas,
-      PHash pHash,
+      List<PHash> pHashes,
       List<HuellaVisual> huellasVisuales) {
     if (evaluadas.isEmpty()) {
       return List.of(descartar(publicacion, SIN_PRODUCTO));
     }
-    PHash pHashUsable = evaluadas.size() == 1 ? pHash : null;
+    List<PHash> fotos = evaluadas.size() == 1 ? List.copyOf(pHashes) : List.of();
     List<Resolucion> resoluciones = new ArrayList<>(evaluadas.size());
     for (ExtraccionEvaluada evaluada : evaluadas) {
-      resoluciones.add(resolverUno(publicacion, proveedor, evaluada, pHashUsable, huellasVisuales));
+      resoluciones.add(resolverUno(publicacion, proveedor, evaluada, fotos, huellasVisuales));
     }
     boolean algunoSeQuedo =
         resoluciones.stream().anyMatch(r -> r.tipo() != TipoDeResolucion.DESCARTADA);
@@ -155,7 +166,7 @@ public final class ResolverBorrador {
       PublicacionProveedor publicacion,
       Proveedor proveedor,
       ExtraccionEvaluada evaluada,
-      PHash pHash,
+      List<PHash> fotos,
       List<HuellaVisual> huellasVisuales) {
     ProductoExtraido extraido = evaluada.producto();
     if (!extraido.esProducto()) {
@@ -163,10 +174,21 @@ public final class ResolverBorrador {
     }
 
     Dinero precio = evaluada.precioProveedor();
-    HuellaProveedor huella =
+    Optional<String> codigo = extraido.codigoReferenciaOpcional();
+    HuellaProveedor delTexto =
         extraido.tituloOpcional().isPresent() && precio != null
             ? HuellaProveedor.calcular(proveedor.id(), extraido.titulo(), precio)
             : null;
+    HuellaProveedor huella;
+    if (codigo.isPresent()) {
+      huella = HuellaProveedor.deReferencia(proveedor.id(), codigo.get());
+    } else if (delTexto != null) {
+      huella =
+          HuellaProveedor.deAnuncio(proveedor.id(), extraido.titulo(), precio, publicacion.fecha());
+    } else {
+      huella = null;
+    }
+    PHash pHash = fotos.isEmpty() ? null : fotos.getFirst();
     Instant ahora = reloj.ahora();
 
     Optional<Producto> existente = buscarExistente(proveedor.id(), huella, pHash, huellasVisuales);
@@ -177,10 +199,18 @@ public final class ResolverBorrador {
     if (extraido.estaAgotado()) {
       return Resolucion.descartada("Anuncia como agotado un producto que no está en el catálogo.");
     }
-    if (huella != null && repositorioBorradores.existeEnRevisionConHuella(proveedor.id(), huella)) {
-      // El mismo anuncio repetido antes de que alguien apruebe el primero. Un segundo borrador
-      // solo sirve para chocar con el índice único al aprobarlo.
-      return Resolucion.descartada("Es el mismo anuncio de un borrador que ya está en revisión.");
+    if (codigo.isPresent()
+        && repositorioBorradores.existeEnRevisionConHuella(proveedor.id(), huella)) {
+      // La misma referencia antes de que alguien apruebe la primera. Un segundo borrador solo
+      // sirve para chocar con el índice único al aprobarlo.
+      return Resolucion.descartada(
+          "Es la misma referencia de un borrador que ya está en revisión.");
+    }
+    if (codigo.isEmpty()
+        && delTexto != null
+        && esAnuncioRepetido(proveedor, delTexto, precio, fotos)) {
+      return Resolucion.descartada(
+          "Es el mismo anuncio, con la misma foto, de un borrador que ya está en revisión.");
     }
 
     Dinero precioSugerido =
@@ -201,6 +231,22 @@ public final class ResolverBorrador {
             ahora);
     repositorioBorradores.guardar(borrador);
     return new Resolucion(TipoDeResolucion.NUEVO, borrador.alertas(), null);
+  }
+
+  /**
+   * ¿Hay un borrador en revisión con este mismo texto y una foto que se le parezca? Sin foto en
+   * alguno de los dos lados no hay cómo saberlo, y la respuesta es no.
+   */
+  private boolean esAnuncioRepetido(
+      Proveedor proveedor, HuellaProveedor delTexto, Dinero precio, List<PHash> fotos) {
+    if (fotos.isEmpty()) {
+      return false;
+    }
+    return repositorioBorradores.anunciosEnRevision(proveedor.id(), precio).stream()
+        .filter(a -> a.pHash() != null)
+        .filter(a -> HuellaProveedor.calcular(proveedor.id(), a.titulo(), precio).equals(delTexto))
+        .anyMatch(
+            a -> fotos.stream().anyMatch(f -> f.distanciaHamming(a.pHash()) <= umbralHamming));
   }
 
   private Resolucion renovar(
@@ -271,19 +317,22 @@ public final class ResolverBorrador {
   }
 
   /**
-   * El pHash de la primera foto de la publicación: lee el archivo del bucket y lo decodifica, así
-   * que va fuera de cualquier transacción.
+   * El pHash de cada foto legible de la publicación, en orden: el primero es el de la principal, y
+   * los demás sirven para reconocer el mismo anuncio aunque las fotos lleguen en otro orden. Lee
+   * los archivos del bucket y los decodifica, así que va fuera de cualquier transacción.
    */
-  public Optional<PHash> pHashDe(
+  public List<PHash> pHashesDe(
       PublicacionProveedor publicacion, Map<UUID, MensajeProveedor> mensajes) {
     return publicacion.medios().stream()
         .map(mensajes::get)
         .filter(Objects::nonNull)
         .map(m -> m.referenciaArchivo().orElse(null))
         .filter(Objects::nonNull)
-        .findFirst()
-        .flatMap(almacen::leer)
-        .flatMap(calculadorDePHash::de);
+        .map(almacen::leer)
+        .flatMap(Optional::stream)
+        .map(calculadorDePHash::de)
+        .flatMap(Optional::stream)
+        .toList();
   }
 
   /**
