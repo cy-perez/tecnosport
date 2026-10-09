@@ -48,7 +48,7 @@ apps/web/lighthouse/
 apps/web/nivel-360/
 
 # Catalogo
-catalogo/
+/catalogo/
 
 # La medición de cobertura de la sonda: es un dato medido, no fuente. Lo que se versiona es la
 # conclusión, en docs/13.
@@ -77,8 +77,8 @@ Imgs/
 imgs/
 
 # Ingestas
-ingesta/
-Ingesta/
+/ingesta/
+/Ingesta/
 
 # Caché de Angular cuando ng corre desde la raíz, y los worktrees de agentes de Claude Code.
 /.angular/
