@@ -12,7 +12,6 @@ import co.tecnosport.api.application.envio.MetodosDePagoDisponiblesComando;
 import co.tecnosport.api.application.envio.TransportadoraNoDisponibleException;
 import co.tecnosport.api.application.inventario.RepositorioInventario;
 import co.tecnosport.api.application.legal.RepositorioAutorizaciones;
-import co.tecnosport.api.domain.catalogo.EstadoProducto;
 import co.tecnosport.api.domain.catalogo.EstadoVariante;
 import co.tecnosport.api.domain.catalogo.ImagenProducto;
 import co.tecnosport.api.domain.catalogo.Producto;
@@ -366,14 +365,7 @@ public final class CrearPedido {
   }
 
   private Producto buscarProductoVendible(UUID varianteId) {
-    Producto producto =
-        repositorioProductos
-            .buscarPorVarianteId(varianteId)
-            .orElseThrow(() -> new VarianteNoEncontradaException(varianteId));
-    if (producto.estado() != EstadoProducto.PUBLICADO) {
-      throw new VarianteNoEncontradaException(varianteId);
-    }
-    return producto;
+    return ProductoVendible.exigir(repositorioProductos, varianteId);
   }
 
   /**

@@ -52,6 +52,7 @@ import co.tecnosport.api.domain.pedido.LineasDuplicadasException;
 import co.tecnosport.api.domain.pedido.MetodoPago;
 import co.tecnosport.api.domain.pedido.Pedido;
 import co.tecnosport.api.domain.pedido.TipoEntrega;
+import co.tecnosport.api.domain.proveedores.HuellaProveedor;
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.Instant;
@@ -910,6 +911,106 @@ class CrearPedidoTest {
     assertThrows(
         VarianteNoEncontradaException.class, () -> caso.ejecutar(comandoConVarianteSinPublicar));
     assertEquals(EstadoVariante.ACTIVA, varianteSinPublicar.estado());
+  }
+
+  /**
+   * Un producto de proveedor que el proveedor ya no tiene sale de la vitrina, pero hasta el
+   * 08/10/2026 se podía comprar igual: {@code buscarProductoVendible} solo miraba que estuviera
+   * publicado. Un carrito armado antes de que se ocultara, o una llamada directa a la API, lo
+   * compraban. La tecnología se vende con lo que dice el proveedor, así que esta es la guarda que
+   * evita cobrar un equipo que ya no hay (regla dura 7: el servidor no confía en el cliente).
+   */
+  @Test
+  void productoDeProveedorOcultoPorVencimientoNoSeVende() {
+    CrearPedido caso = crear();
+    Variante variante = publicarProductoDeProveedor(Producto::ocultarPorVencimiento);
+
+    assertThrows(
+        VarianteNoEncontradaException.class,
+        () -> caso.ejecutar(comandoConVariante(variante.id())));
+    assertEquals(2, disponible(variante));
+  }
+
+  @Test
+  void productoAgotadoPorElProveedorNoSeVende() {
+    CrearPedido caso = crear();
+    Variante variante =
+        publicarProductoDeProveedor(p -> p.marcarAgotadoPorProveedor(AHORA.plusSeconds(60)));
+
+    assertThrows(
+        VarianteNoEncontradaException.class,
+        () -> caso.ejecutar(comandoConVariante(variante.id())));
+  }
+
+  @Test
+  void productoDeProveedorDisponibleSiSeVende() {
+    CrearPedido caso = crear();
+    Variante variante = publicarProductoDeProveedor(p -> {});
+
+    caso.ejecutar(comandoConVariante(variante.id()));
+
+    assertEquals(1, disponible(variante));
+  }
+
+  private int disponible(Variante variante) {
+    return inventarios.buscarPorVarianteId(variante.id()).orElseThrow().saldoDisponible(AHORA);
+  }
+
+  private Variante publicarProductoDeProveedor(java.util.function.Consumer<Producto> despues) {
+    Marca marca = Marca.crear("Samsung");
+    Categoria categoria =
+        Categoria.crear("Celulares", new Slug("celulares"), LineaCatalogo.TECNOLOGIA);
+    UUID proveedorId = UUID.randomUUID();
+    Producto producto =
+        Producto.crearDeProveedor(
+            "Samsung Galaxy A57 5G",
+            new Slug("samsung-galaxy-a57-5g"),
+            "Celular 5G.",
+            marca,
+            categoria,
+            proveedorId,
+            Dinero.deCop(1_290_000),
+            HuellaProveedor.calcular(proveedorId, "Samsung Galaxy A57 5G", Dinero.deCop(1_290_000)),
+            AHORA);
+    producto.asignarImagenPrincipal(
+        ImagenProducto.crear(
+            TipoImagen.PRINCIPAL,
+            0,
+            List.of(new VarianteDeImagen(800, "https://cdn.tecnosport.co/a57.avif", 1000)),
+            null,
+            800,
+            new HashContenido("%064x".formatted(57)),
+            "alt es",
+            "alt en"));
+    Variante variante =
+        Variante.crear(
+            new Sku("TEC-A57-256"),
+            Dinero.deCop(1_599_900),
+            new BigDecimal("0.19"),
+            null,
+            new Paquete(400, 20, 12, 8),
+            List.of());
+    producto.agregarVariante(variante);
+    producto.publicar();
+    despues.accept(producto);
+    productos.conProductos(producto);
+    Inventario inventario = Inventario.crear(variante.id());
+    inventario.registrarEntrada(2, "lista del proveedor", AHORA);
+    inventarios.conInventario(inventario);
+    return variante;
+  }
+
+  private CrearPedidoComando comandoConVariante(UUID varianteId) {
+    return new CrearPedidoComando(
+        null,
+        "cliente@tecnosport.co",
+        CONTACTO,
+        List.of(new CrearPedidoComando.LineaComando(varianteId, 1)),
+        TipoEntrega.ENVIO_A_DOMICILIO,
+        DIRECCION_MEDELLIN,
+        MetodoPago.WOMPI,
+        true,
+        IP);
   }
 
   @Test

@@ -496,6 +496,47 @@ o si basta con el aviso.
 `ts-entrar-con-google` —cargar el script tras un clic previo— y, con él, el
 párrafo de cookies en los dos idiomas y la versión de la política.
 
+## 8. Usar las fotos y las fichas de las marcas y de Icecat
+
+> Nació el 8 de octubre de 2026 con `ADR-0075`.
+
+**El hecho.** El proveedor de tecnología no manda fotos. Las fichas y las fotos
+de cada modelo salen, en este orden, del sitio oficial de la marca y de Open
+Icecat, y se publican procesadas en estudio (fondo, encuadre, tamaños). Las
+marcas consultadas (08/10/2026) prohíben en sus términos el uso comercial de su
+contenido, y varias el acceso automatizado; algunas lo bloquean técnicamente, y
+para esas una persona guarda la página a mano. Icecat se usa bajo su Open Content
+License v1.4 (11/02/2026): exige el aviso literal "Database Right data-sheet
+[año] Icecat. All rights reserved." con su exención de garantía, avisar las
+modificaciones, una cláusula de licenciar igual lo derivado (cl. 2), y su
+cláusula 10 deja sin licencia el contenido que pase por herramientas de IA. Por
+eso los datos de Icecat los maneja solo el código, nunca el modelo de lenguaje,
+y el `robots.txt` cierra el sitio a los rastreadores que entrenan IA.
+
+**Qué dice el texto publicado (versión `2026-10-08.3`).** Términos, numerales 4
+y 13: las fotos de tecnología son imágenes de referencia del modelo, tomadas de
+lo que publica la marca o un catálogo de fichas técnicas; las que no tomamos ni
+escribimos nosotros —también las de los proveedores de prendas— pertenecen a
+sus titulares. No afirma tener licencia ni permiso de las marcas, y decir que
+son de sus titulares es reconocer que no son nuestras: es parte de lo que se
+pregunta.
+
+**Las preguntas.**
+
+1. Si mostrar en la ficha de venta las fotos y especificaciones oficiales de un
+   producto original que se revende es un uso permitido (agotamiento del derecho,
+   uso informativo) pese a los términos de los sitios de las marcas, que son
+   condiciones de navegación que nadie firma.
+2. Si procesar esas fotos —recortar, cambiar el fondo— es una modificación que
+   empeora la posición frente a la marca o frente a Icecat.
+3. Si la cláusula de licenciar igual lo derivado (cl. 2 de Icecat) alcanza las
+   descripciones que se redactan a partir de sus fichas.
+
+**Qué cambia según la respuesta:** si el uso es defendible, nada. Si no, la
+skill deja de usar esa fuente —o la ficha se redacta sin ella— y las fotos de
+tecnología se toman en estudio de la unidad, como las de prendas; los
+numerales 4 y 13 de los términos vuelven a decir que son propias.
+
 ## Antes de la consulta
 
 - [x] ~~Leer el contrato y la documentación de Resend y anotar la región de

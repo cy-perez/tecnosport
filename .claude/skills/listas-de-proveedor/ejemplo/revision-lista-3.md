@@ -2,6 +2,7 @@
 
 - Fecha de la lista: 2026-10-08
 - Productos para publicar: 90
+- Modelos distintos: 80
 - Descartados: 168
 - Duplicados fusionados: 9
 - Productos con algún supuesto aplicado: 51
@@ -11,11 +12,11 @@
 
 ## Productos para publicar
 - **OPPO A6c 4GB RAM 64GB** — celulares — 500.000 COP
-  - · asumido: título confirmado el 02/10/2026: la lista lo trae como «Oppo A6C 4GB RAM 64GB»
+  - · asumido: título confirmado el 02/10/2026: la lista lo trae como «OPPO A6C 4GB RAM 64GB»
 - **OPPO A6c 4GB RAM 128GB** — celulares — 575.000 COP
-  - · asumido: título confirmado el 02/10/2026: la lista lo trae como «Oppo A6C 4GB RAM 128GB»
+  - · asumido: título confirmado el 02/10/2026: la lista lo trae como «OPPO A6C 4GB RAM 128GB»
 - **OPPO A6k 4GB RAM 256GB** — celulares — 850.000 COP
-  - · asumido: título confirmado el 02/10/2026: la lista lo trae como «Oppo A6K 4GB RAM 256GB»
+  - · asumido: título confirmado el 02/10/2026: la lista lo trae como «OPPO A6K 4GB RAM 256GB»
 - **Samsung Galaxy A17 4G 8GB RAM 256GB** — celulares — 620.000 COP
 - **Samsung Galaxy A17 5G 8GB RAM 256GB 1 SIM** — celulares — 675.000 COP
 - **Samsung Galaxy A17 5G 8GB RAM 256GB Dual SIM** — celulares — 690.000 COP

@@ -71,13 +71,13 @@ class AdminProveedorControladorTest {
 
   /** La regla del dominio llega como 422 y con su mensaje: es lo que el panel enseña. */
   @Test
-  void unaLineaQueNoEntraPorWhatsAppEs422() throws Exception {
+  void unaLineaQueNoSeAdmiteEs422() throws Exception {
     mockMvc
         .perform(
             post("/api/v1/admin/proveedores")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
-                    "{\"nombre\":\"Cel\",\"linea\":\"TECNOLOGIA\",\"telefonoWhatsApp\":\"+57\","
+                    "{\"nombre\":\"Tenis\",\"linea\":\"CALZADO\",\"telefonoWhatsApp\":\"+57\","
                         + "\"nombreEnExportacion\":\"Cel\",\"ordenDePublicacion\":\"FOTOS_PRIMERO\"}"))
         .andExpect(status().isUnprocessableContent())
         .andExpect(jsonPath("$.codigo").value("EXCEPCION_DE_DOMINIO"));

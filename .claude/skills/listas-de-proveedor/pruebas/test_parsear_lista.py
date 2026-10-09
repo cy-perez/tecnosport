@@ -89,7 +89,7 @@ class VinetaDeTemporada(unittest.TestCase):
         self.assertEqual([], datos["sin_clasificar"])
         self.assertEqual(
             ["Samsung Galaxy A57 5G 8GB RAM 256GB",
-             "Oppo A6C 4GB RAM 128GB",
+             "OPPO A6C 4GB RAM 128GB",
              "Honor Magic 8 Lite 5G 8GB RAM 512GB"],
             titulos(datos))
 
@@ -398,6 +398,48 @@ class ValidacionDeEquivalencias(unittest.TestCase):
     def test_cada_entrada_dice_cuando_y_por_que(self):
         with self.assertRaisesRegex(ValueError, "faltan motivo"):
             self.validar({"a": {"id": "b", "titulo": "B", "fecha": "2026-10-02"}})
+
+
+class Modelo(unittest.TestCase):
+    """08/10/2026: la base pasa a ser por modelo. El modelo es el equipo que el
+    cliente ve en una ficha; la memoria y la SIM son variantes que elige. La red
+    sí es del modelo: el A17 4G y el A17 5G llevan chips distintos, y Alkosto los
+    publica como productos aparte."""
+
+    def test_el_modelo_es_el_titulo_sin_memoria_ni_sim(self):
+        casos = {
+            "Samsung Galaxy A17 5G 8GB RAM 256GB 1 SIM": "Samsung Galaxy A17 5G",
+            "Samsung Galaxy A17 5G 8GB RAM 256GB Dual SIM": "Samsung Galaxy A17 5G",
+            "Apple iPhone 17 Pro 256GB eSIM": "Apple iPhone 17 Pro",
+            "Xiaomi Redmi Note 15 Pro+ 5G 8GB RAM 256GB": "Xiaomi Redmi Note 15 Pro+ 5G",
+            'Lenovo Tab One 8.7" 4G 4GB RAM 128GB con mouse': 'Lenovo Tab One 8.7" 4G con mouse',
+            "Motorola Edge 50 Fusion 5G 8GB RAM 256GB SIM + eSIM": "Motorola Edge 50 Fusion 5G",
+            "Xiaomi Watch S4 41mm": "Xiaomi Watch S4 41mm",
+            "JBL Flip 7": "JBL Flip 7",
+        }
+        for sku, modelo in casos.items():
+            with self.subTest(sku=sku):
+                self.assertEqual(modelo, parsear_lista.titulo_de_modelo(sku))
+
+    def test_cada_producto_lleva_su_modelo_y_dos_configuraciones_lo_comparten(self):
+        datos = parsear("*SAMSUNG*\n🎃A57 5G (8+256)$1.290\n🎃A57 5G (12+512)$1.700\n🎃A17 4G (8+256)$620\n"
+                        "🎃A17 5G (8+256)$675 *1 SIM*\n")
+        self.assertEqual(
+            [("samsung-galaxy-a57-5g", "Samsung Galaxy A57 5G")] * 2
+            + [("samsung-galaxy-a17-4g", "Samsung Galaxy A17 4G"),
+               ("samsung-galaxy-a17-5g", "Samsung Galaxy A17 5G")],
+            [(p["id_modelo"], p["titulo_modelo"]) for p in datos["productos"]])
+
+    def test_el_modelo_sale_del_titulo_definitivo(self):
+        eq = {"jbl-extreme-4": equivalencia("jbl-xtreme-4", "JBL Xtreme 4")}
+        [p] = parsear("*PARLANTE ORIGINALES*🔊\n🔊JBL EXTREME 4 $1.100\n", eq)["productos"]
+        self.assertEqual(("jbl-xtreme-4", "JBL Xtreme 4"), (p["id_modelo"], p["titulo_modelo"]))
+
+    def test_la_marca_se_escribe_siempre_igual(self):
+        # La base tenía «OPPO» y la lista del 08/10 «Oppo»: con la base por
+        # modelo, una mayúscula partía la misma marca en dos.
+        [p] = parsear(" *OPPO* \n🎃A6C (4+128)$575 \n🎃A6K (4+256)$850\n🎃A6C (4+64)$500\n")["productos"][:1]
+        self.assertEqual(("OPPO", "OPPO A6C 4GB RAM 128GB"), (p["marca"], p["titulo"]))
 
 
 if __name__ == "__main__":

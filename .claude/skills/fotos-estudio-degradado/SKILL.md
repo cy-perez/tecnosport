@@ -209,32 +209,38 @@ catálogo ajeno, no: lo que hace falta es fidelidad, no interpretación.
 
 ## Quién consume esta salida: `listas-de-proveedor`
 
-El catálogo se surte sobre todo de esa skill. **Desde el 25/09/2026 el traspaso
-es a mano**: esa skill dejó de buscar, descargar y retocar fotos —su regla 16—
-y entrega solo las fichas y el comparativo. Cuando llega un lote de fotos, del
-proveedor o propias, se procesa aquí y allá se vuelve a armar el ZIP con
-`--imagenes`. La interfaz entre las dos no cambió, y conviene conocerla porque
-ya se rompió una vez sin que nadie lo notara.
+El catálogo de tecnología se surte de esa skill, y **desde el 08/10/2026 el
+traspaso es por carpetas de modelo**. Cada modelo tiene su carpeta en
+`catalogo/entregables/fichas/` —la arma esa skill, con su archivo
+`<id>-ficha.txt`—; la persona deja las fotos en `Fotos originales/` y esta skill
+escribe la retocada en `Fotos procesadas/`, **con el mismo nombre** (la extensión
+puede cambiar: la maestra siempre es JPEG):
 
-**Lo que le llega a esta skill.** Una carpeta `crudas/<producto>/<producto>-NN.jpg`.
-Si el lote pasó por `filtrar_fotos.py` —que sigue en esa skill, fuera de su
-flujo— ya viene sin pictogramas, sin logos y sin las tomas donde el producto
-sale cortado; si no pasó, ese descarte hay que hacerlo a ojo antes de procesar.
-Como vienen en subcarpetas, **el modo por producto se activa solo** y no hace
-falta pasar `--por-producto`.
-
-**Lo que se lleva de vuelta.** La forma agrupada, tal cual:
-
-```
-<producto>/maestra/<producto>-01.jpg     lo que va al ZIP del catálogo
-<producto>/<ancho>/<producto>-01.avif    lo que va al sitio
+```bash
+python3 "${CLAUDE_SKILL_DIR}/scripts/procesar_fichas.py" catalogo/entregables/fichas
 ```
 
-`construir_entregables.py` lee `<producto>/maestra/` directamente. **Si esta
-skill cambia esa forma, ese script deja de encontrar las fotos y el ZIP sale
-vacío sin fallar.** Hubo un `organizar_imagenes.py` que reacomodaba la salida
-plana; quedó fuera del flujo el 19/09/2026 justamente porque esta skill ya
-entrega la forma buena, y estuvo un tiempo sin hacer nada sin que se notara.
+```
+fichas/Samsung Galaxy S25 Ultra/
+├── Fotos originales/samsung-galaxy-s25-ultra_1.png
+└── Fotos procesadas/samsung-galaxy-s25-ultra_1.jpg              la maestra
+                     web/<ancho>/samsung-galaxy-s25-ultra_1.avif  lo que va al sitio
+```
+
+`procesar_fichas.py` no tiene estilo propio: copia las originales a
+`fichas/_estudio/crudas/<id del modelo>/`, corre `procesar.py` con `--por-producto
+--variantes --nuevas` y devuelve cada resultado a su modelo. Por `--nuevas`,
+correrlo otra vez después de soltar fotos nuevas procesa solo esas. Las hojas de
+revisión y el reporte quedan en `fichas/_estudio/salida/`, en un sitio para todos
+los modelos: ahí se revisa como siempre (paso 4) y ahí se aprueba con `marcar.py`;
+`--devolver` vuelve a copiar lo aprobado. Las REPETIR no se devuelven. Con
+`--segundo-plano` lanza el proceso y, al terminar, se corre `--devolver`.
+
+**Si esta skill cambia la forma de su salida** —`<producto>/maestra/` y
+`<producto>/<ancho>/` en modo por producto—, `procesar_fichas.py` deja de
+encontrar los archivos. Lo vigilan sus pruebas en `pruebas/`, que corren en
+`npm run verificar`. Hubo un `organizar_imagenes.py` que reacomodaba la salida
+plana, y estuvo un tiempo sin hacer nada sin que se notara.
 
 **Lo que esa skill decidió sobre el material pobre.** Su regla 16 decía, hasta
 el 24/09/2026, que una foto por debajo del estándar se publica igual, al máximo

@@ -737,6 +737,33 @@ fotos del bucket privado al público y registra la existencia inicial que el
 panel indique como un movimiento de `ENTRADA`. Lo que deja de verse es asunto de
 `ADR-0066`.
 
+### Tecnología por listas de precios
+
+Desde el 8 de octubre de 2026 el proveedor de tecnología no entra por el chat:
+su lista la procesa la skill `listas-de-proveedor` y se importa por la API
+(`ADR-0075`). `Proveedor` admite la línea `TECNOLOGIA`, pero solo bolsos y ropa
+entran por la exportación (`entraPorExportacion()`). Tres tablas (`V92`):
+
+| Tabla | Contenido | Nota |
+|---|---|---|
+| `borrador_tecnologia` | proveedor, `id_modelo`, huella, título, marca y categoría sugeridas (texto), descripción, meta, paleta, producto, estado, visto en | Un modelo de la lista esperando revisión. Índice único parcial `(proveedor_id, id_modelo) where estado = 'EN_REVISION'`: la lista siguiente actualiza ese. `producto_id` presente desde que nace = configuraciones nuevas de un producto que ya se vende |
+| `borrador_tecnologia_configuracion` | borrador, orden, sku, RAM, almacenamiento, SIM, costo, precio de mercado, colores sugeridos y elegidos, precio de venta | En el orden de la lista. Los colores, uno por línea. Sin colores elegidos la configuración no se vende |
+| `variante_de_proveedor` | variante, producto, proveedor, configuración, color, costo, actualizado en | De qué configuración sale cada variante y su costo de hoy, que es lo que la lista de mañana mueve. Se va con la variante. El costo no es el precio y no sale al comprador |
+
+La huella de un modelo es `sha256(proveedor | "modelo" | id del modelo)`, **sin
+precio**: el costo cambia con cada lista. La variante es configuración × color,
+con los atributos RAM, Almacenamiento, SIM y Color, y su SKU es el comienzo del
+id de configuración más ocho caracteres del SHA-256 de configuración y color.
+Una lista repone la existencia **libre** de cada variante que vino a
+`PROVEEDORES_TECNOLOGIA_EXISTENCIA` (2) —si la lista dice colores, solo la de
+esos— y deja en cero la libre de las configuraciones desaparecidas, sin tocar
+nunca lo reservado; lo de tecnología vence a los
+`PROVEEDORES_TECNOLOGIA_VENTANA_DISPONIBILIDAD` (7 días). Una cuarta tabla,
+`lista_tecnologia_importada` (proveedor, SHA-256 del contenido, fecha), hace que
+una lista no entre dos veces ni más vieja que la última. Las configuraciones de
+un borrador no llevan un único por sku: Hibernate las reescribe por posición, y
+lo sostiene el agregado.
+
 ## Convenciones de base de datos
 
 - Nombres en español, `snake_case`, tablas en singular: `producto`,

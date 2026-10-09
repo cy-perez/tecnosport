@@ -1,6 +1,6 @@
 ---
 name: listas-de-proveedor
-description: Convierte las listas de productos que mandan los proveedores por WhatsApp —con viñetas de emojis, precios acotados tipo $1.850 y colores marcados con corazones— en productos listos para publicar, filtrando usados y categorías que no se venden, estandarizando títulos, investigando el precio promedio del mercado colombiano, redactando la descripción y traduciendo los emojis de color a colores reales; entrega un ZIP con una carpeta por producto y un Excel comparativo de precios y ganancia; las fotos de los productos quedan fuera del alcance: no las busca, no las descarga y no las retoca. Úsala siempre que llegue una lista o listado de proveedor, mayorista o distribuidor; cuando alguien diga "procesa esta lista", "la lista de hoy", "lista de gama alta", "listado de variedad", "pasa esto a productos", "sube estos equipos a la tienda" o "cuánto me gano con estos productos"; o cuando pegue un texto con equipos, capacidades y precios aunque no lo llame lista. Covers WhatsApp supplier price list parsing, ecommerce catalog preparation, Colombian market price research and margin comparison.
+description: Convierte las listas de productos que mandan los proveedores por WhatsApp —con viñetas de emojis, precios acotados tipo $1.850 y colores marcados con corazones— en productos listos para publicar, filtrando usados y categorías que no se venden, estandarizando títulos, investigando el precio promedio del mercado colombiano, redactando la descripción y traduciendo los emojis de color a colores reales; organiza la base por modelo —el equipo, con la memoria y el color como variantes—; deja una carpeta por modelo con su ficha y sus fotos, que la persona descarga y fotos-estudio-degradado retoca, y un Excel comparativo de precios y ganancia. Úsala siempre que llegue una lista o listado de proveedor, mayorista o distribuidor; cuando alguien diga "procesa esta lista", "la lista de hoy", "lista de gama alta", "listado de variedad", "pasa esto a productos", "sube estos equipos a la tienda" o "cuánto me gano con estos productos"; o cuando pegue un texto con equipos, capacidades y precios aunque no lo llame lista. Covers WhatsApp supplier price list parsing, ecommerce catalog preparation, Colombian market price research and margin comparison.
 ---
 
 # Listas de proveedor → catálogo
@@ -128,32 +128,22 @@ lista:
     Esta regla vale aunque el producto tenga buen margen: no se negocia un
     riesgo de incendio contra un punto de rentabilidad.
 
-16. **Las fotos de los productos no las hace esta skill** (decisión del
-    negocio, 25/09/2026). No se buscan, no se descargan y no se retocan. Lo que
-    se entrega es la lectura de la lista, el precio de mercado, la descripción
-    y el comparativo; el material visual se consigue y se procesa aparte.
-    Hasta el 24/09/2026 el flujo bajaba las fotos de Open Icecat, las filtraba
-    y las mandaba a `fotos-estudio-degradado`. La regla que estaba escrita aquí
-    —«una foto por debajo del estándar se retoca igual»— existía justamente
-    porque el material casi nunca alcanzaba: de las 105 fotos de la corrida del
-    19/09/2026, 68 no llegaban al encuadre de 1700 px, con casos de 342×431, y
-    las que pasaban de 3× de ampliación quedaban retenidas y terminaban en el
-    pedido al proveedor de todas formas.
-    **Lo que se entrega no finge que las fotos existen**: sin `--imagenes` el
-    ZIP sale solo con las fichas y no lleva ningún `FOTOS-PENDIENTES.md`. Un
-    aviso repetido en cada producto, siempre, no es información.
-    Cuando haya un lote de fotos —del proveedor o propias— se retoca a mano con
-    `fotos-estudio-degradado`, que sigue siendo la única dueña del estilo del
-    catálogo, y se vuelve a correr el paso 5 con `--imagenes`. Está en el
-    apéndice «Si algún día hay fotos», y no se ofrece si no lo piden.
-    Los scripts no se borraron. `preparar_fotos.py` y `filtrar_fotos.py` siguen
-    en `scripts/`, y `referencias/imagenes.md` conserva el estándar completo,
-    por la misma razón por la que `cargadores` y `power_bank` siguen vivos en el
-    parser: volver atrás tiene que ser reponer dos pasos, no reescribirlos.
-    **Icecat no se va con las fotos.** `icecat_local.py` pasa al paso 4, que es
-    donde de verdad hacía falta: de ahí sale la ficha técnica oficial en español
-    que alimenta la descripción —34 fichas en la última corrida—. Lo único suyo
-    que deja de usarse es el `fotos/urls-icecat.csv` que lista enlaces de fotos.
+16. **Las fotos vuelven a la skill, por carpeta de modelo** (decisión del
+    negocio, 08/10/2026; reemplaza la del 25/09/2026, que las había sacado).
+    Cada modelo tiene su carpeta en `catalogo/entregables/fichas/<Modelo>/`
+    (`scripts/fichas.py`): la persona descarga las fotos en `Fotos originales/`
+    —`<id del modelo>_1.jpg`, `_2.png`…— y `fotos-estudio-degradado` deja la
+    retocada en `Fotos procesadas/` **con el mismo nombre** (la extensión puede
+    cambiar). Las fotos son **de referencia**: no van por color; el color es una
+    variante que el cliente elige al comprar.
+    Por qué volvieron: la información estaba repartida en `catalogo/` —la ficha
+    en `icecat/fichas/<id>.json` con las fotos al lado, la prosa en un JSON, lo
+    de mi.com en otro— y la carpeta de las tomas retocadas se perdió sin que nada
+    lo dijera. El proveedor de tecnología **no manda fotos**, así que las fuentes
+    son la descarga manual y lo que ya bajó Icecat (`referencias/imagenes.md`).
+    La regla de antes sigue valiendo en una cosa: **lo que se entrega no finge
+    que las fotos existen**. Una foto REPETIR no se devuelve; un modelo sin fotos
+    lo dice la salida del paso 5.
 
 17. **Los cargadores y las power bank no se publican** (decisión del negocio,
     24/09/2026). Es la misma regla que ya había sacado a los cables y a los
@@ -272,10 +262,22 @@ Detalle de cómo está armada una lista: `referencias/formato-de-listas.md`.
 
 ### 4. Investigar cada producto
 
-Antes de empezar, mira qué marcas trae la lista y **pide los permisos de sitio
-que vas a necesitar en la extensión del navegador**. Un dominio sin autorizar
-corta el lote entero a mitad de camino. La lista de los que hicieron falta la
-última vez está en `referencias/fichas-tecnicas.md`.
+**La ficha técnica sale, en este orden** (decisión del negocio, 08/10/2026):
+
+1. **El sitio oficial de la marca.** Samsung, Apple, Honor, Motorola, OPPO,
+   realme, TCL y Lenovo (su PSREF) se leen directamente; JBL publica la ficha en
+   PDF, que también se lee. **Xiaomi, JBL (la página), Amazon y Nintendo no se
+   leen de forma automática**: Xiaomi responde 403 a los agentes de IA, JBL pone
+   un captcha y Amazon y Nintendo excluyen a Claude en su robots.txt. Esas
+   barreras no se eluden —ni con otro agente de usuario ni desde el navegador
+   de la persona—: la persona guarda la página de especificaciones en la carpeta
+   «Fuente de la marca» del modelo y se lee de ahí. Detalle por marca en
+   `referencias/fichas-tecnicas.md`.
+2. **Open Icecat**, solo si la marca no da la ficha, y **solo por código**: la
+   tabla la arma `redactar_fichas.py`, y la prosa nunca se escribe a partir de
+   una ficha de Icecat. Su licencia anula el permiso si los datos se usan para
+   «automated synthetic content creation» (cláusula 10).
+3. **La caja del producto**, cuando no hay ninguna de las dos.
 
 Para cada producto con algo `pendiente` —los nuevos, entero; los de precio
 vencido, solo el precio—, en una sola pasada de búsquedas. Lo que se heredó de la
@@ -294,16 +296,15 @@ de la primera vez que se investigó el producto.
   solo se consulta por navegador.
 - **Aviso de retiro del fabricante** — regla 15. Es una consulta por marca, no
   por producto, y se hace antes de redactar.
-- **Ficha técnica y descripción** — estructura y tono en
-  `referencias/descripciones.md`; **de dónde salen los datos** en
-  `referencias/fichas-tecnicas.md`. Para Xiaomi, que suele ser la marca más
-  grande de estas listas, el sitio oficial `mi.com/co` resolvió por sí solo 39
-  de 98 productos: trae ficha completa en español, paleta oficial de colores y
-  las configuraciones de memoria que el fabricante vende de verdad.
-- **Colores reales** — traduce los emojis y confírmalos contra la paleta oficial
-  del modelo: `referencias/colores.md`. Si la línea no trae emojis, se asumen
-  disponibles todos los colores de la ficha oficial (regla 13) y se deja dicho
-  en el producto de dónde salió la lista de colores.
+- **Ficha técnica y descripción, una por modelo** — estructura y tono en
+  `referencias/descripciones.md`; **de dónde salen los datos** arriba y en
+  `referencias/fichas-tecnicas.md`. La descripción vale para todas las memorias
+  del modelo: no nombra la capacidad ni los colores, que son variantes.
+- **Paleta oficial completa** — en `colores_oficiales` van **todos** los colores
+  que el fabricante publica para el modelo, no solo los que marca la lista: la
+  base la guarda como la paleta del modelo. Los que marca la lista los sugiere
+  `comparar_lista.py` en `colores_sugeridos` (`referencias/colores.md`), y se
+  confirman en el panel al revisar el borrador.
 - **¿Esa configuración existe?** La ficha oficial dice qué combinaciones de RAM y
   almacenamiento vende el fabricante, y el proveedor a veces ofrece otras. En la
   lista del 12/09/2026 aparecieron dos: un Redmi Note 15 Pro 5G de 8+512 cuando
@@ -340,16 +341,21 @@ python3 scripts/icecat_local.py buscar --productos catalogo/productos.json
 python3 scripts/icecat_local.py traer  --solo-confirmados \
     --salida-contenido catalogo/icecat/fichas
 
-# 5. Descripciones y metadatos: la estructura la arma el script, la prosa la
-#    escribes tú en catalogo/prosa.json. Ver descripciones.md.
+# 5. Descripciones y metadatos, una por modelo: la estructura la arma el script,
+#    la prosa la escribes tú en catalogo/prosa.json, por id de modelo, y la ficha
+#    de la marca en catalogo/fichas-marca.json. Ver descripciones.md.
 python3 scripts/redactar_fichas.py catalogo/productos.json \
     --prosa catalogo/prosa.json \
-    --icecat catalogo/icecat/fichas --mi catalogo/mi-fichas.json
+    --marca catalogo/fichas-marca.json --icecat catalogo/icecat/fichas
 ```
 
-`traer` escribe además un `fotos/urls-icecat.csv` con enlaces de fotos. Es un
-sobrante de cuando la skill las bajaba (regla 16): nadie lo lee, y no hay que
-darle curso.
+`fichas-marca.json` lleva, por id de modelo, la fuente, la URL, la fecha de
+consulta y las filas: `{"samsung-galaxy-a57-5g": {"fuente": "samsung.com/co",
+"url": "https://…", "fecha": "2026-10-08", "f": {"Pantalla": "…", "Batería":
+"…"}}}`. Las filas de memoria se descartan solas: son de la configuración.
+
+`traer` escribe además un `fotos/urls-icecat.csv` con enlaces de fotos: es una
+lista de dónde descargar a mano lo que falte en `Fotos originales/`.
 
 `asignar_precios.py` **reevalúa el corpus cada vez que corre**, así que apretar
 una regla de emparejamiento en `precios.py` limpia lo que ya está en disco sin
@@ -383,16 +389,34 @@ python3 scripts/construir_entregables.py catalogo/productos.json \
 
 Produce:
 
-- `catalogo-<fecha>.zip` — una carpeta por producto con un `.txt` que lleva el
-  título, los metadatos, los colores, los supuestos que se aplicaron al leer la
-  lista, los pendientes y la descripción.
+- `fichas/<Modelo>/` — una carpeta por modelo, que se queda de una lista a la
+  siguiente: `<id del modelo>-ficha.txt` (el modelo, sus configuraciones de esta
+  lista con costo, precio de mercado y colores sugeridos, la descripción, los
+  supuestos, los pendientes y las fuentes) y `Fotos originales/`, vacía la
+  primera vez. En las marcas que no se leen de forma automática trae además
+  `Fuente de la marca/`. La carpeta se reconoce por el archivo de ficha, no por
+  el nombre; las pulgadas van con `″` porque Windows no admite `"`.
 - `comparativo-<fecha>.xlsx` — hoja **Comparativo** con las cuatro columnas
   pedidas (título, precio de lista, promedio del mercado, ganancia), más hojas de
   **Detalle** (margen %, colores, fuentes, pendientes) y **Descartados**.
 
-El ZIP sale sin fotos y sin ningún `FOTOS-PENDIENTES.md`: es lo esperado
-(regla 16), no un entregable a medias. `--imagenes` sigue existiendo para el
-caso del apéndice.
+La salida dice qué modelos no tienen fotos todavía. Nada de esto borra: las
+fotos que dejó la persona no se tocan.
+
+### 5b. Fotos
+
+Con las fotos en `Fotos originales/` de cada modelo:
+
+```bash
+python3 "${CLAUDE_SKILL_DIR}/../fotos-estudio-degradado/scripts/procesar_fichas.py" catalogo/entregables/fichas
+python3 scripts/conocidos.py fotos catalogo/entregables/fichas --escribir
+```
+
+El primero deja cada foto retocada en `Fotos procesadas/` con el mismo nombre,
+procesando solo lo nuevo; las hojas de revisión quedan en `fichas/_estudio/salida/`
+(ver la skill de fotos). El segundo anota cada foto procesada en la base, con su
+huella: las carpetas viven fuera del repositorio, y el registro es lo que nota
+que una se perdió.
 
 ### 6. Guardar lo investigado
 
@@ -419,6 +443,35 @@ tomado del bloque PRECIOS DE VENTA (línea 530…)»—: son de esa lista y ser�
 falsos en la siguiente. Si escribes un supuesto que sí vale para el producto,
 no lo ates a una línea ni a un precio.
 
+### 6b. Llevarla al catálogo
+
+La lista mueve el catálogo por la API, no a mano (`docs/adr/0075`):
+
+```bash
+python3 scripts/exportar_lista.py catalogo/productos.json --salida catalogo/lista-api.json
+node tools/importar-lista-tecnologia.mjs catalogo/lista-api.json --proveedor <id>             # simula
+node tools/importar-lista-tecnologia.mjs catalogo/lista-api.json --proveedor <id> --escribir
+```
+
+Solo se exportan los modelos con descripción; los demás se dicen. Lo que ya se
+vende se renueva —costo del día y 2 unidades libres por color—, lo desaparecido
+deja de ofrecerse, y lo nuevo queda como borrador en `/admin/tecnologia`, donde
+la persona marca los colores que hay de cada configuración y fija el precio de
+venta. **La lista no toca el precio de venta**: si la salida avisa que el costo
+alcanzó el precio, dilo en la entrega.
+
+Cuando la persona haya aprobado en el panel:
+
+```bash
+node tools/importar-lista-tecnologia.mjs --fotos --publicar             # simula
+node tools/importar-lista-tecnologia.mjs --fotos --publicar --escribir
+```
+
+Sube la principal y la galería de cada modelo aprobado que todavía no tiene
+imagen, desde `Fotos procesadas/` de su carpeta, y lo publica. Un modelo sin
+fotos procesadas se queda en borrador y se dice. La sesión es `--token` o
+`TS_TOKEN_ADMIN`; no la pidas por terminal.
+
 ### 7. Entregar
 
 Preséntale los dos archivos y, en dos o tres líneas, lo que necesita saber:
@@ -427,40 +480,17 @@ hoja del mismo nombre en el Excel— y cualquier caso donde el promedio del
 mercado esté por debajo del precio de lista. Ese caso significa que a
 ese precio se pierde plata: márcalo, no lo publiques callado.
 
-## Si algún día hay fotos
+## De dónde salen las fotos
 
-No es parte del flujo y no se ofrece sin que lo pidan. Cuando llegue el paquete
-de imágenes del proveedor, o se fotografíe el producto:
+El proveedor de tecnología no manda fotos (08/10/2026). Las fuentes, y lo que
+no sirve, están en `referencias/imagenes.md`: **no se usan las salas de prensa
+del fabricante**, cuyas condiciones autorizan uso editorial, no vender. Las de
+Open Icecat se pueden usar con su licencia —aviso, descargo y nota de la
+modificación (cláusulas 1 y 2)—, pero casi siempre llegan en miniatura: de las
+134 que se bajaron para la lista del 02/10/2026, 66 no pasaban de 800 px.
 
-1. Se retocan con `fotos-estudio-degradado`, que es la dueña del estilo del
-   catálogo —fondo blanco, producto al 85 % del lienzo, sombra de contacto,
-   maestra JPEG y AVIF web—. Agrupa sola si las fotos le llegan en subcarpetas
-   `crudas/<producto>/`, y entrega justo la forma que consume el ZIP. Lee su
-   `SKILL.md` antes: tiene su propio flujo de revisión.
-2. Se vuelve a correr el paso 5 con `--imagenes` apuntando a su salida.
-
-```bash
-python3 "${CLAUDE_SKILL_DIR}/../fotos-estudio-degradado/scripts/procesar.py" \
-    catalogo/fotos/crudas -o catalogo/fotos/estudio --variantes --segundo-plano
-
-python3 scripts/construir_entregables.py catalogo/productos.json \
-    --imagenes catalogo/fotos/estudio --salida catalogo/entregables
-```
-
-Con la bandera puesta vuelve el comportamiento de antes: el script lee
-`<producto>/maestra/`, mete hasta cuatro fotos por producto y escribe un
-`FOTOS-PENDIENTES.md` en los que no llegan a cuatro.
-
-Lo que se retiró del flujo sigue en `scripts/` por si el negocio vuelve sobre la
-decisión: `preparar_fotos.py` (arma `urls.csv`, un descargador sin dependencias
-y el pedido al proveedor) y `filtrar_fotos.py` (quita pictogramas, logos y las
-tomas donde el producto sale cortado). El estándar completo —cuántas fotos, en
-qué orden, con qué encuadre— está en `referencias/imagenes.md`.
-
-**No propongas las salas de prensa como fuente.** Las condiciones de Apple
-Newsroom y Samsung Mobile Press autorizan uso editorial o personal, no publicar
-el producto en una tienda. Lo que sirve es el paquete del proveedor, el portal
-de partners si la tienda es revendedor autorizado, o fotos propias.
+`preparar_fotos.py` (enlaces y pedido al proveedor) y `filtrar_fotos.py` (quita
+pictogramas, logos y tomas cortadas) siguen en `scripts/`.
 
 ## Lo que el parser ya resuelve solo
 
@@ -594,10 +624,12 @@ scripts/precios.py                paso 4  cosecha precios VTEX de Éxito, Olímp
 scripts/asignar_precios.py        paso 4  decide el precio de mercado y el margen
 scripts/icecat_local.py           paso 4  trae la ficha técnica oficial de Open Icecat
 scripts/redactar_fichas.py        paso 4  prosa + ficha oficial → descripción y metadatos
-scripts/construir_entregables.py  paso 5  productos.json → ZIP + Excel
-scripts/conocidos.py              paso 6  guarda lo investigado en referencias/conocidos.json
-scripts/preparar_fotos.py         FUERA DEL FLUJO desde el 25/09/2026: regla 16
-scripts/filtrar_fotos.py          FUERA DEL FLUJO desde el 25/09/2026: regla 16
+scripts/construir_entregables.py  paso 5  productos.json → carpetas de modelo + Excel
+scripts/fichas.py                 paso 5  la carpeta de cada modelo en catalogo/entregables/fichas
+scripts/conocidos.py              paso 6  guarda lo investigado en referencias/conocidos.json;
+                                  `fotos` registra las fotos procesadas de cada modelo
+scripts/preparar_fotos.py         enlaces de descarga y pedido de lo que falte (regla 16)
+scripts/filtrar_fotos.py          quita pictogramas, logos y tomas cortadas (regla 16)
 scripts/organizar_imagenes.py     FUERA DEL FLUJO desde el 19/09/2026: ver la nota de abajo
 referencias/formato-de-listas.md  anatomía de los mensajes de proveedor
 referencias/titulos.md            fórmula de títulos y nombres ya confirmados
@@ -607,7 +639,7 @@ referencias/descripciones.md      estructura de la descripción y metadatos
 referencias/fichas-tecnicas.md    de dónde sale la ficha oficial de cada marca
 referencias/precios.md            método de investigación de precios
 referencias/colores.md            emojis → colores publicables
-referencias/imagenes.md           estándar de fotos; fuera del flujo, ver la regla 16
+referencias/imagenes.md           estándar y fuentes de las fotos (regla 16)
 pruebas/test_parsear_lista.py     las listas de ejemplo contra su revisión, y un caso por
                                   defecto corregido. `npm run listas`, y dentro de verificar
 plantillas/producto.txt           plantilla del archivo de cada producto

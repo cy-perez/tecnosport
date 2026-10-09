@@ -261,7 +261,7 @@ CASING = {
     "Ii": "II", "Iii": "III", "1T": "1TB", "1Tb": "1TB", "512Gb": "512GB",
     "Iphone": "iPhone", "Ipad": "iPad", "Playstation": "PlayStation",
     "Ai": "AI", "I3": "i3", "I5": "i5", "I7": "i7", "I9": "i9",
-    "Poco": "POCO", "Zte": "ZTE", "Tcl": "TCL", "Bmax": "BMAX", "Wifi": "WiFi",
+    "Poco": "POCO", "Oppo": "OPPO", "Realme": "realme", "Zte": "ZTE", "Tcl": "TCL", "Bmax": "BMAX", "Wifi": "WiFi",
     "Xpad": "XPAD", "Fe": "FE", "4G": "4G", "5G": "5G", "Nfc": "NFC",
     "Esim": "eSIM", "Gt": "GT", "Gt50": "GT 50", "Lapiz": "Lápiz",
     "Tactil": "Táctil", "Sim/Esim": "SIM + eSIM",
@@ -1143,6 +1143,18 @@ def id_de_titulo(titulo: str) -> str:
     return slug(re.sub(r"(?<=\w)\+", " plus ", titulo))
 
 
+# Lo que en el título es una variante y no el modelo: la memoria y la SIM. La red
+# (4G/5G), las pulgadas, el tamaño de la caja de un reloj y lo que trae el
+# paquete sí son del modelo: cambian el equipo, no la opción que se elige.
+RE_CONFIGURACION = re.compile(
+    r"\b\d+\s*GB RAM\b|\b\d+(?:GB|TB)(?: SSD)?\b|\b(?:1 SIM|Dual SIM|SIM \+ eSIM|eSIM)(?!\w)", re.I)
+
+
+def titulo_de_modelo(titulo: str) -> str:
+    """«Samsung Galaxy A57 5G 12GB RAM 512GB» → «Samsung Galaxy A57 5G»."""
+    return re.sub(r"\s+", " ", RE_CONFIGURACION.sub(" ", titulo)).strip()
+
+
 def validar_equivalencias(equivalencias: dict) -> dict:
     """Se niega a cargar un archivo que renombraría productos mal y en silencio."""
     errores = []
@@ -1184,6 +1196,12 @@ def aplicar_equivalencias(productos, equivalencias, descartados=(), duplicados=N
             p["supuestos"].append(f"título confirmado el {fecha}: la lista lo trae como «{p['titulo']}»")
         p["id"], p["titulo"] = e["id"], e["titulo"]
         p["revisar"] = [r for r in p["revisar"] if r not in ALERTAS_DE_NOMBRE]
+
+    # El modelo sale del título definitivo: una equivalencia que corrige el título
+    # corrige también el modelo, sin una tabla aparte.
+    for p in productos:
+        p["titulo_modelo"] = titulo_de_modelo(p["titulo"])
+        p["id_modelo"] = id_de_titulo(p["titulo_modelo"])
 
     # Los descartados solo toman el id: la comparación tiene que reconocer a un
     # conocido que hoy vino pero no entra (sin precio, bajo el mínimo).
@@ -1242,6 +1260,7 @@ def reporte(datos: dict) -> str:
     L = ["# Revisión de la lista", ""]
     L.append(f"- Fecha de la lista: {datos['fecha_lista'] or 'no detectada'}")
     L.append(f"- Productos para publicar: {len(datos['productos'])}")
+    L.append(f"- Modelos distintos: {len({p.get('id_modelo') for p in datos['productos']})}")
     L.append(f"- Descartados: {len(datos['descartados'])}")
     L.append(f"- Duplicados fusionados: {len(datos['duplicados_fusionados'])}")
     L.append(f"- Productos con algún supuesto aplicado: "

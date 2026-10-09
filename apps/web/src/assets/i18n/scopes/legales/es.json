@@ -1,7 +1,7 @@
 {
   "comun": {
     "version_etiqueta": "Versión",
-    "version": "2026-10-08.2",
+    "version": "2026-10-08.3",
     "vigencia": "Vigente desde el 8 de octubre de 2026.",
     "otros_documentos": "Otros documentos legales",
     "titular_aviso": "Este sitio lo opera Cristhian Yurday Pérez Hoyos, NIT 1054994043-9, Carrera 26C # 38B-31, Medellín, Antioquia, Colombia.",
@@ -185,7 +185,7 @@
       {
         "titulo": "4. Productos, imágenes y precios",
         "parrafos": [
-          "Las fotografías de los productos son propias y corresponden a la unidad que vendemos. Las imágenes y los visores de rotación son representaciones a escala del producto real; el color puede variar levemente según la pantalla con la que las mires.",
+          "Las fotografías de ropa, calzado y bolsos muestran el producto que vendemos, tomadas por nosotros o por el proveedor que nos lo surte. Las de tecnología son imágenes de referencia del modelo, tomadas de la información que publica la marca o un catálogo de fichas técnicas, y no de la unidad que recibes: el modelo, la memoria y las demás características son las que dice la ficha, y el color es el que eliges en ella, aunque la foto muestre otro. Las imágenes y los visores de rotación son representaciones a escala del producto real; el color puede variar levemente según la pantalla con la que las mires.",
           "Todos los precios se muestran en pesos colombianos (COP) y son el valor final de cada producto: Tecno Sport no es responsable del impuesto sobre las ventas (IVA), así que al precio publicado no se le suma ningún impuesto. El precio de cada producto no incluye el costo del envío: ese valor depende de la ciudad de destino y del tamaño y peso de lo que compras, y se calcula al momento de tu compra. Antes de pagar te mostramos el detalle completo: el precio de cada producto, el subtotal, el costo del envío por separado y el total que vas a pagar.",
           "Si por un error evidente de sistema o de digitación un producto aparece con un precio manifiestamente equivocado, te lo informaremos antes de despachar y podrás confirmar la compra al precio correcto o cancelarla sin costo.",
           "Consulta las restricciones de uso y cuidado en la ficha de cada producto; en calzado y ropa deportiva, el uso distinto del previsto puede afectar la garantía."
@@ -257,7 +257,7 @@
       {
         "titulo": "13. Propiedad intelectual",
         "parrafos": [
-          "El contenido de tecnosport.co (incluidas las fotografías de producto, que son propias) está protegido por las normas de propiedad intelectual. Puedes usarlo para informarte y comprar, pero no reproducirlo con fines comerciales sin autorización escrita."
+          "El contenido de tecnosport.co está protegido por las normas de propiedad intelectual. Las fotografías y las fichas técnicas que no tomamos ni escribimos nosotros (las de nuestros proveedores, las de las marcas y las de los catálogos de fichas técnicas) pertenecen a sus titulares. Puedes usar el contenido para informarte y comprar, pero no reproducirlo con fines comerciales sin autorización escrita de quien tenga los derechos."
         ]
       },
       {

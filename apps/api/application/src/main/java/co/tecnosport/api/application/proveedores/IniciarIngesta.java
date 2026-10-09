@@ -49,6 +49,9 @@ public final class IniciarIngesta {
     if (!proveedor.activo()) {
       throw new ProveedorInactivoException(proveedor.nombre());
     }
+    if (!proveedor.entraPorExportacion()) {
+      throw new ProveedorDeListasException(proveedor.nombre());
+    }
     if (!ClavesDeProveedor.esExportacionDe(proveedor.id(), comando.objectKey())) {
       throw new ExportacionNoEncontradaException(comando.objectKey());
     }

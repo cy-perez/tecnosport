@@ -1,11 +1,26 @@
 #!/usr/bin/env python3
 """
-Compone la descripción de cada producto con la estructura de
-`referencias/descripciones.md` y la escribe en productos.json.
+Compone la descripción de cada **modelo** con la estructura de
+`referencias/descripciones.md` y la escribe en todos sus productos de productos.json.
 
 Uso:
     python3 redactar_fichas.py productos.json --prosa prosa.json \
-        --icecat catalogo/icecat/fichas --mi catalogo/mi-fichas.json
+        --marca catalogo/fichas-marca.json --icecat catalogo/icecat/fichas
+
+Una descripción por modelo, no por SKU: el Galaxy A57 de 256 GB y el de 512 GB
+comparten ficha, y la memoria y el color son variantes que el cliente elige al
+comprar. Por eso la descripción no lleva fila de memoria, ni sección de colores,
+ni las notas de RAM virtual y de SIM (decisión del 08/10/2026).
+
+La ficha técnica sale, en este orden (decisión del 08/10/2026):
+
+1. **El sitio oficial de la marca**, en `--marca`: un JSON por id de modelo con
+   la fuente, la URL, la fecha de consulta y las filas.
+2. **Open Icecat**, en `--icecat`, y solo por código: la tabla la arma este
+   script y la prosa no se escribe nunca a partir de ella. La licencia anula el
+   permiso si los datos se usan para «automated synthetic content creation»
+   (cláusula 10), y exige el aviso de derechos, el descargo y la nota de lo que
+   se modificó (cláusulas 1 y 2): ver `aviso_icecat`.
 
 Reparte el trabajo como lo reparte la skill: **la estructura y la tabla las
 arma el script** con los datos de la ficha oficial, y **la prosa la escribe una
@@ -22,9 +37,9 @@ Lo que este script NO hace, a propósito:
   colombiana y a la política de la tienda, porque el plazo es un dato del
   negocio. Nunca un marcador `[[ ]]`, que la regla 4 del proyecto prohíbe en
   texto publicado.
-- **No omite la atribución de Icecat.** Cuando la ficha sale de Open Icecat, el
-  bloque de fuentes lleva la mención y el enlace: es condición de la licencia,
-  no un crédito opcional.
+- **No omite el aviso de Icecat.** Cuando la ficha sale de Open Icecat, el
+  bloque de fuentes lleva el aviso literal, el enlace a la licencia y la nota de
+  la modificación: son condiciones de la licencia, no un crédito opcional.
 
 Sin dependencias: solo biblioteca estándar.
 """
@@ -33,6 +48,7 @@ import argparse
 import json
 import re
 import sys
+from datetime import date
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -48,8 +64,8 @@ FILAS = [
                   "Tipo de pantalla", "Máxima velocidad de actualización"]),
     ("Procesador", ["Familia de procesador", "Modelo del procesador",
                     "Número de núcleos de procesador"]),
-    ("Memoria", ["Capacidad de RAM", "Capacidad de almacenamiento interno",
-                 "Tarjetas de memoria compatibles"]),
+    # Sin RAM ni almacenamiento: son variantes. Sí la tarjeta, que es del equipo.
+    ("Expansión", ["Tarjetas de memoria compatibles"]),
     ("Cámara", ["Resolución de la cámara trasera (numérica)",
                 "Tipo de cámara trasera",
                 "Resolución de la cámara frontal (numérica)"]),
@@ -101,6 +117,10 @@ def tabla_icecat(ficha):
     return filas
 
 
+# Lo que en una ficha de marca es de la configuración y no del modelo.
+FILAS_DE_CONFIGURACION = re.compile(r"^(memoria|ram|almacenamiento|capacidad|memoria y almacenamiento)$", re.I)
+
+
 def tabla_mi(ficha):
     """
     La ficha de mi.com ya viene por secciones y redactada a mano en
@@ -114,13 +134,28 @@ def tabla_mi(ficha):
     filas = []
     for etiqueta, valor in (ficha.get("f") or {}).items():
         v = re.sub(r"\*.*$", "", limpiar(valor)).strip()
-        if v:
+        if v and not FILAS_DE_CONFIGURACION.match(limpiar(etiqueta)):
             filas.append((limpiar(etiqueta), v[:300]))
     return filas
 
 
+def aviso_icecat(fecha: str) -> str:
+    """El aviso que exige la Open Content License de Icecat (v1.4, 11/02/2026).
+
+    Cláusula 1: aviso de derechos literal y descargo de garantía, con la licencia
+    a mano de quien recibe el contenido. Cláusula 2: nota visible de que se
+    modificó, en qué y cuándo. El aviso de derechos va en inglés porque así lo
+    fija la licencia.
+    """
+    return (f"Ficha técnica: Database Right data-sheet {fecha[:4]} Icecat. All rights reserved. "
+            "Datos de Open Icecat (https://icecat.biz) bajo la Open Content License "
+            "(https://iceclog.com/open-content-license-opl/), sin garantía de ningún tipo. "
+            f"Modificado por TecnoSport el {fecha}: selección de atributos, traducción de rótulos "
+            "y formato de la tabla.")
+
+
 def meta_titulo(producto):
-    t = producto["titulo"]
+    t = producto.get("titulo_modelo") or producto["titulo"]
     return t if len(t) <= LIMITE_META_TITULO else t[:LIMITE_META_TITULO].rstrip(" ,·-")
 
 
@@ -138,18 +173,9 @@ def notas_obligatorias(producto):
     Las declaraciones que `descripciones.md` no deja omitir, cuando el dato del
     producto las dispara.
     """
+    # La RAM virtual y la SIM son de la configuración: van en la variante que el
+    # cliente elige, no en la descripción del modelo.
     notas = []
-    if producto.get("ram_virtual"):
-        notas.append(
-            f"La memoria RAM física es de {producto['ram']}. El fabricante permite "
-            f"extenderla en {producto['ram_virtual']} adicionales que el equipo toma "
-            "del almacenamiento interno; esa memoria extendida no es RAM física y no "
-            "se suma a ella.")
-    atributos = " ".join(producto.get("atributos") or [])
-    if "eSIM" in atributos and "SIM" in atributos:
-        notas.append("Admite una SIM física y una eSIM.")
-    elif "eSIM" in atributos:
-        notas.append("Este equipo funciona con eSIM: no tiene bandeja para SIM física.")
     if producto.get("compatible_con"):
         notas.append(
             f"Es un accesorio de la marca {producto.get('marca') or 'indicada'}, "
@@ -162,26 +188,7 @@ def notas_obligatorias(producto):
     return notas
 
 
-def memoria_del_producto(producto):
-    """
-    La RAM y el almacenamiento salen SIEMPRE de la línea del proveedor, nunca de
-    la ficha.
-
-    El índice de Icecat mezcla variantes: la ficha del Galaxy A56 declara 128GB
-    y la que vendemos es de 256GB, la del A57 declara 8GB cuando la nuestra trae
-    12GB. Copiar la ficha tal cual publica una tabla que contradice el título del
-    propio producto, y el cliente lo comprueba en dos toques. El resto de la
-    ficha —pantalla, cámara, batería— no cambia entre variantes y sí sirve.
-    """
-    partes = []
-    if producto.get("ram"):
-        partes.append(f"{producto['ram']} de RAM")
-    if producto.get("almacenamiento"):
-        partes.append(f"{producto['almacenamiento']} de almacenamiento")
-    return " · ".join(partes) or None
-
-
-def componer(producto, prosa, ficha_icecat, ficha_mi):
+def componer(producto, prosa, ficha_icecat, ficha_marca, fecha):
     partes = [prosa["apertura"].strip(), ""]
 
     vinetas = prosa.get("vinetas") or []
@@ -189,26 +196,16 @@ def componer(producto, prosa, ficha_icecat, ficha_mi):
         partes += ["## Características principales", ""]
         partes += [f"- {v}" for v in vinetas] + [""]
 
-    filas = tabla_icecat(ficha_icecat) if ficha_icecat else []
-    origen = "Open Icecat" if filas else None
-    if not filas and ficha_mi:
-        filas = tabla_mi(ficha_mi)
-        origen = "el sitio oficial del fabricante"
-
-    # La memoria manda desde la linea del proveedor, no desde la ficha.
-    propia = memoria_del_producto(producto)
-    if propia:
-        filas = [(a, propia if a == "Memoria" else b) for a, b in filas]
-        if not any(a == "Memoria" for a, _ in filas):
-            filas.append(("Memoria", propia))
+    # La marca primero; Icecat solo si la marca no dio filas.
+    filas = tabla_mi(ficha_marca) if ficha_marca else []
+    origen = "marca" if filas else None
+    if not filas and ficha_icecat:
+        filas = tabla_icecat(ficha_icecat)
+        origen = "Open Icecat" if filas else None
 
     if filas:
         partes += ["## Ficha técnica", "", "| Atributo | Detalle |", "|---|---|"]
         partes += [f"| {a} | {b} |" for a, b in filas] + [""]
-
-    if producto.get("colores_oficiales"):
-        partes += ["## Colores", "",
-                   "Disponible en " + ", ".join(producto["colores_oficiales"]) + ".", ""]
 
     caja = prosa.get("caja") or []
     if caja:
@@ -221,57 +218,81 @@ def componer(producto, prosa, ficha_icecat, ficha_mi):
 
     fuentes = []
     if origen == "Open Icecat":
-        fuentes.append(
-            "Ficha técnica: Specs Icecat (https://icecat.biz). Icecat no responde por "
-            "errores u omisiones en los datos del fabricante.")
-    elif origen:
-        fuentes.append(f"Ficha técnica: {origen}.")
+        fuentes.append(aviso_icecat(fecha))
+    elif origen == "marca":
+        donde = ficha_marca.get("fuente") or "el sitio oficial del fabricante"
+        cuando = ficha_marca.get("fecha")
+        fuentes.append(f"Ficha técnica: {donde}" + (f", consultado el {cuando}." if cuando else "."))
     if fuentes:
         partes += ["---", ""] + fuentes
 
     return "\n".join(partes).strip() + "\n"
 
 
+def fuente_ficha(origen_ficha, ficha_marca, fecha):
+    if origen_ficha == "marca":
+        return {"fuente": ficha_marca.get("fuente"), "url": ficha_marca.get("url"), "fecha": ficha_marca.get("fecha")}
+    if origen_ficha == "icecat":
+        return {"fuente": "Open Icecat", "url": "https://icecat.biz", "fecha": fecha}
+    return None
+
+
+def leer_icecat(dir_ice, ids):
+    for i in ids:
+        ruta = dir_ice / f"{i}.json"
+        if ruta.is_file():
+            return json.loads(ruta.read_text(encoding="utf-8"))
+    return None
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("productos")
-    ap.add_argument("--prosa", required=True)
-    ap.add_argument("--icecat", help="carpeta de fichas de icecat_local.py")
-    ap.add_argument("--mi", help="JSON de fichas de mi.com")
+    ap.add_argument("--prosa", required=True, help="JSON de prosa por id de modelo")
+    ap.add_argument("--marca", help="JSON de fichas del sitio oficial de la marca, por id de modelo")
+    ap.add_argument("--icecat", help="carpeta de fichas de icecat_local.py (segunda opción)")
+    ap.add_argument("--mi", help="(compatibilidad) JSON de fichas de mi.com, por la clave `mi` de la prosa")
+    ap.add_argument("--fecha", default=date.today().isoformat(), help="fecha de la composición")
     a = ap.parse_args()
 
     datos = json.loads(Path(a.productos).read_text(encoding="utf-8"))
     prosas = json.loads(Path(a.prosa).read_text(encoding="utf-8"))
     dir_ice = Path(a.icecat) if a.icecat else None
+    marca = json.loads(Path(a.marca).read_text(encoding="utf-8")) if a.marca else {}
     mi = json.loads(Path(a.mi).read_text(encoding="utf-8")) if a.mi else {}
 
-    hechas, sin_prosa = 0, []
+    # Una descripción por modelo, para todos sus productos. Solo los modelos que
+    # la tienen pendiente: la de un conocido la copió comparar_lista.py de la base.
+    por_modelo = {}
     for p in datos["productos"]:
-        # La descripción de un conocido la copió comparar_lista.py de la base: no
-        # tiene prosa en esta corrida, y sin este filtro salía marcado «sin
-        # descripcion» aunque la tuviera.
-        if not necesita(p, "descripcion"):
+        if necesita(p, "descripcion"):
+            por_modelo.setdefault(p.get("id_modelo") or p["id"], []).append(p)
+
+    hechas, sin_prosa = 0, []
+    for mid, grupo in por_modelo.items():
+        ids = [mid] + [p["id"] for p in grupo]
+        prosa = next((prosas[i] for i in ids if prosas.get(i, {}).get("apertura")), None)
+        if not prosa:
+            sin_prosa.extend(p["titulo"] for p in grupo)
             continue
-        prosa = prosas.get(p["id"])
-        if not prosa or not prosa.get("apertura"):
-            sin_prosa.append(p["titulo"])
-            continue
+        ficha_marca = marca.get(mid) or mi.get(prosa.get("mi") or "")
         # `"icecat": false` descarta la ficha entera. El indice mezcla productos
         # que comparten nombre: la del `Honor Pad X8b` (tablet de 11") es la del
         # `Honor X8b`, que es un celular de 6,7", y la del bundle de Switch 2 es
         # la del juego Mario Kart World, que pesa 10 gramos. Si la ficha
         # contradice la categoria del producto, no se usa ni un dato de ella.
-        ficha_ice = None
-        if dir_ice and prosa.get("icecat") is not False:
-            ruta = dir_ice / f"{p['id']}.json"
-            if ruta.is_file():
-                ficha_ice = json.loads(ruta.read_text(encoding="utf-8"))
-        ficha_mi = mi.get(prosa.get("mi") or "")
-        p["descripcion"] = componer(p, prosa, ficha_ice, ficha_mi)
-        p["meta_titulo"] = meta_titulo(p)
-        p["meta_descripcion"] = meta_descripcion(p, prosa)
-        p["revisar"] = [r for r in p["revisar"] if "sin descripcion" not in r]
+        ficha_ice = leer_icecat(dir_ice, ids) if dir_ice and prosa.get("icecat") is not False else None
+        referencia = grupo[0]
+        descripcion = componer(referencia, prosa, ficha_ice, ficha_marca, a.fecha)
+        origen = "marca" if ficha_marca and tabla_mi(ficha_marca) else ("icecat" if ficha_ice and tabla_icecat(ficha_ice) else None)
+        fuente = fuente_ficha(origen, ficha_marca or {}, a.fecha)
+        for p in grupo:
+            p["descripcion"] = descripcion
+            p["meta_titulo"] = meta_titulo(p)
+            p["meta_descripcion"] = meta_descripcion(p, prosa)
+            p["fuentes_ficha"] = [fuente] if fuente else []
+            p["revisar"] = [r for r in p["revisar"] if "sin descripcion" not in r]
         hechas += 1
 
     for p in datos["productos"]:
@@ -282,7 +303,7 @@ def main():
 
     Path(a.productos).write_text(json.dumps(datos, ensure_ascii=False, indent=2),
                                  encoding="utf-8")
-    print(f"{hechas} descripciones escritas | {len(sin_prosa)} sin prosa autorada")
+    print(f"{hechas} modelos con descripción | {len(sin_prosa)} productos sin prosa autorada")
     largos = [p["titulo"] for p in datos["productos"]
               if len(p.get("meta_titulo") or "") > LIMITE_META_TITULO
               or len(p.get("meta_descripcion") or "") > LIMITE_META_DESCRIPCION]

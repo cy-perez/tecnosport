@@ -34,7 +34,34 @@ export const MARGEN_MINIMO_SUGERIDO = 5;
 // buscar justo donde no es. `verificar-kit.mjs` ya lo hacía bien.
 export const RAIZ = fileURLToPath(new URL("..", import.meta.url));
 export const CATALOGO = join(RAIZ, "catalogo");
-const ESTUDIO = join(CATALOGO, "fotos", "estudio");
+
+/**
+ * Las carpetas de modelo: `catalogo/entregables/fichas/<Modelo>/`, con «Fotos originales» y
+ * «Fotos procesadas» (decisión del 08/10/2026). Antes las tomas vivían en
+ * `catalogo/fotos/estudio/<id>/`, una carpeta por SKU que terminó perdiéndose; ahora las fotos son
+ * del modelo, y el Galaxy A57 de 256 GB y el de 512 GB comparten las mismas.
+ *
+ * La carpeta se reconoce por su archivo `<id del modelo>-ficha.txt`, no por el nombre, igual que en
+ * `listas-de-proveedor/scripts/fichas.py`: una corrección del título no la pierde.
+ */
+export const FICHAS = join(CATALOGO, "entregables", "fichas");
+const PROCESADAS = "Fotos procesadas";
+
+let carpetas = null;
+export function carpetaDeModelo(idModelo) {
+  if (carpetas === null) {
+    carpetas = new Map();
+    if (existsSync(FICHAS)) {
+      for (const nombre of readdirSync(FICHAS)) {
+        const ficha = existsSync(join(FICHAS, nombre))
+          ? readdirSync(join(FICHAS, nombre)).find((f) => f.endsWith("-ficha.txt"))
+          : null;
+        if (ficha) carpetas.set(ficha.slice(0, -"-ficha.txt".length), join(FICHAS, nombre));
+      }
+    }
+  }
+  return carpetas.get(idModelo) ?? null;
+}
 
 /**
  * El ancho y el alto de un JPEG, leyendo su cabecera. Son ~25 líneas y evita una dependencia de
@@ -90,8 +117,8 @@ const ANCHOS_WEB = [1200, 800, 600, 480];
  * `null` y quien suba **tiene que negarse**: subir la maestra en su lugar es exactamente el
  * defecto que esto viene a corregir, y en silencio.
  */
-function variantePara(id, rutaMaestra) {
-  return variantesPara(id, rutaMaestra)[0] ?? null;
+function variantePara(procesadas, rutaMaestra) {
+  return variantesPara(procesadas, rutaMaestra)[0] ?? null;
 }
 
 /**
@@ -105,10 +132,10 @@ function variantePara(id, rutaMaestra) {
  * <p>El tope sigue siendo 1200 (ADR-0056): la ficha no llega a 700 px y mandar 2000 es pagar ancho
  * de banda por píxeles que nadie ve.
  */
-function variantesPara(id, rutaMaestra) {
+function variantesPara(procesadas, rutaMaestra) {
   const base = basename(rutaMaestra).replace(/\.jpg$/i, "");
   return ANCHOS_WEB.map((ancho) => ({
-    ruta: join(ESTUDIO, id, String(ancho), `${base}.avif`),
+    ruta: join(procesadas, "web", String(ancho), `${base}.avif`),
     ancho,
     contentType: "image/avif",
   })).filter((v) => existsSync(v.ruta));
@@ -121,10 +148,10 @@ function variantesPara(id, rutaMaestra) {
  * muestran nada. El estudio produce el JPEG de cada ancho al lado del AVIF, así que esto no cuesta
  * procesamiento — solo un objeto más en el bucket por imagen.
  */
-function vistaPreviaPara(id, rutaMaestra) {
+function vistaPreviaPara(procesadas, rutaMaestra) {
   const base = basename(rutaMaestra).replace(/\.jpg$/i, "");
   for (const ancho of ANCHOS_WEB) {
-    const ruta = join(ESTUDIO, id, String(ancho), `${base}.jpg`);
+    const ruta = join(procesadas, "web", String(ancho), `${base}.jpg`);
     if (existsSync(ruta)) return { ruta, ancho, contentType: "image/jpeg" };
   }
   return null;
@@ -139,22 +166,28 @@ function vistaPreviaPara(id, rutaMaestra) {
  * Confundirlas costó 635 kB por foto en la portada y en la ficha hasta el 21 de septiembre de
  * 2026.
  */
-function fotos(id) {
-  const carpeta = join(ESTUDIO, id, "maestra");
-  if (!existsSync(carpeta)) return { archivos: [], ladoMenor: 0 };
-  const archivos = readdirSync(carpeta)
+export function fotosDeCarpeta(carpetaModelo) {
+  const procesadas = carpetaModelo ? join(carpetaModelo, PROCESADAS) : null;
+  if (!procesadas || !existsSync(procesadas)) return { archivos: [], ladoMenor: 0 };
+  const archivos = readdirSync(procesadas)
     .filter((f) => f.toLowerCase().endsWith(".jpg"))
-    .sort()
-    .map((f) => ({ ruta: join(carpeta, f), ...dimensionesJpeg(join(carpeta, f)) }))
+    // En orden natural: `_10` va después de `_2`, no antes. La primera es la principal.
+    .sort((a, b) => a.localeCompare(b, "es", { numeric: true }))
+    .map((f) => ({ ruta: join(procesadas, f), ...dimensionesJpeg(join(procesadas, f)) }))
     .filter((f) => f.ancho)
     .map((f) => ({
       ...f,
-      web: variantePara(id, f.ruta),
-      variantes: variantesPara(id, f.ruta),
-      vistaPrevia: vistaPreviaPara(id, f.ruta),
+      web: variantePara(procesadas, f.ruta),
+      variantes: variantesPara(procesadas, f.ruta),
+      vistaPrevia: vistaPreviaPara(procesadas, f.ruta),
     }));
   const lados = archivos.map((f) => Math.min(f.ancho, f.alto));
   return { archivos, ladoMenor: lados.length ? Math.min(...lados) : 0 };
+}
+
+/** Las tomas de un producto son las de su modelo. */
+function fotos(producto) {
+  return fotosDeCarpeta(carpetaDeModelo(producto.id_modelo ?? producto.id));
 }
 
 /**
@@ -234,7 +267,7 @@ export function leerMaterial() {
   }
 
   const productos = catalogo.productos.map((producto) => {
-    const foto = fotos(producto.id);
+    const foto = fotos(producto);
     const faltas = [];
     if (foto.archivos.length === 0) faltas.push("sin foto");
     else if (foto.ladoMenor < LADO_MINIMO) faltas.push(`foto ${foto.ladoMenor}px`);

@@ -1,5 +1,6 @@
 package co.tecnosport.api.application.pedido;
 
+import co.tecnosport.api.application.catalogo.RepositorioProductos;
 import co.tecnosport.api.application.compartido.Reloj;
 import co.tecnosport.api.application.inventario.RepositorioInventario;
 import co.tecnosport.api.domain.inventario.Inventario;
@@ -36,6 +37,7 @@ import java.util.UUID;
 public final class ReintentarPago {
 
   private final RepositorioPedidos repositorioPedidos;
+  private final RepositorioProductos repositorioProductos;
   private final RepositorioInventario repositorioInventario;
   private final Reloj reloj;
   private final Duration duracionReservaPagoEnLinea;
@@ -43,11 +45,13 @@ public final class ReintentarPago {
 
   public ReintentarPago(
       RepositorioPedidos repositorioPedidos,
+      RepositorioProductos repositorioProductos,
       RepositorioInventario repositorioInventario,
       Reloj reloj,
       Duration duracionReservaPagoEnLinea,
       ModalidadesDeEntrega modalidadesDeEntrega) {
     this.repositorioPedidos = Objects.requireNonNull(repositorioPedidos);
+    this.repositorioProductos = Objects.requireNonNull(repositorioProductos);
     this.repositorioInventario = Objects.requireNonNull(repositorioInventario);
     this.reloj = Objects.requireNonNull(reloj);
     this.duracionReservaPagoEnLinea = Objects.requireNonNull(duracionReservaPagoEnLinea);
@@ -78,6 +82,12 @@ public final class ReintentarPago {
     // vigentes ya no ofrecen (ADR-0072), así que responde lo mismo que `CrearPedido` — y antes de
     // reservar, por lo mismo que la comprobación de arriba.
     modalidadesDeEntrega.exigirDisponible(pedido.tipoEntrega());
+    // Lo que ya no se vende no se cobra otra vez: un modelo que el proveedor agotó o que venció
+    // sigue con existencia en el libro —agotar no toca el inventario— y sin esto el reintento lo
+    // reservaba y Wompi lo cobraba. Antes de reservar, por lo mismo que las de arriba.
+    for (LineaPedido linea : pedido.lineas()) {
+      ProductoVendible.exigir(repositorioProductos, linea.varianteId());
+    }
     Instant ahora = reloj.ahora();
     Map<UUID, UUID> nuevasReservasPorLineaId = reReservar(pedido, ahora);
     pedido.actualizarReservas(nuevasReservasPorLineaId);

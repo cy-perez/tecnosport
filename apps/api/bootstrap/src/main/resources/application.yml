@@ -308,6 +308,13 @@ tecnosport:
     # ocultarse. Tres dias es lo que pidio el negocio (30 de septiembre de 2026); en pruebas
     # se baja a minutos. Duracion ISO-8601: P3D, PT10M.
     ventana-disponibilidad: ${PROVEEDORES_VENTANA_DISPONIBILIDAD:P3D}
+    tecnologia:
+      # Unidades por color de cada configuracion que trae la lista; se repone con cada lista
+      # (decision del negocio, 8 de octubre de 2026).
+      existencia-por-variante: ${PROVEEDORES_TECNOLOGIA_EXISTENCIA:2}
+      # Cuanto vale una lista de precios antes de ocultar lo que trajo. Siete dias: la vigencia
+      # que el negocio le dio al precio de mercado de la lista (8 de octubre de 2026).
+      ventana-disponibilidad: ${PROVEEDORES_TECNOLOGIA_VENTANA_DISPONIBILIDAD:P7D}
     job-expiracion:
       # Dentro de la aplicacion, como las demas tareas (docs/07): en produccion la API lleva la
       # CPU siempre asignada. Encendido por omision; la bandera existe para apagarlo sin
@@ -584,7 +591,7 @@ tecnosport:
     # en los JSON de Transloco de este mismo repositorio: cambiar el texto y cambiar esta fecha son
     # el mismo commit. La variable existe para poder corregirla sin redesplegar, no para tener que
     # fijarla en cada entorno.
-    politica-datos-version: ${POLITICA_DATOS_VERSION:2026-10-08.2}
+    politica-datos-version: ${POLITICA_DATOS_VERSION:2026-10-08.3}
   verificacion-correo:
     # Ningún doc especifica esta duración (solo la de recuperación, 30 min) — parámetro técnico,
     # no un dato de negocio.

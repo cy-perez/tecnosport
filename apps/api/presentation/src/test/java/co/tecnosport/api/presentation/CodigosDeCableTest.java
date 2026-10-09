@@ -47,9 +47,13 @@ import co.tecnosport.api.application.proveedores.PrendaIncoherenteException;
 import co.tecnosport.api.application.proveedores.ProductoDeProveedorYaExisteException;
 import co.tecnosport.api.application.proveedores.ProveedorConIngestaEnCursoException;
 import co.tecnosport.api.application.proveedores.ProveedorConProductosException;
+import co.tecnosport.api.application.proveedores.ProveedorDeListasException;
 import co.tecnosport.api.application.proveedores.ProveedorInactivoException;
 import co.tecnosport.api.application.proveedores.ProveedorNoEncontradoException;
 import co.tecnosport.api.application.proveedores.TipoDeExportacionNoAdmitidoException;
+import co.tecnosport.api.application.proveedores.tecnologia.ListaDeTecnologiaDesactualizadaException;
+import co.tecnosport.api.application.proveedores.tecnologia.ListaDeTecnologiaYaImportadaException;
+import co.tecnosport.api.application.proveedores.tecnologia.ProveedorSinListasException;
 import co.tecnosport.api.application.reintegro.MontoDeReintegroInvalidoException;
 import co.tecnosport.api.application.reintegro.ReintegroRequeridoException;
 import co.tecnosport.api.application.retracto.PedidoSinEntregarException;
@@ -160,6 +164,12 @@ class CodigosDeCableTest {
           Map.entry(ProveedorConProductosException.class, "PROVEEDOR_CON_PRODUCTOS"),
           Map.entry(ProveedorConIngestaEnCursoException.class, "PROVEEDOR_CON_INGESTA_EN_CURSO"),
           Map.entry(ProveedorInactivoException.class, "PROVEEDOR_INACTIVO"),
+          Map.entry(ProveedorDeListasException.class, "PROVEEDOR_DE_LISTAS"),
+          Map.entry(ProveedorSinListasException.class, "PROVEEDOR_SIN_LISTAS"),
+          Map.entry(
+              ListaDeTecnologiaDesactualizadaException.class, "LISTA_DE_TECNOLOGIA_DESACTUALIZADA"),
+          Map.entry(
+              ListaDeTecnologiaYaImportadaException.class, "LISTA_DE_TECNOLOGIA_YA_IMPORTADA"),
           Map.entry(ExportacionNoEncontradaException.class, "EXPORTACION_NO_ENCONTRADA"),
           Map.entry(ExportacionDemasiadoGrandeException.class, "EXPORTACION_DEMASIADO_GRANDE"),
           Map.entry(TipoDeExportacionNoAdmitidoException.class, "TIPO_DE_EXPORTACION_NO_ADMITIDO"),

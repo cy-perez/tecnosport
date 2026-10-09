@@ -1,0 +1,98 @@
+<section class="mx-auto max-w-contenido px-16 py-32">
+  <ts-migas [ruta]="migas()" />
+
+  <h1 class="m-0 mb-16 font-display text-2xl">{{ 'admin.tecnologia.titulo' | transloco }}</h1>
+
+  <p class="mb-24 text-ts-texto-suave">{{ 'admin.tecnologia.explicacion' | transloco }}</p>
+
+  <div class="mb-16 flex flex-wrap gap-16">
+    <ts-select
+      idCampo="tecnologia-filtro-estado"
+      [label]="'admin.tecnologia.filtroEstado' | transloco"
+      [opciones]="opcionesEstado()"
+      [formControl]="estadoFiltro"
+      (cambio)="filtrarPorEstado($event)"
+    />
+  </div>
+
+  @if (consulta.isPending()) {
+    <ts-esqueleto />
+  } @else if (consulta.isError()) {
+    <p class="text-ts-error" role="alert">{{ 'admin.tecnologia.errorLista' | transloco }}</p>
+  } @else {
+    <div class="overflow-hidden rounded-lg border border-ts-borde bg-ts-superficie">
+      <div class="border-b border-ts-borde px-16 py-12">
+        <p class="m-0 font-medio">
+          {{ 'admin.tecnologia.total' | transloco: { total: borradores().length } }}
+        </p>
+      </div>
+
+      @if (borradores().length === 0) {
+        <p class="m-0 px-16 py-32 text-ts-texto-suave">
+          {{ 'admin.tecnologia.ninguno' | transloco }}
+        </p>
+      } @else {
+        <div class="overflow-x-auto">
+          <table
+            class="w-full border-collapse text-sm [&_td]:px-16 [&_td]:py-12 [&_th]:px-16 [&_th]:py-12 [&_:is(th,td)]:text-left"
+          >
+            <thead>
+              <tr class="border-b border-ts-borde">
+                <th class="font-medio text-ts-texto-suave" scope="col">
+                  {{ 'admin.tecnologia.columnas.modelo' | transloco }}
+                </th>
+                <th class="font-medio text-ts-texto-suave" scope="col">
+                  {{ 'admin.tecnologia.columnas.configuraciones' | transloco }}
+                </th>
+                <th class="font-medio text-ts-texto-suave" scope="col">
+                  {{ 'admin.tecnologia.columnas.estado' | transloco }}
+                </th>
+                <th scope="col">
+                  <span class="sr-only">{{
+                    'admin.tecnologia.columnas.acciones' | transloco
+                  }}</span>
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (borrador of borradores(); track borrador.id) {
+                <tr class="border-b border-ts-borde last:border-b-0 align-top">
+                  <td>
+                    <p class="m-0 font-medio">{{ borrador.titulo }}</p>
+                    <p class="m-0 text-xs text-ts-texto-suave">
+                      {{ nombreDelProveedor(borrador) }} · {{ formatearFecha(borrador.creadoEn) }}
+                    </p>
+                    @if (borrador.productoId && borrador.estado === 'EN_REVISION') {
+                      <p class="m-0 text-xs text-ts-texto-suave">
+                        {{ 'admin.tecnologia.completaProducto' | transloco }}
+                      </p>
+                    }
+                  </td>
+                  <td class="tabular-nums">{{ borrador.configuraciones.length }}</td>
+                  <td>
+                    <span [class]="clasesEstado(borrador.estado)">{{
+                      etiquetaEstado(borrador.estado)
+                    }}</span>
+                  </td>
+                  <td>
+                    <div class="flex justify-end">
+                      <ts-boton
+                        variante="secundario"
+                        [enlace]="[borrador.id]"
+                        [etiquetaAccesible]="
+                          'admin.tecnologia.revisarModelo' | transloco: { modelo: borrador.titulo }
+                        "
+                      >
+                        {{ 'admin.tecnologia.revisar' | transloco }}
+                      </ts-boton>
+                    </div>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </div>
+  }
+</section>

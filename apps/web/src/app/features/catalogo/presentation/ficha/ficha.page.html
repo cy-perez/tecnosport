@@ -64,6 +64,14 @@
           />
         }
 
+        <!-- Las fotos de tecnología son del modelo y no de cada color (ADR-0075): el color que
+             llega es el que se elige aquí, y la ficha lo dice antes de que alguien lo pregunte. -->
+        @if (p.categoria.linea === 'TECNOLOGIA') {
+          <p class="m-0 text-sm text-ts-texto-suave">
+            {{ 'catalogo.ficha.imagen_de_referencia' | transloco }}
+          </p>
+        }
+
         <!-- En el teléfono el precio y el botón quedaban bajo el pliegue, después de la galería
              y de los ejes de variante. Este bloque se pega al borde inferior mientras su posición
              natural esté más abajo, y vuelve al flujo al llegar a ella: un solo botón en el DOM,

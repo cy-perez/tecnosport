@@ -2,9 +2,10 @@
 
 - Fecha de la lista: 2026-09-12
 - Productos para publicar: 52
+- Modelos distintos: 41
 - Descartados: 65
 - Duplicados fusionados: 12
-- Productos con algún supuesto aplicado: 24
+- Productos con algún supuesto aplicado: 23
 - Títulos confirmados en una lista anterior: 9
 - Líneas sin clasificar: 0
 - Mensajes de la lista: ANDROID
@@ -81,7 +82,6 @@
 - **Xiaomi POCO F8 Pro 5G 12GB RAM 256GB** — celulares — 1.850.000 COP
 - **Xiaomi POCO F8 Pro 5G 12GB RAM 512GB** — celulares — 2.050.000 COP
 - **realme Note 70 4G 8GB RAM 256GB** — celulares — 520.000 COP
-  - · asumido: título confirmado el 02/10/2026: la lista lo trae como «Realme Note 70 4G 8GB RAM 256GB»
 - **Samsung Galaxy Tab A11 8.7" WiFi 8GB RAM 128GB** — tablets — 465.000 COP
   - · asumido: título confirmado el 02/10/2026: la lista lo trae como «Samsung A11 7" WiFi 8GB RAM 128GB»
 - **Samsung Galaxy Tab A11+ 11" WiFi 6GB RAM 128GB** — tablets — 735.000 COP

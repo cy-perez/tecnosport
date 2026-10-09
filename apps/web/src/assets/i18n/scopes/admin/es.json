@@ -27,6 +27,10 @@
     "producto_con_ventas": "Tiene ventas, así que no se puede eliminar. Retíralo de la vitrina: los pedidos, las garantías y los retractos siguen necesitándolo.",
     "proveedor_no_encontrado": "Ese proveedor ya no existe. Recarga la lista.",
     "proveedor_inactivo": "El proveedor está inactivo. Actívalo desde su ficha antes de subirle una exportación.",
+    "proveedor_de_listas": "Este proveedor es de tecnología: su catálogo entra por la lista de precios, no por la exportación del chat.",
+    "proveedor_sin_listas": "Este proveedor no es de tecnología: su catálogo entra por la exportación del chat, no por una lista de precios.",
+    "lista_de_tecnologia_desactualizada": "Esa lista es más vieja que la última que entró: impórtala solo si es de esa fecha o posterior.",
+    "lista_de_tecnologia_ya_importada": "Esa lista ya entró con este mismo contenido: repetirla volvería a reponer lo vendido.",
     "proveedor_con_productos": "El proveedor tiene productos en el catálogo. Desactívalo en vez de eliminarlo.",
     "proveedor_con_ingesta_en_curso": "El proveedor tiene una exportación en proceso. Espera a que termine e inténtalo de nuevo.",
     "exportacion_no_encontrada": "El archivo no llegó al bucket. Vuelve a elegirlo y súbelo de nuevo.",
@@ -95,6 +99,7 @@
     "ir_a_proveedores": "Proveedores",
     "ir_a_ingestas": "Ingestas",
     "ir_a_borradores": "Borradores",
+    "ir_a_tecnologia": "Tecnología",
     "ir_a_referencias_envio": "Pesos y medidas de envío"
   },
   "pedidos": {
@@ -876,7 +881,8 @@
     "inactivo": "Inactivo",
     "lineas": {
       "BOLSOS": "Bolsos",
-      "ROPA": "Ropa"
+      "ROPA": "Ropa",
+      "TECNOLOGIA": "Tecnología"
     },
     "ordenesDePublicacion": {
       "FOTOS_PRIMERO": "Primero las fotos, después el precio",
@@ -983,6 +989,73 @@
       "cancelar": "Cancelar",
       "hecho": "Ingesta eliminada. Productos borrados: {{eliminados}}. Se quedaron por estar publicados o vendidos: {{conservados}}.",
       "error": "No pudimos eliminar la ingesta. Vuelve a intentarlo."
+    }
+  },
+  "tecnologia": {
+    "titulo": "Tecnología",
+    "explicacion": "Los modelos que trajo la lista de precios del proveedor de tecnología. Elige qué colores se venden de cada configuración y a qué precio; la lista de mañana solo moverá el costo y la existencia.",
+    "filtroEstado": "Estado",
+    "errorLista": "No se pudieron cargar los modelos. Inténtalo de nuevo.",
+    "total": "{{total}} modelo(s)",
+    "ninguno": "No hay modelos en este estado.",
+    "completaProducto": "Configuraciones nuevas de un producto que ya se vende",
+    "revisar": "Revisar",
+    "revisarModelo": "Revisar {{modelo}}",
+    "columnas": {
+      "modelo": "Modelo",
+      "configuraciones": "Configuraciones",
+      "estado": "Estado",
+      "acciones": "Acciones"
+    },
+    "detalle": {
+      "miga": "Revisión",
+      "errorCarga": "No se pudo cargar el modelo. Recarga la página.",
+      "de": "De {{proveedor}} · modelo {{modelo}}",
+      "completaProducto": "Este modelo ya se vende: lo que apruebes aquí se añade a su producto.",
+      "verProducto": "Ver el producto",
+      "motivoRechazo": "Rechazado: {{motivo}}",
+      "ficha": "Ficha que preparó la skill",
+      "configuraciones": "Configuraciones",
+      "explicacion": "Marca los colores que el proveedor tiene de cada configuración: cada uno será una variante. Una configuración sin colores no se vende.",
+      "explicacionSinPaleta": "No se conoce la paleta oficial de este modelo: escribe los colores que tiene el proveedor, separados por coma. Una configuración sin colores no se vende.",
+      "sugeridos": "La lista sugiere: {{colores}}",
+      "coloresDe": "Colores de {{configuracion}}",
+      "coloresEscritos": "Colores",
+      "coloresEscritosAyuda": "Por ejemplo: Negro, Azul claro",
+      "precioVenta": "Precio de venta",
+      "ayudaPrecio": "Costo {{costo}} · precio de mercado {{mercado}}",
+      "precioIlegible": "Escribe el precio en pesos, sin decimales: 849.900 o 849900.",
+      "guardar": "Guardar la elección",
+      "guardando": "Guardando…",
+      "guardado": "Elección guardada.",
+      "errorGuardar": "No se pudo guardar la elección. Inténtalo de nuevo."
+    },
+    "aprobar": {
+      "titulo": "Aprobar",
+      "explicacion": "Crea el producto con una variante por cada color marcado. Queda en borrador hasta que tenga fotos: salen de la carpeta de fichas del modelo.",
+      "explicacionExistente": "Añade al producto una variante por cada color marcado.",
+      "marca": "Marca",
+      "categoria": "Categoría",
+      "sugerida": "La lista dice: {{valor}}",
+      "seleccionar": "Selecciona una opción",
+      "accion": "Guardar y aprobar",
+      "aprobando": "Aprobando…",
+      "hecho": "Aprobado.",
+      "nadaQueVender": "Marca los colores de al menos una configuración: sin eso no hay nada que vender.",
+      "faltaPrecio": "Cada configuración que se vende necesita su precio de venta, en pesos y sin decimales.",
+      "precioBajoCosto": "El precio de venta de cada configuración tiene que superar su costo.",
+      "faltanMarcaYCategoria": "Elige la marca y la categoría del catálogo.",
+      "error": "No se pudo aprobar. Inténtalo de nuevo."
+    },
+    "rechazar": {
+      "titulo": "Rechazar",
+      "explicacion": "Las próximas listas no volverán a proponer estas configuraciones.",
+      "motivo": "Motivo",
+      "accion": "Rechazar",
+      "rechazando": "Rechazando…",
+      "hecho": "Rechazado.",
+      "faltaMotivo": "Escribe el motivo del rechazo.",
+      "error": "No se pudo rechazar. Inténtalo de nuevo."
     }
   },
   "borradores": {

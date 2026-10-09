@@ -30,7 +30,33 @@ public record PropiedadesProveedores(
     Ganancia ganancia,
     Huella huella,
     Duration ventanaDisponibilidad,
-    JobExpiracion jobExpiracion) {
+    JobExpiracion jobExpiracion,
+    Tecnologia tecnologia) {
+
+  /**
+   * El proveedor de tecnología, que manda listas de precios en vez de publicaciones (ADR-0075).
+   *
+   * @param existenciaPorVariante las unidades que se ofrecen de cada color de cada configuración
+   *     que trae la lista: se vende con lo que el proveedor dice tener, y se repone con cada lista
+   *     (decisión del negocio, 8 de octubre de 2026)
+   * @param ventanaDisponibilidad cuánto vale una lista: pasado eso sin otra, lo que trajo se
+   *     oculta. Distinta de la de los mensajes porque las listas llegan cada varios días
+   */
+  public record Tecnologia(int existenciaPorVariante, Duration ventanaDisponibilidad) {
+    public Tecnologia {
+      if (existenciaPorVariante < 1) {
+        throw new IllegalStateException(
+            "tecnosport.proveedores.tecnologia.existencia-por-variante es por lo menos 1.");
+      }
+      if (ventanaDisponibilidad == null
+          || ventanaDisponibilidad.isNegative()
+          || ventanaDisponibilidad.isZero()) {
+        throw new IllegalStateException(
+            "tecnosport.proveedores.tecnologia.ventana-disponibilidad debe ser una duración"
+                + " positiva.");
+      }
+    }
+  }
 
   /**
    * Cada cuánto corre el job que oculta lo vencido, y cuánto espera tras arrancar. El intervalo se
@@ -105,7 +131,9 @@ public record PropiedadesProveedores(
     if (margenPorLinea == null) {
       throw new IllegalStateException("Falta tecnosport.proveedores.margen-por-linea.");
     }
-    for (LineaCatalogo linea : Proveedor.LINEAS_ADMITIDAS) {
+    // Solo las líneas que entran por la exportación del chat llevan factor de margen: el precio de
+    // la tecnología lo decide una persona en el panel, con el precio de mercado a la vista.
+    for (LineaCatalogo linea : Proveedor.LINEAS_POR_EXPORTACION) {
       BigDecimal factor = margenPorLinea.get(linea);
       if (factor == null || factor.compareTo(BigDecimal.ONE) < 0) {
         throw new IllegalStateException(
@@ -129,6 +157,9 @@ public record PropiedadesProveedores(
     }
     if (jobExpiracion == null) {
       throw new IllegalStateException("Falta tecnosport.proveedores.job-expiracion.");
+    }
+    if (tecnologia == null) {
+      throw new IllegalStateException("Falta tecnosport.proveedores.tecnologia.");
     }
   }
 }

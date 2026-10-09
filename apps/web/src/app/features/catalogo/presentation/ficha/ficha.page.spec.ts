@@ -328,6 +328,35 @@ describe('FichaPage', () => {
     );
   });
 
+  describe('las fotos de referencia', () => {
+    const repositorioCon = (producto: Producto): RepositorioProductos => ({
+      buscar: () =>
+        Promise.resolve<ResultadoPaginado<Producto>>({ items: [], cursorSiguiente: null }),
+      buscarPorSlug: () => Promise.resolve(producto),
+    });
+
+    it('en tecnología la ficha dice que las fotos son de referencia', async () => {
+      const base = productoDePrueba();
+      await renderFicha(
+        repositorioCon({
+          ...base,
+          nombre: 'Samsung Galaxy A17 5G',
+          categoria: { ...base.categoria, linea: 'TECNOLOGIA' },
+        }),
+      );
+
+      await screen.findByRole('heading', { name: 'Samsung Galaxy A17 5G' });
+      expect(screen.getByText(esCatalogo.ficha.imagen_de_referencia)).toBeTruthy();
+    });
+
+    it('en las demás líneas no lo dice', async () => {
+      await renderFicha(repositorioCon(productoDePrueba()));
+
+      await screen.findByRole('heading', { name: 'Morral urbano' });
+      expect(screen.queryByText(esCatalogo.ficha.imagen_de_referencia)).toBeNull();
+    });
+  });
+
   it('muestra "no encontrado" cuando el repositorio devuelve null', async () => {
     const repositorio: RepositorioProductos = {
       buscar: () =>

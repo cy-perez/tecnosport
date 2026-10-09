@@ -572,10 +572,8 @@ class PedidoControladorTest {
 
   @Test
   void reintentarPagoDeUnPedidoFallidoLoRegresaAPagoPendiente() throws Exception {
-    java.util.UUID varianteId = java.util.UUID.randomUUID();
-    Inventario inventario = Inventario.crear(varianteId);
-    inventario.registrarEntrada(5, "siembra de prueba", Instant.now());
-    inventarios.conInventario(inventario);
+    // Publicado y en vitrina: el reintento no cobra lo que ya no se vende.
+    java.util.UUID varianteId = publicarProductoConVarianteYExistencia(5).id();
 
     Pedido pedido =
         Pedido.crear(
@@ -1059,10 +1057,12 @@ class PedidoControladorTest {
     @Bean
     ReintentarPago reintentarPago(
         RepositorioPedidos repositorioPedidos,
+        RepositorioProductos repositorioProductos,
         RepositorioInventario repositorioInventario,
         Reloj reloj) {
       return new ReintentarPago(
           repositorioPedidos,
+          repositorioProductos,
           repositorioInventario,
           reloj,
           Duration.ofMinutes(30),

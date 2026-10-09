@@ -251,12 +251,14 @@ public class ConfiguracionPedido {
   @Bean
   public ReintentarPago reintentarPago(
       RepositorioPedidos repositorioPedidos,
+      RepositorioProductos repositorioProductos,
       RepositorioInventario repositorioInventario,
       Reloj reloj,
       PropiedadesPedido propiedades,
       ModalidadesDeEntrega modalidadesDeEntrega) {
     return new ReintentarPago(
         repositorioPedidos,
+        repositorioProductos,
         repositorioInventario,
         reloj,
         Duration.ofMinutes(propiedades.minutosReservaInventario()),

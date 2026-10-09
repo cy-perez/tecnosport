@@ -109,10 +109,16 @@ public class ConfiguracionBorradores {
   public ExpirarDisponibilidadDeProductos expirarDisponibilidadDeProductos(
       RepositorioProductosDeProveedor productosDeProveedor,
       RepositorioProductos productos,
+      RepositorioProveedores proveedores,
       Reloj reloj,
       PropiedadesProveedores propiedades) {
     return new ExpirarDisponibilidadDeProductos(
-        productosDeProveedor, productos, reloj, propiedades.ventanaDisponibilidad());
+        productosDeProveedor,
+        productos,
+        proveedores,
+        reloj,
+        propiedades.ventanaDisponibilidad(),
+        propiedades.tecnologia().ventanaDisponibilidad());
   }
 
   @Bean

@@ -1,12 +1,11 @@
 # Estándar de fotos
 
-> **Fuera del flujo desde el 25/09/2026.** La skill ya no busca, no descarga y
-> no retoca fotos: ver la regla 16 del `SKILL.md`. Este documento se conserva
-> entero —el estándar, la cobertura medida y el reparto de trabajo— porque
-> sigue siendo la referencia de cómo tiene que verse una foto del catálogo, y
-> porque volver atrás debe ser reponer dos pasos y no reescribirlos. Lo que
-> describe de aquí en adelante **no se ejecuta solo**: se hace a mano cuando
-> llega un lote de fotos, como cuenta el apéndice «Si algún día hay fotos».
+> **De vuelta en el flujo desde el 08/10/2026, por carpeta de modelo** (regla 16
+> del `SKILL.md`): la persona descarga las fotos en `Fotos originales/` de cada
+> modelo y `fotos-estudio-degradado` deja la retocada en `Fotos procesadas/` con
+> el mismo nombre. Las fotos son de referencia, no por color. El proveedor de
+> tecnología no manda fotos. Lo que este documento dice del estándar y de las
+> fuentes sigue valiendo; lo del ZIP por producto, no: ver el paso 5 del `SKILL.md`.
 
 ## Especificación
 
@@ -40,10 +39,11 @@ El reparto de trabajo es deliberado:
 | esta skill (`icecat_local.py`, `preparar_fotos.py`) | consigue el material y arma el pedido de lo que falta |
 | esta skill (`filtrar_fotos.py`) | decide **qué foto sirve** y descarta el resto |
 | `fotos-estudio-degradado` | decide **cómo se ve**, agrupa por producto y separa por ancho |
-| esta skill (`construir_entregables.py`) | lee `<producto>/maestra/` y arma el ZIP |
+| esta skill (`construir_entregables.py`, `fichas.py`) | arma la carpeta de cada modelo con su «Fotos originales» |
+| `fotos-estudio-degradado` (`procesar_fichas.py`) | deja cada retocada en «Fotos procesadas» con el nombre de su original |
 
-No hay paso de reacomodo en el medio: la otra skill ya entrega la forma que
-consume el ZIP.
+No hay paso de reacomodo en el medio: `procesar_fichas.py` devuelve cada foto a
+su modelo.
 
 El estilo del catálogo lo define un solo lugar. Si cada skill recortara y
 encuadrara a su manera, el catálogo dejaría de verse parejo, que es justo lo que
@@ -156,9 +156,16 @@ Antes de contar con él, tres advertencias:
 - Algunas marcas reservan las imágenes en alta resolución para revendedores
   autorizados, y otras limitan la distribución por país. Que la marca aparezca en
   la lista no garantiza que el modelo esté disponible aquí.
-- Su política de uso pide citar "Specs Icecat" con enlace en la ficha del
-  producto, publicar un descargo de responsabilidad y **no usar los datos para
-  entrenar modelos de IA**. Son obligaciones del sitio, no detalles.
+- Su licencia —la Open Content License v1.4, del 11/02/2026, leída el
+  08/10/2026— exige en cada copia el aviso literal «Database Right data-sheet
+  [Año] Icecat. All rights reserved.», el descargo de garantía y la licencia a
+  mano de quien recibe el contenido (cláusula 1); una nota visible de lo que se
+  modificó, en qué y cuándo —retocar una foto o reordenar una tabla es
+  modificar— (cláusula 2); y **anula el permiso si los datos se usan para
+  entrenar modelos o para «automated synthetic content creation»** (cláusula
+  10). La política de uso justo pide además que el robots.txt del sitio excluya
+  los rastreadores de IA. Son obligaciones del sitio, no detalles; el aviso lo
+  pone `redactar_fichas.py`.
 - Las URL de las imágenes de Icecat cambian con el tiempo. Hay que descargarlas y
   servirlas desde el sitio, no enlazarlas en caliente.
 
@@ -305,8 +312,8 @@ salió cada una.
 De vuelta en la skill, `scripts/filtrar_fotos.py` descarta lo que no sirve y el
 retoque lo hace `fotos-estudio-degradado`.
 
-Si un producto queda sin fotos, su carpeta en el ZIP incluye un
-`FOTOS-PENDIENTES.md` que dice cuántas faltan.
+Si un modelo queda sin fotos, la salida del paso 5 lo dice; su carpeta tiene
+«Fotos originales» vacía.
 
 El retoque —fondo blanco, encuadre al 85 %, resplandor, maestra y variantes—
 lo hace la skill `fotos-estudio-degradado`, que es la que define el estilo de

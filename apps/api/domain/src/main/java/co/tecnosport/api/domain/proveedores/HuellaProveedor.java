@@ -41,7 +41,20 @@ public record HuellaProveedor(String valor) {
     return new HuellaProveedor(sha256(material));
   }
 
-  private static String sha256(String texto) {
+  /**
+   * La huella de un modelo de tecnología: el proveedor y el id del modelo que decide la skill de
+   * listas, <b>sin precio</b>. Al revés que en las prendas, aquí el título sí distingue —«Galaxy
+   * A17 5G» es uno solo, cueste lo que cueste esta semana—, y el costo cambia con cada lista: con
+   * el precio dentro, cada lista nueva crearía un producto nuevo.
+   */
+  public static HuellaProveedor deModelo(UUID proveedorId, String idModelo) {
+    if (proveedorId == null || idModelo == null || idModelo.isBlank()) {
+      throw new ExcepcionDeDominio("La huella de un modelo necesita proveedor e id del modelo.");
+    }
+    return new HuellaProveedor(sha256(proveedorId + "|modelo|" + idModelo.strip()));
+  }
+
+  static String sha256(String texto) {
     try {
       MessageDigest digest = MessageDigest.getInstance("SHA-256");
       return HexFormat.of().formatHex(digest.digest(texto.getBytes(StandardCharsets.UTF_8)));

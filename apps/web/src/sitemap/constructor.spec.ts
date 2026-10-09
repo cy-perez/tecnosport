@@ -92,6 +92,23 @@ describe('construirRobots', () => {
    * impide que el rastreador lea ese `noindex`, y la URL puede acabar indexada igual y sin forma
    * de sacarla. Para no aparecer hay que dejar entrar.
    */
+  /**
+   * La política de uso justo de Open Icecat (02/05/2026) pide excluir en el robots.txt a los
+   * rastreadores que descargan contenido para entrenar IA: el catálogo de tecnología publica fichas
+   * de Icecat como segunda fuente. Auditoría del 08/10/2026.
+   */
+  it('cierra el sitio a los rastreadores que entrenan IA, cada uno con su propio grupo', () => {
+    const robots = construirRobots(ORIGEN);
+
+    for (const agente of ['GPTBot', 'ClaudeBot', 'anthropic-ai', 'CCBot', 'Google-Extended']) {
+      expect(robots).toContain(`User-agent: ${agente}\nDisallow: /`);
+    }
+  });
+
+  it('a los buscadores los deja entrar como siempre', () => {
+    expect(construirRobots(ORIGEN)).toContain('User-agent: *\nAllow: /');
+  });
+
   it('no prohíbe el carrito, el checkout ni la cuenta, que ya salen con noindex', () => {
     const robots = construirRobots(ORIGEN);
 

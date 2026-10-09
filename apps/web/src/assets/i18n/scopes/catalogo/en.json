@@ -50,6 +50,7 @@
     "no_encontrado": "We couldn't find this product.",
     "error": "We couldn't load this product. Please try again.",
     "combinacion_no_disponible": "This combination is not available.",
+    "imagen_de_referencia": "Images are for reference only: you receive the color you choose.",
     "volver_al_catalogo": "Back to the catalog"
   },
   "seo": {

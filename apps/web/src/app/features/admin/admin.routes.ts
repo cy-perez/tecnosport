@@ -49,6 +49,8 @@ import { REPOSITORIO_INGESTAS_ADMIN } from './ingestas/domain/repositorio-ingest
 import { IngestasAdminHttpRepositorio } from './ingestas/infrastructure/ingestas-admin-http.repositorio';
 import { REPOSITORIO_BORRADORES_ADMIN } from './borradores/domain/repositorio-borradores-admin.puerto';
 import { BorradoresAdminHttpRepositorio } from './borradores/infrastructure/borradores-admin-http.repositorio';
+import { REPOSITORIO_BORRADORES_TECNOLOGIA } from './tecnologia/domain/repositorio-borradores-tecnologia.puerto';
+import { BorradoresTecnologiaHttpRepositorio } from './tecnologia/infrastructure/borradores-tecnologia-http.repositorio';
 
 // Sin proveedor de puerto aquí: REPOSITORIO_SESION es compartido y se
 // provee en app.config.ts (SesionStore lo va a necesitar también
@@ -245,6 +247,37 @@ export const adminRoutes: Routes = [
                 loadComponent: () =>
                   import('./borradores/presentation/detalle/detalle-borrador-admin.page').then(
                     (m) => m.DetalleBorradorAdminPage,
+                  ),
+              },
+            ],
+          },
+          {
+            path: 'tecnologia',
+            providers: [
+              {
+                provide: REPOSITORIO_BORRADORES_TECNOLOGIA,
+                useClass: BorradoresTecnologiaHttpRepositorio,
+              },
+              { provide: REPOSITORIO_PROVEEDORES_ADMIN, useClass: ProveedoresAdminHttpRepositorio },
+            ],
+            children: [
+              {
+                path: '',
+                loadComponent: () =>
+                  import('./tecnologia/presentation/lista/lista-tecnologia-admin.page').then(
+                    (m) => m.ListaTecnologiaAdminPage,
+                  ),
+              },
+              {
+                path: ':id',
+                // Aprobar un modelo nuevo pide marca y categoría: las del panel, como en borradores.
+                providers: [
+                  { provide: REPOSITORIO_CATEGORIAS, useClass: CategoriasAdminHttpRepositorio },
+                  { provide: REPOSITORIO_MARCAS, useClass: MarcasAdminHttpRepositorio },
+                ],
+                loadComponent: () =>
+                  import('./tecnologia/presentation/detalle/detalle-tecnologia-admin.page').then(
+                    (m) => m.DetalleTecnologiaAdminPage,
                   ),
               },
             ],
