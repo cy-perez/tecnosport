@@ -57,9 +57,9 @@ public class RepositorioBorradoresTecnologiaJpa implements RepositorioBorradores
   }
 
   @Override
-  public Optional<BorradorTecnologia> buscarEnRevision(UUID proveedorId, String idModelo) {
-    return jpa.findByProveedorIdAndIdModeloAndEstado(
-            proveedorId, idModelo, EstadoBorrador.EN_REVISION.name())
+  public Optional<BorradorTecnologia> buscarEnRevisionParaActualizar(
+      UUID proveedorId, String idModelo) {
+    return jpa.buscarEnRevisionConBloqueo(proveedorId, idModelo)
         .map(RepositorioBorradoresTecnologiaJpa::aDominio);
   }
 

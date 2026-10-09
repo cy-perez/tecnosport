@@ -17,8 +17,12 @@ public interface BorradorTecnologiaJpaRepository
   @Query("select b from BorradorTecnologiaJpaEntity b where b.id = :id")
   Optional<BorradorTecnologiaJpaEntity> buscarConBloqueo(@Param("id") UUID id);
 
-  Optional<BorradorTecnologiaJpaEntity> findByProveedorIdAndIdModeloAndEstado(
-      UUID proveedorId, String idModelo, String estado);
+  @Lock(LockModeType.PESSIMISTIC_WRITE)
+  @Query(
+      "select b from BorradorTecnologiaJpaEntity b where b.proveedorId = :proveedorId"
+          + " and b.idModelo = :idModelo and b.estado = 'EN_REVISION'")
+  Optional<BorradorTecnologiaJpaEntity> buscarEnRevisionConBloqueo(
+      @Param("proveedorId") UUID proveedorId, @Param("idModelo") String idModelo);
 
   List<BorradorTecnologiaJpaEntity> findByProveedorIdAndIdModeloAndEstadoNot(
       UUID proveedorId, String idModelo, String estado);

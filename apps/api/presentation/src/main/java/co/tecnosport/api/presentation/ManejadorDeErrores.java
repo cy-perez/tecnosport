@@ -85,6 +85,8 @@ import co.tecnosport.api.application.proveedores.ProveedorInactivoException;
 import co.tecnosport.api.application.proveedores.ProveedorNoEncontradoException;
 import co.tecnosport.api.application.proveedores.TipoDeExportacionNoAdmitidoException;
 import co.tecnosport.api.application.proveedores.TipoDeFotoNoAdmitidoException;
+import co.tecnosport.api.application.proveedores.tecnologia.ListaDeTecnologiaDesactualizadaException;
+import co.tecnosport.api.application.proveedores.tecnologia.ListaDeTecnologiaYaImportadaException;
 import co.tecnosport.api.application.proveedores.tecnologia.ProveedorSinListasException;
 import co.tecnosport.api.application.reintegro.MontoDeReintegroInvalidoException;
 import co.tecnosport.api.application.reintegro.ReintegroRequeridoException;
@@ -265,6 +267,17 @@ public class ManejadorDeErrores {
   @ExceptionHandler(ProveedorSinListasException.class)
   public ProblemDetail proveedorSinListas(ProveedorSinListasException excepcion) {
     return problema(HttpStatus.CONFLICT, "El proveedor no es de listas de precios", excepcion);
+  }
+
+  // 409 las dos: la lista está bien escrita; lo que choca es el estado, la que ya entró.
+  @ExceptionHandler(ListaDeTecnologiaDesactualizadaException.class)
+  public ProblemDetail listaDesactualizada(ListaDeTecnologiaDesactualizadaException excepcion) {
+    return problema(HttpStatus.CONFLICT, "La lista es más vieja que la última", excepcion);
+  }
+
+  @ExceptionHandler(ListaDeTecnologiaYaImportadaException.class)
+  public ProblemDetail listaYaImportada(ListaDeTecnologiaYaImportadaException excepcion) {
+    return problema(HttpStatus.CONFLICT, "La lista ya entró", excepcion);
   }
 
   // 422 y no 404: la key viene en el cuerpo, y una key que no es de ese proveedor o que no apunta

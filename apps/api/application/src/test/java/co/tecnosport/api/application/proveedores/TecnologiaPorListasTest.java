@@ -14,12 +14,16 @@ import co.tecnosport.api.application.proveedores.ApoyoDeCatalogoParaIngesta.Repo
 import co.tecnosport.api.application.proveedores.ApoyoDeCatalogoParaIngesta.RepositorioProductosEnMemoria;
 import co.tecnosport.api.application.proveedores.ApoyoDeIngesta.RepositorioProveedoresEnMemoria;
 import co.tecnosport.api.application.proveedores.tecnologia.AprobarBorradorTecnologia;
+import co.tecnosport.api.application.proveedores.tecnologia.AprobarBorradorTecnologiaComando;
 import co.tecnosport.api.application.proveedores.tecnologia.EditarBorradorTecnologia;
 import co.tecnosport.api.application.proveedores.tecnologia.ImportarListaDeTecnologia;
 import co.tecnosport.api.application.proveedores.tecnologia.ImportarListaDeTecnologiaComando;
+import co.tecnosport.api.application.proveedores.tecnologia.ListaDeTecnologiaDesactualizadaException;
+import co.tecnosport.api.application.proveedores.tecnologia.ListaDeTecnologiaYaImportadaException;
 import co.tecnosport.api.application.proveedores.tecnologia.ProveedorSinListasException;
 import co.tecnosport.api.application.proveedores.tecnologia.RechazarBorradorTecnologia;
 import co.tecnosport.api.application.proveedores.tecnologia.RepositorioBorradoresTecnologia;
+import co.tecnosport.api.application.proveedores.tecnologia.RepositorioListasDeTecnologia;
 import co.tecnosport.api.application.proveedores.tecnologia.RepositorioVariantesDeProveedor;
 import co.tecnosport.api.domain.catalogo.Atributo;
 import co.tecnosport.api.domain.catalogo.EstadoDisponibilidad;
@@ -71,6 +75,7 @@ class TecnologiaPorListasTest {
   private final RepositorioAtributosFijo atributos = new RepositorioAtributosFijo();
   private final BorradoresEnMemoria borradores = new BorradoresEnMemoria();
   private final VinculosEnMemoria vinculos = new VinculosEnMemoria();
+  private final ListasEnMemoria listas = new ListasEnMemoria();
   private final RelojFalso reloj = new RelojFalso(AHORA);
 
   private Proveedor proveedor;
@@ -112,7 +117,20 @@ class TecnologiaPorListasTest {
         sim,
         Dinero.deCop(costo),
         Dinero.deCop(849_900),
-        List.of("Negro"));
+        List.of());
+  }
+
+  private static ConfiguracionTecnologia conColores(
+      String sku, long costo, String sim, String... colores) {
+    return ConfiguracionTecnologia.deLista(
+        sku,
+        "Samsung Galaxy A17 5G 8GB RAM 256GB " + sim,
+        "8GB",
+        "256GB",
+        sim,
+        Dinero.deCop(costo),
+        Dinero.deCop(849_900),
+        List.of(colores));
   }
 
   private static final String UNA_SIM = "a17-256-1-sim";
@@ -139,6 +157,7 @@ class TecnologiaPorListasTest {
             borradores,
             vinculos,
             inventario,
+            listas,
             reloj,
             EXISTENCIA)
         .ejecutar(comando);
@@ -156,13 +175,14 @@ class TecnologiaPorListasTest {
             new AgregarVariante(productos, atributos, inventario, reloj, false),
             EXISTENCIA)
         .ejecutar(
-            borradorId,
-            ApoyoDeCatalogoParaIngesta.MARCA.id(),
-            ApoyoDeCatalogoParaIngesta.BOLSOS_DE_MANO.id());
+            new AprobarBorradorTecnologiaComando(
+                borradorId,
+                ApoyoDeCatalogoParaIngesta.MARCA.id(),
+                ApoyoDeCatalogoParaIngesta.BOLSOS_DE_MANO.id()));
   }
 
   private BorradorTecnologia enRevision() {
-    return borradores.buscarEnRevision(proveedor.id(), A17.idModelo()).orElseThrow();
+    return borradores.buscarEnRevisionParaActualizar(proveedor.id(), A17.idModelo()).orElseThrow();
   }
 
   /** Importa el A17 con la de una SIM y la dual, y aprueba la de una SIM en negro y gris. */
@@ -260,7 +280,7 @@ class TecnologiaPorListasTest {
 
     assertEquals(0, resultado.borradoresNuevos());
     assertEquals(List.of("Samsung Galaxy A17 5G"), resultado.modelosYaDecididos());
-    assertTrue(borradores.buscarEnRevision(proveedor.id(), A17.idModelo()).isEmpty());
+    assertTrue(borradores.buscarEnRevisionParaActualizar(proveedor.id(), A17.idModelo()).isEmpty());
   }
 
   // --- Un modelo que ya se vende ------------------------------------------------------------
@@ -382,7 +402,102 @@ class TecnologiaPorListasTest {
                     deBolsos.id(), LUNES, List.of(), List.of(), List.of())));
   }
 
+  // --- Lo que la lista no puede hacer dos veces ----------------------------------------------
+
+  @Test
+  void laMismaListaDosVecesNoReponeLoVendidoEntreLasDos() {
+    Producto producto = unA17QueYaSeVende();
+    Variante negra = producto.variantes().getFirst();
+    ImportarListaDeTecnologiaComando jueves =
+        lista(JUEVES, List.of(config(UNA_SIM, 660_000, "1 SIM")), List.of(), List.of());
+    importar(jueves);
+    Inventario libro = inventario.porVariante.get(negra.id());
+    libro.reservar(2, null, AHORA); // se vendieron las dos
+    inventario.guardar(libro);
+
+    assertThrows(ListaDeTecnologiaYaImportadaException.class, () -> importar(jueves));
+    assertEquals(0, disponible(negra.id()));
+  }
+
+  @Test
+  void unaListaMasViejaQueLaUltimaNoEntra() {
+    Producto producto = unA17QueYaSeVende();
+    importar(lista(JUEVES, List.of(), List.of(UNA_SIM), List.of()));
+    Variante negra = producto.variantes().getFirst();
+
+    assertThrows(
+        ListaDeTecnologiaDesactualizadaException.class,
+        () ->
+            importar(
+                lista(
+                    LUNES.plusDays(1),
+                    List.of(config(UNA_SIM, 660_000, "1 SIM")),
+                    List.of(),
+                    List.of())));
+    assertEquals(0, disponible(negra.id()), "lo retirado el jueves sigue retirado");
+  }
+
+  @Test
+  void unaListaCorregidaElMismoDiaSiEntra() {
+    unA17QueYaSeVende();
+    importar(lista(JUEVES, List.of(config(UNA_SIM, 660_000, "1 SIM")), List.of(), List.of()));
+
+    importar(lista(JUEVES, List.of(config(UNA_SIM, 650_000, "1 SIM")), List.of(), List.of()));
+
+    assertEquals(Dinero.deCop(650_000), vinculos.porVariante.values().iterator().next().costo());
+  }
+
+  // --- Los colores de hoy -------------------------------------------------------------------
+
+  @Test
+  void cuandoLaListaDiceColoresSoloSeReponenEsos() {
+    Producto producto = unA17QueYaSeVende();
+    Variante negra = variante(producto, "Negro");
+    Variante gris = variante(producto, "Gris");
+
+    ImportarListaDeTecnologia.Resultado resultado =
+        importar(
+            lista(
+                JUEVES,
+                List.of(conColores(UNA_SIM, 660_000, "1 SIM", "Negro", "Azul")),
+                List.of(),
+                List.of()));
+
+    assertEquals(EXISTENCIA, disponible(negra.id()));
+    assertEquals(0, disponible(gris.id()), "hoy no trae gris: no se ofrece");
+    assertEquals(
+        List.of("Samsung Galaxy A17 5G 8GB RAM 256GB 1 SIM · Azul"),
+        resultado.coloresSinVariante());
+  }
+
+  private static Variante variante(Producto producto, String color) {
+    return producto.variantes().stream()
+        .filter(v -> color.equals(valor(v, "Color")))
+        .findFirst()
+        .orElseThrow();
+  }
+
   // --- Dobles -------------------------------------------------------------------------------
+
+  static final class ListasEnMemoria implements RepositorioListasDeTecnologia {
+    final Map<String, LocalDate> porHuella = new LinkedHashMap<>();
+
+    @Override
+    public Optional<LocalDate> fechaDeLaUltima(UUID proveedorId) {
+      return porHuella.values().stream().max(LocalDate::compareTo);
+    }
+
+    @Override
+    public boolean yaEntro(UUID proveedorId, String huella) {
+      return porHuella.containsKey(huella);
+    }
+
+    @Override
+    public void registrar(
+        UUID proveedorId, LocalDate fechaLista, String huella, Instant importadaEn) {
+      porHuella.put(huella, fechaLista);
+    }
+  }
 
   static final class BorradoresEnMemoria implements RepositorioBorradoresTecnologia {
     final Map<UUID, BorradorTecnologia> porId = new LinkedHashMap<>();
@@ -408,7 +523,8 @@ class TecnologiaPorListasTest {
     }
 
     @Override
-    public Optional<BorradorTecnologia> buscarEnRevision(UUID proveedorId, String idModelo) {
+    public Optional<BorradorTecnologia> buscarEnRevisionParaActualizar(
+        UUID proveedorId, String idModelo) {
       return delModelo(proveedorId, idModelo).stream()
           .filter(b -> b.estado() == EstadoBorrador.EN_REVISION)
           .findFirst();

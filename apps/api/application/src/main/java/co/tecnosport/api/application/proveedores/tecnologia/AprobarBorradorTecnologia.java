@@ -89,12 +89,12 @@ public final class AprobarBorradorTecnologia {
     this.existenciaPorVariante = existenciaPorVariante;
   }
 
-  /**
-   * @param marcaId y {@code categoriaId}: los del catálogo, que elige quien aprueba con las que
-   *     sugiere la skill a la vista. Solo cuentan para un modelo nuevo; un producto que ya existe
-   *     conserva las suyas
-   */
-  public Producto ejecutar(UUID borradorId, UUID marcaId, UUID categoriaId) {
+  /** Devuelve el producto que nació, o el que ya existía con sus variantes nuevas. */
+  public Producto ejecutar(AprobarBorradorTecnologiaComando comando) {
+    Objects.requireNonNull(comando, "El comando no puede ser nulo.");
+    UUID borradorId = comando.borradorId();
+    UUID marcaId = comando.marcaId();
+    UUID categoriaId = comando.categoriaId();
     BorradorTecnologia borrador =
         repositorioBorradores
             .buscarPorIdParaActualizar(borradorId)
@@ -104,6 +104,12 @@ public final class AprobarBorradorTecnologia {
     }
     // Antes de tocar el catálogo: lo que impide aprobar se sabe sin crear nada.
     borrador.exigirAprobable();
+    // Un 422 que lo dice y no un 500: el cuerpo los trae opcionales a propósito, porque un
+    // borrador de configuraciones nuevas no los usa.
+    if (borrador.productoId().isEmpty() && (marcaId == null || categoriaId == null)) {
+      throw new ExcepcionDeDominio(
+          "Un modelo nuevo necesita la marca y la categoría del catálogo para aprobarse.");
+    }
     Atributos atributos = atributos();
 
     Producto producto =
@@ -148,8 +154,6 @@ public final class AprobarBorradorTecnologia {
   }
 
   private Producto crearProducto(BorradorTecnologia borrador, UUID marcaId, UUID categoriaId) {
-    Objects.requireNonNull(marcaId, "Un modelo nuevo necesita la marca del catálogo.");
-    Objects.requireNonNull(categoriaId, "Un modelo nuevo necesita la categoría del catálogo.");
     Marca marca =
         repositorioMarcas
             .buscarPorId(marcaId)

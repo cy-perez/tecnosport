@@ -55,8 +55,11 @@ create table borrador_tecnologia_configuracion (
     colores_sugeridos text,
     colores_elegidos text,
     precio_venta numeric(14,2),
-    primary key (borrador_id, orden),
-    constraint ux_borrador_tecnologia_configuracion_sku unique (borrador_id, sku)
+    -- Sin un unico por (borrador_id, sku), y a proposito: Hibernate reescribe esta coleccion por
+    -- posicion (`@OrderColumn`), y cuando una lista quita una configuracion del medio escribe un sku
+    -- en una posicion mientras sigue en otra. Un unico no diferible tumbaba la importacion entera.
+    -- Que no se repita lo sostiene el agregado (`BorradorTecnologia.configuracionesValidas`).
+    primary key (borrador_id, orden)
 );
 
 -- De que configuracion de la lista sale cada variante, y su costo de hoy. El costo no es el
@@ -74,6 +77,20 @@ create table variante_de_proveedor (
 create index ix_variante_de_proveedor_configuracion
     on variante_de_proveedor (proveedor_id, configuracion);
 create index ix_variante_de_proveedor_producto on variante_de_proveedor (producto_id);
+
+-- Las listas que ya entraron. Repetir la misma volvia a reponer lo vendido entre las dos, y una
+-- mas vieja deshacia la de hoy: `ImportarListaDeTecnologia` mira aqui antes de mover nada. La
+-- huella es el SHA-256 del contenido, asi que una lista corregida el mismo dia si entra.
+create table lista_tecnologia_importada (
+    proveedor_id uuid not null references proveedor (id) on delete cascade,
+    huella varchar(64) not null,
+    fecha_lista date not null,
+    importada_en timestamptz not null,
+    primary key (proveedor_id, huella)
+);
+
+create index ix_lista_tecnologia_importada_fecha
+    on lista_tecnologia_importada (proveedor_id, fecha_lista desc);
 
 -- Los ejes de una variante de tecnologia, ademas del Color de V72. `AprobarBorradorTecnologia`
 -- los busca por nombre sin distinguir mayusculas. Mismo criterio que V72: dato que toda

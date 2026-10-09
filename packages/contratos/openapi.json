@@ -1809,6 +1809,12 @@
             "format" : "int32",
             "type" : "integer"
           },
+          "coloresSinVariante" : {
+            "items" : {
+              "type" : "string"
+            },
+            "type" : "array"
+          },
           "modelosAgotados" : {
             "format" : "int32",
             "type" : "integer"

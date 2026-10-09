@@ -12,7 +12,8 @@ public record ImportacionTecnologiaRespuesta(
     int borradoresNuevos,
     int borradoresActualizados,
     List<String> modelosYaDecididos,
-    List<String> sinMargen) {
+    List<String> sinMargen,
+    List<String> coloresSinVariante) {
 
   public static ImportacionTecnologiaRespuesta de(ImportarListaDeTecnologia.Resultado r) {
     return new ImportacionTecnologiaRespuesta(
@@ -23,6 +24,7 @@ public record ImportacionTecnologiaRespuesta(
         r.borradoresNuevos(),
         r.borradoresActualizados(),
         r.modelosYaDecididos(),
-        r.sinMargen());
+        r.sinMargen(),
+        r.coloresSinVariante());
   }
 }

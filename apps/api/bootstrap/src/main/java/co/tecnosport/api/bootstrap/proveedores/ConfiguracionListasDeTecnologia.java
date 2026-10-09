@@ -15,6 +15,7 @@ import co.tecnosport.api.application.proveedores.tecnologia.ImportarListaDeTecno
 import co.tecnosport.api.application.proveedores.tecnologia.ListarBorradoresTecnologia;
 import co.tecnosport.api.application.proveedores.tecnologia.RechazarBorradorTecnologia;
 import co.tecnosport.api.application.proveedores.tecnologia.RepositorioBorradoresTecnologia;
+import co.tecnosport.api.application.proveedores.tecnologia.RepositorioListasDeTecnologia;
 import co.tecnosport.api.application.proveedores.tecnologia.RepositorioVariantesDeProveedor;
 import co.tecnosport.api.application.proveedores.tecnologia.VerBorradorTecnologia;
 import org.springframework.context.annotation.Bean;
@@ -32,6 +33,7 @@ public class ConfiguracionListasDeTecnologia {
       RepositorioBorradoresTecnologia borradores,
       RepositorioVariantesDeProveedor variantes,
       RepositorioInventario inventario,
+      RepositorioListasDeTecnologia listas,
       Reloj reloj,
       PropiedadesProveedores propiedades) {
     return new ImportarListaDeTecnologia(
@@ -41,6 +43,7 @@ public class ConfiguracionListasDeTecnologia {
         borradores,
         variantes,
         inventario,
+        listas,
         reloj,
         propiedades.tecnologia().existenciaPorVariante());
   }

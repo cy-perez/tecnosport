@@ -29,6 +29,7 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
@@ -56,6 +57,7 @@ class RepositoriosDeTecnologiaJpaTest {
   @Autowired private RepositorioProveedoresJpa proveedores;
   @Autowired private RepositorioBorradoresTecnologiaJpa borradores;
   @Autowired private RepositorioVariantesDeProveedorJpa vinculos;
+  @Autowired private RepositorioListasDeTecnologiaJpa listas;
   @Autowired private RepositorioProductosJpa productos;
   @Autowired private MarcaJpaRepository marcas;
   @Autowired private CategoriaJpaRepository categorias;
@@ -158,7 +160,10 @@ class RepositoriosDeTecnologiaJpaTest {
 
     assertEquals(
         abierto.id(),
-        borradores.buscarEnRevision(proveedor.id(), "samsung-galaxy-a17-5g").orElseThrow().id());
+        borradores
+            .buscarEnRevisionParaActualizar(proveedor.id(), "samsung-galaxy-a17-5g")
+            .orElseThrow()
+            .id());
     assertEquals(
         List.of(rechazado.id()),
         borradores.listarResueltos(proveedor.id(), "samsung-galaxy-a17-5g").stream()
@@ -233,6 +238,60 @@ class RepositoriosDeTecnologiaJpaTest {
     assertEquals(1, delProducto.size(), "guardar otra vez reemplaza, no duplica");
     assertEquals(Dinero.deCop(660_000), delProducto.getFirst().costo());
     assertEquals("Negro", delProducto.getFirst().color());
+  }
+
+  /**
+   * Una lista que quita una configuración del medio: Hibernate reescribe la colección por posición,
+   * y con un único por sku la escritura de B en la posición 0 chocaba con B en la 1. Lo levantó la
+   * revisión de arquitectura; esta prueba fallaba con el índice puesto.
+   */
+  @Test
+  void unaListaQueQuitaUnaConfiguracionDelMedioSeGuarda() {
+    Proveedor proveedor = proveedor();
+    BorradorTecnologia borrador =
+        BorradorTecnologia.nuevo(
+            proveedor.id(),
+            a17(),
+            List.of(
+                config("a17-a", "1 SIM", null),
+                config("a17-b", "Dual SIM", null),
+                config("a17-c", "eSIM", null)),
+            null,
+            LUNES,
+            LUNES);
+    borradores.guardar(borrador);
+    em.flush();
+    em.clear();
+
+    BorradorTecnologia leido = borradores.buscarPorIdParaActualizar(borrador.id()).orElseThrow();
+    leido.actualizarConLista(
+        a17(),
+        List.of(config("a17-b", "Dual SIM", null), config("a17-c", "eSIM", null)),
+        LUNES.plusSeconds(86_400));
+    borradores.actualizar(leido);
+    em.flush();
+    em.clear();
+
+    assertEquals(
+        List.of("a17-b", "a17-c"),
+        borradores.buscarPorId(borrador.id()).orElseThrow().configuraciones().stream()
+            .map(ConfiguracionTecnologia::sku)
+            .toList());
+  }
+
+  @Test
+  void lasListasImportadasSeRecuerdanPorContenidoYPorFecha() {
+    Proveedor proveedor = proveedor();
+    assertTrue(listas.fechaDeLaUltima(proveedor.id()).isEmpty());
+
+    listas.registrar(proveedor.id(), LocalDate.parse("2026-10-05"), "a".repeat(64), LUNES);
+    listas.registrar(proveedor.id(), LocalDate.parse("2026-10-08"), "b".repeat(64), LUNES);
+    em.flush();
+
+    assertEquals(
+        LocalDate.parse("2026-10-08"), listas.fechaDeLaUltima(proveedor.id()).orElseThrow());
+    assertTrue(listas.yaEntro(proveedor.id(), "a".repeat(64)));
+    assertTrue(!listas.yaEntro(proveedor.id(), "c".repeat(64)));
   }
 
   @Test

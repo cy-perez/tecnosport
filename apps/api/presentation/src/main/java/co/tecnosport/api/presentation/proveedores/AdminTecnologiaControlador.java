@@ -1,6 +1,7 @@
 package co.tecnosport.api.presentation.proveedores;
 
 import co.tecnosport.api.application.proveedores.tecnologia.AprobarBorradorTecnologia;
+import co.tecnosport.api.application.proveedores.tecnologia.AprobarBorradorTecnologiaComando;
 import co.tecnosport.api.application.proveedores.tecnologia.EditarBorradorTecnologia;
 import co.tecnosport.api.application.proveedores.tecnologia.ImportarListaDeTecnologia;
 import co.tecnosport.api.application.proveedores.tecnologia.ListarBorradoresTecnologia;
@@ -115,7 +116,10 @@ public class AdminTecnologiaControlador {
       @PathVariable UUID id, @RequestBody AprobarBorradorTecnologiaPeticion cuerpo) {
     Producto producto =
         transaccion.execute(
-            estado -> aprobarBorrador.ejecutar(id, cuerpo.marcaId(), cuerpo.categoriaId()));
+            estado ->
+                aprobarBorrador.ejecutar(
+                    new AprobarBorradorTecnologiaComando(
+                        id, cuerpo.marcaId(), cuerpo.categoriaId())));
     log.info(
         "Borrador de tecnología {} aprobado: producto {} con {} variante(s)",
         id,

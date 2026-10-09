@@ -7,10 +7,10 @@ import co.tecnosport.api.application.proveedores.ProveedorInactivoException;
 import co.tecnosport.api.application.proveedores.ProveedorNoEncontradoException;
 import co.tecnosport.api.application.proveedores.RepositorioProductosDeProveedor;
 import co.tecnosport.api.application.proveedores.RepositorioProveedores;
-import co.tecnosport.api.domain.catalogo.LineaCatalogo;
 import co.tecnosport.api.domain.catalogo.Producto;
 import co.tecnosport.api.domain.catalogo.Variante;
 import co.tecnosport.api.domain.compartido.Dinero;
+import co.tecnosport.api.domain.compartido.ZonaDelNegocio;
 import co.tecnosport.api.domain.inventario.Inventario;
 import co.tecnosport.api.domain.proveedores.BorradorTecnologia;
 import co.tecnosport.api.domain.proveedores.ConfiguracionTecnologia;
@@ -18,7 +18,6 @@ import co.tecnosport.api.domain.proveedores.HuellaProveedor;
 import co.tecnosport.api.domain.proveedores.Proveedor;
 import co.tecnosport.api.domain.proveedores.VarianteDeProveedor;
 import java.time.Instant;
-import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -61,14 +60,13 @@ import java.util.UUID;
  */
 public final class ImportarListaDeTecnologia {
 
-  private static final ZoneId ZONA_COLOMBIA = ZoneId.of("America/Bogota");
-
   private final RepositorioProveedores repositorioProveedores;
   private final RepositorioProductosDeProveedor productosDeProveedor;
   private final RepositorioProductos repositorioProductos;
   private final RepositorioBorradoresTecnologia repositorioBorradores;
   private final RepositorioVariantesDeProveedor variantesDeProveedor;
   private final RepositorioInventario repositorioInventario;
+  private final RepositorioListasDeTecnologia listas;
   private final Reloj reloj;
   private final int existenciaPorVariante;
 
@@ -79,6 +77,7 @@ public final class ImportarListaDeTecnologia {
       RepositorioBorradoresTecnologia repositorioBorradores,
       RepositorioVariantesDeProveedor variantesDeProveedor,
       RepositorioInventario repositorioInventario,
+      RepositorioListasDeTecnologia listas,
       Reloj reloj,
       int existenciaPorVariante) {
     this.repositorioProveedores = Objects.requireNonNull(repositorioProveedores);
@@ -87,6 +86,7 @@ public final class ImportarListaDeTecnologia {
     this.repositorioBorradores = Objects.requireNonNull(repositorioBorradores);
     this.variantesDeProveedor = Objects.requireNonNull(variantesDeProveedor);
     this.repositorioInventario = Objects.requireNonNull(repositorioInventario);
+    this.listas = Objects.requireNonNull(listas);
     this.reloj = Objects.requireNonNull(reloj);
     if (existenciaPorVariante < 1) {
       throw new IllegalArgumentException("La existencia por variante es por lo menos 1.");
@@ -103,10 +103,21 @@ public final class ImportarListaDeTecnologia {
     if (!proveedor.activo()) {
       throw new ProveedorInactivoException(proveedor.nombre());
     }
-    if (proveedor.linea() != LineaCatalogo.TECNOLOGIA) {
+    if (!proveedor.entraPorLista()) {
       throw new ProveedorSinListasException(proveedor.nombre());
     }
-    Instant visto = comando.fechaLista().atStartOfDay(ZONA_COLOMBIA).toInstant();
+    // Antes de tocar nada. Una lista vieja deshace la de hoy —repone lo que hoy está retirado y
+    // retira lo que hoy está repuesto—, y la misma lista dos veces repone lo que se vendió entre
+    // las dos. Las dos cosas mueven inventario sin que el proveedor haya dicho nada nuevo.
+    String huellaDeLista = comando.huella();
+    var ultima = listas.fechaDeLaUltima(proveedor.id());
+    if (ultima.isPresent() && comando.fechaLista().isBefore(ultima.get())) {
+      throw new ListaDeTecnologiaDesactualizadaException(comando.fechaLista(), ultima.get());
+    }
+    if (listas.yaEntro(proveedor.id(), huellaDeLista)) {
+      throw new ListaDeTecnologiaYaImportadaException(comando.fechaLista());
+    }
+    Instant visto = comando.fechaLista().atStartOfDay(ZonaDelNegocio.ZONA).toInstant();
     Instant ahora = reloj.ahora();
     String motivo = "Lista del proveedor del " + comando.fechaLista();
     Contador cuenta = new Contador();
@@ -145,10 +156,16 @@ public final class ImportarListaDeTecnologia {
           }
           for (VarianteDeProveedor v : variantes) {
             variantesDeProveedor.guardar(v.conCosto(c.costoProveedor(), visto));
-            objetivos.put(v.varianteId(), existenciaPorVariante);
+            objetivos.put(v.varianteId(), hoyLoTiene(c, v.color()) ? existenciaPorVariante : 0);
             Dinero precio = precioPorVariante.get(v.varianteId());
             if (precio != null && precio.valor().compareTo(c.costoProveedor().valor()) <= 0) {
               cuenta.sinMargen.add(c.titulo() + " · " + v.color());
+            }
+          }
+          for (String color : c.coloresSugeridos()) {
+            if (variantes.stream()
+                .noneMatch(v -> ConfiguracionTecnologia.mismoColor(v.color(), color))) {
+              cuenta.coloresSinVariante.add(c.titulo() + " · " + color);
             }
           }
         }
@@ -180,6 +197,8 @@ public final class ImportarListaDeTecnologia {
               });
     }
 
+    listas.registrar(proveedor.id(), comando.fechaLista(), huellaDeLista, ahora);
+
     for (Map.Entry<UUID, Integer> objetivo : objetivos.entrySet()) {
       Inventario libro = repositorioInventario.abrirLibroConBloqueo(objetivo.getKey());
       int diferencia = objetivo.getValue() - libro.saldoDisponible(ahora);
@@ -208,7 +227,19 @@ public final class ImportarListaDeTecnologia {
         cuenta.borradoresNuevos,
         cuenta.borradoresActualizados,
         cuenta.yaDecididos,
-        cuenta.sinMargen);
+        cuenta.sinMargen,
+        cuenta.coloresSinVariante);
+  }
+
+  /**
+   * Si la lista de hoy dice tener ese color de la configuración. Cuando la lista no dice colores
+   * —sin emojis— vale para todos: no hay con qué retirar uno. Cuando sí los dice, el que no viene
+   * se queda sin existencia libre, porque los términos prometen que llega el color que se elige.
+   */
+  private static boolean hoyLoTiene(ConfiguracionTecnologia hoy, String color) {
+    return hoy.coloresSugeridos().isEmpty()
+        || hoy.coloresSugeridos().stream()
+            .anyMatch(c -> ConfiguracionTecnologia.mismoColor(c, color));
   }
 
   private void proponer(
@@ -220,7 +251,8 @@ public final class ImportarListaDeTecnologia {
       Instant ahora,
       Contador cuenta) {
     Optional<BorradorTecnologia> enRevision =
-        repositorioBorradores.buscarEnRevision(proveedor.id(), entrada.modelo().idModelo());
+        repositorioBorradores.buscarEnRevisionParaActualizar(
+            proveedor.id(), entrada.modelo().idModelo());
     if (enRevision.isPresent()) {
       BorradorTecnologia borrador = enRevision.get();
       borrador.actualizarConLista(entrada.modelo(), configuraciones, visto);
@@ -273,6 +305,7 @@ public final class ImportarListaDeTecnologia {
     int borradoresActualizados;
     final List<String> yaDecididos = new ArrayList<>();
     final List<String> sinMargen = new ArrayList<>();
+    final List<String> coloresSinVariante = new ArrayList<>();
   }
 
   /**
@@ -286,6 +319,8 @@ public final class ImportarListaDeTecnologia {
    *     los rechazó
    * @param sinMargen configuración y color que ahora cuestan lo mismo o más que su precio de venta:
    *     la lista no mueve el precio, así que alguien tiene que mirarlo
+   * @param coloresSinVariante colores que la lista trae de una configuración que ya se vende y que
+   *     el producto no tiene: no se proponen solos, se añaden desde el panel del producto
    */
   public record Resultado(
       int productosRenovados,
@@ -295,10 +330,12 @@ public final class ImportarListaDeTecnologia {
       int borradoresNuevos,
       int borradoresActualizados,
       List<String> modelosYaDecididos,
-      List<String> sinMargen) {
+      List<String> sinMargen,
+      List<String> coloresSinVariante) {
     public Resultado {
       modelosYaDecididos = List.copyOf(modelosYaDecididos);
       sinMargen = List.copyOf(sinMargen);
+      coloresSinVariante = List.copyOf(coloresSinVariante);
     }
   }
 }

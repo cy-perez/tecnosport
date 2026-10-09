@@ -2514,6 +2514,7 @@ export interface components {
             borradoresActualizados?: number;
             /** Format: int32 */
             borradoresNuevos?: number;
+            coloresSinVariante?: string[];
             /** Format: int32 */
             modelosAgotados?: number;
             modelosYaDecididos?: string[];

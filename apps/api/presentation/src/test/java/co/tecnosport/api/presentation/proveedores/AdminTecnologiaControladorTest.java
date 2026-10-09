@@ -23,6 +23,7 @@ import co.tecnosport.api.application.proveedores.tecnologia.ImportarListaDeTecno
 import co.tecnosport.api.application.proveedores.tecnologia.ListarBorradoresTecnologia;
 import co.tecnosport.api.application.proveedores.tecnologia.RechazarBorradorTecnologia;
 import co.tecnosport.api.application.proveedores.tecnologia.RepositorioBorradoresTecnologia;
+import co.tecnosport.api.application.proveedores.tecnologia.RepositorioListasDeTecnologia;
 import co.tecnosport.api.application.proveedores.tecnologia.RepositorioVariantesDeProveedor;
 import co.tecnosport.api.application.proveedores.tecnologia.VerBorradorTecnologia;
 import co.tecnosport.api.domain.catalogo.LineaCatalogo;
@@ -106,10 +107,13 @@ class AdminTecnologiaControladorTest {
       }
       """;
 
+  @Autowired private ListasDoble listas;
+
   @BeforeEach
   void unProveedorDeTecnologia() {
     proveedores.porId.clear();
     borradores.porId.clear();
+    listas.porHuella.clear();
     tecnologia =
         Proveedor.crear(
             "Tecnología Medellín",
@@ -250,6 +254,40 @@ class AdminTecnologiaControladorTest {
         .andExpect(status().isUnprocessableContent());
   }
 
+  /** El cuerpo trae marca y categoría opcionales: sin ellas, un modelo nuevo es 422 y no un 500. */
+  @Test
+  void aprobarUnModeloNuevoSinMarcaNiCategoriaEs422() throws Exception {
+    UUID id = importarYTomarElBorrador();
+    mockMvc
+        .perform(
+            patch("/api/v1/admin/borradores-tecnologia/{id}", id)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    "{\"configuraciones\": [{\"sku\": \"a17-1-sim\", \"colores\": [\"Negro\"],"
+                        + " \"precioVenta\": 829900}]}"))
+        .andExpect(status().isOk());
+
+    mockMvc
+        .perform(
+            post("/api/v1/admin/borradores-tecnologia/{id}/aprobar", id)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{}"))
+        .andExpect(status().isUnprocessableContent());
+  }
+
+  @Test
+  void laMismaListaDosVecesEs409() throws Exception {
+    importarYTomarElBorrador();
+
+    mockMvc
+        .perform(
+            post("/api/v1/admin/proveedores/{id}/listas-tecnologia", tecnologia.id())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(LISTA))
+        .andExpect(status().isConflict())
+        .andExpect(jsonPath("$.codigo").value("LISTA_DE_TECNOLOGIA_YA_IMPORTADA"));
+  }
+
   @Test
   void unBorradorQueNoExisteEs404() throws Exception {
     mockMvc
@@ -338,7 +376,8 @@ class AdminTecnologiaControladorTest {
     }
 
     @Override
-    public Optional<BorradorTecnologia> buscarEnRevision(UUID proveedorId, String idModelo) {
+    public Optional<BorradorTecnologia> buscarEnRevisionParaActualizar(
+        UUID proveedorId, String idModelo) {
       return porId.values().stream()
           .filter(b -> b.proveedorId().equals(proveedorId))
           .filter(b -> b.modelo().idModelo().equals(idModelo))
@@ -361,6 +400,26 @@ class AdminTecnologiaControladorTest {
           .filter(b -> b.estado() == estado)
           .sorted(Comparator.comparing(BorradorTecnologia::creadoEn).reversed())
           .toList();
+    }
+  }
+
+  static final class ListasDoble implements RepositorioListasDeTecnologia {
+    final Map<String, java.time.LocalDate> porHuella = new LinkedHashMap<>();
+
+    @Override
+    public Optional<java.time.LocalDate> fechaDeLaUltima(UUID proveedorId) {
+      return porHuella.values().stream().max(java.time.LocalDate::compareTo);
+    }
+
+    @Override
+    public boolean yaEntro(UUID proveedorId, String huella) {
+      return porHuella.containsKey(huella);
+    }
+
+    @Override
+    public void registrar(
+        UUID proveedorId, java.time.LocalDate fechaLista, String huella, Instant importadaEn) {
+      porHuella.put(huella, fechaLista);
     }
   }
 
@@ -391,8 +450,13 @@ class AdminTecnologiaControladorTest {
     }
 
     @Bean
+    ListasDoble listas() {
+      return new ListasDoble();
+    }
+
+    @Bean
     ImportarListaDeTecnologia importarListaDeTecnologia(
-        ProveedoresDoble proveedores, BorradoresDoble borradores) {
+        ProveedoresDoble proveedores, BorradoresDoble borradores, ListasDoble listas) {
       Reloj reloj = () -> Instant.parse("2026-10-08T15:00:00Z");
       return new ImportarListaDeTecnologia(
           proveedores,
@@ -401,6 +465,7 @@ class AdminTecnologiaControladorTest {
           borradores,
           noUsado(RepositorioVariantesDeProveedor.class),
           noUsado(RepositorioInventario.class),
+          listas,
           reloj,
           2);
     }

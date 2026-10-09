@@ -21,8 +21,12 @@ public interface RepositorioBorradoresTecnologia {
    */
   Optional<BorradorTecnologia> buscarPorIdParaActualizar(UUID id);
 
-  /** El que está en revisión para ese modelo de ese proveedor. Hay uno como mucho. */
-  Optional<BorradorTecnologia> buscarEnRevision(UUID proveedorId, String idModelo);
+  /**
+   * El que está en revisión para ese modelo de ese proveedor, hay uno como mucho, **con bloqueo**:
+   * la importación lo reescribe entero, y sin bloqueo pisaba una aprobación o una elección que el
+   * panel guardaba a la vez.
+   */
+  Optional<BorradorTecnologia> buscarEnRevisionParaActualizar(UUID proveedorId, String idModelo);
 
   /** Los aprobados y los rechazados de ese modelo: lo que una persona ya decidió. */
   List<BorradorTecnologia> listarResueltos(UUID proveedorId, String idModelo);

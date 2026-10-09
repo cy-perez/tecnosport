@@ -2,8 +2,8 @@ package co.tecnosport.api.application.proveedores;
 
 import co.tecnosport.api.application.catalogo.RepositorioProductos;
 import co.tecnosport.api.application.compartido.Reloj;
-import co.tecnosport.api.domain.catalogo.LineaCatalogo;
 import co.tecnosport.api.domain.catalogo.Producto;
+import co.tecnosport.api.domain.proveedores.Proveedor;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.HashMap;
@@ -78,7 +78,7 @@ public final class ExpirarDisponibilidadDeProductos {
               id ->
                   repositorioProveedores
                       .buscarPorId(id)
-                      .map(p -> p.linea() == LineaCatalogo.TECNOLOGIA)
+                      .map(Proveedor::entraPorLista)
                       .orElse(false));
       Instant suLimite = tecnologia ? limiteTecnologia : limite;
       if (!producto.vistoPorUltimaVez().orElseThrow().isBefore(suLimite)) {
