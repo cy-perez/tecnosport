@@ -2,6 +2,7 @@ import { InjectionToken } from '@angular/core';
 import {
   AgregarVarianteAdmin,
   AgregarColorDesdeLaPrincipalAdmin,
+  CambiarTallaAdmin,
   AsignarColorAImagenAdmin,
   UsarImagenComoPrincipalAdmin,
   CrearProductoAdmin,
@@ -87,6 +88,12 @@ export interface RepositorioProductosAdmin {
 
   /** Empieza a vender el producto en el color de la principal, y la marca con él. */
   agregarColorDesdeLaPrincipal(comando: AgregarColorDesdeLaPrincipalAdmin): Promise<void>;
+
+  /**
+   * Corrige la talla de un modelo en todos sus colores. El servidor rechaza con `TALLA_REPETIDA`
+   * si alguno de esos colores ya la tiene: quedarían dos variantes iguales.
+   */
+  cambiarTalla(comando: CambiarTallaAdmin): Promise<void>;
 
   /** Intercambia la principal con una foto de la galería, sin subir nada. */
   usarImagenComoPrincipal(comando: UsarImagenComoPrincipalAdmin): Promise<void>;

@@ -1303,4 +1303,48 @@ class RepositorioProductosJpaTest {
     assertThat(leida.color().orElseThrow().colorHex()).isEqualTo("#C62828");
     assertThat(leida.atributosSinColor().get(0).valor()).isEqualTo("S-M");
   }
+
+  /** La talla corregida reemplaza la fila de la talla; el color de la variante no se toca. */
+  @Test
+  void reemplazarUnAtributoCambiaSuValorSinTocarLosDemasNiOtrasVariantes() {
+    MarcaJpaEntity marca = marca("TecnoSport");
+    CategoriaJpaEntity categoria = categoria("Conjuntos", "conjuntos-t-talla", "ROPA");
+    ProductoJpaEntity productoJpa =
+        producto("Conjunto t-talla", "conjunto-t-talla", "BORRADOR", marca, categoria);
+    AtributoJpaEntity colorJpa = atributo("Color", "COLOR");
+    AtributoJpaEntity tallaJpa = atributo("Talla", "TEXTO");
+    Atributo color = new Atributo(colorJpa.getId(), "Color", TipoAtributo.COLOR, List.of());
+    Atributo talla = new Atributo(tallaJpa.getId(), "Talla", TipoAtributo.TEXTO, List.of());
+    Variante negraS = varianteConTallaYColor("TS-TALLA-S", color, talla, "S-M");
+    Variante negraL = varianteConTallaYColor("TS-TALLA-L", color, talla, "L-XL");
+    repositorio.agregarVariante(productoJpa.getId(), negraS);
+    repositorio.agregarVariante(productoJpa.getId(), negraL);
+
+    repositorio.reemplazarAtributoDeVariante(negraS.id(), ValorAtributo.de(talla, "M"));
+
+    List<Variante> leidas =
+        repositorio.buscarPorSlug(new Slug("conjunto-t-talla")).orElseThrow().variantes();
+    Variante leidaS = leidas.stream().filter(v -> v.id().equals(negraS.id())).findFirst().get();
+    Variante leidaL = leidas.stream().filter(v -> v.id().equals(negraL.id())).findFirst().get();
+    assertThat(leidaS.atributos()).hasSize(2);
+    // En el orden en que se escribieron, aunque el update haya movido la fila de la talla.
+    assertThat(leidaS.atributos().stream().map(a -> a.atributo().nombre()))
+        .containsExactly("Color", "Talla");
+    assertThat(leidaS.talla().orElseThrow().valor()).isEqualTo("M");
+    assertThat(leidaS.color().orElseThrow().valor()).isEqualTo("Negro");
+    assertThat(leidaS.sku()).isEqualTo(new Sku("TS-TALLA-S"));
+    assertThat(leidaL.talla().orElseThrow().valor()).isEqualTo("L-XL");
+  }
+
+  private static Variante varianteConTallaYColor(
+      String sku, Atributo color, Atributo talla, String valorTalla) {
+    return Variante.crear(
+        new Sku(sku),
+        Dinero.deCop(89_900),
+        BigDecimal.ZERO,
+        null,
+        null,
+        List.of(
+            ValorAtributo.deColor(color, "Negro", "#111111"), ValorAtributo.de(talla, valorTalla)));
+  }
 }

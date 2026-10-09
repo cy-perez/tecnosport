@@ -7,6 +7,7 @@ import { SesionStore } from '../../../../core/autenticacion/sesion.store';
 import {
   AgregarVarianteAdmin,
   AgregarColorDesdeLaPrincipalAdmin,
+  CambiarTallaAdmin,
   AsignarColorAImagenAdmin,
   UsarImagenComoPrincipalAdmin,
   CrearProductoAdmin,
@@ -307,6 +308,14 @@ export class ProductosAdminHttpRepositorio implements RepositorioProductosAdmin 
       },
     );
     exigirExito(respuesta, 'no se pudo agregar el color de la foto principal');
+  }
+
+  async cambiarTalla(comando: CambiarTallaAdmin): Promise<void> {
+    const respuesta = await this.cliente.PUT('/api/v1/admin/productos/{id}/tallas/{modeloId}', {
+      params: { path: { id: comando.productoId, modeloId: comando.modeloId } },
+      body: { talla: comando.talla },
+    });
+    exigirExito(respuesta, 'no se pudo cambiar la talla');
   }
 
   async usarImagenComoPrincipal(comando: UsarImagenComoPrincipalAdmin): Promise<void> {

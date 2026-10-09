@@ -45,6 +45,13 @@ public class VarianteAtributoValorJpaEntity {
     this.muestra = muestra;
   }
 
+  /** El mismo atributo con otro valor: la talla corregida. */
+  public void cambiarValor(String valor, String colorHex, String muestra) {
+    this.valor = valor;
+    this.colorHex = colorHex;
+    this.muestra = muestra;
+  }
+
   public UUID getId() {
     return id;
   }

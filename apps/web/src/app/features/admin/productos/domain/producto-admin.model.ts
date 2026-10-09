@@ -135,6 +135,17 @@ export interface AgregarColorDesdeLaPrincipalAdmin {
   readonly existencias: readonly { readonly modeloId: string; readonly existencia: number }[];
 }
 
+/**
+ * La talla de un modelo, corregida en todos sus colores. El SKU no cambia, y los pedidos tampoco:
+ * cada línea guardó la talla con que se compró.
+ */
+export interface CambiarTallaAdmin {
+  readonly productoId: string;
+  /** Cualquier variante de esa talla: uno de `modelosSinColor`. */
+  readonly modeloId: string;
+  readonly talla: string;
+}
+
 /** La foto de la galería que pasa a ser la principal; la principal anterior ocupa su puesto. */
 export interface UsarImagenComoPrincipalAdmin {
   readonly productoId: string;

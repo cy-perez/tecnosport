@@ -117,6 +117,26 @@ describe('FormularioProveedorAdminPage', () => {
     });
   });
 
+  /** Faltaba: el extractor ya reconocía el calzado, pero no había cómo registrar a quien lo surte. */
+  it('ofrece el calzado deportivo como línea y lo manda como CALZADO', async () => {
+    const { repositorio, fixture } = await renderPagina();
+    vi.spyOn(fixture.debugElement.injector.get(Router), 'navigate').mockResolvedValue(true);
+
+    const linea = (await screen.findByLabelText(f.linea)) as HTMLSelectElement;
+    const etiquetas = Array.from(linea.options).map((opcion) => opcion.textContent?.trim());
+    expect(etiquetas).toContain('Calzado deportivo');
+
+    escribir(f.nombre, 'Tenis Medellín');
+    escribir(f.remitente, 'Tenis Medellín');
+    escribir(f.telefono, '573001234567');
+    fireEvent.change(linea, { target: { value: 'CALZADO' } });
+    fireEvent.change(screen.getByLabelText(f.orden), { target: { value: 'FOTOS_PRIMERO' } });
+    fireEvent.click(screen.getByRole('button', { name: f.crear }));
+
+    await vi.waitFor(() => expect(repositorio.creados).toHaveLength(1));
+    expect(repositorio.creados[0]).toMatchObject({ nombre: 'Tenis Medellín', linea: 'CALZADO' });
+  });
+
   it('las opciones del orden se leen en palabras, no como el valor del enum', async () => {
     await renderPagina();
 

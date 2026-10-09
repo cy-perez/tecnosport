@@ -150,6 +150,10 @@ class RepositorioProductosAdminFalso implements RepositorioProductosAdmin {
   usarImagenComoPrincipal(): Promise<void> {
     throw new Error('no usado por esta prueba');
   }
+
+  cambiarTalla(): Promise<void> {
+    throw new Error('no usado por esta prueba');
+  }
 }
 
 async function renderLista(items: ProductoAdmin[], totalPaginas = 1) {

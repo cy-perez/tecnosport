@@ -64,6 +64,7 @@ import co.tecnosport.api.domain.catalogo.GaleriaLlenaException;
 import co.tecnosport.api.domain.catalogo.ImagenDeGaleriaDuplicadaException;
 import co.tecnosport.api.domain.catalogo.ImagenDeGaleriaNoEncontradaException;
 import co.tecnosport.api.domain.catalogo.ProductoSinImagenPrincipalException;
+import co.tecnosport.api.domain.catalogo.TallaRepetidaException;
 import co.tecnosport.api.domain.compartido.ExcepcionDeDominio;
 import co.tecnosport.api.domain.inventario.ExistenciaInsuficienteException;
 import co.tecnosport.api.domain.pedido.TransicionDeEstadoInvalidaException;
@@ -137,6 +138,7 @@ class CodigosDeCableTest {
           Map.entry(EmisionNoEncontradaException.class, "EMISION_NO_ENCONTRADA"),
           Map.entry(ExcepcionDeDominio.class, "EXCEPCION_DE_DOMINIO"),
           Map.entry(GaleriaLlenaException.class, "GALERIA_LLENA"),
+          Map.entry(TallaRepetidaException.class, "TALLA_REPETIDA"),
           Map.entry(GuiaNoEncontradaException.class, "GUIA_NO_ENCONTRADA"),
           Map.entry(ImagenDeGaleriaDuplicadaException.class, "IMAGEN_DE_GALERIA_DUPLICADA"),
           Map.entry(ImagenDeGaleriaNoEncontradaException.class, "IMAGEN_DE_GALERIA_NO_ENCONTRADA"),

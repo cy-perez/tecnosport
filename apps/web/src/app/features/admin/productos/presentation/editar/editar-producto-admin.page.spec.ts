@@ -30,6 +30,7 @@ import {
   ReordenarGaleriaAdmin,
   AgregarColorDesdeLaPrincipalAdmin,
   AsignarColorAImagenAdmin,
+  CambiarTallaAdmin,
   UsarImagenComoPrincipalAdmin,
   SubirImagenDeGaleriaAdmin,
   SubirImagenPrincipalAdmin,
@@ -42,6 +43,7 @@ import {
 import { REPOSITORIO_DIFUSION } from '../../../difusion/domain/repositorio-difusion.puerto';
 import { esperarSinViolaciones } from '../../../../../../testing/axe';
 import { proveerPaletaDePrueba } from '../../../../../../testing/paleta-colores';
+import { ErrorHttp } from '../../../../../core/http/respuesta-http';
 import { EditarProductoAdminPage } from './editar-producto-admin.page';
 
 const MARCA: Marca = { id: 'm1', nombre: 'TecnoSport' };
@@ -64,6 +66,35 @@ const OTRA_CATEGORIA: Categoria = {
   hashtags: [],
   escalaTallas: [],
 };
+
+/** Una categoría con escala: la talla nueva se elige de la lista, o se escribe con «Otra talla». */
+const CONJUNTOS: Categoria = {
+  id: 'c3',
+  nombre: 'Conjuntos',
+  slug: 'conjuntos',
+  linea: 'ROPA',
+  padreId: null,
+  hashtags: [],
+  escalaTallas: ['S', 'M', 'L'],
+};
+
+/** Un conjunto en dos colores; «S-M» no está en la escala de su categoría. */
+function conjuntoDePrueba(): ProductoAdminDetalle {
+  const atributos = (color: string, hex: string, talla: string) => [
+    { nombre: 'Color', valor: color, colorHex: hex },
+    { nombre: 'Talla', valor: talla, colorHex: null },
+  ];
+  return {
+    ...productoDePrueba(),
+    nombre: 'Conjunto deportivo',
+    categoria: { id: CONJUNTOS.id, nombre: 'Conjuntos', slug: 'conjuntos', linea: 'ROPA' },
+    variantes: [
+      { id: 'n-sm', sku: 'C-N-SM', atributos: atributos('Negro', '#111111', 'S-M') },
+      { id: 'n-l', sku: 'C-N-L', atributos: atributos('Negro', '#111111', 'L') },
+      { id: 'v-sm', sku: 'C-V-SM', atributos: atributos('Vino', '#722F37', 'S-M') },
+    ],
+  };
+}
 
 function productoDePrueba(galeria: readonly ImagenDeGaleriaAdmin[] = []): ProductoAdminDetalle {
   return {
@@ -121,7 +152,7 @@ class RepositorioMarcasFalso implements RepositorioMarcas {
 
 class RepositorioCategoriasFalso implements RepositorioCategorias {
   async listarTodas(): Promise<Categoria[]> {
-    return [CATEGORIA, OTRA_CATEGORIA];
+    return [CATEGORIA, OTRA_CATEGORIA, CONJUNTOS];
   }
 }
 
@@ -273,6 +304,16 @@ class RepositorioProductosAdminFalso implements RepositorioProductosAdmin {
 
   async asignarColorAImagen(comando: AsignarColorAImagenAdmin): Promise<void> {
     this.llamadasAsignarColor.push(comando);
+  }
+
+  tallasCambiadas: CambiarTallaAdmin[] = [];
+  falloAlCambiarTalla: unknown = null;
+
+  async cambiarTalla(comando: CambiarTallaAdmin): Promise<void> {
+    this.tallasCambiadas.push(comando);
+    if (this.falloAlCambiarTalla) {
+      throw this.falloAlCambiarTalla;
+    }
   }
 
   coloresNuevos: AgregarColorDesdeLaPrincipalAdmin[] = [];
@@ -442,6 +483,134 @@ describe('EditarProductoAdminPage', () => {
     expect(repositorio.llamadasEditar[0].comando.tallaSirveHasta).toBe('XL');
     expect(screen.getByText(/PRV-1/)).toBeTruthy();
     expect(screen.getByText(/Negro · Única/)).toBeTruthy();
+  });
+
+  describe('tallas', () => {
+    /**
+     * Una fila por talla y no por variante: «S-M» está en dos colores y se corrige una vez. Como no
+     * está en la escala, la caja abre con «Otra talla» y la talla escrita; elegir una de la escala
+     * cierra el campo.
+     */
+    it('corrige la talla de un modelo eligiéndola de la escala', async () => {
+      const repositorio = new RepositorioProductosAdminFalso(conjuntoDePrueba());
+      const { container } = await renderPagina(repositorio);
+
+      const cambiar = await screen.findByRole('button', { name: 'Cambiar la talla S-M' });
+      expect(screen.getAllByRole('button', { name: /^Cambiar la talla / })).toHaveLength(2);
+      fireEvent.click(cambiar);
+
+      const lista = (await screen.findByLabelText(/^Talla nueva/)) as HTMLSelectElement;
+      await vi.waitFor(() => expect(lista.value).toBe('__otra__'));
+      expect((screen.getByLabelText(/^Escribe la talla/) as HTMLInputElement).value).toBe('S-M');
+      expect(cambiar.getAttribute('aria-expanded')).toBe('true');
+      await esperarSinViolaciones(container);
+
+      fireEvent.change(lista, { target: { value: 'M' } });
+      await vi.waitFor(() => expect(screen.queryByLabelText(/^Escribe la talla/)).toBeNull());
+      fireEvent.click(screen.getByRole('button', { name: 'Guardar talla' }));
+
+      await vi.waitFor(() =>
+        expect(repositorio.tallasCambiadas).toEqual([
+          { productoId: 'p1', modeloId: 'n-sm', talla: 'M' },
+        ]),
+      );
+      expect(await screen.findByText('Talla cambiada a M.')).toBeTruthy();
+      expect(screen.queryByLabelText(/^Talla nueva/)).toBeNull();
+    });
+
+    it('sin escala la talla se escribe, y vacía no se manda: dice qué falta', async () => {
+      const repositorio = new RepositorioProductosAdminFalso(bodiDePrueba());
+      await renderPagina(repositorio);
+
+      fireEvent.click(await screen.findByRole('button', { name: 'Cambiar la talla Única' }));
+      const escrita = (await screen.findByLabelText(/^Talla nueva/)) as HTMLInputElement;
+      expect(escrita.tagName).toBe('INPUT');
+      expect(escrita.value).toBe('Única');
+
+      fireEvent.input(escrita, { target: { value: '  ' } });
+      fireEvent.click(screen.getByRole('button', { name: 'Guardar talla' }));
+      expect(await screen.findByText('Elige o escribe la talla nueva.')).toBeTruthy();
+      expect(repositorio.tallasCambiadas).toEqual([]);
+
+      fireEvent.input(escrita, { target: { value: ' S-M ' } });
+      fireEvent.click(screen.getByRole('button', { name: 'Guardar talla' }));
+      await vi.waitFor(() =>
+        expect(repositorio.tallasCambiadas).toEqual([
+          { productoId: 'p1', modeloId: 'v-negro', talla: 'S-M' },
+        ]),
+      );
+    });
+
+    it('si ya existe en algún color, lo dice y deja la caja abierta', async () => {
+      const repositorio = new RepositorioProductosAdminFalso(conjuntoDePrueba());
+      repositorio.falloAlCambiarTalla = new ErrorHttp(422, 'repetida', 'TALLA_REPETIDA');
+      await renderPagina(repositorio);
+
+      fireEvent.click(await screen.findByRole('button', { name: 'Cambiar la talla S-M' }));
+      fireEvent.change(await screen.findByLabelText(/^Talla nueva/), { target: { value: 'L' } });
+      fireEvent.click(screen.getByRole('button', { name: 'Guardar talla' }));
+
+      expect(
+        await screen.findByText(
+          'Ese modelo ya tiene esa talla en alguno de sus colores: quedarían dos variantes iguales.',
+        ),
+      ).toBeTruthy();
+      expect(screen.getByLabelText(/^Talla nueva/)).toBeTruthy();
+      expect(screen.queryByText(/Talla cambiada/)).toBeNull();
+    });
+
+    it('una talla escrita distinto a la escala abre marcando la de la escala', async () => {
+      const conjunto = conjuntoDePrueba();
+      const minuscula: ProductoAdminDetalle = {
+        ...conjunto,
+        variantes: [
+          {
+            id: 'n-m',
+            sku: 'C-N-M',
+            atributos: [
+              { nombre: 'Color', valor: 'Negro', colorHex: '#111111' },
+              { nombre: 'Talla', valor: 'm', colorHex: null },
+            ],
+          },
+        ],
+      };
+      await renderPagina(new RepositorioProductosAdminFalso(minuscula));
+
+      fireEvent.click(await screen.findByRole('button', { name: 'Cambiar la talla m' }));
+      const lista = (await screen.findByLabelText(/^Talla nueva/)) as HTMLSelectElement;
+
+      await vi.waitFor(() => expect(lista.value).toBe('M'));
+      expect(screen.queryByLabelText(/^Escribe la talla/)).toBeNull();
+    });
+
+    it('cancelar cierra la caja sin mandar nada', async () => {
+      const repositorio = new RepositorioProductosAdminFalso(conjuntoDePrueba());
+      await renderPagina(repositorio);
+
+      fireEvent.click(await screen.findByRole('button', { name: 'Cambiar la talla L' }));
+      fireEvent.click(await screen.findByRole('button', { name: 'Cancelar' }));
+
+      await vi.waitFor(() => expect(screen.queryByLabelText(/^Talla nueva/)).toBeNull());
+      expect(repositorio.tallasCambiadas).toEqual([]);
+    });
+
+    it('un producto que no talla no ofrece cambiar tallas', async () => {
+      const morral: ProductoAdminDetalle = {
+        ...productoDePrueba(),
+        variantes: [
+          {
+            id: 'v1',
+            sku: 'MOR-1',
+            atributos: [{ nombre: 'Color', valor: 'Negro', colorHex: '#111111' }],
+          },
+        ],
+      };
+      await renderPagina(new RepositorioProductosAdminFalso(morral));
+      await screen.findByText(/MOR-1/);
+
+      expect(screen.queryByRole('button', { name: /^Cambiar la talla/ })).toBeNull();
+      expect(screen.queryByRole('heading', { name: 'Tallas' })).toBeNull();
+    });
   });
 
   it('un producto que no es de talla única no pregunta hasta dónde sirve', async () => {

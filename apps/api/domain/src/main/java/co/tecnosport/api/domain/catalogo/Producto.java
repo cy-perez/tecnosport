@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -555,13 +556,97 @@ public final class Producto {
   public List<Variante> modelosSinColor() {
     Map<Set<List<String>>, Variante> porCombinacion = new LinkedHashMap<>();
     for (Variante variante : variantes) {
-      Set<List<String>> combinacion = new LinkedHashSet<>();
-      for (ValorAtributo atributo : variante.atributosSinColor()) {
-        combinacion.add(List.of(atributo.atributo().id().toString(), atributo.valor()));
-      }
-      porCombinacion.putIfAbsent(combinacion, variante);
+      porCombinacion.putIfAbsent(combinacion(variante.atributosSinColor()), variante);
     }
     return List.copyOf(porCombinacion.values());
+  }
+
+  private static Set<List<String>> combinacion(List<ValorAtributo> atributos) {
+    Set<List<String>> combinacion = new LinkedHashSet<>();
+    for (ValorAtributo atributo : atributos) {
+      combinacion.add(List.of(atributo.atributo().id().toString(), atributo.valor()));
+    }
+    return combinacion;
+  }
+
+  /**
+   * Corrige la talla de un modelo —uno de {@link #modelosSinColor}— en todos sus colores a la vez:
+   * «S-M» pasa a «M» en la negra y en la vino. El SKU no cambia: es un identificador, y ya está en
+   * pedidos y en el libro de inventario. Los pedidos tampoco: cada línea congeló su talla.
+   *
+   * <p>No deja dos variantes iguales: si la talla nueva ya existe en alguno de esos colores, se
+   * rechaza entera, sin tocar ninguna. La talla se compara como la compara la vitrina ({@link
+   * Atributo#tallaNormalizada}): «2XL» y «XXL», o «S - M» y «S-M», ocupan la misma casilla del
+   * selector, y dos variantes ahí dejarían una de ellas sin forma de elegirse.
+   *
+   * @return las variantes que cambiaron, ya con la talla nueva; vacía si la talla era la misma
+   */
+  public List<Variante> cambiarTalla(UUID modeloId, String nuevaTalla) {
+    Objects.requireNonNull(modeloId, "El id de la variante no puede ser nulo.");
+    Variante modelo =
+        variantes.stream()
+            .filter(v -> v.id().equals(modeloId))
+            .findFirst()
+            .orElseThrow(
+                () ->
+                    new ExcepcionDeDominio(
+                        "La variante '" + modeloId + "' no es de '" + nombre + "'."));
+    ValorAtributo actual =
+        modelo
+            .talla()
+            .orElseThrow(
+                () ->
+                    new ExcepcionDeDominio(
+                        "La variante '" + modelo.sku().valor() + "' no tiene talla."));
+    // Valida que no venga vacía y que esté entre los valores permitidos del atributo, si los hay.
+    ValorAtributo nueva = ValorAtributo.de(actual.atributo(), nuevaTalla);
+    if (nueva.valor().equals(actual.valor())) {
+      return List.of();
+    }
+
+    Set<List<String>> delModelo = combinacion(modelo.atributosSinColor());
+    List<Variante> cambiadas = new ArrayList<>();
+    for (Variante variante : variantes) {
+      if (combinacion(variante.atributosSinColor()).equals(delModelo)) {
+        cambiadas.add(variante.conValor(nueva));
+      }
+    }
+    for (Variante cambiada : cambiadas) {
+      for (Variante otra : variantes) {
+        if (!otra.id().equals(cambiada.id())
+            && cambiadas.stream().noneMatch(c -> c.id().equals(otra.id()))
+            && mismaCombinacionParaLaVitrina(cambiada, otra)) {
+          throw new TallaRepetidaException(
+              "'"
+                  + nombre
+                  + "' ya tiene la talla "
+                  + nueva.valor()
+                  + " en la variante '"
+                  + otra.sku().valor()
+                  + "'.");
+        }
+      }
+    }
+    variantes.replaceAll(
+        v -> cambiadas.stream().filter(c -> c.id().equals(v.id())).findFirst().orElse(v));
+    return List.copyOf(cambiadas);
+  }
+
+  private static boolean mismaCombinacionParaLaVitrina(Variante una, Variante otra) {
+    return clavesComoLasCompara(una).equals(clavesComoLasCompara(otra));
+  }
+
+  /** La talla, normalizada como la compara la vitrina; lo demás, sin mayúsculas. */
+  private static Set<List<String>> clavesComoLasCompara(Variante variante) {
+    Set<List<String>> claves = new LinkedHashSet<>();
+    for (ValorAtributo atributo : variante.atributos()) {
+      String valor =
+          atributo.atributo().esTalla()
+              ? Atributo.tallaNormalizada(atributo.valor())
+              : atributo.valor().toLowerCase(Locale.ROOT);
+      claves.add(List.of(atributo.atributo().id().toString(), valor));
+    }
+    return claves;
   }
 
   /**

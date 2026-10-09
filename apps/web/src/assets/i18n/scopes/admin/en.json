@@ -56,7 +56,8 @@
     "inventario_sin_confirmar": "There is no stock for every line: restock and try again, or cancel with a refund.",
     "peso_de_referencia_no_admitido": "That category does not take a reference weight: it is electronics, which is measured product by product, or it has subcategories, and the weight goes on each of them.",
     "articulo_sin_medidas": "An item in this order has no measurements and its category has no reference weight. Measure it, or set a weight for its category in \"Shipping weights and sizes\".",
-    "articulo_no_asegurable": "A package in this order is worth more than the carrier insures, so it cannot be shipped."
+    "articulo_no_asegurable": "A package in this order is worth more than the carrier insures, so it cannot be shipped.",
+    "talla_repetida": "That model already has that size in one of its colors: two variants would be identical."
   },
   "iniciarSesion": {
     "titulo": "Admin panel",
@@ -360,6 +361,20 @@
       "eliminar": {
         "titulo": "Delete product",
         "explicacion": "Removes it from the catalog with its variants, stock and photos. Only a draft product that has never been sold can be deleted."
+      },
+      "tallas": {
+        "titulo": "Sizes",
+        "ayuda": "Correcting a size changes it in every color of that model. The SKU stays the same, and existing orders keep the size they were bought in.",
+        "cambiar": "Change size",
+        "cambiarAccesible": "Change size {{talla}}",
+        "cajaAccesible": "New size for {{talla}}",
+        "nueva": "New size",
+        "escrita": "Type the size",
+        "guardar": "Save size",
+        "cancelar": "Cancel",
+        "faltaTalla": "Choose or type the new size.",
+        "error": "The size could not be changed. Try again.",
+        "guardada": "Size changed to {{talla}}."
       }
     },
     "agregarVariante": {
@@ -882,6 +897,7 @@
     "lineas": {
       "BOLSOS": "Bags",
       "ROPA": "Clothing",
+      "CALZADO": "Sports footwear",
       "TECNOLOGIA": "Technology"
     },
     "ordenesDePublicacion": {

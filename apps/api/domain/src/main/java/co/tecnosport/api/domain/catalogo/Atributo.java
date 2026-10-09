@@ -2,7 +2,9 @@ package co.tecnosport.api.domain.catalogo;
 
 import co.tecnosport.api.domain.compartido.ExcepcionDeDominio;
 import co.tecnosport.api.domain.compartido.GeneradorIdentificador;
+import java.text.Normalizer;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
@@ -68,6 +70,36 @@ public final class Atributo {
 
   public Optional<String> unidad() {
     return Optional.ofNullable(unidad);
+  }
+
+  /**
+   * Si es el eje de talla: «Talla», «Talla calzado». La misma regla que {@code esEjeDeTalla} en la
+   * vitrina, que es la que ordena las tallas con la escala de la categoría; un color nunca lo es.
+   */
+  public boolean esTalla() {
+    return tipo != TipoAtributo.COLOR && plano(nombre).toLowerCase(Locale.ROOT).startsWith("talla");
+  }
+
+  /**
+   * Una talla como la compara la vitrina —{@code tallaNormalizada} en el frontend, que es quien
+   * decide la casilla del selector—: sin tildes ni espacios, en mayúsculas, con «2XL» escrito
+   * «XXL», y una agrupada parte por parte con guion: «s/m», «S - M» y «S-M» son «S-M».
+   */
+  public static String tallaNormalizada(String talla) {
+    String plana = plano(talla).toUpperCase(Locale.ROOT).replaceAll("\\s+", "");
+    StringBuilder normalizada = new StringBuilder();
+    for (String parte : plana.split("[-/]", -1)) {
+      if (!normalizada.isEmpty()) {
+        normalizada.append('-');
+      }
+      normalizada.append(
+          parte.matches("[2-5]XL") ? "X".repeat(parte.charAt(0) - '0') + "L" : parte);
+    }
+    return normalizada.toString();
+  }
+
+  private static String plano(String texto) {
+    return Normalizer.normalize(texto, Normalizer.Form.NFD).replaceAll("\\p{M}", "").strip();
   }
 
   @Override

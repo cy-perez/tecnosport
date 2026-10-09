@@ -224,6 +224,134 @@ class ProductoTest {
         () -> producto.colorearVariantesSinColor(ValorAtributo.de(TALLA, "M")));
   }
 
+  /** La talla de un modelo se corrige en todos sus colores; las demás tallas no se tocan. */
+  @Test
+  void cambiarTallaLaCorrigeEnTodosLosColoresDelModeloYConservaElSku() {
+    Producto producto = productoDePrueba();
+    Variante negraS = deTallaYColor("N-S", "S-M", "Negro");
+    producto.agregarVariante(negraS);
+    producto.agregarVariante(deTallaYColor("N-L", "L-XL", "Negro"));
+    producto.agregarVariante(deTallaYColor("V-S", "S-M", "Vino"));
+
+    List<Variante> cambiadas = producto.cambiarTalla(negraS.id(), " M ");
+
+    assertEquals(
+        List.of(new Sku("N-S"), new Sku("V-S")), cambiadas.stream().map(Variante::sku).toList());
+    assertEquals(
+        List.of("M", "L-XL", "M"),
+        producto.variantes().stream().map(v -> v.talla().orElseThrow().valor()).toList());
+    assertEquals("Vino", producto.variantes().get(2).color().orElseThrow().valor());
+  }
+
+  @Test
+  void cambiarTallaALaMismaNoCambiaNada() {
+    Producto producto = productoDePrueba();
+    Variante negraS = deTallaYColor("N-S", "S-M", "Negro");
+    producto.agregarVariante(negraS);
+
+    assertEquals(List.of(), producto.cambiarTalla(negraS.id(), "S-M"));
+  }
+
+  /** Quedarían dos variantes iguales: se rechaza entera, aunque el choque sea sin mayúsculas. */
+  @Test
+  void cambiarTallaAUnaQueYaExisteSeRechazaSinTocarNinguna() {
+    Producto producto = productoDePrueba();
+    Variante negraS = deTallaYColor("N-S", "S-M", "Negro");
+    producto.agregarVariante(negraS);
+    producto.agregarVariante(deTallaYColor("V-S", "S-M", "Vino"));
+    producto.agregarVariante(deTallaYColor("V-L", "L-XL", "Vino"));
+
+    assertThrows(TallaRepetidaException.class, () -> producto.cambiarTalla(negraS.id(), "l-xl"));
+    assertEquals(
+        List.of("S-M", "S-M", "L-XL"),
+        producto.variantes().stream().map(v -> v.talla().orElseThrow().valor()).toList());
+  }
+
+  @Test
+  void cambiarTallaExigeUnaVarianteDelProductoConTallaYUnValorPermitido() {
+    Producto producto = productoDePrueba();
+    producto.agregarVariante(variante("SIN-TALLA"));
+    UUID sinTalla = producto.variantes().get(0).id();
+    assertThrows(ExcepcionDeDominio.class, () -> producto.cambiarTalla(sinTalla, "M"));
+    assertThrows(ExcepcionDeDominio.class, () -> producto.cambiarTalla(UUID.randomUUID(), "M"));
+
+    Atributo cerrada = Atributo.crear("Talla", TipoAtributo.TEXTO, List.of("S", "M"));
+    Producto conEscala = productoDePrueba();
+    Variante s =
+        Variante.crear(
+            new Sku("ESC-S"),
+            Dinero.deCop(89_900),
+            BigDecimal.ZERO,
+            null,
+            null,
+            List.of(ValorAtributo.de(cerrada, "S")));
+    conEscala.agregarVariante(s);
+    assertThrows(AtributoInvalidoException.class, () -> conEscala.cambiarTalla(s.id(), "XL"));
+    assertThrows(AtributoInvalidoException.class, () -> conEscala.cambiarTalla(s.id(), " "));
+  }
+
+  /** «2XL» y «XXL» ocupan la misma casilla del selector: quedarían dos variantes en una. */
+  @Test
+  void cambiarTallaChocaConLaQueLaVitrinaTomaPorIgual() {
+    Producto producto = productoDePrueba();
+    Variante negraL = deTallaYColor("N-L", "L", "Negro");
+    Variante negraSM = deTallaYColor("N-SM", "S-M", "Negro");
+    producto.agregarVariante(negraL);
+    producto.agregarVariante(deTallaYColor("N-XXL", "XXL", "Negro"));
+    producto.agregarVariante(negraSM);
+    producto.agregarVariante(deTallaYColor("N-M", "M", "Negro"));
+
+    assertThrows(TallaRepetidaException.class, () -> producto.cambiarTalla(negraL.id(), "2xl"));
+    assertThrows(TallaRepetidaException.class, () -> producto.cambiarTalla(negraL.id(), " m "));
+    assertEquals(List.of(), producto.cambiarTalla(negraSM.id(), "S-M"));
+    assertEquals(1, producto.cambiarTalla(negraSM.id(), "S / M").size());
+  }
+
+  /** El modelo es todo lo que no es color: «M · Algodón» y «M · Poliéster» son dos modelos. */
+  @Test
+  void cambiarTallaSoloTocaElModeloEntreLosQueCompartenTalla() {
+    Atributo material = Atributo.crear("Material", TipoAtributo.TEXTO, List.of());
+    Producto producto = productoDePrueba();
+    Variante algodon = conMaterial("ALG", "M", material, "Algodón");
+    Variante poliester = conMaterial("POL", "M", material, "Poliéster");
+    producto.agregarVariante(algodon);
+    producto.agregarVariante(poliester);
+
+    List<Variante> cambiadas = producto.cambiarTalla(algodon.id(), "L");
+
+    assertEquals(List.of(algodon.id()), cambiadas.stream().map(Variante::id).toList());
+    assertEquals("M", producto.variantes().get(1).talla().orElseThrow().valor());
+    assertEquals("Algodón", producto.variantes().get(0).atributosSinColor().get(1).valor());
+  }
+
+  @Test
+  void laTallaSeNormalizaComoEnLaVitrina() {
+    assertEquals("XXL", Atributo.tallaNormalizada("2xl"));
+    assertEquals("XXL-XXXL", Atributo.tallaNormalizada("2XL - 3XL"));
+    assertEquals("S-M", Atributo.tallaNormalizada(" s/m "));
+    assertEquals("UNICA", Atributo.tallaNormalizada("Única"));
+    assertEquals("38", Atributo.tallaNormalizada("38"));
+  }
+
+  private static Variante conMaterial(
+      String sku, String talla, Atributo material, String valorMaterial) {
+    return Variante.crear(
+        new Sku(sku),
+        Dinero.deCop(89_900),
+        BigDecimal.ZERO,
+        null,
+        null,
+        List.of(ValorAtributo.de(TALLA, talla), ValorAtributo.de(material, valorMaterial)));
+  }
+
+  @Test
+  void elEjeDeTallaSeReconoceSinTildesNiMayusculasYNuncaEsUnColor() {
+    assertTrue(Atributo.crear("Talla calzado", TipoAtributo.TEXTO, List.of()).esTalla());
+    assertTrue(Atributo.crear("TALLA", TipoAtributo.NUMERO, List.of()).esTalla());
+    assertEquals(false, Atributo.crear("Material", TipoAtributo.TEXTO, List.of()).esTalla());
+    assertEquals(false, Atributo.crear("Talla", TipoAtributo.COLOR, List.of()).esTalla());
+  }
+
   private static ImagenProducto imagenPrincipal() {
     return ImagenProducto.crear(
         TipoImagen.PRINCIPAL,

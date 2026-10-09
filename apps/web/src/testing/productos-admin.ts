@@ -175,6 +175,10 @@ export class RepositorioMedicionFalso implements RepositorioProductosAdmin {
   usarImagenComoPrincipal(): Promise<void> {
     throw new Error('no usado por esta prueba');
   }
+
+  cambiarTalla(): Promise<void> {
+    throw new Error('no usado por esta prueba');
+  }
 }
 
 /**
@@ -313,6 +317,10 @@ export class RepositorioExistenciasFalso implements RepositorioProductosAdmin {
   }
 
   usarImagenComoPrincipal(): Promise<void> {
+    throw new Error('no usado por esta prueba');
+  }
+
+  cambiarTalla(): Promise<void> {
     throw new Error('no usado por esta prueba');
   }
 }
