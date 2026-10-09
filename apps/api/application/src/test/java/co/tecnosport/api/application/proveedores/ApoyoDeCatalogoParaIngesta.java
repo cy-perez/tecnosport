@@ -442,7 +442,7 @@ final class ApoyoDeCatalogoParaIngesta {
 
     @Override
     public Inventario abrirLibroConBloqueo(UUID varianteId) {
-      throw new UnsupportedOperationException();
+      return porVariante.computeIfAbsent(varianteId, Inventario::crear);
     }
   }
 }
