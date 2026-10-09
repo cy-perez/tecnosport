@@ -2,6 +2,7 @@ package co.tecnosport.api.bootstrap.proveedores;
 
 import co.tecnosport.api.application.proveedores.ColaDeIngestasLlenaException;
 import co.tecnosport.api.application.proveedores.EjecutorDeIngestas;
+import co.tecnosport.api.application.proveedores.LoteNoEncontradoException;
 import co.tecnosport.api.application.proveedores.ProcesarLoteDeIngesta;
 import co.tecnosport.api.domain.proveedores.LoteIngesta;
 import java.util.Objects;
@@ -73,6 +74,10 @@ public final class EjecutorDeIngestasEnHilo implements EjecutorDeIngestas, Dispo
           lote.proveedorId(),
           lote.estado(),
           lote.resumen().map(Object::toString).orElse(""));
+    } catch (LoteNoEncontradoException e) {
+      // Se detuvo en la cola y se eliminó antes de que el hilo llegara a él: no hay nada que hacer
+      // y no es un fallo. Sin esto quedaba una traza de error en los registros por algo normal.
+      log.info("El lote de ingesta {} se eliminó mientras esperaba en la cola.", loteId);
     } catch (RuntimeException | Error e) {
       // El lote ya quedó en ERROR con su motivo para el panel; aquí va la traza, que es lo que el
       // panel no enseña y lo que hace falta para arreglarlo. También los Error: un zip que no cabe
@@ -86,8 +91,9 @@ public final class EjecutorDeIngestasEnHilo implements EjecutorDeIngestas, Dispo
     executor.shutdown();
     if (!executor.awaitTermination(30, TimeUnit.SECONDS)) {
       log.warn(
-          "La ingesta en curso no terminó en 30 segundos; el lote quedará en PROCESANDO y el"
-              + " arranque siguiente lo cerrará con error (ReanudadorDeIngestas).");
+          "La ingesta en curso no terminó en 30 segundos; el lote quedará abierto (en proceso,"
+              + " en pausa o deteniéndose) y el arranque siguiente lo cerrará con error"
+              + " (ReanudadorDeIngestas).");
       executor.shutdownNow();
     }
   }

@@ -8,6 +8,11 @@ package co.tecnosport.api.domain.proveedores;
  * trabajo lo hace otro hilo. Un lote que lleva mucho en {@code RECIBIDO} dice que la cola no
  * avanza; uno que lleva mucho en {@code PROCESANDO} dice que el trabajo se cayó a medias. Son dos
  * diagnósticos distintos.
+ *
+ * <p>{@code DETENIENDO} existe por la misma razón: el panel pide detener, pero quien suelta el lote
+ * es el trabajador, y lo hace en el siguiente punto de control —entre una publicación y otra—.
+ * Mientras tanto el lote sigue abierto: si se diera por cerrado en el acto, el panel ofrecería
+ * eliminarlo con el hilo todavía escribiendo en él.
  */
 public enum EstadoLote {
   /** El archivo está en el almacén y el lote en la cola. */
@@ -16,8 +21,23 @@ public enum EstadoLote {
   /** Alguien lo está leyendo. */
   PROCESANDO,
 
+  /**
+   * Alguien lo estaba leyendo y se le pidió esperar. <b>Retiene la cola</b>: el hilo es uno solo y
+   * se queda con este lote hasta que se reanude o se detenga.
+   */
+  PAUSADO,
+
+  /** Se pidió detenerlo y el trabajador todavía no lo ha soltado. */
+  DETENIENDO,
+
   /** Se leyó entero y el resumen dice qué salió de ahí. */
   TERMINADO,
+
+  /**
+   * Se detuvo a pedido. Si ya había empezado, el resumen dice lo que alcanzó a hacer; lo que faltó
+   * no se retoma (ver {@code LoteIngesta#pedirDetencion}).
+   */
+  DETENIDO,
 
   /** No se pudo terminar, y el detalle dice por qué. */
   ERROR

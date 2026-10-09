@@ -92,9 +92,18 @@ final class ApoyoDeIngesta {
     private final Map<UUID, LoteIngesta> porId = new LinkedHashMap<>();
     int actualizaciones;
 
+    /**
+     * Con {@code true}, cada lectura devuelve un objeto propio, como la base: quien se queda con
+     * una copia vieja y la escribe pisa lo que otro guardó. Sin esto, el panel y el trabajador de
+     * una prueba comparten la misma instancia y "releer antes de escribir" no se puede probar —
+     * escribir sobre la copia vieja pasaría en verde—. Por omisión, la instancia compartida, que es
+     * lo que esperan las pruebas que la crean y luego la miran.
+     */
+    boolean devolverCopias;
+
     @Override
     public void guardar(LoteIngesta lote) {
-      porId.put(lote.id(), lote);
+      porId.put(lote.id(), devolverCopias ? copia(lote) : lote);
     }
 
     @Override
@@ -103,12 +112,36 @@ final class ApoyoDeIngesta {
         throw new IllegalStateException("No se actualiza lo que no se guardó.");
       }
       actualizaciones++;
-      porId.put(lote.id(), lote);
+      porId.put(lote.id(), devolverCopias ? copia(lote) : lote);
     }
 
     @Override
     public Optional<LoteIngesta> buscarPorId(UUID id) {
-      return Optional.ofNullable(porId.get(id));
+      LoteIngesta lote = porId.get(id);
+      return Optional.ofNullable(lote == null || !devolverCopias ? lote : copia(lote));
+    }
+
+    private static LoteIngesta copia(LoteIngesta lote) {
+      return new LoteIngesta(
+          lote.id(),
+          lote.origen(),
+          lote.proveedorId(),
+          lote.referenciaArchivo().orElse(null),
+          lote.estado(),
+          lote.resumen().orElse(null),
+          lote.detalleError().orElse(null),
+          lote.creadoEn(),
+          lote.iniciadoEn().orElse(null),
+          lote.terminadoEn().orElse(null));
+    }
+
+    /** En memoria no hay nada que bloquear; se cuenta para poder afirmar que se pidió. */
+    int bloqueos;
+
+    @Override
+    public Optional<LoteIngesta> buscarPorIdParaActualizar(UUID id) {
+      bloqueos++;
+      return buscarPorId(id);
     }
 
     @Override
@@ -358,6 +391,32 @@ final class ApoyoDeIngesta {
       llamadas++;
       return new ResultadoExtraccion(
           respuesta.apply(texto), "{\"fixture\":true}", new UsoDelExtractor("falso", 10, 5, 1));
+    }
+  }
+
+  /**
+   * Hace las veces del panel mientras el trabajador espera: cada vez que se le pide esperar, corre
+   * la siguiente acción de la lista. Sin acciones pendientes revienta, porque la prueba se
+   * colgaría.
+   */
+  static final class EsperaGuionada implements EsperaDeIngesta {
+
+    private final java.util.ArrayDeque<Runnable> acciones = new java.util.ArrayDeque<>();
+    int esperas;
+
+    EsperaGuionada luego(Runnable accion) {
+      acciones.add(accion);
+      return this;
+    }
+
+    @Override
+    public void esperar() {
+      esperas++;
+      Runnable accion = acciones.poll();
+      if (accion == null) {
+        throw new IllegalStateException("El trabajador esperaría para siempre.");
+      }
+      accion.run();
     }
   }
 }

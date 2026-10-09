@@ -1228,6 +1228,17 @@
         },
         "type" : "object"
       },
+      "EditarMarcaPeticion" : {
+        "properties" : {
+          "nombre" : {
+            "type" : "string"
+          }
+        },
+        "required" : [
+          "nombre"
+        ],
+        "type" : "object"
+      },
       "EditarProductoPeticion" : {
         "properties" : {
           "categoriaId" : {
@@ -4530,7 +4541,7 @@
     },
     "/api/v1/admin/borradores/{id}" : {
       "delete" : {
-        "operationId" : "eliminar_3",
+        "operationId" : "eliminar_4",
         "parameters" : [
           {
             "in" : "path",
@@ -4581,7 +4592,7 @@
         ]
       },
       "patch" : {
-        "operationId" : "editar_3",
+        "operationId" : "editar_4",
         "parameters" : [
           {
             "in" : "path",
@@ -4867,7 +4878,7 @@
     },
     "/api/v1/admin/categorias/{id}" : {
       "delete" : {
-        "operationId" : "eliminar_1",
+        "operationId" : "eliminar_2",
         "parameters" : [
           {
             "in" : "path",
@@ -4889,7 +4900,7 @@
         ]
       },
       "put" : {
-        "operationId" : "editar_1",
+        "operationId" : "editar_2",
         "parameters" : [
           {
             "in" : "path",
@@ -5320,7 +5331,7 @@
     },
     "/api/v1/admin/ingestas/{id}" : {
       "delete" : {
-        "operationId" : "eliminar_4",
+        "operationId" : "eliminar_5",
         "parameters" : [
           {
             "in" : "path",
@@ -5350,6 +5361,99 @@
       },
       "get" : {
         "operationId" : "ver_6",
+        "parameters" : [
+          {
+            "in" : "path",
+            "name" : "id",
+            "required" : true,
+            "schema" : {
+              "format" : "uuid",
+              "type" : "string"
+            }
+          }
+        ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/LoteIngestaRespuesta"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "admin-ingesta-controlador"
+        ]
+      }
+    },
+    "/api/v1/admin/ingestas/{id}/detener" : {
+      "post" : {
+        "operationId" : "detener",
+        "parameters" : [
+          {
+            "in" : "path",
+            "name" : "id",
+            "required" : true,
+            "schema" : {
+              "format" : "uuid",
+              "type" : "string"
+            }
+          }
+        ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/LoteIngestaRespuesta"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "admin-ingesta-controlador"
+        ]
+      }
+    },
+    "/api/v1/admin/ingestas/{id}/pausar" : {
+      "post" : {
+        "operationId" : "pausar",
+        "parameters" : [
+          {
+            "in" : "path",
+            "name" : "id",
+            "required" : true,
+            "schema" : {
+              "format" : "uuid",
+              "type" : "string"
+            }
+          }
+        ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/LoteIngestaRespuesta"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "admin-ingesta-controlador"
+        ]
+      }
+    },
+    "/api/v1/admin/ingestas/{id}/reanudar" : {
+      "post" : {
+        "operationId" : "reanudar",
         "parameters" : [
           {
             "in" : "path",
@@ -5419,6 +5523,69 @@
               }
             },
             "description" : "Created"
+          }
+        },
+        "tags" : [
+          "admin-marca-controlador"
+        ]
+      }
+    },
+    "/api/v1/admin/marcas/{id}" : {
+      "delete" : {
+        "operationId" : "eliminar_1",
+        "parameters" : [
+          {
+            "in" : "path",
+            "name" : "id",
+            "required" : true,
+            "schema" : {
+              "format" : "uuid",
+              "type" : "string"
+            }
+          }
+        ],
+        "responses" : {
+          "204" : {
+            "description" : "No Content"
+          }
+        },
+        "tags" : [
+          "admin-marca-controlador"
+        ]
+      },
+      "put" : {
+        "operationId" : "editar_1",
+        "parameters" : [
+          {
+            "in" : "path",
+            "name" : "id",
+            "required" : true,
+            "schema" : {
+              "format" : "uuid",
+              "type" : "string"
+            }
+          }
+        ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/EditarMarcaPeticion"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/MarcaRespuesta"
+                }
+              }
+            },
+            "description" : "OK"
           }
         },
         "tags" : [
@@ -6227,7 +6394,7 @@
     },
     "/api/v1/admin/productos/{id}" : {
       "delete" : {
-        "operationId" : "eliminar_2",
+        "operationId" : "eliminar_3",
         "parameters" : [
           {
             "in" : "path",
@@ -6278,7 +6445,7 @@
         ]
       },
       "patch" : {
-        "operationId" : "editar_2",
+        "operationId" : "editar_3",
         "parameters" : [
           {
             "in" : "path",
@@ -7362,7 +7529,7 @@
     },
     "/api/v1/admin/sets-rotacion/{id}" : {
       "delete" : {
-        "operationId" : "eliminar_5",
+        "operationId" : "eliminar_6",
         "parameters" : [
           {
             "in" : "path",

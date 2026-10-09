@@ -76,6 +76,7 @@ import co.tecnosport.api.application.proveedores.FotoDemasiadoGrandeException;
 import co.tecnosport.api.application.proveedores.FotoNoEsDelBorradorException;
 import co.tecnosport.api.application.proveedores.ImagenDeProveedorIlegibleException;
 import co.tecnosport.api.application.proveedores.LoteEnCursoException;
+import co.tecnosport.api.application.proveedores.LoteEnOtroEstadoException;
 import co.tecnosport.api.application.proveedores.LoteNoEncontradoException;
 import co.tecnosport.api.application.proveedores.PrendaIncoherenteException;
 import co.tecnosport.api.application.proveedores.ProductoDeProveedorYaExisteException;
@@ -242,6 +243,11 @@ public class ManejadorDeErrores {
   }
 
   // 409: se arregla solo, esperando a que el lote termine.
+  @ExceptionHandler(LoteEnOtroEstadoException.class)
+  public ProblemDetail loteEnOtroEstado(LoteEnOtroEstadoException excepcion) {
+    return problema(HttpStatus.CONFLICT, "La ingesta cambió de estado", excepcion);
+  }
+
   @ExceptionHandler(LoteEnCursoException.class)
   public ProblemDetail loteEnCurso(LoteEnCursoException excepcion) {
     return problema(HttpStatus.CONFLICT, "La ingesta está en curso", excepcion);

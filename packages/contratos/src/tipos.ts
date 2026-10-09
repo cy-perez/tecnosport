@@ -142,10 +142,10 @@ export interface paths {
         get: operations["ver_2"];
         put?: never;
         post?: never;
-        delete: operations["eliminar_3"];
+        delete: operations["eliminar_4"];
         options?: never;
         head?: never;
-        patch: operations["editar_3"];
+        patch: operations["editar_4"];
         trace?: never;
     };
     "/api/v1/admin/borradores/{id}/aprobar": {
@@ -252,9 +252,9 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
-        put: operations["editar_1"];
+        put: operations["editar_2"];
         post?: never;
-        delete: operations["eliminar_1"];
+        delete: operations["eliminar_2"];
         options?: never;
         head?: never;
         patch?: never;
@@ -430,7 +430,55 @@ export interface paths {
         get: operations["ver_6"];
         put?: never;
         post?: never;
-        delete: operations["eliminar_4"];
+        delete: operations["eliminar_5"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/ingestas/{id}/detener": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["detener"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/ingestas/{id}/pausar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["pausar"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/ingestas/{id}/reanudar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["reanudar"];
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -447,6 +495,22 @@ export interface paths {
         put?: never;
         post: operations["crear_7"];
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/marcas/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["editar_1"];
+        post?: never;
+        delete: operations["eliminar_1"];
         options?: never;
         head?: never;
         patch?: never;
@@ -750,10 +814,10 @@ export interface paths {
         get: operations["ver_1"];
         put?: never;
         post?: never;
-        delete: operations["eliminar_2"];
+        delete: operations["eliminar_3"];
         options?: never;
         head?: never;
-        patch: operations["editar_2"];
+        patch: operations["editar_3"];
         trace?: never;
     };
     "/api/v1/admin/productos/{id}/difusion": {
@@ -1150,7 +1214,7 @@ export interface paths {
         get?: never;
         put?: never;
         post?: never;
-        delete: operations["eliminar_5"];
+        delete: operations["eliminar_6"];
         options?: never;
         head?: never;
         patch?: never;
@@ -2321,6 +2385,9 @@ export interface components {
             /** Format: uuid */
             padreId?: string;
             slug?: string;
+        };
+        EditarMarcaPeticion: {
+            nombre: string;
         };
         EditarProductoPeticion: {
             /** Format: uuid */
@@ -3640,7 +3707,7 @@ export interface operations {
             };
         };
     };
-    eliminar_3: {
+    eliminar_4: {
         parameters: {
             query?: never;
             header?: never;
@@ -3660,7 +3727,7 @@ export interface operations {
             };
         };
     };
-    editar_3: {
+    editar_4: {
         parameters: {
             query?: never;
             header?: never;
@@ -3855,7 +3922,7 @@ export interface operations {
             };
         };
     };
-    editar_1: {
+    editar_2: {
         parameters: {
             query?: never;
             header?: never;
@@ -3881,7 +3948,7 @@ export interface operations {
             };
         };
     };
-    eliminar_1: {
+    eliminar_2: {
         parameters: {
             query?: never;
             header?: never;
@@ -4185,7 +4252,7 @@ export interface operations {
             };
         };
     };
-    eliminar_4: {
+    eliminar_5: {
         parameters: {
             query?: never;
             header?: never;
@@ -4203,6 +4270,72 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["LoteEliminadoRespuesta"];
+                };
+            };
+        };
+    };
+    detener: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["LoteIngestaRespuesta"];
+                };
+            };
+        };
+    };
+    pausar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["LoteIngestaRespuesta"];
+                };
+            };
+        };
+    };
+    reanudar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["LoteIngestaRespuesta"];
                 };
             };
         };
@@ -4248,6 +4381,52 @@ export interface operations {
                 content: {
                     "*/*": components["schemas"]["MarcaRespuesta"];
                 };
+            };
+        };
+    };
+    editar_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EditarMarcaPeticion"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["MarcaRespuesta"];
+                };
+            };
+        };
+    };
+    eliminar_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
@@ -4798,7 +4977,7 @@ export interface operations {
             };
         };
     };
-    eliminar_2: {
+    eliminar_3: {
         parameters: {
             query?: never;
             header?: never;
@@ -4818,7 +4997,7 @@ export interface operations {
             };
         };
     };
-    editar_2: {
+    editar_3: {
         parameters: {
             query?: never;
             header?: never;
@@ -5542,7 +5721,7 @@ export interface operations {
             };
         };
     };
-    eliminar_5: {
+    eliminar_6: {
         parameters: {
             query?: never;
             header?: never;

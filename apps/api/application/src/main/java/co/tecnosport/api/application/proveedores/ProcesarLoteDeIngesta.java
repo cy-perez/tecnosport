@@ -30,7 +30,16 @@ import java.util.stream.Collectors;
  * una publicación no tumba el lote.
  *
  * <p><b>Un lote que no está en la cola no se procesa dos veces.</b> Si el ejecutor lo entrega
- * repetido, o si ya lo tomó otra instancia, se devuelve tal como está.
+ * repetido, o si ya lo tomó otra instancia, se devuelve tal como está. Lo mismo uno que se detuvo
+ * mientras esperaba en la cola: el trabajador lo salta.
+ *
+ * <h2>Pausar y detener</h2>
+ *
+ * <p>El panel no le habla al hilo: escribe el estado del lote, y el trabajador lo relee en sus
+ * puntos de control —después de leer el archivo, después de registrar y antes de cada publicación—.
+ * En {@code PAUSADO} espera ahí mismo, sin soltar el hilo; en {@code DETENIENDO} cierra con lo que
+ * alcanzó y suelta el hilo para el lote siguiente. Lo que esté haciendo entre dos puntos —una
+ * extracción, la subida de las fotos— termina antes de que la orden se note.
  */
 public final class ProcesarLoteDeIngesta {
 
@@ -44,6 +53,7 @@ public final class ProcesarLoteDeIngesta {
   private final ExtraerProductoDePublicacion extraer;
   private final ResolverBorrador resolver;
   private final EnTransaccionPropia enTransaccionPropia;
+  private final EsperaDeIngesta espera;
   private final Reloj reloj;
 
   public ProcesarLoteDeIngesta(
@@ -57,6 +67,7 @@ public final class ProcesarLoteDeIngesta {
       ExtraerProductoDePublicacion extraer,
       ResolverBorrador resolver,
       EnTransaccionPropia enTransaccionPropia,
+      EsperaDeIngesta espera,
       Reloj reloj) {
     this.repositorioLotes = Objects.requireNonNull(repositorioLotes);
     this.repositorioProveedores = Objects.requireNonNull(repositorioProveedores);
@@ -68,6 +79,7 @@ public final class ProcesarLoteDeIngesta {
     this.extraer = Objects.requireNonNull(extraer);
     this.resolver = Objects.requireNonNull(resolver);
     this.enTransaccionPropia = Objects.requireNonNull(enTransaccionPropia);
+    this.espera = Objects.requireNonNull(espera);
     this.reloj = Objects.requireNonNull(reloj);
   }
 
@@ -81,19 +93,24 @@ public final class ProcesarLoteDeIngesta {
       return lote;
     }
 
+    Progreso progreso = new Progreso();
     try {
       String referencia =
           lote.referenciaArchivo()
               .orElseThrow(
                   () -> new ExportacionIlegibleException("El lote no tiene archivo que leer."));
       List<MensajeCrudo> crudos = fuente.leer(referencia);
+      puntoDeControl(lote.id());
       // Sin transacción a propósito: registrar sube cada foto al bucket, y un lote con dos mil
       // fotos sostendría una conexión durante minutos. Lo único que escribe en la base es un solo
       // guardarTodos, que el adaptador ya hace atómico.
       MensajesRegistrados registrados = registrar.ejecutar(lote.id(), crudos);
+      progreso.registrados = registrados;
+      puntoDeControl(lote.id());
 
       AgrupadorDePublicaciones.Resultado agrupado =
           enTransaccionPropia.ejecutar(() -> armar.ejecutar(lote.id()));
+      progreso.publicaciones = agrupado.publicaciones().size();
 
       Proveedor proveedor =
           repositorioProveedores
@@ -105,45 +122,74 @@ public final class ProcesarLoteDeIngesta {
 
       // Una consulta por lote y no una por publicación: la lista crece con cada renovación.
       List<HuellaVisual> huellasVisuales = resolver.huellasVisualesDe(proveedor.id());
-      Contador contador = new Contador();
+      Contador contador = progreso.contador;
       for (PublicacionProveedor publicacion : agrupado.publicaciones()) {
+        puntoDeControl(lote.id());
         resolverUna(publicacion, mensajes, proveedor, huellasVisuales, contador);
       }
 
-      ResumenIngesta resumen =
-          new ResumenIngesta(
-              registrados.leidos(),
-              registrados.ignorados(),
-              registrados.cuantosNuevos(),
-              agrupado.publicaciones().size(),
-              contador.nuevos,
-              contador.renovaciones,
-              contador.agotados,
-              contador.descartes,
-              contador.alertas);
+      ResumenIngesta resumen = progreso.resumen();
       return enTransaccionPropia.ejecutar(
           () -> {
-            lote.terminar(resumen, reloj.ahora());
-            repositorioLotes.actualizar(lote);
-            return lote;
+            // Del lote fresco y bloqueado, no del que se tomó: el panel pudo pausarlo o pedir
+            // detenerlo después del último punto de control, y esa escritura no se pisa a ciegas.
+            LoteIngesta fresco = paraActualizar(lote.id());
+            if (!fresco.enManosDelTrabajador()) {
+              return fresco;
+            }
+            fresco.terminar(resumen, reloj.ahora());
+            repositorioLotes.actualizar(fresco);
+            return fresco;
           });
+    } catch (DetencionPedida detencion) {
+      try {
+        return enTransaccionPropia.ejecutar(
+            () -> {
+              LoteIngesta fresco = paraActualizar(lote.id());
+              if (fresco.estado() == EstadoLote.DETENIENDO) {
+                fresco.detener(progreso.resumen(), reloj.ahora());
+                repositorioLotes.actualizar(fresco);
+              }
+              return fresco;
+            });
+      } catch (RuntimeException e) {
+        // Sin esto, un fallo de la base justo aquí dejaba el lote DETENIENDO —abierto, sin poder
+        // eliminarse ni volver a detenerse— hasta el siguiente arranque.
+        cerrarConFallo(lote.id(), e);
+        throw e;
+      }
+    } catch (LoteAjeno ajeno) {
+      // Ya no es de este hilo: otra instancia lo cerró al arrancar, o se eliminó. No se escribe
+      // nada: lo que diga la base es lo que vale.
+      return repositorioLotes.buscarPorId(lote.id()).orElse(lote);
     } catch (RuntimeException | Error e) {
       // También los Error: un zip que no cabe en memoria o una foto que revienta el decodificador
       // lanzan OutOfMemoryError, y el lote no puede quedar PROCESANDO para siempre por eso.
-      String motivo = motivoLegible(e);
-      enTransaccionPropia.ejecutar(
-          () -> {
-            // Si lo que falló fue el commit de "terminar", el lote en memoria ya dice TERMINADO y
-            // no admite fallar: se relee de la base, donde sigue PROCESANDO.
-            LoteIngesta fresco = repositorioLotes.buscarPorId(lote.id()).orElse(lote);
-            if (fresco.estaAbierto()) {
-              fresco.fallar(motivo, reloj.ahora());
-              repositorioLotes.actualizar(fresco);
-            }
-            return fresco;
-          });
+      cerrarConFallo(lote.id(), e);
       throw e;
     }
+  }
+
+  /**
+   * Escribe el fallo sobre el lote releído y bloqueado. Si lo que falló fue el commit de
+   * "terminar", el lote en memoria ya dice TERMINADO y no admite fallar; en la base sigue abierto.
+   * Y si en la base ya no está —se eliminó—, no se escribe: guardar el de memoria lo volvería a
+   * insertar.
+   */
+  private void cerrarConFallo(UUID loteId, Throwable e) {
+    String motivo = motivoLegible(e);
+    enTransaccionPropia.ejecutar(
+        () -> {
+          repositorioLotes
+              .buscarPorIdParaActualizar(loteId)
+              .filter(LoteIngesta::estaAbierto)
+              .ifPresent(
+                  fresco -> {
+                    fresco.fallar(motivo, reloj.ahora());
+                    repositorioLotes.actualizar(fresco);
+                  });
+          return null;
+        });
   }
 
   /** La extracción fuera de la transacción; la resolución dentro. Un fallo no sale de aquí. */
@@ -198,11 +244,40 @@ public final class ProcesarLoteDeIngesta {
         });
   }
 
+  /**
+   * Relee el lote y obedece lo que diga: en pausa espera aquí, tantas veces como haga falta, y si
+   * se pidió detenerlo sale con {@link DetencionPedida}. Sin transacción: solo lee.
+   *
+   * <p>Cualquier otro estado, o ninguno, quiere decir que el lote dejó de ser de este hilo: otra
+   * instancia lo cerró con error al arrancar ({@link ReanudarLotesDeIngesta}) o se eliminó después.
+   * Seguir sería crear borradores colgados de un lote que el panel ya da por cerrado, y salir de
+   * una pausa sin que nadie la reanudara.
+   */
+  private void puntoDeControl(UUID loteId) {
+    while (true) {
+      EstadoLote estado =
+          repositorioLotes.buscarPorId(loteId).map(LoteIngesta::estado).orElse(null);
+      if (estado == EstadoLote.PROCESANDO) {
+        return;
+      }
+      if (estado == EstadoLote.PAUSADO) {
+        espera.esperar();
+      } else if (estado == EstadoLote.DETENIENDO) {
+        throw new DetencionPedida();
+      } else {
+        throw new LoteAjeno();
+      }
+    }
+  }
+
+  private LoteIngesta paraActualizar(UUID loteId) {
+    return repositorioLotes
+        .buscarPorIdParaActualizar(loteId)
+        .orElseThrow(() -> new LoteNoEncontradoException(loteId));
+  }
+
   private LoteIngesta tomar(UUID loteId) {
-    LoteIngesta lote =
-        repositorioLotes
-            .buscarPorId(loteId)
-            .orElseThrow(() -> new LoteNoEncontradoException(loteId));
+    LoteIngesta lote = paraActualizar(loteId);
     if (lote.estado() != EstadoLote.RECIBIDO) {
       return lote;
     }
@@ -220,10 +295,48 @@ public final class ProcesarLoteDeIngesta {
   private static String motivoLegible(Throwable e) {
     if (e instanceof ExportacionIlegibleException
         || e instanceof ExtraccionFallidaException
+        || e instanceof IngestaInterrumpidaException
         || e instanceof ExcepcionDeDominio) {
       return e.getMessage();
     }
     return "Error inesperado (" + e.getClass().getSimpleName() + ").";
+  }
+
+  /**
+   * Lo que va del lote, para poder cerrarlo con cifras también cuando se detiene a la mitad. Las
+   * fases que no alcanzaron a correr cuentan cero.
+   */
+  private static final class Progreso {
+    MensajesRegistrados registrados;
+    int publicaciones;
+    final Contador contador = new Contador();
+
+    ResumenIngesta resumen() {
+      return new ResumenIngesta(
+          registrados == null ? 0 : registrados.leidos(),
+          registrados == null ? 0 : registrados.ignorados(),
+          registrados == null ? 0 : registrados.cuantosNuevos(),
+          publicaciones,
+          contador.nuevos,
+          contador.renovaciones,
+          contador.agotados,
+          contador.descartes,
+          contador.alertas);
+    }
+  }
+
+  /** El panel pidió detener el lote; sale del trabajo sin ser un fallo. */
+  private static final class DetencionPedida extends RuntimeException {
+    DetencionPedida() {
+      super(null, null, false, false);
+    }
+  }
+
+  /** El lote ya no está en manos de este hilo; sale sin escribir nada. */
+  private static final class LoteAjeno extends RuntimeException {
+    LoteAjeno() {
+      super(null, null, false, false);
+    }
   }
 
   private static final class Contador {
