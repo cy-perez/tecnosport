@@ -1,7 +1,7 @@
 {
   "comun": {
     "version_etiqueta": "Version",
-    "version": "2026-10-08.2",
+    "version": "2026-10-08.3",
     "vigencia": "In force since 8 October 2026.",
     "otros_documentos": "Other legal documents",
     "titular_aviso": "This site is operated by Cristhian Yurday Pérez Hoyos, NIT 1054994043-9, Carrera 26C # 38B-31, Medellín, Antioquia, Colombia.",
@@ -185,7 +185,7 @@
       {
         "titulo": "4. Products, images, and prices",
         "parrafos": [
-          "Product photographs are our own and correspond to the unit we sell. Images and rotation viewers are to-scale representations of the actual product; colour may vary slightly depending on your screen.",
+          "Photographs of clothing, footwear, and bags are our own and correspond to the unit we sell. Technology photographs are reference images of the model, taken from information published by the brand or by a product-data catalogue, and not of the unit you receive: the model, memory, and other features are those stated on the product page, and the colour is the one you choose there, even if the photo shows another. Images and rotation viewers are to-scale representations of the actual product; colour may vary slightly depending on your screen.",
           "All prices are shown in Colombian pesos (COP) and are the final price of each product: Tecno Sport is not a VAT (IVA) taxpayer in Colombia, so no tax is added to the published price. The price of each product does not include the shipping cost: that amount depends on the destination city and on the size and weight of your order, and is calculated at the time of purchase. Before you pay, we show you the full breakdown: the price of each product, the subtotal, the shipping cost listed separately, and the total you will pay.",
           "If an obvious system or typing error shows a product at a manifestly wrong price, we will tell you before shipping and you may either confirm the purchase at the correct price or cancel it at no cost.",
           "Check the use and care restrictions on each product page; for footwear and sportswear, use other than intended may affect the warranty."
@@ -257,7 +257,7 @@
       {
         "titulo": "13. Intellectual property",
         "parrafos": [
-          "The content of tecnosport.co (including the product photographs, which are our own) is protected by intellectual property law. You may use it to inform yourself and to buy, but not reproduce it for commercial purposes without written authorisation."
+          "The content of tecnosport.co is protected by intellectual property law. Photographs of clothing, footwear, and bags are our own; technology photographs and their product data sheets belong to their owners (the product's brand or the catalogue they come from). You may use the content to inform yourself and to buy, but not reproduce it for commercial purposes without the written authorisation of whoever holds the rights."
         ]
       },
       {
