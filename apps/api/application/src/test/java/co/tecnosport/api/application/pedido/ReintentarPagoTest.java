@@ -5,9 +5,20 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import co.tecnosport.api.application.compartido.RelojFalso;
+import co.tecnosport.api.domain.catalogo.Categoria;
+import co.tecnosport.api.domain.catalogo.EstadoVariante;
+import co.tecnosport.api.domain.catalogo.ImagenProducto;
+import co.tecnosport.api.domain.catalogo.LineaCatalogo;
+import co.tecnosport.api.domain.catalogo.Marca;
+import co.tecnosport.api.domain.catalogo.Producto;
+import co.tecnosport.api.domain.catalogo.TipoImagen;
+import co.tecnosport.api.domain.catalogo.Variante;
+import co.tecnosport.api.domain.catalogo.VarianteDeImagen;
 import co.tecnosport.api.domain.compartido.CorreoElectronico;
 import co.tecnosport.api.domain.compartido.Dinero;
+import co.tecnosport.api.domain.compartido.HashContenido;
 import co.tecnosport.api.domain.compartido.Sku;
+import co.tecnosport.api.domain.compartido.Slug;
 import co.tecnosport.api.domain.inventario.ExistenciaInsuficienteException;
 import co.tecnosport.api.domain.inventario.Inventario;
 import co.tecnosport.api.domain.pedido.Direccion;
@@ -18,6 +29,7 @@ import co.tecnosport.api.domain.pedido.NumeroPedido;
 import co.tecnosport.api.domain.pedido.Pedido;
 import co.tecnosport.api.domain.pedido.TipoEntrega;
 import co.tecnosport.api.domain.pedido.TransicionDeEstadoInvalidaException;
+import co.tecnosport.api.domain.proveedores.HuellaProveedor;
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.Instant;
@@ -33,15 +45,67 @@ class ReintentarPagoTest {
       Direccion.sinBarrio("05", "Antioquia", "05001", "Medellín", "Cra. 26C #38B-31", "Casa azul");
 
   private RepositorioPedidosFalso pedidos;
+  private RepositorioProductosFalso productos;
+  private final java.util.Map<UUID, Producto> porVariante = new java.util.LinkedHashMap<>();
   private RepositorioInventarioFalso inventarios;
   private UUID varianteId;
   private ModalidadesDeEntrega modalidadesDeEntrega = new ModalidadesDeEntrega(true);
 
   private ReintentarPago crear() {
     pedidos = new RepositorioPedidosFalso();
+    productos = new RepositorioProductosFalso();
     inventarios = new RepositorioInventarioFalso();
     return new ReintentarPago(
-        pedidos, inventarios, new RelojFalso(AHORA), RESERVA_PAGO_EN_LINEA, modalidadesDeEntrega);
+        pedidos,
+        productos,
+        inventarios,
+        new RelojFalso(AHORA),
+        RESERVA_PAGO_EN_LINEA,
+        modalidadesDeEntrega);
+  }
+
+  /** Un producto de proveedor publicado con esa variante; agotado por el proveedor si se pide. */
+  private Producto seVende(UUID varianteId, boolean agotadoPorElProveedor) {
+    UUID proveedorId = UUID.randomUUID();
+    Producto producto =
+        Producto.crearDeProveedor(
+            "Samsung Galaxy A17 5G",
+            new Slug("a17-" + varianteId),
+            "Celular 5G.",
+            Marca.crear("Samsung"),
+            Categoria.crear("Celulares", new Slug("celulares"), LineaCatalogo.TECNOLOGIA),
+            proveedorId,
+            Dinero.deCop(675_000),
+            HuellaProveedor.deModelo(proveedorId, "samsung-galaxy-a17-5g"),
+            AHORA);
+    producto.asignarImagenPrincipal(
+        ImagenProducto.crear(
+            TipoImagen.PRINCIPAL,
+            0,
+            List.of(new VarianteDeImagen(800, "https://cdn.tecnosport.co/a17.avif", 1000)),
+            null,
+            800,
+            new HashContenido("%064x".formatted(17)),
+            "alt es",
+            "alt en"));
+    producto.agregarVariante(
+        new Variante(
+            varianteId,
+            new Sku("TEC-" + varianteId.toString().substring(0, 8)),
+            Dinero.deCop(849_900),
+            BigDecimal.ZERO,
+            null,
+            null,
+            EstadoVariante.ACTIVA,
+            List.of(),
+            null));
+    producto.publicar();
+    if (agotadoPorElProveedor) {
+      producto.marcarAgotadoPorProveedor(AHORA.plusSeconds(60));
+    }
+    porVariante.put(varianteId, producto);
+    productos.conProductos(porVariante.values().toArray(Producto[]::new));
+    return producto;
   }
 
   private Pedido pedidoFallidoConInventario(int existencia) {
@@ -51,6 +115,7 @@ class ReintentarPagoTest {
       inventario.registrarEntrada(existencia, "siembra de prueba", AHORA);
     }
     inventarios.conInventario(inventario);
+    seVende(varianteId, false);
 
     Pedido pedido =
         Pedido.crear(
@@ -194,6 +259,7 @@ class ReintentarPagoTest {
       Inventario inventario = Inventario.crear(variante);
       inventario.registrarEntrada(5, "siembra de prueba", AHORA);
       inventarios.conInventario(inventario);
+      seVende(variante, false);
     }
     Pedido pedido =
         Pedido.crear(
@@ -215,6 +281,26 @@ class ReintentarPagoTest {
   }
 
   /**
+   * Un modelo que el proveedor agotó sigue con existencia en el libro —agotar no toca el
+   * inventario—: el reintento no lo reserva ni lo deja listo para cobrar.
+   */
+  @Test
+  void loQueElProveedorAgotoNoSeVuelveACobrar() {
+    ReintentarPago caso = crear();
+    Pedido pedido = pedidoFallidoConInventario(5);
+    seVende(varianteId, true);
+
+    assertThrows(
+        VarianteNoEncontradaException.class,
+        () -> caso.ejecutar(new ReintentarPagoComando(pedido.id(), "cliente@tecnosport.co")));
+
+    assertEquals(
+        EstadoPedido.PAGO_FALLIDO, pedidos.buscarPorId(pedido.id()).orElseThrow().estado());
+    assertEquals(
+        5, inventarios.buscarPorVarianteId(varianteId).orElseThrow().saldoDisponible(AHORA));
+  }
+
+  /**
    * Un pedido de recogida que falló antes de que la recogida se apagara: reintentarlo hoy sería
    * cobrar una recogida que los términos vigentes ya no ofrecen, y no reserva nada antes de
    * negarse.
@@ -227,6 +313,7 @@ class ReintentarPagoTest {
     Inventario inventario = Inventario.crear(variante);
     inventario.registrarEntrada(5, "siembra de prueba", AHORA);
     inventarios.conInventario(inventario);
+    seVende(variante, false);
     Pedido pedido =
         Pedido.crear(
             NumeroPedido.de(2026, 3),

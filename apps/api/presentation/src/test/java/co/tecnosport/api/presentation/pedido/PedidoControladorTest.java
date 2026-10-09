@@ -1059,10 +1059,12 @@ class PedidoControladorTest {
     @Bean
     ReintentarPago reintentarPago(
         RepositorioPedidos repositorioPedidos,
+        RepositorioProductos repositorioProductos,
         RepositorioInventario repositorioInventario,
         Reloj reloj) {
       return new ReintentarPago(
           repositorioPedidos,
+          repositorioProductos,
           repositorioInventario,
           reloj,
           Duration.ofMinutes(30),

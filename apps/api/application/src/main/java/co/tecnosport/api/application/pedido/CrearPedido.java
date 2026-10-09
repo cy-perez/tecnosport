@@ -12,7 +12,6 @@ import co.tecnosport.api.application.envio.MetodosDePagoDisponiblesComando;
 import co.tecnosport.api.application.envio.TransportadoraNoDisponibleException;
 import co.tecnosport.api.application.inventario.RepositorioInventario;
 import co.tecnosport.api.application.legal.RepositorioAutorizaciones;
-import co.tecnosport.api.domain.catalogo.EstadoProducto;
 import co.tecnosport.api.domain.catalogo.EstadoVariante;
 import co.tecnosport.api.domain.catalogo.ImagenProducto;
 import co.tecnosport.api.domain.catalogo.Producto;
@@ -366,18 +365,7 @@ public final class CrearPedido {
   }
 
   private Producto buscarProductoVendible(UUID varianteId) {
-    Producto producto =
-        repositorioProductos
-            .buscarPorVarianteId(varianteId)
-            .orElseThrow(() -> new VarianteNoEncontradaException(varianteId));
-    // Publicado no basta: un producto de proveedor que el proveedor ya no tiene sale de la vitrina
-    // (oculto por vencimiento o agotado, ADR-0066) y hasta el 08/10/2026 se podía comprar igual
-    // desde un carrito viejo o llamando a la API. `estaEnVitrina` es la misma pregunta que se hace
-    // el catálogo público, así que lo que no se lista tampoco se vende.
-    if (producto.estado() != EstadoProducto.PUBLICADO || !producto.estaEnVitrina()) {
-      throw new VarianteNoEncontradaException(varianteId);
-    }
-    return producto;
+    return ProductoVendible.exigir(repositorioProductos, varianteId);
   }
 
   /**
