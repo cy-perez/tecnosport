@@ -21,6 +21,10 @@ Reglas, en orden de importancia:
    ni emojis. Solo la primera palabra y los nombres propios van con mayúscula. Ejemplos:
    «Bolso de dama mediano», «Morral dúo», «Conjunto pantalón tela burda strech». Un body se
    escribe «bodi» —«bodis» en plural—: «Body  Herraje» es «Bodi herraje».
+   Una prenda se nombra como su categoría, nunca con un diminutivo: «Busito Manga larga» es
+   «Buzo manga larga», «Camisetica slim» es «Camiseta slim», «Blusita» es «Blusa»,
+   «Pantaloncito» es «Pantalón». El buzo se escribe con zeta, aunque el proveedor escriba
+   «buso». Vale igual para la `descripcion`.
    Cuando el mensaje anuncia una réplica —la marca «1.1» o «AAA»—, el título es el artículo, la
    palabra «estilo» y la marca o el modelo que nombra, sin el «1.1», el «AAA», «Importado» ni
    adornos: «*NUEVA COLECCIÓN 1.1* *SUPERDRY*» en una camiseta es «Camiseta estilo Superdry»;
@@ -33,7 +37,9 @@ Reglas, en orden de importancia:
    zapatillas y zapatos; `otra` si no es ninguna. `tipo` es el artículo concreto: `bolso`, `morral`, `canguro` (también
    «manos libres»), `conjunto_pantalon`, `conjunto_short`, `enterizo`, `polo`, `camiseta`,
    `buso`, `chaqueta`, `pantalon`, `short`, `vestido`, `blusa`, `bodi` (también «body»), `tenis`
-   (también zapatillas deportivas); `otro` solo si no encaja en ninguno. Un chaleco o un blazer son `otro`: no son ni chaqueta ni blusa.
+   (también zapatillas deportivas); `otro` solo si no encaja en ninguno. Un diminutivo es su
+   artículo: «busito» es `buso`, «blusita» es `blusa`. Un chaleco o un blazer son `otro`: no
+   son ni chaqueta ni blusa.
 7. El precio es un entero en pesos colombianos: «53.000» es `53000`, «$45.000» es `45000`,
    «🤑🤑*55.000*» es `55000`. Dos o tres cifras pegadas a 💲 están en miles: «💲124» es
    `124000` y «💲52» es `52000`; «💲119900» ya viene completo. Si un producto tiene dos
@@ -55,12 +61,13 @@ Reglas, en orden de importancia:
 11. `descripcion` es el texto que la ficha del producto va a mostrar: dos a cuatro frases en
     español neutro, en prosa, con lo que el mensaje describe —tela o material, corte,
     compartimentos, tira, cierre, tallas, tonos—. Solo lo que el mensaje dice: sin precio, sin
-    contacto, sin emojis, sin «nueva colección» ni llamados a comprar. De una réplica no digas
+    contacto, sin emojis, sin «nueva colección» ni llamados a comprar, y sin diminutivos: la
+    prenda con el nombre de su categoría, como en el título. De una réplica no digas
     que es original ni de la marca. De un bodi, di una vez que también se le conoce como
     «body»: así lo encuentra quien lo busca con esa palabra. Si el mensaje no describe nada más
     que el nombre, una frase con lo que sí dice.
 12. `alt_en` es el `titulo` en inglés, con el nombre comercial que el artículo tiene en inglés
-    y no la traducción literal: un bodi es «Bodysuit», un buso «Sweatshirt», un canguro o
+    y no la traducción literal: un bodi es «Bodysuit», un buzo «Sweatshirt», un canguro o
     manos libres «Fanny pack», un morral «Backpack», un conjunto pantalón «Pants set». Las
     marcas no se traducen: «Camiseta estilo Superdry» es «Superdry-style T-shirt», y «Tenis
     estilo Superstar» es «Superstar-style sneakers». `null` si no hay título.

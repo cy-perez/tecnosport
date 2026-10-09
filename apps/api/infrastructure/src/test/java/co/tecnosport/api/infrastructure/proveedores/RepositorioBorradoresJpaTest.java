@@ -318,7 +318,7 @@ class RepositorioBorradoresJpaTest {
         BorradorProducto.nuevo(
             publicacion.id(),
             proveedor.id(),
-            extraido("Buso navideño", null),
+            extraido("Buzo navideño", null),
             "{}",
             Dinero.deCop(45000),
             null,
@@ -342,7 +342,7 @@ class RepositorioBorradoresJpaTest {
         BorradorProducto.nuevo(
             publicacion.id(),
             proveedor.id(),
-            extraido("Buso navideño", null),
+            extraido("Buzo navideño", null),
             "{}",
             Dinero.deCop(40000),
             null,
@@ -356,7 +356,7 @@ class RepositorioBorradoresJpaTest {
 
     assertThat(borradores.anunciosEnRevision(proveedor.id(), Dinero.deCop(45000)))
         .containsExactlyInAnyOrder(
-            new AnuncioEnRevision("Buso navideño", pHash),
+            new AnuncioEnRevision("Buzo navideño", pHash),
             new AnuncioEnRevision("Falda puntos", null));
     assertThat(borradores.anunciosEnRevision(UUID.randomUUID(), Dinero.deCop(45000))).isEmpty();
 

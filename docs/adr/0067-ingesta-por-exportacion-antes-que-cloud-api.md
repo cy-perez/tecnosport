@@ -201,6 +201,22 @@ El negocio lo dijo así: un anuncio repetido a otra hora es otro producto.
   su huella vieja: nada los vuelve a encontrar por el texto, y la foto los sigue
   renovando.
 
+## Los diminutivos se escriben con el nombre de la categoría (9 de octubre de 2026)
+
+El mismo día el negocio pidió que «Busito manga larga» se publique como «Buzo
+manga larga»: una prenda se nombra como la categoría en la que se vende, no con
+el diminutivo del proveedor. La categoría del catálogo se llama «Buzos», así que
+el «BUSO NAVIDEÑO» de Meraki también pasa a «Buzo».
+
+- **El prompt lo pide** para el título, la descripción, el texto en inglés y el
+  tipo («busito» es `buso`). El valor `buso` del enumerado es interno y no se
+  renombra; lo que se ve —la etiqueta del panel— dice «Buzo».
+- **Y no depende de que el modelo lo recuerde**: `NombreDeCategoria` corrige el
+  título (dentro de `CorrectorDeTitulo`) y la descripción con una lista
+  **explícita** de diminutivos de las prendas que se venden. Explícita a
+  propósito: quitar un «-ito» suelto convertiría «bonito» en «bon». Un diminutivo
+  nuevo se agrega a la lista con su ejemplo.
+
 ## Pendientes que este ADR deja escritos
 
 - **La confirmación con el proveedor en los pedidos.** Aprobar un borrador

@@ -14,7 +14,8 @@ import java.util.regex.Pattern;
  *
  * <p>Todo lo que el mensaje no dice va en nulo o vacío; nada se rellena. {@code linea} es nula
  * cuando el extractor respondió «otra», y {@code confianza} va de 0 a 1. El título pasa por {@link
- * CorrectorDeTitulo}.
+ * CorrectorDeTitulo}, y la descripción por {@link NombreDeCategoria}: «busito» es «buzo» también
+ * ahí.
  *
  * @param esProducto falso para saludos, promociones y avisos sin producto
  * @param estaAgotado el texto dice agotado, se acabó, sin stock
@@ -51,7 +52,7 @@ public record ProductoExtraido(
   public ProductoExtraido {
     titulo = enBlancoEsNulo(CorrectorDeTitulo.corregir(enBlancoEsNulo(titulo)));
     material = enBlancoEsNulo(material);
-    descripcion = enBlancoEsNulo(descripcion);
+    descripcion = enBlancoEsNulo(NombreDeCategoria.corregir(descripcion));
     altEn = enBlancoEsNulo(altEn);
     notas = enBlancoEsNulo(notas);
     codigoReferencia = normalizarCodigo(codigoReferencia);
