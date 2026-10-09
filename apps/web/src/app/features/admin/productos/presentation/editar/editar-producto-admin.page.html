@@ -261,6 +261,105 @@
             </li>
           }
         </ul>
+
+        <!-- Una fila por talla y no por variante: la talla se corrige en todos los colores a la
+             vez, como la corrige la API. El SKU no cambia. -->
+        @if (tallas().length > 0) {
+          <h3 id="editar-producto-tallas-titulo" class="m-0 mt-16">
+            {{ 'admin.productos.editar.tallas.titulo' | transloco }}
+          </h3>
+          <p class="m-0 text-ts-texto-suave">
+            {{ 'admin.productos.editar.tallas.ayuda' | transloco }}
+          </p>
+          <ul
+            class="m-0 flex list-none flex-col gap-8 p-0"
+            aria-labelledby="editar-producto-tallas-titulo"
+          >
+            @for (talla of tallas(); track talla.modeloId) {
+              <li class="flex flex-col gap-8">
+                <div class="flex flex-wrap items-center gap-8">
+                  <span class="font-medio">{{ talla.etiqueta }}</span>
+                  <ts-boton
+                    variante="secundario"
+                    tipo="button"
+                    [attr.data-cambiar-talla]="talla.modeloId"
+                    [etiquetaAccesible]="
+                      'admin.productos.editar.tallas.cambiarAccesible'
+                        | transloco: { talla: talla.etiqueta }
+                    "
+                    [expandido]="tallaEditando() === talla.modeloId"
+                    [controla]="'cambiar-talla-caja-' + talla.modeloId"
+                    (click)="abrirCambioDeTalla(talla)"
+                  >
+                    {{ 'admin.productos.editar.tallas.cambiar' | transloco }}
+                  </ts-boton>
+                </div>
+
+                @if (tallaEditando() === talla.modeloId) {
+                  <div
+                    class="flex flex-col gap-12 border border-ts-borde-control p-16"
+                    role="group"
+                    [id]="'cambiar-talla-caja-' + talla.modeloId"
+                    [attr.aria-label]="
+                      'admin.productos.editar.tallas.cajaAccesible'
+                        | transloco: { talla: talla.etiqueta }
+                    "
+                    (keydown.escape)="cancelarCambioDeTalla()"
+                  >
+                    @if (hayEscalaDeTallas()) {
+                      <ts-select
+                        idCampo="talla-nueva-lista"
+                        [label]="'admin.productos.editar.tallas.nueva' | transloco"
+                        [opciones]="opcionesTallaNueva()"
+                        [obligatorio]="true"
+                        [valor]="tallaElegida()"
+                        (cambio)="elegirTallaNueva($event)"
+                      />
+                    }
+                    @if (escribeLaTalla()) {
+                      <ts-campo
+                        idCampo="talla-nueva-escrita"
+                        [label]="
+                          (hayEscalaDeTallas()
+                            ? 'admin.productos.editar.tallas.escrita'
+                            : 'admin.productos.editar.tallas.nueva'
+                          ) | transloco
+                        "
+                        [obligatorio]="true"
+                        [formControl]="tallaEscrita"
+                      />
+                    }
+                    @if (errorTalla(); as mensaje) {
+                      <p class="m-0 text-ts-error" role="alert">{{ mensaje }}</p>
+                    }
+                    <div class="flex flex-wrap gap-8">
+                      <ts-boton
+                        tipo="button"
+                        [ocupado]="guardandoTalla()"
+                        (click)="guardarTalla(talla)"
+                      >
+                        {{ 'admin.productos.editar.tallas.guardar' | transloco }}
+                      </ts-boton>
+                      <ts-boton
+                        variante="secundario"
+                        tipo="button"
+                        (click)="cancelarCambioDeTalla()"
+                      >
+                        {{ 'admin.productos.editar.tallas.cancelar' | transloco }}
+                      </ts-boton>
+                    </div>
+                  </div>
+                }
+              </li>
+            }
+          </ul>
+          <!-- Siempre en la pagina: lo que cambia es su contenido. -->
+          <p class="m-0 text-ts-exito" role="status">
+            @if (tallaGuardada(); as guardada) {
+              {{ 'admin.productos.editar.tallas.guardada' | transloco: { talla: guardada } }}
+            }
+          </p>
+        }
       </section>
     }
 

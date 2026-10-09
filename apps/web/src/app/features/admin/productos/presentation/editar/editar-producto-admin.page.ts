@@ -23,7 +23,7 @@ import { TsCampo } from '../../../../../shared/ui/campo/ts-campo';
 import { TsEsqueleto } from '../../../../../shared/ts-esqueleto/ts-esqueleto';
 import { TsMigas } from '../../../../../shared/ts-migas/ts-migas';
 import { usarTraductor } from '../../../../../core/i18n/traductor';
-import { hojasConRuta } from '../../../../catalogo/domain/arbol-categorias';
+import { escalaDeTallasDe, hojasConRuta } from '../../../../catalogo/domain/arbol-categorias';
 import { claveDeLinea } from '../../../../catalogo/domain/filtro-productos.model';
 import { OpcionSelect, TsSelect } from '../../../../../shared/ui/select/ts-select';
 import { ordenarPorEtiqueta } from '../../../../../shared/ui/select/ordenar-opciones';
@@ -40,6 +40,8 @@ import { ImagenDeGaleriaAdmin } from '../../domain/producto-admin.model';
 import { esEjeDeTalla, esTallaUnica } from '../../../../catalogo/domain/seleccion-variante';
 import { usarAsignarColorAImagenAdmin } from '../../application/asignar-color-imagen-admin.mutacion';
 import { usarAgregarColorDesdeLaPrincipal } from '../../application/agregar-color-desde-la-principal.mutacion';
+import { usarCambiarTallaAdmin } from '../../application/cambiar-talla-admin.mutacion';
+import { TallaDelProducto, tallasDelProducto } from '../../domain/tallas-del-producto';
 import { coloresDelProducto, modelosSinColor, tieneColor } from '../../domain/colores-del-producto';
 import {
   TextosSelectorColores,
@@ -80,6 +82,9 @@ const TIPOS_DE_IMAGEN_SOPORTADOS = ['image/jpeg', 'image/png', 'image/webp'];
  * divergen, el que decide sigue siendo el servidor.
  */
 const TOPE_DE_GALERIA = 8;
+
+/** El valor de la opción «Otra talla»; ninguna escala tiene una talla así. */
+const OTRA_TALLA = '__otra__';
 
 import { PanelDeDifusion } from '../../../difusion/presentation/panel-de-difusion';
 @Component({
@@ -207,6 +212,114 @@ export class EditarProductoAdminPage {
       muestra: this.muestraDeVariante(variante.atributos),
     })),
   );
+
+  // --- Tallas: se corrige la de un modelo y vale para todos sus colores (`CambiarTalla` en la API).
+  // El SKU no cambia, y los pedidos tampoco: cada línea guardó la talla con que se compró. ---
+
+  private readonly mutacionTalla = usarCambiarTallaAdmin();
+
+  protected readonly tallas = computed(() =>
+    tallasDelProducto(this.consulta.data()?.variantes ?? []),
+  );
+
+  /**
+   * La escala de la categoría —la suya o la de su rama—, la misma que ofrece «Agregar variante»:
+   * así la talla corregida se escribe igual que las demás y la ficha la pone en su sitio. Vacía si
+   * la categoría no tiene, y entonces la talla se escribe.
+   */
+  private readonly escalaTallas = computed(() => {
+    const categorias = this.opciones.categorias.data() ?? [];
+    const categoriaId = this.consulta.data()?.categoria.id;
+    return escalaDeTallasDe(
+      categorias.find((categoria) => categoria.id === categoriaId),
+      categorias,
+    );
+  });
+
+  protected readonly opcionesTallaNueva = computed<OpcionSelect[]>(() => [
+    ...this.escalaTallas().map((talla) => ({ valor: talla, etiqueta: talla })),
+    {
+      valor: OTRA_TALLA,
+      etiqueta: this.traducir()('admin.productos.agregarVariante.otraTalla'),
+    },
+  ]);
+
+  protected readonly hayEscalaDeTallas = computed(() => this.escalaTallas().length > 0);
+
+  /** El modelo cuya talla se está cambiando; una caja abierta a la vez. */
+  protected readonly tallaEditando = signal<string | null>(null);
+  /** Lo elegido en la lista: una talla de la escala, u `OTRA_TALLA` para escribirla. */
+  protected readonly tallaElegida = signal('');
+  protected readonly tallaEscrita = new FormControl('', { nonNullable: true });
+  protected readonly errorTalla = signal<string | null>(null);
+  /** La talla que quedó guardada, para el aviso; nula mientras no se haya guardado ninguna. */
+  protected readonly tallaGuardada = signal<string | null>(null);
+  protected readonly guardandoTalla = computed(() => this.mutacionTalla.isPending());
+
+  /** Se escribe con «Otra talla», o siempre si la categoría no tiene escala. */
+  protected readonly escribeLaTalla = computed(
+    () => !this.hayEscalaDeTallas() || this.tallaElegida() === OTRA_TALLA,
+  );
+
+  protected abrirCambioDeTalla(talla: TallaDelProducto): void {
+    const enLaEscala = this.escalaTallas().includes(talla.talla);
+    this.tallaEditando.set(talla.modeloId);
+    this.tallaElegida.set(enLaEscala ? talla.talla : this.hayEscalaDeTallas() ? OTRA_TALLA : '');
+    this.tallaEscrita.setValue(enLaEscala ? '' : talla.talla);
+    this.errorTalla.set(null);
+    this.tallaGuardada.set(null);
+    this.enfocarDespuesDePintar(() =>
+      document.getElementById(
+        this.hayEscalaDeTallas() ? 'talla-nueva-lista' : 'talla-nueva-escrita',
+      ),
+    );
+  }
+
+  protected elegirTallaNueva(valor: string): void {
+    this.tallaElegida.set(valor);
+    if (valor === OTRA_TALLA) {
+      this.enfocarDespuesDePintar(() => document.getElementById('talla-nueva-escrita'));
+    }
+  }
+
+  /** Cancelar destruye la caja con el botón dentro: el foco vuelve al botón que la abrió. */
+  protected cancelarCambioDeTalla(): void {
+    const modeloId = this.tallaEditando();
+    this.tallaEditando.set(null);
+    this.errorTalla.set(null);
+    this.enfocarDespuesDePintar(() => this.botonCambiarTalla(modeloId));
+  }
+
+  private botonCambiarTalla(modeloId: string | null): HTMLElement | null {
+    return document.querySelector<HTMLElement>(`[data-cambiar-talla="${modeloId}"] button`);
+  }
+
+  protected guardarTalla(talla: TallaDelProducto): void {
+    if (this.guardandoTalla()) {
+      return;
+    }
+    const nueva = (this.escribeLaTalla() ? this.tallaEscrita.value : this.tallaElegida()).trim();
+    if (!nueva) {
+      this.errorTalla.set(this.traducir()('admin.productos.editar.tallas.faltaTalla'));
+      return;
+    }
+    this.errorTalla.set(null);
+    this.mutacionTalla.mutate(
+      { productoId: this.id(), modeloId: talla.modeloId, talla: nueva },
+      {
+        onSuccess: () => {
+          this.tallaEditando.set(null);
+          this.tallaGuardada.set(nueva);
+          // La fila conserva su modelo: el servidor corrige esa misma variante, no crea otra.
+          this.enfocarDespuesDePintar(() => this.botonCambiarTalla(talla.modeloId));
+        },
+        onError: (error: unknown) =>
+          this.errorTalla.set(
+            mensajeDeError(error, this.transloco, 'admin.productos.editar.tallas.error'),
+          ),
+      },
+    );
+  }
 
   private readonly paleta = usarPaletaDeColores();
 

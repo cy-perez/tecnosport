@@ -56,7 +56,8 @@
     "inventario_sin_confirmar": "No hay existencia para todas las líneas: repón y vuelve a intentarlo, o cancela con reintegro.",
     "peso_de_referencia_no_admitido": "Esa categoría no lleva peso de referencia: es de tecnología, que se mide producto por producto, o tiene subcategorías, y el peso va en cada una de ellas.",
     "articulo_sin_medidas": "Un artículo de este pedido no tiene medidas ni peso de referencia en su categoría. Mídelo, o ponle peso a su categoría en \"Pesos y medidas de envío\".",
-    "articulo_no_asegurable": "Un paquete de este pedido vale más de lo que la transportadora asegura, así que no se puede despachar a domicilio."
+    "articulo_no_asegurable": "Un paquete de este pedido vale más de lo que la transportadora asegura, así que no se puede despachar a domicilio.",
+    "talla_repetida": "Ese modelo ya tiene esa talla en alguno de sus colores: quedarían dos variantes iguales."
   },
   "iniciarSesion": {
     "titulo": "Panel administrativo",
@@ -360,6 +361,20 @@
       "eliminar": {
         "titulo": "Eliminar producto",
         "explicacion": "Lo borra del catálogo con sus variantes, su inventario y sus fotos. Solo se puede con un producto en borrador que nunca se haya vendido."
+      },
+      "tallas": {
+        "titulo": "Tallas",
+        "ayuda": "Corregir una talla la cambia en todos los colores de ese modelo. El SKU no cambia, y los pedidos ya hechos conservan la talla con que se compraron.",
+        "cambiar": "Cambiar talla",
+        "cambiarAccesible": "Cambiar la talla {{talla}}",
+        "cajaAccesible": "Nueva talla para {{talla}}",
+        "nueva": "Talla nueva",
+        "escrita": "Escribe la talla",
+        "guardar": "Guardar talla",
+        "cancelar": "Cancelar",
+        "faltaTalla": "Elige o escribe la talla nueva.",
+        "error": "No se pudo cambiar la talla. Intenta de nuevo.",
+        "guardada": "Talla cambiada a {{talla}}."
       }
     },
     "agregarVariante": {
