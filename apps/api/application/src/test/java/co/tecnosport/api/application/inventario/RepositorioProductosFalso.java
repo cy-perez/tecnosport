@@ -111,6 +111,12 @@ final class RepositorioProductosFalso implements RepositorioProductos {
   }
 
   @Override
+  public void agregarAtributoAVariante(
+      UUID varianteId, co.tecnosport.api.domain.catalogo.ValorAtributo valor) {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
   public void guardarIntercambioDePrincipal(UUID productoId, IntercambioDePrincipal intercambio) {
     throw new UnsupportedOperationException();
   }

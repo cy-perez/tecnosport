@@ -141,6 +141,89 @@ class ProductoTest {
     assertTrue(excepcion.getMessage().contains(ajena.toString()));
   }
 
+  private static final Atributo COLOR = Atributo.crear("Color", TipoAtributo.COLOR, List.of());
+  private static final Atributo TALLA = Atributo.crear("Talla", TipoAtributo.TEXTO, List.of());
+
+  private static Variante deTallaYColor(String sku, String talla, String color) {
+    List<ValorAtributo> atributos =
+        color == null
+            ? List.of(ValorAtributo.de(TALLA, talla))
+            : List.of(
+                ValorAtributo.deColor(COLOR, color, "#111111"), ValorAtributo.de(TALLA, talla));
+    return Variante.crear(
+        new Sku(sku), Dinero.deCop(89_900), BigDecimal.ZERO, null, null, atributos);
+  }
+
+  /** El molde de un color nuevo: una variante por talla, sin importar en cuántos colores esté. */
+  @Test
+  void losModelosSonUnaVariantePorTallaLaPrimeraDeCadaUna() {
+    Producto producto = productoDePrueba();
+    producto.agregarVariante(deTallaYColor("N-S", "S-M", "Negro"));
+    producto.agregarVariante(deTallaYColor("N-L", "L-XL", "Negro"));
+    producto.agregarVariante(deTallaYColor("V-S", "S-M", "Vino"));
+    producto.agregarVariante(deTallaYColor("V-L", "L-XL", "Vino"));
+
+    List<Variante> modelos = producto.modelosSinColor();
+
+    assertEquals(
+        List.of(new Sku("N-S"), new Sku("N-L")), modelos.stream().map(Variante::sku).toList());
+  }
+
+  @Test
+  void tieneElColorComparaSinMayusculasYLaCombinacionEsOtroColor() {
+    Producto producto = productoDePrueba();
+    producto.agregarVariante(deTallaYColor("N-S", "S-M", "Negro"));
+
+    assertTrue(producto.tieneColor());
+    assertTrue(producto.tieneElColor("negro"));
+    assertEquals(false, producto.tieneElColor("Negro / Vino"));
+    assertEquals(false, producto.tieneElColor("Rojo"));
+  }
+
+  /** Un borrador aprobado sin tono: el color va a las variantes que ya hay, con su talla. */
+  @Test
+  void colorearSinColorLoPoneEnTodasLasVariantes() {
+    Producto producto = productoDePrueba();
+    producto.agregarVariante(deTallaYColor("TS-S", "S-M", null));
+    producto.agregarVariante(deTallaYColor("TS-L", "L-XL", null));
+    ValorAtributo rojo = ValorAtributo.deColor(COLOR, "Rojo", "#C62828");
+
+    List<Variante> coloreadas = producto.colorearVariantesSinColor(rojo);
+
+    assertEquals(producto.variantes(), coloreadas);
+    for (Variante variante : coloreadas) {
+      assertEquals(Optional.of(rojo), variante.color());
+      assertEquals(1, variante.atributosSinColor().size());
+    }
+  }
+
+  @Test
+  void unProductoQueYaTieneColorNoSeColoreaEntero() {
+    Producto producto = productoDePrueba();
+    producto.agregarVariante(deTallaYColor("N-S", "S-M", "Negro"));
+
+    assertThrows(
+        ProductoConColorException.class,
+        () -> producto.colorearVariantesSinColor(ValorAtributo.deColor(COLOR, "Rojo", "#C62828")));
+    assertEquals("Negro", producto.variantes().get(0).color().orElseThrow().valor());
+  }
+
+  @Test
+  void colorearExigeUnAtributoDeColorYAlgunaVariante() {
+    Producto sinVariantes = productoDePrueba();
+    assertThrows(
+        ExcepcionDeDominio.class,
+        () ->
+            sinVariantes.colorearVariantesSinColor(
+                ValorAtributo.deColor(COLOR, "Rojo", "#C62828")));
+
+    Producto producto = productoDePrueba();
+    producto.agregarVariante(deTallaYColor("TS-S", "S-M", null));
+    assertThrows(
+        ExcepcionDeDominio.class,
+        () -> producto.colorearVariantesSinColor(ValorAtributo.de(TALLA, "M")));
+  }
+
   private static ImagenProducto imagenPrincipal() {
     return ImagenProducto.crear(
         TipoImagen.PRINCIPAL,

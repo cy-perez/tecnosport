@@ -24,6 +24,10 @@ import java.util.UUID;
 /** Doble de prueba escrito a mano, sin Mockito, ver docs/06-testing.md. */
 class RepositorioProductosDobleDePrueba implements RepositorioProductos {
 
+  /** Lo que grabó {@code agregarAtributoAVariante}, por variante. */
+  final java.util.Map<UUID, co.tecnosport.api.domain.catalogo.ValorAtributo> atributosAgregados =
+      new java.util.LinkedHashMap<>();
+
   private List<VarianteActiva> activas = List.of();
   UUID ultimaVarianteConExistenciaActualizada;
   Integer ultimaExistenciaGrabada;
@@ -185,6 +189,12 @@ class RepositorioProductosDobleDePrueba implements RepositorioProductos {
   public void guardarVarianteDeImagen(UUID imagenId, UUID varianteId) {
     this.imagenConVariante = imagenId;
     this.varianteDeLaImagen = varianteId;
+  }
+
+  @Override
+  public void agregarAtributoAVariante(
+      UUID varianteId, co.tecnosport.api.domain.catalogo.ValorAtributo valor) {
+    atributosAgregados.put(varianteId, valor);
   }
 
   @Override

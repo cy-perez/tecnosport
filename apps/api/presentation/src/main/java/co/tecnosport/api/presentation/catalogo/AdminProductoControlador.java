@@ -1,5 +1,7 @@
 package co.tecnosport.api.presentation.catalogo;
 
+import co.tecnosport.api.application.catalogo.AgregarColorDesdeLaPrincipal;
+import co.tecnosport.api.application.catalogo.AgregarColorDesdeLaPrincipalComando;
 import co.tecnosport.api.application.catalogo.AgregarImagenDeGaleria;
 import co.tecnosport.api.application.catalogo.AgregarImagenDeGaleriaComando;
 import co.tecnosport.api.application.catalogo.AsignarColorAImagenDeGaleria;
@@ -15,6 +17,7 @@ import co.tecnosport.api.application.catalogo.DespublicarProducto;
 import co.tecnosport.api.application.catalogo.EditarProducto;
 import co.tecnosport.api.application.catalogo.EditarProductoComando;
 import co.tecnosport.api.application.catalogo.EliminarProducto;
+import co.tecnosport.api.application.catalogo.ExistenciaDelColorNuevo;
 import co.tecnosport.api.application.catalogo.ImagenDeGaleriaQuitada;
 import co.tecnosport.api.application.catalogo.ListarProductosAdmin;
 import co.tecnosport.api.application.catalogo.ListarProductosAdminComando;
@@ -35,6 +38,7 @@ import co.tecnosport.api.application.catalogo.VarianteSubida;
 import co.tecnosport.api.application.catalogo.VerProductoAdmin;
 import co.tecnosport.api.domain.catalogo.ImagenProducto;
 import co.tecnosport.api.domain.catalogo.Producto;
+import co.tecnosport.api.presentation.catalogo.dto.AgregarColorDesdeLaPrincipalPeticion;
 import co.tecnosport.api.presentation.catalogo.dto.AgregarImagenDeGaleriaPeticion;
 import co.tecnosport.api.presentation.catalogo.dto.AsignarColorPeticion;
 import co.tecnosport.api.presentation.catalogo.dto.ConfirmarImagenPrincipalPeticion;
@@ -56,6 +60,8 @@ import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -93,11 +99,13 @@ public class AdminProductoControlador {
   private final ReordenarGaleria reordenarGaleria;
   private final AsignarColorAImagenDeGaleria asignarColorAImagenDeGaleria;
   private final AsignarColorAImagenPrincipal asignarColorAImagenPrincipal;
+  private final AgregarColorDesdeLaPrincipal agregarColorDesdeLaPrincipal;
   private final UsarImagenDeGaleriaComoPrincipal usarImagenDeGaleriaComoPrincipal;
   private final PublicarProducto publicarProducto;
   private final DespublicarProducto despublicarProducto;
   private final EliminarProducto eliminarProducto;
   private final MapeadorRespuestasProductoAdmin mapeador;
+  private final TransactionTemplate transaccion;
 
   public AdminProductoControlador(
       ListarProductosAdmin listarProductosAdmin,
@@ -112,11 +120,13 @@ public class AdminProductoControlador {
       ReordenarGaleria reordenarGaleria,
       AsignarColorAImagenDeGaleria asignarColorAImagenDeGaleria,
       AsignarColorAImagenPrincipal asignarColorAImagenPrincipal,
+      AgregarColorDesdeLaPrincipal agregarColorDesdeLaPrincipal,
       UsarImagenDeGaleriaComoPrincipal usarImagenDeGaleriaComoPrincipal,
       PublicarProducto publicarProducto,
       DespublicarProducto despublicarProducto,
       EliminarProducto eliminarProducto,
-      MapeadorRespuestasProductoAdmin mapeador) {
+      MapeadorRespuestasProductoAdmin mapeador,
+      PlatformTransactionManager transactionManager) {
     this.listarProductosAdmin = Objects.requireNonNull(listarProductosAdmin);
     this.crearProducto = Objects.requireNonNull(crearProducto);
     this.verProductoAdmin = Objects.requireNonNull(verProductoAdmin);
@@ -131,12 +141,14 @@ public class AdminProductoControlador {
     this.reordenarGaleria = Objects.requireNonNull(reordenarGaleria);
     this.asignarColorAImagenDeGaleria = Objects.requireNonNull(asignarColorAImagenDeGaleria);
     this.asignarColorAImagenPrincipal = Objects.requireNonNull(asignarColorAImagenPrincipal);
+    this.agregarColorDesdeLaPrincipal = Objects.requireNonNull(agregarColorDesdeLaPrincipal);
     this.usarImagenDeGaleriaComoPrincipal =
         Objects.requireNonNull(usarImagenDeGaleriaComoPrincipal);
     this.publicarProducto = Objects.requireNonNull(publicarProducto);
     this.despublicarProducto = Objects.requireNonNull(despublicarProducto);
     this.eliminarProducto = Objects.requireNonNull(eliminarProducto);
     this.mapeador = Objects.requireNonNull(mapeador);
+    this.transaccion = new TransactionTemplate(Objects.requireNonNull(transactionManager));
   }
 
   @GetMapping
@@ -354,6 +366,30 @@ public class AdminProductoControlador {
       @PathVariable("id") UUID id, @RequestBody AsignarColorPeticion cuerpo) {
     asignarColorAImagenPrincipal.ejecutar(
         new AsignarColorAImagenPrincipalComando(id, cuerpo.varianteId()));
+  }
+
+  /**
+   * La foto principal muestra un color en que el producto todavía no se vende: se crean sus
+   * variantes, una por talla y con las unidades que se dicen, y la foto queda marcada con él. En un
+   * producto sin ningún color, sus variantes toman ese color. {@code 204}: el panel vuelve a pedir
+   * el producto.
+   *
+   * <p>Con {@code TransactionTemplate}: son varias variantes, sus libros de inventario y la marca
+   * de la foto, y una talla que fallara a mitad dejaría el color con la mitad de las tallas.
+   */
+  @PostMapping("/{id}/imagen-principal/color-nuevo")
+  @ResponseStatus(HttpStatus.NO_CONTENT)
+  public void agregarColorDesdeLaPrincipal(
+      @PathVariable("id") UUID id, @RequestBody AgregarColorDesdeLaPrincipalPeticion cuerpo) {
+    List<ExistenciaDelColorNuevo> existencias =
+        cuerpo.existencias().stream()
+            .map(e -> new ExistenciaDelColorNuevo(e.modeloId(), e.existencia()))
+            .toList();
+    transaccion.executeWithoutResult(
+        estado ->
+            agregarColorDesdeLaPrincipal.ejecutar(
+                new AgregarColorDesdeLaPrincipalComando(id, cuerpo.color(), existencias)));
+    log.info("Producto {}: color nuevo «{}» desde la foto principal.", id, cuerpo.color());
   }
 
   /**

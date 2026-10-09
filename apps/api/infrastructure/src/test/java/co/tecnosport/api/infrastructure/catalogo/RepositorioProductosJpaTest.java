@@ -1268,4 +1268,39 @@ class RepositorioProductosJpaTest {
     assertThat(leido.muestra()).isEqualTo(muestra);
     assertThat(leido.colorHex()).isEqualTo("#C19A6B");
   }
+
+  /**
+   * El color que recibe un producto aprobado sin tono entra como una fila más de la variante: la
+   * talla que ya tenía sigue ahí, y el color vuelve con su muestra.
+   */
+  @Test
+  void unAtributoAgregadoAUnaVarianteQueYaExisteVaYVuelveSinTocarLosDemas() {
+    MarcaJpaEntity marca = marca("TecnoSport");
+    CategoriaJpaEntity categoria = categoria("Conjuntos", "conjuntos-t-color", "ROPA");
+    ProductoJpaEntity productoJpa =
+        producto("Conjunto t-color", "conjunto-t-color", "BORRADOR", marca, categoria);
+    AtributoJpaEntity colorJpa = atributo("Color", "COLOR");
+    AtributoJpaEntity tallaJpa = atributo("Talla", "TEXTO");
+    Atributo color = new Atributo(colorJpa.getId(), "Color", TipoAtributo.COLOR, List.of());
+    Atributo talla = new Atributo(tallaJpa.getId(), "Talla", TipoAtributo.TEXTO, List.of());
+    Variante sinColor =
+        Variante.crear(
+            new Sku("TS-CONJ-SM"),
+            Dinero.deCop(89_900),
+            BigDecimal.ZERO,
+            null,
+            null,
+            List.of(ValorAtributo.de(talla, "S-M")));
+    repositorio.agregarVariante(productoJpa.getId(), sinColor);
+
+    repositorio.agregarAtributoAVariante(
+        sinColor.id(), ValorAtributo.deColor(color, "Rojo", "#C62828"));
+
+    Variante leida =
+        repositorio.buscarPorSlug(new Slug("conjunto-t-color")).orElseThrow().variantes().get(0);
+    assertThat(leida.atributos()).hasSize(2);
+    assertThat(leida.color().orElseThrow().valor()).isEqualTo("Rojo");
+    assertThat(leida.color().orElseThrow().colorHex()).isEqualTo("#C62828");
+    assertThat(leida.atributosSinColor().get(0).valor()).isEqualTo("S-M");
+  }
 }

@@ -5,6 +5,7 @@ import co.tecnosport.api.domain.catalogo.ImagenProducto;
 import co.tecnosport.api.domain.catalogo.IntercambioDePrincipal;
 import co.tecnosport.api.domain.catalogo.Paquete;
 import co.tecnosport.api.domain.catalogo.Producto;
+import co.tecnosport.api.domain.catalogo.ValorAtributo;
 import co.tecnosport.api.domain.catalogo.Variante;
 import co.tecnosport.api.domain.compartido.Sku;
 import co.tecnosport.api.domain.compartido.Slug;
@@ -144,6 +145,12 @@ public interface RepositorioProductos {
 
   /** Cuelga una imagen de una variante —su tono— o de ninguna. */
   void guardarVarianteDeImagen(UUID imagenId, UUID varianteId);
+
+  /**
+   * Un atributo más en una variante que ya existe: el color que recibe un producto aprobado sin
+   * tono. Las demás filas de la variante no se tocan.
+   */
+  void agregarAtributoAVariante(UUID varianteId, ValorAtributo valor);
 
   /**
    * Graba el intercambio de {@code Producto.usarImagenDeGaleriaComoPrincipal}, todo o nada: quita
