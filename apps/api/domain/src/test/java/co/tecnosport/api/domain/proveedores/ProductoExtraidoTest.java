@@ -202,4 +202,54 @@ class ProductoExtraidoTest {
             .contrastadoCon("Tenis tallas 34 al 40")
             .tallas());
   }
+
+  private static ProductoExtraido conCodigo(String codigo) {
+    return new ProductoExtraido(
+        true,
+        false,
+        "Jean costuras contrastadas",
+        LineaCatalogo.ROPA,
+        TipoProductoProveedor.PANTALON,
+        Dinero.deCop(124000),
+        Tallas.desconocida(),
+        null,
+        List.of(),
+        null,
+        null,
+        null,
+        false,
+        new BigDecimal("0.9"),
+        null,
+        codigo);
+  }
+
+  /** El código se guarda como el proveedor lo marca, sin paréntesis ni espacios. */
+  @Test
+  void elCodigoDeReferenciaSeNormaliza() {
+    assertEquals(Optional.of("VY2777"), conCodigo("( vy2777)").codigoReferenciaOpcional());
+    assertEquals(Optional.of("261003"), conCodigo("261003").codigoReferenciaOpcional());
+    assertEquals(Optional.of("M4"), conCodigo("M4").codigoReferenciaOpcional());
+  }
+
+  /** Sin una cifra, o demasiado largo, no es un código: es una palabra o una frase. */
+  @Test
+  void loQueNoPareceUnCodigoNoLoEs() {
+    assertEquals(Optional.empty(), conCodigo("DYNAMIC").codigoReferenciaOpcional());
+    assertEquals(Optional.empty(), conCodigo("Q1234567890123").codigoReferenciaOpcional());
+    assertEquals(Optional.empty(), conCodigo("  ").codigoReferenciaOpcional());
+  }
+
+  /**
+   * El código identifica el producto, así que uno que el texto no escribe —inventado, o de otro
+   * producto del mensaje mal leído— no se cree.
+   */
+  @Test
+  void elCodigoSoloValeSiElTextoLoEscribe() {
+    String texto = "Jean costuras contrastadas ( Q339)\n💲124\nTalla S M L";
+
+    assertEquals(
+        Optional.of("Q339"), conCodigo("Q339").contrastadoCon(texto).codigoReferenciaOpcional());
+    assertEquals(
+        Optional.empty(), conCodigo("Q340").contrastadoCon(texto).codigoReferenciaOpcional());
+  }
 }

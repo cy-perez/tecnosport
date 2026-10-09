@@ -24,6 +24,7 @@ import co.tecnosport.api.domain.catalogo.Paquete;
 import co.tecnosport.api.domain.catalogo.Producto;
 import co.tecnosport.api.domain.catalogo.TipoAtributo;
 import co.tecnosport.api.domain.catalogo.Variante;
+import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.compartido.Sku;
 import co.tecnosport.api.domain.compartido.Slug;
 import co.tecnosport.api.domain.inventario.Inventario;
@@ -262,6 +263,17 @@ final class ApoyoDeCatalogoParaIngesta {
           .filter(b -> b.proveedorId().equals(proveedorId))
           .filter(b -> b.estado() == EstadoBorrador.EN_REVISION)
           .anyMatch(b -> b.huella().map(huella::equals).orElse(false));
+    }
+
+    @Override
+    public List<AnuncioEnRevision> anunciosEnRevision(UUID proveedorId, Dinero precioProveedor) {
+      return porId.values().stream()
+          .filter(b -> b.proveedorId().equals(proveedorId))
+          .filter(b -> b.estado() == EstadoBorrador.EN_REVISION)
+          .filter(b -> b.precioProveedor().map(precioProveedor::equals).orElse(false))
+          .filter(b -> b.titulo().isPresent())
+          .map(b -> new AnuncioEnRevision(b.titulo().get(), b.pHash().orElse(null)))
+          .toList();
     }
 
     @Override

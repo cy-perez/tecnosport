@@ -385,8 +385,8 @@ class ProcesarLoteDeIngestaTest {
 
   /**
    * Violeta (2 de octubre de 2026): dos pies de foto con un conjunto cada uno, y el jean repetido
-   * en los dos. Salen tres borradores de dos publicaciones —el jean una sola vez—, todos con las
-   * fotos compartidas y sin huella visual.
+   * en los dos. Salen tres borradores de dos publicaciones —el jean una sola vez, porque su código
+   * Q337 es el mismo—, todos con las fotos compartidas y sin huella visual.
    */
   @Test
   void dosConjuntosDeVioletaDejanTresBorradoresYElJeanUnaSolaVez() {
@@ -429,9 +429,11 @@ class ProcesarLoteDeIngestaTest {
             texto ->
                 texto.completo().contains("Chaleco")
                     ? List.of(
-                        prenda("Chaleco Denim", 99000), prenda("Jean wide Leg Licrado", 124000))
+                        prenda("Chaleco Denim", 99000, "Q300"),
+                        prenda("Jean wide Leg Licrado", 124000, "Q337"))
                     : List.of(
-                        prenda("Blusa Rib larga", 28000), prenda("Jean wide Leg Licrado", 124000)));
+                        prenda("Blusa Rib larga", 28000, "VY2719"),
+                        prenda("Jean wide Leg Licrado", 124000, "Q337")));
 
     LoteIngesta resultado = casoCon(new FuenteFija(crudos), extractor).ejecutar(lote.id());
 
@@ -459,6 +461,10 @@ class ProcesarLoteDeIngestaTest {
   }
 
   private static ProductoExtraido prenda(String titulo, long precio) {
+    return prenda(titulo, precio, null);
+  }
+
+  private static ProductoExtraido prenda(String titulo, long precio, String codigo) {
     return new ProductoExtraido(
         true,
         false,
@@ -474,6 +480,7 @@ class ProcesarLoteDeIngestaTest {
         null,
         false,
         new BigDecimal("0.9"),
-        null);
+        null,
+        codigo);
   }
 }

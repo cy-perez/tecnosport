@@ -2,6 +2,7 @@ package co.tecnosport.api.infrastructure.proveedores;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import co.tecnosport.api.application.proveedores.AnuncioEnRevision;
 import co.tecnosport.api.application.proveedores.BorradoresPaginados;
 import co.tecnosport.api.application.proveedores.DependenciasDeLote;
 import co.tecnosport.api.application.proveedores.DependenciasDeProveedor;
@@ -303,6 +304,66 @@ class RepositorioBorradoresJpaTest {
     enRevision.rechazar("Repetido.");
     borradores.actualizar(enRevision);
     assertThat(borradores.existeEnRevisionConHuella(proveedor.id(), huella)).isFalse();
+  }
+
+  /**
+   * Lo que hace falta para reconocer un anuncio repetido sin código: título y pHash de los que
+   * siguen en revisión a ese precio. El precio compara como número, con la escala de la columna.
+   */
+  @Test
+  void devuelveLosAnunciosEnRevisionDeUnPrecio() {
+    unaPublicacion();
+    PHash pHash = PHash.deHex("00000000000000ff");
+    BorradorProducto conFoto =
+        BorradorProducto.nuevo(
+            publicacion.id(),
+            proveedor.id(),
+            extraido("Buso navideño", null),
+            "{}",
+            Dinero.deCop(45000),
+            null,
+            null,
+            pHash,
+            Set.of(),
+            T);
+    BorradorProducto sinFoto =
+        BorradorProducto.nuevo(
+            publicacion.id(),
+            proveedor.id(),
+            extraido("Falda puntos", null),
+            "{}",
+            Dinero.deCop(45000),
+            null,
+            null,
+            null,
+            Set.of(),
+            T);
+    BorradorProducto otroPrecio =
+        BorradorProducto.nuevo(
+            publicacion.id(),
+            proveedor.id(),
+            extraido("Buso navideño", null),
+            "{}",
+            Dinero.deCop(40000),
+            null,
+            null,
+            pHash,
+            Set.of(),
+            T);
+    borradores.guardar(conFoto);
+    borradores.guardar(sinFoto);
+    borradores.guardar(otroPrecio);
+
+    assertThat(borradores.anunciosEnRevision(proveedor.id(), Dinero.deCop(45000)))
+        .containsExactlyInAnyOrder(
+            new AnuncioEnRevision("Buso navideño", pHash),
+            new AnuncioEnRevision("Falda puntos", null));
+    assertThat(borradores.anunciosEnRevision(UUID.randomUUID(), Dinero.deCop(45000))).isEmpty();
+
+    conFoto.rechazar("Repetido.");
+    borradores.actualizar(conFoto);
+    assertThat(borradores.anunciosEnRevision(proveedor.id(), Dinero.deCop(45000)))
+        .containsExactly(new AnuncioEnRevision("Falda puntos", null));
   }
 
   /**

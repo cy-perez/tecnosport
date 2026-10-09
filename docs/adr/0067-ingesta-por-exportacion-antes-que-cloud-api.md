@@ -95,10 +95,12 @@ se puede probar de punta a punta sin gastar una llamada.
   en `ERROR` lo que estaba en `PROCESANDO`, con un motivo que pide volver a
   subir el archivo. No se reanuda a medias porque no hay forma de saber en qué
   publicación iba, y repetir la subida es seguro por la deduplicación.
-- **El mismo anuncio repetido no abre dos borradores.** Mientras hay uno en
-  revisión con la misma huella, la publicación repetida se descarta con ese
-  motivo; y si el primero ya se aprobó, aprobar el segundo responde 409
-  (`PRODUCTO_DE_PROVEEDOR_YA_EXISTE`) en vez de chocar con el índice único.
+- **El mismo anuncio repetido no abre dos borradores**, y desde el 9 de octubre
+  de 2026 «el mismo» pide el texto **y la foto** (ver «El mismo texto no es la
+  misma prenda», abajo). Mientras hay uno en revisión, el repetido se descarta
+  con ese motivo; y si dos borradores con la misma huella llegan a quedar en
+  revisión, aprobar el segundo responde 409 (`PRODUCTO_DE_PROVEEDOR_YA_EXISTE`)
+  en vez de chocar con el índice único.
 - **Un producto aprobado se ve al aprobar, no en la fecha del mensaje.** Entre
   exportar y aprobar pasan días; con la fecha del mensaje nacía ya vencido para
   la ventana de `ADR-0066` y el job lo ocultaba en su primera vuelta.
@@ -164,6 +166,40 @@ aunque en el chat no había nada más entre las dos cosas.
   demoró.
 - **Un precio que ya tiene fotos no recoge nada.** La ventana sigue siendo la
   regla; esto solo rescata lo que la ventana dejaba sin dueño y sin competencia.
+
+## El mismo texto no es la misma prenda (9 de octubre de 2026)
+
+La exportación de La Riverah del 9 de octubre trajo el «Busito manga larga» a
+58.000 dos veces, a las 12:06 y a las 19:32 del día anterior, con el mismo texto
+letra por letra: el primero azul y el segundo gris. La «Chaqueta Cuerina» a
+95.000, igual: negra a mediodía, beige en la noche. La huella era proveedor,
+título y precio, así que el segundo de cada par se descartaba como repetido, y
+si se hubiera aprobado el primero, el segundo se habría tomado por su renovación.
+El negocio lo dijo así: un anuncio repetido a otra hora es otro producto.
+
+- **Sin código, la huella del producto lleva la fecha del mensaje**
+  (`HuellaProveedor.deAnuncio`). Dos anuncios con el mismo texto a distinta hora
+  son dos borradores, y los dos pueden aprobarse sin chocar con el índice único.
+  Leer otra vez el mismo mensaje da la misma huella.
+- **Se descarta solo el anuncio repetido con la misma foto.** Meraki repite el
+  «Buso navideño» con el texto y las fotos de la vez anterior, y eso sigue
+  siendo un solo borrador: hay uno en revisión con el mismo título y precio, y
+  alguna foto del anuncio nuevo está a la distancia de Hamming del umbral de la
+  principal de aquel. Las fotos se comparan todas contra esa, porque el álbum
+  repetido no siempre llega en el mismo orden. Si alguno de los dos no tiene foto
+  con que comparar, no se descarta: un borrador de más se elimina en el panel, y
+  una prenda descartada no vuelve.
+- **Con código de referencia, el código manda** (`HuellaProveedor.deReferencia`).
+  Violeta marca cada prenda —«Jean costuras contrastadas (Q339)»— y la repite en
+  varios conjuntos al día: ahí el mismo código es la misma prenda a cualquier hora
+  y a cualquier precio, y se descarta o se renueva como antes. El código lo lee
+  el extractor (`codigo_referencia`, uno por producto, porque en un mensaje de
+  dos prendas solo el modelo sabe cuál es de cuál), y como el precio, **no se le
+  cree**: si no está escrito en el texto, no hay código.
+- **La renovación de un producto sin código es por la foto.** El mismo texto
+  sin la misma foto ya no renueva nada. Los productos aprobados antes conservan
+  su huella vieja: nada los vuelve a encontrar por el texto, y la foto los sigue
+  renovando.
 
 ## Pendientes que este ADR deja escritos
 

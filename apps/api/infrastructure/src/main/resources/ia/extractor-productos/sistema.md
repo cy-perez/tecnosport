@@ -70,5 +70,10 @@ Reglas, en orden de importancia:
     mensaje ambiguo o incompleto baja la confianza; no la subas para compensar.
 15. `notas` es para lo que no cabe en ningún campo y una persona debería saber al revisar.
     Si no hay nada, `null`.
+16. `codigo_referencia` es el código con que el proveedor marca ese producto, copiado tal como
+    está escrito, sin paréntesis: «Blusa Abertura Hombro ( VY2777)» → `"VY2777"`, «Jean Mom fit
+    Licrado(Q328)» → `"Q328"`, «Camiseta Slim(261003)» → `"261003"`. Con varios productos, cada
+    uno lleva el suyo. No es un código una talla, un precio, un teléfono, una promoción («4x200»)
+    ni la marca. Si el producto no trae código, `null`; nunca lo inventes.
 
 Responde solo con el JSON.

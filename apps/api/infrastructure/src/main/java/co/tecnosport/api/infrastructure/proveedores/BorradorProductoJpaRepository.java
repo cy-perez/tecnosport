@@ -2,6 +2,7 @@ package co.tecnosport.api.infrastructure.proveedores;
 
 import co.tecnosport.api.infrastructure.proveedores.entidad.BorradorProductoJpaEntity;
 import jakarta.persistence.LockModeType;
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -35,6 +36,17 @@ public interface BorradorProductoJpaRepository
   Optional<BorradorProductoJpaEntity> buscarConBloqueo(@Param("id") UUID id);
 
   boolean existsByProveedorIdAndEstadoAndHuella(UUID proveedorId, String estado, String huella);
+
+  /** El título y el pHash de los borradores en un estado y a un precio: proyección de interfaz. */
+  List<AnuncioFila> findByProveedorIdAndEstadoAndPrecioProveedorAndTituloIsNotNull(
+      UUID proveedorId, String estado, BigDecimal precioProveedor);
+
+  /** Lo que hace falta para reconocer un anuncio repetido. */
+  interface AnuncioFila {
+    String getTitulo();
+
+    String getPhash();
+  }
 
   /** Lo que el pHash necesita de un borrador que ya es producto. */
   interface HuellaVisualFila {

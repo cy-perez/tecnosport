@@ -162,15 +162,15 @@ public final class ProcesarLoteDeIngesta {
       return;
     }
     try {
-      // La foto se lee y se decodifica aquí, fuera de la transacción; adentro solo se decide. Con
-      // varios productos no se lee: la primera foto puede ser de cualquiera y no se usa.
-      PHash pHash =
-          evaluadas.size() == 1 ? resolver.pHashDe(publicacion, mensajes).orElse(null) : null;
+      // Las fotos se leen y se decodifican aquí, fuera de la transacción; adentro solo se decide.
+      // Con varios productos no se leen: la primera foto puede ser de cualquiera y no se usa.
+      List<PHash> pHashes =
+          evaluadas.size() == 1 ? resolver.pHashesDe(publicacion, mensajes) : List.of();
       List<ResolverBorrador.Resolucion> resoluciones =
           enTransaccionPropia.ejecutar(
               () ->
                   resolver.ejecutar(
-                      publicacion, mensajes, proveedor, evaluadas, pHash, huellasVisuales));
+                      publicacion, mensajes, proveedor, evaluadas, pHashes, huellasVisuales));
       for (ResolverBorrador.Resolucion resolucion : resoluciones) {
         switch (resolucion.tipo()) {
           case NUEVO -> contador.nuevos++;

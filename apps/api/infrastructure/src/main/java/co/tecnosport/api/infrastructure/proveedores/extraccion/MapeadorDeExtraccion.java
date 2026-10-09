@@ -73,7 +73,8 @@ final class MapeadorDeExtraccion {
           textoONulo(nodo.path("alt_en")),
           nodo.path("es_replica").asBoolean(false),
           confianza(nodo.path("confianza")),
-          textoONulo(nodo.path("notas")));
+          textoONulo(nodo.path("notas")),
+          textoONulo(nodo.path("codigo_referencia")));
     } catch (ExcepcionDeDominio e) {
       throw new ExtraccionFallidaException(
           "El extractor devolvió un valor que el dominio no admite: " + e.getMessage(), e);
