@@ -4,6 +4,7 @@ import {
   LoteEliminado,
   LoteIngesta,
   LotesPaginados,
+  OrdenIngesta,
   SubirExportacion,
 } from './ingesta.model';
 
@@ -20,6 +21,8 @@ export interface RepositorioIngestasAdmin {
   subir(comando: SubirExportacion): Promise<LoteIngesta>;
   /** Borra la ingesta con sus borradores y los productos no publicados que salieron de ella. */
   eliminar(id: string): Promise<LoteEliminado>;
+  /** Pausar, reanudar o detener. Devuelve el lote como quedó: detener en curso da `DETENIENDO`. */
+  ordenar(id: string, orden: OrdenIngesta): Promise<LoteIngesta>;
 }
 
 export const REPOSITORIO_INGESTAS_ADMIN = new InjectionToken<RepositorioIngestasAdmin>(

@@ -51,7 +51,7 @@
     "prenda_incoherente": "A garment has no colour or has photos of two colours. Check the garment of each photo.",
     "imagen_de_proveedor_ilegible": "One of the photos could not be processed. Reject it or ask the supplier for the photo again.",
     "producto_de_proveedor_ya_existe": "This post is already a product in the catalogue: same title at the same price. Reject the draft.",
-    "lote_en_curso": "The import is still being processed. Wait for it to finish before deleting it.",
+    "lote_en_curso": "The import is still running or paused. Stop it, or wait for it to finish, before deleting it.",
     "pago_sin_pedido_ya_devuelto": "That payment already has its refund recorded.",
     "inventario_sin_confirmar": "There is no stock for every line: restock and try again, or cancel with a refund.",
     "peso_de_referencia_no_admitido": "That category does not take a reference weight: it is electronics, which is measured product by product, or it has subcategories, and the weight goes on each of them.",
@@ -60,7 +60,8 @@
     "talla_repetida": "That model already has that size in one of its colors: two variants would be identical.",
     "marca_con_productos": "This brand has products. Move them to another brand from their form before deleting it.",
     "marca_ya_existe": "There's already a brand with that name. Different capitalisation doesn't make it a different one.",
-    "marca_no_encontrada": "That brand no longer exists: the list has just been refreshed."
+    "marca_no_encontrada": "That brand no longer exists: the list has just been refreshed.",
+    "lote_en_otro_estado": "The import changed state in the meantime (it finished, failed or was stopped). The list has just been refreshed."
   },
   "iniciarSesion": {
     "titulo": "Admin panel",
@@ -978,7 +979,7 @@
   },
   "ingestas": {
     "titulo": "Imports",
-    "explicacion": "Each batch is one export of a supplier's chat. Upload the zip WhatsApp generates (Export chat, with media); the server reads the messages, groups them into posts and leaves one draft per new product. Uploading the same chat twice is safe: what was already read is not repeated.",
+    "explicacion": "Each batch is a chat export from a supplier. Upload the zip WhatsApp generates (Export chat, with media); the server reads the messages, groups them into posts and leaves a draft for each new product. Uploading the same chat twice is safe: whatever was already read isn't repeated. Imports run one at a time: while one is running you can pause it (the others wait with it) or stop it, and the queue moves on to the next one.",
     "errorLista": "The import list could not be loaded.",
     "total": "{{total}} batch(es)",
     "ninguna": "No export has been uploaded yet.",
@@ -990,7 +991,10 @@
       "RECIBIDO": "Queued",
       "PROCESANDO": "Processing",
       "TERMINADO": "Finished",
-      "ERROR": "Failed"
+      "ERROR": "Failed",
+      "PAUSADO": "Paused",
+      "DETENIENDO": "Stopping",
+      "DETENIDO": "Stopped"
     },
     "columnas": {
       "proveedor": "Supplier",
@@ -1003,7 +1007,8 @@
       "mensajes": "{{leidos}} messages read, {{nuevos}} new",
       "publicaciones": "{{total}} posts",
       "borradores": "{{nuevos}} new drafts, {{renovaciones}} renewals, {{agotados}} sold out",
-      "alertas": "{{alertas}} with alerts, {{descartes}} discarded"
+      "alertas": "{{alertas}} with alerts, {{descartes}} discarded",
+      "parcial": "Stopped before finishing. This is what it got through:"
     },
     "subir": {
       "titulo": "Upload an export",
@@ -1030,6 +1035,29 @@
       "cancelar": "Cancel",
       "hecho": "Import deleted. Products deleted: {{eliminados}}. Kept because they are published or sold: {{conservados}}.",
       "error": "We could not delete the import. Please try again."
+    },
+    "enPausa": "Paused. Queued imports wait until you resume or stop it. A pause does not survive a server restart: if it restarts, the import is closed with an error.",
+    "deteniendo": "Finishing the current post, then it frees the queue.",
+    "detenidaEnCola": "Stopped before it started: nothing was read.",
+    "ordenes": {
+      "pausar": "Pause",
+      "reanudar": "Resume",
+      "detener": "Stop",
+      "pausarLote": "Pause the import from {{proveedor}} on {{fecha}}",
+      "reanudarLote": "Resume the import from {{proveedor}} on {{fecha}}",
+      "detenerLote": "Stop the import from {{proveedor}} on {{fecha}}",
+      "pregunta": "Stop this import from {{proveedor}}?",
+      "loQueImplica": "The queue moves on to the next import. What was already processed stays; what's left isn't picked up again: uploading the same file again won't process it, because those messages were already read. To process it in full, delete the import and upload it again.",
+      "loQueImplicaEnCola": "It hasn't started yet: it leaves the queue without reading anything.",
+      "confirmar": "Yes, stop",
+      "deteniendo": "Stopping…",
+      "cancelar": "Cancel",
+      "detenida": "The import from {{proveedor}} was stopped. If it was running, it finishes the current post and the queue moves on to the next one.",
+      "error": {
+        "pausar": "We couldn't pause the import. Try again.",
+        "reanudar": "We couldn't resume the import. Try again.",
+        "detener": "We couldn't stop the import. Try again."
+      }
     }
   },
   "tecnologia": {
