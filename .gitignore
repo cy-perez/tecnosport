@@ -47,19 +47,8 @@ apps/web/lighthouse/
 # Sonda del nivel 360: lecturas crudas de un telefono, de una corrida.
 apps/web/nivel-360/
 
-# Icecat
-catalogo/icecat/*.gz
-catalogo/icecat/indice.csv
-catalogo/fotos/crudas/
-catalogo/entregables/
-catalogo/lista*.txt
-catalogo/productos*.json
-catalogo/revision*.md
-catalogo/icecat/fichas/
-catalogo/icecat/coincidencias.csv
-catalogo/icecat/fotos.csv
-catalogo/imagenes/
-catalogo/*
+# Catalogo
+/catalogo/
 
 # La medición de cobertura de la sonda: es un dato medido, no fuente. Lo que se versiona es la
 # conclusión, en docs/13.
@@ -85,3 +74,12 @@ hero-tecnosport.zip
 # apps/web/public/imagenes/portada/hero/— y el encuadre, que vive en tools/recortar-hero.py.
 # No el material de origen, que vive en la raíz porque es donde lo deja quien lo baja.
 Imgs/
+imgs/
+
+# Ingestas
+/ingesta/
+/Ingesta/
+
+# Caché de Angular cuando ng corre desde la raíz, y los worktrees de agentes de Claude Code.
+/.angular/
+.claude/worktrees/

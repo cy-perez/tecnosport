@@ -267,6 +267,84 @@ class AgrupadorDePublicacionesTest {
     assertEquals(List.of(cercaDelMorral.id()), resultado.publicaciones().get(1).medios());
   }
 
+  /**
+   * D'Osman, 7 de octubre de 2026: el álbum del bolso ejecutivo a las 14:22–14:24 y su texto a las
+   * 15:01. Fuera de la ventana, pero no hay nada más en el chat: es suyo.
+   */
+  @Test
+  void unPrecioSinFotosRecogeElAlbumSueltoQueLoPrecede() {
+    MensajeProveedor foto1 = foto(0, null);
+    MensajeProveedor foto2 = foto(60, null);
+    MensajeProveedor foto3 = foto(120, null);
+    MensajeProveedor bolso = texto(120 + 37 * 60, "Bolso ejecutivo 💰*65.000*");
+
+    AgrupadorDePublicaciones.Resultado resultado =
+        new AgrupadorDePublicaciones(QUINCE_MINUTOS)
+            .agrupar(List.of(foto1, foto2, foto3, bolso), FOTOS_PRIMERO);
+
+    assertEquals(
+        List.of(foto1.id(), foto2.id(), foto3.id()), resultado.publicaciones().get(0).medios());
+    assertEquals(0, resultado.sueltos());
+  }
+
+  @Test
+  void elAlbumQueLlegaAMasDeUnaHoraDelPrecioNoEsSuyo() {
+    MensajeProveedor lejana = foto(0, null);
+    MensajeProveedor bolso = texto(3601, "Bolso 💰 53.000");
+
+    AgrupadorDePublicaciones.Resultado resultado =
+        new AgrupadorDePublicaciones(QUINCE_MINUTOS).agrupar(List.of(lejana, bolso), FOTOS_PRIMERO);
+
+    assertEquals(List.of(), resultado.publicaciones().get(0).medios());
+    assertEquals(1, resultado.sueltos());
+  }
+
+  /** Dentro del álbum la ventana sigue mandando: una foto más vieja que eso es de otra cosa. */
+  @Test
+  void elAlbumRecogidoSeCortaDondeSeCortaLaVentanaEntreFotos() {
+    MensajeProveedor vieja = foto(0, null);
+    MensajeProveedor foto1 = foto(20 * 60, null);
+    MensajeProveedor foto2 = foto(21 * 60, null);
+    MensajeProveedor bolso = texto(50 * 60, "Bolso 💰 53.000");
+
+    AgrupadorDePublicaciones.Resultado resultado =
+        new AgrupadorDePublicaciones(QUINCE_MINUTOS)
+            .agrupar(List.of(vieja, foto1, foto2, bolso), FOTOS_PRIMERO);
+
+    assertEquals(List.of(foto1.id(), foto2.id()), resultado.publicaciones().get(0).medios());
+    assertEquals(1, resultado.sueltos());
+  }
+
+  @Test
+  void unMensajeEnMedioCortaElAlbumSuelto() {
+    MensajeProveedor foto = foto(0, null);
+    MensajeProveedor saludo = texto(60, "Buenos días clientes");
+    MensajeProveedor bolso = texto(40 * 60, "Bolso 💰 53.000");
+
+    AgrupadorDePublicaciones.Resultado resultado =
+        new AgrupadorDePublicaciones(QUINCE_MINUTOS)
+            .agrupar(List.of(foto, saludo, bolso), FOTOS_PRIMERO);
+
+    assertEquals(List.of(), resultado.publicaciones().get(0).medios());
+    assertEquals(2, resultado.sueltos());
+  }
+
+  @Test
+  void conUnAlbumSueltoACadaLadoDecideElOrdenDelProveedor() {
+    MensajeProveedor antes = foto(0, null);
+    MensajeProveedor bolso = texto(30 * 60, "Bolso 💰 53.000");
+    MensajeProveedor despues = foto(60 * 60, null);
+    List<MensajeProveedor> mensajes = List.of(antes, bolso, despues);
+    AgrupadorDePublicaciones agrupador = new AgrupadorDePublicaciones(QUINCE_MINUTOS);
+
+    assertEquals(
+        List.of(antes.id()),
+        agrupador.agrupar(mensajes, FOTOS_PRIMERO).publicaciones().get(0).medios());
+    assertEquals(
+        List.of(despues.id()),
+        agrupador.agrupar(mensajes, TEXTO_PRIMERO).publicaciones().get(0).medios());
+  }
+
   @Test
   void elOrdenEsObligatorio() {
     AgrupadorDePublicaciones agrupador = new AgrupadorDePublicaciones(QUINCE_MINUTOS);
