@@ -51,6 +51,7 @@ import co.tecnosport.api.application.proveedores.ProveedorDeListasException;
 import co.tecnosport.api.application.proveedores.ProveedorInactivoException;
 import co.tecnosport.api.application.proveedores.ProveedorNoEncontradoException;
 import co.tecnosport.api.application.proveedores.TipoDeExportacionNoAdmitidoException;
+import co.tecnosport.api.application.proveedores.tecnologia.ProveedorSinListasException;
 import co.tecnosport.api.application.reintegro.MontoDeReintegroInvalidoException;
 import co.tecnosport.api.application.reintegro.ReintegroRequeridoException;
 import co.tecnosport.api.application.retracto.PedidoSinEntregarException;
@@ -162,6 +163,7 @@ class CodigosDeCableTest {
           Map.entry(ProveedorConIngestaEnCursoException.class, "PROVEEDOR_CON_INGESTA_EN_CURSO"),
           Map.entry(ProveedorInactivoException.class, "PROVEEDOR_INACTIVO"),
           Map.entry(ProveedorDeListasException.class, "PROVEEDOR_DE_LISTAS"),
+          Map.entry(ProveedorSinListasException.class, "PROVEEDOR_SIN_LISTAS"),
           Map.entry(ExportacionNoEncontradaException.class, "EXPORTACION_NO_ENCONTRADA"),
           Map.entry(ExportacionDemasiadoGrandeException.class, "EXPORTACION_DEMASIADO_GRANDE"),
           Map.entry(TipoDeExportacionNoAdmitidoException.class, "TIPO_DE_EXPORTACION_NO_ADMITIDO"),

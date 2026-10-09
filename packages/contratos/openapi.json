@@ -212,6 +212,19 @@
         ],
         "type" : "object"
       },
+      "AprobarBorradorTecnologiaPeticion" : {
+        "properties" : {
+          "categoriaId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "marcaId" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
       "AsignarColorPeticion" : {
         "properties" : {
           "varianteId" : {
@@ -382,6 +395,76 @@
             "type" : "array"
           }
         },
+        "type" : "object"
+      },
+      "BorradorTecnologiaRespuesta" : {
+        "properties" : {
+          "categoriaSugerida" : {
+            "type" : "string"
+          },
+          "configuraciones" : {
+            "items" : {
+              "$ref" : "#/components/schemas/ConfiguracionRespuesta"
+            },
+            "type" : "array"
+          },
+          "creadoEn" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "descripcion" : {
+            "type" : "string"
+          },
+          "estado" : {
+            "type" : "string"
+          },
+          "id" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "idModelo" : {
+            "type" : "string"
+          },
+          "marcaSugerida" : {
+            "type" : "string"
+          },
+          "motivoRechazo" : {
+            "type" : "string"
+          },
+          "paleta" : {
+            "items" : {
+              "type" : "string"
+            },
+            "type" : "array"
+          },
+          "productoId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "proveedorId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "titulo" : {
+            "type" : "string"
+          },
+          "vistoEn" : {
+            "format" : "date-time",
+            "type" : "string"
+          }
+        },
+        "required" : [
+          "configuraciones",
+          "creadoEn",
+          "descripcion",
+          "estado",
+          "id",
+          "idModelo",
+          "paleta",
+          "proveedorId",
+          "titulo",
+          "vistoEn"
+        ],
         "type" : "object"
       },
       "BorradoresPaginadosRespuesta" : {
@@ -608,6 +691,96 @@
           "clienteId",
           "habilitado",
           "urlScript"
+        ],
+        "type" : "object"
+      },
+      "ConfiguracionPeticion" : {
+        "properties" : {
+          "almacenamiento" : {
+            "type" : "string"
+          },
+          "coloresSugeridos" : {
+            "items" : {
+              "type" : "string"
+            },
+            "type" : "array"
+          },
+          "costoProveedor" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "precioMercado" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "ram" : {
+            "type" : "string"
+          },
+          "sim" : {
+            "type" : "string"
+          },
+          "sku" : {
+            "type" : "string"
+          },
+          "titulo" : {
+            "type" : "string"
+          }
+        },
+        "required" : [
+          "costoProveedor",
+          "sku",
+          "titulo"
+        ],
+        "type" : "object"
+      },
+      "ConfiguracionRespuesta" : {
+        "properties" : {
+          "almacenamiento" : {
+            "type" : "string"
+          },
+          "coloresElegidos" : {
+            "items" : {
+              "type" : "string"
+            },
+            "type" : "array"
+          },
+          "coloresSugeridos" : {
+            "items" : {
+              "type" : "string"
+            },
+            "type" : "array"
+          },
+          "costoProveedor" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "precioMercado" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "precioVenta" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "ram" : {
+            "type" : "string"
+          },
+          "sim" : {
+            "type" : "string"
+          },
+          "sku" : {
+            "type" : "string"
+          },
+          "titulo" : {
+            "type" : "string"
+          }
+        },
+        "required" : [
+          "coloresElegidos",
+          "coloresSugeridos",
+          "costoProveedor",
+          "sku",
+          "titulo"
         ],
         "type" : "object"
       },
@@ -1046,6 +1219,42 @@
             "type" : "string"
           }
         },
+        "type" : "object"
+      },
+      "EleccionPeticion" : {
+        "properties" : {
+          "colores" : {
+            "items" : {
+              "type" : "string"
+            },
+            "type" : "array"
+          },
+          "precioVenta" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "sku" : {
+            "type" : "string"
+          }
+        },
+        "required" : [
+          "colores",
+          "sku"
+        ],
+        "type" : "object"
+      },
+      "ElegirConfiguracionesPeticion" : {
+        "properties" : {
+          "configuraciones" : {
+            "items" : {
+              "$ref" : "#/components/schemas/EleccionPeticion"
+            },
+            "type" : "array"
+          }
+        },
+        "required" : [
+          "configuraciones"
+        ],
         "type" : "object"
       },
       "EmisionDeGuiaRespuesta" : {
@@ -1590,6 +1799,84 @@
         },
         "type" : "object"
       },
+      "ImportacionTecnologiaRespuesta" : {
+        "properties" : {
+          "borradoresActualizados" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "borradoresNuevos" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "modelosAgotados" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "modelosYaDecididos" : {
+            "items" : {
+              "type" : "string"
+            },
+            "type" : "array"
+          },
+          "productosRenovados" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "sinMargen" : {
+            "items" : {
+              "type" : "string"
+            },
+            "type" : "array"
+          },
+          "variantesRepuestas" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "variantesRetiradas" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        },
+        "type" : "object"
+      },
+      "ImportarListaTecnologiaPeticion" : {
+        "properties" : {
+          "bloques" : {
+            "items" : {
+              "type" : "string"
+            },
+            "type" : "array"
+          },
+          "configuracionesDesaparecidas" : {
+            "items" : {
+              "type" : "string"
+            },
+            "type" : "array"
+          },
+          "fechaLista" : {
+            "format" : "date",
+            "type" : "string"
+          },
+          "modelos" : {
+            "items" : {
+              "$ref" : "#/components/schemas/ModeloPeticion"
+            },
+            "type" : "array"
+          },
+          "modelosDesaparecidos" : {
+            "items" : {
+              "type" : "string"
+            },
+            "type" : "array"
+          }
+        },
+        "required" : [
+          "fechaLista",
+          "modelos"
+        ],
+        "type" : "object"
+      },
       "IniciarIngestaPeticion" : {
         "properties" : {
           "objectKey" : {
@@ -2019,6 +2306,47 @@
         "required" : [
           "envioADomicilio",
           "retiroEnPunto"
+        ],
+        "type" : "object"
+      },
+      "ModeloPeticion" : {
+        "properties" : {
+          "categoria" : {
+            "type" : "string"
+          },
+          "configuraciones" : {
+            "items" : {
+              "$ref" : "#/components/schemas/ConfiguracionPeticion"
+            },
+            "type" : "array"
+          },
+          "descripcion" : {
+            "type" : "string"
+          },
+          "idModelo" : {
+            "type" : "string"
+          },
+          "marca" : {
+            "type" : "string"
+          },
+          "metaDescripcion" : {
+            "type" : "string"
+          },
+          "paleta" : {
+            "items" : {
+              "type" : "string"
+            },
+            "type" : "array"
+          },
+          "titulo" : {
+            "type" : "string"
+          }
+        },
+        "required" : [
+          "configuraciones",
+          "descripcion",
+          "idModelo",
+          "titulo"
         ],
         "type" : "object"
       },
@@ -3962,6 +4290,192 @@
         ]
       }
     },
+    "/api/v1/admin/borradores-tecnologia" : {
+      "get" : {
+        "operationId" : "listar_17",
+        "parameters" : [
+          {
+            "in" : "query",
+            "name" : "estado",
+            "required" : false,
+            "schema" : {
+              "default" : "EN_REVISION",
+              "type" : "string"
+            }
+          }
+        ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/BorradorTecnologiaRespuesta"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "admin-tecnologia-controlador"
+        ]
+      }
+    },
+    "/api/v1/admin/borradores-tecnologia/{id}" : {
+      "get" : {
+        "operationId" : "ver_3",
+        "parameters" : [
+          {
+            "in" : "path",
+            "name" : "id",
+            "required" : true,
+            "schema" : {
+              "format" : "uuid",
+              "type" : "string"
+            }
+          }
+        ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/BorradorTecnologiaRespuesta"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "admin-tecnologia-controlador"
+        ]
+      },
+      "patch" : {
+        "operationId" : "elegir",
+        "parameters" : [
+          {
+            "in" : "path",
+            "name" : "id",
+            "required" : true,
+            "schema" : {
+              "format" : "uuid",
+              "type" : "string"
+            }
+          }
+        ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ElegirConfiguracionesPeticion"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/BorradorTecnologiaRespuesta"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "admin-tecnologia-controlador"
+        ]
+      }
+    },
+    "/api/v1/admin/borradores-tecnologia/{id}/aprobar" : {
+      "post" : {
+        "operationId" : "aprobar_1",
+        "parameters" : [
+          {
+            "in" : "path",
+            "name" : "id",
+            "required" : true,
+            "schema" : {
+              "format" : "uuid",
+              "type" : "string"
+            }
+          }
+        ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/AprobarBorradorTecnologiaPeticion"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProductoAdminRespuesta"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "admin-tecnologia-controlador"
+        ]
+      }
+    },
+    "/api/v1/admin/borradores-tecnologia/{id}/rechazar" : {
+      "post" : {
+        "operationId" : "rechazar_1",
+        "parameters" : [
+          {
+            "in" : "path",
+            "name" : "id",
+            "required" : true,
+            "schema" : {
+              "format" : "uuid",
+              "type" : "string"
+            }
+          }
+        ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/RechazarBorradorPeticion"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/BorradorTecnologiaRespuesta"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "admin-tecnologia-controlador"
+        ]
+      }
+    },
     "/api/v1/admin/borradores/{id}" : {
       "delete" : {
         "operationId" : "eliminar_3",
@@ -4783,7 +5297,7 @@
         ]
       },
       "get" : {
-        "operationId" : "ver_5",
+        "operationId" : "ver_6",
         "parameters" : [
           {
             "in" : "path",
@@ -6492,6 +7006,47 @@
         ]
       }
     },
+    "/api/v1/admin/proveedores/{proveedorId}/listas-tecnologia" : {
+      "post" : {
+        "operationId" : "importar",
+        "parameters" : [
+          {
+            "in" : "path",
+            "name" : "proveedorId",
+            "required" : true,
+            "schema" : {
+              "format" : "uuid",
+              "type" : "string"
+            }
+          }
+        ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ImportarListaTecnologiaPeticion"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ImportacionTecnologiaRespuesta"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "admin-tecnologia-controlador"
+        ]
+      }
+    },
     "/api/v1/admin/retractos/{id}/recepcion" : {
       "post" : {
         "operationId" : "recibirProducto",
@@ -7311,7 +7866,7 @@
     },
     "/api/v1/carritos/{id}" : {
       "get" : {
-        "operationId" : "ver_4",
+        "operationId" : "ver_5",
         "parameters" : [
           {
             "in" : "path",
@@ -7619,7 +8174,7 @@
     },
     "/api/v1/mapa-del-sitio" : {
       "get" : {
-        "operationId" : "ver_3",
+        "operationId" : "ver_4",
         "responses" : {
           "200" : {
             "content" : {

@@ -85,6 +85,7 @@ import co.tecnosport.api.application.proveedores.ProveedorInactivoException;
 import co.tecnosport.api.application.proveedores.ProveedorNoEncontradoException;
 import co.tecnosport.api.application.proveedores.TipoDeExportacionNoAdmitidoException;
 import co.tecnosport.api.application.proveedores.TipoDeFotoNoAdmitidoException;
+import co.tecnosport.api.application.proveedores.tecnologia.ProveedorSinListasException;
 import co.tecnosport.api.application.reintegro.MontoDeReintegroInvalidoException;
 import co.tecnosport.api.application.reintegro.ReintegroRequeridoException;
 import co.tecnosport.api.application.retracto.PedidoSinEntregarException;
@@ -258,6 +259,12 @@ public class ManejadorDeErrores {
   @ExceptionHandler(ProveedorDeListasException.class)
   public ProblemDetail proveedorDeListas(ProveedorDeListasException excepcion) {
     return problema(HttpStatus.CONFLICT, "El proveedor es de listas de precios", excepcion);
+  }
+
+  // Y la simétrica: una lista de precios para un proveedor de bolsos o de ropa.
+  @ExceptionHandler(ProveedorSinListasException.class)
+  public ProblemDetail proveedorSinListas(ProveedorSinListasException excepcion) {
+    return problema(HttpStatus.CONFLICT, "El proveedor no es de listas de precios", excepcion);
   }
 
   // 422 y no 404: la key viene en el cuerpo, y una key que no es de ese proveedor o que no apunta
