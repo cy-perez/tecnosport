@@ -48,7 +48,7 @@ export const FICHAS = join(CATALOGO, "entregables", "fichas");
 const PROCESADAS = "Fotos procesadas";
 
 let carpetas = null;
-function carpetaDeModelo(idModelo) {
+export function carpetaDeModelo(idModelo) {
   if (carpetas === null) {
     carpetas = new Map();
     if (existsSync(FICHAS)) {
