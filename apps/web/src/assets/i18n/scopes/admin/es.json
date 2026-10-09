@@ -1007,6 +1007,7 @@
       "coloresEscritosAyuda": "Por ejemplo: Negro, Azul claro",
       "precioVenta": "Precio de venta",
       "ayudaPrecio": "Costo {{costo}} · precio de mercado {{mercado}}",
+      "precioIlegible": "Escribe el precio en pesos, sin decimales: 849.900 o 849900.",
       "guardar": "Guardar la elección",
       "guardando": "Guardando…",
       "guardado": "Elección guardada.",
@@ -1025,6 +1026,7 @@
       "hecho": "Aprobado.",
       "nadaQueVender": "Marca los colores de al menos una configuración: sin eso no hay nada que vender.",
       "faltaPrecio": "Cada configuración que se vende necesita su precio de venta, en pesos y sin decimales.",
+      "precioBajoCosto": "El precio de venta de cada configuración tiene que superar su costo.",
       "faltanMarcaYCategoria": "Elige la marca y la categoría del catálogo.",
       "error": "No se pudo aprobar. Inténtalo de nuevo."
     },

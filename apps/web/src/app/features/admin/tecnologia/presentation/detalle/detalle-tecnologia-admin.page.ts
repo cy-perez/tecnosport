@@ -43,6 +43,8 @@ import {
   completaUnProductoExistente,
   ConfiguracionTecnologia,
   EleccionDeConfiguracion,
+  mismoColor,
+  precioEscrito,
   precioInicial,
   problemaDeAprobacion,
   separarColoresEscritos,
@@ -51,12 +53,6 @@ import {
 /** «Samsung», «SAMSUNG» y «samsung» son la misma marca; «Celulares» y «celulares», la misma hoja. */
 function sinTildes(texto: string): string {
   return texto.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase().trim();
-}
-
-/** «849.900», «849900» o «849 900». Nulo si no es un entero positivo. */
-function enteroPositivo(texto: string): number | null {
-  const valor = Number(texto.replace(/[.\s]/g, ''));
-  return texto.trim() !== '' && Number.isInteger(valor) && valor > 0 ? valor : null;
 }
 
 /** El campo de precio y, sin paleta, el de colores escritos a mano, de una configuración. */
@@ -137,11 +133,25 @@ export class DetalleTecnologiaAdminPage {
   /** Los colores marcados de cada configuración, por SKU. */
   protected readonly colores = signal<ReadonlyMap<string, readonly string[]>>(new Map());
   private readonly controles = new Map<string, ControlesDeConfiguracion>();
+  /** Los SKU que ya tienen controles: una señal, para que la plantilla espere a que existan. */
+  private readonly conControles = signal<ReadonlySet<string>>(new Set());
   private readonly inicializadoPara = signal<string | null>(null);
-  /** Las configuraciones se pintan cuando sus controles existen, no antes. */
-  protected readonly listo = computed(
-    () => this.borrador() !== null && this.inicializadoPara() === this.borrador()?.id,
-  );
+  /**
+   * Las configuraciones se pintan cuando sus controles existen, no antes. Una importación puede
+   * añadir una con la página abierta, y la revalidación la trae antes de que el `effect` le cree
+   * los suyos.
+   */
+  protected readonly listo = computed(() => {
+    const borrador = this.borrador();
+    const con = this.conControles();
+    return (
+      borrador !== null &&
+      this.inicializadoPara() === borrador.id &&
+      borrador.configuraciones.every((c) => con.has(c.sku))
+    );
+  });
+  /** El error del precio de cada configuración, por SKU: se pinta en su campo. */
+  protected readonly erroresDePrecio = signal<ReadonlyMap<string, string>>(new Map());
 
   protected readonly marca = new FormControl('', { nonNullable: true });
   protected readonly categoria = new FormControl('', { nonNullable: true });
@@ -181,14 +191,22 @@ export class DetalleTecnologiaAdminPage {
   });
 
   constructor() {
-    // Solo al cargar otro borrador, no en cada revalidación: volver a poner lo del servidor
-    // borraría lo que alguien acaba de marcar sin guardar (apps/web/CLAUDE.md).
+    // Todo de nuevo solo al cargar otro borrador, no en cada revalidación: volver a poner lo del
+    // servidor borraría lo que alguien acaba de marcar sin guardar (apps/web/CLAUDE.md). En una
+    // revalidación solo se completan las configuraciones que no tenían controles.
     effect(() => {
       const borrador = this.borrador();
-      if (borrador === null || this.inicializadoPara() === borrador.id) {
+      if (borrador === null) {
         return;
       }
-      untracked(() => this.inicializar(borrador));
+      untracked(() => {
+        if (this.inicializadoPara() !== borrador.id) {
+          this.controles.clear();
+          this.colores.set(new Map());
+          this.inicializadoPara.set(borrador.id);
+        }
+        this.completar(borrador);
+      });
     });
 
     // La marca y la categoría que sugiere la skill, si el catálogo tiene una con ese nombre y nadie
@@ -206,11 +224,16 @@ export class DetalleTecnologiaAdminPage {
           }
         }
         if (borrador?.categoriaSugerida && this.categoria.value === '') {
+          // Entre las hojas: puede haber una rama y una hoja con el mismo nombre, y solo la hoja
+          // se puede elegir.
           const sugerida = sinTildes(borrador.categoriaSugerida);
+          const hojas = new Set(this.opcionesCategoria().map((o) => o.valor));
           const categoria = categorias.find(
-            (c) => sinTildes(c.nombre) === sugerida || sinTildes(c.slug) === sugerida,
+            (c) =>
+              hojas.has(c.id) &&
+              (sinTildes(c.nombre) === sugerida || sinTildes(c.slug) === sugerida),
           );
-          if (categoria && this.opcionesCategoria().some((o) => o.valor === categoria.id)) {
+          if (categoria) {
             this.categoria.setValue(categoria.id);
           }
         }
@@ -218,10 +241,14 @@ export class DetalleTecnologiaAdminPage {
     });
   }
 
-  private inicializar(borrador: BorradorTecnologia): void {
-    this.controles.clear();
-    const colores = new Map<string, readonly string[]>();
-    for (const configuracion of borrador.configuraciones) {
+  /** Crea los controles de las configuraciones que todavía no los tienen; las demás no se tocan. */
+  private completar(borrador: BorradorTecnologia): void {
+    const faltan = borrador.configuraciones.filter((c) => !this.controles.has(c.sku));
+    if (faltan.length === 0) {
+      return;
+    }
+    const colores = new Map(this.colores());
+    for (const configuracion of faltan) {
       const iniciales = coloresIniciales(configuracion, borrador.paleta);
       colores.set(configuracion.sku, iniciales);
       const precio = precioInicial(configuracion);
@@ -231,7 +258,7 @@ export class DetalleTecnologiaAdminPage {
       });
     }
     this.colores.set(colores);
-    this.inicializadoPara.set(borrador.id);
+    this.conControles.set(new Set(this.controles.keys()));
   }
 
   protected controlesDe(sku: string): ControlesDeConfiguracion {
@@ -279,23 +306,44 @@ export class DetalleTecnologiaAdminPage {
     return clasesDeEstadoBorrador(borrador.estado);
   }
 
-  private elecciones(): EleccionDeConfiguracion[] {
+  protected errorDePrecio(sku: string): string | null {
+    return this.erroresDePrecio().get(sku) ?? null;
+  }
+
+  /**
+   * Lo que está en pantalla, o nulo si algún precio está mal escrito: entonces el error se pinta en
+   * su campo y no se manda nada. Mandarlo sin precio borraba en silencio el que ya estaba guardado.
+   */
+  private elecciones(): EleccionDeConfiguracion[] | null {
     const borrador = this.borrador();
     if (!borrador) {
       return [];
     }
-    return borrador.configuraciones.map((configuracion) => {
+    const errores = new Map<string, string>();
+    const elecciones = borrador.configuraciones.map((configuracion) => {
       const controles = this.controlesDe(configuracion.sku);
+      // Con paleta, solo lo que está en ella: un color que salió no se ve para desmarcarlo.
       const colores =
         borrador.paleta.length === 0
           ? separarColoresEscritos(controles.coloresEscritos.value)
-          : [...(this.colores().get(configuracion.sku) ?? [])];
+          : (this.colores().get(configuracion.sku) ?? []).filter((c) =>
+              borrador.paleta.some((p) => mismoColor(p, c)),
+            );
+      const precio = precioEscrito(controles.precio.value);
+      if (precio === 'ilegible') {
+        errores.set(
+          configuracion.sku,
+          this.transloco.translate('admin.tecnologia.detalle.precioIlegible'),
+        );
+      }
       return {
         sku: configuracion.sku,
         colores,
-        precioVenta: enteroPositivo(controles.precio.value),
+        precioVenta: precio === 'ilegible' ? null : precio,
       };
     });
+    this.erroresDePrecio.set(errores);
+    return errores.size > 0 ? null : elecciones;
   }
 
   protected guardar(): void {
@@ -304,8 +352,13 @@ export class DetalleTecnologiaAdminPage {
     }
     this.avisoGuardado.set(false);
     this.errorGuardar.set(null);
+    const elecciones = this.elecciones();
+    if (elecciones === null) {
+      this.errorGuardar.set(this.transloco.translate('admin.tecnologia.detalle.precioIlegible'));
+      return;
+    }
     this.elegir.mutate(
-      { id: this.id(), elecciones: this.elecciones() },
+      { id: this.id(), elecciones },
       {
         onSuccess: () => this.avisoGuardado.set(true),
         onError: (error: unknown) =>
@@ -321,7 +374,11 @@ export class DetalleTecnologiaAdminPage {
       return;
     }
     const elecciones = this.elecciones();
-    const problema = problemaDeAprobacion(elecciones);
+    if (elecciones === null) {
+      this.errorAprobar.set(this.transloco.translate('admin.tecnologia.detalle.precioIlegible'));
+      return;
+    }
+    const problema = problemaDeAprobacion(elecciones, this.borrador()?.configuraciones ?? []);
     if (problema !== null) {
       this.errorAprobar.set(this.transloco.translate('admin.tecnologia.aprobar.' + problema));
       return;

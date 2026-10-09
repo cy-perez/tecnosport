@@ -93,20 +93,45 @@ export function precioInicial(configuracion: ConfiguracionTecnologia): number | 
   return configuracion.precioVenta ?? configuracion.precioMercado;
 }
 
-export type ProblemaDeAprobacion = 'nadaQueVender' | 'faltaPrecio' | null;
+export type ProblemaDeAprobacion = 'nadaQueVender' | 'faltaPrecio' | 'precioBajoCosto' | null;
 
 /**
  * Lo mismo que exige el servidor, dicho antes de enviar: al menos una configuración con colores, y
- * cada una que se venda con su precio.
+ * cada una que se venda con un precio que supere su costo.
  */
 export function problemaDeAprobacion(
   elecciones: readonly EleccionDeConfiguracion[],
+  configuraciones: readonly ConfiguracionTecnologia[],
 ): ProblemaDeAprobacion {
   const queSeVenden = elecciones.filter((e) => e.colores.length > 0);
   if (queSeVenden.length === 0) {
     return 'nadaQueVender';
   }
-  return queSeVenden.some((e) => e.precioVenta === null) ? 'faltaPrecio' : null;
+  if (queSeVenden.some((e) => e.precioVenta === null)) {
+    return 'faltaPrecio';
+  }
+  const costo = new Map(configuraciones.map((c) => [c.sku, c.costoProveedor] as const));
+  return queSeVenden.some((e) => (e.precioVenta ?? 0) <= (costo.get(e.sku) ?? 0))
+    ? 'precioBajoCosto'
+    : null;
+}
+
+/**
+ * El precio que alguien escribió: «849.900», «849900» o «849 900». Vacío es «todavía no»; lo que
+ * no es un entero positivo —«849,900», «ochocientos»— es un error que se dice, no un precio que se
+ * borra en silencio.
+ */
+export function precioEscrito(texto: string): number | null | 'ilegible' {
+  if (texto.trim() === '') {
+    return null;
+  }
+  const valor = Number(texto.replace(/[.\s]/g, ''));
+  return Number.isInteger(valor) && valor > 0 ? valor : 'ilegible';
+}
+
+/** «Negro» y «negro» son el mismo color: el servidor tampoco los distingue. */
+export function mismoColor(a: string, b: string): boolean {
+  return a.trim().toLowerCase() === b.trim().toLowerCase();
 }
 
 /** «Negro, Azul claro»: sin paleta, los colores se escriben separados por coma. */

@@ -119,6 +119,7 @@
               [idCampo]="'precio-' + c"
               [label]="'admin.tecnologia.detalle.precioVenta' | transloco"
               [ayuda]="ayudaDePrecio(configuracion)"
+              [error]="errorDePrecio(configuracion.sku)"
               [formControl]="controlesDe(configuracion.sku).precio"
             />
           </fieldset>

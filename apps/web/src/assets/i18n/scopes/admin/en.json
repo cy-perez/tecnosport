@@ -1007,6 +1007,7 @@
       "coloresEscritosAyuda": "For example: Black, Light blue",
       "precioVenta": "Sale price",
       "ayudaPrecio": "Cost {{costo}} · market price {{mercado}}",
+      "precioIlegible": "Type the price in pesos, without decimals: 849.900 or 849900.",
       "guardar": "Save the selection",
       "guardando": "Saving…",
       "guardado": "Selection saved.",
@@ -1025,6 +1026,7 @@
       "hecho": "Approved.",
       "nadaQueVender": "Check the colors of at least one configuration: otherwise there is nothing to sell.",
       "faltaPrecio": "Every configuration on sale needs its sale price, in pesos and without decimals.",
+      "precioBajoCosto": "The sale price of each configuration must be higher than its cost.",
       "faltanMarcaYCategoria": "Choose the catalog brand and category.",
       "error": "It could not be approved. Try again."
     },

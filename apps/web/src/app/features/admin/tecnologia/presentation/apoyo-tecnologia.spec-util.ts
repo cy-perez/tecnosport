@@ -67,6 +67,11 @@ export class RepositorioBorradoresTecnologiaFalso implements RepositorioBorrador
 
   constructor(private borradores: BorradorTecnologia[] = []) {}
 
+  /** Lo que respondería el servidor después de otra importación. */
+  reemplazar(borrador: BorradorTecnologia): void {
+    this.borradores = this.borradores.map((b) => (b.id === borrador.id ? borrador : b));
+  }
+
   async listar(estado: EstadoBorradorTecnologia): Promise<BorradorTecnologia[]> {
     return this.borradores.filter((b) => b.estado === estado);
   }

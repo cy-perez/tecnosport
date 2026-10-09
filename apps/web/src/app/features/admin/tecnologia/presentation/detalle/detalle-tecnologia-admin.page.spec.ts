@@ -195,6 +195,58 @@ describe('DetalleTecnologiaAdminPage', () => {
     expect(repositorio.rechazos).toEqual([{ id: 'bt-1', motivo: 'No vendemos esta gama' }]);
   });
 
+  it('un precio mal escrito se dice en su campo y no se manda', async () => {
+    const { repositorio } = await renderPagina();
+
+    fireEvent.input(grupoDe(UNA_SIM).getByLabelText(esAdmin.tecnologia.detalle.precioVenta), {
+      target: { value: '849,900' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: esAdmin.tecnologia.detalle.guardar }));
+
+    expect(
+      (await screen.findAllByText(esAdmin.tecnologia.detalle.precioIlegible)).length,
+    ).toBeGreaterThan(0);
+    expect(repositorio.elecciones).toHaveLength(0);
+  });
+
+  it('no se aprueba al costo', async () => {
+    const { repositorio } = await renderPagina();
+
+    fireEvent.input(grupoDe(UNA_SIM).getByLabelText(esAdmin.tecnologia.detalle.precioVenta), {
+      target: { value: '675000' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: esAdmin.tecnologia.aprobar.accion }));
+
+    expect(await screen.findByText(esAdmin.tecnologia.aprobar.precioBajoCosto)).toBeTruthy();
+    expect(repositorio.aprobaciones).toHaveLength(0);
+  });
+
+  it('una configuración que llega con la página abierta aparece sin perder lo marcado', async () => {
+    const { repositorio, fixture } = await renderPagina();
+    fireEvent.click(grupoDe(UNA_SIM).getByLabelText('Gris'));
+
+    const actual = borradorTecnologiaDePrueba();
+    repositorio.reemplazar({
+      ...actual,
+      configuraciones: [
+        ...actual.configuraciones,
+        {
+          ...actual.configuraciones[0],
+          sku: 'a17-esim',
+          titulo: 'Samsung Galaxy A17 5G 8GB RAM 256GB eSIM',
+        },
+      ],
+    });
+    await fixture.debugElement.injector.get(QueryClient).invalidateQueries();
+
+    expect(
+      await screen.findByRole('group', {
+        name: 'Colores de Samsung Galaxy A17 5G 8GB RAM 256GB eSIM',
+      }),
+    ).toBeTruthy();
+    expect((grupoDe(UNA_SIM).getByLabelText('Gris') as HTMLInputElement).checked).toBe(true);
+  });
+
   it('no tiene violaciones de accesibilidad', async () => {
     const { container } = await renderPagina();
 
