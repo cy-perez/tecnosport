@@ -57,7 +57,10 @@
     "peso_de_referencia_no_admitido": "That category does not take a reference weight: it is electronics, which is measured product by product, or it has subcategories, and the weight goes on each of them.",
     "articulo_sin_medidas": "An item in this order has no measurements and its category has no reference weight. Measure it, or set a weight for its category in \"Shipping weights and sizes\".",
     "articulo_no_asegurable": "A package in this order is worth more than the carrier insures, so it cannot be shipped.",
-    "talla_repetida": "That model already has that size in one of its colors: two variants would be identical."
+    "talla_repetida": "That model already has that size in one of its colors: two variants would be identical.",
+    "marca_con_productos": "This brand has products. Move them to another brand from their form before deleting it.",
+    "marca_ya_existe": "There's already a brand with that name. Different capitalisation doesn't make it a different one.",
+    "marca_no_encontrada": "That brand no longer exists: the list has just been refreshed."
   },
   "iniciarSesion": {
     "titulo": "Admin panel",
@@ -782,7 +785,7 @@
   },
   "marcas": {
     "titulo": "Brands",
-    "explicacion": "The catalogue's brands. A new brand can be created here and is available in the product form straight away. Brands can't be renamed or deleted: the name is what shoppers see, on the product page and in the store filter.",
+    "explicacion": "The catalogue's brands. A new brand is available in the product form straight away. Renaming a brand changes what shoppers see, on the product page and in the store filter. Only a brand with no products can be deleted.",
     "nombre": "Brand name",
     "crear": "Create brand",
     "enviando": "Creating…",
@@ -792,7 +795,29 @@
     "error": "Couldn't create the brand. Try again.",
     "errorLista": "Couldn't load the list of brands.",
     "ninguna": "There are no brands yet.",
-    "listaTitulo": "In the catalogue ({{total}})"
+    "listaTitulo": "In the catalogue ({{total}})",
+    "editar": {
+      "accion": "Edit",
+      "accionMarca": "Edit the brand {{nombre}}",
+      "nombre": "New name for {{nombre}}",
+      "guardar": "Save",
+      "guardando": "Saving…",
+      "cancelar": "Cancel",
+      "faltaNombre": "Enter the brand name.",
+      "hecho": "Done: the brand is now called {{nombre}}, in the store too.",
+      "error": "We couldn't rename the brand. Try again."
+    },
+    "eliminar": {
+      "accion": "Delete",
+      "accionMarca": "Delete the brand {{nombre}}",
+      "pregunta": "Delete the brand {{nombre}}?",
+      "loQueImplica": "It's only deleted if it has no products, in any state. This can't be undone.",
+      "confirmar": "Yes, delete",
+      "eliminando": "Deleting…",
+      "cancelar": "Cancel",
+      "hecho": "The brand {{nombre}} was deleted.",
+      "error": "We couldn't delete the brand. Try again."
+    }
   },
   "clave": {
     "titulo": "Change my password",

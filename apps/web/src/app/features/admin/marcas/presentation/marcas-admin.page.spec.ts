@@ -1,16 +1,18 @@
 import { provideRouter } from '@angular/router';
 import { TranslocoTestingModule } from '@jsverse/transloco';
 import { QueryClient, provideTanStackQuery } from '@tanstack/angular-query-experimental';
-import { fireEvent, render, screen } from '@testing-library/angular';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/angular';
 import en from '../../../../../assets/i18n/en.json';
 import es from '../../../../../assets/i18n/es.json';
 import esAdmin from '../../../../../assets/i18n/scopes/admin/es.json';
 import { esperarSinViolaciones } from '../../../../../testing/axe';
+import { ErrorHttp } from '../../../../core/http/respuesta-http';
 import { Marca } from '../../../catalogo/domain/producto.model';
 import {
   REPOSITORIO_MARCAS_ADMIN,
   RepositorioMarcasAdmin,
   ResultadoCrearMarca,
+  ResultadoRenombrarMarca,
 } from '../domain/repositorio-marcas-admin.puerto';
 import { MarcasAdminPage } from './marcas-admin.page';
 
@@ -37,6 +39,32 @@ class RepositorioMarcasAdminFalso implements RepositorioMarcasAdmin {
     const marca: Marca = { id: 'm-' + this.marcas.length, nombre };
     this.marcas = [...this.marcas, marca];
     return { tipo: 'CREADA', marca };
+  }
+
+  readonly renombradas: { id: string; nombre: string }[] = [];
+  readonly eliminadas: string[] = [];
+  /** Las que tienen productos: el servidor responde 409 al borrarlas. */
+  readonly conProductos = new Set<string>();
+
+  async renombrar(id: string, nombre: string): Promise<ResultadoRenombrarMarca> {
+    this.renombradas.push({ id, nombre });
+    const otra = this.marcas.find(
+      (marca) => marca.id !== id && marca.nombre.toLowerCase() === nombre.toLowerCase(),
+    );
+    if (otra) {
+      return { tipo: 'YA_EXISTE' };
+    }
+    const marca: Marca = { id, nombre: nombre.trim() };
+    this.marcas = this.marcas.map((m) => (m.id === id ? marca : m));
+    return { tipo: 'RENOMBRADA', marca };
+  }
+
+  async eliminar(id: string): Promise<void> {
+    this.eliminadas.push(id);
+    if (this.conProductos.has(id)) {
+      throw new ErrorHttp(409, 'tiene productos', 'MARCA_CON_PRODUCTOS');
+    }
+    this.marcas = this.marcas.filter((m) => m.id !== id);
   }
 }
 
@@ -118,5 +146,112 @@ describe('MarcasAdminPage', () => {
 
     await screen.findByText('Xiaomi');
     await esperarSinViolaciones(container);
+  });
+
+  describe('renombrar', () => {
+    const e = esAdmin.marcas.editar;
+
+    it('cambia el nombre en la fila y lo confirma por el nombre nuevo', async () => {
+      const { repositorio } = await renderPagina([{ id: 'm1', nombre: 'Xaomi' }]);
+
+      fireEvent.click(await screen.findByRole('button', { name: 'Editar la marca Xaomi' }));
+      const campo = screen.getByLabelText(/Nuevo nombre de Xaomi/);
+      expect((campo as HTMLInputElement).value).toBe('Xaomi');
+      fireEvent.input(campo, { target: { value: 'Xiaomi' } });
+      fireEvent.click(screen.getByRole('button', { name: e.guardar }));
+
+      expect(await screen.findByText(/la marca ahora se llama Xiaomi/)).toBeTruthy();
+      expect(repositorio.renombradas).toEqual([{ id: 'm1', nombre: 'Xiaomi' }]);
+      expect(await screen.findByRole('button', { name: 'Editar la marca Xiaomi' })).toBeTruthy();
+    });
+
+    it('con el nombre de otra marca dice que ya existe y no cierra la edición', async () => {
+      await renderPagina([
+        { id: 'm1', nombre: 'Xiaomi' },
+        { id: 'm2', nombre: 'Redmi' },
+      ]);
+
+      fireEvent.click(await screen.findByRole('button', { name: 'Editar la marca Redmi' }));
+      fireEvent.input(screen.getByLabelText(/Nuevo nombre de Redmi/), {
+        target: { value: 'XIAOMI' },
+      });
+      fireEvent.click(screen.getByRole('button', { name: e.guardar }));
+
+      expect(await screen.findByText(esAdmin.marcas.yaExiste)).toBeTruthy();
+      expect(screen.getByLabelText(/Nuevo nombre de Redmi/)).toBeTruthy();
+    });
+
+    it('sin cambios no llama al servidor, y cancelar tampoco', async () => {
+      const { repositorio } = await renderPagina([{ id: 'm1', nombre: 'Xiaomi' }]);
+
+      fireEvent.click(await screen.findByRole('button', { name: 'Editar la marca Xiaomi' }));
+      fireEvent.click(screen.getByRole('button', { name: e.guardar }));
+      fireEvent.click(await screen.findByRole('button', { name: 'Editar la marca Xiaomi' }));
+      fireEvent.click(screen.getByRole('button', { name: e.cancelar }));
+
+      expect(repositorio.renombradas).toEqual([]);
+    });
+
+    it('con el nombre vacío dice qué falta', async () => {
+      const { repositorio } = await renderPagina([{ id: 'm1', nombre: 'Xiaomi' }]);
+
+      fireEvent.click(await screen.findByRole('button', { name: 'Editar la marca Xiaomi' }));
+      fireEvent.input(screen.getByLabelText(/Nuevo nombre de Xiaomi/), { target: { value: '' } });
+      fireEvent.click(screen.getByRole('button', { name: e.guardar }));
+
+      expect(await screen.findByText(e.faltaNombre)).toBeTruthy();
+      expect(repositorio.renombradas).toEqual([]);
+    });
+  });
+
+  describe('eliminar', () => {
+    const e = esAdmin.marcas.eliminar;
+
+    it('pregunta y borra la marca sin productos', async () => {
+      const { repositorio } = await renderPagina([
+        { id: 'm1', nombre: 'Xaomi' },
+        { id: 'm2', nombre: 'Xiaomi' },
+      ]);
+
+      fireEvent.click(await screen.findByRole('button', { name: 'Eliminar la marca Xaomi' }));
+      expect(repositorio.eliminadas).toEqual([]);
+      fireEvent.click(screen.getByRole('button', { name: e.confirmar }));
+
+      expect(await screen.findByText('La marca Xaomi se eliminó.')).toBeTruthy();
+      expect(repositorio.eliminadas).toEqual(['m1']);
+      // La lista se vuelve a pedir: la fila se va cuando llega.
+      await waitFor(() =>
+        expect(screen.queryByRole('button', { name: 'Eliminar la marca Xaomi' })).toBeNull(),
+      );
+    });
+
+    it('con productos dice qué hacer, con el texto del código', async () => {
+      const { repositorio } = await renderPagina([{ id: 'm1', nombre: 'Xiaomi' }]);
+      repositorio.conProductos.add('m1');
+
+      fireEvent.click(await screen.findByRole('button', { name: 'Eliminar la marca Xiaomi' }));
+      fireEvent.click(screen.getByRole('button', { name: e.confirmar }));
+
+      const pregunta = within(screen.getByRole('group'));
+      expect(await pregunta.findByText(esAdmin.errores.marca_con_productos)).toBeTruthy();
+      expect(screen.getByText('Xiaomi')).toBeTruthy();
+    });
+
+    it('cancelar no borra nada', async () => {
+      const { repositorio } = await renderPagina([{ id: 'm1', nombre: 'Xiaomi' }]);
+
+      fireEvent.click(await screen.findByRole('button', { name: 'Eliminar la marca Xiaomi' }));
+      fireEvent.click(screen.getByRole('button', { name: e.cancelar }));
+
+      expect(screen.queryByRole('button', { name: e.confirmar })).toBeNull();
+      expect(repositorio.eliminadas).toEqual([]);
+    });
+
+    it('con la pregunta abierta no tiene violaciones de accesibilidad', async () => {
+      const { container } = await renderPagina([{ id: 'm1', nombre: 'Xiaomi' }]);
+
+      fireEvent.click(await screen.findByRole('button', { name: 'Eliminar la marca Xiaomi' }));
+      await esperarSinViolaciones(container);
+    });
   });
 });
