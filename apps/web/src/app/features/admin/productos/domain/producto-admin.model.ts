@@ -123,6 +123,18 @@ export interface AsignarColorAImagenAdmin {
   readonly varianteId: string | null;
 }
 
+/**
+ * Un color en que el producto todavía no se vende, elegido para la foto principal. Si el producto
+ * ya tiene colores, las unidades del nuevo en cada talla; si no tiene ninguno, `existencias` va
+ * vacía y sus variantes toman el color con la existencia que ya tienen.
+ */
+export interface AgregarColorDesdeLaPrincipalAdmin {
+  readonly productoId: string;
+  /** Un color de la paleta, o una combinación: «Negro / Vino». */
+  readonly color: string;
+  readonly existencias: readonly { readonly modeloId: string; readonly existencia: number }[];
+}
+
 /** La foto de la galería que pasa a ser la principal; la principal anterior ocupa su puesto. */
 export interface UsarImagenComoPrincipalAdmin {
   readonly productoId: string;

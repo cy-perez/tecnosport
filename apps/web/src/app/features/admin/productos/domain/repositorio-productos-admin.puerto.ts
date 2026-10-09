@@ -1,6 +1,7 @@
 import { InjectionToken } from '@angular/core';
 import {
   AgregarVarianteAdmin,
+  AgregarColorDesdeLaPrincipalAdmin,
   AsignarColorAImagenAdmin,
   UsarImagenComoPrincipalAdmin,
   CrearProductoAdmin,
@@ -83,6 +84,9 @@ export interface RepositorioProductosAdmin {
   reordenarGaleria(comando: ReordenarGaleriaAdmin): Promise<void>;
   /** De qué color es una foto de la galería o la principal: la cuelga de una variante de ese color. */
   asignarColorAImagen(comando: AsignarColorAImagenAdmin): Promise<void>;
+
+  /** Empieza a vender el producto en el color de la principal, y la marca con él. */
+  agregarColorDesdeLaPrincipal(comando: AgregarColorDesdeLaPrincipalAdmin): Promise<void>;
 
   /** Intercambia la principal con una foto de la galería, sin subir nada. */
   usarImagenComoPrincipal(comando: UsarImagenComoPrincipalAdmin): Promise<void>;

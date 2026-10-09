@@ -143,6 +143,10 @@ class RepositorioProductosAdminFalso implements RepositorioProductosAdmin {
     throw new Error('no usado por esta prueba');
   }
 
+  agregarColorDesdeLaPrincipal(): Promise<void> {
+    throw new Error('no usado por esta prueba');
+  }
+
   usarImagenComoPrincipal(): Promise<void> {
     throw new Error('no usado por esta prueba');
   }
