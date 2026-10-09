@@ -1,5 +1,7 @@
 {
   "errores": {
+    "producto_con_color": "The product already sells in that colour: choose it from the colour list.",
+    "atributo_invalido": "One of the values does not fit its attribute: a colour that is not in the palette, or a value outside the allowed ones.",
     "imagen_producto_invalida": "The gallery changed in the meantime: reload the page and move it again.",
     "monto_de_reintegro_invalido": "The amount does not fit in what is left to refund for this order.",
     "reintegro_requerido": "The refund amount or method is missing, and this outcome returns money.",
@@ -288,6 +290,21 @@
         "tipoNoSoportado": "That file type isn't supported. Use JPEG, PNG or WebP.",
         "subida": "Main image updated.",
         "error": "Couldn't upload the image. Try again."
+      },
+      "colorNuevo": {
+        "opcion": "A new colour…",
+        "titulo": "New colour for the main photo",
+        "ayudaConColores": "The product starts selling in this colour: one variant is created for each size, with the price and packaging of the one that already exists in that size. Each size starts with one unit; change it if there are more, or enter zero to show it as sold out.",
+        "ayudaSinColores": "The product has no colour yet: its variants take the one you choose, with the units they already have.",
+        "color": "Colour",
+        "elegir": "Choose the colour",
+        "unidades": "Units available",
+        "unidadesDe": "Units available in {{talla}}",
+        "unidadesInvalidas": "Enter a whole number, zero or more.",
+        "faltanDatos": "The colour or the units of some size are missing.",
+        "guardar": "Add the colour",
+        "cancelar": "Cancel",
+        "error": "The colour could not be added. Try again."
       },
       "galeria": {
         "colorGuardado": "Photo colour saved.",

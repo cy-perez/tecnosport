@@ -13,7 +13,9 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import co.tecnosport.api.application.catalogo.AgregarColorDesdeLaPrincipal;
 import co.tecnosport.api.application.catalogo.AgregarImagenDeGaleria;
+import co.tecnosport.api.application.catalogo.AgregarVariante;
 import co.tecnosport.api.application.catalogo.AlmacenDeImagenes;
 import co.tecnosport.api.application.catalogo.AsignarColorAImagenDeGaleria;
 import co.tecnosport.api.application.catalogo.AsignarColorAImagenPrincipal;
@@ -28,20 +30,25 @@ import co.tecnosport.api.application.catalogo.ProductosPaginados;
 import co.tecnosport.api.application.catalogo.PublicarProducto;
 import co.tecnosport.api.application.catalogo.QuitarImagenDeGaleria;
 import co.tecnosport.api.application.catalogo.ReordenarGaleria;
+import co.tecnosport.api.application.catalogo.RepositorioAtributos;
 import co.tecnosport.api.application.catalogo.RepositorioCategorias;
 import co.tecnosport.api.application.catalogo.RepositorioMarcas;
+import co.tecnosport.api.application.catalogo.RepositorioPaletaDeColores;
 import co.tecnosport.api.application.catalogo.RepositorioProductos;
 import co.tecnosport.api.application.catalogo.SolicitarSubidaDeImagenDeGaleria;
 import co.tecnosport.api.application.catalogo.SolicitarSubidaDeImagenPrincipal;
 import co.tecnosport.api.application.catalogo.UsarImagenDeGaleriaComoPrincipal;
 import co.tecnosport.api.application.catalogo.VerProductoAdmin;
 import co.tecnosport.api.application.pedido.RepositorioPedidos;
+import co.tecnosport.api.domain.catalogo.Atributo;
 import co.tecnosport.api.domain.catalogo.Categoria;
+import co.tecnosport.api.domain.catalogo.ColorDePaleta;
 import co.tecnosport.api.domain.catalogo.EstadoProducto;
 import co.tecnosport.api.domain.catalogo.ImagenProducto;
 import co.tecnosport.api.domain.catalogo.LineaCatalogo;
 import co.tecnosport.api.domain.catalogo.Marca;
 import co.tecnosport.api.domain.catalogo.Producto;
+import co.tecnosport.api.domain.catalogo.TipoAtributo;
 import co.tecnosport.api.domain.catalogo.TipoImagen;
 import co.tecnosport.api.domain.catalogo.Variante;
 import co.tecnosport.api.domain.catalogo.VarianteDeImagen;
@@ -50,6 +57,7 @@ import co.tecnosport.api.domain.compartido.HashContenido;
 import co.tecnosport.api.domain.compartido.Sku;
 import co.tecnosport.api.domain.compartido.Slug;
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -73,6 +81,7 @@ class AdminProductoControladorTest {
 
   @Autowired private MockMvc mockMvc;
   @Autowired private RepositorioProductosDobleDePrueba repositorio;
+  @Autowired private RepositorioAtributosDobleDePrueba repositorioAtributos;
   @Autowired private RepositorioMarcasDobleDePrueba repositorioMarcas;
   @Autowired private RepositorioCategoriasDobleDePrueba repositorioCategorias;
   @Autowired private AlmacenDeImagenesDobleDePrueba almacenDeImagenes;
@@ -464,6 +473,64 @@ class AdminProductoControladorTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"varianteId\":null}"))
         .andExpect(status().is4xxClientError());
+  }
+
+  /**
+   * Un producto aprobado sin tono: el color nuevo de la principal se lo dan sus variantes, sin
+   * pedir existencias, y la foto queda marcada con la primera.
+   */
+  @Test
+  void unColorNuevoParaLaPrincipalDeUnProductoSinColorDevuelve204() throws Exception {
+    Producto producto = productoConImagen();
+    Variante unica =
+        Variante.crear(
+            new Sku("PRV-UNICA"), Dinero.deCop(60000), BigDecimal.ZERO, null, null, List.of());
+    producto.agregarVariante(unica);
+    repositorio.conProductos(producto);
+    repositorioAtributos.conAtributos(Atributo.crear("Color", TipoAtributo.COLOR, List.of()));
+
+    mockMvc
+        .perform(
+            post("/api/v1/admin/productos/{id}/imagen-principal/color-nuevo", producto.id())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"color\":\"Rojo\",\"existencias\":[]}"))
+        .andExpect(status().isNoContent());
+
+    org.junit.jupiter.api.Assertions.assertEquals(
+        "Rojo", repositorio.atributosAgregados.get(unica.id()).valor());
+    org.junit.jupiter.api.Assertions.assertEquals(
+        producto.imagenPrincipal().orElseThrow().id(), repositorio.imagenConVariante);
+    org.junit.jupiter.api.Assertions.assertEquals(unica.id(), repositorio.varianteDeLaImagen);
+  }
+
+  @Test
+  void unColorQueNoEstaEnLaPaletaEs422() throws Exception {
+    Producto producto = productoConImagen();
+    producto.agregarVariante(
+        Variante.crear(
+            new Sku("PRV-UNICA"), Dinero.deCop(60000), BigDecimal.ZERO, null, null, List.of()));
+    repositorio.conProductos(producto);
+    repositorioAtributos.conAtributos(Atributo.crear("Color", TipoAtributo.COLOR, List.of()));
+
+    mockMvc
+        .perform(
+            post("/api/v1/admin/productos/{id}/imagen-principal/color-nuevo", producto.id())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"color\":\"Turquesa\",\"existencias\":[]}"))
+        .andExpect(status().isUnprocessableContent());
+  }
+
+  @Test
+  void sinColorLaPeticionEs422() throws Exception {
+    Producto producto = productoConImagen();
+    repositorio.conProductos(producto);
+
+    mockMvc
+        .perform(
+            post("/api/v1/admin/productos/{id}/imagen-principal/color-nuevo", producto.id())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"existencias\":[]}"))
+        .andExpect(status().isUnprocessableContent());
   }
 
   @Test
@@ -932,6 +999,29 @@ class AdminProductoControladorTest {
     AsignarColorAImagenPrincipal asignarColorAImagenPrincipal(
         RepositorioProductos repositorioProductos) {
       return new AsignarColorAImagenPrincipal(repositorioProductos);
+    }
+
+    @Bean
+    RepositorioAtributosDobleDePrueba repositorioAtributos() {
+      return new RepositorioAtributosDobleDePrueba();
+    }
+
+    @Bean
+    AgregarColorDesdeLaPrincipal agregarColorDesdeLaPrincipal(
+        RepositorioProductos repositorioProductos, RepositorioAtributos repositorioAtributos) {
+      RepositorioPaletaDeColores paleta =
+          () -> List.of(new ColorDePaleta(UUID.randomUUID(), "Rojo", "Red", "#C62828", 1));
+      return new AgregarColorDesdeLaPrincipal(
+          repositorioProductos,
+          repositorioAtributos,
+          paleta,
+          new AgregarVariante(
+              repositorioProductos,
+              repositorioAtributos,
+              new RepositorioInventarioDobleDePrueba(),
+              Instant::now,
+              false,
+              paleta));
     }
 
     @Bean

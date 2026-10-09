@@ -355,6 +355,11 @@ public class RepositorioProductosJpa implements RepositorioProductos {
   }
 
   @Override
+  public void agregarAtributoAVariante(UUID varianteId, ValorAtributo valor) {
+    varianteAtributoValorJpaRepository.save(aEntidad(varianteId, valor));
+  }
+
+  @Override
   public boolean existeVarianteConSku(Sku sku) {
     return varianteJpaRepository.existsBySku(sku.valor());
   }
