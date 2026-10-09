@@ -64,6 +64,12 @@ public interface MarcaJpaRepository extends JpaRepository<MarcaJpaEntity, UUID> 
    */
   boolean existsByNombreIgnoreCase(String nombre);
 
+  boolean existsByNombreIgnoreCaseAndIdNot(String nombre, UUID id);
+
+  /** Por identificador, como la consulta de arriba: el producto guarda {@code marcaId} suelto. */
+  @Query("select count(p) from ProductoJpaEntity p where p.marcaId = :marcaId")
+  long contarProductos(@Param("marcaId") UUID marcaId);
+
   /**
    * La marca con ese nombre sin distinguir mayúsculas: la que el índice de {@code V56} deja una.
    */

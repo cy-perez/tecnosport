@@ -9,6 +9,9 @@ import co.tecnosport.api.application.catalogo.CategoriaConProductosException;
 import co.tecnosport.api.application.catalogo.CategoriaNoEsHojaException;
 import co.tecnosport.api.application.catalogo.CategoriaSlugYaExisteException;
 import co.tecnosport.api.application.catalogo.CicloDeCategoriasException;
+import co.tecnosport.api.application.catalogo.MarcaConProductosException;
+import co.tecnosport.api.application.catalogo.MarcaNoEncontradaException;
+import co.tecnosport.api.application.catalogo.MarcaYaExisteException;
 import co.tecnosport.api.application.catalogo.ProductoConVentasException;
 import co.tecnosport.api.application.catalogo.ProductoPublicadoException;
 import co.tecnosport.api.application.catalogo.ProductoSinDescripcionException;
@@ -191,7 +194,10 @@ class CodigosDeCableTest {
           Map.entry(PrendaIncoherenteException.class, "PRENDA_INCOHERENTE"),
           Map.entry(ImagenDeProveedorIlegibleException.class, "IMAGEN_DE_PROVEEDOR_ILEGIBLE"),
           Map.entry(FotoDemasiadoGrandeException.class, "FOTO_DEMASIADO_GRANDE"),
-          Map.entry(ProductoDeProveedorYaExisteException.class, "PRODUCTO_DE_PROVEEDOR_YA_EXISTE"));
+          Map.entry(ProductoDeProveedorYaExisteException.class, "PRODUCTO_DE_PROVEEDOR_YA_EXISTE"),
+          Map.entry(MarcaConProductosException.class, "MARCA_CON_PRODUCTOS"),
+          Map.entry(MarcaNoEncontradaException.class, "MARCA_NO_ENCONTRADA"),
+          Map.entry(MarcaYaExisteException.class, "MARCA_YA_EXISTE"));
 
   @Test
   void losCodigosQueUnAdaptadorDelFrontendCableaNoCambian() {

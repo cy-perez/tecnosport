@@ -10,6 +10,7 @@ import co.tecnosport.api.application.catalogo.CategoriaNoEncontradaException;
 import co.tecnosport.api.application.catalogo.CategoriaNoEsHojaException;
 import co.tecnosport.api.application.catalogo.CategoriaSlugYaExisteException;
 import co.tecnosport.api.application.catalogo.CicloDeCategoriasException;
+import co.tecnosport.api.application.catalogo.MarcaConProductosException;
 import co.tecnosport.api.application.catalogo.MarcaNoEncontradaException;
 import co.tecnosport.api.application.catalogo.MarcaYaExisteException;
 import co.tecnosport.api.application.catalogo.ObjetoDeImagenNoEncontradoException;
@@ -430,6 +431,11 @@ public class ManejadorDeErrores {
   @ExceptionHandler(MontoDeReintegroInvalidoException.class)
   public ProblemDetail montoDeReintegroInvalido(MontoDeReintegroInvalidoException excepcion) {
     return problema(HttpStatus.UNPROCESSABLE_CONTENT, "Monto de reintegro invalido", excepcion);
+  }
+
+  @ExceptionHandler(MarcaConProductosException.class)
+  public ProblemDetail marcaConProductos(MarcaConProductosException excepcion) {
+    return problema(HttpStatus.CONFLICT, "La marca tiene productos", excepcion);
   }
 
   /**

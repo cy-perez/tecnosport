@@ -18,6 +18,7 @@ import co.tecnosport.api.application.catalogo.DespublicarProducto;
 import co.tecnosport.api.application.catalogo.EditarCategoria;
 import co.tecnosport.api.application.catalogo.EditarProducto;
 import co.tecnosport.api.application.catalogo.EliminarCategoria;
+import co.tecnosport.api.application.catalogo.EliminarMarca;
 import co.tecnosport.api.application.catalogo.EliminarProducto;
 import co.tecnosport.api.application.catalogo.EliminarSetRotacion;
 import co.tecnosport.api.application.catalogo.ListarAtributos;
@@ -33,6 +34,7 @@ import co.tecnosport.api.application.catalogo.MedirVariante;
 import co.tecnosport.api.application.catalogo.PublicarProducto;
 import co.tecnosport.api.application.catalogo.PublicarSetRotacion;
 import co.tecnosport.api.application.catalogo.QuitarImagenDeGaleria;
+import co.tecnosport.api.application.catalogo.RenombrarMarca;
 import co.tecnosport.api.application.catalogo.ReordenarGaleria;
 import co.tecnosport.api.application.catalogo.RepositorioAtributos;
 import co.tecnosport.api.application.catalogo.RepositorioCategorias;
@@ -201,6 +203,16 @@ public class ConfiguracionCatalogo {
   @Bean
   public CrearMarca crearMarca(RepositorioMarcas repositorioMarcas) {
     return new CrearMarca(repositorioMarcas);
+  }
+
+  @Bean
+  public RenombrarMarca renombrarMarca(RepositorioMarcas repositorioMarcas) {
+    return new RenombrarMarca(repositorioMarcas);
+  }
+
+  @Bean
+  public EliminarMarca eliminarMarca(RepositorioMarcas repositorioMarcas) {
+    return new EliminarMarca(repositorioMarcas);
   }
 
   @Bean

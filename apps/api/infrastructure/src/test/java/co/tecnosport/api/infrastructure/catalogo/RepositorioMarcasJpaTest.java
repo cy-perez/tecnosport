@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import co.tecnosport.api.application.catalogo.MarcaConLineas;
+import co.tecnosport.api.application.catalogo.MarcaConProductosException;
 import co.tecnosport.api.application.catalogo.MarcaYaExisteException;
 import co.tecnosport.api.domain.catalogo.LineaCatalogo;
 import co.tecnosport.api.domain.catalogo.Marca;
@@ -350,5 +351,78 @@ class RepositorioMarcasJpaTest {
   void guardarTraduceLaViolacionDelUnicoEnUnaExcepcionDeAplicacion() {
     assertThatThrownBy(() -> repositorio.guardar(Marca.crear("xiaomi")))
         .isInstanceOf(MarcaYaExisteException.class);
+  }
+
+  // --- Renombrar y borrar (ADR-0076) ---
+
+  @Test
+  void actualizarCambiaElNombreYConservaLaFechaDeCreacion() {
+    MarcaJpaEntity fila = marcas.save(new MarcaJpaEntity(UUID.randomUUID(), "Andes Wer", AHORA));
+
+    repositorio.actualizar(new Marca(fila.getId(), "Andes Wear"));
+
+    MarcaJpaEntity leida = marcas.findById(fila.getId()).orElseThrow();
+    assertThat(leida.getNombre()).isEqualTo("Andes Wear");
+    assertThat(leida.getCreadoEn()).isEqualTo(AHORA);
+  }
+
+  /** El índice de V56 por el adaptador: "xiaomi" la sembró V54. */
+  @Test
+  void actualizarAlNombreDeOtraTraduceLaViolacion() {
+    MarcaJpaEntity fila = marcas.save(new MarcaJpaEntity(UUID.randomUUID(), "Andes Wear", AHORA));
+
+    assertThatThrownBy(() -> repositorio.actualizar(new Marca(fila.getId(), "XIAOMI")))
+        .isInstanceOf(MarcaYaExisteException.class);
+  }
+
+  @Test
+  void existeOtraConNombreNoSeCuentaASiMisma() {
+    Marca andes = Marca.crear("Andes Wear");
+    repositorio.guardar(andes);
+
+    assertThat(repositorio.existeOtraConNombre("ANDES WEAR", andes.id())).isFalse();
+    assertThat(repositorio.existeOtraConNombre("andes wear", UUID.randomUUID())).isTrue();
+  }
+
+  @Test
+  void contarProductosCuentaLosDeCualquierEstado() {
+    CategoriaJpaEntity categoria =
+        categorias.save(
+            new CategoriaJpaEntity(
+                UUID.randomUUID(), "Relojes", "relojes-contar", "TECNOLOGIA", null, AHORA));
+    MarcaJpaEntity marca = marcas.save(new MarcaJpaEntity(UUID.randomUUID(), "Andes Wear", AHORA));
+    guardarProducto(marca.getId(), categoria.getId(), "PUBLICADO", "contar-pub");
+    guardarProducto(marca.getId(), categoria.getId(), "BORRADOR", "contar-bor");
+
+    assertThat(repositorio.contarProductos(marca.getId())).isEqualTo(2);
+  }
+
+  @Test
+  void eliminarBorraLaMarcaSinProductos() {
+    Marca andes = Marca.crear("Andes Wear");
+    repositorio.guardar(andes);
+
+    repositorio.eliminar(andes);
+
+    assertThat(repositorio.buscarPorId(andes.id())).isEmpty();
+  }
+
+  /**
+   * La carrera que la cuenta del caso de uso no ve: entró un producto entre contar y borrar. La
+   * llave de {@code producto.marca_id} lo impide, y sale traducido, no como excepción de JPA.
+   */
+  @Test
+  void eliminarConUnProductoQueSeColoTraduceLaViolacion() {
+    CategoriaJpaEntity categoria =
+        categorias.save(
+            new CategoriaJpaEntity(
+                UUID.randomUUID(), "Parlantes", "parlantes-colo", "TECNOLOGIA", null, AHORA));
+    Marca andes = Marca.crear("Andes Wear");
+    repositorio.guardar(andes);
+    guardarProducto(andes.id(), categoria.getId(), "BORRADOR", "colado");
+    productos.flush();
+
+    assertThatThrownBy(() -> repositorio.eliminar(andes))
+        .isInstanceOf(MarcaConProductosException.class);
   }
 }

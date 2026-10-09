@@ -1,6 +1,8 @@
 package co.tecnosport.api.infrastructure.catalogo;
 
 import co.tecnosport.api.application.catalogo.MarcaConLineas;
+import co.tecnosport.api.application.catalogo.MarcaConProductosException;
+import co.tecnosport.api.application.catalogo.MarcaNoEncontradaException;
 import co.tecnosport.api.application.catalogo.MarcaYaExisteException;
 import co.tecnosport.api.application.catalogo.RepositorioMarcas;
 import co.tecnosport.api.domain.catalogo.EstadoDisponibilidad;
@@ -105,6 +107,46 @@ public class RepositorioMarcasJpa implements RepositorioMarcas {
           new MarcaJpaEntity(marca.id(), marca.nombre(), Instant.now()));
     } catch (DataIntegrityViolationException e) {
       throw new MarcaYaExisteException(marca.nombre());
+    }
+  }
+
+  @Override
+  public boolean existeOtraConNombre(String nombre, UUID excepto) {
+    return marcaJpaRepository.existsByNombreIgnoreCaseAndIdNot(nombre, excepto);
+  }
+
+  /** {@code saveAndFlush} dentro del {@code try} por lo mismo que en {@link #guardar}. */
+  @Override
+  public void actualizar(Marca marca) {
+    MarcaJpaEntity fila =
+        marcaJpaRepository
+            .findById(marca.id())
+            .orElseThrow(() -> new MarcaNoEncontradaException(marca.id()));
+    fila.renombrar(marca.nombre());
+    try {
+      marcaJpaRepository.saveAndFlush(fila);
+    } catch (DataIntegrityViolationException e) {
+      throw new MarcaYaExisteException(marca.nombre());
+    }
+  }
+
+  @Override
+  public long contarProductos(UUID marcaId) {
+    return marcaJpaRepository.contarProductos(marcaId);
+  }
+
+  /**
+   * Con {@code flush} dentro del {@code try}: la única restricción que puede saltar al borrar es la
+   * llave de {@code producto.marca_id}, y sin volcar aquí saltaría al confirmar, fuera del {@code
+   * catch}, como {@code 500}.
+   */
+  @Override
+  public void eliminar(Marca marca) {
+    try {
+      marcaJpaRepository.deleteById(marca.id());
+      marcaJpaRepository.flush();
+    } catch (DataIntegrityViolationException e) {
+      throw new MarcaConProductosException(marca.nombre());
     }
   }
 

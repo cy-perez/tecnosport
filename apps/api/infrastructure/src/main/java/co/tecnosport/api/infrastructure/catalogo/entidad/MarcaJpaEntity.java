@@ -27,6 +27,11 @@ public class MarcaJpaEntity {
     this.creadoEn = creadoEn;
   }
 
+  /** Solo el nombre: {@code creadoEn} es de cuando nació, no de cuando cambió. */
+  public void renombrar(String nombre) {
+    this.nombre = nombre;
+  }
+
   public UUID getId() {
     return id;
   }
