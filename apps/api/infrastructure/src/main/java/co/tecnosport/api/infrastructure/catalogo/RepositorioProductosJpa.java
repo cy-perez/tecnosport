@@ -359,6 +359,29 @@ public class RepositorioProductosJpa implements RepositorioProductos {
     varianteAtributoValorJpaRepository.save(aEntidad(varianteId, valor));
   }
 
+  /**
+   * Por la entidad y no con un {@code update} por SQL: la transacción que llama ya cargó el
+   * producto, y un SQL directo dejaría esas entidades con el valor viejo —quien leyera la variante
+   * después, en la misma transacción, vería la talla de antes—. Si la variante no tiene el
+   * atributo, quien llama creyó otra cosa: es un error del programa, no un estado del negocio.
+   */
+  @Override
+  public void reemplazarAtributoDeVariante(UUID varianteId, ValorAtributo valor) {
+    VarianteAtributoValorJpaEntity fila =
+        varianteAtributoValorJpaRepository
+            .findByVarianteIdAndAtributoId(varianteId, valor.atributo().id())
+            .orElseThrow(
+                () ->
+                    new IllegalStateException(
+                        "La variante "
+                            + varianteId
+                            + " no tiene el atributo "
+                            + valor.atributo().nombre()
+                            + " que se quería reemplazar."));
+    fila.cambiarValor(valor.valor(), valor.colorHex(), CodecDeMuestra.aTexto(valor.muestra()));
+    varianteAtributoValorJpaRepository.save(fila);
+  }
+
   @Override
   public boolean existeVarianteConSku(Sku sku) {
     return varianteJpaRepository.existsBySku(sku.valor());

@@ -523,6 +523,17 @@
         ],
         "type" : "object"
       },
+      "CambiarTallaPeticion" : {
+        "properties" : {
+          "talla" : {
+            "type" : "string"
+          }
+        },
+        "required" : [
+          "talla"
+        ],
+        "type" : "object"
+      },
       "CancelarPedidoRequest" : {
         "properties" : {
           "comprobante" : {
@@ -6849,6 +6860,49 @@
               }
             },
             "description" : "OK"
+          }
+        },
+        "tags" : [
+          "admin-producto-controlador"
+        ]
+      }
+    },
+    "/api/v1/admin/productos/{id}/tallas/{modeloId}" : {
+      "put" : {
+        "operationId" : "cambiarTalla",
+        "parameters" : [
+          {
+            "in" : "path",
+            "name" : "id",
+            "required" : true,
+            "schema" : {
+              "format" : "uuid",
+              "type" : "string"
+            }
+          },
+          {
+            "in" : "path",
+            "name" : "modeloId",
+            "required" : true,
+            "schema" : {
+              "format" : "uuid",
+              "type" : "string"
+            }
+          }
+        ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/CambiarTallaPeticion"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "204" : {
+            "description" : "No Content"
           }
         },
         "tags" : [

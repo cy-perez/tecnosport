@@ -8,6 +8,8 @@ import co.tecnosport.api.application.catalogo.AsignarColorAImagenDeGaleria;
 import co.tecnosport.api.application.catalogo.AsignarColorAImagenDeGaleriaComando;
 import co.tecnosport.api.application.catalogo.AsignarColorAImagenPrincipal;
 import co.tecnosport.api.application.catalogo.AsignarColorAImagenPrincipalComando;
+import co.tecnosport.api.application.catalogo.CambiarTalla;
+import co.tecnosport.api.application.catalogo.CambiarTallaComando;
 import co.tecnosport.api.application.catalogo.ConfirmacionDeImagenPrincipal;
 import co.tecnosport.api.application.catalogo.ConfirmarImagenPrincipal;
 import co.tecnosport.api.application.catalogo.ConfirmarImagenPrincipalComando;
@@ -41,6 +43,7 @@ import co.tecnosport.api.domain.catalogo.Producto;
 import co.tecnosport.api.presentation.catalogo.dto.AgregarColorDesdeLaPrincipalPeticion;
 import co.tecnosport.api.presentation.catalogo.dto.AgregarImagenDeGaleriaPeticion;
 import co.tecnosport.api.presentation.catalogo.dto.AsignarColorPeticion;
+import co.tecnosport.api.presentation.catalogo.dto.CambiarTallaPeticion;
 import co.tecnosport.api.presentation.catalogo.dto.ConfirmarImagenPrincipalPeticion;
 import co.tecnosport.api.presentation.catalogo.dto.CrearProductoPeticion;
 import co.tecnosport.api.presentation.catalogo.dto.EditarProductoPeticion;
@@ -100,6 +103,7 @@ public class AdminProductoControlador {
   private final AsignarColorAImagenDeGaleria asignarColorAImagenDeGaleria;
   private final AsignarColorAImagenPrincipal asignarColorAImagenPrincipal;
   private final AgregarColorDesdeLaPrincipal agregarColorDesdeLaPrincipal;
+  private final CambiarTalla cambiarTalla;
   private final UsarImagenDeGaleriaComoPrincipal usarImagenDeGaleriaComoPrincipal;
   private final PublicarProducto publicarProducto;
   private final DespublicarProducto despublicarProducto;
@@ -121,6 +125,7 @@ public class AdminProductoControlador {
       AsignarColorAImagenDeGaleria asignarColorAImagenDeGaleria,
       AsignarColorAImagenPrincipal asignarColorAImagenPrincipal,
       AgregarColorDesdeLaPrincipal agregarColorDesdeLaPrincipal,
+      CambiarTalla cambiarTalla,
       UsarImagenDeGaleriaComoPrincipal usarImagenDeGaleriaComoPrincipal,
       PublicarProducto publicarProducto,
       DespublicarProducto despublicarProducto,
@@ -142,6 +147,7 @@ public class AdminProductoControlador {
     this.asignarColorAImagenDeGaleria = Objects.requireNonNull(asignarColorAImagenDeGaleria);
     this.asignarColorAImagenPrincipal = Objects.requireNonNull(asignarColorAImagenPrincipal);
     this.agregarColorDesdeLaPrincipal = Objects.requireNonNull(agregarColorDesdeLaPrincipal);
+    this.cambiarTalla = Objects.requireNonNull(cambiarTalla);
     this.usarImagenDeGaleriaComoPrincipal =
         Objects.requireNonNull(usarImagenDeGaleriaComoPrincipal);
     this.publicarProducto = Objects.requireNonNull(publicarProducto);
@@ -390,6 +396,34 @@ public class AdminProductoControlador {
             agregarColorDesdeLaPrincipal.ejecutar(
                 new AgregarColorDesdeLaPrincipalComando(id, cuerpo.color(), existencias)));
     log.info("Producto {}: color nuevo «{}» desde la foto principal.", id, cuerpo.color());
+  }
+
+  /**
+   * Corrige la talla de un modelo en todos sus colores; {@code modeloId} es cualquiera de sus
+   * variantes. El SKU no cambia, y los pedidos tampoco: cada línea congeló su talla. {@code 204}:
+   * el panel vuelve a pedir el producto.
+   *
+   * <p>Con {@code TransactionTemplate}: es una fila por color, y una que fallara a mitad dejaría el
+   * modelo con la talla nueva en un color y la vieja en otro.
+   */
+  @PutMapping("/{id}/tallas/{modeloId}")
+  @ResponseStatus(HttpStatus.NO_CONTENT)
+  public void cambiarTalla(
+      @PathVariable("id") UUID id,
+      @PathVariable("modeloId") UUID modeloId,
+      @RequestBody CambiarTallaPeticion cuerpo) {
+    int cambiadas =
+        transaccion.execute(
+            estado ->
+                cambiarTalla
+                    .ejecutar(new CambiarTallaComando(id, modeloId, cuerpo.talla()))
+                    .size());
+    log.info(
+        "Producto {}: talla del modelo {} corregida a «{}» en {} variantes.",
+        id,
+        modeloId,
+        cuerpo.talla(),
+        cambiadas);
   }
 
   /**

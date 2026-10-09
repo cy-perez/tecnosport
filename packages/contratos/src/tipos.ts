@@ -964,6 +964,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/productos/{id}/tallas/{modeloId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["cambiarTalla"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/proveedores": {
         parameters: {
             query?: never;
@@ -2077,6 +2093,9 @@ export interface components {
         CambiarClaveRequest: {
             claveActual: string;
             claveNueva: string;
+        };
+        CambiarTallaPeticion: {
+            talla: string;
         };
         CancelarPedidoRequest: {
             comprobante?: string;
@@ -5181,6 +5200,31 @@ export interface operations {
                 content: {
                     "*/*": components["schemas"]["ProductoAdminRespuesta"];
                 };
+            };
+        };
+    };
+    cambiarTalla: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                modeloId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CambiarTallaPeticion"];
+            };
+        };
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

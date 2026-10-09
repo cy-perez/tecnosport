@@ -153,6 +153,12 @@ public interface RepositorioProductos {
   void agregarAtributoAVariante(UUID varianteId, ValorAtributo valor);
 
   /**
+   * Otro valor en un atributo que la variante ya tiene: la talla corregida. Las demás filas de la
+   * variante no se tocan.
+   */
+  void reemplazarAtributoDeVariante(UUID varianteId, ValorAtributo valor);
+
+  /**
    * Graba el intercambio de {@code Producto.usarImagenDeGaleriaComoPrincipal}, todo o nada: quita
    * la foto de la galería y la principal vigente, y escribe la principal nueva y —si la había— la
    * anterior como foto de la galería. Por separado, un fallo a mitad dejaría el producto sin

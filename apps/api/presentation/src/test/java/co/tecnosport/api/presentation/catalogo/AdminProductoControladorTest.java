@@ -19,6 +19,7 @@ import co.tecnosport.api.application.catalogo.AgregarVariante;
 import co.tecnosport.api.application.catalogo.AlmacenDeImagenes;
 import co.tecnosport.api.application.catalogo.AsignarColorAImagenDeGaleria;
 import co.tecnosport.api.application.catalogo.AsignarColorAImagenPrincipal;
+import co.tecnosport.api.application.catalogo.CambiarTalla;
 import co.tecnosport.api.application.catalogo.ConfirmarImagenPrincipal;
 import co.tecnosport.api.application.catalogo.CrearProducto;
 import co.tecnosport.api.application.catalogo.DespublicarProducto;
@@ -50,6 +51,7 @@ import co.tecnosport.api.domain.catalogo.Marca;
 import co.tecnosport.api.domain.catalogo.Producto;
 import co.tecnosport.api.domain.catalogo.TipoAtributo;
 import co.tecnosport.api.domain.catalogo.TipoImagen;
+import co.tecnosport.api.domain.catalogo.ValorAtributo;
 import co.tecnosport.api.domain.catalogo.Variante;
 import co.tecnosport.api.domain.catalogo.VarianteDeImagen;
 import co.tecnosport.api.domain.compartido.Dinero;
@@ -531,6 +533,79 @@ class AdminProductoControladorTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"existencias\":[]}"))
         .andExpect(status().isUnprocessableContent());
+  }
+
+  /** La talla corregida en un color se graba en todos los colores de ese modelo. */
+  @Test
+  void cambiarLaTallaDeUnModeloDevuelve204YLaGrabaEnSusColores() throws Exception {
+    Atributo color = Atributo.crear("Color", TipoAtributo.COLOR, List.of());
+    Atributo talla = Atributo.crear("Talla", TipoAtributo.TEXTO, List.of());
+    Producto producto = productoEnBorrador();
+    Variante negra = varianteDeTalla("TS-N-SM", color, "Negro", talla, "S-M");
+    Variante vino = varianteDeTalla("TS-V-SM", color, "Vino", talla, "S-M");
+    producto.agregarVariante(negra);
+    producto.agregarVariante(vino);
+    repositorio.conProductos(producto);
+
+    mockMvc
+        .perform(
+            put("/api/v1/admin/productos/{id}/tallas/{modeloId}", producto.id(), vino.id())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"talla\":\"M\"}"))
+        .andExpect(status().isNoContent());
+
+    org.junit.jupiter.api.Assertions.assertEquals(
+        List.of(negra.id(), vino.id()), List.copyOf(repositorio.atributosReemplazados.keySet()));
+    org.junit.jupiter.api.Assertions.assertEquals(
+        "M", repositorio.atributosReemplazados.get(negra.id()).valor());
+  }
+
+  /** Quedarían dos variantes iguales: 422 con su código, y nada grabado. */
+  @Test
+  void cambiarAUnaTallaQueYaExisteEs422ConSuCodigo() throws Exception {
+    Atributo color = Atributo.crear("Color", TipoAtributo.COLOR, List.of());
+    Atributo talla = Atributo.crear("Talla", TipoAtributo.TEXTO, List.of());
+    Producto producto = productoEnBorrador();
+    Variante s = varianteDeTalla("TS-N-S", color, "Negro", talla, "S");
+    producto.agregarVariante(s);
+    producto.agregarVariante(varianteDeTalla("TS-N-M", color, "Negro", talla, "M"));
+    repositorio.conProductos(producto);
+
+    mockMvc
+        .perform(
+            put("/api/v1/admin/productos/{id}/tallas/{modeloId}", producto.id(), s.id())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"talla\":\"M\"}"))
+        .andExpect(status().isUnprocessableContent())
+        .andExpect(jsonPath("$.codigo").value("TALLA_REPETIDA"));
+
+    org.junit.jupiter.api.Assertions.assertTrue(repositorio.atributosReemplazados.isEmpty());
+  }
+
+  @Test
+  void cambiarLaTallaSinTallaEs422() throws Exception {
+    Producto producto = productoEnBorrador();
+    repositorio.conProductos(producto);
+
+    mockMvc
+        .perform(
+            put("/api/v1/admin/productos/{id}/tallas/{modeloId}", producto.id(), UUID.randomUUID())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{}"))
+        .andExpect(status().isUnprocessableContent());
+  }
+
+  private static Variante varianteDeTalla(
+      String sku, Atributo color, String nombreColor, Atributo talla, String valorTalla) {
+    return Variante.crear(
+        new Sku(sku),
+        Dinero.deCop(60000),
+        BigDecimal.ZERO,
+        null,
+        null,
+        List.of(
+            ValorAtributo.deColor(color, nombreColor, "#111111"),
+            ValorAtributo.de(talla, valorTalla)));
   }
 
   @Test
@@ -1022,6 +1097,11 @@ class AdminProductoControladorTest {
               Instant::now,
               false,
               paleta));
+    }
+
+    @Bean
+    CambiarTalla cambiarTalla(RepositorioProductos repositorioProductos) {
+      return new CambiarTalla(repositorioProductos);
     }
 
     @Bean

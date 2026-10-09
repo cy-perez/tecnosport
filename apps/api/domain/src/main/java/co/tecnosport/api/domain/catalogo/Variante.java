@@ -117,6 +117,29 @@ public final class Variante {
         id, sku, precio, tasaIva, codigoBarras, paquete, estado, con, setRotacionPropio);
   }
 
+  /**
+   * La misma variante con otro valor en un atributo que ya tiene —la talla corregida—. Copia, como
+   * {@link #medida}; el atributo tiene que estar: agregar uno nuevo es {@link #conAtributo}.
+   */
+  public Variante conValor(ValorAtributo nuevo) {
+    Objects.requireNonNull(nuevo, "El valor no puede ser nulo.");
+    if (atributos.stream().noneMatch(a -> a.atributo().id().equals(nuevo.atributo().id()))) {
+      throw new ExcepcionDeDominio(
+          "La variante '" + sku.valor() + "' no tiene " + nuevo.atributo().nombre() + ".");
+    }
+    List<ValorAtributo> con =
+        atributos.stream()
+            .map(a -> a.atributo().id().equals(nuevo.atributo().id()) ? nuevo : a)
+            .toList();
+    return new Variante(
+        id, sku, precio, tasaIva, codigoBarras, paquete, estado, con, setRotacionPropio);
+  }
+
+  /** Su talla, si tiene: el valor del atributo que es eje de talla. */
+  public Optional<ValorAtributo> talla() {
+    return atributos.stream().filter(a -> a.atributo().esTalla()).findFirst();
+  }
+
   /** Su color, si tiene: el valor del atributo de tipo COLOR. */
   public Optional<ValorAtributo> color() {
     return atributos.stream().filter(a -> a.atributo().tipo() == TipoAtributo.COLOR).findFirst();

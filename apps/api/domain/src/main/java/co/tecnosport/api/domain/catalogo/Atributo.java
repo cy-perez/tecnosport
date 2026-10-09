@@ -2,7 +2,9 @@ package co.tecnosport.api.domain.catalogo;
 
 import co.tecnosport.api.domain.compartido.ExcepcionDeDominio;
 import co.tecnosport.api.domain.compartido.GeneradorIdentificador;
+import java.text.Normalizer;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
@@ -68,6 +70,18 @@ public final class Atributo {
 
   public Optional<String> unidad() {
     return Optional.ofNullable(unidad);
+  }
+
+  /**
+   * Si es el eje de talla: «Talla», «Talla calzado». La misma regla que {@code esEjeDeTalla} en la
+   * vitrina, que es la que ordena las tallas con la escala de la categoría; un color nunca lo es.
+   */
+  public boolean esTalla() {
+    String plano =
+        Normalizer.normalize(nombre, Normalizer.Form.NFD)
+            .replaceAll("\\p{M}", "")
+            .toLowerCase(Locale.ROOT);
+    return tipo != TipoAtributo.COLOR && plano.startsWith("talla");
   }
 
   @Override

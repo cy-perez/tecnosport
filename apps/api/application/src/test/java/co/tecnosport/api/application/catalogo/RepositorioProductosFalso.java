@@ -18,6 +18,10 @@ import java.util.UUID;
 /** Doble de prueba escrito a mano, sin Mockito, ver docs/06-testing.md. */
 final class RepositorioProductosFalso implements RepositorioProductos {
 
+  /** Lo que grabó {@code reemplazarAtributoDeVariante}, por variante. */
+  final java.util.Map<UUID, co.tecnosport.api.domain.catalogo.ValorAtributo> atributosReemplazados =
+      new java.util.LinkedHashMap<>();
+
   /** Lo que grabó {@code agregarAtributoAVariante}, por variante. */
   final java.util.Map<UUID, co.tecnosport.api.domain.catalogo.ValorAtributo> atributosAgregados =
       new java.util.LinkedHashMap<>();
@@ -172,6 +176,12 @@ final class RepositorioProductosFalso implements RepositorioProductos {
   public void agregarAtributoAVariante(
       UUID varianteId, co.tecnosport.api.domain.catalogo.ValorAtributo valor) {
     atributosAgregados.put(varianteId, valor);
+  }
+
+  @Override
+  public void reemplazarAtributoDeVariante(
+      UUID varianteId, co.tecnosport.api.domain.catalogo.ValorAtributo valor) {
+    atributosReemplazados.put(varianteId, valor);
   }
 
   @Override
