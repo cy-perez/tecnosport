@@ -62,6 +62,16 @@ const BLUSAS: Categoria = {
   escalaTallas: [],
 };
 
+const FALDAS: Categoria = {
+  id: 'c5',
+  nombre: 'Faldas',
+  slug: 'ropa-dama-faldas',
+  linea: 'ROPA',
+  padreId: null,
+  hashtags: [],
+  escalaTallas: [],
+};
+
 const DAMA: Categoria = {
   id: 'c3',
   nombre: 'Dama',
@@ -84,7 +94,7 @@ const CAMISAS: Categoria = {
 
 class RepositorioCategoriasFalso implements RepositorioCategorias {
   async listarTodas(): Promise<Categoria[]> {
-    return [CATEGORIA, BLUSAS, DAMA, CAMISAS];
+    return [CATEGORIA, BLUSAS, FALDAS, DAMA, CAMISAS];
   }
 }
 
@@ -438,6 +448,24 @@ describe('DetalleBorradorAdminPage', () => {
     await vi.waitFor(() =>
       expect((screen.getByLabelText(a.categoria) as HTMLSelectElement).value).toBe('c2'),
     );
+  });
+
+  /** La «Falda plisada» de La Riverah: una falda siempre cae en Dama › Faldas. */
+  it('una falda llega con su categoría preseleccionada', async () => {
+    await renderPagina(borradorDePrueba({ tipo: 'FALDA' }));
+    await screen.findByRole('option', { name: /Faldas/ });
+
+    await vi.waitFor(() =>
+      expect((screen.getByLabelText(a.categoria) as HTMLSelectElement).value).toBe('c5'),
+    );
+  });
+
+  /** Hay sudaderas de dama y de caballero: la categoría la elige quien aprueba. */
+  it('una sudadera no preselecciona categoría', async () => {
+    await renderPagina(borradorDePrueba({ tipo: 'SUDADERA' }));
+    await screen.findByRole('option', { name: /Faldas/ });
+
+    expect((screen.getByLabelText(a.categoria) as HTMLSelectElement).value).toBe('');
   });
 
   /** Un bolso depende de para quién es: la categoría la elige quien aprueba. */

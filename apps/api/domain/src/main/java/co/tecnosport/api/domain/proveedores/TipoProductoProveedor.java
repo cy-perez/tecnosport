@@ -30,5 +30,10 @@ public enum TipoProductoProveedor {
   // El calzado, para las réplicas AAA de tenis (4 de octubre de 2026): sin tipo propio salían OTRO
   // con la alerta TIPO_DESCONOCIDO, aunque el título dijera «Tenis estilo Adidas».
   TENIS,
+  // La falda y la sudadera, que tienen categoría en el catálogo y salían OTRO o como buzo: la
+  // «Falda plisada» de La Riverah y su «Sudadera jogger», que en Colombia es el pantalón deportivo
+  // (9 de octubre de 2026).
+  FALDA,
+  SUDADERA,
   OTRO
 }

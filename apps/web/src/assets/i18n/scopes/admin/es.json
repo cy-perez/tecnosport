@@ -1117,6 +1117,8 @@
       "BLUSA": "Blusa",
       "BODI": "Bodi",
       "TENIS": "Tenis",
+      "FALDA": "Falda",
+      "SUDADERA": "Sudadera",
       "OTRO": "Otro"
     },
     "tallas": {

@@ -2,6 +2,7 @@ package co.tecnosport.api.domain.proveedores;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import co.tecnosport.api.domain.catalogo.LineaCatalogo;
 import co.tecnosport.api.domain.compartido.Dinero;
@@ -251,5 +252,46 @@ class ProductoExtraidoTest {
         Optional.of("Q339"), conCodigo("Q339").contrastadoCon(texto).codigoReferenciaOpcional());
     assertEquals(
         Optional.empty(), conCodigo("Q340").contrastadoCon(texto).codigoReferenciaOpcional());
+  }
+
+  private static ProductoExtraido pantalon(String titulo, boolean esReplica) {
+    return new ProductoExtraido(
+        true,
+        false,
+        titulo,
+        LineaCatalogo.ROPA,
+        TipoProductoProveedor.PANTALON,
+        Dinero.deCop(75000),
+        Tallas.desconocida(),
+        null,
+        List.of(),
+        null,
+        null,
+        null,
+        esReplica,
+        new BigDecimal("0.9"),
+        null);
+  }
+
+  /** El «Calidad 1.1» sin marca del pantalón de La Riverah: el título termina en «importado». */
+  @Test
+  void laReplicaSinMarcaDelTextoTerminaEnImportado() {
+    String texto = "*Pantalón Jogger para dama*\n✨Calidad 1.1\n❤️Bota recta\n🤑75.000🥳";
+
+    ProductoExtraido contrastado =
+        pantalon("Pantalón jogger para dama estilo", false).contrastadoCon(texto);
+
+    assertEquals(Optional.of("Pantalón jogger para dama importado"), contrastado.tituloOpcional());
+    assertTrue(contrastado.esReplica());
+  }
+
+  /** Sin «1.1» ni «AAA» no es réplica, y el título no se toca. */
+  @Test
+  void loQueNoEsReplicaNoSeTitulaImportado() {
+    ProductoExtraido contrastado =
+        pantalon("Pantalón jogger para dama", false)
+            .contrastadoCon("*Pantalón Jogger para dama*\n🤑75.000🥳");
+
+    assertEquals(Optional.of("Pantalón jogger para dama"), contrastado.tituloOpcional());
   }
 }

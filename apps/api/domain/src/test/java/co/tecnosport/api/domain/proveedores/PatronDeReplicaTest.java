@@ -65,4 +65,31 @@ class PatronDeReplicaTest {
     assertEquals("Parlante 1.1 kg", PatronDeReplica.sinMarca("Parlante 1.1 kg"));
     assertNull(PatronDeReplica.sinMarca(null));
   }
+
+  /**
+   * La Riverah, 7 de octubre de 2026: «Pantalón Jogger para dama ✨Calidad 1.1», sin marca. El
+   * título quedaba «Pantalón jogger para dama estilo»; sin marca que nombrar, dice «importado».
+   */
+  @Test
+  void unaReplicaSinMarcaSeTitulaImportado() {
+    assertEquals(
+        "Pantalón jogger para dama importado",
+        PatronDeReplica.tituloDeReplica("Pantalón jogger para dama estilo"));
+    assertEquals(
+        "Pantalón jogger para dama importado",
+        PatronDeReplica.tituloDeReplica("Pantalón jogger para dama"));
+  }
+
+  /** Con marca el título no cambia, e «importado» no se repite. */
+  @Test
+  void unaReplicaConMarcaOYaImportadaQuedaIgual() {
+    assertEquals(
+        "Camiseta estilo Puma - BMW",
+        PatronDeReplica.tituloDeReplica("Camiseta estilo Puma - BMW"));
+    assertEquals(
+        "Tenis estilo Superstar", PatronDeReplica.tituloDeReplica("Tenis estilo Superstar"));
+    assertEquals("Buzo importado", PatronDeReplica.tituloDeReplica("Buzo importado"));
+    assertEquals("Blusa importada", PatronDeReplica.tituloDeReplica("Blusa importada"));
+    assertNull(PatronDeReplica.tituloDeReplica(null));
+  }
 }
