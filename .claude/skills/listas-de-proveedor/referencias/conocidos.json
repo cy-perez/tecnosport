@@ -243,7 +243,36 @@
       ],
       "supuestos_investigacion": [],
       "fuentes_ficha": [],
-      "fotos": [],
+      "fotos": [
+        {
+          "nombre": "honor-magic-8-lite-5g_1",
+          "original": "honor-magic-8-lite-5g_1.jpg",
+          "procesada": "honor-magic-8-lite-5g_1.jpg",
+          "huella": "584a83be15af927dd5eadcb33f1760cb88681d4ade8b540c67009c53b4d66e57",
+          "estado": "LISTA"
+        },
+        {
+          "nombre": "honor-magic-8-lite-5g_2",
+          "original": "honor-magic-8-lite-5g_2.jpg",
+          "procesada": "honor-magic-8-lite-5g_2.jpg",
+          "huella": "f2ee02131e416b6386e2498eec300e0843753fe3820724597533b45665a9b2c1",
+          "estado": "LISTA"
+        },
+        {
+          "nombre": "honor-magic-8-lite-5g_3",
+          "original": "honor-magic-8-lite-5g_3.jpg",
+          "procesada": "honor-magic-8-lite-5g_3.jpg",
+          "huella": "cd254615487b80cdc51db74414af88f61c5240709c565c14ec9e6a0bfeee8785",
+          "estado": "LISTA"
+        },
+        {
+          "nombre": "honor-magic-8-lite-5g_4",
+          "original": "honor-magic-8-lite-5g_4.jpg",
+          "procesada": "honor-magic-8-lite-5g_4.jpg",
+          "huella": "b6c9ebd2f1bb2166cabcc2776c30f00ef8bb83acc6adee6302f91ad862b69fcb",
+          "estado": "LISTA"
+        }
+      ],
       "fecha_alta": "2026-10-02"
     },
     "honor-pad-x8b-11-wifi": {
@@ -267,7 +296,36 @@
           "fecha": "2026-10-02"
         }
       ],
-      "fotos": [],
+      "fotos": [
+        {
+          "nombre": "honor-pad-x8b-11-wifi_1",
+          "original": "honor-pad-x8b-11-wifi_1.jpg",
+          "procesada": "honor-pad-x8b-11-wifi_1.jpg",
+          "huella": "446af7b0637bb5974825a690412f2fd99341ed33f0ad11245d4b9ccdef500dca",
+          "estado": "LISTA"
+        },
+        {
+          "nombre": "honor-pad-x8b-11-wifi_2",
+          "original": "honor-pad-x8b-11-wifi_2.jpg",
+          "procesada": "honor-pad-x8b-11-wifi_2.jpg",
+          "huella": "941eb569974a53cb6fb6185be83333ddd73420a12e1c44b31c118a656477d3ee",
+          "estado": "LISTA"
+        },
+        {
+          "nombre": "honor-pad-x8b-11-wifi_3",
+          "original": "honor-pad-x8b-11-wifi_3.jpg",
+          "procesada": "honor-pad-x8b-11-wifi_3.jpg",
+          "huella": "2e3ccbe9008cd68d11ffef0afcd20eef1696954495daa7e0f67d30994fb649eb",
+          "estado": "LISTA"
+        },
+        {
+          "nombre": "honor-pad-x8b-11-wifi_4",
+          "original": "honor-pad-x8b-11-wifi_4.jpg",
+          "procesada": "honor-pad-x8b-11-wifi_4.jpg",
+          "huella": "ec532820aa298a1ef5d1ba59ab999410a89ca12bbed40e8ec478707050c91aa3",
+          "estado": "LISTA"
+        }
+      ],
       "fecha_alta": "2026-10-02"
     },
     "honor-watch-choice-2i": {
@@ -292,7 +350,36 @@
           "fecha": "2026-10-02"
         }
       ],
-      "fotos": [],
+      "fotos": [
+        {
+          "nombre": "honor-watch-choice-2i_1",
+          "original": "honor-watch-choice-2i_1.jpg",
+          "procesada": "honor-watch-choice-2i_1.jpg",
+          "huella": "800e0625f8d5e6fcd819980ba15bec62f0140ca7634339fef840160d6c3c1fc7",
+          "estado": "LISTA"
+        },
+        {
+          "nombre": "honor-watch-choice-2i_2",
+          "original": "honor-watch-choice-2i_2.jpg",
+          "procesada": "honor-watch-choice-2i_2.jpg",
+          "huella": "73d2888680af28566601c20593e1bffed2c8781f04ad5780c488c7eb69755a04",
+          "estado": "LISTA"
+        },
+        {
+          "nombre": "honor-watch-choice-2i_3",
+          "original": "honor-watch-choice-2i_3.jpg",
+          "procesada": "honor-watch-choice-2i_3.jpg",
+          "huella": "441a1006c67eec47413db328a12966b51e79e15be8d3b4811d1062e759426bbb",
+          "estado": "LISTA"
+        },
+        {
+          "nombre": "honor-watch-choice-2i_4",
+          "original": "honor-watch-choice-2i_4.jpg",
+          "procesada": "honor-watch-choice-2i_4.jpg",
+          "huella": "6a8cc65008a9d85461cdd051ee1082b9957256d0db6ba172b4b249d93dbb07fb",
+          "estado": "LISTA"
+        }
+      ],
       "fecha_alta": "2026-10-02"
     },
     "honor-x7d-4g": {
@@ -317,7 +404,36 @@
           "fecha": "2026-10-02"
         }
       ],
-      "fotos": [],
+      "fotos": [
+        {
+          "nombre": "honor-x7d-4g_1",
+          "original": "honor-x7d-4g_1.jpg",
+          "procesada": "honor-x7d-4g_1.jpg",
+          "huella": "143ae5cbe59aa699c8326838ec4bac91354269d9a90be228272615140076e38d",
+          "estado": "LISTA"
+        },
+        {
+          "nombre": "honor-x7d-4g_2",
+          "original": "honor-x7d-4g_2.jpg",
+          "procesada": "honor-x7d-4g_2.jpg",
+          "huella": "b2b01435a74c15e21dce3d660e2dd7bae961fd6b2b7cc41ab94ab5742e839d0b",
+          "estado": "LISTA"
+        },
+        {
+          "nombre": "honor-x7d-4g_3",
+          "original": "honor-x7d-4g_3.jpg",
+          "procesada": "honor-x7d-4g_3.jpg",
+          "huella": "662442eb2ad60b253d1e1f200a01059a94eda55e0ee2d39e0b91fee250062c12",
+          "estado": "LISTA"
+        },
+        {
+          "nombre": "honor-x7d-4g_4",
+          "original": "honor-x7d-4g_4.jpg",
+          "procesada": "honor-x7d-4g_4.jpg",
+          "huella": "235e9f9fe7a797f5b92b1db7a39a6da7b4ea521f04a48b769a784969ad02f985",
+          "estado": "LISTA"
+        }
+      ],
       "fecha_alta": "2026-10-02"
     },
     "jbl-boombox-4": {
@@ -346,7 +462,36 @@
           "fecha": "2026-10-02"
         }
       ],
-      "fotos": [],
+      "fotos": [
+        {
+          "nombre": "jbl-boombox-4_1",
+          "original": "jbl-boombox-4_1.jpg",
+          "procesada": "jbl-boombox-4_1.jpg",
+          "huella": "00efdff9a50f519d364095a46a30f6dd343b243b4552ddfabb7afc8e338988c0",
+          "estado": "REVISAR"
+        },
+        {
+          "nombre": "jbl-boombox-4_2",
+          "original": "jbl-boombox-4_2.jpg",
+          "procesada": "jbl-boombox-4_2.jpg",
+          "huella": "d8265895c2cc39597685dbd2d63705a41445bcdd6d141667c58f08e5209d44bf",
+          "estado": "LISTA"
+        },
+        {
+          "nombre": "jbl-boombox-4_3",
+          "original": "jbl-boombox-4_3.jpg",
+          "procesada": "jbl-boombox-4_3.jpg",
+          "huella": "efb673b1c7d077b4bca5976dccc72560af13081a3fc4a5dca1b8c8f0828c3f93",
+          "estado": "LISTA"
+        },
+        {
+          "nombre": "jbl-boombox-4_4",
+          "original": "jbl-boombox-4_4.jpg",
+          "procesada": "jbl-boombox-4_4.jpg",
+          "huella": "f1a837f399d9e0923ef59506d08151ec5d9f558efd2791f8e390b4a09fc7aa69",
+          "estado": "LISTA"
+        }
+      ],
       "fecha_alta": "2026-10-02"
     },
     "jbl-charge-6": {
@@ -373,7 +518,15 @@
       ],
       "supuestos_investigacion": [],
       "fuentes_ficha": [],
-      "fotos": [],
+      "fotos": [
+        {
+          "nombre": "jbl-charge-6_2",
+          "original": "jbl-charge-6_2.jpg",
+          "procesada": "jbl-charge-6_2.jpg",
+          "huella": "ab742a056a98971f73dd29bfa2c1c4523335b747dd40d567b7f2507dfe9a5b5b",
+          "estado": "REVISAR"
+        }
+      ],
       "fecha_alta": "2026-10-02"
     },
     "jbl-cinema-sb180": {
@@ -397,7 +550,29 @@
           "fecha": "2026-10-02"
         }
       ],
-      "fotos": [],
+      "fotos": [
+        {
+          "nombre": "jbl-cinema-sb180_1",
+          "original": "jbl-cinema-sb180_1.jpg",
+          "procesada": "jbl-cinema-sb180_1.jpg",
+          "huella": "626828696f075731b0334bec022410785cb8576104adaf218092c34bb8c39118",
+          "estado": "LISTA"
+        },
+        {
+          "nombre": "jbl-cinema-sb180_2",
+          "original": "jbl-cinema-sb180_2.jpg",
+          "procesada": "jbl-cinema-sb180_2.jpg",
+          "huella": "a1aa4495066c4da88a60fe8ba4eac2ba4494fb4cbe703e2346f6f39586b955df",
+          "estado": "LISTA"
+        },
+        {
+          "nombre": "jbl-cinema-sb180_3",
+          "original": "jbl-cinema-sb180_3.jpg",
+          "procesada": "jbl-cinema-sb180_3.jpg",
+          "huella": "4842de3197c29426124b1336da60e83af9329a1459bcc5b418b858f5e3fec803",
+          "estado": "LISTA"
+        }
+      ],
       "fecha_alta": "2026-10-02"
     },
     "jbl-cinema-sb580": {
@@ -421,7 +596,43 @@
           "fecha": "2026-10-02"
         }
       ],
-      "fotos": [],
+      "fotos": [
+        {
+          "nombre": "jbl-cinema-sb580_1",
+          "original": "jbl-cinema-sb580_1.jpg",
+          "procesada": "jbl-cinema-sb580_1.jpg",
+          "huella": "1d6bd371de7e0c84c907c2ae32f6ba7c9dd847ce652c02e3e553038bb1855e79",
+          "estado": "LISTA"
+        },
+        {
+          "nombre": "jbl-cinema-sb580_2",
+          "original": "jbl-cinema-sb580_2.jpg",
+          "procesada": "jbl-cinema-sb580_2.jpg",
+          "huella": "78c6d338e717248d2d955ad437426ad08f92a959a24fbc70efa4cdb015996f65",
+          "estado": "LISTA"
+        },
+        {
+          "nombre": "jbl-cinema-sb580_3",
+          "original": "jbl-cinema-sb580_3.jpg",
+          "procesada": "jbl-cinema-sb580_3.jpg",
+          "huella": "c245bf231ce735995df6e0347e6b056c644ac5539f2907c64d6fbbde6ab304b0",
+          "estado": "LISTA"
+        },
+        {
+          "nombre": "jbl-cinema-sb580_4",
+          "original": "jbl-cinema-sb580_4.jpg",
+          "procesada": "jbl-cinema-sb580_4.jpg",
+          "huella": "ebe9a5f5f08a124bf64fa770128c0c70e6e19c493d80d495b4e516fecc890899",
+          "estado": "LISTA"
+        },
+        {
+          "nombre": "jbl-cinema-sb580_5",
+          "original": "jbl-cinema-sb580_5.jpg",
+          "procesada": "jbl-cinema-sb580_5.jpg",
+          "huella": "478ad4972cf77f32080240cb4ce15f429e051e9f29b4d268d816383679a2db6b",
+          "estado": "REVISAR"
+        }
+      ],
       "fecha_alta": "2026-10-02"
     },
     "jbl-clip-5": {
@@ -453,7 +664,15 @@
           "fecha": "2026-10-02"
         }
       ],
-      "fotos": [],
+      "fotos": [
+        {
+          "nombre": "jbl-clip-5_1",
+          "original": "jbl-clip-5_1.jpg",
+          "procesada": "jbl-clip-5_1.jpg",
+          "huella": "201cf699c9504f1578a420431ff06a5b1d9d202cb275b886606eb5eb92f293ea",
+          "estado": "LISTA"
+        }
+      ],
       "fecha_alta": "2026-10-02"
     },
     "jbl-flip-7": {
@@ -516,7 +735,43 @@
           "fecha": "2026-10-02"
         }
       ],
-      "fotos": [],
+      "fotos": [
+        {
+          "nombre": "jbl-grip_1",
+          "original": "jbl-grip_1.jpg",
+          "procesada": "jbl-grip_1.jpg",
+          "huella": "c7ee218d0bec2089524592f4f25a65f90ee9ed610163441ee955ff923557b7b9",
+          "estado": "LISTA"
+        },
+        {
+          "nombre": "jbl-grip_2",
+          "original": "jbl-grip_2.jpg",
+          "procesada": "jbl-grip_2.jpg",
+          "huella": "039734aecbc0b8a66fe656c7a80f68ad68d7bbc8e504783ec4bd5b68c57972fc",
+          "estado": "LISTA"
+        },
+        {
+          "nombre": "jbl-grip_3",
+          "original": "jbl-grip_3.jpg",
+          "procesada": "jbl-grip_3.jpg",
+          "huella": "5842f2c9169d0934f404816f76fd9e26fffdcd4f40a206a4f79e6adcd64dedec",
+          "estado": "LISTA"
+        },
+        {
+          "nombre": "jbl-grip_4",
+          "original": "jbl-grip_4.jpg",
+          "procesada": "jbl-grip_4.jpg",
+          "huella": "bd26f9298a63cc52089183818b7110a3c97226b7be3dd62154297573ffa502c5",
+          "estado": "LISTA"
+        },
+        {
+          "nombre": "jbl-grip_5",
+          "original": "jbl-grip_5.jpg",
+          "procesada": "jbl-grip_5.jpg",
+          "huella": "b2756b7d120f04be73b12102aac9ecd912f3a08467f1cc0fadca9cda37e5b7ba",
+          "estado": "LISTA"
+        }
+      ],
       "fecha_alta": "2026-10-02"
     },
     "jbl-partybox-330": {
@@ -565,7 +820,43 @@
           "fecha": "2026-10-02"
         }
       ],
-      "fotos": [],
+      "fotos": [
+        {
+          "nombre": "jbl-partybox-encore-2_1",
+          "original": "jbl-partybox-encore-2_1.jpg",
+          "procesada": "jbl-partybox-encore-2_1.jpg",
+          "huella": "4997841211945ff4433cb671fa0652ab90a1782474140eaa910da2c2ef8125f0",
+          "estado": "REVISAR"
+        },
+        {
+          "nombre": "jbl-partybox-encore-2_2",
+          "original": "jbl-partybox-encore-2_2.jpg",
+          "procesada": "jbl-partybox-encore-2_2.jpg",
+          "huella": "5729790dd50428a9cfd5e8e1838703168c4610c5abbbae8e6dfc86b175000a5d",
+          "estado": "REVISAR"
+        },
+        {
+          "nombre": "jbl-partybox-encore-2_3",
+          "original": "jbl-partybox-encore-2_3.jpg",
+          "procesada": "jbl-partybox-encore-2_3.jpg",
+          "huella": "000dbff466a7d58cb8e54d735c78b05e3f9429ab3ecf5a543d3c4c58fbdaacd5",
+          "estado": "LISTA"
+        },
+        {
+          "nombre": "jbl-partybox-encore-2_4",
+          "original": "jbl-partybox-encore-2_4.jpg",
+          "procesada": "jbl-partybox-encore-2_4.jpg",
+          "huella": "d87c40ebcc563b180aa8f820ed80dc2667d2bdcbce0d4487e246661e0fe420b1",
+          "estado": "LISTA"
+        },
+        {
+          "nombre": "jbl-partybox-encore-2_5",
+          "original": "jbl-partybox-encore-2_5.jpg",
+          "procesada": "jbl-partybox-encore-2_5.jpg",
+          "huella": "e80a4b7e40623eff62214d3699a0bae053320a2e789209d6c4aa82499ae8fd88",
+          "estado": "REVISAR"
+        }
+      ],
       "fecha_alta": "2026-10-02"
     },
     "jbl-tune-730bt": {
@@ -592,7 +883,36 @@
           "fecha": "2026-10-02"
         }
       ],
-      "fotos": [],
+      "fotos": [
+        {
+          "nombre": "jbl-tune-730bt_2",
+          "original": "jbl-tune-730bt_2.jpg",
+          "procesada": "jbl-tune-730bt_2.jpg",
+          "huella": "6b2c8b847e6a92c8345e7fef249de078e1605bd29ae7da1d3fa13be55c60ba37",
+          "estado": "LISTA"
+        },
+        {
+          "nombre": "jbl-tune-730bt_3",
+          "original": "jbl-tune-730bt_3.jpg",
+          "procesada": "jbl-tune-730bt_3.jpg",
+          "huella": "47a22855085f1dc4df3e7c648a22dd111d89ce9c6a81ac81815663143caa28fc",
+          "estado": "LISTA"
+        },
+        {
+          "nombre": "jbl-tune-730bt_4",
+          "original": "jbl-tune-730bt_4.jpg",
+          "procesada": "jbl-tune-730bt_4.jpg",
+          "huella": "940b04863d2467c08c34357cb4036b272bfa4bca11dfdce838acd5f220a69088",
+          "estado": "LISTA"
+        },
+        {
+          "nombre": "jbl-tune-730bt_5",
+          "original": "jbl-tune-730bt_5.jpg",
+          "procesada": "jbl-tune-730bt_5.jpg",
+          "huella": "d316ef0f1c1225e4239e8c16c7e12ff6312da0528d04bdeac544e7ea9277def2",
+          "estado": "LISTA"
+        }
+      ],
       "fecha_alta": "2026-10-02"
     },
     "jbl-xtreme-4": {
@@ -620,7 +940,43 @@
           "fecha": "2026-10-02"
         }
       ],
-      "fotos": [],
+      "fotos": [
+        {
+          "nombre": "jbl-xtreme-4_1",
+          "original": "jbl-xtreme-4_1.jpg",
+          "procesada": "jbl-xtreme-4_1.jpg",
+          "huella": "d19b16a766845de30e2497e21edad086498480fcca1606916d7da65085e83fb2",
+          "estado": "LISTA"
+        },
+        {
+          "nombre": "jbl-xtreme-4_2",
+          "original": "jbl-xtreme-4_2.jpg",
+          "procesada": "jbl-xtreme-4_2.jpg",
+          "huella": "1752bb2bb3c6436200400d103c040ab38a84bccf6e3863499168885e8b9f5f79",
+          "estado": "LISTA"
+        },
+        {
+          "nombre": "jbl-xtreme-4_3",
+          "original": "jbl-xtreme-4_3.jpg",
+          "procesada": "jbl-xtreme-4_3.jpg",
+          "huella": "81a8bc36a39032d12093eef64f5cf514aa57ed04295f0610531c84866fab3866",
+          "estado": "LISTA"
+        },
+        {
+          "nombre": "jbl-xtreme-4_4",
+          "original": "jbl-xtreme-4_4.jpg",
+          "procesada": "jbl-xtreme-4_4.jpg",
+          "huella": "e297f6142a17cb344aacff76ecb955818db7f6986b13882bc77b741d4f12a55c",
+          "estado": "LISTA"
+        },
+        {
+          "nombre": "jbl-xtreme-4_5",
+          "original": "jbl-xtreme-4_5.jpg",
+          "procesada": "jbl-xtreme-4_5.jpg",
+          "huella": "4c3051e9101f0a559e28f502900d84b6f87e1827e95c5adcb01ab0d8b0d614d3",
+          "estado": "LISTA"
+        }
+      ],
       "fecha_alta": "2026-10-02"
     },
     "jbl-xtreme-5": {
@@ -648,7 +1004,43 @@
           "fecha": "2026-10-02"
         }
       ],
-      "fotos": [],
+      "fotos": [
+        {
+          "nombre": "jbl-xtreme-5_1",
+          "original": "jbl-xtreme-5_1.jpg",
+          "procesada": "jbl-xtreme-5_1.jpg",
+          "huella": "9bbfad4e2c16e052b536ac214e4f080bd40288cb3eaeabbcbe7589882092b234",
+          "estado": "LISTA"
+        },
+        {
+          "nombre": "jbl-xtreme-5_2",
+          "original": "jbl-xtreme-5_2.jpg",
+          "procesada": "jbl-xtreme-5_2.jpg",
+          "huella": "ac3fb455c21cf80c4fd02ec11168f1efeea5505e27cdff305d5363ee9d7b8713",
+          "estado": "LISTA"
+        },
+        {
+          "nombre": "jbl-xtreme-5_3",
+          "original": "jbl-xtreme-5_3.jpg",
+          "procesada": "jbl-xtreme-5_3.jpg",
+          "huella": "bc19a6143dead8968cc2a08aa4926d27186044c9bcdf6cca7e7212f4aa6eef3e",
+          "estado": "LISTA"
+        },
+        {
+          "nombre": "jbl-xtreme-5_4",
+          "original": "jbl-xtreme-5_4.jpg",
+          "procesada": "jbl-xtreme-5_4.jpg",
+          "huella": "d1e14a7b5dad8b8d15031aa4548a5ba17e6b477494763f197d55867aef7681e2",
+          "estado": "LISTA"
+        },
+        {
+          "nombre": "jbl-xtreme-5_5",
+          "original": "jbl-xtreme-5_5.jpg",
+          "procesada": "jbl-xtreme-5_5.jpg",
+          "huella": "7a3149e0fa1d36db62e48318bf324c6e7cb581fbb984ff6dc09c8340c99e307f",
+          "estado": "LISTA"
+        }
+      ],
       "fecha_alta": "2026-10-02"
     },
     "lenovo-tab-one-8-7-4g-con-mouse": {
@@ -674,7 +1066,43 @@
           "fecha": "2026-10-02"
         }
       ],
-      "fotos": [],
+      "fotos": [
+        {
+          "nombre": "lenovo-tab-one-8-7-4g-con-mouse_1",
+          "original": "lenovo-tab-one-8-7-4g-con-mouse_1.jpg",
+          "procesada": "lenovo-tab-one-8-7-4g-con-mouse_1.jpg",
+          "huella": "0c7d16687b57dca4869bbb51942a3838c03b2144a8c595f0047d3ea273d100b3",
+          "estado": "LISTA"
+        },
+        {
+          "nombre": "lenovo-tab-one-8-7-4g-con-mouse_2",
+          "original": "lenovo-tab-one-8-7-4g-con-mouse_2.jpg",
+          "procesada": "lenovo-tab-one-8-7-4g-con-mouse_2.jpg",
+          "huella": "03426cb2ddd6794c46f80e34a77678e55cdb28537913d0bc9f4b37569eca45c0",
+          "estado": "LISTA"
+        },
+        {
+          "nombre": "lenovo-tab-one-8-7-4g-con-mouse_3",
+          "original": "lenovo-tab-one-8-7-4g-con-mouse_3.jpg",
+          "procesada": "lenovo-tab-one-8-7-4g-con-mouse_3.jpg",
+          "huella": "2cdbd7cac9f9720021447cf7cebd499ce6d0870ea043b67e876358cc47ce5b7c",
+          "estado": "LISTA"
+        },
+        {
+          "nombre": "lenovo-tab-one-8-7-4g-con-mouse_4",
+          "original": "lenovo-tab-one-8-7-4g-con-mouse_4.jpg",
+          "procesada": "lenovo-tab-one-8-7-4g-con-mouse_4.jpg",
+          "huella": "865f8b9457fd7dcb8901c3e51f3d85fe77905aa43b1304a535c570d460b1ace4",
+          "estado": "LISTA"
+        },
+        {
+          "nombre": "lenovo-tab-one-8-7-4g-con-mouse_5",
+          "original": "lenovo-tab-one-8-7-4g-con-mouse_5.jpg",
+          "procesada": "lenovo-tab-one-8-7-4g-con-mouse_5.jpg",
+          "huella": "47ae38566f363daef562dc69e77680b15b137c058c8c3cce8056af2f65344a8b",
+          "estado": "LISTA"
+        }
+      ],
       "fecha_alta": "2026-10-02"
     },
     "motorola-edge-50-fusion-5g": {
@@ -698,7 +1126,36 @@
           "fecha": "2026-10-02"
         }
       ],
-      "fotos": [],
+      "fotos": [
+        {
+          "nombre": "motorola-edge-50-fusion-5g_1",
+          "original": "motorola-edge-50-fusion-5g_1.jpg",
+          "procesada": "motorola-edge-50-fusion-5g_1.jpg",
+          "huella": "e2657573807aa6260250491bc0fdf8c8fe0ecf272fc0348c6b0a30d8c1ef0976",
+          "estado": "LISTA"
+        },
+        {
+          "nombre": "motorola-edge-50-fusion-5g_2",
+          "original": "motorola-edge-50-fusion-5g_2.jpg",
+          "procesada": "motorola-edge-50-fusion-5g_2.jpg",
+          "huella": "918a9428ced86e396ee873dcd4ab1f00517b33e58c52c3d8ee711a1991e2ae60",
+          "estado": "LISTA"
+        },
+        {
+          "nombre": "motorola-edge-50-fusion-5g_3",
+          "original": "motorola-edge-50-fusion-5g_3.jpg",
+          "procesada": "motorola-edge-50-fusion-5g_3.jpg",
+          "huella": "e78c1addcbef54e507c821ce885657df00534121af8b3d9ffb2967b1444551ec",
+          "estado": "LISTA"
+        },
+        {
+          "nombre": "motorola-edge-50-fusion-5g_4",
+          "original": "motorola-edge-50-fusion-5g_4.jpg",
+          "procesada": "motorola-edge-50-fusion-5g_4.jpg",
+          "huella": "8d3c2597ecc1a4a769152e44480b8d2acbb514da7c023a34c23818ac49df7ed8",
+          "estado": "LISTA"
+        }
+      ],
       "fecha_alta": "2026-10-02"
     },
     "motorola-edge-60-fusion-5g": {
@@ -724,7 +1181,43 @@
           "fecha": "2026-10-02"
         }
       ],
-      "fotos": [],
+      "fotos": [
+        {
+          "nombre": "motorola-edge-60-fusion-5g_1",
+          "original": "motorola-edge-60-fusion-5g_1.jpg",
+          "procesada": "motorola-edge-60-fusion-5g_1.jpg",
+          "huella": "a36775e042f5a896d5adf9a1069ca293559baa0910e3309563a0636bdd3945d4",
+          "estado": "LISTA"
+        },
+        {
+          "nombre": "motorola-edge-60-fusion-5g_2",
+          "original": "motorola-edge-60-fusion-5g_2.jpg",
+          "procesada": "motorola-edge-60-fusion-5g_2.jpg",
+          "huella": "5804c37f9c54ccb9e4ba347ca631ce8d0d8982a4cb2fdee819f8b600d1f0bbcb",
+          "estado": "REVISAR"
+        },
+        {
+          "nombre": "motorola-edge-60-fusion-5g_3",
+          "original": "motorola-edge-60-fusion-5g_3.jpg",
+          "procesada": "motorola-edge-60-fusion-5g_3.jpg",
+          "huella": "c6e9b8dd5b303f770cd56ff4989ce9db69b54ca282b7d7a831023eb87e445d88",
+          "estado": "REVISAR"
+        },
+        {
+          "nombre": "motorola-edge-60-fusion-5g_4",
+          "original": "motorola-edge-60-fusion-5g_4.jpg",
+          "procesada": "motorola-edge-60-fusion-5g_4.jpg",
+          "huella": "60aa4e7775f205a003b91becef05f97efdc3ceed8729a430d1417b1864081baa",
+          "estado": "REVISAR"
+        },
+        {
+          "nombre": "motorola-edge-60-fusion-5g_5",
+          "original": "motorola-edge-60-fusion-5g_5.jpg",
+          "procesada": "motorola-edge-60-fusion-5g_5.jpg",
+          "huella": "ad8d23f566ec2a2f51a8bea3a982847353ecf1210e33342ca5a2bef3569eaf3a",
+          "estado": "REVISAR"
+        }
+      ],
       "fecha_alta": "2026-10-02"
     },
     "motorola-moto-g17-4g": {
@@ -748,7 +1241,43 @@
           "fecha": "2026-10-02"
         }
       ],
-      "fotos": [],
+      "fotos": [
+        {
+          "nombre": "motorola-moto-g17-4g_1",
+          "original": "motorola-moto-g17-4g_1.jpg",
+          "procesada": "motorola-moto-g17-4g_1.jpg",
+          "huella": "35b3f0765b296ce5c6d084c6a1a18143b121dc787de07d5fd085e37a912fc46b",
+          "estado": "LISTA"
+        },
+        {
+          "nombre": "motorola-moto-g17-4g_2",
+          "original": "motorola-moto-g17-4g_2.jpg",
+          "procesada": "motorola-moto-g17-4g_2.jpg",
+          "huella": "733f7ae59516d49ce96384aa9cc114a2f66faeba06410d899d42bffa0754f3fa",
+          "estado": "LISTA"
+        },
+        {
+          "nombre": "motorola-moto-g17-4g_3",
+          "original": "motorola-moto-g17-4g_3.jpg",
+          "procesada": "motorola-moto-g17-4g_3.jpg",
+          "huella": "808eba579a94a8f3f24c2f0efd8605689941e4cca8e7a100f0b03f0386a814a8",
+          "estado": "LISTA"
+        },
+        {
+          "nombre": "motorola-moto-g17-4g_4",
+          "original": "motorola-moto-g17-4g_4.jpg",
+          "procesada": "motorola-moto-g17-4g_4.jpg",
+          "huella": "701c6ce833d4c7101f225053f7a922975877c882e91a8fb0574c1fd1bd88dedf",
+          "estado": "LISTA"
+        },
+        {
+          "nombre": "motorola-moto-g17-4g_5",
+          "original": "motorola-moto-g17-4g_5.jpg",
+          "procesada": "motorola-moto-g17-4g_5.jpg",
+          "huella": "55b8e33c5592b0fe5237fed77060b59b5b1ca482c04e05dec84a0ce19cbbad5d",
+          "estado": "LISTA"
+        }
+      ],
       "fecha_alta": "2026-10-02"
     },
     "motorola-moto-g17-power-4g": {
@@ -773,7 +1302,43 @@
           "fecha": "2026-10-02"
         }
       ],
-      "fotos": [],
+      "fotos": [
+        {
+          "nombre": "motorola-moto-g17-power-4g_1",
+          "original": "motorola-moto-g17-power-4g_1.jpg",
+          "procesada": "motorola-moto-g17-power-4g_1.jpg",
+          "huella": "f5610353cb561929c4689a314a02466370f6766ece11ea7e90614c9b92063f01",
+          "estado": "LISTA"
+        },
+        {
+          "nombre": "motorola-moto-g17-power-4g_2",
+          "original": "motorola-moto-g17-power-4g_2.jpg",
+          "procesada": "motorola-moto-g17-power-4g_2.jpg",
+          "huella": "dc30577d9512dd17ca31f11e8eadf55a1eca396967c9e7419df64fee748bf421",
+          "estado": "LISTA"
+        },
+        {
+          "nombre": "motorola-moto-g17-power-4g_3",
+          "original": "motorola-moto-g17-power-4g_3.jpg",
+          "procesada": "motorola-moto-g17-power-4g_3.jpg",
+          "huella": "914963e89203904fa7686278d08cf73ddafc237550c3efcac11fcd7af17502ed",
+          "estado": "REVISAR"
+        },
+        {
+          "nombre": "motorola-moto-g17-power-4g_4",
+          "original": "motorola-moto-g17-power-4g_4.jpg",
+          "procesada": "motorola-moto-g17-power-4g_4.jpg",
+          "huella": "fb452c7aead934e0918f58f06a7e6d1511ad2a9d7bfcd22686b976a18c01540a",
+          "estado": "LISTA"
+        },
+        {
+          "nombre": "motorola-moto-g17-power-4g_5",
+          "original": "motorola-moto-g17-power-4g_5.jpg",
+          "procesada": "motorola-moto-g17-power-4g_5.jpg",
+          "huella": "67eee26abaa56140dbd15ed50b0a8e78b033ba90a32f2d3605763cb6e8f083be",
+          "estado": "REVISAR"
+        }
+      ],
       "fecha_alta": "2026-10-02"
     },
     "motorola-moto-g67": {
@@ -798,7 +1363,43 @@
           "fecha": "2026-10-02"
         }
       ],
-      "fotos": [],
+      "fotos": [
+        {
+          "nombre": "motorola-moto-g67_1",
+          "original": "motorola-moto-g67_1.jpg",
+          "procesada": "motorola-moto-g67_1.jpg",
+          "huella": "0311928a07f3d43dad95757e7c71dffa5c0b57ea5d185862f42b5d0b42222a62",
+          "estado": "LISTA"
+        },
+        {
+          "nombre": "motorola-moto-g67_2",
+          "original": "motorola-moto-g67_2.jpg",
+          "procesada": "motorola-moto-g67_2.jpg",
+          "huella": "488a5788bc25310a7a3933d4d6eb9c37dfaee78531aede192bfd6d606cae5a38",
+          "estado": "LISTA"
+        },
+        {
+          "nombre": "motorola-moto-g67_3",
+          "original": "motorola-moto-g67_3.jpg",
+          "procesada": "motorola-moto-g67_3.jpg",
+          "huella": "aa4625d81604a772a8ac7bad0c6e129f80ab3b000fdc5830cbfa0b05cb012be0",
+          "estado": "LISTA"
+        },
+        {
+          "nombre": "motorola-moto-g67_4",
+          "original": "motorola-moto-g67_4.jpg",
+          "procesada": "motorola-moto-g67_4.jpg",
+          "huella": "cccbe0f3b6f8cf0c2c82d3f3922d8dbe08371a3c5d09a789b48b328d3f33d435",
+          "estado": "LISTA"
+        },
+        {
+          "nombre": "motorola-moto-g67_5",
+          "original": "motorola-moto-g67_5.jpg",
+          "procesada": "motorola-moto-g67_5.jpg",
+          "huella": "e13b91f451aa455189b433f2886e53ddfd04aabe1a6090154c7948b8ef2408cc",
+          "estado": "LISTA"
+        }
+      ],
       "fecha_alta": "2026-10-02"
     },
     "motorola-moto-g77-5g": {
@@ -816,7 +1417,43 @@
       ],
       "supuestos_investigacion": [],
       "fuentes_ficha": [],
-      "fotos": [],
+      "fotos": [
+        {
+          "nombre": "motorola-moto-g77-5g_1",
+          "original": "motorola-moto-g77-5g_1.jpg",
+          "procesada": "motorola-moto-g77-5g_1.jpg",
+          "huella": "220c581b115512ba45bae888df0fa85a9a8afc694d9f270b7920e976cea08ae6",
+          "estado": "LISTA"
+        },
+        {
+          "nombre": "motorola-moto-g77-5g_2",
+          "original": "motorola-moto-g77-5g_2.jpg",
+          "procesada": "motorola-moto-g77-5g_2.jpg",
+          "huella": "2966a4ead448dca12ad1838ae7eb8e84789e82e0460b0410f5f28105bba7e924",
+          "estado": "LISTA"
+        },
+        {
+          "nombre": "motorola-moto-g77-5g_3",
+          "original": "motorola-moto-g77-5g_3.jpg",
+          "procesada": "motorola-moto-g77-5g_3.jpg",
+          "huella": "ffed1165f82c46157dcd3150b3f21ad2c34e6cb81d4c9b4faec253c374a11618",
+          "estado": "LISTA"
+        },
+        {
+          "nombre": "motorola-moto-g77-5g_4",
+          "original": "motorola-moto-g77-5g_4.jpg",
+          "procesada": "motorola-moto-g77-5g_4.jpg",
+          "huella": "a09bc1590d2f2776cdd2cd88d4f4bf2357f5bf68b6bca6075f7bb77210e1c7a6",
+          "estado": "LISTA"
+        },
+        {
+          "nombre": "motorola-moto-g77-5g_5",
+          "original": "motorola-moto-g77-5g_5.jpg",
+          "procesada": "motorola-moto-g77-5g_5.jpg",
+          "huella": "d3b3115f5f05e47ee5cbbb0b52dbe96cd08578c6c133d1060bdfc501b4e5cb7e",
+          "estado": "LISTA"
+        }
+      ],
       "fecha_alta": "2026-10-02"
     },
     "nintendo-switch-2-mario-kart-world": {
@@ -872,7 +1509,43 @@
       ],
       "supuestos_investigacion": [],
       "fuentes_ficha": [],
-      "fotos": [],
+      "fotos": [
+        {
+          "nombre": "oppo-a6k_1",
+          "original": "oppo-a6k_1.jpg",
+          "procesada": "oppo-a6k_1.jpg",
+          "huella": "4cc9491b4bb9b1b5118291cc95fffe07c2a86b1399c9a3394bfe1b4f2c8b91ed",
+          "estado": "LISTA"
+        },
+        {
+          "nombre": "oppo-a6k_2",
+          "original": "oppo-a6k_2.jpg",
+          "procesada": "oppo-a6k_2.jpg",
+          "huella": "802d3ff2edf3aaaf89644807010a2850fe05e22ba241e8ef4016017a6aae3ba8",
+          "estado": "REVISAR"
+        },
+        {
+          "nombre": "oppo-a6k_3",
+          "original": "oppo-a6k_3.jpg",
+          "procesada": "oppo-a6k_3.jpg",
+          "huella": "4805c42bfa82dc9fd36b2b107b533189f5a72cff7250ba4e2e3450b137768046",
+          "estado": "LISTA"
+        },
+        {
+          "nombre": "oppo-a6k_4",
+          "original": "oppo-a6k_4.jpg",
+          "procesada": "oppo-a6k_4.jpg",
+          "huella": "734c88ff911ce0bed2e606e4e2d13c75e800b29ba9f234a0fb3e3732286deba3",
+          "estado": "REVISAR"
+        },
+        {
+          "nombre": "oppo-a6k_5",
+          "original": "oppo-a6k_5.jpg",
+          "procesada": "oppo-a6k_5.jpg",
+          "huella": "18f3a01b3cfae794de8e5d7cf931575010e6c816cb1d0becface8835d5f94eea",
+          "estado": "REVISAR"
+        }
+      ],
       "fecha_alta": "2026-10-02"
     },
     "realme-note-70-4g": {
@@ -917,7 +1590,15 @@
           "fecha": "2026-10-02"
         }
       ],
-      "fotos": [],
+      "fotos": [
+        {
+          "nombre": "samsung-galaxy-a17-4g_1",
+          "original": "samsung-galaxy-a17-4g_1.jpg",
+          "procesada": "samsung-galaxy-a17-4g_1.jpg",
+          "huella": "d2f90ce95d612265ed72f08d6743a986b103d48c7592e24643f865151c201114",
+          "estado": "REVISAR"
+        }
+      ],
       "fecha_alta": "2026-10-02"
     },
     "samsung-galaxy-a17-5g": {
@@ -937,7 +1618,15 @@
       ],
       "supuestos_investigacion": [],
       "fuentes_ficha": [],
-      "fotos": [],
+      "fotos": [
+        {
+          "nombre": "samsung-galaxy-a17-5g_1",
+          "original": "samsung-galaxy-a17-5g_1.jpg",
+          "procesada": "samsung-galaxy-a17-5g_1.jpg",
+          "huella": "d2f90ce95d612265ed72f08d6743a986b103d48c7592e24643f865151c201114",
+          "estado": "REVISAR"
+        }
+      ],
       "fecha_alta": "2026-10-02"
     },
     "samsung-galaxy-a37-5g": {
@@ -964,7 +1653,43 @@
           "fecha": "2026-10-02"
         }
       ],
-      "fotos": [],
+      "fotos": [
+        {
+          "nombre": "samsung-galaxy-a37-5g_1",
+          "original": "samsung-galaxy-a37-5g_1.jpg",
+          "procesada": "samsung-galaxy-a37-5g_1.jpg",
+          "huella": "6b05a2d866a5499fce3d71aa8294448372d6921ceab0437a83d86d6cdd97c690",
+          "estado": "LISTA"
+        },
+        {
+          "nombre": "samsung-galaxy-a37-5g_2",
+          "original": "samsung-galaxy-a37-5g_2.jpg",
+          "procesada": "samsung-galaxy-a37-5g_2.jpg",
+          "huella": "08ae3c9f3b91a369c53767b4a0f010c861e0dc9de4fc92649ed899e84c841d63",
+          "estado": "REVISAR"
+        },
+        {
+          "nombre": "samsung-galaxy-a37-5g_3",
+          "original": "samsung-galaxy-a37-5g_3.jpg",
+          "procesada": "samsung-galaxy-a37-5g_3.jpg",
+          "huella": "a19124ef92cc666c16f611658dc0358cf872b162e323b6bf55ccd3524283cff3",
+          "estado": "LISTA"
+        },
+        {
+          "nombre": "samsung-galaxy-a37-5g_4",
+          "original": "samsung-galaxy-a37-5g_4.jpg",
+          "procesada": "samsung-galaxy-a37-5g_4.jpg",
+          "huella": "9da203a683beb760c5bb63441ac1ebbaf13f629f896bedc2d8587977ed9af4ad",
+          "estado": "LISTA"
+        },
+        {
+          "nombre": "samsung-galaxy-a37-5g_5",
+          "original": "samsung-galaxy-a37-5g_5.jpg",
+          "procesada": "samsung-galaxy-a37-5g_5.jpg",
+          "huella": "788b0e3b8b35ab05b2f353f9427751b63a2ceb13df59250e3afbbbae6acd0199",
+          "estado": "LISTA"
+        }
+      ],
       "fecha_alta": "2026-10-02"
     },
     "samsung-galaxy-a57-5g": {
@@ -991,7 +1716,15 @@
           "fecha": "2026-10-02"
         }
       ],
-      "fotos": [],
+      "fotos": [
+        {
+          "nombre": "samsung-galaxy-a57-5g_1",
+          "original": "samsung-galaxy-a57-5g_1.jpg",
+          "procesada": "samsung-galaxy-a57-5g_1.jpg",
+          "huella": "7761b4a1aa15dfdc890f6c14afac4cf4e3ccc4af22e57a0dcd101cfce379ccd7",
+          "estado": "LISTA"
+        }
+      ],
       "fecha_alta": "2026-10-02"
     },
     "samsung-galaxy-buds4": {
@@ -1016,7 +1749,15 @@
           "fecha": "2026-10-02"
         }
       ],
-      "fotos": [],
+      "fotos": [
+        {
+          "nombre": "samsung-galaxy-buds4_1",
+          "original": "samsung-galaxy-buds4_1.jpg",
+          "procesada": "samsung-galaxy-buds4_1.jpg",
+          "huella": "b6c55fc4aae2b312f3958952bdb9079aa99ad8b395e829281d6e912b1f7dcae1",
+          "estado": "LISTA"
+        }
+      ],
       "fecha_alta": "2026-10-02"
     },
     "samsung-galaxy-fit3": {
@@ -1064,7 +1805,43 @@
           "fecha": "2026-10-02"
         }
       ],
-      "fotos": [],
+      "fotos": [
+        {
+          "nombre": "samsung-galaxy-s25-ultra_1",
+          "original": "samsung-galaxy-s25-ultra_1.jpg",
+          "procesada": "samsung-galaxy-s25-ultra_1.jpg",
+          "huella": "7a55fde21accf7b451cde8df45e101d379a72a1c225dccbf04ecdc0dd7fb53a4",
+          "estado": "LISTA"
+        },
+        {
+          "nombre": "samsung-galaxy-s25-ultra_2",
+          "original": "samsung-galaxy-s25-ultra_2.jpg",
+          "procesada": "samsung-galaxy-s25-ultra_2.jpg",
+          "huella": "c64335a917c606167aca96a061f2523131f19db1ffae00fdb0e4c8493df7e6de",
+          "estado": "LISTA"
+        },
+        {
+          "nombre": "samsung-galaxy-s25-ultra_3",
+          "original": "samsung-galaxy-s25-ultra_3.jpg",
+          "procesada": "samsung-galaxy-s25-ultra_3.jpg",
+          "huella": "88ff707fa1ebbfbd33cadd3f9961f13d911d996e97440d38afecf4429fe6edba",
+          "estado": "LISTA"
+        },
+        {
+          "nombre": "samsung-galaxy-s25-ultra_4",
+          "original": "samsung-galaxy-s25-ultra_4.jpg",
+          "procesada": "samsung-galaxy-s25-ultra_4.jpg",
+          "huella": "956f0237641623a30e38e7a76fc08071120f81e9e57c552ba2b30755ea46a92e",
+          "estado": "LISTA"
+        },
+        {
+          "nombre": "samsung-galaxy-s25-ultra_5",
+          "original": "samsung-galaxy-s25-ultra_5.jpg",
+          "procesada": "samsung-galaxy-s25-ultra_5.jpg",
+          "huella": "4e43eca0efc9a242845e0d3a4d399f22cc894ef2dcddafe697199b8c8a8f8ed2",
+          "estado": "LISTA"
+        }
+      ],
       "fecha_alta": "2026-10-02"
     },
     "samsung-galaxy-tab-a11-8-7-wifi": {
@@ -1091,7 +1868,43 @@
           "fecha": "2026-10-02"
         }
       ],
-      "fotos": [],
+      "fotos": [
+        {
+          "nombre": "samsung-galaxy-tab-a11-8-7-wifi_1",
+          "original": "samsung-galaxy-tab-a11-8-7-wifi_1.jpg",
+          "procesada": "samsung-galaxy-tab-a11-8-7-wifi_1.jpg",
+          "huella": "556893eb3a3809a2eeb88689510f2ddda40302e64491fe696d575698c58856d0",
+          "estado": "REVISAR"
+        },
+        {
+          "nombre": "samsung-galaxy-tab-a11-8-7-wifi_2",
+          "original": "samsung-galaxy-tab-a11-8-7-wifi_2.jpg",
+          "procesada": "samsung-galaxy-tab-a11-8-7-wifi_2.jpg",
+          "huella": "82db88defd6cb9e390ccb25b3045ad16176a85fd9422ddae54f518e09806d546",
+          "estado": "REVISAR"
+        },
+        {
+          "nombre": "samsung-galaxy-tab-a11-8-7-wifi_3",
+          "original": "samsung-galaxy-tab-a11-8-7-wifi_3.jpg",
+          "procesada": "samsung-galaxy-tab-a11-8-7-wifi_3.jpg",
+          "huella": "7e2e4a37ede6dcc50ad950dc563bdab96501efbbd182c4a2a6e66393486c8d67",
+          "estado": "LISTA"
+        },
+        {
+          "nombre": "samsung-galaxy-tab-a11-8-7-wifi_4",
+          "original": "samsung-galaxy-tab-a11-8-7-wifi_4.jpg",
+          "procesada": "samsung-galaxy-tab-a11-8-7-wifi_4.jpg",
+          "huella": "283d4bfa7b6942502708a2f4056445cee968b667aafad773ee3918b1235bf98e",
+          "estado": "REVISAR"
+        },
+        {
+          "nombre": "samsung-galaxy-tab-a11-8-7-wifi_5",
+          "original": "samsung-galaxy-tab-a11-8-7-wifi_5.jpg",
+          "procesada": "samsung-galaxy-tab-a11-8-7-wifi_5.jpg",
+          "huella": "ad16d75dea7d0df229dabd235ff3bd7e41c74118fc36173487d6e14aca856c64",
+          "estado": "REVISAR"
+        }
+      ],
       "fecha_alta": "2026-10-02"
     },
     "samsung-galaxy-tab-a11-plus-11-wifi": {
@@ -1129,7 +1942,15 @@
       ],
       "supuestos_investigacion": [],
       "fuentes_ficha": [],
-      "fotos": [],
+      "fotos": [
+        {
+          "nombre": "samsung-galaxy-watch-8-40mm_1",
+          "original": "samsung-galaxy-watch-8-40mm_1.jpg",
+          "procesada": "samsung-galaxy-watch-8-40mm_1.jpg",
+          "huella": "a931e93ee66468d27ae40c9a6b87477eb37811fc7db36152071f325914b5d804",
+          "estado": "LISTA"
+        }
+      ],
       "fecha_alta": "2026-10-02"
     },
     "samsung-galaxy-watch-8-classic-46mm": {
@@ -1154,7 +1975,15 @@
           "fecha": "2026-10-02"
         }
       ],
-      "fotos": [],
+      "fotos": [
+        {
+          "nombre": "samsung-galaxy-watch-8-classic-46mm_1",
+          "original": "samsung-galaxy-watch-8-classic-46mm_1.jpg",
+          "procesada": "samsung-galaxy-watch-8-classic-46mm_1.jpg",
+          "huella": "0bbf435074b517388339c1b3231bdaeb4723e5baee17a377e74f575f779c590e",
+          "estado": "LISTA"
+        }
+      ],
       "fecha_alta": "2026-10-02"
     },
     "tcl-pad-lugh-10-wifi": {
@@ -1194,7 +2023,43 @@
           "fecha": "2026-10-02"
         }
       ],
-      "fotos": [],
+      "fotos": [
+        {
+          "nombre": "tcl-tab-11-fe-11-wifi_1",
+          "original": "tcl-tab-11-fe-11-wifi_1.jpg",
+          "procesada": "tcl-tab-11-fe-11-wifi_1.jpg",
+          "huella": "dc37e251563f79114ca4d2d96acc4dde1a6d8d562815cf55e67970dc0ce61138",
+          "estado": "LISTA"
+        },
+        {
+          "nombre": "tcl-tab-11-fe-11-wifi_2",
+          "original": "tcl-tab-11-fe-11-wifi_2.jpg",
+          "procesada": "tcl-tab-11-fe-11-wifi_2.jpg",
+          "huella": "eb63ffdfcfe817cd75039a870d4f730d07791c4e1b0c546ddb483edcef850cb0",
+          "estado": "REVISAR"
+        },
+        {
+          "nombre": "tcl-tab-11-fe-11-wifi_3",
+          "original": "tcl-tab-11-fe-11-wifi_3.jpg",
+          "procesada": "tcl-tab-11-fe-11-wifi_3.jpg",
+          "huella": "db93dd8bf8f2b8ee6eee7eebf6ebe64437d01cdc4ac0e4f1f468d4da72e11880",
+          "estado": "REVISAR"
+        },
+        {
+          "nombre": "tcl-tab-11-fe-11-wifi_4",
+          "original": "tcl-tab-11-fe-11-wifi_4.jpg",
+          "procesada": "tcl-tab-11-fe-11-wifi_4.jpg",
+          "huella": "72c4624253b11f6f02b73a02fcdbb22b92ba00ee8e5d61d5b4e2b86904dd6f40",
+          "estado": "REVISAR"
+        },
+        {
+          "nombre": "tcl-tab-11-fe-11-wifi_5",
+          "original": "tcl-tab-11-fe-11-wifi_5.jpg",
+          "procesada": "tcl-tab-11-fe-11-wifi_5.jpg",
+          "huella": "c5760ff14c59db88d427d7077ba3acc86be5d722753593896f1157282c5ebeca",
+          "estado": "REVISAR"
+        }
+      ],
       "fecha_alta": "2026-10-02"
     },
     "xiaomi-17t-5g": {
