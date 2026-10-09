@@ -37,7 +37,11 @@ import { usarReordenarGaleriaAdmin } from '../../application/reordenar-galeria-a
 import { usarFoco } from '../../../../../shared/foco/foco';
 import { mensajeDeError } from '../../../../../core/errores/mensaje-de-error';
 import { ImagenDeGaleriaAdmin } from '../../domain/producto-admin.model';
-import { esEjeDeTalla, esTallaUnica } from '../../../../catalogo/domain/seleccion-variante';
+import {
+  esEjeDeTalla,
+  esTallaUnica,
+  tallaNormalizada,
+} from '../../../../catalogo/domain/seleccion-variante';
 import { usarAsignarColorAImagenAdmin } from '../../application/asignar-color-imagen-admin.mutacion';
 import { usarAgregarColorDesdeLaPrincipal } from '../../application/agregar-color-desde-la-principal.mutacion';
 import { usarCambiarTallaAdmin } from '../../application/cambiar-talla-admin.mutacion';
@@ -262,9 +266,12 @@ export class EditarProductoAdminPage {
   );
 
   protected abrirCambioDeTalla(talla: TallaDelProducto): void {
-    const enLaEscala = this.escalaTallas().includes(talla.talla);
+    // Comparada como la compara la ficha: «m» marca la «M» de la escala, no «Otra talla».
+    const enLaEscala = this.escalaTallas().find(
+      (deLaEscala) => tallaNormalizada(deLaEscala) === tallaNormalizada(talla.talla),
+    );
     this.tallaEditando.set(talla.modeloId);
-    this.tallaElegida.set(enLaEscala ? talla.talla : this.hayEscalaDeTallas() ? OTRA_TALLA : '');
+    this.tallaElegida.set(enLaEscala ?? (this.hayEscalaDeTallas() ? OTRA_TALLA : ''));
     this.tallaEscrita.setValue(enLaEscala ? '' : talla.talla);
     this.errorTalla.set(null);
     this.tallaGuardada.set(null);

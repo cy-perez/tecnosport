@@ -559,6 +559,30 @@ describe('EditarProductoAdminPage', () => {
       expect(screen.queryByText(/Talla cambiada/)).toBeNull();
     });
 
+    it('una talla escrita distinto a la escala abre marcando la de la escala', async () => {
+      const conjunto = conjuntoDePrueba();
+      const minuscula: ProductoAdminDetalle = {
+        ...conjunto,
+        variantes: [
+          {
+            id: 'n-m',
+            sku: 'C-N-M',
+            atributos: [
+              { nombre: 'Color', valor: 'Negro', colorHex: '#111111' },
+              { nombre: 'Talla', valor: 'm', colorHex: null },
+            ],
+          },
+        ],
+      };
+      await renderPagina(new RepositorioProductosAdminFalso(minuscula));
+
+      fireEvent.click(await screen.findByRole('button', { name: 'Cambiar la talla m' }));
+      const lista = (await screen.findByLabelText(/^Talla nueva/)) as HTMLSelectElement;
+
+      await vi.waitFor(() => expect(lista.value).toBe('M'));
+      expect(screen.queryByLabelText(/^Escribe la talla/)).toBeNull();
+    });
+
     it('cancelar cierra la caja sin mandar nada', async () => {
       const repositorio = new RepositorioProductosAdminFalso(conjuntoDePrueba());
       await renderPagina(repositorio);
