@@ -245,6 +245,24 @@ si el texto no la respalda: cuenta si el texto trae «1.1» o «AAA», o si el
 modelo la marcó y el texto escribe la palabra «réplica»
 (`PatronDeReplica.diceReplica`). El prompt aclara las dos cosas.
 
+## El repetido se reconoce por el texto del proveedor y por cualquier foto (9 de octubre de 2026)
+
+La regla del mismo texto y la misma foto falló dos veces en los lotes del mismo
+día, y por dos razones distintas:
+
+- **El texto era el título del extractor.** Los dos tenis de Imperio Wicho a
+  65.000 —mismo texto letra por letra, misma foto— salieron como «Tenis estilo
+  Cab importado» y «Tenis importado tipo media ultraliviano». El modelo no titula
+  igual dos veces. Ahora se compara **el texto que escribió el proveedor**,
+  normalizado (`TextoDeAnuncio`): sin mayúsculas, tildes, emojis, asteriscos ni
+  la cuenta de espacios, para que el mismo anuncio exportado desde iPhone y desde
+  Android sea el mismo.
+- **La foto era solo la principal.** La polo Prada de Meraki y la de MerakiMen
+  compartían una foto idéntica que no era la principal de ninguna. Ahora cada
+  foto guarda su pHash al registrarse (`mensaje_proveedor.phash`, `V93`) y se
+  comparan **todas contra todas**. Los mensajes de antes no lo tienen; por ellos
+  responde la principal que guardó su borrador.
+
 ## Pendientes que este ADR deja escritos
 
 - **La confirmación con el proveedor en los pedidos.** Aprobar un borrador

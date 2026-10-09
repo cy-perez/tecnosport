@@ -21,6 +21,7 @@ import co.tecnosport.api.infrastructure.proveedores.entidad.FotoSubidaJpaEmbedda
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.EnumSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -108,16 +109,24 @@ public class RepositorioBorradoresJpa implements RepositorioBorradores {
   }
 
   @Override
-  public List<AnuncioEnRevision> anunciosEnRevision(UUID proveedorId, Dinero precioProveedor) {
-    return jpa
-        .findByProveedorIdAndEstadoAndPrecioProveedorAndTituloIsNotNull(
-            proveedorId, EstadoBorrador.EN_REVISION.name(), precioProveedor.valor())
-        .stream()
-        .map(
-            f ->
-                new AnuncioEnRevision(
-                    f.getTitulo(), f.getPhash() == null ? null : PHash.deHex(f.getPhash())))
+  public List<AnuncioEnRevision> anunciosEnRevision(UUID proveedorId) {
+    return jpa.anunciosEnRevision(proveedorId).stream()
+        .map(f -> new AnuncioEnRevision(f.getBorradorId(), f.getTexto(), fotosDe(f)))
         .toList();
+  }
+
+  /**
+   * Las de los mensajes y la principal del borrador, sin repetir: la de antes no tiene las otras.
+   */
+  private static List<PHash> fotosDe(BorradorProductoJpaRepository.AnuncioFila fila) {
+    Set<String> hex = new LinkedHashSet<>();
+    if (fila.getPhashPrincipal() != null) {
+      hex.add(fila.getPhashPrincipal());
+    }
+    if (fila.getPhashes() != null) {
+      hex.addAll(Arrays.asList(fila.getPhashes().split(",")));
+    }
+    return hex.stream().map(PHash::deHex).toList();
   }
 
   @Override

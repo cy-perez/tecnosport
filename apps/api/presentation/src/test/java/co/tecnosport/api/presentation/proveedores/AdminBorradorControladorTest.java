@@ -645,7 +645,7 @@ class AdminBorradorControladorTest {
     }
 
     @Override
-    public List<AnuncioEnRevision> anunciosEnRevision(UUID proveedorId, Dinero precioProveedor) {
+    public List<AnuncioEnRevision> anunciosEnRevision(UUID proveedorId) {
       return List.of();
     }
 

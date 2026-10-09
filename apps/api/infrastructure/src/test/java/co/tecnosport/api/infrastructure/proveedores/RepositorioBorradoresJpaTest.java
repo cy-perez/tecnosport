@@ -24,6 +24,7 @@ import co.tecnosport.api.domain.proveedores.Proveedor;
 import co.tecnosport.api.domain.proveedores.PublicacionProveedor;
 import co.tecnosport.api.domain.proveedores.Tallas;
 import co.tecnosport.api.domain.proveedores.TipoDeTalla;
+import co.tecnosport.api.domain.proveedores.TipoMensaje;
 import co.tecnosport.api.domain.proveedores.TipoProductoProveedor;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
@@ -307,63 +308,79 @@ class RepositorioBorradoresJpaTest {
   }
 
   /**
-   * Lo que hace falta para reconocer un anuncio repetido sin código: título y pHash de los que
-   * siguen en revisión a ese precio. El precio compara como número, con la escala de la columna.
+   * Lo que hace falta para reconocer un anuncio repetido: el texto del mensaje principal y los
+   * pHash de todas las fotos de la publicación, más el de la principal que guardó el borrador. Solo
+   * los que siguen en revisión, y solo los del proveedor.
    */
   @Test
-  void devuelveLosAnunciosEnRevisionDeUnPrecio() {
-    unaPublicacion();
-    PHash pHash = PHash.deHex("00000000000000ff");
-    BorradorProducto conFoto =
+  void devuelveLosAnunciosEnRevisionConSuTextoYTodasSusFotos() {
+    proveedor =
+        Proveedor.crear(
+            "Meraki",
+            LineaCatalogo.ROPA,
+            "+57 350",
+            "Meraki",
+            null,
+            OrdenDePublicacion.FOTOS_PRIMERO);
+    proveedores.guardar(proveedor);
+    LoteIngesta lote = LoteIngesta.recibirExportacion(proveedor.id(), "p/exportaciones/m.zip", T);
+    lotes.guardar(lote);
+    PHash principal = PHash.deHex("00000000000000ff");
+    PHash otra = PHash.deHex("ff00000000000000");
+    MensajeProveedor texto =
+        MensajeProveedor.texto(
+            proveedor.id(), lote.id(), new IdExternoDeMensaje("t"), T, "*BUSO NAVIDEÑO* $45.000");
+    MensajeProveedor conPHash =
+        new MensajeProveedor(
+            UUID.randomUUID(),
+            proveedor.id(),
+            lote.id(),
+            new IdExternoDeMensaje("f1"),
+            T.plusSeconds(5),
+            TipoMensaje.IMAGEN,
+            null,
+            null,
+            "proveedores/x/1.jpg",
+            false,
+            otra);
+    MensajeProveedor sinPHash =
+        MensajeProveedor.imagen(
+            proveedor.id(),
+            lote.id(),
+            new IdExternoDeMensaje("f2"),
+            T.plusSeconds(6),
+            null,
+            "proveedores/x/2.jpg");
+    mensajes.guardarTodos(List.of(texto, conPHash, sinPHash));
+    PublicacionProveedor buso = PublicacionProveedor.abrir(texto);
+    buso.anexar(conPHash);
+    buso.anexar(sinPHash);
+    publicaciones.guardarTodas(List.of(buso));
+    BorradorProducto enRevision =
         BorradorProducto.nuevo(
-            publicacion.id(),
+            buso.id(),
             proveedor.id(),
             extraido("Buzo navideño", null),
             "{}",
             Dinero.deCop(45000),
             null,
             null,
-            pHash,
+            principal,
             Set.of(),
             T);
-    BorradorProducto sinFoto =
-        BorradorProducto.nuevo(
-            publicacion.id(),
-            proveedor.id(),
-            extraido("Falda puntos", null),
-            "{}",
-            Dinero.deCop(45000),
-            null,
-            null,
-            null,
-            Set.of(),
-            T);
-    BorradorProducto otroPrecio =
-        BorradorProducto.nuevo(
-            publicacion.id(),
-            proveedor.id(),
-            extraido("Buzo navideño", null),
-            "{}",
-            Dinero.deCop(40000),
-            null,
-            null,
-            pHash,
-            Set.of(),
-            T);
-    borradores.guardar(conFoto);
-    borradores.guardar(sinFoto);
-    borradores.guardar(otroPrecio);
+    borradores.guardar(enRevision);
 
-    assertThat(borradores.anunciosEnRevision(proveedor.id(), Dinero.deCop(45000)))
-        .containsExactlyInAnyOrder(
-            new AnuncioEnRevision("Buzo navideño", pHash),
-            new AnuncioEnRevision("Falda puntos", null));
-    assertThat(borradores.anunciosEnRevision(UUID.randomUUID(), Dinero.deCop(45000))).isEmpty();
+    List<AnuncioEnRevision> anuncios = borradores.anunciosEnRevision(proveedor.id());
 
-    conFoto.rechazar("Repetido.");
-    borradores.actualizar(conFoto);
-    assertThat(borradores.anunciosEnRevision(proveedor.id(), Dinero.deCop(45000)))
-        .containsExactly(new AnuncioEnRevision("Falda puntos", null));
+    assertThat(anuncios).hasSize(1);
+    assertThat(anuncios.getFirst().borradorId()).isEqualTo(enRevision.id());
+    assertThat(anuncios.getFirst().texto()).isEqualTo("*BUSO NAVIDEÑO* $45.000");
+    assertThat(anuncios.getFirst().fotos()).containsExactlyInAnyOrder(principal, otra);
+    assertThat(borradores.anunciosEnRevision(UUID.randomUUID())).isEmpty();
+
+    enRevision.rechazar("Repetido.");
+    borradores.actualizar(enRevision);
+    assertThat(borradores.anunciosEnRevision(proveedor.id())).isEmpty();
   }
 
   /**

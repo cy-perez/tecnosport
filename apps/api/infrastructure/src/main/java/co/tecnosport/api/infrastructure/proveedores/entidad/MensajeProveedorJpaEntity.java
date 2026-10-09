@@ -46,6 +46,9 @@ public class MensajeProveedorJpaEntity {
   @Column(nullable = false)
   private int posicion;
 
+  /** El pHash de la foto en hexadecimal; nulo en lo que no es una foto con archivo legible. */
+  @Column private String phash;
+
   protected MensajeProveedorJpaEntity() {}
 
   public MensajeProveedorJpaEntity(
@@ -60,7 +63,8 @@ public class MensajeProveedorJpaEntity {
       String referenciaArchivo,
       boolean medioOmitido,
       Instant creadoEn,
-      int posicion) {
+      int posicion,
+      String phash) {
     this.id = id;
     this.proveedorId = proveedorId;
     this.loteId = loteId;
@@ -73,6 +77,11 @@ public class MensajeProveedorJpaEntity {
     this.medioOmitido = medioOmitido;
     this.creadoEn = creadoEn;
     this.posicion = posicion;
+    this.phash = phash;
+  }
+
+  public String getPhash() {
+    return phash;
   }
 
   public UUID getId() {

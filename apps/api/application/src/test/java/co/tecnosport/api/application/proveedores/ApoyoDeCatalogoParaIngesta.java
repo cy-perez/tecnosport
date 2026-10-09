@@ -24,7 +24,6 @@ import co.tecnosport.api.domain.catalogo.Paquete;
 import co.tecnosport.api.domain.catalogo.Producto;
 import co.tecnosport.api.domain.catalogo.TipoAtributo;
 import co.tecnosport.api.domain.catalogo.Variante;
-import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.compartido.Sku;
 import co.tecnosport.api.domain.compartido.Slug;
 import co.tecnosport.api.domain.inventario.Inventario;
@@ -211,6 +210,14 @@ final class ApoyoDeCatalogoParaIngesta {
 
     final Map<UUID, BorradorProducto> porId = new LinkedHashMap<>();
 
+    /**
+     * Cómo se ve un borrador como anuncio. El adaptador real lo saca de la publicación y sus
+     * mensajes; aquí, por omisión, sin texto —nunca es el repetido de nada— y con el pHash del
+     * borrador. La prueba que necesita el texto lo conecta con sus publicaciones.
+     */
+    java.util.function.Function<BorradorProducto, AnuncioEnRevision> comoAnuncio =
+        b -> new AnuncioEnRevision(b.id(), null, b.pHash().stream().toList());
+
     @Override
     public void guardar(BorradorProducto borrador) {
       porId.put(borrador.id(), borrador);
@@ -266,13 +273,11 @@ final class ApoyoDeCatalogoParaIngesta {
     }
 
     @Override
-    public List<AnuncioEnRevision> anunciosEnRevision(UUID proveedorId, Dinero precioProveedor) {
+    public List<AnuncioEnRevision> anunciosEnRevision(UUID proveedorId) {
       return porId.values().stream()
           .filter(b -> b.proveedorId().equals(proveedorId))
           .filter(b -> b.estado() == EstadoBorrador.EN_REVISION)
-          .filter(b -> b.precioProveedor().map(precioProveedor::equals).orElse(false))
-          .filter(b -> b.titulo().isPresent())
-          .map(b -> new AnuncioEnRevision(b.titulo().get(), b.pHash().orElse(null)))
+          .map(comoAnuncio)
           .toList();
     }
 

@@ -69,6 +69,16 @@ class ResolverBorradorTest {
   void unProveedor() {
     proveedor = ApoyoDeIngesta.proveedorDeBolsos();
     lote = LoteIngesta.recibirExportacion(proveedor.id(), "p/exportaciones/a.zip", AHORA);
+    // Como el adaptador real: el texto del mensaje principal y las fotos de la publicación.
+    borradores.comoAnuncio =
+        b -> {
+          PublicacionProveedor publicacion =
+              publicaciones.buscarPorId(b.publicacionId()).orElseThrow();
+          return new AnuncioEnRevision(
+              b.id(),
+              mensajes.get(publicacion.mensajePrincipalId()).textoLegible().orElse(null),
+              caso().pHashesDe(publicacion, mensajes));
+        };
   }
 
   private ResolverBorrador caso() {
@@ -87,6 +97,27 @@ class ResolverBorradorTest {
 
   private PublicacionProveedor publicacion(String texto, String fotoContenido) {
     return publicacion(texto, fotoContenido, FECHA_DEL_MENSAJE);
+  }
+
+  /** Un texto y varias fotos, con el contenido de cada una: el mismo contenido, la misma foto. */
+  private PublicacionProveedor conFotos(String texto, Instant fecha, String... fotos) {
+    PublicacionProveedor publicacion = publicacion(texto, null, fecha);
+    for (String contenido : fotos) {
+      String referencia = "proveedores/x/2026/09/" + (++contador) + ".jpg";
+      almacen.guardar(referencia, "image/jpeg", contenido.getBytes(StandardCharsets.UTF_8));
+      MensajeProveedor foto =
+          MensajeProveedor.imagen(
+              proveedor.id(),
+              lote.id(),
+              new IdExternoDeMensaje("g" + contador),
+              fecha.plusSeconds(contador),
+              null,
+              referencia);
+      mensajes.put(foto.id(), foto);
+      publicacion.anexar(foto);
+    }
+    publicaciones.guardarTodas(List.of(publicacion));
+    return publicacion;
   }
 
   private PublicacionProveedor publicacion(String texto, String fotoContenido, Instant fecha) {
@@ -595,5 +626,44 @@ class ResolverBorradorTest {
     assertEquals(
         EstadoPublicacionProveedor.DESCARTADA,
         publicaciones.buscarPorId(publicacion.id()).orElseThrow().estado());
+  }
+
+  /**
+   * Imperio Wicho, 8 de octubre de 2026: el mismo texto y la misma foto a las 17:31 y a las 17:56,
+   * y el extractor tituló distinto cada uno. El texto del proveedor es el que dice que es el mismo.
+   */
+  @Test
+  void elMismoTextoYFotoSeDescartaAunqueElExtractorTituleDistinto() {
+    String texto = "Nueva Colección Cab 👨🏻👨🏻\nImportado Tipo Media Ultraliviano🔥\n💰*$65,000*";
+    resolver(
+        conFotos(texto, FECHA_DEL_MENSAJE, "tenis-media"),
+        evaluada("Tenis para caballero tipo media", 65000, true, false, Set.of()));
+
+    Resolucion segundo =
+        resolver(
+            conFotos(texto, FECHA_DEL_MENSAJE.plusSeconds(25 * 60), "tenis-media"),
+            evaluada("Tenis importado tipo media ultraliviano", 65000, true, false, Set.of()));
+
+    assertEquals(TipoDeResolucion.DESCARTADA, segundo.tipo());
+    assertEquals(1, borradores.enEstado(EstadoBorrador.EN_REVISION).size());
+  }
+
+  /**
+   * La polo Prada de Meraki y la de MerakiMen compartían una foto que no era la principal de
+   * ninguna: se comparan todas contra todas.
+   */
+  @Test
+  void unaFotoEnComunQueNoEsLaPrincipalBastaParaElRepetido() {
+    String texto = "*NUEVA POLO 1.1🍯*\n *MARCA P R A D A*\n*PRECIO X DIFUSIÓN $50.000💰*";
+    resolver(
+        conFotos(texto, FECHA_DEL_MENSAJE, "prada-frente", "prada-espalda"),
+        evaluada("Camiseta estilo Prada", 50000, true, false, Set.of()));
+
+    Resolucion segundo =
+        resolver(
+            conFotos(texto, FECHA_DEL_MENSAJE.plusSeconds(3600), "prada-modelo", "prada-espalda"),
+            evaluada("Camiseta estilo Prada", 50000, true, false, Set.of()));
+
+    assertEquals(TipoDeResolucion.DESCARTADA, segundo.tipo());
   }
 }

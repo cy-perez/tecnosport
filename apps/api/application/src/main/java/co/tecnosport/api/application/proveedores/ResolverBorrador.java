@@ -14,6 +14,7 @@ import co.tecnosport.api.domain.proveedores.PHash;
 import co.tecnosport.api.domain.proveedores.ProductoExtraido;
 import co.tecnosport.api.domain.proveedores.Proveedor;
 import co.tecnosport.api.domain.proveedores.PublicacionProveedor;
+import co.tecnosport.api.domain.proveedores.TextoDeAnuncio;
 import co.tecnosport.api.domain.proveedores.TopesDeGanancia;
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -43,11 +44,14 @@ import java.util.stream.Collectors;
  *
  * <p>La Riverah repite el texto de un anuncio con otra prenda: el «Busito manga larga» a 58.000
  * salió azul y, horas después, gris. Por eso un anuncio sin código solo se descarta por repetido
- * cuando hay un borrador en revisión con <b>el mismo texto y la misma foto</b>: alguna de sus fotos
- * a la distancia de Hamming del umbral o menos de la principal de aquel. Con el texto igual y otra
- * foto es otra prenda, y abre su propio borrador. Si uno de los dos no tiene foto con la que
- * comparar, no hay cómo saber que es el mismo, y tampoco se descarta: un borrador de más se elimina
- * en el panel; una prenda descartada no vuelve. Con código de referencia el código basta.
+ * cuando hay un borrador en revisión con <b>el mismo texto y la misma foto</b>. El texto es el que
+ * escribió el proveedor, normalizado ({@link TextoDeAnuncio}), no el título del extractor, que no
+ * sale igual dos veces; y la foto es cualquiera de las de un anuncio a la distancia de Hamming del
+ * umbral o menos de cualquiera de las del otro, no solo la principal (los dos, desde el 9 de
+ * octubre de 2026). Con el texto igual y otra foto es otra prenda, y abre su propio borrador. Si
+ * uno de los dos no tiene foto con la que comparar, no hay cómo saber que es el mismo, y tampoco se
+ * descarta: un borrador de más se elimina en el panel; una prenda descartada no vuelve. Con código
+ * de referencia el código basta.
  *
  * <p>Una renovación no crea un borrador para revisar: actualiza la última vista, reactiva el
  * producto si estaba oculto y deja una constancia {@code RENOVACION_APLICADA}. Un agotado sobre un
@@ -142,9 +146,14 @@ public final class ResolverBorrador {
       return List.of(descartar(publicacion, SIN_PRODUCTO));
     }
     List<PHash> fotos = evaluadas.size() == 1 ? List.copyOf(pHashes) : List.of();
+    String textoDelAnuncio =
+        Optional.ofNullable(mensajes.get(publicacion.mensajePrincipalId()))
+            .flatMap(MensajeProveedor::textoLegible)
+            .orElse(null);
     List<Resolucion> resoluciones = new ArrayList<>(evaluadas.size());
     for (ExtraccionEvaluada evaluada : evaluadas) {
-      resoluciones.add(resolverUno(publicacion, proveedor, evaluada, fotos, huellasVisuales));
+      resoluciones.add(
+          resolverUno(publicacion, proveedor, evaluada, textoDelAnuncio, fotos, huellasVisuales));
     }
     boolean algunoSeQuedo =
         resoluciones.stream().anyMatch(r -> r.tipo() != TipoDeResolucion.DESCARTADA);
@@ -166,6 +175,7 @@ public final class ResolverBorrador {
       PublicacionProveedor publicacion,
       Proveedor proveedor,
       ExtraccionEvaluada evaluada,
+      String textoDelAnuncio,
       List<PHash> fotos,
       List<HuellaVisual> huellasVisuales) {
     ProductoExtraido extraido = evaluada.producto();
@@ -206,9 +216,7 @@ public final class ResolverBorrador {
       return Resolucion.descartada(
           "Es la misma referencia de un borrador que ya está en revisión.");
     }
-    if (codigo.isEmpty()
-        && delTexto != null
-        && esAnuncioRepetido(proveedor, delTexto, precio, fotos)) {
+    if (codigo.isEmpty() && esAnuncioRepetido(proveedor, textoDelAnuncio, fotos)) {
       return Resolucion.descartada(
           "Es el mismo anuncio, con la misma foto, de un borrador que ya está en revisión.");
     }
@@ -238,15 +246,19 @@ public final class ResolverBorrador {
    * alguno de los dos lados no hay cómo saberlo, y la respuesta es no.
    */
   private boolean esAnuncioRepetido(
-      Proveedor proveedor, HuellaProveedor delTexto, Dinero precio, List<PHash> fotos) {
+      Proveedor proveedor, String textoDelAnuncio, List<PHash> fotos) {
     if (fotos.isEmpty()) {
       return false;
     }
-    return repositorioBorradores.anunciosEnRevision(proveedor.id(), precio).stream()
-        .filter(a -> a.pHash() != null)
-        .filter(a -> HuellaProveedor.calcular(proveedor.id(), a.titulo(), precio).equals(delTexto))
-        .anyMatch(
-            a -> fotos.stream().anyMatch(f -> f.distanciaHamming(a.pHash()) <= umbralHamming));
+    return repositorioBorradores.anunciosEnRevision(proveedor.id()).stream()
+        .filter(a -> TextoDeAnuncio.mismoAnuncio(a.texto(), textoDelAnuncio))
+        .anyMatch(a -> compartenFoto(a.fotos(), fotos));
+  }
+
+  /** Si alguna foto de un lado está a la distancia del umbral o menos de alguna del otro. */
+  private boolean compartenFoto(List<PHash> unas, List<PHash> otras) {
+    return unas.stream()
+        .anyMatch(u -> otras.stream().anyMatch(o -> u.distanciaHamming(o) <= umbralHamming));
   }
 
   private Resolucion renovar(
@@ -326,13 +338,18 @@ public final class ResolverBorrador {
     return publicacion.medios().stream()
         .map(mensajes::get)
         .filter(Objects::nonNull)
-        .map(m -> m.referenciaArchivo().orElse(null))
-        .filter(Objects::nonNull)
-        .map(almacen::leer)
-        .flatMap(Optional::stream)
-        .map(calculadorDePHash::de)
+        .filter(m -> m.referenciaArchivo().isPresent())
+        .map(this::pHashDe)
         .flatMap(Optional::stream)
         .toList();
+  }
+
+  /** El que se guardó al registrar el mensaje; si no hay, el de leer la foto del bucket. */
+  private Optional<PHash> pHashDe(MensajeProveedor mensaje) {
+    if (mensaje.pHash().isPresent()) {
+      return mensaje.pHash();
+    }
+    return mensaje.referenciaArchivo().flatMap(almacen::leer).flatMap(calculadorDePHash::de);
   }
 
   /**

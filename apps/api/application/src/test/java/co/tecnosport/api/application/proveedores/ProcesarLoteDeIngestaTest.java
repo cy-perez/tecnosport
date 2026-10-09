@@ -94,7 +94,8 @@ class ProcesarLoteDeIngestaTest {
   private ProcesarLoteDeIngesta casoCon(FuenteFija fuente, ExtractorDeProductos extractor) {
     RelojFalso reloj = new RelojFalso(AHORA);
     RegistrarMensajesDeProveedor registrar =
-        new RegistrarMensajesDeProveedor(proveedores, lotes, mensajes, almacen);
+        new RegistrarMensajesDeProveedor(
+            proveedores, lotes, mensajes, almacen, new CalculadorDePHashPorContenido());
     ArmarPublicaciones armar =
         new ArmarPublicaciones(
             lotes,

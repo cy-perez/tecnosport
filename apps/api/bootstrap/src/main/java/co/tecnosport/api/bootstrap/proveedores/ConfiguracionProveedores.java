@@ -5,6 +5,7 @@ import co.tecnosport.api.application.compartido.EnTransaccionPropia;
 import co.tecnosport.api.application.compartido.Reloj;
 import co.tecnosport.api.application.proveedores.AlmacenDeArchivosDeProveedor;
 import co.tecnosport.api.application.proveedores.ArmarPublicaciones;
+import co.tecnosport.api.application.proveedores.CalculadorDePHash;
 import co.tecnosport.api.application.proveedores.CrearProveedor;
 import co.tecnosport.api.application.proveedores.DetenerIngesta;
 import co.tecnosport.api.application.proveedores.EditarProveedor;
@@ -139,8 +140,10 @@ public class ConfiguracionProveedores {
       RepositorioProveedores proveedores,
       RepositorioLotesIngesta lotes,
       RepositorioMensajesProveedor mensajes,
-      AlmacenDeArchivosDeProveedor almacen) {
-    return new RegistrarMensajesDeProveedor(proveedores, lotes, mensajes, almacen);
+      AlmacenDeArchivosDeProveedor almacen,
+      CalculadorDePHash calculadorDePHash) {
+    return new RegistrarMensajesDeProveedor(
+        proveedores, lotes, mensajes, almacen, calculadorDePHash);
   }
 
   @Bean
