@@ -56,6 +56,26 @@ class Exportar(unittest.TestCase):
         self.assertEqual(["xiaomi-17t-5g"], lista["modelosDesaparecidos"])
         self.assertEqual(("2026-10-08", ["ANDROID"]), (lista["fechaLista"], lista["bloques"]))
 
+    def test_un_modelo_nuevo_lleva_los_colores_que_sugiere_la_lista(self):
+        datos = {**DATOS, "productos": [producto(
+            "samsung-galaxy-a17-5g-8gb-ram-256gb-1-sim", "Samsung Galaxy A17 5G 8GB RAM 256GB 1 SIM",
+            atributos=["1 SIM"], colores_sugeridos=[], colores_familia=["Azul"],
+            colores_oficiales=["Negro", "Azul claro"])]}
+        lista, _ = exportar_lista.exportar(datos)
+        self.assertEqual(["Azul claro"], lista["modelos"][0]["configuraciones"][0]["coloresSugeridos"])
+
+    def test_un_id_que_no_cabe_se_queda_fuera_y_se_dice(self):
+        largo = "x" * 61
+        datos = {**DATOS, "productos": [producto(largo, "Equipo con nombre larguísimo")] + DATOS["productos"]}
+        lista, fuera = exportar_lista.exportar(datos)
+        skus = [c["sku"] for m in lista["modelos"] for c in m["configuraciones"]]
+        self.assertNotIn(largo, skus)
+        self.assertIn("Equipo con nombre larguísimo", [t for t, _ in fuera])
+
+    def test_sin_fecha_no_se_exporta(self):
+        with self.assertRaises(ValueError):
+            exportar_lista.exportar({**DATOS, "fecha_lista": None})
+
     def test_la_sim_esim_sola_tambien_se_lee(self):
         self.assertEqual("eSIM", exportar_lista.sim_de({"atributos": ["eSIM"]}))
         self.assertEqual("SIM + eSIM", exportar_lista.sim_de({"atributos": ["SIM + eSIM"]}))

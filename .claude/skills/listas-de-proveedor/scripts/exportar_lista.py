@@ -30,7 +30,12 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+from comparar_lista import colores_sugeridos  # noqa: E402
 from parsear_lista import atributo_sim  # noqa: E402
+
+# Lo que caben las columnas de la API (V92). Pasarse tumba la lista entera en una transacción,
+# así que el que no cabe se queda fuera aquí y se dice.
+LARGO_MAXIMO_DEL_ID = 60
 
 
 def sim_de(producto) -> str | None:
@@ -43,13 +48,31 @@ def sim_de(producto) -> str | None:
     return None
 
 
+def sugeridos(producto) -> list:
+    """Los colores que sugiere la lista, en nombres de la paleta.
+
+    La comparación solo los calcula para un modelo que ya estaba en la base: uno nuevo
+    no tiene paleta hasta el paso 4. Aquí la paleta ya existe, así que se calculan para
+    los que llegaron sin ellos —que es justo el caso principal, el modelo nuevo—.
+    """
+    if producto.get("colores_sugeridos"):
+        return list(producto["colores_sugeridos"])
+    return colores_sugeridos(producto.get("colores_familia"), producto.get("colores_oficiales"))
+
+
 def exportar(datos: dict) -> tuple[dict, list]:
     """Devuelve (lo que va a la API, los modelos que no se exportaron con su motivo)."""
+    if not datos.get("fecha_lista"):
+        raise ValueError("La lista no tiene fecha: sin ella la API no sabe si es más nueva que la última.")
     por_modelo = {}
     for p in datos["productos"]:
+        if len(p["id"]) > LARGO_MAXIMO_DEL_ID:
+            continue
         por_modelo.setdefault(p["id_modelo"], []).append(p)
 
-    modelos, fuera = [], []
+    modelos = []
+    fuera = [(p["titulo"], f"el id pasa de {LARGO_MAXIMO_DEL_ID} caracteres; acórtalo en las equivalencias")
+             for p in datos["productos"] if len(p["id"]) > LARGO_MAXIMO_DEL_ID]
     for mid, productos in por_modelo.items():
         m = productos[0]
         if not m.get("descripcion"):
@@ -71,7 +94,7 @@ def exportar(datos: dict) -> tuple[dict, list]:
                 "sim": sim_de(p),
                 "costoProveedor": p["precio_proveedor_cop"],
                 "precioMercado": p.get("precio_mercado_cop"),
-                "coloresSugeridos": list(p.get("colores_sugeridos") or []),
+                "coloresSugeridos": sugeridos(p),
             } for p in productos],
         })
 
@@ -93,7 +116,10 @@ def main():
     datos = json.loads(Path(args.productos).read_text(encoding="utf-8"))
     if not datos.get("comparacion"):
         sys.exit("Esta corrida no pasó por comparar_lista.py: sin eso no se saben los desaparecidos.")
-    lista, fuera = exportar(datos)
+    try:
+        lista, fuera = exportar(datos)
+    except ValueError as error:
+        sys.exit(str(error))
     Path(args.salida).write_text(json.dumps(lista, ensure_ascii=False, indent=2), encoding="utf-8", newline="")
     n = sum(len(m["configuraciones"]) for m in lista["modelos"])
     print(f"{len(lista['modelos'])} modelos y {n} configuraciones en {args.salida}")
