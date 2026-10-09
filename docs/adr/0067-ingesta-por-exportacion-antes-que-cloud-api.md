@@ -140,6 +140,24 @@ El mismo día, el patrón de precio aprendió las formas de La Riverah
 tres de los ocho productos de La Riverah no abrían publicación y sus fotos
 terminaban en el producto vecino, y de Violeta no salía ninguno.
 
+## El álbum que llega lejos de su precio (9 de octubre de 2026)
+
+La exportación de D'Osman del 7 de octubre trajo el álbum del bolso ejecutivo a
+las 14:22–14:24 y el texto con el precio a las 15:01. Con la ventana de quince
+minutos las cinco fotos quedaban sueltas y el borrador salía con `SIN_FOTOS`,
+aunque en el chat no había nada más entre las dos cosas.
+
+- **Un precio que termina el reparto sin una sola foto recoge el álbum suelto que
+  tiene pegado**: fotos que nadie se quedó, seguidas, sin otro mensaje en medio,
+  justo antes o justo después de él. Si hay uno a cada lado decide el
+  `OrdenDePublicacion` del proveedor.
+- **El álbum tiene que llegar a una hora o menos del precio**, y sus fotos siguen
+  pidiendo la ventana entre ellas. Es un parámetro técnico y no se configura:
+  cubre los 37 minutos de D'Osman con holgura, y más allá ya no es un álbum que se
+  demoró.
+- **Un precio que ya tiene fotos no recoge nada.** La ventana sigue siendo la
+  regla; esto solo rescata lo que la ventana dejaba sin dueño y sin competencia.
+
 ## Pendientes que este ADR deja escritos
 
 - **La confirmación con el proveedor en los pedidos.** Aprobar un borrador
