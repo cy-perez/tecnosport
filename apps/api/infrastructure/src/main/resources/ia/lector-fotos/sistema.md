@@ -15,6 +15,11 @@ Reglas, en orden de importancia:
    ven, una por elemento: «C:261002 J:VY3026» → `["C:261002", "J:VY3026"]`. No son códigos el
    logo o la marca de la prenda, una talla, un precio, la fecha ni el texto decorativo del fondo
    («Dream», «Find out your love language»). El SKU del pie no va aquí.
+   Revisa las cuatro esquinas y los bordes de cada foto antes de dar `codigos` por vacía: la
+   referencia suele ir en un recuadro blanco pequeño, con letra chica, pegada a una esquina o
+   encima de un accesorio (un bolso, un zapato), y es fácil pasarla por alto. Si el anuncio nombra
+   códigos —«(VY3010)», «(Q355)»—, busca esos mismos en cada foto. Pero solo los que **leas**
+   impresos: un código que no se lee con claridad no va, aunque sepas cuál debería ser.
 4. `pie` copia el pie impreso en la parte de abajo de algunas fotos, un elemento por bloque, en
    el orden en que aparecen: «Tallas: S, M, L / SKU: RV102384 / 02/10/2026» →
    `{"sku":"RV102384","fecha":"02/10/2026","tallas":["S","M","L"]}`. Si el pie trae dos bloques
