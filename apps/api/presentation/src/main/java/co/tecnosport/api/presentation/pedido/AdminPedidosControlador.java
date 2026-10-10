@@ -11,6 +11,7 @@ import co.tecnosport.api.application.pedido.ConciliarTransferenciaComando;
 import co.tecnosport.api.application.pedido.ConfirmarInventarioDePedidoPagado;
 import co.tecnosport.api.application.pedido.DespacharPedido;
 import co.tecnosport.api.application.pedido.DespacharPedidoComando;
+import co.tecnosport.api.application.pedido.EliminarPedido;
 import co.tecnosport.api.application.pedido.GuiaDespachada;
 import co.tecnosport.api.application.pedido.ListarPedidosAdmin;
 import co.tecnosport.api.application.pedido.ListarPedidosAdminComando;
@@ -28,6 +29,7 @@ import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.envio.EmisionDeGuia;
 import co.tecnosport.api.domain.pedido.EstadoPedido;
 import co.tecnosport.api.domain.pedido.MotivoCancelacion;
+import co.tecnosport.api.domain.pedido.NumeroPedido;
 import co.tecnosport.api.domain.pedido.Pedido;
 import co.tecnosport.api.domain.reintegro.MedioReintegro;
 import co.tecnosport.api.presentation.pedido.dto.CancelarPedidoRequest;
@@ -47,6 +49,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -81,6 +84,7 @@ public class AdminPedidosControlador {
   private final EmitirGuiaDePedido emitirGuiaDePedido;
   private final MarcarEntregado marcarEntregado;
   private final CancelarPedido cancelarPedido;
+  private final EliminarPedido eliminarPedido;
   private final RechazarEnEntrega rechazarEnEntrega;
   private final RecibirPedidoRechazado recibirPedidoRechazado;
   private final ConciliarRecaudo conciliarRecaudo;
@@ -96,6 +100,7 @@ public class AdminPedidosControlador {
       EmitirGuiaDePedido emitirGuiaDePedido,
       MarcarEntregado marcarEntregado,
       CancelarPedido cancelarPedido,
+      EliminarPedido eliminarPedido,
       RechazarEnEntrega rechazarEnEntrega,
       RecibirPedidoRechazado recibirPedidoRechazado,
       ConciliarRecaudo conciliarRecaudo,
@@ -109,6 +114,7 @@ public class AdminPedidosControlador {
     this.emitirGuiaDePedido = Objects.requireNonNull(emitirGuiaDePedido);
     this.marcarEntregado = Objects.requireNonNull(marcarEntregado);
     this.cancelarPedido = Objects.requireNonNull(cancelarPedido);
+    this.eliminarPedido = Objects.requireNonNull(eliminarPedido);
     this.rechazarEnEntrega = Objects.requireNonNull(rechazarEnEntrega);
     this.recibirPedidoRechazado = Objects.requireNonNull(recibirPedidoRechazado);
     this.conciliarRecaudo = Objects.requireNonNull(conciliarRecaudo);
@@ -301,6 +307,20 @@ public class AdminPedidosControlador {
                         cuerpo.comprobante(),
                         actor)));
     return mapeador.aRespuesta(pedido);
+  }
+
+  /**
+   * Borra del todo un pedido en el que nunca hubo nada en juego: pago fallido o cancelado, sin pago
+   * aprobado ni pendiente, sin envío y sin trámites (ADR-0077). Cualquier otro, {@code 409}: se
+   * cancela y conserva su historia. {@code warn} con el número y quién lo borró, porque el
+   * historial del pedido se va con él y esta línea es lo único que queda.
+   */
+  @DeleteMapping("/{id}")
+  @ResponseStatus(HttpStatus.NO_CONTENT)
+  public void eliminar(@PathVariable UUID id) {
+    String actor = "admin:" + actorId();
+    NumeroPedido numero = transaccion.execute(estado -> eliminarPedido.ejecutar(id));
+    log.warn("Pedido {} ({}) eliminado por {}", numero.valor(), id, actor);
   }
 
   private UUID actorId() {

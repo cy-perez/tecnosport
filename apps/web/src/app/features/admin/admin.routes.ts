@@ -42,6 +42,8 @@ import { REPOSITORIO_RETRACTOS } from './retractos/domain/repositorio-retractos.
 import { RetractosHttpRepositorio } from './retractos/infrastructure/retractos-http.repositorio';
 import { REPOSITORIO_PRODUCTOS_ADMIN } from './productos/domain/repositorio-productos-admin.puerto';
 import { ProductosAdminHttpRepositorio } from './productos/infrastructure/productos-admin-http.repositorio';
+import { REPOSITORIO_PRODUCTOS_NO_PUBLICADOS } from './productos/domain/productos-no-publicados.puerto';
+import { ProductosNoPublicadosHttpRepositorio } from './productos/infrastructure/productos-no-publicados-http.repositorio';
 import { precargarScopeI18n } from '../../core/i18n/precargar-scope';
 import { REPOSITORIO_PROVEEDORES_ADMIN } from './proveedores/domain/repositorio-proveedores-admin.puerto';
 import { ProveedoresAdminHttpRepositorio } from './proveedores/infrastructure/proveedores-admin-http.repositorio';
@@ -49,6 +51,8 @@ import { REPOSITORIO_INGESTAS_ADMIN } from './ingestas/domain/repositorio-ingest
 import { IngestasAdminHttpRepositorio } from './ingestas/infrastructure/ingestas-admin-http.repositorio';
 import { LECTOR_DE_ZIP } from './ingestas/domain/lector-de-zip.puerto';
 import { LectorDeZipNavegador } from './ingestas/infrastructure/lector-de-zip-navegador';
+import { REPOSITORIO_ARCHIVOS_DE_INGESTA } from './ingestas/domain/repositorio-archivos-de-ingesta.puerto';
+import { ArchivosDeIngestaHttpRepositorio } from './ingestas/infrastructure/archivos-de-ingesta-http.repositorio';
 import { REPOSITORIO_BORRADORES_ADMIN } from './borradores/domain/repositorio-borradores-admin.puerto';
 import { BorradoresAdminHttpRepositorio } from './borradores/infrastructure/borradores-admin-http.repositorio';
 import { REPOSITORIO_BORRADORES_TECNOLOGIA } from './tecnologia/domain/repositorio-borradores-tecnologia.puerto';
@@ -219,11 +223,27 @@ export const adminRoutes: Routes = [
               { provide: REPOSITORIO_INGESTAS_ADMIN, useClass: IngestasAdminHttpRepositorio },
               { provide: REPOSITORIO_PROVEEDORES_ADMIN, useClass: ProveedoresAdminHttpRepositorio },
               { provide: LECTOR_DE_ZIP, useClass: LectorDeZipNavegador },
+              {
+                provide: REPOSITORIO_ARCHIVOS_DE_INGESTA,
+                useClass: ArchivosDeIngestaHttpRepositorio,
+              },
             ],
-            loadComponent: () =>
-              import('./ingestas/presentation/lista/lista-ingestas-admin.page').then(
-                (m) => m.ListaIngestasAdminPage,
-              ),
+            children: [
+              {
+                path: '',
+                loadComponent: () =>
+                  import('./ingestas/presentation/lista/lista-ingestas-admin.page').then(
+                    (m) => m.ListaIngestasAdminPage,
+                  ),
+              },
+              {
+                path: 'archivos',
+                loadComponent: () =>
+                  import('./ingestas/presentation/archivos/archivos-de-ingesta-admin.page').then(
+                    (m) => m.ArchivosDeIngestaAdminPage,
+                  ),
+              },
+            ],
           },
           {
             path: 'borradores',
@@ -289,6 +309,10 @@ export const adminRoutes: Routes = [
             path: 'productos',
             providers: [
               { provide: REPOSITORIO_PRODUCTOS_ADMIN, useClass: ProductosAdminHttpRepositorio },
+              {
+                provide: REPOSITORIO_PRODUCTOS_NO_PUBLICADOS,
+                useClass: ProductosNoPublicadosHttpRepositorio,
+              },
             ],
             children: [
               {

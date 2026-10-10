@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import co.tecnosport.api.application.catalogo.FiltroProductos;
 import co.tecnosport.api.application.catalogo.MedidaDeVariante;
 import co.tecnosport.api.application.catalogo.OrdenProductos;
+import co.tecnosport.api.application.catalogo.ProductosNoPublicados;
 import co.tecnosport.api.application.catalogo.ProductosPaginados;
 import co.tecnosport.api.application.catalogo.VarianteActiva;
 import co.tecnosport.api.application.compartido.ResultadoPaginado;
@@ -985,6 +986,39 @@ class RepositorioProductosJpaTest {
         new HashContenido("%064x".formatted(semillaDelHash)),
         "alt es",
         "alt en");
+  }
+
+  /**
+   * El cursor del borrado en bloque: solo borradores, por id, después del cursor. Se filtra por los
+   * creados aquí porque el contenedor lo comparten todas las pruebas de la clase.
+   */
+  @Test
+  void losNoPublicadosSeRecorrenPorIdConCursor() {
+    MarcaJpaEntity marca = marca("Cursor");
+    CategoriaJpaEntity categoria = categoria("Cursor", "cursor-np", "BOLSOS");
+    List<UUID> borradores = new java.util.ArrayList<>();
+    for (int i = 0; i < 3; i++) {
+      borradores.add(producto("Np " + i, "np-" + i, "BORRADOR", marca, categoria).getId());
+    }
+    UUID publicado = producto("Np pub", "np-pub", "PUBLICADO", marca, categoria).getId();
+    ProductosNoPublicados noPublicados = new ProductosNoPublicadosJpa(productos);
+
+    // El orden es el de Postgres, que no es el de UUID.compareTo (Java compara con signo): se toma
+    // el que devuelve la base y se comprueba que el cursor lo respeta.
+    UUID tope = noPublicados.ultimo().orElseThrow();
+    List<UUID> todos = noPublicados.ids(null, tope, 1000);
+    assertThat(todos).containsAll(borradores).doesNotContain(publicado).endsWith(tope);
+    List<UUID> mios = todos.stream().filter(borradores::contains).toList();
+    assertThat(noPublicados.ids(mios.get(0), tope, 1000))
+        .doesNotContain(mios.get(0))
+        .containsSubsequence(mios.get(1), mios.get(2));
+    assertThat(noPublicados.ids(mios.get(2), tope, 1000)).doesNotContainAnyElementsOf(mios);
+    // El tope corta: hasta el primero de los míos, ninguno de los otros dos.
+    assertThat(noPublicados.ids(null, mios.get(0), 1000))
+        .contains(mios.get(0))
+        .doesNotContain(mios.get(1), mios.get(2));
+    assertThat(noPublicados.ids(null, tope, 2)).hasSize(2);
+    assertThat(noPublicados.contar()).isEqualTo(todos.size());
   }
 
   private MarcaJpaEntity marca(String nombre) {

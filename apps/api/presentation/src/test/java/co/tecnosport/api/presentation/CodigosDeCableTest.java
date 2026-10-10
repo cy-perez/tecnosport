@@ -30,7 +30,10 @@ import co.tecnosport.api.application.garantia.LineaNoEsDelPedidoException;
 import co.tecnosport.api.application.pago.SistecreditoNoEntregoLaUrlDePagoException;
 import co.tecnosport.api.application.pedido.ContraentregaNoDisponibleException;
 import co.tecnosport.api.application.pedido.MetodoDePagoNoEsTransferenciaManualException;
+import co.tecnosport.api.application.pedido.PedidoNoEliminableException;
 import co.tecnosport.api.application.pedido.RetiroEnPuntoNoDisponibleException;
+import co.tecnosport.api.application.proveedores.ArchivoDeIngestaEnUsoException;
+import co.tecnosport.api.application.proveedores.ArchivoDeIngestaNoEncontradoException;
 import co.tecnosport.api.application.proveedores.AtributoDeCatalogoNoDefinidoException;
 import co.tecnosport.api.application.proveedores.BorradorNoEditableException;
 import co.tecnosport.api.application.proveedores.BorradorNoEliminableException;
@@ -152,6 +155,7 @@ class CodigosDeCableTest {
               MetodoDePagoNoEsTransferenciaManualException.class,
               "METODO_DE_PAGO_NO_ES_TRANSFERENCIA_MANUAL"),
           Map.entry(PedidoSinEntregarException.class, "PEDIDO_SIN_ENTREGAR"),
+          Map.entry(PedidoNoEliminableException.class, "PEDIDO_NO_ELIMINABLE"),
           Map.entry(PesoDeReferenciaNoAdmitidoException.class, "PESO_DE_REFERENCIA_NO_ADMITIDO"),
           Map.entry(ProductoSinImagenPrincipalException.class, "PRODUCTO_SIN_IMAGEN_PRINCIPAL"),
           // Los dos rechazos del borrado de un producto: el panel los traduce a "retíralo primero"
@@ -200,6 +204,9 @@ class CodigosDeCableTest {
           Map.entry(MarcaConProductosException.class, "MARCA_CON_PRODUCTOS"),
           Map.entry(MarcaNoEncontradaException.class, "MARCA_NO_ENCONTRADA"),
           Map.entry(LoteEnCursoException.class, "LOTE_EN_CURSO"),
+          Map.entry(ArchivoDeIngestaEnUsoException.class, "ARCHIVO_DE_INGESTA_EN_USO"),
+          Map.entry(
+              ArchivoDeIngestaNoEncontradoException.class, "ARCHIVO_DE_INGESTA_NO_ENCONTRADO"),
           Map.entry(LoteEnOtroEstadoException.class, "LOTE_EN_OTRO_ESTADO"),
           Map.entry(MarcaYaExisteException.class, "MARCA_YA_EXISTE"));
 

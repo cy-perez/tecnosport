@@ -7,6 +7,7 @@
     "reintegro_requerido": "Falta el monto o el medio del reintegro, y este desenlace devuelve dinero.",
     "retracto_ya_radicado": "Este pedido ya tiene un retracto en curso.",
     "pedido_sin_entregar": "Este pedido todavía no se ha entregado.",
+    "pedido_no_eliminable": "Solo se elimina un pedido cancelado o con el pago fallido, que nunca recibió un pago ni tuvo envío ni trámites, y que no sea de transferencia manual. Cancélalo en vez de eliminarlo.",
     "existencia_insuficiente": "Ya no hay existencias suficientes para esta operación.",
     "linea_no_es_del_pedido": "Ese producto no está en este pedido.",
     "transicion_de_estado_invalida": "Ese paso no se puede dar desde el estado actual. Recarga y vuelve a mirar.",
@@ -52,6 +53,8 @@
     "imagen_de_proveedor_ilegible": "Una de las fotos no se pudo procesar. Recházalo o pídele al proveedor la foto de nuevo.",
     "producto_de_proveedor_ya_existe": "Este anuncio ya es un producto del catálogo: es el mismo título al mismo precio. Rechaza el borrador.",
     "lote_en_curso": "La ingesta todavía está en curso o en pausa. Detenla, o espera a que termine, para eliminarla.",
+    "archivo_de_ingesta_en_uso": "Una ingesta que lee este archivo todavía está en curso o en pausa. Espera a que termine, o detenla, para borrarlo.",
+    "archivo_de_ingesta_no_encontrado": "El archivo ya no existe. Recarga la lista.",
     "pago_sin_pedido_ya_devuelto": "Ese pago ya tiene registrada su devolución.",
     "inventario_sin_confirmar": "No hay existencia para todas las líneas: repón y vuelve a intentarlo, o cancela con reintegro.",
     "peso_de_referencia_no_admitido": "Esa categoría no lleva peso de referencia: es de tecnología, que se mide producto por producto, o tiene subcategorías, y el peso va en cada una de ellas.",
@@ -234,6 +237,18 @@
         "no_disponibilidad": "El producto dejo de estar disponible",
         "plazo_incumplido": "No entregamos dentro del plazo"
       }
+    },
+    "eliminar": {
+      "titulo": "Eliminar el pedido",
+      "explicacion": "Solo para pedidos en los que no hubo venta: el pago falló o se canceló, y nunca recibió un pago, ni tuvo envío ni trámites. Una transferencia manual no se elimina, porque el sistema no sabe si el dinero llegó. Cualquier otro se cancela y conserva su historia.",
+      "accion": "Eliminar pedido",
+      "pregunta": "¿Eliminar el pedido {{numero}}?",
+      "loQueImplica": "Se borran el pedido, sus líneas, su historial y sus intentos de pago fallidos, y no se pueden recuperar. El enlace del correo para reintentar el pago deja de funcionar.",
+      "confirmar": "Sí, eliminar",
+      "cancelar": "Cancelar",
+      "eliminando": "Eliminando…",
+      "hecho": "Se eliminó el pedido {{numero}}.",
+      "error": "No se pudo eliminar el pedido. Intenta de nuevo."
     }
   },
   "productos": {
@@ -522,6 +537,19 @@
       "accion": "Sí, eliminar",
       "hecho": "{{nombre}} se eliminó del catálogo.",
       "error": "No pudimos eliminar el producto. Vuelve a intentarlo."
+    },
+    "limpiar": {
+      "titulo": "Limpiar lo no publicado",
+      "explicacion": "Hay {{cantidad}} producto(s) sin publicar. Puedes borrarlos todos de una vez, con sus fotos.",
+      "accion": "Borrar los no publicados",
+      "pregunta": "¿Borrar los {{cantidad}} producto(s) no publicados?",
+      "loQueImplica": "Se borran con sus variantes, su inventario y todas sus fotos, y no se pueden recuperar. Entran también los retirados de la vitrina y los de tecnología aprobados que esperan sus fotos. Los publicados no se tocan, y se conservan los que ya tienen ventas o tienen unidades en inventario.",
+      "confirmar": "Sí, borrar todos",
+      "cancelar": "Cancelar",
+      "borrando": "Borrando… {{eliminados}} hasta ahora",
+      "hecho": "Se borraron {{eliminados}} producto(s) no publicados.",
+      "error": "No se pudieron borrar todos. Los que alcanzaron a borrarse ya no están; intenta de nuevo para terminar.",
+      "hechoConConservados": "Se borraron {{eliminados}} producto(s) no publicados. {{conservados}} se conservaron porque tienen ventas o unidades en inventario."
     },
     "total": "{{total}} producto(s) en el catálogo"
   },
@@ -1061,6 +1089,39 @@
         "reanudar": "No pudimos reanudar la ingesta. Vuelve a intentarlo.",
         "detener": "No pudimos detener la ingesta. Vuelve a intentarlo."
       }
+    },
+    "archivos": {
+      "titulo": "Archivos subidos",
+      "enlace": "Ver los archivos subidos",
+      "explicacion": "Los .zip que se han subido para las ingestas. Una vez procesados ya no se vuelven a leer: borrarlos libera el almacenamiento y deja intactas las ingestas, sus borradores y sus fotos. Mientras una ingesta que lo lee siga en curso, el archivo no se puede borrar.",
+      "errorLista": "No se pudo cargar el historial de archivos. Intenta de nuevo.",
+      "total": "{{total}} archivo(s)",
+      "ninguno": "Todavía no se ha subido ningún archivo.",
+      "sinNombre": "Archivo sin nombre",
+      "sinTamano": "Sin dato",
+      "columnas": {
+        "archivo": "Archivo",
+        "tamano": "Tamaño",
+        "lotes": "Ingestas",
+        "estado": "Estado",
+        "acciones": "Acciones"
+      },
+      "estados": {
+        "disponible": "En el almacenamiento",
+        "enUso": "Ingesta en curso",
+        "borrado": "Borrado el {{fecha}}"
+      },
+      "borrar": {
+        "accion": "Borrar",
+        "accionArchivo": "Borrar {{nombre}}",
+        "pregunta": "¿Borrar {{nombre}} del almacenamiento?",
+        "loQueImplica": "Se borra solo el archivo .zip y no se puede recuperar. Las ingestas, sus borradores y sus fotos se quedan como están.",
+        "confirmar": "Sí, borrar",
+        "cancelar": "Cancelar",
+        "borrando": "Borrando…",
+        "hecho": "Se borró {{nombre}} del almacenamiento.",
+        "error": "No se pudo borrar el archivo. Intenta de nuevo."
+      }
     }
   },
   "tecnologia": {
@@ -1322,6 +1383,19 @@
       "borrando": "Borrando…",
       "error": "No se pudo borrar el borrador. Intenta de nuevo.",
       "explicacionSinProducto": "Su producto ya se borró: este borrador ya no reconoce nada y solo guarda los mensajes y las fotos del proveedor. Borrarlo los libera del bucket."
+    },
+    "limpiar": {
+      "titulo": "Limpiar la bandeja",
+      "explicacion": "Hay {{cantidad}} borrador(es) sin aprobar: en revisión o rechazados. Puedes borrarlos todos de una vez.",
+      "accion": "Borrar los no aprobados",
+      "pregunta": "¿Borrar los {{cantidad}} borrador(es) sin aprobar?",
+      "loQueImplica": "Se borran con sus mensajes y sus fotos del almacenamiento privado, y no se pueden recuperar. Los aprobados no se tocan. Si vuelves a subir una exportación que traiga esos anuncios, aparecerán otra vez como borradores.",
+      "confirmar": "Sí, borrar todos",
+      "cancelar": "Cancelar",
+      "borrando": "Borrando… {{borrados}} hasta ahora",
+      "hecho": "Se borraron {{borrados}} borrador(es) sin aprobar.",
+      "error": "No se pudieron borrar todos. Los que alcanzaron a borrarse ya no están; intenta de nuevo para terminar.",
+      "ninguno": "No se borró ninguno: los que quedan los está decidiendo alguien más en este momento. Recarga la página e intenta de nuevo."
     }
   },
   "referencias_envio": {

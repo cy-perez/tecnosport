@@ -132,6 +132,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/borradores/sin-aprobar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["contarSinAprobar"];
+        put?: never;
+        post?: never;
+        delete: operations["eliminarSinAprobar"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/borradores/{id}": {
         parameters: {
             query?: never;
@@ -420,6 +436,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/ingestas/archivos": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listarArchivos"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/ingestas/archivos/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["borrarArchivo"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/ingestas/{id}": {
         parameters: {
             query?: never;
@@ -559,6 +607,22 @@ export interface paths {
         put?: never;
         post?: never;
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/pedidos/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["eliminar_7"];
         options?: never;
         head?: never;
         patch?: never;
@@ -799,6 +863,22 @@ export interface paths {
         put?: never;
         post: operations["crear_6"];
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/productos/no-publicados": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["contarNoPublicados"];
+        put?: never;
+        post?: never;
+        delete: operations["eliminarNoPublicados"];
         options?: never;
         head?: never;
         patch?: never;
@@ -2066,6 +2146,31 @@ export interface components {
             /** Format: uuid */
             marcaId?: string;
         };
+        ArchivoDeIngestaRespuesta: {
+            /** Format: date-time */
+            borradoEn?: string;
+            enUso?: boolean;
+            /** Format: uuid */
+            id?: string;
+            /** Format: int32 */
+            lotes?: number;
+            nombreOriginal?: string;
+            /** Format: uuid */
+            proveedorId?: string;
+            /** Format: date-time */
+            subidoEn?: string;
+            /** Format: int64 */
+            tamanoBytes?: number;
+        };
+        ArchivosDeIngestaPaginadosRespuesta: {
+            items?: components["schemas"]["ArchivoDeIngestaRespuesta"][];
+            /** Format: int32 */
+            pagina?: number;
+            /** Format: int64 */
+            totalArchivos?: number;
+            /** Format: int32 */
+            totalPaginas?: number;
+        };
         AsignarColorPeticion: {
             /** Format: uuid */
             varianteId?: string;
@@ -2145,6 +2250,14 @@ export interface components {
             /** Format: date-time */
             vistoEn: string;
         };
+        BorradoresEliminadosRespuesta: {
+            /** Format: int32 */
+            archivosBorrados?: number;
+            /** Format: int32 */
+            eliminados?: number;
+            /** Format: int64 */
+            quedan?: number;
+        };
         BorradoresPaginadosRespuesta: {
             items?: components["schemas"]["BorradorRespuesta"][];
             /** Format: int32 */
@@ -2153,6 +2266,10 @@ export interface components {
             totalBorradores?: number;
             /** Format: int32 */
             totalPaginas?: number;
+        };
+        BorradoresSinAprobarRespuesta: {
+            /** Format: int64 */
+            cantidad?: number;
         };
         CambiarClaveRequest: {
             claveActual: string;
@@ -2647,6 +2764,7 @@ export interface components {
             modelosDesaparecidos?: string[];
         };
         IniciarIngestaPeticion: {
+            nombreArchivo?: string;
             objectKey: string;
         };
         IniciarSesionConGoogleRequest: {
@@ -2991,6 +3109,22 @@ export interface components {
             totalPaginas?: number;
             /** Format: int64 */
             totalProductos?: number;
+        };
+        ProductosEliminadosRespuesta: {
+            /** Format: int32 */
+            conservadosPorExistencias?: number;
+            /** Format: int32 */
+            conservadosPorVentas?: number;
+            /** Format: int32 */
+            eliminados?: number;
+            /** Format: uuid */
+            hasta?: string;
+            /** Format: uuid */
+            siguiente?: string;
+        };
+        ProductosNoPublicadosRespuesta: {
+            /** Format: int64 */
+            cantidad?: number;
         };
         PropuestaDePieRespuesta: {
             pieDeFoto?: string;
@@ -3687,6 +3821,46 @@ export interface operations {
             };
         };
     };
+    contarSinAprobar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["BorradoresSinAprobarRespuesta"];
+                };
+            };
+        };
+    };
+    eliminarSinAprobar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["BorradoresEliminadosRespuesta"];
+                };
+            };
+        };
+    };
     ver_2: {
         parameters: {
             query?: never;
@@ -4232,6 +4406,50 @@ export interface operations {
             };
         };
     };
+    listarArchivos: {
+        parameters: {
+            query?: {
+                proveedorId?: string;
+                pagina?: number;
+                tamano?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ArchivosDeIngestaPaginadosRespuesta"];
+                };
+            };
+        };
+    };
+    borrarArchivo: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     ver_6: {
         parameters: {
             query?: never;
@@ -4497,6 +4715,26 @@ export interface operations {
                 content: {
                     "*/*": components["schemas"]["PedidosPaginadosRespuesta"];
                 };
+            };
+        };
+    };
+    eliminar_7: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
@@ -4953,6 +5191,49 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["ProductoAdminRespuesta"];
+                };
+            };
+        };
+    };
+    contarNoPublicados: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ProductosNoPublicadosRespuesta"];
+                };
+            };
+        };
+    };
+    eliminarNoPublicados: {
+        parameters: {
+            query?: {
+                desde?: string;
+                hasta?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ProductosEliminadosRespuesta"];
                 };
             };
         };

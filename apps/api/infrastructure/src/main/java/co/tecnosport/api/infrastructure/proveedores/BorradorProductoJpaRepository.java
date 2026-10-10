@@ -2,6 +2,7 @@ package co.tecnosport.api.infrastructure.proveedores;
 
 import co.tecnosport.api.infrastructure.proveedores.entidad.BorradorProductoJpaEntity;
 import jakarta.persistence.LockModeType;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -29,6 +30,13 @@ public interface BorradorProductoJpaRepository
   List<HuellaVisualFila> findByProveedorIdAndProductoIdIsNotNullAndPhashIsNotNull(UUID proveedorId);
 
   long countByPublicacionId(UUID publicacionId);
+
+  @Query(
+      "select b.id from BorradorProductoJpaEntity b where b.estado in :estados"
+          + " order by b.creadoEn asc, b.id asc")
+  List<UUID> idsEnEstados(@Param("estados") Collection<String> estados, Pageable pagina);
+
+  long countByEstadoIn(Collection<String> estados);
 
   @Lock(LockModeType.PESSIMISTIC_WRITE)
   @Query("select b from BorradorProductoJpaEntity b where b.id = :id")

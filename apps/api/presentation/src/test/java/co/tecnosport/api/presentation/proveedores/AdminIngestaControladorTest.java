@@ -10,6 +10,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import co.tecnosport.api.application.catalogo.UrlFirmada;
 import co.tecnosport.api.application.compartido.Reloj;
 import co.tecnosport.api.application.proveedores.AlmacenDeArchivosDeProveedor;
+import co.tecnosport.api.application.proveedores.ArchivosDeIngestaPaginados;
 import co.tecnosport.api.application.proveedores.ColaDeIngestasLlenaException;
 import co.tecnosport.api.application.proveedores.DependenciasDeLote;
 import co.tecnosport.api.application.proveedores.DependenciasDeProveedor;
@@ -22,10 +23,12 @@ import co.tecnosport.api.application.proveedores.IniciarIngesta;
 import co.tecnosport.api.application.proveedores.LotesPaginados;
 import co.tecnosport.api.application.proveedores.PausarIngesta;
 import co.tecnosport.api.application.proveedores.ReanudarIngesta;
+import co.tecnosport.api.application.proveedores.RepositorioArchivosDeIngesta;
 import co.tecnosport.api.application.proveedores.RepositorioLotesIngesta;
 import co.tecnosport.api.application.proveedores.RepositorioProveedores;
 import co.tecnosport.api.application.proveedores.SolicitarSubidaDeExportacion;
 import co.tecnosport.api.domain.catalogo.LineaCatalogo;
+import co.tecnosport.api.domain.proveedores.ArchivoDeIngesta;
 import co.tecnosport.api.domain.proveedores.EstadoLote;
 import co.tecnosport.api.domain.proveedores.LoteIngesta;
 import co.tecnosport.api.domain.proveedores.OrdenDePublicacion;
@@ -72,6 +75,7 @@ class AdminIngestaControladorTest {
   @Autowired private EjecutorDoble ejecutor;
   @Autowired private TransaccionEspia transaccion;
   @Autowired private EliminacionDoble eliminacion;
+  @Autowired private RepositorioArchivosDoble archivos;
 
   private Proveedor proveedor;
   private String key;
@@ -80,6 +84,7 @@ class AdminIngestaControladorTest {
   void unProveedorConSuExportacionSubida() {
     proveedores.porId.clear();
     lotes.porId.clear();
+    archivos.guardados.clear();
     almacen.objetos.clear();
     ejecutor.encolados.clear();
     lotes.dependencias.clear();
@@ -164,6 +169,24 @@ class AdminIngestaControladorTest {
     assertThat(ejecutor.transaccionesAbiertasAlEncolar)
         .as("la cola recibe el lote con la transacción ya cerrada")
         .isZero();
+  }
+
+  /** El nombre con que se eligió el zip llega al historial; el tamaño lo mide el servidor. */
+  @Test
+  void iniciarGuardaElArchivoConElNombreQueMandaElPanel() throws Exception {
+    mockMvc
+        .perform(
+            post("/api/v1/admin/proveedores/{id}/ingestas", proveedor.id())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    "{\"objectKey\":\"" + key + "\",\"nombreArchivo\":\"Chat con Bolsos.zip\"}"))
+        .andExpect(status().isAccepted());
+
+    assertThat(archivos.guardados).hasSize(1);
+    ArchivoDeIngesta archivo = archivos.guardados.getFirst();
+    assertThat(archivo.nombreOriginal()).contains("Chat con Bolsos.zip");
+    assertThat(archivo.tamanoBytes()).contains(500L);
+    assertThat(archivo.referencia()).isEqualTo(key);
   }
 
   @Test
@@ -461,11 +484,42 @@ class AdminIngestaControladorTest {
     }
 
     @Bean
+    RepositorioArchivosDoble repositorioArchivos() {
+      return new RepositorioArchivosDoble();
+    }
+
+    @Bean
     IniciarIngesta iniciarIngesta(
         RepositorioProveedoresDoble proveedores,
         RepositorioLotesDoble lotes,
+        RepositorioArchivosDoble archivos,
         AlmacenDoble almacen) {
-      return new IniciarIngesta(proveedores, lotes, almacen, (Reloj) () -> AHORA, MAXIMO);
+      return new IniciarIngesta(proveedores, lotes, archivos, almacen, (Reloj) () -> AHORA, MAXIMO);
+    }
+  }
+
+  /** Lo que guardó la ingesta; el historial lo prueba su propio controlador. */
+  static final class RepositorioArchivosDoble implements RepositorioArchivosDeIngesta {
+    final List<ArchivoDeIngesta> guardados = new ArrayList<>();
+
+    @Override
+    public void guardar(ArchivoDeIngesta archivo) {
+      guardados.add(archivo);
+    }
+
+    @Override
+    public Optional<ArchivoDeIngesta> buscarPorId(UUID id) {
+      return guardados.stream().filter(a -> a.id().equals(id)).findFirst();
+    }
+
+    @Override
+    public ArchivosDeIngestaPaginados listar(UUID proveedorId, int pagina, int tamanoPagina) {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public boolean enUso(String referencia) {
+      throw new UnsupportedOperationException();
     }
   }
 

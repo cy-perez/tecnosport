@@ -54,6 +54,10 @@ export class RepositorioBorradoresAdminFalso implements RepositorioBorradoresAdm
   readonly fallosAlSubir = new Map<string, unknown>();
   /** Si se pone, `eliminar` revienta con esto: el 409 de un borrador que no se borra. */
   falloAlEliminar: unknown = null;
+  /** El tamaño de tanda del borrado en bloque; chico para que las pruebas vean varias. */
+  tandaDeBorrado = 100;
+  /** Cuántas tandas pidió la pantalla. */
+  tandasPedidas = 0;
 
   constructor(
     private borradores: Borrador[] = [],
@@ -125,6 +129,22 @@ export class RepositorioBorradoresAdminFalso implements RepositorioBorradoresAdm
     }
     this.eliminados.push(id);
     this.borradores = this.borradores.filter((b) => b.id !== id);
+  }
+
+  async contarSinAprobar(): Promise<number> {
+    return this.sinAprobar().length;
+  }
+
+  /** Como el servidor: los aprobados no se tocan y se dice cuántos quedan. */
+  async eliminarSinAprobar(): Promise<{ eliminados: number; quedan: number }> {
+    this.tandasPedidas++;
+    const tanda = this.sinAprobar().slice(0, this.tandaDeBorrado);
+    this.borradores = this.borradores.filter((b) => !tanda.includes(b));
+    return { eliminados: tanda.length, quedan: this.sinAprobar().length };
+  }
+
+  private sinAprobar(): Borrador[] {
+    return this.borradores.filter((b) => b.estado === 'EN_REVISION' || b.estado === 'RECHAZADO');
   }
 
   private reemplazar(id: string, cambios: Partial<Borrador>): Borrador {

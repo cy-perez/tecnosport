@@ -3,6 +3,8 @@
 
   <h1 class="m-0 mb-24 font-display text-2xl">{{ 'admin.productos.titulo' | transloco }}</h1>
 
+  <app-limpiar-no-publicados />
+
   @if (consulta.isPending()) {
     <ts-esqueleto />
   } @else if (consulta.isError()) {

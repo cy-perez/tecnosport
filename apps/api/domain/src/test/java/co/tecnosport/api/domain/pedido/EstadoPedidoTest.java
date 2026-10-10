@@ -68,4 +68,13 @@ class EstadoPedidoTest {
   void recaudoPendienteConciliaHaciaRecaudoConciliado() {
     assertTrue(EstadoPedido.RECAUDO_PENDIENTE.puedeTransicionarA(EstadoPedido.RECAUDO_CONCILIADO));
   }
+
+  /** Solo los dos en que no hay nada en juego; todos los demás se cancelan, no se borran. */
+  @Test
+  void soloElPagoFallidoYElCanceladoAdmitenEliminacion() {
+    for (EstadoPedido estado : EstadoPedido.values()) {
+      boolean esperado = estado == EstadoPedido.PAGO_FALLIDO || estado == EstadoPedido.CANCELADO;
+      assertTrue(estado.admiteEliminacion() == esperado, estado.name());
+    }
+  }
 }

@@ -3,6 +3,8 @@ import { describe, expect, it } from 'vitest';
 import { adminRoutes } from './admin.routes';
 import { REPOSITORIO_DIFUSION } from './difusion/domain/repositorio-difusion.puerto';
 import { REPOSITORIO_CATEGORIAS } from '../catalogo/domain/repositorio-categorias.puerto';
+import { REPOSITORIO_PRODUCTOS_NO_PUBLICADOS } from './productos/domain/productos-no-publicados.puerto';
+import { REPOSITORIO_ARCHIVOS_DE_INGESTA } from './ingestas/domain/repositorio-archivos-de-ingesta.puerto';
 
 /**
  * Lo que los specs de página **no** pueden ver.
@@ -34,6 +36,27 @@ describe('adminRoutes', () => {
     const agregar = buscarRuta(adminRoutes, ':productoId/variantes/crear');
 
     expect(proveeTokens(agregar)).toContain(REPOSITORIO_CATEGORIAS);
+  });
+
+  /**
+   * La lista de productos monta el bloque de limpieza, que inyecta su propio puerto. El 10 de
+   * octubre de 2026 el proveedor acabó en `panel` —el primer bloque con el puerto de productos— y
+   * la lista reventaba con NG0201, con todas las pruebas en verde.
+   */
+  it('productos provee el puerto de los no publicados, y el panel no', () => {
+    expect(proveeTokens(buscarRuta(adminRoutes, 'productos'))).toContain(
+      REPOSITORIO_PRODUCTOS_NO_PUBLICADOS,
+    );
+    expect(proveeTokens(buscarRuta(adminRoutes, 'panel'))).not.toContain(
+      REPOSITORIO_PRODUCTOS_NO_PUBLICADOS,
+    );
+  });
+
+  /** El historial de zips cuelga de ingestas y no tiene ruta propia con proveedores. */
+  it('ingestas provee el puerto de los archivos subidos', () => {
+    expect(proveeTokens(buscarRuta(adminRoutes, 'ingestas'))).toContain(
+      REPOSITORIO_ARCHIVOS_DE_INGESTA,
+    );
   });
 });
 

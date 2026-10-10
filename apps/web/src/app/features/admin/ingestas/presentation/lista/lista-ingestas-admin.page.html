@@ -3,7 +3,13 @@
 
   <h1 class="m-0 mb-16 font-display text-2xl">{{ 'admin.ingestas.titulo' | transloco }}</h1>
 
-  <p class="mb-24 text-ts-texto-suave">{{ 'admin.ingestas.explicacion' | transloco }}</p>
+  <p class="mb-16 text-ts-texto-suave">{{ 'admin.ingestas.explicacion' | transloco }}</p>
+
+  <div class="mb-24">
+    <ts-boton variante="secundario" [enlace]="['archivos']">
+      {{ 'admin.ingestas.archivos.enlace' | transloco }}
+    </ts-boton>
+  </div>
 
   <form
     class="mb-32 flex flex-col gap-16 rounded-lg border border-ts-borde bg-ts-superficie p-16"

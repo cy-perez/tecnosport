@@ -1,0 +1,178 @@
+<section class="mx-auto max-w-contenido px-16 py-32">
+  <ts-migas [ruta]="migas()" />
+
+  <h1 class="m-0 mb-16 font-display text-2xl">
+    {{ 'admin.ingestas.archivos.titulo' | transloco }}
+  </h1>
+
+  <p class="mb-24 text-ts-texto-suave">{{ 'admin.ingestas.archivos.explicacion' | transloco }}</p>
+
+  <!-- Siempre en el DOM: una región cortés que nace llena no se anuncia. -->
+  <p
+    #avisoRef
+    class="m-0 text-ts-exito"
+    role="status"
+    tabindex="-1"
+    [class.mb-16]="aviso() !== null"
+  >
+    @if (aviso(); as texto) {
+      {{ texto }}
+    }
+  </p>
+
+  @if (consulta.isPending()) {
+    <ts-esqueleto />
+  } @else if (consulta.isError()) {
+    <p class="text-ts-error" role="alert">
+      {{ 'admin.ingestas.archivos.errorLista' | transloco }}
+    </p>
+  } @else {
+    <div class="overflow-hidden rounded-lg border border-ts-borde bg-ts-superficie">
+      <div class="border-b border-ts-borde px-16 py-12">
+        <p class="m-0 font-medio">
+          {{ 'admin.ingestas.archivos.total' | transloco: { total: total() } }}
+        </p>
+      </div>
+
+      @if (archivos().length === 0) {
+        <p class="m-0 px-16 py-32 text-ts-texto-suave">
+          {{ 'admin.ingestas.archivos.ninguno' | transloco }}
+        </p>
+      } @else {
+        <div class="overflow-x-auto">
+          <table
+            class="w-full border-collapse text-sm [&_td]:px-16 [&_td]:py-12 [&_th]:px-16 [&_th]:py-12 [&_:is(th,td)]:text-left"
+          >
+            <thead>
+              <tr class="border-b border-ts-borde">
+                <th class="font-medio text-ts-texto-suave" scope="col">
+                  {{ 'admin.ingestas.archivos.columnas.archivo' | transloco }}
+                </th>
+                <th class="font-medio text-ts-texto-suave" scope="col">
+                  {{ 'admin.ingestas.archivos.columnas.tamano' | transloco }}
+                </th>
+                <th class="font-medio text-ts-texto-suave" scope="col">
+                  {{ 'admin.ingestas.archivos.columnas.lotes' | transloco }}
+                </th>
+                <th class="font-medio text-ts-texto-suave" scope="col">
+                  {{ 'admin.ingestas.archivos.columnas.estado' | transloco }}
+                </th>
+                <th scope="col">
+                  <span class="sr-only">{{
+                    'admin.ingestas.archivos.columnas.acciones' | transloco
+                  }}</span>
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (archivo of archivos(); track archivo.id) {
+                <tr class="border-b border-ts-borde last:border-b-0 align-top">
+                  <td>
+                    <p class="m-0 font-medio break-all">{{ nombre(archivo) }}</p>
+                    <p class="m-0 text-xs text-ts-texto-suave">
+                      {{ nombreDelProveedor(archivo) }} · {{ formatearFecha(archivo.subidoEn) }}
+                    </p>
+                  </td>
+                  <td class="tabular-nums">
+                    {{ tamano(archivo) ?? ('admin.ingestas.archivos.sinTamano' | transloco) }}
+                  </td>
+                  <td class="tabular-nums">{{ archivo.lotes }}</td>
+                  <td>
+                    @if (archivo.borradoEn; as borradoEn) {
+                      <span class="text-ts-texto-suave">{{
+                        'admin.ingestas.archivos.estados.borrado'
+                          | transloco: { fecha: formatearFecha(borradoEn) }
+                      }}</span>
+                    } @else if (archivo.enUso) {
+                      <span class="text-ts-aviso">{{
+                        'admin.ingestas.archivos.estados.enUso' | transloco
+                      }}</span>
+                    } @else {
+                      <span>{{ 'admin.ingestas.archivos.estados.disponible' | transloco }}</span>
+                    }
+                  </td>
+                  <td>
+                    <div class="flex justify-end">
+                      @if (sePuedeBorrar(archivo)) {
+                        <ts-boton
+                          variante="secundario"
+                          tipo="button"
+                          [attr.data-borrar]="archivo.id"
+                          [etiquetaAccesible]="
+                            'admin.ingestas.archivos.borrar.accionArchivo'
+                              | transloco: { nombre: nombre(archivo) }
+                          "
+                          [expandido]="confirmando() === archivo.id"
+                          [controla]="'borrar-archivo-' + archivo.id"
+                          (click)="preguntar(archivo)"
+                        >
+                          {{ 'admin.ingestas.archivos.borrar.accion' | transloco }}
+                        </ts-boton>
+                      }
+                    </div>
+                  </td>
+                </tr>
+
+                @if (confirmando() === archivo.id) {
+                  <tr class="border-b border-ts-borde last:border-b-0">
+                    <td colspan="5">
+                      <div
+                        #caja
+                        class="flex flex-col gap-12 rounded-md border border-ts-borde-control p-12"
+                        role="group"
+                        tabindex="-1"
+                        [id]="'borrar-archivo-' + archivo.id"
+                        [attr.aria-labelledby]="'borrar-archivo-pregunta-' + archivo.id"
+                        [attr.aria-describedby]="'borrar-archivo-implica-' + archivo.id"
+                        (keydown.escape)="cancelar()"
+                      >
+                        <p class="m-0" [id]="'borrar-archivo-pregunta-' + archivo.id">
+                          {{
+                            'admin.ingestas.archivos.borrar.pregunta'
+                              | transloco: { nombre: nombre(archivo) }
+                          }}
+                        </p>
+                        <p
+                          class="m-0 text-ts-texto-suave"
+                          [id]="'borrar-archivo-implica-' + archivo.id"
+                        >
+                          {{ 'admin.ingestas.archivos.borrar.loQueImplica' | transloco }}
+                        </p>
+                        @if (error(); as mensaje) {
+                          <p class="m-0 text-ts-error" role="alert">{{ mensaje }}</p>
+                        }
+                        <div class="flex flex-wrap gap-12">
+                          <ts-boton
+                            variante="peligro"
+                            [ocupado]="borrando()"
+                            [etiquetaCargando]="
+                              'admin.ingestas.archivos.borrar.borrando' | transloco
+                            "
+                            (click)="borrar(archivo)"
+                          >
+                            {{ 'admin.ingestas.archivos.borrar.confirmar' | transloco }}
+                          </ts-boton>
+                          <ts-boton variante="secundario" (click)="cancelar()">
+                            {{ 'admin.ingestas.archivos.borrar.cancelar' | transloco }}
+                          </ts-boton>
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
+                }
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </div>
+
+    @if ((consulta.data()?.totalPaginas ?? 0) > 1) {
+      <ts-paginador
+        [pagina]="pagina()"
+        [totalPaginas]="consulta.data()?.totalPaginas ?? 1"
+        (paginaCambiada)="irAPagina($event)"
+      />
+    }
+  }
+</section>

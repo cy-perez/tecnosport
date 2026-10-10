@@ -7,6 +7,7 @@ import {
   EditarBorrador,
   FiltroBorradores,
   FotoBorrador,
+  TandaDeBorradoresEliminados,
 } from './borrador.model';
 
 /**
@@ -33,6 +34,13 @@ export interface RepositorioBorradoresAdmin {
   subirFoto(id: string, archivo: File): Promise<FotoBorrador>;
   /** Sin vuelta atrás: el borrador, la publicación, los mensajes y las fotos del bucket. */
   eliminar(id: string): Promise<void>;
+  /** Cuántos hay en revisión o rechazados: lo que borraría `eliminarSinAprobar`. */
+  contarSinAprobar(): Promise<number>;
+  /**
+   * Una tanda del borrado en bloque de los que están en revisión o rechazados, cada uno con su
+   * publicación, sus mensajes y sus fotos del bucket. Los aprobados no se tocan.
+   */
+  eliminarSinAprobar(): Promise<TandaDeBorradoresEliminados>;
 }
 
 export const REPOSITORIO_BORRADORES_ADMIN = new InjectionToken<RepositorioBorradoresAdmin>(

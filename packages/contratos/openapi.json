@@ -243,6 +243,64 @@
         },
         "type" : "object"
       },
+      "ArchivoDeIngestaRespuesta" : {
+        "properties" : {
+          "borradoEn" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "enUso" : {
+            "type" : "boolean"
+          },
+          "id" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "lotes" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "nombreOriginal" : {
+            "type" : "string"
+          },
+          "proveedorId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "subidoEn" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "tamanoBytes" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        },
+        "type" : "object"
+      },
+      "ArchivosDeIngestaPaginadosRespuesta" : {
+        "properties" : {
+          "items" : {
+            "items" : {
+              "$ref" : "#/components/schemas/ArchivoDeIngestaRespuesta"
+            },
+            "type" : "array"
+          },
+          "pagina" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "totalArchivos" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "totalPaginas" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        },
+        "type" : "object"
+      },
       "AsignarColorPeticion" : {
         "properties" : {
           "varianteId" : {
@@ -485,6 +543,23 @@
         ],
         "type" : "object"
       },
+      "BorradoresEliminadosRespuesta" : {
+        "properties" : {
+          "archivosBorrados" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "eliminados" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "quedan" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        },
+        "type" : "object"
+      },
       "BorradoresPaginadosRespuesta" : {
         "properties" : {
           "items" : {
@@ -503,6 +578,15 @@
           },
           "totalPaginas" : {
             "format" : "int32",
+            "type" : "integer"
+          }
+        },
+        "type" : "object"
+      },
+      "BorradoresSinAprobarRespuesta" : {
+        "properties" : {
+          "cantidad" : {
+            "format" : "int64",
             "type" : "integer"
           }
         },
@@ -1942,6 +2026,9 @@
       },
       "IniciarIngestaPeticion" : {
         "properties" : {
+          "nombreArchivo" : {
+            "type" : "string"
+          },
           "objectKey" : {
             "type" : "string"
           }
@@ -2922,6 +3009,40 @@
             "type" : "integer"
           },
           "totalProductos" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        },
+        "type" : "object"
+      },
+      "ProductosEliminadosRespuesta" : {
+        "properties" : {
+          "conservadosPorExistencias" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "conservadosPorVentas" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "eliminados" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "hasta" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "siguiente" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "ProductosNoPublicadosRespuesta" : {
+        "properties" : {
+          "cantidad" : {
             "format" : "int64",
             "type" : "integer"
           }
@@ -4545,6 +4666,44 @@
         ]
       }
     },
+    "/api/v1/admin/borradores/sin-aprobar" : {
+      "delete" : {
+        "operationId" : "eliminarSinAprobar",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/BorradoresEliminadosRespuesta"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "admin-borrador-controlador"
+        ]
+      },
+      "get" : {
+        "operationId" : "contarSinAprobar",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/BorradoresSinAprobarRespuesta"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "admin-borrador-controlador"
+        ]
+      }
+    },
     "/api/v1/admin/borradores/{id}" : {
       "delete" : {
         "operationId" : "eliminar_4",
@@ -5335,6 +5494,81 @@
         ]
       }
     },
+    "/api/v1/admin/ingestas/archivos" : {
+      "get" : {
+        "operationId" : "listarArchivos",
+        "parameters" : [
+          {
+            "in" : "query",
+            "name" : "proveedorId",
+            "required" : false,
+            "schema" : {
+              "format" : "uuid",
+              "type" : "string"
+            }
+          },
+          {
+            "in" : "query",
+            "name" : "pagina",
+            "required" : false,
+            "schema" : {
+              "default" : 0,
+              "format" : "int32",
+              "type" : "integer"
+            }
+          },
+          {
+            "in" : "query",
+            "name" : "tamano",
+            "required" : false,
+            "schema" : {
+              "default" : 20,
+              "format" : "int32",
+              "type" : "integer"
+            }
+          }
+        ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ArchivosDeIngestaPaginadosRespuesta"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "admin-archivos-de-ingesta-controlador"
+        ]
+      }
+    },
+    "/api/v1/admin/ingestas/archivos/{id}" : {
+      "delete" : {
+        "operationId" : "borrarArchivo",
+        "parameters" : [
+          {
+            "in" : "path",
+            "name" : "id",
+            "required" : true,
+            "schema" : {
+              "format" : "uuid",
+              "type" : "string"
+            }
+          }
+        ],
+        "responses" : {
+          "204" : {
+            "description" : "No Content"
+          }
+        },
+        "tags" : [
+          "admin-archivos-de-ingesta-controlador"
+        ]
+      }
+    },
     "/api/v1/admin/ingestas/{id}" : {
       "delete" : {
         "operationId" : "eliminar_5",
@@ -5699,6 +5933,30 @@
               }
             },
             "description" : "OK"
+          }
+        },
+        "tags" : [
+          "admin-pedidos-controlador"
+        ]
+      }
+    },
+    "/api/v1/admin/pedidos/{id}" : {
+      "delete" : {
+        "operationId" : "eliminar_7",
+        "parameters" : [
+          {
+            "in" : "path",
+            "name" : "id",
+            "required" : true,
+            "schema" : {
+              "format" : "uuid",
+              "type" : "string"
+            }
+          }
+        ],
+        "responses" : {
+          "204" : {
+            "description" : "No Content"
           }
         },
         "tags" : [
@@ -6395,6 +6653,64 @@
         },
         "tags" : [
           "admin-producto-controlador"
+        ]
+      }
+    },
+    "/api/v1/admin/productos/no-publicados" : {
+      "delete" : {
+        "operationId" : "eliminarNoPublicados",
+        "parameters" : [
+          {
+            "in" : "query",
+            "name" : "desde",
+            "required" : false,
+            "schema" : {
+              "format" : "uuid",
+              "type" : "string"
+            }
+          },
+          {
+            "in" : "query",
+            "name" : "hasta",
+            "required" : false,
+            "schema" : {
+              "format" : "uuid",
+              "type" : "string"
+            }
+          }
+        ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProductosEliminadosRespuesta"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "admin-productos-no-publicados-controlador"
+        ]
+      },
+      "get" : {
+        "operationId" : "contarNoPublicados",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProductosNoPublicadosRespuesta"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "admin-productos-no-publicados-controlador"
         ]
       }
     },

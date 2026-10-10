@@ -15,6 +15,19 @@
     />
   </div>
 
+  <!-- Siempre en el DOM: una región cortés que nace llena no se anuncia. -->
+  <p
+    #avisoEliminadoRef
+    class="m-0 text-ts-exito"
+    role="status"
+    tabindex="-1"
+    [class.mb-16]="pedidoEliminado() !== null"
+  >
+    @if (pedidoEliminado(); as numero) {
+      {{ 'admin.pedidos.eliminar.hecho' | transloco: { numero } }}
+    }
+  </p>
+
   <p class="text-ts-error" [class.mb-16]="errorAccion()" role="alert">
     {{ errorAccion() }}
   </p>
@@ -633,6 +646,14 @@
                   />
 
                   <app-panel-reversion [pedidoId]="pedido.id" [totalPedido]="pedido.total.valor" />
+
+                  @if (puedeEliminar(pedido)) {
+                    <app-eliminar-pedido
+                      [pedidoId]="pedido.id"
+                      [numeroPedido]="pedido.numeroPedido"
+                      (eliminado)="alEliminar($event)"
+                    />
+                  }
                 </td>
               </tr>
             }

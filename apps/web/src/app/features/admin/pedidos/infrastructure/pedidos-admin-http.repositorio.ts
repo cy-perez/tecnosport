@@ -148,6 +148,13 @@ export class PedidosAdminHttpRepositorio implements RepositorioPedidosAdmin {
     return aPedidoAdmin(desempaquetar(respuesta, 'no se pudo conciliar el recaudo'));
   }
 
+  async eliminar(pedidoId: string): Promise<void> {
+    const respuesta = await this.cliente.DELETE('/api/v1/admin/pedidos/{id}', {
+      params: { path: { id: pedidoId } },
+    });
+    exigirExito(respuesta, 'no se pudo eliminar el pedido');
+  }
+
   async cancelar(entrada: {
     pedidoId: string;
     motivo: MotivoCancelacion;

@@ -6,9 +6,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import co.tecnosport.api.application.compartido.RelojFalso;
 import co.tecnosport.api.application.proveedores.ApoyoDeIngesta.AlmacenEnMemoria;
+import co.tecnosport.api.application.proveedores.ApoyoDeIngesta.RepositorioArchivosEnMemoria;
 import co.tecnosport.api.application.proveedores.ApoyoDeIngesta.RepositorioLotesEnMemoria;
 import co.tecnosport.api.application.proveedores.ApoyoDeIngesta.RepositorioProveedoresEnMemoria;
 import co.tecnosport.api.domain.catalogo.LineaCatalogo;
+import co.tecnosport.api.domain.proveedores.ArchivoDeIngesta;
 import co.tecnosport.api.domain.proveedores.ChatDelZip;
 import co.tecnosport.api.domain.proveedores.EstadoLote;
 import co.tecnosport.api.domain.proveedores.LoteIngesta;
@@ -26,9 +28,11 @@ class IniciarIngestaTest {
 
   private final RepositorioProveedoresEnMemoria proveedores = new RepositorioProveedoresEnMemoria();
   private final RepositorioLotesEnMemoria lotes = new RepositorioLotesEnMemoria();
+  private final RepositorioArchivosEnMemoria archivos = new RepositorioArchivosEnMemoria(lotes);
   private final AlmacenEnMemoria almacen = new AlmacenEnMemoria();
   private final IniciarIngesta caso =
-      new IniciarIngesta(proveedores, lotes, almacen, new RelojFalso(ApoyoDeIngesta.AHORA), MAXIMO);
+      new IniciarIngesta(
+          proveedores, lotes, archivos, almacen, new RelojFalso(ApoyoDeIngesta.AHORA), MAXIMO);
 
   private Proveedor proveedor;
   private String key;
@@ -171,6 +175,43 @@ class IniciarIngestaTest {
     assertTrue(creados.get(0).creadoEn().isBefore(creados.get(1).creadoEn()));
     assertEquals(creados.get(0).referenciaArchivo(), creados.get(1).referenciaArchivo());
     assertEquals(Optional.of(creados.get(1)), lotes.buscarPorId(creados.get(1).id()));
+  }
+
+  /** El historial lo necesita para la limpieza: con qué nombre llegó y cuánto ocupa. */
+  @Test
+  void quedaElRegistroDelArchivoConSuNombreYSuTamano() {
+    caso.ejecutar(
+        new IniciarIngestaComando(proveedor.id(), key, "Chat de WhatsApp con Meraki.zip"));
+
+    ArchivoDeIngesta archivo = archivos.porId.values().iterator().next();
+    assertEquals(key, archivo.referencia());
+    assertEquals(proveedor.id(), archivo.proveedorId());
+    assertEquals(Optional.of("Chat de WhatsApp con Meraki.zip"), archivo.nombreOriginal());
+    assertEquals(Optional.of(600L), archivo.tamanoBytes());
+    assertEquals(ApoyoDeIngesta.AHORA, archivo.subidoEn());
+  }
+
+  /** Dos lotes, un archivo: el historial lista zips, no trabajos. */
+  @Test
+  void conDosChatsQuedaUnSoloRegistroDelArchivo() {
+    proveedor.definirDosChatsEnUnZip(true);
+
+    caso.ejecutarTodos(new IniciarIngestaComando(proveedor.id(), key, "meraki.zip"));
+
+    assertEquals(1, archivos.porId.size());
+    assertEquals(2, archivos.listar(null, 0, 20).items().getFirst().lotes());
+  }
+
+  /** Lo que se rechaza no deja registro: no hay archivo de nadie que listar. */
+  @Test
+  void unaExportacionRechazadaNoDejaRegistro() {
+    String ajena = "proveedores/" + UUID.randomUUID() + "/exportaciones/abc.zip";
+    almacen.guardar(ajena, "application/zip", new byte[600]);
+
+    assertThrows(
+        ExportacionNoEncontradaException.class,
+        () -> caso.ejecutar(new IniciarIngestaComando(proveedor.id(), ajena)));
+    assertTrue(archivos.porId.isEmpty());
   }
 
   @Test

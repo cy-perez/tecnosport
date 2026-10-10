@@ -5,6 +5,7 @@ import co.tecnosport.api.domain.proveedores.EstadoBorrador;
 import co.tecnosport.api.domain.proveedores.HuellaProveedor;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 /** Los borradores: lo que espera revisión y la constancia de lo que se renovó. */
@@ -47,6 +48,15 @@ public interface RepositorioBorradores {
    * otra vez —el mismo texto y una foto en común— o la misma plantilla con otra prenda.
    */
   List<AnuncioEnRevision> anunciosEnRevision(UUID proveedorId);
+
+  /**
+   * Los ids de los borradores en alguno de estos estados, del más antiguo al más reciente, como
+   * mucho {@code limite}. Es la lista de una tanda del borrado en bloque.
+   */
+  List<UUID> idsEnEstados(Set<EstadoBorrador> estados, int limite);
+
+  /** Cuántos borradores hay en alguno de estos estados. */
+  long contarEnEstados(Set<EstadoBorrador> estados);
 
   /** Cuántos borradores salieron de esta publicación, en cualquier estado. */
   long contarDePublicacion(UUID publicacionId);

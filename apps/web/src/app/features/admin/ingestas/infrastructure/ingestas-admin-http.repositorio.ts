@@ -117,7 +117,8 @@ export class IngestasAdminHttpRepositorio implements RepositorioIngestasAdmin {
 
     const respuesta = await this.cliente.POST('/api/v1/admin/proveedores/{id}/ingestas', {
       params: { path: { id: comando.proveedorId } },
-      body: { objectKey: solicitud.objectKey },
+      // El nombre solo es para reconocer el zip en el historial; la key es la que manda.
+      body: { objectKey: solicitud.objectKey, nombreArchivo: comando.archivo.name },
     });
     return aLoteIngesta(desempaquetar(respuesta, 'no se pudo iniciar la ingesta'));
   }

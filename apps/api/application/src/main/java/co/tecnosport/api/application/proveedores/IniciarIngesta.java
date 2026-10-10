@@ -1,6 +1,7 @@
 package co.tecnosport.api.application.proveedores;
 
 import co.tecnosport.api.application.compartido.Reloj;
+import co.tecnosport.api.domain.proveedores.ArchivoDeIngesta;
 import co.tecnosport.api.domain.proveedores.ChatDelZip;
 import co.tecnosport.api.domain.proveedores.LoteIngesta;
 import co.tecnosport.api.domain.proveedores.Proveedor;
@@ -15,6 +16,9 @@ import java.util.Objects;
  * de <em>ese</em> proveedor —una key ajena no entra aunque exista—, que el objeto esté y que no
  * pase del tope. Abrirlo es trabajo del procesamiento, que corre aparte.
  *
+ * <p>Deja además el registro del archivo ({@link ArchivoDeIngesta}) con su nombre y su tamaño, uno
+ * por zip aunque lo lean dos lotes: es lo que lista el historial para la limpieza del bucket.
+ *
  * <p><b>No encola.</b> La transacción la abre el controlador, y encolar dentro de ella haría que el
  * trabajador pudiera arrancar antes de que la fila del lote esté confirmada. Encola el controlador,
  * al salir de la transacción.
@@ -23,6 +27,7 @@ public final class IniciarIngesta {
 
   private final RepositorioProveedores repositorioProveedores;
   private final RepositorioLotesIngesta repositorioLotes;
+  private final RepositorioArchivosDeIngesta repositorioArchivos;
   private final AlmacenDeArchivosDeProveedor almacen;
   private final Reloj reloj;
   private final long maximoBytes;
@@ -30,11 +35,13 @@ public final class IniciarIngesta {
   public IniciarIngesta(
       RepositorioProveedores repositorioProveedores,
       RepositorioLotesIngesta repositorioLotes,
+      RepositorioArchivosDeIngesta repositorioArchivos,
       AlmacenDeArchivosDeProveedor almacen,
       Reloj reloj,
       long maximoBytes) {
     this.repositorioProveedores = Objects.requireNonNull(repositorioProveedores);
     this.repositorioLotes = Objects.requireNonNull(repositorioLotes);
+    this.repositorioArchivos = Objects.requireNonNull(repositorioArchivos);
     this.almacen = Objects.requireNonNull(almacen);
     this.reloj = Objects.requireNonNull(reloj);
     if (maximoBytes <= 0) {
@@ -80,6 +87,9 @@ public final class IniciarIngesta {
     }
 
     Instant ahora = reloj.ahora();
+    repositorioArchivos.guardar(
+        ArchivoDeIngesta.recibir(
+            comando.objectKey(), proveedor.id(), comando.nombreArchivo(), tamano, ahora));
     if (!proveedor.subeDosChatsEnUnZip()) {
       LoteIngesta lote = LoteIngesta.recibirExportacion(proveedor.id(), comando.objectKey(), ahora);
       repositorioLotes.guardar(lote);

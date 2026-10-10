@@ -22,6 +22,7 @@ import {
   REPOSITORIO_PRODUCTOS_ADMIN,
   RepositorioProductosAdmin,
 } from '../../domain/repositorio-productos-admin.puerto';
+import { REPOSITORIO_PRODUCTOS_NO_PUBLICADOS } from '../../domain/productos-no-publicados.puerto';
 import { ListaProductosAdminPage } from './lista-productos-admin.page';
 
 function productoDePrueba(overrides: Partial<ProductoAdmin> = {}): ProductoAdmin {
@@ -170,6 +171,11 @@ async function renderLista(items: ProductoAdmin[], totalPaginas = 1) {
       provideRouter([]),
       provideTanStackQuery(new QueryClient()),
       { provide: REPOSITORIO_PRODUCTOS_ADMIN, useValue: repositorio },
+      // El bloque de limpieza tiene su propia prueba; aquí, sin nada que limpiar, no se pinta.
+      {
+        provide: REPOSITORIO_PRODUCTOS_NO_PUBLICADOS,
+        useValue: { contar: async () => 0, eliminarTanda: async () => null },
+      },
     ],
   });
   return { ...resultado, repositorio };

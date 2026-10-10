@@ -7,6 +7,7 @@
     "reintegro_requerido": "The refund amount or method is missing, and this outcome returns money.",
     "retracto_ya_radicado": "This order already has a withdrawal in progress.",
     "pedido_sin_entregar": "This order has not been delivered yet.",
+    "pedido_no_eliminable": "Only a cancelled order, or one whose payment failed, that never received a payment or had a shipment or a claim, and is not a manual transfer, can be deleted. Cancel it instead.",
     "existencia_insuficiente": "There is no longer enough stock for this operation.",
     "linea_no_es_del_pedido": "That product is not part of this order.",
     "transicion_de_estado_invalida": "That step is not possible from the current state. Reload and check again.",
@@ -52,6 +53,8 @@
     "imagen_de_proveedor_ilegible": "One of the photos could not be processed. Reject it or ask the supplier for the photo again.",
     "producto_de_proveedor_ya_existe": "This post is already a product in the catalogue: same title at the same price. Reject the draft.",
     "lote_en_curso": "The import is still running or paused. Stop it, or wait for it to finish, before deleting it.",
+    "archivo_de_ingesta_en_uso": "An import that reads this file is still running or paused. Wait for it to finish, or stop it, to delete the file.",
+    "archivo_de_ingesta_no_encontrado": "The file no longer exists. Reload the list.",
     "pago_sin_pedido_ya_devuelto": "That payment already has its refund recorded.",
     "inventario_sin_confirmar": "There is no stock for every line: restock and try again, or cancel with a refund.",
     "peso_de_referencia_no_admitido": "That category does not take a reference weight: it is electronics, which is measured product by product, or it has subcategories, and the weight goes on each of them.",
@@ -234,6 +237,18 @@
         "no_disponibilidad": "The product became unavailable",
         "plazo_incumplido": "We did not deliver on time"
       }
+    },
+    "eliminar": {
+      "titulo": "Delete the order",
+      "explicacion": "Only for orders where no sale happened: the payment failed or it was cancelled, and it never received a payment, had a shipment or a claim. A manual transfer order is never deleted, because the system cannot tell whether the money arrived. Any other order is cancelled and keeps its history.",
+      "accion": "Delete order",
+      "pregunta": "Delete order {{numero}}?",
+      "loQueImplica": "The order, its lines, its history and its failed payment attempts are deleted and cannot be recovered. The email link to retry the payment stops working.",
+      "confirmar": "Yes, delete",
+      "cancelar": "Cancel",
+      "eliminando": "Deleting…",
+      "hecho": "Order {{numero}} was deleted.",
+      "error": "The order could not be deleted. Try again."
     }
   },
   "productos": {
@@ -522,6 +537,19 @@
       "accion": "Yes, delete",
       "hecho": "{{nombre}} was deleted from the catalog.",
       "error": "We couldn't delete the product. Please try again."
+    },
+    "limpiar": {
+      "titulo": "Clean up unpublished products",
+      "explicacion": "There are {{cantidad}} unpublished product(s). You can delete them all at once, with their photos.",
+      "accion": "Delete unpublished products",
+      "pregunta": "Delete the {{cantidad}} unpublished product(s)?",
+      "loQueImplica": "They are deleted along with their variants, their stock and all their photos, and cannot be recovered. This includes products removed from the storefront and approved technology products still waiting for photos. Published products are not touched, and products that have been sold or have units in stock are kept.",
+      "confirmar": "Yes, delete all",
+      "cancelar": "Cancel",
+      "borrando": "Deleting… {{eliminados}} so far",
+      "hecho": "{{eliminados}} unpublished product(s) deleted.",
+      "error": "Not all of them could be deleted. The ones already deleted are gone; try again to finish.",
+      "hechoConConservados": "{{eliminados}} unpublished product(s) deleted. {{conservados}} were kept because they have sales or units in stock."
     },
     "total": "{{total}} product(s) in the catalog"
   },
@@ -1061,6 +1089,39 @@
         "reanudar": "We couldn't resume the import. Try again.",
         "detener": "We couldn't stop the import. Try again."
       }
+    },
+    "archivos": {
+      "titulo": "Uploaded files",
+      "enlace": "See uploaded files",
+      "explicacion": "The .zip files uploaded for imports. Once processed they are never read again: deleting them frees storage and leaves the imports, their drafts and their photos untouched. While an import that reads a file is still running, the file cannot be deleted.",
+      "errorLista": "The file history could not be loaded. Try again.",
+      "total": "{{total}} file(s)",
+      "ninguno": "No file has been uploaded yet.",
+      "sinNombre": "Unnamed file",
+      "sinTamano": "No data",
+      "columnas": {
+        "archivo": "File",
+        "tamano": "Size",
+        "lotes": "Imports",
+        "estado": "Status",
+        "acciones": "Actions"
+      },
+      "estados": {
+        "disponible": "In storage",
+        "enUso": "Import running",
+        "borrado": "Deleted on {{fecha}}"
+      },
+      "borrar": {
+        "accion": "Delete",
+        "accionArchivo": "Delete {{nombre}}",
+        "pregunta": "Delete {{nombre}} from storage?",
+        "loQueImplica": "Only the .zip file is deleted, and it cannot be recovered. The imports, their drafts and their photos stay as they are.",
+        "confirmar": "Yes, delete",
+        "cancelar": "Cancel",
+        "borrando": "Deleting…",
+        "hecho": "{{nombre}} was deleted from storage.",
+        "error": "The file could not be deleted. Try again."
+      }
     }
   },
   "tecnologia": {
@@ -1322,6 +1383,19 @@
       "borrando": "Deleting…",
       "error": "The draft could not be deleted. Try again.",
       "explicacionSinProducto": "Its product was already deleted: this draft no longer recognizes anything and only keeps the supplier's messages and photos. Deleting it frees them from the bucket."
+    },
+    "limpiar": {
+      "titulo": "Clean up the inbox",
+      "explicacion": "There are {{cantidad}} unapproved draft(s): in review or rejected. You can delete them all at once.",
+      "accion": "Delete unapproved drafts",
+      "pregunta": "Delete the {{cantidad}} unapproved draft(s)?",
+      "loQueImplica": "They are deleted along with their messages and their photos in private storage, and cannot be recovered. Approved drafts are not touched. If you upload an export that brings those listings again, they will show up as drafts again.",
+      "confirmar": "Yes, delete all",
+      "cancelar": "Cancel",
+      "borrando": "Deleting… {{borrados}} so far",
+      "hecho": "{{borrados}} unapproved draft(s) deleted.",
+      "error": "Not all of them could be deleted. The ones already deleted are gone; try again to finish.",
+      "ninguno": "None was deleted: someone else is deciding on the remaining ones right now. Reload the page and try again."
     }
   },
   "referencias_envio": {

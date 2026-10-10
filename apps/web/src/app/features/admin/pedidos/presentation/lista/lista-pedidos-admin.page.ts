@@ -3,8 +3,10 @@ import {
   Component,
   computed,
   effect,
+  ElementRef,
   inject,
   signal,
+  viewChild,
 } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import {
@@ -18,6 +20,7 @@ import {
 import { ActivatedRoute, Router } from '@angular/router';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { usarTraductor } from '../../../../../core/i18n/traductor';
+import { usarFoco } from '../../../../../shared/foco/foco';
 import { TsBoton } from '../../../../../shared/ui/boton/ts-boton';
 import { TsCampo } from '../../../../../shared/ui/campo/ts-campo';
 import { TsEsqueleto } from '../../../../../shared/ts-esqueleto/ts-esqueleto';
@@ -30,6 +33,7 @@ import { PanelGarantia } from '../../../garantias/presentation/panel-garantia/pa
 import { PaquetesParaGuia } from '../../../envios/presentation/paquetes/paquetes-para-guia';
 import { PanelRetracto } from '../../../retractos/presentation/panel-retracto/panel-retracto';
 import { PanelReversion } from '../../../reversiones/presentation/panel-reversion/panel-reversion';
+import { EliminarPedido } from '../eliminar/eliminar-pedido';
 import { usarMigasAdmin } from '../../../migas-admin';
 import { usarAccionesPedidoAdmin } from '../../application/acciones-pedido-admin.mutaciones';
 import { usarListarPedidosAdmin } from '../../application/listar-pedidos-admin.consulta';
@@ -40,6 +44,7 @@ import { MedioReintegro } from '../../../retractos/domain/retracto.model';
 import {
   EmisionDeGuiaAdmin,
   ESTADOS_QUE_ADMITEN_CANCELACION,
+  ESTADOS_QUE_ADMITEN_ELIMINACION,
   EstadoPedido,
   FiltroPedidosAdmin,
   MODALIDADES_RECAUDO,
@@ -156,6 +161,7 @@ const CLAVE_MOTIVO_CANCELACION: Record<MotivoCancelacion, string> = {
     PaquetesParaGuia,
     PanelRetracto,
     PanelReversion,
+    EliminarPedido,
     ReactiveFormsModule,
     TranslocoPipe,
     TsBoton,
@@ -420,6 +426,29 @@ export class ListaPedidosAdminPage {
 
   protected puedeCancelar(pedido: PedidoAdmin): boolean {
     return (ESTADOS_QUE_ADMITEN_CANCELACION as readonly string[]).includes(pedido.estado);
+  }
+
+  /**
+   * Lo que se ve desde aquí: el estado, y que no sea transferencia manual —su dinero no deja
+   * rastro en el sistema—. Si algo cuelga del pedido, el servidor dice 409.
+   */
+  protected puedeEliminar(pedido: PedidoAdmin): boolean {
+    return (
+      (ESTADOS_QUE_ADMITEN_ELIMINACION as readonly string[]).includes(pedido.estado) &&
+      pedido.metodoPago !== 'TRANSFERENCIA_MANUAL'
+    );
+  }
+
+  /** El número del último pedido eliminado: su fila ya no existe para decirlo. */
+  protected readonly pedidoEliminado = signal<string | null>(null);
+  private readonly avisoEliminadoRef = viewChild<ElementRef<HTMLElement>>('avisoEliminadoRef');
+  private readonly enfocarTrasEliminar = usarFoco();
+
+  /** La fila se fue con el botón: el foco va al aviso, que dice lo que pasó. */
+  protected alEliminar(numero: string): void {
+    this.pedidoExpandidoId.set(null);
+    this.pedidoEliminado.set(numero);
+    this.enfocarTrasEliminar(() => this.avisoEliminadoRef()?.nativeElement);
   }
 
   /**
