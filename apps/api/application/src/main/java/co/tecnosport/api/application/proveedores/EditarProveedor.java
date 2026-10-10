@@ -27,6 +27,7 @@ public final class EditarProveedor {
         comando.publicacionAutomatica(),
         comando.factorDeMargen(),
         comando.ordenDePublicacion());
+    proveedor.definirDosChatsEnUnZip(comando.dosChatsEnUnZip());
     repositorioProveedores.actualizar(proveedor);
     return proveedor;
   }

@@ -2,7 +2,6 @@ package co.tecnosport.api.infrastructure.proveedores;
 
 import co.tecnosport.api.infrastructure.proveedores.entidad.BorradorProductoJpaEntity;
 import jakarta.persistence.LockModeType;
-import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -37,15 +36,46 @@ public interface BorradorProductoJpaRepository
 
   boolean existsByProveedorIdAndEstadoAndHuella(UUID proveedorId, String estado, String huella);
 
-  /** El título y el pHash de los borradores en un estado y a un precio: proyección de interfaz. */
-  List<AnuncioFila> findByProveedorIdAndEstadoAndPrecioProveedorAndTituloIsNotNull(
-      UUID proveedorId, String estado, BigDecimal precioProveedor);
+  /**
+   * Los borradores en revisión del proveedor, vistos como anuncios: el texto del mensaje principal
+   * de su publicación —el cuerpo o, si no tiene, el pie de foto—, el pHash de la principal que
+   * guardó el borrador y los de todas las fotos de la publicación que lo tienen, separados por
+   * coma. Una sola consulta por publicación del lote, sin cargar filas enteras con su JSON crudo.
+   */
+  @Query(
+      value =
+          """
+          select b.id as borradorId,
+                 coalesce(m.texto, m.pie_de_foto) as texto,
+                 b.phash as phashPrincipal,
+                 (select string_agg(mm.phash, ',')
+                    from publicacion_mensaje pm
+                    join mensaje_proveedor mm on mm.id = pm.mensaje_id
+                   where pm.publicacion_id = p.id
+                     and pm.rol = 'MEDIO'
+                     and mm.phash is not null) as phashes,
+                 l.chat_de_caballero as deChatDeCaballero
+            from borrador_producto b
+            join publicacion_proveedor p on p.id = b.publicacion_id
+            join mensaje_proveedor m on m.id = p.mensaje_principal_id
+            join lote_ingesta l on l.id = p.lote_id
+           where b.proveedor_id = :proveedorId
+             and b.estado = 'EN_REVISION'
+          """,
+      nativeQuery = true)
+  List<AnuncioFila> anunciosEnRevision(@Param("proveedorId") UUID proveedorId);
 
   /** Lo que hace falta para reconocer un anuncio repetido. */
   interface AnuncioFila {
-    String getTitulo();
+    UUID getBorradorId();
 
-    String getPhash();
+    String getTexto();
+
+    String getPhashPrincipal();
+
+    String getPhashes();
+
+    boolean getDeChatDeCaballero();
   }
 
   /** Lo que el pHash necesita de un borrador que ya es producto. */

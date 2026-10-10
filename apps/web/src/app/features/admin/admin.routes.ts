@@ -47,6 +47,8 @@ import { REPOSITORIO_PROVEEDORES_ADMIN } from './proveedores/domain/repositorio-
 import { ProveedoresAdminHttpRepositorio } from './proveedores/infrastructure/proveedores-admin-http.repositorio';
 import { REPOSITORIO_INGESTAS_ADMIN } from './ingestas/domain/repositorio-ingestas-admin.puerto';
 import { IngestasAdminHttpRepositorio } from './ingestas/infrastructure/ingestas-admin-http.repositorio';
+import { LECTOR_DE_ZIP } from './ingestas/domain/lector-de-zip.puerto';
+import { LectorDeZipNavegador } from './ingestas/infrastructure/lector-de-zip-navegador';
 import { REPOSITORIO_BORRADORES_ADMIN } from './borradores/domain/repositorio-borradores-admin.puerto';
 import { BorradoresAdminHttpRepositorio } from './borradores/infrastructure/borradores-admin-http.repositorio';
 import { REPOSITORIO_BORRADORES_TECNOLOGIA } from './tecnologia/domain/repositorio-borradores-tecnologia.puerto';
@@ -216,6 +218,7 @@ export const adminRoutes: Routes = [
             providers: [
               { provide: REPOSITORIO_INGESTAS_ADMIN, useClass: IngestasAdminHttpRepositorio },
               { provide: REPOSITORIO_PROVEEDORES_ADMIN, useClass: ProveedoresAdminHttpRepositorio },
+              { provide: LECTOR_DE_ZIP, useClass: LectorDeZipNavegador },
             ],
             loadComponent: () =>
               import('./ingestas/presentation/lista/lista-ingestas-admin.page').then(

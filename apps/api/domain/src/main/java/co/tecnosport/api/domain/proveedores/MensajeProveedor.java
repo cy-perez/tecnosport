@@ -24,6 +24,15 @@ import java.util.UUID;
  * sigue diciendo que ahí hubo una foto: la publicación se arma con la cuenta correcta de medios y
  * el borrador queda con la alerta de que no tiene fotos, en vez de con una foto de menos sin que
  * nadie sepa por qué.
+ *
+ * <h2>El pHash de la foto</h2>
+ *
+ * <p>Desde el 9 de octubre de 2026 una imagen con archivo guarda el pHash de su foto, calculado al
+ * registrarla, cuando los bytes están en la mano. Es lo que deja comparar <b>todas</b> las fotos de
+ * un anuncio con todas las de otro sin volver a leer el bucket: la polo Prada de Meraki y la de
+ * MerakiMen compartían una foto idéntica, pero no la principal, y comparando solo la principal
+ * quedaron dos borradores. Nulo en lo demás, en una foto que no se pudo decodificar y en los
+ * mensajes registrados antes.
  */
 public final class MensajeProveedor {
 
@@ -37,7 +46,9 @@ public final class MensajeProveedor {
   private final String pieDeFoto;
   private final String referenciaArchivo;
   private final boolean medioOmitido;
+  private final PHash pHash;
 
+  /** Sin pHash: la forma de antes del 9 de octubre de 2026. */
   public MensajeProveedor(
       UUID id,
       UUID proveedorId,
@@ -49,6 +60,32 @@ public final class MensajeProveedor {
       String pieDeFoto,
       String referenciaArchivo,
       boolean medioOmitido) {
+    this(
+        id,
+        proveedorId,
+        loteId,
+        idExterno,
+        enviadoEn,
+        tipo,
+        texto,
+        pieDeFoto,
+        referenciaArchivo,
+        medioOmitido,
+        null);
+  }
+
+  public MensajeProveedor(
+      UUID id,
+      UUID proveedorId,
+      UUID loteId,
+      IdExternoDeMensaje idExterno,
+      Instant enviadoEn,
+      TipoMensaje tipo,
+      String texto,
+      String pieDeFoto,
+      String referenciaArchivo,
+      boolean medioOmitido,
+      PHash pHash) {
     this.id = Objects.requireNonNull(id, "El id del mensaje no puede ser nulo.");
     this.proveedorId = Objects.requireNonNull(proveedorId, "Un mensaje es de un proveedor.");
     this.loteId = Objects.requireNonNull(loteId, "Un mensaje llega dentro de un lote.");
@@ -59,6 +96,10 @@ public final class MensajeProveedor {
     this.pieDeFoto = vacioEsNulo(pieDeFoto);
     this.referenciaArchivo = vacioEsNulo(referenciaArchivo);
     this.medioOmitido = medioOmitido;
+    if (pHash != null && this.referenciaArchivo == null) {
+      throw new ExcepcionDeDominio("Solo una foto con archivo tiene pHash.");
+    }
+    this.pHash = pHash;
 
     switch (tipo) {
       case TEXTO -> {
@@ -161,6 +202,11 @@ public final class MensajeProveedor {
         null,
         null,
         medioOmitido);
+  }
+
+  /** El pHash de su foto, si es una imagen con archivo que se pudo decodificar. */
+  public Optional<PHash> pHash() {
+    return Optional.ofNullable(pHash);
   }
 
   /** El texto que se lee para decidir si el mensaje abre un producto: el cuerpo o el pie. */

@@ -1,21 +1,27 @@
 package co.tecnosport.api.infrastructure.proveedores.whatsapp;
 
 import co.tecnosport.api.application.proveedores.AlmacenDeArchivosDeProveedor;
+import co.tecnosport.api.application.proveedores.ChatExportado;
 import co.tecnosport.api.application.proveedores.ExportacionIlegibleException;
 import co.tecnosport.api.application.proveedores.FuenteDeMensajes;
-import co.tecnosport.api.application.proveedores.MensajeCrudo;
+import co.tecnosport.api.domain.compartido.ExcepcionDeDominio;
+import co.tecnosport.api.domain.proveedores.ChatDelZip;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Comparator;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
@@ -35,6 +41,12 @@ import java.util.zip.ZipFile;
  */
 public final class ExportacionChatWhatsApp implements FuenteDeMensajes {
 
+  private static final List<String> PREFIJOS_DEL_NOMBRE =
+      List.of("Chat de WhatsApp con ", "WhatsApp Chat with ", "WhatsApp Chat - ");
+
+  /** «[2/10/26, 4:32:25 p. m.] MERAKI • FICUS 1C-14 & 1C-13 #COMUNIDAD: …» */
+  private static final Pattern REMITENTE_DE_IOS = Pattern.compile("^\\[[^\\]]*\\]\\s*([^:]+):");
+
   private final AlmacenDeArchivosDeProveedor almacen;
   private final long maximoBytesDescomprimidos;
 
@@ -48,7 +60,7 @@ public final class ExportacionChatWhatsApp implements FuenteDeMensajes {
   }
 
   @Override
-  public List<MensajeCrudo> leer(String referenciaArchivo) {
+  public ChatExportado leer(String referenciaArchivo, ChatDelZip chat) {
     byte[] zip =
         almacen
             .leer(referenciaArchivo)
@@ -56,16 +68,44 @@ public final class ExportacionChatWhatsApp implements FuenteDeMensajes {
                 () ->
                     new ExportacionIlegibleException(
                         "La exportación ya no está en el almacén: " + referenciaArchivo));
-    Contenido contenido = descomprimir(zip);
+    Contenido contenido = descomprimir(zip, chat);
     AnalizadorDeExportacionWhatsApp analizador =
         new AnalizadorDeExportacionWhatsApp(
             nombre -> Optional.ofNullable(contenido.archivos().get(nombre)));
-    return analizador.analizar(contenido.texto());
+    return new ChatExportado(
+        nombreDelChat(contenido.nombreDelTexto(), contenido.texto()),
+        analizador.analizar(contenido.texto()));
   }
 
-  private Contenido descomprimir(byte[] zip) {
-    String texto = null;
-    int largoDelTexto = -1;
+  /**
+   * El nombre del chat. Android lo pone en el del archivo —«Chat de WhatsApp con • M͟E͟R͟A͟K͟I͟
+   * ͟M͟E͟N͟ •….txt»—; iPhone lo llama siempre {@code _chat.txt}, y en un grupo el nombre es el
+   * remitente de la primera línea, la del aviso de cifrado. Nulo si no se puede saber.
+   */
+  static String nombreDelChat(String nombreDelTexto, String texto) {
+    String base =
+        nombreDelTexto.toLowerCase(Locale.ROOT).endsWith(".txt")
+            ? nombreDelTexto.substring(0, nombreDelTexto.length() - 4)
+            : nombreDelTexto;
+    for (String prefijo : PREFIJOS_DEL_NOMBRE) {
+      if (base.regionMatches(true, 0, prefijo, 0, prefijo.length())) {
+        return base.substring(prefijo.length()).strip();
+      }
+    }
+    if (!base.equalsIgnoreCase("_chat")) {
+      return base.strip();
+    }
+    String primera = texto.lines().findFirst().orElse("").replace("‎", "").strip();
+    Matcher m = REMITENTE_DE_IOS.matcher(primera);
+    return m.find() ? m.group(1).strip() : null;
+  }
+
+  /**
+   * @param chat cuál de los dos {@code .txt} leer en un zip de dos chats; nulo en uno de un solo
+   *     chat, donde se queda el más largo si hubiera más de uno —no debería—: el chat es el grande
+   */
+  private Contenido descomprimir(byte[] zip, ChatDelZip chat) {
+    Map<String, byte[]> textos = new LinkedHashMap<>();
     Map<String, byte[]> archivos = new HashMap<>();
     long total = 0;
     Path temporal = null;
@@ -93,11 +133,7 @@ public final class ExportacionChatWhatsApp implements FuenteDeMensajes {
           }
           String nombre = nombreBase(entry.getName());
           if (nombre.toLowerCase(Locale.ROOT).endsWith(".txt")) {
-            // Si hubiera más de un .txt —no debería—, se queda el más largo: el chat es el grande.
-            if (bytes.length > largoDelTexto) {
-              texto = new String(bytes, StandardCharsets.UTF_8);
-              largoDelTexto = bytes.length;
-            }
+            textos.put(nombre, bytes);
           } else {
             archivos.put(nombre, bytes);
           }
@@ -108,12 +144,29 @@ public final class ExportacionChatWhatsApp implements FuenteDeMensajes {
     } finally {
       borrar(temporal);
     }
-    if (texto == null) {
+    if (textos.isEmpty()) {
       throw new ExportacionIlegibleException(
           "El zip no trae ningún archivo .txt con el chat. Exporta el chat de nuevo desde"
               + " WhatsApp, con o sin archivos.");
     }
-    return new Contenido(texto, archivos);
+    String elegido = chat == null ? elMasLargo(textos) : delChat(chat, textos);
+    return new Contenido(
+        elegido, new String(textos.get(elegido), StandardCharsets.UTF_8), archivos);
+  }
+
+  private static String elMasLargo(Map<String, byte[]> textos) {
+    return textos.entrySet().stream()
+        .max(Comparator.comparingInt(e -> e.getValue().length))
+        .orElseThrow()
+        .getKey();
+  }
+
+  private static String delChat(ChatDelZip chat, Map<String, byte[]> textos) {
+    try {
+      return chat.elegir(List.copyOf(textos.keySet()));
+    } catch (ExcepcionDeDominio e) {
+      throw new ExportacionIlegibleException(e.getMessage(), e);
+    }
   }
 
   private static void borrar(Path temporal) {
@@ -133,5 +186,5 @@ public final class ExportacionChatWhatsApp implements FuenteDeMensajes {
     return barra < 0 ? ruta : ruta.substring(barra + 1);
   }
 
-  private record Contenido(String texto, Map<String, byte[]> archivos) {}
+  private record Contenido(String nombreDelTexto, String texto, Map<String, byte[]> archivos) {}
 }

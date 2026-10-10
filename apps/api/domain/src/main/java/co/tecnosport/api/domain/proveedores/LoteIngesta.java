@@ -36,6 +36,18 @@ public final class LoteIngesta {
   private Instant iniciadoEn;
   private Instant terminadoEn;
 
+  /**
+   * Si la exportación es el chat de caballero de un proveedor que publica en dos ({@link
+   * NombreDeChat}). Se sabe al leer el archivo, no al recibirlo: el nombre del chat viene adentro.
+   */
+  private boolean chatDeCaballero;
+
+  /**
+   * Cuál de los dos chats del zip lee el lote, cuando el proveedor los sube juntos; nulo cuando el
+   * zip es de un solo chat.
+   */
+  private ChatDelZip chatDelZip;
+
   public LoteIngesta(
       UUID id,
       OrigenIngesta origen,
@@ -136,6 +148,35 @@ public final class LoteIngesta {
    * Solo desde {@code PROCESANDO}: un lote en la cola no tiene trabajo que pausar, y si se pausara
    * ahí retendría la cola en cuanto el hilo llegara a él, sin que nadie lo hubiera visto empezar.
    */
+  /**
+   * Lo marca como el chat de caballero del proveedor: lo que el chat general repita de él se
+   * descarta, y lo que el general ya dejó en revisión se rechaza (9 de octubre de 2026). Marcarlo
+   * otra vez no cambia nada; el adaptador lo usa también para devolverlo como estaba guardado.
+   */
+  public void marcarChatDeCaballero() {
+    this.chatDeCaballero = true;
+  }
+
+  public boolean esChatDeCaballero() {
+    return chatDeCaballero;
+  }
+
+  /**
+   * Le dice al lote cuál de los dos chats del zip le toca leer. El de caballero queda marcado como
+   * tal desde ya: su nombre de archivo, «MerakiMen», no dice «MEN» como palabra suelta. El
+   * adaptador lo usa también para devolverlo como estaba guardado.
+   */
+  public void leerSoloElChat(ChatDelZip chat) {
+    this.chatDelZip = Objects.requireNonNull(chat, "El chat del zip no puede ser nulo.");
+    if (chat == ChatDelZip.CABALLERO) {
+      marcarChatDeCaballero();
+    }
+  }
+
+  public Optional<ChatDelZip> chatDelZip() {
+    return Optional.ofNullable(chatDelZip);
+  }
+
   public void pausar() {
     if (estado != EstadoLote.PROCESANDO) {
       throw new ExcepcionDeDominio(

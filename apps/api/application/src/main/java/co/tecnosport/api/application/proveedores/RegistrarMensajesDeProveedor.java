@@ -4,6 +4,7 @@ import co.tecnosport.api.domain.compartido.GeneradorIdentificador;
 import co.tecnosport.api.domain.proveedores.IdExternoDeMensaje;
 import co.tecnosport.api.domain.proveedores.LoteIngesta;
 import co.tecnosport.api.domain.proveedores.MensajeProveedor;
+import co.tecnosport.api.domain.proveedores.PHash;
 import co.tecnosport.api.domain.proveedores.Proveedor;
 import co.tecnosport.api.domain.proveedores.TipoMensaje;
 import java.time.Instant;
@@ -40,16 +41,24 @@ public final class RegistrarMensajesDeProveedor {
   private final RepositorioLotesIngesta repositorioLotes;
   private final RepositorioMensajesProveedor repositorioMensajes;
   private final AlmacenDeArchivosDeProveedor almacen;
+  private final CalculadorDePHash calculadorDePHash;
 
+  /**
+   * @param calculadorDePHash con qué se saca el pHash de cada foto al registrarla, con los bytes ya
+   *     en la mano: guardarlo es lo que deja comparar todas las fotos de un anuncio con todas las
+   *     de otro sin volver a leer el bucket (9 de octubre de 2026)
+   */
   public RegistrarMensajesDeProveedor(
       RepositorioProveedores repositorioProveedores,
       RepositorioLotesIngesta repositorioLotes,
       RepositorioMensajesProveedor repositorioMensajes,
-      AlmacenDeArchivosDeProveedor almacen) {
+      AlmacenDeArchivosDeProveedor almacen,
+      CalculadorDePHash calculadorDePHash) {
     this.repositorioProveedores = Objects.requireNonNull(repositorioProveedores);
     this.repositorioLotes = Objects.requireNonNull(repositorioLotes);
     this.repositorioMensajes = Objects.requireNonNull(repositorioMensajes);
     this.almacen = Objects.requireNonNull(almacen);
+    this.calculadorDePHash = Objects.requireNonNull(calculadorDePHash);
   }
 
   public MensajesRegistrados ejecutar(UUID loteId, List<MensajeCrudo> crudos) {
@@ -112,11 +121,13 @@ public final class RegistrarMensajesDeProveedor {
       UUID proveedorId, UUID loteId, IdExternoDeMensaje idExterno, MensajeCrudo crudo) {
     UUID id = GeneradorIdentificador.nuevo();
     String referencia = null;
+    PHash pHash = null;
     if (crudo.tipo() == TipoMensaje.IMAGEN && crudo.adjunto() != null) {
       MensajeCrudo.Adjunto adjunto = crudo.adjunto();
       referencia =
           ClavesDeProveedor.medio(proveedorId, crudo.enviadoEn(), id, adjunto.contentType());
       almacen.guardar(referencia, adjunto.contentType(), adjunto.bytes());
+      pHash = calculadorDePHash.de(adjunto.bytes()).orElse(null);
     }
     return new MensajeProveedor(
         id,
@@ -128,7 +139,8 @@ public final class RegistrarMensajesDeProveedor {
         crudo.texto(),
         crudo.pieDeFoto(),
         referencia,
-        crudo.tipo() == TipoMensaje.IMAGEN ? referencia == null : crudo.medioOmitido());
+        crudo.tipo() == TipoMensaje.IMAGEN ? referencia == null : crudo.medioOmitido(),
+        pHash);
   }
 
   private static String nulo(String texto) {

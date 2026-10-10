@@ -2,6 +2,7 @@ package co.tecnosport.api.application.proveedores;
 
 import co.tecnosport.api.application.catalogo.UrlFirmada;
 import co.tecnosport.api.domain.catalogo.LineaCatalogo;
+import co.tecnosport.api.domain.proveedores.ChatDelZip;
 import co.tecnosport.api.domain.proveedores.IdExternoDeMensaje;
 import co.tecnosport.api.domain.proveedores.LoteIngesta;
 import co.tecnosport.api.domain.proveedores.MensajeProveedor;
@@ -264,27 +265,39 @@ final class ApoyoDeIngesta {
 
     private final List<MensajeCrudo> mensajes;
     private final RuntimeException fallo;
+    private final String nombreDelChat;
     String ultimaReferencia;
     int lecturas;
 
     FuenteFija(List<MensajeCrudo> mensajes) {
+      this(null, mensajes);
+    }
+
+    /** Con el nombre del chat, como lo trae la exportación. */
+    FuenteFija(String nombreDelChat, List<MensajeCrudo> mensajes) {
       this.mensajes = mensajes;
       this.fallo = null;
+      this.nombreDelChat = nombreDelChat;
     }
 
     FuenteFija(RuntimeException fallo) {
       this.mensajes = List.of();
       this.fallo = fallo;
+      this.nombreDelChat = null;
     }
 
+    /** El chat del zip que se le pidió la última vez; nulo si se leyó como un solo chat. */
+    ChatDelZip ultimoChat;
+
     @Override
-    public List<MensajeCrudo> leer(String referenciaArchivo) {
+    public ChatExportado leer(String referenciaArchivo, ChatDelZip chat) {
       ultimaReferencia = referenciaArchivo;
+      ultimoChat = chat;
       lecturas++;
       if (fallo != null) {
         throw fallo;
       }
-      return mensajes;
+      return new ChatExportado(nombreDelChat, mensajes);
     }
   }
 
@@ -292,6 +305,17 @@ final class ApoyoDeIngesta {
       implements RepositorioPublicacionesProveedor {
 
     final Map<UUID, PublicacionProveedor> porId = new LinkedHashMap<>();
+
+    /**
+     * Los textos del chat de caballero de un proveedor. El adaptador real los saca de los lotes y
+     * los mensajes; aquí, por omisión, ninguno, y la prueba que los necesita lo conecta.
+     */
+    java.util.function.Function<UUID, List<String>> textosDeCaballero = proveedorId -> List.of();
+
+    @Override
+    public List<String> textosDelChatDeCaballero(UUID proveedorId) {
+      return textosDeCaballero.apply(proveedorId);
+    }
 
     @Override
     public void guardarTodas(List<PublicacionProveedor> publicaciones) {

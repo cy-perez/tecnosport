@@ -80,6 +80,11 @@ public class RepositorioPublicacionesProveedorJpa implements RepositorioPublicac
 
   /** La composición primero: el orden de los {@code delete} es el de las llaves foráneas. */
   @Override
+  public List<String> textosDelChatDeCaballero(UUID proveedorId) {
+    return publicaciones.textosDelChatDeCaballero(proveedorId);
+  }
+
+  @Override
   public void eliminar(UUID id) {
     mensajes.deleteByClavePublicacionId(id);
     publicaciones.deleteById(id);

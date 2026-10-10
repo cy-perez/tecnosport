@@ -3008,6 +3008,7 @@ export interface components {
         };
         ProveedorPeticion: {
             activo?: boolean;
+            dosChatsEnUnZip?: boolean;
             factorDeMargen?: number;
             linea: string;
             nombre: string;
@@ -3018,6 +3019,7 @@ export interface components {
         };
         ProveedorRespuesta: {
             activo?: boolean;
+            dosChatsEnUnZip?: boolean;
             factorDeMargen?: number;
             /** Format: uuid */
             id?: string;

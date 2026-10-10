@@ -1,6 +1,7 @@
 package co.tecnosport.api.application.proveedores;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -23,6 +24,7 @@ import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.proveedores.AgrupadorDePublicaciones;
 import co.tecnosport.api.domain.proveedores.AlertaBorrador;
 import co.tecnosport.api.domain.proveedores.BorradorProducto;
+import co.tecnosport.api.domain.proveedores.ChatDelZip;
 import co.tecnosport.api.domain.proveedores.EstadoBorrador;
 import co.tecnosport.api.domain.proveedores.EstadoLote;
 import co.tecnosport.api.domain.proveedores.EstadoPublicacionProveedor;
@@ -94,7 +96,8 @@ class ProcesarLoteDeIngestaTest {
   private ProcesarLoteDeIngesta casoCon(FuenteFija fuente, ExtractorDeProductos extractor) {
     RelojFalso reloj = new RelojFalso(AHORA);
     RegistrarMensajesDeProveedor registrar =
-        new RegistrarMensajesDeProveedor(proveedores, lotes, mensajes, almacen);
+        new RegistrarMensajesDeProveedor(
+            proveedores, lotes, mensajes, almacen, new CalculadorDePHashPorContenido());
     ArmarPublicaciones armar =
         new ArmarPublicaciones(
             lotes,
@@ -660,5 +663,127 @@ class ProcesarLoteDeIngestaTest {
     casoCon(new FuenteFija(comoChat(losNueveDelCriterio())), extractor).ejecutar(lote.id());
 
     assertEquals(Optional.empty(), lotes.buscarPorId(lote.id()));
+  }
+
+  private static final String POLO_PRADA =
+      "*NUEVA POLO 1.1🍯*\n *MARCA P R A D A*\n*TELA FRIA*\n*PRECIO X DIFUSIÓN $50.000💰*";
+  private static final String CHAT_DE_CABALLERO = "• M͟E͟R͟A͟K͟I͟ ͟M͟E͟N͟ • LC 1-228";
+  private static final String CHAT_GENERAL = "MERAKI • FICUS 1C-14 & 1C-13 #COMUNIDAD";
+
+  /**
+   * La polo Prada con su foto, como la manda Meraki en cualquiera de sus dos chats. Cada chat la
+   * manda a su hora: con la misma, el registro la tomaría por el mismo mensaje.
+   */
+  private static List<MensajeCrudo> poloPrada(String foto, Instant cuando) {
+    return List.of(
+        MensajeCrudo.imagen(cuando, ApoyoDeIngesta.REMITENTE, null, ApoyoDeIngesta.foto(foto)),
+        MensajeCrudo.texto(cuando.plusSeconds(20), ApoyoDeIngesta.REMITENTE, POLO_PRADA));
+  }
+
+  /** Los dos ganchos de los repositorios en memoria, conectados como el adaptador real. */
+  private void conLosChatsDeVerdad() {
+    publicaciones.textosDeCaballero =
+        proveedorId ->
+            publicaciones.porId.values().stream()
+                .filter(p -> p.proveedorId().equals(proveedorId))
+                .filter(p -> lotes.buscarPorId(p.loteId()).orElseThrow().esChatDeCaballero())
+                .map(p -> textoDe(p.mensajePrincipalId()))
+                .toList();
+    borradores.comoAnuncio =
+        b -> {
+          PublicacionProveedor p = publicaciones.buscarPorId(b.publicacionId()).orElseThrow();
+          return new AnuncioEnRevision(
+              b.id(),
+              textoDe(p.mensajePrincipalId()),
+              b.pHash().stream().toList(),
+              lotes.buscarPorId(p.loteId()).orElseThrow().esChatDeCaballero());
+        };
+  }
+
+  private String textoDe(UUID mensajeId) {
+    return mensajes.guardados.stream()
+        .filter(m -> m.id().equals(mensajeId))
+        .findFirst()
+        .orElseThrow()
+        .textoLegible()
+        .orElse(null);
+  }
+
+  private LoteIngesta procesar(String nombreDelChat, List<MensajeCrudo> crudos) {
+    LoteIngesta nuevo =
+        LoteIngesta.recibirExportacion(proveedor.id(), "proveedores/x/exportaciones/b.zip", T);
+    lotes.guardar(nuevo);
+    ExtractorFalso extractor =
+        ExtractorFalso.porTexto(texto -> prenda("Camiseta estilo Prada", 50000));
+    return casoCon(new FuenteFija(nombreDelChat, crudos), extractor).ejecutar(nuevo.id());
+  }
+
+  /**
+   * Meraki, 9 de octubre de 2026: primero MerakiMen.zip y después Meraki.zip. La polo Prada viene
+   * en los dos; en el general se descarta sin mirar fotos —aquí con otra foto—, porque su lugar es
+   * el chat de caballero.
+   */
+  @Test
+  void conElChatDeCaballeroPrimeroElGeneralDescartaLoQueEseYaTrajo() {
+    conLosChatsDeVerdad();
+
+    LoteIngesta deCaballero = procesar(CHAT_DE_CABALLERO, poloPrada("IMG-MEN-0159.jpg", T));
+    LoteIngesta general =
+        procesar(CHAT_GENERAL, poloPrada("00000200-PHOTO.jpg", T.plusSeconds(3 * 3600)));
+
+    assertTrue(deCaballero.esChatDeCaballero());
+    assertFalse(general.esChatDeCaballero());
+    assertEquals(1, deCaballero.resumen().orElseThrow().borradoresNuevos());
+    assertEquals(0, general.resumen().orElseThrow().borradoresNuevos());
+    assertEquals(1, general.resumen().orElseThrow().descartes());
+    assertEquals(
+        1,
+        borradores.porId.values().stream()
+            .filter(b -> b.estado() == EstadoBorrador.EN_REVISION)
+            .count());
+  }
+
+  /**
+   * Al revés: si el general se procesó primero, cuando llega el de caballero el borrador del
+   * general se rechaza con el motivo escrito, y queda el de caballero.
+   */
+  @Test
+  void conElGeneralPrimeroSuBorradorSeRechazaCuandoLlegaElDeCaballero() {
+    conLosChatsDeVerdad();
+
+    procesar(CHAT_GENERAL, poloPrada("00000200-PHOTO.jpg", T.plusSeconds(3 * 3600)));
+    procesar(CHAT_DE_CABALLERO, poloPrada("IMG-MEN-0159.jpg", T));
+
+    List<BorradorProducto> todos = List.copyOf(borradores.porId.values());
+    assertEquals(2, todos.size());
+    assertEquals(EstadoBorrador.RECHAZADO, todos.get(0).estado());
+    assertTrue(todos.get(0).motivoRechazo().orElseThrow().contains("chat de caballero"));
+    assertEquals(EstadoBorrador.EN_REVISION, todos.get(1).estado());
+  }
+
+  /** Un proveedor de un solo chat no cambia: sin chat de caballero no hay nada que descartar. */
+  @Test
+  void sinChatDeCaballeroNadaSeDescartaPorEsto() {
+    conLosChatsDeVerdad();
+
+    LoteIngesta uno =
+        procesar(CHAT_GENERAL, poloPrada("00000200-PHOTO.jpg", T.plusSeconds(3 * 3600)));
+
+    assertEquals(1, uno.resumen().orElseThrow().borradoresNuevos());
+  }
+
+  /** El lote del chat de caballero de un zip le pide a la fuente ese chat, y queda marcado. */
+  @Test
+  void elLoteDeUnChatDelZipLeeSoloEseChat() {
+    lote.leerSoloElChat(ChatDelZip.CABALLERO);
+    FuenteFija fuente = new FuenteFija("MerakiMen", poloPrada("IMG-MEN-0159.jpg", T));
+
+    LoteIngesta resultado =
+        casoCon(fuente, ExtractorFalso.porTexto(texto -> prenda("Camiseta estilo Prada", 50000)))
+            .ejecutar(lote.id());
+
+    assertEquals(ChatDelZip.CABALLERO, fuente.ultimoChat);
+    assertTrue(resultado.esChatDeCaballero());
+    assertEquals(1, resultado.resumen().orElseThrow().borradoresNuevos());
   }
 }

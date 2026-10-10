@@ -130,20 +130,24 @@ public class RepositorioProveedoresJpa implements RepositorioProveedores {
         p.publicacionAutomatica(),
         p.factorDeMargen().orElse(null),
         p.ordenDePublicacion().name(),
+        p.subeDosChatsEnUnZip(),
         creadoEn,
         actualizadoEn);
   }
 
   private static Proveedor aDominio(ProveedorJpaEntity fila) {
-    return new Proveedor(
-        fila.getId(),
-        fila.getNombre(),
-        LineaCatalogo.valueOf(fila.getLinea()),
-        fila.getTelefonoWhatsapp(),
-        fila.getNombreEnExportacion(),
-        fila.isActivo(),
-        fila.isPublicacionAutomatica(),
-        fila.getFactorDeMargen(),
-        OrdenDePublicacion.valueOf(fila.getOrdenDePublicacion()));
+    Proveedor proveedor =
+        new Proveedor(
+            fila.getId(),
+            fila.getNombre(),
+            LineaCatalogo.valueOf(fila.getLinea()),
+            fila.getTelefonoWhatsapp(),
+            fila.getNombreEnExportacion(),
+            fila.isActivo(),
+            fila.isPublicacionAutomatica(),
+            fila.getFactorDeMargen(),
+            OrdenDePublicacion.valueOf(fila.getOrdenDePublicacion()));
+    proveedor.definirDosChatsEnUnZip(fila.isDosChatsEnUnZip());
+    return proveedor;
   }
 }

@@ -272,4 +272,31 @@ class ProveedorTest {
                 "Bolsos", LineaCatalogo.BOLSOS, "+57 300", "Bolsos", true, false, null, null));
     assertEquals(OrdenDePublicacion.FOTOS_PRIMERO, proveedor.ordenDePublicacion());
   }
+
+  /** Meraki sube sus dos chats en un zip; un proveedor de tecnología no tiene chats que subir. */
+  @Test
+  void soloQuienEntraPorElChatSubeDosChatsEnUnZip() {
+    Proveedor ropa =
+        Proveedor.crear(
+            "Meraki",
+            LineaCatalogo.ROPA,
+            "+57 350",
+            "Meraki",
+            null,
+            OrdenDePublicacion.FOTOS_PRIMERO);
+    assertFalse(ropa.subeDosChatsEnUnZip(), "nace con un solo chat");
+    ropa.definirDosChatsEnUnZip(true);
+    assertTrue(ropa.subeDosChatsEnUnZip());
+
+    Proveedor tecnologia =
+        Proveedor.crear(
+            "Fénix",
+            LineaCatalogo.TECNOLOGIA,
+            "+57 323",
+            "Fénix",
+            null,
+            OrdenDePublicacion.TEXTO_PRIMERO);
+    assertThrows(ExcepcionDeDominio.class, () -> tecnologia.definirDosChatsEnUnZip(true));
+    tecnologia.definirDosChatsEnUnZip(false);
+  }
 }

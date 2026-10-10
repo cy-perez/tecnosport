@@ -71,6 +71,15 @@
         formControlName="factorDeMargen"
       />
 
+      @if (form.controls.linea.value !== 'TECNOLOGIA') {
+        <ts-checkbox
+          idCasilla="proveedor-dos-chats"
+          [etiqueta]="'admin.proveedores.formulario.dosChatsEnUnZip' | transloco"
+          [marcado]="form.controls.dosChatsEnUnZip.value"
+          (marcadoCambio)="form.controls.dosChatsEnUnZip.setValue($event)"
+        />
+      }
+
       <ts-checkbox
         idCasilla="proveedor-publicacion-automatica"
         [etiqueta]="'admin.proveedores.formulario.publicacionAutomatica' | transloco"

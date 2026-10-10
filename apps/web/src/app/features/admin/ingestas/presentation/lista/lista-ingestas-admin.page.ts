@@ -8,7 +8,7 @@ import {
   signal,
   viewChild,
 } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
@@ -31,6 +31,8 @@ import { usarListarIngestas } from '../../application/listar-ingestas.consulta';
 import { usarSubirExportacion } from '../../application/subir-exportacion.mutacion';
 import { usarEliminarIngesta } from '../../application/eliminar-ingesta.mutacion';
 import { usarOrdenarIngesta } from '../../application/ordenar-ingesta.mutacion';
+import { usarValidarZipDeDosChats } from '../../application/validar-zip-de-dos-chats';
+import { EstructuraDeDosChats, estructuraDeDosChats } from '../../domain/zip-de-dos-chats';
 import {
   EstadoLote,
   FiltroLotes,
@@ -162,6 +164,29 @@ export class ListaIngestasAdminPage {
     () => new Map((this.proveedores.data() ?? []).map((p) => [p.id, p.nombre] as const)),
   );
 
+  // --- El zip de un proveedor que sube sus dos chats juntos, como Meraki (9 de octubre de 2026). ---
+
+  private readonly validarZip = usarValidarZipDeDosChats();
+  private readonly proveedorElegidoId = toSignal(this.proveedorParaSubir.valueChanges, {
+    initialValue: this.proveedorParaSubir.value,
+  });
+  /** El proveedor elegido para subir, si sube sus dos chats en un zip; si no, nulo. */
+  protected readonly estructuraEsperada = computed<EstructuraDeDosChats | null>(() => {
+    const proveedor = (this.proveedores.data() ?? []).find(
+      (p) => p.id === this.proveedorElegidoId(),
+    );
+    return proveedor?.dosChatsEnUnZip ? estructuraDeDosChats(proveedor.nombre) : null;
+  });
+  /** La estructura que se esperaba, cuando el archivo elegido no la tiene. */
+  protected readonly estructuraNoAcordada = signal<EstructuraDeDosChats | null>(null);
+  private readonly validandoZip = signal(false);
+  /** Cada validación lleva su número: si el archivo cambia a mitad, la respuesta vieja no cuenta. */
+  private validacionEnCurso = 0;
+  /** No se sube un zip sin la estructura acordada, ni mientras se está revisando. */
+  protected readonly puedeSubir = computed(
+    () => !this.validandoZip() && this.estructuraNoAcordada() === null,
+  );
+
   /** Sin ningún proveedor activo no hay a quién subirle: se dice y se enlaza el alta. */
   protected readonly sinProveedoresActivos = computed(
     () => this.proveedores.isSuccess() && this.opcionesProveedorActivo().length === 0,
@@ -172,6 +197,36 @@ export class ListaIngestasAdminPage {
     effect(() => {
       this.proveedorFiltro.setValue(this.filtro().proveedorId, { emitEvent: false });
     });
+    // Cambiar de proveedor con el archivo ya elegido vuelve a revisar el archivo.
+    this.proveedorParaSubir.valueChanges
+      .pipe(takeUntilDestroyed())
+      .subscribe(() => void this.revisarEstructura());
+  }
+
+  /**
+   * Revisa el archivo elegido contra la estructura de dos chats, si el proveedor la usa. Con otro
+   * proveedor, o sin archivo, no hay nada que revisar.
+   */
+  private async revisarEstructura(): Promise<void> {
+    const numero = ++this.validacionEnCurso;
+    const archivo = this.archivo();
+    // El proveedor se busca aquí y no en `estructuraEsperada`: el valor del control ya cambió y la
+    // señal que lo sigue puede no haberse enterado todavía.
+    const proveedor = (this.proveedores.data() ?? []).find(
+      (p) => p.id === this.proveedorParaSubir.value,
+    );
+    if (!archivo || !proveedor?.dosChatsEnUnZip) {
+      this.estructuraNoAcordada.set(null);
+      this.validandoZip.set(false);
+      return;
+    }
+    this.validandoZip.set(true);
+    const validacion = await this.validarZip(archivo, proveedor.nombre);
+    if (numero !== this.validacionEnCurso) {
+      return;
+    }
+    this.validandoZip.set(false);
+    this.estructuraNoAcordada.set(validacion.valida ? null : validacion.estructura);
   }
 
   protected nombreDelProveedor(lote: LoteIngesta): string {
@@ -201,10 +256,14 @@ export class ListaIngestasAdminPage {
       return;
     }
     this.archivo.set(archivo);
+    void this.revisarEstructura();
   }
 
   protected subir(): void {
     if (this.subiendo()) {
+      return;
+    }
+    if (!this.puedeSubir()) {
       return;
     }
     const proveedorId = this.proveedorParaSubir.value;

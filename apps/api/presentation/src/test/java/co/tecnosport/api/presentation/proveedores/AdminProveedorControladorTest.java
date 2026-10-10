@@ -156,6 +156,53 @@ class AdminProveedorControladorTest {
         .andExpect(jsonPath("$[0].nombreEnExportacion").value("Bolsos Centro"));
   }
 
+  /**
+   * Meraki sube sus dos chats en un zip: se marca al crearlo, y editar sin el campo lo conserva.
+   */
+  @Test
+  void losDosChatsEnUnZipSeMarcanAlCrearYEditarSinElCampoLosConserva() throws Exception {
+    String creado =
+        mockMvc
+            .perform(
+                post("/api/v1/admin/proveedores")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(
+                        "{\"nombre\":\"Meraki\",\"linea\":\"ROPA\",\"telefonoWhatsApp\":\"+57 350\","
+                            + "\"nombreEnExportacion\":\"Meraki\",\"ordenDePublicacion\":\"FOTOS_PRIMERO\","
+                            + "\"dosChatsEnUnZip\":true}"))
+            .andExpect(status().isCreated())
+            .andExpect(jsonPath("$.dosChatsEnUnZip").value(true))
+            .andReturn()
+            .getResponse()
+            .getContentAsString();
+    UUID id = proveedores.porId.keySet().iterator().next();
+    assertTrue(creado.contains(id.toString()));
+
+    mockMvc
+        .perform(
+            put("/api/v1/admin/proveedores/{id}", id)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    "{\"nombre\":\"Meraki\",\"linea\":\"ROPA\",\"telefonoWhatsApp\":\"+57 350\","
+                        + "\"nombreEnExportacion\":\"Meraki\",\"ordenDePublicacion\":\"FOTOS_PRIMERO\"}"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.dosChatsEnUnZip").value(true));
+  }
+
+  /** La tecnología llega por listas: no tiene chats que subir, y la regla llega como 422. */
+  @Test
+  void unProveedorDeTecnologiaNoSubeChatsEs422() throws Exception {
+    mockMvc
+        .perform(
+            post("/api/v1/admin/proveedores")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    "{\"nombre\":\"Fénix\",\"linea\":\"TECNOLOGIA\",\"telefonoWhatsApp\":\"+57 323\","
+                        + "\"nombreEnExportacion\":\"Fénix\",\"ordenDePublicacion\":\"TEXTO_PRIMERO\","
+                        + "\"dosChatsEnUnZip\":true}"))
+        .andExpect(status().isUnprocessableContent());
+  }
+
   @Test
   void editarUnoQueNoExisteEs404() throws Exception {
     mockMvc

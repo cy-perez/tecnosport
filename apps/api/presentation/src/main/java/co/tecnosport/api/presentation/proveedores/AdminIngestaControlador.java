@@ -19,6 +19,7 @@ import co.tecnosport.api.presentation.proveedores.dto.LoteIngestaRespuesta;
 import co.tecnosport.api.presentation.proveedores.dto.LotesPaginadosRespuesta;
 import co.tecnosport.api.presentation.proveedores.dto.SolicitarSubidaDeExportacionPeticion;
 import co.tecnosport.api.presentation.proveedores.dto.SubidaDeExportacionRespuesta;
+import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 import org.slf4j.Logger;
@@ -93,14 +94,21 @@ public class AdminIngestaControlador {
   @ResponseStatus(HttpStatus.ACCEPTED)
   public LoteIngestaRespuesta iniciar(
       @PathVariable UUID id, @RequestBody IniciarIngestaPeticion cuerpo) {
-    LoteIngesta lote =
+    List<LoteIngesta> lotes =
         transaccion.execute(
-            estado -> iniciarIngesta.ejecutar(new IniciarIngestaComando(id, cuerpo.objectKey())));
+            estado ->
+                iniciarIngesta.ejecutarTodos(new IniciarIngestaComando(id, cuerpo.objectKey())));
+    // En el orden en que se tienen que procesar: con dos chats en un zip, el de caballero primero.
     // Si la cola está llena, EncolarIngesta cierra el lote con su motivo y relanza (409).
-    encolarIngesta.ejecutar(lote);
-    log.info(
-        "Lote de ingesta {} del proveedor {} encolado desde {}", lote.id(), id, cuerpo.objectKey());
-    return LoteIngestaRespuesta.de(lote);
+    for (LoteIngesta lote : lotes) {
+      encolarIngesta.ejecutar(lote);
+      log.info(
+          "Lote de ingesta {} del proveedor {} encolado desde {}",
+          lote.id(),
+          id,
+          cuerpo.objectKey());
+    }
+    return LoteIngestaRespuesta.de(lotes.getFirst());
   }
 
   @GetMapping("/ingestas/{id}")

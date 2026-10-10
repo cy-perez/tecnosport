@@ -4,6 +4,7 @@ import co.tecnosport.api.application.compartido.Reloj;
 import co.tecnosport.api.application.proveedores.RepositorioMensajesProveedor;
 import co.tecnosport.api.domain.proveedores.IdExternoDeMensaje;
 import co.tecnosport.api.domain.proveedores.MensajeProveedor;
+import co.tecnosport.api.domain.proveedores.PHash;
 import co.tecnosport.api.domain.proveedores.TipoMensaje;
 import co.tecnosport.api.infrastructure.proveedores.entidad.MensajeProveedorJpaEntity;
 import java.time.Instant;
@@ -77,7 +78,8 @@ public class RepositorioMensajesProveedorJpa implements RepositorioMensajesProve
         m.referenciaArchivo().orElse(null),
         m.medioOmitido(),
         creadoEn,
-        posicion);
+        posicion,
+        m.pHash().map(PHash::hex).orElse(null));
   }
 
   private static MensajeProveedor aDominio(MensajeProveedorJpaEntity fila) {
@@ -91,6 +93,7 @@ public class RepositorioMensajesProveedorJpa implements RepositorioMensajesProve
         fila.getTexto(),
         fila.getPieDeFoto(),
         fila.getReferenciaArchivo(),
-        fila.isMedioOmitido());
+        fila.isMedioOmitido(),
+        fila.getPhash() == null ? null : PHash.deHex(fila.getPhash()));
   }
 }

@@ -81,7 +81,8 @@ public class AdminProveedorControlador {
                         cuerpo.telefonoWhatsApp(),
                         cuerpo.nombreEnExportacion(),
                         cuerpo.factorDeMargen(),
-                        OrdenDePublicacion.valueOf(cuerpo.ordenDePublicacion()))));
+                        OrdenDePublicacion.valueOf(cuerpo.ordenDePublicacion()),
+                        Boolean.TRUE.equals(cuerpo.dosChatsEnUnZip()))));
     return ProveedorRespuesta.de(proveedor);
   }
 
@@ -107,7 +108,10 @@ public class AdminProveedorControlador {
                             ? cuerpo.publicacionAutomatica()
                             : actual.publicacionAutomatica(),
                         cuerpo.factorDeMargen(),
-                        OrdenDePublicacion.valueOf(cuerpo.ordenDePublicacion()))));
+                        OrdenDePublicacion.valueOf(cuerpo.ordenDePublicacion()),
+                        cuerpo.dosChatsEnUnZip() != null
+                            ? cuerpo.dosChatsEnUnZip()
+                            : actual.subeDosChatsEnUnZip())));
     return ProveedorRespuesta.de(proveedor);
   }
 

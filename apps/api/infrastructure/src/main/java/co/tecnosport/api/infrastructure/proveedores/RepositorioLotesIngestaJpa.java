@@ -3,6 +3,7 @@ package co.tecnosport.api.infrastructure.proveedores;
 import co.tecnosport.api.application.proveedores.DependenciasDeLote;
 import co.tecnosport.api.application.proveedores.LotesPaginados;
 import co.tecnosport.api.application.proveedores.RepositorioLotesIngesta;
+import co.tecnosport.api.domain.proveedores.ChatDelZip;
 import co.tecnosport.api.domain.proveedores.EstadoLote;
 import co.tecnosport.api.domain.proveedores.LoteIngesta;
 import co.tecnosport.api.domain.proveedores.OrigenIngesta;
@@ -165,7 +166,9 @@ public class RepositorioLotesIngestaJpa implements RepositorioLotesIngesta {
         lote.detalleError().orElse(null),
         lote.creadoEn(),
         lote.iniciadoEn().orElse(null),
-        lote.terminadoEn().orElse(null));
+        lote.terminadoEn().orElse(null),
+        lote.esChatDeCaballero(),
+        lote.chatDelZip().map(ChatDelZip::name).orElse(null));
   }
 
   private static LoteIngesta aDominio(LoteIngestaJpaEntity fila) {
@@ -182,16 +185,24 @@ public class RepositorioLotesIngestaJpa implements RepositorioLotesIngesta {
                 fila.getResumenAgotados(),
                 fila.getResumenDescartes(),
                 fila.getResumenAlertas());
-    return new LoteIngesta(
-        fila.getId(),
-        OrigenIngesta.valueOf(fila.getOrigen()),
-        fila.getProveedorId(),
-        fila.getReferenciaArchivo(),
-        EstadoLote.valueOf(fila.getEstado()),
-        resumen,
-        fila.getDetalleError(),
-        fila.getCreadoEn(),
-        fila.getIniciadoEn(),
-        fila.getTerminadoEn());
+    LoteIngesta lote =
+        new LoteIngesta(
+            fila.getId(),
+            OrigenIngesta.valueOf(fila.getOrigen()),
+            fila.getProveedorId(),
+            fila.getReferenciaArchivo(),
+            EstadoLote.valueOf(fila.getEstado()),
+            resumen,
+            fila.getDetalleError(),
+            fila.getCreadoEn(),
+            fila.getIniciadoEn(),
+            fila.getTerminadoEn());
+    if (fila.getChatDelZip() != null) {
+      lote.leerSoloElChat(ChatDelZip.valueOf(fila.getChatDelZip()));
+    }
+    if (fila.isChatDeCaballero()) {
+      lote.marcarChatDeCaballero();
+    }
+    return lote;
   }
 }

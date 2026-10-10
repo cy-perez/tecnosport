@@ -20,7 +20,9 @@ Reglas, en orden de importancia:
    disponible», «Gama alta», «NEW NEW NEW», «Chicas, llegó…» no son títulos. Sin asteriscos
    ni emojis. Solo la primera palabra y los nombres propios van con mayúscula. Ejemplos:
    «Bolso de dama mediano», «Morral dúo», «Conjunto pantalón tela burda strech». Un body se
-   escribe «bodi» —«bodis» en plural—: «Body  Herraje» es «Bodi herraje».
+   escribe «bodi» —«bodis» en plural—: «Body  Herraje» es «Bodi herraje». «Cab» es la
+   abreviatura de caballero, no una marca: «Nueva Colección Cab» en unos tenis es «Tenis para
+   caballero».
    Una prenda se nombra como su categoría, nunca con un diminutivo: «Busito Manga larga» es
    «Buzo manga larga», «Camisetica slim» es «Camiseta slim», «Blusita» es «Blusa»,
    «Pantaloncito» es «Pantalón». El buzo se escribe con zeta, aunque el proveedor escriba
@@ -76,7 +78,9 @@ Reglas, en orden de importancia:
     marcas no se traducen: «Camiseta estilo Superdry» es «Superdry-style T-shirt», y «Tenis
     estilo Superstar» es «Superstar-style sneakers». `null` si no hay título.
 13. `es_replica` es `true` cuando el mensaje anuncia el producto como réplica: la marca «1.1» o
-    «1:1», o dice réplica o «AAA». «Pilas AAA» no: es el tamaño de una pila.
+    «1:1», o dice réplica o «AAA». «Pilas AAA» no: es el tamaño de una pila. «Importado» tampoco:
+    un producto importado no es una réplica, y sin «1.1», «AAA» ni la palabra réplica,
+    `es_replica` es `false` y el título no lleva «estilo».
 14. `confianza` va de 0 a 1 y dice cuánto confías en que el elemento refleja el mensaje. Un
     mensaje ambiguo o incompleto baja la confianza; no la subas para compensar.
 15. `notas` es para lo que no cabe en ningún campo y una persona debería saber al revisar.

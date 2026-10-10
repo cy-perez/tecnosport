@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import co.tecnosport.api.application.proveedores.ApoyoDeCatalogoParaIngesta.CalculadorDePHashPorContenido;
 import co.tecnosport.api.application.proveedores.ApoyoDeIngesta.AlmacenEnMemoria;
 import co.tecnosport.api.application.proveedores.ApoyoDeIngesta.RepositorioLotesEnMemoria;
 import co.tecnosport.api.application.proveedores.ApoyoDeIngesta.RepositorioMensajesEnMemoria;
@@ -30,7 +31,8 @@ class RegistrarMensajesDeProveedorTest {
   private final RepositorioMensajesEnMemoria mensajes = new RepositorioMensajesEnMemoria();
   private final AlmacenEnMemoria almacen = new AlmacenEnMemoria();
   private final RegistrarMensajesDeProveedor caso =
-      new RegistrarMensajesDeProveedor(proveedores, lotes, mensajes, almacen);
+      new RegistrarMensajesDeProveedor(
+          proveedores, lotes, mensajes, almacen, new CalculadorDePHashPorContenido());
 
   private Proveedor proveedor;
   private LoteIngesta lote;
@@ -192,5 +194,16 @@ class RegistrarMensajesDeProveedorTest {
   void sinLoteNoSeRegistraNada() {
     assertThrows(
         LoteNoEncontradoException.class, () -> caso.ejecutar(UUID.randomUUID(), List.of()));
+  }
+
+  /** La foto guarda su pHash al registrarse; el texto no tiene foto que medir. */
+  @Test
+  void cadaFotoGuardaSuPHashAlRegistrarse() {
+    caso.ejecutar(lote.id(), unProductoConDosFotosYUnaRespuestaNuestra());
+
+    List<MensajeProveedor> registrados = mensajes.listarDeLote(lote.id());
+    assertTrue(registrados.get(0).pHash().isEmpty());
+    assertTrue(registrados.get(1).pHash().isPresent());
+    assertTrue(registrados.get(2).pHash().isPresent());
   }
 }

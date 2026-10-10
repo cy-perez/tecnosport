@@ -23,6 +23,12 @@ public interface RepositorioPublicacionesProveedor {
   void eliminar(UUID id);
 
   /**
+   * El texto de cada anuncio que llegó en el chat de caballero del proveedor —el del mensaje
+   * principal de cada publicación de esos lotes—, para descartar lo que el chat general repite.
+   */
+  List<String> textosDelChatDeCaballero(UUID proveedorId);
+
+  /**
    * De estos mensajes, los que alguna otra publicación usa, como principal o en su composición.
    * Rehacer la agrupación de un lote arma publicaciones nuevas sobre los mismos mensajes.
    */

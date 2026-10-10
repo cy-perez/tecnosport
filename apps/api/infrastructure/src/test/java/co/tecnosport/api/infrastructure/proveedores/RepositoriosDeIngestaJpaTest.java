@@ -5,11 +5,13 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import co.tecnosport.api.application.proveedores.LotesPaginados;
 import co.tecnosport.api.domain.catalogo.LineaCatalogo;
+import co.tecnosport.api.domain.proveedores.ChatDelZip;
 import co.tecnosport.api.domain.proveedores.EstadoLote;
 import co.tecnosport.api.domain.proveedores.IdExternoDeMensaje;
 import co.tecnosport.api.domain.proveedores.LoteIngesta;
 import co.tecnosport.api.domain.proveedores.MensajeProveedor;
 import co.tecnosport.api.domain.proveedores.OrdenDePublicacion;
+import co.tecnosport.api.domain.proveedores.PHash;
 import co.tecnosport.api.domain.proveedores.Proveedor;
 import co.tecnosport.api.domain.proveedores.ResumenIngesta;
 import co.tecnosport.api.domain.proveedores.TipoMensaje;
@@ -375,5 +377,77 @@ class RepositoriosDeIngestaJpaTest {
     assertThat(leido.estado()).isEqualTo(EstadoLote.DETENIDO);
     assertThat(leido.resumen()).contains(parcial);
     assertThat(lotes.buscarPorId(enCola.id()).orElseThrow().resumen()).isEmpty();
+  }
+
+  /** La marca del chat de caballero sobrevive a guardar y leer, también después de terminar. */
+  @Test
+  void elLoteDelChatDeCaballeroVaYVuelveConSuMarca() {
+    Proveedor proveedor = proveedorGuardado(null);
+    LoteIngesta lote = LoteIngesta.recibirExportacion(proveedor.id(), "p/exportaciones/m.zip", T);
+    lote.marcarChatDeCaballero();
+    lotes.guardar(lote);
+    LoteIngesta otro = LoteIngesta.recibirExportacion(proveedor.id(), "p/exportaciones/g.zip", T);
+    lotes.guardar(otro);
+
+    assertThat(lotes.buscarPorId(lote.id()).orElseThrow().esChatDeCaballero()).isTrue();
+    assertThat(lotes.buscarPorId(otro.id()).orElseThrow().esChatDeCaballero()).isFalse();
+  }
+
+  /** El pHash de una foto se guarda con el mensaje y vuelve igual. */
+  @Test
+  void elPHashDeLaFotoVaYVuelveConElMensaje() {
+    Proveedor proveedor = proveedorGuardado(null);
+    LoteIngesta lote = LoteIngesta.recibirExportacion(proveedor.id(), "p/exportaciones/a.zip", T);
+    lotes.guardar(lote);
+    PHash pHash = PHash.deHex("0123456789abcdef");
+    MensajeProveedor foto =
+        new MensajeProveedor(
+            UUID.randomUUID(),
+            proveedor.id(),
+            lote.id(),
+            new IdExternoDeMensaje("f"),
+            T,
+            TipoMensaje.IMAGEN,
+            null,
+            null,
+            "proveedores/x/f.jpg",
+            false,
+            pHash);
+    mensajes.guardarTodos(List.of(foto));
+
+    assertThat(mensajes.listarDeLote(lote.id()).getFirst().pHash()).contains(pHash);
+  }
+
+  @Test
+  void losDosChatsEnUnZipVanYVuelven() {
+    Proveedor proveedor = proveedorGuardado(null);
+    proveedor.definirDosChatsEnUnZip(true);
+    proveedores.actualizar(proveedor);
+
+    assertThat(proveedores.buscarPorId(proveedor.id()).orElseThrow().subeDosChatsEnUnZip())
+        .isTrue();
+  }
+
+  /** El chat del zip que lee cada lote va y vuelve, y el de caballero conserva su marca. */
+  @Test
+  void elChatDelZipDeCadaLoteVaYVuelve() {
+    Proveedor proveedor = proveedorGuardado(null);
+    LoteIngesta deCaballero =
+        LoteIngesta.recibirExportacion(proveedor.id(), "p/exportaciones/m.zip", T);
+    deCaballero.leerSoloElChat(ChatDelZip.CABALLERO);
+    LoteIngesta general =
+        LoteIngesta.recibirExportacion(proveedor.id(), "p/exportaciones/m.zip", T.plusMillis(1));
+    general.leerSoloElChat(ChatDelZip.GENERAL);
+    lotes.guardar(deCaballero);
+    lotes.guardar(general);
+
+    LoteIngesta leido = lotes.buscarPorId(deCaballero.id()).orElseThrow();
+    assertThat(leido.chatDelZip()).contains(ChatDelZip.CABALLERO);
+    assertThat(leido.esChatDeCaballero()).isTrue();
+    assertThat(lotes.buscarPorId(general.id()).orElseThrow().chatDelZip())
+        .contains(ChatDelZip.GENERAL);
+    assertThat(lotes.abiertos())
+        .extracting(LoteIngesta::id)
+        .containsExactly(deCaballero.id(), general.id());
   }
 }

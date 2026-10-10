@@ -17,4 +17,30 @@ public record EditarProveedorComando(
     boolean activo,
     boolean publicacionAutomatica,
     BigDecimal factorDeMargen,
-    OrdenDePublicacion ordenDePublicacion) {}
+    OrdenDePublicacion ordenDePublicacion,
+    boolean dosChatsEnUnZip) {
+
+  /** Con un solo chat, que es lo de casi todos. */
+  public EditarProveedorComando(
+      UUID id,
+      String nombre,
+      LineaCatalogo linea,
+      String telefonoWhatsApp,
+      String nombreEnExportacion,
+      boolean activo,
+      boolean publicacionAutomatica,
+      BigDecimal factorDeMargen,
+      OrdenDePublicacion ordenDePublicacion) {
+    this(
+        id,
+        nombre,
+        linea,
+        telefonoWhatsApp,
+        nombreEnExportacion,
+        activo,
+        publicacionAutomatica,
+        factorDeMargen,
+        ordenDePublicacion,
+        false);
+  }
+}

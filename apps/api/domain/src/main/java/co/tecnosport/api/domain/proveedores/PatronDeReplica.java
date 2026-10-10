@@ -55,10 +55,25 @@ public final class PatronDeReplica {
   private static final Pattern ESTILO =
       Pattern.compile("(?<!\\p{L})estilo(?!\\p{L})", Pattern.CASE_INSENSITIVE);
 
+  /** La palabra «réplica», con o sin tilde, en singular o plural. */
+  private static final Pattern PALABRA_REPLICA =
+      Pattern.compile(
+          "(?<!\\p{L})r[eé]plicas?(?!\\p{L})", Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE);
+
   private static final Pattern IMPORTADO =
       Pattern.compile("(?<!\\p{L})importad[oa]s?(?!\\p{L})", Pattern.CASE_INSENSITIVE);
 
   private PatronDeReplica() {}
+
+  /**
+   * Si el texto dice «réplica» con todas sus letras. Es lo único, además de «1.1» y «AAA», con que
+   * se le cree al extractor que un producto es réplica: Imperio Wicho escribe «Importado» en casi
+   * todo, y el 9 de octubre de 2026 el modelo empezó a marcar esos anuncios como réplica y a
+   * titularlos «Tenis estilo Cab importado». «Importado» no es una marca de réplica.
+   */
+  public static boolean diceReplica(String texto) {
+    return texto != null && PALABRA_REPLICA.matcher(texto).find();
+  }
 
   public static boolean esReplica(String texto) {
     return texto != null && (UNO_A_UNO.matcher(texto).find() || tieneTripleA(texto));

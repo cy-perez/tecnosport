@@ -235,6 +235,77 @@ El lote de La Riverah dejó tres borradores que había que corregir a mano:
   texto: cambia un «estilo» colgando por «importado», o lo agrega si el título no
   nombra marca. Un título con marca, o que ya dice «importado», no se toca.
 
+## «Importado» no es réplica (9 de octubre de 2026)
+
+Con la regla de «importado» en el prompt, el modelo empezó a marcar como réplica
+todo lo que Imperio Wicho anuncia como «IMPORTADO»: los once borradores de su
+lote salieron con la alerta y uno con el título «Tenis estilo **Cab** importado»
+—«Cab» es caballero—. Desde entonces **al extractor no se le cree la réplica**
+si el texto no la respalda: cuenta si el texto trae «1.1» o «AAA», o si el
+modelo la marcó y el texto escribe la palabra «réplica»
+(`PatronDeReplica.diceReplica`). El prompt aclara las dos cosas.
+
+## El repetido se reconoce por el texto del proveedor y por cualquier foto (9 de octubre de 2026)
+
+La regla del mismo texto y la misma foto falló dos veces en los lotes del mismo
+día, y por dos razones distintas:
+
+- **El texto era el título del extractor.** Los dos tenis de Imperio Wicho a
+  65.000 —mismo texto letra por letra, misma foto— salieron como «Tenis estilo
+  Cab importado» y «Tenis importado tipo media ultraliviano». El modelo no titula
+  igual dos veces. Ahora se compara **el texto que escribió el proveedor**,
+  normalizado (`TextoDeAnuncio`): sin mayúsculas, tildes, emojis, asteriscos ni
+  la cuenta de espacios, para que el mismo anuncio exportado desde iPhone y desde
+  Android sea el mismo.
+- **La foto era solo la principal.** La polo Prada de Meraki y la de MerakiMen
+  compartían una foto idéntica que no era la principal de ninguna. Ahora cada
+  foto guarda su pHash al registrarse (`mensaje_proveedor.phash`, `V93`) y se
+  comparan **todas contra todas**. Los mensajes de antes no lo tienen; por ellos
+  responde la principal que guardó su borrador.
+
+## El chat de caballero (9 de octubre de 2026)
+
+Meraki publica desde el mismo número en dos chats, el general y el de caballero
+(«• M͟E͟R͟A͟K͟I͟ ͟M͟E͟N͟ •»). Los dos se exportan con el mismo contacto, se suben al
+mismo proveedor, y el general repite anuncios del de caballero: la polo Prada
+salió dos veces. El negocio decidió que **lo que el general repite del de
+caballero se descarta, sin comparar fotos**.
+
+- **Cuál es cuál lo dice el nombre del chat**, porque el panel guarda el zip con
+  un nombre aleatorio. Android lo pone en el nombre del `.txt`; el iPhone lo
+  llama `_chat.txt`, y en un grupo el nombre es el remitente de la primera línea.
+  `NombreDeChat` quita los adornos —esas letras subrayadas son caracteres
+  combinados— y busca la palabra suelta «MEN», «CABALLERO» u «HOMBRE», para que
+  «WOMEN» no cuente. El lote queda marcado (`lote_ingesta.chat_de_caballero`,
+  `V94`).
+- **El mismo anuncio es el mismo texto del proveedor**, normalizado como en la
+  regla del repetido.
+- **No depende del orden de subida.** Se suben primero `MerakiMen.zip` y luego
+  `Meraki.zip`, y así el general descarta al llegar lo que el de caballero ya
+  trajo. Si llegan al revés, el borrador del general que siga en revisión se
+  **rechaza** cuando llega el de caballero, con el motivo escrito, y queda el del
+  chat de caballero.
+
+## Los dos chats de Meraki en un solo zip (9 de octubre de 2026)
+
+Subir dos zips y confiar en el orden dejaba el resultado en manos de quien sube.
+El negocio decidió que Meraki suba **un solo zip**, `Meraki.zip`, con dos `.txt`
+—`Meraki.txt` el general y `MerakiMen.txt` el de caballero— y las fotos de los
+dos al lado. El proveedor lleva el ajuste `dos_chats_en_un_zip` (`V95`).
+
+- **Una subida, dos lotes en la cola**, sobre el mismo archivo: el de caballero
+  primero y el general después (`lote_ingesta.chat_del_zip`, `V96`). La cola
+  procesa uno a la vez y en orden, así que cuando el general corre, lo del chat
+  de caballero ya está registrado y la regla del chat de caballero lo descarta.
+  El general nace un milisegundo después: al reiniciar, los lotes abiertos
+  vuelven a la cola por fecha de creación, y el orden tiene que sobrevivir a eso.
+- **La estructura se valida dos veces.** El panel no deja subir un archivo que no
+  sea exactamente esa, y el servidor la vuelve a validar al leerlo
+  (`ChatDelZip.elegir`): un zip de dos chats sin los dos `.txt` acordados termina
+  en `ERROR` con el motivo, en vez de leerse a medias.
+- Borrar uno de los dos lotes no borra el zip mientras el otro lo nombre: eso ya
+  lo cuidaba el cálculo de dependencias del lote.
+
 ## Pendientes que este ADR deja escritos
 
 - **La confirmación con el proveedor en los pedidos.** Aprobar un borrador

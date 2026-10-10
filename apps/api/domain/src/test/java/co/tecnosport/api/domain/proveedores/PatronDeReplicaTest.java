@@ -92,4 +92,13 @@ class PatronDeReplicaTest {
     assertEquals("Blusa importada", PatronDeReplica.tituloDeReplica("Blusa importada"));
     assertNull(PatronDeReplica.tituloDeReplica(null));
   }
+
+  @Test
+  void diceReplicaSoloConLaPalabra() {
+    assertTrue(PatronDeReplica.diceReplica("Réplica exacta"));
+    assertTrue(PatronDeReplica.diceReplica("REPLICAS AAA"));
+    assertFalse(PatronDeReplica.diceReplica("IMPORTADO CABALLERO"));
+    assertFalse(PatronDeReplica.diceReplica("Replicador de señal"));
+    assertFalse(PatronDeReplica.diceReplica(null));
+  }
 }

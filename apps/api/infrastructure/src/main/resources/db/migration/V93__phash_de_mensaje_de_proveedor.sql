@@ -1,0 +1,12 @@
+-- El pHash de cada foto del proveedor, calculado al registrar el mensaje (9 de octubre de 2026).
+--
+-- Hasta ahora solo se guardaba el de la foto principal, en el borrador, y un anuncio repetido se
+-- reconocia comparando contra esa sola foto: la polo Prada de Meraki y la de MerakiMen compartian
+-- una foto identica que no era la principal, y quedaron dos borradores. Con el pHash de cada
+-- mensaje se comparan todas las fotos de un anuncio con todas las del otro sin volver a leer el
+-- bucket.
+--
+-- Nula en un texto, en una imagen omitida, en una foto que no se pudo decodificar y en los mensajes
+-- de antes: esos se comparan por el pHash de la principal que guardo su borrador. Mismo tipo que
+-- `borrador_producto.phash`: `char(16)` no pasa la validacion de Hibernate.
+alter table mensaje_proveedor add column phash varchar(16);
