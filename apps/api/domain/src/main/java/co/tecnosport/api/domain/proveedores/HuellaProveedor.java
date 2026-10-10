@@ -83,6 +83,17 @@ public record HuellaProveedor(String valor) {
     return new HuellaProveedor(sha256(delAnuncio.valor() + "|diseno|" + deLaFoto.strip()));
   }
 
+  /**
+   * La de un borrador que se partió de otro desde el panel: la de aquel y la primera foto que se
+   * llevó. Sin ella, aprobar los dos chocaría en la misma huella.
+   */
+  public static HuellaProveedor deParte(HuellaProveedor deOrigen, String primeraFoto) {
+    if (deOrigen == null || primeraFoto == null || primeraFoto.isBlank()) {
+      throw new ExcepcionDeDominio("La huella de una parte necesita la de origen y su foto.");
+    }
+    return new HuellaProveedor(sha256(deOrigen.valor() + "|parte|" + primeraFoto.strip()));
+  }
+
   /** La prenda que el proveedor marca con un código: el código manda, sin título ni precio. */
   public static HuellaProveedor deReferencia(UUID proveedorId, String codigo) {
     if (proveedorId == null || codigo == null || codigo.isBlank()) {

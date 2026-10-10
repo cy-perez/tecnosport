@@ -24,6 +24,8 @@ public record BorradorDetalleRespuesta(
    *     aprobar y al quitarla
    * @param url nula cuando la exportación omitió el archivo: la foto existió y no está
    * @param origen {@code PROVEEDOR} o {@code PANEL}
+   * @param tonoSugerido el color que la lectura de fotos vio en ella, si mostraba uno solo: lo que
+   *     el panel propone al aprobar; nulo si no hay sugerencia
    */
   public record FotoRespuesta(
       UUID mensajeId,
@@ -32,11 +34,16 @@ public record BorradorDetalleRespuesta(
       @Schema(
               requiredMode = Schema.RequiredMode.REQUIRED,
               allowableValues = {"PROVEEDOR", "PANEL"})
-          String origen) {
+          String origen,
+      String tonoSugerido) {
 
     public static FotoRespuesta de(VerBorrador.FotoDeBorrador foto) {
       return new FotoRespuesta(
-          foto.mensajeId(), foto.url(), foto.pieDeFoto(), foto.origen().name());
+          foto.mensajeId(),
+          foto.url(),
+          foto.pieDeFoto(),
+          foto.origen().name(),
+          foto.tonoSugerido());
     }
   }
 }

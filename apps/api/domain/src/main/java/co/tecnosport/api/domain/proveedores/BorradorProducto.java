@@ -382,6 +382,86 @@ public final class BorradorProducto {
   }
 
   /**
+   * Parte el borrador en dos: las fotos que se nombran se van a un borrador nuevo, con los mismos
+   * datos, y en este quedan descartadas. Es la salida cuando la lectura de fotos juntó dos
+   * productos en uno —dos diseños del álbum que vio iguales— o no repartió el conjunto (10 de
+   * octubre de 2026).
+   *
+   * <p>El nuevo nace sin huella visual —la toma de su principal al aprobarse— y con una huella
+   * derivada de la de este y de su primera foto ({@link HuellaProveedor#deParte}): con la misma,
+   * aprobar los dos chocaría. Las fotos subidas desde el panel se quedan aquí. Este olvida su
+   * huella visual, porque podía ser de una de las fotos que se van.
+   *
+   * @param fotos las que se lleva el nuevo, de las de la publicación que este borrador conserva
+   * @param fotosDeLaPublicacion las de la publicación, en orden
+   * @return el borrador nuevo, en revisión
+   */
+  public BorradorProducto partir(List<UUID> fotos, List<UUID> fotosDeLaPublicacion, Instant ahora) {
+    exigirEnRevision("partir");
+    Objects.requireNonNull(fotos, "Partir dice qué fotos se van.");
+    List<UUID> propias =
+        fotosDeLaPublicacion.stream().filter(id -> !fotosDescartadas.contains(id)).toList();
+    Set<UUID> queSeVan = new LinkedHashSet<>(fotos);
+    if (queSeVan.isEmpty()) {
+      throw new ExcepcionDeDominio("Partir un borrador se lleva al menos una foto.");
+    }
+    if (!propias.containsAll(queSeVan)) {
+      throw new ExcepcionDeDominio("Solo se pueden llevar fotos que este borrador conserva.");
+    }
+    if (queSeVan.size() == propias.size() && fotosSubidas.isEmpty()) {
+      throw new ExcepcionDeDominio("Partir deja al menos una foto en el borrador de origen.");
+    }
+    UUID primera = propias.stream().filter(queSeVan::contains).findFirst().orElseThrow();
+    Set<UUID> ajenasDelNuevo = new LinkedHashSet<>(fotosDeLaPublicacion);
+    ajenasDelNuevo.removeAll(queSeVan);
+    Map<UUID, String> tonosDelNuevo = new LinkedHashMap<>();
+    tonosSugeridos.forEach(
+        (foto, tono) -> {
+          if (queSeVan.contains(foto)) {
+            tonosDelNuevo.put(foto, tono);
+          }
+        });
+    // Las mismas alertas, `SIN_FOTOS` incluida: si el origen la llevaba, ninguna de las fotos que
+    // se van tiene archivo, y las subidas desde el panel se quedan en el origen.
+    Set<AlertaBorrador> alertasDelNuevo = EnumSet.noneOf(AlertaBorrador.class);
+    alertasDelNuevo.addAll(alertas);
+    BorradorProducto nuevo =
+        new BorradorProducto(
+            GeneradorIdentificador.nuevo(),
+            publicacionId,
+            proveedorId,
+            extraccionCruda,
+            titulo,
+            linea,
+            tipo,
+            precioProveedor,
+            precioVentaSugerido,
+            tallas,
+            cantidadTonos,
+            tonosNombrados,
+            material,
+            descripcion,
+            altEn,
+            huella == null ? null : HuellaProveedor.deParte(huella, primera.toString()),
+            null,
+            alertasDelNuevo,
+            ajenasDelNuevo,
+            List.of(),
+            tallasPorTono,
+            preciosAdicionales,
+            tonosDelNuevo,
+            lecturaDeFotos,
+            EstadoBorrador.EN_REVISION,
+            null,
+            null,
+            ahora);
+    fotosDescartadas.addAll(queSeVan);
+    queSeVan.forEach(tonosSugeridos::remove);
+    this.pHash = null;
+    return nuevo;
+  }
+
+  /**
    * Quien revisa sube una foto porque la ingesta no trajo ninguna, o no las que sirven. Con ella el
    * borrador deja de estar {@link AlertaBorrador#SIN_FOTOS}: la alerta decía que no había con qué
    * publicarlo, y eso ya no es cierto.

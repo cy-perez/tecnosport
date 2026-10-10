@@ -9,6 +9,7 @@ import co.tecnosport.api.application.proveedores.EditarBorrador;
 import co.tecnosport.api.application.proveedores.EditarBorradorComando;
 import co.tecnosport.api.application.proveedores.EliminarBorrador;
 import co.tecnosport.api.application.proveedores.EliminarBorradoresSinAprobar;
+import co.tecnosport.api.application.proveedores.PartirBorrador;
 import co.tecnosport.api.application.proveedores.RechazarBorrador;
 import co.tecnosport.api.application.proveedores.RepositorioBorradores;
 import co.tecnosport.api.application.proveedores.SolicitarSubidaDeFotoDeBorrador;
@@ -27,6 +28,7 @@ import co.tecnosport.api.presentation.proveedores.dto.BorradoresPaginadosRespues
 import co.tecnosport.api.presentation.proveedores.dto.BorradoresSinAprobarRespuesta;
 import co.tecnosport.api.presentation.proveedores.dto.ConfirmarFotoPeticion;
 import co.tecnosport.api.presentation.proveedores.dto.EditarBorradorPeticion;
+import co.tecnosport.api.presentation.proveedores.dto.PartirBorradorPeticion;
 import co.tecnosport.api.presentation.proveedores.dto.RechazarBorradorPeticion;
 import co.tecnosport.api.presentation.proveedores.dto.SolicitarSubidaDeFotoPeticion;
 import co.tecnosport.api.presentation.proveedores.dto.SubidaDeFotoRespuesta;
@@ -80,6 +82,7 @@ public class AdminBorradorControlador {
   private final DescartarFotoDeBorrador descartarFotoDeBorrador;
   private final SolicitarSubidaDeFotoDeBorrador solicitarSubidaDeFoto;
   private final ConfirmarFotoDeBorrador confirmarFoto;
+  private final PartirBorrador partirBorrador;
   private final MapeadorRespuestasProductoAdmin mapeadorProducto;
   private final TransactionTemplate transaccion;
 
@@ -94,6 +97,7 @@ public class AdminBorradorControlador {
       DescartarFotoDeBorrador descartarFotoDeBorrador,
       SolicitarSubidaDeFotoDeBorrador solicitarSubidaDeFoto,
       ConfirmarFotoDeBorrador confirmarFoto,
+      PartirBorrador partirBorrador,
       MapeadorRespuestasProductoAdmin mapeadorProducto,
       PlatformTransactionManager transactionManager) {
     this.repositorioBorradores = Objects.requireNonNull(repositorioBorradores);
@@ -106,6 +110,7 @@ public class AdminBorradorControlador {
     this.descartarFotoDeBorrador = Objects.requireNonNull(descartarFotoDeBorrador);
     this.solicitarSubidaDeFoto = Objects.requireNonNull(solicitarSubidaDeFoto);
     this.confirmarFoto = Objects.requireNonNull(confirmarFoto);
+    this.partirBorrador = Objects.requireNonNull(partirBorrador);
     this.mapeadorProducto = Objects.requireNonNull(mapeadorProducto);
     this.transaccion = new TransactionTemplate(Objects.requireNonNull(transactionManager));
   }
@@ -237,6 +242,18 @@ public class AdminBorradorControlador {
   @ResponseStatus(HttpStatus.NO_CONTENT)
   public void descartarFoto(@PathVariable UUID id, @PathVariable UUID mensajeId) {
     transaccion.executeWithoutResult(estado -> descartarFotoDeBorrador.ejecutar(id, mensajeId));
+  }
+
+  /**
+   * Parte el borrador: las fotos nombradas se van a uno nuevo de la misma publicación, que es lo
+   * que devuelve. Para cuando la lectura de fotos juntó dos productos en uno.
+   */
+  @PostMapping("/{id}/partir")
+  @ResponseStatus(HttpStatus.CREATED)
+  public BorradorRespuesta partir(
+      @PathVariable UUID id, @RequestBody PartirBorradorPeticion cuerpo) {
+    return BorradorRespuesta.de(
+        transaccion.execute(estado -> partirBorrador.ejecutar(id, cuerpo.fotos())));
   }
 
   /**

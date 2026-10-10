@@ -29,6 +29,7 @@ import co.tecnosport.api.application.proveedores.EliminarBorrador;
 import co.tecnosport.api.application.proveedores.EliminarBorradoresSinAprobar;
 import co.tecnosport.api.application.proveedores.HuellaVisual;
 import co.tecnosport.api.application.proveedores.ImagenProcesada;
+import co.tecnosport.api.application.proveedores.PartirBorrador;
 import co.tecnosport.api.application.proveedores.ProcesadorDeImagenes;
 import co.tecnosport.api.application.proveedores.RechazarBorrador;
 import co.tecnosport.api.application.proveedores.RepositorioBorradores;
@@ -459,8 +460,69 @@ class AdminBorradorControladorTest {
         .andExpect(jsonPath("$.detail").value("Las prendas se numeran desde 1."));
   }
 
+  /** El álbum que la lectura de fotos juntó en uno: la segunda foto se va a un borrador nuevo. */
+  @Test
+  void partirSeLlevaLasFotosNombradasAUnBorradorNuevo() throws Exception {
+    PublicacionProveedor publicacion = publicaciones.porId.get(borrador.publicacionId());
+    MensajeProveedor otra =
+        MensajeProveedor.imagen(
+            borrador.proveedorId(),
+            publicacion.loteId(),
+            new IdExternoDeMensaje("g"),
+            T.plusSeconds(20),
+            null,
+            "p/g.jpg");
+    publicacion.anexar(otra);
+    List<MensajeProveedor> delLote =
+        new java.util.ArrayList<>(mensajes.porLote.get(publicacion.loteId()));
+    delLote.add(otra);
+    mensajes.porLote.put(publicacion.loteId(), delLote);
+
+    mockMvc
+        .perform(
+            post("/api/v1/admin/borradores/{id}/partir", borrador.id())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"fotos\":[\"" + otra.id() + "\"]}"))
+        .andExpect(status().isCreated())
+        .andExpect(jsonPath("$.titulo").value("Bolso de dama mediano"))
+        .andExpect(jsonPath("$.estado").value("EN_REVISION"))
+        .andExpect(jsonPath("$.tallasPorTono").isArray())
+        .andExpect(jsonPath("$.preciosAdicionales").isArray());
+
+    assertThat(borradores.porId).hasSize(2);
+    assertThat(borradores.porId.get(borrador.id()).fotosDescartadas()).contains(otra.id());
+  }
+
+  @Test
+  void partirConUnaFotoAjenaEsUn422() throws Exception {
+    mockMvc
+        .perform(
+            post("/api/v1/admin/borradores/{id}/partir", borrador.id())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"fotos\":[\"" + UUID.randomUUID() + "\"]}"))
+        .andExpect(status().isUnprocessableContent());
+  }
+
+  @Test
+  void partirNoDejaAlBorradorDeOrigenSinFotos() throws Exception {
+    mockMvc
+        .perform(
+            post("/api/v1/admin/borradores/{id}/partir", borrador.id())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"fotos\":[\"" + foto.id() + "\"]}"))
+        .andExpect(status().isUnprocessableContent())
+        .andExpect(
+            jsonPath("$.detail").value("Partir deja al menos una foto en el borrador de origen."));
+  }
+
   @TestConfiguration
   static class Configuracion {
+
+    @Bean
+    PartirBorrador partirBorrador(
+        RepositorioBorradoresDoble borradores, RepositorioPublicacionesDoble publicaciones) {
+      return new PartirBorrador(borradores, publicaciones, () -> T);
+    }
 
     @Bean
     RepositorioBorradoresDoble repositorioBorradores() {

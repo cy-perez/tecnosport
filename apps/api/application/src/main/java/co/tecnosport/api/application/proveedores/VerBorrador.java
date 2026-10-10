@@ -73,7 +73,8 @@ public final class VerBorrador {
               mensaje.id(),
               mensaje.referenciaArchivo().map(r -> almacen.urlDeLectura(r).url()).orElse(null),
               mensaje.pieDeFoto().orElse(null),
-              OrigenDeFoto.PROVEEDOR));
+              OrigenDeFoto.PROVEEDOR,
+              borrador.tonosSugeridos().get(id)));
     }
     for (FotoSubida subida : borrador.fotosSubidas()) {
       fotos.add(
@@ -103,6 +104,13 @@ public final class VerBorrador {
    *     FotoSubida} si se subió desde el panel. Se llama así por el contrato que ya usaba la
    *     aprobación; los dos son UUID generados aquí y no chocan.
    * @param url firmada y de vida corta; nula cuando la exportación omitió el archivo
+   * @param tonoSugerido el color que la lectura de fotos vio en ella; nulo si no hay sugerencia
    */
-  public record FotoDeBorrador(UUID mensajeId, String url, String pieDeFoto, OrigenDeFoto origen) {}
+  public record FotoDeBorrador(
+      UUID mensajeId, String url, String pieDeFoto, OrigenDeFoto origen, String tonoSugerido) {
+
+    public FotoDeBorrador(UUID mensajeId, String url, String pieDeFoto, OrigenDeFoto origen) {
+      this(mensajeId, url, pieDeFoto, origen, null);
+    }
+  }
 }

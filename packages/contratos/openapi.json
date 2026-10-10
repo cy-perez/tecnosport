@@ -443,6 +443,12 @@
             "format" : "int64",
             "type" : "integer"
           },
+          "preciosAdicionales" : {
+            "items" : {
+              "$ref" : "#/components/schemas/PrecioAdicionalRespuesta"
+            },
+            "type" : "array"
+          },
           "productoId" : {
             "format" : "uuid",
             "type" : "string"
@@ -457,6 +463,12 @@
           },
           "tallas" : {
             "$ref" : "#/components/schemas/TallasRespuesta"
+          },
+          "tallasPorTono" : {
+            "items" : {
+              "$ref" : "#/components/schemas/TallasDeTonoRespuesta"
+            },
+            "type" : "array"
           },
           "tipo" : {
             "type" : "string"
@@ -1711,6 +1723,9 @@
           "pieDeFoto" : {
             "type" : "string"
           },
+          "tonoSugerido" : {
+            "type" : "string"
+          },
           "url" : {
             "type" : "string"
           }
@@ -2633,6 +2648,21 @@
         },
         "type" : "object"
       },
+      "PartirBorradorPeticion" : {
+        "properties" : {
+          "fotos" : {
+            "items" : {
+              "format" : "uuid",
+              "type" : "string"
+            },
+            "type" : "array"
+          }
+        },
+        "required" : [
+          "fotos"
+        ],
+        "type" : "object"
+      },
       "PedidoRespuesta" : {
         "properties" : {
           "contacto" : {
@@ -2845,6 +2875,22 @@
             "type" : "string"
           }
         },
+        "type" : "object"
+      },
+      "PrecioAdicionalRespuesta" : {
+        "properties" : {
+          "concepto" : {
+            "type" : "string"
+          },
+          "precio" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        },
+        "required" : [
+          "concepto",
+          "precio"
+        ],
         "type" : "object"
       },
       "Producto" : {
@@ -4048,6 +4094,24 @@
         },
         "type" : "object"
       },
+      "TallasDeTonoRespuesta" : {
+        "properties" : {
+          "tallas" : {
+            "items" : {
+              "type" : "string"
+            },
+            "type" : "array"
+          },
+          "tono" : {
+            "type" : "string"
+          }
+        },
+        "required" : [
+          "tallas",
+          "tono"
+        ],
+        "type" : "object"
+      },
       "TallasPeticion" : {
         "properties" : {
           "sirveHasta" : {
@@ -4945,6 +5009,47 @@
         "responses" : {
           "204" : {
             "description" : "No Content"
+          }
+        },
+        "tags" : [
+          "admin-borrador-controlador"
+        ]
+      }
+    },
+    "/api/v1/admin/borradores/{id}/partir" : {
+      "post" : {
+        "operationId" : "partir",
+        "parameters" : [
+          {
+            "in" : "path",
+            "name" : "id",
+            "required" : true,
+            "schema" : {
+              "format" : "uuid",
+              "type" : "string"
+            }
+          }
+        ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/PartirBorradorPeticion"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/BorradorRespuesta"
+                }
+              }
+            },
+            "description" : "Created"
           }
         },
         "tags" : [
