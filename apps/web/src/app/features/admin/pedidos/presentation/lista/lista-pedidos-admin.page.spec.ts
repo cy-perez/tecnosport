@@ -349,6 +349,15 @@ describe('ListaPedidosAdminPage', () => {
     ).toBeTruthy();
   });
 
+  /** Lo que se vio en dev: `?estado=CANCELADO` se ignoraba y la lista decía que no había pedidos. */
+  it('el filtro de cancelados se lee de la URL', async () => {
+    await renderLista([], { estado: 'CANCELADO' }, 0);
+
+    expect(
+      await screen.findByText('No hay pedidos en ese estado. Prueba con «Todos».'),
+    ).toBeTruthy();
+  });
+
   it('cambiar el filtro de estado navega con ese query param', async () => {
     const { fixture } = await renderLista([pedidoDePrueba()]);
     await screen.findByText('TS-2026-000123');

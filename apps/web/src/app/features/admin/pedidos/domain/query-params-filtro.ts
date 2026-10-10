@@ -1,24 +1,10 @@
 import { Params } from '@angular/router';
-import { EstadoPedido, FiltroPedidosAdmin } from './pedido-admin.model';
+import { ESTADOS_PEDIDO, EstadoPedido, FiltroPedidosAdmin } from './pedido-admin.model';
 
 const TAMANO_PAGINA = 20;
 
-const ESTADOS_VALIDOS: readonly EstadoPedido[] = [
-  'PAGO_PENDIENTE',
-  'PAGADO',
-  'PAGO_FALLIDO',
-  'CONFIRMADO_CONTRAENTREGA',
-  'EN_PREPARACION',
-  'DESPACHADO',
-  'ENTREGADO',
-  'RECHAZADO_EN_ENTREGA',
-  'DEVUELTO',
-  'RECAUDO_PENDIENTE',
-  'RECAUDO_CONCILIADO',
-];
-
 function esEstadoValido(valor: unknown): valor is EstadoPedido {
-  return typeof valor === 'string' && (ESTADOS_VALIDOS as readonly string[]).includes(valor);
+  return typeof valor === 'string' && (ESTADOS_PEDIDO as readonly string[]).includes(valor);
 }
 
 /** Params del router -> FiltroPedidosAdmin. `pagina` en la URL es 1-based (más legible para un

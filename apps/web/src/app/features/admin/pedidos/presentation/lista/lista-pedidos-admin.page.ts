@@ -43,6 +43,7 @@ import { BandejaPagosSinPedido } from '../pagos-sin-pedido/bandeja-pagos-sin-ped
 import { MedioReintegro } from '../../../retractos/domain/retracto.model';
 import {
   EmisionDeGuiaAdmin,
+  ESTADOS_PEDIDO,
   ESTADOS_QUE_ADMITEN_CANCELACION,
   ESTADOS_QUE_ADMITEN_ELIMINACION,
   EstadoPedido,
@@ -68,21 +69,6 @@ import { fechaConHora, ultimoDia } from '../../../../../core/i18n/fecha-colombia
  * están escritos y probados del lado del servidor.
  */
 const EMISION_AUTOMATICA = false;
-
-const ESTADOS: readonly EstadoPedido[] = [
-  'PAGO_PENDIENTE',
-  'PAGADO',
-  'PAGO_FALLIDO',
-  'CONFIRMADO_CONTRAENTREGA',
-  'EN_PREPARACION',
-  'DESPACHADO',
-  'ENTREGADO',
-  'RECHAZADO_EN_ENTREGA',
-  'DEVUELTO',
-  'RECAUDO_PENDIENTE',
-  'RECAUDO_CONCILIADO',
-  'CANCELADO',
-];
 
 const CLAVE_ETIQUETA_ESTADO: Record<EstadoPedido, string> = {
   PAGO_PENDIENTE: 'admin.pedidos.estados.pago_pendiente',
@@ -215,7 +201,7 @@ export class ListaPedidosAdminPage {
   protected readonly formularioEstado = new FormControl('', { nonNullable: true });
 
   protected readonly opcionesEstado = computed<OpcionSelect[]>(() =>
-    ESTADOS.map((estado) => ({
+    ESTADOS_PEDIDO.map((estado) => ({
       valor: estado,
       etiqueta: this.traducir()(CLAVE_ETIQUETA_ESTADO[estado]),
     })),
