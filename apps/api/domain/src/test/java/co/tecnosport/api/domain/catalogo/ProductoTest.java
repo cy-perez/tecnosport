@@ -49,7 +49,8 @@ class ProductoTest {
     Producto producto = productoDePrueba();
     Slug slugOriginal = producto.slug();
     Marca nuevaMarca = Marca.crear("Under Trail");
-    Categoria nuevaCategoria = Categoria.crear("Bolsos", new Slug("bolsos"), LineaCatalogo.BOLSOS);
+    Categoria nuevaCategoria =
+        Categoria.crear("Morrales", new Slug("bolsos-dama-morrales"), LineaCatalogo.BOLSOS);
 
     producto.actualizarDatosBasicos(
         "Camiseta renombrada", "Nueva descripción", nuevaMarca, nuevaCategoria);
@@ -93,7 +94,7 @@ class ProductoTest {
   private static Producto productoDePrueba() {
     Marca marca = Marca.crear("TecnoSport");
     Categoria categoria =
-        Categoria.crear("Ropa deportiva", new Slug("ropa-deportiva"), LineaCatalogo.ROPA);
+        Categoria.crear("Camisetas", new Slug("ropa-caballero-camisetas"), LineaCatalogo.ROPA);
     return Producto.crear(
         "Camiseta running Dry-Fit",
         new Slug("camiseta-running-dry-fit"),
@@ -575,7 +576,7 @@ class ProductoTest {
   void reconstruirConUnaImagenQueNoEsDeGaleriaEnLaGaleriaFalla() {
     Marca marca = Marca.crear("TecnoSport");
     Categoria categoria =
-        Categoria.crear("Ropa deportiva", new Slug("ropa-deportiva"), LineaCatalogo.ROPA);
+        Categoria.crear("Camisetas", new Slug("ropa-caballero-camisetas"), LineaCatalogo.ROPA);
 
     assertThrows(
         ImagenProductoInvalidaException.class,

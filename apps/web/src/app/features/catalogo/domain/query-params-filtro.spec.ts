@@ -3,7 +3,7 @@ import { filtroDesdeQueryParams, queryParamsDesdeFiltro } from './query-params-f
 describe('filtroDesdeQueryParams', () => {
   it('convierte params de texto a un FiltroProductos tipado', () => {
     const filtro = filtroDesdeQueryParams({
-      categoria: 'bolsos',
+      categoria: 'bolsos-dama-morrales',
       marca: '01a0-abc',
       linea: 'BOLSOS',
       texto: 'morral',
@@ -11,7 +11,7 @@ describe('filtroDesdeQueryParams', () => {
     });
 
     expect(filtro).toEqual({
-      categoria: 'bolsos',
+      categoria: 'bolsos-dama-morrales',
       marca: '01a0-abc',
       linea: 'BOLSOS',
       texto: 'morral',
@@ -60,7 +60,7 @@ describe('queryParamsDesdeFiltro', () => {
 
   it('es el inverso de filtroDesdeQueryParams para un filtro completo', () => {
     const original = {
-      categoria: 'bolsos',
+      categoria: 'bolsos-dama-morrales',
       marca: '01a0-abc',
       linea: 'BOLSOS',
       texto: 'morral',

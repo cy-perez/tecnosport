@@ -408,7 +408,7 @@ class AdminPedidosControladorTest {
             new Slug("camiseta-running-dry-fit"),
             "Descripción",
             Marca.crear("TecnoSport"),
-            Categoria.crear("Ropa deportiva", new Slug("ropa-deportiva"), LineaCatalogo.ROPA));
+            Categoria.crear("Camisetas", new Slug("ropa-caballero-camisetas"), LineaCatalogo.ROPA));
     producto.agregarVariante(
         new Variante(
             pedido.lineas().getFirst().varianteId(),

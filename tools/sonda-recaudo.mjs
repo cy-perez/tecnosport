@@ -27,33 +27,33 @@
 //       VER_ENVIO=<id> node tools/sonda-recaudo.mjs   busca los campos de contraentrega en un
 //                                                     envío ya emitido, sin gastar nada
 
-import { readFileSync, existsSync } from 'node:fs';
+import { readFileSync, existsSync } from "node:fs";
 
-const RAIZ = new URL('..', import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1');
+const RAIZ = new URL("..", import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, "$1");
 const PAUSA_MS = 600;
 const INTENTOS_SONDEO = 10;
 
 function cargarEntorno() {
   const valores = {};
-  for (const archivo of ['.env', '.env.local']) {
+  for (const archivo of [".env", ".env.local"]) {
     const ruta = `${RAIZ}/${archivo}`;
     if (!existsSync(ruta)) continue;
-    for (const linea of readFileSync(ruta, 'utf8').split(/\r?\n/)) {
+    for (const linea of readFileSync(ruta, "utf8").split(/\r?\n/)) {
       const m = linea.match(/^\s*([A-Z0-9_]+)\s*=\s*(.*)$/);
       if (!m) continue;
-      valores[m[1]] = m[2].trim().replace(/^["']|["']$/g, '');
+      valores[m[1]] = m[2].trim().replace(/^["']|["']$/g, "");
     }
   }
   return { ...valores, ...process.env };
 }
 
 const env = cargarEntorno();
-const URL_BASE = env.SKYDROPX_URL_BASE || 'https://sb-pro.skydropx.com';
+const URL_BASE = env.SKYDROPX_URL_BASE || "https://sb-pro.skydropx.com";
 const CLIENT_ID = env.SKYDROPX_CLIENT_ID;
 const CLIENT_SECRET = env.SKYDROPX_CLIENT_SECRET;
 
 if (!CLIENT_ID || !CLIENT_SECRET || /pendiente_de_configurar/.test(CLIENT_ID)) {
-  console.error('Faltan SKYDROPX_CLIENT_ID / SKYDROPX_CLIENT_SECRET en .env.local.');
+  console.error("Faltan SKYDROPX_CLIENT_ID / SKYDROPX_CLIENT_SECRET en .env.local.");
   process.exit(1);
 }
 
@@ -73,18 +73,18 @@ async function llamar(ruta, opciones = {}) {
 }
 
 const ORIGEN = {
-  country_code: 'CO',
-  postal_code: '05001',
-  area_level1: 'Antioquia',
-  area_level2: 'Medellín',
-  street1: 'Cra. 26C # 38B-31, apto. 401, La Milagrosa',
-  name: 'TecnoSport',
-  phone: '3138816711',
+  country_code: "CO",
+  postal_code: "05001",
+  area_level1: "Antioquia",
+  area_level2: "Medellín",
+  street1: "Cra. 26C # 38B-31, apto. 401, La Milagrosa",
+  name: "TecnoSport",
+  phone: "3138816711",
 };
 
 const DESTINOS = [
-  { etiqueta: 'Medellín', postal_code: '05001', area_level1: 'Antioquia', area_level2: 'Medellín' },
-  { etiqueta: 'Bogotá', postal_code: '11001', area_level1: 'Bogotá, D.C.', area_level2: 'Bogotá' },
+  { etiqueta: "Medellín", postal_code: "05001", area_level1: "Antioquia", area_level2: "Medellín" },
+  { etiqueta: "Bogotá", postal_code: "11001", area_level1: "Bogotá, D.C.", area_level2: "Bogotá" },
 ];
 
 const VALOR_DECLARADO = 250000;
@@ -92,21 +92,21 @@ const BULTO = { length: 30, width: 25, height: 10, weight: 1.0, declared_amount:
 const NONCE = process.env.NONCE || Date.now().toString().slice(-6);
 
 const VARIANTES = [
-  { clave: 'sin recaudo (referencia)', extra: {} },
-  { clave: 'con recaudo', extra: { cash_on_delivery: true } },
+  { clave: "sin recaudo (referencia)", extra: {} },
+  { clave: "con recaudo", extra: { cash_on_delivery: true } },
   {
-    clave: 'con recaudo + flete al destinatario',
+    clave: "con recaudo + flete al destinatario",
     extra: { cash_on_delivery: true, recipient_pays_shipping: true },
   },
 ];
 
 async function cotizar(bearer, destino, variante) {
-  const cabeceras = { 'Content-Type': 'application/json', Authorization: `Bearer ${bearer}` };
+  const cabeceras = { "Content-Type": "application/json", Authorization: `Bearer ${bearer}` };
   const cuerpo = {
     quotation: {
       address_from: ORIGEN,
       address_to: {
-        country_code: 'CO',
+        country_code: "CO",
         postal_code: destino.postal_code,
         area_level1: destino.area_level1,
         area_level2: destino.area_level2,
@@ -116,8 +116,8 @@ async function cotizar(bearer, destino, variante) {
       ...variante.extra,
     },
   };
-  const creada = await llamar('/api/v1/quotations', {
-    method: 'POST',
+  const creada = await llamar("/api/v1/quotations", {
+    method: "POST",
     headers: cabeceras,
     body: JSON.stringify(cuerpo),
   });
@@ -126,13 +126,14 @@ async function cotizar(bearer, destino, variante) {
   }
   let ultima = creada.cuerpo;
   for (let i = 0; i < INTENTOS_SONDEO && !ultima.is_completed; i++) {
-    ultima = (await llamar(`/api/v1/quotations/${creada.cuerpo.id}`, { headers: cabeceras })).cuerpo;
+    ultima = (await llamar(`/api/v1/quotations/${creada.cuerpo.id}`, { headers: cabeceras }))
+      .cuerpo;
   }
   return { respuesta: ultima };
 }
 
 const texto = (e) =>
-  typeof e === 'string' ? e : JSON.stringify(e).replace(/[{}"]/g, '').replace(/,/g, ', ');
+  typeof e === "string" ? e : JSON.stringify(e).replace(/[{}"]/g, "").replace(/,/g, ", ");
 
 function pintar(resultado) {
   if (resultado.error) {
@@ -146,29 +147,29 @@ function pintar(resultado) {
       ` · on_delivery_amount: ${JSON.stringify(r.on_delivery_amount)}`,
   );
   for (const t of r.rates || []) {
-    const quien = `${t.provider_name}/${t.provider_service_code ?? '?'}`;
+    const quien = `${t.provider_name}/${t.provider_service_code ?? "?"}`;
     const viva = t.success === true;
     const errores = Array.isArray(t.error_messages)
-      ? t.error_messages.map(texto).join(' | ').slice(0, 170)
-      : '';
+      ? t.error_messages.map(texto).join(" | ").slice(0, 170)
+      : "";
     console.log(
-      `    ${viva ? '✓' : '·'} ${quien.padEnd(34)} ${String(t.status).padEnd(24)}` +
-        `${t.total ? 'total ' + t.total : '—'}${errores ? `\n        ${errores}` : ''}`,
+      `    ${viva ? "✓" : "·"} ${quien.padEnd(34)} ${String(t.status).padEnd(24)}` +
+        `${t.total ? "total " + t.total : "—"}${errores ? `\n        ${errores}` : ""}`,
     );
   }
 }
 
-const { cuerpo: tok } = await llamar('/api/v1/oauth/token', {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
+const { cuerpo: tok } = await llamar("/api/v1/oauth/token", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
   body: JSON.stringify({
-    grant_type: 'client_credentials',
+    grant_type: "client_credentials",
     client_id: CLIENT_ID,
     client_secret: CLIENT_SECRET,
   }),
 });
 const bearer = tok.access_token;
-if (!bearer) throw new Error('No autenticó.');
+if (!bearer) throw new Error("No autenticó.");
 
 // RELEER=<id> vuelve a leer una cotización ya creada, para ver si una tarifa que quedó en
 // `pending` con la cotización ya `is_completed` termina resolviéndose después.
@@ -180,7 +181,7 @@ if (process.env.RELEER) {
   for (const t of cuerpo.rates || []) {
     console.log(
       `  ${t.provider_name}/${t.provider_service_code} → ${t.status}` +
-        ` · success ${t.success} · ${t.total ?? '—'}`,
+        ` · success ${t.success} · ${t.total ?? "—"}`,
     );
   }
   process.exit(0);
@@ -196,7 +197,7 @@ if (process.env.VER_ENVIO) {
   console.log(`GET /api/v1/shipments/${process.env.VER_ENVIO} → ${estado}`);
   const hallazgos = [];
   (function recorrer(nodo, camino) {
-    if (nodo === null || typeof nodo !== 'object') return;
+    if (nodo === null || typeof nodo !== "object") return;
     for (const [clave, valor] of Object.entries(nodo)) {
       const aqui = camino ? `${camino}.${clave}` : clave;
       if (/delivery|cash|cod|collect/i.test(clave)) {
@@ -204,19 +205,19 @@ if (process.env.VER_ENVIO) {
       }
       recorrer(valor, aqui);
     }
-  })(cuerpo, '');
+  })(cuerpo, "");
   if (hallazgos.length) {
     console.log(`Campos de contraentrega en el envío (${hallazgos.length}):`);
     for (const linea of hallazgos) console.log(linea);
   } else {
     console.log(
-      'El envío NO expone ningún campo de contraentrega. Emitir no contestaría la pregunta 3.',
+      "El envío NO expone ningún campo de contraentrega. Emitir no contestaría la pregunta 3.",
     );
   }
   process.exit(0);
 }
 
-const saldo = await llamar('/api/v1/finance/credits', {
+const saldo = await llamar("/api/v1/finance/credits", {
   headers: { Authorization: `Bearer ${bearer}` },
 });
 console.log(`Saldo: ${JSON.stringify(saldo.cuerpo)} · valor declarado ${VALOR_DECLARADO}\n`);
@@ -227,5 +228,5 @@ for (const destino of DESTINOS) {
     console.log(`  ${variante.clave}`);
     pintar(await cotizar(bearer, destino, variante));
   }
-  console.log('');
+  console.log("");
 }

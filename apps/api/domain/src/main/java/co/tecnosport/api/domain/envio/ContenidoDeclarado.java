@@ -25,6 +25,15 @@ import co.tecnosport.api.domain.catalogo.LineaCatalogo;
  * partir {@code ROPA_Y_CALZADO} en dos: la frase "Ropa y calzado deportivo" declaraba calzado en la
  * guía de una camiseta y ropa en la de unos tenis, y eso es declarar de más en las dos. Ahora cada
  * línea dice lo suyo, que es más barato de defender ante una reclamación.
+ *
+ * <p><b>Y cobró su segunda pieza el 10 de octubre de 2026</b>, esta vez sin que la línea se
+ * partiera: el negocio dejó de surtir solo ropa deportiva y entró la casual. "Ropa deportiva" pasó
+ * de ser un genérico a ser una descripción <b>más estrecha que la caja</b>, y declarar de menos es
+ * justo lo que tumba una reclamación por pérdida. De ahí "Prendas de vestir", que cubre lo casual,
+ * lo deportivo y lo que entre después sin volver a quedarse corta — el mismo criterio con el que
+ * "Electrónica y accesorios" se deja ancha a propósito. La lección es que esta frase no envejece
+ * solo cuando cambia el enum: también cuando cambia el surtido dentro de una línea, y eso no lo
+ * detiene ningún compilador.
  */
 public final class ContenidoDeclarado {
 
@@ -43,7 +52,7 @@ public final class ContenidoDeclarado {
    */
   public static String de(LineaCatalogo linea) {
     return switch (linea) {
-      case ROPA -> "Ropa deportiva";
+      case ROPA -> "Prendas de vestir";
       case CALZADO -> "Calzado deportivo";
       case BOLSOS -> "Bolsos y morrales";
       case TECNOLOGIA -> "Electrónica y accesorios";

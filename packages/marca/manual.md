@@ -2,8 +2,8 @@
 
 ## La idea
 
-Tecno Sport vende celulares, tecnología y ropa y calzado deportivo en Medellín,
-al mayor y al detal. La marca no habla como una tienda de barrio: habla como un
+Tecno Sport vende celulares, tecnología, ropa casual y deportiva y calzado en
+Medellín, al mayor y al detal. La marca no habla como una tienda de barrio: habla como un
 **distribuidor confiable con diez años de oficio**, que sabe surtir tanto al que
 compra un equipo como al que compra cien.
 

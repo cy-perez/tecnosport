@@ -83,7 +83,7 @@
     "sugerencias": "Buzón de sugerencias"
   },
   "portada": {
-    "titulo": "Ropa y calzado deportivo, bolsos y tecnología",
+    "titulo": "Ropa casual y deportiva, calzado, bolsos y tecnología",
     "lema": "Envío a todo el país desde Medellín.",
     "ver_catalogo": "Ver el catálogo",
     "lineas": "Nuestras líneas",
@@ -100,11 +100,11 @@
       "indicadores": "Ir a una pieza del catálogo",
       "slides": {
         "ropa": {
-          "eyebrow": "Ropa deportiva · dama y caballero",
+          "eyebrow": "Ropa casual y deportiva · dama y caballero",
           "titular": "Vístete para moverte",
-          "apoyo": "Blusas, licras, faldas y pantalonetas para entrenar, correr y salir.",
+          "apoyo": "Camisas, blusas, licras, faldas y pantalonetas para entrenar, correr y salir.",
           "cta": "Ver ropa",
-          "indicador": "Ropa deportiva",
+          "indicador": "Ropa",
           "alt": "Una pareja con ropa deportiva negra, de pie al sol en las escaleras de un estadio"
         },
         "calzado": {
@@ -180,8 +180,8 @@
   },
   "seo": {
     "portada": {
-      "titulo": "Tecno Sport · Ropa y calzado deportivo, bolsos y tecnología",
-      "descripcion": "Tienda en línea de ropa y calzado deportivo, bolsos y tecnología: celulares, audífonos, computadores y más. Envío a todo Colombia desde Medellín."
+      "titulo": "Tecno Sport · Ropa casual y deportiva, calzado, bolsos y tecnología",
+      "descripcion": "Tienda en línea de ropa casual y deportiva, calzado, bolsos y tecnología: celulares, audífonos, computadores y más. Envío a todo Colombia desde Medellín."
     },
     "carrito": {
       "titulo": "Carrito · Tecno Sport"

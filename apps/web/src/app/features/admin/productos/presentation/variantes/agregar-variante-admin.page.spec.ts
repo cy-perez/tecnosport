@@ -71,8 +71,8 @@ class RepositorioCategoriasFalso implements RepositorioCategorias {
   async listarTodas(): Promise<Categoria[]> {
     return [
       categoria('ropa-dama', null, ESCALA_ROPA),
-      categoria('conjuntos', 'ropa-dama', []),
-      categoria('bolsos', null, []),
+      categoria('ropa-dama-conjuntos', 'ropa-dama', []),
+      categoria('bolsos-dama', null, []),
     ];
   }
 }
@@ -82,7 +82,7 @@ class RepositorioProductosAdminFalso implements RepositorioProductosAdmin {
 
   constructor(
     private errorAlAgregar = false,
-    private categoriaId = 'conjuntos',
+    private categoriaId = 'ropa-dama-conjuntos',
   ) {}
 
   async listar(): Promise<ProductosPaginadosAdmin> {
@@ -385,7 +385,7 @@ describe('AgregarVarianteAdminPage', () => {
   });
 
   it('en una categoría sin escala, la talla se escribe como antes', async () => {
-    await renderPagina(new RepositorioProductosAdminFalso(false, 'bolsos'));
+    await renderPagina(new RepositorioProductosAdminFalso(false, 'bolsos-dama'));
 
     fireEvent.click(screen.getByRole('button', { name: 'Agregar atributo' }));
     await screen.findByRole('option', { name: 'Talla' });

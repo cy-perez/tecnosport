@@ -402,6 +402,44 @@ señal de que el contador dentro del día ya no es una mejora teórica.
 
 ---
 
+## 3 ter. La ropa dejó de ser solo deportiva (10 de octubre de 2026)
+
+El negocio empezó a surtir **ropa casual además de deportiva**, y eso movió un numeral de
+los términos y una etiqueta de envío. No movió el modelo: la línea `ROPA` ya era genérica
+y ninguna de sus hojas —camisas, blusas, busos, pantalones, faldas, shorts, bodis,
+licras, sudaderas, jeans, camisetas, pantalonetas, conjuntos— dice "deportiva". Sin
+migración, sin tocar el enum.
+
+**Numeral 2 (objeto).** Decía "ropa y calzado deportivo, bolsos y productos de
+tecnología", y con la casual dentro describía un contrato **más estrecho que la venta
+real** — el mismo error del 14 de septiembre, pero por el apellido de una línea y no por
+una categoría nueva. Ahora dice "ropa casual y deportiva, calzado, bolsos y productos de
+tecnología". El "entre ellos" de la enumeración tecnológica no ayudaba aquí: el problema
+no estaba en la lista sino en el adjetivo.
+
+**Numeral 4, último párrafo.** "En calzado y ropa deportiva, el uso distinto del previsto
+puede afectar la garantía" dejaba fuera la ropa casual de una advertencia que le aplica
+igual. Dice "prendas de vestir".
+
+**Y lo que no es un texto legal pero se defiende como uno: `ContenidoDeclarado`.** La
+etiqueta de la guía decía "Ropa deportiva" para toda la línea, así que la caja de una
+camisa casual habría viajado **declarando de menos**, que es lo que tumba una reclamación
+por pérdida. Dice "Prendas de vestir", ancha a propósito, por el mismo criterio con el
+que "Electrónica y accesorios" se dejó sin estrechar. Aquí el `switch` exhaustivo no
+protegió nada: no cambió el enum, cambió el surtido dentro de una línea, y de eso no
+avisa ningún compilador.
+
+**La versión legal no subió, por tercera vez y por la misma razón.**
+`legales.comun.version` sigue en `2026-10-08.3`. No cambió el responsable ni la finalidad
+—las dos únicas causas de cambio sustancial que la SIC exige comunicar y reautorizar—, la
+política de datos no cambió una palabra, y del lado del consumidor no se movió plazo,
+precio, garantía ni retracto: la enumeración del objeto es enunciativa y la advertencia
+del numeral 4 se amplió, no se recortó. Subirla dejaría cada fila de `autorizacion_datos`
+apuntando a una política que nadie leyó. Es el caso exacto que el acoplamiento descrito
+arriba aguanta "mientras los cambios sean de este tamaño", y este lo es.
+
+---
+
 ## 4. Campos por completar
 
 **Ninguno de estos marcadores se publica ya.** El 10 de septiembre de 2026 los

@@ -41,6 +41,16 @@ if (!soloApi) {
   // celular del negocio estuvo mal en el pie y en tres parrafos de los legales durante una fase
   // entera, y al corregirlo no quedo nada que impidiera que volviera a pasar.
   ejecutar("node tools/verificar-datos-de-negocio.mjs");
+  // Y por el mismo motivo: que ningun fixture nombre una categoria que el catalogo no tiene, ni la
+  // llame distinto de como se llama. Un slug inventado en una prueba **no falla** —el doble acepta
+  // cualquier cadena—, y asi `bolsos`, que V63 borro, sobrevivio en 43 usos de 26 archivos. El
+  // arbol no se escribe en el guardian: se deriva de las migraciones y se cruza con los slugs que
+  // ArbolDeCategoriasTest afirma contra un Postgres real.
+  ejecutar("node tools/verificar-categorias.mjs");
+  // Y el formato de esta carpeta, que hasta el 10 de octubre de 2026 no lo gobernaba nadie: el
+  // unico .prettierrc vivia en apps/web, asi que `tools/` era una mezcla de archivos envueltos a 80
+  // y de lineas de 190. `npm run lint --workspaces` no la ve porque `tools/` no es un workspace.
+  ejecutar("npm run formato");
   // Y por el mismo motivo y al mismo precio (menos de un segundo): que el kit de marca siga
   // regenerándose igual que como está guardado. El comando que documentaba su propio LEEME dejó
   // el repositorio peor que antes de ejecutarlo durante días, y nada lo miraba porque el kit no

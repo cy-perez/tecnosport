@@ -17,27 +17,27 @@
 // Uso:
 //   node tools/sonda-oficina-y-fallido.mjs
 
-import { readFileSync, existsSync } from 'node:fs';
+import { readFileSync, existsSync } from "node:fs";
 
-const RAIZ = new URL('..', import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1');
+const RAIZ = new URL("..", import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, "$1");
 const PAUSA_MS = 600;
 
 function cargarEntorno() {
   const valores = {};
-  for (const archivo of ['.env', '.env.local']) {
+  for (const archivo of [".env", ".env.local"]) {
     const ruta = `${RAIZ}/${archivo}`;
     if (!existsSync(ruta)) continue;
-    for (const linea of readFileSync(ruta, 'utf8').split(/\r?\n/)) {
+    for (const linea of readFileSync(ruta, "utf8").split(/\r?\n/)) {
       const m = linea.match(/^\s*([A-Z0-9_]+)\s*=\s*(.*)$/);
       if (!m) continue;
-      valores[m[1]] = m[2].trim().replace(/^["']|["']$/g, '');
+      valores[m[1]] = m[2].trim().replace(/^["']|["']$/g, "");
     }
   }
   return { ...valores, ...process.env };
 }
 
 const env = cargarEntorno();
-const URL_BASE = env.SKYDROPX_URL_BASE || 'https://sb-pro.skydropx.com';
+const URL_BASE = env.SKYDROPX_URL_BASE || "https://sb-pro.skydropx.com";
 const dormir = (ms) => new Promise((r) => setTimeout(r, ms));
 
 async function llamar(ruta, opciones = {}) {
@@ -53,34 +53,34 @@ async function llamar(ruta, opciones = {}) {
   return { estado: respuesta.status, cuerpo };
 }
 
-const { cuerpo: tok } = await llamar('/api/v1/oauth/token', {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
+const { cuerpo: tok } = await llamar("/api/v1/oauth/token", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
   body: JSON.stringify({
-    grant_type: 'client_credentials',
+    grant_type: "client_credentials",
     client_id: env.SKYDROPX_CLIENT_ID,
     client_secret: env.SKYDROPX_CLIENT_SECRET,
   }),
 });
-if (!tok.access_token) throw new Error('No autenticó.');
-const H = { 'Content-Type': 'application/json', Authorization: `Bearer ${tok.access_token}` };
+if (!tok.access_token) throw new Error("No autenticó.");
+const H = { "Content-Type": "application/json", Authorization: `Bearer ${tok.access_token}` };
 
 // ---------- 1. La entrega en oficina, con tarifas que sí cotizan ----------
 const ciudad = (barrio) => ({
-  country_code: 'CO',
-  postal_code: '05001',
-  area_level1: 'Antioquia',
-  area_level2: 'Medellín',
+  country_code: "CO",
+  postal_code: "05001",
+  area_level1: "Antioquia",
+  area_level2: "Medellín",
   area_level3: barrio,
 });
 
-const cot = await llamar('/api/v1/quotations', {
-  method: 'POST',
+const cot = await llamar("/api/v1/quotations", {
+  method: "POST",
   headers: H,
   body: JSON.stringify({
     quotation: {
-      address_from: ciudad('La Milagrosa'),
-      address_to: ciudad('Boston'),
+      address_from: ciudad("La Milagrosa"),
+      address_to: ciudad("Boston"),
       parcels: [{ length: 20, width: 15, height: 2, weight: 0.1, declared_amount: 10000 }],
     },
   }),
@@ -90,14 +90,16 @@ for (let i = 0; i < 20 && !q.is_completed; i++) {
   q = (await llamar(`/api/v1/quotations/${cot.cuerpo.id}`, { headers: H })).cuerpo;
 }
 
-console.log(`cotizacion ${cot.estado} · id ${q?.id} · completa ${q?.is_completed} · tarifas ${(q?.rates || []).length}`);
+console.log(
+  `cotizacion ${cot.estado} · id ${q?.id} · completa ${q?.is_completed} · tarifas ${(q?.rates || []).length}`,
+);
 if (!q?.rates?.length) console.log(JSON.stringify(q).slice(0, 500));
-console.log('=== 1. Entrega en oficina, por tarifa ===');
+console.log("=== 1. Entrega en oficina, por tarifa ===");
 const vivas = [];
 for (const t of q.rates || []) {
-  const cotiza = t.success ? 'cotiza' : t.status;
+  const cotiza = t.success ? "cotiza" : t.status;
   console.log(
-    `  ${t.provider_name}/${t.provider_service_code} → ${cotiza} · ${t.total ?? '—'}` +
+    `  ${t.provider_name}/${t.provider_service_code} → ${cotiza} · ${t.total ?? "—"}` +
       ` · office_delivery ${t.office_delivery} · office_pickup ${t.office_pickup}`,
   );
   if (t.success) vivas.push(t);
@@ -105,31 +107,31 @@ for (const t of q.rates || []) {
 
 // `office_points` exige `rate_id` (§6.2). Se pregunta por cada tarifa viva: antes solo se pudo
 // preguntar por la de 99 minutes, que es la única que no tiene sucursales.
-console.log('\n=== office_points por cada tarifa viva ===');
+console.log("\n=== office_points por cada tarifa viva ===");
 for (const t of vivas) {
   const r = await llamar(`/api/v1/office_points?rate_id=${t.id}`, { headers: H });
-  const total = r.cuerpo?.meta?.total ?? r.cuerpo?.data?.length ?? '?';
+  const total = r.cuerpo?.meta?.total ?? r.cuerpo?.data?.length ?? "?";
   console.log(
     `  ${t.provider_name} → ${r.estado} · total ${total} ${
-      r.estado >= 400 ? JSON.stringify(r.cuerpo).slice(0, 160) : ''
+      r.estado >= 400 ? JSON.stringify(r.cuerpo).slice(0, 160) : ""
     }`,
   );
 }
 
 // ---------- 2. ¿Un envío muerto llega a tener guía? ----------
-console.log('\n=== 2. Envíos en error: ¿tienen número de guía? ===');
-const envios = await llamar('/api/v1/shipments?per_page=30', { headers: H });
+console.log("\n=== 2. Envíos en error: ¿tienen número de guía? ===");
+const envios = await llamar("/api/v1/shipments?per_page=30", { headers: H });
 const muertos = (envios.cuerpo?.data ?? []).filter(
-  (s) => (s.attributes?.workflow_status ?? '') === 'error',
+  (s) => (s.attributes?.workflow_status ?? "") === "error",
 );
 if (muertos.length === 0) {
-  console.log('  (ninguno en error en la cuenta)');
+  console.log("  (ninguno en error en la cuenta)");
 }
 for (const s of muertos) {
   const a = s.attributes ?? {};
   console.log(
-    `  ${s.id} · ${a.carrier_name} · guía ${a.master_tracking_number ?? 'null'}` +
-      ` · pago ${a.payment_status} · ${(a.error_detail ?? '').toString().slice(0, 90)}`,
+    `  ${s.id} · ${a.carrier_name} · guía ${a.master_tracking_number ?? "null"}` +
+      ` · pago ${a.payment_status} · ${(a.error_detail ?? "").toString().slice(0, 90)}`,
   );
 }
 

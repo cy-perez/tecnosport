@@ -36,7 +36,7 @@ class CambiarTallaTest {
           new Slug("conjunto-deportivo"),
           "",
           Marca.crear("Genérica"),
-          Categoria.crear("Conjuntos", new Slug("conjuntos"), LineaCatalogo.ROPA));
+          Categoria.crear("Conjuntos", new Slug("ropa-dama-conjuntos"), LineaCatalogo.ROPA));
 
   private final Variante negroS = variante("C-N-S", "S-M", "Negro");
   private final Variante negroL = variante("C-N-L", "L-XL", "Negro");

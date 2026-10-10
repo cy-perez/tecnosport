@@ -80,14 +80,19 @@ class ArbolDeCategoriasTest {
                   "ropa-dama-bodis",
                   "ropa-dama-licras",
                   "ropa-dama-sudaderas",
-                  "ropa-dama-jeans"),
+                  "ropa-dama-jeans",
+                  // `V100`, 10 de octubre de 2026. El negocio surte conjuntos y el árbol no los
+                  // tenía: `V91` ya había subido la escala agrupada S-M a las dos ramas *por* los
+                  // conjuntos, y no había hoja donde colgar uno.
+                  "ropa-dama-conjuntos"),
           "ropa-caballero",
               List.of(
                   "ropa-caballero-camisetas",
                   "ropa-caballero-busos",
                   "ropa-caballero-sudaderas",
                   "ropa-caballero-pantalonetas",
-                  "ropa-caballero-jeans"),
+                  "ropa-caballero-jeans",
+                  "ropa-caballero-conjuntos"),
           "bolsos-dama",
               List.of(
                   "bolsos-dama-bolsos-de-mano", "bolsos-dama-manos-libres", "bolsos-dama-morrales"),

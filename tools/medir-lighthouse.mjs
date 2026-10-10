@@ -224,8 +224,7 @@ async function primerSlug() {
   if (!respuesta.ok) {
     throw new Error(
       `El catalogo no responde a traves del proxy (HTTP ${respuesta.status} en ${url}).
-` +
-        `Sin ese camino la medicion seria invalida: es exactamente la trampa de la Fase 6.`,
+` + `Sin ese camino la medicion seria invalida: es exactamente la trampa de la Fase 6.`,
     );
   }
   const datos = await respuesta.json();
@@ -290,7 +289,8 @@ async function medirUnaVez(url, puertoChrome, lighthouse) {
 function metricasDe(lhr) {
   const a = lhr.audits ?? {};
   const observadas = a["metrics"]?.details?.items?.[0] ?? {};
-  const ms = (id) => (typeof a[id]?.numericValue === "number" ? Math.round(a[id].numericValue) : null);
+  const ms = (id) =>
+    typeof a[id]?.numericValue === "number" ? Math.round(a[id].numericValue) : null;
   const grupo = (nombre) => {
     const fila = a["mainthread-work-breakdown"]?.details?.items?.find((i) => i.group === nombre);
     return fila ? Math.round(fila.duration) : null;
@@ -356,7 +356,11 @@ async function medir(url, etiqueta, puertoChrome, lighthouse, destino) {
   }
 
   return {
-    fila: { pantalla: etiqueta, ...mediana.puntajes, "rendimiento (peor-mejor)": `${peor}-${mejor}` },
+    fila: {
+      pantalla: etiqueta,
+      ...mediana.puntajes,
+      "rendimiento (peor-mejor)": `${peor}-${mejor}`,
+    },
     detalle: {
       pantalla: etiqueta,
       dispersion: mejor - peor,
@@ -493,9 +497,7 @@ function comparar(antes, despues) {
       log(`${nombre}: no está en '${despues}', se omite.\n`);
       continue;
     }
-    const claves = Object.keys(pa.muestras[0] ?? {}).filter((clave) =>
-      COMPARABLES.includes(clave),
-    );
+    const claves = Object.keys(pa.muestras[0] ?? {}).filter((clave) => COMPARABLES.includes(clave));
     const filas = [];
     for (const clave of claves) {
       const valoresA = pa.muestras.map((m) => m[clave]);
@@ -603,10 +605,7 @@ async function main() {
   // Las muestras crudas quedan en disco: la dispersión de hoy es el único dato con el que la
   // medición de mañana se puede comparar sin volver a discutir si el arnés es confiable.
   const resumen = { fecha: new Date().toISOString(), muestras: MUESTRAS, pantallas: detalles };
-  writeFileSync(
-    join(destino, "resumen.json"),
-    `${JSON.stringify(resumen, null, 2)}\n`,
-  );
+  writeFileSync(join(destino, "resumen.json"), `${JSON.stringify(resumen, null, 2)}\n`);
 
   console.table(filas);
   const donde = etiqueta ? `apps/web/lighthouse/${etiqueta}/` : "apps/web/lighthouse/";

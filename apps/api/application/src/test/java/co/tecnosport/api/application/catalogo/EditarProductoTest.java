@@ -25,7 +25,7 @@ class EditarProductoTest {
   void actualizaNombreDescripcionMarcaYCategoriaSinTocarElSlug() {
     Marca marcaOriginal = Marca.crear("TecnoSport");
     Categoria categoriaOriginal =
-        Categoria.crear("Bolsos", new Slug("bolsos"), LineaCatalogo.BOLSOS);
+        Categoria.crear("Morrales", new Slug("bolsos-dama-morrales"), LineaCatalogo.BOLSOS);
     Producto producto =
         Producto.crear(
             "Morral urbano", new Slug("morral-urbano"), "", marcaOriginal, categoriaOriginal);
@@ -58,7 +58,7 @@ class EditarProductoTest {
   @Test
   void sinDescripcionNoSeEdita() {
     Marca marca = Marca.crear("Genérica");
-    Categoria bodis = Categoria.crear("Bodis", new Slug("bodis-sd"), LineaCatalogo.ROPA);
+    Categoria bodis = Categoria.crear("Bodis", new Slug("ropa-dama-bodis-sd"), LineaCatalogo.ROPA);
     Producto bodi = Producto.crear("Bodi", new Slug("bodi-sd"), "Bodi.", marca, bodis);
     repositorioProductos.conProductos(bodi);
     repositorioMarcas.conMarcas(marca);
@@ -76,7 +76,7 @@ class EditarProductoTest {
   @Test
   void elSirveHastaSeEditaSeConservaYSeQuita() {
     Marca marca = Marca.crear("Genérica");
-    Categoria bodis = Categoria.crear("Bodis", new Slug("bodis"), LineaCatalogo.ROPA);
+    Categoria bodis = Categoria.crear("Bodis", new Slug("ropa-dama-bodis"), LineaCatalogo.ROPA);
     Producto bodi = Producto.crear("Bodi herraje", new Slug("bodi"), "Bodi.", marca, bodis);
     repositorioProductos.conProductos(bodi);
     repositorioMarcas.conMarcas(marca);
@@ -98,7 +98,8 @@ class EditarProductoTest {
   @Test
   void productoInexistenteLanzaProductoNoEncontradoPorId() {
     Marca marca = Marca.crear("TecnoSport");
-    Categoria categoria = Categoria.crear("Bolsos", new Slug("bolsos"), LineaCatalogo.BOLSOS);
+    Categoria categoria =
+        Categoria.crear("Morrales", new Slug("bolsos-dama-morrales"), LineaCatalogo.BOLSOS);
     repositorioMarcas.conMarcas(marca);
     repositorioCategorias.conCategorias(categoria);
     UUID productoId = UUID.randomUUID();
@@ -113,7 +114,8 @@ class EditarProductoTest {
   @Test
   void marcaInexistenteLanzaMarcaNoEncontrada() {
     Marca marca = Marca.crear("TecnoSport");
-    Categoria categoria = Categoria.crear("Bolsos", new Slug("bolsos"), LineaCatalogo.BOLSOS);
+    Categoria categoria =
+        Categoria.crear("Morrales", new Slug("bolsos-dama-morrales"), LineaCatalogo.BOLSOS);
     Producto producto =
         Producto.crear("Morral urbano", new Slug("morral-urbano"), "", marca, categoria);
     repositorioProductos.conProductos(producto);
@@ -130,7 +132,8 @@ class EditarProductoTest {
   @Test
   void categoriaInexistenteLanzaCategoriaNoEncontrada() {
     Marca marca = Marca.crear("TecnoSport");
-    Categoria categoria = Categoria.crear("Bolsos", new Slug("bolsos"), LineaCatalogo.BOLSOS);
+    Categoria categoria =
+        Categoria.crear("Morrales", new Slug("bolsos-dama-morrales"), LineaCatalogo.BOLSOS);
     Producto producto =
         Producto.crear("Morral urbano", new Slug("morral-urbano"), "", marca, categoria);
     repositorioProductos.conProductos(producto);

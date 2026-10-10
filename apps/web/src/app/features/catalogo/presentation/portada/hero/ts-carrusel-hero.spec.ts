@@ -75,7 +75,7 @@ function botonesDeLinea(): HTMLAnchorElement[] {
 /** Las viñetas de abajo. Se distinguen de cualquier otro botón por llevar `aria-label`. */
 function indicadores(): HTMLButtonElement[] {
   return [
-    screen.getByRole('button', { name: 'Ropa deportiva' }),
+    screen.getByRole('button', { name: 'Ropa' }),
     screen.getByRole('button', { name: 'Calzado deportivo' }),
     screen.getByRole('button', { name: 'Bolsos' }),
     screen.getByRole('button', { name: 'Tecnología' }),

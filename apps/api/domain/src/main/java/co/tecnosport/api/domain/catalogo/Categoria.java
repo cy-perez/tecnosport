@@ -157,6 +157,18 @@ public final class Categoria {
     return padre.map(Categoria::escalaTallas).orElse(List.of());
   }
 
+  /**
+   * ¿Puede ese slug ser el de una hija mía? Lo es si empieza por el mío y un guion: "Busos" y
+   * "Sudaderas" existen en Dama y en Caballero, el slug es único en toda la tabla y el filtro de la
+   * vitrina viaja por él, así que la rama tiene que ir delante para que las dos quepan.
+   *
+   * <p>El predicado vive aquí —compara dos slugs y no necesita ver ninguna fila— y el rechazo en
+   * {@code application}, que es quien tiene el padre en la mano.
+   */
+  public boolean esPrefijoDe(Slug slugDeHija) {
+    return slugDeHija.valor().startsWith(slug.valor() + "-");
+  }
+
   /** Las tallas propias, sin heredar; vacía si usa las de su rama. */
   public List<String> escalaTallas() {
     return escalaTallas;

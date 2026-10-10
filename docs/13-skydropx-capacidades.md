@@ -521,8 +521,8 @@ recortadas, no reescritas— viven como fixtures en
   (`ADR-0071`)**, sin probar todavía contra la plataforma.
 
   Y `package_content` dejó de ser una línea sola: la bolsa de lo que no se mide
-  junta varias y las declara todas, separadas por coma ("Ropa deportiva, Calzado
-  deportivo"). Tampoco se ha probado cuánto texto acepta el campo.
+  junta varias y las declara todas, separadas por coma ("Prendas de vestir,
+  Calzado deportivo"). Tampoco se ha probado cuánto texto acepta el campo.
 
   **Por qué el mapa de `package_content` ya no se escribe aquí.** Esta tabla lo
   tuvo, y decía `CELULARES` → "Equipo de telefonía móvil". Ese mismo 14 de

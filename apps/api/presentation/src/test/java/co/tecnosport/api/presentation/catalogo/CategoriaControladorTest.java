@@ -27,13 +27,14 @@ class CategoriaControladorTest {
 
   @Test
   void listadoDevuelveItemsYCursorSiguienteNulo() throws Exception {
-    repositorio.conCategorias(Categoria.crear("Bolsos", new Slug("bolsos"), LineaCatalogo.BOLSOS));
+    repositorio.conCategorias(
+        Categoria.crear("Morrales", new Slug("bolsos-dama-morrales"), LineaCatalogo.BOLSOS));
 
     mockMvc
         .perform(get("/api/v1/categorias"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.items", hasSize(1)))
-        .andExpect(jsonPath("$.items[0].nombre").value("Bolsos"))
+        .andExpect(jsonPath("$.items[0].nombre").value("Morrales"))
         .andExpect(jsonPath("$.items[0].linea").value("BOLSOS"))
         .andExpect(jsonPath("$.items[0].padreId").isEmpty())
         .andExpect(jsonPath("$.cursorSiguiente").isEmpty());

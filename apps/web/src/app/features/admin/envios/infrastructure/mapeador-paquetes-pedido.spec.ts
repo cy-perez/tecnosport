@@ -11,7 +11,7 @@ describe('mapeador de los paquetes de un pedido', () => {
           anchoCm: 30,
           altoCm: 10,
           valorDeclarado: { valor: 131_000, moneda: 'COP' },
-          contenido: 'Ropa deportiva',
+          contenido: 'Prendas de vestir',
         },
       ],
     });
@@ -25,7 +25,7 @@ describe('mapeador de los paquetes de un pedido', () => {
           anchoCm: 30,
           altoCm: 10,
           valorDeclarado: { valor: 131_000, moneda: 'COP' },
-          contenido: 'Ropa deportiva',
+          contenido: 'Prendas de vestir',
         },
       ],
     });

@@ -131,7 +131,9 @@ export function revisar(raiz) {
 if (process.argv[1] && fileURLToPath(import.meta.url) === resolve(process.argv[1])) {
   const { violaciones, enPruebas } = revisar(RAIZ_POR_OMISION);
   if (enPruebas.length > 0) {
-    console.log(`aviso: ${enPruebas.length} import(s) de este tipo en archivos de prueba, que no fallan el build:`);
+    console.log(
+      `aviso: ${enPruebas.length} import(s) de este tipo en archivos de prueba, que no fallan el build:`,
+    );
     for (const v of enPruebas) {
       console.log(`  ${v.archivo}  ${v.desde} -> ${v.destino} (${v.especificador})`);
     }
@@ -144,7 +146,9 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === resolve(process.argv[1
   }
 
   for (const v of violaciones) {
-    console.log(`${v.archivo}\n  ${v.desde} -> ${v.destino}  (${v.especificador})\n  ${v.motivo}\n`);
+    console.log(
+      `${v.archivo}\n  ${v.desde} -> ${v.destino}  (${v.especificador})\n  ${v.motivo}\n`,
+    );
   }
   console.log(`dependencias invertidas: ${violaciones.length}`);
   process.exit(1);

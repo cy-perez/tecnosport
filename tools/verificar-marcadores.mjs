@@ -48,9 +48,7 @@ for (const ruta of [...jsons(TEXTOS), ...correos]) {
 }
 
 if (hallazgos.length > 0) {
-  console.error(
-    `\n${hallazgos.length} marcador(es) sin cerrar en textos que se publican:\n`,
-  );
+  console.error(`\n${hallazgos.length} marcador(es) sin cerrar en textos que se publican:\n`);
   for (const { ruta, linea, encontrado } of hallazgos) {
     console.error(`  ${ruta}:${linea}  ${encontrado}`);
   }

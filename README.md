@@ -1,7 +1,8 @@
 # TecnoSport
 
-Tienda en línea de TecnoSport: ropa y calzado deportivo, bolsos y celulares.
-Venta al detal con pago en línea y contraentrega, envío a todo Colombia.
+Tienda en línea de TecnoSport: ropa casual y deportiva, calzado, bolsos y
+tecnología. Venta al detal con pago en línea y contraentrega, envío a todo
+Colombia.
 Dominio: tecnosport.co
 
 Monorepo. Backend en Java 21 con Spring Boot 4.1, frontend en Angular 22.5 con

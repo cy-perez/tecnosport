@@ -24,45 +24,45 @@
 // Las credenciales las lee de .env.local / .env (SKYDROPX_URL_BASE, SKYDROPX_CLIENT_ID,
 // SKYDROPX_CLIENT_SECRET). No las imprime nunca.
 
-import { readFileSync, existsSync, writeFileSync } from 'node:fs';
+import { readFileSync, existsSync, writeFileSync } from "node:fs";
 
-const RAIZ = new URL('..', import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1');
+const RAIZ = new URL("..", import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, "$1");
 const PAUSA_MS = 600; // el proveedor admite 2 peticiones por segundo
 const INTENTOS_SONDEO = 8;
 const SALIDA = `${RAIZ}/cobertura-medida.json`;
 
 function cargarEntorno() {
   const valores = {};
-  for (const archivo of ['.env', '.env.local']) {
+  for (const archivo of [".env", ".env.local"]) {
     const ruta = `${RAIZ}/${archivo}`;
     if (!existsSync(ruta)) continue;
-    for (const linea of readFileSync(ruta, 'utf8').split(/\r?\n/)) {
+    for (const linea of readFileSync(ruta, "utf8").split(/\r?\n/)) {
       const m = linea.match(/^\s*([A-Z0-9_]+)\s*=\s*(.*)$/);
       if (!m) continue;
-      valores[m[1]] = m[2].trim().replace(/^["']|["']$/g, '');
+      valores[m[1]] = m[2].trim().replace(/^["']|["']$/g, "");
     }
   }
   return { ...valores, ...process.env };
 }
 
 const env = cargarEntorno();
-const URL_BASE = env.SKYDROPX_URL_BASE || 'https://sb-pro.skydropx.com';
+const URL_BASE = env.SKYDROPX_URL_BASE || "https://sb-pro.skydropx.com";
 const CLIENT_ID = env.SKYDROPX_CLIENT_ID;
 const CLIENT_SECRET = env.SKYDROPX_CLIENT_SECRET;
 
 if (!CLIENT_ID || !CLIENT_SECRET || /pendiente_de_configurar/.test(CLIENT_ID)) {
-  console.error('Faltan SKYDROPX_CLIENT_ID / SKYDROPX_CLIENT_SECRET en .env.local.');
+  console.error("Faltan SKYDROPX_CLIENT_ID / SKYDROPX_CLIENT_SECRET en .env.local.");
   process.exit(1);
 }
 
 const argumentos = process.argv.slice(2);
-const soloCapitales = argumentos.includes('--capitales');
+const soloCapitales = argumentos.includes("--capitales");
 const valorDe = (bandera, omision) => {
   const i = argumentos.indexOf(bandera);
   return i >= 0 && argumentos[i + 1] ? Number(argumentos[i + 1]) : omision;
 };
-const DESDE = valorDe('--desde', 0);
-const LIMITE = valorDe('--limite', Infinity);
+const DESDE = valorDe("--desde", 0);
+const LIMITE = valorDe("--limite", Infinity);
 
 const dormir = (ms) => new Promise((r) => setTimeout(r, ms));
 
@@ -80,11 +80,11 @@ async function llamar(ruta, opciones = {}) {
 }
 
 async function autenticar() {
-  const { estado, cuerpo } = await llamar('/api/v1/oauth/token', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+  const { estado, cuerpo } = await llamar("/api/v1/oauth/token", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      grant_type: 'client_credentials',
+      grant_type: "client_credentials",
       client_id: CLIENT_ID,
       client_secret: CLIENT_SECRET,
     }),
@@ -129,21 +129,20 @@ async function bearer(forzarRenovacion = false) {
  */
 function municipios() {
   const ruta = `${RAIZ}/apps/web/src/app/features/checkout/domain/geografia-co.datos.ts`;
-  const fuente = readFileSync(ruta, 'utf8');
+  const fuente = readFileSync(ruta, "utf8");
 
   const departamentos = new Map();
   const bloqueDepartamentos = fuente.slice(
-    fuente.indexOf('export const DEPARTAMENTOS'),
-    fuente.indexOf('export const MUNICIPIOS'),
+    fuente.indexOf("export const DEPARTAMENTOS"),
+    fuente.indexOf("export const MUNICIPIOS"),
   );
   for (const m of bloqueDepartamentos.matchAll(/\{ codigo: '(\d+)', nombre: '([^']+)' \}/g)) {
     departamentos.set(m[1], m[2]);
   }
 
-  const bloqueMunicipios = fuente.slice(fuente.indexOf('export const MUNICIPIOS'));
+  const bloqueMunicipios = fuente.slice(fuente.indexOf("export const MUNICIPIOS"));
   const lista = [];
-  const patron =
-    /\{ codigoDepartamento: '(\d+)', codigo: '(\d+)', nombre: '((?:[^'\\]|\\.)+)' \}/g;
+  const patron = /\{ codigoDepartamento: '(\d+)', codigo: '(\d+)', nombre: '((?:[^'\\]|\\.)+)' \}/g;
   for (const m of bloqueMunicipios.matchAll(patron)) {
     lista.push({
       codigoDepartamento: m[1],
@@ -153,21 +152,21 @@ function municipios() {
     });
   }
   if (lista.length === 0) {
-    throw new Error('No se pudo leer la lista DIVIPOLA: ¿cambió el formato del archivo?');
+    throw new Error("No se pudo leer la lista DIVIPOLA: ¿cambió el formato del archivo?");
   }
   return lista;
 }
 
 // Origen real de despacho, el de application.yml.
 const ORIGEN = {
-  country_code: 'CO',
-  postal_code: '05001',
-  area_level1: 'Antioquia',
-  area_level2: 'Medellín',
-  area_level3: 'La Milagrosa',
-  street1: 'Cra. 26C # 38B-31, apto. 401',
-  name: 'TecnoSport',
-  phone: '3138816711',
+  country_code: "CO",
+  postal_code: "05001",
+  area_level1: "Antioquia",
+  area_level2: "Medellín",
+  area_level3: "La Milagrosa",
+  street1: "Cra. 26C # 38B-31, apto. 401",
+  name: "TecnoSport",
+  phone: "3138816711",
 };
 
 // Un solo artículo de peso y valor medianos: lo único que varía entre una medición y la siguiente
@@ -184,11 +183,11 @@ function cuerpo(municipio, conRecaudo) {
   const quotation = {
     address_from: ORIGEN,
     address_to: {
-      country_code: 'CO',
+      country_code: "CO",
       postal_code: municipio.codigo,
       area_level1: municipio.departamento,
       area_level2: municipio.nombre,
-      area_level3: 'Centro',
+      area_level3: "Centro",
       street1: `Calle 10 # 10-10 ${NONCE}`,
     },
     parcels: [{ ...BULTO, declared_amount: VALOR_DECLARADO }],
@@ -203,11 +202,11 @@ function cuerpo(municipio, conRecaudo) {
 
 async function cotizar(municipio, conRecaudo, yaReintento = false) {
   const cabeceras = {
-    'Content-Type': 'application/json',
+    "Content-Type": "application/json",
     Authorization: `Bearer ${await bearer()}`,
   };
-  const creada = await llamar('/api/v1/quotations', {
-    method: 'POST',
+  const creada = await llamar("/api/v1/quotations", {
+    method: "POST",
     headers: cabeceras,
     body: JSON.stringify(cuerpo(municipio, conRecaudo)),
   });
@@ -222,7 +221,7 @@ async function cotizar(municipio, conRecaudo, yaReintento = false) {
     // distinción importa porque una es "aquí no hay cobertura" y la otra "no pudimos preguntar",
     // y mezclarlas es justo el defecto que adr/0039 corrigió en el checkout.
     return {
-      resultado: creada.estado === 422 ? 'rechazada' : 'fallo',
+      resultado: creada.estado === 422 ? "rechazada" : "fallo",
       detalle: `${creada.estado} ${JSON.stringify(creada.cuerpo).slice(0, 160)}`,
       transportadoras: [],
     };
@@ -234,19 +233,19 @@ async function cotizar(municipio, conRecaudo, yaReintento = false) {
   }
   const tarifas = ultima.rates || [];
   const vivas = tarifas.filter(
-    (r) => r.status === 'price_found_internal' || r.status === 'price_found_external',
+    (r) => r.status === "price_found_internal" || r.status === "price_found_external",
   );
   // docs/13 §6.5: is_completed puede volver en true con una tarifa todavía en `pending`, y el
   // mapeador del backend la descarta. Se cuenta aparte, porque si esto ocurre a escala significa
   // que el checkout pierde tarifas en silencio — y a veces la más barata.
-  const pendientes = tarifas.filter((r) => r.status === 'pending').length;
+  const pendientes = tarifas.filter((r) => r.status === "pending").length;
   return {
-    resultado: vivas.length > 0 ? 'cubierto' : 'sin_cobertura',
+    resultado: vivas.length > 0 ? "cubierto" : "sin_cobertura",
     completa: Boolean(ultima.is_completed),
     pendientes,
     transportadoras: vivas.map((r) => ({
       proveedor: r.provider_name,
-      servicio: r.provider_service_code ?? r.provider_service_name ?? '?',
+      servicio: r.provider_service_code ?? r.provider_service_name ?? "?",
       total: r.total,
     })),
   };
@@ -255,11 +254,11 @@ async function cotizar(municipio, conRecaudo, yaReintento = false) {
 let lista = municipios();
 if (soloCapitales) {
   // La capital de cada departamento es el municipio cuyo código termina en 001.
-  lista = lista.filter((m) => m.codigo.endsWith('001'));
+  lista = lista.filter((m) => m.codigo.endsWith("001"));
 }
 const aMedir = lista.slice(DESDE, DESDE + LIMITE);
 
-const previo = existsSync(SALIDA) ? JSON.parse(readFileSync(SALIDA, 'utf8')) : { medidos: {} };
+const previo = existsSync(SALIDA) ? JSON.parse(readFileSync(SALIDA, "utf8")) : { medidos: {} };
 const medidos = previo.medidos ?? {};
 
 console.log(
@@ -275,7 +274,7 @@ for (const municipio of aMedir) {
   // municipios que la primera corrida perdió por el token caducado se habrían quedado contados
   // como "no se pudo medir" para siempre, y el resumen habría seguido imprimiendo un porcentaje
   // sobre un país a medias.
-  if (medidos[clave] && medidos[clave].sinRecaudo.resultado !== 'fallo') {
+  if (medidos[clave] && medidos[clave].sinRecaudo.resultado !== "fallo") {
     hechos++;
     continue;
   }
@@ -290,27 +289,27 @@ for (const municipio of aMedir) {
   hechos++;
 
   const marca =
-    sinRecaudo.resultado === 'cubierto' ? (conRecaudo.resultado === 'cubierto' ? '✓✓' : '✓·') : '··';
+    sinRecaudo.resultado === "cubierto"
+      ? conRecaudo.resultado === "cubierto"
+        ? "✓✓"
+        : "✓·"
+      : "··";
   console.log(
     `${String(hechos).padStart(4)}/${aMedir.length} ${marca} ` +
       `${municipio.departamento} / ${municipio.nombre} (${clave})` +
-      (sinRecaudo.resultado === 'cubierto'
-        ? ` — ${sinRecaudo.transportadoras.map((t) => t.proveedor).join(', ')}`
-        : ` — ${sinRecaudo.resultado}${sinRecaudo.detalle ? ': ' + sinRecaudo.detalle : ''}`),
+      (sinRecaudo.resultado === "cubierto"
+        ? ` — ${sinRecaudo.transportadoras.map((t) => t.proveedor).join(", ")}`
+        : ` — ${sinRecaudo.resultado}${sinRecaudo.detalle ? ": " + sinRecaudo.detalle : ""}`),
   );
 
   // Se guarda tras cada municipio, no al final: si esto se corta en el 800, lo medido se queda.
-  writeFileSync(
-    SALIDA,
-    JSON.stringify({ host: URL_BASE, nonce: NONCE, medidos }, null, 2),
-    'utf8',
-  );
+  writeFileSync(SALIDA, JSON.stringify({ host: URL_BASE, nonce: NONCE, medidos }, null, 2), "utf8");
 }
 
 const filas = Object.values(medidos);
-const cubiertos = filas.filter((f) => f.sinRecaudo.resultado === 'cubierto');
-const conContraentrega = filas.filter((f) => f.conRecaudo.resultado === 'cubierto');
-const fallos = filas.filter((f) => f.sinRecaudo.resultado === 'fallo');
+const cubiertos = filas.filter((f) => f.sinRecaudo.resultado === "cubierto");
+const conContraentrega = filas.filter((f) => f.conRecaudo.resultado === "cubierto");
+const fallos = filas.filter((f) => f.sinRecaudo.resultado === "fallo");
 const conPendientes = filas.filter((f) => (f.sinRecaudo.pendientes ?? 0) > 0);
 
 const porcentaje = (n) => ((n / filas.length) * 100).toFixed(1);
@@ -324,17 +323,17 @@ console.log(`  Sin cobertura:      ${filas.length - cubiertos.length - fallos.le
 console.log(`  No se pudo medir:   ${fallos.length}`);
 console.log(
   `  Con tarifas 'pending' al cerrar: ${conPendientes.length}` +
-    ' — cada una es una tarifa que el checkout descarta sin verla (docs/13 §6.5)',
+    " — cada una es una tarifa que el checkout descarta sin verla (docs/13 §6.5)",
 );
 
 const porDepartamento = new Map();
 for (const fila of filas) {
   const actual = porDepartamento.get(fila.departamento) ?? { total: 0, cubiertos: 0 };
   actual.total++;
-  if (fila.sinRecaudo.resultado === 'cubierto') actual.cubiertos++;
+  if (fila.sinRecaudo.resultado === "cubierto") actual.cubiertos++;
   porDepartamento.set(fila.departamento, actual);
 }
-console.log('\n=== Por departamento ===');
+console.log("\n=== Por departamento ===");
 for (const [departamento, { total, cubiertos: c }] of [...porDepartamento].sort()) {
   console.log(`  ${departamento.padEnd(24)} ${String(c).padStart(4)}/${String(total).padEnd(4)}`);
 }

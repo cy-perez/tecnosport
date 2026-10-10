@@ -31,7 +31,13 @@ const oscuro = { ...claro, ...leerBloque('[data-tema="oscuro"]') };
 
 function aRgb(hex) {
   const h = hex.replace("#", "").trim();
-  const n = h.length === 3 ? h.split("").map((c) => c + c).join("") : h;
+  const n =
+    h.length === 3
+      ? h
+          .split("")
+          .map((c) => c + c)
+          .join("")
+      : h;
   return [0, 2, 4].map((i) => parseInt(n.slice(i, i + 2), 16));
 }
 
@@ -68,7 +74,13 @@ const PARES = [
   ["--color-texto", "--color-superficie-alt", UMBRAL_TEXTO, "texto sobre superficie elevada"],
   // **Las baldosas de linea de la portada no son del mismo color en los dos temas** desde
   // `ADR-0065`: gris tenue de marca en claro, ambar en oscuro. De ahi el quinto campo.
-  ["--color-texto", "--color-primario-suave", UMBRAL_TEXTO, "texto de las baldosas de linea", "claro"],
+  [
+    "--color-texto",
+    "--color-primario-suave",
+    UMBRAL_TEXTO,
+    "texto de las baldosas de linea",
+    "claro",
+  ],
   // **El contorno de esas baldosas NO se declara aqui, y no es un olvido.** Va `borde-control` a
   // media opacidad, que sobre el relleno da 1,66:1: por debajo de los 3:1 que pide WCAG 1.4.11
   // para lo que identifica un componente. Esta tabla no sabe expresar una opacidad, asi que el
@@ -80,7 +92,13 @@ const PARES = [
   // que el RELLENO identifique la baldosa, y eso pide un gris medio que deja de ser el relleno
   // tenue de marca. Lo que la sostiene es que son enlaces de un `<nav>` con su texto visible, no
   // controles sin etiqueta. Si alguna vez dejan de serlo, el par vuelve aqui.
-  ["--color-sobre-acento", "--color-primario-suave", UMBRAL_GRANDE, "borde de hover de las baldosas", "claro"],
+  [
+    "--color-sobre-acento",
+    "--color-primario-suave",
+    UMBRAL_GRANDE,
+    "borde de hover de las baldosas",
+    "claro",
+  ],
   ["--color-texto-suave", "--color-fondo", UMBRAL_TEXTO, "texto secundario sobre el lienzo"],
   ["--color-texto-suave", "--color-superficie", UMBRAL_TEXTO, "marca y SKU en la tarjeta"],
   ["--color-texto-suave", "--color-superficie-alt", UMBRAL_TEXTO, "etiqueta de agotado"],
@@ -100,10 +118,31 @@ const PARES = [
   // En oscuro un solo par cubre el texto y el borde de hover: los dos son `sobre-acento` sobre el
   // relleno ambar. El borde en reposo no se declara a proposito —`acento` sobre `acento-2` da
   // 1,09:1— porque ahi el relleno ya separa la baldosa del lienzo y la afordancia es el hover.
-  ["--color-sobre-acento", "--color-acento-2", UMBRAL_TEXTO, "texto y hover de las baldosas", "oscuro"],
-  ["--color-sobre-acento", "--color-acento-3", UMBRAL_TEXTO, "escala de ámbar, tono 3 (sin uso hoy)"],
-  ["--color-sobre-acento", "--color-acento-4", UMBRAL_TEXTO, "escala de ámbar, tono 4 (sin uso hoy)"],
-  ["--color-sobre-marca", "--color-marca", UMBRAL_TEXTO, "pie, franjas de marca y pista del visor 360"],
+  [
+    "--color-sobre-acento",
+    "--color-acento-2",
+    UMBRAL_TEXTO,
+    "texto y hover de las baldosas",
+    "oscuro",
+  ],
+  [
+    "--color-sobre-acento",
+    "--color-acento-3",
+    UMBRAL_TEXTO,
+    "escala de ámbar, tono 3 (sin uso hoy)",
+  ],
+  [
+    "--color-sobre-acento",
+    "--color-acento-4",
+    UMBRAL_TEXTO,
+    "escala de ámbar, tono 4 (sin uso hoy)",
+  ],
+  [
+    "--color-sobre-marca",
+    "--color-marca",
+    UMBRAL_TEXTO,
+    "pie, franjas de marca y pista del visor 360",
+  ],
   ["--color-error", "--color-fondo", UMBRAL_TEXTO, "mensajes de error"],
   ["--color-error", "--color-superficie", UMBRAL_TEXTO, "error dentro de un formulario"],
   // La fila expandida del panel de pedidos vive sobre la superficie elevada, y ahí pinta en rojo el
@@ -115,7 +154,12 @@ const PARES = [
   // como texto y como borde sobre `--color-superficie`. Faltaba el par — se miraba el verde sobre
   // superficie-alt y sobre el lienzo, pero no sobre la superficie elevada, que es donde vive la
   // unica pieza que lo usa como linea.
-  ["--color-exito", "--color-superficie", UMBRAL_TEXTO, "insignia de publicado en la lista del panel"],
+  [
+    "--color-exito",
+    "--color-superficie",
+    UMBRAL_TEXTO,
+    "insignia de publicado en la lista del panel",
+  ],
   // Los cuatro acuses del panel —publicado, retirado, existencia ajustada, medida corregida—
   // pintan en verde directamente sobre el lienzo, no sobre una superficie. El guardian solo
   // miraba el verde sobre superficie-alt, asi que ese par no lo vigilaba nadie.
@@ -148,10 +192,30 @@ const PARES = [
   // del propio control, que es lo único que tienen detrás.
   ["--color-foco", "--color-fondo", UMBRAL_GRANDE, "anillo exterior sobre el lienzo"],
   ["--color-foco", "--color-superficie", UMBRAL_GRANDE, "anillo exterior sobre tarjeta"],
-  ["--color-foco", "--color-superficie-alt", UMBRAL_GRANDE, "anillo exterior sobre superficie elevada"],
-  ["--color-sobre-marca", "--color-marca", UMBRAL_GRANDE, "anillo exterior de los enlaces del pie (detrás: la franja de marca)"],
-  ["--color-sobre-acento", "--color-acento", UMBRAL_GRANDE, "anillo INTERIOR del CTA ámbar y del enlace de salto (detrás: su propio relleno)"],
-  ["--color-sobre-marca", "--color-marca", UMBRAL_GRANDE, "anillo INTERIOR del botón de WhatsApp (detrás: su propio relleno)"],
+  [
+    "--color-foco",
+    "--color-superficie-alt",
+    UMBRAL_GRANDE,
+    "anillo exterior sobre superficie elevada",
+  ],
+  [
+    "--color-sobre-marca",
+    "--color-marca",
+    UMBRAL_GRANDE,
+    "anillo exterior de los enlaces del pie (detrás: la franja de marca)",
+  ],
+  [
+    "--color-sobre-acento",
+    "--color-acento",
+    UMBRAL_GRANDE,
+    "anillo INTERIOR del CTA ámbar y del enlace de salto (detrás: su propio relleno)",
+  ],
+  [
+    "--color-sobre-marca",
+    "--color-marca",
+    UMBRAL_GRANDE,
+    "anillo INTERIOR del botón de WhatsApp (detrás: su propio relleno)",
+  ],
 ];
 
 // Lo que **no** se puede declarar como par, y por eso se anota: un anillo exterior sobre una
@@ -160,7 +224,10 @@ const PARES = [
 // que cambia, su anillo va por dentro o no cabe en esta tabla.
 
 let fallos = 0;
-for (const [nombre, tema] of [["claro", claro], ["oscuro", oscuro]]) {
+for (const [nombre, tema] of [
+  ["claro", claro],
+  ["oscuro", oscuro],
+]) {
   console.log(`\n== tema ${nombre} ==`);
   for (const [frente, fondo, umbral, donde, soloEnTema] of PARES) {
     if (soloEnTema && soloEnTema !== nombre) continue;

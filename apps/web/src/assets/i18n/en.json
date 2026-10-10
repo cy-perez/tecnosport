@@ -83,7 +83,7 @@
     "sugerencias": "Suggestion box"
   },
   "portada": {
-    "titulo": "Sportswear, footwear, bags and tech",
+    "titulo": "Casual and sportswear, footwear, bags and tech",
     "lema": "Nationwide shipping from Medellín, Colombia.",
     "ver_catalogo": "Browse the catalog",
     "lineas": "Our lines",
@@ -100,9 +100,9 @@
       "indicadores": "Go to a catalog highlight",
       "slides": {
         "ropa": {
-          "eyebrow": "Sportswear · women and men",
+          "eyebrow": "Casual and sportswear · women and men",
           "titular": "Dress to move",
-          "apoyo": "Tops, leggings, skirts and shorts to train, run and go out.",
+          "apoyo": "Shirts, tops, leggings, skirts and shorts to train, run and go out.",
           "cta": "Browse clothing",
           "indicador": "Clothing",
           "alt": "A couple in black sportswear standing in the sun on stadium steps"
@@ -180,8 +180,8 @@
   },
   "seo": {
     "portada": {
-      "titulo": "Tecno Sport · Sportswear, footwear, bags and tech",
-      "descripcion": "Online store for sportswear, footwear, bags and tech: phones, headphones, computers and more. Nationwide shipping across Colombia from Medellín."
+      "titulo": "Tecno Sport · Casual and sportswear, footwear, bags and tech",
+      "descripcion": "Online store for casual and sportswear, footwear, bags and tech: phones, headphones, computers and more. Nationwide shipping across Colombia from Medellín."
     },
     "carrito": {
       "titulo": "Cart · Tecno Sport"

@@ -50,8 +50,8 @@ const MARCA: Marca = { id: 'm1', nombre: 'TecnoSport' };
 const OTRA_MARCA: Marca = { id: 'm2', nombre: 'Under Trail' };
 const CATEGORIA: Categoria = {
   id: 'c1',
-  nombre: 'Bolsos',
-  slug: 'bolsos',
+  nombre: 'Morrales',
+  slug: 'bolsos-dama-morrales',
   linea: 'BOLSOS',
   padreId: null,
   hashtags: [],
@@ -71,7 +71,7 @@ const OTRA_CATEGORIA: Categoria = {
 const CONJUNTOS: Categoria = {
   id: 'c3',
   nombre: 'Conjuntos',
-  slug: 'conjuntos',
+  slug: 'ropa-dama-conjuntos',
   linea: 'ROPA',
   padreId: null,
   hashtags: [],
@@ -87,7 +87,12 @@ function conjuntoDePrueba(): ProductoAdminDetalle {
   return {
     ...productoDePrueba(),
     nombre: 'Conjunto deportivo',
-    categoria: { id: CONJUNTOS.id, nombre: 'Conjuntos', slug: 'conjuntos', linea: 'ROPA' },
+    categoria: {
+      id: CONJUNTOS.id,
+      nombre: 'Conjuntos',
+      slug: 'ropa-dama-conjuntos',
+      linea: 'ROPA',
+    },
     variantes: [
       { id: 'n-sm', sku: 'C-N-SM', atributos: atributos('Negro', '#111111', 'S-M') },
       { id: 'n-l', sku: 'C-N-L', atributos: atributos('Negro', '#111111', 'L') },

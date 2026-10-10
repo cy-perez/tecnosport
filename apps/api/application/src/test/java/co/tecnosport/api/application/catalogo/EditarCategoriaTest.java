@@ -76,7 +76,8 @@ class EditarCategoriaTest {
   @Test
   void moverUnaCategoriaBajoOtraLeCambiaLaLinea() {
     Categoria dama = Categoria.crear("Dama", new Slug("bolsos-dama"), LineaCatalogo.BOLSOS);
-    Categoria sueltas = Categoria.crear("Morrales", new Slug("morrales"), LineaCatalogo.TECNOLOGIA);
+    Categoria sueltas =
+        Categoria.crear("Morrales", new Slug("bolsos-dama-morrales"), LineaCatalogo.TECNOLOGIA);
     repositorio.conCategorias(dama, sueltas);
 
     Categoria movida =
@@ -99,6 +100,62 @@ class EditarCategoriaTest {
 
     assertTrue(movida.esRaiz());
     assertEquals(LineaCatalogo.CALZADO, movida.linea());
+  }
+
+  /**
+   * La misma regla que al crear, por el otro camino: aquí el prefijo que manda es el del destino.
+   */
+  @Test
+  void rechazaUnSlugEscritoQueNoEmpiezaPorElDeSuNuevaRama() {
+    Categoria dama = Categoria.crear("Dama", new Slug("ropa-dama"), LineaCatalogo.ROPA);
+    Categoria caballero =
+        Categoria.crear("Caballero", new Slug("ropa-caballero"), LineaCatalogo.ROPA);
+    Categoria faldas = Categoria.crearBajo(dama, "Faldas", new Slug("ropa-dama-faldas"));
+    repositorio.conCategorias(dama, caballero, faldas);
+
+    assertThrows(
+        SlugDeHijaSinPrefijoException.class,
+        () ->
+            editar.ejecutar(
+                new EditarCategoriaComando(
+                    faldas.id(), "Faldas", "ropa-dama-faldas", null, caballero.id())));
+  }
+
+  /**
+   * Y moverla <b>sin escribir el slug</b> sí se puede, con el slug viejo intacto. Es deliberado y
+   * es la parte incómoda de la regla: `ropa-dama-faldas` bajo Caballero miente sobre su rama, pero
+   * recalcularlo rompería los enlaces que la gente compartió y que los buscadores indexaron. La
+   * regla vigila lo que alguien escribe hoy, no lo que la historia dejó.
+   */
+  @Test
+  void moverlaSinEscribirElSlugLeConservaElViejo() {
+    Categoria dama = Categoria.crear("Dama", new Slug("ropa-dama"), LineaCatalogo.ROPA);
+    Categoria caballero =
+        Categoria.crear("Caballero", new Slug("ropa-caballero"), LineaCatalogo.ROPA);
+    Categoria faldas = Categoria.crearBajo(dama, "Faldas", new Slug("ropa-dama-faldas"));
+    repositorio.conCategorias(dama, caballero, faldas);
+
+    Categoria movida =
+        editar.ejecutar(
+            new EditarCategoriaComando(faldas.id(), "Faldas", null, null, caballero.id()));
+
+    assertEquals("ropa-dama-faldas", movida.slug().valor());
+    assertEquals(caballero.id(), movida.padreId().orElseThrow());
+  }
+
+  /** Renombrar una raíz con slug escrito no tiene prefijo que cumplir. */
+  @Test
+  void aceptaUnSlugEscritoEnUnaRaiz() {
+    Categoria consolas =
+        Categoria.crear("Consolas", new Slug("consolas"), LineaCatalogo.TECNOLOGIA);
+    repositorio.conCategorias(consolas);
+
+    Categoria editada =
+        editar.ejecutar(
+            new EditarCategoriaComando(
+                consolas.id(), "Consolas de videojuegos", "consolas-de-videojuegos", null, null));
+
+    assertEquals("consolas-de-videojuegos", editada.slug().valor());
   }
 
   @Test

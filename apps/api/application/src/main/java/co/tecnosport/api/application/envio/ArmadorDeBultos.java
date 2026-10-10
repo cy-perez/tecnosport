@@ -446,7 +446,7 @@ public final class ArmadorDeBultos {
 
     /**
      * El contenido de la bolsa nombra cada línea que lleva, una vez: una bolsa con una camiseta y
-     * unos tenis declara "Ropa deportiva, Calzado deportivo". Declarar solo una dejaría la otra
+     * unos tenis declara "Prendas de vestir, Calzado deportivo". Declarar solo una dejaría la otra
      * fuera de una reclamación por pérdida.
      */
     static Grupo de(List<Unidad> unidades, Optional<Paquete> paquete, Dinero minimo) {

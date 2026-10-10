@@ -296,7 +296,6 @@ if (objetos.length === 0) {
   process.exit(0);
 }
 
-
 /**
  * Todos los productos del panel, recorriendo las páginas.
  *

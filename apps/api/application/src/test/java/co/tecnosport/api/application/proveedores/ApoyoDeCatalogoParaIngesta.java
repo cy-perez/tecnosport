@@ -49,9 +49,9 @@ final class ApoyoDeCatalogoParaIngesta {
 
   static final Marca MARCA = new Marca(UUID.randomUUID(), "Genérica");
   static final Categoria BOLSOS_DAMA =
-      Categoria.crear("Bolsos", new Slug("bolsos"), LineaCatalogo.BOLSOS);
+      Categoria.crear("Dama", new Slug("bolsos-dama"), LineaCatalogo.BOLSOS);
   static final Categoria BOLSOS_DE_MANO =
-      Categoria.crearBajo(BOLSOS_DAMA, "Bolsos de mano", new Slug("bolsos-de-mano"));
+      Categoria.crearBajo(BOLSOS_DAMA, "Bolsos de mano", new Slug("bolsos-dama-bolsos-de-mano"));
   static final Atributo COLOR = Atributo.crear("Color", TipoAtributo.COLOR, List.of());
   static final Atributo TALLA =
       // Sin valores permitidos, como en producción desde V73: la lista la dicta cada prenda.

@@ -63,7 +63,7 @@ class AgregarColorDesdeLaPrincipalTest {
           new Slug("conjunto-deportivo"),
           "",
           Marca.crear("Genérica"),
-          Categoria.crear("Conjuntos", new Slug("conjuntos"), LineaCatalogo.ROPA));
+          Categoria.crear("Conjuntos", new Slug("ropa-dama-conjuntos"), LineaCatalogo.ROPA));
 
   AgregarColorDesdeLaPrincipalTest() {
     atributos.conAtributos(TALLA, COLOR);
@@ -216,7 +216,7 @@ class AgregarColorDesdeLaPrincipalTest {
             new Slug("bolso"),
             "",
             Marca.crear("Genérica"),
-            Categoria.crear("Bolsos", new Slug("bolsos"), LineaCatalogo.BOLSOS));
+            Categoria.crear("Morrales", new Slug("bolsos-dama-morrales"), LineaCatalogo.BOLSOS));
     sinPrincipal.agregarVariante(variante("PRV-8-U", "Única", null, 60_000, null));
     productos.conProductos(sinPrincipal);
 

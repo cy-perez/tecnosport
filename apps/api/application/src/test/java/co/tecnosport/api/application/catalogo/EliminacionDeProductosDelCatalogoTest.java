@@ -86,7 +86,7 @@ class EliminacionDeProductosDelCatalogoTest {
             new Slug("bolso"),
             "",
             Marca.crear("Genérica"),
-            Categoria.crear("Bolsos", new Slug("bolsos"), LineaCatalogo.BOLSOS));
+            Categoria.crear("Morrales", new Slug("bolsos-dama-morrales"), LineaCatalogo.BOLSOS));
     producto.agregarVariante(
         Variante.crear(
             new Sku("PRV-1"), Dinero.deCop(60000), BigDecimal.ZERO, null, null, List.of()));

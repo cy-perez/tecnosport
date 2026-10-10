@@ -66,6 +66,30 @@ Fase 5 entera y encontró cosas que ninguna corrida verde encontró:
   que el código se defiende**. Si solo sabe responder lo correcto, lo que prueba
   es que el camino feliz funciona. Se nota preguntándose "¿cómo escribo aquí la
   respuesta maliciosa?" antes de escribir la prueba amable.
+- **Y la quinta, del 10 de octubre de 2026: un doble que acepta cualquier cosa.**
+  Un fixture de categoría es una cadena, y ningún doble la valida contra el
+  catálogo. Así que `Categoria.crear("Bolsos", new Slug("bolsos"), BOLSOS)` siguió
+  pasando durante dos semanas después de que `V63` borrara ese slug —43 usos en 26
+  archivos—, y con él `cables`, que `V62` borró porque el negocio dejó de
+  venderlos, y `conjuntos`, que **no existía en ninguna base**. Las pruebas no
+  mentían sobre la lógica: mentían sobre el mundo en el que corren.
+
+  Lo que lo hace peor que un descuido de mantenimiento es que esos fixtures son la
+  única descripción del catálogo que un lector encuentra al abrir una prueba. Y
+  "Conjuntos" resultó ser el caso interesante al revés: la prueba describía el
+  negocio mejor que la migración —`V91` ya había subido la escala de tallas
+  agrupadas *por* los conjuntos y `NombreDeCategoria` ya sabía leerlos de una lista
+  de proveedor—, así que el arreglo no fue renombrar el fixture sino crear la
+  categoría (`V100`).
+
+  La regla que se saca: **donde el doble no puede validar, hace falta un guardián
+  fuera de la prueba**. Es `npm run categorias`, que deriva el árbol de las
+  migraciones —no lo copia—, lo cruza contra los slugs que `ArbolDeCategoriasTest`
+  afirma sobre un Postgres real, y exige que cada fixture llame a su categoría por
+  su nombre. Tiene sus propias pruebas, y dos de ellas fijan los dos errores que se
+  cometieron al escribirlo a mano: resolver `bolsos-dama-morrales-t9` por el
+  prefijo más corto —leerlo como la rama Dama— y leer un producto del frontend como
+  si fuera una categoría, que tiene la misma forma `{ nombre, slug }`.
 - **Un código de cable que nadie fija se lo lleva un renombrado.**
   `ManejadorDeErrores` deriva el `codigo` del **nombre de la clase** de la
   excepción —decisión buena, evita un catálogo paralelo—, y el frontend los cablea

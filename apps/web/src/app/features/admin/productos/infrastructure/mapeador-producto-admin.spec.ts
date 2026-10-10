@@ -8,7 +8,7 @@ function detalle(imagenPrincipal: unknown) {
     slug: 'morral-urbano',
     estado: 'BORRADOR',
     marca: { id: 'm1', nombre: 'TecnoSport' },
-    categoria: { id: 'c1', nombre: 'Bolsos', slug: 'bolsos', linea: 'BOLSOS' },
+    categoria: { id: 'c1', nombre: 'Morrales', slug: 'bolsos-dama-morrales', linea: 'BOLSOS' },
     totalVariantes: 0,
     galeria: [],
     imagenPrincipal,

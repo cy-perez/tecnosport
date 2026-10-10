@@ -28,8 +28,8 @@ function productoDePrueba(slug: string): Producto {
     marca: { id: '1', nombre: 'TecnoSport' },
     categoria: {
       id: 'c1',
-      nombre: 'Bolsos',
-      slug: 'bolsos',
+      nombre: 'Morrales',
+      slug: 'bolsos-dama-morrales',
       linea: 'BOLSOS',
       padreId: null,
       hashtags: [],
@@ -76,8 +76,8 @@ class RepositorioCategoriasFalso implements RepositorioCategorias {
 const TRES_LINEAS: Categoria[] = [
   {
     id: 'c0',
-    nombre: 'Ropa deportiva',
-    slug: 'ropa-deportiva',
+    nombre: 'Caballero',
+    slug: 'ropa-caballero',
     linea: 'ROPA',
     padreId: null,
     hashtags: [],
@@ -85,8 +85,8 @@ const TRES_LINEAS: Categoria[] = [
   },
   {
     id: 'c1',
-    nombre: 'Bolsos',
-    slug: 'bolsos',
+    nombre: 'Dama',
+    slug: 'bolsos-dama',
     linea: 'BOLSOS',
     padreId: null,
     hashtags: [],
@@ -155,7 +155,9 @@ describe('PortadaPage', () => {
     const { container } = await renderPortada();
 
     const titulo = screen.getByRole('heading', { level: 1 });
-    expect(titulo.textContent?.trim()).toBe('Ropa y calzado deportivo, bolsos y tecnología');
+    expect(titulo.textContent?.trim()).toBe(
+      'Ropa casual y deportiva, calzado, bolsos y tecnología',
+    );
     expect(container.querySelector('ts-carrusel-hero')?.contains(titulo)).toBe(false);
   });
 

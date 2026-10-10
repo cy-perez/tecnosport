@@ -154,7 +154,7 @@ class ReclamacionGarantiaTest {
 
     assertTrue(terminos.mesesPara("linea-por-decidir").isEmpty());
     assertEquals(6, terminos.mesesPara("calzado").orElseThrow());
-    assertEquals(12, terminos.mesesPara("ropa-deportiva").orElseThrow());
+    assertEquals(12, terminos.mesesPara("ropa-caballero-camisetas").orElseThrow());
   }
 
   /**

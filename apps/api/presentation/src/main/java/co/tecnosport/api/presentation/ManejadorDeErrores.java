@@ -23,6 +23,7 @@ import co.tecnosport.api.application.catalogo.ProfundidadDeCategoriaExcedidaExce
 import co.tecnosport.api.application.catalogo.SetRotacionNoEncontradoException;
 import co.tecnosport.api.application.catalogo.SetRotacionPublicadoExistenteException;
 import co.tecnosport.api.application.catalogo.SkuYaEnUsoException;
+import co.tecnosport.api.application.catalogo.SlugDeHijaSinPrefijoException;
 import co.tecnosport.api.application.catalogo.TasaIvaNoPermitidaException;
 import co.tecnosport.api.application.catalogo.VarianteNoEncontradaPorIdException;
 import co.tecnosport.api.application.compartido.LimiteDeIntentosExcedidoException;
@@ -475,6 +476,15 @@ public class ManejadorDeErrores {
   @ExceptionHandler(CategoriaSlugYaExisteException.class)
   public ProblemDetail categoriaSlugYaExiste(CategoriaSlugYaExisteException excepcion) {
     return problema(HttpStatus.CONFLICT, "Slug de categoría ya en uso", excepcion);
+  }
+
+  /**
+   * 422 y no 409 como su hermano de arriba: aquí no hay choque con nada que exista, hay un valor
+   * mal escrito en el cuerpo. Mismo criterio que "Monto de reintegro invalido".
+   */
+  @ExceptionHandler(SlugDeHijaSinPrefijoException.class)
+  public ProblemDetail slugDeHijaSinPrefijo(SlugDeHijaSinPrefijoException excepcion) {
+    return problema(HttpStatus.UNPROCESSABLE_CONTENT, "Slug sin el prefijo de su rama", excepcion);
   }
 
   /**

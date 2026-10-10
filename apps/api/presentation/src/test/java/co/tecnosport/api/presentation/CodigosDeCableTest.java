@@ -16,6 +16,7 @@ import co.tecnosport.api.application.catalogo.ProductoConVentasException;
 import co.tecnosport.api.application.catalogo.ProductoPublicadoException;
 import co.tecnosport.api.application.catalogo.ProductoSinDescripcionException;
 import co.tecnosport.api.application.catalogo.ProfundidadDeCategoriaExcedidaException;
+import co.tecnosport.api.application.catalogo.SlugDeHijaSinPrefijoException;
 import co.tecnosport.api.application.compartido.LimiteDeIntentosExcedidoException;
 import co.tecnosport.api.application.envio.AcuseNoAplicableException;
 import co.tecnosport.api.application.envio.ArticuloNoAsegurableException;
@@ -126,11 +127,12 @@ class CodigosDeCableTest {
               SistecreditoNoEntregoLaUrlDePagoException.class,
               "SISTECREDITO_NO_ENTREGO_LA_URL_DE_PAGO"),
           Map.entry(MontoDeReintegroInvalidoException.class, "MONTO_DE_REINTEGRO_INVALIDO"),
-          // Los seis rechazos del árbol de categorías, que `categorias-admin-http.repositorio.ts`
+          // Los siete rechazos del árbol de categorías, que `categorias-admin-http.repositorio.ts`
           // traduce a un resultado con nombre para que la pantalla diga qué hacer: "mueve primero
           // sus productos", "borra antes sus subcategorías". Sin esto, renombrar la excepción deja
           // el panel enseñando el fallo genérico y la suite en verde.
           Map.entry(CategoriaSlugYaExisteException.class, "CATEGORIA_SLUG_YA_EXISTE"),
+          Map.entry(SlugDeHijaSinPrefijoException.class, "SLUG_DE_HIJA_SIN_PREFIJO"),
           Map.entry(CategoriaConProductosException.class, "CATEGORIA_CON_PRODUCTOS"),
           Map.entry(CategoriaConHijasException.class, "CATEGORIA_CON_HIJAS"),
           Map.entry(CategoriaNoEsHojaException.class, "CATEGORIA_NO_ES_HOJA"),

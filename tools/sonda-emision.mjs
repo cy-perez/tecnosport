@@ -15,28 +15,28 @@
 //
 // Uso:  node tools/sonda-emision.mjs
 
-import { readFileSync, existsSync } from 'node:fs';
+import { readFileSync, existsSync } from "node:fs";
 
-const RAIZ = new URL('..', import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1');
+const RAIZ = new URL("..", import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, "$1");
 const PAUSA_MS = 600;
 const TOPE = 15000; // no emitir nada por encima de esto
 
 function cargarEntorno() {
   const valores = {};
-  for (const archivo of ['.env', '.env.local']) {
+  for (const archivo of [".env", ".env.local"]) {
     const ruta = `${RAIZ}/${archivo}`;
     if (!existsSync(ruta)) continue;
-    for (const linea of readFileSync(ruta, 'utf8').split(/\r?\n/)) {
+    for (const linea of readFileSync(ruta, "utf8").split(/\r?\n/)) {
       const m = linea.match(/^\s*([A-Z0-9_]+)\s*=\s*(.*)$/);
       if (!m) continue;
-      valores[m[1]] = m[2].trim().replace(/^["']|["']$/g, '');
+      valores[m[1]] = m[2].trim().replace(/^["']|["']$/g, "");
     }
   }
   return { ...valores, ...process.env };
 }
 
 const env = cargarEntorno();
-const URL_BASE = env.SKYDROPX_URL_BASE || 'https://sb-pro.skydropx.com';
+const URL_BASE = env.SKYDROPX_URL_BASE || "https://sb-pro.skydropx.com";
 const dormir = (ms) => new Promise((r) => setTimeout(r, ms));
 
 async function llamar(ruta, opciones = {}) {
@@ -52,17 +52,17 @@ async function llamar(ruta, opciones = {}) {
   return { estado: respuesta.status, cuerpo };
 }
 
-const { cuerpo: tok } = await llamar('/api/v1/oauth/token', {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
+const { cuerpo: tok } = await llamar("/api/v1/oauth/token", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
   body: JSON.stringify({
-    grant_type: 'client_credentials',
+    grant_type: "client_credentials",
     client_id: env.SKYDROPX_CLIENT_ID,
     client_secret: env.SKYDROPX_CLIENT_SECRET,
   }),
 });
-if (!tok.access_token) throw new Error('No autenticó.');
-const H = { 'Content-Type': 'application/json', Authorization: `Bearer ${tok.access_token}` };
+if (!tok.access_token) throw new Error("No autenticó.");
+const H = { "Content-Type": "application/json", Authorization: `Bearer ${tok.access_token}` };
 
 // VER_ENVIO=<id> relee un envío ya creado: estados, guía y etiqueta por paquete.
 if (process.env.VER_ENVIO) {
@@ -74,7 +74,7 @@ if (process.env.VER_ENVIO) {
       ` · total: ${a.total} · error_detail: ${JSON.stringify(a.error_detail)}`,
   );
   for (const inc of cuerpo.included ?? []) {
-    if (inc.type !== 'package') continue;
+    if (inc.type !== "package") continue;
     const p = inc.attributes ?? {};
     console.log(
       `  paquete ${inc.id}\n    package_type: ${p.package_type} · declared_amount: ${p.declared_amount}` +
@@ -86,62 +86,62 @@ if (process.env.VER_ENVIO) {
 }
 
 // ---------- gratis: el catálogo que falta para package_type ----------
-const empaques = await llamar('/api/v1/shipments/packagings?per_page=20', { headers: H });
-console.log('=== Tipos de empaque (package_type) ===');
+const empaques = await llamar("/api/v1/shipments/packagings?per_page=20", { headers: H });
+console.log("=== Tipos de empaque (package_type) ===");
 console.log(`meta: ${JSON.stringify(empaques.cuerpo?.meta)}`);
 for (const e of empaques.cuerpo?.data ?? []) {
   console.log(`  ${String(e.code).padEnd(6)} ${e.name}`);
 }
-if (process.env.SOLO_CATALOGO === '1') {
+if (process.env.SOLO_CATALOGO === "1") {
   process.exit(0);
 }
 
-const saldoAntes = await llamar('/api/v1/finance/credits', { headers: H });
+const saldoAntes = await llamar("/api/v1/finance/credits", { headers: H });
 console.log(`\nSaldo antes: ${JSON.stringify(saldoAntes.cuerpo)}`);
 
 // ---------- cotización mínima, dentro de Medellín ----------
 const NONCE = Date.now().toString().slice(-6);
 const DIRECCION_DESTINO = {
-  country_code: 'CO',
-  postal_code: '05001',
-  area_level1: 'Antioquia',
-  area_level2: 'Medellín',
+  country_code: "CO",
+  postal_code: "05001",
+  area_level1: "Antioquia",
+  area_level2: "Medellín",
   street1: `Calle 50 # 40-20 ${NONCE}`,
-  name: 'Comprador de prueba',
-  company: 'Comprador de prueba',
-  phone: '3001234567',
-  email: 'comprador@example.com',
-  reference: 'Sin indicaciones adicionales',
+  name: "Comprador de prueba",
+  company: "Comprador de prueba",
+  phone: "3001234567",
+  email: "comprador@example.com",
+  reference: "Sin indicaciones adicionales",
 };
 const DIRECCION_ORIGEN = {
-  country_code: 'CO',
-  postal_code: '05001',
-  area_level1: 'Antioquia',
-  area_level2: 'Medellín',
-  street1: 'Cra. 26C # 38B-31, apto. 401, La Milagrosa',
-  name: 'TecnoSport',
-  company: 'TecnoSport',
-  phone: '3138816711',
-  email: 'contacto@tecnosport.co',
-  reference: 'Apartamento 401',
+  country_code: "CO",
+  postal_code: "05001",
+  area_level1: "Antioquia",
+  area_level2: "Medellín",
+  street1: "Cra. 26C # 38B-31, apto. 401, La Milagrosa",
+  name: "TecnoSport",
+  company: "TecnoSport",
+  phone: "3138816711",
+  email: "contacto@tecnosport.co",
+  reference: "Apartamento 401",
 };
 
-const cotizacion = await llamar('/api/v1/quotations', {
-  method: 'POST',
+const cotizacion = await llamar("/api/v1/quotations", {
+  method: "POST",
   headers: H,
   body: JSON.stringify({
     quotation: {
       address_from: {
-        country_code: 'CO',
-        postal_code: '05001',
-        area_level1: 'Antioquia',
-        area_level2: 'Medellín',
+        country_code: "CO",
+        postal_code: "05001",
+        area_level1: "Antioquia",
+        area_level2: "Medellín",
       },
       address_to: {
-        country_code: 'CO',
-        postal_code: '05001',
-        area_level1: 'Antioquia',
-        area_level2: 'Medellín',
+        country_code: "CO",
+        postal_code: "05001",
+        area_level1: "Antioquia",
+        area_level2: "Medellín",
       },
       parcels: [{ length: 20, width: 15, height: 2, weight: 0.1, declared_amount: 10000 }],
     },
@@ -159,14 +159,14 @@ for (let i = 0; i < 10 && !q.is_completed; i++) {
 console.log(`\n=== Cotización ${q.id} (declarado 10.000) ===`);
 for (const t of q.rates || []) {
   console.log(
-    `  ${t.provider_name}/${t.provider_service_code} → ${t.status} · ${t.total ?? '—'}` +
+    `  ${t.provider_name}/${t.provider_service_code} → ${t.status} · ${t.total ?? "—"}` +
       ` · creation_type ${t.shipment_creation_type}`,
   );
 }
 
-const tarifa = (q.rates || []).find((t) => t.provider_name === 'ninetynineminutes' && t.success);
+const tarifa = (q.rates || []).find((t) => t.provider_name === "ninetynineminutes" && t.success);
 if (!tarifa) {
-  console.log('\n99 minutes no cotizó esta vez. Sin tarifa no hay prueba; no se emite nada.');
+  console.log("\n99 minutes no cotizó esta vez. Sin tarifa no hay prueba; no se emite nada.");
   process.exit(0);
 }
 if (Number(tarifa.total) > TOPE) {
@@ -177,17 +177,17 @@ if (Number(tarifa.total) > TOPE) {
 // ---------- la prueba: emitir con esa tarifa ----------
 // Emitir cuesta dinero de verdad, así que hay que pedirlo a propósito. Sin EMITIR=1 la sonda
 // llega hasta aquí, dice qué habría hecho y para.
-if (process.env.EMITIR !== '1') {
+if (process.env.EMITIR !== "1") {
   console.log(
     `\nHabría emitido con ${tarifa.provider_name} por ${tarifa.total}.` +
-      ' Para hacerlo de verdad: EMITIR=1 node tools/sonda-emision.mjs',
+      " Para hacerlo de verdad: EMITIR=1 node tools/sonda-emision.mjs",
   );
   process.exit(0);
 }
 
 console.log(`\n=== POST /shipments con la tarifa de 99 minutes (${tarifa.total}) ===`);
-const envio = await llamar('/api/v1/shipments', {
-  method: 'POST',
+const envio = await llamar("/api/v1/shipments", {
+  method: "POST",
   headers: H,
   body: JSON.stringify({
     shipment: {
@@ -197,9 +197,9 @@ const envio = await llamar('/api/v1/shipments', {
       address_to: DIRECCION_DESTINO,
       packages: [
         {
-          package_number: '1',
-          package_content: 'Accesorios de tecnología',
-          package_type: '4G',
+          package_number: "1",
+          package_content: "Accesorios de tecnología",
+          package_type: "4G",
         },
       ],
     },
@@ -208,5 +208,5 @@ const envio = await llamar('/api/v1/shipments', {
 console.log(`Estado: ${envio.estado}`);
 console.log(JSON.stringify(envio.cuerpo).slice(0, 1200));
 
-const saldoDespues = await llamar('/api/v1/finance/credits', { headers: H });
+const saldoDespues = await llamar("/api/v1/finance/credits", { headers: H });
 console.log(`\nSaldo después: ${JSON.stringify(saldoDespues.cuerpo)}`);
