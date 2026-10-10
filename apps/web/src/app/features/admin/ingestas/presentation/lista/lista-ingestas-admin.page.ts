@@ -58,7 +58,7 @@ const CLAVE_ESTADO: Record<EstadoLote, string> = {
 };
 
 const CLASES_INSIGNIA =
-  'inline-flex items-center rounded-completo border px-12 py-4 text-xs font-medio';
+  'inline-flex items-center whitespace-nowrap rounded-completo border px-12 py-4 text-xs font-medio';
 
 const CLASES_ESTADO: Record<EstadoLote, string> = {
   RECIBIDO: 'border-ts-borde text-ts-texto-suave',
