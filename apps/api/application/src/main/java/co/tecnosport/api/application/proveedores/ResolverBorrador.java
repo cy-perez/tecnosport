@@ -197,6 +197,7 @@ public final class ResolverBorrador {
               ? Resolucion.descartada(VIENE_EN_EL_CHAT_DE_CABALLERO)
               : resolverUno(
                   publicacion,
+                  mensajes,
                   proveedor,
                   evaluada,
                   textoDelAnuncio,
@@ -224,6 +225,7 @@ public final class ResolverBorrador {
 
   private Resolucion resolverUno(
       PublicacionProveedor publicacion,
+      Map<UUID, MensajeProveedor> mensajes,
       Proveedor proveedor,
       ExtraccionEvaluada evaluada,
       String textoDelAnuncio,
@@ -270,12 +272,20 @@ public final class ResolverBorrador {
     if (extraido.estaAgotado()) {
       return Resolucion.descartada("Anuncia como agotado un producto que no está en el catálogo.");
     }
-    if (codigo.isPresent()
-        && repositorioBorradores.existeEnRevisionConHuella(proveedor.id(), huella)) {
-      // La misma referencia antes de que alguien apruebe la primera. Un segundo borrador solo
-      // sirve para chocar con el índice único al aprobarlo.
-      return Resolucion.descartada(
-          "Es la misma referencia de un borrador que ya está en revisión.");
+    if (codigo.isPresent()) {
+      Optional<UUID> enRevision =
+          repositorioBorradores.buscarEnRevisionConHuella(proveedor.id(), huella);
+      if (enRevision.isPresent()) {
+        // La misma referencia antes de que alguien apruebe la primera. Un segundo borrador solo
+        // sirve para chocar con el índice único al aprobarlo; sus fotos sí sirven, y van a aquel.
+        int sumadas = sumarFotos(enRevision.get(), evaluada, mensajes);
+        return Resolucion.descartada(
+            sumadas == 0
+                ? "Es la misma referencia de un borrador que ya está en revisión."
+                : "Es la misma referencia de un borrador que ya está en revisión; sus "
+                    + sumadas
+                    + " fotos se sumaron a ese borrador.");
+      }
     }
     if (codigo.isEmpty() && esAnuncioRepetido(proveedor, textoDelAnuncio, fotos)) {
       return Resolucion.descartada(
@@ -301,6 +311,45 @@ public final class ResolverBorrador {
             ahora);
     repositorioBorradores.guardar(borrador);
     return new Resolucion(TipoDeResolucion.NUEVO, borrador.alertas(), null);
+  }
+
+  /**
+   * Suma al borrador que ya espera revisión con la misma referencia las fotos de esta publicación
+   * que son de ese producto con respaldo ({@link ExtraccionEvaluada#fotosParaSumar}) y tienen
+   * archivo (10 de octubre de 2026). La camiseta 261002 de Violeta acompaña al jogger a las 10:35 y
+   * a la bermuda a las 11:01: la foto de las 11:01 con su código impreso termina en el borrador de
+   * las 10:35, y no perdida con la publicación descartada.
+   *
+   * @return cuántas se sumaron
+   */
+  private int sumarFotos(
+      UUID borradorId, ExtraccionEvaluada evaluada, Map<UUID, MensajeProveedor> mensajes) {
+    List<UUID> conArchivo =
+        evaluada.fotosParaSumar().stream()
+            .filter(
+                id ->
+                    Optional.ofNullable(mensajes.get(id))
+                        .flatMap(MensajeProveedor::referenciaArchivo)
+                        .isPresent())
+            .toList();
+    if (conArchivo.isEmpty()) {
+      return 0;
+    }
+    Optional<BorradorProducto> destino =
+        repositorioBorradores.buscarPorIdParaActualizar(borradorId);
+    if (destino.isEmpty()) {
+      return 0;
+    }
+    List<UUID> deSuPublicacion =
+        repositorioPublicaciones
+            .buscarPorId(destino.get().publicacionId())
+            .map(PublicacionProveedor::medios)
+            .orElse(List.of());
+    int sumadas = destino.get().agregarFotos(conArchivo, deSuPublicacion).size();
+    if (sumadas > 0) {
+      repositorioBorradores.actualizar(destino.get());
+    }
+    return sumadas;
   }
 
   /**

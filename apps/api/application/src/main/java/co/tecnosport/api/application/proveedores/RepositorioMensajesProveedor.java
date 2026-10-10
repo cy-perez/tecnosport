@@ -33,5 +33,11 @@ public interface RepositorioMensajesProveedor {
    */
   List<MensajeProveedor> listarDeLote(UUID loteId);
 
+  /**
+   * Los de estos ids, de cualquier lote, en el orden en que se piden; los que ya no existen no
+   * vienen. Para las fotos que un borrador sumó de otra publicación.
+   */
+  List<MensajeProveedor> buscarPorIds(List<UUID> ids);
+
   void eliminarTodos(Collection<UUID> ids);
 }

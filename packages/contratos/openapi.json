@@ -385,6 +385,12 @@
             },
             "type" : "array"
           },
+          "hermanos" : {
+            "items" : {
+              "$ref" : "#/components/schemas/HermanoRespuesta"
+            },
+            "type" : "array"
+          },
           "textos" : {
             "items" : {
               "type" : "string"
@@ -1839,6 +1845,21 @@
         },
         "type" : "object"
       },
+      "HermanoRespuesta" : {
+        "properties" : {
+          "id" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "titulo" : {
+            "type" : "string"
+          }
+        },
+        "required" : [
+          "id"
+        ],
+        "type" : "object"
+      },
       "HistorialPedidoRespuesta" : {
         "properties" : {
           "actor" : {
@@ -2512,6 +2533,18 @@
           "descripcion",
           "idModelo",
           "titulo"
+        ],
+        "type" : "object"
+      },
+      "MoverFotoPeticion" : {
+        "properties" : {
+          "destinoId" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        },
+        "required" : [
+          "destinoId"
         ],
         "type" : "object"
       },
@@ -5006,6 +5039,49 @@
             }
           }
         ],
+        "responses" : {
+          "204" : {
+            "description" : "No Content"
+          }
+        },
+        "tags" : [
+          "admin-borrador-controlador"
+        ]
+      }
+    },
+    "/api/v1/admin/borradores/{id}/fotos/{mensajeId}/mover" : {
+      "post" : {
+        "operationId" : "moverFoto",
+        "parameters" : [
+          {
+            "in" : "path",
+            "name" : "id",
+            "required" : true,
+            "schema" : {
+              "format" : "uuid",
+              "type" : "string"
+            }
+          },
+          {
+            "in" : "path",
+            "name" : "mensajeId",
+            "required" : true,
+            "schema" : {
+              "format" : "uuid",
+              "type" : "string"
+            }
+          }
+        ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/MoverFotoPeticion"
+              }
+            }
+          },
+          "required" : true
+        },
         "responses" : {
           "204" : {
             "description" : "No Content"

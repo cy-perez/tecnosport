@@ -175,7 +175,8 @@ public final class ExtraerProductoDePublicacion {
               repartido.fotos(),
               repartido.reparto(),
               varios || album ? repartido.exclusiva() : null,
-              album));
+              album,
+              varios || album ? repartido.conSuCodigo() : repartido.fotos()));
     }
     return evaluadas;
   }

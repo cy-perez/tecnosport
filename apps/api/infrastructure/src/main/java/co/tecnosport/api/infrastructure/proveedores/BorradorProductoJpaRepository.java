@@ -44,6 +44,11 @@ public interface BorradorProductoJpaRepository
 
   boolean existsByProveedorIdAndEstadoAndHuella(UUID proveedorId, String estado, String huella);
 
+  Optional<BorradorProductoJpaEntity> findFirstByProveedorIdAndEstadoAndHuellaOrderByCreadoEnAsc(
+      UUID proveedorId, String estado, String huella);
+
+  List<BorradorProductoJpaEntity> findByPublicacionIdOrderByCreadoEnAscIdAsc(UUID publicacionId);
+
   /**
    * Los borradores en revisión del proveedor, vistos como anuncios: el texto del mensaje principal
    * de su publicación —el cuerpo o, si no tiene, el pie de foto—, el pHash de la principal que

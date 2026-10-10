@@ -673,6 +673,32 @@ class AprobarBorradorTest {
     assertEquals(List.of("Negro/SM", "Negro/ML", "Café/ML"), combinaciones);
   }
 
+  /**
+   * Una foto sumada desde otra publicación se aprueba como las suyas: está en otro lote, y la
+   * aprobación la encuentra por su id (10 de octubre de 2026).
+   */
+  @Test
+  void unaFotoSumadaDeOtraPublicacionSeApruebaComoLasDemas() {
+    LoteIngesta otroLote =
+        LoteIngesta.recibirExportacion(proveedor.id(), "p/exportaciones/b.zip", AHORA);
+    MensajeProveedor deOtroLote =
+        foto(otroLote, "otra", "proveedores/x/2026/10/otra.jpg", "foto-otra");
+    mensajes.guardarTodos(List.of(deOtroLote));
+    borrador.agregarFotos(List.of(deOtroLote.id()), List.of(foto1.id(), foto2.id()));
+    borradores.actualizar(borrador);
+
+    Producto producto =
+        caso()
+            .ejecutar(
+                comando(
+                    List.of(
+                        new FotoAprobada(foto1.id(), null, null),
+                        new FotoAprobada(deOtroLote.id(), null, null))));
+
+    assertTrue(producto.imagenPrincipal().isPresent());
+    assertEquals(1, producto.galeria().size(), "la sumada de otra publicación entra a la galería");
+  }
+
   /** Una prenda es una variante y una variante tiene un color: sin él no hay qué ofrecer. */
   @Test
   void unaPrendaSinColorNoSeAprueba() {

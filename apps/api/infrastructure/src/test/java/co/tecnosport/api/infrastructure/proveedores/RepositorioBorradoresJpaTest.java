@@ -478,6 +478,73 @@ class RepositorioBorradoresJpaTest {
     assertThat(anuncios.getFirst().fotos()).containsExactly(dePrimero);
   }
 
+  /**
+   * Las fotos de otra publicación que se le suman a un borrador van y vuelven en su orden, y las
+   * encuentra la consulta por ids aunque sean de otro lote; la misma referencia en revisión se
+   * encuentra por su huella, y los borradores de una publicación salen en orden (10 de octubre de
+   * 2026).
+   */
+  @Test
+  void lasFotosAgregadasVanYVuelvenYSeEncuentranPorIdEnOtroLote() {
+    unaPublicacion();
+    LoteIngesta otroLote =
+        LoteIngesta.recibirExportacion(proveedor.id(), "p/exportaciones/b.zip", T);
+    lotes.guardar(otroLote);
+    MensajeProveedor primera =
+        MensajeProveedor.imagen(
+            proveedor.id(), otroLote.id(), new IdExternoDeMensaje("a1"), T, null, "p/a1.jpg");
+    MensajeProveedor segunda =
+        MensajeProveedor.imagen(
+            proveedor.id(), otroLote.id(), new IdExternoDeMensaje("a2"), T, null, "p/a2.jpg");
+    mensajes.guardarTodos(List.of(primera, segunda));
+    HuellaProveedor referencia = HuellaProveedor.deReferencia(proveedor.id(), "261002");
+    BorradorProducto borrador =
+        BorradorProducto.nuevo(
+            publicacion.id(),
+            proveedor.id(),
+            extraido("Camiseta slim", null),
+            "{}",
+            Dinero.deCop(42000),
+            null,
+            referencia,
+            null,
+            Set.of(),
+            T);
+    borrador.agregarFotos(List.of(segunda.id(), primera.id()), List.of());
+    borradores.guardar(borrador);
+    BorradorProducto otro =
+        BorradorProducto.nuevo(
+            publicacion.id(),
+            proveedor.id(),
+            extraido("Jogger", null),
+            "{}",
+            Dinero.deCop(72000),
+            null,
+            null,
+            null,
+            Set.of(),
+            T.plusSeconds(1));
+    borradores.guardar(otro);
+    em.flush();
+    em.clear();
+
+    BorradorProducto leido = borradores.buscarPorId(borrador.id()).orElseThrow();
+    assertThat(leido.fotosAgregadas()).containsExactly(segunda.id(), primera.id());
+    assertThat(mensajes.buscarPorIds(List.of(segunda.id(), UUID.randomUUID(), primera.id())))
+        .extracting(MensajeProveedor::id)
+        .containsExactly(segunda.id(), primera.id());
+    assertThat(mensajes.buscarPorIds(List.of())).isEmpty();
+    assertThat(borradores.buscarEnRevisionConHuella(proveedor.id(), referencia))
+        .contains(borrador.id());
+    assertThat(
+            borradores.buscarEnRevisionConHuella(
+                proveedor.id(), HuellaProveedor.deReferencia(proveedor.id(), "Q355")))
+        .isEmpty();
+    assertThat(borradores.listarDePublicacion(publicacion.id()))
+        .extracting(BorradorProducto::id)
+        .containsExactly(borrador.id(), otro.id());
+  }
+
   private MensajeProveedor fotoConPHash(String id, PHash pHash) {
     return new MensajeProveedor(
         UUID.randomUUID(),

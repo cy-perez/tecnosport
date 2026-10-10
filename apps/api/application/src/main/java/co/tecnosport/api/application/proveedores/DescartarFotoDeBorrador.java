@@ -59,7 +59,8 @@ public final class DescartarFotoDeBorrador {
       almacen.borrar(subida.get().referenciaArchivo());
       borrador.quitarFotoSubida(mensajeId);
     } else {
-      if (!publicacion.medios().contains(mensajeId)) {
+      if (!publicacion.medios().contains(mensajeId)
+          && !borrador.fotosAgregadas().contains(mensajeId)) {
         throw new FotoNoEsDelBorradorException(mensajeId);
       }
       borrador.descartarFoto(mensajeId);
@@ -84,6 +85,10 @@ public final class DescartarFotoDeBorrador {
   private boolean quedanFotosConArchivo(
       BorradorProducto borrador, PublicacionProveedor publicacion) {
     if (!borrador.fotosSubidas().isEmpty()) {
+      return true;
+    }
+    if (repositorioMensajes.buscarPorIds(borrador.fotosAgregadas()).stream()
+        .anyMatch(m -> m.referenciaArchivo().isPresent())) {
       return true;
     }
     Set<UUID> descartadas = borrador.fotosDescartadas();

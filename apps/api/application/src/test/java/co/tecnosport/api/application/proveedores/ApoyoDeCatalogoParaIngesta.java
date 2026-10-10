@@ -266,10 +266,22 @@ final class ApoyoDeCatalogoParaIngesta {
 
     @Override
     public boolean existeEnRevisionConHuella(UUID proveedorId, HuellaProveedor huella) {
+      return buscarEnRevisionConHuella(proveedorId, huella).isPresent();
+    }
+
+    @Override
+    public Optional<UUID> buscarEnRevisionConHuella(UUID proveedorId, HuellaProveedor huella) {
       return porId.values().stream()
           .filter(b -> b.proveedorId().equals(proveedorId))
           .filter(b -> b.estado() == EstadoBorrador.EN_REVISION)
-          .anyMatch(b -> b.huella().map(huella::equals).orElse(false));
+          .filter(b -> b.huella().map(huella::equals).orElse(false))
+          .map(BorradorProducto::id)
+          .findFirst();
+    }
+
+    @Override
+    public List<BorradorProducto> listarDePublicacion(UUID publicacionId) {
+      return porId.values().stream().filter(b -> b.publicacionId().equals(publicacionId)).toList();
     }
 
     @Override

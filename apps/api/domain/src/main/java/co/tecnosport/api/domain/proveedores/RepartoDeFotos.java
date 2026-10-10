@@ -94,6 +94,7 @@ public final class RepartoDeFotos {
     for (ProductoExtraido producto : productos) {
       Optional<String> codigo = producto.codigoReferenciaOpcional();
       List<UUID> propias = new ArrayList<>();
+      List<UUID> conSuCodigo = new ArrayList<>();
       boolean algunaPorCodigo = false;
       UUID exclusiva = null;
       for (int i = 0; i < fotos.size(); i++) {
@@ -109,6 +110,7 @@ public final class RepartoDeFotos {
         if (muestraEste) {
           algunaPorCodigo = true;
           propias.add(fotos.get(i));
+          conSuCodigo.add(fotos.get(i));
           boolean soloEste =
               productos.stream()
                   .filter(otro -> otro != producto)
@@ -142,7 +144,9 @@ public final class RepartoDeFotos {
                   tonosSugeridos(fotos, lectura, propias),
                   lectura.jsonCrudo()),
               Respaldo.TEXTO_IMPRESO,
-              exclusiva));
+              exclusiva,
+              false,
+              conSuCodigo));
     }
     return repartidos;
   }
@@ -189,7 +193,10 @@ public final class RepartoDeFotos {
                   lectura.jsonCrudo()),
               conPie ? Respaldo.TEXTO_IMPRESO : Respaldo.DISENO_SIN_PIE,
               fotos.get(posiciones.getFirst()),
-              true));
+              true,
+              sku == null || skuRepetido
+                  ? List.of()
+                  : posiciones.stream().map(fotos::get).toList()));
     }
     return repartidos;
   }
@@ -291,6 +298,9 @@ public final class RepartoDeFotos {
    *     si no hay ninguna
    * @param disenoDeAlbum el producto es un diseño de un álbum: comparte el texto y el precio del
    *     anuncio con los demás diseños
+   * @param conSuCodigo las fotos que llevan impreso el código de este producto, o el SKU en un
+   *     álbum: las únicas que, con respaldo, se pueden sumar a un borrador de otra publicación con
+   *     la misma referencia (10 de octubre de 2026). Vacía sin reparto
    */
   public record ProductoRepartido(
       ProductoExtraido producto,
@@ -298,7 +308,8 @@ public final class RepartoDeFotos {
       FotosDelProducto reparto,
       Respaldo respaldo,
       UUID exclusiva,
-      boolean disenoDeAlbum) {
+      boolean disenoDeAlbum,
+      List<UUID> conSuCodigo) {
 
     public ProductoRepartido(
         ProductoExtraido producto,
@@ -306,12 +317,13 @@ public final class RepartoDeFotos {
         FotosDelProducto reparto,
         Respaldo respaldo,
         UUID exclusiva) {
-      this(producto, fotos, reparto, respaldo, exclusiva, false);
+      this(producto, fotos, reparto, respaldo, exclusiva, false, List.of());
     }
 
     public ProductoRepartido {
       Objects.requireNonNull(producto);
       fotos = List.copyOf(fotos);
+      conSuCodigo = conSuCodigo == null ? List.of() : List.copyOf(conSuCodigo);
       Objects.requireNonNull(reparto);
       Objects.requireNonNull(respaldo);
     }

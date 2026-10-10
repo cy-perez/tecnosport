@@ -227,6 +227,66 @@ class RevisarBorradorTest {
                 .ejecutar(borrador.id(), UUID.randomUUID()));
   }
 
+  /**
+   * Una foto de otro lote que se le sumó —la misma referencia publicada otra vez— se ve después de
+   * las suyas; y los otros borradores en revisión de la misma publicación salen como hermanos, a
+   * donde el panel deja mover una foto (10 de octubre de 2026).
+   */
+  @Test
+  void verTraeLasFotosAgregadasYLosHermanos() {
+    LoteIngesta otroLote =
+        LoteIngesta.recibirExportacion(borrador.proveedorId(), "p/exportaciones/b.zip", T);
+    MensajeProveedor deOtroLote =
+        MensajeProveedor.imagen(
+            borrador.proveedorId(),
+            otroLote.id(),
+            new IdExternoDeMensaje("otra"),
+            T.plusSeconds(3600),
+            null,
+            "proveedores/x/otra.jpg");
+    mensajes.guardarTodos(List.of(deOtroLote));
+    borrador.agregarFotos(List.of(deOtroLote.id(), UUID.randomUUID()), List.of());
+    borradores.actualizar(borrador);
+    BorradorProducto hermano =
+        BorradorProducto.nuevo(
+            borrador.publicacionId(),
+            borrador.proveedorId(),
+            new ProductoExtraido(
+                true,
+                false,
+                "Llavero",
+                LineaCatalogo.BOLSOS,
+                TipoProductoProveedor.OTRO,
+                Dinero.deCop(5000),
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                false,
+                new BigDecimal("0.9"),
+                null),
+            "{}",
+            null,
+            null,
+            null,
+            null,
+            Set.of(),
+            T);
+    borradores.guardar(hermano);
+
+    VerBorrador.DetalleDeBorrador detalle =
+        new VerBorrador(borradores, publicaciones, mensajes, almacen).ejecutar(borrador.id());
+
+    assertEquals(
+        List.of(foto.id(), omitida.id(), deOtroLote.id()),
+        detalle.fotos().stream().map(VerBorrador.FotoDeBorrador::mensajeId).toList(),
+        "la que ya no existe no se pinta");
+    assertEquals("https://firmada.local/leer/proveedores/x/otra.jpg", detalle.fotos().get(2).url());
+    assertEquals(List.of(new VerBorrador.Hermano(hermano.id(), "Llavero")), detalle.hermanos());
+  }
+
   @Test
   void verTraeLosTextosYLasFotosConUrlFirmadaYLaOmitidaSinUrl() {
     VerBorrador.DetalleDeBorrador detalle =

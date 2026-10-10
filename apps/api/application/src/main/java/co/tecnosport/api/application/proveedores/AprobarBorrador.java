@@ -520,6 +520,10 @@ public final class AprobarBorrador {
                     m -> m.referenciaArchivo().orElseThrow(),
                     (a, b) -> a,
                     LinkedHashMap::new));
+    // Las sumadas de otras publicaciones: se buscan por id, porque su lote es otro.
+    for (MensajeProveedor agregada : repositorioMensajes.buscarPorIds(borrador.fotosAgregadas())) {
+      agregada.referenciaArchivo().ifPresent(r -> archivos.put(agregada.id(), r));
+    }
     for (FotoSubida subida : borrador.fotosSubidas()) {
       archivos.put(subida.id(), subida.referenciaArchivo());
     }

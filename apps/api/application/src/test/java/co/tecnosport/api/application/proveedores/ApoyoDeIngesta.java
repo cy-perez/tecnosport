@@ -238,6 +238,13 @@ final class ApoyoDeIngesta {
     final List<MensajeProveedor> guardados = new ArrayList<>();
 
     @Override
+    public List<MensajeProveedor> buscarPorIds(List<UUID> ids) {
+      return ids.stream()
+          .flatMap(id -> guardados.stream().filter(m -> m.id().equals(id)).limit(1))
+          .toList();
+    }
+
+    @Override
     public void guardarTodos(List<MensajeProveedor> mensajes) {
       for (MensajeProveedor mensaje : mensajes) {
         boolean repetido =

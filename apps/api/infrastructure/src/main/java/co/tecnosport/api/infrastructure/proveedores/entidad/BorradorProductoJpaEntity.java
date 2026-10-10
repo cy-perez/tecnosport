@@ -92,6 +92,9 @@ public class BorradorProductoJpaEntity {
   @Column(name = "lectura_de_fotos")
   private String lecturaDeFotos;
 
+  @Column(name = "fotos_agregadas")
+  private String fotosAgregadas;
+
   @Column(nullable = false)
   private String estado;
 
@@ -136,6 +139,7 @@ public class BorradorProductoJpaEntity {
       String preciosAdicionales,
       String tonosSugeridos,
       String lecturaDeFotos,
+      String fotosAgregadas,
       String estado,
       UUID productoId,
       String motivoRechazo,
@@ -167,6 +171,7 @@ public class BorradorProductoJpaEntity {
     this.preciosAdicionales = preciosAdicionales;
     this.tonosSugeridos = tonosSugeridos;
     this.lecturaDeFotos = lecturaDeFotos;
+    this.fotosAgregadas = fotosAgregadas;
     this.estado = estado;
     this.productoId = productoId;
     this.motivoRechazo = motivoRechazo;
@@ -195,6 +200,11 @@ public class BorradorProductoJpaEntity {
 
   public String getLecturaDeFotos() {
     return lecturaDeFotos;
+  }
+
+  /** Ids de mensaje separados por salto de línea, en orden; nulo si no hay. */
+  public String getFotosAgregadas() {
+    return fotosAgregadas;
   }
 
   public UUID getPublicacionId() {

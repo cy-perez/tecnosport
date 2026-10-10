@@ -16,6 +16,7 @@ import co.tecnosport.api.application.proveedores.EditarBorrador;
 import co.tecnosport.api.application.proveedores.EliminarBorrador;
 import co.tecnosport.api.application.proveedores.EliminarBorradoresSinAprobar;
 import co.tecnosport.api.application.proveedores.ExpirarDisponibilidadDeProductos;
+import co.tecnosport.api.application.proveedores.MoverFotoDeBorrador;
 import co.tecnosport.api.application.proveedores.PartirBorrador;
 import co.tecnosport.api.application.proveedores.ProcesadorDeImagenes;
 import co.tecnosport.api.application.proveedores.RechazarBorrador;
@@ -140,6 +141,14 @@ public class ConfiguracionBorradores {
       RepositorioMensajesProveedor mensajes,
       AlmacenDeArchivosDeProveedor almacen) {
     return new DescartarFotoDeBorrador(borradores, publicaciones, mensajes, almacen);
+  }
+
+  @Bean
+  public MoverFotoDeBorrador moverFotoDeBorrador(
+      RepositorioBorradores borradores,
+      RepositorioPublicacionesProveedor publicaciones,
+      DescartarFotoDeBorrador descartar) {
+    return new MoverFotoDeBorrador(borradores, publicaciones, descartar);
   }
 
   @Bean

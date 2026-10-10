@@ -228,6 +228,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/borradores/{id}/fotos/{mensajeId}/mover": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["moverFoto"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/borradores/{id}/partir": {
         parameters: {
             query?: never;
@@ -2213,6 +2229,7 @@ export interface components {
         BorradorDetalleRespuesta: {
             borrador?: components["schemas"]["BorradorRespuesta"];
             fotos?: components["schemas"]["FotoRespuesta"][];
+            hermanos?: components["schemas"]["HermanoRespuesta"][];
             textos?: string[];
         };
         BorradorRespuesta: {
@@ -2711,6 +2728,11 @@ export interface components {
             transportadora?: string;
             urlEtiqueta?: string;
         };
+        HermanoRespuesta: {
+            /** Format: uuid */
+            id: string;
+            titulo?: string;
+        };
         HistorialPedidoRespuesta: {
             actor?: string;
             estado?: string;
@@ -2958,6 +2980,10 @@ export interface components {
             metaDescripcion?: string;
             paleta?: string[];
             titulo: string;
+        };
+        MoverFotoPeticion: {
+            /** Format: uuid */
+            destinoId: string;
         };
         OpcionEnvioRespuesta: {
             costoEnvio: components["schemas"]["DineroRespuesta"];
@@ -4049,6 +4075,31 @@ export interface operations {
             cookie?: never;
         };
         requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    moverFoto: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                mensajeId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MoverFotoPeticion"];
+            };
+        };
         responses: {
             /** @description No Content */
             204: {

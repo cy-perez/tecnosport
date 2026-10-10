@@ -22,6 +22,9 @@ import java.util.UUID;
  *     si sus fotos pueden ser de otro producto del mismo mensaje
  * @param disenoDeAlbum el producto es un diseño de un álbum: comparte el texto del anuncio con los
  *     demás diseños, y sin código su huella necesita además su foto
+ * @param fotosParaSumar las que, si la misma referencia ya espera revisión en otro borrador, se le
+ *     suman a ese: todas las de la publicación si es de un solo producto; con varios, o en un
+ *     álbum, solo las que llevan impreso su código o su SKU
  */
 public record ExtraccionEvaluada(
     ProductoExtraido producto,
@@ -32,9 +35,11 @@ public record ExtraccionEvaluada(
     List<UUID> fotos,
     FotosDelProducto reparto,
     UUID exclusiva,
-    boolean disenoDeAlbum) {
+    boolean disenoDeAlbum,
+    List<UUID> fotosParaSumar) {
 
   public ExtraccionEvaluada {
+    fotosParaSumar = fotosParaSumar == null ? List.of() : List.copyOf(fotosParaSumar);
     Objects.requireNonNull(producto);
     Objects.requireNonNull(jsonCrudo);
     alertas = Set.copyOf(alertas);
@@ -50,7 +55,31 @@ public record ExtraccionEvaluada(
       Dinero precioProveedor,
       Set<AlertaBorrador> alertas,
       UsoDelExtractor uso) {
-    this(producto, jsonCrudo, precioProveedor, alertas, uso, List.of(), null, null, false);
+    this(producto, jsonCrudo, precioProveedor, alertas, uso, List.of(), null, null, false, null);
+  }
+
+  /** Sin fotos para sumar a otro borrador: la forma de antes de que existieran. */
+  public ExtraccionEvaluada(
+      ProductoExtraido producto,
+      String jsonCrudo,
+      Dinero precioProveedor,
+      Set<AlertaBorrador> alertas,
+      UsoDelExtractor uso,
+      List<UUID> fotos,
+      FotosDelProducto reparto,
+      UUID exclusiva,
+      boolean disenoDeAlbum) {
+    this(
+        producto,
+        jsonCrudo,
+        precioProveedor,
+        alertas,
+        uso,
+        fotos,
+        reparto,
+        exclusiva,
+        disenoDeAlbum,
+        null);
   }
 
   public Optional<Dinero> precioProveedorOpcional() {

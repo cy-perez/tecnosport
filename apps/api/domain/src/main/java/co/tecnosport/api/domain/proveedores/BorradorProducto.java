@@ -57,6 +57,7 @@ public final class BorradorProducto {
   private final List<PrecioAdicional> preciosAdicionales;
   private final Map<UUID, String> tonosSugeridos;
   private final String lecturaDeFotos;
+  private final List<UUID> fotosAgregadas;
   private EstadoBorrador estado;
   private UUID productoId;
   private String motivoRechazo;
@@ -112,6 +113,7 @@ public final class BorradorProducto {
         null,
         null,
         null,
+        null,
         estado,
         productoId,
         motivoRechazo,
@@ -125,6 +127,9 @@ public final class BorradorProducto {
    * @param tonosSugeridos el color que la lectura de fotos vio en cada foto, por mensaje; solo las
    *     fotos de un solo color. Lo que el panel propone al aprobar, no lo que se aprueba
    * @param lecturaDeFotos el JSON que devolvió la lectura de fotos, tal cual; nulo si no se leyeron
+   * @param fotosAgregadas fotos de <b>otras</b> publicaciones del proveedor que se sumaron a este
+   *     borrador, por mensaje y en orden: la misma referencia publicada otra vez, o una foto que
+   *     quien revisa movió aquí desde otro borrador
    */
   public BorradorProducto(
       UUID id,
@@ -151,6 +156,7 @@ public final class BorradorProducto {
       List<PrecioAdicional> preciosAdicionales,
       Map<UUID, String> tonosSugeridos,
       String lecturaDeFotos,
+      List<UUID> fotosAgregadas,
       EstadoBorrador estado,
       UUID productoId,
       String motivoRechazo,
@@ -195,6 +201,10 @@ public final class BorradorProducto {
       this.tonosSugeridos.putAll(tonosSugeridos);
     }
     this.lecturaDeFotos = enBlancoEsNulo(lecturaDeFotos);
+    this.fotosAgregadas = new ArrayList<>();
+    if (fotosAgregadas != null) {
+      fotosAgregadas.stream().distinct().forEach(this.fotosAgregadas::add);
+    }
     this.estado = Objects.requireNonNull(estado, "El estado del borrador no puede ser nulo.");
     this.productoId = productoId;
     this.motivoRechazo = enBlancoEsNulo(motivoRechazo);
@@ -278,6 +288,7 @@ public final class BorradorProducto {
         extraido.preciosAdicionales(),
         fotos.tonosSugeridos(),
         fotos.lecturaCruda(),
+        List.of(),
         EstadoBorrador.EN_REVISION,
         null,
         null,
@@ -378,7 +389,54 @@ public final class BorradorProducto {
    */
   public void descartarFoto(UUID mensajeId) {
     exigirEnRevision("descartar fotos de");
-    fotosDescartadas.add(Objects.requireNonNull(mensajeId, "La foto no puede ser nula."));
+    Objects.requireNonNull(mensajeId, "La foto no puede ser nula.");
+    // Una de otra publicación no es de la publicación de este borrador: no hay nada que marcar
+    // como descartado, sale de las agregadas y ya.
+    if (!fotosAgregadas.remove(mensajeId)) {
+      fotosDescartadas.add(mensajeId);
+    }
+    tonosSugeridos.remove(mensajeId);
+  }
+
+  /**
+   * Suma fotos de otra publicación del mismo proveedor (10 de octubre de 2026): la misma referencia
+   * que vuelve a salir —la camiseta 261002 de Violeta acompaña al jogger a las 10:35 y a la bermuda
+   * a las 11:01— o una foto que quien revisa trae desde otro borrador. Las que ya tiene no se
+   * repiten. Con alguna foto nueva deja de estar {@code SIN_FOTOS}: quien llama solo suma fotos con
+   * archivo.
+   *
+   * @param fotosDeLaPublicacion las de su propia publicación, que no son «otra publicación»
+   * @return las que de verdad se sumaron
+   */
+  public List<UUID> agregarFotos(List<UUID> fotos, List<UUID> fotosDeLaPublicacion) {
+    exigirEnRevision("sumar fotos a");
+    Objects.requireNonNull(fotos, "Las fotos no pueden ser nulas.");
+    List<UUID> sumadas = new ArrayList<>();
+    for (UUID foto : fotos) {
+      if (foto != null
+          && !fotosDeLaPublicacion.contains(foto)
+          && !fotosAgregadas.contains(foto)
+          && !sumadas.contains(foto)) {
+        sumadas.add(foto);
+      }
+    }
+    fotosAgregadas.addAll(sumadas);
+    if (!sumadas.isEmpty()) {
+      alertas.remove(AlertaBorrador.SIN_FOTOS);
+    }
+    return sumadas;
+  }
+
+  /**
+   * Devuelve una foto de su propia publicación que estaba descartada: la que quien revisa mueve
+   * aquí desde otro borrador del mismo mensaje.
+   */
+  public void recuperarFoto(UUID mensajeId) {
+    exigirEnRevision("recuperar fotos de");
+    if (!fotosDescartadas.remove(Objects.requireNonNull(mensajeId, "La foto no puede ser nula."))) {
+      throw new ExcepcionDeDominio("Esa foto no estaba descartada en el borrador.");
+    }
+    alertas.remove(AlertaBorrador.SIN_FOTOS);
   }
 
   /**
@@ -451,6 +509,7 @@ public final class BorradorProducto {
             preciosAdicionales,
             tonosDelNuevo,
             lecturaDeFotos,
+            List.of(),
             EstadoBorrador.EN_REVISION,
             null,
             null,
@@ -656,6 +715,11 @@ public final class BorradorProducto {
 
   public Optional<String> lecturaDeFotos() {
     return Optional.ofNullable(lecturaDeFotos);
+  }
+
+  /** Las de otras publicaciones que se sumaron, por mensaje y en el orden en que llegaron. */
+  public List<UUID> fotosAgregadas() {
+    return List.copyOf(fotosAgregadas);
   }
 
   public EstadoBorrador estado() {

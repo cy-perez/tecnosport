@@ -376,6 +376,47 @@ class ResolverBorradorTest {
   }
 
   /**
+   * La camiseta 261002 de Violeta acompaña al jogger a las 10:35 y a la bermuda a las 11:01 (10 de
+   * octubre de 2026). La segunda publicación se descarta por la misma referencia, pero la foto con
+   * su código impreso se suma al borrador de la primera, en vez de perderse.
+   */
+  @Test
+  void laMismaReferenciaEnRevisionRecibeLasFotosConSuCodigo() {
+    resolver(
+        publicacion("Camiseta Slim(261002) 💲42", "camiseta-y-jogger", FECHA_DEL_MENSAJE),
+        conCodigo("Camiseta slim", 42000, "261002"));
+    BorradorProducto primero = borradores.enEstado(EstadoBorrador.EN_REVISION).getFirst();
+    PublicacionProveedor segunda =
+        conFotos(
+            "Camiseta Slim(261002) 💲42",
+            FECHA_DEL_MENSAJE.plusSeconds(1560),
+            "camiseta-y-bermuda",
+            "solo-la-bermuda");
+    UUID conSuCodigo = segunda.medios().getFirst();
+    ExtraccionEvaluada base = conCodigo("Camiseta slim", 42000, "261002");
+    ExtraccionEvaluada conFotosParaSumar =
+        new ExtraccionEvaluada(
+            base.producto(),
+            base.jsonCrudo(),
+            base.precioProveedor(),
+            base.alertas(),
+            base.uso(),
+            segunda.medios(),
+            null,
+            null,
+            false,
+            List.of(conSuCodigo));
+
+    Resolucion resolucion = resolver(segunda, conFotosParaSumar);
+
+    assertEquals(TipoDeResolucion.DESCARTADA, resolucion.tipo());
+    assertTrue(resolucion.motivo().contains("1 fotos se sumaron"), resolucion.motivo());
+    assertEquals(
+        List.of(conSuCodigo), borradores.buscarPorId(primero.id()).orElseThrow().fotosAgregadas());
+    assertEquals(1, borradores.enEstado(EstadoBorrador.EN_REVISION).size());
+  }
+
+  /**
    * Un producto aprobado con este texto, y un anuncio nuevo con el mismo texto y sin su foto: es
    * otra prenda, no una renovación (9 de octubre de 2026).
    */
