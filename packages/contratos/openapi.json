@@ -2954,6 +2954,40 @@
         },
         "type" : "object"
       },
+      "ProductosEliminadosRespuesta" : {
+        "properties" : {
+          "conservadosPorExistencias" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "conservadosPorVentas" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "eliminados" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "hasta" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "siguiente" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "ProductosNoPublicadosRespuesta" : {
+        "properties" : {
+          "cantidad" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        },
+        "type" : "object"
+      },
       "PropuestaDePieRespuesta" : {
         "properties" : {
           "pieDeFoto" : {
@@ -6459,6 +6493,64 @@
         },
         "tags" : [
           "admin-producto-controlador"
+        ]
+      }
+    },
+    "/api/v1/admin/productos/no-publicados" : {
+      "delete" : {
+        "operationId" : "eliminarNoPublicados",
+        "parameters" : [
+          {
+            "in" : "query",
+            "name" : "desde",
+            "required" : false,
+            "schema" : {
+              "format" : "uuid",
+              "type" : "string"
+            }
+          },
+          {
+            "in" : "query",
+            "name" : "hasta",
+            "required" : false,
+            "schema" : {
+              "format" : "uuid",
+              "type" : "string"
+            }
+          }
+        ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProductosEliminadosRespuesta"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "admin-productos-no-publicados-controlador"
+        ]
+      },
+      "get" : {
+        "operationId" : "contarNoPublicados",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProductosNoPublicadosRespuesta"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "admin-productos-no-publicados-controlador"
         ]
       }
     },

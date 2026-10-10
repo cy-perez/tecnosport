@@ -20,6 +20,7 @@ import co.tecnosport.api.application.catalogo.EditarProducto;
 import co.tecnosport.api.application.catalogo.EliminarCategoria;
 import co.tecnosport.api.application.catalogo.EliminarMarca;
 import co.tecnosport.api.application.catalogo.EliminarProducto;
+import co.tecnosport.api.application.catalogo.EliminarProductosNoPublicados;
 import co.tecnosport.api.application.catalogo.EliminarSetRotacion;
 import co.tecnosport.api.application.catalogo.ListarAtributos;
 import co.tecnosport.api.application.catalogo.ListarCategorias;
@@ -31,6 +32,7 @@ import co.tecnosport.api.application.catalogo.ListarPaletaDeColores;
 import co.tecnosport.api.application.catalogo.ListarProductosAdmin;
 import co.tecnosport.api.application.catalogo.ListarVariantesSinMedir;
 import co.tecnosport.api.application.catalogo.MedirVariante;
+import co.tecnosport.api.application.catalogo.ProductosNoPublicados;
 import co.tecnosport.api.application.catalogo.PublicarProducto;
 import co.tecnosport.api.application.catalogo.PublicarSetRotacion;
 import co.tecnosport.api.application.catalogo.QuitarImagenDeGaleria;
@@ -246,6 +248,16 @@ public class ConfiguracionCatalogo {
       RepositorioPedidos repositorioPedidos,
       AlmacenDeImagenes almacenDeImagenes) {
     return new EliminarProducto(repositorioProductos, repositorioPedidos, almacenDeImagenes);
+  }
+
+  @Bean
+  public EliminarProductosNoPublicados eliminarProductosNoPublicados(
+      ProductosNoPublicados productosNoPublicados,
+      RepositorioProductos repositorioProductos,
+      RepositorioInventario repositorioInventario,
+      EliminarProducto eliminarProducto) {
+    return new EliminarProductosNoPublicados(
+        productosNoPublicados, repositorioProductos, repositorioInventario, eliminarProducto);
   }
 
   @Bean

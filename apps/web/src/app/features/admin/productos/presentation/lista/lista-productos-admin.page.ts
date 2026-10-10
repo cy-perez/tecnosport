@@ -19,6 +19,7 @@ import { TsEsqueleto } from '../../../../../shared/ts-esqueleto/ts-esqueleto';
 import { TsMigas } from '../../../../../shared/ts-migas/ts-migas';
 import { TsPaginador } from '../../../../../shared/ts-paginador/ts-paginador';
 import { usarMigasAdmin } from '../../../migas-admin';
+import { LimpiarNoPublicados } from './limpiar-no-publicados';
 import { usarEliminarProducto } from '../../application/eliminar-producto.mutacion';
 import { usarListarProductosAdmin } from '../../application/listar-productos-admin.consulta';
 import {
@@ -66,7 +67,15 @@ import {
  */
 @Component({
   selector: 'app-lista-productos-admin',
-  imports: [TranslocoPipe, TsBoton, TsEsqueleto, TsMenuAcciones, TsMigas, TsPaginador],
+  imports: [
+    LimpiarNoPublicados,
+    TranslocoPipe,
+    TsBoton,
+    TsEsqueleto,
+    TsMenuAcciones,
+    TsMigas,
+    TsPaginador,
+  ],
   templateUrl: './lista-productos-admin.page.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

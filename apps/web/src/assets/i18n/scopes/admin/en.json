@@ -523,6 +523,19 @@
       "hecho": "{{nombre}} was deleted from the catalog.",
       "error": "We couldn't delete the product. Please try again."
     },
+    "limpiar": {
+      "titulo": "Clean up unpublished products",
+      "explicacion": "There are {{cantidad}} unpublished product(s). You can delete them all at once, with their photos.",
+      "accion": "Delete unpublished products",
+      "pregunta": "Delete the {{cantidad}} unpublished product(s)?",
+      "loQueImplica": "They are deleted along with their variants, their stock and all their photos, and cannot be recovered. This includes products removed from the storefront and approved technology products still waiting for photos. Published products are not touched, and products that have been sold or have units in stock are kept.",
+      "confirmar": "Yes, delete all",
+      "cancelar": "Cancel",
+      "borrando": "Deleting… {{eliminados}} so far",
+      "hecho": "{{eliminados}} unpublished product(s) deleted.",
+      "error": "Not all of them could be deleted. The ones already deleted are gone; try again to finish.",
+      "hechoConConservados": "{{eliminados}} unpublished product(s) deleted. {{conservados}} were kept because they have sales or units in stock."
+    },
     "total": "{{total}} product(s) in the catalog"
   },
   "retractos": {

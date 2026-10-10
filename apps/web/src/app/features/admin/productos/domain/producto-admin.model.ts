@@ -315,3 +315,17 @@ export interface ExistenciaAjustada {
   readonly sinCambios: boolean;
   readonly dejaReservasSinRespaldo: boolean;
 }
+
+/**
+ * Una tanda del borrado en bloque de los productos no publicados. `siguiente` es el cursor de la
+ * próxima; nulo, terminó. Los que tienen ventas se quedan y se cuentan aparte.
+ */
+export interface TandaDeProductosEliminados {
+  readonly eliminados: number;
+  readonly conservadosPorVentas: number;
+  /** Los que tienen unidades en el libro: en bloque no se borran. */
+  readonly conservadosPorExistencias: number;
+  readonly siguiente: string | null;
+  /** El tope que fijó la primera tanda; las siguientes lo repiten. */
+  readonly hasta: string | null;
+}

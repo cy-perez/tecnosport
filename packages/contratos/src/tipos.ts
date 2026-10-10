@@ -820,6 +820,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/productos/no-publicados": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["contarNoPublicados"];
+        put?: never;
+        post?: never;
+        delete: operations["eliminarNoPublicados"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/productos/{id}": {
         parameters: {
             query?: never;
@@ -3020,6 +3036,22 @@ export interface components {
             /** Format: int64 */
             totalProductos?: number;
         };
+        ProductosEliminadosRespuesta: {
+            /** Format: int32 */
+            conservadosPorExistencias?: number;
+            /** Format: int32 */
+            conservadosPorVentas?: number;
+            /** Format: int32 */
+            eliminados?: number;
+            /** Format: uuid */
+            hasta?: string;
+            /** Format: uuid */
+            siguiente?: string;
+        };
+        ProductosNoPublicadosRespuesta: {
+            /** Format: int64 */
+            cantidad?: number;
+        };
         PropuestaDePieRespuesta: {
             pieDeFoto?: string;
         };
@@ -5021,6 +5053,49 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["ProductoAdminRespuesta"];
+                };
+            };
+        };
+    };
+    contarNoPublicados: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ProductosNoPublicadosRespuesta"];
+                };
+            };
+        };
+    };
+    eliminarNoPublicados: {
+        parameters: {
+            query?: {
+                desde?: string;
+                hasta?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ProductosEliminadosRespuesta"];
                 };
             };
         };

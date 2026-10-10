@@ -523,6 +523,19 @@
       "hecho": "{{nombre}} se eliminó del catálogo.",
       "error": "No pudimos eliminar el producto. Vuelve a intentarlo."
     },
+    "limpiar": {
+      "titulo": "Limpiar lo no publicado",
+      "explicacion": "Hay {{cantidad}} producto(s) sin publicar. Puedes borrarlos todos de una vez, con sus fotos.",
+      "accion": "Borrar los no publicados",
+      "pregunta": "¿Borrar los {{cantidad}} producto(s) no publicados?",
+      "loQueImplica": "Se borran con sus variantes, su inventario y todas sus fotos, y no se pueden recuperar. Entran también los retirados de la vitrina y los de tecnología aprobados que esperan sus fotos. Los publicados no se tocan, y se conservan los que ya tienen ventas o tienen unidades en inventario.",
+      "confirmar": "Sí, borrar todos",
+      "cancelar": "Cancelar",
+      "borrando": "Borrando… {{eliminados}} hasta ahora",
+      "hecho": "Se borraron {{eliminados}} producto(s) no publicados.",
+      "error": "No se pudieron borrar todos. Los que alcanzaron a borrarse ya no están; intenta de nuevo para terminar.",
+      "hechoConConservados": "Se borraron {{eliminados}} producto(s) no publicados. {{conservados}} se conservaron porque tienen ventas o unidades en inventario."
+    },
     "total": "{{total}} producto(s) en el catálogo"
   },
   "retractos": {

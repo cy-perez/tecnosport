@@ -42,6 +42,8 @@ import { REPOSITORIO_RETRACTOS } from './retractos/domain/repositorio-retractos.
 import { RetractosHttpRepositorio } from './retractos/infrastructure/retractos-http.repositorio';
 import { REPOSITORIO_PRODUCTOS_ADMIN } from './productos/domain/repositorio-productos-admin.puerto';
 import { ProductosAdminHttpRepositorio } from './productos/infrastructure/productos-admin-http.repositorio';
+import { REPOSITORIO_PRODUCTOS_NO_PUBLICADOS } from './productos/domain/productos-no-publicados.puerto';
+import { ProductosNoPublicadosHttpRepositorio } from './productos/infrastructure/productos-no-publicados-http.repositorio';
 import { precargarScopeI18n } from '../../core/i18n/precargar-scope';
 import { REPOSITORIO_PROVEEDORES_ADMIN } from './proveedores/domain/repositorio-proveedores-admin.puerto';
 import { ProveedoresAdminHttpRepositorio } from './proveedores/infrastructure/proveedores-admin-http.repositorio';
@@ -289,6 +291,10 @@ export const adminRoutes: Routes = [
             path: 'productos',
             providers: [
               { provide: REPOSITORIO_PRODUCTOS_ADMIN, useClass: ProductosAdminHttpRepositorio },
+              {
+                provide: REPOSITORIO_PRODUCTOS_NO_PUBLICADOS,
+                useClass: ProductosNoPublicadosHttpRepositorio,
+              },
             ],
             children: [
               {

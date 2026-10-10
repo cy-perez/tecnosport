@@ -1,0 +1,68 @@
+<p #avisoRef class="m-0 text-ts-exito" role="status" tabindex="-1" [class.mb-16]="aviso() !== null">
+  @if (aviso(); as texto) {
+    {{ texto }}
+  }
+</p>
+
+@if (cantidad() > 0 || confirmando()) {
+  <section
+    class="mb-24 flex flex-col gap-16 rounded-lg border border-ts-borde bg-ts-superficie p-16"
+    aria-labelledby="limpiar-no-publicados-titulo"
+  >
+    <h2 id="limpiar-no-publicados-titulo" class="m-0 font-display text-lg">
+      {{ 'admin.productos.limpiar.titulo' | transloco }}
+    </h2>
+    <p class="m-0 text-ts-texto-suave">
+      {{ 'admin.productos.limpiar.explicacion' | transloco: { cantidad: cantidad() } }}
+    </p>
+    <div>
+      <ts-boton
+        #boton
+        variante="secundario"
+        [expandido]="confirmando()"
+        controla="limpiar-no-publicados-confirmar"
+        (click)="preguntar()"
+      >
+        {{ 'admin.productos.limpiar.accion' | transloco }}
+      </ts-boton>
+    </div>
+
+    @if (confirmando()) {
+      <div
+        #caja
+        id="limpiar-no-publicados-confirmar"
+        class="flex flex-col gap-16 border border-ts-borde-control p-16"
+        role="group"
+        tabindex="-1"
+        aria-labelledby="limpiar-no-publicados-pregunta"
+        aria-describedby="limpiar-no-publicados-implica"
+        (keydown.escape)="cancelar()"
+      >
+        <p id="limpiar-no-publicados-pregunta" class="m-0">
+          {{ 'admin.productos.limpiar.pregunta' | transloco: { cantidad: cantidad() } }}
+        </p>
+        <p id="limpiar-no-publicados-implica" class="m-0 text-ts-texto-suave">
+          {{ 'admin.productos.limpiar.loQueImplica' | transloco }}
+        </p>
+        @if (error(); as mensaje) {
+          <p class="m-0 text-ts-error" role="alert">{{ mensaje }}</p>
+        }
+        <div class="flex flex-wrap gap-16">
+          <ts-boton
+            variante="peligro"
+            [ocupado]="borrando()"
+            [etiquetaCargando]="
+              'admin.productos.limpiar.borrando' | transloco: { eliminados: eliminadosHastaAhora() }
+            "
+            (click)="confirmar()"
+          >
+            {{ 'admin.productos.limpiar.confirmar' | transloco }}
+          </ts-boton>
+          <ts-boton variante="secundario" (click)="cancelar()">
+            {{ 'admin.productos.limpiar.cancelar' | transloco }}
+          </ts-boton>
+        </div>
+      </div>
+    }
+  </section>
+}
