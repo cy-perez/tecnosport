@@ -1,7 +1,9 @@
 package co.tecnosport.api.domain.catalogo;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import co.tecnosport.api.domain.compartido.ExcepcionDeDominio;
 import co.tecnosport.api.domain.compartido.Hashtag;
@@ -85,5 +87,30 @@ class CategoriaTest {
 
     assertEquals(List.of(new Hashtag("#Camisas")), movida.hashtags());
     assertEquals(LineaCatalogo.ROPA, movida.linea());
+  }
+
+  /**
+   * El predicado que sostiene la regla del panel: una hija lleva el slug de su rama delante, porque
+   * "Busos" vive en Dama y en Caballero y el slug es único en toda la tabla.
+   */
+  @Test
+  void reconoceElSlugDeUnaHijaPorSuPrefijo() {
+    Categoria dama = Categoria.crear("Dama", new Slug("ropa-dama"), LineaCatalogo.ROPA);
+
+    assertTrue(dama.esPrefijoDe(new Slug("ropa-dama-busos")));
+    assertFalse(dama.esPrefijoDe(new Slug("busos")));
+    assertFalse(dama.esPrefijoDe(new Slug("ropa-caballero-busos")));
+  }
+
+  /**
+   * Y el guion no es decoración: sin él, `ropa-damasco` pasaría por hija de `ropa-dama` — un slug
+   * que el filtro de la vitrina mandaría a la rama equivocada.
+   */
+  @Test
+  void elPrefijoExigeElGuion() {
+    Categoria dama = Categoria.crear("Dama", new Slug("ropa-dama"), LineaCatalogo.ROPA);
+
+    assertFalse(dama.esPrefijoDe(new Slug("ropa-damasco")));
+    assertFalse(dama.esPrefijoDe(new Slug("ropa-dama")));
   }
 }

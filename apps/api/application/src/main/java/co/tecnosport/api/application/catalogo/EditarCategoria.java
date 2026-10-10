@@ -43,6 +43,7 @@ public final class EditarCategoria {
     exigirSlugLibre(slug, actual);
 
     Optional<Categoria> nuevoPadre = padreValidado(comando, actual);
+    exigirPrefijoSiLoEscribieron(comando, slug, nuevoPadre);
 
     Categoria editada =
         conHashtagsDe(
@@ -72,9 +73,37 @@ public final class EditarCategoria {
   }
 
   private static Slug slugDe(EditarCategoriaComando comando, Categoria actual) {
-    return comando.slug() == null || comando.slug().isBlank()
-        ? actual.slug()
-        : new Slug(comando.slug().trim());
+    return loEscribieron(comando) ? new Slug(comando.slug().trim()) : actual.slug();
+  }
+
+  private static boolean loEscribieron(EditarCategoriaComando comando) {
+    return comando.slug() != null && !comando.slug().isBlank();
+  }
+
+  /**
+   * Un slug <b>escrito</b> para una hija empieza por el de su rama, igual que al crear ({@link
+   * SlugDeHijaSinPrefijoException}). Se comprueba después de validar el padre porque el prefijo que
+   * manda es el del padre <b>nuevo</b>: quien mueve una categoría y le escribe el slug a la vez
+   * tiene que escribir el de su destino.
+   *
+   * <p><b>Y solo cuando lo escriben</b>, que es la parte deliberada. El slug vacío significa
+   * "déjalo como está", así que mover "Faldas" a Caballero le conserva {@code ropa-dama-faldas}: un
+   * slug que ya miente sobre su rama, y a propósito, porque está en enlaces que la gente compartió
+   * y que los buscadores indexaron. Esta regla vigila lo que alguien escribe hoy, no lo que la
+   * historia dejó — hacer fallar el movimiento obligaría a romper esas URL para poder mover una
+   * categoría de sitio.
+   */
+  private static void exigirPrefijoSiLoEscribieron(
+      EditarCategoriaComando comando, Slug slug, Optional<Categoria> nuevoPadre) {
+    if (!loEscribieron(comando)) {
+      return;
+    }
+    nuevoPadre
+        .filter(padre -> !padre.esPrefijoDe(slug))
+        .ifPresent(
+            padre -> {
+              throw new SlugDeHijaSinPrefijoException(slug.valor(), padre.slug().valor());
+            });
   }
 
   /** Libre, o ya ocupado por ella misma — que es lo que pasa cuando solo se renombra. */

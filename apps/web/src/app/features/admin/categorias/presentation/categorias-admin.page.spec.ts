@@ -240,6 +240,20 @@ describe('CategoriasAdminPage', () => {
     );
   });
 
+  it('un slug sin el prefijo de su rama se explica por su nombre', async () => {
+    const repositorio = new RepositorioCategoriasAdminFalso();
+    repositorio.respuesta = { tipo: 'SLUG_SIN_PREFIJO' };
+    const { fixture } = await renderPagina(repositorio);
+
+    await escribir('Nombre', 'Morrales');
+    await escribir('Slug', 'morrales');
+    fireEvent.change(await screen.findByLabelText('Línea'), { target: { value: 'BOLSOS' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Crear categoría' }));
+    await fixture.whenStable();
+
+    await vi.waitFor(() => expect(textoDeLasAlertas()).toContain('empieza por el de su rama'));
+  });
+
   it('un slug repetido se explica por su nombre', async () => {
     const repositorio = new RepositorioCategoriasAdminFalso();
     repositorio.respuesta = { tipo: 'SLUG_REPETIDO' };

@@ -288,6 +288,8 @@ export class CategoriasAdminPage {
     switch (resultado.tipo) {
       case 'SLUG_REPETIDO':
         return this.transloco.translate('admin.categorias.slugRepetido');
+      case 'SLUG_SIN_PREFIJO':
+        return this.transloco.translate('admin.categorias.slugSinPrefijo');
       case 'TIENE_PRODUCTOS':
         return this.transloco.translate('admin.categorias.tieneProductos');
       case 'TIENE_SUBCATEGORIAS':

@@ -334,9 +334,18 @@ Las categorías, además, se editan y se borran, cosa que las marcas no: mover "
 rama o corregir un nombre es operación, y borrar una hoja vacía no arrastra nada. Los
 rechazos del árbol llegan con `codigo` propio —`CATEGORIA_SLUG_YA_EXISTE`,
 `CATEGORIA_CON_HIJAS`, `CATEGORIA_CON_PRODUCTOS`, `CATEGORIA_NO_ES_HOJA`,
-`PROFUNDIDAD_DE_CATEGORIA_EXCEDIDA`, `CICLO_DE_CATEGORIAS`— y los fija
+`PROFUNDIDAD_DE_CATEGORIA_EXCEDIDA`, `CICLO_DE_CATEGORIAS`,
+`SLUG_DE_HIJA_SIN_PREFIJO`— y los fija
 `CodigosDeCableTest`: el panel los traduce a una salida concreta ("mueve primero sus
 productos"), no a un fallo genérico.
+
+El séptimo entró el 10 de octubre de 2026 y es el único **422** de los siete: los demás
+son choques con el estado y este es un valor mal escrito en el cuerpo. Cierra una regla
+que estaba a medias — el slug derivado llevaba el de su rama delante y el escrito a mano
+no se miraba, así que el panel podía crear "Morrales" bajo `bolsos-caballero` con el slug
+`morrales`, que es la forma plana que `V63` tuvo que borrar del catálogo. **Mover** una
+categoría sigue conservando su slug viejo a propósito: está en enlaces compartidos e
+indexados, y la regla vigila lo que alguien escribe, no lo que la historia dejó.
 
 No hay `PATCH` ni `DELETE` de marca, y las dos ausencias son deliberadas:
 renombrar cambia lo que ve quien compra en la ficha y en el filtro, y borrar

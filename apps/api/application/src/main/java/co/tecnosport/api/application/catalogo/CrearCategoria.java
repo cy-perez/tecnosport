@@ -83,13 +83,32 @@ public final class CrearCategoria {
    * <p>No se prueban sufijos numéricos como en {@link CrearProducto}: un {@code ropa-dama-busos-2}
    * silencioso es una categoría que nadie pidió con un nombre que nadie reconoce. Aquí choca y
    * quien administra decide.
+   *
+   * <p><b>Y el escrito a mano también lleva el prefijo, desde el 10 de octubre de 2026.</b> Hasta
+   * ese día se tomaba tal cual, así que el panel podía crear "Morrales" bajo {@code
+   * bolsos-caballero} con el slug {@code morrales} — el mismo slug plano que {@code V63} tuvo que
+   * borrar del catálogo. Que el derivado lleve prefijo y el escrito no era una regla a medias:
+   * {@link SlugDeHijaSinPrefijoException} explica el daño, que llega meses después y culpando al
+   * segundo. Una raíz no tiene de quién llevar prefijo —y las ocho de tecnología no lo llevan—, así
+   * que la regla solo aplica con padre.
    */
   private static Slug slugDe(CrearCategoriaComando comando, Optional<Categoria> padre) {
     if (comando.slug() != null && !comando.slug().isBlank()) {
-      return new Slug(comando.slug().trim());
+      return exigirPrefijoDelPadre(new Slug(comando.slug().trim()), padre);
     }
     Slug delNombre = Slug.generarDesde(comando.nombre());
     return padre.map(p -> new Slug(p.slug().valor() + "-" + delNombre.valor())).orElse(delNombre);
+  }
+
+  /** Un slug escrito a mano para una hija empieza por el de su rama, o no entra. */
+  private static Slug exigirPrefijoDelPadre(Slug slug, Optional<Categoria> padre) {
+    padre
+        .filter(p -> !p.esPrefijoDe(slug))
+        .ifPresent(
+            p -> {
+              throw new SlugDeHijaSinPrefijoException(slug.valor(), p.slug().valor());
+            });
+    return slug;
   }
 
   private void exigirSlugLibre(Slug slug) {

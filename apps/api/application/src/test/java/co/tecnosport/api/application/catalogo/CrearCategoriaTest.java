@@ -70,6 +70,42 @@ class CrearCategoriaTest {
     assertEquals(dama.id(), morrales.padreId().orElseThrow());
   }
 
+  /**
+   * El agujero que esto cierra, abierto hasta el 10 de octubre de 2026: el derivado llevaba prefijo
+   * y el escrito a mano no, así que el panel podía crear "Morrales" bajo Caballero con el slug
+   * `morrales` — el mismo slug plano que `V63` tuvo que borrar del catálogo. El daño llegaba meses
+   * después, cuando Dama pidiera su "Morrales" y chocara contra el índice único culpando al
+   * segundo.
+   */
+  @Test
+  void rechazaUnSlugEscritoAManoQueNoEmpiezaPorElDeSuRama() {
+    Categoria caballero =
+        Categoria.crear("Caballero", new Slug("bolsos-caballero"), LineaCatalogo.BOLSOS);
+    repositorio.conCategorias(caballero);
+
+    assertThrows(
+        SlugDeHijaSinPrefijoException.class,
+        () ->
+            crear.ejecutar(
+                new CrearCategoriaComando("Morrales", "morrales", null, caballero.id())));
+  }
+
+  /** Y el que sí lo lleva entra tal cual: la escapatoria sigue existiendo, solo que acotada. */
+  @Test
+  void aceptaUnSlugEscritoAManoQueSiLlevaElDeSuRama() {
+    Categoria caballero =
+        Categoria.crear("Caballero", new Slug("bolsos-caballero"), LineaCatalogo.BOLSOS);
+    repositorio.conCategorias(caballero);
+
+    Categoria creada =
+        crear.ejecutar(
+            new CrearCategoriaComando(
+                "Morrales", "bolsos-caballero-morrales-grandes", null, caballero.id()));
+
+    assertEquals("bolsos-caballero-morrales-grandes", creada.slug().valor());
+  }
+
+  /** Una raíz no tiene de quién llevar prefijo: las ocho de tecnología no lo llevan. */
   @Test
   void aceptaUnSlugEscritoAMano() {
     Categoria creada =

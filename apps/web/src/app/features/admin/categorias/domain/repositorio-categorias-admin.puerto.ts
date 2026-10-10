@@ -51,6 +51,7 @@ export interface RepositorioCategoriasAdmin {
 export type ResultadoEscritura =
   | { readonly tipo: 'OK'; readonly categoria: Categoria | null }
   | { readonly tipo: 'SLUG_REPETIDO' }
+  | { readonly tipo: 'SLUG_SIN_PREFIJO' }
   | { readonly tipo: 'TIENE_PRODUCTOS' }
   | { readonly tipo: 'TIENE_SUBCATEGORIAS' }
   | { readonly tipo: 'DEMASIADO_PROFUNDA' }
