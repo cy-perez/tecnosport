@@ -3,10 +3,14 @@ package co.tecnosport.api.application.proveedores;
 import co.tecnosport.api.domain.catalogo.LineaCatalogo;
 import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.proveedores.AlertaBorrador;
+import co.tecnosport.api.domain.proveedores.LecturaDeFotos;
 import co.tecnosport.api.domain.proveedores.MensajeProveedor;
 import co.tecnosport.api.domain.proveedores.PatronDePrecio;
 import co.tecnosport.api.domain.proveedores.ProductoExtraido;
 import co.tecnosport.api.domain.proveedores.PublicacionProveedor;
+import co.tecnosport.api.domain.proveedores.RepartoDeFotos;
+import co.tecnosport.api.domain.proveedores.RepartoDeFotos.ProductoRepartido;
+import co.tecnosport.api.domain.proveedores.RepartoDeFotos.Respaldo;
 import co.tecnosport.api.domain.proveedores.TipoProductoProveedor;
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -43,6 +47,17 @@ import java.util.UUID;
  * pasan de {@link #TOPE_DE_PRODUCTOS}: un mensaje de catálogo con treinta líneas no son treinta
  * borradores, es algo que tiene que mirar una persona, y por eso los que quedan llevan además
  * {@code CONFIANZA_BAJA}.
+ *
+ * <h2>Las fotos (10 de octubre de 2026)</h2>
+ *
+ * <p>Con los productos ya leídos, el {@link LectorDeFotos} mira las fotos y {@link RepartoDeFotos}
+ * decide cuáles son de quién. Un producto cuyas fotos se repartieron con respaldo —una referencia
+ * impresa que coincide con la del texto, o el pie de un álbum— deja de llevar {@code
+ * FOTOS_COMPARTIDAS}. Un álbum de diseños se parte en un producto por diseño, todos con el precio y
+ * el texto del anuncio; esos no cuentan para {@link #TOPE_DE_PRODUCTOS}, que es de productos
+ * escritos en el texto. El diseño que el lector separó sin nada impreso que lo confirme lleva
+ * {@code CONFIANZA_BAJA}. Si la lectura falla, la publicación sigue como antes de existir: todas
+ * las fotos para todos.
  */
 public final class ExtraerProductoDePublicacion {
 
@@ -50,11 +65,28 @@ public final class ExtraerProductoDePublicacion {
   static final int TOPE_DE_PRODUCTOS = 5;
 
   private final ExtractorDeProductos extractor;
+  private final LectorDeFotos lector;
+  private final AlmacenDeArchivosDeProveedor almacen;
   private final BigDecimal umbralDeConfianza;
 
+  /** Sin lectura de fotos: el reparto de antes del 10 de octubre de 2026. */
   public ExtraerProductoDePublicacion(
       ExtractorDeProductos extractor, BigDecimal umbralDeConfianza) {
+    this(extractor, fotos -> Optional.empty(), null, umbralDeConfianza);
+  }
+
+  /**
+   * @param almacen de donde se leen las fotos para el lector; puede ser nulo solo si el lector está
+   *     apagado
+   */
+  public ExtraerProductoDePublicacion(
+      ExtractorDeProductos extractor,
+      LectorDeFotos lector,
+      AlmacenDeArchivosDeProveedor almacen,
+      BigDecimal umbralDeConfianza) {
     this.extractor = Objects.requireNonNull(extractor);
+    this.lector = Objects.requireNonNull(lector);
+    this.almacen = almacen;
     Objects.requireNonNull(umbralDeConfianza, "El umbral de confianza no puede ser nulo.");
     if (umbralDeConfianza.compareTo(BigDecimal.ZERO) < 0
         || umbralDeConfianza.compareTo(BigDecimal.ONE) > 0) {
@@ -94,11 +126,24 @@ public final class ExtraerProductoDePublicacion {
             .noneMatch(m -> m != null && m.referenciaArchivo().isPresent());
     List<Dinero> preciosDelTexto = PatronDePrecio.extraerTodos(texto.completo());
 
-    List<ExtraccionEvaluada> evaluadas = new ArrayList<>(productos.size());
-    for (int i = 0; i < productos.size(); i++) {
-      ProductoExtraido producto = productos.get(i).contrastadoCon(texto.completo());
+    List<ProductoExtraido> contrastados =
+        productos.stream().map(p -> p.contrastadoCon(texto.completo())).toList();
+    List<ProductoRepartido> repartidos =
+        RepartoDeFotos.repartir(
+            contrastados,
+            publicacion.medios(),
+            sinFotos ? null : leerFotos(publicacion, mensajes, texto, contrastados));
+
+    List<ExtraccionEvaluada> evaluadas = new ArrayList<>(repartidos.size());
+    for (int i = 0; i < repartidos.size(); i++) {
+      ProductoRepartido repartido = repartidos.get(i);
+      ProductoExtraido producto = repartido.producto();
       Set<AlertaBorrador> alertas = EnumSet.noneOf(AlertaBorrador.class);
-      Optional<Dinero> delTexto = precioDelTexto(preciosDelTexto, i, productos.size());
+      // Los diseños de un álbum comparten el único precio del texto.
+      boolean album = repartido.disenoDeAlbum();
+      int posicionEnElTexto = album ? 0 : i;
+      Optional<Dinero> delTexto =
+          precioDelTexto(preciosDelTexto, posicionEnElTexto, contrastados.size());
       Dinero precio = contrastarPrecio(delTexto, producto.precioProveedorOpcional(), alertas);
 
       if (producto.tituloOpcional().isEmpty()) {
@@ -107,7 +152,9 @@ public final class ExtraerProductoDePublicacion {
       if (producto.tipo() == TipoProductoProveedor.OTRO) {
         alertas.add(AlertaBorrador.TIPO_DESCONOCIDO);
       }
-      if (recortado || producto.confianza().compareTo(umbralDeConfianza) < 0) {
+      if (recortado
+          || producto.confianza().compareTo(umbralDeConfianza) < 0
+          || repartido.respaldo() == Respaldo.DISENO_SIN_PIE) {
         alertas.add(AlertaBorrador.CONFIANZA_BAJA);
       }
       if (producto.esReplica()) {
@@ -115,14 +162,71 @@ public final class ExtraerProductoDePublicacion {
       }
       if (sinFotos) {
         alertas.add(AlertaBorrador.SIN_FOTOS);
-      } else if (varios) {
+      } else if (varios && repartido.exclusivaOpcional().isEmpty()) {
         alertas.add(AlertaBorrador.FOTOS_COMPARTIDAS);
       }
       evaluadas.add(
           new ExtraccionEvaluada(
-              producto, resultado.jsonCrudo(), precio, alertas, resultado.uso()));
+              producto,
+              resultado.jsonCrudo(),
+              precio,
+              alertas,
+              resultado.uso(),
+              repartido.fotos(),
+              repartido.reparto(),
+              varios || album ? repartido.exclusiva() : null,
+              album));
     }
     return evaluadas;
+  }
+
+  /**
+   * Las fotos legibles de la publicación, al lector. Lee del bucket, así que va fuera de cualquier
+   * transacción, como la extracción. <b>Nada de aquí tumba la publicación ni el lote</b>: ni el
+   * lector que falla ni el bucket que no responde a mitad de la lectura. Sin lectura, el reparto es
+   * el de antes. Por eso se atrapa cualquier {@code RuntimeException} y no solo la del lector: una
+   * que se escapara de aquí cerraría el lote entero en {@link ProcesarLoteDeIngesta}.
+   */
+  private LecturaDeFotos leerFotos(
+      PublicacionProveedor publicacion,
+      Map<UUID, MensajeProveedor> mensajes,
+      TextoDePublicacion texto,
+      List<ProductoExtraido> productos) {
+    if (almacen == null || productos.isEmpty()) {
+      return null;
+    }
+    try {
+      return leerFotosSinProteger(publicacion, mensajes, texto, productos);
+    } catch (RuntimeException e) {
+      return null;
+    }
+  }
+
+  private LecturaDeFotos leerFotosSinProteger(
+      PublicacionProveedor publicacion,
+      Map<UUID, MensajeProveedor> mensajes,
+      TextoDePublicacion texto,
+      List<ProductoExtraido> productos) {
+    List<FotosParaLeer.FotoParaLeer> fotos = new ArrayList<>();
+    List<UUID> medios = publicacion.medios();
+    for (int i = 0; i < medios.size(); i++) {
+      int posicion = i;
+      Optional.ofNullable(mensajes.get(medios.get(i)))
+          .flatMap(MensajeProveedor::referenciaArchivo)
+          .flatMap(almacen::leer)
+          .ifPresent(bytes -> fotos.add(new FotosParaLeer.FotoParaLeer(posicion, bytes)));
+    }
+    if (fotos.isEmpty()) {
+      return null;
+    }
+    List<FotosParaLeer.ProductoNombrado> nombrados =
+        productos.stream()
+            .map(
+                p ->
+                    new FotosParaLeer.ProductoNombrado(
+                        p.titulo(), p.codigoReferenciaOpcional().orElse(null)))
+            .toList();
+    return lector.leer(new FotosParaLeer(texto.completo(), nombrados, fotos)).orElse(null);
   }
 
   /**

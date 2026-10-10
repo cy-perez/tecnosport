@@ -9,8 +9,10 @@ import co.tecnosport.api.domain.compartido.GeneradorIdentificador;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.EnumSet;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -51,6 +53,10 @@ public final class BorradorProducto {
   private final Set<AlertaBorrador> alertas;
   private final Set<UUID> fotosDescartadas;
   private final List<FotoSubida> fotosSubidas;
+  private final TallasPorTono tallasPorTono;
+  private final List<PrecioAdicional> preciosAdicionales;
+  private final Map<UUID, String> tonosSugeridos;
+  private final String lecturaDeFotos;
   private EstadoBorrador estado;
   private UUID productoId;
   private String motivoRechazo;
@@ -77,6 +83,74 @@ public final class BorradorProducto {
       Set<AlertaBorrador> alertas,
       Set<UUID> fotosDescartadas,
       List<FotoSubida> fotosSubidas,
+      EstadoBorrador estado,
+      UUID productoId,
+      String motivoRechazo,
+      Instant creadoEn) {
+    this(
+        id,
+        publicacionId,
+        proveedorId,
+        extraccionCruda,
+        titulo,
+        linea,
+        tipo,
+        precioProveedor,
+        precioVentaSugerido,
+        tallas,
+        cantidadTonos,
+        tonosNombrados,
+        material,
+        descripcion,
+        altEn,
+        huella,
+        pHash,
+        alertas,
+        fotosDescartadas,
+        fotosSubidas,
+        null,
+        null,
+        null,
+        null,
+        estado,
+        productoId,
+        motivoRechazo,
+        creadoEn);
+  }
+
+  /**
+   * @param tallasPorTono las tallas de cada tono, cuando el mensaje no las tiene todas en todos
+   * @param preciosAdicionales los del anuncio que no son de este producto: acompañantes, combos y
+   *     promociones
+   * @param tonosSugeridos el color que la lectura de fotos vio en cada foto, por mensaje; solo las
+   *     fotos de un solo color. Lo que el panel propone al aprobar, no lo que se aprueba
+   * @param lecturaDeFotos el JSON que devolvió la lectura de fotos, tal cual; nulo si no se leyeron
+   */
+  public BorradorProducto(
+      UUID id,
+      UUID publicacionId,
+      UUID proveedorId,
+      String extraccionCruda,
+      String titulo,
+      LineaCatalogo linea,
+      TipoProductoProveedor tipo,
+      Dinero precioProveedor,
+      Dinero precioVentaSugerido,
+      Tallas tallas,
+      Integer cantidadTonos,
+      List<String> tonosNombrados,
+      String material,
+      String descripcion,
+      String altEn,
+      HuellaProveedor huella,
+      PHash pHash,
+      Set<AlertaBorrador> alertas,
+      Set<UUID> fotosDescartadas,
+      List<FotoSubida> fotosSubidas,
+      TallasPorTono tallasPorTono,
+      List<PrecioAdicional> preciosAdicionales,
+      Map<UUID, String> tonosSugeridos,
+      String lecturaDeFotos,
       EstadoBorrador estado,
       UUID productoId,
       String motivoRechazo,
@@ -113,6 +187,14 @@ public final class BorradorProducto {
     if (fotosSubidas != null) {
       this.fotosSubidas.addAll(fotosSubidas);
     }
+    this.tallasPorTono = tallasPorTono == null ? TallasPorTono.ninguna() : tallasPorTono;
+    this.preciosAdicionales =
+        preciosAdicionales == null ? List.of() : List.copyOf(preciosAdicionales);
+    this.tonosSugeridos = new LinkedHashMap<>();
+    if (tonosSugeridos != null) {
+      this.tonosSugeridos.putAll(tonosSugeridos);
+    }
+    this.lecturaDeFotos = enBlancoEsNulo(lecturaDeFotos);
     this.estado = Objects.requireNonNull(estado, "El estado del borrador no puede ser nulo.");
     this.productoId = productoId;
     this.motivoRechazo = enBlancoEsNulo(motivoRechazo);
@@ -138,7 +220,39 @@ public final class BorradorProducto {
       PHash pHash,
       Set<AlertaBorrador> alertas,
       Instant ahora) {
+    return nuevo(
+        publicacionId,
+        proveedorId,
+        extraido,
+        extraccionCruda,
+        precioProveedor,
+        precioVentaSugerido,
+        huella,
+        pHash,
+        alertas,
+        FotosDelProducto.todas(),
+        ahora);
+  }
+
+  /**
+   * Un producto nuevo con sus fotos ya repartidas: las de la publicación que no son suyas nacen
+   * descartadas —se pueden recuperar partiendo otro borrador, no se borran— y las que la lectura de
+   * fotos vio de un solo color llegan con ese tono sugerido.
+   */
+  public static BorradorProducto nuevo(
+      UUID publicacionId,
+      UUID proveedorId,
+      ProductoExtraido extraido,
+      String extraccionCruda,
+      Dinero precioProveedor,
+      Dinero precioVentaSugerido,
+      HuellaProveedor huella,
+      PHash pHash,
+      Set<AlertaBorrador> alertas,
+      FotosDelProducto fotos,
+      Instant ahora) {
     Objects.requireNonNull(extraido, "El borrador nace de una extracción.");
+    Objects.requireNonNull(fotos, "El borrador sabe cuáles fotos son suyas.");
     return new BorradorProducto(
         GeneradorIdentificador.nuevo(),
         publicacionId,
@@ -158,8 +272,12 @@ public final class BorradorProducto {
         huella,
         pHash,
         alertas,
-        Set.of(),
+        fotos.ajenas(),
         List.of(),
+        extraido.tallasPorTono(),
+        extraido.preciosAdicionales(),
+        fotos.tonosSugeridos(),
+        fotos.lecturaCruda(),
         EstadoBorrador.EN_REVISION,
         null,
         null,
@@ -441,6 +559,23 @@ public final class BorradorProducto {
   /** Las que quien revisa subió desde el panel, en el orden en que llegaron. */
   public List<FotoSubida> fotosSubidas() {
     return List.copyOf(fotosSubidas);
+  }
+
+  public TallasPorTono tallasPorTono() {
+    return tallasPorTono;
+  }
+
+  public List<PrecioAdicional> preciosAdicionales() {
+    return preciosAdicionales;
+  }
+
+  /** El tono que la lectura de fotos vio en cada foto de un solo color, por mensaje. */
+  public Map<UUID, String> tonosSugeridos() {
+    return Map.copyOf(tonosSugeridos);
+  }
+
+  public Optional<String> lecturaDeFotos() {
+    return Optional.ofNullable(lecturaDeFotos);
   }
 
   public EstadoBorrador estado() {

@@ -364,7 +364,7 @@ public final class AprobarBorrador {
     List<String> ejesDeTalla = valoresDeTalla.isEmpty() ? List.of("") : valoresDeTalla;
     int correlativo = 1;
     for (String tono : ejesDeTono) {
-      for (String valorTalla : ejesDeTalla) {
+      for (String valorTalla : tallasDelTono(borrador, comando, tonoPorFoto, tono, ejesDeTalla)) {
         List<ValorAtributoComando> atributos = new ArrayList<>();
         color.ifPresent(
             a -> atributos.add(new ValorAtributoComando(a.id(), tono, hexPorTono.get(tono))));
@@ -387,6 +387,29 @@ public final class AprobarBorrador {
       }
     }
     return variantePorTono;
+  }
+
+  /**
+   * Las tallas que hay de un tono ({@link TallasPorTono#tallasPara}): «Talla ML(cocoa)» deja al
+   * cocoa sin SM aunque la blusa se apruebe en SM y ML (Violeta, 10 de octubre de 2026). El tono se
+   * busca por el nombre con que se aprueba y por el color que la lectura de fotos vio en las fotos
+   * de ese tono, que es el del proveedor.
+   */
+  private static List<String> tallasDelTono(
+      BorradorProducto borrador,
+      AprobarBorradorComando comando,
+      List<String> tonoPorFoto,
+      String tono,
+      List<String> ejesDeTalla) {
+    List<String> nombres = new ArrayList<>();
+    nombres.add(tono);
+    for (int i = 0; i < comando.fotos().size(); i++) {
+      String sugerido = borrador.tonosSugeridos().get(comando.fotos().get(i).mensajeId());
+      if (tono.equals(tonoPorFoto.get(i)) && sugerido != null && !nombres.contains(sugerido)) {
+        nombres.add(sugerido);
+      }
+    }
+    return borrador.tallasPorTono().tallasPara(nombres, ejesDeTalla);
   }
 
   /**

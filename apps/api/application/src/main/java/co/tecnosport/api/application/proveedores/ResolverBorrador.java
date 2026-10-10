@@ -20,6 +20,7 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.EnumSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -61,6 +62,14 @@ import java.util.stream.Collectors;
  * general se procesó primero y ese anuncio ya espera revisión, cuando llega el de caballero aquel
  * se rechaza con el motivo escrito, y queda el de caballero. Se suben en ese orden —primero el de
  * caballero— para no tener que rechazar nada, pero el resultado no depende del orden.
+ *
+ * <h2>Las fotos repartidas (10 de octubre de 2026)</h2>
+ *
+ * <p>Cuando la extracción repartió las fotos ({@link ExtraccionEvaluada#exclusiva()}), cada
+ * producto usa las suyas para reconocerse y su foto exclusiva como huella visual, aunque el mensaje
+ * traiga varios. El diseño de un álbum sin código comparte el texto, el precio y la fecha con los
+ * demás diseños: su huella lleva además la de su foto ({@link HuellaProveedor#deDisenoDeAnuncio}),
+ * o los trece diseños serían el mismo producto al aprobar el segundo.
  *
  * <p>Una renovación no crea un borrador para revisar: actualiza la última vista, reactiva el
  * producto si estaba oculto y deja una constancia {@code RENOVACION_APLICADA}. Un agotado sobre un
@@ -126,7 +135,7 @@ public final class ResolverBorrador {
         mensajes,
         proveedor,
         evaluadas,
-        evaluadas.size() == 1 ? pHashesDe(publicacion, mensajes) : List.of(),
+        necesitaPHashes(evaluadas) ? pHashesDe(publicacion, mensajes) : Map.of(),
         huellasVisualesDe(proveedor.id()));
   }
 
@@ -140,8 +149,8 @@ public final class ResolverBorrador {
    * después como la chaqueta. Esos borradores nacen sin huella visual y la reciben al aprobarse, de
    * la foto que la persona marque como principal.
    *
-   * @param pHashes los de las fotos legibles de la publicación, en orden, ya calculados fuera de la
-   *     transacción; el primero es el de la principal. Vacía si no hay ninguna
+   * @param pHashes los de las fotos legibles de la publicación, por mensaje, ya calculados fuera de
+   *     la transacción. Vacío si no hay ninguna o no hacen falta ({@link #necesitaPHashes})
    * @param huellasVisuales las de los productos que ya existen del proveedor, cargadas una vez por
    *     lote
    * @return una resolución por producto, en el orden del mensaje; una sola, descartada, si el
@@ -152,7 +161,7 @@ public final class ResolverBorrador {
       Map<UUID, MensajeProveedor> mensajes,
       Proveedor proveedor,
       List<ExtraccionEvaluada> evaluadas,
-      List<PHash> pHashes,
+      Map<UUID, PHash> pHashes,
       List<HuellaVisual> huellasVisuales) {
     return ejecutar(
         publicacion, mensajes, proveedor, evaluadas, pHashes, huellasVisuales, ChatDelLote.unico());
@@ -167,13 +176,12 @@ public final class ResolverBorrador {
       Map<UUID, MensajeProveedor> mensajes,
       Proveedor proveedor,
       List<ExtraccionEvaluada> evaluadas,
-      List<PHash> pHashes,
+      Map<UUID, PHash> pHashes,
       List<HuellaVisual> huellasVisuales,
       ChatDelLote chat) {
     if (evaluadas.isEmpty()) {
       return List.of(descartar(publicacion, SIN_PRODUCTO));
     }
-    List<PHash> fotos = evaluadas.size() == 1 ? List.copyOf(pHashes) : List.of();
     String textoDelAnuncio =
         Optional.ofNullable(mensajes.get(publicacion.mensajePrincipalId()))
             .flatMap(MensajeProveedor::textoLegible)
@@ -188,7 +196,12 @@ public final class ResolverBorrador {
           vieneEnElDeCaballero
               ? Resolucion.descartada(VIENE_EN_EL_CHAT_DE_CABALLERO)
               : resolverUno(
-                  publicacion, proveedor, evaluada, textoDelAnuncio, fotos, huellasVisuales));
+                  publicacion,
+                  proveedor,
+                  evaluada,
+                  textoDelAnuncio,
+                  fotosDe(publicacion, evaluada, evaluadas.size(), pHashes),
+                  huellasVisuales));
     }
     if (chat.deCaballero()) {
       rechazarLosDelChatGeneral(proveedor, textoDelAnuncio);
@@ -230,6 +243,16 @@ public final class ResolverBorrador {
     HuellaProveedor huella;
     if (codigo.isPresent()) {
       huella = HuellaProveedor.deReferencia(proveedor.id(), codigo.get());
+    } else if (delTexto != null && evaluada.disenoDeAlbum()) {
+      huella =
+          HuellaProveedor.deDisenoDeAnuncio(
+              proveedor.id(),
+              extraido.titulo(),
+              precio,
+              publicacion.fecha(),
+              fotos.isEmpty()
+                  ? evaluada.exclusivaOpcional().map(UUID::toString).orElse("")
+                  : fotos.getFirst().hex());
     } else if (delTexto != null) {
       huella =
           HuellaProveedor.deAnuncio(proveedor.id(), extraido.titulo(), precio, publicacion.fecha());
@@ -274,6 +297,7 @@ public final class ResolverBorrador {
             huella,
             pHash,
             evaluada.alertas(),
+            evaluada.reparto(),
             ahora);
     repositorioBorradores.guardar(borrador);
     return new Resolucion(TipoDeResolucion.NUEVO, borrador.alertas(), null);
@@ -380,25 +404,56 @@ public final class ResolverBorrador {
         .flatMap(h -> repositorioProductos.buscarPorId(h.productoId()));
   }
 
+  /**
+   * Las huellas visuales de un producto, la de su principal primero. Con un solo producto, las de
+   * sus fotos; con varios, solo si la extracción le repartió una exclusiva: la primera foto del
+   * mensaje puede ser de cualquiera de ellos, y con ella el jean del conjunto se reconocería
+   * después como la chaqueta.
+   */
+  private static List<PHash> fotosDe(
+      PublicacionProveedor publicacion,
+      ExtraccionEvaluada evaluada,
+      int cuantas,
+      Map<UUID, PHash> pHashes) {
+    if (cuantas > 1 && evaluada.exclusivaOpcional().isEmpty()) {
+      return List.of();
+    }
+    List<UUID> propias = evaluada.fotos().isEmpty() ? publicacion.medios() : evaluada.fotos();
+    List<PHash> fotos = new ArrayList<>();
+    evaluada.exclusivaOpcional().map(pHashes::get).ifPresent(fotos::add);
+    propias.stream()
+        .filter(id -> !evaluada.exclusivaOpcional().map(id::equals).orElse(false))
+        .map(pHashes::get)
+        .filter(Objects::nonNull)
+        .forEach(fotos::add);
+    return fotos;
+  }
+
+  /** Si alguna evaluación va a usar las huellas visuales de sus fotos. */
+  public static boolean necesitaPHashes(List<ExtraccionEvaluada> evaluadas) {
+    return evaluadas.size() == 1
+        || evaluadas.stream().anyMatch(e -> e.exclusivaOpcional().isPresent());
+  }
+
   /** Las huellas visuales contra las que se compara cada foto del lote. Una consulta por lote. */
   public List<HuellaVisual> huellasVisualesDe(UUID proveedorId) {
     return repositorioBorradores.huellasVisualesDelProveedor(proveedorId);
   }
 
   /**
-   * El pHash de cada foto legible de la publicación, en orden: el primero es el de la principal, y
-   * los demás sirven para reconocer el mismo anuncio aunque las fotos lleguen en otro orden. Lee
-   * los archivos del bucket y los decodifica, así que va fuera de cualquier transacción.
+   * El pHash de cada foto legible de la publicación, por mensaje y en orden: la primera es la
+   * principal, y las demás sirven para reconocer el mismo anuncio aunque las fotos lleguen en otro
+   * orden. Lee los archivos del bucket y los decodifica, así que va fuera de cualquier transacción.
    */
-  public List<PHash> pHashesDe(
+  public Map<UUID, PHash> pHashesDe(
       PublicacionProveedor publicacion, Map<UUID, MensajeProveedor> mensajes) {
-    return publicacion.medios().stream()
+    Map<UUID, PHash> pHashes = new LinkedHashMap<>();
+    publicacion.medios().stream()
         .map(mensajes::get)
         .filter(Objects::nonNull)
         .filter(m -> m.referenciaArchivo().isPresent())
-        .map(this::pHashDe)
-        .flatMap(Optional::stream)
-        .toList();
+        .forEach(m -> pHashDe(m).ifPresent(p -> pHashes.put(m.id(), p)));
+    return pHashes;
   }
 
   /** El que se guardó al registrar el mensaje; si no hay, el de leer la foto del bucket. */

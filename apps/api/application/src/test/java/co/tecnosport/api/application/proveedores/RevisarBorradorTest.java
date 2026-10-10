@@ -162,6 +162,24 @@ class RevisarBorradorTest {
     assertEquals(Optional.empty(), borradores.buscarPorId(borrador.id()).orElseThrow().pHash());
   }
 
+  /**
+   * Y también si no es la primera: desde el 10 de octubre de 2026 la huella visual puede salir de
+   * la foto exclusiva del reparto, que no tiene por qué ir primero, y el borrador no guarda de cuál
+   * salió. Recordarla de una foto descartada reconocería otro producto como este.
+   */
+  @Test
+  void descartarCualquierFotoOlvidaLaHuellaVisual() {
+    PublicacionProveedor publicacion =
+        publicaciones.buscarPorId(borrador.publicacionId()).orElseThrow();
+    UUID ultima = publicacion.medios().getLast();
+    assertTrue(!ultima.equals(publicacion.medios().getFirst()), "la publicación trae dos fotos");
+
+    new DescartarFotoDeBorrador(borradores, publicaciones, mensajes, almacen)
+        .ejecutar(borrador.id(), ultima);
+
+    assertEquals(Optional.empty(), borradores.buscarPorId(borrador.id()).orElseThrow().pHash());
+  }
+
   /** La foto descartada deja de verse en la revisión, y su archivo se queda en el bucket. */
   @Test
   void descartarUnaFotoLaSacaDeLaRevision() {

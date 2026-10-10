@@ -1,0 +1,24 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["album_de_disenos", "fotos"],
+  "properties": {
+    "album_de_disenos": { "type": "boolean" },
+    "fotos": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["foto", "codigos", "pie_sku", "pie_tallas", "colores", "diseno"],
+        "properties": {
+          "foto": { "type": "integer" },
+          "codigos": { "type": "array", "items": { "type": "string" } },
+          "pie_sku": { "type": ["string", "null"] },
+          "pie_tallas": { "type": "array", "items": { "type": "string" } },
+          "colores": { "type": "array", "items": { "type": "string" } },
+          "diseno": { "type": ["string", "null"] }
+        }
+      }
+    }
+  }
+}

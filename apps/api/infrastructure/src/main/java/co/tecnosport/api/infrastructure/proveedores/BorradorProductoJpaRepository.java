@@ -47,8 +47,13 @@ public interface BorradorProductoJpaRepository
   /**
    * Los borradores en revisión del proveedor, vistos como anuncios: el texto del mensaje principal
    * de su publicación —el cuerpo o, si no tiene, el pie de foto—, el pHash de la principal que
-   * guardó el borrador y los de todas las fotos de la publicación que lo tienen, separados por
-   * coma. Una sola consulta por publicación del lote, sin cargar filas enteras con su JSON crudo.
+   * guardó el borrador y los de las fotos de la publicación que lo tienen, separados por coma. Una
+   * sola consulta por publicación del lote, sin cargar filas enteras con su JSON crudo.
+   *
+   * <p><b>Sin las fotos que el borrador descartó</b> (10 de octubre de 2026): los trece diseños de
+   * un álbum de La Riverah son trece borradores de la misma publicación, con el mismo texto, y cada
+   * uno nace con las fotos de los demás descartadas. Con ellas, el segundo diseño compartía foto
+   * con el primero y se descartaba por anuncio repetido.
    */
   @Query(
       value =
@@ -61,7 +66,9 @@ public interface BorradorProductoJpaRepository
                     join mensaje_proveedor mm on mm.id = pm.mensaje_id
                    where pm.publicacion_id = p.id
                      and pm.rol = 'MEDIO'
-                     and mm.phash is not null) as phashes,
+                     and mm.phash is not null
+                     and (b.fotos_descartadas is null
+                          or position(mm.id::text in b.fotos_descartadas) = 0)) as phashes,
                  l.chat_de_caballero as deChatDeCaballero
             from borrador_producto b
             join publicacion_proveedor p on p.id = b.publicacion_id

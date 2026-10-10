@@ -182,6 +182,10 @@ public class RepositorioBorradoresJpa implements RepositorioBorradores {
         b.fotosSubidas().stream()
             .map(f -> new FotoSubidaJpaEmbeddable(f.id(), f.referenciaArchivo(), f.subidaEn()))
             .toList(),
+        CamposJsonDelBorrador.deTallasPorTono(b.tallasPorTono()),
+        CamposJsonDelBorrador.dePreciosAdicionales(b.preciosAdicionales()),
+        CamposJsonDelBorrador.deTonosSugeridos(b.tonosSugeridos()),
+        b.lecturaDeFotos().orElse(null),
         b.estado().name(),
         b.productoId().orElse(null),
         b.motivoRechazo().orElse(null),
@@ -224,6 +228,10 @@ public class RepositorioBorradoresJpa implements RepositorioBorradores {
         f.getFotosSubidas().stream()
             .map(s -> new FotoSubida(s.getId(), s.getReferenciaArchivo(), s.getSubidaEn()))
             .toList(),
+        CamposJsonDelBorrador.aTallasPorTono(f.getTallasPorTono()),
+        CamposJsonDelBorrador.aPreciosAdicionales(f.getPreciosAdicionales()),
+        CamposJsonDelBorrador.aTonosSugeridos(f.getTonosSugeridos()),
+        f.getLecturaDeFotos(),
         EstadoBorrador.valueOf(f.getEstado()),
         f.getProductoId(),
         f.getMotivoRechazo(),

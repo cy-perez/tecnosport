@@ -1,8 +1,10 @@
 package co.tecnosport.api.bootstrap.proveedores;
 
+import co.tecnosport.api.application.proveedores.AlmacenDeArchivosDeProveedor;
 import co.tecnosport.api.application.proveedores.ArmarPublicaciones;
 import co.tecnosport.api.application.proveedores.ExtractorDeProductos;
 import co.tecnosport.api.application.proveedores.ExtraerProductoDePublicacion;
+import co.tecnosport.api.application.proveedores.LectorDeFotos;
 import co.tecnosport.api.application.proveedores.RepositorioLotesIngesta;
 import co.tecnosport.api.application.proveedores.RepositorioMensajesProveedor;
 import co.tecnosport.api.application.proveedores.RepositorioProveedores;
@@ -10,6 +12,8 @@ import co.tecnosport.api.application.proveedores.RepositorioPublicacionesProveed
 import co.tecnosport.api.domain.proveedores.AgrupadorDePublicaciones;
 import co.tecnosport.api.infrastructure.proveedores.extraccion.ExtractorClaude;
 import co.tecnosport.api.infrastructure.proveedores.extraccion.ExtractorSembrado;
+import co.tecnosport.api.infrastructure.proveedores.extraccion.LectorDeFotosApagado;
+import co.tecnosport.api.infrastructure.proveedores.extraccion.LectorDeFotosClaude;
 import co.tecnosport.api.infrastructure.proveedores.extraccion.RecursosDelExtractor;
 import java.net.URI;
 import org.slf4j.Logger;
@@ -23,7 +27,7 @@ import org.springframework.context.annotation.Configuration;
  * capa.
  */
 @Configuration
-@EnableConfigurationProperties(PropiedadesExtraccion.class)
+@EnableConfigurationProperties({PropiedadesExtraccion.class, PropiedadesLecturaFotos.class})
 public class ConfiguracionExtraccion {
 
   private static final Logger log = LoggerFactory.getLogger(ConfiguracionExtraccion.class);
@@ -55,6 +59,29 @@ public class ConfiguracionExtraccion {
         RecursosDelExtractor.esquema());
   }
 
+  /** Como el extractor: el de verdad solo con clave y encendido, y el arranque dice cuál quedó. */
+  @Bean
+  public LectorDeFotos lectorDeFotos(
+      PropiedadesExtraccion extraccion, PropiedadesLecturaFotos lectura) {
+    if (!extraccion.tieneClave() || !lectura.habilitada()) {
+      log.warn(
+          "Lectura de fotos APAGADA: las fotos de una publicación con varios productos o de un"
+              + " álbum quedan para todos sus borradores.");
+      return new LectorDeFotosApagado();
+    }
+    log.info("Lectura de fotos REAL con el modelo {}.", lectura.modelo());
+    return new LectorDeFotosClaude(
+        URI.create(extraccion.urlBase()),
+        extraccion.apiKey(),
+        lectura.modelo(),
+        lectura.maxTokens(),
+        lectura.timeout(),
+        extraccion.intentos(),
+        extraccion.esperaInicial(),
+        RecursosDelExtractor.promptDelLector(),
+        RecursosDelExtractor.esquemaDelLector());
+  }
+
   @Bean
   public AgrupadorDePublicaciones agrupadorDePublicaciones(PropiedadesExtraccion propiedades) {
     return new AgrupadorDePublicaciones(propiedades.ventanaAgrupacion());
@@ -72,7 +99,11 @@ public class ConfiguracionExtraccion {
 
   @Bean
   public ExtraerProductoDePublicacion extraerProductoDePublicacion(
-      ExtractorDeProductos extractor, PropiedadesExtraccion propiedades) {
-    return new ExtraerProductoDePublicacion(extractor, propiedades.umbralConfianza());
+      ExtractorDeProductos extractor,
+      LectorDeFotos lector,
+      AlmacenDeArchivosDeProveedor almacen,
+      PropiedadesExtraccion propiedades) {
+    return new ExtraerProductoDePublicacion(
+        extractor, lector, almacen, propiedades.umbralConfianza());
   }
 }
