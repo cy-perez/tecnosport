@@ -69,7 +69,7 @@ public final class RepartoDeFotos {
     if (productos.size() > 1) {
       return porCodigo(productos, fotos, lectura);
     }
-    List<List<Integer>> disenos = lectura.albumDeDisenos() ? disenos(fotos, lectura) : List.of();
+    List<List<Integer>> disenos = esAlbum(lectura) ? disenos(fotos, lectura) : List.of();
     if (disenos.size() > 1) {
       return porDiseno(productos.getFirst(), fotos, lectura, disenos);
     }
@@ -197,6 +197,23 @@ public final class RepartoDeFotos {
               true));
     }
     return repartidos;
+  }
+
+  /**
+   * Un álbum lo dice el lector o lo dice el pie: dos SKU distintos impresos en las fotos de una
+   * publicación de un solo producto son dos cosas que se venden aparte. El modelo dudó con los diez
+   * jeans de las 19:19 —en una corrida dijo álbum y en la siguiente no—, y el pie no cambia de una
+   * corrida a otra (10 de octubre de 2026). Si los dos SKU son de dos colores de la misma prenda
+   * —la falda de La Riverah—, la agrupación por diseño los vuelve a juntar.
+   */
+  private static boolean esAlbum(LecturaDeFotos lectura) {
+    long skus =
+        lectura.fotos().stream()
+            .map(LecturaDeFoto::skuOpcional)
+            .flatMap(Optional::stream)
+            .distinct()
+            .count();
+    return lectura.albumDeDisenos() || skus >= 2;
   }
 
   /**

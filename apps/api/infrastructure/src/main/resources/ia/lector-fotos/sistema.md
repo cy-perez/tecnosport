@@ -30,7 +30,8 @@ Reglas, en orden de importancia:
    nombres.
 6. `album_de_disenos` es `true` solo cuando el anuncio es un texto general —«Camisetas oversize
    para caballero», «Jeans importados»— y las fotos muestran **diseños distintos**: estampados,
-   marcas, lavados o cortes que cambian de una foto a otra. Es `false` cuando todas las fotos son
+   marcas, lavados o cortes que cambian de una foto a otra. Si cada foto trae su propio SKU en el
+   pie, casi siempre es un álbum: el proveedor le pone un SKU a cada prenda que vende aparte. Es `false` cuando todas las fotos son
    el mismo producto en otros colores o en otras vistas, aunque sean muchas.
 7. `diseno` es una etiqueta corta, de dos a cuatro palabras, del diseño que muestra la foto:
    «jordan 23 arco», «boss franja», «msm logo grande», «rotos pintura». **Dos fotos del mismo

@@ -244,6 +244,35 @@ class RepartoDeFotosTest {
         repartidos.stream().map(ProductoRepartido::fotos).toList());
   }
 
+  /**
+   * El lector dijo que no era un álbum, pero el pie trae un SKU por foto: los diez jeans de las
+   * 19:19 en la segunda corrida contra la verdad. La falda con un SKU por color sigue siendo una.
+   */
+  @Test
+  void dosSkuDistintosImpresosHacenAlbumAunqueElLectorDigaQueNo() {
+    ProductoExtraido jeans = producto("Jean licrado", TipoProductoProveedor.PANTALON, null);
+    LecturaDeFotos noEsAlbumDiceElLector =
+        new LecturaDeFotos(
+            false,
+            List.of(
+                delAlbum(0, "RV491", List.of(), "azul", "jean"),
+                delAlbum(1, "RV494", List.of(), "azul", "jean"),
+                delAlbum(2, "RV489", List.of(), "negro", "jean")),
+            "{}");
+    LecturaDeFotos falda =
+        new LecturaDeFotos(
+            false,
+            List.of(
+                delAlbum(0, "RV101282", List.of(), "negro", "falda tableada"),
+                delAlbum(1, "RV101281", List.of(), "gris", "falda tableada")),
+            "{}");
+
+    assertEquals(
+        2,
+        RepartoDeFotos.repartir(List.of(jeans), List.of(F1, F2, F3), noEsAlbumDiceElLector).size());
+    assertEquals(1, RepartoDeFotos.repartir(List.of(jeans), List.of(F1, F2), falda).size());
+  }
+
   /** Sin SKU no hay con qué saber que son dos: el mismo color puede ser frente y espalda. */
   @Test
   void sinSkuElMismoColorNoSepara() {
