@@ -32,9 +32,27 @@
         (change)="onArchivoSeleccionado($event)"
       />
       <p id="ingesta-archivo-ayuda" class="m-0 text-xs text-ts-texto-suave">
-        {{ 'admin.ingestas.subir.archivoAyuda' | transloco }}
+        @if (estructuraEsperada(); as esperada) {
+          {{
+            'admin.ingestas.subir.estructuraDosChats'
+              | transloco
+                : { zip: esperada.zip, general: esperada.general, caballero: esperada.caballero }
+          }}
+        } @else {
+          {{ 'admin.ingestas.subir.archivoAyuda' | transloco }}
+        }
       </p>
     </div>
+
+    <p class="m-0 text-ts-error" role="alert">
+      @if (estructuraNoAcordada(); as esperada) {
+        {{
+          'admin.ingestas.subir.estructuraNoAcordada'
+            | transloco
+              : { zip: esperada.zip, general: esperada.general, caballero: esperada.caballero }
+        }}
+      }
+    </p>
 
     @if (sinProveedoresActivos()) {
       <p class="m-0 text-sm text-ts-texto-suave">
@@ -60,6 +78,7 @@
         variante="primario"
         tipo="submit"
         [cargando]="subiendo()"
+        [deshabilitado]="!puedeSubir()"
         [etiquetaCargando]="'admin.ingestas.subir.subiendo' | transloco"
       >
         {{ 'admin.ingestas.subir.accion' | transloco }}

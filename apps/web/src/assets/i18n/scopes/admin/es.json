@@ -1017,6 +1017,8 @@
       "seleccionar": "Selecciona un proveedor",
       "archivo": "Archivo exportado por WhatsApp (.zip)",
       "archivoAyuda": "En WhatsApp: abre el chat › Más › Exportar chat › Incluir archivos. Sube el zip tal cual, sin descomprimirlo.",
+      "estructuraDosChats": "Este proveedor sube sus dos chats en un solo zip: «{{zip}}», con «{{general}}» (el chat general), «{{caballero}}» (el de caballero) y las fotos de los dos.",
+      "estructuraNoAcordada": "La estructura del archivo no es la acordada. Debe llamarse «{{zip}}» y traer exactamente dos .txt, «{{general}}» y «{{caballero}}», junto con las fotos de cada chat.",
       "tipoNoSoportado": "Ese archivo no es un zip. Sube el que genera WhatsApp al exportar el chat.",
       "faltanCampos": "Elige el proveedor y el archivo antes de subir.",
       "accion": "Subir e ingerir",

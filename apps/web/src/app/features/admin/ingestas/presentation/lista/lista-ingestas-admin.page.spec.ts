@@ -23,6 +23,7 @@ import {
   REPOSITORIO_INGESTAS_ADMIN,
   RepositorioIngestasAdmin,
 } from '../../domain/repositorio-ingestas-admin.puerto';
+import { LECTOR_DE_ZIP, LectorDeZip } from '../../domain/lector-de-zip.puerto';
 import { ListaIngestasAdminPage } from './lista-ingestas-admin.page';
 
 function loteDePrueba(overrides: Partial<LoteIngesta> = {}): LoteIngesta {
@@ -110,6 +111,20 @@ class RepositorioIngestasAdminFalso implements RepositorioIngestasAdmin {
   }
 }
 
+/** Lo que trae cada zip, por nombre de archivo: el de verdad lee el directorio central. */
+class LectorDeZipFalso implements LectorDeZip {
+  entradas: Record<string, string[]> = {};
+  async nombresDeEntradas(archivo: Blob): Promise<string[]> {
+    const nombre = (archivo as File).name;
+    if (!(nombre in this.entradas)) {
+      throw new Error('no es un zip');
+    }
+    return this.entradas[nombre];
+  }
+}
+
+let lectorDeZip = new LectorDeZipFalso();
+
 async function renderPagina(lotes: LoteIngesta[] = []) {
   const repositorio = new RepositorioIngestasAdminFalso(lotes);
   const resultado = await render(ListaIngestasAdminPage, {
@@ -124,11 +139,13 @@ async function renderPagina(lotes: LoteIngesta[] = []) {
       provideRouter([]),
       provideTanStackQuery(new QueryClient({ defaultOptions: { queries: { retry: false } } })),
       { provide: REPOSITORIO_INGESTAS_ADMIN, useValue: repositorio },
+      { provide: LECTOR_DE_ZIP, useValue: lectorDeZip },
       {
         provide: REPOSITORIO_PROVEEDORES_ADMIN,
         useValue: new RepositorioProveedoresAdminFalso([
           proveedorDePrueba(),
           proveedorDePrueba({ id: 'prov-2', nombre: 'Inactivo S.A.', activo: false }),
+          proveedorDePrueba({ id: 'prov-meraki', nombre: 'Meraki', dosChatsEnUnZip: true }),
         ]),
       },
     ],
@@ -139,6 +156,90 @@ async function renderPagina(lotes: LoteIngesta[] = []) {
 const s = esAdmin.ingestas.subir;
 
 describe('ListaIngestasAdminPage', () => {
+  beforeEach(() => {
+    lectorDeZip = new LectorDeZipFalso();
+  });
+
+  describe('el zip de dos chats de Meraki', () => {
+    async function elegir(proveedorId: string, archivo: File) {
+      await within(screen.getByLabelText(s.proveedor)).findByRole('option', { name: 'Meraki' });
+      fireEvent.change(screen.getByLabelText(s.proveedor), { target: { value: proveedorId } });
+      fireEvent.change(screen.getByLabelText(s.archivo), { target: { files: [archivo] } });
+    }
+
+    const zip = (nombre: string) => new File(['zip'], nombre, { type: 'application/zip' });
+
+    it('con la estructura acordada deja subir', async () => {
+      const { repositorio } = await renderPagina();
+      lectorDeZip.entradas['Meraki.zip'] = [
+        'Meraki.txt',
+        'MerakiMen.txt',
+        '00000200-PHOTO-2026-10-07-12-03-46.jpg',
+        'IMG-20261007-WA0040.jpg',
+      ];
+      const archivo = zip('Meraki.zip');
+
+      await elegir('prov-meraki', archivo);
+      const boton = screen.getByRole('button', { name: s.accion }) as HTMLButtonElement;
+      await vi.waitFor(() => expect(boton.disabled).toBe(false));
+      fireEvent.click(boton);
+
+      expect(await screen.findByText(/Meraki\.zip quedó en cola/)).toBeTruthy();
+      expect(repositorio.subidas).toEqual([{ proveedorId: 'prov-meraki', archivo }]);
+    });
+
+    it('dice la estructura esperada en cuanto se elige el proveedor', async () => {
+      await renderPagina();
+      await within(screen.getByLabelText(s.proveedor)).findByRole('option', { name: 'Meraki' });
+
+      fireEvent.change(screen.getByLabelText(s.proveedor), { target: { value: 'prov-meraki' } });
+
+      expect(await screen.findByText(/«Meraki\.zip», con «Meraki\.txt»/)).toBeTruthy();
+    });
+
+    it.each([
+      ['otro nombre de zip', 'meraki.zip', ['Meraki.txt', 'MerakiMen.txt']],
+      ['un solo .txt', 'Meraki.zip', ['_chat.txt', 'IMG-1.jpg']],
+      ['un .txt de más', 'Meraki.zip', ['Meraki.txt', 'MerakiMen.txt', 'notas.txt']],
+      ['los .txt mal nombrados', 'Meraki.zip', ['Meraki.txt', 'Meraki Men.txt']],
+    ])('con %s dice que no es la acordada y no deja subir', async (_caso, nombre, entradas) => {
+      const { repositorio } = await renderPagina();
+      lectorDeZip.entradas[nombre] = entradas;
+
+      await elegir('prov-meraki', zip(nombre));
+
+      expect(await screen.findByText(/La estructura del archivo no es la acordada/)).toBeTruthy();
+      const boton = screen.getByRole('button', { name: s.accion }) as HTMLButtonElement;
+      expect(boton.disabled).toBe(true);
+      fireEvent.click(boton);
+      expect(repositorio.subidas).toEqual([]);
+    });
+
+    it('un archivo que no se deja leer como zip tampoco la tiene', async () => {
+      await renderPagina();
+
+      await elegir('prov-meraki', zip('Meraki.zip'));
+
+      expect(await screen.findByText(/La estructura del archivo no es la acordada/)).toBeTruthy();
+    });
+
+    /** Cambiar a un proveedor de un solo chat con el archivo elegido quita el aviso. */
+    it('a un proveedor de un solo chat no se le revisa la estructura', async () => {
+      await renderPagina();
+      lectorDeZip.entradas['chat.zip'] = ['_chat.txt'];
+
+      await elegir('prov-meraki', zip('chat.zip'));
+      expect(await screen.findByText(/La estructura del archivo no es la acordada/)).toBeTruthy();
+      fireEvent.change(screen.getByLabelText(s.proveedor), { target: { value: 'prov-1' } });
+
+      await vi.waitFor(() =>
+        expect(screen.queryByText(/La estructura del archivo no es la acordada/)).toBeNull(),
+      );
+      const boton = screen.getByRole('button', { name: s.accion }) as HTMLButtonElement;
+      expect(boton.disabled).toBe(false);
+    });
+  });
+
   it('muestra cada lote con el nombre del proveedor, su estado y su resultado', async () => {
     await renderPagina([loteDePrueba()]);
 
@@ -210,6 +311,7 @@ describe('ListaIngestasAdminPage', () => {
         provideRouter([]),
         provideTanStackQuery(new QueryClient({ defaultOptions: { queries: { retry: false } } })),
         { provide: REPOSITORIO_INGESTAS_ADMIN, useValue: repositorio },
+        { provide: LECTOR_DE_ZIP, useValue: lectorDeZip },
         {
           provide: REPOSITORIO_PROVEEDORES_ADMIN,
           useValue: new RepositorioProveedoresAdminFalso([

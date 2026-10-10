@@ -1017,6 +1017,8 @@
       "seleccionar": "Select a supplier",
       "archivo": "File exported by WhatsApp (.zip)",
       "archivoAyuda": "In WhatsApp: open the chat › More › Export chat › Include media. Upload the zip as is, without unzipping it.",
+      "estructuraDosChats": "This supplier uploads both chats in one zip: “{{zip}}”, with “{{general}}” (the general chat), “{{caballero}}” (the menswear one) and the photos of both.",
+      "estructuraNoAcordada": "The file structure is not the agreed one. It must be named “{{zip}}” and contain exactly two .txt files, “{{general}}” and “{{caballero}}”, along with the photos of each chat.",
       "tipoNoSoportado": "That file is not a zip. Upload the one WhatsApp generates when exporting the chat.",
       "faltanCampos": "Pick the supplier and the file before uploading.",
       "accion": "Upload and import",
