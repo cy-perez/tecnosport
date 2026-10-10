@@ -57,6 +57,7 @@ import co.tecnosport.api.application.pedido.ContraentregaNoDisponibleException;
 import co.tecnosport.api.application.pedido.InventarioSinConfirmarException;
 import co.tecnosport.api.application.pedido.MetodoDePagoNoEsTransferenciaManualException;
 import co.tecnosport.api.application.pedido.MetodoDePagoNoHabilitadoException;
+import co.tecnosport.api.application.pedido.PedidoNoEliminableException;
 import co.tecnosport.api.application.pedido.PedidoNoEncontradoException;
 import co.tecnosport.api.application.pedido.RetiroEnPuntoNoDisponibleException;
 import co.tecnosport.api.application.pedido.SistecreditoNoDisponibleException;
@@ -551,6 +552,11 @@ public class ManejadorDeErrores {
   @ExceptionHandler(VarianteNoEncontradaException.class)
   public ProblemDetail varianteNoEncontrada(VarianteNoEncontradaException excepcion) {
     return problema(HttpStatus.NOT_FOUND, "Variante no encontrada", excepcion);
+  }
+
+  @ExceptionHandler(PedidoNoEliminableException.class)
+  public ProblemDetail pedidoNoEliminable(PedidoNoEliminableException excepcion) {
+    return problema(HttpStatus.CONFLICT, "El pedido no se puede eliminar", excepcion);
   }
 
   @ExceptionHandler(PedidoNoEncontradoException.class)

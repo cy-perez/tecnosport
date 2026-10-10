@@ -5940,6 +5940,30 @@
         ]
       }
     },
+    "/api/v1/admin/pedidos/{id}" : {
+      "delete" : {
+        "operationId" : "eliminar_7",
+        "parameters" : [
+          {
+            "in" : "path",
+            "name" : "id",
+            "required" : true,
+            "schema" : {
+              "format" : "uuid",
+              "type" : "string"
+            }
+          }
+        ],
+        "responses" : {
+          "204" : {
+            "description" : "No Content"
+          }
+        },
+        "tags" : [
+          "admin-pedidos-controlador"
+        ]
+      }
+    },
     "/api/v1/admin/pedidos/{id}/cancelacion" : {
       "post" : {
         "operationId" : "cancelar",

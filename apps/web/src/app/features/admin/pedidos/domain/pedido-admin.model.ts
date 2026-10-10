@@ -209,6 +209,13 @@ export const MOTIVOS_CANCELACION: readonly MotivoCancelacion[] = [
   'PLAZO_INCUMPLIDO',
 ];
 
+/**
+ * Los únicos en que un pedido se puede eliminar del todo (ADR-0077): el pago falló o se canceló.
+ * Es la mitad de la regla; la otra —sin pago, envío ni trámites colgando— la decide el servidor,
+ * que responde 409 si algo cuelga.
+ */
+export const ESTADOS_QUE_ADMITEN_ELIMINACION = ['PAGO_FALLIDO', 'CANCELADO'] as const;
+
 /** Solo antes de despachar: despues ya existen entrega, rechazo en la entrega y devolucion. */
 export const ESTADOS_QUE_ADMITEN_CANCELACION = [
   'PAGO_PENDIENTE',

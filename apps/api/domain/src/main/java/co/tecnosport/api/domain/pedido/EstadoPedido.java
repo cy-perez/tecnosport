@@ -71,4 +71,20 @@ public enum EstadoPedido {
   public boolean puedeTransicionarA(EstadoPedido siguiente) {
     return TRANSICIONES_VALIDAS.get(this).contains(siguiente);
   }
+
+  /**
+   * Si un pedido en este estado se puede eliminar del todo (ADR-0077). Solo los dos en que no hay
+   * nada en juego: el pago falló —la reserva ya se liberó— o se canceló. Cualquier otro tiene
+   * dinero en camino, inventario apartado o un paquete que seguir, y lo que corresponde es
+   * cancelarlo.
+   *
+   * <p>Es la mitad de la regla: la otra la mira el caso de uso, porque un pedido cancelado puede
+   * haber cobrado antes —y entonces conserva su pago, su reintegro y su historia—.
+   *
+   * <p>{@code CREADO} no está porque nunca se guarda: es el estado del constructor, y el pedido
+   * sale de él antes de existir en la base.
+   */
+  public boolean admiteEliminacion() {
+    return this == PAGO_FALLIDO || this == CANCELADO;
+  }
 }

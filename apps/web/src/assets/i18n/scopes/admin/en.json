@@ -7,6 +7,7 @@
     "reintegro_requerido": "The refund amount or method is missing, and this outcome returns money.",
     "retracto_ya_radicado": "This order already has a withdrawal in progress.",
     "pedido_sin_entregar": "This order has not been delivered yet.",
+    "pedido_no_eliminable": "Only a cancelled order, or one whose payment failed, that never received a payment or had a shipment or a claim, and is not a manual transfer, can be deleted. Cancel it instead.",
     "existencia_insuficiente": "There is no longer enough stock for this operation.",
     "linea_no_es_del_pedido": "That product is not part of this order.",
     "transicion_de_estado_invalida": "That step is not possible from the current state. Reload and check again.",
@@ -236,6 +237,18 @@
         "no_disponibilidad": "The product became unavailable",
         "plazo_incumplido": "We did not deliver on time"
       }
+    },
+    "eliminar": {
+      "titulo": "Delete the order",
+      "explicacion": "Only for orders where no sale happened: the payment failed or it was cancelled, and it never received a payment, had a shipment or a claim. A manual transfer order is never deleted, because the system cannot tell whether the money arrived. Any other order is cancelled and keeps its history.",
+      "accion": "Delete order",
+      "pregunta": "Delete order {{numero}}?",
+      "loQueImplica": "The order, its lines, its history and its failed payment attempts are deleted and cannot be recovered. The email link to retry the payment stops working.",
+      "confirmar": "Yes, delete",
+      "cancelar": "Cancel",
+      "eliminando": "Deleting…",
+      "hecho": "Order {{numero}} was deleted.",
+      "error": "The order could not be deleted. Try again."
     }
   },
   "productos": {

@@ -141,6 +141,9 @@ identifica al comprador, aunque sea solo por correo.
   si existe debe estar completo: un set a medias no se muestra.
 - **Todo cambio de estado de un pedido queda registrado** con fecha, actor y
   motivo. No se sobrescribe historia.
+  La única excepción es borrar del todo un pedido en el que nunca hubo nada en
+  juego —pago fallido o cancelado, sin pago, envío ni trámites—, que se lleva su
+  historial (`adr/0077`).
 
 ## Cómo se mide que salió bien
 

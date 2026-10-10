@@ -7,6 +7,7 @@
     "reintegro_requerido": "Falta el monto o el medio del reintegro, y este desenlace devuelve dinero.",
     "retracto_ya_radicado": "Este pedido ya tiene un retracto en curso.",
     "pedido_sin_entregar": "Este pedido todavía no se ha entregado.",
+    "pedido_no_eliminable": "Solo se elimina un pedido cancelado o con el pago fallido, que nunca recibió un pago ni tuvo envío ni trámites, y que no sea de transferencia manual. Cancélalo en vez de eliminarlo.",
     "existencia_insuficiente": "Ya no hay existencias suficientes para esta operación.",
     "linea_no_es_del_pedido": "Ese producto no está en este pedido.",
     "transicion_de_estado_invalida": "Ese paso no se puede dar desde el estado actual. Recarga y vuelve a mirar.",
@@ -236,6 +237,18 @@
         "no_disponibilidad": "El producto dejo de estar disponible",
         "plazo_incumplido": "No entregamos dentro del plazo"
       }
+    },
+    "eliminar": {
+      "titulo": "Eliminar el pedido",
+      "explicacion": "Solo para pedidos en los que no hubo venta: el pago falló o se canceló, y nunca recibió un pago, ni tuvo envío ni trámites. Una transferencia manual no se elimina, porque el sistema no sabe si el dinero llegó. Cualquier otro se cancela y conserva su historia.",
+      "accion": "Eliminar pedido",
+      "pregunta": "¿Eliminar el pedido {{numero}}?",
+      "loQueImplica": "Se borran el pedido, sus líneas, su historial y sus intentos de pago fallidos, y no se pueden recuperar. El enlace del correo para reintentar el pago deja de funcionar.",
+      "confirmar": "Sí, eliminar",
+      "cancelar": "Cancelar",
+      "eliminando": "Eliminando…",
+      "hecho": "Se eliminó el pedido {{numero}}.",
+      "error": "No se pudo eliminar el pedido. Intenta de nuevo."
     }
   },
   "productos": {

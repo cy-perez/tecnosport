@@ -56,6 +56,12 @@ export interface RepositorioPedidosAdmin {
     comprobante: string | null;
   }): Promise<void>;
 
+  /**
+   * Borra el pedido del todo, con su historial. Solo uno con el pago fallido o cancelado, que
+   * nunca recibió un pago ni tuvo envío ni trámites; si no, el servidor responde 409.
+   */
+  eliminar(pedidoId: string): Promise<void>;
+
   /** `monto` y `medio` solo cuando el dinero ya habia entrado; el servidor rechaza si faltan. */
   cancelar(entrada: {
     pedidoId: string;

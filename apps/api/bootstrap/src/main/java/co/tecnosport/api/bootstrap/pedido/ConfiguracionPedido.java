@@ -13,6 +13,7 @@ import co.tecnosport.api.application.envio.RepositorioEnvios;
 import co.tecnosport.api.application.inventario.RepositorioInventario;
 import co.tecnosport.api.application.legal.RepositorioAutorizaciones;
 import co.tecnosport.api.application.pedido.AvisarPlazosDeEntregaVencidos;
+import co.tecnosport.api.application.pedido.BorradoDePedidos;
 import co.tecnosport.api.application.pedido.CancelarPedido;
 import co.tecnosport.api.application.pedido.ConciliarRecaudo;
 import co.tecnosport.api.application.pedido.ConciliarTransferencia;
@@ -21,6 +22,7 @@ import co.tecnosport.api.application.pedido.ConsultarSeguimientoPedido;
 import co.tecnosport.api.application.pedido.ConsultarSeguimientoPorNumero;
 import co.tecnosport.api.application.pedido.CrearPedido;
 import co.tecnosport.api.application.pedido.DespacharPedido;
+import co.tecnosport.api.application.pedido.EliminarPedido;
 import co.tecnosport.api.application.pedido.EnviarComprobantesDeCompra;
 import co.tecnosport.api.application.pedido.ListarPedidosAdmin;
 import co.tecnosport.api.application.pedido.MarcarEntregado;
@@ -162,6 +164,12 @@ public class ConfiguracionPedido {
         enviadorDeCorreo,
         textos,
         reloj);
+  }
+
+  @Bean
+  public EliminarPedido eliminarPedido(
+      RepositorioPedidos repositorioPedidos, BorradoDePedidos borradoDePedidos) {
+    return new EliminarPedido(repositorioPedidos, borradoDePedidos);
   }
 
   @Bean

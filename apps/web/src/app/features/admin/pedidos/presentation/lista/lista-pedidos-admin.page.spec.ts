@@ -244,6 +244,12 @@ class RepositorioPedidosAdminFalso implements RepositorioPedidosAdmin {
     comprobante: string | null;
   }[] = [];
 
+  readonly eliminados: string[] = [];
+
+  async eliminar(pedidoId: string): Promise<void> {
+    this.eliminados.push(pedidoId);
+  }
+
   async cancelar(entrada: {
     pedidoId: string;
     motivo: MotivoCancelacion;
@@ -367,6 +373,45 @@ describe('ListaPedidosAdminPage', () => {
     expect(screen.getByRole('button', { name: 'Siguiente' }).getAttribute('aria-disabled')).toBe(
       'true',
     );
+  });
+
+  /**
+   * Eliminar solo se ofrece donde el estado lo admite; lo que cuelga del pedido lo decide el
+   * servidor. Y como la fila se va con el botón, el aviso vive en la lista.
+   */
+  it('eliminar se ofrece en un pago fallido, y al hacerlo la lista lo dice', async () => {
+    const { repositorio } = await renderLista([
+      pedidoDePrueba({ estado: 'PAGO_FALLIDO', metodoPago: 'WOMPI' }),
+    ]);
+    await screen.findByText('TS-2026-000123');
+    fireEvent.click(screen.getByRole('button', { name: 'Ver detalle' }));
+
+    fireEvent.click(await screen.findByRole('button', { name: esAdmin.pedidos.eliminar.accion }));
+    fireEvent.click(screen.getByRole('button', { name: esAdmin.pedidos.eliminar.confirmar }));
+
+    expect(await screen.findByText('Se eliminó el pedido TS-2026-000123.')).toBeTruthy();
+    expect(repositorio.eliminados).toEqual([pedidoDePrueba().id]);
+  });
+
+  /** Su dinero no deja rastro en el sistema: cancelada, puede tener una consignación sin ver. */
+  it('eliminar no se ofrece en una transferencia manual cancelada', async () => {
+    await renderLista([
+      pedidoDePrueba({ estado: 'CANCELADO', metodoPago: 'TRANSFERENCIA_MANUAL' }),
+    ]);
+    await screen.findByText('TS-2026-000123');
+    fireEvent.click(screen.getByRole('button', { name: 'Ver detalle' }));
+
+    await screen.findByText(/Camiseta/);
+    expect(screen.queryByRole('button', { name: esAdmin.pedidos.eliminar.accion })).toBeNull();
+  });
+
+  it('eliminar no se ofrece en un pedido pagado', async () => {
+    await renderLista([pedidoDePrueba({ estado: 'PAGADO' })]);
+    await screen.findByText('TS-2026-000123');
+    fireEvent.click(screen.getByRole('button', { name: 'Ver detalle' }));
+
+    await screen.findByText(/Camiseta/);
+    expect(screen.queryByRole('button', { name: esAdmin.pedidos.eliminar.accion })).toBeNull();
   });
 
   it('ver detalle expande la fila con las líneas del pedido', async () => {

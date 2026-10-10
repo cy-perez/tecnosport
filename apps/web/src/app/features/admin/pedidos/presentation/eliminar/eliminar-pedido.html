@@ -1,0 +1,56 @@
+<section
+  class="mt-16 flex flex-col gap-12 rounded-lg border border-ts-error p-16"
+  [attr.aria-labelledby]="'eliminar-pedido-titulo-' + pedidoId()"
+>
+  <h2 class="m-0 text-base font-medio" [id]="'eliminar-pedido-titulo-' + pedidoId()">
+    {{ 'admin.pedidos.eliminar.titulo' | transloco }}
+  </h2>
+  <p class="m-0 text-ts-texto-suave">{{ 'admin.pedidos.eliminar.explicacion' | transloco }}</p>
+  <div>
+    <ts-boton
+      #boton
+      variante="secundario"
+      [expandido]="confirmando()"
+      [controla]="'eliminar-pedido-' + pedidoId()"
+      (click)="preguntar()"
+    >
+      {{ 'admin.pedidos.eliminar.accion' | transloco }}
+    </ts-boton>
+  </div>
+
+  @if (confirmando()) {
+    <div
+      #caja
+      class="flex flex-col gap-12 rounded-md border border-ts-borde-control p-12"
+      role="group"
+      tabindex="-1"
+      [id]="'eliminar-pedido-' + pedidoId()"
+      [attr.aria-labelledby]="'eliminar-pedido-pregunta-' + pedidoId()"
+      [attr.aria-describedby]="'eliminar-pedido-implica-' + pedidoId()"
+      (keydown.escape)="cancelar()"
+    >
+      <p class="m-0" [id]="'eliminar-pedido-pregunta-' + pedidoId()">
+        {{ 'admin.pedidos.eliminar.pregunta' | transloco: { numero: numeroPedido() } }}
+      </p>
+      <p class="m-0 text-ts-texto-suave" [id]="'eliminar-pedido-implica-' + pedidoId()">
+        {{ 'admin.pedidos.eliminar.loQueImplica' | transloco }}
+      </p>
+      @if (error(); as mensaje) {
+        <p class="m-0 text-ts-error" role="alert">{{ mensaje }}</p>
+      }
+      <div class="flex flex-wrap gap-12">
+        <ts-boton
+          variante="peligro"
+          [ocupado]="eliminando()"
+          [etiquetaCargando]="'admin.pedidos.eliminar.eliminando' | transloco"
+          (click)="eliminar()"
+        >
+          {{ 'admin.pedidos.eliminar.confirmar' | transloco }}
+        </ts-boton>
+        <ts-boton variante="secundario" (click)="cancelar()">
+          {{ 'admin.pedidos.eliminar.cancelar' | transloco }}
+        </ts-boton>
+      </div>
+    </div>
+  }
+</section>

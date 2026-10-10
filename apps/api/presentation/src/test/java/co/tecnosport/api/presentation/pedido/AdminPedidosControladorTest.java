@@ -3,6 +3,7 @@ package co.tecnosport.api.presentation.pedido;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -20,11 +21,13 @@ import co.tecnosport.api.application.envio.RepositorioEnvios;
 import co.tecnosport.api.application.envio.ResultadoCotizacion;
 import co.tecnosport.api.application.envio.ResultadoEmision;
 import co.tecnosport.api.application.inventario.RepositorioInventario;
+import co.tecnosport.api.application.pedido.BorradoDePedidos;
 import co.tecnosport.api.application.pedido.CancelarPedido;
 import co.tecnosport.api.application.pedido.ConciliarRecaudo;
 import co.tecnosport.api.application.pedido.ConciliarTransferencia;
 import co.tecnosport.api.application.pedido.ConfirmarInventarioDePedidoPagado;
 import co.tecnosport.api.application.pedido.DespacharPedido;
+import co.tecnosport.api.application.pedido.EliminarPedido;
 import co.tecnosport.api.application.pedido.ListarPedidosAdmin;
 import co.tecnosport.api.application.pedido.MarcarEntregado;
 import co.tecnosport.api.application.pedido.RechazarEnEntrega;
@@ -94,6 +97,7 @@ class AdminPedidosControladorTest {
   @Autowired private RepositorioEmisionesDobleDePrueba emisiones;
   @Autowired private EmisorDeGuiasDobleDePrueba emisor;
   @Autowired private RepositorioProductosDobleDePrueba productos;
+  @Autowired private BorradoDoble borrado;
 
   private static final Direccion DIRECCION_MEDELLIN =
       Direccion.sinBarrio("05", "Antioquia", "05001", "Medellín", "Cra. 26C #38B-31", "Casa azul");
@@ -101,6 +105,67 @@ class AdminPedidosControladorTest {
   @AfterEach
   void limpiarContextoDeSeguridad() {
     SecurityContextHolder.clearContext();
+    borrado.compromisos.clear();
+    borrado.eliminados.clear();
+  }
+
+  /** Pago fallido y sin nada colgando: se borra, 204. */
+  @Test
+  void eliminarUnPedidoConElPagoFallidoEs204() throws Exception {
+    autenticarComoAdmin();
+    Pedido pedido = pedidoConMetodo(MetodoPago.WOMPI);
+    pedido.transicionar(EstadoPedido.PAGO_FALLIDO, "webhook-wompi", "rechazado", Instant.now());
+
+    mockMvc
+        .perform(delete("/api/v1/admin/pedidos/{id}", pedido.id()))
+        .andExpect(status().isNoContent());
+
+    assertEquals(List.of(pedido.id()), borrado.eliminados);
+  }
+
+  /** Esperando el pago hay dinero en camino: 409 con su código, y no se borra nada. */
+  @Test
+  void eliminarUnPedidoEsperandoElPagoEs409() throws Exception {
+    autenticarComoAdmin();
+    Pedido pedido = pedidoConMetodo(MetodoPago.WOMPI);
+
+    mockMvc
+        .perform(delete("/api/v1/admin/pedidos/{id}", pedido.id()))
+        .andExpect(status().isConflict())
+        .andExpect(jsonPath("$.codigo").value("PEDIDO_NO_ELIMINABLE"));
+
+    assertTrue(borrado.eliminados.isEmpty());
+  }
+
+  @Test
+  void eliminarUnCanceladoQueCobroEs409() throws Exception {
+    autenticarComoAdmin();
+    Pedido pedido = pedidoConMetodo(MetodoPago.WOMPI);
+    pedido.transicionar(EstadoPedido.CANCELADO, "admin:1", "sin existencia", Instant.now());
+    borrado.compromisos.put(pedido.id(), java.util.EnumSet.of(BorradoDePedidos.Compromiso.PAGO));
+
+    mockMvc
+        .perform(delete("/api/v1/admin/pedidos/{id}", pedido.id()))
+        .andExpect(status().isConflict())
+        .andExpect(jsonPath("$.codigo").value("PEDIDO_NO_ELIMINABLE"));
+
+    assertTrue(borrado.eliminados.isEmpty());
+  }
+
+  /** Lo que el adaptador vería en las tablas de pagos, envíos y trámites. */
+  static final class BorradoDoble implements BorradoDePedidos {
+    final java.util.Map<UUID, java.util.Set<Compromiso>> compromisos = new java.util.HashMap<>();
+    final List<UUID> eliminados = new java.util.ArrayList<>();
+
+    @Override
+    public java.util.Set<Compromiso> compromisosDe(UUID pedidoId) {
+      return compromisos.getOrDefault(pedidoId, java.util.Set.of());
+    }
+
+    @Override
+    public void eliminar(UUID pedidoId) {
+      eliminados.add(pedidoId);
+    }
   }
 
   private void autenticarComoAdmin() {
@@ -839,6 +904,16 @@ class AdminPedidosControladorTest {
     @Bean
     RepositorioInventarioDobleDePrueba repositorioInventario() {
       return new RepositorioInventarioDobleDePrueba();
+    }
+
+    @Bean
+    BorradoDoble borradoDePedidos() {
+      return new BorradoDoble();
+    }
+
+    @Bean
+    EliminarPedido eliminarPedido(RepositorioPedidos repositorioPedidos, BorradoDoble borrado) {
+      return new EliminarPedido(repositorioPedidos, borrado);
     }
 
     @Bean
