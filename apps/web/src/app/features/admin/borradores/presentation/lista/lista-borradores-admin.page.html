@@ -5,6 +5,84 @@
 
   <p class="mb-24 text-ts-texto-suave">{{ 'admin.borradores.explicacion' | transloco }}</p>
 
+  <!-- Siempre en el DOM: una región cortés que nace llena no se anuncia. -->
+  <p
+    #avisoLimpiarRef
+    class="m-0 text-ts-exito"
+    role="status"
+    tabindex="-1"
+    [class.mb-16]="avisoLimpiar() !== null"
+  >
+    @if (avisoLimpiar(); as aviso) {
+      {{ aviso }}
+    }
+  </p>
+
+  @if (cantidadSinAprobar() > 0 || confirmandoLimpiar()) {
+    <section
+      class="mb-24 flex flex-col gap-16 rounded-lg border border-ts-borde bg-ts-superficie p-16"
+      aria-labelledby="limpiar-titulo"
+    >
+      <h2 id="limpiar-titulo" class="m-0 font-display text-lg">
+        {{ 'admin.borradores.limpiar.titulo' | transloco }}
+      </h2>
+      <p class="m-0 text-ts-texto-suave">
+        {{ 'admin.borradores.limpiar.explicacion' | transloco: { cantidad: cantidadSinAprobar() } }}
+      </p>
+      <div>
+        <ts-boton
+          #botonLimpiar
+          variante="secundario"
+          [expandido]="confirmandoLimpiar()"
+          controla="limpiar-confirmar"
+          (click)="preguntarSiLimpiar()"
+        >
+          {{ 'admin.borradores.limpiar.accion' | transloco }}
+        </ts-boton>
+      </div>
+
+      @if (confirmandoLimpiar()) {
+        <div
+          #cajaLimpiar
+          id="limpiar-confirmar"
+          class="flex flex-col gap-16 border border-ts-borde-control p-16"
+          role="group"
+          tabindex="-1"
+          aria-labelledby="limpiar-pregunta"
+          aria-describedby="limpiar-implica"
+          (keydown.escape)="cancelarLimpiar()"
+        >
+          <p id="limpiar-pregunta" class="m-0">
+            {{
+              'admin.borradores.limpiar.pregunta' | transloco: { cantidad: cantidadSinAprobar() }
+            }}
+          </p>
+          <p id="limpiar-implica" class="m-0 text-ts-texto-suave">
+            {{ 'admin.borradores.limpiar.loQueImplica' | transloco }}
+          </p>
+          @if (errorLimpiar(); as mensaje) {
+            <p class="m-0 text-ts-error" role="alert">{{ mensaje }}</p>
+          }
+          <div class="flex flex-wrap gap-16">
+            <ts-boton
+              variante="peligro"
+              [ocupado]="limpiando()"
+              [etiquetaCargando]="
+                'admin.borradores.limpiar.borrando' | transloco: { borrados: borradosHastaAhora() }
+              "
+              (click)="limpiar()"
+            >
+              {{ 'admin.borradores.limpiar.confirmar' | transloco }}
+            </ts-boton>
+            <ts-boton variante="secundario" (click)="cancelarLimpiar()">
+              {{ 'admin.borradores.limpiar.cancelar' | transloco }}
+            </ts-boton>
+          </div>
+        </div>
+      }
+    </section>
+  }
+
   <div class="mb-16 flex flex-wrap gap-16">
     <ts-select
       idCampo="borradores-filtro-estado"

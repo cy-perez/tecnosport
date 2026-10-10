@@ -132,6 +132,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/borradores/sin-aprobar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["contarSinAprobar"];
+        put?: never;
+        post?: never;
+        delete: operations["eliminarSinAprobar"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/borradores/{id}": {
         parameters: {
             query?: never;
@@ -2145,6 +2161,14 @@ export interface components {
             /** Format: date-time */
             vistoEn: string;
         };
+        BorradoresEliminadosRespuesta: {
+            /** Format: int32 */
+            archivosBorrados?: number;
+            /** Format: int32 */
+            eliminados?: number;
+            /** Format: int64 */
+            quedan?: number;
+        };
         BorradoresPaginadosRespuesta: {
             items?: components["schemas"]["BorradorRespuesta"][];
             /** Format: int32 */
@@ -2153,6 +2177,10 @@ export interface components {
             totalBorradores?: number;
             /** Format: int32 */
             totalPaginas?: number;
+        };
+        BorradoresSinAprobarRespuesta: {
+            /** Format: int64 */
+            cantidad?: number;
         };
         CambiarClaveRequest: {
             claveActual: string;
@@ -3683,6 +3711,46 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["BorradorTecnologiaRespuesta"];
+                };
+            };
+        };
+    };
+    contarSinAprobar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["BorradoresSinAprobarRespuesta"];
+                };
+            };
+        };
+    };
+    eliminarSinAprobar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["BorradoresEliminadosRespuesta"];
                 };
             };
         };

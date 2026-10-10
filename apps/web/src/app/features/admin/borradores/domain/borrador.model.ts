@@ -249,3 +249,12 @@ export function borradorSinProducto(borrador: Borrador): boolean {
     borrador.productoId === null
   );
 }
+
+/**
+ * Una tanda del borrado en bloque de los borradores sin aprobar. El servidor borra por tandas para
+ * no rozar su límite de tiempo, y dice cuántos quedan para que el panel pida la siguiente.
+ */
+export interface TandaDeBorradoresEliminados {
+  readonly eliminados: number;
+  readonly quedan: number;
+}

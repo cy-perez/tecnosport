@@ -1322,6 +1322,19 @@
       "borrando": "Borrando…",
       "error": "No se pudo borrar el borrador. Intenta de nuevo.",
       "explicacionSinProducto": "Su producto ya se borró: este borrador ya no reconoce nada y solo guarda los mensajes y las fotos del proveedor. Borrarlo los libera del bucket."
+    },
+    "limpiar": {
+      "titulo": "Limpiar la bandeja",
+      "explicacion": "Hay {{cantidad}} borrador(es) sin aprobar: en revisión o rechazados. Puedes borrarlos todos de una vez.",
+      "accion": "Borrar los no aprobados",
+      "pregunta": "¿Borrar los {{cantidad}} borrador(es) sin aprobar?",
+      "loQueImplica": "Se borran con sus mensajes y sus fotos del almacenamiento privado, y no se pueden recuperar. Los aprobados no se tocan. Si vuelves a subir una exportación que traiga esos anuncios, aparecerán otra vez como borradores.",
+      "confirmar": "Sí, borrar todos",
+      "cancelar": "Cancelar",
+      "borrando": "Borrando… {{borrados}} hasta ahora",
+      "hecho": "Se borraron {{borrados}} borrador(es) sin aprobar.",
+      "error": "No se pudieron borrar todos. Los que alcanzaron a borrarse ya no están; intenta de nuevo para terminar.",
+      "ninguno": "No se borró ninguno: los que quedan los está decidiendo alguien más en este momento. Recarga la página e intenta de nuevo."
     }
   },
   "referencias_envio": {

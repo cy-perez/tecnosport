@@ -280,6 +280,39 @@ class RepositorioBorradoresJpaTest {
     assertThat(ninguna).isEmpty();
   }
 
+  /** La lista de una tanda del borrado en bloque: por estado, del más antiguo, con tope. */
+  @Test
+  void losIdsPorEstadoVanDelMasAntiguoConTopeYSeCuentanAparte() {
+    unaPublicacion();
+    BorradorProducto tercero = borradorEn(T.plusSeconds(20));
+    BorradorProducto primero = borradorEn(T);
+    BorradorProducto rechazado = borradorEn(T.plusSeconds(10));
+    rechazado.rechazar("No.");
+    List.of(tercero, primero, rechazado).forEach(borradores::guardar);
+    Set<EstadoBorrador> sinAprobar = Set.of(EstadoBorrador.EN_REVISION, EstadoBorrador.RECHAZADO);
+
+    assertThat(borradores.idsEnEstados(sinAprobar, 2))
+        .containsExactly(primero.id(), rechazado.id());
+    assertThat(borradores.idsEnEstados(Set.of(EstadoBorrador.EN_REVISION), 10))
+        .containsExactly(primero.id(), tercero.id());
+    assertThat(borradores.contarEnEstados(sinAprobar)).isEqualTo(3);
+    assertThat(borradores.contarEnEstados(Set.of(EstadoBorrador.APROBADO))).isZero();
+  }
+
+  private BorradorProducto borradorEn(Instant creadoEn) {
+    return BorradorProducto.nuevo(
+        publicacion.id(),
+        proveedor.id(),
+        extraido("Uno", null),
+        "{}",
+        Dinero.deCop(1000),
+        null,
+        null,
+        null,
+        Set.of(),
+        creadoEn);
+  }
+
   /** El anuncio repetido: solo cuenta el que sigue en revisión, y solo el de ese proveedor. */
   @Test
   void sabeSiYaHayUnBorradorEnRevisionConLaMismaHuella() {

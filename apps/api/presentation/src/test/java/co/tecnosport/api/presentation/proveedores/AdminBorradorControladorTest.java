@@ -26,6 +26,7 @@ import co.tecnosport.api.application.proveedores.ConfirmarFotoDeBorrador;
 import co.tecnosport.api.application.proveedores.DescartarFotoDeBorrador;
 import co.tecnosport.api.application.proveedores.EditarBorrador;
 import co.tecnosport.api.application.proveedores.EliminarBorrador;
+import co.tecnosport.api.application.proveedores.EliminarBorradoresSinAprobar;
 import co.tecnosport.api.application.proveedores.HuellaVisual;
 import co.tecnosport.api.application.proveedores.ImagenProcesada;
 import co.tecnosport.api.application.proveedores.ProcesadorDeImagenes;
@@ -242,6 +243,56 @@ class AdminBorradorControladorTest {
         .perform(delete("/api/v1/admin/borradores/{id}", borrador.id()))
         .andExpect(status().isNotFound())
         .andExpect(jsonPath("$.codigo").value("BORRADOR_NO_ENCONTRADO"));
+  }
+
+  /**
+   * La ruta literal gana a {@code /{id}}: "sin-aprobar" no se intenta leer como un UUID. Y lo
+   * aprobado no cuenta ni se borra.
+   */
+  @Test
+  void elBorradoEnBloqueCuentaBorraYDiceCuantosQuedan() throws Exception {
+    BorradorProducto aprobado =
+        new BorradorProducto(
+            UUID.randomUUID(),
+            UUID.randomUUID(),
+            borrador.proveedorId(),
+            "{}",
+            "Aprobado",
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            EstadoBorrador.APROBADO,
+            UUID.randomUUID(),
+            null,
+            T);
+    borradores.guardar(aprobado);
+
+    mockMvc
+        .perform(get("/api/v1/admin/borradores/sin-aprobar"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.cantidad").value(1));
+
+    mockMvc
+        .perform(delete("/api/v1/admin/borradores/sin-aprobar"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.eliminados").value(1))
+        .andExpect(jsonPath("$.archivosBorrados").value(1))
+        .andExpect(jsonPath("$.quedan").value(0));
+
+    assertThat(borradores.porId).containsOnlyKeys(aprobado.id());
+    assertThat(objetosBorrados.claves).containsExactly("p/f.jpg");
   }
 
   /** La foto deja de verse en la revisión y el archivo se queda: es de la publicación. */
@@ -486,6 +537,12 @@ class AdminBorradorControladorTest {
     }
 
     @Bean
+    EliminarBorradoresSinAprobar eliminarBorradoresSinAprobar(
+        RepositorioBorradoresDoble borradores, EliminarBorrador eliminarBorrador) {
+      return new EliminarBorradoresSinAprobar(borradores, eliminarBorrador);
+    }
+
+    @Bean
     DescartarFotoDeBorrador descartarFotoDeBorrador(
         RepositorioBorradoresDoble borradores,
         RepositorioPublicacionesDoble publicaciones,
@@ -647,6 +704,21 @@ class AdminBorradorControladorTest {
     @Override
     public List<AnuncioEnRevision> anunciosEnRevision(UUID proveedorId) {
       return List.of();
+    }
+
+    @Override
+    public List<UUID> idsEnEstados(Set<EstadoBorrador> estados, int limite) {
+      return porId.values().stream()
+          .filter(b -> estados.contains(b.estado()))
+          .sorted(Comparator.comparing(BorradorProducto::creadoEn))
+          .limit(limite)
+          .map(BorradorProducto::id)
+          .toList();
+    }
+
+    @Override
+    public long contarEnEstados(Set<EstadoBorrador> estados) {
+      return porId.values().stream().filter(b -> estados.contains(b.estado())).count();
     }
 
     @Override

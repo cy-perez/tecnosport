@@ -133,6 +133,20 @@ public class RepositorioBorradoresJpa implements RepositorioBorradores {
   }
 
   @Override
+  public List<UUID> idsEnEstados(Set<EstadoBorrador> estados, int limite) {
+    return jpa.idsEnEstados(nombres(estados), PageRequest.of(0, limite));
+  }
+
+  @Override
+  public long contarEnEstados(Set<EstadoBorrador> estados) {
+    return jpa.countByEstadoIn(nombres(estados));
+  }
+
+  private static List<String> nombres(Set<EstadoBorrador> estados) {
+    return estados.stream().map(Enum::name).toList();
+  }
+
+  @Override
   public long contarDePublicacion(UUID publicacionId) {
     return jpa.countByPublicacionId(publicacionId);
   }

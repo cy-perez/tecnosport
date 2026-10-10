@@ -485,6 +485,23 @@
         ],
         "type" : "object"
       },
+      "BorradoresEliminadosRespuesta" : {
+        "properties" : {
+          "archivosBorrados" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "eliminados" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "quedan" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        },
+        "type" : "object"
+      },
       "BorradoresPaginadosRespuesta" : {
         "properties" : {
           "items" : {
@@ -503,6 +520,15 @@
           },
           "totalPaginas" : {
             "format" : "int32",
+            "type" : "integer"
+          }
+        },
+        "type" : "object"
+      },
+      "BorradoresSinAprobarRespuesta" : {
+        "properties" : {
+          "cantidad" : {
+            "format" : "int64",
             "type" : "integer"
           }
         },
@@ -4542,6 +4568,44 @@
         },
         "tags" : [
           "admin-tecnologia-controlador"
+        ]
+      }
+    },
+    "/api/v1/admin/borradores/sin-aprobar" : {
+      "delete" : {
+        "operationId" : "eliminarSinAprobar",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/BorradoresEliminadosRespuesta"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "admin-borrador-controlador"
+        ]
+      },
+      "get" : {
+        "operationId" : "contarSinAprobar",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/BorradoresSinAprobarRespuesta"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "admin-borrador-controlador"
         ]
       }
     },

@@ -8,6 +8,7 @@ import co.tecnosport.api.application.proveedores.DescartarFotoDeBorrador;
 import co.tecnosport.api.application.proveedores.EditarBorrador;
 import co.tecnosport.api.application.proveedores.EditarBorradorComando;
 import co.tecnosport.api.application.proveedores.EliminarBorrador;
+import co.tecnosport.api.application.proveedores.EliminarBorradoresSinAprobar;
 import co.tecnosport.api.application.proveedores.RechazarBorrador;
 import co.tecnosport.api.application.proveedores.RepositorioBorradores;
 import co.tecnosport.api.application.proveedores.SolicitarSubidaDeFotoDeBorrador;
@@ -21,7 +22,9 @@ import co.tecnosport.api.presentation.catalogo.dto.ProductoAdminRespuesta;
 import co.tecnosport.api.presentation.proveedores.dto.AprobarBorradorPeticion;
 import co.tecnosport.api.presentation.proveedores.dto.BorradorDetalleRespuesta;
 import co.tecnosport.api.presentation.proveedores.dto.BorradorRespuesta;
+import co.tecnosport.api.presentation.proveedores.dto.BorradoresEliminadosRespuesta;
 import co.tecnosport.api.presentation.proveedores.dto.BorradoresPaginadosRespuesta;
+import co.tecnosport.api.presentation.proveedores.dto.BorradoresSinAprobarRespuesta;
 import co.tecnosport.api.presentation.proveedores.dto.ConfirmarFotoPeticion;
 import co.tecnosport.api.presentation.proveedores.dto.EditarBorradorPeticion;
 import co.tecnosport.api.presentation.proveedores.dto.RechazarBorradorPeticion;
@@ -61,12 +64,19 @@ public class AdminBorradorControlador {
   private static final Logger log = LoggerFactory.getLogger(AdminBorradorControlador.class);
   private static final int TAMANO_PAGINA_PREDETERMINADO = 20;
 
+  /**
+   * Cuántos borradores borra una petición del borrado en bloque. Cada uno son unas pocas filas y
+   * uno o dos objetos del bucket: cien caben con holgura en el límite de tiempo del servidor.
+   */
+  static final int TANDA_DE_BORRADO = 100;
+
   private final RepositorioBorradores repositorioBorradores;
   private final VerBorrador verBorrador;
   private final EditarBorrador editarBorrador;
   private final AprobarBorrador aprobarBorrador;
   private final RechazarBorrador rechazarBorrador;
   private final EliminarBorrador eliminarBorrador;
+  private final EliminarBorradoresSinAprobar eliminarSinAprobar;
   private final DescartarFotoDeBorrador descartarFotoDeBorrador;
   private final SolicitarSubidaDeFotoDeBorrador solicitarSubidaDeFoto;
   private final ConfirmarFotoDeBorrador confirmarFoto;
@@ -80,6 +90,7 @@ public class AdminBorradorControlador {
       AprobarBorrador aprobarBorrador,
       RechazarBorrador rechazarBorrador,
       EliminarBorrador eliminarBorrador,
+      EliminarBorradoresSinAprobar eliminarSinAprobar,
       DescartarFotoDeBorrador descartarFotoDeBorrador,
       SolicitarSubidaDeFotoDeBorrador solicitarSubidaDeFoto,
       ConfirmarFotoDeBorrador confirmarFoto,
@@ -91,6 +102,7 @@ public class AdminBorradorControlador {
     this.aprobarBorrador = Objects.requireNonNull(aprobarBorrador);
     this.rechazarBorrador = Objects.requireNonNull(rechazarBorrador);
     this.eliminarBorrador = Objects.requireNonNull(eliminarBorrador);
+    this.eliminarSinAprobar = Objects.requireNonNull(eliminarSinAprobar);
     this.descartarFotoDeBorrador = Objects.requireNonNull(descartarFotoDeBorrador);
     this.solicitarSubidaDeFoto = Objects.requireNonNull(solicitarSubidaDeFoto);
     this.confirmarFoto = Objects.requireNonNull(confirmarFoto);
@@ -108,6 +120,27 @@ public class AdminBorradorControlador {
         estado == null || estado.isBlank() ? null : EstadoBorrador.valueOf(estado);
     return BorradoresPaginadosRespuesta.de(
         repositorioBorradores.listar(filtro, proveedorId, pagina, tamano));
+  }
+
+  /** Cuántos borraría {@link #eliminarSinAprobar()}: el panel lo dice antes de confirmar. */
+  @GetMapping("/sin-aprobar")
+  public BorradoresSinAprobarRespuesta contarSinAprobar() {
+    return new BorradoresSinAprobarRespuesta(eliminarSinAprobar.contar());
+  }
+
+  /**
+   * Una tanda del borrado en bloque de los borradores en revisión o rechazados. Responde cuántos
+   * quedan; el panel repite mientras no sea cero. {@code warn}, como el borrado de uno.
+   */
+  @DeleteMapping("/sin-aprobar")
+  public BorradoresEliminadosRespuesta eliminarSinAprobar() {
+    var resultado = transaccion.execute(estado -> eliminarSinAprobar.ejecutar(TANDA_DE_BORRADO));
+    log.warn(
+        "Borradores sin aprobar eliminados: {} ({} fotos borradas del bucket, quedan {})",
+        resultado.eliminados(),
+        resultado.archivosBorrados(),
+        resultado.quedan());
+    return BorradoresEliminadosRespuesta.de(resultado);
   }
 
   @GetMapping("/{id}")

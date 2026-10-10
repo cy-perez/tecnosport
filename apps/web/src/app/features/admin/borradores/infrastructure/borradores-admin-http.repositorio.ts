@@ -11,6 +11,7 @@ import {
   EditarBorrador,
   FiltroBorradores,
   FotoBorrador,
+  TandaDeBorradoresEliminados,
 } from '../domain/borrador.model';
 import { RepositorioBorradoresAdmin } from '../domain/repositorio-borradores-admin.puerto';
 import {
@@ -118,5 +119,18 @@ export class BorradoresAdminHttpRepositorio implements RepositorioBorradoresAdmi
       params: { path: { id } },
     });
     exigirExito(respuesta, 'no se pudo borrar el borrador');
+  }
+
+  async contarSinAprobar(): Promise<number> {
+    const respuesta = await this.cliente.GET('/api/v1/admin/borradores/sin-aprobar');
+    return (
+      desempaquetar(respuesta, 'no se pudieron contar los borradores sin aprobar').cantidad ?? 0
+    );
+  }
+
+  async eliminarSinAprobar(): Promise<TandaDeBorradoresEliminados> {
+    const respuesta = await this.cliente.DELETE('/api/v1/admin/borradores/sin-aprobar');
+    const tanda = desempaquetar(respuesta, 'no se pudieron borrar los borradores sin aprobar');
+    return { eliminados: tanda.eliminados ?? 0, quedan: tanda.quedan ?? 0 };
   }
 }

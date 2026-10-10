@@ -1322,6 +1322,19 @@
       "borrando": "Deleting…",
       "error": "The draft could not be deleted. Try again.",
       "explicacionSinProducto": "Its product was already deleted: this draft no longer recognizes anything and only keeps the supplier's messages and photos. Deleting it frees them from the bucket."
+    },
+    "limpiar": {
+      "titulo": "Clean up the inbox",
+      "explicacion": "There are {{cantidad}} unapproved draft(s): in review or rejected. You can delete them all at once.",
+      "accion": "Delete unapproved drafts",
+      "pregunta": "Delete the {{cantidad}} unapproved draft(s)?",
+      "loQueImplica": "They are deleted along with their messages and their photos in private storage, and cannot be recovered. Approved drafts are not touched. If you upload an export that brings those listings again, they will show up as drafts again.",
+      "confirmar": "Yes, delete all",
+      "cancelar": "Cancel",
+      "borrando": "Deleting… {{borrados}} so far",
+      "hecho": "{{borrados}} unapproved draft(s) deleted.",
+      "error": "Not all of them could be deleted. The ones already deleted are gone; try again to finish.",
+      "ninguno": "None was deleted: someone else is deciding on the remaining ones right now. Reload the page and try again."
     }
   },
   "referencias_envio": {

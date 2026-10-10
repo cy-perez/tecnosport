@@ -282,6 +282,21 @@ final class ApoyoDeCatalogoParaIngesta {
     }
 
     @Override
+    public List<UUID> idsEnEstados(Set<EstadoBorrador> estados, int limite) {
+      return porId.values().stream()
+          .filter(b -> estados.contains(b.estado()))
+          .sorted(Comparator.comparing(BorradorProducto::creadoEn))
+          .limit(limite)
+          .map(BorradorProducto::id)
+          .toList();
+    }
+
+    @Override
+    public long contarEnEstados(Set<EstadoBorrador> estados) {
+      return porId.values().stream().filter(b -> estados.contains(b.estado())).count();
+    }
+
+    @Override
     public long contarDePublicacion(UUID publicacionId) {
       return porId.values().stream().filter(b -> b.publicacionId().equals(publicacionId)).count();
     }
