@@ -1396,6 +1396,36 @@
       "hecho": "{{borrados}} unapproved draft(s) deleted.",
       "error": "Not all of them could be deleted. The ones already deleted are gone; try again to finish.",
       "ninguno": "None was deleted: someone else is deciding on the remaining ones right now. Reload the page and try again."
+    },
+    "separar": {
+      "accion": "Split photos into another draft",
+      "cancelar": "Cancel splitting",
+      "explicacion": "Check the photos that belong to another product. They move to a new draft with the same details and stop showing here.",
+      "fotoASeparar": "Move photo {{numero}} to the new draft",
+      "confirmar": "Create the draft with the checked photos ({{cantidad}})",
+      "separando": "Creating the draft…",
+      "faltanFotos": "Check at least one photo for the new draft.",
+      "hecho": "Photos moved to a new draft: {{cantidad}}.",
+      "abrir": "Open the new draft",
+      "error": "The draft couldn't be created. Try again."
+    },
+    "anuncio": {
+      "titulo": "What else the listing says",
+      "tallasPorTono": "Sizes per color",
+      "tallasPorTonoAyuda": "The supplier doesn't have every size in every color. On approval, each color is created only in its own sizes.",
+      "tallasDeTono": "{{tono}}: {{tallas}}",
+      "preciosAdicionales": "Other prices in the listing",
+      "preciosAdicionalesAyuda": "Add-ons, bundles and bulk deals. They aren't published: they're there so you know what the supplier offers.",
+      "precioAdicional": "{{concepto}}: {{precio}}"
+    },
+    "mover": {
+      "etiqueta": "Move photo {{numero}} to another draft",
+      "sinMover": "Keep it here",
+      "opcion": "Draft {{numero}} of this listing: {{titulo}}",
+      "sinTitulo": "untitled",
+      "hecho": "The photo moved to another draft.",
+      "abrir": "Open that draft",
+      "error": "The photo couldn't be moved. Try again."
     }
   },
   "referencias_envio": {

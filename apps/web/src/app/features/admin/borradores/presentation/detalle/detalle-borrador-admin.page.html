@@ -92,6 +92,53 @@
           {{ 'admin.borradores.aprobar.fotosCompartidas' | transloco }}
         </p>
       }
+      @if (fotos().length > 1) {
+        <div class="mb-8">
+          <ts-boton
+            id="boton-separar-fotos"
+            variante="secundario"
+            [expandido]="separando()"
+            controla="caja-separar-fotos"
+            (click)="alternarSeparar()"
+          >
+            {{
+              (separando()
+                ? 'admin.borradores.separar.cancelar'
+                : 'admin.borradores.separar.accion'
+              ) | transloco
+            }}
+          </ts-boton>
+        </div>
+      }
+      @if (separando()) {
+        <div
+          #cajaSeparar
+          id="caja-separar-fotos"
+          class="mb-12 flex flex-col gap-8 rounded-md border border-ts-borde-control p-12"
+          role="group"
+          tabindex="-1"
+          aria-labelledby="titulo-separar-fotos"
+          (keydown.escape)="alternarSeparar()"
+        >
+          <p id="titulo-separar-fotos" class="m-0">
+            {{ 'admin.borradores.separar.explicacion' | transloco }}
+          </p>
+          @if (errorSeparar(); as mensaje) {
+            <p class="m-0 text-ts-error" role="alert">{{ mensaje }}</p>
+          }
+          <div>
+            <ts-boton
+              [ocupado]="partiendo()"
+              [etiquetaCargando]="'admin.borradores.separar.separando' | transloco"
+              (click)="separarFotos()"
+            >
+              {{
+                'admin.borradores.separar.confirmar' | transloco: { cantidad: fotosASeparar().size }
+              }}
+            </ts-boton>
+          </div>
+        </div>
+      }
     }
     <!-- Siempre en la pagina: recibe el foco al eliminar una foto, porque el boton pulsado se va
          con su fila. -->
@@ -99,7 +146,26 @@
       @if (fotoEliminada()) {
         {{ 'admin.borradores.eliminarFoto.hecho' | transloco }}
       }
+      @if (fotoMovida(); as destino) {
+        {{ 'admin.borradores.mover.hecho' | transloco }}
+        <a
+          class="anillo-foco text-ts-primario"
+          [routerLink]="['/', idioma(), 'admin', 'borradores', destino]"
+          >{{ 'admin.borradores.mover.abrir' | transloco }}</a
+        >
+      }
+      @if (borradorSeparado(); as separado) {
+        {{ 'admin.borradores.separar.hecho' | transloco: { cantidad: separado.fotos } }}
+        <a
+          class="anillo-foco text-ts-primario"
+          [routerLink]="['/', idioma(), 'admin', 'borradores', separado.id]"
+          >{{ 'admin.borradores.separar.abrir' | transloco }}</a
+        >
+      }
     </p>
+    @if (errorMover(); as mensaje) {
+      <p class="m-0 mb-8 text-ts-error" role="alert">{{ mensaje }}</p>
+    }
     @if (fotos().length === 0) {
       <p class="mb-24 text-ts-texto-suave">
         {{
@@ -130,6 +196,14 @@
               <p class="m-0 text-xs text-ts-texto-suave">
                 {{ 'admin.borradores.detalle.fotoSubida' | transloco }}
               </p>
+            }
+            @if (separando() && foto.origen === 'PROVEEDOR') {
+              <ts-checkbox
+                [idCasilla]="'separar-foto-' + i"
+                [etiqueta]="'admin.borradores.separar.fotoASeparar' | transloco: { numero: i + 1 }"
+                [marcado]="fotoASeparar(foto.mensajeId)"
+                (marcadoCambio)="marcarFotoASeparar(foto.mensajeId, $event)"
+              />
             }
             @if (editable()) {
               <ts-checkbox
@@ -228,6 +302,16 @@
                 (cambio)="moverAPrenda(foto.mensajeId, $event)"
               />
             }
+            @if (editable() && foto.origen === 'PROVEEDOR' && hermanos().length > 0) {
+              <ts-select
+                [idCampo]="'mover-foto-' + i"
+                [label]="'admin.borradores.mover.etiqueta' | transloco: { numero: i + 1 }"
+                [opciones]="opcionesMover()"
+                [placeholder]="'admin.borradores.mover.sinMover' | transloco"
+                valor=""
+                (cambio)="moverFoto(foto.mensajeId, $event)"
+              />
+            }
           </li>
         }
       </ul>
@@ -320,6 +404,50 @@
           </li>
         }
       </ul>
+    }
+
+    @if (borrador.tallasPorTono.length > 0 || borrador.preciosAdicionales.length > 0) {
+      <section class="mb-24 flex flex-col gap-8" aria-labelledby="titulo-del-anuncio">
+        <h2 id="titulo-del-anuncio" class="m-0 font-display text-lg">
+          {{ 'admin.borradores.anuncio.titulo' | transloco }}
+        </h2>
+        @if (borrador.tallasPorTono.length > 0) {
+          <h3 class="m-0 font-display text-base">
+            {{ 'admin.borradores.anuncio.tallasPorTono' | transloco }}
+          </h3>
+          <p class="m-0 text-sm text-ts-texto-suave">
+            {{ 'admin.borradores.anuncio.tallasPorTonoAyuda' | transloco }}
+          </p>
+          <ul class="m-0 flex list-none flex-col gap-4 p-0">
+            @for (tono of borrador.tallasPorTono; track tono.tono) {
+              <li>
+                {{
+                  'admin.borradores.anuncio.tallasDeTono'
+                    | transloco: { tono: tono.tono, tallas: etiquetaTallasDeTono(tono.tallas) }
+                }}
+              </li>
+            }
+          </ul>
+        }
+        @if (borrador.preciosAdicionales.length > 0) {
+          <h3 class="m-0 font-display text-base">
+            {{ 'admin.borradores.anuncio.preciosAdicionales' | transloco }}
+          </h3>
+          <p class="m-0 text-sm text-ts-texto-suave">
+            {{ 'admin.borradores.anuncio.preciosAdicionalesAyuda' | transloco }}
+          </p>
+          <ul class="m-0 flex list-none flex-col gap-4 p-0">
+            @for (adicional of borrador.preciosAdicionales; track $index) {
+              <li>
+                {{
+                  'admin.borradores.anuncio.precioAdicional'
+                    | transloco: { concepto: adicional.concepto, precio: precio(adicional.precio) }
+                }}
+              </li>
+            }
+          </ul>
+        }
+      </section>
     }
 
     <form

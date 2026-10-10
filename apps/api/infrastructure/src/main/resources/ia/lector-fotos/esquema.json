@@ -1,0 +1,35 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["album_de_disenos", "fotos"],
+  "properties": {
+    "album_de_disenos": { "type": "boolean" },
+    "fotos": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["foto", "codigos", "pie", "colores", "diseno"],
+        "properties": {
+          "foto": { "type": "integer" },
+          "codigos": { "type": "array", "items": { "type": "string" } },
+          "pie": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["sku", "fecha", "tallas"],
+              "properties": {
+                "sku": { "type": "string" },
+                "fecha": { "type": ["string", "null"] },
+                "tallas": { "type": "array", "items": { "type": "string" } }
+              }
+            }
+          },
+          "colores": { "type": "array", "items": { "type": "string" } },
+          "diseno": { "type": ["string", "null"] }
+        }
+      }
+    }
+  }
+}

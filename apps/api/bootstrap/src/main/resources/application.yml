@@ -346,6 +346,18 @@ tecnosport:
       # Cuanto silencio cierra una publicacion: un texto con precio abre, y lo que llegue dentro de
       # esta ventana desde el ultimo mensaje anexado es suyo.
       ventana-agrupacion: ${PROVEEDORES_VENTANA_AGRUPACION:PT15M}
+    lectura-fotos:
+      # Mira las fotos de cada publicacion para repartirlas entre sus productos (ADR-0078). Usa la
+      # clave, la URL y los reintentos de la extraccion; sin clave queda apagado igual. La bandera
+      # existe para apagarlo sin desplegar si cuesta mas de lo que ahorra.
+      habilitada: ${PROVEEDORES_LECTURA_FOTOS_HABILITADA:true}
+      # El mismo del extractor: salida estructurada verificada el 30 de septiembre de 2026, y lee
+      # imagenes. Otro modelo tiene que hacer las dos cosas; comprobarlo antes de cambiarlo.
+      modelo: ${PROVEEDORES_LECTURA_FOTOS_MODELO:claude-haiku-4-5-20251001}
+      # Un album de La Riverah trae hasta 23 fotos, y cada lectura ronda los 60 tokens de salida.
+      max-tokens: ${PROVEEDORES_LECTURA_FOTOS_MAX_TOKENS:4096}
+      # Una peticion con veinte fotos tarda bastante mas que una de texto.
+      timeout: ${PROVEEDORES_LECTURA_FOTOS_TIMEOUT:PT90S}
 
   meta:
     # La version va dentro de la ruta y Meta retira versiones con calendario publicado: congelarla

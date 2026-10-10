@@ -9,6 +9,8 @@ import co.tecnosport.api.domain.catalogo.LineaCatalogo;
 import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.proveedores.AlertaBorrador;
 import co.tecnosport.api.domain.proveedores.IdExternoDeMensaje;
+import co.tecnosport.api.domain.proveedores.LecturaDeFotos;
+import co.tecnosport.api.domain.proveedores.LecturaDeFotos.LecturaDeFoto;
 import co.tecnosport.api.domain.proveedores.MensajeProveedor;
 import co.tecnosport.api.domain.proveedores.ProductoExtraido;
 import co.tecnosport.api.domain.proveedores.PublicacionProveedor;
@@ -393,5 +395,215 @@ class ExtraerProductoDePublicacionTest {
     ExtraccionEvaluada evaluada = evaluar(publicacion, extraido("Bolso", 53000L, "0.9"));
 
     assertFalse(evaluada.alertas().contains(AlertaBorrador.FOTOS_COMPARTIDAS));
+  }
+
+  // --- La lectura de fotos (10 de octubre de 2026) ---
+
+  private static ProductoExtraido prenda(String titulo, String codigo) {
+    return new ProductoExtraido(
+        true,
+        false,
+        titulo,
+        LineaCatalogo.ROPA,
+        TipoProductoProveedor.CAMISETA,
+        null,
+        Tallas.lista(List.of("S", "M", "L")),
+        null,
+        List.of(),
+        null,
+        "Una prenda.",
+        null,
+        false,
+        new BigDecimal("0.9"),
+        null,
+        codigo);
+  }
+
+  private ApoyoDeIngesta.AlmacenEnMemoria almacenCon(String... referencias) {
+    ApoyoDeIngesta.AlmacenEnMemoria almacen = new ApoyoDeIngesta.AlmacenEnMemoria();
+    for (String referencia : referencias) {
+      almacen.guardar(referencia, "image/jpeg", new byte[] {1, 2, 3});
+    }
+    return almacen;
+  }
+
+  private List<ExtraccionEvaluada> evaluarConFotos(
+      PublicacionProveedor publicacion,
+      List<ProductoExtraido> productos,
+      LectorDeFotos lector,
+      AlmacenDeArchivosDeProveedor almacen) {
+    return new ExtraerProductoDePublicacion(
+            ApoyoDeIngesta.ExtractorFalso.varios(productos), lector, almacen, UMBRAL)
+        .ejecutar(publicacion, mensajes, LineaCatalogo.ROPA);
+  }
+
+  @Test
+  void elBodiYElJeanDeVioletaSeRepartenLasFotosYDejanDeSerCompartidas() {
+    PublicacionProveedor publicacion =
+        PublicacionProveedor.abrir(
+            texto("Body manga larga (VY3010)\n💲38\n\nJean baggy (Q355)\n💲128"));
+    MensajeProveedor consolidada = foto("p/1.jpg");
+    MensajeProveedor delBodi = foto("p/2.jpg");
+    publicacion.anexar(consolidada);
+    publicacion.anexar(delBodi);
+    List<FotosParaLeer> leidas = new java.util.ArrayList<>();
+    LectorDeFotos lector =
+        fotos -> {
+          leidas.add(fotos);
+          return Optional.of(
+              new LecturaDeFotos(
+                  false,
+                  List.of(
+                      new LecturaDeFoto(
+                          0, List.of("B:VY3010", "J:Q355"), null, List.of(), List.of(), null),
+                      new LecturaDeFoto(
+                          1, List.of("VY3010"), null, List.of(), List.of("cocoa"), null)),
+                  "{\"lectura\":true}"));
+        };
+
+    List<ExtraccionEvaluada> evaluadas =
+        evaluarConFotos(
+            publicacion,
+            List.of(prenda("Bodi manga larga", "VY3010"), prenda("Jean baggy", "Q355")),
+            lector,
+            almacenCon("p/1.jpg", "p/2.jpg"));
+
+    assertEquals(2, leidas.getFirst().fotos().size());
+    assertEquals("VY3010", leidas.getFirst().productos().getFirst().codigo());
+    ExtraccionEvaluada bodi = evaluadas.get(0);
+    assertFalse(bodi.alertas().contains(AlertaBorrador.FOTOS_COMPARTIDAS));
+    assertEquals(Optional.of(delBodi.id()), bodi.exclusivaOpcional());
+    assertEquals(java.util.Map.of(delBodi.id(), "cocoa"), bodi.reparto().tonosSugeridos());
+    assertEquals("{\"lectura\":true}", bodi.reparto().lecturaCruda());
+    ExtraccionEvaluada jean = evaluadas.get(1);
+    // El jean solo sale en la consolidada, que es de los dos: sigue compartiendo.
+    assertTrue(jean.alertas().contains(AlertaBorrador.FOTOS_COMPARTIDAS));
+    assertEquals(Set.of(delBodi.id()), jean.reparto().ajenas());
+    assertEquals(Optional.of(Dinero.deCop(128000)), jean.precioProveedorOpcional());
+  }
+
+  @Test
+  void elAlbumDeLaRiverahDaUnBorradorPorDisenoConElPrecioDelTexto() {
+    PublicacionProveedor publicacion =
+        PublicacionProveedor.abrir(
+            texto("Camisetas Oversize para Caballero\nCamiseta 🎽55.000~~\nPromo 4x200.000"));
+    MensajeProveedor primera = foto("p/1.jpg");
+    MensajeProveedor segunda = foto("p/2.jpg");
+    MensajeProveedor tercera = foto("p/3.jpg");
+    publicacion.anexar(primera);
+    publicacion.anexar(segunda);
+    publicacion.anexar(tercera);
+    ProductoExtraido camiseta = prenda("Camiseta oversize para caballero", null);
+    LectorDeFotos lector =
+        fotos ->
+            Optional.of(
+                new LecturaDeFotos(
+                    true,
+                    List.of(
+                        new LecturaDeFoto(
+                            0,
+                            List.of(),
+                            "RV102347",
+                            List.of("S", "M"),
+                            List.of("negro"),
+                            "swoosh"),
+                        new LecturaDeFoto(
+                            1, List.of(), "RV102336", List.of("L"), List.of("gris"), "jordan"),
+                        new LecturaDeFoto(
+                            2, List.of(), null, List.of(), List.of("blanco"), "monastery")),
+                    "{}"));
+
+    List<ExtraccionEvaluada> evaluadas =
+        evaluarConFotos(
+            publicacion, List.of(camiseta), lector, almacenCon("p/1.jpg", "p/2.jpg", "p/3.jpg"));
+
+    assertEquals(3, evaluadas.size());
+    evaluadas.forEach(e -> assertTrue(e.disenoDeAlbum()));
+    evaluadas.forEach(
+        e -> assertEquals(Optional.of(Dinero.deCop(55000)), e.precioProveedorOpcional()));
+    assertEquals(Optional.of("RV102347"), evaluadas.get(0).producto().codigoReferenciaOpcional());
+    assertEquals(List.of(primera.id()), evaluadas.get(0).fotos());
+    assertFalse(evaluadas.get(0).alertas().contains(AlertaBorrador.CONFIANZA_BAJA));
+    // El tercero no tiene pie impreso: lo separó el lector sin respaldo.
+    assertTrue(evaluadas.get(2).alertas().contains(AlertaBorrador.CONFIANZA_BAJA));
+    assertEquals(Set.of(primera.id(), segunda.id()), evaluadas.get(2).reparto().ajenas());
+  }
+
+  @Test
+  void siLaLecturaFallaLaPublicacionSigueComoAntes() {
+    PublicacionProveedor publicacion =
+        PublicacionProveedor.abrir(texto("Body (VY3010) 💲38\nJean (Q355) 💲128"));
+    publicacion.anexar(foto("p/1.jpg"));
+    LectorDeFotos lector =
+        fotos -> {
+          throw new ExtraccionFallidaException("La API respondió 500.");
+        };
+
+    List<ExtraccionEvaluada> evaluadas =
+        evaluarConFotos(
+            publicacion,
+            List.of(prenda("Bodi", "VY3010"), prenda("Jean", "Q355")),
+            lector,
+            almacenCon("p/1.jpg"));
+
+    assertEquals(2, evaluadas.size());
+    evaluadas.forEach(e -> assertTrue(e.alertas().contains(AlertaBorrador.FOTOS_COMPARTIDAS)));
+    evaluadas.forEach(e -> assertEquals(Set.of(), e.reparto().ajenas()));
+  }
+
+  /**
+   * Un fallo que no es del lector —el bucket que no responde, una respuesta que no se entiende—
+   * tampoco tumba la publicación: antes salía de aquí y cerraba el lote entero.
+   */
+  @Test
+  void unFalloInesperadoAlLeerLasFotosNoSaleDeLaExtraccion() {
+    PublicacionProveedor publicacion =
+        PublicacionProveedor.abrir(texto("Body (VY3010) 💲38\nJean (Q355) 💲128"));
+    publicacion.anexar(foto("p/1.jpg"));
+    AlmacenDeArchivosDeProveedor bucketCaido =
+        (AlmacenDeArchivosDeProveedor)
+            java.lang.reflect.Proxy.newProxyInstance(
+                AlmacenDeArchivosDeProveedor.class.getClassLoader(),
+                new Class<?>[] {AlmacenDeArchivosDeProveedor.class},
+                (proxy, metodo, args) -> {
+                  throw new IllegalStateException("503 de Cloud Storage");
+                });
+
+    List<ExtraccionEvaluada> conBucketCaido =
+        evaluarConFotos(
+            publicacion,
+            List.of(prenda("Bodi", "VY3010"), prenda("Jean", "Q355")),
+            fotos -> Optional.empty(),
+            bucketCaido);
+    List<ExtraccionEvaluada> conLectorRoto =
+        evaluarConFotos(
+            publicacion,
+            List.of(prenda("Bodi", "VY3010"), prenda("Jean", "Q355")),
+            fotos -> {
+              throw new IllegalArgumentException("JSON ilegible");
+            },
+            almacenCon("p/1.jpg"));
+
+    assertEquals(2, conBucketCaido.size());
+    assertEquals(2, conLectorRoto.size());
+    conLectorRoto.forEach(e -> assertTrue(e.alertas().contains(AlertaBorrador.FOTOS_COMPARTIDAS)));
+  }
+
+  @Test
+  void sinFotosLegiblesNoSeLlamaAlLector() {
+    PublicacionProveedor publicacion = PublicacionProveedor.abrir(texto("Bolso 💰 *53.000*"));
+    publicacion.anexar(foto("p/no-esta.jpg"));
+    List<FotosParaLeer> leidas = new java.util.ArrayList<>();
+
+    evaluarConFotos(
+        publicacion,
+        List.of(prenda("Bolso", null)),
+        fotos -> {
+          leidas.add(fotos);
+          return Optional.empty();
+        },
+        almacenCon());
+
+    assertTrue(leidas.isEmpty());
   }
 }

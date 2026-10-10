@@ -8,6 +8,8 @@ import co.tecnosport.api.application.proveedores.ResultadoExtraccion;
 import co.tecnosport.api.application.proveedores.TextoDePublicacion;
 import co.tecnosport.api.domain.catalogo.LineaCatalogo;
 import co.tecnosport.api.domain.compartido.Dinero;
+import co.tecnosport.api.domain.proveedores.PrecioAdicional;
+import co.tecnosport.api.domain.proveedores.ProductoExtraido;
 import co.tecnosport.api.domain.proveedores.TipoDeTalla;
 import co.tecnosport.api.domain.proveedores.TipoProductoProveedor;
 import com.sun.net.httpserver.HttpExchange;
@@ -330,5 +332,63 @@ class ExtractorClaudeTest {
 
     assertThat(resultado.productos().get(0).tipo()).isEqualTo(TipoProductoProveedor.TENIS);
     assertThat(resultado.productos().get(0).linea()).isEqualTo(LineaCatalogo.CALZADO);
+  }
+
+  /**
+   * Violeta y La Riverah (10 de octubre de 2026): las tallas de cada tono y los precios que no son
+   * del producto —la gorra, el set, la promo— llegan como campos propios.
+   */
+  @Test
+  void lasTallasPorTonoYLosPreciosAdicionalesSeLeen() {
+    String blusa =
+        BOLSO.replace(
+            "\"notas\":null}",
+            "\"notas\":null,\"codigo_referencia\":\"VY2945\","
+                + "\"tallas_por_tono\":[{\"tono\":\"negro\",\"tallas\":[\"SM\",\"ML\"]},"
+                + "{\"tono\":\"cocoa\",\"tallas\":[\"ML\"]},{\"tono\":\"verde\",\"tallas\":[]}],"
+                + "\"precios_adicionales\":[{\"concepto\":\"Gorra\",\"precio_cop\":35000},"
+                + "{\"concepto\":\"Dúo\",\"precio_cop\":0}]}");
+    respuestas.add(new Respuesta(200, exito("{\"productos\":[" + blusa + "]}", "end_turn")));
+
+    ProductoExtraido producto = extractor(1).extraer(texto()).productos().getFirst();
+
+    assertThat(producto.tallasPorTono().tonos()).hasSize(2);
+    assertThat(producto.tallasPorTono().tallasDe("cocoa")).contains(List.of("ML"));
+    assertThat(producto.preciosAdicionales())
+        .containsExactly(new PrecioAdicional("Gorra", Dinero.deCop(35000)));
+  }
+
+  /** Un tono repetido no se adivina: el reparto se pierde, no el producto. */
+  @Test
+  void unTonoRepetidoDejaSinTallasPorTono() {
+    String blusa =
+        BOLSO.replace(
+            "\"notas\":null}",
+            "\"notas\":null,\"tallas_por_tono\":[{\"tono\":\"negro\",\"tallas\":[\"S\"]},"
+                + "{\"tono\":\"Negro\",\"tallas\":[\"M\"]}],\"precios_adicionales\":[]}");
+    respuestas.add(new Respuesta(200, exito("{\"productos\":[" + blusa + "]}", "end_turn")));
+
+    ProductoExtraido producto = extractor(1).extraer(texto()).productos().getFirst();
+
+    assertThat(producto.tallasPorTono().estaVacia()).isTrue();
+  }
+
+  @Test
+  void elEsquemaPideLosCamposNuevos() {
+    respuestas.add(new Respuesta(200, exito(PRODUCTO_JSON, "end_turn")));
+
+    extractor(1).extraer(texto());
+
+    JsonNode requeridos =
+        peticiones
+            .get(0)
+            .path("output_config")
+            .path("format")
+            .path("schema")
+            .path("properties")
+            .path("productos")
+            .path("items")
+            .path("required");
+    assertThat(requeridos.toString()).contains("tallas_por_tono").contains("precios_adicionales");
   }
 }

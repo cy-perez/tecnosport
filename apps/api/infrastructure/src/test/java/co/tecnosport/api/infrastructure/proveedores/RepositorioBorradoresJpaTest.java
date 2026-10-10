@@ -13,16 +13,19 @@ import co.tecnosport.api.domain.proveedores.AlertaBorrador;
 import co.tecnosport.api.domain.proveedores.BorradorProducto;
 import co.tecnosport.api.domain.proveedores.EstadoBorrador;
 import co.tecnosport.api.domain.proveedores.FotoSubida;
+import co.tecnosport.api.domain.proveedores.FotosDelProducto;
 import co.tecnosport.api.domain.proveedores.HuellaProveedor;
 import co.tecnosport.api.domain.proveedores.IdExternoDeMensaje;
 import co.tecnosport.api.domain.proveedores.LoteIngesta;
 import co.tecnosport.api.domain.proveedores.MensajeProveedor;
 import co.tecnosport.api.domain.proveedores.OrdenDePublicacion;
 import co.tecnosport.api.domain.proveedores.PHash;
+import co.tecnosport.api.domain.proveedores.PrecioAdicional;
 import co.tecnosport.api.domain.proveedores.ProductoExtraido;
 import co.tecnosport.api.domain.proveedores.Proveedor;
 import co.tecnosport.api.domain.proveedores.PublicacionProveedor;
 import co.tecnosport.api.domain.proveedores.Tallas;
+import co.tecnosport.api.domain.proveedores.TallasPorTono;
 import co.tecnosport.api.domain.proveedores.TipoDeTalla;
 import co.tecnosport.api.domain.proveedores.TipoMensaje;
 import co.tecnosport.api.domain.proveedores.TipoProductoProveedor;
@@ -31,6 +34,7 @@ import jakarta.persistence.PersistenceContext;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
@@ -345,6 +349,217 @@ class RepositorioBorradoresJpaTest {
    * pHash de todas las fotos de la publicación, más el de la principal que guardó el borrador. Solo
    * los que siguen en revisión, y solo los del proveedor.
    */
+  /**
+   * Lo que la ingesta lee de La Riverah y Violeta (10 de octubre de 2026): las tallas de cada tono,
+   * los precios que no son del producto, el tono que vio la lectura de fotos y la lectura cruda, y
+   * las fotos ajenas que nacen descartadas.
+   */
+  @Test
+  void lasTallasPorTonoLosPreciosAdicionalesYLosTonosSugeridosVanYVuelven() {
+    unaPublicacion();
+    UUID negra = UUID.randomUUID();
+    UUID ajena = UUID.randomUUID();
+    ProductoExtraido base = extraido("Blusa licrada", "Blusa con herraje.");
+    ProductoExtraido blusa =
+        new ProductoExtraido(
+            true,
+            false,
+            base.titulo(),
+            base.linea(),
+            base.tipo(),
+            base.precioProveedor(),
+            Tallas.lista(List.of("SM", "ML")),
+            3,
+            List.of("negro", "cocoa"),
+            null,
+            base.descripcion(),
+            null,
+            false,
+            base.confianza(),
+            null,
+            "VY2945",
+            new TallasPorTono(
+                List.of(
+                    new TallasPorTono.TallasDeUnTono("negro", List.of("SM", "ML")),
+                    new TallasPorTono.TallasDeUnTono("cocoa", List.of("ML")))),
+            List.of(new PrecioAdicional("Gorra", Dinero.deCop(35000))));
+    BorradorProducto borrador =
+        BorradorProducto.nuevo(
+            publicacion.id(),
+            proveedor.id(),
+            blusa,
+            "{}",
+            Dinero.deCop(38000),
+            Dinero.deCop(58000),
+            null,
+            null,
+            Set.of(),
+            new FotosDelProducto(
+                Set.of(ajena), Map.of(negra, "negro"), "{\"album_de_disenos\":false}"),
+            T);
+    borradores.guardar(borrador);
+    em.flush();
+    em.clear();
+
+    BorradorProducto leido = borradores.buscarPorId(borrador.id()).orElseThrow();
+
+    assertThat(leido.tallasPorTono().tallasDe("cocoa")).contains(List.of("ML"));
+    assertThat(leido.tallasPorTono().tonos()).hasSize(2);
+    assertThat(leido.preciosAdicionales())
+        .containsExactly(new PrecioAdicional("Gorra", Dinero.deCop(35000)));
+    assertThat(leido.tonosSugeridos()).containsExactlyEntriesOf(Map.of(negra, "negro"));
+    assertThat(leido.lecturaDeFotos()).contains("{\"album_de_disenos\":false}");
+    assertThat(leido.fotosDescartadas()).containsExactly(ajena);
+
+    BorradorProducto sinNada =
+        BorradorProducto.nuevo(
+            publicacion.id(),
+            proveedor.id(),
+            extraido("Otro", null),
+            "{}",
+            null,
+            null,
+            null,
+            null,
+            Set.of(),
+            T);
+    borradores.guardar(sinNada);
+    em.flush();
+    em.clear();
+    BorradorProducto vacio = borradores.buscarPorId(sinNada.id()).orElseThrow();
+    assertThat(vacio.tallasPorTono().estaVacia()).isTrue();
+    assertThat(vacio.preciosAdicionales()).isEmpty();
+    assertThat(vacio.tonosSugeridos()).isEmpty();
+    assertThat(vacio.lecturaDeFotos()).isEmpty();
+  }
+
+  /**
+   * Los diseños de un álbum son borradores de la misma publicación, y cada uno nace con las fotos
+   * de los demás descartadas. Como anuncio, cada uno lleva solo las suyas: con todas, el segundo
+   * compartía foto con el primero y se descartaba por repetido (10 de octubre de 2026).
+   */
+  @Test
+  void unAnuncioEnRevisionNoLlevaLasFotosQueSuBorradorDescarto() {
+    unaPublicacion();
+    PHash dePrimero = PHash.deHex("00000000000000ff");
+    PHash deSegundo = PHash.deHex("ff00000000000000");
+    MensajeProveedor texto =
+        MensajeProveedor.texto(
+            proveedor.id(),
+            publicacion.loteId(),
+            new IdExternoDeMensaje("album"),
+            T,
+            "Camisetas oversize 🎽55.000~~");
+    MensajeProveedor primera = fotoConPHash("d1", dePrimero);
+    MensajeProveedor segunda = fotoConPHash("d2", deSegundo);
+    mensajes.guardarTodos(List.of(texto, primera, segunda));
+    PublicacionProveedor album = PublicacionProveedor.abrir(texto);
+    album.anexar(primera);
+    album.anexar(segunda);
+    publicaciones.guardarTodas(List.of(album));
+    BorradorProducto delPrimero =
+        BorradorProducto.nuevo(
+            album.id(),
+            proveedor.id(),
+            extraido("Camiseta", null),
+            "{}",
+            Dinero.deCop(55000),
+            null,
+            null,
+            null,
+            Set.of(),
+            new FotosDelProducto(Set.of(segunda.id()), Map.of(), null),
+            T);
+    borradores.guardar(delPrimero);
+
+    List<AnuncioEnRevision> anuncios = borradores.anunciosEnRevision(proveedor.id());
+
+    assertThat(anuncios).hasSize(1);
+    assertThat(anuncios.getFirst().fotos()).containsExactly(dePrimero);
+  }
+
+  /**
+   * Las fotos de otra publicación que se le suman a un borrador van y vuelven en su orden, y las
+   * encuentra la consulta por ids aunque sean de otro lote; la misma referencia en revisión se
+   * encuentra por su huella, y los borradores de una publicación salen en orden (10 de octubre de
+   * 2026).
+   */
+  @Test
+  void lasFotosAgregadasVanYVuelvenYSeEncuentranPorIdEnOtroLote() {
+    unaPublicacion();
+    LoteIngesta otroLote =
+        LoteIngesta.recibirExportacion(proveedor.id(), "p/exportaciones/b.zip", T);
+    lotes.guardar(otroLote);
+    MensajeProveedor primera =
+        MensajeProveedor.imagen(
+            proveedor.id(), otroLote.id(), new IdExternoDeMensaje("a1"), T, null, "p/a1.jpg");
+    MensajeProveedor segunda =
+        MensajeProveedor.imagen(
+            proveedor.id(), otroLote.id(), new IdExternoDeMensaje("a2"), T, null, "p/a2.jpg");
+    mensajes.guardarTodos(List.of(primera, segunda));
+    HuellaProveedor referencia = HuellaProveedor.deReferencia(proveedor.id(), "261002");
+    BorradorProducto borrador =
+        BorradorProducto.nuevo(
+            publicacion.id(),
+            proveedor.id(),
+            extraido("Camiseta slim", null),
+            "{}",
+            Dinero.deCop(42000),
+            null,
+            referencia,
+            null,
+            Set.of(),
+            T);
+    borrador.agregarFotos(List.of(segunda.id(), primera.id()), List.of());
+    borradores.guardar(borrador);
+    BorradorProducto otro =
+        BorradorProducto.nuevo(
+            publicacion.id(),
+            proveedor.id(),
+            extraido("Jogger", null),
+            "{}",
+            Dinero.deCop(72000),
+            null,
+            null,
+            null,
+            Set.of(),
+            T.plusSeconds(1));
+    borradores.guardar(otro);
+    em.flush();
+    em.clear();
+
+    BorradorProducto leido = borradores.buscarPorId(borrador.id()).orElseThrow();
+    assertThat(leido.fotosAgregadas()).containsExactly(segunda.id(), primera.id());
+    assertThat(mensajes.buscarPorIds(List.of(segunda.id(), UUID.randomUUID(), primera.id())))
+        .extracting(MensajeProveedor::id)
+        .containsExactly(segunda.id(), primera.id());
+    assertThat(mensajes.buscarPorIds(List.of())).isEmpty();
+    assertThat(borradores.buscarEnRevisionConHuella(proveedor.id(), referencia))
+        .contains(borrador.id());
+    assertThat(
+            borradores.buscarEnRevisionConHuella(
+                proveedor.id(), HuellaProveedor.deReferencia(proveedor.id(), "Q355")))
+        .isEmpty();
+    assertThat(borradores.listarDePublicacion(publicacion.id()))
+        .extracting(BorradorProducto::id)
+        .containsExactly(borrador.id(), otro.id());
+  }
+
+  private MensajeProveedor fotoConPHash(String id, PHash pHash) {
+    return new MensajeProveedor(
+        UUID.randomUUID(),
+        proveedor.id(),
+        publicacion.loteId(),
+        new IdExternoDeMensaje(id),
+        T.plusSeconds(5),
+        TipoMensaje.IMAGEN,
+        null,
+        null,
+        "proveedores/x/" + id + ".jpg",
+        false,
+        pHash);
+  }
+
   @Test
   void devuelveLosAnunciosEnRevisionConSuTextoYTodasSusFotos() {
     proveedor =

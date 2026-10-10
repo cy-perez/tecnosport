@@ -228,6 +228,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/borradores/{id}/fotos/{mensajeId}/mover": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["moverFoto"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/borradores/{id}/partir": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["partir"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/borradores/{id}/rechazar": {
         parameters: {
             query?: never;
@@ -2197,6 +2229,7 @@ export interface components {
         BorradorDetalleRespuesta: {
             borrador?: components["schemas"]["BorradorRespuesta"];
             fotos?: components["schemas"]["FotoRespuesta"][];
+            hermanos?: components["schemas"]["HermanoRespuesta"][];
             textos?: string[];
         };
         BorradorRespuesta: {
@@ -2218,6 +2251,7 @@ export interface components {
             precioProveedor?: number;
             /** Format: int64 */
             precioVentaSugerido?: number;
+            preciosAdicionales?: components["schemas"]["PrecioAdicionalRespuesta"][];
             /** Format: uuid */
             productoId?: string;
             /** Format: uuid */
@@ -2225,6 +2259,7 @@ export interface components {
             /** Format: uuid */
             publicacionId?: string;
             tallas?: components["schemas"]["TallasRespuesta"];
+            tallasPorTono?: components["schemas"]["TallasDeTonoRespuesta"][];
             tipo?: string;
             titulo?: string;
             tonosNombrados?: string[];
@@ -2649,6 +2684,7 @@ export interface components {
             /** @enum {string} */
             origen: "PROVEEDOR" | "PANEL";
             pieDeFoto?: string;
+            tonoSugerido?: string;
             url?: string;
         };
         FotogramaPeticion: {
@@ -2691,6 +2727,11 @@ export interface components {
             guia?: string;
             transportadora?: string;
             urlEtiqueta?: string;
+        };
+        HermanoRespuesta: {
+            /** Format: uuid */
+            id: string;
+            titulo?: string;
         };
         HistorialPedidoRespuesta: {
             actor?: string;
@@ -2940,6 +2981,10 @@ export interface components {
             paleta?: string[];
             titulo: string;
         };
+        MoverFotoPeticion: {
+            /** Format: uuid */
+            destinoId: string;
+        };
         OpcionEnvioRespuesta: {
             costoEnvio: components["schemas"]["DineroRespuesta"];
             /** Format: int32 */
@@ -2979,6 +3024,9 @@ export interface components {
         ParteDeMuestraRespuesta: {
             colores?: string[];
             patron?: string;
+        };
+        PartirBorradorPeticion: {
+            fotos: string[];
         };
         PedidoRespuesta: {
             contacto?: components["schemas"]["ContactoRespuesta"];
@@ -3052,6 +3100,11 @@ export interface components {
             /** Format: date-time */
             limite?: string;
             verdicto?: string;
+        };
+        PrecioAdicionalRespuesta: {
+            concepto: string;
+            /** Format: int64 */
+            precio: number;
         };
         Producto: {
             /** Format: date-time */
@@ -3486,6 +3539,10 @@ export interface components {
             /** Format: int32 */
             orden?: number;
             url?: string;
+        };
+        TallasDeTonoRespuesta: {
+            tallas: string[];
+            tono: string;
         };
         TallasPeticion: {
             sirveHasta?: string;
@@ -4025,6 +4082,57 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    moverFoto: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                mensajeId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MoverFotoPeticion"];
+            };
+        };
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    partir: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PartirBorradorPeticion"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["BorradorRespuesta"];
+                };
             };
         };
     };

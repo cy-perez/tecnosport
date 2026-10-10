@@ -22,6 +22,7 @@ import co.tecnosport.api.domain.proveedores.AlertaBorrador;
 import co.tecnosport.api.domain.proveedores.BorradorProducto;
 import co.tecnosport.api.domain.proveedores.EstadoBorrador;
 import co.tecnosport.api.domain.proveedores.EstadoPublicacionProveedor;
+import co.tecnosport.api.domain.proveedores.FotosDelProducto;
 import co.tecnosport.api.domain.proveedores.HuellaProveedor;
 import co.tecnosport.api.domain.proveedores.IdExternoDeMensaje;
 import co.tecnosport.api.domain.proveedores.LoteIngesta;
@@ -77,7 +78,11 @@ class ResolverBorradorTest {
           return new AnuncioEnRevision(
               b.id(),
               mensajes.get(publicacion.mensajePrincipalId()).textoLegible().orElse(null),
-              caso().pHashesDe(publicacion, mensajes),
+              // Sin las que el borrador descartó, como la consulta del adaptador.
+              caso().pHashesDe(publicacion, mensajes).entrySet().stream()
+                  .filter(e -> !b.fotosDescartadas().contains(e.getKey()))
+                  .map(java.util.Map.Entry::getValue)
+                  .toList(),
               false);
         };
   }
@@ -371,6 +376,47 @@ class ResolverBorradorTest {
   }
 
   /**
+   * La camiseta 261002 de Violeta acompaña al jogger a las 10:35 y a la bermuda a las 11:01 (10 de
+   * octubre de 2026). La segunda publicación se descarta por la misma referencia, pero la foto con
+   * su código impreso se suma al borrador de la primera, en vez de perderse.
+   */
+  @Test
+  void laMismaReferenciaEnRevisionRecibeLasFotosConSuCodigo() {
+    resolver(
+        publicacion("Camiseta Slim(261002) 💲42", "camiseta-y-jogger", FECHA_DEL_MENSAJE),
+        conCodigo("Camiseta slim", 42000, "261002"));
+    BorradorProducto primero = borradores.enEstado(EstadoBorrador.EN_REVISION).getFirst();
+    PublicacionProveedor segunda =
+        conFotos(
+            "Camiseta Slim(261002) 💲42",
+            FECHA_DEL_MENSAJE.plusSeconds(1560),
+            "camiseta-y-bermuda",
+            "solo-la-bermuda");
+    UUID conSuCodigo = segunda.medios().getFirst();
+    ExtraccionEvaluada base = conCodigo("Camiseta slim", 42000, "261002");
+    ExtraccionEvaluada conFotosParaSumar =
+        new ExtraccionEvaluada(
+            base.producto(),
+            base.jsonCrudo(),
+            base.precioProveedor(),
+            base.alertas(),
+            base.uso(),
+            segunda.medios(),
+            null,
+            null,
+            false,
+            List.of(conSuCodigo));
+
+    Resolucion resolucion = resolver(segunda, conFotosParaSumar);
+
+    assertEquals(TipoDeResolucion.DESCARTADA, resolucion.tipo());
+    assertTrue(resolucion.motivo().contains("1 fotos se sumaron"), resolucion.motivo());
+    assertEquals(
+        List.of(conSuCodigo), borradores.buscarPorId(primero.id()).orElseThrow().fotosAgregadas());
+    assertEquals(1, borradores.enEstado(EstadoBorrador.EN_REVISION).size());
+  }
+
+  /**
    * Un producto aprobado con este texto, y un anuncio nuevo con el mismo texto y sin su foto: es
    * otra prenda, no una renovación (9 de octubre de 2026).
    */
@@ -616,12 +662,52 @@ class ResolverBorradorTest {
     assertTrue(guardada.motivo().orElseThrow().contains("agotado"));
   }
 
+  /**
+   * Los diseños de un álbum de La Riverah sin SKU: mismo texto, mismo precio, misma fecha. Cada uno
+   * es su propio borrador, con su propia huella y sin las fotos de los demás (10 de octubre de
+   * 2026). Con la huella del anuncio eran el mismo producto, y el segundo se descartaba por
+   * repetido.
+   */
+  @Test
+  void cadaDisenoDeUnAlbumSinCodigoEsSuPropioBorrador() {
+    PublicacionProveedor album =
+        conFotos("Camisetas oversize 🎽55.000~~", FECHA_DEL_MENSAJE, "boss", "msm", "nike");
+    List<UUID> fotos = album.medios();
+    List<ExtraccionEvaluada> disenos = new java.util.ArrayList<>();
+    for (UUID propia : fotos) {
+      ExtraccionEvaluada base = evaluada("Camiseta oversize", 55000, true, false, Set.of());
+      java.util.Set<UUID> ajenas = new java.util.HashSet<>(fotos);
+      ajenas.remove(propia);
+      disenos.add(
+          new ExtraccionEvaluada(
+              base.producto(),
+              base.jsonCrudo(),
+              base.precioProveedor(),
+              base.alertas(),
+              base.uso(),
+              List.of(propia),
+              new FotosDelProducto(ajenas, java.util.Map.of(propia, "negro"), "{}"),
+              propia,
+              true));
+    }
+
+    List<Resolucion> resoluciones = caso().ejecutar(album, mensajes, proveedor, disenos);
+
+    assertTrue(resoluciones.stream().allMatch(r -> r.tipo() == TipoDeResolucion.NUEVO));
+    List<BorradorProducto> creados = borradores.enEstado(EstadoBorrador.EN_REVISION);
+    assertEquals(3, creados.size());
+    assertEquals(3, creados.stream().map(BorradorProducto::huella).distinct().count());
+    assertTrue(creados.stream().allMatch(c -> c.pHash().isPresent()));
+    assertEquals(2, creados.getFirst().fotosDescartadas().size());
+    assertEquals(1, creados.getFirst().tonosSugeridos().size());
+  }
+
   @Test
   void sinProductosLaPublicacionSeDescarta() {
     PublicacionProveedor publicacion = publicacion("Hoy no abrimos", null);
 
     List<Resolucion> resoluciones =
-        caso().ejecutar(publicacion, mensajes, proveedor, List.of(), null, List.of());
+        caso().ejecutar(publicacion, mensajes, proveedor, List.of(), java.util.Map.of(), List.of());
 
     assertEquals(TipoDeResolucion.DESCARTADA, resoluciones.getFirst().tipo());
     assertEquals(

@@ -11,7 +11,7 @@ import java.util.UUID;
 import java.util.regex.Pattern;
 
 /**
- * La identidad de un producto de proveedor, en un SHA-256. Hay cuatro, según lo que se identifica.
+ * La identidad de un producto de proveedor, en un SHA-256. Hay cinco, según lo que se identifica.
  *
  * <ul>
  *   <li>{@link #calcular}: <b>el texto del anuncio</b> —proveedor, título normalizado y precio—. El
@@ -23,6 +23,7 @@ import java.util.regex.Pattern;
  *       58.000 salió azul a las 12:06 y gris a las 19:32 del 8 de octubre. Con la huella del texto
  *       eran el mismo producto, el segundo se descartaba y no podía aprobarse. Lo que reconoce la
  *       misma prenda otro día es su foto, la huella visual.
+ *   <li>{@link #deDisenoDeAnuncio}: <b>un diseño de un álbum sin código</b> —el anuncio y su foto—.
  *   <li>{@link #deReferencia}: <b>la prenda con código del proveedor</b> —«(Q339)»—. El código sí
  *       la identifica, a cualquier hora y a cualquier precio, y por eso manda sobre las otras.
  *   <li>{@link #deModelo}: un modelo de tecnología de la lista de precios.
@@ -62,6 +63,35 @@ public record HuellaProveedor(String valor) {
     }
     HuellaProveedor delTexto = calcular(proveedorId, titulo, precioProveedor);
     return new HuellaProveedor(sha256(delTexto.valor() + "|anuncio|" + publicadoEn));
+  }
+
+  /**
+   * Un diseño de un álbum sin código: el anuncio y además algo de su foto —su huella visual—. La
+   * Riverah publica trece camisetas bajo un solo texto (10 de octubre de 2026); con la huella del
+   * anuncio las trece eran el mismo producto, y aprobar la segunda chocaba con la primera.
+   */
+  public static HuellaProveedor deDisenoDeAnuncio(
+      UUID proveedorId,
+      String titulo,
+      Dinero precioProveedor,
+      Instant publicadoEn,
+      String deLaFoto) {
+    if (deLaFoto == null || deLaFoto.isBlank()) {
+      throw new ExcepcionDeDominio("La huella de un diseño necesita algo de su foto.");
+    }
+    HuellaProveedor delAnuncio = deAnuncio(proveedorId, titulo, precioProveedor, publicadoEn);
+    return new HuellaProveedor(sha256(delAnuncio.valor() + "|diseno|" + deLaFoto.strip()));
+  }
+
+  /**
+   * La de un borrador que se partió de otro desde el panel: la de aquel y la primera foto que se
+   * llevó. Sin ella, aprobar los dos chocaría en la misma huella.
+   */
+  public static HuellaProveedor deParte(HuellaProveedor deOrigen, String primeraFoto) {
+    if (deOrigen == null || primeraFoto == null || primeraFoto.isBlank()) {
+      throw new ExcepcionDeDominio("La huella de una parte necesita la de origen y su foto.");
+    }
+    return new HuellaProveedor(sha256(deOrigen.valor() + "|parte|" + primeraFoto.strip()));
   }
 
   /** La prenda que el proveedor marca con un código: el código manda, sin título ni precio. */

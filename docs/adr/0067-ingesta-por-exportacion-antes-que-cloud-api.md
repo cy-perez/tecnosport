@@ -1,7 +1,8 @@
 # ADR-0067 — La ingesta de proveedores empieza por la exportación del chat, no por la Cloud API
 
 **Fecha:** 2026-09-30
-**Estado:** aceptado.
+**Estado:** aceptado. Ampliado por `ADR-0078`: desde el 10 de octubre de 2026 la ingesta lee
+también las fotos, y no solo el texto.
 
 ## Contexto
 

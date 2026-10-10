@@ -61,5 +61,11 @@ public interface RepositorioBorradores {
   /** Cuántos borradores salieron de esta publicación, en cualquier estado. */
   long contarDePublicacion(UUID publicacionId);
 
+  /** El borrador en revisión del proveedor con esa huella, si hay uno. */
+  Optional<UUID> buscarEnRevisionConHuella(UUID proveedorId, HuellaProveedor huella);
+
+  /** Los borradores de una publicación, en el orden en que se crearon. */
+  List<BorradorProducto> listarDePublicacion(UUID publicacionId);
+
   void eliminar(UUID id);
 }

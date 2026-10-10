@@ -34,6 +34,7 @@ import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.proveedores.BorradorProducto;
 import co.tecnosport.api.domain.proveedores.EstadoBorrador;
 import co.tecnosport.api.domain.proveedores.FotoSubida;
+import co.tecnosport.api.domain.proveedores.FotosDelProducto;
 import co.tecnosport.api.domain.proveedores.HuellaProveedor;
 import co.tecnosport.api.domain.proveedores.IdExternoDeMensaje;
 import co.tecnosport.api.domain.proveedores.LoteIngesta;
@@ -43,6 +44,7 @@ import co.tecnosport.api.domain.proveedores.ProductoExtraido;
 import co.tecnosport.api.domain.proveedores.Proveedor;
 import co.tecnosport.api.domain.proveedores.PublicacionProveedor;
 import co.tecnosport.api.domain.proveedores.Tallas;
+import co.tecnosport.api.domain.proveedores.TallasPorTono;
 import co.tecnosport.api.domain.proveedores.TipoProductoProveedor;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
@@ -599,6 +601,102 @@ class AprobarBorradorTest {
 
     assertEquals(2, producto.variantes().size(), "una prenda por dos tallas");
     assertEquals(List.of("Rojo", "Rojo"), coloresDe(producto));
+  }
+
+  /**
+   * «Talla SM ML(negro) / Talla ML(cocoa)», Violeta, 10 de octubre de 2026: del cocoa no hay SM, y
+   * no se crea esa variante aunque la blusa se apruebe en SM y ML. La paleta no tiene «cocoa»:
+   * quien aprueba marca la foto «Café», y es el color que la lectura vio en esa foto el que la une
+   * con sus tallas. Con el nombre solo, el café salía en SM.
+   */
+  @Test
+  void unTonoSoloTieneLasTallasQueElMensajeLeDio() {
+    borrador =
+        BorradorProducto.nuevo(
+            borrador.publicacionId(),
+            proveedor.id(),
+            new ProductoExtraido(
+                true,
+                false,
+                "Blusa licrada",
+                LineaCatalogo.ROPA,
+                TipoProductoProveedor.BLUSA,
+                Dinero.deCop(38000),
+                Tallas.lista(List.of("SM", "ML")),
+                2,
+                List.of("negro", "cocoa"),
+                null,
+                "Blusa licrada con herraje trasero.",
+                null,
+                false,
+                new BigDecimal("0.9"),
+                null,
+                "VY2945",
+                new TallasPorTono(
+                    List.of(
+                        new TallasPorTono.TallasDeUnTono("negro", List.of("SM", "ML")),
+                        new TallasPorTono.TallasDeUnTono("cocoa", List.of("ML")))),
+                List.of()),
+            "{}",
+            Dinero.deCop(38000),
+            Dinero.deCop(58000),
+            HuellaProveedor.deReferencia(proveedor.id(), "VY2945"),
+            null,
+            Set.of(),
+            new FotosDelProducto(
+                Set.of(), java.util.Map.of(foto1.id(), "negro", foto2.id(), "cocoa"), null),
+            AHORA);
+    borradores.guardar(borrador);
+
+    Producto producto =
+        caso()
+            .ejecutar(
+                new AprobarBorradorComando(
+                    borrador.id(),
+                    null,
+                    null,
+                    ApoyoDeCatalogoParaIngesta.BOLSOS_DE_MANO.id(),
+                    ApoyoDeCatalogoParaIngesta.MARCA.id(),
+                    58000,
+                    null,
+                    1,
+                    "Blusa",
+                    "Top",
+                    List.of(
+                        new FotoAprobada(foto1.id(), "Negro", "#000000", 1),
+                        new FotoAprobada(foto2.id(), "Café", "#6F4E37", 2))));
+
+    List<String> combinaciones =
+        producto.variantes().stream()
+            .map(v -> v.atributos().get(0).valor() + "/" + v.atributos().get(1).valor())
+            .toList();
+    assertEquals(List.of("Negro/SM", "Negro/ML", "Café/ML"), combinaciones);
+  }
+
+  /**
+   * Una foto sumada desde otra publicación se aprueba como las suyas: está en otro lote, y la
+   * aprobación la encuentra por su id (10 de octubre de 2026).
+   */
+  @Test
+  void unaFotoSumadaDeOtraPublicacionSeApruebaComoLasDemas() {
+    LoteIngesta otroLote =
+        LoteIngesta.recibirExportacion(proveedor.id(), "p/exportaciones/b.zip", AHORA);
+    MensajeProveedor deOtroLote =
+        foto(otroLote, "otra", "proveedores/x/2026/10/otra.jpg", "foto-otra");
+    mensajes.guardarTodos(List.of(deOtroLote));
+    borrador.agregarFotos(List.of(deOtroLote.id()), List.of(foto1.id(), foto2.id()));
+    borradores.actualizar(borrador);
+
+    Producto producto =
+        caso()
+            .ejecutar(
+                comando(
+                    List.of(
+                        new FotoAprobada(foto1.id(), null, null),
+                        new FotoAprobada(deOtroLote.id(), null, null))));
+
+    assertTrue(producto.imagenPrincipal().isPresent());
+    assertEquals(1, producto.galeria().size(), "la sumada de otra publicación entra a la galería");
   }
 
   /** Una prenda es una variante y una variante tiene un color: sin él no hay qué ofrecer. */

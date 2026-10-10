@@ -9,8 +9,10 @@ import co.tecnosport.api.domain.compartido.GeneradorIdentificador;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.EnumSet;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -51,6 +53,11 @@ public final class BorradorProducto {
   private final Set<AlertaBorrador> alertas;
   private final Set<UUID> fotosDescartadas;
   private final List<FotoSubida> fotosSubidas;
+  private final TallasPorTono tallasPorTono;
+  private final List<PrecioAdicional> preciosAdicionales;
+  private final Map<UUID, String> tonosSugeridos;
+  private final String lecturaDeFotos;
+  private final List<UUID> fotosAgregadas;
   private EstadoBorrador estado;
   private UUID productoId;
   private String motivoRechazo;
@@ -77,6 +84,79 @@ public final class BorradorProducto {
       Set<AlertaBorrador> alertas,
       Set<UUID> fotosDescartadas,
       List<FotoSubida> fotosSubidas,
+      EstadoBorrador estado,
+      UUID productoId,
+      String motivoRechazo,
+      Instant creadoEn) {
+    this(
+        id,
+        publicacionId,
+        proveedorId,
+        extraccionCruda,
+        titulo,
+        linea,
+        tipo,
+        precioProveedor,
+        precioVentaSugerido,
+        tallas,
+        cantidadTonos,
+        tonosNombrados,
+        material,
+        descripcion,
+        altEn,
+        huella,
+        pHash,
+        alertas,
+        fotosDescartadas,
+        fotosSubidas,
+        null,
+        null,
+        null,
+        null,
+        null,
+        estado,
+        productoId,
+        motivoRechazo,
+        creadoEn);
+  }
+
+  /**
+   * @param tallasPorTono las tallas de cada tono, cuando el mensaje no las tiene todas en todos
+   * @param preciosAdicionales los del anuncio que no son de este producto: acompañantes, combos y
+   *     promociones
+   * @param tonosSugeridos el color que la lectura de fotos vio en cada foto, por mensaje; solo las
+   *     fotos de un solo color. Lo que el panel propone al aprobar, no lo que se aprueba
+   * @param lecturaDeFotos el JSON que devolvió la lectura de fotos, tal cual; nulo si no se leyeron
+   * @param fotosAgregadas fotos de <b>otras</b> publicaciones del proveedor que se sumaron a este
+   *     borrador, por mensaje y en orden: la misma referencia publicada otra vez, o una foto que
+   *     quien revisa movió aquí desde otro borrador
+   */
+  public BorradorProducto(
+      UUID id,
+      UUID publicacionId,
+      UUID proveedorId,
+      String extraccionCruda,
+      String titulo,
+      LineaCatalogo linea,
+      TipoProductoProveedor tipo,
+      Dinero precioProveedor,
+      Dinero precioVentaSugerido,
+      Tallas tallas,
+      Integer cantidadTonos,
+      List<String> tonosNombrados,
+      String material,
+      String descripcion,
+      String altEn,
+      HuellaProveedor huella,
+      PHash pHash,
+      Set<AlertaBorrador> alertas,
+      Set<UUID> fotosDescartadas,
+      List<FotoSubida> fotosSubidas,
+      TallasPorTono tallasPorTono,
+      List<PrecioAdicional> preciosAdicionales,
+      Map<UUID, String> tonosSugeridos,
+      String lecturaDeFotos,
+      List<UUID> fotosAgregadas,
       EstadoBorrador estado,
       UUID productoId,
       String motivoRechazo,
@@ -113,6 +193,18 @@ public final class BorradorProducto {
     if (fotosSubidas != null) {
       this.fotosSubidas.addAll(fotosSubidas);
     }
+    this.tallasPorTono = tallasPorTono == null ? TallasPorTono.ninguna() : tallasPorTono;
+    this.preciosAdicionales =
+        preciosAdicionales == null ? List.of() : List.copyOf(preciosAdicionales);
+    this.tonosSugeridos = new LinkedHashMap<>();
+    if (tonosSugeridos != null) {
+      this.tonosSugeridos.putAll(tonosSugeridos);
+    }
+    this.lecturaDeFotos = enBlancoEsNulo(lecturaDeFotos);
+    this.fotosAgregadas = new ArrayList<>();
+    if (fotosAgregadas != null) {
+      fotosAgregadas.stream().distinct().forEach(this.fotosAgregadas::add);
+    }
     this.estado = Objects.requireNonNull(estado, "El estado del borrador no puede ser nulo.");
     this.productoId = productoId;
     this.motivoRechazo = enBlancoEsNulo(motivoRechazo);
@@ -138,7 +230,39 @@ public final class BorradorProducto {
       PHash pHash,
       Set<AlertaBorrador> alertas,
       Instant ahora) {
+    return nuevo(
+        publicacionId,
+        proveedorId,
+        extraido,
+        extraccionCruda,
+        precioProveedor,
+        precioVentaSugerido,
+        huella,
+        pHash,
+        alertas,
+        FotosDelProducto.todas(),
+        ahora);
+  }
+
+  /**
+   * Un producto nuevo con sus fotos ya repartidas: las de la publicación que no son suyas nacen
+   * descartadas —se pueden recuperar partiendo otro borrador, no se borran— y las que la lectura de
+   * fotos vio de un solo color llegan con ese tono sugerido.
+   */
+  public static BorradorProducto nuevo(
+      UUID publicacionId,
+      UUID proveedorId,
+      ProductoExtraido extraido,
+      String extraccionCruda,
+      Dinero precioProveedor,
+      Dinero precioVentaSugerido,
+      HuellaProveedor huella,
+      PHash pHash,
+      Set<AlertaBorrador> alertas,
+      FotosDelProducto fotos,
+      Instant ahora) {
     Objects.requireNonNull(extraido, "El borrador nace de una extracción.");
+    Objects.requireNonNull(fotos, "El borrador sabe cuáles fotos son suyas.");
     return new BorradorProducto(
         GeneradorIdentificador.nuevo(),
         publicacionId,
@@ -158,7 +282,12 @@ public final class BorradorProducto {
         huella,
         pHash,
         alertas,
-        Set.of(),
+        fotos.ajenas(),
+        List.of(),
+        extraido.tallasPorTono(),
+        extraido.preciosAdicionales(),
+        fotos.tonosSugeridos(),
+        fotos.lecturaCruda(),
         List.of(),
         EstadoBorrador.EN_REVISION,
         null,
@@ -260,7 +389,135 @@ public final class BorradorProducto {
    */
   public void descartarFoto(UUID mensajeId) {
     exigirEnRevision("descartar fotos de");
-    fotosDescartadas.add(Objects.requireNonNull(mensajeId, "La foto no puede ser nula."));
+    Objects.requireNonNull(mensajeId, "La foto no puede ser nula.");
+    // Una de otra publicación no es de la publicación de este borrador: no hay nada que marcar
+    // como descartado, sale de las agregadas y ya.
+    if (!fotosAgregadas.remove(mensajeId)) {
+      fotosDescartadas.add(mensajeId);
+    }
+    tonosSugeridos.remove(mensajeId);
+  }
+
+  /**
+   * Suma fotos de otra publicación del mismo proveedor (10 de octubre de 2026): la misma referencia
+   * que vuelve a salir —la camiseta 261002 de Violeta acompaña al jogger a las 10:35 y a la bermuda
+   * a las 11:01— o una foto que quien revisa trae desde otro borrador. Las que ya tiene no se
+   * repiten. Con alguna foto nueva deja de estar {@code SIN_FOTOS}: quien llama solo suma fotos con
+   * archivo.
+   *
+   * @param fotosDeLaPublicacion las de su propia publicación, que no son «otra publicación»
+   * @return las que de verdad se sumaron
+   */
+  public List<UUID> agregarFotos(List<UUID> fotos, List<UUID> fotosDeLaPublicacion) {
+    exigirEnRevision("sumar fotos a");
+    Objects.requireNonNull(fotos, "Las fotos no pueden ser nulas.");
+    List<UUID> sumadas = new ArrayList<>();
+    for (UUID foto : fotos) {
+      if (foto != null
+          && !fotosDeLaPublicacion.contains(foto)
+          && !fotosAgregadas.contains(foto)
+          && !sumadas.contains(foto)) {
+        sumadas.add(foto);
+      }
+    }
+    fotosAgregadas.addAll(sumadas);
+    if (!sumadas.isEmpty()) {
+      alertas.remove(AlertaBorrador.SIN_FOTOS);
+    }
+    return sumadas;
+  }
+
+  /**
+   * Devuelve una foto de su propia publicación que estaba descartada: la que quien revisa mueve
+   * aquí desde otro borrador del mismo mensaje.
+   */
+  public void recuperarFoto(UUID mensajeId) {
+    exigirEnRevision("recuperar fotos de");
+    if (!fotosDescartadas.remove(Objects.requireNonNull(mensajeId, "La foto no puede ser nula."))) {
+      throw new ExcepcionDeDominio("Esa foto no estaba descartada en el borrador.");
+    }
+    alertas.remove(AlertaBorrador.SIN_FOTOS);
+  }
+
+  /**
+   * Parte el borrador en dos: las fotos que se nombran se van a un borrador nuevo, con los mismos
+   * datos, y en este quedan descartadas. Es la salida cuando la lectura de fotos juntó dos
+   * productos en uno —dos diseños del álbum que vio iguales— o no repartió el conjunto (10 de
+   * octubre de 2026).
+   *
+   * <p>El nuevo nace sin huella visual —la toma de su principal al aprobarse— y con una huella
+   * derivada de la de este y de su primera foto ({@link HuellaProveedor#deParte}): con la misma,
+   * aprobar los dos chocaría. Las fotos subidas desde el panel se quedan aquí. Este olvida su
+   * huella visual, porque podía ser de una de las fotos que se van.
+   *
+   * @param fotos las que se lleva el nuevo, de las de la publicación que este borrador conserva
+   * @param fotosDeLaPublicacion las de la publicación, en orden
+   * @return el borrador nuevo, en revisión
+   */
+  public BorradorProducto partir(List<UUID> fotos, List<UUID> fotosDeLaPublicacion, Instant ahora) {
+    exigirEnRevision("partir");
+    Objects.requireNonNull(fotos, "Partir dice qué fotos se van.");
+    List<UUID> propias =
+        fotosDeLaPublicacion.stream().filter(id -> !fotosDescartadas.contains(id)).toList();
+    Set<UUID> queSeVan = new LinkedHashSet<>(fotos);
+    if (queSeVan.isEmpty()) {
+      throw new ExcepcionDeDominio("Partir un borrador se lleva al menos una foto.");
+    }
+    if (!propias.containsAll(queSeVan)) {
+      throw new ExcepcionDeDominio("Solo se pueden llevar fotos que este borrador conserva.");
+    }
+    if (queSeVan.size() == propias.size() && fotosSubidas.isEmpty()) {
+      throw new ExcepcionDeDominio("Partir deja al menos una foto en el borrador de origen.");
+    }
+    UUID primera = propias.stream().filter(queSeVan::contains).findFirst().orElseThrow();
+    Set<UUID> ajenasDelNuevo = new LinkedHashSet<>(fotosDeLaPublicacion);
+    ajenasDelNuevo.removeAll(queSeVan);
+    Map<UUID, String> tonosDelNuevo = new LinkedHashMap<>();
+    tonosSugeridos.forEach(
+        (foto, tono) -> {
+          if (queSeVan.contains(foto)) {
+            tonosDelNuevo.put(foto, tono);
+          }
+        });
+    // Las mismas alertas, `SIN_FOTOS` incluida: si el origen la llevaba, ninguna de las fotos que
+    // se van tiene archivo, y las subidas desde el panel se quedan en el origen.
+    Set<AlertaBorrador> alertasDelNuevo = EnumSet.noneOf(AlertaBorrador.class);
+    alertasDelNuevo.addAll(alertas);
+    BorradorProducto nuevo =
+        new BorradorProducto(
+            GeneradorIdentificador.nuevo(),
+            publicacionId,
+            proveedorId,
+            extraccionCruda,
+            titulo,
+            linea,
+            tipo,
+            precioProveedor,
+            precioVentaSugerido,
+            tallas,
+            cantidadTonos,
+            tonosNombrados,
+            material,
+            descripcion,
+            altEn,
+            huella == null ? null : HuellaProveedor.deParte(huella, primera.toString()),
+            null,
+            alertasDelNuevo,
+            ajenasDelNuevo,
+            List.of(),
+            tallasPorTono,
+            preciosAdicionales,
+            tonosDelNuevo,
+            lecturaDeFotos,
+            List.of(),
+            EstadoBorrador.EN_REVISION,
+            null,
+            null,
+            ahora);
+    fotosDescartadas.addAll(queSeVan);
+    queSeVan.forEach(tonosSugeridos::remove);
+    this.pHash = null;
+    return nuevo;
   }
 
   /**
@@ -441,6 +698,28 @@ public final class BorradorProducto {
   /** Las que quien revisa subió desde el panel, en el orden en que llegaron. */
   public List<FotoSubida> fotosSubidas() {
     return List.copyOf(fotosSubidas);
+  }
+
+  public TallasPorTono tallasPorTono() {
+    return tallasPorTono;
+  }
+
+  public List<PrecioAdicional> preciosAdicionales() {
+    return preciosAdicionales;
+  }
+
+  /** El tono que la lectura de fotos vio en cada foto de un solo color, por mensaje. */
+  public Map<UUID, String> tonosSugeridos() {
+    return Map.copyOf(tonosSugeridos);
+  }
+
+  public Optional<String> lecturaDeFotos() {
+    return Optional.ofNullable(lecturaDeFotos);
+  }
+
+  /** Las de otras publicaciones que se sumaron, por mensaje y en el orden en que llegaron. */
+  public List<UUID> fotosAgregadas() {
+    return List.copyOf(fotosAgregadas);
   }
 
   public EstadoBorrador estado() {

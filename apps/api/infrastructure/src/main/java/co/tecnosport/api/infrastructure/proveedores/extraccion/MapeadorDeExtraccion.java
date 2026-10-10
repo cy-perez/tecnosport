@@ -4,8 +4,10 @@ import co.tecnosport.api.application.proveedores.ExtraccionFallidaException;
 import co.tecnosport.api.domain.catalogo.LineaCatalogo;
 import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.compartido.ExcepcionDeDominio;
+import co.tecnosport.api.domain.proveedores.PrecioAdicional;
 import co.tecnosport.api.domain.proveedores.ProductoExtraido;
 import co.tecnosport.api.domain.proveedores.Tallas;
+import co.tecnosport.api.domain.proveedores.TallasPorTono;
 import co.tecnosport.api.domain.proveedores.TipoDeTalla;
 import co.tecnosport.api.domain.proveedores.TipoProductoProveedor;
 import java.math.BigDecimal;
@@ -74,7 +76,9 @@ final class MapeadorDeExtraccion {
           nodo.path("es_replica").asBoolean(false),
           confianza(nodo.path("confianza")),
           textoONulo(nodo.path("notas")),
-          textoONulo(nodo.path("codigo_referencia")));
+          textoONulo(nodo.path("codigo_referencia")),
+          tallasPorTono(nodo.path("tallas_por_tono")),
+          preciosAdicionales(nodo.path("precios_adicionales")));
     } catch (ExcepcionDeDominio e) {
       throw new ExtraccionFallidaException(
           "El extractor devolvió un valor que el dominio no admite: " + e.getMessage(), e);
@@ -147,6 +151,41 @@ final class MapeadorDeExtraccion {
       case LISTA -> valores.isEmpty() ? Tallas.desconocida() : Tallas.lista(valores);
       case DESCONOCIDA -> Tallas.desconocida();
     };
+  }
+
+  /**
+   * Un tono sin tallas no dice nada y se salta; uno repetido deja la lista vacía: no se adivina.
+   */
+  private static TallasPorTono tallasPorTono(JsonNode nodo) {
+    List<TallasPorTono.TallasDeUnTono> tonos = new ArrayList<>();
+    if (nodo != null && nodo.isArray()) {
+      for (JsonNode elemento : nodo) {
+        String tono = textoONulo(elemento.path("tono"));
+        List<String> tallas = lista(elemento.path("tallas"));
+        if (tono != null && !tallas.isEmpty()) {
+          tonos.add(new TallasPorTono.TallasDeUnTono(tono, tallas));
+        }
+      }
+    }
+    try {
+      return new TallasPorTono(tonos);
+    } catch (ExcepcionDeDominio e) {
+      return TallasPorTono.ninguna();
+    }
+  }
+
+  private static List<PrecioAdicional> preciosAdicionales(JsonNode nodo) {
+    List<PrecioAdicional> precios = new ArrayList<>();
+    if (nodo != null && nodo.isArray()) {
+      for (JsonNode elemento : nodo) {
+        String concepto = textoONulo(elemento.path("concepto"));
+        Dinero precio = precio(elemento.path("precio_cop"));
+        if (concepto != null && precio != null) {
+          precios.add(new PrecioAdicional(concepto, precio));
+        }
+      }
+    }
+    return precios;
   }
 
   private static List<String> lista(JsonNode nodo) {

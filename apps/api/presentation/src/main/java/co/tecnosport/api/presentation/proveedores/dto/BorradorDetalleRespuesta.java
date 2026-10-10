@@ -10,20 +10,34 @@ import java.util.UUID;
  * con URL firmada de lectura, que caduca en minutos porque el bucket es privado.
  */
 public record BorradorDetalleRespuesta(
-    BorradorRespuesta borrador, List<String> textos, List<FotoRespuesta> fotos) {
+    BorradorRespuesta borrador,
+    List<String> textos,
+    List<FotoRespuesta> fotos,
+    List<HermanoRespuesta> hermanos) {
 
   public static BorradorDetalleRespuesta de(VerBorrador.DetalleDeBorrador detalle) {
     return new BorradorDetalleRespuesta(
         BorradorRespuesta.de(detalle.borrador()),
         detalle.textos(),
-        detalle.fotos().stream().map(FotoRespuesta::de).toList());
+        detalle.fotos().stream().map(FotoRespuesta::de).toList(),
+        detalle.hermanos().stream().map(h -> new HermanoRespuesta(h.id(), h.titulo())).toList());
   }
+
+  /**
+   * Otro borrador en revisión de la misma publicación: a donde el panel deja mover una foto.
+   *
+   * @param titulo nulo si la extracción no le dio ninguno
+   */
+  public record HermanoRespuesta(
+      @Schema(requiredMode = Schema.RequiredMode.REQUIRED) UUID id, String titulo) {}
 
   /**
    * @param mensajeId el id de la foto, venga del proveedor o del panel: es el que se manda al
    *     aprobar y al quitarla
    * @param url nula cuando la exportación omitió el archivo: la foto existió y no está
    * @param origen {@code PROVEEDOR} o {@code PANEL}
+   * @param tonoSugerido el color que la lectura de fotos vio en ella, si mostraba uno solo: lo que
+   *     el panel propone al aprobar; nulo si no hay sugerencia
    */
   public record FotoRespuesta(
       UUID mensajeId,
@@ -32,11 +46,16 @@ public record BorradorDetalleRespuesta(
       @Schema(
               requiredMode = Schema.RequiredMode.REQUIRED,
               allowableValues = {"PROVEEDOR", "PANEL"})
-          String origen) {
+          String origen,
+      String tonoSugerido) {
 
     public static FotoRespuesta de(VerBorrador.FotoDeBorrador foto) {
       return new FotoRespuesta(
-          foto.mensajeId(), foto.url(), foto.pieDeFoto(), foto.origen().name());
+          foto.mensajeId(),
+          foto.url(),
+          foto.pieDeFoto(),
+          foto.origen().name(),
+          foto.tonoSugerido());
     }
   }
 }

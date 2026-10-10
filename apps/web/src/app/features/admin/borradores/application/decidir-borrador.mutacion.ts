@@ -27,6 +27,17 @@ export interface SubirFotoComando {
   readonly archivo: File;
 }
 
+export interface PartirBorradorComando {
+  readonly id: string;
+  readonly fotos: readonly string[];
+}
+
+export interface MoverFotoComando {
+  readonly id: string;
+  readonly mensajeId: string;
+  readonly destinoId: string;
+}
+
 export interface RechazarBorradorComando {
   readonly id: string;
   readonly motivo: string;
@@ -96,6 +107,30 @@ export function usarSubirFotoBorrador() {
   return injectMutation(() => ({
     mutationFn: (comando: SubirFotoComando): Promise<FotoBorrador> =>
       repositorio.subirFoto(comando.id, comando.archivo),
+    onSuccess: () => void queryClient.invalidateQueries({ queryKey: CLAVE_BORRADORES_ADMIN }),
+  }));
+}
+
+/** Partir crea un borrador nuevo y le quita fotos a este: la lista y el detalle cambian. */
+export function usarPartirBorrador() {
+  const repositorio = inject(REPOSITORIO_BORRADORES_ADMIN);
+  const queryClient = inject(QueryClient);
+
+  return injectMutation(() => ({
+    mutationFn: (comando: PartirBorradorComando): Promise<Borrador> =>
+      repositorio.partir(comando.id, comando.fotos),
+    onSuccess: () => void queryClient.invalidateQueries({ queryKey: CLAVE_BORRADORES_ADMIN }),
+  }));
+}
+
+/** Mover cambia dos borradores: se invalida el prefijo entero, que cubre los dos detalles. */
+export function usarMoverFotoBorrador() {
+  const repositorio = inject(REPOSITORIO_BORRADORES_ADMIN);
+  const queryClient = inject(QueryClient);
+
+  return injectMutation(() => ({
+    mutationFn: (comando: MoverFotoComando): Promise<void> =>
+      repositorio.moverFoto(comando.id, comando.mensajeId, comando.destinoId),
     onSuccess: () => void queryClient.invalidateQueries({ queryKey: CLAVE_BORRADORES_ADMIN }),
   }));
 }

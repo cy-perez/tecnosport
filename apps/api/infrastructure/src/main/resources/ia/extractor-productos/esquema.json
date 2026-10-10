@@ -23,7 +23,9 @@
           "es_replica",
           "confianza",
           "notas",
-          "codigo_referencia"
+          "codigo_referencia",
+          "tallas_por_tono",
+          "precios_adicionales"
         ],
         "properties": {
           "esta_agotado": { "type": "boolean" },
@@ -72,7 +74,31 @@
           "es_replica": { "type": "boolean" },
           "confianza": { "type": "number" },
           "notas": { "type": ["string", "null"] },
-          "codigo_referencia": { "type": ["string", "null"] }
+          "codigo_referencia": { "type": ["string", "null"] },
+          "tallas_por_tono": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["tono", "tallas"],
+              "properties": {
+                "tono": { "type": "string" },
+                "tallas": { "type": "array", "items": { "type": "string" } }
+              }
+            }
+          },
+          "precios_adicionales": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["concepto", "precio_cop"],
+              "properties": {
+                "concepto": { "type": "string" },
+                "precio_cop": { "type": "integer" }
+              }
+            }
+          }
         }
       }
     }

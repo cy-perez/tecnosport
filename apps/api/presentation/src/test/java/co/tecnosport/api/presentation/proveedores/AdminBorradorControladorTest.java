@@ -29,6 +29,8 @@ import co.tecnosport.api.application.proveedores.EliminarBorrador;
 import co.tecnosport.api.application.proveedores.EliminarBorradoresSinAprobar;
 import co.tecnosport.api.application.proveedores.HuellaVisual;
 import co.tecnosport.api.application.proveedores.ImagenProcesada;
+import co.tecnosport.api.application.proveedores.MoverFotoDeBorrador;
+import co.tecnosport.api.application.proveedores.PartirBorrador;
 import co.tecnosport.api.application.proveedores.ProcesadorDeImagenes;
 import co.tecnosport.api.application.proveedores.RechazarBorrador;
 import co.tecnosport.api.application.proveedores.RepositorioBorradores;
@@ -43,6 +45,7 @@ import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.proveedores.AlertaBorrador;
 import co.tecnosport.api.domain.proveedores.BorradorProducto;
 import co.tecnosport.api.domain.proveedores.EstadoBorrador;
+import co.tecnosport.api.domain.proveedores.FotosDelProducto;
 import co.tecnosport.api.domain.proveedores.HuellaProveedor;
 import co.tecnosport.api.domain.proveedores.IdExternoDeMensaje;
 import co.tecnosport.api.domain.proveedores.MensajeProveedor;
@@ -459,8 +462,137 @@ class AdminBorradorControladorTest {
         .andExpect(jsonPath("$.detail").value("Las prendas se numeran desde 1."));
   }
 
+  /** El álbum que la lectura de fotos juntó en uno: la segunda foto se va a un borrador nuevo. */
+  @Test
+  void partirSeLlevaLasFotosNombradasAUnBorradorNuevo() throws Exception {
+    PublicacionProveedor publicacion = publicaciones.porId.get(borrador.publicacionId());
+    MensajeProveedor otra =
+        MensajeProveedor.imagen(
+            borrador.proveedorId(),
+            publicacion.loteId(),
+            new IdExternoDeMensaje("g"),
+            T.plusSeconds(20),
+            null,
+            "p/g.jpg");
+    publicacion.anexar(otra);
+    List<MensajeProveedor> delLote =
+        new java.util.ArrayList<>(mensajes.porLote.get(publicacion.loteId()));
+    delLote.add(otra);
+    mensajes.porLote.put(publicacion.loteId(), delLote);
+
+    mockMvc
+        .perform(
+            post("/api/v1/admin/borradores/{id}/partir", borrador.id())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"fotos\":[\"" + otra.id() + "\"]}"))
+        .andExpect(status().isCreated())
+        .andExpect(jsonPath("$.titulo").value("Bolso de dama mediano"))
+        .andExpect(jsonPath("$.estado").value("EN_REVISION"))
+        .andExpect(jsonPath("$.tallasPorTono").isArray())
+        .andExpect(jsonPath("$.preciosAdicionales").isArray());
+
+    assertThat(borradores.porId).hasSize(2);
+    assertThat(borradores.porId.get(borrador.id()).fotosDescartadas()).contains(otra.id());
+  }
+
+  @Test
+  void partirConUnaFotoAjenaEsUn422() throws Exception {
+    mockMvc
+        .perform(
+            post("/api/v1/admin/borradores/{id}/partir", borrador.id())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"fotos\":[\"" + UUID.randomUUID() + "\"]}"))
+        .andExpect(status().isUnprocessableContent());
+  }
+
+  @Test
+  void partirNoDejaAlBorradorDeOrigenSinFotos() throws Exception {
+    mockMvc
+        .perform(
+            post("/api/v1/admin/borradores/{id}/partir", borrador.id())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"fotos\":[\"" + foto.id() + "\"]}"))
+        .andExpect(status().isUnprocessableContent())
+        .andExpect(
+            jsonPath("$.detail").value("Partir deja al menos una foto en el borrador de origen."));
+  }
+
+  /** El conjunto de dos productos: la foto pasa del uno al otro, y el detalle nombra al hermano. */
+  @Test
+  void moverPasaLaFotoAlOtroBorradorDeLaPublicacion() throws Exception {
+    BorradorProducto hermano =
+        BorradorProducto.nuevo(
+            borrador.publicacionId(),
+            borrador.proveedorId(),
+            new ProductoExtraido(
+                true,
+                false,
+                "Llavero",
+                LineaCatalogo.BOLSOS,
+                TipoProductoProveedor.OTRO,
+                Dinero.deCop(5000),
+                Tallas.desconocida(),
+                null,
+                List.of(),
+                null,
+                "Llavero.",
+                null,
+                false,
+                new BigDecimal("0.9"),
+                null),
+            "{}",
+            null,
+            null,
+            null,
+            null,
+            Set.of(),
+            new FotosDelProducto(Set.of(foto.id()), java.util.Map.of(), null),
+            T);
+    borradores.porId.put(hermano.id(), hermano);
+
+    mockMvc
+        .perform(get("/api/v1/admin/borradores/{id}", borrador.id()))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.hermanos[0].id").value(hermano.id().toString()))
+        .andExpect(jsonPath("$.hermanos[0].titulo").value("Llavero"));
+
+    mockMvc
+        .perform(
+            post("/api/v1/admin/borradores/{id}/fotos/{mensajeId}/mover", borrador.id(), foto.id())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"destinoId\":\"" + hermano.id() + "\"}"))
+        .andExpect(status().isNoContent());
+
+    assertThat(borradores.porId.get(borrador.id()).fotosDescartadas()).contains(foto.id());
+    assertThat(borradores.porId.get(hermano.id()).fotosDescartadas()).doesNotContain(foto.id());
+  }
+
+  @Test
+  void moverAUnBorradorQueNoExisteEsUn404() throws Exception {
+    mockMvc
+        .perform(
+            post("/api/v1/admin/borradores/{id}/fotos/{mensajeId}/mover", borrador.id(), foto.id())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"destinoId\":\"" + UUID.randomUUID() + "\"}"))
+        .andExpect(status().isNotFound());
+  }
+
   @TestConfiguration
   static class Configuracion {
+
+    @Bean
+    MoverFotoDeBorrador moverFotoDeBorrador(
+        RepositorioBorradoresDoble borradores,
+        RepositorioPublicacionesDoble publicaciones,
+        DescartarFotoDeBorrador descartar) {
+      return new MoverFotoDeBorrador(borradores, publicaciones, descartar);
+    }
+
+    @Bean
+    PartirBorrador partirBorrador(
+        RepositorioBorradoresDoble borradores, RepositorioPublicacionesDoble publicaciones) {
+      return new PartirBorrador(borradores, publicaciones, () -> T);
+    }
 
     @Bean
     RepositorioBorradoresDoble repositorioBorradores() {
@@ -658,6 +790,16 @@ class AdminBorradorControladorTest {
     final Map<UUID, BorradorProducto> porId = new LinkedHashMap<>();
 
     @Override
+    public Optional<UUID> buscarEnRevisionConHuella(UUID proveedorId, HuellaProveedor huella) {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public List<BorradorProducto> listarDePublicacion(UUID publicacionId) {
+      return porId.values().stream().filter(b -> b.publicacionId().equals(publicacionId)).toList();
+    }
+
+    @Override
     public void guardar(BorradorProducto borrador) {
       porId.put(borrador.id(), borrador);
     }
@@ -785,6 +927,18 @@ class AdminBorradorControladorTest {
 
   static final class RepositorioMensajesDoble implements RepositorioMensajesProveedor {
     final Map<UUID, List<MensajeProveedor>> porLote = new LinkedHashMap<>();
+
+    @Override
+    public List<MensajeProveedor> buscarPorIds(List<UUID> ids) {
+      return ids.stream()
+          .flatMap(
+              id ->
+                  porLote.values().stream()
+                      .flatMap(List::stream)
+                      .filter(m -> m.id().equals(id))
+                      .limit(1))
+          .toList();
+    }
 
     @Override
     public void guardarTodos(List<MensajeProveedor> mensajes) {

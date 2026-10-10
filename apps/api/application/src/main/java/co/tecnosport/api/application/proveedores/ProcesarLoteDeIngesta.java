@@ -231,9 +231,12 @@ public final class ProcesarLoteDeIngesta {
     }
     try {
       // Las fotos se leen y se decodifican aquí, fuera de la transacción; adentro solo se decide.
-      // Con varios productos no se leen: la primera foto puede ser de cualquiera y no se usa.
-      List<PHash> pHashes =
-          evaluadas.size() == 1 ? resolver.pHashesDe(publicacion, mensajes) : List.of();
+      // Con varios productos sin fotos repartidas no se leen: la primera foto puede ser de
+      // cualquiera y no se usa.
+      Map<UUID, PHash> pHashes =
+          ResolverBorrador.necesitaPHashes(evaluadas)
+              ? resolver.pHashesDe(publicacion, mensajes)
+              : Map.of();
       List<ResolverBorrador.Resolucion> resoluciones =
           enTransaccionPropia.ejecutar(
               () ->

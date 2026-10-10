@@ -44,7 +44,9 @@ public record ProductoExtraido(
     boolean esReplica,
     BigDecimal confianza,
     String notas,
-    String codigoReferencia) {
+    String codigoReferencia,
+    TallasPorTono tallasPorTono,
+    List<PrecioAdicional> preciosAdicionales) {
 
   /** Un código: letras y cifras, con alguna cifra, sin más de 12 caracteres. */
   private static final Pattern CODIGO = Pattern.compile("^(?=.*\\d)[A-Z0-9-]{2,12}$");
@@ -59,6 +61,8 @@ public record ProductoExtraido(
     tipo = tipo == null ? TipoProductoProveedor.OTRO : tipo;
     tallas = tallas == null ? Tallas.desconocida() : tallas;
     tonosNombrados = tonosNombrados == null ? List.of() : List.copyOf(tonosNombrados);
+    tallasPorTono = tallasPorTono == null ? TallasPorTono.ninguna() : tallasPorTono;
+    preciosAdicionales = preciosAdicionales == null ? List.of() : List.copyOf(preciosAdicionales);
     if (cantidadTonos != null && cantidadTonos < 0) {
       throw new ExcepcionDeDominio("La cantidad de tonos no puede ser negativa.");
     }
@@ -67,6 +71,45 @@ public record ProductoExtraido(
         || confianza.compareTo(BigDecimal.ONE) > 0) {
       throw new ExcepcionDeDominio("La confianza va de 0 a 1.");
     }
+  }
+
+  /** Sin tallas por tono ni precios adicionales: la forma de antes del 10 de octubre de 2026. */
+  public ProductoExtraido(
+      boolean esProducto,
+      boolean estaAgotado,
+      String titulo,
+      LineaCatalogo linea,
+      TipoProductoProveedor tipo,
+      Dinero precioProveedor,
+      Tallas tallas,
+      Integer cantidadTonos,
+      List<String> tonosNombrados,
+      String material,
+      String descripcion,
+      String altEn,
+      boolean esReplica,
+      BigDecimal confianza,
+      String notas,
+      String codigoReferencia) {
+    this(
+        esProducto,
+        estaAgotado,
+        titulo,
+        linea,
+        tipo,
+        precioProveedor,
+        tallas,
+        cantidadTonos,
+        tonosNombrados,
+        material,
+        descripcion,
+        altEn,
+        esReplica,
+        confianza,
+        notas,
+        codigoReferencia,
+        null,
+        null);
   }
 
   /** Sin código de referencia: la forma de antes del 9 de octubre de 2026. */
@@ -102,7 +145,7 @@ public record ProductoExtraido(
         esReplica,
         confianza,
         notas,
-        null);
+        (String) null);
   }
 
   /**
@@ -133,7 +176,66 @@ public record ProductoExtraido(
         replica,
         confianza,
         notas,
-        codigoEscritoEn(texto));
+        codigoEscritoEn(texto),
+        tallasPorTono.contrastadoCon(texto),
+        preciosAdicionales);
+  }
+
+  /**
+   * Este producto como un diseño de un álbum: el código es <b>solo</b> el SKU de su pie —nulo si no
+   * lo tiene—, nunca el que el texto le dio al anuncio entero, que compartirían todos los diseños;
+   * y las tallas, las del pie si las trae.
+   */
+  public ProductoExtraido comoDisenoDeAlbum(String skuDelPie, List<String> tallasDelPie) {
+    ProductoExtraido conFotos = conLoDeSusFotos(skuDelPie, tallasDelPie);
+    return new ProductoExtraido(
+        conFotos.esProducto,
+        conFotos.estaAgotado,
+        conFotos.titulo,
+        conFotos.linea,
+        conFotos.tipo,
+        conFotos.precioProveedor,
+        conFotos.tallas,
+        conFotos.cantidadTonos,
+        conFotos.tonosNombrados,
+        conFotos.material,
+        conFotos.descripcion,
+        conFotos.altEn,
+        conFotos.esReplica,
+        conFotos.confianza,
+        conFotos.notas,
+        normalizarCodigo(skuDelPie),
+        conFotos.tallasPorTono,
+        conFotos.preciosAdicionales);
+  }
+
+  /**
+   * Este mismo producto con lo que se leyó en sus fotos: el código impreso en la etiqueta o el pie
+   * —que identifica la prenda igual que el escrito ({@link HuellaProveedor#deReferencia})— y las
+   * tallas del pie, que en un álbum son las del diseño y no las del texto. Lo que la foto no trae
+   * se queda como estaba.
+   */
+  public ProductoExtraido conLoDeSusFotos(String codigoDeLaFoto, List<String> tallasDeLaFoto) {
+    String codigo = normalizarCodigo(codigoDeLaFoto);
+    return new ProductoExtraido(
+        esProducto,
+        estaAgotado,
+        titulo,
+        linea,
+        tipo,
+        precioProveedor,
+        tallasDeLaFoto == null || tallasDeLaFoto.isEmpty() ? tallas : Tallas.lista(tallasDeLaFoto),
+        cantidadTonos,
+        tonosNombrados,
+        material,
+        descripcion,
+        altEn,
+        esReplica,
+        confianza,
+        notas,
+        codigo == null ? codigoReferencia : codigo,
+        tallasPorTono,
+        preciosAdicionales);
   }
 
   private String codigoEscritoEn(String texto) {

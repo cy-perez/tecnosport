@@ -59,14 +59,17 @@ public final class DescartarFotoDeBorrador {
       almacen.borrar(subida.get().referenciaArchivo());
       borrador.quitarFotoSubida(mensajeId);
     } else {
-      if (!publicacion.medios().contains(mensajeId)) {
+      if (!publicacion.medios().contains(mensajeId)
+          && !borrador.fotosAgregadas().contains(mensajeId)) {
         throw new FotoNoEsDelBorradorException(mensajeId);
       }
       borrador.descartarFoto(mensajeId);
-      // La huella visual sale de la primera foto de la publicación (ResolverBorrador.pHashDe).
-      if (publicacion.medios().getFirst().equals(mensajeId)) {
-        borrador.olvidarHuellaVisual();
-      }
+      // La huella visual pudo salir de esta foto: de la primera de la publicación o, desde el 10
+      // de octubre de 2026, de la exclusiva del reparto, que no tiene por qué ser la primera. El
+      // borrador no guarda de cuál salió, así que se olvida con cualquier descarte: al aprobar se
+      // toma de la principal que quede, que es lo seguro. Recordarla de una foto descartada
+      // reconocería después otro producto como este.
+      borrador.olvidarHuellaVisual();
     }
     if (!quedanFotosConArchivo(borrador, publicacion)) {
       borrador.alertarSinFotos();
@@ -82,6 +85,10 @@ public final class DescartarFotoDeBorrador {
   private boolean quedanFotosConArchivo(
       BorradorProducto borrador, PublicacionProveedor publicacion) {
     if (!borrador.fotosSubidas().isEmpty()) {
+      return true;
+    }
+    if (repositorioMensajes.buscarPorIds(borrador.fotosAgregadas()).stream()
+        .anyMatch(m -> m.referenciaArchivo().isPresent())) {
       return true;
     }
     Set<UUID> descartadas = borrador.fotosDescartadas();

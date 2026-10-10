@@ -80,6 +80,21 @@ public class BorradorProductoJpaEntity {
   @OrderBy("subidaEn ASC, id ASC")
   private List<FotoSubidaJpaEmbeddable> fotosSubidas = new ArrayList<>();
 
+  @Column(name = "tallas_por_tono")
+  private String tallasPorTono;
+
+  @Column(name = "precios_adicionales")
+  private String preciosAdicionales;
+
+  @Column(name = "tonos_sugeridos")
+  private String tonosSugeridos;
+
+  @Column(name = "lectura_de_fotos")
+  private String lecturaDeFotos;
+
+  @Column(name = "fotos_agregadas")
+  private String fotosAgregadas;
+
   @Column(nullable = false)
   private String estado;
 
@@ -120,6 +135,11 @@ public class BorradorProductoJpaEntity {
       String alertas,
       String fotosDescartadas,
       List<FotoSubidaJpaEmbeddable> fotosSubidas,
+      String tallasPorTono,
+      String preciosAdicionales,
+      String tonosSugeridos,
+      String lecturaDeFotos,
+      String fotosAgregadas,
       String estado,
       UUID productoId,
       String motivoRechazo,
@@ -147,6 +167,11 @@ public class BorradorProductoJpaEntity {
     this.alertas = alertas;
     this.fotosDescartadas = fotosDescartadas;
     this.fotosSubidas = new ArrayList<>(fotosSubidas);
+    this.tallasPorTono = tallasPorTono;
+    this.preciosAdicionales = preciosAdicionales;
+    this.tonosSugeridos = tonosSugeridos;
+    this.lecturaDeFotos = lecturaDeFotos;
+    this.fotosAgregadas = fotosAgregadas;
     this.estado = estado;
     this.productoId = productoId;
     this.motivoRechazo = motivoRechazo;
@@ -156,6 +181,30 @@ public class BorradorProductoJpaEntity {
 
   public UUID getId() {
     return id;
+  }
+
+  /** JSON: {@code [{"tono":"cocoa","tallas":["ML"]}]}; nulo si el mensaje no reparte tallas. */
+  public String getTallasPorTono() {
+    return tallasPorTono;
+  }
+
+  /** JSON: {@code [{"concepto":"Gorra","precio":35000}]}; nulo si no hay. */
+  public String getPreciosAdicionales() {
+    return preciosAdicionales;
+  }
+
+  /** JSON: {@code {"<mensajeId>":"negro"}}; nulo si no hay. */
+  public String getTonosSugeridos() {
+    return tonosSugeridos;
+  }
+
+  public String getLecturaDeFotos() {
+    return lecturaDeFotos;
+  }
+
+  /** Ids de mensaje separados por salto de línea, en orden; nulo si no hay. */
+  public String getFotosAgregadas() {
+    return fotosAgregadas;
   }
 
   public UUID getPublicacionId() {

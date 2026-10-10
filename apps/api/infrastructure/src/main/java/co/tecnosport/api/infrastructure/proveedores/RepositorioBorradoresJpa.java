@@ -152,6 +152,20 @@ public class RepositorioBorradoresJpa implements RepositorioBorradores {
   }
 
   @Override
+  public Optional<UUID> buscarEnRevisionConHuella(UUID proveedorId, HuellaProveedor huella) {
+    return jpa.findFirstByProveedorIdAndEstadoAndHuellaOrderByCreadoEnAsc(
+            proveedorId, EstadoBorrador.EN_REVISION.name(), huella.valor())
+        .map(BorradorProductoJpaEntity::getId);
+  }
+
+  @Override
+  public List<BorradorProducto> listarDePublicacion(UUID publicacionId) {
+    return jpa.findByPublicacionIdOrderByCreadoEnAscIdAsc(publicacionId).stream()
+        .map(RepositorioBorradoresJpa::aDominio)
+        .toList();
+  }
+
+  @Override
   public void eliminar(UUID id) {
     jpa.deleteById(id);
   }
@@ -182,6 +196,11 @@ public class RepositorioBorradoresJpa implements RepositorioBorradores {
         b.fotosSubidas().stream()
             .map(f -> new FotoSubidaJpaEmbeddable(f.id(), f.referenciaArchivo(), f.subidaEn()))
             .toList(),
+        CamposJsonDelBorrador.deTallasPorTono(b.tallasPorTono()),
+        CamposJsonDelBorrador.dePreciosAdicionales(b.preciosAdicionales()),
+        CamposJsonDelBorrador.deTonosSugeridos(b.tonosSugeridos()),
+        b.lecturaDeFotos().orElse(null),
+        unir(b.fotosAgregadas().stream().map(UUID::toString).toList()),
         b.estado().name(),
         b.productoId().orElse(null),
         b.motivoRechazo().orElse(null),
@@ -224,6 +243,11 @@ public class RepositorioBorradoresJpa implements RepositorioBorradores {
         f.getFotosSubidas().stream()
             .map(s -> new FotoSubida(s.getId(), s.getReferenciaArchivo(), s.getSubidaEn()))
             .toList(),
+        CamposJsonDelBorrador.aTallasPorTono(f.getTallasPorTono()),
+        CamposJsonDelBorrador.aPreciosAdicionales(f.getPreciosAdicionales()),
+        CamposJsonDelBorrador.aTonosSugeridos(f.getTonosSugeridos()),
+        f.getLecturaDeFotos(),
+        partir(f.getFotosAgregadas()).stream().map(UUID::fromString).toList(),
         EstadoBorrador.valueOf(f.getEstado()),
         f.getProductoId(),
         f.getMotivoRechazo(),

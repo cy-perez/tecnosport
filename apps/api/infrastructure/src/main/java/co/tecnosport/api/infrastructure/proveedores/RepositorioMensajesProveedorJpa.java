@@ -11,6 +11,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
@@ -57,6 +58,18 @@ public class RepositorioMensajesProveedorJpa implements RepositorioMensajesProve
     return jpa.findByLoteIdOrderByEnviadoEnAscCreadoEnAscPosicionAsc(loteId).stream()
         .map(RepositorioMensajesProveedorJpa::aDominio)
         .toList();
+  }
+
+  @Override
+  public List<MensajeProveedor> buscarPorIds(List<UUID> ids) {
+    if (ids.isEmpty()) {
+      return List.of();
+    }
+    Map<UUID, MensajeProveedor> porId =
+        jpa.findAllById(ids).stream()
+            .map(RepositorioMensajesProveedorJpa::aDominio)
+            .collect(Collectors.toMap(MensajeProveedor::id, m -> m));
+    return ids.stream().map(porId::get).filter(Objects::nonNull).toList();
   }
 
   @Override

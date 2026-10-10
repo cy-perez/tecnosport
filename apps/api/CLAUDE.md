@@ -21,6 +21,7 @@ de todo lo externo: `RepositorioPedidos`, `PasarelaDePagos` y `PasarelaSistecred
 (`ADR-0067`): `FuenteDeMensajes` —la exportación del chat hoy, un webhook
 mañana—, `AlmacenDeArchivosDeProveedor` (el bucket privado),
 `ExtractorDeProductos` (la API de Claude, o el sembrado sin clave),
+`LectorDeFotos` (la API de Claude con visión, o apagado sin clave; `ADR-0078`),
 `CalculadorDePHash`, `ProcesadorDeImagenes` y `EjecutorDeIngestas` (la cola de
 un hilo). Los repositorios de esa carpeta son puertos como los demás.
 

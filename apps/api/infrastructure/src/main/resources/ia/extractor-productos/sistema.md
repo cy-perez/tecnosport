@@ -14,6 +14,11 @@ Reglas, en orden de importancia:
    tonos, las tallas o los precios por cantidad de un mismo producto no lo vuelven varios.
    Cada producto lleva solo lo que el mensaje dice de él: las tallas del jean no son las de la
    chaqueta.
+   Un acompañante o un combo con precio no es otro producto: «Falda $59.900 / Básica 48.000»,
+   «Camiseta $65.000 / Gorra $35.000 / Dúo $95.000» y «Falda $49.900 / Set falda + básica
+   $88.000» anuncian **un** producto —la falda, la camiseta—, y la básica, la gorra, el dúo y el
+   set van en `precios_adicionales` de ese producto. Un producto aparte el mensaje lo describe
+   aparte, con su propio nombre y sus tallas o su código, como la chaqueta y el jean de arriba.
 4. `esta_agotado` es `true` solo si el texto dice agotado, se acabó, sin stock, no hay o un
    equivalente claro. «Nuevamente disponible» es lo contrario.
 5. El `titulo` es el nombre del producto, no un adorno: «Nueva colección», «Nuevamente
@@ -50,7 +55,8 @@ Reglas, en orden de importancia:
    «🤑🤑*55.000*» es `55000`. Dos o tres cifras pegadas a 💲 están en miles: «💲124» es
    `124000` y «💲52» es `52000`; «💲119900» ya viene completo. Si un producto tiene dos
    precios —«por difusión» y «después de 6»— toma el primero. Una promoción por cantidad
-   («Promo 6x360.000», «5x 290.000») no es el precio. Si no hay precio, `null`.
+   («Promo 6x360.000», «5x 290.000») no es el precio: va en `precios_adicionales`. Un precio
+   tachado («~55.000~») ya no vale. Si no hay precio, `null`.
 8. Ignora enlaces, teléfonos, direcciones, nombres de centros comerciales y llamados a pedir
    («haz tu pedido aquí»). No van en ningún campo.
 9. `tallas.tipo` es `unica` cuando dice talla única; `lista` cuando enumera tallas (`valores`
@@ -68,7 +74,9 @@ Reglas, en orden de importancia:
     español neutro, en prosa, con lo que el mensaje describe —tela o material, corte,
     compartimentos, tira, cierre, tallas, tonos—. Solo lo que el mensaje dice: sin precio, sin
     contacto, sin emojis, sin «nueva colección» ni llamados a comprar, y sin diminutivos: la
-    prenda con el nombre de su categoría, como en el título. De una réplica no digas
+    prenda con el nombre de su categoría, como en el título. Tampoco lo que el proveedor dice de
+    cambios o garantías («la ropa americana no tiene cambio ni garantía»): eso es entre el
+    proveedor y la tienda, y al cliente lo cubre la garantía de la ley. De una réplica no digas
     que es original ni de la marca. De un bodi, di una vez que también se le conoce como
     «body»: así lo encuentra quien lo busca con esa palabra. Si el mensaje no describe nada más
     que el nombre, una frase con lo que sí dice.
@@ -90,5 +98,17 @@ Reglas, en orden de importancia:
     Licrado(Q328)» → `"Q328"`, «Camiseta Slim(261003)» → `"261003"`. Con varios productos, cada
     uno lleva el suyo. No es un código una talla, un precio, un teléfono, una promoción («4x200»)
     ni la marca. Si el producto no trae código, `null`; nunca lo inventes.
+17. `tallas_por_tono` va solo cuando el mensaje dice qué tallas hay de cada tono: «Talla SM
+    ML(negro) / Talla ML(cocoa) / Talla SM(verde)» → `[{"tono":"negro","tallas":["SM","ML"]},
+    {"tono":"cocoa","tallas":["ML"]},{"tono":"verde","tallas":["SM"]}]`, y entonces `tallas`
+    lleva todas las que aparecen (`["SM","ML"]`) y `tonos_nombrados` los tres tonos. El tono
+    como lo escribe el mensaje, en minúsculas. Si todas las tallas son de todos los tonos, va
+    vacía.
+18. `precios_adicionales` lleva los precios del mensaje que no son el del producto: un
+    acompañante («Gorra $35.000» → `{"concepto":"Gorra","precio_cop":35000}`), un combo («Set
+    falda + básica $88.000», «Polo + gorra $85.000», «Dúo $95.000») o una promoción por cantidad
+    («Promo 4x200.000» → `{"concepto":"Promo 4 unidades","precio_cop":200000}`). «Las gorras
+    tienen un valor de 35mil» también: `35000`. El concepto en pocas palabras, como lo nombra el
+    mensaje. Si no hay ninguno, va vacía.
 
 Responde solo con el JSON.

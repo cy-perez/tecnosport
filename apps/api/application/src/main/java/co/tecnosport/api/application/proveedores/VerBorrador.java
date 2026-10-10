@@ -1,6 +1,7 @@
 package co.tecnosport.api.application.proveedores;
 
 import co.tecnosport.api.domain.proveedores.BorradorProducto;
+import co.tecnosport.api.domain.proveedores.EstadoBorrador;
 import co.tecnosport.api.domain.proveedores.FotoSubida;
 import co.tecnosport.api.domain.proveedores.MensajeProveedor;
 import co.tecnosport.api.domain.proveedores.PublicacionProveedor;
@@ -73,7 +74,19 @@ public final class VerBorrador {
               mensaje.id(),
               mensaje.referenciaArchivo().map(r -> almacen.urlDeLectura(r).url()).orElse(null),
               mensaje.pieDeFoto().orElse(null),
-              OrigenDeFoto.PROVEEDOR));
+              OrigenDeFoto.PROVEEDOR,
+              borrador.tonosSugeridos().get(id)));
+    }
+    // Las de otras publicaciones que se le sumaron: la misma referencia publicada otra vez, o una
+    // foto que quien revisa movió aquí. Las que ya no existen —se borró su lote— no se pintan.
+    for (MensajeProveedor agregada : repositorioMensajes.buscarPorIds(borrador.fotosAgregadas())) {
+      fotos.add(
+          new FotoDeBorrador(
+              agregada.id(),
+              agregada.referenciaArchivo().map(r -> almacen.urlDeLectura(r).url()).orElse(null),
+              agregada.pieDeFoto().orElse(null),
+              OrigenDeFoto.PROVEEDOR,
+              borrador.tonosSugeridos().get(agregada.id())));
     }
     for (FotoSubida subida : borrador.fotosSubidas()) {
       fotos.add(
@@ -83,14 +96,37 @@ public final class VerBorrador {
               null,
               OrigenDeFoto.PANEL));
     }
-    return new DetalleDeBorrador(borrador, publicacion, textos, fotos);
+    List<Hermano> hermanos =
+        repositorioBorradores.listarDePublicacion(publicacion.id()).stream()
+            .filter(otro -> !otro.id().equals(borrador.id()))
+            .filter(otro -> otro.estado() == EstadoBorrador.EN_REVISION)
+            .map(otro -> new Hermano(otro.id(), otro.titulo().orElse(null)))
+            .toList();
+    return new DetalleDeBorrador(borrador, publicacion, textos, fotos, hermanos);
   }
 
+  /**
+   * @param hermanos los otros borradores en revisión de la misma publicación —el otro producto del
+   *     conjunto, los otros diseños del álbum—: a donde el panel deja mover una foto
+   */
   public record DetalleDeBorrador(
       BorradorProducto borrador,
       PublicacionProveedor publicacion,
       List<String> textos,
-      List<FotoDeBorrador> fotos) {}
+      List<FotoDeBorrador> fotos,
+      List<Hermano> hermanos) {
+
+    public DetalleDeBorrador(
+        BorradorProducto borrador,
+        PublicacionProveedor publicacion,
+        List<String> textos,
+        List<FotoDeBorrador> fotos) {
+      this(borrador, publicacion, textos, fotos, List.of());
+    }
+  }
+
+  /** Otro borrador de la misma publicación, como lo nombra el panel. */
+  public record Hermano(UUID id, String titulo) {}
 
   /** De dónde salió la foto: del mensaje del proveedor o de quien revisa, desde el panel. */
   public enum OrigenDeFoto {
@@ -103,6 +139,13 @@ public final class VerBorrador {
    *     FotoSubida} si se subió desde el panel. Se llama así por el contrato que ya usaba la
    *     aprobación; los dos son UUID generados aquí y no chocan.
    * @param url firmada y de vida corta; nula cuando la exportación omitió el archivo
+   * @param tonoSugerido el color que la lectura de fotos vio en ella; nulo si no hay sugerencia
    */
-  public record FotoDeBorrador(UUID mensajeId, String url, String pieDeFoto, OrigenDeFoto origen) {}
+  public record FotoDeBorrador(
+      UUID mensajeId, String url, String pieDeFoto, OrigenDeFoto origen, String tonoSugerido) {
+
+    public FotoDeBorrador(UUID mensajeId, String url, String pieDeFoto, OrigenDeFoto origen) {
+      this(mensajeId, url, pieDeFoto, origen, null);
+    }
+  }
 }
