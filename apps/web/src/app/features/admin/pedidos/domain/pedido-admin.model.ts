@@ -23,6 +23,26 @@ export type EstadoPedido =
   | 'RECAUDO_CONCILIADO'
   | 'CANCELADO';
 
+/**
+ * Todos los estados, en el orden del desplegable. Una sola lista para el desplegable y para leer
+ * el filtro de la URL: eran dos, se separaron, y `?estado=CANCELADO` dejó de filtrar aunque el
+ * desplegable lo ofrecía.
+ */
+export const ESTADOS_PEDIDO: readonly EstadoPedido[] = [
+  'PAGO_PENDIENTE',
+  'PAGADO',
+  'PAGO_FALLIDO',
+  'CONFIRMADO_CONTRAENTREGA',
+  'EN_PREPARACION',
+  'DESPACHADO',
+  'ENTREGADO',
+  'RECHAZADO_EN_ENTREGA',
+  'DEVUELTO',
+  'RECAUDO_PENDIENTE',
+  'RECAUDO_CONCILIADO',
+  'CANCELADO',
+];
+
 export interface Direccion {
   readonly codigoDaneDepartamento: string;
   readonly departamento: string;
