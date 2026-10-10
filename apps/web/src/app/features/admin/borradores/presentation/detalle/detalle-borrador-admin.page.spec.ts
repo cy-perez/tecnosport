@@ -921,4 +921,94 @@ describe('DetalleBorradorAdminPage', () => {
     await screen.findByRole('option', { name: 'Genérica' });
     await esperarSinViolaciones(container);
   });
+  describe('lo que leyó la ingesta en las fotos y en el anuncio (10 de octubre de 2026)', () => {
+    const sep = esAdmin.borradores.separar;
+    const anuncio = esAdmin.borradores.anuncio;
+
+    it('propone el color que vio la lectura de fotos, y las del mismo color son una prenda', async () => {
+      const { repositorio } = await renderPagina(borradorDePrueba(), [
+        { ...fotoDePrueba('consolidada'), tonoSugerido: null },
+        { ...fotoDePrueba('negra'), tonoSugerido: 'negro' },
+        { ...fotoDePrueba('cafe'), tonoSugerido: 'cafe' },
+        { ...fotoDePrueba('negra-espalda'), tonoSugerido: 'NEGRO' },
+        { ...fotoDePrueba('cocoa'), tonoSugerido: 'cocoa' },
+      ]);
+      await llenarAprobacion();
+
+      await aprobarCon75000();
+
+      await screen.findByRole('link', { name: a.verProducto });
+      expect(repositorio.aprobaciones[0].aprobacion.fotos).toEqual([
+        { mensajeId: 'consolidada', tono: null, colorHex: null, prenda: null },
+        expect.objectContaining({ mensajeId: 'negra', tono: 'Negro', prenda: 1 }),
+        expect.objectContaining({ mensajeId: 'cafe', tono: 'Café', prenda: 2 }),
+        expect.objectContaining({ mensajeId: 'negra-espalda', tono: 'Negro', prenda: 1 }),
+        // La paleta no tiene «cocoa»: no se inventa un color, la foto vale para todos.
+        { mensajeId: 'cocoa', tono: null, colorHex: null, prenda: null },
+      ]);
+    });
+
+    it('muestra las tallas de cada tono y los otros precios del anuncio', async () => {
+      await renderPagina(
+        borradorDePrueba({
+          tallasPorTono: [
+            { tono: 'negro', tallas: ['SM', 'ML'] },
+            { tono: 'cocoa', tallas: ['ML'] },
+          ],
+          preciosAdicionales: [{ concepto: 'Gorra', precio: 35000 }],
+        }),
+      );
+
+      expect(await screen.findByRole('heading', { name: anuncio.titulo })).toBeTruthy();
+      expect(screen.getByText('cocoa: ML')).toBeTruthy();
+      expect(screen.getByText('negro: SM, ML')).toBeTruthy();
+      expect(screen.getByText(/Gorra: \$ 35\.000/)).toBeTruthy();
+    });
+
+    it('sin nada aparte no pinta la sección', async () => {
+      await renderPagina();
+
+      await screen.findByText('Bolso tote 53.000 sirve hasta L');
+      expect(screen.queryByRole('heading', { name: anuncio.titulo })).toBeNull();
+    });
+
+    it('separa las fotos marcadas en un borrador nuevo y lo enlaza', async () => {
+      const { repositorio } = await renderPagina(borradorDePrueba(), [
+        fotoDePrueba('f-1'),
+        fotoDePrueba('f-2'),
+        fotoDePrueba('f-3'),
+      ]);
+
+      fireEvent.click(await screen.findByRole('button', { name: sep.accion }));
+      fireEvent.click(screen.getByLabelText('Llevar la foto 2 al borrador nuevo'));
+      fireEvent.click(screen.getByLabelText('Llevar la foto 3 al borrador nuevo'));
+      fireEvent.click(
+        screen.getByRole('button', { name: 'Crear el borrador con las fotos marcadas (2)' }),
+      );
+
+      expect(await screen.findByRole('link', { name: sep.abrir })).toBeTruthy();
+      expect(screen.getByText(/Fotos que pasaron a un borrador nuevo: 2/)).toBeTruthy();
+      expect(repositorio.particiones).toEqual([{ id: 'b-1', fotos: ['f-2', 'f-3'] }]);
+      await vi.waitFor(() => expect(screen.getAllByRole('img')).toHaveLength(1));
+    });
+
+    it('sin fotos marcadas dice qué falta y no separa nada', async () => {
+      const { repositorio } = await renderPagina();
+
+      fireEvent.click(await screen.findByRole('button', { name: sep.accion }));
+      fireEvent.click(
+        screen.getByRole('button', { name: 'Crear el borrador con las fotos marcadas (0)' }),
+      );
+
+      expect(await screen.findByText(sep.faltanFotos)).toBeTruthy();
+      expect(repositorio.particiones).toEqual([]);
+    });
+
+    it('con una sola foto no ofrece separar', async () => {
+      await renderPagina(borradorDePrueba(), [fotoDePrueba('f-1')]);
+
+      await screen.findByText('Bolso tote 53.000 sirve hasta L');
+      expect(screen.queryByRole('button', { name: sep.accion })).toBeNull();
+    });
+  });
 });

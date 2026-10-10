@@ -64,6 +64,11 @@ export function aBorrador(dto: BorradorDto): Borrador {
     motivoRechazo: dto.motivoRechazo ?? null,
     productoId: dto.productoId ?? null,
     creadoEn: dto.creadoEn ?? '',
+    tallasPorTono: (dto.tallasPorTono ?? []).map((t) => ({ tono: t.tono, tallas: t.tallas })),
+    preciosAdicionales: (dto.preciosAdicionales ?? []).map((p) => ({
+      concepto: p.concepto,
+      precio: p.precio,
+    })),
   };
 }
 
@@ -73,6 +78,7 @@ export function aFoto(dto: FotoDto): FotoBorrador {
     url: dto.url ?? '',
     pieDeFoto: dto.pieDeFoto ?? null,
     origen: dto.origen,
+    tonoSugerido: dto.tonoSugerido ?? null,
   };
 }
 

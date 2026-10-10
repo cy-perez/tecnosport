@@ -45,6 +45,7 @@ import {
   usarDescartarFotoBorrador,
   usarEditarBorrador,
   usarEliminarBorrador,
+  usarPartirBorrador,
   usarRechazarBorrador,
   usarSubirFotoBorrador,
 } from '../../application/decidir-borrador.mutacion';
@@ -70,6 +71,7 @@ import {
   moverFotoAPrenda,
   olvidarFotoDePrendas,
   prendasEnUso,
+  prendasSugeridas,
   problemaDePrendas,
   SIN_PRENDAS,
   tonoDeFoto,
@@ -166,6 +168,7 @@ export class DetalleBorradorAdminPage {
   private readonly eliminar = usarEliminarBorrador();
   private readonly descartarFoto = usarDescartarFotoBorrador();
   private readonly subirFoto = usarSubirFotoBorrador();
+  private readonly partir = usarPartirBorrador();
 
   protected readonly borrador = computed<Borrador | null>(
     () => this.consulta.data()?.borrador ?? null,
@@ -200,6 +203,7 @@ export class DetalleBorradorAdminPage {
   protected readonly rechazando = computed(() => this.rechazar.isPending());
   protected readonly borrando = computed(() => this.eliminar.isPending());
   protected readonly descartandoFoto = computed(() => this.descartarFoto.isPending());
+  protected readonly partiendo = computed(() => this.partir.isPending());
   /** Cualquiera de las tres en vuelo bloquea las otras dos: el servidor solo admite una. */
   private readonly decidiendo = computed(
     () => this.aprobando() || this.rechazando() || this.borrando(),
@@ -221,6 +225,17 @@ export class DetalleBorradorAdminPage {
   protected readonly errorBorrar = signal<string | null>(null);
   /** El avance de la subida en curso; nulo si no se está subiendo nada. */
   protected readonly subiendoFotos = signal<{ hechas: number; total: number } | null>(null);
+  /**
+   * Si se están eligiendo fotos para llevarlas a un borrador nuevo: la salida cuando la lectura de
+   * fotos juntó dos productos en uno (10 de octubre de 2026).
+   */
+  protected readonly separando = signal(false);
+  /** Las elegidas para el borrador nuevo, por `mensajeId`. */
+  protected readonly fotosASeparar = signal<ReadonlySet<string>>(new Set());
+  protected readonly errorSeparar = signal<string | null>(null);
+  /** El borrador que se acaba de crear al separar, para enlazarlo desde el aviso. */
+  protected readonly borradorSeparado = signal<{ id: string; fotos: number } | null>(null);
+  private readonly cajaSeparar = viewChild<ElementRef<HTMLElement>>('cajaSeparar');
   /** Cuántas entraron en la última subida; nulo antes de la primera. */
   protected readonly fotosSubidas = signal<number | null>(null);
   /** Un mensaje por archivo que no entró, con su nombre: de varios, puede fallar uno solo. */
@@ -438,6 +453,7 @@ export class DetalleBorradorAdminPage {
 
   private cargado: string | null = null;
   private sugeridaAplicada: string | null = null;
+  private tonosSugeridosAplicados: string | null = null;
   private marcaDeReplicaAplicada: string | null = null;
 
   constructor() {
@@ -460,6 +476,10 @@ export class DetalleBorradorAdminPage {
       this.confirmandoEliminarFoto.set(null);
       this.errorEliminarFoto.set(null);
       this.fotoEliminada.set(false);
+      this.separando.set(false);
+      this.fotosASeparar.set(new Set());
+      this.errorSeparar.set(null);
+      this.borradorSeparado.set(null);
       this.subiendoFotos.set(null);
       this.fotosSubidas.set(null);
       this.erroresSubida.set([]);
@@ -503,6 +523,27 @@ export class DetalleBorradorAdminPage {
       const control = this.formAprobar.controls.categoriaId;
       if (sugerida && borradorEditable(borrador) && control.value === '') {
         control.setValue(sugerida.id);
+      }
+    });
+
+    // Los colores que vio la lectura de fotos se proponen en cuanto llegan las fotos y la paleta,
+    // una vez por borrador y solo si nadie marcó nada todavía. Va después del efecto que reinicia
+    // las prendas.
+    effect(() => {
+      const borrador = this.borrador();
+      const fotos = this.fotos();
+      const paleta = this.paleta.data();
+      if (!borrador || !paleta || this.tonosSugeridosAplicados === borrador.id) {
+        return;
+      }
+      this.tonosSugeridosAplicados = borrador.id;
+      if (borradorEditable(borrador) && this.prendas() === SIN_PRENDAS) {
+        this.prendas.set(
+          prendasSugeridas(
+            fotos,
+            paleta.map((color) => color.nombre),
+          ),
+        );
       }
     });
 
@@ -712,6 +753,80 @@ export class DetalleBorradorAdminPage {
     this.principalMarcada.set(mensajeId);
     this.enfocarDespuesDePintar(() =>
       this.host.nativeElement.querySelector<HTMLElement>('#incluir-foto-' + indice),
+    );
+  }
+
+  protected etiquetaTallasDeTono(tallas: readonly string[]): string {
+    return tallas.join(', ');
+  }
+
+  /**
+   * Abrir o cerrar la elección de fotos para un borrador nuevo; cerrarla olvida lo elegido. Al
+   * cerrar —con el botón o con Escape desde dentro de la caja— la caja se va con el foco adentro:
+   * vuelve al botón que la abrió.
+   */
+  protected alternarSeparar(): void {
+    const abrir = !this.separando();
+    this.separando.set(abrir);
+    this.fotosASeparar.set(new Set());
+    this.errorSeparar.set(null);
+    if (abrir) {
+      this.borradorSeparado.set(null);
+      this.enfocarDespuesDePintar(() => this.cajaSeparar()?.nativeElement);
+    } else {
+      this.enfocarDespuesDePintar(() =>
+        this.host.nativeElement.querySelector<HTMLElement>('#boton-separar-fotos button'),
+      );
+    }
+  }
+
+  protected fotoASeparar(mensajeId: string): boolean {
+    return this.fotosASeparar().has(mensajeId);
+  }
+
+  protected marcarFotoASeparar(mensajeId: string, marcada: boolean): void {
+    this.fotosASeparar.update((actual) => conSinFoto(actual, mensajeId, marcada));
+    this.errorSeparar.set(null);
+  }
+
+  /**
+   * Se lleva las elegidas a un borrador nuevo de la misma publicación. Sin ninguna elegida se dice
+   * qué falta, sin deshabilitar el botón. La caja se cierra con el botón pulsado dentro: el foco va
+   * al aviso, que enlaza el borrador nuevo.
+   */
+  protected separarFotos(): void {
+    if (this.partiendo()) {
+      return;
+    }
+    const fotos = this.fotos()
+      .map((foto) => foto.mensajeId)
+      .filter((id) => this.fotosASeparar().has(id));
+    if (fotos.length === 0) {
+      this.errorSeparar.set(this.traducir()('admin.borradores.separar.faltanFotos'));
+      return;
+    }
+    this.errorSeparar.set(null);
+    this.partir.mutate(
+      { id: this.id(), fotos },
+      {
+        onSuccess: (nuevo) => {
+          for (const mensajeId of fotos) {
+            this.olvidarFoto(mensajeId);
+            this.prendas.update((actual) => olvidarFotoDePrendas(actual, mensajeId));
+            if (this.principalMarcada() === mensajeId) {
+              this.principalMarcada.set(null);
+            }
+          }
+          this.separando.set(false);
+          this.fotosASeparar.set(new Set());
+          this.borradorSeparado.set({ id: nuevo.id, fotos: fotos.length });
+          this.enfocarDespuesDePintar(() => this.avisoFotosRef()?.nativeElement);
+        },
+        onError: (error: unknown) =>
+          this.errorSeparar.set(
+            mensajeDeError(error, this.transloco, 'admin.borradores.separar.error'),
+          ),
+      },
     );
   }
 

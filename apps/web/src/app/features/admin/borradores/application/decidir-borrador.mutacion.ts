@@ -27,6 +27,11 @@ export interface SubirFotoComando {
   readonly archivo: File;
 }
 
+export interface PartirBorradorComando {
+  readonly id: string;
+  readonly fotos: readonly string[];
+}
+
 export interface RechazarBorradorComando {
   readonly id: string;
   readonly motivo: string;
@@ -96,6 +101,18 @@ export function usarSubirFotoBorrador() {
   return injectMutation(() => ({
     mutationFn: (comando: SubirFotoComando): Promise<FotoBorrador> =>
       repositorio.subirFoto(comando.id, comando.archivo),
+    onSuccess: () => void queryClient.invalidateQueries({ queryKey: CLAVE_BORRADORES_ADMIN }),
+  }));
+}
+
+/** Partir crea un borrador nuevo y le quita fotos a este: la lista y el detalle cambian. */
+export function usarPartirBorrador() {
+  const repositorio = inject(REPOSITORIO_BORRADORES_ADMIN);
+  const queryClient = inject(QueryClient);
+
+  return injectMutation(() => ({
+    mutationFn: (comando: PartirBorradorComando): Promise<Borrador> =>
+      repositorio.partir(comando.id, comando.fotos),
     onSuccess: () => void queryClient.invalidateQueries({ queryKey: CLAVE_BORRADORES_ADMIN }),
   }));
 }

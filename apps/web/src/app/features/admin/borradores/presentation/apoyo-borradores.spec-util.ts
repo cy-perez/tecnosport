@@ -29,6 +29,8 @@ export function borradorDePrueba(overrides: Partial<Borrador> = {}): Borrador {
     motivoRechazo: null,
     productoId: null,
     creadoEn: '2026-09-30T15:00:00Z',
+    tallasPorTono: [],
+    preciosAdicionales: [],
     ...overrides,
   };
 }
@@ -39,6 +41,7 @@ export function fotoDePrueba(mensajeId: string): FotoBorrador {
     url: 'https://storage.local/' + mensajeId + '.jpg',
     pieDeFoto: null,
     origen: 'PROVEEDOR',
+    tonoSugerido: null,
   };
 }
 
@@ -50,6 +53,7 @@ export class RepositorioBorradoresAdminFalso implements RepositorioBorradoresAdm
   readonly eliminados: string[] = [];
   readonly fotosDescartadas: { id: string; mensajeId: string }[] = [];
   readonly fotosSubidas: { id: string; archivo: File }[] = [];
+  readonly particiones: { id: string; fotos: readonly string[] }[] = [];
   /** Por nombre de archivo: si se pone, subir ese revienta con esto. */
   readonly fallosAlSubir = new Map<string, unknown>();
   /** Si se pone, `eliminar` revienta con esto: el 409 de un borrador que no se borra. */
@@ -114,6 +118,7 @@ export class RepositorioBorradoresAdminFalso implements RepositorioBorradoresAdm
       url: 'https://storage.local/subida-' + this.fotosSubidas.length + '.jpg',
       pieDeFoto: null,
       origen: 'PANEL',
+      tonoSugerido: null,
     };
     this.fotos = [...this.fotos, foto];
     const actual = this.borradores.find((b) => b.id === id);
@@ -121,6 +126,16 @@ export class RepositorioBorradoresAdminFalso implements RepositorioBorradoresAdm
       this.reemplazar(id, { alertas: actual.alertas.filter((a) => a !== 'SIN_FOTOS') });
     }
     return foto;
+  }
+
+  /** Como el servidor: el nuevo se lleva las fotos nombradas, que este deja de tener. */
+  async partir(id: string, fotos: readonly string[]): Promise<Borrador> {
+    this.particiones.push({ id, fotos });
+    const origen = this.borradores.find((b) => b.id === id) ?? borradorDePrueba({ id });
+    const nuevo: Borrador = { ...origen, id: id + '-parte' };
+    this.borradores = [...this.borradores, nuevo];
+    this.fotos = this.fotos.filter((foto) => !fotos.includes(foto.mensajeId));
+    return nuevo;
   }
 
   async eliminar(id: string): Promise<void> {

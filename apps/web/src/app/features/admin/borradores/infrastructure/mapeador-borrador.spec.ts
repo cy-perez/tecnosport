@@ -21,6 +21,24 @@ describe('mapeador-borrador', () => {
     expect(aFoto({ mensajeId: 'f2', url: 'u', origen: 'PROVEEDOR' }).origen).toBe('PROVEEDOR');
   });
 
+  /** Un borrador de antes del 10 de octubre de 2026 no trae ni tallas por tono ni otros precios. */
+  it('lleva las tallas por tono, los otros precios y el tono sugerido, o vacíos si no vienen', () => {
+    const conTodo = aBorrador({
+      id: 'b1',
+      tallasPorTono: [{ tono: 'cocoa', tallas: ['ML'] }],
+      preciosAdicionales: [{ concepto: 'Gorra', precio: 35000 }],
+    });
+
+    expect(conTodo.tallasPorTono).toEqual([{ tono: 'cocoa', tallas: ['ML'] }]);
+    expect(conTodo.preciosAdicionales).toEqual([{ concepto: 'Gorra', precio: 35000 }]);
+    expect(aBorrador({ id: 'b2' }).tallasPorTono).toEqual([]);
+    expect(aBorrador({ id: 'b2' }).preciosAdicionales).toEqual([]);
+    expect(
+      aFoto({ mensajeId: 'f1', url: 'u', origen: 'PROVEEDOR', tonoSugerido: 'negro' }).tonoSugerido,
+    ).toBe('negro');
+    expect(aFoto({ mensajeId: 'f2', url: 'u', origen: 'PROVEEDOR' }).tonoSugerido).toBeNull();
+  });
+
   /**
    * El PATCH es parcial: mandar `titulo: undefined` como clave presente haría que Jackson lo
    * leyera como nulo y el caso de uso lo interpretara como «borra el título». Solo viaja lo que

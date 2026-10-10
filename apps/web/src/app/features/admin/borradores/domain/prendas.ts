@@ -236,3 +236,41 @@ export function problemaDePrendas(
   }
   return null;
 }
+
+/** «Café», «CAFE» y «café» son el mismo color. */
+function claveDeColor(texto: string): string {
+  return texto.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase().trim();
+}
+
+/**
+ * Las prendas que propone la lectura de fotos (10 de octubre de 2026): cada foto con un color
+ * sugerido que está en la paleta va a la prenda de ese color, y las fotos del mismo color son la
+ * misma prenda —en un anuncio de Violeta, la blusa negra de frente y de espalda—. La que no trae
+ * sugerencia, o trae un color que la paleta no tiene, vale para todas. Es un punto de partida: quien
+ * aprueba lo corrige con los mismos selectores de siempre.
+ *
+ * @param paleta los nombres en español de los colores que se pueden elegir: el valor del atributo
+ */
+export function prendasSugeridas(
+  fotos: readonly { readonly mensajeId: string; readonly tonoSugerido: string | null }[],
+  paleta: readonly string[],
+): AsignacionDePrendas {
+  const porClave = new Map(paleta.map((nombre) => [claveDeColor(nombre), nombre]));
+  const prendaPorFoto: Record<string, number> = {};
+  const tonoPorPrenda: Record<number, string> = {};
+  const prendaDeTono = new Map<string, number>();
+  for (const foto of fotos) {
+    const tono = foto.tonoSugerido ? porClave.get(claveDeColor(foto.tonoSugerido)) : undefined;
+    if (!tono) {
+      continue;
+    }
+    let prenda = prendaDeTono.get(tono);
+    if (prenda === undefined) {
+      prenda = prendaDeTono.size + 1;
+      prendaDeTono.set(tono, prenda);
+      tonoPorPrenda[prenda] = tono;
+    }
+    prendaPorFoto[foto.mensajeId] = prenda;
+  }
+  return { prendaPorFoto, tonoPorPrenda };
+}

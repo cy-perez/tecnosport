@@ -100,6 +100,22 @@ export interface Tallas {
   readonly valores: readonly string[];
 }
 
+/** «Talla ML(cocoa)»: las tallas que hay de un tono cuando no son todas las del producto. */
+export interface TallasDeTono {
+  readonly tono: string;
+  readonly tallas: readonly string[];
+}
+
+/**
+ * Un precio del anuncio que no es del producto: la gorra que acompaña, el combo, la promoción por
+ * cantidad. Solo se muestra: el catálogo no tiene combos.
+ */
+export interface PrecioAdicional {
+  readonly concepto: string;
+  /** En pesos, entero. */
+  readonly precio: number;
+}
+
 export interface Borrador {
   readonly id: string;
   readonly proveedorId: string;
@@ -124,6 +140,12 @@ export interface Borrador {
   /** El producto que creó al aprobarse, o el que renovó. */
   readonly productoId: string | null;
   readonly creadoEn: string;
+  /**
+   * Las tallas de cada tono cuando el proveedor no las tiene todas en todos. Al aprobar, un tono
+   * solo se crea en las suyas. Vacía casi siempre.
+   */
+  readonly tallasPorTono: readonly TallasDeTono[];
+  readonly preciosAdicionales: readonly PrecioAdicional[];
 }
 
 /** De dónde salió la foto: del mensaje del proveedor, o de quien revisa, desde el panel. */
@@ -140,6 +162,11 @@ export interface FotoBorrador {
   readonly pieDeFoto: string | null;
   /** La del panel es solo de este borrador: eliminarla borra el archivo. */
   readonly origen: OrigenFoto;
+  /**
+   * El color que la lectura de fotos vio en ella, si mostraba uno solo de lo que se vende. El
+   * formulario de aprobación lo propone; nulo si no hay sugerencia.
+   */
+  readonly tonoSugerido: string | null;
 }
 
 /**

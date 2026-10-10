@@ -1396,6 +1396,27 @@
       "hecho": "Se borraron {{borrados}} borrador(es) sin aprobar.",
       "error": "No se pudieron borrar todos. Los que alcanzaron a borrarse ya no están; intenta de nuevo para terminar.",
       "ninguno": "No se borró ninguno: los que quedan los está decidiendo alguien más en este momento. Recarga la página e intenta de nuevo."
+    },
+    "separar": {
+      "accion": "Separar fotos en otro borrador",
+      "cancelar": "Cancelar la separación",
+      "explicacion": "Marca las fotos que son de otro producto. Se van a un borrador nuevo con los mismos datos, y aquí dejan de verse.",
+      "fotoASeparar": "Llevar la foto {{numero}} al borrador nuevo",
+      "confirmar": "Crear el borrador con las fotos marcadas ({{cantidad}})",
+      "separando": "Creando el borrador…",
+      "faltanFotos": "Marca al menos una foto para el borrador nuevo.",
+      "hecho": "Fotos que pasaron a un borrador nuevo: {{cantidad}}.",
+      "abrir": "Abrir el borrador nuevo",
+      "error": "No se pudo crear el borrador. Intenta de nuevo."
+    },
+    "anuncio": {
+      "titulo": "Lo que el anuncio dice aparte",
+      "tallasPorTono": "Tallas de cada tono",
+      "tallasPorTonoAyuda": "El proveedor no tiene todas las tallas en todos los tonos. Al aprobar, cada tono se crea solo en las suyas.",
+      "tallasDeTono": "{{tono}}: {{tallas}}",
+      "preciosAdicionales": "Otros precios del anuncio",
+      "preciosAdicionalesAyuda": "Acompañantes, combos y promociones por cantidad. No se publican: son para que sepas qué ofrece el proveedor.",
+      "precioAdicional": "{{concepto}}: {{precio}}"
     }
   },
   "referencias_envio": {

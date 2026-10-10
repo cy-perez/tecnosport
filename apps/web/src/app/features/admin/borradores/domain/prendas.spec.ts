@@ -4,6 +4,7 @@ import {
   moverFotoAPrenda,
   olvidarFotoDePrendas,
   prendasEnUso,
+  prendasSugeridas,
   problemaDePrendas,
   SIN_PRENDAS,
   tonoDeFoto,
@@ -15,6 +16,32 @@ import {
 function conTonos(...pares: [string, string][]): AsignacionDePrendas {
   return pares.reduce((a, [id, tono]) => elegirTonoDeFoto(a, id, tono), SIN_PRENDAS);
 }
+
+describe('prendas sugeridas por la lectura de fotos', () => {
+  const paleta = ['Negro', 'Café', 'Gris oscuro', 'Verde'];
+
+  it('las fotos del mismo color son una prenda, y cada color la suya', () => {
+    const a = prendasSugeridas(
+      [
+        { mensajeId: 'consolidada', tonoSugerido: null },
+        { mensajeId: 'negra-frente', tonoSugerido: 'negro' },
+        { mensajeId: 'cafe', tonoSugerido: 'cafe' },
+        { mensajeId: 'negra-espalda', tonoSugerido: 'NEGRO' },
+      ],
+      paleta,
+    );
+
+    expect(a.prendaPorFoto).toEqual({ 'negra-frente': 1, cafe: 2, 'negra-espalda': 1 });
+    expect(a.tonoPorPrenda).toEqual({ 1: 'Negro', 2: 'Café' });
+    expect(variantesQueSeCrean(a, ['consolidada', 'negra-frente', 'cafe']).length).toBe(2);
+  });
+
+  it('un color que la paleta no tiene no se inventa: la foto vale para todas', () => {
+    const a = prendasSugeridas([{ mensajeId: 'f1', tonoSugerido: 'cocoa' }], paleta);
+
+    expect(a).toEqual(SIN_PRENDAS);
+  });
+});
 
 describe('prendas del borrador', () => {
   it('un color en una foto sin prenda la vuelve una prenda ella sola', () => {
