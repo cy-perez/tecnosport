@@ -82,7 +82,7 @@ class MetodosDePagoDisponiblesTest {
   private void publicarProductoConVariante() {
     Marca marca = Marca.crear("TecnoSport");
     Categoria categoria =
-        Categoria.crear("Ropa deportiva", new Slug("ropa-deportiva"), LineaCatalogo.ROPA);
+        Categoria.crear("Camisetas", new Slug("ropa-caballero-camisetas"), LineaCatalogo.ROPA);
     Producto producto =
         Producto.crear(
             "Camiseta running Dry-Fit",
@@ -158,15 +158,15 @@ class MetodosDePagoDisponiblesTest {
         direccion);
   }
 
-  /** Reemplaza el catálogo por un cable de 8.000: por debajo del mínimo asegurable. */
+  /** Reemplaza el catálogo por unos audífonos de 8.000: por debajo del mínimo asegurable. */
   private void publicarProductoBarato() {
     Producto barato =
         Producto.crear(
-            "Cable USB-C",
-            new Slug("cable-usb-c"),
+            "Audífonos in-ear básicos",
+            new Slug("audifonos-in-ear-basicos"),
             "Descripción",
             Marca.crear("TecnoSport"),
-            Categoria.crear("Cables", new Slug("cables"), LineaCatalogo.TECNOLOGIA));
+            Categoria.crear("Audífonos", new Slug("audifonos"), LineaCatalogo.TECNOLOGIA));
     barato.asignarImagenPrincipal(
         ImagenProducto.crear(
             TipoImagen.PRINCIPAL,
@@ -658,8 +658,8 @@ class MetodosDePagoDisponiblesTest {
 
   /**
    * La regla de {@code adr/0037} vista desde el checkout. En contraentrega la transportadora cobra
-   * la suma de lo declarado y la plataforma exige un mínimo por bulto, así que diez cables de 8.000
-   * declaran 100.000 contra los 94.900 que el pedido cobra —80.000 de mercancía más 14.900 de
+   * la suma de lo declarado y la plataforma exige un mínimo por bulto, así que diez audífonos de
+   * 8.000 declaran 100.000 contra los 94.900 que el pedido cobra —80.000 de mercancía más 14.900 de
    * flete—. No hay forma de declarar menos, así que ese carrito pierde la contraentrega en vez de
    * cobrar 5.100 de más en la puerta.
    */
@@ -676,7 +676,7 @@ class MetodosDePagoDisponiblesTest {
     assertTrue(disponibles.contains(MetodoPago.WOMPI), "los demás métodos siguen ahí");
   }
 
-  /** Y el mismo cable, en cantidad razonable, sí la conserva: el flete cubre de sobra el piso. */
+  /** Y los mismos audífonos, en cantidad razonable, sí la conservan: el flete cubre el piso. */
   @Test
   void elMismoCarritoConPocasUnidadesSiConservaLaContraentrega() {
     MetodosDePagoDisponibles caso = crear(CRITERIOS_PERMISIVOS);

@@ -33,7 +33,7 @@ const SAMSUNG: Marca = { id: 'm-sam', nombre: 'Samsung' };
 const CELULARES: Categoria = {
   id: 'c-cel',
   nombre: 'Celulares',
-  slug: 'tecnologia-celulares',
+  slug: 'celulares',
   linea: 'TECNOLOGIA',
   padreId: null,
   hashtags: [],

@@ -26,15 +26,15 @@ import org.junit.jupiter.api.Test;
 /**
  * Los dos extremos del rango asegurable, que se tratan distinto a propósito: el piso se eleva
  * ({@code adr/0035}) y el techo rechaza ({@code adr/0036}). Lo que se prueba aquí no es la
- * aritmética de un máximo y un mínimo: es que un cable barato no deje sin envío a un carrito
- * entero, y que un celular caro lo deje pero diciéndolo.
+ * aritmética de un máximo y un mínimo: es que unos audífonos baratos no dejen sin envío a un
+ * carrito entero, y que un celular caro lo deje pero diciéndolo.
  */
 class ArmadorDeBultosTest {
 
   private static final Dinero MINIMO = Dinero.deCop(10_000);
   private static final Dinero MAXIMO = Dinero.deCop(5_000_000);
 
-  private static final Paquete PAQUETE_CABLE = new Paquete(90, 12, 10, 3);
+  private static final Paquete PAQUETE_AUDIFONOS = new Paquete(90, 12, 10, 3);
 
   private RepositorioProductosFalso productos;
   private ArmadorDeBultos armador;
@@ -49,9 +49,9 @@ class ArmadorDeBultosTest {
 
   @Test
   void eleva_al_minimo_el_bulto_que_queda_por_debajo() {
-    Variante cable = catalogoCon(Dinero.deCop(8_000));
+    Variante audifonos = catalogoCon(Dinero.deCop(8_000));
 
-    List<BultoDespachable> bultos = armador.armar(List.of(linea(cable, 1)));
+    List<BultoDespachable> bultos = armador.armar(List.of(linea(audifonos, 1)));
 
     assertEquals(MINIMO, bultos.getFirst().bulto().valorDeclarado());
   }
@@ -75,15 +75,15 @@ class ArmadorDeBultosTest {
   }
 
   /**
-   * El bulto es por unidad, así que el piso se paga tantas veces como unidades haya: tres cables de
-   * 8.000 declaran 30.000 y no 24.000. Está decidido y escrito en {@code adr/0035}; esta prueba
+   * El bulto es por unidad, así que el piso se paga tantas veces como unidades haya: tres audífonos
+   * de 8.000 declaran 30.000 y no 24.000. Está decidido y escrito en {@code adr/0035}; esta prueba
    * existe para que cambiarlo tenga que ser deliberado.
    */
   @Test
   void cada_unidad_barata_declara_el_minimo_por_su_cuenta() {
-    Variante cable = catalogoCon(Dinero.deCop(8_000));
+    Variante audifonos = catalogoCon(Dinero.deCop(8_000));
 
-    List<BultoDespachable> bultos = armador.armar(List.of(linea(cable, 3)));
+    List<BultoDespachable> bultos = armador.armar(List.of(linea(audifonos, 3)));
 
     assertEquals(3, bultos.size());
     assertEquals(
@@ -98,10 +98,10 @@ class ArmadorDeBultosTest {
    */
   @Test
   void eleva_tambien_el_valor_congelado_que_llega_en_la_linea() {
-    Variante cable = catalogoCon(Dinero.deCop(50_000));
+    Variante audifonos = catalogoCon(Dinero.deCop(50_000));
 
     List<BultoDespachable> bultos =
-        armador.armar(List.of(new LineaAEmpacar(cable.id(), 1, Dinero.deCop(7_500))));
+        armador.armar(List.of(new LineaAEmpacar(audifonos.id(), 1, Dinero.deCop(7_500))));
 
     assertEquals(MINIMO, bultos.getFirst().bulto().valorDeclarado());
   }
@@ -208,7 +208,7 @@ class ArmadorDeBultosTest {
 
   /** El catálogo del caso típico: un solo producto, del precio que la prueba necesite. */
   private Variante catalogoCon(Dinero precio) {
-    return agregarVarianteAlCatalogo("Cable USB-C trenzado", "TS-CAB-USBC-1M", precio);
+    return agregarVarianteAlCatalogo("Audífonos in-ear básicos", "TS-AUD-INEAR-1", precio);
   }
 
   /**
@@ -217,7 +217,7 @@ class ArmadorDeBultosTest {
    * listan todos" pasaría por la razón equivocada.
    */
   private Variante agregarVarianteAlCatalogo(String nombre, String sku, Dinero precio) {
-    return agregarVarianteAlCatalogo(nombre, sku, precio, PAQUETE_CABLE);
+    return agregarVarianteAlCatalogo(nombre, sku, precio, PAQUETE_AUDIFONOS);
   }
 
   private Variante agregarVarianteAlCatalogo(
@@ -227,7 +227,7 @@ class ArmadorDeBultosTest {
         sku,
         precio,
         paquete,
-        Categoria.crear("Cables", new Slug("cables"), LineaCatalogo.TECNOLOGIA));
+        Categoria.crear("Audífonos", new Slug("audifonos"), LineaCatalogo.TECNOLOGIA));
   }
 
   private Variante agregarVarianteAlCatalogo(
@@ -317,17 +317,17 @@ class ArmadorDeBultosTest {
 
   /**
    * El caso que obliga a no ofrecer contraentrega: el piso del {@code adr/0035} ya infló la suma
-   * por encima de lo que el pedido cobra. Diez cables de 8.000 declaran 100.000 contra 80.000 de
+   * por encima de lo que el pedido cobra. Diez audífonos de 8.000 declaran 100.000 contra 80.000 de
    * mercancía, y ningún flete nacional cierra esos 20.000.
    */
   @Test
   void si_el_piso_ya_supera_el_total_ese_carrito_no_lleva_contraentrega() {
-    Variante cable = catalogoCon(Dinero.deCop(8_000));
+    Variante audifonos = catalogoCon(Dinero.deCop(8_000));
 
     RecaudoNoCuadraException error =
         assertThrows(
             RecaudoNoCuadraException.class,
-            () -> armador.armarParaRecaudo(List.of(linea(cable, 10)), Dinero.deCop(88_000)));
+            () -> armador.armarParaRecaudo(List.of(linea(audifonos, 10)), Dinero.deCop(88_000)));
 
     assertEquals(Dinero.deCop(100_000), error.declarado());
     assertEquals(Dinero.deCop(88_000), error.aRecaudar());
@@ -336,10 +336,10 @@ class ArmadorDeBultosTest {
   /** Justo en el filo: declarar exactamente lo que se cobra sí cuadra, no hay nada que repartir. */
   @Test
   void declarar_exactamente_el_total_cuadra() {
-    Variante cable = catalogoCon(Dinero.deCop(8_000));
+    Variante audifonos = catalogoCon(Dinero.deCop(8_000));
 
     List<BultoDespachable> bultos =
-        armador.armarParaRecaudo(List.of(linea(cable, 2)), Dinero.deCop(20_000));
+        armador.armarParaRecaudo(List.of(linea(audifonos, 2)), Dinero.deCop(20_000));
 
     assertEquals(List.of(MINIMO, MINIMO), declarados(bultos));
   }
@@ -396,12 +396,12 @@ class ArmadorDeBultosTest {
     return agregarVarianteAlCatalogo(sku, sku, precio, null, categoria);
   }
 
-  /** El formulario de la plataforma pide kilos enteros: 90 gramos de cable son 1 kg. */
+  /** El formulario de la plataforma pide kilos enteros: 90 gramos de audífonos son 1 kg. */
   @Test
   void el_peso_de_un_bulto_medido_sube_al_kilo_entero() {
-    Variante cable = catalogoCon(Dinero.deCop(50_000));
+    Variante audifonos = catalogoCon(Dinero.deCop(50_000));
 
-    Paquete paquete = armador.armar(List.of(linea(cable, 1))).getFirst().bulto().paquete();
+    Paquete paquete = armador.armar(List.of(linea(audifonos, 1))).getFirst().bulto().paquete();
 
     assertEquals(new Paquete(1000, 12, 10, 3), paquete);
   }
@@ -558,9 +558,9 @@ class ArmadorDeBultosTest {
   @Test
   void si_todo_esta_medido_las_referencias_no_se_leen() {
     ArmadorDeBultos conReferencias = armadorConReferencias();
-    Variante cable = catalogoCon(Dinero.deCop(50_000));
+    Variante audifonos = catalogoCon(Dinero.deCop(50_000));
 
-    conReferencias.armar(List.of(linea(cable, 2)));
+    conReferencias.armar(List.of(linea(audifonos, 2)));
 
     assertEquals(0, referencias.lecturas());
   }
@@ -570,11 +570,11 @@ class ArmadorDeBultosTest {
   void con_bolsa_la_suma_declarada_sigue_siendo_lo_que_se_recauda() {
     ArmadorDeBultos conReferencias = armadorConReferencias();
     Variante camiseta = prenda(CAMISETAS, "TS-CAM-1", Dinero.deCop(50_000));
-    Variante cable = catalogoCon(Dinero.deCop(30_000));
+    Variante audifonos = catalogoCon(Dinero.deCop(30_000));
 
     List<BultoDespachable> bultos =
         conReferencias.armarParaRecaudo(
-            List.of(linea(camiseta, 2), linea(cable, 1)), Dinero.deCop(143_700));
+            List.of(linea(camiseta, 2), linea(audifonos, 1)), Dinero.deCop(143_700));
 
     assertEquals(2, bultos.size());
     assertEquals(Dinero.deCop(143_700), suma(bultos));

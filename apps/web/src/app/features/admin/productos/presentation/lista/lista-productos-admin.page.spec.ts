@@ -33,7 +33,7 @@ function productoDePrueba(overrides: Partial<ProductoAdmin> = {}): ProductoAdmin
     slug: 'morral-urbano',
     estado: 'BORRADOR',
     marca: { id: 'm1', nombre: 'TecnoSport' },
-    categoria: { id: 'c1', nombre: 'Bolsos', slug: 'bolsos', linea: 'BOLSOS' },
+    categoria: { id: 'c1', nombre: 'Morrales', slug: 'bolsos-dama-morrales', linea: 'BOLSOS' },
     imagenPrincipalUrl: null,
     totalVariantes: 2,
     ...overrides,
@@ -372,7 +372,7 @@ describe('ListaProductosAdminPage', () => {
     expect(await screen.findByText('Morral urbano')).toBeTruthy();
     expect(screen.getByText('morral-urbano')).toBeTruthy();
     expect(screen.getByText('TecnoSport')).toBeTruthy();
-    expect(screen.getByText('Bolsos')).toBeTruthy();
+    expect(screen.getByText('Morrales')).toBeTruthy();
     expect(screen.getByRole('cell', { name: 'Borrador' })).toBeTruthy();
   });
 

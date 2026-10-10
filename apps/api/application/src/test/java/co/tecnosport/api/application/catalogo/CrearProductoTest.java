@@ -23,7 +23,8 @@ class CrearProductoTest {
   @Test
   void creaElProductoEnBorradorConSlugDerivadoDelNombre() {
     Marca marca = Marca.crear("TecnoSport");
-    Categoria categoria = Categoria.crear("Bolsos", new Slug("bolsos"), LineaCatalogo.BOLSOS);
+    Categoria categoria =
+        Categoria.crear("Morrales", new Slug("bolsos-dama-morrales"), LineaCatalogo.BOLSOS);
     repositorioMarcas.conMarcas(marca);
     repositorioCategorias.conCategorias(categoria);
 
@@ -39,7 +40,8 @@ class CrearProductoTest {
   @Test
   void siElSlugYaExisteLeAgregaUnSufijoNumerico() {
     Marca marca = Marca.crear("TecnoSport");
-    Categoria categoria = Categoria.crear("Bolsos", new Slug("bolsos"), LineaCatalogo.BOLSOS);
+    Categoria categoria =
+        Categoria.crear("Morrales", new Slug("bolsos-dama-morrales"), LineaCatalogo.BOLSOS);
     repositorioMarcas.conMarcas(marca);
     repositorioCategorias.conCategorias(categoria);
     repositorioProductos.conProductos(
@@ -54,7 +56,8 @@ class CrearProductoTest {
 
   @Test
   void marcaInexistenteLanzaMarcaNoEncontrada() {
-    Categoria categoria = Categoria.crear("Bolsos", new Slug("bolsos"), LineaCatalogo.BOLSOS);
+    Categoria categoria =
+        Categoria.crear("Morrales", new Slug("bolsos-dama-morrales"), LineaCatalogo.BOLSOS);
     repositorioCategorias.conCategorias(categoria);
     UUID marcaId = UUID.randomUUID();
 

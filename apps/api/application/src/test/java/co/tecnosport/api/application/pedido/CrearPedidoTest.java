@@ -165,7 +165,7 @@ class CrearPedidoTest {
   private Variante publicarSegundaVarianteConExistencia(int existencia) {
     Marca marca = Marca.crear("TecnoSport");
     Categoria categoria =
-        Categoria.crear("Ropa deportiva", new Slug("ropa-deportiva"), LineaCatalogo.ROPA);
+        Categoria.crear("Camisetas", new Slug("ropa-caballero-camisetas"), LineaCatalogo.ROPA);
     Producto producto =
         Producto.crear(
             "Pantaloneta running",
@@ -218,7 +218,7 @@ class CrearPedidoTest {
   private void publicarProductoConVarianteYExistencia(int existencia) {
     Marca marca = Marca.crear("TecnoSport");
     Categoria categoria =
-        Categoria.crear("Ropa deportiva", new Slug("ropa-deportiva"), LineaCatalogo.ROPA);
+        Categoria.crear("Camisetas", new Slug("ropa-caballero-camisetas"), LineaCatalogo.ROPA);
     Producto producto =
         Producto.crear(
             "Camiseta running Dry-Fit",
@@ -878,7 +878,7 @@ class CrearPedidoTest {
   void productoSinPublicarLanzaVarianteNoEncontrada() {
     Marca marca = Marca.crear("TecnoSport");
     Categoria categoria =
-        Categoria.crear("Ropa deportiva", new Slug("ropa-deportiva"), LineaCatalogo.ROPA);
+        Categoria.crear("Camisetas", new Slug("ropa-caballero-camisetas"), LineaCatalogo.ROPA);
     Producto productoEnBorrador =
         Producto.crear(
             "Camiseta sin publicar", new Slug("camiseta-sin-publicar"), "", marca, categoria);

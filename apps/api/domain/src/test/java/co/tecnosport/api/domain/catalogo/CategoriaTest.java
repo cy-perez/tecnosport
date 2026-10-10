@@ -14,7 +14,8 @@ class CategoriaTest {
 
   @Test
   void guardaLaLineaDelCatalogo() {
-    Categoria categoria = Categoria.crear("Bolsos", new Slug("bolsos"), LineaCatalogo.BOLSOS);
+    Categoria categoria =
+        Categoria.crear("Morrales", new Slug("bolsos-dama-morrales"), LineaCatalogo.BOLSOS);
 
     assertEquals(LineaCatalogo.BOLSOS, categoria.linea());
   }
@@ -65,7 +66,7 @@ class CategoriaTest {
   @Test
   void renombrarNoSeLlevaLasEtiquetas() {
     Categoria categoria =
-        Categoria.crear("Camisas", new Slug("camisas"), LineaCatalogo.ROPA)
+        Categoria.crear("Camisas", new Slug("ropa-dama-camisas"), LineaCatalogo.ROPA)
             .conHashtags(List.of(new Hashtag("Camisas")));
 
     Categoria renombrada = categoria.renombrada("Camisas de vestir", new Slug("camisas-de-vestir"));
@@ -77,7 +78,7 @@ class CategoriaTest {
   void moverDeSitioTampoco() {
     Categoria padre = Categoria.crear("Caballero", new Slug("ropa-caballero"), LineaCatalogo.ROPA);
     Categoria categoria =
-        Categoria.crear("Camisas", new Slug("camisas"), LineaCatalogo.TECNOLOGIA)
+        Categoria.crear("Camisas", new Slug("ropa-dama-camisas"), LineaCatalogo.TECNOLOGIA)
             .conHashtags(List.of(new Hashtag("Camisas")));
 
     Categoria movida = categoria.movidaBajo(Optional.of(padre), LineaCatalogo.ROPA);

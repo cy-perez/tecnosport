@@ -31,7 +31,8 @@ class ConfirmarImagenPrincipalTest {
 
   private Producto productoDePrueba() {
     Marca marca = Marca.crear("TecnoSport");
-    Categoria categoria = Categoria.crear("Bolsos", new Slug("bolsos"), LineaCatalogo.BOLSOS);
+    Categoria categoria =
+        Categoria.crear("Morrales", new Slug("bolsos-dama-morrales"), LineaCatalogo.BOLSOS);
     return Producto.crear("Morral urbano", new Slug("morral-urbano"), "", marca, categoria);
   }
 

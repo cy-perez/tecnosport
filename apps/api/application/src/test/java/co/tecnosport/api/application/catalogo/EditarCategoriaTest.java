@@ -76,7 +76,8 @@ class EditarCategoriaTest {
   @Test
   void moverUnaCategoriaBajoOtraLeCambiaLaLinea() {
     Categoria dama = Categoria.crear("Dama", new Slug("bolsos-dama"), LineaCatalogo.BOLSOS);
-    Categoria sueltas = Categoria.crear("Morrales", new Slug("morrales"), LineaCatalogo.TECNOLOGIA);
+    Categoria sueltas =
+        Categoria.crear("Morrales", new Slug("bolsos-dama-morrales"), LineaCatalogo.TECNOLOGIA);
     repositorio.conCategorias(dama, sueltas);
 
     Categoria movida =

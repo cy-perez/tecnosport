@@ -6,7 +6,7 @@ describe('hayFiltrosActivos', () => {
   });
 
   it.each<[string, FiltroProductos]>([
-    ['categoría', { categoria: 'bolsos' }],
+    ['categoría', { categoria: 'bolsos-dama-morrales' }],
     ['marca', { marca: 'm1' }],
     ['línea', { linea: 'BOLSOS' }],
     ['texto', { texto: 'morral' }],

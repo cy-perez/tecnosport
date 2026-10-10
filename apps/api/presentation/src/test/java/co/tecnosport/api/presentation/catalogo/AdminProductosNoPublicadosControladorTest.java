@@ -49,7 +49,7 @@ class AdminProductosNoPublicadosControladorTest {
             new Slug("morral-urbano"),
             "",
             Marca.crear("TecnoSport"),
-            Categoria.crear("Bolsos", new Slug("bolsos"), LineaCatalogo.BOLSOS));
+            Categoria.crear("Morrales", new Slug("bolsos-dama-morrales"), LineaCatalogo.BOLSOS));
     productos.conProductos(morral);
     noPublicados.ids.clear();
     noPublicados.ids.add(morral.id());

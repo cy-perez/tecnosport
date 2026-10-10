@@ -84,7 +84,7 @@ class RepositorioProductosJpaTest {
   @Test
   void buscarPorSlugHidrataUnProductoCompletoConAtributosEImagenesYSetDeRotacion() {
     MarcaJpaEntity marca = marca("TecnoSport");
-    CategoriaJpaEntity categoria = categoria("Ropa deportiva", "ropa-deportiva-t1", "ROPA");
+    CategoriaJpaEntity categoria = categoria("Camisetas", "ropa-caballero-camisetas-t1", "ROPA");
     AtributoJpaEntity color = atributo("Color", "COLOR");
     ProductoJpaEntity producto =
         producto("Camiseta test", "camiseta-test-1", "PUBLICADO", marca, categoria);
@@ -129,7 +129,7 @@ class RepositorioProductosJpaTest {
     // Recapturar un producto deja dos sets a la vez: el que ya se ve y el que se está armando.
     // Antes de este filtro, el borrador podía ganar y la ficha se quedaba sin visor.
     MarcaJpaEntity marca = marca("TecnoSport");
-    CategoriaJpaEntity categoria = categoria("Bolsos", "bolsos-t9", "BOLSOS");
+    CategoriaJpaEntity categoria = categoria("Morrales", "bolsos-dama-morrales-t9", "BOLSOS");
     ProductoJpaEntity producto =
         producto("Morral recapturado", "morral-t9", "PUBLICADO", marca, categoria);
     variante(producto, "SKU-T9", "150000");
@@ -207,7 +207,7 @@ class RepositorioProductosJpaTest {
   @Test
   void elSirveHastaDeUnaTallaUnicaVaYVuelve() {
     MarcaJpaEntity marca = marca("Genérica");
-    CategoriaJpaEntity categoria = categoria("Bodis", "bodis-t2", "ROPA");
+    CategoriaJpaEntity categoria = categoria("Bodis", "ropa-dama-bodis-t2", "ROPA");
     producto("Bodi herraje", "bodi-herraje-t2", "BORRADOR", marca, categoria);
     Producto bodi = repositorio.buscarPorSlug(new Slug("bodi-herraje-t2")).orElseThrow();
 
@@ -227,7 +227,7 @@ class RepositorioProductosJpaTest {
   @Test
   void buscarPorSlugDevuelveUnProductoEnBorrador() {
     MarcaJpaEntity marca = marca("TecnoSport");
-    CategoriaJpaEntity categoria = categoria("Bolsos", "bolsos-t2", "BOLSOS");
+    CategoriaJpaEntity categoria = categoria("Morrales", "bolsos-dama-morrales-t2", "BOLSOS");
     producto("Morral en borrador", "morral-borrador-t2", "BORRADOR", marca, categoria);
 
     Optional<Producto> encontrado = repositorio.buscarPorSlug(new Slug("morral-borrador-t2"));
@@ -264,8 +264,8 @@ class RepositorioProductosJpaTest {
   @Test
   void buscarFiltraPorCategoriaYPorLinea() {
     MarcaJpaEntity marca = marca("TecnoSport");
-    CategoriaJpaEntity ropa = categoria("Ropa deportiva", "ropa-deportiva-t4", "ROPA");
-    CategoriaJpaEntity bolsos = categoria("Bolsos", "bolsos-t4", "BOLSOS");
+    CategoriaJpaEntity ropa = categoria("Camisetas", "ropa-caballero-camisetas-t4", "ROPA");
+    CategoriaJpaEntity bolsos = categoria("Morrales", "bolsos-dama-morrales-t4", "BOLSOS");
     ProductoJpaEntity productoRopa =
         producto("Camiseta t4", "camiseta-t4", "PUBLICADO", marca, ropa);
     variante(productoRopa, "SKU-T4-ROPA", "90000");
@@ -278,7 +278,8 @@ class RepositorioProductosJpaTest {
     entityManager.flush();
     ResultadoPaginado<Producto> porCategoria =
         repositorio.buscar(
-            new FiltroProductos(new Slug("ropa-deportiva-t4"), null, null, null, null, null),
+            new FiltroProductos(
+                new Slug("ropa-caballero-camisetas-t4"), null, null, null, null, null),
             OrdenProductos.MAS_RECIENTES,
             null,
             10);
@@ -302,7 +303,7 @@ class RepositorioProductosJpaTest {
   @Test
   void buscarPaginaConCursorSinRepetirNiSaltarProductos() {
     MarcaJpaEntity marca = marca("TecnoSport");
-    CategoriaJpaEntity categoria = categoria("Bolsos", "bolsos-t5", "BOLSOS");
+    CategoriaJpaEntity categoria = categoria("Morrales", "bolsos-dama-morrales-t5", "BOLSOS");
     List<String> slugs = List.of("morral-t5-barato", "morral-t5-medio", "morral-t5-caro");
     List<String> precios = List.of("100000", "200000", "300000");
     for (int i = 0; i < slugs.size(); i++) {
@@ -337,7 +338,7 @@ class RepositorioProductosJpaTest {
   @Test
   void buscarConTextoEncuentraPorSimilitudAunqueNoSeaSubstringExacto() {
     MarcaJpaEntity marca = marca("TecnoSport");
-    CategoriaJpaEntity categoria = categoria("Ropa deportiva", "ropa-deportiva-t6", "ROPA");
+    CategoriaJpaEntity categoria = categoria("Camisetas", "ropa-caballero-camisetas-t6", "ROPA");
     ProductoJpaEntity camiseta =
         producto("Camiseta running Dry-Fit", "camiseta-t6", "PUBLICADO", marca, categoria);
     variante(camiseta, "SKU-T6-CAM", "89900");
@@ -390,7 +391,7 @@ class RepositorioProductosJpaTest {
   @Test
   void guardarInsertaUnProductoNuevoYQuedaLegibleParaBuscarPorSlug() {
     MarcaJpaEntity marca = marca("TecnoSport");
-    CategoriaJpaEntity categoria = categoria("Bolsos", "bolsos-t9", "BOLSOS");
+    CategoriaJpaEntity categoria = categoria("Morrales", "bolsos-dama-morrales-t9", "BOLSOS");
 
     Producto producto =
         Producto.crear(
@@ -399,7 +400,11 @@ class RepositorioProductosJpaTest {
             "Descripción",
             new Marca(marca.getId(), "TecnoSport"),
             new Categoria(
-                categoria.getId(), "Bolsos", new Slug("bolsos-t9"), LineaCatalogo.BOLSOS, null));
+                categoria.getId(),
+                "Morrales",
+                new Slug("bolsos-dama-morrales-t9"),
+                LineaCatalogo.BOLSOS,
+                null));
 
     repositorio.guardar(producto);
 
@@ -415,7 +420,7 @@ class RepositorioProductosJpaTest {
   @Test
   void guardarLaImagenPrincipalGuardaSusTresVariantesYVuelvenOrdenadas() {
     MarcaJpaEntity marca = marca("TecnoSport");
-    CategoriaJpaEntity categoria = categoria("Bolsos", "bolsos-v1", "BOLSOS");
+    CategoriaJpaEntity categoria = categoria("Morrales", "bolsos-dama-morrales-v1", "BOLSOS");
     ProductoJpaEntity producto = producto("Morral v1", "morral-v1", "PUBLICADO", marca, categoria);
 
     repositorio.guardarImagenPrincipal(
@@ -455,7 +460,7 @@ class RepositorioProductosJpaTest {
   @Test
   void reemplazarLaImagenPrincipalSeLlevaLasVariantesDeLaAnterior() {
     MarcaJpaEntity marca = marca("TecnoSport");
-    CategoriaJpaEntity categoria = categoria("Bolsos", "bolsos-v2", "BOLSOS");
+    CategoriaJpaEntity categoria = categoria("Morrales", "bolsos-dama-morrales-v2", "BOLSOS");
     ProductoJpaEntity producto = producto("Morral v2", "morral-v2", "PUBLICADO", marca, categoria);
 
     repositorio.guardarImagenPrincipal(
@@ -488,7 +493,7 @@ class RepositorioProductosJpaTest {
   @Test
   void buscarPorIdDevuelveUnProductoEnCualquierEstado() {
     MarcaJpaEntity marca = marca("TecnoSport");
-    CategoriaJpaEntity categoria = categoria("Bolsos", "bolsos-t10", "BOLSOS");
+    CategoriaJpaEntity categoria = categoria("Morrales", "bolsos-dama-morrales-t10", "BOLSOS");
     ProductoJpaEntity borrador = producto("Morral t10", "morral-t10", "BORRADOR", marca, categoria);
 
     Optional<Producto> encontrado = repositorio.buscarPorId(borrador.getId());
@@ -505,7 +510,8 @@ class RepositorioProductosJpaTest {
   @Test
   void actualizarCambiaLosDatosBasicosYConservaCreadoEnPeroActualizaActualizadoEn() {
     MarcaJpaEntity marcaOriginal = marca("TecnoSport");
-    CategoriaJpaEntity categoriaOriginal = categoria("Bolsos", "bolsos-t11", "BOLSOS");
+    CategoriaJpaEntity categoriaOriginal =
+        categoria("Morrales", "bolsos-dama-morrales-t11", "BOLSOS");
     ProductoJpaEntity entidadOriginal =
         producto("Morral t11", "morral-t11", "BORRADOR", marcaOriginal, categoriaOriginal);
     MarcaJpaEntity nuevaMarca = marca("Under Trail");
@@ -561,7 +567,7 @@ class RepositorioProductosJpaTest {
   @Test
   void agregarVarianteLaPersisteConSusAtributosYQuedaLegibleAlHidratarElProducto() {
     MarcaJpaEntity marca = marca("TecnoSport");
-    CategoriaJpaEntity categoria = categoria("Ropa deportiva", "ropa-deportiva-t12", "ROPA");
+    CategoriaJpaEntity categoria = categoria("Camisetas", "ropa-caballero-camisetas-t12", "ROPA");
     ProductoJpaEntity productoJpa =
         producto("Camiseta t12", "camiseta-t12", "BORRADOR", marca, categoria);
     AtributoJpaEntity colorJpa = atributo("Color", "COLOR");
@@ -734,7 +740,7 @@ class RepositorioProductosJpaTest {
   @Test
   void existeVarianteConSkuDistingueEntreExistenteEInexistente() {
     MarcaJpaEntity marca = marca("TecnoSport");
-    CategoriaJpaEntity categoria = categoria("Bolsos", "bolsos-t13", "BOLSOS");
+    CategoriaJpaEntity categoria = categoria("Morrales", "bolsos-dama-morrales-t13", "BOLSOS");
     ProductoJpaEntity productoJpa =
         producto("Morral t13", "morral-t13", "BORRADOR", marca, categoria);
     variante(productoJpa, "TS-MOR-T13", "150000");
@@ -746,7 +752,7 @@ class RepositorioProductosJpaTest {
   @Test
   void guardarImagenPrincipalInsertaLaPrimeraYLuegoReemplazaSinDuplicarFila() {
     MarcaJpaEntity marca = marca("TecnoSport");
-    CategoriaJpaEntity categoria = categoria("Bolsos", "bolsos-t14", "BOLSOS");
+    CategoriaJpaEntity categoria = categoria("Morrales", "bolsos-dama-morrales-t14", "BOLSOS");
     ProductoJpaEntity productoJpa =
         producto("Morral t14", "morral-t14", "BORRADOR", marca, categoria);
     ImagenProducto primera =
@@ -787,7 +793,7 @@ class RepositorioProductosJpaTest {
   @Test
   void guardarImagenDeGaleriaAcumulaEnVezDeReemplazarYQuedaLegibleAlHidratar() {
     MarcaJpaEntity marca = marca("TecnoSport");
-    CategoriaJpaEntity categoria = categoria("Bolsos", "bolsos-t20", "BOLSOS");
+    CategoriaJpaEntity categoria = categoria("Morrales", "bolsos-dama-morrales-t20", "BOLSOS");
     ProductoJpaEntity productoJpa =
         producto("Morral t20", "morral-t20", "BORRADOR", marca, categoria);
     imagenPrincipal(productoJpa);
@@ -811,7 +817,7 @@ class RepositorioProductosJpaTest {
   @Test
   void elIntercambioDePrincipalQuedaGrabadoYSeVuelveALeer() {
     MarcaJpaEntity marca = marca("TecnoSport");
-    CategoriaJpaEntity categoria = categoria("Bolsos", "bolsos-t23", "BOLSOS");
+    CategoriaJpaEntity categoria = categoria("Morrales", "bolsos-dama-morrales-t23", "BOLSOS");
     ProductoJpaEntity productoJpa =
         producto("Morral t23", "morral-t23", "BORRADOR", marca, categoria);
     imagenPrincipal(productoJpa);
@@ -841,7 +847,7 @@ class RepositorioProductosJpaTest {
   @Test
   void elColorDeUnaFotoDeLaGaleriaVaYVuelve() {
     MarcaJpaEntity marca = marca("Genérica");
-    CategoriaJpaEntity categoria = categoria("Bodis", "bodis-t22", "ROPA");
+    CategoriaJpaEntity categoria = categoria("Bodis", "ropa-dama-bodis-t22", "ROPA");
     ProductoJpaEntity productoJpa = producto("Bodi t22", "bodi-t22", "BORRADOR", marca, categoria);
     VarianteJpaEntity vino = variante(productoJpa, "PRV-T22-VINO", "60000");
     ImagenProducto foto = imagenDeGaleria(0, 22);
@@ -871,7 +877,7 @@ class RepositorioProductosJpaTest {
   @Test
   void laGaleriaSeHidrataOrdenadaAunqueLasFilasSeHayanInsertadoAlReves() {
     MarcaJpaEntity marca = marca("TecnoSport");
-    CategoriaJpaEntity categoria = categoria("Bolsos", "bolsos-t21", "BOLSOS");
+    CategoriaJpaEntity categoria = categoria("Morrales", "bolsos-dama-morrales-t21", "BOLSOS");
     ProductoJpaEntity productoJpa =
         producto("Morral t21", "morral-t21", "BORRADOR", marca, categoria);
 
@@ -887,7 +893,7 @@ class RepositorioProductosJpaTest {
   @Test
   void eliminarImagenDeGaleriaBorraSoloEsaFila() {
     MarcaJpaEntity marca = marca("TecnoSport");
-    CategoriaJpaEntity categoria = categoria("Bolsos", "bolsos-t22", "BOLSOS");
+    CategoriaJpaEntity categoria = categoria("Morrales", "bolsos-dama-morrales-t22", "BOLSOS");
     ProductoJpaEntity productoJpa =
         producto("Morral t22", "morral-t22", "BORRADOR", marca, categoria);
     ImagenProducto primera = imagenDeGaleria(0, 11);
@@ -906,7 +912,7 @@ class RepositorioProductosJpaTest {
   @Test
   void eliminarImagenDeGaleriaNoBorraLaDeOtroProducto() {
     MarcaJpaEntity marca = marca("TecnoSport");
-    CategoriaJpaEntity categoria = categoria("Bolsos", "bolsos-t23", "BOLSOS");
+    CategoriaJpaEntity categoria = categoria("Morrales", "bolsos-dama-morrales-t23", "BOLSOS");
     ProductoJpaEntity uno = producto("Morral t23", "morral-t23", "BORRADOR", marca, categoria);
     ProductoJpaEntity otro = producto("Morral t24", "morral-t24", "BORRADOR", marca, categoria);
     ImagenProducto delOtro = imagenDeGaleria(0, 13);
@@ -921,7 +927,7 @@ class RepositorioProductosJpaTest {
   @Test
   void guardarOrdenDeGaleriaCambiaElOrdenDeLasFilasQueYaEstaban() {
     MarcaJpaEntity marca = marca("TecnoSport");
-    CategoriaJpaEntity categoria = categoria("Bolsos", "bolsos-t25", "BOLSOS");
+    CategoriaJpaEntity categoria = categoria("Morrales", "bolsos-dama-morrales-t25", "BOLSOS");
     ProductoJpaEntity productoJpa =
         producto("Morral t25", "morral-t25", "BORRADOR", marca, categoria);
     ImagenProducto primera = imagenDeGaleria(0, 21);
@@ -953,7 +959,7 @@ class RepositorioProductosJpaTest {
   @Test
   void reordenarNoTocaLaFechaDeCreacionDeLasImagenes() {
     MarcaJpaEntity marca = marca("TecnoSport");
-    CategoriaJpaEntity categoria = categoria("Bolsos", "bolsos-t26", "BOLSOS");
+    CategoriaJpaEntity categoria = categoria("Morrales", "bolsos-dama-morrales-t26", "BOLSOS");
     ProductoJpaEntity productoJpa =
         producto("Morral t26", "morral-t26", "BORRADOR", marca, categoria);
     ImagenProducto primera = imagenDeGaleria(0, 24);
@@ -1101,7 +1107,7 @@ class RepositorioProductosJpaTest {
   @Test
   void eliminarNoTocaOtrosProductos() {
     MarcaJpaEntity marca = marca("Marca vecina");
-    CategoriaJpaEntity categoria = categoria("Bolsos", "bolsos-vecino", "BOLSOS");
+    CategoriaJpaEntity categoria = categoria("Morrales", "bolsos-dama-morrales-vecino", "BOLSOS");
     ProductoJpaEntity victima =
         producto("El que se borra", "el-que-se-borra", "BORRADOR", marca, categoria);
     variante(victima, "SKU-VICTIMA", "100000");
@@ -1270,7 +1276,8 @@ class RepositorioProductosJpaTest {
   @Test
   void laMuestraDeUnaCombinacionVaYVuelve() {
     MarcaJpaEntity marca = marca("TecnoSport");
-    CategoriaJpaEntity categoria = categoria("Bolsos", "bolsos-t-muestra", "BOLSOS");
+    CategoriaJpaEntity categoria =
+        categoria("Morrales", "bolsos-dama-morrales-t-muestra", "BOLSOS");
     ProductoJpaEntity productoJpa =
         producto("Bolso t-muestra", "bolso-t-muestra", "BORRADOR", marca, categoria);
     AtributoJpaEntity colorJpa = atributo("Color", "COLOR");
@@ -1310,7 +1317,7 @@ class RepositorioProductosJpaTest {
   @Test
   void unAtributoAgregadoAUnaVarianteQueYaExisteVaYVuelveSinTocarLosDemas() {
     MarcaJpaEntity marca = marca("TecnoSport");
-    CategoriaJpaEntity categoria = categoria("Conjuntos", "conjuntos-t-color", "ROPA");
+    CategoriaJpaEntity categoria = categoria("Conjuntos", "ropa-dama-conjuntos-t-color", "ROPA");
     ProductoJpaEntity productoJpa =
         producto("Conjunto t-color", "conjunto-t-color", "BORRADOR", marca, categoria);
     AtributoJpaEntity colorJpa = atributo("Color", "COLOR");
@@ -1342,7 +1349,7 @@ class RepositorioProductosJpaTest {
   @Test
   void reemplazarUnAtributoCambiaSuValorSinTocarLosDemasNiOtrasVariantes() {
     MarcaJpaEntity marca = marca("TecnoSport");
-    CategoriaJpaEntity categoria = categoria("Conjuntos", "conjuntos-t-talla", "ROPA");
+    CategoriaJpaEntity categoria = categoria("Conjuntos", "ropa-dama-conjuntos-t-talla", "ROPA");
     ProductoJpaEntity productoJpa =
         producto("Conjunto t-talla", "conjunto-t-talla", "BORRADOR", marca, categoria);
     AtributoJpaEntity colorJpa = atributo("Color", "COLOR");

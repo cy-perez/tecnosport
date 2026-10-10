@@ -17,8 +17,8 @@ function productoDePrueba(): Producto {
     marca: { id: '1', nombre: 'TecnoSport' },
     categoria: {
       id: 'c1',
-      nombre: 'Bolsos',
-      slug: 'bolsos',
+      nombre: 'Morrales',
+      slug: 'bolsos-dama-morrales',
       linea: 'BOLSOS',
       padreId: null,
       hashtags: [],

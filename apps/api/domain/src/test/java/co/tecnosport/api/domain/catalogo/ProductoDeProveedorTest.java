@@ -24,7 +24,8 @@ class ProductoDeProveedorTest {
   private static final UUID PROVEEDOR = UUID.randomUUID();
   private static final Marca MARCA = new Marca(UUID.randomUUID(), "Genérica");
   private static final Categoria CATEGORIA =
-      Categoria.crear("Bolsos de mano", new Slug("bolsos-de-mano"), LineaCatalogo.BOLSOS);
+      Categoria.crear(
+          "Bolsos de mano", new Slug("bolsos-dama-bolsos-de-mano"), LineaCatalogo.BOLSOS);
   private static final HuellaProveedor HUELLA =
       HuellaProveedor.calcular(PROVEEDOR, "Bolso de dama mediano", Dinero.deCop(53000));
 

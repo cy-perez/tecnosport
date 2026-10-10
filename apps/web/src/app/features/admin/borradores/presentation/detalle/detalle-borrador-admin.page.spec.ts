@@ -39,7 +39,7 @@ const MARCA: Marca = { id: 'm1', nombre: 'Genérica' };
 const CATEGORIA: Categoria = {
   id: 'c1',
   nombre: 'Bolsos de mano',
-  slug: 'bolsos-de-mano',
+  slug: 'bolsos-dama-bolsos-de-mano',
   linea: 'BOLSOS',
   padreId: null,
   hashtags: [],

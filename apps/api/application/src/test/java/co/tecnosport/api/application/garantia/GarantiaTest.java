@@ -128,7 +128,7 @@ class GarantiaTest {
    */
   @Test
   void radicarUnaGarantiaRadicaTambienSuSolicitudDeAtencion() {
-    ReclamacionGarantia reclamacion = radicar("ropa-deportiva");
+    ReclamacionGarantia reclamacion = radicar("ropa-caballero-camisetas");
 
     SolicitudAtencion solicitud = solicitudes.buscarPorId(reclamacion.solicitudId()).orElseThrow();
     assertEquals(TipoSolicitud.GARANTIA, solicitud.tipo());
@@ -141,7 +141,7 @@ class GarantiaTest {
 
   @Test
   void elTerminoSaleDeLaCategoriaYNoDeUnaConstante() {
-    ReclamacionGarantia ropa = radicar("ropa-deportiva");
+    ReclamacionGarantia ropa = radicar("ropa-caballero-camisetas");
 
     assertEquals(12, ropa.mesesDeTermino().orElseThrow());
     assertEquals(VigenciaGarantia.CUBIERTA, ropa.vigencia());
@@ -162,7 +162,7 @@ class GarantiaTest {
 
   @Test
   void reclamarLaGarantiaDeAlgoQueNoSeComproEnEsePedidoFalla() {
-    Pedido pedido = sembrarPedido("ropa-deportiva");
+    Pedido pedido = sembrarPedido("ropa-caballero-camisetas");
 
     assertThrows(
         LineaNoEsDelPedidoException.class,
@@ -180,7 +180,7 @@ class GarantiaTest {
    */
   @Test
   void resolverCierraTambienLaSolicitudDeAtencion() {
-    ReclamacionGarantia reclamacion = radicar("ropa-deportiva");
+    ReclamacionGarantia reclamacion = radicar("ropa-caballero-camisetas");
 
     resolvedor(RECLAMO.plusSeconds(86_400))
         .ejecutar(
@@ -201,7 +201,7 @@ class GarantiaTest {
 
   @Test
   void reponerNoDejaConstanciaDeDineroPorqueNoSaleDinero() {
-    ReclamacionGarantia reclamacion = radicar("ropa-deportiva");
+    ReclamacionGarantia reclamacion = radicar("ropa-caballero-camisetas");
 
     resolvedor(RECLAMO.plusSeconds(86_400))
         .ejecutar(
@@ -227,7 +227,7 @@ class GarantiaTest {
    */
   @Test
   void resolverConReintegroSinMontoNiMedioPideLosDatosEnVezDeReventar() {
-    ReclamacionGarantia reclamacion = radicar("ropa-deportiva");
+    ReclamacionGarantia reclamacion = radicar("ropa-caballero-camisetas");
 
     assertThrows(
         ReintegroRequeridoException.class, () -> resolverConReintegro(reclamacion, null, null));
@@ -257,7 +257,7 @@ class GarantiaTest {
   /** La tercera salida deja la misma constancia que los otros cuatro caminos, con su motivo. */
   @Test
   void devolverElDineroDejaUnReintegroConMotivoGarantia() {
-    ReclamacionGarantia reclamacion = radicar("ropa-deportiva");
+    ReclamacionGarantia reclamacion = radicar("ropa-caballero-camisetas");
 
     resolvedor(RECLAMO.plusSeconds(86_400))
         .ejecutar(
@@ -290,7 +290,7 @@ class GarantiaTest {
    */
   @Test
   void unaGarantiaNoDevuelveLoQueOtroCaminoYaDevolvio() {
-    ReclamacionGarantia reclamacion = radicar("ropa-deportiva");
+    ReclamacionGarantia reclamacion = radicar("ropa-caballero-camisetas");
     reintegros.guardar(
         Reintegro.registrar(
             reclamacion.pedidoId(),
@@ -330,7 +330,7 @@ class GarantiaTest {
   @Test
   void unaGarantiaFueraDeTerminoSePuedeResolverIgual() {
     Instant muyTarde = ZonedDateTime.of(2028, 1, 1, 10, 0, 0, 0, ZonaDelNegocio.ZONA).toInstant();
-    Pedido pedido = sembrarPedido("ropa-deportiva");
+    Pedido pedido = sembrarPedido("ropa-caballero-camisetas");
     ReclamacionGarantia reclamacion =
         radicador(muyTarde)
             .ejecutar(

@@ -23,11 +23,18 @@ Sí entra:
   Tecnología    celulares · tablets · relojes · audífonos · consolas de videojuegos ·
                 computadores · proyectores · parlantes
   Ropa          Dama      → camisas, blusas, busos, pantalones, faldas, shorts, bodis,
-                            licras, sudaderas
-                Caballero → camisetas, busos, sudaderas, pantalonetas
+                            licras, sudaderas, jeans, conjuntos
+                Caballero → camisetas, busos, sudaderas, pantalonetas, jeans, conjuntos
   Calzado       Dama · Caballero · Unisex
   Bolsos        Dama      → bolsos de mano, manos libres, morrales
+                Caballero → morrales
   ```
+
+  Este bloque se quedó atrás dos veces antes de corregirse el 10 de octubre de 2026: le
+  faltaban los jeans que `V75` colgó de las dos ramas de ropa y la rama Caballero que
+  `V64` abrió en bolsos. Que el documento liste el árbol y `ArbolDeCategoriasTest` lo
+  afirme no es duplicar: la prueba protege la base, no la prosa. Cuando el árbol cambie,
+  los dos se tocan en el mismo commit.
 
   Las ocho de tecnología son **exactamente** las que la skill `listas-de-proveedor`
   publica, y eso no se sostiene solo: lo afirma `CategoriasDeTecnologiaTest`. El árbol

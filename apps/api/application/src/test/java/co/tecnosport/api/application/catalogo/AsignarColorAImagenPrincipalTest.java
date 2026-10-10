@@ -35,7 +35,7 @@ class AsignarColorAImagenPrincipalTest {
           new Slug("bodi-herraje"),
           "",
           Marca.crear("Genérica"),
-          Categoria.crear("Bodis", new Slug("bodis"), LineaCatalogo.ROPA));
+          Categoria.crear("Bodis", new Slug("ropa-dama-bodis"), LineaCatalogo.ROPA));
   private final Variante vino =
       Variante.crear(
           new Sku("PRV-VINO"), Dinero.deCop(60000), BigDecimal.ZERO, null, null, List.of());

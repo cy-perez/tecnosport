@@ -126,7 +126,8 @@ class AdminProductoControladorTest {
   @Test
   void crearDevuelve201ConElProductoEnBorrador() throws Exception {
     Marca marca = Marca.crear("TecnoSport");
-    Categoria categoria = Categoria.crear("Bolsos", new Slug("bolsos"), LineaCatalogo.BOLSOS);
+    Categoria categoria =
+        Categoria.crear("Morrales", new Slug("bolsos-dama-morrales"), LineaCatalogo.BOLSOS);
     repositorioMarcas.conMarcas(marca);
     repositorioCategorias.conCategorias(categoria);
 
@@ -147,7 +148,8 @@ class AdminProductoControladorTest {
 
   @Test
   void crearConMarcaInexistenteDevuelve404() throws Exception {
-    Categoria categoria = Categoria.crear("Bolsos", new Slug("bolsos"), LineaCatalogo.BOLSOS);
+    Categoria categoria =
+        Categoria.crear("Morrales", new Slug("bolsos-dama-morrales"), LineaCatalogo.BOLSOS);
     repositorioCategorias.conCategorias(categoria);
 
     mockMvc
@@ -165,7 +167,8 @@ class AdminProductoControladorTest {
   @Test
   void crearConNombreVacioDevuelve422() throws Exception {
     Marca marca = Marca.crear("TecnoSport");
-    Categoria categoria = Categoria.crear("Bolsos", new Slug("bolsos"), LineaCatalogo.BOLSOS);
+    Categoria categoria =
+        Categoria.crear("Morrales", new Slug("bolsos-dama-morrales"), LineaCatalogo.BOLSOS);
     repositorioMarcas.conMarcas(marca);
     repositorioCategorias.conCategorias(categoria);
 
@@ -229,7 +232,8 @@ class AdminProductoControladorTest {
   @Test
   void editarConIdInexistenteDevuelve404() throws Exception {
     Marca marca = Marca.crear("TecnoSport");
-    Categoria categoria = Categoria.crear("Bolsos", new Slug("bolsos"), LineaCatalogo.BOLSOS);
+    Categoria categoria =
+        Categoria.crear("Morrales", new Slug("bolsos-dama-morrales"), LineaCatalogo.BOLSOS);
     repositorioMarcas.conMarcas(marca);
     repositorioCategorias.conCategorias(categoria);
 
@@ -855,7 +859,8 @@ class AdminProductoControladorTest {
 
   private static Producto productoEnBorrador() {
     Marca marca = Marca.crear("TecnoSport");
-    Categoria categoria = Categoria.crear("Bolsos", new Slug("bolsos"), LineaCatalogo.BOLSOS);
+    Categoria categoria =
+        Categoria.crear("Morrales", new Slug("bolsos-dama-morrales"), LineaCatalogo.BOLSOS);
     Producto producto =
         Producto.crear("Morral urbano", new Slug("morral-urbano"), "", marca, categoria);
     assert producto.estado() == EstadoProducto.BORRADOR;

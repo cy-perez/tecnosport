@@ -137,7 +137,8 @@ class ProductoControladorTest {
 
   private static Producto productoPublicado() {
     Marca marca = Marca.crear("TecnoSport");
-    Categoria categoria = Categoria.crear("Bolsos", new Slug("bolsos"), LineaCatalogo.BOLSOS);
+    Categoria categoria =
+        Categoria.crear("Morrales", new Slug("bolsos-dama-morrales"), LineaCatalogo.BOLSOS);
     Producto producto =
         Producto.crear("Morral urbano", new Slug("morral-urbano"), "", marca, categoria);
     producto.asignarImagenPrincipal(

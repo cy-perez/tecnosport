@@ -42,7 +42,7 @@ class AgregarVarianteTest {
   private Producto productoDePrueba() {
     Marca marca = Marca.crear("TecnoSport");
     Categoria categoria =
-        Categoria.crear("Ropa deportiva", new Slug("ropa-deportiva"), LineaCatalogo.ROPA);
+        Categoria.crear("Camisetas", new Slug("ropa-caballero-camisetas"), LineaCatalogo.ROPA);
     return Producto.crear(
         "Camiseta running Dry-Fit", new Slug("camiseta-running-dry-fit"), "", marca, categoria);
   }

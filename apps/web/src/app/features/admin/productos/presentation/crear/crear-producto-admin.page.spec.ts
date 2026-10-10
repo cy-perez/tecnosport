@@ -35,8 +35,8 @@ import { CrearProductoAdminPage } from './crear-producto-admin.page';
 const MARCA: Marca = { id: 'm1', nombre: 'TecnoSport' };
 const CATEGORIA: Categoria = {
   id: 'c1',
-  nombre: 'Bolsos',
-  slug: 'bolsos',
+  nombre: 'Morrales',
+  slug: 'bolsos-dama-morrales',
   linea: 'BOLSOS',
   padreId: null,
   hashtags: [],
@@ -211,16 +211,15 @@ describe('CrearProductoAdminPage', () => {
   });
 
   /**
-   * La categoría se ofrece con su **ruta** desde el 24 de septiembre de 2026 —"Bolsos › Bolsos"
-   * aquí, porque el doble monta una hoja de primer nivel llamada igual que su línea—, y no con el
-   * nombre a secas. Sin la ruta el desplegable tiene entradas que no se distinguen: "Busos" está
-   * bajo Dama y bajo Caballero, y "Dama" en tres líneas.
+   * La categoría se ofrece con su **ruta** desde el 24 de septiembre de 2026 —"Bolsos › Morrales"
+   * aquí—, y no con el nombre a secas. Sin la ruta el desplegable tiene entradas que no se
+   * distinguen: "Busos" está bajo Dama y bajo Caballero, y "Dama" en tres líneas.
    */
   it('carga las opciones de marca y categoría, la categoría con su ruta', async () => {
     await renderPagina(new RepositorioProductosAdminFalso());
 
     expect(await screen.findByRole('option', { name: 'TecnoSport' })).toBeTruthy();
-    expect(screen.getByRole('option', { name: 'Bolsos › Bolsos' })).toBeTruthy();
+    expect(screen.getByRole('option', { name: 'Bolsos › Morrales' })).toBeTruthy();
   });
 
   it('al enviar exitosamente, crea el producto y navega a la lista', async () => {

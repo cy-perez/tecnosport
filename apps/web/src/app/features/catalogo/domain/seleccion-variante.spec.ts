@@ -30,8 +30,8 @@ function productoDePrueba(variantes: Variante[]): Producto {
     marca: { id: '1', nombre: 'TecnoSport' },
     categoria: {
       id: 'c1',
-      nombre: 'Ropa',
-      slug: 'ropa',
+      nombre: 'Camisetas',
+      slug: 'ropa-caballero-camisetas',
       linea: 'ROPA',
       padreId: null,
       hashtags: [],
