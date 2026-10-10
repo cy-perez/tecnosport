@@ -1417,6 +1417,15 @@
       "preciosAdicionales": "Otros precios del anuncio",
       "preciosAdicionalesAyuda": "Acompañantes, combos y promociones por cantidad. No se publican: son para que sepas qué ofrece el proveedor.",
       "precioAdicional": "{{concepto}}: {{precio}}"
+    },
+    "mover": {
+      "etiqueta": "Mover la foto {{numero}} a otro borrador",
+      "sinMover": "Dejarla aquí",
+      "opcion": "Borrador {{numero}} de esta publicación: {{titulo}}",
+      "sinTitulo": "sin título",
+      "hecho": "La foto pasó a otro borrador.",
+      "abrir": "Abrir ese borrador",
+      "error": "No se pudo mover la foto. Intenta de nuevo."
     }
   },
   "referencias_envio": {

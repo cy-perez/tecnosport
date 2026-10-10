@@ -118,8 +118,10 @@ async function renderPagina(
   borrador: Borrador = borradorDePrueba(),
   fotos: FotoBorrador[] = [fotoDePrueba('f-1'), fotoDePrueba('f-2')],
   textos: string[] = ['Bolso tote 53.000 sirve hasta L', 'Disponible en negro y café'],
+  hermanos: { id: string; titulo: string }[] = [],
 ) {
   const repositorio = new RepositorioBorradoresAdminFalso([borrador], fotos, textos);
+  repositorio.hermanos = hermanos;
   const resultado = await render(DetalleBorradorAdminPage, {
     imports: [
       TranslocoTestingModule.forRoot({
@@ -1002,6 +1004,40 @@ describe('DetalleBorradorAdminPage', () => {
 
       expect(await screen.findByText(sep.faltanFotos)).toBeTruthy();
       expect(repositorio.particiones).toEqual([]);
+    });
+
+    it('mueve una foto a otro borrador de la publicación y enlaza el destino', async () => {
+      const mov = esAdmin.borradores.mover;
+      const { repositorio } = await renderPagina(
+        borradorDePrueba(),
+        [fotoDePrueba('f-1'), fotoDePrueba('f-2')],
+        undefined,
+        [
+          { id: 'b-jean', titulo: 'Jean baggy' },
+          { id: 'b-otro', titulo: '' },
+        ],
+      );
+
+      const selector = (await screen.findByLabelText(
+        'Mover la foto 2 a otro borrador',
+      )) as HTMLSelectElement;
+      expect([...selector.options].map((o) => o.textContent?.trim())).toEqual([
+        mov.sinMover,
+        'Borrador 1 de esta publicación: Jean baggy',
+        'Borrador 2 de esta publicación: sin título',
+      ]);
+      fireEvent.change(selector, { target: { value: 'b-jean' } });
+
+      expect(await screen.findByRole('link', { name: mov.abrir })).toBeTruthy();
+      expect(repositorio.movidas).toEqual([{ id: 'b-1', mensajeId: 'f-2', destinoId: 'b-jean' }]);
+      await vi.waitFor(() => expect(screen.getAllByRole('img')).toHaveLength(1));
+    });
+
+    it('sin otros borradores en la publicación no ofrece mover', async () => {
+      await renderPagina();
+
+      await screen.findByText('Bolso tote 53.000 sirve hasta L');
+      expect(screen.queryByLabelText('Mover la foto 1 a otro borrador')).toBeNull();
     });
 
     it('con una sola foto no ofrece separar', async () => {

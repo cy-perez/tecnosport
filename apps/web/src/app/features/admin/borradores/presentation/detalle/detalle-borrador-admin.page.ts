@@ -45,6 +45,7 @@ import {
   usarDescartarFotoBorrador,
   usarEditarBorrador,
   usarEliminarBorrador,
+  usarMoverFotoBorrador,
   usarPartirBorrador,
   usarRechazarBorrador,
   usarSubirFotoBorrador,
@@ -169,6 +170,7 @@ export class DetalleBorradorAdminPage {
   private readonly descartarFoto = usarDescartarFotoBorrador();
   private readonly subirFoto = usarSubirFotoBorrador();
   private readonly partir = usarPartirBorrador();
+  private readonly mover = usarMoverFotoBorrador();
 
   protected readonly borrador = computed<Borrador | null>(
     () => this.consulta.data()?.borrador ?? null,
@@ -204,6 +206,12 @@ export class DetalleBorradorAdminPage {
   protected readonly borrando = computed(() => this.eliminar.isPending());
   protected readonly descartandoFoto = computed(() => this.descartarFoto.isPending());
   protected readonly partiendo = computed(() => this.partir.isPending());
+  protected readonly moviendoFoto = computed(() => this.mover.isPending());
+  /** Los otros borradores en revisión de la publicación: a donde se puede mover una foto. */
+  protected readonly hermanos = computed(() => this.consulta.data()?.hermanos ?? []);
+  /** El borrador al que pasó la última foto movida, para enlazarlo desde el aviso. */
+  protected readonly fotoMovida = signal<string | null>(null);
+  protected readonly errorMover = signal<string | null>(null);
   /** Cualquiera de las tres en vuelo bloquea las otras dos: el servidor solo admite una. */
   private readonly decidiendo = computed(
     () => this.aprobando() || this.rechazando() || this.borrando(),
@@ -477,6 +485,8 @@ export class DetalleBorradorAdminPage {
       this.errorEliminarFoto.set(null);
       this.fotoEliminada.set(false);
       this.separando.set(false);
+      this.fotoMovida.set(null);
+      this.errorMover.set(null);
       this.fotosASeparar.set(new Set());
       this.errorSeparar.set(null);
       this.borradorSeparado.set(null);
@@ -753,6 +763,49 @@ export class DetalleBorradorAdminPage {
     this.principalMarcada.set(mensajeId);
     this.enfocarDespuesDePintar(() =>
       this.host.nativeElement.querySelector<HTMLElement>('#incluir-foto-' + indice),
+    );
+  }
+
+  /** Los hermanos como opciones, por su lugar en la publicación: los títulos suelen repetirse. */
+  protected readonly opcionesMover = computed<OpcionSelect[]>(() => {
+    const traducir = this.traducir();
+    return this.hermanos().map((hermano, i) => ({
+      valor: hermano.id,
+      etiqueta: traducir('admin.borradores.mover.opcion', {
+        numero: i + 1,
+        titulo: hermano.titulo || traducir('admin.borradores.mover.sinTitulo'),
+      }),
+    }));
+  });
+
+  /**
+   * Pasa la foto a otro borrador de la publicación. La foto se va de la lista con el selector que
+   * la movió adentro: el foco va al aviso, que enlaza el borrador de destino.
+   */
+  protected moverFoto(mensajeId: string, destinoId: string): void {
+    if (!destinoId || this.moviendoFoto()) {
+      return;
+    }
+    this.errorMover.set(null);
+    this.mover.mutate(
+      { id: this.id(), mensajeId, destinoId },
+      {
+        onSuccess: () => {
+          this.olvidarFoto(mensajeId);
+          this.prendas.update((actual) => olvidarFotoDePrendas(actual, mensajeId));
+          if (this.principalMarcada() === mensajeId) {
+            this.principalMarcada.set(null);
+          }
+          this.fotoEliminada.set(false);
+          this.borradorSeparado.set(null);
+          this.fotoMovida.set(destinoId);
+          this.enfocarDespuesDePintar(() => this.avisoFotosRef()?.nativeElement);
+        },
+        onError: (error: unknown) =>
+          this.errorMover.set(
+            mensajeDeError(error, this.transloco, 'admin.borradores.mover.error'),
+          ),
+      },
     );
   }
 

@@ -87,6 +87,7 @@ export function aBorradorDetalle(dto: BorradorDetalleDto): BorradorDetalle {
     borrador: aBorrador(dto.borrador ?? {}),
     fotos: (dto.fotos ?? []).map(aFoto),
     textos: dto.textos ?? [],
+    hermanos: (dto.hermanos ?? []).map((h) => ({ id: h.id, titulo: h.titulo ?? '' })),
   };
 }
 

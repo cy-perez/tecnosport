@@ -54,6 +54,9 @@ export class RepositorioBorradoresAdminFalso implements RepositorioBorradoresAdm
   readonly fotosDescartadas: { id: string; mensajeId: string }[] = [];
   readonly fotosSubidas: { id: string; archivo: File }[] = [];
   readonly particiones: { id: string; fotos: readonly string[] }[] = [];
+  readonly movidas: { id: string; mensajeId: string; destinoId: string }[] = [];
+  /** Los otros borradores de la publicación que devuelve `obtener`. */
+  hermanos: { id: string; titulo: string }[] = [];
   /** Por nombre de archivo: si se pone, subir ese revienta con esto. */
   readonly fallosAlSubir = new Map<string, unknown>();
   /** Si se pone, `eliminar` revienta con esto: el 409 de un borrador que no se borra. */
@@ -83,7 +86,7 @@ export class RepositorioBorradoresAdminFalso implements RepositorioBorradoresAdm
     if (!borrador) {
       throw new Error('no existe');
     }
-    return { borrador, fotos: this.fotos, textos: this.textos };
+    return { borrador, fotos: this.fotos, textos: this.textos, hermanos: this.hermanos };
   }
 
   async editar(id: string, cambios: EditarBorrador): Promise<Borrador> {
@@ -136,6 +139,12 @@ export class RepositorioBorradoresAdminFalso implements RepositorioBorradoresAdm
     this.borradores = [...this.borradores, nuevo];
     this.fotos = this.fotos.filter((foto) => !fotos.includes(foto.mensajeId));
     return nuevo;
+  }
+
+  /** Como el servidor: la foto deja de verse en este borrador. */
+  async moverFoto(id: string, mensajeId: string, destinoId: string): Promise<void> {
+    this.movidas.push({ id, mensajeId, destinoId });
+    this.fotos = this.fotos.filter((foto) => foto.mensajeId !== mensajeId);
   }
 
   async eliminar(id: string): Promise<void> {

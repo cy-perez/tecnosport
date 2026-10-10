@@ -179,11 +179,20 @@ export function fotoAdmitida(archivo: File): boolean {
   return TIPOS_DE_FOTO_ADMITIDOS.includes(archivo.type);
 }
 
+/** Otro borrador en revisión de la misma publicación: a donde se puede mover una foto. */
+export interface HermanoBorrador {
+  readonly id: string;
+  /** Vacío si la extracción no le dio título. */
+  readonly titulo: string;
+}
+
 export interface BorradorDetalle {
   readonly borrador: Borrador;
   readonly fotos: readonly FotoBorrador[];
   /** Los textos de la publicación tal como los escribió el proveedor, en orden. */
   readonly textos: readonly string[];
+  /** El otro producto del conjunto, los otros diseños del álbum; vacío si no hay. */
+  readonly hermanos: readonly HermanoBorrador[];
 }
 
 export interface BorradoresPaginados {

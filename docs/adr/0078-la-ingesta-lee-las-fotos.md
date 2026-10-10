@@ -110,9 +110,17 @@ fotos, el «set falda + básica», el dúo, la promoción por cantidad.
   `IngestaRealContraVerdadTest` (`integracion-externa`), que pasa los zips de `ingesta/` por el
   código real y los compara con `ingesta/verdad.json`, escrito a mano a partir de las fotos. Ni los
   zips ni la verdad se versionan.
-- Lo que el reparto todavía no hace:
-  - **Una foto de otra publicación no se suma a un borrador que ya existe.** La camiseta 261002 de
-    Violeta sale como acompañante en dos publicaciones, y la segunda se descarta por la misma
-    referencia en revisión, como antes. Sumarla obligaría a que un borrador tenga fotos de dos
-    publicaciones.
-  - **Mover una foto entre dos borradores ya existentes** no está: está partir.
+- **Fotos de otra publicación (10 de octubre de 2026, `V99`).** Cuando una referencia ya espera
+  revisión, la publicación que la repite se sigue descartando —un segundo borrador chocaría al
+  aprobar—, pero sus fotos con el código impreso se suman al borrador existente: todas, si la
+  publicación es de un solo producto; con varios o en un álbum, solo las que llevan su código o
+  su SKU. Es el caso de la camiseta 261002 de Violeta, que sale con el jogger a las 10:35 y con la
+  bermuda a las 11:01. El borrador las guarda en `fotos_agregadas` y las lee por id desde
+  cualquier lote. Si ese lote se borra, la foto deja de verse sin romper el borrador.
+- **Mover una foto entre borradores** (`POST /admin/borradores/{id}/fotos/{mensajeId}/mover`).
+  En el origen la foto se descarta y su huella visual se olvida. En el destino se recupera si es de
+  su misma publicación, o se suma como foto agregada si no. Los dos borradores tienen que estar en
+  revisión y ser del mismo proveedor, y las fotos subidas desde el panel no se mueven. El panel
+  solo ofrece como destino los otros borradores de la misma publicación (`hermanos`): el otro
+  producto del conjunto o los otros diseños del álbum. Mover a otra publicación está en la API,
+  pero sin interfaz.

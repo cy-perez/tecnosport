@@ -122,6 +122,17 @@ export class BorradoresAdminHttpRepositorio implements RepositorioBorradoresAdmi
     return aBorrador(desempaquetar(respuesta, 'no se pudo partir el borrador'));
   }
 
+  async moverFoto(id: string, mensajeId: string, destinoId: string): Promise<void> {
+    const respuesta = await this.cliente.POST(
+      '/api/v1/admin/borradores/{id}/fotos/{mensajeId}/mover',
+      {
+        params: { path: { id, mensajeId } },
+        body: { destinoId },
+      },
+    );
+    exigirExito(respuesta, 'no se pudo mover la foto');
+  }
+
   async eliminar(id: string): Promise<void> {
     const respuesta = await this.cliente.DELETE('/api/v1/admin/borradores/{id}', {
       params: { path: { id } },

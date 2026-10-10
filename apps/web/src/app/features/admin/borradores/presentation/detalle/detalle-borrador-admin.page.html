@@ -146,6 +146,14 @@
       @if (fotoEliminada()) {
         {{ 'admin.borradores.eliminarFoto.hecho' | transloco }}
       }
+      @if (fotoMovida(); as destino) {
+        {{ 'admin.borradores.mover.hecho' | transloco }}
+        <a
+          class="anillo-foco text-ts-primario"
+          [routerLink]="['/', idioma(), 'admin', 'borradores', destino]"
+          >{{ 'admin.borradores.mover.abrir' | transloco }}</a
+        >
+      }
       @if (borradorSeparado(); as separado) {
         {{ 'admin.borradores.separar.hecho' | transloco: { cantidad: separado.fotos } }}
         <a
@@ -155,6 +163,9 @@
         >
       }
     </p>
+    @if (errorMover(); as mensaje) {
+      <p class="m-0 mb-8 text-ts-error" role="alert">{{ mensaje }}</p>
+    }
     @if (fotos().length === 0) {
       <p class="mb-24 text-ts-texto-suave">
         {{
@@ -289,6 +300,16 @@
                 [placeholder]="'admin.borradores.aprobar.sinPrenda' | transloco"
                 [valor]="prendaDe(foto.mensajeId)"
                 (cambio)="moverAPrenda(foto.mensajeId, $event)"
+              />
+            }
+            @if (editable() && foto.origen === 'PROVEEDOR' && hermanos().length > 0) {
+              <ts-select
+                [idCampo]="'mover-foto-' + i"
+                [label]="'admin.borradores.mover.etiqueta' | transloco: { numero: i + 1 }"
+                [opciones]="opcionesMover()"
+                [placeholder]="'admin.borradores.mover.sinMover' | transloco"
+                valor=""
+                (cambio)="moverFoto(foto.mensajeId, $event)"
               />
             }
           </li>

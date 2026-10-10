@@ -38,6 +38,11 @@ export interface RepositorioBorradoresAdmin {
    * fotos juntó dos productos en uno.
    */
   partir(id: string, fotos: readonly string[]): Promise<Borrador>;
+  /**
+   * Pasa una foto del proveedor a otro borrador: en este se descarta, y en el otro se recupera o
+   * se suma. Las subidas desde el panel no se mueven.
+   */
+  moverFoto(id: string, mensajeId: string, destinoId: string): Promise<void>;
   /** Sin vuelta atrás: el borrador, la publicación, los mensajes y las fotos del bucket. */
   eliminar(id: string): Promise<void>;
   /** Cuántos hay en revisión o rechazados: lo que borraría `eliminarSinAprobar`. */

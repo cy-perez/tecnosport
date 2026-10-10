@@ -1417,6 +1417,15 @@
       "preciosAdicionales": "Other prices in the listing",
       "preciosAdicionalesAyuda": "Add-ons, bundles and bulk deals. They aren't published: they're there so you know what the supplier offers.",
       "precioAdicional": "{{concepto}}: {{precio}}"
+    },
+    "mover": {
+      "etiqueta": "Move photo {{numero}} to another draft",
+      "sinMover": "Keep it here",
+      "opcion": "Draft {{numero}} of this listing: {{titulo}}",
+      "sinTitulo": "untitled",
+      "hecho": "The photo moved to another draft.",
+      "abrir": "Open that draft",
+      "error": "The photo couldn't be moved. Try again."
     }
   },
   "referencias_envio": {
