@@ -39,6 +39,10 @@ fotos, el «set falda + básica», el dúo, la promoción por cantidad.
    - los colores de lo que se vende (no de lo que ambienta),
    - una etiqueta de diseño.
 
+   La petición va con `temperature: 0`: sin ella, el lector leyó distinto las mismas fotos en
+   corridas seguidas. Haiku 4.5 admite los parámetros de muestreo; los modelos desde Opus 4.7 los
+   rechazan con un 400, así que cambiar de modelo obliga a revisarlo.
+
    Va aparte porque falla aparte: si la lectura falla, la publicación sigue como antes —todas las
    fotos para todos— y no se pierde. Eso vale para cualquier fallo, no solo los del lector: el
    bucket que no responde a mitad de la lectura tampoco sale de ahí. Si saliera, cerraría el lote
@@ -49,24 +53,24 @@ fotos, el «set falda + básica», el dúo, la promoción por cantidad.
    - **Varios productos con código.** Una foto va al producto cuya referencia impresa es la del
      texto. La que muestra varias es de todas, y la que no muestra ninguna también. Si a un
      producto no le toca ninguna foto, se queda con todas.
-   - **Un texto y un álbum de diseños.** Cada grupo de fotos del mismo diseño es un producto, con
-     el texto y el precio del anuncio y las tallas del pie. Estos productos no cuentan para el tope
-     de cinco del 2 de octubre, que es de productos escritos en el texto. Además:
-     - El SKU del pie es su referencia solo si todas sus fotos traen el mismo: la falda con un SKU
-       por color no tiene una referencia.
-     - Un diseño no hereda el código que el texto le dio al anuncio, y un SKU repetido en dos
-       diseños no identifica a ninguno. Con la misma referencia, los diseños 2 a N se descartaban
-       y sus fotos quedaban perdidas en el primero.
-     - Una foto que el lector no leyó —sin archivo, ilegible, o que el modelo no devolvió— no es
-       un diseño: es de todos. Antes salía como un borrador basura.
-     - Un diseño que el lector separó sin ningún pie impreso lleva `CONFIANZA_BAJA`.
-     - **Dos fotos que el lector juntó se separan si muestran el mismo color con SKU distintos**:
-       dos vistas de la misma prenda no llevan dos SKU. La primera corrida contra la verdad lo
-       mostró: el lector juntaba los diez jeans azules de las 19:19 en tres «diseños». Sin SKU
-       no se separa nada.
-     - **Del pie con dos bloques vale el de la fecha más reciente**, y lo decide el dominio: el
-       lector devuelve todos los bloques. Cuando se lo pedíamos al modelo, tomó el SKU viejo en
-       las trece fotos de un álbum.
+   - **Un texto y un álbum (La Riverah): un producto por SKU** (decidido el 10 de octubre de
+     2026). Cada SKU del pie impreso es una prenda que el proveedor vende aparte, con sus propias
+     tallas, y es lo único del álbum que no cambia de una corrida del lector a otra. Primero se
+     agrupó por la etiqueta de diseño del lector, para que un diseño en varios colores fuera un
+     producto. Tres corridas seguidas contra `ingesta/verdad.json` mostraron que el lector junta
+     y separa distinto los mismos jeans y bermudas cada vez: los diez jeans de las 19:19 salieron
+     como 3, como 1 y como 10 productos. El costo de esta regla: un diseño en seis colores con un
+     SKU por color son seis productos, y una falda con un SKU por color son dos.
+     - Las fotos sin SKU se agrupan por la etiqueta del lector y llevan `CONFIANZA_BAJA`.
+     - Dos SKU distintos impresos hacen álbum aunque el lector diga que no lo es.
+     - Un producto no hereda el código que el texto le dio al anuncio.
+     - Una foto que el lector no leyó —sin archivo, ilegible o que el modelo no devolvió— es de
+       todos los productos. Antes salía como un borrador basura.
+     - Del pie con dos bloques vale el de la fecha más reciente, y lo decide el dominio: el lector
+       devuelve todos los bloques. Cuando se lo pedíamos al modelo, tomó el SKU viejo en las trece
+       fotos de un álbum.
+     - Estos productos no cuentan para el tope de cinco del 2 de octubre, que es de productos
+       escritos en el texto.
    - **Una foto de un solo color** sugiere ese color. El panel lo propone al aprobar, y las fotos
      del mismo color quedan como una prenda. La consolidada no sugiere nada: vale para todas.
 3. **Las fotos ajenas nacen descartadas** en el borrador (`fotos_descartadas`): el mismo mecanismo

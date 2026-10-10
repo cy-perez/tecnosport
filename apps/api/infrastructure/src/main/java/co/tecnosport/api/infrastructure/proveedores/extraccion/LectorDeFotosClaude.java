@@ -117,6 +117,11 @@ public final class LectorDeFotosClaude implements LectorDeFotos {
     ObjectNode cuerpo = json.createObjectNode();
     cuerpo.put("model", llamada.modelo());
     cuerpo.put("max_tokens", maxTokens);
+    // Temperatura 0: en tres corridas seguidas contra la verdad el lector leyó distinto las
+    // mismas fotos (10 de octubre de 2026). Haiku 4.5 admite los parámetros de muestreo; los
+    // modelos desde Opus 4.7 los rechazan con un 400, así que cambiar de modelo obliga a revisar
+    // esta línea.
+    cuerpo.put("temperature", 0);
     cuerpo.put("system", promptDeSistema);
     ObjectNode mensaje = cuerpo.putArray("messages").addObject();
     mensaje.put("role", "user");

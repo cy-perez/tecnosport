@@ -119,11 +119,6 @@ public record LecturaDeFotos(boolean albumDeDisenos, List<LecturaDeFoto> fotos, 
       return Optional.ofNullable(sku);
     }
 
-    /** El único color a la venta que muestra la foto; vacío si muestra varios o ninguno. */
-    public Optional<String> colorUnico() {
-      return colores.size() == 1 ? Optional.of(colores.getFirst()) : Optional.empty();
-    }
-
     /** Si la foto muestra la referencia, compactada igual que la del texto. */
     public boolean muestra(String codigo) {
       return codigo != null && codigos.contains(normalizarCodigo(codigo));

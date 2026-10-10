@@ -120,7 +120,7 @@ class RepartoDeFotosTest {
   }
 
   @Test
-  void elAlbumDeLaRiverahSeParteEnUnProductoPorDisenoConLasTallasYElSkuDelPie() {
+  void elAlbumDeLaRiverahDaUnProductoPorSkuConLasTallasDeSuPie() {
     ProductoExtraido camisetas =
         producto("Camiseta oversize para caballero", TipoProductoProveedor.CAMISETA, null);
     LecturaDeFotos lectura =
@@ -135,7 +135,7 @@ class RepartoDeFotosTest {
     List<ProductoRepartido> repartidos =
         RepartoDeFotos.repartir(List.of(camisetas), List.of(F1, F2, F3), lectura);
 
-    assertEquals(2, repartidos.size());
+    assertEquals(3, repartidos.size());
     ProductoRepartido primero = repartidos.get(0);
     assertEquals(List.of(F1), primero.fotos());
     assertEquals(Set.of(F2, F3), primero.reparto().ajenas());
@@ -144,12 +144,15 @@ class RepartoDeFotosTest {
     assertEquals(Optional.of(F1), primero.exclusivaOpcional());
     assertEquals("{\"album\":true}", primero.reparto().lecturaCruda());
 
-    // El mismo diseño en dos colores: un producto, y sin SKU porque no todas sus fotos lo traen.
-    ProductoRepartido segundo = repartidos.get(1);
-    assertEquals(List.of(F2, F3), segundo.fotos());
-    assertEquals(Optional.empty(), segundo.producto().codigoReferenciaOpcional());
-    assertEquals(Map.of(F2, "gris", F3, "gris oscuro"), segundo.reparto().tonosSugeridos());
-    assertEquals(Respaldo.TEXTO_IMPRESO, segundo.respaldo());
+    // El lector dice que la tercera es el mismo diseño que la segunda en otro color, pero la
+    // segunda trae su SKU y la tercera no: cada SKU es un producto, y la que no trae ninguno se
+    // agrupa por su diseño, sin respaldo impreso.
+    assertEquals(List.of(F2), repartidos.get(1).fotos());
+    assertEquals(Optional.of("RV102336"), repartidos.get(1).producto().codigoReferenciaOpcional());
+    assertEquals(Respaldo.TEXTO_IMPRESO, repartidos.get(1).respaldo());
+    assertEquals(List.of(F3), repartidos.get(2).fotos());
+    assertEquals(Optional.empty(), repartidos.get(2).producto().codigoReferenciaOpcional());
+    assertEquals(Respaldo.DISENO_SIN_PIE, repartidos.get(2).respaldo());
   }
 
   /**
@@ -192,11 +195,12 @@ class RepartoDeFotosTest {
   }
 
   /**
-   * Con el código del texto, o con el mismo SKU, los diseños 2..N tendrían la misma huella que el
-   * primero y se descartarían por «la misma referencia», con sus fotos perdidas en el primero.
+   * Con el código del texto, los diseños 2..N tendrían la misma huella que el primero y se
+   * descartarían por «la misma referencia», con sus fotos perdidas en el primero. Dos fotos con el
+   * mismo SKU son el mismo producto, aunque el lector les ponga diseños distintos.
    */
   @Test
-  void unDisenoNoHeredaElCodigoDelTextoYUnSkuRepetidoNoIdentificaANinguno() {
+  void unDisenoNoHeredaElCodigoDelTextoYElMismoSkuEsElMismoProducto() {
     ProductoExtraido jeans = producto("Jean importado", TipoProductoProveedor.PANTALON, "REF123");
     LecturaDeFotos lectura =
         new LecturaDeFotos(
@@ -212,17 +216,20 @@ class RepartoDeFotosTest {
         RepartoDeFotos.repartir(List.of(jeans), List.of(F1, F2, F3, F4), lectura);
 
     assertEquals(
-        List.of(Optional.empty(), Optional.empty(), Optional.empty(), Optional.of("RV7")),
+        List.of(List.of(F1), List.of(F2, F3), List.of(F4)),
+        repartidos.stream().map(ProductoRepartido::fotos).toList());
+    assertEquals(
+        List.of(Optional.empty(), Optional.of("RV9"), Optional.of("RV7")),
         repartidos.stream().map(r -> r.producto().codigoReferenciaOpcional()).toList());
   }
 
   /**
-   * Los jeans de las 19:19 del 9 de octubre de 2026: el lector juntó en un «diseño» cinco jeans
-   * distintos, cuatro de ellos azules, cada uno con su SKU. Dos fotos del mismo color con SKU
-   * distintos no son vistas de la misma prenda: son dos productos.
+   * Los jeans de las 19:19 del 9 de octubre de 2026: en tres corridas contra la verdad, el lector
+   * juntó de maneras distintas diez jeans con diez SKU. Con un producto por SKU (decidido el 10 de
+   * octubre de 2026) da igual cómo los agrupe.
    */
   @Test
-  void dosFotosDelMismoColorConSkuDistintoSonDosProductosAunqueElLectorLasJunte() {
+  void cadaSkuEsUnProductoAunqueElLectorLosJunte() {
     UUID f5 = UUID.randomUUID();
     ProductoExtraido jeans = producto("Jean licrado", TipoProductoProveedor.PANTALON, null);
     LecturaDeFotos lectura =
@@ -240,13 +247,15 @@ class RepartoDeFotosTest {
         RepartoDeFotos.repartir(List.of(jeans), List.of(F1, F2, F3, F4, f5), lectura);
 
     assertEquals(
-        List.of(List.of(F1, F2), List.of(F3), List.of(F4), List.of(f5)),
+        List.of(List.of(F1), List.of(F2), List.of(F3), List.of(F4), List.of(f5)),
         repartidos.stream().map(ProductoRepartido::fotos).toList());
+    assertEquals(Tallas.lista(List.of("32")), repartidos.get(1).producto().tallas());
   }
 
   /**
    * El lector dijo que no era un álbum, pero el pie trae un SKU por foto: los diez jeans de las
-   * 19:19 en la segunda corrida contra la verdad. La falda con un SKU por color sigue siendo una.
+   * 19:19 en la segunda corrida contra la verdad. Y la falda con un SKU por color son dos
+   * productos: es el costo de un producto por SKU.
    */
   @Test
   void dosSkuDistintosImpresosHacenAlbumAunqueElLectorDigaQueNo() {
@@ -268,9 +277,9 @@ class RepartoDeFotosTest {
             "{}");
 
     assertEquals(
-        2,
+        3,
         RepartoDeFotos.repartir(List.of(jeans), List.of(F1, F2, F3), noEsAlbumDiceElLector).size());
-    assertEquals(1, RepartoDeFotos.repartir(List.of(jeans), List.of(F1, F2), falda).size());
+    assertEquals(2, RepartoDeFotos.repartir(List.of(jeans), List.of(F1, F2), falda).size());
   }
 
   /** Sin SKU no hay con qué saber que son dos: el mismo color puede ser frente y espalda. */

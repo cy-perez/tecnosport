@@ -133,6 +133,8 @@ class LectorDeFotosClaudeTest {
         .isEqualTo("image/jpeg");
     assertThat(contenido.get(3).path("text").asString()).isEqualTo("Foto 3");
     assertThat(peticiones.get(0).path("system").asString()).contains("Nunca inventes");
+    assertThat(peticiones.get(0).path("temperature").isNumber()).isTrue();
+    assertThat(peticiones.get(0).path("temperature").asInt(-1)).isZero();
 
     assertThat(lectura).isPresent();
     assertThat(lectura.get().fotos()).hasSize(2);

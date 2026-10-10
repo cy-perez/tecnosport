@@ -2,7 +2,6 @@ package co.tecnosport.api.domain.proveedores;
 
 import co.tecnosport.api.domain.proveedores.LecturaDeFotos.LecturaDeFoto;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -26,18 +25,14 @@ import java.util.UUID;
  *       dos, y la que no muestra ninguna también, porque no hay con qué decidir. Si a un producto
  *       no le toca ninguna foto, ese producto se queda con todas: un borrador sin fotos no se puede
  *       aprobar, y uno con fotos de más se corrige en el panel.
- *   <li><b>Un texto y un álbum de diseños</b> —La Riverah, «Camisetas oversize para caballero» con
- *       trece fotos de trece camisetas—: cada grupo de fotos del mismo diseño es un producto, con
- *       el texto del anuncio y las tallas y el SKU del pie impreso. Un diseño sin SKU impreso se
- *       reparte igual, pero sin respaldo de un texto impreso. Una foto que el lector no leyó —sin
- *       archivo, ilegible, o que el modelo no devolvió— no es un diseño: es de todos, como la foto
- *       sin código del caso de arriba. Un diseño no hereda el código del texto, y un SKU que se
- *       repite en dos diseños no identifica a ninguno: con el mismo código, el segundo se
- *       descartaría por «la misma referencia» y sus fotos quedarían perdidas en el primero. Y
- *       <b>dos fotos que el lector juntó en un diseño se separan si muestran el mismo color con SKU
- *       distintos</b>: dos vistas de la misma prenda no llevan dos SKU. El lector juntaba los diez
- *       jeans azules de un álbum en tres «diseños» (corrida del 10 de octubre de 2026 contra
- *       `ingesta/verdad.json`). Sin SKU impreso no hay con qué separar, y no se separa.
+ *   <li><b>Un texto y un álbum</b> —La Riverah, «Camisetas oversize para caballero» con trece fotos
+ *       de trece camisetas—: <b>cada SKU del pie impreso es un producto</b>, con el texto del
+ *       anuncio y sus tallas ({@link #disenos}); las fotos sin SKU se agrupan por el diseño que vio
+ *       el lector, y uno así lleva {@code CONFIANZA_BAJA}. Una foto que el lector no leyó —sin
+ *       archivo, ilegible, o que el modelo no devolvió— no es un producto: es de todos, como la
+ *       foto sin código del caso de arriba. Un diseño no hereda el código del texto: con el mismo
+ *       código, el segundo se descartaría por «la misma referencia» y sus fotos quedarían perdidas
+ *       en el primero.
  *   <li><b>Lo demás</b>: el reparto de antes, todas las fotos para todos.
  * </ul>
  *
@@ -203,8 +198,7 @@ public final class RepartoDeFotos {
    * Un álbum lo dice el lector o lo dice el pie: dos SKU distintos impresos en las fotos de una
    * publicación de un solo producto son dos cosas que se venden aparte. El modelo dudó con los diez
    * jeans de las 19:19 —en una corrida dijo álbum y en la siguiente no—, y el pie no cambia de una
-   * corrida a otra (10 de octubre de 2026). Si los dos SKU son de dos colores de la misma prenda
-   * —la falda de La Riverah—, la agrupación por diseño los vuelve a juntar.
+   * corrida a otra (10 de octubre de 2026).
    */
   private static boolean esAlbum(LecturaDeFotos lectura) {
     long skus =
@@ -217,70 +211,41 @@ public final class RepartoDeFotos {
   }
 
   /**
-   * Las posiciones agrupadas por diseño, en el orden de su primera foto. Solo las fotos leídas y
-   * con etiqueta: las demás no dicen de qué diseño son ({@link #sinDiseno}).
+   * Las posiciones agrupadas por producto, en el orden de su primera foto. <b>Un producto por
+   * SKU</b> (decidido el 10 de octubre de 2026): cada SKU del pie es una prenda que el proveedor
+   * vende aparte, con sus propias tallas, y es lo único del álbum que no cambia de una corrida del
+   * lector a otra. Agrupar por la etiqueta de diseño juntaba unas veces y otras no los jeans y las
+   * bermudas que se parecen, en tres corridas seguidas contra la verdad. El costo: un diseño en
+   * seis colores con un SKU por color son seis productos. Solo las fotos sin SKU se agrupan por la
+   * etiqueta del lector, y las que no tienen ninguna de las dos no dicen de qué producto son
+   * ({@link #sinDiseno}).
    */
   private static List<List<Integer>> disenos(List<UUID> fotos, LecturaDeFotos lectura) {
-    Map<String, List<Integer>> porEtiqueta = new LinkedHashMap<>();
+    Map<String, List<Integer>> porClave = new LinkedHashMap<>();
     for (int i = 0; i < fotos.size(); i++) {
       int posicion = i;
       lectura
           .deLaFoto(i)
-          .map(LecturaDeFoto::diseno)
-          .map(d -> d.toLowerCase(Locale.ROOT))
+          .flatMap(RepartoDeFotos::claveDeProducto)
           .ifPresent(
-              etiqueta ->
-                  porEtiqueta.computeIfAbsent(etiqueta, e -> new ArrayList<>()).add(posicion));
+              clave -> porClave.computeIfAbsent(clave, c -> new ArrayList<>()).add(posicion));
     }
-    List<List<Integer>> disenos = new ArrayList<>();
-    for (List<Integer> grupo : porEtiqueta.values()) {
-      disenos.addAll(separarLosQueChocan(grupo, lectura));
-    }
-    disenos.sort(Comparator.comparing(List::getFirst));
-    return List.copyOf(disenos);
+    return List.copyOf(porClave.values());
   }
 
-  /**
-   * Parte un grupo del lector en los productos que de verdad son: cada foto va al primer subgrupo
-   * con el que no choca, y choca con uno que ya tiene su mismo color bajo otro SKU.
-   */
-  private static List<List<Integer>> separarLosQueChocan(
-      List<Integer> grupo, LecturaDeFotos lectura) {
-    List<List<Integer>> partes = new ArrayList<>();
-    for (int posicion : grupo) {
-      Optional<LecturaDeFoto> esta = lectura.deLaFoto(posicion);
-      List<Integer> destino =
-          partes.stream()
-              .filter(
-                  parte -> parte.stream().noneMatch(otra -> chocan(esta, lectura.deLaFoto(otra))))
-              .findFirst()
-              .orElse(null);
-      if (destino == null) {
-        destino = new ArrayList<>();
-        partes.add(destino);
-      }
-      destino.add(posicion);
+  /** El SKU del pie si lo hay; si no, la etiqueta de diseño del lector. */
+  private static Optional<String> claveDeProducto(LecturaDeFoto leida) {
+    if (leida.skuOpcional().isPresent()) {
+      return Optional.of("sku:" + leida.sku());
     }
-    return partes;
+    return Optional.ofNullable(leida.diseno()).map(d -> "diseno:" + d.toLowerCase(Locale.ROOT));
   }
 
-  private static boolean chocan(Optional<LecturaDeFoto> una, Optional<LecturaDeFoto> otra) {
-    if (una.isEmpty() || otra.isEmpty()) {
-      return false;
-    }
-    Optional<String> color = una.get().colorUnico();
-    Optional<String> sku = una.get().skuOpcional();
-    return color.isPresent()
-        && sku.isPresent()
-        && color.equals(otra.get().colorUnico())
-        && otra.get().skuOpcional().filter(s -> !s.equals(sku.get())).isPresent();
-  }
-
-  /** Las fotos que el lector no leyó o no etiquetó: en un álbum son de todos los diseños. */
+  /** Las fotos que el lector no leyó, o sin SKU ni etiqueta: en un álbum son de todos. */
   private static List<Integer> sinDiseno(List<UUID> fotos, LecturaDeFotos lectura) {
     List<Integer> sin = new ArrayList<>();
     for (int i = 0; i < fotos.size(); i++) {
-      if (lectura.deLaFoto(i).map(LecturaDeFoto::diseno).isEmpty()) {
+      if (lectura.deLaFoto(i).flatMap(RepartoDeFotos::claveDeProducto).isEmpty()) {
         sin.add(i);
       }
     }
