@@ -31,6 +31,8 @@ import co.tecnosport.api.application.pago.SistecreditoNoEntregoLaUrlDePagoExcept
 import co.tecnosport.api.application.pedido.ContraentregaNoDisponibleException;
 import co.tecnosport.api.application.pedido.MetodoDePagoNoEsTransferenciaManualException;
 import co.tecnosport.api.application.pedido.RetiroEnPuntoNoDisponibleException;
+import co.tecnosport.api.application.proveedores.ArchivoDeIngestaEnUsoException;
+import co.tecnosport.api.application.proveedores.ArchivoDeIngestaNoEncontradoException;
 import co.tecnosport.api.application.proveedores.AtributoDeCatalogoNoDefinidoException;
 import co.tecnosport.api.application.proveedores.BorradorNoEditableException;
 import co.tecnosport.api.application.proveedores.BorradorNoEliminableException;
@@ -200,6 +202,9 @@ class CodigosDeCableTest {
           Map.entry(MarcaConProductosException.class, "MARCA_CON_PRODUCTOS"),
           Map.entry(MarcaNoEncontradaException.class, "MARCA_NO_ENCONTRADA"),
           Map.entry(LoteEnCursoException.class, "LOTE_EN_CURSO"),
+          Map.entry(ArchivoDeIngestaEnUsoException.class, "ARCHIVO_DE_INGESTA_EN_USO"),
+          Map.entry(
+              ArchivoDeIngestaNoEncontradoException.class, "ARCHIVO_DE_INGESTA_NO_ENCONTRADO"),
           Map.entry(LoteEnOtroEstadoException.class, "LOTE_EN_OTRO_ESTADO"),
           Map.entry(MarcaYaExisteException.class, "MARCA_YA_EXISTE"));
 

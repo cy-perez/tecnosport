@@ -61,6 +61,8 @@ import co.tecnosport.api.application.pedido.PedidoNoEncontradoException;
 import co.tecnosport.api.application.pedido.RetiroEnPuntoNoDisponibleException;
 import co.tecnosport.api.application.pedido.SistecreditoNoDisponibleException;
 import co.tecnosport.api.application.pedido.VarianteNoEncontradaException;
+import co.tecnosport.api.application.proveedores.ArchivoDeIngestaEnUsoException;
+import co.tecnosport.api.application.proveedores.ArchivoDeIngestaNoEncontradoException;
 import co.tecnosport.api.application.proveedores.AtributoDeCatalogoNoDefinidoException;
 import co.tecnosport.api.application.proveedores.BorradorNoEditableException;
 import co.tecnosport.api.application.proveedores.BorradorNoEliminableException;
@@ -251,6 +253,17 @@ public class ManejadorDeErrores {
   @ExceptionHandler(LoteEnCursoException.class)
   public ProblemDetail loteEnCurso(LoteEnCursoException excepcion) {
     return problema(HttpStatus.CONFLICT, "La ingesta está en curso", excepcion);
+  }
+
+  @ExceptionHandler(ArchivoDeIngestaEnUsoException.class)
+  public ProblemDetail archivoDeIngestaEnUso(ArchivoDeIngestaEnUsoException excepcion) {
+    return problema(HttpStatus.CONFLICT, "El archivo lo lee una ingesta en curso", excepcion);
+  }
+
+  @ExceptionHandler(ArchivoDeIngestaNoEncontradoException.class)
+  public ProblemDetail archivoDeIngestaNoEncontrado(
+      ArchivoDeIngestaNoEncontradoException excepcion) {
+    return problema(HttpStatus.NOT_FOUND, "Archivo de ingesta no encontrado", excepcion);
   }
 
   @ExceptionHandler(LoteNoEncontradoException.class)

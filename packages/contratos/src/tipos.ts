@@ -436,6 +436,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/ingestas/archivos": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listarArchivos"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/ingestas/archivos/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["borrarArchivo"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/ingestas/{id}": {
         parameters: {
             query?: never;
@@ -2098,6 +2130,31 @@ export interface components {
             /** Format: uuid */
             marcaId?: string;
         };
+        ArchivoDeIngestaRespuesta: {
+            /** Format: date-time */
+            borradoEn?: string;
+            enUso?: boolean;
+            /** Format: uuid */
+            id?: string;
+            /** Format: int32 */
+            lotes?: number;
+            nombreOriginal?: string;
+            /** Format: uuid */
+            proveedorId?: string;
+            /** Format: date-time */
+            subidoEn?: string;
+            /** Format: int64 */
+            tamanoBytes?: number;
+        };
+        ArchivosDeIngestaPaginadosRespuesta: {
+            items?: components["schemas"]["ArchivoDeIngestaRespuesta"][];
+            /** Format: int32 */
+            pagina?: number;
+            /** Format: int64 */
+            totalArchivos?: number;
+            /** Format: int32 */
+            totalPaginas?: number;
+        };
         AsignarColorPeticion: {
             /** Format: uuid */
             varianteId?: string;
@@ -2691,6 +2748,7 @@ export interface components {
             modelosDesaparecidos?: string[];
         };
         IniciarIngestaPeticion: {
+            nombreArchivo?: string;
             objectKey: string;
         };
         IniciarSesionConGoogleRequest: {
@@ -4329,6 +4387,50 @@ export interface operations {
                 content: {
                     "*/*": components["schemas"]["LotesPaginadosRespuesta"];
                 };
+            };
+        };
+    };
+    listarArchivos: {
+        parameters: {
+            query?: {
+                proveedorId?: string;
+                pagina?: number;
+                tamano?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ArchivosDeIngestaPaginadosRespuesta"];
+                };
+            };
+        };
+    };
+    borrarArchivo: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

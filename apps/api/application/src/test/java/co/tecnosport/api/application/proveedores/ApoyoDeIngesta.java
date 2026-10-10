@@ -2,6 +2,7 @@ package co.tecnosport.api.application.proveedores;
 
 import co.tecnosport.api.application.catalogo.UrlFirmada;
 import co.tecnosport.api.domain.catalogo.LineaCatalogo;
+import co.tecnosport.api.domain.proveedores.ArchivoDeIngesta;
 import co.tecnosport.api.domain.proveedores.ChatDelZip;
 import co.tecnosport.api.domain.proveedores.IdExternoDeMensaje;
 import co.tecnosport.api.domain.proveedores.LoteIngesta;
@@ -88,9 +89,63 @@ final class ApoyoDeIngesta {
     }
   }
 
+  /** Los archivos, leyendo de los lotes lo que la base sacaría con una subconsulta. */
+  static final class RepositorioArchivosEnMemoria implements RepositorioArchivosDeIngesta {
+
+    final Map<UUID, ArchivoDeIngesta> porId = new LinkedHashMap<>();
+    private final RepositorioLotesEnMemoria lotes;
+
+    RepositorioArchivosEnMemoria(RepositorioLotesEnMemoria lotes) {
+      this.lotes = lotes;
+    }
+
+    /** Como la base: la key es única, y el segundo con la misma se ignora. */
+    @Override
+    public void guardar(ArchivoDeIngesta archivo) {
+      boolean otraConLaMismaKey =
+          porId.values().stream()
+              .anyMatch(
+                  a -> !a.id().equals(archivo.id()) && a.referencia().equals(archivo.referencia()));
+      if (!otraConLaMismaKey) {
+        porId.put(archivo.id(), archivo);
+      }
+    }
+
+    @Override
+    public Optional<ArchivoDeIngesta> buscarPorId(UUID id) {
+      return Optional.ofNullable(porId.get(id));
+    }
+
+    @Override
+    public ArchivosDeIngestaPaginados listar(UUID proveedorId, int pagina, int tamanoPagina) {
+      List<ArchivoDeIngestaEnLista> items =
+          porId.values().stream()
+              .filter(a -> proveedorId == null || a.proveedorId().equals(proveedorId))
+              .sorted(Comparator.comparing(ArchivoDeIngesta::subidoEn).reversed())
+              .map(
+                  a ->
+                      new ArchivoDeIngestaEnLista(
+                          a, deArchivo(a.referencia()).size(), enUso(a.referencia())))
+              .filter(a -> a.lotes() > 0)
+              .toList();
+      return new ArchivosDeIngestaPaginados(items, 0, 1, items.size());
+    }
+
+    @Override
+    public boolean enUso(String referencia) {
+      return deArchivo(referencia).stream().anyMatch(LoteIngesta::estaAbierto);
+    }
+
+    private List<LoteIngesta> deArchivo(String referencia) {
+      return lotes.porId.values().stream()
+          .filter(l -> l.referenciaArchivo().map(referencia::equals).orElse(false))
+          .toList();
+    }
+  }
+
   static final class RepositorioLotesEnMemoria implements RepositorioLotesIngesta {
 
-    private final Map<UUID, LoteIngesta> porId = new LinkedHashMap<>();
+    final Map<UUID, LoteIngesta> porId = new LinkedHashMap<>();
     int actualizaciones;
 
     /**

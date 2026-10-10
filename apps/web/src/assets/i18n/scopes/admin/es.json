@@ -52,6 +52,8 @@
     "imagen_de_proveedor_ilegible": "Una de las fotos no se pudo procesar. Recházalo o pídele al proveedor la foto de nuevo.",
     "producto_de_proveedor_ya_existe": "Este anuncio ya es un producto del catálogo: es el mismo título al mismo precio. Rechaza el borrador.",
     "lote_en_curso": "La ingesta todavía está en curso o en pausa. Detenla, o espera a que termine, para eliminarla.",
+    "archivo_de_ingesta_en_uso": "Una ingesta que lee este archivo todavía está en curso o en pausa. Espera a que termine, o detenla, para borrarlo.",
+    "archivo_de_ingesta_no_encontrado": "El archivo ya no existe. Recarga la lista.",
     "pago_sin_pedido_ya_devuelto": "Ese pago ya tiene registrada su devolución.",
     "inventario_sin_confirmar": "No hay existencia para todas las líneas: repón y vuelve a intentarlo, o cancela con reintegro.",
     "peso_de_referencia_no_admitido": "Esa categoría no lleva peso de referencia: es de tecnología, que se mide producto por producto, o tiene subcategorías, y el peso va en cada una de ellas.",
@@ -1073,6 +1075,39 @@
         "pausar": "No pudimos pausar la ingesta. Vuelve a intentarlo.",
         "reanudar": "No pudimos reanudar la ingesta. Vuelve a intentarlo.",
         "detener": "No pudimos detener la ingesta. Vuelve a intentarlo."
+      }
+    },
+    "archivos": {
+      "titulo": "Archivos subidos",
+      "enlace": "Ver los archivos subidos",
+      "explicacion": "Los .zip que se han subido para las ingestas. Una vez procesados ya no se vuelven a leer: borrarlos libera el almacenamiento y deja intactas las ingestas, sus borradores y sus fotos. Mientras una ingesta que lo lee siga en curso, el archivo no se puede borrar.",
+      "errorLista": "No se pudo cargar el historial de archivos. Intenta de nuevo.",
+      "total": "{{total}} archivo(s)",
+      "ninguno": "Todavía no se ha subido ningún archivo.",
+      "sinNombre": "Archivo sin nombre",
+      "sinTamano": "Sin dato",
+      "columnas": {
+        "archivo": "Archivo",
+        "tamano": "Tamaño",
+        "lotes": "Ingestas",
+        "estado": "Estado",
+        "acciones": "Acciones"
+      },
+      "estados": {
+        "disponible": "En el almacenamiento",
+        "enUso": "Ingesta en curso",
+        "borrado": "Borrado el {{fecha}}"
+      },
+      "borrar": {
+        "accion": "Borrar",
+        "accionArchivo": "Borrar {{nombre}}",
+        "pregunta": "¿Borrar {{nombre}} del almacenamiento?",
+        "loQueImplica": "Se borra solo el archivo .zip y no se puede recuperar. Las ingestas, sus borradores y sus fotos se quedan como están.",
+        "confirmar": "Sí, borrar",
+        "cancelar": "Cancelar",
+        "borrando": "Borrando…",
+        "hecho": "Se borró {{nombre}} del almacenamiento.",
+        "error": "No se pudo borrar el archivo. Intenta de nuevo."
       }
     }
   },

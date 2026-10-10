@@ -5,6 +5,7 @@ import co.tecnosport.api.application.compartido.EnTransaccionPropia;
 import co.tecnosport.api.application.compartido.Reloj;
 import co.tecnosport.api.application.proveedores.AlmacenDeArchivosDeProveedor;
 import co.tecnosport.api.application.proveedores.ArmarPublicaciones;
+import co.tecnosport.api.application.proveedores.BorrarArchivoDeIngesta;
 import co.tecnosport.api.application.proveedores.CalculadorDePHash;
 import co.tecnosport.api.application.proveedores.CrearProveedor;
 import co.tecnosport.api.application.proveedores.DetenerIngesta;
@@ -23,6 +24,7 @@ import co.tecnosport.api.application.proveedores.ProcesarLoteDeIngesta;
 import co.tecnosport.api.application.proveedores.ReanudarIngesta;
 import co.tecnosport.api.application.proveedores.ReanudarLotesDeIngesta;
 import co.tecnosport.api.application.proveedores.RegistrarMensajesDeProveedor;
+import co.tecnosport.api.application.proveedores.RepositorioArchivosDeIngesta;
 import co.tecnosport.api.application.proveedores.RepositorioLotesIngesta;
 import co.tecnosport.api.application.proveedores.RepositorioMensajesProveedor;
 import co.tecnosport.api.application.proveedores.RepositorioProveedores;
@@ -119,11 +121,18 @@ public class ConfiguracionProveedores {
   public IniciarIngesta iniciarIngesta(
       RepositorioProveedores proveedores,
       RepositorioLotesIngesta lotes,
+      RepositorioArchivosDeIngesta archivos,
       AlmacenDeArchivosDeProveedor almacen,
       Reloj reloj,
       PropiedadesProveedores propiedades) {
     return new IniciarIngesta(
-        proveedores, lotes, almacen, reloj, propiedades.exportacionMaximaBytes());
+        proveedores, lotes, archivos, almacen, reloj, propiedades.exportacionMaximaBytes());
+  }
+
+  @Bean
+  public BorrarArchivoDeIngesta borrarArchivoDeIngesta(
+      RepositorioArchivosDeIngesta archivos, AlmacenDeArchivosDeProveedor almacen, Reloj reloj) {
+    return new BorrarArchivoDeIngesta(archivos, almacen, reloj);
   }
 
   @Bean

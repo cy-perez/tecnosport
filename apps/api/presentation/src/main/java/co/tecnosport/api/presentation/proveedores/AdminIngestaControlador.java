@@ -97,7 +97,8 @@ public class AdminIngestaControlador {
     List<LoteIngesta> lotes =
         transaccion.execute(
             estado ->
-                iniciarIngesta.ejecutarTodos(new IniciarIngestaComando(id, cuerpo.objectKey())));
+                iniciarIngesta.ejecutarTodos(
+                    new IniciarIngestaComando(id, cuerpo.objectKey(), cuerpo.nombreArchivo())));
     // En el orden en que se tienen que procesar: con dos chats en un zip, el de caballero primero.
     // Si la cola está llena, EncolarIngesta cierra el lote con su motivo y relanza (409).
     for (LoteIngesta lote : lotes) {

@@ -52,6 +52,8 @@
     "imagen_de_proveedor_ilegible": "One of the photos could not be processed. Reject it or ask the supplier for the photo again.",
     "producto_de_proveedor_ya_existe": "This post is already a product in the catalogue: same title at the same price. Reject the draft.",
     "lote_en_curso": "The import is still running or paused. Stop it, or wait for it to finish, before deleting it.",
+    "archivo_de_ingesta_en_uso": "An import that reads this file is still running or paused. Wait for it to finish, or stop it, to delete the file.",
+    "archivo_de_ingesta_no_encontrado": "The file no longer exists. Reload the list.",
     "pago_sin_pedido_ya_devuelto": "That payment already has its refund recorded.",
     "inventario_sin_confirmar": "There is no stock for every line: restock and try again, or cancel with a refund.",
     "peso_de_referencia_no_admitido": "That category does not take a reference weight: it is electronics, which is measured product by product, or it has subcategories, and the weight goes on each of them.",
@@ -1073,6 +1075,39 @@
         "pausar": "We couldn't pause the import. Try again.",
         "reanudar": "We couldn't resume the import. Try again.",
         "detener": "We couldn't stop the import. Try again."
+      }
+    },
+    "archivos": {
+      "titulo": "Uploaded files",
+      "enlace": "See uploaded files",
+      "explicacion": "The .zip files uploaded for imports. Once processed they are never read again: deleting them frees storage and leaves the imports, their drafts and their photos untouched. While an import that reads a file is still running, the file cannot be deleted.",
+      "errorLista": "The file history could not be loaded. Try again.",
+      "total": "{{total}} file(s)",
+      "ninguno": "No file has been uploaded yet.",
+      "sinNombre": "Unnamed file",
+      "sinTamano": "No data",
+      "columnas": {
+        "archivo": "File",
+        "tamano": "Size",
+        "lotes": "Imports",
+        "estado": "Status",
+        "acciones": "Actions"
+      },
+      "estados": {
+        "disponible": "In storage",
+        "enUso": "Import running",
+        "borrado": "Deleted on {{fecha}}"
+      },
+      "borrar": {
+        "accion": "Delete",
+        "accionArchivo": "Delete {{nombre}}",
+        "pregunta": "Delete {{nombre}} from storage?",
+        "loQueImplica": "Only the .zip file is deleted, and it cannot be recovered. The imports, their drafts and their photos stay as they are.",
+        "confirmar": "Yes, delete",
+        "cancelar": "Cancel",
+        "borrando": "Deleting…",
+        "hecho": "{{nombre}} was deleted from storage.",
+        "error": "The file could not be deleted. Try again."
       }
     }
   },
