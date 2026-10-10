@@ -27,6 +27,7 @@
     "pareja": "node tools/medir-pareja.mjs",
     "datos-negocio": "node tools/verificar-datos-de-negocio.mjs",
     "categorias": "node tools/verificar-categorias.mjs",
+    "formato": "prettier --check \"tools/**/*.mjs\"",
     "legales-impresos": "node tools/imprimir-legales.mjs",
     "cruce-catalogo": "node tools/cruce-catalogo.mjs",
     "huerfanos": "node tools/huerfanos-bucket.mjs"

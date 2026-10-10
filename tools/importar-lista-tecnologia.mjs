@@ -100,7 +100,9 @@ export function informeDeImportacion(r) {
     lineas.push(...r.sinMargen.map((s) => `  - ${s}`));
   }
   if (r.coloresSinVariante?.length) {
-    lineas.push("La lista trae colores que el producto no tiene; se añaden desde su ficha en el panel:");
+    lineas.push(
+      "La lista trae colores que el producto no tiene; se añaden desde su ficha en el panel:",
+    );
     lineas.push(...r.coloresSinVariante.map((s) => `  - ${s}`));
   }
   return lineas.join("\n");
@@ -167,7 +169,9 @@ async function subirFotos() {
     }
     const { archivos } = fotosDeCarpeta(carpetaDeModelo(borrador.idModelo));
     if (!archivos.length) {
-      console.log(`sin fotos    ${producto.nombre}: no hay "Fotos procesadas" en su carpeta de fichas`);
+      console.log(
+        `sin fotos    ${producto.nombre}: no hay "Fotos procesadas" en su carpeta de fichas`,
+      );
       continue;
     }
     const [principal, ...resto] = archivos;
@@ -214,10 +218,16 @@ const CON_VALOR = new Set(["--proveedor", "--api", "--token"]);
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   const archivo = argv.find((a, i) => !a.startsWith("--") && !CON_VALOR.has(argv[i - 1]));
-  const tarea = FOTOS ? subirFotos() : archivo ? importar(archivo) : Promise.reject(
-    new Error("Uso: importar-lista-tecnologia.mjs <lista-api.json> --proveedor <id> [--escribir]\n" +
-      "     importar-lista-tecnologia.mjs --fotos [--publicar] [--escribir]"),
-  );
+  const tarea = FOTOS
+    ? subirFotos()
+    : archivo
+      ? importar(archivo)
+      : Promise.reject(
+          new Error(
+            "Uso: importar-lista-tecnologia.mjs <lista-api.json> --proveedor <id> [--escribir]\n" +
+              "     importar-lista-tecnologia.mjs --fotos [--publicar] [--escribir]",
+          ),
+        );
   tarea.catch((error) => {
     console.error(error.message);
     process.exit(1);

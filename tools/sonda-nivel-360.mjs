@@ -27,10 +27,7 @@ import http from "node:http";
 import { join } from "node:path";
 
 const PUERTO = Number(process.env.PUERTO ?? 4300);
-const RAIZ = new URL("..", import.meta.url).pathname.replace(
-  /^\/([A-Za-z]:)/,
-  "$1",
-);
+const RAIZ = new URL("..", import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, "$1");
 const DESTINO = join(RAIZ, "apps", "web", "nivel-360");
 
 const PAGINA = `<!doctype html>
@@ -213,11 +210,16 @@ function guardar(cuerpo, res) {
   const dos = (n) => String(n).padStart(2, "0");
   const sello =
     ahora.getFullYear() +
-    "-" + dos(ahora.getMonth() + 1) +
-    "-" + dos(ahora.getDate()) +
-    "-" + dos(ahora.getHours()) +
-    "-" + dos(ahora.getMinutes()) +
-    "-" + dos(ahora.getSeconds());
+    "-" +
+    dos(ahora.getMonth() + 1) +
+    "-" +
+    dos(ahora.getDate()) +
+    "-" +
+    dos(ahora.getHours()) +
+    "-" +
+    dos(ahora.getMinutes()) +
+    "-" +
+    dos(ahora.getSeconds());
   const archivo = join(DESTINO, `${nombre || "sin-nombre"}-${sello}.json`);
 
   mkdirSync(DESTINO, { recursive: true });

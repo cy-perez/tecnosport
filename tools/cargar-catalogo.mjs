@@ -144,8 +144,6 @@ if (MODOS.length > 1) {
   process.exit(1);
 }
 
-
-
 /**
  * Las categorías de la lista del proveedor y su slug en el catálogo. Son las ocho de
  * `CATEGORIAS_INCLUIDAS` en la skill `listas-de-proveedor`, y las ocho que `V62` dejó en la línea
@@ -263,7 +261,6 @@ async function pedir(ruta, opciones = {}) {
   }
   return respuesta.status === 204 ? null : respuesta.json();
 }
-
 
 /**
  * Todos los productos del panel, recorriendo las páginas.
@@ -517,7 +514,6 @@ async function medir(peticiones) {
   console.log(`\n${ESCRIBIR ? "corregidas" : "se corregirían"}: ${corregidas}`);
 }
 
-
 if (REHACER_IMAGENES) {
   if (!TOKEN) {
     console.error(
@@ -599,9 +595,7 @@ if (mediciones.length > 0) {
 async function rellenarGalerias(skus, registro) {
   const existencias = await pedir("/api/v1/admin/variantes/existencias");
   const porSku = new Map(existencias.items.map((v) => [v.sku, v]));
-  const idPorSku = new Map(
-    Object.entries(registro).map(([id, anotado]) => [anotado.sku, id]),
-  );
+  const idPorSku = new Map(Object.entries(registro).map(([id, anotado]) => [anotado.sku, id]));
   let subidas = 0;
   let fallaronGalerias = 0;
 
@@ -806,12 +800,7 @@ async function reconciliar(registro) {
   const existencias = (await pedir("/api/v1/admin/variantes/existencias")).items;
   const porSku = new Map(existencias.map((v) => [v.sku, v]));
   const porProductoId = new Map(existencias.map((v) => [v.productoId, v]));
-  const porNombre = new Map(
-    (await todosLosProductos()).map((p) => [
-      p.nombre.toLowerCase(),
-      p,
-    ]),
-  );
+  const porNombre = new Map((await todosLosProductos()).map((p) => [p.nombre.toLowerCase(), p]));
 
   let yaEstaban = 0;
   let sinRastro = 0;
@@ -967,9 +956,7 @@ const skusExistentes = TOKEN
   ? new Set((await pedir("/api/v1/admin/variantes/existencias")).items.map((v) => v.sku))
   : new Set();
 const nombresExistentes = TOKEN
-  ? new Set(
-      (await todosLosProductos()).map((p) => p.nombre.toLowerCase()),
-    )
+  ? new Set((await todosLosProductos()).map((p) => p.nombre.toLowerCase()))
   : new Set();
 
 /**
@@ -981,7 +968,8 @@ const nombresExistentes = TOKEN
 function yaEstaCargado(id, producto) {
   if (registro[id]) return "ya lo cargó este script";
   if (skusExistentes.has(skuDe(id))) return "ya hay una variante con ese SKU";
-  if (nombresExistentes.has(producto.titulo.toLowerCase())) return "ya hay un producto con ese nombre";
+  if (nombresExistentes.has(producto.titulo.toLowerCase()))
+    return "ya hay un producto con ese nombre";
   return null;
 }
 

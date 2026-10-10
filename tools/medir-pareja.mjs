@@ -267,7 +267,9 @@ async function main() {
     );
   }
   if (!/^[a-z0-9][a-z0-9-]*$/i.test(prefijo)) {
-    throw new Error(`--prefijo pide un nombre simple (letras, digitos y guiones), no '${prefijo}'.`);
+    throw new Error(
+      `--prefijo pide un nombre simple (letras, digitos y guiones), no '${prefijo}'.`,
+    );
   }
 
   const shaAntes = git("rev-parse", "--short", antes);

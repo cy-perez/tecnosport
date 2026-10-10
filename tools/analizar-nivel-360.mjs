@@ -29,10 +29,7 @@ import {
   suavizar,
 } from "../apps/web/src/app/features/captura360/domain/nivel-360.ts";
 
-const RAIZ = new URL("..", import.meta.url).pathname.replace(
-  /^\/([A-Za-z]:)/,
-  "$1",
-);
+const RAIZ = new URL("..", import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, "$1");
 const GRABACIONES = join(RAIZ, "apps", "web", "nivel-360");
 
 const HISTERESIS_POR_OMISION = [0, 1, 2, 3];
@@ -47,9 +44,7 @@ function leerArgumentos() {
   };
   const lista = (nombre, omision) => {
     const crudo = valor(nombre);
-    return crudo === undefined
-      ? omision
-      : crudo.split(",").map((n) => Number(n.trim()));
+    return crudo === undefined ? omision : crudo.split(",").map((n) => Number(n.trim()));
   };
   return {
     archivo: valor("archivo"),
@@ -183,9 +178,7 @@ function cambiosDeObturador(paso) {
 
 function estadistica(valores) {
   const media = valores.reduce((s, x) => s + x, 0) / valores.length;
-  const sd = Math.sqrt(
-    valores.reduce((s, x) => s + (x - media) ** 2, 0) / valores.length,
-  );
+  const sd = Math.sqrt(valores.reduce((s, x) => s + (x - media) ** 2, 0) / valores.length);
   return { media, sd, maximo: Math.max(...valores) };
 }
 
@@ -254,10 +247,11 @@ function analizar(ruta, { histeresis, retardos }) {
   console.log("");
 
   const desv = estadistica(paso.map((p) => p.nivel.desviacion));
-  const bloqueado =
-    (paso.filter(({ nivel }) => !nivel.puedeDisparar).length / paso.length) * 100;
+  const bloqueado = (paso.filter(({ nivel }) => !nivel.puedeDisparar).length / paso.length) * 100;
 
-  console.log(`  desviación   media ${desv.media.toFixed(2)}° · sd ${desv.sd.toFixed(2)}° · máximo ${desv.maximo.toFixed(2)}°`);
+  console.log(
+    `  desviación   media ${desv.media.toFixed(2)}° · sd ${desv.sd.toFixed(2)}° · máximo ${desv.maximo.toFixed(2)}°`,
+  );
   console.log(`  bloqueado    ${bloqueado.toFixed(0)} % del tiempo`);
   console.log(
     `  el indicador habla ${porMinuto(anuncios(paso, ({ mensaje }) => `${mensaje.clave}:${mensaje.grados}`, 0).cuenta)} veces por minuto, con los grados dentro del texto`,

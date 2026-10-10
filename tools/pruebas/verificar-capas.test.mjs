@@ -44,7 +44,8 @@ test("el panel también está dentro del grafo: features/admin/<x>/<capa>", () =
   conArbol(
     {
       "features/admin/pedidos/infrastructure/http.ts": "export const x = 1;\n",
-      "features/admin/pedidos/presentation/lista.ts": "import { x } from '../infrastructure/http';\n",
+      "features/admin/pedidos/presentation/lista.ts":
+        "import { x } from '../infrastructure/http';\n",
     },
     (raiz) => {
       const { violaciones } = revisar(raiz);
@@ -67,7 +68,10 @@ test("un import dinámico cuenta igual", () => {
 
 test("un import sin nada que importar cuenta igual", () => {
   conArbol(
-    { ...ADAPTADOR, "features/carrito/presentation/pagina.ts": "import '../infrastructure/almacen';\n" },
+    {
+      ...ADAPTADOR,
+      "features/carrito/presentation/pagina.ts": "import '../infrastructure/almacen';\n",
+    },
     (raiz) => assert.equal(revisar(raiz).violaciones.length, 1),
   );
 });
@@ -86,8 +90,10 @@ test("las rutas eligen el adaptador y las pruebas montan el escenario: no fallan
   conArbol(
     {
       ...ADAPTADOR,
-      "features/carrito/presentation/carrito.routes.ts": "import { x } from '../infrastructure/almacen';\n",
-      "features/carrito/presentation/pagina.spec.ts": "import { x } from '../infrastructure/almacen';\n",
+      "features/carrito/presentation/carrito.routes.ts":
+        "import { x } from '../infrastructure/almacen';\n",
+      "features/carrito/presentation/pagina.spec.ts":
+        "import { x } from '../infrastructure/almacen';\n",
     },
     (raiz) => {
       const { violaciones, enPruebas } = revisar(raiz);
@@ -101,7 +107,8 @@ test("domain hacia application es una violación; application hacia domain no", 
   conArbol(
     {
       "features/carrito/domain/modelo.ts": "import { y } from '../application/store';\n",
-      "features/carrito/application/store.ts": "import { M } from '../domain/modelo';\nexport const y = 1;\n",
+      "features/carrito/application/store.ts":
+        "import { M } from '../domain/modelo';\nexport const y = 1;\n",
     },
     (raiz) => {
       const { violaciones } = revisar(raiz);

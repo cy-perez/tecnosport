@@ -23,29 +23,29 @@
 //   CARRIER=<nombre>, TOPE=<pesos>, FORZAR=1 (ventana inventada si no hay cobertura) y
 //   PLANTILLA=<id> (manda `address_template_id` en el origen) modulan lo anterior
 
-import { readFileSync, existsSync } from 'node:fs';
+import { readFileSync, existsSync } from "node:fs";
 
-const RAIZ = new URL('..', import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1');
+const RAIZ = new URL("..", import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, "$1");
 const PAUSA_MS = 600;
 const TOPE = Number(process.env.TOPE || 8000); // techo de gasto por guía, en pesos
-const CARRIERS_CON_API = ['coordinadora', 'servientrega', 'interrapidisimo'];
+const CARRIERS_CON_API = ["coordinadora", "servientrega", "interrapidisimo"];
 
 function cargarEntorno() {
   const valores = {};
-  for (const archivo of ['.env', '.env.local']) {
+  for (const archivo of [".env", ".env.local"]) {
     const ruta = `${RAIZ}/${archivo}`;
     if (!existsSync(ruta)) continue;
-    for (const linea of readFileSync(ruta, 'utf8').split(/\r?\n/)) {
+    for (const linea of readFileSync(ruta, "utf8").split(/\r?\n/)) {
       const m = linea.match(/^\s*([A-Z0-9_]+)\s*=\s*(.*)$/);
       if (!m) continue;
-      valores[m[1]] = m[2].trim().replace(/^["']|["']$/g, '');
+      valores[m[1]] = m[2].trim().replace(/^["']|["']$/g, "");
     }
   }
   return { ...valores, ...process.env };
 }
 
 const env = cargarEntorno();
-const URL_BASE = env.SKYDROPX_URL_BASE || 'https://sb-pro.skydropx.com';
+const URL_BASE = env.SKYDROPX_URL_BASE || "https://sb-pro.skydropx.com";
 const dormir = (ms) => new Promise((r) => setTimeout(r, ms));
 
 async function llamar(ruta, opciones = {}) {
@@ -61,17 +61,17 @@ async function llamar(ruta, opciones = {}) {
   return { estado: respuesta.status, cuerpo };
 }
 
-const { cuerpo: tok } = await llamar('/api/v1/oauth/token', {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
+const { cuerpo: tok } = await llamar("/api/v1/oauth/token", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
   body: JSON.stringify({
-    grant_type: 'client_credentials',
+    grant_type: "client_credentials",
     client_id: env.SKYDROPX_CLIENT_ID,
     client_secret: env.SKYDROPX_CLIENT_SECRET,
   }),
 });
-if (!tok.access_token) throw new Error('No autenticó.');
-const H = { 'Content-Type': 'application/json', Authorization: `Bearer ${tok.access_token}` };
+if (!tok.access_token) throw new Error("No autenticó.");
+const H = { "Content-Type": "application/json", Authorization: `Bearer ${tok.access_token}` };
 
 const recorta = (o, n = 900) => JSON.stringify(o).slice(0, n);
 
@@ -81,7 +81,7 @@ if (process.env.VER_PICKUP) {
   process.exit(0);
 }
 
-const saldo = await llamar('/api/v1/finance/credits', { headers: H });
+const saldo = await llamar("/api/v1/finance/credits", { headers: H });
 console.log(`Saldo: ${recorta(saldo.cuerpo)}`);
 
 // ---------- 1. envío del que colgar la recolección ----------
@@ -94,19 +94,19 @@ if (!envioId) {
   // cotización se heredan `country_code`, `postal_code` y `area_level1/2/3`. Sin barrio,
   // `POST /pickups` responde `422 base: "Shipper address2 not valid: null"`.
   const ciudad = (barrio) => ({
-    country_code: 'CO',
-    postal_code: '05001',
-    area_level1: 'Antioquia',
-    area_level2: 'Medellín',
+    country_code: "CO",
+    postal_code: "05001",
+    area_level1: "Antioquia",
+    area_level2: "Medellín",
     area_level3: barrio,
   });
-  const cot = await llamar('/api/v1/quotations', {
-    method: 'POST',
+  const cot = await llamar("/api/v1/quotations", {
+    method: "POST",
     headers: H,
     body: JSON.stringify({
       quotation: {
-        address_from: ciudad('La Milagrosa'),
-        address_to: ciudad('Boston'),
+        address_from: ciudad("La Milagrosa"),
+        address_to: ciudad("Boston"),
         parcels: [{ length: 20, width: 15, height: 2, weight: 0.1, declared_amount: 10000 }],
       },
     }),
@@ -122,9 +122,9 @@ if (!envioId) {
 
   console.log(`\n=== Cotización ${q.id} ===`);
   for (const t of q.rates || []) {
-    const conApi = CARRIERS_CON_API.includes(t.provider_name) ? ' · recolección por API' : '';
+    const conApi = CARRIERS_CON_API.includes(t.provider_name) ? " · recolección por API" : "";
     console.log(
-      `  ${t.provider_name}/${t.provider_service_code} → ${t.status} · ${t.total ?? '—'}` +
+      `  ${t.provider_name}/${t.provider_service_code} → ${t.status} · ${t.total ?? "—"}` +
         ` · pickup ${t.pickup} · pickup_via_support ${t.pickup_via_support}` +
         ` · pickup_ocurre ${t.pickup_ocurre} · pickup_package_min ${t.pickup_package_min}${conApi}`,
     );
@@ -137,30 +137,32 @@ if (!envioId) {
     .sort((a, b) => Number(a.total) - Number(b.total));
   const tarifa = candidatas[0];
   if (!tarifa) {
-    console.log('\nNinguna transportadora con recolección por API cotizó. No se emite nada.');
+    console.log("\nNinguna transportadora con recolección por API cotizó. No se emite nada.");
     process.exit(0);
   }
   if (Number(tarifa.total) > TOPE) {
-    console.log(`\nLa más barata con API vale ${tarifa.total}, sobre el tope ${TOPE}. No se emite.`);
+    console.log(
+      `\nLa más barata con API vale ${tarifa.total}, sobre el tope ${TOPE}. No se emite.`,
+    );
     process.exit(0);
   }
-  if (process.env.EMITIR !== '1') {
+  if (process.env.EMITIR !== "1") {
     console.log(
       `\nHabría emitido con ${tarifa.provider_name} por ${tarifa.total}.` +
-        ' Para hacerlo: EMITIR=1 node tools/sonda-recoleccion.mjs',
+        " Para hacerlo: EMITIR=1 node tools/sonda-recoleccion.mjs",
     );
     process.exit(0);
   }
 
   const direccion = (extra) => ({
-    country_code: 'CO',
-    postal_code: '05001',
-    area_level1: 'Antioquia',
-    area_level2: 'Medellín',
+    country_code: "CO",
+    postal_code: "05001",
+    area_level1: "Antioquia",
+    area_level2: "Medellín",
     ...extra,
   });
-  const envio = await llamar('/api/v1/shipments', {
-    method: 'POST',
+  const envio = await llamar("/api/v1/shipments", {
+    method: "POST",
     headers: H,
     body: JSON.stringify({
       shipment: {
@@ -173,24 +175,24 @@ if (!envioId) {
         // que es justo lo que rompe la recolección.
         address_from: direccion({
           ...(env.PLANTILLA ? { address_template_id: env.PLANTILLA } : {}),
-          street1: 'Cra. 26C # 38B-31',
-          apartment_number: '401',
-          name: 'TecnoSport',
-          company: 'TecnoSport',
-          phone: '3138816711',
-          email: 'contacto@tecnosport.co',
-          reference: 'Edificio, cuarto piso',
+          street1: "Cra. 26C # 38B-31",
+          apartment_number: "401",
+          name: "TecnoSport",
+          company: "TecnoSport",
+          phone: "3138816711",
+          email: "contacto@tecnosport.co",
+          reference: "Edificio, cuarto piso",
         }),
         address_to: direccion({
           street1: `Calle 50 # 40-20 ${NONCE}`,
-          name: 'Comprador de prueba',
-          company: 'Comprador de prueba',
-          phone: '3001234567',
-          email: 'comprador@example.com',
-          reference: 'Sin indicaciones adicionales',
+          name: "Comprador de prueba",
+          company: "Comprador de prueba",
+          phone: "3001234567",
+          email: "comprador@example.com",
+          reference: "Sin indicaciones adicionales",
         }),
         packages: [
-          { package_number: '1', package_content: 'Accesorios de tecnología', package_type: '4G' },
+          { package_number: "1", package_content: "Accesorios de tecnología", package_type: "4G" },
         ],
       },
     }),
@@ -213,11 +215,11 @@ for (let i = 0; i < 40; i++) {
   const a = cuerpo.data?.attributes ?? {};
   console.log(
     `  envío: ${a.workflow_status} · guía ${JSON.stringify(a.master_tracking_number)}` +
-      `${a.error_detail ? ' · error ' + JSON.stringify(a.error_detail) : ''}`,
+      `${a.error_detail ? " · error " + JSON.stringify(a.error_detail) : ""}`,
   );
   // `creation_waiting` es un tercer estado no terminal, y es el largo: la guía del 16 de
   // septiembre estuvo dos minutos ahí antes de llegar a `success`. Veinte vueltas no le daban.
-  if (!['in_progress', 'pending', 'creation_waiting'].includes(a.workflow_status)) break;
+  if (!["in_progress", "pending", "creation_waiting"].includes(a.workflow_status)) break;
   await dormir(5000);
 }
 
@@ -231,18 +233,18 @@ let fechas = cobertura.cuerpo?.pickupDates || cobertura.cuerpo?.data?.pickupDate
 // La cobertura viene respondiendo 422 con `message: null` para todo envío que se le pase, viva o
 // muerta la guía. Programar no la exige: FORZAR=1 arma una ventana del próximo día hábil y
 // llama igual, que es la forma de saber si el 422 es de la cobertura o de la recolección entera.
-if (!fechas.length && process.env.FORZAR === '1') {
+if (!fechas.length && process.env.FORZAR === "1") {
   const d = new Date();
   do {
     d.setDate(d.getDate() + 1);
   } while (d.getDay() === 0 || d.getDay() === 6);
   const dia = d.toISOString().slice(0, 10);
-  fechas = [{ date: dia, startHour: '08:00:00', endHour: '12:00:00' }];
+  fechas = [{ date: dia, startHour: "08:00:00", endHour: "12:00:00" }];
   console.log(`\nSin cobertura; se fuerza una ventana para el ${dia}.`);
 }
 
 if (!fechas.length) {
-  console.log('\nSin fechas de cobertura: no hay con qué programar. Repite con FORZAR=1. Fin.');
+  console.log("\nSin fechas de cobertura: no hay con qué programar. Repite con FORZAR=1. Fin.");
   process.exit(0);
 }
 
@@ -251,8 +253,8 @@ const f = fechas[0];
 const desde = `${f.date}T${f.startHour}-05:00`;
 const hasta = `${f.date}T${f.endHour}-05:00`;
 console.log(`\n=== POST /pickups (${desde} → ${hasta}) ===`);
-const pickup = await llamar('/api/v1/pickups', {
-  method: 'POST',
+const pickup = await llamar("/api/v1/pickups", {
+  method: "POST",
   headers: H,
   body: JSON.stringify({
     pickup: {
@@ -276,5 +278,5 @@ if (pickupId) {
   console.log(`${leida.estado} ${recorta(leida.cuerpo, 1200)}`);
 }
 
-const saldoFinal = await llamar('/api/v1/finance/credits', { headers: H });
+const saldoFinal = await llamar("/api/v1/finance/credits", { headers: H });
 console.log(`\nSaldo final: ${recorta(saldoFinal.cuerpo)}`);

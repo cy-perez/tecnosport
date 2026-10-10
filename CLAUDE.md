@@ -148,6 +148,7 @@ npm run kit                              ¿el kit se regenera igual, y sus tipog
 npm run listas                           ¿el parser de la skill de listas de proveedor sigue leyendo igual?
 npm run datos-negocio                    ¿el teléfono, el NIT y la versión legal dicen lo mismo en todas sus copias?
 npm run categorias                       ¿nombra algún fixture una categoría que el catálogo no tiene?
+npm run formato                          ¿los scripts de tools/ están en formato? (Prettier, 100 columnas)
 npm run cruce-catalogo                   ¿qué productos de la lista están listos para publicar?
 npm run huerfanos -- --bucket X --api Y  ¿qué objetos del bucket no los reclama nadie? (informa, no borra)
 node tools/cargar-catalogo.mjs           carga por la API del panel; simula si no le pasas --escribir

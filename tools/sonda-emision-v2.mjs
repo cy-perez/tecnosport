@@ -49,28 +49,28 @@
 // LABEL_NUMBER`, y sin él emite a la primera (medido el 18, docs/13 §6.17). O sea que con RECAUDO=1
 // la única que hoy emite de verdad es 99 minutes, a 9.897.
 
-import { readFileSync, existsSync } from 'node:fs';
+import { readFileSync, existsSync } from "node:fs";
 
-const RAIZ = new URL('..', import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1');
+const RAIZ = new URL("..", import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, "$1");
 const PAUSA_MS = 600;
 const TOPE_POR_GUIA = 15000;
 
 function cargarEntorno() {
   const valores = {};
-  for (const archivo of ['.env', '.env.local']) {
+  for (const archivo of [".env", ".env.local"]) {
     const ruta = `${RAIZ}/${archivo}`;
     if (!existsSync(ruta)) continue;
-    for (const linea of readFileSync(ruta, 'utf8').split(/\r?\n/)) {
+    for (const linea of readFileSync(ruta, "utf8").split(/\r?\n/)) {
       const m = linea.match(/^\s*([A-Z0-9_]+)\s*=\s*(.*)$/);
       if (!m) continue;
-      valores[m[1]] = m[2].trim().replace(/^["']|["']$/g, '');
+      valores[m[1]] = m[2].trim().replace(/^["']|["']$/g, "");
     }
   }
   return { ...valores, ...process.env };
 }
 
 const env = cargarEntorno();
-const URL_BASE = env.SKYDROPX_URL_BASE || 'https://sb-pro.skydropx.com';
+const URL_BASE = env.SKYDROPX_URL_BASE || "https://sb-pro.skydropx.com";
 const BULTOS = Number(env.BULTOS || 1);
 const dormir = (ms) => new Promise((r) => setTimeout(r, ms));
 const recorta = (valor, n = 900) => JSON.stringify(valor).slice(0, n);
@@ -88,17 +88,17 @@ async function llamar(ruta, opciones = {}) {
   return { estado: respuesta.status, cuerpo };
 }
 
-const { cuerpo: tok } = await llamar('/api/v1/oauth/token', {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
+const { cuerpo: tok } = await llamar("/api/v1/oauth/token", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
   body: JSON.stringify({
-    grant_type: 'client_credentials',
+    grant_type: "client_credentials",
     client_id: env.SKYDROPX_CLIENT_ID,
     client_secret: env.SKYDROPX_CLIENT_SECRET,
   }),
 });
-if (!tok.access_token) throw new Error('No autenticó.');
-const H = { 'Content-Type': 'application/json', Authorization: `Bearer ${tok.access_token}` };
+if (!tok.access_token) throw new Error("No autenticó.");
+const H = { "Content-Type": "application/json", Authorization: `Bearer ${tok.access_token}` };
 
 /** Relee un envío y cuenta lo que trae: estados, guías, etiquetas y —lo que importa— el barrio. */
 async function releer(id) {
@@ -117,14 +117,14 @@ async function releer(id) {
   );
   for (const inc of cuerpo.included ?? []) {
     const p = inc.attributes ?? {};
-    if (inc.type === 'package') {
+    if (inc.type === "package") {
       console.log(
         `    paquete ${inc.id}\n      tracking_number: ${JSON.stringify(p.tracking_number)}` +
           ` · tracking_status: ${p.tracking_status} · declared_amount: ${p.declared_amount}` +
-          `\n      label_url: ${p.label_url ? p.label_url.slice(0, 60) + '…' : 'null'}`,
+          `\n      label_url: ${p.label_url ? p.label_url.slice(0, 60) + "…" : "null"}`,
       );
     }
-    if (inc.type === 'address') {
+    if (inc.type === "address") {
       console.log(
         `    dirección ${p.address_type}: area_level3 ${JSON.stringify(p.area_level3)}` +
           ` · apartment_number ${JSON.stringify(p.apartment_number)}` +
@@ -136,43 +136,43 @@ async function releer(id) {
 }
 
 if (env.VER_ENVIO) {
-  console.log('=== Envío ===');
+  console.log("=== Envío ===");
   await releer(env.VER_ENVIO);
   process.exit(0);
 }
 
-const saldoAntes = await llamar('/api/v1/finance/credits', { headers: H });
+const saldoAntes = await llamar("/api/v1/finance/credits", { headers: H });
 console.log(`Saldo antes: ${recorta(saldoAntes.cuerpo)}`);
 
 // ---------- cotización, con el barrio en los dos extremos ----------
 const NONCE = Date.now().toString().slice(-6);
-const BARRIO_ORIGEN = 'La Milagrosa';
-const BARRIO_DESTINO = 'Boston';
+const BARRIO_ORIGEN = "La Milagrosa";
+const BARRIO_DESTINO = "Boston";
 // DECLARADO baja el valor declarado para que una medición cueste menos: el piso del proveedor es
 // 10.000 por bulto (adr/0035) y con él la diferencia entre "recauda el declarado" y "recauda el
 // declarado más el flete" queda imposible de confundir.
 const DECLARADO = Number(env.DECLARADO || 120000);
 const PARCEL = { length: 20, width: 15, height: 5, weight: 0.5, declared_amount: DECLARADO };
-const CON_RECAUDO = env.RECAUDO === '1';
-const FLETE_AL_DESTINATARIO = env.FLETE_AL_DESTINATARIO === '1';
+const CON_RECAUDO = env.RECAUDO === "1";
+const FLETE_AL_DESTINATARIO = env.FLETE_AL_DESTINATARIO === "1";
 
-const cotizacion = await llamar('/api/v1/quotations', {
-  method: 'POST',
+const cotizacion = await llamar("/api/v1/quotations", {
+  method: "POST",
   headers: H,
   body: JSON.stringify({
     quotation: {
       address_from: {
-        country_code: 'CO',
-        postal_code: '05001',
-        area_level1: 'Antioquia',
-        area_level2: 'Medellín',
+        country_code: "CO",
+        postal_code: "05001",
+        area_level1: "Antioquia",
+        area_level2: "Medellín",
         area_level3: BARRIO_ORIGEN,
       },
       address_to: {
-        country_code: 'CO',
-        postal_code: '05001',
-        area_level1: 'Antioquia',
-        area_level2: 'Medellín',
+        country_code: "CO",
+        postal_code: "05001",
+        area_level1: "Antioquia",
+        area_level2: "Medellín",
         area_level3: BARRIO_DESTINO,
         street1: `Calle 50 # 40-20 ${NONCE}`,
       },
@@ -197,7 +197,7 @@ console.log(`\n=== Cotización ${q.id} · ${BULTOS} bulto(s) ===`);
 for (const t of q.rates || []) {
   console.log(
     `  ${String(t.provider_name).padEnd(20)} ${String(t.provider_service_code).padEnd(16)}` +
-      ` ${String(t.status).padEnd(22)} total ${String(t.total ?? '—').padStart(8)}` +
+      ` ${String(t.status).padEnd(22)} total ${String(t.total ?? "—").padStart(8)}` +
       ` · pickup ${t.pickup} · ${t.shipment_creation_type}`,
   );
 }
@@ -226,15 +226,15 @@ if (CON_RECAUDO) {
 // recoge solo por soporte (`pickup: false`), así que sin esta salida el filtro la descarta y la
 // pregunta se queda sin poderse medir.
 const candidatas = (q.rates || [])
-  .filter((t) => t.success && (CON_RECAUDO || env.SIN_PICKUP === '1' || t.pickup) && t.total)
+  .filter((t) => t.success && (CON_RECAUDO || env.SIN_PICKUP === "1" || t.pickup) && t.total)
   .filter((t) => !env.TRANSPORTADORA || t.provider_name === env.TRANSPORTADORA)
   .sort((a, b) => Number(a.total) - Number(b.total));
 const tarifa = candidatas[0];
 if (!tarifa) {
   console.log(
     CON_RECAUDO
-      ? '\nNinguna tarifa sobrevivió a la cotización con recaudo. No hay con qué medir; no se emite.'
-      : '\nNinguna tarifa con `pickup: true` cotizó. Sin ella no hay prueba; no se emite.',
+      ? "\nNinguna tarifa sobrevivió a la cotización con recaudo. No hay con qué medir; no se emite."
+      : "\nNinguna tarifa con `pickup: true` cotizó. Sin ella no hay prueba; no se emite.",
   );
   process.exit(0);
 }
@@ -243,11 +243,11 @@ if (Number(tarifa.total) > TOPE_POR_GUIA * BULTOS) {
   process.exit(0);
 }
 
-if (process.env.EMITIR !== '1') {
+if (process.env.EMITIR !== "1") {
   console.log(
     `\nHabría emitido con ${tarifa.provider_name}/${tarifa.provider_service_code} por` +
       ` ${tarifa.total} (${tarifa.shipment_creation_type}).` +
-      ' Para hacerlo de verdad: EMITIR=1 node tools/sonda-emision-v2.mjs',
+      " Para hacerlo de verdad: EMITIR=1 node tools/sonda-emision-v2.mjs",
   );
   process.exit(0);
 }
@@ -255,15 +255,15 @@ if (process.env.EMITIR !== '1') {
 // ---------- la emisión, por v2 ----------
 const paquetes = Array.from({ length: BULTOS }, (_, i) => ({
   package_number: String(i + 1),
-  package_content: 'Electrónica y accesorios',
-  package_type: '4G',
+  package_content: "Electrónica y accesorios",
+  package_type: "4G",
 }));
 console.log(
   `\n=== POST /api/v2/shipments · ${tarifa.provider_name} · ${tarifa.total} ·` +
     ` ${tarifa.shipment_creation_type} ===`,
 );
-const envio = await llamar('/api/v2/shipments', {
-  method: 'POST',
+const envio = await llamar("/api/v2/shipments", {
+  method: "POST",
   headers: H,
   body: JSON.stringify({
     shipment: {
@@ -273,22 +273,22 @@ const envio = await llamar('/api/v2/shipments', {
       unique_shipment: true,
       sync_label_creation: false,
       address_from: {
-        street1: 'Cra. 26C # 38B-31',
-        apartment_number: '401',
-        name: 'TecnoSport',
-        company: 'TecnoSport',
+        street1: "Cra. 26C # 38B-31",
+        apartment_number: "401",
+        name: "TecnoSport",
+        company: "TecnoSport",
         // Sin indicativo: `+57…` responde `400 phone no es válido` al emitir (§6.2).
-        phone: '3138816711',
-        email: 'contacto@tecnosport.co',
-        reference: 'Edificio, cuarto piso',
+        phone: "3138816711",
+        email: "contacto@tecnosport.co",
+        reference: "Edificio, cuarto piso",
       },
       address_to: {
         street1: `Calle 50 # 40-20 ${NONCE}`,
-        name: 'Comprador de prueba',
-        company: 'Comprador de prueba',
-        phone: '3001234567',
-        email: 'comprador@example.com',
-        reference: 'Sin indicaciones adicionales',
+        name: "Comprador de prueba",
+        company: "Comprador de prueba",
+        phone: "3001234567",
+        email: "comprador@example.com",
+        reference: "Sin indicaciones adicionales",
       },
       packages: paquetes,
     },
@@ -301,12 +301,12 @@ if (envio.estado >= 400) process.exit(1);
 // v2 promete un arreglo; se acepta también el objeto de v1 por si la promesa no se cumple.
 const datos = Array.isArray(envio.cuerpo?.data) ? envio.cuerpo.data : [envio.cuerpo?.data];
 const ids = datos.filter(Boolean).map((d) => d.id);
-console.log(`\nEnvíos creados: ${ids.length} → ${ids.join(', ')}`);
+console.log(`\nEnvíos creados: ${ids.length} → ${ids.join(", ")}`);
 
 // ---------- esperar el estado terminal ----------
 // Tres estados no terminales medidos: `in_progress`, `pending` y `creation_waiting`. El último
 // es el largo —dos minutos y pico— y no está en la documentación de Skydropx (§6.7).
-const NO_TERMINALES = ['in_progress', 'pending', 'creation_waiting'];
+const NO_TERMINALES = ["in_progress", "pending", "creation_waiting"];
 for (let vuelta = 0; vuelta < 40; vuelta++) {
   console.log(`\n--- vuelta ${vuelta + 1} ---`);
   const estados = [];
@@ -315,10 +315,10 @@ for (let vuelta = 0; vuelta < 40; vuelta++) {
   await dormir(5000);
 }
 
-const saldoDespues = await llamar('/api/v1/finance/credits', { headers: H });
+const saldoDespues = await llamar("/api/v1/finance/credits", { headers: H });
 console.log(`\nSaldo después: ${recorta(saldoDespues.cuerpo)}`);
 
-if (process.env.RECOLECCION !== '1') process.exit(0);
+if (process.env.RECOLECCION !== "1") process.exit(0);
 
 // ---------- la recolección, sobre la guía viva ----------
 const d = new Date();
@@ -328,8 +328,8 @@ do {
 const dia = d.toISOString().slice(0, 10);
 for (const id of ids) {
   console.log(`\n=== POST /pickups (envío ${id}, ${dia} 08:00–12:00) ===`);
-  const pickup = await llamar('/api/v1/pickups', {
-    method: 'POST',
+  const pickup = await llamar("/api/v1/pickups", {
+    method: "POST",
     headers: H,
     body: JSON.stringify({
       pickup: {

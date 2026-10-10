@@ -15,10 +15,7 @@
 
 import { readFileSync, existsSync } from "node:fs";
 
-const RAIZ = new URL("..", import.meta.url).pathname.replace(
-  /^\/([A-Za-z]:)/,
-  "$1",
-);
+const RAIZ = new URL("..", import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, "$1");
 const PAUSA_MS = 600;
 
 function cargarEntorno() {
@@ -84,9 +81,7 @@ const GUIAS = process.env.GUIA
     ];
 
 const cuantos = (c) =>
-  Array.isArray(c?.data)
-    ? `${c.data.length} eventos`
-    : JSON.stringify(c).slice(0, 120);
+  Array.isArray(c?.data) ? `${c.data.length} eventos` : JSON.stringify(c).slice(0, 120);
 
 for (const { guia, slug, nombre } of GUIAS) {
   console.log(`\n=== guía ${guia} (${nombre} / ${slug})`);
@@ -101,10 +96,7 @@ for (const { guia, slug, nombre } of GUIAS) {
       "con nombre      ",
       `/api/v1/shipments/tracking?tracking_number=${guia}&carrier_name=${encodeURIComponent(nombre)}`,
     ],
-    [
-      "en la ruta      ",
-      `/api/v1/shipments/tracking/${guia}/${encodeURIComponent(slug)}`,
-    ],
+    ["en la ruta      ", `/api/v1/shipments/tracking/${guia}/${encodeURIComponent(slug)}`],
   ];
 
   for (const [etiqueta, ruta] of variantes) {

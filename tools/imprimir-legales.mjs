@@ -23,10 +23,7 @@ const DOCUMENTOS = ["terminos", "privacidad", "cookies"];
 const IDIOMAS = ["es", "en"];
 
 function escapar(texto) {
-  return String(texto)
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;");
+  return String(texto).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
 // Sin un solo color ni tamaño de marca: esto no es el sitio, es papel. La regla dura #2 habla del

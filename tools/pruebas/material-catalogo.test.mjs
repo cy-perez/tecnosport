@@ -35,7 +35,10 @@ test("las tomas salen de «Fotos procesadas», con su maestra y sus anchos web",
     const { archivos, ladoMenor } = fotosDeCarpeta(modelo);
     assert.equal(ladoMenor, 2000);
     assert.equal(archivos.length, 1);
-    assert.deepEqual(archivos[0].variantes.map((v) => v.ancho), [1200, 800]);
+    assert.deepEqual(
+      archivos[0].variantes.map((v) => v.ancho),
+      [1200, 800],
+    );
     assert.equal(archivos[0].web.ancho, 1200);
     assert.equal(archivos[0].vistaPrevia.contentType, "image/jpeg");
   } finally {

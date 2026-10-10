@@ -146,11 +146,40 @@ const LOGOS = [
  * la placa que aquí ya no está.
  */
 const LOGOS_TRANSPORTADORA = [
-  { constante: "logoServientrega", archivo: "servientrega.svg", titulo: "Servientrega", origen: "transportadoras", vista: "41 32 157 165" },
-  { constante: "logoCoordinadora", archivo: "coordinadora.svg", titulo: "Coordinadora", origen: "transportadoras", vista: "0 20 76 40" },
-  { constante: "logoInterRapidisimo", archivo: "interrapidisimo.svg", titulo: "Inter Rapidísimo", origen: "transportadoras", vista: "8 8 32 32" },
-  { constante: "logoEnvia", archivo: "envia.svg", titulo: "Envía", origen: "transportadoras", vista: "176 418 918 408" },
-  { constante: "logo99Minutos", archivo: "99minutos.svg", titulo: "99 minutos", origen: "transportadoras" },
+  {
+    constante: "logoServientrega",
+    archivo: "servientrega.svg",
+    titulo: "Servientrega",
+    origen: "transportadoras",
+    vista: "41 32 157 165",
+  },
+  {
+    constante: "logoCoordinadora",
+    archivo: "coordinadora.svg",
+    titulo: "Coordinadora",
+    origen: "transportadoras",
+    vista: "0 20 76 40",
+  },
+  {
+    constante: "logoInterRapidisimo",
+    archivo: "interrapidisimo.svg",
+    titulo: "Inter Rapidísimo",
+    origen: "transportadoras",
+    vista: "8 8 32 32",
+  },
+  {
+    constante: "logoEnvia",
+    archivo: "envia.svg",
+    titulo: "Envía",
+    origen: "transportadoras",
+    vista: "176 418 918 408",
+  },
+  {
+    constante: "logo99Minutos",
+    archivo: "99minutos.svg",
+    titulo: "99 minutos",
+    origen: "transportadoras",
+  },
 ];
 
 /**
@@ -271,7 +300,7 @@ function redondear(archivo, d) {
   const partes = [];
   let leidoHasta = 0;
   TOKEN.lastIndex = 0;
-  for (let m; (m = TOKEN.exec(normalizado)) !== null; ) {
+  for (let m; (m = TOKEN.exec(normalizado)) !== null;) {
     if (m.index !== leidoHasta) {
       throw new Error(
         `${archivo}: no se entiende "${normalizado.slice(leidoHasta, m.index + 8)}" dentro de un path. ` +
@@ -488,32 +517,32 @@ ${constantes(logos)}
 
 function constantes(lista) {
   return lista
-  .map(
-    ({ constante, titulo, vista, transformacion, trazos }) =>
-      `export const ${constante}: LogoPago = {\n` +
-      `  titulo: ${valor(titulo)},\n` +
-      `  vista: ${valor(vista)},\n` +
-      `  transformacion: ${valor(transformacion)},\n` +
-      `  trazos: [\n` +
-      trazos
-        .map(
-          (t) =>
-            `    {\n` +
-            // El `d` va en una línea por larga que sea: partido, Prettier lo vuelve a juntar y el
-            // generado queda sucio nada más escribirlo.
-            `      d: ${valor(t.d)},\n` +
-            `      relleno: ${valor(t.relleno)},\n` +
-            `      reglaDeRelleno: ${valor(t.reglaDeRelleno)},\n` +
-            `      reglaDeRecorte: ${valor(t.reglaDeRecorte)},\n` +
-            `      trazo: ${valor(t.trazo)},\n` +
-            `      grosorDeTrazo: ${valor(t.grosorDeTrazo)},\n` +
-            `      unionDeTrazo: ${valor(t.unionDeTrazo)},\n` +
-            `    },`,
-        )
-        .join("\n") +
-      `\n  ],\n};`,
-  )
-  .join("\n\n");
+    .map(
+      ({ constante, titulo, vista, transformacion, trazos }) =>
+        `export const ${constante}: LogoPago = {\n` +
+        `  titulo: ${valor(titulo)},\n` +
+        `  vista: ${valor(vista)},\n` +
+        `  transformacion: ${valor(transformacion)},\n` +
+        `  trazos: [\n` +
+        trazos
+          .map(
+            (t) =>
+              `    {\n` +
+              // El `d` va en una línea por larga que sea: partido, Prettier lo vuelve a juntar y el
+              // generado queda sucio nada más escribirlo.
+              `      d: ${valor(t.d)},\n` +
+              `      relleno: ${valor(t.relleno)},\n` +
+              `      reglaDeRelleno: ${valor(t.reglaDeRelleno)},\n` +
+              `      reglaDeRecorte: ${valor(t.reglaDeRecorte)},\n` +
+              `      trazo: ${valor(t.trazo)},\n` +
+              `      grosorDeTrazo: ${valor(t.grosorDeTrazo)},\n` +
+              `      unionDeTrazo: ${valor(t.unionDeTrazo)},\n` +
+              `    },`,
+          )
+          .join("\n") +
+        `\n  ],\n};`,
+    )
+    .join("\n\n");
 }
 
 writeFileSync(DESTINO, contenido);

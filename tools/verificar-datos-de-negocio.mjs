@@ -69,7 +69,10 @@ const calleCanonica = es.pie.direccion.split(",")[0].trim();
 
 /** La calle, con la vía escrita igual venga abreviada o completa. */
 const calleNormalizada = (valor) =>
-  valor.trim().replace(/^(?:Cra\.?|Carrera)/, "Cra.").replace(/\s+/g, " ");
+  valor
+    .trim()
+    .replace(/^(?:Cra\.?|Carrera)/, "Cra.")
+    .replace(/\s+/g, " ");
 
 // Los NIT que no son el nuestro y aun así se publican con razón. Desde el 14 de septiembre de 2026
 // la política de datos identifica al encargado de logística con su NIT, que es lo que la Ley 1581
@@ -173,7 +176,10 @@ if (legalesEn.comun.version !== version) {
   );
 }
 
-const yml = readFileSync(join(RAIZ, "apps/api/bootstrap/src/main/resources/application.yml"), "utf8");
+const yml = readFileSync(
+  join(RAIZ, "apps/api/bootstrap/src/main/resources/application.yml"),
+  "utf8",
+);
 const enYml = yml.match(/politica-datos-version:\s*\$\{POLITICA_DATOS_VERSION:([^}]+)\}/)?.[1];
 if (enYml !== version) {
   problemas.push(
@@ -184,7 +190,9 @@ if (enYml !== version) {
 const env = readFileSync(join(RAIZ, ".env.example"), "utf8");
 const enEnv = env.match(/^POLITICA_DATOS_VERSION=(.+)$/m)?.[1]?.trim();
 if (enEnv !== version) {
-  problemas.push(`.env.example: POLITICA_DATOS_VERSION es ${enEnv}, y el texto publicado es ${version}`);
+  problemas.push(
+    `.env.example: POLITICA_DATOS_VERSION es ${enEnv}, y el texto publicado es ${version}`,
+  );
 }
 
 // --- 4. Si el sistema cotiza el flete, el texto legal no puede prometer que el precio lo incluye.
@@ -199,14 +207,23 @@ if (enEnv !== version) {
 // había — `npm run marcadores` nació igual, porque ninguna prueba mira el contenido de un texto
 // legal.
 const COTIZA_EL_ENVIO = existsSync(
-  join(RAIZ, "apps/api/application/src/main/java/co/tecnosport/api/application/envio/CotizarEnvio.java"),
+  join(
+    RAIZ,
+    "apps/api/application/src/main/java/co/tecnosport/api/application/envio/CotizarEnvio.java",
+  ),
 );
 
 // El `no` de "no incluye el costo del envío" es la frase correcta de hoy, y la que había antes era
 // la misma sin el `no`. Sin la mirada atrás, el guardián fallaría contra el texto que vino a exigir.
 const PROMESAS_DE_ENVIO_INCLUIDO = [
-  { patron: /(?<!\bno )incluye\b[^.]{0,40}\bcosto del env[ií]o/gi, que: "que el precio incluye el envío" },
-  { patron: /(?<!\bnot )includ(?:e|es)\b[^.]{0,40}\bshipping/gi, que: "que el precio incluye el envío, en inglés" },
+  {
+    patron: /(?<!\bno )incluye\b[^.]{0,40}\bcosto del env[ií]o/gi,
+    que: "que el precio incluye el envío",
+  },
+  {
+    patron: /(?<!\bnot )includ(?:e|es)\b[^.]{0,40}\bshipping/gi,
+    que: "que el precio incluye el envío, en inglés",
+  },
   { patron: /no hay cobros adicionales/gi, que: "que no hay cobros adicionales" },
   { patron: /no additional charges/gi, que: "que no hay cobros adicionales, en inglés" },
   { patron: /env[ií]os? gratis/gi, que: "envío gratis" },
@@ -244,7 +261,9 @@ if (COTIZA_EL_ENVIO) {
 //
 // La fuente de verdad es NEGOCIO_RESPONSABLE_IVA en application.yml, no una constante de aquí: el
 // día que pase a true, este guardián deja de disparar solo y los textos vuelven a poder decirlo.
-const enYmlIva = yml.match(/responsable-de-iva:\s*\$\{NEGOCIO_RESPONSABLE_IVA:([^}]+)\}/)?.[1]?.trim();
+const enYmlIva = yml
+  .match(/responsable-de-iva:\s*\$\{NEGOCIO_RESPONSABLE_IVA:([^}]+)\}/)?.[1]
+  ?.trim();
 const enEnvIva = env.match(/^NEGOCIO_RESPONSABLE_IVA=(.+)$/m)?.[1]?.trim();
 
 if (enYmlIva === undefined) {
@@ -294,8 +313,10 @@ if (enYmlIva === "false") {
 //
 // El arreglo fue quitar la copia: los numerales de vigencia remiten al encabezado, que sale de
 // `legales.comun.version`. Esta regla existe para que no vuelva a aparecer una fecha suelta ahí.
-const FECHA_ES = /\b\d{1,2} de (?:enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|octubre|noviembre|diciembre) de \d{4}\b/gi;
-const FECHA_EN = /\b\d{1,2} (?:January|February|March|April|May|June|July|August|September|October|November|December) \d{4}\b/gi;
+const FECHA_ES =
+  /\b\d{1,2} de (?:enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|octubre|noviembre|diciembre) de \d{4}\b/gi;
+const FECHA_EN =
+  /\b\d{1,2} (?:January|February|March|April|May|June|July|August|September|October|November|December) \d{4}\b/gi;
 
 for (const [idioma, legales] of [
   ["es", legalesEs],

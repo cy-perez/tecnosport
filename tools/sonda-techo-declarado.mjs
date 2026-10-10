@@ -19,33 +19,33 @@
 // Las credenciales las lee de .env.local / .env (SKYDROPX_URL_BASE, SKYDROPX_CLIENT_ID,
 // SKYDROPX_CLIENT_SECRET). No las imprime nunca.
 
-import { readFileSync, existsSync } from 'node:fs';
+import { readFileSync, existsSync } from "node:fs";
 
-const RAIZ = new URL('..', import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1');
+const RAIZ = new URL("..", import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, "$1");
 const PAUSA_MS = 600; // el proveedor admite 2 peticiones por segundo
 const INTENTOS_SONDEO = 10;
 
 function cargarEntorno() {
   const valores = {};
-  for (const archivo of ['.env', '.env.local']) {
+  for (const archivo of [".env", ".env.local"]) {
     const ruta = `${RAIZ}/${archivo}`;
     if (!existsSync(ruta)) continue;
-    for (const linea of readFileSync(ruta, 'utf8').split(/\r?\n/)) {
+    for (const linea of readFileSync(ruta, "utf8").split(/\r?\n/)) {
       const m = linea.match(/^\s*([A-Z0-9_]+)\s*=\s*(.*)$/);
       if (!m) continue;
-      valores[m[1]] = m[2].trim().replace(/^["']|["']$/g, '');
+      valores[m[1]] = m[2].trim().replace(/^["']|["']$/g, "");
     }
   }
   return { ...valores, ...process.env };
 }
 
 const env = cargarEntorno();
-const URL_BASE = env.SKYDROPX_URL_BASE || 'https://sb-pro.skydropx.com';
+const URL_BASE = env.SKYDROPX_URL_BASE || "https://sb-pro.skydropx.com";
 const CLIENT_ID = env.SKYDROPX_CLIENT_ID;
 const CLIENT_SECRET = env.SKYDROPX_CLIENT_SECRET;
 
 if (!CLIENT_ID || !CLIENT_SECRET || /pendiente_de_configurar/.test(CLIENT_ID)) {
-  console.error('Faltan SKYDROPX_CLIENT_ID / SKYDROPX_CLIENT_SECRET en .env.local.');
+  console.error("Faltan SKYDROPX_CLIENT_ID / SKYDROPX_CLIENT_SECRET en .env.local.");
   process.exit(1);
 }
 
@@ -65,11 +65,11 @@ async function llamar(ruta, opciones = {}) {
 }
 
 async function token() {
-  const { estado, cuerpo } = await llamar('/api/v1/oauth/token', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+  const { estado, cuerpo } = await llamar("/api/v1/oauth/token", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      grant_type: 'client_credentials',
+      grant_type: "client_credentials",
       client_id: CLIENT_ID,
       client_secret: CLIENT_SECRET,
     }),
@@ -83,21 +83,21 @@ async function token() {
 // El origen real de despacho, tal como lo manda el mapeador hoy — barrio incluido, que es el
 // campo cuya ausencia rompió la recolección durante dos sesiones (docs/13 §6.10).
 const ORIGEN = {
-  country_code: 'CO',
-  postal_code: '05001',
-  area_level1: 'Antioquia',
-  area_level2: 'Medellín',
-  area_level3: 'La Milagrosa',
-  street1: 'Cra. 26C # 38B-31, apto. 401, La Milagrosa',
-  name: 'TecnoSport',
-  phone: '3138816711',
+  country_code: "CO",
+  postal_code: "05001",
+  area_level1: "Antioquia",
+  area_level2: "Medellín",
+  area_level3: "La Milagrosa",
+  street1: "Cra. 26C # 38B-31, apto. 401, La Milagrosa",
+  name: "TecnoSport",
+  phone: "3138816711",
 };
 
 const DESTINO = {
-  country_code: 'CO',
-  postal_code: '11001',
-  area_level1: 'Bogotá, D.C.',
-  area_level2: 'Bogotá',
+  country_code: "CO",
+  postal_code: "11001",
+  area_level1: "Bogotá, D.C.",
+  area_level2: "Bogotá",
 };
 
 // Un celular: caja pequeña y liviana. Lo que se mueve entre escalones es el declarado, nada más.
@@ -109,14 +109,14 @@ const BULTO = { length: 20, width: 15, height: 8, weight: 0.5 };
 const NONCE = process.env.NONCE || Date.now().toString().slice(-6);
 
 const ESCALONES = [
-  { clave: 'control · 1.000.000 en un bulto', declarados: [1_000_000] },
-  { clave: '4.999.999 · justo debajo del tope del panel', declarados: [4_999_999] },
-  { clave: '5.000.000 · el tope exacto del panel', declarados: [5_000_000] },
-  { clave: '5.000.001 · justo encima', declarados: [5_000_001] },
-  { clave: '6.000.000 · un celular de gama alta', declarados: [6_000_000] },
-  { clave: '20.000.000 · bien arriba, por si el tope real es otro', declarados: [20_000_000] },
+  { clave: "control · 1.000.000 en un bulto", declarados: [1_000_000] },
+  { clave: "4.999.999 · justo debajo del tope del panel", declarados: [4_999_999] },
+  { clave: "5.000.000 · el tope exacto del panel", declarados: [5_000_000] },
+  { clave: "5.000.001 · justo encima", declarados: [5_000_001] },
+  { clave: "6.000.000 · un celular de gama alta", declarados: [6_000_000] },
+  { clave: "20.000.000 · bien arriba, por si el tope real es otro", declarados: [20_000_000] },
   {
-    clave: 'DOS bultos de 3.000.000 · ¿el límite es por bulto o por cotización?',
+    clave: "DOS bultos de 3.000.000 · ¿el límite es por bulto o por cotización?",
     declarados: [3_000_000, 3_000_000],
   },
 ];
@@ -132,9 +132,9 @@ function cuerpo(escalon) {
 }
 
 async function cotizar(bearer, escalon) {
-  const cabeceras = { 'Content-Type': 'application/json', Authorization: `Bearer ${bearer}` };
-  const creada = await llamar('/api/v1/quotations', {
-    method: 'POST',
+  const cabeceras = { "Content-Type": "application/json", Authorization: `Bearer ${bearer}` };
+  const creada = await llamar("/api/v1/quotations", {
+    method: "POST",
     headers: cabeceras,
     body: JSON.stringify(cuerpo(escalon)),
   });
@@ -159,33 +159,33 @@ function pintar(resultado) {
   }
   console.log(`    cotización ${resultado.id} (is_completed: ${resultado.completa})`);
   if (!resultado.rates.length) {
-    console.log('    sin tarifas');
+    console.log("    sin tarifas");
     return;
   }
   const texto = (e) =>
-    typeof e === 'string' ? e : JSON.stringify(e).replace(/[{}"]/g, '').replace(/,/g, ', ');
+    typeof e === "string" ? e : JSON.stringify(e).replace(/[{}"]/g, "").replace(/,/g, ", ");
   for (const r of resultado.rates) {
-    const quien = `${r.provider_name}/${r.provider_service_code ?? r.provider_service_name ?? '?'}`;
-    const precio = r.total ? `total ${r.total}` : '—';
+    const quien = `${r.provider_name}/${r.provider_service_code ?? r.provider_service_name ?? "?"}`;
+    const precio = r.total ? `total ${r.total}` : "—";
     const errores = Array.isArray(r.error_messages)
-      ? r.error_messages.map(texto).join(' | ').slice(0, 220)
+      ? r.error_messages.map(texto).join(" | ").slice(0, 220)
       : r.error_messages
         ? texto(r.error_messages).slice(0, 220)
-        : '';
-    const viva = r.status === 'price_found_internal' || r.status === 'price_found';
+        : "";
+    const viva = r.status === "price_found_internal" || r.status === "price_found";
     console.log(
-      `    ${viva ? '✓' : '·'} ${quien.padEnd(34)} ${String(r.status).padEnd(26)} ${precio}` +
-        (errores ? `\n        ${errores}` : ''),
+      `    ${viva ? "✓" : "·"} ${quien.padEnd(34)} ${String(r.status).padEnd(26)} ${precio}` +
+        (errores ? `\n        ${errores}` : ""),
     );
   }
 }
 
 const bearer = await token();
 console.log(`Host ${URL_BASE} · Medellín → Bogotá · nonce ${NONCE}`);
-console.log('Ninguna guía se emite aquí: cotizar no consume saldo.\n');
+console.log("Ninguna guía se emite aquí: cotizar no consume saldo.\n");
 
 for (const escalon of ESCALONES) {
   console.log(`=== ${escalon.clave} ===`);
   pintar(await cotizar(bearer, escalon));
-  console.log('');
+  console.log("");
 }

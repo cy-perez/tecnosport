@@ -13,33 +13,33 @@
 // Las credenciales las lee de .env.local / .env (SKYDROPX_URL_BASE, SKYDROPX_CLIENT_ID,
 // SKYDROPX_CLIENT_SECRET). No las imprime nunca.
 
-import { readFileSync, existsSync } from 'node:fs';
+import { readFileSync, existsSync } from "node:fs";
 
-const RAIZ = new URL('..', import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1');
+const RAIZ = new URL("..", import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, "$1");
 const PAUSA_MS = 600; // el proveedor admite 2 peticiones por segundo
 const INTENTOS_SONDEO = 10;
 
 function cargarEntorno() {
   const valores = {};
-  for (const archivo of ['.env', '.env.local']) {
+  for (const archivo of [".env", ".env.local"]) {
     const ruta = `${RAIZ}/${archivo}`;
     if (!existsSync(ruta)) continue;
-    for (const linea of readFileSync(ruta, 'utf8').split(/\r?\n/)) {
+    for (const linea of readFileSync(ruta, "utf8").split(/\r?\n/)) {
       const m = linea.match(/^\s*([A-Z0-9_]+)\s*=\s*(.*)$/);
       if (!m) continue;
-      valores[m[1]] = m[2].trim().replace(/^["']|["']$/g, '');
+      valores[m[1]] = m[2].trim().replace(/^["']|["']$/g, "");
     }
   }
   return { ...valores, ...process.env };
 }
 
 const env = cargarEntorno();
-const URL_BASE = env.SKYDROPX_URL_BASE || 'https://sb-pro.skydropx.com';
+const URL_BASE = env.SKYDROPX_URL_BASE || "https://sb-pro.skydropx.com";
 const CLIENT_ID = env.SKYDROPX_CLIENT_ID;
 const CLIENT_SECRET = env.SKYDROPX_CLIENT_SECRET;
 
 if (!CLIENT_ID || !CLIENT_SECRET || /pendiente_de_configurar/.test(CLIENT_ID)) {
-  console.error('Faltan SKYDROPX_CLIENT_ID / SKYDROPX_CLIENT_SECRET en .env.local.');
+  console.error("Faltan SKYDROPX_CLIENT_ID / SKYDROPX_CLIENT_SECRET en .env.local.");
   process.exit(1);
 }
 
@@ -59,11 +59,11 @@ async function llamar(ruta, opciones = {}) {
 }
 
 async function token() {
-  const { estado, cuerpo } = await llamar('/api/v1/oauth/token', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+  const { estado, cuerpo } = await llamar("/api/v1/oauth/token", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      grant_type: 'client_credentials',
+      grant_type: "client_credentials",
       client_id: CLIENT_ID,
       client_secret: CLIENT_SECRET,
     }),
@@ -76,18 +76,18 @@ async function token() {
 
 // Origen real de despacho, el de application.yml.
 const ORIGEN = {
-  country_code: 'CO',
-  postal_code: '05001',
-  area_level1: 'Antioquia',
-  area_level2: 'Medellín',
-  street1: 'Cra. 26C # 38B-31, apto. 401, La Milagrosa',
-  name: 'TecnoSport',
-  phone: '3138816711',
+  country_code: "CO",
+  postal_code: "05001",
+  area_level1: "Antioquia",
+  area_level2: "Medellín",
+  street1: "Cra. 26C # 38B-31, apto. 401, La Milagrosa",
+  name: "TecnoSport",
+  phone: "3138816711",
 };
 
 const DESTINOS = [
-  { etiqueta: 'Bogotá', postal_code: '11001', area_level1: 'Bogotá, D.C.', area_level2: 'Bogotá' },
-  { etiqueta: 'Medellín', postal_code: '05001', area_level1: 'Antioquia', area_level2: 'Medellín' },
+  { etiqueta: "Bogotá", postal_code: "11001", area_level1: "Bogotá, D.C.", area_level2: "Bogotá" },
+  { etiqueta: "Medellín", postal_code: "05001", area_level1: "Antioquia", area_level2: "Medellín" },
 ];
 
 const VALOR_DECLARADO = 250000;
@@ -100,24 +100,24 @@ const NONCE = process.env.NONCE || Date.now().toString().slice(-6);
 
 const VARIANTES = [
   {
-    clave: 'A · declared_amount en el bulto',
+    clave: "A · declared_amount en el bulto",
     parcel: { ...BULTO, declared_amount: VALOR_DECLARADO },
   },
   {
-    clave: 'B · declared_value en el bulto (lo que manda hoy el mapeador)',
+    clave: "B · declared_value en el bulto (lo que manda hoy el mapeador)",
     parcel: { ...BULTO, declared_value: VALOR_DECLARADO },
   },
   {
-    clave: 'C · los dos campos en el bulto',
+    clave: "C · los dos campos en el bulto",
     parcel: { ...BULTO, declared_amount: VALOR_DECLARADO, declared_value: VALOR_DECLARADO },
   },
   {
-    clave: 'D · solo en el bulto, sin declared_amount de cotización',
+    clave: "D · solo en el bulto, sin declared_amount de cotización",
     parcel: { ...BULTO, declared_amount: VALOR_DECLARADO },
     sinDeclaradoDeCotizacion: true,
   },
   {
-    clave: 'E · en el bulto, por debajo del mínimo (8.000)',
+    clave: "E · en el bulto, por debajo del mínimo (8.000)",
     parcel: { ...BULTO, declared_amount: 8000 },
     declaradoDeCotizacion: 8000,
   },
@@ -127,7 +127,7 @@ function cuerpo(destino, variante) {
   const quotation = {
     address_from: ORIGEN,
     address_to: {
-      country_code: 'CO',
+      country_code: "CO",
       postal_code: destino.postal_code,
       area_level1: destino.area_level1,
       area_level2: destino.area_level2,
@@ -143,11 +143,11 @@ function cuerpo(destino, variante) {
 
 async function cotizar(bearer, destino, variante) {
   const cabeceras = {
-    'Content-Type': 'application/json',
+    "Content-Type": "application/json",
     Authorization: `Bearer ${bearer}`,
   };
-  const creada = await llamar('/api/v1/quotations', {
-    method: 'POST',
+  const creada = await llamar("/api/v1/quotations", {
+    method: "POST",
     headers: cabeceras,
     body: JSON.stringify(cuerpo(destino, variante)),
   });
@@ -170,23 +170,23 @@ function pintar(resultado) {
   }
   console.log(`    cotización ${resultado.id} (is_completed: ${resultado.completa})`);
   if (!resultado.rates.length) {
-    console.log('    sin tarifas');
+    console.log("    sin tarifas");
     return;
   }
   for (const r of resultado.rates) {
-    const quien = `${r.provider_name}/${r.provider_service_code ?? r.provider_service_name ?? '?'}`;
-    const precio = r.total ? `total ${r.total}` : '—';
+    const quien = `${r.provider_name}/${r.provider_service_code ?? r.provider_service_name ?? "?"}`;
+    const precio = r.total ? `total ${r.total}` : "—";
     const texto = (e) =>
-      typeof e === 'string' ? e : JSON.stringify(e).replace(/[{}"]/g, '').replace(/,/g, ', ');
+      typeof e === "string" ? e : JSON.stringify(e).replace(/[{}"]/g, "").replace(/,/g, ", ");
     const errores = Array.isArray(r.error_messages)
-      ? r.error_messages.map(texto).join(' | ').slice(0, 220)
+      ? r.error_messages.map(texto).join(" | ").slice(0, 220)
       : r.error_messages
         ? texto(r.error_messages).slice(0, 220)
-        : '';
-    const viva = r.status === 'price_found_internal' || r.status === 'price_found';
+        : "";
+    const viva = r.status === "price_found_internal" || r.status === "price_found";
     console.log(
-      `    ${viva ? '✓' : '·'} ${quien.padEnd(34)} ${String(r.status).padEnd(26)} ${precio}` +
-        (errores ? `\n        ${errores}` : ''),
+      `    ${viva ? "✓" : "·"} ${quien.padEnd(34)} ${String(r.status).padEnd(26)} ${precio}` +
+        (errores ? `\n        ${errores}` : ""),
     );
   }
 }
@@ -200,5 +200,5 @@ for (const destino of DESTINOS) {
     console.log(`  ${variante.clave}`);
     pintar(await cotizar(bearer, destino, variante));
   }
-  console.log('');
+  console.log("");
 }
