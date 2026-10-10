@@ -278,7 +278,7 @@ class RepositorioPaquetesFalso implements RepositorioPaquetesPedido {
           anchoCm: 30,
           altoCm: 10,
           valorDeclarado: { valor: 62_000, moneda: 'COP' },
-          contenido: 'Ropa deportiva',
+          contenido: 'Prendas de vestir',
         },
       ],
     };
@@ -576,7 +576,7 @@ describe('ListaPedidosAdminPage', () => {
     expect(await screen.findByText(/La guía se crea a mano en Skydropx/)).toBeTruthy();
     // Y con qué crearla: los paquetes tal como se cotizaron, para copiarlos en la plataforma.
     expect(await screen.findByText('40 × 30 × 10 cm')).toBeTruthy();
-    expect(screen.getByText('Ropa deportiva')).toBeTruthy();
+    expect(screen.getByText('Prendas de vestir')).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Emitir guía con la transportadora' })).toBeNull();
     expect(screen.getByRole('button', { name: 'Despachar' })).toBeTruthy();
     expect(repositorio.emisiones).toEqual([]);

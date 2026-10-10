@@ -71,7 +71,7 @@ movimientos. Si es de la categoría celulares, además tiene N unidades con IMEI
 
 ## Variantes por categoría, mercado colombiano
 
-**Ropa deportiva**
+**Ropa casual y deportiva**
 - Talla alfanumérica: XS, S, M, L, XL, XXL. Guardar también la equivalencia
   numérica cuando el proveedor la use (6, 8, 10, 12, 14, 16).
 - Color: nombre comercial más HEX para el selector visual.

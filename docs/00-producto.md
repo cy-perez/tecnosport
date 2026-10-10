@@ -6,10 +6,10 @@ Tienda en línea propia de TecnoSport. Vende al detal, con pago en línea, pago
 contraentrega y envío a todo Colombia —cotizado por destino, cobrado aparte del
 precio del producto—, además de recogida sin costo en el punto de Medellín.
 
-TecnoSport es un negocio real con diez años de oficio: distribuidor de tecnología
-y ropa y calzado deportivo en Medellín. Persona natural, NIT 1054994043-9,
-Cra. 26C #38B-31, Medellín. Teléfono y WhatsApp 313 881 6711. Correo
-contact@tecnosport.co. Dominio tecnosport.co.
+TecnoSport es un negocio real con diez años de oficio: distribuidor de
+tecnología, ropa casual y deportiva, calzado y bolsos en Medellín. Persona
+natural, NIT 1054994043-9, Cra. 26C #38B-31, Medellín. Teléfono y WhatsApp
+313 881 6711. Correo contact@tecnosport.co. Dominio tecnosport.co.
 
 ## Alcance de la fase 1
 
@@ -40,6 +40,12 @@ Sí entra:
   lista de proveedor puede reponer. Ese mismo día `ROPA_Y_CALZADO` se partió en dos, y es
   la única línea que ha cambiado: no comparten talla, ni proveedor, ni lo que se declara
   en la guía de envío.
+
+  **El 10 de octubre de 2026 la ropa dejó de ser solo deportiva**: entró la casual. Ese
+  cambio no tocó ni el enum ni una fila del árbol —ninguna categoría de ropa se llamaba
+  "deportiva"—, solo los textos que describen la tienda y la etiqueta de la guía de
+  envío, que pasó a "Prendas de vestir" para no declarar de menos. Es la señal de que el
+  apellido de una línea envejece aparte de su modelo.
 
   **Cuatro líneas y no treinta**: la línea es el nivel grueso —un valor del enum, un
   control en el filtro, una rama del menú, una etiqueta en la guía, traducciones y

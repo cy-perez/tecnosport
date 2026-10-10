@@ -1033,7 +1033,7 @@ class SkydropxClientTest {
           Direccion.sinBarrio("11", "Bogotá D.C.", "11001", "Bogotá", "Cra. 7 #12-34", null),
           new Contacto("Comprador de prueba", "3001234567"),
           new CorreoElectronico("comprador@example.com"),
-          List.of("Ropa deportiva"));
+          List.of("Prendas de vestir"));
 
   private SkydropxClient clienteDeEmision(int estado, String cuerpo) throws IOException {
     servidor = HttpServer.create(new InetSocketAddress(0), 0);

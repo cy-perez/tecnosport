@@ -155,7 +155,9 @@ describe('PortadaPage', () => {
     const { container } = await renderPortada();
 
     const titulo = screen.getByRole('heading', { level: 1 });
-    expect(titulo.textContent?.trim()).toBe('Ropa y calzado deportivo, bolsos y tecnología');
+    expect(titulo.textContent?.trim()).toBe(
+      'Ropa casual y deportiva, calzado, bolsos y tecnología',
+    );
     expect(container.querySelector('ts-carrusel-hero')?.contains(titulo)).toBe(false);
   });
 

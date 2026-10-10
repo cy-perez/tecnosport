@@ -416,7 +416,7 @@ class ArmadorDeBultosTest {
     assertEquals(1, bultos.size());
     assertEquals(new Paquete(1000, 40, 30, 10), bultos.getFirst().bulto().paquete());
     assertEquals(Dinero.deCop(50_000), bultos.getFirst().bulto().valorDeclarado());
-    assertEquals("Ropa deportiva", bultos.getFirst().contenido());
+    assertEquals("Prendas de vestir", bultos.getFirst().contenido());
   }
 
   /**
@@ -499,7 +499,7 @@ class ArmadorDeBultosTest {
     List<BultoDespachable> bultos =
         conReferencias.armar(List.of(linea(camiseta, 1), linea(tenis, 1)));
 
-    assertEquals("Ropa deportiva, Calzado deportivo", bultos.getFirst().contenido());
+    assertEquals("Prendas de vestir, Calzado deportivo", bultos.getFirst().contenido());
   }
 
   /** El piso es por bulto: dos prendas de 6.000 declaran 12.000, no dos veces el mínimo. */
