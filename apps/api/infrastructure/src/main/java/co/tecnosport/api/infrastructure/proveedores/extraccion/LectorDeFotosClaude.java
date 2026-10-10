@@ -13,6 +13,9 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.URI;
 import java.time.Duration;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
@@ -37,6 +40,8 @@ public final class LectorDeFotosClaude implements LectorDeFotos {
 
   /** El lado mayor de la foto que se manda. */
   static final int LADO_MAYOR = 1024;
+
+  private static final DateTimeFormatter FECHA_DEL_PIE = DateTimeFormatter.ofPattern("d/M/uuuu");
 
   private final JsonMapper json = JsonMapper.builder().build();
   private final LlamadaAClaude llamada;
@@ -214,16 +219,35 @@ public final class LectorDeFotosClaude implements LectorDeFotos {
         continue;
       }
       vistas.add(posicion);
+      List<LecturaDeFoto.BloqueDePie> pie = new ArrayList<>();
+      for (JsonNode bloque : foto.path("pie")) {
+        pie.add(
+            new LecturaDeFoto.BloqueDePie(
+                texto(bloque.path("sku")),
+                fecha(texto(bloque.path("fecha"))),
+                lista(bloque.path("tallas"))));
+      }
       lecturas.add(
-          new LecturaDeFoto(
+          LecturaDeFoto.conPie(
               posicion,
               lista(foto.path("codigos")),
-              texto(foto.path("pie_sku")),
-              lista(foto.path("pie_tallas")),
+              pie,
               lista(foto.path("colores")),
               texto(foto.path("diseno"))));
     }
     return new LecturaDeFotos(raiz.path("album_de_disenos").asBoolean(false), lecturas, jsonCrudo);
+  }
+
+  /** «09/10/2026», como lo imprime La Riverah; nula si no se lee así. */
+  private static LocalDate fecha(String texto) {
+    if (texto == null) {
+      return null;
+    }
+    try {
+      return LocalDate.parse(texto.strip(), FECHA_DEL_PIE);
+    } catch (DateTimeParseException e) {
+      return null;
+    }
   }
 
   private static String texto(JsonNode nodo) {

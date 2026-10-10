@@ -60,6 +60,13 @@ fotos, el «set falda + básica», el dúo, la promoción por cantidad.
      - Una foto que el lector no leyó —sin archivo, ilegible, o que el modelo no devolvió— no es
        un diseño: es de todos. Antes salía como un borrador basura.
      - Un diseño que el lector separó sin ningún pie impreso lleva `CONFIANZA_BAJA`.
+     - **Dos fotos que el lector juntó se separan si muestran el mismo color con SKU distintos**:
+       dos vistas de la misma prenda no llevan dos SKU. La primera corrida contra la verdad lo
+       mostró: el lector juntaba los diez jeans azules de las 19:19 en tres «diseños». Sin SKU
+       no se separa nada.
+     - **Del pie con dos bloques vale el de la fecha más reciente**, y lo decide el dominio: el
+       lector devuelve todos los bloques. Cuando se lo pedíamos al modelo, tomó el SKU viejo en
+       las trece fotos de un álbum.
    - **Una foto de un solo color** sugiere ese color. El panel lo propone al aprobar, y las fotos
      del mismo color quedan como una prenda. La consolidada no sugiere nada: vale para todas.
 3. **Las fotos ajenas nacen descartadas** en el borrador (`fotos_descartadas`): el mismo mecanismo

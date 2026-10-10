@@ -216,6 +216,94 @@ class RepartoDeFotosTest {
         repartidos.stream().map(r -> r.producto().codigoReferenciaOpcional()).toList());
   }
 
+  /**
+   * Los jeans de las 19:19 del 9 de octubre de 2026: el lector juntó en un «diseño» cinco jeans
+   * distintos, cuatro de ellos azules, cada uno con su SKU. Dos fotos del mismo color con SKU
+   * distintos no son vistas de la misma prenda: son dos productos.
+   */
+  @Test
+  void dosFotosDelMismoColorConSkuDistintoSonDosProductosAunqueElLectorLasJunte() {
+    UUID f5 = UUID.randomUUID();
+    ProductoExtraido jeans = producto("Jean licrado", TipoProductoProveedor.PANTALON, null);
+    LecturaDeFotos lectura =
+        new LecturaDeFotos(
+            true,
+            List.of(
+                delAlbum(0, "RV491", List.of("30"), "azul", "jean clasico"),
+                delAlbum(1, "RV494", List.of("32"), "azul oscuro", "jean clasico"),
+                delAlbum(2, "RV489", List.of("34"), "negro", "jean negro"),
+                delAlbum(3, "RV490", List.of("36"), "azul", "jean clasico"),
+                delAlbum(4, "RV485", List.of("30"), "azul", "jean clasico")),
+            "{}");
+
+    List<ProductoRepartido> repartidos =
+        RepartoDeFotos.repartir(List.of(jeans), List.of(F1, F2, F3, F4, f5), lectura);
+
+    assertEquals(
+        List.of(List.of(F1, F2), List.of(F3), List.of(F4), List.of(f5)),
+        repartidos.stream().map(ProductoRepartido::fotos).toList());
+  }
+
+  /** Sin SKU no hay con qué saber que son dos: el mismo color puede ser frente y espalda. */
+  @Test
+  void sinSkuElMismoColorNoSepara() {
+    ProductoExtraido camisetas = producto("Camiseta", TipoProductoProveedor.CAMISETA, null);
+    LecturaDeFotos lectura =
+        new LecturaDeFotos(
+            true,
+            List.of(
+                delAlbum(0, null, List.of(), "negro", "msm"),
+                delAlbum(1, null, List.of(), "negro", "msm"),
+                delAlbum(2, null, List.of(), "azul", "boss")),
+            "{}");
+
+    List<ProductoRepartido> repartidos =
+        RepartoDeFotos.repartir(List.of(camisetas), List.of(F1, F2, F3), lectura);
+
+    assertEquals(List.of(F1, F2), repartidos.get(0).fotos());
+  }
+
+  @Test
+  void delPieConDosBloquesValeElDeLaFechaMasRecienteYSinFechasElUltimo() {
+    LecturaDeFoto conFechas =
+        LecturaDeFoto.conPie(
+            0,
+            List.of(),
+            List.of(
+                new LecturaDeFoto.BloqueDePie(
+                    "RV101862", java.time.LocalDate.of(2026, 10, 2), List.of("S", "M", "L", "XL")),
+                new LecturaDeFoto.BloqueDePie(
+                    "RV102347", java.time.LocalDate.of(2026, 10, 9), List.of("S", "M"))),
+            List.of("negro"),
+            "swoosh");
+    LecturaDeFoto alReves =
+        LecturaDeFoto.conPie(
+            0,
+            List.of(),
+            List.of(
+                new LecturaDeFoto.BloqueDePie(
+                    "RV102347", java.time.LocalDate.of(2026, 10, 9), List.of("S", "M")),
+                new LecturaDeFoto.BloqueDePie(
+                    "RV101862", java.time.LocalDate.of(2026, 10, 2), List.of("S"))),
+            List.of(),
+            null);
+    LecturaDeFoto sinFechas =
+        LecturaDeFoto.conPie(
+            0,
+            List.of(),
+            List.of(
+                new LecturaDeFoto.BloqueDePie("RV1", null, List.of("S")),
+                new LecturaDeFoto.BloqueDePie("RV2", null, List.of("M"))),
+            List.of(),
+            null);
+
+    assertEquals("RV102347", conFechas.sku());
+    assertEquals(List.of("S", "M"), conFechas.tallasDelPie());
+    assertEquals("RV102347", alReves.sku());
+    assertEquals("RV2", sinFechas.sku());
+    assertEquals(null, LecturaDeFoto.conPie(0, List.of(), List.of(), List.of(), null).sku());
+  }
+
   @Test
   void unDisenoSinPieSeRepartePeroSinRespaldo() {
     ProductoExtraido camisetas = producto("Camiseta", TipoProductoProveedor.CAMISETA, null);

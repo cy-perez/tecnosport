@@ -110,9 +110,9 @@ class LectorDeFotosClaudeTest {
     respuestas.add(
         exito(
             "{\"album_de_disenos\":false,\"fotos\":["
-                + "{\"foto\":1,\"codigos\":[\"B:VY3010\",\"J:Q355\"],\"pie_sku\":null,"
-                + "\"pie_tallas\":[],\"colores\":[\"negro\",\"gris\"],\"diseno\":\"bodi\"},"
-                + "{\"foto\":3,\"codigos\":[\"VY3010\"],\"pie_sku\":null,\"pie_tallas\":[],"
+                + "{\"foto\":1,\"codigos\":[\"B:VY3010\",\"J:Q355\"],\"pie\":[],"
+                + "\"colores\":[\"negro\",\"gris\"],\"diseno\":\"bodi\"},"
+                + "{\"foto\":3,\"codigos\":[\"VY3010\"],\"pie\":[],"
                 + "\"colores\":[\"cocoa\"],\"diseno\":\"bodi\"}]}"));
 
     Optional<LecturaDeFotos> lectura =
@@ -140,16 +140,17 @@ class LectorDeFotosClaudeTest {
     assertThat(lectura.get().deLaFoto(2).orElseThrow().colores()).containsExactly("cocoa");
   }
 
+  /** Y del pie con dos bloques vale el de la fecha más reciente, no el que va primero. */
   @Test
   void unaFotoQueElModeloNoVioNoEntraALaLectura() throws IOException {
     respuestas.add(
         exito(
             "{\"album_de_disenos\":false,\"fotos\":["
-                + "{\"foto\":7,\"codigos\":[\"VY3010\"],\"pie_sku\":null,\"pie_tallas\":[],"
+                + "{\"foto\":7,\"codigos\":[\"VY3010\"],\"pie\":[],"
                 + "\"colores\":[],\"diseno\":null},"
-                + "{\"foto\":1,\"codigos\":[],\"pie_sku\":\"RV102347\",\"pie_tallas\":[\"s\"],"
+                + "{\"foto\":1,\"codigos\":[],\"pie\":[{\"sku\":\"RV101862\",\"fecha\":\"02/10/2026\",\"tallas\":[\"S\",\"M\",\"L\",\"XL\"]},{\"sku\":\"RV102347\",\"fecha\":\"9/10/2026\",\"tallas\":[\"s\"]}],"
                 + "\"colores\":[],\"diseno\":null},"
-                + "{\"foto\":1,\"codigos\":[\"OTRA\"],\"pie_sku\":null,\"pie_tallas\":[],"
+                + "{\"foto\":1,\"codigos\":[\"OTRA\"],\"pie\":[],"
                 + "\"colores\":[],\"diseno\":null}]}"));
 
     LecturaDeFotos lectura =

@@ -15,10 +15,11 @@ Reglas, en orden de importancia:
    ven, una por elemento: «C:261002 J:VY3026» → `["C:261002", "J:VY3026"]`. No son códigos el
    logo o la marca de la prenda, una talla, un precio, la fecha ni el texto decorativo del fondo
    («Dream», «Find out your love language»). El SKU del pie no va aquí.
-4. `pie_sku` y `pie_tallas` salen del pie impreso en la parte de abajo de algunas fotos, con
-   «Tallas: S, M, L» y «SKU: RV102384». Si el pie trae dos bloques con fecha —el mismo diseño
-   publicado dos veces—, toma el SKU y las tallas del de la fecha más reciente. Las tallas en
-   mayúsculas, una por elemento. Sin pie: `null` y `[]`.
+4. `pie` copia el pie impreso en la parte de abajo de algunas fotos, un elemento por bloque, en
+   el orden en que aparecen: «Tallas: S, M, L / SKU: RV102384 / 02/10/2026» →
+   `{"sku":"RV102384","fecha":"02/10/2026","tallas":["S","M","L"]}`. Si el pie trae dos bloques
+   —el mismo diseño publicado dos veces—, van los dos. La fecha tal como está impresa, o `null`
+   si no se lee. Las tallas en mayúsculas, una por elemento. Sin pie: `[]`.
 5. `colores` son los colores de **lo que se vende** en la foto: el producto del anuncio. No los
    de lo que solo ambienta la foto —la gorra, el bolso, las gafas, los zapatos, el jean o el
    short que acompaña una blusa—, salvo que el anuncio venda ese artículo como uno de sus

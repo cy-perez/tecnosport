@@ -2,6 +2,7 @@ package co.tecnosport.api.domain.proveedores;
 
 import co.tecnosport.api.domain.proveedores.LecturaDeFotos.LecturaDeFoto;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -32,7 +33,11 @@ import java.util.UUID;
  *       archivo, ilegible, o que el modelo no devolvió— no es un diseño: es de todos, como la foto
  *       sin código del caso de arriba. Un diseño no hereda el código del texto, y un SKU que se
  *       repite en dos diseños no identifica a ninguno: con el mismo código, el segundo se
- *       descartaría por «la misma referencia» y sus fotos quedarían perdidas en el primero.
+ *       descartaría por «la misma referencia» y sus fotos quedarían perdidas en el primero. Y
+ *       <b>dos fotos que el lector juntó en un diseño se separan si muestran el mismo color con SKU
+ *       distintos</b>: dos vistas de la misma prenda no llevan dos SKU. El lector juntaba los diez
+ *       jeans azules de un álbum en tres «diseños» (corrida del 10 de octubre de 2026 contra
+ *       `ingesta/verdad.json`). Sin SKU impreso no hay con qué separar, y no se separa.
  *   <li><b>Lo demás</b>: el reparto de antes, todas las fotos para todos.
  * </ul>
  *
@@ -210,7 +215,48 @@ public final class RepartoDeFotos {
               etiqueta ->
                   porEtiqueta.computeIfAbsent(etiqueta, e -> new ArrayList<>()).add(posicion));
     }
-    return List.copyOf(porEtiqueta.values());
+    List<List<Integer>> disenos = new ArrayList<>();
+    for (List<Integer> grupo : porEtiqueta.values()) {
+      disenos.addAll(separarLosQueChocan(grupo, lectura));
+    }
+    disenos.sort(Comparator.comparing(List::getFirst));
+    return List.copyOf(disenos);
+  }
+
+  /**
+   * Parte un grupo del lector en los productos que de verdad son: cada foto va al primer subgrupo
+   * con el que no choca, y choca con uno que ya tiene su mismo color bajo otro SKU.
+   */
+  private static List<List<Integer>> separarLosQueChocan(
+      List<Integer> grupo, LecturaDeFotos lectura) {
+    List<List<Integer>> partes = new ArrayList<>();
+    for (int posicion : grupo) {
+      Optional<LecturaDeFoto> esta = lectura.deLaFoto(posicion);
+      List<Integer> destino =
+          partes.stream()
+              .filter(
+                  parte -> parte.stream().noneMatch(otra -> chocan(esta, lectura.deLaFoto(otra))))
+              .findFirst()
+              .orElse(null);
+      if (destino == null) {
+        destino = new ArrayList<>();
+        partes.add(destino);
+      }
+      destino.add(posicion);
+    }
+    return partes;
+  }
+
+  private static boolean chocan(Optional<LecturaDeFoto> una, Optional<LecturaDeFoto> otra) {
+    if (una.isEmpty() || otra.isEmpty()) {
+      return false;
+    }
+    Optional<String> color = una.get().colorUnico();
+    Optional<String> sku = una.get().skuOpcional();
+    return color.isPresent()
+        && sku.isPresent()
+        && color.equals(otra.get().colorUnico())
+        && otra.get().skuOpcional().filter(s -> !s.equals(sku.get())).isPresent();
   }
 
   /** Las fotos que el lector no leyó o no etiquetó: en un álbum son de todos los diseños. */

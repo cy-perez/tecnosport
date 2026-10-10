@@ -1,6 +1,8 @@
 package co.tecnosport.api.domain.proveedores;
 
 import co.tecnosport.api.domain.compartido.ExcepcionDeDominio;
+import java.time.LocalDate;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
@@ -90,13 +92,69 @@ public record LecturaDeFotos(boolean albumDeDisenos, List<LecturaDeFoto> fotos, 
       diseno = diseno == null || diseno.isBlank() ? null : diseno.strip();
     }
 
+    /**
+     * Una foto con su pie impreso entero. La Riverah vuelve a publicar un diseño con otro SKU, y el
+     * pie trae entonces dos bloques, cada uno con su fecha (10 de octubre de 2026): vale el de la
+     * fecha más reciente. Al modelo se le pidió eso en el prompt y tomó el viejo en las trece fotos
+     * de un álbum; por eso el lector devuelve todos los bloques y elige el dominio. Sin fechas,
+     * vale el último, que es el que se imprimió encima.
+     */
+    public static LecturaDeFoto conPie(
+        int posicion,
+        List<String> codigos,
+        List<BloqueDePie> pie,
+        List<String> colores,
+        String diseno) {
+      Optional<BloqueDePie> vigente = BloqueDePie.vigente(pie == null ? List.of() : pie);
+      return new LecturaDeFoto(
+          posicion,
+          codigos,
+          vigente.map(BloqueDePie::sku).orElse(null),
+          vigente.map(BloqueDePie::tallas).orElse(List.of()),
+          colores,
+          diseno);
+    }
+
     public Optional<String> skuOpcional() {
       return Optional.ofNullable(sku);
+    }
+
+    /** El único color a la venta que muestra la foto; vacío si muestra varios o ninguno. */
+    public Optional<String> colorUnico() {
+      return colores.size() == 1 ? Optional.of(colores.getFirst()) : Optional.empty();
     }
 
     /** Si la foto muestra la referencia, compactada igual que la del texto. */
     public boolean muestra(String codigo) {
       return codigo != null && codigos.contains(normalizarCodigo(codigo));
+    }
+
+    /**
+     * Un bloque del pie impreso: «Tallas: S, M / SKU: RV102347 / 09/10/2026».
+     *
+     * @param fecha nula si no se leyó
+     */
+    public record BloqueDePie(String sku, LocalDate fecha, List<String> tallas) {
+      public BloqueDePie {
+        tallas = tallas == null ? List.of() : List.copyOf(tallas);
+      }
+
+      /**
+       * El de la fecha más reciente; entre los que no tienen fecha, o si ninguno la tiene, el
+       * último.
+       */
+      static Optional<BloqueDePie> vigente(List<BloqueDePie> bloques) {
+        List<BloqueDePie> conSku =
+            bloques.stream().filter(b -> b.sku() != null && !b.sku().isBlank()).toList();
+        if (conSku.isEmpty()) {
+          return Optional.empty();
+        }
+        Optional<BloqueDePie> masReciente =
+            conSku.stream()
+                .filter(b -> b.fecha() != null)
+                .max(Comparator.comparing(BloqueDePie::fecha));
+        return masReciente.isPresent() ? masReciente : Optional.of(conSku.getLast());
+      }
     }
 
     static String normalizarCodigo(String codigo) {
