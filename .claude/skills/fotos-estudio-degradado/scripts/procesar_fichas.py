@@ -8,41 +8,88 @@ puede cambiar: la maestra siempre es JPEG):
 
     fichas/Samsung Galaxy S25 Ultra/
     ├── Fotos originales/samsung-galaxy-s25-ultra_1.png
-    └── Fotos procesadas/samsung-galaxy-s25-ultra_1.jpg        la maestra
-                         web/1200/samsung-galaxy-s25-ultra_1.avif   los anchos para el sitio
+    ├── Fotos procesadas/samsung-galaxy-s25-ultra_1.jpg        la maestra
+    │                    web/1200/samsung-galaxy-s25-ultra_1.avif   los anchos para el sitio
+    └── estado-fotos.json                                      con --tanda: apto, en espera o fuera
 
 Uso:
-    python3 procesar_fichas.py catalogo/entregables/fichas
-    python3 procesar_fichas.py catalogo/entregables/fichas --devolver   # tras un --segundo-plano
+    python3 procesar_fichas.py catalogo/entregables/fichas --tanda catalogo/por-proponer.json
+    python3 procesar_fichas.py catalogo/entregables/fichas --tanda catalogo/por-proponer.json --devolver
+    python3 procesar_fichas.py catalogo/entregables/fichas --tanda catalogo/por-proponer.json \\
+        --sacar <id del modelo> --motivo "sin material oficial"
 
 No reimplementa nada del estilo: arma un árbol de trabajo en `<fichas>/_estudio/`
 —`crudas/<id del modelo>/` con copias de las originales—, corre `procesar.py` sobre
-él con `--por-producto --variantes --nuevas` y devuelve cada resultado a la carpeta
-de su modelo. `--nuevas` salta lo ya procesado que no cambió, así que correrlo de
-nuevo después de soltar fotos nuevas procesa solo esas. Las hojas de revisión y el
-reporte quedan en `_estudio/salida/`, en un solo sitio para todos los modelos.
+él con `--por-producto --variantes` y devuelve cada resultado a la carpeta de su
+modelo. Las hojas de revisión y el reporte quedan en `_estudio/salida/`.
 
-Las fotos REPETIR no se devuelven: no hay archivo que subir, y quedan en la lista
-del final para volver a conseguirlas.
+**La tanda es el bloque 2 de la ingesta de tecnología** (ADR-0079). Con `--tanda`
+solo se procesan los modelos de `por-proponer.json` —los que el sitio no vende—, y
+cada uno necesita `MINIMO_LISTA` fotos LISTA en un lienzo de por lo menos
+`LIENZO_MINIMO` px. Una REVISAR no cuenta, aunque se apruebe a ojo: decisión del
+negocio del 10/10/2026. El modelo que no llega queda **en espera**, con la razón de
+cada foto que falló, y la tanda no se da por terminada hasta que todos pasen o la
+persona saque alguno a mano con `--sacar`.
 
-Esta parte —preparar y devolver— usa solo la biblioteca estándar, para que sus
-pruebas corran donde no está OpenCV.
+Para no gastar retoques en vano, y para que el veredicto sea cierto:
+
+- **Antes de procesar** se cuentan las originales que pueden salir LISTA: una foto
+  cuyo lado mayor no alcanza `LIENZO_MINIMO × ocupación / ampliación_revisar` no
+  puede, porque el producto nunca mide más que la foto. Si no hay cuatro, el
+  modelo espera sin procesarse.
+- **Un modelo que cambió se reprocesa entero** (`--solo` con todas sus fotos), no
+  solo la foto nueva: el lienzo lo fija la mejor foto del modelo, y una foto que se
+  procesara sola elegiría el suyo.
+- **Un modelo ya decidido no se vuelve a procesar** mientras sus originales no
+  cambien: `estado-fotos.json` guarda la huella del contenido de la carpeta. Si la
+  persona dice que dejó fotos nuevas y la huella es la misma, la salida lo dice.
+  Pero el veredicto **sí se recalcula** contra el reporte en cada corrida: una foto
+  marcada a ojo como REPETIR después de la tanda deja de contar.
+- **Cada foto se empareja con su registro del reporte por archivo y por huella**, no
+  por nombre: un registro de una foto que ya se reemplazó no cuenta.
+
+Sale con 0 si la tanda está completa y con 3 si algún modelo espera fotos o el
+retoque sigue en segundo plano.
+
+Las fotos REPETIR no se devuelven: no hay archivo que subir. La parte de preparar,
+devolver y decidir usa solo la biblioteca estándar —Pillow, si está, para medir las
+originales—, para que sus pruebas corran donde no está OpenCV.
 """
 
 import argparse
+import hashlib
 import json
+import math
 import re
 import shutil
 import subprocess
 import sys
 import unicodedata
+from datetime import datetime, timezone
 from pathlib import Path
 
 ORIGINALES = "Fotos originales"   # los mismos nombres que listas-de-proveedor/scripts/fichas.py
 PROCESADAS = "Fotos procesadas"
 WEB = "web"
 TRABAJO = "_estudio"
+ESTADO = "estado-fotos.json"
+SACADOS = "sacados.json"          # en _estudio/: los modelos sacados que no tienen carpeta
 EXT_FOTO = {".jpg", ".jpeg", ".png", ".webp", ".heic", ".heif"}
+CONFIG = Path(__file__).resolve().parent.parent / "config.json"
+
+# Decisión del negocio del 10/10/2026 (ADR-0079): cuatro fotos LISTA por modelo.
+MINIMO_LISTA = 4
+# Y en un lienzo de por lo menos esto: 1200 es la mayor variante que sirve el sitio
+# (tools/subida-de-imagenes.mjs); por debajo, la ficha se ve con menos resolución de la que
+# pide. No va en config.json porque no cambia cómo se retoca, y allá entraría en la huella de
+# la configuración y obligaría a reprocesar el catálogo entero.
+LIENZO_MINIMO = 1200
+
+APTO, EN_ESPERA, FUERA = "apto", "en_espera", "fuera_de_tanda"
+SALIDA_EN_ESPERA = 3
+# procesar.py sale con 2 cuando no queda ninguna foto por procesar: no es un error.
+SALIDAS_DE_PROCESAR_ACEPTADAS = (0, 2)
+SIN_PROCESAR = "SIN PROCESAR"
 
 
 def slug(texto: str) -> str:
@@ -53,44 +100,83 @@ def slug(texto: str) -> str:
     return t or "foto"
 
 
+def orden_natural(nombre: str):
+    """`_10` después de `_2`, como `fotosDeCarpeta` en tools/material-catalogo.mjs: el orden de
+    las LISTA es el orden en que se publican, y la primera es la principal."""
+    return [int(p) if p.isdigit() else p.lower() for p in re.split(r"(\d+)", nombre)]
+
+
+def huella_archivo(ruta: Path) -> str:
+    """La misma de imagen.huella_archivo, que procesar.py guarda como `huella_origen`."""
+    h = hashlib.sha1()
+    with open(ruta, "rb") as fh:
+        for bloque in iter(lambda: fh.read(1 << 20), b""):
+            h.update(bloque)
+    return h.hexdigest()
+
+
 def id_de_carpeta(carpeta: Path):
     for f in carpeta.glob("*-ficha.txt"):
         return f.name[: -len("-ficha.txt")]
     return slug(carpeta.name)
 
 
-def modelos(raiz: Path) -> dict:
-    """{id del modelo: carpeta} de las carpetas que tienen «Fotos originales»."""
+def modelos(raiz: Path, solo=None) -> dict:
+    """{id del modelo: carpeta} de las carpetas que tienen «Fotos originales»; con `solo`, de esos ids."""
     salida = {}
     for carpeta in sorted(Path(raiz).iterdir()):
         if carpeta.is_dir() and not carpeta.name.startswith("_") and (carpeta / ORIGINALES).is_dir():
-            salida[id_de_carpeta(carpeta)] = carpeta
+            mid = id_de_carpeta(carpeta)
+            if solo is None or mid in solo:
+                salida[mid] = carpeta
     return salida
 
 
 def originales(carpeta: Path) -> list:
-    return sorted(f for f in (carpeta / ORIGINALES).iterdir() if f.is_file() and f.suffix.lower() in EXT_FOTO)
+    if not (carpeta / ORIGINALES).is_dir():
+        return []
+    return sorted((f for f in (carpeta / ORIGINALES).iterdir() if f.is_file() and f.suffix.lower() in EXT_FOTO),
+                  key=lambda f: orden_natural(f.name))
 
 
-def preparar(raiz: Path) -> tuple:
-    """Copia las originales a `_estudio/crudas/<id>/`. Devuelve (copiadas, errores).
+def unicas(carpeta: Path) -> tuple:
+    """(originales que se procesan, duplicadas). Dos originales cuyo nombre da el mismo slug
+    —«x_1.jpg» y «x-1.png»— saldrían con el mismo nombre: la primera se procesa, la otra no, y
+    no cuenta para las cuatro."""
+    vistas, buenas, duplicadas = {}, [], []
+    for f in originales(carpeta):
+        clave = slug(f.stem)
+        if clave in vistas:
+            duplicadas.append((f, vistas[clave]))
+        else:
+            vistas[clave] = f.name
+            buenas.append(f)
+    return buenas, duplicadas
 
-    Dos originales cuyo nombre da el mismo slug —«x_1.jpg» y «x-1.png»— saldrían
-    con el mismo nombre y uno pisaría al otro: se informa y ninguno se procesa.
+
+def preparar(raiz: Path, solo=None) -> tuple:
+    """Deja `_estudio/crudas/<id>/` igual que las originales de cada modelo. Devuelve (copiadas, errores).
+
+    Borra de `crudas/` lo que ya no está en las originales: una copia vieja de una foto
+    reemplazada se procesaría otra vez, y procesar.py desempataría la nueva con «-2».
     """
     crudas = Path(raiz) / TRABAJO / "crudas"
     copiadas, errores = 0, []
-    for mid, carpeta in modelos(raiz).items():
-        vistos = {}
+    for mid, carpeta in modelos(raiz, solo).items():
+        buenas, duplicadas = unicas(carpeta)
+        for dup, primera in duplicadas:
+            errores.append(f"{carpeta.name}: «{primera}» y «{dup.name}» quedarían con el mismo nombre; "
+                           f"renombra una")
         destino = crudas / mid
-        for f in originales(carpeta):
-            clave = slug(f.stem)
-            if clave in vistos:
-                errores.append(f"{carpeta.name}: «{vistos[clave]}» y «{f.name}» quedarían con el mismo nombre")
-                continue
-            vistos[clave] = f.name
+        nombres = {f.name for f in buenas}
+        if destino.is_dir():
+            for vieja in destino.iterdir():
+                if vieja.is_file() and vieja.name not in nombres:
+                    vieja.unlink()
+        for f in buenas:
             copia = destino / f.name
-            if copia.is_file() and copia.stat().st_size == f.stat().st_size and copia.stat().st_mtime >= f.stat().st_mtime:
+            if (copia.is_file() and copia.stat().st_size == f.stat().st_size
+                    and copia.stat().st_mtime_ns == f.stat().st_mtime_ns):
                 continue
             destino.mkdir(parents=True, exist_ok=True)
             shutil.copy2(f, copia)
@@ -98,62 +184,396 @@ def preparar(raiz: Path) -> tuple:
     return copiadas, errores
 
 
+def leer_reporte(raiz: Path) -> dict:
+    ruta = Path(raiz) / TRABAJO / "salida" / "reporte.json"
+    return json.loads(ruta.read_text(encoding="utf-8")) if ruta.is_file() else {"fotos": []}
+
+
+def registro_de(original: Path, grupo: str, registros: list):
+    """El registro del reporte que es de esta original: mismo modelo, mismo archivo y, si el
+    registro trae huella, el mismo contenido. Sin `archivo` (reportes viejos), por nombre."""
+    for foto in registros:
+        if foto.get("grupo") != grupo:
+            continue
+        if foto.get("archivo"):
+            if foto["archivo"] != original.name:
+                continue
+        elif foto.get("nombre") != slug(original.stem):
+            continue
+        if foto.get("huella_origen") and foto["huella_origen"] != huella_archivo(original):
+            continue
+        return foto
+    return None
+
+
 def devolver(raiz: Path) -> dict:
     """Copia cada resultado del reporte a la carpeta de su modelo, con el nombre de su original."""
     raiz = Path(raiz)
     salida = raiz / TRABAJO / "salida"
-    reporte = json.loads((salida / "reporte.json").read_text(encoding="utf-8"))
-    por_id = modelos(raiz)
+    registros = leer_reporte(raiz).get("fotos", [])
     resumen = {"devueltas": 0, "repetir": [], "revisar": [], "sin_original": []}
-    for foto in reporte.get("fotos", []):
-        carpeta = por_id.get(foto.get("grupo") or "")
-        original = None
-        if carpeta:
-            original = next((f for f in originales(carpeta) if slug(f.stem) == foto["nombre"]), None)
-        if original is None:
-            resumen["sin_original"].append(f"{foto.get('grupo')}/{foto['nombre']}")
-            continue
-        etiqueta = f"{carpeta.name}/{original.name}"
-        estado = foto.get("estado")
-        sal = foto.get("salidas") or {}
-        if estado == "REPETIR" or not sal.get("maestra"):
-            resumen["repetir"].append(etiqueta)
-            continue
-        if estado == "REVISAR":
-            resumen["revisar"].append(etiqueta)
-        procesadas = carpeta / PROCESADAS
-        procesadas.mkdir(exist_ok=True)
-        shutil.copy2(salida / sal["maestra"]["ruta"], procesadas / f"{original.stem}.jpg")
-        for w in sal.get("web", []):
-            ruta = Path(w["ruta"])
-            destino = procesadas / WEB / ruta.parent.name / f"{original.stem}{ruta.suffix}"
-            destino.parent.mkdir(parents=True, exist_ok=True)
-            shutil.copy2(salida / ruta, destino)
-        resumen["devueltas"] += 1
+    usados = set()
+    for mid, carpeta in modelos(raiz).items():
+        buenas, _ = unicas(carpeta)
+        for original in buenas:
+            foto = registro_de(original, mid, registros)
+            if foto is None:
+                continue
+            usados.add(id(foto))
+            etiqueta = f"{carpeta.name}/{original.name}"
+            estado = foto.get("estado")
+            sal = foto.get("salidas") or {}
+            if estado == "REPETIR" or not sal.get("maestra"):
+                resumen["repetir"].append(etiqueta)
+                continue
+            if estado == "REVISAR":
+                resumen["revisar"].append(etiqueta)
+            procesadas = carpeta / PROCESADAS
+            procesadas.mkdir(exist_ok=True)
+            shutil.copy2(salida / sal["maestra"]["ruta"], procesadas / f"{original.stem}.jpg")
+            # Los anchos de una versión anterior de esta foto se van: un lienzo más pequeño deja
+            # anchos que el nuevo no genera, y se subirían como si fueran de la foto de hoy.
+            if (procesadas / WEB).is_dir():
+                for vieja in (procesadas / WEB).glob(f"*/{original.stem}.*"):
+                    vieja.unlink()
+            for w in sal.get("web", []):
+                ruta = Path(w["ruta"])
+                destino = procesadas / WEB / ruta.parent.name / f"{original.stem}{ruta.suffix}"
+                destino.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(salida / ruta, destino)
+            resumen["devueltas"] += 1
+    for foto in registros:
+        if id(foto) not in usados:
+            resumen["sin_original"].append(f"{foto.get('grupo')}/{foto.get('nombre')}")
     return resumen
+
+
+# --------------------------------------------------------------------------
+# La tanda del bloque 2 (ADR-0079)
+# --------------------------------------------------------------------------
+
+def cargar_config() -> dict:
+    return {**json.loads(CONFIG.read_text(encoding="utf-8")), "lienzo_minimo": LIENZO_MINIMO}
+
+
+def lado_minimo(cfg: dict) -> int:
+    """El lado mayor por debajo del cual una foto no puede salir LISTA en `lienzo_minimo`.
+
+    El producto mide como mucho lo que mide la foto, y `procesar.py` marca REVISAR
+    desde `ampliacion_revisar`: si la foto entera ampliada hasta ahí no llena el
+    producto en el lienzo mínimo, ningún recorte lo hará."""
+    return math.ceil(int(cfg["lienzo_minimo"]) * float(cfg["ocupacion"]) / float(cfg["ampliacion_revisar"]))
+
+
+def medir(ruta: Path):
+    """(ancho, alto), o None si no se puede saber: sin Pillow, o un formato que no abre.
+    Lo que no se mide no se descarta: lo decide el retoque."""
+    try:
+        from PIL import Image
+    except ImportError:
+        return None
+    try:
+        with Image.open(ruta) as im:
+            return im.size
+    except Exception:
+        return None
+
+
+def revisar_antes(carpeta: Path, cfg: dict, medidor=medir) -> dict:
+    """Cuántas originales pueden salir LISTA, y por qué no las demás, sin procesar nada."""
+    minimo = lado_minimo(cfg)
+    buenas, duplicadas = unicas(carpeta)
+    viables = []
+    fallidas = [{"foto": dup.name, "estado": "DUPLICADA",
+                 "motivo": f"sale con el mismo nombre que «{primera}»: renómbrala para que cuente"}
+                for dup, primera in duplicadas]
+    for f in buenas:
+        medida = medidor(f)
+        if medida is not None and max(medida) < minimo:
+            fallidas.append({"foto": f.name, "estado": "PEQUEÑA",
+                             "motivo": f"mide {max(medida)} px de lado mayor y necesita por lo menos {minimo} px "
+                                       f"para salir LISTA en un lienzo de {cfg['lienzo_minimo']} px"})
+        else:
+            viables.append(f.name)
+    return {"viables": viables, "fallidas": fallidas}
+
+
+def huella_de_originales(carpeta: Path) -> str:
+    """Cambia si se añade, quita, renombra o reemplaza una original, aunque conserve tamaño y fecha."""
+    h = hashlib.sha256()
+    for f in originales(carpeta):
+        h.update(f"{f.name}|{huella_archivo(f)}\n".encode())
+    return h.hexdigest()
+
+
+def leer_estado(carpeta: Path):
+    ruta = carpeta / ESTADO
+    return json.loads(ruta.read_text(encoding="utf-8")) if ruta.is_file() else None
+
+
+def escribir_estado(carpeta: Path, estado: dict) -> None:
+    (carpeta / ESTADO).write_text(json.dumps(estado, ensure_ascii=False, indent=2) + "\n",
+                                  encoding="utf-8", newline="")
+
+
+def leer_sacados(raiz: Path) -> dict:
+    ruta = Path(raiz) / TRABAJO / SACADOS
+    return json.loads(ruta.read_text(encoding="utf-8")) if ruta.is_file() else {}
+
+
+def ahora() -> str:
+    return datetime.now(timezone.utc).isoformat(timespec="seconds")
+
+
+def texto_de_motivo(m) -> str:
+    """El reporte guarda los motivos finales como texto (reporte.estado_final) y los automáticos
+    como diccionarios: se aceptan los dos."""
+    if isinstance(m, str):
+        return m
+    return (m or {}).get("texto") or (m or {}).get("codigo", "")
+
+
+def evaluar(mid: str, carpeta: Path, reporte: dict, cfg: dict) -> dict:
+    """Las fotos LISTA del modelo según el reporte, y la razón de cada una que no lo es."""
+    registros = reporte.get("fotos", [])
+    buenas, _ = unicas(carpeta)
+    listas, fallidas = [], []
+    for original in buenas:
+        foto = registro_de(original, mid, registros)
+        if foto is None:
+            fallidas.append({"foto": original.name, "estado": SIN_PROCESAR,
+                             "motivo": "el retoque no la procesó: si es HEIC, falta pillow-heif "
+                                       "(pip install pillow-heif); si no, se reintenta en la próxima corrida"})
+            continue
+        estado = foto.get("estado")
+        lienzo = int((foto.get("lienzo") or [0])[0])
+        motivos = "; ".join(texto_de_motivo(m) for m in foto.get("motivos", []))
+        # Una aprobación a ojo solo pesa si había algo que aprobar: un REVISAR automático.
+        aprobada_a_ojo = bool(foto.get("revisada")) and any(
+            isinstance(m, dict) and m.get("estado") == "REVISAR" for m in foto.get("motivos_auto", []))
+        if estado == "LISTA" and aprobada_a_ojo:
+            motivos_auto = "; ".join(m.get("texto", "") for m in foto.get("motivos_auto", [])
+                                     if isinstance(m, dict) and m.get("estado") == "REVISAR")
+            fallidas.append({"foto": original.name, "estado": "REVISAR",
+                             "motivo": "salió REVISAR y se aprobó a ojo; para la tanda solo cuenta una LISTA"
+                                       + (f" ({motivos_auto})" if motivos_auto else "")})
+        elif estado == "LISTA" and lienzo < int(cfg["lienzo_minimo"]):
+            fallidas.append({"foto": original.name, "estado": "LIENZO",
+                             "motivo": f"salió en un lienzo de {lienzo} px; el sitio pide por lo menos "
+                                       f"{cfg['lienzo_minimo']} px, y el lienzo lo fija la mejor foto del modelo: "
+                                       "hace falta una foto de más resolución"})
+        elif estado == "LISTA":
+            listas.append(f"{original.stem}.jpg")
+        else:
+            fallidas.append({"foto": original.name, "estado": estado or "?", "motivo": motivos or "sin motivo"})
+    return {"listas": listas, "fallidas": fallidas}
+
+
+def _evaluado_de_verdad(previo: dict) -> bool:
+    """Si el estado guardado salió de mirar el reporte. Uno «por procesar», o con fotos que el
+    retoque no procesó, no se puede dar por decidido aunque la carpeta no haya cambiado."""
+    return previo.get("motivo") != "por procesar" and not any(
+        f.get("estado") == SIN_PROCESAR for f in previo.get("fallidas", []))
+
+
+def decidir(mid: str, carpeta, cfg: dict, reporte=None, medidor=medir, fecha_tanda=None,
+            sacados=None) -> tuple:
+    """(estado del modelo, ¿hay que procesarlo?). Sin `reporte` solo decide lo que se sabe antes de procesar.
+
+    Con `reporte` siempre recalcula el veredicto —salvo el de un modelo sacado—: lo que se marcó
+    a ojo después de la corrida anterior tiene que contar."""
+    sacados = sacados or {}
+    if carpeta is None:
+        if mid in sacados and sacados[mid].get("fechaLista") == fecha_tanda:
+            return dict(sacados[mid], modelo=mid, estado=FUERA), False
+        return {"modelo": mid, "estado": EN_ESPERA, "listas": [], "faltan": MINIMO_LISTA,
+                "fallidas": [], "motivo": "no tiene carpeta: corre el paso 5 de /listas-de-proveedor, "
+                                          "o sácalo de la tanda", "fecha": ahora()}, False
+    huella = huella_de_originales(carpeta)
+    previo = leer_estado(carpeta) or {}
+    mismo = previo.get("huella") == huella
+    # Sacado de la tanda: vale para esta lista. Con fotos nuevas, o en la tanda de otra lista, se
+    # vuelve a intentar.
+    if previo.get("estado") == FUERA and mismo and previo.get("fechaLista") == fecha_tanda:
+        return previo, False
+
+    base = {"modelo": mid, "huella": huella, "fechaLista": fecha_tanda, "fecha": ahora(), "sin_cambios": False}
+    antes = revisar_antes(carpeta, cfg, medidor)
+    if len(antes["viables"]) < MINIMO_LISTA:
+        faltan = MINIMO_LISTA - len(antes["viables"])
+        return dict(base, estado=EN_ESPERA, listas=[], faltan=faltan, fallidas=antes["fallidas"],
+                    sin_cambios=mismo and previo.get("estado") == EN_ESPERA,
+                    motivo=f"tiene {len(antes['viables'])} originales que pueden salir LISTA y necesita "
+                           f"{MINIMO_LISTA}: no se procesó"), False
+
+    if reporte is None:
+        if mismo and previo.get("estado") in (APTO, EN_ESPERA) and _evaluado_de_verdad(previo):
+            return dict(previo, sin_cambios=previo.get("estado") == EN_ESPERA), False
+        return dict(base, estado=EN_ESPERA, listas=[], faltan=MINIMO_LISTA, fallidas=antes["fallidas"],
+                    motivo="por procesar"), True
+
+    ev = evaluar(mid, carpeta, reporte, cfg)
+    vistas = {x["foto"] for x in antes["fallidas"]}
+    fallidas = antes["fallidas"] + [f for f in ev["fallidas"] if f["foto"] not in vistas]
+    if len(ev["listas"]) >= MINIMO_LISTA:
+        return dict(base, estado=APTO, listas=ev["listas"], faltan=0, fallidas=fallidas, motivo=None), False
+    faltan = MINIMO_LISTA - len(ev["listas"])
+    return dict(base, estado=EN_ESPERA, listas=ev["listas"], faltan=faltan, fallidas=fallidas,
+                motivo=f"salieron {len(ev['listas'])} fotos LISTA y necesita {MINIMO_LISTA}"), False
+
+
+def sacar(raiz: Path, carpeta, mid: str, motivo: str, fecha_tanda) -> dict:
+    """La única salida de la espera, y es de la persona: el modelo queda fuera de esta tanda.
+    Si después deja fotos nuevas, o llega la tanda de otra lista, vuelve a intentarse. Un modelo
+    sin carpeta se anota en `_estudio/sacados.json`."""
+    if not motivo or not motivo.strip():
+        raise ValueError("Sacar un modelo de la tanda pide el motivo: queda escrito en su estado.")
+    texto = f"sacado de la tanda por la persona: {motivo.strip()}"
+    if carpeta is None:
+        sacados = leer_sacados(raiz)
+        sacados[mid] = {"motivo": texto, "fechaLista": fecha_tanda, "fecha": ahora()}
+        ruta = Path(raiz) / TRABAJO / SACADOS
+        ruta.parent.mkdir(parents=True, exist_ok=True)
+        ruta.write_text(json.dumps(sacados, ensure_ascii=False, indent=2) + "\n", encoding="utf-8", newline="")
+        return dict(sacados[mid], modelo=mid, estado=FUERA)
+    previo = leer_estado(carpeta) or {}
+    estado = dict(previo, modelo=mid, estado=FUERA, huella=huella_de_originales(carpeta),
+                  fechaLista=fecha_tanda, motivo=texto, fecha=ahora())
+    escribir_estado(carpeta, estado)
+    return estado
+
+
+def leer_tanda(ruta: Path) -> tuple:
+    """(fecha de la lista, ids de los modelos que esperan fotos)."""
+    datos = json.loads(Path(ruta).read_text(encoding="utf-8"))
+    return datos.get("fechaLista"), list(dict.fromkeys(datos.get("modelos") or []))
+
+
+def informe(estados: list) -> str:
+    lineas = []
+    aptos = [e for e in estados if e["estado"] == APTO]
+    fuera = [e for e in estados if e["estado"] == FUERA]
+    espera = [e for e in estados if e["estado"] == EN_ESPERA]
+    lineas.append(f"Tanda: {len(aptos)} aptos, {len(espera)} en espera, {len(fuera)} fuera de la tanda")
+    for e in espera:
+        nota = " · sin fotos nuevas desde el último intento" if e.get("sin_cambios") else ""
+        lineas.append(f"\nEN ESPERA  {e['modelo']}: faltan {e['faltan']} LISTA ({e.get('motivo')}){nota}")
+        for f in e.get("fallidas", []):
+            lineas.append(f"  - {f['foto']} [{f['estado']}] {f['motivo']}")
+    for e in fuera:
+        lineas.append(f"\nFUERA      {e['modelo']}: {e.get('motivo')}")
+    lineas.append("\nTANDA COMPLETA: revisa a ojo las hojas de las LISTA y sigue con /fichas-de-tecnologia"
+                  if not espera
+                  else "\nLA TANDA ESPERA FOTOS: deja las nuevas en «Fotos originales» y vuelve a correrla")
+    return "\n".join(lineas)
+
+
+def nombres_de(raiz: Path, ids) -> list:
+    """Los nombres con que procesar.py conoce las fotos de esos modelos, para `--solo`."""
+    nombres = []
+    for carpeta in modelos(raiz, set(ids)).values():
+        buenas, _ = unicas(carpeta)
+        nombres.extend(slug(f.stem) for f in buenas)
+    return nombres
+
+
+def correr_tanda(raiz: Path, ids: list, cfg: dict, procesar_fn, solo_devolver=False, medidor=medir,
+                 fecha_tanda=None) -> list:
+    """Decide, procesa lo que haga falta, devuelve y vuelve a decidir. Escribe el estado de cada modelo.
+
+    `procesar_fn(nombres)` corre el retoque sobre esas fotos y devuelve False si quedó en
+    segundo plano."""
+    por_id = modelos(raiz, set(ids))
+    sacados = leer_sacados(raiz)
+    decisiones = {}
+    if not solo_devolver:
+        decisiones = {mid: decidir(mid, por_id.get(mid), cfg, None, medidor, fecha_tanda, sacados)
+                      for mid in ids}
+        a_procesar = [mid for mid, (_, p) in decisiones.items() if p]
+        if a_procesar:
+            copiadas, errores = preparar(raiz, set(a_procesar))
+            for e in errores:
+                print(f"[error] {e}")
+            print(f"{copiadas} foto(s) nuevas o cambiadas; se procesan enteros {len(a_procesar)} modelo(s)")
+            if procesar_fn(nombres_de(raiz, a_procesar)) is False:
+                return []   # quedó en segundo plano: se termina con --devolver
+    devolver(raiz)
+    reporte = leer_reporte(raiz)
+    estados = []
+    for mid in ids:
+        estado, _ = decidir(mid, por_id.get(mid), cfg, reporte, medidor, fecha_tanda, sacados)
+        if mid in decisiones and decisiones[mid][0].get("sin_cambios"):
+            # Se dice aunque se reevalúe: quien confirmó fotos nuevas tiene que saber que no llegaron.
+            estado = dict(estado, sin_cambios=True)
+        if por_id.get(mid) is not None:
+            escribir_estado(por_id[mid], {k: v for k, v in estado.items() if k != "sin_cambios"})
+        estados.append(estado)
+    return estados
+
+
+def retoque_en_curso(raiz: Path):
+    """El avance de un retoque en segundo plano que no ha terminado, o None."""
+    ruta = Path(raiz) / TRABAJO / "salida" / ".trabajo" / "avance.json"
+    try:
+        datos = json.loads(ruta.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return None
+    return datos if datos.get("estado") in ("iniciando", "procesando") else None
 
 
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     ap.add_argument("fichas", nargs="?", default="catalogo/entregables/fichas")
+    ap.add_argument("--tanda", help="por-proponer.json: el bloque 2, solo esos modelos y con la compuerta")
     ap.add_argument("--devolver", action="store_true",
                     help="solo copia a cada modelo lo que ya está en _estudio/salida (tras un --segundo-plano)")
     ap.add_argument("--segundo-plano", action="store_true", help="lanza procesar.py desacoplado y sale")
+    ap.add_argument("--sacar", metavar="ID", help="con --tanda: saca ese modelo de la tanda")
+    ap.add_argument("--motivo", help="con --sacar: por qué, queda escrito en su estado")
     a = ap.parse_args()
     raiz = Path(a.fichas)
+    base = [sys.executable, str(Path(__file__).with_name("procesar.py")), str(raiz / TRABAJO / "crudas"),
+            "-o", str(raiz / TRABAJO / "salida"), "--por-producto", "--variantes"]
+
+    def correr(orden) -> bool:
+        if a.segundo_plano:
+            subprocess.run(orden + ["--segundo-plano"], check=True)
+            extra = f' --tanda "{a.tanda}"' if a.tanda else ""
+            print(f"Cuando termine: python3 {Path(__file__).name} \"{raiz}\"{extra} --devolver")
+            return False
+        salida = subprocess.run(orden).returncode
+        if salida not in SALIDAS_DE_PROCESAR_ACEPTADAS:
+            raise SystemExit(f"procesar.py salió con {salida}: revisa el registro en {raiz / TRABAJO / 'salida'}")
+        return True
+
+    if a.tanda:
+        fecha, ids = leer_tanda(Path(a.tanda))
+        cfg = cargar_config()
+        if a.sacar:
+            if a.sacar not in ids:
+                print(f"{a.sacar} no está en la tanda.")
+                return 1
+            print(informe([sacar(raiz, modelos(raiz, {a.sacar}).get(a.sacar), a.sacar, a.motivo or "", fecha)]))
+            return 0
+        if a.devolver and retoque_en_curso(raiz):
+            print("El retoque sigue en segundo plano: espera a que termine y vuelve a correr --devolver.")
+            return SALIDA_EN_ESPERA
+        # Cada modelo que cambió se procesa entero, con --solo: el lienzo lo fija su mejor foto.
+        procesar_fn = lambda nombres: correr(base + sum((["--solo", n] for n in nombres), []))  # noqa: E731
+        estados = correr_tanda(raiz, ids, cfg, procesar_fn, solo_devolver=a.devolver, fecha_tanda=fecha)
+        if not estados:
+            return SALIDA_EN_ESPERA   # en segundo plano: la tanda todavía no está completa
+        print(informe(estados))
+        print(f"\nHojas de revisión: {raiz / TRABAJO / 'salida'}")
+        return SALIDA_EN_ESPERA if any(e["estado"] == EN_ESPERA for e in estados) else 0
 
     if not a.devolver:
         copiadas, errores = preparar(raiz)
         for e in errores:
             print(f"[error] {e}")
         print(f"{copiadas} foto(s) nuevas o cambiadas para procesar")
-        orden = [sys.executable, str(Path(__file__).with_name("procesar.py")), str(raiz / TRABAJO / "crudas"),
-                 "-o", str(raiz / TRABAJO / "salida"), "--por-producto", "--variantes", "--nuevas"]
-        if a.segundo_plano:
-            subprocess.run(orden + ["--segundo-plano"], check=True)
-            print(f"Cuando termine: python3 {Path(__file__).name} \"{raiz}\" --devolver")
+        if correr(base + ["--nuevas"]) is False:
             return 0
-        subprocess.run(orden, check=True)
 
     r = devolver(raiz)
     print(f"{r['devueltas']} foto(s) en «{PROCESADAS}»")

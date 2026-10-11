@@ -53,6 +53,13 @@ public class BorradorTecnologiaJpaEntity {
   @OrderColumn(name = "orden")
   private List<ConfiguracionTecnologiaJpaEmbeddable> configuraciones = new ArrayList<>();
 
+  @ElementCollection(fetch = FetchType.EAGER)
+  @CollectionTable(
+      name = "borrador_tecnologia_foto",
+      joinColumns = @JoinColumn(name = "borrador_id"))
+  @OrderColumn(name = "orden")
+  private List<FotoTecnologiaJpaEmbeddable> fotos = new ArrayList<>();
+
   @Column(name = "producto_id")
   private UUID productoId;
 
@@ -90,7 +97,8 @@ public class BorradorTecnologiaJpaEntity {
       String motivoRechazo,
       Instant vistoEn,
       Instant creadoEn,
-      Instant actualizadoEn) {
+      Instant actualizadoEn,
+      List<FotoTecnologiaJpaEmbeddable> fotos) {
     this.id = id;
     this.proveedorId = proveedorId;
     this.idModelo = idModelo;
@@ -108,6 +116,11 @@ public class BorradorTecnologiaJpaEntity {
     this.vistoEn = vistoEn;
     this.creadoEn = creadoEn;
     this.actualizadoEn = actualizadoEn;
+    this.fotos = new ArrayList<>(fotos);
+  }
+
+  public List<FotoTecnologiaJpaEmbeddable> getFotos() {
+    return fotos;
   }
 
   public UUID getId() {

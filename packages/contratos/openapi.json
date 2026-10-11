@@ -79,6 +79,40 @@
         ],
         "type" : "object"
       },
+      "AgregarFotoBorradorTecnologiaPeticion" : {
+        "properties" : {
+          "altEn" : {
+            "type" : "string"
+          },
+          "altEs" : {
+            "type" : "string"
+          },
+          "alto" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "hash" : {
+            "type" : "string"
+          },
+          "objectKeyVistaPrevia" : {
+            "type" : "string"
+          },
+          "variantes" : {
+            "items" : {
+              "$ref" : "#/components/schemas/VarianteSubidaPeticion"
+            },
+            "type" : "array"
+          }
+        },
+        "required" : [
+          "altEn",
+          "altEs",
+          "alto",
+          "hash",
+          "variantes"
+        ],
+        "type" : "object"
+      },
       "AgregarImagenDeGaleriaPeticion" : {
         "properties" : {
           "altEn" : {
@@ -493,6 +527,10 @@
       },
       "BorradorTecnologiaRespuesta" : {
         "properties" : {
+          "cantidadDeFotos" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
           "categoriaSugerida" : {
             "type" : "string"
           },
@@ -511,6 +549,16 @@
           },
           "estado" : {
             "type" : "string"
+          },
+          "fotos" : {
+            "items" : {
+              "$ref" : "#/components/schemas/FotoDeBorradorTecnologiaRespuesta"
+            },
+            "type" : "array"
+          },
+          "fotosQueFaltan" : {
+            "format" : "int32",
+            "type" : "integer"
           },
           "id" : {
             "format" : "uuid",
@@ -548,10 +596,13 @@
           }
         },
         "required" : [
+          "cantidadDeFotos",
           "configuraciones",
           "creadoEn",
           "descripcion",
           "estado",
+          "fotos",
+          "fotosQueFaltan",
           "id",
           "idModelo",
           "paleta",
@@ -1713,6 +1764,44 @@
         ],
         "type" : "object"
       },
+      "FotoDeBorradorTecnologiaRespuesta" : {
+        "properties" : {
+          "altEn" : {
+            "type" : "string"
+          },
+          "altEs" : {
+            "type" : "string"
+          },
+          "alto" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "ancho" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "hash" : {
+            "type" : "string"
+          },
+          "id" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "url" : {
+            "type" : "string"
+          }
+        },
+        "required" : [
+          "altEn",
+          "altEs",
+          "alto",
+          "ancho",
+          "hash",
+          "id",
+          "url"
+        ],
+        "type" : "object"
+      },
       "FotoRespuesta" : {
         "properties" : {
           "mensajeId" : {
@@ -1992,9 +2081,21 @@
             },
             "type" : "array"
           },
+          "configuracionesPorProponer" : {
+            "items" : {
+              "type" : "string"
+            },
+            "type" : "array"
+          },
           "modelosAgotados" : {
             "format" : "int32",
             "type" : "integer"
+          },
+          "modelosPorProponer" : {
+            "items" : {
+              "type" : "string"
+            },
+            "type" : "array"
           },
           "modelosYaDecididos" : {
             "items" : {
@@ -2052,11 +2153,19 @@
               "type" : "string"
             },
             "type" : "array"
+          },
+          "modo" : {
+            "enum" : [
+              "INVENTARIO",
+              "BORRADORES"
+            ],
+            "type" : "string"
           }
         },
         "required" : [
           "fechaLista",
-          "modelos"
+          "modelos",
+          "modo"
         ],
         "type" : "object"
       },
@@ -4715,6 +4824,121 @@
               }
             },
             "description" : "OK"
+          }
+        },
+        "tags" : [
+          "admin-tecnologia-controlador"
+        ]
+      }
+    },
+    "/api/v1/admin/borradores-tecnologia/{id}/fotos" : {
+      "post" : {
+        "operationId" : "agregarFoto",
+        "parameters" : [
+          {
+            "in" : "path",
+            "name" : "id",
+            "required" : true,
+            "schema" : {
+              "format" : "uuid",
+              "type" : "string"
+            }
+          }
+        ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/AgregarFotoBorradorTecnologiaPeticion"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/BorradorTecnologiaRespuesta"
+                }
+              }
+            },
+            "description" : "Created"
+          }
+        },
+        "tags" : [
+          "admin-tecnologia-controlador"
+        ]
+      }
+    },
+    "/api/v1/admin/borradores-tecnologia/{id}/fotos/url-subida" : {
+      "post" : {
+        "operationId" : "urlDeSubidaDeFoto_1",
+        "parameters" : [
+          {
+            "in" : "path",
+            "name" : "id",
+            "required" : true,
+            "schema" : {
+              "format" : "uuid",
+              "type" : "string"
+            }
+          }
+        ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/SolicitarSubidaDeFotoPeticion"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SubidaDeFotoRespuesta"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "admin-tecnologia-controlador"
+        ]
+      }
+    },
+    "/api/v1/admin/borradores-tecnologia/{id}/fotos/{fotoId}" : {
+      "delete" : {
+        "operationId" : "quitarFoto",
+        "parameters" : [
+          {
+            "in" : "path",
+            "name" : "id",
+            "required" : true,
+            "schema" : {
+              "format" : "uuid",
+              "type" : "string"
+            }
+          },
+          {
+            "in" : "path",
+            "name" : "fotoId",
+            "required" : true,
+            "schema" : {
+              "format" : "uuid",
+              "type" : "string"
+            }
+          }
+        ],
+        "responses" : {
+          "204" : {
+            "description" : "No Content"
           }
         },
         "tags" : [

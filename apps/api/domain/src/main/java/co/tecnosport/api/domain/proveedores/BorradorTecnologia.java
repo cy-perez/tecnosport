@@ -2,6 +2,7 @@
 // después y la constancia tiene que poder releerse sin él. Mismo criterio que BorradorProducto.
 package co.tecnosport.api.domain.proveedores;
 
+import co.tecnosport.api.domain.catalogo.Producto;
 import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.compartido.ExcepcionDeDominio;
 import co.tecnosport.api.domain.compartido.GeneradorIdentificador;
@@ -36,14 +37,31 @@ import java.util.UUID;
  *
  * <p>Una configuración sin colores elegidos no se vende, y eso no es un error: el proveedor puede
  * ofrecer una memoria que no interesa. Lo que no se puede es aprobar sin vender ninguna.
+ *
+ * <h2>Las fotos llegan con el borrador</h2>
+ *
+ * <p>Desde ADR-0079 la skill de fichas sube al borrador las fotos ya retocadas del modelo, en el
+ * orden en que se publicarán: la primera es la principal. Quien revisa ve el producto antes de
+ * decidir colores y precio, y aprobar las pasa al producto.
  */
 public final class BorradorTecnologia {
+
+  /** La principal y la galería entera del producto: más no cabe al aprobar. */
+  public static final int TOPE_DE_FOTOS = 1 + Producto.TOPE_DE_GALERIA;
+
+  /**
+   * Las que necesita un modelo nuevo para aprobarse (decisión del negocio del 10/10/2026,
+   * ADR-0079). La skill de fotos ya no deja pasar un modelo con menos; esto es para que la
+   * compuerta no dependa solo de ella.
+   */
+  public static final int MINIMO_DE_FOTOS = 4;
 
   private final UUID id;
   private final UUID proveedorId;
   private ModeloDeLista modelo;
   private final HuellaProveedor huella;
   private final List<ConfiguracionTecnologia> configuraciones;
+  private final List<FotoDeBorradorTecnologia> fotos;
   private UUID productoId;
   private EstadoBorrador estado;
   private String motivoRechazo;
@@ -59,7 +77,8 @@ public final class BorradorTecnologia {
       EstadoBorrador estado,
       String motivoRechazo,
       Instant vistoEn,
-      Instant creadoEn) {
+      Instant creadoEn,
+      List<FotoDeBorradorTecnologia> fotos) {
     this.id = Objects.requireNonNull(id, "El id del borrador no puede ser nulo.");
     this.proveedorId = Objects.requireNonNull(proveedorId, "Un borrador es de un proveedor.");
     this.modelo = Objects.requireNonNull(modelo, "Un borrador de tecnología es de un modelo.");
@@ -76,6 +95,7 @@ public final class BorradorTecnologia {
     if (estado == EstadoBorrador.RECHAZADO && this.motivoRechazo == null) {
       throw new ExcepcionDeDominio("Un borrador rechazado dice por qué.");
     }
+    this.fotos = new ArrayList<>(fotos == null ? List.of() : fotos);
   }
 
   /**
@@ -98,7 +118,8 @@ public final class BorradorTecnologia {
         EstadoBorrador.EN_REVISION,
         null,
         vistoEn,
-        ahora);
+        ahora,
+        List.of());
   }
 
   /**
@@ -127,6 +148,37 @@ public final class BorradorTecnologia {
     this.configuraciones.clear();
     this.configuraciones.addAll(nuevas);
     this.vistoEn = visto;
+  }
+
+  /**
+   * Suma una foto al final: la primera que entra es la principal. Una foto con el mismo contenido
+   * que otra no entra, porque publicaría dos veces la misma toma.
+   */
+  public void agregarFoto(FotoDeBorradorTecnologia foto) {
+    exigirEnRevision("agregarle fotos a");
+    Objects.requireNonNull(foto, "La foto no puede ser nula.");
+    if (fotos.size() >= TOPE_DE_FOTOS) {
+      throw new ExcepcionDeDominio(
+          "El borrador ya tiene "
+              + TOPE_DE_FOTOS
+              + " fotos: la principal y la galería entera del producto.");
+    }
+    if (fotos.stream().anyMatch(f -> f.hash().equals(foto.hash()))) {
+      throw new ExcepcionDeDominio("Esa foto ya está en el borrador.");
+    }
+    fotos.add(foto);
+  }
+
+  /** Quita la foto y la devuelve, para que quien llama borre sus archivos. */
+  public FotoDeBorradorTecnologia quitarFoto(UUID fotoId) {
+    exigirEnRevision("quitarle fotos a");
+    FotoDeBorradorTecnologia foto =
+        fotos.stream()
+            .filter(f -> f.id().equals(fotoId))
+            .findFirst()
+            .orElseThrow(() -> new ExcepcionDeDominio("Esa foto no es de este borrador."));
+    fotos.remove(foto);
+    return foto;
   }
 
   /** Lo que quien revisa decide de una configuración. */
@@ -182,10 +234,21 @@ public final class BorradorTecnologia {
   }
 
   /**
-   * Lo que impide aprobar, dicho antes de tocar el catálogo: ninguna configuración con colores, o
-   * una con colores y sin precio.
+   * Lo que impide aprobar, dicho antes de tocar el catálogo: un modelo nuevo sin sus fotos, ninguna
+   * configuración con colores, o una con colores y sin precio. Un borrador de configuraciones
+   * nuevas no pide fotos: el producto ya tiene las suyas.
    */
   public void exigirAprobable() {
+    if (fotosQueFaltan() > 0) {
+      throw new ExcepcionDeDominio(
+          "Un modelo nuevo necesita "
+              + MINIMO_DE_FOTOS
+              + " fotos para aprobarse; "
+              + modelo.titulo()
+              + " tiene "
+              + fotos.size()
+              + ".");
+    }
     List<ConfiguracionTecnologia> vendibles = configuracionesQueSeVenden();
     if (vendibles.isEmpty()) {
       throw new ExcepcionDeDominio(
@@ -291,6 +354,19 @@ public final class BorradorTecnologia {
 
   public List<ConfiguracionTecnologia> configuraciones() {
     return List.copyOf(configuraciones);
+  }
+
+  /**
+   * Cuántas fotos le faltan para aprobarse. Un borrador de configuraciones nuevas no pide: el
+   * producto ya tiene las suyas. Lo dice el dominio para que el panel no tenga que saber el mínimo.
+   */
+  public int fotosQueFaltan() {
+    return productoId != null ? 0 : Math.max(0, MINIMO_DE_FOTOS - fotos.size());
+  }
+
+  /** En el orden en que se publican: la primera es la principal. */
+  public List<FotoDeBorradorTecnologia> fotos() {
+    return List.copyOf(fotos);
   }
 
   public Optional<UUID> productoId() {

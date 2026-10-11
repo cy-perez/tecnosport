@@ -6,9 +6,11 @@ import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.proveedores.BorradorTecnologia;
 import co.tecnosport.api.domain.proveedores.ConfiguracionTecnologia;
 import co.tecnosport.api.domain.proveedores.EstadoBorrador;
+import co.tecnosport.api.domain.proveedores.FotoDeBorradorTecnologia;
 import co.tecnosport.api.domain.proveedores.ModeloDeLista;
 import co.tecnosport.api.infrastructure.proveedores.entidad.BorradorTecnologiaJpaEntity;
 import co.tecnosport.api.infrastructure.proveedores.entidad.ConfiguracionTecnologiaJpaEmbeddable;
+import co.tecnosport.api.infrastructure.proveedores.entidad.FotoTecnologiaJpaEmbeddable;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.Arrays;
@@ -113,7 +115,24 @@ public class RepositorioBorradoresTecnologiaJpa implements RepositorioBorradores
         b.motivoRechazo().orElse(null),
         b.vistoEn(),
         b.creadoEn(),
-        ahora);
+        ahora,
+        b.fotos().stream()
+            .map(
+                f ->
+                    new FotoTecnologiaJpaEmbeddable(
+                        f.id(),
+                        String.join(
+                            SEPARADOR,
+                            f.variantes().stream()
+                                .map(v -> v.ancho() + ";" + v.bytes() + ";" + v.referencia())
+                                .toList()),
+                        f.referenciaVistaPrevia(),
+                        f.alto(),
+                        f.hash(),
+                        f.altEs(),
+                        f.altEn(),
+                        f.subidaEn()))
+            .toList());
   }
 
   private static BorradorTecnologia aDominio(BorradorTecnologiaJpaEntity f) {
@@ -147,7 +166,31 @@ public class RepositorioBorradoresTecnologiaJpa implements RepositorioBorradores
         EstadoBorrador.valueOf(f.getEstado()),
         f.getMotivoRechazo(),
         f.getVistoEn(),
-        f.getCreadoEn());
+        f.getCreadoEn(),
+        f.getFotos().stream().map(RepositorioBorradoresTecnologiaJpa::foto).toList());
+  }
+
+  private static FotoDeBorradorTecnologia foto(FotoTecnologiaJpaEmbeddable f) {
+    List<FotoDeBorradorTecnologia.Variante> variantes =
+        separar(f.getVariantes()).stream()
+            .map(
+                linea -> {
+                  // La clave va al final y con límite 3: si algún día trajera un punto y coma,
+                  // seguiría entera.
+                  String[] partes = linea.split(";", 3);
+                  return new FotoDeBorradorTecnologia.Variante(
+                      Integer.parseInt(partes[0]), partes[2], Long.parseLong(partes[1]));
+                })
+            .toList();
+    return new FotoDeBorradorTecnologia(
+        f.getFotoId(),
+        variantes,
+        f.getReferenciaVistaPrevia(),
+        f.getAlto(),
+        f.getHash(),
+        f.getAltEs(),
+        f.getAltEn(),
+        f.getSubidaEn());
   }
 
   private static BigDecimal valor(Dinero dinero) {

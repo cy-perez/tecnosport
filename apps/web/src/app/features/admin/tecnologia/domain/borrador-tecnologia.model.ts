@@ -27,6 +27,18 @@ export interface ConfiguracionTecnologia {
   readonly precioVenta: number | null;
 }
 
+/** Una foto del borrador, ya retocada; la primera es la principal (ADR-0079). */
+export interface FotoDeBorradorTecnologia {
+  readonly id: string;
+  /** Firmada: caduca, y por eso no pasa por el cargador de imágenes del catálogo. */
+  readonly url: string;
+  readonly ancho: number;
+  readonly alto: number;
+  /** El texto alternativo con que se publicará, en cada idioma: quien aprueba lo ve. */
+  readonly altEs: string;
+  readonly altEn: string;
+}
+
 export interface BorradorTecnologia {
   readonly id: string;
   readonly proveedorId: string;
@@ -47,6 +59,15 @@ export interface BorradorTecnologia {
   readonly motivoRechazo: string | null;
   readonly vistoEn: string;
   readonly creadoEn: string;
+  /** Cuántas tiene: viene también en la bandeja, que no trae las fotos. */
+  readonly cantidadDeFotos: number;
+  /**
+   * Cuántas le faltan para aprobarse; cero en uno de configuraciones nuevas. Lo calcula el servidor,
+   * que es quien sabe el mínimo: el panel no lo repite.
+   */
+  readonly fotosQueFaltan: number;
+  /** Solo en el detalle; vacía en la bandeja. */
+  readonly fotos: readonly FotoDeBorradorTecnologia[];
 }
 
 export interface EleccionDeConfiguracion {

@@ -21,6 +21,19 @@ describe('mapeador del borrador de tecnología', () => {
       estado: 'EN_REVISION',
       vistoEn: '2026-10-08T05:00:00Z',
       creadoEn: '2026-10-08T15:00:00Z',
+      cantidadDeFotos: 1,
+      fotosQueFaltan: 3,
+      fotos: [
+        {
+          id: 'f-1',
+          url: 'https://firmada/f-1',
+          ancho: 1200,
+          alto: 1200,
+          hash: 'a'.repeat(64),
+          altEs: 'Galaxy A17 sobre fondo blanco',
+          altEn: 'Galaxy A17 on a white background',
+        },
+      ],
     });
 
     expect(borrador.marcaSugerida).toBeNull();
@@ -30,6 +43,18 @@ describe('mapeador del borrador de tecnología', () => {
     expect(config.precioVenta).toBeNull();
     expect(config.ram).toBeNull();
     expect(config.coloresSugeridos).toEqual(['Negro']);
+    expect(borrador.cantidadDeFotos).toBe(1);
+    expect(borrador.fotosQueFaltan).toBe(3);
+    expect(borrador.fotos).toEqual([
+      {
+        id: 'f-1',
+        url: 'https://firmada/f-1',
+        ancho: 1200,
+        alto: 1200,
+        altEs: 'Galaxy A17 sobre fondo blanco',
+        altEn: 'Galaxy A17 on a white background',
+      },
+    ]);
   });
 
   it('una elección sin precio no manda el campo', () => {

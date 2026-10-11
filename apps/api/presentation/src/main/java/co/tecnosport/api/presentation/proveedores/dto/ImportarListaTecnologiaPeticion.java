@@ -16,9 +16,11 @@ import java.util.UUID;
  *
  * @param bloques los bloques de la lista que vinieron («ANDROID», «IPHONE»…). Solo informativo: qué
  *     desapareció ya lo decidió la skill con ellos
+ * @param modo el inventario de lo que ya se vende o los borradores de lo que no (ADR-0079)
  */
 public record ImportarListaTecnologiaPeticion(
     @Schema(requiredMode = Schema.RequiredMode.REQUIRED) LocalDate fechaLista,
+    @Schema(requiredMode = Schema.RequiredMode.REQUIRED) ImportarListaDeTecnologiaComando.Modo modo,
     List<String> bloques,
     @Schema(requiredMode = Schema.RequiredMode.REQUIRED) List<ModeloPeticion> modelos,
     List<String> configuracionesDesaparecidas,
@@ -26,6 +28,7 @@ public record ImportarListaTecnologiaPeticion(
 
   public ImportarListaTecnologiaPeticion {
     Objects.requireNonNull(fechaLista, "La lista tiene fecha.");
+    Objects.requireNonNull(modo, "La lista dice si es el inventario o los borradores.");
     Objects.requireNonNull(modelos, "La lista trae sus modelos, aunque sean ninguno.");
   }
 
@@ -33,6 +36,7 @@ public record ImportarListaTecnologiaPeticion(
     return new ImportarListaDeTecnologiaComando(
         proveedorId,
         fechaLista,
+        modo,
         modelos.stream().map(ModeloPeticion::aDominio).toList(),
         configuracionesDesaparecidas,
         modelosDesaparecidos);

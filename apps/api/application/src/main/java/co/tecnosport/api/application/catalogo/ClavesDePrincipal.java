@@ -23,7 +23,7 @@ import java.util.UUID;
  * <p>Es además la regla dura #7: la key la manda el cliente, y comprobar solo que empiece por el id
  * del producto es confiar en él para decidir qué objeto se borra.
  */
-final class ClavesDePrincipal {
+public final class ClavesDePrincipal {
 
   private ClavesDePrincipal() {}
 
@@ -31,7 +31,12 @@ final class ClavesDePrincipal {
     return "productos/" + productoId + "/principal-";
   }
 
-  static String nueva(UUID productoId, String extension) {
+  /**
+   * Pública porque la usan también las aprobaciones de los borradores de proveedor, que copian
+   * fotos al bucket con estas mismas claves: si las escribieran a mano, la limpieza de la principal
+   * y el borrado de la galería dejarían de reconocerlas.
+   */
+  public static String nueva(UUID productoId, String extension) {
     return prefijoDe(productoId) + GeneradorIdentificador.nuevo() + "." + extension;
   }
 }

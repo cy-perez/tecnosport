@@ -1,22 +1,28 @@
 package co.tecnosport.api.bootstrap.proveedores;
 
 import co.tecnosport.api.application.catalogo.AgregarVariante;
+import co.tecnosport.api.application.catalogo.AlmacenDeImagenes;
 import co.tecnosport.api.application.catalogo.RepositorioAtributos;
 import co.tecnosport.api.application.catalogo.RepositorioCategorias;
 import co.tecnosport.api.application.catalogo.RepositorioMarcas;
 import co.tecnosport.api.application.catalogo.RepositorioProductos;
 import co.tecnosport.api.application.compartido.Reloj;
 import co.tecnosport.api.application.inventario.RepositorioInventario;
+import co.tecnosport.api.application.proveedores.AlmacenDeArchivosDeProveedor;
 import co.tecnosport.api.application.proveedores.RepositorioProductosDeProveedor;
 import co.tecnosport.api.application.proveedores.RepositorioProveedores;
+import co.tecnosport.api.application.proveedores.tecnologia.AgregarFotoABorradorTecnologia;
 import co.tecnosport.api.application.proveedores.tecnologia.AprobarBorradorTecnologia;
 import co.tecnosport.api.application.proveedores.tecnologia.EditarBorradorTecnologia;
+import co.tecnosport.api.application.proveedores.tecnologia.FotosFirmadasDeBorradorTecnologia;
 import co.tecnosport.api.application.proveedores.tecnologia.ImportarListaDeTecnologia;
 import co.tecnosport.api.application.proveedores.tecnologia.ListarBorradoresTecnologia;
+import co.tecnosport.api.application.proveedores.tecnologia.QuitarFotoDeBorradorTecnologia;
 import co.tecnosport.api.application.proveedores.tecnologia.RechazarBorradorTecnologia;
 import co.tecnosport.api.application.proveedores.tecnologia.RepositorioBorradoresTecnologia;
 import co.tecnosport.api.application.proveedores.tecnologia.RepositorioListasDeTecnologia;
 import co.tecnosport.api.application.proveedores.tecnologia.RepositorioVariantesDeProveedor;
+import co.tecnosport.api.application.proveedores.tecnologia.SolicitarSubidaDeFotoDeBorradorTecnologia;
 import co.tecnosport.api.application.proveedores.tecnologia.VerBorradorTecnologia;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -54,20 +60,26 @@ public class ConfiguracionListasDeTecnologia {
       RepositorioVariantesDeProveedor variantes,
       RepositorioProductos productos,
       RepositorioProductosDeProveedor productosDeProveedor,
+      RepositorioListasDeTecnologia listas,
       RepositorioMarcas marcas,
       RepositorioCategorias categorias,
       RepositorioAtributos atributos,
       AgregarVariante agregarVariante,
+      AlmacenDeArchivosDeProveedor almacenPrivado,
+      AlmacenDeImagenes almacenDeImagenes,
       PropiedadesProveedores propiedades) {
     return new AprobarBorradorTecnologia(
         borradores,
         variantes,
         productos,
         productosDeProveedor,
+        listas,
         marcas,
         categorias,
         atributos,
         agregarVariante,
+        almacenPrivado,
+        almacenDeImagenes,
         propiedades.tecnologia().existenciaPorVariante());
   }
 
@@ -92,5 +104,31 @@ public class ConfiguracionListasDeTecnologia {
   public RechazarBorradorTecnologia rechazarBorradorTecnologia(
       RepositorioBorradoresTecnologia borradores) {
     return new RechazarBorradorTecnologia(borradores);
+  }
+
+  @Bean
+  public SolicitarSubidaDeFotoDeBorradorTecnologia solicitarSubidaDeFotoDeBorradorTecnologia(
+      RepositorioBorradoresTecnologia borradores, AlmacenDeArchivosDeProveedor almacen) {
+    return new SolicitarSubidaDeFotoDeBorradorTecnologia(borradores, almacen);
+  }
+
+  @Bean
+  public AgregarFotoABorradorTecnologia agregarFotoABorradorTecnologia(
+      RepositorioBorradoresTecnologia borradores,
+      AlmacenDeArchivosDeProveedor almacen,
+      Reloj reloj) {
+    return new AgregarFotoABorradorTecnologia(borradores, almacen, reloj);
+  }
+
+  @Bean
+  public QuitarFotoDeBorradorTecnologia quitarFotoDeBorradorTecnologia(
+      RepositorioBorradoresTecnologia borradores, AlmacenDeArchivosDeProveedor almacen) {
+    return new QuitarFotoDeBorradorTecnologia(borradores, almacen);
+  }
+
+  @Bean
+  public FotosFirmadasDeBorradorTecnologia fotosFirmadasDeBorradorTecnologia(
+      AlmacenDeArchivosDeProveedor almacen) {
+    return new FotosFirmadasDeBorradorTecnologia(almacen);
   }
 }

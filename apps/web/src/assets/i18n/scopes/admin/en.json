@@ -1139,7 +1139,10 @@
       "modelo": "Model",
       "configuraciones": "Configurations",
       "estado": "Status",
-      "acciones": "Actions"
+      "acciones": "Actions",
+      "fotos": "Photos",
+      "fotosFaltan": "{{tiene}} ({{faltan}} missing)",
+      "fotosNoAplica": "Not applicable: the product already has its photos"
     },
     "detalle": {
       "miga": "Review",
@@ -1162,11 +1165,15 @@
       "guardar": "Save the selection",
       "guardando": "Saving…",
       "guardado": "Selection saved.",
-      "errorGuardar": "The selection could not be saved. Try again."
+      "errorGuardar": "The selection could not be saved. Try again.",
+      "fotos": "Photos",
+      "sinFotos": "This model has no photos yet. The product sheet skill uploads them once the model has its photos ready.",
+      "fotoAlt": "Photo {{numero}} of {{modelo}}",
+      "principal": "Main: the one that opens the product page and the catalog card."
     },
     "aprobar": {
       "titulo": "Approve",
-      "explicacion": "Creates the product with one variant per checked color. It stays as a draft until it has photos: they come from the model's product sheet folder.",
+      "explicacion": "Creates the product with one variant per checked color and publishes it with these photos.",
       "explicacionExistente": "Adds one variant per checked color to the product.",
       "marca": "Brand",
       "categoria": "Category",
@@ -1179,7 +1186,9 @@
       "faltaPrecio": "Every configuration on sale needs its sale price, in pesos and without decimals.",
       "precioBajoCosto": "The sale price of each configuration must be higher than its cost.",
       "faltanMarcaYCategoria": "Choose the catalog brand and category.",
-      "error": "It could not be approved. Try again."
+      "error": "It could not be approved. Try again.",
+      "faltanFotos": "It is missing {{faltan}} photos to be approved.",
+      "revisaFotos": "It cannot be approved yet: photos are missing."
     },
     "rechazar": {
       "titulo": "Reject",

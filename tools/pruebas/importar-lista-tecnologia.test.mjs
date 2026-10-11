@@ -3,7 +3,17 @@
 // modelos que no se volvieron a proponer.
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { informeDeImportacion, resumenDeLista } from "../importar-lista-tecnologia.mjs";
+import {
+  cuerpoParaModo,
+  informeDeImportacion,
+  porProponerDe,
+  resumenDeLista,
+  huellaDeArchivo,
+  mismasFotos,
+  seleccionParaBorradores,
+  TOPE_DE_FOTOS,
+  tomasListas,
+} from "../importar-lista-tecnologia.mjs";
 
 test("el resumen cuenta modelos, configuraciones y desaparecidos", () => {
   const resumen = resumenDeLista({
@@ -49,4 +59,129 @@ test("sin avisos no hay líneas de aviso", () => {
     sinMargen: [],
   });
   assert.doesNotMatch(informe, /OJO|rechazados/);
+});
+
+test("los borradores no mandan lo desaparecido y el inventario sí", () => {
+  const lista = {
+    fechaLista: "2026-10-10",
+    modelos: [],
+    configuracionesDesaparecidas: ["a17-256-1-sim"],
+    modelosDesaparecidos: ["jbl-boombox-4"],
+  };
+  const inventario = cuerpoParaModo(lista, "INVENTARIO");
+  assert.equal(inventario.modo, "INVENTARIO");
+  assert.deepEqual(inventario.modelosDesaparecidos, ["jbl-boombox-4"]);
+  const borradores = cuerpoParaModo(lista, "BORRADORES");
+  assert.equal(borradores.modo, "BORRADORES");
+  assert.deepEqual(borradores.configuracionesDesaparecidas, []);
+  assert.deepEqual(borradores.modelosDesaparecidos, []);
+  assert.throws(() => cuerpoParaModo(lista, "COMPLETO"), /Modo desconocido/);
+});
+
+test("el inventario entrega lo que espera borrador y lo dice", () => {
+  const resultado = {
+    productosRenovados: 40,
+    variantesRepuestas: 90,
+    variantesRetiradas: 3,
+    modelosAgotados: 1,
+    borradoresNuevos: 0,
+    borradoresActualizados: 0,
+    modelosYaDecididos: [],
+    sinMargen: [],
+    modelosPorProponer: ["xiaomi-poco-f9-ultra-5g", "apple-airpods-pro-3"],
+    configuracionesPorProponer: ["samsung-galaxy-a17-5g-8gb-ram-256gb-dual-sim"],
+  };
+  assert.deepEqual(porProponerDe({ fechaLista: "2026-10-10" }, resultado, "h"), {
+    fechaLista: "2026-10-10",
+    huellaLista: "h",
+    modelos: ["xiaomi-poco-f9-ultra-5g", "apple-airpods-pro-3"],
+    configuraciones: ["samsung-galaxy-a17-5g-8gb-ram-256gb-dual-sim"],
+  });
+  assert.match(
+    informeDeImportacion(resultado),
+    /Esperan borrador: 2 modelos[\s\S]*y 1 configuraciones/,
+  );
+});
+
+const LISTA = {
+  fechaLista: "2026-10-10",
+  modelos: [
+    { idModelo: "poco-f9-ultra", titulo: "POCO F9 Ultra", configuraciones: [{ sku: "f9-512" }] },
+    { idModelo: "airpods-pro-3", titulo: "AirPods Pro 3", configuraciones: [{ sku: "app3" }] },
+    { idModelo: "honor-5i", titulo: "Honor 5i", configuraciones: [{ sku: "h5i" }] },
+    {
+      idModelo: "galaxy-a17",
+      titulo: "Galaxy A17",
+      configuraciones: [{ sku: "a17-1-sim" }, { sku: "a17-dual" }],
+    },
+    { idModelo: "jbl-flip-7", titulo: "JBL Flip 7", configuraciones: [{ sku: "flip7" }] },
+  ],
+};
+const POR_PROPONER = {
+  fechaLista: "2026-10-10",
+  modelos: ["poco-f9-ultra", "airpods-pro-3", "honor-5i"],
+  configuraciones: ["a17-dual"],
+};
+
+test("los borradores llevan los modelos aptos y las configuraciones nuevas, y dicen qué se queda", () => {
+  const { lista, omitidos } = seleccionParaBorradores(LISTA, POR_PROPONER, {
+    "poco-f9-ultra": { estado: "apto", listas: ["a.jpg"] },
+    "airpods-pro-3": { estado: "en_espera", faltan: 2, motivo: "salieron 2 fotos LISTA" },
+    "honor-5i": { estado: "fuera_de_tanda", motivo: "sacado de la tanda: sin material" },
+  });
+  assert.deepEqual(
+    lista.modelos.map((m) => [m.idModelo, m.configuraciones.map((c) => c.sku)]),
+    [
+      ["poco-f9-ultra", ["f9-512"]],
+      ["galaxy-a17", ["a17-dual"]],
+    ],
+    "el JBL ya se vende sin nada nuevo: se renovó con el inventario",
+  );
+  assert.deepEqual(
+    omitidos.map((o) => o.titulo),
+    ["AirPods Pro 3", "Honor 5i"],
+  );
+  assert.match(omitidos[0].motivo, /espera fotos/);
+  assert.match(omitidos[1].motivo, /fuera de la tanda/);
+});
+
+test("un modelo nuevo que no pasó por la tanda no entra", () => {
+  const { lista, omitidos } = seleccionParaBorradores(LISTA, POR_PROPONER, {});
+  assert.deepEqual(
+    lista.modelos.map((m) => m.idModelo),
+    ["galaxy-a17"],
+  );
+  assert.equal(omitidos.length, 3);
+  assert.match(omitidos[0].motivo, /no pasó por la tanda/);
+});
+
+test("las tomas que se suben son las LISTA, en el orden de la tanda", () => {
+  const archivos = [
+    { ruta: "/f/Fotos procesadas/x_1.jpg" },
+    { ruta: "/f/Fotos procesadas/x_2.jpg" },
+    { ruta: "/f/Fotos procesadas/x_3.jpg" },
+  ];
+  assert.deepEqual(
+    tomasListas(archivos, ["x_3.jpg", "x_1.jpg"]).map((a) => a.ruta),
+    ["/f/Fotos procesadas/x_3.jpg", "/f/Fotos procesadas/x_1.jpg"],
+  );
+  assert.throws(() => tomasListas(archivos, ["x_9.jpg"]), /ya no está/);
+});
+
+test("nunca se suben más fotos de las que caben en el borrador", () => {
+  const archivos = Array.from({ length: 12 }, (_, i) => ({ ruta: `/f/x_${i + 1}.jpg` }));
+  const listas = archivos.map((a) => a.ruta.slice(3));
+  assert.equal(tomasListas(archivos, listas).length, TOPE_DE_FOTOS);
+});
+
+test("las fotos del borrador son las mismas solo con los mismos hashes en el mismo orden", () => {
+  assert.equal(mismasFotos(["a", "b"], ["a", "b"]), true);
+  assert.equal(mismasFotos(["a", "b"], ["b", "a"]), false, "cambió la principal");
+  assert.equal(mismasFotos(["a", "b"], ["a", "c"]), false, "otra tanda, la misma cantidad");
+  assert.equal(mismasFotos(["a", "b"], ["a"]), false);
+});
+
+test("la huella del archivo cambia si cambia la lista", () => {
+  assert.equal(huellaDeArchivo("{}"), huellaDeArchivo("{}"));
+  assert.notEqual(huellaDeArchivo("{}"), huellaDeArchivo("{ }"));
 });

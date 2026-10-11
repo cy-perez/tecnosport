@@ -41,6 +41,7 @@ import {
   borradorTecnologiaEditable,
   coloresIniciales,
   completaUnProductoExistente,
+  FotoDeBorradorTecnologia,
   ConfiguracionTecnologia,
   EleccionDeConfiguracion,
   mismoColor,
@@ -123,6 +124,12 @@ export class DetalleTecnologiaAdminPage {
     const borrador = this.borrador();
     return borrador !== null && completaUnProductoExistente(borrador);
   });
+  /** Cuántas fotos le faltan para aprobarse; las sube la skill de fichas (ADR-0079). */
+  /** El texto alternativo con que se publicará la foto, en el idioma del panel. */
+  protected altDe(foto: FotoDeBorradorTecnologia): string {
+    return this.idioma() === 'en' ? foto.altEn : foto.altEs;
+  }
+  protected readonly faltanFotos = computed(() => this.borrador()?.fotosQueFaltan ?? 0);
   protected readonly nombreDelProveedor = computed(() => {
     const borrador = this.borrador();
     return (
@@ -376,6 +383,12 @@ export class DetalleTecnologiaAdminPage {
     const elecciones = this.elecciones();
     if (elecciones === null) {
       this.errorAprobar.set(this.transloco.translate('admin.tecnologia.detalle.precioIlegible'));
+      return;
+    }
+    if (this.faltanFotos() > 0) {
+      // Corto y distinto del aviso fijo, que ya describe el botón: repetir la frase la oiría dos
+      // veces quien usa lector de pantalla.
+      this.errorAprobar.set(this.transloco.translate('admin.tecnologia.aprobar.revisaFotos'));
       return;
     }
     const problema = problemaDeAprobacion(elecciones, this.borrador()?.configuraciones ?? []);

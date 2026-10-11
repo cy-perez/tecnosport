@@ -91,6 +91,7 @@ import co.tecnosport.api.application.proveedores.ProveedorInactivoException;
 import co.tecnosport.api.application.proveedores.ProveedorNoEncontradoException;
 import co.tecnosport.api.application.proveedores.TipoDeExportacionNoAdmitidoException;
 import co.tecnosport.api.application.proveedores.TipoDeFotoNoAdmitidoException;
+import co.tecnosport.api.application.proveedores.tecnologia.InventarioDeLaListaPendienteException;
 import co.tecnosport.api.application.proveedores.tecnologia.ListaDeTecnologiaDesactualizadaException;
 import co.tecnosport.api.application.proveedores.tecnologia.ListaDeTecnologiaYaImportadaException;
 import co.tecnosport.api.application.proveedores.tecnologia.ProveedorSinListasException;
@@ -292,6 +293,12 @@ public class ManejadorDeErrores {
   }
 
   // 409 las dos: la lista está bien escrita; lo que choca es el estado, la que ya entró.
+  @ExceptionHandler(InventarioDeLaListaPendienteException.class)
+  public ProblemDetail inventarioDeLaListaPendiente(
+      InventarioDeLaListaPendienteException excepcion) {
+    return problema(HttpStatus.CONFLICT, "Falta el inventario de esta lista", excepcion);
+  }
+
   @ExceptionHandler(ListaDeTecnologiaDesactualizadaException.class)
   public ProblemDetail listaDesactualizada(ListaDeTecnologiaDesactualizadaException excepcion) {
     return problema(HttpStatus.CONFLICT, "La lista es más vieja que la última", excepcion);

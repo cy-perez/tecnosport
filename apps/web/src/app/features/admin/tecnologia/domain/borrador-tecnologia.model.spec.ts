@@ -86,4 +86,5 @@ describe('borrador de tecnología', () => {
   it('los colores escritos a mano se separan por coma, sin repetir', () => {
     expect(separarColoresEscritos(' Negro, Azul claro,,Negro ')).toEqual(['Negro', 'Azul claro']);
   });
+
 });

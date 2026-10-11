@@ -2,7 +2,9 @@
 
 **Fecha:** 2026-10-08
 **Estado:** aceptado. Extiende ADR-0067 (proveedores por WhatsApp), que solo
-contemplaba bolsos y ropa por la exportación del chat.
+contemplaba bolsos y ropa por la exportación del chat. El flujo de una lista
+—la importación de una sola vez y las fotos después de aprobar— lo reemplaza
+ADR-0079, que lo parte en tres bloques; el resto sigue vigente.
 
 ## Contexto
 

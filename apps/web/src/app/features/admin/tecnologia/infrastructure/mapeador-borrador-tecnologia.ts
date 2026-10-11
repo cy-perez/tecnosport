@@ -42,6 +42,16 @@ export function aBorradorTecnologia(dto: BorradorDto): BorradorTecnologia {
     motivoRechazo: dto.motivoRechazo ?? null,
     vistoEn: dto.vistoEn,
     creadoEn: dto.creadoEn,
+    cantidadDeFotos: dto.cantidadDeFotos,
+    fotosQueFaltan: dto.fotosQueFaltan,
+    fotos: dto.fotos.map((f) => ({
+      id: f.id,
+      url: f.url,
+      ancho: f.ancho,
+      alto: f.alto,
+      altEs: f.altEs,
+      altEn: f.altEn,
+    })),
   };
 }
 

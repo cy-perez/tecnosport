@@ -34,17 +34,26 @@ import java.util.UUID;
  *
  * <p>Se vende con lo que el proveedor dice tener, y <b>la lista mueve solo la disponibilidad y el
  * costo</b> (decisión del 08/10/2026). El precio de venta, la descripción y las fotos son del
- * panel; la lista no los toca. Por cada modelo:
+ * panel; la lista no los toca.
+ *
+ * <p><b>Entra en dos tiempos</b> (ADR-0079), según {@link ImportarListaDeTecnologiaComando.Modo}:
+ * el inventario el día de la lista, y los borradores cuando lo nuevo ya tiene sus fotos. Por cada
+ * modelo:
  *
  * <ul>
- *   <li><b>Ya se vende</b> (hay un producto con su huella): se renueva —vuelve a estar disponible
- *       si el proveedor lo había agotado—, cada configuración que vino actualiza su costo y su
- *       existencia vuelve a {@code existenciaPorVariante} por color. Las configuraciones que el
- *       producto no tiene y nadie descartó van a un borrador de ese producto.
- *   <li><b>No se vende</b>: entra o se actualiza su borrador en revisión, con las configuraciones
- *       que nadie haya descartado. Si no queda ninguna —el modelo se rechazó entero—, no se propone
- *       otra vez.
+ *   <li><b>Ya se vende</b> (hay un producto con su huella), en el inventario: se renueva —vuelve a
+ *       estar disponible si el proveedor lo había agotado—, cada configuración que vino actualiza
+ *       su costo y su existencia vuelve a {@code existenciaPorVariante} por color. Las
+ *       configuraciones que el producto no tiene y nadie descartó van, en los borradores, a un
+ *       borrador de ese producto.
+ *   <li><b>No se vende</b>, en los borradores: entra o se actualiza su borrador en revisión, con
+ *       las configuraciones que nadie haya descartado. Si no queda ninguna —el modelo se rechazó
+ *       entero—, no se propone otra vez.
  * </ul>
+ *
+ * <p>Lo que el inventario no propone lo devuelve en {@link Resultado#modelosPorProponer()} y {@link
+ * Resultado#configuracionesPorProponer()}: solo esta API sabe qué se vende, y es lo que la skill de
+ * fotos necesita para saber a qué modelos les toca.
  *
  * <p>Lo desaparecido deja de ofrecerse sin borrar nada: una configuración pierde su existencia
  * libre —<b>nunca la reservada</b>, que es de un pedido en curso— y un modelo queda agotado por el
@@ -109,12 +118,21 @@ public final class ImportarListaDeTecnologia {
     // Antes de tocar nada. Una lista vieja deshace la de hoy —repone lo que hoy está retirado y
     // retira lo que hoy está repuesto—, y la misma lista dos veces repone lo que se vendió entre
     // las dos. Las dos cosas mueven inventario sin que el proveedor haya dicho nada nuevo.
+    //
+    // Los borradores no mueven inventario, así que la misma lista puede proponerlos dos veces —es
+    // justo lo que pasa cuando las fotos de un modelo llegan después que las de otro—. Pero solo
+    // los de la lista cuyo inventario ya entró: los de una vieja le pondrían a un borrador el costo
+    // de antes, y los de una que no entró, un costo que el inventario nunca aplicó.
+    boolean inventario = comando.modo() == ImportarListaDeTecnologiaComando.Modo.INVENTARIO;
     String huellaDeLista = comando.huella();
     var ultima = listas.fechaDeLaUltima(proveedor.id());
     if (ultima.isPresent() && comando.fechaLista().isBefore(ultima.get())) {
       throw new ListaDeTecnologiaDesactualizadaException(comando.fechaLista(), ultima.get());
     }
-    if (listas.yaEntro(proveedor.id(), huellaDeLista)) {
+    if (!inventario && (ultima.isEmpty() || !ultima.get().equals(comando.fechaLista()))) {
+      throw new InventarioDeLaListaPendienteException(comando.fechaLista());
+    }
+    if (inventario && listas.yaEntro(proveedor.id(), huellaDeLista)) {
       throw new ListaDeTecnologiaYaImportadaException(comando.fechaLista());
     }
     Instant visto = comando.fechaLista().atStartOfDay(ZonaDelNegocio.ZONA).toInstant();
@@ -141,9 +159,11 @@ public final class ImportarListaDeTecnologia {
 
       if (producto.isPresent()) {
         Producto existente = producto.get();
-        existente.renovar(visto);
-        repositorioProductos.actualizar(existente);
-        cuenta.renovados++;
+        if (inventario) {
+          existente.renovar(visto);
+          repositorioProductos.actualizar(existente);
+          cuenta.renovados++;
+        }
         Map<String, List<VarianteDeProveedor>> conocidas = porConfiguracion(existente.id());
         Map<UUID, Dinero> precioPorVariante = preciosDe(existente);
         for (ConfiguracionTecnologia c : entrada.configuraciones()) {
@@ -152,6 +172,9 @@ public final class ImportarListaDeTecnologia {
             if (!descartados.contains(c.sku())) {
               porProponer.add(c);
             }
+            continue;
+          }
+          if (!inventario) {
             continue;
           }
           for (VarianteDeProveedor v : variantes) {
@@ -183,7 +206,23 @@ public final class ImportarListaDeTecnologia {
         }
         continue;
       }
+      if (inventario) {
+        if (producto.isEmpty()) {
+          cuenta.modelosPorProponer.add(entrada.modelo().idModelo());
+        } else {
+          porProponer.forEach(c -> cuenta.configuracionesPorProponer.add(c.sku()));
+        }
+        // El inventario no propone, pero sí refresca el borrador que ya está en revisión: si no, se
+        // aprobaría con el costo, las configuraciones y los colores de la lista en que entró, y una
+        // configuración que el proveedor ya no tiene nacería con existencia (ADR-0079).
+        refrescar(proveedor, entrada, porProponer, visto, cuenta);
+        continue;
+      }
       proponer(proveedor, entrada, porProponer, producto.map(Producto::id), visto, ahora, cuenta);
+    }
+
+    if (!inventario) {
+      return cuenta.resultado();
     }
 
     for (String idModelo : comando.modelosDesaparecidos()) {
@@ -219,16 +258,7 @@ public final class ImportarListaDeTecnologia {
       }
     }
 
-    return new Resultado(
-        cuenta.renovados,
-        cuenta.repuestas,
-        cuenta.retiradas,
-        cuenta.agotados,
-        cuenta.borradoresNuevos,
-        cuenta.borradoresActualizados,
-        cuenta.yaDecididos,
-        cuenta.sinMargen,
-        cuenta.coloresSinVariante);
+    return cuenta.resultado();
   }
 
   /**
@@ -271,6 +301,22 @@ public final class ImportarListaDeTecnologia {
     cuenta.borradoresNuevos++;
   }
 
+  private void refrescar(
+      Proveedor proveedor,
+      ImportarListaDeTecnologiaComando.Modelo entrada,
+      List<ConfiguracionTecnologia> configuraciones,
+      Instant visto,
+      Contador cuenta) {
+    repositorioBorradores
+        .buscarEnRevisionParaActualizar(proveedor.id(), entrada.modelo().idModelo())
+        .ifPresent(
+            borrador -> {
+              borrador.actualizarConLista(entrada.modelo(), configuraciones, visto);
+              repositorioBorradores.actualizar(borrador);
+              cuenta.borradoresActualizados++;
+            });
+  }
+
   private Set<String> descartados(UUID proveedorId, String idModelo) {
     Set<String> descartados = new HashSet<>();
     for (BorradorTecnologia resuelto :
@@ -306,6 +352,23 @@ public final class ImportarListaDeTecnologia {
     final List<String> yaDecididos = new ArrayList<>();
     final List<String> sinMargen = new ArrayList<>();
     final List<String> coloresSinVariante = new ArrayList<>();
+    final List<String> modelosPorProponer = new ArrayList<>();
+    final List<String> configuracionesPorProponer = new ArrayList<>();
+
+    Resultado resultado() {
+      return new Resultado(
+          renovados,
+          repuestas,
+          retiradas,
+          agotados,
+          borradoresNuevos,
+          borradoresActualizados,
+          yaDecididos,
+          sinMargen,
+          coloresSinVariante,
+          modelosPorProponer,
+          configuracionesPorProponer);
+    }
   }
 
   /**
@@ -321,6 +384,11 @@ public final class ImportarListaDeTecnologia {
    *     la lista no mueve el precio, así que alguien tiene que mirarlo
    * @param coloresSinVariante colores que la lista trae de una configuración que ya se vende y que
    *     el producto no tiene: no se proponen solos, se añaden desde el panel del producto
+   * @param modelosPorProponer en el inventario, los ids de modelo que no se venden y esperan su
+   *     borrador: los que necesitan fotos. En los borradores, vacía
+   * @param configuracionesPorProponer en el inventario, los ids de configuración nuevos de un
+   *     modelo que ya se vende: esperan borrador, pero no fotos, porque el producto ya las tiene.
+   *     En los borradores, vacía
    */
   public record Resultado(
       int productosRenovados,
@@ -331,11 +399,15 @@ public final class ImportarListaDeTecnologia {
       int borradoresActualizados,
       List<String> modelosYaDecididos,
       List<String> sinMargen,
-      List<String> coloresSinVariante) {
+      List<String> coloresSinVariante,
+      List<String> modelosPorProponer,
+      List<String> configuracionesPorProponer) {
     public Resultado {
       modelosYaDecididos = List.copyOf(modelosYaDecididos);
       sinMargen = List.copyOf(sinMargen);
       coloresSinVariante = List.copyOf(coloresSinVariante);
+      modelosPorProponer = List.copyOf(modelosPorProponer);
+      configuracionesPorProponer = List.copyOf(configuracionesPorProponer);
     }
   }
 }

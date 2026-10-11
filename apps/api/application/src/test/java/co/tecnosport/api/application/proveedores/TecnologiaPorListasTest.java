@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import co.tecnosport.api.application.catalogo.AgregarVariante;
+import co.tecnosport.api.application.catalogo.ObjetoDeImagenNoEncontradoException;
 import co.tecnosport.api.application.compartido.RelojFalso;
 import co.tecnosport.api.application.proveedores.ApoyoDeCatalogoParaIngesta.RepositorioAtributosFijo;
 import co.tecnosport.api.application.proveedores.ApoyoDeCatalogoParaIngesta.RepositorioCategoriasFijo;
@@ -18,6 +19,8 @@ import co.tecnosport.api.application.proveedores.tecnologia.AprobarBorradorTecno
 import co.tecnosport.api.application.proveedores.tecnologia.EditarBorradorTecnologia;
 import co.tecnosport.api.application.proveedores.tecnologia.ImportarListaDeTecnologia;
 import co.tecnosport.api.application.proveedores.tecnologia.ImportarListaDeTecnologiaComando;
+import co.tecnosport.api.application.proveedores.tecnologia.ImportarListaDeTecnologiaComando.Modo;
+import co.tecnosport.api.application.proveedores.tecnologia.InventarioDeLaListaPendienteException;
 import co.tecnosport.api.application.proveedores.tecnologia.ListaDeTecnologiaDesactualizadaException;
 import co.tecnosport.api.application.proveedores.tecnologia.ListaDeTecnologiaYaImportadaException;
 import co.tecnosport.api.application.proveedores.tecnologia.ProveedorSinListasException;
@@ -34,11 +37,13 @@ import co.tecnosport.api.domain.catalogo.TipoAtributo;
 import co.tecnosport.api.domain.catalogo.ValorAtributo;
 import co.tecnosport.api.domain.catalogo.Variante;
 import co.tecnosport.api.domain.compartido.Dinero;
+import co.tecnosport.api.domain.compartido.ExcepcionDeDominio;
 import co.tecnosport.api.domain.inventario.Inventario;
 import co.tecnosport.api.domain.proveedores.BorradorTecnologia;
 import co.tecnosport.api.domain.proveedores.BorradorTecnologia.Eleccion;
 import co.tecnosport.api.domain.proveedores.ConfiguracionTecnologia;
 import co.tecnosport.api.domain.proveedores.EstadoBorrador;
+import co.tecnosport.api.domain.proveedores.FotoDeBorradorTecnologia;
 import co.tecnosport.api.domain.proveedores.ModeloDeLista;
 import co.tecnosport.api.domain.proveedores.OrdenDePublicacion;
 import co.tecnosport.api.domain.proveedores.Proveedor;
@@ -77,6 +82,9 @@ class TecnologiaPorListasTest {
   private final VinculosEnMemoria vinculos = new VinculosEnMemoria();
   private final ListasEnMemoria listas = new ListasEnMemoria();
   private final RelojFalso reloj = new RelojFalso(AHORA);
+  private final ApoyoDeIngesta.AlmacenEnMemoria privado = new ApoyoDeIngesta.AlmacenEnMemoria();
+  private final ApoyoDeCatalogoParaIngesta.AlmacenDeImagenesEnMemoria publico =
+      new ApoyoDeCatalogoParaIngesta.AlmacenDeImagenesEnMemoria();
 
   private Proveedor proveedor;
 
@@ -136,17 +144,47 @@ class TecnologiaPorListasTest {
   private static final String UNA_SIM = "a17-256-1-sim";
   private static final String DUAL = "a17-256-dual-sim";
 
+  /** El inventario de la lista: renueva y retira, y no propone nada. */
   private ImportarListaDeTecnologiaComando lista(
       LocalDate fecha,
       List<ConfiguracionTecnologia> configuraciones,
       List<String> desaparecidas,
       List<String> modelosDesaparecidos) {
-    List<ImportarListaDeTecnologiaComando.Modelo> modelos =
-        configuraciones.isEmpty()
-            ? List.of()
-            : List.of(new ImportarListaDeTecnologiaComando.Modelo(A17, configuraciones));
     return new ImportarListaDeTecnologiaComando(
-        proveedor.id(), fecha, modelos, desaparecidas, modelosDesaparecidos);
+        proveedor.id(),
+        fecha,
+        Modo.INVENTARIO,
+        delA17(configuraciones),
+        desaparecidas,
+        modelosDesaparecidos);
+  }
+
+  /** Los borradores de la misma lista: proponen, y no tocan costo ni existencia. */
+  private ImportarListaDeTecnologiaComando deBorradores(
+      LocalDate fecha, List<ConfiguracionTecnologia> configuraciones) {
+    return new ImportarListaDeTecnologiaComando(
+        proveedor.id(), fecha, Modo.BORRADORES, delA17(configuraciones), List.of(), List.of());
+  }
+
+  /**
+   * Los borradores de una lista van después de su inventario (ADR-0079): importa el inventario de
+   * esa misma lista si todavía no entró, y después los borradores.
+   */
+  private ImportarListaDeTecnologia.Resultado proponer(
+      LocalDate fecha, List<ConfiguracionTecnologia> configuraciones) {
+    ImportarListaDeTecnologiaComando inventarioDeLaLista =
+        lista(fecha, configuraciones, List.of(), List.of());
+    if (!listas.yaEntro(proveedor.id(), inventarioDeLaLista.huella())) {
+      importar(inventarioDeLaLista);
+    }
+    return importar(deBorradores(fecha, configuraciones));
+  }
+
+  private static List<ImportarListaDeTecnologiaComando.Modelo> delA17(
+      List<ConfiguracionTecnologia> configuraciones) {
+    return configuraciones.isEmpty()
+        ? List.of()
+        : List.of(new ImportarListaDeTecnologiaComando.Modelo(A17, configuraciones));
   }
 
   private ImportarListaDeTecnologia.Resultado importar(ImportarListaDeTecnologiaComando comando) {
@@ -169,10 +207,13 @@ class TecnologiaPorListasTest {
             vinculos,
             productos,
             productosDeProveedor,
+            listas,
             new RepositorioMarcasFijo(),
             new RepositorioCategoriasFijo(),
             atributos,
             new AgregarVariante(productos, atributos, inventario, reloj, false),
+            privado,
+            publico,
             EXISTENCIA)
         .ejecutar(
             new AprobarBorradorTecnologiaComando(
@@ -181,23 +222,49 @@ class TecnologiaPorListasTest {
                 ApoyoDeCatalogoParaIngesta.BOLSOS_DE_MANO.id()));
   }
 
+  /**
+   * Las cuatro fotos que exige un modelo nuevo, con sus archivos en el bucket privado: dos anchos
+   * AVIF y la vista previa JPEG cada una.
+   */
+  private void conCuatroFotos(BorradorTecnologia borrador) {
+    String prefijo =
+        "proveedores/" + proveedor.id() + "/borradores-tecnologia/" + borrador.id() + "/";
+    for (int i = 1; i <= BorradorTecnologia.MINIMO_DE_FOTOS; i++) {
+      String mayor = prefijo + i + "-1200.avif";
+      String menor = prefijo + i + "-480.avif";
+      String vista = prefijo + i + ".jpg";
+      privado.guardar(mayor, "image/avif", new byte[58]);
+      privado.guardar(menor, "image/avif", new byte[12]);
+      privado.guardar(vista, "image/jpeg", new byte[30]);
+      borrador.agregarFoto(
+          new FotoDeBorradorTecnologia(
+              UUID.randomUUID(),
+              List.of(
+                  new FotoDeBorradorTecnologia.Variante(1200, mayor, 58),
+                  new FotoDeBorradorTecnologia.Variante(480, menor, 12)),
+              vista,
+              1200,
+              String.valueOf(i).repeat(64),
+              "Galaxy A17 sobre fondo blanco",
+              "Galaxy A17 on a white background",
+              AHORA));
+    }
+    borradores.actualizar(borrador);
+  }
+
   private BorradorTecnologia enRevision() {
     return borradores.buscarEnRevisionParaActualizar(proveedor.id(), A17.idModelo()).orElseThrow();
   }
 
   /** Importa el A17 con la de una SIM y la dual, y aprueba la de una SIM en negro y gris. */
   private Producto unA17QueYaSeVende() {
-    importar(
-        lista(
-            LUNES,
-            List.of(config(UNA_SIM, 675_000, "1 SIM"), config(DUAL, 690_000, "Dual SIM")),
-            List.of(),
-            List.of()));
+    proponer(LUNES, List.of(config(UNA_SIM, 675_000, "1 SIM"), config(DUAL, 690_000, "Dual SIM")));
     BorradorTecnologia borrador = enRevision();
     new EditarBorradorTecnologia(borradores)
         .ejecutar(
             borrador.id(),
             List.of(new Eleccion(UNA_SIM, List.of("Negro", "Gris"), Dinero.deCop(849_900))));
+    conCuatroFotos(enRevision());
     return aprobar(borrador.id());
   }
 
@@ -218,12 +285,8 @@ class TecnologiaPorListasTest {
   @Test
   void unModeloQueNoSeVendeEntraComoBorradorConSusConfiguraciones() {
     ImportarListaDeTecnologia.Resultado resultado =
-        importar(
-            lista(
-                LUNES,
-                List.of(config(UNA_SIM, 675_000, "1 SIM"), config(DUAL, 690_000, "Dual SIM")),
-                List.of(),
-                List.of()));
+        proponer(
+            LUNES, List.of(config(UNA_SIM, 675_000, "1 SIM"), config(DUAL, 690_000, "Dual SIM")));
 
     assertEquals(1, resultado.borradoresNuevos());
     BorradorTecnologia borrador = enRevision();
@@ -236,9 +299,9 @@ class TecnologiaPorListasTest {
 
   @Test
   void otraListaActualizaElMismoBorradorYNoAbreOtro() {
-    importar(lista(LUNES, List.of(config(UNA_SIM, 675_000, "1 SIM")), List.of(), List.of()));
+    proponer(LUNES, List.of(config(UNA_SIM, 675_000, "1 SIM")));
     ImportarListaDeTecnologia.Resultado resultado =
-        importar(lista(JUEVES, List.of(config(UNA_SIM, 660_000, "1 SIM")), List.of(), List.of()));
+        proponer(JUEVES, List.of(config(UNA_SIM, 660_000, "1 SIM")));
 
     assertEquals(1, resultado.borradoresActualizados());
     assertEquals(1, borradores.porId.size());
@@ -249,7 +312,7 @@ class TecnologiaPorListasTest {
   void aprobarCreaUnaVariantePorColorConSusAtributosYLaExistenciaDeLaLista() {
     Producto producto = unA17QueYaSeVende();
 
-    assertEquals(EstadoProducto.BORRADOR, producto.estado(), "sin fotos no se publica");
+    assertEquals(EstadoProducto.PUBLICADO, producto.estado(), "las fotos llegaron con el borrador");
     assertEquals("Samsung Galaxy A17 5G", producto.nombre());
     assertEquals(Dinero.deCop(675_000), producto.precioProveedor().orElseThrow());
     assertEquals(
@@ -272,15 +335,248 @@ class TecnologiaPorListasTest {
 
   @Test
   void unModeloRechazadoNoSeVuelveAProponer() {
-    importar(lista(LUNES, List.of(config(UNA_SIM, 675_000, "1 SIM")), List.of(), List.of()));
+    proponer(LUNES, List.of(config(UNA_SIM, 675_000, "1 SIM")));
     new RechazarBorradorTecnologia(borradores).ejecutar(enRevision().id(), "No vendemos esta gama");
 
     ImportarListaDeTecnologia.Resultado resultado =
-        importar(lista(JUEVES, List.of(config(UNA_SIM, 660_000, "1 SIM")), List.of(), List.of()));
+        proponer(JUEVES, List.of(config(UNA_SIM, 660_000, "1 SIM")));
 
     assertEquals(0, resultado.borradoresNuevos());
     assertEquals(List.of("Samsung Galaxy A17 5G"), resultado.modelosYaDecididos());
     assertTrue(borradores.buscarEnRevisionParaActualizar(proveedor.id(), A17.idModelo()).isEmpty());
+  }
+
+  // --- La lista en dos tiempos (ADR-0079) ---------------------------------------------------
+
+  @Test
+  void elInventarioNoProponeYDiceQueModelosEsperanBorrador() {
+    ImportarListaDeTecnologia.Resultado resultado =
+        importar(
+            lista(
+                LUNES,
+                List.of(config(UNA_SIM, 675_000, "1 SIM"), config(DUAL, 690_000, "Dual SIM")),
+                List.of(),
+                List.of()));
+
+    assertEquals(0, resultado.borradoresNuevos());
+    assertTrue(borradores.porId.isEmpty(), "el borrador espera a las fotos");
+    assertEquals(List.of(A17.idModelo()), resultado.modelosPorProponer());
+    assertEquals(List.of(), resultado.configuracionesPorProponer());
+  }
+
+  @Test
+  void elInventarioDiceQueConfiguracionesNuevasDeUnProductoEsperanBorrador() {
+    unA17QueYaSeVende();
+    String nueva = "a17-128-1-sim";
+
+    ImportarListaDeTecnologia.Resultado resultado =
+        importar(
+            lista(
+                JUEVES,
+                List.of(config(UNA_SIM, 660_000, "1 SIM"), config(nueva, 600_000, "1 SIM")),
+                List.of(),
+                List.of()));
+
+    assertEquals(1, resultado.productosRenovados());
+    assertEquals(List.of(nueva), resultado.configuracionesPorProponer());
+    assertEquals(List.of(), resultado.modelosPorProponer(), "el modelo ya se vende: no pide fotos");
+    assertTrue(borradores.buscarEnRevisionParaActualizar(proveedor.id(), A17.idModelo()).isEmpty());
+  }
+
+  @Test
+  void losBorradoresNoTocanCostoNiExistencia() {
+    Producto producto = unA17QueYaSeVende();
+    Variante negra = producto.variantes().getFirst();
+    importar(lista(JUEVES, List.of(config(UNA_SIM, 660_000, "1 SIM")), List.of(), List.of()));
+    Inventario libro = inventario.porVariante.get(negra.id());
+    libro.reservar(2, null, AHORA); // se vendieron las dos
+    inventario.guardar(libro);
+
+    ImportarListaDeTecnologia.Resultado resultado =
+        importar(deBorradores(JUEVES, List.of(config(UNA_SIM, 600_000, "1 SIM"))));
+
+    assertEquals(0, resultado.productosRenovados());
+    assertEquals(0, resultado.variantesRepuestas());
+    assertEquals(0, disponible(negra.id()), "lo vendido no se repone");
+    assertEquals(Dinero.deCop(660_000), vinculos.porVariante.get(negra.id()).costo());
+  }
+
+  @Test
+  void losBorradoresDeUnaListaCuyoInventarioNoEntroNoEntran() {
+    assertThrows(
+        InventarioDeLaListaPendienteException.class,
+        () -> importar(deBorradores(LUNES, List.of(config(UNA_SIM, 675_000, "1 SIM")))));
+
+    importar(lista(LUNES, List.of(config(UNA_SIM, 675_000, "1 SIM")), List.of(), List.of()));
+    importar(lista(JUEVES, List.of(), List.of(), List.of()));
+    assertThrows(
+        ListaDeTecnologiaDesactualizadaException.class,
+        () -> importar(deBorradores(LUNES, List.of(config(UNA_SIM, 675_000, "1 SIM")))),
+        "ya entró una más nueva");
+    assertTrue(borradores.porId.isEmpty());
+  }
+
+  @Test
+  void elInventarioRefrescaElBorradorQueYaEstaEnRevision() {
+    proponer(LUNES, List.of(config(UNA_SIM, 675_000, "1 SIM"), config(DUAL, 690_000, "Dual SIM")));
+
+    ImportarListaDeTecnologia.Resultado resultado =
+        importar(lista(JUEVES, List.of(config(UNA_SIM, 660_000, "1 SIM")), List.of(), List.of()));
+
+    assertEquals(1, resultado.borradoresActualizados());
+    assertEquals(0, resultado.borradoresNuevos(), "refrescar no es proponer");
+    BorradorTecnologia borrador = enRevision();
+    assertEquals(
+        List.of(UNA_SIM),
+        borrador.configuraciones().stream().map(ConfiguracionTecnologia::sku).toList(),
+        "la dual ya no vino: sale del borrador");
+    assertEquals(Dinero.deCop(660_000), borrador.configuraciones().getFirst().costoProveedor());
+  }
+
+  @Test
+  void laHuellaNoDependeDelModoYEsLaDeAntes() {
+    ImportarListaDeTecnologiaComando inventario =
+        lista(LUNES, List.of(config(UNA_SIM, 675_000, "1 SIM")), List.of(), List.of());
+    ImportarListaDeTecnologiaComando borradoresDeLaMisma =
+        deBorradores(LUNES, List.of(config(UNA_SIM, 675_000, "1 SIM")));
+    assertEquals(inventario.huella(), borradoresDeLaMisma.huella());
+
+    // El texto con que se calculaban las huellas ya registradas, antes de que existiera el modo:
+    // si cambia, la lista del día del despliegue vuelve a entrar y repone lo vendido.
+    String deAntes =
+        "ImportarListaDeTecnologiaComando[proveedorId="
+            + proveedor.id()
+            + ", fechaLista="
+            + LUNES
+            + ", modelos="
+            + inventario.modelos()
+            + ", configuracionesDesaparecidas=[], modelosDesaparecidos=[]]";
+    assertEquals(sha256(deAntes), inventario.huella());
+  }
+
+  private static String sha256(String texto) {
+    try {
+      return java.util.HexFormat.of()
+          .formatHex(
+              java.security.MessageDigest.getInstance("SHA-256")
+                  .digest(texto.getBytes(java.nio.charset.StandardCharsets.UTF_8)));
+    } catch (java.security.NoSuchAlgorithmException e) {
+      throw new IllegalStateException(e);
+    }
+  }
+
+  @Test
+  void losBorradoresDeLaMismaListaEntranDosVeces() {
+    importar(lista(LUNES, List.of(config(UNA_SIM, 675_000, "1 SIM")), List.of(), List.of()));
+    ImportarListaDeTecnologiaComando lunes =
+        deBorradores(LUNES, List.of(config(UNA_SIM, 675_000, "1 SIM")));
+
+    importar(lunes);
+    ImportarListaDeTecnologia.Resultado otraVez = importar(lunes);
+
+    assertEquals(1, otraVez.borradoresActualizados(), "las fotos de otro modelo llegaron después");
+    assertEquals(1, borradores.porId.size());
+  }
+
+  @Test
+  void losBorradoresDeUnaListaViejaNoEntran() {
+    importar(lista(JUEVES, List.of(), List.of(), List.of()));
+
+    assertThrows(
+        ListaDeTecnologiaDesactualizadaException.class,
+        () -> importar(deBorradores(LUNES, List.of(config(UNA_SIM, 675_000, "1 SIM")))));
+    assertTrue(borradores.porId.isEmpty());
+  }
+
+  @Test
+  void unaImportacionDeBorradoresNoRetiraNada() {
+    assertThrows(
+        IllegalArgumentException.class,
+        () ->
+            new ImportarListaDeTecnologiaComando(
+                proveedor.id(), LUNES, Modo.BORRADORES, List.of(), List.of(UNA_SIM), List.of()));
+  }
+
+  // --- Las fotos del borrador pasan al producto (ADR-0079) -----------------------------------
+
+  @Test
+  void aprobarCopiaLasFotosAlBucketPublicoConLaPrimeraDePrincipal() {
+    Producto producto = unA17QueYaSeVende();
+
+    assertTrue(producto.imagenPrincipal().isPresent());
+    assertEquals(BorradorTecnologia.MINIMO_DE_FOTOS - 1, producto.galeria().size());
+    var principal = producto.imagenPrincipal().orElseThrow();
+    assertEquals("1".repeat(64), principal.hash().valor());
+    assertEquals(List.of(480, 1200), principal.variantes().stream().map(v -> v.ancho()).toList());
+    String url = principal.variantes().getLast().url();
+    assertTrue(
+        url.startsWith("https://publico.local/productos/" + producto.id() + "/principal-"), url);
+    assertTrue(url.endsWith(".avif"), url);
+    assertTrue(principal.urlVistaPrevia().orElseThrow().endsWith(".jpg"));
+    assertTrue(
+        producto.galeria().getFirst().variantes().getFirst().url().contains("/galeria-"),
+        "las demás van a la galería");
+    // 4 fotos × (2 anchos + vista previa)
+    assertEquals(12, publico.objetos.size());
+  }
+
+  @Test
+  void unBorradorQueNoVinoEnLaUltimaListaNoSeAprueba() {
+    proponer(LUNES, List.of(config(UNA_SIM, 675_000, "1 SIM")));
+    BorradorTecnologia borrador = enRevision();
+    new EditarBorradorTecnologia(borradores)
+        .ejecutar(
+            borrador.id(), List.of(new Eleccion(UNA_SIM, List.of("Negro"), Dinero.deCop(849_900))));
+    conCuatroFotos(enRevision());
+    // El jueves el modelo ya no vino: el inventario no tiene con qué refrescar su borrador.
+    importar(lista(JUEVES, List.of(), List.of(), List.of()));
+
+    ExcepcionDeDominio error = assertThrows(ExcepcionDeDominio.class, () -> aprobar(borrador.id()));
+    assertTrue(error.getMessage().contains("no vino en ella"), error.getMessage());
+    assertTrue(productos.porId.isEmpty());
+  }
+
+  @Test
+  void alAprobarSoloTieneExistenciaElColorQueLaListaTrae() {
+    proponer(LUNES, List.of(conColores(UNA_SIM, 675_000, "1 SIM", "Negro")));
+    BorradorTecnologia borrador = enRevision();
+    new EditarBorradorTecnologia(borradores)
+        .ejecutar(
+            borrador.id(),
+            List.of(new Eleccion(UNA_SIM, List.of("Negro", "Gris"), Dinero.deCop(849_900))));
+    conCuatroFotos(enRevision());
+
+    Producto producto = aprobar(borrador.id());
+
+    assertEquals(EXISTENCIA, disponible(variante(producto, "Negro").id()));
+    assertEquals(0, disponible(variante(producto, "Gris").id()), "la lista no dice gris");
+  }
+
+  @Test
+  void unModeloNuevoSinSusCuatroFotosNoSeAprueba() {
+    proponer(LUNES, List.of(config(UNA_SIM, 675_000, "1 SIM")));
+    BorradorTecnologia borrador = enRevision();
+    new EditarBorradorTecnologia(borradores)
+        .ejecutar(
+            borrador.id(), List.of(new Eleccion(UNA_SIM, List.of("Negro"), Dinero.deCop(849_900))));
+
+    ExcepcionDeDominio error = assertThrows(ExcepcionDeDominio.class, () -> aprobar(borrador.id()));
+    assertTrue(error.getMessage().contains("4 fotos"), error.getMessage());
+    assertTrue(productos.porId.isEmpty(), "nada se creó");
+  }
+
+  @Test
+  void siUnArchivoFaltaSeBorraLoQueYaSeSubioAlPublico() {
+    proponer(LUNES, List.of(config(UNA_SIM, 675_000, "1 SIM")));
+    BorradorTecnologia borrador = enRevision();
+    new EditarBorradorTecnologia(borradores)
+        .ejecutar(
+            borrador.id(), List.of(new Eleccion(UNA_SIM, List.of("Negro"), Dinero.deCop(849_900))));
+    conCuatroFotos(enRevision());
+    privado.borrar(enRevision().fotos().getLast().referenciaVistaPrevia());
+
+    assertThrows(ObjetoDeImagenNoEncontradoException.class, () -> aprobar(borrador.id()));
+    assertTrue(publico.objetos.isEmpty(), "ninguna foto queda huérfana en el bucket público");
   }
 
   // --- Un modelo que ya se vende ------------------------------------------------------------
@@ -318,12 +614,7 @@ class TecnologiaPorListasTest {
     Producto producto = unA17QueYaSeVende();
     String nueva = "a17-128-1-sim";
 
-    importar(
-        lista(
-            JUEVES,
-            List.of(config(UNA_SIM, 660_000, "1 SIM"), config(nueva, 600_000, "1 SIM")),
-            List.of(),
-            List.of()));
+    proponer(JUEVES, List.of(config(UNA_SIM, 660_000, "1 SIM"), config(nueva, 600_000, "1 SIM")));
 
     BorradorTecnologia borrador = enRevision();
     assertEquals(producto.id(), borrador.productoId().orElseThrow());
@@ -399,7 +690,7 @@ class TecnologiaPorListasTest {
         () ->
             importar(
                 new ImportarListaDeTecnologiaComando(
-                    deBolsos.id(), LUNES, List.of(), List.of(), List.of())));
+                    deBolsos.id(), LUNES, Modo.INVENTARIO, List.of(), List.of(), List.of())));
   }
 
   // --- Lo que la lista no puede hacer dos veces ----------------------------------------------
