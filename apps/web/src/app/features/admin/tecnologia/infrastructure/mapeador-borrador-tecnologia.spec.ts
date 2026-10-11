@@ -21,6 +21,8 @@ describe('mapeador del borrador de tecnología', () => {
       estado: 'EN_REVISION',
       vistoEn: '2026-10-08T05:00:00Z',
       creadoEn: '2026-10-08T15:00:00Z',
+      cantidadDeFotos: 0,
+      fotos: [],
     });
 
     expect(borrador.marcaSugerida).toBeNull();

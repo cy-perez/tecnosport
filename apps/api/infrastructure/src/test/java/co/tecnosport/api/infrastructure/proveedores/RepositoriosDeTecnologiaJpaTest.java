@@ -15,6 +15,7 @@ import co.tecnosport.api.domain.compartido.Slug;
 import co.tecnosport.api.domain.proveedores.BorradorTecnologia;
 import co.tecnosport.api.domain.proveedores.ConfiguracionTecnologia;
 import co.tecnosport.api.domain.proveedores.EstadoBorrador;
+import co.tecnosport.api.domain.proveedores.FotoDeBorradorTecnologia;
 import co.tecnosport.api.domain.proveedores.HuellaProveedor;
 import co.tecnosport.api.domain.proveedores.ModeloDeLista;
 import co.tecnosport.api.domain.proveedores.OrdenDePublicacion;
@@ -277,6 +278,49 @@ class RepositoriosDeTecnologiaJpaTest {
         borradores.buscarPorId(borrador.id()).orElseThrow().configuraciones().stream()
             .map(ConfiguracionTecnologia::sku)
             .toList());
+  }
+
+  private static FotoDeBorradorTecnologia foto(String hash) {
+    return new FotoDeBorradorTecnologia(
+        UUID.randomUUID(),
+        List.of(
+            new FotoDeBorradorTecnologia.Variante(1200, "p/b/" + hash + "-1200.avif", 58_000),
+            new FotoDeBorradorTecnologia.Variante(480, "p/b/" + hash + "-480.avif", 12_000)),
+        hash.equals("b") ? null : "p/b/" + hash + ".jpg",
+        1200,
+        hash,
+        "Galaxy A17 sobre fondo blanco",
+        "Galaxy A17 on a white background",
+        LUNES);
+  }
+
+  /** Las fotos van y vuelven en orden, y quitar una del medio se guarda: mismo caso que arriba. */
+  @Test
+  void lasFotosDelBorradorVanYVuelvenEnOrdenYSeQuitaUnaDelMedio() {
+    Proveedor proveedor = proveedor();
+    BorradorTecnologia borrador =
+        BorradorTecnologia.nuevo(
+            proveedor.id(), a17(), List.of(config("a17-a", "1 SIM", null)), null, LUNES, LUNES);
+    borrador.agregarFoto(foto("a"));
+    FotoDeBorradorTecnologia b = foto("b");
+    borrador.agregarFoto(b);
+    borrador.agregarFoto(foto("c"));
+    borradores.guardar(borrador);
+    em.flush();
+    em.clear();
+
+    BorradorTecnologia leido = borradores.buscarPorIdParaActualizar(borrador.id()).orElseThrow();
+    assertEquals(borrador.fotos(), leido.fotos());
+    leido.quitarFoto(b.id());
+    borradores.actualizar(leido);
+    em.flush();
+    em.clear();
+
+    List<FotoDeBorradorTecnologia> fotos =
+        borradores.buscarPorId(borrador.id()).orElseThrow().fotos();
+    assertEquals(List.of("a", "c"), fotos.stream().map(FotoDeBorradorTecnologia::hash).toList());
+    assertEquals(58_000, fotos.getFirst().mayor().bytes());
+    assertEquals("p/b/a.jpg", fotos.getFirst().referenciaVistaPrevia());
   }
 
   @Test

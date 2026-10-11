@@ -1,5 +1,6 @@
 package co.tecnosport.api.presentation.proveedores.dto;
 
+import co.tecnosport.api.application.proveedores.tecnologia.FotosFirmadasDeBorradorTecnologia;
 import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.proveedores.BorradorTecnologia;
 import co.tecnosport.api.domain.proveedores.ConfiguracionTecnologia;
@@ -13,6 +14,9 @@ import java.util.UUID;
  *
  * @param productoId el producto que ya vende este modelo, si el borrador es de configuraciones
  *     nuevas de uno existente; o el que nació al aprobarlo
+ * @param cantidadDeFotos cuántas fotos tiene, también en la bandeja
+ * @param fotos las fotos con su URL firmada, en el orden en que se publican; vacía en la bandeja,
+ *     que no las firma (ADR-0079)
  */
 public record BorradorTecnologiaRespuesta(
     @Schema(requiredMode = Schema.RequiredMode.REQUIRED) UUID id,
@@ -29,9 +33,18 @@ public record BorradorTecnologiaRespuesta(
     @Schema(requiredMode = Schema.RequiredMode.REQUIRED) String estado,
     String motivoRechazo,
     @Schema(requiredMode = Schema.RequiredMode.REQUIRED) Instant vistoEn,
-    @Schema(requiredMode = Schema.RequiredMode.REQUIRED) Instant creadoEn) {
+    @Schema(requiredMode = Schema.RequiredMode.REQUIRED) Instant creadoEn,
+    @Schema(requiredMode = Schema.RequiredMode.REQUIRED) int cantidadDeFotos,
+    @Schema(requiredMode = Schema.RequiredMode.REQUIRED)
+        List<FotoDeBorradorTecnologiaRespuesta> fotos) {
 
+  /** Para la bandeja: sin firmar las fotos. */
   public static BorradorTecnologiaRespuesta de(BorradorTecnologia b) {
+    return de(b, List.of());
+  }
+
+  public static BorradorTecnologiaRespuesta de(
+      BorradorTecnologia b, List<FotosFirmadasDeBorradorTecnologia.FotoVista> fotos) {
     return new BorradorTecnologiaRespuesta(
         b.id(),
         b.proveedorId(),
@@ -46,7 +59,21 @@ public record BorradorTecnologiaRespuesta(
         b.estado().name(),
         b.motivoRechazo().orElse(null),
         b.vistoEn(),
-        b.creadoEn());
+        b.creadoEn(),
+        b.fotos().size(),
+        fotos.stream().map(FotoDeBorradorTecnologiaRespuesta::de).toList());
+  }
+
+  /** Una foto del borrador; la primera es la principal. */
+  public record FotoDeBorradorTecnologiaRespuesta(
+      @Schema(requiredMode = Schema.RequiredMode.REQUIRED) UUID id,
+      @Schema(requiredMode = Schema.RequiredMode.REQUIRED) String url,
+      @Schema(requiredMode = Schema.RequiredMode.REQUIRED) int ancho,
+      @Schema(requiredMode = Schema.RequiredMode.REQUIRED) int alto) {
+
+    static FotoDeBorradorTecnologiaRespuesta de(FotosFirmadasDeBorradorTecnologia.FotoVista f) {
+      return new FotoDeBorradorTecnologiaRespuesta(f.id(), f.url(), f.ancho(), f.alto());
+    }
   }
 
   public record ConfiguracionRespuesta(

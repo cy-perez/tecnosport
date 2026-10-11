@@ -116,6 +116,54 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/borradores-tecnologia/{id}/fotos": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["agregarFoto"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/borradores-tecnologia/{id}/fotos/url-subida": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["urlDeSubidaDeFoto_1"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/borradores-tecnologia/{id}/fotos/{fotoId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["quitarFoto"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/borradores-tecnologia/{id}/rechazar": {
         parameters: {
             query?: never;
@@ -2116,6 +2164,15 @@ export interface components {
             color: string;
             existencias: components["schemas"]["ExistenciaPorTalla"][];
         };
+        AgregarFotoBorradorTecnologiaPeticion: {
+            altEn: string;
+            altEs: string;
+            /** Format: int32 */
+            alto: number;
+            hash: string;
+            objectKeyVistaPrevia?: string;
+            variantes: components["schemas"]["VariantePeticion"][];
+        };
         AgregarImagenDeGaleriaPeticion: {
             altEn?: string;
             altEs?: string;
@@ -2265,12 +2322,15 @@ export interface components {
             tonosNombrados?: string[];
         };
         BorradorTecnologiaRespuesta: {
+            /** Format: int32 */
+            cantidadDeFotos: number;
             categoriaSugerida?: string;
             configuraciones: components["schemas"]["ConfiguracionRespuesta"][];
             /** Format: date-time */
             creadoEn: string;
             descripcion: string;
             estado: string;
+            fotos: components["schemas"]["FotoDeBorradorTecnologiaRespuesta"][];
             /** Format: uuid */
             id: string;
             idModelo: string;
@@ -2677,6 +2737,15 @@ export interface components {
             /** Format: int32 */
             prenda?: number;
             tono?: string;
+        };
+        FotoDeBorradorTecnologiaRespuesta: {
+            /** Format: int32 */
+            alto: number;
+            /** Format: int32 */
+            ancho: number;
+            /** Format: uuid */
+            id: string;
+            url: string;
         };
         FotoRespuesta: {
             /** Format: uuid */
@@ -3587,6 +3656,11 @@ export interface components {
             /** Format: uuid */
             varianteId?: string;
         };
+        VariantePeticion: {
+            /** Format: int32 */
+            ancho: number;
+            objectKey: string;
+        };
         VarianteRespuesta: {
             atributos?: components["schemas"]["AtributoValorRespuesta"][];
             disponible: boolean;
@@ -3853,6 +3927,79 @@ export interface operations {
                 content: {
                     "*/*": components["schemas"]["ProductoAdminRespuesta"];
                 };
+            };
+        };
+    };
+    agregarFoto: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AgregarFotoBorradorTecnologiaPeticion"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["BorradorTecnologiaRespuesta"];
+                };
+            };
+        };
+    };
+    urlDeSubidaDeFoto_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SolicitarSubidaDeFotoPeticion"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SubidaDeFotoRespuesta"];
+                };
+            };
+        };
+    };
+    quitarFoto: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                fotoId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

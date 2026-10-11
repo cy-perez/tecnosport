@@ -256,4 +256,100 @@ class BorradorTecnologiaTest {
                 null,
                 List.of("x".repeat(81))));
   }
+
+  // --- Las fotos (ADR-0079) -----------------------------------------------------------------
+
+  private static FotoDeBorradorTecnologia foto(String hash) {
+    return new FotoDeBorradorTecnologia(
+        UUID.randomUUID(),
+        List.of(
+            new FotoDeBorradorTecnologia.Variante(1200, "b/" + hash + "-1200.avif", 58_000),
+            new FotoDeBorradorTecnologia.Variante(480, "b/" + hash + "-480.avif", 12_000)),
+        "b/" + hash + ".jpg",
+        1200,
+        hash,
+        "Galaxy A17 sobre fondo blanco",
+        "Galaxy A17 on a white background",
+        LUNES);
+  }
+
+  @Test
+  void lasFotosQuedanEnElOrdenEnQueEntranYLaPrimeraEsLaPrincipal() {
+    BorradorTecnologia borrador = nuevo();
+    borrador.agregarFoto(foto("a"));
+    borrador.agregarFoto(foto("b"));
+
+    assertEquals(List.of("a", "b"), borrador.fotos().stream().map(f -> f.hash()).toList());
+    assertEquals(1200, borrador.fotos().getFirst().mayor().ancho());
+  }
+
+  @Test
+  void laMismaFotoDosVecesNoEntra() {
+    BorradorTecnologia borrador = nuevo();
+    borrador.agregarFoto(foto("a"));
+
+    assertThrows(ExcepcionDeDominio.class, () -> borrador.agregarFoto(foto("a")));
+    assertEquals(1, borrador.fotos().size());
+  }
+
+  @Test
+  void noCabenMasFotosQueLaPrincipalYLaGaleria() {
+    BorradorTecnologia borrador = nuevo();
+    for (int i = 0; i < BorradorTecnologia.TOPE_DE_FOTOS; i++) {
+      borrador.agregarFoto(foto("f" + i));
+    }
+
+    assertThrows(ExcepcionDeDominio.class, () -> borrador.agregarFoto(foto("otra")));
+  }
+
+  @Test
+  void quitarUnaFotoLaDevuelveParaBorrarSusArchivos() {
+    BorradorTecnologia borrador = nuevo();
+    FotoDeBorradorTecnologia a = foto("a");
+    borrador.agregarFoto(a);
+    borrador.agregarFoto(foto("b"));
+
+    FotoDeBorradorTecnologia quitada = borrador.quitarFoto(a.id());
+
+    assertEquals(List.of("b/a-1200.avif", "b/a-480.avif", "b/a.jpg"), quitada.referencias());
+    assertEquals(List.of("b"), borrador.fotos().stream().map(f -> f.hash()).toList());
+    assertThrows(ExcepcionDeDominio.class, () -> borrador.quitarFoto(UUID.randomUUID()));
+  }
+
+  @Test
+  void unBorradorRechazadoNoRecibeFotos() {
+    BorradorTecnologia borrador = nuevo();
+    borrador.rechazar("No vendemos esta gama");
+
+    assertThrows(ExcepcionDeDominio.class, () -> borrador.agregarFoto(foto("a")));
+  }
+
+  @Test
+  void unaFotoNoTraeDosVecesElMismoAncho() {
+    assertThrows(
+        ExcepcionDeDominio.class,
+        () ->
+            new FotoDeBorradorTecnologia(
+                UUID.randomUUID(),
+                List.of(
+                    new FotoDeBorradorTecnologia.Variante(1200, "x.avif", 1),
+                    new FotoDeBorradorTecnologia.Variante(1200, "y.avif", 1)),
+                null,
+                1200,
+                "h",
+                "alt",
+                "alt",
+                LUNES));
+  }
+
+  @Test
+  void otraListaConservaLasFotos() {
+    BorradorTecnologia borrador = nuevo();
+    borrador.agregarFoto(foto("a"));
+
+    borrador.actualizarConLista(
+        a17(List.of("Negro", "Gris", "Azul")), List.of(config("a17-256", 660_000)), JUEVES);
+
+    assertEquals(1, borrador.fotos().size());
+  }
 }
