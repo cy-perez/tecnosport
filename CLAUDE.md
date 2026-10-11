@@ -154,6 +154,10 @@ npm run huerfanos -- --bucket X --api Y  ¿qué objetos del bucket no los reclam
 node tools/cargar-catalogo.mjs           carga por la API del panel; simula si no le pasas --escribir
                                          --api elige el ambiente (por omisión localhost:8080), y el
                                          registro de cargados distingue uno de otro
+node tools/importar-lista-tecnologia.mjs L --inventario   la lista de tecnología, bloque 1: renueva y
+                                         retira; deja por-proponer.json (ADR-0079)
+node tools/importar-lista-tecnologia.mjs L --borradores   bloque 3: borradores con sus fotos LISTA;
+                                         los dos simulan sin --escribir y piden --proveedor
 npm run iconos-marca                     regenera los logos de marca desde simple-icons
 npm run legales-impresos                 los textos legales en una hoja para imprimir, sin transcribir
 docker compose up -d                     PostgreSQL, Mailpit, Adminer

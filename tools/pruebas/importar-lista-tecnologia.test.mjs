@@ -8,6 +8,8 @@ import {
   informeDeImportacion,
   porProponerDe,
   resumenDeLista,
+  seleccionParaBorradores,
+  tomasListas,
 } from "../importar-lista-tecnologia.mjs";
 
 test("el resumen cuenta modelos, configuraciones y desaparecidos", () => {
@@ -95,4 +97,69 @@ test("el inventario entrega lo que espera borrador y lo dice", () => {
     informeDeImportacion(resultado),
     /Esperan borrador: 2 modelos[\s\S]*y 1 configuraciones/,
   );
+});
+
+const LISTA = {
+  fechaLista: "2026-10-10",
+  modelos: [
+    { idModelo: "poco-f9-ultra", titulo: "POCO F9 Ultra", configuraciones: [{ sku: "f9-512" }] },
+    { idModelo: "airpods-pro-3", titulo: "AirPods Pro 3", configuraciones: [{ sku: "app3" }] },
+    { idModelo: "honor-5i", titulo: "Honor 5i", configuraciones: [{ sku: "h5i" }] },
+    {
+      idModelo: "galaxy-a17",
+      titulo: "Galaxy A17",
+      configuraciones: [{ sku: "a17-1-sim" }, { sku: "a17-dual" }],
+    },
+    { idModelo: "jbl-flip-7", titulo: "JBL Flip 7", configuraciones: [{ sku: "flip7" }] },
+  ],
+};
+const POR_PROPONER = {
+  fechaLista: "2026-10-10",
+  modelos: ["poco-f9-ultra", "airpods-pro-3", "honor-5i"],
+  configuraciones: ["a17-dual"],
+};
+
+test("los borradores llevan los modelos aptos y las configuraciones nuevas, y dicen qué se queda", () => {
+  const { lista, omitidos } = seleccionParaBorradores(LISTA, POR_PROPONER, {
+    "poco-f9-ultra": { estado: "apto", listas: ["a.jpg"] },
+    "airpods-pro-3": { estado: "en_espera", faltan: 2, motivo: "salieron 2 fotos LISTA" },
+    "honor-5i": { estado: "fuera_de_tanda", motivo: "sacado de la tanda: sin material" },
+  });
+  assert.deepEqual(
+    lista.modelos.map((m) => [m.idModelo, m.configuraciones.map((c) => c.sku)]),
+    [
+      ["poco-f9-ultra", ["f9-512"]],
+      ["galaxy-a17", ["a17-dual"]],
+    ],
+    "el JBL ya se vende sin nada nuevo: se renovó con el inventario",
+  );
+  assert.deepEqual(
+    omitidos.map((o) => o.titulo),
+    ["AirPods Pro 3", "Honor 5i"],
+  );
+  assert.match(omitidos[0].motivo, /espera fotos/);
+  assert.match(omitidos[1].motivo, /fuera de la tanda/);
+});
+
+test("un modelo nuevo que no pasó por la tanda no entra", () => {
+  const { lista, omitidos } = seleccionParaBorradores(LISTA, POR_PROPONER, {});
+  assert.deepEqual(
+    lista.modelos.map((m) => m.idModelo),
+    ["galaxy-a17"],
+  );
+  assert.equal(omitidos.length, 3);
+  assert.match(omitidos[0].motivo, /no pasó por la tanda/);
+});
+
+test("las tomas que se suben son las LISTA, en el orden de la tanda", () => {
+  const archivos = [
+    { ruta: "/f/Fotos procesadas/x_1.jpg" },
+    { ruta: "/f/Fotos procesadas/x_2.jpg" },
+    { ruta: "/f/Fotos procesadas/x_3.jpg" },
+  ];
+  assert.deepEqual(
+    tomasListas(archivos, ["x_3.jpg", "x_1.jpg"]).map((a) => a.ruta),
+    ["/f/Fotos procesadas/x_3.jpg", "/f/Fotos procesadas/x_1.jpg"],
+  );
+  assert.throws(() => tomasListas(archivos, ["x_9.jpg"]), /ya no está/);
 });
