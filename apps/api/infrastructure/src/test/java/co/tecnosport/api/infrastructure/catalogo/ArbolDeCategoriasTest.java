@@ -84,7 +84,11 @@ class ArbolDeCategoriasTest {
                   // `V100`, 10 de octubre de 2026. El negocio surte conjuntos y el árbol no los
                   // tenía: `V91` ya había subido la escala agrupada S-M a las dos ramas *por* los
                   // conjuntos, y no había hoja donde colgar uno.
-                  "ropa-dama-conjuntos"),
+                  "ropa-dama-conjuntos",
+                  // `V108`, 11 de octubre de 2026: los blazers y los chalecos de Violeta, que el
+                  // extractor dejaba en OTRO porque no tenían dónde caer.
+                  "ropa-dama-blazers",
+                  "ropa-dama-chalecos"),
           "ropa-caballero",
               List.of(
                   "ropa-caballero-camisetas",
@@ -92,7 +96,10 @@ class ArbolDeCategoriasTest {
                   "ropa-caballero-sudaderas",
                   "ropa-caballero-pantalonetas",
                   "ropa-caballero-jeans",
-                  "ropa-caballero-conjuntos"),
+                  "ropa-caballero-conjuntos",
+                  // `V108`: los polos de La Riverah. En la nube existía, creada a mano. En las
+                  // migraciones, no.
+                  "ropa-caballero-polos"),
           "bolsos-dama",
               List.of(
                   "bolsos-dama-bolsos-de-mano", "bolsos-dama-manos-libres", "bolsos-dama-morrales"),
