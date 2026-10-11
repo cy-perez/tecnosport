@@ -437,6 +437,90 @@ class ExtraerProductoDePublicacionTest {
         .ejecutar(publicacion, mensajes, LineaCatalogo.ROPA);
   }
 
+  /**
+   * Las camisetas de seda fría de La Riverah llevaban el logo de CK y de A|X en el pecho y el texto
+   * no decía réplica: salieron sin la alerta (11 de octubre de 2026). Un logo que se lee la pide.
+   */
+  @Test
+  void unaMarcaQueSeLeeEnLaFotoAlertaLaReplicaAunqueElTextoNoLaDiga() {
+    PublicacionProveedor conLogo =
+        PublicacionProveedor.abrir(texto("Camisetas seda fría para Caballero $35.000"));
+    conLogo.anexar(foto("p/1.jpg"));
+    LectorDeFotos leeCk =
+        fotos ->
+            Optional.of(
+                new LecturaDeFotos(
+                    false,
+                    List.of(
+                        new LecturaDeFoto(
+                            0, List.of(), null, List.of(), List.of("blanco"), null, List.of("CK"))),
+                    "{}"));
+    LectorDeFotos noLeeNada =
+        fotos ->
+            Optional.of(
+                new LecturaDeFotos(
+                    false,
+                    List.of(
+                        new LecturaDeFoto(0, List.of(), null, List.of(), List.of("blanco"), null)),
+                    "{}"));
+
+    ExtraccionEvaluada conMarca =
+        evaluarConFotos(
+                conLogo,
+                List.of(prenda("Camiseta seda fría para caballero", null)),
+                leeCk,
+                almacenCon("p/1.jpg"))
+            .getFirst();
+    PublicacionProveedor sinLogo =
+        PublicacionProveedor.abrir(texto("Camisetas seda fría para Caballero $35.000"));
+    sinLogo.anexar(foto("p/1.jpg"));
+    ExtraccionEvaluada sinMarca =
+        evaluarConFotos(
+                sinLogo,
+                List.of(prenda("Camiseta seda fría para caballero", null)),
+                noLeeNada,
+                almacenCon("p/1.jpg"))
+            .getFirst();
+
+    assertTrue(conMarca.alertas().contains(AlertaBorrador.REPLICA));
+    assertFalse(sinMarca.alertas().contains(AlertaBorrador.REPLICA));
+  }
+
+  /**
+   * «Camiseta Regular (VY3075) 💲35 Talla U» no nombra tonos, y sus fotos muestran tres: el
+   * borrador llega con ellos, en el orden de las fotos (11 de octubre de 2026).
+   */
+  @Test
+  void sinTonosEnElTextoElBorradorLlegaConLosDeLasFotos() {
+    PublicacionProveedor publicacion =
+        PublicacionProveedor.abrir(texto("Camiseta Regular (VY3075) 💲35 Talla U"));
+    publicacion.anexar(foto("p/1.jpg"));
+    publicacion.anexar(foto("p/2.jpg"));
+    publicacion.anexar(foto("p/3.jpg"));
+    LectorDeFotos lector =
+        fotos ->
+            Optional.of(
+                new LecturaDeFotos(
+                    false,
+                    List.of(
+                        new LecturaDeFoto(0, List.of(), null, List.of(), List.of("crema"), null),
+                        new LecturaDeFoto(
+                            1, List.of(), null, List.of(), List.of("blanco", "crema"), null),
+                        new LecturaDeFoto(2, List.of(), null, List.of(), List.of("rosado"), null)),
+                    "{}"));
+
+    ExtraccionEvaluada evaluada =
+        evaluarConFotos(
+                publicacion,
+                List.of(prenda("Camiseta regular", "VY3075")),
+                lector,
+                almacenCon("p/1.jpg", "p/2.jpg", "p/3.jpg"))
+            .getFirst();
+
+    assertEquals(List.of("crema", "rosado"), evaluada.producto().tonosNombrados());
+    assertEquals(2, evaluada.producto().cantidadTonos());
+  }
+
   @Test
   void elBodiYElJeanDeVioletaSeRepartenLasFotosYDejanDeSerCompartidas() {
     PublicacionProveedor publicacion =

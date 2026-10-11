@@ -66,7 +66,11 @@ public final class RepartoDeFotos {
     }
     List<List<Integer>> disenos = esAlbum(lectura) ? disenos(fotos, lectura) : List.of();
     if (disenos.size() > 1) {
-      return porDiseno(productos.getFirst(), fotos, lectura, disenos);
+      return conSuMarca(porDiseno(productos.getFirst(), fotos, lectura, disenos), fotos, lectura);
+    }
+    List<ProductoRepartido> porMarca = porMarca(productos.getFirst(), fotos, lectura);
+    if (!porMarca.isEmpty()) {
+      return porMarca;
     }
     return List.of(
         new ProductoRepartido(
@@ -183,6 +187,12 @@ public final class RepartoDeFotos {
       String sku = skuPorDiseno.get(d);
       boolean skuRepetido = sku != null && skuPorDiseno.stream().filter(sku::equals).count() > 1;
       boolean conPie = leidas.stream().anyMatch(l -> l.skuOpcional().isPresent());
+      String etiqueta =
+          leidas.stream()
+              .map(LecturaDeFoto::diseno)
+              .filter(Objects::nonNull)
+              .findFirst()
+              .orElse(null);
       repartidos.add(
           new ProductoRepartido(
               producto.comoDisenoDeAlbum(skuRepetido ? null : sku, tallas),
@@ -190,7 +200,8 @@ public final class RepartoDeFotos {
               new FotosDelProducto(
                   ajenas(fotos, propias),
                   tonosSugeridos(fotos, lectura, propias),
-                  lectura.jsonCrudo()),
+                  lectura.jsonCrudo(),
+                  etiqueta),
               conPie ? Respaldo.TEXTO_IMPRESO : Respaldo.DISENO_SIN_PIE,
               fotos.get(posiciones.getFirst()),
               true,
@@ -199,6 +210,105 @@ public final class RepartoDeFotos {
                   : posiciones.stream().map(fotos::get).toList()));
     }
     return repartidos;
+  }
+
+  /**
+   * Un texto que nombra varias marcas que se venden por separado —«DIESEL-AMIRI-Dsq purple DG»— es
+   * un borrador por marca, con las fotos donde se lee esa marca (decidido por el negocio el 11 de
+   * octubre de 2026). La foto en que no se lee ninguna, o se leen varias, es de todos, y esos
+   * llevan {@code FOTOS_COMPARTIDAS}. Una colaboración —Puma y BMW en la misma prenda— no se parte:
+   * sus fotos muestran las dos y ninguna queda para una sola. Si no quedan al menos dos marcas con
+   * fotos propias, no hay nada que partir y la lista sale vacía.
+   */
+  private static List<ProductoRepartido> porMarca(
+      ProductoExtraido producto, List<UUID> fotos, LecturaDeFotos lectura) {
+    if (producto.marcas().size() < 2) {
+      return List.of();
+    }
+    Map<String, List<Integer>> porMarca = new LinkedHashMap<>();
+    List<Integer> deTodas = new ArrayList<>();
+    for (int i = 0; i < fotos.size(); i++) {
+      Optional<String> unica = marcaUnica(producto, lectura.deLaFoto(i));
+      if (unica.isPresent()) {
+        porMarca.computeIfAbsent(unica.get(), m -> new ArrayList<>()).add(i);
+      } else {
+        deTodas.add(i);
+      }
+    }
+    if (porMarca.size() < 2) {
+      return List.of();
+    }
+    List<ProductoRepartido> repartidos = new ArrayList<>(porMarca.size());
+    for (Map.Entry<String, List<Integer>> marca : porMarca.entrySet()) {
+      List<UUID> propias = new ArrayList<>();
+      for (int i = 0; i < fotos.size(); i++) {
+        if (marca.getValue().contains(i) || deTodas.contains(i)) {
+          propias.add(fotos.get(i));
+        }
+      }
+      repartidos.add(
+          new ProductoRepartido(
+              producto.conMarca(marca.getKey()).sinCodigo(),
+              propias,
+              new FotosDelProducto(
+                  ajenas(fotos, propias),
+                  tonosSugeridos(fotos, lectura, propias),
+                  lectura.jsonCrudo()),
+              Respaldo.MARCA_VISIBLE,
+              fotos.get(marca.getValue().getFirst()),
+              true,
+              List.of(),
+              !deTodas.isEmpty()));
+    }
+    return repartidos;
+  }
+
+  /**
+   * En un álbum cada SKU ya es un producto; si el texto nombraba varias marcas, cada diseño lleva
+   * en el título la que se lee en sus fotos, y no las cuatro del anuncio.
+   */
+  private static List<ProductoRepartido> conSuMarca(
+      List<ProductoRepartido> repartidos, List<UUID> fotos, LecturaDeFotos lectura) {
+    List<ProductoRepartido> conMarca = new ArrayList<>(repartidos.size());
+    for (ProductoRepartido repartido : repartidos) {
+      ProductoExtraido producto = repartido.producto();
+      if (producto.marcas().size() < 2) {
+        conMarca.add(repartido);
+        continue;
+      }
+      Set<String> vistas = new LinkedHashSet<>();
+      for (int i = 0; i < fotos.size(); i++) {
+        if (repartido.fotos().contains(fotos.get(i))
+            && !repartido.reparto().ajenas().contains(fotos.get(i))) {
+          marcaUnica(producto, lectura.deLaFoto(i)).ifPresent(vistas::add);
+        }
+      }
+      conMarca.add(
+          vistas.size() == 1
+              ? new ProductoRepartido(
+                  producto.conMarca(vistas.iterator().next()),
+                  repartido.fotos(),
+                  repartido.reparto(),
+                  repartido.respaldo(),
+                  repartido.exclusiva(),
+                  repartido.disenoDeAlbum(),
+                  repartido.conSuCodigo(),
+                  repartido.compartidas())
+              : repartido);
+    }
+    return conMarca;
+  }
+
+  /**
+   * La única de las marcas del texto que se lee en la foto; vacía si no se lee ninguna o varias.
+   */
+  private static Optional<String> marcaUnica(
+      ProductoExtraido producto, Optional<LecturaDeFoto> leida) {
+    if (leida.isEmpty()) {
+      return Optional.empty();
+    }
+    List<String> vistas = producto.marcas().stream().filter(leida.get()::muestraMarca).toList();
+    return vistas.size() == 1 ? Optional.of(vistas.getFirst()) : Optional.empty();
   }
 
   /**
@@ -288,7 +398,9 @@ public final class RepartoDeFotos {
     /** Por un código o un SKU impreso en la foto. */
     TEXTO_IMPRESO,
     /** Por el diseño que vio el lector, sin nada impreso que lo confirme. */
-    DISENO_SIN_PIE
+    DISENO_SIN_PIE,
+    /** Por la marca que se lee en la foto, cuando el texto nombra varias. */
+    MARCA_VISIBLE
   }
 
   /**
@@ -301,6 +413,8 @@ public final class RepartoDeFotos {
    * @param conSuCodigo las fotos que llevan impreso el código de este producto, o el SKU en un
    *     álbum: las únicas que, con respaldo, se pueden sumar a un borrador de otra publicación con
    *     la misma referencia (10 de octubre de 2026). Vacía sin reparto
+   * @param compartidas lleva fotos que también son de otro producto de la publicación porque no se
+   *     supo de cuál eran: la foto sin marca legible de un anuncio de varias marcas
    */
   public record ProductoRepartido(
       ProductoExtraido producto,
@@ -309,7 +423,19 @@ public final class RepartoDeFotos {
       Respaldo respaldo,
       UUID exclusiva,
       boolean disenoDeAlbum,
-      List<UUID> conSuCodigo) {
+      List<UUID> conSuCodigo,
+      boolean compartidas) {
+
+    public ProductoRepartido(
+        ProductoExtraido producto,
+        List<UUID> fotos,
+        FotosDelProducto reparto,
+        Respaldo respaldo,
+        UUID exclusiva,
+        boolean disenoDeAlbum,
+        List<UUID> conSuCodigo) {
+      this(producto, fotos, reparto, respaldo, exclusiva, disenoDeAlbum, conSuCodigo, false);
+    }
 
     public ProductoRepartido(
         ProductoExtraido producto,

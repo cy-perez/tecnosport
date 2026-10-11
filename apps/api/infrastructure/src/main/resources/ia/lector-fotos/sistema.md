@@ -43,5 +43,12 @@ Reglas, en orden de importancia:
    diseño llevan exactamente la misma etiqueta, aunque cambie el color**; dos diseños distintos,
    etiquetas distintas. Si la foto muestra dos diseños, la del que ocupa más. Cuando
    `album_de_disenos` es `false`, todas las fotos llevan la misma etiqueta.
+8. `marcas` son las marcas cuyo logo o nombre **se lee** en lo que se vende: «CK» o «Calvin
+   Klein» en el pecho de una camiseta, las tres rayas de Adidas, la franja de Onitsuka Tiger, el
+   «A|X» de Armani Exchange. No las de lo que ambienta la foto —la gorra, el bolso, los zapatos—,
+   ni el texto decorativo que no es una marca. Si el anuncio nombra marcas para el producto («marcas:
+   Diesel, Amiri»), y la que lees es una de ellas, escríbela **igual que el anuncio**. Una por
+   elemento; vacía si no se lee ninguna. Como con los códigos: solo la que se lee, no la que
+   supones.
 
 Responde solo con el JSON.

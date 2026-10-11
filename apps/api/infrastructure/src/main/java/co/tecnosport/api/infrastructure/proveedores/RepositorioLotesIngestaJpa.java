@@ -182,6 +182,7 @@ public class RepositorioLotesIngestaJpa implements RepositorioLotesIngesta {
         r == null ? null : r.agotados(),
         r == null ? null : r.descartes(),
         r == null ? null : r.alertas(),
+        r == null ? null : r.fallidas(),
         lote.fallo().map(f -> f.motivo().name()).orElse(null),
         lote.fallo().map(FalloDeLote::dato).orElse(null),
         lote.creadoEn(),
@@ -206,7 +207,8 @@ public class RepositorioLotesIngestaJpa implements RepositorioLotesIngesta {
                 fila.getResumenRenovaciones(),
                 fila.getResumenAgotados(),
                 fila.getResumenDescartes(),
-                fila.getResumenAlertas());
+                fila.getResumenAlertas(),
+                fila.getResumenFallidas() == null ? 0 : fila.getResumenFallidas());
     LoteIngesta lote =
         new LoteIngesta(
             fila.getId(),

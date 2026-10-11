@@ -3,13 +3,16 @@ import {
   EstadoLote,
   LoteIngesta,
   LotesPaginados,
+  PublicacionCerrada,
   ResumenIngesta,
   esCodigoDeFallo,
+  esMotivoDePublicacion,
 } from '../domain/ingesta.model';
 
 type LoteDto = components['schemas']['LoteIngestaRespuesta'];
 type LotesPaginadosDto = components['schemas']['LotesPaginadosRespuesta'];
 type ResumenDto = components['schemas']['ResumenIngestaRespuesta'];
+type PublicacionCerradaDto = components['schemas']['PublicacionCerradaRespuesta'];
 
 /** Un lote recién recibido todavía no tiene cifras: todas en cero y la pantalla lo pinta igual. */
 function aResumen(dto: ResumenDto | undefined): ResumenIngesta {
@@ -23,6 +26,7 @@ function aResumen(dto: ResumenDto | undefined): ResumenIngesta {
     agotados: dto?.agotados ?? 0,
     descartes: dto?.descartes ?? 0,
     alertas: dto?.alertas ?? 0,
+    fallidas: dto?.fallidas ?? 0,
   };
 }
 
@@ -41,6 +45,18 @@ export function aLoteIngesta(dto: LoteDto): LoteIngesta {
         : 'DESCONOCIDO'
       : null,
     datoError: dto.datoError ?? null,
+  };
+}
+
+export function aPublicacionCerrada(dto: PublicacionCerradaDto): PublicacionCerrada {
+  return {
+    id: dto.id,
+    fecha: dto.fecha,
+    estado: dto.estado === 'ERROR' ? 'ERROR' : 'DESCARTADA',
+    motivo: esMotivoDePublicacion(dto.codigoMotivo) ? dto.codigoMotivo : 'DESCONOCIDO',
+    dato: dto.datoMotivo ?? null,
+    extracto: dto.extracto ?? null,
+    fotos: dto.fotos ?? 0,
   };
 }
 

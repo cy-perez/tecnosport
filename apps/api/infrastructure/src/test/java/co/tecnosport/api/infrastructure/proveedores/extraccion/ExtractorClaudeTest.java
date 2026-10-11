@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import co.tecnosport.api.application.proveedores.ExtraccionFallidaException;
+import co.tecnosport.api.application.proveedores.ExtractorNoDisponibleException;
 import co.tecnosport.api.application.proveedores.ResultadoExtraccion;
 import co.tecnosport.api.application.proveedores.TextoDePublicacion;
 import co.tecnosport.api.domain.catalogo.LineaCatalogo;
@@ -195,6 +196,41 @@ class ExtractorClaudeTest {
     assertThat(pausas).isEmpty();
   }
 
+  /**
+   * Sin saldo, sin clave o sin modelo, ninguna publicación del lote va a salir distinta: el fallo
+   * es de la cuenta y no de la publicación (11 de octubre de 2026, Meraki).
+   */
+  @Test
+  void unRechazoDeLaCuentaNoEsUnaExtraccionFallida() {
+    respuestas.add(
+        new Respuesta(
+            400,
+            "{\"type\":\"error\",\"error\":{\"type\":\"invalid_request_error\",\"message\":"
+                + "\"Your credit balance is too low to access the Anthropic API.\"}}"));
+
+    assertThatThrownBy(() -> extractor(3).extraer(texto()))
+        .isInstanceOf(ExtractorNoDisponibleException.class)
+        .hasMessageContaining("credit balance");
+    assertThat(peticiones).hasSize(1);
+  }
+
+  @Test
+  void unaClaveInvalidaOUnModeloQueNoExisteSonDeLaCuenta() {
+    respuestas.add(
+        new Respuesta(
+            401,
+            "{\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}"));
+    respuestas.add(
+        new Respuesta(
+            404, "{\"error\":{\"type\":\"not_found_error\",\"message\":\"model: claude-x\"}}"));
+
+    assertThatThrownBy(() -> extractor(3).extraer(texto()))
+        .isInstanceOf(ExtractorNoDisponibleException.class)
+        .satisfies(e -> assertThat(((ExtractorNoDisponibleException) e).estado()).isEqualTo(401));
+    assertThatThrownBy(() -> extractor(3).extraer(texto()))
+        .isInstanceOf(ExtractorNoDisponibleException.class);
+  }
+
   @Test
   void unaNegativaOUnCortePorLongitudNoSonUnProducto() {
     respuestas.add(new Respuesta(200, exito("no puedo", "refusal")));
@@ -215,7 +251,7 @@ class ExtractorClaudeTest {
             200,
             exito(
                 "{\"productos\":[{\"esta_agotado\":true,\"titulo\":null,\"linea\":\"otra\","
-                    + "\"tipo\":\"chaleco\",\"precio_proveedor_cop\":null,"
+                    + "\"tipo\":\"pijama\",\"precio_proveedor_cop\":null,"
                     + "\"tallas\":{\"tipo\":\"Lista\",\"sirve_hasta\":null,\"valores\":[\"M\",\"L\"]},"
                     + "\"cantidad_tonos\":null,\"tonos_nombrados\":[\"negro\"],\"material\":null,"
                     + "\"descripcion\":null,\"alt_en\":null,\"es_replica\":false,"
@@ -299,6 +335,37 @@ class ExtractorClaudeTest {
         .extracting(p -> p.tipo())
         .containsExactly(
             TipoProductoProveedor.BLUSA, TipoProductoProveedor.BODI, TipoProductoProveedor.BODI);
+  }
+
+  /** El blazer y el chaleco de Violeta tienen tipo desde V108, y el esquema los ofrece. */
+  @Test
+  void elBlazerYElChalecoSonTiposReconocidos() {
+    String blazer = BOLSO.replace("\"tipo\":\"bolso\"", "\"tipo\":\"blazer\"");
+    String chaleco = BOLSO.replace("\"tipo\":\"bolso\"", "\"tipo\":\"chaleco\"");
+    respuestas.add(
+        new Respuesta(200, exito("{\"productos\":[" + blazer + "," + chaleco + "]}", "end_turn")));
+
+    ResultadoExtraccion resultado = extractor(1).extraer(texto());
+
+    assertThat(resultado.productos())
+        .extracting(p -> p.tipo())
+        .containsExactly(TipoProductoProveedor.BLAZER, TipoProductoProveedor.CHALECO);
+    assertThat(RecursosDelExtractor.esquema()).contains("\"blazer\"", "\"chaleco\"");
+  }
+
+  /** Las marcas que nombra el texto, una por elemento: con varias, un borrador por marca. */
+  @Test
+  void lasMarcasDelTextoSeLeen() {
+    String jeans =
+        BOLSO.replace(
+            "\"confianza\":0.92",
+            "\"confianza\":0.92,\"marcas\":[\"Diesel\",\" Amiri \",\"\",\"Diesel\"]");
+    respuestas.add(new Respuesta(200, exito("{\"productos\":[" + jeans + "]}", "end_turn")));
+
+    ResultadoExtraccion resultado = extractor(1).extraer(texto());
+
+    assertThat(resultado.productos().getFirst().marcas()).containsExactly("Diesel", "Amiri");
+    assertThat(RecursosDelExtractor.esquema()).contains("\"marcas\"");
   }
 
   /** Un saludo o una promoción: la lista vacía, sin fallo. */

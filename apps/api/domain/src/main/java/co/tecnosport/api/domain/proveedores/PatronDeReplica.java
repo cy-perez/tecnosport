@@ -19,6 +19,10 @@ import java.util.regex.Pattern;
  * ✨Calidad 1.1»—, no hay «estilo» que escribir: el título dice «importado», «Pantalón jogger para
  * dama importado» (decidido por el negocio el 9 de octubre de 2026). Antes el título quedaba
  * colgando, «Pantalón jogger para dama estilo» ({@link #tituloDeReplica}).
+ *
+ * <p>«AA» entró el 11 de octubre de 2026, con los «Jeans AA plus para caballero» de La Riverah: el
+ * negocio decidió que es la misma marca de réplica que «AAA». Solo en mayúsculas —«aa» suelto en
+ * minúsculas no la anuncia— y nunca la de una pila, como con «AAA».
  */
 public final class PatronDeReplica {
 
@@ -38,6 +42,18 @@ public final class PatronDeReplica {
    */
   private static final Pattern TRIPLE_A =
       Pattern.compile("(?<![\\p{L}\\d])aaa(?![\\p{L}\\d])", Pattern.CASE_INSENSITIVE);
+
+  /** «AA» como palabra suelta y en mayúsculas: «Jeans AA plus». «AAA» lo atrapa el de arriba. */
+  private static final Pattern DOBLE_A = Pattern.compile("(?<![\\p{L}\\d])AA(?![\\p{L}\\d])");
+
+  /**
+   * «estilo» seguido de algo que no es «importado»: el título que el extractor escribe para una
+   * réplica que nombra marca o modelo, «Pantalón estilo Levis para caballero».
+   */
+  private static final Pattern ESTILO_CON_MARCA =
+      Pattern.compile(
+          "(?<!\\p{L})estilo\\s+(?!importad[oa]s?(?!\\p{L}))\\p{L}",
+          Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE);
 
   /**
    * «Pilas AAA», «baterías AAA»: el tamaño de una pila, que un control o un juguete dice que usa.
@@ -76,7 +92,19 @@ public final class PatronDeReplica {
   }
 
   public static boolean esReplica(String texto) {
-    return texto != null && (UNO_A_UNO.matcher(texto).find() || tieneTripleA(texto));
+    return texto != null
+        && (UNO_A_UNO.matcher(texto).find() || tieneTripleA(texto) || tieneDobleA(texto));
+  }
+
+  /**
+   * Si el título nombra una marca con «estilo», que es como el extractor titula una réplica: «Jeans
+   * AA para caballero ⭕️Marca Levis» salió como «Pantalón estilo Levis para caballero» sin que el
+   * texto dijera 1.1, y el borrador se quedó sin la alerta (11 de octubre de 2026). Es una señal
+   * para revisar, no una prueba: «Tenis estilo runner» también la da, y la confirma o la descarta
+   * quien aprueba.
+   */
+  public static boolean nombraMarcaConEstilo(String titulo) {
+    return titulo != null && ESTILO_CON_MARCA.matcher(titulo).find();
   }
 
   /**
@@ -93,7 +121,14 @@ public final class PatronDeReplica {
       m.appendReplacement(sinTripleA, esDePila(titulo, m.start()) ? "$0" : " ");
     }
     m.appendTail(sinTripleA);
-    String sinUnoAUno = UNO_A_UNO.matcher(sinTripleA).replaceAll(" ");
+    Matcher dobleA = DOBLE_A.matcher(sinTripleA);
+    StringBuilder sinDobleA = new StringBuilder();
+    while (dobleA.find()) {
+      dobleA.appendReplacement(
+          sinDobleA, esDePila(sinTripleA.toString(), dobleA.start()) ? "$0" : " ");
+    }
+    dobleA.appendTail(sinDobleA);
+    String sinUnoAUno = UNO_A_UNO.matcher(sinDobleA).replaceAll(" ");
     return sinUnoAUno.replaceAll("\\s+", " ").strip();
   }
 
@@ -118,6 +153,16 @@ public final class PatronDeReplica {
 
   private static boolean tieneTripleA(String texto) {
     Matcher m = TRIPLE_A.matcher(texto);
+    while (m.find()) {
+      if (!esDePila(texto, m.start())) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  private static boolean tieneDobleA(String texto) {
+    Matcher m = DOBLE_A.matcher(texto);
     while (m.find()) {
       if (!esDePila(texto, m.start())) {
         return true;

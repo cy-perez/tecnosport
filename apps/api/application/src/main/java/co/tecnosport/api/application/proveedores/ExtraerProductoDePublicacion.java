@@ -128,16 +128,26 @@ public final class ExtraerProductoDePublicacion {
 
     List<ProductoExtraido> contrastados =
         productos.stream().map(p -> p.contrastadoCon(texto.completo())).toList();
+    LecturaDeFotos lectura =
+        sinFotos ? null : leerFotos(publicacion, mensajes, texto, contrastados);
     List<ProductoRepartido> repartidos =
-        RepartoDeFotos.repartir(
-            contrastados,
-            publicacion.medios(),
-            sinFotos ? null : leerFotos(publicacion, mensajes, texto, contrastados));
+        RepartoDeFotos.repartir(contrastados, publicacion.medios(), lectura);
 
     List<ExtraccionEvaluada> evaluadas = new ArrayList<>(repartidos.size());
     for (int i = 0; i < repartidos.size(); i++) {
       ProductoRepartido repartido = repartidos.get(i);
-      ProductoExtraido producto = repartido.producto();
+      // Solo si sus fotos son suyas: con varios productos en el texto o fotos de todos, los colores
+      // de la foto pueden ser del otro, y el borrador nacería con variantes que no tiene.
+      ProductoExtraido producto =
+          varios || repartido.compartidas()
+              ? repartido.producto()
+              : repartido
+                  .producto()
+                  .conTonosDeLasFotos(
+                      repartido.fotos().stream()
+                          .map(repartido.reparto().tonosSugeridos()::get)
+                          .filter(Objects::nonNull)
+                          .toList());
       Set<AlertaBorrador> alertas = EnumSet.noneOf(AlertaBorrador.class);
       // Los diseños de un álbum comparten el único precio del texto.
       boolean album = repartido.disenoDeAlbum();
@@ -157,12 +167,12 @@ public final class ExtraerProductoDePublicacion {
           || repartido.respaldo() == Respaldo.DISENO_SIN_PIE) {
         alertas.add(AlertaBorrador.CONFIANZA_BAJA);
       }
-      if (producto.esReplica()) {
+      if (producto.esReplica() || muestraMarca(repartido, publicacion.medios(), lectura)) {
         alertas.add(AlertaBorrador.REPLICA);
       }
       if (sinFotos) {
         alertas.add(AlertaBorrador.SIN_FOTOS);
-      } else if (varios && repartido.exclusivaOpcional().isEmpty()) {
+      } else if ((varios && repartido.exclusivaOpcional().isEmpty()) || repartido.compartidas()) {
         alertas.add(AlertaBorrador.FOTOS_COMPARTIDAS);
       }
       evaluadas.add(
@@ -186,7 +196,8 @@ public final class ExtraerProductoDePublicacion {
    * transacción, como la extracción. <b>Nada de aquí tumba la publicación ni el lote</b>: ni el
    * lector que falla ni el bucket que no responde a mitad de la lectura. Sin lectura, el reparto es
    * el de antes. Por eso se atrapa cualquier {@code RuntimeException} y no solo la del lector: una
-   * que se escapara de aquí cerraría el lote entero en {@link ProcesarLoteDeIngesta}.
+   * que se escapara de aquí cerraría el lote entero en {@link ProcesarLoteDeIngesta}. Salvo {@link
+   * ExtractorNoDisponibleException}, que no cierra el lote sino que lo pausa.
    */
   private LecturaDeFotos leerFotos(
       PublicacionProveedor publicacion,
@@ -198,6 +209,10 @@ public final class ExtraerProductoDePublicacion {
     }
     try {
       return leerFotosSinProteger(publicacion, mensajes, texto, productos);
+    } catch (ExtractorNoDisponibleException e) {
+      // La cuenta, no la foto: la publicación siguiente fallaría igual, y sin lectura saldrían
+      // borradores peor repartidos. Que el lote se pause, como con el extractor.
+      throw e;
     } catch (RuntimeException e) {
       return null;
     }
@@ -225,9 +240,27 @@ public final class ExtraerProductoDePublicacion {
             .map(
                 p ->
                     new FotosParaLeer.ProductoNombrado(
-                        p.titulo(), p.codigoReferenciaOpcional().orElse(null)))
+                        p.titulo(), p.codigoReferenciaOpcional().orElse(null), p.marcas()))
             .toList();
     return lector.leer(new FotosParaLeer(texto.completo(), nombrados, fotos)).orElse(null);
+  }
+
+  /**
+   * Si en alguna de sus fotos se lee una marca: un logo de CK o de A|X en una camiseta de mayorista
+   * es una réplica aunque el texto no lo diga (La Riverah, 11 de octubre de 2026). Es una alerta,
+   * no un veredicto: quien aprueba decide con la foto a la vista.
+   */
+  private static boolean muestraMarca(
+      ProductoRepartido repartido, List<UUID> medios, LecturaDeFotos lectura) {
+    if (lectura == null) {
+      return false;
+    }
+    return repartido.fotos().stream()
+        .map(medios::indexOf)
+        .filter(i -> i >= 0)
+        .map(lectura::deLaFoto)
+        .flatMap(Optional::stream)
+        .anyMatch(l -> !l.marcas().isEmpty());
   }
 
   /**

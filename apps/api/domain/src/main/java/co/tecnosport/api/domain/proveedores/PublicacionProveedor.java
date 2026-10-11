@@ -27,7 +27,14 @@ public final class PublicacionProveedor {
   private final List<UUID> medios;
   private final Instant fecha;
   private EstadoPublicacionProveedor estado;
-  private String motivo;
+  private CierreDePublicacion cierre;
+
+  /**
+   * Lo que pasó por dentro, para quien diagnostica: el mensaje de la API que rechazó la extracción,
+   * la excepción. No se muestra en el panel —el panel traduce el {@link #cierre}—; está en la base
+   * para que una ingesta como la de Meraki se explique con una consulta.
+   */
+  private String detalle;
 
   public PublicacionProveedor(
       UUID id,
@@ -38,7 +45,8 @@ public final class PublicacionProveedor {
       List<UUID> medios,
       Instant fecha,
       EstadoPublicacionProveedor estado,
-      String motivo) {
+      CierreDePublicacion cierre,
+      String detalle) {
     this.id = Objects.requireNonNull(id, "El id de la publicación no puede ser nulo.");
     this.proveedorId = Objects.requireNonNull(proveedorId, "Una publicación es de un proveedor.");
     this.loteId = Objects.requireNonNull(loteId, "Una publicación nace en un lote.");
@@ -49,10 +57,11 @@ public final class PublicacionProveedor {
     this.medios = new ArrayList<>(Objects.requireNonNullElse(medios, List.of()));
     this.fecha = Objects.requireNonNull(fecha, "Una publicación tiene fecha.");
     this.estado = Objects.requireNonNull(estado, "El estado no puede ser nulo.");
-    this.motivo = enBlancoEsNulo(motivo);
+    this.cierre = cierre;
+    this.detalle = enBlancoEsNulo(detalle);
     if ((estado == EstadoPublicacionProveedor.DESCARTADA
             || estado == EstadoPublicacionProveedor.ERROR)
-        && this.motivo == null) {
+        && this.cierre == null) {
       throw new ExcepcionDeDominio("Una publicación " + estado + " tiene que decir por qué.");
     }
   }
@@ -69,6 +78,7 @@ public final class PublicacionProveedor {
             List.of(),
             principal.enviadoEn(),
             EstadoPublicacionProveedor.PENDIENTE_EXTRACCION,
+            null,
             null);
     if (principal.tipo() == TipoMensaje.IMAGEN) {
       publicacion.medios.add(principal.id());
@@ -92,19 +102,36 @@ public final class PublicacionProveedor {
     this.estado = EstadoPublicacionProveedor.EXTRAIDA;
   }
 
-  /** No era un producto: un saludo, una promoción, un aviso. */
-  public void descartar(String motivo) {
+  /** No era un producto, o ya hay un borrador que lo tiene: un saludo, un anuncio repetido. */
+  public void descartar(CierreDePublicacion cierre) {
     exigirPendiente("descartar");
-    String porQue = exigirMotivo(motivo);
+    this.cierre = Objects.requireNonNull(cierre, "Hace falta el motivo.");
     this.estado = EstadoPublicacionProveedor.DESCARTADA;
-    this.motivo = porQue;
   }
 
-  public void fallar(String motivo) {
+  /**
+   * No se pudo leer.
+   *
+   * @param detalle lo que pasó por dentro, para quien diagnostica; nulo si no hay
+   */
+  public void fallar(CierreDePublicacion cierre, String detalle) {
     exigirPendiente("fallar");
-    String porQue = exigirMotivo(motivo);
+    this.cierre = Objects.requireNonNull(cierre, "Hace falta el motivo.");
+    this.detalle = enBlancoEsNulo(detalle);
     this.estado = EstadoPublicacionProveedor.ERROR;
-    this.motivo = porQue;
+  }
+
+  /**
+   * Una publicación en {@code ERROR} vuelve a esperar al extractor: alguien pidió reintentar las
+   * fallidas del lote. Las descartadas no: esas se leyeron y no eran productos.
+   */
+  public void reabrir() {
+    if (estado != EstadoPublicacionProveedor.ERROR) {
+      throw new ExcepcionDeDominio("Solo se reabre una publicación en error; esta está " + estado);
+    }
+    this.estado = EstadoPublicacionProveedor.PENDIENTE_EXTRACCION;
+    this.cierre = null;
+    this.detalle = null;
   }
 
   private void exigirPendiente(String accion) {
@@ -112,14 +139,6 @@ public final class PublicacionProveedor {
       throw new ExcepcionDeDominio(
           "Solo se puede " + accion + " una publicación pendiente; esta está " + estado + ".");
     }
-  }
-
-  private static String exigirMotivo(String motivo) {
-    String limpio = enBlancoEsNulo(motivo);
-    if (limpio == null) {
-      throw new ExcepcionDeDominio("Hace falta el motivo.");
-    }
-    return limpio;
   }
 
   private static String enBlancoEsNulo(String valor) {
@@ -158,7 +177,11 @@ public final class PublicacionProveedor {
     return estado;
   }
 
-  public Optional<String> motivo() {
-    return Optional.ofNullable(motivo);
+  public Optional<CierreDePublicacion> cierre() {
+    return Optional.ofNullable(cierre);
+  }
+
+  public Optional<String> detalle() {
+    return Optional.ofNullable(detalle);
   }
 }

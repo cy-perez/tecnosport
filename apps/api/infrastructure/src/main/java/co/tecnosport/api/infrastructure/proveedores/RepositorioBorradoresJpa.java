@@ -114,7 +114,11 @@ public class RepositorioBorradoresJpa implements RepositorioBorradores {
         .map(
             f ->
                 new AnuncioEnRevision(
-                    f.getBorradorId(), f.getTexto(), fotosDe(f), f.getDeChatDeCaballero()))
+                    f.getBorradorId(),
+                    f.getTexto(),
+                    fotosDe(f),
+                    f.getDeChatDeCaballero(),
+                    f.getPublicacionId()))
         .toList();
   }
 
@@ -171,41 +175,44 @@ public class RepositorioBorradoresJpa implements RepositorioBorradores {
   }
 
   private static BorradorProductoJpaEntity aFila(BorradorProducto b, Instant ahora) {
-    return new BorradorProductoJpaEntity(
-        b.id(),
-        b.publicacionId(),
-        b.proveedorId(),
-        b.extraccionCruda(),
-        b.titulo().orElse(null),
-        b.linea().map(LineaCatalogo::name).orElse(null),
-        b.tipo().name(),
-        b.precioProveedor().map(Dinero::valor).orElse(null),
-        b.precioVentaSugerido().map(Dinero::valor).orElse(null),
-        b.tallas().tipo().name(),
-        b.tallas().sirveHasta(),
-        unir(b.tallas().valores()),
-        b.cantidadTonos().orElse(null),
-        unir(b.tonosNombrados()),
-        b.material().orElse(null),
-        b.descripcion().orElse(null),
-        b.altEn().orElse(null),
-        b.huella().map(HuellaProveedor::valor).orElse(null),
-        b.pHash().map(PHash::hex).orElse(null),
-        b.alertas().stream().map(Enum::name).sorted().collect(Collectors.joining(",")),
-        unir(b.fotosDescartadas().stream().map(UUID::toString).sorted().toList()),
-        b.fotosSubidas().stream()
-            .map(f -> new FotoSubidaJpaEmbeddable(f.id(), f.referenciaArchivo(), f.subidaEn()))
-            .toList(),
-        CamposJsonDelBorrador.deTallasPorTono(b.tallasPorTono()),
-        CamposJsonDelBorrador.dePreciosAdicionales(b.preciosAdicionales()),
-        CamposJsonDelBorrador.deTonosSugeridos(b.tonosSugeridos()),
-        b.lecturaDeFotos().orElse(null),
-        unir(b.fotosAgregadas().stream().map(UUID::toString).toList()),
-        b.estado().name(),
-        b.productoId().orElse(null),
-        b.motivoRechazo().orElse(null),
-        b.creadoEn(),
-        ahora);
+    BorradorProductoJpaEntity fila =
+        new BorradorProductoJpaEntity(
+            b.id(),
+            b.publicacionId(),
+            b.proveedorId(),
+            b.extraccionCruda(),
+            b.titulo().orElse(null),
+            b.linea().map(LineaCatalogo::name).orElse(null),
+            b.tipo().name(),
+            b.precioProveedor().map(Dinero::valor).orElse(null),
+            b.precioVentaSugerido().map(Dinero::valor).orElse(null),
+            b.tallas().tipo().name(),
+            b.tallas().sirveHasta(),
+            unir(b.tallas().valores()),
+            b.cantidadTonos().orElse(null),
+            unir(b.tonosNombrados()),
+            b.material().orElse(null),
+            b.descripcion().orElse(null),
+            b.altEn().orElse(null),
+            b.huella().map(HuellaProveedor::valor).orElse(null),
+            b.pHash().map(PHash::hex).orElse(null),
+            b.alertas().stream().map(Enum::name).sorted().collect(Collectors.joining(",")),
+            unir(b.fotosDescartadas().stream().map(UUID::toString).sorted().toList()),
+            b.fotosSubidas().stream()
+                .map(f -> new FotoSubidaJpaEmbeddable(f.id(), f.referenciaArchivo(), f.subidaEn()))
+                .toList(),
+            CamposJsonDelBorrador.deTallasPorTono(b.tallasPorTono()),
+            CamposJsonDelBorrador.dePreciosAdicionales(b.preciosAdicionales()),
+            CamposJsonDelBorrador.deTonosSugeridos(b.tonosSugeridos()),
+            b.lecturaDeFotos().orElse(null),
+            unir(b.fotosAgregadas().stream().map(UUID::toString).toList()),
+            b.estado().name(),
+            b.productoId().orElse(null),
+            b.motivoRechazo().orElse(null),
+            b.creadoEn(),
+            ahora);
+    fila.setDiseno(b.diseno().orElse(null));
+    return fila;
   }
 
   private static BorradorProducto aDominio(BorradorProductoJpaEntity f) {
@@ -217,41 +224,45 @@ public class RepositorioBorradoresJpa implements RepositorioBorradores {
           .map(AlertaBorrador::valueOf)
           .forEach(alertas::add);
     }
-    return new BorradorProducto(
-        f.getId(),
-        f.getPublicacionId(),
-        f.getProveedorId(),
-        f.getExtraccionCruda(),
-        f.getTitulo(),
-        f.getLinea() == null ? null : LineaCatalogo.valueOf(f.getLinea()),
-        TipoProductoProveedor.valueOf(f.getTipo()),
-        f.getPrecioProveedor() == null ? null : Dinero.deCop(f.getPrecioProveedor()),
-        f.getPrecioVentaSugerido() == null ? null : Dinero.deCop(f.getPrecioVentaSugerido()),
-        new Tallas(
-            TipoDeTalla.valueOf(f.getTallasTipo()),
-            f.getTallasSirveHasta(),
-            partir(f.getTallasValores())),
-        f.getCantidadTonos(),
-        partir(f.getTonosNombrados()),
-        f.getMaterial(),
-        f.getDescripcion(),
-        f.getAltEn(),
-        f.getHuella() == null ? null : new HuellaProveedor(f.getHuella()),
-        f.getPhash() == null ? null : PHash.deHex(f.getPhash()),
-        alertas,
-        partir(f.getFotosDescartadas()).stream().map(UUID::fromString).collect(Collectors.toSet()),
-        f.getFotosSubidas().stream()
-            .map(s -> new FotoSubida(s.getId(), s.getReferenciaArchivo(), s.getSubidaEn()))
-            .toList(),
-        CamposJsonDelBorrador.aTallasPorTono(f.getTallasPorTono()),
-        CamposJsonDelBorrador.aPreciosAdicionales(f.getPreciosAdicionales()),
-        CamposJsonDelBorrador.aTonosSugeridos(f.getTonosSugeridos()),
-        f.getLecturaDeFotos(),
-        partir(f.getFotosAgregadas()).stream().map(UUID::fromString).toList(),
-        EstadoBorrador.valueOf(f.getEstado()),
-        f.getProductoId(),
-        f.getMotivoRechazo(),
-        f.getCreadoEn());
+    BorradorProducto borrador =
+        new BorradorProducto(
+            f.getId(),
+            f.getPublicacionId(),
+            f.getProveedorId(),
+            f.getExtraccionCruda(),
+            f.getTitulo(),
+            f.getLinea() == null ? null : LineaCatalogo.valueOf(f.getLinea()),
+            TipoProductoProveedor.valueOf(f.getTipo()),
+            f.getPrecioProveedor() == null ? null : Dinero.deCop(f.getPrecioProveedor()),
+            f.getPrecioVentaSugerido() == null ? null : Dinero.deCop(f.getPrecioVentaSugerido()),
+            new Tallas(
+                TipoDeTalla.valueOf(f.getTallasTipo()),
+                f.getTallasSirveHasta(),
+                partir(f.getTallasValores())),
+            f.getCantidadTonos(),
+            partir(f.getTonosNombrados()),
+            f.getMaterial(),
+            f.getDescripcion(),
+            f.getAltEn(),
+            f.getHuella() == null ? null : new HuellaProveedor(f.getHuella()),
+            f.getPhash() == null ? null : PHash.deHex(f.getPhash()),
+            alertas,
+            partir(f.getFotosDescartadas()).stream()
+                .map(UUID::fromString)
+                .collect(Collectors.toSet()),
+            f.getFotosSubidas().stream()
+                .map(s -> new FotoSubida(s.getId(), s.getReferenciaArchivo(), s.getSubidaEn()))
+                .toList(),
+            CamposJsonDelBorrador.aTallasPorTono(f.getTallasPorTono()),
+            CamposJsonDelBorrador.aPreciosAdicionales(f.getPreciosAdicionales()),
+            CamposJsonDelBorrador.aTonosSugeridos(f.getTonosSugeridos()),
+            f.getLecturaDeFotos(),
+            partir(f.getFotosAgregadas()).stream().map(UUID::fromString).toList(),
+            EstadoBorrador.valueOf(f.getEstado()),
+            f.getProductoId(),
+            f.getMotivoRechazo(),
+            f.getCreadoEn());
+    return BorradorProducto.conDiseno(borrador, f.getDiseno());
   }
 
   private static String unir(List<String> valores) {

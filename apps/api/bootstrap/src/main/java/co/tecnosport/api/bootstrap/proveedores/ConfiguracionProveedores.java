@@ -20,6 +20,7 @@ import co.tecnosport.api.application.proveedores.EncolarIngesta;
 import co.tecnosport.api.application.proveedores.ExtraerProductoDePublicacion;
 import co.tecnosport.api.application.proveedores.FuenteDeMensajes;
 import co.tecnosport.api.application.proveedores.IniciarIngesta;
+import co.tecnosport.api.application.proveedores.ListarPublicacionesCerradas;
 import co.tecnosport.api.application.proveedores.MarcapasosDeIngesta;
 import co.tecnosport.api.application.proveedores.PausarIngesta;
 import co.tecnosport.api.application.proveedores.ProcesarLoteDeIngesta;
@@ -28,6 +29,7 @@ import co.tecnosport.api.application.proveedores.ReanudarLotesDeIngesta;
 import co.tecnosport.api.application.proveedores.RecuperarIngestasAbandonadas;
 import co.tecnosport.api.application.proveedores.RegistrarLatidoDeIngesta;
 import co.tecnosport.api.application.proveedores.RegistrarMensajesDeProveedor;
+import co.tecnosport.api.application.proveedores.ReintentarPublicacionesFallidas;
 import co.tecnosport.api.application.proveedores.RepositorioArchivosDeIngesta;
 import co.tecnosport.api.application.proveedores.RepositorioLotesIngesta;
 import co.tecnosport.api.application.proveedores.RepositorioMensajesProveedor;
@@ -133,6 +135,20 @@ public class ConfiguracionProveedores {
   @Bean
   public ReanudarIngesta reanudarIngesta(RepositorioLotesIngesta repositorio) {
     return new ReanudarIngesta(repositorio);
+  }
+
+  @Bean
+  public ReintentarPublicacionesFallidas reintentarPublicacionesFallidas(
+      RepositorioLotesIngesta lotes, RepositorioPublicacionesProveedor publicaciones, Reloj reloj) {
+    return new ReintentarPublicacionesFallidas(lotes, publicaciones, reloj);
+  }
+
+  @Bean
+  public ListarPublicacionesCerradas listarPublicacionesCerradas(
+      RepositorioLotesIngesta lotes,
+      RepositorioPublicacionesProveedor publicaciones,
+      RepositorioMensajesProveedor mensajes) {
+    return new ListarPublicacionesCerradas(lotes, publicaciones, mensajes);
   }
 
   @Bean

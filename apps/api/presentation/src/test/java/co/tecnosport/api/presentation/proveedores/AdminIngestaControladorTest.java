@@ -20,21 +20,31 @@ import co.tecnosport.api.application.proveedores.EliminacionDeProductos;
 import co.tecnosport.api.application.proveedores.EliminarLoteDeIngesta;
 import co.tecnosport.api.application.proveedores.EncolarIngesta;
 import co.tecnosport.api.application.proveedores.IniciarIngesta;
+import co.tecnosport.api.application.proveedores.ListarPublicacionesCerradas;
 import co.tecnosport.api.application.proveedores.LotesPaginados;
 import co.tecnosport.api.application.proveedores.PausarIngesta;
 import co.tecnosport.api.application.proveedores.ReanudarIngesta;
+import co.tecnosport.api.application.proveedores.ReintentarPublicacionesFallidas;
 import co.tecnosport.api.application.proveedores.RepositorioArchivosDeIngesta;
 import co.tecnosport.api.application.proveedores.RepositorioLotesIngesta;
+import co.tecnosport.api.application.proveedores.RepositorioMensajesProveedor;
 import co.tecnosport.api.application.proveedores.RepositorioProveedores;
+import co.tecnosport.api.application.proveedores.RepositorioPublicacionesProveedor;
 import co.tecnosport.api.application.proveedores.SolicitarSubidaDeExportacion;
 import co.tecnosport.api.domain.catalogo.LineaCatalogo;
 import co.tecnosport.api.domain.proveedores.ArchivoDeIngesta;
+import co.tecnosport.api.domain.proveedores.CierreDePublicacion;
 import co.tecnosport.api.domain.proveedores.EstadoLote;
+import co.tecnosport.api.domain.proveedores.EstadoPublicacionProveedor;
 import co.tecnosport.api.domain.proveedores.FalloDeLote;
+import co.tecnosport.api.domain.proveedores.IdExternoDeMensaje;
 import co.tecnosport.api.domain.proveedores.LoteIngesta;
+import co.tecnosport.api.domain.proveedores.MensajeProveedor;
 import co.tecnosport.api.domain.proveedores.MotivoDeFalloDeLote;
+import co.tecnosport.api.domain.proveedores.MotivoDePublicacion;
 import co.tecnosport.api.domain.proveedores.OrdenDePublicacion;
 import co.tecnosport.api.domain.proveedores.Proveedor;
+import co.tecnosport.api.domain.proveedores.PublicacionProveedor;
 import co.tecnosport.api.domain.proveedores.ResumenIngesta;
 import co.tecnosport.api.presentation.ManejadorDeErrores;
 import java.time.Instant;
@@ -78,6 +88,8 @@ class AdminIngestaControladorTest {
   @Autowired private TransaccionEspia transaccion;
   @Autowired private EliminacionDoble eliminacion;
   @Autowired private RepositorioArchivosDoble archivos;
+  @Autowired private RepositorioPublicacionesDoble publicaciones;
+  @Autowired private RepositorioMensajesDoble mensajes;
 
   private Proveedor proveedor;
   private String key;
@@ -87,6 +99,8 @@ class AdminIngestaControladorTest {
     proveedores.porId.clear();
     lotes.porId.clear();
     archivos.guardados.clear();
+    publicaciones.porId.clear();
+    mensajes.guardados.clear();
     almacen.objetos.clear();
     ejecutor.encolados.clear();
     lotes.dependencias.clear();
@@ -275,7 +289,7 @@ class AdminIngestaControladorTest {
   void eliminarUnaIngestaBorraSusProductosNoPublicadosYDiceCuantosQuedan() throws Exception {
     LoteIngesta lote = LoteIngesta.recibirExportacion(proveedor.id(), key, AHORA);
     lote.iniciar(AHORA.plusSeconds(1));
-    lote.terminar(new ResumenIngesta(40, 5, 35, 9, 9, 0, 0, 0, 2), AHORA.plusSeconds(60));
+    lote.terminar(new ResumenIngesta(40, 5, 35, 9, 9, 0, 0, 0, 2, 0), AHORA.plusSeconds(60));
     lotes.porId.put(lote.id(), lote);
     UUID borrador = UUID.randomUUID();
     UUID publicado = UUID.randomUUID();
@@ -321,7 +335,7 @@ class AdminIngestaControladorTest {
   void verYListarDevuelvenElResumenCuandoLoHay() throws Exception {
     LoteIngesta lote = LoteIngesta.recibirExportacion(proveedor.id(), key, AHORA);
     lote.iniciar(AHORA.plusSeconds(1));
-    lote.terminar(new ResumenIngesta(40, 5, 35, 9, 9, 0, 0, 0, 2), AHORA.plusSeconds(60));
+    lote.terminar(new ResumenIngesta(40, 5, 35, 9, 9, 0, 0, 0, 2, 0), AHORA.plusSeconds(60));
     lotes.porId.put(lote.id(), lote);
 
     mockMvc
@@ -427,6 +441,55 @@ class AdminIngestaControladorTest {
         .andExpect(jsonPath("$.codigo").value("LOTE_NO_ENCONTRADO"));
   }
 
+  /**
+   * Meraki, 11 de octubre de 2026: un lote terminado con publicaciones que fallaron. El panel ve
+   * cuáles y por qué, y las devuelve a la cola sin volver a subir el archivo.
+   */
+  @Test
+  void elPanelVeLasFallidasYLasReintenta() throws Exception {
+    LoteIngesta lote = LoteIngesta.recibirExportacion(proveedor.id(), "proveedores/x/a.zip", AHORA);
+    lote.iniciar(AHORA);
+    lote.terminar(new ResumenIngesta(2, 0, 2, 2, 1, 0, 0, 0, 0, 1), AHORA);
+    lotes.guardar(lote);
+    MensajeProveedor texto =
+        MensajeProveedor.texto(
+            proveedor.id(), lote.id(), new IdExternoDeMensaje("m1"), AHORA, "Polo 1.1 $55.000");
+    mensajes.guardarTodos(List.of(texto));
+    PublicacionProveedor rota = PublicacionProveedor.abrir(texto);
+    rota.fallar(
+        CierreDePublicacion.de(MotivoDePublicacion.EXTRACCION_FALLIDA), "La API respondió 400.");
+    publicaciones.guardarTodas(List.of(rota));
+
+    mockMvc
+        .perform(get("/api/v1/admin/ingestas/{id}/publicaciones-cerradas", lote.id()))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$[0].estado").value("ERROR"))
+        .andExpect(jsonPath("$[0].codigoMotivo").value("EXTRACCION_FALLIDA"))
+        .andExpect(jsonPath("$[0].extracto").value("Polo 1.1 $55.000"))
+        .andExpect(jsonPath("$[0].detalle").doesNotExist());
+
+    mockMvc
+        .perform(post("/api/v1/admin/ingestas/{id}/reintentar-fallidas", lote.id()))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.estado").value("RECIBIDO"))
+        .andExpect(jsonPath("$.resumen.fallidas").value(0));
+    assertThat(publicaciones.buscarPorId(rota.id()).orElseThrow().estado())
+        .isEqualTo(EstadoPublicacionProveedor.PENDIENTE_EXTRACCION);
+  }
+
+  @Test
+  void reintentarUnLoteSinFallidasEsUnConflicto() throws Exception {
+    LoteIngesta lote = LoteIngesta.recibirExportacion(proveedor.id(), "proveedores/x/a.zip", AHORA);
+    lote.iniciar(AHORA);
+    lote.terminar(new ResumenIngesta(2, 0, 2, 2, 2, 0, 0, 0, 0, 0), AHORA);
+    lotes.guardar(lote);
+
+    mockMvc
+        .perform(post("/api/v1/admin/ingestas/{id}/reintentar-fallidas", lote.id()))
+        .andExpect(status().isConflict())
+        .andExpect(jsonPath("$.codigo").value("LOTE_EN_OTRO_ESTADO"));
+  }
+
   @TestConfiguration
   static class Configuracion {
 
@@ -438,6 +501,30 @@ class AdminIngestaControladorTest {
     @Bean
     ReanudarIngesta reanudarIngesta(RepositorioLotesDoble lotes) {
       return new ReanudarIngesta(lotes);
+    }
+
+    @Bean
+    RepositorioPublicacionesDoble repositorioPublicaciones() {
+      return new RepositorioPublicacionesDoble();
+    }
+
+    @Bean
+    RepositorioMensajesDoble repositorioMensajes() {
+      return new RepositorioMensajesDoble();
+    }
+
+    @Bean
+    ReintentarPublicacionesFallidas reintentarFallidas(
+        RepositorioLotesDoble lotes, RepositorioPublicacionesDoble publicaciones) {
+      return new ReintentarPublicacionesFallidas(lotes, publicaciones, () -> AHORA);
+    }
+
+    @Bean
+    ListarPublicacionesCerradas listarCerradas(
+        RepositorioLotesDoble lotes,
+        RepositorioPublicacionesDoble publicaciones,
+        RepositorioMensajesDoble mensajes) {
+      return new ListarPublicacionesCerradas(lotes, publicaciones, mensajes);
     }
 
     @Bean
@@ -636,6 +723,76 @@ class AdminIngestaControladorTest {
     public void eliminarConSuHistorial(UUID loteId) {
       eliminados.add(loteId);
       porId.remove(loteId);
+    }
+  }
+
+  static final class RepositorioPublicacionesDoble implements RepositorioPublicacionesProveedor {
+    final Map<UUID, PublicacionProveedor> porId = new LinkedHashMap<>();
+
+    @Override
+    public void guardarTodas(List<PublicacionProveedor> publicaciones) {
+      publicaciones.forEach(p -> porId.put(p.id(), p));
+    }
+
+    @Override
+    public void actualizar(PublicacionProveedor publicacion) {
+      porId.put(publicacion.id(), publicacion);
+    }
+
+    @Override
+    public Optional<PublicacionProveedor> buscarPorId(UUID id) {
+      return Optional.ofNullable(porId.get(id));
+    }
+
+    @Override
+    public List<PublicacionProveedor> listarDeLote(UUID loteId) {
+      return porId.values().stream().filter(p -> p.loteId().equals(loteId)).toList();
+    }
+
+    @Override
+    public void eliminar(UUID id) {
+      porId.remove(id);
+    }
+
+    @Override
+    public List<String> textosDelChatDeCaballero(UUID proveedorId) {
+      return List.of();
+    }
+
+    @Override
+    public java.util.Set<UUID> mensajesUsadosPorOtras(
+        UUID publicacionId, java.util.Collection<UUID> mensajeIds) {
+      return java.util.Set.of();
+    }
+  }
+
+  static final class RepositorioMensajesDoble implements RepositorioMensajesProveedor {
+    final List<MensajeProveedor> guardados = new ArrayList<>();
+
+    @Override
+    public void guardarTodos(List<MensajeProveedor> mensajes) {
+      guardados.addAll(mensajes);
+    }
+
+    @Override
+    public java.util.Set<IdExternoDeMensaje> idsExternosExistentes(
+        UUID proveedorId, java.util.Collection<IdExternoDeMensaje> candidatos) {
+      return java.util.Set.of();
+    }
+
+    @Override
+    public List<MensajeProveedor> listarDeLote(UUID loteId) {
+      return guardados.stream().filter(m -> m.loteId().equals(loteId)).toList();
+    }
+
+    @Override
+    public List<MensajeProveedor> buscarPorIds(List<UUID> ids) {
+      return guardados.stream().filter(m -> ids.contains(m.id())).toList();
+    }
+
+    @Override
+    public void eliminarTodos(java.util.Collection<UUID> ids) {
+      guardados.removeIf(m -> ids.contains(m.id()));
     }
   }
 

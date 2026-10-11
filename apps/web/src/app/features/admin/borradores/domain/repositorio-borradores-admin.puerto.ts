@@ -43,6 +43,11 @@ export interface RepositorioBorradoresAdmin {
    * se suma. Las subidas desde el panel no se mueven.
    */
   moverFoto(id: string, mensajeId: string, destinoId: string): Promise<void>;
+  /**
+   * Une a este otro borrador de la misma publicación —el mismo diseño en otro color—: este se queda
+   * con las fotos y los tonos de los dos, y el otro desaparece. Devuelve este, ya unido.
+   */
+  unir(id: string, otroId: string): Promise<Borrador>;
   /** Sin vuelta atrás: el borrador, la publicación, los mensajes y las fotos del bucket. */
   eliminar(id: string): Promise<void>;
   /** Cuántos hay en revisión o rechazados: lo que borraría `eliminarSinAprobar`. */

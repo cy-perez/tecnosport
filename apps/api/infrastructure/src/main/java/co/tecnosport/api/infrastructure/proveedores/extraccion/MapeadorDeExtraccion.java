@@ -78,7 +78,8 @@ final class MapeadorDeExtraccion {
           textoONulo(nodo.path("notas")),
           textoONulo(nodo.path("codigo_referencia")),
           tallasPorTono(nodo.path("tallas_por_tono")),
-          preciosAdicionales(nodo.path("precios_adicionales")));
+          preciosAdicionales(nodo.path("precios_adicionales")),
+          lista(nodo.path("marcas")));
     } catch (ExcepcionDeDominio e) {
       throw new ExtraccionFallidaException(
           "El extractor devolvió un valor que el dominio no admite: " + e.getMessage(), e);

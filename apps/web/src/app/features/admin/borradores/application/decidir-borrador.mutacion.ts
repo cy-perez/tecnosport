@@ -123,6 +123,23 @@ export function usarPartirBorrador() {
   }));
 }
 
+export interface UnirBorradoresComando {
+  readonly id: string;
+  readonly otroId: string;
+}
+
+/** Unir cambia uno y borra otro: se invalida el prefijo entero, que cubre la lista y los detalles. */
+export function usarUnirBorradores() {
+  const repositorio = inject(REPOSITORIO_BORRADORES_ADMIN);
+  const queryClient = inject(QueryClient);
+
+  return injectMutation(() => ({
+    mutationFn: (comando: UnirBorradoresComando): Promise<Borrador> =>
+      repositorio.unir(comando.id, comando.otroId),
+    onSuccess: () => void queryClient.invalidateQueries({ queryKey: CLAVE_BORRADORES_ADMIN }),
+  }));
+}
+
 /** Mover cambia dos borradores: se invalida el prefijo entero, que cubre los dos detalles. */
 export function usarMoverFotoBorrador() {
   const repositorio = inject(REPOSITORIO_BORRADORES_ADMIN);

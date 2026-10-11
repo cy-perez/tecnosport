@@ -2,7 +2,9 @@ package co.tecnosport.api.infrastructure.proveedores;
 
 import co.tecnosport.api.application.compartido.Reloj;
 import co.tecnosport.api.application.proveedores.RepositorioPublicacionesProveedor;
+import co.tecnosport.api.domain.proveedores.CierreDePublicacion;
 import co.tecnosport.api.domain.proveedores.EstadoPublicacionProveedor;
+import co.tecnosport.api.domain.proveedores.MotivoDePublicacion;
 import co.tecnosport.api.domain.proveedores.PublicacionProveedor;
 import co.tecnosport.api.infrastructure.proveedores.entidad.PublicacionMensajeJpaEntity;
 import co.tecnosport.api.infrastructure.proveedores.entidad.PublicacionProveedorJpaEntity;
@@ -124,7 +126,9 @@ public class RepositorioPublicacionesProveedorJpa implements RepositorioPublicac
         p.mensajePrincipalId(),
         p.fecha(),
         p.estado().name(),
-        p.motivo().orElse(null),
+        p.detalle().orElse(null),
+        p.cierre().map(c -> c.motivo().name()).orElse(null),
+        p.cierre().map(CierreDePublicacion::dato).orElse(null),
         creadoEn);
   }
 
@@ -162,6 +166,10 @@ public class RepositorioPublicacionesProveedorJpa implements RepositorioPublicac
         medios,
         fila.getFecha(),
         EstadoPublicacionProveedor.valueOf(fila.getEstado()),
+        fila.getCodigoMotivo() == null
+            ? null
+            : new CierreDePublicacion(
+                MotivoDePublicacion.valueOf(fila.getCodigoMotivo()), fila.getDatoMotivo()),
         fila.getMotivo());
   }
 }

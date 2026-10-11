@@ -6,10 +6,12 @@ import co.tecnosport.api.application.proveedores.EliminarLoteDeIngesta;
 import co.tecnosport.api.application.proveedores.EncolarIngesta;
 import co.tecnosport.api.application.proveedores.IniciarIngesta;
 import co.tecnosport.api.application.proveedores.IniciarIngestaComando;
+import co.tecnosport.api.application.proveedores.ListarPublicacionesCerradas;
 import co.tecnosport.api.application.proveedores.LoteEliminado;
 import co.tecnosport.api.application.proveedores.LoteNoEncontradoException;
 import co.tecnosport.api.application.proveedores.PausarIngesta;
 import co.tecnosport.api.application.proveedores.ReanudarIngesta;
+import co.tecnosport.api.application.proveedores.ReintentarPublicacionesFallidas;
 import co.tecnosport.api.application.proveedores.RepositorioLotesIngesta;
 import co.tecnosport.api.application.proveedores.SolicitarSubidaDeExportacion;
 import co.tecnosport.api.domain.proveedores.LoteIngesta;
@@ -17,6 +19,7 @@ import co.tecnosport.api.presentation.proveedores.dto.IniciarIngestaPeticion;
 import co.tecnosport.api.presentation.proveedores.dto.LoteEliminadoRespuesta;
 import co.tecnosport.api.presentation.proveedores.dto.LoteIngestaRespuesta;
 import co.tecnosport.api.presentation.proveedores.dto.LotesPaginadosRespuesta;
+import co.tecnosport.api.presentation.proveedores.dto.PublicacionCerradaRespuesta;
 import co.tecnosport.api.presentation.proveedores.dto.SolicitarSubidaDeExportacionPeticion;
 import co.tecnosport.api.presentation.proveedores.dto.SubidaDeExportacionRespuesta;
 import java.util.List;
@@ -61,6 +64,8 @@ public class AdminIngestaControlador {
   private final PausarIngesta pausarIngesta;
   private final ReanudarIngesta reanudarIngesta;
   private final DetenerIngesta detenerIngesta;
+  private final ReintentarPublicacionesFallidas reintentarFallidas;
+  private final ListarPublicacionesCerradas listarCerradas;
 
   public AdminIngestaControlador(
       SolicitarSubidaDeExportacion solicitarSubida,
@@ -71,7 +76,9 @@ public class AdminIngestaControlador {
       EliminarLoteDeIngesta eliminarLote,
       PausarIngesta pausarIngesta,
       ReanudarIngesta reanudarIngesta,
-      DetenerIngesta detenerIngesta) {
+      DetenerIngesta detenerIngesta,
+      ReintentarPublicacionesFallidas reintentarFallidas,
+      ListarPublicacionesCerradas listarCerradas) {
     this.solicitarSubida = Objects.requireNonNull(solicitarSubida);
     this.iniciarIngesta = Objects.requireNonNull(iniciarIngesta);
     this.encolarIngesta = Objects.requireNonNull(encolarIngesta);
@@ -81,6 +88,8 @@ public class AdminIngestaControlador {
     this.pausarIngesta = Objects.requireNonNull(pausarIngesta);
     this.reanudarIngesta = Objects.requireNonNull(reanudarIngesta);
     this.detenerIngesta = Objects.requireNonNull(detenerIngesta);
+    this.reintentarFallidas = Objects.requireNonNull(reintentarFallidas);
+    this.listarCerradas = Objects.requireNonNull(listarCerradas);
   }
 
   @PostMapping("/proveedores/{id}/ingestas/url-subida")
@@ -183,6 +192,32 @@ public class AdminIngestaControlador {
               siguiente -> log.info("Lote de ingesta {} encolado tras detener {}.", siguiente, id));
     } catch (RuntimeException e) {
       log.warn("No se pudo encolar el lote que esperaba a {}: {}", id, e.toString());
+    }
+    return LoteIngestaRespuesta.de(lote);
+  }
+
+  /**
+   * Las publicaciones del lote que no dejaron borrador, con su motivo; ver {@link
+   * ListarPublicacionesCerradas}.
+   */
+  @GetMapping("/ingestas/{id}/publicaciones-cerradas")
+  public List<PublicacionCerradaRespuesta> publicacionesCerradas(@PathVariable UUID id) {
+    return listarCerradas.ejecutar(id).stream().map(PublicacionCerradaRespuesta::de).toList();
+  }
+
+  /**
+   * Las publicaciones que quedaron en error vuelven a esperar al extractor y el lote vuelve a la
+   * cola; ver {@link ReintentarPublicacionesFallidas}. Se encola después de confirmar, como al
+   * reanudar, y por la misma razón: si la cola no lo acepta, la tarea de los estancados lo recoge.
+   */
+  @PostMapping("/ingestas/{id}/reintentar-fallidas")
+  public LoteIngestaRespuesta reintentarFallidas(@PathVariable UUID id) {
+    LoteIngesta lote = transaccion.execute(estado -> reintentarFallidas.ejecutar(id));
+    try {
+      encolarIngesta.encolar(id);
+      log.info("Lote de ingesta {}: fallidas de vuelta en la cola.", id);
+    } catch (RuntimeException e) {
+      log.warn("Lote de ingesta {} reabierto, pero no se pudo encolar: {}", id, e.toString());
     }
     return LoteIngestaRespuesta.de(lote);
   }

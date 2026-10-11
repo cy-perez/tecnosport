@@ -324,6 +324,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/borradores/{id}/unir": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["unir"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/categorias": {
         parameters: {
             query?: never;
@@ -596,6 +612,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/ingestas/{id}/publicaciones-cerradas": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["publicacionesCerradas"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/ingestas/{id}/reanudar": {
         parameters: {
             query?: never;
@@ -606,6 +638,22 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["reanudar"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/ingestas/{id}/reintentar-fallidas": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["reintentarFallidas"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2805,6 +2853,7 @@ export interface components {
         HermanoRespuesta: {
             /** Format: uuid */
             id: string;
+            mismoDiseno: boolean;
             titulo?: string;
         };
         HistorialPedidoRespuesta: {
@@ -3296,6 +3345,19 @@ export interface components {
             publicacionAutomatica?: boolean;
             telefonoWhatsApp?: string;
         };
+        PublicacionCerradaRespuesta: {
+            codigoMotivo: string;
+            datoMotivo?: string;
+            /** @enum {string} */
+            estado: "DESCARTADA" | "ERROR";
+            extracto?: string;
+            /** Format: date-time */
+            fecha: string;
+            /** Format: int32 */
+            fotos?: number;
+            /** Format: uuid */
+            id: string;
+        };
         PublicacionEnRedRespuesta: {
             detalleDelFallo?: string;
             estado?: string;
@@ -3473,6 +3535,8 @@ export interface components {
             /** Format: int32 */
             descartes?: number;
             /** Format: int32 */
+            fallidas?: number;
+            /** Format: int32 */
             mensajesIgnorados?: number;
             /** Format: int32 */
             mensajesLeidos?: number;
@@ -3632,6 +3696,10 @@ export interface components {
             sirveHasta?: string;
             tipo?: string;
             valores?: string[];
+        };
+        UnirBorradorPeticion: {
+            /** Format: uuid */
+            borradorId: string;
         };
         UrlSubidaRespuesta: {
             objectKey?: string;
@@ -4314,6 +4382,32 @@ export interface operations {
             };
         };
     };
+    unir: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UnirBorradorPeticion"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["BorradorRespuesta"];
+                };
+            };
+        };
+    };
     listar_6: {
         parameters: {
             query?: never;
@@ -4798,7 +4892,51 @@ export interface operations {
             };
         };
     };
+    publicacionesCerradas: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PublicacionCerradaRespuesta"][];
+                };
+            };
+        };
+    };
     reanudar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["LoteIngestaRespuesta"];
+                };
+            };
+        };
+    };
+    reintentarFallidas: {
         parameters: {
             query?: never;
             header?: never;

@@ -1940,12 +1940,16 @@
             "format" : "uuid",
             "type" : "string"
           },
+          "mismoDiseno" : {
+            "type" : "boolean"
+          },
           "titulo" : {
             "type" : "string"
           }
         },
         "required" : [
-          "id"
+          "id",
+          "mismoDiseno"
         ],
         "type" : "object"
       },
@@ -3350,6 +3354,45 @@
         },
         "type" : "object"
       },
+      "PublicacionCerradaRespuesta" : {
+        "properties" : {
+          "codigoMotivo" : {
+            "type" : "string"
+          },
+          "datoMotivo" : {
+            "type" : "string"
+          },
+          "estado" : {
+            "enum" : [
+              "DESCARTADA",
+              "ERROR"
+            ],
+            "type" : "string"
+          },
+          "extracto" : {
+            "type" : "string"
+          },
+          "fecha" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "fotos" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "id" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        },
+        "required" : [
+          "codigoMotivo",
+          "estado",
+          "fecha",
+          "id"
+        ],
+        "type" : "object"
+      },
       "PublicacionEnRedRespuesta" : {
         "properties" : {
           "detalleDelFallo" : {
@@ -3848,6 +3891,10 @@
             "format" : "int32",
             "type" : "integer"
           },
+          "fallidas" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
           "mensajesIgnorados" : {
             "format" : "int32",
             "type" : "integer"
@@ -4289,6 +4336,18 @@
             "type" : "array"
           }
         },
+        "type" : "object"
+      },
+      "UnirBorradorPeticion" : {
+        "properties" : {
+          "borradorId" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        },
+        "required" : [
+          "borradorId"
+        ],
         "type" : "object"
       },
       "UrlSubidaRespuesta" : {
@@ -5401,6 +5460,47 @@
         ]
       }
     },
+    "/api/v1/admin/borradores/{id}/unir" : {
+      "post" : {
+        "operationId" : "unir",
+        "parameters" : [
+          {
+            "in" : "path",
+            "name" : "id",
+            "required" : true,
+            "schema" : {
+              "format" : "uuid",
+              "type" : "string"
+            }
+          }
+        ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/UnirBorradorPeticion"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/BorradorRespuesta"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "admin-borrador-controlador"
+        ]
+      }
+    },
     "/api/v1/admin/categorias" : {
       "get" : {
         "operationId" : "listar_6",
@@ -6099,9 +6199,74 @@
         ]
       }
     },
+    "/api/v1/admin/ingestas/{id}/publicaciones-cerradas" : {
+      "get" : {
+        "operationId" : "publicacionesCerradas",
+        "parameters" : [
+          {
+            "in" : "path",
+            "name" : "id",
+            "required" : true,
+            "schema" : {
+              "format" : "uuid",
+              "type" : "string"
+            }
+          }
+        ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/PublicacionCerradaRespuesta"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "admin-ingesta-controlador"
+        ]
+      }
+    },
     "/api/v1/admin/ingestas/{id}/reanudar" : {
       "post" : {
         "operationId" : "reanudar",
+        "parameters" : [
+          {
+            "in" : "path",
+            "name" : "id",
+            "required" : true,
+            "schema" : {
+              "format" : "uuid",
+              "type" : "string"
+            }
+          }
+        ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/LoteIngestaRespuesta"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "admin-ingesta-controlador"
+        ]
+      }
+    },
+    "/api/v1/admin/ingestas/{id}/reintentar-fallidas" : {
+      "post" : {
+        "operationId" : "reintentarFallidas",
         "parameters" : [
           {
             "in" : "path",

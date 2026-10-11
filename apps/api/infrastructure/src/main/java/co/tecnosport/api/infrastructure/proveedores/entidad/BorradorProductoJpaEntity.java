@@ -95,6 +95,10 @@ public class BorradorProductoJpaEntity {
   @Column(name = "fotos_agregadas")
   private String fotosAgregadas;
 
+  /** La etiqueta de diseño del lector en un álbum (V109); nula si no hay. */
+  @Column(name = "diseno")
+  private String diseno;
+
   @Column(nullable = false)
   private String estado;
 
@@ -200,6 +204,15 @@ public class BorradorProductoJpaEntity {
 
   public String getLecturaDeFotos() {
     return lecturaDeFotos;
+  }
+
+  public String getDiseno() {
+    return diseno;
+  }
+
+  /** Fuera del constructor para no alargarlo más: lo pone el adaptador al armar la fila. */
+  public void setDiseno(String diseno) {
+    this.diseno = diseno;
   }
 
   /** Ids de mensaje separados por salto de línea, en orden; nulo si no hay. */

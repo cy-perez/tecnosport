@@ -53,7 +53,7 @@ public final class BorradorProducto {
   private final Set<AlertaBorrador> alertas;
   private final Set<UUID> fotosDescartadas;
   private final List<FotoSubida> fotosSubidas;
-  private final TallasPorTono tallasPorTono;
+  private TallasPorTono tallasPorTono;
   private final List<PrecioAdicional> preciosAdicionales;
   private final Map<UUID, String> tonosSugeridos;
   private final String lecturaDeFotos;
@@ -62,6 +62,14 @@ public final class BorradorProducto {
   private UUID productoId;
   private String motivoRechazo;
   private final Instant creadoEn;
+
+  /**
+   * La etiqueta de diseño que el lector le dio a sus fotos en un álbum; nula si no hay. Es lo que
+   * deja al panel decir «posible mismo diseño» de dos borradores de la misma publicación: un diseño
+   * en seis colores con un SKU por color son seis borradores (decidido el 10 de octubre de 2026), y
+   * quien revisa los une si son el mismo producto ({@link #absorber}).
+   */
+  private String diseno;
 
   public BorradorProducto(
       UUID id,
@@ -263,36 +271,206 @@ public final class BorradorProducto {
       Instant ahora) {
     Objects.requireNonNull(extraido, "El borrador nace de una extracción.");
     Objects.requireNonNull(fotos, "El borrador sabe cuáles fotos son suyas.");
-    return new BorradorProducto(
-        GeneradorIdentificador.nuevo(),
-        publicacionId,
-        proveedorId,
-        extraccionCruda,
-        extraido.titulo(),
-        extraido.linea(),
-        extraido.tipo(),
-        precioProveedor,
-        precioVentaSugerido,
-        extraido.tallas(),
-        extraido.cantidadTonos(),
-        extraido.tonosNombrados(),
-        extraido.material(),
-        extraido.descripcion(),
-        extraido.altEn(),
-        huella,
-        pHash,
-        alertas,
-        fotos.ajenas(),
-        List.of(),
-        extraido.tallasPorTono(),
-        extraido.preciosAdicionales(),
-        fotos.tonosSugeridos(),
-        fotos.lecturaCruda(),
-        List.of(),
-        EstadoBorrador.EN_REVISION,
-        null,
-        null,
-        ahora);
+    BorradorProducto borrador =
+        new BorradorProducto(
+            GeneradorIdentificador.nuevo(),
+            publicacionId,
+            proveedorId,
+            extraccionCruda,
+            extraido.titulo(),
+            extraido.linea(),
+            extraido.tipo(),
+            precioProveedor,
+            precioVentaSugerido,
+            extraido.tallas(),
+            extraido.cantidadTonos(),
+            extraido.tonosNombrados(),
+            extraido.material(),
+            extraido.descripcion(),
+            extraido.altEn(),
+            huella,
+            pHash,
+            alertas,
+            fotos.ajenas(),
+            List.of(),
+            extraido.tallasPorTono(),
+            extraido.preciosAdicionales(),
+            fotos.tonosSugeridos(),
+            fotos.lecturaCruda(),
+            List.of(),
+            EstadoBorrador.EN_REVISION,
+            null,
+            null,
+            ahora);
+    borrador.anotarDiseno(fotos.diseno());
+    return borrador;
+  }
+
+  /** Lo que cabe en la columna: el modelo no tiene tope para la etiqueta. */
+  static final int LARGO_MAXIMO_DEL_DISENO = 120;
+
+  /**
+   * La etiqueta de diseño del lector. Solo la ponen la creación del borrador y el adaptador, para
+   * devolverlo como estaba guardado: no es algo que un caso de uso decida.
+   */
+  void anotarDiseno(String diseno) {
+    this.diseno = etiquetaDeDiseno(diseno);
+  }
+
+  /** Para el adaptador, que vive en otro paquete. */
+  public static BorradorProducto conDiseno(BorradorProducto borrador, String diseno) {
+    borrador.anotarDiseno(diseno);
+    return borrador;
+  }
+
+  static String etiquetaDeDiseno(String diseno) {
+    if (diseno == null || diseno.isBlank()) {
+      return null;
+    }
+    String limpia = diseno.strip();
+    return limpia.length() <= LARGO_MAXIMO_DEL_DISENO
+        ? limpia
+        : limpia.substring(0, LARGO_MAXIMO_DEL_DISENO).strip();
+  }
+
+  public Optional<String> diseno() {
+    return Optional.ofNullable(diseno);
+  }
+
+  /** ¿La lectura de fotos vio el mismo diseño en este y en el otro? */
+  public boolean mismoDisenoQue(BorradorProducto otro) {
+    return diseno != null
+        && otro.diseno != null
+        && publicacionId.equals(otro.publicacionId)
+        && diseno.equalsIgnoreCase(otro.diseno);
+  }
+
+  /**
+   * Se queda con otro borrador de la misma publicación: el mismo diseño en otro color, que el álbum
+   * dio aparte por traer otro SKU (camino acordado el 11 de octubre de 2026). Recupera las fotos
+   * que el otro conservaba, con sus tonos sugeridos, y las que se le sumaron de otras
+   * publicaciones; junta los tonos de los dos, y si las tallas no son las mismas, guarda las de
+   * cada tono para no publicar una talla que un color no tiene. El otro se elimina después: su SKU
+   * deja de reconocer renovaciones, y ese es el costo de unirlos.
+   *
+   * <p>Las fotos subidas desde el panel no se pasan: son archivos del otro borrador, y se irían con
+   * él. Con alguna, no se une.
+   *
+   * @param fotosDeLaPublicacion las de la publicación, en orden
+   */
+  public void absorber(BorradorProducto otro, List<UUID> fotosDeLaPublicacion) {
+    exigirEnRevision("unir");
+    Objects.requireNonNull(otro, "Unir dice con cuál.");
+    if (otro.id.equals(id)) {
+      throw new ExcepcionDeDominio("Un borrador no se une consigo mismo.");
+    }
+    if (otro.estado != EstadoBorrador.EN_REVISION) {
+      throw new ExcepcionDeDominio("Solo se une un borrador que sigue en revisión.");
+    }
+    if (!otro.publicacionId.equals(publicacionId)) {
+      throw new ExcepcionDeDominio("Solo se unen borradores de la misma publicación.");
+    }
+    if (!otro.fotosSubidas.isEmpty()) {
+      throw new ExcepcionDeDominio(
+          "El otro borrador tiene fotos subidas desde el panel: súbelas en este antes de unirlos.");
+    }
+    if (!tallasDeCadaTonoSeSaben(otro)) {
+      throw new ExcepcionDeDominio(
+          "Las tallas no son las mismas y uno de los dos no dice sus tonos: no se sabría qué talla"
+              + " tiene cada color.");
+    }
+    List<String> tonosDeEste = tonosConocidos();
+    List<String> tonosDelOtro = otro.tonosConocidos();
+    boolean porTono =
+        !tallas.equals(otro.tallas)
+            || !tallasPorTono.estaVacia()
+            || !otro.tallasPorTono.estaVacia();
+    if (porTono && !tonosDeEste.isEmpty() && !tonosDelOtro.isEmpty()) {
+      Map<String, List<String>> tallasDe = new LinkedHashMap<>();
+      tallasPorTonoDe(tonosDeEste).forEach((t, v) -> juntar(tallasDe, t, v));
+      otro.tallasPorTonoDe(tonosDelOtro).forEach((t, v) -> juntar(tallasDe, t, v));
+      List<TallasPorTono.TallasDeUnTono> lista = new ArrayList<>();
+      tallasDe.forEach((t, v) -> lista.add(new TallasPorTono.TallasDeUnTono(t, v)));
+      this.tallasPorTono = new TallasPorTono(lista);
+    }
+    for (UUID foto : fotosDeLaPublicacion) {
+      if (!otro.fotosDescartadas.contains(foto) && fotosDescartadas.remove(foto)) {
+        String tono = otro.tonosSugeridos.get(foto);
+        if (tono != null) {
+          tonosSugeridos.put(foto, tono);
+        }
+      }
+    }
+    otro.fotosAgregadas.stream()
+        .filter(f -> !fotosAgregadas.contains(f))
+        .forEach(
+            f -> {
+              fotosAgregadas.add(f);
+              String tono = otro.tonosSugeridos.get(f);
+              if (tono != null) {
+                tonosSugeridos.put(f, tono);
+              }
+            });
+    List<String> unidos = new ArrayList<>(tonosDeEste);
+    tonosDelOtro.stream().filter(t -> !unidos.contains(t)).forEach(unidos::add);
+    if (!tallas.equals(otro.tallas)
+        && tallas.tipo() == TipoDeTalla.LISTA
+        && otro.tallas.tipo() == TipoDeTalla.LISTA) {
+      List<String> todas = new ArrayList<>(tallas.valores());
+      otro.tallas.valores().stream().filter(t -> !todas.contains(t)).forEach(todas::add);
+      this.tallas = Tallas.lista(todas);
+    }
+    if (!unidos.isEmpty()) {
+      this.tonosNombrados = List.copyOf(unidos);
+      this.cantidadTonos = unidos.size();
+    }
+    if (otro.alertas.contains(AlertaBorrador.REPLICA)) {
+      alertas.add(AlertaBorrador.REPLICA);
+    }
+    // Con las fotos del otro, este puede dejar de estar sin fotos.
+    boolean sinNinguna =
+        fotosDeLaPublicacion.stream().allMatch(fotosDescartadas::contains)
+            && fotosAgregadas.isEmpty()
+            && fotosSubidas.isEmpty();
+    if (!sinNinguna) {
+      alertas.remove(AlertaBorrador.SIN_FOTOS);
+    }
+  }
+
+  /**
+   * ¿Se puede saber qué tallas tiene cada color de los dos? Con las mismas tallas y sin tallas por
+   * tono no hace falta; si no, los dos tienen que decir sus tonos: unir un crema en L y XL con uno
+   * que no dice su color, en M, publicaría un crema M que no existe.
+   */
+  public boolean tallasDeCadaTonoSeSaben(BorradorProducto otro) {
+    boolean hace =
+        !tallas.equals(otro.tallas)
+            || !tallasPorTono.estaVacia()
+            || !otro.tallasPorTono.estaVacia();
+    return !hace || (!tonosConocidos().isEmpty() && !otro.tonosConocidos().isEmpty());
+  }
+
+  /** Las tallas de cada uno de sus tonos: las de sus tallas por tono, o todas las suyas. */
+  private Map<String, List<String>> tallasPorTonoDe(List<String> tonos) {
+    Map<String, List<String>> porTono = new LinkedHashMap<>();
+    for (String tono : tonos) {
+      porTono.put(tono, tallasPorTono.tallasDe(tono).orElse(tallas.valores()));
+    }
+    return porTono;
+  }
+
+  private static void juntar(Map<String, List<String>> tallasDe, String tono, List<String> mas) {
+    List<String> ya = new ArrayList<>(tallasDe.getOrDefault(tono, List.of()));
+    mas.stream().filter(t -> !ya.contains(t)).forEach(ya::add);
+    tallasDe.put(tono, List.copyOf(ya));
+  }
+
+  /** Los tonos que nombra, o si no nombra ninguno, los que sugirió la lectura de sus fotos. */
+  private List<String> tonosConocidos() {
+    if (!tonosNombrados.isEmpty()) {
+      return tonosNombrados;
+    }
+    return tonosSugeridos.values().stream().distinct().toList();
   }
 
   /**
@@ -514,6 +692,8 @@ public final class BorradorProducto {
             null,
             null,
             ahora);
+    // Sin la etiqueta: quien parte dice que no son el mismo producto, y el panel no tiene por qué
+    // sugerirle volver a unirlos.
     fotosDescartadas.addAll(queSeVan);
     queSeVan.forEach(tonosSugeridos::remove);
     this.pHash = null;

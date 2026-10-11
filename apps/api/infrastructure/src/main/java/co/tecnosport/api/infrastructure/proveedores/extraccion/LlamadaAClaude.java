@@ -1,6 +1,7 @@
 package co.tecnosport.api.infrastructure.proveedores.extraccion;
 
 import co.tecnosport.api.application.proveedores.ExtraccionFallidaException;
+import co.tecnosport.api.application.proveedores.ExtractorNoDisponibleException;
 import co.tecnosport.api.application.proveedores.UsoDelExtractor;
 import java.io.IOException;
 import java.net.URI;
@@ -9,6 +10,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.Locale;
 import java.util.Objects;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,9 +22,11 @@ import tools.jackson.databind.json.JsonMapper;
  * el extractor de productos y el lector de fotos. Lo que cada uno manda y cómo lee el JSON es suyo.
  *
  * <p>Un 429 y un 5xx se reintentan con espera exponencial: son la API ocupada, no la petición mal
- * hecha. Un 4xx distinto no se reintenta y sale como fallo con el código. Una respuesta con {@code
- * stop_reason} de {@code refusal} o de {@code max_tokens} tampoco: el modelo no va a contestar
- * distinto la segunda vez. Al registro van modelo, tokens y latencia; nunca el contenido.
+ * hecha. Un 4xx distinto no se reintenta y sale como fallo con el código, y al registro; si es de
+ * la cuenta —saldo, clave, permiso, modelo— sale como {@link ExtractorNoDisponibleException}. Una
+ * respuesta con {@code stop_reason} de {@code refusal} o de {@code max_tokens} tampoco: el modelo
+ * no va a contestar distinto la segunda vez. Al registro van modelo, tokens y latencia; nunca el
+ * contenido.
  */
 final class LlamadaAClaude {
 
@@ -166,12 +170,45 @@ final class LlamadaAClaude {
         continue;
       }
       // Un 4xx distinto no mejora repitiéndolo. El mensaje de error de la API sí ayuda a
-      // arreglarlo, y no lleva nada del proveedor.
-      throw new ExtraccionFallidaException(
-          "La API respondió " + estado + ": " + motivoDe(respuesta.body()));
+      // arreglarlo, y no lleva nada del proveedor. Va al registro: hasta el 11 de octubre de
+      // 2026 no iba, y 27 publicaciones de Meraki fallaron sin dejar una línea.
+      String motivo = motivoDe(respuesta.body());
+      log.warn("{}: la API respondió {}: {}", quien, estado, motivo);
+      if (esDeLaCuenta(estado, tipoDeError(respuesta.body()), motivo)) {
+        throw new ExtractorNoDisponibleException(
+            estado, "La API respondió " + estado + ": " + motivo);
+      }
+      throw new ExtraccionFallidaException("La API respondió " + estado + ": " + motivo);
     }
     throw new ExtraccionFallidaException(
         "La API no respondió tras " + intentos + " intentos (" + ultimoMotivo + ").");
+  }
+
+  /**
+   * ¿Rechazó la cuenta y no el mensaje? Sin autenticación (401), sin permiso (403), un modelo que
+   * ya no existe (404) o sin saldo. El saldo agotado llega como un 400 {@code
+   * invalid_request_error} cuyo mensaje habla del «credit balance»: no tiene tipo propio, y el
+   * mensaje es lo único que lo distingue de un 400 por la petición.
+   */
+  static boolean esDeLaCuenta(int estado, String tipo, String motivo) {
+    if (estado == 401 || estado == 403 || estado == 404) {
+      return true;
+    }
+    if ("authentication_error".equals(tipo)
+        || "permission_error".equals(tipo)
+        || "billing_error".equals(tipo)
+        || "not_found_error".equals(tipo)) {
+      return true;
+    }
+    return motivo != null && motivo.toLowerCase(Locale.ROOT).contains("credit balance");
+  }
+
+  private String tipoDeError(String cuerpo) {
+    try {
+      return json.readTree(cuerpo).path("error").path("type").asString();
+    } catch (RuntimeException e) {
+      return null;
+    }
   }
 
   private String motivoDe(String cuerpo) {

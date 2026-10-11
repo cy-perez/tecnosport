@@ -159,6 +159,9 @@ public final class LectorDeFotosClaude implements LectorDeFotos {
       if (producto.codigo() != null) {
         texto.append(" (código ").append(producto.codigo()).append(')');
       }
+      if (!producto.marcas().isEmpty()) {
+        texto.append(" (marcas: ").append(String.join(", ", producto.marcas())).append(')');
+      }
       texto.append('\n');
     }
     return texto.toString();
@@ -238,7 +241,8 @@ public final class LectorDeFotosClaude implements LectorDeFotos {
               lista(foto.path("codigos")),
               pie,
               lista(foto.path("colores")),
-              texto(foto.path("diseno"))));
+              texto(foto.path("diseno")),
+              lista(foto.path("marcas"))));
     }
     return new LecturaDeFotos(raiz.path("album_de_disenos").asBoolean(false), lecturas, jsonCrudo);
   }

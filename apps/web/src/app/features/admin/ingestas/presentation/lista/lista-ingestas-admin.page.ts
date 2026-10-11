@@ -31,18 +31,24 @@ import { usarListarIngestas } from '../../application/listar-ingestas.consulta';
 import { usarSubirExportacion } from '../../application/subir-exportacion.mutacion';
 import { usarEliminarIngesta } from '../../application/eliminar-ingesta.mutacion';
 import { usarOrdenarIngesta } from '../../application/ordenar-ingesta.mutacion';
+import { usarPublicacionesCerradas } from '../../application/publicaciones-cerradas.consulta';
 import { usarValidarZipDeDosChats } from '../../application/validar-zip-de-dos-chats';
 import { EstructuraDeDosChats, estructuraDeDosChats } from '../../domain/zip-de-dos-chats';
 import {
+  claveDelMotivo,
   textoDelFallo,
   EstadoLote,
   FiltroLotes,
   LoteEliminado,
   LoteIngesta,
   loteAbierto,
+  OrdenIngesta,
+  PublicacionCerrada,
   sePuedeDetener,
   sePuedePausar,
   sePuedeReanudar,
+  sePuedenReintentarFallidas,
+  tieneCerradas,
   tieneResumen,
 } from '../../domain/ingesta.model';
 import {
@@ -396,6 +402,30 @@ export class ListaIngestasAdminPage {
   protected readonly sePuedeReanudar = sePuedeReanudar;
   protected readonly sePuedeDetener = sePuedeDetener;
   protected readonly tieneResumen = tieneResumen;
+  protected readonly tieneCerradas = tieneCerradas;
+  protected readonly sePuedenReintentarFallidas = sePuedenReintentarFallidas;
+
+  // --- Las publicaciones que no dejaron borrador, en una fila aparte, y reintentar las fallidas. ---
+
+  /** El lote cuyas cerradas se están mirando: una sola fila abierta a la vez. */
+  protected readonly viendoCerradas = signal<string | null>(null);
+  protected readonly cerradas = usarPublicacionesCerradas(() => this.viendoCerradas());
+  /** El proveedor del lote cuyas fallidas volvieron a la cola, para decirlo sin el botón. */
+  protected readonly avisoReintento = signal<string | null>(null);
+  private readonly avisoReintentoRef = viewChild<ElementRef<HTMLElement>>('avisoReintentoRef');
+
+  protected alternarCerradas(lote: LoteIngesta): void {
+    this.viendoCerradas.set(this.viendoCerradas() === lote.id ? null : lote.id);
+  }
+
+  protected reintentarFallidas(lote: LoteIngesta): void {
+    this.avisoReintento.set(null);
+    this.ordenar(lote, 'reintentarFallidas');
+  }
+
+  protected textoDelMotivo(publicacion: PublicacionCerrada): string {
+    return this.traducir()(claveDelMotivo(publicacion), { dato: publicacion.dato ?? '' });
+  }
 
   /**
    * Un solo botón que alterna: pausar y reanudar ocupan el mismo sitio, así que el foco se queda
@@ -426,7 +456,7 @@ export class ListaIngestasAdminPage {
     this.ordenar(lote, 'detener');
   }
 
-  private ordenar(lote: LoteIngesta, orden: 'pausar' | 'reanudar' | 'detener'): void {
+  private ordenar(lote: LoteIngesta, orden: OrdenIngesta): void {
     // Marca propia por lo mismo que en eliminar: `isPending` no cambia en el mismo tic del `mutate`.
     if (this.ordenEnVuelo) {
       return;
@@ -442,6 +472,13 @@ export class ListaIngestasAdminPage {
           this.loteOrdenando.set(null);
         },
         onSuccess: () => {
+          if (orden === 'reintentarFallidas') {
+            this.viendoCerradas.set(null);
+            this.avisoReintento.set(this.nombreDelProveedor(lote));
+            // El botón se fue con el estado TERMINADO: el foco va al aviso.
+            this.enfocarDespuesDePintar(() => this.avisoReintentoRef()?.nativeElement);
+            return;
+          }
           if (orden !== 'detener') {
             return;
           }

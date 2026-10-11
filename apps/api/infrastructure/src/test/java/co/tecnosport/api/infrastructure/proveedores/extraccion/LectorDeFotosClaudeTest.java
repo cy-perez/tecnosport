@@ -172,6 +172,42 @@ class LectorDeFotosClaudeTest {
     assertThat(peticiones).isEmpty();
   }
 
+  /**
+   * Las marcas que el texto nombra viajan al lector, que las escribe igual cuando las lee en una
+   * foto; y las que lee vuelven en la lectura (11 de octubre de 2026).
+   */
+  @Test
+  void lasMarcasDelTextoVanAlLectorYLasQueLeeVuelven() throws IOException {
+    respuestas.add(
+        exito(
+            "{\"album_de_disenos\":false,\"fotos\":["
+                + "{\"foto\":1,\"codigos\":[],\"pie\":[],\"colores\":[\"azul\"],"
+                + "\"diseno\":\"jean\",\"marcas\":[\"Amiri\"]}]}"));
+
+    Optional<LecturaDeFotos> lectura =
+        lector()
+            .leer(
+                new FotosParaLeer(
+                    "*DIESEL-AMIRI* $125.000",
+                    List.of(
+                        new ProductoNombrado(
+                            "Pantalón estilo Diesel - Amiri", null, List.of("Diesel", "Amiri"))),
+                    List.of(new FotoParaLeer(0, jpeg(40, 30)))));
+
+    assertThat(
+            peticiones
+                .get(0)
+                .path("messages")
+                .get(0)
+                .path("content")
+                .get(0)
+                .path("text")
+                .asString())
+        .contains("(marcas: Diesel, Amiri)");
+    assertThat(lectura.orElseThrow().deLaFoto(0).orElseThrow().marcas()).containsExactly("Amiri");
+    assertThat(RecursosDelExtractor.esquemaDelLector()).contains("\"marcas\"");
+  }
+
   @Test
   void unaFotoGrandeSeAchicaAntesDeSalir() throws IOException {
     respuestas.add(exito("{\"album_de_disenos\":false,\"fotos\":[]}"));

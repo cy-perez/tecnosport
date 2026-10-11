@@ -31,6 +31,7 @@ import co.tecnosport.api.domain.proveedores.EstadoPublicacionProveedor;
 import co.tecnosport.api.domain.proveedores.FalloDeLote;
 import co.tecnosport.api.domain.proveedores.LoteIngesta;
 import co.tecnosport.api.domain.proveedores.MotivoDeFalloDeLote;
+import co.tecnosport.api.domain.proveedores.MotivoDePublicacion;
 import co.tecnosport.api.domain.proveedores.PatronDePrecio;
 import co.tecnosport.api.domain.proveedores.ProductoExtraido;
 import co.tecnosport.api.domain.proveedores.Proveedor;
@@ -306,6 +307,133 @@ class ProcesarLoteDeIngestaTest {
     assertEquals(9, borradores.porId.size());
   }
 
+  private static ProductoExtraido bolsoLlamado(String titulo, long precio) {
+    return new ProductoExtraido(
+        true,
+        false,
+        titulo,
+        LineaCatalogo.BOLSOS,
+        TipoProductoProveedor.BOLSO,
+        Dinero.deCop(precio),
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        false,
+        BigDecimal.ONE,
+        null);
+  }
+
+  /**
+   * Sin saldo en la cuenta del modelo, ninguna publicación va a salir distinta: el lote se pausa
+   * con el motivo y las publicaciones se quedan pendientes, en vez de marcarlas todas como rotas en
+   * seis segundos, como pasó con Meraki el 11 de octubre de 2026. Al reanudarlo sigue donde iba.
+   */
+  @Test
+  void sinSaldoElLoteSePausaYAlReanudarloSigueDondeIba() {
+    List<String> textos = List.of("Bolso 💰 53.000", "Morral 💰 40.000");
+    boolean[] conSaldo = {false};
+    ExtractorFalso extractor =
+        ExtractorFalso.porTexto(
+            texto -> {
+              if (!conSaldo[0]) {
+                throw new ExtractorNoDisponibleException(400, "credit balance is too low");
+              }
+              return texto.completo().contains("Morral")
+                  ? bolsoLlamado("Morral", 40000)
+                  : bolsoLlamado("Bolso", 53000);
+            });
+    ProcesarLoteDeIngesta caso = casoCon(new FuenteFija(comoChat(textos)), extractor);
+
+    LoteIngesta pausado = caso.ejecutar(lote.id());
+
+    assertEquals(EstadoLote.PAUSADO, pausado.estado());
+    assertEquals(
+        Optional.of(new FalloDeLote(MotivoDeFalloDeLote.EXTRACTOR_NO_DISPONIBLE, "400")),
+        pausado.fallo());
+    assertTrue(
+        publicaciones.listarDeLote(lote.id()).stream()
+            .allMatch(p -> p.estado() == EstadoPublicacionProveedor.PENDIENTE_EXTRACCION),
+        "ninguna se marcó como rota");
+
+    conSaldo[0] = true;
+    LoteIngesta reanudado = lotes.buscarPorId(lote.id()).orElseThrow();
+    reanudado.reanudar();
+    lotes.actualizar(reanudado);
+    LoteIngesta terminado = caso.ejecutar(lote.id());
+
+    assertEquals(EstadoLote.TERMINADO, terminado.estado());
+    assertEquals(Optional.empty(), terminado.fallo());
+    assertEquals(2, terminado.resumen().orElseThrow().borradoresNuevos());
+    assertEquals(0, terminado.resumen().orElseThrow().fallidas());
+  }
+
+  /**
+   * Las fallidas se reintentan sin volver a subir el archivo: vuelven a esperar al extractor, el
+   * lote vuelve a la cola, y lo que salga se cuenta en su lugar.
+   */
+  @Test
+  void lasFallidasSeReintentanSinVolverASubirElArchivo() {
+    List<String> textos = List.of("Bolso 💰 53.000", "Morral 💰 40.000");
+    boolean[] morralLegible = {false};
+    ExtractorFalso extractor =
+        ExtractorFalso.porTexto(
+            texto -> {
+              if (texto.completo().contains("Morral")) {
+                if (!morralLegible[0]) {
+                  throw new ExtraccionFallidaException("La API respondió 400: algo pasó.");
+                }
+                return bolsoLlamado("Morral", 40000);
+              }
+              return bolsoLlamado("Bolso", 53000);
+            });
+    ProcesarLoteDeIngesta caso = casoCon(new FuenteFija(comoChat(textos)), extractor);
+    caso.ejecutar(lote.id());
+    morralLegible[0] = true;
+
+    List<PublicacionCerrada> cerradas =
+        new ListarPublicacionesCerradas(lotes, publicaciones, mensajes).ejecutar(lote.id());
+    assertEquals(1, cerradas.size(), "el panel ve cuál falló y por qué");
+    assertEquals(EstadoPublicacionProveedor.ERROR, cerradas.getFirst().estado());
+    assertEquals(MotivoDePublicacion.EXTRACCION_FALLIDA, cerradas.getFirst().cierre().motivo());
+    assertEquals("Morral 💰 40.000", cerradas.getFirst().extracto());
+
+    LoteIngesta reabierto =
+        new ReintentarPublicacionesFallidas(lotes, publicaciones, new RelojFalso(AHORA))
+            .ejecutar(lote.id());
+    assertEquals(EstadoLote.RECIBIDO, reabierto.estado());
+    LoteIngesta terminado = caso.ejecutar(lote.id());
+
+    ResumenIngesta resumen = terminado.resumen().orElseThrow();
+    assertEquals(EstadoLote.TERMINADO, terminado.estado());
+    assertEquals(2, resumen.borradoresNuevos(), "el bolso de antes y el morral de ahora");
+    assertEquals(0, resumen.fallidas());
+    assertEquals(2, resumen.publicaciones(), "lo leído no se cuenta dos veces");
+    assertEquals(2, borradores.porId.size());
+  }
+
+  @Test
+  void noSeReintentanLasFallidasMientrasOtroLoteDelProveedorEstaAbierto() {
+    List<String> textos = List.of("Morral 💰 40.000");
+    ExtractorFalso extractor =
+        ExtractorFalso.porTexto(
+            texto -> {
+              throw new ExtraccionFallidaException("La API respondió 400.");
+            });
+    casoCon(new FuenteFija(comoChat(textos)), extractor).ejecutar(lote.id());
+    lotes.guardar(
+        LoteIngesta.recibirExportacion(proveedor.id(), "proveedores/x/exportaciones/b.zip", T));
+
+    ReintentarPublicacionesFallidas reintentar =
+        new ReintentarPublicacionesFallidas(lotes, publicaciones, new RelojFalso(AHORA));
+
+    assertThrows(
+        OtraIngestaDelProveedorEnCursoException.class, () -> reintentar.ejecutar(lote.id()));
+    assertEquals(EstadoLote.TERMINADO, lotes.buscarPorId(lote.id()).orElseThrow().estado());
+  }
+
   /** Una publicación que el extractor no puede leer queda en ERROR y el lote termina igual. */
   @Test
   void unaExtraccionFallidaNoTumbaElLote() {
@@ -341,10 +469,13 @@ class ProcesarLoteDeIngestaTest {
     ResumenIngesta resumen = resultado.resumen().orElseThrow();
     assertEquals(2, resumen.publicaciones());
     assertEquals(1, resumen.borradoresNuevos());
-    assertEquals(1, resumen.descartes());
+    assertEquals(0, resumen.descartes(), "no se pudo leer no es «no era un producto»");
+    assertEquals(1, resumen.fallidas());
     List<PublicacionProveedor> pubs = publicaciones.listarDeLote(lote.id());
     assertEquals(EstadoPublicacionProveedor.ERROR, pubs.get(1).estado());
-    assertTrue(pubs.get(1).motivo().orElseThrow().contains("4 intentos"));
+    assertEquals(
+        MotivoDePublicacion.EXTRACCION_FALLIDA, pubs.get(1).cierre().orElseThrow().motivo());
+    assertTrue(pubs.get(1).detalle().orElseThrow().contains("4 intentos"));
   }
 
   /**

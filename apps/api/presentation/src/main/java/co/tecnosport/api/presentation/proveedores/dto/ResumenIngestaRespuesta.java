@@ -11,7 +11,8 @@ public record ResumenIngestaRespuesta(
     int renovaciones,
     int agotados,
     int descartes,
-    int alertas) {
+    int alertas,
+    int fallidas) {
 
   public static ResumenIngestaRespuesta de(ResumenIngesta r) {
     return new ResumenIngestaRespuesta(
@@ -23,6 +24,7 @@ public record ResumenIngestaRespuesta(
         r.renovaciones(),
         r.agotados(),
         r.descartes(),
-        r.alertas());
+        r.alertas(),
+        r.fallidas());
   }
 }

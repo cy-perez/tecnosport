@@ -28,7 +28,14 @@ public class PublicacionProveedorJpaEntity {
   @Column(nullable = false)
   private String estado;
 
+  /** El detalle interno para diagnosticar; el panel muestra el código. */
   @Column private String motivo;
+
+  @Column(name = "codigo_motivo")
+  private String codigoMotivo;
+
+  @Column(name = "dato_motivo")
+  private String datoMotivo;
 
   @Column(name = "creado_en", nullable = false)
   private Instant creadoEn;
@@ -43,6 +50,8 @@ public class PublicacionProveedorJpaEntity {
       Instant fecha,
       String estado,
       String motivo,
+      String codigoMotivo,
+      String datoMotivo,
       Instant creadoEn) {
     this.id = id;
     this.proveedorId = proveedorId;
@@ -51,6 +60,8 @@ public class PublicacionProveedorJpaEntity {
     this.fecha = fecha;
     this.estado = estado;
     this.motivo = motivo;
+    this.codigoMotivo = codigoMotivo;
+    this.datoMotivo = datoMotivo;
     this.creadoEn = creadoEn;
   }
 
@@ -80,6 +91,14 @@ public class PublicacionProveedorJpaEntity {
 
   public String getMotivo() {
     return motivo;
+  }
+
+  public String getCodigoMotivo() {
+    return codigoMotivo;
+  }
+
+  public String getDatoMotivo() {
+    return datoMotivo;
   }
 
   public Instant getCreadoEn() {

@@ -27,6 +27,7 @@ import co.tecnosport.api.application.proveedores.RepositorioProveedores;
 import co.tecnosport.api.application.proveedores.RepositorioPublicacionesProveedor;
 import co.tecnosport.api.application.proveedores.ResolverBorrador;
 import co.tecnosport.api.application.proveedores.SolicitarSubidaDeFotoDeBorrador;
+import co.tecnosport.api.application.proveedores.UnirBorradores;
 import co.tecnosport.api.application.proveedores.VerBorrador;
 import co.tecnosport.api.infrastructure.proveedores.imagenes.CalculadorDePHashAwt;
 import co.tecnosport.api.infrastructure.proveedores.imagenes.ProcesadorDeImagenesNulo;
@@ -157,6 +158,12 @@ public class ConfiguracionBorradores {
       RepositorioPublicacionesProveedor publicaciones,
       Reloj reloj) {
     return new PartirBorrador(borradores, publicaciones, reloj);
+  }
+
+  @Bean
+  public UnirBorradores unirBorradores(
+      RepositorioBorradores borradores, RepositorioPublicacionesProveedor publicaciones) {
+    return new UnirBorradores(borradores, publicaciones);
   }
 
   @Bean

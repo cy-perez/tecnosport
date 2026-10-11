@@ -230,4 +230,33 @@ class MoverFotoDeBorradorTest {
     assertThrows(
         ExcepcionDeDominio.class, () -> caso().ejecutar(bodi.id(), delBodi.id(), ajeno.id()));
   }
+
+  // --- Unir dos borradores de la misma publicación (11 de octubre de 2026) ---
+
+  @Test
+  void unirSeQuedaConLasFotosDelOtroYLoElimina() {
+    BorradorProducto soloBodi = borrador(conjunto, "Bodi", Set.of(consolidada.id(), delJean.id()));
+    BorradorProducto soloJean = borrador(conjunto, "Jean", Set.of(consolidada.id(), delBodi.id()));
+
+    BorradorProducto unido =
+        new UnirBorradores(borradores, publicaciones).ejecutar(soloBodi.id(), soloJean.id());
+
+    assertEquals(Set.of(consolidada.id()), unido.fotosDescartadas());
+    assertTrue(borradores.buscarPorId(soloJean.id()).isEmpty(), "el otro desaparece");
+    assertEquals(
+        Set.of(consolidada.id()),
+        borradores.buscarPorId(soloBodi.id()).orElseThrow().fotosDescartadas(),
+        "y el que se queda se guarda");
+  }
+
+  @Test
+  void noSeUneConUnoDeOtraPublicacionNiConsigoMismo() {
+    PublicacionProveedor otra = publicacion("Camiseta (261002) 💲42", foto("camiseta"));
+    BorradorProducto camiseta = borrador(otra, "Camiseta", Set.of());
+    UnirBorradores unir = new UnirBorradores(borradores, publicaciones);
+
+    assertThrows(ExcepcionDeDominio.class, () -> unir.ejecutar(bodi.id(), camiseta.id()));
+    assertThrows(ExcepcionDeDominio.class, () -> unir.ejecutar(bodi.id(), bodi.id()));
+    assertTrue(borradores.buscarPorId(camiseta.id()).isPresent());
+  }
 }

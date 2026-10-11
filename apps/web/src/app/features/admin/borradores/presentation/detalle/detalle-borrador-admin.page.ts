@@ -46,6 +46,7 @@ import {
   usarEditarBorrador,
   usarEliminarBorrador,
   usarMoverFotoBorrador,
+  usarUnirBorradores,
   usarPartirBorrador,
   usarRechazarBorrador,
   usarSubirFotoBorrador,
@@ -59,6 +60,7 @@ import {
   CATEGORIA_SUGERIDA_POR_TIPO,
   EstadoBorrador,
   fotoAdmitida,
+  HermanoBorrador,
   MARCA_DE_REPLICAS,
   MAXIMO_FOTOS_POR_PRODUCTO,
   Tallas,
@@ -171,6 +173,7 @@ export class DetalleBorradorAdminPage {
   private readonly subirFoto = usarSubirFotoBorrador();
   private readonly partir = usarPartirBorrador();
   private readonly mover = usarMoverFotoBorrador();
+  private readonly unirBorradores = usarUnirBorradores();
 
   protected readonly borrador = computed<Borrador | null>(
     () => this.consulta.data()?.borrador ?? null,
@@ -763,6 +766,45 @@ export class DetalleBorradorAdminPage {
     this.principalMarcada.set(mensajeId);
     this.enfocarDespuesDePintar(() =>
       this.host.nativeElement.querySelector<HTMLElement>('#incluir-foto-' + indice),
+    );
+  }
+
+  // --- Unir otro borrador de la publicación a este (camino acordado el 11 de octubre de 2026). ---
+
+  protected readonly uniendo = signal<string | null>(null);
+  protected readonly errorUnir = signal<string | null>(null);
+  /** El título del que se unió, para decirlo cuando ya no está en la lista. */
+  protected readonly avisoUnido = signal<string | null>(null);
+  private readonly avisoUnidoRef = viewChild<ElementRef<HTMLElement>>('avisoUnidoRef');
+
+  /** El mismo diseño primero: es el que la persona viene a unir. */
+  protected readonly hermanosParaUnir = computed(() =>
+    this.hermanos()
+      .map((hermano, i) => ({ ...hermano, numero: i + 1 }))
+      .sort((a, b) => Number(b.mismoDiseno) - Number(a.mismoDiseno)),
+  );
+
+  protected unir(hermano: HermanoBorrador & { numero: number }): void {
+    if (this.uniendo()) {
+      return;
+    }
+    this.uniendo.set(hermano.id);
+    this.errorUnir.set(null);
+    this.avisoUnido.set(null);
+    const titulo =
+      hermano.titulo || this.traducir()('admin.borradores.mover.sinTitulo') + ' ' + hermano.numero;
+    this.unirBorradores.mutate(
+      { id: this.id(), otroId: hermano.id },
+      {
+        onSettled: () => this.uniendo.set(null),
+        onSuccess: () => {
+          this.avisoUnido.set(titulo);
+          // El botón se fue con su fila: el foco va al aviso, que dice lo que pasó.
+          this.enfocarDespuesDePintar(() => this.avisoUnidoRef()?.nativeElement);
+        },
+        onError: (error: unknown) =>
+          this.errorUnir.set(mensajeDeError(error, this.transloco, 'admin.borradores.unir.error')),
+      },
     );
   }
 

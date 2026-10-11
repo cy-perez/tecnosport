@@ -46,6 +46,10 @@ public record LecturaDeFotos(boolean albumDeDisenos, List<LecturaDeFoto> fotos, 
    *     y en minúsculas
    * @param diseno una etiqueta corta que es igual en las fotos del mismo diseño: dos fotos con la
    *     misma etiqueta son el mismo producto, aunque cambie el color. Nula si no se sabe
+   * @param marcas las marcas o logos que se leen en lo que se vende —no en la gorra que lo
+   *     ambienta—, como la marca se escribe. Vacía si no se lee ninguna. Desde el 11 de octubre de
+   *     2026: un logo de CK o de A|X en una camiseta de mayorista es una réplica aunque el texto no
+   *     lo diga, y con varias marcas en un anuncio dice cuál foto es de cuál
    */
   public record LecturaDeFoto(
       int posicion,
@@ -53,7 +57,8 @@ public record LecturaDeFotos(boolean albumDeDisenos, List<LecturaDeFoto> fotos, 
       String sku,
       List<String> tallasDelPie,
       List<String> colores,
-      String diseno) {
+      String diseno,
+      List<String> marcas) {
 
     /** Un prefijo de tipo, como la «C:» de camiseta o la «J:» de jogger en las de Violeta. */
     private static final Pattern PREFIJO = Pattern.compile("^[A-Z]{1,2}:");
@@ -90,6 +95,26 @@ public record LecturaDeFotos(boolean albumDeDisenos, List<LecturaDeFoto> fotos, 
                   .distinct()
                   .toList();
       diseno = diseno == null || diseno.isBlank() ? null : diseno.strip();
+      marcas =
+          marcas == null
+              ? List.of()
+              : marcas.stream()
+                  .filter(Objects::nonNull)
+                  .map(String::strip)
+                  .filter(m -> !m.isEmpty())
+                  .distinct()
+                  .toList();
+    }
+
+    /** Sin marcas: la forma de antes del 11 de octubre de 2026. */
+    public LecturaDeFoto(
+        int posicion,
+        List<String> codigos,
+        String sku,
+        List<String> tallasDelPie,
+        List<String> colores,
+        String diseno) {
+      this(posicion, codigos, sku, tallasDelPie, colores, diseno, List.of());
     }
 
     /**
@@ -105,6 +130,16 @@ public record LecturaDeFotos(boolean albumDeDisenos, List<LecturaDeFoto> fotos, 
         List<BloqueDePie> pie,
         List<String> colores,
         String diseno) {
+      return conPie(posicion, codigos, pie, colores, diseno, List.of());
+    }
+
+    public static LecturaDeFoto conPie(
+        int posicion,
+        List<String> codigos,
+        List<BloqueDePie> pie,
+        List<String> colores,
+        String diseno,
+        List<String> marcas) {
       Optional<BloqueDePie> vigente = BloqueDePie.vigente(pie == null ? List.of() : pie);
       return new LecturaDeFoto(
           posicion,
@@ -112,7 +147,40 @@ public record LecturaDeFotos(boolean albumDeDisenos, List<LecturaDeFoto> fotos, 
           vigente.map(BloqueDePie::sku).orElse(null),
           vigente.map(BloqueDePie::tallas).orElse(List.of()),
           colores,
-          diseno);
+          diseno,
+          marcas);
+    }
+
+    /**
+     * Si en la foto se lee esta marca. Sin mayúsculas, espacios ni signos: «A|X» es «ax». Una forma
+     * corta solo vale entera: «ck» está dentro de «jackjones», y una foto de Calvin Klein caía en
+     * el borrador de Jack &amp; Jones. Que una contenga a la otra —«Dsquared2» y «Dsq»— solo cuenta
+     * cuando la más corta tiene {@value #CONTENCION_MINIMA} caracteres o más.
+     */
+    public boolean muestraMarca(String marca) {
+      String buscada = compactar(marca);
+      return !buscada.isEmpty()
+          && marcas.stream()
+              .map(LecturaDeFoto::compactar)
+              .filter(m -> !m.isEmpty())
+              .anyMatch(m -> m.equals(buscada) || seContienen(m, buscada));
+    }
+
+    private static final int CONTENCION_MINIMA = 4;
+
+    private static boolean seContienen(String una, String otra) {
+      String corta = una.length() <= otra.length() ? una : otra;
+      String larga = corta == una ? otra : una;
+      return corta.length() >= CONTENCION_MINIMA && larga.contains(corta);
+    }
+
+    private static String compactar(String marca) {
+      return marca == null
+          ? ""
+          : java.text.Normalizer.normalize(marca, java.text.Normalizer.Form.NFD)
+              .replaceAll("\\p{M}+", "")
+              .toLowerCase(Locale.ROOT)
+              .replaceAll("[^a-z0-9]", "");
     }
 
     public Optional<String> skuOpcional() {
