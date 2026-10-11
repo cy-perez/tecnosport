@@ -1489,7 +1489,7 @@
     },
     "unir": {
       "titulo": "Other drafts from this post",
-      "ayuda": "If one is the same design in another color, merge it into this one: this one keeps its photos and colors —with each color's sizes, if they differ— and the other disappears. Its reference no longer recognizes renewals.",
+      "ayuda": "If one is the same design in another color, merge it into this one: this one keeps its photos and colors, with each color's sizes if they differ, and the other disappears. Its reference no longer recognizes renewals.",
       "mismoDiseno": "Possibly the same design",
       "accion": "Merge into this one",
       "accionDe": "Merge “{{titulo}}” into this draft",

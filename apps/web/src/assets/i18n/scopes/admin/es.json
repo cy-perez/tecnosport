@@ -1489,7 +1489,7 @@
     },
     "unir": {
       "titulo": "Otros borradores de esta publicación",
-      "ayuda": "Si uno es el mismo diseño en otro color, únelo a este: este se queda con sus fotos y sus tonos —con las tallas de cada tono, si no son las mismas— y el otro desaparece. Su referencia deja de reconocer renovaciones.",
+      "ayuda": "Si uno es el mismo diseño en otro color, únelo a este: este se queda con sus fotos y sus tonos, con las tallas de cada tono si no son las mismas, y el otro desaparece. Su referencia deja de reconocer renovaciones.",
       "mismoDiseno": "Posible mismo diseño",
       "accion": "Unir a este",
       "accionDe": "Unir «{{titulo}}» a este borrador",
