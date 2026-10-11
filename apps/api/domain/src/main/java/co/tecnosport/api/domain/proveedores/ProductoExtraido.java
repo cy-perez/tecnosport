@@ -6,7 +6,9 @@ import co.tecnosport.api.domain.compartido.ExcepcionDeDominio;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
@@ -27,6 +29,10 @@ import java.util.regex.Pattern;
  * @param codigoReferencia el código con que el proveedor marca la prenda —«(VY2777)», «(Q339)»—, en
  *     mayúsculas y sin espacios; nulo si el mensaje no trae ninguno. Desde el 9 de octubre de 2026
  *     es lo que identifica un producto que lo tiene ({@link HuellaProveedor#deReferencia})
+ * @param marcas las que el mensaje nombra para este producto, como la marca se escribe. Una
+ *     colaboración que se vende como una sola prenda es una: «Puma - BMW». Con dos o más que se
+ *     venden por separado, cada una sale en su borrador con sus fotos ({@link RepartoDeFotos},
+ *     decidido por el negocio el 11 de octubre de 2026)
  */
 public record ProductoExtraido(
     boolean esProducto,
@@ -46,7 +52,8 @@ public record ProductoExtraido(
     String notas,
     String codigoReferencia,
     TallasPorTono tallasPorTono,
-    List<PrecioAdicional> preciosAdicionales) {
+    List<PrecioAdicional> preciosAdicionales,
+    List<String> marcas) {
 
   /** Un código: letras y cifras, con alguna cifra, sin más de 12 caracteres. */
   private static final Pattern CODIGO = Pattern.compile("^(?=.*\\d)[A-Z0-9-]{2,12}$");
@@ -63,6 +70,15 @@ public record ProductoExtraido(
     tonosNombrados = tonosNombrados == null ? List.of() : List.copyOf(tonosNombrados);
     tallasPorTono = tallasPorTono == null ? TallasPorTono.ninguna() : tallasPorTono;
     preciosAdicionales = preciosAdicionales == null ? List.of() : List.copyOf(preciosAdicionales);
+    marcas =
+        marcas == null
+            ? List.of()
+            : marcas.stream()
+                .filter(Objects::nonNull)
+                .map(String::strip)
+                .filter(m -> !m.isEmpty())
+                .distinct()
+                .toList();
     if (cantidadTonos != null && cantidadTonos < 0) {
       throw new ExcepcionDeDominio("La cantidad de tonos no puede ser negativa.");
     }
@@ -71,6 +87,48 @@ public record ProductoExtraido(
         || confianza.compareTo(BigDecimal.ONE) > 0) {
       throw new ExcepcionDeDominio("La confianza va de 0 a 1.");
     }
+  }
+
+  /** Sin marcas: la forma de antes del 11 de octubre de 2026. */
+  public ProductoExtraido(
+      boolean esProducto,
+      boolean estaAgotado,
+      String titulo,
+      LineaCatalogo linea,
+      TipoProductoProveedor tipo,
+      Dinero precioProveedor,
+      Tallas tallas,
+      Integer cantidadTonos,
+      List<String> tonosNombrados,
+      String material,
+      String descripcion,
+      String altEn,
+      boolean esReplica,
+      BigDecimal confianza,
+      String notas,
+      String codigoReferencia,
+      TallasPorTono tallasPorTono,
+      List<PrecioAdicional> preciosAdicionales) {
+    this(
+        esProducto,
+        estaAgotado,
+        titulo,
+        linea,
+        tipo,
+        precioProveedor,
+        tallas,
+        cantidadTonos,
+        tonosNombrados,
+        material,
+        descripcion,
+        altEn,
+        esReplica,
+        confianza,
+        notas,
+        codigoReferencia,
+        tallasPorTono,
+        preciosAdicionales,
+        null);
   }
 
   /** Sin tallas por tono ni precios adicionales: la forma de antes del 10 de octubre de 2026. */
@@ -108,6 +166,7 @@ public record ProductoExtraido(
         confianza,
         notas,
         codigoReferencia,
+        null,
         null,
         null);
   }
@@ -156,16 +215,31 @@ public record ProductoExtraido(
    * extractor solo si el texto escribe además «réplica» ({@link PatronDeReplica#diceReplica}), y el
    * código de referencia solo si está escrito en el texto: identifica el producto, y uno inventado
    * lo confundiría con otro.
+   *
+   * <p>Desde el 11 de octubre de 2026, además: el título que nombra una marca con «estilo» cuenta
+   * como réplica para revisarla ({@link PatronDeReplica#nombraMarcaConEstilo}), y la camiseta de un
+   * anuncio que vende polos es un polo, con el título de un polo ({@link TituloDePolo}).
    */
   public ProductoExtraido contrastadoCon(String texto) {
     boolean replica =
-        PatronDeReplica.esReplica(texto) || (esReplica && PatronDeReplica.diceReplica(texto));
+        PatronDeReplica.esReplica(texto)
+            || (esReplica && PatronDeReplica.diceReplica(texto))
+            || PatronDeReplica.nombraMarcaConEstilo(titulo);
+    TipoProductoProveedor tipoContrastado =
+        (tipo == TipoProductoProveedor.CAMISETA || tipo == TipoProductoProveedor.OTRO)
+                && TituloDePolo.anunciaPolo(texto)
+            ? TipoProductoProveedor.POLO
+            : tipo;
+    String tituloContrastado = replica ? PatronDeReplica.tituloDeReplica(titulo) : titulo;
+    if (tipoContrastado == TipoProductoProveedor.POLO) {
+      tituloContrastado = TituloDePolo.componer(tituloContrastado, replica);
+    }
     return new ProductoExtraido(
         esProducto,
         estaAgotado,
-        replica ? PatronDeReplica.tituloDeReplica(titulo) : titulo,
+        tituloContrastado,
         linea,
-        tipo,
+        tipoContrastado,
         precioProveedor,
         tallasContrastadas(texto),
         cantidadTonos,
@@ -178,7 +252,53 @@ public record ProductoExtraido(
         notas,
         codigoEscritoEn(texto),
         tallasPorTono.contrastadoCon(texto),
-        preciosAdicionales);
+        preciosAdicionales,
+        marcas);
+  }
+
+  /**
+   * Este producto vendido con una sola de sus marcas: el título nombra esa y no las otras, y {@code
+   * marcas} queda con ella sola. «Pantalón estilo Diesel - Amiri - Dsq purple - DG importado» con
+   * Amiri es «Pantalón estilo Amiri importado». Si el título no tenía «estilo», se le agrega.
+   */
+  public ProductoExtraido conMarca(String marca) {
+    Objects.requireNonNull(marca, "La marca no puede ser nula.");
+    return new ProductoExtraido(
+        esProducto,
+        estaAgotado,
+        tituloConMarca(titulo, marca.strip()),
+        linea,
+        tipo,
+        precioProveedor,
+        tallas,
+        cantidadTonos,
+        tonosNombrados,
+        material,
+        descripcion,
+        altEn,
+        true,
+        confianza,
+        notas,
+        codigoReferencia,
+        tallasPorTono,
+        preciosAdicionales,
+        List.of(marca));
+  }
+
+  private static final Pattern ESTILO_HASTA_IMPORTADO =
+      Pattern.compile(
+          "(?<!\\p{L})estilo\\s+.*?(?=\\s+importad[oa]s?(?!\\p{L})|$)",
+          Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE);
+
+  private static String tituloConMarca(String titulo, String marca) {
+    if (titulo == null) {
+      return null;
+    }
+    Matcher m = ESTILO_HASTA_IMPORTADO.matcher(titulo);
+    if (m.find()) {
+      return titulo.substring(0, m.start()) + "estilo " + marca + titulo.substring(m.end());
+    }
+    return titulo + " estilo " + marca;
   }
 
   /**
@@ -206,7 +326,8 @@ public record ProductoExtraido(
         conFotos.notas,
         normalizarCodigo(skuDelPie),
         conFotos.tallasPorTono,
-        conFotos.preciosAdicionales);
+        conFotos.preciosAdicionales,
+        conFotos.marcas);
   }
 
   /**
@@ -235,7 +356,8 @@ public record ProductoExtraido(
         notas,
         codigo == null ? codigoReferencia : codigo,
         tallasPorTono,
-        preciosAdicionales);
+        preciosAdicionales,
+        marcas);
   }
 
   private String codigoEscritoEn(String texto) {

@@ -25,7 +25,8 @@
           "notas",
           "codigo_referencia",
           "tallas_por_tono",
-          "precios_adicionales"
+          "precios_adicionales",
+          "marcas"
         ],
         "properties": {
           "esta_agotado": { "type": "boolean" },
@@ -89,6 +90,7 @@
               }
             }
           },
+          "marcas": { "type": "array", "items": { "type": "string" } },
           "precios_adicionales": {
             "type": "array",
             "items": {

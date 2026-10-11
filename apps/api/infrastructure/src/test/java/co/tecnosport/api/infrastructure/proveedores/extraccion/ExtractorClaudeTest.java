@@ -353,6 +353,21 @@ class ExtractorClaudeTest {
     assertThat(RecursosDelExtractor.esquema()).contains("\"blazer\"", "\"chaleco\"");
   }
 
+  /** Las marcas que nombra el texto, una por elemento: con varias, un borrador por marca. */
+  @Test
+  void lasMarcasDelTextoSeLeen() {
+    String jeans =
+        BOLSO.replace(
+            "\"confianza\":0.92",
+            "\"confianza\":0.92,\"marcas\":[\"Diesel\",\" Amiri \",\"\",\"Diesel\"]");
+    respuestas.add(new Respuesta(200, exito("{\"productos\":[" + jeans + "]}", "end_turn")));
+
+    ResultadoExtraccion resultado = extractor(1).extraer(texto());
+
+    assertThat(resultado.productos().getFirst().marcas()).containsExactly("Diesel", "Amiri");
+    assertThat(RecursosDelExtractor.esquema()).contains("\"marcas\"");
+  }
+
   /** Un saludo o una promoción: la lista vacía, sin fallo. */
   @Test
   void unMensajeSinProductosDevuelveLaListaVacia() {

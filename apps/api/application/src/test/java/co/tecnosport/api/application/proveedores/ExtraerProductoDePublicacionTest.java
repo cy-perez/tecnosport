@@ -437,6 +437,55 @@ class ExtraerProductoDePublicacionTest {
         .ejecutar(publicacion, mensajes, LineaCatalogo.ROPA);
   }
 
+  /**
+   * Las camisetas de seda fría de La Riverah llevaban el logo de CK y de A|X en el pecho y el texto
+   * no decía réplica: salieron sin la alerta (11 de octubre de 2026). Un logo que se lee la pide.
+   */
+  @Test
+  void unaMarcaQueSeLeeEnLaFotoAlertaLaReplicaAunqueElTextoNoLaDiga() {
+    PublicacionProveedor conLogo =
+        PublicacionProveedor.abrir(texto("Camisetas seda fría para Caballero $35.000"));
+    conLogo.anexar(foto("p/1.jpg"));
+    LectorDeFotos leeCk =
+        fotos ->
+            Optional.of(
+                new LecturaDeFotos(
+                    false,
+                    List.of(
+                        new LecturaDeFoto(
+                            0, List.of(), null, List.of(), List.of("blanco"), null, List.of("CK"))),
+                    "{}"));
+    LectorDeFotos noLeeNada =
+        fotos ->
+            Optional.of(
+                new LecturaDeFotos(
+                    false,
+                    List.of(
+                        new LecturaDeFoto(0, List.of(), null, List.of(), List.of("blanco"), null)),
+                    "{}"));
+
+    ExtraccionEvaluada conMarca =
+        evaluarConFotos(
+                conLogo,
+                List.of(prenda("Camiseta seda fría para caballero", null)),
+                leeCk,
+                almacenCon("p/1.jpg"))
+            .getFirst();
+    PublicacionProveedor sinLogo =
+        PublicacionProveedor.abrir(texto("Camisetas seda fría para Caballero $35.000"));
+    sinLogo.anexar(foto("p/1.jpg"));
+    ExtraccionEvaluada sinMarca =
+        evaluarConFotos(
+                sinLogo,
+                List.of(prenda("Camiseta seda fría para caballero", null)),
+                noLeeNada,
+                almacenCon("p/1.jpg"))
+            .getFirst();
+
+    assertTrue(conMarca.alertas().contains(AlertaBorrador.REPLICA));
+    assertFalse(sinMarca.alertas().contains(AlertaBorrador.REPLICA));
+  }
+
   @Test
   void elBodiYElJeanDeVioletaSeRepartenLasFotosYDejanDeSerCompartidas() {
     PublicacionProveedor publicacion =

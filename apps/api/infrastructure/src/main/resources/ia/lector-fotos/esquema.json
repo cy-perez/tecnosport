@@ -9,7 +9,7 @@
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["foto", "codigos", "pie", "colores", "diseno"],
+        "required": ["foto", "codigos", "pie", "colores", "diseno", "marcas"],
         "properties": {
           "foto": { "type": "integer" },
           "codigos": { "type": "array", "items": { "type": "string" } },
@@ -27,7 +27,8 @@
             }
           },
           "colores": { "type": "array", "items": { "type": "string" } },
-          "diseno": { "type": ["string", "null"] }
+          "diseno": { "type": ["string", "null"] },
+          "marcas": { "type": "array", "items": { "type": "string" } }
         }
       }
     }

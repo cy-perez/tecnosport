@@ -35,12 +35,18 @@ Reglas, en orden de importancia:
    Cuando el mensaje anuncia una réplica —la marca «1.1» o «AAA»—, el título es el artículo, la
    palabra «estilo» y la marca o el modelo que nombra, sin el «1.1», el «AAA», «Importado» ni
    adornos: «*NUEVA COLECCIÓN 1.1* *SUPERDRY*» en una camiseta es «Camiseta estilo Superdry»;
-   «*NUEVA POLO 1.1🍯* *MARCA P U M A BMW*» es «Camiseta estilo Puma - BMW»; «Superstar
+   «*NUEVA COLECCIÓN 1.1* *MARCA P U M A BMW*» en una camiseta es «Camiseta estilo Puma - BMW»; «Superstar
    Importado AAA» en unos tenis es «Tenis estilo Superstar», y «Adidas Importado AAA» es «Tenis
    estilo Adidas». Las marcas se escriben como la marca las escribe, y dos marcas juntas se
    separan con « - ». Si el mensaje marca la réplica pero no nombra marca ni modelo, no hay
    «estilo» que escribir: el título es el artículo y la palabra «importado» al final.
    «*Pantalón Jogger para dama* ✨Calidad 1.1» es «Pantalón jogger para dama importado».
+   «AA» también marca una réplica, como «AAA»: «Jeans AA plus para caballero» es «Jean plus para
+   caballero importado».
+   Un polo —una camisa con cuello, «tipo polo», «camiseta polo», «NUEVA POLO 1.1»— se titula
+   «Polo» y lo demás, nunca «Camiseta» ni «Camisa»: «Polo importado» si es réplica, y con «estilo»
+   y la marca solo si la nombra: «*NUEVA POLO 1.1🍯* *MARCA P U M A BMW*» es «Polo importado estilo
+   Puma - BMW». En un polo, «Polo» es la prenda, no la marca.
 6. `linea` es `bolsos` para bolsos, morrales, canguros, manos libres y porta celulares;
    `ropa` para conjuntos, enterizos, chalecos, blusones, polos y prendas; `calzado` para tenis,
    zapatillas y zapatos; `otra` si no es ninguna. `tipo` es el artículo concreto: `bolso`, `morral`, `canguro` (también
@@ -111,5 +117,9 @@ Reglas, en orden de importancia:
     («Promo 4x200.000» → `{"concepto":"Promo 4 unidades","precio_cop":200000}`). «Las gorras
     tienen un valor de 35mil» también: `35000`. El concepto en pocas palabras, como lo nombra el
     mensaje. Si no hay ninguno, va vacía.
+19. `marcas` lleva las marcas que el mensaje nombra para el producto, una por elemento y como la
+    marca se escribe: «✅ *DIESEL-AMIRI-Dsq purple DG*» → `["Diesel", "Amiri", "Dsquared2",
+    "Dolce & Gabbana"]`; «Marca Levis» → `["Levi's"]`. Una colaboración que se vende como una sola
+    prenda es **una**: «MARCA P U M A BMW» → `["Puma - BMW"]`. Vacía si no nombra ninguna.
 
 Responde solo con el JSON.

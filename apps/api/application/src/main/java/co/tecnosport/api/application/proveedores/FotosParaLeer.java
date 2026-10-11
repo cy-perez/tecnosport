@@ -18,8 +18,18 @@ public record FotosParaLeer(
 
   /**
    * @param codigo la referencia escrita en el texto; nula si no trae
+   * @param marcas las que el texto nombra para el producto: el lector las escribe igual cuando las
+   *     lee en una foto, y así se sabe cuál foto es de cuál
    */
-  public record ProductoNombrado(String titulo, String codigo) {}
+  public record ProductoNombrado(String titulo, String codigo, List<String> marcas) {
+    public ProductoNombrado {
+      marcas = marcas == null ? List.of() : List.copyOf(marcas);
+    }
+
+    public ProductoNombrado(String titulo, String codigo) {
+      this(titulo, codigo, List.of());
+    }
+  }
 
   /**
    * @param posicion su lugar en la publicación, desde 0: la lectura la devuelve con este número
