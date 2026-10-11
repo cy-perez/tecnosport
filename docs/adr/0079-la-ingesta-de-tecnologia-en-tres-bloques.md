@@ -60,6 +60,19 @@ independientes, cada uno con su skill, que se entregan el trabajo por archivos.
    quien aprueba ya vio fotos, colores y precio. El servidor exige 4 fotos para
    aprobar un modelo nuevo, para que la compuerta no dependa solo de la skill.
 
+5. **Lo que un borrador no puede tener viejo** (lo encontró la revisión de
+   inventario antes de publicar esto). El inventario de cada lista **refresca el
+   borrador que ya está en revisión** —costo, configuraciones, colores— aunque no
+   proponga ninguno nuevo; **aprobar se niega si el borrador no es de la última
+   lista** que entró, y de cada configuración solo nace con existencia el color
+   que la lista dice tener. Sin eso, un borrador esperando fotos varios días se
+   aprobaba con el costo de cuando entró, y una configuración que el proveedor ya
+   no tenía nacía con existencia que nadie retiraba.
+6. **La huella de una lista no incluye el modo**, y sale del mismo texto que antes
+   de que existiera: con el modo dentro cambiaban todas las ya registradas, y el
+   día del despliegue la lista de ese día habría vuelto a entrar y repuesto lo
+   vendido.
+
 ## Consecuencias
 
 - El inventario de lo publicado ya no espera a nadie.
@@ -70,3 +83,11 @@ independientes, cada uno con su skill, que se entregan el trabajo por archivos.
   de mejor resolución.
 - El borrador de tecnología gana fotos propias, con el mismo patrón que el de
   prendas (`FotoSubida`), pero ya procesadas: el servidor no las retoca.
+- Las fotos de un borrador viven en el bucket privado del proveedor y **no se
+  borran al aprobar ni al rechazar**, igual que las que se suben a un borrador de
+  prendas: aprobar las copia al público, y el bucket privado crece con cada
+  tanda. Si eso llega a pesar, se decide una regla de ciclo de vida para
+  `proveedores/*/borradores-tecnologia/`.
+- Si algo falla después de copiar las fotos al bucket público —el guardado, el
+  commit—, esos archivos quedan sin producto: la transacción no los deshace. Lo
+  mismo que en la aprobación de prendas; los recoge `npm run huerfanos`.
