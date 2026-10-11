@@ -147,6 +147,12 @@ class AdminTecnologiaControladorTest {
         .perform(
             post("/api/v1/admin/proveedores/{id}/listas-tecnologia", tecnologia.id())
                 .contentType(MediaType.APPLICATION_JSON)
+                .content(INVENTARIO))
+        .andExpect(status().isOk());
+    mockMvc
+        .perform(
+            post("/api/v1/admin/proveedores/{id}/listas-tecnologia", tecnologia.id())
+                .contentType(MediaType.APPLICATION_JSON)
                 .content(LISTA))
         .andExpect(status().isOk());
     return borradores.porId.keySet().iterator().next();
@@ -154,6 +160,12 @@ class AdminTecnologiaControladorTest {
 
   @Test
   void importarLaListaDeLaSkillAbreElBorradorDelModelo() throws Exception {
+    mockMvc
+        .perform(
+            post("/api/v1/admin/proveedores/{id}/listas-tecnologia", tecnologia.id())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(INVENTARIO))
+        .andExpect(status().isOk());
     mockMvc
         .perform(
             post("/api/v1/admin/proveedores/{id}/listas-tecnologia", tecnologia.id())
@@ -188,6 +200,17 @@ class AdminTecnologiaControladorTest {
         .andExpect(jsonPath("$.modelosPorProponer[0]").value("samsung-galaxy-a17-5g"))
         .andExpect(jsonPath("$.configuracionesPorProponer").isEmpty());
     assertTrue(borradores.porId.isEmpty());
+  }
+
+  @Test
+  void losBorradoresAntesDelInventarioDeSuListaSon409() throws Exception {
+    mockMvc
+        .perform(
+            post("/api/v1/admin/proveedores/{id}/listas-tecnologia", tecnologia.id())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(LISTA))
+        .andExpect(status().isConflict())
+        .andExpect(jsonPath("$.codigo").value("INVENTARIO_DE_LA_LISTA_PENDIENTE"));
   }
 
   @Test
@@ -440,7 +463,14 @@ class AdminTecnologiaControladorTest {
   void unArchivoQueNoLlegoAlBucketEs404() throws Exception {
     UUID id = importarYTomarElBorrador();
     String mayor = subir(id, "image/avif");
-    String sinSubir = "proveedores/" + tecnologia.id() + "/borradores-tecnologia/" + id + "/n.avif";
+    String sinSubir =
+        "proveedores/"
+            + tecnologia.id()
+            + "/borradores-tecnologia/"
+            + id
+            + "/"
+            + UUID.randomUUID()
+            + ".avif";
 
     mockMvc
         .perform(
@@ -727,7 +757,7 @@ class AdminTecnologiaControladorTest {
 
     @Bean
     AprobarBorradorTecnologia aprobarBorradorTecnologia(
-        BorradoresDoble borradores, AlmacenDoble almacen) {
+        BorradoresDoble borradores, AlmacenDoble almacen, ListasDoble listas) {
       Reloj reloj = () -> Instant.parse("2026-10-08T15:00:00Z");
       RepositorioProductos productos = noUsado(RepositorioProductos.class);
       return new AprobarBorradorTecnologia(
@@ -735,6 +765,7 @@ class AdminTecnologiaControladorTest {
           noUsado(RepositorioVariantesDeProveedor.class),
           productos,
           new SinProductosDeProveedor(),
+          listas,
           noUsado(RepositorioMarcas.class),
           noUsado(RepositorioCategorias.class),
           noUsado(RepositorioAtributos.class),

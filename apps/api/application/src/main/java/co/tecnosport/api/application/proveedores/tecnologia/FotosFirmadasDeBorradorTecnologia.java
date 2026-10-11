@@ -29,9 +29,19 @@ public final class FotosFirmadasDeBorradorTecnologia {
   private FotoVista vista(FotoDeBorradorTecnologia foto) {
     FotoDeBorradorTecnologia.Variante mayor = foto.mayor();
     return new FotoVista(
-        foto.id(), almacen.urlDeLectura(mayor.referencia()).url(), mayor.ancho(), foto.alto());
+        foto.id(),
+        almacen.urlDeLectura(mayor.referencia()).url(),
+        mayor.ancho(),
+        foto.alto(),
+        foto.hash(),
+        foto.altEs(),
+        foto.altEn());
   }
 
-  /** Una foto del borrador, lista para mostrarse. */
-  public record FotoVista(UUID id, String url, int ancho, int alto) {}
+  /**
+   * Una foto del borrador, lista para mostrarse: con el texto alternativo que se publicará, para
+   * que quien aprueba lo vea, y el hash, para que la skill sepa si ya subió esas mismas fotos.
+   */
+  public record FotoVista(
+      UUID id, String url, int ancho, int alto, String hash, String altEs, String altEn) {}
 }

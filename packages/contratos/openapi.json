@@ -99,7 +99,7 @@
           },
           "variantes" : {
             "items" : {
-              "$ref" : "#/components/schemas/VariantePeticion"
+              "$ref" : "#/components/schemas/VarianteSubidaPeticion"
             },
             "type" : "array"
           }
@@ -556,6 +556,10 @@
             },
             "type" : "array"
           },
+          "fotosQueFaltan" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
           "id" : {
             "format" : "uuid",
             "type" : "string"
@@ -598,6 +602,7 @@
           "descripcion",
           "estado",
           "fotos",
+          "fotosQueFaltan",
           "id",
           "idModelo",
           "paleta",
@@ -1761,6 +1766,12 @@
       },
       "FotoDeBorradorTecnologiaRespuesta" : {
         "properties" : {
+          "altEn" : {
+            "type" : "string"
+          },
+          "altEs" : {
+            "type" : "string"
+          },
           "alto" : {
             "format" : "int32",
             "type" : "integer"
@@ -1768,6 +1779,9 @@
           "ancho" : {
             "format" : "int32",
             "type" : "integer"
+          },
+          "hash" : {
+            "type" : "string"
           },
           "id" : {
             "format" : "uuid",
@@ -1778,8 +1792,11 @@
           }
         },
         "required" : [
+          "altEn",
+          "altEs",
           "alto",
           "ancho",
+          "hash",
           "id",
           "url"
         ],
@@ -4338,22 +4355,6 @@
             "type" : "string"
           }
         },
-        "type" : "object"
-      },
-      "VariantePeticion" : {
-        "properties" : {
-          "ancho" : {
-            "format" : "int32",
-            "type" : "integer"
-          },
-          "objectKey" : {
-            "type" : "string"
-          }
-        },
-        "required" : [
-          "ancho",
-          "objectKey"
-        ],
         "type" : "object"
       },
       "VarianteRespuesta" : {

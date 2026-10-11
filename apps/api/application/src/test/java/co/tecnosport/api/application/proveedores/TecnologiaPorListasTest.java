@@ -20,6 +20,7 @@ import co.tecnosport.api.application.proveedores.tecnologia.EditarBorradorTecnol
 import co.tecnosport.api.application.proveedores.tecnologia.ImportarListaDeTecnologia;
 import co.tecnosport.api.application.proveedores.tecnologia.ImportarListaDeTecnologiaComando;
 import co.tecnosport.api.application.proveedores.tecnologia.ImportarListaDeTecnologiaComando.Modo;
+import co.tecnosport.api.application.proveedores.tecnologia.InventarioDeLaListaPendienteException;
 import co.tecnosport.api.application.proveedores.tecnologia.ListaDeTecnologiaDesactualizadaException;
 import co.tecnosport.api.application.proveedores.tecnologia.ListaDeTecnologiaYaImportadaException;
 import co.tecnosport.api.application.proveedores.tecnologia.ProveedorSinListasException;
@@ -165,6 +166,20 @@ class TecnologiaPorListasTest {
         proveedor.id(), fecha, Modo.BORRADORES, delA17(configuraciones), List.of(), List.of());
   }
 
+  /**
+   * Los borradores de una lista van después de su inventario (ADR-0079): importa el inventario de
+   * esa misma lista si todavía no entró, y después los borradores.
+   */
+  private ImportarListaDeTecnologia.Resultado proponer(
+      LocalDate fecha, List<ConfiguracionTecnologia> configuraciones) {
+    ImportarListaDeTecnologiaComando inventarioDeLaLista =
+        lista(fecha, configuraciones, List.of(), List.of());
+    if (!listas.yaEntro(proveedor.id(), inventarioDeLaLista.huella())) {
+      importar(inventarioDeLaLista);
+    }
+    return importar(deBorradores(fecha, configuraciones));
+  }
+
   private static List<ImportarListaDeTecnologiaComando.Modelo> delA17(
       List<ConfiguracionTecnologia> configuraciones) {
     return configuraciones.isEmpty()
@@ -192,6 +207,7 @@ class TecnologiaPorListasTest {
             vinculos,
             productos,
             productosDeProveedor,
+            listas,
             new RepositorioMarcasFijo(),
             new RepositorioCategoriasFijo(),
             atributos,
@@ -242,9 +258,7 @@ class TecnologiaPorListasTest {
 
   /** Importa el A17 con la de una SIM y la dual, y aprueba la de una SIM en negro y gris. */
   private Producto unA17QueYaSeVende() {
-    importar(
-        deBorradores(
-            LUNES, List.of(config(UNA_SIM, 675_000, "1 SIM"), config(DUAL, 690_000, "Dual SIM"))));
+    proponer(LUNES, List.of(config(UNA_SIM, 675_000, "1 SIM"), config(DUAL, 690_000, "Dual SIM")));
     BorradorTecnologia borrador = enRevision();
     new EditarBorradorTecnologia(borradores)
         .ejecutar(
@@ -271,10 +285,8 @@ class TecnologiaPorListasTest {
   @Test
   void unModeloQueNoSeVendeEntraComoBorradorConSusConfiguraciones() {
     ImportarListaDeTecnologia.Resultado resultado =
-        importar(
-            deBorradores(
-                LUNES,
-                List.of(config(UNA_SIM, 675_000, "1 SIM"), config(DUAL, 690_000, "Dual SIM"))));
+        proponer(
+            LUNES, List.of(config(UNA_SIM, 675_000, "1 SIM"), config(DUAL, 690_000, "Dual SIM")));
 
     assertEquals(1, resultado.borradoresNuevos());
     BorradorTecnologia borrador = enRevision();
@@ -287,9 +299,9 @@ class TecnologiaPorListasTest {
 
   @Test
   void otraListaActualizaElMismoBorradorYNoAbreOtro() {
-    importar(deBorradores(LUNES, List.of(config(UNA_SIM, 675_000, "1 SIM"))));
+    proponer(LUNES, List.of(config(UNA_SIM, 675_000, "1 SIM")));
     ImportarListaDeTecnologia.Resultado resultado =
-        importar(deBorradores(JUEVES, List.of(config(UNA_SIM, 660_000, "1 SIM"))));
+        proponer(JUEVES, List.of(config(UNA_SIM, 660_000, "1 SIM")));
 
     assertEquals(1, resultado.borradoresActualizados());
     assertEquals(1, borradores.porId.size());
@@ -323,11 +335,11 @@ class TecnologiaPorListasTest {
 
   @Test
   void unModeloRechazadoNoSeVuelveAProponer() {
-    importar(deBorradores(LUNES, List.of(config(UNA_SIM, 675_000, "1 SIM"))));
+    proponer(LUNES, List.of(config(UNA_SIM, 675_000, "1 SIM")));
     new RechazarBorradorTecnologia(borradores).ejecutar(enRevision().id(), "No vendemos esta gama");
 
     ImportarListaDeTecnologia.Resultado resultado =
-        importar(deBorradores(JUEVES, List.of(config(UNA_SIM, 660_000, "1 SIM"))));
+        proponer(JUEVES, List.of(config(UNA_SIM, 660_000, "1 SIM")));
 
     assertEquals(0, resultado.borradoresNuevos());
     assertEquals(List.of("Samsung Galaxy A17 5G"), resultado.modelosYaDecididos());
@@ -375,6 +387,7 @@ class TecnologiaPorListasTest {
   void losBorradoresNoTocanCostoNiExistencia() {
     Producto producto = unA17QueYaSeVende();
     Variante negra = producto.variantes().getFirst();
+    importar(lista(JUEVES, List.of(config(UNA_SIM, 660_000, "1 SIM")), List.of(), List.of()));
     Inventario libro = inventario.porVariante.get(negra.id());
     libro.reservar(2, null, AHORA); // se vendieron las dos
     inventario.guardar(libro);
@@ -385,7 +398,71 @@ class TecnologiaPorListasTest {
     assertEquals(0, resultado.productosRenovados());
     assertEquals(0, resultado.variantesRepuestas());
     assertEquals(0, disponible(negra.id()), "lo vendido no se repone");
-    assertEquals(Dinero.deCop(675_000), vinculos.porVariante.get(negra.id()).costo());
+    assertEquals(Dinero.deCop(660_000), vinculos.porVariante.get(negra.id()).costo());
+  }
+
+  @Test
+  void losBorradoresDeUnaListaCuyoInventarioNoEntroNoEntran() {
+    assertThrows(
+        InventarioDeLaListaPendienteException.class,
+        () -> importar(deBorradores(LUNES, List.of(config(UNA_SIM, 675_000, "1 SIM")))));
+
+    importar(lista(LUNES, List.of(config(UNA_SIM, 675_000, "1 SIM")), List.of(), List.of()));
+    importar(lista(JUEVES, List.of(), List.of(), List.of()));
+    assertThrows(
+        ListaDeTecnologiaDesactualizadaException.class,
+        () -> importar(deBorradores(LUNES, List.of(config(UNA_SIM, 675_000, "1 SIM")))),
+        "ya entró una más nueva");
+    assertTrue(borradores.porId.isEmpty());
+  }
+
+  @Test
+  void elInventarioRefrescaElBorradorQueYaEstaEnRevision() {
+    proponer(LUNES, List.of(config(UNA_SIM, 675_000, "1 SIM"), config(DUAL, 690_000, "Dual SIM")));
+
+    ImportarListaDeTecnologia.Resultado resultado =
+        importar(lista(JUEVES, List.of(config(UNA_SIM, 660_000, "1 SIM")), List.of(), List.of()));
+
+    assertEquals(1, resultado.borradoresActualizados());
+    assertEquals(0, resultado.borradoresNuevos(), "refrescar no es proponer");
+    BorradorTecnologia borrador = enRevision();
+    assertEquals(
+        List.of(UNA_SIM),
+        borrador.configuraciones().stream().map(ConfiguracionTecnologia::sku).toList(),
+        "la dual ya no vino: sale del borrador");
+    assertEquals(Dinero.deCop(660_000), borrador.configuraciones().getFirst().costoProveedor());
+  }
+
+  @Test
+  void laHuellaNoDependeDelModoYEsLaDeAntes() {
+    ImportarListaDeTecnologiaComando inventario =
+        lista(LUNES, List.of(config(UNA_SIM, 675_000, "1 SIM")), List.of(), List.of());
+    ImportarListaDeTecnologiaComando borradoresDeLaMisma =
+        deBorradores(LUNES, List.of(config(UNA_SIM, 675_000, "1 SIM")));
+    assertEquals(inventario.huella(), borradoresDeLaMisma.huella());
+
+    // El texto con que se calculaban las huellas ya registradas, antes de que existiera el modo:
+    // si cambia, la lista del día del despliegue vuelve a entrar y repone lo vendido.
+    String deAntes =
+        "ImportarListaDeTecnologiaComando[proveedorId="
+            + proveedor.id()
+            + ", fechaLista="
+            + LUNES
+            + ", modelos="
+            + inventario.modelos()
+            + ", configuracionesDesaparecidas=[], modelosDesaparecidos=[]]";
+    assertEquals(sha256(deAntes), inventario.huella());
+  }
+
+  private static String sha256(String texto) {
+    try {
+      return java.util.HexFormat.of()
+          .formatHex(
+              java.security.MessageDigest.getInstance("SHA-256")
+                  .digest(texto.getBytes(java.nio.charset.StandardCharsets.UTF_8)));
+    } catch (java.security.NoSuchAlgorithmException e) {
+      throw new IllegalStateException(e);
+    }
   }
 
   @Test
@@ -444,8 +521,40 @@ class TecnologiaPorListasTest {
   }
 
   @Test
+  void unBorradorQueNoVinoEnLaUltimaListaNoSeAprueba() {
+    proponer(LUNES, List.of(config(UNA_SIM, 675_000, "1 SIM")));
+    BorradorTecnologia borrador = enRevision();
+    new EditarBorradorTecnologia(borradores)
+        .ejecutar(
+            borrador.id(), List.of(new Eleccion(UNA_SIM, List.of("Negro"), Dinero.deCop(849_900))));
+    conCuatroFotos(enRevision());
+    // El jueves el modelo ya no vino: el inventario no tiene con qué refrescar su borrador.
+    importar(lista(JUEVES, List.of(), List.of(), List.of()));
+
+    ExcepcionDeDominio error = assertThrows(ExcepcionDeDominio.class, () -> aprobar(borrador.id()));
+    assertTrue(error.getMessage().contains("no vino en ella"), error.getMessage());
+    assertTrue(productos.porId.isEmpty());
+  }
+
+  @Test
+  void alAprobarSoloTieneExistenciaElColorQueLaListaTrae() {
+    proponer(LUNES, List.of(conColores(UNA_SIM, 675_000, "1 SIM", "Negro")));
+    BorradorTecnologia borrador = enRevision();
+    new EditarBorradorTecnologia(borradores)
+        .ejecutar(
+            borrador.id(),
+            List.of(new Eleccion(UNA_SIM, List.of("Negro", "Gris"), Dinero.deCop(849_900))));
+    conCuatroFotos(enRevision());
+
+    Producto producto = aprobar(borrador.id());
+
+    assertEquals(EXISTENCIA, disponible(variante(producto, "Negro").id()));
+    assertEquals(0, disponible(variante(producto, "Gris").id()), "la lista no dice gris");
+  }
+
+  @Test
   void unModeloNuevoSinSusCuatroFotosNoSeAprueba() {
-    importar(deBorradores(LUNES, List.of(config(UNA_SIM, 675_000, "1 SIM"))));
+    proponer(LUNES, List.of(config(UNA_SIM, 675_000, "1 SIM")));
     BorradorTecnologia borrador = enRevision();
     new EditarBorradorTecnologia(borradores)
         .ejecutar(
@@ -458,7 +567,7 @@ class TecnologiaPorListasTest {
 
   @Test
   void siUnArchivoFaltaSeBorraLoQueYaSeSubioAlPublico() {
-    importar(deBorradores(LUNES, List.of(config(UNA_SIM, 675_000, "1 SIM"))));
+    proponer(LUNES, List.of(config(UNA_SIM, 675_000, "1 SIM")));
     BorradorTecnologia borrador = enRevision();
     new EditarBorradorTecnologia(borradores)
         .ejecutar(
@@ -505,9 +614,7 @@ class TecnologiaPorListasTest {
     Producto producto = unA17QueYaSeVende();
     String nueva = "a17-128-1-sim";
 
-    importar(
-        deBorradores(
-            JUEVES, List.of(config(UNA_SIM, 660_000, "1 SIM"), config(nueva, 600_000, "1 SIM"))));
+    proponer(JUEVES, List.of(config(UNA_SIM, 660_000, "1 SIM"), config(nueva, 600_000, "1 SIM")));
 
     BorradorTecnologia borrador = enRevision();
     assertEquals(producto.id(), borrador.productoId().orElseThrow());

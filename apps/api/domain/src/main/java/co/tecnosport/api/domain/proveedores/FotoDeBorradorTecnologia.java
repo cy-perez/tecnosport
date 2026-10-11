@@ -1,6 +1,7 @@
 package co.tecnosport.api.domain.proveedores;
 
 import co.tecnosport.api.domain.compartido.ExcepcionDeDominio;
+import co.tecnosport.api.domain.compartido.HashContenido;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -21,8 +22,8 @@ import java.util.UUID;
  * @param variantes un objeto por ancho, en el bucket privado del proveedor
  * @param referenciaVistaPrevia el JPEG que se ve cuando un enlace se comparte; nulo si no hay
  * @param alto el alto de la variante mayor
- * @param hash el SHA-256 de la variante mayor, que calculó quien la subió: dos fotos con el mismo
- *     no entran al mismo borrador
+ * @param hash el SHA-256 de la variante mayor, que calculó quien la subió, en minúsculas: dos fotos
+ *     con el mismo no entran al mismo borrador
  */
 public record FotoDeBorradorTecnologia(
     UUID id,
@@ -54,9 +55,9 @@ public record FotoDeBorradorTecnologia(
     if (alto <= 0) {
       throw new ExcepcionDeDominio("El alto de la foto tiene que ser positivo.");
     }
-    if (hash == null || hash.isBlank()) {
-      throw new ExcepcionDeDominio("La foto dice el hash de su contenido.");
-    }
+    // Normalizado aquí y no en quien llama: la regla de que dos fotos con el mismo contenido no
+    // entran compara cadenas, y el mismo hash en mayúsculas pasaría por otra foto.
+    hash = new HashContenido(hash).valor();
     if (altEs == null || altEs.isBlank() || altEn == null || altEn.isBlank()) {
       throw new ExcepcionDeDominio("La foto trae su texto alternativo en español y en inglés.");
     }

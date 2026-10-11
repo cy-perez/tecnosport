@@ -71,14 +71,30 @@ public record ImportarListaDeTecnologiaComando(
 
   /**
    * Lo que identifica el contenido de la lista: el SHA-256 de todo lo que trae. Dos envíos del
-   * mismo archivo dan la misma; una lista corregida el mismo día, otra. Sale de los {@code
-   * toString} de los records, que son deterministas: cambian si cambia la forma del comando, y
-   * entonces una lista vieja se puede volver a importar una vez, que es el lado seguro.
+   * mismo archivo dan la misma; una lista corregida el mismo día, otra.
+   *
+   * <p><b>Sin el modo, y con el texto exacto de antes de que existiera</b> (ADR-0079). La huella
+   * salía del {@code toString} del record, y agregarle {@code modo} cambiaba todas: el día del
+   * despliegue, la lista de ese día habría vuelto a entrar y repuesto lo vendido desde la primera
+   * vez. Reponer no es nunca «el lado seguro». Si algún día cambia la forma de las configuraciones,
+   * las listas ya registradas tienen que seguir coincidiendo.
    */
   public String huella() {
+    String contenido =
+        "ImportarListaDeTecnologiaComando[proveedorId="
+            + proveedorId
+            + ", fechaLista="
+            + fechaLista
+            + ", modelos="
+            + modelos
+            + ", configuracionesDesaparecidas="
+            + configuracionesDesaparecidas
+            + ", modelosDesaparecidos="
+            + modelosDesaparecidos
+            + "]";
     try {
       MessageDigest digest = MessageDigest.getInstance("SHA-256");
-      return HexFormat.of().formatHex(digest.digest(toString().getBytes(StandardCharsets.UTF_8)));
+      return HexFormat.of().formatHex(digest.digest(contenido.getBytes(StandardCharsets.UTF_8)));
     } catch (NoSuchAlgorithmException e) {
       throw new IllegalStateException("La JVM no ofrece SHA-256.", e);
     }

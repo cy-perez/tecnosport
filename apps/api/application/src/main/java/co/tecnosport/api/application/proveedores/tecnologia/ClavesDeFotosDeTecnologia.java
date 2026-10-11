@@ -4,6 +4,7 @@ import co.tecnosport.api.domain.compartido.GeneradorIdentificador;
 import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
+import java.util.regex.Pattern;
 
 /**
  * Dónde viven las fotos de un borrador de tecnología en el bucket privado del proveedor, y qué
@@ -25,6 +26,10 @@ final class ClavesDeFotosDeTecnologia {
           "image/png", "png",
           "image/webp", "webp");
 
+  private static final Pattern NOMBRE =
+      Pattern.compile(
+          "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\\.(avif|jpg|png|webp)");
+
   private ClavesDeFotosDeTecnologia() {}
 
   static String nueva(UUID proveedorId, UUID borradorId, String contentType) {
@@ -38,11 +43,17 @@ final class ClavesDeFotosDeTecnologia {
     return prefijo(proveedorId, borradorId) + GeneradorIdentificador.nuevo() + "." + extension;
   }
 
+  /**
+   * Exactamente la forma que arma {@link #nueva}: el prefijo del borrador, un UUID y una extensión
+   * admitida. No basta con el prefijo: la clave la manda el cliente, y una con un salto de línea se
+   * partiría al releerla de la base —los anchos se guardan uno por línea— en otra clave que no pasó
+   * por esta guarda.
+   */
   static boolean esDelBorrador(UUID proveedorId, UUID borradorId, String objectKey) {
-    return objectKey != null
-        && objectKey.startsWith(prefijo(proveedorId, borradorId))
-        && !objectKey.contains("..")
-        && EXTENSIONES.values().stream().anyMatch(e -> objectKey.endsWith("." + e));
+    if (objectKey == null || !objectKey.startsWith(prefijo(proveedorId, borradorId))) {
+      return false;
+    }
+    return NOMBRE.matcher(objectKey.substring(prefijo(proveedorId, borradorId).length())).matches();
   }
 
   /** El tipo de contenido que corresponde a la extensión de una clave ya validada. */

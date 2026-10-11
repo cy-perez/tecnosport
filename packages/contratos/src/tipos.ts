@@ -2171,7 +2171,7 @@ export interface components {
             alto: number;
             hash: string;
             objectKeyVistaPrevia?: string;
-            variantes: components["schemas"]["VariantePeticion"][];
+            variantes: components["schemas"]["VarianteSubidaPeticion"][];
         };
         AgregarImagenDeGaleriaPeticion: {
             altEn?: string;
@@ -2331,6 +2331,8 @@ export interface components {
             descripcion: string;
             estado: string;
             fotos: components["schemas"]["FotoDeBorradorTecnologiaRespuesta"][];
+            /** Format: int32 */
+            fotosQueFaltan: number;
             /** Format: uuid */
             id: string;
             idModelo: string;
@@ -2739,10 +2741,13 @@ export interface components {
             tono?: string;
         };
         FotoDeBorradorTecnologiaRespuesta: {
+            altEn: string;
+            altEs: string;
             /** Format: int32 */
             alto: number;
             /** Format: int32 */
             ancho: number;
+            hash: string;
             /** Format: uuid */
             id: string;
             url: string;
@@ -3655,11 +3660,6 @@ export interface components {
             sku?: string;
             /** Format: uuid */
             varianteId?: string;
-        };
-        VariantePeticion: {
-            /** Format: int32 */
-            ancho: number;
-            objectKey: string;
         };
         VarianteRespuesta: {
             atributos?: components["schemas"]["AtributoValorRespuesta"][];

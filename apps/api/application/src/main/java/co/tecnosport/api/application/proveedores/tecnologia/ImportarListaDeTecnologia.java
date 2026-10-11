@@ -120,13 +120,17 @@ public final class ImportarListaDeTecnologia {
     // las dos. Las dos cosas mueven inventario sin que el proveedor haya dicho nada nuevo.
     //
     // Los borradores no mueven inventario, así que la misma lista puede proponerlos dos veces —es
-    // justo lo que pasa cuando las fotos de un modelo llegan después que las de otro—. Pero no los
-    // de una lista vieja: le pondrían a un borrador el costo de antes de la última.
+    // justo lo que pasa cuando las fotos de un modelo llegan después que las de otro—. Pero solo
+    // los de la lista cuyo inventario ya entró: los de una vieja le pondrían a un borrador el costo
+    // de antes, y los de una que no entró, un costo que el inventario nunca aplicó.
     boolean inventario = comando.modo() == ImportarListaDeTecnologiaComando.Modo.INVENTARIO;
     String huellaDeLista = comando.huella();
     var ultima = listas.fechaDeLaUltima(proveedor.id());
     if (ultima.isPresent() && comando.fechaLista().isBefore(ultima.get())) {
       throw new ListaDeTecnologiaDesactualizadaException(comando.fechaLista(), ultima.get());
+    }
+    if (!inventario && (ultima.isEmpty() || !ultima.get().equals(comando.fechaLista()))) {
+      throw new InventarioDeLaListaPendienteException(comando.fechaLista());
     }
     if (inventario && listas.yaEntro(proveedor.id(), huellaDeLista)) {
       throw new ListaDeTecnologiaYaImportadaException(comando.fechaLista());
@@ -208,6 +212,10 @@ public final class ImportarListaDeTecnologia {
         } else {
           porProponer.forEach(c -> cuenta.configuracionesPorProponer.add(c.sku()));
         }
+        // El inventario no propone, pero sí refresca el borrador que ya está en revisión: si no, se
+        // aprobaría con el costo, las configuraciones y los colores de la lista en que entró, y una
+        // configuración que el proveedor ya no tiene nacería con existencia (ADR-0079).
+        refrescar(proveedor, entrada, porProponer, visto, cuenta);
         continue;
       }
       proponer(proveedor, entrada, porProponer, producto.map(Producto::id), visto, ahora, cuenta);
@@ -291,6 +299,22 @@ public final class ImportarListaDeTecnologia {
             visto,
             ahora));
     cuenta.borradoresNuevos++;
+  }
+
+  private void refrescar(
+      Proveedor proveedor,
+      ImportarListaDeTecnologiaComando.Modelo entrada,
+      List<ConfiguracionTecnologia> configuraciones,
+      Instant visto,
+      Contador cuenta) {
+    repositorioBorradores
+        .buscarEnRevisionParaActualizar(proveedor.id(), entrada.modelo().idModelo())
+        .ifPresent(
+            borrador -> {
+              borrador.actualizarConLista(entrada.modelo(), configuraciones, visto);
+              repositorioBorradores.actualizar(borrador);
+              cuenta.borradoresActualizados++;
+            });
   }
 
   private Set<String> descartados(UUID proveedorId, String idModelo) {

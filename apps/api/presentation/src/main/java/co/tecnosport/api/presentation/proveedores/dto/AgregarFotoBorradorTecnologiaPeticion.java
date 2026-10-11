@@ -1,6 +1,7 @@
 package co.tecnosport.api.presentation.proveedores.dto;
 
 import co.tecnosport.api.application.proveedores.tecnologia.AgregarFotoABorradorTecnologiaComando;
+import co.tecnosport.api.presentation.catalogo.dto.VarianteSubidaPeticion;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
 import java.util.Objects;
@@ -11,7 +12,7 @@ import java.util.UUID;
  * tools/subida-de-imagenes.mjs}: el mismo cuerpo que la confirmación de una imagen de galería.
  */
 public record AgregarFotoBorradorTecnologiaPeticion(
-    @Schema(requiredMode = Schema.RequiredMode.REQUIRED) List<VariantePeticion> variantes,
+    @Schema(requiredMode = Schema.RequiredMode.REQUIRED) List<VarianteSubidaPeticion> variantes,
     String objectKeyVistaPrevia,
     @Schema(requiredMode = Schema.RequiredMode.REQUIRED) Integer alto,
     @Schema(requiredMode = Schema.RequiredMode.REQUIRED) String hash,
@@ -37,15 +38,5 @@ public record AgregarFotoBorradorTecnologiaPeticion(
         hash,
         altEs,
         altEn);
-  }
-
-  public record VariantePeticion(
-      @Schema(requiredMode = Schema.RequiredMode.REQUIRED) Integer ancho,
-      @Schema(requiredMode = Schema.RequiredMode.REQUIRED) String objectKey) {
-
-    public VariantePeticion {
-      Objects.requireNonNull(ancho, "Cada ancho dice cuánto mide.");
-      Objects.requireNonNull(objectKey, "Cada ancho dice a qué clave se subió.");
-    }
   }
 }

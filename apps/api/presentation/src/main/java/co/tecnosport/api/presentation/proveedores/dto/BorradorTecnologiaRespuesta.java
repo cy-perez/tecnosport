@@ -15,6 +15,7 @@ import java.util.UUID;
  * @param productoId el producto que ya vende este modelo, si el borrador es de configuraciones
  *     nuevas de uno existente; o el que nació al aprobarlo
  * @param cantidadDeFotos cuántas fotos tiene, también en la bandeja
+ * @param fotosQueFaltan cuántas le faltan para aprobarse; cero en uno de configuraciones nuevas
  * @param fotos las fotos con su URL firmada, en el orden en que se publican; vacía en la bandeja,
  *     que no las firma (ADR-0079)
  */
@@ -35,6 +36,7 @@ public record BorradorTecnologiaRespuesta(
     @Schema(requiredMode = Schema.RequiredMode.REQUIRED) Instant vistoEn,
     @Schema(requiredMode = Schema.RequiredMode.REQUIRED) Instant creadoEn,
     @Schema(requiredMode = Schema.RequiredMode.REQUIRED) int cantidadDeFotos,
+    @Schema(requiredMode = Schema.RequiredMode.REQUIRED) int fotosQueFaltan,
     @Schema(requiredMode = Schema.RequiredMode.REQUIRED)
         List<FotoDeBorradorTecnologiaRespuesta> fotos) {
 
@@ -61,6 +63,7 @@ public record BorradorTecnologiaRespuesta(
         b.vistoEn(),
         b.creadoEn(),
         b.fotos().size(),
+        b.fotosQueFaltan(),
         fotos.stream().map(FotoDeBorradorTecnologiaRespuesta::de).toList());
   }
 
@@ -69,10 +72,14 @@ public record BorradorTecnologiaRespuesta(
       @Schema(requiredMode = Schema.RequiredMode.REQUIRED) UUID id,
       @Schema(requiredMode = Schema.RequiredMode.REQUIRED) String url,
       @Schema(requiredMode = Schema.RequiredMode.REQUIRED) int ancho,
-      @Schema(requiredMode = Schema.RequiredMode.REQUIRED) int alto) {
+      @Schema(requiredMode = Schema.RequiredMode.REQUIRED) int alto,
+      @Schema(requiredMode = Schema.RequiredMode.REQUIRED) String hash,
+      @Schema(requiredMode = Schema.RequiredMode.REQUIRED) String altEs,
+      @Schema(requiredMode = Schema.RequiredMode.REQUIRED) String altEn) {
 
     static FotoDeBorradorTecnologiaRespuesta de(FotosFirmadasDeBorradorTecnologia.FotoVista f) {
-      return new FotoDeBorradorTecnologiaRespuesta(f.id(), f.url(), f.ancho(), f.alto());
+      return new FotoDeBorradorTecnologiaRespuesta(
+          f.id(), f.url(), f.ancho(), f.alto(), f.hash(), f.altEs(), f.altEn());
     }
   }
 

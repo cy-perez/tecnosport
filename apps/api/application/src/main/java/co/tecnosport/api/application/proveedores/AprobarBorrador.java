@@ -5,6 +5,8 @@ import co.tecnosport.api.application.catalogo.AgregarVarianteComando;
 import co.tecnosport.api.application.catalogo.AlmacenDeImagenes;
 import co.tecnosport.api.application.catalogo.CategoriaNoEncontradaException;
 import co.tecnosport.api.application.catalogo.CategoriaNoEsHojaException;
+import co.tecnosport.api.application.catalogo.ClavesDeGaleria;
+import co.tecnosport.api.application.catalogo.ClavesDePrincipal;
 import co.tecnosport.api.application.catalogo.MarcaNoEncontradaException;
 import co.tecnosport.api.application.catalogo.RepositorioAtributos;
 import co.tecnosport.api.application.catalogo.RepositorioCategorias;
@@ -23,7 +25,6 @@ import co.tecnosport.api.domain.catalogo.TipoAtributo;
 import co.tecnosport.api.domain.catalogo.TipoImagen;
 import co.tecnosport.api.domain.catalogo.VarianteDeImagen;
 import co.tecnosport.api.domain.compartido.Dinero;
-import co.tecnosport.api.domain.compartido.GeneradorIdentificador;
 import co.tecnosport.api.domain.compartido.HashContenido;
 import co.tecnosport.api.domain.compartido.Slug;
 import co.tecnosport.api.domain.proveedores.BorradorProducto;
@@ -567,13 +568,9 @@ public final class AprobarBorrador {
           case "image/avif" -> "avif";
           default -> "jpg";
         };
-    return "productos/"
-        + productoId
-        + "/"
-        + (principal ? "principal-" : "galeria-")
-        + GeneradorIdentificador.nuevo()
-        + "."
-        + extension;
+    return principal
+        ? ClavesDePrincipal.nueva(productoId, extension)
+        : ClavesDeGaleria.nueva(productoId, extension);
   }
 
   private static String contentTypeDe(String referencia) {

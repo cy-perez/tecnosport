@@ -131,6 +131,17 @@ class FotosDeBorradorTecnologiaTest {
   }
 
   @Test
+  void unaClaveConUnSaltoDeLineaNoEntra() {
+    // Los anchos se guardan uno por línea: una clave así se partiría en otra al releerla.
+    String valida = subido("image/avif");
+    String conSalto = valida.replace(".avif", ".avif\n1200;1;proveedores/otro/x.avif");
+    almacen.guardar(conSalto, "image/avif", new byte[10]);
+
+    assertThrows(
+        IllegalArgumentException.class, () -> agregar().ejecutar(foto("a", conSalto, null)));
+  }
+
+  @Test
   void unArchivoQueNoLlegoNoEntra() {
     String clave = subido("image/avif");
     almacen.borrar(clave);

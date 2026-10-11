@@ -5,6 +5,8 @@ import co.tecnosport.api.application.catalogo.AgregarVarianteComando;
 import co.tecnosport.api.application.catalogo.AlmacenDeImagenes;
 import co.tecnosport.api.application.catalogo.CategoriaNoEncontradaException;
 import co.tecnosport.api.application.catalogo.CategoriaNoEsHojaException;
+import co.tecnosport.api.application.catalogo.ClavesDeGaleria;
+import co.tecnosport.api.application.catalogo.ClavesDePrincipal;
 import co.tecnosport.api.application.catalogo.MarcaNoEncontradaException;
 import co.tecnosport.api.application.catalogo.ObjetoDeImagenNoEncontradoException;
 import co.tecnosport.api.application.catalogo.ProductoNoEncontradoPorIdException;
@@ -28,9 +30,9 @@ import co.tecnosport.api.domain.catalogo.TipoAtributo;
 import co.tecnosport.api.domain.catalogo.TipoImagen;
 import co.tecnosport.api.domain.catalogo.VarianteDeImagen;
 import co.tecnosport.api.domain.compartido.ExcepcionDeDominio;
-import co.tecnosport.api.domain.compartido.GeneradorIdentificador;
 import co.tecnosport.api.domain.compartido.HashContenido;
 import co.tecnosport.api.domain.compartido.Slug;
+import co.tecnosport.api.domain.compartido.ZonaDelNegocio;
 import co.tecnosport.api.domain.proveedores.BorradorTecnologia;
 import co.tecnosport.api.domain.proveedores.ConfiguracionTecnologia;
 import co.tecnosport.api.domain.proveedores.EstadoBorrador;
@@ -38,6 +40,7 @@ import co.tecnosport.api.domain.proveedores.FotoDeBorradorTecnologia;
 import co.tecnosport.api.domain.proveedores.VarianteDeProveedor;
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -56,8 +59,16 @@ import java.util.UUID;
  * variantes salen por {@link AgregarVariante}, para que el SKU, los atributos y el libro de
  * inventario sigan las mismas reglas que en el panel.
  *
- * <p>Si algo falla después de subir una foto al bucket público, se borra lo subido: la transacción
- * deshace las filas, pero no los archivos.
+ * <p><b>Solo se aprueba un borrador de la última lista que entró.</b> El inventario de cada lista
+ * refresca el borrador en revisión —costo, configuraciones, colores—; uno que se quedó en una lista
+ * vieja es de un modelo o una configuración que ya no vino, y aprobarlo daría existencia a algo que
+ * el proveedor no tiene, con un costo que ya no es el de hoy. Y de cada configuración solo nace con
+ * existencia el color que la lista dice tener, igual que en la reposición.
+ *
+ * <p>Si la copia de las fotos falla a mitad, se borra lo que ya se subió al bucket público. Lo que
+ * falle después —el guardado, el commit— deja esos archivos sin producto: la transacción deshace
+ * las filas, no los archivos. Es el mismo precio que paga la aprobación de prendas, y los recoge
+ * {@code npm run huerfanos}.
  *
  * <p>Quien llama abre la transacción.
  */
@@ -72,6 +83,7 @@ public final class AprobarBorradorTecnologia {
   private final RepositorioVariantesDeProveedor variantesDeProveedor;
   private final RepositorioProductos repositorioProductos;
   private final RepositorioProductosDeProveedor productosDeProveedor;
+  private final RepositorioListasDeTecnologia listas;
   private final RepositorioMarcas repositorioMarcas;
   private final RepositorioCategorias repositorioCategorias;
   private final RepositorioAtributos repositorioAtributos;
@@ -85,6 +97,7 @@ public final class AprobarBorradorTecnologia {
       RepositorioVariantesDeProveedor variantesDeProveedor,
       RepositorioProductos repositorioProductos,
       RepositorioProductosDeProveedor productosDeProveedor,
+      RepositorioListasDeTecnologia listas,
       RepositorioMarcas repositorioMarcas,
       RepositorioCategorias repositorioCategorias,
       RepositorioAtributos repositorioAtributos,
@@ -96,6 +109,7 @@ public final class AprobarBorradorTecnologia {
     this.variantesDeProveedor = Objects.requireNonNull(variantesDeProveedor);
     this.repositorioProductos = Objects.requireNonNull(repositorioProductos);
     this.productosDeProveedor = Objects.requireNonNull(productosDeProveedor);
+    this.listas = Objects.requireNonNull(listas);
     this.repositorioMarcas = Objects.requireNonNull(repositorioMarcas);
     this.repositorioCategorias = Objects.requireNonNull(repositorioCategorias);
     this.repositorioAtributos = Objects.requireNonNull(repositorioAtributos);
@@ -123,6 +137,21 @@ public final class AprobarBorradorTecnologia {
     }
     // Antes de tocar el catálogo: lo que impide aprobar se sabe sin crear nada.
     borrador.exigirAprobable();
+    LocalDate deLaLista = LocalDate.ofInstant(borrador.vistoEn(), ZonaDelNegocio.ZONA);
+    listas
+        .fechaDeLaUltima(borrador.proveedorId())
+        .filter(ultima -> !ultima.equals(deLaLista))
+        .ifPresent(
+            ultima -> {
+              throw new ExcepcionDeDominio(
+                  borrador.modelo().titulo()
+                      + " es de la lista del "
+                      + deLaLista
+                      + " y la última es del "
+                      + ultima
+                      + ": no vino en ella. Si el proveedor todavía lo tiene, llegará con la"
+                      + " próxima lista.");
+            });
     // Un 422 que lo dice y no un 500: el cuerpo los trae opcionales a propósito, porque un
     // borrador de configuraciones nuevas no los usa.
     if (borrador.productoId().isEmpty() && (marcaId == null || categoriaId == null)) {
@@ -149,7 +178,7 @@ public final class AprobarBorradorTecnologia {
                     c.precioVenta().valor().longValueExact(),
                     BigDecimal.ZERO,
                     null,
-                    existenciaPorVariante,
+                    hoyLoTiene(c, color) ? existenciaPorVariante : 0,
                     null,
                     null,
                     null,
@@ -178,6 +207,16 @@ public final class AprobarBorradorTecnologia {
     borrador.aprobar(producto.id());
     repositorioBorradores.actualizar(borrador);
     return repositorioProductos.buscarPorId(producto.id()).orElseThrow();
+  }
+
+  /**
+   * Si la lista dice tener ese color. Sin colores en la lista vale para todos, como en la
+   * reposición: no hay con qué negar uno.
+   */
+  private static boolean hoyLoTiene(ConfiguracionTecnologia c, String color) {
+    return c.coloresSugeridos().isEmpty()
+        || c.coloresSugeridos().stream()
+            .anyMatch(s -> ConfiguracionTecnologia.mismoColor(s, color));
   }
 
   private void publicarFotos(Producto producto, BorradorTecnologia borrador) {
@@ -217,7 +256,14 @@ public final class AprobarBorradorTecnologia {
         orden++;
       }
     } catch (RuntimeException e) {
-      subidas.forEach(almacenDeImagenes::eliminar);
+      for (String key : subidas) {
+        try {
+          almacenDeImagenes.eliminar(key);
+        } catch (RuntimeException alBorrar) {
+          // Que una limpieza fallida no tape el error de verdad ni deje sin intentar las demás.
+          e.addSuppressed(alBorrar);
+        }
+      }
       throw e;
     }
   }
@@ -233,14 +279,11 @@ public final class AprobarBorradorTecnologia {
         almacenPrivado
             .leer(referencia)
             .orElseThrow(() -> new ObjetoDeImagenNoEncontradoException(referencia));
+    String extension = ClavesDeFotosDeTecnologia.extensionDe(referencia);
     String key =
-        "productos/"
-            + productoId
-            + "/"
-            + (principal ? "principal-" : "galeria-")
-            + GeneradorIdentificador.nuevo()
-            + "."
-            + ClavesDeFotosDeTecnologia.extensionDe(referencia);
+        principal
+            ? ClavesDePrincipal.nueva(productoId, extension)
+            : ClavesDeGaleria.nueva(productoId, extension);
     almacenDeImagenes.subir(key, ClavesDeFotosDeTecnologia.contentTypeDe(referencia), bytes);
     subidas.add(key);
     return key;

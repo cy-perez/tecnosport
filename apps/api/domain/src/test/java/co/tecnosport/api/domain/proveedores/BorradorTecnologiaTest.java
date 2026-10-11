@@ -259,7 +259,13 @@ class BorradorTecnologiaTest {
 
   // --- Las fotos (ADR-0079) -----------------------------------------------------------------
 
-  private static FotoDeBorradorTecnologia foto(String hash) {
+  /** Un SHA-256 bien formado y distinto por etiqueta. */
+  private static String hex(String etiqueta) {
+    return String.format("%064x", new java.math.BigInteger(1, etiqueta.getBytes()));
+  }
+
+  private static FotoDeBorradorTecnologia foto(String etiqueta) {
+    String hash = hex(etiqueta);
     return new FotoDeBorradorTecnologia(
         UUID.randomUUID(),
         List.of(
@@ -324,7 +330,8 @@ class BorradorTecnologiaTest {
     borrador.agregarFoto(foto("a"));
     borrador.agregarFoto(foto("b"));
 
-    assertEquals(List.of("a", "b"), borrador.fotos().stream().map(f -> f.hash()).toList());
+    assertEquals(
+        List.of(hex("a"), hex("b")), borrador.fotos().stream().map(f -> f.hash()).toList());
     assertEquals(1200, borrador.fotos().getFirst().mayor().ancho());
   }
 
@@ -356,8 +363,13 @@ class BorradorTecnologiaTest {
 
     FotoDeBorradorTecnologia quitada = borrador.quitarFoto(a.id());
 
-    assertEquals(List.of("b/a-1200.avif", "b/a-480.avif", "b/a.jpg"), quitada.referencias());
-    assertEquals(List.of("b"), borrador.fotos().stream().map(f -> f.hash()).toList());
+    assertEquals(
+        List.of(
+            "b/" + hex("a") + "-1200.avif",
+            "b/" + hex("a") + "-480.avif",
+            "b/" + hex("a") + ".jpg"),
+        quitada.referencias());
+    assertEquals(List.of(hex("b")), borrador.fotos().stream().map(f -> f.hash()).toList());
     assertThrows(ExcepcionDeDominio.class, () -> borrador.quitarFoto(UUID.randomUUID()));
   }
 
@@ -381,7 +393,7 @@ class BorradorTecnologiaTest {
                     new FotoDeBorradorTecnologia.Variante(1200, "y.avif", 1)),
                 null,
                 1200,
-                "h",
+                hex("h"),
                 "alt",
                 "alt",
                 LUNES));
@@ -396,5 +408,37 @@ class BorradorTecnologiaTest {
         a17(List.of("Negro", "Gris", "Azul")), List.of(config("a17-256", 660_000)), JUEVES);
 
     assertEquals(1, borrador.fotos().size());
+  }
+
+  @Test
+  void elHashDeUnaFotoEsUnSha256EnMinusculas() {
+    FotoDeBorradorTecnologia foto = foto("a");
+    FotoDeBorradorTecnologia enMayusculas =
+        new FotoDeBorradorTecnologia(
+            UUID.randomUUID(),
+            foto.variantes(),
+            null,
+            1200,
+            foto.hash().toUpperCase(),
+            "alt",
+            "alt",
+            LUNES);
+    assertEquals(foto.hash(), enMayusculas.hash());
+
+    BorradorTecnologia borrador = nuevo();
+    borrador.agregarFoto(foto);
+    assertThrows(ExcepcionDeDominio.class, () -> borrador.agregarFoto(enMayusculas));
+    assertThrows(
+        ExcepcionDeDominio.class,
+        () ->
+            new FotoDeBorradorTecnologia(
+                UUID.randomUUID(), foto.variantes(), null, 1200, "no-es-un-hash", "a", "a", LUNES));
+  }
+
+  @Test
+  void elBorradorDiceCuantasFotosLeFaltan() {
+    BorradorTecnologia borrador = nuevo();
+    borrador.agregarFoto(foto("a"));
+    assertEquals(BorradorTecnologia.MINIMO_DE_FOTOS - 1, borrador.fotosQueFaltan());
   }
 }

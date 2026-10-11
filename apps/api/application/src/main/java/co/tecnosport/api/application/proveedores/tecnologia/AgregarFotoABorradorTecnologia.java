@@ -6,7 +6,6 @@ import co.tecnosport.api.application.proveedores.AlmacenDeArchivosDeProveedor;
 import co.tecnosport.api.application.proveedores.BorradorNoEditableException;
 import co.tecnosport.api.application.proveedores.BorradorNoEncontradoException;
 import co.tecnosport.api.domain.compartido.GeneradorIdentificador;
-import co.tecnosport.api.domain.compartido.HashContenido;
 import co.tecnosport.api.domain.proveedores.BorradorTecnologia;
 import co.tecnosport.api.domain.proveedores.EstadoBorrador;
 import co.tecnosport.api.domain.proveedores.FotoDeBorradorTecnologia;
@@ -46,10 +45,6 @@ public final class AgregarFotoABorradorTecnologia {
     if (borrador.estado() != EstadoBorrador.EN_REVISION) {
       throw new BorradorNoEditableException(borrador.estado());
     }
-    if (comando.variantes().isEmpty()) {
-      throw new IllegalArgumentException("Hay que confirmar al menos un ancho de la foto.");
-    }
-
     List<FotoDeBorradorTecnologia.Variante> variantes = new ArrayList<>();
     for (AgregarFotoABorradorTecnologiaComando.Variante v : comando.variantes()) {
       String clave = v.objectKey() == null ? null : v.objectKey().strip();
@@ -71,9 +66,7 @@ public final class AgregarFotoABorradorTecnologia {
             variantes,
             vistaPrevia,
             comando.alto(),
-            // Validado aquí y no al aprobar: un hash mal formado se dice cuando se sube la foto, no
-            // cuando alguien ya llenó el formulario de aprobación.
-            new HashContenido(comando.hash()).valor(),
+            comando.hash(),
             comando.altEs(),
             comando.altEn(),
             reloj.ahora());

@@ -14,7 +14,7 @@ import java.util.UUID;
  * productos/{id}/}— se podía confirmar una key de {@code principal-} como imagen de galería, y el
  * siguiente reemplazo de la imagen principal borraba el objeto que la galería estaba sirviendo.
  */
-final class ClavesDeGaleria {
+public final class ClavesDeGaleria {
 
   private ClavesDeGaleria() {}
 
@@ -22,7 +22,12 @@ final class ClavesDeGaleria {
     return "productos/" + productoId + "/galeria-";
   }
 
-  static String nueva(UUID productoId, String extension) {
+  /**
+   * Pública porque la usan también las aprobaciones de los borradores de proveedor, que copian
+   * fotos al bucket con estas mismas claves: si las escribieran a mano, la limpieza de la principal
+   * y el borrado de la galería dejarían de reconocerlas.
+   */
+  public static String nueva(UUID productoId, String extension) {
     return prefijoDe(productoId) + GeneradorIdentificador.nuevo() + "." + extension;
   }
 }

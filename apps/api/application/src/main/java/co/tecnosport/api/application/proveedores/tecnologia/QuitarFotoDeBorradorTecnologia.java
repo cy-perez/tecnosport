@@ -13,8 +13,10 @@ import java.util.UUID;
  * Quita una foto del borrador y borra sus archivos del bucket: no son de nadie más, porque cada
  * clave nace bajo el prefijo de este borrador.
  *
- * <p>Se borra después de guardar, como la principal de un producto: al revés, si el guardado
- * fallara con los archivos ya borrados, el borrador apuntaría a una foto que no existe.
+ * <p>Se borra después de guardar, como la principal de un producto. No después del commit —la
+ * transacción la abre quien llama—: si el commit falla, el borrador queda apuntando a archivos que
+ * ya no están, y aprobarlo falla con {@code ObjetoDeImagenNoEncontradoException} antes de publicar
+ * nada; se arregla quitando esa foto otra vez.
  */
 public final class QuitarFotoDeBorradorTecnologia {
 

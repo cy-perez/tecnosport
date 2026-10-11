@@ -288,7 +288,7 @@ class RepositoriosDeTecnologiaJpaTest {
             new FotoDeBorradorTecnologia.Variante(480, "p/b/" + hash + "-480.avif", 12_000)),
         hash.equals("b") ? null : "p/b/" + hash + ".jpg",
         1200,
-        hash,
+        String.valueOf(hash.charAt(0)).repeat(64),
         "Galaxy A17 sobre fondo blanco",
         "Galaxy A17 on a white background",
         LUNES);
@@ -318,7 +318,9 @@ class RepositoriosDeTecnologiaJpaTest {
 
     List<FotoDeBorradorTecnologia> fotos =
         borradores.buscarPorId(borrador.id()).orElseThrow().fotos();
-    assertEquals(List.of("a", "c"), fotos.stream().map(FotoDeBorradorTecnologia::hash).toList());
+    assertEquals(
+        List.of("a".repeat(64), "c".repeat(64)),
+        fotos.stream().map(FotoDeBorradorTecnologia::hash).toList());
     assertEquals(58_000, fotos.getFirst().mayor().bytes());
     assertEquals("p/b/a.jpg", fotos.getFirst().referenciaVistaPrevia());
   }

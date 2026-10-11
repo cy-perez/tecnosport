@@ -239,7 +239,7 @@ public final class BorradorTecnologia {
    * nuevas no pide fotos: el producto ya tiene las suyas.
    */
   public void exigirAprobable() {
-    if (productoId == null && fotos.size() < MINIMO_DE_FOTOS) {
+    if (fotosQueFaltan() > 0) {
       throw new ExcepcionDeDominio(
           "Un modelo nuevo necesita "
               + MINIMO_DE_FOTOS
@@ -354,6 +354,14 @@ public final class BorradorTecnologia {
 
   public List<ConfiguracionTecnologia> configuraciones() {
     return List.copyOf(configuraciones);
+  }
+
+  /**
+   * Cuántas fotos le faltan para aprobarse. Un borrador de configuraciones nuevas no pide: el
+   * producto ya tiene las suyas. Lo dice el dominio para que el panel no tenga que saber el mínimo.
+   */
+  public int fotosQueFaltan() {
+    return productoId != null ? 0 : Math.max(0, MINIMO_DE_FOTOS - fotos.size());
   }
 
   /** En el orden en que se publican: la primera es la principal. */
