@@ -15,6 +15,7 @@ import co.tecnosport.api.domain.proveedores.PHash;
 import co.tecnosport.api.domain.proveedores.Proveedor;
 import co.tecnosport.api.domain.proveedores.ResumenIngesta;
 import co.tecnosport.api.domain.proveedores.TipoMensaje;
+import jakarta.persistence.EntityManager;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
@@ -54,6 +55,7 @@ class RepositoriosDeIngestaJpaTest {
   @Autowired private ProveedorJpaRepository filasDeProveedor;
   @Autowired private MensajeProveedorJpaRepository filasDeMensaje;
   @Autowired private JdbcTemplate jdbc;
+  @Autowired private EntityManager entityManager;
 
   private Proveedor proveedorGuardado(BigDecimal factor) {
     Proveedor proveedor =
@@ -449,5 +451,62 @@ class RepositoriosDeIngestaJpaTest {
     assertThat(lotes.abiertos())
         .extracting(LoteIngesta::id)
         .containsExactly(deCaballero.id(), general.id());
+  }
+
+  /** Lo que escribe la sentencia directa no está en el contexto de persistencia: se relee. */
+  private LoteIngesta releido(LoteIngesta lote) {
+    entityManager.flush();
+    entityManager.clear();
+    return lotes.buscarPorId(lote.id()).orElseThrow();
+  }
+
+  /**
+   * El latido viaja con la fila, y el que se registra aparte avanza solo sobre un lote en manos del
+   * trabajador: uno cerrado no vuelve a parecer vivo, y uno más viejo no reemplaza al más reciente.
+   */
+  @Test
+  void elLatidoVaYVuelveYSoloAvanzaEnLoQueSeEstaProcesando() {
+    Proveedor proveedor = proveedorGuardado(null);
+    LoteIngesta enCurso = LoteIngesta.recibirExportacion(proveedor.id(), "p/1.zip", T);
+    enCurso.iniciar(T.plusSeconds(1));
+    LoteIngesta enCola = LoteIngesta.recibirExportacion(proveedor.id(), "p/2.zip", T);
+    LoteIngesta cerrado = LoteIngesta.recibirExportacion(proveedor.id(), "p/3.zip", T);
+    cerrado.iniciar(T.plusSeconds(1));
+    cerrado.fallar("Se cayó.", T.plusSeconds(2));
+    lotes.guardar(enCurso);
+    lotes.guardar(enCola);
+    lotes.guardar(cerrado);
+    assertThat(releido(enCurso).latidoEn()).contains(T.plusSeconds(1));
+
+    lotes.registrarLatido(enCurso.id(), T.plusSeconds(90));
+    lotes.registrarLatido(enCurso.id(), T.plusSeconds(60));
+    lotes.registrarLatido(enCola.id(), T.plusSeconds(90));
+    lotes.registrarLatido(cerrado.id(), T.plusSeconds(90));
+    lotes.registrarLatido(UUID.randomUUID(), T.plusSeconds(90));
+
+    assertThat(releido(enCurso).latidoEn()).contains(T.plusSeconds(90));
+    assertThat(releido(enCola).latidoEn()).isEmpty();
+    assertThat(releido(cerrado).latidoEn()).contains(T.plusSeconds(1));
+  }
+
+  /**
+   * El trabajador o el panel guardan la fila entera después de releerla bloqueada: el latido que
+   * llegó antes se conserva, porque viene en la lectura.
+   */
+  @Test
+  void guardarLaFilaReleidaNoBorraElLatido() {
+    Proveedor proveedor = proveedorGuardado(null);
+    LoteIngesta lote = LoteIngesta.recibirExportacion(proveedor.id(), "p/1.zip", T);
+    lote.iniciar(T.plusSeconds(1));
+    lotes.guardar(lote);
+    lotes.registrarLatido(lote.id(), T.plusSeconds(120));
+
+    LoteIngesta fresco = releido(lote);
+    fresco.pausar();
+    lotes.actualizar(fresco);
+
+    LoteIngesta pausado = releido(lote);
+    assertThat(pausado.estado()).isEqualTo(EstadoLote.PAUSADO);
+    assertThat(pausado.latidoEn()).contains(T.plusSeconds(120));
   }
 }

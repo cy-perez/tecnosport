@@ -180,7 +180,8 @@ public final class ProcesarLoteDeIngesta {
         throw e;
       }
     } catch (LoteAjeno ajeno) {
-      // Ya no es de este hilo: otra instancia lo cerró al arrancar, o se eliminó. No se escribe
+      // Ya no es de este hilo: se dio por abandonado —este hilo dejó de latir más de la
+      // tolerancia, por ejemplo con la CPU congelada entre peticiones— o se eliminó. No se escribe
       // nada: lo que diga la base es lo que vale.
       return repositorioLotes.buscarPorId(lote.id()).orElse(lote);
     } catch (RuntimeException | Error e) {

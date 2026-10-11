@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import co.tecnosport.api.domain.compartido.ExcepcionDeDominio;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
@@ -246,5 +247,89 @@ class LoteIngestaTest {
     deteniendo.pedirDetencion(T2);
     deteniendo.terminar(RESUMEN, T2);
     assertEquals(EstadoLote.TERMINADO, deteniendo.estado());
+  }
+
+  private static final Duration TOLERANCIA = Duration.ofMinutes(3);
+
+  @Test
+  void tomarloEsElPrimerLatido() {
+    LoteIngesta lote = recibido();
+    assertEquals(Optional.empty(), lote.latidoEn());
+
+    lote.iniciar(T1);
+
+    assertEquals(Optional.of(T1), lote.latidoEn());
+  }
+
+  /**
+   * El caso del 11 de octubre de 2026: otra instancia lo tomó y sigue latiendo; para la que arranca
+   * no está abandonado, aunque su estado sea el mismo que el de uno huérfano.
+   */
+  @Test
+  void conUnLatidoRecienteNoEstaAbandonadoYSinLatirSi() {
+    LoteIngesta lote = recibido();
+    lote.iniciar(T1);
+    Instant ahora = T1.plus(Duration.ofMinutes(10));
+    lote.latir(ahora.minusSeconds(30));
+
+    assertFalse(lote.abandonado(ahora, TOLERANCIA));
+    assertTrue(lote.abandonado(ahora.plus(TOLERANCIA), TOLERANCIA));
+  }
+
+  @Test
+  void unLatidoViejoNoReemplazaAUnoMasReciente() {
+    LoteIngesta lote = recibido();
+    lote.iniciar(T2);
+
+    lote.latir(T1);
+
+    assertEquals(Optional.of(T2), lote.latidoEn());
+  }
+
+  @Test
+  void pausadoYDeteniendoTambienSeAbandonan() {
+    LoteIngesta pausado = recibido();
+    pausado.iniciar(T1);
+    pausado.pausar();
+    LoteIngesta deteniendo = recibido();
+    deteniendo.iniciar(T1);
+    deteniendo.pedirDetencion(T1);
+    Instant tarde = T1.plus(TOLERANCIA).plusSeconds(1);
+
+    assertTrue(pausado.abandonado(tarde, TOLERANCIA));
+    assertTrue(deteniendo.abandonado(tarde, TOLERANCIA));
+  }
+
+  /** En la cola no hay trabajador que deje de latir; cerrado, no hay nada que abandonar. */
+  @Test
+  void niElRecibidoNiElCerradoSeAbandonan() {
+    LoteIngesta enCola = recibido();
+    LoteIngesta terminado = recibido();
+    terminado.iniciar(T1);
+    terminado.terminar(RESUMEN, T2);
+    Instant muchoDespues = T2.plus(Duration.ofDays(1));
+
+    assertFalse(enCola.abandonado(muchoDespues, TOLERANCIA));
+    assertFalse(terminado.abandonado(muchoDespues, TOLERANCIA));
+  }
+
+  /** Los lotes tomados antes de que existiera el latido cuentan desde que se tomaron. */
+  @Test
+  void sinLatidoGuardadoCuentaDesdeQueSeTomo() {
+    LoteIngesta deAntes =
+        new LoteIngesta(
+            UUID.randomUUID(),
+            OrigenIngesta.EXPORTACION_CHAT,
+            PROVEEDOR,
+            ARCHIVO,
+            EstadoLote.PROCESANDO,
+            null,
+            null,
+            T0,
+            T1,
+            null);
+
+    assertFalse(deAntes.abandonado(T1.plus(TOLERANCIA), TOLERANCIA));
+    assertTrue(deAntes.abandonado(T1.plus(TOLERANCIA).plusSeconds(1), TOLERANCIA));
   }
 }

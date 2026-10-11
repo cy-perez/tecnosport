@@ -1,6 +1,7 @@
 package co.tecnosport.api.application.proveedores;
 
 import co.tecnosport.api.domain.proveedores.LoteIngesta;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -26,6 +27,13 @@ public interface RepositorioLotesIngesta {
    * nulo lista los de todos los proveedores.
    */
   LotesPaginados listar(UUID proveedorId, int pagina, int tamanoPagina);
+
+  /**
+   * Renueva el latido del lote si sigue en manos del trabajador, y nada más: es una escritura
+   * aparte, desde otro hilo, que no puede pisar el estado que el trabajador o el panel estén
+   * escribiendo. Un lote ya cerrado o eliminado se ignora.
+   */
+  void registrarLatido(UUID loteId, Instant ahora);
 
   /** Los que están en la cola o a medio procesar, del más antiguo al más reciente. */
   List<LoteIngesta> abiertos();

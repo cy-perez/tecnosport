@@ -178,24 +178,46 @@ final class ApoyoDeIngesta {
     }
 
     private static LoteIngesta copia(LoteIngesta lote) {
-      return new LoteIngesta(
-          lote.id(),
-          lote.origen(),
-          lote.proveedorId(),
-          lote.referenciaArchivo().orElse(null),
-          lote.estado(),
-          lote.resumen().orElse(null),
-          lote.detalleError().orElse(null),
-          lote.creadoEn(),
-          lote.iniciadoEn().orElse(null),
-          lote.terminadoEn().orElse(null));
+      LoteIngesta copia =
+          new LoteIngesta(
+              lote.id(),
+              lote.origen(),
+              lote.proveedorId(),
+              lote.referenciaArchivo().orElse(null),
+              lote.estado(),
+              lote.resumen().orElse(null),
+              lote.detalleError().orElse(null),
+              lote.creadoEn(),
+              lote.iniciadoEn().orElse(null),
+              lote.terminadoEn().orElse(null));
+      lote.latidoEn().ifPresent(copia::latir);
+      lote.chatDelZip().ifPresent(copia::leerSoloElChat);
+      if (lote.esChatDeCaballero()) {
+        copia.marcarChatDeCaballero();
+      }
+      return copia;
+    }
+
+    final List<UUID> latidos = new ArrayList<>();
+
+    @Override
+    public void registrarLatido(UUID loteId, Instant ahora) {
+      latidos.add(loteId);
+      LoteIngesta lote = porId.get(loteId);
+      if (lote != null && lote.enManosDelTrabajador()) {
+        lote.latir(ahora);
+      }
     }
 
     /** En memoria no hay nada que bloquear; se cuenta para poder afirmar que se pidió. */
     int bloqueos;
 
+    /** Lo que otro hilo alcanza a escribir justo antes de que este bloquee la fila. */
+    Runnable antesDeBloquear = () -> {};
+
     @Override
     public Optional<LoteIngesta> buscarPorIdParaActualizar(UUID id) {
+      antesDeBloquear.run();
       bloqueos++;
       return buscarPorId(id);
     }

@@ -10,6 +10,7 @@ import co.tecnosport.api.domain.proveedores.OrigenIngesta;
 import co.tecnosport.api.domain.proveedores.ResumenIngesta;
 import co.tecnosport.api.infrastructure.proveedores.entidad.LoteIngestaJpaEntity;
 import jakarta.persistence.EntityManager;
+import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -127,6 +128,22 @@ public class RepositorioLotesIngestaJpa implements RepositorioLotesIngesta {
   }
 
   @Override
+  public void registrarLatido(UUID loteId, Instant ahora) {
+    // Sentencia directa y no un save de la fila: el latido llega desde otro hilo, y guardar la
+    // fila entera pisaría el estado que el trabajador o el panel acaban de escribir. Si uno de
+    // ellos
+    // tiene la fila bloqueada, esto espera a que confirme.
+    entityManager
+        .createNativeQuery(
+            "update lote_ingesta set latido_en = ?2 where id = ?1"
+                + " and estado in ('PROCESANDO', 'PAUSADO', 'DETENIENDO')"
+                + " and (latido_en is null or latido_en < ?2)")
+        .setParameter(1, loteId)
+        .setParameter(2, ahora)
+        .executeUpdate();
+  }
+
+  @Override
   public List<LoteIngesta> abiertos() {
     return jpa.findByEstadoInOrderByCreadoEnAsc(ESTADOS_ABIERTOS).stream()
         .map(RepositorioLotesIngestaJpa::aDominio)
@@ -167,6 +184,7 @@ public class RepositorioLotesIngestaJpa implements RepositorioLotesIngesta {
         lote.creadoEn(),
         lote.iniciadoEn().orElse(null),
         lote.terminadoEn().orElse(null),
+        lote.latidoEn().orElse(null),
         lote.esChatDeCaballero(),
         lote.chatDelZip().map(ChatDelZip::name).orElse(null));
   }
@@ -202,6 +220,9 @@ public class RepositorioLotesIngestaJpa implements RepositorioLotesIngesta {
     }
     if (fila.isChatDeCaballero()) {
       lote.marcarChatDeCaballero();
+    }
+    if (fila.getLatidoEn() != null) {
+      lote.latir(fila.getLatidoEn());
     }
     return lote;
   }
