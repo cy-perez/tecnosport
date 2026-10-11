@@ -2,6 +2,7 @@ package co.tecnosport.api.domain.proveedores;
 
 import co.tecnosport.api.domain.compartido.ExcepcionDeDominio;
 import co.tecnosport.api.domain.compartido.GeneradorIdentificador;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Objects;
 import java.util.Optional;
@@ -21,6 +22,14 @@ import java.util.UUID;
  * entre la primera y la segunda es la cola; entre la segunda y la tercera, el trabajo. En Cloud Run
  * con CPU solo durante la petición ({@code docs/07}) la primera puede crecer sin que nada esté
  * roto, y hay que poder verlo.
+ *
+ * <h2>El latido</h2>
+ *
+ * <p>Mientras el trabajador lo tiene, renueva {@code latidoEn} cada pocos segundos. Es lo único que
+ * distingue un lote que otra instancia viva está procesando de uno que se quedó abierto porque su
+ * instancia murió: el estado es el mismo en los dos. Sin él, la instancia que arrancaba cerraba con
+ * error lo que su vecina estaba leyendo (11 de octubre de 2026: cinco arranques en cuarenta
+ * segundos cerraron tres lotes que no alcanzaron a leer un mensaje).
  */
 public final class LoteIngesta {
 
@@ -35,6 +44,7 @@ public final class LoteIngesta {
   private String detalleError;
   private Instant iniciadoEn;
   private Instant terminadoEn;
+  private Instant latidoEn;
 
   /**
    * Si la exportación es el chat de caballero de un proveedor que publica en dos ({@link
@@ -105,6 +115,30 @@ public final class LoteIngesta {
     }
     this.estado = EstadoLote.PROCESANDO;
     this.iniciadoEn = Objects.requireNonNull(ahora, "La fecha de inicio no puede ser nula.");
+    this.latidoEn = ahora;
+  }
+
+  /**
+   * El trabajador sigue vivo. Un latido viejo no reemplaza a uno más reciente: el adaptador lo usa
+   * también para devolverlo como estaba guardado.
+   */
+  public void latir(Instant ahora) {
+    Objects.requireNonNull(ahora, "La fecha del latido no puede ser nula.");
+    if (latidoEn == null || ahora.isAfter(latidoEn)) {
+      this.latidoEn = ahora;
+    }
+  }
+
+  /**
+   * Está en manos de un trabajador que dejó de latir hace más de {@code tolerancia}: su instancia
+   * murió y nadie lo va a soltar. Un lote de antes del latido cuenta desde que se tomó.
+   */
+  public boolean abandonado(Instant ahora, Duration tolerancia) {
+    if (!enManosDelTrabajador()) {
+      return false;
+    }
+    Instant ultimo = latidoEn != null ? latidoEn : iniciadoEn != null ? iniciadoEn : creadoEn;
+    return ultimo.plus(tolerancia).isBefore(ahora);
   }
 
   /**
@@ -286,5 +320,9 @@ public final class LoteIngesta {
 
   public Optional<Instant> terminadoEn() {
     return Optional.ofNullable(terminadoEn);
+  }
+
+  public Optional<Instant> latidoEn() {
+    return Optional.ofNullable(latidoEn);
   }
 }

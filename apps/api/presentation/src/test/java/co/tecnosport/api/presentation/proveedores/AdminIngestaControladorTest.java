@@ -558,6 +558,11 @@ class AdminIngestaControladorTest {
   }
 
   static final class RepositorioLotesDoble implements RepositorioLotesIngesta {
+
+    /** El panel no late: eso lo hace el trabajador, que aquí no corre. */
+    @Override
+    public void registrarLatido(UUID loteId, Instant ahora) {}
+
     final Map<UUID, LoteIngesta> porId = new LinkedHashMap<>();
 
     @Override

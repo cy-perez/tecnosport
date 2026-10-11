@@ -483,6 +483,19 @@ module "api" {
     SISTECREDITO_VENDOR_ID        = "sistecredito-vendor-id"
   } : {})
 
+  # **La ingesta de proveedores no funciona sin estas dos líneas** (11 de octubre de 2026). Con CPU
+  # solo durante la petición, el hilo que procesa un lote se congela en cuanto la subida responde:
+  # tres lotes subidos a la 1 a. m. esperaron ocho horas sin leer un mensaje, y la escala a cero
+  # los dejó a medias. Y con varias instancias, cada una que arrancaba cerraba lo que otra estaba
+  # leyendo. `docs/07` dejó dev sin CPU entre peticiones pensando en las tareas programadas, que
+  # pueden esperar a la próxima visita; un lote no puede, porque es trabajo que alguien pidió.
+  #
+  # El costo: se cobra la CPU de toda la vida de la instancia y no solo la de las peticiones, pero
+  # con `instancias_minimas = 0` sigue apagándose cuando nadie la usa. Una sola instancia es
+  # además lo que la cola en memoria supone: con una, el panel siempre le habla a la que procesa.
+  cpu_siempre_asignada = true
+  instancias_maximas   = 1
+
   depends_on = [google_project_service.apis]
 }
 

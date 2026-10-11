@@ -13,8 +13,11 @@ import org.springframework.stereotype.Component;
  * Al arrancar, lo que el reinicio dejó en la cola vuelve a ella y lo que iba a medias se cierra.
  *
  * <p>Con {@code ApplicationReadyEvent} y no antes: para entonces el ejecutor existe y la base ya
- * migró. Con varias instancias corre en cada una y no pasa nada: encolar un lote {@code RECIBIDO}
- * dos veces lo procesa una, porque {@code ProcesarLoteDeIngesta} solo toma lo que sigue en la cola.
+ * migró. Con varias instancias corre en cada una. Encolar un lote {@code RECIBIDO} dos veces lo
+ * procesa una, porque {@code ProcesarLoteDeIngesta} solo toma lo que sigue en la cola. Y lo que
+ * está en manos de un trabajador solo se cierra si dejó de latir: hasta el 11 de octubre de 2026
+ * este párrafo decía que no pasaba nada, y cada instancia que arrancaba cerraba con error lo que su
+ * vecina estaba procesando ({@code CerrarIngestasAbandonadas}).
  */
 @Component
 public class ReanudadorDeIngestas {

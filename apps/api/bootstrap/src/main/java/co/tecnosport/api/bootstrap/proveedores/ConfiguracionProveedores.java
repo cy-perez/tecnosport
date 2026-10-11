@@ -7,6 +7,7 @@ import co.tecnosport.api.application.proveedores.AlmacenDeArchivosDeProveedor;
 import co.tecnosport.api.application.proveedores.ArmarPublicaciones;
 import co.tecnosport.api.application.proveedores.BorrarArchivoDeIngesta;
 import co.tecnosport.api.application.proveedores.CalculadorDePHash;
+import co.tecnosport.api.application.proveedores.CerrarIngestasAbandonadas;
 import co.tecnosport.api.application.proveedores.CrearProveedor;
 import co.tecnosport.api.application.proveedores.DetenerIngesta;
 import co.tecnosport.api.application.proveedores.EditarProveedor;
@@ -23,6 +24,7 @@ import co.tecnosport.api.application.proveedores.PausarIngesta;
 import co.tecnosport.api.application.proveedores.ProcesarLoteDeIngesta;
 import co.tecnosport.api.application.proveedores.ReanudarIngesta;
 import co.tecnosport.api.application.proveedores.ReanudarLotesDeIngesta;
+import co.tecnosport.api.application.proveedores.RegistrarLatidoDeIngesta;
 import co.tecnosport.api.application.proveedores.RegistrarMensajesDeProveedor;
 import co.tecnosport.api.application.proveedores.RepositorioArchivosDeIngesta;
 import co.tecnosport.api.application.proveedores.RepositorioLotesIngesta;
@@ -52,6 +54,16 @@ public class ConfiguracionProveedores {
    * "Reanudar" o "Detener" desde el panel, y una lectura de una fila por vuelta.
    */
   private static final Duration ESPERA_EN_PAUSA = Duration.ofSeconds(2);
+
+  /**
+   * Cada cuánto avisa el trabajador que sigue vivo con su lote, y cuánto puede pasar sin aviso
+   * antes de darlo por abandonado. Parámetros técnicos: la tolerancia es seis latidos, para que una
+   * pausa del recolector o una base lenta no maten una ingesta viva, y lo bastante corta para que
+   * lo que dejó una instancia apagada se cierre en minutos y no al arranque siguiente.
+   */
+  private static final Duration INTERVALO_DEL_LATIDO = Duration.ofSeconds(30);
+
+  private static final Duration TOLERANCIA_DEL_LATIDO = Duration.ofMinutes(3);
 
   /** Sobre el mismo {@code Storage} del catálogo: misma cuenta, otro bucket. */
   @Bean
@@ -184,14 +196,41 @@ public class ConfiguracionProveedores {
   }
 
   @Bean
+  public RegistrarLatidoDeIngesta registrarLatidoDeIngesta(
+      RepositorioLotesIngesta lotes, Reloj reloj) {
+    return new RegistrarLatidoDeIngesta(lotes, reloj);
+  }
+
+  @Bean
   public EjecutorDeIngestas ejecutorDeIngestas(
-      ProcesarLoteDeIngesta procesar, PropiedadesProveedores propiedades) {
-    return new EjecutorDeIngestasEnHilo(procesar, propiedades.colaDeIngestas());
+      ProcesarLoteDeIngesta procesar,
+      RegistrarLatidoDeIngesta registrarLatido,
+      EnTransaccionPropia enTransaccionPropia,
+      PropiedadesProveedores propiedades) {
+    return new EjecutorDeIngestasEnHilo(
+        procesar::ejecutar,
+        propiedades.colaDeIngestas(),
+        loteId ->
+            enTransaccionPropia.ejecutar(
+                () -> {
+                  registrarLatido.ejecutar(loteId);
+                  return null;
+                }),
+        INTERVALO_DEL_LATIDO);
+  }
+
+  @Bean
+  public CerrarIngestasAbandonadas cerrarIngestasAbandonadas(
+      RepositorioLotesIngesta lotes, Reloj reloj) {
+    return new CerrarIngestasAbandonadas(lotes, reloj, TOLERANCIA_DEL_LATIDO);
   }
 
   @Bean
   public ReanudarLotesDeIngesta reanudarLotesDeIngesta(
-      RepositorioLotesIngesta lotes, EjecutorDeIngestas ejecutor, Reloj reloj) {
-    return new ReanudarLotesDeIngesta(lotes, ejecutor, reloj);
+      RepositorioLotesIngesta lotes,
+      EjecutorDeIngestas ejecutor,
+      CerrarIngestasAbandonadas cerrarAbandonadas,
+      Reloj reloj) {
+    return new ReanudarLotesDeIngesta(lotes, ejecutor, cerrarAbandonadas, reloj);
   }
 }
