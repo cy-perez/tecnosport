@@ -21,8 +21,7 @@ public enum TipoProductoProveedor {
   PANTALON,
   SHORT,
   VESTIDO,
-  // Las de dama que trajo Violeta (2 de octubre de 2026). El chaleco y el blazer se quedan en OTRO
-  // a propósito: el catálogo no tiene dónde ponerlos y los revisa una persona.
+  // Las de dama que trajo Violeta (2 de octubre de 2026).
   BLUSA,
   // «Bodi», no «body»: es como se escribe en español (3 de octubre de 2026). V74 renombró los que
   // ya estaban guardados, y el extractor todavía acepta «body» de una extracción vieja.
@@ -35,5 +34,9 @@ public enum TipoProductoProveedor {
   // (9 de octubre de 2026).
   FALDA,
   SUDADERA,
+  // El blazer y el chaleco de Violeta se quedaban en OTRO porque el catálogo no tenía dónde
+  // ponerlos. Desde V108 tiene Blazers y Chalecos en la rama de dama (11 de octubre de 2026).
+  BLAZER,
+  CHALECO,
   OTRO
 }

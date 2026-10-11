@@ -30,6 +30,8 @@ export type TipoProductoProveedor =
   | 'TENIS'
   | 'FALDA'
   | 'SUDADERA'
+  | 'BLAZER'
+  | 'CHALECO'
   | 'OTRO';
 
 export const TIPOS_PRODUCTO_PROVEEDOR: readonly TipoProductoProveedor[] = [
@@ -51,6 +53,8 @@ export const TIPOS_PRODUCTO_PROVEEDOR: readonly TipoProductoProveedor[] = [
   'TENIS',
   'FALDA',
   'SUDADERA',
+  'BLAZER',
+  'CHALECO',
   'OTRO',
 ];
 
@@ -64,6 +68,10 @@ export const CATEGORIA_SUGERIDA_POR_TIPO: Readonly<Partial<Record<TipoProductoPr
     BLUSA: 'ropa-dama-blusas',
     BODI: 'ropa-dama-bodis',
     FALDA: 'ropa-dama-faldas',
+    // El polo, el blazer y el chaleco caen siempre en la misma hoja (11 de octubre de 2026, V108).
+    POLO: 'ropa-caballero-polos',
+    BLAZER: 'ropa-dama-blazers',
+    CHALECO: 'ropa-dama-chalecos',
   };
 
 /**

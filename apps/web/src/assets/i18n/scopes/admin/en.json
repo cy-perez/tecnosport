@@ -1292,6 +1292,8 @@
       "TENIS": "Sneakers",
       "FALDA": "Skirt",
       "SUDADERA": "Sweatpants",
+      "BLAZER": "Blazer",
+      "CHALECO": "Vest",
       "OTRO": "Other"
     },
     "tallas": {

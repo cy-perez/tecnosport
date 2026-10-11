@@ -251,7 +251,7 @@ class ExtractorClaudeTest {
             200,
             exito(
                 "{\"productos\":[{\"esta_agotado\":true,\"titulo\":null,\"linea\":\"otra\","
-                    + "\"tipo\":\"chaleco\",\"precio_proveedor_cop\":null,"
+                    + "\"tipo\":\"pijama\",\"precio_proveedor_cop\":null,"
                     + "\"tallas\":{\"tipo\":\"Lista\",\"sirve_hasta\":null,\"valores\":[\"M\",\"L\"]},"
                     + "\"cantidad_tonos\":null,\"tonos_nombrados\":[\"negro\"],\"material\":null,"
                     + "\"descripcion\":null,\"alt_en\":null,\"es_replica\":false,"
@@ -335,6 +335,22 @@ class ExtractorClaudeTest {
         .extracting(p -> p.tipo())
         .containsExactly(
             TipoProductoProveedor.BLUSA, TipoProductoProveedor.BODI, TipoProductoProveedor.BODI);
+  }
+
+  /** El blazer y el chaleco de Violeta tienen tipo desde V108, y el esquema los ofrece. */
+  @Test
+  void elBlazerYElChalecoSonTiposReconocidos() {
+    String blazer = BOLSO.replace("\"tipo\":\"bolso\"", "\"tipo\":\"blazer\"");
+    String chaleco = BOLSO.replace("\"tipo\":\"bolso\"", "\"tipo\":\"chaleco\"");
+    respuestas.add(
+        new Respuesta(200, exito("{\"productos\":[" + blazer + "," + chaleco + "]}", "end_turn")));
+
+    ResultadoExtraccion resultado = extractor(1).extraer(texto());
+
+    assertThat(resultado.productos())
+        .extracting(p -> p.tipo())
+        .containsExactly(TipoProductoProveedor.BLAZER, TipoProductoProveedor.CHALECO);
+    assertThat(RecursosDelExtractor.esquema()).contains("\"blazer\"", "\"chaleco\"");
   }
 
   /** Un saludo o una promoción: la lista vacía, sin fallo. */

@@ -92,9 +92,23 @@ const CAMISAS: Categoria = {
   escalaTallas: [],
 };
 
+/** Las tres de V108 (11 de octubre de 2026). */
+const POLOS: Categoria = {
+  id: 'c6',
+  nombre: 'Polos',
+  slug: 'ropa-caballero-polos',
+  linea: 'ROPA',
+  padreId: null,
+  hashtags: [],
+  escalaTallas: [],
+};
+
+const BLAZERS: Categoria = { ...POLOS, id: 'c7', nombre: 'Blazers', slug: 'ropa-dama-blazers' };
+const CHALECOS: Categoria = { ...POLOS, id: 'c8', nombre: 'Chalecos', slug: 'ropa-dama-chalecos' };
+
 class RepositorioCategoriasFalso implements RepositorioCategorias {
   async listarTodas(): Promise<Categoria[]> {
-    return [CATEGORIA, BLUSAS, FALDAS, DAMA, CAMISAS];
+    return [CATEGORIA, BLUSAS, FALDAS, DAMA, CAMISAS, POLOS, BLAZERS, CHALECOS];
   }
 }
 
@@ -459,6 +473,23 @@ describe('DetalleBorradorAdminPage', () => {
 
     await vi.waitFor(() =>
       expect((screen.getByLabelText(a.categoria) as HTMLSelectElement).value).toBe('c5'),
+    );
+  });
+
+  /**
+   * Los polos de La Riverah caen en Caballero › Polos, y los blazers y chalecos de Violeta en sus
+   * hojas de Dama: antes los tres llegaban sin categoría, como camiseta o como OTRO.
+   */
+  it.each([
+    ['POLO', 'c6', /Polos/],
+    ['BLAZER', 'c7', /Blazers/],
+    ['CHALECO', 'c8', /Chalecos/],
+  ] as const)('un %s llega con su categoría preseleccionada', async (tipo, id, opcion) => {
+    await renderPagina(borradorDePrueba({ tipo }));
+    await screen.findByRole('option', { name: opcion });
+
+    await vi.waitFor(() =>
+      expect((screen.getByLabelText(a.categoria) as HTMLSelectElement).value).toBe(id),
     );
   });
 

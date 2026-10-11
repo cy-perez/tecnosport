@@ -1292,6 +1292,8 @@
       "TENIS": "Tenis",
       "FALDA": "Falda",
       "SUDADERA": "Sudadera",
+      "BLAZER": "Blazer",
+      "CHALECO": "Chaleco",
       "OTRO": "Otro"
     },
     "tallas": {
