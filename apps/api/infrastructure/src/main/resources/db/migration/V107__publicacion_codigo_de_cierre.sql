@@ -8,6 +8,11 @@
 alter table publicacion_proveedor add column codigo_motivo varchar(40);
 alter table publicacion_proveedor add column dato_motivo varchar(200);
 
+-- La restriccion de V70 pedia `motivo` en las descartadas y fallidas. Se quita antes de llenar los
+-- codigos: llenarlos deja en nulo el `motivo` de las descartadas, que ya no tiene nada que decir.
+-- La nueva, al final, pide el codigo.
+alter table publicacion_proveedor drop constraint ck_publicacion_proveedor_motivo;
+
 -- Las de antes: la frase de cada motivo conocido pasa a su codigo. Las frases son las que
 -- escribia ResolverBorrador hasta hoy. Varias frases juntas (varios productos descartados) toman
 -- el codigo de la primera que reconocen, en el orden de estas sentencias.
@@ -35,7 +40,6 @@ update publicacion_proveedor set codigo_motivo = 'EXTRACCION_FALLIDA'
 update publicacion_proveedor set codigo_motivo = 'DESCONOCIDO'
  where codigo_motivo is null and estado = 'DESCARTADA';
 
-alter table publicacion_proveedor drop constraint ck_publicacion_proveedor_motivo;
 alter table publicacion_proveedor add constraint ck_publicacion_proveedor_motivo check (
     estado not in ('DESCARTADA', 'ERROR') or codigo_motivo is not null
 );
