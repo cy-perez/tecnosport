@@ -285,6 +285,50 @@ public record ProductoExtraido(
         List.of(marca));
   }
 
+  /**
+   * Los tonos que vio el lector en las fotos de este producto, cuando el texto no dice ninguno:
+   * «Camiseta Regular (VY3075) 💲35 Talla U» con cinco fotos de cinco colores llegaba al panel sin
+   * tonos, y quien aprueba los escribía mirando las fotos (decidido por el negocio el 11 de octubre
+   * de 2026). Si el texto dice cuántos o cuáles, manda el texto y esto no cambia nada.
+   *
+   * @param tonos los de sus fotos, en el orden de la publicación; los repetidos cuentan una vez
+   */
+  public ProductoExtraido conTonosDeLasFotos(List<String> tonos) {
+    if (cantidadTonos != null || !tonosNombrados.isEmpty() || tonos == null) {
+      return this;
+    }
+    List<String> distintos =
+        tonos.stream()
+            .filter(Objects::nonNull)
+            .map(t -> t.strip().toLowerCase(Locale.ROOT))
+            .filter(t -> !t.isEmpty())
+            .distinct()
+            .toList();
+    if (distintos.isEmpty()) {
+      return this;
+    }
+    return new ProductoExtraido(
+        esProducto,
+        estaAgotado,
+        titulo,
+        linea,
+        tipo,
+        precioProveedor,
+        tallas,
+        distintos.size(),
+        distintos,
+        material,
+        descripcion,
+        altEn,
+        esReplica,
+        confianza,
+        notas,
+        codigoReferencia,
+        tallasPorTono,
+        preciosAdicionales,
+        marcas);
+  }
+
   private static final Pattern ESTILO_HASTA_IMPORTADO =
       Pattern.compile(
           "(?<!\\p{L})estilo\\s+.*?(?=\\s+importad[oa]s?(?!\\p{L})|$)",

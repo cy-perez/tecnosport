@@ -486,6 +486,41 @@ class ExtraerProductoDePublicacionTest {
     assertFalse(sinMarca.alertas().contains(AlertaBorrador.REPLICA));
   }
 
+  /**
+   * «Camiseta Regular (VY3075) 💲35 Talla U» no nombra tonos, y sus fotos muestran tres: el
+   * borrador llega con ellos, en el orden de las fotos (11 de octubre de 2026).
+   */
+  @Test
+  void sinTonosEnElTextoElBorradorLlegaConLosDeLasFotos() {
+    PublicacionProveedor publicacion =
+        PublicacionProveedor.abrir(texto("Camiseta Regular (VY3075) 💲35 Talla U"));
+    publicacion.anexar(foto("p/1.jpg"));
+    publicacion.anexar(foto("p/2.jpg"));
+    publicacion.anexar(foto("p/3.jpg"));
+    LectorDeFotos lector =
+        fotos ->
+            Optional.of(
+                new LecturaDeFotos(
+                    false,
+                    List.of(
+                        new LecturaDeFoto(0, List.of(), null, List.of(), List.of("crema"), null),
+                        new LecturaDeFoto(
+                            1, List.of(), null, List.of(), List.of("blanco", "crema"), null),
+                        new LecturaDeFoto(2, List.of(), null, List.of(), List.of("rosado"), null)),
+                    "{}"));
+
+    ExtraccionEvaluada evaluada =
+        evaluarConFotos(
+                publicacion,
+                List.of(prenda("Camiseta regular", "VY3075")),
+                lector,
+                almacenCon("p/1.jpg", "p/2.jpg", "p/3.jpg"))
+            .getFirst();
+
+    assertEquals(List.of("crema", "rosado"), evaluada.producto().tonosNombrados());
+    assertEquals(2, evaluada.producto().cantidadTonos());
+  }
+
   @Test
   void elBodiYElJeanDeVioletaSeRepartenLasFotosYDejanDeSerCompartidas() {
     PublicacionProveedor publicacion =

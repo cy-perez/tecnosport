@@ -267,4 +267,44 @@ class ReplicasPolosYMarcasTest {
         repartidos.get(1).producto().titulo(),
         "sin marca legible no hay con qué decidir");
   }
+
+  // --- Los tonos de las fotos ---
+
+  /** La VY3075 de Violeta: cinco fotos de cinco colores y un texto que no nombra ninguno. */
+  @Test
+  void sinTonosEnElTextoSeTomanLosDeLasFotos() {
+    ProductoExtraido camiseta =
+        extraido("Camiseta regular", TipoProductoProveedor.CAMISETA, false, null);
+
+    ProductoExtraido conTonos =
+        camiseta.conTonosDeLasFotos(List.of("blanco", "Crema", "rosado", "blanco", " "));
+
+    assertEquals(List.of("blanco", "crema", "rosado"), conTonos.tonosNombrados());
+    assertEquals(3, conTonos.cantidadTonos());
+    assertEquals(camiseta, camiseta.conTonosDeLasFotos(List.of()), "sin fotos con color, nada");
+  }
+
+  /** Si el texto dice cuántos o cuáles, manda el texto. */
+  @Test
+  void conTonosEnElTextoLasFotosNoCambianNada() {
+    ProductoExtraido conCantidad =
+        new ProductoExtraido(
+            true,
+            false,
+            "Bolso de dama mediano",
+            LineaCatalogo.BOLSOS,
+            TipoProductoProveedor.BOLSO,
+            Dinero.deCop(60000),
+            Tallas.desconocida(),
+            4,
+            List.of(),
+            null,
+            "Un bolso.",
+            null,
+            false,
+            new BigDecimal("0.9"),
+            null);
+
+    assertEquals(conCantidad, conCantidad.conTonosDeLasFotos(List.of("negro", "beige")));
+  }
 }

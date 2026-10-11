@@ -136,7 +136,14 @@ public final class ExtraerProductoDePublicacion {
     List<ExtraccionEvaluada> evaluadas = new ArrayList<>(repartidos.size());
     for (int i = 0; i < repartidos.size(); i++) {
       ProductoRepartido repartido = repartidos.get(i);
-      ProductoExtraido producto = repartido.producto();
+      ProductoExtraido producto =
+          repartido
+              .producto()
+              .conTonosDeLasFotos(
+                  repartido.fotos().stream()
+                      .map(repartido.reparto().tonosSugeridos()::get)
+                      .filter(Objects::nonNull)
+                      .toList());
       Set<AlertaBorrador> alertas = EnumSet.noneOf(AlertaBorrador.class);
       // Los diseños de un álbum comparten el único precio del texto.
       boolean album = repartido.disenoDeAlbum();
