@@ -39,6 +39,7 @@ import co.tecnosport.api.application.proveedores.RepositorioProductosDeProveedor
 import co.tecnosport.api.application.proveedores.RepositorioProveedores;
 import co.tecnosport.api.application.proveedores.RepositorioPublicacionesProveedor;
 import co.tecnosport.api.application.proveedores.SolicitarSubidaDeFotoDeBorrador;
+import co.tecnosport.api.application.proveedores.UnirBorradores;
 import co.tecnosport.api.application.proveedores.VerBorrador;
 import co.tecnosport.api.domain.catalogo.LineaCatalogo;
 import co.tecnosport.api.domain.compartido.Dinero;
@@ -495,6 +496,45 @@ class AdminBorradorControladorTest {
     assertThat(borradores.porId.get(borrador.id()).fotosDescartadas()).contains(otra.id());
   }
 
+  /** Partir y volver a unir: el que se partió vuelve con sus fotos y el otro desaparece. */
+  @Test
+  void unirSeQuedaConLasFotosDelOtroYLoElimina() throws Exception {
+    PublicacionProveedor publicacion = publicaciones.porId.get(borrador.publicacionId());
+    MensajeProveedor otra =
+        MensajeProveedor.imagen(
+            borrador.proveedorId(),
+            publicacion.loteId(),
+            new IdExternoDeMensaje("u"),
+            T.plusSeconds(20),
+            null,
+            "p/u.jpg");
+    publicacion.anexar(otra);
+    BorradorProducto partido =
+        borrador.partir(List.of(otra.id()), publicacion.medios(), T.plusSeconds(30));
+    borradores.porId.put(partido.id(), partido);
+
+    mockMvc
+        .perform(
+            post("/api/v1/admin/borradores/{id}/unir", borrador.id())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"borradorId\":\"" + partido.id() + "\"}"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.id").value(borrador.id().toString()));
+
+    assertThat(borradores.porId).doesNotContainKey(partido.id());
+    assertThat(borradores.porId.get(borrador.id()).fotosDescartadas()).doesNotContain(otra.id());
+  }
+
+  @Test
+  void unirSinDecirConCualEsUn422() throws Exception {
+    mockMvc
+        .perform(
+            post("/api/v1/admin/borradores/{id}/unir", borrador.id())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{}"))
+        .andExpect(status().isUnprocessableContent());
+  }
+
   @Test
   void partirConUnaFotoAjenaEsUn422() throws Exception {
     mockMvc
@@ -586,6 +626,12 @@ class AdminBorradorControladorTest {
         RepositorioPublicacionesDoble publicaciones,
         DescartarFotoDeBorrador descartar) {
       return new MoverFotoDeBorrador(borradores, publicaciones, descartar);
+    }
+
+    @Bean
+    UnirBorradores unirBorradores(
+        RepositorioBorradoresDoble borradores, RepositorioPublicacionesDoble publicaciones) {
+      return new UnirBorradores(borradores, publicaciones);
     }
 
     @Bean

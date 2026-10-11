@@ -187,6 +187,12 @@ public final class RepartoDeFotos {
       String sku = skuPorDiseno.get(d);
       boolean skuRepetido = sku != null && skuPorDiseno.stream().filter(sku::equals).count() > 1;
       boolean conPie = leidas.stream().anyMatch(l -> l.skuOpcional().isPresent());
+      String etiqueta =
+          leidas.stream()
+              .map(LecturaDeFoto::diseno)
+              .filter(Objects::nonNull)
+              .findFirst()
+              .orElse(null);
       repartidos.add(
           new ProductoRepartido(
               producto.comoDisenoDeAlbum(skuRepetido ? null : sku, tallas),
@@ -194,7 +200,8 @@ public final class RepartoDeFotos {
               new FotosDelProducto(
                   ajenas(fotos, propias),
                   tonosSugeridos(fotos, lectura, propias),
-                  lectura.jsonCrudo()),
+                  lectura.jsonCrudo(),
+                  etiqueta),
               conPie ? Respaldo.TEXTO_IMPRESO : Respaldo.DISENO_SIN_PIE,
               fotos.get(posiciones.getFirst()),
               true,

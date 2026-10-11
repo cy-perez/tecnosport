@@ -14,6 +14,7 @@ import co.tecnosport.api.application.proveedores.PartirBorrador;
 import co.tecnosport.api.application.proveedores.RechazarBorrador;
 import co.tecnosport.api.application.proveedores.RepositorioBorradores;
 import co.tecnosport.api.application.proveedores.SolicitarSubidaDeFotoDeBorrador;
+import co.tecnosport.api.application.proveedores.UnirBorradores;
 import co.tecnosport.api.application.proveedores.VerBorrador;
 import co.tecnosport.api.domain.catalogo.Producto;
 import co.tecnosport.api.domain.compartido.Dinero;
@@ -34,6 +35,7 @@ import co.tecnosport.api.presentation.proveedores.dto.PartirBorradorPeticion;
 import co.tecnosport.api.presentation.proveedores.dto.RechazarBorradorPeticion;
 import co.tecnosport.api.presentation.proveedores.dto.SolicitarSubidaDeFotoPeticion;
 import co.tecnosport.api.presentation.proveedores.dto.SubidaDeFotoRespuesta;
+import co.tecnosport.api.presentation.proveedores.dto.UnirBorradorPeticion;
 import java.util.Objects;
 import java.util.UUID;
 import org.slf4j.Logger;
@@ -85,6 +87,7 @@ public class AdminBorradorControlador {
   private final SolicitarSubidaDeFotoDeBorrador solicitarSubidaDeFoto;
   private final ConfirmarFotoDeBorrador confirmarFoto;
   private final PartirBorrador partirBorrador;
+  private final UnirBorradores unirBorradores;
   private final MoverFotoDeBorrador moverFoto;
   private final MapeadorRespuestasProductoAdmin mapeadorProducto;
   private final TransactionTemplate transaccion;
@@ -101,6 +104,7 @@ public class AdminBorradorControlador {
       SolicitarSubidaDeFotoDeBorrador solicitarSubidaDeFoto,
       ConfirmarFotoDeBorrador confirmarFoto,
       PartirBorrador partirBorrador,
+      UnirBorradores unirBorradores,
       MoverFotoDeBorrador moverFoto,
       MapeadorRespuestasProductoAdmin mapeadorProducto,
       PlatformTransactionManager transactionManager) {
@@ -115,6 +119,7 @@ public class AdminBorradorControlador {
     this.solicitarSubidaDeFoto = Objects.requireNonNull(solicitarSubidaDeFoto);
     this.confirmarFoto = Objects.requireNonNull(confirmarFoto);
     this.partirBorrador = Objects.requireNonNull(partirBorrador);
+    this.unirBorradores = Objects.requireNonNull(unirBorradores);
     this.moverFoto = Objects.requireNonNull(moverFoto);
     this.mapeadorProducto = Objects.requireNonNull(mapeadorProducto);
     this.transaccion = new TransactionTemplate(Objects.requireNonNull(transactionManager));
@@ -259,6 +264,19 @@ public class AdminBorradorControlador {
       @PathVariable UUID id, @RequestBody PartirBorradorPeticion cuerpo) {
     return BorradorRespuesta.de(
         transaccion.execute(estado -> partirBorrador.ejecutar(id, cuerpo.fotos())));
+  }
+
+  /**
+   * Une a este el otro borrador de la misma publicación: el mismo diseño en otro color. Este se
+   * queda con las fotos y los tonos de los dos, y el otro desaparece; ver {@link UnirBorradores}.
+   */
+  @PostMapping("/{id}/unir")
+  public BorradorRespuesta unir(@PathVariable UUID id, @RequestBody UnirBorradorPeticion cuerpo) {
+    BorradorRespuesta unido =
+        BorradorRespuesta.de(
+            transaccion.execute(estado -> unirBorradores.ejecutar(id, cuerpo.borradorId())));
+    log.info("Borrador {} unido al {}", cuerpo.borradorId(), id);
+    return unido;
   }
 
   /**

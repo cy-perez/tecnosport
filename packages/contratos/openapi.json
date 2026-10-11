@@ -1940,12 +1940,16 @@
             "format" : "uuid",
             "type" : "string"
           },
+          "mismoDiseno" : {
+            "type" : "boolean"
+          },
           "titulo" : {
             "type" : "string"
           }
         },
         "required" : [
-          "id"
+          "id",
+          "mismoDiseno"
         ],
         "type" : "object"
       },
@@ -4334,6 +4338,18 @@
         },
         "type" : "object"
       },
+      "UnirBorradorPeticion" : {
+        "properties" : {
+          "borradorId" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        },
+        "required" : [
+          "borradorId"
+        ],
+        "type" : "object"
+      },
       "UrlSubidaRespuesta" : {
         "properties" : {
           "objectKey" : {
@@ -5422,6 +5438,47 @@
             "application/json" : {
               "schema" : {
                 "$ref" : "#/components/schemas/RechazarBorradorPeticion"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/BorradorRespuesta"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "admin-borrador-controlador"
+        ]
+      }
+    },
+    "/api/v1/admin/borradores/{id}/unir" : {
+      "post" : {
+        "operationId" : "unir",
+        "parameters" : [
+          {
+            "in" : "path",
+            "name" : "id",
+            "required" : true,
+            "schema" : {
+              "format" : "uuid",
+              "type" : "string"
+            }
+          }
+        ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/UnirBorradorPeticion"
               }
             }
           },

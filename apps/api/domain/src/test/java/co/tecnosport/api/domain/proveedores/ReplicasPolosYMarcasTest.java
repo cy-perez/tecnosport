@@ -266,6 +266,8 @@ class ReplicasPolosYMarcasTest {
         "Pantalón estilo Diesel - Amiri importado",
         repartidos.get(1).producto().titulo(),
         "sin marca legible no hay con qué decidir");
+    assertEquals("a", repartidos.get(0).reparto().diseno(), "la etiqueta del lector, para unirlos");
+    assertEquals("b", repartidos.get(1).reparto().diseno());
   }
 
   // --- Los tonos de las fotos ---

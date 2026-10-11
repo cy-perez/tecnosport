@@ -397,7 +397,10 @@ class RepositorioBorradoresJpaTest {
             null,
             Set.of(),
             new FotosDelProducto(
-                Set.of(ajena), Map.of(negra, "negro"), "{\"album_de_disenos\":false}"),
+                Set.of(ajena),
+                Map.of(negra, "negro"),
+                "{\"album_de_disenos\":false}",
+                "blusa abertura"),
             T);
     borradores.guardar(borrador);
     em.flush();
@@ -411,6 +414,7 @@ class RepositorioBorradoresJpaTest {
         .containsExactly(new PrecioAdicional("Gorra", Dinero.deCop(35000)));
     assertThat(leido.tonosSugeridos()).containsExactlyEntriesOf(Map.of(negra, "negro"));
     assertThat(leido.lecturaDeFotos()).contains("{\"album_de_disenos\":false}");
+    assertThat(leido.diseno()).contains("blusa abertura");
     assertThat(leido.fotosDescartadas()).containsExactly(ajena);
 
     BorradorProducto sinNada =

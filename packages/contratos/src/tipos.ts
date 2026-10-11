@@ -324,6 +324,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/borradores/{id}/unir": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["unir"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/categorias": {
         parameters: {
             query?: never;
@@ -2837,6 +2853,7 @@ export interface components {
         HermanoRespuesta: {
             /** Format: uuid */
             id: string;
+            mismoDiseno: boolean;
             titulo?: string;
         };
         HistorialPedidoRespuesta: {
@@ -3680,6 +3697,10 @@ export interface components {
             tipo?: string;
             valores?: string[];
         };
+        UnirBorradorPeticion: {
+            /** Format: uuid */
+            borradorId: string;
+        };
         UrlSubidaRespuesta: {
             objectKey?: string;
             url?: string;
@@ -4347,6 +4368,32 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["RechazarBorradorPeticion"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["BorradorRespuesta"];
+                };
+            };
+        };
+    };
+    unir: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UnirBorradorPeticion"];
             };
         };
         responses: {

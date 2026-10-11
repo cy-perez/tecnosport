@@ -20,16 +20,23 @@ public record BorradorDetalleRespuesta(
         BorradorRespuesta.de(detalle.borrador()),
         detalle.textos(),
         detalle.fotos().stream().map(FotoRespuesta::de).toList(),
-        detalle.hermanos().stream().map(h -> new HermanoRespuesta(h.id(), h.titulo())).toList());
+        detalle.hermanos().stream()
+            .map(h -> new HermanoRespuesta(h.id(), h.titulo(), h.mismoDiseno()))
+            .toList());
   }
 
   /**
-   * Otro borrador en revisión de la misma publicación: a donde el panel deja mover una foto.
+   * Otro borrador en revisión de la misma publicación: a donde el panel deja mover una foto, y con
+   * el que deja unirlo.
    *
    * @param titulo nulo si la extracción no le dio ninguno
+   * @param mismoDiseno la lectura de fotos vio en él el mismo diseño: posiblemente es el mismo
+   *     producto en otro color
    */
   public record HermanoRespuesta(
-      @Schema(requiredMode = Schema.RequiredMode.REQUIRED) UUID id, String titulo) {}
+      @Schema(requiredMode = Schema.RequiredMode.REQUIRED) UUID id,
+      String titulo,
+      @Schema(requiredMode = Schema.RequiredMode.REQUIRED) boolean mismoDiseno) {}
 
   /**
    * @param mensajeId el id de la foto, venga del proveedor o del panel: es el que se manda al

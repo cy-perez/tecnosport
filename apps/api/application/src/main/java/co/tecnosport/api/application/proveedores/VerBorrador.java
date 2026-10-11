@@ -100,7 +100,10 @@ public final class VerBorrador {
         repositorioBorradores.listarDePublicacion(publicacion.id()).stream()
             .filter(otro -> !otro.id().equals(borrador.id()))
             .filter(otro -> otro.estado() == EstadoBorrador.EN_REVISION)
-            .map(otro -> new Hermano(otro.id(), otro.titulo().orElse(null)))
+            .map(
+                otro ->
+                    new Hermano(
+                        otro.id(), otro.titulo().orElse(null), borrador.mismoDisenoQue(otro)))
             .toList();
     return new DetalleDeBorrador(borrador, publicacion, textos, fotos, hermanos);
   }
@@ -125,8 +128,17 @@ public final class VerBorrador {
     }
   }
 
-  /** Otro borrador de la misma publicación, como lo nombra el panel. */
-  public record Hermano(UUID id, String titulo) {}
+  /**
+   * Otro borrador de la misma publicación, como lo nombra el panel.
+   *
+   * @param mismoDiseno la lectura de fotos vio en él el mismo diseño que en este: posiblemente es
+   *     el mismo producto en otro color, y el panel ofrece unirlos ({@link UnirBorradores})
+   */
+  public record Hermano(UUID id, String titulo, boolean mismoDiseno) {
+    public Hermano(UUID id, String titulo) {
+      this(id, titulo, false);
+    }
+  }
 
   /** De dónde salió la foto: del mensaje del proveedor o de quien revisa, desde el panel. */
   public enum OrigenDeFoto {
