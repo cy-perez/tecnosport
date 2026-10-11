@@ -64,7 +64,8 @@
     "marca_con_productos": "This brand has products. Move them to another brand from their form before deleting it.",
     "marca_ya_existe": "There's already a brand with that name. Different capitalisation doesn't make it a different one.",
     "marca_no_encontrada": "That brand no longer exists: the list has just been refreshed.",
-    "lote_en_otro_estado": "The import changed state in the meantime (it finished, failed or was stopped). The list has just been refreshed."
+    "lote_en_otro_estado": "The import changed state in the meantime (it finished, failed or was stopped). The list has just been refreshed.",
+    "otra_ingesta_del_proveedor_en_curso": "The supplier has another import in progress. Retry the failed posts when it finishes."
   },
   "iniciarSesion": {
     "titulo": "Admin panel",
@@ -1038,7 +1039,8 @@
       "publicaciones": "{{total}} posts",
       "borradores": "{{nuevos}} new drafts, {{renovaciones}} renewals, {{agotados}} sold out",
       "alertas": "{{alertas}} with alerts, {{descartes}} discarded",
-      "parcial": "Stopped before finishing. This is what it got through:"
+      "parcial": "Stopped before finishing. This is what it got through:",
+      "fallidas": "{{fallidas}} couldn't be read"
     },
     "subir": {
       "titulo": "Upload an export",
@@ -1088,7 +1090,8 @@
       "error": {
         "pausar": "We couldn't pause the import. Try again.",
         "reanudar": "We couldn't resume the import. Try again.",
-        "detener": "We couldn't stop the import. Try again."
+        "detener": "We couldn't stop the import. Try again.",
+        "reintentarFallidas": "We couldn't retry the failed posts. Try again."
       }
     },
     "archivos": {
@@ -1140,7 +1143,32 @@
       "SIN_REINTENTOS_CON_CAUSA": "Processing was interrupted several times without finishing. The last failure: {{ultimo}} To process all of it, delete the import and upload the export again: uploading it without deleting it won't read again what was already recorded.",
       "REINICIO": "The application restarted while the import was being processed. To process all of it, delete the import and upload the export again: uploading it without deleting it won't read again what was already recorded.",
       "ERROR_INESPERADO": "It failed because of an unexpected program error. Delete the import and upload the export again; if it happens again, the server log says what it was.",
-      "DESCONOCIDO": "The import failed."
+      "DESCONOCIDO": "The import failed.",
+      "EXTRACTOR_NO_DISPONIBLE": "It paused itself: the model's API rejected the account (code {{dato}}): no credit, an invalid key or a model that no longer exists. Fix the account and press Resume; it picks up where it left off, losing nothing."
+    },
+    "cerradas": {
+      "ver": "See why",
+      "verLote": "See the posts that didn't leave a draft in the import from {{proveedor}} on {{fecha}}",
+      "reintentar": "Retry failed",
+      "reintentarLote": "Retry the failed posts of the import from {{proveedor}} on {{fecha}}",
+      "reintentadas": "The failed posts from {{proveedor}} are back in the queue. Whatever comes out of them is added to the same import's summary.",
+      "error": "We couldn't load the posts. Try again.",
+      "explicacion": "The posts in this import that didn't leave a draft. Discarded ones were read and there's nothing to review; failed ones couldn't be read and can be retried.",
+      "fotos": "{{total}} photos",
+      "descartada": "Discarded:",
+      "fallida": "Couldn't be read:",
+      "soloFotos": "Photos only, no text.",
+      "motivos": {
+        "SIN_PRODUCTO": "the message doesn't announce a product (a greeting, a notice or a promotion).",
+        "AGOTADO_FUERA_DE_CATALOGO": "it announces as sold out a product the catalog doesn't have.",
+        "MISMA_REFERENCIA_EN_REVISION": "it has the same reference as a draft already under review.",
+        "MISMA_REFERENCIA_EN_REVISION_CON_FOTOS": "it has the same reference as a draft already under review; its {{dato}} photos were added to that draft.",
+        "ANUNCIO_REPETIDO": "it's the same post, with the same photo, as a draft already under review.",
+        "VIENE_EN_CHAT_DE_CABALLERO": "the post is in the supplier's men's chat and is processed from that file.",
+        "EXTRACCION_FALLIDA": "the extractor couldn't read it: the API rejected the request or answered something unreadable.",
+        "ERROR_AL_RESOLVER": "a program error happened while deciding what to do with it ({{dato}}).",
+        "DESCONOCIDO": "the reason is unknown: it's from before reasons were saved."
+      }
     }
   },
   "tecnologia": {

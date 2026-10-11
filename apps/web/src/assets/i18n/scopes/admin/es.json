@@ -64,7 +64,8 @@
     "marca_con_productos": "Esta marca tiene productos. Muévelos a otra marca desde su formulario antes de eliminarla.",
     "marca_ya_existe": "Ya hay una marca con ese nombre. Escribirlo con otras mayúsculas no la hace distinta.",
     "marca_no_encontrada": "Esa marca ya no existe: la lista se acaba de actualizar.",
-    "lote_en_otro_estado": "La ingesta cambió de estado mientras tanto (terminó, falló o la detuvieron). La lista se acaba de actualizar."
+    "lote_en_otro_estado": "La ingesta cambió de estado mientras tanto (terminó, falló o la detuvieron). La lista se acaba de actualizar.",
+    "otra_ingesta_del_proveedor_en_curso": "El proveedor tiene otra ingesta en curso. Reintenta las fallidas cuando termine."
   },
   "iniciarSesion": {
     "titulo": "Panel administrativo",
@@ -1038,7 +1039,8 @@
       "publicaciones": "{{total}} publicaciones",
       "borradores": "{{nuevos}} borradores nuevos, {{renovaciones}} renovaciones, {{agotados}} agotados",
       "alertas": "{{alertas}} con alertas, {{descartes}} descartadas",
-      "parcial": "Se detuvo antes de terminar. Alcanzó a hacer esto:"
+      "parcial": "Se detuvo antes de terminar. Alcanzó a hacer esto:",
+      "fallidas": "{{fallidas}} no se pudieron leer"
     },
     "subir": {
       "titulo": "Subir una exportación",
@@ -1088,7 +1090,8 @@
       "error": {
         "pausar": "No pudimos pausar la ingesta. Vuelve a intentarlo.",
         "reanudar": "No pudimos reanudar la ingesta. Vuelve a intentarlo.",
-        "detener": "No pudimos detener la ingesta. Vuelve a intentarlo."
+        "detener": "No pudimos detener la ingesta. Vuelve a intentarlo.",
+        "reintentarFallidas": "No pudimos reintentar las fallidas. Vuelve a intentarlo."
       }
     },
     "archivos": {
@@ -1140,7 +1143,32 @@
       "SIN_REINTENTOS_CON_CAUSA": "El procesamiento se interrumpió varias veces sin terminar. El último fallo: {{ultimo}} Para procesarla entera, elimina la ingesta y vuelve a subir la exportación: subirla sin eliminarla no vuelve a leer lo que ya se registró.",
       "REINICIO": "La aplicación se reinició mientras se procesaba. Para procesarla entera, elimina la ingesta y vuelve a subir la exportación: subirla sin eliminarla no vuelve a leer lo que ya se registró.",
       "ERROR_INESPERADO": "Falló por un error inesperado del programa. Elimina la ingesta y vuelve a subir la exportación; si vuelve a pasar, el registro del servidor dice qué fue.",
-      "DESCONOCIDO": "La ingesta falló."
+      "DESCONOCIDO": "La ingesta falló.",
+      "EXTRACTOR_NO_DISPONIBLE": "Se pausó sola: la API del modelo rechazó la cuenta (código {{dato}}): sin saldo, la clave no vale o el modelo ya no existe. Arregla la cuenta y pulsa Reanudar; sigue donde iba, sin perder nada."
+    },
+    "cerradas": {
+      "ver": "Ver por qué",
+      "verLote": "Ver las publicaciones que no dejaron borrador en la ingesta de {{proveedor}} del {{fecha}}",
+      "reintentar": "Reintentar fallidas",
+      "reintentarLote": "Reintentar las publicaciones fallidas de la ingesta de {{proveedor}} del {{fecha}}",
+      "reintentadas": "Las publicaciones fallidas de {{proveedor}} volvieron a la cola. Lo que salga de ellas se suma al resumen de la misma ingesta.",
+      "error": "No pudimos cargar las publicaciones. Vuelve a intentarlo.",
+      "explicacion": "Las publicaciones de esta ingesta que no dejaron un borrador. Las descartadas se leyeron y no hay nada que revisar; las fallidas no se pudieron leer y se pueden reintentar.",
+      "fotos": "{{total}} fotos",
+      "descartada": "Descartada:",
+      "fallida": "No se pudo leer:",
+      "soloFotos": "Solo fotos, sin texto.",
+      "motivos": {
+        "SIN_PRODUCTO": "el mensaje no anuncia un producto (un saludo, un aviso o una promoción).",
+        "AGOTADO_FUERA_DE_CATALOGO": "anuncia como agotado un producto que el catálogo no tiene.",
+        "MISMA_REFERENCIA_EN_REVISION": "es la misma referencia de un borrador que ya está en revisión.",
+        "MISMA_REFERENCIA_EN_REVISION_CON_FOTOS": "es la misma referencia de un borrador que ya está en revisión; sus {{dato}} fotos se sumaron a ese borrador.",
+        "ANUNCIO_REPETIDO": "es el mismo anuncio, con la misma foto, de un borrador que ya está en revisión.",
+        "VIENE_EN_CHAT_DE_CABALLERO": "el anuncio está en el chat de caballero del proveedor y se procesa desde ese archivo.",
+        "EXTRACCION_FALLIDA": "el extractor no pudo leerla: la API rechazó la petición o respondió algo ilegible.",
+        "ERROR_AL_RESOLVER": "falló por un error del programa al decidir qué hacer con ella ({{dato}}).",
+        "DESCONOCIDO": "no se sabe el motivo: es de antes de que se guardara."
+      }
     }
   },
   "tecnologia": {

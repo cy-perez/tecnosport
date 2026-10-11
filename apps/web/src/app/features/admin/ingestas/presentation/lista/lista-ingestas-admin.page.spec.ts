@@ -17,6 +17,7 @@ import {
   LoteIngesta,
   LotesPaginados,
   OrdenIngesta,
+  PublicacionCerrada,
   SubirExportacion,
 } from '../../domain/ingesta.model';
 import {
@@ -44,6 +45,7 @@ function loteDePrueba(overrides: Partial<LoteIngesta> = {}): LoteIngesta {
       agotados: 0,
       descartes: 0,
       alertas: 2,
+      fallidas: 0,
     },
     codigoError: null,
     datoError: null,
@@ -91,6 +93,16 @@ class RepositorioIngestasAdminFalso implements RepositorioIngestasAdmin {
       throw this.errorAlOrdenar;
     }
     const actual = this.lotes.find((l) => l.id === id) ?? loteDePrueba({ id });
+    if (orden === 'reintentarFallidas') {
+      const reabierto: LoteIngesta = {
+        ...actual,
+        estado: 'RECIBIDO',
+        terminadoEn: null,
+        resumen: { ...actual.resumen, fallidas: 0 },
+      };
+      this.lotes = this.lotes.map((l) => (l.id === id ? reabierto : l));
+      return reabierto;
+    }
     const estado =
       orden === 'pausar'
         ? 'PAUSADO'
@@ -102,6 +114,14 @@ class RepositorioIngestasAdminFalso implements RepositorioIngestasAdmin {
     const nuevo: LoteIngesta = { ...actual, estado };
     this.lotes = this.lotes.map((l) => (l.id === id ? nuevo : l));
     return nuevo;
+  }
+
+  cerradas: PublicacionCerrada[] = [];
+  readonly cerradasPedidas: string[] = [];
+
+  async publicacionesCerradas(id: string): Promise<readonly PublicacionCerrada[]> {
+    this.cerradasPedidas.push(id);
+    return this.cerradas;
   }
 
   async subir(comando: SubirExportacion): Promise<LoteIngesta> {
@@ -562,6 +582,120 @@ describe('ListaIngestasAdminPage', () => {
       const { container } = await renderPagina([enCurso()]);
 
       fireEvent.click(await screen.findByRole('button', { name: /Detener la ingesta de Bolsos/ }));
+      await esperarSinViolaciones(container);
+    });
+  });
+
+  /**
+   * Meraki, 11 de octubre de 2026: la API del modelo rechazó la cuenta y el panel dijo «23
+   * descartadas». Las fallidas se cuentan aparte, se ve por qué, y se reintentan.
+   */
+  describe('las publicaciones que no dejaron borrador', () => {
+    const c = esAdmin.ingestas.cerradas;
+    const conFallidas = () =>
+      loteDePrueba({
+        resumen: {
+          ...loteDePrueba().resumen,
+          borradoresNuevos: 0,
+          alertas: 0,
+          descartes: 1,
+          fallidas: 2,
+        },
+      });
+
+    it('cuenta las fallidas aparte de las descartadas', async () => {
+      await renderPagina([conFallidas()]);
+
+      expect(await screen.findByText('2 no se pudieron leer')).toBeTruthy();
+      expect(screen.getByText('0 con alertas, 1 descartadas')).toBeTruthy();
+    });
+
+    it('muestra por qué no dejó borrador cada una, traducido', async () => {
+      const { repositorio } = await renderPagina([conFallidas()]);
+      repositorio.cerradas = [
+        {
+          id: 'p1',
+          fecha: '2026-10-11T19:34:40Z',
+          estado: 'ERROR',
+          motivo: 'EXTRACCION_FALLIDA',
+          dato: null,
+          extracto: 'Polo 1.1 $55.000',
+          fotos: 4,
+        },
+        {
+          id: 'p2',
+          fecha: '2026-10-11T19:35:00Z',
+          estado: 'DESCARTADA',
+          motivo: 'MISMA_REFERENCIA_EN_REVISION',
+          dato: '3',
+          extracto: null,
+          fotos: 3,
+        },
+      ];
+
+      const ver = await screen.findByRole('button', { name: /Ver las publicaciones/ });
+      expect(ver.getAttribute('aria-expanded')).toBe('false');
+      fireEvent.click(ver);
+
+      expect(await screen.findByText('Polo 1.1 $55.000')).toBeTruthy();
+      expect(screen.getByText(new RegExp(c.motivos.EXTRACCION_FALLIDA.slice(0, 30)))).toBeTruthy();
+      expect(screen.getByText(new RegExp('sus 3 fotos se sumaron a ese borrador'))).toBeTruthy();
+      expect(screen.getByText(c.soloFotos)).toBeTruthy();
+      expect(repositorio.cerradasPedidas).toEqual(['lote-1']);
+      expect(ver.getAttribute('aria-expanded')).toBe('true');
+    });
+
+    it('reintenta las fallidas y lo dice cuando el botón ya no está', async () => {
+      const { repositorio } = await renderPagina([conFallidas()]);
+
+      fireEvent.click(await screen.findByRole('button', { name: /Reintentar las publicaciones/ }));
+
+      expect(
+        await screen.findByText(c.reintentadas.replace('{{proveedor}}', 'Bolsos Medellín')),
+      ).toBeTruthy();
+      expect(repositorio.ordenes).toEqual([{ id: 'lote-1', orden: 'reintentarFallidas' }]);
+    });
+
+    it('sin fallidas no ofrece reintentar, y sin descartes tampoco ver por qué', async () => {
+      await renderPagina([loteDePrueba()]);
+
+      await screen.findByText('9 publicaciones');
+      expect(screen.queryByRole('button', { name: /Reintentar las publicaciones/ })).toBeNull();
+      expect(screen.queryByRole('button', { name: /Ver las publicaciones/ })).toBeNull();
+    });
+
+    it('en pausa por la cuenta del modelo dice qué pasó y que se reanuda', async () => {
+      await renderPagina([
+        loteDePrueba({
+          estado: 'PAUSADO',
+          codigoError: 'EXTRACTOR_NO_DISPONIBLE',
+          datoError: '400',
+        }),
+      ]);
+
+      expect(
+        await screen.findByText(
+          esAdmin.ingestas.fallos.EXTRACTOR_NO_DISPONIBLE.replace('{{dato}}', '400'),
+        ),
+      ).toBeTruthy();
+    });
+
+    it('con la lista abierta no tiene violaciones de accesibilidad', async () => {
+      const { container, repositorio } = await renderPagina([conFallidas()]);
+      repositorio.cerradas = [
+        {
+          id: 'p1',
+          fecha: '2026-10-11T19:34:40Z',
+          estado: 'ERROR',
+          motivo: 'EXTRACCION_FALLIDA',
+          dato: null,
+          extracto: 'Polo 1.1',
+          fotos: 1,
+        },
+      ];
+
+      fireEvent.click(await screen.findByRole('button', { name: /Ver las publicaciones/ }));
+      await screen.findByText('Polo 1.1');
       await esperarSinViolaciones(container);
     });
   });

@@ -136,6 +136,18 @@
     }
   </p>
 
+  <p
+    #avisoReintentoRef
+    class="m-0 text-ts-exito"
+    [class.mb-16]="avisoReintento()"
+    role="status"
+    tabindex="-1"
+  >
+    @if (avisoReintento(); as proveedor) {
+      {{ 'admin.ingestas.cerradas.reintentadas' | transloco: { proveedor: proveedor } }}
+    }
+  </p>
+
   <!-- Los errores de pausar y reanudar; los de detener se dicen dentro de su pregunta. -->
   @if (errorOrden() && !confirmandoDetener()) {
     <p class="m-0 mb-16 text-ts-error" role="alert">{{ errorOrden() }}</p>
@@ -239,6 +251,14 @@
                                   }
                           }}
                         </li>
+                        @if (lote.resumen.fallidas > 0) {
+                          <li class="text-ts-error">
+                            {{
+                              'admin.ingestas.resumen.fallidas'
+                                | transloco: { fallidas: lote.resumen.fallidas }
+                            }}
+                          </li>
+                        }
                         @if (lote.resumen.alertas > 0 || lote.resumen.descartes > 0) {
                           <li>
                             {{
@@ -272,6 +292,45 @@
                   </td>
                   <td>
                     <div class="flex flex-wrap gap-8">
+                      @if (tieneCerradas(lote)) {
+                        <ts-boton
+                          variante="secundario"
+                          tipo="button"
+                          [attr.data-cerradas]="lote.id"
+                          [etiquetaAccesible]="
+                            'admin.ingestas.cerradas.verLote'
+                              | transloco
+                                : {
+                                    proveedor: nombreDelProveedor(lote),
+                                    fecha: formatearFecha(lote.creadoEn),
+                                  }
+                          "
+                          [expandido]="viendoCerradas() === lote.id"
+                          [controla]="'cerradas-lote-' + lote.id"
+                          (click)="alternarCerradas(lote)"
+                        >
+                          {{ 'admin.ingestas.cerradas.ver' | transloco }}
+                        </ts-boton>
+                      }
+                      @if (sePuedenReintentarFallidas(lote)) {
+                        <ts-boton
+                          variante="secundario"
+                          tipo="button"
+                          [attr.data-reintentar]="lote.id"
+                          [ocupado]="loteOrdenando() === lote.id"
+                          [etiquetaAccesible]="
+                            'admin.ingestas.cerradas.reintentarLote'
+                              | transloco
+                                : {
+                                    proveedor: nombreDelProveedor(lote),
+                                    fecha: formatearFecha(lote.creadoEn),
+                                  }
+                          "
+                          (click)="reintentarFallidas(lote)"
+                        >
+                          {{ 'admin.ingestas.cerradas.reintentar' | transloco }}
+                        </ts-boton>
+                      }
                       @if (sePuedePausar(lote) || sePuedeReanudar(lote)) {
                         <ts-boton
                           variante="secundario"
@@ -342,6 +401,60 @@
                     </div>
                   </td>
                 </tr>
+
+                @if (viendoCerradas() === lote.id) {
+                  <tr class="border-b border-ts-borde last:border-b-0">
+                    <td colspan="5">
+                      <div
+                        class="flex flex-col gap-8 rounded-md border border-ts-borde-control p-12"
+                        [id]="'cerradas-lote-' + lote.id"
+                      >
+                        @if (cerradas.isPending()) {
+                          <ts-esqueleto />
+                        } @else if (cerradas.isError()) {
+                          <p class="m-0 text-ts-error" role="alert">
+                            {{ 'admin.ingestas.cerradas.error' | transloco }}
+                          </p>
+                        } @else {
+                          <p class="m-0 text-ts-texto-suave">
+                            {{ 'admin.ingestas.cerradas.explicacion' | transloco }}
+                          </p>
+                          <ul class="m-0 flex list-none flex-col gap-8 p-0">
+                            @for (publicacion of cerradas.data() ?? []; track publicacion.id) {
+                              <li class="border-t border-ts-borde pt-8 first:border-t-0 first:pt-0">
+                                <p class="m-0 text-xs text-ts-texto-suave tabular-nums">
+                                  {{ formatearFecha(publicacion.fecha) }} ·
+                                  {{
+                                    'admin.ingestas.cerradas.fotos'
+                                      | transloco: { total: publicacion.fotos }
+                                  }}
+                                </p>
+                                <p
+                                  class="m-0"
+                                  [class.text-ts-error]="publicacion.estado === 'ERROR'"
+                                >
+                                  {{
+                                    (publicacion.estado === 'ERROR'
+                                      ? 'admin.ingestas.cerradas.fallida'
+                                      : 'admin.ingestas.cerradas.descartada'
+                                    ) | transloco
+                                  }}
+                                  {{ textoDelMotivo(publicacion) }}
+                                </p>
+                                <p class="m-0 text-xs text-ts-texto-suave">
+                                  {{
+                                    publicacion.extracto ??
+                                      ('admin.ingestas.cerradas.soloFotos' | transloco)
+                                  }}
+                                </p>
+                              </li>
+                            }
+                          </ul>
+                        }
+                      </div>
+                    </td>
+                  </tr>
+                }
 
                 @if (confirmandoDetener() === lote.id) {
                   <tr class="border-b border-ts-borde last:border-b-0">

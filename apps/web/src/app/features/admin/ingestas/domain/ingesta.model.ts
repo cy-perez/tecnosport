@@ -15,8 +15,11 @@ export const ESTADOS_ABIERTOS: readonly EstadoLote[] = [
   'DETENIENDO',
 ];
 
-/** Lo que el panel le puede pedir a un lote abierto. */
-export type OrdenIngesta = 'pausar' | 'reanudar' | 'detener';
+/**
+ * Lo que el panel le puede pedir a un lote: pausar, reanudar o detener uno abierto, y reintentar
+ * las fallidas de uno terminado.
+ */
+export type OrdenIngesta = 'pausar' | 'reanudar' | 'detener' | 'reintentarFallidas';
 
 /** Las cifras con las que termina un lote. Todas en cero mientras corre. */
 export interface ResumenIngesta {
@@ -29,6 +32,11 @@ export interface ResumenIngesta {
   readonly agotados: number;
   readonly descartes: number;
   readonly alertas: number;
+  /**
+   * Las publicaciones que no se pudieron leer —la API del modelo las rechazó—. Hasta el 11 de
+   * octubre de 2026 se contaban como descartadas, que es decir que no eran productos.
+   */
+  readonly fallidas: number;
 }
 
 export interface LoteIngesta {
@@ -41,8 +49,9 @@ export interface LoteIngesta {
   readonly terminadoEn: string | null;
   readonly resumen: ResumenIngesta;
   /**
-   * Solo en `ERROR`: por qué no terminó, como código que el panel traduce (regla dura 4). El
-   * servidor no manda frases desde el 11 de octubre de 2026.
+   * En `ERROR`, por qué no terminó; en `PAUSADO`, por qué se pausó solo —la cuenta del modelo no
+   * respondía—. Un código que el panel traduce (regla dura 4): el servidor no manda frases desde el
+   * 11 de octubre de 2026.
    */
   readonly codigoError: CodigoDeFallo | null;
   /** El valor que interpola el texto del fallo, si hay uno: la fecha ilegible, el último fallo. */
@@ -68,6 +77,7 @@ export const CODIGOS_DE_FALLO = [
   'COLA_NO_DISPONIBLE',
   'SIN_REINTENTOS',
   'REINICIO',
+  'EXTRACTOR_NO_DISPONIBLE',
   'ERROR_INESPERADO',
   'DESCONOCIDO',
 ] as const;
@@ -125,6 +135,68 @@ export interface SubirExportacion {
 export interface LoteEliminado {
   readonly productosEliminados: number;
   readonly productosConservados: number;
+}
+
+/**
+ * Por qué una publicación no dejó borrador, los mismos de `MotivoDePublicacion` en el servidor. Cada
+ * uno tiene su texto en `admin.ingestas.cerradas.motivos`; uno que el panel no conozca se muestra
+ * como `DESCONOCIDO`.
+ */
+export const MOTIVOS_DE_PUBLICACION = [
+  'SIN_PRODUCTO',
+  'AGOTADO_FUERA_DE_CATALOGO',
+  'MISMA_REFERENCIA_EN_REVISION',
+  'ANUNCIO_REPETIDO',
+  'VIENE_EN_CHAT_DE_CABALLERO',
+  'EXTRACCION_FALLIDA',
+  'ERROR_AL_RESOLVER',
+  'DESCONOCIDO',
+] as const;
+
+export type MotivoDePublicacion = (typeof MOTIVOS_DE_PUBLICACION)[number];
+
+export function esMotivoDePublicacion(
+  valor: string | null | undefined,
+): valor is MotivoDePublicacion {
+  return (MOTIVOS_DE_PUBLICACION as readonly string[]).includes(valor ?? '');
+}
+
+/** Una publicación del lote que no dejó borrador: descartada o fallida, con su motivo. */
+export interface PublicacionCerrada {
+  readonly id: string;
+  /** ISO-8601, UTC: la fecha del anuncio en el chat. */
+  readonly fecha: string;
+  readonly estado: 'DESCARTADA' | 'ERROR';
+  readonly motivo: MotivoDePublicacion;
+  /** El valor que interpola el texto del motivo: cuántas fotos se sumaron, el tipo del error. */
+  readonly dato: string | null;
+  /** El comienzo del anuncio; nulo si eran solo fotos. */
+  readonly extracto: string | null;
+  readonly fotos: number;
+}
+
+/**
+ * La clave del texto que explica el motivo. «La misma referencia» con fotos sumadas lo dice,
+ * porque esas fotos no se perdieron: están en el otro borrador.
+ */
+export function claveDelMotivo(publicacion: PublicacionCerrada): string {
+  const base = 'admin.ingestas.cerradas.motivos.' + publicacion.motivo;
+  return publicacion.motivo === 'MISMA_REFERENCIA_EN_REVISION' && publicacion.dato
+    ? base + '_CON_FOTOS'
+    : base;
+}
+
+/** ¿Hay algo cerrado que mirar? Solo cuando el lote ya contó. */
+export function tieneCerradas(lote: LoteIngesta): boolean {
+  return tieneResumen(lote) && lote.resumen.descartes + lote.resumen.fallidas > 0;
+}
+
+/**
+ * Las fallidas se reintentan en un lote terminado: en uno abierto todavía pueden estar corriendo, y
+ * en uno detenido lo que faltó no se retoma (ver `admin.ingestas.ordenes.loQueImplica`).
+ */
+export function sePuedenReintentarFallidas(lote: LoteIngesta): boolean {
+  return lote.estado === 'TERMINADO' && lote.resumen.fallidas > 0;
 }
 
 export function loteAbierto(lote: LoteIngesta): boolean {

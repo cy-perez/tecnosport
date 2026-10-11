@@ -9,10 +9,11 @@ import {
   LoteIngesta,
   LotesPaginados,
   OrdenIngesta,
+  PublicacionCerrada,
   SubirExportacion,
 } from '../domain/ingesta.model';
 import { RepositorioIngestasAdmin } from '../domain/repositorio-ingestas-admin.puerto';
-import { aLoteIngesta, aLotesPaginados } from './mapeador-ingesta';
+import { aLoteIngesta, aLotesPaginados, aPublicacionCerrada } from './mapeador-ingesta';
 
 /**
  * Lo que el navegador manda como tipo del zip. Chrome dice `application/zip`, Windows a veces
@@ -90,7 +91,25 @@ export class IngestasAdminHttpRepositorio implements RepositorioIngestasAdmin {
             'no se pudo detener la ingesta',
           ),
         );
+      case 'reintentarFallidas':
+        return aLoteIngesta(
+          desempaquetar(
+            await this.cliente.POST('/api/v1/admin/ingestas/{id}/reintentar-fallidas', {
+              params,
+            }),
+            'no se pudieron reintentar las fallidas',
+          ),
+        );
     }
+  }
+
+  async publicacionesCerradas(id: string): Promise<readonly PublicacionCerrada[]> {
+    const respuesta = await this.cliente.GET('/api/v1/admin/ingestas/{id}/publicaciones-cerradas', {
+      params: { path: { id } },
+    });
+    return desempaquetar(respuesta, 'no se pudieron cargar las publicaciones').map(
+      aPublicacionCerrada,
+    );
   }
 
   async subir(comando: SubirExportacion): Promise<LoteIngesta> {

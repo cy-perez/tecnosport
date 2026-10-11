@@ -5,6 +5,7 @@ import {
   LoteIngesta,
   LotesPaginados,
   OrdenIngesta,
+  PublicacionCerrada,
   SubirExportacion,
 } from './ingesta.model';
 
@@ -21,8 +22,13 @@ export interface RepositorioIngestasAdmin {
   subir(comando: SubirExportacion): Promise<LoteIngesta>;
   /** Borra la ingesta con sus borradores y los productos no publicados que salieron de ella. */
   eliminar(id: string): Promise<LoteEliminado>;
-  /** Pausar, reanudar o detener. Devuelve el lote como quedó: detener en curso da `DETENIENDO`. */
+  /**
+   * Pausar, reanudar, detener o reintentar las fallidas. Devuelve el lote como quedó: detener en
+   * curso da `DETENIENDO`, reintentar da `RECIBIDO`.
+   */
   ordenar(id: string, orden: OrdenIngesta): Promise<LoteIngesta>;
+  /** Las publicaciones del lote que no dejaron borrador, en el orden del chat. */
+  publicacionesCerradas(id: string): Promise<readonly PublicacionCerrada[]>;
 }
 
 export const REPOSITORIO_INGESTAS_ADMIN = new InjectionToken<RepositorioIngestasAdmin>(
