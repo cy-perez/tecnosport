@@ -34,10 +34,10 @@ export interface FotoDeBorradorTecnologia {
   readonly url: string;
   readonly ancho: number;
   readonly alto: number;
+  /** El texto alternativo con que se publicará, en cada idioma: quien aprueba lo ve. */
+  readonly altEs: string;
+  readonly altEn: string;
 }
-
-/** Las que necesita un modelo nuevo para aprobarse. El servidor lo exige igual. */
-export const MINIMO_DE_FOTOS = 4;
 
 export interface BorradorTecnologia {
   readonly id: string;
@@ -61,6 +61,11 @@ export interface BorradorTecnologia {
   readonly creadoEn: string;
   /** Cuántas tiene: viene también en la bandeja, que no trae las fotos. */
   readonly cantidadDeFotos: number;
+  /**
+   * Cuántas le faltan para aprobarse; cero en uno de configuraciones nuevas. Lo calcula el servidor,
+   * que es quien sabe el mínimo: el panel no lo repite.
+   */
+  readonly fotosQueFaltan: number;
   /** Solo en el detalle; vacía en la bandeja. */
   readonly fotos: readonly FotoDeBorradorTecnologia[];
 }
@@ -84,14 +89,6 @@ export function borradorTecnologiaEditable(borrador: BorradorTecnologia): boolea
 /** Un borrador con producto mientras está en revisión completa ese producto: no crea otro. */
 export function completaUnProductoExistente(borrador: BorradorTecnologia): boolean {
   return borrador.estado === 'EN_REVISION' && borrador.productoId !== null;
-}
-
-/**
- * Cuántas fotos le faltan para aprobarse. Un borrador de configuraciones nuevas no pide: el
- * producto ya tiene las suyas.
- */
-export function fotosQueFaltan(borrador: BorradorTecnologia): number {
-  return borrador.productoId !== null ? 0 : Math.max(0, MINIMO_DE_FOTOS - borrador.cantidadDeFotos);
 }
 
 /**

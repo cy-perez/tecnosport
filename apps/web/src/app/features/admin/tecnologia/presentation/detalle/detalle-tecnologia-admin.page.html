@@ -56,29 +56,36 @@
       </h2>
       @if (borrador.fotos.length === 0) {
         <p class="mb-24 text-ts-texto-suave">
-          {{ 'admin.tecnologia.detalle.sinFotos' | transloco: { minimo: minimoDeFotos } }}
+          {{ 'admin.tecnologia.detalle.sinFotos' | transloco }}
         </p>
       } @else {
         <ul class="m-0 mb-24 grid list-none grid-cols-2 gap-12 p-0 desde-tableta:grid-cols-4">
           @for (foto of borrador.fotos; track foto.id; let i = $index) {
-            <li class="flex flex-col gap-8">
-              <!-- `<img>` a secas y no NgOptimizedImage: la URL es firmada, caduca y lleva su
-                   propia query; el cargador del catálogo la partiría en variantes que no existen. -->
-              <img
-                class="aspect-square w-full rounded-md object-cover"
-                [src]="foto.url"
-                [width]="foto.ancho"
-                [height]="foto.alto"
-                [alt]="
-                  'admin.tecnologia.detalle.fotoAlt'
-                    | transloco: { modelo: borrador.titulo, numero: i + 1 }
-                "
-              />
-              @if (i === 0) {
-                <p class="m-0 text-xs text-ts-texto-suave">
-                  {{ 'admin.tecnologia.detalle.principal' | transloco }}
-                </p>
-              }
+            <li>
+              <figure class="m-0 flex flex-col gap-8">
+                <!-- `<img>` a secas y no NgOptimizedImage: la URL es firmada, caduca y lleva su
+                     propia query; el cargador del catálogo la partiría en variantes que no existen. -->
+                <img
+                  class="aspect-square w-full rounded-md object-cover"
+                  [src]="foto.url"
+                  [width]="foto.ancho"
+                  [height]="foto.alto"
+                  [alt]="
+                    altDe(foto) ||
+                    ('admin.tecnologia.detalle.fotoAlt'
+                      | transloco: { modelo: borrador.titulo, numero: i + 1 })
+                  "
+                />
+                <!-- El texto que se publicará como alternativo: quien aprueba lo ve antes. -->
+                <figcaption class="flex flex-col gap-4 text-xs text-ts-texto-suave">
+                  @if (i === 0) {
+                    <span class="font-medio">{{
+                      'admin.tecnologia.detalle.principal' | transloco
+                    }}</span>
+                  }
+                  <span>{{ altDe(foto) }}</span>
+                </figcaption>
+              </figure>
             </li>
           }
         </ul>
@@ -199,11 +206,9 @@
         </p>
 
         @if (faltanFotos() > 0) {
-          <p class="m-0 text-sm text-ts-error">
-            {{
-              'admin.tecnologia.aprobar.faltanFotos'
-                | transloco: { faltan: faltanFotos(), minimo: minimoDeFotos }
-            }}
+          <!-- Describe el botón de aprobar: quien llega con Tab lo oye ahí, no solo al leer en orden. -->
+          <p id="tecnologia-faltan-fotos" class="m-0 text-sm text-ts-error">
+            {{ 'admin.tecnologia.aprobar.faltanFotos' | transloco: { faltan: faltanFotos() } }}
           </p>
         }
 
@@ -245,6 +250,7 @@
             tipo="submit"
             [ocupado]="aprobando()"
             [etiquetaCargando]="'admin.tecnologia.aprobar.aprobando' | transloco"
+            [descritoPor]="faltanFotos() > 0 ? 'tecnologia-faltan-fotos' : null"
           >
             {{ 'admin.tecnologia.aprobar.accion' | transloco }}
           </ts-boton>

@@ -253,33 +253,39 @@ describe('DetalleTecnologiaAdminPage', () => {
     const fotos = screen.getAllByRole('img');
     expect(fotos).toHaveLength(4);
     expect(fotos[0].getAttribute('src')).toBe('https://firmada.local/foto-1.avif');
-    expect(fotos[0].getAttribute('alt')).toBe('Foto 1 de Samsung Galaxy A17 5G');
+    expect(fotos[0].getAttribute('alt')).toBe('Samsung Galaxy A17 5G sobre fondo blanco 1');
     expect(screen.getByText(esAdmin.tecnologia.detalle.principal)).toBeTruthy();
+    expect(screen.getByText('Samsung Galaxy A17 5G sobre fondo blanco 2')).toBeTruthy();
   });
 
   it('un modelo nuevo sin sus cuatro fotos no se aprueba, y no se envía', async () => {
     const { repositorio } = await renderPagina(
-      borradorTecnologiaDePrueba({ cantidadDeFotos: 1, fotos: [] }),
+      borradorTecnologiaDePrueba({ cantidadDeFotos: 1, fotosQueFaltan: 3, fotos: [] }),
     );
     await screen.findByRole('option', { name: 'Samsung' });
 
     expect(screen.getByText(/todavía no tiene fotos/)).toBeTruthy();
-    fireEvent.click(screen.getByRole('button', { name: esAdmin.tecnologia.aprobar.accion }));
+    const aprobar = screen.getByRole('button', { name: esAdmin.tecnologia.aprobar.accion });
+    const aviso = screen.getByText('Le faltan 3 fotos para aprobarse.');
+    expect(aprobar.getAttribute('aria-describedby')).toContain(aviso.id);
+    fireEvent.click(aprobar);
 
-    expect(
-      (await screen.findAllByText('Le faltan 3 de las 4 fotos que necesita para aprobarse.'))
-        .length,
-    ).toBeGreaterThan(0);
+    expect(await screen.findByText(esAdmin.tecnologia.aprobar.revisaFotos)).toBeTruthy();
     expect(repositorio.aprobaciones).toEqual([]);
   });
 
   it('las configuraciones nuevas de un producto no muestran fotos ni las piden', async () => {
     await renderPagina(
-      borradorTecnologiaDePrueba({ productoId: 'p-1', cantidadDeFotos: 0, fotos: [] }),
+      borradorTecnologiaDePrueba({
+        productoId: 'p-1',
+        cantidadDeFotos: 0,
+        fotosQueFaltan: 0,
+        fotos: [],
+      }),
     );
 
     expect(screen.queryByRole('heading', { name: esAdmin.tecnologia.detalle.fotos })).toBeNull();
-    expect(screen.queryByText(/fotos que necesita/)).toBeNull();
+    expect(screen.queryByText(/fotos para aprobarse/)).toBeNull();
   });
 
   it('no tiene violaciones de accesibilidad', async () => {

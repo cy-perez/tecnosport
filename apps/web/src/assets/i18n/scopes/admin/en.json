@@ -1140,7 +1140,9 @@
       "configuraciones": "Configurations",
       "estado": "Status",
       "acciones": "Actions",
-      "fotos": "Photos"
+      "fotos": "Photos",
+      "fotosFaltan": "{{tiene}} ({{faltan}} missing)",
+      "fotosNoAplica": "Not applicable: the product already has its photos"
     },
     "detalle": {
       "miga": "Review",
@@ -1165,7 +1167,7 @@
       "guardado": "Selection saved.",
       "errorGuardar": "The selection could not be saved. Try again.",
       "fotos": "Photos",
-      "sinFotos": "This model has no photos yet. The product sheet skill uploads them once the model has its {{minimo}} photos ready.",
+      "sinFotos": "This model has no photos yet. The product sheet skill uploads them once the model has its photos ready.",
       "fotoAlt": "Photo {{numero}} of {{modelo}}",
       "principal": "Main: the one that opens the product page and the catalog card."
     },
@@ -1185,7 +1187,8 @@
       "precioBajoCosto": "The sale price of each configuration must be higher than its cost.",
       "faltanMarcaYCategoria": "Choose the catalog brand and category.",
       "error": "It could not be approved. Try again.",
-      "faltanFotos": "It is missing {{faltan}} of the {{minimo}} photos it needs to be approved."
+      "faltanFotos": "It is missing {{faltan}} photos to be approved.",
+      "revisaFotos": "It cannot be approved yet: photos are missing."
     },
     "rechazar": {
       "titulo": "Reject",

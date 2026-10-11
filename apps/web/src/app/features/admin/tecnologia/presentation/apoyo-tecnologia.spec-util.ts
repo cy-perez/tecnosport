@@ -55,11 +55,14 @@ export function borradorTecnologiaDePrueba(
     creadoEn: '2026-10-08T15:00:00Z',
     // Las cuatro que exige un modelo nuevo: así cada prueba de la aprobación prueba lo suyo.
     cantidadDeFotos: 4,
+    fotosQueFaltan: 0,
     fotos: [1, 2, 3, 4].map((n) => ({
       id: `foto-${n}`,
       url: `https://firmada.local/foto-${n}.avif`,
       ancho: 1200,
       alto: 1200,
+      altEs: `Samsung Galaxy A17 5G sobre fondo blanco ${n}`,
+      altEn: `Samsung Galaxy A17 5G on a white background ${n}`,
     })),
     ...cambios,
   };

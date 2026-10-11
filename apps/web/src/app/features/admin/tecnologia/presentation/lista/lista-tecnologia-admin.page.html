@@ -72,7 +72,23 @@
                     }
                   </td>
                   <td class="tabular-nums">{{ borrador.configuraciones.length }}</td>
-                  <td class="tabular-nums">{{ borrador.cantidadDeFotos }}</td>
+                  <td class="tabular-nums">
+                    @if (borrador.productoId) {
+                      <!-- Configuraciones nuevas de un producto: no piden fotos. -->
+                      <span aria-hidden="true">—</span>
+                      <span class="sr-only">{{
+                        'admin.tecnologia.columnas.fotosNoAplica' | transloco
+                      }}</span>
+                    } @else if (borrador.fotosQueFaltan > 0) {
+                      {{
+                        'admin.tecnologia.columnas.fotosFaltan'
+                          | transloco
+                            : { tiene: borrador.cantidadDeFotos, faltan: borrador.fotosQueFaltan }
+                      }}
+                    } @else {
+                      {{ borrador.cantidadDeFotos }}
+                    }
+                  </td>
                   <td>
                     <span [class]="clasesEstado(borrador.estado)">{{
                       etiquetaEstado(borrador.estado)

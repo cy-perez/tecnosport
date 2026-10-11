@@ -1,8 +1,6 @@
 import {
-  BorradorTecnologia,
   ConfiguracionTecnologia,
   coloresIniciales,
-  fotosQueFaltan,
   precioEscrito,
   precioInicial,
   problemaDeAprobacion,
@@ -89,30 +87,4 @@ describe('borrador de tecnología', () => {
     expect(separarColoresEscritos(' Negro, Azul claro,,Negro ')).toEqual(['Negro', 'Azul claro']);
   });
 
-  function conFotos(cantidadDeFotos: number, productoId: string | null = null): BorradorTecnologia {
-    return {
-      id: 'bt-1',
-      proveedorId: 'prov-1',
-      idModelo: 'samsung-galaxy-a17-5g',
-      titulo: 'Samsung Galaxy A17 5G',
-      marcaSugerida: null,
-      categoriaSugerida: null,
-      descripcion: 'El A17.',
-      paleta: [],
-      configuraciones: [configuracion()],
-      productoId,
-      estado: 'EN_REVISION',
-      motivoRechazo: null,
-      vistoEn: '2026-10-08T05:00:00Z',
-      creadoEn: '2026-10-08T15:00:00Z',
-      cantidadDeFotos,
-      fotos: [],
-    };
-  }
-
-  it('a un modelo nuevo le faltan las fotos hasta cuatro, y a uno de configuraciones nuevas ninguna', () => {
-    expect(fotosQueFaltan(conFotos(1))).toBe(3);
-    expect(fotosQueFaltan(conFotos(6))).toBe(0);
-    expect(fotosQueFaltan(conFotos(0, 'p-1'))).toBe(0);
-  });
 });

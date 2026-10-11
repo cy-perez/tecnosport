@@ -57,14 +57,25 @@ describe('ListaTecnologiaAdminPage', () => {
     expect(screen.getByRole('link', { name: 'Revisar Samsung Galaxy A17 5G' })).toBeTruthy();
   });
 
-  it('dice cuántas fotos tiene cada modelo', async () => {
-    await renderPagina([borradorTecnologiaDePrueba({ cantidadDeFotos: 3, fotos: [] })]);
+  it('dice cuántas fotos tiene cada modelo y cuántas le faltan', async () => {
+    await renderPagina([
+      borradorTecnologiaDePrueba({ cantidadDeFotos: 3, fotosQueFaltan: 1, fotos: [] }),
+      borradorTecnologiaDePrueba({
+        id: 'bt-2',
+        titulo: 'Galaxy A17 128GB',
+        productoId: 'p-1',
+        cantidadDeFotos: 0,
+        fotosQueFaltan: 0,
+        fotos: [],
+      }),
+    ]);
 
     const tabla = within(await screen.findByRole('table'));
     expect(
       tabla.getByRole('columnheader', { name: esAdmin.tecnologia.columnas.fotos }),
     ).toBeTruthy();
-    expect(tabla.getByText('3')).toBeTruthy();
+    expect(tabla.getByText('3 (faltan 1)')).toBeTruthy();
+    expect(tabla.getByText(esAdmin.tecnologia.columnas.fotosNoAplica)).toBeTruthy();
   });
 
   it('marca los que completan un producto que ya se vende', async () => {

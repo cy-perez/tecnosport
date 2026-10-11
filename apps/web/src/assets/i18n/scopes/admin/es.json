@@ -1140,7 +1140,9 @@
       "configuraciones": "Configuraciones",
       "estado": "Estado",
       "acciones": "Acciones",
-      "fotos": "Fotos"
+      "fotos": "Fotos",
+      "fotosFaltan": "{{tiene}} (faltan {{faltan}})",
+      "fotosNoAplica": "No aplica: el producto ya tiene sus fotos"
     },
     "detalle": {
       "miga": "Revisión",
@@ -1165,7 +1167,7 @@
       "guardado": "Elección guardada.",
       "errorGuardar": "No se pudo guardar la elección. Inténtalo de nuevo.",
       "fotos": "Fotos",
-      "sinFotos": "Este modelo todavía no tiene fotos. Las sube la skill de fichas cuando el modelo tiene sus {{minimo}} fotos listas.",
+      "sinFotos": "Este modelo todavía no tiene fotos. Las sube la skill de fichas cuando el modelo tiene las suyas listas.",
       "fotoAlt": "Foto {{numero}} de {{modelo}}",
       "principal": "Principal: la que abre la ficha y la tarjeta del catálogo."
     },
@@ -1185,7 +1187,8 @@
       "precioBajoCosto": "El precio de venta de cada configuración tiene que superar su costo.",
       "faltanMarcaYCategoria": "Elige la marca y la categoría del catálogo.",
       "error": "No se pudo aprobar. Inténtalo de nuevo.",
-      "faltanFotos": "Le faltan {{faltan}} de las {{minimo}} fotos que necesita para aprobarse."
+      "faltanFotos": "Le faltan {{faltan}} fotos para aprobarse.",
+      "revisaFotos": "Todavía no se puede aprobar: faltan fotos."
     },
     "rechazar": {
       "titulo": "Rechazar",

@@ -44,8 +44,16 @@ describe('mapeador del borrador de tecnología', () => {
     expect(config.ram).toBeNull();
     expect(config.coloresSugeridos).toEqual(['Negro']);
     expect(borrador.cantidadDeFotos).toBe(1);
+    expect(borrador.fotosQueFaltan).toBe(3);
     expect(borrador.fotos).toEqual([
-      { id: 'f-1', url: 'https://firmada/f-1', ancho: 1200, alto: 1200 },
+      {
+        id: 'f-1',
+        url: 'https://firmada/f-1',
+        ancho: 1200,
+        alto: 1200,
+        altEs: 'Galaxy A17 sobre fondo blanco',
+        altEn: 'Galaxy A17 on a white background',
+      },
     ]);
   });
 
