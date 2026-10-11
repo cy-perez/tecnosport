@@ -116,7 +116,8 @@ class RepositorioCategoriasJpaTest {
 
   /**
    * V75 deja las escalas que dio el negocio en las ramas de ropa, en Jeans y en calzado; V91
-   * intercala en las dos de ropa las tallas agrupadas, cada una entre las dos que junta.
+   * intercala en las dos de ropa las tallas agrupadas, cada una entre las dos que junta; V105 lleva
+   * la de calzado hasta la 45.
    */
   @Test
   void laMigracionDejaLasEscalasDelNegocio() {
@@ -143,8 +144,12 @@ class RepositorioCategoriasJpaTest {
                 .orElseThrow()
                 .escalaTallas())
         .containsExactly("26", "28", "30", "32", "34", "36", "38", "40", "42");
-    assertThat(repositorio.buscarPorSlug(new Slug("calzado-unisex")).orElseThrow().escalaTallas())
-        .containsExactly("34", "35", "36", "37", "38", "39", "40", "41", "42", "43");
+    // V105 la estira hasta la 45: Imperio Wicho vende tenis de caballero de la 40 a la 45.
+    for (String rama : List.of("calzado-dama", "calzado-caballero", "calzado-unisex")) {
+      assertThat(repositorio.buscarPorSlug(new Slug(rama)).orElseThrow().escalaTallas())
+          .as(rama)
+          .containsExactly("34", "35", "36", "37", "38", "39", "40", "41", "42", "43", "44", "45");
+    }
     // `calzado-dama` es hoja otra vez desde `V84`, asi que su escala es la que ella misma lleva.
     assertThat(
             repositorio.hijasDe(
