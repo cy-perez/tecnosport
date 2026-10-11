@@ -1,5 +1,11 @@
 import type { components } from '@tecnosport/contratos';
-import { EstadoLote, LoteIngesta, LotesPaginados, ResumenIngesta } from '../domain/ingesta.model';
+import {
+  EstadoLote,
+  LoteIngesta,
+  LotesPaginados,
+  ResumenIngesta,
+  esCodigoDeFallo,
+} from '../domain/ingesta.model';
 
 type LoteDto = components['schemas']['LoteIngestaRespuesta'];
 type LotesPaginadosDto = components['schemas']['LotesPaginadosRespuesta'];
@@ -29,7 +35,12 @@ export function aLoteIngesta(dto: LoteDto): LoteIngesta {
     iniciadoEn: dto.iniciadoEn ?? null,
     terminadoEn: dto.terminadoEn ?? null,
     resumen: aResumen(dto.resumen),
-    detalleError: dto.detalleError ?? null,
+    codigoError: dto.codigoError
+      ? esCodigoDeFallo(dto.codigoError)
+        ? dto.codigoError
+        : 'DESCONOCIDO'
+      : null,
+    datoError: dto.datoError ?? null,
   };
 }
 

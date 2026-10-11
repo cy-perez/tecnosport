@@ -7,9 +7,11 @@ import co.tecnosport.api.application.proveedores.LotesPaginados;
 import co.tecnosport.api.domain.catalogo.LineaCatalogo;
 import co.tecnosport.api.domain.proveedores.ChatDelZip;
 import co.tecnosport.api.domain.proveedores.EstadoLote;
+import co.tecnosport.api.domain.proveedores.FalloDeLote;
 import co.tecnosport.api.domain.proveedores.IdExternoDeMensaje;
 import co.tecnosport.api.domain.proveedores.LoteIngesta;
 import co.tecnosport.api.domain.proveedores.MensajeProveedor;
+import co.tecnosport.api.domain.proveedores.MotivoDeFalloDeLote;
 import co.tecnosport.api.domain.proveedores.OrdenDePublicacion;
 import co.tecnosport.api.domain.proveedores.PHash;
 import co.tecnosport.api.domain.proveedores.Proveedor;
@@ -158,12 +160,14 @@ class RepositoriosDeIngestaJpaTest {
     LoteIngesta lote =
         LoteIngesta.recibirExportacion(proveedor.id(), "proveedores/x/exportaciones/a.zip", T);
     lotes.guardar(lote);
-    lote.fallar("El zip no trae ningún .txt.", T.plusSeconds(5));
+    lote.fallar(
+        new FalloDeLote(MotivoDeFalloDeLote.FECHA_ILEGIBLE, "31/02/2026"), T.plusSeconds(5));
     lotes.actualizar(lote);
 
     LoteIngesta leido = lotes.buscarPorId(lote.id()).orElseThrow();
     assertThat(leido.estado()).isEqualTo(EstadoLote.ERROR);
-    assertThat(leido.detalleError()).contains("El zip no trae ningún .txt.");
+    assertThat(leido.fallo())
+        .contains(new FalloDeLote(MotivoDeFalloDeLote.FECHA_ILEGIBLE, "31/02/2026"));
   }
 
   /** Lo que un reinicio deja abierto, del más antiguo al más reciente; lo cerrado no cuenta. */
@@ -472,7 +476,7 @@ class RepositoriosDeIngestaJpaTest {
     LoteIngesta enCola = LoteIngesta.recibirExportacion(proveedor.id(), "p/2.zip", T);
     LoteIngesta cerrado = LoteIngesta.recibirExportacion(proveedor.id(), "p/3.zip", T);
     cerrado.iniciar(T.plusSeconds(1));
-    cerrado.fallar("Se cayó.", T.plusSeconds(2));
+    cerrado.fallar(FalloDeLote.de(MotivoDeFalloDeLote.ERROR_INESPERADO), T.plusSeconds(2));
     lotes.guardar(enCurso);
     lotes.guardar(enCola);
     lotes.guardar(cerrado);

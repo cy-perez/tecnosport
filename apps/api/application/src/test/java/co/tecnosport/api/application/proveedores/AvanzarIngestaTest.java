@@ -9,7 +9,9 @@ import co.tecnosport.api.application.compartido.RelojFalso;
 import co.tecnosport.api.application.proveedores.ApoyoDeIngesta.RepositorioLotesEnMemoria;
 import co.tecnosport.api.application.proveedores.ProcesarLoteDeIngesta.Resultado;
 import co.tecnosport.api.domain.proveedores.EstadoLote;
+import co.tecnosport.api.domain.proveedores.FalloDeLote;
 import co.tecnosport.api.domain.proveedores.LoteIngesta;
+import co.tecnosport.api.domain.proveedores.MotivoDeFalloDeLote;
 import co.tecnosport.api.domain.proveedores.ResumenIngesta;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -165,7 +167,7 @@ class AvanzarIngestaTest {
                 avanzarQue(
                         l -> {
                           l.iniciar(AHORA);
-                          l.fallar("se cayó", AHORA);
+                          l.fallar(FalloDeLote.de(MotivoDeFalloDeLote.ERROR_INESPERADO), AHORA);
                           throw new TramoFallidoException(
                               new IllegalStateException("se cayó"), false);
                         })

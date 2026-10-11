@@ -34,6 +34,7 @@ import { usarOrdenarIngesta } from '../../application/ordenar-ingesta.mutacion';
 import { usarValidarZipDeDosChats } from '../../application/validar-zip-de-dos-chats';
 import { EstructuraDeDosChats, estructuraDeDosChats } from '../../domain/zip-de-dos-chats';
 import {
+  textoDelFallo,
   EstadoLote,
   FiltroLotes,
   LoteEliminado,
@@ -235,6 +236,22 @@ export class ListaIngestasAdminPage {
 
   protected etiquetaEstado(estado: EstadoLote): string {
     return this.traducir()(CLAVE_ESTADO[estado]);
+  }
+
+  /**
+   * Por qué falló el lote, en el idioma del panel. El servidor manda un código (regla dura 4); sin
+   * reintentos, el texto nombra el último fallo, traducido también.
+   */
+  protected motivoDelFallo(lote: LoteIngesta): string | null {
+    const texto = textoDelFallo(lote);
+    if (!texto) {
+      return null;
+    }
+    const traducir = this.traducir();
+    const parametros = texto.ultimo
+      ? { ultimo: traducir('admin.ingestas.fallos.' + texto.ultimo) }
+      : texto.parametros;
+    return traducir(texto.clave, parametros);
   }
 
   protected clasesEstado(estado: EstadoLote): string {

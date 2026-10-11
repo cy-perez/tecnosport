@@ -42,12 +42,6 @@ public final class LoteIngesta {
   /** Cuántas veces vuelve a la cola un lote cuyo trabajador murió, antes de darlo por fallido. */
   public static final int MAXIMO_DE_REINTENTOS = 3;
 
-  static final String MOTIVO_SIN_REINTENTOS =
-      "El procesamiento se interrumpió "
-          + (MAXIMO_DE_REINTENTOS + 1)
-          + " veces sin terminar. Para procesarla entera, elimina la ingesta y vuelve a subir la"
-          + " exportación: subirla sin eliminarla no vuelve a leer lo que ya se registró.";
-
   private final UUID id;
   private final OrigenIngesta origen;
   private final UUID proveedorId;
@@ -56,7 +50,7 @@ public final class LoteIngesta {
 
   private EstadoLote estado;
   private ResumenIngesta resumen;
-  private String detalleError;
+  private FalloDeLote fallo;
   private Instant iniciadoEn;
   private Instant terminadoEn;
   private Instant latidoEn;
@@ -81,7 +75,7 @@ public final class LoteIngesta {
       String referenciaArchivo,
       EstadoLote estado,
       ResumenIngesta resumen,
-      String detalleError,
+      FalloDeLote fallo,
       Instant creadoEn,
       Instant iniciadoEn,
       Instant terminadoEn) {
@@ -91,7 +85,7 @@ public final class LoteIngesta {
     this.referenciaArchivo = enBlancoEsNulo(referenciaArchivo);
     this.estado = Objects.requireNonNull(estado, "El estado del lote no puede ser nulo.");
     this.resumen = resumen;
-    this.detalleError = enBlancoEsNulo(detalleError);
+    this.fallo = fallo;
     this.creadoEn = Objects.requireNonNull(creadoEn, "La fecha de creación no puede ser nula.");
     this.iniciadoEn = iniciadoEn;
     this.terminadoEn = terminadoEn;
@@ -102,7 +96,7 @@ public final class LoteIngesta {
     if (estado == EstadoLote.TERMINADO && resumen == null) {
       throw new ExcepcionDeDominio("Un lote terminado tiene que traer su resumen.");
     }
-    if (estado == EstadoLote.ERROR && this.detalleError == null) {
+    if (estado == EstadoLote.ERROR && fallo == null) {
       throw new ExcepcionDeDominio("Un lote en error tiene que decir por qué.");
     }
   }
@@ -214,12 +208,12 @@ public final class LoteIngesta {
   }
 
   /**
-   * Lo mismo, cuando se sabe por qué se interrumpió: si se acabaron los reintentos, el motivo que
-   * ve el panel lo dice.
+   * Lo mismo, cuando se sabe por qué se interrumpió: si se acabaron los reintentos, el fallo lleva
+   * el código del último, y el panel lo dice.
    *
-   * @param causa la del último fallo, ya escrita para leerse; nula si no se sabe
+   * @param causa el motivo del último fallo; nulo si no se sabe
    */
-  public Recuperacion recuperar(Instant ahora, String causa) {
+  public Recuperacion recuperar(Instant ahora, MotivoDeFalloDeLote causa) {
     Objects.requireNonNull(ahora, "La fecha no puede ser nula.");
     if (!enManosDelTrabajador()) {
       throw new ExcepcionDeDominio("Un lote " + estado + " no está en manos de nadie.");
@@ -229,11 +223,8 @@ public final class LoteIngesta {
       return Recuperacion.DETENIDO;
     }
     if (reintentos >= MAXIMO_DE_REINTENTOS) {
-      String causaLegible = enBlancoEsNulo(causa);
       fallar(
-          causaLegible == null
-              ? MOTIVO_SIN_REINTENTOS
-              : MOTIVO_SIN_REINTENTOS + " El último fallo: " + causaLegible,
+          new FalloDeLote(MotivoDeFalloDeLote.SIN_REINTENTOS, causa == null ? null : causa.name()),
           ahora);
       return Recuperacion.FALLIDO;
     }
@@ -260,7 +251,7 @@ public final class LoteIngesta {
     this.resumen = Objects.requireNonNull(resumen, "Un lote no termina sin resumen.");
     this.estado = EstadoLote.TERMINADO;
     this.terminadoEn = Objects.requireNonNull(ahora, "La fecha de fin no puede ser nula.");
-    this.detalleError = null;
+    this.fallo = null;
   }
 
   /**
@@ -268,16 +259,12 @@ public final class LoteIngesta {
    * —la cola lo rechazó— o a la mitad. Lo que no vale es fallar lo que ya terminó: el resumen que
    * alguien leyó no se convierte en un error después.
    */
-  public void fallar(String detalle, Instant ahora) {
+  public void fallar(FalloDeLote fallo, Instant ahora) {
     if (!estaAbierto()) {
       throw new ExcepcionDeDominio("Un lote " + estado + " ya no puede fallar.");
     }
-    String motivo = enBlancoEsNulo(detalle);
-    if (motivo == null) {
-      throw new ExcepcionDeDominio("Un lote no falla sin decir por qué.");
-    }
+    this.fallo = Objects.requireNonNull(fallo, "Un lote no falla sin decir por qué.");
     this.estado = EstadoLote.ERROR;
-    this.detalleError = motivo;
     this.terminadoEn = Objects.requireNonNull(ahora, "La fecha de fin no puede ser nula.");
   }
 
@@ -431,8 +418,8 @@ public final class LoteIngesta {
     return Optional.ofNullable(resumen);
   }
 
-  public Optional<String> detalleError() {
-    return Optional.ofNullable(detalleError);
+  public Optional<FalloDeLote> fallo() {
+    return Optional.ofNullable(fallo);
   }
 
   public Instant creadoEn() {

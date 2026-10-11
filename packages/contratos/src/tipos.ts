@@ -2954,9 +2954,10 @@ export interface components {
             productosEliminados?: number;
         };
         LoteIngestaRespuesta: {
+            codigoError?: string;
             /** Format: date-time */
             creadoEn?: string;
-            detalleError?: string;
+            datoError?: string;
             estado?: string;
             /** Format: uuid */
             id?: string;

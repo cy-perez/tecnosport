@@ -189,8 +189,8 @@
                     <span [class]="clasesEstado(lote.estado)">{{
                       etiquetaEstado(lote.estado)
                     }}</span>
-                    @if (lote.detalleError; as detalle) {
-                      <p class="m-0 mt-8 text-xs text-ts-error">{{ detalle }}</p>
+                    @if (motivoDelFallo(lote); as motivo) {
+                      <p class="m-0 mt-8 text-xs text-ts-error">{{ motivo }}</p>
                     }
                   </td>
                   <td class="tabular-nums">

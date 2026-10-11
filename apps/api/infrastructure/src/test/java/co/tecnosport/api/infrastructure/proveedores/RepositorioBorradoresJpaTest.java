@@ -12,12 +12,14 @@ import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.proveedores.AlertaBorrador;
 import co.tecnosport.api.domain.proveedores.BorradorProducto;
 import co.tecnosport.api.domain.proveedores.EstadoBorrador;
+import co.tecnosport.api.domain.proveedores.FalloDeLote;
 import co.tecnosport.api.domain.proveedores.FotoSubida;
 import co.tecnosport.api.domain.proveedores.FotosDelProducto;
 import co.tecnosport.api.domain.proveedores.HuellaProveedor;
 import co.tecnosport.api.domain.proveedores.IdExternoDeMensaje;
 import co.tecnosport.api.domain.proveedores.LoteIngesta;
 import co.tecnosport.api.domain.proveedores.MensajeProveedor;
+import co.tecnosport.api.domain.proveedores.MotivoDeFalloDeLote;
 import co.tecnosport.api.domain.proveedores.OrdenDePublicacion;
 import co.tecnosport.api.domain.proveedores.PHash;
 import co.tecnosport.api.domain.proveedores.PrecioAdicional;
@@ -762,7 +764,7 @@ class RepositorioBorradoresJpaTest {
     assertThat(abiertas.archivos())
         .containsExactly("p/borradores/b/1.jpg", "p/exportaciones/a.zip", "p/fotos/1.jpg");
 
-    lote.fallar("se cayó", T.plusSeconds(10));
+    lote.fallar(FalloDeLote.de(MotivoDeFalloDeLote.ERROR_INESPERADO), T.plusSeconds(10));
     lotes.actualizar(lote);
     assertThat(proveedores.dependenciasDe(proveedor.id()).ingestaEnCurso()).isFalse();
 

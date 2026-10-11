@@ -186,7 +186,7 @@ final class ApoyoDeIngesta {
               lote.referenciaArchivo().orElse(null),
               lote.estado(),
               lote.resumen().orElse(null),
-              lote.detalleError().orElse(null),
+              lote.fallo().orElse(null),
               lote.creadoEn(),
               lote.iniciadoEn().orElse(null),
               lote.terminadoEn().orElse(null));

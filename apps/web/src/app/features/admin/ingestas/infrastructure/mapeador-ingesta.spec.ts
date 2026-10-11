@@ -27,4 +27,25 @@ describe('aLoteIngesta', () => {
     expect(lote.resumen).toMatchObject({ publicaciones: 9, borradoresNuevos: 9, alertas: 0 });
     expect(loteAbierto(lote)).toBe(false);
   });
+
+  /** El código del fallo pasa tal cual; uno que el panel no conoce se muestra como desconocido. */
+  it('el código del fallo pasa tal cual, y uno desconocido no llega crudo al panel', () => {
+    const conocido = aLoteIngesta({
+      id: 'l1',
+      estado: 'ERROR',
+      creadoEn: '2026-09-30T15:00:00Z',
+      codigoError: 'FECHA_ILEGIBLE',
+      datoError: '31/2/26',
+    });
+    const nuevo = aLoteIngesta({
+      id: 'l2',
+      estado: 'ERROR',
+      creadoEn: '2026-09-30T15:00:00Z',
+      codigoError: 'UN_MOTIVO_QUE_EL_PANEL_NO_CONOCE',
+    });
+
+    expect(conocido.codigoError).toBe('FECHA_ILEGIBLE');
+    expect(conocido.datoError).toBe('31/2/26');
+    expect(nuevo.codigoError).toBe('DESCONOCIDO');
+  });
 });

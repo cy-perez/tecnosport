@@ -40,8 +40,66 @@ export interface LoteIngesta {
   readonly iniciadoEn: string | null;
   readonly terminadoEn: string | null;
   readonly resumen: ResumenIngesta;
-  /** Solo en `ERROR`: por qué no terminó, escrito para leerse. */
-  readonly detalleError: string | null;
+  /**
+   * Solo en `ERROR`: por qué no terminó, como código que el panel traduce (regla dura 4). El
+   * servidor no manda frases desde el 11 de octubre de 2026.
+   */
+  readonly codigoError: CodigoDeFallo | null;
+  /** El valor que interpola el texto del fallo, si hay uno: la fecha ilegible, el último fallo. */
+  readonly datoError: string | null;
+}
+
+/**
+ * Los motivos con que falla un lote, los mismos de `MotivoDeFalloDeLote` en el servidor. Cada uno
+ * tiene su texto en `admin.ingestas.fallos`. Uno que el panel no conozca —el servidor agregó otro
+ * antes de que el panel se enterara— se muestra como `DESCONOCIDO`, no como el código crudo.
+ */
+export const CODIGOS_DE_FALLO = [
+  'ZIP_INVALIDO',
+  'ZIP_SIN_CHAT',
+  'ZIP_DEMASIADO_GRANDE',
+  'NO_ES_UN_CHAT',
+  'FECHA_ILEGIBLE',
+  'ESTRUCTURA_NO_ACORDADA',
+  'EXPORTACION_NO_ENCONTRADA',
+  'SIN_ARCHIVO',
+  'PROVEEDOR_NO_ENCONTRADO',
+  'COLA_LLENA',
+  'COLA_NO_DISPONIBLE',
+  'SIN_REINTENTOS',
+  'REINICIO',
+  'ERROR_INESPERADO',
+  'DESCONOCIDO',
+] as const;
+
+export type CodigoDeFallo = (typeof CODIGOS_DE_FALLO)[number];
+
+export function esCodigoDeFallo(valor: string | null | undefined): valor is CodigoDeFallo {
+  return (CODIGOS_DE_FALLO as readonly string[]).includes(valor ?? '');
+}
+
+/**
+ * La clave y los parámetros del texto que explica el fallo. Sin reintentos y con el código del
+ * último fallo, el texto lo nombra, traducido también.
+ */
+export function textoDelFallo(
+  lote: LoteIngesta,
+): { clave: string; parametros: Record<string, string>; ultimo: CodigoDeFallo | null } | null {
+  if (!lote.codigoError) {
+    return null;
+  }
+  if (lote.codigoError === 'SIN_REINTENTOS' && esCodigoDeFallo(lote.datoError)) {
+    return {
+      clave: 'admin.ingestas.fallos.SIN_REINTENTOS_CON_CAUSA',
+      parametros: {},
+      ultimo: lote.datoError,
+    };
+  }
+  return {
+    clave: 'admin.ingestas.fallos.' + lote.codigoError,
+    parametros: { dato: lote.datoError ?? '' },
+    ultimo: null,
+  };
 }
 
 export interface LotesPaginados {

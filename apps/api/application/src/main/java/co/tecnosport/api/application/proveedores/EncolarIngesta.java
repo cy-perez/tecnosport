@@ -4,7 +4,9 @@ import co.tecnosport.api.application.compartido.EnTransaccionPropia;
 import co.tecnosport.api.application.compartido.Reloj;
 import co.tecnosport.api.domain.proveedores.ColaDelProveedor;
 import co.tecnosport.api.domain.proveedores.EstadoLote;
+import co.tecnosport.api.domain.proveedores.FalloDeLote;
 import co.tecnosport.api.domain.proveedores.LoteIngesta;
+import co.tecnosport.api.domain.proveedores.MotivoDeFalloDeLote;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -28,11 +30,6 @@ import java.util.UUID;
  * </ul>
  */
 public final class EncolarIngesta {
-
-  static final String MOTIVO_COLA_LLENA =
-      "La cola de ingestas estaba llena. Vuelve a subir la exportación.";
-  static final String MOTIVO_COLA_NO_DISPONIBLE =
-      "No pudimos poner la ingesta en la cola. Vuelve a subir la exportación en unos minutos.";
 
   private final EjecutorDeIngestas ejecutor;
   private final RepositorioLotesIngesta repositorioLotes;
@@ -61,10 +58,11 @@ public final class EncolarIngesta {
       try {
         ejecutor.encolar(lotes.get(i).id());
       } catch (ColaDeIngestasLlenaException | ColaDeIngestasNoDisponibleException e) {
-        String motivo =
-            e instanceof ColaDeIngestasLlenaException
-                ? MOTIVO_COLA_LLENA
-                : MOTIVO_COLA_NO_DISPONIBLE;
+        FalloDeLote motivo =
+            FalloDeLote.de(
+                e instanceof ColaDeIngestasLlenaException
+                    ? MotivoDeFalloDeLote.COLA_LLENA
+                    : MotivoDeFalloDeLote.COLA_NO_DISPONIBLE);
         for (LoteIngesta sinTarea : lotes.subList(i, lotes.size())) {
           fallar(sinTarea.id(), motivo);
         }
@@ -94,7 +92,7 @@ public final class EncolarIngesta {
   }
 
   /** Sobre el lote releído: entre la subida y este fallo, el panel pudo detenerlo. */
-  private void fallar(UUID loteId, String motivo) {
+  private void fallar(UUID loteId, FalloDeLote motivo) {
     enTransaccionPropia.ejecutar(
         () -> {
           repositorioLotes

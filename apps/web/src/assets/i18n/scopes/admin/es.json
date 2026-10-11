@@ -1123,6 +1123,24 @@
         "hecho": "Se borró {{nombre}} del almacenamiento.",
         "error": "No se pudo borrar el archivo. Intenta de nuevo."
       }
+    },
+    "fallos": {
+      "ZIP_INVALIDO": "El archivo no es un zip que se pueda abrir. Exporta el chat de nuevo desde WhatsApp.",
+      "ZIP_SIN_CHAT": "El zip no trae el .txt del chat. Exporta el chat de nuevo desde WhatsApp, con o sin archivos.",
+      "ZIP_DEMASIADO_GRANDE": "Descomprimido, el zip pasa del tamaño permitido: no parece una exportación de chat.",
+      "NO_ES_UN_CHAT": "El texto no tiene ni un mensaje con fecha, hora y remitente: no parece una exportación de chat de WhatsApp.",
+      "FECHA_ILEGIBLE": "Una fecha de la exportación no se pudo leer: {{dato}}.",
+      "ESTRUCTURA_NO_ACORDADA": "El zip no trae los dos chats acordados para este proveedor.",
+      "EXPORTACION_NO_ENCONTRADA": "La exportación ya no está en el almacén. Vuelve a subirla.",
+      "SIN_ARCHIVO": "La ingesta no tiene un archivo que leer.",
+      "PROVEEDOR_NO_ENCONTRADO": "El proveedor de esta ingesta ya no existe.",
+      "COLA_LLENA": "La cola de ingestas estaba llena. Vuelve a subir la exportación.",
+      "COLA_NO_DISPONIBLE": "No pudimos poner la ingesta en la cola. Vuelve a subir la exportación en unos minutos.",
+      "SIN_REINTENTOS": "El procesamiento se interrumpió varias veces sin terminar. Para procesarla entera, elimina la ingesta y vuelve a subir la exportación: subirla sin eliminarla no vuelve a leer lo que ya se registró.",
+      "SIN_REINTENTOS_CON_CAUSA": "El procesamiento se interrumpió varias veces sin terminar. El último fallo: {{ultimo}} Para procesarla entera, elimina la ingesta y vuelve a subir la exportación: subirla sin eliminarla no vuelve a leer lo que ya se registró.",
+      "REINICIO": "La aplicación se reinició mientras se procesaba. Para procesarla entera, elimina la ingesta y vuelve a subir la exportación: subirla sin eliminarla no vuelve a leer lo que ya se registró.",
+      "ERROR_INESPERADO": "Falló por un error inesperado del programa. Elimina la ingesta y vuelve a subir la exportación; si vuelve a pasar, el registro del servidor dice qué fue.",
+      "DESCONOCIDO": "La ingesta falló."
     }
   },
   "tecnologia": {

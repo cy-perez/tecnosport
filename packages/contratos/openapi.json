@@ -2362,11 +2362,14 @@
       },
       "LoteIngestaRespuesta" : {
         "properties" : {
+          "codigoError" : {
+            "type" : "string"
+          },
           "creadoEn" : {
             "format" : "date-time",
             "type" : "string"
           },
-          "detalleError" : {
+          "datoError" : {
             "type" : "string"
           },
           "estado" : {

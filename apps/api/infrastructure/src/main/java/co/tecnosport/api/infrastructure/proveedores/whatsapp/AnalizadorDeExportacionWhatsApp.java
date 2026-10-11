@@ -3,6 +3,8 @@ package co.tecnosport.api.infrastructure.proveedores.whatsapp;
 import co.tecnosport.api.application.proveedores.ExportacionIlegibleException;
 import co.tecnosport.api.application.proveedores.MensajeCrudo;
 import co.tecnosport.api.domain.compartido.ZonaDelNegocio;
+import co.tecnosport.api.domain.proveedores.FalloDeLote;
+import co.tecnosport.api.domain.proveedores.MotivoDeFalloDeLote;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -91,6 +93,7 @@ public final class AnalizadorDeExportacionWhatsApp {
     List<Bloque> bloques = partirEnBloques(contenido);
     if (bloques.isEmpty()) {
       throw new ExportacionIlegibleException(
+          MotivoDeFalloDeLote.NO_ES_UN_CHAT,
           "El archivo de texto no tiene ni un mensaje con fecha, hora y remitente: no parece una"
               + " exportación de chat de WhatsApp.");
     }
@@ -174,8 +177,11 @@ public final class AnalizadorDeExportacionWhatsApp {
           .atZone(ZonaDelNegocio.ZONA)
           .toInstant();
     } catch (java.time.DateTimeException e) {
+      String fecha = dia + "/" + mes + "/" + anio;
       throw new ExportacionIlegibleException(
-          "Una fecha de la exportación no se pudo leer: " + dia + "/" + mes + "/" + anio, e);
+          new FalloDeLote(MotivoDeFalloDeLote.FECHA_ILEGIBLE, fecha),
+          "Una fecha de la exportación no se pudo leer: " + fecha,
+          e);
     }
   }
 

@@ -9,6 +9,8 @@ import co.tecnosport.api.application.proveedores.ChatExportado;
 import co.tecnosport.api.application.proveedores.ExportacionIlegibleException;
 import co.tecnosport.api.application.proveedores.MensajeCrudo;
 import co.tecnosport.api.domain.proveedores.ChatDelZip;
+import co.tecnosport.api.domain.proveedores.FalloDeLote;
+import co.tecnosport.api.domain.proveedores.MotivoDeFalloDeLote;
 import co.tecnosport.api.domain.proveedores.TipoMensaje;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -146,7 +148,9 @@ class ExportacionChatWhatsAppTest {
     assertThatThrownBy(
             () -> new ExportacionChatWhatsApp(almacen, 1_000_000).leer("p/exportaciones/a.zip"))
         .isInstanceOf(ExportacionIlegibleException.class)
-        .hasMessageContaining("no es un zip");
+        .hasMessageContaining("no es un zip")
+        .extracting(e -> ((ExportacionIlegibleException) e).fallo())
+        .isEqualTo(FalloDeLote.de(MotivoDeFalloDeLote.ZIP_INVALIDO));
   }
 
   @Test
@@ -157,7 +161,9 @@ class ExportacionChatWhatsAppTest {
     assertThatThrownBy(
             () -> new ExportacionChatWhatsApp(almacen, 1_000_000).leer("p/exportaciones/a.zip"))
         .isInstanceOf(ExportacionIlegibleException.class)
-        .hasMessageContaining(".txt");
+        .hasMessageContaining(".txt")
+        .extracting(e -> ((ExportacionIlegibleException) e).fallo())
+        .isEqualTo(FalloDeLote.de(MotivoDeFalloDeLote.ZIP_SIN_CHAT));
   }
 
   @Test
@@ -165,7 +171,9 @@ class ExportacionChatWhatsAppTest {
     assertThatThrownBy(
             () -> new ExportacionChatWhatsApp(almacen, 1_000_000).leer("p/exportaciones/x.zip"))
         .isInstanceOf(ExportacionIlegibleException.class)
-        .hasMessageContaining("ya no está");
+        .hasMessageContaining("ya no está")
+        .extracting(e -> ((ExportacionIlegibleException) e).fallo())
+        .isEqualTo(FalloDeLote.de(MotivoDeFalloDeLote.EXPORTACION_NO_ENCONTRADA));
   }
 
   @Test
@@ -179,7 +187,9 @@ class ExportacionChatWhatsAppTest {
     assertThatThrownBy(
             () -> new ExportacionChatWhatsApp(almacen, 4_000).leer("p/exportaciones/a.zip"))
         .isInstanceOf(ExportacionIlegibleException.class)
-        .hasMessageContaining("tope");
+        .hasMessageContaining("tope")
+        .extracting(e -> ((ExportacionIlegibleException) e).fallo())
+        .isEqualTo(FalloDeLote.de(MotivoDeFalloDeLote.ZIP_DEMASIADO_GRANDE));
   }
 
   private static final class AlmacenFalso implements AlmacenDeArchivosDeProveedor {
@@ -275,6 +285,8 @@ class ExportacionChatWhatsAppTest {
                 new ExportacionChatWhatsApp(almacen, 1_000_000)
                     .leer("p/exportaciones/m.zip", ChatDelZip.GENERAL))
         .isInstanceOf(ExportacionIlegibleException.class)
-        .hasMessageStartingWith("La estructura del archivo no es la acordada");
+        .hasMessageStartingWith("La estructura del archivo no es la acordada")
+        .extracting(e -> ((ExportacionIlegibleException) e).fallo())
+        .isEqualTo(FalloDeLote.de(MotivoDeFalloDeLote.ESTRUCTURA_NO_ACORDADA));
   }
 }
