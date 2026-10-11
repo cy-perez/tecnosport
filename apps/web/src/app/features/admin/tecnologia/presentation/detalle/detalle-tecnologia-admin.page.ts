@@ -41,6 +41,8 @@ import {
   borradorTecnologiaEditable,
   coloresIniciales,
   completaUnProductoExistente,
+  fotosQueFaltan,
+  MINIMO_DE_FOTOS,
   ConfiguracionTecnologia,
   EleccionDeConfiguracion,
   mismoColor,
@@ -123,6 +125,12 @@ export class DetalleTecnologiaAdminPage {
     const borrador = this.borrador();
     return borrador !== null && completaUnProductoExistente(borrador);
   });
+  /** Cuántas fotos le faltan para aprobarse; las sube la skill de fichas (ADR-0079). */
+  protected readonly faltanFotos = computed(() => {
+    const borrador = this.borrador();
+    return borrador === null ? 0 : fotosQueFaltan(borrador);
+  });
+  protected readonly minimoDeFotos = MINIMO_DE_FOTOS;
   protected readonly nombreDelProveedor = computed(() => {
     const borrador = this.borrador();
     return (
@@ -376,6 +384,15 @@ export class DetalleTecnologiaAdminPage {
     const elecciones = this.elecciones();
     if (elecciones === null) {
       this.errorAprobar.set(this.transloco.translate('admin.tecnologia.detalle.precioIlegible'));
+      return;
+    }
+    if (this.faltanFotos() > 0) {
+      this.errorAprobar.set(
+        this.transloco.translate('admin.tecnologia.aprobar.faltanFotos', {
+          faltan: this.faltanFotos(),
+          minimo: MINIMO_DE_FOTOS,
+        }),
+      );
       return;
     }
     const problema = problemaDeAprobacion(elecciones, this.borrador()?.configuraciones ?? []);

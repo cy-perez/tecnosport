@@ -27,6 +27,18 @@ export interface ConfiguracionTecnologia {
   readonly precioVenta: number | null;
 }
 
+/** Una foto del borrador, ya retocada; la primera es la principal (ADR-0079). */
+export interface FotoDeBorradorTecnologia {
+  readonly id: string;
+  /** Firmada: caduca, y por eso no pasa por el cargador de imágenes del catálogo. */
+  readonly url: string;
+  readonly ancho: number;
+  readonly alto: number;
+}
+
+/** Las que necesita un modelo nuevo para aprobarse. El servidor lo exige igual. */
+export const MINIMO_DE_FOTOS = 4;
+
 export interface BorradorTecnologia {
   readonly id: string;
   readonly proveedorId: string;
@@ -47,6 +59,10 @@ export interface BorradorTecnologia {
   readonly motivoRechazo: string | null;
   readonly vistoEn: string;
   readonly creadoEn: string;
+  /** Cuántas tiene: viene también en la bandeja, que no trae las fotos. */
+  readonly cantidadDeFotos: number;
+  /** Solo en el detalle; vacía en la bandeja. */
+  readonly fotos: readonly FotoDeBorradorTecnologia[];
 }
 
 export interface EleccionDeConfiguracion {
@@ -68,6 +84,14 @@ export function borradorTecnologiaEditable(borrador: BorradorTecnologia): boolea
 /** Un borrador con producto mientras está en revisión completa ese producto: no crea otro. */
 export function completaUnProductoExistente(borrador: BorradorTecnologia): boolean {
   return borrador.estado === 'EN_REVISION' && borrador.productoId !== null;
+}
+
+/**
+ * Cuántas fotos le faltan para aprobarse. Un borrador de configuraciones nuevas no pide: el
+ * producto ya tiene las suyas.
+ */
+export function fotosQueFaltan(borrador: BorradorTecnologia): number {
+  return borrador.productoId !== null ? 0 : Math.max(0, MINIMO_DE_FOTOS - borrador.cantidadDeFotos);
 }
 
 /**

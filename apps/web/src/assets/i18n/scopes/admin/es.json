@@ -1139,7 +1139,8 @@
       "modelo": "Modelo",
       "configuraciones": "Configuraciones",
       "estado": "Estado",
-      "acciones": "Acciones"
+      "acciones": "Acciones",
+      "fotos": "Fotos"
     },
     "detalle": {
       "miga": "Revisión",
@@ -1162,11 +1163,15 @@
       "guardar": "Guardar la elección",
       "guardando": "Guardando…",
       "guardado": "Elección guardada.",
-      "errorGuardar": "No se pudo guardar la elección. Inténtalo de nuevo."
+      "errorGuardar": "No se pudo guardar la elección. Inténtalo de nuevo.",
+      "fotos": "Fotos",
+      "sinFotos": "Este modelo todavía no tiene fotos. Las sube la skill de fichas cuando el modelo tiene sus {{minimo}} fotos listas.",
+      "fotoAlt": "Foto {{numero}} de {{modelo}}",
+      "principal": "Principal: la que abre la ficha y la tarjeta del catálogo."
     },
     "aprobar": {
       "titulo": "Aprobar",
-      "explicacion": "Crea el producto con una variante por cada color marcado. Queda en borrador hasta que tenga fotos: salen de la carpeta de fichas del modelo.",
+      "explicacion": "Crea el producto con una variante por cada color marcado y lo publica con estas fotos.",
       "explicacionExistente": "Añade al producto una variante por cada color marcado.",
       "marca": "Marca",
       "categoria": "Categoría",
@@ -1179,7 +1184,8 @@
       "faltaPrecio": "Cada configuración que se vende necesita su precio de venta, en pesos y sin decimales.",
       "precioBajoCosto": "El precio de venta de cada configuración tiene que superar su costo.",
       "faltanMarcaYCategoria": "Elige la marca y la categoría del catálogo.",
-      "error": "No se pudo aprobar. Inténtalo de nuevo."
+      "error": "No se pudo aprobar. Inténtalo de nuevo.",
+      "faltanFotos": "Le faltan {{faltan}} de las {{minimo}} fotos que necesita para aprobarse."
     },
     "rechazar": {
       "titulo": "Rechazar",

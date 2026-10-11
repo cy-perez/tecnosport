@@ -21,8 +21,8 @@ describe('mapeador del borrador de tecnología', () => {
       estado: 'EN_REVISION',
       vistoEn: '2026-10-08T05:00:00Z',
       creadoEn: '2026-10-08T15:00:00Z',
-      cantidadDeFotos: 0,
-      fotos: [],
+      cantidadDeFotos: 1,
+      fotos: [{ id: 'f-1', url: 'https://firmada/f-1', ancho: 1200, alto: 1200 }],
     });
 
     expect(borrador.marcaSugerida).toBeNull();
@@ -32,6 +32,10 @@ describe('mapeador del borrador de tecnología', () => {
     expect(config.precioVenta).toBeNull();
     expect(config.ram).toBeNull();
     expect(config.coloresSugeridos).toEqual(['Negro']);
+    expect(borrador.cantidadDeFotos).toBe(1);
+    expect(borrador.fotos).toEqual([
+      { id: 'f-1', url: 'https://firmada/f-1', ancho: 1200, alto: 1200 },
+    ]);
   });
 
   it('una elección sin precio no manda el campo', () => {

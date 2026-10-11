@@ -57,6 +57,16 @@ describe('ListaTecnologiaAdminPage', () => {
     expect(screen.getByRole('link', { name: 'Revisar Samsung Galaxy A17 5G' })).toBeTruthy();
   });
 
+  it('dice cuántas fotos tiene cada modelo', async () => {
+    await renderPagina([borradorTecnologiaDePrueba({ cantidadDeFotos: 3, fotos: [] })]);
+
+    const tabla = within(await screen.findByRole('table'));
+    expect(
+      tabla.getByRole('columnheader', { name: esAdmin.tecnologia.columnas.fotos }),
+    ).toBeTruthy();
+    expect(tabla.getByText('3')).toBeTruthy();
+  });
+
   it('marca los que completan un producto que ya se vende', async () => {
     await renderPagina([borradorTecnologiaDePrueba({ productoId: 'prod-9' })]);
 

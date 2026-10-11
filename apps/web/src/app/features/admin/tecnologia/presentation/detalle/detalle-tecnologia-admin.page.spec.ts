@@ -247,6 +247,41 @@ describe('DetalleTecnologiaAdminPage', () => {
     expect((grupoDe(UNA_SIM).getByLabelText('Gris') as HTMLInputElement).checked).toBe(true);
   });
 
+  it('muestra las fotos del borrador y cuál es la principal', async () => {
+    await renderPagina();
+
+    const fotos = screen.getAllByRole('img');
+    expect(fotos).toHaveLength(4);
+    expect(fotos[0].getAttribute('src')).toBe('https://firmada.local/foto-1.avif');
+    expect(fotos[0].getAttribute('alt')).toBe('Foto 1 de Samsung Galaxy A17 5G');
+    expect(screen.getByText(esAdmin.tecnologia.detalle.principal)).toBeTruthy();
+  });
+
+  it('un modelo nuevo sin sus cuatro fotos no se aprueba, y no se envía', async () => {
+    const { repositorio } = await renderPagina(
+      borradorTecnologiaDePrueba({ cantidadDeFotos: 1, fotos: [] }),
+    );
+    await screen.findByRole('option', { name: 'Samsung' });
+
+    expect(screen.getByText(/todavía no tiene fotos/)).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: esAdmin.tecnologia.aprobar.accion }));
+
+    expect(
+      (await screen.findAllByText('Le faltan 3 de las 4 fotos que necesita para aprobarse.'))
+        .length,
+    ).toBeGreaterThan(0);
+    expect(repositorio.aprobaciones).toEqual([]);
+  });
+
+  it('las configuraciones nuevas de un producto no muestran fotos ni las piden', async () => {
+    await renderPagina(
+      borradorTecnologiaDePrueba({ productoId: 'p-1', cantidadDeFotos: 0, fotos: [] }),
+    );
+
+    expect(screen.queryByRole('heading', { name: esAdmin.tecnologia.detalle.fotos })).toBeNull();
+    expect(screen.queryByText(/fotos que necesita/)).toBeNull();
+  });
+
   it('no tiene violaciones de accesibilidad', async () => {
     const { container } = await renderPagina();
 
