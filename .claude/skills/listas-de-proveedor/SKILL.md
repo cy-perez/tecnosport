@@ -1,6 +1,6 @@
 ---
 name: listas-de-proveedor
-description: Convierte las listas de productos que mandan los proveedores por WhatsApp —con viñetas de emojis, precios acotados tipo $1.850 y colores marcados con corazones— en productos listos para publicar, filtrando usados y categorías que no se venden, estandarizando títulos, investigando el precio promedio del mercado colombiano, redactando la descripción y traduciendo los emojis de color a colores reales; organiza la base por modelo —el equipo, con la memoria y el color como variantes—; deja una carpeta por modelo con su ficha y sus fotos, que la persona descarga y fotos-estudio-degradado retoca, y un Excel comparativo de precios y ganancia. Úsala siempre que llegue una lista o listado de proveedor, mayorista o distribuidor; cuando alguien diga "procesa esta lista", "la lista de hoy", "lista de gama alta", "listado de variedad", "pasa esto a productos", "sube estos equipos a la tienda" o "cuánto me gano con estos productos"; o cuando pegue un texto con equipos, capacidades y precios aunque no lo llame lista. Covers WhatsApp supplier price list parsing, ecommerce catalog preparation, Colombian market price research and margin comparison.
+description: Convierte las listas de productos que mandan los proveedores por WhatsApp —con viñetas de emojis, precios acotados tipo $1.850 y colores marcados con corazones— en productos listos para publicar, filtrando usados y categorías que no se venden, estandarizando títulos, investigando el precio promedio del mercado colombiano, redactando la descripción y traduciendo los emojis de color a colores reales; organiza la base por modelo —el equipo, con la memoria y el color como variantes—; deja una carpeta por modelo con su ficha, donde la persona descarga las fotos que retoca fotos-estudio-degradado, y un Excel comparativo de precios y ganancia; y cierra actualizando en el catálogo el costo y la existencia de lo que ya se vende y retirando lo desaparecido. Es el primero de tres bloques: los borradores con fotos los deja fichas-de-tecnologia. Úsala siempre que llegue una lista o listado de proveedor, mayorista o distribuidor; cuando alguien diga "procesa esta lista", "la lista de hoy", "lista de gama alta", "listado de variedad", "pasa esto a productos", "sube estos equipos a la tienda" o "cuánto me gano con estos productos"; o cuando pegue un texto con equipos, capacidades y precios aunque no lo llame lista. Covers WhatsApp supplier price list parsing, ecommerce catalog preparation, Colombian market price research and margin comparison.
 ---
 
 # Listas de proveedor → catálogo
@@ -15,6 +15,21 @@ clasificar, extraer capacidades, precios y colores) y **lo que exige criterio lo
 haces tú** (confirmar nombres comerciales, investigar precios de mercado, redactar
 descripciones). El script nunca inventa: lo que no
 reconoce lo marca en `revisar` para que quede a la vista.
+
+## Esta skill es el primero de tres bloques
+
+La ingesta de tecnología va en tres bloques independientes, cada uno con su
+skill, que se entregan el trabajo por archivos (`docs/adr/0079`):
+
+| Bloque | Skill | Qué hace | Qué deja |
+|---|---|---|---|
+| 1 | `/listas-de-proveedor` (esta) | lee, compara e investiga la lista; arma los entregables; actualiza el **inventario** de lo que ya se vende | `productos.json`, la carpeta de cada modelo, el Excel, `lista-api.json` y `por-proponer.json` |
+| 2 | `/fotos-estudio-degradado` | retoca las fotos de los modelos de `por-proponer.json`; ninguno pasa sin **4 fotos LISTA**, y si falta alguna el bloque espera | `Fotos procesadas/` y `estado-fotos.json` de cada modelo |
+| 3 | `/fichas-de-tecnologia` | lleva al panel el **borrador con sus fotos** de cada modelo que pasó el bloque 2 | los borradores en `/admin/tecnologia`; aprobar publica |
+
+**Esta skill no toca fotos ni deja borradores.** El inventario no espera a las
+fotos de lo nuevo: si esperara, el sitio vendería lo que el proveedor ya no
+tiene, o con el costo de ayer.
 
 ## Reglas de negocio
 
@@ -128,15 +143,17 @@ lista:
     Esta regla vale aunque el producto tenga buen margen: no se negocia un
     riesgo de incendio contra un punto de rentabilidad.
 
-16. **Las fotos vuelven a la skill, por carpeta de modelo** (decisión del
-    negocio, 08/10/2026; reemplaza la del 25/09/2026, que las había sacado).
+16. **Las fotos tienen su carpeta aquí y su bloque aparte** (decisión del
+    negocio, 08/10/2026, y la del 10/10/2026 que las pasó al bloque 2).
     Cada modelo tiene su carpeta en `catalogo/entregables/fichas/<Modelo>/`
-    (`scripts/fichas.py`): la persona descarga las fotos en `Fotos originales/`
-    —`<id del modelo>_1.jpg`, `_2.png`…— y `fotos-estudio-degradado` deja la
-    retocada en `Fotos procesadas/` **con el mismo nombre** (la extensión puede
-    cambiar). Las fotos son **de referencia**: no van por color; el color es una
-    variante que el cliente elige al comprar.
-    Por qué volvieron: la información estaba repartida en `catalogo/` —la ficha
+    (`scripts/fichas.py`), que nace en el paso 5 de esta skill: la persona
+    descarga las fotos en `Fotos originales/` —`<id del modelo>_1.jpg`,
+    `_2.png`…— y `fotos-estudio-degradado` deja la retocada en `Fotos
+    procesadas/` **con el mismo nombre** (la extensión puede cambiar). Esta skill
+    ya no corre el retoque: la compuerta de 4 fotos LISTA y la espera son del
+    bloque 2 (ADR-0079). Las fotos son **de referencia**: no van por color; el
+    color es una variante que el cliente elige al comprar.
+    Por qué la carpeta es por modelo: la información estaba repartida en `catalogo/` —la ficha
     en `icecat/fichas/<id>.json` con las fotos al lado, la prosa en un JSON, lo
     de mi.com en otro— y la carpeta de las tomas retocadas se perdió sin que nada
     lo dijera. El proveedor de tecnología **no manda fotos**, así que las fuentes
@@ -403,21 +420,6 @@ Produce:
 La salida dice qué modelos no tienen fotos todavía. Nada de esto borra: las
 fotos que dejó la persona no se tocan.
 
-### 5b. Fotos
-
-Con las fotos en `Fotos originales/` de cada modelo:
-
-```bash
-python3 "${CLAUDE_SKILL_DIR}/../fotos-estudio-degradado/scripts/procesar_fichas.py" catalogo/entregables/fichas
-python3 scripts/conocidos.py fotos catalogo/entregables/fichas --escribir
-```
-
-El primero deja cada foto retocada en `Fotos procesadas/` con el mismo nombre,
-procesando solo lo nuevo; las hojas de revisión quedan en `fichas/_estudio/salida/`
-(ver la skill de fotos). El segundo anota cada foto procesada en la base, con su
-huella: las carpetas viven fuera del repositorio, y el registro es lo que nota
-que una se perdió.
-
 ### 6. Guardar lo investigado
 
 ```bash
@@ -443,34 +445,31 @@ tomado del bloque PRECIOS DE VENTA (línea 530…)»—: son de esa lista y ser�
 falsos en la siguiente. Si escribes un supuesto que sí vale para el producto,
 no lo ates a una línea ni a un precio.
 
-### 6b. Llevarla al catálogo
+### 6b. Cerrar con el inventario
 
-La lista mueve el catálogo por la API, no a mano (`docs/adr/0075`):
+La lista mueve el catálogo por la API, no a mano (`docs/adr/0075`), y esta skill
+solo mueve **el inventario** (`docs/adr/0079`):
 
 ```bash
 python3 scripts/exportar_lista.py catalogo/productos.json --salida catalogo/lista-api.json
-node tools/importar-lista-tecnologia.mjs catalogo/lista-api.json --proveedor <id>             # simula
-node tools/importar-lista-tecnologia.mjs catalogo/lista-api.json --proveedor <id> --escribir
+node tools/importar-lista-tecnologia.mjs catalogo/lista-api.json --inventario --proveedor <id>             # simula
+node tools/importar-lista-tecnologia.mjs catalogo/lista-api.json --inventario --proveedor <id> --escribir
 ```
 
 Solo se exportan los modelos con descripción; los demás se dicen. Lo que ya se
-vende se renueva —costo del día y 2 unidades libres por color—, lo desaparecido
-deja de ofrecerse, y lo nuevo queda como borrador en `/admin/tecnologia`, donde
-la persona marca los colores que hay de cada configuración y fija el precio de
-venta. **La lista no toca el precio de venta**: si la salida avisa que el costo
-alcanzó el precio, dilo en la entrega.
+vende se renueva —costo del día y 2 unidades libres por color— y lo desaparecido
+deja de ofrecerse. **La lista no toca el precio de venta**: si la salida avisa
+que el costo alcanzó el precio, dilo en la entrega.
 
-Cuando la persona haya aprobado en el panel:
+**Lo nuevo no entra aquí.** La importación de inventario no propone nada: deja en
+`catalogo/por-proponer.json` los modelos que el sitio no vende —los que necesitan
+fotos— y las configuraciones nuevas de los que sí. Ese archivo es la entrega al
+bloque 2. Lo decide la API y no esta skill porque solo ella sabe qué se vende: la
+base de conocidos dice qué se investigó, no qué se aprobó.
 
-```bash
-node tools/importar-lista-tecnologia.mjs --fotos --publicar             # simula
-node tools/importar-lista-tecnologia.mjs --fotos --publicar --escribir
-```
-
-Sube la principal y la galería de cada modelo aprobado que todavía no tiene
-imagen, desde `Fotos procesadas/` de su carpeta, y lo publica. Un modelo sin
-fotos procesadas se queda en borrador y se dice. La sesión es `--token` o
-`TS_TOKEN_ADMIN`; no la pidas por terminal.
+La sesión es `--token` o `TS_TOKEN_ADMIN`; no la pidas por terminal. La misma
+lista no entra dos veces en inventario —repondría lo vendido entre las dos—: si
+hay que corregirla, se corrige el archivo y la huella cambia.
 
 ### 7. Entregar
 
@@ -480,9 +479,17 @@ hoja del mismo nombre en el Excel— y cualquier caso donde el promedio del
 mercado esté por debajo del precio de lista. Ese caso significa que a
 ese precio se pierde plata: márcalo, no lo publiques callado.
 
+Y la entrega al bloque 2: los modelos de `por-proponer.json`, cada uno con la
+ruta de su carpeta, para que la persona descargue **por lo menos 4 fotos** en
+`Fotos originales/` —de dónde, en la sección siguiente—. Dile que cuando las
+tenga siga con `/fotos-estudio-degradado`. Las configuraciones nuevas de un
+modelo que ya se vende no piden fotos: van directo al bloque 3.
+
 ## De dónde salen las fotos
 
-El proveedor de tecnología no manda fotos (08/10/2026). Las fuentes, y lo que
+Las consigue la persona para el bloque 2; esta sección es lo que se le dice al
+entregarle la lista de modelos. El proveedor de tecnología no manda fotos
+(08/10/2026). Las fuentes, y lo que
 no sirve, están en `referencias/imagenes.md`: **no se usan las salas de prensa
 del fabricante**, cuyas condiciones autorizan uso editorial, no vender. Las de
 Open Icecat se pueden usar con su licencia —aviso, descargo y nota de la
