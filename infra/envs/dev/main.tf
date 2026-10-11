@@ -22,6 +22,7 @@ resource "google_project_service" "apis" {
     "iamcredentials.googleapis.com",
     "sts.googleapis.com",
     "cloudresourcemanager.googleapis.com",
+    "cloudtasks.googleapis.com",
   ])
   service            = each.value
   disable_on_destroy = false
@@ -62,6 +63,58 @@ resource "google_service_account" "api" {
   account_id   = "tecnosport-api"
   display_name = "Servicio de la API en Cloud Run"
   depends_on   = [google_project_service.apis]
+}
+
+# ── Cola de la ingesta de proveedores (ADR-0080) ────────────────────────────────────────────────
+# Cada tramo de un lote es una tarea HTTP que llama al endpoint interno de la API. Mientras la
+# petición dura, la instancia tiene CPU y Cloud Run no la apaga: es lo que la ingesta necesitaba y
+# lo que un hilo de fondo no tenía (11 de octubre de 2026).
+resource "google_cloud_tasks_queue" "ingestas" {
+  name     = "ingestas-proveedores"
+  location = var.region
+
+  # Un tramo a la vez, como el hilo único de antes: dos a la vez podrían registrar el mismo mensaje
+  # dos veces. El orden entre lotes del mismo proveedor lo pone la aplicación (ColaDelProveedor).
+  rate_limits {
+    max_concurrent_dispatches = 1
+  }
+
+  # Un tramo que falló se reintenta con espera creciente, y el reintento retoma el lote donde
+  # quedó: la aplicación lo devuelve a la cola, con su propio tope de reintentos. Y uno que encontró
+  # el lote en manos de otro trabajador vivo responde 503 hasta que ese latido vence (3 minutos) y
+  # el reintento lo retoma: con estas esperas —10, 20, 40, 80, 160 s y luego 300— el sexto intento
+  # ya llega pasados los cinco minutos. Diez dejan margen.
+  retry_config {
+    max_attempts  = 10
+    min_backoff   = "10s"
+    max_backoff   = "300s"
+    max_doublings = 4
+  }
+
+  depends_on = [google_project_service.apis]
+}
+
+# La que firma el token con que cada tarea llama a la API. Aparte de la de la API a propósito: el
+# endpoint interno acepta solo tokens de esta cuenta, y ninguna otra cosa la usa.
+resource "google_service_account" "tareas_de_ingesta" {
+  account_id   = "tecnosport-ingesta-tareas"
+  display_name = "Tareas de la ingesta de proveedores (Cloud Tasks)"
+  depends_on   = [google_project_service.apis]
+}
+
+# La API crea las tareas en esta cola y nada más.
+resource "google_cloud_tasks_queue_iam_member" "api_encola_ingestas" {
+  name     = google_cloud_tasks_queue.ingestas.name
+  location = google_cloud_tasks_queue.ingestas.location
+  role     = "roles/cloudtasks.enqueuer"
+  member   = "serviceAccount:${google_service_account.api.email}"
+}
+
+# Crear una tarea con el token de otra cuenta exige poder actuar como ella (iam.serviceAccounts.actAs).
+resource "google_service_account_iam_member" "api_actua_como_tareas_de_ingesta" {
+  service_account_id = google_service_account.tareas_de_ingesta.name
+  role               = "roles/iam.serviceAccountUser"
+  member             = "serviceAccount:${google_service_account.api.email}"
 }
 
 resource "google_service_account" "web" {
@@ -434,6 +487,14 @@ module "api" {
     # omisión de `application.yml` apunta a localhost y la notificación de Sistecrédito no llega a
     # ninguna parte — que es justo lo que las pruebas contra dev vienen a comprobar.
     SISTECREDITO_URL_CONFIRMACION = "${var.dominio_publico_api}${var.ruta_confirmacion_sistecredito}"
+    }, var.dominio_publico_api == "" ? {} : {
+    # La cola de la ingesta (ADR-0080). La URL de los tramos y la audiencia salen del origen público
+    # de la API por la misma razón que la confirmación de Sistecrédito: `module.api.url` aquí sería
+    # un ciclo. Sin origen —el primer apply—, la ingesta corre en el hilo con la cola en memoria.
+    PROVEEDORES_COLA_DE_TAREAS          = "projects/${var.proyecto}/locations/${var.region}/queues/${google_cloud_tasks_queue.ingestas.name}"
+    PROVEEDORES_COLA_URL_TRAMOS         = "${var.dominio_publico_api}/api/v1/internal/ingestas"
+    PROVEEDORES_COLA_CUENTA_DE_SERVICIO = google_service_account.tareas_de_ingesta.email
+    PROVEEDORES_COLA_AUDIENCIA          = var.dominio_publico_api
     }, var.wompi_llave_publica == "" ? {} : {
     WOMPI_LLAVE_PUBLICA = var.wompi_llave_publica
     }, var.db_host == "" ? {} : {
@@ -483,18 +544,13 @@ module "api" {
     SISTECREDITO_VENDOR_ID        = "sistecredito-vendor-id"
   } : {})
 
-  # **La ingesta de proveedores no funciona sin estas dos líneas** (11 de octubre de 2026). Con CPU
-  # solo durante la petición, el hilo que procesa un lote se congela en cuanto la subida responde:
-  # tres lotes subidos a la 1 a. m. esperaron ocho horas sin leer un mensaje, y la escala a cero
-  # los dejó a medias. Y con varias instancias, cada una que arrancaba cerraba lo que otra estaba
-  # leyendo. `docs/07` dejó dev sin CPU entre peticiones pensando en las tareas programadas, que
-  # pueden esperar a la próxima visita; un lote no puede, porque es trabajo que alguien pidió.
-  #
-  # El costo: se cobra la CPU de toda la vida de la instancia y no solo la de las peticiones, pero
-  # con `instancias_minimas = 0` sigue apagándose cuando nadie la usa. Una sola instancia es
-  # además lo que la cola en memoria supone: con una, el panel siempre le habla a la que procesa.
-  cpu_siempre_asignada = true
-  instancias_maximas   = 1
+  # **Treinta minutos por petición** por los tramos de la ingesta (ADR-0080): Cloud Tasks espera
+  # quince la respuesta de cada uno, y Cloud Run no puede cortar antes. Del 11 de octubre de 2026
+  # hasta este cambio, la API de dev llevó además CPU entre peticiones y una sola instancia para que
+  # la ingesta corriera en un hilo de fondo; con Cloud Tasks cada tramo es una petición, tiene CPU
+  # mientras dura y la instancia no se apaga con él a medias, así que las dos volvieron a lo de
+  # dev: CPU solo durante la petición y hasta tres instancias.
+  tiempo_maximo_de_peticion = "1800s"
 
   depends_on = [google_project_service.apis]
 }
