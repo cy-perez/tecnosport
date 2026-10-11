@@ -65,7 +65,9 @@
     "marca_ya_existe": "Ya hay una marca con ese nombre. Escribirlo con otras mayúsculas no la hace distinta.",
     "marca_no_encontrada": "Esa marca ya no existe: la lista se acaba de actualizar.",
     "lote_en_otro_estado": "La ingesta cambió de estado mientras tanto (terminó, falló o la detuvieron). La lista se acaba de actualizar.",
-    "otra_ingesta_del_proveedor_en_curso": "El proveedor tiene otra ingesta en curso. Reintenta las fallidas cuando termine."
+    "otra_ingesta_del_proveedor_en_curso": "El proveedor tiene otra ingesta en curso. Reintenta las fallidas cuando termine.",
+    "borrador_con_fotos_subidas": "El otro borrador tiene fotos subidas desde el panel. Súbelas en este antes de unirlos: se irían con el otro.",
+    "tallas_de_cada_tono_desconocidas": "Las tallas de los dos no son las mismas y uno no dice sus tonos. Escribe los tonos de los dos antes de unirlos, para que cada color quede con sus tallas."
   },
   "iniciarSesion": {
     "titulo": "Panel administrativo",
