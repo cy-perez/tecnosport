@@ -161,7 +161,7 @@ export interface Producto {
   readonly rotacion: Rotacion | null;
   readonly variantes: readonly Variante[];
   /**
-   * Las tallas de la categoría en su orden —XS…XXXL, 26…42, 34…43—, heredadas de la rama si la
+   * Las tallas de la categoría en su orden —XS…XXXL, 26…42, 34…45—, heredadas de la rama si la
    * hoja no tiene las suyas. Solo llega con la ficha: en la rejilla viene vacía.
    */
   readonly escalaTallas: readonly string[];
