@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import co.tecnosport.api.application.catalogo.AgregarVariante;
+import co.tecnosport.api.application.catalogo.ObjetoDeImagenNoEncontradoException;
 import co.tecnosport.api.application.compartido.RelojFalso;
 import co.tecnosport.api.application.proveedores.ApoyoDeCatalogoParaIngesta.RepositorioAtributosFijo;
 import co.tecnosport.api.application.proveedores.ApoyoDeCatalogoParaIngesta.RepositorioCategoriasFijo;
@@ -35,11 +36,13 @@ import co.tecnosport.api.domain.catalogo.TipoAtributo;
 import co.tecnosport.api.domain.catalogo.ValorAtributo;
 import co.tecnosport.api.domain.catalogo.Variante;
 import co.tecnosport.api.domain.compartido.Dinero;
+import co.tecnosport.api.domain.compartido.ExcepcionDeDominio;
 import co.tecnosport.api.domain.inventario.Inventario;
 import co.tecnosport.api.domain.proveedores.BorradorTecnologia;
 import co.tecnosport.api.domain.proveedores.BorradorTecnologia.Eleccion;
 import co.tecnosport.api.domain.proveedores.ConfiguracionTecnologia;
 import co.tecnosport.api.domain.proveedores.EstadoBorrador;
+import co.tecnosport.api.domain.proveedores.FotoDeBorradorTecnologia;
 import co.tecnosport.api.domain.proveedores.ModeloDeLista;
 import co.tecnosport.api.domain.proveedores.OrdenDePublicacion;
 import co.tecnosport.api.domain.proveedores.Proveedor;
@@ -78,6 +81,9 @@ class TecnologiaPorListasTest {
   private final VinculosEnMemoria vinculos = new VinculosEnMemoria();
   private final ListasEnMemoria listas = new ListasEnMemoria();
   private final RelojFalso reloj = new RelojFalso(AHORA);
+  private final ApoyoDeIngesta.AlmacenEnMemoria privado = new ApoyoDeIngesta.AlmacenEnMemoria();
+  private final ApoyoDeCatalogoParaIngesta.AlmacenDeImagenesEnMemoria publico =
+      new ApoyoDeCatalogoParaIngesta.AlmacenDeImagenesEnMemoria();
 
   private Proveedor proveedor;
 
@@ -190,12 +196,44 @@ class TecnologiaPorListasTest {
             new RepositorioCategoriasFijo(),
             atributos,
             new AgregarVariante(productos, atributos, inventario, reloj, false),
+            privado,
+            publico,
             EXISTENCIA)
         .ejecutar(
             new AprobarBorradorTecnologiaComando(
                 borradorId,
                 ApoyoDeCatalogoParaIngesta.MARCA.id(),
                 ApoyoDeCatalogoParaIngesta.BOLSOS_DE_MANO.id()));
+  }
+
+  /**
+   * Las cuatro fotos que exige un modelo nuevo, con sus archivos en el bucket privado: dos anchos
+   * AVIF y la vista previa JPEG cada una.
+   */
+  private void conCuatroFotos(BorradorTecnologia borrador) {
+    String prefijo =
+        "proveedores/" + proveedor.id() + "/borradores-tecnologia/" + borrador.id() + "/";
+    for (int i = 1; i <= BorradorTecnologia.MINIMO_DE_FOTOS; i++) {
+      String mayor = prefijo + i + "-1200.avif";
+      String menor = prefijo + i + "-480.avif";
+      String vista = prefijo + i + ".jpg";
+      privado.guardar(mayor, "image/avif", new byte[58]);
+      privado.guardar(menor, "image/avif", new byte[12]);
+      privado.guardar(vista, "image/jpeg", new byte[30]);
+      borrador.agregarFoto(
+          new FotoDeBorradorTecnologia(
+              UUID.randomUUID(),
+              List.of(
+                  new FotoDeBorradorTecnologia.Variante(1200, mayor, 58),
+                  new FotoDeBorradorTecnologia.Variante(480, menor, 12)),
+              vista,
+              1200,
+              String.valueOf(i).repeat(64),
+              "Galaxy A17 sobre fondo blanco",
+              "Galaxy A17 on a white background",
+              AHORA));
+    }
+    borradores.actualizar(borrador);
   }
 
   private BorradorTecnologia enRevision() {
@@ -212,6 +250,7 @@ class TecnologiaPorListasTest {
         .ejecutar(
             borrador.id(),
             List.of(new Eleccion(UNA_SIM, List.of("Negro", "Gris"), Dinero.deCop(849_900))));
+    conCuatroFotos(enRevision());
     return aprobar(borrador.id());
   }
 
@@ -261,7 +300,7 @@ class TecnologiaPorListasTest {
   void aprobarCreaUnaVariantePorColorConSusAtributosYLaExistenciaDeLaLista() {
     Producto producto = unA17QueYaSeVende();
 
-    assertEquals(EstadoProducto.BORRADOR, producto.estado(), "sin fotos no se publica");
+    assertEquals(EstadoProducto.PUBLICADO, producto.estado(), "las fotos llegaron con el borrador");
     assertEquals("Samsung Galaxy A17 5G", producto.nombre());
     assertEquals(Dinero.deCop(675_000), producto.precioProveedor().orElseThrow());
     assertEquals(
@@ -379,6 +418,56 @@ class TecnologiaPorListasTest {
         () ->
             new ImportarListaDeTecnologiaComando(
                 proveedor.id(), LUNES, Modo.BORRADORES, List.of(), List.of(UNA_SIM), List.of()));
+  }
+
+  // --- Las fotos del borrador pasan al producto (ADR-0079) -----------------------------------
+
+  @Test
+  void aprobarCopiaLasFotosAlBucketPublicoConLaPrimeraDePrincipal() {
+    Producto producto = unA17QueYaSeVende();
+
+    assertTrue(producto.imagenPrincipal().isPresent());
+    assertEquals(BorradorTecnologia.MINIMO_DE_FOTOS - 1, producto.galeria().size());
+    var principal = producto.imagenPrincipal().orElseThrow();
+    assertEquals("1".repeat(64), principal.hash().valor());
+    assertEquals(List.of(480, 1200), principal.variantes().stream().map(v -> v.ancho()).toList());
+    String url = principal.variantes().getLast().url();
+    assertTrue(
+        url.startsWith("https://publico.local/productos/" + producto.id() + "/principal-"), url);
+    assertTrue(url.endsWith(".avif"), url);
+    assertTrue(principal.urlVistaPrevia().orElseThrow().endsWith(".jpg"));
+    assertTrue(
+        producto.galeria().getFirst().variantes().getFirst().url().contains("/galeria-"),
+        "las demás van a la galería");
+    // 4 fotos × (2 anchos + vista previa)
+    assertEquals(12, publico.objetos.size());
+  }
+
+  @Test
+  void unModeloNuevoSinSusCuatroFotosNoSeAprueba() {
+    importar(deBorradores(LUNES, List.of(config(UNA_SIM, 675_000, "1 SIM"))));
+    BorradorTecnologia borrador = enRevision();
+    new EditarBorradorTecnologia(borradores)
+        .ejecutar(
+            borrador.id(), List.of(new Eleccion(UNA_SIM, List.of("Negro"), Dinero.deCop(849_900))));
+
+    ExcepcionDeDominio error = assertThrows(ExcepcionDeDominio.class, () -> aprobar(borrador.id()));
+    assertTrue(error.getMessage().contains("4 fotos"), error.getMessage());
+    assertTrue(productos.porId.isEmpty(), "nada se creó");
+  }
+
+  @Test
+  void siUnArchivoFaltaSeBorraLoQueYaSeSubioAlPublico() {
+    importar(deBorradores(LUNES, List.of(config(UNA_SIM, 675_000, "1 SIM"))));
+    BorradorTecnologia borrador = enRevision();
+    new EditarBorradorTecnologia(borradores)
+        .ejecutar(
+            borrador.id(), List.of(new Eleccion(UNA_SIM, List.of("Negro"), Dinero.deCop(849_900))));
+    conCuatroFotos(enRevision());
+    privado.borrar(enRevision().fotos().getLast().referenciaVistaPrevia());
+
+    assertThrows(ObjetoDeImagenNoEncontradoException.class, () -> aprobar(borrador.id()));
+    assertTrue(publico.objetos.isEmpty(), "ninguna foto queda huérfana en el bucket público");
   }
 
   // --- Un modelo que ya se vende ------------------------------------------------------------

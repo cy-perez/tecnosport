@@ -73,13 +73,18 @@ class FotosDeBorradorTecnologiaTest {
     return solicitud.objectKey();
   }
 
+  /** Un SHA-256 de mentiras pero bien formado, distinto por etiqueta. */
+  private static String hex(String etiqueta) {
+    return String.format("%064x", new java.math.BigInteger(1, etiqueta.getBytes()));
+  }
+
   private AgregarFotoABorradorTecnologiaComando foto(String hash, String mayor, String vista) {
     return new AgregarFotoABorradorTecnologiaComando(
         borrador.id(),
         List.of(new AgregarFotoABorradorTecnologiaComando.Variante(1200, mayor)),
         vista,
         1200,
-        hash,
+        hex(hash),
         "POCO F9 Ultra sobre fondo blanco",
         "POCO F9 Ultra on a white background");
   }
@@ -94,9 +99,25 @@ class FotosDeBorradorTecnologiaTest {
     agregar().ejecutar(foto("b", subido("image/avif"), null));
 
     BorradorTecnologia leido = borradores.buscarPorId(borrador.id()).orElseThrow();
-    assertEquals(List.of("a", "b"), leido.fotos().stream().map(f -> f.hash()).toList());
+    assertEquals(List.of(hex("a"), hex("b")), leido.fotos().stream().map(f -> f.hash()).toList());
     assertEquals(100, leido.fotos().getFirst().mayor().bytes());
     assertEquals(AHORA, leido.fotos().getFirst().subidaEn());
+  }
+
+  @Test
+  void unHashMalFormadoNoEntra() {
+    String clave = subido("image/avif");
+    AgregarFotoABorradorTecnologiaComando conHashMalo =
+        new AgregarFotoABorradorTecnologiaComando(
+            borrador.id(),
+            List.of(new AgregarFotoABorradorTecnologiaComando.Variante(1200, clave)),
+            null,
+            1200,
+            "no-es-un-sha256",
+            "alt",
+            "alt");
+
+    assertThrows(ExcepcionDeDominio.class, () -> agregar().ejecutar(conHashMalo));
   }
 
   @Test

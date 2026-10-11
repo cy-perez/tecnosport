@@ -49,6 +49,13 @@ public final class BorradorTecnologia {
   /** La principal y la galería entera del producto: más no cabe al aprobar. */
   public static final int TOPE_DE_FOTOS = 1 + Producto.TOPE_DE_GALERIA;
 
+  /**
+   * Las que necesita un modelo nuevo para aprobarse (decisión del negocio del 10/10/2026,
+   * ADR-0079). La skill de fotos ya no deja pasar un modelo con menos; esto es para que la
+   * compuerta no dependa solo de ella.
+   */
+  public static final int MINIMO_DE_FOTOS = 4;
+
   private final UUID id;
   private final UUID proveedorId;
   private ModeloDeLista modelo;
@@ -227,10 +234,21 @@ public final class BorradorTecnologia {
   }
 
   /**
-   * Lo que impide aprobar, dicho antes de tocar el catálogo: ninguna configuración con colores, o
-   * una con colores y sin precio.
+   * Lo que impide aprobar, dicho antes de tocar el catálogo: un modelo nuevo sin sus fotos, ninguna
+   * configuración con colores, o una con colores y sin precio. Un borrador de configuraciones
+   * nuevas no pide fotos: el producto ya tiene las suyas.
    */
   public void exigirAprobable() {
+    if (productoId == null && fotos.size() < MINIMO_DE_FOTOS) {
+      throw new ExcepcionDeDominio(
+          "Un modelo nuevo necesita "
+              + MINIMO_DE_FOTOS
+              + " fotos para aprobarse; "
+              + modelo.titulo()
+              + " tiene "
+              + fotos.size()
+              + ".");
+    }
     List<ConfiguracionTecnologia> vendibles = configuracionesQueSeVenden();
     if (vendibles.isEmpty()) {
       throw new ExcepcionDeDominio(

@@ -383,7 +383,7 @@ final class ApoyoDeCatalogoParaIngesta {
 
     @Override
     public boolean eliminar(String objectKey) {
-      throw new UnsupportedOperationException();
+      return objetos.remove(objectKey) != null;
     }
 
     @Override

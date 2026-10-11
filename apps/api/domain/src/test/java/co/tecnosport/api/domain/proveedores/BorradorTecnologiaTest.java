@@ -107,7 +107,7 @@ class BorradorTecnologiaTest {
 
   @Test
   void noSeApruebaSinNadaQueVenderNiConUnPrecioPendiente() {
-    BorradorTecnologia borrador = nuevo();
+    BorradorTecnologia borrador = conCuatroFotos(nuevo());
     UUID producto = UUID.randomUUID();
     assertThrows(ExcepcionDeDominio.class, () -> borrador.aprobar(producto));
 
@@ -124,7 +124,7 @@ class BorradorTecnologiaTest {
 
   @Test
   void loQueQuedoSinColoresAlAprobarYaEstaDecidido() {
-    BorradorTecnologia borrador = nuevo();
+    BorradorTecnologia borrador = conCuatroFotos(nuevo());
     borrador.elegir(
         List.of(
             new BorradorTecnologia.Eleccion("a17-256", List.of("Negro"), Dinero.deCop(849_900))));
@@ -271,6 +271,51 @@ class BorradorTecnologiaTest {
         "Galaxy A17 sobre fondo blanco",
         "Galaxy A17 on a white background",
         LUNES);
+  }
+
+  private static BorradorTecnologia conCuatroFotos(BorradorTecnologia borrador) {
+    for (int i = 0; i < BorradorTecnologia.MINIMO_DE_FOTOS; i++) {
+      borrador.agregarFoto(foto("h" + i));
+    }
+    return borrador;
+  }
+
+  @Test
+  void unModeloNuevoNoSeApruebaSinSusCuatroFotos() {
+    BorradorTecnologia borrador = nuevo();
+    borrador.elegir(
+        List.of(
+            new BorradorTecnologia.Eleccion("a17-256", List.of("Negro"), Dinero.deCop(849_900))));
+    for (int i = 0; i < BorradorTecnologia.MINIMO_DE_FOTOS - 1; i++) {
+      borrador.agregarFoto(foto("h" + i));
+    }
+
+    ExcepcionDeDominio error =
+        assertThrows(ExcepcionDeDominio.class, () -> borrador.aprobar(UUID.randomUUID()));
+    assertTrue(error.getMessage().contains("tiene 3"), error.getMessage());
+
+    borrador.agregarFoto(foto("h3"));
+    borrador.aprobar(UUID.randomUUID());
+    assertEquals(EstadoBorrador.APROBADO, borrador.estado());
+  }
+
+  @Test
+  void lasConfiguracionesNuevasDeUnProductoNoPidenFotos() {
+    BorradorTecnologia borrador =
+        BorradorTecnologia.nuevo(
+            PROVEEDOR,
+            a17(List.of("Negro")),
+            List.of(config("a17-512", 900_000)),
+            UUID.randomUUID(),
+            LUNES,
+            LUNES);
+    borrador.elegir(
+        List.of(
+            new BorradorTecnologia.Eleccion("a17-512", List.of("Negro"), Dinero.deCop(1_049_900))));
+
+    borrador.aprobar(borrador.productoId().orElseThrow());
+
+    assertEquals(EstadoBorrador.APROBADO, borrador.estado());
   }
 
   @Test

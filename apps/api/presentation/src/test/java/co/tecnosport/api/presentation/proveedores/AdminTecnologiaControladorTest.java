@@ -9,6 +9,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import co.tecnosport.api.application.catalogo.AgregarVariante;
+import co.tecnosport.api.application.catalogo.AlmacenDeImagenes;
 import co.tecnosport.api.application.catalogo.RepositorioAtributos;
 import co.tecnosport.api.application.catalogo.RepositorioCategorias;
 import co.tecnosport.api.application.catalogo.RepositorioMarcas;
@@ -37,6 +38,7 @@ import co.tecnosport.api.domain.catalogo.LineaCatalogo;
 import co.tecnosport.api.domain.catalogo.Producto;
 import co.tecnosport.api.domain.proveedores.BorradorTecnologia;
 import co.tecnosport.api.domain.proveedores.EstadoBorrador;
+import co.tecnosport.api.domain.proveedores.FotoDeBorradorTecnologia;
 import co.tecnosport.api.domain.proveedores.HuellaProveedor;
 import co.tecnosport.api.domain.proveedores.OrdenDePublicacion;
 import co.tecnosport.api.domain.proveedores.Proveedor;
@@ -282,9 +284,42 @@ class AdminTecnologiaControladorTest {
         .andExpect(status().isUnprocessableContent());
   }
 
+  /** Las cuatro que exige un modelo nuevo, puestas directo en el borrador del doble. */
+  private void conCuatroFotos(UUID id) {
+    for (int i = 1; i <= BorradorTecnologia.MINIMO_DE_FOTOS; i++) {
+      borradores
+          .porId
+          .get(id)
+          .agregarFoto(
+              new FotoDeBorradorTecnologia(
+                  UUID.randomUUID(),
+                  List.of(new FotoDeBorradorTecnologia.Variante(1200, "f" + i + ".avif", 58)),
+                  null,
+                  1200,
+                  String.valueOf(i).repeat(64),
+                  "alt",
+                  "alt",
+                  Instant.parse("2026-10-08T15:00:00Z")));
+    }
+  }
+
+  @Test
+  void aprobarUnModeloNuevoSinSusFotosEs422() throws Exception {
+    UUID id = importarYTomarElBorrador();
+
+    mockMvc
+        .perform(
+            post("/api/v1/admin/borradores-tecnologia/{id}/aprobar", id)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{}"))
+        .andExpect(status().isUnprocessableContent())
+        .andExpect(jsonPath("$.detail").value(org.hamcrest.Matchers.containsString("4 fotos")));
+  }
+
   @Test
   void aprobarSinNadaQueVenderEs422AntesDeTocarElCatalogo() throws Exception {
     UUID id = importarYTomarElBorrador();
+    conCuatroFotos(id);
 
     mockMvc
         .perform(
@@ -298,6 +333,7 @@ class AdminTecnologiaControladorTest {
   @Test
   void aprobarUnModeloNuevoSinMarcaNiCategoriaEs422() throws Exception {
     UUID id = importarYTomarElBorrador();
+    conCuatroFotos(id);
     mockMvc
         .perform(
             patch("/api/v1/admin/borradores-tecnologia/{id}", id)
@@ -690,7 +726,8 @@ class AdminTecnologiaControladorTest {
     }
 
     @Bean
-    AprobarBorradorTecnologia aprobarBorradorTecnologia(BorradoresDoble borradores) {
+    AprobarBorradorTecnologia aprobarBorradorTecnologia(
+        BorradoresDoble borradores, AlmacenDoble almacen) {
       Reloj reloj = () -> Instant.parse("2026-10-08T15:00:00Z");
       RepositorioProductos productos = noUsado(RepositorioProductos.class);
       return new AprobarBorradorTecnologia(
@@ -707,6 +744,8 @@ class AdminTecnologiaControladorTest {
               noUsado(RepositorioInventario.class),
               reloj,
               false),
+          almacen,
+          noUsado(AlmacenDeImagenes.class),
           2);
     }
 

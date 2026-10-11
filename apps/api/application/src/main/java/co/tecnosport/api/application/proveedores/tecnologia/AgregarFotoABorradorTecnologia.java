@@ -6,6 +6,7 @@ import co.tecnosport.api.application.proveedores.AlmacenDeArchivosDeProveedor;
 import co.tecnosport.api.application.proveedores.BorradorNoEditableException;
 import co.tecnosport.api.application.proveedores.BorradorNoEncontradoException;
 import co.tecnosport.api.domain.compartido.GeneradorIdentificador;
+import co.tecnosport.api.domain.compartido.HashContenido;
 import co.tecnosport.api.domain.proveedores.BorradorTecnologia;
 import co.tecnosport.api.domain.proveedores.EstadoBorrador;
 import co.tecnosport.api.domain.proveedores.FotoDeBorradorTecnologia;
@@ -70,7 +71,9 @@ public final class AgregarFotoABorradorTecnologia {
             variantes,
             vistaPrevia,
             comando.alto(),
-            comando.hash(),
+            // Validado aquí y no al aprobar: un hash mal formado se dice cuando se sube la foto, no
+            // cuando alguien ya llenó el formulario de aprobación.
+            new HashContenido(comando.hash()).valor(),
             comando.altEs(),
             comando.altEn(),
             reloj.ahora());

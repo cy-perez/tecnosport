@@ -1,6 +1,7 @@
 package co.tecnosport.api.bootstrap.proveedores;
 
 import co.tecnosport.api.application.catalogo.AgregarVariante;
+import co.tecnosport.api.application.catalogo.AlmacenDeImagenes;
 import co.tecnosport.api.application.catalogo.RepositorioAtributos;
 import co.tecnosport.api.application.catalogo.RepositorioCategorias;
 import co.tecnosport.api.application.catalogo.RepositorioMarcas;
@@ -63,6 +64,8 @@ public class ConfiguracionListasDeTecnologia {
       RepositorioCategorias categorias,
       RepositorioAtributos atributos,
       AgregarVariante agregarVariante,
+      AlmacenDeArchivosDeProveedor almacenPrivado,
+      AlmacenDeImagenes almacenDeImagenes,
       PropiedadesProveedores propiedades) {
     return new AprobarBorradorTecnologia(
         borradores,
@@ -73,6 +76,8 @@ public class ConfiguracionListasDeTecnologia {
         categorias,
         atributos,
         agregarVariante,
+        almacenPrivado,
+        almacenDeImagenes,
         propiedades.tecnologia().existenciaPorVariante());
   }
 
