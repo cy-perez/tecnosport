@@ -6,9 +6,9 @@ import java.util.Objects;
 import java.util.UUID;
 
 /**
- * Pide al trabajador que espere entre una publicación y otra. <b>Retiene la cola</b>: el hilo es
- * uno solo ({@code EjecutorDeIngestasEnHilo}), así que los lotes que esperan detrás esperan
- * también, hasta que este se reanude o se detenga.
+ * Pide al trabajador que suelte el lote en su próximo punto de control, con lo que lleva. Ya no
+ * retiene la cola (ADR-0080): los demás lotes siguen, incluido el siguiente del mismo proveedor, y
+ * este espera a que alguien lo reanude.
  *
  * <p>Corre dentro de la transacción de quien llama, y lee el lote bloqueándolo: el trabajador puede
  * estar escribiendo el final en ese mismo instante, y sin el bloqueo una de las dos escrituras

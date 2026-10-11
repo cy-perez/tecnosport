@@ -67,6 +67,9 @@ public class LoteIngestaJpaEntity {
   @Column(name = "latido_en")
   private Instant latidoEn;
 
+  @Column(nullable = false)
+  private int reintentos;
+
   @Column(name = "chat_de_caballero", nullable = false)
   private boolean chatDeCaballero;
 
@@ -96,6 +99,7 @@ public class LoteIngestaJpaEntity {
       Instant iniciadoEn,
       Instant terminadoEn,
       Instant latidoEn,
+      int reintentos,
       boolean chatDeCaballero,
       String chatDelZip) {
     this.id = id;
@@ -117,8 +121,13 @@ public class LoteIngestaJpaEntity {
     this.iniciadoEn = iniciadoEn;
     this.terminadoEn = terminadoEn;
     this.latidoEn = latidoEn;
+    this.reintentos = reintentos;
     this.chatDeCaballero = chatDeCaballero;
     this.chatDelZip = chatDelZip;
+  }
+
+  public int getReintentos() {
+    return reintentos;
   }
 
   public Instant getLatidoEn() {

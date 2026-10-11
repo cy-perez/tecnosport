@@ -3,72 +3,49 @@ package co.tecnosport.api.bootstrap.proveedores;
 import co.tecnosport.api.application.proveedores.ColaDeIngestasLlenaException;
 import co.tecnosport.api.application.proveedores.EjecutorDeIngestas;
 import co.tecnosport.api.application.proveedores.LoteNoEncontradoException;
+import co.tecnosport.api.application.proveedores.LoteOcupadoException;
+import co.tecnosport.api.application.proveedores.TramoFallidoException;
 import co.tecnosport.api.domain.proveedores.LoteIngesta;
-import java.time.Duration;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.Executors;
 import java.util.concurrent.RejectedExecutionException;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Consumer;
 import java.util.function.Function;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.DisposableBean;
 
 /**
- * Un hilo y una cola acotada, dentro del proceso.
+ * La cola de ingestas en memoria: un hilo y una cola acotada, dentro del proceso. Es la de local y
+ * las pruebas; los ambientes desplegados usan Cloud Tasks ({@code ColaDeIngestasCloudTasks},
+ * ADR-0080), porque en Cloud Run un hilo de fondo no tiene CPU entre peticiones y la instancia se
+ * apaga con el trabajo a medias.
  *
- * <p><b>Un solo hilo a propósito.</b> Dos lotes del mismo proveedor procesados a la vez podrían
- * registrar el mismo mensaje dos veces —los dos leen «no existe» antes de que ninguno escriba— y la
- * restricción única lo convertiría en un lote en error. Con un hilo el segundo lote ve lo que dejó
- * el primero. El precio es que un lote espera al anterior, y para el volumen de un chat de
- * proveedor eso son minutos.
+ * <p>Cada elemento de la cola es un tramo ({@code AvanzarIngesta}), igual que una tarea de Cloud
+ * Tasks: el lote que no cabe en un tramo vuelve a encolarse al final, detrás de los demás.
+ *
+ * <p><b>Un solo hilo a propósito</b>, como la cola de Cloud Tasks con un despacho a la vez: dos
+ * tramos a la vez podrían registrar el mismo mensaje dos veces.
  *
  * <p><b>El executor es privado, no un bean.</b> Boot registra su {@code applicationTaskExecutor}
  * solo cuando no hay otro {@code Executor} en el contexto; exponer este como bean lo reemplazaría
  * para todo lo que Spring MVC ejecuta aparte, con un hilo y una cola de veinte. Se cierra con el
  * contexto.
- *
- * <p><b>El latido va en otro hilo.</b> Mientras procesa un lote, un temporizador aparte avisa cada
- * {@code intervaloDelLatido} que sigue vivo con él, y para en cuanto lo suelta. Aparte porque entre
- * dos puntos de control del trabajo —subir dos mil fotos, una extracción con reintentos— pueden
- * pasar minutos, y un lote que no late lo cierra otra instancia ({@code
- * CerrarIngestasAbandonadas}).
- *
- * <p>En Cloud Run con CPU solo durante la petición, este hilo y el del latido solo avanzan mientras
- * hay tráfico, y el lote se da por abandonado aunque la instancia siga viva ({@code docs/07}). Por
- * eso la API lleva {@code cpu_siempre_asignada} en dev también desde el 11 de octubre de 2026.
  */
 public final class EjecutorDeIngestasEnHilo implements EjecutorDeIngestas, DisposableBean {
 
   private static final Logger log = LoggerFactory.getLogger(EjecutorDeIngestasEnHilo.class);
 
-  private final Function<UUID, LoteIngesta> procesar;
-  private final Consumer<UUID> latir;
-  private final Duration intervaloDelLatido;
+  private final Function<UUID, LoteIngesta> avanzar;
   private final ThreadPoolExecutor executor;
-  private final ScheduledExecutorService latidos;
 
   /**
-   * @param procesar el trabajo entero de un lote; devuelve el lote como quedó
-   * @param latir registra que el trabajador sigue vivo con ese lote, en su propia transacción
+   * @param avanzar un tramo del lote, con lo que encola después; devuelve el lote como quedó
    */
-  public EjecutorDeIngestasEnHilo(
-      Function<UUID, LoteIngesta> procesar,
-      int capacidadDeCola,
-      Consumer<UUID> latir,
-      Duration intervaloDelLatido) {
-    this.procesar = Objects.requireNonNull(procesar);
-    this.latir = Objects.requireNonNull(latir);
-    this.intervaloDelLatido = Objects.requireNonNull(intervaloDelLatido);
-    if (intervaloDelLatido.isNegative() || intervaloDelLatido.isZero()) {
-      throw new IllegalArgumentException("El intervalo del latido tiene que ser positivo.");
-    }
+  public EjecutorDeIngestasEnHilo(Function<UUID, LoteIngesta> avanzar, int capacidadDeCola) {
+    this.avanzar = Objects.requireNonNull(avanzar);
     this.executor =
         new ThreadPoolExecutor(
             1,
@@ -82,33 +59,27 @@ public final class EjecutorDeIngestasEnHilo implements EjecutorDeIngestas, Dispo
               return hilo;
             },
             new ThreadPoolExecutor.AbortPolicy());
-    this.latidos =
-        Executors.newSingleThreadScheduledExecutor(
-            r -> {
-              Thread hilo = new Thread(r, "latido-ingesta");
-              hilo.setDaemon(true);
-              return hilo;
-            });
   }
 
   @Override
   public void encolar(UUID loteId) {
     try {
-      executor.execute(() -> procesarConRegistro(loteId));
+      executor.execute(() -> avanzarConRegistro(loteId));
     } catch (RejectedExecutionException e) {
       throw new ColaDeIngestasLlenaException();
     }
   }
 
-  private void procesarConRegistro(UUID loteId) {
-    long intervalo = intervaloDelLatido.toMillis();
-    ScheduledFuture<?> latido =
-        latidos.scheduleWithFixedDelay(
-            () -> latirSinRomper(loteId), intervalo, intervalo, TimeUnit.MILLISECONDS);
+  @Override
+  public boolean sobreviveAUnReinicio() {
+    return false;
+  }
+
+  private void avanzarConRegistro(UUID loteId) {
     try {
-      LoteIngesta lote = procesar.apply(loteId);
+      LoteIngesta lote = avanzar.apply(loteId);
       log.info(
-          "Lote de ingesta {} del proveedor {}: {} {}",
+          "Tramo del lote de ingesta {} del proveedor {}: {} {}",
           lote.id(),
           lote.proveedorId(),
           lote.estado(),
@@ -117,41 +88,39 @@ public final class EjecutorDeIngestasEnHilo implements EjecutorDeIngestas, Dispo
       // Se detuvo en la cola y se eliminó antes de que el hilo llegara a él: no hay nada que hacer
       // y no es un fallo. Sin esto quedaba una traza de error en los registros por algo normal.
       log.info("El lote de ingesta {} se eliminó mientras esperaba en la cola.", loteId);
+    } catch (LoteOcupadoException e) {
+      // Con una sola instancia en local no pasa; si pasa, el otro trabajador lo terminará.
+      log.info("El lote de ingesta {} lo tiene otro trabajador.", loteId);
+    } catch (TramoFallidoException e) {
+      if (e.reintentar()) {
+        // Lo que haría Cloud Tasks: reintentar. El tope de reintentos del lote corta el ciclo.
+        log.warn("Tramo del lote de ingesta {} falló; vuelve a la cola", loteId, e.getCause());
+        try {
+          encolar(loteId);
+        } catch (RuntimeException sinLugar) {
+          log.warn(
+              "No se pudo volver a encolar el lote de ingesta {}: {}", loteId, sinLugar.toString());
+        }
+      } else {
+        // El lote ya quedó en ERROR con su motivo para el panel; aquí va la traza.
+        log.error("El lote de ingesta {} falló", loteId, e.getCause());
+      }
     } catch (RuntimeException | Error e) {
-      // El lote ya quedó en ERROR con su motivo para el panel; aquí va la traza, que es lo que el
-      // panel no enseña y lo que hace falta para arreglarlo. También los Error: un zip que no cabe
-      // en memoria mata el hilo en silencio, y el pool lo repone pero nadie se entera.
+      // Lo que no es del tramo —encolar el siguiente, por ejemplo—. También los Error: un hilo
+      // que muere en silencio lo repone el pool pero nadie se entera. El lote, si quedó en la
+      // cola, lo recoge la tarea de los estancados.
       log.error("El lote de ingesta {} falló", loteId, e);
-    } finally {
-      latido.cancel(false);
-    }
-  }
-
-  /**
-   * Un latido que falla no puede tumbar los siguientes: una excepción que sale de aquí cancela la
-   * tarea periódica en silencio, y el lote se daría por abandonado con el trabajador vivo.
-   */
-  private void latirSinRomper(UUID loteId) {
-    try {
-      latir.accept(loteId);
-    } catch (RuntimeException e) {
-      log.warn("No se pudo registrar el latido del lote de ingesta {}: {}", loteId, e.toString());
     }
   }
 
   @Override
   public void destroy() throws InterruptedException {
     executor.shutdown();
-    try {
-      if (!executor.awaitTermination(30, TimeUnit.SECONDS)) {
-        log.warn(
-            "La ingesta en curso no terminó en 30 segundos; el lote quedará abierto (en proceso,"
-                + " en pausa o deteniéndose) y se cerrará con error cuando deje de latir"
-                + " (CerrarIngestasAbandonadas).");
-        executor.shutdownNow();
-      }
-    } finally {
-      latidos.shutdownNow();
+    if (!executor.awaitTermination(30, TimeUnit.SECONDS)) {
+      log.warn(
+          "La ingesta en curso no terminó en 30 segundos; el lote quedará en proceso y se"
+              + " retomará cuando deje de latir (RecuperarIngestasAbandonadas).");
+      executor.shutdownNow();
     }
   }
 }

@@ -9,12 +9,11 @@ import co.tecnosport.api.domain.proveedores.LoteIngesta;
 import co.tecnosport.api.domain.proveedores.ResumenIngesta;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 
-/** Un reinicio se lleva la cola en memoria; esto es lo que pasa con lo que había en ella. */
+/** Al arrancar: lo abandonado se retoma, y la cola en memoria se rehace. */
 class ReanudarLotesDeIngestaTest {
 
   private static final Instant AHORA = Instant.parse("2026-09-30T12:00:00Z");
@@ -24,54 +23,69 @@ class ReanudarLotesDeIngestaTest {
   private final RelojFalso reloj = new RelojFalso(AHORA);
   private final UUID proveedorId = UUID.randomUUID();
 
-  /** Un ejecutor que anota lo que le llega y, si se le pide, rechaza todo. */
-  private static final class EjecutorAnotador implements EjecutorDeIngestas {
-    final List<UUID> encolados = new ArrayList<>();
-    boolean lleno;
-
+  private record Cola(boolean sobrevive) implements EjecutorDeIngestas {
     @Override
     public void encolar(UUID loteId) {
-      if (lleno) {
-        throw new ColaDeIngestasLlenaException();
-      }
-      encolados.add(loteId);
+      throw new AssertionError("ReanudarLotesDeIngesta no encola: devuelve qué encolar.");
+    }
+
+    @Override
+    public boolean sobreviveAUnReinicio() {
+      return sobrevive;
     }
   }
 
-  private ReanudarLotesDeIngesta reanudar(EjecutorDeIngestas ejecutor) {
+  private ReanudarLotesDeIngesta reanudar(boolean colaQueSobrevive) {
     return new ReanudarLotesDeIngesta(
-        lotes, ejecutor, new CerrarIngestasAbandonadas(lotes, reloj, TOLERANCIA), reloj);
+        lotes,
+        new RecuperarIngestasAbandonadas(lotes, reloj, TOLERANCIA, null),
+        new Cola(colaQueSobrevive));
   }
 
   /** Los tomados, hace diez minutos y sin latir desde entonces: su instancia murió. */
-  private LoteIngesta lote(EstadoLote estado) {
+  private LoteIngesta lote(EstadoLote estado, int segundosAntes) {
     LoteIngesta lote =
         LoteIngesta.recibirExportacion(
-            proveedorId, "p/exportaciones/" + UUID.randomUUID() + ".zip", AHORA.minusSeconds(900));
+            proveedorId,
+            "p/exportaciones/" + UUID.randomUUID() + ".zip",
+            AHORA.minusSeconds(segundosAntes));
     if (estado != EstadoLote.RECIBIDO) {
       lote.iniciar(AHORA.minusSeconds(600));
     }
     if (estado == EstadoLote.TERMINADO) {
-      lote.terminar(new ResumenIngesta(0, 0, 0, 0, 0, 0, 0, 0, 0), AHORA.minusSeconds(400));
+      lote.terminar(ResumenIngesta.vacio(), AHORA.minusSeconds(400));
     }
     lotes.guardar(lote);
     return lote;
   }
 
+  /** Con la cola en memoria: lo de la cola vuelve a ella, en orden, y el abandonado también. */
   @Test
-  void reencolaLosRecibidosYFallaLosQueIbanAMedias() {
-    LoteIngesta enCola = lote(EstadoLote.RECIBIDO);
-    LoteIngesta aMedias = lote(EstadoLote.PROCESANDO);
-    LoteIngesta terminado = lote(EstadoLote.TERMINADO);
-    EjecutorAnotador ejecutor = new EjecutorAnotador();
+  void conLaColaEnMemoriaRehaceLaColaYRetomaElAbandonado() {
+    LoteIngesta aMedias = lote(EstadoLote.PROCESANDO, 900);
+    LoteIngesta enCola = lote(EstadoLote.RECIBIDO, 800);
+    LoteIngesta terminado = lote(EstadoLote.TERMINADO, 700);
 
-    ReanudarLotesDeIngesta.Resultado resultado = reanudar(ejecutor).ejecutar();
+    ReanudarLotesDeIngesta.Resultado resultado = reanudar(false).ejecutar();
 
-    assertEquals(new ReanudarLotesDeIngesta.Resultado(1, 1), resultado);
-    assertEquals(List.of(enCola.id()), ejecutor.encolados);
-    assertEquals(EstadoLote.ERROR, aMedias.estado());
-    assertEquals(CerrarIngestasAbandonadas.MOTIVO_ABANDONADO, aMedias.detalleError().orElseThrow());
+    assertEquals(List.of(aMedias.id(), enCola.id()), resultado.porEncolar());
+    assertEquals(1, resultado.retomados());
+    assertEquals(EstadoLote.RECIBIDO, aMedias.estado(), "vuelve a la cola, no se cierra");
     assertEquals(EstadoLote.TERMINADO, terminado.estado(), "lo cerrado no se toca");
+  }
+
+  /**
+   * Con Cloud Tasks lo de la cola sigue en la cola de afuera: encolarlo en cada arranque —en dev,
+   * muchos al día— solo duplicaría tareas. El abandonado sí, que no tiene tarea.
+   */
+  @Test
+  void conLaColaDeAfueraSoloEncolaElAbandonado() {
+    LoteIngesta aMedias = lote(EstadoLote.PROCESANDO, 900);
+    lote(EstadoLote.RECIBIDO, 800);
+
+    ReanudarLotesDeIngesta.Resultado resultado = reanudar(true).ejecutar();
+
+    assertEquals(List.of(aMedias.id()), resultado.porEncolar());
   }
 
   /**
@@ -80,44 +94,24 @@ class ReanudarLotesDeIngestaTest {
    */
   @Test
   void elLoteQueOtraInstanciaEstaProcesandoNoSeToca() {
-    LoteIngesta deLaVecina = lote(EstadoLote.PROCESANDO);
+    LoteIngesta deLaVecina = lote(EstadoLote.PROCESANDO, 900);
     deLaVecina.latir(AHORA.minusSeconds(20));
-    EjecutorAnotador ejecutor = new EjecutorAnotador();
 
-    ReanudarLotesDeIngesta.Resultado resultado = reanudar(ejecutor).ejecutar();
+    ReanudarLotesDeIngesta.Resultado resultado = reanudar(true).ejecutar();
 
-    assertEquals(new ReanudarLotesDeIngesta.Resultado(0, 0), resultado);
+    assertEquals(List.of(), resultado.porEncolar());
     assertEquals(EstadoLote.PROCESANDO, deLaVecina.estado());
-    assertEquals(List.of(), ejecutor.encolados);
   }
 
-  /** Si la cola no lo acepta tampoco al reanudar, el lote no se queda en RECIBIDO sin dueño. */
+  /** El que se estaba deteniendo queda detenido, que es lo que se pidió; no vuelve a la cola. */
   @Test
-  void loQueLaColaRechazaAlReanudarQuedaEnErrorConSuMotivo() {
-    LoteIngesta enCola = lote(EstadoLote.RECIBIDO);
-    EjecutorAnotador ejecutor = new EjecutorAnotador();
-    ejecutor.lleno = true;
-
-    ReanudarLotesDeIngesta.Resultado resultado = reanudar(ejecutor).ejecutar();
-
-    assertEquals(new ReanudarLotesDeIngesta.Resultado(0, 1), resultado);
-    assertEquals(EstadoLote.ERROR, enCola.estado());
-    assertEquals(ReanudarLotesDeIngesta.MOTIVO_COLA_LLENA, enCola.detalleError().orElseThrow());
-  }
-
-  /** El hilo que los retenía se fue con el reinicio: no hay quién los reanude ni los suelte. */
-  @Test
-  void losPausadosYLosQueSeDeteniaSeCierranComoLosQueIbanAMedias() {
-    LoteIngesta pausado = lote(EstadoLote.PROCESANDO);
-    pausado.pausar();
-    LoteIngesta deteniendo = lote(EstadoLote.PROCESANDO);
+  void elQueSeDeteniaQuedaDetenido() {
+    LoteIngesta deteniendo = lote(EstadoLote.PROCESANDO, 900);
     deteniendo.pedirDetencion(AHORA);
-    EjecutorAnotador ejecutor = new EjecutorAnotador();
 
-    ReanudarLotesDeIngesta.Resultado resultado = reanudar(ejecutor).ejecutar();
+    ReanudarLotesDeIngesta.Resultado resultado = reanudar(true).ejecutar();
 
-    assertEquals(new ReanudarLotesDeIngesta.Resultado(0, 2), resultado);
-    assertEquals(EstadoLote.ERROR, pausado.estado());
-    assertEquals(EstadoLote.ERROR, deteniendo.estado());
+    assertEquals(EstadoLote.DETENIDO, deteniendo.estado());
+    assertEquals(1, resultado.cerrados());
   }
 }

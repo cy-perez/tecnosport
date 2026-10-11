@@ -317,6 +317,17 @@ tecnosport:
       # Cuanto vale una lista de precios antes de ocultar lo que trajo. Siete dias: la vigencia
       # que el negocio le dio al precio de mercado de la lista (8 de octubre de 2026).
       ventana-disponibilidad: ${PROVEEDORES_TECNOLOGIA_VENTANA_DISPONIBILIDAD:P7D}
+    cola-de-tareas:
+      # La cola de ingestas en Cloud Tasks (ADR-0080): cada tramo de un lote es una tarea que llama
+      # al endpoint interno. VACIA, la ingesta corre en un hilo con la cola en memoria, que es lo de
+      # local; con ella, las demas son obligatorias y las fija Terraform. Ninguna URL real por
+      # omision (regla dura #5) salvo las de Google, que son las mismas en todos los ambientes.
+      cola: ${PROVEEDORES_COLA_DE_TAREAS:}
+      url-tramos: ${PROVEEDORES_COLA_URL_TRAMOS:}
+      cuenta-de-servicio: ${PROVEEDORES_COLA_CUENTA_DE_SERVICIO:}
+      audiencia: ${PROVEEDORES_COLA_AUDIENCIA:}
+      url-api: ${PROVEEDORES_COLA_URL_API:https://cloudtasks.googleapis.com}
+      url-llaves: ${PROVEEDORES_COLA_URL_LLAVES:https://www.googleapis.com/oauth2/v3/certs}
     job-expiracion:
       # Dentro de la aplicacion, como las demas tareas (docs/07): en produccion la API lleva la
       # CPU siempre asignada. Encendido por omision; la bandera existe para apagarlo sin
@@ -675,6 +686,8 @@ tecnosport:
     destinatario: ${SUGERENCIAS_DESTINATARIO:contacto@tecnosport.co}
 
 springdoc:
+  # El endpoint interno es de Cloud Tasks, no un contrato con el cliente (ADR-0080).
+  paths-to-exclude: /api/v1/internal/**
   api-docs:
     path: /api/openapi.json
   swagger-ui:

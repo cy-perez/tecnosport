@@ -1,8 +1,9 @@
 /**
  * El ciclo de un lote: se recibe la exportación, se procesa en segundo plano y termina bien o con
- * error. Mientras se procesa se puede pausar —el hilo es uno solo y la cola espera con él— o
- * detener, y entonces `DETENIENDO` dura hasta que el servidor suelta el lote. Mientras esté abierto,
- * la lista se refresca sola.
+ * error. Mientras se procesa se puede pausar —el servidor lo suelta y la cola sigue con los de otros
+ * proveedores; al reanudarlo vuelve a `RECIBIDO`— o detener, y entonces `DETENIENDO` dura hasta que el servidor
+ * suelta el lote. Un lote grande vuelve a `RECIBIDO` entre un tramo y el siguiente (ADR-0080).
+ * Mientras esté abierto, la lista se refresca sola.
  */
 export type EstadoLote =
   'RECIBIDO' | 'PROCESANDO' | 'PAUSADO' | 'DETENIENDO' | 'TERMINADO' | 'DETENIDO' | 'ERROR';

@@ -21,6 +21,11 @@ resource "google_cloud_run_v2_service" "este" {
   template {
     service_account = var.cuenta_de_servicio
 
+    # Cuánto espera Cloud Run una respuesta antes de cortar la petición. La API lo sube por los
+    # tramos de la ingesta que llama Cloud Tasks (ADR-0080): mientras uno dura, la petición sigue
+    # abierta, y eso es lo que le da CPU a la instancia.
+    timeout = var.tiempo_maximo_de_peticion
+
     # Cero instancias en reposo. No es una preferencia: una instancia siempre encendida son ~2,59
     # millones de vCPU-segundos al mes contra los 180.000 de la capa gratuita. En dev se paga con
     # arranque en frío; en producción, con dinero.

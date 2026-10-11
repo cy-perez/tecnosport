@@ -61,6 +61,12 @@ variable "publico" {
   default = true
 }
 
+variable "tiempo_maximo_de_peticion" {
+  description = "Cuánto espera Cloud Run una respuesta, como duración en segundos (`\"300s\"`). El valor por omisión es el de Cloud Run; la API lo sube para los tramos de la ingesta (ADR-0080)."
+  type        = string
+  default     = "300s"
+}
+
 variable "cpu_siempre_asignada" {
   description = "Si la instancia conserva CPU entre peticiones. `false` —lo de dev— es CPU solo mientras atiende, que es lo que mantiene el ambiente dentro de la capa gratuita; el precio es que **las tareas `@Scheduled` solo avanzan mientras alguien usa el sitio**. En producción la API va en `true`: allí `min-instances = 1` ya paga la instancia, y sin CPU entre peticiones la conciliación de pagos no sería de fiar (decidido el 23 de septiembre de 2026, `docs/07-infra-gcp.md`)."
   type        = bool

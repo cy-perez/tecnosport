@@ -45,7 +45,8 @@ class OrdenesDelPanelSobreUnaIngestaTest {
     assertEquals(EstadoLote.PAUSADO, lotes.buscarPorId(lote.id()).orElseThrow().estado());
 
     LoteIngesta reanudado = new ReanudarIngesta(lotes).ejecutar(lote.id());
-    assertEquals(EstadoLote.PROCESANDO, reanudado.estado());
+    assertEquals(
+        EstadoLote.RECIBIDO, reanudado.estado(), "vuelve a la cola; quien llama lo encola");
     assertEquals(2, lotes.bloqueos);
     assertEquals(2, lotes.actualizaciones);
   }

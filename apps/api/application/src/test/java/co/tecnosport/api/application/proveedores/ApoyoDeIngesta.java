@@ -191,6 +191,7 @@ final class ApoyoDeIngesta {
               lote.iniciadoEn().orElse(null),
               lote.terminadoEn().orElse(null));
       lote.latidoEn().ifPresent(copia::latir);
+      copia.restaurarReintentos(lote.reintentos());
       lote.chatDelZip().ifPresent(copia::leerSoloElChat);
       if (lote.esChatDeCaballero()) {
         copia.marcarChatDeCaballero();
@@ -354,7 +355,7 @@ final class ApoyoDeIngesta {
     int lecturas;
 
     FuenteFija(List<MensajeCrudo> mensajes) {
-      this(null, mensajes);
+      this((String) null, mensajes);
     }
 
     /** Con el nombre del chat, como lo trae la exportación. */
@@ -373,12 +374,30 @@ final class ApoyoDeIngesta {
     /** El chat del zip que se le pidió la última vez; nulo si se leyó como un solo chat. */
     ChatDelZip ultimoChat;
 
+    /** Cuántas lecturas más fallan con {@code fallo} antes de responder bien; sin tope, todas. */
+    int fallosQueQuedan = Integer.MAX_VALUE;
+
+    /** Falla con {@code fallo} las primeras {@code veces} lecturas, y después lee los mensajes. */
+    static FuenteFija queFallaPrimero(
+        int veces, RuntimeException fallo, List<MensajeCrudo> crudos) {
+      FuenteFija fuente = new FuenteFija(fallo, crudos);
+      fuente.fallosQueQuedan = veces;
+      return fuente;
+    }
+
+    private FuenteFija(RuntimeException fallo, List<MensajeCrudo> mensajes) {
+      this.mensajes = mensajes;
+      this.fallo = fallo;
+      this.nombreDelChat = null;
+    }
+
     @Override
     public ChatExportado leer(String referenciaArchivo, ChatDelZip chat) {
       ultimaReferencia = referenciaArchivo;
       ultimoChat = chat;
       lecturas++;
-      if (fallo != null) {
+      if (fallo != null && fallosQueQuedan > 0) {
+        fallosQueQuedan--;
         throw fallo;
       }
       return new ChatExportado(nombreDelChat, mensajes);
@@ -499,32 +518,6 @@ final class ApoyoDeIngesta {
       llamadas++;
       return new ResultadoExtraccion(
           respuesta.apply(texto), "{\"fixture\":true}", new UsoDelExtractor("falso", 10, 5, 1));
-    }
-  }
-
-  /**
-   * Hace las veces del panel mientras el trabajador espera: cada vez que se le pide esperar, corre
-   * la siguiente acción de la lista. Sin acciones pendientes revienta, porque la prueba se
-   * colgaría.
-   */
-  static final class EsperaGuionada implements EsperaDeIngesta {
-
-    private final java.util.ArrayDeque<Runnable> acciones = new java.util.ArrayDeque<>();
-    int esperas;
-
-    EsperaGuionada luego(Runnable accion) {
-      acciones.add(accion);
-      return this;
-    }
-
-    @Override
-    public void esperar() {
-      esperas++;
-      Runnable accion = acciones.poll();
-      if (accion == null) {
-        throw new IllegalStateException("El trabajador esperaría para siempre.");
-      }
-      accion.run();
     }
   }
 }

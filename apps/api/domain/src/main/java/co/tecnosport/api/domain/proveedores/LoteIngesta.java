@@ -18,20 +18,35 @@ import java.util.UUID;
  * <h2>Las tres fechas</h2>
  *
  * <p>{@code creadoEn} es cuando el panel lo entregó; {@code iniciadoEn}, cuando el trabajador lo
- * tomó de la cola; {@code terminadoEn}, cuando soltó el resultado, bueno o malo. La diferencia
- * entre la primera y la segunda es la cola; entre la segunda y la tercera, el trabajo. En Cloud Run
- * con CPU solo durante la petición ({@code docs/07}) la primera puede crecer sin que nada esté
- * roto, y hay que poder verlo.
+ * tomó de la cola por primera vez; {@code terminadoEn}, cuando soltó el resultado, bueno o malo. La
+ * diferencia entre la primera y la segunda es la cola; entre la segunda y la tercera, el trabajo.
+ *
+ * <h2>Por tramos</h2>
+ *
+ * <p>Un lote se procesa en uno o varios tramos ({@code ADR-0080}): una tarea de Cloud Tasks dura a
+ * lo más treinta minutos, y un chat grande con la lectura de fotos puede pasar de eso. Al final de
+ * un tramo con trabajo pendiente el lote vuelve a la cola —{@code RECIBIDO}— con su avance en el
+ * resumen, y el tramo siguiente lo retoma donde iba. Por eso el resumen existe antes de terminar:
+ * mientras el lote está abierto es lo que va, y al cerrar es lo que fue.
  *
  * <h2>El latido</h2>
  *
- * <p>Mientras el trabajador lo tiene, renueva {@code latidoEn} cada pocos segundos. Es lo único que
+ * <p>Mientras un trabajador lo tiene, renueva {@code latidoEn} cada pocos segundos. Es lo único que
  * distingue un lote que otra instancia viva está procesando de uno que se quedó abierto porque su
- * instancia murió: el estado es el mismo en los dos. Sin él, la instancia que arrancaba cerraba con
- * error lo que su vecina estaba leyendo (11 de octubre de 2026: cinco arranques en cuarenta
- * segundos cerraron tres lotes que no alcanzaron a leer un mensaje).
+ * instancia murió: el estado es el mismo en los dos (11 de octubre de 2026: cinco arranques en
+ * cuarenta segundos cerraron tres lotes que no alcanzaron a leer un mensaje). El que dejó de latir
+ * se recupera ({@link #recuperar}): vuelve a la cola hasta {@value #MAXIMO_DE_REINTENTOS} veces.
  */
 public final class LoteIngesta {
+
+  /** Cuántas veces vuelve a la cola un lote cuyo trabajador murió, antes de darlo por fallido. */
+  public static final int MAXIMO_DE_REINTENTOS = 3;
+
+  static final String MOTIVO_SIN_REINTENTOS =
+      "El procesamiento se interrumpió "
+          + (MAXIMO_DE_REINTENTOS + 1)
+          + " veces sin terminar. Para procesarla entera, elimina la ingesta y vuelve a subir la"
+          + " exportación: subirla sin eliminarla no vuelve a leer lo que ya se registró.";
 
   private final UUID id;
   private final OrigenIngesta origen;
@@ -45,6 +60,7 @@ public final class LoteIngesta {
   private Instant iniciadoEn;
   private Instant terminadoEn;
   private Instant latidoEn;
+  private int reintentos;
 
   /**
    * Si la exportación es el chat de caballero de un proveedor que publica en dos ({@link
@@ -107,15 +123,51 @@ public final class LoteIngesta {
         null);
   }
 
-  /** El trabajador lo tomó. Solo desde la cola: dos hilos no pueden tomar el mismo lote. */
+  /**
+   * Un trabajador lo tomó para un tramo. Solo desde la cola: dos trabajadores no pueden tomar el
+   * mismo lote. La fecha de inicio es la del primer tramo; los siguientes no la mueven.
+   */
   public void iniciar(Instant ahora) {
+    Objects.requireNonNull(ahora, "La fecha de inicio no puede ser nula.");
     if (estado != EstadoLote.RECIBIDO) {
       throw new ExcepcionDeDominio(
           "Solo se puede empezar a procesar un lote recibido; este está " + estado + ".");
     }
     this.estado = EstadoLote.PROCESANDO;
-    this.iniciadoEn = Objects.requireNonNull(ahora, "La fecha de inicio no puede ser nula.");
+    if (iniciadoEn == null) {
+      this.iniciadoEn = ahora;
+    }
     this.latidoEn = ahora;
+  }
+
+  /**
+   * Ya tiene la lectura hecha: el primer tramo leyó el archivo, registró los mensajes y armó las
+   * publicaciones, y anotó lo que contó. Los tramos siguientes van directo a las publicaciones.
+   */
+  public boolean lecturaHecha() {
+    return resumen != null;
+  }
+
+  /** Lo que va del trabajo, mientras el lote sigue abierto. */
+  public void anotarAvance(ResumenIngesta avance) {
+    if (!estaAbierto()) {
+      throw new ExcepcionDeDominio("Un lote " + estado + " ya no avanza.");
+    }
+    this.resumen = Objects.requireNonNull(avance, "El avance no puede ser nulo.");
+  }
+
+  /**
+   * Terminó un tramo y queda trabajo: vuelve a la cola con lo que va, para que otro tramo lo
+   * retome. Solo desde {@code PROCESANDO}: en pausa o deteniéndose, lo que toca es otra cosa.
+   */
+  public void soltarParaSeguir(ResumenIngesta avance, Instant ahora) {
+    if (estado != EstadoLote.PROCESANDO) {
+      throw new ExcepcionDeDominio(
+          "Solo vuelve a la cola un lote que se está procesando; este está " + estado + ".");
+    }
+    this.resumen = Objects.requireNonNull(avance, "El avance no puede ser nulo.");
+    this.estado = EstadoLote.RECIBIDO;
+    this.latidoEn = Objects.requireNonNull(ahora, "La fecha no puede ser nula.");
   }
 
   /**
@@ -134,22 +186,74 @@ public final class LoteIngesta {
    * murió y nadie lo va a soltar. Un lote de antes del latido cuenta desde que se tomó.
    */
   public boolean abandonado(Instant ahora, Duration tolerancia) {
-    if (!enManosDelTrabajador()) {
-      return false;
-    }
-    Instant ultimo = latidoEn != null ? latidoEn : iniciadoEn != null ? iniciadoEn : creadoEn;
-    return ultimo.plus(tolerancia).isBefore(ahora);
+    return enManosDelTrabajador() && ultimoMovimiento().plus(tolerancia).isBefore(ahora);
   }
 
   /**
-   * Se leyó entero. <b>El resumen se escribe una vez</b>: un lote terminado no se vuelve a terminar
-   * con otras cifras, porque las cifras son lo que alguien ya leyó en el panel.
+   * Espera en la cola hace más de {@code tolerancia} sin que nadie lo tome: la tarea que debía
+   * moverlo se perdió. Cuenta desde la última vez que se movió —la subida, o el final del tramo
+   * anterior—, no desde que se subió.
+   */
+  public boolean estancadoEnLaCola(Instant ahora, Duration tolerancia) {
+    return estado == EstadoLote.RECIBIDO && ultimoMovimiento().plus(tolerancia).isBefore(ahora);
+  }
+
+  private Instant ultimoMovimiento() {
+    return latidoEn != null ? latidoEn : iniciadoEn != null ? iniciadoEn : creadoEn;
+  }
+
+  /**
+   * Lo que se hace con un lote abandonado. El que se estaba deteniendo se detiene con lo que iba,
+   * que es lo que pidió el panel. El que se estaba procesando vuelve a la cola para que otro tramo
+   * lo retome —lo hecho no se repite: las publicaciones ya resueltas no vuelven a extraerse—, salvo
+   * que ya lo haya hecho {@value #MAXIMO_DE_REINTENTOS} veces: un lote que tumba siempre a su
+   * trabajador lo seguiría tumbando.
+   */
+  public Recuperacion recuperar(Instant ahora) {
+    return recuperar(ahora, null);
+  }
+
+  /**
+   * Lo mismo, cuando se sabe por qué se interrumpió: si se acabaron los reintentos, el motivo que
+   * ve el panel lo dice.
+   *
+   * @param causa la del último fallo, ya escrita para leerse; nula si no se sabe
+   */
+  public Recuperacion recuperar(Instant ahora, String causa) {
+    Objects.requireNonNull(ahora, "La fecha no puede ser nula.");
+    if (!enManosDelTrabajador()) {
+      throw new ExcepcionDeDominio("Un lote " + estado + " no está en manos de nadie.");
+    }
+    if (estado == EstadoLote.DETENIENDO) {
+      detener(resumen != null ? resumen : ResumenIngesta.vacio(), ahora);
+      return Recuperacion.DETENIDO;
+    }
+    if (reintentos >= MAXIMO_DE_REINTENTOS) {
+      String causaLegible = enBlancoEsNulo(causa);
+      fallar(
+          causaLegible == null
+              ? MOTIVO_SIN_REINTENTOS
+              : MOTIVO_SIN_REINTENTOS + " El último fallo: " + causaLegible,
+          ahora);
+      return Recuperacion.FALLIDO;
+    }
+    this.reintentos++;
+    this.estado = EstadoLote.RECIBIDO;
+    this.latidoEn = ahora;
+    return Recuperacion.RETOMADO;
+  }
+
+  /**
+   * Se leyó entero. <b>El resumen final se escribe una vez</b>: un lote terminado no se vuelve a
+   * terminar con otras cifras, porque las cifras son lo que alguien ya leyó en el panel.
    */
   public void terminar(ResumenIngesta resumen, Instant ahora) {
     // Desde la pausa o la detención pedida también: si el trabajador llegó al final antes de
-    // verlas,
-    // el trabajo está hecho entero y el resumen lo dice. Esconderlo como "detenido" sería mentir.
-    if (!enManosDelTrabajador()) {
+    // verlas, el trabajo está hecho entero y el resumen lo dice. Esconderlo como "detenido" sería
+    // mentir.
+    if (estado != EstadoLote.PROCESANDO
+        && estado != EstadoLote.PAUSADO
+        && estado != EstadoLote.DETENIENDO) {
       throw new ExcepcionDeDominio(
           "Solo se puede terminar un lote que se está procesando; este está " + estado + ".");
     }
@@ -177,11 +281,6 @@ public final class LoteIngesta {
     this.terminadoEn = Objects.requireNonNull(ahora, "La fecha de fin no puede ser nula.");
   }
 
-  /**
-   * El trabajador espera aquí, entre una publicación y otra, hasta que se reanude o se detenga.
-   * Solo desde {@code PROCESANDO}: un lote en la cola no tiene trabajo que pausar, y si se pausara
-   * ahí retendría la cola en cuanto el hilo llegara a él, sin que nadie lo hubiera visto empezar.
-   */
   /**
    * Lo marca como el chat de caballero del proveedor: lo que el chat general repita de él se
    * descarta, y lo que el general ya dejó en revisión se rechaza (9 de octubre de 2026). Marcarlo
@@ -211,6 +310,10 @@ public final class LoteIngesta {
     return Optional.ofNullable(chatDelZip);
   }
 
+  /**
+   * El trabajador lo suelta en su próximo punto de control y nadie lo retoma hasta que se reanude.
+   * Solo desde {@code PROCESANDO}: un lote en la cola no tiene trabajo que pausar.
+   */
   public void pausar() {
     if (estado != EstadoLote.PROCESANDO) {
       throw new ExcepcionDeDominio(
@@ -219,18 +322,22 @@ public final class LoteIngesta {
     this.estado = EstadoLote.PAUSADO;
   }
 
+  /**
+   * Vuelve a la cola, y quien lo reanuda lo encola: en pausa nadie lo retiene, así que nadie más se
+   * va a enterar. Lo hecho no se repite: el tramo que lo tome sigue en la publicación pendiente.
+   */
   public void reanudar() {
     if (estado != EstadoLote.PAUSADO) {
       throw new ExcepcionDeDominio(
           "Solo se puede reanudar un lote pausado; este está " + estado + ".");
     }
-    this.estado = EstadoLote.PROCESANDO;
+    this.estado = EstadoLote.RECIBIDO;
   }
 
   /**
-   * El panel pide detenerlo. Si nadie lo ha tomado, queda {@code DETENIDO} en el acto y el
-   * trabajador lo salta al llegar a él; si ya se está procesando, queda {@code DETENIENDO} hasta
-   * que el trabajador lo suelte con {@link #detener}.
+   * El panel pide detenerlo. Si nadie lo tiene —en la cola o en pausa—, queda {@code DETENIDO} en
+   * el acto con lo que alcanzó; si se está procesando, queda {@code DETENIENDO} hasta que el
+   * trabajador lo suelte con {@link #detener}.
    *
    * <p><b>Lo que faltó no se retoma.</b> Los mensajes que alcanzaron a registrarse ya no se vuelven
    * a registrar si se sube otra vez la misma exportación, así que sus publicaciones pendientes no
@@ -238,12 +345,12 @@ public final class LoteIngesta {
    * vez.
    */
   public void pedirDetencion(Instant ahora) {
-    if (estado == EstadoLote.RECIBIDO) {
+    if (estado == EstadoLote.RECIBIDO || estado == EstadoLote.PAUSADO) {
       this.estado = EstadoLote.DETENIDO;
       this.terminadoEn = Objects.requireNonNull(ahora, "La fecha de fin no puede ser nula.");
       return;
     }
-    if (estado != EstadoLote.PROCESANDO && estado != EstadoLote.PAUSADO) {
+    if (estado != EstadoLote.PROCESANDO) {
       throw new ExcepcionDeDominio("Un lote " + estado + " no se puede detener.");
     }
     this.estado = EstadoLote.DETENIENDO;
@@ -261,20 +368,38 @@ public final class LoteIngesta {
   }
 
   /**
-   * Abierto es lo que todavía puede cambiar: en la cola o en manos del trabajador. Mientras lo esté
-   * no se elimina, porque el hilo puede estar escribiendo en él.
+   * Abierto es lo que todavía puede cambiar: en la cola, en pausa o en manos de un trabajador.
+   * Mientras lo esté no se elimina, porque alguien puede estar escribiendo en él.
    */
   public boolean estaAbierto() {
-    return estado == EstadoLote.RECIBIDO || enManosDelTrabajador();
+    return estado == EstadoLote.RECIBIDO || estado == EstadoLote.PAUSADO || enManosDelTrabajador();
   }
 
   /**
-   * Lo tomó el trabajador y todavía no lo ha soltado, sea cual sea la orden que tenga pendiente.
+   * Lo tiene un trabajador y todavía no lo ha soltado. En pausa no: desde el 11 de octubre de 2026
+   * el trabajador lo suelta al verla, en vez de esperar con él.
    */
   public boolean enManosDelTrabajador() {
-    return estado == EstadoLote.PROCESANDO
-        || estado == EstadoLote.PAUSADO
-        || estado == EstadoLote.DETENIENDO;
+    return estado == EstadoLote.PROCESANDO || estado == EstadoLote.DETENIENDO;
+  }
+
+  /**
+   * Ocupa al proveedor: un lote más nuevo del mismo proveedor no empieza mientras este siga
+   * abierto, <b>en pausa incluido</b>. El orden importa —el chat de caballero de Meraki tiene que
+   * leerse antes que el general—, y si la pausa lo soltara, el general correría primero y no
+   * descartaría lo que el de caballero trae. Pausar retiene a los del mismo proveedor; los de los
+   * demás siguen.
+   */
+  public boolean ocupaAlProveedor() {
+    return estaAbierto();
+  }
+
+  /** El adaptador lo usa para devolver el lote como estaba guardado. */
+  public void restaurarReintentos(int reintentos) {
+    if (reintentos < 0) {
+      throw new ExcepcionDeDominio("Los reintentos de un lote no pueden ser negativos.");
+    }
+    this.reintentos = reintentos;
   }
 
   private static String enBlancoEsNulo(String valor) {
@@ -324,5 +449,19 @@ public final class LoteIngesta {
 
   public Optional<Instant> latidoEn() {
     return Optional.ofNullable(latidoEn);
+  }
+
+  public int reintentos() {
+    return reintentos;
+  }
+
+  /** Lo que {@link #recuperar} hizo con el lote. */
+  public enum Recuperacion {
+    /** Volvió a la cola: hay que encolarlo. */
+    RETOMADO,
+    /** Se estaba deteniendo, y quedó detenido. */
+    DETENIDO,
+    /** Se acabaron los reintentos. */
+    FALLIDO
   }
 }

@@ -22,8 +22,11 @@ de todo lo externo: `RepositorioPedidos`, `PasarelaDePagos` y `PasarelaSistecred
 mañana—, `AlmacenDeArchivosDeProveedor` (el bucket privado),
 `ExtractorDeProductos` (la API de Claude, o el sembrado sin clave),
 `LectorDeFotos` (la API de Claude con visión, o apagado sin clave; `ADR-0078`),
-`CalculadorDePHash`, `ProcesadorDeImagenes` y `EjecutorDeIngestas` (la cola de
-un hilo). Los repositorios de esa carpeta son puertos como los demás.
+`CalculadorDePHash`, `ProcesadorDeImagenes`, `EjecutorDeIngestas` (Cloud Tasks
+en los ambientes desplegados, un hilo con la cola en memoria en local;
+`ADR-0080`), `MarcapasosDeIngesta` (el latido de un tramo) y
+`VerificadorDeTareasDeIngesta` (el token de Cloud Tasks). Los repositorios de esa
+carpeta son puertos como los demás.
 
 **La transacción NO se abre aquí, y esta línea decía que sí.** La abre quien
 llama, con un `TransactionTemplate` en el controlador —`PedidoControlador` para

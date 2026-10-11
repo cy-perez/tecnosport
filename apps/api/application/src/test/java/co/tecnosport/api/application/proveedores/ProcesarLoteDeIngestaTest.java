@@ -6,13 +6,13 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import co.tecnosport.api.application.compartido.EnTransaccionPropiaFalsa;
+import co.tecnosport.api.application.compartido.Reloj;
 import co.tecnosport.api.application.compartido.RelojFalso;
 import co.tecnosport.api.application.proveedores.ApoyoDeCatalogoParaIngesta.CalculadorDePHashPorContenido;
 import co.tecnosport.api.application.proveedores.ApoyoDeCatalogoParaIngesta.RepositorioBorradoresEnMemoria;
 import co.tecnosport.api.application.proveedores.ApoyoDeCatalogoParaIngesta.RepositorioProductosDeProveedorEnMemoria;
 import co.tecnosport.api.application.proveedores.ApoyoDeCatalogoParaIngesta.RepositorioProductosEnMemoria;
 import co.tecnosport.api.application.proveedores.ApoyoDeIngesta.AlmacenEnMemoria;
-import co.tecnosport.api.application.proveedores.ApoyoDeIngesta.EsperaGuionada;
 import co.tecnosport.api.application.proveedores.ApoyoDeIngesta.ExtractorFalso;
 import co.tecnosport.api.application.proveedores.ApoyoDeIngesta.FuenteFija;
 import co.tecnosport.api.application.proveedores.ApoyoDeIngesta.RepositorioLotesEnMemoria;
@@ -81,7 +81,6 @@ class ProcesarLoteDeIngestaTest {
   private final AlmacenEnMemoria almacen = new AlmacenEnMemoria();
   private final EnTransaccionPropiaFalsa transacciones = new EnTransaccionPropiaFalsa();
 
-  private EsperaGuionada espera = new EsperaGuionada();
   private Proveedor proveedor;
   private LoteIngesta lote;
 
@@ -94,7 +93,11 @@ class ProcesarLoteDeIngestaTest {
   }
 
   private ProcesarLoteDeIngesta casoCon(FuenteFija fuente, ExtractorDeProductos extractor) {
-    RelojFalso reloj = new RelojFalso(AHORA);
+    return casoCon(fuente, extractor, new RelojFalso(AHORA), Duration.ofDays(1));
+  }
+
+  private ProcesarLoteDeIngesta casoCon(
+      FuenteFija fuente, ExtractorDeProductos extractor, Reloj reloj, Duration presupuesto) {
     RegistrarMensajesDeProveedor registrar =
         new RegistrarMensajesDeProveedor(
             proveedores, lotes, mensajes, almacen, new CalculadorDePHashPorContenido());
@@ -134,9 +137,12 @@ class ProcesarLoteDeIngestaTest {
         extraer,
         resolver,
         transacciones,
-        espera,
-        reloj);
+        reloj,
+        presupuesto,
+        TOLERANCIA_DEL_LATIDO);
   }
+
+  private static final Duration TOLERANCIA_DEL_LATIDO = Duration.ofMinutes(3);
 
   /** Los 25 del anexo, y de ahí los nueve del criterio: bolsos 1-5 y ropa 1-4. */
   private static List<String> losNueveDelCriterio() {
@@ -339,29 +345,41 @@ class ProcesarLoteDeIngestaTest {
     assertTrue(pubs.get(1).motivo().orElseThrow().contains("4 intentos"));
   }
 
-  /** El error queda escrito en el lote para el panel, y se propaga para el log. */
+  /**
+   * Un fallo que se repetiría igual no se reintenta: el lote queda en error con el motivo, y sale
+   * para el registro diciendo que no hay que reintentar.
+   */
   @Test
-  void unArchivoIlegibleDejaElLoteEnErrorConElMotivoYPropaga() {
-    ProcesarLoteDeIngesta caso =
-        casoCon(
-            new FuenteFija(new ExportacionIlegibleException("El zip no trae .txt.")),
-            extractorDelAnexo());
+  void unArchivoIlegibleDejaElLoteEnErrorConElMotivoYNoSeReintenta() {
+    FuenteFija fuente = new FuenteFija(new ExportacionIlegibleException("El zip no trae .txt."));
+    ProcesarLoteDeIngesta caso = casoCon(fuente, extractorDelAnexo());
 
-    assertThrows(ExportacionIlegibleException.class, () -> caso.ejecutar(lote.id()));
+    TramoFallidoException fallo =
+        assertThrows(TramoFallidoException.class, () -> caso.procesarTramo(lote.id()));
+
+    assertFalse(fallo.reintentar());
+    assertTrue(fallo.getCause() instanceof ExportacionIlegibleException);
+    assertEquals(1, fuente.lecturas);
 
     LoteIngesta guardado = lotes.buscarPorId(lote.id()).orElseThrow();
     assertEquals(EstadoLote.ERROR, guardado.estado());
     assertEquals(Optional.of("El zip no trae .txt."), guardado.detalleError());
   }
 
+  /**
+   * Un fallo inesperado puede ser pasajero: el lote vuelve a la cola y se reintenta, hasta el tope.
+   * Si se repite siempre, al final queda en error con un motivo que no copia el mensaje crudo.
+   */
   @Test
-  void unFalloInesperadoSeEscribeComoTalSinElMensajeCrudo() {
-    ProcesarLoteDeIngesta caso =
-        casoCon(
-            new FuenteFija(new NullPointerException("Cannot invoke \"x.y()\"")),
-            extractorDelAnexo());
+  void unFalloInesperadoSeReintentaHastaElTopeYSeEscribeComoTal() {
+    FuenteFija fuente = new FuenteFija(new NullPointerException("Cannot invoke \"x.y()\""));
+    ProcesarLoteDeIngesta caso = casoCon(fuente, extractorDelAnexo());
 
-    assertThrows(NullPointerException.class, () -> caso.ejecutar(lote.id()));
+    TramoFallidoException fallo =
+        assertThrows(TramoFallidoException.class, () -> caso.ejecutar(lote.id()));
+
+    assertFalse(fallo.reintentar(), "al final, ya no");
+    assertEquals(LoteIngesta.MAXIMO_DE_REINTENTOS + 1, fuente.lecturas);
 
     String detalle = lotes.buscarPorId(lote.id()).orElseThrow().detalleError().orElseThrow();
     assertTrue(detalle.contains("Error inesperado"), detalle);
@@ -521,25 +539,50 @@ class ProcesarLoteDeIngestaTest {
     };
   }
 
-  /** La pausa retiene el hilo donde iba y, al reanudar, sigue sin repetir ni saltarse nada. */
+  /**
+   * La pausa suelta el lote con lo que lleva: el tramo termina sin trabajo pendiente y nadie lo
+   * retoma hasta que se reanude. Al reanudar, el tramo siguiente sigue en la publicación pendiente
+   * sin volver a leer el archivo ni a extraer lo que ya se extrajo (ADR-0080).
+   */
   @Test
-  void enPausaEsperaYAlReanudarTerminaEntero() {
+  void enPausaSueltaElLoteConSuAvanceYAlReanudarTerminaSinRepetir() {
     conCopias();
-    espera.luego(() -> {}).luego(() -> enElPanel(LoteIngesta::reanudar));
+    int[] llamadas = {0};
+    ExtractorFalso delAnexo = extractorDelAnexo();
     ExtractorDeProductos extractor =
-        extractorQueEnLaLlamada(3, () -> enElPanel(LoteIngesta::pausar));
+        texto -> {
+          if (++llamadas[0] == 3) {
+            enElPanel(LoteIngesta::pausar);
+          }
+          return delAnexo.extraer(texto);
+        };
+    FuenteFija fuente = new FuenteFija(comoChat(losNueveDelCriterio()));
+    ProcesarLoteDeIngesta caso = casoCon(fuente, extractor);
 
-    LoteIngesta resultado =
-        casoCon(new FuenteFija(comoChat(losNueveDelCriterio())), extractor).ejecutar(lote.id());
+    ProcesarLoteDeIngesta.Tramo enPausa = caso.procesarTramo(lote.id());
+
+    assertEquals(EstadoLote.PAUSADO, enPausa.lote().estado());
+    assertFalse(enPausa.quedaTrabajo(), "en pausa no se encola: lo retoma quien lo reanude");
+    assertEquals(
+        3,
+        enPausa.lote().resumen().orElseThrow().borradoresNuevos(),
+        "la publicación en curso termina antes de soltarlo");
+
+    enElPanel(LoteIngesta::reanudar);
+    LoteIngesta resultado = caso.ejecutar(lote.id());
 
     assertEquals(EstadoLote.TERMINADO, resultado.estado());
-    assertEquals(2, espera.esperas, "esperó mientras siguió en pausa, no una sola vez");
-    assertEquals(9, resultado.resumen().orElseThrow().borradoresNuevos());
+    ResumenIngesta resumen = resultado.resumen().orElseThrow();
+    assertEquals(28, resumen.mensajesLeidos(), "lo de la lectura viene del avance");
+    assertEquals(9, resumen.publicaciones());
+    assertEquals(9, resumen.borradoresNuevos());
     assertEquals(9, borradores.porId.size());
+    assertEquals(1, fuente.lecturas, "el archivo se lee una sola vez");
+    assertEquals(9, llamadas[0], "ninguna publicación se extrae dos veces");
   }
 
   /**
-   * Detener a la mitad suelta el hilo con lo que alcanzó: las publicaciones que faltan no se tocan.
+   * Detener a la mitad suelta el lote con lo que alcanzó: las publicaciones que faltan no se tocan.
    */
   @Test
   void detenerEnCursoCierraConLoQueAlcanzoYNoSigue() {
@@ -557,21 +600,21 @@ class ProcesarLoteDeIngestaTest {
     assertEquals(3, resumen.borradoresNuevos(), "la que estaba en curso termina; las demás no");
     assertEquals(3, borradores.porId.size());
     assertEquals(Optional.of(AHORA), resultado.terminadoEn());
-    assertEquals(0, espera.esperas);
   }
 
+  /** En pausa nadie lo tiene: detenerlo lo cierra en el acto, con el avance que dejó el tramo. */
   @Test
-  void detenerEnPausaSueltaElHiloSinVolverATrabajar() {
+  void detenerUnLotePausadoLoCierraConSuAvance() {
     conCopias();
-    espera.luego(() -> enElPanel(l -> l.pedirDetencion(AHORA)));
     ExtractorDeProductos extractor =
         extractorQueEnLaLlamada(1, () -> enElPanel(LoteIngesta::pausar));
+    casoCon(new FuenteFija(comoChat(losNueveDelCriterio())), extractor).procesarTramo(lote.id());
 
-    LoteIngesta resultado =
-        casoCon(new FuenteFija(comoChat(losNueveDelCriterio())), extractor).ejecutar(lote.id());
+    enElPanel(l -> l.pedirDetencion(AHORA));
 
-    assertEquals(EstadoLote.DETENIDO, resultado.estado());
-    assertEquals(1, resultado.resumen().orElseThrow().borradoresNuevos());
+    LoteIngesta detenido = lotes.buscarPorId(lote.id()).orElseThrow();
+    assertEquals(EstadoLote.DETENIDO, detenido.estado());
+    assertEquals(1, detenido.resumen().orElseThrow().borradoresNuevos());
   }
 
   /** El que se detuvo en la cola se salta: ni se lee el archivo. */
@@ -588,28 +631,6 @@ class ProcesarLoteDeIngestaTest {
     assertTrue(mensajes.guardados.isEmpty());
   }
 
-  /** Si la aplicación se apaga con el lote en pausa, el lote no se queda abierto para siempre. */
-  @Test
-  void unaPausaInterrumpidaDejaElLoteEnErrorConSuMotivo() {
-    conCopias();
-    espera.luego(
-        () -> {
-          throw new IngestaInterrumpidaException();
-        });
-    ExtractorDeProductos extractor =
-        extractorQueEnLaLlamada(1, () -> enElPanel(LoteIngesta::pausar));
-
-    assertThrows(
-        IngestaInterrumpidaException.class,
-        () ->
-            casoCon(new FuenteFija(comoChat(losNueveDelCriterio())), extractor)
-                .ejecutar(lote.id()));
-
-    LoteIngesta guardado = lotes.buscarPorId(lote.id()).orElseThrow();
-    assertEquals(EstadoLote.ERROR, guardado.estado());
-    assertTrue(guardado.detalleError().orElseThrow().contains("en pausa"));
-  }
-
   /**
    * El final se escribe sobre el lote releído y bloqueado, no sobre el que se tomó al empezar: el
    * panel lo pausó después del último punto de control, y terminar sobre la copia vieja —que dice
@@ -621,24 +642,24 @@ class ProcesarLoteDeIngestaTest {
     List<String> uno = losNueveDelCriterio().subList(0, 1);
     ExtractorDeProductos extractor =
         extractorQueEnLaLlamada(1, () -> enElPanel(LoteIngesta::pausar));
-    // Pausado después del último punto de control: el trabajador no espera, termina.
+    // Pausado después del último punto de control: el trabajador no lo suelta, termina.
     LoteIngesta resultado = casoCon(new FuenteFija(comoChat(uno)), extractor).ejecutar(lote.id());
 
     assertEquals(EstadoLote.TERMINADO, resultado.estado());
     assertEquals(EstadoLote.TERMINADO, lotes.buscarPorId(lote.id()).orElseThrow().estado());
-    assertEquals(2, lotes.bloqueos, "uno al tomarlo y otro al soltarlo");
+    assertEquals(
+        4, lotes.bloqueos, "al tomarlo, al anotar la lectura, al anotar el avance y al soltarlo");
   }
 
   /**
-   * Otra instancia arrancó y cerró con error el lote que este hilo tenía en pausa
-   * (ReanudarLotesDeIngesta): el hilo no sigue creando borradores ni escribe encima.
+   * Se dio por abandonado y otro lo cerró mientras este trabajaba: no sigue creando borradores ni
+   * escribe encima.
    */
   @Test
-  void unLoteQueOtraInstanciaCerroNoSigueNiSeEscribe() {
+  void unLoteQueOtroCerroNoSigueNiSeEscribe() {
     conCopias();
-    espera.luego(() -> enElPanel(l -> l.fallar("reinicio", AHORA)));
     ExtractorDeProductos extractor =
-        extractorQueEnLaLlamada(1, () -> enElPanel(LoteIngesta::pausar));
+        extractorQueEnLaLlamada(1, () -> enElPanel(l -> l.fallar("reinicio", AHORA)));
 
     LoteIngesta resultado =
         casoCon(new FuenteFija(comoChat(losNueveDelCriterio())), extractor).ejecutar(lote.id());
@@ -648,21 +669,264 @@ class ProcesarLoteDeIngestaTest {
     assertEquals(1, borradores.porId.size(), "la publicación en curso y ninguna más");
   }
 
-  /** Y si además se eliminó, no se vuelve a insertar desde la copia que tenía el hilo. */
+  /** Y si además se eliminó, no se vuelve a insertar desde la copia que tenía el trabajador. */
   @Test
-  void unLoteEliminadoMientrasEsperabaNoSeReinserta() {
+  void unLoteEliminadoMientrasTrabajabaNoSeReinserta() {
     conCopias();
-    espera.luego(
-        () -> {
-          enElPanel(l -> l.fallar("reinicio", AHORA));
-          lotes.eliminarConSuHistorial(lote.id());
-        });
     ExtractorDeProductos extractor =
-        extractorQueEnLaLlamada(1, () -> enElPanel(LoteIngesta::pausar));
+        extractorQueEnLaLlamada(
+            1,
+            () -> {
+              enElPanel(l -> l.fallar("reinicio", AHORA));
+              lotes.eliminarConSuHistorial(lote.id());
+            });
 
     casoCon(new FuenteFija(comoChat(losNueveDelCriterio())), extractor).ejecutar(lote.id());
 
     assertEquals(Optional.empty(), lotes.buscarPorId(lote.id()));
+  }
+
+  // --- Por tramos (ADR-0080) ---
+
+  /** Un reloj que mueve la prueba: cada extracción le suma un minuto, lo que tarda el modelo. */
+  private static final class RelojManual implements Reloj {
+    Instant ahora = AHORA;
+
+    @Override
+    public Instant ahora() {
+      return ahora;
+    }
+  }
+
+  private static ExtractorDeProductos queTardaUnMinuto(RelojManual reloj, int[] llamadas) {
+    ExtractorFalso delAnexo = extractorDelAnexo();
+    return texto -> {
+      llamadas[0]++;
+      reloj.ahora = reloj.ahora.plus(Duration.ofMinutes(1));
+      return delAnexo.extraer(texto);
+    };
+  }
+
+  /**
+   * Con dos minutos y medio por tramo y un minuto por publicación, los nueve mensajes caben en tres
+   * tramos. Termina igual que de una sola vez: mismas cifras, ninguna extracción repetida, el
+   * archivo leído una vez.
+   */
+  @Test
+  void unLoteQueNoCabeEnUnTramoSigueEnElSiguienteSinRepetirNada() {
+    conCopias();
+    RelojManual reloj = new RelojManual();
+    int[] llamadas = {0};
+    FuenteFija fuente = new FuenteFija(comoChat(losNueveDelCriterio()));
+    ProcesarLoteDeIngesta caso =
+        casoCon(fuente, queTardaUnMinuto(reloj, llamadas), reloj, Duration.ofSeconds(150));
+
+    List<ProcesarLoteDeIngesta.Tramo> tramos = new ArrayList<>();
+    ProcesarLoteDeIngesta.Tramo tramo;
+    do {
+      tramo = caso.procesarTramo(lote.id());
+      tramos.add(tramo);
+    } while (tramo.quedaTrabajo());
+
+    assertEquals(3, tramos.size());
+    assertEquals(EstadoLote.RECIBIDO, tramos.get(0).lote().estado(), "vuelve a la cola");
+    assertEquals(3, tramos.get(0).lote().resumen().orElseThrow().borradoresNuevos());
+    LoteIngesta resultado = tramos.get(2).lote();
+    assertEquals(EstadoLote.TERMINADO, resultado.estado());
+    ResumenIngesta resumen = resultado.resumen().orElseThrow();
+    assertEquals(28, resumen.mensajesLeidos());
+    assertEquals(27, resumen.mensajesNuevos());
+    assertEquals(9, resumen.publicaciones());
+    assertEquals(9, resumen.borradoresNuevos());
+    assertEquals(0, resumen.descartes());
+    assertEquals(9, llamadas[0], "ninguna publicación se extrae dos veces");
+    assertEquals(1, fuente.lecturas, "el archivo se lee una sola vez");
+    assertEquals(Optional.of(AHORA), resultado.iniciadoEn(), "el inicio es el del primer tramo");
+  }
+
+  /**
+   * El trabajador murió con el lote a medias, y la tarea de los abandonados lo devolvió a la cola.
+   * El que lo retoma sigue donde iba: no relee el archivo ni repite borradores.
+   */
+  @Test
+  void elQueRetomaUnLoteAbandonadoSigueDondeIba() {
+    conCopias();
+    RelojManual reloj = new RelojManual();
+    int[] llamadas = {0};
+    FuenteFija fuente = new FuenteFija(comoChat(losNueveDelCriterio()));
+    ProcesarLoteDeIngesta caso =
+        casoCon(fuente, queTardaUnMinuto(reloj, llamadas), reloj, Duration.ofSeconds(150));
+    caso.procesarTramo(lote.id());
+    // Otro trabajador lo tomó y murió sin soltarlo; la tarea de los abandonados lo recuperó.
+    LoteIngesta delMuerto = lotes.buscarPorId(lote.id()).orElseThrow();
+    delMuerto.iniciar(reloj.ahora);
+    assertEquals(LoteIngesta.Recuperacion.RETOMADO, delMuerto.recuperar(reloj.ahora));
+    lotes.actualizar(delMuerto);
+
+    LoteIngesta resultado = caso.ejecutar(lote.id());
+
+    assertEquals(EstadoLote.TERMINADO, resultado.estado());
+    assertEquals(9, resultado.resumen().orElseThrow().borradoresNuevos());
+    assertEquals(9, borradores.porId.size());
+    assertEquals(9, llamadas[0]);
+    assertEquals(1, fuente.lecturas);
+  }
+
+  /** El lote más nuevo del mismo proveedor no empieza mientras el anterior ocupe la cola. */
+  @Test
+  void elMasNuevoDelMismoProveedorEsperaAlAnterior() {
+    LoteIngesta nuevo =
+        LoteIngesta.recibirExportacion(proveedor.id(), "proveedores/x/b.zip", T.plusSeconds(1));
+    lotes.guardar(nuevo);
+    FuenteFija fuente = new FuenteFija(comoChat(losNueveDelCriterio()));
+
+    ProcesarLoteDeIngesta.Tramo tramo =
+        casoCon(fuente, extractorDelAnexo()).procesarTramo(nuevo.id());
+
+    assertEquals(EstadoLote.RECIBIDO, tramo.lote().estado());
+    assertFalse(tramo.quedaTrabajo(), "no se reencola: lo encola quien suelte al anterior");
+    assertEquals(0, fuente.lecturas);
+  }
+
+  // --- Lo que encontraron las revisiones del 11 de octubre de 2026 ---
+
+  /**
+   * Un fallo pasajero —el bucket no respondió al leer el zip— no cierra el lote: vuelve a la cola,
+   * y el reintento de la cola lo procesa entero.
+   */
+  @Test
+  void unFalloPasajeroDevuelveElLoteALaColaYElReintentoLoTermina() {
+    FuenteFija fuente =
+        FuenteFija.queFallaPrimero(
+            1,
+            new IllegalStateException("el bucket no respondió"),
+            comoChat(losNueveDelCriterio()));
+    ProcesarLoteDeIngesta caso = casoCon(fuente, extractorDelAnexo());
+
+    TramoFallidoException fallo =
+        assertThrows(TramoFallidoException.class, () -> caso.procesarTramo(lote.id()));
+    assertTrue(fallo.reintentar());
+    LoteIngesta enLaCola = lotes.buscarPorId(lote.id()).orElseThrow();
+    assertEquals(EstadoLote.RECIBIDO, enLaCola.estado());
+    assertEquals(1, enLaCola.reintentos());
+
+    LoteIngesta resultado = caso.ejecutar(lote.id());
+
+    assertEquals(EstadoLote.TERMINADO, resultado.estado());
+    assertEquals(9, resultado.resumen().orElseThrow().borradoresNuevos());
+  }
+
+  /**
+   * La tarea reintentada encuentra el lote en manos de un trabajador que dejó de latir: lo retoma
+   * ella misma, sin esperar a la tarea periódica, que en dev solo corre con tráfico.
+   */
+  @Test
+  void elTramoQueEncuentraElLoteAbandonadoLoRetomaElMismo() {
+    lote.iniciar(AHORA.minus(TOLERANCIA_DEL_LATIDO).minusSeconds(1));
+
+    LoteIngesta resultado =
+        casoCon(new FuenteFija(comoChat(losNueveDelCriterio())), extractorDelAnexo())
+            .ejecutar(lote.id());
+
+    assertEquals(EstadoLote.TERMINADO, resultado.estado());
+    assertEquals(1, resultado.reintentos());
+  }
+
+  /** Si su trabajador sigue latiendo, el tramo lo dice para que la cola reintente más tarde. */
+  @Test
+  void elTramoQueEncuentraElLoteDeOtroVivoDiceQueEstaOcupado() {
+    lote.iniciar(AHORA.minusSeconds(20));
+    FuenteFija fuente = new FuenteFija(comoChat(losNueveDelCriterio()));
+
+    ProcesarLoteDeIngesta.Tramo tramo =
+        casoCon(fuente, extractorDelAnexo()).procesarTramo(lote.id());
+
+    assertEquals(ProcesarLoteDeIngesta.Resultado.OCUPADO, tramo.resultado());
+    assertEquals(EstadoLote.PROCESANDO, tramo.lote().estado());
+    assertEquals(0, fuente.lecturas);
+  }
+
+  /**
+   * Un trabajador congelado despierta con el lote en PROCESANDO, pero otro ya lo había retomado:
+   * los reintentos cambiaron, así que el lote no es suyo y no sigue creando borradores.
+   */
+  @Test
+  void elTrabajadorQueDespiertaConElLoteRetomadoPorOtroNoSigue() {
+    conCopias();
+    ExtractorDeProductos extractor =
+        extractorQueEnLaLlamada(
+            1,
+            () ->
+                enElPanel(
+                    l -> {
+                      // Lo que hizo la otra instancia mientras este estaba congelado.
+                      l.recuperar(AHORA);
+                      l.iniciar(AHORA);
+                    }));
+
+    ProcesarLoteDeIngesta.Tramo tramo =
+        casoCon(new FuenteFija(comoChat(losNueveDelCriterio())), extractor)
+            .procesarTramo(lote.id());
+
+    assertEquals(ProcesarLoteDeIngesta.Resultado.NADA, tramo.resultado());
+    assertEquals(1, borradores.porId.size(), "la publicación en curso y ninguna más");
+    LoteIngesta delOtro = lotes.buscarPorId(lote.id()).orElseThrow();
+    assertEquals(EstadoLote.PROCESANDO, delOtro.estado(), "no escribió sobre el lote del otro");
+  }
+
+  /** El avance se anota después de cada publicación: un tramo cortado no se lleva lo que contó. */
+  @Test
+  void elAvanceSeAnotaDespuesDeCadaPublicacion() {
+    conCopias();
+    int[] vistos = {-1};
+    ExtractorDeProductos extractor =
+        extractorQueEnLaLlamada(
+            4,
+            () ->
+                vistos[0] =
+                    lotes
+                        .buscarPorId(lote.id())
+                        .orElseThrow()
+                        .resumen()
+                        .orElseThrow()
+                        .borradoresNuevos());
+
+    casoCon(new FuenteFija(comoChat(losNueveDelCriterio())), extractor).ejecutar(lote.id());
+
+    assertEquals(3, vistos[0], "al extraer la cuarta, las tres anteriores ya están anotadas");
+  }
+
+  /**
+   * El presupuesto se acabó, y el panel lo pausó justo entre el último punto de control y el
+   * momento de soltarlo: se obedece la pausa, con su avance, y no se encola un tramo más.
+   */
+  @Test
+  void siLoPausanAlIrASoltarloSeObedeceLaPausaYNoSeEncola() {
+    conCopias();
+    RelojManual reloj = new RelojManual();
+    int[] llamadas = {0};
+    ProcesarLoteDeIngesta caso =
+        casoCon(
+            new FuenteFija(comoChat(losNueveDelCriterio())),
+            queTardaUnMinuto(reloj, llamadas),
+            reloj,
+            Duration.ofSeconds(30));
+    // Bloqueos: al tomarlo, al armar, al anotar el avance de la primera publicación, y el cuarto
+    // es el de soltarlo. Justo antes de ese, el panel lo pausa.
+    lotes.antesDeBloquear =
+        () -> {
+          if (lotes.bloqueos == 3) {
+            enElPanel(LoteIngesta::pausar);
+          }
+        };
+
+    ProcesarLoteDeIngesta.Tramo tramo = caso.procesarTramo(lote.id());
+
+    assertEquals(ProcesarLoteDeIngesta.Resultado.SOLTADO, tramo.resultado());
+    assertFalse(tramo.quedaTrabajo());
+    assertEquals(EstadoLote.PAUSADO, tramo.lote().estado());
+    assertEquals(1, tramo.lote().resumen().orElseThrow().borradoresNuevos());
+    assertEquals(1, llamadas[0]);
   }
 
   private static final String POLO_PRADA =
@@ -710,6 +974,9 @@ class ProcesarLoteDeIngestaTest {
   }
 
   private LoteIngesta procesar(String nombreDelChat, List<MensajeCrudo> crudos) {
+    // El lote de la preparación es del mismo proveedor y se subió antes: sin quitarlo, este
+    // esperaría detrás de él (ColaDelProveedor).
+    lotes.porId.remove(lote.id());
     LoteIngesta nuevo =
         LoteIngesta.recibirExportacion(proveedor.id(), "proveedores/x/exportaciones/b.zip", T);
     lotes.guardar(nuevo);

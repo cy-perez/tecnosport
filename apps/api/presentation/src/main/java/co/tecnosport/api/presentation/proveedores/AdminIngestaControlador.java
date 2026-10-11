@@ -100,9 +100,10 @@ public class AdminIngestaControlador {
                 iniciarIngesta.ejecutarTodos(
                     new IniciarIngestaComando(id, cuerpo.objectKey(), cuerpo.nombreArchivo())));
     // En el orden en que se tienen que procesar: con dos chats en un zip, el de caballero primero.
-    // Si la cola está llena, EncolarIngesta cierra el lote con su motivo y relanza (409).
+    // Si la cola no acepta uno, EncolarIngesta cierra ese y los que venían detrás con su motivo y
+    // relanza (503): el general de un zip de dos chats no sigue solo sin el de caballero.
+    encolarIngesta.ejecutarTodos(lotes);
     for (LoteIngesta lote : lotes) {
-      encolarIngesta.ejecutar(lote);
       log.info(
           "Lote de ingesta {} del proveedor {} encolado desde {}",
           lote.id(),
@@ -139,9 +140,9 @@ public class AdminIngestaControlador {
   }
 
   /**
-   * El trabajador espera entre una publicación y otra hasta que se reanude o se detenga, y la cola
-   * espera con él. Solo un lote en proceso; si ya no lo está —terminó mientras se pulsaba—, {@code
-   * 422} con el estado en que quedó.
+   * El trabajador suelta el lote en su próximo punto de control y la cola sigue con los demás; este
+   * espera a que lo reanuden (ADR-0080). Solo un lote en proceso; si ya no lo está —terminó
+   * mientras se pulsaba—, {@code 422} con el estado en que quedó.
    */
   @PostMapping("/ingestas/{id}/pausar")
   public LoteIngestaRespuesta pausar(@PathVariable UUID id) {
@@ -153,18 +154,36 @@ public class AdminIngestaControlador {
   @PostMapping("/ingestas/{id}/reanudar")
   public LoteIngestaRespuesta reanudar(@PathVariable UUID id) {
     LoteIngesta lote = transaccion.execute(estado -> reanudarIngesta.ejecutar(id));
-    log.info("Lote de ingesta {} reanudado.", id);
+    // En pausa nadie lo tenía: vuelve a la cola y hay que encolarlo, después de confirmar. Si la
+    // cola no lo acepta no se cierra —ya tiene mensajes registrados, y volver a subir el archivo no
+    // los volvería a leer—: queda en la cola y lo recoge la tarea de los estancados.
+    try {
+      encolarIngesta.encolar(id);
+      log.info("Lote de ingesta {} reanudado y encolado.", id);
+    } catch (RuntimeException e) {
+      log.warn("Lote de ingesta {} reanudado, pero no se pudo encolar: {}", id, e.toString());
+    }
     return LoteIngestaRespuesta.de(lote);
   }
 
   /**
-   * En la cola, el lote queda {@code DETENIDO} en el acto; en curso o en pausa, {@code DETENIENDO}
+   * En la cola o en pausa, el lote queda {@code DETENIDO} en el acto; en curso, {@code DETENIENDO}
    * hasta que el trabajador lo suelte y siga con el siguiente. Ver {@link DetenerIngesta}.
    */
   @PostMapping("/ingestas/{id}/detener")
   public LoteIngestaRespuesta detener(@PathVariable UUID id) {
     LoteIngesta lote = transaccion.execute(estado -> detenerIngesta.ejecutar(id));
     log.info("Lote de ingesta {}: detención pedida, queda {}.", id, lote.estado());
+    // Detenido en el acto —estaba en la cola o en pausa—: el siguiente del mismo proveedor lo
+    // estaba esperando y nadie más lo va a encolar. Si la cola falla, la tarea periódica lo recoge.
+    try {
+      encolarIngesta
+          .siguienteDelProveedorDe(id)
+          .ifPresent(
+              siguiente -> log.info("Lote de ingesta {} encolado tras detener {}.", siguiente, id));
+    } catch (RuntimeException e) {
+      log.warn("No se pudo encolar el lote que esperaba a {}: {}", id, e.toString());
+    }
     return LoteIngestaRespuesta.de(lote);
   }
 

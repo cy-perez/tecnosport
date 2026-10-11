@@ -136,7 +136,7 @@ public class RepositorioLotesIngestaJpa implements RepositorioLotesIngesta {
     entityManager
         .createNativeQuery(
             "update lote_ingesta set latido_en = ?2 where id = ?1"
-                + " and estado in ('PROCESANDO', 'PAUSADO', 'DETENIENDO')"
+                + " and estado in ('PROCESANDO', 'DETENIENDO')"
                 + " and (latido_en is null or latido_en < ?2)")
         .setParameter(1, loteId)
         .setParameter(2, ahora)
@@ -185,6 +185,7 @@ public class RepositorioLotesIngestaJpa implements RepositorioLotesIngesta {
         lote.iniciadoEn().orElse(null),
         lote.terminadoEn().orElse(null),
         lote.latidoEn().orElse(null),
+        lote.reintentos(),
         lote.esChatDeCaballero(),
         lote.chatDelZip().map(ChatDelZip::name).orElse(null));
   }
@@ -224,6 +225,7 @@ public class RepositorioLotesIngestaJpa implements RepositorioLotesIngesta {
     if (fila.getLatidoEn() != null) {
       lote.latir(fila.getLatidoEn());
     }
+    lote.restaurarReintentos(fila.getReintentos());
     return lote;
   }
 }

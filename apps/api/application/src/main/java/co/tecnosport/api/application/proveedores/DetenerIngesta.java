@@ -9,10 +9,11 @@ import java.util.UUID;
 /**
  * Detiene un lote para que la cola siga con el siguiente.
  *
- * <p>En la cola, se cierra en el acto. En curso o en pausa, queda {@code DETENIENDO} y el
- * trabajador lo suelta en su siguiente punto de control, con lo que alcanzó a hacer; si estaba en
- * medio de una extracción o subiendo las fotos, eso termina primero. Ver {@link
- * LoteIngesta#pedirDetencion} para lo que <b>no</b> se retoma.
+ * <p>En la cola o en pausa, se cierra en el acto, y quien llama encola el siguiente del mismo
+ * proveedor ({@link EncolarIngesta#siguienteDelProveedorDe}), que lo estaba esperando. En curso,
+ * queda {@code DETENIENDO} y el trabajador lo suelta en su siguiente punto de control, con lo que
+ * alcanzó a hacer; si estaba en medio de una extracción o subiendo las fotos, eso termina primero.
+ * Ver {@link LoteIngesta#pedirDetencion} para lo que <b>no</b> se retoma.
  */
 public final class DetenerIngesta {
 
