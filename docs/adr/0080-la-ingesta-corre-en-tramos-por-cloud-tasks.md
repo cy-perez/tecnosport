@@ -103,9 +103,10 @@ librería de Cloud Tasks: es una sola llamada. Las credenciales salen de
   que ya quedó resuelto no se repite.
 - **Las cifras pueden quedar cortas en un caso**: si la lectura se repite —el trabajador murió entre
   registrar y armar—, `mensajesNuevos` cuenta cero, porque esos mensajes ya estaban registrados.
-- **El motivo del error sigue siendo texto en español** que el panel pinta tal cual, como antes de
-  este cambio. La regla dura 4 pide una clave que el panel traduzca; es deuda anterior a este ADR
-  que este amplía con dos motivos más.
+- **El motivo del error es un código desde el mismo día** (`MotivoDeFalloDeLote`, `V104`): el
+  lote guarda el código y, si hace falta, el dato que el texto interpola, y el panel lo traduce
+  (regla dura 4). La frase en español queda para el registro. Las publicaciones todavía guardan su
+  motivo como texto: es el mismo problema en otra pantalla, y va aparte.
 
 ## Lo que hay que verificar con el primer lote real
 
