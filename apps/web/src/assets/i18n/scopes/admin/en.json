@@ -1009,7 +1009,7 @@
   },
   "ingestas": {
     "titulo": "Imports",
-    "explicacion": "Each batch is a chat export from a supplier. Upload the zip WhatsApp generates (Export chat, with media); the server reads the messages, groups them into posts and leaves a draft for each new product. Uploading the same chat twice is safe: whatever was already read isn't repeated. Imports run one at a time: while one is running you can pause it (the others wait with it) or stop it, and the queue moves on to the next one.",
+    "explicacion": "Each batch is a chat export from a supplier. Upload the zip WhatsApp generates (Export chat, with media); the server reads the messages, groups them into posts and leaves a draft for each new product. Uploading the same chat twice is safe: whatever was already read isn't repeated. Imports run one at a time, and a supplier's imports in the order they were uploaded. While one is running you can pause or stop it, and the queue moves on to the next one; a paused import waits until you resume it, and so do the supplier's later imports.",
     "errorLista": "The import list could not be loaded.",
     "total": "{{total}} batch(es)",
     "ninguna": "No export has been uploaded yet.",

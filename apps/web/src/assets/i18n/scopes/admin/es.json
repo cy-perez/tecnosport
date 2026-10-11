@@ -1009,7 +1009,7 @@
   },
   "ingestas": {
     "titulo": "Ingestas",
-    "explicacion": "Cada lote es una exportación del chat de un proveedor. Se sube el zip que genera WhatsApp (Exportar chat, con archivos), el servidor lee los mensajes, los agrupa en publicaciones y deja un borrador por cada producto nuevo. Subir dos veces el mismo chat es seguro: lo que ya se leyó no se repite. Las ingestas se procesan de una en una: mientras una corre se puede pausar (las demás esperan con ella) o detener, y la cola sigue con la siguiente.",
+    "explicacion": "Cada lote es una exportación del chat de un proveedor. Se sube el zip que genera WhatsApp (Exportar chat, con archivos), el servidor lee los mensajes, los agrupa en publicaciones y deja un borrador por cada producto nuevo. Subir dos veces el mismo chat es seguro: lo que ya se leyó no se repite. Las ingestas se procesan de una en una, y las de un mismo proveedor en el orden en que se subieron. Mientras una corre se puede pausar o detener, y la cola sigue con la siguiente; la pausada espera a que la reanudes, y con ella las siguientes del mismo proveedor.",
     "errorLista": "No se pudo cargar la lista de ingestas.",
     "total": "{{total}} lote(s)",
     "ninguna": "Todavía no se ha subido ninguna exportación.",
