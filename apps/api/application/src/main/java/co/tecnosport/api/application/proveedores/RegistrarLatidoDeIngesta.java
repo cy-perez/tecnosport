@@ -8,7 +8,7 @@ import java.util.UUID;
  * El trabajador avisa que sigue vivo con el lote que tiene. Lo llama un temporizador aparte del
  * hilo que procesa, cada pocos segundos, porque entre dos puntos de control del trabajo —subir dos
  * mil fotos, una extracción con reintentos— pueden pasar minutos. Ver {@link
- * CerrarIngestasAbandonadas}.
+ * RecuperarIngestasAbandonadas}.
  */
 public final class RegistrarLatidoDeIngesta {
 

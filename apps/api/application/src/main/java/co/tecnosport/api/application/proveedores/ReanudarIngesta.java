@@ -6,9 +6,9 @@ import java.util.Objects;
 import java.util.UUID;
 
 /**
- * Devuelve a {@code PROCESANDO} un lote pausado. El trabajador lo nota en su próxima mirada —unos
- * segundos, lo que dure {@link EsperaDeIngesta}— y sigue desde la publicación donde se quedó: el
- * hilo nunca lo soltó.
+ * Devuelve a la cola un lote pausado. En pausa nadie lo tiene —el trabajador lo soltó al verla—,
+ * así que <b>quien llama tiene que encolarlo</b> después de confirmar ({@link EncolarIngesta}); el
+ * tramo que lo tome sigue desde la publicación pendiente (ADR-0080).
  *
  * <p>No confundir con {@link ReanudarLotesDeIngesta}, que es lo que hace el arranque con la cola
  * que se llevó un reinicio.

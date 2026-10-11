@@ -44,6 +44,23 @@ public record ResumenIngesta(
     return new ResumenIngesta(0, 0, 0, 0, 0, 0, 0, 0, 0);
   }
 
+  /**
+   * Lo de este más lo de otro: un lote que se procesa en varios tramos ({@code ADR-0080}) termina
+   * con la suma de lo que contó cada uno.
+   */
+  public ResumenIngesta mas(ResumenIngesta otro) {
+    return new ResumenIngesta(
+        mensajesLeidos + otro.mensajesLeidos,
+        mensajesIgnorados + otro.mensajesIgnorados,
+        mensajesNuevos + otro.mensajesNuevos,
+        publicaciones + otro.publicaciones,
+        borradoresNuevos + otro.borradoresNuevos,
+        renovaciones + otro.renovaciones,
+        agotados + otro.agotados,
+        descartes + otro.descartes,
+        alertas + otro.alertas);
+  }
+
   private static void exigirNoNegativo(int valor, String nombre) {
     if (valor < 0) {
       throw new ExcepcionDeDominio("El resumen no admite " + nombre + " en negativo.");

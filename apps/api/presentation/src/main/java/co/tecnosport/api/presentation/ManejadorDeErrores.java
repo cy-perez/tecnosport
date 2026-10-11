@@ -74,6 +74,7 @@ import co.tecnosport.api.application.proveedores.BorradorSinFotosException;
 import co.tecnosport.api.application.proveedores.BorradorSinPrecioException;
 import co.tecnosport.api.application.proveedores.BorradorSinTituloException;
 import co.tecnosport.api.application.proveedores.ColaDeIngestasLlenaException;
+import co.tecnosport.api.application.proveedores.ColaDeIngestasNoDisponibleException;
 import co.tecnosport.api.application.proveedores.ExportacionDemasiadoGrandeException;
 import co.tecnosport.api.application.proveedores.ExportacionNoEncontradaException;
 import co.tecnosport.api.application.proveedores.FotoDemasiadoGrandeException;
@@ -341,6 +342,16 @@ public class ManejadorDeErrores {
   @ExceptionHandler(ColaDeIngestasLlenaException.class)
   public ProblemDetail colaDeIngestasLlena(ColaDeIngestasLlenaException excepcion) {
     return problema(HttpStatus.SERVICE_UNAVAILABLE, "La cola de ingestas está llena", excepcion);
+  }
+
+  // 503: Cloud Tasks no aceptó la tarea (ADR-0080). En una subida, el lote quedó en ERROR con su
+  // motivo (EncolarIngesta); en el endpoint interno, sigue en la cola y la tarea se reintenta. La
+  // causa —lo que dijo Google— va al registro, no al cliente.
+  @ExceptionHandler(ColaDeIngestasNoDisponibleException.class)
+  public ProblemDetail colaDeIngestasNoDisponible(ColaDeIngestasNoDisponibleException excepcion) {
+    log.warn("Cloud Tasks no aceptó la tarea", excepcion.getCause());
+    return problema(
+        HttpStatus.SERVICE_UNAVAILABLE, "La cola de ingestas no está disponible", excepcion);
   }
 
   // 409: el mismo anuncio ya se aprobó desde otro borrador; este se rechaza, no se aprueba.

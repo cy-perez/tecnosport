@@ -361,8 +361,30 @@ class AdminIngestaControladorTest {
     mockMvc
         .perform(post("/api/v1/admin/ingestas/{id}/reanudar", lote.id()))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.estado").value("PROCESANDO"));
+        .andExpect(jsonPath("$.estado").value("RECIBIDO"));
     assertThat(transaccion.abiertas).as("la transacción se cerró").isZero();
+    assertThat(ejecutor.encolados)
+        .as("en pausa nadie lo tenía: reanudarlo lo encola")
+        .containsExactly(lote.id());
+    assertThat(ejecutor.transaccionesAbiertasAlEncolar)
+        .as("después de confirmar, no dentro")
+        .isZero();
+  }
+
+  /** Detenido en el acto, el que esperaba detrás del mismo proveedor se encola. */
+  @Test
+  void detenerEnLaColaEncolaAlQueEsperabaDelMismoProveedor() throws Exception {
+    LoteIngesta primero = LoteIngesta.recibirExportacion(proveedor.id(), key, AHORA);
+    LoteIngesta segundo = LoteIngesta.recibirExportacion(proveedor.id(), key, AHORA.plusSeconds(5));
+    lotes.porId.put(primero.id(), primero);
+    lotes.porId.put(segundo.id(), segundo);
+
+    mockMvc
+        .perform(post("/api/v1/admin/ingestas/{id}/detener", primero.id()))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.estado").value("DETENIDO"));
+
+    assertThat(ejecutor.encolados).containsExactly(segundo.id());
   }
 
   @Test
@@ -707,6 +729,11 @@ class AdminIngestaControladorTest {
       }
       transaccionesAbiertasAlEncolar = transaccion.abiertas;
       encolados.add(loteId);
+    }
+
+    @Override
+    public boolean sobreviveAUnReinicio() {
+      return false;
     }
   }
 }

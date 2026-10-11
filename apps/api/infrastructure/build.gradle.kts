@@ -32,6 +32,10 @@ dependencies {
     // GOOGLE_APPLICATION_CREDENTIALS — nunca literales en el código. Versión
     // confirmada en Maven Central (agosto 2026), no de memoria (regla dura #9).
     implementation("com.google.cloud:google-cloud-storage:2.71.0")
+    // Las credenciales con que la API llama a Cloud Tasks (ADR-0080). Ya venía con Storage, en esta
+    // misma versión; se declara porque ahora se usa directamente y no debe depender de lo que
+    // Storage arrastre.
+    implementation("com.google.auth:google-auth-library-oauth2-http:1.50.0")
 
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.springframework.boot:spring-boot-testcontainers")

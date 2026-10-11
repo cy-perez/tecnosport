@@ -1,26 +1,24 @@
 package co.tecnosport.api.bootstrap.proveedores;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import co.tecnosport.api.application.proveedores.ColaDeIngestasLlenaException;
 import co.tecnosport.api.domain.proveedores.LoteIngesta;
-import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
-/** El latido acompaña al lote mientras se procesa, y solo entonces. */
+/** La cola en memoria de local: un tramo a la vez, en orden, y acotada. */
 class EjecutorDeIngestasEnHiloTest {
 
-  private static final Duration LATIDO = Duration.ofMillis(20);
-
-  private final List<UUID> latidos = new CopyOnWriteArrayList<>();
   private EjecutorDeIngestasEnHilo ejecutor;
 
   @AfterEach
@@ -30,48 +28,33 @@ class EjecutorDeIngestasEnHiloTest {
     }
   }
 
-  /** Lo que devuelve el trabajo; el ejecutor solo lo usa para el registro. */
   private static LoteIngesta loteDe(UUID id) {
     return LoteIngesta.recibirExportacion(UUID.randomUUID(), "p/" + id + ".zip", Instant.now());
   }
 
   @Test
-  void lateMientrasProcesaYDejaDeLatirAlSoltarlo() throws Exception {
-    UUID loteId = UUID.randomUUID();
-    CountDownLatch empezo = new CountDownLatch(1);
-    CountDownLatch soltar = new CountDownLatch(1);
-    CountDownLatch termino = new CountDownLatch(1);
-    Function<UUID, LoteIngesta> procesar =
-        id -> {
-          empezo.countDown();
-          try {
-            soltar.await(5, TimeUnit.SECONDS);
-          } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-          }
-          termino.countDown();
-          return loteDe(id);
-        };
-    ejecutor = new EjecutorDeIngestasEnHilo(procesar, 5, latidos::add, LATIDO);
+  void procesaLosTramosDeUnoEnUnoYEnElOrdenEnQueLlegan() throws Exception {
+    List<UUID> procesados = new CopyOnWriteArrayList<>();
+    CountDownLatch tres = new CountDownLatch(3);
+    ejecutor =
+        new EjecutorDeIngestasEnHilo(
+            id -> {
+              procesados.add(id);
+              tres.countDown();
+              return loteDe(id);
+            },
+            5);
+    List<UUID> ids = List.of(UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID());
 
-    ejecutor.encolar(loteId);
-    assertTrue(empezo.await(5, TimeUnit.SECONDS));
-    Thread.sleep(LATIDO.toMillis() * 6);
-    soltar.countDown();
-    assertTrue(termino.await(5, TimeUnit.SECONDS));
+    ids.forEach(ejecutor::encolar);
 
-    assertTrue(latidos.size() >= 2, "latió " + latidos.size() + " vez/veces");
-    assertTrue(latidos.stream().allMatch(loteId::equals));
-    Thread.sleep(LATIDO.toMillis() * 3);
-    int alSoltar = latidos.size();
-    Thread.sleep(LATIDO.toMillis() * 5);
-    assertEquals(alSoltar, latidos.size(), "siguió latiendo con el lote ya suelto");
+    assertTrue(tres.await(5, TimeUnit.SECONDS));
+    assertEquals(ids, procesados);
   }
 
-  /** Si un latido falla, los siguientes siguen llegando: si no, el lote se daría por abandonado. */
+  /** Lo que no cabe se rechaza al encolar, no se pierde en silencio. */
   @Test
-  void unLatidoQueFallaNoDetieneLosSiguientes() throws Exception {
-    CountDownLatch tresIntentos = new CountDownLatch(3);
+  void unaColaLlenaSeDiceAlEncolar() throws Exception {
     CountDownLatch soltar = new CountDownLatch(1);
     ejecutor =
         new EjecutorDeIngestasEnHilo(
@@ -83,16 +66,42 @@ class EjecutorDeIngestasEnHiloTest {
               }
               return loteDe(id);
             },
-            5,
-            id -> {
-              tresIntentos.countDown();
-              throw new IllegalStateException("la base no responde");
-            },
-            LATIDO);
+            1);
 
     ejecutor.encolar(UUID.randomUUID());
+    Thread.sleep(50);
+    ejecutor.encolar(UUID.randomUUID());
 
-    assertTrue(tresIntentos.await(5, TimeUnit.SECONDS), "dejó de latir tras el primer fallo");
+    assertThrows(ColaDeIngestasLlenaException.class, () -> ejecutor.encolar(UUID.randomUUID()));
     soltar.countDown();
+  }
+
+  /** Un tramo que revienta no se lleva el hilo: el siguiente se procesa igual. */
+  @Test
+  void unTramoQueRevientaNoDetieneLaCola() throws Exception {
+    CountDownLatch elSegundo = new CountDownLatch(1);
+    UUID malo = UUID.randomUUID();
+    ejecutor =
+        new EjecutorDeIngestasEnHilo(
+            id -> {
+              if (id.equals(malo)) {
+                throw new IllegalStateException("se cayó");
+              }
+              elSegundo.countDown();
+              return loteDe(id);
+            },
+            5);
+
+    ejecutor.encolar(malo);
+    ejecutor.encolar(UUID.randomUUID());
+
+    assertTrue(elSegundo.await(5, TimeUnit.SECONDS));
+  }
+
+  @Test
+  void laColaEnMemoriaNoSobreviveAUnReinicio() {
+    ejecutor = new EjecutorDeIngestasEnHilo(EjecutorDeIngestasEnHiloTest::loteDe, 1);
+
+    assertFalse(ejecutor.sobreviveAUnReinicio());
   }
 }

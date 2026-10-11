@@ -166,17 +166,23 @@ class LoteIngestaTest {
     return lote;
   }
 
+  /**
+   * En pausa nadie lo tiene: el trabajador lo soltó al verla. Reanudar lo devuelve a la cola, y
+   * quien lo reanuda lo encola.
+   */
   @Test
-  void pausaYReanudaSinSalirDeLasManosDelTrabajador() {
+  void pausadoNadieLoTieneYAlReanudarVuelveALaCola() {
     LoteIngesta lote = procesando();
 
     lote.pausar();
     assertEquals(EstadoLote.PAUSADO, lote.estado());
-    assertTrue(lote.estaAbierto(), "pausado no se elimina: el hilo lo retiene");
-    assertTrue(lote.enManosDelTrabajador());
+    assertTrue(lote.estaAbierto(), "pausado no se elimina");
+    assertFalse(lote.enManosDelTrabajador());
+    assertTrue(lote.ocupaAlProveedor(), "retiene a los del mismo proveedor: el orden importa");
 
     lote.reanudar();
-    assertEquals(EstadoLote.PROCESANDO, lote.estado());
+    assertEquals(EstadoLote.RECIBIDO, lote.estado());
+    assertEquals(Optional.of(T1), lote.iniciadoEn(), "la fecha de inicio no se pierde");
   }
 
   /** En la cola no hay trabajo que pausar; pausarlo ahí retendría la cola sin aviso. */
@@ -206,7 +212,6 @@ class LoteIngestaTest {
   @Test
   void detenerEnCursoEsperaAQueElTrabajadorLoSuelte() {
     LoteIngesta lote = procesando();
-    lote.pausar();
 
     lote.pedirDetencion(T2);
     assertEquals(EstadoLote.DETENIENDO, lote.estado());
@@ -286,8 +291,11 @@ class LoteIngestaTest {
     assertEquals(Optional.of(T2), lote.latidoEn());
   }
 
+  /**
+   * El que se estaba deteniendo también lo tiene un trabajador; el pausado ya no lo tiene nadie.
+   */
   @Test
-  void pausadoYDeteniendoTambienSeAbandonan() {
+  void deteniendoSeAbandonaYPausadoNo() {
     LoteIngesta pausado = recibido();
     pausado.iniciar(T1);
     pausado.pausar();
@@ -296,7 +304,7 @@ class LoteIngestaTest {
     deteniendo.pedirDetencion(T1);
     Instant tarde = T1.plus(TOLERANCIA).plusSeconds(1);
 
-    assertTrue(pausado.abandonado(tarde, TOLERANCIA));
+    assertFalse(pausado.abandonado(tarde, TOLERANCIA));
     assertTrue(deteniendo.abandonado(tarde, TOLERANCIA));
   }
 
@@ -331,5 +339,137 @@ class LoteIngestaTest {
 
     assertFalse(deAntes.abandonado(T1.plus(TOLERANCIA), TOLERANCIA));
     assertTrue(deAntes.abandonado(T1.plus(TOLERANCIA).plusSeconds(1), TOLERANCIA));
+  }
+
+  // --- Por tramos (ADR-0080) ---
+
+  /** Un tramo que no alcanzó devuelve el lote a la cola con lo que va; el siguiente lo retoma. */
+  @Test
+  void unTramoQueNoAlcanzaDevuelveElLoteALaColaConSuAvance() {
+    LoteIngesta lote = procesando();
+    assertFalse(lote.lecturaHecha());
+    ResumenIngesta avance = new ResumenIngesta(40, 5, 35, 9, 4, 0, 0, 0, 1);
+
+    lote.soltarParaSeguir(avance, T2);
+
+    assertEquals(EstadoLote.RECIBIDO, lote.estado());
+    assertEquals(Optional.of(avance), lote.resumen());
+    assertTrue(lote.lecturaHecha());
+    assertTrue(lote.ocupaAlProveedor(), "en la cola sigue ocupando a su proveedor");
+    lote.iniciar(T2.plusSeconds(5));
+    assertEquals(Optional.of(T1), lote.iniciadoEn(), "el inicio es el del primer tramo");
+    assertEquals(Optional.of(T2.plusSeconds(5)), lote.latidoEn());
+  }
+
+  @Test
+  void soloVuelveALaColaLoQueSeEstaProcesando() {
+    LoteIngesta pausado = procesando();
+    pausado.pausar();
+
+    assertThrows(ExcepcionDeDominio.class, () -> recibido().soltarParaSeguir(RESUMEN, T2));
+    assertThrows(ExcepcionDeDominio.class, () -> pausado.soltarParaSeguir(RESUMEN, T2));
+  }
+
+  @Test
+  void elAvanceSeAnotaMientrasEstaAbiertoYNoDespues() {
+    LoteIngesta lote = procesando();
+    lote.anotarAvance(RESUMEN);
+    assertEquals(Optional.of(RESUMEN), lote.resumen());
+
+    lote.terminar(RESUMEN, T2);
+    assertThrows(ExcepcionDeDominio.class, () -> lote.anotarAvance(RESUMEN));
+  }
+
+  /** En pausa nadie lo retiene: detenerlo lo cierra en el acto, con lo que alcanzó. */
+  @Test
+  void detenerEnPausaLoCierraEnElActoConSuAvance() {
+    LoteIngesta lote = procesando();
+    lote.anotarAvance(RESUMEN);
+    lote.pausar();
+
+    lote.pedirDetencion(T2);
+
+    assertEquals(EstadoLote.DETENIDO, lote.estado());
+    assertEquals(Optional.of(RESUMEN), lote.resumen());
+    assertEquals(Optional.of(T2), lote.terminadoEn());
+  }
+
+  /** El abandonado vuelve a la cola tres veces; a la cuarta se da por fallido. */
+  @Test
+  void elAbandonadoSeRetomaTresVecesYALaCuartaFalla() {
+    LoteIngesta lote = procesando();
+
+    for (int vez = 1; vez <= LoteIngesta.MAXIMO_DE_REINTENTOS; vez++) {
+      assertEquals(LoteIngesta.Recuperacion.RETOMADO, lote.recuperar(T2));
+      assertEquals(EstadoLote.RECIBIDO, lote.estado());
+      assertEquals(vez, lote.reintentos());
+      lote.iniciar(T2);
+    }
+
+    assertEquals(LoteIngesta.Recuperacion.FALLIDO, lote.recuperar(T2));
+    assertEquals(EstadoLote.ERROR, lote.estado());
+    assertEquals(Optional.of(LoteIngesta.MOTIVO_SIN_REINTENTOS), lote.detalleError());
+  }
+
+  /** El que se estaba deteniendo se detiene, que es lo que se pidió; no vuelve a la cola. */
+  @Test
+  void elAbandonadoQueSeDeteniaQuedaDetenidoConSuAvance() {
+    LoteIngesta lote = procesando();
+    lote.anotarAvance(RESUMEN);
+    lote.pedirDetencion(T2);
+
+    assertEquals(LoteIngesta.Recuperacion.DETENIDO, lote.recuperar(T2));
+
+    assertEquals(EstadoLote.DETENIDO, lote.estado());
+    assertEquals(Optional.of(RESUMEN), lote.resumen());
+  }
+
+  @Test
+  void soloSeRecuperaLoQueTieneUnTrabajador() {
+    LoteIngesta pausado = procesando();
+    pausado.pausar();
+
+    assertThrows(ExcepcionDeDominio.class, () -> recibido().recuperar(T2));
+    assertThrows(ExcepcionDeDominio.class, () -> pausado.recuperar(T2));
+  }
+
+  /** En la cola se estanca si nadie lo mueve desde la subida o desde el final del último tramo. */
+  @Test
+  void seEstancaEnLaColaContandoDesdeQueSeMovioPorUltimaVez() {
+    LoteIngesta subido = recibido();
+    LoteIngesta deUnTramo = procesando();
+    Instant finDelTramo = T0.plus(Duration.ofHours(1));
+    deUnTramo.soltarParaSeguir(RESUMEN, finDelTramo);
+    Duration tolerancia = Duration.ofMinutes(15);
+    Instant despues = finDelTramo.plus(Duration.ofMinutes(10));
+
+    assertTrue(subido.estancadoEnLaCola(despues, tolerancia));
+    assertFalse(deUnTramo.estancadoEnLaCola(despues, tolerancia));
+    assertFalse(procesando().estancadoEnLaCola(despues.plus(Duration.ofDays(1)), tolerancia));
+  }
+
+  @Test
+  void losReintentosGuardadosNoPuedenSerNegativos() {
+    assertThrows(ExcepcionDeDominio.class, () -> recibido().restaurarReintentos(-1));
+  }
+
+  @Test
+  void dosResumenesSeSuman() {
+    ResumenIngesta lectura = new ResumenIngesta(40, 5, 35, 9, 0, 0, 0, 0, 0);
+    ResumenIngesta tramo = new ResumenIngesta(0, 0, 0, 0, 4, 1, 0, 2, 3);
+
+    assertEquals(new ResumenIngesta(40, 5, 35, 9, 4, 1, 0, 2, 3), lectura.mas(tramo));
+  }
+
+  /** Con la causa del último fallo, el motivo la dice: es lo que hace falta para arreglarlo. */
+  @Test
+  void sinReintentosElMotivoDiceElUltimoFallo() {
+    LoteIngesta lote = procesando();
+    lote.restaurarReintentos(LoteIngesta.MAXIMO_DE_REINTENTOS);
+
+    lote.recuperar(T2, "El zip no trae ningún .txt.");
+
+    assertTrue(
+        lote.detalleError().orElseThrow().endsWith("El último fallo: El zip no trae ningún .txt."));
   }
 }

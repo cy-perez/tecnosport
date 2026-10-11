@@ -102,4 +102,19 @@ class CadenaDeSeguridadTest {
         .andExpect(status().isUnauthorized())
         .andExpect(jsonPath("$.codigo").value("CREDENCIALES_INVALIDAS"));
   }
+
+  /**
+   * El endpoint de Cloud Tasks (ADR-0080) no lo abre una sesión del panel, ni siquiera la de un
+   * administrador: solo el token de la cuenta de las tareas. Sin cola configurada —como aquí—, no
+   * lo abre nada. Si esta regla se cayera, el {@code anyRequest().permitAll()} lo dejaría abierto a
+   * cualquiera en una API pública.
+   */
+  @Test
+  void elEndpointDeLaColaNoLoAbreNiUnaSesionDeAdministrador() throws Exception {
+    String ruta = "/api/v1/internal/ingestas/" + java.util.UUID.randomUUID() + "/tramo";
+    mockMvc.perform(post(ruta)).andExpect(status().isUnauthorized());
+    mockMvc
+        .perform(post(ruta).header("Authorization", "Bearer " + tokenDe(Rol.ADMIN)))
+        .andExpect(status().isForbidden());
+  }
 }
