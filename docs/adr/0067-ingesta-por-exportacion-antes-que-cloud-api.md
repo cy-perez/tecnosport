@@ -93,9 +93,24 @@ se puede probar de punta a punta sin gastar una llamada.
   prometer un trabajador que no iba a llegar. Se vuelve a subir la exportación.
 - **La cola no sobrevive a un reinicio, y eso está resuelto al arrancar.**
   `ReanudadorDeIngestas` devuelve a la cola lo que quedó en `RECIBIDO` y cierra
-  en `ERROR` lo que estaba en `PROCESANDO`, con un motivo que pide volver a
+  en `ERROR` lo que su trabajador dejó a medias, con un motivo que pide volver a
   subir el archivo. No se reanuda a medias porque no hay forma de saber en qué
   publicación iba, y repetir la subida es seguro por la deduplicación.
+- **«A medias» lo dice el latido, no el estado** (11 de octubre de 2026). Antes
+  se cerraba todo lo que estuviera en `PROCESANDO`, y con varias instancias eso
+  incluía lo que una vecina viva estaba leyendo: cinco arranques en cuarenta
+  segundos cerraron tres lotes que no alcanzaron a leer un mensaje. Ahora el
+  trabajador renueva `lote_ingesta.latido_en` (`V102`) cada 30 segundos desde un
+  hilo aparte, y `CerrarIngestasAbandonadas` cierra solo lo que lleva tres minutos
+  sin latir: al arrancar y cada minuto después, para que lo que suelta un
+  despliegue o la escala a cero no espere al arranque siguiente.
+- **El trabajo de fondo necesita CPU.** En Cloud Run con CPU solo durante la
+  petición, el hilo se congela en cuanto la subida responde. Por eso la API de
+  dev lleva `cpu_siempre_asignada` desde el mismo día, como producción
+  (`docs/07`). Queda pendiente lo que eso no resuelve: con
+  `instancias_minimas = 0`, una ingesta larga sin nadie en el panel puede
+  quedar cortada si Cloud Run apaga la instancia; el camino de fondo es sacarla
+  a Cloud Tasks o a un trabajo de Cloud Run.
 - **El mismo anuncio repetido no abre dos borradores**, y desde el 9 de octubre
   de 2026 «el mismo» pide el texto **y la foto** (ver «El mismo texto no es la
   misma prenda», abajo). Mientras hay uno en revisión, el repetido se descarta

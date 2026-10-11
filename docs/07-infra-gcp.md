@@ -99,6 +99,21 @@ no hay nadie.
   peticiones, que es lo único que hace que `@Scheduled` sea de fiar. El módulo lo expone como
   variable (`cpu_siempre_asignada`), con el valor de dev por omisión.
 
+**Corregido el 11 de octubre de 2026: la API de dev sí lleva CPU entre peticiones**, y con una sola
+instancia como techo (`cpu_siempre_asignada = true`, `instancias_maximas = 1`). La razón es la
+ingesta de proveedores, que no es una tarea programada sino trabajo que alguien pidió: la subida
+responde y el lote se procesa después, en un hilo de fondo. Sin CPU ese hilo se congelaba —tres
+lotes subidos a la 1 a. m. esperaron ocho horas sin leer un mensaje— y la escala a cero los dejaba
+a medias. Las tareas programadas siguen como dice arriba: con `instancias_minimas = 0`, dev se
+apaga cuando nadie lo usa y entonces no corre nada.
+
+Ese mismo día apareció lo que pasaba con varias instancias: cada una que arrancaba cerraba con
+error los lotes que otra estaba procesando, porque «en proceso» no distinguía a una vecina viva de
+una muerta. Desde entonces el trabajador renueva un latido en el lote cada 30 segundos y solo se
+cierra el que lleva tres minutos sin latir (`CerrarIngestasAbandonadas`, al arrancar y cada
+minuto). Eso vale también para producción, donde un despliegue arranca una revisión nueva mientras
+la anterior todavía procesa.
+
 **Cloud Scheduler queda descartado mientras las tareas vivan dentro de la aplicación.** Usarlo
 pediría un endpoint interno autenticado por tarea y sacar el `@Scheduled`; solo se justifica el día
 que la API de producción escale a cero, que hoy no es el caso.
