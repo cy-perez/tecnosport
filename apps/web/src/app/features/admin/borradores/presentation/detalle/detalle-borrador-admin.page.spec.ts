@@ -132,7 +132,7 @@ async function renderPagina(
   borrador: Borrador = borradorDePrueba(),
   fotos: FotoBorrador[] = [fotoDePrueba('f-1'), fotoDePrueba('f-2')],
   textos: string[] = ['Bolso tote 53.000 sirve hasta L', 'Disponible en negro y café'],
-  hermanos: { id: string; titulo: string }[] = [],
+  hermanos: { id: string; titulo: string; mismoDiseno: boolean }[] = [],
 ) {
   const repositorio = new RepositorioBorradoresAdminFalso([borrador], fotos, textos);
   repositorio.hermanos = hermanos;
@@ -1044,8 +1044,8 @@ describe('DetalleBorradorAdminPage', () => {
         [fotoDePrueba('f-1'), fotoDePrueba('f-2')],
         undefined,
         [
-          { id: 'b-jean', titulo: 'Jean baggy' },
-          { id: 'b-otro', titulo: '' },
+          { id: 'b-jean', titulo: 'Jean baggy', mismoDiseno: false },
+          { id: 'b-otro', titulo: '', mismoDiseno: false },
         ],
       );
 
@@ -1069,6 +1069,53 @@ describe('DetalleBorradorAdminPage', () => {
 
       await screen.findByText('Bolso tote 53.000 sirve hasta L');
       expect(screen.queryByLabelText('Mover la foto 1 a otro borrador')).toBeNull();
+    });
+
+    /**
+     * La camiseta de seda fría de La Riverah, en crema, café y negro: un borrador por SKU. El de la
+     * misma etiqueta de diseño se sugiere primero, y unirlo lo trae a este (11 de octubre de 2026).
+     */
+    it('sugiere el mismo diseño primero y lo une a este', async () => {
+      const u = esAdmin.borradores.unir;
+      const { repositorio } = await renderPagina(borradorDePrueba(), undefined, undefined, [
+        { id: 'b-monastery', titulo: 'Camiseta Monastery', mismoDiseno: false },
+        { id: 'b-cafe', titulo: 'Camiseta café', mismoDiseno: true },
+      ]);
+
+      const seccion = within(
+        (await screen.findByRole('heading', { name: u.titulo })).closest('section') as HTMLElement,
+      );
+      const enlaces = seccion.getAllByRole('link').map((a) => a.textContent?.trim());
+      expect(enlaces).toEqual(['Camiseta café', 'Camiseta Monastery']);
+      expect(seccion.getAllByText(u.mismoDiseno)).toHaveLength(1);
+
+      fireEvent.click(
+        seccion.getByRole('button', { name: 'Unir «Camiseta café» a este borrador' }),
+      );
+
+      expect(await screen.findByText(u.hecho.replace('{{titulo}}', 'Camiseta café'))).toBeTruthy();
+      expect(repositorio.uniones).toEqual([{ id: 'b-1', otroId: 'b-cafe' }]);
+    });
+
+    it('si unir falla, lo dice', async () => {
+      const u = esAdmin.borradores.unir;
+      const { repositorio } = await renderPagina(borradorDePrueba(), undefined, undefined, [
+        { id: 'b-cafe', titulo: 'Camiseta café', mismoDiseno: true },
+      ]);
+      repositorio.falloAlUnir = new Error('red');
+
+      fireEvent.click(
+        await screen.findByRole('button', { name: 'Unir «Camiseta café» a este borrador' }),
+      );
+
+      expect(await screen.findByText(u.error)).toBeTruthy();
+    });
+
+    it('sin otros borradores no ofrece unir', async () => {
+      await renderPagina();
+
+      await screen.findByText('Bolso tote 53.000 sirve hasta L');
+      expect(screen.queryByRole('heading', { name: esAdmin.borradores.unir.titulo })).toBeNull();
     });
 
     it('con una sola foto no ofrece separar', async () => {

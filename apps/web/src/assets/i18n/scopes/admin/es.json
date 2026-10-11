@@ -1484,6 +1484,15 @@
       "hecho": "La foto pasó a otro borrador.",
       "abrir": "Abrir ese borrador",
       "error": "No se pudo mover la foto. Intenta de nuevo."
+    },
+    "unir": {
+      "titulo": "Otros borradores de esta publicación",
+      "ayuda": "Si uno es el mismo diseño en otro color, únelo a este: este se queda con sus fotos y sus tonos —con las tallas de cada tono, si no son las mismas— y el otro desaparece. Su referencia deja de reconocer renovaciones.",
+      "mismoDiseno": "Posible mismo diseño",
+      "accion": "Unir a este",
+      "accionDe": "Unir «{{titulo}}» a este borrador",
+      "hecho": "Se unió «{{titulo}}»: sus fotos y sus tonos están ahora en este borrador.",
+      "error": "No pudimos unir los borradores. Vuelve a intentarlo."
     }
   },
   "referencias_envio": {

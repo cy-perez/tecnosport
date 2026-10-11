@@ -122,6 +122,14 @@ export class BorradoresAdminHttpRepositorio implements RepositorioBorradoresAdmi
     return aBorrador(desempaquetar(respuesta, 'no se pudo partir el borrador'));
   }
 
+  async unir(id: string, otroId: string): Promise<Borrador> {
+    const respuesta = await this.cliente.POST('/api/v1/admin/borradores/{id}/unir', {
+      params: { path: { id } },
+      body: { borradorId: otroId },
+    });
+    return aBorrador(desempaquetar(respuesta, 'no se pudieron unir los borradores'));
+  }
+
   async moverFoto(id: string, mensajeId: string, destinoId: string): Promise<void> {
     const respuesta = await this.cliente.POST(
       '/api/v1/admin/borradores/{id}/fotos/{mensajeId}/mover',

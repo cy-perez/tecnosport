@@ -192,6 +192,11 @@ export interface HermanoBorrador {
   readonly id: string;
   /** Vacío si la extracción no le dio título. */
   readonly titulo: string;
+  /**
+   * La lectura de fotos vio en él el mismo diseño que en este: posiblemente es el mismo producto en
+   * otro color, que el álbum dio aparte por traer otro SKU. El panel lo sugiere para unirlos.
+   */
+  readonly mismoDiseno: boolean;
 }
 
 export interface BorradorDetalle {

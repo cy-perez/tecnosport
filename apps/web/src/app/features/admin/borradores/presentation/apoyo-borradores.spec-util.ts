@@ -56,7 +56,10 @@ export class RepositorioBorradoresAdminFalso implements RepositorioBorradoresAdm
   readonly particiones: { id: string; fotos: readonly string[] }[] = [];
   readonly movidas: { id: string; mensajeId: string; destinoId: string }[] = [];
   /** Los otros borradores de la publicación que devuelve `obtener`. */
-  hermanos: { id: string; titulo: string }[] = [];
+  hermanos: { id: string; titulo: string; mismoDiseno: boolean }[] = [];
+  readonly uniones: { id: string; otroId: string }[] = [];
+  /** Si se pone, `unir` revienta con esto. */
+  falloAlUnir: unknown = null;
   /** Por nombre de archivo: si se pone, subir ese revienta con esto. */
   readonly fallosAlSubir = new Map<string, unknown>();
   /** Si se pone, `eliminar` revienta con esto: el 409 de un borrador que no se borra. */
@@ -129,6 +132,16 @@ export class RepositorioBorradoresAdminFalso implements RepositorioBorradoresAdm
       this.reemplazar(id, { alertas: actual.alertas.filter((a) => a !== 'SIN_FOTOS') });
     }
     return foto;
+  }
+
+  /** Como el servidor: el otro desaparece de los hermanos y este se queda. */
+  async unir(id: string, otroId: string): Promise<Borrador> {
+    if (this.falloAlUnir) {
+      throw this.falloAlUnir;
+    }
+    this.uniones.push({ id, otroId });
+    this.hermanos = this.hermanos.filter((h) => h.id !== otroId);
+    return this.borradores.find((b) => b.id === id) ?? borradorDePrueba({ id });
   }
 
   /** Como el servidor: el nuevo se lleva las fotos nombradas, que este deja de tener. */
