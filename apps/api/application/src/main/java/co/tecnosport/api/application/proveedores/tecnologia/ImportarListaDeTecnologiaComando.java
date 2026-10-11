@@ -18,12 +18,15 @@ import java.util.UUID;
  *     desaparecidos: estaban en la última lista de su bloque y en esta no. Los decide la skill y no
  *     este caso de uso porque solo ella sabe qué bloques trae la lista de hoy —una lista parcial no
  *     dice que lo que falta se acabó—
+ * @param modo qué parte de la lista se aplica: el inventario de lo que ya se vende, o los
+ *     borradores de lo que todavía no
  * @param modelosDesaparecidos ids de modelo de los que no vino ninguna configuración, con el mismo
  *     criterio
  */
 public record ImportarListaDeTecnologiaComando(
     UUID proveedorId,
     LocalDate fechaLista,
+    Modo modo,
     List<Modelo> modelos,
     List<String> configuracionesDesaparecidas,
     List<String> modelosDesaparecidos) {
@@ -31,6 +34,7 @@ public record ImportarListaDeTecnologiaComando(
   public ImportarListaDeTecnologiaComando {
     Objects.requireNonNull(proveedorId, "La lista es de un proveedor.");
     Objects.requireNonNull(fechaLista, "La lista tiene fecha.");
+    Objects.requireNonNull(modo, "La lista dice qué parte se aplica.");
     modelos = modelos == null ? List.of() : List.copyOf(modelos);
     configuracionesDesaparecidas =
         configuracionesDesaparecidas == null
@@ -38,6 +42,31 @@ public record ImportarListaDeTecnologiaComando(
             : List.copyOf(configuracionesDesaparecidas);
     modelosDesaparecidos =
         modelosDesaparecidos == null ? List.of() : List.copyOf(modelosDesaparecidos);
+    // Retirar es inventario. Una importación de borradores que lo trajera lo perdería sin decirlo,
+    // y quien la mandó creería que lo desaparecido ya dejó de ofrecerse.
+    if (modo == Modo.BORRADORES
+        && !(configuracionesDesaparecidas.isEmpty() && modelosDesaparecidos.isEmpty())) {
+      throw new IllegalArgumentException(
+          "Una importación de borradores no retira nada: lo desaparecido va con el inventario.");
+    }
+  }
+
+  /**
+   * La lista entra en dos tiempos (ADR-0079). El inventario no puede esperar a las fotos de lo
+   * nuevo —vendería lo que el proveedor ya no tiene, o con el costo de ayer—, y un borrador sin
+   * fotos no es una ficha que se pueda revisar.
+   */
+  public enum Modo {
+    /**
+     * Lo que ya se vende: renueva el costo y la existencia, y retira lo desaparecido. No propone
+     * nada; dice qué quedó esperando borrador.
+     */
+    INVENTARIO,
+    /**
+     * Lo que todavía no se vende: entra o se actualiza su borrador. No toca costo ni existencia,
+     * así que puede llegar días después del inventario de la misma lista, y más de una vez.
+     */
+    BORRADORES
   }
 
   /**

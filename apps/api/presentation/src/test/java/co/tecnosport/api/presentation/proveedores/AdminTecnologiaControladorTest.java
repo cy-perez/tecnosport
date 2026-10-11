@@ -84,6 +84,7 @@ class AdminTecnologiaControladorTest {
       """
       {
         "fechaLista": "2026-10-08",
+        "modo": "BORRADORES",
         "bloques": ["ANDROID"],
         "modelos": [{
           "idModelo": "samsung-galaxy-a17-5g",
@@ -106,6 +107,10 @@ class AdminTecnologiaControladorTest {
         "modelosDesaparecidos": []
       }
       """;
+
+  /** La misma lista, en el tiempo del inventario. */
+  private static final String INVENTARIO =
+      LISTA.replace("\"modo\": \"BORRADORES\"", "\"modo\": \"INVENTARIO\"");
 
   @Autowired private ListasDoble listas;
 
@@ -157,6 +162,31 @@ class AdminTecnologiaControladorTest {
         .andExpect(jsonPath("$[0].configuraciones[0].precioMercado").value(849900))
         .andExpect(jsonPath("$[0].configuraciones[1].precioMercado").doesNotExist())
         .andExpect(jsonPath("$[0].configuraciones[0].coloresSugeridos[0]").value("Negro"));
+  }
+
+  @Test
+  void elInventarioDiceQueModelosEsperanBorradorSinAbrirlo() throws Exception {
+    mockMvc
+        .perform(
+            post("/api/v1/admin/proveedores/{id}/listas-tecnologia", tecnologia.id())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(INVENTARIO))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.borradoresNuevos").value(0))
+        .andExpect(jsonPath("$.modelosPorProponer[0]").value("samsung-galaxy-a17-5g"))
+        .andExpect(jsonPath("$.configuracionesPorProponer").isEmpty());
+    assertTrue(borradores.porId.isEmpty());
+  }
+
+  @Test
+  void unaListaSinModoEs422() throws Exception {
+    mockMvc
+        .perform(
+            post("/api/v1/admin/proveedores/{id}/listas-tecnologia", tecnologia.id())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(LISTA.replace("\"modo\": \"BORRADORES\",", "")))
+        .andExpect(status().isUnprocessableContent());
+    assertTrue(borradores.porId.isEmpty());
   }
 
   @Test
@@ -276,14 +306,19 @@ class AdminTecnologiaControladorTest {
   }
 
   @Test
-  void laMismaListaDosVecesEs409() throws Exception {
-    importarYTomarElBorrador();
+  void elMismoInventarioDosVecesEs409() throws Exception {
+    mockMvc
+        .perform(
+            post("/api/v1/admin/proveedores/{id}/listas-tecnologia", tecnologia.id())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(INVENTARIO))
+        .andExpect(status().isOk());
 
     mockMvc
         .perform(
             post("/api/v1/admin/proveedores/{id}/listas-tecnologia", tecnologia.id())
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(LISTA))
+                .content(INVENTARIO))
         .andExpect(status().isConflict())
         .andExpect(jsonPath("$.codigo").value("LISTA_DE_TECNOLOGIA_YA_IMPORTADA"));
   }

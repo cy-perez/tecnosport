@@ -1992,9 +1992,21 @@
             },
             "type" : "array"
           },
+          "configuracionesPorProponer" : {
+            "items" : {
+              "type" : "string"
+            },
+            "type" : "array"
+          },
           "modelosAgotados" : {
             "format" : "int32",
             "type" : "integer"
+          },
+          "modelosPorProponer" : {
+            "items" : {
+              "type" : "string"
+            },
+            "type" : "array"
           },
           "modelosYaDecididos" : {
             "items" : {
@@ -2052,11 +2064,19 @@
               "type" : "string"
             },
             "type" : "array"
+          },
+          "modo" : {
+            "enum" : [
+              "INVENTARIO",
+              "BORRADORES"
+            ],
+            "type" : "string"
           }
         },
         "required" : [
           "fechaLista",
-          "modelos"
+          "modelos",
+          "modo"
         ],
         "type" : "object"
       },

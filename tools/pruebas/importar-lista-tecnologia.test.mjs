@@ -3,7 +3,12 @@
 // modelos que no se volvieron a proponer.
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { informeDeImportacion, resumenDeLista } from "../importar-lista-tecnologia.mjs";
+import {
+  cuerpoParaModo,
+  informeDeImportacion,
+  porProponerDe,
+  resumenDeLista,
+} from "../importar-lista-tecnologia.mjs";
 
 test("el resumen cuenta modelos, configuraciones y desaparecidos", () => {
   const resumen = resumenDeLista({
@@ -49,4 +54,45 @@ test("sin avisos no hay líneas de aviso", () => {
     sinMargen: [],
   });
   assert.doesNotMatch(informe, /OJO|rechazados/);
+});
+
+test("los borradores no mandan lo desaparecido y el inventario sí", () => {
+  const lista = {
+    fechaLista: "2026-10-10",
+    modelos: [],
+    configuracionesDesaparecidas: ["a17-256-1-sim"],
+    modelosDesaparecidos: ["jbl-boombox-4"],
+  };
+  const inventario = cuerpoParaModo(lista, "INVENTARIO");
+  assert.equal(inventario.modo, "INVENTARIO");
+  assert.deepEqual(inventario.modelosDesaparecidos, ["jbl-boombox-4"]);
+  const borradores = cuerpoParaModo(lista, "BORRADORES");
+  assert.equal(borradores.modo, "BORRADORES");
+  assert.deepEqual(borradores.configuracionesDesaparecidas, []);
+  assert.deepEqual(borradores.modelosDesaparecidos, []);
+  assert.throws(() => cuerpoParaModo(lista, "COMPLETO"), /Modo desconocido/);
+});
+
+test("el inventario entrega lo que espera borrador y lo dice", () => {
+  const resultado = {
+    productosRenovados: 40,
+    variantesRepuestas: 90,
+    variantesRetiradas: 3,
+    modelosAgotados: 1,
+    borradoresNuevos: 0,
+    borradoresActualizados: 0,
+    modelosYaDecididos: [],
+    sinMargen: [],
+    modelosPorProponer: ["xiaomi-poco-f9-ultra-5g", "apple-airpods-pro-3"],
+    configuracionesPorProponer: ["samsung-galaxy-a17-5g-8gb-ram-256gb-dual-sim"],
+  };
+  assert.deepEqual(porProponerDe({ fechaLista: "2026-10-10" }, resultado), {
+    fechaLista: "2026-10-10",
+    modelos: ["xiaomi-poco-f9-ultra-5g", "apple-airpods-pro-3"],
+    configuraciones: ["samsung-galaxy-a17-5g-8gb-ram-256gb-dual-sim"],
+  });
+  assert.match(
+    informeDeImportacion(resultado),
+    /Esperan borrador: 2 modelos[\s\S]*y 1 configuraciones/,
+  );
 });

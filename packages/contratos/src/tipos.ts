@@ -2785,8 +2785,10 @@ export interface components {
             /** Format: int32 */
             borradoresNuevos?: number;
             coloresSinVariante?: string[];
+            configuracionesPorProponer?: string[];
             /** Format: int32 */
             modelosAgotados?: number;
+            modelosPorProponer?: string[];
             modelosYaDecididos?: string[];
             /** Format: int32 */
             productosRenovados?: number;
@@ -2803,6 +2805,8 @@ export interface components {
             fechaLista: string;
             modelos: components["schemas"]["ModeloPeticion"][];
             modelosDesaparecidos?: string[];
+            /** @enum {string} */
+            modo: "INVENTARIO" | "BORRADORES";
         };
         IniciarIngestaPeticion: {
             nombreArchivo?: string;

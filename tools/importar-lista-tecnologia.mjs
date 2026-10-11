@@ -4,16 +4,26 @@
 // **Simula por omisión.** Sin `--escribir` no toca nada: dice qué mandaría. Importar mueve
 // existencias de verdad y subir fotos escribe en un bucket real.
 //
-// Dos pasos, en este orden, con la revisión del panel en medio:
+// La lista que escribió `exportar_lista.py` entra en dos tiempos (ADR-0079), y hay que decir cuál:
 //
-//   1. Importar la lista que escribió `exportar_lista.py`:
+//   1. El inventario, el día de la lista, al cerrar la skill de listas:
 //
-//        node tools/importar-lista-tecnologia.mjs catalogo/lista-api.json --proveedor <id> --escribir
+//        node tools/importar-lista-tecnologia.mjs catalogo/lista-api.json --inventario \
+//            --proveedor <id> --escribir
 //
-//      Lo que ya se vende se renueva —costo y existencia—, lo desaparecido deja de ofrecerse, y
-//      lo nuevo entra como borrador de tecnología para revisar en /admin/tecnologia.
+//      Lo que ya se vende se renueva —costo y existencia— y lo desaparecido deja de ofrecerse. No
+//      propone nada: deja en `por-proponer.json`, junto a la lista, los modelos que no se venden
+//      —los que necesitan fotos— y las configuraciones nuevas de los que sí.
 //
-//   2. Después de aprobar en el panel, subir las fotos de los modelos aprobados desde su carpeta
+//   2. Los borradores, cuando lo nuevo ya tiene sus fotos:
+//
+//        node tools/importar-lista-tecnologia.mjs catalogo/lista-api.json --borradores \
+//            --proveedor <id> --escribir
+//
+//      Entra o se actualiza el borrador de cada modelo, para revisar en /admin/tecnologia. No toca
+//      costo ni existencia, así que puede correrse más de una vez con la misma lista.
+//
+//   3. Después de aprobar en el panel, subir las fotos de los modelos aprobados desde su carpeta
 //      de fichas (`catalogo/entregables/fichas/<Modelo>/Fotos procesadas`) y publicarlos:
 //
 //        node tools/importar-lista-tecnologia.mjs --fotos --escribir --publicar
@@ -22,15 +32,18 @@
 //      veces. Un modelo sin fotos procesadas se informa y se queda en borrador.
 //
 // Opciones:
+//   --inventario    el paso 1
+//   --borradores    el paso 2
 //   --proveedor ID  el proveedor de tecnología, como lo muestra su ficha en el panel
-//   --fotos         el paso 2
+//   --fotos         el paso 3
 //   --publicar      con --fotos: publica lo que quedó con imagen principal
 //   --escribir      hace los cambios de verdad
 //   --api URL       por omisión http://localhost:8080
 //   --token JWT     o la variable de entorno TS_TOKEN_ADMIN. No pregunta la clave: los prompts
 //                   no funcionan desde `!` en Claude Code, y el token no se imprime nunca.
 
-import { readFileSync } from "node:fs";
+import { readFileSync, writeFileSync } from "node:fs";
+import { dirname, join } from "node:path";
 import { pathToFileURL } from "node:url";
 import { carpetaDeModelo, fotosDeCarpeta } from "./material-catalogo.mjs";
 import { paraLaWeb, subirVariantes } from "./subida-de-imagenes.mjs";
@@ -55,6 +68,8 @@ const ESCRIBIR = bandera("--escribir");
 const PUBLICAR = bandera("--publicar");
 const FOTOS = bandera("--fotos");
 const PROVEEDOR = valor("--proveedor");
+const INVENTARIO = bandera("--inventario");
+const BORRADORES = bandera("--borradores");
 /** El mismo tope que `Producto.TOPE_DE_GALERIA`: la principal y ocho más. */
 const TOPE_DE_GALERIA = 8;
 
@@ -85,6 +100,28 @@ export function resumenDeLista(lista) {
   );
 }
 
+/**
+ * Lo que se manda en cada tiempo. Los borradores no retiran nada —la API lo rechaza, porque quien
+ * los manda creería que lo desaparecido dejó de ofrecerse—, así que la misma lista sirve para los
+ * dos: lo desaparecido se queda fuera aquí.
+ */
+export function cuerpoParaModo(lista, modo) {
+  if (modo === "INVENTARIO") return { ...lista, modo };
+  if (modo === "BORRADORES") {
+    return { ...lista, modo, configuracionesDesaparecidas: [], modelosDesaparecidos: [] };
+  }
+  throw new Error(`Modo desconocido: ${modo}`);
+}
+
+/** La entrega del inventario a las skills de fotos y de fichas: lo que espera borrador. */
+export function porProponerDe(lista, resultado) {
+  return {
+    fechaLista: lista.fechaLista,
+    modelos: resultado.modelosPorProponer ?? [],
+    configuraciones: resultado.configuracionesPorProponer ?? [],
+  };
+}
+
 /** Lo que respondió la importación, en el orden en que alguien lo tiene que leer. */
 export function informeDeImportacion(r) {
   const lineas = [
@@ -92,6 +129,12 @@ export function informeDeImportacion(r) {
     `${r.borradoresNuevos} borradores nuevos y ${r.borradoresActualizados} actualizados: revísalos en /admin/tecnologia`,
     `${r.variantesRetiradas} variantes retiradas, ${r.modelosAgotados} modelos agotados`,
   ];
+  if (r.modelosPorProponer?.length || r.configuracionesPorProponer?.length) {
+    lineas.push(
+      `Esperan borrador: ${r.modelosPorProponer?.length ?? 0} modelos que no se venden —necesitan ` +
+        `fotos— y ${r.configuracionesPorProponer?.length ?? 0} configuraciones nuevas de los que sí`,
+    );
+  }
   if (r.modelosYaDecididos.length) {
     lineas.push(`No se volvieron a proponer (ya rechazados): ${r.modelosYaDecididos.join(", ")}`);
   }
@@ -112,17 +155,26 @@ async function importar(ruta) {
   if (!PROVEEDOR) {
     throw new Error("Falta --proveedor: el id del proveedor de tecnología.");
   }
-  const lista = JSON.parse(readFileSync(ruta, "utf8"));
-  console.log(resumenDeLista(lista));
+  if (INVENTARIO === BORRADORES) {
+    throw new Error("Di cuál de los dos tiempos: --inventario o --borradores (ADR-0079).");
+  }
+  const modo = INVENTARIO ? "INVENTARIO" : "BORRADORES";
+  const cuerpo = cuerpoParaModo(JSON.parse(readFileSync(ruta, "utf8")), modo);
+  console.log(`${modo.toLowerCase()} · ${resumenDeLista(cuerpo)}`);
   if (!ESCRIBIR) {
     console.log("Simulado: añade --escribir para importarla.");
     return;
   }
   const resultado = await pedir(`/api/v1/admin/proveedores/${PROVEEDOR}/listas-tecnologia`, {
     method: "POST",
-    body: JSON.stringify(lista),
+    body: JSON.stringify(cuerpo),
   });
   console.log(informeDeImportacion(resultado));
+  if (modo === "INVENTARIO") {
+    const destino = join(dirname(ruta), "por-proponer.json");
+    writeFileSync(destino, JSON.stringify(porProponerDe(cuerpo, resultado), null, 2) + "\n");
+    console.log(`Lo que espera borrador quedó en ${destino}`);
+  }
 }
 
 /**
@@ -224,7 +276,8 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
       ? importar(archivo)
       : Promise.reject(
           new Error(
-            "Uso: importar-lista-tecnologia.mjs <lista-api.json> --proveedor <id> [--escribir]\n" +
+            "Uso: importar-lista-tecnologia.mjs <lista-api.json> --inventario|--borradores " +
+              "--proveedor <id> [--escribir]\n" +
               "     importar-lista-tecnologia.mjs --fotos [--publicar] [--escribir]",
           ),
         );
