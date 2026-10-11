@@ -4,6 +4,7 @@ import co.tecnosport.api.application.compartido.EnTransaccionPropia;
 import co.tecnosport.api.application.compartido.Reloj;
 import co.tecnosport.api.domain.compartido.ExcepcionDeDominio;
 import co.tecnosport.api.domain.proveedores.AgrupadorDePublicaciones;
+import co.tecnosport.api.domain.proveedores.CierreDePublicacion;
 import co.tecnosport.api.domain.proveedores.ColaDelProveedor;
 import co.tecnosport.api.domain.proveedores.EstadoLote;
 import co.tecnosport.api.domain.proveedores.EstadoPublicacionProveedor;
@@ -11,6 +12,7 @@ import co.tecnosport.api.domain.proveedores.FalloDeLote;
 import co.tecnosport.api.domain.proveedores.LoteIngesta;
 import co.tecnosport.api.domain.proveedores.MensajeProveedor;
 import co.tecnosport.api.domain.proveedores.MotivoDeFalloDeLote;
+import co.tecnosport.api.domain.proveedores.MotivoDePublicacion;
 import co.tecnosport.api.domain.proveedores.NombreDeChat;
 import co.tecnosport.api.domain.proveedores.PHash;
 import co.tecnosport.api.domain.proveedores.Proveedor;
@@ -225,6 +227,10 @@ public final class ProcesarLoteDeIngesta {
           Resultado.SOLTADO);
     } catch (PausaPedida pausa) {
       return new Tramo(soltarEnPausa(lote.id(), mios, progreso), Resultado.SOLTADO);
+    } catch (ExtractorNoDisponibleException e) {
+      // La cuenta del modelo, no la publicación: seguir solo convertiría cada una en un error. Se
+      // pausa con el motivo y la publicación se queda pendiente para cuando se reanude.
+      return new Tramo(pausarPorFallo(lote.id(), mios, progreso, e), Resultado.SOLTADO);
     } catch (DetencionPedida detencion) {
       return new Tramo(detener(lote.id(), mios, progreso), Resultado.SOLTADO);
     } catch (LoteAjeno ajeno) {
@@ -358,6 +364,28 @@ public final class ProcesarLoteDeIngesta {
         });
   }
 
+  private LoteIngesta pausarPorFallo(
+      UUID loteId, int mios, Progreso progreso, ExtractorNoDisponibleException causa) {
+    return enTransaccionPropia.ejecutar(
+        () -> {
+          LoteIngesta fresco = paraActualizar(loteId);
+          if (!esMio(fresco, mios)) {
+            return fresco;
+          }
+          if (fresco.estado() == EstadoLote.DETENIENDO) {
+            // Pidieron detenerlo: se obedece eso, con lo que iba.
+            fresco.detener(progreso.resumen(), reloj.ahora());
+          } else {
+            fresco.pausarPorFallo(
+                new FalloDeLote(
+                    MotivoDeFalloDeLote.EXTRACTOR_NO_DISPONIBLE, String.valueOf(causa.estado())),
+                progreso.resumen());
+          }
+          repositorioLotes.actualizar(fresco);
+          return fresco;
+        });
+  }
+
   private LoteIngesta detener(UUID loteId, int mios, Progreso progreso) {
     return enTransaccionPropia.ejecutar(
         () -> {
@@ -426,8 +454,11 @@ public final class ProcesarLoteDeIngesta {
     try {
       evaluadas = extraer.ejecutar(publicacion, mensajes, proveedor.linea());
     } catch (ExtraccionFallidaException e) {
-      fallarPublicacion(publicacion, e.getMessage());
-      progreso.descartes++;
+      fallarPublicacion(
+          publicacion,
+          CierreDePublicacion.de(MotivoDePublicacion.EXTRACCION_FALLIDA),
+          e.getMessage());
+      progreso.fallidas++;
       return;
     }
     try {
@@ -459,18 +490,23 @@ public final class ProcesarLoteDeIngesta {
         progreso.alertas += resolucion.alertas().size();
       }
     } catch (RuntimeException e) {
-      fallarPublicacion(publicacion, motivoLegible(e));
-      progreso.descartes++;
+      fallarPublicacion(
+          publicacion,
+          new CierreDePublicacion(
+              MotivoDePublicacion.ERROR_AL_RESOLVER, e.getClass().getSimpleName()),
+          motivoLegible(e));
+      progreso.fallidas++;
     }
   }
 
-  private void fallarPublicacion(PublicacionProveedor publicacion, String motivo) {
+  private void fallarPublicacion(
+      PublicacionProveedor publicacion, CierreDePublicacion cierre, String detalle) {
     enTransaccionPropia.ejecutar(
         () -> {
           // La publicación pudo quedar tocada en memoria por la transacción que revirtió; se relee.
           PublicacionProveedor fresca =
               repositorioPublicaciones.buscarPorId(publicacion.id()).orElse(publicacion);
-          fresca.fallar(motivo);
+          fresca.fallar(cierre, detalle);
           repositorioPublicaciones.actualizar(fresca);
           return fresca;
         });
@@ -557,8 +593,8 @@ public final class ProcesarLoteDeIngesta {
   /**
    * Lo que se escribe en la publicación lo lee una persona en el panel. El mensaje de una excepción
    * nuestra está escrito para eso; el de un {@code NullPointerException} no, y se sustituye por
-   * algo que al menos diga que fue un fallo del programa. Las publicaciones todavía guardan texto:
-   * pasarlas a códigos, como el lote, es otro cambio.
+   * algo que al menos diga que fue un fallo del programa. Es el detalle para quien diagnostica: lo
+   * que el panel muestra es el código del cierre.
    */
   private static String motivoLegible(Throwable e) {
     if (e instanceof ExportacionIlegibleException
@@ -613,6 +649,7 @@ public final class ProcesarLoteDeIngesta {
     int agotados;
     int descartes;
     int alertas;
+    int fallidas;
 
     Progreso(ResumenIngesta base) {
       this.base = base;
@@ -628,12 +665,14 @@ public final class ProcesarLoteDeIngesta {
           0,
           0,
           0,
+          0,
           0);
     }
 
     ResumenIngesta resumen() {
       ResumenIngesta deEsteTramo =
-          new ResumenIngesta(0, 0, 0, 0, nuevos, renovaciones, agotados, descartes, alertas);
+          new ResumenIngesta(
+              0, 0, 0, 0, nuevos, renovaciones, agotados, descartes, alertas, fallidas);
       return (base != null ? base : lectura()).mas(deEsteTramo);
     }
   }

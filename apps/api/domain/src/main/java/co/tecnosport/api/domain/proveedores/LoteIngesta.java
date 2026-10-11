@@ -310,8 +310,25 @@ public final class LoteIngesta {
   }
 
   /**
+   * El trabajador lo pausa solo, porque algo de fuera impide seguir —la API del modelo rechaza la
+   * cuenta— y seguir solo convertiría cada publicación en un error. Queda {@code PAUSADO} con el
+   * motivo, que el panel muestra, y con lo que iba: al reanudarlo sigue en la publicación
+   * pendiente. Desde la pausa que pidió el panel también: el motivo explica por qué no avanzó.
+   */
+  public void pausarPorFallo(FalloDeLote fallo, ResumenIngesta avance) {
+    if (estado != EstadoLote.PROCESANDO && estado != EstadoLote.PAUSADO) {
+      throw new ExcepcionDeDominio(
+          "Solo se pausa por un fallo un lote en proceso; este está " + estado + ".");
+    }
+    this.fallo = Objects.requireNonNull(fallo, "Una pausa por un fallo dice cuál.");
+    this.resumen = Objects.requireNonNull(avance, "El avance no puede ser nulo.");
+    this.estado = EstadoLote.PAUSADO;
+  }
+
+  /**
    * Vuelve a la cola, y quien lo reanuda lo encola: en pausa nadie lo retiene, así que nadie más se
-   * va a enterar. Lo hecho no se repite: el tramo que lo tome sigue en la publicación pendiente.
+   * va a enterar. Lo hecho no se repite: el tramo que lo tome sigue en la publicación pendiente. Si
+   * estaba en pausa por un fallo, el motivo se va: quien reanuda dice que ya se arregló.
    */
   public void reanudar() {
     if (estado != EstadoLote.PAUSADO) {
@@ -319,6 +336,29 @@ public final class LoteIngesta {
           "Solo se puede reanudar un lote pausado; este está " + estado + ".");
     }
     this.estado = EstadoLote.RECIBIDO;
+    this.fallo = null;
+  }
+
+  /**
+   * Las publicaciones que quedaron en {@code ERROR} vuelven a intentarse: el lote terminado vuelve
+   * a la cola sin ellas en el resumen, y el tramo que las procese cuenta lo que salga. Es la única
+   * vez que un resumen terminado cambia, y es a pedido: alguien vio las fallidas en el panel y
+   * pidió reintentarlas. Los reintentos de tramo vuelven a cero, porque es otro trabajo.
+   */
+  public void reabrirFallidas(Instant ahora) {
+    Objects.requireNonNull(ahora, "La fecha no puede ser nula.");
+    if (estado != EstadoLote.TERMINADO) {
+      throw new ExcepcionDeDominio(
+          "Solo se reintentan las fallidas de un lote terminado; este está " + estado + ".");
+    }
+    if (resumen.fallidas() == 0) {
+      throw new ExcepcionDeDominio("Este lote no tiene publicaciones fallidas que reintentar.");
+    }
+    this.resumen = resumen.sinFallidas();
+    this.estado = EstadoLote.RECIBIDO;
+    this.terminadoEn = null;
+    this.reintentos = 0;
+    this.latidoEn = ahora;
   }
 
   /**

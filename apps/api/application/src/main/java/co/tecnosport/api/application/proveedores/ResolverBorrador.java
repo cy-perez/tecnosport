@@ -8,8 +8,10 @@ import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.proveedores.AlertaBorrador;
 import co.tecnosport.api.domain.proveedores.BorradorProducto;
 import co.tecnosport.api.domain.proveedores.CalculadoraDeMargen;
+import co.tecnosport.api.domain.proveedores.CierreDePublicacion;
 import co.tecnosport.api.domain.proveedores.HuellaProveedor;
 import co.tecnosport.api.domain.proveedores.MensajeProveedor;
+import co.tecnosport.api.domain.proveedores.MotivoDePublicacion;
 import co.tecnosport.api.domain.proveedores.PHash;
 import co.tecnosport.api.domain.proveedores.ProductoExtraido;
 import co.tecnosport.api.domain.proveedores.Proveedor;
@@ -27,7 +29,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 /**
  * Con la extracción ya evaluada, decide qué es la publicación: un producto nuevo que espera
@@ -78,7 +79,8 @@ import java.util.stream.Collectors;
  */
 public final class ResolverBorrador {
 
-  private static final String SIN_PRODUCTO = "El extractor no reconoció un producto en el mensaje.";
+  private static final CierreDePublicacion SIN_PRODUCTO =
+      CierreDePublicacion.de(MotivoDePublicacion.SIN_PRODUCTO);
 
   static final String VIENE_EN_EL_CHAT_DE_CABALLERO =
       "El anuncio viene en el chat de caballero del proveedor; se procesa desde ese archivo.";
@@ -194,7 +196,8 @@ public final class ResolverBorrador {
     for (ExtraccionEvaluada evaluada : evaluadas) {
       resoluciones.add(
           vieneEnElDeCaballero
-              ? Resolucion.descartada(VIENE_EN_EL_CHAT_DE_CABALLERO)
+              ? Resolucion.descartada(
+                  CierreDePublicacion.de(MotivoDePublicacion.VIENE_EN_CHAT_DE_CABALLERO))
               : resolverUno(
                   publicacion,
                   mensajes,
@@ -212,12 +215,14 @@ public final class ResolverBorrador {
     if (algunoSeQuedo) {
       publicacion.marcarExtraida();
     } else {
+      // Con varios productos descartados por razones distintas, la del primero: el panel muestra
+      // una por publicación, y el orden es el del mensaje.
       publicacion.descartar(
           resoluciones.stream()
-              .map(Resolucion::motivo)
+              .map(Resolucion::cierre)
               .filter(Objects::nonNull)
-              .distinct()
-              .collect(Collectors.joining(" ")));
+              .findFirst()
+              .orElse(SIN_PRODUCTO));
     }
     repositorioPublicaciones.actualizar(publicacion);
     return resoluciones;
@@ -270,7 +275,8 @@ public final class ResolverBorrador {
           publicacion, proveedor, evaluada, existente.get(), huella, pHash, precio, ahora);
     }
     if (extraido.estaAgotado()) {
-      return Resolucion.descartada("Anuncia como agotado un producto que no está en el catálogo.");
+      return Resolucion.descartada(
+          CierreDePublicacion.de(MotivoDePublicacion.AGOTADO_FUERA_DE_CATALOGO));
     }
     if (codigo.isPresent()) {
       Optional<UUID> enRevision =
@@ -280,16 +286,13 @@ public final class ResolverBorrador {
         // sirve para chocar con el índice único al aprobarlo; sus fotos sí sirven, y van a aquel.
         int sumadas = sumarFotos(enRevision.get(), evaluada, mensajes);
         return Resolucion.descartada(
-            sumadas == 0
-                ? "Es la misma referencia de un borrador que ya está en revisión."
-                : "Es la misma referencia de un borrador que ya está en revisión; sus "
-                    + sumadas
-                    + " fotos se sumaron a ese borrador.");
+            new CierreDePublicacion(
+                MotivoDePublicacion.MISMA_REFERENCIA_EN_REVISION,
+                sumadas == 0 ? null : String.valueOf(sumadas)));
       }
     }
     if (codigo.isEmpty() && esAnuncioRepetido(proveedor, textoDelAnuncio, fotos)) {
-      return Resolucion.descartada(
-          "Es el mismo anuncio, con la misma foto, de un borrador que ya está en revisión.");
+      return Resolucion.descartada(CierreDePublicacion.de(MotivoDePublicacion.ANUNCIO_REPETIDO));
     }
 
     Dinero precioSugerido =
@@ -430,7 +433,7 @@ public final class ResolverBorrador {
     return new Resolucion(tipo, alertas, null);
   }
 
-  private Resolucion descartar(PublicacionProveedor publicacion, String motivo) {
+  private Resolucion descartar(PublicacionProveedor publicacion, CierreDePublicacion motivo) {
     publicacion.descartar(motivo);
     repositorioPublicaciones.actualizar(publicacion);
     return Resolucion.descartada(motivo);
@@ -544,15 +547,16 @@ public final class ResolverBorrador {
   /**
    * Qué se decidió y con qué alertas, para que el lote las cuente.
    *
-   * @param motivo por qué se descartó; nulo en lo demás
+   * @param cierre por qué se descartó; nulo en lo demás
    */
-  public record Resolucion(TipoDeResolucion tipo, Set<AlertaBorrador> alertas, String motivo) {
+  public record Resolucion(
+      TipoDeResolucion tipo, Set<AlertaBorrador> alertas, CierreDePublicacion cierre) {
     public Resolucion {
       alertas = Set.copyOf(alertas);
     }
 
-    static Resolucion descartada(String motivo) {
-      return new Resolucion(TipoDeResolucion.DESCARTADA, Set.of(), motivo);
+    static Resolucion descartada(CierreDePublicacion cierre) {
+      return new Resolucion(TipoDeResolucion.DESCARTADA, Set.of(), cierre);
     }
   }
 }

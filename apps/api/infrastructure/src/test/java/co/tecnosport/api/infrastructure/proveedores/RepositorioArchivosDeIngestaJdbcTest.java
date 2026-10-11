@@ -172,6 +172,6 @@ class RepositorioArchivosDeIngestaJdbcTest {
 
   private static void terminar(LoteIngesta lote) {
     lote.iniciar(T);
-    lote.terminar(new ResumenIngesta(1, 0, 1, 1, 1, 0, 0, 0, 0), T.plusSeconds(60));
+    lote.terminar(new ResumenIngesta(1, 0, 1, 1, 1, 0, 0, 0, 0, 0), T.plusSeconds(60));
   }
 }

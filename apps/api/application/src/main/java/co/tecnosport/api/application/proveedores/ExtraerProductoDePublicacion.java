@@ -186,7 +186,8 @@ public final class ExtraerProductoDePublicacion {
    * transacción, como la extracción. <b>Nada de aquí tumba la publicación ni el lote</b>: ni el
    * lector que falla ni el bucket que no responde a mitad de la lectura. Sin lectura, el reparto es
    * el de antes. Por eso se atrapa cualquier {@code RuntimeException} y no solo la del lector: una
-   * que se escapara de aquí cerraría el lote entero en {@link ProcesarLoteDeIngesta}.
+   * que se escapara de aquí cerraría el lote entero en {@link ProcesarLoteDeIngesta}. Salvo {@link
+   * ExtractorNoDisponibleException}, que no cierra el lote sino que lo pausa.
    */
   private LecturaDeFotos leerFotos(
       PublicacionProveedor publicacion,
@@ -198,6 +199,10 @@ public final class ExtraerProductoDePublicacion {
     }
     try {
       return leerFotosSinProteger(publicacion, mensajes, texto, productos);
+    } catch (ExtractorNoDisponibleException e) {
+      // La cuenta, no la foto: la publicación siguiente fallaría igual, y sin lectura saldrían
+      // borradores peor repartidos. Que el lote se pause, como con el extractor.
+      throw e;
     } catch (RuntimeException e) {
       return null;
     }

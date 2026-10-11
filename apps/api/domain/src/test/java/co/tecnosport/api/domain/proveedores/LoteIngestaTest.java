@@ -19,7 +19,7 @@ class LoteIngestaTest {
   private static final Instant T2 = Instant.parse("2026-09-28T15:16:30Z");
   private static final UUID PROVEEDOR = UUID.fromString("01a0ca12-ce7f-7ae2-95e8-e6e0127dc7a6");
   private static final String ARCHIVO = "proveedores/01a0ca12/2026/09/exportacion-abc.zip";
-  private static final ResumenIngesta RESUMEN = new ResumenIngesta(40, 5, 35, 9, 9, 0, 0, 0, 2);
+  private static final ResumenIngesta RESUMEN = new ResumenIngesta(40, 5, 35, 9, 9, 0, 0, 0, 2, 0);
 
   private static LoteIngesta recibido() {
     return LoteIngesta.recibirExportacion(PROVEEDOR, ARCHIVO, T0);
@@ -168,10 +168,10 @@ class LoteIngestaTest {
 
   @Test
   void elResumenNoAdmiteNegativosNiMasRegistradosQueLeidos() {
-    assertThrows(ExcepcionDeDominio.class, () -> new ResumenIngesta(1, 0, 0, 0, 0, 0, 0, 0, -1));
+    assertThrows(ExcepcionDeDominio.class, () -> new ResumenIngesta(1, 0, 0, 0, 0, 0, 0, 0, -1, 0));
     ExcepcionDeDominio error =
         assertThrows(
-            ExcepcionDeDominio.class, () -> new ResumenIngesta(10, 6, 5, 0, 0, 0, 0, 0, 0));
+            ExcepcionDeDominio.class, () -> new ResumenIngesta(10, 6, 5, 0, 0, 0, 0, 0, 0, 0));
 
     assertTrue(error.getMessage().contains("más mensajes de los que leyó"), error.getMessage());
   }
@@ -234,7 +234,7 @@ class LoteIngestaTest {
     assertTrue(lote.estaAbierto(), "con el hilo escribiendo en él no se puede eliminar");
     assertEquals(Optional.empty(), lote.terminadoEn());
 
-    ResumenIngesta parcial = new ResumenIngesta(40, 5, 35, 9, 3, 0, 0, 0, 0);
+    ResumenIngesta parcial = new ResumenIngesta(40, 5, 35, 9, 3, 0, 0, 0, 0, 0);
     lote.detener(parcial, T2);
     assertEquals(EstadoLote.DETENIDO, lote.estado());
     assertEquals(Optional.of(parcial), lote.resumen());
@@ -366,7 +366,7 @@ class LoteIngestaTest {
   void unTramoQueNoAlcanzaDevuelveElLoteALaColaConSuAvance() {
     LoteIngesta lote = procesando();
     assertFalse(lote.lecturaHecha());
-    ResumenIngesta avance = new ResumenIngesta(40, 5, 35, 9, 4, 0, 0, 0, 1);
+    ResumenIngesta avance = new ResumenIngesta(40, 5, 35, 9, 4, 0, 0, 0, 1, 0);
 
     lote.soltarParaSeguir(avance, T2);
 
@@ -473,10 +473,10 @@ class LoteIngestaTest {
 
   @Test
   void dosResumenesSeSuman() {
-    ResumenIngesta lectura = new ResumenIngesta(40, 5, 35, 9, 0, 0, 0, 0, 0);
-    ResumenIngesta tramo = new ResumenIngesta(0, 0, 0, 0, 4, 1, 0, 2, 3);
+    ResumenIngesta lectura = new ResumenIngesta(40, 5, 35, 9, 0, 0, 0, 0, 0, 0);
+    ResumenIngesta tramo = new ResumenIngesta(0, 0, 0, 0, 4, 1, 0, 2, 3, 0);
 
-    assertEquals(new ResumenIngesta(40, 5, 35, 9, 4, 1, 0, 2, 3), lectura.mas(tramo));
+    assertEquals(new ResumenIngesta(40, 5, 35, 9, 4, 1, 0, 2, 3, 0), lectura.mas(tramo));
   }
 
   /** Sin reintentos, el fallo lleva el código del último: es lo que hace falta para arreglarlo. */
@@ -490,5 +490,63 @@ class LoteIngestaTest {
     assertEquals(
         Optional.of(new FalloDeLote(MotivoDeFalloDeLote.SIN_REINTENTOS, "ERROR_INESPERADO")),
         lote.fallo());
+  }
+
+  /**
+   * La cuenta del modelo rechazó la petición: el lote queda en pausa con el motivo y con lo que
+   * iba, y al reanudarlo el motivo se va, porque quien reanuda dice que ya se arregló (11 de
+   * octubre de 2026, Meraki).
+   */
+  @Test
+  void sinExtractorSePausaConElMotivoYReanudarLoBorra() {
+    LoteIngesta lote = procesando();
+    FalloDeLote sinSaldo = new FalloDeLote(MotivoDeFalloDeLote.EXTRACTOR_NO_DISPONIBLE, "400");
+
+    lote.pausarPorFallo(sinSaldo, RESUMEN);
+
+    assertEquals(EstadoLote.PAUSADO, lote.estado());
+    assertEquals(Optional.of(sinSaldo), lote.fallo());
+    assertEquals(Optional.of(RESUMEN), lote.resumen());
+    assertTrue(lote.ocupaAlProveedor(), "el chat general de Meraki espera al de caballero");
+
+    lote.reanudar();
+    assertEquals(EstadoLote.RECIBIDO, lote.estado());
+    assertEquals(Optional.empty(), lote.fallo());
+  }
+
+  @Test
+  void soloSePausaPorUnFalloLoQueSeEstaProcesando() {
+    FalloDeLote fallo = FalloDeLote.de(MotivoDeFalloDeLote.EXTRACTOR_NO_DISPONIBLE);
+    assertThrows(ExcepcionDeDominio.class, () -> recibido().pausarPorFallo(fallo, RESUMEN));
+    LoteIngesta terminado = procesando();
+    terminado.terminar(RESUMEN, T2);
+    assertThrows(ExcepcionDeDominio.class, () -> terminado.pausarPorFallo(fallo, RESUMEN));
+  }
+
+  /**
+   * Reintentar las fallidas devuelve el lote terminado a la cola sin ellas en el resumen: lo que
+   * salga de reintentarlas lo cuenta el tramo que las procese.
+   */
+  @Test
+  void reabrirLasFallidasDevuelveElLoteALaColaSinEllasEnElResumen() {
+    LoteIngesta lote = procesando();
+    lote.terminar(new ResumenIngesta(159, 1, 158, 23, 0, 0, 0, 0, 0, 23), T2);
+
+    lote.reabrirFallidas(T2);
+
+    assertEquals(EstadoLote.RECIBIDO, lote.estado());
+    assertEquals(Optional.empty(), lote.terminadoEn());
+    assertEquals(0, lote.resumen().orElseThrow().fallidas());
+    assertEquals(
+        23, lote.resumen().orElseThrow().publicaciones(), "lo leído no se cuenta dos veces");
+    assertTrue(lote.lecturaHecha(), "el tramo siguiente va directo a las publicaciones");
+  }
+
+  @Test
+  void noSeReabreLoQueNoTerminoNiLoQueNoTieneFallidas() {
+    assertThrows(ExcepcionDeDominio.class, () -> procesando().reabrirFallidas(T2));
+    LoteIngesta sinFallidas = procesando();
+    sinFallidas.terminar(RESUMEN, T2);
+    assertThrows(ExcepcionDeDominio.class, () -> sinFallidas.reabrirFallidas(T2));
   }
 }

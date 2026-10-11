@@ -12,6 +12,10 @@ import co.tecnosport.api.domain.compartido.ExcepcionDeDominio;
  * <p>{@code mensajesIgnorados} son los de otros remitentes: las respuestas del negocio en el mismo
  * chat. Se cuentan para que un lote con cero mensajes nuevos se pueda explicar sin abrir el
  * archivo: o todo era nuestro, o todo estaba ya registrado, y las dos cifras lo distinguen.
+ *
+ * <p>{@code fallidas} son las publicaciones que quedaron en {@code ERROR}: el extractor no pudo.
+ * Hasta el 11 de octubre de 2026 se contaban en {@code descartes}, y 27 publicaciones de Meraki que
+ * nadie leyó aparecieron en el panel como «descartadas», que es decir que no eran productos.
  */
 public record ResumenIngesta(
     int mensajesLeidos,
@@ -22,7 +26,8 @@ public record ResumenIngesta(
     int renovaciones,
     int agotados,
     int descartes,
-    int alertas) {
+    int alertas,
+    int fallidas) {
 
   public ResumenIngesta {
     exigirNoNegativo(mensajesLeidos, "mensajes leídos");
@@ -34,6 +39,7 @@ public record ResumenIngesta(
     exigirNoNegativo(agotados, "agotados");
     exigirNoNegativo(descartes, "descartes");
     exigirNoNegativo(alertas, "alertas");
+    exigirNoNegativo(fallidas, "fallidas");
     if (mensajesIgnorados + mensajesNuevos > mensajesLeidos) {
       throw new ExcepcionDeDominio(
           "Un resumen no puede ignorar y registrar más mensajes de los que leyó.");
@@ -41,7 +47,7 @@ public record ResumenIngesta(
   }
 
   public static ResumenIngesta vacio() {
-    return new ResumenIngesta(0, 0, 0, 0, 0, 0, 0, 0, 0);
+    return new ResumenIngesta(0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
   }
 
   /**
@@ -58,7 +64,26 @@ public record ResumenIngesta(
         renovaciones + otro.renovaciones,
         agotados + otro.agotados,
         descartes + otro.descartes,
-        alertas + otro.alertas);
+        alertas + otro.alertas,
+        fallidas + otro.fallidas);
+  }
+
+  /**
+   * El mismo resumen sin las fallidas que se vuelven a intentar: lo que salga de ellas lo cuenta el
+   * tramo que las procese, como cuenta todo lo demás.
+   */
+  public ResumenIngesta sinFallidas() {
+    return new ResumenIngesta(
+        mensajesLeidos,
+        mensajesIgnorados,
+        mensajesNuevos,
+        publicaciones,
+        borradoresNuevos,
+        renovaciones,
+        agotados,
+        descartes,
+        alertas,
+        0);
   }
 
   private static void exigirNoNegativo(int valor, String nombre) {

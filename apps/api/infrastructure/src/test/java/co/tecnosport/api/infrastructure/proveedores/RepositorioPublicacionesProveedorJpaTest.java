@@ -3,10 +3,12 @@ package co.tecnosport.api.infrastructure.proveedores;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import co.tecnosport.api.domain.catalogo.LineaCatalogo;
+import co.tecnosport.api.domain.proveedores.CierreDePublicacion;
 import co.tecnosport.api.domain.proveedores.EstadoPublicacionProveedor;
 import co.tecnosport.api.domain.proveedores.IdExternoDeMensaje;
 import co.tecnosport.api.domain.proveedores.LoteIngesta;
 import co.tecnosport.api.domain.proveedores.MensajeProveedor;
+import co.tecnosport.api.domain.proveedores.MotivoDePublicacion;
 import co.tecnosport.api.domain.proveedores.OrdenDePublicacion;
 import co.tecnosport.api.domain.proveedores.Proveedor;
 import co.tecnosport.api.domain.proveedores.PublicacionProveedor;
@@ -113,11 +115,13 @@ class RepositorioPublicacionesProveedorJpaTest {
     assertThat(leidas.get(1).textosAdicionales()).isEmpty();
     assertThat(leidas.get(1).medios()).isEmpty();
 
-    primera.descartar("Es un saludo.");
+    primera.descartar(
+        new CierreDePublicacion(MotivoDePublicacion.MISMA_REFERENCIA_EN_REVISION, "3"));
     publicaciones.actualizar(primera);
     PublicacionProveedor releida = publicaciones.buscarPorId(primera.id()).orElseThrow();
     assertThat(releida.estado()).isEqualTo(EstadoPublicacionProveedor.DESCARTADA);
-    assertThat(releida.motivo()).contains("Es un saludo.");
+    assertThat(releida.cierre())
+        .contains(new CierreDePublicacion(MotivoDePublicacion.MISMA_REFERENCIA_EN_REVISION, "3"));
     assertThat(releida.medios()).containsExactly(foto1.id(), foto2.id());
   }
 }

@@ -144,12 +144,12 @@ class RepositoriosDeIngestaJpaTest {
     assertThat(leido.referenciaArchivo()).contains("proveedores/x/exportaciones/a.zip");
 
     leido.iniciar(T.plusSeconds(1));
-    leido.terminar(new ResumenIngesta(40, 5, 35, 9, 9, 1, 0, 2, 3), T.plusSeconds(60));
+    leido.terminar(new ResumenIngesta(40, 5, 35, 9, 9, 1, 0, 2, 3, 0), T.plusSeconds(60));
     lotes.actualizar(leido);
 
     LoteIngesta terminado = lotes.buscarPorId(recibido.id()).orElseThrow();
     assertThat(terminado.estado()).isEqualTo(EstadoLote.TERMINADO);
-    assertThat(terminado.resumen()).contains(new ResumenIngesta(40, 5, 35, 9, 9, 1, 0, 2, 3));
+    assertThat(terminado.resumen()).contains(new ResumenIngesta(40, 5, 35, 9, 9, 1, 0, 2, 3, 0));
     assertThat(terminado.iniciadoEn()).contains(T.plusSeconds(1));
     assertThat(terminado.terminadoEn()).contains(T.plusSeconds(60));
   }
@@ -181,7 +181,7 @@ class RepositoriosDeIngestaJpaTest {
     LoteIngesta cerrado =
         LoteIngesta.recibirExportacion(uno.id(), "p/exportaciones/3.zip", T.plusSeconds(20));
     cerrado.iniciar(T.plusSeconds(21));
-    cerrado.terminar(new ResumenIngesta(0, 0, 0, 0, 0, 0, 0, 0, 0), T.plusSeconds(22));
+    cerrado.terminar(new ResumenIngesta(0, 0, 0, 0, 0, 0, 0, 0, 0, 0), T.plusSeconds(22));
     lotes.guardar(aMedias);
     lotes.guardar(enCola);
     lotes.guardar(cerrado);
@@ -372,7 +372,7 @@ class RepositoriosDeIngestaJpaTest {
     LoteIngesta aMedias = LoteIngesta.recibirExportacion(uno.id(), "p/exportaciones/1.zip", T);
     aMedias.iniciar(T.plusSeconds(1));
     aMedias.pedirDetencion(T.plusSeconds(2));
-    ResumenIngesta parcial = new ResumenIngesta(40, 5, 35, 9, 3, 0, 0, 0, 0);
+    ResumenIngesta parcial = new ResumenIngesta(40, 5, 35, 9, 3, 0, 0, 0, 0, 0);
     aMedias.detener(parcial, T.plusSeconds(3));
     LoteIngesta enCola = LoteIngesta.recibirExportacion(uno.id(), "p/exportaciones/2.zip", T);
     enCola.pedirDetencion(T.plusSeconds(1));

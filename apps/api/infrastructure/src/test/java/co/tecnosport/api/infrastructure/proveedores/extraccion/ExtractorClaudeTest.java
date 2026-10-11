@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import co.tecnosport.api.application.proveedores.ExtraccionFallidaException;
+import co.tecnosport.api.application.proveedores.ExtractorNoDisponibleException;
 import co.tecnosport.api.application.proveedores.ResultadoExtraccion;
 import co.tecnosport.api.application.proveedores.TextoDePublicacion;
 import co.tecnosport.api.domain.catalogo.LineaCatalogo;
@@ -193,6 +194,41 @@ class ExtractorClaudeTest {
         .hasMessageContaining("schema is too complex");
     assertThat(peticiones).hasSize(1);
     assertThat(pausas).isEmpty();
+  }
+
+  /**
+   * Sin saldo, sin clave o sin modelo, ninguna publicación del lote va a salir distinta: el fallo
+   * es de la cuenta y no de la publicación (11 de octubre de 2026, Meraki).
+   */
+  @Test
+  void unRechazoDeLaCuentaNoEsUnaExtraccionFallida() {
+    respuestas.add(
+        new Respuesta(
+            400,
+            "{\"type\":\"error\",\"error\":{\"type\":\"invalid_request_error\",\"message\":"
+                + "\"Your credit balance is too low to access the Anthropic API.\"}}"));
+
+    assertThatThrownBy(() -> extractor(3).extraer(texto()))
+        .isInstanceOf(ExtractorNoDisponibleException.class)
+        .hasMessageContaining("credit balance");
+    assertThat(peticiones).hasSize(1);
+  }
+
+  @Test
+  void unaClaveInvalidaOUnModeloQueNoExisteSonDeLaCuenta() {
+    respuestas.add(
+        new Respuesta(
+            401,
+            "{\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}"));
+    respuestas.add(
+        new Respuesta(
+            404, "{\"error\":{\"type\":\"not_found_error\",\"message\":\"model: claude-x\"}}"));
+
+    assertThatThrownBy(() -> extractor(3).extraer(texto()))
+        .isInstanceOf(ExtractorNoDisponibleException.class)
+        .satisfies(e -> assertThat(((ExtractorNoDisponibleException) e).estado()).isEqualTo(401));
+    assertThatThrownBy(() -> extractor(3).extraer(texto()))
+        .isInstanceOf(ExtractorNoDisponibleException.class);
   }
 
   @Test

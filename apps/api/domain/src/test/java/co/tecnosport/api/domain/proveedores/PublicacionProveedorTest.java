@@ -15,6 +15,10 @@ class PublicacionProveedorTest {
   private static final Instant T = Instant.parse("2026-09-28T15:15:00Z");
   private static final UUID PROVEEDOR = UUID.randomUUID();
   private static final UUID LOTE = UUID.randomUUID();
+  private static final CierreDePublicacion SALUDO =
+      CierreDePublicacion.de(MotivoDePublicacion.SIN_PRODUCTO);
+  private static final CierreDePublicacion ROTA =
+      CierreDePublicacion.de(MotivoDePublicacion.EXTRACCION_FALLIDA);
 
   private static MensajeProveedor principal() {
     return MensajeProveedor.texto(
@@ -27,7 +31,7 @@ class PublicacionProveedorTest {
 
     assertEquals(EstadoPublicacionProveedor.PENDIENTE_EXTRACCION, publicacion.estado());
     assertEquals(List.of(), publicacion.medios());
-    assertEquals(Optional.empty(), publicacion.motivo());
+    assertEquals(Optional.empty(), publicacion.cierre());
     assertEquals(PROVEEDOR, publicacion.proveedorId());
     assertEquals(LOTE, publicacion.loteId());
   }
@@ -37,18 +41,20 @@ class PublicacionProveedorTest {
     PublicacionProveedor extraida = PublicacionProveedor.abrir(principal());
     extraida.marcarExtraida();
     assertEquals(EstadoPublicacionProveedor.EXTRAIDA, extraida.estado());
-    assertThrows(ExcepcionDeDominio.class, () -> extraida.descartar("no es producto"));
+    assertThrows(ExcepcionDeDominio.class, () -> extraida.descartar(SALUDO));
     assertThrows(ExcepcionDeDominio.class, extraida::marcarExtraida);
 
     PublicacionProveedor descartada = PublicacionProveedor.abrir(principal());
-    descartada.descartar("Es un saludo.");
+    descartada.descartar(SALUDO);
     assertEquals(EstadoPublicacionProveedor.DESCARTADA, descartada.estado());
-    assertEquals(Optional.of("Es un saludo."), descartada.motivo());
-    assertThrows(ExcepcionDeDominio.class, () -> descartada.fallar("x"));
+    assertEquals(Optional.of(SALUDO), descartada.cierre());
+    assertThrows(ExcepcionDeDominio.class, () -> descartada.fallar(ROTA, "x"));
 
     PublicacionProveedor rota = PublicacionProveedor.abrir(principal());
-    rota.fallar("El extractor no respondió.");
+    rota.fallar(ROTA, "La API respondió 400: Your credit balance is too low.");
     assertEquals(EstadoPublicacionProveedor.ERROR, rota.estado());
+    assertEquals(
+        Optional.of("La API respondió 400: Your credit balance is too low."), rota.detalle());
     assertThrows(
         ExcepcionDeDominio.class,
         () ->
@@ -61,8 +67,8 @@ class PublicacionProveedorTest {
   void descartarYFallarExigenMotivo() {
     PublicacionProveedor publicacion = PublicacionProveedor.abrir(principal());
 
-    assertThrows(ExcepcionDeDominio.class, () -> publicacion.descartar(" "));
-    assertThrows(ExcepcionDeDominio.class, () -> publicacion.fallar(null));
+    assertThrows(NullPointerException.class, () -> publicacion.descartar(null));
+    assertThrows(NullPointerException.class, () -> publicacion.fallar(null, "detalle"));
     assertEquals(EstadoPublicacionProveedor.PENDIENTE_EXTRACCION, publicacion.estado());
   }
 
@@ -80,6 +86,41 @@ class PublicacionProveedorTest {
                 List.of(),
                 T,
                 EstadoPublicacionProveedor.DESCARTADA,
-                null));
+                null,
+                "Es un saludo."));
+  }
+
+  /**
+   * Reintentar las fallidas las vuelve a poner a esperar al extractor, sin el motivo ni el detalle
+   * de la vez anterior. Una descartada no: se leyó y no era un producto.
+   */
+  @Test
+  void soloLaFallidaSeReabre() {
+    PublicacionProveedor rota = PublicacionProveedor.abrir(principal());
+    rota.fallar(ROTA, "La API respondió 400.");
+
+    rota.reabrir();
+
+    assertEquals(EstadoPublicacionProveedor.PENDIENTE_EXTRACCION, rota.estado());
+    assertEquals(Optional.empty(), rota.cierre());
+    assertEquals(Optional.empty(), rota.detalle());
+
+    PublicacionProveedor descartada = PublicacionProveedor.abrir(principal());
+    descartada.descartar(SALUDO);
+    assertThrows(ExcepcionDeDominio.class, descartada::reabrir);
+    assertThrows(ExcepcionDeDominio.class, () -> PublicacionProveedor.abrir(principal()).reabrir());
+  }
+
+  @Test
+  void elDatoDeUnCierreEsCorto() {
+    assertThrows(
+        ExcepcionDeDominio.class,
+        () ->
+            new CierreDePublicacion(
+                MotivoDePublicacion.MISMA_REFERENCIA_EN_REVISION, "x".repeat(201)));
+    assertEquals(
+        Optional.of("3"),
+        new CierreDePublicacion(MotivoDePublicacion.MISMA_REFERENCIA_EN_REVISION, " 3 ")
+            .datoOpcional());
   }
 }

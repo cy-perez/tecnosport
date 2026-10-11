@@ -36,6 +36,12 @@ public enum MotivoDeFalloDeLote {
   SIN_REINTENTOS,
   /** La aplicación se reinició con el lote a medias (lotes de antes del 11 de octubre de 2026). */
   REINICIO,
+  /**
+   * La API del modelo rechazó la cuenta —sin saldo, clave inválida, sin permiso, modelo retirado—;
+   * el dato es el código HTTP. No cierra el lote: lo pausa, y se reanuda cuando la cuenta se
+   * arregle.
+   */
+  EXTRACTOR_NO_DISPONIBLE,
   /** Un fallo del programa; el dato es el tipo de la excepción. */
   ERROR_INESPERADO,
   /** Un lote de antes de los códigos cuyo motivo no se pudo reconocer al migrar. */

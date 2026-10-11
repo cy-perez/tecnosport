@@ -38,7 +38,7 @@ class EliminarLoteDeIngestaTest {
             UUID.randomUUID(), "proveedores/x/exportacion.zip", ApoyoDeIngesta.AHORA);
     lote.iniciar(ApoyoDeIngesta.AHORA.plusSeconds(1));
     lote.terminar(
-        new ResumenIngesta(4, 0, 4, 2, 2, 0, 0, 0, 0), ApoyoDeIngesta.AHORA.plusSeconds(60));
+        new ResumenIngesta(4, 0, 4, 2, 2, 0, 0, 0, 0, 0), ApoyoDeIngesta.AHORA.plusSeconds(60));
     lotes.guardar(lote);
     return lote;
   }

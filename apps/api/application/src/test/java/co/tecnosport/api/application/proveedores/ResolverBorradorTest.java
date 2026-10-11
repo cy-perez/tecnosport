@@ -20,6 +20,7 @@ import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.compartido.Slug;
 import co.tecnosport.api.domain.proveedores.AlertaBorrador;
 import co.tecnosport.api.domain.proveedores.BorradorProducto;
+import co.tecnosport.api.domain.proveedores.CierreDePublicacion;
 import co.tecnosport.api.domain.proveedores.EstadoBorrador;
 import co.tecnosport.api.domain.proveedores.EstadoPublicacionProveedor;
 import co.tecnosport.api.domain.proveedores.FotosDelProducto;
@@ -27,6 +28,7 @@ import co.tecnosport.api.domain.proveedores.HuellaProveedor;
 import co.tecnosport.api.domain.proveedores.IdExternoDeMensaje;
 import co.tecnosport.api.domain.proveedores.LoteIngesta;
 import co.tecnosport.api.domain.proveedores.MensajeProveedor;
+import co.tecnosport.api.domain.proveedores.MotivoDePublicacion;
 import co.tecnosport.api.domain.proveedores.OrdenDePublicacion;
 import co.tecnosport.api.domain.proveedores.PHash;
 import co.tecnosport.api.domain.proveedores.ProductoExtraido;
@@ -294,7 +296,7 @@ class ResolverBorradorTest {
 
     assertEquals(TipoDeResolucion.NUEVO, primero.tipo());
     assertEquals(TipoDeResolucion.DESCARTADA, segundo.tipo());
-    assertTrue(segundo.motivo().contains("misma foto"));
+    assertEquals(MotivoDePublicacion.ANUNCIO_REPETIDO, segundo.cierre().motivo());
     assertEquals(1, borradores.enEstado(EstadoBorrador.EN_REVISION).size());
   }
 
@@ -371,7 +373,7 @@ class ResolverBorradorTest {
             conCodigo("Jean costuras contrastadas", 124000, "Q339"));
 
     assertEquals(TipoDeResolucion.DESCARTADA, segundo.tipo());
-    assertTrue(segundo.motivo().contains("misma referencia"));
+    assertEquals(MotivoDePublicacion.MISMA_REFERENCIA_EN_REVISION, segundo.cierre().motivo());
     assertEquals(1, borradores.enEstado(EstadoBorrador.EN_REVISION).size());
   }
 
@@ -410,7 +412,9 @@ class ResolverBorradorTest {
     Resolucion resolucion = resolver(segunda, conFotosParaSumar);
 
     assertEquals(TipoDeResolucion.DESCARTADA, resolucion.tipo());
-    assertTrue(resolucion.motivo().contains("1 fotos se sumaron"), resolucion.motivo());
+    assertEquals(
+        new CierreDePublicacion(MotivoDePublicacion.MISMA_REFERENCIA_EN_REVISION, "1"),
+        resolucion.cierre());
     assertEquals(
         List.of(conSuCodigo), borradores.buscarPorId(primero.id()).orElseThrow().fotosAgregadas());
     assertEquals(1, borradores.enEstado(EstadoBorrador.EN_REVISION).size());
@@ -524,7 +528,7 @@ class ResolverBorradorTest {
     assertEquals(TipoDeResolucion.DESCARTADA, resolucion.tipo());
     PublicacionProveedor guardada = publicaciones.buscarPorId(publicacion.id()).orElseThrow();
     assertEquals(EstadoPublicacionProveedor.DESCARTADA, guardada.estado());
-    assertTrue(guardada.motivo().orElseThrow().contains("no reconoció"));
+    assertEquals(MotivoDePublicacion.SIN_PRODUCTO, guardada.cierre().orElseThrow().motivo());
   }
 
   @Test
@@ -635,7 +639,8 @@ class ResolverBorradorTest {
 
     assertEquals(TipoDeResolucion.NUEVO, resoluciones.get(0).tipo());
     assertEquals(TipoDeResolucion.DESCARTADA, resoluciones.get(1).tipo());
-    assertTrue(resoluciones.get(1).motivo().contains("ya está en revisión"));
+    assertEquals(
+        MotivoDePublicacion.MISMA_REFERENCIA_EN_REVISION, resoluciones.get(1).cierre().motivo());
     assertEquals(
         EstadoPublicacionProveedor.EXTRAIDA,
         publicaciones.buscarPorId(conjunto.id()).orElseThrow().estado());
@@ -659,7 +664,8 @@ class ResolverBorradorTest {
     assertTrue(resoluciones.stream().allMatch(r -> r.tipo() == TipoDeResolucion.DESCARTADA));
     PublicacionProveedor guardada = publicaciones.buscarPorId(publicacion.id()).orElseThrow();
     assertEquals(EstadoPublicacionProveedor.DESCARTADA, guardada.estado());
-    assertTrue(guardada.motivo().orElseThrow().contains("agotado"));
+    assertEquals(
+        MotivoDePublicacion.AGOTADO_FUERA_DE_CATALOGO, guardada.cierre().orElseThrow().motivo());
   }
 
   /**

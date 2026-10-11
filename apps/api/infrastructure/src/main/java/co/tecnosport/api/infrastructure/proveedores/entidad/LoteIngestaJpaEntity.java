@@ -52,6 +52,10 @@ public class LoteIngestaJpaEntity {
   @Column(name = "resumen_alertas")
   private Integer resumenAlertas;
 
+  /** Nula en una fila de antes de V106 sin resumen; la migración rellenó las que lo tenían. */
+  @Column(name = "resumen_fallidas")
+  private Integer resumenFallidas;
+
   /** Por qué falló (MotivoDeFalloDeLote); nulo si no falló. */
   @Column(name = "codigo_error")
   private String codigoError;
@@ -102,6 +106,7 @@ public class LoteIngestaJpaEntity {
       Integer resumenAgotados,
       Integer resumenDescartes,
       Integer resumenAlertas,
+      Integer resumenFallidas,
       String codigoError,
       String detalleError,
       Instant creadoEn,
@@ -125,6 +130,7 @@ public class LoteIngestaJpaEntity {
     this.resumenAgotados = resumenAgotados;
     this.resumenDescartes = resumenDescartes;
     this.resumenAlertas = resumenAlertas;
+    this.resumenFallidas = resumenFallidas;
     this.codigoError = codigoError;
     this.detalleError = detalleError;
     this.creadoEn = creadoEn;
@@ -210,6 +216,10 @@ public class LoteIngestaJpaEntity {
 
   public Integer getResumenAlertas() {
     return resumenAlertas;
+  }
+
+  public Integer getResumenFallidas() {
+    return resumenFallidas;
   }
 
   public String getDetalleError() {

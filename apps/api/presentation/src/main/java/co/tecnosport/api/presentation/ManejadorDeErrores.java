@@ -83,6 +83,7 @@ import co.tecnosport.api.application.proveedores.ImagenDeProveedorIlegibleExcept
 import co.tecnosport.api.application.proveedores.LoteEnCursoException;
 import co.tecnosport.api.application.proveedores.LoteEnOtroEstadoException;
 import co.tecnosport.api.application.proveedores.LoteNoEncontradoException;
+import co.tecnosport.api.application.proveedores.OtraIngestaDelProveedorEnCursoException;
 import co.tecnosport.api.application.proveedores.PrendaIncoherenteException;
 import co.tecnosport.api.application.proveedores.ProductoDeProveedorYaExisteException;
 import co.tecnosport.api.application.proveedores.ProveedorConIngestaEnCursoException;
@@ -252,6 +253,13 @@ public class ManejadorDeErrores {
   @ExceptionHandler(LoteEnOtroEstadoException.class)
   public ProblemDetail loteEnOtroEstado(LoteEnOtroEstadoException excepcion) {
     return problema(HttpStatus.CONFLICT, "La ingesta cambió de estado", excepcion);
+  }
+
+  // 409: se arregla solo, esperando a que termine la otra ingesta del proveedor.
+  @ExceptionHandler(OtraIngestaDelProveedorEnCursoException.class)
+  public ProblemDetail otraIngestaDelProveedorEnCurso(
+      OtraIngestaDelProveedorEnCursoException excepcion) {
+    return problema(HttpStatus.CONFLICT, "El proveedor tiene otra ingesta en curso", excepcion);
   }
 
   @ExceptionHandler(LoteEnCursoException.class)

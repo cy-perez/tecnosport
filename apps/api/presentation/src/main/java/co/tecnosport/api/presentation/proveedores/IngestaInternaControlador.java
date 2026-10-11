@@ -59,6 +59,15 @@ public class IngestaInternaControlador {
           lote.proveedorId(),
           lote.estado(),
           lote.resumen().map(Object::toString).orElse(""));
+      lote.fallo()
+          .ifPresent(
+              fallo ->
+                  log.warn(
+                      "El lote de ingesta {} quedó {} por {} ({})",
+                      lote.id(),
+                      lote.estado(),
+                      fallo.motivo(),
+                      fallo.datoOpcional().orElse("")));
     } catch (LoteNoEncontradoException e) {
       log.info("El lote de ingesta {} se eliminó mientras esperaba en la cola.", id);
     } catch (LoteOcupadoException e) {
