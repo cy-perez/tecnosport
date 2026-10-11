@@ -230,9 +230,16 @@ mayor no llega a 680 px (1200 × 0,85 / 1,5) no puede salir LISTA, porque el
 producto nunca mide más que la foto. Un modelo con menos de cuatro originales que
 puedan, espera sin procesarse.
 
+**Un modelo que cambió se reprocesa entero**, no solo la foto nueva: el lienzo lo
+fija la mejor foto del modelo, y una foto que se procesara sola elegiría el suyo.
+Por eso agregar una foto de más resolución sí sube el lienzo de las demás.
+
 Cada modelo queda con su `estado-fotos.json`: `apto`, `en_espera` —con cuántas
-LISTA le faltan y la razón de cada foto que falló— o `fuera_de_tanda`. El script
-sale con **0 si la tanda está completa y con 3 si algún modelo espera**.
+LISTA le faltan y la razón de cada foto que falló— o `fuera_de_tanda`. El
+veredicto se recalcula contra el reporte en cada corrida, aunque la carpeta no
+haya cambiado: lo que se marque a ojo cuenta. El script sale con **0 si la tanda
+está completa y con 3 si algún modelo espera** —o si el retoque quedó en segundo
+plano: hasta que termine y se corra `--devolver`, la tanda no está completa—.
 
 ### Cuando la tanda espera
 
@@ -247,10 +254,11 @@ no haga falta otra corrida. Con salida 3:
    «De dónde salen las fotos»). Muéstrale las hojas de revisión de las que fallaron.
 2. **Espera su confirmación** con `AskUserQuestion`: «ya dejé fotos nuevas»,
    «sacar un modelo de la tanda» o «lo retomo después». No sigas sin respuesta.
-3. Con «ya dejé fotos nuevas», vuelve a correr la tanda. El script reprocesa solo
-   las fotos nuevas de los modelos en espera; si la carpeta de alguno no cambió,
-   lo dice («sin fotos nuevas desde el último intento») y no lo reprocesa:
-   díselo a la persona tal cual, no lo des por intentado.
+3. Con «ya dejé fotos nuevas», vuelve a correr la tanda. El script reprocesa los
+   modelos en espera cuya carpeta cambió; si la de alguno no cambió, lo dice
+   («sin fotos nuevas desde el último intento») y no lo reprocesa: díselo a la
+   persona tal cual, no lo des por intentado. Una foto `SIN PROCESAR` —el retoque
+   no la tocó, casi siempre una HEIC sin `pillow-heif`— se reintenta sola.
 4. Repite hasta que la salida sea 0.
 
 **Sacar un modelo lo decide la persona**, con su motivo, y nunca tú:
@@ -260,14 +268,25 @@ python3 "${CLAUDE_SKILL_DIR}/scripts/procesar_fichas.py" catalogo/entregables/fi
     --tanda catalogo/por-proponer.json --sacar <id del modelo> --motivo "sin material oficial"
 ```
 
-Queda `fuera_de_tanda` y no bloquea la entrega. Si después aparecen fotos nuevas
-en su carpeta, la huella cambia y vuelve a intentarse.
+Queda `fuera_de_tanda` y no bloquea la entrega. Vale para la tanda de esa lista:
+si después aparecen fotos nuevas en su carpeta, o llega la tanda de otra lista,
+vuelve a intentarse. Un modelo que ni siquiera tiene carpeta también se puede
+sacar; queda anotado en `_estudio/sacados.json`.
 
 **Con «lo retomo después»**, la espera queda guardada en el `estado-fotos.json`
 de cada modelo: la sesión siguiente corre la misma orden y sigue desde ahí, sin
 reprocesar lo que ya salió LISTA.
 
 ### Cuando la tanda está completa
+
+**Primero, la revisión a ojo** (paso 4 de esta skill), sobre las hojas de las
+fotos LISTA: hay defectos que solo ve una persona —una mano, una marca de agua,
+dos productos en la toma—. Si una no sirve, márcala con `marcar.py --repetir
+"motivo"` y vuelve a correr la tanda: deja de contar, y si el modelo baja de
+cuatro, vuelve a esperar. Una aprobación a ojo, en cambio, no sube una REVISAR a
+LISTA para la tanda.
+
+Con la revisión hecha:
 
 ```bash
 python3 "${CLAUDE_SKILL_DIR}/../listas-de-proveedor/scripts/conocidos.py" fotos catalogo/entregables/fichas --escribir

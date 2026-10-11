@@ -8,7 +8,10 @@ import {
   informeDeImportacion,
   porProponerDe,
   resumenDeLista,
+  huellaDeArchivo,
+  mismasFotos,
   seleccionParaBorradores,
+  TOPE_DE_FOTOS,
   tomasListas,
 } from "../importar-lista-tecnologia.mjs";
 
@@ -88,8 +91,9 @@ test("el inventario entrega lo que espera borrador y lo dice", () => {
     modelosPorProponer: ["xiaomi-poco-f9-ultra-5g", "apple-airpods-pro-3"],
     configuracionesPorProponer: ["samsung-galaxy-a17-5g-8gb-ram-256gb-dual-sim"],
   };
-  assert.deepEqual(porProponerDe({ fechaLista: "2026-10-10" }, resultado), {
+  assert.deepEqual(porProponerDe({ fechaLista: "2026-10-10" }, resultado, "h"), {
     fechaLista: "2026-10-10",
+    huellaLista: "h",
     modelos: ["xiaomi-poco-f9-ultra-5g", "apple-airpods-pro-3"],
     configuraciones: ["samsung-galaxy-a17-5g-8gb-ram-256gb-dual-sim"],
   });
@@ -162,4 +166,22 @@ test("las tomas que se suben son las LISTA, en el orden de la tanda", () => {
     ["/f/Fotos procesadas/x_3.jpg", "/f/Fotos procesadas/x_1.jpg"],
   );
   assert.throws(() => tomasListas(archivos, ["x_9.jpg"]), /ya no está/);
+});
+
+test("nunca se suben más fotos de las que caben en el borrador", () => {
+  const archivos = Array.from({ length: 12 }, (_, i) => ({ ruta: `/f/x_${i + 1}.jpg` }));
+  const listas = archivos.map((a) => a.ruta.slice(3));
+  assert.equal(tomasListas(archivos, listas).length, TOPE_DE_FOTOS);
+});
+
+test("las fotos del borrador son las mismas solo con los mismos hashes en el mismo orden", () => {
+  assert.equal(mismasFotos(["a", "b"], ["a", "b"]), true);
+  assert.equal(mismasFotos(["a", "b"], ["b", "a"]), false, "cambió la principal");
+  assert.equal(mismasFotos(["a", "b"], ["a", "c"]), false, "otra tanda, la misma cantidad");
+  assert.equal(mismasFotos(["a", "b"], ["a"]), false);
+});
+
+test("la huella del archivo cambia si cambia la lista", () => {
+  assert.equal(huellaDeArchivo("{}"), huellaDeArchivo("{}"));
+  assert.notEqual(huellaDeArchivo("{}"), huellaDeArchivo("{ }"));
 });

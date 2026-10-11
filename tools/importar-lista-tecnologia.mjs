@@ -37,6 +37,7 @@
 //   --token JWT     o la variable de entorno TS_TOKEN_ADMIN. No pregunta la clave: los prompts
 //                   no funcionan desde `!` en Claude Code, y el token no se imprime nunca.
 
+import { createHash } from "node:crypto";
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { basename, dirname, join } from "node:path";
 import { pathToFileURL } from "node:url";
@@ -65,6 +66,8 @@ const INVENTARIO = bandera("--inventario");
 const BORRADORES = bandera("--borradores");
 /** El mismo nombre que escribe `fotos-estudio-degradado/scripts/procesar_fichas.py`. */
 const ESTADO_FOTOS = "estado-fotos.json";
+/** El mismo tope que `BorradorTecnologia.TOPE_DE_FOTOS`: la principal y la galería entera. */
+export const TOPE_DE_FOTOS = 9;
 
 async function pedir(ruta, opciones = {}) {
   const respuesta = await fetch(`${API}${ruta}`, {
@@ -106,10 +109,20 @@ export function cuerpoParaModo(lista, modo) {
   throw new Error(`Modo desconocido: ${modo}`);
 }
 
-/** La entrega del inventario a las skills de fotos y de fichas: lo que espera borrador. */
-export function porProponerDe(lista, resultado) {
+/** El SHA-256 del archivo de la lista, para saber si es el mismo que entró como inventario. */
+export function huellaDeArchivo(contenido) {
+  return createHash("sha256").update(contenido).digest("hex");
+}
+
+/**
+ * La entrega del inventario a las skills de fotos y de fichas: lo que espera borrador, y la huella
+ * del archivo de la lista con que entró. Los borradores se niegan si el archivo cambió después: le
+ * propondrían a la API un contenido que el inventario nunca vio.
+ */
+export function porProponerDe(lista, resultado, huellaLista = null) {
   return {
     fechaLista: lista.fechaLista,
+    huellaLista,
     modelos: resultado.modelosPorProponer ?? [],
     configuraciones: resultado.configuracionesPorProponer ?? [],
   };
@@ -160,13 +173,30 @@ export function seleccionParaBorradores(lista, porProponer, estados) {
  */
 export function tomasListas(archivos, listas) {
   const porNombre = new Map(archivos.map((a) => [basename(a.ruta), a]));
-  return listas.map((nombre) => {
+  // Más de las que caben no se suben: el servidor cortaría en el tope, y cada corrida vería un
+  // borrador distinto del esperado y lo rehiciera sin terminar nunca.
+  return listas.slice(0, TOPE_DE_FOTOS).map((nombre) => {
     const toma = porNombre.get(nombre);
     if (!toma) {
       throw new Error(`La tanda contó ${nombre} como LISTA y ya no está en «Fotos procesadas».`);
     }
     return toma;
   });
+}
+
+/**
+ * Si el borrador ya tiene exactamente esas fotos, en ese orden. Por hash y no por cantidad: una
+ * tanda que se repitió deja otras cuatro LISTA, y contar cuatro y cuatro publicaría las viejas.
+ */
+export function mismasFotos(esperadas, actuales) {
+  return esperadas.length === actuales.length && esperadas.every((hash, i) => hash === actuales[i]);
+}
+
+/** El hash con que se sube una toma: el de su variante mayor, como en `subirVariantes`. */
+function hashDeToma(toma, titulo) {
+  const web = paraLaWeb(toma, titulo);
+  const mayor = web.variantes.find((v) => v.ancho === web.ancho) ?? web.variantes[0];
+  return createHash("sha256").update(readFileSync(mayor.ruta)).digest("hex");
 }
 
 /** Lo que respondió la importación, en el orden en que alguien lo tiene que leer. */
@@ -211,14 +241,15 @@ async function importar(ruta) {
   if (INVENTARIO === BORRADORES) {
     throw new Error("Di cuál de los dos tiempos: --inventario o --borradores (ADR-0079).");
   }
-  const lista = JSON.parse(readFileSync(ruta, "utf8"));
+  const contenido = readFileSync(ruta, "utf8");
+  const lista = JSON.parse(contenido);
   if (INVENTARIO) {
-    return importarInventario(ruta, lista);
+    return importarInventario(ruta, lista, contenido);
   }
-  return importarBorradores(ruta, lista);
+  return importarBorradores(ruta, lista, contenido);
 }
 
-async function importarInventario(ruta, lista) {
+async function importarInventario(ruta, lista, contenido) {
   const cuerpo = cuerpoParaModo(lista, "INVENTARIO");
   console.log(`inventario · ${resumenDeLista(cuerpo)}`);
   if (!ESCRIBIR) {
@@ -231,11 +262,14 @@ async function importarInventario(ruta, lista) {
   });
   console.log(informeDeImportacion(resultado));
   const destino = join(dirname(ruta), "por-proponer.json");
-  writeFileSync(destino, JSON.stringify(porProponerDe(cuerpo, resultado), null, 2) + "\n");
+  writeFileSync(
+    destino,
+    JSON.stringify(porProponerDe(cuerpo, resultado, huellaDeArchivo(contenido)), null, 2) + "\n",
+  );
   console.log(`Lo que espera borrador quedó en ${destino}`);
 }
 
-async function importarBorradores(ruta, lista) {
+async function importarBorradores(ruta, lista, contenido) {
   const rutaPorProponer = join(dirname(ruta), "por-proponer.json");
   if (!existsSync(rutaPorProponer)) {
     throw new Error(
@@ -247,6 +281,13 @@ async function importarBorradores(ruta, lista) {
     throw new Error(
       `por-proponer.json es de la lista del ${porProponer.fechaLista} y esta es del ` +
         `${lista.fechaLista}: corre primero el inventario de esta lista.`,
+    );
+  }
+  if (porProponer.huellaLista && porProponer.huellaLista !== huellaDeArchivo(contenido)) {
+    throw new Error(
+      `${ruta} cambió después de que su inventario entró: los borradores llevarían un contenido ` +
+        "que el inventario nunca vio. Vuelve a exportar desde la misma corrida, o corre el " +
+        "inventario de esta versión.",
     );
   }
   const estados = Object.fromEntries(
@@ -301,18 +342,24 @@ async function importarBorradores(ruta, lista) {
 }
 
 /**
- * Las fotos del modelo al borrador, en orden. Si ya tiene exactamente esas, no hace nada; si tiene
- * otras —una corrida que se cayó a mitad—, las quita y las sube de nuevo, para que la principal
- * siga siendo la primera.
+ * Las fotos del modelo al borrador, en orden. Si ya tiene exactamente esas —mismos hashes, mismo
+ * orden—, no hace nada; si tiene otras —una corrida que se cayó a mitad, o una tanda que se
+ * repitió—, las quita y las sube de nuevo, para que la principal siga siendo la primera.
  */
 async function subirFotosAlBorrador(borrador, titulo, tomas) {
-  if (borrador.cantidadDeFotos === tomas.length) {
-    console.log(`  ya tiene   ${titulo}: ${tomas.length} fotos`);
-    return;
-  }
   const base = `/api/v1/admin/borradores-tecnologia/${borrador.id}/fotos`;
+  const esperadas = tomas.map((toma) => hashDeToma(toma, titulo));
   if (borrador.cantidadDeFotos > 0) {
     const detalle = await pedir(`/api/v1/admin/borradores-tecnologia/${borrador.id}`);
+    if (
+      mismasFotos(
+        esperadas,
+        detalle.fotos.map((f) => f.hash),
+      )
+    ) {
+      console.log(`  ya tiene   ${titulo}: sus ${tomas.length} fotos`);
+      return;
+    }
     for (const foto of detalle.fotos) {
       await pedir(`${base}/${foto.id}`, { method: "DELETE" });
     }

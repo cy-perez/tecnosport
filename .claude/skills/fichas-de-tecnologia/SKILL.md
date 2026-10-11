@@ -66,9 +66,24 @@ Hace dos cosas, en este orden:
    `estado-fotos.json` —la primera es la principal—, con sus anchos AVIF y la
    vista previa, al bucket privado del proveedor.
 
-Se puede correr otra vez sin miedo: un borrador que ya tiene sus fotos no se toca,
-y uno que quedó a medias —una corrida que se cayó— se rehace entero para que la
-principal siga siendo la primera.
+Se puede correr otra vez sin miedo. Un borrador que ya tiene exactamente esas
+fotos —los mismos hashes, en el mismo orden— no se toca; uno con otras —una
+corrida que se cayó, o una tanda que se repitió con fotos nuevas— se rehace
+entero, para que la principal siga siendo la primera. Nunca se suben más de 9:
+la principal y la galería entera del producto.
+
+Y se niega en dos casos, a propósito:
+
+- `lista-api.json` cambió después de que su inventario entró: los borradores
+  llevarían un contenido que el inventario nunca vio. Se vuelve a exportar desde
+  la misma corrida, o se corre el inventario de esa versión con el bloque 1.
+- El inventario de esa lista no es el último que entró (la API responde 409): o
+  no se importó, o ya entró una lista más nueva.
+
+El inventario de cada lista refresca, además, los borradores que siguen en
+revisión —costo, configuraciones y colores—, y **aprobar se niega si el borrador
+no es de la última lista**: un modelo que dejó de venir no se publica con
+existencia que el proveedor ya no tiene.
 
 ### 3. Entregar
 
