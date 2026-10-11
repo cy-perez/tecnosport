@@ -2,7 +2,8 @@
 
 **Fecha:** 2026-09-30
 **Estado:** aceptado. Ampliado por `ADR-0078`: desde el 10 de octubre de 2026 la ingesta lee
-también las fotos, y no solo el texto.
+también las fotos, y no solo el texto. Y por `ADR-0080`: desde el 11 de octubre de 2026 la cola de
+los ambientes desplegados es Cloud Tasks, y un lote se procesa en tramos.
 
 ## Contexto
 
@@ -86,31 +87,21 @@ se puede probar de punta a punta sin gastar una llamada.
 - El zip pesa lo que pesen las fotos: decenas de megas. Por eso no pasa por la
   API sino derecho al bucket, y por eso hay dos topes —el del zip y el de lo
   descomprimido— que responden 413 y 422 antes de intentar nada.
-- La ingesta corre en un solo hilo dentro de la aplicación. Dos lotes del mismo
-  proveedor no se pisan porque van en fila. Un lote que no cabe en la cola
-  responde 503 y **queda cerrado en `ERROR`** con su motivo: la cola vive en
-  memoria y solo entra lo que se encola, así que dejarlo en `RECIBIDO` era
-  prometer un trabajador que no iba a llegar. Se vuelve a subir la exportación.
-- **La cola no sobrevive a un reinicio, y eso está resuelto al arrancar.**
-  `ReanudadorDeIngestas` devuelve a la cola lo que quedó en `RECIBIDO` y cierra
-  en `ERROR` lo que su trabajador dejó a medias, con un motivo que pide volver a
-  subir el archivo. No se reanuda a medias porque no hay forma de saber en qué
-  publicación iba, y repetir la subida es seguro por la deduplicación.
-- **«A medias» lo dice el latido, no el estado** (11 de octubre de 2026). Antes
-  se cerraba todo lo que estuviera en `PROCESANDO`, y con varias instancias eso
-  incluía lo que una vecina viva estaba leyendo: cinco arranques en cuarenta
-  segundos cerraron tres lotes que no alcanzaron a leer un mensaje. Ahora el
-  trabajador renueva `lote_ingesta.latido_en` (`V102`) cada 30 segundos desde un
-  hilo aparte, y `CerrarIngestasAbandonadas` cierra solo lo que lleva tres minutos
-  sin latir: al arrancar y cada minuto después, para que lo que suelta un
-  despliegue o la escala a cero no espere al arranque siguiente.
-- **El trabajo de fondo necesita CPU.** En Cloud Run con CPU solo durante la
-  petición, el hilo se congela en cuanto la subida responde. Por eso la API de
-  dev lleva `cpu_siempre_asignada` desde el mismo día, como producción
-  (`docs/07`). Queda pendiente lo que eso no resuelve: con
-  `instancias_minimas = 0`, una ingesta larga sin nadie en el panel puede
-  quedar cortada si Cloud Run apaga la instancia; el camino de fondo es sacarla
-  a Cloud Tasks o a un trabajo de Cloud Run.
+- **La cola es Cloud Tasks en los ambientes desplegados, y un lote se procesa en
+  tramos** (`ADR-0080`, 11 de octubre de 2026). Hasta entonces la ingesta corría
+  en un hilo dentro de la aplicación, y en Cloud Run con CPU solo durante la
+  petición ese hilo se congelaba en cuanto la subida respondía. El hilo con su
+  cola en memoria queda para local y las pruebas. Un lote que no cabe en la cola
+  —llena, o Cloud Tasks no responde— responde 503 y **queda cerrado en `ERROR`**
+  con su motivo: dejarlo en `RECIBIDO` era prometer un trabajador que no iba a
+  llegar. Se vuelve a subir la exportación.
+- **Un lote a medias se retoma, no se cierra.** Lo distingue el latido, no el
+  estado: el trabajador renueva `lote_ingesta.latido_en` (`V102`) cada 30
+  segundos desde un hilo aparte, y un lote sin latir tres minutos vuelve a la
+  cola hasta tres veces (`V103`). Antes se cerraba todo lo que estuviera en
+  `PROCESANDO`, y con varias instancias eso incluía lo que una vecina viva
+  estaba leyendo: cinco arranques en cuarenta segundos cerraron tres lotes que no
+  alcanzaron a leer un mensaje.
 - **El mismo anuncio repetido no abre dos borradores**, y desde el 9 de octubre
   de 2026 «el mismo» pide el texto **y la foto** (ver «El mismo texto no es la
   misma prenda», abajo). Mientras hay uno en revisión, el repetido se descarta
@@ -329,6 +320,8 @@ dos al lado. El proveedor lleva el ajuste `dos_chats_en_un_zip` (`V95`).
   antes de despachar un pedido con productos de proveedor habría que
   confirmarle al proveedor que todavía lo tiene. Es un paso del flujo de
   pedidos que no existe y que este trabajo no abre.
+- **Una publicación cortada a la mitad se extrae otra vez** al retomar el lote:
+  una llamada más a la API de Claude, y nada que se repita de lo ya resuelto.
 - **La publicación automática.** El proveedor tiene un indicador
   `publicacion_automatica` que el panel muestra y guarda, y que hoy no hace
   nada: todo borrador pasa por revisión. Se encenderá para un proveedor cuando
