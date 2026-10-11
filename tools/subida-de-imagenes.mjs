@@ -102,7 +102,7 @@ export async function subirVariantes(pedir, endpointDeSubida, web, titulo) {
     objectKeyVistaPrevia,
     alto: web.alto,
     hash,
-    altEs: `${titulo} sobre fondo gris`,
-    altEn: `${titulo} on a grey background`,
+    altEs: `${titulo} sobre fondo blanco`,
+    altEn: `${titulo} on a white background`,
   };
 }
