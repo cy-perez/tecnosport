@@ -1,6 +1,6 @@
 ---
 name: fotos-estudio-degradado
-description: Convierte lotes de fotos de producto en tomas de estudio uniformes con el estilo de TecnoSport — aísla el producto sin retocar su interior —ni color, ni forma, ni brillo, ni logos—, lo escala al 85 % de un lienzo cuadrado de hasta 2000 px, menor cuando la foto no da para más, y lo centra sobre un fondo blanco idéntico en todo el catálogo, con una sombra de contacto sutil que le dibuja el resplandor alrededor, y exporta la maestra JPEG y el AVIF web, con un reporte honesto que marca cada foto como LISTA, REVISAR o REPETIR. Úsala siempre que alguien pida fotos «de estudio», «con fondo blanco», «con sombra», «con resplandor», «como las de TecnoSport» o que combinen con el catálogo, aunque no diga «editar»; también si piden el fondo gris degradado que el catálogo usó antes, que sigue disponible con un ajuste. No la uses para piezas publicitarias (diseno-publicitario) ni para fotogramas del visor 360. Covers studio product photos with pure white backgrounds and contact shadow, batch background removal, AVIF export and image QA.
+description: Convierte lotes de fotos de producto en tomas de estudio uniformes con el estilo de TecnoSport — aísla el producto sin retocar su interior —ni color, ni forma, ni brillo, ni logos—, lo escala al 85 % de un lienzo cuadrado de hasta 2000 px, menor cuando la foto no da para más, y lo centra sobre un fondo blanco idéntico en todo el catálogo, con una sombra de contacto sutil que le dibuja el resplandor alrededor, y exporta la maestra JPEG y el AVIF web, con un reporte honesto que marca cada foto como LISTA, REVISAR o REPETIR. Es también el bloque 2 de la ingesta de tecnología: con la tanda de por-proponer.json, ningún modelo pasa sin 4 fotos LISTA y la tanda espera fotos nuevas hasta que todos pasen; úsala cuando alguien diga «procesa las fotos de la tanda», «ya dejé las fotos», «sigue con las fotos de los productos nuevos» o termine /listas-de-proveedor con modelos esperando fotos. Úsala siempre que alguien pida fotos «de estudio», «con fondo blanco», «con sombra», «con resplandor», «como las de TecnoSport» o que combinen con el catálogo, aunque no diga «editar»; también si piden el fondo gris degradado que el catálogo usó antes, que sigue disponible con un ajuste. No la uses para piezas publicitarias (diseno-publicitario) ni para fotogramas del visor 360. Covers studio product photos with pure white backgrounds and contact shadow, batch background removal, AVIF export and image QA.
 ---
 
 # Fotos de estudio (estilo TecnoSport)
@@ -207,6 +207,76 @@ Las dos siguen implementadas y se reactivan con un valor en el config o con
 propia bien expuesta, volver a encenderlas tiene sentido; con material de
 catálogo ajeno, no: lo que hace falta es fidelidad, no interpretación.
 
+## El bloque 2 de la ingesta de tecnología: la tanda
+
+La ingesta de tecnología va en tres bloques (`docs/adr/0079`): `/listas-de-proveedor`
+deja la carpeta de cada modelo y `catalogo/por-proponer.json` —los modelos que el
+sitio no vende—; **esta skill retoca sus fotos y no deja pasar ninguno a medias**;
+`/fichas-de-tecnologia` lleva al panel el borrador con sus fotos.
+
+```bash
+python3 "${CLAUDE_SKILL_DIR}/scripts/procesar_fichas.py" catalogo/entregables/fichas \
+    --tanda catalogo/por-proponer.json
+```
+
+**La compuerta** (decisión del negocio del 10/10/2026): cada modelo necesita
+**4 fotos LISTA** en un lienzo de por lo menos **1200 px** —la mayor variante que
+sirve el sitio—. Una REVISAR **no cuenta aunque se apruebe a ojo** con `marcar.py`,
+y una LISTA en un lienzo menor tampoco: el lienzo lo fija la mejor foto del modelo,
+así que lo que falta ahí es una foto de más resolución.
+
+**Antes de gastar un retoque**, el script mide las originales: una foto cuyo lado
+mayor no llega a 680 px (1200 × 0,85 / 1,5) no puede salir LISTA, porque el
+producto nunca mide más que la foto. Un modelo con menos de cuatro originales que
+puedan, espera sin procesarse.
+
+Cada modelo queda con su `estado-fotos.json`: `apto`, `en_espera` —con cuántas
+LISTA le faltan y la razón de cada foto que falló— o `fuera_de_tanda`. El script
+sale con **0 si la tanda está completa y con 3 si algún modelo espera**.
+
+### Cuando la tanda espera
+
+**No sigas con el bloque 3 con un modelo en espera, ni lo saques por tu cuenta.**
+El objetivo es que al final todos los modelos queden con fotos publicables y que
+no haga falta otra corrida. Con salida 3:
+
+1. Muéstrale a la persona, por modelo, qué foto falló y por qué —el motivo que
+   escribe el script, en sus palabras: «el producto mide 900 px y necesita 1700»,
+   «el borde se confunde con el fondo»— y cuántas LISTA le faltan. Dile dónde
+   está la carpeta, y de dónde salen las fotos (`listas-de-proveedor`, sección
+   «De dónde salen las fotos»). Muéstrale las hojas de revisión de las que fallaron.
+2. **Espera su confirmación** con `AskUserQuestion`: «ya dejé fotos nuevas»,
+   «sacar un modelo de la tanda» o «lo retomo después». No sigas sin respuesta.
+3. Con «ya dejé fotos nuevas», vuelve a correr la tanda. El script reprocesa solo
+   las fotos nuevas de los modelos en espera; si la carpeta de alguno no cambió,
+   lo dice («sin fotos nuevas desde el último intento») y no lo reprocesa:
+   díselo a la persona tal cual, no lo des por intentado.
+4. Repite hasta que la salida sea 0.
+
+**Sacar un modelo lo decide la persona**, con su motivo, y nunca tú:
+
+```bash
+python3 "${CLAUDE_SKILL_DIR}/scripts/procesar_fichas.py" catalogo/entregables/fichas \
+    --tanda catalogo/por-proponer.json --sacar <id del modelo> --motivo "sin material oficial"
+```
+
+Queda `fuera_de_tanda` y no bloquea la entrega. Si después aparecen fotos nuevas
+en su carpeta, la huella cambia y vuelve a intentarse.
+
+**Con «lo retomo después»**, la espera queda guardada en el `estado-fotos.json`
+de cada modelo: la sesión siguiente corre la misma orden y sigue desde ahí, sin
+reprocesar lo que ya salió LISTA.
+
+### Cuando la tanda está completa
+
+```bash
+python3 "${CLAUDE_SKILL_DIR}/../listas-de-proveedor/scripts/conocidos.py" fotos catalogo/entregables/fichas --escribir
+```
+
+Anota cada foto procesada en la base de conocidos, con su huella: las carpetas
+viven fuera del repositorio, y el registro es lo que nota que una se perdió.
+Después dile a la persona que siga con `/fichas-de-tecnologia`.
+
 ## Quién consume esta salida: `listas-de-proveedor`
 
 El catálogo de tecnología se surte de esa skill, y **desde el 08/10/2026 el
@@ -234,7 +304,10 @@ correrlo otra vez después de soltar fotos nuevas procesa solo esas. Las hojas d
 revisión y el reporte quedan en `fichas/_estudio/salida/`, en un sitio para todos
 los modelos: ahí se revisa como siempre (paso 4) y ahí se aprueba con `marcar.py`;
 `--devolver` vuelve a copiar lo aprobado. Las REPETIR no se devuelven. Con
-`--segundo-plano` lanza el proceso y, al terminar, se corre `--devolver`.
+`--segundo-plano` lanza el proceso y, al terminar, se corre `--devolver` —con la
+misma `--tanda`, que es la que decide el estado de cada modelo—. Sin `--tanda`
+procesa todas las carpetas y no decide nada: es el modo de antes, para un lote
+suelto.
 
 **Si esta skill cambia la forma de su salida** —`<producto>/maestra/` y
 `<producto>/<ancho>/` en modo por producto—, `procesar_fichas.py` deja de

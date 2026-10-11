@@ -25,15 +25,18 @@ def armar(raiz: Path, nombres=("samsung-galaxy-s25-ultra_1.jpg", "samsung-galaxy
     return carpeta
 
 
-def salida_de_procesar(raiz: Path, fotos):
+def salida_de_procesar(raiz: Path, fotos, grupo=MODELO, lienzo=2000, revisadas=()):
     """Lo que procesar.py deja en _estudio/salida para cada (nombre, estado)."""
     salida = raiz / pf.TRABAJO / "salida"
     registro = []
     for nombre, estado in fotos:
-        f = {"nombre": nombre, "grupo": MODELO, "estado": estado, "salidas": {}}
+        f = {"nombre": nombre, "grupo": grupo, "estado": estado, "salidas": {}, "lienzo": [lienzo, lienzo],
+             "revisada": {"nota": "a ojo"} if nombre in revisadas else None,
+             "motivos": [] if estado == "LISTA" and nombre not in revisadas
+             else [{"estado": "REVISAR", "codigo": "ampliacion", "texto": "El producto se amplió 1.80×"}]}
         if estado != "REPETIR":
-            maestra = Path(MODELO) / "maestra" / f"{nombre}.jpg"
-            web = Path(MODELO) / "1200" / f"{nombre}.avif"
+            maestra = Path(grupo) / "maestra" / f"{nombre}.jpg"
+            web = Path(grupo) / "1200" / f"{nombre}.avif"
             for r, contenido in ((maestra, b"maestra"), (web, b"avif")):
                 (salida / r).parent.mkdir(parents=True, exist_ok=True)
                 (salida / r).write_bytes(contenido + nombre.encode())
@@ -107,6 +110,174 @@ class Devolver(unittest.TestCase):
             armar(raiz)
             pf.preparar(raiz)
             self.assertEqual([MODELO], list(pf.modelos(raiz)))
+
+
+# --------------------------------------------------------------------------
+# La tanda del bloque 2 (ADR-0079): cuatro LISTA por modelo, o espera
+# --------------------------------------------------------------------------
+
+CFG = {"lienzo_minimo": 1200, "ocupacion": 0.85, "ampliacion_revisar": 1.5}
+CUATRO = tuple(f"{MODELO}_{i}.jpg" for i in range(1, 5))
+NOMBRES = [f"{MODELO}-{i}" for i in range(1, 5)]
+GRANDE = lambda ruta: (2400, 2400)  # noqa: E731
+
+
+def tanda(raiz, ids=(MODELO,), procesar=None, medidor=GRANDE, solo_devolver=False):
+    llamadas = []
+
+    def procesar_fn():
+        llamadas.append(True)
+        if procesar:
+            procesar()
+        return True
+
+    estados = pf.correr_tanda(raiz, list(ids), CFG, procesar_fn, solo_devolver, medidor)
+    return {e["modelo"]: e for e in estados}, len(llamadas)
+
+
+class Tanda(unittest.TestCase):
+    def test_con_cuatro_lista_el_modelo_queda_apto_y_lo_escribe(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            raiz = Path(tmp)
+            carpeta = armar(raiz, CUATRO)
+            estados, procesos = tanda(raiz, procesar=lambda: salida_de_procesar(raiz, [(n, "LISTA") for n in NOMBRES]))
+            self.assertEqual(1, procesos)
+            self.assertEqual(pf.APTO, estados[MODELO]["estado"])
+            self.assertEqual(4, len(estados[MODELO]["listas"]))
+            guardado = json.loads((carpeta / pf.ESTADO).read_text(encoding="utf-8"))
+            self.assertEqual(pf.APTO, guardado["estado"])
+            self.assertIn("TANDA COMPLETA", pf.informe(list(estados.values())))
+
+    def test_con_menos_de_cuatro_originales_espera_sin_procesar(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            raiz = Path(tmp)
+            armar(raiz, CUATRO[:3])
+            estados, procesos = tanda(raiz)
+            self.assertEqual(0, procesos, "no se gasta un retoque que no puede completar el modelo")
+            self.assertEqual(pf.EN_ESPERA, estados[MODELO]["estado"])
+            self.assertEqual(1, estados[MODELO]["faltan"])
+            self.assertIn("LA TANDA ESPERA FOTOS", pf.informe(list(estados.values())))
+
+    def test_una_foto_demasiado_pequena_no_cuenta_antes_de_procesar(self):
+        # 1200 × 0,85 / 1,5 = 680 px: una foto de 600 nunca da un producto LISTA en 1200.
+        with tempfile.TemporaryDirectory() as tmp:
+            raiz = Path(tmp)
+            armar(raiz, CUATRO)
+            pequena = lambda ruta: (600, 450) if ruta.name.endswith("_4.jpg") else (2400, 2400)  # noqa: E731
+            estados, procesos = tanda(raiz, medidor=pequena)
+            self.assertEqual(0, procesos)
+            fallida = estados[MODELO]["fallidas"][0]
+            self.assertEqual("PEQUEÑA", fallida["estado"])
+            self.assertIn("680 px", fallida["motivo"])
+
+    def test_una_foto_que_no_se_puede_medir_la_decide_el_retoque(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            raiz = Path(tmp)
+            armar(raiz, CUATRO)
+            _, procesos = tanda(raiz, medidor=lambda ruta: None,
+                                procesar=lambda: salida_de_procesar(raiz, [(n, "LISTA") for n in NOMBRES]))
+            self.assertEqual(1, procesos)
+
+    def test_una_revisar_aprobada_a_ojo_no_cuenta(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            raiz = Path(tmp)
+            armar(raiz, CUATRO)
+            estados, _ = tanda(raiz, procesar=lambda: salida_de_procesar(
+                raiz, [(n, "LISTA") for n in NOMBRES], revisadas=(NOMBRES[3],)))
+            self.assertEqual(pf.EN_ESPERA, estados[MODELO]["estado"])
+            self.assertEqual(3, len(estados[MODELO]["listas"]))
+            self.assertEqual("REVISAR", estados[MODELO]["fallidas"][0]["estado"])
+
+    def test_una_revisar_dice_por_que(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            raiz = Path(tmp)
+            armar(raiz, CUATRO)
+            estados, _ = tanda(raiz, procesar=lambda: salida_de_procesar(
+                raiz, [(n, "LISTA") for n in NOMBRES[:3]] + [(NOMBRES[3], "REVISAR")]))
+            self.assertIn("1.80×", estados[MODELO]["fallidas"][0]["motivo"])
+
+    def test_una_lista_en_un_lienzo_menor_al_del_sitio_no_cuenta(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            raiz = Path(tmp)
+            armar(raiz, CUATRO)
+            estados, _ = tanda(raiz, procesar=lambda: salida_de_procesar(
+                raiz, [(n, "LISTA") for n in NOMBRES], lienzo=800))
+            self.assertEqual(pf.EN_ESPERA, estados[MODELO]["estado"])
+            self.assertEqual({"LIENZO"}, {f["estado"] for f in estados[MODELO]["fallidas"]})
+
+    def test_sin_fotos_nuevas_no_se_reprocesa_y_se_dice(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            raiz = Path(tmp)
+            armar(raiz, CUATRO)
+            tanda(raiz, procesar=lambda: salida_de_procesar(
+                raiz, [(n, "LISTA") for n in NOMBRES[:3]] + [(NOMBRES[3], "REPETIR")]))
+            estados, procesos = tanda(raiz)
+            self.assertEqual(0, procesos, "la persona dijo que dejó fotos, pero la carpeta es la misma")
+            self.assertTrue(estados[MODELO]["sin_cambios"])
+            self.assertIn("sin fotos nuevas", pf.informe(list(estados.values())))
+
+    def test_una_foto_nueva_vuelve_a_intentar_el_modelo(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            raiz = Path(tmp)
+            carpeta = armar(raiz, CUATRO)
+            tanda(raiz, procesar=lambda: salida_de_procesar(
+                raiz, [(n, "LISTA") for n in NOMBRES[:3]] + [(NOMBRES[3], "REPETIR")]))
+            (carpeta / pf.ORIGINALES / f"{MODELO}_5.jpg").write_bytes(b"otra")
+            nombres = NOMBRES[:3] + [f"{MODELO}-5"]
+            estados, procesos = tanda(raiz, procesar=lambda: salida_de_procesar(
+                raiz, [(n, "LISTA") for n in nombres] + [(NOMBRES[3], "REPETIR")]))
+            self.assertEqual(1, procesos)
+            self.assertEqual(pf.APTO, estados[MODELO]["estado"])
+
+    def test_un_modelo_apto_no_se_vuelve_a_procesar(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            raiz = Path(tmp)
+            armar(raiz, CUATRO)
+            tanda(raiz, procesar=lambda: salida_de_procesar(raiz, [(n, "LISTA") for n in NOMBRES]))
+            estados, procesos = tanda(raiz)
+            self.assertEqual(0, procesos)
+            self.assertEqual(pf.APTO, estados[MODELO]["estado"])
+
+    def test_sacarlo_es_de_la_persona_y_vuelve_con_fotos_nuevas(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            raiz = Path(tmp)
+            carpeta = armar(raiz, CUATRO[:2])
+            with self.assertRaises(ValueError):
+                pf.sacar(carpeta, MODELO, " ")
+            pf.sacar(carpeta, MODELO, "sin material oficial")
+            estados, _ = tanda(raiz)
+            self.assertEqual(pf.FUERA, estados[MODELO]["estado"])
+            self.assertIn("TANDA COMPLETA", pf.informe(list(estados.values())))
+            (carpeta / pf.ORIGINALES / f"{MODELO}_3.jpg").write_bytes(b"otra")
+            estados, _ = tanda(raiz)
+            self.assertEqual(pf.EN_ESPERA, estados[MODELO]["estado"])
+
+    def test_un_modelo_sin_carpeta_espera(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            raiz = Path(tmp)
+            armar(raiz, CUATRO)
+            estados, _ = tanda(raiz, ids=("xiaomi-poco-f9-ultra-5g",))
+            self.assertEqual(pf.EN_ESPERA, estados["xiaomi-poco-f9-ultra-5g"]["estado"])
+            self.assertIn("paso 5", estados["xiaomi-poco-f9-ultra-5g"]["motivo"])
+
+    def test_solo_procesa_los_modelos_de_la_tanda(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            raiz = Path(tmp)
+            armar(raiz, CUATRO)
+            otro = raiz / "JBL Flip 7"
+            (otro / pf.ORIGINALES).mkdir(parents=True)
+            (otro / "jbl-flip-7-ficha.txt").write_text("MODELO", encoding="utf-8")
+            (otro / pf.ORIGINALES / "jbl-flip-7_1.jpg").write_bytes(b"x")
+            tanda(raiz, procesar=lambda: salida_de_procesar(raiz, [(n, "LISTA") for n in NOMBRES]))
+            self.assertFalse((raiz / pf.TRABAJO / "crudas" / "jbl-flip-7").exists())
+            self.assertFalse((otro / pf.ESTADO).exists())
+
+    def test_la_tanda_se_lee_de_por_proponer(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            ruta = Path(tmp) / "por-proponer.json"
+            ruta.write_text(json.dumps({"fechaLista": "2026-10-10", "modelos": ["a", "b", "a"],
+                                        "configuraciones": ["c"]}), encoding="utf-8")
+            self.assertEqual(["a", "b"], pf.leer_tanda(ruta))
 
 
 if __name__ == "__main__":
