@@ -309,4 +309,90 @@ class ReplicasPolosYMarcasTest {
 
     assertEquals(conCantidad, conCantidad.conTonosDeLasFotos(List.of("negro", "beige")));
   }
+
+  // --- Lo que dejó la revisión adversarial ---
+
+  /** «CK» no es Jack & Jones: una forma corta solo vale entera. */
+  @Test
+  void unaMarcaCortaNoSeEncuentraDentroDeOtra() {
+    LecturaDeFoto ck = conMarcas(0, List.of("CK"));
+
+    assertFalse(ck.muestraMarca("Jack & Jones"));
+    assertTrue(ck.muestraMarca("ck"));
+    assertTrue(conMarcas(0, List.of("DSQUARED2")).muestraMarca("Dsquared"));
+  }
+
+  @Test
+  void conMarcaConservaLoQueVaDespuesDeLaMarca() {
+    ProductoExtraido varias =
+        extraido(
+            "Pantalón estilo Diesel - Amiri para caballero",
+            TipoProductoProveedor.PANTALON,
+            true,
+            List.of("Diesel", "Amiri"));
+
+    assertEquals("Pantalón estilo Amiri para caballero", varias.conMarca("Amiri").titulo());
+  }
+
+  /** Cada marca sale sin el código del anuncio: con él, la segunda se descartaría como repetida. */
+  @Test
+  void elRepartoPorMarcaQuitaElCodigoDelAnuncio() {
+    ProductoExtraido jeans =
+        new ProductoExtraido(
+            true,
+            false,
+            "Pantalón estilo Diesel - Amiri importado",
+            LineaCatalogo.ROPA,
+            TipoProductoProveedor.PANTALON,
+            Dinero.deCop(125000),
+            Tallas.lista(List.of("32")),
+            null,
+            List.of(),
+            null,
+            "Un jean.",
+            null,
+            true,
+            new BigDecimal("0.9"),
+            null,
+            "Q339",
+            null,
+            null,
+            List.of("Diesel", "Amiri"));
+    LecturaDeFotos lectura =
+        new LecturaDeFotos(
+            false, List.of(conMarcas(0, List.of("Diesel")), conMarcas(1, List.of("Amiri"))), "{}");
+
+    List<ProductoRepartido> repartidos =
+        RepartoDeFotos.repartir(List.of(jeans), List.of(F1, F2), lectura);
+
+    assertEquals(2, repartidos.size());
+    assertTrue(
+        repartidos.stream().allMatch(r -> r.producto().codigoReferenciaOpcional().isEmpty()));
+  }
+
+  @Test
+  void estiloPoloSeguidoDeOtraMarcaNoSeComeLaMarca() {
+    assertEquals(
+        "Polo importado estilo Polo Ralph Lauren",
+        TituloDePolo.componer("Camiseta estilo Polo Ralph Lauren", true));
+  }
+
+  /** Una camiseta de la marca Polo no es un polo. */
+  @Test
+  void unaCamisetaDeLaMarcaPoloNoEsUnPolo() {
+    assertFalse(TituloDePolo.anunciaPolo("Camiseta Polo Ralph Lauren para caballero $60.000"));
+    assertTrue(TituloDePolo.anunciaPolo("CAMISETA POLO 1.1 ⭕ tipo polo"));
+    assertTrue(TituloDePolo.anunciaPolo("Polo AAA cuello"));
+  }
+
+  /** El «estilo» del extractor solo pide revisarla: no vuelve el título «importado». */
+  @Test
+  void elEstiloDelExtractorAlertaPeroNoCambiaElTitulo() {
+    ProductoExtraido polo =
+        extraido("Camiseta tipo polo estilo slim fit", TipoProductoProveedor.POLO, false, null)
+            .contrastadoCon("Camiseta tipo polo slim fit $45.000");
+
+    assertTrue(polo.esReplica(), "se revisa");
+    assertEquals("Polo estilo slim fit", polo.titulo(), "pero el texto no dijo importado");
+  }
 }

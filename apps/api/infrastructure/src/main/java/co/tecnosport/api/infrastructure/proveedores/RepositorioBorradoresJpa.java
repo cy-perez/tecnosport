@@ -114,7 +114,11 @@ public class RepositorioBorradoresJpa implements RepositorioBorradores {
         .map(
             f ->
                 new AnuncioEnRevision(
-                    f.getBorradorId(), f.getTexto(), fotosDe(f), f.getDeChatDeCaballero()))
+                    f.getBorradorId(),
+                    f.getTexto(),
+                    fotosDe(f),
+                    f.getDeChatDeCaballero(),
+                    f.getPublicacionId()))
         .toList();
   }
 
@@ -258,8 +262,7 @@ public class RepositorioBorradoresJpa implements RepositorioBorradores {
             f.getProductoId(),
             f.getMotivoRechazo(),
             f.getCreadoEn());
-    borrador.anotarDiseno(f.getDiseno());
-    return borrador;
+    return BorradorProducto.conDiseno(borrador, f.getDiseno());
   }
 
   private static String unir(List<String> valores) {

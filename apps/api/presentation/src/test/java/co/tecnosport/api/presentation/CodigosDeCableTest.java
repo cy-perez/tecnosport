@@ -36,6 +36,7 @@ import co.tecnosport.api.application.pedido.RetiroEnPuntoNoDisponibleException;
 import co.tecnosport.api.application.proveedores.ArchivoDeIngestaEnUsoException;
 import co.tecnosport.api.application.proveedores.ArchivoDeIngestaNoEncontradoException;
 import co.tecnosport.api.application.proveedores.AtributoDeCatalogoNoDefinidoException;
+import co.tecnosport.api.application.proveedores.BorradorConFotosSubidasException;
 import co.tecnosport.api.application.proveedores.BorradorNoEditableException;
 import co.tecnosport.api.application.proveedores.BorradorNoEliminableException;
 import co.tecnosport.api.application.proveedores.BorradorNoEncontradoException;
@@ -52,6 +53,7 @@ import co.tecnosport.api.application.proveedores.ImagenDeProveedorIlegibleExcept
 import co.tecnosport.api.application.proveedores.LoteEnCursoException;
 import co.tecnosport.api.application.proveedores.LoteEnOtroEstadoException;
 import co.tecnosport.api.application.proveedores.LoteNoEncontradoException;
+import co.tecnosport.api.application.proveedores.OtraIngestaDelProveedorEnCursoException;
 import co.tecnosport.api.application.proveedores.PrendaIncoherenteException;
 import co.tecnosport.api.application.proveedores.ProductoDeProveedorYaExisteException;
 import co.tecnosport.api.application.proveedores.ProveedorConIngestaEnCursoException;
@@ -59,6 +61,7 @@ import co.tecnosport.api.application.proveedores.ProveedorConProductosException;
 import co.tecnosport.api.application.proveedores.ProveedorDeListasException;
 import co.tecnosport.api.application.proveedores.ProveedorInactivoException;
 import co.tecnosport.api.application.proveedores.ProveedorNoEncontradoException;
+import co.tecnosport.api.application.proveedores.TallasDeCadaTonoDesconocidasException;
 import co.tecnosport.api.application.proveedores.TipoDeExportacionNoAdmitidoException;
 import co.tecnosport.api.application.proveedores.tecnologia.ListaDeTecnologiaDesactualizadaException;
 import co.tecnosport.api.application.proveedores.tecnologia.ListaDeTecnologiaYaImportadaException;
@@ -210,6 +213,12 @@ class CodigosDeCableTest {
           Map.entry(
               ArchivoDeIngestaNoEncontradoException.class, "ARCHIVO_DE_INGESTA_NO_ENCONTRADO"),
           Map.entry(LoteEnOtroEstadoException.class, "LOTE_EN_OTRO_ESTADO"),
+          // 11 de octubre de 2026: el panel de ingestas y el de borradores traducen estos tres.
+          Map.entry(
+              OtraIngestaDelProveedorEnCursoException.class, "OTRA_INGESTA_DEL_PROVEEDOR_EN_CURSO"),
+          Map.entry(BorradorConFotosSubidasException.class, "BORRADOR_CON_FOTOS_SUBIDAS"),
+          Map.entry(
+              TallasDeCadaTonoDesconocidasException.class, "TALLAS_DE_CADA_TONO_DESCONOCIDAS"),
           Map.entry(MarcaYaExisteException.class, "MARCA_YA_EXISTE"));
 
   @Test

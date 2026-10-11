@@ -248,7 +248,7 @@ public final class RepartoDeFotos {
       }
       repartidos.add(
           new ProductoRepartido(
-              producto.conMarca(marca.getKey()),
+              producto.conMarca(marca.getKey()).sinCodigo(),
               propias,
               new FotosDelProducto(
                   ajenas(fotos, propias),

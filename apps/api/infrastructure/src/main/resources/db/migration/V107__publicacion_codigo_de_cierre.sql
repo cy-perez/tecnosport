@@ -35,6 +35,11 @@ update publicacion_proveedor set codigo_motivo = 'ERROR_AL_RESOLVER',
        dato_motivo = substring(motivo from '^Error inesperado \((.*)\)\.$')
  where codigo_motivo is null and estado = 'ERROR' and motivo like 'Error inesperado (%';
 update publicacion_proveedor set codigo_motivo = 'EXTRACCION_FALLIDA'
+ where codigo_motivo is null and estado = 'ERROR'
+   and (motivo like 'La API %' or motivo like 'El extractor %' or motivo like 'El lector de fotos %');
+-- El resto de las fallidas las tumbo una regla del dominio al resolverlas: ExcepcionDeDominio y
+-- ExportacionIlegibleException guardaban su mensaje tal cual, sin el "Error inesperado".
+update publicacion_proveedor set codigo_motivo = 'ERROR_AL_RESOLVER'
  where codigo_motivo is null and estado = 'ERROR';
 
 update publicacion_proveedor set codigo_motivo = 'DESCONOCIDO'

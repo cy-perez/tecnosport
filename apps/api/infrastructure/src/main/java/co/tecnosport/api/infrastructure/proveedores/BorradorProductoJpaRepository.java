@@ -74,7 +74,8 @@ public interface BorradorProductoJpaRepository
                      and mm.phash is not null
                      and (b.fotos_descartadas is null
                           or position(mm.id::text in b.fotos_descartadas) = 0)) as phashes,
-                 l.chat_de_caballero as deChatDeCaballero
+                 l.chat_de_caballero as deChatDeCaballero,
+                 p.id as publicacionId
             from borrador_producto b
             join publicacion_proveedor p on p.id = b.publicacion_id
             join mensaje_proveedor m on m.id = p.mensaje_principal_id
@@ -96,6 +97,8 @@ public interface BorradorProductoJpaRepository
     String getPhashes();
 
     boolean getDeChatDeCaballero();
+
+    UUID getPublicacionId();
   }
 
   /** Lo que el pHash necesita de un borrador que ya es producto. */

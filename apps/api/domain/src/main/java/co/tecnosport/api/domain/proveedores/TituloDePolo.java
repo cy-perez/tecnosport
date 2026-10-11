@@ -19,19 +19,24 @@ import java.util.regex.Pattern;
 public final class TituloDePolo {
 
   /**
-   * Lo que en el texto de un mayorista anuncia un polo y no una camiseta: «tipo polo», «camiseta
-   * polo», «cuello polo», «NUEVA POLO 1.1». «Polo» solo, no: puede ser la marca.
+   * Lo que en el texto de un mayorista anuncia un polo y no una camiseta: «tipo polo», «cuello
+   * polo», «NUEVA POLO 1.1», «POLO AAA». «Camiseta Polo» o «Polo para caballero», no: pueden ser
+   * una camiseta de la marca Polo.
    */
   private static final Pattern ANUNCIA_POLO =
       Pattern.compile(
-          "(?<!\\p{L})(?:tipo|cuello|camisetas?|camisas?|nuevas?)\\s+polos?(?!\\p{L})"
-              + "|(?<!\\p{L})polos?\\s+(?:1\\.1|aaa?|para)(?!\\p{L})",
+          "(?<!\\p{L})(?:tipo|cuello|nuevas?)\\s+polos?(?!\\p{L})"
+              + "|(?<!\\p{L})polos?\\s+(?:1\\.1|aaa?)(?![\\p{L}\\d])",
           Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE);
 
-  /** La prenda al comienzo del título: «Camiseta estilo Polo», «Camisa tipo polo», «Polo». */
+  /**
+   * La prenda al comienzo del título: «Camisa tipo polo», «Camiseta polo», «Camiseta», «Polo».
+   * «estilo Polo» no: lo que sigue a «estilo» es la marca, y si es solo «Polo» la quita {@link
+   * #componer}; si es «Polo Ralph Lauren», se queda.
+   */
   private static final Pattern PRENDA_AL_COMIENZO =
       Pattern.compile(
-          "^(?:(?:camisetas?|camisas?)(?:\\s+(?:tipo|estilo))?\\s+polos?|camisetas?|camisas?|polos?)"
+          "^(?:(?:camisetas?|camisas?)(?:\\s+tipo)?\\s+polos?|camisetas?|camisas?|polos?)"
               + "(?!\\p{L})",
           Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE);
 

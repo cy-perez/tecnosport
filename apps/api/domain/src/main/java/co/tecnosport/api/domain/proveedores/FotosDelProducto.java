@@ -21,7 +21,7 @@ public record FotosDelProducto(
   public FotosDelProducto {
     ajenas = ajenas == null ? Set.of() : Set.copyOf(ajenas);
     tonosSugeridos = tonosSugeridos == null ? Map.of() : Map.copyOf(tonosSugeridos);
-    diseno = diseno == null || diseno.isBlank() ? null : diseno.strip();
+    diseno = BorradorProducto.etiquetaDeDiseno(diseno);
   }
 
   public FotosDelProducto(Set<UUID> ajenas, Map<UUID, String> tonosSugeridos, String lecturaCruda) {

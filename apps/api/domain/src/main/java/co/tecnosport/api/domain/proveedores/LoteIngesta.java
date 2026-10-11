@@ -343,7 +343,11 @@ public final class LoteIngesta {
    * Las publicaciones que quedaron en {@code ERROR} vuelven a intentarse: el lote terminado vuelve
    * a la cola sin ellas en el resumen, y el tramo que las procese cuenta lo que salga. Es la única
    * vez que un resumen terminado cambia, y es a pedido: alguien vio las fallidas en el panel y
-   * pidió reintentarlas. Los reintentos de tramo vuelven a cero, porque es otro trabajo.
+   * pidió reintentarlas.
+   *
+   * <p><b>Los reintentos no vuelven a cero.</b> Son también el testigo con que un tramo sabe que el
+   * lote sigue siendo suyo ({@code ProcesarLoteDeIngesta#esMio}): bajarlo dejaría que un tramo
+   * congelado de antes, con el mismo número, se creyera dueño otra vez y escribiera encima.
    */
   public void reabrirFallidas(Instant ahora) {
     Objects.requireNonNull(ahora, "La fecha no puede ser nula.");
@@ -357,7 +361,6 @@ public final class LoteIngesta {
     this.resumen = resumen.sinFallidas();
     this.estado = EstadoLote.RECIBIDO;
     this.terminadoEn = null;
-    this.reintentos = 0;
     this.latidoEn = ahora;
   }
 
@@ -373,6 +376,9 @@ public final class LoteIngesta {
    */
   public void pedirDetencion(Instant ahora) {
     if (estado == EstadoLote.RECIBIDO || estado == EstadoLote.PAUSADO) {
+      // El motivo de una pausa por fallo decía «arregla la cuenta y reanuda»: detenido ya no
+      // aplica.
+      this.fallo = null;
       this.estado = EstadoLote.DETENIDO;
       this.terminadoEn = Objects.requireNonNull(ahora, "La fecha de fin no puede ser nula.");
       return;
@@ -390,6 +396,7 @@ public final class LoteIngesta {
           "Solo se suelta un lote al que se le pidió detenerse; este está " + estado + ".");
     }
     this.resumen = Objects.requireNonNull(resumenParcial, "Un lote detenido dice qué alcanzó.");
+    this.fallo = null;
     this.estado = EstadoLote.DETENIDO;
     this.terminadoEn = Objects.requireNonNull(ahora, "La fecha de fin no puede ser nula.");
   }

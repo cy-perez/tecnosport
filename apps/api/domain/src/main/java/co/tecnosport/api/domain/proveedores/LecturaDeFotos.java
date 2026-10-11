@@ -151,13 +151,27 @@ public record LecturaDeFotos(boolean albumDeDisenos, List<LecturaDeFoto> fotos, 
           marcas);
     }
 
-    /** Si en la foto se lee esta marca. Sin mayúsculas, espacios ni signos: «A|X» es «ax». */
+    /**
+     * Si en la foto se lee esta marca. Sin mayúsculas, espacios ni signos: «A|X» es «ax». Una forma
+     * corta solo vale entera: «ck» está dentro de «jackjones», y una foto de Calvin Klein caía en
+     * el borrador de Jack &amp; Jones. Que una contenga a la otra —«Dsquared2» y «Dsq»— solo cuenta
+     * cuando la más corta tiene {@value #CONTENCION_MINIMA} caracteres o más.
+     */
     public boolean muestraMarca(String marca) {
       String buscada = compactar(marca);
       return !buscada.isEmpty()
           && marcas.stream()
               .map(LecturaDeFoto::compactar)
-              .anyMatch(m -> !m.isEmpty() && (m.contains(buscada) || buscada.contains(m)));
+              .filter(m -> !m.isEmpty())
+              .anyMatch(m -> m.equals(buscada) || seContienen(m, buscada));
+    }
+
+    private static final int CONTENCION_MINIMA = 4;
+
+    private static boolean seContienen(String una, String otra) {
+      String corta = una.length() <= otra.length() ? una : otra;
+      String larga = corta == una ? otra : una;
+      return corta.length() >= CONTENCION_MINIMA && larga.contains(corta);
     }
 
     private static String compactar(String marca) {

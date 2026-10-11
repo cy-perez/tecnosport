@@ -42,19 +42,24 @@ public final class UnirBorradores {
     if (Objects.equals(destinoId, otroId)) {
       throw new ExcepcionDeDominio("Un borrador no se une consigo mismo.");
     }
-    BorradorProducto destino =
-        repositorioBorradores
-            .buscarPorIdParaActualizar(destinoId)
-            .orElseThrow(() -> new BorradorNoEncontradoException(destinoId));
-    BorradorProducto otro =
-        repositorioBorradores
-            .buscarPorIdParaActualizar(otroId)
-            .orElseThrow(() -> new BorradorNoEncontradoException(otroId));
+    // Se bloquean en el orden de sus ids: dos pestañas que unan A con B y B con A a la vez se
+    // esperan en vez de bloquearse una a la otra.
+    boolean destinoPrimero = destinoId.compareTo(otroId) < 0;
+    BorradorProducto primero = bloquear(destinoPrimero ? destinoId : otroId);
+    BorradorProducto segundo = bloquear(destinoPrimero ? otroId : destinoId);
+    BorradorProducto destino = destinoPrimero ? primero : segundo;
+    BorradorProducto otro = destinoPrimero ? segundo : primero;
     if (destino.estado() != EstadoBorrador.EN_REVISION) {
       throw new BorradorNoEditableException(destino.estado());
     }
     if (otro.estado() != EstadoBorrador.EN_REVISION) {
       throw new BorradorNoEditableException(otro.estado());
+    }
+    if (!otro.fotosSubidas().isEmpty()) {
+      throw new BorradorConFotosSubidasException();
+    }
+    if (!destino.tallasDeCadaTonoSeSaben(otro)) {
+      throw new TallasDeCadaTonoDesconocidasException();
     }
     PublicacionProveedor publicacion =
         repositorioPublicaciones
@@ -67,5 +72,11 @@ public final class UnirBorradores {
     repositorioBorradores.actualizar(destino);
     repositorioBorradores.eliminar(otroId);
     return destino;
+  }
+
+  private BorradorProducto bloquear(UUID id) {
+    return repositorioBorradores
+        .buscarPorIdParaActualizar(id)
+        .orElseThrow(() -> new BorradorNoEncontradoException(id));
   }
 }

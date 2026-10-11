@@ -306,9 +306,31 @@ public final class BorradorProducto {
     return borrador;
   }
 
-  /** La etiqueta de diseño del lector. El adaptador la usa para devolverlo como estaba guardado. */
-  public void anotarDiseno(String diseno) {
-    this.diseno = diseno == null || diseno.isBlank() ? null : diseno.strip();
+  /** Lo que cabe en la columna: el modelo no tiene tope para la etiqueta. */
+  static final int LARGO_MAXIMO_DEL_DISENO = 120;
+
+  /**
+   * La etiqueta de diseño del lector. Solo la ponen la creación del borrador y el adaptador, para
+   * devolverlo como estaba guardado: no es algo que un caso de uso decida.
+   */
+  void anotarDiseno(String diseno) {
+    this.diseno = etiquetaDeDiseno(diseno);
+  }
+
+  /** Para el adaptador, que vive en otro paquete. */
+  public static BorradorProducto conDiseno(BorradorProducto borrador, String diseno) {
+    borrador.anotarDiseno(diseno);
+    return borrador;
+  }
+
+  static String etiquetaDeDiseno(String diseno) {
+    if (diseno == null || diseno.isBlank()) {
+      return null;
+    }
+    String limpia = diseno.strip();
+    return limpia.length() <= LARGO_MAXIMO_DEL_DISENO
+        ? limpia
+        : limpia.substring(0, LARGO_MAXIMO_DEL_DISENO).strip();
   }
 
   public Optional<String> diseno() {
@@ -352,8 +374,25 @@ public final class BorradorProducto {
       throw new ExcepcionDeDominio(
           "El otro borrador tiene fotos subidas desde el panel: súbelas en este antes de unirlos.");
     }
+    if (!tallasDeCadaTonoSeSaben(otro)) {
+      throw new ExcepcionDeDominio(
+          "Las tallas no son las mismas y uno de los dos no dice sus tonos: no se sabría qué talla"
+              + " tiene cada color.");
+    }
     List<String> tonosDeEste = tonosConocidos();
     List<String> tonosDelOtro = otro.tonosConocidos();
+    boolean porTono =
+        !tallas.equals(otro.tallas)
+            || !tallasPorTono.estaVacia()
+            || !otro.tallasPorTono.estaVacia();
+    if (porTono && !tonosDeEste.isEmpty() && !tonosDelOtro.isEmpty()) {
+      Map<String, List<String>> tallasDe = new LinkedHashMap<>();
+      tallasPorTonoDe(tonosDeEste).forEach((t, v) -> juntar(tallasDe, t, v));
+      otro.tallasPorTonoDe(tonosDelOtro).forEach((t, v) -> juntar(tallasDe, t, v));
+      List<TallasPorTono.TallasDeUnTono> lista = new ArrayList<>();
+      tallasDe.forEach((t, v) -> lista.add(new TallasPorTono.TallasDeUnTono(t, v)));
+      this.tallasPorTono = new TallasPorTono(lista);
+    }
     for (UUID foto : fotosDeLaPublicacion) {
       if (!otro.fotosDescartadas.contains(foto) && fotosDescartadas.remove(foto)) {
         String tono = otro.tonosSugeridos.get(foto);
@@ -374,18 +413,6 @@ public final class BorradorProducto {
             });
     List<String> unidos = new ArrayList<>(tonosDeEste);
     tonosDelOtro.stream().filter(t -> !unidos.contains(t)).forEach(unidos::add);
-    if (!tallas.equals(otro.tallas)
-        && tallasPorTono.estaVacia()
-        && otro.tallasPorTono.estaVacia()
-        && !tonosDeEste.isEmpty()
-        && !tonosDelOtro.isEmpty()) {
-      List<TallasPorTono.TallasDeUnTono> porTono = new ArrayList<>();
-      tonosDeEste.forEach(t -> porTono.add(new TallasPorTono.TallasDeUnTono(t, tallas.valores())));
-      tonosDelOtro.stream()
-          .filter(t -> !tonosDeEste.contains(t))
-          .forEach(t -> porTono.add(new TallasPorTono.TallasDeUnTono(t, otro.tallas.valores())));
-      this.tallasPorTono = new TallasPorTono(porTono);
-    }
     if (!tallas.equals(otro.tallas)
         && tallas.tipo() == TipoDeTalla.LISTA
         && otro.tallas.tipo() == TipoDeTalla.LISTA) {
@@ -408,6 +435,34 @@ public final class BorradorProducto {
     if (!sinNinguna) {
       alertas.remove(AlertaBorrador.SIN_FOTOS);
     }
+  }
+
+  /**
+   * ¿Se puede saber qué tallas tiene cada color de los dos? Con las mismas tallas y sin tallas por
+   * tono no hace falta; si no, los dos tienen que decir sus tonos: unir un crema en L y XL con uno
+   * que no dice su color, en M, publicaría un crema M que no existe.
+   */
+  public boolean tallasDeCadaTonoSeSaben(BorradorProducto otro) {
+    boolean hace =
+        !tallas.equals(otro.tallas)
+            || !tallasPorTono.estaVacia()
+            || !otro.tallasPorTono.estaVacia();
+    return !hace || (!tonosConocidos().isEmpty() && !otro.tonosConocidos().isEmpty());
+  }
+
+  /** Las tallas de cada uno de sus tonos: las de sus tallas por tono, o todas las suyas. */
+  private Map<String, List<String>> tallasPorTonoDe(List<String> tonos) {
+    Map<String, List<String>> porTono = new LinkedHashMap<>();
+    for (String tono : tonos) {
+      porTono.put(tono, tallasPorTono.tallasDe(tono).orElse(tallas.valores()));
+    }
+    return porTono;
+  }
+
+  private static void juntar(Map<String, List<String>> tallasDe, String tono, List<String> mas) {
+    List<String> ya = new ArrayList<>(tallasDe.getOrDefault(tono, List.of()));
+    mas.stream().filter(t -> !ya.contains(t)).forEach(ya::add);
+    tallasDe.put(tono, List.copyOf(ya));
   }
 
   /** Los tonos que nombra, o si no nombra ninguno, los que sugirió la lectura de sus fotos. */
@@ -637,7 +692,8 @@ public final class BorradorProducto {
             null,
             null,
             ahora);
-    nuevo.anotarDiseno(diseno);
+    // Sin la etiqueta: quien parte dice que no son el mismo producto, y el panel no tiene por qué
+    // sugerirle volver a unirlos.
     fotosDescartadas.addAll(queSeVan);
     queSeVan.forEach(tonosSugeridos::remove);
     this.pHash = null;

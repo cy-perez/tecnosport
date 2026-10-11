@@ -221,10 +221,11 @@ public record ProductoExtraido(
    * anuncio que vende polos es un polo, con el título de un polo ({@link TituloDePolo}).
    */
   public ProductoExtraido contrastadoCon(String texto) {
+    // La que el texto confirma decide el título; la que solo sale del «estilo» del extractor, solo
+    // la alerta: «Camiseta tipo polo estilo slim fit» no se vuelve «importado» por eso.
     boolean replica =
-        PatronDeReplica.esReplica(texto)
-            || (esReplica && PatronDeReplica.diceReplica(texto))
-            || PatronDeReplica.nombraMarcaConEstilo(titulo);
+        PatronDeReplica.esReplica(texto) || (esReplica && PatronDeReplica.diceReplica(texto));
+    boolean paraRevisar = replica || PatronDeReplica.nombraMarcaConEstilo(titulo);
     TipoProductoProveedor tipoContrastado =
         (tipo == TipoProductoProveedor.CAMISETA || tipo == TipoProductoProveedor.OTRO)
                 && TituloDePolo.anunciaPolo(texto)
@@ -247,7 +248,7 @@ public record ProductoExtraido(
         material,
         descripcion,
         altEn,
-        replica,
+        paraRevisar,
         confianza,
         notas,
         codigoEscritoEn(texto),
@@ -329,10 +330,44 @@ public record ProductoExtraido(
         marcas);
   }
 
+  /**
+   * «estilo» y la lista de marcas, hasta lo que ya no es marca: «importado», «para caballero», «de
+   * dama», «con capota», o el final. «Pantalón estilo Diesel - Amiri para caballero» con Amiri es
+   * «Pantalón estilo Amiri para caballero», no «Pantalón estilo Amiri».
+   */
   private static final Pattern ESTILO_HASTA_IMPORTADO =
       Pattern.compile(
-          "(?<!\\p{L})estilo\\s+.*?(?=\\s+importad[oa]s?(?!\\p{L})|$)",
+          "(?<!\\p{L})estilo\\s+.*?(?=\\s+(?:importad[oa]s?|para|de|del|con|en|tipo|manga|talla)"
+              + "(?!\\p{L})|$)",
           Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE);
+
+  /**
+   * Este mismo producto sin código de referencia. Para los borradores de un anuncio de varias
+   * marcas: el código del texto es del anuncio entero, y con el mismo código el de la segunda marca
+   * se descartaría por «la misma referencia» que el de la primera.
+   */
+  public ProductoExtraido sinCodigo() {
+    return new ProductoExtraido(
+        esProducto,
+        estaAgotado,
+        titulo,
+        linea,
+        tipo,
+        precioProveedor,
+        tallas,
+        cantidadTonos,
+        tonosNombrados,
+        material,
+        descripcion,
+        altEn,
+        esReplica,
+        confianza,
+        notas,
+        null,
+        tallasPorTono,
+        preciosAdicionales,
+        marcas);
+  }
 
   private static String tituloConMarca(String titulo, String marca) {
     if (titulo == null) {

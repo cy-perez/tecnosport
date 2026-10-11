@@ -549,4 +549,28 @@ class LoteIngestaTest {
     sinFallidas.terminar(RESUMEN, T2);
     assertThrows(ExcepcionDeDominio.class, () -> sinFallidas.reabrirFallidas(T2));
   }
+
+  /** Los reintentos son el testigo del trabajador: reabrir no los baja. */
+  @Test
+  void reabrirLasFallidasNoBajaLosReintentos() {
+    LoteIngesta lote = procesando();
+    lote.restaurarReintentos(2);
+    lote.terminar(new ResumenIngesta(10, 0, 10, 2, 1, 0, 0, 0, 0, 1), T2);
+
+    lote.reabrirFallidas(T2);
+
+    assertEquals(2, lote.reintentos());
+  }
+
+  /** Detenido, el «arregla la cuenta y reanuda» ya no aplica. */
+  @Test
+  void detenerUnoPausadoPorFalloLeQuitaElMotivo() {
+    LoteIngesta lote = procesando();
+    lote.pausarPorFallo(FalloDeLote.de(MotivoDeFalloDeLote.EXTRACTOR_NO_DISPONIBLE), RESUMEN);
+
+    lote.pedirDetencion(T2);
+
+    assertEquals(EstadoLote.DETENIDO, lote.estado());
+    assertEquals(Optional.empty(), lote.fallo());
+  }
 }

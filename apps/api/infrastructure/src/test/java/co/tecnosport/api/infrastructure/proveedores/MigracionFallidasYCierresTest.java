@@ -142,6 +142,7 @@ class MigracionFallidasYCierresTest {
             "Es el mismo anuncio, con la misma foto, de un borrador que ya está en revisión.");
     UUID sinSaldo = publicacion("ERROR", "La API respondió 400: Your credit balance is too low.");
     UUID inesperado = publicacion("ERROR", "Error inesperado (NullPointerException).");
+    UUID deDominio = publicacion("ERROR", "La talla no puede estar vacia.");
     UUID raro = publicacion("DESCARTADA", "Algo que nadie escribió así.");
 
     flywayHasta("107").migrate();
@@ -158,6 +159,9 @@ class MigracionFallidasYCierresTest {
         .containsEntry("codigo_motivo", "ERROR_AL_RESOLVER")
         .containsEntry("dato_motivo", "NullPointerException");
     assertThat(publicacion(raro)).containsEntry("codigo_motivo", "DESCONOCIDO");
+    assertThat(publicacion(deDominio))
+        .as("una regla del dominio al resolver no es la API")
+        .containsEntry("codigo_motivo", "ERROR_AL_RESOLVER");
   }
 
   @Test

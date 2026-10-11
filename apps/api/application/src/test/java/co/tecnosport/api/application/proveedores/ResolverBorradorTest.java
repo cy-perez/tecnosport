@@ -85,7 +85,8 @@ class ResolverBorradorTest {
                   .filter(e -> !b.fotosDescartadas().contains(e.getKey()))
                   .map(java.util.Map.Entry::getValue)
                   .toList(),
-              false);
+              false,
+              b.publicacionId());
         };
   }
 
@@ -758,5 +759,64 @@ class ResolverBorradorTest {
             evaluada("Camiseta estilo Prada", 50000, true, false, Set.of()));
 
     assertEquals(TipoDeResolucion.DESCARTADA, segundo.tipo());
+  }
+
+  /**
+   * «DIESEL-AMIRI» con una foto de cada logo y una sin marca legible, que va a los dos: el de Amiri
+   * no es «el mismo anuncio otra vez» que el de Diesel, aunque compartan texto y esa foto. Antes de
+   * la revisión del 11 de octubre de 2026 se descartaba y la segunda marca se perdía.
+   */
+  @Test
+  void dosMarcasDelMismoAnuncioQuedanEnDosBorradores() {
+    PublicacionProveedor publicacion =
+        conFotos("*DIESEL-AMIRI* Gama alta $125.000", FECHA_DEL_MENSAJE, "diesel", "amiri", "sin");
+    List<UUID> medios = publicacion.medios();
+    Map<UUID, PHash> pHashes = caso().pHashesDe(publicacion, mensajes);
+
+    List<Resolucion> resoluciones =
+        caso()
+            .ejecutar(
+                publicacion,
+                mensajes,
+                proveedor,
+                List.of(
+                    deUnaMarca("Pantalón estilo Diesel importado", medios.get(0), medios.get(2)),
+                    deUnaMarca("Pantalón estilo Amiri importado", medios.get(1), medios.get(2))),
+                pHashes,
+                List.of());
+
+    assertEquals(TipoDeResolucion.NUEVO, resoluciones.get(0).tipo());
+    assertEquals(TipoDeResolucion.NUEVO, resoluciones.get(1).tipo());
+    assertEquals(2, borradores.enEstado(EstadoBorrador.EN_REVISION).size());
+  }
+
+  private static ExtraccionEvaluada deUnaMarca(String titulo, UUID suya, UUID compartida) {
+    ProductoExtraido extraido =
+        new ProductoExtraido(
+            true,
+            false,
+            titulo,
+            LineaCatalogo.ROPA,
+            TipoProductoProveedor.PANTALON,
+            Dinero.deCop(125000),
+            Tallas.lista(List.of("32", "34")),
+            null,
+            List.of(),
+            null,
+            "Un jean.",
+            null,
+            true,
+            new BigDecimal("0.9"),
+            null);
+    return new ExtraccionEvaluada(
+        extraido,
+        "{}",
+        Dinero.deCop(125000),
+        Set.of(AlertaBorrador.FOTOS_COMPARTIDAS),
+        new UsoDelExtractor("falso", 1, 1, 1),
+        List.of(suya, compartida),
+        null,
+        suya,
+        true);
   }
 }

@@ -291,7 +291,7 @@ public final class ResolverBorrador {
                 sumadas == 0 ? null : String.valueOf(sumadas)));
       }
     }
-    if (codigo.isEmpty() && esAnuncioRepetido(proveedor, textoDelAnuncio, fotos)) {
+    if (codigo.isEmpty() && esAnuncioRepetido(proveedor, publicacion, textoDelAnuncio, fotos)) {
       return Resolucion.descartada(CierreDePublicacion.de(MotivoDePublicacion.ANUNCIO_REPETIDO));
     }
 
@@ -360,11 +360,17 @@ public final class ResolverBorrador {
    * alguno de los dos lados no hay cómo saberlo, y la respuesta es no.
    */
   private boolean esAnuncioRepetido(
-      Proveedor proveedor, String textoDelAnuncio, List<PHash> fotos) {
+      Proveedor proveedor,
+      PublicacionProveedor publicacion,
+      String textoDelAnuncio,
+      List<PHash> fotos) {
     if (fotos.isEmpty()) {
       return false;
     }
+    // Uno de la misma publicación no es el anuncio otra vez: es su hermano —la otra marca, el otro
+    // diseño del álbum—, y comparte las fotos que no se supo de quién eran (11 de octubre de 2026).
     return repositorioBorradores.anunciosEnRevision(proveedor.id()).stream()
+        .filter(a -> !publicacion.id().equals(a.publicacionId()))
         .filter(a -> TextoDeAnuncio.mismoAnuncio(a.texto(), textoDelAnuncio))
         .anyMatch(a -> compartenFoto(a.fotos(), fotos));
   }

@@ -197,11 +197,6 @@ public class AdminIngestaControlador {
   }
 
   /**
-   * Las publicaciones que quedaron en error vuelven a esperar al extractor y el lote vuelve a la
-   * cola; ver {@link ReintentarPublicacionesFallidas}. Se encola después de confirmar, como al
-   * reanudar, y por la misma razón: si la cola no lo acepta, la tarea de los estancados lo recoge.
-   */
-  /**
    * Las publicaciones del lote que no dejaron borrador, con su motivo; ver {@link
    * ListarPublicacionesCerradas}.
    */
@@ -210,6 +205,11 @@ public class AdminIngestaControlador {
     return listarCerradas.ejecutar(id).stream().map(PublicacionCerradaRespuesta::de).toList();
   }
 
+  /**
+   * Las publicaciones que quedaron en error vuelven a esperar al extractor y el lote vuelve a la
+   * cola; ver {@link ReintentarPublicacionesFallidas}. Se encola después de confirmar, como al
+   * reanudar, y por la misma razón: si la cola no lo acepta, la tarea de los estancados lo recoge.
+   */
   @PostMapping("/ingestas/{id}/reintentar-fallidas")
   public LoteIngestaRespuesta reintentarFallidas(@PathVariable UUID id) {
     LoteIngesta lote = transaccion.execute(estado -> reintentarFallidas.ejecutar(id));

@@ -66,6 +66,7 @@ import co.tecnosport.api.application.pedido.VarianteNoEncontradaException;
 import co.tecnosport.api.application.proveedores.ArchivoDeIngestaEnUsoException;
 import co.tecnosport.api.application.proveedores.ArchivoDeIngestaNoEncontradoException;
 import co.tecnosport.api.application.proveedores.AtributoDeCatalogoNoDefinidoException;
+import co.tecnosport.api.application.proveedores.BorradorConFotosSubidasException;
 import co.tecnosport.api.application.proveedores.BorradorNoEditableException;
 import co.tecnosport.api.application.proveedores.BorradorNoEliminableException;
 import co.tecnosport.api.application.proveedores.BorradorNoEncontradoException;
@@ -91,6 +92,7 @@ import co.tecnosport.api.application.proveedores.ProveedorConProductosException;
 import co.tecnosport.api.application.proveedores.ProveedorDeListasException;
 import co.tecnosport.api.application.proveedores.ProveedorInactivoException;
 import co.tecnosport.api.application.proveedores.ProveedorNoEncontradoException;
+import co.tecnosport.api.application.proveedores.TallasDeCadaTonoDesconocidasException;
 import co.tecnosport.api.application.proveedores.TipoDeExportacionNoAdmitidoException;
 import co.tecnosport.api.application.proveedores.TipoDeFotoNoAdmitidoException;
 import co.tecnosport.api.application.proveedores.tecnologia.InventarioDeLaListaPendienteException;
@@ -253,6 +255,23 @@ public class ManejadorDeErrores {
   @ExceptionHandler(LoteEnOtroEstadoException.class)
   public ProblemDetail loteEnOtroEstado(LoteEnOtroEstadoException excepcion) {
     return problema(HttpStatus.CONFLICT, "La ingesta cambió de estado", excepcion);
+  }
+
+  // 422: hay que subir las fotos en el que se queda antes de unir.
+  @ExceptionHandler(BorradorConFotosSubidasException.class)
+  public ProblemDetail borradorConFotosSubidas(BorradorConFotosSubidasException excepcion) {
+    return problema(
+        HttpStatus.UNPROCESSABLE_CONTENT,
+        "El borrador tiene fotos subidas desde el panel",
+        excepcion);
+  }
+
+  // 422: hay que nombrar los tonos de los dos antes de unir.
+  @ExceptionHandler(TallasDeCadaTonoDesconocidasException.class)
+  public ProblemDetail tallasDeCadaTonoDesconocidas(
+      TallasDeCadaTonoDesconocidasException excepcion) {
+    return problema(
+        HttpStatus.UNPROCESSABLE_CONTENT, "No se sabe qué talla tiene cada color", excepcion);
   }
 
   // 409: se arregla solo, esperando a que termine la otra ingesta del proveedor.
