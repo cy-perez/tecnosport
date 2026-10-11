@@ -30,7 +30,9 @@ import co.tecnosport.api.application.proveedores.SolicitarSubidaDeExportacion;
 import co.tecnosport.api.domain.catalogo.LineaCatalogo;
 import co.tecnosport.api.domain.proveedores.ArchivoDeIngesta;
 import co.tecnosport.api.domain.proveedores.EstadoLote;
+import co.tecnosport.api.domain.proveedores.FalloDeLote;
 import co.tecnosport.api.domain.proveedores.LoteIngesta;
+import co.tecnosport.api.domain.proveedores.MotivoDeFalloDeLote;
 import co.tecnosport.api.domain.proveedores.OrdenDePublicacion;
 import co.tecnosport.api.domain.proveedores.Proveedor;
 import co.tecnosport.api.domain.proveedores.ResumenIngesta;
@@ -255,7 +257,7 @@ class AdminIngestaControladorTest {
 
     LoteIngesta lote = lotes.porId.values().iterator().next();
     assertThat(lote.estado()).isEqualTo(EstadoLote.ERROR);
-    assertThat(lote.detalleError()).hasValueSatisfying(m -> assertThat(m).contains("cola"));
+    assertThat(lote.fallo()).contains(FalloDeLote.de(MotivoDeFalloDeLote.COLA_LLENA));
   }
 
   @Test

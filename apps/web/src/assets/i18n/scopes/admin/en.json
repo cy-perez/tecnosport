@@ -1123,6 +1123,24 @@
         "hecho": "{{nombre}} was deleted from storage.",
         "error": "The file could not be deleted. Try again."
       }
+    },
+    "fallos": {
+      "ZIP_INVALIDO": "The file isn't a zip that can be opened. Export the chat again from WhatsApp.",
+      "ZIP_SIN_CHAT": "The zip doesn't include the chat's .txt file. Export the chat again from WhatsApp, with or without media.",
+      "ZIP_DEMASIADO_GRANDE": "Unzipped, the file exceeds the allowed size: it doesn't look like a chat export.",
+      "NO_ES_UN_CHAT": "The text has no message with a date, time and sender: it doesn't look like a WhatsApp chat export.",
+      "FECHA_ILEGIBLE": "A date in the export couldn't be read: {{dato}}.",
+      "ESTRUCTURA_NO_ACORDADA": "The zip doesn't include the two chats agreed for this supplier.",
+      "EXPORTACION_NO_ENCONTRADA": "The export is no longer in storage. Upload it again.",
+      "SIN_ARCHIVO": "The import has no file to read.",
+      "PROVEEDOR_NO_ENCONTRADO": "This import's supplier no longer exists.",
+      "COLA_LLENA": "The import queue was full. Upload the export again.",
+      "COLA_NO_DISPONIBLE": "We couldn't add the import to the queue. Upload the export again in a few minutes.",
+      "SIN_REINTENTOS": "Processing was interrupted several times without finishing. To process all of it, delete the import and upload the export again: uploading it without deleting it won't read again what was already recorded.",
+      "SIN_REINTENTOS_CON_CAUSA": "Processing was interrupted several times without finishing. The last failure: {{ultimo}} To process all of it, delete the import and upload the export again: uploading it without deleting it won't read again what was already recorded.",
+      "REINICIO": "The application restarted while the import was being processed. To process all of it, delete the import and upload the export again: uploading it without deleting it won't read again what was already recorded.",
+      "ERROR_INESPERADO": "It failed because of an unexpected program error. Delete the import and upload the export again; if it happens again, the server log says what it was.",
+      "DESCONOCIDO": "The import failed."
     }
   },
   "tecnologia": {

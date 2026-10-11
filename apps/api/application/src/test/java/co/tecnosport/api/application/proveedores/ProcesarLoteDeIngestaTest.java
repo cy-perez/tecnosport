@@ -28,7 +28,9 @@ import co.tecnosport.api.domain.proveedores.ChatDelZip;
 import co.tecnosport.api.domain.proveedores.EstadoBorrador;
 import co.tecnosport.api.domain.proveedores.EstadoLote;
 import co.tecnosport.api.domain.proveedores.EstadoPublicacionProveedor;
+import co.tecnosport.api.domain.proveedores.FalloDeLote;
 import co.tecnosport.api.domain.proveedores.LoteIngesta;
+import co.tecnosport.api.domain.proveedores.MotivoDeFalloDeLote;
 import co.tecnosport.api.domain.proveedores.PatronDePrecio;
 import co.tecnosport.api.domain.proveedores.ProductoExtraido;
 import co.tecnosport.api.domain.proveedores.Proveedor;
@@ -351,7 +353,10 @@ class ProcesarLoteDeIngestaTest {
    */
   @Test
   void unArchivoIlegibleDejaElLoteEnErrorConElMotivoYNoSeReintenta() {
-    FuenteFija fuente = new FuenteFija(new ExportacionIlegibleException("El zip no trae .txt."));
+    FuenteFija fuente =
+        new FuenteFija(
+            new ExportacionIlegibleException(
+                MotivoDeFalloDeLote.ZIP_SIN_CHAT, "El zip no trae .txt."));
     ProcesarLoteDeIngesta caso = casoCon(fuente, extractorDelAnexo());
 
     TramoFallidoException fallo =
@@ -363,7 +368,10 @@ class ProcesarLoteDeIngestaTest {
 
     LoteIngesta guardado = lotes.buscarPorId(lote.id()).orElseThrow();
     assertEquals(EstadoLote.ERROR, guardado.estado());
-    assertEquals(Optional.of("El zip no trae .txt."), guardado.detalleError());
+    assertEquals(
+        Optional.of(FalloDeLote.de(MotivoDeFalloDeLote.ZIP_SIN_CHAT)),
+        guardado.fallo(),
+        "el código, no la frase: la frase va al registro");
   }
 
   /**
@@ -381,9 +389,10 @@ class ProcesarLoteDeIngestaTest {
     assertFalse(fallo.reintentar(), "al final, ya no");
     assertEquals(LoteIngesta.MAXIMO_DE_REINTENTOS + 1, fuente.lecturas);
 
-    String detalle = lotes.buscarPorId(lote.id()).orElseThrow().detalleError().orElseThrow();
-    assertTrue(detalle.contains("Error inesperado"), detalle);
-    assertTrue(!detalle.contains("Cannot invoke"), detalle);
+    assertEquals(
+        Optional.of(new FalloDeLote(MotivoDeFalloDeLote.SIN_REINTENTOS, "ERROR_INESPERADO")),
+        lotes.buscarPorId(lote.id()).orElseThrow().fallo(),
+        "el código del último fallo, sin el mensaje crudo");
   }
 
   @Test
@@ -659,13 +668,14 @@ class ProcesarLoteDeIngestaTest {
   void unLoteQueOtroCerroNoSigueNiSeEscribe() {
     conCopias();
     ExtractorDeProductos extractor =
-        extractorQueEnLaLlamada(1, () -> enElPanel(l -> l.fallar("reinicio", AHORA)));
+        extractorQueEnLaLlamada(
+            1, () -> enElPanel(l -> l.fallar(FalloDeLote.de(MotivoDeFalloDeLote.REINICIO), AHORA)));
 
     LoteIngesta resultado =
         casoCon(new FuenteFija(comoChat(losNueveDelCriterio())), extractor).ejecutar(lote.id());
 
     assertEquals(EstadoLote.ERROR, resultado.estado());
-    assertEquals(Optional.of("reinicio"), resultado.detalleError());
+    assertEquals(Optional.of(FalloDeLote.de(MotivoDeFalloDeLote.REINICIO)), resultado.fallo());
     assertEquals(1, borradores.porId.size(), "la publicación en curso y ninguna más");
   }
 
@@ -677,7 +687,7 @@ class ProcesarLoteDeIngestaTest {
         extractorQueEnLaLlamada(
             1,
             () -> {
-              enElPanel(l -> l.fallar("reinicio", AHORA));
+              enElPanel(l -> l.fallar(FalloDeLote.de(MotivoDeFalloDeLote.REINICIO), AHORA));
               lotes.eliminarConSuHistorial(lote.id());
             });
 

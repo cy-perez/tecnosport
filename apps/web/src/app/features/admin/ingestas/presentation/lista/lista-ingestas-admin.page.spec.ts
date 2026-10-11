@@ -45,7 +45,8 @@ function loteDePrueba(overrides: Partial<LoteIngesta> = {}): LoteIngesta {
       descartes: 0,
       alertas: 2,
     },
-    detalleError: null,
+    codigoError: null,
+    datoError: null,
     ...overrides,
   };
 }
@@ -250,12 +251,41 @@ describe('ListaIngestasAdminPage', () => {
     expect(screen.getByText('9 borradores nuevos, 0 renovaciones, 0 agotados')).toBeTruthy();
   });
 
-  it('un lote con error muestra el detalle', async () => {
+  /** El servidor manda un código; el panel lo dice en su idioma (regla dura 4). */
+  it('un lote con error muestra el motivo traducido, con su dato', async () => {
     await renderPagina([
-      loteDePrueba({ estado: 'ERROR', detalleError: 'La exportación no trae el .txt del chat.' }),
+      loteDePrueba({ id: 'a', estado: 'ERROR', codigoError: 'ZIP_SIN_CHAT' }),
+      loteDePrueba({
+        id: 'b',
+        estado: 'ERROR',
+        codigoError: 'FECHA_ILEGIBLE',
+        datoError: '31/2/26',
+      }),
     ]);
 
-    expect(await screen.findByText('La exportación no trae el .txt del chat.')).toBeTruthy();
+    expect(await screen.findByText(esAdmin.ingestas.fallos.ZIP_SIN_CHAT)).toBeTruthy();
+    expect(
+      screen.getByText(esAdmin.ingestas.fallos.FECHA_ILEGIBLE.replace('{{dato}}', '31/2/26')),
+    ).toBeTruthy();
+  });
+
+  it('sin reintentos, el motivo nombra el último fallo, traducido', async () => {
+    await renderPagina([
+      loteDePrueba({
+        estado: 'ERROR',
+        codigoError: 'SIN_REINTENTOS',
+        datoError: 'ERROR_INESPERADO',
+      }),
+    ]);
+
+    expect(
+      await screen.findByText(
+        esAdmin.ingestas.fallos.SIN_REINTENTOS_CON_CAUSA.replace(
+          '{{ultimo}}',
+          esAdmin.ingestas.fallos.ERROR_INESPERADO,
+        ),
+      ),
+    ).toBeTruthy();
   });
 
   it('sin proveedor ni archivo dice qué falta y no sube nada', async () => {

@@ -6,6 +6,7 @@ import co.tecnosport.api.application.proveedores.ExportacionIlegibleException;
 import co.tecnosport.api.application.proveedores.FuenteDeMensajes;
 import co.tecnosport.api.domain.compartido.ExcepcionDeDominio;
 import co.tecnosport.api.domain.proveedores.ChatDelZip;
+import co.tecnosport.api.domain.proveedores.MotivoDeFalloDeLote;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
@@ -67,6 +68,7 @@ public final class ExportacionChatWhatsApp implements FuenteDeMensajes {
             .orElseThrow(
                 () ->
                     new ExportacionIlegibleException(
+                        MotivoDeFalloDeLote.EXPORTACION_NO_ENCONTRADA,
                         "La exportación ya no está en el almacén: " + referenciaArchivo));
     Contenido contenido = descomprimir(zip, chat);
     AnalizadorDeExportacionWhatsApp analizador =
@@ -129,6 +131,7 @@ public final class ExportacionChatWhatsApp implements FuenteDeMensajes {
           total += bytes.length;
           if (total > maximoBytesDescomprimidos) {
             throw new ExportacionIlegibleException(
+                MotivoDeFalloDeLote.ZIP_DEMASIADO_GRANDE,
                 "El zip descomprimido pasa del tope permitido; no parece una exportación de chat.");
           }
           String nombre = nombreBase(entry.getName());
@@ -140,12 +143,14 @@ public final class ExportacionChatWhatsApp implements FuenteDeMensajes {
         }
       }
     } catch (IOException e) {
-      throw new ExportacionIlegibleException("El archivo no es un zip que se pueda abrir.", e);
+      throw new ExportacionIlegibleException(
+          MotivoDeFalloDeLote.ZIP_INVALIDO, "El archivo no es un zip que se pueda abrir.", e);
     } finally {
       borrar(temporal);
     }
     if (textos.isEmpty()) {
       throw new ExportacionIlegibleException(
+          MotivoDeFalloDeLote.ZIP_SIN_CHAT,
           "El zip no trae ningún archivo .txt con el chat. Exporta el chat de nuevo desde"
               + " WhatsApp, con o sin archivos.");
     }
@@ -165,7 +170,8 @@ public final class ExportacionChatWhatsApp implements FuenteDeMensajes {
     try {
       return chat.elegir(List.copyOf(textos.keySet()));
     } catch (ExcepcionDeDominio e) {
-      throw new ExportacionIlegibleException(e.getMessage(), e);
+      throw new ExportacionIlegibleException(
+          MotivoDeFalloDeLote.ESTRUCTURA_NO_ACORDADA, e.getMessage(), e);
     }
   }
 

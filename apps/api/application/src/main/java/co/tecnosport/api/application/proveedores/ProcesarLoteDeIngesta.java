@@ -7,8 +7,10 @@ import co.tecnosport.api.domain.proveedores.AgrupadorDePublicaciones;
 import co.tecnosport.api.domain.proveedores.ColaDelProveedor;
 import co.tecnosport.api.domain.proveedores.EstadoLote;
 import co.tecnosport.api.domain.proveedores.EstadoPublicacionProveedor;
+import co.tecnosport.api.domain.proveedores.FalloDeLote;
 import co.tecnosport.api.domain.proveedores.LoteIngesta;
 import co.tecnosport.api.domain.proveedores.MensajeProveedor;
+import co.tecnosport.api.domain.proveedores.MotivoDeFalloDeLote;
 import co.tecnosport.api.domain.proveedores.NombreDeChat;
 import co.tecnosport.api.domain.proveedores.PHash;
 import co.tecnosport.api.domain.proveedores.Proveedor;
@@ -254,7 +256,9 @@ public final class ProcesarLoteDeIngesta {
     String referencia =
         lote.referenciaArchivo()
             .orElseThrow(
-                () -> new ExportacionIlegibleException("El lote no tiene archivo que leer."));
+                () ->
+                    new ExportacionIlegibleException(
+                        MotivoDeFalloDeLote.SIN_ARCHIVO, "El lote no tiene archivo que leer."));
     ChatExportado chat = fuente.leer(referencia, lote.chatDelZip().orElse(null));
     // El de un zip de dos chats ya nace marcado; el de un chat suelto se sabe por su nombre.
     if (!lote.esChatDeCaballero() && NombreDeChat.esDeCaballero(chat.nombre())) {
@@ -372,7 +376,7 @@ public final class ProcesarLoteDeIngesta {
    * insertar.
    */
   private void cerrarConFallo(UUID loteId, int mios, Throwable e) {
-    String motivo = motivoLegible(e);
+    FalloDeLote fallo = falloDe(e);
     enTransaccionPropia.ejecutar(
         () -> {
           repositorioLotes
@@ -380,7 +384,7 @@ public final class ProcesarLoteDeIngesta {
               .filter(fresco -> esMio(fresco, mios) && fresco.estaAbierto())
               .ifPresent(
                   fresco -> {
-                    fresco.fallar(motivo, reloj.ahora());
+                    fresco.fallar(fallo, reloj.ahora());
                     repositorioLotes.actualizar(fresco);
                   });
           return null;
@@ -394,7 +398,7 @@ public final class ProcesarLoteDeIngesta {
    *     cerrado
    */
   private boolean devolverParaReintentar(UUID loteId, int mios, Throwable e) {
-    String motivo = motivoLegible(e);
+    MotivoDeFalloDeLote motivo = falloDe(e).motivo();
     return enTransaccionPropia.ejecutar(
         () ->
             repositorioLotes
@@ -536,10 +540,25 @@ public final class ProcesarLoteDeIngesta {
   }
 
   /**
-   * Lo que se escribe en el lote o en la publicación lo lee una persona en el panel. El mensaje de
-   * una excepción nuestra está escrito para eso; el de un {@code NullPointerException} no, y se
-   * sustituye por algo que al menos diga que fue un fallo del programa. La traza completa la
-   * registra quien llama, que es quien tiene el log.
+   * Por qué falló el lote, como código que el panel traduce (regla dura 4). El mensaje de la
+   * excepción no va al lote: con la traza completa lo registra quien llama, que es quien tiene el
+   * log.
+   */
+  private static FalloDeLote falloDe(Throwable e) {
+    if (e instanceof ExportacionIlegibleException ilegible) {
+      return ilegible.fallo();
+    }
+    if (e instanceof ProveedorNoEncontradoException) {
+      return FalloDeLote.de(MotivoDeFalloDeLote.PROVEEDOR_NO_ENCONTRADO);
+    }
+    return new FalloDeLote(MotivoDeFalloDeLote.ERROR_INESPERADO, e.getClass().getSimpleName());
+  }
+
+  /**
+   * Lo que se escribe en la publicación lo lee una persona en el panel. El mensaje de una excepción
+   * nuestra está escrito para eso; el de un {@code NullPointerException} no, y se sustituye por
+   * algo que al menos diga que fue un fallo del programa. Las publicaciones todavía guardan texto:
+   * pasarlas a códigos, como el lote, es otro cambio.
    */
   private static String motivoLegible(Throwable e) {
     if (e instanceof ExportacionIlegibleException

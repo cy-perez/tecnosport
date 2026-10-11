@@ -52,6 +52,14 @@ public class LoteIngestaJpaEntity {
   @Column(name = "resumen_alertas")
   private Integer resumenAlertas;
 
+  /** Por qué falló (MotivoDeFalloDeLote); nulo si no falló. */
+  @Column(name = "codigo_error")
+  private String codigoError;
+
+  /**
+   * El dato que interpola el texto del fallo. En los lotes de antes de los códigos, la frase que se
+   * guardaba entonces; la migración V104 la dejó cuando no supo a qué código corresponde.
+   */
   @Column(name = "detalle_error")
   private String detalleError;
 
@@ -94,6 +102,7 @@ public class LoteIngestaJpaEntity {
       Integer resumenAgotados,
       Integer resumenDescartes,
       Integer resumenAlertas,
+      String codigoError,
       String detalleError,
       Instant creadoEn,
       Instant iniciadoEn,
@@ -116,6 +125,7 @@ public class LoteIngestaJpaEntity {
     this.resumenAgotados = resumenAgotados;
     this.resumenDescartes = resumenDescartes;
     this.resumenAlertas = resumenAlertas;
+    this.codigoError = codigoError;
     this.detalleError = detalleError;
     this.creadoEn = creadoEn;
     this.iniciadoEn = iniciadoEn;
@@ -128,6 +138,10 @@ public class LoteIngestaJpaEntity {
 
   public int getReintentos() {
     return reintentos;
+  }
+
+  public String getCodigoError() {
+    return codigoError;
   }
 
   public Instant getLatidoEn() {

@@ -5,7 +5,9 @@ import co.tecnosport.api.application.proveedores.LotesPaginados;
 import co.tecnosport.api.application.proveedores.RepositorioLotesIngesta;
 import co.tecnosport.api.domain.proveedores.ChatDelZip;
 import co.tecnosport.api.domain.proveedores.EstadoLote;
+import co.tecnosport.api.domain.proveedores.FalloDeLote;
 import co.tecnosport.api.domain.proveedores.LoteIngesta;
+import co.tecnosport.api.domain.proveedores.MotivoDeFalloDeLote;
 import co.tecnosport.api.domain.proveedores.OrigenIngesta;
 import co.tecnosport.api.domain.proveedores.ResumenIngesta;
 import co.tecnosport.api.infrastructure.proveedores.entidad.LoteIngestaJpaEntity;
@@ -180,7 +182,8 @@ public class RepositorioLotesIngestaJpa implements RepositorioLotesIngesta {
         r == null ? null : r.agotados(),
         r == null ? null : r.descartes(),
         r == null ? null : r.alertas(),
-        lote.detalleError().orElse(null),
+        lote.fallo().map(f -> f.motivo().name()).orElse(null),
+        lote.fallo().map(FalloDeLote::dato).orElse(null),
         lote.creadoEn(),
         lote.iniciadoEn().orElse(null),
         lote.terminadoEn().orElse(null),
@@ -212,7 +215,7 @@ public class RepositorioLotesIngestaJpa implements RepositorioLotesIngesta {
             fila.getReferenciaArchivo(),
             EstadoLote.valueOf(fila.getEstado()),
             resumen,
-            fila.getDetalleError(),
+            falloDe(fila),
             fila.getCreadoEn(),
             fila.getIniciadoEn(),
             fila.getTerminadoEn());
@@ -227,5 +230,18 @@ public class RepositorioLotesIngestaJpa implements RepositorioLotesIngesta {
     }
     lote.restaurarReintentos(fila.getReintentos());
     return lote;
+  }
+
+  /**
+   * El fallo guardado. Un lote en error de antes de los códigos que la migración no reconoció lleva
+   * {@code DESCONOCIDO}; su frase vieja se queda en la columna y no se muestra.
+   */
+  private static FalloDeLote falloDe(LoteIngestaJpaEntity fila) {
+    if (fila.getCodigoError() == null) {
+      return null;
+    }
+    MotivoDeFalloDeLote motivo = MotivoDeFalloDeLote.valueOf(fila.getCodigoError());
+    return new FalloDeLote(
+        motivo, motivo == MotivoDeFalloDeLote.DESCONOCIDO ? null : fila.getDetalleError());
   }
 }

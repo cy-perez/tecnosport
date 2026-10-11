@@ -5,6 +5,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import co.tecnosport.api.application.proveedores.ExportacionIlegibleException;
 import co.tecnosport.api.application.proveedores.MensajeCrudo;
+import co.tecnosport.api.domain.proveedores.FalloDeLote;
+import co.tecnosport.api.domain.proveedores.MotivoDeFalloDeLote;
 import co.tecnosport.api.domain.proveedores.TipoMensaje;
 import java.io.IOException;
 import java.io.InputStream;
@@ -194,7 +196,9 @@ class AnalizadorDeExportacionWhatsAppTest {
 
     assertThatThrownBy(() -> analizador.analizar("hola\nesto no es un chat\n"))
         .isInstanceOf(ExportacionIlegibleException.class)
-        .hasMessageContaining("no parece una exportación");
+        .hasMessageContaining("no parece una exportación")
+        .extracting(e -> ((ExportacionIlegibleException) e).fallo())
+        .isEqualTo(FalloDeLote.de(MotivoDeFalloDeLote.NO_ES_UN_CHAT));
   }
 
   @Test
@@ -204,7 +208,9 @@ class AnalizadorDeExportacionWhatsAppTest {
 
     assertThatThrownBy(() -> analizador.analizar("31/2/26, 10:15 a. m. - Alguien: hola\n"))
         .isInstanceOf(ExportacionIlegibleException.class)
-        .hasMessageContaining("31/2/26");
+        .hasMessageContaining("31/2/26")
+        .extracting(e -> ((ExportacionIlegibleException) e).fallo())
+        .isEqualTo(new FalloDeLote(MotivoDeFalloDeLote.FECHA_ILEGIBLE, "31/2/26"));
   }
 
   private static String nulo(String texto) {

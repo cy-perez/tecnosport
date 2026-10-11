@@ -89,21 +89,23 @@ class LoteIngestaTest {
     lote.terminar(RESUMEN, T2);
 
     assertThrows(ExcepcionDeDominio.class, () -> lote.terminar(ResumenIngesta.vacio(), T2));
-    assertThrows(ExcepcionDeDominio.class, () -> lote.fallar("tarde", T2));
+    assertThrows(
+        ExcepcionDeDominio.class,
+        () -> lote.fallar(FalloDeLote.de(MotivoDeFalloDeLote.COLA_LLENA), T2));
     assertEquals(Optional.of(RESUMEN), lote.resumen());
   }
 
   @Test
   void puedeFallarDesdeLaColaYDesdeElTrabajo() {
     LoteIngesta enCola = recibido();
-    enCola.fallar("La cola de ingestas está llena.", T1);
+    enCola.fallar(FalloDeLote.de(MotivoDeFalloDeLote.COLA_LLENA), T1);
     assertEquals(EstadoLote.ERROR, enCola.estado());
-    assertEquals(Optional.of("La cola de ingestas está llena."), enCola.detalleError());
+    assertEquals(Optional.of(FalloDeLote.de(MotivoDeFalloDeLote.COLA_LLENA)), enCola.fallo());
     assertEquals(Optional.of(T1), enCola.terminadoEn());
 
     LoteIngesta enTrabajo = recibido();
     enTrabajo.iniciar(T1);
-    enTrabajo.fallar("El zip no trae ningún .txt.", T2);
+    enTrabajo.fallar(FalloDeLote.de(MotivoDeFalloDeLote.ZIP_SIN_CHAT), T2);
     assertEquals(EstadoLote.ERROR, enTrabajo.estado());
     assertFalse(enTrabajo.estaAbierto());
   }
@@ -112,10 +114,24 @@ class LoteIngestaTest {
   void noFallaSinMotivo() {
     LoteIngesta lote = recibido();
 
-    ExcepcionDeDominio error = assertThrows(ExcepcionDeDominio.class, () -> lote.fallar("  ", T1));
+    assertThrows(NullPointerException.class, () -> lote.fallar(null, T1));
 
-    assertTrue(error.getMessage().contains("sin decir por qué"), error.getMessage());
     assertEquals(EstadoLote.RECIBIDO, lote.estado());
+  }
+
+  /**
+   * El dato de un fallo es un valor que el texto interpola, no una frase escrita en el servidor.
+   */
+  @Test
+  void elDatoDeUnFalloEsCortoYSinEspaciosSobrantes() {
+    assertEquals(
+        Optional.of("31/02/2026"),
+        new FalloDeLote(MotivoDeFalloDeLote.FECHA_ILEGIBLE, " 31/02/2026 ").datoOpcional());
+    assertEquals(
+        Optional.empty(), new FalloDeLote(MotivoDeFalloDeLote.COLA_LLENA, "  ").datoOpcional());
+    assertThrows(
+        ExcepcionDeDominio.class,
+        () -> new FalloDeLote(MotivoDeFalloDeLote.ERROR_INESPERADO, "x".repeat(201)));
   }
 
   @Test
@@ -235,7 +251,9 @@ class LoteIngestaTest {
     LoteIngesta detenido = recibido();
     detenido.pedirDetencion(T1);
     assertThrows(ExcepcionDeDominio.class, () -> detenido.pedirDetencion(T2));
-    assertThrows(ExcepcionDeDominio.class, () -> detenido.fallar("tarde", T2));
+    assertThrows(
+        ExcepcionDeDominio.class,
+        () -> detenido.fallar(FalloDeLote.de(MotivoDeFalloDeLote.COLA_LLENA), T2));
 
     assertThrows(ExcepcionDeDominio.class, () -> procesando().detener(RESUMEN, T2));
   }
@@ -408,7 +426,7 @@ class LoteIngestaTest {
 
     assertEquals(LoteIngesta.Recuperacion.FALLIDO, lote.recuperar(T2));
     assertEquals(EstadoLote.ERROR, lote.estado());
-    assertEquals(Optional.of(LoteIngesta.MOTIVO_SIN_REINTENTOS), lote.detalleError());
+    assertEquals(Optional.of(FalloDeLote.de(MotivoDeFalloDeLote.SIN_REINTENTOS)), lote.fallo());
   }
 
   /** El que se estaba deteniendo se detiene, que es lo que se pidió; no vuelve a la cola. */
@@ -461,15 +479,16 @@ class LoteIngestaTest {
     assertEquals(new ResumenIngesta(40, 5, 35, 9, 4, 1, 0, 2, 3), lectura.mas(tramo));
   }
 
-  /** Con la causa del último fallo, el motivo la dice: es lo que hace falta para arreglarlo. */
+  /** Sin reintentos, el fallo lleva el código del último: es lo que hace falta para arreglarlo. */
   @Test
-  void sinReintentosElMotivoDiceElUltimoFallo() {
+  void sinReintentosElFalloLlevaElCodigoDelUltimo() {
     LoteIngesta lote = procesando();
     lote.restaurarReintentos(LoteIngesta.MAXIMO_DE_REINTENTOS);
 
-    lote.recuperar(T2, "El zip no trae ningún .txt.");
+    lote.recuperar(T2, MotivoDeFalloDeLote.ERROR_INESPERADO);
 
-    assertTrue(
-        lote.detalleError().orElseThrow().endsWith("El último fallo: El zip no trae ningún .txt."));
+    assertEquals(
+        Optional.of(new FalloDeLote(MotivoDeFalloDeLote.SIN_REINTENTOS, "ERROR_INESPERADO")),
+        lote.fallo());
   }
 }
