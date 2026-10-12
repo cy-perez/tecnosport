@@ -3307,6 +3307,12 @@
           },
           "telefonoWhatsApp" : {
             "type" : "string"
+          },
+          "tiposExcluidos" : {
+            "items" : {
+              "type" : "string"
+            },
+            "type" : "array"
           }
         },
         "required" : [
@@ -3350,8 +3356,17 @@
           },
           "telefonoWhatsApp" : {
             "type" : "string"
+          },
+          "tiposExcluidos" : {
+            "items" : {
+              "type" : "string"
+            },
+            "type" : "array"
           }
         },
+        "required" : [
+          "tiposExcluidos"
+        ],
         "type" : "object"
       },
       "PublicacionCerradaRespuesta" : {

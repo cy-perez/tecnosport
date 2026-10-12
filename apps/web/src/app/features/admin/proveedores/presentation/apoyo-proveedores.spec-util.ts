@@ -12,6 +12,7 @@ export function proveedorDePrueba(overrides: Partial<Proveedor> = {}): Proveedor
     ordenDePublicacion: 'FOTOS_PRIMERO',
     publicacionAutomatica: false,
     dosChatsEnUnZip: false,
+    tiposExcluidos: [],
     activo: true,
     ...overrides,
   };

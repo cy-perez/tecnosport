@@ -424,7 +424,13 @@ export class ListaIngestasAdminPage {
   }
 
   protected textoDelMotivo(publicacion: PublicacionCerrada): string {
-    return this.traducir()(claveDelMotivo(publicacion), { dato: publicacion.dato ?? '' });
+    const traducir = this.traducir();
+    // El tipo excluido llega como el nombre del enum —«PANTALON»—: se lee como «Pantalón».
+    const dato =
+      publicacion.motivo === 'TIPO_EXCLUIDO' && publicacion.dato
+        ? traducir('admin.borradores.tipos.' + publicacion.dato)
+        : (publicacion.dato ?? '');
+    return traducir(claveDelMotivo(publicacion), { dato });
   }
 
   /**

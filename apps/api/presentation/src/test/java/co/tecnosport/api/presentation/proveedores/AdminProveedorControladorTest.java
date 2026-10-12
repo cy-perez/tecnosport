@@ -189,6 +189,97 @@ class AdminProveedorControladorTest {
         .andExpect(jsonPath("$.dosChatsEnUnZip").value(true));
   }
 
+  /**
+   * A Violeta no se le compran prendas inferiores: se marcan al crearla, salen en el orden del
+   * enum, editar sin el campo las conserva y una lista vacía las quita.
+   */
+  @Test
+  void losTiposExcluidosSeMarcanAlCrearYEditarSinElCampoLosConserva() throws Exception {
+    String violeta =
+        "{\"nombre\":\"Violeta\",\"linea\":\"ROPA\",\"telefonoWhatsApp\":\"+57 301\","
+            + "\"nombreEnExportacion\":\"Violeta\",\"ordenDePublicacion\":\"FOTOS_PRIMERO\"";
+    mockMvc
+        .perform(
+            post("/api/v1/admin/proveedores")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(violeta + ",\"tiposExcluidos\":[\"SHORT\",\"SUDADERA\",\"PANTALON\"]}"))
+        .andExpect(status().isCreated())
+        .andExpect(jsonPath("$.tiposExcluidos.length()").value(3))
+        .andExpect(jsonPath("$.tiposExcluidos[0]").value("PANTALON"))
+        .andExpect(jsonPath("$.tiposExcluidos[1]").value("SHORT"))
+        .andExpect(jsonPath("$.tiposExcluidos[2]").value("SUDADERA"));
+    UUID id = proveedores.porId.keySet().iterator().next();
+
+    mockMvc
+        .perform(
+            put("/api/v1/admin/proveedores/{id}", id)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(violeta + "}"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.tiposExcluidos.length()").value(3));
+
+    mockMvc
+        .perform(
+            put("/api/v1/admin/proveedores/{id}", id)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(violeta + ",\"tiposExcluidos\":[]}"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.tiposExcluidos.length()").value(0));
+  }
+
+  /** «Otro» es lo que el extractor no reconoció: excluirlo es una regla del dominio, y es 422. */
+  @Test
+  void excluirElTipoOtroEs422() throws Exception {
+    mockMvc
+        .perform(
+            post("/api/v1/admin/proveedores")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    "{\"nombre\":\"Violeta\",\"linea\":\"ROPA\",\"telefonoWhatsApp\":\"+57 301\","
+                        + "\"nombreEnExportacion\":\"Violeta\",\"ordenDePublicacion\":\"FOTOS_PRIMERO\","
+                        + "\"tiposExcluidos\":[\"OTRO\"]}"))
+        .andExpect(status().isUnprocessableContent());
+  }
+
+  /** Un nulo en la lista es un cuerpo inválido: 422, no un 500. */
+  @Test
+  void unTipoExcluidoNuloEs422() throws Exception {
+    mockMvc
+        .perform(
+            post("/api/v1/admin/proveedores")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    "{\"nombre\":\"Violeta\",\"linea\":\"ROPA\",\"telefonoWhatsApp\":\"+57 301\","
+                        + "\"nombreEnExportacion\":\"Violeta\",\"ordenDePublicacion\":\"FOTOS_PRIMERO\","
+                        + "\"tiposExcluidos\":[\"PANTALON\",null]}"))
+        .andExpect(status().isUnprocessableContent());
+  }
+
+  /** Pasar a tecnología sin mandar los tipos los quita, en vez de chocar con la regla. */
+  @Test
+  void pasarATecnologiaSinElCampoQuitaLosTiposExcluidos() throws Exception {
+    mockMvc
+        .perform(
+            post("/api/v1/admin/proveedores")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    "{\"nombre\":\"Violeta\",\"linea\":\"ROPA\",\"telefonoWhatsApp\":\"+57 301\","
+                        + "\"nombreEnExportacion\":\"Violeta\",\"ordenDePublicacion\":\"FOTOS_PRIMERO\","
+                        + "\"tiposExcluidos\":[\"PANTALON\"]}"))
+        .andExpect(status().isCreated());
+    UUID id = proveedores.porId.keySet().iterator().next();
+
+    mockMvc
+        .perform(
+            put("/api/v1/admin/proveedores/{id}", id)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    "{\"nombre\":\"Violeta\",\"linea\":\"TECNOLOGIA\",\"telefonoWhatsApp\":\"+57 301\","
+                        + "\"nombreEnExportacion\":\"Violeta\",\"ordenDePublicacion\":\"FOTOS_PRIMERO\"}"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.tiposExcluidos.length()").value(0));
+  }
+
   /** La tecnología llega por listas: no tiene chats que subir, y la regla llega como 422. */
   @Test
   void unProveedorDeTecnologiaNoSubeChatsEs422() throws Exception {

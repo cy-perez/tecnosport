@@ -78,6 +78,28 @@
           [marcado]="form.controls.dosChatsEnUnZip.value"
           (marcadoCambio)="form.controls.dosChatsEnUnZip.setValue($event)"
         />
+
+        <fieldset
+          class="m-0 flex flex-col gap-8 border-0 p-0"
+          aria-describedby="proveedor-tipos-ayuda"
+        >
+          <legend class="mb-8 p-0 text-sm text-ts-texto">
+            {{ 'admin.proveedores.formulario.tiposExcluidos' | transloco }}
+          </legend>
+          <p id="proveedor-tipos-ayuda" class="m-0 text-sm text-ts-texto-suave">
+            {{ 'admin.proveedores.formulario.tiposExcluidosAyuda' | transloco }}
+          </p>
+          <div class="flex flex-wrap gap-x-16 gap-y-8">
+            @for (tipo of tiposExcluibles; track tipo) {
+              <ts-checkbox
+                [idCasilla]="'proveedor-excluye-' + tipo"
+                [etiqueta]="'admin.borradores.tipos.' + tipo | transloco"
+                [marcado]="excluido(tipo)"
+                (marcadoCambio)="marcarExcluido(tipo, $event)"
+              />
+            }
+          </div>
+        </fieldset>
       }
 
       <ts-checkbox

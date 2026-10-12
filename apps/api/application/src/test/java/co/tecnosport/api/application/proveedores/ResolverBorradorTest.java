@@ -790,6 +790,182 @@ class ResolverBorradorTest {
     assertEquals(2, borradores.enEstado(EstadoBorrador.EN_REVISION).size());
   }
 
+  /** Violeta: a quien no se le compran prendas inferiores. */
+  private void sinInferiores() {
+    proveedor.definirTiposExcluidos(
+        Set.of(
+            TipoProductoProveedor.PANTALON,
+            TipoProductoProveedor.SUDADERA,
+            TipoProductoProveedor.SHORT));
+  }
+
+  /** El «Jean Mom Fit Licrado (Q343)» solo: se descarta con el tipo como dato. */
+  @Test
+  void unaPrendaDeUnTipoExcluidoSeDescarta() {
+    sinInferiores();
+    PublicacionProveedor publicacion = publicacion("Jean Mom Fit Licrado (Q343) 💲119900", "jean");
+
+    Resolucion resolucion =
+        resolver(
+            publicacion, deTipo("Jean mom fit licrado", TipoProductoProveedor.PANTALON, "Q343"));
+
+    assertEquals(TipoDeResolucion.DESCARTADA, resolucion.tipo());
+    assertEquals(
+        new CierreDePublicacion(MotivoDePublicacion.TIPO_EXCLUIDO, "PANTALON"),
+        resolucion.cierre());
+    PublicacionProveedor guardada = publicaciones.buscarPorId(publicacion.id()).orElseThrow();
+    assertEquals(EstadoPublicacionProveedor.DESCARTADA, guardada.estado());
+    assertEquals(MotivoDePublicacion.TIPO_EXCLUIDO, guardada.cierre().orElseThrow().motivo());
+    assertTrue(borradores.enEstado(EstadoBorrador.EN_REVISION).isEmpty());
+  }
+
+  /**
+   * La «Camiseta slim» con el «Jogger»: el anuncio se descarta entero, y la camiseta, que sí se le
+   * compra, tampoco deja borrador. El dato es el tipo que lo descartó, aunque venga segundo.
+   */
+  @Test
+  void unAnuncioQueTraeUnTipoExcluidoSeDescartaEntero() {
+    sinInferiores();
+    PublicacionProveedor publicacion =
+        publicacion("Camiseta Slim (261002) 💲42 Jogger (VY3026) 💲72", "conjunto");
+
+    List<Resolucion> resoluciones =
+        caso()
+            .ejecutar(
+                publicacion,
+                mensajes,
+                proveedor,
+                List.of(
+                    deTipo("Camiseta slim", TipoProductoProveedor.CAMISETA, "261002"),
+                    deTipo("Sudadera jogger", TipoProductoProveedor.SUDADERA, "VY3026")));
+
+    assertTrue(resoluciones.stream().allMatch(r -> r.tipo() == TipoDeResolucion.DESCARTADA));
+    assertTrue(
+        resoluciones.stream()
+            .allMatch(
+                r ->
+                    r.cierre()
+                        .equals(
+                            new CierreDePublicacion(
+                                MotivoDePublicacion.TIPO_EXCLUIDO, "SUDADERA"))));
+    assertEquals(
+        EstadoPublicacionProveedor.DESCARTADA,
+        publicaciones.buscarPorId(publicacion.id()).orElseThrow().estado());
+    assertTrue(borradores.enEstado(EstadoBorrador.EN_REVISION).isEmpty());
+  }
+
+  /**
+   * La blusa ya está en el catálogo y vuelve con su jean: el anuncio se descarta antes de buscarla,
+   * así que no la renueva. Es lo que se decidió al descartar el anuncio entero.
+   */
+  @Test
+  void unAnuncioConUnTipoExcluidoNoRenuevaLoQueYaEstaEnElCatalogo() {
+    sinInferiores();
+    Producto blusa =
+        productoConCodigo(
+            "Blusa corta bordada", 28000, "VY2719", EstadoDisponibilidad.OCULTO_POR_VENCIMIENTO);
+
+    List<Resolucion> resoluciones =
+        caso()
+            .ejecutar(
+                publicacion("Blusa (VY2719) 💲28 Jean (Q343) 💲124", "conjunto"),
+                mensajes,
+                proveedor,
+                List.of(
+                    deTipo("Blusa corta bordada", TipoProductoProveedor.BLUSA, "VY2719"),
+                    deTipo("Jean mom fit", TipoProductoProveedor.PANTALON, "Q343")));
+
+    assertEquals(TipoDeResolucion.DESCARTADA, resoluciones.getFirst().tipo());
+    assertEquals(
+        EstadoDisponibilidad.OCULTO_POR_VENCIMIENTO, blusa.estadoDisponibilidad(), "no se renovó");
+  }
+
+  /**
+   * El jean se publicó antes de excluir el tipo y ahora el proveedor lo anuncia agotado: se agota,
+   * porque dejarlo a la venta es venderle a alguien lo que no hay.
+   */
+  @Test
+  void unAgotadoDeUnTipoExcluidoAgotaLoQueYaEstaEnElCatalogo() {
+    sinInferiores();
+    Producto jean =
+        productoConCodigo("Jean mom fit", 124000, "Q343", EstadoDisponibilidad.DISPONIBLE);
+
+    Resolucion resolucion =
+        resolver(
+            publicacion("AGOTADO Jean Mom Fit (Q343)", null),
+            deTipo("Jean mom fit", TipoProductoProveedor.PANTALON, "Q343", true));
+
+    assertEquals(EstadoDisponibilidad.AGOTADO_POR_PROVEEDOR, jean.estadoDisponibilidad());
+    assertNotEquals(TipoDeResolucion.DESCARTADA, resolucion.tipo());
+  }
+
+  /** Un agotado de un tipo excluido que no está en el catálogo no deja nada. */
+  @Test
+  void unAgotadoDeUnTipoExcluidoFueraDelCatalogoSeDescarta() {
+    sinInferiores();
+
+    Resolucion resolucion =
+        resolver(
+            publicacion("AGOTADO Jean (Q999)", null),
+            deTipo("Jean", TipoProductoProveedor.PANTALON, "Q999", true));
+
+    assertEquals(TipoDeResolucion.DESCARTADA, resolucion.tipo());
+    assertTrue(borradores.enEstado(EstadoBorrador.EN_REVISION).isEmpty());
+  }
+
+  /** Sin un tipo excluido en el anuncio, nada cambia: la blusa y el jean, dos borradores. */
+  @Test
+  void unAnuncioSinTiposExcluidosSigueIgual() {
+    proveedor.definirTiposExcluidos(Set.of(TipoProductoProveedor.FALDA));
+
+    List<Resolucion> resoluciones =
+        caso()
+            .ejecutar(
+                publicacion("Blusa (VY2719) 💲28 Jean (Q343) 💲124", "conjunto"),
+                mensajes,
+                proveedor,
+                List.of(
+                    deTipo("Blusa corta bordada", TipoProductoProveedor.BLUSA, "VY2719"),
+                    deTipo("Jean mom fit", TipoProductoProveedor.PANTALON, "Q343")));
+
+    assertEquals(
+        List.of(TipoDeResolucion.NUEVO, TipoDeResolucion.NUEVO),
+        resoluciones.stream().map(Resolucion::tipo).toList());
+  }
+
+  private static ExtraccionEvaluada deTipo(
+      String titulo, TipoProductoProveedor tipo, String codigo) {
+    return deTipo(titulo, tipo, codigo, false);
+  }
+
+  private static ExtraccionEvaluada deTipo(
+      String titulo, TipoProductoProveedor tipo, String codigo, boolean agotado) {
+    ProductoExtraido extraido =
+        new ProductoExtraido(
+            true,
+            agotado,
+            titulo,
+            LineaCatalogo.ROPA,
+            tipo,
+            Dinero.deCop(50000),
+            Tallas.lista(List.of("S", "M", "L")),
+            null,
+            List.of(),
+            null,
+            "Una prenda.",
+            null,
+            false,
+            new BigDecimal("0.9"),
+            null,
+            codigo);
+    return new ExtraccionEvaluada(
+        extraido,
+        "{}",
+        Dinero.deCop(50000),
+        Set.of(AlertaBorrador.FOTOS_COMPARTIDAS),
+        new UsoDelExtractor("falso", 1, 1, 1));
+  }
+
   private static ExtraccionEvaluada deUnaMarca(String titulo, UUID suya, UUID compartida) {
     ProductoExtraido extraido =
         new ProductoExtraido(

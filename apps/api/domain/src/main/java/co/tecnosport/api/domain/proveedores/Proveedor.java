@@ -85,6 +85,13 @@ public final class Proveedor {
    */
   private boolean dosChatsEnUnZip;
 
+  /**
+   * Los tipos de prenda que no se le compran a este proveedor. Un anuncio que trae uno se descarta
+   * entero, aunque venga con otras prendas: a Violeta no se le compran pantalones, sudaderas ni
+   * shorts, y el anuncio de una blusa con su jean no deja ni la blusa (12 de octubre de 2026).
+   */
+  private Set<TipoProductoProveedor> tiposExcluidos = Set.of();
+
   public Proveedor(
       UUID id,
       String nombre,
@@ -240,6 +247,38 @@ public final class Proveedor {
 
   public boolean subeDosChatsEnUnZip() {
     return dosChatsEnUnZip;
+  }
+
+  /**
+   * Define los tipos que no se le compran. {@code OTRO} no se puede excluir: es lo que el extractor
+   * responde cuando no supo qué es, y excluirlo descartaría lo que nadie miró. Solo quien entra por
+   * la exportación del chat tiene anuncios que descartar; el adaptador lo usa también para
+   * devolverlos como estaban guardados.
+   */
+  public void definirTiposExcluidos(Set<TipoProductoProveedor> tipos) {
+    Set<TipoProductoProveedor> excluidos =
+        tipos == null || tipos.isEmpty()
+            ? EnumSet.noneOf(TipoProductoProveedor.class)
+            : EnumSet.copyOf(tipos);
+    if (excluidos.contains(TipoProductoProveedor.OTRO)) {
+      throw new ExcepcionDeDominio(
+          "No se puede excluir el tipo «otro»: es el de los anuncios que el extractor no reconoció.");
+    }
+    if (!excluidos.isEmpty() && !entraPorExportacion()) {
+      throw new ExcepcionDeDominio(
+          "Solo un proveedor que entra por la exportación del chat puede excluir tipos de prenda.");
+    }
+    this.tiposExcluidos = Set.copyOf(excluidos);
+  }
+
+  /** Vacío cuando se le compra todo lo que anuncia. */
+  public Set<TipoProductoProveedor> tiposExcluidos() {
+    return tiposExcluidos;
+  }
+
+  /** Si el tipo es uno de los que no se le compran. */
+  public boolean excluye(TipoProductoProveedor tipo) {
+    return tipo != null && tiposExcluidos.contains(tipo);
   }
 
   private static OrdenDePublicacion exigirOrden(OrdenDePublicacion orden) {

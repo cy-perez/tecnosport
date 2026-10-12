@@ -17,6 +17,7 @@ import co.tecnosport.api.domain.proveedores.PHash;
 import co.tecnosport.api.domain.proveedores.Proveedor;
 import co.tecnosport.api.domain.proveedores.ResumenIngesta;
 import co.tecnosport.api.domain.proveedores.TipoMensaje;
+import co.tecnosport.api.domain.proveedores.TipoProductoProveedor;
 import jakarta.persistence.EntityManager;
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -102,6 +103,51 @@ class RepositoriosDeIngestaJpaTest {
                         + " now(), now())",
                     UUID.randomUUID()))
         .isInstanceOf(DataIntegrityViolationException.class);
+  }
+
+  /**
+   * Los tipos excluidos viven en su propia tabla: van y vuelven, al editar se reemplazan en vez de
+   * sumarse, y se van con el proveedor.
+   */
+  @Test
+  void losTiposExcluidosVanVuelvenSeReemplazanYSeVanConElProveedor() {
+    Proveedor violeta =
+        Proveedor.crear(
+            "Violeta",
+            LineaCatalogo.ROPA,
+            "+57 301",
+            "Violeta",
+            null,
+            OrdenDePublicacion.FOTOS_PRIMERO);
+    violeta.definirTiposExcluidos(
+        Set.of(
+            TipoProductoProveedor.PANTALON,
+            TipoProductoProveedor.SUDADERA,
+            TipoProductoProveedor.SHORT));
+    proveedores.guardar(violeta);
+    entityManager.flush();
+    entityManager.clear();
+
+    assertThat(proveedores.buscarPorId(violeta.id()).orElseThrow().tiposExcluidos())
+        .containsExactlyInAnyOrder(
+            TipoProductoProveedor.PANTALON,
+            TipoProductoProveedor.SUDADERA,
+            TipoProductoProveedor.SHORT);
+
+    violeta.definirTiposExcluidos(Set.of(TipoProductoProveedor.FALDA));
+    proveedores.actualizar(violeta);
+    entityManager.flush();
+    entityManager.clear();
+    assertThat(proveedores.buscarPorId(violeta.id()).orElseThrow().tiposExcluidos())
+        .containsExactly(TipoProductoProveedor.FALDA);
+
+    proveedores.eliminarConSuHistorial(violeta.id());
+    assertThat(
+            jdbc.queryForObject(
+                "select count(*) from proveedor_tipo_excluido where proveedor_id = ?",
+                Integer.class,
+                violeta.id()))
+        .isZero();
   }
 
   @Test

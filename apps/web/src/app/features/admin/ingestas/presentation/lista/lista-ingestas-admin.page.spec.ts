@@ -631,6 +631,15 @@ describe('ListaIngestasAdminPage', () => {
           extracto: null,
           fotos: 3,
         },
+        {
+          id: 'p3',
+          fecha: '2026-10-11T19:36:00Z',
+          estado: 'DESCARTADA',
+          motivo: 'TIPO_EXCLUIDO',
+          dato: 'PANTALON',
+          extracto: 'Jean Mom Fit Licrado (Q343)',
+          fotos: 2,
+        },
       ];
 
       const ver = await screen.findByRole('button', { name: /Ver las publicaciones/ });
@@ -640,6 +649,9 @@ describe('ListaIngestasAdminPage', () => {
       expect(await screen.findByText('Polo 1.1 $55.000')).toBeTruthy();
       expect(screen.getByText(new RegExp(c.motivos.EXTRACCION_FALLIDA.slice(0, 30)))).toBeTruthy();
       expect(screen.getByText(new RegExp('sus 3 fotos se sumaron a ese borrador'))).toBeTruthy();
+      expect(
+        screen.getByText(new RegExp('no se le compra a este proveedor \\(Pantalón\\)')),
+      ).toBeTruthy();
       expect(screen.getByText(c.soloFotos)).toBeTruthy();
       expect(repositorio.cerradasPedidas).toEqual(['lote-1']);
       expect(ver.getAttribute('aria-expanded')).toBe('true');

@@ -2,6 +2,7 @@ package co.tecnosport.api.presentation.proveedores.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.Objects;
 
 /**
@@ -12,6 +13,8 @@ import java.util.Objects;
  * @param factorDeMargen nulo para usar el de la línea
  * @param ordenDePublicacion {@code FOTOS_PRIMERO} o {@code TEXTO_PRIMERO}; obligatorio también al
  *     editar, porque no hay un valor que el servidor pueda suponer
+ * @param tiposExcluidos los nombres de {@code TipoProductoProveedor} que no se le compran; nulo en
+ *     el alta es ninguno, y al editar deja los que tenía
  */
 public record ProveedorPeticion(
     @Schema(requiredMode = Schema.RequiredMode.REQUIRED) String nombre,
@@ -22,7 +25,8 @@ public record ProveedorPeticion(
     Boolean publicacionAutomatica,
     BigDecimal factorDeMargen,
     @Schema(requiredMode = Schema.RequiredMode.REQUIRED) String ordenDePublicacion,
-    Boolean dosChatsEnUnZip) {
+    Boolean dosChatsEnUnZip,
+    List<String> tiposExcluidos) {
 
   public ProveedorPeticion {
     Objects.requireNonNull(nombre, "El nombre es obligatorio.");

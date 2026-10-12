@@ -28,6 +28,7 @@ public final class EditarProveedor {
         comando.factorDeMargen(),
         comando.ordenDePublicacion());
     proveedor.definirDosChatsEnUnZip(comando.dosChatsEnUnZip());
+    proveedor.definirTiposExcluidos(comando.tiposExcluidos());
     repositorioProveedores.actualizar(proveedor);
     return proveedor;
   }

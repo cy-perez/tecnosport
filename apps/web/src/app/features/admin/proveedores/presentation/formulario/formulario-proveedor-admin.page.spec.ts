@@ -144,6 +144,53 @@ describe('FormularioProveedorAdminPage', () => {
     await vi.waitFor(() => expect(screen.queryByLabelText(f.dosChatsEnUnZip)).toBeNull());
   });
 
+  /** A Violeta no se le compran prendas inferiores: las casillas viajan en lo que se crea. */
+  it('manda los tipos que no se le compran, en el orden de la lista y sin «otro»', async () => {
+    const { repositorio, fixture } = await renderPagina();
+    vi.spyOn(fixture.debugElement.injector.get(Router), 'navigate').mockResolvedValue(true);
+    const tipos = esAdmin.borradores.tipos;
+
+    escribir(f.nombre, 'Violeta');
+    escribir(f.remitente, 'Violeta');
+    escribir(f.telefono, '573011234567');
+    fireEvent.change(screen.getByLabelText(f.linea), { target: { value: 'ROPA' } });
+    fireEvent.change(screen.getByLabelText(f.orden), { target: { value: 'FOTOS_PRIMERO' } });
+    expect(await screen.findByRole('group', { name: f.tiposExcluidos })).toBeTruthy();
+    expect(screen.queryByLabelText(tipos.OTRO)).toBeNull();
+    fireEvent.click(screen.getByLabelText(tipos.SUDADERA));
+    fireEvent.click(screen.getByLabelText(tipos.SHORT));
+    fireEvent.click(screen.getByLabelText(tipos.PANTALON));
+    fireEvent.click(screen.getByLabelText(tipos.BLUSA));
+    fireEvent.click(screen.getByLabelText(tipos.BLUSA));
+    fireEvent.click(screen.getByRole('button', { name: f.crear }));
+
+    await vi.waitFor(() => expect(repositorio.creados).toHaveLength(1));
+    expect(repositorio.creados[0].tiposExcluidos).toEqual(['PANTALON', 'SHORT', 'SUDADERA']);
+  });
+
+  it('al editar marca los tipos que ya tenía excluidos', async () => {
+    await renderPagina(
+      [proveedorDePrueba({ linea: 'ROPA', tiposExcluidos: ['PANTALON'] })],
+      'prov-1',
+    );
+    const tipos = esAdmin.borradores.tipos;
+
+    const pantalon = (await screen.findByLabelText(tipos.PANTALON)) as HTMLInputElement;
+    await vi.waitFor(() => expect(pantalon.checked).toBe(true));
+    expect((screen.getByLabelText(tipos.SHORT) as HTMLInputElement).checked).toBe(false);
+  });
+
+  /** La tecnología llega por listas: no tiene anuncios que descartar. */
+  it('no ofrece excluir tipos a un proveedor de tecnología', async () => {
+    await renderPagina();
+
+    fireEvent.change(await screen.findByLabelText(f.linea), { target: { value: 'TECNOLOGIA' } });
+
+    await vi.waitFor(() =>
+      expect(screen.queryByRole('group', { name: f.tiposExcluidos })).toBeNull(),
+    );
+  });
+
   /** Faltaba: el extractor ya reconocía el calzado, pero no había cómo registrar a quien lo surte. */
   it('ofrece el calzado deportivo como línea y lo manda como CALZADO', async () => {
     const { repositorio, fixture } = await renderPagina();

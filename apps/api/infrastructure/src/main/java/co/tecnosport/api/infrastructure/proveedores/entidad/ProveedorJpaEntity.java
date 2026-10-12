@@ -1,11 +1,17 @@
 package co.tecnosport.api.infrastructure.proveedores.entidad;
 
+import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
+import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
 import jakarta.persistence.Table;
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.UUID;
 
 @Entity
@@ -41,6 +47,13 @@ public class ProveedorJpaEntity {
   @Column(name = "dos_chats_en_un_zip", nullable = false)
   private boolean dosChatsEnUnZip;
 
+  @ElementCollection(fetch = FetchType.EAGER)
+  @CollectionTable(
+      name = "proveedor_tipo_excluido",
+      joinColumns = @JoinColumn(name = "proveedor_id"))
+  @Column(name = "tipo", nullable = false)
+  private Set<String> tiposExcluidos = new HashSet<>();
+
   @Column(name = "creado_en", nullable = false)
   private Instant creadoEn;
 
@@ -60,6 +73,7 @@ public class ProveedorJpaEntity {
       BigDecimal factorDeMargen,
       String ordenDePublicacion,
       boolean dosChatsEnUnZip,
+      Set<String> tiposExcluidos,
       Instant creadoEn,
       Instant actualizadoEn) {
     this.id = id;
@@ -72,6 +86,7 @@ public class ProveedorJpaEntity {
     this.factorDeMargen = factorDeMargen;
     this.ordenDePublicacion = ordenDePublicacion;
     this.dosChatsEnUnZip = dosChatsEnUnZip;
+    this.tiposExcluidos = new HashSet<>(tiposExcluidos);
     this.creadoEn = creadoEn;
     this.actualizadoEn = actualizadoEn;
   }
@@ -114,6 +129,10 @@ public class ProveedorJpaEntity {
 
   public boolean isDosChatsEnUnZip() {
     return dosChatsEnUnZip;
+  }
+
+  public Set<String> getTiposExcluidos() {
+    return tiposExcluidos;
   }
 
   public Instant getCreadoEn() {

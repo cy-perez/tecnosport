@@ -10,11 +10,14 @@ import co.tecnosport.api.application.proveedores.RepositorioProveedores;
 import co.tecnosport.api.domain.catalogo.LineaCatalogo;
 import co.tecnosport.api.domain.proveedores.OrdenDePublicacion;
 import co.tecnosport.api.domain.proveedores.Proveedor;
+import co.tecnosport.api.domain.proveedores.TipoProductoProveedor;
 import co.tecnosport.api.presentation.proveedores.dto.ProveedorPeticion;
 import co.tecnosport.api.presentation.proveedores.dto.ProveedorRespuesta;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import org.springframework.http.HttpStatus;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -82,7 +85,8 @@ public class AdminProveedorControlador {
                         cuerpo.nombreEnExportacion(),
                         cuerpo.factorDeMargen(),
                         OrdenDePublicacion.valueOf(cuerpo.ordenDePublicacion()),
-                        Boolean.TRUE.equals(cuerpo.dosChatsEnUnZip()))));
+                        Boolean.TRUE.equals(cuerpo.dosChatsEnUnZip()),
+                        tiposDe(cuerpo.tiposExcluidos()))));
     return ProveedorRespuesta.de(proveedor);
   }
 
@@ -111,7 +115,8 @@ public class AdminProveedorControlador {
                         OrdenDePublicacion.valueOf(cuerpo.ordenDePublicacion()),
                         cuerpo.dosChatsEnUnZip() != null
                             ? cuerpo.dosChatsEnUnZip()
-                            : actual.subeDosChatsEnUnZip())));
+                            : actual.subeDosChatsEnUnZip(),
+                        tiposAlEditar(cuerpo, actual))));
     return ProveedorRespuesta.de(proveedor);
   }
 
@@ -123,5 +128,33 @@ public class AdminProveedorControlador {
   @ResponseStatus(HttpStatus.NO_CONTENT)
   public void eliminar(@PathVariable UUID id) {
     transaccion.executeWithoutResult(estado -> eliminarProveedor.ejecutar(id));
+  }
+
+  /**
+   * Sin el campo quedan los que tenía, salvo si pasa a tecnología: ahí no hay anuncios que
+   * descartar, y conservarlos haría fallar una edición que no los mencionó.
+   */
+  private static Set<TipoProductoProveedor> tiposAlEditar(
+      ProveedorPeticion cuerpo, Proveedor actual) {
+    if (cuerpo.tiposExcluidos() != null) {
+      return tiposDe(cuerpo.tiposExcluidos());
+    }
+    return LineaCatalogo.valueOf(cuerpo.linea()) == LineaCatalogo.TECNOLOGIA
+        ? Set.of()
+        : actual.tiposExcluidos();
+  }
+
+  /**
+   * Un nombre que no es de {@link TipoProductoProveedor} es un cuerpo inválido, como la línea; un
+   * nulo también, y no un 500.
+   */
+  private static Set<TipoProductoProveedor> tiposDe(List<String> nombres) {
+    if (nombres == null) {
+      return Set.of();
+    }
+    if (nombres.contains(null)) {
+      throw new IllegalArgumentException("Un tipo excluido no puede ser nulo.");
+    }
+    return nombres.stream().map(TipoProductoProveedor::valueOf).collect(Collectors.toSet());
   }
 }

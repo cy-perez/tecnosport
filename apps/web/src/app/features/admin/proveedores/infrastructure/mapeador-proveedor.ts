@@ -1,4 +1,5 @@
 import type { components } from '@tecnosport/contratos';
+import { TipoProductoProveedor } from '../../borradores/domain/borrador.model';
 import {
   DatosProveedor,
   LineaProveedor,
@@ -10,7 +11,7 @@ type ProveedorDto = components['schemas']['ProveedorRespuesta'];
 type ProveedorPeticionDto = components['schemas']['ProveedorPeticion'];
 
 /**
- * DTO generado -> modelo del panel. `linea` y `ordenDePublicacion` llegan como `string` (springdoc no publica el enum
+ * DTO generado -> modelo del panel. `linea`, `ordenDePublicacion` y `tiposExcluidos` llegan como `string` (springdoc no publica el enum
  * como unión); el backend garantiza el nombre exacto, así que se afirma — mismo criterio que
  * `admin/productos/infrastructure/mapeador-producto-admin.ts`.
  */
@@ -26,6 +27,7 @@ export function aProveedor(dto: ProveedorDto): Proveedor {
     publicacionAutomatica: dto.publicacionAutomatica ?? false,
     activo: dto.activo ?? true,
     dosChatsEnUnZip: dto.dosChatsEnUnZip ?? false,
+    tiposExcluidos: (dto.tiposExcluidos ?? []) as TipoProductoProveedor[],
   };
 }
 
@@ -40,5 +42,6 @@ export function aProveedorPeticion(datos: DatosProveedor): ProveedorPeticionDto 
     publicacionAutomatica: datos.publicacionAutomatica,
     activo: datos.activo,
     dosChatsEnUnZip: datos.dosChatsEnUnZip,
+    tiposExcluidos: [...datos.tiposExcluidos],
   };
 }

@@ -2,11 +2,14 @@ package co.tecnosport.api.application.proveedores;
 
 import co.tecnosport.api.domain.catalogo.LineaCatalogo;
 import co.tecnosport.api.domain.proveedores.OrdenDePublicacion;
+import co.tecnosport.api.domain.proveedores.TipoProductoProveedor;
 import java.math.BigDecimal;
+import java.util.Set;
 import java.util.UUID;
 
 /**
  * @param factorDeMargen nulo para usar el de la línea
+ * @param tiposExcluidos los que no se le compran; vacío para comprarle todo
  */
 public record EditarProveedorComando(
     UUID id,
@@ -18,7 +21,38 @@ public record EditarProveedorComando(
     boolean publicacionAutomatica,
     BigDecimal factorDeMargen,
     OrdenDePublicacion ordenDePublicacion,
-    boolean dosChatsEnUnZip) {
+    boolean dosChatsEnUnZip,
+    Set<TipoProductoProveedor> tiposExcluidos) {
+
+  public EditarProveedorComando {
+    tiposExcluidos = tiposExcluidos == null ? Set.of() : Set.copyOf(tiposExcluidos);
+  }
+
+  /** Sin tipos excluidos: se le compra todo lo que anuncia. */
+  public EditarProveedorComando(
+      UUID id,
+      String nombre,
+      LineaCatalogo linea,
+      String telefonoWhatsApp,
+      String nombreEnExportacion,
+      boolean activo,
+      boolean publicacionAutomatica,
+      BigDecimal factorDeMargen,
+      OrdenDePublicacion ordenDePublicacion,
+      boolean dosChatsEnUnZip) {
+    this(
+        id,
+        nombre,
+        linea,
+        telefonoWhatsApp,
+        nombreEnExportacion,
+        activo,
+        publicacionAutomatica,
+        factorDeMargen,
+        ordenDePublicacion,
+        dosChatsEnUnZip,
+        Set.of());
+  }
 
   /** Con un solo chat, que es lo de casi todos. */
   public EditarProveedorComando(

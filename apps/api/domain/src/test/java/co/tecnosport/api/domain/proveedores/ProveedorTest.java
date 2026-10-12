@@ -11,6 +11,7 @@ import co.tecnosport.api.domain.catalogo.LineaCatalogo;
 import co.tecnosport.api.domain.compartido.ExcepcionDeDominio;
 import java.math.BigDecimal;
 import java.util.Optional;
+import java.util.Set;
 import org.junit.jupiter.api.Test;
 
 class ProveedorTest {
@@ -298,5 +299,53 @@ class ProveedorTest {
             OrdenDePublicacion.TEXTO_PRIMERO);
     assertThrows(ExcepcionDeDominio.class, () -> tecnologia.definirDosChatsEnUnZip(true));
     tecnologia.definirDosChatsEnUnZip(false);
+  }
+
+  /**
+   * A Violeta no se le compran prendas inferiores; un proveedor de tecnología no tiene anuncios.
+   */
+  @Test
+  void excluyeLosTiposQueNoSeLeCompran() {
+    Proveedor ropa =
+        Proveedor.crear(
+            "Violeta",
+            LineaCatalogo.ROPA,
+            "+57 301",
+            "Violeta",
+            null,
+            OrdenDePublicacion.FOTOS_PRIMERO);
+    assertTrue(ropa.tiposExcluidos().isEmpty(), "nace comprándolo todo");
+    assertFalse(ropa.excluye(TipoProductoProveedor.PANTALON));
+
+    ropa.definirTiposExcluidos(
+        Set.of(
+            TipoProductoProveedor.PANTALON,
+            TipoProductoProveedor.SUDADERA,
+            TipoProductoProveedor.SHORT));
+    assertTrue(ropa.excluye(TipoProductoProveedor.SUDADERA));
+    assertFalse(ropa.excluye(TipoProductoProveedor.BLUSA));
+    assertFalse(ropa.excluye(null));
+
+    assertThrows(
+        ExcepcionDeDominio.class,
+        () -> ropa.definirTiposExcluidos(Set.of(TipoProductoProveedor.OTRO)),
+        "excluir «otro» descartaría lo que el extractor no reconoció");
+    assertTrue(ropa.excluye(TipoProductoProveedor.PANTALON), "el intento fallido no borra nada");
+
+    ropa.definirTiposExcluidos(null);
+    assertTrue(ropa.tiposExcluidos().isEmpty());
+
+    Proveedor tecnologia =
+        Proveedor.crear(
+            "Fénix",
+            LineaCatalogo.TECNOLOGIA,
+            "+57 323",
+            "Fénix",
+            null,
+            OrdenDePublicacion.TEXTO_PRIMERO);
+    assertThrows(
+        ExcepcionDeDominio.class,
+        () -> tecnologia.definirTiposExcluidos(Set.of(TipoProductoProveedor.PANTALON)));
+    tecnologia.definirTiposExcluidos(Set.of());
   }
 }
