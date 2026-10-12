@@ -6,6 +6,7 @@ import {
   marcarTallaDePrenda,
   moverFotoAPrenda,
   olvidarFotoDePrendas,
+  ColorParaProponer,
   prendasEnUso,
   prendaSinTallas,
   prendasSugeridas,
@@ -17,7 +18,18 @@ import {
   tonoDeFoto,
   unaSolaPrenda,
   variantesQueSeCrean,
+  verPrendaEnFoto,
+  fotoEnQueSeVe,
+  principalEnLaFichaPorOmision,
+  principalPuedeEntrarEnLaFicha,
 } from './prendas';
+
+/** La paleta como la manda la API: el nombre en español y, si se da, el inglés. */
+function colores(...nombres: (string | [string, string])[]): ColorParaProponer[] {
+  return nombres.map((n) =>
+    typeof n === 'string' ? { nombre: n } : { nombre: n[0], nombreEn: n[1] },
+  );
+}
 
 /** Aplica los colores en orden, cada uno a su foto: el camino de quien marca foto por foto. */
 function conTonos(...pares: [string, string][]): AsignacionDePrendas {
@@ -25,7 +37,7 @@ function conTonos(...pares: [string, string][]): AsignacionDePrendas {
 }
 
 describe('prendas sugeridas por la lectura de fotos', () => {
-  const paleta = ['Negro', 'Café', 'Gris oscuro', 'Verde'];
+  const paleta = colores('Negro', 'Café', 'Gris oscuro', 'Verde');
 
   it('las fotos del mismo color son una prenda, y cada color la suya', () => {
     const a = prendasSugeridas(
@@ -47,6 +59,202 @@ describe('prendas sugeridas por la lectura de fotos', () => {
     const a = prendasSugeridas([{ mensajeId: 'f1', tonoSugerido: 'cocoa' }], paleta);
 
     expect(a).toEqual(SIN_PRENDAS);
+  });
+});
+
+/** Los borradores de Violeta revisados en dev el 12 de octubre de 2026. */
+describe('prendas sugeridas con los nombres del proveedor', () => {
+  const paleta = colores(
+    ['Negro', 'Black'],
+    ['Blanco', 'White'],
+    ['Verde', 'Green'],
+    ['Rosado', 'Pink'],
+    ['Cocoa', 'Cocoa'],
+    ['Vino', 'Wine'],
+    ['Azul', 'Blue'],
+    ['Café', 'Brown'],
+    ['Crema', 'Cream'],
+    ['Marfil', 'Ivory'],
+  );
+
+  /** La lectura vio «rosado» donde el texto dice «cocoa»: mandan los nombres del texto. */
+  it('la blusa sale en negro, cocoa y verde, sin un rosado que no existe', () => {
+    const a = prendasSugeridas(
+      [
+        { mensajeId: 'frente', tonoSugerido: null, tonosVistos: ['negro', 'rosado', 'verde'] },
+        { mensajeId: 'espalda', tonoSugerido: null, tonosVistos: ['negro', 'rosado', 'verde'] },
+      ],
+      paleta,
+      ['negro', 'cocoa', 'verde'],
+    );
+
+    expect(variantesQueSeCrean(a, ['frente', 'espalda']).map((v) => v.valor)).toEqual([
+      'Negro',
+      'Cocoa',
+      'Verde',
+    ]);
+    expect(a.fotoDePrenda).toEqual({});
+  });
+
+  /** En el orden de la foto, con el vino del texto donde la lectura vio rosado. */
+  it('el croptop sale con los cuatro tonos del texto', () => {
+    const a = prendasSugeridas(
+      [
+        {
+          mensajeId: 'unica',
+          tonoSugerido: null,
+          tonosVistos: ['negro', 'azul', 'cocoa', 'rosado'],
+        },
+      ],
+      paleta,
+      ['cocoa', 'vino', 'azul', 'negro'],
+    );
+
+    expect(variantesQueSeCrean(a, ['unica']).map((v) => v.valor)).toEqual([
+      'Negro',
+      'Azul',
+      'Cocoa',
+      'Vino',
+    ]);
+  });
+
+  it('«ivory» se propone como Marfil, por el nombre en inglés', () => {
+    const a = prendasSugeridas(
+      [{ mensajeId: 'unica', tonoSugerido: null, tonosVistos: ['ivory', 'azul'] }],
+      paleta,
+    );
+
+    expect(a.tonoPorPrenda).toEqual({ 1: 'Marfil', 2: 'Azul' });
+    expect(a.pistaPorPrenda[1]).toBe('ivory');
+  });
+
+  it('el español gana si un nombre en inglés coincide con otro color', () => {
+    const a = prendasSugeridas(
+      [{ mensajeId: 'f', tonoSugerido: 'crema' }],
+      colores(['Crema', 'Cream'], ['Hueso', 'Crema']),
+    );
+
+    expect(a.tonoPorPrenda).toEqual({ 1: 'Crema' });
+  });
+
+  /**
+   * La camiseta: el blanco y el negro en la foto 1, el café, el crema y el cocoa en la 2. El texto
+   * nombra uno solo, así que no manda: cada tono se ve en la foto en que está.
+   */
+  it('cada tono de la camiseta se ve en la foto en que está', () => {
+    const a = prendasSugeridas(
+      [
+        { mensajeId: 'f1', tonoSugerido: null, tonosVistos: ['blanco', 'negro'] },
+        { mensajeId: 'f2', tonoSugerido: null, tonosVistos: ['café', 'crema', 'cocoa'] },
+      ],
+      paleta,
+      ['blanco'],
+    );
+
+    expect(a.aparte.map((p) => [a.tonoPorPrenda[p], a.fotoDePrenda[p]])).toEqual([
+      ['Blanco', 'f1'],
+      ['Negro', 'f1'],
+      ['Café', 'f2'],
+      ['Crema', 'f2'],
+      ['Cocoa', 'f2'],
+    ]);
+  });
+});
+
+describe('el texto solo renombra el único tono que no coincide', () => {
+  const paleta = colores('Blanco', 'Negro', 'Café', 'Crema', 'Azul', 'Rojo', ['Marfil', 'Ivory']);
+
+  /** El texto nombra los tonos de la foto 1; la foto 2 es de otros, y no se pierden. */
+  it('una foto sin ningún tono del texto se queda con los suyos', () => {
+    const a = prendasSugeridas(
+      [
+        { mensajeId: 'f1', tonoSugerido: null, tonosVistos: ['blanco', 'negro'] },
+        { mensajeId: 'f2', tonoSugerido: null, tonosVistos: ['café', 'crema'] },
+      ],
+      paleta,
+      ['blanco', 'negro'],
+    );
+
+    expect(variantesQueSeCrean(a, ['f1', 'f2']).map((v) => v.valor)).toEqual([
+      'Blanco',
+      'Negro',
+      'Café',
+      'Crema',
+    ]);
+  });
+
+  it('con dos diferencias no adivina cuál es cuál', () => {
+    const a = prendasSugeridas(
+      [{ mensajeId: 'f', tonoSugerido: null, tonosVistos: ['negro', 'café', 'crema'] }],
+      paleta,
+      ['negro', 'azul', 'rojo'],
+    );
+
+    expect(variantesQueSeCrean(a, ['f']).map((v) => v.valor)).toEqual([
+      'Negro',
+      'Café',
+      'Crema',
+      'Azul',
+      'Rojo',
+    ]);
+  });
+
+  /** «ivory» en una foto y «marfil» en otra son el mismo color, visto en las dos. */
+  it('el mismo color con dos nombres no se ve en una sola foto', () => {
+    const a = prendasSugeridas(
+      [
+        { mensajeId: 'f1', tonoSugerido: null, tonosVistos: ['ivory', 'negro'] },
+        { mensajeId: 'f2', tonoSugerido: null, tonosVistos: ['marfil', 'azul'] },
+      ],
+      paleta,
+    );
+
+    const marfil = a.aparte.find((p) => a.tonoPorPrenda[p] === 'Marfil')!;
+    expect(a.fotoDePrenda[marfil]).toBeUndefined();
+  });
+});
+
+describe('la casilla de la principal en la ficha', () => {
+  it('solo se ofrece con una principal sin color y más fotos', () => {
+    expect(principalPuedeEntrarEnLaFicha(SIN_PRENDAS, ['f1', 'f2'])).toBe(true);
+    expect(principalPuedeEntrarEnLaFicha(SIN_PRENDAS, ['f1'])).toBe(false);
+    expect(principalPuedeEntrarEnLaFicha(conTonos(['f1', 'Negro']), ['f1', 'f2'])).toBe(false);
+  });
+
+  it('se propone marcada si una prenda sin foto se ve en la principal', () => {
+    let a = agregarPrendaAparte(SIN_PRENDAS, 'Negro');
+    expect(principalEnLaFichaPorOmision(a, ['f1', 'f2'])).toBe(false);
+
+    a = verPrendaEnFoto(a, 1, 'f2');
+    expect(principalEnLaFichaPorOmision(a, ['f1', 'f2'])).toBe(false);
+    expect(principalEnLaFichaPorOmision(a, ['f2', 'f1'])).toBe(true);
+  });
+
+  it('una foto que no entra no es donde se ve nada', () => {
+    const a = verPrendaEnFoto(agregarPrendaAparte(SIN_PRENDAS, 'Negro'), 1, 'f3');
+
+    expect(fotoEnQueSeVe(a, 1, new Set(['f1', 'f2']))).toBeNull();
+    expect(fotoEnQueSeVe(a, 1, new Set(['f3']))).toBe('f3');
+  });
+});
+
+describe('la foto en que se ve una prenda sin foto', () => {
+  it('se elige y se suelta', () => {
+    let a = agregarPrendaAparte(SIN_PRENDAS, 'Negro');
+    a = verPrendaEnFoto(a, 1, 'f1');
+    expect(a.fotoDePrenda).toEqual({ 1: 'f1' });
+
+    a = verPrendaEnFoto(a, 1, null);
+    expect(a.fotoDePrenda).toEqual({});
+  });
+
+  it('eliminar la foto la suelta, y quitar la prenda se lleva la referencia', () => {
+    let a = agregarPrendaAparte(SIN_PRENDAS, 'Negro');
+    a = agregarPrendaAparte(a, 'Blanco');
+    a = verPrendaEnFoto(verPrendaEnFoto(a, 1, 'f1'), 2, 'f2');
+
+    expect(olvidarFotoDePrendas(a, 'f1').fotoDePrenda).toEqual({ 2: 'f2' });
+    expect(quitarPrenda(a, 2).fotoDePrenda).toEqual({ 1: 'f1' });
   });
 });
 
@@ -191,7 +399,7 @@ describe('prendas del borrador', () => {
 });
 
 describe('prendas sin foto propia', () => {
-  const paleta = ['Negro', 'Café', 'Verde', 'Azul', 'Beige'];
+  const paleta = colores('Negro', 'Café', 'Verde', 'Azul', 'Beige');
 
   /**
    * La blusa de Violeta (12 de octubre de 2026): una foto con los tres tonos de frente y otra de
@@ -221,10 +429,11 @@ describe('prendas sin foto propia', () => {
     expect(problemaDePrendas(conCafe, ['frente', 'espalda'])).toBeNull();
   });
 
+  /** Tres tonos vistos y dos nombrados: no son los mismos, así que el texto no los reemplaza. */
   it('un tono que ya tiene su foto no se propone otra vez sin foto', () => {
     const a = prendasSugeridas(
       [
-        { mensajeId: 'todos', tonoSugerido: null, tonosVistos: ['azul', 'beige'] },
+        { mensajeId: 'todos', tonoSugerido: null, tonosVistos: ['azul', 'beige', 'verde'] },
         { mensajeId: 'azul', tonoSugerido: 'azul' },
       ],
       paleta,
@@ -234,9 +443,10 @@ describe('prendas sin foto propia', () => {
     expect(variantesQueSeCrean(a, ['todos', 'azul']).map((v) => [v.valor, v.fotos])).toEqual([
       ['Azul', ['azul']],
       ['Beige', []],
+      ['Verde', []],
     ]);
-    expect(a.pistaPorPrenda[3]).toBe('ivory');
-    expect(a.tonoPorPrenda[3]).toBe('');
+    expect(a.pistaPorPrenda[4]).toBe('ivory');
+    expect(a.tonoPorPrenda[4]).toBe('');
   });
 
   it('las prendas con foto van primero, como en la API', () => {

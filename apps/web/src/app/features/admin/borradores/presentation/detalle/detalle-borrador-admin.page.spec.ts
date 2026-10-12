@@ -512,14 +512,65 @@ describe('DetalleBorradorAdminPage', () => {
 
       await screen.findByRole('link', { name: a.verProducto });
       expect(repositorio.aprobaciones[0].aprobacion.prendas).toEqual([
-        { numero: 1, tono: 'Negro', colorHex: '#111111', tallas: null },
-        { numero: 2, tono: 'Café', colorHex: '#6F4E37', tallas: null },
-        { numero: 3, tono: 'Vino', colorHex: '#722F37', tallas: null },
+        { numero: 1, tono: 'Negro', colorHex: '#111111', tallas: null, seVeEn: null },
+        { numero: 2, tono: 'Café', colorHex: '#6F4E37', tallas: null, seVeEn: null },
+        { numero: 3, tono: 'Vino', colorHex: '#722F37', tallas: null, seVeEn: null },
       ]);
+      // Las dos fotos retratan los tres tonos: ninguna los distingue, y la principal no se pidió.
+      expect(repositorio.aprobaciones[0].aprobacion.principalEnLaFicha).toBe(false);
       expect(repositorio.aprobaciones[0].aprobacion.fotos.map((f) => f.prenda)).toEqual([
         null,
         null,
       ]);
+    });
+
+    /**
+     * La blusa (ADR-0082): todas las fotos retratan los tres tonos, así que la principal elegida no
+     * se veía en la ficha. La casilla la mete.
+     */
+    it('la casilla de la principal viaja con la aprobación', async () => {
+      const { repositorio } = await renderPagina(sinTonosDelTexto(), fotosDeTodos());
+      await llenarAprobacion();
+      await marcarColorDePrenda(2, 'Café');
+
+      const casilla = (await screen.findByLabelText(a.principalEnLaFicha)) as HTMLInputElement;
+      expect(casilla.checked).toBe(false);
+      fireEvent.click(casilla);
+      await aprobarCon75000();
+
+      await screen.findByRole('link', { name: a.verProducto });
+      expect(repositorio.aprobaciones[0].aprobacion.principalEnLaFicha).toBe(true);
+    });
+
+    /**
+     * La camiseta de Violeta: el negro y el vino en la foto 1, el café en la 2. Cada tono se
+     * propone visto en la foto en que está, y la principal entra en la ficha porque el negro y el
+     * vino se ven en ella.
+     */
+    it('cada tono se ve en la foto en que está, y eso viaja con la aprobación', async () => {
+      const { repositorio } = await renderPagina(sinTonosDelTexto(), [
+        { ...fotoDePrueba('f1'), tonosVistos: ['negro', 'vino'] },
+        { ...fotoDePrueba('f2'), tonosVistos: ['café'] },
+      ]);
+      await llenarAprobacion();
+
+      const dondeSeVe = (await screen.findByLabelText(
+        a.seVeEn.replace('{{numero}}', '3'),
+      )) as HTMLSelectElement;
+      expect(dondeSeVe.value).toBe('f2');
+      expect((screen.getByLabelText(a.principalEnLaFicha) as HTMLInputElement).checked).toBe(true);
+
+      fireEvent.change(dondeSeVe, { target: { value: '' } });
+      await aprobarCon75000();
+
+      await screen.findByRole('link', { name: a.verProducto });
+      const aprobacion = repositorio.aprobaciones[0].aprobacion;
+      expect(aprobacion.prendas.map((p) => [p.tono, p.seVeEn])).toEqual([
+        ['Negro', 'f1'],
+        ['Vino', 'f1'],
+        ['Café', null],
+      ]);
+      expect(aprobacion.principalEnLaFicha).toBe(true);
     });
 
     /** El anuncio dice «negro y café»; quien revisa marca la foto negra y es la de esa prenda. */

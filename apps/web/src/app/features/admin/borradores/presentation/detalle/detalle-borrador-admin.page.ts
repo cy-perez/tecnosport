@@ -88,6 +88,10 @@ import {
   tonoDeFoto,
   unaSolaPrenda,
   variantesQueSeCrean,
+  verPrendaEnFoto,
+  fotoEnQueSeVe,
+  principalEnLaFichaPorOmision,
+  principalPuedeEntrarEnLaFicha,
 } from '../../domain/prendas';
 import { clasesDeEstadoBorrador } from '../estado-borrador';
 
@@ -312,6 +316,14 @@ export class DetalleBorradorAdminPage {
   protected readonly tallasPorColor = signal(false);
 
   /**
+   * Si la principal que vale para todos los tonos entra también en la ficha (ADR-0082). Nula =
+   * nadie la tocó, y entonces entra si alguna prenda sin foto se ve en ella: es la foto de ese tono,
+   * y sin entrar en la ficha elegirlo no llevaría a ninguna parte. Fuera de ese caso, lo de
+   * ADR-0069: la portada no entra.
+   */
+  private readonly principalEnLaFichaElegida = signal<boolean | null>(null);
+
+  /**
    * Las fotos que alguien desmarcó, por `mensajeId`. Se guardan las excluidas y no las elegidas
    * para que una foto nueva en una revalidación entre por omisión.
    */
@@ -502,6 +514,7 @@ export class DetalleBorradorAdminPage {
       // la URL reutiliza el componente.
       this.prendas.set(SIN_PRENDAS);
       this.tallasPorColor.set(false);
+      this.principalEnLaFichaElegida.set(null);
       this.principalMarcada.set(null);
       this.fotosExcluidas.set(new Set());
       this.fotosIncluidasAMano.set(new Set());
@@ -579,11 +592,7 @@ export class DetalleBorradorAdminPage {
         // Los tonos de la foto de todos y los que nombra el texto llegan como prendas sin foto
         // propia; y si el anuncio reparte las tallas por tono, la tabla de color y talla se abre
         // ya llena con ellas.
-        const sugeridas = prendasSugeridas(
-          fotos,
-          paleta.map((color) => color.nombre),
-          borrador.tonosNombrados,
-        );
+        const sugeridas = prendasSugeridas(fotos, paleta, borrador.tonosNombrados);
         const conTallas = borrador.tallasPorTono.length > 0 && borrador.tallas.tipo === 'LISTA';
         this.prendas.set(
           conTallas
@@ -744,8 +753,57 @@ export class DetalleBorradorAdminPage {
     );
     return asignacion.aparte
       .filter((prenda) => !conFoto.has(prenda))
-      .map((prenda) => ({ prenda, pista: asignacion.pistaPorPrenda[prenda] ?? null }));
+      .map((prenda) => ({
+        prenda,
+        pista: asignacion.pistaPorPrenda[prenda] ?? null,
+        foto: this.fotoEnQueSeVe(prenda),
+      }));
   });
+
+  /** La foto en que se ve una prenda sin foto propia, entre las que entran (`prendas.ts`). */
+  private fotoEnQueSeVe(prenda: number): string | null {
+    return fotoEnQueSeVe(this.prendas(), prenda, this.fotosQueEntran());
+  }
+
+  /** Las fotos que entran, por su número en la lista: dónde se puede ver una prenda sin foto. */
+  protected readonly opcionesFotoDePrenda = computed<OpcionSelect[]>(() => {
+    const traducir = this.traducir();
+    const numeroDe = new Map(this.fotos().map((foto, i) => [foto.mensajeId, i + 1]));
+    return this.fotosElegidas().map((foto) => ({
+      valor: foto.mensajeId,
+      etiqueta: traducir('admin.borradores.aprobar.fotoNumero', {
+        numero: numeroDe.get(foto.mensajeId) ?? 0,
+      }),
+    }));
+  });
+
+  protected verEnFoto(prenda: number, valor: string): void {
+    this.prendas.update((actual) => verPrendaEnFoto(actual, prenda, valor || null));
+  }
+
+  /**
+   * La casilla de la principal solo cuando hay qué decidir: la principal vale para todos los tonos
+   * —una con color ya entra— y no es la única foto, porque sola entra igual.
+   */
+  protected readonly ofrecerPrincipalEnLaFicha = computed(() =>
+    principalPuedeEntrarEnLaFicha(
+      this.prendas(),
+      this.fotosElegidas().map((foto) => foto.mensajeId),
+    ),
+  );
+
+  protected readonly principalEnLaFicha = computed(
+    () =>
+      this.principalEnLaFichaElegida() ??
+      principalEnLaFichaPorOmision(
+        this.prendas(),
+        this.fotosElegidas().map((foto) => foto.mensajeId),
+      ),
+  );
+
+  protected elegirPrincipalEnLaFicha(marcada: boolean): void {
+    this.principalEnLaFichaElegida.set(marcada);
+  }
 
   /** Los colores marcados de una prenda sin foto, en orden. */
   protected coloresDePrenda(prenda: number): string[] {
@@ -859,6 +917,8 @@ export class DetalleBorradorAdminPage {
     // Elegirla es elegirla a mano: si no, marcar después otra que pasa del tope podría sacarla.
     this.incluirFoto(mensajeId, true);
     this.principalMarcada.set(mensajeId);
+    // La casilla era de la principal anterior: con otra foto, vuelve a proponer.
+    this.principalEnLaFichaElegida.set(null);
     this.enfocarDespuesDePintar(() =>
       this.host.nativeElement.querySelector<HTMLElement>('#incluir-foto-' + indice),
     );
@@ -1302,6 +1362,7 @@ export class DetalleBorradorAdminPage {
               numero: variante.prenda,
               tono,
               colorHex: this.hexDe(tono),
+              seVeEn: variante.fotos.length === 0 ? this.fotoEnQueSeVe(variante.prenda) : null,
               // Desmarcada la casilla, cada color va en todas las tallas, como ella promete: con
               // nulo, la API volvería a recortarlas por lo que el anuncio dijo de cada tono.
               tallas: conTallasPorColor
@@ -1311,6 +1372,7 @@ export class DetalleBorradorAdminPage {
                   : null,
             };
           }),
+          principalEnLaFicha: this.ofrecerPrincipalEnLaFicha() && this.principalEnLaFicha(),
         },
       },
       {
