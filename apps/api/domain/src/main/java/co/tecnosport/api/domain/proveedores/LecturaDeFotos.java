@@ -45,11 +45,12 @@ public record LecturaDeFotos(boolean albumDeDisenos, List<LecturaDeFoto> fotos, 
    * @param colores los colores de lo que se vende en la foto —no de lo que la ambienta—, en español
    *     y en minúsculas
    * @param diseno una etiqueta corta que es igual en las fotos del mismo diseño: dos fotos con la
-   *     misma etiqueta son el mismo producto, aunque cambie el color. Nula si no se sabe
+   *     misma etiqueta son el mismo producto, aunque cambie el color. Sin colores ({@link
+   *     EtiquetaDeDiseno}); nula si no se sabe o si solo decía colores
    * @param marcas las marcas o logos que se leen en lo que se vende —no en la gorra que lo
-   *     ambienta—, como la marca se escribe. Vacía si no se lee ninguna. Desde el 11 de octubre de
-   *     2026: un logo de CK o de A|X en una camiseta de mayorista es una réplica aunque el texto no
-   *     lo diga, y con varias marcas en un anuncio dice cuál foto es de cuál
+   *     ambienta—, como la marca se escribe. Vacía si no se lee ninguna. Con varias marcas en un
+   *     anuncio dice cuál foto es de cuál. No alerta la réplica: esa la dice solo el texto
+   *     (decidido por el negocio el 11 de octubre de 2026)
    */
   public record LecturaDeFoto(
       int posicion,
@@ -94,7 +95,8 @@ public record LecturaDeFotos(boolean albumDeDisenos, List<LecturaDeFoto> fotos, 
                   .filter(c -> !c.isEmpty())
                   .distinct()
                   .toList();
-      diseno = diseno == null || diseno.isBlank() ? null : diseno.strip();
+      // Lo que solo cambia en el color no es otro diseño, aunque el lector lo etiquete aparte.
+      diseno = EtiquetaDeDiseno.sinColores(diseno);
       marcas =
           marcas == null
               ? List.of()

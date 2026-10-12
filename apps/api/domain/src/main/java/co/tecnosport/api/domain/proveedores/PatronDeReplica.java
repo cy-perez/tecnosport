@@ -47,13 +47,15 @@ public final class PatronDeReplica {
   private static final Pattern DOBLE_A = Pattern.compile("(?<![\\p{L}\\d])AA(?![\\p{L}\\d])");
 
   /**
-   * «estilo» seguido de algo que no es «importado»: el título que el extractor escribe para una
-   * réplica que nombra marca o modelo, «Pantalón estilo Levis para caballero».
+   * «estilo» seguido de una palabra en mayúscula que no es «Importado»: el título que el extractor
+   * escribe para una réplica que nombra marca o modelo, «Pantalón estilo Levis para caballero». La
+   * mayúscula es la que separa la marca del adjetivo: «Bolso de dama mediano estilo ejecutivo»
+   * salió con la alerta de réplica sin que el texto nombrara marca alguna (11 de octubre de 2026).
+   * Solo «estilo» e «importado» ignoran mayúsculas: con la bandera sobre todo el patrón, Java deja
+   * que {@code \p{Lu}} acepte también las minúsculas.
    */
   private static final Pattern ESTILO_CON_MARCA =
-      Pattern.compile(
-          "(?<!\\p{L})estilo\\s+(?!importad[oa]s?(?!\\p{L}))\\p{L}",
-          Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE);
+      Pattern.compile("(?<!\\p{L})(?iu:estilo)\\s+(?!(?iu:importad[oa]s?)(?!\\p{L}))\\p{Lu}");
 
   /**
    * «Pilas AAA», «baterías AAA»: el tamaño de una pila, que un control o un juguete dice que usa.
@@ -100,8 +102,8 @@ public final class PatronDeReplica {
    * Si el título nombra una marca con «estilo», que es como el extractor titula una réplica: «Jeans
    * AA para caballero ⭕️Marca Levis» salió como «Pantalón estilo Levis para caballero» sin que el
    * texto dijera 1.1, y el borrador se quedó sin la alerta (11 de octubre de 2026). Es una señal
-   * para revisar, no una prueba: «Tenis estilo runner» también la da, y la confirma o la descarta
-   * quien aprueba.
+   * para revisar, no una prueba: «Tenis estilo Runner» también la da, y la confirma o la descarta
+   * quien aprueba. En minúscula —«estilo ejecutivo», «estilo slim fit»— es un adjetivo y no la da.
    */
   public static boolean nombraMarcaConEstilo(String titulo) {
     return titulo != null && ESTILO_CON_MARCA.matcher(titulo).find();
