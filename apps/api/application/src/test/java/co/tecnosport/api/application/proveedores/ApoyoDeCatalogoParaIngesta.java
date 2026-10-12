@@ -24,6 +24,7 @@ import co.tecnosport.api.domain.catalogo.Paquete;
 import co.tecnosport.api.domain.catalogo.Producto;
 import co.tecnosport.api.domain.catalogo.TipoAtributo;
 import co.tecnosport.api.domain.catalogo.Variante;
+import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.compartido.Sku;
 import co.tecnosport.api.domain.compartido.Slug;
 import co.tecnosport.api.domain.inventario.Inventario;
@@ -135,6 +136,11 @@ final class ApoyoDeCatalogoParaIngesta {
 
     @Override
     public void actualizarPaquete(UUID varianteId, Paquete paquete) {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void actualizarPrecio(UUID varianteId, Dinero precio) {
       throw new UnsupportedOperationException();
     }
 

@@ -1220,6 +1220,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/productos/{id}/precios": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["cambiarPrecios"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/productos/{id}/publicacion": {
         parameters: {
             query?: never;
@@ -2422,6 +2438,9 @@ export interface components {
             claveActual: string;
             claveNueva: string;
         };
+        CambiarPreciosPeticion: {
+            precios: components["schemas"]["PrecioDeVariantePeticion"][];
+        };
         CambiarTallaPeticion: {
             talla: string;
         };
@@ -3239,6 +3258,12 @@ export interface components {
             /** Format: int64 */
             precio: number;
         };
+        PrecioDeVariantePeticion: {
+            /** Format: int64 */
+            precio: number;
+            /** Format: uuid */
+            varianteId: string;
+        };
         PrendaAprobadaPeticion: {
             colorHex?: string;
             /** Format: int32 */
@@ -3758,6 +3783,8 @@ export interface components {
             atributos?: components["schemas"]["AtributoValorRespuesta"][];
             /** Format: uuid */
             id?: string;
+            /** Format: int64 */
+            precio: number;
             sku?: string;
         };
         VarianteSinMedirRespuesta: {
@@ -6023,6 +6050,30 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["AsignarColorPeticion"];
+            };
+        };
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    cambiarPrecios: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CambiarPreciosPeticion"];
             };
         };
         responses: {

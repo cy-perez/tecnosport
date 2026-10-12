@@ -11,6 +11,7 @@ import co.tecnosport.api.domain.catalogo.IntercambioDePrincipal;
 import co.tecnosport.api.domain.catalogo.Paquete;
 import co.tecnosport.api.domain.catalogo.Producto;
 import co.tecnosport.api.domain.catalogo.Variante;
+import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.compartido.Sku;
 import co.tecnosport.api.domain.compartido.Slug;
 import java.util.List;
@@ -131,6 +132,11 @@ final class RepositorioProductosFalso implements RepositorioProductos {
 
   @Override
   public void actualizarPaquete(UUID varianteId, Paquete paquete) {
+    throw new UnsupportedOperationException("No usado por las pruebas de pedido.");
+  }
+
+  @Override
+  public void actualizarPrecio(UUID varianteId, Dinero precio) {
     throw new UnsupportedOperationException("No usado por las pruebas de pedido.");
   }
 

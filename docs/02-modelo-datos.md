@@ -743,7 +743,9 @@ huella_proveedor)` es lo que hace que la renovación encuentre su producto.
   `PRECIO_CAMBIO`.
 
 El precio de venta que se sugiere es `precio_proveedor × factor de margen`,
-redondeado a la centena con `HALF_UP`; el factor sale del proveedor y, si no lo
+subido a la unidad de mil siguiente (72.500 es 73.000; desde el 12 de octubre de
+2026, antes era la centena con `HALF_UP`) y llevado a los topes de ganancia, donde
+el máximo baja a la unidad de mil anterior para cumplirse; el factor sale del proveedor y, si no lo
 tiene, de la línea (`PROVEEDORES_MARGEN_BOLSOS`, `PROVEEDORES_MARGEN_ROPA`,
 `PROVEEDORES_MARGEN_CALZADO`; el del calzado es el de la ropa mientras el
 negocio no defina uno propio).

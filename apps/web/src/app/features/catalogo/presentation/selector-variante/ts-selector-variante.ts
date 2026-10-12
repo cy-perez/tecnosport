@@ -1,3 +1,4 @@
+import { Leyenda } from '../../../../shared/leyenda/leyenda';
 import { TsMuestraColor } from '../../../../shared/ui/muestra-color/ts-muestra-color';
 import { ParteDeMuestra } from '../../domain/producto.model';
 import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
@@ -38,7 +39,7 @@ const MUESTRA_ACTIVA = `${MUESTRA} outline-foco outline-offset-foco outline-ts-p
 
 @Component({
   selector: 'ts-selector-variante',
-  imports: [TsBoton, TsMuestraColor],
+  imports: [TsBoton, TsMuestraColor, Leyenda],
   templateUrl: './ts-selector-variante.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

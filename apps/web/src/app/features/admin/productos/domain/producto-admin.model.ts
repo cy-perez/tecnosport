@@ -104,10 +104,12 @@ export interface ImagenDeGaleriaAdmin {
   readonly varianteId: string | null;
 }
 
-/** Una variante como la lista la edición: su SKU y lo que la distingue. */
+/** Una variante como la lista la edición: su SKU, lo que la distingue y su precio de venta. */
 export interface VarianteResumenAdmin {
   readonly id: string;
   readonly sku: string;
+  /** En pesos enteros, como el de `AgregarVarianteAdmin`. */
+  readonly precio: number;
   readonly atributos: readonly {
     readonly nombre: string;
     readonly valor: string;
@@ -144,6 +146,15 @@ export interface CambiarTallaAdmin {
   /** Cualquier variante de esa talla: uno de `modelosSinColor`. */
   readonly modeloId: string;
   readonly talla: string;
+}
+
+/**
+ * Los precios de venta como tienen que quedar, por variante; las que no vayan no se tocan. Los
+ * pedidos ya hechos no cambian: cada línea guardó el precio con que se compró.
+ */
+export interface CambiarPreciosAdmin {
+  readonly productoId: string;
+  readonly precios: readonly { readonly varianteId: string; readonly precio: number }[];
 }
 
 /** La foto de la galería que pasa a ser la principal; la principal anterior ocupa su puesto. */

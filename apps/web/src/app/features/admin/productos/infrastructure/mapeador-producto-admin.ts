@@ -67,6 +67,7 @@ export function aProductoAdminDetalle(dto: ProductoDetalleDto): ProductoAdminDet
     variantes: (dto.variantes ?? []).map((variante) => ({
       id: variante.id ?? '',
       sku: variante.sku ?? '',
+      precio: variante.precio,
       atributos: (variante.atributos ?? []).map((atributo) => ({
         nombre: atributo.nombre ?? '',
         valor: atributo.valor ?? '',

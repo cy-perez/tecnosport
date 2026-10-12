@@ -12,11 +12,14 @@ import co.tecnosport.api.domain.catalogo.IntercambioDePrincipal;
 import co.tecnosport.api.domain.catalogo.Paquete;
 import co.tecnosport.api.domain.catalogo.Producto;
 import co.tecnosport.api.domain.catalogo.Variante;
+import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.compartido.Sku;
 import co.tecnosport.api.domain.compartido.Slug;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -54,6 +57,7 @@ class RepositorioProductosDobleDePrueba implements RepositorioProductos {
 
   UUID ultimaVarianteMedida;
   Paquete ultimoPaqueteGrabado;
+  final Map<UUID, Dinero> preciosGrabados = new LinkedHashMap<>();
   private List<MedidaDeVariante> sinMedir = List.of();
   private final Set<String> skusEnUso = new HashSet<>();
 
@@ -84,6 +88,7 @@ class RepositorioProductosDobleDePrueba implements RepositorioProductos {
     this.ordenGuardado = null;
     this.ultimaVarianteMedida = null;
     this.ultimoPaqueteGrabado = null;
+    this.preciosGrabados.clear();
     this.sinMedir = List.of();
     this.skusEnUso.clear();
     this.productosEliminados.clear();
@@ -230,6 +235,11 @@ class RepositorioProductosDobleDePrueba implements RepositorioProductos {
   public void actualizarPaquete(UUID varianteId, Paquete paquete) {
     this.ultimaVarianteMedida = varianteId;
     this.ultimoPaqueteGrabado = paquete;
+  }
+
+  @Override
+  public void actualizarPrecio(UUID varianteId, Dinero precio) {
+    preciosGrabados.put(varianteId, precio);
   }
 
   @Override

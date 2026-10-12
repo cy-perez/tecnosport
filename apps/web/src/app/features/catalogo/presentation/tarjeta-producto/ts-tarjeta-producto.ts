@@ -1,3 +1,4 @@
+import { Leyenda } from '../../../../shared/leyenda/leyenda';
 import { TsMuestraColor } from '../../../../shared/ui/muestra-color/ts-muestra-color';
 import { NgOptimizedImage } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
@@ -45,7 +46,15 @@ const MUESTRA_ACTIVA = `${MUESTRA} outline-foco outline-offset-foco outline-ts-p
  */
 @Component({
   selector: 'ts-tarjeta-producto',
-  imports: [NgOptimizedImage, TranslocoPipe, TsPrecio, TsEtiquetaStock, RouterLink, TsMuestraColor],
+  imports: [
+    NgOptimizedImage,
+    TranslocoPipe,
+    TsPrecio,
+    TsEtiquetaStock,
+    RouterLink,
+    TsMuestraColor,
+    Leyenda,
+  ],
   templateUrl: './ts-tarjeta-producto.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

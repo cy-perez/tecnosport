@@ -228,6 +228,11 @@ final class ApoyoDeDifusion {
     }
 
     @Override
+    public void actualizarPrecio(UUID varianteId, Dinero precio) {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
     public List<VarianteActiva> variantesActivas() {
       throw new UnsupportedOperationException();
     }

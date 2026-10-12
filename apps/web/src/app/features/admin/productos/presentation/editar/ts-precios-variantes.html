@@ -1,0 +1,68 @@
+<p class="m-0 text-ts-texto-suave">
+  {{ 'admin.productos.editar.precios.ayuda' | transloco }}
+</p>
+
+<ul class="m-0 flex list-none flex-col gap-8 p-0">
+  @for (variante of variantes(); track variante.id) {
+    @if (campos().get(variante.id); as campo) {
+      <li class="flex items-end gap-8">
+        <!-- Decorativa: el nombre del color ya va en la etiqueta del campo. La caja mide lo que el
+             campo, para que la muestra quede centrada con él y no con la etiqueta. -->
+        <span class="grid min-h-tactil shrink-0 place-items-center" aria-hidden="true">
+          @if (variante.muestra; as muestra) {
+            <span
+              class="block size-16 overflow-hidden rounded-completo border border-ts-borde-control"
+            >
+              <ts-muestra-color [partes]="muestra" />
+            </span>
+          }
+        </span>
+        <!-- Texto y no `number`: en un campo numérico «79.000» es setenta y nueve (`leerPrecio`). -->
+        <ts-campo
+          class="flex-1"
+          [idCampo]="'precio-variante-' + variante.id"
+          [label]="
+            'admin.productos.editar.precios.precioDe' | transloco: { variante: etiqueta(variante) }
+          "
+          [obligatorio]="true"
+          [error]="
+            invalidas().has(variante.id)
+              ? ('admin.productos.editar.precios.invalido' | transloco)
+              : null
+          "
+          [formControl]="campo.control"
+        />
+      </li>
+    }
+  }
+</ul>
+
+@if (variantes().length > 1) {
+  <div class="flex flex-wrap items-end gap-8">
+    <ts-campo
+      class="flex-1"
+      idCampo="precio-para-todas"
+      [label]="'admin.productos.editar.precios.paraTodas' | transloco"
+      [ayuda]="'admin.productos.editar.precios.paraTodasAyuda' | transloco"
+      [formControl]="paraTodas"
+    />
+    <ts-boton variante="secundario" tipo="button" (click)="aplicarATodas()">
+      {{ 'admin.productos.editar.precios.aplicarATodas' | transloco }}
+    </ts-boton>
+  </div>
+}
+
+@if (error(); as mensaje) {
+  <p class="m-0 text-ts-error" role="alert">{{ mensaje }}</p>
+}
+
+<!-- `ocupado` y no `cargando`: es una acción de sección, y deshabilitar el botón recién pulsado
+     manda el foco a <body> (apps/web/CLAUDE.md). La guarda de reentrada está en `guardar`. -->
+<div>
+  <ts-boton tipo="button" [ocupado]="guardando()" (click)="guardar()">
+    {{ 'admin.productos.editar.precios.guardar' | transloco }}
+  </ts-boton>
+</div>
+
+<!-- Siempre en la página: lo que cambia es su contenido. -->
+<p class="m-0 text-ts-exito" role="status">{{ aviso() }}</p>

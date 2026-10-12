@@ -58,7 +58,7 @@ import {
   usarPublicarProducto,
 } from '../../application/publicar-producto.mutacion';
 import { usarEliminarProducto } from '../../application/eliminar-producto.mutacion';
-import { TsMuestraColor } from '../../../../../shared/ui/muestra-color/ts-muestra-color';
+import { TsPreciosVariantes } from './ts-precios-variantes';
 import {
   ParteDeMuestra,
   separarColores,
@@ -104,7 +104,7 @@ import { PanelDeDifusion } from '../../../difusion/presentation/panel-de-difusio
     TsCampo,
     TsEsqueleto,
     TsMigas,
-    TsMuestraColor,
+    TsPreciosVariantes,
     TsSelect,
     TsSelectControl,
     TsSelectorColores,
@@ -214,6 +214,7 @@ export class EditarProductoAdminPage {
       sku: variante.sku,
       detalle: variante.atributos.map((atributo) => atributo.valor).join(' · '),
       muestra: this.muestraDeVariante(variante.atributos),
+      precio: variante.precio,
     })),
   );
 

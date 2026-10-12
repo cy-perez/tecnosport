@@ -11,7 +11,9 @@ import co.tecnosport.api.domain.compartido.HashContenido;
 import co.tecnosport.api.domain.compartido.Sku;
 import co.tecnosport.api.domain.compartido.Slug;
 import java.math.BigDecimal;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
@@ -141,6 +143,75 @@ class ProductoTest {
             ExcepcionDeDominio.class,
             () -> producto.medirVariante(ajena, new Paquete(430, 17, 9, 5)));
     assertTrue(excepcion.getMessage().contains(ajena.toString()));
+  }
+
+  @Test
+  void cambiarPreciosCambiaSoloLasPedidasYDevuelveElPrecioAnterior() {
+    Producto producto = productoDePrueba();
+    Variante negra = deTallaYColor("N-S", "S-M", "Negro");
+    Variante vino = deTallaYColor("V-S", "S-M", "Vino");
+    producto.agregarVariante(negra);
+    producto.agregarVariante(vino);
+
+    List<CambioDePrecio> cambios =
+        producto.cambiarPrecios(Map.of(negra.id(), Dinero.deCop(95_000)));
+
+    assertEquals(
+        List.of(
+            new CambioDePrecio(
+                negra.id(), new Sku("N-S"), Dinero.deCop(89_900), Dinero.deCop(95_000))),
+        cambios);
+    assertEquals(Dinero.deCop(95_000), producto.variantes().get(0).precio());
+    assertEquals(Dinero.deCop(89_900), producto.variantes().get(1).precio());
+    // El resto de la variante no se toca: el precio es lo único que viaja.
+    assertEquals(negra.atributos(), producto.variantes().get(0).atributos());
+    assertEquals(negra.sku(), producto.variantes().get(0).sku());
+  }
+
+  /** «Aplicar a todas» manda el mismo precio a la que ya lo tenía: eso no es un cambio. */
+  @Test
+  void elMismoPrecioNoCuentaComoCambio() {
+    Producto producto = productoDePrueba();
+    Variante negra = deTallaYColor("N-S", "S-M", "Negro");
+    producto.agregarVariante(negra);
+
+    assertEquals(List.of(), producto.cambiarPrecios(Map.of(negra.id(), Dinero.deCop(89_900))));
+  }
+
+  /**
+   * Todo o nada: un cero en la segunda no deja la primera cambiada. Sin la validación previa, el
+   * panel mostraría un error y el producto quedaría a medias, con un precio nuevo que nadie vio.
+   */
+  @Test
+  void unPrecioEnCeroNoDejaLasDemasCambiadas() {
+    Producto producto = productoDePrueba();
+    Variante negra = deTallaYColor("N-S", "S-M", "Negro");
+    Variante vino = deTallaYColor("V-S", "S-M", "Vino");
+    producto.agregarVariante(negra);
+    producto.agregarVariante(vino);
+    Map<UUID, Dinero> precios = new LinkedHashMap<>();
+    precios.put(negra.id(), Dinero.deCop(95_000));
+    precios.put(vino.id(), Dinero.deCop(0));
+
+    assertThrows(ExcepcionDeDominio.class, () -> producto.cambiarPrecios(precios));
+    assertEquals(Dinero.deCop(89_900), producto.variantes().get(0).precio());
+    assertEquals(Dinero.deCop(89_900), producto.variantes().get(1).precio());
+  }
+
+  @Test
+  void noSeCambiaElPrecioDeUnaVarianteDeOtroProducto() {
+    Producto producto = productoDePrueba();
+    Variante propia = variante("TS-PROPIA");
+    producto.agregarVariante(propia);
+    UUID ajena = UUID.randomUUID();
+    Map<UUID, Dinero> precios = new LinkedHashMap<>();
+    precios.put(propia.id(), Dinero.deCop(95_000));
+    precios.put(ajena, Dinero.deCop(95_000));
+
+    ExcepcionDeDominio excepcion =
+        assertThrows(ExcepcionDeDominio.class, () -> producto.cambiarPrecios(precios));
+    assertTrue(excepcion.getMessage().contains(ajena.toString()));
+    assertEquals(propia.precio(), producto.variantes().get(0).precio());
   }
 
   private static final Atributo COLOR = Atributo.crear("Color", TipoAtributo.COLOR, List.of());

@@ -7,6 +7,7 @@ import co.tecnosport.api.domain.catalogo.Paquete;
 import co.tecnosport.api.domain.catalogo.Producto;
 import co.tecnosport.api.domain.catalogo.ValorAtributo;
 import co.tecnosport.api.domain.catalogo.Variante;
+import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.compartido.Sku;
 import co.tecnosport.api.domain.compartido.Slug;
 import java.util.List;
@@ -103,6 +104,12 @@ public interface RepositorioProductos {
    * decide {@code MedirVariante}, que es quien la puede explicar.
    */
   void actualizarPaquete(UUID varianteId, Paquete paquete);
+
+  /**
+   * Graba el precio de venta de una variante existente. Las reglas —mayor que cero, que la variante
+   * sea del producto— ya las aplicó {@code Producto#cambiarPrecios}; el puerto solo escribe.
+   */
+  void actualizarPrecio(UUID varianteId, Dinero precio);
 
   /**
    * Las variantes {@code ACTIVA} de todo el catálogo, sin paginar — la lista que el panel necesita

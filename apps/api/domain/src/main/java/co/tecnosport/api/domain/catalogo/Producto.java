@@ -332,6 +332,46 @@ public final class Producto {
     return medida;
   }
 
+  /**
+   * Cambia el precio de venta de varias de sus variantes a la vez: las que estén en {@code precios}
+   * —por id— y nada más. Las que ya tenían ese precio no cuentan como cambio.
+   *
+   * <p><b>Todo o nada</b>: se valida cada precio y que cada variante sea de este producto antes de
+   * tocar ninguna, para que un precio en cero en la última no deje las primeras ya cambiadas. Pasa
+   * por el agregado por la misma razón que {@link #medirVariante}: es el único sitio que sabe qué
+   * variantes son suyas.
+   *
+   * <p>Los pedidos no cambian —cada línea congeló el suyo— y el carrito no guarda precios: el nuevo
+   * es el que ve y paga quien compre desde ahora.
+   *
+   * @return lo que cambió, en el orden de las variantes del producto; vacía si nada cambió
+   */
+  public List<CambioDePrecio> cambiarPrecios(Map<UUID, Dinero> precios) {
+    Objects.requireNonNull(precios, "Los precios no pueden ser nulos.");
+    for (UUID varianteId : precios.keySet()) {
+      if (variantes.stream().noneMatch(v -> v.id().equals(varianteId))) {
+        throw new ExcepcionDeDominio(
+            "La variante '" + varianteId + "' no pertenece al producto '" + nombre + "'.");
+      }
+    }
+    List<Variante> nuevas = new ArrayList<>(variantes.size());
+    List<CambioDePrecio> cambios = new ArrayList<>();
+    for (Variante variante : variantes) {
+      Dinero precio = precios.get(variante.id());
+      if (precio == null || precio.valor().compareTo(variante.precio().valor()) == 0) {
+        nuevas.add(variante);
+        continue;
+      }
+      // Valida antes de reemplazar nada: conPrecio rechaza el cero y la lista aún no se toca.
+      nuevas.add(variante.conPrecio(precio));
+      cambios.add(new CambioDePrecio(variante.id(), variante.sku(), variante.precio(), precio));
+    }
+    for (int i = 0; i < nuevas.size(); i++) {
+      variantes.set(i, nuevas.get(i));
+    }
+    return List.copyOf(cambios);
+  }
+
   public void asignarImagenPrincipal(ImagenProducto imagen) {
     if (imagen != null && imagen.tipo() != TipoImagen.PRINCIPAL) {
       throw new ImagenProductoInvalidaException("La imagen principal debe ser de tipo PRINCIPAL.");

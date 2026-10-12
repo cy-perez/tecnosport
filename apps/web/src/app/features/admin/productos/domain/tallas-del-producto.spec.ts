@@ -9,6 +9,7 @@ function variante(
   return {
     id,
     sku: id,
+    precio: 60000,
     atributos: atributos.map(([nombre, valor, colorHex]) => ({
       nombre,
       valor,

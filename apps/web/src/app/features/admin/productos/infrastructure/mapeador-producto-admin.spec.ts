@@ -44,4 +44,14 @@ describe('aProductoAdminDetalle', () => {
   it('un producto sin imagen principal la deja en null', () => {
     expect(aProductoAdminDetalle(detalle(undefined)).imagenPrincipalUrl).toBeNull();
   });
+
+  /** El precio de cada variante llega a la edición: es lo que el campo muestra para cambiarlo. */
+  it('lleva el precio de cada variante', () => {
+    const producto = aProductoAdminDetalle({
+      ...detalle(undefined),
+      variantes: [{ id: 'v1', sku: 'TS-1', precio: 79000, atributos: [] }],
+    });
+
+    expect(producto.variantes).toEqual([{ id: 'v1', sku: 'TS-1', precio: 79000, atributos: [] }]);
+  });
 });

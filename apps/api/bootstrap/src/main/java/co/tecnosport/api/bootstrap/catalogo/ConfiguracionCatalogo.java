@@ -8,6 +8,7 @@ import co.tecnosport.api.application.catalogo.AlmacenDeImagenes;
 import co.tecnosport.api.application.catalogo.AsignarColorAImagenDeGaleria;
 import co.tecnosport.api.application.catalogo.AsignarColorAImagenPrincipal;
 import co.tecnosport.api.application.catalogo.BuscarProductos;
+import co.tecnosport.api.application.catalogo.CambiarPrecios;
 import co.tecnosport.api.application.catalogo.CambiarTalla;
 import co.tecnosport.api.application.catalogo.CompletarSetRotacion;
 import co.tecnosport.api.application.catalogo.ConfirmarImagenPrincipal;
@@ -169,6 +170,11 @@ public class ConfiguracionCatalogo {
   @Bean
   public CambiarTalla cambiarTalla(RepositorioProductos repositorioProductos) {
     return new CambiarTalla(repositorioProductos);
+  }
+
+  @Bean
+  public CambiarPrecios cambiarPrecios(RepositorioProductos repositorioProductos) {
+    return new CambiarPrecios(repositorioProductos);
   }
 
   @Bean

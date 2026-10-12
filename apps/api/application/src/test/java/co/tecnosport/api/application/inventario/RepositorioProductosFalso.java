@@ -12,6 +12,7 @@ import co.tecnosport.api.domain.catalogo.IntercambioDePrincipal;
 import co.tecnosport.api.domain.catalogo.Paquete;
 import co.tecnosport.api.domain.catalogo.Producto;
 import co.tecnosport.api.domain.catalogo.Variante;
+import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.compartido.Sku;
 import co.tecnosport.api.domain.compartido.Slug;
 import java.util.ArrayList;
@@ -101,6 +102,9 @@ final class RepositorioProductosFalso implements RepositorioProductos {
   public boolean eliminarImagenDeGaleria(UUID productoId, UUID imagenId) {
     return true;
   }
+
+  @Override
+  public void actualizarPrecio(UUID varianteId, Dinero precio) {}
 
   @Override
   public void guardarOrdenDeGaleria(UUID productoId, List<ImagenProducto> galeria) {}

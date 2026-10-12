@@ -458,6 +458,37 @@ public class RepositorioProductosJpa implements RepositorioProductos {
             existente.getCreadoEn()));
   }
 
+  /**
+   * Por la entidad, como {@link #actualizarPaquete}: la transacción que llama ya cargó el producto,
+   * y un {@code update} por SQL dejaría esa entidad con el precio viejo para quien la lea después.
+   */
+  @Override
+  public void actualizarPrecio(UUID varianteId, Dinero precio) {
+    VarianteJpaEntity existente =
+        varianteJpaRepository
+            .findById(varianteId)
+            .orElseThrow(
+                () ->
+                    new IllegalStateException(
+                        "No existe la variante '"
+                            + varianteId
+                            + "' a la que se cambia el precio."));
+    varianteJpaRepository.save(
+        new VarianteJpaEntity(
+            existente.getId(),
+            existente.getProductoId(),
+            existente.getSku(),
+            precio.valor(),
+            existente.getTasaIva(),
+            existente.getCodigoBarras(),
+            existente.getPesoGramos(),
+            existente.getLargoCm(),
+            existente.getAnchoCm(),
+            existente.getAltoCm(),
+            existente.getEstado(),
+            existente.getCreadoEn()));
+  }
+
   @Override
   public List<VarianteActiva> variantesActivas() {
     return jdbc.query(

@@ -2,6 +2,7 @@ import { InjectionToken } from '@angular/core';
 import {
   AgregarVarianteAdmin,
   AgregarColorDesdeLaPrincipalAdmin,
+  CambiarPreciosAdmin,
   CambiarTallaAdmin,
   AsignarColorAImagenAdmin,
   UsarImagenComoPrincipalAdmin,
@@ -94,6 +95,9 @@ export interface RepositorioProductosAdmin {
    * si alguno de esos colores ya la tiene: quedarían dos variantes iguales.
    */
   cambiarTalla(comando: CambiarTallaAdmin): Promise<void>;
+
+  /** Cambia el precio de venta de las variantes que vayan; todo o nada si alguno no sirve. */
+  cambiarPrecios(comando: CambiarPreciosAdmin): Promise<void>;
 
   /** Intercambia la principal con una foto de la galería, sin subir nada. */
   usarImagenComoPrincipal(comando: UsarImagenComoPrincipalAdmin): Promise<void>;

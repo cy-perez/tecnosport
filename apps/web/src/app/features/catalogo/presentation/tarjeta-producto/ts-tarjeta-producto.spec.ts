@@ -187,6 +187,20 @@ describe('TsTarjetaProducto', () => {
     expect(container.querySelector('img')!.getAttribute('src')).toContain('vino');
   });
 
+  /** Pasar el puntero por una muestra dice de qué color es, sin tener que elegirla. */
+  it('pasar el puntero por una muestra muestra el nombre del color', async () => {
+    await renderBodi();
+
+    fireEvent.pointerEnter(screen.getByRole('button', { name: 'Ver en Vino' }), {
+      pointerType: 'mouse',
+    });
+
+    const globo = document.querySelector<HTMLElement>('[data-leyenda]')!;
+    expect(globo.textContent).toBe('Vino');
+    expect(globo.hidden).toBe(false);
+    globo.remove();
+  });
+
   /**
    * La foto va dentro del enlace, y el enlace ya se nombra con el producto: con el alt, el lector
    * de pantalla decía el nombre dos veces por tarjeta.

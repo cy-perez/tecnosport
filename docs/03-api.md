@@ -13,6 +13,10 @@ TypeScript de `packages/contratos`. No se escriben interfaces de respuesta a man
 - Fechas ISO-8601 en UTC: `2026-08-30T14:05:00Z`.
 - Dinero como entero de pesos más el código de moneda:
   `{ "valor": 189900, "moneda": "COP" }`. Nunca un texto con separadores.
+  **Excepción del panel:** el precio de una variante viaja como entero de pesos a
+  secas (`precio: 189900`) al agregarla, al cambiarlo y en el resumen de variantes
+  de la edición. Es solo COP, lo escribe una persona del negocio, y así lo hacía ya
+  `AgregarVariantePeticion`; la vitrina y los pedidos siguen con `{ valor, moneda }`.
 - Paginación por cursor en el catálogo, por página en el panel administrativo. La
   respuesta siempre trae `items` y metadatos, nunca un arreglo desnudo.
 
@@ -426,6 +430,8 @@ POST /api/v1/admin/productos/{id}/imagen-principal            confirma la subida
 PUT /api/v1/admin/productos/{id}/imagen-principal/variante   de qué color es la principal ({varianteId} o null); 204, 400 si no hay principal o la variante es ajena
 PUT /api/v1/admin/productos/{id}/tallas/{modeloId}           corrige la talla ({talla}) del modelo de esa variante en todos sus colores; el SKU no cambia;
                                                              204, 422 TALLA_REPETIDA si algún color ya la tiene
+PUT /api/v1/admin/productos/{id}/precios                     cambia el precio de venta ({precios: [{varianteId, precio}]}, pesos enteros) de las que vengan;
+                                                             204, 422 si alguno no es mayor que cero, la variante es ajena o viene dos veces; todo o nada
 POST /api/v1/admin/productos/{id}/galeria/url-subida         igual que la principal, con su propio prefijo: la limpieza de una no toca a la otra
 POST /api/v1/admin/productos/{id}/galeria                    confirma y suma a la galería; 409 si la foto ya está o si no caben más (adr/0052)
 DELETE /api/v1/admin/productos/{id}/galeria/{imagenId}       la saca de la ficha y borra su objeto; 204, y 404 si no era de ese producto
