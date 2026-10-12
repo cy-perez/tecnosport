@@ -1,6 +1,7 @@
 package co.tecnosport.api.application.proveedores;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -812,6 +813,128 @@ class AprobarBorradorTest {
     assertEquals(List.of("Azul", "Beige"), coloresDe(producto));
     assertEquals(
         Optional.of(producto.variantes().get(0).id()), producto.galeria().get(0).varianteId());
+  }
+
+  /**
+   * La camiseta de Violeta (12 de octubre de 2026, ADR-0082): la foto 1 trae el blanco y el negro,
+   * la foto 2 el café, el crema y el cocoa, y ninguna es de un solo tono. Cada foto retrata las
+   * variantes que se ven en ella, y elegir el negro en la ficha lleva a la foto 1.
+   */
+  @Test
+  void cadaFotoRetrataLasPrendasQueSeVenEnElla() {
+    Producto producto =
+        caso()
+            .ejecutar(
+                conPrendas(
+                    null,
+                    List.of(
+                        new FotoAprobada(foto1.id(), null, null),
+                        new FotoAprobada(foto2.id(), null, null)),
+                    List.of(
+                        new PrendaAprobada(1, "Blanco", "#FFFFFF", null, foto1.id()),
+                        new PrendaAprobada(2, "Negro", "#000000", null, foto1.id()),
+                        new PrendaAprobada(3, "Café", "#6F4E37", null, foto2.id()),
+                        new PrendaAprobada(4, "Crema", "#FFF5DC", null, foto2.id()),
+                        new PrendaAprobada(5, "Cocoa", "#875F42", null, foto2.id()))));
+
+    List<UUID> ids = producto.variantes().stream().map(v -> v.id()).toList();
+    assertEquals(List.of("Blanco", "Negro", "Café", "Crema", "Cocoa"), coloresDe(producto));
+    assertEquals(
+        List.of(ids.get(0), ids.get(1)),
+        producto.imagenPrincipal().orElseThrow().variantesQueMuestra());
+    assertEquals(
+        List.of(ids.get(2), ids.get(3), ids.get(4)),
+        producto.galeria().get(0).variantesQueMuestra());
+    assertTrue(producto.imagenPrincipal().orElseThrow().varianteId().isEmpty());
+  }
+
+  /** Una prenda sin foto que no dice dónde se ve se queda como antes: en la de todos. */
+  @Test
+  void sinDecirDondeSeVeNingunaFotoLaRetrata() {
+    Producto producto =
+        caso()
+            .ejecutar(
+                conPrendas(
+                    null,
+                    List.of(new FotoAprobada(foto1.id(), null, null)),
+                    List.of(new PrendaAprobada(1, "Negro", "#000000", null))));
+
+    assertTrue(producto.imagenPrincipal().orElseThrow().variantesQueMuestra().isEmpty());
+  }
+
+  @Test
+  void unaPrendaConFotoPropiaNoDiceVerseEnOtra() {
+    PrendaIncoherenteException error =
+        assertThrows(
+            PrendaIncoherenteException.class,
+            () ->
+                caso()
+                    .ejecutar(
+                        conPrendas(
+                            null,
+                            List.of(
+                                new FotoAprobada(foto1.id(), null, null),
+                                new FotoAprobada(foto2.id(), "Negro", "#000000", 1)),
+                            List.of(new PrendaAprobada(1, "Negro", "#000000", null, foto1.id())))));
+    assertTrue(error.getMessage().contains("foto propia"), error.getMessage());
+    assertTrue(productos.porId.isEmpty(), "ni producto a medias");
+  }
+
+  @Test
+  void unaPrendaNoSeVeEnUnaFotoQueNoSePublica() {
+    PrendaIncoherenteException error =
+        assertThrows(
+            PrendaIncoherenteException.class,
+            () ->
+                caso()
+                    .ejecutar(
+                        conPrendas(
+                            null,
+                            List.of(new FotoAprobada(foto1.id(), null, null)),
+                            List.of(new PrendaAprobada(1, "Negro", "#000000", null, foto2.id())))));
+    assertTrue(error.getMessage().contains("no se publica"), error.getMessage());
+    assertTrue(almacenPublico.objetos.isEmpty(), "ni fotos en el bucket público");
+  }
+
+  /**
+   * La blusa: las dos fotos retratan los tres tonos y quien aprueba pide que la principal se vea en
+   * la ficha (ADR-0082). Sin pedirlo, lo de ADR-0069: la portada no entra.
+   */
+  @Test
+  void laPrincipalSinTonoEntraEnLaFichaSiSePide() {
+    AprobarBorradorComando sinPedirlo =
+        conPrendas(
+            null,
+            List.of(
+                new FotoAprobada(foto1.id(), null, null), new FotoAprobada(foto2.id(), null, null)),
+            List.of(new PrendaAprobada(1, "Negro", "#000000", null)));
+    AprobarBorradorComando pidiendolo =
+        new AprobarBorradorComando(
+            sinPedirlo.borradorId(),
+            sinPedirlo.titulo(),
+            sinPedirlo.descripcion(),
+            sinPedirlo.categoriaId(),
+            sinPedirlo.marcaId(),
+            sinPedirlo.precioVenta(),
+            sinPedirlo.tallas(),
+            sinPedirlo.existenciaInicial(),
+            sinPedirlo.altEs(),
+            sinPedirlo.altEn(),
+            sinPedirlo.fotos(),
+            sinPedirlo.prendas(),
+            true);
+
+    Producto producto = caso().ejecutar(pidiendolo);
+
+    assertTrue(producto.imagenPrincipal().orElseThrow().enLaFicha());
+    assertFalse(producto.galeria().get(0).enLaFicha(), "la galería entra siempre");
+  }
+
+  @Test
+  void sinPedirloLaPrincipalSinTonoNoEntraEnLaFicha() {
+    Producto producto = caso().ejecutar(comando(List.of(new FotoAprobada(foto1.id(), null, null))));
+
+    assertFalse(producto.imagenPrincipal().orElseThrow().enLaFicha());
   }
 
   /**

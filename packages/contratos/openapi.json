@@ -252,6 +252,9 @@
             },
             "type" : "array"
           },
+          "principalEnLaFicha" : {
+            "type" : "boolean"
+          },
           "tallas" : {
             "$ref" : "#/components/schemas/TallasPeticion"
           },
@@ -2043,6 +2046,9 @@
             "format" : "int32",
             "type" : "integer"
           },
+          "enLaFicha" : {
+            "type" : "boolean"
+          },
           "url" : {
             "type" : "string"
           },
@@ -2056,6 +2062,13 @@
           "variantes" : {
             "items" : {
               "$ref" : "#/components/schemas/VarianteDeImagenRespuesta"
+            },
+            "type" : "array"
+          },
+          "variantesQueMuestra" : {
+            "items" : {
+              "format" : "uuid",
+              "type" : "string"
             },
             "type" : "array"
           }
@@ -3063,6 +3076,10 @@
           "numero" : {
             "format" : "int32",
             "type" : "integer"
+          },
+          "seVeEn" : {
+            "format" : "uuid",
+            "type" : "string"
           },
           "tallas" : {
             "items" : {

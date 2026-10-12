@@ -1,5 +1,6 @@
 package co.tecnosport.api.presentation.proveedores.dto;
 
+import co.tecnosport.api.application.proveedores.AprobarBorradorComando;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
 import java.util.Objects;
@@ -16,7 +17,12 @@ public record AprobarBorradorPeticion(
     @Schema(requiredMode = Schema.RequiredMode.REQUIRED) String altEs,
     @Schema(requiredMode = Schema.RequiredMode.REQUIRED) String altEn,
     @Schema(requiredMode = Schema.RequiredMode.REQUIRED) List<FotoAprobadaPeticion> fotos,
-    List<PrendaAprobadaPeticion> prendas) {
+    List<PrendaAprobadaPeticion> prendas,
+    /**
+     * Si la principal que vale para todos los tonos entra también en la galería de la ficha. Nulo =
+     * no, como antes de existir el campo.
+     */
+    Boolean principalEnLaFicha) {
 
   public AprobarBorradorPeticion {
     Objects.requireNonNull(categoriaId, "La categoría es obligatoria.");
@@ -24,6 +30,36 @@ public record AprobarBorradorPeticion(
     Objects.requireNonNull(altEs, "El texto alternativo en español es obligatorio.");
     Objects.requireNonNull(altEn, "El texto alternativo en inglés es obligatorio.");
     Objects.requireNonNull(fotos, "Hay que decir qué fotos se publican.");
+  }
+
+  /** El comando de la aprobación de ese borrador, con todo lo que trae el cuerpo. */
+  public AprobarBorradorComando aComando(UUID borradorId) {
+    return new AprobarBorradorComando(
+        borradorId,
+        titulo,
+        descripcion,
+        categoriaId,
+        marcaId,
+        precioVenta,
+        tallas == null ? null : tallas.aDominio(),
+        existenciaInicial,
+        altEs,
+        altEn,
+        fotos.stream()
+            .map(
+                f ->
+                    new AprobarBorradorComando.FotoAprobada(
+                        f.mensajeId(), f.tono(), f.colorHex(), f.prenda()))
+            .toList(),
+        prendas == null
+            ? List.of()
+            : prendas.stream()
+                .map(
+                    p ->
+                        new AprobarBorradorComando.PrendaAprobada(
+                            p.numero(), p.tono(), p.colorHex(), p.tallas(), p.seVeEn()))
+                .toList(),
+        Boolean.TRUE.equals(principalEnLaFicha));
   }
 
   /**
@@ -48,12 +84,15 @@ public record AprobarBorradorPeticion(
    * @param numero el que citan las fotos en {@code prenda}, desde 1
    * @param tono el color, sin numerar
    * @param tallas en cuáles tallas del producto viene; nula = en todas
+   * @param seVeEn la foto que la retrata junto con otros tonos, si no tiene foto propia; nula = la
+   *     de todos
    */
   public record PrendaAprobadaPeticion(
       @Schema(requiredMode = Schema.RequiredMode.REQUIRED) int numero,
       @Schema(requiredMode = Schema.RequiredMode.REQUIRED) String tono,
       String colorHex,
-      List<String> tallas) {
+      List<String> tallas,
+      UUID seVeEn) {
     public PrendaAprobadaPeticion {
       Objects.requireNonNull(tono, "Una prenda tiene color.");
     }

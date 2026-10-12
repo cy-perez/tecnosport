@@ -8,8 +8,9 @@ import java.util.UUID;
 /**
  * Lo que una persona decide al aprobar: el título y la descripción finales, dónde cuelga en el
  * catálogo, a cuánto se vende, cómo talla, con cuánta existencia inicial nace cada variante, los
- * textos alternativos de la foto principal, qué tono muestra cada foto, cuáles son la misma prenda
- * y en qué tallas viene cada una.
+ * textos alternativos de la foto principal, qué tono muestra cada foto, cuáles son la misma prenda,
+ * en qué tallas viene cada una, en qué foto se ve la que no tiene foto propia y si la principal que
+ * vale para todos los tonos entra en la ficha.
  *
  * @param fotos en el orden en que van a publicarse; la primera es la principal
  * @param existenciaInicial por variante; el checkout no vende lo que el libro no tiene
@@ -17,6 +18,8 @@ import java.util.UUID;
  *     prenda puede no tener foto propia —se ve en la foto que retrata todos los tonos juntos— y
  *     puede venir en menos tallas que el producto. Vacía = las prendas salen de las fotos, que es
  *     lo que hacía el contrato antes de tener el campo
+ * @param principalEnLaFicha si la principal que vale para todos los tonos entra también en la
+ *     galería de la ficha (ADR-0082). Sin efecto si la principal es de un tono: esa ya entra
  */
 public record AprobarBorradorComando(
     UUID borradorId,
@@ -30,7 +33,8 @@ public record AprobarBorradorComando(
     String altEs,
     String altEn,
     List<FotoAprobada> fotos,
-    List<PrendaAprobada> prendas) {
+    List<PrendaAprobada> prendas,
+    boolean principalEnLaFicha) {
 
   public AprobarBorradorComando {
     Objects.requireNonNull(borradorId, "El id del borrador no puede ser nulo.");
@@ -47,6 +51,38 @@ public record AprobarBorradorComando(
     if (prendas.stream().map(PrendaAprobada::numero).distinct().count() != prendas.size()) {
       throw new IllegalArgumentException("Dos prendas no pueden tener el mismo número.");
     }
+  }
+
+  /**
+   * Sin decir si la principal entra en la ficha: no entra, como antes del 12 de octubre de 2026.
+   */
+  public AprobarBorradorComando(
+      UUID borradorId,
+      String titulo,
+      String descripcion,
+      UUID categoriaId,
+      UUID marcaId,
+      long precioVenta,
+      Tallas tallas,
+      int existenciaInicial,
+      String altEs,
+      String altEn,
+      List<FotoAprobada> fotos,
+      List<PrendaAprobada> prendas) {
+    this(
+        borradorId,
+        titulo,
+        descripcion,
+        categoriaId,
+        marcaId,
+        precioVenta,
+        tallas,
+        existenciaInicial,
+        altEs,
+        altEn,
+        fotos,
+        prendas,
+        false);
   }
 
   /** Sin prendas dichas aparte: salen de las fotos, como antes del 12 de octubre de 2026. */
@@ -74,7 +110,8 @@ public record AprobarBorradorComando(
         altEs,
         altEn,
         fotos,
-        List.of());
+        List.of(),
+        false);
   }
 
   /**
@@ -108,8 +145,12 @@ public record AprobarBorradorComando(
    * @param tono el valor del atributo Color, sin numerar: la aprobación numera los repetidos
    * @param tallas en cuáles tallas del producto viene; nula = en todas. Solo con una lista de
    *     tallas
+   * @param seVeEn la foto que la retrata junto con otros tonos, cuando no tiene foto propia: la
+   *     camiseta negra que sale con la blanca en la foto 1 (ADR-0082). Elegir ese tono en la ficha
+   *     lleva a esa foto. Nula = se ve en la de todos, sin que la ficha se mueva
    */
-  public record PrendaAprobada(int numero, String tono, String colorHex, List<String> tallas) {
+  public record PrendaAprobada(
+      int numero, String tono, String colorHex, List<String> tallas, UUID seVeEn) {
     public PrendaAprobada {
       if (numero < 1) {
         throw new IllegalArgumentException("Las prendas se numeran desde 1.");
@@ -117,6 +158,11 @@ public record AprobarBorradorComando(
       tono = tono == null || tono.isBlank() ? null : tono.strip();
       colorHex = colorHex == null || colorHex.isBlank() ? null : colorHex.strip();
       tallas = tallas == null ? null : tallas.stream().map(String::strip).toList();
+    }
+
+    /** Una prenda que no dice en qué foto se ve. */
+    public PrendaAprobada(int numero, String tono, String colorHex, List<String> tallas) {
+      this(numero, tono, colorHex, tallas, null);
     }
   }
 }

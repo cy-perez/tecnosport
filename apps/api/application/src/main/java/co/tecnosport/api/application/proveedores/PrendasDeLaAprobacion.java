@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 /**
@@ -21,7 +22,9 @@ import java.util.stream.Collectors;
  * prenda sin foto propia</b> (ADR-0081) es la del anuncio que retrata todos los tonos en una foto
  * —el bodi en seis colores, la blusa negra, cocoa y verde de frente y de espalda—: no hay foto de
  * cada tono, y aun así cada tono se vende y quien compra tiene que poder elegirlo. Se ve en la foto
- * de todos, que vale para todas las prendas.
+ * de todos, que vale para todas las prendas. Y si quien aprueba dice en cuál foto se ve (ADR-0082)
+ * —la camiseta negra sale con la blanca en la foto 1—, esa foto la retrata también, y elegir el
+ * negro en la ficha lleva a ella.
  *
  * <p><b>Un tono que se repite entre prendas se numera</b>: dos prendas «Negro» son «Negro 1» y
  * «Negro 2», en el orden de su primera foto, y las que no tienen foto detrás, en el orden en que
@@ -38,8 +41,11 @@ final class PrendasDeLaAprobacion {
    * @param valorPorFoto el valor del atributo Color de la variante de cada foto, por posición; nulo
    *     donde la foto vale para todas
    * @param prendas las variantes de color que se crean, en orden
+   * @param muestraPorFoto los valores de las prendas sin foto propia que cada foto retrata, por
+   *     posición; vacía donde ninguna
    */
-  record Resueltas(List<String> valorPorFoto, List<Prenda> prendas) {}
+  record Resueltas(
+      List<String> valorPorFoto, List<Prenda> prendas, List<List<String>> muestraPorFoto) {}
 
   /**
    * @param valor el valor del atributo Color, ya numerado si se repite
@@ -101,7 +107,10 @@ final class PrendasDeLaAprobacion {
         tonoPorPrenda.keySet().stream()
             .map(p -> new Prenda(valorPorPrenda.get(p), hexPorPrenda.get(p), null))
             .toList();
-    return new Resueltas(porFoto(prendaPorFoto, valorPorPrenda), resueltas);
+    return new Resueltas(
+        porFoto(prendaPorFoto, valorPorPrenda),
+        resueltas,
+        Collections.nCopies(fotos.size(), List.of()));
   }
 
   private static Resueltas explicitas(
@@ -152,6 +161,20 @@ final class PrendasDeLaAprobacion {
       if (!enOrden.containsKey(clave)) {
         enOrden.put(clave, prenda);
         sinFoto.add(clave);
+      } else if (prenda.seVeEn() != null) {
+        throw new PrendaIncoherenteException(
+            prenda.numero(), "tiene foto propia y dice verse en otra");
+      }
+    }
+    Map<UUID, Integer> posicionDeFoto = new HashMap<>();
+    for (int i = 0; i < fotos.size(); i++) {
+      posicionDeFoto.putIfAbsent(fotos.get(i).mensajeId(), i);
+    }
+    for (String clave : sinFoto) {
+      PrendaAprobada prenda = enOrden.get(clave);
+      if (prenda.seVeEn() != null && !posicionDeFoto.containsKey(prenda.seVeEn())) {
+        throw new PrendaIncoherenteException(
+            prenda.numero(), "dice verse en una foto que no se publica");
       }
     }
 
@@ -180,7 +203,20 @@ final class PrendasDeLaAprobacion {
                     valorPorPrenda.get(clave),
                     prenda.colorHex() != null ? prenda.colorHex() : hexDeLasFotos.get(clave),
                     tallasDe(prenda, tallasAprobadas, conListaDeTallas))));
-    return new Resueltas(porFoto(prendaPorFoto, valorPorPrenda), List.copyOf(resueltas));
+    List<List<String>> muestraPorFoto = new ArrayList<>(fotos.size());
+    for (int i = 0; i < fotos.size(); i++) {
+      muestraPorFoto.add(new ArrayList<>());
+    }
+    for (String clave : sinFoto) {
+      PrendaAprobada prenda = enOrden.get(clave);
+      if (prenda.seVeEn() != null) {
+        muestraPorFoto.get(posicionDeFoto.get(prenda.seVeEn())).add(valorPorPrenda.get(clave));
+      }
+    }
+    return new Resueltas(
+        porFoto(prendaPorFoto, valorPorPrenda),
+        List.copyOf(resueltas),
+        muestraPorFoto.stream().map(List::copyOf).toList());
   }
 
   /**
