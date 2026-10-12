@@ -3,6 +3,8 @@
 **Fecha:** 2026-10-07
 **Estado:** aceptado. Afina la sección «Un tono que se repite se numera» de
 `ADR-0069`: la numeración se queda, pero ahora distingue prendas, no fotos.
+Ampliado por `ADR-0081` (12 de octubre de 2026): una prenda puede no tener foto
+propia —el tono que solo sale en la foto de todos— y traer sus propias tallas.
 
 ## Contexto
 
