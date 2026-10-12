@@ -18,6 +18,12 @@ export interface VarianteConPrecio {
   readonly precio: number;
 }
 
+/** El campo de una variante y el precio del servidor con que se llenó por última vez. */
+interface CampoDePrecio {
+  readonly delServidor: number;
+  readonly control: FormControl<string | null>;
+}
+
 /**
  * El precio de venta de cada variante, editable desde la edición del producto. Es por variante y
  * no por producto porque así lo guarda la API: en ropa suelen ser iguales, en tecnología la de
@@ -40,20 +46,40 @@ export class TsPreciosVariantes {
   private readonly transloco = inject(TranslocoService);
   private readonly mutacion = usarCambiarPreciosAdmin();
 
-  /** Un control por variante, en su orden. Se rehacen cuando el servidor devuelve otros precios. */
-  protected readonly controles = signal<readonly FormControl<number | null>[]>([]);
-  protected readonly paraTodas = new FormControl<number | null>(null);
+  /** Por id de variante. */
+  protected readonly campos = signal<ReadonlyMap<string, CampoDePrecio>>(new Map());
+  protected readonly paraTodas = new FormControl<string | null>(null);
 
   protected readonly guardando = signal(false);
   protected readonly error = signal<string | null>(null);
+  /** Las variantes cuyo precio no sirve: su campo lo dice, no solo el aviso general. */
+  protected readonly invalidas = signal<ReadonlySet<string>>(new Set());
   /** El texto de la región viva: «Precios guardados» o «Ningún precio cambió». */
   protected readonly aviso = signal<string | null>(null);
 
   constructor() {
-    // Lo que llega del servidor manda: tras guardar, el detalle se vuelve a pedir y los campos
-    // quedan con lo que quedó grabado, no con lo que se tecleó.
+    // El detalle se vuelve a pedir tras cualquier cambio de la página —un color en una foto, una
+    // talla—, no solo tras guardar precios. Rehacer todos los campos borraba en silencio lo que se
+    // había tecleado sin guardar. Un campo se rehace solo si el servidor trae otro precio para esa
+    // variante: ahí sí manda lo grabado.
     effect(() => {
-      this.controles.set(this.variantes().map((v) => new FormControl<number | null>(v.precio)));
+      const variantes = this.variantes();
+      this.campos.update((anteriores) => {
+        const nuevos = new Map<string, CampoDePrecio>();
+        for (const variante of variantes) {
+          const anterior = anteriores.get(variante.id);
+          nuevos.set(
+            variante.id,
+            anterior && anterior.delServidor === variante.precio
+              ? anterior
+              : {
+                  delServidor: variante.precio,
+                  control: new FormControl<string | null>(String(variante.precio)),
+                },
+          );
+        }
+        return nuevos;
+      });
     });
   }
 
@@ -62,15 +88,16 @@ export class TsPreciosVariantes {
   }
 
   protected aplicarATodas(): void {
-    const valor = this.paraTodas.value;
+    const valor = leerPrecio(this.paraTodas.value);
     this.aviso.set(null);
-    if (!esPrecioValido(valor)) {
+    if (valor === null) {
       this.error.set(this.transloco.translate('admin.productos.editar.precios.invalido'));
       return;
     }
     this.error.set(null);
-    for (const control of this.controles()) {
-      control.setValue(valor);
+    this.invalidas.set(new Set());
+    for (const campo of this.campos().values()) {
+      campo.control.setValue(String(valor));
     }
   }
 
@@ -79,15 +106,20 @@ export class TsPreciosVariantes {
       return;
     }
     this.aviso.set(null);
-    const controles = this.controles();
-    if (controles.some((control) => !esPrecioValido(control.value))) {
+    const leidos = this.variantes().map((variante) => ({
+      variante,
+      precio: leerPrecio(this.campos().get(variante.id)?.control.value ?? null),
+    }));
+    const invalidas = new Set(leidos.filter((l) => l.precio === null).map((l) => l.variante.id));
+    this.invalidas.set(invalidas);
+    if (invalidas.size > 0) {
       this.error.set(this.transloco.translate('admin.productos.editar.precios.invalido'));
       return;
     }
     this.error.set(null);
-    const precios = this.variantes()
-      .map((variante, i) => ({ varianteId: variante.id, precio: controles[i].value as number }))
-      .filter((cambio, i) => cambio.precio !== this.variantes()[i].precio);
+    const precios = leidos
+      .filter((l) => l.precio !== l.variante.precio)
+      .map((l) => ({ varianteId: l.variante.id, precio: l.precio as number }));
     if (precios.length === 0) {
       this.aviso.set(this.transloco.translate('admin.productos.editar.precios.sinCambios'));
       return;
@@ -108,7 +140,17 @@ export class TsPreciosVariantes {
   }
 }
 
-/** Pesos enteros y mayores que cero: lo mismo que exige el servidor, dicho antes de llamarlo. */
-function esPrecioValido(valor: number | null): valor is number {
-  return valor !== null && Number.isInteger(valor) && valor > 0;
+/**
+ * Pesos enteros mayores que cero, escritos como se escriben en Colombia: «79000» o «79.000». El
+ * campo es de texto y no `number` a propósito: en uno numérico «79.000» es setenta y nueve, y el
+ * producto se publicaba a 79 pesos sin que nada se quejara. Un punto solo vale como separador de
+ * miles —seguido de tres cifras—; «65000.5» o «65,000» no son un precio y se rechazan.
+ */
+export function leerPrecio(valor: string | null): number | null {
+  const texto = (valor ?? '').trim();
+  if (!/^\d+$/.test(texto) && !/^\d{1,3}(\.\d{3})+$/.test(texto)) {
+    return null;
+  }
+  const precio = Number(texto.replaceAll('.', ''));
+  return Number.isSafeInteger(precio) && precio > 0 ? precio : null;
 }

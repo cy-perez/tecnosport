@@ -3,8 +3,8 @@
 </p>
 
 <ul class="m-0 flex list-none flex-col gap-8 p-0">
-  @for (variante of variantes(); track variante.id; let i = $index) {
-    @if (controles()[i]; as control) {
+  @for (variante of variantes(); track variante.id) {
+    @if (campos().get(variante.id); as campo) {
       <li class="flex items-end gap-8">
         <!-- Decorativa: el nombre del color ya va en la etiqueta del campo. La caja mide lo que el
              campo, para que la muestra quede centrada con él y no con la etiqueta. -->
@@ -17,13 +17,20 @@
             </span>
           }
         </span>
+        <!-- Texto y no `number`: en un campo numérico «79.000» es setenta y nueve (`leerPrecio`). -->
         <ts-campo
           class="flex-1"
-          tipo="number"
           [idCampo]="'precio-variante-' + variante.id"
-          [label]="etiqueta(variante)"
+          [label]="
+            'admin.productos.editar.precios.precioDe' | transloco: { variante: etiqueta(variante) }
+          "
           [obligatorio]="true"
-          [formControl]="control"
+          [error]="
+            invalidas().has(variante.id)
+              ? ('admin.productos.editar.precios.invalido' | transloco)
+              : null
+          "
+          [formControl]="campo.control"
         />
       </li>
     }
@@ -35,7 +42,6 @@
     <ts-campo
       class="flex-1"
       idCampo="precio-para-todas"
-      tipo="number"
       [label]="'admin.productos.editar.precios.paraTodas' | transloco"
       [ayuda]="'admin.productos.editar.precios.paraTodasAyuda' | transloco"
       [formControl]="paraTodas"
@@ -50,13 +56,10 @@
   <p class="m-0 text-ts-error" role="alert">{{ mensaje }}</p>
 }
 
+<!-- `ocupado` y no `cargando`: es una acción de sección, y deshabilitar el botón recién pulsado
+     manda el foco a <body> (apps/web/CLAUDE.md). La guarda de reentrada está en `guardar`. -->
 <div>
-  <ts-boton
-    tipo="button"
-    [cargando]="guardando()"
-    [etiquetaCargando]="'admin.productos.editar.precios.guardando' | transloco"
-    (click)="guardar()"
-  >
+  <ts-boton tipo="button" [ocupado]="guardando()" (click)="guardar()">
     {{ 'admin.productos.editar.precios.guardar' | transloco }}
   </ts-boton>
 </div>

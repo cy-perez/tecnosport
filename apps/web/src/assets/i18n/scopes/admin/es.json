@@ -300,13 +300,12 @@
       "variantesAyuda": "Cada una con su SKU y lo que la distingue. Se agregan con «Agregar variante».",
       "precios": {
         "ayuda": "El precio de venta de cada variante, en pesos. Los pedidos ya hechos conservan el precio con que se compraron.",
-        "precioAccesible": "Precio de {{variante}}",
+        "precioDe": "Precio de {{variante}}",
         "paraTodas": "Precio para todas",
         "paraTodasAyuda": "Lo copia en todas las variantes; se guarda con «Guardar precios».",
         "aplicarATodas": "Aplicar a todas",
         "guardar": "Guardar precios",
-        "guardando": "Guardando precios…",
-        "invalido": "Cada precio tiene que ser un número entero de pesos mayor que cero.",
+        "invalido": "Escribe un precio en pesos enteros mayor que cero, como 79000 o 79.000.",
         "sinCambios": "Ningún precio cambió.",
         "error": "No se pudieron guardar los precios. Intenta de nuevo.",
         "guardados": "Precios guardados."

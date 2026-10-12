@@ -323,6 +323,16 @@ class RepositorioProductosAdminFalso implements RepositorioProductosAdmin {
   }
 
   preciosCambiados: CambiarPreciosAdmin[] = [];
+
+  /** Un precio que cambió en el servidor por otra vía: lo verá el siguiente `obtener`. */
+  precioEnElServidor(varianteId: string, precio: number): void {
+    if (this.producto) {
+      this.producto = {
+        ...this.producto,
+        variantes: this.producto.variantes.map((v) => (v.id === varianteId ? { ...v, precio } : v)),
+      };
+    }
+  }
   falloAlCambiarPrecios: unknown = null;
 
   async cambiarPrecios(comando: CambiarPreciosAdmin): Promise<void> {
@@ -643,14 +653,14 @@ describe('EditarProductoAdminPage', () => {
 
   describe('precios', () => {
     const campo = (sku: string) =>
-      screen.getByLabelText(new RegExp(`^${sku} —`)) as HTMLInputElement;
+      screen.getByLabelText(new RegExp(`^Precio de ${sku} —`)) as HTMLInputElement;
 
     /** Viaja solo el que cambió, y el campo queda con lo que el servidor grabó. */
     it('cambia el precio de una variante y manda solo esa', async () => {
       const repositorio = new RepositorioProductosAdminFalso(conjuntoDePrueba());
       const { container } = await renderPagina(repositorio);
 
-      await screen.findByLabelText(/^C-N-SM —/);
+      await screen.findByLabelText(/^Precio de C-N-SM —/);
       expect(campo('C-N-SM').value).toBe('60000');
       await esperarSinViolaciones(container);
 
@@ -663,8 +673,43 @@ describe('EditarProductoAdminPage', () => {
         ]),
       );
       expect(await screen.findByText('Precios guardados.')).toBeTruthy();
-      await vi.waitFor(() => expect(campo('C-N-L').value).toBe('65000'));
       expect(campo('C-N-SM').value).toBe('60000');
+    });
+
+    /** En Colombia el punto separa miles: «79.000» no puede grabarse como 79 pesos. */
+    it('lee el punto como separador de miles', async () => {
+      const repositorio = new RepositorioProductosAdminFalso(conjuntoDePrueba());
+      await renderPagina(repositorio);
+      await screen.findByLabelText(/^Precio de C-N-SM —/);
+
+      fireEvent.input(campo('C-N-SM'), { target: { value: '79.000' } });
+      fireEvent.click(screen.getByRole('button', { name: 'Guardar precios' }));
+
+      await vi.waitFor(() =>
+        expect(repositorio.preciosCambiados).toEqual([
+          { productoId: 'p1', precios: [{ varianteId: 'n-sm', precio: 79000 }] },
+        ]),
+      );
+    });
+
+    /**
+     * Otra acción de la página vuelve a pedir el detalle. Lo tecleado y no guardado se queda; el
+     * campo cuyo precio cambió en el servidor toma el del servidor.
+     */
+    it('un refetch conserva lo tecleado y trae lo que cambió en el servidor', async () => {
+      const repositorio = new RepositorioProductosAdminFalso(conjuntoDePrueba());
+      await renderPagina(repositorio);
+      await screen.findByLabelText(/^Precio de C-N-SM —/);
+      fireEvent.input(campo('C-N-SM'), { target: { value: '65000' } });
+      repositorio.precioEnElServidor('v-sm', 70000);
+
+      fireEvent.click(screen.getByRole('button', { name: 'Cambiar la talla S-M' }));
+      fireEvent.change(await screen.findByLabelText(/^Talla nueva/), { target: { value: 'M' } });
+      fireEvent.click(screen.getByRole('button', { name: 'Guardar talla' }));
+      expect(await screen.findByText('Talla cambiada a M.')).toBeTruthy();
+
+      await vi.waitFor(() => expect(campo('C-V-SM').value).toBe('70000'));
+      expect(campo('C-N-SM').value).toBe('65000');
     });
 
     /** «Aplicar a todas» copia sin guardar; guardar manda las tres. */
@@ -699,14 +744,17 @@ describe('EditarProductoAdminPage', () => {
     it('un precio en cero, con decimales o vacío no manda ninguno y dice por qué', async () => {
       const repositorio = new RepositorioProductosAdminFalso(conjuntoDePrueba());
       await renderPagina(repositorio);
-      await screen.findByLabelText(/^C-N-SM —/);
-      const mensaje = 'Cada precio tiene que ser un número entero de pesos mayor que cero.';
+      await screen.findByLabelText(/^Precio de C-N-SM —/);
+      const mensaje = esAdmin.productos.editar.precios.invalido;
 
       for (const malo of ['0', '65000.5', '']) {
         fireEvent.input(campo('C-N-SM'), { target: { value: '65000' } });
         fireEvent.input(campo('C-V-SM'), { target: { value: malo } });
         fireEvent.click(screen.getByRole('button', { name: 'Guardar precios' }));
-        expect(await screen.findByText(mensaje)).toBeTruthy();
+        expect((await screen.findAllByText(mensaje)).length).toBeGreaterThan(0);
+        // El campo culpable lo dice, no solo el aviso general.
+        expect(campo('C-V-SM').getAttribute('aria-invalid')).toBe('true');
+        expect(campo('C-N-SM').getAttribute('aria-invalid')).not.toBe('true');
       }
       expect(repositorio.preciosCambiados).toEqual([]);
     });
@@ -714,7 +762,7 @@ describe('EditarProductoAdminPage', () => {
     it('sin cambios no llama al servidor y lo dice', async () => {
       const repositorio = new RepositorioProductosAdminFalso(conjuntoDePrueba());
       await renderPagina(repositorio);
-      await screen.findByLabelText(/^C-N-SM —/);
+      await screen.findByLabelText(/^Precio de C-N-SM —/);
 
       fireEvent.click(screen.getByRole('button', { name: 'Guardar precios' }));
 
@@ -726,7 +774,7 @@ describe('EditarProductoAdminPage', () => {
       const repositorio = new RepositorioProductosAdminFalso(conjuntoDePrueba());
       repositorio.falloAlCambiarPrecios = new Error('falló');
       await renderPagina(repositorio);
-      await screen.findByLabelText(/^C-N-SM —/);
+      await screen.findByLabelText(/^Precio de C-N-SM —/);
 
       fireEvent.input(campo('C-N-SM'), { target: { value: '65000' } });
       fireEvent.click(screen.getByRole('button', { name: 'Guardar precios' }));
@@ -1529,7 +1577,7 @@ describe('EditarProductoAdminPage', () => {
       const { container } = await renderPagina(new RepositorioProductosAdminFalso(bodiDePrueba()));
       await screen.findByDisplayValue('Bodi herraje');
 
-      const fila = screen.getByText(/^PRV-2 —/).closest('li')!;
+      const fila = screen.getByText(/^Precio de PRV-2 —/).closest('li')!;
       await vi.waitFor(() =>
         expect(fila.querySelector('ts-muestra-color path')?.getAttribute('fill')).toBe('#722F37'),
       );
