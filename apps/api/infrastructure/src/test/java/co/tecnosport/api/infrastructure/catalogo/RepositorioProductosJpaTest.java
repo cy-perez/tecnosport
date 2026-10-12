@@ -874,6 +874,69 @@ class RepositorioProductosJpaTest {
         .isEmpty();
   }
 
+  /**
+   * Lo que cada foto retrata además de su tono, y la casilla de la principal (V112): la camiseta de
+   * cinco tonos repartidos en dos fotos, con la principal pedida en la ficha.
+   */
+  @Test
+  void loQueMuestraCadaFotoVaYVuelve() {
+    MarcaJpaEntity marca = marca("Genérica");
+    CategoriaJpaEntity categoria = categoria("Camisetas", "ropa-dama-camisetas-t23", "ROPA");
+    ProductoJpaEntity productoJpa =
+        producto("Camiseta t23", "camiseta-t23", "BORRADOR", marca, categoria);
+    VarianteJpaEntity blanca = variante(productoJpa, "PRV-T23-BLANCO", "48000");
+    VarianteJpaEntity negra = variante(productoJpa, "PRV-T23-NEGRO", "48000");
+    VarianteJpaEntity cocoa = variante(productoJpa, "PRV-T23-COCOA", "48000");
+    repositorio.guardarImagenPrincipal(
+        productoJpa.getId(),
+        ImagenProducto.crearDeVariante(
+            TipoImagen.PRINCIPAL,
+            0,
+            List.of(new VarianteDeImagen(2000, "https://cdn/t23-principal.jpg", 120_000)),
+            null,
+            2000,
+            new HashContenido("%064x".formatted(23)),
+            "alt es",
+            "alt en",
+            null,
+            true,
+            List.of(blanca.getId(), negra.getId())));
+    repositorio.guardarImagenDeGaleria(
+        productoJpa.getId(),
+        ImagenProducto.crearDeVariante(
+            TipoImagen.GALERIA,
+            0,
+            List.of(new VarianteDeImagen(2000, "https://cdn/galeria-24.jpg", 120_000)),
+            null,
+            2000,
+            new HashContenido("%064x".formatted(24)),
+            "alt es",
+            "alt en",
+            null,
+            false,
+            List.of(cocoa.getId())));
+    repositorio.guardarImagenDeGaleria(productoJpa.getId(), imagenDeGaleria(1, 25));
+
+    Producto hidratado = repositorio.buscarPorSlug(new Slug("camiseta-t23")).orElseThrow();
+    ImagenProducto principal = hidratado.imagenPrincipal().orElseThrow();
+    assertThat(principal.enLaFicha()).isTrue();
+    assertThat(principal.variantesQueMuestra()).containsExactly(blanca.getId(), negra.getId());
+    assertThat(hidratado.galeria().get(0).variantesQueMuestra()).containsExactly(cocoa.getId());
+    assertThat(hidratado.galeria().get(0).enLaFicha()).isFalse();
+    assertThat(hidratado.galeria().get(1).variantesQueMuestra()).isEmpty();
+  }
+
+  /** Un id que no se lee —una fila editada a mano— se ignora: no tumba la ficha ni el catálogo. */
+  @Test
+  void unIdIlegibleEnLoQueMuestraUnaFotoSeIgnora() {
+    UUID negra = UUID.randomUUID();
+
+    assertThat(MapeadorCatalogo.deTextoDeVariantes(negra + ", no-es-un-id ,"))
+        .containsExactly(negra);
+    assertThat(MapeadorCatalogo.deTextoDeVariantes(null)).isEmpty();
+    assertThat(MapeadorCatalogo.aTextoDeVariantes(List.of())).isNull();
+  }
+
   @Test
   void laGaleriaSeHidrataOrdenadaAunqueLasFilasSeHayanInsertadoAlReves() {
     MarcaJpaEntity marca = marca("TecnoSport");
