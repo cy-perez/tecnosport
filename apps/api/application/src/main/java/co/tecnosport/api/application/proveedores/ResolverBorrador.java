@@ -78,7 +78,9 @@ import java.util.UUID;
  * Proveedor#tiposExcluidos()}), se descartan todos, con ese motivo y antes de cualquier otra cosa:
  * a Violeta no se le compran pantalones, y el anuncio de una blusa con su jean no deja ni la blusa.
  * Tampoco renueva: si la blusa ya estuviera en el catálogo, ese anuncio no le refresca la
- * disponibilidad.
+ * disponibilidad. <b>Lo que sí pasa es un agotado</b>: el jean que se publicó antes de excluir el
+ * tipo, o la blusa del anuncio, se agota cuando el proveedor lo anuncia agotado, porque dejarlo a
+ * la venta es venderle a alguien lo que no hay.
  *
  * <p>Una renovación no crea un borrador para revisar: actualiza la última vista, reactiva el
  * producto si estaba oculto y deja una constancia {@code RENOVACION_APLICADA}. Un agotado sobre un
@@ -209,7 +211,7 @@ public final class ResolverBorrador {
                 .anyMatch(t -> TextoDeAnuncio.mismoAnuncio(t, textoDelAnuncio));
     for (ExtraccionEvaluada evaluada : evaluadas) {
       resoluciones.add(
-          excluido.isPresent()
+          excluido.isPresent() && !evaluada.producto().estaAgotado()
               ? Resolucion.descartada(excluido.get())
               : vieneEnElDeCaballero
                   ? Resolucion.descartada(

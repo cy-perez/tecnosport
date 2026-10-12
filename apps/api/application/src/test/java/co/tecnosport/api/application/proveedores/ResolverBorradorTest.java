@@ -880,6 +880,39 @@ class ResolverBorradorTest {
         EstadoDisponibilidad.OCULTO_POR_VENCIMIENTO, blusa.estadoDisponibilidad(), "no se renovó");
   }
 
+  /**
+   * El jean se publicó antes de excluir el tipo y ahora el proveedor lo anuncia agotado: se agota,
+   * porque dejarlo a la venta es venderle a alguien lo que no hay.
+   */
+  @Test
+  void unAgotadoDeUnTipoExcluidoAgotaLoQueYaEstaEnElCatalogo() {
+    sinInferiores();
+    Producto jean =
+        productoConCodigo("Jean mom fit", 124000, "Q343", EstadoDisponibilidad.DISPONIBLE);
+
+    Resolucion resolucion =
+        resolver(
+            publicacion("AGOTADO Jean Mom Fit (Q343)", null),
+            deTipo("Jean mom fit", TipoProductoProveedor.PANTALON, "Q343", true));
+
+    assertEquals(EstadoDisponibilidad.AGOTADO_POR_PROVEEDOR, jean.estadoDisponibilidad());
+    assertNotEquals(TipoDeResolucion.DESCARTADA, resolucion.tipo());
+  }
+
+  /** Un agotado de un tipo excluido que no está en el catálogo no deja nada. */
+  @Test
+  void unAgotadoDeUnTipoExcluidoFueraDelCatalogoSeDescarta() {
+    sinInferiores();
+
+    Resolucion resolucion =
+        resolver(
+            publicacion("AGOTADO Jean (Q999)", null),
+            deTipo("Jean", TipoProductoProveedor.PANTALON, "Q999", true));
+
+    assertEquals(TipoDeResolucion.DESCARTADA, resolucion.tipo());
+    assertTrue(borradores.enEstado(EstadoBorrador.EN_REVISION).isEmpty());
+  }
+
   /** Sin un tipo excluido en el anuncio, nada cambia: la blusa y el jean, dos borradores. */
   @Test
   void unAnuncioSinTiposExcluidosSigueIgual() {
@@ -902,10 +935,15 @@ class ResolverBorradorTest {
 
   private static ExtraccionEvaluada deTipo(
       String titulo, TipoProductoProveedor tipo, String codigo) {
+    return deTipo(titulo, tipo, codigo, false);
+  }
+
+  private static ExtraccionEvaluada deTipo(
+      String titulo, TipoProductoProveedor tipo, String codigo, boolean agotado) {
     ProductoExtraido extraido =
         new ProductoExtraido(
             true,
-            false,
+            agotado,
             titulo,
             LineaCatalogo.ROPA,
             tipo,
