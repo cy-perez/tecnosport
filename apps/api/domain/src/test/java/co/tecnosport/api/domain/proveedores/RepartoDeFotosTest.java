@@ -392,6 +392,94 @@ class RepartoDeFotosTest {
     assertEquals(Map.of(), repartidos.getFirst().reparto().tonosSugeridos());
   }
 
+  private static ProductoExtraido conTonos(String titulo, Integer cantidadTonos) {
+    return new ProductoExtraido(
+        true,
+        false,
+        titulo,
+        LineaCatalogo.BOLSOS,
+        TipoProductoProveedor.CANGURO,
+        Dinero.deCop(45000),
+        Tallas.desconocida(),
+        cantidadTonos,
+        List.of(),
+        "poliuretano",
+        "Un bolso.",
+        null,
+        false,
+        new BigDecimal("0.9"),
+        null,
+        null);
+  }
+
+  /** D'Osman, 11 de octubre de 2026: el mismo bolso en tres estampados, sin SKU. */
+  private static LecturaDeFotos manosLibresEnTresEstampados() {
+    return new LecturaDeFotos(
+        true,
+        List.of(
+            new LecturaDeFoto(
+                0,
+                List.of(),
+                null,
+                List.of(),
+                List.of("cafe", "beige", "crema"),
+                "monograma rombos"),
+            delAlbum(1, null, List.of(), "cafe", "monograma rombos"),
+            delAlbum(2, null, List.of(), "beige", "monograma letras"),
+            delAlbum(3, null, List.of(), "crema", "monograma letras")),
+        "{}");
+  }
+
+  @Test
+  void losEstampadosQueCabenEnLosTonosDelTextoSonUnSoloProducto() {
+    List<ProductoRepartido> repartidos =
+        RepartoDeFotos.repartir(
+            List.of(conTonos("Manos libres de dama", 3)),
+            List.of(F1, F2, F3, F4),
+            manosLibresEnTresEstampados());
+
+    assertEquals(1, repartidos.size());
+    assertEquals(List.of(F1, F2, F3, F4), repartidos.getFirst().fotos());
+    assertEquals(Set.of(), repartidos.getFirst().reparto().ajenas());
+  }
+
+  @Test
+  void sinTonosEnElTextoLosMismosDisenosSiguenSiendoUnAlbum() {
+    assertEquals(
+        2,
+        RepartoDeFotos.repartir(
+                List.of(conTonos("Manos libres de dama", null)),
+                List.of(F1, F2, F3, F4),
+                manosLibresEnTresEstampados())
+            .size());
+  }
+
+  @Test
+  void masDisenosQueTonosOUnSkuPorFotoSiguenSiendoUnAlbum() {
+    LecturaDeFotos tresDisenos =
+        new LecturaDeFotos(
+            true,
+            List.of(
+                delAlbum(0, null, List.of(), "negro", "msm"),
+                delAlbum(1, null, List.of(), "azul", "boss"),
+                delAlbum(2, null, List.of(), "gris", "jordan 23")),
+            "{}");
+    LecturaDeFotos conSku =
+        new LecturaDeFotos(
+            true,
+            List.of(
+                delAlbum(0, "RV1", List.of(), "negro", "msm"),
+                delAlbum(1, "RV2", List.of(), "azul", "boss")),
+            "{}");
+
+    assertEquals(
+        3,
+        RepartoDeFotos.repartir(List.of(conTonos("Bolso", 2)), List.of(F1, F2, F3), tresDisenos)
+            .size());
+    assertEquals(
+        2, RepartoDeFotos.repartir(List.of(conTonos("Bolso", 3)), List.of(F1, F2), conSku).size());
+  }
+
   @Test
   void sinLecturaEsElRepartoDeAntes() {
     ProductoExtraido bolso = producto("Bolso", TipoProductoProveedor.BOLSO, null);

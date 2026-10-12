@@ -65,7 +65,7 @@ public final class RepartoDeFotos {
       return porCodigo(productos, fotos, lectura);
     }
     List<List<Integer>> disenos = esAlbum(lectura) ? disenos(fotos, lectura) : List.of();
-    if (disenos.size() > 1) {
+    if (disenos.size() > 1 && !sonSusTonos(productos.getFirst(), lectura, disenos)) {
       return conSuMarca(porDiseno(productos.getFirst(), fotos, lectura, disenos), fotos, lectura);
     }
     List<ProductoRepartido> porMarca = porMarca(productos.getFirst(), fotos, lectura);
@@ -325,6 +325,25 @@ public final class RepartoDeFotos {
             .distinct()
             .count();
     return lectura.albumDeDisenos() || skus >= 2;
+  }
+
+  /**
+   * Los «diseños» que el lector separó sin SKU no son productos aparte si caben en los tonos que
+   * declara el texto. D'Osman, 11 de octubre de 2026: «Manos libres de dama, 3 tonos disponibles»
+   * con cuatro fotos del mismo bolso en tres estampados —rombos, monograma CLN, monograma MKT—
+   * salió en dos borradores, porque el lector vio el estampado como diseño. En un bolso el
+   * estampado es el tono. Un álbum de verdad trae más diseños que tonos —las trece camisetas de La
+   * Riverah— o un SKU por foto, y ese no se toca: el SKU es lo único del álbum que no cambia de una
+   * corrida a otra.
+   */
+  private static boolean sonSusTonos(
+      ProductoExtraido producto, LecturaDeFotos lectura, List<List<Integer>> disenos) {
+    int tonos =
+        Math.max(
+            producto.cantidadTonos() == null ? 0 : producto.cantidadTonos(),
+            producto.tonosNombrados().size());
+    boolean conSku = lectura.fotos().stream().anyMatch(l -> l.skuOpcional().isPresent());
+    return tonos >= 2 && !conSku && disenos.size() <= tonos;
   }
 
   /**
