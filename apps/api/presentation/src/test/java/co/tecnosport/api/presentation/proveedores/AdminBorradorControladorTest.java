@@ -463,6 +463,30 @@ class AdminBorradorControladorTest {
         .andExpect(jsonPath("$.detail").value("Las prendas se numeran desde 1."));
   }
 
+  /**
+   * Las prendas dichas aparte llegan al comando: dos con el mismo número se rechazan al armarlo. Si
+   * el controlador las dejara atrás, la aprobación seguiría como si no hubiera ninguna.
+   */
+  @Test
+  void lasPrendasDeLaAprobacionLleganAlComando() throws Exception {
+    mockMvc
+        .perform(
+            post("/api/v1/admin/borradores/{id}/aprobar", borrador.id())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    "{\"categoriaId\":\""
+                        + UUID.randomUUID()
+                        + "\",\"marcaId\":\""
+                        + UUID.randomUUID()
+                        + "\",\"precioVenta\":71600,\"existenciaInicial\":1,\"altEs\":\"Bolso\","
+                        + "\"altEn\":\"Bag\",\"fotos\":[{\"mensajeId\":\""
+                        + foto.id()
+                        + "\"}],\"prendas\":[{\"numero\":1,\"tono\":\"Negro\"},"
+                        + "{\"numero\":1,\"tono\":\"Rojo\",\"tallas\":[\"S\"]}]}"))
+        .andExpect(status().isUnprocessableContent())
+        .andExpect(jsonPath("$.detail").value("Dos prendas no pueden tener el mismo número."));
+  }
+
   /** El álbum que la lectura de fotos juntó en uno: la segunda foto se va a un borrador nuevo. */
   @Test
   void partirSeLlevaLasFotosNombradasAUnBorradorNuevo() throws Exception {

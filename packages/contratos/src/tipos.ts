@@ -2274,6 +2274,7 @@ export interface components {
             marcaId: string;
             /** Format: int64 */
             precioVenta: number;
+            prendas?: components["schemas"]["PrendaAprobadaPeticion"][];
             tallas?: components["schemas"]["TallasPeticion"];
             titulo?: string;
         };
@@ -2807,6 +2808,7 @@ export interface components {
             origen: "PROVEEDOR" | "PANEL";
             pieDeFoto?: string;
             tonoSugerido?: string;
+            tonosVistos: string[];
             url?: string;
         };
         FotogramaPeticion: {
@@ -3233,6 +3235,13 @@ export interface components {
             concepto: string;
             /** Format: int64 */
             precio: number;
+        };
+        PrendaAprobadaPeticion: {
+            colorHex?: string;
+            /** Format: int32 */
+            numero: number;
+            tallas?: string[];
+            tono: string;
         };
         Producto: {
             /** Format: date-time */

@@ -3,12 +3,15 @@ package co.tecnosport.api.application.proveedores;
 import co.tecnosport.api.domain.proveedores.BorradorProducto;
 import co.tecnosport.api.domain.proveedores.EstadoBorrador;
 import co.tecnosport.api.domain.proveedores.FotoSubida;
+import co.tecnosport.api.domain.proveedores.LecturaDeFotos;
 import co.tecnosport.api.domain.proveedores.MensajeProveedor;
 import co.tecnosport.api.domain.proveedores.PublicacionProveedor;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -17,6 +20,10 @@ import java.util.stream.Collectors;
  * El borrador con lo que hace falta para revisarlo: el texto original del proveedor y sus fotos,
  * cada una con una URL firmada de lectura porque el bucket es privado. Las que quien revisa
  * descartó no vienen. Las que se subieron desde el panel van después de las del proveedor.
+ *
+ * <p>Cada foto trae los colores que la lectura de fotos vio en ella: el sugerido si mostraba uno
+ * solo, y todos si mostraba varios —la foto que retrata la blusa en negro, cocoa y verde—. Esos son
+ * los tonos que el panel propone como prendas sin foto propia (12 de octubre de 2026).
  */
 public final class VerBorrador {
 
@@ -24,16 +31,33 @@ public final class VerBorrador {
   private final RepositorioPublicacionesProveedor repositorioPublicaciones;
   private final RepositorioMensajesProveedor repositorioMensajes;
   private final AlmacenDeArchivosDeProveedor almacen;
+  private final InterpreteDeLecturaDeFotos interprete;
 
   public VerBorrador(
       RepositorioBorradores repositorioBorradores,
       RepositorioPublicacionesProveedor repositorioPublicaciones,
       RepositorioMensajesProveedor repositorioMensajes,
-      AlmacenDeArchivosDeProveedor almacen) {
+      AlmacenDeArchivosDeProveedor almacen,
+      InterpreteDeLecturaDeFotos interprete) {
     this.repositorioBorradores = Objects.requireNonNull(repositorioBorradores);
     this.repositorioPublicaciones = Objects.requireNonNull(repositorioPublicaciones);
     this.repositorioMensajes = Objects.requireNonNull(repositorioMensajes);
     this.almacen = Objects.requireNonNull(almacen);
+    this.interprete = Objects.requireNonNull(interprete);
+  }
+
+  /** Sin lecturas que interpretar: ninguna foto trae los tonos de una foto de varios. */
+  public VerBorrador(
+      RepositorioBorradores repositorioBorradores,
+      RepositorioPublicacionesProveedor repositorioPublicaciones,
+      RepositorioMensajesProveedor repositorioMensajes,
+      AlmacenDeArchivosDeProveedor almacen) {
+    this(
+        repositorioBorradores,
+        repositorioPublicaciones,
+        repositorioMensajes,
+        almacen,
+        InterpreteDeLecturaDeFotos.NINGUNO);
   }
 
   public DetalleDeBorrador ejecutar(UUID borradorId) {
@@ -63,8 +87,14 @@ public final class VerBorrador {
         mensaje.textoLegible().ifPresent(textos::add);
       }
     }
+    List<BorradorProducto> deLaPublicacion =
+        repositorioBorradores.listarDePublicacion(publicacion.id());
+    Map<Integer, List<String>> tonosVistos =
+        tonosDeFotosDeVarios(borrador, publicacion.medios(), deLaPublicacion);
     List<FotoDeBorrador> fotos = new ArrayList<>();
-    for (UUID id : publicacion.medios()) {
+    List<UUID> medios = publicacion.medios();
+    for (int i = 0; i < medios.size(); i++) {
+      UUID id = medios.get(i);
       MensajeProveedor mensaje = mensajes.get(id);
       if (mensaje == null || borrador.fotosDescartadas().contains(id)) {
         continue;
@@ -75,7 +105,8 @@ public final class VerBorrador {
               mensaje.referenciaArchivo().map(r -> almacen.urlDeLectura(r).url()).orElse(null),
               mensaje.pieDeFoto().orElse(null),
               OrigenDeFoto.PROVEEDOR,
-              borrador.tonosSugeridos().get(id)));
+              borrador.tonosSugeridos().get(id),
+              tonosVistos.getOrDefault(i, List.of())));
     }
     // Las de otras publicaciones que se le sumaron: la misma referencia publicada otra vez, o una
     // foto que quien revisa movió aquí. Las que ya no existen —se borró su lote— no se pintan.
@@ -97,7 +128,7 @@ public final class VerBorrador {
               OrigenDeFoto.PANEL));
     }
     List<Hermano> hermanos =
-        repositorioBorradores.listarDePublicacion(publicacion.id()).stream()
+        deLaPublicacion.stream()
             .filter(otro -> !otro.id().equals(borrador.id()))
             .filter(otro -> otro.estado() == EstadoBorrador.EN_REVISION)
             .map(
@@ -106,6 +137,37 @@ public final class VerBorrador {
                         otro.id(), otro.titulo().orElse(null), borrador.mismoDisenoQue(otro)))
             .toList();
     return new DetalleDeBorrador(borrador, publicacion, textos, fotos, hermanos);
+  }
+
+  /**
+   * Los tonos que la lectura vio en cada foto que muestra varios, por su posición en la
+   * publicación. Solo las fotos que este borrador tiene para él solo: una foto que otro producto de
+   * la publicación también conserva puede retratar los colores de ese otro, y proponerlos aquí
+   * crearía variantes que este no tiene —es la misma cautela con que la extracción solo toma los
+   * tonos de las fotos cuando son suyas—.
+   */
+  private Map<Integer, List<String>> tonosDeFotosDeVarios(
+      BorradorProducto borrador, List<UUID> medios, List<BorradorProducto> deLaPublicacion) {
+    Optional<LecturaDeFotos> lectura = borrador.lecturaDeFotos().flatMap(interprete::interpretar);
+    if (lectura.isEmpty()) {
+      return Map.of();
+    }
+    Map<Integer, List<String>> porPosicion = new HashMap<>();
+    for (LecturaDeFotos.LecturaDeFoto foto : lectura.get().fotos()) {
+      if (foto.colores().size() < 2 || foto.posicion() >= medios.size()) {
+        continue;
+      }
+      UUID id = medios.get(foto.posicion());
+      boolean deOtro =
+          deLaPublicacion.stream()
+              .filter(otro -> !otro.id().equals(borrador.id()))
+              .filter(otro -> otro.estado() != EstadoBorrador.RECHAZADO)
+              .anyMatch(otro -> !otro.fotosDescartadas().contains(id));
+      if (!deOtro) {
+        porPosicion.put(foto.posicion(), foto.colores());
+      }
+    }
+    return porPosicion;
   }
 
   /**
@@ -152,9 +214,26 @@ public final class VerBorrador {
    *     aprobación; los dos son UUID generados aquí y no chocan.
    * @param url firmada y de vida corta; nula cuando la exportación omitió el archivo
    * @param tonoSugerido el color que la lectura de fotos vio en ella; nulo si no hay sugerencia
+   * @param tonosVistos los colores que la lectura vio en ella cuando muestra varios —la foto con
+   *     todos los tonos del producto—, como los nombró: «cocoa», no el de la paleta. Vacía si
+   *     muestra uno solo o ninguno
    */
   public record FotoDeBorrador(
-      UUID mensajeId, String url, String pieDeFoto, OrigenDeFoto origen, String tonoSugerido) {
+      UUID mensajeId,
+      String url,
+      String pieDeFoto,
+      OrigenDeFoto origen,
+      String tonoSugerido,
+      List<String> tonosVistos) {
+
+    public FotoDeBorrador {
+      tonosVistos = tonosVistos == null ? List.of() : List.copyOf(tonosVistos);
+    }
+
+    public FotoDeBorrador(
+        UUID mensajeId, String url, String pieDeFoto, OrigenDeFoto origen, String tonoSugerido) {
+      this(mensajeId, url, pieDeFoto, origen, tonoSugerido, List.of());
+    }
 
     public FotoDeBorrador(UUID mensajeId, String url, String pieDeFoto, OrigenDeFoto origen) {
       this(mensajeId, url, pieDeFoto, origen, null);

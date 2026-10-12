@@ -190,6 +190,15 @@ function elegirPrenda(numero: number, valor: string) {
   });
 }
 
+/**
+ * Sin tonos en el texto: el borrador de prueba dice «Negro, Café», y desde el 12 de octubre de
+ * 2026 esos tonos llegan propuestos como prendas sin foto. Las pruebas de las prendas de foto
+ * parten de cero.
+ */
+function sinTonosDelTexto(): Borrador {
+  return borradorDePrueba({ tonosNombrados: [] });
+}
+
 async function aprobarCon75000() {
   fireEvent.input(screen.getByLabelText(a.precioVenta), { target: { value: '75.000' } });
   fireEvent.click(screen.getByRole('button', { name: a.accion }));
@@ -266,7 +275,7 @@ describe('DetalleBorradorAdminPage', () => {
   });
 
   it('aprueba con el tono de cada foto, las unidades y el precio, y enlaza el producto', async () => {
-    const { repositorio } = await renderPagina();
+    const { repositorio } = await renderPagina(sinTonosDelTexto());
     await llenarAprobacion();
 
     // La foto 1 es de dos colores, marcados en orden: negro y luego vino.
@@ -362,7 +371,7 @@ describe('DetalleBorradorAdminPage', () => {
   /** El selector de color sigue en las que no entran: el color se recuerda si se vuelve a tildar. */
   it('no aprueba si una foto que no entra tiene un color marcado, y dice cuál', async () => {
     const fotos = Array.from({ length: 10 }, (_, i) => fotoDePrueba('f-' + (i + 1)));
-    const { repositorio } = await renderPagina(borradorDePrueba(), fotos);
+    const { repositorio } = await renderPagina(sinTonosDelTexto(), fotos);
     await llenarAprobacion();
 
     fireEvent.click(await screen.findByRole('button', { name: /Color de la foto 10/ }));
@@ -380,7 +389,7 @@ describe('DetalleBorradorAdminPage', () => {
    */
   describe('prendas', () => {
     it('juntar dos fotos en una prenda manda una sola variante con las dos', async () => {
-      const { repositorio } = await renderPagina();
+      const { repositorio } = await renderPagina(sinTonosDelTexto());
       await llenarAprobacion();
 
       await marcarColor(1, 'Negro');
@@ -397,7 +406,7 @@ describe('DetalleBorradorAdminPage', () => {
 
     /** El jean del 7 de octubre de 2026: el mismo color en dos fotos sin juntar son dos prendas. */
     it('el mismo color en dos fotos sueltas son dos prendas numeradas', async () => {
-      const { repositorio } = await renderPagina();
+      const { repositorio } = await renderPagina(sinTonosDelTexto());
       await llenarAprobacion();
 
       await marcarColor(1, 'Negro');
@@ -427,7 +436,7 @@ describe('DetalleBorradorAdminPage', () => {
     });
 
     it('cambiar el color de una foto de la prenda lo cambia en todas', async () => {
-      await renderPagina();
+      await renderPagina(sinTonosDelTexto());
       await llenarAprobacion();
 
       await marcarColor(1, 'Negro');
@@ -439,7 +448,7 @@ describe('DetalleBorradorAdminPage', () => {
     });
 
     it('una prenda sin color no se aprueba, y dice cuál', async () => {
-      const { repositorio } = await renderPagina();
+      const { repositorio } = await renderPagina(sinTonosDelTexto());
       await llenarAprobacion();
 
       elegirPrenda(1, 'nueva');
@@ -450,9 +459,194 @@ describe('DetalleBorradorAdminPage', () => {
     });
 
     it('sin colores dice que sale una sola variante sin color', async () => {
-      await renderPagina();
+      await renderPagina(sinTonosDelTexto());
 
       expect(await screen.findByText(a.sinVariantesDeColor)).toBeTruthy();
+    });
+  });
+
+  /**
+   * Los colores sin foto propia (12 de octubre de 2026): la blusa de Violeta trae una foto con
+   * todos los tonos de frente y otra de espalda, y ninguna de un solo tono.
+   */
+  describe('colores sin foto propia', () => {
+    const fotosDeTodos = (): FotoBorrador[] => [
+      { ...fotoDePrueba('frente'), tonosVistos: ['negro', 'cocoa', 'vino'] },
+      { ...fotoDePrueba('espalda'), tonosVistos: ['negro', 'cocoa', 'vino'] },
+    ];
+
+    function selectorDePrenda(numero: number): HTMLElement {
+      return screen.getByRole('button', {
+        name: new RegExp(`Color de la prenda ${numero}\\b`),
+      });
+    }
+
+    async function marcarColorDePrenda(numero: number, color: string) {
+      const boton = selectorDePrenda(numero);
+      fireEvent.click(boton);
+      const lista = document.getElementById(
+        boton.getAttribute('aria-controls') ?? '',
+      ) as HTMLElement;
+      fireEvent.click(within(lista).getByLabelText(new RegExp(`^${color}( [(][0-9][)])?$`)));
+      fireEvent.click(boton);
+    }
+
+    it('propone los tonos de la foto de todos y los manda como prendas sin foto', async () => {
+      const { repositorio } = await renderPagina(sinTonosDelTexto(), fotosDeTodos());
+      await llenarAprobacion();
+
+      expect(
+        await screen.findByText('Negro: sin foto propia, se ve en la foto de todos los colores'),
+      ).toBeTruthy();
+      expect(screen.getByText('El proveedor lo llama «cocoa».')).toBeTruthy();
+
+      // La paleta no tiene «cocoa»: la prenda llega sin color y no se aprueba hasta elegirlo.
+      await aprobarCon75000();
+      expect(
+        await screen.findByText(a.colorSinFotoSinColor.replace('{{prenda}}', '2')),
+      ).toBeTruthy();
+      expect(repositorio.aprobaciones).toEqual([]);
+
+      await marcarColorDePrenda(2, 'Café');
+      await aprobarCon75000();
+
+      await screen.findByRole('link', { name: a.verProducto });
+      expect(repositorio.aprobaciones[0].aprobacion.prendas).toEqual([
+        { numero: 1, tono: 'Negro', colorHex: '#111111', tallas: null },
+        { numero: 2, tono: 'Café', colorHex: '#6F4E37', tallas: null },
+        { numero: 3, tono: 'Vino', colorHex: '#722F37', tallas: null },
+      ]);
+      expect(repositorio.aprobaciones[0].aprobacion.fotos.map((f) => f.prenda)).toEqual([
+        null,
+        null,
+      ]);
+    });
+
+    /** El anuncio dice «negro y café»; quien revisa marca la foto negra y es la de esa prenda. */
+    it('los tonos del anuncio se proponen, y marcar la foto de uno la mete en su prenda', async () => {
+      const { repositorio } = await renderPagina();
+      await llenarAprobacion();
+
+      await marcarColor(1, 'Negro');
+
+      expect(await screen.findByText('Negro: la foto 1')).toBeTruthy();
+      expect(
+        screen.getByText('Café: sin foto propia, se ve en la foto de todos los colores'),
+      ).toBeTruthy();
+      await aprobarCon75000();
+      await screen.findByRole('link', { name: a.verProducto });
+      expect(repositorio.aprobaciones[0].aprobacion.prendas.map((p) => p.tono)).toEqual([
+        'Negro',
+        'Café',
+      ]);
+      expect(repositorio.aprobaciones[0].aprobacion.fotos[0].prenda).toBe(1);
+    });
+
+    it('agregar y quitar un color sin foto', async () => {
+      const { repositorio } = await renderPagina(sinTonosDelTexto());
+      await llenarAprobacion();
+
+      fireEvent.click(await screen.findByRole('button', { name: a.agregarColorSinFoto }));
+      await marcarColorDePrenda(1, 'Vino');
+      expect(
+        await screen.findByText('Vino: sin foto propia, se ve en la foto de todos los colores'),
+      ).toBeTruthy();
+
+      fireEvent.click(screen.getByRole('button', { name: 'Quitar el color de la prenda 1' }));
+      expect(await screen.findByText(a.sinVariantesDeColor)).toBeTruthy();
+      await aprobarCon75000();
+      await screen.findByRole('link', { name: a.verProducto });
+      expect(repositorio.aprobaciones[0].aprobacion.prendas).toEqual([]);
+    });
+
+    /** Sin foto, «Negro 1» y «Negro 2» se leen igual: se para antes de mandarlo. */
+    it('un color sin foto no se llama como otro', async () => {
+      const { repositorio } = await renderPagina(sinTonosDelTexto());
+      await llenarAprobacion();
+
+      await marcarColor(1, 'Negro');
+      fireEvent.click(screen.getByRole('button', { name: a.agregarColorSinFoto }));
+      await marcarColorDePrenda(2, 'Negro');
+      await aprobarCon75000();
+
+      expect(await screen.findByText(a.prendaRepetida.replace('{{tono}}', 'Negro'))).toBeTruthy();
+      expect(repositorio.aprobaciones).toEqual([]);
+    });
+  });
+
+  /** El enterizo de Violeta: «ivory S M L XL / beige rosa S L XL / azul M L XL». */
+  describe('tallas por color', () => {
+    const conTallasPorTono = () =>
+      borradorDePrueba({
+        tallas: { tipo: 'LISTA', sirveHasta: null, valores: ['S', 'M', 'L'] },
+        tallasPorTono: [{ tono: 'negro', tallas: ['S', 'M'] }],
+      });
+
+    function casilla(color: string, talla: string): HTMLInputElement {
+      return within(
+        screen.getByRole('group', { name: `Tallas del color ${color}` }),
+      ).getByLabelText(talla) as HTMLInputElement;
+    }
+
+    it('se abre llena con lo que dijo el anuncio y viaja con cada color', async () => {
+      const { repositorio } = await renderPagina(conTallasPorTono());
+      await llenarAprobacion();
+
+      const interruptor = (await screen.findByLabelText(a.tallasPorColor)) as HTMLInputElement;
+      await vi.waitFor(() => expect(interruptor.checked).toBe(true));
+      expect(casilla('Negro', 'L').checked).toBe(false);
+      expect(casilla('Café', 'L').checked).toBe(true);
+
+      fireEvent.click(casilla('Café', 'S'));
+      await aprobarCon75000();
+
+      await screen.findByRole('link', { name: a.verProducto });
+      expect(repositorio.aprobaciones[0].aprobacion.prendas.map((p) => [p.tono, p.tallas])).toEqual(
+        [
+          ['Negro', ['S', 'M']],
+          ['Café', ['M', 'L']],
+        ],
+      );
+    });
+
+    it('apagado, todos los colores vienen en todas las tallas', async () => {
+      const { repositorio } = await renderPagina(conTallasPorTono());
+      await llenarAprobacion();
+
+      const interruptor = (await screen.findByLabelText(a.tallasPorColor)) as HTMLInputElement;
+      await vi.waitFor(() => expect(interruptor.checked).toBe(true));
+      fireEvent.click(interruptor);
+      expect(screen.queryByRole('group', { name: 'Tallas del color Negro' })).toBeNull();
+      await aprobarCon75000();
+
+      await screen.findByRole('link', { name: a.verProducto });
+      // Todas, y no nulo: con nulo la API recortaría el negro a S y M por lo que dijo el anuncio.
+      expect(repositorio.aprobaciones[0].aprobacion.prendas.map((p) => p.tallas)).toEqual([
+        ['S', 'M', 'L'],
+        ['S', 'M', 'L'],
+      ]);
+    });
+
+    it('un color sin ninguna talla no se aprueba, y dice cuál', async () => {
+      const { repositorio } = await renderPagina(conTallasPorTono());
+      await llenarAprobacion();
+
+      await screen.findByRole('group', { name: 'Tallas del color Negro' });
+      fireEvent.click(casilla('Negro', 'S'));
+      fireEvent.click(casilla('Negro', 'M'));
+      await aprobarCon75000();
+
+      expect(await screen.findByText(a.prendaSinTallas.replace('{{tono}}', 'Negro'))).toBeTruthy();
+      expect(repositorio.aprobaciones).toEqual([]);
+    });
+
+    it('sin reparto en el anuncio, la casilla llega sin marcar', async () => {
+      await renderPagina(
+        borradorDePrueba({ tallas: { tipo: 'LISTA', sirveHasta: null, valores: ['S', 'M'] } }),
+      );
+
+      const interruptor = (await screen.findByLabelText(a.tallasPorColor)) as HTMLInputElement;
+      expect(interruptor.checked).toBe(false);
     });
   });
 

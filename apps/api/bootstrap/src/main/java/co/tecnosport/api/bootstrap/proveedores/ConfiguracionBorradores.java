@@ -29,6 +29,7 @@ import co.tecnosport.api.application.proveedores.ResolverBorrador;
 import co.tecnosport.api.application.proveedores.SolicitarSubidaDeFotoDeBorrador;
 import co.tecnosport.api.application.proveedores.UnirBorradores;
 import co.tecnosport.api.application.proveedores.VerBorrador;
+import co.tecnosport.api.infrastructure.proveedores.extraccion.InterpreteDeLecturaDeFotosJson;
 import co.tecnosport.api.infrastructure.proveedores.imagenes.CalculadorDePHashAwt;
 import co.tecnosport.api.infrastructure.proveedores.imagenes.ProcesadorDeImagenesNulo;
 import org.springframework.context.annotation.Bean;
@@ -204,6 +205,7 @@ public class ConfiguracionBorradores {
       RepositorioPublicacionesProveedor publicaciones,
       RepositorioMensajesProveedor mensajes,
       AlmacenDeArchivosDeProveedor almacen) {
-    return new VerBorrador(borradores, publicaciones, mensajes, almacen);
+    return new VerBorrador(
+        borradores, publicaciones, mensajes, almacen, new InterpreteDeLecturaDeFotosJson());
   }
 }

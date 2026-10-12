@@ -8,11 +8,15 @@ import java.util.UUID;
 /**
  * Lo que una persona decide al aprobar: el título y la descripción finales, dónde cuelga en el
  * catálogo, a cuánto se vende, cómo talla, con cuánta existencia inicial nace cada variante, los
- * textos alternativos de la foto principal, qué tono muestra cada foto y cuáles son la misma
- * prenda.
+ * textos alternativos de la foto principal, qué tono muestra cada foto, cuáles son la misma prenda
+ * y en qué tallas viene cada una.
  *
  * @param fotos en el orden en que van a publicarse; la primera es la principal
  * @param existenciaInicial por variante; el checkout no vende lo que el libro no tiene
+ * @param prendas las prendas del producto, dichas aparte de las fotos (12 de octubre de 2026): una
+ *     prenda puede no tener foto propia —se ve en la foto que retrata todos los tonos juntos— y
+ *     puede venir en menos tallas que el producto. Vacía = las prendas salen de las fotos, que es
+ *     lo que hacía el contrato antes de tener el campo
  */
 public record AprobarBorradorComando(
     UUID borradorId,
@@ -25,7 +29,8 @@ public record AprobarBorradorComando(
     int existenciaInicial,
     String altEs,
     String altEn,
-    List<FotoAprobada> fotos) {
+    List<FotoAprobada> fotos,
+    List<PrendaAprobada> prendas) {
 
   public AprobarBorradorComando {
     Objects.requireNonNull(borradorId, "El id del borrador no puede ser nulo.");
@@ -38,6 +43,38 @@ public record AprobarBorradorComando(
       throw new IllegalArgumentException("La existencia inicial no puede ser negativa.");
     }
     fotos = fotos == null ? List.of() : List.copyOf(fotos);
+    prendas = prendas == null ? List.of() : List.copyOf(prendas);
+    if (prendas.stream().map(PrendaAprobada::numero).distinct().count() != prendas.size()) {
+      throw new IllegalArgumentException("Dos prendas no pueden tener el mismo número.");
+    }
+  }
+
+  /** Sin prendas dichas aparte: salen de las fotos, como antes del 12 de octubre de 2026. */
+  public AprobarBorradorComando(
+      UUID borradorId,
+      String titulo,
+      String descripcion,
+      UUID categoriaId,
+      UUID marcaId,
+      long precioVenta,
+      Tallas tallas,
+      int existenciaInicial,
+      String altEs,
+      String altEn,
+      List<FotoAprobada> fotos) {
+    this(
+        borradorId,
+        titulo,
+        descripcion,
+        categoriaId,
+        marcaId,
+        precioVenta,
+        tallas,
+        existenciaInicial,
+        altEs,
+        altEn,
+        fotos,
+        List.of());
   }
 
   /**
@@ -59,6 +96,27 @@ public record AprobarBorradorComando(
     /** Una foto que no dice de qué prenda es: con tono, es una prenda ella sola. */
     public FotoAprobada(UUID mensajeId, String tono, String colorHex) {
       this(mensajeId, tono, colorHex, null);
+    }
+  }
+
+  /**
+   * Una prenda del producto: una variante de color.
+   *
+   * @param numero el que las fotos citan en {@link FotoAprobada#prenda()}, desde 1. Una prenda que
+   *     ninguna foto cita no tiene foto propia: quien compra la ve en la que retrata todos los
+   *     tonos
+   * @param tono el valor del atributo Color, sin numerar: la aprobación numera los repetidos
+   * @param tallas en cuáles tallas del producto viene; nula = en todas. Solo con una lista de
+   *     tallas
+   */
+  public record PrendaAprobada(int numero, String tono, String colorHex, List<String> tallas) {
+    public PrendaAprobada {
+      if (numero < 1) {
+        throw new IllegalArgumentException("Las prendas se numeran desde 1.");
+      }
+      tono = tono == null || tono.isBlank() ? null : tono.strip();
+      colorHex = colorHex == null || colorHex.isBlank() ? null : colorHex.strip();
+      tallas = tallas == null ? null : tallas.stream().map(String::strip).toList();
     }
   }
 }

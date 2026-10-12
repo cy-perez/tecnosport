@@ -42,8 +42,6 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.HexFormat;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -181,10 +179,18 @@ public final class AprobarBorrador {
       }
     }
 
-    // El tono que le toca a cada foto, por posición. Se calcula una vez y lo usan las dos mitades
-    // —crear las variantes y publicar las fotos—, porque tienen que coincidir exactamente. Y antes
-    // de crear nada: una prenda incoherente es un error del cuerpo y no debe dejar producto.
-    List<String> tonoPorFoto = tonosPorPrenda(comando.fotos());
+    // Las prendas y el tono que le toca a cada foto, por posición. Se calcula una vez y lo usan las
+    // dos mitades —crear las variantes y publicar las fotos—, porque tienen que coincidir
+    // exactamente. Y antes de crear nada: una prenda incoherente es un error del cuerpo y no debe
+    // dejar producto.
+    Tallas tallasAprobadas = comando.tallas() == null ? borrador.tallas() : comando.tallas();
+    PrendasDeLaAprobacion.Resueltas prendas =
+        PrendasDeLaAprobacion.resolver(
+            comando.fotos(),
+            comando.prendas(),
+            valoresDeTalla(tallasAprobadas),
+            tallasAprobadas.tipo() == TipoDeTalla.LISTA);
+    List<String> tonoPorFoto = prendas.valorPorFoto();
 
     String titulo =
         comando.titulo() == null || comando.titulo().isBlank()
@@ -225,13 +231,13 @@ public final class AprobarBorrador {
             precioProveedor,
             huella,
             vistoPorUltimaVez);
-    Tallas tallasAprobadas = comando.tallas() == null ? borrador.tallas() : comando.tallas();
     if (tallasAprobadas.tipo() == TipoDeTalla.UNICA) {
       producto.definirTallaSirveHasta(tallasAprobadas.sirveHasta());
     }
     repositorioProductos.guardar(producto);
 
-    Map<String, UUID> variantePorTono = crearVariantes(producto, comando, borrador, tonoPorFoto);
+    Map<String, UUID> variantePorTono =
+        crearVariantes(producto, comando, borrador, tallasAprobadas, prendas);
 
     // Las fotos se releen del repositorio: agregarVariante las dejó ya guardadas y el agregado en
     // memoria tiene que verlas para poder publicar.
@@ -253,122 +259,41 @@ public final class AprobarBorrador {
   }
 
   /**
-   * El valor del atributo Color que le toca a cada foto, por posición; nulo donde la foto no lleva
-   * tono. <b>Una variante es una prenda</b>, y una prenda puede tener varias fotos: las que traen
-   * el mismo número de {@code prenda} cuelgan de la misma variante. <b>Un tono que se repite entre
-   * prendas distintas se numera</b>: dos prendas «Negro» salen como «Negro 1» y «Negro 2»; el que
-   * sale en una sola prenda se queda como está, tenga las fotos que tenga.
-   *
-   * <p>Hasta el 6 de octubre de 2026 los tonos se agrupaban con {@code distinct()}: dos fotos del
-   * mismo color colapsaban en una variante. Bien cuando eran dos vistas de la misma prenda; mal
-   * cuando eran dos prendas que el proveedor llamó igual — un jean con cuatro diseños negros
-   * ofrecía un solo círculo. Del 6 al 7 de octubre cada foto con tono fue su propia variante, y
-   * entonces se rompía lo contrario: dos ángulos de la misma prenda salían como «Rojo 1» y «Rojo
-   * 2». <b>El color no dice cuál de los dos casos es, ni en un sentido ni en el otro</b>; lo dice
-   * quien mira las fotos, y por eso la prenda llega explícita (ADR-0070).
-   *
-   * <p>Una foto con tono y sin prenda es una prenda ella sola: es lo que hacía el contrato antes de
-   * tener el campo, y un cliente que no lo manda sigue obteniendo lo mismo.
-   *
-   * <p><b>Numerar es feo y es lo correcto</b>: la variante se identifica por el valor del atributo,
-   * y ese valor es lo que el pedido congela ({@code LineaPedido.detalleVariante}) y lo que lee
-   * quien empaca. Dos variantes con el mismo texto se leen igual en el carrito, en el correo y en
-   * la guía, y nadie sabría cuál de las dos prendas meter en la caja.
-   *
-   * @throws PrendaIncoherenteException si una prenda no tiene color o sus fotos traen dos distintos
-   */
-  private static List<String> tonosPorPrenda(List<AprobarBorradorComando.FotoAprobada> fotos) {
-    List<String> prendaPorFoto = new ArrayList<>(fotos.size());
-    Map<String, String> tonoPorPrenda = new LinkedHashMap<>();
-    Map<String, String> hexPorPrenda = new HashMap<>();
-    for (int i = 0; i < fotos.size(); i++) {
-      AprobarBorradorComando.FotoAprobada foto = fotos.get(i);
-      String prenda;
-      if (foto.prenda() != null) {
-        if (foto.tono() == null) {
-          throw new PrendaIncoherenteException(foto.prenda(), "no tiene color");
-        }
-        prenda = "prenda-" + foto.prenda();
-      } else {
-        // Sin prenda: con tono es una prenda sola; sin tono vale para todas.
-        prenda = foto.tono() == null ? null : "foto-" + i;
-      }
-      prendaPorFoto.add(prenda);
-      if (prenda == null) {
-        continue;
-      }
-      String tonoPrevio = tonoPorPrenda.putIfAbsent(prenda, foto.tono());
-      String hexPrevio =
-          foto.colorHex() == null ? null : hexPorPrenda.putIfAbsent(prenda, foto.colorHex());
-      if ((tonoPrevio != null && !tonoPrevio.equals(foto.tono()))
-          || (hexPrevio != null && !hexPrevio.equalsIgnoreCase(foto.colorHex()))) {
-        throw new PrendaIncoherenteException(foto.prenda(), "tiene fotos de dos colores");
-      }
-    }
-
-    Map<String, Long> prendasPorTono =
-        tonoPorPrenda.values().stream()
-            .collect(Collectors.groupingBy(tono -> tono, Collectors.counting()));
-    Map<String, Integer> vistos = new HashMap<>();
-    Map<String, String> valorPorPrenda = new HashMap<>();
-    tonoPorPrenda.forEach(
-        (prenda, tono) -> {
-          int cual = vistos.merge(tono, 1, Integer::sum);
-          valorPorPrenda.put(prenda, prendasPorTono.get(tono) == 1 ? tono : tono + " " + cual);
-        });
-
-    List<String> porFoto = new ArrayList<>(fotos.size());
-    for (String prenda : prendaPorFoto) {
-      porFoto.add(prenda == null ? null : valorPorPrenda.get(prenda));
-    }
-    // `Collections.unmodifiableList` y no `List.copyOf`: la lista lleva nulos en las fotos sin
-    // tono, y `List.copyOf` los rechaza.
-    return Collections.unmodifiableList(porFoto);
-  }
-
-  /**
-   * Una variante por prenda —con su tono ya numerado si se repite—; y por talla cuando el borrador
-   * trae una lista. Sin tonos, una sola.
+   * Una variante por prenda —con su tono ya numerado si se repite—, tenga foto propia o no; y por
+   * talla cuando el borrador trae una lista: las de la prenda si quien aprueba las dijo, y si no,
+   * las que el proveedor le dio a ese tono. Sin prendas, una sola variante por talla.
    */
   private Map<String, UUID> crearVariantes(
       Producto producto,
       AprobarBorradorComando comando,
       BorradorProducto borrador,
-      List<String> tonoPorFoto) {
-    List<String> tonos = tonoPorFoto.stream().filter(Objects::nonNull).distinct().toList();
-    Map<String, String> hexPorTono = new LinkedHashMap<>();
-    for (int i = 0; i < comando.fotos().size(); i++) {
-      String tono = tonoPorFoto.get(i);
-      String hex = comando.fotos().get(i).colorHex();
-      if (tono != null && hex != null) {
-        hexPorTono.putIfAbsent(tono, hex);
-      }
-    }
-    Tallas tallas = comando.tallas() == null ? borrador.tallas() : comando.tallas();
-    List<String> valoresDeTalla =
-        switch (tallas.tipo()) {
-          case LISTA -> tallas.valores();
-          // La talla única es una talla: la ficha y la tarjeta la dicen, y el carrito la muestra.
-          case UNICA -> List.of(TALLA_UNICA);
-          case DESCONOCIDA -> List.of();
-        };
-
+      Tallas tallas,
+      PrendasDeLaAprobacion.Resueltas prendas) {
+    List<String> valoresDeTalla = valoresDeTalla(tallas);
     Optional<Atributo> color =
-        tonos.isEmpty()
+        prendas.prendas().isEmpty()
             ? Optional.empty()
             : Optional.of(atributo(ATRIBUTO_COLOR, TipoAtributo.COLOR));
     Optional<Atributo> talla =
         valoresDeTalla.isEmpty() ? Optional.empty() : Optional.of(atributo(ATRIBUTO_TALLA, null));
 
-    Map<String, UUID> variantePorTono = new LinkedHashMap<>();
-    List<String> ejesDeTono = tonos.isEmpty() ? List.of("") : tonos;
+    List<PrendasDeLaAprobacion.Prenda> ejesDeTono =
+        prendas.prendas().isEmpty()
+            ? List.of(new PrendasDeLaAprobacion.Prenda("", null, null))
+            : prendas.prendas();
     List<String> ejesDeTalla = valoresDeTalla.isEmpty() ? List.of("") : valoresDeTalla;
+    Map<String, UUID> variantePorTono = new LinkedHashMap<>();
     int correlativo = 1;
-    for (String tono : ejesDeTono) {
-      for (String valorTalla : tallasDelTono(borrador, comando, tonoPorFoto, tono, ejesDeTalla)) {
+    for (PrendasDeLaAprobacion.Prenda prenda : ejesDeTono) {
+      String tono = prenda.valor();
+      List<String> tallasDeLaPrenda =
+          prenda.tallas() != null
+              ? prenda.tallas()
+              : tallasDelTono(borrador, comando, prendas.valorPorFoto(), tono, ejesDeTalla);
+      for (String valorTalla : tallasDeLaPrenda) {
         List<ValorAtributoComando> atributos = new ArrayList<>();
         color.ifPresent(
-            a -> atributos.add(new ValorAtributoComando(a.id(), tono, hexPorTono.get(tono))));
+            a -> atributos.add(new ValorAtributoComando(a.id(), tono, prenda.colorHex())));
         talla.ifPresent(a -> atributos.add(new ValorAtributoComando(a.id(), valorTalla, null)));
         VarianteCreada creada =
             agregarVariante.ejecutar(
@@ -388,6 +313,15 @@ public final class AprobarBorrador {
       }
     }
     return variantePorTono;
+  }
+
+  private static List<String> valoresDeTalla(Tallas tallas) {
+    return switch (tallas.tipo()) {
+      case LISTA -> tallas.valores();
+      // La talla única es una talla: la ficha y la tarjeta la dicen, y el carrito la muestra.
+      case UNICA -> List.of(TALLA_UNICA);
+      case DESCONOCIDA -> List.of();
+    };
   }
 
   /**

@@ -175,6 +175,12 @@ export interface FotoBorrador {
    * formulario de aprobación lo propone; nulo si no hay sugerencia.
    */
   readonly tonoSugerido: string | null;
+  /**
+   * Los colores que la lectura vio en ella cuando retrata varios —la blusa en negro, cocoa y verde
+   * en una sola foto—, como los nombró el lector. Son los que el panel propone como prendas sin
+   * foto propia; vacía si muestra uno solo o ninguno.
+   */
+  readonly tonosVistos: readonly string[];
 }
 
 /**
@@ -261,9 +267,19 @@ export interface AprobarBorrador {
   /** Unidades por variante que entran al inventario al aprobar. Cero es válido: agotado desde ya. */
   readonly existenciaInicial: number;
   /**
-   * Si las fotos sin tono —la principal casi siempre— acompañan a las de cada color en la ficha.
-   * Se apaga cuando cada color trae sus propias fotos.
+   * Las prendas del producto, con foto propia o sin ella (`prendas.ts`). Vacía = salen de las
+   * fotos, como antes del 12 de octubre de 2026.
    */
+  readonly prendas: readonly PrendaAprobada[];
+}
+
+/** Una prenda: una variante de color. La que ninguna foto cita se ve en la foto de todos. */
+export interface PrendaAprobada {
+  readonly numero: number;
+  readonly tono: string;
+  readonly colorHex: string | null;
+  /** En cuáles tallas del producto viene; nula = en todas. */
+  readonly tallas: readonly string[] | null;
 }
 
 /**

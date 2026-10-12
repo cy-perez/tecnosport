@@ -391,14 +391,103 @@
               @for (variante of variantesQueSeCrean(); track variante.prenda) {
                 <li>
                   {{
-                    (variante.fotos.length === 1
-                      ? 'admin.borradores.aprobar.varianteConUnaFoto'
-                      : 'admin.borradores.aprobar.varianteConFotos'
+                    (variante.fotos.length === 0
+                      ? 'admin.borradores.aprobar.varianteSinFoto'
+                      : variante.fotos.length === 1
+                        ? 'admin.borradores.aprobar.varianteConUnaFoto'
+                        : 'admin.borradores.aprobar.varianteConFotos'
                     ) | transloco: { valor: variante.valor, fotos: variante.numeros }
                   }}
                 </li>
               }
             </ul>
+          }
+
+          <h4 class="m-0 font-display text-base">
+            {{ 'admin.borradores.aprobar.coloresSinFotoTitulo' | transloco }}
+          </h4>
+          <p class="m-0 text-sm text-ts-texto-suave">
+            {{ 'admin.borradores.aprobar.coloresSinFotoAyuda' | transloco }}
+          </p>
+          @if (prendasSinFoto().length > 0) {
+            <ul class="m-0 flex list-none flex-col gap-12 p-0">
+              @for (sinFoto of prendasSinFoto(); track sinFoto.prenda) {
+                <li class="flex flex-wrap items-end gap-12">
+                  <div class="min-w-0 flex-1">
+                    <ts-selector-colores
+                      [idCampo]="'tono-prenda-' + sinFoto.prenda"
+                      [label]="
+                        'admin.borradores.aprobar.colorDePrenda'
+                          | transloco: { numero: sinFoto.prenda }
+                      "
+                      [ayuda]="
+                        sinFoto.pista
+                          ? ('admin.borradores.aprobar.pistaDelProveedor'
+                            | transloco: { pista: sinFoto.pista })
+                          : null
+                      "
+                      [opciones]="opcionesTono()"
+                      [seleccion]="coloresDePrenda(sinFoto.prenda)"
+                      [textos]="textosColores()"
+                      (seleccionCambio)="elegirColoresDePrenda(sinFoto.prenda, $event)"
+                    />
+                  </div>
+                  <ts-boton
+                    variante="secundario"
+                    [etiquetaAccesible]="
+                      'admin.borradores.aprobar.quitarColorSinFoto'
+                        | transloco: { numero: sinFoto.prenda }
+                    "
+                    (click)="quitarPrendaSinFoto(sinFoto.prenda)"
+                  >
+                    {{ 'admin.borradores.aprobar.quitar' | transloco }}
+                  </ts-boton>
+                </li>
+              }
+            </ul>
+          }
+          <div>
+            <ts-boton
+              id="agregar-color-sin-foto"
+              variante="secundario"
+              (click)="agregarColorSinFoto()"
+            >
+              {{ 'admin.borradores.aprobar.agregarColorSinFoto' | transloco }}
+            </ts-boton>
+          </div>
+
+          @if (ofrecerTallasPorColor()) {
+            <ts-checkbox
+              idCasilla="tallas-por-color"
+              [etiqueta]="'admin.borradores.aprobar.tallasPorColor' | transloco"
+              [marcado]="tallasPorColor()"
+              (marcadoCambio)="tallasPorColor.set($event)"
+            />
+            <p class="m-0 text-sm text-ts-texto-suave">
+              {{ 'admin.borradores.aprobar.tallasPorColorAyuda' | transloco }}
+            </p>
+            @if (tallasPorColor()) {
+              @for (variante of variantesQueSeCrean(); track variante.prenda) {
+                <fieldset class="m-0 flex flex-col gap-8 border-0 p-0">
+                  <legend class="mb-8 p-0 text-sm text-ts-texto">
+                    {{
+                      'admin.borradores.aprobar.tallasDeColor'
+                        | transloco: { color: variante.valor }
+                    }}
+                  </legend>
+                  <div class="flex flex-wrap gap-x-16 gap-y-8">
+                    @for (talla of tallasDelProducto(); track talla; let t = $index) {
+                      <ts-checkbox
+                        [idCasilla]="'talla-prenda-' + variante.prenda + '-' + t"
+                        [etiqueta]="talla"
+                        [marcado]="tallaDePrendaMarcada(variante.prenda, talla)"
+                        (marcadoCambio)="marcarTallaDePrenda(variante.prenda, talla, $event)"
+                      />
+                    }
+                  </div>
+                </fieldset>
+              }
+            }
           }
           @if (fotosElegidas().length > 1) {
             <div>

@@ -79,6 +79,7 @@ export function aFoto(dto: FotoDto): FotoBorrador {
     pieDeFoto: dto.pieDeFoto ?? null,
     origen: dto.origen,
     tonoSugerido: dto.tonoSugerido ?? null,
+    tonosVistos: dto.tonosVistos ?? [],
   };
 }
 
@@ -140,5 +141,15 @@ export function aAprobarPeticion(aprobacion: AprobarBorrador): AprobarPeticionDt
     altEs: aprobacion.altEs,
     altEn: aprobacion.altEn,
     existenciaInicial: aprobacion.existenciaInicial,
+    ...(aprobacion.prendas.length > 0
+      ? {
+          prendas: aprobacion.prendas.map((prenda) => ({
+            numero: prenda.numero,
+            tono: prenda.tono,
+            ...(prenda.colorHex ? { colorHex: prenda.colorHex } : {}),
+            ...(prenda.tallas ? { tallas: [...prenda.tallas] } : {}),
+          })),
+        }
+      : {}),
   };
 }
