@@ -56,6 +56,16 @@ public class ImagenProductoJpaEntity {
   @Column(name = "creada_en", nullable = false)
   private Instant creadaEn;
 
+  /**
+   * Solo una PRINCIPAL la lleva en verdadero: la que vale para todos y aun asi entra en la ficha.
+   */
+  @Column(name = "en_la_ficha", nullable = false)
+  private boolean enLaFicha;
+
+  /** Los ids de las variantes sin foto propia que la foto retrata, separados por coma; o nula. */
+  @Column(name = "muestra_variantes")
+  private String muestraVariantes;
+
   protected ImagenProductoJpaEntity() {}
 
   public ImagenProductoJpaEntity(
@@ -74,6 +84,46 @@ public class ImagenProductoJpaEntity {
       String altEs,
       String altEn,
       Instant creadaEn) {
+    this(
+        id,
+        productoId,
+        varianteId,
+        setRotacionId,
+        tipo,
+        orden,
+        url,
+        urlVistaPrevia,
+        ancho,
+        alto,
+        bytes,
+        hash,
+        altEs,
+        altEn,
+        creadaEn,
+        false,
+        null);
+  }
+
+  public ImagenProductoJpaEntity(
+      UUID id,
+      UUID productoId,
+      UUID varianteId,
+      UUID setRotacionId,
+      String tipo,
+      int orden,
+      String url,
+      String urlVistaPrevia,
+      int ancho,
+      int alto,
+      long bytes,
+      String hash,
+      String altEs,
+      String altEn,
+      Instant creadaEn,
+      boolean enLaFicha,
+      String muestraVariantes) {
+    this.enLaFicha = enLaFicha;
+    this.muestraVariantes = muestraVariantes;
     this.id = id;
     this.productoId = productoId;
     this.varianteId = varianteId;
@@ -162,5 +212,13 @@ public class ImagenProductoJpaEntity {
 
   public Instant getCreadaEn() {
     return creadaEn;
+  }
+
+  public boolean isEnLaFicha() {
+    return enLaFicha;
+  }
+
+  public String getMuestraVariantes() {
+    return muestraVariantes;
   }
 }

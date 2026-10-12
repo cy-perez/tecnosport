@@ -217,7 +217,8 @@ fotogramas ordenados.
 imagen_producto
   id, producto_id, variante_id (nullable), tipo, orden,
   url, url_vista_previa (nullable), ancho, alto, bytes, hash,
-  alt_es, alt_en, creada_en
+  alt_es, alt_en, creada_en,
+  en_la_ficha (solo PRINCIPAL), muestra_variantes (nullable)
 
 variante_imagen
   id, imagen_id, ancho, url, bytes
@@ -246,6 +247,12 @@ Reglas:
   costo visible y reversible —se reemplaza la imagen cuando llegue una mejor— y
   esa es exactamente la diferencia con el peso del paquete, que no es reversible
   porque el flete ya se cobró.
+- **Una foto puede retratar variantes que no son la suya** (`ADR-0082`, 12 de
+  octubre de 2026). `variante_id` es el tono de la foto; `muestra_variantes`, los
+  tonos sin foto propia que también se ven en ella —la camiseta negra que sale con
+  la blanca—, como ids separados por coma. Elegir uno de esos tonos en la ficha
+  lleva a esa foto. Y `en_la_ficha` deja entrar en la galería de la ficha a la
+  principal que vale para todos los tonos, que por `ADR-0069` no entra.
 - **La galería acumula; la principal se reemplaza** (`ADR-0052`, 21 de septiembre de
   2026). Agregar una imagen de galería no borra nada del bucket —limpiar el
   prefijo `galeria-` se llevaría las hermanas, que siguen publicadas—, y quitarla

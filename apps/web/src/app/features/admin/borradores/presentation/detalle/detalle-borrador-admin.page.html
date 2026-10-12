@@ -376,6 +376,19 @@
           </li>
         }
       </ul>
+      @if (editable() && ofrecerPrincipalEnLaFicha()) {
+        <div class="mb-24 flex flex-col gap-8">
+          <ts-checkbox
+            idCasilla="principal-en-la-ficha"
+            [etiqueta]="'admin.borradores.aprobar.principalEnLaFicha' | transloco"
+            [marcado]="principalEnLaFicha()"
+            (marcadoCambio)="elegirPrincipalEnLaFicha($event)"
+          />
+          <p class="m-0 text-sm text-ts-texto-suave">
+            {{ 'admin.borradores.aprobar.principalEnLaFichaAyuda' | transloco }}
+          </p>
+        </div>
+      }
       @if (editable() && opcionesTono().length > 0) {
         <section class="mb-24 flex flex-col gap-8" aria-labelledby="titulo-variantes-que-se-crean">
           <h3 id="titulo-variantes-que-se-crean" class="m-0 font-display text-base">
@@ -432,6 +445,16 @@
                       (seleccionCambio)="elegirColoresDePrenda(sinFoto.prenda, $event)"
                     />
                   </div>
+                  <ts-select
+                    [idCampo]="'foto-prenda-' + sinFoto.prenda"
+                    [label]="
+                      'admin.borradores.aprobar.seVeEn' | transloco: { numero: sinFoto.prenda }
+                    "
+                    [opciones]="opcionesFotoDePrenda()"
+                    [placeholder]="'admin.borradores.aprobar.seVeEnLaDeTodos' | transloco"
+                    [valor]="sinFoto.foto ?? ''"
+                    (cambio)="verEnFoto(sinFoto.prenda, $event)"
+                  />
                   <ts-boton
                     variante="secundario"
                     [etiquetaAccesible]="

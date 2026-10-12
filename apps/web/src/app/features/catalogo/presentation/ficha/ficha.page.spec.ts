@@ -172,6 +172,8 @@ function foto(url: string, varianteId: string | null) {
     altEs: url,
     altEn: url,
     varianteId,
+    enLaFicha: false,
+    variantesQueMuestra: [],
   };
 }
 
@@ -226,6 +228,8 @@ function productoConRotacion(): Producto {
       altEs: 'Morral de frente',
       altEn: 'Backpack, front',
       varianteId: null,
+      enLaFicha: false,
+      variantesQueMuestra: [],
     },
     // Ordenados, como los entrega el mapeador: que el orden se garantice en la frontera es
     // asunto de `mapeador-productos.spec.ts`, no de esta pantalla.
@@ -447,6 +451,63 @@ describe('FichaPage', () => {
     expect(screen.getAllByRole('button', { name: /imagenes[.]test/ })).toHaveLength(3);
     const grande = screen.getByRole('img', { name: 'https://imagenes.test/principal.jpg' });
     expect(grande.getAttribute('src')).toContain('principal.jpg');
+  });
+
+  /**
+   * La blusa de Violeta (ADR-0082): todas las fotos retratan los tres tonos, y quien aprobó pidió
+   * que la principal entrara. Sin eso, la foto que eligió de principal no se veía en la ficha.
+   */
+  it('una principal genérica que pidió entrar encabeza la ficha', async () => {
+    const generica = productoConPrincipalGenerica();
+    const repositorio: RepositorioProductos = {
+      buscar: () =>
+        Promise.resolve<ResultadoPaginado<Producto>>({ items: [], cursorSiguiente: null }),
+      buscarPorSlug: () =>
+        Promise.resolve({
+          ...generica,
+          imagenPrincipal: { ...generica.imagenPrincipal!, enLaFicha: true },
+        }),
+    };
+
+    await renderFicha(repositorio);
+    await screen.findByRole('heading', { name: 'Camiseta running Dry-Fit' });
+
+    expect(screen.getAllByRole('button', { name: /imagenes[.]test/ })).toHaveLength(3);
+    const grande = screen.getByRole('img', { name: 'https://imagenes.test/principal.jpg' });
+    expect(grande.getAttribute('src')).toContain('principal.jpg');
+  });
+
+  /**
+   * La camiseta de cinco tonos en dos fotos: el negro no tiene foto propia y quien aprobó dijo que
+   * se ve en la segunda. Elegirlo lleva a ella.
+   */
+  it('elegir un color sin foto propia salta a la foto que lo retrata', async () => {
+    const generica = productoConPrincipalGenerica();
+    const repositorio: RepositorioProductos = {
+      buscar: () =>
+        Promise.resolve<ResultadoPaginado<Producto>>({ items: [], cursorSiguiente: null }),
+      buscarPorSlug: () =>
+        Promise.resolve({
+          ...generica,
+          galeria: [
+            foto('https://imagenes.test/azul.jpg', 'variante-az'),
+            {
+              ...foto('https://imagenes.test/varios-tonos.jpg', null),
+              variantesQueMuestra: ['variante-ng'],
+            },
+          ],
+        }),
+    };
+
+    await renderFicha(repositorio);
+    await screen.findByRole('heading', { name: 'Camiseta running Dry-Fit' });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Negro' }));
+
+    await vi.waitFor(() => {
+      const grande = document.querySelector('.aspect-square img') as HTMLImageElement;
+      expect(grande.getAttribute('src')).toContain('varios-tonos.jpg');
+    });
   });
 
   /** Y elegir un color mueve la foto activa; no recorta la lista. */

@@ -249,6 +249,7 @@ public final class AprobarBorrador {
             archivoPorFoto,
             variantePorTono,
             tonoPorFoto,
+            prendas.muestraPorFoto(),
             borrador.pHash().isEmpty());
     conVariantes.publicar();
     repositorioProductos.actualizar(conVariantes);
@@ -363,11 +364,19 @@ public final class AprobarBorrador {
       Map<UUID, String> fotos,
       Map<String, UUID> variantePorTono,
       List<String> tonoPorFoto,
+      List<List<String>> muestraPorFoto,
       boolean conHuellaVisual) {
     List<String> subidas = new ArrayList<>();
     try {
       return publicarFotos(
-          producto, comando, fotos, variantePorTono, tonoPorFoto, conHuellaVisual, subidas);
+          producto,
+          comando,
+          fotos,
+          variantePorTono,
+          tonoPorFoto,
+          muestraPorFoto,
+          conHuellaVisual,
+          subidas);
     } catch (RuntimeException e) {
       for (String key : subidas) {
         almacenDeImagenes.eliminar(key);
@@ -382,6 +391,7 @@ public final class AprobarBorrador {
       Map<UUID, String> fotos,
       Map<String, UUID> variantePorTono,
       List<String> tonoPorFoto,
+      List<List<String>> muestraPorFoto,
       boolean conHuellaVisual,
       List<String> subidas) {
     PHash pHashDeLaPrincipal = null;
@@ -412,6 +422,8 @@ public final class AprobarBorrador {
       // `V87` ensanchó el índice a todas las PRINCIPAL, así que la invariante no se afloja.
       String tono = tonoPorFoto.get(orden);
       UUID varianteId = tono == null ? null : variantePorTono.get(tono);
+      // Además de su tono, las prendas sin foto propia que se ven en ella y, en la principal, si
+      // entra en la ficha (ADR-0082); con tono ya entra, y el dominio no guarda la casilla.
       ImagenProducto imagen =
           ImagenProducto.crearDeVariante(
               principal ? TipoImagen.PRINCIPAL : TipoImagen.GALERIA,
@@ -426,7 +438,9 @@ public final class AprobarBorrador {
               new HashContenido(sha256(procesada.bytes())),
               comando.altEs(),
               comando.altEn(),
-              varianteId);
+              varianteId,
+              principal && comando.principalEnLaFicha(),
+              muestraPorFoto.get(orden).stream().map(variantePorTono::get).toList());
       if (principal) {
         producto.asignarImagenPrincipal(imagen);
         repositorioProductos.guardarImagenPrincipal(producto.id(), imagen);

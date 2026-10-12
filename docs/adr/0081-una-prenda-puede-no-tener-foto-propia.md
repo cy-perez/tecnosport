@@ -97,6 +97,7 @@ la foto de un tono; los de la foto con varios se quedaban en el JSON de la lectu
   propia. **Elegir el cuarto tono no lleva a la segunda foto.** Para eso una foto tendría que
   colgar de varias variantes, y hoy cuelga de una (`imagen_producto.variante_id`). Se decidió
   dejarlo fuera el 12 de octubre de 2026: la compra queda bien hecha y la galería no se mueve.
+  **Resuelto el mismo día en `ADR-0082`**: la prenda sin foto dice en cuál se ve.
 - Las fotos con varios tonos de un borrador con un solo producto en la publicación proponen
   colores al abrirlo, también en los borradores que ya estaban en revisión.
 - Los tonos del texto se proponen aunque la lectura de fotos esté apagada. Si el anuncio nombra

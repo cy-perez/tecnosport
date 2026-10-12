@@ -33,6 +33,7 @@ import co.tecnosport.api.infrastructure.catalogo.entidad.SetRotacionJpaEntity;
 import co.tecnosport.api.infrastructure.catalogo.entidad.VarianteAtributoValorJpaEntity;
 import co.tecnosport.api.infrastructure.catalogo.entidad.VarianteImagenJpaEntity;
 import co.tecnosport.api.infrastructure.catalogo.entidad.VarianteJpaEntity;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -348,7 +349,39 @@ public class MapeadorCatalogo {
         new HashContenido(i.getHash()),
         i.getAltEs(),
         i.getAltEn(),
-        i.getVarianteId());
+        i.getVarianteId(),
+        i.isEnLaFicha(),
+        deTextoDeVariantes(i.getMuestraVariantes()));
+  }
+
+  /**
+   * Las variantes que una foto retrata, como las guarda {@code muestra_variantes} (V112): ids
+   * separados por coma, o nulo si ninguna.
+   */
+  static String aTextoDeVariantes(List<UUID> variantes) {
+    return variantes.isEmpty()
+        ? null
+        : variantes.stream().map(UUID::toString).collect(Collectors.joining(","));
+  }
+
+  /**
+   * Un id que no se lee se ignora en vez de lanzar: una sola fila así, editada a mano, tumbaría la
+   * ficha y el catálogo entero (ver {@code RepositorioProductosJpa#guardarFilaYVariantes}), y lo
+   * que se pierde es solo un camino de la ficha a una foto.
+   */
+  static List<UUID> deTextoDeVariantes(String texto) {
+    if (texto == null || texto.isBlank()) {
+      return List.of();
+    }
+    List<UUID> ids = new ArrayList<>();
+    for (String parte : texto.split(",")) {
+      try {
+        ids.add(UUID.fromString(parte.strip()));
+      } catch (IllegalArgumentException e) {
+        // Ver el javadoc: se ignora.
+      }
+    }
+    return List.copyOf(ids);
   }
 
   private Marca aMarca(MarcaJpaEntity m) {

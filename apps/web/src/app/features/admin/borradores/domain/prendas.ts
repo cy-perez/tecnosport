@@ -11,6 +11,10 @@
  * y cada tono se vende. Esas son las prendas **agregadas aparte** de las fotos: existen aunque
  * ninguna foto las cite, y quien compra las ve en la foto de todos.
  *
+ * <p>Una prenda sin foto propia puede decir en cuál foto se ve (12 de octubre de 2026, ADR-0082): la
+ * camiseta en cinco tonos repartidos en dos fotos, la negra con la blanca en la 1 y la cocoa con la
+ * café y la crema en la 2. Elegir el negro en la ficha lleva a la foto 1.
+ *
  * <p>Una foto sin prenda vale para todas: no retrata ninguna de las que se pueden elegir. Marcarle
  * un color la vuelve una prenda ella sola, que es lo que pasaba antes de que hubiera prendas; y
  * para juntarla con otra se elige la prenda de la otra.
@@ -33,6 +37,11 @@ export interface AsignacionDePrendas {
   readonly pistaPorPrenda: Readonly<Record<number, string>>;
   /** Las tallas en que viene cada prenda, por su número. Sin entrada = en todas las del producto. */
   readonly tallasPorPrenda: Readonly<Record<number, readonly string[]>>;
+  /**
+   * La foto en que se ve cada prenda sin foto propia, por su número: la que la retrata junto con
+   * otros tonos. Sin entrada = se ve en la de todos, y la ficha no se mueve al elegirla.
+   */
+  readonly fotoDePrenda: Readonly<Record<number, string>>;
 }
 
 export const SIN_PRENDAS: AsignacionDePrendas = {
@@ -41,6 +50,7 @@ export const SIN_PRENDAS: AsignacionDePrendas = {
   aparte: [],
   pistaPorPrenda: {},
   tallasPorPrenda: {},
+  fotoDePrenda: {},
 };
 
 /** Los números de prenda que existen —con fotos o agregados aparte—, de menor a mayor. */
@@ -81,6 +91,7 @@ function sinPrendasVacias(asignacion: AsignacionDePrendas): AsignacionDePrendas 
     tonoPorPrenda: deLasQueQuedan(asignacion.tonoPorPrenda, quedan),
     pistaPorPrenda: deLasQueQuedan(asignacion.pistaPorPrenda, quedan),
     tallasPorPrenda: deLasQueQuedan(asignacion.tallasPorPrenda, quedan),
+    fotoDePrenda: deLasQueQuedan(asignacion.fotoDePrenda, quedan),
   };
 }
 
@@ -223,12 +234,37 @@ export function unaSolaPrenda(
   return { ...SIN_PRENDAS, prendaPorFoto, tonoPorPrenda: { 1: tono } };
 }
 
-/** Una foto eliminada sale de su prenda; si era la única, la prenda se va con su color. */
+/**
+ * Una foto eliminada sale de su prenda —si era la única, la prenda se va con su color— y deja de
+ * ser donde se ven las prendas sin foto que la citaban.
+ */
 export function olvidarFotoDePrendas(
   asignacion: AsignacionDePrendas,
   mensajeId: string,
 ): AsignacionDePrendas {
-  return moverFotoAPrenda(asignacion, mensajeId, null);
+  const sinElla = moverFotoAPrenda(asignacion, mensajeId, null);
+  const fotoDePrenda: Record<number, string> = {};
+  for (const [prenda, foto] of Object.entries(sinElla.fotoDePrenda)) {
+    if (foto !== mensajeId) {
+      fotoDePrenda[Number(prenda)] = foto;
+    }
+  }
+  return { ...sinElla, fotoDePrenda };
+}
+
+/** En qué foto se ve una prenda sin foto propia, o en ninguna en particular: en la de todos. */
+export function verPrendaEnFoto(
+  asignacion: AsignacionDePrendas,
+  prenda: number,
+  mensajeId: string | null,
+): AsignacionDePrendas {
+  const fotoDePrenda = { ...asignacion.fotoDePrenda };
+  if (mensajeId === null) {
+    delete fotoDePrenda[prenda];
+  } else {
+    fotoDePrenda[prenda] = mensajeId;
+  }
+  return { ...asignacion, fotoDePrenda };
 }
 
 /**
@@ -382,6 +418,15 @@ export function claveDeColor(texto: string): string {
   return texto.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase().trim();
 }
 
+/**
+ * Un color de la paleta como lo busca la propuesta: por su nombre y por el inglés, porque el
+ * proveedor escribe «ivory» y la paleta lo llama Marfil.
+ */
+export interface ColorParaProponer {
+  readonly nombre: string;
+  readonly nombreEn?: string;
+}
+
 /** La foto como la lee la propuesta: su color sugerido y los que se vieron si retrata varios. */
 export interface FotoParaProponer {
   readonly mensajeId: string;
@@ -401,6 +446,20 @@ export interface FotoParaProponer {
  * Si la paleta no tiene ese nombre, la prenda llega sin color y con la pista del proveedor, para
  * que quien aprueba lo elija: no se inventa un color, pero tampoco se pierde un tono que se vende.
  *
+ * <p>Tres ajustes del 12 de octubre de 2026, con los borradores de Violeta delante:
+ *
+ * <ul>
+ *   <li>El tono se busca también por el nombre en inglés: «ivory» es Marfil.
+ *   <li>Cuando una foto ve los mismos tonos que nombra el texto salvo **uno de cada lado**, ese
+ *       es el mismo con otro nombre, y **manda el del texto**: la lectura vio «negro, rosado,
+ *       verde» donde el proveedor escribió «negro, cocoa, verde», y a su ojo el cocoa es rosado.
+ *       Solo uno, y con algún tono en común: una foto que no comparte ninguno con el texto es de
+ *       otros tonos, y dos diferencias no dicen cuál corresponde a cuál.
+ *   <li>Un tono que se ve en una sola de las fotos de varios tonos se propone visto en ella: la
+ *       camiseta negra que sale con la blanca en la foto 1. Si se ve en varias —la blusa de frente
+ *       y de espalda—, no hay una foto que lo distinga.
+ * </ul>
+ *
  * <p>Es un punto de partida: quien aprueba lo corrige con los mismos selectores de siempre.
  *
  * @param paleta los nombres en español de los colores que se pueden elegir: el valor del atributo
@@ -408,10 +467,19 @@ export interface FotoParaProponer {
  */
 export function prendasSugeridas(
   fotos: readonly FotoParaProponer[],
-  paleta: readonly string[],
+  paleta: readonly ColorParaProponer[],
   tonosDelTexto: readonly string[] = [],
 ): AsignacionDePrendas {
-  const porClave = new Map(paleta.map((nombre) => [claveDeColor(nombre), nombre]));
+  // El inglés primero, para que un nombre en español gane si coinciden.
+  const porClave = new Map<string, string>();
+  for (const color of paleta) {
+    if (color.nombreEn) {
+      porClave.set(claveDeColor(color.nombreEn), color.nombre);
+    }
+  }
+  for (const color of paleta) {
+    porClave.set(claveDeColor(color.nombre), color.nombre);
+  }
   const prendaPorFoto: Record<string, number> = {};
   const tonoPorPrenda: Record<number, string> = {};
   const pistaPorPrenda: Record<number, string> = {};
@@ -440,8 +508,25 @@ export function prendasSugeridas(
     tonoPorPrenda,
     pistaPorPrenda,
   };
-  const vistos = [...fotos.flatMap((foto) => foto.tonosVistos ?? []), ...tonosDelTexto];
-  for (const visto of vistos) {
+  const delTexto = sinRepetir(tonosDelTexto);
+  const vistosPorFoto = fotos.map((foto) =>
+    conElNombreDelTexto(sinRepetir(foto.tonosVistos ?? []), delTexto),
+  );
+  // En cuántas fotos se ve cada color —por el de la paleta: «ivory» y «marfil» son uno—: el que
+  // se ve en una sola, se ve en esa.
+  const colorDe = (visto: string) => {
+    const clave = claveDeColor(visto);
+    const tono = porClave.get(clave);
+    return tono ? claveDeColor(tono) : clave;
+  };
+  const fotosDeTono = new Map<string, string[]>();
+  vistosPorFoto.forEach((vistos, i) => {
+    for (const visto of vistos) {
+      const color = colorDe(visto);
+      fotosDeTono.set(color, [...(fotosDeTono.get(color) ?? []), fotos[i].mensajeId]);
+    }
+  });
+  for (const visto of [...vistosPorFoto.flat(), ...delTexto]) {
     const clave = claveDeColor(visto);
     if (!clave || cubiertos.has(clave)) {
       continue;
@@ -455,8 +540,94 @@ export function prendasSugeridas(
       cubiertos.add(claveDeColor(tono));
     }
     asignacion = agregarPrendaAparte(asignacion, tono, visto.trim());
+    const enFotos = [...new Set(fotosDeTono.get(colorDe(visto)) ?? [])];
+    if (enFotos.length === 1) {
+      asignacion = verPrendaEnFoto(
+        asignacion,
+        asignacion.aparte[asignacion.aparte.length - 1],
+        enFotos[0],
+      );
+    }
   }
   return asignacion;
+}
+
+/**
+ * Los tonos que vio una foto, con el nombre del texto en el único que no coincide: «negro, rosado,
+ * verde» contra «negro, cocoa, verde» es «negro, cocoa, verde». Sin ningún tono en común, o con
+ * más de una diferencia, los de la foto como están.
+ */
+function conElNombreDelTexto(vistos: string[], delTexto: readonly string[]): string[] {
+  const enElTexto = new Set(delTexto.map(claveDeColor));
+  const enLaFoto = new Set(vistos.map(claveDeColor));
+  const soloEnLaFoto = vistos.filter((visto) => !enElTexto.has(claveDeColor(visto)));
+  const soloEnElTexto = delTexto.filter((tono) => !enLaFoto.has(claveDeColor(tono)));
+  const comunes = vistos.length - soloEnLaFoto.length;
+  if (comunes === 0 || soloEnLaFoto.length !== 1 || soloEnElTexto.length !== 1) {
+    return vistos;
+  }
+  return vistos.map((visto) => (visto === soloEnLaFoto[0] ? soloEnElTexto[0] : visto));
+}
+
+/**
+ * La foto en que se ve una prenda sin foto propia, si es de las que entran: la que se queda fuera
+ * no se publica, y la API rechazaría la referencia.
+ */
+export function fotoEnQueSeVe(
+  asignacion: AsignacionDePrendas,
+  prenda: number,
+  entran: ReadonlySet<string>,
+): string | null {
+  const foto = asignacion.fotoDePrenda[prenda];
+  return foto && entran.has(foto) ? foto : null;
+}
+
+/**
+ * Si hay que decidir si la principal entra en la ficha (ADR-0082): vale para todos los tonos —una
+ * con color ya entra— y no es la única foto, porque sola entra igual.
+ *
+ * @param elegidas las fotos que entran, la principal primero
+ */
+export function principalPuedeEntrarEnLaFicha(
+  asignacion: AsignacionDePrendas,
+  elegidas: readonly string[],
+): boolean {
+  return elegidas.length > 1 && !tonoDeFoto(asignacion, elegidas[0]);
+}
+
+/**
+ * Lo que propone la casilla mientras nadie la toque: entra si alguna prenda sin foto se ve en la
+ * principal. Entonces es la foto de ese tono, y sin entrar en la ficha elegirlo no llevaría a
+ * ninguna parte. Fuera de ese caso, lo de ADR-0069: la portada no entra.
+ *
+ * @param elegidas las fotos que entran, la principal primero
+ */
+export function principalEnLaFichaPorOmision(
+  asignacion: AsignacionDePrendas,
+  elegidas: readonly string[],
+): boolean {
+  const principal = elegidas[0];
+  const entran = new Set(elegidas);
+  const conFoto = new Set(elegidas.map((id) => asignacion.prendaPorFoto[id]));
+  return (
+    principalPuedeEntrarEnLaFicha(asignacion, elegidas) &&
+    asignacion.aparte.some(
+      (prenda) => !conFoto.has(prenda) && fotoEnQueSeVe(asignacion, prenda, entran) === principal,
+    )
+  );
+}
+
+/** Los tonos sin repetir —«Negro» y «negro» son uno—, en el orden en que aparecen. */
+function sinRepetir(tonos: readonly string[]): string[] {
+  const vistos = new Set<string>();
+  return tonos.filter((tono) => {
+    const clave = claveDeColor(tono);
+    if (!clave || vistos.has(clave)) {
+      return false;
+    }
+    vistos.add(clave);
+    return true;
+  });
 }
 
 /**

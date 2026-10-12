@@ -687,7 +687,9 @@ public final class Producto {
     for (int i = 0; i < galeria.size(); i++) {
       ImagenProducto elegida = galeria.get(i);
       if (elegida.id().equals(imagenId)) {
-        ImagenProducto nuevaPrincipal = elegida.comoPrincipal();
+        // La casilla de la ficha pasa con el puesto (ADR-0082).
+        ImagenProducto nuevaPrincipal =
+            elegida.comoPrincipal(imagenPrincipal != null && imagenPrincipal.enLaFicha());
         // Si la galería ya tiene la misma foto que la principal anterior, esa no vuelve: quedaría
         // repetida, que es justo lo que `agregarImagenGaleria` impide.
         boolean yaEstaEnLaGaleria =

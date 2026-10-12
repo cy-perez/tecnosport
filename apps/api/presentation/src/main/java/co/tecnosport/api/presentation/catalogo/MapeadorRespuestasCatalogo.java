@@ -168,7 +168,9 @@ public class MapeadorRespuestasCatalogo {
         imagen.alto(),
         imagen.altEs(),
         imagen.altEn(),
-        imagen.varianteId().orElse(null));
+        imagen.varianteId().orElse(null),
+        imagen.enLaFicha(),
+        imagen.variantesQueMuestra());
   }
 
   /** Las variantes del dominio, que el agregado ya devuelve de menor a mayor ancho. */

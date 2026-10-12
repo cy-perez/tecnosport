@@ -257,7 +257,9 @@ public class RepositorioProductosJpa implements RepositorioProductos {
             imagen.hash().valor(),
             imagen.altEs(),
             imagen.altEn(),
-            Instant.now()));
+            Instant.now(),
+            imagen.enLaFicha(),
+            MapeadorCatalogo.aTextoDeVariantes(imagen.variantesQueMuestra())));
     varianteImagenJpaRepository.saveAll(
         imagen.variantes().stream()
             .map(

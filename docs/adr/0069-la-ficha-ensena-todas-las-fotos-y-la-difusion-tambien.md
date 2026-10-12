@@ -58,6 +58,11 @@ Pedido el 7 de octubre de 2026, y es el que cierra la forma de la galería:
 - La principal **con un color asignado** sale en las dos: encabeza la tarjeta y
   abre la ficha. Entonces sí es la foto de ese tono, y además es la que quien
   viene de la rejilla acaba de ver.
+- **Excepción del 12 de octubre de 2026 (`ADR-0082`)**: la principal sin color
+  entra también cuando quien aprueba lo pide con la casilla «La foto principal
+  también se ve en la ficha». Es el producto cuyas fotos retratan todas varios
+  tonos juntos: ahí la portada sí retrata prendas que se pueden elegir, y sin
+  la casilla la foto elegida de principal no se veía al abrir el producto.
 
 **Para distinguir los dos casos la principal tiene que poder llevar su
 variante, y no podía.** Tres cosas lo impedían, y las tres eran deliberadas:

@@ -1,6 +1,7 @@
 package co.tecnosport.api.domain.catalogo;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -618,6 +619,35 @@ class ProductoTest {
     assertEquals(principal.url(), anterior.url());
     assertEquals(1, anterior.orden());
     assertEquals(anterior, intercambio.anteriorEnLaGaleria().orElseThrow());
+  }
+
+  /**
+   * La blusa aprobada con la principal en la ficha (ADR-0082): la casilla es del puesto. Si la que
+   * sube llegara sin ella, desaparecería de la ficha, y el editor no tiene cómo volver a marcarla.
+   */
+  @Test
+  void laCasillaDeLaFichaPasaConElPuestoDePrincipal() {
+    Producto producto = productoDePrueba();
+    producto.asignarImagenPrincipal(imagenPrincipal().conLoQueMuestra(List.of(), true));
+    ImagenProducto elegida = imagenDeGaleria(0, 1);
+    producto.agregarImagenGaleria(elegida);
+
+    producto.usarImagenDeGaleriaComoPrincipal(elegida.id());
+
+    assertTrue(producto.imagenPrincipal().orElseThrow().enLaFicha());
+    assertFalse(producto.galeria().get(0).enLaFicha(), "la que baja entra siempre");
+  }
+
+  @Test
+  void sinCasillaLaQueSubeTampocoLaLleva() {
+    Producto producto = productoDePrueba();
+    producto.asignarImagenPrincipal(imagenPrincipal());
+    ImagenProducto elegida = imagenDeGaleria(0, 1);
+    producto.agregarImagenGaleria(elegida);
+
+    producto.usarImagenDeGaleriaComoPrincipal(elegida.id());
+
+    assertFalse(producto.imagenPrincipal().orElseThrow().enLaFicha());
   }
 
   @Test

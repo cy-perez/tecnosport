@@ -20,6 +20,8 @@ function imagen(seed: string, altEs: string): Imagen {
     altEs,
     altEn: altEs,
     varianteId: null,
+    enLaFicha: false,
+    variantesQueMuestra: [],
   };
 }
 
@@ -141,6 +143,8 @@ describe('TsGaleria', () => {
         altEs: 'Foto A',
         altEn: 'Photo A',
         varianteId: null,
+        enLaFicha: false,
+        variantesQueMuestra: [],
       },
     ]);
 
@@ -169,6 +173,8 @@ describe('TsGaleria', () => {
       altEs: '',
       altEn: '',
       varianteId: null,
+      enLaFicha: false,
+      variantesQueMuestra: [],
     };
 
     await renderGaleria([sinAlt, imagen('dos', 'Foto dos')]);

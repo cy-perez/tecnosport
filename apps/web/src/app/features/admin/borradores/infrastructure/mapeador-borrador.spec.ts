@@ -77,9 +77,11 @@ describe('mapeador-borrador', () => {
       altEn: 'Black bag',
       existenciaInicial: 2,
       prendas: [],
+      principalEnLaFicha: false,
     });
 
     expect('prendas' in peticion).toBe(false);
+    expect('principalEnLaFicha' in peticion).toBe(false);
     expect(peticion.tallas).toEqual({ tipo: 'UNICA', sirveHasta: 'L', valores: [] });
     expect(peticion.fotos).toEqual([
       { mensajeId: 'f1', tono: 'Negro', prenda: 1 },
@@ -103,15 +105,45 @@ describe('mapeador-borrador', () => {
       altEn: 'Top',
       existenciaInicial: 1,
       prendas: [
-        { numero: 1, tono: 'Negro', colorHex: '#000000', tallas: null },
-        { numero: 2, tono: 'Café', colorHex: null, tallas: ['ML'] },
+        { numero: 1, tono: 'Negro', colorHex: '#000000', tallas: null, seVeEn: null },
+        { numero: 2, tono: 'Café', colorHex: null, tallas: ['ML'], seVeEn: null },
       ],
+      principalEnLaFicha: false,
     });
 
     expect(peticion.prendas).toEqual([
       { numero: 1, tono: 'Negro', colorHex: '#000000' },
       { numero: 2, tono: 'Café', tallas: ['ML'] },
     ]);
+  });
+
+  /** La camiseta de cinco tonos en dos fotos, y la principal pedida en la ficha (ADR-0082). */
+  it('al aprobar manda en qué foto se ve cada prenda y la casilla de la principal', () => {
+    const peticion = aAprobarPeticion({
+      marcaId: 'm1',
+      categoriaId: 'c1',
+      precioVenta: 48000,
+      fotos: [
+        { mensajeId: 'f1', tono: null, colorHex: null, prenda: null },
+        { mensajeId: 'f2', tono: null, colorHex: null, prenda: null },
+      ],
+      altEs: 'Camiseta',
+      altEn: 'T-shirt',
+      existenciaInicial: 1,
+      prendas: [
+        { numero: 1, tono: 'Negro', colorHex: null, tallas: null, seVeEn: 'f1' },
+        { numero: 2, tono: 'Cocoa', colorHex: null, tallas: null, seVeEn: 'f2' },
+        { numero: 3, tono: 'Crema', colorHex: null, tallas: null, seVeEn: null },
+      ],
+      principalEnLaFicha: true,
+    });
+
+    expect(peticion.prendas).toEqual([
+      { numero: 1, tono: 'Negro', seVeEn: 'f1' },
+      { numero: 2, tono: 'Cocoa', seVeEn: 'f2' },
+      { numero: 3, tono: 'Crema' },
+    ]);
+    expect(peticion.principalEnLaFicha).toBe(true);
   });
 
   it('lleva los tonos que la lectura vio en una foto de varios', () => {

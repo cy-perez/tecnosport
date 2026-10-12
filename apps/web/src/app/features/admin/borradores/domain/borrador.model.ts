@@ -271,6 +271,8 @@ export interface AprobarBorrador {
    * fotos, como antes del 12 de octubre de 2026.
    */
   readonly prendas: readonly PrendaAprobada[];
+  /** Si la principal que vale para todos los tonos entra también en la ficha (ADR-0082). */
+  readonly principalEnLaFicha: boolean;
 }
 
 /** Una prenda: una variante de color. La que ninguna foto cita se ve en la foto de todos. */
@@ -280,6 +282,11 @@ export interface PrendaAprobada {
   readonly colorHex: string | null;
   /** En cuáles tallas del producto viene; nula = en todas. */
   readonly tallas: readonly string[] | null;
+  /**
+   * La foto en que se ve, si no tiene foto propia y la retrata junto con otros tonos (ADR-0082).
+   * Nula = en la de todos.
+   */
+  readonly seVeEn: string | null;
 }
 
 /**

@@ -2,7 +2,6 @@ package co.tecnosport.api.presentation.proveedores;
 
 import co.tecnosport.api.application.catalogo.SolicitudDeSubida;
 import co.tecnosport.api.application.proveedores.AprobarBorrador;
-import co.tecnosport.api.application.proveedores.AprobarBorradorComando;
 import co.tecnosport.api.application.proveedores.ConfirmarFotoDeBorrador;
 import co.tecnosport.api.application.proveedores.DescartarFotoDeBorrador;
 import co.tecnosport.api.application.proveedores.EditarBorrador;
@@ -36,7 +35,6 @@ import co.tecnosport.api.presentation.proveedores.dto.RechazarBorradorPeticion;
 import co.tecnosport.api.presentation.proveedores.dto.SolicitarSubidaDeFotoPeticion;
 import co.tecnosport.api.presentation.proveedores.dto.SubidaDeFotoRespuesta;
 import co.tecnosport.api.presentation.proveedores.dto.UnirBorradorPeticion;
-import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 import org.slf4j.Logger;
@@ -190,34 +188,7 @@ public class AdminBorradorControlador {
   public ProductoAdminRespuesta aprobar(
       @PathVariable UUID id, @RequestBody AprobarBorradorPeticion cuerpo) {
     Producto producto =
-        transaccion.execute(
-            estado ->
-                aprobarBorrador.ejecutar(
-                    new AprobarBorradorComando(
-                        id,
-                        cuerpo.titulo(),
-                        cuerpo.descripcion(),
-                        cuerpo.categoriaId(),
-                        cuerpo.marcaId(),
-                        cuerpo.precioVenta(),
-                        cuerpo.tallas() == null ? null : cuerpo.tallas().aDominio(),
-                        cuerpo.existenciaInicial(),
-                        cuerpo.altEs(),
-                        cuerpo.altEn(),
-                        cuerpo.fotos().stream()
-                            .map(
-                                f ->
-                                    new AprobarBorradorComando.FotoAprobada(
-                                        f.mensajeId(), f.tono(), f.colorHex(), f.prenda()))
-                            .toList(),
-                        cuerpo.prendas() == null
-                            ? List.of()
-                            : cuerpo.prendas().stream()
-                                .map(
-                                    p ->
-                                        new AprobarBorradorComando.PrendaAprobada(
-                                            p.numero(), p.tono(), p.colorHex(), p.tallas()))
-                                .toList())));
+        transaccion.execute(estado -> aprobarBorrador.ejecutar(cuerpo.aComando(id)));
     log.info(
         "Borrador {} aprobado: producto {} publicado con {} variante(s)",
         id,

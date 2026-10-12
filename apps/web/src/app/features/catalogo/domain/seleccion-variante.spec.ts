@@ -2,6 +2,7 @@ import { muestraDe, Producto, Variante } from './producto.model';
 import {
   colorDeImagen,
   detalleDeVariante,
+  imagenDelColor,
   indiceDeLaPrimeraDelColor,
   nombreDeColor,
   seleccionAlElegir,
@@ -369,7 +370,7 @@ describe('seleccionAlElegir', () => {
 });
 
 describe('indiceDeLaPrimeraDelColor', () => {
-  const imagen = (url: string, varianteId: string | null) => ({
+  const imagen = (url: string, varianteId: string | null, variantesQueMuestra: string[] = []) => ({
     url,
     variantes: [{ ancho: 800, url }],
     urlVistaPrevia: null,
@@ -378,6 +379,8 @@ describe('indiceDeLaPrimeraDelColor', () => {
     altEs: url,
     altEn: url,
     varianteId,
+    enLaFicha: false,
+    variantesQueMuestra,
   });
   const vino = variante('SKU-V', true, [
     { nombre: 'Color', valor: 'Vino', colorHex: '#722F37', unidad: null },
@@ -407,6 +410,31 @@ describe('indiceDeLaPrimeraDelColor', () => {
   });
 
   /**
+   * La camiseta de cinco tonos en dos fotos (ADR-0082): el negro no tiene foto propia, pero quien
+   * aprobó dijo que se ve en la segunda, con el blanco.
+   */
+  it('un color sin foto propia se para en la foto que lo retrata con otros', () => {
+    const conElNegro = imagen('blanco-y-negro', null, [negro.id]);
+
+    expect(indiceDeLaPrimeraDelColor(producto, [principal, conElNegro, deVino], 'Negro')).toBe(1);
+  });
+
+  it('la foto propia gana a la que lo retrata con otros', () => {
+    const conElVino = imagen('varios', null, [vino.id]);
+
+    expect(indiceDeLaPrimeraDelColor(producto, [principal, conElVino, deVino], 'Vino')).toBe(2);
+  });
+
+  it('la foto del carrito para un color sin foto propia es la que lo retrata', () => {
+    const conElNegro = imagen('blanco-y-negro', null, [negro.id]);
+    const conGaleria = { ...producto, imagenPrincipal: principal, galeria: [deVino, conElNegro] };
+
+    expect(imagenDelColor(conGaleria, 'Negro')).toBe(conElNegro);
+    expect(imagenDelColor(conGaleria, 'Vino')).toBe(deVino);
+    expect(imagenDelColor({ ...conGaleria, galeria: [deVino] }, 'Negro')).toBe(principal);
+  });
+
+  /**
    * Y lo que de verdad arregla el defecto: las fotos de los demás colores <b>siguen en la lista</b>.
    * La función ya no decide cuántas se ven, solo en cuál se empieza — un producto de nueve fotos
    * enseñaba una.
@@ -428,6 +456,8 @@ describe('colorDeImagen', () => {
     altEs: url,
     altEn: url,
     varianteId,
+    enLaFicha: false,
+    variantesQueMuestra: [],
   });
   const producto = productoDePrueba([azulM, negroL]);
 

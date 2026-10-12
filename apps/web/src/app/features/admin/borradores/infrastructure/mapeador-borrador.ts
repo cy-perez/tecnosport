@@ -148,8 +148,10 @@ export function aAprobarPeticion(aprobacion: AprobarBorrador): AprobarPeticionDt
             tono: prenda.tono,
             ...(prenda.colorHex ? { colorHex: prenda.colorHex } : {}),
             ...(prenda.tallas ? { tallas: [...prenda.tallas] } : {}),
+            ...(prenda.seVeEn ? { seVeEn: prenda.seVeEn } : {}),
           })),
         }
       : {}),
+    ...(aprobacion.principalEnLaFicha ? { principalEnLaFicha: true } : {}),
   };
 }

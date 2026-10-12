@@ -1,12 +1,14 @@
 package co.tecnosport.api.domain.catalogo;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import co.tecnosport.api.domain.compartido.HashContenido;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 import org.junit.jupiter.api.Test;
 
 class ImagenProductoTest {
@@ -199,6 +201,94 @@ class ImagenProductoTest {
         Optional.of("https://x/800.jpg?v=2"),
         conVariantes(new VarianteDeImagen(800, "https://x/800.jpg?v=2", 1000))
             .urlParaTercerosQueNoNegocianFormato());
+  }
+
+  /**
+   * La principal que vale para todos los tonos no entra en la ficha si nadie lo pide (ADR-0069).
+   */
+  @Test
+  void laPrincipalNoEntraEnLaFichaPorOmision() {
+    ImagenProducto principal = imagen(TipoImagen.PRINCIPAL, "alt es", "alt en");
+
+    assertFalse(principal.enLaFicha());
+    assertTrue(principal.variantesQueMuestra().isEmpty());
+  }
+
+  @Test
+  void soloLaPrincipalDecideSiEntraEnLaFicha() {
+    ImagenProducto deGaleria = imagen(TipoImagen.GALERIA, "alt es", "alt en");
+
+    assertThrows(
+        ImagenProductoInvalidaException.class, () -> deGaleria.conLoQueMuestra(List.of(), true));
+    assertTrue(
+        imagen(TipoImagen.PRINCIPAL, "alt es", "alt en")
+            .conLoQueMuestra(List.of(), true)
+            .enLaFicha());
+  }
+
+  /** La foto de la camiseta blanca y negra: retrata las dos, y su propia variante no cuenta. */
+  @Test
+  void lasVariantesQueMuestraVanSinRepetirYSinLaPropia() {
+    UUID propia = UUID.randomUUID();
+    UUID blanca = UUID.randomUUID();
+    UUID negra = UUID.randomUUID();
+    ImagenProducto foto =
+        ImagenProducto.crearDeVariante(
+                TipoImagen.GALERIA,
+                1,
+                List.of(new VarianteDeImagen(800, "https://x/800.avif", 120_000)),
+                null,
+                600,
+                new HashContenido("%064x".formatted(1)),
+                "alt es",
+                "alt en",
+                propia)
+            .conLoQueMuestra(List.of(blanca, propia, negra, blanca), false);
+
+    assertEquals(List.of(blanca, negra), foto.variantesQueMuestra());
+  }
+
+  /**
+   * Intercambiar la principal con una de la galería no pierde qué tonos retrata cada una. La
+   * casilla de la ficha la suelta la que baja —la galería entra siempre— y la que sube la recibe de
+   * quien llama, que la toma del puesto (ver {@code ProductoTest}).
+   */
+  @Test
+  void elIntercambioConservaLoQueMuestraYSueltaLaCasilla() {
+    UUID cocoa = UUID.randomUUID();
+    ImagenProducto principal =
+        imagen(TipoImagen.PRINCIPAL, "alt es", "alt en").conLoQueMuestra(List.of(cocoa), true);
+
+    ImagenProducto enLaGaleria = principal.comoGaleria(3);
+    ImagenProducto deVuelta = enLaGaleria.comoPrincipal();
+
+    assertEquals(List.of(cocoa), enLaGaleria.variantesQueMuestra());
+    assertFalse(enLaGaleria.enLaFicha());
+    assertEquals(List.of(cocoa), deVuelta.variantesQueMuestra());
+    assertFalse(deVuelta.enLaFicha());
+    assertTrue(enLaGaleria.comoPrincipal(true).enLaFicha(), "la casilla la trae el puesto");
+    assertTrue(principal.conOrden(0).enLaFicha());
+  }
+
+  /** Con color ya entra: la casilla no se guarda, para que no reviva si un día pierde el color. */
+  @Test
+  void unaPrincipalConColorNoGuardaLaCasilla() {
+    ImagenProducto conColor =
+        ImagenProducto.crearDeVariante(
+            TipoImagen.PRINCIPAL,
+            0,
+            List.of(new VarianteDeImagen(800, "https://x/800.avif", 120_000)),
+            null,
+            600,
+            new HashContenido("%064x".formatted(1)),
+            "alt es",
+            "alt en",
+            UUID.randomUUID(),
+            true,
+            List.of());
+
+    assertFalse(conColor.enLaFicha());
+    assertFalse(conColor.conVariante(null).enLaFicha());
   }
 
   private static ImagenProducto conVariantes(VarianteDeImagen... variantes) {

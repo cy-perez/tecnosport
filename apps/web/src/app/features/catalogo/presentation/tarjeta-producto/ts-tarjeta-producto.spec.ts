@@ -36,6 +36,8 @@ function productoDePrueba(): Producto {
       altEs: 'Morral urbano negro',
       altEn: 'Black urban backpack',
       varianteId: null,
+      enLaFicha: false,
+      variantesQueMuestra: [],
     },
     galeria: [],
     rotacion: null,
@@ -81,6 +83,8 @@ function imagenDePrueba(nombre: string, varianteId: string | null) {
     altEs: `Bodi ${nombre}`,
     altEn: `Bodysuit ${nombre}`,
     varianteId,
+    enLaFicha: false,
+    variantesQueMuestra: [],
   };
 }
 

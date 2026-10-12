@@ -40,6 +40,8 @@ public final class ImagenProducto {
   private final String altEs;
   private final String altEn;
   private final UUID varianteId;
+  private final boolean enLaFicha;
+  private final List<UUID> variantesQueMuestra;
 
   public ImagenProducto(
       UUID id,
@@ -70,6 +72,45 @@ public final class ImagenProducto {
       String altEs,
       String altEn,
       UUID varianteId) {
+    this(
+        id,
+        tipo,
+        orden,
+        variantes,
+        urlVistaPrevia,
+        alto,
+        hash,
+        altEs,
+        altEn,
+        varianteId,
+        false,
+        List.of());
+  }
+
+  /**
+   * @param enLaFicha si la principal que vale para todos los tonos entra también en la galería de
+   *     la ficha (12 de octubre de 2026). Por omisión no entra —es la portada del catálogo, ver
+   *     ADR-0069—, y quien aprueba un borrador cuyas fotos retratan todas varios tonos la pide: sin
+   *     ella, la foto que eligió de principal no se ve en la ficha. Solo una PRINCIPAL la lleva, y
+   *     solo sin variante: con color ya entra, y guardarla ahí dejaría una casilla que nadie marcó
+   *     el día que se le quite el color
+   * @param variantesQueMuestra las variantes sin foto propia que esta foto también retrata: la
+   *     camiseta blanca y negra de la foto 1, la café, crema y cocoa de la foto 2 (ADR-0082).
+   *     Elegir uno de esos tonos en la ficha lleva a esta foto. Nunca incluye su propia variante
+   */
+  public ImagenProducto(
+      UUID id,
+      TipoImagen tipo,
+      int orden,
+      List<VarianteDeImagen> variantes,
+      String urlVistaPrevia,
+      int alto,
+      HashContenido hash,
+      String altEs,
+      String altEn,
+      UUID varianteId,
+      boolean enLaFicha,
+      List<UUID> variantesQueMuestra) {
     this.varianteId = varianteId;
     this.id = Objects.requireNonNull(id, "El id de la imagen no puede ser nulo.");
     this.tipo = Objects.requireNonNull(tipo, "El tipo de la imagen no puede ser nulo.");
@@ -85,6 +126,12 @@ public final class ImagenProducto {
     }
     this.alto = alto;
     this.hash = Objects.requireNonNull(hash, "El hash de la imagen no puede ser nulo.");
+    if (enLaFicha && tipo != TipoImagen.PRINCIPAL) {
+      throw new ImagenProductoInvalidaException(
+          "Solo la principal decide si entra en la ficha: las demás entran siempre.");
+    }
+    this.enLaFicha = enLaFicha && varianteId == null;
+    this.variantesQueMuestra = sinRepetirNiPropia(variantesQueMuestra, varianteId);
 
     if (tipo == TipoImagen.PRINCIPAL || tipo == TipoImagen.GALERIA) {
       this.altEs =
@@ -151,10 +198,74 @@ public final class ImagenProducto {
         varianteId);
   }
 
+  /**
+   * La foto de un tono que además retrata otras variantes sin foto propia y, si es la principal,
+   * dice si entra en la ficha (ADR-0082). Es lo que decide quien aprueba un borrador de proveedor.
+   */
+  public static ImagenProducto crearDeVariante(
+      TipoImagen tipo,
+      int orden,
+      List<VarianteDeImagen> variantes,
+      String urlVistaPrevia,
+      int alto,
+      HashContenido hash,
+      String altEs,
+      String altEn,
+      UUID varianteId,
+      boolean enLaFicha,
+      List<UUID> variantesQueMuestra) {
+    return new ImagenProducto(
+        GeneradorIdentificador.nuevo(),
+        tipo,
+        orden,
+        variantes,
+        urlVistaPrevia,
+        alto,
+        hash,
+        altEs,
+        altEn,
+        varianteId,
+        enLaFicha,
+        variantesQueMuestra);
+  }
+
   /** La misma foto colgada de otra variante —otro tono—, o de ninguna. */
   ImagenProducto conVariante(UUID nuevaVarianteId) {
     return new ImagenProducto(
-        id, tipo, orden, variantes, urlVistaPrevia, alto, hash, altEs, altEn, nuevaVarianteId);
+        id,
+        tipo,
+        orden,
+        variantes,
+        urlVistaPrevia,
+        alto,
+        hash,
+        altEs,
+        altEn,
+        nuevaVarianteId,
+        enLaFicha,
+        variantesQueMuestra);
+  }
+
+  /**
+   * La misma foto, que además retrata esas variantes sin foto propia y, si es la principal, dice si
+   * entra en la ficha. De paquete, como las demás transformaciones: desde fuera, lo que muestra una
+   * foto se decide al crearla ({@link #crearDeVariante(TipoImagen, int, List, String, int,
+   * HashContenido, String, String, UUID, boolean, List)}).
+   */
+  ImagenProducto conLoQueMuestra(List<UUID> otrasVariantes, boolean entraEnLaFicha) {
+    return new ImagenProducto(
+        id,
+        tipo,
+        orden,
+        variantes,
+        urlVistaPrevia,
+        alto,
+        hash,
+        altEs,
+        altEn,
+        varianteId,
+        entraEnLaFicha,
+        otrasVariantes);
   }
 
   /**
@@ -166,8 +277,12 @@ public final class ImagenProducto {
    * decide si la ficha la enseña, soltarla tiene un efecto que nadie pediría: ascender la foto de
    * un tono la convierte en genérica y <b>desaparece de la galería</b> — quien la asciende ve una
    * foto menos en la ficha, sin que nada lo explique.
+   *
+   * <p><b>La casilla de la ficha es del puesto, no de la foto</b> (ADR-0082): la trae quien llama,
+   * de la principal que se va. Si la que sube llegara sin ella, una foto que estaba en la ficha
+   * desaparecería al ascenderla, y el editor no tiene cómo volver a marcarla.
    */
-  ImagenProducto comoPrincipal() {
+  ImagenProducto comoPrincipal(boolean entraEnLaFicha) {
     return new ImagenProducto(
         GeneradorIdentificador.nuevo(),
         TipoImagen.PRINCIPAL,
@@ -178,7 +293,14 @@ public final class ImagenProducto {
         hash,
         altEs,
         altEn,
-        varianteId);
+        varianteId,
+        entraEnLaFicha,
+        variantesQueMuestra);
+  }
+
+  /** Sin la casilla de la ficha: la de una principal que no viene de ningún puesto. */
+  ImagenProducto comoPrincipal() {
+    return comoPrincipal(false);
   }
 
   /**
@@ -197,12 +319,25 @@ public final class ImagenProducto {
         hash,
         altEs,
         altEn,
-        varianteId);
+        varianteId,
+        false,
+        variantesQueMuestra);
   }
 
   ImagenProducto conOrden(int nuevoOrden) {
     return new ImagenProducto(
-        id, tipo, nuevoOrden, variantes, urlVistaPrevia, alto, hash, altEs, altEn, varianteId);
+        id,
+        tipo,
+        nuevoOrden,
+        variantes,
+        urlVistaPrevia,
+        alto,
+        hash,
+        altEs,
+        altEn,
+        varianteId,
+        enLaFicha,
+        variantesQueMuestra);
   }
 
   /**
@@ -230,6 +365,21 @@ public final class ImagenProducto {
       }
     }
     return List.copyOf(ordenadas);
+  }
+
+  /**
+   * Sin repetidas y sin la propia: la foto de un tono ya lleva a ese tono por su variante, y
+   * contarla dos veces solo daría dos caminos al mismo sitio.
+   */
+  private static List<UUID> sinRepetirNiPropia(List<UUID> otras, UUID propia) {
+    if (otras == null) {
+      return List.of();
+    }
+    if (otras.stream().anyMatch(Objects::isNull)) {
+      throw new ImagenProductoInvalidaException(
+          "Una de las variantes que muestra la foto es nula.");
+    }
+    return otras.stream().distinct().filter(v -> !v.equals(propia)).toList();
   }
 
   private static String requerido(String valor, String mensaje) {
@@ -349,5 +499,15 @@ public final class ImagenProducto {
   /** Vacío cuando la foto es del producto entero y no de un tono. */
   public Optional<UUID> varianteId() {
     return Optional.ofNullable(varianteId);
+  }
+
+  /** Si la principal que vale para todos los tonos entra también en la galería de la ficha. */
+  public boolean enLaFicha() {
+    return enLaFicha;
+  }
+
+  /** Las variantes sin foto propia que esta foto también retrata, en el orden en que se dijeron. */
+  public List<UUID> variantesQueMuestra() {
+    return variantesQueMuestra;
   }
 }

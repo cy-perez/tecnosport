@@ -304,8 +304,23 @@ function variantesDelColor(producto: Producto, color: string): Set<string> {
 }
 
 /**
- * Dónde se para la galería al elegir un color: en la primera foto de ese tono, o en la primera
- * de todas si ese tono no tiene ninguna propia.
+ * Si la principal entra en la galería de la ficha. La que vale para todos los tonos es la portada
+ * del catálogo y no entra (ADR-0069), salvo en dos casos: la galería está vacía —una ficha sin una
+ * sola foto no le sirve a nadie— o quien aprobó lo pidió (ADR-0082), porque todas las fotos
+ * retratan varios tonos y la que eligió de principal, sin esto, no se veía. La que tiene color
+ * entra siempre: es la foto de ese tono.
+ */
+export function principalEntraEnLaFicha(producto: Producto): boolean {
+  const principal = producto.imagenPrincipal;
+  if (!principal) {
+    return false;
+  }
+  return principal.varianteId !== null || principal.enLaFicha || producto.galeria.length === 0;
+}
+
+/**
+ * Dónde se para la galería al elegir un color: en la primera foto de ese tono; si no tiene ninguna
+ * propia, en la que lo retrata junto con otros tonos (ADR-0082); y si tampoco, en la primera.
  *
  * <b>Esto era un filtro y ahora es un índice, y el cambio es el arreglo.</b> `imagenesDelColor`
  * devolvía <i>solo</i> las fotos del color elegido —y, con la casilla de las fotos generales en
@@ -327,10 +342,20 @@ export function indiceDeLaPrimeraDelColor(
     return 0;
   }
   const delColor = variantesDelColor(producto, color);
-  const indice = imagenes.findIndex(
+  const propia = imagenes.findIndex(
     (imagen) => imagen.varianteId !== null && delColor.has(imagen.varianteId),
   );
-  return indice === -1 ? 0 : indice;
+  if (propia !== -1) {
+    return propia;
+  }
+  // Un tono sin foto propia que quien aprobó vio en una foto de varios tonos (ADR-0082): la
+  // camiseta negra que sale con la blanca en la foto 1.
+  const dondeSeVe = imagenes.findIndex((imagen) => muestraAlguna(imagen, delColor));
+  return dondeSeVe === -1 ? 0 : dondeSeVe;
+}
+
+function muestraAlguna(imagen: Imagen, variantes: ReadonlySet<string>): boolean {
+  return imagen.variantesQueMuestra.some((id) => variantes.has(id));
 }
 
 /**
@@ -350,7 +375,8 @@ export function colorDeImagen(producto: Producto, imagen: Imagen): string | null
 }
 
 /**
- * La foto de la tarjeta para un color: la primera de ese tono, o la principal. La principal no
+ * La foto de la tarjeta para un color: la primera de ese tono, la que lo retrata con otros tonos
+ * (ADR-0082) o la principal. La principal no
  * cuelga de ninguna variante —el panel la reemplaza como la del producto—, así que el color que
  * muestra es el que no tiene otra foto propia.
  */
@@ -359,8 +385,12 @@ export function imagenDelColor(producto: Producto, color: string | null): Imagen
     return producto.imagenPrincipal;
   }
   const delColor = variantesDelColor(producto, color);
+  const todas = producto.imagenPrincipal
+    ? [producto.imagenPrincipal, ...producto.galeria]
+    : producto.galeria;
   return (
     producto.galeria.find((imagen) => imagen.varianteId && delColor.has(imagen.varianteId)) ??
+    todas.find((imagen) => muestraAlguna(imagen, delColor)) ??
     producto.imagenPrincipal
   );
 }

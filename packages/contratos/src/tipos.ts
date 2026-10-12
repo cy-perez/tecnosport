@@ -2275,6 +2275,7 @@ export interface components {
             /** Format: int64 */
             precioVenta: number;
             prendas?: components["schemas"]["PrendaAprobadaPeticion"][];
+            principalEnLaFicha?: boolean;
             tallas?: components["schemas"]["TallasPeticion"];
             titulo?: string;
         };
@@ -2889,11 +2890,13 @@ export interface components {
             alto?: number;
             /** Format: int32 */
             ancho?: number;
+            enLaFicha?: boolean;
             url?: string;
             urlVistaPrevia?: string;
             /** Format: uuid */
             varianteId?: string;
             variantes?: components["schemas"]["VarianteDeImagenRespuesta"][];
+            variantesQueMuestra?: string[];
         };
         ImagenRotacionRespuesta: {
             /** Format: int32 */
@@ -3240,6 +3243,8 @@ export interface components {
             colorHex?: string;
             /** Format: int32 */
             numero: number;
+            /** Format: uuid */
+            seVeEn?: string;
             tallas?: string[];
             tono: string;
         };
