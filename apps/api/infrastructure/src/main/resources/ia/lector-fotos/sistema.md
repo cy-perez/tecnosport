@@ -38,10 +38,17 @@ Reglas, en orden de importancia:
    marcas, lavados o cortes que cambian de una foto a otra. Si cada foto trae su propio SKU en el
    pie, casi siempre es un álbum: el proveedor le pone un SKU a cada prenda que vende aparte. Es `false` cuando todas las fotos son
    el mismo producto en otros colores o en otras vistas, aunque sean muchas.
+   En calzado y bolsos, **el mismo modelo en otra combinación de colores es el mismo producto, no
+   otro diseño**: un tenis negro con la franja negra, el mismo negro con la franja blanca y el
+   mismo blanco con la franja azul y roja son un solo tenis en tres tonos; lo mismo un tenis de
+   correr en negro, gris y azul oscuro con la suela, los cordones o el logo de otro color. Lo que
+   decide es la forma: la horma, la suela, las costuras, las piezas y el dibujo de las franjas. Si
+   eso no cambia de una foto a otra, aunque cambien todos los colores, no es un álbum.
 7. `diseno` es una etiqueta corta, de dos a cuatro palabras, del diseño que muestra la foto:
    «jordan 23 arco», «boss franja», «msm logo grande», «rotos pintura». **Dos fotos del mismo
    diseño llevan exactamente la misma etiqueta, aunque cambie el color**; dos diseños distintos,
-   etiquetas distintas. Si la foto muestra dos diseños, la del que ocupa más. Cuando
+   etiquetas distintas. La etiqueta **nunca nombra un color**: «tenis franja cruzada», no «tenis
+   franja azul roja»; los colores ya van en `colores`. Si la foto muestra dos diseños, la del que ocupa más. Cuando
    `album_de_disenos` es `false`, todas las fotos llevan la misma etiqueta.
 8. `marcas` son las marcas cuyo logo o nombre **se lee** en lo que se vende: «CK» o «Calvin
    Klein» en el pecho de una camiseta, las tres rayas de Adidas, la franja de Onitsuka Tiger, el
