@@ -268,6 +268,75 @@ class AgrupadorDePublicacionesTest {
   }
 
   /**
+   * Imperio Wicho, 10 de octubre de 2026, tal como lo exporta Android: el New Balance con su foto
+   * antes del texto, y en el minuto siguiente el álbum del Runking. Las dos primeras fotos del
+   * Runking quedan a cero minutos del New Balance, pero el New Balance ya tiene su álbum.
+   */
+  @Test
+  void conLasFotosPrimeroElAlbumEntreDosPreciosEsEnteroDelSiguiente() {
+    MensajeProveedor delNewBalance = foto(0, null);
+    MensajeProveedor newBalance = texto(60, "New Balance Importado AAA 💰*$100,000*");
+    MensajeProveedor runking1 = foto(60, null);
+    MensajeProveedor runking2 = foto(60, null);
+    MensajeProveedor runking3 = foto(120, null);
+    MensajeProveedor runking = texto(120, "Importado Runking Caballero 💰*$110,000*");
+
+    AgrupadorDePublicaciones.Resultado resultado =
+        new AgrupadorDePublicaciones(QUINCE_MINUTOS)
+            .agrupar(
+                List.of(delNewBalance, newBalance, runking1, runking2, runking3, runking),
+                FOTOS_PRIMERO);
+
+    assertEquals(List.of(delNewBalance.id()), resultado.publicaciones().get(0).medios());
+    assertEquals(
+        List.of(runking1.id(), runking2.id(), runking3.id()),
+        resultado.publicaciones().get(1).medios());
+    assertEquals(0, resultado.sueltos());
+  }
+
+  /** El espejo: quien manda el texto primero y el siguiente ya tiene sus fotos detrás. */
+  @Test
+  void conElTextoPrimeroElAlbumEntreDosPreciosEsEnteroDelAnterior() {
+    MensajeProveedor bolso = texto(0, "Bolso 💰 53.000");
+    MensajeProveedor delBolso1 = foto(0, null);
+    MensajeProveedor delBolso2 = foto(60, null);
+    MensajeProveedor delBolso3 = foto(60, null);
+    MensajeProveedor morral = texto(60, "Morral 💰 52.000");
+    MensajeProveedor delMorral = foto(120, null);
+
+    AgrupadorDePublicaciones.Resultado resultado =
+        new AgrupadorDePublicaciones(QUINCE_MINUTOS)
+            .agrupar(
+                List.of(bolso, delBolso1, delBolso2, delBolso3, morral, delMorral), TEXTO_PRIMERO);
+
+    assertEquals(
+        List.of(delBolso1.id(), delBolso2.id(), delBolso3.id()),
+        resultado.publicaciones().get(0).medios());
+    assertEquals(List.of(delMorral.id()), resultado.publicaciones().get(1).medios());
+  }
+
+  /** Un texto en medio dice que ahí pasa otra cosa: cada foto sigue en el más cercano. */
+  @Test
+  void unTextoEntreLasFotosDejaElRepartoPorCercania() {
+    MensajeProveedor delNewBalance = foto(0, null);
+    MensajeProveedor newBalance = texto(60, "New Balance Importado AAA 💰*$100,000*");
+    MensajeProveedor tarde = foto(60, null);
+    MensajeProveedor saludo = texto(120, "Clientes colección nueva");
+    MensajeProveedor delRunking = foto(300, null);
+    MensajeProveedor runking = texto(300, "Importado Runking Caballero 💰*$110,000*");
+
+    AgrupadorDePublicaciones.Resultado resultado =
+        new AgrupadorDePublicaciones(QUINCE_MINUTOS)
+            .agrupar(
+                List.of(delNewBalance, newBalance, tarde, saludo, delRunking, runking),
+                FOTOS_PRIMERO);
+
+    assertEquals(
+        List.of(delNewBalance.id(), tarde.id()), resultado.publicaciones().get(0).medios());
+    assertEquals(List.of(delRunking.id()), resultado.publicaciones().get(1).medios());
+  }
+
+  /**
    * D'Osman, 7 de octubre de 2026: el álbum del bolso ejecutivo a las 14:22–14:24 y su texto a las
    * 15:01. Fuera de la ventana, pero no hay nada más en el chat: es suyo.
    */
