@@ -7,6 +7,7 @@ import { SesionStore } from '../../../../core/autenticacion/sesion.store';
 import {
   AgregarVarianteAdmin,
   AgregarColorDesdeLaPrincipalAdmin,
+  CambiarPreciosAdmin,
   CambiarTallaAdmin,
   AsignarColorAImagenAdmin,
   UsarImagenComoPrincipalAdmin,
@@ -316,6 +317,16 @@ export class ProductosAdminHttpRepositorio implements RepositorioProductosAdmin 
       body: { talla: comando.talla },
     });
     exigirExito(respuesta, 'no se pudo cambiar la talla');
+  }
+
+  async cambiarPrecios(comando: CambiarPreciosAdmin): Promise<void> {
+    const respuesta = await this.cliente.PUT('/api/v1/admin/productos/{id}/precios', {
+      params: { path: { id: comando.productoId } },
+      body: {
+        precios: comando.precios.map((p) => ({ varianteId: p.varianteId, precio: p.precio })),
+      },
+    });
+    exigirExito(respuesta, 'no se pudieron cambiar los precios');
   }
 
   async usarImagenComoPrincipal(comando: UsarImagenComoPrincipalAdmin): Promise<void> {

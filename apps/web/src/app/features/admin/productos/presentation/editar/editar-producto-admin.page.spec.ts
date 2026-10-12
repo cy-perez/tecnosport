@@ -30,6 +30,7 @@ import {
   ReordenarGaleriaAdmin,
   AgregarColorDesdeLaPrincipalAdmin,
   AsignarColorAImagenAdmin,
+  CambiarPreciosAdmin,
   CambiarTallaAdmin,
   UsarImagenComoPrincipalAdmin,
   SubirImagenDeGaleriaAdmin,
@@ -94,9 +95,9 @@ function conjuntoDePrueba(): ProductoAdminDetalle {
       linea: 'ROPA',
     },
     variantes: [
-      { id: 'n-sm', sku: 'C-N-SM', atributos: atributos('Negro', '#111111', 'S-M') },
-      { id: 'n-l', sku: 'C-N-L', atributos: atributos('Negro', '#111111', 'L') },
-      { id: 'v-sm', sku: 'C-V-SM', atributos: atributos('Vino', '#722F37', 'S-M') },
+      { id: 'n-sm', sku: 'C-N-SM', precio: 60000, atributos: atributos('Negro', '#111111', 'S-M') },
+      { id: 'n-l', sku: 'C-N-L', precio: 60000, atributos: atributos('Negro', '#111111', 'L') },
+      { id: 'v-sm', sku: 'C-V-SM', precio: 60000, atributos: atributos('Vino', '#722F37', 'S-M') },
     ],
   };
 }
@@ -130,8 +131,8 @@ function bodiDePrueba(): ProductoAdminDetalle {
     nombre: 'Bodi herraje',
     tallaSirveHasta: 'L',
     variantes: [
-      { id: 'v-negro', sku: 'PRV-1', atributos: atributos('Negro', '#111111') },
-      { id: 'v-vino', sku: 'PRV-2', atributos: atributos('Vino', '#722F37') },
+      { id: 'v-negro', sku: 'PRV-1', precio: 60000, atributos: atributos('Negro', '#111111') },
+      { id: 'v-vino', sku: 'PRV-2', precio: 60000, atributos: atributos('Vino', '#722F37') },
     ],
   };
 }
@@ -318,6 +319,26 @@ class RepositorioProductosAdminFalso implements RepositorioProductosAdmin {
     this.tallasCambiadas.push(comando);
     if (this.falloAlCambiarTalla) {
       throw this.falloAlCambiarTalla;
+    }
+  }
+
+  preciosCambiados: CambiarPreciosAdmin[] = [];
+  falloAlCambiarPrecios: unknown = null;
+
+  async cambiarPrecios(comando: CambiarPreciosAdmin): Promise<void> {
+    this.preciosCambiados.push(comando);
+    if (this.falloAlCambiarPrecios) {
+      throw this.falloAlCambiarPrecios;
+    }
+    if (this.producto) {
+      const porId = new Map(comando.precios.map((p) => [p.varianteId, p.precio]));
+      this.producto = {
+        ...this.producto,
+        variantes: this.producto.variantes.map((v) => ({
+          ...v,
+          precio: porId.get(v.id) ?? v.precio,
+        })),
+      };
     }
   }
 
@@ -572,6 +593,7 @@ describe('EditarProductoAdminPage', () => {
           {
             id: 'n-m',
             sku: 'C-N-M',
+            precio: 60000,
             atributos: [
               { nombre: 'Color', valor: 'Negro', colorHex: '#111111' },
               { nombre: 'Talla', valor: 'm', colorHex: null },
@@ -606,6 +628,7 @@ describe('EditarProductoAdminPage', () => {
           {
             id: 'v1',
             sku: 'MOR-1',
+            precio: 60000,
             atributos: [{ nombre: 'Color', valor: 'Negro', colorHex: '#111111' }],
           },
         ],
@@ -615,6 +638,103 @@ describe('EditarProductoAdminPage', () => {
 
       expect(screen.queryByRole('button', { name: /^Cambiar la talla/ })).toBeNull();
       expect(screen.queryByRole('heading', { name: 'Tallas' })).toBeNull();
+    });
+  });
+
+  describe('precios', () => {
+    const campo = (sku: string) =>
+      screen.getByLabelText(new RegExp(`^${sku} —`)) as HTMLInputElement;
+
+    /** Viaja solo el que cambió, y el campo queda con lo que el servidor grabó. */
+    it('cambia el precio de una variante y manda solo esa', async () => {
+      const repositorio = new RepositorioProductosAdminFalso(conjuntoDePrueba());
+      const { container } = await renderPagina(repositorio);
+
+      await screen.findByLabelText(/^C-N-SM —/);
+      expect(campo('C-N-SM').value).toBe('60000');
+      await esperarSinViolaciones(container);
+
+      fireEvent.input(campo('C-N-L'), { target: { value: '65000' } });
+      fireEvent.click(screen.getByRole('button', { name: 'Guardar precios' }));
+
+      await vi.waitFor(() =>
+        expect(repositorio.preciosCambiados).toEqual([
+          { productoId: 'p1', precios: [{ varianteId: 'n-l', precio: 65000 }] },
+        ]),
+      );
+      expect(await screen.findByText('Precios guardados.')).toBeTruthy();
+      await vi.waitFor(() => expect(campo('C-N-L').value).toBe('65000'));
+      expect(campo('C-N-SM').value).toBe('60000');
+    });
+
+    /** «Aplicar a todas» copia sin guardar; guardar manda las tres. */
+    it('aplica el mismo precio a todas y lo guarda al pedirlo', async () => {
+      const repositorio = new RepositorioProductosAdminFalso(conjuntoDePrueba());
+      await renderPagina(repositorio);
+
+      fireEvent.input(await screen.findByLabelText(/^Precio para todas/), {
+        target: { value: '69000' },
+      });
+      fireEvent.click(screen.getByRole('button', { name: 'Aplicar a todas' }));
+
+      expect(campo('C-N-SM').value).toBe('69000');
+      expect(campo('C-V-SM').value).toBe('69000');
+      expect(repositorio.preciosCambiados).toEqual([]);
+
+      fireEvent.click(screen.getByRole('button', { name: 'Guardar precios' }));
+      await vi.waitFor(() =>
+        expect(repositorio.preciosCambiados).toEqual([
+          {
+            productoId: 'p1',
+            precios: [
+              { varianteId: 'n-sm', precio: 69000 },
+              { varianteId: 'n-l', precio: 69000 },
+              { varianteId: 'v-sm', precio: 69000 },
+            ],
+          },
+        ]),
+      );
+    });
+
+    it('un precio en cero, con decimales o vacío no manda ninguno y dice por qué', async () => {
+      const repositorio = new RepositorioProductosAdminFalso(conjuntoDePrueba());
+      await renderPagina(repositorio);
+      await screen.findByLabelText(/^C-N-SM —/);
+      const mensaje = 'Cada precio tiene que ser un número entero de pesos mayor que cero.';
+
+      for (const malo of ['0', '65000.5', '']) {
+        fireEvent.input(campo('C-N-SM'), { target: { value: '65000' } });
+        fireEvent.input(campo('C-V-SM'), { target: { value: malo } });
+        fireEvent.click(screen.getByRole('button', { name: 'Guardar precios' }));
+        expect(await screen.findByText(mensaje)).toBeTruthy();
+      }
+      expect(repositorio.preciosCambiados).toEqual([]);
+    });
+
+    it('sin cambios no llama al servidor y lo dice', async () => {
+      const repositorio = new RepositorioProductosAdminFalso(conjuntoDePrueba());
+      await renderPagina(repositorio);
+      await screen.findByLabelText(/^C-N-SM —/);
+
+      fireEvent.click(screen.getByRole('button', { name: 'Guardar precios' }));
+
+      expect(await screen.findByText('Ningún precio cambió.')).toBeTruthy();
+      expect(repositorio.preciosCambiados).toEqual([]);
+    });
+
+    it('si el servidor falla, lo dice y no anuncia nada guardado', async () => {
+      const repositorio = new RepositorioProductosAdminFalso(conjuntoDePrueba());
+      repositorio.falloAlCambiarPrecios = new Error('falló');
+      await renderPagina(repositorio);
+      await screen.findByLabelText(/^C-N-SM —/);
+
+      fireEvent.input(campo('C-N-SM'), { target: { value: '65000' } });
+      fireEvent.click(screen.getByRole('button', { name: 'Guardar precios' }));
+
+      expect(
+        await screen.findByText('No se pudieron guardar los precios. Intenta de nuevo.'),
+      ).toBeTruthy();
+      expect(screen.queryByText('Precios guardados.')).toBeNull();
     });
   });
 
@@ -682,8 +802,8 @@ describe('EditarProductoAdminPage', () => {
         ...productoDePrueba(),
         imagenPrincipalUrl: URL_PRINCIPAL,
         variantes: [
-          { id: 'v-s', sku: 'PRV-S', atributos: atributos('S-M') },
-          { id: 'v-l', sku: 'PRV-L', atributos: atributos('L-XL') },
+          { id: 'v-s', sku: 'PRV-S', precio: 60000, atributos: atributos('S-M') },
+          { id: 'v-l', sku: 'PRV-L', precio: 60000, atributos: atributos('L-XL') },
         ],
       };
     }
@@ -697,6 +817,7 @@ describe('EditarProductoAdminPage', () => {
           {
             id: 'v-s',
             sku: 'PRV-S',
+            precio: 60000,
             atributos: [{ nombre: 'Talla', valor: 'S-M', colorHex: null }],
           },
         ],
@@ -1408,7 +1529,7 @@ describe('EditarProductoAdminPage', () => {
       const { container } = await renderPagina(new RepositorioProductosAdminFalso(bodiDePrueba()));
       await screen.findByDisplayValue('Bodi herraje');
 
-      const fila = screen.getByText('PRV-2').closest('li')!;
+      const fila = screen.getByText(/^PRV-2 —/).closest('li')!;
       await vi.waitFor(() =>
         expect(fila.querySelector('ts-muestra-color path')?.getAttribute('fill')).toBe('#722F37'),
       );

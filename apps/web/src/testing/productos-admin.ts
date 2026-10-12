@@ -179,6 +179,10 @@ export class RepositorioMedicionFalso implements RepositorioProductosAdmin {
   cambiarTalla(): Promise<void> {
     throw new Error('no usado por esta prueba');
   }
+
+  cambiarPrecios(): Promise<void> {
+    throw new Error('no usado por esta prueba');
+  }
 }
 
 /**
@@ -321,6 +325,10 @@ export class RepositorioExistenciasFalso implements RepositorioProductosAdmin {
   }
 
   cambiarTalla(): Promise<void> {
+    throw new Error('no usado por esta prueba');
+  }
+
+  cambiarPrecios(): Promise<void> {
     throw new Error('no usado por esta prueba');
   }
 }

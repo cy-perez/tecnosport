@@ -6,6 +6,7 @@ function variante(id: string, talla: string | null, color: string | null): Varia
   return {
     id,
     sku: id,
+    precio: 60000,
     atributos: [
       ...(color ? [{ nombre: 'Color', valor: color, colorHex: '#111111' }] : []),
       ...(talla ? [{ nombre: 'Talla', valor: talla, colorHex: null }] : []),

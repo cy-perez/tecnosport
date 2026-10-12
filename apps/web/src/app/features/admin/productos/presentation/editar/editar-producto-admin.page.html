@@ -242,25 +242,7 @@
         <p class="m-0 text-ts-texto-suave">
           {{ 'admin.productos.editar.variantesAyuda' | transloco }}
         </p>
-        <ul class="m-0 flex list-none flex-col gap-4 p-0">
-          @for (variante of variantes(); track variante.id) {
-            <li class="flex items-center gap-8">
-              <!-- Decorativa: el nombre del color ya va en el detalle de al lado. -->
-              @if (variante.muestra; as muestra) {
-                <span
-                  class="block size-16 shrink-0 overflow-hidden rounded-completo border border-ts-borde-control"
-                  aria-hidden="true"
-                >
-                  <ts-muestra-color [partes]="muestra" />
-                </span>
-              }
-              <span class="font-medio">{{ variante.sku }}</span>
-              @if (variante.detalle) {
-                — {{ variante.detalle }}
-              }
-            </li>
-          }
-        </ul>
+        <ts-precios-variantes [productoId]="id()" [variantes]="variantes()" />
 
         <!-- Una fila por talla y no por variante: la talla se corrige en todos los colores a la
              vez, como la corrige la API. El SKU no cambia. -->
