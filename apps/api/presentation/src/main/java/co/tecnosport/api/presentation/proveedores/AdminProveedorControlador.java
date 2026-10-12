@@ -10,11 +10,14 @@ import co.tecnosport.api.application.proveedores.RepositorioProveedores;
 import co.tecnosport.api.domain.catalogo.LineaCatalogo;
 import co.tecnosport.api.domain.proveedores.OrdenDePublicacion;
 import co.tecnosport.api.domain.proveedores.Proveedor;
+import co.tecnosport.api.domain.proveedores.TipoProductoProveedor;
 import co.tecnosport.api.presentation.proveedores.dto.ProveedorPeticion;
 import co.tecnosport.api.presentation.proveedores.dto.ProveedorRespuesta;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import org.springframework.http.HttpStatus;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -82,7 +85,8 @@ public class AdminProveedorControlador {
                         cuerpo.nombreEnExportacion(),
                         cuerpo.factorDeMargen(),
                         OrdenDePublicacion.valueOf(cuerpo.ordenDePublicacion()),
-                        Boolean.TRUE.equals(cuerpo.dosChatsEnUnZip()))));
+                        Boolean.TRUE.equals(cuerpo.dosChatsEnUnZip()),
+                        tiposDe(cuerpo.tiposExcluidos()))));
     return ProveedorRespuesta.de(proveedor);
   }
 
@@ -111,7 +115,10 @@ public class AdminProveedorControlador {
                         OrdenDePublicacion.valueOf(cuerpo.ordenDePublicacion()),
                         cuerpo.dosChatsEnUnZip() != null
                             ? cuerpo.dosChatsEnUnZip()
-                            : actual.subeDosChatsEnUnZip())));
+                            : actual.subeDosChatsEnUnZip(),
+                        cuerpo.tiposExcluidos() != null
+                            ? tiposDe(cuerpo.tiposExcluidos())
+                            : actual.tiposExcluidos())));
     return ProveedorRespuesta.de(proveedor);
   }
 
@@ -123,5 +130,12 @@ public class AdminProveedorControlador {
   @ResponseStatus(HttpStatus.NO_CONTENT)
   public void eliminar(@PathVariable UUID id) {
     transaccion.executeWithoutResult(estado -> eliminarProveedor.ejecutar(id));
+  }
+
+  /** Un nombre que no es de {@link TipoProductoProveedor} es un cuerpo inválido, como la línea. */
+  private static Set<TipoProductoProveedor> tiposDe(List<String> nombres) {
+    return nombres == null
+        ? Set.of()
+        : nombres.stream().map(TipoProductoProveedor::valueOf).collect(Collectors.toSet());
   }
 }

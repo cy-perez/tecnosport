@@ -3331,6 +3331,7 @@ export interface components {
             ordenDePublicacion: string;
             publicacionAutomatica?: boolean;
             telefonoWhatsApp: string;
+            tiposExcluidos?: string[];
         };
         ProveedorRespuesta: {
             activo?: boolean;
@@ -3344,6 +3345,7 @@ export interface components {
             ordenDePublicacion?: string;
             publicacionAutomatica?: boolean;
             telefonoWhatsApp?: string;
+            tiposExcluidos: string[];
         };
         PublicacionCerradaRespuesta: {
             codigoMotivo: string;

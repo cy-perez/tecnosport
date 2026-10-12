@@ -6,6 +6,7 @@ import co.tecnosport.api.application.proveedores.RepositorioProveedores;
 import co.tecnosport.api.domain.catalogo.LineaCatalogo;
 import co.tecnosport.api.domain.proveedores.OrdenDePublicacion;
 import co.tecnosport.api.domain.proveedores.Proveedor;
+import co.tecnosport.api.domain.proveedores.TipoProductoProveedor;
 import co.tecnosport.api.infrastructure.proveedores.entidad.ProveedorJpaEntity;
 import jakarta.persistence.EntityManager;
 import java.time.Instant;
@@ -13,6 +14,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import org.springframework.stereotype.Repository;
 
 @Repository
@@ -131,6 +133,7 @@ public class RepositorioProveedoresJpa implements RepositorioProveedores {
         p.factorDeMargen().orElse(null),
         p.ordenDePublicacion().name(),
         p.subeDosChatsEnUnZip(),
+        p.tiposExcluidos().stream().map(Enum::name).collect(Collectors.toSet()),
         creadoEn,
         actualizadoEn);
   }
@@ -148,6 +151,10 @@ public class RepositorioProveedoresJpa implements RepositorioProveedores {
             fila.getFactorDeMargen(),
             OrdenDePublicacion.valueOf(fila.getOrdenDePublicacion()));
     proveedor.definirDosChatsEnUnZip(fila.isDosChatsEnUnZip());
+    proveedor.definirTiposExcluidos(
+        fila.getTiposExcluidos().stream()
+            .map(TipoProductoProveedor::valueOf)
+            .collect(Collectors.toSet()));
     return proveedor;
   }
 }

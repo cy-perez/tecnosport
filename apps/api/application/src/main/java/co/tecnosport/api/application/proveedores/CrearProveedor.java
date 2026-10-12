@@ -23,6 +23,7 @@ public final class CrearProveedor {
             comando.factorDeMargen(),
             comando.ordenDePublicacion());
     proveedor.definirDosChatsEnUnZip(comando.dosChatsEnUnZip());
+    proveedor.definirTiposExcluidos(comando.tiposExcluidos());
     repositorioProveedores.guardar(proveedor);
     return proveedor;
   }
