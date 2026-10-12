@@ -148,6 +148,7 @@ export const MOTIVOS_DE_PUBLICACION = [
   'MISMA_REFERENCIA_EN_REVISION',
   'ANUNCIO_REPETIDO',
   'VIENE_EN_CHAT_DE_CABALLERO',
+  'TIPO_EXCLUIDO',
   'EXTRACCION_FALLIDA',
   'ERROR_AL_RESOLVER',
   'DESCONOCIDO',
@@ -168,7 +169,10 @@ export interface PublicacionCerrada {
   readonly fecha: string;
   readonly estado: 'DESCARTADA' | 'ERROR';
   readonly motivo: MotivoDePublicacion;
-  /** El valor que interpola el texto del motivo: cuántas fotos se sumaron, el tipo del error. */
+  /**
+   * El valor que interpola el texto del motivo: cuántas fotos se sumaron, el tipo del error, o el
+   * tipo de prenda que no se le compra al proveedor.
+   */
   readonly dato: string | null;
   /** El comienzo del anuncio; nulo si eran solo fotos. */
   readonly extracto: string | null;

@@ -1169,6 +1169,7 @@
         "MISMA_REFERENCIA_EN_REVISION_CON_FOTOS": "es la misma referencia de un borrador que ya está en revisión; sus {{dato}} fotos se sumaron a ese borrador.",
         "ANUNCIO_REPETIDO": "es el mismo anuncio, con la misma foto, de un borrador que ya está en revisión.",
         "VIENE_EN_CHAT_DE_CABALLERO": "el anuncio está en el chat de caballero del proveedor y se procesa desde ese archivo.",
+        "TIPO_EXCLUIDO": "trae una prenda que no se le compra a este proveedor ({{dato}}), y el anuncio se descarta entero.",
         "EXTRACCION_FALLIDA": "el extractor no pudo leerla: la API rechazó la petición o respondió algo ilegible.",
         "ERROR_AL_RESOLVER": "falló por un error del programa al decidir qué hacer con ella ({{dato}}).",
         "DESCONOCIDO": "no se sabe el motivo: es de antes de que se guardara."

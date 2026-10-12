@@ -1169,6 +1169,7 @@
         "MISMA_REFERENCIA_EN_REVISION_CON_FOTOS": "it has the same reference as a draft already under review; its {{dato}} photos were added to that draft.",
         "ANUNCIO_REPETIDO": "it's the same post, with the same photo, as a draft already under review.",
         "VIENE_EN_CHAT_DE_CABALLERO": "the post is in the supplier's men's chat and is processed from that file.",
+        "TIPO_EXCLUIDO": "it includes a garment that is not bought from this supplier ({{dato}}), so the whole post is discarded.",
         "EXTRACCION_FALLIDA": "the extractor couldn't read it: the API rejected the request or answered something unreadable.",
         "ERROR_AL_RESOLVER": "a program error happened while deciding what to do with it ({{dato}}).",
         "DESCONOCIDO": "the reason is unknown: it's from before reasons were saved."
