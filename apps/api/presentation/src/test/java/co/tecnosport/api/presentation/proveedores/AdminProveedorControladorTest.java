@@ -241,6 +241,45 @@ class AdminProveedorControladorTest {
         .andExpect(status().isUnprocessableContent());
   }
 
+  /** Un nulo en la lista es un cuerpo inválido: 422, no un 500. */
+  @Test
+  void unTipoExcluidoNuloEs422() throws Exception {
+    mockMvc
+        .perform(
+            post("/api/v1/admin/proveedores")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    "{\"nombre\":\"Violeta\",\"linea\":\"ROPA\",\"telefonoWhatsApp\":\"+57 301\","
+                        + "\"nombreEnExportacion\":\"Violeta\",\"ordenDePublicacion\":\"FOTOS_PRIMERO\","
+                        + "\"tiposExcluidos\":[\"PANTALON\",null]}"))
+        .andExpect(status().isUnprocessableContent());
+  }
+
+  /** Pasar a tecnología sin mandar los tipos los quita, en vez de chocar con la regla. */
+  @Test
+  void pasarATecnologiaSinElCampoQuitaLosTiposExcluidos() throws Exception {
+    mockMvc
+        .perform(
+            post("/api/v1/admin/proveedores")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    "{\"nombre\":\"Violeta\",\"linea\":\"ROPA\",\"telefonoWhatsApp\":\"+57 301\","
+                        + "\"nombreEnExportacion\":\"Violeta\",\"ordenDePublicacion\":\"FOTOS_PRIMERO\","
+                        + "\"tiposExcluidos\":[\"PANTALON\"]}"))
+        .andExpect(status().isCreated());
+    UUID id = proveedores.porId.keySet().iterator().next();
+
+    mockMvc
+        .perform(
+            put("/api/v1/admin/proveedores/{id}", id)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    "{\"nombre\":\"Violeta\",\"linea\":\"TECNOLOGIA\",\"telefonoWhatsApp\":\"+57 301\","
+                        + "\"nombreEnExportacion\":\"Violeta\",\"ordenDePublicacion\":\"FOTOS_PRIMERO\"}"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.tiposExcluidos.length()").value(0));
+  }
+
   /** La tecnología llega por listas: no tiene chats que subir, y la regla llega como 422. */
   @Test
   void unProveedorDeTecnologiaNoSubeChatsEs422() throws Exception {

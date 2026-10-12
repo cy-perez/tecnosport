@@ -116,9 +116,7 @@ public class AdminProveedorControlador {
                         cuerpo.dosChatsEnUnZip() != null
                             ? cuerpo.dosChatsEnUnZip()
                             : actual.subeDosChatsEnUnZip(),
-                        cuerpo.tiposExcluidos() != null
-                            ? tiposDe(cuerpo.tiposExcluidos())
-                            : actual.tiposExcluidos())));
+                        tiposAlEditar(cuerpo, actual))));
     return ProveedorRespuesta.de(proveedor);
   }
 
@@ -132,10 +130,31 @@ public class AdminProveedorControlador {
     transaccion.executeWithoutResult(estado -> eliminarProveedor.ejecutar(id));
   }
 
-  /** Un nombre que no es de {@link TipoProductoProveedor} es un cuerpo inválido, como la línea. */
-  private static Set<TipoProductoProveedor> tiposDe(List<String> nombres) {
-    return nombres == null
+  /**
+   * Sin el campo quedan los que tenía, salvo si pasa a tecnología: ahí no hay anuncios que
+   * descartar, y conservarlos haría fallar una edición que no los mencionó.
+   */
+  private static Set<TipoProductoProveedor> tiposAlEditar(
+      ProveedorPeticion cuerpo, Proveedor actual) {
+    if (cuerpo.tiposExcluidos() != null) {
+      return tiposDe(cuerpo.tiposExcluidos());
+    }
+    return LineaCatalogo.valueOf(cuerpo.linea()) == LineaCatalogo.TECNOLOGIA
         ? Set.of()
-        : nombres.stream().map(TipoProductoProveedor::valueOf).collect(Collectors.toSet());
+        : actual.tiposExcluidos();
+  }
+
+  /**
+   * Un nombre que no es de {@link TipoProductoProveedor} es un cuerpo inválido, como la línea; un
+   * nulo también, y no un 500.
+   */
+  private static Set<TipoProductoProveedor> tiposDe(List<String> nombres) {
+    if (nombres == null) {
+      return Set.of();
+    }
+    if (nombres.contains(null)) {
+      throw new IllegalArgumentException("Un tipo excluido no puede ser nulo.");
+    }
+    return nombres.stream().map(TipoProductoProveedor::valueOf).collect(Collectors.toSet());
   }
 }
