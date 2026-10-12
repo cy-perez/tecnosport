@@ -19,6 +19,7 @@ import co.tecnosport.api.application.catalogo.AgregarVariante;
 import co.tecnosport.api.application.catalogo.AlmacenDeImagenes;
 import co.tecnosport.api.application.catalogo.AsignarColorAImagenDeGaleria;
 import co.tecnosport.api.application.catalogo.AsignarColorAImagenPrincipal;
+import co.tecnosport.api.application.catalogo.CambiarPrecios;
 import co.tecnosport.api.application.catalogo.CambiarTalla;
 import co.tecnosport.api.application.catalogo.ConfirmarImagenPrincipal;
 import co.tecnosport.api.application.catalogo.CrearProducto;
@@ -607,6 +608,91 @@ class AdminProductoControladorTest {
     org.junit.jupiter.api.Assertions.assertTrue(repositorio.atributosReemplazados.isEmpty());
   }
 
+  /** Cambia solo las que vienen, y la respuesta de la edición trae el precio nuevo. */
+  @Test
+  void cambiarPreciosDevuelve204YGrabaLosQueCambiaron() throws Exception {
+    Atributo color = Atributo.crear("Color", TipoAtributo.COLOR, List.of());
+    Atributo talla = Atributo.crear("Talla", TipoAtributo.TEXTO, List.of());
+    Producto producto = productoEnBorrador();
+    Variante negra = varianteDeTalla("TS-N-SM", color, "Negro", talla, "S-M");
+    Variante vino = varianteDeTalla("TS-V-SM", color, "Vino", talla, "S-M");
+    producto.agregarVariante(negra);
+    producto.agregarVariante(vino);
+    repositorio.conProductos(producto);
+
+    mockMvc
+        .perform(
+            put("/api/v1/admin/productos/{id}/precios", producto.id())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    "{\"precios\":[{\"varianteId\":\""
+                        + negra.id()
+                        + "\",\"precio\":65000},{\"varianteId\":\""
+                        + vino.id()
+                        + "\",\"precio\":60000}]}"))
+        .andExpect(status().isNoContent());
+
+    org.junit.jupiter.api.Assertions.assertEquals(
+        java.util.Map.of(negra.id(), Dinero.deCop(65000)), repositorio.preciosGrabados);
+    mockMvc
+        .perform(get("/api/v1/admin/productos/{id}", producto.id()))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.variantes[0].precio").value(65000))
+        .andExpect(jsonPath("$.variantes[1].precio").value(60000));
+  }
+
+  /** Un precio en cero es 422 y no graba ninguno, ni siquiera el bueno que venía antes. */
+  @Test
+  void cambiarUnPrecioACeroEs422YNoGrabaNada() throws Exception {
+    Atributo color = Atributo.crear("Color", TipoAtributo.COLOR, List.of());
+    Atributo talla = Atributo.crear("Talla", TipoAtributo.TEXTO, List.of());
+    Producto producto = productoEnBorrador();
+    Variante negra = varianteDeTalla("TS-N-SM", color, "Negro", talla, "S-M");
+    Variante vino = varianteDeTalla("TS-V-SM", color, "Vino", talla, "S-M");
+    producto.agregarVariante(negra);
+    producto.agregarVariante(vino);
+    repositorio.conProductos(producto);
+
+    mockMvc
+        .perform(
+            put("/api/v1/admin/productos/{id}/precios", producto.id())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    "{\"precios\":[{\"varianteId\":\""
+                        + negra.id()
+                        + "\",\"precio\":65000},{\"varianteId\":\""
+                        + vino.id()
+                        + "\",\"precio\":0}]}"))
+        .andExpect(status().isUnprocessableContent());
+
+    org.junit.jupiter.api.Assertions.assertTrue(repositorio.preciosGrabados.isEmpty());
+  }
+
+  /** La misma variante dos veces no es un precio: es un panel con un error, y no se adivina. */
+  @Test
+  void laMismaVarianteDosVecesEs422() throws Exception {
+    Producto producto = productoEnBorrador();
+    Variante negra =
+        varianteDeTalla(
+            "TS-N-SM",
+            Atributo.crear("Color", TipoAtributo.COLOR, List.of()),
+            "Negro",
+            Atributo.crear("Talla", TipoAtributo.TEXTO, List.of()),
+            "S-M");
+    producto.agregarVariante(negra);
+    repositorio.conProductos(producto);
+    String una = "{\"varianteId\":\"" + negra.id() + "\",\"precio\":65000}";
+
+    mockMvc
+        .perform(
+            put("/api/v1/admin/productos/{id}/precios", producto.id())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"precios\":[" + una + "," + una + "]}"))
+        .andExpect(status().isUnprocessableContent());
+
+    org.junit.jupiter.api.Assertions.assertTrue(repositorio.preciosGrabados.isEmpty());
+  }
+
   private static Variante varianteDeTalla(
       String sku, Atributo color, String nombreColor, Atributo talla, String valorTalla) {
     return Variante.crear(
@@ -1115,6 +1201,11 @@ class AdminProductoControladorTest {
     @Bean
     CambiarTalla cambiarTalla(RepositorioProductos repositorioProductos) {
       return new CambiarTalla(repositorioProductos);
+    }
+
+    @Bean
+    CambiarPrecios cambiarPrecios(RepositorioProductos repositorioProductos) {
+      return new CambiarPrecios(repositorioProductos);
     }
 
     @Bean

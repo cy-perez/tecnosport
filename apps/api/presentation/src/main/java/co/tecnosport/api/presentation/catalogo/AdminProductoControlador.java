@@ -8,6 +8,8 @@ import co.tecnosport.api.application.catalogo.AsignarColorAImagenDeGaleria;
 import co.tecnosport.api.application.catalogo.AsignarColorAImagenDeGaleriaComando;
 import co.tecnosport.api.application.catalogo.AsignarColorAImagenPrincipal;
 import co.tecnosport.api.application.catalogo.AsignarColorAImagenPrincipalComando;
+import co.tecnosport.api.application.catalogo.CambiarPrecios;
+import co.tecnosport.api.application.catalogo.CambiarPreciosComando;
 import co.tecnosport.api.application.catalogo.CambiarTalla;
 import co.tecnosport.api.application.catalogo.CambiarTallaComando;
 import co.tecnosport.api.application.catalogo.ConfirmacionDeImagenPrincipal;
@@ -38,17 +40,21 @@ import co.tecnosport.api.application.catalogo.UsarImagenDeGaleriaComoPrincipal;
 import co.tecnosport.api.application.catalogo.UsarImagenDeGaleriaComoPrincipalComando;
 import co.tecnosport.api.application.catalogo.VarianteSubida;
 import co.tecnosport.api.application.catalogo.VerProductoAdmin;
+import co.tecnosport.api.domain.catalogo.CambioDePrecio;
 import co.tecnosport.api.domain.catalogo.ImagenProducto;
 import co.tecnosport.api.domain.catalogo.Producto;
+import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.presentation.catalogo.dto.AgregarColorDesdeLaPrincipalPeticion;
 import co.tecnosport.api.presentation.catalogo.dto.AgregarImagenDeGaleriaPeticion;
 import co.tecnosport.api.presentation.catalogo.dto.AsignarColorPeticion;
+import co.tecnosport.api.presentation.catalogo.dto.CambiarPreciosPeticion;
 import co.tecnosport.api.presentation.catalogo.dto.CambiarTallaPeticion;
 import co.tecnosport.api.presentation.catalogo.dto.ConfirmarImagenPrincipalPeticion;
 import co.tecnosport.api.presentation.catalogo.dto.CrearProductoPeticion;
 import co.tecnosport.api.presentation.catalogo.dto.EditarProductoPeticion;
 import co.tecnosport.api.presentation.catalogo.dto.ImagenDeGaleriaRespuesta;
 import co.tecnosport.api.presentation.catalogo.dto.ImagenRespuesta;
+import co.tecnosport.api.presentation.catalogo.dto.PrecioDeVariantePeticion;
 import co.tecnosport.api.presentation.catalogo.dto.ProductoAdminDetalleRespuesta;
 import co.tecnosport.api.presentation.catalogo.dto.ProductoAdminRespuesta;
 import co.tecnosport.api.presentation.catalogo.dto.ProductosAdminPaginadosRespuesta;
@@ -57,7 +63,9 @@ import co.tecnosport.api.presentation.catalogo.dto.SolicitarSubidaDeImagenDeGale
 import co.tecnosport.api.presentation.catalogo.dto.SolicitarSubidaDeImagenPrincipalPeticion;
 import co.tecnosport.api.presentation.catalogo.dto.UrlSubidaRespuesta;
 import co.tecnosport.api.presentation.catalogo.dto.VarianteSubidaPeticion;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 import org.slf4j.Logger;
@@ -104,6 +112,7 @@ public class AdminProductoControlador {
   private final AsignarColorAImagenPrincipal asignarColorAImagenPrincipal;
   private final AgregarColorDesdeLaPrincipal agregarColorDesdeLaPrincipal;
   private final CambiarTalla cambiarTalla;
+  private final CambiarPrecios cambiarPrecios;
   private final UsarImagenDeGaleriaComoPrincipal usarImagenDeGaleriaComoPrincipal;
   private final PublicarProducto publicarProducto;
   private final DespublicarProducto despublicarProducto;
@@ -126,6 +135,7 @@ public class AdminProductoControlador {
       AsignarColorAImagenPrincipal asignarColorAImagenPrincipal,
       AgregarColorDesdeLaPrincipal agregarColorDesdeLaPrincipal,
       CambiarTalla cambiarTalla,
+      CambiarPrecios cambiarPrecios,
       UsarImagenDeGaleriaComoPrincipal usarImagenDeGaleriaComoPrincipal,
       PublicarProducto publicarProducto,
       DespublicarProducto despublicarProducto,
@@ -148,6 +158,7 @@ public class AdminProductoControlador {
     this.asignarColorAImagenPrincipal = Objects.requireNonNull(asignarColorAImagenPrincipal);
     this.agregarColorDesdeLaPrincipal = Objects.requireNonNull(agregarColorDesdeLaPrincipal);
     this.cambiarTalla = Objects.requireNonNull(cambiarTalla);
+    this.cambiarPrecios = Objects.requireNonNull(cambiarPrecios);
     this.usarImagenDeGaleriaComoPrincipal =
         Objects.requireNonNull(usarImagenDeGaleriaComoPrincipal);
     this.publicarProducto = Objects.requireNonNull(publicarProducto);
@@ -424,6 +435,40 @@ public class AdminProductoControlador {
         modeloId,
         cuerpo.talla(),
         cambiadas);
+  }
+
+  /**
+   * Cambia el precio de venta de las variantes que vengan —una, o todas con «aplicar a todas»—.
+   * {@code 204}: el panel vuelve a pedir el producto.
+   *
+   * <p>Con {@code TransactionTemplate} por lo mismo que la talla: una fila por variante, y una que
+   * fallara a mitad dejaría el producto con unos precios nuevos y otros viejos. Cada cambio queda
+   * en el registro con el precio anterior, que es lo único que permite reconstruir qué se cobraba
+   * antes; los pedidos ya creados no cambian porque cada línea congeló el suyo.
+   */
+  @PutMapping("/{id}/precios")
+  @ResponseStatus(HttpStatus.NO_CONTENT)
+  public void cambiarPrecios(
+      @PathVariable("id") UUID id, @RequestBody CambiarPreciosPeticion cuerpo) {
+    Map<UUID, Dinero> precios = new LinkedHashMap<>();
+    for (PrecioDeVariantePeticion precio : cuerpo.precios()) {
+      if (precios.put(precio.varianteId(), Dinero.deCop(precio.precio())) != null) {
+        throw new IllegalArgumentException(
+            "La variante '" + precio.varianteId() + "' viene dos veces.");
+      }
+    }
+    List<CambioDePrecio> cambios =
+        transaccion.execute(
+            estado -> cambiarPrecios.ejecutar(new CambiarPreciosComando(id, precios)));
+    for (CambioDePrecio cambio : cambios) {
+      log.info(
+          "Producto {}: precio de la variante {} ({}) cambiado de {} a {}.",
+          id,
+          cambio.varianteId(),
+          cambio.sku().valor(),
+          cambio.anterior().valor().toPlainString(),
+          cambio.nuevo().valor().toPlainString());
+    }
   }
 
   /**

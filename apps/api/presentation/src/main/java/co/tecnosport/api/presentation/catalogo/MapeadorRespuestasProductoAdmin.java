@@ -60,7 +60,8 @@ public class MapeadorRespuestasProductoAdmin {
                     new VarianteResumenAdminRespuesta(
                         variante.id(),
                         variante.sku().valor(),
-                        mapeadorCatalogo.aRespuesta(variante, false).atributos()))
+                        mapeadorCatalogo.aRespuesta(variante, false).atributos(),
+                        variante.precio().valor().longValueExact()))
             .toList());
   }
 

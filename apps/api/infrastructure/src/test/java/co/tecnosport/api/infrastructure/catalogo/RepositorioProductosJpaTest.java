@@ -715,6 +715,27 @@ class RepositorioProductosJpaTest {
     assertThat(p.variantes().get(0).precio()).isEqualTo(Dinero.deCop(890_000));
   }
 
+  /** El precio nuevo se lee de vuelta, y la medida que ya tenía no se pierde por el camino. */
+  @Test
+  void actualizarPrecioCambiaElPrecioYConservaLaMedida() {
+    MarcaJpaEntity marca = marca("Marca precio T1");
+    CategoriaJpaEntity categoria = categoria("Celulares", "celulares-pr1", "TECNOLOGIA");
+    ProductoJpaEntity productoJpa =
+        producto("Galaxy A17", "galaxy-a17-precio", "PUBLICADO", marca, categoria);
+    VarianteJpaEntity variante = variante(productoJpa, "TS-PRECIO-1", "890000");
+    repositorio.actualizarPaquete(variante.getId(), new Paquete(500, 20, 12, 7));
+    entityManager.flush();
+
+    repositorio.actualizarPrecio(variante.getId(), Dinero.deCop(849_000));
+    entityManager.flush();
+    entityManager.clear();
+
+    Producto p = repositorio.buscarPorSlug(new Slug("galaxy-a17-precio")).orElseThrow();
+    assertThat(p.variantes().get(0).precio()).isEqualTo(Dinero.deCop(849_000));
+    assertThat(p.variantes().get(0).paquete()).contains(new Paquete(500, 20, 12, 7));
+    assertThat(p.variantes().get(0).sku().valor()).isEqualTo("TS-PRECIO-1");
+  }
+
   /** Y una medida sí vuelve completa, para que la de arriba no pase por no leer nada. */
   @Test
   void agregarVarianteConMedidasLaDevuelveCompleta() {

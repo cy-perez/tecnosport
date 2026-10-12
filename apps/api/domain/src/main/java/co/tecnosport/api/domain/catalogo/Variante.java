@@ -102,6 +102,23 @@ public final class Variante {
   }
 
   /**
+   * La misma variante con otro precio de venta. Copia, como {@link #medida}, y por lo mismo.
+   *
+   * <p>Cero no es un precio: el constructor lo admite porque {@link Dinero} lo admite, pero cambiar
+   * un precio a cero desde el panel solo puede ser un error de digitación, y lo que se publicaría
+   * es un producto regalado. Los pedidos ya creados no cambian: cada línea congeló su precio.
+   */
+  public Variante conPrecio(Dinero nuevo) {
+    Objects.requireNonNull(nuevo, "El precio no puede ser nulo.");
+    if (nuevo.valor().signum() <= 0) {
+      throw new ExcepcionDeDominio(
+          "El precio de la variante '" + sku.valor() + "' tiene que ser mayor que cero.");
+    }
+    return new Variante(
+        id, sku, nuevo, tasaIva, codigoBarras, paquete, estado, atributos, setRotacionPropio);
+  }
+
+  /**
    * La misma variante con un atributo más. Copia, como {@link #medida}, y por lo mismo. No admite
    * un segundo valor del mismo atributo: una variante es negra o es vino, no las dos.
    */

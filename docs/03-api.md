@@ -426,6 +426,8 @@ POST /api/v1/admin/productos/{id}/imagen-principal            confirma la subida
 PUT /api/v1/admin/productos/{id}/imagen-principal/variante   de qué color es la principal ({varianteId} o null); 204, 400 si no hay principal o la variante es ajena
 PUT /api/v1/admin/productos/{id}/tallas/{modeloId}           corrige la talla ({talla}) del modelo de esa variante en todos sus colores; el SKU no cambia;
                                                              204, 422 TALLA_REPETIDA si algún color ya la tiene
+PUT /api/v1/admin/productos/{id}/precios                     cambia el precio de venta ({precios: [{varianteId, precio}]}, pesos enteros) de las que vengan;
+                                                             204, 422 si alguno no es mayor que cero, la variante es ajena o viene dos veces; todo o nada
 POST /api/v1/admin/productos/{id}/galeria/url-subida         igual que la principal, con su propio prefijo: la limpieza de una no toca a la otra
 POST /api/v1/admin/productos/{id}/galeria                    confirma y suma a la galería; 409 si la foto ya está o si no caben más (adr/0052)
 DELETE /api/v1/admin/productos/{id}/galeria/{imagenId}       la saca de la ficha y borra su objeto; 204, y 404 si no era de ese producto

@@ -685,6 +685,20 @@
         ],
         "type" : "object"
       },
+      "CambiarPreciosPeticion" : {
+        "properties" : {
+          "precios" : {
+            "items" : {
+              "$ref" : "#/components/schemas/PrecioDeVariantePeticion"
+            },
+            "type" : "array"
+          }
+        },
+        "required" : [
+          "precios"
+        ],
+        "type" : "object"
+      },
       "CambiarTallaPeticion" : {
         "properties" : {
           "talla" : {
@@ -3068,6 +3082,23 @@
         ],
         "type" : "object"
       },
+      "PrecioDeVariantePeticion" : {
+        "properties" : {
+          "precio" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "varianteId" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        },
+        "required" : [
+          "precio",
+          "varianteId"
+        ],
+        "type" : "object"
+      },
       "PrendaAprobadaPeticion" : {
         "properties" : {
           "colorHex" : {
@@ -4528,10 +4559,17 @@
             "format" : "uuid",
             "type" : "string"
           },
+          "precio" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
           "sku" : {
             "type" : "string"
           }
         },
+        "required" : [
+          "precio"
+        ],
         "type" : "object"
       },
       "VarianteSinMedirRespuesta" : {
@@ -7924,6 +7962,40 @@
             "application/json" : {
               "schema" : {
                 "$ref" : "#/components/schemas/AsignarColorPeticion"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "204" : {
+            "description" : "No Content"
+          }
+        },
+        "tags" : [
+          "admin-producto-controlador"
+        ]
+      }
+    },
+    "/api/v1/admin/productos/{id}/precios" : {
+      "put" : {
+        "operationId" : "cambiarPrecios",
+        "parameters" : [
+          {
+            "in" : "path",
+            "name" : "id",
+            "required" : true,
+            "schema" : {
+              "format" : "uuid",
+              "type" : "string"
+            }
+          }
+        ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/CambiarPreciosPeticion"
               }
             }
           },
