@@ -86,6 +86,7 @@
           [attr.aria-label]="
             'catalogo.colores.elegir' | transloco: { color: nombreDeColor(color.valor) }
           "
+          [tsLeyenda]="nombreDeColor(color.valor)"
           (click)="elegirColor(color.valor)"
         >
           <span [class]="claseMuestra(colorElegido() === color.valor)">
@@ -114,6 +115,7 @@
         [attr.aria-label]="
           'catalogo.colores.unico' | transloco: { color: nombreDeColor(colores()[0].valor) }
         "
+        [tsLeyenda]="nombreDeColor(colores()[0].valor)"
       >
         <span [class]="claseMuestra(false)">
           <ts-muestra-color [partes]="colores()[0].muestra" />
