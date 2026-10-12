@@ -881,7 +881,7 @@ class RepositorioProductosJpaTest {
   @Test
   void loQueMuestraCadaFotoVaYVuelve() {
     MarcaJpaEntity marca = marca("Genérica");
-    CategoriaJpaEntity categoria = categoria("Camisetas", "ropa-dama-camisetas-t23", "ROPA");
+    CategoriaJpaEntity categoria = categoria("Bodis", "ropa-dama-bodis-t23", "ROPA");
     ProductoJpaEntity productoJpa =
         producto("Camiseta t23", "camiseta-t23", "BORRADOR", marca, categoria);
     VarianteJpaEntity blanca = variante(productoJpa, "PRV-T23-BLANCO", "48000");
