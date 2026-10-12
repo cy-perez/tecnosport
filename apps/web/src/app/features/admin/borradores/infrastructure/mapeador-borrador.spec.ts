@@ -17,8 +17,12 @@ describe('mapeador-borrador', () => {
 
   /** Del origen depende qué promete eliminarla: que el archivo se queda, o que se borra. */
   it('conserva el origen de cada foto', () => {
-    expect(aFoto({ mensajeId: 'f1', url: 'u', origen: 'PANEL' }).origen).toBe('PANEL');
-    expect(aFoto({ mensajeId: 'f2', url: 'u', origen: 'PROVEEDOR' }).origen).toBe('PROVEEDOR');
+    expect(aFoto({ mensajeId: 'f1', url: 'u', origen: 'PANEL', tonosVistos: [] }).origen).toBe(
+      'PANEL',
+    );
+    expect(aFoto({ mensajeId: 'f2', url: 'u', origen: 'PROVEEDOR', tonosVistos: [] }).origen).toBe(
+      'PROVEEDOR',
+    );
   });
 
   /** Un borrador de antes del 10 de octubre de 2026 no trae ni tallas por tono ni otros precios. */
@@ -34,9 +38,17 @@ describe('mapeador-borrador', () => {
     expect(aBorrador({ id: 'b2' }).tallasPorTono).toEqual([]);
     expect(aBorrador({ id: 'b2' }).preciosAdicionales).toEqual([]);
     expect(
-      aFoto({ mensajeId: 'f1', url: 'u', origen: 'PROVEEDOR', tonoSugerido: 'negro' }).tonoSugerido,
+      aFoto({
+        mensajeId: 'f1',
+        url: 'u',
+        origen: 'PROVEEDOR',
+        tonoSugerido: 'negro',
+        tonosVistos: [],
+      }).tonoSugerido,
     ).toBe('negro');
-    expect(aFoto({ mensajeId: 'f2', url: 'u', origen: 'PROVEEDOR' }).tonoSugerido).toBeNull();
+    expect(
+      aFoto({ mensajeId: 'f2', url: 'u', origen: 'PROVEEDOR', tonosVistos: [] }).tonoSugerido,
+    ).toBeNull();
   });
 
   /**
@@ -64,13 +76,48 @@ describe('mapeador-borrador', () => {
       altEs: 'Bolso negro',
       altEn: 'Black bag',
       existenciaInicial: 2,
+      prendas: [],
     });
 
+    expect('prendas' in peticion).toBe(false);
     expect(peticion.tallas).toEqual({ tipo: 'UNICA', sirveHasta: 'L', valores: [] });
     expect(peticion.fotos).toEqual([
       { mensajeId: 'f1', tono: 'Negro', prenda: 1 },
       { mensajeId: 'f2' },
     ]);
     expect(peticion.existenciaInicial).toBe(2);
+  });
+
+  /**
+   * La prenda sin foto propia viaja aparte de las fotos: si el mapeador la dejara atrás, la blusa
+   * de tres tonos fotografiados juntos se aprobaría sin un solo color que elegir.
+   */
+  it('al aprobar manda las prendas, con sus tallas solo cuando se dijeron', () => {
+    const peticion = aAprobarPeticion({
+      marcaId: 'm1',
+      categoriaId: 'c1',
+      precioVenta: 58000,
+      tallas: { tipo: 'LISTA', sirveHasta: null, valores: ['SM', 'ML'] },
+      fotos: [{ mensajeId: 'f1', tono: null, colorHex: null, prenda: null }],
+      altEs: 'Blusa',
+      altEn: 'Top',
+      existenciaInicial: 1,
+      prendas: [
+        { numero: 1, tono: 'Negro', colorHex: '#000000', tallas: null },
+        { numero: 2, tono: 'Café', colorHex: null, tallas: ['ML'] },
+      ],
+    });
+
+    expect(peticion.prendas).toEqual([
+      { numero: 1, tono: 'Negro', colorHex: '#000000' },
+      { numero: 2, tono: 'Café', tallas: ['ML'] },
+    ]);
+  });
+
+  it('lleva los tonos que la lectura vio en una foto de varios', () => {
+    expect(
+      aFoto({ mensajeId: 'f1', url: 'u', origen: 'PROVEEDOR', tonosVistos: ['negro', 'cocoa'] })
+        .tonosVistos,
+    ).toEqual(['negro', 'cocoa']);
   });
 });

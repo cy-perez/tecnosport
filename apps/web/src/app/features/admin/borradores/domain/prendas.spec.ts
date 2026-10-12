@@ -1,12 +1,19 @@
 import {
+  agregarPrendaAparte,
   AsignacionDePrendas,
   elegirTonoDeFoto,
+  elegirTonoDePrenda,
+  marcarTallaDePrenda,
   moverFotoAPrenda,
   olvidarFotoDePrendas,
   prendasEnUso,
+  prendaSinTallas,
   prendasSugeridas,
   problemaDePrendas,
+  quitarPrenda,
   SIN_PRENDAS,
+  tallasDePrenda,
+  tallasSugeridasPorPrenda,
   tonoDeFoto,
   unaSolaPrenda,
   variantesQueSeCrean,
@@ -179,6 +186,178 @@ describe('prendas del borrador', () => {
       a = moverFotoAPrenda(a, 'f9', 1);
 
       expect(problemaDePrendas(a, ['f1'])).toBeNull();
+    });
+  });
+});
+
+describe('prendas sin foto propia', () => {
+  const paleta = ['Negro', 'Café', 'Verde', 'Azul', 'Beige'];
+
+  /**
+   * La blusa de Violeta (12 de octubre de 2026): una foto con los tres tonos de frente y otra de
+   * espalda. Ninguna es de un solo tono, y antes no se proponía ninguno: se aprobaba sin colores.
+   */
+  it('los tonos de la foto de todos se proponen como prendas sin foto', () => {
+    const a = prendasSugeridas(
+      [
+        { mensajeId: 'frente', tonoSugerido: null, tonosVistos: ['negro', 'cocoa', 'verde'] },
+        { mensajeId: 'espalda', tonoSugerido: null, tonosVistos: ['negro', 'cocoa', 'verde'] },
+      ],
+      paleta,
+    );
+
+    expect(a.prendaPorFoto).toEqual({});
+    expect(a.aparte).toEqual([1, 2, 3]);
+    expect(a.tonoPorPrenda).toEqual({ 1: 'Negro', 2: '', 3: 'Verde' });
+    expect(a.pistaPorPrenda[2]).toBe('cocoa');
+    expect(problemaDePrendas(a, ['frente', 'espalda'])).toEqual({ tipo: 'SIN_COLOR', prenda: 2 });
+
+    const conCafe = elegirTonoDePrenda(a, 2, 'Café');
+    expect(variantesQueSeCrean(conCafe, ['frente', 'espalda'])).toEqual([
+      { prenda: 1, valor: 'Negro', fotos: [] },
+      { prenda: 2, valor: 'Café', fotos: [] },
+      { prenda: 3, valor: 'Verde', fotos: [] },
+    ]);
+    expect(problemaDePrendas(conCafe, ['frente', 'espalda'])).toBeNull();
+  });
+
+  it('un tono que ya tiene su foto no se propone otra vez sin foto', () => {
+    const a = prendasSugeridas(
+      [
+        { mensajeId: 'todos', tonoSugerido: null, tonosVistos: ['azul', 'beige'] },
+        { mensajeId: 'azul', tonoSugerido: 'azul' },
+      ],
+      paleta,
+      ['Azul', 'ivory'],
+    );
+
+    expect(variantesQueSeCrean(a, ['todos', 'azul']).map((v) => [v.valor, v.fotos])).toEqual([
+      ['Azul', ['azul']],
+      ['Beige', []],
+    ]);
+    expect(a.pistaPorPrenda[3]).toBe('ivory');
+    expect(a.tonoPorPrenda[3]).toBe('');
+  });
+
+  it('las prendas con foto van primero, como en la API', () => {
+    let a = agregarPrendaAparte(SIN_PRENDAS, 'Beige');
+    a = elegirTonoDeFoto(a, 'f1', 'Azul');
+
+    expect(variantesQueSeCrean(a, ['f1']).map((v) => v.valor)).toEqual(['Azul', 'Beige']);
+  });
+
+  it('una prenda sin foto no se llama como otra', () => {
+    let a = elegirTonoDeFoto(SIN_PRENDAS, 'f1', 'Negro');
+    a = agregarPrendaAparte(a, 'Negro');
+
+    expect(problemaDePrendas(a, ['f1'])).toEqual({ tipo: 'REPETIDA', prenda: 2, tono: 'Negro' });
+  });
+
+  /** La agregada aparte existe sin fotos: sacarle la última no la borra. */
+  it('una prenda agregada aparte sigue aunque se quede sin fotos', () => {
+    let a = agregarPrendaAparte(SIN_PRENDAS, 'Verde');
+    a = moverFotoAPrenda(a, 'f1', 1);
+    a = moverFotoAPrenda(a, 'f1', null);
+
+    expect(prendasEnUso(a)).toEqual([1]);
+    expect(a.tonoPorPrenda).toEqual({ 1: 'Verde' });
+  });
+
+  /** El anuncio dice «verde» y quien revisa marca la foto verde: es la foto de esa prenda. */
+  it('marcarle a una foto el color de una prenda sin foto la mete en ella', () => {
+    let a = agregarPrendaAparte(SIN_PRENDAS, 'Verde');
+    a = elegirTonoDeFoto(a, 'f1', 'verde');
+
+    expect(a.prendaPorFoto).toEqual({ f1: 1 });
+    expect(variantesQueSeCrean(a, ['f1'])).toEqual([{ prenda: 1, valor: 'Verde', fotos: ['f1'] }]);
+    expect(problemaDePrendas(a, ['f1'])).toBeNull();
+  });
+
+  it('quitarle el color a su única foto la saca, y la prenda se queda sin foto y con su color', () => {
+    let a = agregarPrendaAparte(SIN_PRENDAS, 'Verde');
+    a = elegirTonoDeFoto(a, 'f1', 'Verde');
+    a = elegirTonoDeFoto(a, 'f1', '');
+
+    expect(a.prendaPorFoto).toEqual({});
+    expect(a.tonoPorPrenda).toEqual({ 1: 'Verde' });
+  });
+
+  it('una prenda agregada aparte con fotos que no entran sigue creándose, sin foto', () => {
+    let a = agregarPrendaAparte(SIN_PRENDAS, 'Verde');
+    a = moverFotoAPrenda(a, 'f9', 1);
+
+    expect(problemaDePrendas(a, ['f1'])).toBeNull();
+    expect(variantesQueSeCrean(a, ['f1'])).toEqual([{ prenda: 1, valor: 'Verde', fotos: [] }]);
+  });
+
+  it('quitar una prenda devuelve sus fotos a valer para todas y olvida sus tallas', () => {
+    let a = agregarPrendaAparte(SIN_PRENDAS, 'Verde');
+    a = moverFotoAPrenda(a, 'f1', 1);
+    a = marcarTallaDePrenda(a, 1, 'S', false, ['S', 'M']);
+    a = quitarPrenda(a, 1);
+
+    expect(a).toEqual(SIN_PRENDAS);
+  });
+
+  it('separar una foto en una prenda nueva se lleva la pista y las tallas de la suya', () => {
+    let a = agregarPrendaAparte(SIN_PRENDAS, 'Café', 'cocoa');
+    a = marcarTallaDePrenda(a, 1, 'S', false, ['S', 'M']);
+    a = moverFotoAPrenda(a, 'f1', 1);
+    a = moverFotoAPrenda(a, 'f1', 'nueva');
+
+    expect(a.prendaPorFoto).toEqual({ f1: 2 });
+    expect(a.pistaPorPrenda[2]).toBe('cocoa');
+    expect(tallasDePrenda(a, 2, ['S', 'M'])).toEqual(['M']);
+  });
+
+  it('el atajo de una sola prenda se lleva las agregadas aparte', () => {
+    const a = unaSolaPrenda(agregarPrendaAparte(SIN_PRENDAS, 'Verde'), ['f1', 'f2']);
+
+    expect(a.aparte).toEqual([]);
+  });
+});
+
+describe('tallas por color', () => {
+  const aprobadas = ['S', 'M', 'L', 'XL'];
+
+  /** El enterizo de Violeta: «beige rosa S L XL / azul M L XL». */
+  it('se llenan con lo que el anuncio dice de cada tono, por el color o por la pista', () => {
+    let a = agregarPrendaAparte(SIN_PRENDAS, 'Beige', 'beige rosa');
+    a = agregarPrendaAparte(a, 'Azul', 'azul');
+    a = agregarPrendaAparte(a, 'Blanco', 'ivory');
+    a = tallasSugeridasPorPrenda(
+      a,
+      [
+        { tono: 'beige rosa', tallas: ['S', 'L', 'XL'] },
+        { tono: 'AZUL', tallas: ['m', 'L', 'XL'] },
+      ],
+      aprobadas,
+    );
+
+    expect(tallasDePrenda(a, 1, aprobadas)).toEqual(['S', 'L', 'XL']);
+    expect(tallasDePrenda(a, 2, aprobadas)).toEqual(['M', 'L', 'XL']);
+    expect(tallasDePrenda(a, 3, aprobadas)).toEqual(aprobadas);
+  });
+
+  it('marcar y desmarcar una casilla cambia solo esa prenda, en el orden del producto', () => {
+    let a = agregarPrendaAparte(SIN_PRENDAS, 'Azul');
+    a = agregarPrendaAparte(a, 'Beige');
+    a = marcarTallaDePrenda(a, 1, 'M', false, aprobadas);
+    a = marcarTallaDePrenda(a, 1, 'M', true, aprobadas);
+    a = marcarTallaDePrenda(a, 1, 'S', false, aprobadas);
+
+    expect(tallasDePrenda(a, 1, aprobadas)).toEqual(['M', 'L', 'XL']);
+    expect(tallasDePrenda(a, 2, aprobadas)).toEqual(aprobadas);
+  });
+
+  it('las tallas de una prenda se quedan entre las del producto', () => {
+    const a = marcarTallaDePrenda(agregarPrendaAparte(SIN_PRENDAS, 'Azul'), 1, 'S', true, ['S']);
+
+    expect(tallasDePrenda(a, 1, ['M', 'L'])).toEqual([]);
+    expect(prendaSinTallas(a, [], ['M', 'L'])).toEqual({
+      tipo: 'SIN_TALLAS',
+      prenda: 1,
+      tono: 'Azul',
     });
   });
 });

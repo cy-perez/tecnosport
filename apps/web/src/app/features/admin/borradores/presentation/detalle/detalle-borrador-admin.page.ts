@@ -69,14 +69,22 @@ import {
   TipoProductoProveedor,
 } from '../../domain/borrador.model';
 import {
+  agregarPrendaAparte,
   AsignacionDePrendas,
   elegirTonoDeFoto,
+  elegirTonoDePrenda,
+  marcarTallaDePrenda,
   moverFotoAPrenda,
   olvidarFotoDePrendas,
   prendasEnUso,
+  prendaSinTallas,
   prendasSugeridas,
   problemaDePrendas,
+  ProblemaDePrendas,
+  quitarPrenda,
   SIN_PRENDAS,
+  tallasDePrenda,
+  tallasSugeridasPorPrenda,
   tonoDeFoto,
   unaSolaPrenda,
   variantesQueSeCrean,
@@ -296,6 +304,14 @@ export class DetalleBorradorAdminPage {
   protected readonly prendas = signal<AsignacionDePrendas>(SIN_PRENDAS);
 
   /**
+   * Si cada color viene en sus propias tallas (12 de octubre de 2026): el enterizo de Violeta trae
+   * el beige rosa en S, L y XL y el azul en M, L y XL. Apagado, todos los colores vienen en todas
+   * las tallas del producto, que es lo de casi siempre. Se enciende solo cuando el anuncio reparte
+   * las tallas por tono.
+   */
+  protected readonly tallasPorColor = signal(false);
+
+  /**
    * Las fotos que alguien desmarcó, por `mensajeId`. Se guardan las excluidas y no las elegidas
    * para que una foto nueva en una revalidación entre por omisión.
    */
@@ -408,6 +424,14 @@ export class DetalleBorradorAdminPage {
   private readonly tallasEscritas = toSignal(this.formDatos.controls.tallas.valueChanges, {
     initialValue: '',
   });
+  private readonly tipoDeTallaElegido = toSignal(this.formDatos.controls.tipoDeTalla.valueChanges, {
+    initialValue: this.formDatos.controls.tipoDeTalla.value,
+  });
+
+  /** Las tallas con que se aprueba: las de la lista, o ninguna con talla única o desconocida. */
+  protected readonly tallasDelProducto = computed(() =>
+    this.tipoDeTallaElegido() === 'LISTA' ? separarTallas(this.tallasEscritas()) : [],
+  );
 
   /**
    * La escala de tallas de la categoría elegida —la suya o la de su rama—: las casillas que la
@@ -477,6 +501,7 @@ export class DetalleBorradorAdminPage {
       // Todo lo que es de la decisión anterior se va con ella: navegar de un borrador a otro por
       // la URL reutiliza el componente.
       this.prendas.set(SIN_PRENDAS);
+      this.tallasPorColor.set(false);
       this.principalMarcada.set(null);
       this.fotosExcluidas.set(new Set());
       this.fotosIncluidasAMano.set(new Set());
@@ -551,12 +576,21 @@ export class DetalleBorradorAdminPage {
       }
       this.tonosSugeridosAplicados = borrador.id;
       if (borradorEditable(borrador) && this.prendas() === SIN_PRENDAS) {
-        this.prendas.set(
-          prendasSugeridas(
-            fotos,
-            paleta.map((color) => color.nombre),
-          ),
+        // Los tonos de la foto de todos y los que nombra el texto llegan como prendas sin foto
+        // propia; y si el anuncio reparte las tallas por tono, la tabla de color y talla se abre
+        // ya llena con ellas.
+        const sugeridas = prendasSugeridas(
+          fotos,
+          paleta.map((color) => color.nombre),
+          borrador.tonosNombrados,
         );
+        const conTallas = borrador.tallasPorTono.length > 0 && borrador.tallas.tipo === 'LISTA';
+        this.prendas.set(
+          conTallas
+            ? tallasSugeridasPorPrenda(sugeridas, borrador.tallasPorTono, borrador.tallas.valores)
+            : sugeridas,
+        );
+        this.tallasPorColor.set(conTallas);
       }
     });
 
@@ -696,6 +730,67 @@ export class DetalleBorradorAdminPage {
     const destino = valor === '' ? null : valor === 'nueva' ? 'nueva' : Number(valor);
     this.prendas.update((actual) => moverFotoAPrenda(actual, mensajeId, destino));
   }
+
+  /**
+   * Las prendas agregadas aparte que no tienen ninguna foto que entre: los tonos que se ven en la
+   * foto de todos. Cada una con su selector de color y la pista del proveedor.
+   */
+  protected readonly prendasSinFoto = computed(() => {
+    const asignacion = this.prendas();
+    const conFoto = new Set(
+      this.fotosElegidas()
+        .map((foto) => asignacion.prendaPorFoto[foto.mensajeId])
+        .filter((prenda) => prenda !== undefined),
+    );
+    return asignacion.aparte
+      .filter((prenda) => !conFoto.has(prenda))
+      .map((prenda) => ({ prenda, pista: asignacion.pistaPorPrenda[prenda] ?? null }));
+  });
+
+  /** Los colores marcados de una prenda sin foto, en orden. */
+  protected coloresDePrenda(prenda: number): string[] {
+    return separarColores(this.prendas().tonoPorPrenda[prenda] ?? '');
+  }
+
+  protected elegirColoresDePrenda(prenda: number, colores: readonly string[]): void {
+    this.prendas.update((actual) => elegirTonoDePrenda(actual, prenda, unirColores(colores)));
+  }
+
+  /** Una prenda sin foto nueva, sin color: el foco va a su selector, que acaba de aparecer. */
+  protected agregarColorSinFoto(): void {
+    let nueva = 0;
+    this.prendas.update((actual) => {
+      const siguiente = agregarPrendaAparte(actual, '');
+      nueva = siguiente.aparte[siguiente.aparte.length - 1];
+      return siguiente;
+    });
+    this.enfocarDespuesDePintar(() =>
+      this.host.nativeElement.querySelector<HTMLElement>('#tono-prenda-' + nueva),
+    );
+  }
+
+  /** La fila se va con el botón pulsado: el foco vuelve al de agregar, que no se va. */
+  protected quitarPrendaSinFoto(prenda: number): void {
+    this.prendas.update((actual) => quitarPrenda(actual, prenda));
+    this.enfocarDespuesDePintar(() =>
+      this.host.nativeElement.querySelector<HTMLElement>('#agregar-color-sin-foto button'),
+    );
+  }
+
+  protected tallaDePrendaMarcada(prenda: number, talla: string): boolean {
+    return tallasDePrenda(this.prendas(), prenda, this.tallasDelProducto()).includes(talla);
+  }
+
+  protected marcarTallaDePrenda(prenda: number, talla: string, marcada: boolean): void {
+    this.prendas.update((actual) =>
+      marcarTallaDePrenda(actual, prenda, talla, marcada, this.tallasDelProducto()),
+    );
+  }
+
+  /** La tabla de color y talla solo tiene sentido con varias tallas y algún color. */
+  protected readonly ofrecerTallasPorColor = computed(
+    () => this.tallasDelProducto().length > 1 && this.variantesQueSeCrean().length > 0,
+  );
 
   /** El atajo del producto que viene en una sola prenda fotografiada desde varios ángulos. */
   protected unaSolaPrenda(): void {
@@ -1125,10 +1220,11 @@ export class DetalleBorradorAdminPage {
     // cuenta con ese tono en la ficha. Y una prenda sin color no tiene variante que crear. En los
     // dos casos se para y se dice cuál, en vez de aprobar sin ella.
     const prendas = this.prendas();
-    const problema = problemaDePrendas(
-      prendas,
-      elegidas.map((foto) => foto.mensajeId),
-    );
+    const idsElegidas = elegidas.map((foto) => foto.mensajeId);
+    const conTallasPorColor = this.tallasPorColor() && this.ofrecerTallasPorColor();
+    const problema: ProblemaDePrendas | null =
+      problemaDePrendas(prendas, idsElegidas) ??
+      (conTallasPorColor ? prendaSinTallas(prendas, idsElegidas, this.tallasDelProducto()) : null);
     if (problema?.tipo === 'FUERA') {
       this.errorDecision.set(
         this.transloco.translate('admin.borradores.aprobar.fotoConTonoFuera', {
@@ -1139,8 +1235,28 @@ export class DetalleBorradorAdminPage {
     }
     if (problema?.tipo === 'SIN_COLOR') {
       this.errorDecision.set(
-        this.transloco.translate('admin.borradores.aprobar.prendaSinColor', {
-          prenda: problema.prenda,
+        this.transloco.translate(
+          prendas.aparte.includes(problema.prenda) &&
+            !idsElegidas.some((id) => prendas.prendaPorFoto[id] === problema.prenda)
+            ? 'admin.borradores.aprobar.colorSinFotoSinColor'
+            : 'admin.borradores.aprobar.prendaSinColor',
+          { prenda: problema.prenda },
+        ),
+      );
+      return;
+    }
+    if (problema?.tipo === 'REPETIDA') {
+      this.errorDecision.set(
+        this.transloco.translate('admin.borradores.aprobar.prendaRepetida', {
+          tono: problema.tono,
+        }),
+      );
+      return;
+    }
+    if (problema?.tipo === 'SIN_TALLAS') {
+      this.errorDecision.set(
+        this.transloco.translate('admin.borradores.aprobar.prendaSinTallas', {
+          tono: problema.tono,
         }),
       );
       return;
@@ -1176,6 +1292,23 @@ export class DetalleBorradorAdminPage {
               tono,
               colorHex: this.hexDe(tono),
               prenda: prendas.prendaPorFoto[foto.mensajeId] ?? null,
+            };
+          }),
+          // Las prendas van aparte de las fotos, en el orden del resumen: así viaja la que no
+          // tiene foto propia, y con ella las tallas de cada color cuando cambian.
+          prendas: variantesQueSeCrean(prendas, idsElegidas).map((variante) => {
+            const tono = prendas.tonoPorPrenda[variante.prenda];
+            return {
+              numero: variante.prenda,
+              tono,
+              colorHex: this.hexDe(tono),
+              // Desmarcada la casilla, cada color va en todas las tallas, como ella promete: con
+              // nulo, la API volvería a recortarlas por lo que el anuncio dijo de cada tono.
+              tallas: conTallasPorColor
+                ? tallasDePrenda(prendas, variante.prenda, this.tallasDelProducto())
+                : this.tallasDelProducto().length > 0
+                  ? this.tallasDelProducto()
+                  : null,
             };
           }),
         },

@@ -42,6 +42,7 @@ export function fotoDePrueba(mensajeId: string): FotoBorrador {
     pieDeFoto: null,
     origen: 'PROVEEDOR',
     tonoSugerido: null,
+    tonosVistos: [],
   };
 }
 
@@ -125,6 +126,7 @@ export class RepositorioBorradoresAdminFalso implements RepositorioBorradoresAdm
       pieDeFoto: null,
       origen: 'PANEL',
       tonoSugerido: null,
+      tonosVistos: [],
     };
     this.fotos = [...this.fotos, foto];
     const actual = this.borradores.find((b) => b.id === id);
