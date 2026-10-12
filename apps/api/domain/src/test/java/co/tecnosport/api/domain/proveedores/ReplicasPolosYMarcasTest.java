@@ -76,7 +76,9 @@ class ReplicasPolosYMarcasTest {
     assertTrue(PatronDeReplica.nombraMarcaConEstilo("Tenis estilo For One"));
     assertFalse(PatronDeReplica.nombraMarcaConEstilo("Pantalón jogger para dama importado"));
     assertFalse(PatronDeReplica.nombraMarcaConEstilo("Pantalón estilo importado"));
+    assertFalse(PatronDeReplica.nombraMarcaConEstilo("Pantalón estilo Importado"));
     assertFalse(PatronDeReplica.nombraMarcaConEstilo(null));
+    assertTrue(PatronDeReplica.nombraMarcaConEstilo("Tenis Estilo Adidas"));
 
     ProductoExtraido levis =
         extraido(
@@ -389,10 +391,34 @@ class ReplicasPolosYMarcasTest {
   @Test
   void elEstiloDelExtractorAlertaPeroNoCambiaElTitulo() {
     ProductoExtraido polo =
+        extraido("Camiseta tipo polo estilo Lacoste", TipoProductoProveedor.POLO, false, null)
+            .contrastadoCon("Camiseta tipo polo Lacoste $45.000");
+
+    assertTrue(polo.esReplica(), "se revisa");
+    assertFalse(polo.titulo().contains("importado"), "pero el texto no dijo importado");
+  }
+
+  /**
+   * Un «estilo» en minúscula es un adjetivo, no una marca: el bolso de dama «estilo ejecutivo» y el
+   * polo «estilo slim fit» salieron con la alerta de réplica (11 de octubre de 2026).
+   */
+  @Test
+  void unEstiloEnMinusculaNoEsUnaMarca() {
+    assertFalse(PatronDeReplica.nombraMarcaConEstilo("Bolso de dama mediano estilo ejecutivo"));
+    assertFalse(PatronDeReplica.nombraMarcaConEstilo("Tenis estilo runner"));
+
+    ProductoExtraido bolso =
+        extraido("Bolso de dama mediano estilo ejecutivo", TipoProductoProveedor.BOLSO, false, null)
+            .contrastadoCon(
+                "*nueva colección*😍\nBolso de dama mediano estilo ejecutivo 🤗\n5 tonos disponibles"
+                    + " 🌈\nAlta calidad, importado 🔝\n💰*65.000*");
+    ProductoExtraido polo =
         extraido("Camiseta tipo polo estilo slim fit", TipoProductoProveedor.POLO, false, null)
             .contrastadoCon("Camiseta tipo polo slim fit $45.000");
 
-    assertTrue(polo.esReplica(), "se revisa");
-    assertEquals("Polo estilo slim fit", polo.titulo(), "pero el texto no dijo importado");
+    assertFalse(bolso.esReplica());
+    assertEquals("Bolso de dama mediano estilo ejecutivo", bolso.titulo());
+    assertFalse(polo.esReplica());
+    assertEquals("Polo estilo slim fit", polo.titulo());
   }
 }
