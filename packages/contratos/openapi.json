@@ -246,6 +246,12 @@
             "format" : "int64",
             "type" : "integer"
           },
+          "prendas" : {
+            "items" : {
+              "$ref" : "#/components/schemas/PrendaAprobadaPeticion"
+            },
+            "type" : "array"
+          },
           "tallas" : {
             "$ref" : "#/components/schemas/TallasPeticion"
           },
@@ -1821,12 +1827,19 @@
           "tonoSugerido" : {
             "type" : "string"
           },
+          "tonosVistos" : {
+            "items" : {
+              "type" : "string"
+            },
+            "type" : "array"
+          },
           "url" : {
             "type" : "string"
           }
         },
         "required" : [
-          "origen"
+          "origen",
+          "tonosVistos"
         ],
         "type" : "object"
       },
@@ -3039,6 +3052,31 @@
         "required" : [
           "concepto",
           "precio"
+        ],
+        "type" : "object"
+      },
+      "PrendaAprobadaPeticion" : {
+        "properties" : {
+          "colorHex" : {
+            "type" : "string"
+          },
+          "numero" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "tallas" : {
+            "items" : {
+              "type" : "string"
+            },
+            "type" : "array"
+          },
+          "tono" : {
+            "type" : "string"
+          }
+        },
+        "required" : [
+          "numero",
+          "tono"
         ],
         "type" : "object"
       },

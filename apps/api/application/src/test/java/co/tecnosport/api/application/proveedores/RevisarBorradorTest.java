@@ -15,7 +15,9 @@ import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.proveedores.AlertaBorrador;
 import co.tecnosport.api.domain.proveedores.BorradorProducto;
 import co.tecnosport.api.domain.proveedores.EstadoBorrador;
+import co.tecnosport.api.domain.proveedores.FotosDelProducto;
 import co.tecnosport.api.domain.proveedores.IdExternoDeMensaje;
+import co.tecnosport.api.domain.proveedores.LecturaDeFotos;
 import co.tecnosport.api.domain.proveedores.LoteIngesta;
 import co.tecnosport.api.domain.proveedores.MensajeProveedor;
 import co.tecnosport.api.domain.proveedores.PHash;
@@ -311,5 +313,119 @@ class RevisarBorradorTest {
     assertThrows(
         BorradorNoEncontradoException.class,
         () -> new RechazarBorrador(borradores).ejecutar(UUID.randomUUID(), "x"));
+  }
+
+  /** Un lector que vio los tonos dados en la foto de la posición dada; las demás, sin leer. */
+  private static InterpreteDeLecturaDeFotos queVio(int posicion, List<String> tonos) {
+    return json ->
+        Optional.of(
+            new LecturaDeFotos(
+                false,
+                List.of(
+                    new LecturaDeFotos.LecturaDeFoto(
+                        posicion, List.of(), null, List.of(), tonos, null)),
+                json));
+  }
+
+  private BorradorProducto conLectura(Set<UUID> ajenas) {
+    BorradorProducto leido =
+        BorradorProducto.nuevo(
+            borrador.publicacionId(),
+            borrador.proveedorId(),
+            new ProductoExtraido(
+                true,
+                false,
+                "Blusa licrada",
+                LineaCatalogo.ROPA,
+                TipoProductoProveedor.BLUSA,
+                Dinero.deCop(38000),
+                null,
+                3,
+                null,
+                null,
+                null,
+                null,
+                false,
+                new BigDecimal("0.9"),
+                null),
+            "{}",
+            Dinero.deCop(38000),
+            Dinero.deCop(58000),
+            null,
+            null,
+            Set.of(),
+            new FotosDelProducto(ajenas, java.util.Map.of(), "{\"fotos\":[]}"),
+            T);
+    borradores.guardar(leido);
+    return leido;
+  }
+
+  /**
+   * La blusa de Violeta (12 de octubre de 2026): la foto retrata los tres tonos juntos. El borrador
+   * solo guardaba el color de las fotos de un tono, así que el panel no tenía de dónde proponer
+   * estos tres; ahora salen de la lectura que el borrador guardó.
+   */
+  @Test
+  void unaFotoDeVariosTonosTraeLosQueVioLaLectura() {
+    BorradorProducto leido = conLectura(Set.of());
+    borradores.porId.remove(borrador.id());
+
+    VerBorrador.DetalleDeBorrador detalle =
+        new VerBorrador(
+                borradores,
+                publicaciones,
+                mensajes,
+                almacen,
+                queVio(0, List.of("negro", "cocoa", "verde")))
+            .ejecutar(leido.id());
+
+    VerBorrador.FotoDeBorrador laDeTodos =
+        detalle.fotos().stream()
+            .filter(f -> f.mensajeId().equals(foto.id()))
+            .findFirst()
+            .orElseThrow();
+    assertEquals(List.of("negro", "cocoa", "verde"), laDeTodos.tonosVistos());
+    VerBorrador.FotoDeBorrador otra =
+        detalle.fotos().stream()
+            .filter(f -> f.mensajeId().equals(omitida.id()))
+            .findFirst()
+            .orElseThrow();
+    assertEquals(List.of(), otra.tonosVistos());
+  }
+
+  /** La de un solo tono ya lo trae como sugerido: no es una foto de varios. */
+  @Test
+  void unaFotoDeUnSoloTonoNoTraeTonosVistos() {
+    BorradorProducto leido = conLectura(Set.of());
+    borradores.porId.remove(borrador.id());
+
+    VerBorrador.DetalleDeBorrador detalle =
+        new VerBorrador(borradores, publicaciones, mensajes, almacen, queVio(0, List.of("negro")))
+            .ejecutar(leido.id());
+
+    assertTrue(detalle.fotos().stream().allMatch(f -> f.tonosVistos().isEmpty()));
+  }
+
+  /**
+   * Si otro producto de la publicación también conserva la foto, sus tonos pueden ser los de ese
+   * otro —la camiseta y el jogger en la misma foto—, y proponerlos aquí crearía variantes que este
+   * producto no tiene.
+   */
+  @Test
+  void unaFotoQueOtroProductoTambienConservaNoTraeTonosVistos() {
+    BorradorProducto leido = conLectura(Set.of());
+
+    VerBorrador.DetalleDeBorrador detalle =
+        new VerBorrador(
+                borradores,
+                publicaciones,
+                mensajes,
+                almacen,
+                queVio(0, List.of("negro", "cocoa", "verde")))
+            .ejecutar(leido.id());
+
+    assertTrue(
+        detalle.fotos().stream().allMatch(f -> f.tonosVistos().isEmpty()),
+        "el borrador de la preparación también conserva la foto");
   }
 }

@@ -36,6 +36,7 @@ import co.tecnosport.api.presentation.proveedores.dto.RechazarBorradorPeticion;
 import co.tecnosport.api.presentation.proveedores.dto.SolicitarSubidaDeFotoPeticion;
 import co.tecnosport.api.presentation.proveedores.dto.SubidaDeFotoRespuesta;
 import co.tecnosport.api.presentation.proveedores.dto.UnirBorradorPeticion;
+import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 import org.slf4j.Logger;
@@ -208,7 +209,15 @@ public class AdminBorradorControlador {
                                 f ->
                                     new AprobarBorradorComando.FotoAprobada(
                                         f.mensajeId(), f.tono(), f.colorHex(), f.prenda()))
-                            .toList())));
+                            .toList(),
+                        cuerpo.prendas() == null
+                            ? List.of()
+                            : cuerpo.prendas().stream()
+                                .map(
+                                    p ->
+                                        new AprobarBorradorComando.PrendaAprobada(
+                                            p.numero(), p.tono(), p.colorHex(), p.tallas()))
+                                .toList())));
     log.info(
         "Borrador {} aprobado: producto {} publicado con {} variante(s)",
         id,

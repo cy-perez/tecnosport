@@ -22,6 +22,7 @@ import co.tecnosport.api.application.proveedores.ApoyoDeIngesta.RepositorioMensa
 import co.tecnosport.api.application.proveedores.ApoyoDeIngesta.RepositorioProveedoresEnMemoria;
 import co.tecnosport.api.application.proveedores.ApoyoDeIngesta.RepositorioPublicacionesEnMemoria;
 import co.tecnosport.api.application.proveedores.AprobarBorradorComando.FotoAprobada;
+import co.tecnosport.api.application.proveedores.AprobarBorradorComando.PrendaAprobada;
 import co.tecnosport.api.domain.catalogo.EstadoDisponibilidad;
 import co.tecnosport.api.domain.catalogo.EstadoProducto;
 import co.tecnosport.api.domain.catalogo.ImagenProducto;
@@ -603,14 +604,8 @@ class AprobarBorradorTest {
     assertEquals(List.of("Rojo", "Rojo"), coloresDe(producto));
   }
 
-  /**
-   * «Talla SM ML(negro) / Talla ML(cocoa)», Violeta, 10 de octubre de 2026: del cocoa no hay SM, y
-   * no se crea esa variante aunque la blusa se apruebe en SM y ML. La paleta no tiene «cocoa»:
-   * quien aprueba marca la foto «Café», y es el color que la lectura vio en esa foto el que la une
-   * con sus tallas. Con el nombre solo, el café salía en SM.
-   */
-  @Test
-  void unTonoSoloTieneLasTallasQueElMensajeLeDio() {
+  /** La blusa de Violeta: «Talla SM ML(negro) / Talla ML(cocoa)», con una foto de cada tono. */
+  private void blusaConTallasPorTono() {
     borrador =
         BorradorProducto.nuevo(
             borrador.publicacionId(),
@@ -647,6 +642,17 @@ class AprobarBorradorTest {
                 Set.of(), java.util.Map.of(foto1.id(), "negro", foto2.id(), "cocoa"), null),
             AHORA);
     borradores.guardar(borrador);
+  }
+
+  /**
+   * «Talla SM ML(negro) / Talla ML(cocoa)», Violeta, 10 de octubre de 2026: del cocoa no hay SM, y
+   * no se crea esa variante aunque la blusa se apruebe en SM y ML. La paleta no tiene «cocoa»:
+   * quien aprueba marca la foto «Café», y es el color que la lectura vio en esa foto el que la une
+   * con sus tallas. Con el nombre solo, el café salía en SM.
+   */
+  @Test
+  void unTonoSoloTieneLasTallasQueElMensajeLeDio() {
+    blusaConTallasPorTono();
 
     Producto producto =
         caso()
@@ -730,6 +736,255 @@ class AprobarBorradorTest {
                             new FotoAprobada(foto2.id(), "Blanco", "#FFFFFF", 1)))));
     assertTrue(productos.porId.isEmpty());
     assertTrue(almacenPublico.objetos.isEmpty());
+  }
+
+  private AprobarBorradorComando conPrendas(
+      Tallas tallas, List<FotoAprobada> fotos, List<PrendaAprobada> prendas) {
+    return new AprobarBorradorComando(
+        borrador.id(),
+        null,
+        null,
+        ApoyoDeCatalogoParaIngesta.BOLSOS_DE_MANO.id(),
+        ApoyoDeCatalogoParaIngesta.MARCA.id(),
+        58000,
+        tallas,
+        1,
+        "Blusa",
+        "Top",
+        fotos,
+        prendas);
+  }
+
+  private static List<String> combinacionesDe(Producto producto) {
+    return producto.variantes().stream()
+        .map(v -> v.atributos().get(0).valor() + "/" + v.atributos().get(1).valor())
+        .toList();
+  }
+
+  /**
+   * La blusa de Violeta (12 de octubre de 2026): una foto con los tres tonos de frente y otra con
+   * los tres de espalda, y ninguna de un solo tono. Antes de las prendas sin foto la aprobación no
+   * creaba ningún color —todas las fotos valían para todas— y quien compraba no podía decir cuál
+   * quería. Cada tono es una variante, con las tallas que tiene, y las dos fotos valen para todas.
+   */
+  @Test
+  void losTonosDeUnaFotoDeTodosSonVariantesSinFotoPropia() {
+    Producto producto =
+        caso()
+            .ejecutar(
+                conPrendas(
+                    Tallas.lista(List.of("SM", "ML")),
+                    List.of(
+                        new FotoAprobada(foto1.id(), null, null),
+                        new FotoAprobada(foto2.id(), null, null)),
+                    List.of(
+                        new PrendaAprobada(1, "Negro", "#000000", null),
+                        new PrendaAprobada(2, "Café", "#6F4E37", List.of("ML")),
+                        new PrendaAprobada(3, "Verde", "#2E7D32", List.of("SM")))));
+
+    assertEquals(List.of("Negro/SM", "Negro/ML", "Café/ML", "Verde/SM"), combinacionesDe(producto));
+    assertEquals(
+        "#6F4E37",
+        producto.variantes().get(2).atributos().get(0).colorHex(),
+        "la muestra del círculo sale de la prenda, que no tiene foto que la dé");
+    assertTrue(producto.imagenPrincipal().orElseThrow().varianteId().isEmpty());
+    assertTrue(producto.galeria().get(0).varianteId().isEmpty(), "la de espalda vale para todas");
+  }
+
+  /**
+   * El enterizo: una prenda con foto y otra sin ella. La de foto va primero —el orden de su primera
+   * foto— y la foto cuelga de su variante; la otra se crea igual, sin foto.
+   */
+  @Test
+  void unaPrendaConFotoYOtraSinFoto() {
+    Producto producto =
+        caso()
+            .ejecutar(
+                conPrendas(
+                    null,
+                    List.of(
+                        new FotoAprobada(foto1.id(), null, null),
+                        new FotoAprobada(foto2.id(), "Azul", "#1E4FA0", 2)),
+                    List.of(
+                        new PrendaAprobada(1, "Beige", "#D8C3A5", null),
+                        new PrendaAprobada(2, "Azul", "#1E4FA0", null))));
+
+    assertEquals(List.of("Azul", "Beige"), coloresDe(producto));
+    assertEquals(
+        Optional.of(producto.variantes().get(0).id()), producto.galeria().get(0).varianteId());
+  }
+
+  /**
+   * Las tallas que quien aprueba marca en la tabla mandan sobre las que el proveedor escribió: el
+   * texto decía que del cocoa solo había ML, y quien aprueba sabe que llegó SM.
+   */
+  @Test
+  void lasTallasDeLaPrendaMandanSobreLasDelMensaje() {
+    blusaConTallasPorTono();
+
+    Producto producto =
+        caso()
+            .ejecutar(
+                conPrendas(
+                    null,
+                    List.of(
+                        new FotoAprobada(foto1.id(), "Negro", "#000000", 1),
+                        new FotoAprobada(foto2.id(), "Café", "#6F4E37", 2)),
+                    List.of(
+                        new PrendaAprobada(1, "Negro", "#000000", null),
+                        new PrendaAprobada(2, "Café", "#6F4E37", List.of("SM", "ML")))));
+
+    assertEquals(List.of("Negro/SM", "Negro/ML", "Café/SM", "Café/ML"), combinacionesDe(producto));
+  }
+
+  /** Sin tallas dichas en la prenda, deciden las del mensaje, como antes. */
+  @Test
+  void sinTallasEnLaPrendaDecidenLasDelMensaje() {
+    blusaConTallasPorTono();
+
+    Producto producto =
+        caso()
+            .ejecutar(
+                conPrendas(
+                    null,
+                    List.of(
+                        new FotoAprobada(foto1.id(), "Negro", "#000000", 1),
+                        new FotoAprobada(foto2.id(), "Café", "#6F4E37", 2)),
+                    List.of(
+                        new PrendaAprobada(1, "Negro", "#000000", null),
+                        new PrendaAprobada(2, "Café", "#6F4E37", null))));
+
+    assertEquals(List.of("Negro/SM", "Negro/ML", "Café/ML"), combinacionesDe(producto));
+  }
+
+  /**
+   * Sin foto, el número no distingue nada: «Negro 1» y «Negro 2» se leen igual en la ficha si no
+   * hay una foto de cada uno. Se rechaza antes de crear nada.
+   */
+  @Test
+  void unaPrendaSinFotoNoSeLlamaComoOtra() {
+    PrendaIncoherenteException error =
+        assertThrows(
+            PrendaIncoherenteException.class,
+            () ->
+                caso()
+                    .ejecutar(
+                        conPrendas(
+                            null,
+                            List.of(new FotoAprobada(foto1.id(), "Negro", "#000000", 1)),
+                            List.of(
+                                new PrendaAprobada(1, "Negro", "#000000", null),
+                                new PrendaAprobada(2, "negro", "#000000", null)))));
+    assertTrue(error.getMessage().contains("La prenda 2"), error.getMessage());
+    assertTrue(productos.porId.isEmpty(), "ni producto a medias");
+    assertTrue(almacenPublico.objetos.isEmpty(), "ni fotos en el bucket público");
+  }
+
+  @Test
+  void unaPrendaNoVieneEnUnaTallaQueElProductoNoTiene() {
+    assertThrows(
+        PrendaIncoherenteException.class,
+        () ->
+            caso()
+                .ejecutar(
+                    conPrendas(
+                        Tallas.lista(List.of("S", "M")),
+                        List.of(new FotoAprobada(foto1.id(), null, null)),
+                        List.of(new PrendaAprobada(1, "Negro", null, List.of("XL"))))));
+    assertTrue(productos.porId.isEmpty());
+  }
+
+  @Test
+  void unaPrendaQueNoVieneEnNingunaTallaNoSeAprueba() {
+    assertThrows(
+        PrendaIncoherenteException.class,
+        () ->
+            caso()
+                .ejecutar(
+                    conPrendas(
+                        Tallas.lista(List.of("S", "M")),
+                        List.of(new FotoAprobada(foto1.id(), null, null)),
+                        List.of(new PrendaAprobada(1, "Negro", null, List.of())))));
+  }
+
+  /** Con talla única no hay tallas que repartir entre los colores. */
+  @Test
+  void lasTallasPorPrendaPidenUnaListaDeTallas() {
+    assertThrows(
+        PrendaIncoherenteException.class,
+        () ->
+            caso()
+                .ejecutar(
+                    conPrendas(
+                        Tallas.unica(null),
+                        List.of(new FotoAprobada(foto1.id(), null, null)),
+                        List.of(new PrendaAprobada(1, "Negro", null, List.of("Única"))))));
+  }
+
+  @Test
+  void unaFotoCitaUnaPrendaQueExiste() {
+    assertThrows(
+        PrendaIncoherenteException.class,
+        () ->
+            caso()
+                .ejecutar(
+                    conPrendas(
+                        null,
+                        List.of(new FotoAprobada(foto1.id(), "Negro", null, 3)),
+                        List.of(new PrendaAprobada(1, "Negro", null, null)))));
+  }
+
+  /** Con las prendas dichas aparte, una foto con color tiene que decir cuál es la suya. */
+  @Test
+  void conPrendasUnaFotoConColorDiceSuPrenda() {
+    assertThrows(
+        PrendaIncoherenteException.class,
+        () ->
+            caso()
+                .ejecutar(
+                    conPrendas(
+                        null,
+                        List.of(new FotoAprobada(foto1.id(), "Negro", null)),
+                        List.of(new PrendaAprobada(1, "Negro", null, null)))));
+  }
+
+  @Test
+  void unaFotoNoContradiceElColorDeSuPrenda() {
+    assertThrows(
+        PrendaIncoherenteException.class,
+        () ->
+            caso()
+                .ejecutar(
+                    conPrendas(
+                        null,
+                        List.of(new FotoAprobada(foto1.id(), "Rojo", null, 1)),
+                        List.of(new PrendaAprobada(1, "Negro", null, null)))));
+  }
+
+  @Test
+  void unaPrendaDichaApartePideColor() {
+    assertThrows(
+        PrendaIncoherenteException.class,
+        () ->
+            caso()
+                .ejecutar(
+                    conPrendas(
+                        null,
+                        List.of(new FotoAprobada(foto1.id(), null, null)),
+                        List.of(new PrendaAprobada(1, null, null, null)))));
+  }
+
+  @Test
+  void dosPrendasNoTienenElMismoNumero() {
+    assertThrows(
+        IllegalArgumentException.class,
+        () ->
+            conPrendas(
+                null,
+                List.of(new FotoAprobada(foto1.id(), null, null)),
+                List.of(
+                    new PrendaAprobada(1, "Negro", null, null),
+                    new PrendaAprobada(1, "Rojo", null, null))));
   }
 
   @Test

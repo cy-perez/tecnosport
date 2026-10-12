@@ -15,7 +15,8 @@ public record AprobarBorradorPeticion(
     @Schema(requiredMode = Schema.RequiredMode.REQUIRED) int existenciaInicial,
     @Schema(requiredMode = Schema.RequiredMode.REQUIRED) String altEs,
     @Schema(requiredMode = Schema.RequiredMode.REQUIRED) String altEn,
-    @Schema(requiredMode = Schema.RequiredMode.REQUIRED) List<FotoAprobadaPeticion> fotos) {
+    @Schema(requiredMode = Schema.RequiredMode.REQUIRED) List<FotoAprobadaPeticion> fotos,
+    List<PrendaAprobadaPeticion> prendas) {
 
   public AprobarBorradorPeticion {
     Objects.requireNonNull(categoriaId, "La categoría es obligatoria.");
@@ -37,6 +38,24 @@ public record AprobarBorradorPeticion(
       Integer prenda) {
     public FotoAprobadaPeticion {
       Objects.requireNonNull(mensajeId, "La foto se nombra por su mensaje.");
+    }
+  }
+
+  /**
+   * Una prenda del producto, con foto propia o sin ella: la que no cita ninguna foto se ve en la
+   * que retrata todos los tonos.
+   *
+   * @param numero el que citan las fotos en {@code prenda}, desde 1
+   * @param tono el color, sin numerar
+   * @param tallas en cuáles tallas del producto viene; nula = en todas
+   */
+  public record PrendaAprobadaPeticion(
+      @Schema(requiredMode = Schema.RequiredMode.REQUIRED) int numero,
+      @Schema(requiredMode = Schema.RequiredMode.REQUIRED) String tono,
+      String colorHex,
+      List<String> tallas) {
+    public PrendaAprobadaPeticion {
+      Objects.requireNonNull(tono, "Una prenda tiene color.");
     }
   }
 }
