@@ -23,20 +23,28 @@ class CalculadoraDeMargenTest {
   }
 
   @Test
-  void multiplicaYRedondeaALaCentena() {
-    // 53.000 × 1,35 = 71.550 → 71.600
-    assertEquals(Dinero.deCop(71600), sugerir(53000, "1.35", SIN_TOPES));
-    // 45.000 × 1,30 = 58.500, ya en la centena
-    assertEquals(Dinero.deCop(58500), sugerir(45000, "1.30", SIN_TOPES));
+  void multiplicaYSubeALaUnidadDeMilSiguiente() {
+    // 53.000 × 1,35 = 71.550 → 72.000
+    assertEquals(Dinero.deCop(72000), sugerir(53000, "1.35", SIN_TOPES));
+    // 45.000 × 1,30 = 58.500 → 59.000: la mitad también sube
+    assertEquals(Dinero.deCop(59000), sugerir(45000, "1.30", SIN_TOPES));
   }
 
-  /** HALF_UP en la mitad exacta: 43.000 × 1,35 = 58.050 → 58.100, no 58.000. */
+  /** Los ejemplos del negocio: 72.500 es 73.000 y 78.900 es 79.000. */
   @Test
-  void enLaMitadExactaRedondeaHaciaArriba() {
-    assertEquals(Dinero.deCop(58100), sugerir(43000, "1.35", SIN_TOPES));
+  void subeAunqueEsteMuyCercaDeLaUnidadDeMilAnterior() {
+    assertEquals(Dinero.deCop(73000), sugerir(72500, "1", SIN_TOPES));
+    assertEquals(Dinero.deCop(79000), sugerir(78900, "1", SIN_TOPES));
+    // 72.001 no se queda en 72.000: siempre la siguiente, nunca la más cercana
+    assertEquals(Dinero.deCop(73000), sugerir(72001, "1", SIN_TOPES));
   }
 
-  /** 53.000 × 1,35 = 71.600 gana 18.600: sube hasta ganar 20.000. */
+  @Test
+  void unPrecioYaRedondoNoSube() {
+    assertEquals(Dinero.deCop(79000), sugerir(79000, "1", SIN_TOPES));
+  }
+
+  /** 53.000 × 1,35 = 72.000 gana 19.000: sube hasta ganar 20.000. */
   @Test
   void unaGananciaPorDebajoDelMinimoSubeAlMinimo() {
     assertEquals(Dinero.deCop(73000), sugerir(53000, "1.35", TOPES));
@@ -65,25 +73,45 @@ class CalculadoraDeMargenTest {
 
   /**
    * Con un precio del proveedor que no es redondo, el tope se cumple igual: el redondeo va hacia
-   * dentro. 53.050 + 20.000 = 73.050 → 73.100, no 73.000 (que ganaría 19.950).
+   * dentro. 53.050 + 20.000 = 73.050 → 74.000, no 73.000 (que ganaría 19.950).
    */
   @Test
   void conUnPrecioNoRedondoElTopeSeCumple() {
-    assertEquals(Dinero.deCop(73100), sugerir(53050, "1.35", TOPES));
-    // 200.050 + 30.000 = 230.050 → 230.000, no 230.100 (que ganaría 30.050)
+    assertEquals(Dinero.deCop(74000), sugerir(53050, "1.35", TOPES));
+    // 200.050 + 30.000 = 230.050 → 230.000, no 231.000 (que ganaría 30.950)
     assertEquals(Dinero.deCop(230000), sugerir(200050, "1.35", TOPES));
   }
 
   /**
-   * 53.020 + 20.000 = 73.020: hacia arriba es 73.100; con HALF_UP sería 73.000, que gana 19.980 y
-   * rompe el mínimo. Este caso es el que distingue los dos redondeos.
+   * 100.500 × 1,30 = 130.650 gana 30.150 y ya se pasa; subirlo a 131.000 ganaría 30.500. Manda el
+   * máximo hacia abajo: 130.500 → 130.000. Es el caso en que el máximo no deja ir a la siguiente.
+   */
+  @Test
+  void elMaximoBajaALaUnidadDeMilAnterior() {
+    assertEquals(Dinero.deCop(130000), sugerir(100500, "1.30", TOPES));
+  }
+
+  /**
+   * 76.700 × 1,30 = 99.710 gana 23.010, entre los topes; subirlo a 100.000 gana 23.300, aún entre
+   * los topes. Pero 99.900 × 1,30 = 129.870 → 130.000 gana 30.100: lo que se pasa es el redondeo,
+   * no el factor, y también ahí manda el máximo.
+   */
+  @Test
+  void siElRedondeoEsLoQueSePasaDelMaximoTambienBaja() {
+    assertEquals(Dinero.deCop(100000), sugerir(76700, "1.30", TOPES));
+    assertEquals(Dinero.deCop(129000), sugerir(99900, "1.30", TOPES));
+  }
+
+  /**
+   * 53.020 + 20.000 = 73.020: hacia arriba es 74.000; al más cercano sería 73.000, que gana 19.980
+   * y rompe el mínimo. Este caso es el que distingue los dos redondeos.
    */
   @Test
   void elMinimoRedondeaHaciaArribaYNoAlMasCercano() {
-    assertEquals(Dinero.deCop(73100), sugerir(53020, "1.35", TOPES));
+    assertEquals(Dinero.deCop(74000), sugerir(53020, "1.35", TOPES));
   }
 
-  /** Mínimo y máximo iguales: subir a la centena no puede ganar más que el máximo. */
+  /** Mínimo y máximo iguales: subir a la unidad de mil no puede ganar más que el máximo. */
   @Test
   void conTopesIgualesNoSePasaDelMaximo() {
     TopesDeGanancia iguales = new TopesDeGanancia(Dinero.deCop(20000), Dinero.deCop(20000));

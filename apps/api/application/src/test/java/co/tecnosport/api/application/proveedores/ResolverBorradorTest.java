@@ -275,7 +275,8 @@ class ResolverBorradorTest {
     resolver(publicacion, evaluada("Bolso", 53000, true, false, Set.of()));
 
     assertEquals(
-        Optional.of(Dinero.deCop(79500)),
+        // 53.000 × 1,5 = 79.500, que sube a la unidad de mil siguiente
+        Optional.of(Dinero.deCop(80000)),
         borradores.enEstado(EstadoBorrador.EN_REVISION).get(0).precioVentaSugerido());
   }
 
