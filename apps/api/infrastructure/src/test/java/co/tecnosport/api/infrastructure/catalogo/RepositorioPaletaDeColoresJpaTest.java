@@ -17,7 +17,10 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.postgresql.PostgreSQLContainer;
 import org.testcontainers.utility.DockerImageName;
 
-/** La paleta que siembran V75 y V78, contra Postgres real: completa y en orden alfabético. */
+/**
+ * La paleta que siembran V75, V78, V80 y V111, contra Postgres real: completa y en orden
+ * alfabético.
+ */
 @SpringBootTest
 @Testcontainers
 @Transactional
@@ -36,9 +39,10 @@ class RepositorioPaletaDeColoresJpaTest {
     Collator espanol = Collator.getInstance(Locale.forLanguageTag("es"));
     espanol.setStrength(Collator.PRIMARY);
     assertThat(nombres).isSortedAccordingTo(espanol);
-    assertThat(nombres).hasSize(66).doesNotHaveDuplicates();
+    assertThat(nombres).hasSize(67).doesNotHaveDuplicates();
     assertThat(nombres)
-        .contains("Negro", "Verde militar", "Azul oscuro", "Gris jaspe", "Coñac", "Índigo");
+        .contains(
+            "Negro", "Verde militar", "Azul oscuro", "Gris jaspe", "Coñac", "Índigo", "Cocoa");
   }
 
   /** Los tres diseños de V80 llegan con su patrón y sus colores; los lisos, sin ninguno. */
