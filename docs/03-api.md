@@ -13,6 +13,10 @@ TypeScript de `packages/contratos`. No se escriben interfaces de respuesta a man
 - Fechas ISO-8601 en UTC: `2026-08-30T14:05:00Z`.
 - Dinero como entero de pesos más el código de moneda:
   `{ "valor": 189900, "moneda": "COP" }`. Nunca un texto con separadores.
+  **Excepción del panel:** el precio de una variante viaja como entero de pesos a
+  secas (`precio: 189900`) al agregarla, al cambiarlo y en el resumen de variantes
+  de la edición. Es solo COP, lo escribe una persona del negocio, y así lo hacía ya
+  `AgregarVariantePeticion`; la vitrina y los pedidos siguen con `{ valor, moneda }`.
 - Paginación por cursor en el catálogo, por página en el panel administrativo. La
   respuesta siempre trae `items` y metadatos, nunca un arreglo desnudo.
 
