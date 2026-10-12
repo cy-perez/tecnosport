@@ -10,6 +10,8 @@ function imagen(anchos: number[]): Imagen {
     altEs: 'alt es',
     altEn: 'alt en',
     varianteId: null,
+    enLaFicha: false,
+    variantesQueMuestra: [],
   };
 }
 

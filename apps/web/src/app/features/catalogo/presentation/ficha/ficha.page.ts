@@ -50,6 +50,7 @@ import {
   indiceDeLaPrimeraDelColor,
   nombreDeColor,
   opcionDisponible,
+  principalEntraEnLaFicha,
   Seleccion,
   seleccionAlElegir,
   seleccionDeVariante,
@@ -140,11 +141,7 @@ export class FichaPage {
     if (principal === null) {
       return [...producto.galeria];
     }
-    // Y si la galería está vacía, la principal entra aunque sea genérica: una ficha sin una sola
-    // foto no le sirve a nadie, y es el mismo respaldo que ya tenía el recorte por color. La
-    // regla distingue la portada de las fotos de cada prenda cuando hay prendas que distinguir.
-    const encabeza = principal.varianteId !== null || producto.galeria.length === 0;
-    return [...(encabeza ? [principal] : []), ...producto.galeria];
+    return [...(principalEntraEnLaFicha(producto) ? [principal] : []), ...producto.galeria];
   });
 
   /**

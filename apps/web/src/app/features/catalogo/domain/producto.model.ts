@@ -25,6 +25,16 @@ export interface Imagen {
    * foto al elegir un color, en la tarjeta y en la ficha.
    */
   readonly varianteId: string | null;
+  /**
+   * Si la principal que vale para todos los tonos entra también en la galería de la ficha
+   * (ADR-0082). Siempre falso fuera de la principal: las demás entran siempre.
+   */
+  readonly enLaFicha: boolean;
+  /**
+   * Las variantes sin foto propia que la foto también retrata: la camiseta negra que sale con la
+   * blanca. Elegir uno de esos tonos lleva a esta foto.
+   */
+  readonly variantesQueMuestra: readonly string[];
 }
 
 /** Un fotograma de rotación se publica en un solo ancho: el visor los pinta todos igual. */

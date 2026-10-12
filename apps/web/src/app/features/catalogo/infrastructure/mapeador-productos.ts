@@ -104,6 +104,8 @@ function aImagen(dto: ImagenDto): Imagen {
     altEs: dto.altEs ?? '',
     altEn: dto.altEn ?? '',
     varianteId: dto.varianteId ?? null,
+    enLaFicha: dto.enLaFicha ?? false,
+    variantesQueMuestra: dto.variantesQueMuestra ?? [],
   };
 }
 
