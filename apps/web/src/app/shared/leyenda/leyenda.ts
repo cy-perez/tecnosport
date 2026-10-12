@@ -14,27 +14,32 @@ const ABAJO = 'translate-y-4';
  * Una leyenda con un texto corto —el nombre de un color— al pasar el puntero sobre el elemento, o
  * al llegar a él con el teclado.
  *
- * <p><b>No es el `title` del navegador</b>: ese tarda en salir, no sale con el teclado ni al tocar,
- * y el lector de pantalla lo lee además del `aria-label`. Esta es solo visual (`aria-hidden`): el
- * nombre accesible lo sigue dando el `aria-label` del elemento, que ya lo trae.
+ * <p><b>No es el `title` del navegador</b>: ese tarda en salir, no sale con el teclado, y el lector
+ * de pantalla lo lee además del `aria-label`. Esta es solo visual (`aria-hidden`): el nombre
+ * accesible lo sigue dando el `aria-label` del elemento, que ya lo trae.
  *
  * <p><b>Vive en la capa superior</b> (`popover`), fuera del elemento: la tarjeta de producto recorta
  * lo que se sale de ella, y una leyenda posicionada con CSS dentro de la tarjeta quedaba cortada en
  * las muestras de los bordes. Por eso se coloca midiendo: encima del elemento, centrada y sin
  * salirse de la ventana; debajo si arriba no cabe. Sin `popover` —jsdom— se muestra con `hidden`.
+ *
+ * <p>El globo existe solo mientras se ve: se crea al mostrarse y se quita al ocultarse. Conservarlo
+ * dejaba un `<div>` en el `<body>` por cada muestra sobrevolada, cientos en una rejilla larga.
+ *
+ * <p>Un toque no la abre: el navegador emite el `pointerenter` del toque pero no el `pointerleave`
+ * hasta el siguiente toque en otra parte, y el globo se quedaba encima de la tarjeta.
  */
 @Directive({
-  selector: '[tsLeyenda]',
+  selector: '[appLeyenda]',
   host: {
-    '(mouseenter)': 'mostrar()',
-    '(mouseleave)': 'ocultar()',
+    '(pointerenter)': 'alEntrar($event)',
+    '(pointerleave)': 'ocultar()',
     '(focusin)': 'mostrarConTeclado()',
     '(focusout)': 'ocultar()',
-    '(keydown.escape)': 'ocultar()',
   },
 })
-export class TsLeyenda {
-  readonly texto = input.required<string>({ alias: 'tsLeyenda' });
+export class Leyenda {
+  readonly texto = input.required<string>({ alias: 'appLeyenda' });
 
   private readonly elemento = inject<ElementRef<HTMLElement>>(ElementRef).nativeElement;
   private readonly documento = inject(DOCUMENT);
@@ -44,12 +49,24 @@ export class TsLeyenda {
   /** Un desplazamiento deja el globo donde estaba el elemento: se quita en vez de perseguirlo. */
   private readonly alDesplazar = () => this.ocultar();
 
-  constructor() {
-    inject(DestroyRef).onDestroy(() => {
+  /**
+   * Escape en el documento y no en el elemento: abierta con el puntero, el foco puede estar en
+   * cualquier otra parte, y la leyenda tiene que poder descartarse igual (WCAG 1.4.13).
+   */
+  private readonly alPulsar = (evento: KeyboardEvent) => {
+    if (evento.key === 'Escape') {
       this.ocultar();
-      this.globo?.remove();
-      this.globo = null;
-    });
+    }
+  };
+
+  constructor() {
+    inject(DestroyRef).onDestroy(() => this.ocultar());
+  }
+
+  protected alEntrar(evento: PointerEvent): void {
+    if (evento.pointerType !== 'touch') {
+      this.mostrar();
+    }
   }
 
   /** Con el teclado sí, con el clic no: un clic también enfoca, y el puntero ya está encima. */
@@ -64,7 +81,7 @@ export class TsLeyenda {
     if (!this.enNavegador || !texto) {
       return;
     }
-    const globo = this.crearGlobo();
+    const globo = this.globo ?? this.crearGlobo();
     globo.textContent = texto;
     if (typeof globo.showPopover === 'function') {
       if (!globo.matches(':popover-open')) {
@@ -74,31 +91,20 @@ export class TsLeyenda {
       globo.hidden = false;
     }
     this.colocar(globo);
-    this.documento.defaultView?.addEventListener('scroll', this.alDesplazar, {
-      capture: true,
-      passive: true,
-    });
+    const ventana = this.documento.defaultView;
+    ventana?.addEventListener('scroll', this.alDesplazar, { capture: true, passive: true });
+    ventana?.addEventListener('keydown', this.alPulsar);
   }
 
   protected ocultar(): void {
-    const globo = this.globo;
-    this.documento.defaultView?.removeEventListener('scroll', this.alDesplazar, { capture: true });
-    if (!globo) {
-      return;
-    }
-    if (typeof globo.hidePopover === 'function') {
-      if (globo.matches(':popover-open')) {
-        globo.hidePopover();
-      }
-    } else {
-      globo.hidden = true;
-    }
+    const ventana = this.documento.defaultView;
+    ventana?.removeEventListener('scroll', this.alDesplazar, { capture: true });
+    ventana?.removeEventListener('keydown', this.alPulsar);
+    this.globo?.remove();
+    this.globo = null;
   }
 
   private crearGlobo(): HTMLElement {
-    if (this.globo) {
-      return this.globo;
-    }
     const globo = this.documento.createElement('div');
     globo.className = CLASES_GLOBO;
     globo.setAttribute('aria-hidden', 'true');

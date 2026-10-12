@@ -191,7 +191,9 @@ describe('TsTarjetaProducto', () => {
   it('pasar el puntero por una muestra muestra el nombre del color', async () => {
     await renderBodi();
 
-    fireEvent.mouseEnter(screen.getByRole('button', { name: 'Ver en Vino' }));
+    fireEvent.pointerEnter(screen.getByRole('button', { name: 'Ver en Vino' }), {
+      pointerType: 'mouse',
+    });
 
     const globo = document.querySelector<HTMLElement>('[data-leyenda]')!;
     expect(globo.textContent).toBe('Vino');
