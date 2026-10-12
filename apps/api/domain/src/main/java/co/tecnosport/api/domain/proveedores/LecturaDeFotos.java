@@ -47,9 +47,9 @@ public record LecturaDeFotos(boolean albumDeDisenos, List<LecturaDeFoto> fotos, 
    * @param diseno una etiqueta corta que es igual en las fotos del mismo diseño: dos fotos con la
    *     misma etiqueta son el mismo producto, aunque cambie el color. Nula si no se sabe
    * @param marcas las marcas o logos que se leen en lo que se vende —no en la gorra que lo
-   *     ambienta—, como la marca se escribe. Vacía si no se lee ninguna. Desde el 11 de octubre de
-   *     2026: un logo de CK o de A|X en una camiseta de mayorista es una réplica aunque el texto no
-   *     lo diga, y con varias marcas en un anuncio dice cuál foto es de cuál
+   *     ambienta—, como la marca se escribe. Vacía si no se lee ninguna. Con varias marcas en un
+   *     anuncio dice cuál foto es de cuál. No alerta la réplica: esa la dice solo el texto
+   *     (decidido por el negocio el 11 de octubre de 2026)
    */
   public record LecturaDeFoto(
       int posicion,

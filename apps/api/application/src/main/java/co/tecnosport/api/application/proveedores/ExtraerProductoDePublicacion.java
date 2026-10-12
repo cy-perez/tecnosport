@@ -38,6 +38,12 @@ import java.util.UUID;
  * <p>Tampoco se cree el «sirve hasta» que el texto no escribe, y una réplica se reconoce por el
  * «1.1» del texto aunque el extractor no la marque ({@link ProductoExtraido#contrastadoCon}).
  *
+ * <p>La réplica sale solo del texto: una marca que el lector lee en la foto no la alerta. Un logo
+ * en una suela o en una lengüeta no dice que el proveedor la venda como réplica, y la alerta
+ * terminaba en productos que el texto no relacionaba con ninguna marca (decidido por el negocio el
+ * 11 de octubre de 2026). Lo que lee sigue sirviendo para repartir las fotos entre las marcas que
+ * el texto sí nombra ({@link RepartoDeFotos}).
+ *
  * <h2>Varios productos en un mensaje</h2>
  *
  * <p>Cada producto se contrasta con <b>el precio de su misma posición</b> en el texto, y solo si el
@@ -167,7 +173,7 @@ public final class ExtraerProductoDePublicacion {
           || repartido.respaldo() == Respaldo.DISENO_SIN_PIE) {
         alertas.add(AlertaBorrador.CONFIANZA_BAJA);
       }
-      if (producto.esReplica() || muestraMarca(repartido, publicacion.medios(), lectura)) {
+      if (producto.esReplica()) {
         alertas.add(AlertaBorrador.REPLICA);
       }
       if (sinFotos) {
@@ -243,24 +249,6 @@ public final class ExtraerProductoDePublicacion {
                         p.titulo(), p.codigoReferenciaOpcional().orElse(null), p.marcas()))
             .toList();
     return lector.leer(new FotosParaLeer(texto.completo(), nombrados, fotos)).orElse(null);
-  }
-
-  /**
-   * Si en alguna de sus fotos se lee una marca: un logo de CK o de A|X en una camiseta de mayorista
-   * es una réplica aunque el texto no lo diga (La Riverah, 11 de octubre de 2026). Es una alerta,
-   * no un veredicto: quien aprueba decide con la foto a la vista.
-   */
-  private static boolean muestraMarca(
-      ProductoRepartido repartido, List<UUID> medios, LecturaDeFotos lectura) {
-    if (lectura == null) {
-      return false;
-    }
-    return repartido.fotos().stream()
-        .map(medios::indexOf)
-        .filter(i -> i >= 0)
-        .map(lectura::deLaFoto)
-        .flatMap(Optional::stream)
-        .anyMatch(l -> !l.marcas().isEmpty());
   }
 
   /**
