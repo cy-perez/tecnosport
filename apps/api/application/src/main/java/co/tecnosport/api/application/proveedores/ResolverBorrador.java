@@ -72,6 +72,14 @@ import java.util.UUID;
  * demás diseños: su huella lleva además la de su foto ({@link HuellaProveedor#deDisenoDeAnuncio}),
  * o los trece diseños serían el mismo producto al aprobar el segundo.
  *
+ * <h2>Lo que no se le compra al proveedor (12 de octubre de 2026)</h2>
+ *
+ * <p>Si un producto del anuncio es de un tipo que el proveedor tiene excluido ({@link
+ * Proveedor#tiposExcluidos()}), se descartan todos, con ese motivo y antes de cualquier otra cosa:
+ * a Violeta no se le compran pantalones, y el anuncio de una blusa con su jean no deja ni la blusa.
+ * Tampoco renueva: si la blusa ya estuviera en el catálogo, ese anuncio no le refresca la
+ * disponibilidad.
+ *
  * <p>Una renovación no crea un borrador para revisar: actualiza la última vista, reactiva el
  * producto si estaba oculto y deja una constancia {@code RENOVACION_APLICADA}. Un agotado sobre un
  * producto existente lo agota de inmediato. Un agotado sobre algo que no está en el catálogo no es
@@ -188,6 +196,12 @@ public final class ResolverBorrador {
         Optional.ofNullable(mensajes.get(publicacion.mensajePrincipalId()))
             .flatMap(MensajeProveedor::textoLegible)
             .orElse(null);
+    Optional<CierreDePublicacion> excluido =
+        evaluadas.stream()
+            .map(e -> e.producto().tipo())
+            .filter(proveedor::excluye)
+            .findFirst()
+            .map(tipo -> new CierreDePublicacion(MotivoDePublicacion.TIPO_EXCLUIDO, tipo.name()));
     List<Resolucion> resoluciones = new ArrayList<>(evaluadas.size());
     boolean vieneEnElDeCaballero =
         !chat.deCaballero()
@@ -195,17 +209,19 @@ public final class ResolverBorrador {
                 .anyMatch(t -> TextoDeAnuncio.mismoAnuncio(t, textoDelAnuncio));
     for (ExtraccionEvaluada evaluada : evaluadas) {
       resoluciones.add(
-          vieneEnElDeCaballero
-              ? Resolucion.descartada(
-                  CierreDePublicacion.de(MotivoDePublicacion.VIENE_EN_CHAT_DE_CABALLERO))
-              : resolverUno(
-                  publicacion,
-                  mensajes,
-                  proveedor,
-                  evaluada,
-                  textoDelAnuncio,
-                  fotosDe(publicacion, evaluada, evaluadas.size(), pHashes),
-                  huellasVisuales));
+          excluido.isPresent()
+              ? Resolucion.descartada(excluido.get())
+              : vieneEnElDeCaballero
+                  ? Resolucion.descartada(
+                      CierreDePublicacion.de(MotivoDePublicacion.VIENE_EN_CHAT_DE_CABALLERO))
+                  : resolverUno(
+                      publicacion,
+                      mensajes,
+                      proveedor,
+                      evaluada,
+                      textoDelAnuncio,
+                      fotosDe(publicacion, evaluada, evaluadas.size(), pHashes),
+                      huellasVisuales));
     }
     if (chat.deCaballero()) {
       rechazarLosDelChatGeneral(proveedor, textoDelAnuncio);

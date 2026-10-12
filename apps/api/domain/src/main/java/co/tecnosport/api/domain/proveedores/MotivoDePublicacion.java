@@ -22,6 +22,11 @@ public enum MotivoDePublicacion {
   ANUNCIO_REPETIDO,
   /** El anuncio está en el chat de caballero del proveedor, y se procesa desde ese archivo. */
   VIENE_EN_CHAT_DE_CABALLERO,
+  /**
+   * El anuncio trae un tipo de prenda que no se le compra al proveedor, solo o con otras: se
+   * descarta entero. El dato es el nombre del tipo ({@link TipoProductoProveedor}).
+   */
+  TIPO_EXCLUIDO,
   /** El extractor no pudo: la API rechazó la petición, se negó, o respondió algo ilegible. */
   EXTRACCION_FALLIDA,
   /** Algo falló al decidir qué hacer con lo extraído; el dato es el tipo de la excepción. */
