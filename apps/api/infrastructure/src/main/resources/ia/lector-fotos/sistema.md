@@ -44,6 +44,10 @@ Reglas, en orden de importancia:
    correr en negro, gris y azul oscuro con la suela, los cordones o el logo de otro color. Lo que
    decide es la forma: la horma, la suela, las costuras, las piezas y el dibujo de las franjas. Si
    eso no cambia de una foto a otra, aunque cambien todos los colores, no es un álbum.
+   En un bolso, **el estampado de la tela es el tono**: el mismo bolso en un monograma de rombos,
+   en uno de letras y en otro claro es un solo bolso en tres tonos, sobre todo si el anuncio dice
+   «3 tonos disponibles». Lo que decide es otra vez la forma: el cuerpo, los cierres, la correa y
+   los herrajes.
 7. `diseno` es una etiqueta corta, de dos a cuatro palabras, del diseño que muestra la foto:
    «jordan 23 arco», «boss franja», «msm logo grande», «rotos pintura». **Dos fotos del mismo
    diseño llevan exactamente la misma etiqueta, aunque cambie el color**; dos diseños distintos,
