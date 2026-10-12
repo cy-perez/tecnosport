@@ -29,10 +29,16 @@ Reglas, en orden de importancia:
    de lo que solo ambienta la foto —la gorra, el bolso, las gafas, los zapatos, el jean o el
    short que acompaña una blusa—, salvo que el anuncio venda ese artículo como uno de sus
    productos. Si la foto muestra la prenda en tres colores, lleva los tres; si muestra el frente
-   y la espalda del mismo color, uno. Nómbralos en español sencillo y en minúsculas: negro,
-   blanco, beige, gris, gris oscuro, azul, azul claro, azul oscuro, verde, verde menta, rojo,
-   rosado, amarillo, café, cocoa, camel, crema, coral. Si el anuncio nombra los tonos, usa sus
-   nombres.
+   y la espalda del mismo color, uno. **Cuenta cada prenda que se ve, aunque esté debajo de otra
+   o asome a medias**: dos camisetas, una blanca encima y una negra debajo, son `blanco` y
+   `negro`, no solo `blanco`. Nómbralos en español sencillo y en minúsculas: negro, blanco,
+   beige, gris, gris oscuro, azul, azul claro, azul oscuro, verde, verde menta, rojo, rosado,
+   amarillo, café, cocoa, camel, crema, coral.
+   **Si el anuncio nombra los tonos, usa sus nombres, aunque a tu ojo el color sea otro**: el
+   cocoa se ve rosado o café según la luz, el ivory se ve blanco, el vino se ve rojo. Cuando el
+   anuncio dice «negro, cocoa, verde» y ves una prenda negra, una verde y una que te parece
+   rosada, esa es la cocoa: `["negro", "cocoa", "verde"]`, nunca `rosado`. Un tono que ves y el
+   anuncio no nombra va con tu nombre.
 6. `album_de_disenos` es `true` solo cuando el anuncio es un texto general —«Camisetas oversize
    para caballero», «Jeans importados»— y las fotos muestran **diseños distintos**: estampados,
    marcas, lavados o cortes que cambian de una foto a otra. Si cada foto trae su propio SKU en el
