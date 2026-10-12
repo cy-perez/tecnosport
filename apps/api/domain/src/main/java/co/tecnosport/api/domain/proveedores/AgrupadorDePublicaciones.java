@@ -3,6 +3,7 @@ package co.tecnosport.api.domain.proveedores;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -35,6 +36,17 @@ import java.util.Objects;
  * ({@code TEXTO_PRIMERO}) quiere el de antes: con el empate hacia adelante, en la de La Riverah (5
  * de octubre de 2026) la foto del jean de cuero cayó en el jean blanco del mismo minuto. Fuera del
  * empate el orden no cuenta.
+ *
+ * <h2>El álbum entre dos precios va entero</h2>
+ *
+ * <p>Foto por foto, la cercanía parte un álbum en dos. Imperio Wicho, 10 de octubre de 2026: la
+ * foto del New Balance a las 15:43, su texto a las 15:44, tres fotos del Runking a las 15:44 y
+ * 15:45 y el texto del Runking a las 15:45. Las dos primeras del Runking quedaban a cero minutos
+ * del New Balance y caían en él, y el Runking salía con una sola foto. Cuando entre dos precios
+ * solo hay fotos y uno de los dos ya tiene su álbum del otro lado —el New Balance ya tenía la suya
+ * antes del texto, y el proveedor manda las fotos primero—, las del medio son todas del otro
+ * precio, mientras quepan en su ventana. Un precio sin álbum propio sigue repartiendo por cercanía:
+ * esa foto puede ser la que se le quedó atrás.
  *
  * <h2>El álbum que llega lejos de su precio</h2>
  *
@@ -93,6 +105,8 @@ public final class AgrupadorDePublicaciones {
     }
 
     boolean[] suelto = new boolean[enOrden.size()];
+    int[] elegidaDe = new int[enOrden.size()];
+    Arrays.fill(elegidaDe, -1);
     int sueltos = 0;
     int anterior = -1; // posición en `anclas` del último precio ya visto
     for (int i = 0; i < enOrden.size(); i++) {
@@ -134,9 +148,46 @@ public final class AgrupadorDePublicaciones {
         sueltos++;
         continue;
       }
-      publicaciones.get(elegida).anexar(mensaje);
+      elegidaDe[i] = elegida;
       if (elegida == anterior) {
         ultimoAnexado.set(anterior, cuando);
+      }
+    }
+
+    // El álbum entre dos precios va entero cuando el precio del otro lado ya tiene el suyo.
+    for (int k = 0; k + 1 < anclas.size(); k++) {
+      int desde = anclas.get(k);
+      int hasta = anclas.get(k + 1);
+      if (!esAlbumEntre(enOrden, elegidaDe, desde, hasta)) {
+        continue;
+      }
+      int destino;
+      if (orden == OrdenDePublicacion.FOTOS_PRIMERO
+          && tieneFotosDelOtroLado(enOrden, elegidaDe, k, desde, -1)) {
+        destino = k + 1;
+      } else if (orden == OrdenDePublicacion.TEXTO_PRIMERO
+          && tieneFotosDelOtroLado(enOrden, elegidaDe, k + 1, hasta, 1)) {
+        destino = k;
+      } else {
+        continue;
+      }
+      Instant precioDestino = enOrden.get(anclas.get(destino)).enviadoEn();
+      boolean cabe = true;
+      for (int i = desde + 1; i < hasta; i++) {
+        cabe &=
+            Duration.between(enOrden.get(i).enviadoEn(), precioDestino).abs().compareTo(ventana)
+                <= 0;
+      }
+      if (!cabe) {
+        continue;
+      }
+      for (int i = desde + 1; i < hasta; i++) {
+        elegidaDe[i] = destino;
+      }
+    }
+    for (int i = 0; i < enOrden.size(); i++) {
+      if (elegidaDe[i] >= 0) {
+        publicaciones.get(elegidaDe[i]).anexar(enOrden.get(i));
       }
     }
 
@@ -160,6 +211,39 @@ public final class AgrupadorDePublicaciones {
       }
     }
     return new Resultado(publicaciones, sueltos);
+  }
+
+  /**
+   * ¿Entre los dos precios solo hay fotos, y ya repartidas? Un texto sin precio, un audio o una
+   * foto suelta en medio dicen que ahí pasa otra cosa, y entonces cada foto sigue en el más
+   * cercano.
+   */
+  private static boolean esAlbumEntre(
+      List<MensajeProveedor> enOrden, int[] elegidaDe, int desde, int hasta) {
+    if (hasta - desde < 2) {
+      return false;
+    }
+    for (int i = desde + 1; i < hasta; i++) {
+      if (enOrden.get(i).tipo() != TipoMensaje.IMAGEN || elegidaDe[i] < 0) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  /**
+   * ¿El precio ya tiene fotos al otro lado del álbum en disputa? Antes de él ({@code direccion} -1)
+   * para quien manda las fotos primero, después ({@code 1}) para quien manda el texto primero. El
+   * propio precio no cuenta aunque sea una foto con pie.
+   */
+  private static boolean tieneFotosDelOtroLado(
+      List<MensajeProveedor> enOrden, int[] elegidaDe, int publicacion, int ancla, int direccion) {
+    for (int i = ancla + direccion; i >= 0 && i < enOrden.size(); i += direccion) {
+      if (elegidaDe[i] == publicacion && enOrden.get(i).tipo() == TipoMensaje.IMAGEN) {
+        return true;
+      }
+    }
+    return false;
   }
 
   /**

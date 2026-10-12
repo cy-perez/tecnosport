@@ -135,7 +135,7 @@ class RepartoDeFotosTest {
     List<ProductoRepartido> repartidos =
         RepartoDeFotos.repartir(List.of(camisetas), List.of(F1, F2, F3), lectura);
 
-    assertEquals(3, repartidos.size());
+    assertEquals(2, repartidos.size());
     ProductoRepartido primero = repartidos.get(0);
     assertEquals(List.of(F1), primero.fotos());
     assertEquals(Set.of(F2, F3), primero.reparto().ajenas());
@@ -144,15 +144,12 @@ class RepartoDeFotosTest {
     assertEquals(Optional.of(F1), primero.exclusivaOpcional());
     assertEquals("{\"album\":true}", primero.reparto().lecturaCruda());
 
-    // El lector dice que la tercera es el mismo diseño que la segunda en otro color, pero la
-    // segunda trae su SKU y la tercera no: cada SKU es un producto, y la que no trae ninguno se
-    // agrupa por su diseño, sin respaldo impreso.
-    assertEquals(List.of(F2), repartidos.get(1).fotos());
+    // El lector dice que la tercera es el mismo diseño que la segunda en otro color, y la tercera
+    // no trae SKU: es la camiseta del segundo SKU fotografiada sin el pie.
+    assertEquals(List.of(F2, F3), repartidos.get(1).fotos());
     assertEquals(Optional.of("RV102336"), repartidos.get(1).producto().codigoReferenciaOpcional());
     assertEquals(Respaldo.TEXTO_IMPRESO, repartidos.get(1).respaldo());
-    assertEquals(List.of(F3), repartidos.get(2).fotos());
-    assertEquals(Optional.empty(), repartidos.get(2).producto().codigoReferenciaOpcional());
-    assertEquals(Respaldo.DISENO_SIN_PIE, repartidos.get(2).respaldo());
+    assertEquals(Optional.of(F2), repartidos.get(1).exclusivaOpcional());
   }
 
   /**
@@ -215,11 +212,12 @@ class RepartoDeFotosTest {
     List<ProductoRepartido> repartidos =
         RepartoDeFotos.repartir(List.of(jeans), List.of(F1, F2, F3, F4), lectura);
 
+    // La primera no trae SKU y su diseño no es el de ningún SKU: es de los dos.
     assertEquals(
-        List.of(List.of(F1), List.of(F2, F3), List.of(F4)),
+        List.of(List.of(F1, F2, F3), List.of(F1, F4)),
         repartidos.stream().map(ProductoRepartido::fotos).toList());
     assertEquals(
-        List.of(Optional.empty(), Optional.of("RV9"), Optional.of("RV7")),
+        List.of(Optional.of("RV9"), Optional.of("RV7")),
         repartidos.stream().map(r -> r.producto().codigoReferenciaOpcional()).toList());
   }
 
@@ -284,7 +282,7 @@ class RepartoDeFotosTest {
 
   /** Sin SKU no hay con qué saber que son dos: el mismo color puede ser frente y espalda. */
   @Test
-  void sinSkuElMismoColorNoSepara() {
+  void sinSkuNiElDisenoNiElColorSeparan() {
     ProductoExtraido camisetas = producto("Camiseta", TipoProductoProveedor.CAMISETA, null);
     LecturaDeFotos lectura =
         new LecturaDeFotos(
@@ -298,7 +296,8 @@ class RepartoDeFotosTest {
     List<ProductoRepartido> repartidos =
         RepartoDeFotos.repartir(List.of(camisetas), List.of(F1, F2, F3), lectura);
 
-    assertEquals(List.of(F1, F2), repartidos.get(0).fotos());
+    assertEquals(1, repartidos.size());
+    assertEquals(List.of(F1, F2, F3), repartidos.getFirst().fotos());
   }
 
   @Test
@@ -342,22 +341,37 @@ class RepartoDeFotosTest {
     assertEquals(null, LecturaDeFoto.conPie(0, List.of(), List.of(), List.of(), null).sku());
   }
 
+  /**
+   * Imperio Wicho, 11 de octubre de 2026: el mismo tenis en negro, negro con la franja blanca y
+   * blanco con la franja azul y roja. El lector dijo álbum y les puso etiquetas distintas aunque
+   * sus instrucciones describen este mismo tenis como un solo producto; salieron tres borradores.
+   * Sin SKU, uno, con el tono de la foto que muestra uno solo.
+   */
   @Test
-  void unDisenoSinPieSeRepartePeroSinRespaldo() {
-    ProductoExtraido camisetas = producto("Camiseta", TipoProductoProveedor.CAMISETA, null);
+  void sinSkuElAlbumQueVeElLectorEsUnSoloProducto() {
+    ProductoExtraido tenis = producto("Tenis para caballero", TipoProductoProveedor.TENIS, null);
     LecturaDeFotos lectura =
         new LecturaDeFotos(
             true,
             List.of(
-                delAlbum(0, null, List.of(), "azul", "boss"),
-                delAlbum(1, null, List.of(), "negro", "msm")),
+                delAlbum(0, null, List.of(), "negro", "tenis liso"),
+                new LecturaDeFoto(
+                    1, List.of(), null, List.of(), List.of("negro", "blanco"), "tenis franja"),
+                new LecturaDeFoto(
+                    2,
+                    List.of(),
+                    null,
+                    List.of(),
+                    List.of("blanco", "azul", "rojo"),
+                    "tenis franja cruzada")),
             "{}");
 
     List<ProductoRepartido> repartidos =
-        RepartoDeFotos.repartir(List.of(camisetas), List.of(F1, F2), lectura);
+        RepartoDeFotos.repartir(List.of(tenis), List.of(F1, F2, F3), lectura);
 
-    assertEquals(2, repartidos.size());
-    repartidos.forEach(r -> assertEquals(Respaldo.DISENO_SIN_PIE, r.respaldo()));
+    assertEquals(1, repartidos.size());
+    assertEquals(List.of(F1, F2, F3), repartidos.getFirst().fotos());
+    assertEquals(Map.of(F1, "negro"), repartidos.getFirst().reparto().tonosSugeridos());
   }
 
   @Test
@@ -444,9 +458,9 @@ class RepartoDeFotosTest {
   }
 
   @Test
-  void sinTonosEnElTextoLosMismosDisenosSiguenSiendoUnAlbum() {
+  void sinTonosEnElTextoTampocoSeParte() {
     assertEquals(
-        2,
+        1,
         RepartoDeFotos.repartir(
                 List.of(conTonos("Manos libres de dama", null)),
                 List.of(F1, F2, F3, F4),
@@ -455,7 +469,7 @@ class RepartoDeFotosTest {
   }
 
   @Test
-  void masDisenosQueTonosOUnSkuPorFotoSiguenSiendoUnAlbum() {
+  void soloUnSkuPorFotoHaceUnAlbumAunqueHayaMasDisenosQueTonos() {
     LecturaDeFotos tresDisenos =
         new LecturaDeFotos(
             true,
@@ -473,7 +487,7 @@ class RepartoDeFotosTest {
             "{}");
 
     assertEquals(
-        3,
+        1,
         RepartoDeFotos.repartir(List.of(conTonos("Bolso", 2)), List.of(F1, F2, F3), tresDisenos)
             .size());
     assertEquals(

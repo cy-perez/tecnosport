@@ -10,7 +10,6 @@ import co.tecnosport.api.domain.proveedores.ProductoExtraido;
 import co.tecnosport.api.domain.proveedores.PublicacionProveedor;
 import co.tecnosport.api.domain.proveedores.RepartoDeFotos;
 import co.tecnosport.api.domain.proveedores.RepartoDeFotos.ProductoRepartido;
-import co.tecnosport.api.domain.proveedores.RepartoDeFotos.Respaldo;
 import co.tecnosport.api.domain.proveedores.TipoProductoProveedor;
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -168,9 +167,7 @@ public final class ExtraerProductoDePublicacion {
       if (producto.tipo() == TipoProductoProveedor.OTRO) {
         alertas.add(AlertaBorrador.TIPO_DESCONOCIDO);
       }
-      if (recortado
-          || producto.confianza().compareTo(umbralDeConfianza) < 0
-          || repartido.respaldo() == Respaldo.DISENO_SIN_PIE) {
+      if (recortado || producto.confianza().compareTo(umbralDeConfianza) < 0) {
         alertas.add(AlertaBorrador.CONFIANZA_BAJA);
       }
       if (producto.esReplica()) {

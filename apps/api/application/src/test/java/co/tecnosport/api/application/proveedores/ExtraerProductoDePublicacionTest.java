@@ -549,7 +549,7 @@ class ExtraerProductoDePublicacionTest {
   }
 
   @Test
-  void elAlbumDeLaRiverahDaUnBorradorPorDisenoConElPrecioDelTexto() {
+  void elAlbumDeLaRiverahDaUnBorradorPorSkuConElPrecioDelTexto() {
     PublicacionProveedor publicacion =
         PublicacionProveedor.abrir(
             texto("Camisetas Oversize para Caballero\nCamiseta 🎽55.000~~\nPromo 4x200.000"));
@@ -583,16 +583,16 @@ class ExtraerProductoDePublicacionTest {
         evaluarConFotos(
             publicacion, List.of(camiseta), lector, almacenCon("p/1.jpg", "p/2.jpg", "p/3.jpg"));
 
-    assertEquals(3, evaluadas.size());
+    assertEquals(2, evaluadas.size());
     evaluadas.forEach(e -> assertTrue(e.disenoDeAlbum()));
     evaluadas.forEach(
         e -> assertEquals(Optional.of(Dinero.deCop(55000)), e.precioProveedorOpcional()));
     assertEquals(Optional.of("RV102347"), evaluadas.get(0).producto().codigoReferenciaOpcional());
-    assertEquals(List.of(primera.id()), evaluadas.get(0).fotos());
-    assertFalse(evaluadas.get(0).alertas().contains(AlertaBorrador.CONFIANZA_BAJA));
-    // El tercero no tiene pie impreso: lo separó el lector sin respaldo.
-    assertTrue(evaluadas.get(2).alertas().contains(AlertaBorrador.CONFIANZA_BAJA));
-    assertEquals(Set.of(primera.id(), segunda.id()), evaluadas.get(2).reparto().ajenas());
+    assertEquals(List.of(primera.id(), tercera.id()), evaluadas.get(0).fotos());
+    evaluadas.forEach(e -> assertFalse(e.alertas().contains(AlertaBorrador.CONFIANZA_BAJA)));
+    // La tercera no trae pie ni el diseño de ningún SKU: no es un producto más, es de los dos.
+    assertEquals(List.of(segunda.id(), tercera.id()), evaluadas.get(1).fotos());
+    assertEquals(Set.of(primera.id()), evaluadas.get(1).reparto().ajenas());
   }
 
   @Test
