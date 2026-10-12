@@ -988,6 +988,8 @@
       "orden": "Orden en que publica",
       "ordenAyuda": "Mira cómo manda cada producto en su chat. Solo decide de cuál producto es una foto que llega en el mismo minuto que dos precios, porque el chat exportado no trae los segundos.",
       "dosChatsEnUnZip": "Sube sus dos chats en un solo zip: «{nombre}.zip» con «{nombre}.txt» (el general) y «{nombre}Men.txt» (el de caballero), y las fotos de los dos",
+      "tiposExcluidos": "No se le compran",
+      "tiposExcluidosAyuda": "El anuncio que traiga una de estas prendas se descarta entero, aunque venga con otras: no deja borrador ni para las demás.",
       "publicacionAutomatica": "Publicar sin revisar (todavía no aplica: todo borrador pasa por el panel)",
       "activo": "Activo. Desmarcado, no se le pueden subir exportaciones.",
       "faltanCampos": "Faltan datos: nombre, nombre en el chat, teléfono, línea, orden en que publica y un margen de por lo menos 1.",

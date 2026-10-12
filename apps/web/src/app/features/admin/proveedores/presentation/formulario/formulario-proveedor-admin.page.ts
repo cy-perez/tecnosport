@@ -39,6 +39,10 @@ import {
   OrdenDePublicacion,
   Proveedor,
 } from '../../domain/proveedor.model';
+import {
+  TIPOS_PRODUCTO_PROVEEDOR,
+  TipoProductoProveedor,
+} from '../../../borradores/domain/borrador.model';
 
 /**
  * El alta y la edición de un proveedor, en una sola pantalla: los campos son los mismos y lo
@@ -129,7 +133,11 @@ export class FormularioProveedorAdminPage {
     publicacionAutomatica: new FormControl(false, { nonNullable: true }),
     activo: new FormControl(true, { nonNullable: true }),
     dosChatsEnUnZip: new FormControl(false, { nonNullable: true }),
+    tiposExcluidos: new FormControl<readonly TipoProductoProveedor[]>([], { nonNullable: true }),
   });
+
+  /** «Otro» no se ofrece: es lo que el extractor no reconoció, y el servidor no deja excluirlo. */
+  protected readonly tiposExcluibles = TIPOS_PRODUCTO_PROVEEDOR.filter((tipo) => tipo !== 'OTRO');
 
   protected readonly opcionesLinea = computed<OpcionSelect[]>(() =>
     LINEAS_PROVEEDOR.map((linea) => ({
@@ -170,7 +178,20 @@ export class FormularioProveedorAdminPage {
       publicacionAutomatica: proveedor.publicacionAutomatica,
       activo: proveedor.activo,
       dosChatsEnUnZip: proveedor.dosChatsEnUnZip,
+      tiposExcluidos: proveedor.tiposExcluidos,
     };
+  }
+
+  protected excluido(tipo: TipoProductoProveedor): boolean {
+    return this.form.controls.tiposExcluidos.value.includes(tipo);
+  }
+
+  /** En el orden de la lista, que es el del servidor: así el formulario no queda «sucio» de más. */
+  protected marcarExcluido(tipo: TipoProductoProveedor, marcado: boolean): void {
+    const actuales = this.form.controls.tiposExcluidos.value;
+    this.form.controls.tiposExcluidos.setValue(
+      this.tiposExcluibles.filter((t) => (t === tipo ? marcado : actuales.includes(t))),
+    );
   }
 
   protected enviar(): void {
@@ -198,6 +219,8 @@ export class FormularioProveedorAdminPage {
       activo: valores.activo,
       // La tecnología llega por listas: no tiene chats que subir, aunque la casilla quedara marcada.
       dosChatsEnUnZip: valores.linea !== 'TECNOLOGIA' && valores.dosChatsEnUnZip,
+      // Igual con los tipos: la tecnología no tiene anuncios que descartar.
+      tiposExcluidos: valores.linea === 'TECNOLOGIA' ? [] : valores.tiposExcluidos,
     };
 
     const manejadores = {

@@ -1,3 +1,5 @@
+import { TipoProductoProveedor } from '../../borradores/domain/borrador.model';
+
 /**
  * La línea del catálogo que surte el proveedor. El backend (`Proveedor.LINEAS_ADMITIDAS`) rechaza
  * cualquier otra, y un proveedor que mande bolsos y ropa se registra dos veces, una por línea,
@@ -48,6 +50,12 @@ export interface Proveedor {
    * estructura antes de dejar subir el archivo. Solo para quien entra por el chat.
    */
   readonly dosChatsEnUnZip: boolean;
+  /**
+   * Los tipos de prenda que no se le compran: el anuncio que trae uno se descarta entero, aunque
+   * venga con otras prendas. A Violeta, pantalones, sudaderas y shorts (12 de octubre de 2026).
+   * Solo para quien entra por el chat.
+   */
+  readonly tiposExcluidos: readonly TipoProductoProveedor[];
 }
 
 /** Lo que se escribe al crear o al editar. El `id` lo pone el servidor. */
