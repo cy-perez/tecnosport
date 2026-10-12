@@ -61,7 +61,14 @@ fotos, el «set falda + básica», el dúo, la promoción por cantidad.
      y separa distinto los mismos jeans y bermudas cada vez: los diez jeans de las 19:19 salieron
      como 3, como 1 y como 10 productos. El costo de esta regla: un diseño en seis colores con un
      SKU por color son seis productos, y una falda con un SKU por color son dos.
-     - Las fotos sin SKU se agrupan por la etiqueta del lector y llevan `CONFIANZA_BAJA`.
+     - **Sin SKU no se parte** (11 de octubre de 2026). Antes las fotos sin SKU se agrupaban por
+       la etiqueta del lector y llevaban `CONFIANZA_BAJA`. Imperio Wicho mostró que esa etiqueta
+       tampoco es estable: un tenis en tres combinaciones salió en tres borradores aunque las
+       instrucciones del lector describen ese mismo tenis como un solo producto, y un estilo
+       Adidas con franjas florales salió en dos. Lo normal sin SKU es un modelo en varios
+       colores; el catálogo de diseños sin SKU, que es lo raro, se parte en el panel. La
+       etiqueta solo pega una foto sin SKU al único SKU cuyas fotos llevan la misma; si no, es de
+       todos.
      - Dos SKU distintos impresos hacen álbum aunque el lector diga que no lo es.
      - Un producto no hereda el código que el texto le dio al anuncio.
      - Una foto que el lector no leyó —sin archivo, ilegible o que el modelo no devolvió— es de
