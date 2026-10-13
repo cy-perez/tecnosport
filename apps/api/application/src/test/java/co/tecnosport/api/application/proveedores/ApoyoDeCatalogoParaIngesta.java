@@ -211,6 +211,53 @@ final class ApoyoDeCatalogoParaIngesta {
           .filter(p -> p.vistoPorUltimaVez().map(v -> v.isBefore(limite)).orElse(false))
           .toList();
     }
+
+    /** El SKU del proveedor de cada variante, como la columna {@code referencia_proveedor}. */
+    final Map<UUID, String> referencias = new LinkedHashMap<>();
+
+    /** Las variantes agotadas por el proveedor, como la columna {@code agotada_por_proveedor}. */
+    final Set<UUID> retiradas = new java.util.HashSet<>();
+
+    @Override
+    public List<PrendaDeProveedor> buscarPrendasPorReferencia(UUID proveedorId, String referencia) {
+      List<PrendaDeProveedor> prendas = new ArrayList<>();
+      for (Producto producto : productos.porId.values()) {
+        if (!producto.proveedorId().map(proveedorId::equals).orElse(false)) {
+          continue;
+        }
+        List<UUID> suyas =
+            producto.variantes().stream()
+                .map(Variante::id)
+                .filter(id -> referencia.equals(referencias.get(id)))
+                .toList();
+        if (suyas.isEmpty()) {
+          continue;
+        }
+        int otras =
+            (int)
+                producto.variantes().stream()
+                    .map(Variante::id)
+                    .filter(id -> !suyas.contains(id) && !retiradas.contains(id))
+                    .count();
+        prendas.add(
+            new PrendaDeProveedor(producto.id(), suyas, retiradas.containsAll(suyas), otras));
+      }
+      return prendas;
+    }
+
+    @Override
+    public void asignarReferencias(Map<UUID, String> referenciaPorVariante) {
+      referencias.putAll(referenciaPorVariante);
+    }
+
+    @Override
+    public void cambiarDisponibilidadDeVariantes(List<UUID> varianteIds, boolean aLaVenta) {
+      if (aLaVenta) {
+        varianteIds.forEach(retiradas::remove);
+      } else {
+        retiradas.addAll(varianteIds);
+      }
+    }
   }
 
   static final class RepositorioBorradoresEnMemoria implements RepositorioBorradores {

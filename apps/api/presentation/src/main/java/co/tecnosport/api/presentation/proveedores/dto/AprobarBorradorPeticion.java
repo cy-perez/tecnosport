@@ -57,7 +57,12 @@ public record AprobarBorradorPeticion(
                 .map(
                     p ->
                         new AprobarBorradorComando.PrendaAprobada(
-                            p.numero(), p.tono(), p.colorHex(), p.tallas(), p.seVeEn()))
+                            p.numero(),
+                            p.tono(),
+                            p.colorHex(),
+                            p.tallas(),
+                            p.seVeEn(),
+                            p.referencia()))
                 .toList(),
         Boolean.TRUE.equals(principalEnLaFicha));
   }
@@ -86,13 +91,16 @@ public record AprobarBorradorPeticion(
    * @param tallas en cuáles tallas del producto viene; nula = en todas
    * @param seVeEn la foto que la retrata junto con otros tonos, si no tiene foto propia; nula = la
    *     de todos
+   * @param referencia el SKU con que el proveedor vende la prenda, el del pie de su foto en un
+   *     álbum: queda en sus variantes para poder agotarla sola. Nula si no tiene
    */
   public record PrendaAprobadaPeticion(
       @Schema(requiredMode = Schema.RequiredMode.REQUIRED) int numero,
       @Schema(requiredMode = Schema.RequiredMode.REQUIRED) String tono,
       String colorHex,
       List<String> tallas,
-      UUID seVeEn) {
+      UUID seVeEn,
+      String referencia) {
     public PrendaAprobadaPeticion {
       Objects.requireNonNull(tono, "Una prenda tiene color.");
     }

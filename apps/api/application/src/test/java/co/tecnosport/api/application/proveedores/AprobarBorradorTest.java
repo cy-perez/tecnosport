@@ -55,6 +55,7 @@ import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -72,6 +73,8 @@ class AprobarBorradorTest {
       new RepositorioPublicacionesEnMemoria();
   private final RepositorioBorradoresEnMemoria borradores = new RepositorioBorradoresEnMemoria();
   private final RepositorioProductosEnMemoria productos = new RepositorioProductosEnMemoria();
+  private final RepositorioProductosDeProveedorEnMemoria productosDeProveedor =
+      new RepositorioProductosDeProveedorEnMemoria(productos);
   private final RepositorioAtributosFijo atributos = new RepositorioAtributosFijo();
   private final RepositorioInventarioEnMemoria inventario = new RepositorioInventarioEnMemoria();
   private final AlmacenEnMemoria almacenPrivado = new AlmacenEnMemoria();
@@ -152,7 +155,7 @@ class AprobarBorradorTest {
         mensajes,
         proveedores,
         productos,
-        new RepositorioProductosDeProveedorEnMemoria(productos),
+        productosDeProveedor,
         new RepositorioMarcasFijo(),
         new RepositorioCategoriasFijo(),
         atributos,
@@ -1366,5 +1369,48 @@ class AprobarBorradorTest {
             .orElseThrow();
     assertEquals(
         Optional.of(esperado), borradores.buscarPorId(borrador.id()).orElseThrow().pHash());
+  }
+
+  /**
+   * Un álbum de La Riverah (13 de octubre de 2026): cada foto es un diseño con su SKU, y el SKU
+   * queda en las variantes de su prenda —una por talla— para que el proveedor la pueda agotar sola.
+   */
+  @Test
+  void elSkuDeCadaPrendaDelAlbumQuedaEnSusVariantes() {
+    Producto producto =
+        caso()
+            .ejecutar(
+                conPrendas(
+                    Tallas.lista(List.of("S", "M")),
+                    List.of(
+                        new FotoAprobada(foto1.id(), "Negro", "#000000", 1),
+                        new FotoAprobada(foto2.id(), "Blanco", "#FFFFFF", 2)),
+                    List.of(
+                        new PrendaAprobada(
+                            1, "Negro", "#000000", List.of("S", "M"), null, "rv102347"),
+                        new PrendaAprobada(
+                            2, "Blanco", "#FFFFFF", List.of("M"), null, "RV102336"))));
+
+    assertEquals(List.of("Negro/S", "Negro/M", "Blanco/M"), combinacionesDe(producto));
+    List<UUID> variantes = producto.variantes().stream().map(v -> v.id()).toList();
+    assertEquals(
+        Map.of(
+            variantes.get(0), "RV102347",
+            variantes.get(1), "RV102347",
+            variantes.get(2), "RV102336"),
+        productosDeProveedor.referencias);
+  }
+
+  /** Sin SKU en las prendas no se guarda ninguno: la aprobación de siempre. */
+  @Test
+  void sinSkuEnLasPrendasNoSeGuardaNinguno() {
+    caso()
+        .ejecutar(
+            conPrendas(
+                null,
+                List.of(new FotoAprobada(foto1.id(), "Azul", "#1E4FA0", 1)),
+                List.of(new PrendaAprobada(1, "Azul", "#1E4FA0", null))));
+
+    assertTrue(productosDeProveedor.referencias.isEmpty());
   }
 }

@@ -8,12 +8,17 @@ import java.util.UUID;
 /**
  * El borrador con lo que hace falta para revisarlo: los textos originales del proveedor y sus fotos
  * con URL firmada de lectura, que caduca en minutos porque el bucket es privado.
+ *
+ * @param prendasDelAlbum si la publicación es un álbum, una prenda por SKU impreso con sus fotos y
+ *     las tallas de su pie: lo que el panel propone al aprobar (13 de octubre de 2026). Vacía si no
  */
 public record BorradorDetalleRespuesta(
     BorradorRespuesta borrador,
     List<String> textos,
     List<FotoRespuesta> fotos,
-    List<HermanoRespuesta> hermanos) {
+    List<HermanoRespuesta> hermanos,
+    @Schema(requiredMode = Schema.RequiredMode.REQUIRED)
+        List<PrendaDelAlbumRespuesta> prendasDelAlbum) {
 
   public static BorradorDetalleRespuesta de(VerBorrador.DetalleDeBorrador detalle) {
     return new BorradorDetalleRespuesta(
@@ -22,8 +27,23 @@ public record BorradorDetalleRespuesta(
         detalle.fotos().stream().map(FotoRespuesta::de).toList(),
         detalle.hermanos().stream()
             .map(h -> new HermanoRespuesta(h.id(), h.titulo(), h.mismoDiseno()))
+            .toList(),
+        detalle.prendasDelAlbum().stream()
+            .map(p -> new PrendaDelAlbumRespuesta(p.referencia(), p.tallas(), p.fotos()))
             .toList());
   }
+
+  /**
+   * Una prenda de un álbum: un diseño con su SKU.
+   *
+   * @param referencia el SKU del pie de sus fotos, que la aprobación deja en sus variantes
+   * @param tallas las de su pie; vacía si no las dice
+   * @param fotos las suyas, por {@code mensajeId} y en orden
+   */
+  public record PrendaDelAlbumRespuesta(
+      @Schema(requiredMode = Schema.RequiredMode.REQUIRED) String referencia,
+      @Schema(requiredMode = Schema.RequiredMode.REQUIRED) List<String> tallas,
+      @Schema(requiredMode = Schema.RequiredMode.REQUIRED) List<UUID> fotos) {}
 
   /**
    * Otro borrador en revisión de la misma publicación: a donde el panel deja mover una foto, y con

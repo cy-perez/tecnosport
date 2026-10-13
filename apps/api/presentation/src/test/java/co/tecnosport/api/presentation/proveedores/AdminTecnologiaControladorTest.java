@@ -657,6 +657,17 @@ class AdminTecnologiaControladorTest {
     public List<Producto> disponiblesVistosAntesDe(Instant limite) {
       return List.of();
     }
+
+    @Override
+    public List<PrendaDeProveedor> buscarPrendasPorReferencia(UUID proveedorId, String referencia) {
+      return List.of();
+    }
+
+    @Override
+    public void asignarReferencias(java.util.Map<UUID, String> referenciaPorVariante) {}
+
+    @Override
+    public void cambiarDisponibilidadDeVariantes(List<UUID> varianteIds, boolean aLaVenta) {}
   }
 
   /** El bucket privado del proveedor, en memoria. */

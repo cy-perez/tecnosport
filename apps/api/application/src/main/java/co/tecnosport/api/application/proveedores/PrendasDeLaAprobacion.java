@@ -51,8 +51,13 @@ final class PrendasDeLaAprobacion {
    * @param valor el valor del atributo Color, ya numerado si se repite
    * @param tallas en cuáles tallas de las aprobadas viene, en su orden; nula si quien aprueba no lo
    *     dijo, y entonces deciden las tallas por tono que el proveedor escribió
+   * @param referencia el SKU del proveedor que llevan sus variantes; nulo si no tiene
    */
-  record Prenda(String valor, String colorHex, List<String> tallas) {}
+  record Prenda(String valor, String colorHex, List<String> tallas, String referencia) {
+    Prenda(String valor, String colorHex, List<String> tallas) {
+      this(valor, colorHex, tallas, null);
+    }
+  }
 
   private PrendasDeLaAprobacion() {}
 
@@ -202,7 +207,8 @@ final class PrendasDeLaAprobacion {
                 new Prenda(
                     valorPorPrenda.get(clave),
                     prenda.colorHex() != null ? prenda.colorHex() : hexDeLasFotos.get(clave),
-                    tallasDe(prenda, tallasAprobadas, conListaDeTallas))));
+                    tallasDe(prenda, tallasAprobadas, conListaDeTallas),
+                    prenda.referencia())));
     List<List<String>> muestraPorFoto = new ArrayList<>(fotos.size());
     for (int i = 0; i < fotos.size(); i++) {
       muestraPorFoto.add(new ArrayList<>());
