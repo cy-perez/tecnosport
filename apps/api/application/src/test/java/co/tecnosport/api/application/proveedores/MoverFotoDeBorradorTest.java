@@ -11,6 +11,7 @@ import co.tecnosport.api.application.proveedores.ApoyoDeIngesta.RepositorioPubli
 import co.tecnosport.api.domain.catalogo.LineaCatalogo;
 import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.compartido.ExcepcionDeDominio;
+import co.tecnosport.api.domain.proveedores.AjusteDeTalla;
 import co.tecnosport.api.domain.proveedores.BorradorProducto;
 import co.tecnosport.api.domain.proveedores.FotoSubida;
 import co.tecnosport.api.domain.proveedores.FotosDelProducto;
@@ -247,6 +248,20 @@ class MoverFotoDeBorradorTest {
         Set.of(consolidada.id()),
         borradores.buscarPorId(soloBodi.id()).orElseThrow().fotosDescartadas(),
         "y el que se queda se guarda");
+  }
+
+  /** El de dama y el de caballero de un anuncio unisex nombran distinto sus tallas (ADR-0085). */
+  @Test
+  void noSeUnenDosQueNombranDistintoSusTallas() {
+    BorradorProducto soloBodi = borrador(conjunto, "Bodi", Set.of(consolidada.id(), delJean.id()));
+    BorradorProducto soloJean = borrador(conjunto, "Jean", Set.of(consolidada.id(), delBodi.id()));
+    BorradorProducto.conAjusteDeTalla(soloJean, new AjusteDeTalla(1));
+    borradores.guardar(soloJean);
+
+    assertThrows(
+        AjustesDeTallaDistintosException.class,
+        () -> new UnirBorradores(borradores, publicaciones).ejecutar(soloBodi.id(), soloJean.id()));
+    assertTrue(borradores.buscarPorId(soloJean.id()).isPresent(), "ninguno desaparece");
   }
 
   @Test

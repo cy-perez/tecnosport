@@ -33,6 +33,7 @@ import co.tecnosport.api.application.pedido.ContraentregaNoDisponibleException;
 import co.tecnosport.api.application.pedido.MetodoDePagoNoEsTransferenciaManualException;
 import co.tecnosport.api.application.pedido.PedidoNoEliminableException;
 import co.tecnosport.api.application.pedido.RetiroEnPuntoNoDisponibleException;
+import co.tecnosport.api.application.proveedores.AjustesDeTallaDistintosException;
 import co.tecnosport.api.application.proveedores.ArchivoDeIngestaEnUsoException;
 import co.tecnosport.api.application.proveedores.ArchivoDeIngestaNoEncontradoException;
 import co.tecnosport.api.application.proveedores.AtributoDeCatalogoNoDefinidoException;
@@ -61,6 +62,7 @@ import co.tecnosport.api.application.proveedores.ProveedorConProductosException;
 import co.tecnosport.api.application.proveedores.ProveedorDeListasException;
 import co.tecnosport.api.application.proveedores.ProveedorInactivoException;
 import co.tecnosport.api.application.proveedores.ProveedorNoEncontradoException;
+import co.tecnosport.api.application.proveedores.TallaDelProveedorDesconocidaException;
 import co.tecnosport.api.application.proveedores.TallasDeCadaTonoDesconocidasException;
 import co.tecnosport.api.application.proveedores.TipoDeExportacionNoAdmitidoException;
 import co.tecnosport.api.application.proveedores.tecnologia.ListaDeTecnologiaDesactualizadaException;
@@ -219,6 +221,9 @@ class CodigosDeCableTest {
           Map.entry(BorradorConFotosSubidasException.class, "BORRADOR_CON_FOTOS_SUBIDAS"),
           Map.entry(
               TallasDeCadaTonoDesconocidasException.class, "TALLAS_DE_CADA_TONO_DESCONOCIDAS"),
+          // 13 de octubre de 2026: el panel de borradores traduce este (ADR-0085).
+          Map.entry(TallaDelProveedorDesconocidaException.class, "TALLA_DEL_PROVEEDOR_DESCONOCIDA"),
+          Map.entry(AjustesDeTallaDistintosException.class, "AJUSTES_DE_TALLA_DISTINTOS"),
           Map.entry(MarcaYaExisteException.class, "MARCA_YA_EXISTE"));
 
   @Test

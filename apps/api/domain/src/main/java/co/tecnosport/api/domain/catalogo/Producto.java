@@ -4,7 +4,9 @@ import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.compartido.ExcepcionDeDominio;
 import co.tecnosport.api.domain.compartido.GeneradorIdentificador;
 import co.tecnosport.api.domain.compartido.Slug;
+import co.tecnosport.api.domain.proveedores.AjusteDeTalla;
 import co.tecnosport.api.domain.proveedores.HuellaProveedor;
+import co.tecnosport.api.domain.proveedores.TallaAlProveedor;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -60,6 +62,13 @@ public final class Producto {
    * 2026). Cero en todo lo demás.
    */
   private int pesoAdicionalGramos;
+
+  /**
+   * Cuántas tallas más arriba nombra el proveedor la que se vende (ADR-0085): la copia la
+   * aprobación del borrador. Vive en el producto y no en cada variante para que la talla que se le
+   * pide salga de la talla de hoy, también la de una variante cambiada o agregada después.
+   */
+  private AjusteDeTalla ajusteDeTalla = AjusteDeTalla.NINGUNO;
 
   /** Un producto creado a mano o reconstruido sin datos de proveedor: origen {@code MANUAL}. */
   public Producto(
@@ -897,6 +906,44 @@ public final class Producto {
       throw new ExcepcionDeDominio("El peso adicional de un producto no puede ser negativo.");
     }
     this.pesoAdicionalGramos = gramos;
+  }
+
+  public AjusteDeTalla ajusteDeTalla() {
+    return ajusteDeTalla;
+  }
+
+  /**
+   * @param ajuste cuántas tallas más arriba las nombra el proveedor; solo un producto de proveedor
+   *     tiene a quién pedírselas
+   */
+  public void definirAjusteDeTalla(AjusteDeTalla ajuste) {
+    Objects.requireNonNull(ajuste, "El ajuste de talla no es nulo.");
+    if (!ajuste.ninguno() && !esDeProveedor()) {
+      throw new ExcepcionDeDominio("Solo un producto de proveedor nombra sus tallas corridas.");
+    }
+    this.ajusteDeTalla = ajuste;
+  }
+
+  /**
+   * La talla que hay que pedirle al proveedor por esta variante, contada desde la que tiene hoy.
+   *
+   * @param escala la de su categoría, con la que se cuentan las numéricas
+   * @return vacío si se pide como se vende —sin ajuste, o una variante sin talla—
+   */
+  public Optional<TallaAlProveedor> tallaAlProveedor(UUID varianteId, List<String> escala) {
+    if (ajusteDeTalla.ninguno()) {
+      return Optional.empty();
+    }
+    return variantes.stream()
+        .filter(v -> v.id().equals(varianteId))
+        .findFirst()
+        .flatMap(Variante::talla)
+        .map(
+            talla ->
+                ajusteDeTalla
+                    .tallaDelProveedor(talla.valor(), escala)
+                    .map(TallaAlProveedor::new)
+                    .orElseGet(TallaAlProveedor::desconocida));
   }
 
   @Override

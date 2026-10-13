@@ -740,6 +740,15 @@ huella_proveedor)` es lo que hace que la renovación encuentre su producto.
 - `producto.peso_adicional_gramos` (cero por omisión) es lo que la bolsa del envío le suma al
   promedio de la categoría: los 100 g de la gorra de un set de camiseta o polo.
 
+**La talla del proveedor** (`V115`, `ADR-0085`, 13 de octubre de 2026):
+`borrador_producto.ajuste_de_talla` y `producto.ajuste_de_talla` dicen cuántas tallas más
+arriba nombra el proveedor la que se vende —el polo de horma reducida que se vende en S y el
+proveedor llama M, el tenis que se vende en 38 y el proveedor llama 40, la talla EUR—, entre -4
+y 4 y cero por omisión. La aprobación copia el del borrador al producto. **La talla del
+proveedor no se guarda**: el listado de pedidos del panel la cuenta desde la talla que la
+variante tiene hoy, así que cambiar una talla o agregar un color después de aprobar no la deja
+vieja ni ausente. El comprador no la ve.
+
 **Dos formas de reconocer que un mensaje es un producto que ya existe:**
 
 - **La huella**, que desde el 9 de octubre de 2026 es una de dos (`ADR-0067`):

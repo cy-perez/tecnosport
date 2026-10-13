@@ -7,6 +7,7 @@ import co.tecnosport.api.application.proveedores.HuellaVisual;
 import co.tecnosport.api.application.proveedores.RepositorioBorradores;
 import co.tecnosport.api.domain.catalogo.LineaCatalogo;
 import co.tecnosport.api.domain.compartido.Dinero;
+import co.tecnosport.api.domain.proveedores.AjusteDeTalla;
 import co.tecnosport.api.domain.proveedores.AlertaBorrador;
 import co.tecnosport.api.domain.proveedores.ArmadoDeSet;
 import co.tecnosport.api.domain.proveedores.BorradorProducto;
@@ -222,6 +223,7 @@ public class RepositorioBorradoresJpa implements RepositorioBorradores {
             b.creadoEn(),
             ahora);
     fila.setDiseno(b.diseno().orElse(null));
+    fila.setAjusteDeTalla(b.ajusteDeTalla().tallas());
     fila.setSet(
         b.set().map(set -> set.acompanante().name()).orElse(null),
         b.set().map(set -> set.origenDelCosto().name()).orElse(null));
@@ -275,7 +277,10 @@ public class RepositorioBorradoresJpa implements RepositorioBorradores {
             f.getProductoId(),
             f.getMotivoRechazo(),
             f.getCreadoEn());
-    BorradorProducto conDiseno = BorradorProducto.conDiseno(borrador, f.getDiseno());
+    BorradorProducto conDiseno =
+        BorradorProducto.conAjusteDeTalla(
+            BorradorProducto.conDiseno(borrador, f.getDiseno()),
+            new AjusteDeTalla(f.getAjusteDeTalla()));
     return f.getSetAcompanante() == null || f.getSetOrigenDelCosto() == null
         ? conDiseno
         : BorradorProducto.conSet(

@@ -107,6 +107,10 @@ public class BorradorProductoJpaEntity {
   @Column(name = "set_origen_del_costo")
   private String setOrigenDelCosto;
 
+  /** Cuántas tallas más arriba nombra el proveedor la que se vende (V115); 0 si igual. */
+  @Column(name = "ajuste_de_talla", nullable = false)
+  private int ajusteDeTalla;
+
   @Column(nullable = false)
   private String estado;
 
@@ -235,6 +239,15 @@ public class BorradorProductoJpaEntity {
   public void setSet(String acompanante, String origenDelCosto) {
     this.setAcompanante = acompanante;
     this.setOrigenDelCosto = origenDelCosto;
+  }
+
+  public int getAjusteDeTalla() {
+    return ajusteDeTalla;
+  }
+
+  /** Fuera del constructor, como el diseño. */
+  public void setAjusteDeTalla(int ajusteDeTalla) {
+    this.ajusteDeTalla = ajusteDeTalla;
   }
 
   /** Ids de mensaje separados por salto de línea, en orden; nulo si no hay. */

@@ -19,6 +19,7 @@ import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.compartido.HashContenido;
 import co.tecnosport.api.domain.compartido.Sku;
 import co.tecnosport.api.domain.compartido.Slug;
+import co.tecnosport.api.domain.proveedores.AjusteDeTalla;
 import co.tecnosport.api.domain.proveedores.HuellaProveedor;
 import co.tecnosport.api.domain.proveedores.OrdenDePublicacion;
 import co.tecnosport.api.domain.proveedores.Proveedor;
@@ -311,6 +312,25 @@ class RepositorioProductosDeProveedorJpaTest {
     var prendas = deProveedor.buscarPrendasPorReferencia(proveedor.id(), "RV102376");
     assertThat(prendas).hasSize(1);
     assertThat(prendas.getFirst().retirada()).isTrue();
+  }
+
+  /**
+   * El ajuste de talla va y vuelve contra la V115 (ADR-0085), también al actualizar el producto.
+   */
+  @Test
+  void elAjusteDeTallaDelProductoSeGuardaYSeConserva() {
+    catalogoBase();
+    Producto tenis = deProveedor("Tenis para caballero", 65000);
+    tenis.definirAjusteDeTalla(new AjusteDeTalla(2));
+    productos.guardar(tenis);
+
+    Producto leido = productos.buscarPorId(tenis.id()).orElseThrow();
+    assertThat(leido.ajusteDeTalla()).isEqualTo(new AjusteDeTalla(2));
+
+    leido.definirTallaSirveHasta("L");
+    productos.actualizar(leido);
+    assertThat(productos.buscarPorId(tenis.id()).orElseThrow().ajusteDeTalla())
+        .isEqualTo(new AjusteDeTalla(2));
   }
 
   @Test
