@@ -28,5 +28,15 @@ public enum AlertaBorrador {
    * El mensaje anuncia una réplica («1.1» o «AAA»): se publica con la marca Genérica y la original
    * solo va en el título, como «Camiseta estilo Puma - BMW». Quien aprueba confirma las dos cosas.
    */
-  REPLICA
+  REPLICA,
+  /**
+   * El proveedor arma sets y el texto ofrece la prenda con una gorra, un set o un dúo, pero el
+   * modelo no devolvió ningún acompañante: el borrador quedó como la prenda sola, con su precio.
+   */
+  ACOMPANANTE_SIN_LEER,
+  /**
+   * El borrador es un set, pero el modelo no escribió su descripción: la que lleva es la de la
+   * prenda sola y no nombra la gorra ni la blusa.
+   */
+  SET_SIN_DESCRIPCION
 }

@@ -1305,4 +1305,88 @@ class ResolverBorradorTest {
 
     assertTrue(resolucion.alertas().isEmpty());
   }
+
+  private static final String OVERSIZE =
+      "Camisetas Oversize para Caballero ⭕ Cuello redondo Camiseta 🎽55.000~~ Promo 4x200.000"
+          + " Nota: Las gorras tiene un valor de 35mil-";
+
+  private static ExtraccionEvaluada camisetaOversize(List<PrecioAdicional> adicionales) {
+    ProductoExtraido camiseta =
+        new ProductoExtraido(
+            true,
+            false,
+            "Camiseta oversize para caballero",
+            LineaCatalogo.ROPA,
+            TipoProductoProveedor.CAMISETA,
+            Dinero.deCop(55000),
+            Tallas.lista(List.of("S", "M", "L", "XL")),
+            null,
+            List.of(),
+            null,
+            "Camiseta oversize con cuello redondo.",
+            "Oversized T-shirt for men",
+            false,
+            new BigDecimal("0.9"),
+            null,
+            null,
+            null,
+            adicionales,
+            List.of(),
+            null);
+    return new ExtraccionEvaluada(
+        camiseta, "{}", Dinero.deCop(55000), Set.of(), new UsoDelExtractor("falso", 1, 1, 1));
+  }
+
+  /**
+   * El segundo anuncio oversize: el modelo solo devolvió la promo, y la nota de gorras se perdió.
+   */
+  @Test
+  void unAcompananteQueElModeloNoLeyoSeAlerta() {
+    proveedor.definirArmaSets(true);
+
+    Resolucion resolucion =
+        resolver(
+            publicacion(OVERSIZE, "foto-oversize"),
+            camisetaOversize(
+                List.of(
+                    new PrecioAdicional(
+                        "Promo 4 unidades",
+                        Dinero.deCop(200000),
+                        ClaseDePrecioAdicional.PROMOCION,
+                        null))));
+
+    assertTrue(resolucion.alertas().contains(AlertaBorrador.ACOMPANANTE_SIN_LEER));
+    assertTrue(borradores.enEstado(EstadoBorrador.EN_REVISION).getFirst().set().isEmpty());
+  }
+
+  @Test
+  void aQuienNoArmaSetsNoSeLeAlertaElAcompanante() {
+    Resolucion resolucion =
+        resolver(publicacion(OVERSIZE, "foto-oversize"), camisetaOversize(List.of()));
+
+    assertTrue(resolucion.alertas().isEmpty());
+  }
+
+  /** El primer anuncio oversize: set por suma, pero sin la descripción del set. */
+  @Test
+  void unSetSinDescripcionPropiaSeAlerta() {
+    proveedor.definirArmaSets(true);
+
+    Resolucion resolucion =
+        resolver(
+            publicacion(OVERSIZE, "foto-oversize"),
+            camisetaOversize(
+                List.of(
+                    new PrecioAdicional(
+                        "Gorras",
+                        Dinero.deCop(35000),
+                        ClaseDePrecioAdicional.ACOMPANANTE,
+                        PrendaAcompanante.GORRA))));
+
+    assertTrue(resolucion.alertas().contains(AlertaBorrador.SET_SIN_DESCRIPCION));
+    assertTrue(!resolucion.alertas().contains(AlertaBorrador.PRECIO_INCONSISTENTE));
+    BorradorProducto set = borradores.enEstado(EstadoBorrador.EN_REVISION).getFirst();
+    assertEquals(Optional.of(Dinero.deCop(90000)), set.precioProveedor());
+    assertEquals(Optional.of("Oversized T-shirt and cap set"), set.altEn());
+  }
 }

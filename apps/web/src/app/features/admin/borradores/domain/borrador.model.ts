@@ -102,7 +102,9 @@ export type AlertaBorrador =
   | 'SIN_FOTOS'
   | 'PRECIO_CAMBIO'
   | 'FOTOS_COMPARTIDAS'
-  | 'REPLICA';
+  | 'REPLICA'
+  | 'ACOMPANANTE_SIN_LEER'
+  | 'SET_SIN_DESCRIPCION';
 
 /**
  * Cómo se llama la marca con que se publica una réplica («1.1» o «AAA»): la original solo va en el título,

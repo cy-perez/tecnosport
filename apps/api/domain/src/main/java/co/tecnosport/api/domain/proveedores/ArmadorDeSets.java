@@ -4,7 +4,6 @@ import co.tecnosport.api.domain.compartido.Dinero;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
-import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -55,9 +54,15 @@ public final class ArmadorDeSets {
    * @param costo el precio del proveedor con el que se sigue: el del set o la suma
    * @param preciosLeidos los que el modelo leyó y dieron el costo: el del combo, o el de la prenda
    *     y el de su acompañante
+   * @param conTextosPropios el modelo escribió la descripción del set; si no, la descripción es la
+   *     de la prenda sola y no nombra la gorra ni la blusa, y quien revisa tiene que completarla
    */
   public record SetArmado(
-      ProductoExtraido producto, Dinero costo, ArmadoDeSet armado, List<Dinero> preciosLeidos) {
+      ProductoExtraido producto,
+      Dinero costo,
+      ArmadoDeSet armado,
+      List<Dinero> preciosLeidos,
+      boolean conTextosPropios) {
 
     public SetArmado {
       Objects.requireNonNull(producto);
@@ -76,24 +81,60 @@ public final class ArmadorDeSets {
     }
   }
 
-  private static final Pattern NO_CUENTA = Pattern.compile("[\\s.,$]+");
+  /** ¿Está este precio escrito en el texto? Ver {@link PrecioEscrito}. */
+  public static boolean estaEscrito(Dinero precio, String texto) {
+    return PrecioEscrito.en(precio, texto);
+  }
 
   /**
-   * ¿Está este precio escrito en el texto? Completo —«88.000», «$ 88.000», «88000»— o en miles con
-   * la palabra —«35mil», «35 mil»—, y nunca como parte de otra cifra.
+   * Lo que en el texto anuncia un acompañante o un combo: la gorra, el set, el dúo. La «básica»
+   * solo con una prenda de abajo, porque la «BÁSICA RAYA AMERICANAS» es la prenda misma.
    */
-  public static boolean estaEscrito(Dinero precio, String texto) {
-    if (precio == null || texto == null) {
+  private static final Pattern ANUNCIA_ACOMPANANTE =
+      Pattern.compile(
+          "(?<!\\p{L})(?:gorras?|cachuchas?|sets?|d[uú]o)(?!\\p{L})",
+          Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE);
+
+  private static final Pattern ANUNCIA_BASICA =
+      Pattern.compile(
+          "(?<!\\p{L})b[aá]sicas?(?!\\p{L})", Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE);
+
+  /**
+   * ¿El texto ofrece la prenda con un acompañante que el modelo no devolvió? El segundo anuncio de
+   * camisetas oversize de La Riverah, idéntico al primero, salió sin la nota de las gorras y sin
+   * set (12 de octubre de 2026). No se arma nada con esto, solo se alerta: el precio lo tendría que
+   * inventar.
+   */
+  public static boolean anunciaAcompanante(String texto, TipoProductoProveedor tipo) {
+    if (texto == null) {
       return false;
     }
-    String compacto = NO_CUENTA.matcher(texto.toLowerCase(Locale.ROOT)).replaceAll("");
-    long valor = precio.valor().longValueExact();
-    if (Pattern.compile("(?<!\\d)" + valor + "(?!\\d)").matcher(compacto).find()) {
+    if (ANUNCIA_ACOMPANANTE.matcher(texto).find()) {
       return true;
     }
-    return valor % 1000 == 0
-        && Pattern.compile("(?<!\\d)" + valor / 1000 + "mil").matcher(compacto).find();
+    return CON_BLUSA_SON_CONJUNTO.contains(tipo) && ANUNCIA_BASICA.matcher(texto).find();
   }
+
+  /**
+   * El nombre del set en inglés cuando el modelo no lo escribió: el de la prenda sin el género y el
+   * acompañante —«Oversized T-shirt for men» con gorra es «Oversized T-shirt and cap set»—.
+   */
+  static String altDeSet(String altDeLaPrenda, PrendaAcompanante acompanante) {
+    if (altDeLaPrenda == null || altDeLaPrenda.isBlank()) {
+      return null;
+    }
+    String prenda = GENERO_EN.matcher(altDeLaPrenda).replaceAll("").replaceAll("\\s+", " ").strip();
+    return switch (acompanante) {
+      case GORRA -> prenda + " and cap set";
+      case BLUSA -> prenda + " and blouse set";
+      case OTRA -> null;
+    };
+  }
+
+  private static final Pattern GENERO_EN =
+      Pattern.compile(
+          "(?:\\s+for\\s+(?:men|women|ladies|man|woman))|(?:^(?:men's|women's|ladies')\\s+)",
+          Pattern.CASE_INSENSITIVE);
 
   private ArmadorDeSets() {}
 
@@ -174,7 +215,9 @@ public final class ArmadorDeSets {
             producto.tonosNombrados(),
             producto.material(),
             textos.map(TextosDelSet::descripcion).orElse(producto.descripcion()),
-            textos.map(TextosDelSet::altEn).orElse(producto.altEn()),
+            textos
+                .map(TextosDelSet::altEn)
+                .orElseGet(() -> altDeSet(producto.altEn(), prenda.get())),
             producto.esReplica(),
             producto.confianza(),
             producto.notas(),
@@ -184,7 +227,12 @@ public final class ArmadorDeSets {
             producto.marcas(),
             producto.set());
     return Optional.of(
-        new SetArmado(comoSet, costo, new ArmadoDeSet(prenda.get(), origen), leidos));
+        new SetArmado(
+            comoSet,
+            costo,
+            new ArmadoDeSet(prenda.get(), origen),
+            leidos,
+            textos.map(TextosDelSet::descripcion).isPresent()));
   }
 
   private static boolean armaSet(PrecioAdicional precio) {

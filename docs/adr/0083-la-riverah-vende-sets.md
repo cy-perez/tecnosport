@@ -93,6 +93,16 @@ el costo del set, y un anuncio de la falda sola le bajaría el costo al conjunto
 set. Y uno que no trae los precios del acompañante —«AGOTADO polo RV102376»— agota además los sets
 de esa prenda, encontrados por la huella con cada acompañante o por la foto entre los sets.
 
+**Lo que dejó la primera ingesta con sets** (12 de octubre de 2026, 117 borradores):
+
+- **Un precio adicional que el anuncio no escribe se descarta** (`PrecioEscrito`), para todos los
+  proveedores. El modelo restó la falda al set y puso una blusa a 38.100 que nadie escribió.
+- **Un texto que ofrece gorra, set o dúo sin que el modelo devuelva acompañante deja
+  `ACOMPANANTE_SIN_LEER`.** De dos anuncios oversize idénticos, uno salió sin la nota de las gorras.
+  No se arma nada con esa señal, porque el precio habría que inventarlo.
+- **Un set sin descripción propia deja `SET_SIN_DESCRIPCION`**, y su nombre en inglés se arma con el
+  de la prenda: «Oversized T-shirt and cap set».
+
 ## Consecuencias
 
 - **Lo ya aprobado no cambia.** Una prenda de La Riverah publicada sola sigue así. Si el
