@@ -42,7 +42,21 @@ public record BorradorRespuesta(
     Instant creadoEn,
     List<TallasDeTonoRespuesta> tallasPorTono,
     List<PrecioAdicionalRespuesta> preciosAdicionales,
-    SetRespuesta set) {
+    SetRespuesta set,
+    /** Cuántas tallas más arriba las nombra el proveedor (ADR-0085); 0 si igual. */
+    int ajusteDeTalla,
+    /**
+     * Cómo se le pide al proveedor cada talla, con el paso del tipo de prenda; vacía sin ajuste. La
+     * del proveedor es nula si no se puede contar.
+     */
+    List<TallaPedidaRespuesta> tallasPedidas) {
+
+  /**
+   * @param talla la que se vende
+   * @param delProveedor la que se le pide al proveedor; nula si no se puede contar
+   */
+  public record TallaPedidaRespuesta(
+      @Schema(requiredMode = Schema.RequiredMode.REQUIRED) String talla, String delProveedor) {}
 
   public static BorradorRespuesta de(BorradorProducto b) {
     return new BorradorRespuesta(
@@ -81,7 +95,11 @@ public record BorradorRespuesta(
             .toList(),
         b.set()
             .map(s -> new SetRespuesta(s.acompanante().name(), s.origenDelCosto().name()))
-            .orElse(null));
+            .orElse(null),
+        b.ajusteDeTalla().tallas(),
+        b.tallasPedidas().stream()
+            .map(t -> new TallaPedidaRespuesta(t.talla(), t.delProveedor()))
+            .toList());
   }
 
   private static Long entero(Dinero dinero) {

@@ -193,8 +193,12 @@ public final class AprobarBorrador {
             tallasAprobadas.tipo() == TipoDeTalla.LISTA);
     List<String> tonoPorFoto = prendas.valorPorFoto();
     // También antes de crear nada: una talla que no se sabe cómo pedirle al proveedor no se vende.
-    exigirTallasQueSeSabenPedir(
-        borrador.ajusteDeTalla(), valoresDeTalla(tallasAprobadas), categoria);
+    // El ajuste escrito en el panel manda, como las tallas, se haya guardado o no.
+    AjusteDeTalla ajusteDeTalla =
+        comando.ajusteDeTalla() == null
+            ? borrador.ajusteDeTalla()
+            : new AjusteDeTalla(comando.ajusteDeTalla());
+    exigirTallasQueSeSabenPedir(ajusteDeTalla, valoresDeTalla(tallasAprobadas), categoria);
 
     String titulo =
         comando.titulo() == null || comando.titulo().isBlank()
@@ -240,7 +244,7 @@ public final class AprobarBorrador {
     }
     // La talla que se le pide al proveedor sale de este ajuste y de la talla de cada variante, al
     // consultar el pedido (ADR-0085).
-    producto.definirAjusteDeTalla(borrador.ajusteDeTalla());
+    producto.definirAjusteDeTalla(ajusteDeTalla);
     // La gorra de un set de camiseta o polo viaja con el promedio de su categoría y 100 g más.
     borrador.set().ifPresent(set -> producto.definirPesoAdicional(set.gramosAdicionales()));
     repositorioProductos.guardar(producto);

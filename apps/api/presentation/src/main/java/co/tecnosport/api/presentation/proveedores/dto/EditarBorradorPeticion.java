@@ -12,4 +12,6 @@ public record EditarBorradorPeticion(
     List<String> tonosNombrados,
     String material,
     String descripcion,
-    String altEn) {}
+    String altEn,
+    /** Cuántas tallas más arriba las nombra el proveedor, de -4 a 4 (ADR-0085). Nulo = igual. */
+    Integer ajusteDeTalla) {}

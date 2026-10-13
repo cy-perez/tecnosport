@@ -6,6 +6,7 @@ import co.tecnosport.api.application.proveedores.RepositorioProductosDeProveedor
 import co.tecnosport.api.domain.catalogo.LineaCatalogo;
 import co.tecnosport.api.domain.catalogo.Producto;
 import co.tecnosport.api.domain.compartido.Dinero;
+import co.tecnosport.api.domain.proveedores.AjusteDelAnuncio;
 import co.tecnosport.api.domain.proveedores.AlertaBorrador;
 import co.tecnosport.api.domain.proveedores.ArmadoDeSet;
 import co.tecnosport.api.domain.proveedores.ArmadorDeSets;
@@ -454,6 +455,10 @@ public final class ResolverBorrador {
             evaluada.reparto(),
             ahora);
     set.ifPresent(s -> BorradorProducto.conSet(borrador, s.armado()));
+    // «Ojo Horma reducida pedir una talla más», «Aumentar 2 tallas», «eur»: el borrador nace con
+    // las tallas que se venden y el ajuste para pedirlas (ADR-0085).
+    AjusteDelAnuncio.de(textoDelAnuncio)
+        .ifPresent(ajuste -> BorradorProducto.conTallasCorridas(borrador, ajuste));
     repositorioBorradores.guardar(borrador);
     return new Resolucion(TipoDeResolucion.NUEVO, borrador.alertas(), null);
   }

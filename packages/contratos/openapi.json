@@ -215,6 +215,10 @@
       },
       "AprobarBorradorPeticion" : {
         "properties" : {
+          "ajusteDeTalla" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
           "altEn" : {
             "type" : "string"
           },
@@ -454,6 +458,10 @@
       },
       "BorradorRespuesta" : {
         "properties" : {
+          "ajusteDeTalla" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
           "alertas" : {
             "items" : {
               "type" : "string"
@@ -524,6 +532,12 @@
           },
           "tallas" : {
             "$ref" : "#/components/schemas/TallasRespuesta"
+          },
+          "tallasPedidas" : {
+            "items" : {
+              "$ref" : "#/components/schemas/TallaPedidaRespuesta"
+            },
+            "type" : "array"
           },
           "tallasPorTono" : {
             "items" : {
@@ -1357,6 +1371,10 @@
       },
       "EditarBorradorPeticion" : {
         "properties" : {
+          "ajusteDeTalla" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
           "altEn" : {
             "type" : "string"
           },
@@ -4470,6 +4488,20 @@
             "type" : "string"
           }
         },
+        "type" : "object"
+      },
+      "TallaPedidaRespuesta" : {
+        "properties" : {
+          "delProveedor" : {
+            "type" : "string"
+          },
+          "talla" : {
+            "type" : "string"
+          }
+        },
+        "required" : [
+          "talla"
+        ],
         "type" : "object"
       },
       "TallasDeTonoRespuesta" : {

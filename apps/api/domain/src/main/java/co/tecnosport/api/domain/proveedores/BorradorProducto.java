@@ -371,6 +371,87 @@ public final class BorradorProducto {
     return ajusteDeTalla;
   }
 
+  /**
+   * Para la ingesta: el anuncio nombra las tallas corridas, y el borrador pasa a las que se venden
+   * —«Tallas M-L-XL-XXL» con horma reducida son S, M, L, XL— y guarda el ajuste para decir cuál
+   * pedirle al proveedor (ADR-0085). Las de cada tono también. Todas o ninguna: si una no se puede
+   * correr, se quedan las del anuncio con {@link AlertaBorrador#TALLAS_SIN_CORRER}.
+   */
+  public static BorradorProducto conTallasCorridas(
+      BorradorProducto borrador, AjusteDeTalla ajuste) {
+    Objects.requireNonNull(ajuste, "El ajuste de talla no es nulo.");
+    borrador.ajusteDeTalla = ajuste;
+    if (ajuste.ninguno()) {
+      return borrador;
+    }
+    int paso = AjusteDeTalla.pasoDe(borrador.tipo);
+    if (borrador.tallas.tipo() == TipoDeTalla.UNICA) {
+      borrador.alertas.add(AlertaBorrador.TALLAS_SIN_CORRER);
+      return borrador;
+    }
+    if (borrador.tallas.tipo() == TipoDeTalla.DESCONOCIDA) {
+      return borrador;
+    }
+    Optional<List<String>> tallas = corridas(borrador.tallas.valores(), ajuste, paso);
+    List<TallasPorTono.TallasDeUnTono> porTono = new ArrayList<>();
+    boolean todasLasDeLosTonos = true;
+    for (TallasPorTono.TallasDeUnTono tono : borrador.tallasPorTono.tonos()) {
+      Optional<List<String>> suyas = corridas(tono.tallas(), ajuste, paso);
+      todasLasDeLosTonos &= suyas.isPresent();
+      suyas.ifPresent(t -> porTono.add(new TallasPorTono.TallasDeUnTono(tono.tono(), t)));
+    }
+    if (tallas.isEmpty() || !todasLasDeLosTonos) {
+      borrador.alertas.add(AlertaBorrador.TALLAS_SIN_CORRER);
+      return borrador;
+    }
+    borrador.tallas = Tallas.lista(tallas.get());
+    borrador.tallasPorTono = new TallasPorTono(porTono);
+    borrador.alertas.add(AlertaBorrador.TALLAS_CORRIDAS);
+    return borrador;
+  }
+
+  /**
+   * Quien revisa corrige cómo nombra el proveedor las tallas. No vuelve a correrlas: las del
+   * borrador son siempre las que se venden.
+   */
+  public void cambiarAjusteDeTalla(AjusteDeTalla ajuste) {
+    exigirEnRevision("cambiar el ajuste de talla de");
+    this.ajusteDeTalla = Objects.requireNonNull(ajuste, "El ajuste de talla no es nulo.");
+  }
+
+  /**
+   * Cómo le pide al proveedor cada talla del borrador, con el paso de su tipo de prenda: lo que el
+   * panel enseña al lado de cada una. Vacía sin ajuste o sin lista de tallas.
+   */
+  public List<TallaPedida> tallasPedidas() {
+    if (ajusteDeTalla.ninguno() || tallas.tipo() != TipoDeTalla.LISTA) {
+      return List.of();
+    }
+    int paso = AjusteDeTalla.pasoDe(tipo);
+    return tallas.valores().stream()
+        .map(t -> new TallaPedida(t, ajusteDeTalla.tallaDelProveedorConPaso(t, paso).orElse(null)))
+        .toList();
+  }
+
+  /**
+   * @param talla la que se vende
+   * @param delProveedor la que se le pide al proveedor; nula si no se puede contar
+   */
+  public record TallaPedida(String talla, String delProveedor) {}
+
+  private static Optional<List<String>> corridas(
+      List<String> delAnuncio, AjusteDeTalla ajuste, int paso) {
+    List<String> vendidas = new ArrayList<>();
+    for (String talla : delAnuncio) {
+      Optional<String> vendida = ajuste.tallaQueSeVende(talla, paso);
+      if (vendida.isEmpty()) {
+        return Optional.empty();
+      }
+      vendidas.add(vendida.get());
+    }
+    return Optional.of(vendidas);
+  }
+
   /** ¿La lectura de fotos vio el mismo diseño en este y en el otro? */
   public boolean mismoDisenoQue(BorradorProducto otro) {
     return diseno != null

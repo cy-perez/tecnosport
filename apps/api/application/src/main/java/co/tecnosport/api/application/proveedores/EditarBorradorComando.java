@@ -18,9 +18,37 @@ public record EditarBorradorComando(
     List<String> tonosNombrados,
     String material,
     String descripcion,
-    String altEn) {
+    String altEn,
+    /** Cuántas tallas más arriba las nombra el proveedor (ADR-0085). */
+    Integer ajusteDeTalla) {
 
   public EditarBorradorComando {
     Objects.requireNonNull(borradorId, "El id del borrador no puede ser nulo.");
+  }
+
+  /** Sin tocar el ajuste de talla, como antes del 13 de octubre de 2026. */
+  public EditarBorradorComando(
+      UUID borradorId,
+      String titulo,
+      TipoProductoProveedor tipo,
+      Dinero precioVentaSugerido,
+      Tallas tallas,
+      Integer cantidadTonos,
+      List<String> tonosNombrados,
+      String material,
+      String descripcion,
+      String altEn) {
+    this(
+        borradorId,
+        titulo,
+        tipo,
+        precioVentaSugerido,
+        tallas,
+        cantidadTonos,
+        tonosNombrados,
+        material,
+        descripcion,
+        altEn,
+        null);
   }
 }

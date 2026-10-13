@@ -328,6 +328,37 @@ class AprobarBorradorTest {
         pedirPorTalla(producto, ApoyoDeCatalogoParaIngesta.CALZADO.escalaTallas()));
   }
 
+  /**
+   * El ajuste escrito en el panel manda, se haya guardado o no, como las tallas: quien lo corrigió
+   * y aprobó sin guardar no pierde la corrección.
+   */
+  @Test
+  void elAjusteEscritoEnElPanelMandaSobreElDelBorrador() {
+    BorradorProducto.conAjusteDeTalla(borrador, new AjusteDeTalla(2));
+    borradores.guardar(borrador);
+
+    Producto producto =
+        caso()
+            .ejecutar(
+                new AprobarBorradorComando(
+                    borrador.id(),
+                    null,
+                    "Polo de horma reducida.",
+                    ApoyoDeCatalogoParaIngesta.BOLSOS_DE_MANO.id(),
+                    ApoyoDeCatalogoParaIngesta.MARCA.id(),
+                    70000,
+                    Tallas.lista(List.of("S", "M")),
+                    1,
+                    "Polo",
+                    "Polo shirt",
+                    List.of(new FotoAprobada(foto1.id(), null, null)),
+                    List.of(),
+                    false,
+                    1));
+
+    assertEquals(new AjusteDeTalla(1), producto.ajusteDeTalla());
+  }
+
   /** Sin escala numérica no se sabe el paso: la 38 en bolsos de mano no tiene cómo pedirse. */
   @Test
   void unaNumericaSinEscalaNoSeApruebaConAjuste() {

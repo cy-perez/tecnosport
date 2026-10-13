@@ -35,7 +35,12 @@ public record AprobarBorradorComando(
     String altEn,
     List<FotoAprobada> fotos,
     List<PrendaAprobada> prendas,
-    boolean principalEnLaFicha) {
+    boolean principalEnLaFicha,
+    /**
+     * Cuántas tallas más arriba las nombra el proveedor (ADR-0085): lo que está escrito en el
+     * panel, se haya guardado o no. Nulo = el del borrador.
+     */
+    Integer ajusteDeTalla) {
 
   public AprobarBorradorComando {
     Objects.requireNonNull(borradorId, "El id del borrador no puede ser nulo.");
@@ -52,6 +57,38 @@ public record AprobarBorradorComando(
     if (prendas.stream().map(PrendaAprobada::numero).distinct().count() != prendas.size()) {
       throw new IllegalArgumentException("Dos prendas no pueden tener el mismo número.");
     }
+  }
+
+  /** Con el ajuste de talla del borrador, como antes del 13 de octubre de 2026. */
+  public AprobarBorradorComando(
+      UUID borradorId,
+      String titulo,
+      String descripcion,
+      UUID categoriaId,
+      UUID marcaId,
+      long precioVenta,
+      Tallas tallas,
+      int existenciaInicial,
+      String altEs,
+      String altEn,
+      List<FotoAprobada> fotos,
+      List<PrendaAprobada> prendas,
+      boolean principalEnLaFicha) {
+    this(
+        borradorId,
+        titulo,
+        descripcion,
+        categoriaId,
+        marcaId,
+        precioVenta,
+        tallas,
+        existenciaInicial,
+        altEs,
+        altEn,
+        fotos,
+        prendas,
+        principalEnLaFicha,
+        null);
   }
 
   /**

@@ -1,6 +1,7 @@
 package co.tecnosport.api.application.proveedores;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -20,6 +21,7 @@ import co.tecnosport.api.domain.catalogo.Variante;
 import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.compartido.Sku;
 import co.tecnosport.api.domain.compartido.Slug;
+import co.tecnosport.api.domain.proveedores.AjusteDeTalla;
 import co.tecnosport.api.domain.proveedores.AlertaBorrador;
 import co.tecnosport.api.domain.proveedores.ArmadoDeSet;
 import co.tecnosport.api.domain.proveedores.BorradorProducto;
@@ -267,6 +269,67 @@ class ResolverBorradorTest {
     assertEquals(
         EstadoPublicacionProveedor.EXTRAIDA,
         publicaciones.buscarPorId(publicacion.id()).orElseThrow().estado());
+  }
+
+  private static ExtraccionEvaluada tenis(List<String> tallas) {
+    ProductoExtraido extraido =
+        new ProductoExtraido(
+            true,
+            false,
+            "Tenis para caballero importado",
+            LineaCatalogo.CALZADO,
+            TipoProductoProveedor.TENIS,
+            Dinero.deCop(65000),
+            Tallas.lista(tallas),
+            null,
+            List.of(),
+            null,
+            "Tenis importados para caballero.",
+            null,
+            false,
+            new BigDecimal("0.9"),
+            null,
+            null);
+    return new ExtraccionEvaluada(
+        extraido, "{}", Dinero.deCop(65000), Set.of(), new UsoDelExtractor("falso", 1, 1, 1));
+  }
+
+  /**
+   * Imperio Wicho, 7 de octubre de 2026: «Tallas disponibles 40 a la 45 · Aumentar 2 tallas». El
+   * borrador nace con las que se venden, de la 38 a la 43, y con el ajuste para pedirlas
+   * (ADR-0085).
+   */
+  @Test
+  void unAnuncioQueDiceAumentarDosTallasNaceConLasQueSeVenden() {
+    PublicacionProveedor publicacion =
+        publicacion(
+            "IMPORTADO CABALLERO👟👟\nTallas disponibles 40 a la 45\nAumentar 2 tallas⚠️⚠️\n"
+                + "*$65,000* incluye caja 📦",
+            "foto-tenis");
+
+    resolver(publicacion, tenis(List.of("40", "41", "42", "43", "44", "45")));
+
+    BorradorProducto borrador = borradores.enEstado(EstadoBorrador.EN_REVISION).getFirst();
+    assertEquals(Tallas.lista(List.of("38", "39", "40", "41", "42", "43")), borrador.tallas());
+    assertEquals(new AjusteDeTalla(2), borrador.ajusteDeTalla());
+    assertTrue(borrador.alertas().contains(AlertaBorrador.TALLAS_CORRIDAS));
+  }
+
+  /** «Horma normal» no corre nada. */
+  @Test
+  void unAnuncioDeHormaNormalNaceConLasDelAnuncio() {
+    PublicacionProveedor publicacion =
+        publicacion(
+            "Colección Caballero 🔥🔥\nTallas disponibles 38 a la 43!\nHorma normal⚠️⚠️\n"
+                + "💰*$80,000*",
+            "foto-tenis-normal");
+
+    resolver(publicacion, tenis(List.of("38", "39", "40", "41", "42", "43")));
+
+    BorradorProducto borrador = borradores.enEstado(EstadoBorrador.EN_REVISION).getFirst();
+    assertEquals(Tallas.lista(List.of("38", "39", "40", "41", "42", "43")), borrador.tallas());
+    assertTrue(borrador.ajusteDeTalla().ninguno());
+    assertFalse(borrador.alertas().contains(AlertaBorrador.TALLAS_CORRIDAS));
   }
 
   @Test
