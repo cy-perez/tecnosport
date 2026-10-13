@@ -238,6 +238,11 @@ export interface FotoBorrador {
    * foto propia; vacía si muestra uno solo o ninguno.
    */
   readonly tonosVistos: readonly string[];
+  /**
+   * Las del rótulo impreso en ella —«Tallas disponibles en la foto!»—, ya como se venden en este
+   * borrador (ADR-0085): las que el panel propone a su prenda. Vacía si no trae.
+   */
+  readonly tallas: readonly string[];
 }
 
 /**

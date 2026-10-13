@@ -75,6 +75,45 @@ class AjusteDelAnuncioTest {
     assertEquals(Optional.empty(), AjusteDelAnuncio.de("Horma normal Dama, aumentar 1 Cab⚠️⚠️"));
   }
 
+  /** Imperio Wicho, 10 de octubre de 2026, NIKE y ADIDAS UNISEX: dama igual, caballero una más. */
+  @Test
+  void elAnuncioUnisexDaElAjusteDeCadaGenero() {
+    AjusteDelAnuncio.PorGenero esperado =
+        new AjusteDelAnuncio.PorGenero(AjusteDeTalla.NINGUNO, new AjusteDeTalla(1));
+    assertEquals(
+        Optional.of(esperado),
+        AjusteDelAnuncio.porGenero(
+            "NIKE UNISEX ULTRALIVIANO🔥\nSUELA IMPORTADA💯\nTallas disponibles en la foto!\n"
+                + "Horma normal Dama, Aumenta 1 Cab⚠️⚠️"));
+    assertEquals(
+        Optional.of(esperado), AjusteDelAnuncio.porGenero("Horma normal Dama, aumentar 1 Cab⚠️⚠️"));
+  }
+
+  /** Las dos partes nacen de tallas EUR: la de dama una, la de caballero dos. */
+  @Test
+  void elAnuncioUnisexEnTallasEurSumaEnLasDosPartes() {
+    assertEquals(
+        Optional.of(new AjusteDelAnuncio.PorGenero(new AjusteDeTalla(1), new AjusteDeTalla(2))),
+        AjusteDelAnuncio.porGenero(
+            "Tallas disponibles 36 a la 45 eur\nHorma normal Dama, Aumenta 1 Cab"));
+  }
+
+  @Test
+  void elAnuncioUnisexSeLeeEscritoDeOtrasManeras() {
+    Optional<AjusteDelAnuncio.PorGenero> uno =
+        Optional.of(new AjusteDelAnuncio.PorGenero(AjusteDeTalla.NINGUNO, new AjusteDeTalla(1)));
+    assertEquals(uno, AjusteDelAnuncio.porGenero("Horma normal Damas y aumenta 1 Caballeros"));
+    assertEquals(uno, AjusteDelAnuncio.porGenero("Horma normal Dama,\naumentar 1Cab"));
+    assertEquals(uno, AjusteDelAnuncio.porGenero("Horma\u00a0normal Dama, Aumenta\u00a01 Cab"));
+  }
+
+  @Test
+  void unAnuncioDeUnSoloGeneroNoSeParte() {
+    assertEquals(Optional.empty(), AjusteDelAnuncio.porGenero("Aumentar 2 tallas⚠️⚠️"));
+    assertEquals(Optional.empty(), AjusteDelAnuncio.porGenero("Horma normal⚠️⚠️"));
+    assertEquals(Optional.empty(), AjusteDelAnuncio.porGenero(null));
+  }
+
   /** «Europa», «euros» o un precio no son tallas EUR. */
   @Test
   void eurSueltoNoEsUnaTallaEur() {

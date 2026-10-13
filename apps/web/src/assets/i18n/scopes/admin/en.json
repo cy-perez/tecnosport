@@ -1375,6 +1375,7 @@
       "ajusteDeTallaAyuda": "The sizes above are the ones sold. If the post says “small fit, order one size up”, “go up 2 sizes” or gives EU sizes, the supplier names them higher, and each order will say which one to order.",
       "ajusteIgual": "Same as sold",
       "ajusteArriba": "{{tallas}} up",
+      "ajusteAbajo": "{{tallas}} down",
       "tallasPedidas": "Ordered from the supplier, as saved: {{tallas}}. A “?” is a size that cannot be worked out: remove it before approving.",
       "cantidadTonos": "Number of colours",
       "tonosNombrados": "Colours, by name",

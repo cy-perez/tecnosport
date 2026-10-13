@@ -96,6 +96,7 @@ public final class VerBorrador {
         repositorioBorradores.listarDePublicacion(publicacion.id());
     Map<Integer, List<String>> tonosVistos =
         tonosDeFotosDeVarios(borrador, publicacion.medios(), deLaPublicacion);
+    Optional<LecturaDeFotos> leidas = borrador.lecturaDeFotos().flatMap(interprete::interpretar);
     List<FotoDeBorrador> fotos = new ArrayList<>();
     List<UUID> medios = publicacion.medios();
     for (int i = 0; i < medios.size(); i++) {
@@ -111,7 +112,8 @@ public final class VerBorrador {
               mensaje.pieDeFoto().orElse(null),
               OrigenDeFoto.PROVEEDOR,
               borrador.tonosSugeridos().get(id),
-              tonosVistos.getOrDefault(i, List.of())));
+              tonosVistos.getOrDefault(i, List.of()),
+              tallasDeLaFoto(borrador, leidas, i)));
     }
     // Las de otras publicaciones que se le sumaron: la misma referencia publicada otra vez, o una
     // foto que quien revisa movió aquí. Las que ya no existen —se borró su lote— no se pintan.
@@ -143,6 +145,18 @@ public final class VerBorrador {
             .toList();
     return new DetalleDeBorrador(
         borrador, publicacion, textos, fotos, hermanos, prendasDelAlbum(borrador, medios));
+  }
+
+  /**
+   * Las del rótulo impreso en la foto, ya como se venden en este borrador: «Tallas disponibles en
+   * la foto!» (ADR-0085). Lo que el panel propone a la prenda de esa foto.
+   */
+  private static List<String> tallasDeLaFoto(
+      BorradorProducto borrador, Optional<LecturaDeFotos> leidas, int posicion) {
+    return leidas
+        .flatMap(l -> l.deLaFoto(posicion))
+        .map(l -> borrador.queSeVendenDe(l.tallasImpresas()))
+        .orElse(List.of());
   }
 
   /**
@@ -189,6 +203,8 @@ public final class VerBorrador {
           deLaPublicacion.stream()
               .filter(otro -> !otro.id().equals(borrador.id()))
               .filter(otro -> otro.estado() != EstadoBorrador.RECHAZADO)
+              // El otro género de un anuncio unisex conserva las mismas fotos (ADR-0085).
+              .filter(otro -> !otro.esGemeloDe(borrador))
               .anyMatch(otro -> !otro.fotosDescartadas().contains(id));
       if (!deOtro) {
         porPosicion.put(foto.posicion(), foto.colores());
@@ -273,6 +289,7 @@ public final class VerBorrador {
    * @param tonosVistos los colores que la lectura vio en ella cuando muestra varios —la foto con
    *     todos los tonos del producto—, como los nombró: «cocoa», no el de la paleta. Vacía si
    *     muestra uno solo o ninguno
+   * @param tallas las del rótulo impreso en ella, como se venden en este borrador; vacía si no trae
    */
   public record FotoDeBorrador(
       UUID mensajeId,
@@ -280,10 +297,22 @@ public final class VerBorrador {
       String pieDeFoto,
       OrigenDeFoto origen,
       String tonoSugerido,
-      List<String> tonosVistos) {
+      List<String> tonosVistos,
+      List<String> tallas) {
 
     public FotoDeBorrador {
       tonosVistos = tonosVistos == null ? List.of() : List.copyOf(tonosVistos);
+      tallas = tallas == null ? List.of() : List.copyOf(tallas);
+    }
+
+    public FotoDeBorrador(
+        UUID mensajeId,
+        String url,
+        String pieDeFoto,
+        OrigenDeFoto origen,
+        String tonoSugerido,
+        List<String> tonosVistos) {
+      this(mensajeId, url, pieDeFoto, origen, tonoSugerido, tonosVistos, List.of());
     }
 
     public FotoDeBorrador(

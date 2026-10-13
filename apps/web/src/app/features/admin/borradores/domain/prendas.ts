@@ -744,6 +744,32 @@ export function tallasSugeridasPorPrenda(
   return { ...asignacion, tallasPorPrenda };
 }
 
+/**
+ * Las tallas de cada prenda que el proveedor imprimió en sus fotos —«Tallas disponibles en la
+ * foto!», con un rótulo en la esquina de cada una (Imperio Wicho, 13 de octubre de 2026)—, para
+ * llenar la tabla de color y talla. Una prenda con varias fotos junta las de todas; la que no tiene
+ * foto con rótulo viene en todas.
+ *
+ * @param aprobadas las tallas del producto: las de la prenda se quedan entre ellas
+ */
+export function tallasDeSusFotos(
+  asignacion: AsignacionDePrendas,
+  fotos: readonly { readonly mensajeId: string; readonly tallas: readonly string[] }[],
+  aprobadas: readonly string[],
+): AsignacionDePrendas {
+  const tallasPorPrenda: Record<number, readonly string[]> = {};
+  for (const prenda of prendasEnUso(asignacion)) {
+    const impresas = fotos
+      .filter((foto) => asignacion.prendaPorFoto[foto.mensajeId] === prenda)
+      .flatMap((foto) => foto.tallas.map((talla) => talla.toLowerCase()));
+    const comunes = aprobadas.filter((talla) => impresas.includes(talla.toLowerCase()));
+    if (comunes.length > 0) {
+      tallasPorPrenda[prenda] = comunes;
+    }
+  }
+  return { ...asignacion, tallasPorPrenda };
+}
+
 /** Las tallas en que viene una prenda, entre las del producto: sin decirlo, en todas. */
 export function tallasDePrenda(
   asignacion: AsignacionDePrendas,

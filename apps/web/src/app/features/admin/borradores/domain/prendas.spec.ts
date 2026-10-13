@@ -15,6 +15,7 @@ import {
   quitarPrenda,
   SIN_PRENDAS,
   tallasDePrenda,
+  tallasDeSusFotos,
   tallasSugeridasPorPrenda,
   tonoDeFoto,
   unaSolaPrenda,
@@ -548,6 +549,30 @@ describe('tallas por color', () => {
     expect(tallasDePrenda(a, 1, aprobadas)).toEqual(['S', 'L', 'XL']);
     expect(tallasDePrenda(a, 2, aprobadas)).toEqual(['M', 'L', 'XL']);
     expect(tallasDePrenda(a, 3, aprobadas)).toEqual(aprobadas);
+  });
+
+  /**
+   * NIKE UNISEX de Imperio Wicho (10 de octubre de 2026): cada foto es un color con su rótulo de
+   * tallas, y la prenda de esa foto viene en esas. La que no tiene foto con rótulo, en todas.
+   */
+  it('se llenan con las tallas impresas en las fotos de cada prenda', () => {
+    const tallas = ['35', '36', '38', '39', '41', '42', '43'];
+    let a = conTonos(['WA0149', 'Blanco'], ['WA0150', 'Negro'], ['WA0151', 'Gris oscuro']);
+    a = agregarPrendaAparte(a, 'Rosado');
+    a = tallasDeSusFotos(
+      a,
+      [
+        { mensajeId: 'WA0149', tallas: ['41', '42', '43'] },
+        { mensajeId: 'WA0150', tallas: ['35', '36', '38', '41', '42'] },
+        { mensajeId: 'WA0151', tallas: ['38', '39', '43'] },
+      ],
+      tallas,
+    );
+
+    expect(tallasDePrenda(a, 1, tallas)).toEqual(['41', '42', '43']);
+    expect(tallasDePrenda(a, 2, tallas)).toEqual(['35', '36', '38', '41', '42']);
+    expect(tallasDePrenda(a, 3, tallas)).toEqual(['38', '39', '43']);
+    expect(tallasDePrenda(a, 4, tallas)).toEqual(tallas);
   });
 
   it('marcar y desmarcar una casilla cambia solo esa prenda, en el orden del producto', () => {

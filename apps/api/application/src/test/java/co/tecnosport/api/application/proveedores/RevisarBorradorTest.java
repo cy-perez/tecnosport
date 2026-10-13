@@ -414,6 +414,48 @@ class RevisarBorradorTest {
     assertEquals(List.of(), otra.tonosVistos());
   }
 
+  /**
+   * El rótulo de tallas de la foto, como se venden en este borrador (ADR-0085): en el de caballero
+   * de un anuncio unisex con ajuste 1, la 42 impresa es la 41.
+   */
+  @Test
+  void cadaFotoTraeLasTallasDeSuRotuloComoSeVenden() {
+    BorradorProducto leido = conLectura(Set.of());
+    BorradorProducto.conAjusteDeTalla(leido, new AjusteDeTalla(1));
+    borradores.porId.remove(borrador.id());
+    InterpreteDeLecturaDeFotos conRotulo =
+        json ->
+            Optional.of(
+                new LecturaDeFotos(
+                    false,
+                    List.of(
+                        new LecturaDeFotos.LecturaDeFoto(
+                            0,
+                            List.of(),
+                            null,
+                            List.of(),
+                            List.of("negro"),
+                            null,
+                            List.of(),
+                            List.of("41", "42", "43"))),
+                    json));
+
+    VerBorrador.DetalleDeBorrador detalle =
+        new VerBorrador(borradores, publicaciones, mensajes, almacen, conRotulo)
+            .ejecutar(leido.id());
+
+    VerBorrador.FotoDeBorrador conTallas =
+        detalle.fotos().stream()
+            .filter(f -> f.mensajeId().equals(foto.id()))
+            .findFirst()
+            .orElseThrow();
+    assertEquals(List.of("40", "41", "42"), conTallas.tallas());
+    assertTrue(
+        detalle.fotos().stream()
+            .filter(f -> !f.mensajeId().equals(foto.id()))
+            .allMatch(f -> f.tallas().isEmpty()));
+  }
+
   /** La de un solo tono ya lo trae como sugerido: no es una foto de varios. */
   @Test
   void unaFotoDeUnSoloTonoNoTraeTonosVistos() {

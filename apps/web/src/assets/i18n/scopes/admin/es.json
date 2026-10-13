@@ -1375,6 +1375,7 @@
       "ajusteDeTallaAyuda": "Las tallas de arriba son las que se venden. Si el anuncio dice «horma reducida, pedir una talla más», «aumentar 2 tallas» o da tallas EUR, el proveedor las llama más arriba, y cada pedido dirá cuál pedirle.",
       "ajusteIgual": "Igual que se venden",
       "ajusteArriba": "{{tallas}} más arriba",
+      "ajusteAbajo": "{{tallas}} más abajo",
       "tallasPedidas": "Al proveedor se le piden, según lo guardado: {{tallas}}. Un «?» es una talla que no se puede contar: quítala antes de aprobar.",
       "cantidadTonos": "Cantidad de tonos",
       "tonosNombrados": "Tonos, por nombre",

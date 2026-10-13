@@ -152,7 +152,8 @@ public final class ExtraerProductoDePublicacion {
                       repartido.fotos().stream()
                           .map(repartido.reparto().tonosSugeridos()::get)
                           .filter(Objects::nonNull)
-                          .toList());
+                          .toList())
+                  .conTallasDeLasFotos(tallasImpresas(publicacion, repartido.fotos(), lectura));
       Set<AlertaBorrador> alertas = EnumSet.noneOf(AlertaBorrador.class);
       // Los diseños de un álbum comparten el único precio del texto.
       boolean album = repartido.disenoDeAlbum();
@@ -285,5 +286,24 @@ public final class ExtraerProductoDePublicacion {
           "La publicación apunta a un mensaje que no está en el lote: " + id);
     }
     return mensaje;
+  }
+
+  /**
+   * Las tallas del rótulo impreso en las fotos de este producto, en el orden de la publicación
+   * ({@link LecturaDeFotos.LecturaDeFoto#tallasImpresas}).
+   */
+  private static List<String> tallasImpresas(
+      PublicacionProveedor publicacion, List<UUID> suyas, LecturaDeFotos lectura) {
+    if (lectura == null) {
+      return List.of();
+    }
+    List<String> tallas = new ArrayList<>();
+    List<UUID> medios = publicacion.medios();
+    for (int i = 0; i < medios.size(); i++) {
+      if (suyas.contains(medios.get(i))) {
+        lectura.deLaFoto(i).ifPresent(l -> tallas.addAll(l.tallasImpresas()));
+      }
+    }
+    return tallas;
   }
 }
