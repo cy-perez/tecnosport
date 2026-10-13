@@ -981,7 +981,7 @@ class ResolverBorradorTest {
             titulo,
             LineaCatalogo.ROPA,
             TipoProductoProveedor.PANTALON,
-            Dinero.deCop(125000),
+            Dinero.deCop(85000),
             Tallas.lista(List.of("32", "34")),
             null,
             List.of(),
@@ -994,7 +994,7 @@ class ResolverBorradorTest {
     return new ExtraccionEvaluada(
         extraido,
         "{}",
-        Dinero.deCop(125000),
+        Dinero.deCop(85000),
         Set.of(AlertaBorrador.FOTOS_COMPARTIDAS),
         new UsoDelExtractor("falso", 1, 1, 1),
         List.of(suya, compartida),
@@ -1388,5 +1388,125 @@ class ResolverBorradorTest {
     BorradorProducto set = borradores.enEstado(EstadoBorrador.EN_REVISION).getFirst();
     assertEquals(Optional.of(Dinero.deCop(90000)), set.precioProveedor());
     assertEquals(Optional.of("Oversized T-shirt and cap set"), set.altEn());
+  }
+
+  private static ExtraccionEvaluada conCosto(
+      String titulo, TipoProductoProveedor tipo, long costo, boolean agotado) {
+    ProductoExtraido extraido =
+        new ProductoExtraido(
+            true,
+            agotado,
+            titulo,
+            LineaCatalogo.ROPA,
+            tipo,
+            Dinero.deCop(costo),
+            Tallas.lista(List.of("30", "32", "34")),
+            null,
+            List.of(),
+            null,
+            "Una prenda.",
+            null,
+            false,
+            new BigDecimal("0.9"),
+            null,
+            null);
+    return new ExtraccionEvaluada(
+        extraido, "{}", Dinero.deCop(costo), Set.of(), new UsoDelExtractor("falso", 1, 1, 1));
+  }
+
+  /**
+   * Los «JEANS Importado para Caballero» de La Riverah a 125.000: pasan del tope de 90.000 que el
+   * negocio fijó el 13 de octubre de 2026, y no dejan borrador. El dato es el costo.
+   */
+  @Test
+  void unJeanDeMasDe90MilSeDescartaConSuCosto() {
+    PublicacionProveedor publicacion =
+        publicacion("*NUEVA COLECCIÓN JEANS Importado para Caballero* *PROMO* $125.000", "jean");
+
+    Resolucion resolucion =
+        resolver(
+            publicacion,
+            conCosto("Jean para caballero", TipoProductoProveedor.PANTALON, 125000, false));
+
+    assertEquals(TipoDeResolucion.DESCARTADA, resolucion.tipo());
+    assertEquals(
+        new CierreDePublicacion(MotivoDePublicacion.PRECIO_SOBRE_TOPE, "125000"),
+        resolucion.cierre());
+    assertEquals(
+        EstadoPublicacionProveedor.DESCARTADA,
+        publicaciones.buscarPorId(publicacion.id()).orElseThrow().estado());
+    assertTrue(borradores.enEstado(EstadoBorrador.EN_REVISION).isEmpty());
+  }
+
+  @Test
+  void elJoggerYLaBermudaDeMasDe90MilTambienSeDescartan() {
+    assertEquals(
+        TipoDeResolucion.DESCARTADA,
+        resolver(
+                publicacion("Sudadera jogger $95.000", "jogger"),
+                conCosto("Sudadera jogger", TipoProductoProveedor.SUDADERA, 95000, false))
+            .tipo());
+    assertEquals(
+        TipoDeResolucion.DESCARTADA,
+        resolver(
+                publicacion("Bermuda jean $90.100", "bermuda"),
+                conCosto("Bermuda jean", TipoProductoProveedor.SHORT, 90100, false))
+            .tipo());
+  }
+
+  @Test
+  void exactamente90MilTodaviaPasa() {
+    Resolucion resolucion =
+        resolver(
+            publicacion("Jean licrado $90.000", "jean-90"),
+            conCosto("Jean licrado", TipoProductoProveedor.PANTALON, 90000, false));
+
+    assertEquals(TipoDeResolucion.NUEVO, resolucion.tipo());
+  }
+
+  @Test
+  void elTopeNoEsDeLasDemasPrendas() {
+    Resolucion resolucion =
+        resolver(
+            publicacion("Chaqueta $120.000", "chaqueta"),
+            conCosto("Chaqueta", TipoProductoProveedor.CHAQUETA, 120000, false));
+
+    assertEquals(TipoDeResolucion.NUEVO, resolucion.tipo());
+  }
+
+  /** Un agotado no se descarta por el tope: lo que se vendía tiene que poder agotarse. */
+  @Test
+  void unAgotadoDeMasDe90MilNoSeDescartaPorElTope() {
+    Resolucion resolucion =
+        resolver(
+            publicacion("AGOTADO jean $125.000", "jean-agotado"),
+            conCosto("Jean", TipoProductoProveedor.PANTALON, 125000, true));
+
+    assertEquals(
+        new CierreDePublicacion(MotivoDePublicacion.AGOTADO_FUERA_DE_CATALOGO, null),
+        resolucion.cierre());
+  }
+
+  /** Con varios productos, solo el que pasa del tope: la camiseta del anuncio sí deja borrador. */
+  @Test
+  void conVariosProductosSoloSeDescartaElQuePasaDelTope() {
+    PublicacionProveedor publicacion =
+        publicacion("Camiseta $40.000 Jean $120.000", "conjunto-caro");
+
+    List<Resolucion> resoluciones =
+        caso()
+            .ejecutar(
+                publicacion,
+                mensajes,
+                proveedor,
+                List.of(
+                    conCosto("Camiseta", TipoProductoProveedor.CAMISETA, 40000, false),
+                    conCosto("Jean", TipoProductoProveedor.PANTALON, 120000, false)));
+
+    assertEquals(TipoDeResolucion.NUEVO, resoluciones.get(0).tipo());
+    assertEquals(TipoDeResolucion.DESCARTADA, resoluciones.get(1).tipo());
+    assertEquals(
+        EstadoPublicacionProveedor.EXTRAIDA,
+        publicaciones.buscarPorId(publicacion.id()).orElseThrow().estado());
   }
 }

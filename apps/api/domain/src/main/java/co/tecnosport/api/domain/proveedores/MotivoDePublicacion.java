@@ -27,6 +27,12 @@ public enum MotivoDePublicacion {
    * descarta entero. El dato es el nombre del tipo ({@link TipoProductoProveedor}).
    */
   TIPO_EXCLUIDO,
+  /**
+   * La prenda cuesta más de lo que se le paga al proveedor por su tipo ({@link
+   * TopeDeCostoPorTipo}): el pantalón, el jogger o el short de más de 90.000. El dato es el costo,
+   * en pesos y sin separadores.
+   */
+  PRECIO_SOBRE_TOPE,
   /** El extractor no pudo: la API rechazó la petición, se negó, o respondió algo ilegible. */
   EXTRACCION_FALLIDA,
   /** Algo falló al decidir qué hacer con lo extraído; el dato es el tipo de la excepción. */

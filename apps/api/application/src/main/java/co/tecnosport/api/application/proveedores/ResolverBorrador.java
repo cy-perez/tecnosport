@@ -21,6 +21,7 @@ import co.tecnosport.api.domain.proveedores.ProductoExtraido;
 import co.tecnosport.api.domain.proveedores.Proveedor;
 import co.tecnosport.api.domain.proveedores.PublicacionProveedor;
 import co.tecnosport.api.domain.proveedores.TextoDeAnuncio;
+import co.tecnosport.api.domain.proveedores.TopeDeCostoPorTipo;
 import co.tecnosport.api.domain.proveedores.TopesDeGanancia;
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -85,6 +86,12 @@ import java.util.UUID;
  * disponibilidad. <b>Lo que sí pasa es un agotado</b>: el jean que se publicó antes de excluir el
  * tipo, o la blusa del anuncio, se agota cuando el proveedor lo anuncia agotado, porque dejarlo a
  * la venta es venderle a alguien lo que no hay.
+ *
+ * <h2>Lo que cuesta de más (13 de octubre de 2026)</h2>
+ *
+ * <p>El pantalón, el jogger o el short que el proveedor anuncia por encima de lo que se le paga por
+ * su tipo ({@link TopeDeCostoPorTipo}) se descarta, solo ese producto y no los demás del anuncio, y
+ * sin renovar: si ya estuviera en el catálogo, a ese precio ya no se le compra. Un agotado sí pasa.
  *
  * <h2>Los sets (12 de octubre de 2026)</h2>
  *
@@ -227,17 +234,26 @@ public final class ResolverBorrador {
       resoluciones.add(
           excluido.isPresent() && !evaluada.producto().estaAgotado()
               ? Resolucion.descartada(excluido.get())
-              : vieneEnElDeCaballero
+              : pasaDelTope(evaluada, textoDelAnuncio)
                   ? Resolucion.descartada(
-                      CierreDePublicacion.de(MotivoDePublicacion.VIENE_EN_CHAT_DE_CABALLERO))
-                  : resolverUno(
-                      publicacion,
-                      mensajes,
-                      proveedor,
-                      evaluada,
-                      textoDelAnuncio,
-                      fotosDe(publicacion, evaluada, evaluadas.size(), pHashes),
-                      huellasVisuales));
+                      new CierreDePublicacion(
+                          MotivoDePublicacion.PRECIO_SOBRE_TOPE,
+                          precioDeLaPrenda(
+                                  evaluada.producto(), evaluada.precioProveedor(), textoDelAnuncio)
+                              .valor()
+                              .toBigInteger()
+                              .toString()))
+                  : vieneEnElDeCaballero
+                      ? Resolucion.descartada(
+                          CierreDePublicacion.de(MotivoDePublicacion.VIENE_EN_CHAT_DE_CABALLERO))
+                      : resolverUno(
+                          publicacion,
+                          mensajes,
+                          proveedor,
+                          evaluada,
+                          textoDelAnuncio,
+                          fotosDe(publicacion, evaluada, evaluadas.size(), pHashes),
+                          huellasVisuales));
     }
     if (chat.deCaballero()) {
       rechazarLosDelChatGeneral(proveedor, textoDelAnuncio);
@@ -559,6 +575,18 @@ public final class ResolverBorrador {
         .precioProveedorOpcional()
         .filter(p -> !p.equals(delTexto) && ArmadorDeSets.estaEscrito(p, textoDelAnuncio))
         .orElse(delTexto);
+  }
+
+  /**
+   * ¿Cuesta la prenda más de lo que se paga por su tipo? Con el precio de la prenda sola —el mismo
+   * con que se armaría el set ({@link #precioDeLaPrenda}): en «Básica 48.000 / Pantalón 95.000» el
+   * primero del texto es el de la blusa—, y nunca en un agotado ({@link TopeDeCostoPorTipo}).
+   */
+  private static boolean pasaDelTope(ExtraccionEvaluada evaluada, String textoDelAnuncio) {
+    return !evaluada.producto().estaAgotado()
+        && TopeDeCostoPorTipo.loExcede(
+            evaluada.producto().tipo(),
+            precioDeLaPrenda(evaluada.producto(), evaluada.precioProveedor(), textoDelAnuncio));
   }
 
   private static Set<AlertaBorrador> conLasDelSet(
