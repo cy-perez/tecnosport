@@ -313,10 +313,10 @@ class AprobarBorradorTest {
 
   /**
    * Imperio Wicho: «Tallas disponibles 40 a la 45 · Aumentar 2 tallas» se vende de la 38. Las
-   * numéricas se cuentan sobre la escala que la hoja hereda de la rama de calzado.
+   * numéricas se cuentan sobre la escala de la categoría.
    */
   @Test
-  void enCalzadoLasNumericasSeCuentanSobreLaEscalaHeredada() {
+  void enCalzadoLasNumericasSeCuentanSobreLaEscalaDeLaCategoria() {
     BorradorProducto.conAjusteDeTalla(borrador, new AjusteDeTalla(2));
     borradores.guardar(borrador);
 
@@ -325,7 +325,7 @@ class AprobarBorradorTest {
 
     assertEquals(
         Map.of("38", "40", "43", "45"),
-        pedirPorTalla(producto, ApoyoDeCatalogoParaIngesta.CALZADO.escalaTallas()));
+        pedirPorTalla(producto, ApoyoDeCatalogoParaIngesta.CALZADO_CABALLERO.escalaTallas()));
   }
 
   /**
