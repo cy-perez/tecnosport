@@ -775,6 +775,30 @@ describe('DetalleBorradorAdminPage', () => {
       expect(repositorio.aprobaciones).toEqual([]);
     });
 
+    /**
+     * «Tallas disponibles en la foto!» (Imperio Wicho, ADR-0085): sin reparto en el texto, cada
+     * color llega con las tallas impresas en su foto.
+     */
+    it('se abre llena con las tallas impresas en la foto de cada color', async () => {
+      await renderPagina(
+        borradorDePrueba({
+          tallas: { tipo: 'LISTA', sirveHasta: null, valores: ['38', '41', '42'] },
+          tonosNombrados: [],
+        }),
+        [
+          { ...fotoDePrueba('f-1'), tonoSugerido: 'negro', tallas: ['41', '42'] },
+          { ...fotoDePrueba('f-2'), tonoSugerido: 'café', tallas: ['38'] },
+        ],
+      );
+
+      const interruptor = (await screen.findByLabelText(a.tallasPorColor)) as HTMLInputElement;
+      await vi.waitFor(() => expect(interruptor.checked).toBe(true));
+      expect(casilla('Negro', '38').checked).toBe(false);
+      expect(casilla('Negro', '41').checked).toBe(true);
+      expect(casilla('Café', '38').checked).toBe(true);
+      expect(casilla('Café', '42').checked).toBe(false);
+    });
+
     it('sin reparto en el anuncio, la casilla llega sin marcar', async () => {
       await renderPagina(
         borradorDePrueba({ tallas: { tipo: 'LISTA', sirveHasta: null, valores: ['S', 'M'] } }),
@@ -955,6 +979,17 @@ describe('DetalleBorradorAdminPage', () => {
 
     await screen.findByRole('link', { name: a.verProducto });
     expect(repositorio.aprobaciones[0].aprobacion).toMatchObject({ ajusteDeTalla: 1 });
+  });
+
+  /** Una talla única se pide como se vende: un ajuste viejo no bloquea la aprobación. */
+  it('con talla única el ajuste viaja en cero', async () => {
+    const { repositorio } = await renderPagina(borradorDePrueba({ ajusteDeTalla: 1 }));
+    await llenarAprobacion();
+
+    fireEvent.click(screen.getByRole('button', { name: a.accion }));
+
+    await screen.findByRole('link', { name: a.verProducto });
+    expect(repositorio.aprobaciones[0].aprobacion).toMatchObject({ ajusteDeTalla: 0 });
   });
 
   it('sin ajuste no dice nada de cómo se piden las tallas', async () => {

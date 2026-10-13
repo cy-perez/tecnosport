@@ -87,6 +87,7 @@ import {
   quitarPrenda,
   SIN_PRENDAS,
   tallasDePrenda,
+  tallasDeSusFotos,
   tallasSugeridasPorPrenda,
   tonoDeFoto,
   unaSolaPrenda,
@@ -397,13 +398,20 @@ export class DetalleBorradorAdminPage {
 
   /** «Igual que se venden» y de 1 a 4 tallas más arriba. */
   protected readonly opcionesAjusteDeTalla = computed<OpcionSelect[]>(() =>
-    Array.from({ length: AJUSTE_DE_TALLA_MAXIMO + 1 }, (_, tallas) => ({
-      valor: String(tallas),
-      etiqueta:
-        tallas === 0
-          ? this.traducir()('admin.borradores.datos.ajusteIgual')
-          : this.traducir()('admin.borradores.datos.ajusteArriba', { tallas }),
-    })),
+    Array.from({ length: 2 * AJUSTE_DE_TALLA_MAXIMO + 1 }, (_, i) => {
+      // «Igual que se venden» primero, después de 1 a 4 más arriba y al final de 1 a 4 más abajo:
+      // una horma grande es rara, pero el dominio la admite y el select tiene que poder mostrarla.
+      const tallas = i <= AJUSTE_DE_TALLA_MAXIMO ? i : AJUSTE_DE_TALLA_MAXIMO - i;
+      return {
+        valor: String(tallas),
+        etiqueta:
+          tallas === 0
+            ? this.traducir()('admin.borradores.datos.ajusteIgual')
+            : tallas > 0
+              ? this.traducir()('admin.borradores.datos.ajusteArriba', { tallas })
+              : this.traducir()('admin.borradores.datos.ajusteAbajo', { tallas: -tallas }),
+      };
+    }),
   );
 
   /** «S → M, XXXL → ?»: cómo se pide cada talla, con lo que está guardado. */
@@ -630,13 +638,24 @@ export class DetalleBorradorAdminPage {
         // propia; y si el anuncio reparte las tallas por tono, la tabla de color y talla se abre
         // ya llena con ellas.
         const sugeridas = prendasSugeridas(fotos, paleta, borrador.tonosNombrados);
-        const conTallas = borrador.tallasPorTono.length > 0 && borrador.tallas.tipo === 'LISTA';
-        this.prendas.set(
-          conTallas
-            ? tallasSugeridasPorPrenda(sugeridas, borrador.tallasPorTono, borrador.tallas.valores)
-            : sugeridas,
+        const lista = borrador.tallas.tipo === 'LISTA';
+        const conTallas = borrador.tallasPorTono.length > 0 && lista;
+        // «Tallas disponibles en la foto!»: sin tallas por tono en el texto, las del rótulo de
+        // cada foto (ADR-0085).
+        const conRotulo = !conTallas && lista && fotos.some((foto) => foto.tallas.length > 0);
+        const conSusTallas = conTallas
+          ? tallasSugeridasPorPrenda(sugeridas, borrador.tallasPorTono, borrador.tallas.valores)
+          : conRotulo
+            ? tallasDeSusFotos(sugeridas, fotos, borrador.tallas.valores)
+            : sugeridas;
+        this.prendas.set(conSusTallas);
+        this.tallasPorColor.set(
+          conTallas ||
+            (conRotulo &&
+              Object.values(conSusTallas.tallasPorPrenda).some(
+                (suyas) => suyas.length < borrador.tallas.valores.length,
+              )),
         );
-        this.tallasPorColor.set(conTallas);
       }
     });
 
@@ -1255,7 +1274,9 @@ export class DetalleBorradorAdminPage {
           tipo: valores.tipo,
           ...(precioSugerido !== null ? { precioVentaSugerido: precioSugerido } : {}),
           tallas: this.tallasDelFormulario(),
-          ajusteDeTalla: Number(valores.ajusteDeTalla),
+          // Una talla única o desconocida se pide como se vende: el ajuste solo tiene sentido en
+          // una lista, y el campo solo se ve con ella.
+          ajusteDeTalla: valores.tipoDeTalla === 'LISTA' ? Number(valores.ajusteDeTalla) : 0,
           cantidadTonos,
           tonosNombrados: separar(valores.tonosNombrados),
           material: valores.material.trim(),
@@ -1382,7 +1403,7 @@ export class DetalleBorradorAdminPage {
           // de esa tarjeta promete que la aprobación parte de ahí.
           ...(datos.titulo.trim() ? { titulo: datos.titulo.trim() } : {}),
           tallas: this.tallasDelFormulario(),
-          ajusteDeTalla: Number(datos.ajusteDeTalla),
+          ajusteDeTalla: datos.tipoDeTalla === 'LISTA' ? Number(datos.ajusteDeTalla) : 0,
           marcaId: valores.marcaId,
           categoriaId: valores.categoriaId,
           precioVenta,

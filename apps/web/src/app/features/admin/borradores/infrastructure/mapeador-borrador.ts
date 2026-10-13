@@ -97,6 +97,7 @@ export function aFoto(dto: FotoDto): FotoBorrador {
     origen: dto.origen,
     tonoSugerido: dto.tonoSugerido ?? null,
     tonosVistos: dto.tonosVistos ?? [],
+    tallas: dto.tallas ?? [],
   };
 }
 

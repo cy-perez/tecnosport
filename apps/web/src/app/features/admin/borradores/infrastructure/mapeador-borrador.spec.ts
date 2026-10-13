@@ -211,6 +211,17 @@ describe('mapeador-borrador', () => {
     expect(peticion.principalEnLaFicha).toBe(true);
   });
 
+  /** El rótulo de tallas de la foto (ADR-0085); las lecturas de antes no lo traen. */
+  it('lleva las tallas impresas en la foto, o vacía si no vienen', () => {
+    expect(
+      aFoto({ mensajeId: 'f1', url: 'u', origen: 'PROVEEDOR', tonosVistos: [], tallas: ['41'] })
+        .tallas,
+    ).toEqual(['41']);
+    expect(
+      aFoto({ mensajeId: 'f2', url: 'u', origen: 'PROVEEDOR', tonosVistos: [] }).tallas,
+    ).toEqual([]);
+  });
+
   it('lleva los tonos que la lectura vio en una foto de varios', () => {
     expect(
       aFoto({ mensajeId: 'f1', url: 'u', origen: 'PROVEEDOR', tonosVistos: ['negro', 'cocoa'] })
