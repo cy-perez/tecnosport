@@ -5,9 +5,13 @@ import {
   Borrador,
   BorradorDetalle,
   BorradoresPaginados,
+  ClaseDePrecioAdicional,
   EditarBorrador,
   EstadoBorrador,
   FotoBorrador,
+  OrigenDelCostoDeSet,
+  PrendaAcompanante,
+  SetDelBorrador,
   Tallas,
   TipoDeTalla,
   TipoProductoProveedor,
@@ -68,7 +72,15 @@ export function aBorrador(dto: BorradorDto): Borrador {
     preciosAdicionales: (dto.preciosAdicionales ?? []).map((p) => ({
       concepto: p.concepto,
       precio: p.precio,
+      clase: (p.clase ?? null) as ClaseDePrecioAdicional | null,
+      prenda: (p.prenda ?? null) as PrendaAcompanante | null,
     })),
+    set: dto.set
+      ? {
+          acompanante: dto.set.acompanante as SetDelBorrador['acompanante'],
+          origenDelCosto: dto.set.origenDelCosto as OrigenDelCostoDeSet,
+        }
+      : null,
   };
 }
 

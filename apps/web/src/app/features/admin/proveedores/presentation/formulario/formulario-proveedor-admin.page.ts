@@ -41,6 +41,7 @@ import {
 } from '../../domain/proveedor.model';
 import {
   TIPOS_PRODUCTO_PROVEEDOR,
+  TIPOS_QUE_ARMA_LA_INGESTA,
   TipoProductoProveedor,
 } from '../../../borradores/domain/borrador.model';
 
@@ -134,10 +135,13 @@ export class FormularioProveedorAdminPage {
     activo: new FormControl(true, { nonNullable: true }),
     dosChatsEnUnZip: new FormControl(false, { nonNullable: true }),
     tiposExcluidos: new FormControl<readonly TipoProductoProveedor[]>([], { nonNullable: true }),
+    armaSets: new FormControl(false, { nonNullable: true }),
   });
 
   /** «Otro» no se ofrece: es lo que el extractor no reconoció, y el servidor no deja excluirlo. */
-  protected readonly tiposExcluibles = TIPOS_PRODUCTO_PROVEEDOR.filter((tipo) => tipo !== 'OTRO');
+  protected readonly tiposExcluibles = TIPOS_PRODUCTO_PROVEEDOR.filter(
+    (tipo) => tipo !== 'OTRO' && !TIPOS_QUE_ARMA_LA_INGESTA.includes(tipo),
+  );
 
   protected readonly opcionesLinea = computed<OpcionSelect[]>(() =>
     LINEAS_PROVEEDOR.map((linea) => ({
@@ -179,6 +183,7 @@ export class FormularioProveedorAdminPage {
       activo: proveedor.activo,
       dosChatsEnUnZip: proveedor.dosChatsEnUnZip,
       tiposExcluidos: proveedor.tiposExcluidos,
+      armaSets: proveedor.armaSets,
     };
   }
 
@@ -221,6 +226,8 @@ export class FormularioProveedorAdminPage {
       dosChatsEnUnZip: valores.linea !== 'TECNOLOGIA' && valores.dosChatsEnUnZip,
       // Igual con los tipos: la tecnología no tiene anuncios que descartar.
       tiposExcluidos: valores.linea === 'TECNOLOGIA' ? [] : valores.tiposExcluidos,
+      // Y con los sets: la tecnología no tiene anuncios que armar.
+      armaSets: valores.linea !== 'TECNOLOGIA' && valores.armaSets,
     };
 
     const manejadores = {

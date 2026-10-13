@@ -17,6 +17,7 @@ export type TipoProductoProveedor =
   | 'CANGURO'
   | 'CONJUNTO_PANTALON'
   | 'CONJUNTO_SHORT'
+  | 'CONJUNTO_FALDA'
   | 'ENTERIZO'
   | 'POLO'
   | 'CAMISETA'
@@ -29,6 +30,7 @@ export type TipoProductoProveedor =
   | 'BODI'
   | 'TENIS'
   | 'FALDA'
+  | 'FALDA_SHORT'
   | 'SUDADERA'
   | 'BLAZER'
   | 'CHALECO'
@@ -40,6 +42,7 @@ export const TIPOS_PRODUCTO_PROVEEDOR: readonly TipoProductoProveedor[] = [
   'CANGURO',
   'CONJUNTO_PANTALON',
   'CONJUNTO_SHORT',
+  'CONJUNTO_FALDA',
   'ENTERIZO',
   'POLO',
   'CAMISETA',
@@ -52,6 +55,7 @@ export const TIPOS_PRODUCTO_PROVEEDOR: readonly TipoProductoProveedor[] = [
   'BODI',
   'TENIS',
   'FALDA',
+  'FALDA_SHORT',
   'SUDADERA',
   'BLAZER',
   'CHALECO',
@@ -72,7 +76,18 @@ export const CATEGORIA_SUGERIDA_POR_TIPO: Readonly<Partial<Record<TipoProductoPr
     POLO: 'ropa-caballero-polos',
     BLAZER: 'ropa-dama-blazers',
     CHALECO: 'ropa-dama-chalecos',
+    // La falda con short tiene su hoja, y la falda con su blusa es un conjunto de dama: el set que
+    // arma la ingesta de La Riverah (12 de octubre de 2026). El set de camiseta o polo con gorra
+    // conserva el tipo de la prenda, y con él la categoría.
+    FALDA_SHORT: 'ropa-dama-falda-short',
+    CONJUNTO_FALDA: 'ropa-dama-conjuntos',
   };
+
+/**
+ * Los tipos que arma la ingesta y no lee el extractor: excluir uno no descartaría nada, porque lo
+ * que se compara con las exclusiones del proveedor es lo que el anuncio dice, antes de armar el set.
+ */
+export const TIPOS_QUE_ARMA_LA_INGESTA: readonly TipoProductoProveedor[] = ['CONJUNTO_FALDA'];
 
 /**
  * Lo que la extracción no pudo resolver sola y alguien tiene que mirar antes de aprobar. Los
@@ -115,13 +130,36 @@ export interface TallasDeTono {
 }
 
 /**
+ * Qué es un precio adicional. `PRENDA_SOLA` es el de la prenda sin su acompañante, cuando el
+ * borrador es el set; `null` en los guardados antes del 12 de octubre de 2026.
+ */
+export type ClaseDePrecioAdicional = 'ACOMPANANTE' | 'COMBO' | 'PROMOCION' | 'PRENDA_SOLA';
+
+/** La prenda que acompaña a la del anuncio: la «básica» de La Riverah es la blusa. */
+export type PrendaAcompanante = 'BLUSA' | 'GORRA' | 'OTRA';
+
+/**
  * Un precio del anuncio que no es del producto: la gorra que acompaña, el combo, la promoción por
- * cantidad. Solo se muestra: el catálogo no tiene combos.
+ * cantidad, y en un set la prenda sola. Solo se muestra.
  */
 export interface PrecioAdicional {
   readonly concepto: string;
   /** En pesos, entero. */
   readonly precio: number;
+  readonly clase: ClaseDePrecioAdicional | null;
+  readonly prenda: PrendaAcompanante | null;
+}
+
+/** De dónde salió el costo de un set: el precio que anunció el proveedor, o la suma de las prendas. */
+export type OrigenDelCostoDeSet = 'ANUNCIADO' | 'SUMA_DE_PRENDAS';
+
+/**
+ * El borrador es la prenda vendida con su acompañante: la falda con la blusa, la camiseta o el polo
+ * con la gorra de la foto (La Riverah, 12 de octubre de 2026).
+ */
+export interface SetDelBorrador {
+  readonly acompanante: Exclude<PrendaAcompanante, 'OTRA'>;
+  readonly origenDelCosto: OrigenDelCostoDeSet;
 }
 
 export interface Borrador {
@@ -154,6 +192,8 @@ export interface Borrador {
    */
   readonly tallasPorTono: readonly TallasDeTono[];
   readonly preciosAdicionales: readonly PrecioAdicional[];
+  /** Cómo se armó el set; `null` si el borrador es la prenda sola. */
+  readonly set: SetDelBorrador | null;
 }
 
 /** De dónde salió la foto: del mensaje del proveedor, o de quien revisa, desde el panel. */

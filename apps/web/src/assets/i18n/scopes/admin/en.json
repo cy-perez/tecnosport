@@ -1002,6 +1002,7 @@
       "dosChatsEnUnZip": "Uploads both chats in one zip: “{name}.zip” with “{name}.txt” (the general one) and “{name}Men.txt” (the menswear one), plus the photos of both",
       "tiposExcluidos": "Not bought from this supplier",
       "tiposExcluidosAyuda": "A post that includes one of these garments is discarded whole, even if it comes with others: none of them leaves a draft.",
+      "armaSets": "Builds sets: the garment it posts with a companion piece is published together, like the skirt with the blouse or the T-shirt with the cap in the photo",
       "publicacionAutomatica": "Publish without review (not in effect yet: every draft goes through the panel)",
       "activo": "Active. Unchecked, no exports can be uploaded for it.",
       "faltanCampos": "Missing data: name, name in the chat, phone, line, posting order and a margin of at least 1.",
@@ -1296,6 +1297,7 @@
       "CANGURO": "Belt bag",
       "CONJUNTO_PANTALON": "Set with trousers",
       "CONJUNTO_SHORT": "Set with shorts",
+      "CONJUNTO_FALDA": "Set with skirt",
       "ENTERIZO": "Jumpsuit",
       "POLO": "Polo shirt",
       "CAMISETA": "T-shirt",
@@ -1308,6 +1310,7 @@
       "BODI": "Bodysuit",
       "TENIS": "Sneakers",
       "FALDA": "Skirt",
+      "FALDA_SHORT": "Skort",
       "SUDADERA": "Sweatpants",
       "BLAZER": "Blazer",
       "CHALECO": "Vest",
@@ -1510,7 +1513,17 @@
       "tallasDeTono": "{{tono}}: {{tallas}}",
       "preciosAdicionales": "Other prices in the listing",
       "preciosAdicionalesAyuda": "Add-ons, bundles and bulk deals. They aren't published: they're there so you know what the supplier offers.",
-      "precioAdicional": "{{concepto}}: {{precio}}"
+      "precioAdicional": "{{concepto}}: {{precio}}",
+      "precioPrendaSola": "{{concepto}}, without its companion piece: {{precio}}",
+      "set": "This is a set",
+      "setCon": {
+        "BLUSA": "Published with the blouse shown in the photos, in the Sets category.",
+        "GORRA": "Published with the cap shown in the photo, in the garment's category. Shipping adds the cap's weight."
+      },
+      "costo": {
+        "ANUNCIADO": "The cost is the set price the supplier posted.",
+        "SUMA_DE_PRENDAS": "The supplier did not post a set price: the cost is the garment plus its companion piece."
+      }
     },
     "mover": {
       "etiqueta": "Move photo {{numero}} to another draft",

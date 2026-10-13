@@ -56,6 +56,12 @@ export interface Proveedor {
    * Solo para quien entra por el chat.
    */
   readonly tiposExcluidos: readonly TipoProductoProveedor[];
+  /**
+   * Si la prenda que anuncia con su acompañante —la falda con la blusa, la camiseta con la gorra—
+   * se publica como set. Solo La Riverah (12 de octubre de 2026), y solo para quien entra por el
+   * chat.
+   */
+  readonly armaSets: boolean;
 }
 
 /** Lo que se escribe al crear o al editar. El `id` lo pone el servidor. */

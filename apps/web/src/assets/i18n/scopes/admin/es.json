@@ -1002,6 +1002,7 @@
       "dosChatsEnUnZip": "Sube sus dos chats en un solo zip: «{nombre}.zip» con «{nombre}.txt» (el general) y «{nombre}Men.txt» (el de caballero), y las fotos de los dos",
       "tiposExcluidos": "No se le compran",
       "tiposExcluidosAyuda": "El anuncio que traiga una de estas prendas se descarta entero, aunque venga con otras: no deja borrador ni para las demás.",
+      "armaSets": "Arma sets: la prenda que anuncia con su acompañante se publica junta, como la falda con la blusa o la camiseta con la gorra de la foto",
       "publicacionAutomatica": "Publicar sin revisar (todavía no aplica: todo borrador pasa por el panel)",
       "activo": "Activo. Desmarcado, no se le pueden subir exportaciones.",
       "faltanCampos": "Faltan datos: nombre, nombre en el chat, teléfono, línea, orden en que publica y un margen de por lo menos 1.",
@@ -1296,6 +1297,7 @@
       "CANGURO": "Canguro",
       "CONJUNTO_PANTALON": "Conjunto con pantalón",
       "CONJUNTO_SHORT": "Conjunto con short",
+      "CONJUNTO_FALDA": "Conjunto con falda",
       "ENTERIZO": "Enterizo",
       "POLO": "Polo",
       "CAMISETA": "Camiseta",
@@ -1308,6 +1310,7 @@
       "BODI": "Bodi",
       "TENIS": "Tenis",
       "FALDA": "Falda",
+      "FALDA_SHORT": "Falda short",
       "SUDADERA": "Sudadera",
       "BLAZER": "Blazer",
       "CHALECO": "Chaleco",
@@ -1510,7 +1513,17 @@
       "tallasDeTono": "{{tono}}: {{tallas}}",
       "preciosAdicionales": "Otros precios del anuncio",
       "preciosAdicionalesAyuda": "Acompañantes, combos y promociones por cantidad. No se publican: son para que sepas qué ofrece el proveedor.",
-      "precioAdicional": "{{concepto}}: {{precio}}"
+      "precioAdicional": "{{concepto}}: {{precio}}",
+      "precioPrendaSola": "{{concepto}}, sin su acompañante: {{precio}}",
+      "set": "Es un set",
+      "setCon": {
+        "BLUSA": "Se publica con la blusa que aparece en las fotos, en la categoría Conjuntos.",
+        "GORRA": "Se publica con la gorra que aparece en la foto, en la categoría de la prenda. El envío le suma el peso de la gorra."
+      },
+      "costo": {
+        "ANUNCIADO": "El costo es el precio del set que anunció el proveedor.",
+        "SUMA_DE_PRENDAS": "El proveedor no anunció el precio del set: el costo es la suma de la prenda y su acompañante."
+      }
     },
     "mover": {
       "etiqueta": "Mover la foto {{numero}} a otro borrador",
