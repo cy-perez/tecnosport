@@ -3035,6 +3035,12 @@
             "format" : "int32",
             "type" : "integer"
           },
+          "tallasAlProveedor" : {
+            "additionalProperties" : {
+              "$ref" : "#/components/schemas/TallaAlProveedorRespuesta"
+            },
+            "type" : "object"
+          },
           "totalPaginas" : {
             "format" : "int32",
             "type" : "integer"
@@ -3044,6 +3050,9 @@
             "type" : "integer"
           }
         },
+        "required" : [
+          "tallasAlProveedor"
+        ],
         "type" : "object"
       },
       "PesoDeReferenciaRespuesta" : {
@@ -4450,6 +4459,14 @@
             "type" : "integer"
           },
           "url" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "TallaAlProveedorRespuesta" : {
+        "properties" : {
+          "talla" : {
             "type" : "string"
           }
         },

@@ -185,7 +185,10 @@ class AdminPedidosControladorTest {
   }
 
   private Pedido pedidoConMetodo(MetodoPago metodoPago) {
-    UUID varianteId = UUID.randomUUID();
+    return pedidoConMetodo(metodoPago, UUID.randomUUID());
+  }
+
+  private Pedido pedidoConMetodo(MetodoPago metodoPago, UUID varianteId) {
     Inventario inventario = Inventario.crear(varianteId);
     inventario.registrarEntrada(1, "stock inicial de prueba", Instant.now());
     MovimientoInventario reserva = inventario.reservar(1, null, Instant.now());
@@ -317,6 +320,102 @@ class AdminPedidosControladorTest {
         .andExpect(jsonPath("$.items.length()").value(2))
         .andExpect(jsonPath("$.pagina").value(0))
         .andExpect(jsonPath("$.totalPedidos").value(2));
+  }
+
+  /**
+   * El polo de horma reducida se vende en S y se pide en M; la XXXL agregada después no se sabe
+   * cómo pedirla, y viaja con la talla nula. Al lado de los pedidos y no dentro de la línea, que es
+   * la misma que ve el comprador (ADR-0085).
+   */
+  @Test
+  void elListadoDiceQueTallaPedirleAlProveedorFueraDeLaLinea() throws Exception {
+    co.tecnosport.api.domain.catalogo.Atributo talla =
+        co.tecnosport.api.domain.catalogo.Atributo.crear(
+            "Talla", co.tecnosport.api.domain.catalogo.TipoAtributo.TEXTO, List.of());
+    co.tecnosport.api.domain.catalogo.Producto polo =
+        co.tecnosport.api.domain.catalogo.Producto.crearDeProveedor(
+            "Polo estilo Puma - Ferrari",
+            new co.tecnosport.api.domain.compartido.Slug("polo-estilo-puma-ferrari"),
+            "Importado.",
+            new co.tecnosport.api.domain.catalogo.Marca(UUID.randomUUID(), "Genérica"),
+            co.tecnosport.api.domain.catalogo.Categoria.crear(
+                "Polos",
+                new co.tecnosport.api.domain.compartido.Slug("polos"),
+                co.tecnosport.api.domain.catalogo.LineaCatalogo.ROPA),
+            UUID.randomUUID(),
+            Dinero.deCop(50_000),
+            co.tecnosport.api.domain.proveedores.HuellaProveedor.calcular(
+                UUID.randomUUID(), "Polo", Dinero.deCop(50_000)),
+            Instant.now());
+    polo.definirAjusteDeTalla(new co.tecnosport.api.domain.proveedores.AjusteDeTalla(1));
+    co.tecnosport.api.domain.catalogo.Variante enS = variante(talla, "S");
+    co.tecnosport.api.domain.catalogo.Variante enXxxl = variante(talla, "XXXL");
+    polo.agregarVariante(enS);
+    polo.agregarVariante(enXxxl);
+    productos.conProductos(polo);
+    pedidoConMetodo(MetodoPago.WOMPI, enS.id());
+    pedidoConMetodo(MetodoPago.WOMPI, enXxxl.id());
+
+    mockMvc
+        .perform(get("/api/v1/admin/pedidos"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.tallasAlProveedor['" + enS.id() + "'].talla").value("M"))
+        .andExpect(jsonPath("$.tallasAlProveedor['" + enXxxl.id() + "']").exists())
+        .andExpect(jsonPath("$.tallasAlProveedor['" + enXxxl.id() + "'].talla").isEmpty())
+        .andExpect(jsonPath("$.items[0].lineas[0].tallaAlProveedor").doesNotExist())
+        .andExpect(jsonPath("$.items[0].lineas[0].tallasAlProveedor").doesNotExist());
+  }
+
+  private static co.tecnosport.api.domain.catalogo.Variante variante(
+      co.tecnosport.api.domain.catalogo.Atributo talla, String valor) {
+    return co.tecnosport.api.domain.catalogo.Variante.crear(
+        new Sku("PRV-POLO-" + valor),
+        Dinero.deCop(69_900),
+        BigDecimal.ZERO,
+        null,
+        null,
+        List.of(co.tecnosport.api.domain.catalogo.ValorAtributo.de(talla, valor)));
+  }
+
+  /** Sin escala: las tallas en letras no la necesitan. */
+  private static final class CategoriasSinEscala
+      implements co.tecnosport.api.application.catalogo.RepositorioCategorias {
+
+    @Override
+    public List<co.tecnosport.api.domain.catalogo.Categoria> listarTodas() {
+      return List.of();
+    }
+
+    @Override
+    public java.util.Optional<co.tecnosport.api.domain.catalogo.Categoria> buscarPorId(UUID id) {
+      return java.util.Optional.empty();
+    }
+
+    @Override
+    public java.util.Optional<co.tecnosport.api.domain.catalogo.Categoria> buscarPorSlug(
+        co.tecnosport.api.domain.compartido.Slug slug) {
+      return java.util.Optional.empty();
+    }
+
+    @Override
+    public List<co.tecnosport.api.domain.catalogo.Categoria> hijasDe(UUID padreId) {
+      return List.of();
+    }
+
+    @Override
+    public void guardar(co.tecnosport.api.domain.catalogo.Categoria categoria) {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void eliminar(UUID id) {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public boolean tieneProductos(UUID categoriaId) {
+      return false;
+    }
   }
 
   @Test
@@ -917,8 +1016,10 @@ class AdminPedidosControladorTest {
     }
 
     @Bean
-    ListarPedidosAdmin listarPedidosAdmin(RepositorioPedidos repositorioPedidos) {
-      return new ListarPedidosAdmin(repositorioPedidos);
+    ListarPedidosAdmin listarPedidosAdmin(
+        RepositorioPedidos repositorioPedidos, RepositorioProductos repositorioProductos) {
+      return new ListarPedidosAdmin(
+          repositorioPedidos, repositorioProductos, new CategoriasSinEscala());
     }
 
     @Bean
