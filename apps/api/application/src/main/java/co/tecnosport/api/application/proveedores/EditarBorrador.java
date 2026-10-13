@@ -1,5 +1,6 @@
 package co.tecnosport.api.application.proveedores;
 
+import co.tecnosport.api.domain.proveedores.AjusteDeTalla;
 import co.tecnosport.api.domain.proveedores.BorradorProducto;
 import co.tecnosport.api.domain.proveedores.EstadoBorrador;
 import java.util.Objects;
@@ -32,6 +33,9 @@ public final class EditarBorrador {
         comando.material(),
         comando.descripcion(),
         comando.altEn());
+    if (comando.ajusteDeTalla() != null) {
+      borrador.cambiarAjusteDeTalla(new AjusteDeTalla(comando.ajusteDeTalla()));
+    }
     repositorioBorradores.actualizar(borrador);
     return borrador;
   }

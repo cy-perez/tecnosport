@@ -22,7 +22,12 @@ public record AprobarBorradorPeticion(
      * Si la principal que vale para todos los tonos entra también en la galería de la ficha. Nulo =
      * no, como antes de existir el campo.
      */
-    Boolean principalEnLaFicha) {
+    Boolean principalEnLaFicha,
+    /**
+     * Cuántas tallas más arriba las nombra el proveedor, de -4 a 4 (ADR-0085). Nulo = el del
+     * borrador.
+     */
+    Integer ajusteDeTalla) {
 
   public AprobarBorradorPeticion {
     Objects.requireNonNull(categoriaId, "La categoría es obligatoria.");
@@ -64,7 +69,8 @@ public record AprobarBorradorPeticion(
                             p.seVeEn(),
                             p.referencia()))
                 .toList(),
-        Boolean.TRUE.equals(principalEnLaFicha));
+        Boolean.TRUE.equals(principalEnLaFicha),
+        ajusteDeTalla);
   }
 
   /**

@@ -81,6 +81,11 @@ export function aBorrador(dto: BorradorDto): Borrador {
           origenDelCosto: dto.set.origenDelCosto as OrigenDelCostoDeSet,
         }
       : null,
+    ajusteDeTalla: dto.ajusteDeTalla ?? 0,
+    tallasPedidas: (dto.tallasPedidas ?? []).map((t) => ({
+      talla: t.talla,
+      delProveedor: t.delProveedor ?? null,
+    })),
   };
 }
 
@@ -138,6 +143,7 @@ export function aEditarPeticion(cambios: EditarBorrador): EditarPeticionDto {
     ...(cambios.material !== undefined ? { material: cambios.material } : {}),
     ...(cambios.descripcion !== undefined ? { descripcion: cambios.descripcion } : {}),
     ...(cambios.altEn !== undefined ? { altEn: cambios.altEn } : {}),
+    ...(cambios.ajusteDeTalla !== undefined ? { ajusteDeTalla: cambios.ajusteDeTalla } : {}),
   };
 }
 
@@ -171,5 +177,6 @@ export function aAprobarPeticion(aprobacion: AprobarBorrador): AprobarPeticionDt
         }
       : {}),
     ...(aprobacion.principalEnLaFicha ? { principalEnLaFicha: true } : {}),
+    ...(aprobacion.ajusteDeTalla !== undefined ? { ajusteDeTalla: aprobacion.ajusteDeTalla } : {}),
   };
 }

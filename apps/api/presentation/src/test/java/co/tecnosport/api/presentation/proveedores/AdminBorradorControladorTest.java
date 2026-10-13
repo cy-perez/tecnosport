@@ -237,6 +237,36 @@ class AdminBorradorControladorTest {
         .andExpect(jsonPath("$.cantidadTonos").value(4));
   }
 
+  /**
+   * El panel corrige cómo nombra el proveedor las tallas, y el borrador dice cómo se pide cada una
+   * (ADR-0085).
+   */
+  @Test
+  void editarElAjusteDeTallaDiceComoSePideCadaTalla() throws Exception {
+    mockMvc
+        .perform(
+            patch("/api/v1/admin/borradores/{id}", borrador.id())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    "{\"tallas\":{\"tipo\":\"LISTA\",\"valores\":[\"S\",\"XXXL\"]},"
+                        + "\"ajusteDeTalla\":1}"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.ajusteDeTalla").value(1))
+        .andExpect(jsonPath("$.tallasPedidas[0].talla").value("S"))
+        .andExpect(jsonPath("$.tallasPedidas[0].delProveedor").value("M"))
+        .andExpect(jsonPath("$.tallasPedidas[1].talla").value("XXXL"))
+        .andExpect(jsonPath("$.tallasPedidas[1].delProveedor").isEmpty());
+  }
+
+  @Test
+  void sinAjusteElBorradorNoTraeTallasPedidas() throws Exception {
+    mockMvc
+        .perform(get("/api/v1/admin/borradores/{id}", borrador.id()))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.borrador.ajusteDeTalla").value(0))
+        .andExpect(jsonPath("$.borrador.tallasPedidas").isEmpty());
+  }
+
   @Test
   void rechazarExigeMotivoYDejaElBorradorRechazado() throws Exception {
     mockMvc

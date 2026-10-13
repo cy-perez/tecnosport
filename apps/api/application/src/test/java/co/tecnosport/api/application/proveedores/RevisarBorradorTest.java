@@ -12,6 +12,7 @@ import co.tecnosport.api.application.proveedores.ApoyoDeIngesta.RepositorioMensa
 import co.tecnosport.api.application.proveedores.ApoyoDeIngesta.RepositorioPublicacionesEnMemoria;
 import co.tecnosport.api.domain.catalogo.LineaCatalogo;
 import co.tecnosport.api.domain.compartido.Dinero;
+import co.tecnosport.api.domain.proveedores.AjusteDeTalla;
 import co.tecnosport.api.domain.proveedores.AlertaBorrador;
 import co.tecnosport.api.domain.proveedores.BorradorProducto;
 import co.tecnosport.api.domain.proveedores.EstadoBorrador;
@@ -130,6 +131,26 @@ class RevisarBorradorTest {
     assertEquals(Optional.of(Dinero.deCop(75000)), editado.precioVentaSugerido());
     assertEquals(Optional.of(4), editado.cantidadTonos());
     assertEquals(TipoProductoProveedor.BOLSO, editado.tipo());
+  }
+
+  /** Quien revisa corrige el ajuste que leyó la ingesta; las tallas no se vuelven a correr. */
+  @Test
+  void editarCambiaElAjusteDeTallaSinCorrerLasTallas() {
+    BorradorProducto editado =
+        new EditarBorrador(borradores)
+            .ejecutar(
+                new EditarBorradorComando(
+                    borrador.id(), null, null, null, null, null, null, null, null, null, 2));
+
+    assertEquals(new AjusteDeTalla(2), editado.ajusteDeTalla());
+    assertEquals(borrador.tallas(), editado.tallas());
+
+    BorradorProducto sinTocar =
+        new EditarBorrador(borradores)
+            .ejecutar(
+                new EditarBorradorComando(
+                    borrador.id(), "Bolso", null, null, null, null, null, null, null, null));
+    assertEquals(new AjusteDeTalla(2), sinTocar.ajusteDeTalla(), "nulo no lo toca");
   }
 
   @Test

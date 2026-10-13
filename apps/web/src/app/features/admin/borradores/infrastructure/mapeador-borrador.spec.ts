@@ -66,6 +66,28 @@ describe('mapeador-borrador', () => {
     expect('titulo' in peticion).toBe(false);
   });
 
+  /** El ajuste de talla y cómo se pide cada una (ADR-0085); los de antes no lo traen. */
+  it('lleva el ajuste de talla y cómo se pide cada talla, o cero y vacía si no vienen', () => {
+    const corrido = aBorrador({
+      id: 'b1',
+      ajusteDeTalla: 1,
+      tallasPedidas: [{ talla: 'S', delProveedor: 'M' }, { talla: 'XXXL' }],
+    });
+
+    expect(corrido.ajusteDeTalla).toBe(1);
+    expect(corrido.tallasPedidas).toEqual([
+      { talla: 'S', delProveedor: 'M' },
+      { talla: 'XXXL', delProveedor: null },
+    ]);
+    expect(aBorrador({ id: 'b2' }).ajusteDeTalla).toBe(0);
+    expect(aBorrador({ id: 'b2' }).tallasPedidas).toEqual([]);
+  });
+
+  it('al editar manda el ajuste de talla solo si vino, también el cero', () => {
+    expect(aEditarPeticion({ ajusteDeTalla: 0 })).toEqual({ ajusteDeTalla: 0 });
+    expect('ajusteDeTalla' in aEditarPeticion({ titulo: 'x' })).toBe(false);
+  });
+
   it('al aprobar traduce las tallas y omite el tono y la prenda de una foto que vale para todos', () => {
     const peticion = aAprobarPeticion({
       marcaId: 'm1',

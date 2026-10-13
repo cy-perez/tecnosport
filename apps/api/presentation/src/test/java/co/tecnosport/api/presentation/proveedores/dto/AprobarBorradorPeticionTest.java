@@ -73,8 +73,22 @@ class AprobarBorradorPeticionTest {
     assertThat(comando.prendas()).isEmpty();
   }
 
+  /** El ajuste escrito en el panel viaja, y nulo deja el del borrador (ADR-0085). */
+  @Test
+  void elAjusteDeTallaViajaYNuloEsElDelBorrador() {
+    assertThat(peticion(null, null, 2).aComando(BORRADOR).ajusteDeTalla()).isEqualTo(2);
+    assertThat(peticion(null, null).aComando(BORRADOR).ajusteDeTalla()).isNull();
+  }
+
   private static AprobarBorradorPeticion peticion(
       List<AprobarBorradorPeticion.PrendaAprobadaPeticion> prendas, Boolean principalEnLaFicha) {
+    return peticion(prendas, principalEnLaFicha, null);
+  }
+
+  private static AprobarBorradorPeticion peticion(
+      List<AprobarBorradorPeticion.PrendaAprobadaPeticion> prendas,
+      Boolean principalEnLaFicha,
+      Integer ajusteDeTalla) {
     return new AprobarBorradorPeticion(
         null,
         null,
@@ -89,6 +103,7 @@ class AprobarBorradorPeticionTest {
             new AprobarBorradorPeticion.FotoAprobadaPeticion(FOTO_1, null, null, null),
             new AprobarBorradorPeticion.FotoAprobadaPeticion(FOTO_2, null, null, null)),
         prendas,
-        principalEnLaFicha);
+        principalEnLaFicha,
+        ajusteDeTalla);
   }
 }

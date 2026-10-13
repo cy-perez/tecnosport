@@ -181,7 +181,8 @@ public class AdminBorradorControlador {
                         cuerpo.tonosNombrados(),
                         cuerpo.material(),
                         cuerpo.descripcion(),
-                        cuerpo.altEn()))));
+                        cuerpo.altEn(),
+                        cuerpo.ajusteDeTalla()))));
   }
 
   @PostMapping("/{id}/aprobar")

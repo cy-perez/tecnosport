@@ -33,6 +33,8 @@ export function borradorDePrueba(overrides: Partial<Borrador> = {}): Borrador {
     tallasPorTono: [],
     preciosAdicionales: [],
     set: null,
+    ajusteDeTalla: 0,
+    tallasPedidas: [],
     ...overrides,
   };
 }

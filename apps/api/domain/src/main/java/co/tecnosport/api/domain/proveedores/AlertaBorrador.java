@@ -38,5 +38,16 @@ public enum AlertaBorrador {
    * El borrador es un set y no hay descripción que nombre la gorra o la blusa: el modelo no
    * escribió la del set y tampoco la de la prenda, que {@link ArmadorDeSets} habría completado.
    */
-  SET_SIN_DESCRIPCION
+  SET_SIN_DESCRIPCION,
+  /**
+   * El anuncio nombra las tallas corridas —«Ojo Horma reducida pedir una talla más», «Aumentar 2
+   * tallas», tallas EUR— y la ingesta las corrió a las que se venden ({@link AjusteDelAnuncio}).
+   * Quien aprueba confirma que el anuncio dice eso (ADR-0085).
+   */
+  TALLAS_CORRIDAS,
+  /**
+   * El anuncio nombra las tallas corridas pero alguna no se pudo correr —la XS una más abajo, la
+   * talla única—: el borrador se quedó con las del anuncio, y quien aprueba las corrige.
+   */
+  TALLAS_SIN_CORRER
 }

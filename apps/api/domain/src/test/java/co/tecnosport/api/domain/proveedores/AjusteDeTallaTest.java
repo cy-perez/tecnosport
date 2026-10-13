@@ -123,6 +123,35 @@ class AjusteDeTallaTest {
     assertEquals(Optional.of("37"), new AjusteDeTalla(-1).tallaDelProveedor("38", CALZADO));
   }
 
+  /** La ingesta, al revés: lo que el anuncio nombra, a lo que se vende (ADR-0085). */
+  @Test
+  void laIngestaCorreLasDelAnuncioALasQueSeVenden() {
+    AjusteDeTalla meraki = new AjusteDeTalla(1);
+    assertEquals(
+        List.of("S", "M", "L", "XL"),
+        List.of("M", "L", "XL", "XXL").stream()
+            .map(t -> meraki.tallaQueSeVende(t, 1).orElseThrow())
+            .toList());
+    assertEquals(Optional.of("38"), new AjusteDeTalla(2).tallaQueSeVende("40", 1));
+    assertEquals(Optional.of("28"), new AjusteDeTalla(1).tallaQueSeVende("30", 2));
+    assertEquals(Optional.of("S-M"), meraki.tallaQueSeVende("M-L", 1));
+  }
+
+  @Test
+  void loQueNoSePuedeCorrerQuedaVacio() {
+    assertEquals(Optional.empty(), new AjusteDeTalla(1).tallaQueSeVende("XS", 1));
+    assertEquals(Optional.empty(), new AjusteDeTalla(2).tallaQueSeVende("2", 1));
+    assertEquals(Optional.empty(), new AjusteDeTalla(1).tallaQueSeVende("Única", 1));
+    assertEquals(Optional.of("40"), AjusteDeTalla.NINGUNO.tallaQueSeVende(" 40 ", 1));
+  }
+
+  @Test
+  void losPantalonesYLosShortsVanDeDosEnDos() {
+    assertEquals(2, AjusteDeTalla.pasoDe(TipoProductoProveedor.PANTALON));
+    assertEquals(2, AjusteDeTalla.pasoDe(TipoProductoProveedor.SHORT));
+    assertEquals(1, AjusteDeTalla.pasoDe(TipoProductoProveedor.TENIS));
+  }
+
   @Test
   void masDeCuatroTallasNoEsUnaHorma() {
     assertThrows(ExcepcionDeDominio.class, () -> new AjusteDeTalla(5));

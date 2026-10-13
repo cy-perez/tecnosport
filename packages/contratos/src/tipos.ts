@@ -2278,6 +2278,8 @@ export interface components {
             motivo?: string;
         };
         AprobarBorradorPeticion: {
+            /** Format: int32 */
+            ajusteDeTalla?: number;
             altEn: string;
             altEs: string;
             /** Format: uuid */
@@ -2357,6 +2359,8 @@ export interface components {
             textos?: string[];
         };
         BorradorRespuesta: {
+            /** Format: int32 */
+            ajusteDeTalla?: number;
             alertas?: string[];
             altEn?: string;
             /** Format: int32 */
@@ -2384,6 +2388,7 @@ export interface components {
             publicacionId?: string;
             set?: components["schemas"]["SetRespuesta"];
             tallas?: components["schemas"]["TallasRespuesta"];
+            tallasPedidas?: components["schemas"]["TallaPedidaRespuesta"][];
             tallasPorTono?: components["schemas"]["TallasDeTonoRespuesta"][];
             tipo?: string;
             titulo?: string;
@@ -2651,6 +2656,8 @@ export interface components {
             indicaciones?: string;
         };
         EditarBorradorPeticion: {
+            /** Format: int32 */
+            ajusteDeTalla?: number;
             altEn?: string;
             /** Format: int32 */
             cantidadTonos?: number;
@@ -3745,6 +3752,10 @@ export interface components {
         };
         TallaAlProveedorRespuesta: {
             talla?: string;
+        };
+        TallaPedidaRespuesta: {
+            delProveedor?: string;
+            talla: string;
         };
         TallasDeTonoRespuesta: {
             tallas: string[];

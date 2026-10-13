@@ -66,9 +66,50 @@ public record AjusteDeTalla(int tallas) {
     if (normalizada.matches("\\d{1,2}")) {
       return numerica(Integer.parseInt(normalizada), escala);
     }
+    return enLetras(normalizada, tallas);
+  }
+
+  /**
+   * Al revés: la talla que se vende por la que el anuncio nombra. Es lo que hace la ingesta, cuando
+   * todavía no hay categoría ni escala: el paso de las numéricas lo da el tipo de prenda ({@link
+   * #pasoDe}), y la aprobación vuelve a contar sobre la escala de verdad.
+   *
+   * @param delProveedor la talla como la escribe el anuncio
+   * @param paso de cuánto en cuánto van las numéricas: 1 en calzado, 2 en jeans
+   * @return la que se vende, la misma si no hay ajuste, o vacía si no se puede contar
+   */
+  public Optional<String> tallaQueSeVende(String delProveedor, int paso) {
+    if (delProveedor == null || delProveedor.isBlank()) {
+      return Optional.empty();
+    }
+    if (ninguno()) {
+      return Optional.of(delProveedor.strip());
+    }
+    String normalizada = Atributo.tallaNormalizada(delProveedor);
+    if (normalizada.matches("\\d{1,2}")) {
+      int vendida = Integer.parseInt(normalizada) - tallas * paso;
+      return vendida > 0 ? Optional.of(String.valueOf(vendida)) : Optional.empty();
+    }
+    return enLetras(normalizada, -tallas);
+  }
+
+  /**
+   * La del proveedor con el paso del tipo de prenda, sin escala: lo que el panel enseña mientras el
+   * borrador no tiene categoría. La aprobación vuelve a contar sobre la escala de verdad.
+   */
+  public Optional<String> tallaDelProveedorConPaso(String talla, int paso) {
+    return new AjusteDeTalla(-tallas).tallaQueSeVende(talla, paso);
+  }
+
+  /** De 2 en 2 los pantalones y los shorts, como sus rangos ({@link RangoDeTallas}); 1 lo demás. */
+  public static int pasoDe(TipoProductoProveedor tipo) {
+    return tipo == TipoProductoProveedor.PANTALON || tipo == TipoProductoProveedor.SHORT ? 2 : 1;
+  }
+
+  private static Optional<String> enLetras(String normalizada, int desplazamiento) {
     List<String> partes = new ArrayList<>();
     for (String parte : normalizada.split("-")) {
-      int posicion = LETRAS.indexOf(parte) + tallas;
+      int posicion = LETRAS.indexOf(parte) + desplazamiento;
       if (LETRAS.indexOf(parte) < 0 || posicion < 0 || posicion >= LETRAS.size()) {
         return Optional.empty();
       }
