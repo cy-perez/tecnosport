@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import co.tecnosport.api.domain.catalogo.LineaCatalogo;
 import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.proveedores.LecturaDeFotos.LecturaDeFoto;
+import co.tecnosport.api.domain.proveedores.RepartoDeFotos.DisenoDeAlbum;
 import co.tecnosport.api.domain.proveedores.RepartoDeFotos.ProductoRepartido;
 import co.tecnosport.api.domain.proveedores.RepartoDeFotos.Respaldo;
 import java.math.BigDecimal;
@@ -119,8 +120,13 @@ class RepartoDeFotosTest {
     repartidos.forEach(r -> assertEquals(List.of(F1), r.fotos()));
   }
 
+  /**
+   * El álbum de La Riverah es un solo producto (decidido por el negocio el 13 de octubre de 2026):
+   * con todas las fotos, sin código, y con las tallas del texto más las de los pies. Cada SKU es
+   * una prenda, con sus fotos y las tallas de su pie.
+   */
   @Test
-  void elAlbumDeLaRiverahDaUnProductoPorSkuConLasTallasDeSuPie() {
+  void elAlbumDeLaRiverahEsUnSoloProductoConUnaPrendaPorSku() {
     ProductoExtraido camisetas =
         producto("Camiseta oversize para caballero", TipoProductoProveedor.CAMISETA, null);
     LecturaDeFotos lectura =
@@ -128,37 +134,37 @@ class RepartoDeFotosTest {
             true,
             List.of(
                 delAlbum(0, "RV102347", List.of("s", "M"), "negro", "swoosh rejilla"),
-                delAlbum(1, "RV102336", List.of("S", "M", "L"), "gris", "jordan 23"),
+                delAlbum(1, "RV102336", List.of("S", "M", "L", "XL"), "gris", "jordan 23"),
                 delAlbum(2, null, List.of(), "gris oscuro", "Jordan 23")),
             "{\"album\":true}");
 
     List<ProductoRepartido> repartidos =
         RepartoDeFotos.repartir(List.of(camisetas), List.of(F1, F2, F3), lectura);
 
-    assertEquals(2, repartidos.size());
-    ProductoRepartido primero = repartidos.get(0);
-    assertEquals(List.of(F1), primero.fotos());
-    assertEquals(Set.of(F2, F3), primero.reparto().ajenas());
-    assertEquals(Optional.of("RV102347"), primero.producto().codigoReferenciaOpcional());
-    assertEquals(Tallas.lista(List.of("S", "M")), primero.producto().tallas());
-    assertEquals(Optional.of(F1), primero.exclusivaOpcional());
-    assertEquals("{\"album\":true}", primero.reparto().lecturaCruda());
+    assertEquals(1, repartidos.size());
+    ProductoRepartido album = repartidos.getFirst();
+    assertEquals(List.of(F1, F2, F3), album.fotos());
+    assertEquals(Set.of(), album.reparto().ajenas());
+    assertEquals(Optional.empty(), album.producto().codigoReferenciaOpcional());
+    assertEquals(Tallas.lista(List.of("S", "M", "L", "XL")), album.producto().tallas());
+    assertEquals(Optional.of(F1), album.exclusivaOpcional());
+    assertEquals(Respaldo.TEXTO_IMPRESO, album.respaldo());
+    assertEquals("{\"album\":true}", album.reparto().lecturaCruda());
+    assertEquals(
+        Map.of(F1, "negro", F2, "gris", F3, "gris oscuro"), album.reparto().tonosSugeridos());
 
-    // El lector dice que la tercera es el mismo diseño que la segunda en otro color, y la tercera
-    // no trae SKU: es la camiseta del segundo SKU fotografiada sin el pie.
-    assertEquals(List.of(F2, F3), repartidos.get(1).fotos());
-    assertEquals(Optional.of("RV102336"), repartidos.get(1).producto().codigoReferenciaOpcional());
-    assertEquals(Respaldo.TEXTO_IMPRESO, repartidos.get(1).respaldo());
-    assertEquals(Optional.of(F2), repartidos.get(1).exclusivaOpcional());
+    // La tercera no trae SKU y el lector dice que es el mismo diseño que la segunda: es la camiseta
+    // del segundo SKU fotografiada sin el pie.
+    assertEquals(
+        List.of(
+            new DisenoDeAlbum("RV102347", List.of("S", "M"), List.of(F1)),
+            new DisenoDeAlbum("RV102336", List.of("S", "M", "L", "XL"), List.of(F2, F3))),
+        RepartoDeFotos.disenosDelAlbum(List.of(F1, F2, F3), lectura));
   }
 
-  /**
-   * Una foto que el lector no leyó —omitida, ilegible o que el modelo no devolvió— no es un diseño:
-   * es de todos. Antes era un diseño ella sola, un borrador basura que además se la quitaba al
-   * real.
-   */
+  /** Una foto que el lector no leyó no es de ningún diseño: vale para todas las prendas. */
   @Test
-  void unaFotoSinLecturaEnUnAlbumEsDeTodosLosDisenosYNoUnDisenoMas() {
+  void unaFotoSinLecturaEnUnAlbumNoEsDeNingunaPrenda() {
     ProductoExtraido camisetas = producto("Camiseta", TipoProductoProveedor.CAMISETA, null);
     LecturaDeFotos lectura =
         new LecturaDeFotos(
@@ -171,11 +177,13 @@ class RepartoDeFotosTest {
     List<ProductoRepartido> repartidos =
         RepartoDeFotos.repartir(List.of(camisetas), List.of(F1, F2, F3), lectura);
 
-    assertEquals(2, repartidos.size());
-    assertEquals(List.of(F1, F2), repartidos.get(0).fotos());
-    assertEquals(List.of(F2, F3), repartidos.get(1).fotos());
-    assertEquals(Optional.of(F3), repartidos.get(1).exclusivaOpcional());
-    repartidos.forEach(r -> assertTrue(r.disenoDeAlbum()));
+    assertEquals(1, repartidos.size());
+    assertEquals(List.of(F1, F2, F3), repartidos.getFirst().fotos());
+    assertEquals(
+        List.of(List.of(F1), List.of(F3)),
+        RepartoDeFotos.disenosDelAlbum(List.of(F1, F2, F3), lectura).stream()
+            .map(DisenoDeAlbum::fotos)
+            .toList());
   }
 
   @Test
@@ -189,15 +197,15 @@ class RepartoDeFotosTest {
 
     assertEquals(1, repartidos.size());
     assertEquals(List.of(F1, F2), repartidos.getFirst().fotos());
+    assertTrue(RepartoDeFotos.disenosDelAlbum(List.of(F1, F2), lectura).isEmpty());
   }
 
   /**
-   * Con el código del texto, los diseños 2..N tendrían la misma huella que el primero y se
-   * descartarían por «la misma referencia», con sus fotos perdidas en el primero. Dos fotos con el
-   * mismo SKU son el mismo producto, aunque el lector les ponga diseños distintos.
+   * El producto del álbum no lleva el código del texto: es el de uno de los diseños, o de ninguno.
+   * Dos fotos con el mismo SKU son la misma prenda, aunque el lector les ponga diseños distintos.
    */
   @Test
-  void unDisenoNoHeredaElCodigoDelTextoYElMismoSkuEsElMismoProducto() {
+  void elAlbumNoHeredaElCodigoDelTextoYElMismoSkuEsLaMismaPrenda() {
     ProductoExtraido jeans = producto("Jean importado", TipoProductoProveedor.PANTALON, "REF123");
     LecturaDeFotos lectura =
         new LecturaDeFotos(
@@ -212,22 +220,22 @@ class RepartoDeFotosTest {
     List<ProductoRepartido> repartidos =
         RepartoDeFotos.repartir(List.of(jeans), List.of(F1, F2, F3, F4), lectura);
 
-    // La primera no trae SKU y su diseño no es el de ningún SKU: es de los dos.
+    assertEquals(1, repartidos.size());
+    assertEquals(Optional.empty(), repartidos.getFirst().producto().codigoReferenciaOpcional());
     assertEquals(
-        List.of(List.of(F1, F2, F3), List.of(F1, F4)),
-        repartidos.stream().map(ProductoRepartido::fotos).toList());
-    assertEquals(
-        List.of(Optional.of("RV9"), Optional.of("RV7")),
-        repartidos.stream().map(r -> r.producto().codigoReferenciaOpcional()).toList());
+        List.of(
+            new DisenoDeAlbum("RV9", List.of(), List.of(F2, F3)),
+            new DisenoDeAlbum("RV7", List.of(), List.of(F4))),
+        RepartoDeFotos.disenosDelAlbum(List.of(F1, F2, F3, F4), lectura));
   }
 
   /**
    * Los jeans de las 19:19 del 9 de octubre de 2026: en tres corridas contra la verdad, el lector
-   * juntó de maneras distintas diez jeans con diez SKU. Con un producto por SKU (decidido el 10 de
-   * octubre de 2026) da igual cómo los agrupe.
+   * juntó de maneras distintas diez jeans con diez SKU. Por SKU da igual cómo los agrupe: son diez
+   * prendas de un solo producto.
    */
   @Test
-  void cadaSkuEsUnProductoAunqueElLectorLosJunte() {
+  void cadaSkuEsUnaPrendaAunqueElLectorLosJunte() {
     UUID f5 = UUID.randomUUID();
     ProductoExtraido jeans = producto("Jean licrado", TipoProductoProveedor.PANTALON, null);
     LecturaDeFotos lectura =
@@ -241,23 +249,24 @@ class RepartoDeFotosTest {
                 delAlbum(4, "RV485", List.of("30"), "azul", "jean clasico")),
             "{}");
 
-    List<ProductoRepartido> repartidos =
-        RepartoDeFotos.repartir(List.of(jeans), List.of(F1, F2, F3, F4, f5), lectura);
+    List<DisenoDeAlbum> disenos =
+        RepartoDeFotos.disenosDelAlbum(List.of(F1, F2, F3, F4, f5), lectura);
 
     assertEquals(
         List.of(List.of(F1), List.of(F2), List.of(F3), List.of(F4), List.of(f5)),
-        repartidos.stream().map(ProductoRepartido::fotos).toList());
-    assertEquals(Tallas.lista(List.of("32")), repartidos.get(1).producto().tallas());
+        disenos.stream().map(DisenoDeAlbum::fotos).toList());
+    assertEquals(List.of("32"), disenos.get(1).tallas());
+    assertEquals(
+        1, RepartoDeFotos.repartir(List.of(jeans), List.of(F1, F2, F3, F4, f5), lectura).size());
   }
 
   /**
    * El lector dijo que no era un álbum, pero el pie trae un SKU por foto: los diez jeans de las
-   * 19:19 en la segunda corrida contra la verdad. Y la falda con un SKU por color son dos
-   * productos: es el costo de un producto por SKU.
+   * 19:19 en la segunda corrida contra la verdad. Y la falda con un SKU por color es una falda en
+   * dos prendas.
    */
   @Test
   void dosSkuDistintosImpresosHacenAlbumAunqueElLectorDigaQueNo() {
-    ProductoExtraido jeans = producto("Jean licrado", TipoProductoProveedor.PANTALON, null);
     LecturaDeFotos noEsAlbumDiceElLector =
         new LecturaDeFotos(
             false,
@@ -275,9 +284,31 @@ class RepartoDeFotosTest {
             "{}");
 
     assertEquals(
-        3,
-        RepartoDeFotos.repartir(List.of(jeans), List.of(F1, F2, F3), noEsAlbumDiceElLector).size());
-    assertEquals(2, RepartoDeFotos.repartir(List.of(jeans), List.of(F1, F2), falda).size());
+        3, RepartoDeFotos.disenosDelAlbum(List.of(F1, F2, F3), noEsAlbumDiceElLector).size());
+    assertEquals(2, RepartoDeFotos.disenosDelAlbum(List.of(F1, F2), falda).size());
+    assertEquals(
+        1,
+        RepartoDeFotos.repartir(
+                List.of(producto("Falda", TipoProductoProveedor.FALDA, null)),
+                List.of(F1, F2),
+                falda)
+            .size());
+  }
+
+  /** Lo que el lector juntó con la talla en el pie no es una talla: «XLNEGRO». */
+  @Test
+  void loQueNoPareceUnaTallaNoEntraEnLasDelPie() {
+    LecturaDeFotos lectura =
+        new LecturaDeFotos(
+            true,
+            List.of(
+                delAlbum(0, "RV102346", List.of("S", "M", "L", "XLNEGRO"), "blanco", "msm"),
+                delAlbum(1, "RV102348", List.of("S", "M", "L"), "gris", "jordan")),
+            "{}");
+
+    assertEquals(
+        List.of("S", "M", "L"),
+        RepartoDeFotos.disenosDelAlbum(List.of(F1, F2), lectura).getFirst().tallas());
   }
 
   /** Sin SKU no hay con qué saber que son dos: el mismo color puede ser frente y espalda. */
@@ -490,8 +521,8 @@ class RepartoDeFotosTest {
         1,
         RepartoDeFotos.repartir(List.of(conTonos("Bolso", 2)), List.of(F1, F2, F3), tresDisenos)
             .size());
-    assertEquals(
-        2, RepartoDeFotos.repartir(List.of(conTonos("Bolso", 3)), List.of(F1, F2), conSku).size());
+    assertTrue(RepartoDeFotos.disenosDelAlbum(List.of(F1, F2, F3), tresDisenos).isEmpty());
+    assertEquals(2, RepartoDeFotos.disenosDelAlbum(List.of(F1, F2), conSku).size());
   }
 
   @Test

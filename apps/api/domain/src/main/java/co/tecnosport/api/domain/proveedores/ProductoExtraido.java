@@ -529,43 +529,25 @@ public record ProductoExtraido(
   }
 
   /**
-   * Este producto como un diseño de un álbum: el código es <b>solo</b> el SKU de su pie —nulo si no
-   * lo tiene—, nunca el que el texto le dio al anuncio entero, que compartirían todos los diseños;
-   * y las tallas, las del pie si las trae.
+   * Este producto como el de un álbum (13 de octubre de 2026): sin código —el del texto sería el de
+   * un diseño, y cada SKU del pie es de su prenda— y con las tallas del texto más las de los pies
+   * que el texto no nombra. Sin tallas en el texto, las de los pies.
+   *
+   * @param tallasDeLosPies las de todos los diseños, en el orden en que aparecen
    */
-  public ProductoExtraido comoDisenoDeAlbum(String skuDelPie, List<String> tallasDelPie) {
-    ProductoExtraido conFotos = conLoDeSusFotos(skuDelPie, tallasDelPie);
-    return new ProductoExtraido(
-        conFotos.esProducto,
-        conFotos.estaAgotado,
-        conFotos.titulo,
-        conFotos.linea,
-        conFotos.tipo,
-        conFotos.precioProveedor,
-        conFotos.tallas,
-        conFotos.cantidadTonos,
-        conFotos.tonosNombrados,
-        conFotos.material,
-        conFotos.descripcion,
-        conFotos.altEn,
-        conFotos.esReplica,
-        conFotos.confianza,
-        conFotos.notas,
-        normalizarCodigo(skuDelPie),
-        conFotos.tallasPorTono,
-        conFotos.preciosAdicionales,
-        conFotos.marcas,
-        conFotos.set);
-  }
-
-  /**
-   * Este mismo producto con lo que se leyó en sus fotos: el código impreso en la etiqueta o el pie
-   * —que identifica la prenda igual que el escrito ({@link HuellaProveedor#deReferencia})— y las
-   * tallas del pie, que en un álbum son las del diseño y no las del texto. Lo que la foto no trae
-   * se queda como estaba.
-   */
-  public ProductoExtraido conLoDeSusFotos(String codigoDeLaFoto, List<String> tallasDeLaFoto) {
-    String codigo = normalizarCodigo(codigoDeLaFoto);
+  public ProductoExtraido comoAlbum(List<String> tallasDeLosPies) {
+    Tallas delAlbum = tallas;
+    if (tallasDeLosPies != null && !tallasDeLosPies.isEmpty()) {
+      if (tallas.tipo() == TipoDeTalla.LISTA) {
+        List<String> todas = new ArrayList<>(tallas.valores());
+        tallasDeLosPies.stream()
+            .filter(t -> todas.stream().noneMatch(t::equalsIgnoreCase))
+            .forEach(todas::add);
+        delAlbum = Tallas.lista(todas);
+      } else if (tallas.tipo() == TipoDeTalla.DESCONOCIDA) {
+        delAlbum = Tallas.lista(tallasDeLosPies);
+      }
+    }
     return new ProductoExtraido(
         esProducto,
         estaAgotado,
@@ -573,7 +555,7 @@ public record ProductoExtraido(
         linea,
         tipo,
         precioProveedor,
-        tallasDeLaFoto == null || tallasDeLaFoto.isEmpty() ? tallas : Tallas.lista(tallasDeLaFoto),
+        delAlbum,
         cantidadTonos,
         tonosNombrados,
         material,
@@ -582,7 +564,7 @@ public record ProductoExtraido(
         esReplica,
         confianza,
         notas,
-        codigo == null ? codigoReferencia : codigo,
+        null,
         tallasPorTono,
         preciosAdicionales,
         marcas,
@@ -601,7 +583,12 @@ public record ProductoExtraido(
     return Optional.ofNullable(codigoReferencia);
   }
 
-  private static String normalizarCodigo(String codigo) {
+  /**
+   * Un código del proveedor como se compara en todas partes: en mayúsculas, sin espacios ni
+   * paréntesis, con alguna cifra y de 2 a 12 caracteres. Nulo si no lo es. Lo usan también la
+   * aprobación, para el SKU que deja en las variantes de un álbum, y la lectura del pie.
+   */
+  public static String normalizarCodigo(String codigo) {
     if (codigo == null) {
       return null;
     }

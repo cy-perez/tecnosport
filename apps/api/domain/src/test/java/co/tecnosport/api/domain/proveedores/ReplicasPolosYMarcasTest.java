@@ -238,11 +238,40 @@ class ReplicasPolosYMarcasTest {
   }
 
   /**
-   * En un álbum, cada SKU ya es un producto: el que tiene la foto con el logo de Amiri se titula
-   * con Amiri, no con las cuatro marcas del anuncio.
+   * Un álbum de varias marcas que se leen en sus fotos es un borrador por marca, como cualquier
+   * anuncio de varias marcas (11 de octubre de 2026); el álbum ya no parte por SKU.
    */
   @Test
-  void enUnAlbumCadaDisenoLlevaLaMarcaQueSeLeeEnSusFotos() {
+  void unAlbumDeVariasMarcasEsUnBorradorPorMarca() {
+    ProductoExtraido jeans =
+        extraido(
+            "Pantalón estilo Diesel - Amiri importado",
+            TipoProductoProveedor.PANTALON,
+            true,
+            List.of("Diesel", "Amiri"));
+    LecturaDeFotos lectura =
+        new LecturaDeFotos(
+            true,
+            List.of(
+                new LecturaDeFoto(
+                    0, List.of(), "RV1", List.of("32"), List.of("azul"), "a", List.of("Amiri")),
+                new LecturaDeFoto(
+                    1, List.of(), "RV2", List.of("34"), List.of("negro"), "b", List.of("Diesel"))),
+            "{}");
+
+    List<ProductoRepartido> repartidos =
+        RepartoDeFotos.repartir(List.of(jeans), List.of(F1, F2), lectura);
+
+    assertEquals(2, repartidos.size());
+    assertEquals("Pantalón estilo Amiri importado", repartidos.get(0).producto().titulo());
+    assertEquals("Pantalón estilo Diesel importado", repartidos.get(1).producto().titulo());
+  }
+
+  /**
+   * Con una sola marca legible no hay dos que partir: el álbum es un producto con las del texto.
+   */
+  @Test
+  void unAlbumConUnaSolaMarcaLegibleEsUnSoloProducto() {
     ProductoExtraido jeans =
         extraido(
             "Pantalón estilo Diesel - Amiri importado",
@@ -262,14 +291,9 @@ class ReplicasPolosYMarcasTest {
     List<ProductoRepartido> repartidos =
         RepartoDeFotos.repartir(List.of(jeans), List.of(F1, F2), lectura);
 
-    assertEquals(2, repartidos.size());
-    assertEquals("Pantalón estilo Amiri importado", repartidos.get(0).producto().titulo());
+    assertEquals(1, repartidos.size());
     assertEquals(
-        "Pantalón estilo Diesel - Amiri importado",
-        repartidos.get(1).producto().titulo(),
-        "sin marca legible no hay con qué decidir");
-    assertEquals("a", repartidos.get(0).reparto().diseno(), "la etiqueta del lector, para unirlos");
-    assertEquals("b", repartidos.get(1).reparto().diseno());
+        "Pantalón estilo Diesel - Amiri importado", repartidos.getFirst().producto().titulo());
   }
 
   // --- Los tonos de las fotos ---

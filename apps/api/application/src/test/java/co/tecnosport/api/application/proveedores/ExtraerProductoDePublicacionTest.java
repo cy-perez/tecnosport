@@ -549,7 +549,7 @@ class ExtraerProductoDePublicacionTest {
   }
 
   @Test
-  void elAlbumDeLaRiverahDaUnBorradorPorSkuConElPrecioDelTexto() {
+  void elAlbumDeLaRiverahDaUnSoloBorradorConElPrecioDelTexto() {
     PublicacionProveedor publicacion =
         PublicacionProveedor.abrir(
             texto("Camisetas Oversize para Caballero\nCamiseta 🎽55.000~~\nPromo 4x200.000"));
@@ -583,16 +583,17 @@ class ExtraerProductoDePublicacionTest {
         evaluarConFotos(
             publicacion, List.of(camiseta), lector, almacenCon("p/1.jpg", "p/2.jpg", "p/3.jpg"));
 
-    assertEquals(2, evaluadas.size());
-    evaluadas.forEach(e -> assertTrue(e.disenoDeAlbum()));
-    evaluadas.forEach(
-        e -> assertEquals(Optional.of(Dinero.deCop(55000)), e.precioProveedorOpcional()));
-    assertEquals(Optional.of("RV102347"), evaluadas.get(0).producto().codigoReferenciaOpcional());
-    assertEquals(List.of(primera.id(), tercera.id()), evaluadas.get(0).fotos());
-    evaluadas.forEach(e -> assertFalse(e.alertas().contains(AlertaBorrador.CONFIANZA_BAJA)));
-    // La tercera no trae pie ni el diseño de ningún SKU: no es un producto más, es de los dos.
-    assertEquals(List.of(segunda.id(), tercera.id()), evaluadas.get(1).fotos());
-    assertEquals(Set.of(primera.id()), evaluadas.get(1).reparto().ajenas());
+    // Un solo borrador desde el 13 de octubre de 2026: cada SKU es una prenda del álbum, y el
+    // producto no lleva el código de ninguno.
+    assertEquals(1, evaluadas.size());
+    ExtraccionEvaluada album = evaluadas.getFirst();
+    assertFalse(album.disenoDeAlbum());
+    assertEquals(Optional.of(Dinero.deCop(55000)), album.precioProveedorOpcional());
+    assertEquals(Optional.empty(), album.producto().codigoReferenciaOpcional());
+    assertEquals(List.of(primera.id(), segunda.id(), tercera.id()), album.fotos());
+    assertEquals(Set.of(), album.reparto().ajenas());
+    assertFalse(album.alertas().contains(AlertaBorrador.CONFIANZA_BAJA));
+    assertFalse(album.alertas().contains(AlertaBorrador.FOTOS_COMPARTIDAS));
   }
 
   @Test

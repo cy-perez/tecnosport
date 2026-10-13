@@ -6,6 +6,7 @@ import co.tecnosport.api.domain.proveedores.FotoSubida;
 import co.tecnosport.api.domain.proveedores.LecturaDeFotos;
 import co.tecnosport.api.domain.proveedores.MensajeProveedor;
 import co.tecnosport.api.domain.proveedores.PublicacionProveedor;
+import co.tecnosport.api.domain.proveedores.RepartoDeFotos;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -24,6 +25,10 @@ import java.util.stream.Collectors;
  * <p>Cada foto trae los colores que la lectura de fotos vio en ella: el sugerido si mostraba uno
  * solo, y todos si mostraba varios —la foto que retrata la blusa en negro, cocoa y verde—. Esos son
  * los tonos que el panel propone como prendas sin foto propia (12 de octubre de 2026).
+ *
+ * <p>Y si la publicación es un álbum —La Riverah, un texto y un SKU impreso en cada foto—, trae las
+ * prendas del álbum: una por SKU, con sus fotos y las tallas de su pie (13 de octubre de 2026). Es
+ * lo que el panel propone al aprobar, y el SKU de cada una queda en sus variantes.
  */
 public final class VerBorrador {
 
@@ -136,7 +141,29 @@ public final class VerBorrador {
                     new Hermano(
                         otro.id(), otro.titulo().orElse(null), borrador.mismoDisenoQue(otro)))
             .toList();
-    return new DetalleDeBorrador(borrador, publicacion, textos, fotos, hermanos);
+    return new DetalleDeBorrador(
+        borrador, publicacion, textos, fotos, hermanos, prendasDelAlbum(borrador, medios));
+  }
+
+  /**
+   * Las prendas del álbum que este borrador conserva: un diseño cuyas fotos descartó todas ya no es
+   * suyo.
+   */
+  private List<PrendaDelAlbum> prendasDelAlbum(BorradorProducto borrador, List<UUID> medios) {
+    Optional<LecturaDeFotos> lectura = borrador.lecturaDeFotos().flatMap(interprete::interpretar);
+    if (lectura.isEmpty()) {
+      return List.of();
+    }
+    List<PrendaDelAlbum> prendas = new ArrayList<>();
+    for (RepartoDeFotos.DisenoDeAlbum diseno :
+        RepartoDeFotos.disenosDelAlbum(medios, lectura.get())) {
+      List<UUID> suyas =
+          diseno.fotos().stream().filter(f -> !borrador.fotosDescartadas().contains(f)).toList();
+      if (!suyas.isEmpty()) {
+        prendas.add(new PrendaDelAlbum(diseno.sku(), diseno.tallas(), suyas));
+      }
+    }
+    return List.copyOf(prendas);
   }
 
   /**
@@ -179,7 +206,21 @@ public final class VerBorrador {
       PublicacionProveedor publicacion,
       List<String> textos,
       List<FotoDeBorrador> fotos,
-      List<Hermano> hermanos) {
+      List<Hermano> hermanos,
+      List<PrendaDelAlbum> prendasDelAlbum) {
+
+    public DetalleDeBorrador {
+      prendasDelAlbum = prendasDelAlbum == null ? List.of() : List.copyOf(prendasDelAlbum);
+    }
+
+    public DetalleDeBorrador(
+        BorradorProducto borrador,
+        PublicacionProveedor publicacion,
+        List<String> textos,
+        List<FotoDeBorrador> fotos,
+        List<Hermano> hermanos) {
+      this(borrador, publicacion, textos, fotos, hermanos, List.of());
+    }
 
     public DetalleDeBorrador(
         BorradorProducto borrador,
@@ -199,6 +240,21 @@ public final class VerBorrador {
   public record Hermano(UUID id, String titulo, boolean mismoDiseno) {
     public Hermano(UUID id, String titulo) {
       this(id, titulo, false);
+    }
+  }
+
+  /**
+   * Una prenda de un álbum, como la propone el panel.
+   *
+   * @param referencia el SKU del pie de sus fotos
+   * @param tallas las de su pie; vacía si no las dice
+   * @param fotos las suyas que el borrador conserva, por mensaje y en orden
+   */
+  public record PrendaDelAlbum(String referencia, List<String> tallas, List<UUID> fotos) {
+    public PrendaDelAlbum {
+      Objects.requireNonNull(referencia);
+      tallas = List.copyOf(tallas);
+      fotos = List.copyOf(fotos);
     }
   }
 
