@@ -67,5 +67,12 @@ Reglas, en orden de importancia:
    Diesel, Amiri»), y la que lees es una de ellas, escríbela **igual que el anuncio**. Una por
    elemento; vacía si no se lee ninguna. Como con los códigos: solo la que se lee, no la que
    supones.
+9. `tallas` son las tallas impresas **sobre la foto, fuera del pie**: el rótulo con una lista de
+   números o de letras que algunos proveedores ponen en una esquina —un recuadro blanco con «35 /
+   36 / 38 / 41 / 42» uno debajo del otro—. Son las tallas que hay de lo que esa foto muestra.
+   Cópialas tal como se ven, una por elemento y en mayúsculas: `["35", "36", "38", "41", "42"]`. No
+   son tallas las del pie —esas van en `pie`—, un precio, la fecha, la talla de la etiqueta de la
+   prenda ni un número de la caja. Si la foto no trae ese rótulo, `[]`. Como con los códigos: solo
+   las que **lees**, no las que el anuncio dice.
 
 Responde solo con el JSON.

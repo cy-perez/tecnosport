@@ -94,10 +94,42 @@ Decidida por el negocio el 13 de octubre de 2026.
      venden.
    - Como las tallas, el ajuste escrito viaja con la aprobación aunque no se haya guardado.
 
+10. **El lector de fotos lee el rótulo de tallas** (`LecturaDeFoto.tallasImpresas`, campo `tallas`
+    del esquema). Es el recuadro blanco con «35 / 36 / 38 / 41 / 42» que Imperio Wicho imprime en la
+    esquina cuando escribe «Tallas disponibles en la foto!», y no es el pie de La Riverah.
+    - Si el texto no dice tallas, el producto llega con todas las de sus fotos, de menor a mayor.
+    - El panel recibe las de cada foto, ya corridas con el ajuste del borrador, y llena con ellas la
+      tabla de color y talla.
+    - Las lecturas guardadas antes de este cambio no traen el campo, y se leen vacías.
+11. **«Horma normal Dama, Aumenta 1 Cab» parte el anuncio** (`AjusteDelAnuncio.porGenero`,
+    `BorradorProducto.delOtroGenero`). El de dama se queda con las tallas de la foto y sin ajuste.
+    El de caballero queda una abajo, con ajuste 1.
+    - Los dos tienen las mismas fotos, el mismo texto y el mismo costo.
+    - El título dice el género («Tenis estilo Nike para dama», «… para caballero»,
+      `TituloPorGenero`).
+    - El de caballero lleva una huella derivada de la de dama (`HuellaProveedor.delGemelo`), para
+      que aprobar los dos no choque.
+    - **Los dos viven y se agotan juntos.** Cuando el anuncio vuelve, la foto reconoce a los dos.
+      Manda el de dama, y la renovación o el «AGOTADO» se aplica también al de caballero, que se
+      encuentra por su huella de gemelo. Lo destapó la revisión adversarial con las pruebas en verde:
+      la consulta por foto no tiene orden y caía en cualquiera de los dos, y un agotado dejaba al
+      otro a la venta sin existencias.
+    - Si el anuncio está además en tallas EUR, las dos partes suman la de EUR.
+    - Un bolso del mismo anuncio no talla: ni se corre ni se parte.
+
 ## Consecuencias
 
-- Queda para después: el lector de fotos lee las tallas impresas en la foto —el rótulo de la
-  esquina, que no es el pie de La Riverah—, y el anuncio unisex se parte en dos.
+- **Una talla única no guarda ajuste**: se pide como se vende. Antes quedaba con un ajuste que
+  bloqueaba la aprobación desde un campo que el panel no mostraba.
+- **Lo que queda abierto del anuncio unisex:**
+  - Las tallas de cada foto llegan a su prenda solo si la lectura vio en ella un único color. Una
+    foto «negro con suela blanca» leída como dos colores no tiene prenda propuesta, y quien revisa
+    marca sus tallas a mano.
+  - Los contadores del lote cuentan el par como un borrador nuevo, no como dos.
+  - Si la extracción no dio título ni precio, los dos nacen sin huella. Si quien revisa les escribe
+    el mismo título, el segundo choca al aprobarse.
+- El esquema del lector cambió: la prueba `LectorDeFotosClaudeContratoTest` contra la API real se
+  corre antes de fusionar (`-PintegracionExterna=true` con `ANTHROPIC_API_KEY`).
 - Una redacción nueva del proveedor —«horma pequeña», «pide una más»— no se lee hasta agregarla a
   `AjusteDelAnuncio` con su prueba. Mientras tanto, el borrador nace sin ajuste y quien revisa lo pone
   en el panel.

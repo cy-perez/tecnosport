@@ -114,14 +114,68 @@ class TallasCorridasDelBorradorTest {
     assertFalse(polo.alertas().contains(AlertaBorrador.TALLAS_CORRIDAS));
   }
 
+  /** Una talla única se pide como se vende: no queda ajuste que deje la aprobación bloqueada. */
   @Test
-  void unaTallaUnicaNoSeCorre() {
+  void unaTallaUnicaNoSeCorreNiGuardaAjuste() {
     BorradorProducto polo = borrador(TipoProductoProveedor.POLO, Tallas.unica(null));
 
     BorradorProducto.conTallasCorridas(polo, new AjusteDeTalla(1));
 
     assertEquals(Tallas.unica(null), polo.tallas());
-    assertTrue(polo.alertas().contains(AlertaBorrador.TALLAS_SIN_CORRER));
+    assertTrue(polo.ajusteDeTalla().ninguno());
+    assertTrue(polo.alertas().isEmpty());
+  }
+
+  /** Sin tallas leídas el ajuste queda, y la alerta pide escribir las que se venden. */
+  @Test
+  void sinTallasElAjusteQuedaConSuAlerta() {
+    BorradorProducto tenis = borrador(TipoProductoProveedor.TENIS, Tallas.desconocida());
+
+    BorradorProducto.conTallasCorridas(tenis, new AjusteDeTalla(1));
+
+    assertEquals(new AjusteDeTalla(1), tenis.ajusteDeTalla());
+    assertTrue(tenis.alertas().contains(AlertaBorrador.TALLAS_SIN_CORRER));
+  }
+
+  @Test
+  void losDosGenerosDelMismoAnuncioSonGemelos() {
+    BorradorProducto dama =
+        BorradorProducto.nuevo(
+            UUID.randomUUID(),
+            UUID.randomUUID(),
+            new ProductoExtraido(
+                true,
+                false,
+                "Tenis estilo Nike unisex",
+                LineaCatalogo.CALZADO,
+                TipoProductoProveedor.TENIS,
+                Dinero.deCop(85000),
+                Tallas.lista(List.of("41")),
+                null,
+                List.of(),
+                null,
+                "Tenis.",
+                null,
+                false,
+                new BigDecimal("0.9"),
+                null,
+                null),
+            "{}",
+            Dinero.deCop(85000),
+            Dinero.deCop(110000),
+            HuellaProveedor.calcular(UUID.randomUUID(), "Tenis", Dinero.deCop(85000)),
+            null,
+            Set.of(),
+            T);
+    BorradorProducto caballero =
+        dama.delOtroGenero("Tenis para caballero", new AjusteDeTalla(1), T);
+    BorradorProducto otro = borrador(TipoProductoProveedor.TENIS, Tallas.lista(List.of("41")));
+
+    assertTrue(dama.esGemeloDe(caballero));
+    assertTrue(caballero.esGemeloDe(dama));
+    assertFalse(dama.esGemeloDe(otro));
+    assertEquals(
+        Optional.of(HuellaProveedor.delGemelo(dama.huella().orElseThrow())), caballero.huella());
   }
 
   /** Lo que el panel enseña al lado de cada talla, con el paso del tipo de prenda. */
@@ -161,6 +215,29 @@ class TallasCorridasDelBorradorTest {
     org.junit.jupiter.api.Assertions.assertThrows(
         co.tecnosport.api.domain.compartido.ExcepcionDeDominio.class,
         () -> polo.cambiarAjusteDeTalla(AjusteDeTalla.NINGUNO));
+  }
+
+  /**
+   * IMG-20261010-WA0150 de Imperio Wicho: para dama 35, 36, 38, 41 y 42; para caballero una talla
+   * abajo, 34, 35, 37, 40 y 41. Las mismas fotos, otro título y otra huella.
+   */
+  @Test
+  void elBorradorDeCaballeroCorreLasTallasConSuAjuste() {
+    BorradorProducto dama =
+        borrador(TipoProductoProveedor.TENIS, Tallas.lista(List.of("35", "36", "38", "41", "42")));
+
+    BorradorProducto caballero =
+        dama.delOtroGenero("Tenis estilo Nike para caballero", new AjusteDeTalla(1), T);
+
+    assertEquals(Tallas.lista(List.of("34", "35", "37", "40", "41")), caballero.tallas());
+    assertEquals(new AjusteDeTalla(1), caballero.ajusteDeTalla());
+    assertEquals(Optional.of("Tenis estilo Nike para caballero"), caballero.titulo());
+    assertEquals(dama.publicacionId(), caballero.publicacionId());
+    assertEquals(dama.fotosDescartadas(), caballero.fotosDescartadas());
+    assertTrue(caballero.alertas().contains(AlertaBorrador.TALLAS_CORRIDAS));
+    assertEquals(
+        Tallas.lista(List.of("35", "36", "38", "41", "42")), dama.tallas(), "la de dama no cambia");
+    assertFalse(caballero.id().equals(dama.id()));
   }
 
   @Test

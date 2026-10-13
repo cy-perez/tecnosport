@@ -503,6 +503,69 @@ class ExtraerProductoDePublicacionTest {
     assertEquals(2, evaluada.producto().cantidadTonos());
   }
 
+  /**
+   * «Tallas disponibles en la foto!» (Imperio Wicho, 10 de octubre de 2026): el texto no las dice,
+   * y el producto llega con las del rótulo de sus fotos.
+   */
+  @Test
+  void sinTallasEnElTextoLlegaConLasImpresasEnSusFotos() {
+    PublicacionProveedor publicacion =
+        PublicacionProveedor.abrir(
+            texto("NIKE UNISEX ULTRALIVIANO🔥\nTallas disponibles en la foto!\n💰*$85,000*"));
+    publicacion.anexar(foto("p/1.jpg"));
+    publicacion.anexar(foto("p/2.jpg"));
+    LectorDeFotos lector =
+        fotos ->
+            Optional.of(
+                new LecturaDeFotos(
+                    false,
+                    List.of(
+                        new LecturaDeFoto(
+                            0,
+                            List.of(),
+                            null,
+                            List.of(),
+                            List.of("blanco"),
+                            null,
+                            List.of(),
+                            List.of("41", "42", "43")),
+                        new LecturaDeFoto(
+                            1,
+                            List.of(),
+                            null,
+                            List.of(),
+                            List.of("negro"),
+                            null,
+                            List.of(),
+                            List.of("35", "36", "38", "41", "42"))),
+                    "{}"));
+    ProductoExtraido sinTallas =
+        new ProductoExtraido(
+            true,
+            false,
+            "Tenis estilo Nike unisex",
+            LineaCatalogo.CALZADO,
+            TipoProductoProveedor.TENIS,
+            null,
+            Tallas.desconocida(),
+            null,
+            List.of(),
+            null,
+            "Tenis ultralivianos.",
+            null,
+            false,
+            new BigDecimal("0.9"),
+            null,
+            null);
+
+    ExtraccionEvaluada evaluada =
+        evaluarConFotos(publicacion, List.of(sinTallas), lector, almacenCon("p/1.jpg", "p/2.jpg"))
+            .getFirst();
+
+    assertEquals(
+        Tallas.lista(List.of("35", "36", "38", "41", "42", "43")), evaluada.producto().tallas());
+  }
+
   @Test
   void elBodiYElJeanDeVioletaSeRepartenLasFotosYDejanDeSerCompartidas() {
     PublicacionProveedor publicacion =

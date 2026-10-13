@@ -31,13 +31,28 @@ public final class AjusteDelAnuncio {
 
   /** «aumentar 2 tallas», «aumenta una talla», «pedir una talla mas», «pedir 2 tallas mas». */
   private static final Pattern AUMENTAR =
-      Pattern.compile("\\baumentar?\\s+(\\d|una?|dos|tres|cuatro)\\s+tallas?\\b");
+      Pattern.compile(
+          "\\baumentar?\\s+(\\d|una?|dos|tres|cuatro)\\s+tallas?\\b",
+          Pattern.UNICODE_CHARACTER_CLASS);
 
   private static final Pattern PEDIR_MAS =
-      Pattern.compile("\\bpedir\\s+(\\d|una?|dos|tres|cuatro)\\s+tallas?\\s+mas\\b");
+      Pattern.compile(
+          "\\bpedir\\s+(\\d|una?|dos|tres|cuatro)\\s+tallas?\\s+mas\\b",
+          Pattern.UNICODE_CHARACTER_CLASS);
+
+  /**
+   * «Horma normal Dama, Aumenta 1 Cab», «Horma normal Dama, aumentar 1 Cab» (Imperio Wicho, 10 de
+   * octubre de 2026): el mismo par sirve a dama en su talla y a caballero una más arriba.
+   */
+  private static final Pattern NORMAL_DAMA_AUMENTA_CABALLERO =
+      Pattern.compile(
+          "\\bhorma\\s+normal\\s+(?:para\\s+)?damas?\\W+(?:y\\s+)?aumentar?\\s+(\\d|una?|dos|tres|cuatro)"
+              + "\\s*(?:tallas?\\s+)?(?:para\\s+)?cab(?:alleros?)?\\b",
+          Pattern.UNICODE_CHARACTER_CLASS);
 
   /** «36 a la 45 eur», «tallas eur»: la marca EUR va con las tallas, no suelta en el texto. */
-  private static final Pattern EUR = Pattern.compile("(\\d{2}|tallas?)\\s*eur\\b");
+  private static final Pattern EUR =
+      Pattern.compile("(\\d{2}|tallas?)\\s*eur\\b", Pattern.UNICODE_CHARACTER_CLASS);
 
   private AjusteDelAnuncio() {}
 
@@ -49,11 +64,7 @@ public final class AjusteDelAnuncio {
     if (texto == null || texto.isBlank()) {
       return Optional.empty();
     }
-    String plano =
-        DIACRITICOS
-            .matcher(Normalizer.normalize(texto, Normalizer.Form.NFD))
-            .replaceAll("")
-            .toLowerCase(Locale.ROOT);
+    String plano = plano(texto);
     int horma =
         tallasDe(AUMENTAR.matcher(plano)).or(() -> tallasDe(PEDIR_MAS.matcher(plano))).orElse(0);
     int eur = EUR.matcher(plano).find() ? 1 : 0;
@@ -62,6 +73,39 @@ public final class AjusteDelAnuncio {
       return Optional.empty();
     }
     return Optional.of(new AjusteDeTalla(total));
+  }
+
+  /**
+   * El ajuste de cada género cuando el anuncio unisex los da distintos: «Horma normal Dama, Aumenta
+   * 1 Cab» es dama igual y caballero uno más arriba. El anuncio se parte en un borrador por género
+   * (ADR-0085), y cada uno corre sus tallas con el suyo.
+   *
+   * @return vacío si el anuncio no los distingue
+   */
+  public static Optional<PorGenero> porGenero(String texto) {
+    if (texto == null || texto.isBlank()) {
+      return Optional.empty();
+    }
+    return tallasDe(NORMAL_DAMA_AUMENTA_CABALLERO.matcher(plano(texto)))
+        .filter(tallas -> tallas > 0 && tallas <= AjusteDeTalla.MAXIMO)
+        .map(
+            tallas -> {
+              // «36 a la 45 eur» también aquí: las dos partes nacen de tallas EUR.
+              int eur = EUR.matcher(plano(texto)).find() ? 1 : 0;
+              return new PorGenero(
+                  new AjusteDeTalla(eur),
+                  new AjusteDeTalla(Math.min(tallas + eur, AjusteDeTalla.MAXIMO)));
+            });
+  }
+
+  /** El de dama y el de caballero de un mismo anuncio. */
+  public record PorGenero(AjusteDeTalla dama, AjusteDeTalla caballero) {}
+
+  private static String plano(String texto) {
+    return DIACRITICOS
+        .matcher(Normalizer.normalize(texto, Normalizer.Form.NFD))
+        .replaceAll("")
+        .toLowerCase(Locale.ROOT);
   }
 
   private static Optional<Integer> tallasDe(Matcher matcher) {

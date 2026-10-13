@@ -315,6 +315,130 @@ class ResolverBorradorTest {
     assertTrue(borrador.alertas().contains(AlertaBorrador.TALLAS_CORRIDAS));
   }
 
+  /**
+   * NIKE UNISEX de Imperio Wicho, 10 de octubre de 2026: «Horma normal Dama, Aumenta 1 Cab». Dos
+   * borradores de la misma publicación: dama en las tallas de la foto, caballero una abajo.
+   */
+  @Test
+  void unAnuncioUnisexConHormaDistintaSeParteEnDamaYCaballero() {
+    PublicacionProveedor publicacion =
+        publicacion(
+            "NIKE UNISEX ULTRALIVIANO🔥\nTallas disponibles en la foto!\n"
+                + "Horma normal Dama, Aumenta 1 Cab⚠️⚠️\n💰*$85,000*",
+            "foto-nike");
+    ExtraccionEvaluada nike = tenis(List.of("41", "42", "43"));
+
+    resolver(publicacion, nike);
+
+    List<BorradorProducto> enRevision = borradores.enEstado(EstadoBorrador.EN_REVISION);
+    assertEquals(2, enRevision.size());
+    BorradorProducto dama =
+        enRevision.stream()
+            .filter(b -> b.titulo().orElse("").endsWith("dama"))
+            .findFirst()
+            .orElseThrow();
+    BorradorProducto caballero =
+        enRevision.stream()
+            .filter(b -> b.titulo().orElse("").endsWith("caballero"))
+            .findFirst()
+            .orElseThrow();
+    assertEquals(Tallas.lista(List.of("41", "42", "43")), dama.tallas());
+    assertTrue(dama.ajusteDeTalla().ninguno());
+    assertEquals(Tallas.lista(List.of("40", "41", "42")), caballero.tallas());
+    assertEquals(new AjusteDeTalla(1), caballero.ajusteDeTalla());
+    assertEquals(dama.publicacionId(), caballero.publicacionId());
+    assertFalse(dama.huella().equals(caballero.huella()), "aprobar los dos no choca");
+  }
+
+  /**
+   * Aprobados los dos, el «AGOTADO» del anuncio unisex agota los dos: es el mismo par en otra
+   * talla. El de caballero se encuentra por su huella de gemelo, y aunque la foto dé primero con
+   * él, manda el de dama.
+   */
+  @Test
+  void elAgotadoDelAnuncioUnisexAgotaLosDosGemelos() {
+    String texto =
+        "NIKE UNISEX ULTRALIVIANO🔥\nTallas disponibles en la foto!\n"
+            + "Horma normal Dama, Aumenta 1 Cab⚠️⚠️\n💰*$85,000*";
+    resolver(publicacion(texto, "foto-nike"), tenis(List.of("41", "42", "43")));
+    BorradorProducto dama =
+        borradores.enEstado(EstadoBorrador.EN_REVISION).stream()
+            .filter(b -> b.titulo().orElse("").endsWith("dama"))
+            .findFirst()
+            .orElseThrow();
+    BorradorProducto caballero =
+        borradores.enEstado(EstadoBorrador.EN_REVISION).stream()
+            .filter(b -> b.titulo().orElse("").endsWith("caballero"))
+            .findFirst()
+            .orElseThrow();
+    Producto deDama =
+        productoExistente(
+            "Tenis para dama", 65000, dama.huella().orElseThrow(), EstadoDisponibilidad.DISPONIBLE);
+    Producto deCaballero =
+        productoExistente(
+            "Tenis para caballero",
+            65000,
+            caballero.huella().orElseThrow(),
+            EstadoDisponibilidad.DISPONIBLE);
+    PHash foto = dama.pHash().orElseThrow();
+    // La foto da primero con el de caballero: la consulta real no tiene orden.
+    caballero.aprobar(deCaballero.id(), foto);
+    borradores.porId.remove(dama.id());
+    dama.aprobar(deDama.id(), foto);
+    borradores.guardar(dama);
+
+    Resolucion agotado =
+        resolver(
+            publicacion(texto + "\nAGOTADO", "foto-nike", FECHA_DEL_MENSAJE.plusSeconds(86_400)),
+            agotadoDe(tenis(List.of("41", "42", "43"))));
+
+    assertEquals(TipoDeResolucion.AGOTADO, agotado.tipo());
+    assertEquals(EstadoDisponibilidad.AGOTADO_POR_PROVEEDOR, deDama.estadoDisponibilidad());
+    assertEquals(
+        EstadoDisponibilidad.AGOTADO_POR_PROVEEDOR,
+        deCaballero.estadoDisponibilidad(),
+        "el gemelo no se sigue vendiendo sin existencias");
+  }
+
+  private static ExtraccionEvaluada agotadoDe(ExtraccionEvaluada evaluada) {
+    ProductoExtraido p = evaluada.producto();
+    return new ExtraccionEvaluada(
+        new ProductoExtraido(
+            p.esProducto(),
+            true,
+            p.titulo(),
+            p.linea(),
+            p.tipo(),
+            Dinero.deCop(65000),
+            p.tallas(),
+            null,
+            List.of(),
+            null,
+            p.descripcion(),
+            null,
+            false,
+            new BigDecimal("0.9"),
+            null,
+            null),
+        "{}",
+        Dinero.deCop(65000),
+        Set.of(),
+        new UsoDelExtractor("falso", 1, 1, 1));
+  }
+
+  /** Un bolso del mismo anuncio no talla: ni se corre ni se parte. */
+  @Test
+  void unBolsoNoSeCorreNiSeParte() {
+    PublicacionProveedor publicacion =
+        publicacion("Bolso de dama 💰 53.000\nAumentar 2 tallas", "foto-bolso");
+
+    resolver(publicacion, evaluada("Bolso de dama mediano", 53000, true, false, Set.of()));
+
+    BorradorProducto bolso = borradores.enEstado(EstadoBorrador.EN_REVISION).getFirst();
+    assertTrue(bolso.ajusteDeTalla().ninguno());
+    assertFalse(bolso.alertas().contains(AlertaBorrador.TALLAS_SIN_CORRER));
+  }
+
   /** «Horma normal» no corre nada. */
   @Test
   void unAnuncioDeHormaNormalNaceConLasDelAnuncio() {

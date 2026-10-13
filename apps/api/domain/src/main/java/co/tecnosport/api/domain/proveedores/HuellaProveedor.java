@@ -88,6 +88,15 @@ public record HuellaProveedor(String valor) {
    * La de un borrador que se partió de otro desde el panel: la de aquel y la primera foto que se
    * llevó. Sin ella, aprobar los dos chocaría en la misma huella.
    */
+  /**
+   * La del producto de caballero de un anuncio unisex que se partió por género (ADR-0085), sacada
+   * de la de dama. Determinista, para que la renovación y el agotado de uno encuentren al otro: los
+   * dos vienen del mismo anuncio y comparten foto.
+   */
+  public static HuellaProveedor delGemelo(HuellaProveedor deDama) {
+    return deParte(deDama, "genero:caballero");
+  }
+
   public static HuellaProveedor deParte(HuellaProveedor deOrigen, String primeraFoto) {
     if (deOrigen == null || primeraFoto == null || primeraFoto.isBlank()) {
       throw new ExcepcionDeDominio("La huella de una parte necesita la de origen y su foto.");

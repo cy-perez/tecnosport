@@ -59,7 +59,8 @@ public record LecturaDeFotos(boolean albumDeDisenos, List<LecturaDeFoto> fotos, 
       List<String> tallasDelPie,
       List<String> colores,
       String diseno,
-      List<String> marcas) {
+      List<String> marcas,
+      List<String> tallasImpresas) {
 
     /** Un prefijo de tipo, como la «C:» de camiseta o la «J:» de jogger en las de Violeta. */
     private static final Pattern PREFIJO = Pattern.compile("^[A-Z]{1,2}:");
@@ -106,6 +107,31 @@ public record LecturaDeFotos(boolean albumDeDisenos, List<LecturaDeFoto> fotos, 
                   .filter(m -> !m.isEmpty())
                   .distinct()
                   .toList();
+      tallasImpresas =
+          tallasImpresas == null
+              ? List.of()
+              : tallasImpresas.stream()
+                  .filter(Objects::nonNull)
+                  .map(t -> t.strip().toUpperCase(Locale.ROOT))
+                  .filter(t -> !t.isEmpty())
+                  .distinct()
+                  .toList();
+    }
+
+    /**
+     * Sin tallas impresas fuera del pie: la forma de antes del 13 de octubre de 2026.
+     *
+     * @see #tallasImpresas
+     */
+    public LecturaDeFoto(
+        int posicion,
+        List<String> codigos,
+        String sku,
+        List<String> tallasDelPie,
+        List<String> colores,
+        String diseno,
+        List<String> marcas) {
+      this(posicion, codigos, sku, tallasDelPie, colores, diseno, marcas, List.of());
     }
 
     /** Sin marcas: la forma de antes del 11 de octubre de 2026. */
@@ -142,6 +168,22 @@ public record LecturaDeFotos(boolean albumDeDisenos, List<LecturaDeFoto> fotos, 
         List<String> colores,
         String diseno,
         List<String> marcas) {
+      return conPie(posicion, codigos, pie, colores, diseno, marcas, List.of());
+    }
+
+    /**
+     * @param tallasImpresas las del rótulo que algunos proveedores imprimen sobre la foto, fuera
+     *     del pie —«35 · 36 · 38 · 41 · 42» en una esquina—: las que hay de lo que esa foto
+     *     muestra. Imperio Wicho, «Tallas disponibles en la foto!» (13 de octubre de 2026)
+     */
+    public static LecturaDeFoto conPie(
+        int posicion,
+        List<String> codigos,
+        List<BloqueDePie> pie,
+        List<String> colores,
+        String diseno,
+        List<String> marcas,
+        List<String> tallasImpresas) {
       Optional<BloqueDePie> vigente = BloqueDePie.vigente(pie == null ? List.of() : pie);
       return new LecturaDeFoto(
           posicion,
@@ -150,7 +192,8 @@ public record LecturaDeFotos(boolean albumDeDisenos, List<LecturaDeFoto> fotos, 
           vigente.map(BloqueDePie::tallas).orElse(List.of()),
           colores,
           diseno,
-          marcas);
+          marcas,
+          tallasImpresas);
     }
 
     /**

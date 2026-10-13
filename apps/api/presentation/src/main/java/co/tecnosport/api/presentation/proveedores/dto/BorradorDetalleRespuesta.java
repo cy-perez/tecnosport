@@ -67,6 +67,8 @@ public record BorradorDetalleRespuesta(
    *     el panel propone al aprobar; nulo si no hay sugerencia
    * @param tonosVistos los colores que la lectura vio en ella si muestra varios, como los nombró:
    *     los que el panel propone como prendas sin foto propia. Vacía si muestra uno o ninguno
+   * @param tallas las del rótulo impreso en ella, como se venden en este borrador: las que el panel
+   *     propone a su prenda (ADR-0085). Vacía si no trae
    */
   public record FotoRespuesta(
       UUID mensajeId,
@@ -77,7 +79,8 @@ public record BorradorDetalleRespuesta(
               allowableValues = {"PROVEEDOR", "PANEL"})
           String origen,
       String tonoSugerido,
-      @Schema(requiredMode = Schema.RequiredMode.REQUIRED) List<String> tonosVistos) {
+      @Schema(requiredMode = Schema.RequiredMode.REQUIRED) List<String> tonosVistos,
+      List<String> tallas) {
 
     public static FotoRespuesta de(VerBorrador.FotoDeBorrador foto) {
       return new FotoRespuesta(
@@ -86,7 +89,8 @@ public record BorradorDetalleRespuesta(
           foto.pieDeFoto(),
           foto.origen().name(),
           foto.tonoSugerido(),
-          foto.tonosVistos());
+          foto.tonosVistos(),
+          foto.tallas());
     }
   }
 }

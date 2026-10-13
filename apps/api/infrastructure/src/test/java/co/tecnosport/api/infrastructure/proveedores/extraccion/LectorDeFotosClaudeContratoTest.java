@@ -116,6 +116,47 @@ class LectorDeFotosClaudeContratoTest {
     assertThat(lectura.deLaFoto(1).orElseThrow().tallasDelPie()).containsExactly("S", "M");
   }
 
+  /**
+   * Imperio Wicho, 10 de octubre de 2026: «Tallas disponibles en la foto!», con un recuadro blanco
+   * de tallas una debajo de otra en la esquina de arriba (ADR-0085). La API acepta el campo nuevo y
+   * el lector lo llena.
+   */
+  @Test
+  void leeLasTallasDelRotuloDeLaEsquina() throws IOException {
+    BufferedImage imagen = new BufferedImage(900, 1200, BufferedImage.TYPE_INT_RGB);
+    Graphics2D lienzo = imagen.createGraphics();
+    lienzo.setColor(new Color(0xB0, 0x7A, 0x50));
+    lienzo.fillRect(0, 0, 900, 1200);
+    lienzo.setColor(Color.BLACK);
+    lienzo.fillRoundRect(150, 650, 560, 220, 80, 80);
+    lienzo.setColor(Color.WHITE);
+    lienzo.fillRect(150, 820, 560, 50);
+    lienzo.fillRoundRect(780, 200, 80, 190, 16, 16);
+    lienzo.setColor(Color.BLACK);
+    lienzo.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 30));
+    String[] tallas = {"35", "36", "38", "41", "42"};
+    for (int i = 0; i < tallas.length; i++) {
+      lienzo.drawString(tallas[i], 800, 235 + i * 34);
+    }
+    lienzo.dispose();
+    ByteArrayOutputStream salida = new ByteArrayOutputStream();
+    ImageIO.write(imagen, "jpg", salida);
+
+    LecturaDeFotos lectura =
+        lector()
+            .leer(
+                new FotosParaLeer(
+                    "NIKE UNISEX ULTRALIVIANO🔥\nSUELA IMPORTADA💯\nTallas disponibles en la foto!\n"
+                        + "Horma normal Dama, Aumenta 1 Cab⚠️⚠️\n💰*$85,000*",
+                    List.of(new ProductoNombrado("Tenis estilo Nike unisex", null)),
+                    List.of(new FotoParaLeer(0, salida.toByteArray()))))
+            .orElseThrow();
+
+    assertThat(lectura.deLaFoto(0).orElseThrow().tallasImpresas())
+        .containsExactly("35", "36", "38", "41", "42");
+    assertThat(lectura.deLaFoto(0).orElseThrow().tallasDelPie()).isEmpty();
+  }
+
   /** La Riverah, 17:36 del 9 de octubre de 2026: la gorra y el combo no son otro producto. */
   @Test
   void laGorraYElComboVanEnPreciosAdicionales() {

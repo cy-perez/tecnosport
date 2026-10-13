@@ -386,10 +386,13 @@ public final class BorradorProducto {
     }
     int paso = AjusteDeTalla.pasoDe(borrador.tipo);
     if (borrador.tallas.tipo() == TipoDeTalla.UNICA) {
-      borrador.alertas.add(AlertaBorrador.TALLAS_SIN_CORRER);
+      // Una talla única se pide como se vende: no hay otra que pedirle al proveedor.
+      borrador.ajusteDeTalla = AjusteDeTalla.NINGUNO;
       return borrador;
     }
     if (borrador.tallas.tipo() == TipoDeTalla.DESCONOCIDA) {
+      // El ajuste queda, y quien escriba las tallas tiene que escribir las que se venden.
+      borrador.alertas.add(AlertaBorrador.TALLAS_SIN_CORRER);
       return borrador;
     }
     Optional<List<String>> tallas = corridas(borrador.tallas.valores(), ajuste, paso);
@@ -408,6 +411,73 @@ public final class BorradorProducto {
     borrador.tallasPorTono = new TallasPorTono(porTono);
     borrador.alertas.add(AlertaBorrador.TALLAS_CORRIDAS);
     return borrador;
+  }
+
+  /**
+   * El borrador de caballero de un anuncio unisex que nombra distinto las tallas de cada género:
+   * «Horma normal Dama, Aumenta 1 Cab» (Imperio Wicho, 10 de octubre de 2026; ADR-0085). Las mismas
+   * fotos, el mismo texto y el mismo costo; otro título, sus tallas corridas con su ajuste, y una
+   * huella derivada de la de este, para que aprobar los dos no choque. Nace sin huella visual, como
+   * una parte ({@link #partir}): la toma de su principal al aprobarse.
+   *
+   * @param titulo el suyo, con su género
+   */
+  public BorradorProducto delOtroGenero(String titulo, AjusteDeTalla ajuste, Instant ahora) {
+    exigirEnRevision("partir por género");
+    Objects.requireNonNull(ajuste, "El ajuste de talla no es nulo.");
+    Set<AlertaBorrador> alertasDelNuevo = EnumSet.noneOf(AlertaBorrador.class);
+    alertasDelNuevo.addAll(alertas);
+    BorradorProducto otro =
+        new BorradorProducto(
+            GeneradorIdentificador.nuevo(),
+            publicacionId,
+            proveedorId,
+            extraccionCruda,
+            titulo,
+            linea,
+            tipo,
+            precioProveedor,
+            precioVentaSugerido,
+            tallas,
+            cantidadTonos,
+            tonosNombrados,
+            material,
+            descripcion,
+            altEn,
+            huella == null ? null : HuellaProveedor.delGemelo(huella),
+            null,
+            alertasDelNuevo,
+            fotosDescartadas,
+            List.of(),
+            tallasPorTono,
+            preciosAdicionales,
+            tonosSugeridos,
+            lecturaDeFotos,
+            List.of(),
+            EstadoBorrador.EN_REVISION,
+            null,
+            null,
+            ahora);
+    otro.set = set;
+    return conTallasCorridas(otro, ajuste);
+  }
+
+  /**
+   * ¿Es el otro género del mismo anuncio unisex ({@link #delOtroGenero})? Los dos conservan las
+   * mismas fotos, y una foto de los dos no es «de otro producto».
+   */
+  public boolean esGemeloDe(BorradorProducto otro) {
+    return publicacionId.equals(otro.publicacionId)
+        && huella != null
+        && otro.huella != null
+        && (otro.huella.equals(HuellaProveedor.delGemelo(huella))
+            || huella.equals(HuellaProveedor.delGemelo(otro.huella)));
+  }
+
+  /** Para la ingesta: el título de la parte de este género de un anuncio unisex. */
+  public void titularPorGenero(String titulo) {
+    exigirEnRevision("titular");
+    this.titulo = enBlancoEsNulo(titulo);
   }
 
   /**
@@ -430,6 +500,19 @@ public final class BorradorProducto {
     int paso = AjusteDeTalla.pasoDe(tipo);
     return tallas.valores().stream()
         .map(t -> new TallaPedida(t, ajusteDeTalla.tallaDelProveedorConPaso(t, paso).orElse(null)))
+        .toList();
+  }
+
+  /**
+   * Las que se venden de las que el proveedor imprimió en una foto, con el ajuste de este borrador:
+   * en el de caballero de un anuncio unisex, la 42 de la foto es la 41 (ADR-0085). Las que no se
+   * pueden correr no se proponen.
+   */
+  public List<String> queSeVendenDe(List<String> impresas) {
+    int paso = AjusteDeTalla.pasoDe(tipo);
+    return impresas.stream()
+        .map(t -> ajusteDeTalla.tallaQueSeVende(t, paso))
+        .flatMap(Optional::stream)
         .toList();
   }
 

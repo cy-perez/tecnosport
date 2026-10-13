@@ -7,6 +7,7 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
@@ -415,6 +416,59 @@ public record ProductoExtraido(
         preciosAdicionales,
         marcas,
         set);
+  }
+
+  /**
+   * Las tallas impresas en sus fotos, cuando el texto no las escribe: «Tallas disponibles en la
+   * foto!» de Imperio Wicho, con un rótulo de tallas en la esquina de cada foto (13 de octubre de
+   * 2026). Todas las de sus fotos, de menor a mayor; las de cada foto las propone el panel por
+   * prenda. Si el texto dice sus tallas, mandan esas.
+   */
+  public ProductoExtraido conTallasDeLasFotos(List<String> impresas) {
+    if (tallas.tipo() != TipoDeTalla.DESCONOCIDA || impresas == null || impresas.isEmpty()) {
+      return this;
+    }
+    return new ProductoExtraido(
+        esProducto,
+        estaAgotado,
+        titulo,
+        linea,
+        tipo,
+        precioProveedor,
+        Tallas.lista(enOrden(impresas)),
+        cantidadTonos,
+        tonosNombrados,
+        material,
+        descripcion,
+        altEn,
+        esReplica,
+        confianza,
+        notas,
+        codigoReferencia,
+        tallasPorTono,
+        preciosAdicionales,
+        marcas,
+        set);
+  }
+
+  private static final List<String> LETRAS = List.of("XS", "S", "M", "L", "XL", "XXL", "XXXL");
+
+  /** Sin repetir y de menor a mayor: los números por su valor y las letras por la escalera. */
+  private static List<String> enOrden(List<String> tallas) {
+    List<String> distintas =
+        tallas.stream()
+            .filter(Objects::nonNull)
+            .map(t -> t.strip().toUpperCase(Locale.ROOT))
+            .filter(t -> !t.isEmpty())
+            .distinct()
+            .toList();
+    if (distintas.stream().allMatch(t -> t.matches("\\d{1,2}"))) {
+      return distintas.stream().sorted(Comparator.comparingInt(Integer::parseInt)).toList();
+    }
+    if (distintas.stream().allMatch(LETRAS::contains)) {
+      return distintas.stream().sorted(Comparator.comparingInt(LETRAS::indexOf)).toList();
+    }
+    return distintas;
   }
 
   /**

@@ -2836,6 +2836,7 @@ export interface components {
             /** @enum {string} */
             origen: "PROVEEDOR" | "PANEL";
             pieDeFoto?: string;
+            tallas?: string[];
             tonoSugerido?: string;
             tonosVistos: string[];
             url?: string;

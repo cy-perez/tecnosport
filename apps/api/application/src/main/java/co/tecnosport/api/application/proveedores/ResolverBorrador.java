@@ -23,6 +23,7 @@ import co.tecnosport.api.domain.proveedores.ProductoExtraido;
 import co.tecnosport.api.domain.proveedores.Proveedor;
 import co.tecnosport.api.domain.proveedores.PublicacionProveedor;
 import co.tecnosport.api.domain.proveedores.TextoDeAnuncio;
+import co.tecnosport.api.domain.proveedores.TituloPorGenero;
 import co.tecnosport.api.domain.proveedores.TopeDeCostoPorTipo;
 import co.tecnosport.api.domain.proveedores.TopesDeGanancia;
 import java.math.BigDecimal;
@@ -455,10 +456,32 @@ public final class ResolverBorrador {
             evaluada.reparto(),
             ahora);
     set.ifPresent(s -> BorradorProducto.conSet(borrador, s.armado()));
+    // Un bolso, un morral o una tula del mismo anuncio no tallan: ni se corren ni se parten.
+    boolean talla = extraido.linea() != LineaCatalogo.BOLSOS;
+    Optional<AjusteDelAnuncio.PorGenero> porGenero =
+        talla ? AjusteDelAnuncio.porGenero(textoDelAnuncio) : Optional.empty();
+    if (porGenero.isPresent()) {
+      // «Horma normal Dama, Aumenta 1 Cab»: el mismo par es la 42 de dama y la 41 de caballero.
+      // Un borrador por género, cada uno con sus tallas y su ajuste (ADR-0085).
+      String titulo = borrador.titulo().orElse(null);
+      BorradorProducto caballero =
+          borrador.delOtroGenero(
+              TituloPorGenero.para(titulo, "caballero"), porGenero.get().caballero(), ahora);
+      borrador.titularPorGenero(TituloPorGenero.para(titulo, "dama"));
+      BorradorProducto.conTallasCorridas(borrador, porGenero.get().dama());
+      repositorioBorradores.guardar(borrador);
+      repositorioBorradores.guardar(caballero);
+      Set<AlertaBorrador> alertas = EnumSet.noneOf(AlertaBorrador.class);
+      alertas.addAll(borrador.alertas());
+      alertas.addAll(caballero.alertas());
+      return new Resolucion(TipoDeResolucion.NUEVO, alertas, null);
+    }
     // «Ojo Horma reducida pedir una talla más», «Aumentar 2 tallas», «eur»: el borrador nace con
     // las tallas que se venden y el ajuste para pedirlas (ADR-0085).
-    AjusteDelAnuncio.de(textoDelAnuncio)
-        .ifPresent(ajuste -> BorradorProducto.conTallasCorridas(borrador, ajuste));
+    if (talla) {
+      AjusteDelAnuncio.de(textoDelAnuncio)
+          .ifPresent(ajuste -> BorradorProducto.conTallasCorridas(borrador, ajuste));
+    }
     repositorioBorradores.guardar(borrador);
     return new Resolucion(TipoDeResolucion.NUEVO, borrador.alertas(), null);
   }
@@ -577,6 +600,21 @@ public final class ResolverBorrador {
       tipo = TipoDeResolucion.RENOVACION;
     }
     repositorioProductos.actualizar(producto);
+    // El de caballero de un anuncio unisex vive y se agota con el de dama: es el mismo par en otra
+    // talla (ADR-0085). Sin esto, un «AGOTADO» dejaba a la venta al otro sin existencias.
+    gemeloDe(proveedor.id(), producto)
+        .ifPresent(
+            gemelo -> {
+              if (extraido.estaAgotado()) {
+                gemelo.marcarAgotadoPorProveedor(publicacion.fecha());
+              } else {
+                gemelo.renovar(publicacion.fecha());
+                if (precio != null && !gemelo.precioProveedor().map(precio::equals).orElse(false)) {
+                  gemelo.actualizarPrecioProveedor(precio);
+                }
+              }
+              repositorioProductos.actualizar(gemelo);
+            });
     repositorioBorradores.guardar(
         BorradorProducto.conSet(
             BorradorProducto.renovacionAplicada(
@@ -779,11 +817,39 @@ public final class ResolverBorrador {
     if (pHash == null) {
       return Optional.empty();
     }
-    return huellasVisuales.stream()
-        .filter(h -> h.acompananteDelSet() == acompanante)
-        .filter(h -> h.pHash().distanciaHamming(pHash) <= umbralHamming)
+    List<Producto> porFoto =
+        huellasVisuales.stream()
+            .filter(h -> h.acompananteDelSet() == acompanante)
+            .filter(h -> h.pHash().distanciaHamming(pHash) <= umbralHamming)
+            .map(HuellaVisual::productoId)
+            .distinct()
+            .map(repositorioProductos::buscarPorId)
+            .flatMap(Optional::stream)
+            .toList();
+    // El de dama y el de caballero de un anuncio unisex comparten foto: manda el de dama, y la
+    // renovación lleva consigo al otro ({@link #gemeloDe}). Sin preferencia, la consulta no tiene
+    // orden y caía en cualquiera de los dos.
+    return porFoto.stream()
+        .filter(
+            p ->
+                p.huellaProveedor()
+                    .map(HuellaProveedor::delGemelo)
+                    .map(
+                        g ->
+                            porFoto.stream()
+                                .anyMatch(o -> o.huellaProveedor().equals(Optional.of(g))))
+                    .orElse(false))
         .findFirst()
-        .flatMap(h -> repositorioProductos.buscarPorId(h.productoId()));
+        .or(() -> porFoto.stream().findFirst());
+  }
+
+  /** El de caballero de un anuncio unisex aprobado como dos productos (ADR-0085), si existe. */
+  private Optional<Producto> gemeloDe(UUID proveedorId, Producto producto) {
+    return producto
+        .huellaProveedor()
+        .map(HuellaProveedor::delGemelo)
+        .flatMap(g -> productosDeProveedor.buscarPorHuella(proveedorId, g))
+        .filter(g -> !g.id().equals(producto.id()));
   }
 
   /**

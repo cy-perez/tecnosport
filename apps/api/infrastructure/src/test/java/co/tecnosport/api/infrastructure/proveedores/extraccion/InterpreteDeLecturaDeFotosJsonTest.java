@@ -27,6 +27,20 @@ class InterpreteDeLecturaDeFotosJsonTest {
     assertEquals(List.of("negro"), lectura.fotos().get(1).colores());
   }
 
+  /** El rótulo de tallas de la esquina (13 de octubre de 2026); las lecturas viejas no lo traen. */
+  @Test
+  void lasTallasImpresasSeLeenYLasViejasNoLasTraen() {
+    LecturaDeFotos lectura =
+        interprete
+            .interpretar(
+                "{\"fotos\":[{\"foto\":1,\"tallas\":[\"35\",\"36\",\" 38 \"]},"
+                    + "{\"foto\":2,\"colores\":[\"negro\"]}]}")
+            .orElseThrow();
+
+    assertEquals(List.of("35", "36", "38"), lectura.fotos().get(0).tallasImpresas());
+    assertEquals(List.of(), lectura.fotos().get(1).tallasImpresas());
+  }
+
   /** Una lectura vieja o rota no impide revisar el borrador: no hay tonos que proponer, y ya. */
   @Test
   void loQueNoSeEntiendeNoEsUnaLectura() {
