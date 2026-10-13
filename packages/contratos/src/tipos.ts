@@ -3236,6 +3236,9 @@ export interface components {
             items?: components["schemas"]["PedidoRespuesta"][];
             /** Format: int32 */
             pagina?: number;
+            tallasAlProveedor: {
+                [key: string]: components["schemas"]["TallaAlProveedorRespuesta"];
+            };
             /** Format: int32 */
             totalPaginas?: number;
             /** Format: int64 */
@@ -3739,6 +3742,9 @@ export interface components {
             /** Format: int32 */
             orden?: number;
             url?: string;
+        };
+        TallaAlProveedorRespuesta: {
+            talla?: string;
         };
         TallasDeTonoRespuesta: {
             tallas: string[];

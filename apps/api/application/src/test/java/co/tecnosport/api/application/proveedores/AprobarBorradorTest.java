@@ -24,6 +24,7 @@ import co.tecnosport.api.application.proveedores.ApoyoDeIngesta.RepositorioProve
 import co.tecnosport.api.application.proveedores.ApoyoDeIngesta.RepositorioPublicacionesEnMemoria;
 import co.tecnosport.api.application.proveedores.AprobarBorradorComando.FotoAprobada;
 import co.tecnosport.api.application.proveedores.AprobarBorradorComando.PrendaAprobada;
+import co.tecnosport.api.domain.catalogo.Categoria;
 import co.tecnosport.api.domain.catalogo.EstadoDisponibilidad;
 import co.tecnosport.api.domain.catalogo.EstadoProducto;
 import co.tecnosport.api.domain.catalogo.ImagenProducto;
@@ -33,6 +34,7 @@ import co.tecnosport.api.domain.catalogo.Producto;
 import co.tecnosport.api.domain.catalogo.TipoImagen;
 import co.tecnosport.api.domain.catalogo.Variante;
 import co.tecnosport.api.domain.compartido.Dinero;
+import co.tecnosport.api.domain.proveedores.AjusteDeTalla;
 import co.tecnosport.api.domain.proveedores.ArmadoDeSet;
 import co.tecnosport.api.domain.proveedores.BorradorProducto;
 import co.tecnosport.api.domain.proveedores.EstadoBorrador;
@@ -48,6 +50,7 @@ import co.tecnosport.api.domain.proveedores.PrendaAcompanante;
 import co.tecnosport.api.domain.proveedores.ProductoExtraido;
 import co.tecnosport.api.domain.proveedores.Proveedor;
 import co.tecnosport.api.domain.proveedores.PublicacionProveedor;
+import co.tecnosport.api.domain.proveedores.TallaAlProveedor;
 import co.tecnosport.api.domain.proveedores.Tallas;
 import co.tecnosport.api.domain.proveedores.TallasPorTono;
 import co.tecnosport.api.domain.proveedores.TipoProductoProveedor;
@@ -252,6 +255,114 @@ class AprobarBorradorTest {
     Producto producto = caso().ejecutar(comando(List.of(new FotoAprobada(foto1.id(), null, null))));
 
     assertEquals(100, producto.pesoAdicionalGramos());
+  }
+
+  private Producto aprobarEnTallas(List<String> tallas) {
+    return aprobarEnTallas(tallas, ApoyoDeCatalogoParaIngesta.BOLSOS_DE_MANO);
+  }
+
+  private Producto aprobarEnTallas(List<String> tallas, Categoria categoria) {
+    return caso()
+        .ejecutar(
+            new AprobarBorradorComando(
+                borrador.id(),
+                null,
+                "Polo de horma reducida.",
+                categoria.id(),
+                ApoyoDeCatalogoParaIngesta.MARCA.id(),
+                70000,
+                Tallas.lista(tallas),
+                1,
+                "Polo",
+                "Polo shirt",
+                List.of(new FotoAprobada(foto1.id(), null, null))));
+  }
+
+  /**
+   * La talla que se vende, y la que hay que pedirle al proveedor por esa variante, como la cuenta
+   * el listado de pedidos: con el ajuste que quedó en el producto.
+   */
+  private Map<String, String> pedirPorTalla(Producto producto, List<String> escala) {
+    Map<String, String> pedir = new java.util.LinkedHashMap<>();
+    for (Variante variante : producto.variantes()) {
+      pedir.put(
+          variante.atributos().get(0).valor(),
+          producto
+              .tallaAlProveedor(variante.id(), escala)
+              .flatMap(TallaAlProveedor::conocida)
+              .orElse(null));
+    }
+    return pedir;
+  }
+
+  /**
+   * Meraki, 13 de octubre de 2026: «Ojo Horma reducida pedir una talla más · Tallas M-L-XL-XXL». Se
+   * vende de la S a la XL, y el producto se queda con el ajuste para decir cuál pedir (ADR-0085).
+   */
+  @Test
+  void conHormaReducidaElProductoSeQuedaConElAjuste() {
+    BorradorProducto.conAjusteDeTalla(borrador, new AjusteDeTalla(1));
+    borradores.guardar(borrador);
+
+    Producto producto = aprobarEnTallas(List.of("S", "M", "L", "XL"));
+
+    assertEquals(new AjusteDeTalla(1), producto.ajusteDeTalla());
+    assertEquals(
+        Map.of("S", "M", "M", "L", "L", "XL", "XL", "XXL"), pedirPorTalla(producto, List.of()));
+  }
+
+  /**
+   * Imperio Wicho: «Tallas disponibles 40 a la 45 · Aumentar 2 tallas» se vende de la 38. Las
+   * numéricas se cuentan sobre la escala de la categoría.
+   */
+  @Test
+  void enCalzadoLasNumericasSeCuentanSobreLaEscalaDeLaCategoria() {
+    BorradorProducto.conAjusteDeTalla(borrador, new AjusteDeTalla(2));
+    borradores.guardar(borrador);
+
+    Producto producto =
+        aprobarEnTallas(List.of("38", "43"), ApoyoDeCatalogoParaIngesta.CALZADO_CABALLERO);
+
+    assertEquals(
+        Map.of("38", "40", "43", "45"),
+        pedirPorTalla(producto, ApoyoDeCatalogoParaIngesta.CALZADO_CABALLERO.escalaTallas()));
+  }
+
+  /** Sin escala numérica no se sabe el paso: la 38 en bolsos de mano no tiene cómo pedirse. */
+  @Test
+  void unaNumericaSinEscalaNoSeApruebaConAjuste() {
+    BorradorProducto.conAjusteDeTalla(borrador, new AjusteDeTalla(2));
+    borradores.guardar(borrador);
+
+    assertThrows(TallaDelProveedorDesconocidaException.class, () -> aprobarEnTallas(List.of("38")));
+  }
+
+  /** Lo normal: el proveedor nombra la talla como se vende, y el producto no lleva ajuste. */
+  @Test
+  void sinAjusteElProductoNoLoLleva() {
+    Producto producto = aprobarEnTallas(List.of("S", "M"));
+
+    assertTrue(producto.ajusteDeTalla().ninguno());
+    assertEquals(
+        Optional.empty(), producto.tallaAlProveedor(producto.variantes().get(0).id(), List.of()));
+  }
+
+  /**
+   * La XXXL una más arriba no existe: sin saber qué pedirle al proveedor, no se vende. Y se sabe
+   * antes de crear nada.
+   */
+  @Test
+  void unaTallaQueNoSePuedeContarNoSeApruebaNiDejaProducto() {
+    BorradorProducto.conAjusteDeTalla(borrador, new AjusteDeTalla(1));
+    borradores.guardar(borrador);
+
+    assertThrows(
+        TallaDelProveedorDesconocidaException.class, () -> aprobarEnTallas(List.of("XL", "XXXL")));
+
+    assertTrue(productos.porId.isEmpty(), "ni producto a medias");
+    assertTrue(almacenPublico.objetos.isEmpty(), "ni fotos en el bucket público");
+    assertEquals(
+        EstadoBorrador.EN_REVISION, borradores.buscarPorId(borrador.id()).orElseThrow().estado());
   }
 
   @Test

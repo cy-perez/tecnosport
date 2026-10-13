@@ -79,6 +79,16 @@ class PartirBorradorProductoTest {
     assertEquals(Optional.empty(), origen.pHash());
   }
 
+  /** Las dos partes salen del mismo anuncio: el proveedor nombra igual sus tallas (ADR-0085). */
+  @Test
+  void elNuevoNombraLasTallasComoElOrigen() {
+    BorradorProducto origen = BorradorProducto.conAjusteDeTalla(camisetas(), new AjusteDeTalla(2));
+
+    BorradorProducto nuevo = origen.partir(List.of(F3), DE_LA_PUBLICACION, AHORA);
+
+    assertEquals(new AjusteDeTalla(2), nuevo.ajusteDeTalla());
+  }
+
   @Test
   void soloSeLlevaFotosQueElBorradorConservaYLeDejaAlMenosUna() {
     BorradorProducto origen = camisetas();

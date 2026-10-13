@@ -23,6 +23,7 @@ import co.tecnosport.api.domain.compartido.HashContenido;
 import co.tecnosport.api.domain.compartido.Hashtag;
 import co.tecnosport.api.domain.compartido.Sku;
 import co.tecnosport.api.domain.compartido.Slug;
+import co.tecnosport.api.domain.proveedores.AjusteDeTalla;
 import co.tecnosport.api.domain.proveedores.HuellaProveedor;
 import co.tecnosport.api.infrastructure.catalogo.entidad.AtributoJpaEntity;
 import co.tecnosport.api.infrastructure.catalogo.entidad.CategoriaJpaEntity;
@@ -236,6 +237,7 @@ public class MapeadorCatalogo {
             EstadoDisponibilidad.valueOf(p.getEstadoDisponibilidad()));
     producto.definirTallaSirveHasta(p.getTallaSirveHasta());
     producto.definirPesoAdicional(p.getPesoAdicionalGramos());
+    producto.definirAjusteDeTalla(new AjusteDeTalla(p.getAjusteDeTalla()));
     return producto;
   }
 

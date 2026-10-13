@@ -1,5 +1,6 @@
 package co.tecnosport.api.bootstrap.pedido;
 
+import co.tecnosport.api.application.catalogo.RepositorioCategorias;
 import co.tecnosport.api.application.catalogo.RepositorioProductos;
 import co.tecnosport.api.application.compartido.EnviadorDeCorreo;
 import co.tecnosport.api.application.compartido.LimitadorDeIntentos;
@@ -93,8 +94,11 @@ public class ConfiguracionPedido {
   }
 
   @Bean
-  public ListarPedidosAdmin listarPedidosAdmin(RepositorioPedidos repositorioPedidos) {
-    return new ListarPedidosAdmin(repositorioPedidos);
+  public ListarPedidosAdmin listarPedidosAdmin(
+      RepositorioPedidos repositorioPedidos,
+      RepositorioProductos repositorioProductos,
+      RepositorioCategorias repositorioCategorias) {
+    return new ListarPedidosAdmin(repositorioPedidos, repositorioProductos, repositorioCategorias);
   }
 
   @Bean

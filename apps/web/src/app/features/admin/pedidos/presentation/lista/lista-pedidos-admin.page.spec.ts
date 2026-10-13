@@ -116,6 +116,7 @@ function pedidoDePrueba(overrides: Partial<PedidoAdmin> = {}): PedidoAdmin {
         tasaIva: 0.19,
         imagenUrl: null,
         detalleVariante: 'Negro · M',
+        alProveedor: null,
       },
     ],
     tipoEntrega: 'ENVIO_A_DOMICILIO',
@@ -432,6 +433,43 @@ describe('ListaPedidosAdminPage', () => {
     expect(await screen.findByText(/Camiseta/)).toBeTruthy();
     // Quien despacha ve qué talla y color empacar, no solo el SKU.
     expect(screen.getByText(/Negro · M/)).toBeTruthy();
+    expect(screen.queryByText(/Pídela al proveedor/)).toBeNull();
+  });
+
+  /** El polo de horma reducida se vende en S y al proveedor se le pide la M (ADR-0085). */
+  it('el detalle dice qué talla pedirle al proveedor cuando la nombra distinto', async () => {
+    const base = pedidoDePrueba();
+    await renderLista([
+      pedidoDePrueba({
+        lineas: [
+          {
+            ...base.lineas[0],
+            detalleVariante: 'Negro · S',
+            alProveedor: { conocida: true, talla: 'M' },
+          },
+        ],
+      }),
+    ]);
+    await screen.findByText('TS-2026-000123');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Ver detalle' }));
+
+    expect(await screen.findByText('Pídela al proveedor en talla M')).toBeTruthy();
+  });
+
+  /** Una XXXL agregada después que el ajuste no alcanza a contar: callarlo sería pedir la XXXL. */
+  it('si no se sabe qué talla pedirle al proveedor, lo dice', async () => {
+    const base = pedidoDePrueba();
+    await renderLista([
+      pedidoDePrueba({
+        lineas: [{ ...base.lineas[0], alProveedor: { conocida: false } }],
+      }),
+    ]);
+    await screen.findByText('TS-2026-000123');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Ver detalle' }));
+
+    expect(await screen.findByText(/Pregúntale al proveedor qué talla pedir/)).toBeTruthy();
   });
 
   /**

@@ -67,7 +67,9 @@
     "lote_en_otro_estado": "La ingesta cambió de estado mientras tanto (terminó, falló o la detuvieron). La lista se acaba de actualizar.",
     "otra_ingesta_del_proveedor_en_curso": "El proveedor tiene otra ingesta en curso. Reintenta las fallidas cuando termine.",
     "borrador_con_fotos_subidas": "El otro borrador tiene fotos subidas desde el panel. Súbelas en este antes de unirlos: se irían con el otro.",
-    "tallas_de_cada_tono_desconocidas": "Las tallas de los dos no son las mismas y uno no dice sus tonos. Escribe los tonos de los dos antes de unirlos, para que cada color quede con sus tallas."
+    "tallas_de_cada_tono_desconocidas": "Las tallas de los dos no son las mismas y uno no dice sus tonos. Escribe los tonos de los dos antes de unirlos, para que cada color quede con sus tallas.",
+    "talla_del_proveedor_desconocida": "El proveedor nombra estas tallas corridas y una de ellas no tiene con qué nombre pedírsela, como la XXXL una talla más arriba. Quítala de las tallas antes de aprobar.",
+    "ajustes_de_talla_distintos": "El proveedor nombra distinto las tallas de los dos, como el de dama y el de caballero de un mismo anuncio: unidos, no se sabría qué talla pedirle."
   },
   "iniciarSesion": {
     "titulo": "Panel administrativo",
@@ -162,6 +164,8 @@
     },
     "detalle": {
       "lineas": "Líneas",
+      "tallaDelProveedor": "Pídela al proveedor en talla {{talla}}",
+      "tallaDelProveedorDesconocida": "Pregúntale al proveedor qué talla pedir: esta la nombra corrida y no se pudo contar",
       "direccion": "Dirección de envío",
       "transportadora": "Transportadora elegida",
       "transferencia": "Transferencia manual",

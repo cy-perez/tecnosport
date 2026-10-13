@@ -130,7 +130,8 @@ public class RepositorioProductosJpa implements RepositorioProductos {
                 producto.vistoPorUltimaVez().orElse(null),
                 producto.estadoDisponibilidad().name())
             .conTallaSirveHasta(producto.tallaSirveHasta().orElse(null))
-            .conPesoAdicionalGramos(producto.pesoAdicionalGramos()));
+            .conPesoAdicionalGramos(producto.pesoAdicionalGramos())
+            .conAjusteDeTalla(producto.ajusteDeTalla().tallas()));
   }
 
   @Override
@@ -169,7 +170,8 @@ public class RepositorioProductosJpa implements RepositorioProductos {
                 producto.vistoPorUltimaVez().orElse(null),
                 producto.estadoDisponibilidad().name())
             .conTallaSirveHasta(producto.tallaSirveHasta().orElse(null))
-            .conPesoAdicionalGramos(producto.pesoAdicionalGramos()));
+            .conPesoAdicionalGramos(producto.pesoAdicionalGramos())
+            .conAjusteDeTalla(producto.ajusteDeTalla().tallas()));
   }
 
   @Override

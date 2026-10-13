@@ -64,6 +64,10 @@ public class ProductoJpaEntity {
   @Column(name = "peso_adicional_gramos", nullable = false)
   private int pesoAdicionalGramos;
 
+  /** Cuántas tallas más arriba nombra el proveedor la que se vende (V115); 0 si igual. */
+  @Column(name = "ajuste_de_talla", nullable = false)
+  private int ajusteDeTalla;
+
   protected ProductoJpaEntity() {}
 
   public ProductoJpaEntity(
@@ -199,6 +203,15 @@ public class ProductoJpaEntity {
 
   public ProductoJpaEntity conPesoAdicionalGramos(int pesoAdicionalGramos) {
     this.pesoAdicionalGramos = pesoAdicionalGramos;
+    return this;
+  }
+
+  public int getAjusteDeTalla() {
+    return ajusteDeTalla;
+  }
+
+  public ProductoJpaEntity conAjusteDeTalla(int ajusteDeTalla) {
+    this.ajusteDeTalla = ajusteDeTalla;
     return this;
   }
 

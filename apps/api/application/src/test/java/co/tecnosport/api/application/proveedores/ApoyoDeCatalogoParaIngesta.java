@@ -54,6 +54,13 @@ final class ApoyoDeCatalogoParaIngesta {
       Categoria.crear("Dama", new Slug("bolsos-dama"), LineaCatalogo.BOLSOS);
   static final Categoria BOLSOS_DE_MANO =
       Categoria.crearBajo(BOLSOS_DAMA, "Bolsos de mano", new Slug("bolsos-dama-bolsos-de-mano"));
+
+  /** Calzado de caballero con su escala de 1 en 1, como en producción (V63, V75, V105). */
+  static final Categoria CALZADO_CABALLERO =
+      Categoria.crear("Caballero", new Slug("calzado-caballero"), LineaCatalogo.CALZADO)
+          .conEscalaDeTallas(
+              List.of("34", "35", "36", "37", "38", "39", "40", "41", "42", "43", "44", "45"));
+
   static final Atributo COLOR = Atributo.crear("Color", TipoAtributo.COLOR, List.of());
   static final Atributo TALLA =
       // Sin valores permitidos, como en producción desde V73: la lista la dicta cada prenda.
@@ -501,20 +508,19 @@ final class ApoyoDeCatalogoParaIngesta {
   static final class RepositorioCategoriasFijo implements RepositorioCategorias {
     @Override
     public Optional<Categoria> buscarPorId(UUID id) {
-      if (BOLSOS_DAMA.id().equals(id)) {
-        return Optional.of(BOLSOS_DAMA);
-      }
-      return BOLSOS_DE_MANO.id().equals(id) ? Optional.of(BOLSOS_DE_MANO) : Optional.empty();
+      return listarTodas().stream().filter(c -> c.id().equals(id)).findFirst();
     }
 
     @Override
     public List<Categoria> hijasDe(UUID padreId) {
-      return BOLSOS_DAMA.id().equals(padreId) ? List.of(BOLSOS_DE_MANO) : List.of();
+      return listarTodas().stream()
+          .filter(c -> c.padreId().map(padreId::equals).orElse(false))
+          .toList();
     }
 
     @Override
     public List<Categoria> listarTodas() {
-      return List.of(BOLSOS_DAMA, BOLSOS_DE_MANO);
+      return List.of(BOLSOS_DAMA, BOLSOS_DE_MANO, CALZADO_CABALLERO);
     }
 
     @Override

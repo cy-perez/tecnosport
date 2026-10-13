@@ -63,7 +63,15 @@ export interface LineaPedidoAdmin {
   readonly imagenUrl: string | null;
   /** Lo que se eligió de la variante, «Negro · M»; nulo en los pedidos de antes. */
   readonly detalleVariante: string | null;
+  /** Qué talla pedirle al proveedor cuando la nombra distinto de como se vende —horma reducida,
+   * talla EUR— (ADR-0085); nulo si se pide como se vende. Solo lo trae el listado. */
+  readonly alProveedor: TallaAlProveedorAdmin | null;
 }
+
+/** La del proveedor, o que no se sabe: una talla agregada después de aprobar que el ajuste no
+ * alcanza a contar. «No se sabe» se dice: callado, quien despacha pediría la que se vende. */
+export type TallaAlProveedorAdmin =
+  { readonly conocida: true; readonly talla: string } | { readonly conocida: false };
 
 /** Una cuenta a la que transferir. `entidad` y no `banco`: dos de las tres son
  * billeteras —Nequi y Daviplata— y el comprador las busca por ese nombre en su

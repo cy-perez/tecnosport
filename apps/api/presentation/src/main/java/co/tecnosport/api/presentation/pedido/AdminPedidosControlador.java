@@ -17,6 +17,7 @@ import co.tecnosport.api.application.pedido.ListarPedidosAdmin;
 import co.tecnosport.api.application.pedido.ListarPedidosAdminComando;
 import co.tecnosport.api.application.pedido.MarcarEntregado;
 import co.tecnosport.api.application.pedido.MarcarEntregadoComando;
+import co.tecnosport.api.application.pedido.PedidosDelPanel;
 import co.tecnosport.api.application.pedido.PedidosPaginados;
 import co.tecnosport.api.application.pedido.RechazarEnEntrega;
 import co.tecnosport.api.application.pedido.RechazarEnEntregaComando;
@@ -40,9 +41,12 @@ import co.tecnosport.api.presentation.pedido.dto.PedidoRespuesta;
 import co.tecnosport.api.presentation.pedido.dto.PedidosPaginadosRespuesta;
 import co.tecnosport.api.presentation.pedido.dto.RechazarEnEntregaRequest;
 import co.tecnosport.api.presentation.pedido.dto.RecibirPedidoRechazadoRequest;
+import co.tecnosport.api.presentation.pedido.dto.TallaAlProveedorRespuesta;
 import co.tecnosport.api.presentation.pedido.dto.VerificarContraentregaRequest;
+import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -129,13 +133,19 @@ public class AdminPedidosControlador {
       @RequestParam(defaultValue = "" + TAMANO_PAGINA_PREDETERMINADO) int tamano,
       @RequestParam(required = false) String estado) {
     EstadoPedido filtro = estado == null ? null : EstadoPedido.valueOf(estado);
-    PedidosPaginados resultado =
+    PedidosDelPanel delPanel =
         listarPedidosAdmin.ejecutar(new ListarPedidosAdminComando(pagina, tamano, filtro));
+    PedidosPaginados resultado = delPanel.pedidos();
     return new PedidosPaginadosRespuesta(
         resultado.items().stream().map(mapeador::aRespuesta).toList(),
         resultado.pagina(),
         resultado.totalPaginas(),
-        resultado.totalPedidos());
+        resultado.totalPedidos(),
+        delPanel.tallasAlProveedor().entrySet().stream()
+            .collect(
+                Collectors.toMap(
+                    Map.Entry::getKey,
+                    e -> new TallaAlProveedorRespuesta(e.getValue().conocida().orElse(null)))));
   }
 
   @PostMapping("/{id}/conciliar-transferencia")

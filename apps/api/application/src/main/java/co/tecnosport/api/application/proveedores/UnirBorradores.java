@@ -61,6 +61,9 @@ public final class UnirBorradores {
     if (!destino.tallasDeCadaTonoSeSaben(otro)) {
       throw new TallasDeCadaTonoDesconocidasException();
     }
+    if (!destino.ajusteDeTalla().equals(otro.ajusteDeTalla())) {
+      throw new AjustesDeTallaDistintosException();
+    }
     PublicacionProveedor publicacion =
         repositorioPublicaciones
             .buscarPorId(destino.publicacionId())

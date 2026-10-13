@@ -27,6 +27,7 @@ import co.tecnosport.api.domain.catalogo.VarianteDeImagen;
 import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.compartido.HashContenido;
 import co.tecnosport.api.domain.compartido.Slug;
+import co.tecnosport.api.domain.proveedores.AjusteDeTalla;
 import co.tecnosport.api.domain.proveedores.BorradorProducto;
 import co.tecnosport.api.domain.proveedores.EstadoBorrador;
 import co.tecnosport.api.domain.proveedores.FotoSubida;
@@ -191,6 +192,9 @@ public final class AprobarBorrador {
             valoresDeTalla(tallasAprobadas),
             tallasAprobadas.tipo() == TipoDeTalla.LISTA);
     List<String> tonoPorFoto = prendas.valorPorFoto();
+    // También antes de crear nada: una talla que no se sabe cómo pedirle al proveedor no se vende.
+    exigirTallasQueSeSabenPedir(
+        borrador.ajusteDeTalla(), valoresDeTalla(tallasAprobadas), categoria);
 
     String titulo =
         comando.titulo() == null || comando.titulo().isBlank()
@@ -234,6 +238,9 @@ public final class AprobarBorrador {
     if (tallasAprobadas.tipo() == TipoDeTalla.UNICA) {
       producto.definirTallaSirveHasta(tallasAprobadas.sirveHasta());
     }
+    // La talla que se le pide al proveedor sale de este ajuste y de la talla de cada variante, al
+    // consultar el pedido (ADR-0085).
+    producto.definirAjusteDeTalla(borrador.ajusteDeTalla());
     // La gorra de un set de camiseta o polo viaja con el promedio de su categoría y 100 g más.
     borrador.set().ifPresent(set -> producto.definirPesoAdicional(set.gramosAdicionales()));
     repositorioProductos.guardar(producto);
@@ -325,6 +332,27 @@ public final class AprobarBorrador {
       productosDeProveedor.asignarReferencias(referenciaPorVariante);
     }
     return variantePorTono;
+  }
+
+  /**
+   * Cada talla que se aprueba tiene con qué nombre pedírsela al proveedor (ADR-0085). Las de una
+   * prenda son siempre de estas: {@link PrendasDeLaAprobacion} lo exige. Las numéricas se cuentan
+   * sobre la escala de la categoría donde se publica.
+   *
+   * @throws TallaDelProveedorDesconocidaException con la primera que no se puede contar
+   */
+  private void exigirTallasQueSeSabenPedir(
+      AjusteDeTalla ajuste, List<String> valoresDeTalla, Categoria categoria) {
+    if (ajuste.ninguno()) {
+      return;
+    }
+    List<String> escala =
+        categoria.escalaEfectiva(categoria.padreId().flatMap(repositorioCategorias::buscarPorId));
+    for (String talla : valoresDeTalla) {
+      if (ajuste.tallaDelProveedor(talla, escala).isEmpty()) {
+        throw new TallaDelProveedorDesconocidaException(talla, ajuste);
+      }
+    }
   }
 
   private static List<String> valoresDeTalla(Tallas tallas) {

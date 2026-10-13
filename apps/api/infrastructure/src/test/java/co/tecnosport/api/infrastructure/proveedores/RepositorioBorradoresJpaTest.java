@@ -9,6 +9,7 @@ import co.tecnosport.api.application.proveedores.DependenciasDeProveedor;
 import co.tecnosport.api.application.proveedores.HuellaVisual;
 import co.tecnosport.api.domain.catalogo.LineaCatalogo;
 import co.tecnosport.api.domain.compartido.Dinero;
+import co.tecnosport.api.domain.proveedores.AjusteDeTalla;
 import co.tecnosport.api.domain.proveedores.AlertaBorrador;
 import co.tecnosport.api.domain.proveedores.ArmadoDeSet;
 import co.tecnosport.api.domain.proveedores.BorradorProducto;
@@ -475,6 +476,7 @@ class RepositorioBorradoresJpaTest {
             T);
     BorradorProducto.conSet(
         borrador, new ArmadoDeSet(PrendaAcompanante.BLUSA, OrigenDelCostoDeSet.SUMA_DE_PRENDAS));
+    BorradorProducto.conAjusteDeTalla(borrador, new AjusteDeTalla(2));
     borradores.guardar(borrador);
     em.flush();
     em.clear();
@@ -496,6 +498,7 @@ class RepositorioBorradoresJpaTest {
     assertThat(leido.tonosSugeridos()).containsExactlyEntriesOf(Map.of(negra, "negro"));
     assertThat(leido.lecturaDeFotos()).contains("{\"album_de_disenos\":false}");
     assertThat(leido.diseno()).contains("blusa abertura");
+    assertThat(leido.ajusteDeTalla()).isEqualTo(new AjusteDeTalla(2));
     assertThat(leido.fotosDescartadas()).containsExactly(ajena);
 
     BorradorProducto sinNada =
@@ -518,6 +521,7 @@ class RepositorioBorradoresJpaTest {
     assertThat(vacio.preciosAdicionales()).isEmpty();
     assertThat(vacio.tonosSugeridos()).isEmpty();
     assertThat(vacio.lecturaDeFotos()).isEmpty();
+    assertThat(vacio.ajusteDeTalla()).isEqualTo(AjusteDeTalla.NINGUNO);
     assertThat(vacio.set()).isEmpty();
   }
 

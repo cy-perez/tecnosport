@@ -194,6 +194,19 @@ class UnirBorradorProductoTest {
     assertThrows(ExcepcionDeDominio.class, () -> crema.absorber(sinColor, PUBLICADAS));
   }
 
+  /**
+   * El de dama y el de caballero de un anuncio unisex salen de la misma publicación con otro ajuste
+   * (ADR-0085): unidos, una talla no diría qué pedirle al proveedor.
+   */
+  @Test
+  void conOtroAjusteDeTallaNoSeUne() {
+    BorradorProducto crema = delAlbum("RV102517", CREMA, "crema", List.of("L"), "ax franja");
+    BorradorProducto cafe = delAlbum("RV102516", CAFE, "café", List.of("L"), "ax franja");
+    BorradorProducto.conAjusteDeTalla(cafe, new AjusteDeTalla(1));
+
+    assertThrows(ExcepcionDeDominio.class, () -> crema.absorber(cafe, PUBLICADAS));
+  }
+
   @Test
   void unaEtiquetaLargaSeRecortaALoQueCabe() {
     BorradorProducto largo = delAlbum("RV1", CREMA, "crema", List.of("L"), "x".repeat(300));

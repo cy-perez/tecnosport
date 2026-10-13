@@ -185,6 +185,21 @@
                           [valor]="linea.precioUnitario.valor"
                           [moneda]="linea.precioUnitario.moneda"
                         />
+                        <!-- Horma reducida o talla EUR: se vende una y al proveedor se le pide
+                             otra (ADR-0085). Quien despacha no tiene cómo deducirla. -->
+                        @if (linea.alProveedor; as alProveedor) {
+                          ·
+                          <strong class="font-medio">
+                            @if (alProveedor.conocida) {
+                              {{
+                                'admin.pedidos.detalle.tallaDelProveedor'
+                                  | transloco: { talla: alProveedor.talla }
+                              }}
+                            } @else {
+                              {{ 'admin.pedidos.detalle.tallaDelProveedorDesconocida' | transloco }}
+                            }
+                          </strong>
+                        }
                       </li>
                     }
                   </ul>

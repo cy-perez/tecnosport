@@ -78,6 +78,13 @@ public final class BorradorProducto {
    */
   private ArmadoDeSet set;
 
+  /**
+   * Cuántas tallas más arriba nombra el proveedor la que se vende (ADR-0085); {@link
+   * AjusteDeTalla#NINGUNO} si las nombra igual. Con él, aprobar deja en cada variante qué talla
+   * pedirle al proveedor. Lo pone la ingesta y lo devuelve el adaptador, como el set.
+   */
+  private AjusteDeTalla ajusteDeTalla = AjusteDeTalla.NINGUNO;
+
   public BorradorProducto(
       UUID id,
       UUID publicacionId,
@@ -354,6 +361,16 @@ public final class BorradorProducto {
     return Optional.ofNullable(set);
   }
 
+  /** Para la ingesta y el adaptador: el proveedor nombra las tallas así. */
+  public static BorradorProducto conAjusteDeTalla(BorradorProducto borrador, AjusteDeTalla ajuste) {
+    borrador.ajusteDeTalla = Objects.requireNonNull(ajuste, "El ajuste de talla no es nulo.");
+    return borrador;
+  }
+
+  public AjusteDeTalla ajusteDeTalla() {
+    return ajusteDeTalla;
+  }
+
   /** ¿La lectura de fotos vio el mismo diseño en este y en el otro? */
   public boolean mismoDisenoQue(BorradorProducto otro) {
     return diseno != null
@@ -390,6 +407,11 @@ public final class BorradorProducto {
     if (!otro.fotosSubidas.isEmpty()) {
       throw new ExcepcionDeDominio(
           "El otro borrador tiene fotos subidas desde el panel: súbelas en este antes de unirlos.");
+    }
+    if (!otro.ajusteDeTalla.equals(ajusteDeTalla)) {
+      throw new ExcepcionDeDominio(
+          "El proveedor nombra las tallas de los dos de distinta manera: no se sabría qué talla"
+              + " pedirle por cada una.");
     }
     if (!tallasDeCadaTonoSeSaben(otro)) {
       throw new ExcepcionDeDominio(
@@ -710,9 +732,10 @@ public final class BorradorProducto {
             null,
             ahora);
     // Sin la etiqueta: quien parte dice que no son el mismo producto, y el panel no tiene por qué
-    // sugerirle volver a unirlos. El set sí: las dos partes salen del mismo anuncio y del mismo
-    // costo.
+    // sugerirle volver a unirlos. El set y el ajuste de talla sí: las dos partes salen del mismo
+    // anuncio y del mismo costo.
     nuevo.set = set;
+    nuevo.ajusteDeTalla = ajusteDeTalla;
     fotosDescartadas.addAll(queSeVan);
     queSeVan.forEach(tonosSugeridos::remove);
     this.pHash = null;

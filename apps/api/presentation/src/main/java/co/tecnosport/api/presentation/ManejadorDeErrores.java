@@ -63,6 +63,7 @@ import co.tecnosport.api.application.pedido.PedidoNoEncontradoException;
 import co.tecnosport.api.application.pedido.RetiroEnPuntoNoDisponibleException;
 import co.tecnosport.api.application.pedido.SistecreditoNoDisponibleException;
 import co.tecnosport.api.application.pedido.VarianteNoEncontradaException;
+import co.tecnosport.api.application.proveedores.AjustesDeTallaDistintosException;
 import co.tecnosport.api.application.proveedores.ArchivoDeIngestaEnUsoException;
 import co.tecnosport.api.application.proveedores.ArchivoDeIngestaNoEncontradoException;
 import co.tecnosport.api.application.proveedores.AtributoDeCatalogoNoDefinidoException;
@@ -92,6 +93,7 @@ import co.tecnosport.api.application.proveedores.ProveedorConProductosException;
 import co.tecnosport.api.application.proveedores.ProveedorDeListasException;
 import co.tecnosport.api.application.proveedores.ProveedorInactivoException;
 import co.tecnosport.api.application.proveedores.ProveedorNoEncontradoException;
+import co.tecnosport.api.application.proveedores.TallaDelProveedorDesconocidaException;
 import co.tecnosport.api.application.proveedores.TallasDeCadaTonoDesconocidasException;
 import co.tecnosport.api.application.proveedores.TipoDeExportacionNoAdmitidoException;
 import co.tecnosport.api.application.proveedores.TipoDeFotoNoAdmitidoException;
@@ -266,6 +268,15 @@ public class ManejadorDeErrores {
         excepcion);
   }
 
+  // 422: el de dama y el de caballero de un anuncio unisex no se unen (ADR-0085).
+  @ExceptionHandler(AjustesDeTallaDistintosException.class)
+  public ProblemDetail ajustesDeTallaDistintos(AjustesDeTallaDistintosException excepcion) {
+    return problema(
+        HttpStatus.UNPROCESSABLE_CONTENT,
+        "El proveedor nombra distinto las tallas de los dos",
+        excepcion);
+  }
+
   // 422: hay que nombrar los tonos de los dos antes de unir.
   @ExceptionHandler(TallasDeCadaTonoDesconocidasException.class)
   public ProblemDetail tallasDeCadaTonoDesconocidas(
@@ -392,15 +403,16 @@ public class ManejadorDeErrores {
     return problema(HttpStatus.NOT_FOUND, "Borrador no encontrado", excepcion);
   }
 
-  // 409 los cuatro: el borrador existe y la petición está bien; lo que falta es un estado o un
-  // dato que quien revisa arregla en el panel y vuelve.
+  // 409 todos: el borrador existe y la petición está bien; lo que falta es un estado o un dato
+  // que quien revisa arregla en el panel y vuelve. La talla del proveedor, quitando esa talla.
   @ExceptionHandler({
     BorradorNoEditableException.class,
     BorradorSinFotosException.class,
     BorradorSinPrecioException.class,
     BorradorSinTituloException.class,
     BorradorSinDescripcionException.class,
-    AtributoDeCatalogoNoDefinidoException.class
+    AtributoDeCatalogoNoDefinidoException.class,
+    TallaDelProveedorDesconocidaException.class
   })
   public ProblemDetail borradorNoAprobable(RuntimeException excepcion) {
     return problema(HttpStatus.CONFLICT, "El borrador no se puede aprobar así", excepcion);

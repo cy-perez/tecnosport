@@ -9,7 +9,9 @@ import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.compartido.ExcepcionDeDominio;
 import co.tecnosport.api.domain.compartido.HashContenido;
 import co.tecnosport.api.domain.compartido.Slug;
+import co.tecnosport.api.domain.proveedores.AjusteDeTalla;
 import co.tecnosport.api.domain.proveedores.HuellaProveedor;
+import co.tecnosport.api.domain.proveedores.TallaAlProveedor;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
@@ -56,6 +58,61 @@ class ProductoDeProveedorTest {
         new HashContenido("%064x".formatted(1)),
         "Bolso",
         "Bag");
+  }
+
+  private static final Atributo TALLA = Atributo.crear("Talla", TipoAtributo.TEXTO, List.of());
+  private static final List<String> ROPA = List.of("XS", "S", "M", "L", "XL", "XXL", "XXXL");
+
+  private static Variante enTalla(String sku, String talla) {
+    return Variante.crear(
+        new co.tecnosport.api.domain.compartido.Sku(sku),
+        Dinero.deCop(69_900),
+        java.math.BigDecimal.ZERO,
+        null,
+        null,
+        List.of(ValorAtributo.de(TALLA, talla)));
+  }
+
+  /**
+   * El polo de Meraki se vende en S y se pide en M (ADR-0085), y la talla se cuenta desde la de
+   * hoy: cambiada en el panel, la que se pide cambia con ella; agregada después, también la tiene.
+   */
+  @Test
+  void laTallaAlProveedorSaleDeLaTallaDeHoy() {
+    Producto polo = deProveedor();
+    polo.definirAjusteDeTalla(new AjusteDeTalla(1));
+    Variante s = enTalla("P-S", "S");
+    polo.agregarVariante(s);
+
+    assertEquals(Optional.of(new TallaAlProveedor("M")), polo.tallaAlProveedor(s.id(), ROPA));
+
+    polo.cambiarTalla(s.id(), "L");
+    assertEquals(Optional.of(new TallaAlProveedor("XL")), polo.tallaAlProveedor(s.id(), ROPA));
+
+    Variante xxxl = enTalla("P-XXXL", "XXXL");
+    polo.agregarVariante(xxxl);
+    assertEquals(
+        Optional.of(TallaAlProveedor.desconocida()),
+        polo.tallaAlProveedor(xxxl.id(), ROPA),
+        "una talla que el ajuste no alcanza a contar se dice, no se calla");
+  }
+
+  @Test
+  void sinAjusteOSinTallaSePideComoSeVende() {
+    Producto polo = deProveedor();
+    Variante s = enTalla("P-S", "S");
+    polo.agregarVariante(s);
+    assertEquals(Optional.empty(), polo.tallaAlProveedor(s.id(), ROPA));
+
+    polo.definirAjusteDeTalla(new AjusteDeTalla(1));
+    assertEquals(Optional.empty(), polo.tallaAlProveedor(UUID.randomUUID(), ROPA));
+  }
+
+  @Test
+  void unProductoManualNoTieneTallasCorridas() {
+    assertThrows(
+        ExcepcionDeDominio.class, () -> manual().definirAjusteDeTalla(new AjusteDeTalla(1)));
+    manual().definirAjusteDeTalla(AjusteDeTalla.NINGUNO);
   }
 
   @Test
