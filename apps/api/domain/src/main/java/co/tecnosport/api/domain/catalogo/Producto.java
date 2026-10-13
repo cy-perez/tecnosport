@@ -29,8 +29,11 @@ public final class Producto {
    * una ficha que nadie puede recorrer. Ocho es holgado para las cuatro tomas del estándar de
    * estudio y para un producto que llegue con más. Si un día quedan cortas, se sube el número: es
    * reversible y no hay ningún dato que se pierda.
+   *
+   * <p>Subió de ocho a nueve el 13 de octubre de 2026, a pedido del negocio: un álbum de La Riverah
+   * es un solo producto con una prenda por diseño, y diez fotos son diez diseños.
    */
-  public static final int TOPE_DE_GALERIA = 8;
+  public static final int TOPE_DE_GALERIA = 9;
 
   private final UUID id;
   private String nombre;
