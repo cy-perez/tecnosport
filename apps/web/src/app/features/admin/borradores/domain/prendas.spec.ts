@@ -9,6 +9,7 @@ import {
   ColorParaProponer,
   prendasEnUso,
   prendaSinTallas,
+  prendasDelAlbumSugeridas,
   prendasSugeridas,
   problemaDePrendas,
   quitarPrenda,
@@ -569,5 +570,91 @@ describe('tallas por color', () => {
       prenda: 1,
       tono: 'Azul',
     });
+  });
+});
+
+/**
+ * El álbum de La Riverah (13 de octubre de 2026): un solo producto, y cada SKU impreso es una prenda
+ * con sus fotos, su color, las tallas de su pie y su SKU.
+ */
+describe('prendas de un álbum', () => {
+  const paleta = colores('Negro', 'Gris', 'Blanco');
+  const fotos = [
+    { mensajeId: 'f1', tonoSugerido: 'negro' },
+    { mensajeId: 'f2', tonoSugerido: 'gris' },
+    { mensajeId: 'f3', tonoSugerido: 'gris oscuro' },
+    { mensajeId: 'f4', tonoSugerido: null },
+    { mensajeId: 'f5', tonoSugerido: 'camel' },
+  ];
+  const album = [
+    { referencia: 'RV102347', tallas: ['S', 'M'], fotos: ['f1'] },
+    { referencia: 'RV102336', tallas: ['S', 'M', 'L', 'XL'], fotos: ['f2', 'f3'] },
+    { referencia: 'RV102343', tallas: [], fotos: ['f5'] },
+  ];
+
+  it('propone una prenda por SKU con sus fotos, su color, sus tallas y su SKU', () => {
+    const asignacion = prendasDelAlbumSugeridas(album, fotos, paleta, ['S', 'M', 'L', 'XL']);
+
+    expect(asignacion.prendaPorFoto).toEqual({ f1: 1, f2: 2, f3: 2, f5: 3 });
+    expect(asignacion.tonoPorPrenda).toEqual({ 1: 'Negro', 2: 'Gris', 3: '' });
+    expect(asignacion.pistaPorPrenda).toEqual({ 1: 'negro', 2: 'gris', 3: 'camel' });
+    expect(asignacion.tallasPorPrenda).toEqual({ 1: ['S', 'M'], 2: ['S', 'M', 'L', 'XL'] });
+    expect(asignacion.referenciaPorPrenda).toEqual({ 1: 'RV102347', 2: 'RV102336', 3: 'RV102343' });
+  });
+
+  it('una foto que no es de ningún SKU vale para todas', () => {
+    const asignacion = prendasDelAlbumSugeridas(album, fotos, paleta, []);
+
+    expect(tonoDeFoto(asignacion, 'f4')).toBe('');
+    expect(asignacion.prendaPorFoto['f4']).toBeUndefined();
+  });
+
+  it('un SKU cuyas fotos ya no están en el borrador no es una prenda', () => {
+    const asignacion = prendasDelAlbumSugeridas(
+      album,
+      fotos.filter((f) => f.mensajeId !== 'f1'),
+      paleta,
+      [],
+    );
+
+    expect(Object.values(asignacion.referenciaPorPrenda)).toEqual(['RV102336', 'RV102343']);
+  });
+
+  /** Diez fotos caben en un producto: las prendas del álbum que no entran no se crean, y no es un error. */
+  it('la prenda del álbum que se queda fuera no impide aprobar', () => {
+    const asignacion = elegirTonoDePrenda(
+      prendasDelAlbumSugeridas(album, fotos, paleta, []),
+      3,
+      'Blanco',
+    );
+
+    expect(problemaDePrendas(asignacion, ['f1', 'f2', 'f3'])).toBeNull();
+    expect(variantesQueSeCrean(asignacion, ['f1', 'f2', 'f3']).map((v) => v.prenda)).toEqual([
+      1, 2,
+    ]);
+  });
+
+  it('una prenda que no es del álbum y se queda fuera sigue siendo un problema', () => {
+    const asignacion = conTonos(['f1', 'Negro'], ['f2', 'Gris']);
+
+    expect(problemaDePrendas(asignacion, ['f1'])).toEqual({ tipo: 'FUERA', mensajeId: 'f2' });
+  });
+
+  it('separar una foto de su prenda en una nueva no le lleva el SKU', () => {
+    const asignacion = moverFotoAPrenda(
+      prendasDelAlbumSugeridas(album, fotos, paleta, []),
+      'f3',
+      'nueva',
+    );
+
+    const nueva = asignacion.prendaPorFoto['f3'];
+    expect(asignacion.referenciaPorPrenda[nueva]).toBeUndefined();
+    expect(asignacion.referenciaPorPrenda[2]).toBe('RV102336');
+  });
+
+  it('quitar una prenda del álbum olvida su SKU', () => {
+    const asignacion = quitarPrenda(prendasDelAlbumSugeridas(album, fotos, paleta, []), 1);
+
+    expect(asignacion.referenciaPorPrenda[1]).toBeUndefined();
   });
 });

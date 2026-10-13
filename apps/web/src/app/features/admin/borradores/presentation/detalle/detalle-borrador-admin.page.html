@@ -397,6 +397,14 @@
           <p class="m-0 text-sm text-ts-texto-suave">
             {{ 'admin.borradores.aprobar.prendasAyuda' | transloco }}
           </p>
+          @if (prendasDelAlbum().length > 0) {
+            <p class="m-0 text-sm text-ts-texto-suave">
+              {{
+                'admin.borradores.aprobar.albumAyuda'
+                  | transloco: { prendas: prendasDelAlbum().length, maximo: maximoFotos }
+              }}
+            </p>
+          }
           @if (variantesQueSeCrean().length === 0) {
             <p class="m-0">{{ 'admin.borradores.aprobar.sinVariantesDeColor' | transloco }}</p>
           } @else {
@@ -411,6 +419,11 @@
                         : 'admin.borradores.aprobar.varianteConFotos'
                     ) | transloco: { valor: variante.valor, fotos: variante.numeros }
                   }}
+                  @if (referenciaDe(variante.prenda); as sku) {
+                    <span class="text-ts-texto-suave">
+                      {{ 'admin.borradores.aprobar.skuDeLaPrenda' | transloco: { sku } }}
+                    </span>
+                  }
                 </li>
               }
             </ul>

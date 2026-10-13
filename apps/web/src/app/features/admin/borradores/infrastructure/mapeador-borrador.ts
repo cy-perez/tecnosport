@@ -105,6 +105,11 @@ export function aBorradorDetalle(dto: BorradorDetalleDto): BorradorDetalle {
       titulo: h.titulo ?? '',
       mismoDiseno: h.mismoDiseno ?? false,
     })),
+    prendasDelAlbum: (dto.prendasDelAlbum ?? []).map((p) => ({
+      referencia: p.referencia,
+      tallas: p.tallas,
+      fotos: p.fotos,
+    })),
   };
 }
 
@@ -161,6 +166,7 @@ export function aAprobarPeticion(aprobacion: AprobarBorrador): AprobarPeticionDt
             ...(prenda.colorHex ? { colorHex: prenda.colorHex } : {}),
             ...(prenda.tallas ? { tallas: [...prenda.tallas] } : {}),
             ...(prenda.seVeEn ? { seVeEn: prenda.seVeEn } : {}),
+            ...(prenda.referencia ? { referencia: prenda.referencia } : {}),
           })),
         }
       : {}),

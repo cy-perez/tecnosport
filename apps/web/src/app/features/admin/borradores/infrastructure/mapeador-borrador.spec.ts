@@ -108,8 +108,15 @@ describe('mapeador-borrador', () => {
       altEn: 'Top',
       existenciaInicial: 1,
       prendas: [
-        { numero: 1, tono: 'Negro', colorHex: '#000000', tallas: null, seVeEn: null },
-        { numero: 2, tono: 'Café', colorHex: null, tallas: ['ML'], seVeEn: null },
+        {
+          numero: 1,
+          tono: 'Negro',
+          colorHex: '#000000',
+          tallas: null,
+          seVeEn: null,
+          referencia: null,
+        },
+        { numero: 2, tono: 'Café', colorHex: null, tallas: ['ML'], seVeEn: null, referencia: null },
       ],
       principalEnLaFicha: false,
     });
@@ -117,6 +124,39 @@ describe('mapeador-borrador', () => {
     expect(peticion.prendas).toEqual([
       { numero: 1, tono: 'Negro', colorHex: '#000000' },
       { numero: 2, tono: 'Café', tallas: ['ML'] },
+    ]);
+  });
+
+  /** Un álbum de La Riverah (13 de octubre de 2026): cada prenda lleva su SKU, y la que no, nada. */
+  it('al aprobar manda el SKU de cada prenda del álbum', () => {
+    const peticion = aAprobarPeticion({
+      marcaId: 'm1',
+      categoriaId: 'c1',
+      precioVenta: 115000,
+      fotos: [
+        { mensajeId: 'f1', tono: 'Negro', colorHex: null, prenda: 1 },
+        { mensajeId: 'f2', tono: 'Gris', colorHex: null, prenda: 2 },
+      ],
+      altEs: 'Polo',
+      altEn: 'Polo shirt',
+      existenciaInicial: 1,
+      prendas: [
+        {
+          numero: 1,
+          tono: 'Negro',
+          colorHex: null,
+          tallas: null,
+          seVeEn: null,
+          referencia: 'RV102376',
+        },
+        { numero: 2, tono: 'Gris', colorHex: null, tallas: null, seVeEn: null, referencia: null },
+      ],
+      principalEnLaFicha: false,
+    });
+
+    expect(peticion.prendas).toEqual([
+      { numero: 1, tono: 'Negro', referencia: 'RV102376' },
+      { numero: 2, tono: 'Gris' },
     ]);
   });
 
@@ -134,9 +174,9 @@ describe('mapeador-borrador', () => {
       altEn: 'T-shirt',
       existenciaInicial: 1,
       prendas: [
-        { numero: 1, tono: 'Negro', colorHex: null, tallas: null, seVeEn: 'f1' },
-        { numero: 2, tono: 'Cocoa', colorHex: null, tallas: null, seVeEn: 'f2' },
-        { numero: 3, tono: 'Crema', colorHex: null, tallas: null, seVeEn: null },
+        { numero: 1, tono: 'Negro', colorHex: null, tallas: null, seVeEn: 'f1', referencia: null },
+        { numero: 2, tono: 'Cocoa', colorHex: null, tallas: null, seVeEn: 'f2', referencia: null },
+        { numero: 3, tono: 'Crema', colorHex: null, tallas: null, seVeEn: null, referencia: null },
       ],
       principalEnLaFicha: true,
     });

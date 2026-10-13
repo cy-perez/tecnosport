@@ -26,7 +26,7 @@ import {
   proveedorDePrueba,
   RepositorioProveedoresAdminFalso,
 } from '../../../proveedores/presentation/apoyo-proveedores.spec-util';
-import { Borrador, FotoBorrador } from '../../domain/borrador.model';
+import { Borrador, FotoBorrador, PrendaDelAlbum } from '../../domain/borrador.model';
 import { REPOSITORIO_BORRADORES_ADMIN } from '../../domain/repositorio-borradores-admin.puerto';
 import {
   borradorDePrueba,
@@ -157,9 +157,11 @@ async function renderPagina(
   fotos: FotoBorrador[] = [fotoDePrueba('f-1'), fotoDePrueba('f-2')],
   textos: string[] = ['Bolso tote 53.000 sirve hasta L', 'Disponible en negro y café'],
   hermanos: { id: string; titulo: string; mismoDiseno: boolean }[] = [],
+  prendasDelAlbum: PrendaDelAlbum[] = [],
 ) {
   const repositorio = new RepositorioBorradoresAdminFalso([borrador], fotos, textos);
   repositorio.hermanos = hermanos;
+  repositorio.prendasDelAlbum = prendasDelAlbum;
   const resultado = await render(DetalleBorradorAdminPage, {
     imports: [
       TranslocoTestingModule.forRoot({
@@ -229,6 +231,40 @@ async function aprobarCon75000() {
 }
 
 describe('DetalleBorradorAdminPage', () => {
+  /**
+   * El álbum de La Riverah es un borrador (13 de octubre de 2026): cada SKU impreso es una prenda,
+   * con el color de su foto, y la aprobación manda el SKU de cada una.
+   */
+  it('en un álbum propone una prenda por SKU y manda el SKU de cada una', async () => {
+    const fotos = [
+      { ...fotoDePrueba('f-1'), tonoSugerido: 'negro' },
+      { ...fotoDePrueba('f-2'), tonoSugerido: 'burgundy' },
+    ];
+    const { repositorio } = await renderPagina(
+      sinTonosDelTexto(),
+      fotos,
+      undefined,
+      [],
+      [
+        { referencia: 'RV102347', tallas: [], fotos: ['f-1'] },
+        { referencia: 'RV102336', tallas: [], fotos: ['f-2'] },
+      ],
+    );
+    await llenarAprobacion();
+
+    expect(await screen.findByText('Negro: la foto 1')).toBeTruthy();
+    expect(screen.getByText('Vino: la foto 2')).toBeTruthy();
+    expect(screen.getByText('· SKU RV102347')).toBeTruthy();
+    expect(screen.getByText('· SKU RV102336')).toBeTruthy();
+
+    await aprobarCon75000();
+    await screen.findByRole('link', { name: a.verProducto });
+    expect(repositorio.aprobaciones[0].aprobacion.prendas.map((p) => p.referencia)).toEqual([
+      'RV102347',
+      'RV102336',
+    ]);
+  });
+
   it('muestra lo que escribió el proveedor, las fotos y las alertas', async () => {
     await renderPagina(borradorDePrueba({ alertas: ['CONFIANZA_BAJA'] }));
 
@@ -325,19 +361,20 @@ describe('DetalleBorradorAdminPage', () => {
   });
 
   /**
-   * Una publicación de ropa trae doce o catorce fotos y el catálogo admite nueve: por omisión
-   * entran las nueve primeras, y quien aprueba cambia cuáles. La primera elegida es la principal.
+   * Una publicación de ropa trae doce o catorce fotos y el catálogo admite diez (desde el 13 de
+   * octubre de 2026): por omisión entran las diez primeras, y quien aprueba cambia cuáles. La
+   * primera elegida es la principal.
    */
-  it('con más fotos de las que caben entran las nueve primeras y se puede cambiar cuáles', async () => {
-    const fotos = Array.from({ length: 11 }, (_, i) => fotoDePrueba('f-' + (i + 1)));
+  it('con más fotos de las que caben entran las diez primeras y se puede cambiar cuáles', async () => {
+    const fotos = Array.from({ length: 12 }, (_, i) => fotoDePrueba('f-' + (i + 1)));
     const { repositorio } = await renderPagina(borradorDePrueba(), fotos);
     await llenarAprobacion();
 
-    expect(await screen.findByText(/9 de 9 fotos elegidas/)).toBeTruthy();
-    expect((screen.getByLabelText('Incluir la foto 11') as HTMLInputElement).checked).toBe(false);
+    expect(await screen.findByText(/10 de 10 fotos elegidas/)).toBeTruthy();
+    expect((screen.getByLabelText('Incluir la foto 12') as HTMLInputElement).checked).toBe(false);
 
     fireEvent.click(screen.getByLabelText('Foto principal (la 1)'));
-    fireEvent.click(screen.getByLabelText('Incluir la foto 11'));
+    fireEvent.click(screen.getByLabelText('Incluir la foto 12'));
     expect(await screen.findByText('Foto principal (la 2)')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: a.accion }));
 
@@ -351,7 +388,8 @@ describe('DetalleBorradorAdminPage', () => {
       'f-7',
       'f-8',
       'f-9',
-      'f-11',
+      'f-10',
+      'f-12',
     ]);
   });
 
@@ -360,21 +398,21 @@ describe('DetalleBorradorAdminPage', () => {
    * novena seguía fuera porque el tope se había aplicado al cargar. Se aprobó con ocho.
    */
   it('eliminar una foto deja entrar a la que esperaba fuera del tope', async () => {
-    const fotos = Array.from({ length: 10 }, (_, i) => fotoDePrueba('f-' + (i + 1)));
+    const fotos = Array.from({ length: 11 }, (_, i) => fotoDePrueba('f-' + (i + 1)));
     const { repositorio } = await renderPagina(borradorDePrueba(), fotos);
     await llenarAprobacion();
-    expect((screen.getByLabelText('Incluir la foto 10') as HTMLInputElement).checked).toBe(false);
+    expect((screen.getByLabelText('Incluir la foto 11') as HTMLInputElement).checked).toBe(false);
 
     fireEvent.click(screen.getByRole('button', { name: 'Eliminar la foto 2' }));
     fireEvent.click(
       screen.getByRole('button', { name: esAdmin.borradores.eliminarFoto.confirmar }),
     );
     await vi.waitFor(() =>
-      expect(screen.queryByRole('button', { name: 'Eliminar la foto 10' })).toBeNull(),
+      expect(screen.queryByRole('button', { name: 'Eliminar la foto 11' })).toBeNull(),
     );
 
-    expect((screen.getByLabelText('Incluir la foto 9') as HTMLInputElement).checked).toBe(true);
-    expect(screen.getByText(/9 de 9 fotos elegidas/)).toBeTruthy();
+    expect((screen.getByLabelText('Incluir la foto 10') as HTMLInputElement).checked).toBe(true);
+    expect(screen.getByText(/10 de 10 fotos elegidas/)).toBeTruthy();
     fireEvent.input(screen.getByLabelText(a.precioVenta), { target: { value: '75.000' } });
     fireEvent.click(screen.getByRole('button', { name: a.accion }));
 
@@ -389,21 +427,22 @@ describe('DetalleBorradorAdminPage', () => {
       'f-8',
       'f-9',
       'f-10',
+      'f-11',
     ]);
   });
 
   /** El selector de color sigue en las que no entran: el color se recuerda si se vuelve a tildar. */
   it('no aprueba si una foto que no entra tiene un color marcado, y dice cuál', async () => {
-    const fotos = Array.from({ length: 10 }, (_, i) => fotoDePrueba('f-' + (i + 1)));
+    const fotos = Array.from({ length: 11 }, (_, i) => fotoDePrueba('f-' + (i + 1)));
     const { repositorio } = await renderPagina(sinTonosDelTexto(), fotos);
     await llenarAprobacion();
 
-    fireEvent.click(await screen.findByRole('button', { name: /Color de la foto 10/ }));
+    fireEvent.click(await screen.findByRole('button', { name: /Color de la foto 11/ }));
     fireEvent.click(await screen.findByLabelText('Negro'));
     fireEvent.input(screen.getByLabelText(a.precioVenta), { target: { value: '75.000' } });
     fireEvent.click(screen.getByRole('button', { name: a.accion }));
 
-    expect(await screen.findByText(a.fotoConTonoFuera.replace('{{numero}}', '10'))).toBeTruthy();
+    expect(await screen.findByText(a.fotoConTonoFuera.replace('{{numero}}', '11'))).toBeTruthy();
     expect(repositorio.aprobaciones).toEqual([]);
   });
 
@@ -536,9 +575,30 @@ describe('DetalleBorradorAdminPage', () => {
 
       await screen.findByRole('link', { name: a.verProducto });
       expect(repositorio.aprobaciones[0].aprobacion.prendas).toEqual([
-        { numero: 1, tono: 'Negro', colorHex: '#111111', tallas: null, seVeEn: null },
-        { numero: 2, tono: 'Café', colorHex: '#6F4E37', tallas: null, seVeEn: null },
-        { numero: 3, tono: 'Vino', colorHex: '#722F37', tallas: null, seVeEn: null },
+        {
+          numero: 1,
+          tono: 'Negro',
+          colorHex: '#111111',
+          tallas: null,
+          seVeEn: null,
+          referencia: null,
+        },
+        {
+          numero: 2,
+          tono: 'Café',
+          colorHex: '#6F4E37',
+          tallas: null,
+          seVeEn: null,
+          referencia: null,
+        },
+        {
+          numero: 3,
+          tono: 'Vino',
+          colorHex: '#722F37',
+          tallas: null,
+          seVeEn: null,
+          referencia: null,
+        },
       ]);
       // Las dos fotos retratan los tres tonos: ninguna los distingue, y la principal no se pidió.
       expect(repositorio.aprobaciones[0].aprobacion.principalEnLaFicha).toBe(false);
@@ -1285,9 +1345,7 @@ describe('DetalleBorradorAdminPage', () => {
       expect(await screen.findByRole('heading', { name: anuncio.set })).toBeTruthy();
       expect(screen.getByText(anuncio.setCon.GORRA)).toBeTruthy();
       expect(screen.getByText(anuncio.costo.SUMA_DE_PRENDAS)).toBeTruthy();
-      expect(
-        screen.getByText(/Camiseta oversize, sin su acompañante: \$ 55\.000/),
-      ).toBeTruthy();
+      expect(screen.getByText(/Camiseta oversize, sin su acompañante: \$ 55\.000/)).toBeTruthy();
       expect(screen.getByText(/Gorras: \$ 35\.000/)).toBeTruthy();
     });
 
