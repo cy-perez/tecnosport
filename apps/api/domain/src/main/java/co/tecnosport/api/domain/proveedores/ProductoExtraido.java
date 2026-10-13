@@ -264,6 +264,10 @@ public record ProductoExtraido(
    * código de referencia solo si está escrito en el texto: identifica el producto, y uno inventado
    * lo confundiría con otro.
    *
+   * <p>Un precio adicional que no está escrito en el texto se descarta ({@link PrecioEscrito}): el
+   * modelo restó el precio de la falda al del set y puso una blusa a 38.100 que el proveedor nunca
+   * escribió (12 de octubre de 2026).
+   *
    * <p>Desde el 11 de octubre de 2026, además: el título que nombra una marca con «estilo» cuenta
    * como réplica para revisarla ({@link PatronDeReplica#nombraMarcaConEstilo}), y la camiseta de un
    * anuncio que vende polos es un polo, con el título de un polo ({@link TituloDePolo}).
@@ -301,7 +305,9 @@ public record ProductoExtraido(
         notas,
         codigoEscritoEn(texto),
         tallasPorTono.contrastadoCon(texto),
-        preciosAdicionales,
+        texto == null
+            ? preciosAdicionales
+            : preciosAdicionales.stream().filter(p -> PrecioEscrito.en(p.precio(), texto)).toList(),
         marcas,
         set);
   }

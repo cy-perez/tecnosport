@@ -1330,7 +1330,9 @@
       "SIN_FOTOS": "The post has no photos. It cannot be approved without photos.",
       "PRECIO_CAMBIO": "The supplier changed the price of a product that already exists. The supplier price was updated; check the sale price.",
       "FOTOS_COMPARTIDAS": "The message announced several products with the same photos. Keep only the ones of this product and mark its main photo.",
-      "REPLICA": "The supplier announces it as a replica (1.1 or AAA). It is published under the Generic brand, with the original brand only in the title, such as “Puma - BMW style T-shirt”. Confirm both before approving."
+      "REPLICA": "The supplier announces it as a replica (1.1 or AAA). It is published under the Generic brand, with the original brand only in the title, such as “Puma - BMW style T-shirt”. Confirm both before approving.",
+      "ACOMPANANTE_SIN_LEER": "The post offers the garment with a cap, a set or a duo, but the extraction did not read its price: the draft is the garment on its own. Check the post; if it is a set, reject it and ingest the chat again.",
+      "SET_SIN_DESCRIPCION": "This is a set, but the description is the garment's own and does not mention the cap or the blouse. Add it before approving."
     },
     "detalle": {
       "miga": "Review",

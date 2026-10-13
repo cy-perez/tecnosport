@@ -504,4 +504,96 @@ class SetsDeProveedorTest {
         ExcepcionDeDominio.class,
         () -> new ArmadoDeSet(PrendaAcompanante.OTRA, OrigenDelCostoDeSet.ANUNCIADO));
   }
+
+  // --- Lo que dejó la primera ingesta con sets (12 de octubre de 2026) ---
+
+  private static final String FALDA_MALLATEX =
+      "✅Falda de dama ✅Tela Mallatex americana ✅Talla  S M L Falda 🤑$49.900 "
+          + "Set, falda + básica $ 88.000";
+
+  /** El modelo restó el set y la falda, y puso una blusa a 38.100 que nadie escribió. */
+  @Test
+  void unPrecioAdicionalQueElTextoNoEscribeSeDescarta() {
+    ProductoExtraido falda =
+        extraido(
+            "Falda de dama",
+            TipoProductoProveedor.FALDA,
+            49900,
+            List.of(
+                acompanante("Básica", 38100, PrendaAcompanante.BLUSA),
+                combo("Set falda + básica", 88000, PrendaAcompanante.BLUSA)),
+            TEXTOS);
+
+    ProductoExtraido contrastada = falda.contrastadoCon(FALDA_MALLATEX);
+
+    assertEquals(
+        List.of(combo("Set falda + básica", 88000, PrendaAcompanante.BLUSA)),
+        contrastada.preciosAdicionales());
+  }
+
+  @Test
+  void losMilesPegadosAlSimboloCuentanComoEscritos() {
+    assertTrue(PrecioEscrito.en(Dinero.deCop(124000), "Jean Mom Fit 💲124 Talla S M L"));
+    assertFalse(PrecioEscrito.en(Dinero.deCop(12000), "Jean Mom Fit 💲124 Talla S M L"));
+  }
+
+  /** Sin los textos del set, el nombre en inglés se arma y la descripción queda para revisar. */
+  @Test
+  void unSetSinSusTextosArmaElNombreEnInglesYLoDice() {
+    ProductoExtraido camiseta =
+        new ProductoExtraido(
+            true,
+            false,
+            "Camiseta oversize para caballero",
+            LineaCatalogo.ROPA,
+            TipoProductoProveedor.CAMISETA,
+            Dinero.deCop(55000),
+            Tallas.lista(List.of("S", "M")),
+            null,
+            List.of(),
+            null,
+            "Camiseta oversize.",
+            "Oversized T-shirt for men",
+            false,
+            new BigDecimal("0.9"),
+            null,
+            null,
+            null,
+            List.of(acompanante("Gorras", 35000, PrendaAcompanante.GORRA)),
+            List.of(),
+            null);
+
+    SetArmado set = armar(camiseta);
+
+    assertEquals("Oversized T-shirt and cap set", set.producto().altEn());
+    assertFalse(set.conTextosPropios());
+    assertTrue(
+        armar(
+                extraido(
+                    "Falda",
+                    TipoProductoProveedor.FALDA,
+                    49900,
+                    List.of(combo("Set", 88000, PrendaAcompanante.BLUSA)),
+                    TEXTOS))
+            .conTextosPropios());
+  }
+
+  @Test
+  void elTextoQueOfreceUnAcompananteSeReconoce() {
+    assertTrue(
+        ArmadorDeSets.anunciaAcompanante(
+            "Camiseta 🎽55.000~~ Promo 4x200.000 Nota: Las gorras tiene un valor de 35mil-",
+            TipoProductoProveedor.CAMISETA));
+    assertTrue(
+        ArmadorDeSets.anunciaAcompanante(
+            "Falda 🤑$59.900 Básica 48.000", TipoProductoProveedor.FALDA));
+    assertFalse(
+        ArmadorDeSets.anunciaAcompanante(
+            "BÁSICA RAYA AMERICANAS ❤️TELA Licrada $49.900 Promo 2x88.000",
+            TipoProductoProveedor.CAMISETA),
+        "la básica es la prenda misma");
+    assertFalse(
+        ArmadorDeSets.anunciaAcompanante(
+            "JEANS LICRADO CABALLERO Tallas 30 a la 36 $49.000", TipoProductoProveedor.PANTALON));
+  }
 }
