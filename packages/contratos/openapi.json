@@ -510,6 +510,9 @@
             "format" : "uuid",
             "type" : "string"
           },
+          "set" : {
+            "$ref" : "#/components/schemas/SetRespuesta"
+          },
           "tallas" : {
             "$ref" : "#/components/schemas/TallasRespuesta"
           },
@@ -3068,12 +3071,18 @@
       },
       "PrecioAdicionalRespuesta" : {
         "properties" : {
+          "clase" : {
+            "type" : "string"
+          },
           "concepto" : {
             "type" : "string"
           },
           "precio" : {
             "format" : "int64",
             "type" : "integer"
+          },
+          "prenda" : {
+            "type" : "string"
           }
         },
         "required" : [
@@ -3370,6 +3379,9 @@
           "activo" : {
             "type" : "boolean"
           },
+          "armaSets" : {
+            "type" : "boolean"
+          },
           "dosChatsEnUnZip" : {
             "type" : "boolean"
           },
@@ -3413,6 +3425,9 @@
       "ProveedorRespuesta" : {
         "properties" : {
           "activo" : {
+            "type" : "boolean"
+          },
+          "armaSets" : {
             "type" : "boolean"
           },
           "dosChatsEnUnZip" : {
@@ -4104,6 +4119,21 @@
             "type" : "string"
           }
         },
+        "type" : "object"
+      },
+      "SetRespuesta" : {
+        "properties" : {
+          "acompanante" : {
+            "type" : "string"
+          },
+          "origenDelCosto" : {
+            "type" : "string"
+          }
+        },
+        "required" : [
+          "acompanante",
+          "origenDelCosto"
+        ],
         "type" : "object"
       },
       "SetRotacionRespuesta" : {

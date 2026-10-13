@@ -17,8 +17,11 @@ Reglas, en orden de importancia:
    Un acompañante o un combo con precio no es otro producto: «Falda $59.900 / Básica 48.000»,
    «Camiseta $65.000 / Gorra $35.000 / Dúo $95.000» y «Falda $49.900 / Set falda + básica
    $88.000» anuncian **un** producto —la falda, la camiseta—, y la básica, la gorra, el dúo y el
-   set van en `precios_adicionales` de ese producto. Un producto aparte el mensaje lo describe
-   aparte, con su propio nombre y sus tallas o su código, como la chaqueta y el jean de arriba.
+   set van en `precios_adicionales` de ese producto, con su clase y su prenda (regla 18). El
+   producto sigue siendo la prenda sola: su título, su tipo, su precio y su descripción son los de
+   la falda o la camiseta, y lo de la prenda con su acompañante va aparte, en `set` (regla 20).
+   Un producto aparte el mensaje lo describe aparte, con su propio nombre y sus tallas o su
+   código, como la chaqueta y el jean de arriba.
 4. `esta_agotado` es `true` solo si el texto dice agotado, se acabó, sin stock, no hay o un
    equivalente claro. «Nuevamente disponible» es lo contrario.
 5. El `titulo` es el nombre del producto, no un adorno: «Nueva colección», «Nuevamente
@@ -52,11 +55,14 @@ Reglas, en orden de importancia:
    zapatillas y zapatos; `otra` si no es ninguna. `tipo` es el artículo concreto: `bolso`, `morral`, `canguro` (también
    «manos libres»), `conjunto_pantalon`, `conjunto_short`, `enterizo`, `polo`, `camiseta`,
    `buso`, `chaqueta`, `pantalon`, `short`, `vestido`, `blusa`, `bodi` (también «body»), `tenis`
-   (también zapatillas deportivas), `falda`, `sudadera`, `blazer`, `chaleco`; `otro` solo si no
-   encaja en ninguno.
+   (también zapatillas deportivas), `falda`, `falda_short`, `sudadera`, `blazer`, `chaleco`;
+   `otro` solo si no encaja en ninguno.
    Una sudadera, en Colombia, es el pantalón deportivo —jogger o de sudadera—: «Sudadera Jogger
-   para dama» es `sudadera`, no `buso`, que es la prenda de arriba. Una falda short o una
-   faldashort es `short`. Un diminutivo es su artículo: «busito» es `buso`, «blusita» es
+   para dama» es `sudadera`, no `buso`, que es la prenda de arriba. Una falda que trae short
+   es `falda_short`, lo diga como lo diga y donde lo diga: «Falda short», «faldashort», «Falda de
+   dama ( tiene short )», «con short por dentro». Su título es «Falda short» y lo que siga
+   —«Falda short de dama»—, y su descripción dice que es una falda short. Una falda sin short es
+   `falda`, y un short sin falda es `short`. Un diminutivo es su artículo: «busito» es `buso`, «blusita» es
    `blusa`. Un blazer es `blazer` y un chaleco es `chaleco`: no son ni chaqueta ni blusa.
 7. El precio es un entero en pesos colombianos: «53.000» es `53000`, «$45.000» es `45000`,
    «🤑🤑*55.000*» es `55000`. Dos o tres cifras pegadas a 💲 están en miles: «💲124» es
@@ -111,15 +117,37 @@ Reglas, en orden de importancia:
     lleva todas las que aparecen (`["SM","ML"]`) y `tonos_nombrados` los tres tonos. El tono
     como lo escribe el mensaje, en minúsculas. Si todas las tallas son de todos los tonos, va
     vacía.
-18. `precios_adicionales` lleva los precios del mensaje que no son el del producto: un
-    acompañante («Gorra $35.000» → `{"concepto":"Gorra","precio_cop":35000}`), un combo («Set
-    falda + básica $88.000», «Polo + gorra $85.000», «Dúo $95.000») o una promoción por cantidad
-    («Promo 4x200.000» → `{"concepto":"Promo 4 unidades","precio_cop":200000}`). «Las gorras
-    tienen un valor de 35mil» también: `35000`. El concepto en pocas palabras, como lo nombra el
-    mensaje. Si no hay ninguno, va vacía.
+18. `precios_adicionales` lleva los precios del mensaje que no son el del producto, cada uno con
+    su `clase`:
+    - `acompanante`: otra prenda con su precio, que se vende con la del anuncio. «Gorra $35.000»
+      → `{"concepto":"Gorra","precio_cop":35000,"clase":"acompanante","prenda":"gorra"}`;
+      «Básica 48.000» → `{"concepto":"Básica","precio_cop":48000,"clase":"acompanante",
+      "prenda":"blusa"}`. «Nota: Las gorras tiene un valor de 35mil» también es un acompañante:
+      `35000`.
+    - `combo`: la prenda con su acompañante a un solo precio. «Set falda + básica $88.000», «Set
+      básica + falda $99.000», «Polo+ gorra $85.000», «Dúo 🧢👕 camiseta/gorra $65.000» y «Dúo
+      $95.000» debajo de «Gorra $35.000» son combos; `prenda` es la que acompaña a la del
+      anuncio: `blusa` con la falda, `gorra` con la camiseta o el polo.
+    - `promocion`: un precio por cantidad, «Promo 4x200.000» → `{"concepto":"Promo 4 unidades",
+      "precio_cop":200000,"clase":"promocion","prenda":null}`.
+    `prenda` es `blusa` para una blusa, una camiseta básica de dama o lo que el proveedor llama
+    «básica»; `gorra` para una gorra o una cachucha; `otra` para cualquier otra prenda, y `null`
+    en una promoción. El concepto en pocas palabras, como lo nombra el mensaje. Si no hay
+    ninguno, va vacía.
 19. `marcas` lleva las marcas que el mensaje nombra para el producto, una por elemento y como la
     marca se escribe: «✅ *DIESEL-AMIRI-Dsq purple DG*» → `["Diesel", "Amiri", "Dsquared2",
     "Dolce & Gabbana"]`; «Marca Levis» → `["Levi's"]`. Una colaboración que se vende como una sola
     prenda es **una**: «MARCA P U M A BMW» → `["Puma - BMW"]`. Vacía si no nombra ninguna.
+20. `set` va cuando el mensaje ofrece el producto junto con su acompañante —hay en
+    `precios_adicionales` un `acompanante` o un `combo` con `prenda` `blusa` o `gorra`—, y si no,
+    es `null`. Describe la prenda con su acompañante como un solo artículo:
+    - `descripcion`: como la de la regla 11, de los dos: la prenda del anuncio con lo que el
+      mensaje dice de ella, y que se vende con la blusa o con la gorra que aparecen en las fotos.
+      Si la prenda es una falda short, la descripción lo dice: «falda short». No digas el precio
+      del set ni si se ahorra algo.
+    - `alt_en`: el nombre del conjunto en inglés: «Skirt and blouse set», «Skort and blouse set»
+      para la falda short, «Oversized T-shirt and cap set», «Polo shirt and cap set».
+    El `titulo`, el `tipo`, el precio y la `descripcion` del producto siguen siendo los de la
+    prenda sola: el set no los cambia.
 
 Responde solo con el JSON.

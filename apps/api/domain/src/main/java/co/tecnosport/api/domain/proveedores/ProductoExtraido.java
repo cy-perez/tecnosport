@@ -33,6 +33,9 @@ import java.util.regex.Pattern;
  *     colaboración que se vende como una sola prenda es una: «Puma - BMW». Con dos o más que se
  *     venden por separado, cada una sale en su borrador con sus fotos ({@link RepartoDeFotos},
  *     decidido por el negocio el 11 de octubre de 2026)
+ * @param set la descripción y el texto alternativo de la prenda vendida con su acompañante —la
+ *     blusa, la gorra—, cuando el anuncio la ofrece así; nulo si no. Lo escribe el extractor y lo
+ *     usa {@link ArmadorDeSets} solo con los proveedores que venden sets (12 de octubre de 2026)
  */
 public record ProductoExtraido(
     boolean esProducto,
@@ -53,7 +56,8 @@ public record ProductoExtraido(
     String codigoReferencia,
     TallasPorTono tallasPorTono,
     List<PrecioAdicional> preciosAdicionales,
-    List<String> marcas) {
+    List<String> marcas,
+    TextosDelSet set) {
 
   /** Un código: letras y cifras, con alguna cifra, sin más de 12 caracteres. */
   private static final Pattern CODIGO = Pattern.compile("^(?=.*\\d)[A-Z0-9-]{2,12}$");
@@ -87,6 +91,50 @@ public record ProductoExtraido(
         || confianza.compareTo(BigDecimal.ONE) > 0) {
       throw new ExcepcionDeDominio("La confianza va de 0 a 1.");
     }
+  }
+
+  /** Sin los textos del set: la forma de antes del 12 de octubre de 2026. */
+  public ProductoExtraido(
+      boolean esProducto,
+      boolean estaAgotado,
+      String titulo,
+      LineaCatalogo linea,
+      TipoProductoProveedor tipo,
+      Dinero precioProveedor,
+      Tallas tallas,
+      Integer cantidadTonos,
+      List<String> tonosNombrados,
+      String material,
+      String descripcion,
+      String altEn,
+      boolean esReplica,
+      BigDecimal confianza,
+      String notas,
+      String codigoReferencia,
+      TallasPorTono tallasPorTono,
+      List<PrecioAdicional> preciosAdicionales,
+      List<String> marcas) {
+    this(
+        esProducto,
+        estaAgotado,
+        titulo,
+        linea,
+        tipo,
+        precioProveedor,
+        tallas,
+        cantidadTonos,
+        tonosNombrados,
+        material,
+        descripcion,
+        altEn,
+        esReplica,
+        confianza,
+        notas,
+        codigoReferencia,
+        tallasPorTono,
+        preciosAdicionales,
+        marcas,
+        null);
   }
 
   /** Sin marcas: la forma de antes del 11 de octubre de 2026. */
@@ -254,7 +302,8 @@ public record ProductoExtraido(
         codigoEscritoEn(texto),
         tallasPorTono.contrastadoCon(texto),
         preciosAdicionales,
-        marcas);
+        marcas,
+        set);
   }
 
   /**
@@ -283,7 +332,8 @@ public record ProductoExtraido(
         codigoReferencia,
         tallasPorTono,
         preciosAdicionales,
-        List.of(marca));
+        List.of(marca),
+        set);
   }
 
   /**
@@ -327,7 +377,8 @@ public record ProductoExtraido(
         codigoReferencia,
         tallasPorTono,
         preciosAdicionales,
-        marcas);
+        marcas,
+        set);
   }
 
   /**
@@ -366,7 +417,8 @@ public record ProductoExtraido(
         null,
         tallasPorTono,
         preciosAdicionales,
-        marcas);
+        marcas,
+        set);
   }
 
   private static String tituloConMarca(String titulo, String marca) {
@@ -406,7 +458,8 @@ public record ProductoExtraido(
         normalizarCodigo(skuDelPie),
         conFotos.tallasPorTono,
         conFotos.preciosAdicionales,
-        conFotos.marcas);
+        conFotos.marcas,
+        conFotos.set);
   }
 
   /**
@@ -436,7 +489,8 @@ public record ProductoExtraido(
         codigo == null ? codigoReferencia : codigo,
         tallasPorTono,
         preciosAdicionales,
-        marcas);
+        marcas,
+        set);
   }
 
   private String codigoEscritoEn(String texto) {
@@ -471,6 +525,10 @@ public record ProductoExtraido(
       }
     }
     return tallas.sinSirveHastaQueElTextoNoDiga(texto);
+  }
+
+  public Optional<TextosDelSet> setOpcional() {
+    return Optional.ofNullable(set);
   }
 
   public Optional<String> tituloOpcional() {

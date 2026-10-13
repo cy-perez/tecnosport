@@ -33,6 +33,7 @@ import co.tecnosport.api.domain.catalogo.Producto;
 import co.tecnosport.api.domain.catalogo.TipoImagen;
 import co.tecnosport.api.domain.catalogo.Variante;
 import co.tecnosport.api.domain.compartido.Dinero;
+import co.tecnosport.api.domain.proveedores.ArmadoDeSet;
 import co.tecnosport.api.domain.proveedores.BorradorProducto;
 import co.tecnosport.api.domain.proveedores.EstadoBorrador;
 import co.tecnosport.api.domain.proveedores.FotoSubida;
@@ -41,7 +42,9 @@ import co.tecnosport.api.domain.proveedores.HuellaProveedor;
 import co.tecnosport.api.domain.proveedores.IdExternoDeMensaje;
 import co.tecnosport.api.domain.proveedores.LoteIngesta;
 import co.tecnosport.api.domain.proveedores.MensajeProveedor;
+import co.tecnosport.api.domain.proveedores.OrigenDelCostoDeSet;
 import co.tecnosport.api.domain.proveedores.PHash;
+import co.tecnosport.api.domain.proveedores.PrendaAcompanante;
 import co.tecnosport.api.domain.proveedores.ProductoExtraido;
 import co.tecnosport.api.domain.proveedores.Proveedor;
 import co.tecnosport.api.domain.proveedores.PublicacionProveedor;
@@ -231,6 +234,28 @@ class AprobarBorradorTest {
     assertEquals(
         EstadoBorrador.APROBADO, borradores.buscarPorId(borrador.id()).orElseThrow().estado());
     assertEquals(Optional.of(producto.id()), borrador.productoId());
+  }
+
+  /**
+   * El set de camiseta o polo con su gorra (12 de octubre de 2026) se publica en Camisetas o en
+   * Polos, y la bolsa del envío le suma a ese promedio los 100 g de la gorra.
+   */
+  @Test
+  void elSetConGorraNaceConElPesoDeLaGorra() {
+    BorradorProducto.conSet(
+        borrador, new ArmadoDeSet(PrendaAcompanante.GORRA, OrigenDelCostoDeSet.ANUNCIADO));
+    borradores.guardar(borrador);
+
+    Producto producto = caso().ejecutar(comando(List.of(new FotoAprobada(foto1.id(), null, null))));
+
+    assertEquals(100, producto.pesoAdicionalGramos());
+  }
+
+  @Test
+  void laPrendaSolaNoPesaDeMas() {
+    Producto producto = caso().ejecutar(comando(List.of(new FotoAprobada(foto1.id(), null, null))));
+
+    assertEquals(0, producto.pesoAdicionalGramos());
   }
 
   /**

@@ -15,6 +15,8 @@ import java.util.Objects;
  *     editar, porque no hay un valor que el servidor pueda suponer
  * @param tiposExcluidos los nombres de {@code TipoProductoProveedor} que no se le compran; nulo en
  *     el alta es ninguno, y al editar deja los que tenía
+ * @param armaSets si la prenda que anuncia con su acompañante se publica como set; nulo en el alta
+ *     es que no, y al editar deja lo que tenía
  */
 public record ProveedorPeticion(
     @Schema(requiredMode = Schema.RequiredMode.REQUIRED) String nombre,
@@ -26,7 +28,8 @@ public record ProveedorPeticion(
     BigDecimal factorDeMargen,
     @Schema(requiredMode = Schema.RequiredMode.REQUIRED) String ordenDePublicacion,
     Boolean dosChatsEnUnZip,
-    List<String> tiposExcluidos) {
+    List<String> tiposExcluidos,
+    Boolean armaSets) {
 
   public ProveedorPeticion {
     Objects.requireNonNull(nombre, "El nombre es obligatorio.");

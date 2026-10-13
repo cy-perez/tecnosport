@@ -44,12 +44,15 @@ import co.tecnosport.api.application.proveedores.VerBorrador;
 import co.tecnosport.api.domain.catalogo.LineaCatalogo;
 import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.proveedores.AlertaBorrador;
+import co.tecnosport.api.domain.proveedores.ArmadoDeSet;
 import co.tecnosport.api.domain.proveedores.BorradorProducto;
 import co.tecnosport.api.domain.proveedores.EstadoBorrador;
 import co.tecnosport.api.domain.proveedores.FotosDelProducto;
 import co.tecnosport.api.domain.proveedores.HuellaProveedor;
 import co.tecnosport.api.domain.proveedores.IdExternoDeMensaje;
 import co.tecnosport.api.domain.proveedores.MensajeProveedor;
+import co.tecnosport.api.domain.proveedores.OrigenDelCostoDeSet;
+import co.tecnosport.api.domain.proveedores.PrendaAcompanante;
 import co.tecnosport.api.domain.proveedores.ProductoExtraido;
 import co.tecnosport.api.domain.proveedores.PublicacionProveedor;
 import co.tecnosport.api.domain.proveedores.Tallas;
@@ -176,6 +179,27 @@ class AdminBorradorControladorTest {
         .perform(get("/api/v1/admin/borradores").param("estado", "RECHAZADO"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.totalBorradores").value(0));
+  }
+
+  /** El panel dice si el borrador es un set y de dónde salió su costo (12 de octubre de 2026). */
+  @Test
+  void unSetDiceConQuePrendaVaYDeDondeSalioSuCosto() throws Exception {
+    BorradorProducto.conSet(
+        borrador, new ArmadoDeSet(PrendaAcompanante.GORRA, OrigenDelCostoDeSet.SUMA_DE_PRENDAS));
+
+    mockMvc
+        .perform(get("/api/v1/admin/borradores/{id}", borrador.id()))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.borrador.set.acompanante").value("GORRA"))
+        .andExpect(jsonPath("$.borrador.set.origenDelCosto").value("SUMA_DE_PRENDAS"));
+  }
+
+  @Test
+  void laPrendaSolaNoTraeSet() throws Exception {
+    mockMvc
+        .perform(get("/api/v1/admin/borradores/{id}", borrador.id()))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.borrador.set").doesNotExist());
   }
 
   @Test

@@ -368,7 +368,9 @@ public final class ArmadorDeBultos {
   private static int pesoDe(List<Unidad> bolsa, Map<UUID, Integer> pesos) {
     long gramos = 0;
     for (Unidad unidad : bolsa) {
-      gramos += pesos.get(unidad.producto().categoria().id());
+      // El promedio de la categoría, y lo que el producto pesa de más: la gorra de un set.
+      gramos +=
+          pesos.get(unidad.producto().categoria().id()) + unidad.producto().pesoAdicionalGramos();
     }
     return (int) Math.min(gramos, Integer.MAX_VALUE);
   }

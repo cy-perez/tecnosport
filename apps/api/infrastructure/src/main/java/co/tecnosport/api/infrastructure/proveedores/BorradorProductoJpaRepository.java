@@ -106,5 +106,8 @@ public interface BorradorProductoJpaRepository
     UUID getProductoId();
 
     String getPhash();
+
+    /** La prenda con que se armó el set (V113); nula si el borrador es la prenda sola. */
+    String getSetAcompanante();
   }
 }

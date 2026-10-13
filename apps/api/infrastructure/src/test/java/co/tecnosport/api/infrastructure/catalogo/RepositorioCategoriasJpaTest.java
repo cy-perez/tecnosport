@@ -8,8 +8,11 @@ import co.tecnosport.api.domain.compartido.Slug;
 import co.tecnosport.api.infrastructure.catalogo.entidad.CategoriaJpaEntity;
 import co.tecnosport.api.infrastructure.catalogo.entidad.MarcaJpaEntity;
 import co.tecnosport.api.infrastructure.catalogo.entidad.ProductoJpaEntity;
+import java.text.Collator;
 import java.time.Instant;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
@@ -191,6 +194,14 @@ class RepositorioCategoriasJpaTest {
    * <p>Una prueba de repositorio no debería depender de que nadie más haya escrito en la tabla: lo
    * que tiene que demostrar es que {@code listarTodas} devuelve lo que hay, ordenado por nombre.
    */
+  private static final Comparator<String> COMO_LA_BASE =
+      Comparator.comparing(
+          nombre -> {
+            Collator collator = Collator.getInstance(Locale.forLanguageTag("es"));
+            collator.setStrength(Collator.PRIMARY);
+            return collator.getCollationKey(nombre.replaceAll("[^\\p{L}\\p{N}]", ""));
+          });
+
   @Test
   void listarTodasDevuelveLasCategoriasOrdenadasPorNombre() {
     categorias.save(
@@ -203,7 +214,9 @@ class RepositorioCategoriasJpaTest {
     List<Categoria> resultado = repositorio.listarTodas();
 
     assertThat(resultado).extracting(Categoria::nombre).contains("Aaa primera", "Zzz última");
-    assertThat(resultado).extracting(Categoria::nombre).isSorted();
+    // Como ordena PostgreSQL: sin mayúsculas, sin tildes y sin lo que no es letra ni cifra.
+    // «Falda - Short» va después de «Faldas», y en Java un espacio va antes que una letra.
+    assertThat(resultado).extracting(Categoria::nombre).isSortedAccordingTo(COMO_LA_BASE);
     assertThat(resultado)
         .extracting(Categoria::linea)
         .contains(LineaCatalogo.BOLSOS, LineaCatalogo.TECNOLOGIA);

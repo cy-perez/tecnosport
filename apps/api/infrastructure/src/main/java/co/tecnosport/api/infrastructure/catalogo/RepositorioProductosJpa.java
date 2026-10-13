@@ -129,7 +129,8 @@ public class RepositorioProductosJpa implements RepositorioProductos {
                 producto.huellaProveedor().map(HuellaProveedor::valor).orElse(null),
                 producto.vistoPorUltimaVez().orElse(null),
                 producto.estadoDisponibilidad().name())
-            .conTallaSirveHasta(producto.tallaSirveHasta().orElse(null)));
+            .conTallaSirveHasta(producto.tallaSirveHasta().orElse(null))
+            .conPesoAdicionalGramos(producto.pesoAdicionalGramos()));
   }
 
   @Override
@@ -167,7 +168,8 @@ public class RepositorioProductosJpa implements RepositorioProductos {
                 producto.huellaProveedor().map(HuellaProveedor::valor).orElse(null),
                 producto.vistoPorUltimaVez().orElse(null),
                 producto.estadoDisponibilidad().name())
-            .conTallaSirveHasta(producto.tallaSirveHasta().orElse(null)));
+            .conTallaSirveHasta(producto.tallaSirveHasta().orElse(null))
+            .conPesoAdicionalGramos(producto.pesoAdicionalGramos()));
   }
 
   @Override

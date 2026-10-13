@@ -11,7 +11,8 @@ import java.util.UUID;
 import java.util.regex.Pattern;
 
 /**
- * La identidad de un producto de proveedor, en un SHA-256. Hay cinco, según lo que se identifica.
+ * La identidad de un producto de proveedor, en un SHA-256. Hay cinco, según lo que se identifica, y
+ * un set lleva además su acompañante ({@link #deSet}).
  *
  * <ul>
  *   <li>{@link #calcular}: <b>el texto del anuncio</b> —proveedor, título normalizado y precio—. El
@@ -92,6 +93,20 @@ public record HuellaProveedor(String valor) {
       throw new ExcepcionDeDominio("La huella de una parte necesita la de origen y su foto.");
     }
     return new HuellaProveedor(sha256(deOrigen.valor() + "|parte|" + primeraFoto.strip()));
+  }
+
+  /**
+   * La de la prenda vendida como set con su acompañante: la de la prenda y la prenda que la
+   * acompaña (12 de octubre de 2026). La camiseta RV101860 sola y con su gorra son dos productos, y
+   * con la misma huella el anuncio del set renovaría la camiseta sola y le pondría el costo del
+   * set.
+   */
+  public static HuellaProveedor deSet(HuellaProveedor deLaPrenda, PrendaAcompanante acompanante) {
+    if (deLaPrenda == null || acompanante == null) {
+      throw new ExcepcionDeDominio(
+          "La huella de un set necesita la de la prenda y su acompañante.");
+    }
+    return new HuellaProveedor(sha256(deLaPrenda.valor() + "|set|" + acompanante.name()));
   }
 
   /** La prenda que el proveedor marca con un código: el código manda, sin título ni precio. */

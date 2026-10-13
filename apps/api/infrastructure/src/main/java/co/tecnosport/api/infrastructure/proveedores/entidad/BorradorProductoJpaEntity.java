@@ -99,6 +99,14 @@ public class BorradorProductoJpaEntity {
   @Column(name = "diseno")
   private String diseno;
 
+  /** La prenda con que se armó el set (V113); nula si el borrador es la prenda sola. */
+  @Column(name = "set_acompanante")
+  private String setAcompanante;
+
+  /** De dónde salió el costo del set (V113); nulo si no es un set. */
+  @Column(name = "set_origen_del_costo")
+  private String setOrigenDelCosto;
+
   @Column(nullable = false)
   private String estado;
 
@@ -213,6 +221,20 @@ public class BorradorProductoJpaEntity {
   /** Fuera del constructor para no alargarlo más: lo pone el adaptador al armar la fila. */
   public void setDiseno(String diseno) {
     this.diseno = diseno;
+  }
+
+  public String getSetAcompanante() {
+    return setAcompanante;
+  }
+
+  public String getSetOrigenDelCosto() {
+    return setOrigenDelCosto;
+  }
+
+  /** Como el diseño, fuera del constructor. Los dos van juntos: los dos nulos o los dos puestos. */
+  public void setSet(String acompanante, String origenDelCosto) {
+    this.setAcompanante = acompanante;
+    this.setOrigenDelCosto = origenDelCosto;
   }
 
   /** Ids de mensaje separados por salto de línea, en orden; nulo si no hay. */

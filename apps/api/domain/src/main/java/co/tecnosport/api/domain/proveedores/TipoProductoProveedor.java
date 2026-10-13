@@ -11,6 +11,10 @@ public enum TipoProductoProveedor {
   CANGURO,
   CONJUNTO_PANTALON,
   CONJUNTO_SHORT,
+  // La falda que se vende con la blusa de la foto, como un solo producto: lo arma {@link
+  // ArmadorDeSets} a los proveedores que venden sets, nunca el extractor (12 de octubre de 2026).
+  // No se puede excluir: lo que se compara con las exclusiones es lo que dice el anuncio.
+  CONJUNTO_FALDA,
   ENTERIZO,
   // Las prendas sueltas: el proveedor de ropa real vende polos y camisetas por unidad, y con solo
   // los conjuntos todas salían OTRO con la alerta TIPO_DESCONOCIDO (30 de septiembre de 2026).
@@ -33,6 +37,9 @@ public enum TipoProductoProveedor {
   // «Falda plisada» de La Riverah y su «Sudadera jogger», que en Colombia es el pantalón deportivo
   // (9 de octubre de 2026).
   FALDA,
+  // La falda que trae un short por dentro tiene su propia hoja en el catálogo, «Falda - Short», y
+  // antes salía SHORT: «Falda de dama (tiene short)» de La Riverah (12 de octubre de 2026).
+  FALDA_SHORT,
   SUDADERA,
   // El blazer y el chaleco de Violeta se quedaban en OTRO porque el catálogo no tenía dónde
   // ponerlos. Desde V108 tiene Blazers y Chalecos en la rama de dama (11 de octubre de 2026).

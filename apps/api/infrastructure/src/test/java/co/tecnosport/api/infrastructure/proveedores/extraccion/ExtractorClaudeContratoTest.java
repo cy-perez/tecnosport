@@ -6,7 +6,11 @@ import co.tecnosport.api.application.proveedores.ResultadoExtraccion;
 import co.tecnosport.api.application.proveedores.TextoDePublicacion;
 import co.tecnosport.api.domain.catalogo.LineaCatalogo;
 import co.tecnosport.api.domain.compartido.Dinero;
+import co.tecnosport.api.domain.proveedores.ClaseDePrecioAdicional;
+import co.tecnosport.api.domain.proveedores.PrendaAcompanante;
+import co.tecnosport.api.domain.proveedores.ProductoExtraido;
 import co.tecnosport.api.domain.proveedores.TipoDeTalla;
+import co.tecnosport.api.domain.proveedores.TipoProductoProveedor;
 import java.net.URI;
 import java.time.Duration;
 import java.util.List;
@@ -79,5 +83,66 @@ class ExtractorClaudeContratoTest {
         .isNotBlank()
         .doesNotContain("Nueva colección");
     assertThat(resultado.uso().tokensDeEntrada()).isPositive();
+  }
+
+  // --- Los sets de La Riverah (12 de octubre de 2026), con los anuncios del 9 de octubre ---
+
+  private static ProductoExtraido unoDeLaRiverah(String texto) {
+    ResultadoExtraccion resultado =
+        extractor().extraer(new TextoDePublicacion(texto, List.of(), LineaCatalogo.ROPA));
+    assertThat(resultado.productos()).hasSize(1);
+    return resultado.productos().getFirst();
+  }
+
+  @Test
+  void laFaldaConSuSetAnunciadoTraeElComboConLaBlusaYLosTextosDelSet() {
+    ProductoExtraido falda =
+        unoDeLaRiverah(
+            "NUEVA COLECCIÓN \n         ✨👸✨\n\n✅Falda de dama \n✅Tela Mallatex americana \n"
+                + "✅Talla  S M L \n\nFalda 🤑$49.900\nSet, falda + básica $ 88.000\n\n"
+                + "*LÍNEA EXCLUSIVA PARA PEDIDO*\n📦*+57 301 9854097*");
+
+    assertThat(falda.tipo()).isEqualTo(TipoProductoProveedor.FALDA);
+    assertThat(falda.precioProveedor()).isEqualTo(Dinero.deCop(49900));
+    assertThat(falda.preciosAdicionales())
+        .anySatisfy(
+            p -> {
+              assertThat(p.clase()).isEqualTo(ClaseDePrecioAdicional.COMBO);
+              assertThat(p.prenda()).isEqualTo(PrendaAcompanante.BLUSA);
+              assertThat(p.precio()).isEqualTo(Dinero.deCop(88000));
+            });
+    assertThat(falda.set()).isNotNull();
+    assertThat(falda.set().descripcion()).isNotBlank();
+  }
+
+  @Test
+  void laFaldaQueTieneShortEsUnaFaldaShort() {
+    ProductoExtraido falda =
+        unoDeLaRiverah(
+            "NUEVA COLECCIÓN \n         ✨👸✨\n\n✅Falda de dama ( tiene short ) \n"
+                + "✅Textura lisa con caída \n✅Talla  S M L \n\nFalda 🤑$59.900\n"
+                + "Set básica + falda $99.000");
+
+    assertThat(falda.tipo()).isEqualTo(TipoProductoProveedor.FALDA_SHORT);
+    assertThat(falda.set()).isNotNull();
+    assertThat(falda.set().descripcion()).containsIgnoringCase("short");
+  }
+
+  @Test
+  void laNotaDeLasGorrasEsUnAcompananteYLaPromoUnaPromocion() {
+    ProductoExtraido camiseta =
+        unoDeLaRiverah(
+            "Camisetas Oversize para  Caballero\n      👕👕👕\n⭕ Cuello redondo\n⭕ *PREMIUN*\n"
+                + "⭕ Talla S M L XL (Horma real, amplia) \n\n  Camiseta 🎽55.000~~\n"
+                + "Promo 4x200.000\nNota: Las gorras tiene un valor de 35mil-");
+
+    assertThat(camiseta.preciosAdicionales())
+        .anySatisfy(
+            p -> {
+              assertThat(p.clase()).isEqualTo(ClaseDePrecioAdicional.ACOMPANANTE);
+              assertThat(p.prenda()).isEqualTo(PrendaAcompanante.GORRA);
+              assertThat(p.precio()).isEqualTo(Dinero.deCop(35000));
+            })
+        .anySatisfy(p -> assertThat(p.clase()).isEqualTo(ClaseDePrecioAdicional.PROMOCION));
   }
 }

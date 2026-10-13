@@ -190,6 +190,41 @@ class AdminProveedorControladorTest {
   }
 
   /**
+   * La Riverah arma sets (12 de octubre de 2026): se marca al crearla, editar sin el campo lo
+   * conserva y {@code false} lo quita. Sin marcar, nadie arma sets.
+   */
+  @Test
+  void armaSetsSeMarcaAlCrearYEditarSinElCampoLoConserva() throws Exception {
+    String riverah =
+        "{\"nombre\":\"La Riverah\",\"linea\":\"ROPA\",\"telefonoWhatsApp\":\"+57 301\","
+            + "\"nombreEnExportacion\":\"La Riverah\",\"ordenDePublicacion\":\"TEXTO_PRIMERO\"";
+    mockMvc
+        .perform(
+            post("/api/v1/admin/proveedores")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(riverah + ",\"armaSets\":true}"))
+        .andExpect(status().isCreated())
+        .andExpect(jsonPath("$.armaSets").value(true));
+    UUID id = proveedores.porId.keySet().iterator().next();
+
+    mockMvc
+        .perform(
+            put("/api/v1/admin/proveedores/{id}", id)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(riverah + "}"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.armaSets").value(true));
+
+    mockMvc
+        .perform(
+            put("/api/v1/admin/proveedores/{id}", id)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(riverah + ",\"armaSets\":false}"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.armaSets").value(false));
+  }
+
+  /**
    * A Violeta no se le compran prendas inferiores: se marcan al crearla, salen en el orden del
    * enum, editar sin el campo las conserva y una lista vacía las quita.
    */

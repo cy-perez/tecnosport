@@ -29,6 +29,7 @@ public final class EditarProveedor {
         comando.ordenDePublicacion());
     proveedor.definirDosChatsEnUnZip(comando.dosChatsEnUnZip());
     proveedor.definirTiposExcluidos(comando.tiposExcluidos());
+    proveedor.definirArmaSets(comando.armaSets());
     repositorioProveedores.actualizar(proveedor);
     return proveedor;
   }

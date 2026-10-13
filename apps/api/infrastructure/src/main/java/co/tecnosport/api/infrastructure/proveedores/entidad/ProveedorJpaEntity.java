@@ -47,6 +47,10 @@ public class ProveedorJpaEntity {
   @Column(name = "dos_chats_en_un_zip", nullable = false)
   private boolean dosChatsEnUnZip;
 
+  /** Si la prenda con su acompañante se publica como set (V113). */
+  @Column(name = "arma_sets", nullable = false)
+  private boolean armaSets;
+
   @ElementCollection(fetch = FetchType.EAGER)
   @CollectionTable(
       name = "proveedor_tipo_excluido",
@@ -133,6 +137,16 @@ public class ProveedorJpaEntity {
 
   public Set<String> getTiposExcluidos() {
     return tiposExcluidos;
+  }
+
+  public boolean isArmaSets() {
+    return armaSets;
+  }
+
+  /** Fuera del constructor para no alargarlo más: lo pone el adaptador al armar la fila. */
+  public ProveedorJpaEntity conArmaSets(boolean armaSets) {
+    this.armaSets = armaSets;
+    return this;
   }
 
   public Instant getCreadoEn() {
