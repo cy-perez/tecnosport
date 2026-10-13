@@ -14,6 +14,7 @@ import {
   PedidoAdmin,
   PedidosPaginadosAdmin,
   PlazoDeEntregaAdmin,
+  TallaAlProveedorAdmin,
   TipoEntrega,
   VerdictoPlazoEntrega,
 } from '../domain/pedido-admin.model';
@@ -27,6 +28,7 @@ type EnvioDto = components['schemas']['EnvioRespuesta'];
 type HistorialPedidoDto = components['schemas']['HistorialPedidoRespuesta'];
 type PlazoDeEntregaDto = components['schemas']['PlazoDeEntregaRespuesta'];
 type EmisionDeGuiaDto = components['schemas']['EmisionDeGuiaRespuesta'];
+type TallaAlProveedorDto = components['schemas']['TallaAlProveedorRespuesta'];
 
 /**
  * DTO generado -> modelo propio del panel. Mismo criterio que
@@ -48,7 +50,14 @@ type MetodoPagoDto = NonNullable<PedidoDto['metodoPago']>;
  */
 export const METODOS_DE_PAGO_AL_DIA: MismaUnion<MetodoPago, MetodoPagoDto> = true;
 
-export function aPedidoAdmin(dto: PedidoDto): PedidoAdmin {
+/**
+ * @param tallasAlProveedor qué talla pedirle al proveedor, por variante: la trae el listado aparte
+ *     de las líneas, porque la línea es la misma que ve el comprador (ADR-0085)
+ */
+export function aPedidoAdmin(
+  dto: PedidoDto,
+  tallasAlProveedor: Readonly<Record<string, TallaAlProveedorDto>> = {},
+): PedidoAdmin {
   return {
     id: dto.id ?? '',
     numeroPedido: dto.numeroPedido ?? '',
@@ -57,7 +66,7 @@ export function aPedidoAdmin(dto: PedidoDto): PedidoAdmin {
     contacto: dto.contacto
       ? { nombre: dto.contacto.nombre ?? '', telefono: dto.contacto.telefono ?? '' }
       : null,
-    lineas: (dto.lineas ?? []).map(aLineaPedido),
+    lineas: (dto.lineas ?? []).map((linea) => aLineaPedido(linea, tallasAlProveedor)),
     tipoEntrega: (dto.tipoEntrega ?? 'ENVIO_A_DOMICILIO') as TipoEntrega,
     direccion: dto.direccion ? aDireccion(dto.direccion) : null,
     metodoPago: dto.metodoPago ?? 'WOMPI',
@@ -79,7 +88,7 @@ export function aPedidoAdmin(dto: PedidoDto): PedidoAdmin {
 
 export function aPedidosPaginadosAdmin(dto: PedidosPaginadosDto): PedidosPaginadosAdmin {
   return {
-    items: (dto.items ?? []).map(aPedidoAdmin),
+    items: (dto.items ?? []).map((item) => aPedidoAdmin(item, dto.tallasAlProveedor ?? {})),
     pagina: dto.pagina ?? 0,
     totalPaginas: dto.totalPaginas ?? 0,
     totalPedidos: dto.totalPedidos ?? 0,
@@ -97,7 +106,10 @@ function aDireccion(dto: DireccionDto): Direccion {
   };
 }
 
-function aLineaPedido(dto: LineaPedidoDto): LineaPedidoAdmin {
+function aLineaPedido(
+  dto: LineaPedidoDto,
+  tallasAlProveedor: Readonly<Record<string, TallaAlProveedorDto>>,
+): LineaPedidoAdmin {
   return {
     id: dto.id ?? '',
     varianteId: dto.varianteId ?? '',
@@ -111,7 +123,15 @@ function aLineaPedido(dto: LineaPedidoDto): LineaPedidoAdmin {
     tasaIva: dto.tasaIva ?? 0,
     imagenUrl: dto.imagenUrl ?? null,
     detalleVariante: dto.detalleVariante ?? null,
+    alProveedor: aTallaAlProveedor(dto.varianteId ? tallasAlProveedor[dto.varianteId] : undefined),
   };
+}
+
+function aTallaAlProveedor(dto: TallaAlProveedorDto | undefined): TallaAlProveedorAdmin | null {
+  if (!dto) {
+    return null;
+  }
+  return dto.talla ? { conocida: true, talla: dto.talla } : { conocida: false };
 }
 
 function aDatosTransferencia(dto: DatosTransferenciaDto): DatosTransferencia {
