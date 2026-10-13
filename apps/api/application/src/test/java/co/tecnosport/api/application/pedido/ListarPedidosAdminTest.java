@@ -45,7 +45,7 @@ class ListarPedidosAdminTest {
   private static final Categoria POLOS =
       Categoria.crear("Polos", new Slug("ropa-caballero-polos"), LineaCatalogo.ROPA);
   private static final Categoria CALZADO =
-      Categoria.crear("Calzado caballero", new Slug("calzado-caballero"), LineaCatalogo.CALZADO)
+      Categoria.crear("Caballero", new Slug("calzado-caballero"), LineaCatalogo.CALZADO)
           .conEscalaDeTallas(
               List.of("34", "35", "36", "37", "38", "39", "40", "41", "42", "43", "44", "45"));
 

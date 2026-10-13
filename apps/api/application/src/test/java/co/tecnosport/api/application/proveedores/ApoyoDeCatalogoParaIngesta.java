@@ -55,14 +55,12 @@ final class ApoyoDeCatalogoParaIngesta {
   static final Categoria BOLSOS_DE_MANO =
       Categoria.crearBajo(BOLSOS_DAMA, "Bolsos de mano", new Slug("bolsos-dama-bolsos-de-mano"));
 
-  /** La rama de calzado lleva la escala, y la hoja la hereda: como en producción (V75, V105). */
-  static final Categoria CALZADO =
-      Categoria.crear("Calzado", new Slug("calzado"), LineaCatalogo.CALZADO)
+  /** Calzado de caballero con su escala de 1 en 1, como en producción (V63, V75, V105). */
+  static final Categoria CALZADO_CABALLERO =
+      Categoria.crear("Caballero", new Slug("calzado-caballero"), LineaCatalogo.CALZADO)
           .conEscalaDeTallas(
               List.of("34", "35", "36", "37", "38", "39", "40", "41", "42", "43", "44", "45"));
 
-  static final Categoria CALZADO_CABALLERO =
-      Categoria.crearBajo(CALZADO, "Caballero", new Slug("calzado-caballero"));
   static final Atributo COLOR = Atributo.crear("Color", TipoAtributo.COLOR, List.of());
   static final Atributo TALLA =
       // Sin valores permitidos, como en producción desde V73: la lista la dicta cada prenda.
@@ -522,7 +520,7 @@ final class ApoyoDeCatalogoParaIngesta {
 
     @Override
     public List<Categoria> listarTodas() {
-      return List.of(BOLSOS_DAMA, BOLSOS_DE_MANO, CALZADO, CALZADO_CABALLERO);
+      return List.of(BOLSOS_DAMA, BOLSOS_DE_MANO, CALZADO_CABALLERO);
     }
 
     @Override
