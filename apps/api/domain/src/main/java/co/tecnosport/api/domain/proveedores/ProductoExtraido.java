@@ -4,6 +4,9 @@ import co.tecnosport.api.domain.catalogo.LineaCatalogo;
 import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.compartido.ExcepcionDeDominio;
 import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
@@ -283,9 +286,17 @@ public record ProductoExtraido(
                 && TituloDePolo.anunciaPolo(texto)
             ? TipoProductoProveedor.POLO
             : tipo;
-    String tituloContrastado = replica ? PatronDeReplica.tituloDeReplica(titulo) : titulo;
+    String sinAjenos = CalificativosDelTitulo.sinLosQueElTextoNoEscribe(titulo, texto);
+    String tituloContrastado;
     if (tipoContrastado == TipoProductoProveedor.POLO) {
-      tituloContrastado = TituloDePolo.componer(tituloContrastado, replica);
+      tituloContrastado =
+          TituloDePolo.componer(
+              replica ? PatronDeReplica.tituloDeReplica(sinAjenos) : sinAjenos, replica);
+    } else {
+      tituloContrastado =
+          replica
+              ? PatronDeReplica.tituloDeReplica(conEstiloDeSusMarcas(sinAjenos, texto))
+              : sinAjenos;
     }
     return new ProductoExtraido(
         esProducto,
@@ -305,11 +316,30 @@ public record ProductoExtraido(
         notas,
         codigoEscritoEn(texto),
         tallasPorTono.contrastadoCon(texto),
-        texto == null
-            ? preciosAdicionales
-            : preciosAdicionales.stream().filter(p -> PrecioEscrito.en(p.precio(), texto)).toList(),
+        preciosAdicionalesContrastados(texto),
         marcas,
         set);
+  }
+
+  /**
+   * Los del modelo que el texto escribe, más el acompañante o el combo que el texto escribe con su
+   * precio y el modelo no devolvió ({@link AcompananteEscrito}): «Nota: Las gorras tiene un valor
+   * de 35mil-» salió sin leer en los dos anuncios oversize de La Riverah del 12 de octubre de 2026.
+   */
+  private List<PrecioAdicional> preciosAdicionalesContrastados(String texto) {
+    if (texto == null) {
+      return preciosAdicionales;
+    }
+    List<PrecioAdicional> contrastados =
+        new ArrayList<>(
+            preciosAdicionales.stream().filter(p -> PrecioEscrito.en(p.precio(), texto)).toList());
+    AcompananteEscrito.en(texto).stream()
+        .filter(
+            escrito ->
+                contrastados.stream()
+                    .noneMatch(p -> p.prenda() == escrito.prenda() && p.clase() == escrito.clase()))
+        .forEach(contrastados::add);
+    return contrastados;
   }
 
   /**
@@ -425,6 +455,66 @@ public record ProductoExtraido(
         preciosAdicionales,
         marcas,
         set);
+  }
+
+  /** Donde va «estilo» y la marca: antes de lo que ya no es el artículo, o al final. */
+  private static final Pattern DONDE_VA_EL_ESTILO =
+      Pattern.compile(
+          "\\s+(?=(?:para|de|del|con|en|tipo|manga|talla)(?!\\p{L}))",
+          Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE);
+
+  private static final Pattern IMPORTADO =
+      Pattern.compile(
+          "\\s*(?<!\\p{L})importad[oa]s?(?!\\p{L})",
+          Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE);
+
+  private static final Pattern NO_LETRA = Pattern.compile("[^\\p{L}\\d]+");
+
+  /** Las palabras, en minúsculas, sin tildes y sin apóstrofos: «Levi's» es «levis». */
+  private static List<String> palabras(String texto) {
+    String sinApostrofos = CalificativosDelTitulo.normalizado(texto).replaceAll("['’`]", "");
+    return Arrays.stream(NO_LETRA.split(sinApostrofos)).filter(p -> !p.isEmpty()).toList();
+  }
+
+  /**
+   * El título de una réplica que el modelo escribió sin «estilo» aunque el texto nombre la marca:
+   * «*Jeans AA para caballero* ⭕️Marca Levis» salió «Jean plus para caballero importado» el 12 de
+   * octubre de 2026, y es «Jean estilo Levi's para caballero». Solo con las marcas que el texto
+   * escribe —«Levi's» está en «Marca Levis»—, nunca las que el modelo vio en otra parte.
+   */
+  private String conEstiloDeSusMarcas(String titulo, String texto) {
+    if (titulo == null
+        || texto == null
+        || marcas.isEmpty()
+        || PatronDeReplica.nombraMarcaConEstilo(titulo)
+        || titulo.toLowerCase(Locale.ROOT).contains("estilo")) {
+      return titulo;
+    }
+    // Por palabras enteras: «DG» no está escrito en «adgjl», y «Levi's» sí en «Marca Levis».
+    List<String> delTexto = palabras(texto);
+    List<String> delTitulo = palabras(titulo);
+    boolean todasEscritas =
+        marcas.stream()
+            .map(ProductoExtraido::palabras)
+            .allMatch(m -> !m.isEmpty() && Collections.indexOfSubList(delTexto, m) >= 0);
+    // «Jean Levi's para caballero» ya la nombra: con «estilo» saldría dos veces.
+    boolean yaLaNombra =
+        marcas.stream()
+            .map(ProductoExtraido::palabras)
+            .anyMatch(m -> !m.isEmpty() && Collections.indexOfSubList(delTitulo, m) >= 0);
+    if (!todasEscritas || yaLaNombra) {
+      return titulo;
+    }
+    String sinImportado = IMPORTADO.matcher(titulo).replaceAll("").strip();
+    String estilo = "estilo " + String.join(" - ", marcas);
+    Matcher donde = DONDE_VA_EL_ESTILO.matcher(sinImportado);
+    if (donde.find()) {
+      return sinImportado.substring(0, donde.start())
+          + " "
+          + estilo
+          + sinImportado.substring(donde.start());
+    }
+    return sinImportado + " " + estilo;
   }
 
   private static String tituloConMarca(String titulo, String marca) {
