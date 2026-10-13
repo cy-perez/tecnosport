@@ -152,7 +152,10 @@ class SetsDeProveedorTest {
     assertEquals("Set camiseta oversize y gorra", set.producto().titulo());
     assertEquals(100, set.armado().gramosAdicionales(), "la gorra pesa 100 g");
     assertEquals(
-        "La prenda sola.", set.producto().descripcion(), "sin textos del set, los de la prenda");
+        "La prenda sola. Se vende en set con la gorra que aparece en las fotos.",
+        set.producto().descripcion(),
+        "sin textos del set, la de la prenda dice con qué se vende");
+    assertTrue(set.conDescripcionDelSet());
   }
 
   @Test
@@ -537,7 +540,9 @@ class SetsDeProveedorTest {
     assertFalse(PrecioEscrito.en(Dinero.deCop(12000), "Jean Mom Fit 💲124 Talla S M L"));
   }
 
-  /** Sin los textos del set, el nombre en inglés se arma y la descripción queda para revisar. */
+  /**
+   * Sin los textos del set, el nombre en inglés se arma, y sin descripción de la prenda se avisa.
+   */
   @Test
   void unSetSinSusTextosArmaElNombreEnInglesYLoDice() {
     ProductoExtraido camiseta =
@@ -552,7 +557,7 @@ class SetsDeProveedorTest {
             null,
             List.of(),
             null,
-            "Camiseta oversize.",
+            null,
             "Oversized T-shirt for men",
             false,
             new BigDecimal("0.9"),
@@ -566,7 +571,8 @@ class SetsDeProveedorTest {
     SetArmado set = armar(camiseta);
 
     assertEquals("Oversized T-shirt and cap set", set.producto().altEn());
-    assertFalse(set.conTextosPropios());
+    assertNull(set.producto().descripcion());
+    assertFalse(set.conDescripcionDelSet());
     assertTrue(
         armar(
                 extraido(
@@ -575,7 +581,80 @@ class SetsDeProveedorTest {
                     49900,
                     List.of(combo("Set", 88000, PrendaAcompanante.BLUSA)),
                     TEXTOS))
-            .conTextosPropios());
+            .conDescripcionDelSet());
+  }
+
+  // --- La descripción que el modelo no escribió ---
+
+  /**
+   * Los dos anuncios de camisetas oversize de La Riverah del 12 de octubre de 2026: el modelo no
+   * escribió la descripción del set, ni siquiera en el que leyó la gorra.
+   */
+  @Test
+  void sinDescripcionDelSetLaDeLaCamisetaDiceQueVaConLaGorra() {
+    assertEquals(
+        "Camiseta oversize para caballero con cuello redondo. Se vende en set con la gorra que"
+            + " aparece en las fotos.",
+        ArmadorDeSets.describirSet(
+            "Camiseta oversize para caballero con cuello redondo.", PrendaAcompanante.GORRA));
+  }
+
+  @Test
+  void sinDescripcionDelSetLaDeLaFaldaDiceQueVaConLaBlusa() {
+    SetArmado set =
+        armar(
+            extraido(
+                "Falda de dama",
+                TipoProductoProveedor.FALDA,
+                59900,
+                List.of(acompanante("Básica", 48000, PrendaAcompanante.BLUSA)),
+                null));
+
+    assertEquals(
+        "La prenda sola. Se vende en conjunto con la blusa que aparece en las fotos.",
+        set.producto().descripcion());
+    assertTrue(set.conDescripcionDelSet());
+  }
+
+  @Test
+  void laFraseSeSeparaConPuntoAunqueLaPrendaNoLoTraiga() {
+    assertEquals(
+        "Camiseta oversize. Se vende en set con la gorra que aparece en las fotos.",
+        ArmadorDeSets.describirSet("  Camiseta oversize  ", PrendaAcompanante.GORRA));
+  }
+
+  @Test
+  void unaDescripcionQueYaNombraElAcompananteNoSeRepite() {
+    assertEquals(
+        "Camiseta oversize con su Gorra a juego.",
+        ArmadorDeSets.describirSet(
+            "Camiseta oversize con su Gorra a juego.", PrendaAcompanante.GORRA));
+    assertEquals(
+        "Falda plisada con su básica.",
+        ArmadorDeSets.describirSet("Falda plisada con su básica.", PrendaAcompanante.BLUSA));
+    assertEquals(
+        "Falda plisada con blusa.",
+        ArmadorDeSets.describirSet("Falda plisada con blusa.", PrendaAcompanante.BLUSA));
+  }
+
+  @Test
+  void laDescripcionDelSetQueEscribioElModeloNoSeToca() {
+    SetArmado set =
+        armar(
+            extraido(
+                "Falda de dama",
+                TipoProductoProveedor.FALDA,
+                59900,
+                List.of(acompanante("Básica", 48000, PrendaAcompanante.BLUSA)),
+                TEXTOS));
+
+    assertEquals("Falda con la blusa que aparece en las fotos.", set.producto().descripcion());
+  }
+
+  @Test
+  void sinDescripcionDeLaPrendaNoHayNadaQueCompletar() {
+    assertNull(ArmadorDeSets.describirSet(null, PrendaAcompanante.GORRA));
+    assertNull(ArmadorDeSets.describirSet("  ", PrendaAcompanante.BLUSA));
   }
 
   @Test
