@@ -1333,7 +1333,7 @@
       "FOTOS_COMPARTIDAS": "El mensaje anunciaba varios productos con las mismas fotos. Deja solo las de este producto y marca su foto principal.",
       "REPLICA": "El proveedor lo anuncia como réplica (1.1 o AAA). Se publica con la marca Genérica y la marca original solo en el título, como «Camiseta estilo Puma - BMW». Confirma las dos cosas antes de aprobar.",
       "ACOMPANANTE_SIN_LEER": "El anuncio ofrece la prenda con una gorra, un set o un dúo, pero la extracción no leyó su precio: el borrador quedó como la prenda sola. Revisa el anuncio; si es un set, recházalo y vuelve a ingerir el chat.",
-      "SET_SIN_DESCRIPCION": "Es un set, pero la descripción es la de la prenda sola y no nombra la gorra ni la blusa. Agrégala antes de aprobar."
+      "SET_SIN_DESCRIPCION": "Es un set y no tiene descripción. Escríbela, nombrando la gorra o la blusa, antes de aprobar."
     },
     "detalle": {
       "miga": "Revisión",
