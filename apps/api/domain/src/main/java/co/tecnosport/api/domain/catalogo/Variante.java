@@ -29,6 +29,11 @@ import java.util.UUID;
  * <p>Lo que no se relaja es el {@link Paquete} en sí: si existe, sus cuatro cifras siguen siendo
  * mayores que cero. La diferencia entre "no lo sé todavía" y "mide cero" es justo la que hay que
  * conservar, porque la segunda es la que cobra fletes de menos.
+ *
+ * <p><b>Agotada por el proveedor</b> (13 de octubre de 2026, ADR-0084) es la prenda de un álbum
+ * cuyo SKU el proveedor anunció agotado: sigue siendo una variante activa —un pedido ya pagado de
+ * ella se despacha, y no se puede borrar si se vendió—, pero no se vende hasta que el proveedor la
+ * vuelva a anunciar ({@link #seVende}).
  */
 public final class Variante {
 
@@ -41,6 +46,7 @@ public final class Variante {
   private final EstadoVariante estado;
   private final List<ValorAtributo> atributos;
   private final SetRotacion setRotacionPropio;
+  private final boolean agotadaPorProveedor;
 
   public Variante(
       UUID id,
@@ -52,6 +58,30 @@ public final class Variante {
       EstadoVariante estado,
       List<ValorAtributo> atributos,
       SetRotacion setRotacionPropio) {
+    this(
+        id,
+        sku,
+        precio,
+        tasaIva,
+        codigoBarras,
+        paquete,
+        estado,
+        atributos,
+        setRotacionPropio,
+        false);
+  }
+
+  public Variante(
+      UUID id,
+      Sku sku,
+      Dinero precio,
+      BigDecimal tasaIva,
+      String codigoBarras,
+      Paquete paquete,
+      EstadoVariante estado,
+      List<ValorAtributo> atributos,
+      SetRotacion setRotacionPropio,
+      boolean agotadaPorProveedor) {
     this.id = Objects.requireNonNull(id, "El id de la variante no puede ser nulo.");
     this.sku = Objects.requireNonNull(sku, "El SKU de la variante no puede ser nulo.");
     this.precio = Objects.requireNonNull(precio, "El precio de la variante no puede ser nulo.");
@@ -64,6 +94,7 @@ public final class Variante {
     this.estado = Objects.requireNonNull(estado, "El estado de la variante no puede ser nulo.");
     this.atributos = List.copyOf(Objects.requireNonNullElse(atributos, List.of()));
     this.setRotacionPropio = setRotacionPropio;
+    this.agotadaPorProveedor = agotadaPorProveedor;
   }
 
   public static Variante crear(
@@ -98,7 +129,16 @@ public final class Variante {
   public Variante medida(Paquete paquete) {
     Objects.requireNonNull(paquete, "No se puede medir una variante con un paquete nulo.");
     return new Variante(
-        id, sku, precio, tasaIva, codigoBarras, paquete, estado, atributos, setRotacionPropio);
+        id,
+        sku,
+        precio,
+        tasaIva,
+        codigoBarras,
+        paquete,
+        estado,
+        atributos,
+        setRotacionPropio,
+        agotadaPorProveedor);
   }
 
   /**
@@ -115,7 +155,16 @@ public final class Variante {
           "El precio de la variante '" + sku.valor() + "' tiene que ser mayor que cero.");
     }
     return new Variante(
-        id, sku, nuevo, tasaIva, codigoBarras, paquete, estado, atributos, setRotacionPropio);
+        id,
+        sku,
+        nuevo,
+        tasaIva,
+        codigoBarras,
+        paquete,
+        estado,
+        atributos,
+        setRotacionPropio,
+        agotadaPorProveedor);
   }
 
   /**
@@ -131,7 +180,16 @@ public final class Variante {
     List<ValorAtributo> con = new ArrayList<>(atributos);
     con.add(atributo);
     return new Variante(
-        id, sku, precio, tasaIva, codigoBarras, paquete, estado, con, setRotacionPropio);
+        id,
+        sku,
+        precio,
+        tasaIva,
+        codigoBarras,
+        paquete,
+        estado,
+        con,
+        setRotacionPropio,
+        agotadaPorProveedor);
   }
 
   /**
@@ -149,7 +207,16 @@ public final class Variante {
             .map(a -> a.atributo().id().equals(nuevo.atributo().id()) ? nuevo : a)
             .toList();
     return new Variante(
-        id, sku, precio, tasaIva, codigoBarras, paquete, estado, con, setRotacionPropio);
+        id,
+        sku,
+        precio,
+        tasaIva,
+        codigoBarras,
+        paquete,
+        estado,
+        con,
+        setRotacionPropio,
+        agotadaPorProveedor);
   }
 
   /** Su talla, si tiene: el valor del atributo que es eje de talla. */
@@ -202,6 +269,18 @@ public final class Variante {
 
   public EstadoVariante estado() {
     return estado;
+  }
+
+  /**
+   * El proveedor anunció agotado el SKU de esta prenda: no se vende hasta que lo vuelva a anunciar.
+   */
+  public boolean agotadaPorProveedor() {
+    return agotadaPorProveedor;
+  }
+
+  /** Si quien compra la puede elegir: activa y sin agotar por el proveedor. */
+  public boolean seVende() {
+    return estado == EstadoVariante.ACTIVA && !agotadaPorProveedor;
   }
 
   public List<ValorAtributo> atributos() {

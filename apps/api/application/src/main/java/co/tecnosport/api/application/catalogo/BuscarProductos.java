@@ -37,6 +37,8 @@ public final class BuscarProductos {
     List<UUID> variantes =
         pagina.items().stream()
             .flatMap(producto -> producto.variantes().stream())
+            // La prenda que el proveedor agotó no está disponible, tenga el saldo que tenga.
+            .filter(Variante::seVende)
             .map(Variante::id)
             .toList();
     return new CatalogoPaginado(pagina, disponibilidad.de(variantes));

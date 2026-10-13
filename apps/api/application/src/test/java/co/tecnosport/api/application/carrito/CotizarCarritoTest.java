@@ -39,6 +39,10 @@ class CotizarCarritoTest {
   }
 
   private Variante publicada(String sku, long precio, boolean publicar) {
+    return publicada(sku, precio, publicar, false);
+  }
+
+  private Variante publicada(String sku, long precio, boolean publicar, boolean agotada) {
     Producto producto =
         Producto.crear(
             "Producto " + sku,
@@ -57,13 +61,17 @@ class CotizarCarritoTest {
             "alt es",
             "alt en"));
     Variante variante =
-        Variante.crear(
+        new Variante(
+            java.util.UUID.randomUUID(),
             new Sku(sku),
             Dinero.deCop(precio),
             BigDecimal.ZERO,
             null,
             new Paquete(150, 28, 22, 3),
-            List.of());
+            co.tecnosport.api.domain.catalogo.EstadoVariante.ACTIVA,
+            List.of(),
+            null,
+            agotada);
     producto.agregarVariante(variante);
     if (publicar) {
       producto.publicar();
@@ -110,6 +118,25 @@ class CotizarCarritoTest {
     assertFalse(linea.disponible());
     assertNull(linea.subtotal());
     assertTrue(cotizado.lineas().get(0).disponible());
+  }
+
+  /**
+   * La prenda de un álbum que el proveedor agotó (ADR-0084) no suma: sigue activa en el catálogo,
+   * pero no se vende.
+   */
+  @Test
+  void unaPrendaAgotadaPorElProveedorNoSumaYSeMarca() {
+    Variante viva = publicada("TS-VIV", 50_000, true);
+    Variante agotada = publicada("TS-AGO", 99_000, true, true);
+    Carrito carrito = Carrito.crear(null, AHORA);
+    carrito.agregarLinea(viva.id(), 1, AHORA);
+    carrito.agregarLinea(agotada.id(), 1, AHORA);
+    carritos.guardar(carrito);
+
+    CarritoCotizado cotizado = casoDeUso().ejecutar(carrito.id());
+
+    assertEquals(Dinero.deCop(50_000), cotizado.subtotal());
+    assertFalse(cotizado.lineas().get(1).disponible());
   }
 
   @Test
