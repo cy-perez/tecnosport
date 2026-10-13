@@ -1371,9 +1371,12 @@ class ResolverBorradorTest {
     assertTrue(resolucion.alertas().isEmpty());
   }
 
-  /** El primer anuncio oversize: set por suma, pero sin la descripción del set. */
+  /**
+   * El primer anuncio oversize: set por suma, sin la descripción del set. La de la camiseta dice
+   * que va con la gorra, y no se alerta (13 de octubre de 2026).
+   */
   @Test
-  void unSetSinDescripcionPropiaSeAlerta() {
+  void unSetSinDescripcionPropiaCompletaLaDeLaPrenda() {
     proveedor.definirArmaSets(true);
 
     Resolucion resolucion =
@@ -1387,11 +1390,16 @@ class ResolverBorradorTest {
                         ClaseDePrecioAdicional.ACOMPANANTE,
                         PrendaAcompanante.GORRA))));
 
-    assertTrue(resolucion.alertas().contains(AlertaBorrador.SET_SIN_DESCRIPCION));
+    assertTrue(!resolucion.alertas().contains(AlertaBorrador.SET_SIN_DESCRIPCION));
     assertTrue(!resolucion.alertas().contains(AlertaBorrador.PRECIO_INCONSISTENTE));
     BorradorProducto set = borradores.enEstado(EstadoBorrador.EN_REVISION).getFirst();
     assertEquals(Optional.of(Dinero.deCop(90000)), set.precioProveedor());
     assertEquals(Optional.of("Oversized T-shirt and cap set"), set.altEn());
+    assertEquals(
+        Optional.of(
+            "Camiseta oversize con cuello redondo. Se vende en set con la gorra que aparece en"
+                + " las fotos."),
+        set.descripcion());
   }
 
   private static ExtraccionEvaluada conCosto(

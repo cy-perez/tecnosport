@@ -311,7 +311,7 @@ public final class ResolverBorrador {
       if (!set.get().preciosEscritosEn(textoDelAnuncio)) {
         alertasDelSet.add(AlertaBorrador.PRECIO_INCONSISTENTE);
       }
-      if (!set.get().conTextosPropios()) {
+      if (!set.get().conDescripcionDelSet()) {
         alertasDelSet.add(AlertaBorrador.SET_SIN_DESCRIPCION);
       }
     } else if (proveedor.armaSets()

@@ -23,6 +23,8 @@ import java.util.regex.Pattern;
  *   <li><b>La camiseta o el polo con su gorra es un set</b> que conserva el tipo de la prenda: se
  *       publica en Camisetas o en Polos, donde lo busca quien quiere una camiseta. La gorra es la
  *       de la foto de ese SKU.
+ *   <li><b>La descripción nombra la gorra o la blusa</b>: la del set si el modelo la escribió; si
+ *       no, la de la prenda con una frase que dice con qué se vende ({@link #describirSet}).
  *   <li><b>El costo es el precio del set si el proveedor lo anuncia</b> —el combo—; si no, la suma
  *       de la prenda y su acompañante: «Falda $59.900 / Básica 48.000» cuesta 107.900. Sobre ese
  *       costo se calcula después el precio de venta, como con cualquier otro.
@@ -54,15 +56,16 @@ public final class ArmadorDeSets {
    * @param costo el precio del proveedor con el que se sigue: el del set o la suma
    * @param preciosLeidos los que el modelo leyó y dieron el costo: el del combo, o el de la prenda
    *     y el de su acompañante
-   * @param conTextosPropios el modelo escribió la descripción del set; si no, la descripción es la
-   *     de la prenda sola y no nombra la gorra ni la blusa, y quien revisa tiene que completarla
+   * @param conDescripcionDelSet la descripción nombra la gorra o la blusa, la haya escrito el
+   *     modelo o se haya completado; si no, no había descripción de la prenda que completar, y
+   *     quien revisa tiene que escribirla
    */
   public record SetArmado(
       ProductoExtraido producto,
       Dinero costo,
       ArmadoDeSet armado,
       List<Dinero> preciosLeidos,
-      boolean conTextosPropios) {
+      boolean conDescripcionDelSet) {
 
     public SetArmado {
       Objects.requireNonNull(producto);
@@ -136,6 +139,48 @@ public final class ArmadorDeSets {
           "(?:\\s+for\\s+(?:men|women|ladies|man|woman))|(?:^(?:men's|women's|ladies')\\s+)",
           Pattern.CASE_INSENSITIVE);
 
+  private static final Pattern NOMBRA_GORRA =
+      Pattern.compile(
+          "(?<!\\p{L})(?:gorras?|cachuchas?)(?!\\p{L})",
+          Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE);
+
+  private static final Pattern NOMBRA_BLUSA =
+      Pattern.compile(
+          "(?<!\\p{L})(?:blusas?|b[aá]sicas?)(?!\\p{L})",
+          Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE);
+
+  /**
+   * La descripción del set cuando el modelo no la escribió: la de la prenda y una frase que dice
+   * con qué se vende. En los dos anuncios de camisetas oversize de La Riverah del 12 de octubre de
+   * 2026 el modelo no la escribió nunca, ni siquiera en el que leyó la gorra, y los dos borradores
+   * salieron con la descripción de la camiseta sola. Si la de la prenda ya nombra la gorra o la
+   * blusa, se deja como está.
+   *
+   * @return nulo si la prenda no tiene descripción: no hay nada que completar
+   */
+  static String describirSet(String descripcionDeLaPrenda, PrendaAcompanante acompanante) {
+    if (descripcionDeLaPrenda == null || descripcionDeLaPrenda.isBlank()) {
+      return null;
+    }
+    String prenda = descripcionDeLaPrenda.strip();
+    String frase =
+        switch (acompanante) {
+          case GORRA ->
+              NOMBRA_GORRA.matcher(prenda).find()
+                  ? null
+                  : "Se vende en set con la gorra que aparece en las fotos.";
+          case BLUSA ->
+              NOMBRA_BLUSA.matcher(prenda).find()
+                  ? null
+                  : "Se vende en conjunto con la blusa que aparece en las fotos.";
+          case OTRA -> null;
+        };
+    if (frase == null) {
+      return prenda;
+    }
+    return (prenda.matches("(?s).*[.!?]$") ? prenda : prenda + ".") + " " + frase;
+  }
+
   private ArmadorDeSets() {}
 
   /**
@@ -202,6 +247,10 @@ public final class ArmadorDeSets {
     adicionales.addAll(producto.preciosAdicionales());
 
     Optional<TextosDelSet> textos = producto.setOpcional();
+    String descripcion =
+        textos
+            .map(TextosDelSet::descripcion)
+            .orElseGet(() -> describirSet(producto.descripcion(), prenda.get()));
     ProductoExtraido comoSet =
         new ProductoExtraido(
             producto.esProducto(),
@@ -214,7 +263,7 @@ public final class ArmadorDeSets {
             producto.cantidadTonos(),
             producto.tonosNombrados(),
             producto.material(),
-            textos.map(TextosDelSet::descripcion).orElse(producto.descripcion()),
+            descripcion,
             textos
                 .map(TextosDelSet::altEn)
                 .orElseGet(() -> altDeSet(producto.altEn(), prenda.get())),
@@ -228,11 +277,7 @@ public final class ArmadorDeSets {
             producto.set());
     return Optional.of(
         new SetArmado(
-            comoSet,
-            costo,
-            new ArmadoDeSet(prenda.get(), origen),
-            leidos,
-            textos.map(TextosDelSet::descripcion).isPresent()));
+            comoSet, costo, new ArmadoDeSet(prenda.get(), origen), leidos, descripcion != null));
   }
 
   private static boolean armaSet(PrecioAdicional precio) {

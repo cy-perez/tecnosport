@@ -35,8 +35,8 @@ public enum AlertaBorrador {
    */
   ACOMPANANTE_SIN_LEER,
   /**
-   * El borrador es un set, pero el modelo no escribió su descripción: la que lleva es la de la
-   * prenda sola y no nombra la gorra ni la blusa.
+   * El borrador es un set y no hay descripción que nombre la gorra o la blusa: el modelo no
+   * escribió la del set y tampoco la de la prenda, que {@link ArmadorDeSets} habría completado.
    */
   SET_SIN_DESCRIPCION
 }
