@@ -408,7 +408,7 @@ class AdminProductoControladorTest {
   @Test
   void agregarConLaGaleriaLlenaDevuelve409() throws Exception {
     Producto producto = productoEnBorrador();
-    for (int i = 0; i < 8; i++) {
+    for (int i = 0; i < Producto.TOPE_DE_GALERIA; i++) {
       producto.agregarImagenGaleria(imagenDeGaleria(i));
     }
     repositorio.conProductos(producto);

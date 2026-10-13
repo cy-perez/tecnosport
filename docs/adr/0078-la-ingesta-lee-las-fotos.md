@@ -53,6 +53,8 @@ fotos, el «set falda + básica», el dúo, la promoción por cantidad.
    - **Varios productos con código.** Una foto va al producto cuya referencia impresa es la del
      texto. La que muestra varias es de todas, y la que no muestra ninguna también. Si a un
      producto no le toca ninguna foto, se queda con todas.
+   - **Reemplazado el 13 de octubre de 2026 por `ADR-0084`: el álbum es un solo producto y cada
+     SKU es una prenda de él, con el SKU en sus variantes.** Lo que sigue es la regla de antes.
    - **Un texto y un álbum (La Riverah): un producto por SKU** (decidido el 10 de octubre de
      2026). Cada SKU del pie impreso es una prenda que el proveedor vende aparte, con sus propias
      tallas, y es lo único del álbum que no cambia de una corrida del lector a otra. Primero se

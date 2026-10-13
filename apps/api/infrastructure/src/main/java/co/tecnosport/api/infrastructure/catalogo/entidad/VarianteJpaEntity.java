@@ -50,6 +50,22 @@ public class VarianteJpaEntity {
   @Column(name = "creado_en", nullable = false)
   private Instant creadoEn;
 
+  /**
+   * El SKU con que el proveedor vende la prenda de esta variante: el del pie de su foto en un álbum
+   * de La Riverah (V114, 13 de octubre de 2026). Nulo en las demás. Fuera del constructor a
+   * propósito: quien reescribe una variante con {@code save(new ...)} tiene que copiarlo con {@link
+   * #conReferenciaProveedor}, o lo borra.
+   */
+  @Column(name = "referencia_proveedor")
+  private String referenciaProveedor;
+
+  /**
+   * El proveedor anunció agotado el SKU de esta prenda (V114): sigue activa, pero no se vende.
+   * Fuera del constructor, como {@link #referenciaProveedor}, y por lo mismo.
+   */
+  @Column(name = "agotada_por_proveedor", nullable = false)
+  private boolean agotadaPorProveedor;
+
   protected VarianteJpaEntity() {}
 
   public VarianteJpaEntity(
@@ -125,5 +141,25 @@ public class VarianteJpaEntity {
 
   public Instant getCreadoEn() {
     return creadoEn;
+  }
+
+  public String getReferenciaProveedor() {
+    return referenciaProveedor;
+  }
+
+  /** Esta misma entidad con el SKU del proveedor; nulo lo quita. */
+  public VarianteJpaEntity conReferenciaProveedor(String referencia) {
+    this.referenciaProveedor = referencia;
+    return this;
+  }
+
+  public boolean isAgotadaPorProveedor() {
+    return agotadaPorProveedor;
+  }
+
+  /** Esta misma entidad, agotada por el proveedor o de nuevo a la venta. */
+  public VarianteJpaEntity conAgotadaPorProveedor(boolean agotada) {
+    this.agotadaPorProveedor = agotada;
+    return this;
   }
 }

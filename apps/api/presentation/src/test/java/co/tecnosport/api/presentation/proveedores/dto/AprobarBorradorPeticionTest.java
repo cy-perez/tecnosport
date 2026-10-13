@@ -25,11 +25,11 @@ class AprobarBorradorPeticionTest {
         peticion(
                 List.of(
                     new AprobarBorradorPeticion.PrendaAprobadaPeticion(
-                        1, "Negro", "#000000", null, FOTO_1),
+                        1, "Negro", "#000000", null, FOTO_1, null),
                     new AprobarBorradorPeticion.PrendaAprobadaPeticion(
-                        2, "Cocoa", "#875F42", List.of("S"), FOTO_2),
+                        2, "Cocoa", "#875F42", List.of("S"), FOTO_2, null),
                     new AprobarBorradorPeticion.PrendaAprobadaPeticion(
-                        3, "Crema", null, null, null)),
+                        3, "Crema", null, null, null, null)),
                 null)
             .aComando(BORRADOR);
 
@@ -38,6 +38,24 @@ class AprobarBorradorPeticionTest {
         .extracting(AprobarBorradorComando.PrendaAprobada::seVeEn)
         .containsExactly(FOTO_1, FOTO_2, null);
     assertThat(comando.prendas().get(1).tallas()).containsExactly("S");
+  }
+
+  /** El SKU de cada prenda de un álbum llega al comando, en mayúsculas y sin espacios. */
+  @Test
+  void elSkuDeCadaPrendaLlegaAlComando() {
+    AprobarBorradorComando comando =
+        peticion(
+                List.of(
+                    new AprobarBorradorPeticion.PrendaAprobadaPeticion(
+                        1, "Negro", "#000000", null, null, " rv102347 "),
+                    new AprobarBorradorPeticion.PrendaAprobadaPeticion(
+                        2, "Gris", "#808080", null, null, null)),
+                null)
+            .aComando(BORRADOR);
+
+    assertThat(comando.prendas())
+        .extracting(AprobarBorradorComando.PrendaAprobada::referencia)
+        .containsExactly("RV102347", null);
   }
 
   @Test

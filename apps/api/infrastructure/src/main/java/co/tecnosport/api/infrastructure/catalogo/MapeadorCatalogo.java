@@ -276,7 +276,8 @@ public class MapeadorCatalogo {
         paqueteDe(v),
         EstadoVariante.valueOf(v.getEstado()),
         atributos,
-        setRotacionPropio);
+        setRotacionPropio,
+        v.isAgotadaPorProveedor());
   }
 
   private static boolean estaPublicado(SetRotacionJpaEntity set) {

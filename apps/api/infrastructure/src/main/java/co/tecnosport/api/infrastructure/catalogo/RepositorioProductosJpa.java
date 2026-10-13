@@ -446,18 +446,20 @@ public class RepositorioProductosJpa implements RepositorioProductos {
                         "No existe la variante '" + varianteId + "' que se intenta medir."));
     varianteJpaRepository.save(
         new VarianteJpaEntity(
-            existente.getId(),
-            existente.getProductoId(),
-            existente.getSku(),
-            existente.getPrecio(),
-            existente.getTasaIva(),
-            existente.getCodigoBarras(),
-            paquete.pesoGramos(),
-            paquete.largoCm(),
-            paquete.anchoCm(),
-            paquete.altoCm(),
-            existente.getEstado(),
-            existente.getCreadoEn()));
+                existente.getId(),
+                existente.getProductoId(),
+                existente.getSku(),
+                existente.getPrecio(),
+                existente.getTasaIva(),
+                existente.getCodigoBarras(),
+                paquete.pesoGramos(),
+                paquete.largoCm(),
+                paquete.anchoCm(),
+                paquete.altoCm(),
+                existente.getEstado(),
+                existente.getCreadoEn())
+            .conReferenciaProveedor(existente.getReferenciaProveedor())
+            .conAgotadaPorProveedor(existente.isAgotadaPorProveedor()));
   }
 
   /**
@@ -477,18 +479,20 @@ public class RepositorioProductosJpa implements RepositorioProductos {
                             + "' a la que se cambia el precio."));
     varianteJpaRepository.save(
         new VarianteJpaEntity(
-            existente.getId(),
-            existente.getProductoId(),
-            existente.getSku(),
-            precio.valor(),
-            existente.getTasaIva(),
-            existente.getCodigoBarras(),
-            existente.getPesoGramos(),
-            existente.getLargoCm(),
-            existente.getAnchoCm(),
-            existente.getAltoCm(),
-            existente.getEstado(),
-            existente.getCreadoEn()));
+                existente.getId(),
+                existente.getProductoId(),
+                existente.getSku(),
+                precio.valor(),
+                existente.getTasaIva(),
+                existente.getCodigoBarras(),
+                existente.getPesoGramos(),
+                existente.getLargoCm(),
+                existente.getAnchoCm(),
+                existente.getAltoCm(),
+                existente.getEstado(),
+                existente.getCreadoEn())
+            .conReferenciaProveedor(existente.getReferenciaProveedor())
+            .conAgotadaPorProveedor(existente.isAgotadaPorProveedor()));
   }
 
   @Override

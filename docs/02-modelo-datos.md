@@ -110,6 +110,13 @@ columna fija en la variante: `sku`, `precio`, `tasa_iva`, `estado`,
 `codigo_barras`, y **el paquete: `peso_gramos`, `largo_cm`, `ancho_cm`,
 `alto_cm`**. Hubo también `existencia`, y la `V59` la borró (`ADR-0050`).
 
+Y dos del 13 de octubre de 2026 (`V114`, `ADR-0084`), para los álbumes de La Riverah:
+`referencia_proveedor`, el SKU con que el proveedor vende la prenda de esa variante, nula
+en todas las demás; y `agotada_por_proveedor`, que pone «AGOTADO polo RV102376» en las
+variantes de ese diseño. La agotada sigue `ACTIVA` —un pedido pagado de ella se despacha
+y cuenta como vendida— pero la ficha no la da por disponible y el carrito y el pedido no
+la venden. No se usa `INACTIVA` para esto: lo inactivo no se hidrata en ninguna parte.
+
 **El paquete es columna fija, no atributo** (`adr/0021`), y desde el 19 de
 septiembre de 2026 es **opcional** (`adr/0046`). Sin peso ni dimensiones no hay
 cotización de envío, pero eso no impide vender: la variante sin medir se publica y

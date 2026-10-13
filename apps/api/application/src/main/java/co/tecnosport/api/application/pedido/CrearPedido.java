@@ -12,7 +12,6 @@ import co.tecnosport.api.application.envio.MetodosDePagoDisponiblesComando;
 import co.tecnosport.api.application.envio.TransportadoraNoDisponibleException;
 import co.tecnosport.api.application.inventario.RepositorioInventario;
 import co.tecnosport.api.application.legal.RepositorioAutorizaciones;
-import co.tecnosport.api.domain.catalogo.EstadoVariante;
 import co.tecnosport.api.domain.catalogo.ImagenProducto;
 import co.tecnosport.api.domain.catalogo.Producto;
 import co.tecnosport.api.domain.catalogo.Variante;
@@ -388,7 +387,8 @@ public final class CrearPedido {
             .filter(v -> v.id().equals(varianteId))
             .findFirst()
             .orElseThrow(() -> new VarianteNoEncontradaException(varianteId));
-    if (variante.estado() != EstadoVariante.ACTIVA) {
+    // Una prenda que el proveedor agotó no se vende, aunque el libro tenga saldo (ADR-0084).
+    if (!variante.seVende()) {
       throw new VarianteNoEncontradaException(varianteId);
     }
     return variante;

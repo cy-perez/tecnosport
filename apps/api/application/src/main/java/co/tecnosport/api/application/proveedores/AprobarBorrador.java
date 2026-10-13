@@ -286,6 +286,7 @@ public final class AprobarBorrador {
             : prendas.prendas();
     List<String> ejesDeTalla = valoresDeTalla.isEmpty() ? List.of("") : valoresDeTalla;
     Map<String, UUID> variantePorTono = new LinkedHashMap<>();
+    Map<UUID, String> referenciaPorVariante = new LinkedHashMap<>();
     int correlativo = 1;
     for (PrendasDeLaAprobacion.Prenda prenda : ejesDeTono) {
       String tono = prenda.valor();
@@ -313,7 +314,15 @@ public final class AprobarBorrador {
                     null,
                     atributos));
         variantePorTono.putIfAbsent(tono, creada.variante().id());
+        if (prenda.referencia() != null) {
+          referenciaPorVariante.put(creada.variante().id(), prenda.referencia());
+        }
       }
+    }
+    // El SKU de cada prenda de un álbum queda en sus variantes: es con lo que el proveedor la agota
+    // sin agotar las demás (13 de octubre de 2026).
+    if (!referenciaPorVariante.isEmpty()) {
+      productosDeProveedor.asignarReferencias(referenciaPorVariante);
     }
     return variantePorTono;
   }

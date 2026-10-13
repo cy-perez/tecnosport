@@ -1,5 +1,6 @@
 package co.tecnosport.api.domain.proveedores;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -14,14 +15,28 @@ import java.util.UUID;
  * @param diseno la etiqueta de diseño que el lector le dio a sus fotos, en un álbum: dos borradores
  *     de la misma publicación con la misma etiqueta son, posiblemente, el mismo diseño en otro
  *     color. Nula fuera de un álbum o si el lector no dio ninguna
+ * @param referenciasDelAlbum los SKU impresos de un álbum, uno por prenda (13 de octubre de 2026):
+ *     con ellos se reconoce el álbum que el proveedor vuelve a publicar con los mismos SKU. Vacía
+ *     fuera de un álbum. No se guarda en el borrador: el panel los vuelve a leer de la lectura
  */
 public record FotosDelProducto(
-    Set<UUID> ajenas, Map<UUID, String> tonosSugeridos, String lecturaCruda, String diseno) {
+    Set<UUID> ajenas,
+    Map<UUID, String> tonosSugeridos,
+    String lecturaCruda,
+    String diseno,
+    List<String> referenciasDelAlbum) {
 
   public FotosDelProducto {
     ajenas = ajenas == null ? Set.of() : Set.copyOf(ajenas);
     tonosSugeridos = tonosSugeridos == null ? Map.of() : Map.copyOf(tonosSugeridos);
     diseno = BorradorProducto.etiquetaDeDiseno(diseno);
+    referenciasDelAlbum =
+        referenciasDelAlbum == null ? List.of() : List.copyOf(referenciasDelAlbum);
+  }
+
+  public FotosDelProducto(
+      Set<UUID> ajenas, Map<UUID, String> tonosSugeridos, String lecturaCruda, String diseno) {
+    this(ajenas, tonosSugeridos, lecturaCruda, diseno, List.of());
   }
 
   public FotosDelProducto(Set<UUID> ajenas, Map<UUID, String> tonosSugeridos, String lecturaCruda) {

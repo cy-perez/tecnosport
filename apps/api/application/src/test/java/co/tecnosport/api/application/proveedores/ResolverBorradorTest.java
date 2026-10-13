@@ -16,7 +16,9 @@ import co.tecnosport.api.application.proveedores.ResolverBorrador.TipoDeResoluci
 import co.tecnosport.api.domain.catalogo.EstadoDisponibilidad;
 import co.tecnosport.api.domain.catalogo.LineaCatalogo;
 import co.tecnosport.api.domain.catalogo.Producto;
+import co.tecnosport.api.domain.catalogo.Variante;
 import co.tecnosport.api.domain.compartido.Dinero;
+import co.tecnosport.api.domain.compartido.Sku;
 import co.tecnosport.api.domain.compartido.Slug;
 import co.tecnosport.api.domain.proveedores.AlertaBorrador;
 import co.tecnosport.api.domain.proveedores.ArmadoDeSet;
@@ -65,6 +67,8 @@ class ResolverBorradorTest {
           LineaCatalogo.BOLSOS, new BigDecimal("1.35"), LineaCatalogo.ROPA, new BigDecimal("1.30"));
 
   private final RepositorioProductosEnMemoria productos = new RepositorioProductosEnMemoria();
+  private final RepositorioProductosDeProveedorEnMemoria productosDeProveedor =
+      new RepositorioProductosDeProveedorEnMemoria(productos);
   private final RepositorioBorradoresEnMemoria borradores = new RepositorioBorradoresEnMemoria();
   private final RepositorioPublicacionesEnMemoria publicaciones =
       new RepositorioPublicacionesEnMemoria();
@@ -99,7 +103,7 @@ class ResolverBorradorTest {
   private ResolverBorrador caso() {
     return new ResolverBorrador(
         borradores,
-        new RepositorioProductosDeProveedorEnMemoria(productos),
+        productosDeProveedor,
         productos,
         publicaciones,
         almacen,
@@ -981,7 +985,7 @@ class ResolverBorradorTest {
             titulo,
             LineaCatalogo.ROPA,
             TipoProductoProveedor.PANTALON,
-            Dinero.deCop(125000),
+            Dinero.deCop(85000),
             Tallas.lista(List.of("32", "34")),
             null,
             List.of(),
@@ -994,7 +998,7 @@ class ResolverBorradorTest {
     return new ExtraccionEvaluada(
         extraido,
         "{}",
-        Dinero.deCop(125000),
+        Dinero.deCop(85000),
         Set.of(AlertaBorrador.FOTOS_COMPARTIDAS),
         new UsoDelExtractor("falso", 1, 1, 1),
         List.of(suya, compartida),
@@ -1388,5 +1392,325 @@ class ResolverBorradorTest {
     BorradorProducto set = borradores.enEstado(EstadoBorrador.EN_REVISION).getFirst();
     assertEquals(Optional.of(Dinero.deCop(90000)), set.precioProveedor());
     assertEquals(Optional.of("Oversized T-shirt and cap set"), set.altEn());
+  }
+
+  private static ExtraccionEvaluada conCosto(
+      String titulo, TipoProductoProveedor tipo, long costo, boolean agotado) {
+    ProductoExtraido extraido =
+        new ProductoExtraido(
+            true,
+            agotado,
+            titulo,
+            LineaCatalogo.ROPA,
+            tipo,
+            Dinero.deCop(costo),
+            Tallas.lista(List.of("30", "32", "34")),
+            null,
+            List.of(),
+            null,
+            "Una prenda.",
+            null,
+            false,
+            new BigDecimal("0.9"),
+            null,
+            null);
+    return new ExtraccionEvaluada(
+        extraido, "{}", Dinero.deCop(costo), Set.of(), new UsoDelExtractor("falso", 1, 1, 1));
+  }
+
+  /**
+   * Los «JEANS Importado para Caballero» de La Riverah a 125.000: pasan del tope de 90.000 que el
+   * negocio fijó el 13 de octubre de 2026, y no dejan borrador. El dato es el costo.
+   */
+  @Test
+  void unJeanDeMasDe90MilSeDescartaConSuCosto() {
+    PublicacionProveedor publicacion =
+        publicacion("*NUEVA COLECCIÓN JEANS Importado para Caballero* *PROMO* $125.000", "jean");
+
+    Resolucion resolucion =
+        resolver(
+            publicacion,
+            conCosto("Jean para caballero", TipoProductoProveedor.PANTALON, 125000, false));
+
+    assertEquals(TipoDeResolucion.DESCARTADA, resolucion.tipo());
+    assertEquals(
+        new CierreDePublicacion(MotivoDePublicacion.PRECIO_SOBRE_TOPE, "125000"),
+        resolucion.cierre());
+    assertEquals(
+        EstadoPublicacionProveedor.DESCARTADA,
+        publicaciones.buscarPorId(publicacion.id()).orElseThrow().estado());
+    assertTrue(borradores.enEstado(EstadoBorrador.EN_REVISION).isEmpty());
+  }
+
+  @Test
+  void elJoggerYLaBermudaDeMasDe90MilTambienSeDescartan() {
+    assertEquals(
+        TipoDeResolucion.DESCARTADA,
+        resolver(
+                publicacion("Sudadera jogger $95.000", "jogger"),
+                conCosto("Sudadera jogger", TipoProductoProveedor.SUDADERA, 95000, false))
+            .tipo());
+    assertEquals(
+        TipoDeResolucion.DESCARTADA,
+        resolver(
+                publicacion("Bermuda jean $90.100", "bermuda"),
+                conCosto("Bermuda jean", TipoProductoProveedor.SHORT, 90100, false))
+            .tipo());
+  }
+
+  @Test
+  void exactamente90MilTodaviaPasa() {
+    Resolucion resolucion =
+        resolver(
+            publicacion("Jean licrado $90.000", "jean-90"),
+            conCosto("Jean licrado", TipoProductoProveedor.PANTALON, 90000, false));
+
+    assertEquals(TipoDeResolucion.NUEVO, resolucion.tipo());
+  }
+
+  @Test
+  void elTopeNoEsDeLasDemasPrendas() {
+    Resolucion resolucion =
+        resolver(
+            publicacion("Chaqueta $120.000", "chaqueta"),
+            conCosto("Chaqueta", TipoProductoProveedor.CHAQUETA, 120000, false));
+
+    assertEquals(TipoDeResolucion.NUEVO, resolucion.tipo());
+  }
+
+  /** Un agotado no se descarta por el tope: lo que se vendía tiene que poder agotarse. */
+  @Test
+  void unAgotadoDeMasDe90MilNoSeDescartaPorElTope() {
+    Resolucion resolucion =
+        resolver(
+            publicacion("AGOTADO jean $125.000", "jean-agotado"),
+            conCosto("Jean", TipoProductoProveedor.PANTALON, 125000, true));
+
+    assertEquals(
+        new CierreDePublicacion(MotivoDePublicacion.AGOTADO_FUERA_DE_CATALOGO, null),
+        resolucion.cierre());
+  }
+
+  /** Con varios productos, solo el que pasa del tope: la camiseta del anuncio sí deja borrador. */
+  @Test
+  void conVariosProductosSoloSeDescartaElQuePasaDelTope() {
+    PublicacionProveedor publicacion =
+        publicacion("Camiseta $40.000 Jean $120.000", "conjunto-caro");
+
+    List<Resolucion> resoluciones =
+        caso()
+            .ejecutar(
+                publicacion,
+                mensajes,
+                proveedor,
+                List.of(
+                    conCosto("Camiseta", TipoProductoProveedor.CAMISETA, 40000, false),
+                    conCosto("Jean", TipoProductoProveedor.PANTALON, 120000, false)));
+
+    assertEquals(TipoDeResolucion.NUEVO, resoluciones.get(0).tipo());
+    assertEquals(TipoDeResolucion.DESCARTADA, resoluciones.get(1).tipo());
+    assertEquals(
+        EstadoPublicacionProveedor.EXTRAIDA,
+        publicaciones.buscarPorId(publicacion.id()).orElseThrow().estado());
+  }
+
+  // --- Las prendas de un álbum (13 de octubre de 2026) ---
+
+  private Variante uno;
+  private Variante dos;
+
+  /** El álbum de polos aprobado como un producto: cada SKU quedó en la variante de su prenda. */
+  private Producto albumDePolos() {
+    Producto album =
+        productoExistente(
+            "Set polo importado y gorra",
+            85000,
+            HuellaProveedor.deAnuncio(
+                proveedor.id(), "Set polo importado y gorra", Dinero.deCop(85000), ANTES),
+            EstadoDisponibilidad.DISPONIBLE);
+    uno =
+        Variante.crear(
+            new Sku("PRV-1-NEGRO"), Dinero.deCop(115000), BigDecimal.ZERO, null, null, List.of());
+    dos =
+        Variante.crear(
+            new Sku("PRV-1-BLANCO"), Dinero.deCop(115000), BigDecimal.ZERO, null, null, List.of());
+    album.agregarVariante(uno);
+    album.agregarVariante(dos);
+    productosDeProveedor.asignarReferencias(Map.of(uno.id(), "RV102376", dos.id(), "RV102377"));
+    return album;
+  }
+
+  /** «AGOTADO polo RV102376»: sale de la venta ese diseño, y los demás del álbum siguen. */
+  @Test
+  void elAgotadoDeUnSkuDeUnAlbumRetiraSoloSuPrenda() {
+    Producto album = albumDePolos();
+
+    Resolucion resolucion =
+        resolver(
+            publicacion("AGOTADO polo RV102376", null),
+            deTipo("Polo importado", TipoProductoProveedor.POLO, "RV102376", true));
+
+    assertEquals(TipoDeResolucion.AGOTADO, resolucion.tipo());
+    assertEquals(Set.of(uno.id()), productosDeProveedor.retiradas);
+    assertEquals(EstadoDisponibilidad.DISPONIBLE, album.estadoDisponibilidad());
+    assertEquals(
+        1, borradores.enEstado(EstadoBorrador.RENOVACION_APLICADA).size(), "deja la constancia");
+  }
+
+  @Test
+  void conTodasSusPrendasAgotadasSeAgotaElAlbum() {
+    Producto album = albumDePolos();
+    productosDeProveedor.cambiarDisponibilidadDeVariantes(List.of(dos.id()), false);
+
+    resolver(
+        publicacion("AGOTADO polo RV102376", null),
+        deTipo("Polo importado", TipoProductoProveedor.POLO, "RV102376", true));
+
+    assertEquals(Set.of(uno.id(), dos.id()), productosDeProveedor.retiradas);
+    assertEquals(EstadoDisponibilidad.AGOTADO_POR_PROVEEDOR, album.estadoDisponibilidad());
+  }
+
+  /** El SKU retirado que el proveedor vuelve a anunciar vuelve a la venta, y renueva el álbum. */
+  @Test
+  void unSkuRetiradoQueSeVuelveAAnunciarVuelveALaVenta() {
+    Producto album = albumDePolos();
+    productosDeProveedor.cambiarDisponibilidadDeVariantes(List.of(uno.id()), false);
+
+    Resolucion resolucion =
+        resolver(
+            publicacion("Polo RV102376 llegó otra vez", "polo-otra-vez"),
+            deTipo("Polo importado", TipoProductoProveedor.POLO, "RV102376", false));
+
+    assertEquals(TipoDeResolucion.RENOVACION, resolucion.tipo());
+    assertTrue(productosDeProveedor.retiradas.isEmpty());
+    assertEquals(EstadoDisponibilidad.DISPONIBLE, album.estadoDisponibilidad());
+  }
+
+  /** Un SKU que no es de ninguna prenda sigue el camino de siempre. */
+  @Test
+  void unAgotadoDeUnSkuQueNingunaPrendaLlevaNoTocaElAlbum() {
+    albumDePolos();
+
+    Resolucion resolucion =
+        resolver(
+            publicacion("AGOTADO polo RV999999", null),
+            deTipo("Polo importado", TipoProductoProveedor.POLO, "RV999999", true));
+
+    assertEquals(TipoDeResolucion.DESCARTADA, resolucion.tipo());
+    assertTrue(productosDeProveedor.retiradas.isEmpty());
+  }
+
+  /**
+   * Un agotado más viejo que el último visto del álbum no cambia nada: dos lotes procesados fuera
+   * de orden no pueden agotar lo que el proveedor volvió a anunciar después.
+   */
+  @Test
+  void unAgotadoMasViejoQueElUltimoVistoNoRetiraLaPrenda() {
+    albumDePolos();
+
+    resolver(
+        publicacion("AGOTADO polo RV102376", null, Instant.parse("2026-09-10T12:00:00Z")),
+        deTipo("Polo importado", TipoProductoProveedor.POLO, "RV102376", true));
+
+    assertTrue(productosDeProveedor.retiradas.isEmpty());
+  }
+
+  /**
+   * El anuncio de un SKU no le cambia el costo al álbum: puede ser la prenda sola de un álbum que
+   * se aprobó como set, y renovarlo con 50.000 dejaría el set de 85.000 vendiéndose con el margen
+   * de la camiseta.
+   */
+  @Test
+  void elAnuncioDeUnSkuNoLeCambiaElCostoAlAlbum() {
+    Producto album = albumDePolos();
+
+    resolver(
+        publicacion("Polo RV102376 $50.000", "polo-solo"),
+        deTipo("Polo importado", TipoProductoProveedor.POLO, "RV102376", false));
+
+    assertEquals(Optional.of(Dinero.deCop(85000)), album.precioProveedor());
+  }
+
+  /**
+   * El álbum que el proveedor vuelve a publicar con los mismos SKU es el mismo producto, empiece
+   * por la foto que empiece: se renueva, sus prendas agotadas vuelven a la venta, y no sale otro
+   * borrador.
+   */
+  @Test
+  void elAlbumQueVuelveConLosMismosSkuRenuevaElMismoProducto() {
+    albumDePolos();
+    productosDeProveedor.cambiarDisponibilidadDeVariantes(List.of(uno.id()), false);
+    ProductoExtraido polo =
+        new ProductoExtraido(
+            true,
+            false,
+            "Set polo importado y gorra",
+            LineaCatalogo.ROPA,
+            TipoProductoProveedor.POLO,
+            Dinero.deCop(85000),
+            Tallas.lista(List.of("M", "L")),
+            null,
+            List.of(),
+            null,
+            "Un polo.",
+            null,
+            false,
+            new BigDecimal("0.9"),
+            null,
+            null);
+    ExtraccionEvaluada delAlbum =
+        new ExtraccionEvaluada(
+            polo,
+            "{}",
+            Dinero.deCop(85000),
+            Set.of(),
+            new UsoDelExtractor("falso", 1, 1, 1),
+            List.of(),
+            new FotosDelProducto(Set.of(), Map.of(), "{}", null, List.of("RV102377", "RV102376")),
+            null,
+            false);
+
+    Resolucion resolucion =
+        resolver(publicacion("CAMISETA POLO 1.1 $55.000", "otra-portada"), delAlbum);
+
+    assertEquals(TipoDeResolucion.RENOVACION, resolucion.tipo());
+    assertTrue(productosDeProveedor.retiradas.isEmpty());
+    assertTrue(borradores.enEstado(EstadoBorrador.EN_REVISION).isEmpty());
+  }
+
+  /**
+   * «Básica 48.000 / Pantalón 95.000»: el primer precio del texto es el de la blusa, pero el
+   * pantalón cuesta 95.000 y pasa del tope. Se compara el mismo precio con que se armaría el set.
+   */
+  @Test
+  void elTopeSeComparaConElPrecioDeLaPrendaYNoConElPrimeroDelTexto() {
+    ProductoExtraido pantalon =
+        new ProductoExtraido(
+            true,
+            false,
+            "Pantalón de dama",
+            LineaCatalogo.ROPA,
+            TipoProductoProveedor.PANTALON,
+            Dinero.deCop(95000),
+            Tallas.lista(List.of("S", "M")),
+            null,
+            List.of(),
+            null,
+            "Un pantalón.",
+            null,
+            false,
+            new BigDecimal("0.9"),
+            null,
+            null);
+    ExtraccionEvaluada evaluada =
+        new ExtraccionEvaluada(
+            pantalon, "{}", Dinero.deCop(48000), Set.of(), new UsoDelExtractor("falso", 1, 1, 1));
+
+    Resolucion resolucion =
+        resolver(publicacion("Básica 48.000\nPantalón 95.000", "pantalon-con-basica"), evaluada);
+
+    assertEquals(
+        new CierreDePublicacion(MotivoDePublicacion.PRECIO_SOBRE_TOPE, "95000"),
+        resolucion.cierre());
   }
 }

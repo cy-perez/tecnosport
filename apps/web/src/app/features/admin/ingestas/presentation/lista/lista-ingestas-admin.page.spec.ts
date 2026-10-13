@@ -640,6 +640,15 @@ describe('ListaIngestasAdminPage', () => {
           extracto: 'Jean Mom Fit Licrado (Q343)',
           fotos: 2,
         },
+        {
+          id: 'p4',
+          fecha: '2026-10-11T19:37:00Z',
+          estado: 'DESCARTADA',
+          motivo: 'PRECIO_SOBRE_TOPE',
+          dato: '125000',
+          extracto: 'JEANS Importado para Caballero',
+          fotos: 12,
+        },
       ];
 
       const ver = await screen.findByRole('button', { name: /Ver las publicaciones/ });
@@ -652,6 +661,8 @@ describe('ListaIngestasAdminPage', () => {
       expect(
         screen.getByText(new RegExp('no se le compra a este proveedor \\(Pantalón\\)')),
       ).toBeTruthy();
+      // El costo llega en pesos sin separadores y se lee como un precio.
+      expect(screen.getByText(/cuesta \$\s?125\.000, más de lo que se le paga/)).toBeTruthy();
       expect(screen.getByText(c.soloFotos)).toBeTruthy();
       expect(repositorio.cerradasPedidas).toEqual(['lote-1']);
       expect(ver.getAttribute('aria-expanded')).toBe('true');

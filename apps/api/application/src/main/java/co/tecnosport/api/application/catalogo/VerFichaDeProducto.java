@@ -40,7 +40,9 @@ public final class VerFichaDeProducto {
         categoria.escalaEfectiva(categoria.padreId().flatMap(repositorioCategorias::buscarPorId));
     return new FichaDeProducto(
         producto,
-        disponibilidad.de(producto.variantes().stream().map(Variante::id).toList()),
+        // La prenda que el proveedor agotó se ve en la ficha, pero no disponible (ADR-0084).
+        disponibilidad.de(
+            producto.variantes().stream().filter(Variante::seVende).map(Variante::id).toList()),
         escala);
   }
 }

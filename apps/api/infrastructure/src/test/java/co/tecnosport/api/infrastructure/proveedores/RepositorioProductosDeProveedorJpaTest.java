@@ -238,4 +238,90 @@ class RepositorioProductosDeProveedorJpaTest {
 
     assertThat(proveedores.dependenciasDe(proveedor.id()).productos()).isEqualTo(2);
   }
+
+  private Variante variante(Producto producto) {
+    Variante variante =
+        Variante.crear(
+            new Sku("SKU-" + UUID.randomUUID()),
+            Dinero.deCop(115000),
+            BigDecimal.ZERO,
+            null,
+            null,
+            List.of());
+    producto.agregarVariante(variante);
+    productos.agregarVariante(producto.id(), variante);
+    return variante;
+  }
+
+  /**
+   * El álbum de polos (13 de octubre de 2026): dos variantes —dos tallas— del SKU RV102376 y una
+   * del RV102377. El SKU va y vuelve contra la V114, y la prenda se agota sin tocar la otra. La
+   * agotada sigue hidratándose —un pedido pagado de ella se despacha—, pero ya no se vende.
+   */
+  @Test
+  void laPrendaDeUnAlbumSeEncuentraPorSuSkuYSeAgotaSola() {
+    catalogoBase();
+    Producto album = deProveedor("Set polo importado y gorra", 85000);
+    productos.guardar(album);
+    Variante negroM = variante(album);
+    Variante negroL = variante(album);
+    Variante blancoM = variante(album);
+    deProveedor.asignarReferencias(
+        java.util.Map.of(
+            negroM.id(), "RV102376", negroL.id(), "RV102376", blancoM.id(), "RV102377"));
+
+    var prenda = deProveedor.buscarPrendasPorReferencia(proveedor.id(), "RV102376").getFirst();
+    assertThat(prenda.productoId()).isEqualTo(album.id());
+    assertThat(prenda.variantes()).containsExactlyInAnyOrder(negroM.id(), negroL.id());
+    assertThat(prenda.retirada()).isFalse();
+    assertThat(prenda.otrasALaVenta()).isEqualTo(1);
+
+    deProveedor.cambiarDisponibilidadDeVariantes(prenda.variantes(), false);
+
+    var agotada = deProveedor.buscarPrendasPorReferencia(proveedor.id(), "RV102376").getFirst();
+    assertThat(agotada.retirada()).isTrue();
+    assertThat(agotada.otrasALaVenta()).isEqualTo(1);
+    var leido = productos.buscarPorId(album.id()).orElseThrow();
+    assertThat(leido.variantes()).hasSize(3);
+    assertThat(leido.variantes())
+        .filteredOn(Variante::seVende)
+        .extracting(Variante::id)
+        .containsExactly(blancoM.id());
+
+    deProveedor.cambiarDisponibilidadDeVariantes(prenda.variantes(), true);
+    assertThat(productos.buscarPorId(album.id()).orElseThrow().variantes())
+        .allMatch(Variante::seVende);
+  }
+
+  /**
+   * Cambiar el precio o medir reescribe la variante entera: el SKU del proveedor y la marca de
+   * agotada no se pueden perder.
+   */
+  @Test
+  void cambiarElPrecioDeUnaVarianteConservaSuSkuYSuAgotado() {
+    catalogoBase();
+    Producto album = deProveedor("Set polo importado y gorra", 85000);
+    productos.guardar(album);
+    Variante negroM = variante(album);
+    deProveedor.asignarReferencias(java.util.Map.of(negroM.id(), "RV102376"));
+    deProveedor.cambiarDisponibilidadDeVariantes(java.util.List.of(negroM.id()), false);
+
+    productos.actualizarPrecio(negroM.id(), Dinero.deCop(119000));
+
+    var prendas = deProveedor.buscarPrendasPorReferencia(proveedor.id(), "RV102376");
+    assertThat(prendas).hasSize(1);
+    assertThat(prendas.getFirst().retirada()).isTrue();
+  }
+
+  @Test
+  void elSkuDeOtroProveedorNoEsUnaPrendaSuya() {
+    catalogoBase();
+    Producto album = deProveedor("Set polo importado y gorra", 85000);
+    productos.guardar(album);
+    Variante negroM = variante(album);
+    deProveedor.asignarReferencias(java.util.Map.of(negroM.id(), "RV102376"));
+
+    assertThat(deProveedor.buscarPrendasPorReferencia(UUID.randomUUID(), "RV102376")).isEmpty();
+    assertThat(deProveedor.buscarPrendasPorReferencia(proveedor.id(), "RV000000")).isEmpty();
+  }
 }

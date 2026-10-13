@@ -1,5 +1,6 @@
 package co.tecnosport.api.application.proveedores;
 
+import co.tecnosport.api.domain.proveedores.ProductoExtraido;
 import co.tecnosport.api.domain.proveedores.Tallas;
 import java.util.List;
 import java.util.Objects;
@@ -148,9 +149,17 @@ public record AprobarBorradorComando(
    * @param seVeEn la foto que la retrata junto con otros tonos, cuando no tiene foto propia: la
    *     camiseta negra que sale con la blanca en la foto 1 (ADR-0082). Elegir ese tono en la ficha
    *     lleva a esa foto. Nula = se ve en la de todos, sin que la ficha se mueva
+   * @param referencia el SKU con que el proveedor vende esta prenda: el del pie de su foto en un
+   *     álbum (13 de octubre de 2026). Queda en sus variantes, para que el proveedor la pueda
+   *     agotar sin agotar las demás. Nula si no tiene
    */
   public record PrendaAprobada(
-      int numero, String tono, String colorHex, List<String> tallas, UUID seVeEn) {
+      int numero,
+      String tono,
+      String colorHex,
+      List<String> tallas,
+      UUID seVeEn,
+      String referencia) {
     public PrendaAprobada {
       if (numero < 1) {
         throw new IllegalArgumentException("Las prendas se numeran desde 1.");
@@ -158,6 +167,14 @@ public record AprobarBorradorComando(
       tono = tono == null || tono.isBlank() ? null : tono.strip();
       colorHex = colorHex == null || colorHex.isBlank() ? null : colorHex.strip();
       tallas = tallas == null ? null : tallas.stream().map(String::strip).toList();
+      // Como se compara al ingerir: un SKU escrito de otra forma no casaría nunca con su agotado.
+      referencia = ProductoExtraido.normalizarCodigo(referencia);
+    }
+
+    /** Una prenda sin SKU del proveedor. */
+    public PrendaAprobada(
+        int numero, String tono, String colorHex, List<String> tallas, UUID seVeEn) {
+      this(numero, tono, colorHex, tallas, seVeEn, null);
     }
 
     /** Una prenda que no dice en qué foto se ve. */

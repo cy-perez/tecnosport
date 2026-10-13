@@ -4,7 +4,6 @@ import co.tecnosport.api.application.catalogo.RepositorioProductos;
 import co.tecnosport.api.domain.carrito.Carrito;
 import co.tecnosport.api.domain.carrito.LineaCarrito;
 import co.tecnosport.api.domain.catalogo.EstadoProducto;
-import co.tecnosport.api.domain.catalogo.EstadoVariante;
 import co.tecnosport.api.domain.catalogo.Producto;
 import co.tecnosport.api.domain.catalogo.Variante;
 import co.tecnosport.api.domain.compartido.Dinero;
@@ -70,7 +69,7 @@ public final class CotizarCarrito {
         .buscarPorVarianteId(varianteId)
         .filter(producto -> producto.estado() == EstadoProducto.PUBLICADO)
         .flatMap(producto -> variante(producto, varianteId))
-        .filter(variante -> variante.estado() == EstadoVariante.ACTIVA)
+        .filter(Variante::seVende)
         .map(Variante::precio);
   }
 

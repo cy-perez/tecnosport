@@ -5,7 +5,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -13,6 +12,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.regex.Pattern;
 
 /**
  * Reparte las fotos de una publicación entre sus productos con lo que se leyó en ellas ({@link
@@ -27,13 +27,15 @@ import java.util.UUID;
  *       no le toca ninguna foto, ese producto se queda con todas: un borrador sin fotos no se puede
  *       aprobar, y uno con fotos de más se corrige en el panel.
  *   <li><b>Un texto y un álbum</b> —La Riverah, «Camisetas oversize para caballero» con trece fotos
- *       de trece camisetas—: <b>cada SKU del pie impreso es un producto</b>, con el texto del
- *       anuncio y sus tallas ({@link #disenos}). <b>Sin SKU no se parte</b>, aunque el lector vea
- *       diseños distintos: su etiqueta no es estable, y lo normal es un modelo en varios colores.
- *       Una foto que el lector no leyó —sin archivo, ilegible, o que el modelo no devolvió— no es
- *       un producto: es de todos, como la foto sin código del caso de arriba. Un diseño no hereda
- *       el código del texto: con el mismo código, el segundo se descartaría por «la misma
- *       referencia» y sus fotos quedarían perdidas en el primero.
+ *       de trece camisetas—: <b>el álbum es un solo producto, y cada SKU del pie impreso es una
+ *       prenda de él</b>, con sus fotos y sus tallas ({@link #disenosDelAlbum}). Decidido por el
+ *       negocio el 13 de octubre de 2026: hasta ese día cada SKU era un producto, y un anuncio de
+ *       veintitrés polos dejaba veintitrés borradores con el mismo texto y el mismo precio. El
+ *       producto no lleva el código del texto ni el de ningún SKU: cada SKU es de su prenda, y la
+ *       aprobación se lo deja a su variante para que el proveedor la pueda agotar sola. <b>Sin SKU
+ *       no hay prendas que proponer</b>: la etiqueta del lector no es estable, y lo normal es un
+ *       modelo en varios colores. Una foto que el lector no leyó —sin archivo, ilegible, o que el
+ *       modelo no devolvió— no es de ningún diseño: vale para todos.
  *   <li><b>Lo demás</b>: el reparto de antes, todas las fotos para todos.
  * </ul>
  *
@@ -66,10 +68,10 @@ public final class RepartoDeFotos {
       return porCodigo(productos, fotos, lectura);
     }
     List<List<Integer>> disenos = disenos(fotos, lectura);
-    if (disenos.size() > 1) {
-      return conSuMarca(porDiseno(productos.getFirst(), fotos, lectura, disenos), fotos, lectura);
-    }
     List<ProductoRepartido> porMarca = porMarca(productos.getFirst(), fotos, lectura);
+    if (disenos.size() > 1 && porMarca.isEmpty()) {
+      return List.of(comoAlbum(productos.getFirst(), fotos, lectura, disenos));
+    }
     if (!porMarca.isEmpty()) {
       return porMarca;
     }
@@ -156,49 +158,102 @@ public final class RepartoDeFotos {
     return repartidos;
   }
 
-  private static List<ProductoRepartido> porDiseno(
+  /**
+   * El álbum como un solo producto: con todas las fotos, sin código —cada SKU es de su prenda—, y
+   * con las tallas del texto más las de los pies que el texto no nombra.
+   */
+  private static ProductoRepartido comoAlbum(
       ProductoExtraido producto,
       List<UUID> fotos,
       LecturaDeFotos lectura,
       List<List<Integer>> disenos) {
-    List<Integer> sinDiseno = sinDiseno(fotos, disenos);
-    List<ProductoRepartido> repartidos = new ArrayList<>(disenos.size());
+    List<String> tallasDeLosPies = new ArrayList<>();
     for (List<Integer> posiciones : disenos) {
-      List<UUID> propias = new ArrayList<>();
-      for (int i = 0; i < fotos.size(); i++) {
-        if (posiciones.contains(i) || sinDiseno.contains(i)) {
-          propias.add(fotos.get(i));
-        }
-      }
-      List<LecturaDeFoto> leidas =
-          posiciones.stream().map(lectura::deLaFoto).flatMap(Optional::stream).toList();
+      posiciones.stream()
+          .map(lectura::deLaFoto)
+          .flatMap(Optional::stream)
+          .filter(l -> l.skuOpcional().isPresent())
+          .flatMap(l -> l.tallasDelPie().stream())
+          .filter(RepartoDeFotos::pareceTalla)
+          .filter(t -> tallasDeLosPies.stream().noneMatch(t::equalsIgnoreCase))
+          .forEach(tallasDeLosPies::add);
+    }
+    return new ProductoRepartido(
+        producto.comoAlbum(tallasDeLosPies),
+        fotos,
+        new FotosDelProducto(
+            Set.of(),
+            tonosSugeridos(fotos, lectura, fotos),
+            lectura.jsonCrudo(),
+            null,
+            disenosDelAlbum(fotos, lectura).stream().map(DisenoDeAlbum::sku).toList()),
+        Respaldo.TEXTO_IMPRESO,
+        fotos.getFirst());
+  }
+
+  /**
+   * Las prendas de un álbum: una por SKU del pie, con sus fotos —en el orden de la publicación— y
+   * las tallas de su pie. Es lo que el panel propone al aprobar, y cada SKU queda en su variante.
+   * Vacía si la publicación no es un álbum: menos de dos SKU distintos impresos.
+   *
+   * @param fotos las de la publicación, por mensaje y en orden, como las nombra la lectura
+   */
+  public static List<DisenoDeAlbum> disenosDelAlbum(List<UUID> fotos, LecturaDeFotos lectura) {
+    if (lectura == null || fotos == null || fotos.isEmpty()) {
+      return List.of();
+    }
+    List<List<Integer>> disenos = disenos(fotos, lectura);
+    if (disenos.size() < 2) {
+      return List.of();
+    }
+    List<DisenoDeAlbum> delAlbum = new ArrayList<>(disenos.size());
+    for (List<Integer> posiciones : disenos) {
       List<LecturaDeFoto> conSku =
-          leidas.stream().filter(l -> l.skuOpcional().isPresent()).toList();
-      String sku = conSku.getFirst().sku();
+          posiciones.stream()
+              .map(lectura::deLaFoto)
+              .flatMap(Optional::stream)
+              .filter(l -> l.skuOpcional().isPresent())
+              .toList();
       List<String> tallas = new ArrayList<>();
       conSku.forEach(
-          l -> l.tallasDelPie().stream().filter(t -> !tallas.contains(t)).forEach(tallas::add));
-      String etiqueta =
-          leidas.stream()
-              .map(LecturaDeFoto::diseno)
-              .filter(Objects::nonNull)
-              .findFirst()
-              .orElse(null);
-      repartidos.add(
-          new ProductoRepartido(
-              producto.comoDisenoDeAlbum(sku, tallas),
-              propias,
-              new FotosDelProducto(
-                  ajenas(fotos, propias),
-                  tonosSugeridos(fotos, lectura, propias),
-                  lectura.jsonCrudo(),
-                  etiqueta),
-              Respaldo.TEXTO_IMPRESO,
-              fotos.get(posiciones.getFirst()),
-              true,
-              conSku.stream().map(l -> fotos.get(l.posicion())).toList()));
+          l ->
+              l.tallasDelPie().stream()
+                  .filter(RepartoDeFotos::pareceTalla)
+                  .filter(t -> tallas.stream().noneMatch(t::equalsIgnoreCase))
+                  .forEach(tallas::add));
+      delAlbum.add(
+          new DisenoDeAlbum(
+              conSku.getFirst().sku(), tallas, posiciones.stream().map(fotos::get).toList()));
     }
-    return repartidos;
+    return List.copyOf(delAlbum);
+  }
+
+  /**
+   * Una talla de ropa o de calzado, y no lo que el lector juntó con ella: el pie de la camiseta
+   * RV102346 dice «S, M, L, XLNEGRO» en la lectura del 12 de octubre de 2026.
+   */
+  private static final Pattern TALLA =
+      Pattern.compile(
+          "^(?:\\d{1,2}|X{0,3}S|M|X{0,3}L|[2-6]XL|U|[ÚU]NICA)$",
+          Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE);
+
+  private static boolean pareceTalla(String talla) {
+    return talla != null && TALLA.matcher(talla.strip()).matches();
+  }
+
+  /**
+   * Una prenda de un álbum.
+   *
+   * @param sku el del pie impreso, el más reciente si trae dos
+   * @param tallas las del pie; vacía si no las dice
+   * @param fotos las suyas, en el orden de la publicación
+   */
+  public record DisenoDeAlbum(String sku, List<String> tallas, List<UUID> fotos) {
+    public DisenoDeAlbum {
+      Objects.requireNonNull(sku, "Un diseño del álbum tiene su SKU.");
+      tallas = List.copyOf(tallas);
+      fotos = List.copyOf(fotos);
+    }
   }
 
   /**
@@ -253,42 +308,6 @@ public final class RepartoDeFotos {
   }
 
   /**
-   * En un álbum cada SKU ya es un producto; si el texto nombraba varias marcas, cada diseño lleva
-   * en el título la que se lee en sus fotos, y no las cuatro del anuncio.
-   */
-  private static List<ProductoRepartido> conSuMarca(
-      List<ProductoRepartido> repartidos, List<UUID> fotos, LecturaDeFotos lectura) {
-    List<ProductoRepartido> conMarca = new ArrayList<>(repartidos.size());
-    for (ProductoRepartido repartido : repartidos) {
-      ProductoExtraido producto = repartido.producto();
-      if (producto.marcas().size() < 2) {
-        conMarca.add(repartido);
-        continue;
-      }
-      Set<String> vistas = new LinkedHashSet<>();
-      for (int i = 0; i < fotos.size(); i++) {
-        if (repartido.fotos().contains(fotos.get(i))
-            && !repartido.reparto().ajenas().contains(fotos.get(i))) {
-          marcaUnica(producto, lectura.deLaFoto(i)).ifPresent(vistas::add);
-        }
-      }
-      conMarca.add(
-          vistas.size() == 1
-              ? new ProductoRepartido(
-                  producto.conMarca(vistas.iterator().next()),
-                  repartido.fotos(),
-                  repartido.reparto(),
-                  repartido.respaldo(),
-                  repartido.exclusiva(),
-                  repartido.disenoDeAlbum(),
-                  repartido.conSuCodigo(),
-                  repartido.compartidas())
-              : repartido);
-    }
-    return conMarca;
-  }
-
-  /**
    * La única de las marcas del texto que se lee en la foto; vacía si no se lee ninguna o varias.
    */
   private static Optional<String> marcaUnica(
@@ -301,12 +320,12 @@ public final class RepartoDeFotos {
   }
 
   /**
-   * Las posiciones agrupadas por producto, en el orden de su primera foto. <b>Un producto por
-   * SKU</b> (decidido el 10 de octubre de 2026): cada SKU del pie es una prenda que el proveedor
-   * vende aparte, con sus propias tallas, y es lo único del álbum que no cambia de una corrida del
-   * lector a otra. Agrupar por la etiqueta de diseño juntaba unas veces y otras no los jeans y las
-   * bermudas que se parecen, en tres corridas seguidas contra la verdad. El costo: un diseño en
-   * seis colores con un SKU por color son seis productos.
+   * Las posiciones agrupadas por SKU, en el orden de su primera foto. Cada SKU del pie es una
+   * prenda que el proveedor vende aparte, con sus propias tallas, y es lo único del álbum que no
+   * cambia de una corrida del lector a otra (10 de octubre de 2026). Agrupar por la etiqueta de
+   * diseño juntaba unas veces y otras no los jeans y las bermudas que se parecen, en tres corridas
+   * seguidas contra la verdad. Desde el 13 de octubre de 2026 cada grupo es una prenda del producto
+   * del álbum, no un producto aparte.
    *
    * <p><b>Sin SKU no se parte nada</b> (decidido el 11 de octubre de 2026). La etiqueta del lector
    * es texto libre y cambia por detalles: el tenis en tres combinaciones de Imperio Wicho salió en
@@ -318,7 +337,7 @@ public final class RepartoDeFotos {
    *
    * <p>La etiqueta solo sirve para pegar una foto sin SKU al único grupo cuyas fotos llevan su
    * misma etiqueta: la camiseta en otro color que el proveedor fotografió sin el pie. Si no
-   * coincide con ninguno, o con varios, no dice de qué producto es ({@link #sinDiseno}).
+   * coincide con ninguno, o con varios, no dice de qué prenda es: vale para todas.
    */
   private static List<List<Integer>> disenos(List<UUID> fotos, LecturaDeFotos lectura) {
     Map<String, List<Integer>> porSku = new LinkedHashMap<>();
@@ -358,18 +377,6 @@ public final class RepartoDeFotos {
 
   private static Optional<String> etiquetaDe(LecturaDeFoto leida) {
     return Optional.ofNullable(leida.diseno()).map(d -> d.toLowerCase(Locale.ROOT));
-  }
-
-  /** Las fotos que no quedaron en ningún grupo: en un álbum son de todos. */
-  private static List<Integer> sinDiseno(List<UUID> fotos, List<List<Integer>> disenos) {
-    List<Integer> sin = new ArrayList<>();
-    for (int i = 0; i < fotos.size(); i++) {
-      int posicion = i;
-      if (disenos.stream().noneMatch(d -> d.contains(posicion))) {
-        sin.add(i);
-      }
-    }
-    return sin;
   }
 
   private static Set<UUID> ajenas(List<UUID> fotos, List<UUID> propias) {

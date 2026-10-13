@@ -1353,7 +1353,7 @@ describe('EditarProductoAdminPage', () => {
     });
 
     it('con la galería llena, no ofrece el formulario de agregar', async () => {
-      const llena = Array.from({ length: 8 }, (_, i) => imagenDeGaleria(i));
+      const llena = Array.from({ length: 9 }, (_, i) => imagenDeGaleria(i));
       await renderPagina(new RepositorioProductosAdminFalso(productoDePrueba(llena)));
       await screen.findByDisplayValue('Morral urbano');
 
@@ -1392,7 +1392,7 @@ describe('EditarProductoAdminPage', () => {
     });
 
     it('con la galería llena lo dice, en vez de apagar el formulario en silencio', async () => {
-      const llena = Array.from({ length: 8 }, (_, i) => imagenDeGaleria(i));
+      const llena = Array.from({ length: 9 }, (_, i) => imagenDeGaleria(i));
       await renderPagina(new RepositorioProductosAdminFalso(productoDePrueba(llena)));
       await screen.findByDisplayValue('Morral urbano');
 

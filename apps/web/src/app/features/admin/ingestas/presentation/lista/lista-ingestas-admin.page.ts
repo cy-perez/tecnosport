@@ -19,6 +19,7 @@ import { CLAVE_INGESTAS_ADMIN } from '../../application/listar-ingestas.consulta
 import { fechaConHora } from '../../../../../core/i18n/fecha-colombia';
 import { usarTraductor } from '../../../../../core/i18n/traductor';
 import { usarFoco } from '../../../../../shared/foco/foco';
+import { formatearPrecio } from '../../../../../shared/ts-precio/formato-precio';
 import { TsBoton } from '../../../../../shared/ui/boton/ts-boton';
 import { OpcionSelect, TsSelect } from '../../../../../shared/ui/select/ts-select';
 import { TsSelectControl } from '../../../../../shared/ui/select/ts-select-control';
@@ -425,11 +426,14 @@ export class ListaIngestasAdminPage {
 
   protected textoDelMotivo(publicacion: PublicacionCerrada): string {
     const traducir = this.traducir();
-    // El tipo excluido llega como el nombre del enum —«PANTALON»—: se lee como «Pantalón».
+    // El tipo excluido llega como el nombre del enum —«PANTALON»—: se lee como «Pantalón». El
+    // precio sobre el tope llega en pesos, sin separadores: se lee como un precio.
     const dato =
       publicacion.motivo === 'TIPO_EXCLUIDO' && publicacion.dato
         ? traducir('admin.borradores.tipos.' + publicacion.dato)
-        : (publicacion.dato ?? '');
+        : publicacion.motivo === 'PRECIO_SOBRE_TOPE' && publicacion.dato
+          ? formatearPrecio(Number(publicacion.dato), 'COP', this.transloco.activeLang())
+          : (publicacion.dato ?? '');
     return traducir(claveDelMotivo(publicacion), { dato });
   }
 

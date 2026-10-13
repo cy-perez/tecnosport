@@ -5,6 +5,7 @@ import {
   BorradoresPaginados,
   EditarBorrador,
   FotoBorrador,
+  PrendaDelAlbum,
 } from '../domain/borrador.model';
 import { RepositorioBorradoresAdmin } from '../domain/repositorio-borradores-admin.puerto';
 
@@ -59,6 +60,7 @@ export class RepositorioBorradoresAdminFalso implements RepositorioBorradoresAdm
   readonly movidas: { id: string; mensajeId: string; destinoId: string }[] = [];
   /** Los otros borradores de la publicación que devuelve `obtener`. */
   hermanos: { id: string; titulo: string; mismoDiseno: boolean }[] = [];
+  prendasDelAlbum: PrendaDelAlbum[] = [];
   readonly uniones: { id: string; otroId: string }[] = [];
   /** Si se pone, `unir` revienta con esto. */
   falloAlUnir: unknown = null;
@@ -91,7 +93,13 @@ export class RepositorioBorradoresAdminFalso implements RepositorioBorradoresAdm
     if (!borrador) {
       throw new Error('no existe');
     }
-    return { borrador, fotos: this.fotos, textos: this.textos, hermanos: this.hermanos };
+    return {
+      borrador,
+      fotos: this.fotos,
+      textos: this.textos,
+      hermanos: this.hermanos,
+      prendasDelAlbum: this.prendasDelAlbum,
+    };
   }
 
   async editar(id: string, cambios: EditarBorrador): Promise<Borrador> {

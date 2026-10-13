@@ -44,8 +44,10 @@ Reglas, en orden de importancia:
    separan con « - ». Si el mensaje marca la réplica pero no nombra marca ni modelo, no hay
    «estilo» que escribir: el título es el artículo y la palabra «importado» al final.
    «*Pantalón Jogger para dama* ✨Calidad 1.1» es «Pantalón jogger para dama importado».
-   «AA» también marca una réplica, como «AAA»: «Jeans AA plus para caballero» es «Jean plus para
-   caballero importado».
+   «AA» también marca una réplica, como «AAA»: «*Jeans AA para caballero* ⭕️Marca Levis» es «Jean
+   estilo Levi's para caballero», y sin marca, «Jeans AA para dama» es «Jean para dama importado».
+   El título no lleva palabras que el anuncio no escribe: «plus», «oversize» o «licrado» solo si
+   el anuncio las dice.
    Un polo —una camisa con cuello, «tipo polo», «camiseta polo», «NUEVA POLO 1.1»— se titula
    «Polo» y lo demás, nunca «Camiseta» ni «Camisa»: «Polo importado» si es réplica, y con «estilo»
    y la marca solo si la nombra: «*NUEVA POLO 1.1🍯* *MARCA P U M A BMW*» es «Polo importado estilo

@@ -78,6 +78,7 @@ import {
   olvidarFotoDePrendas,
   prendasEnUso,
   prendaSinTallas,
+  prendasDelAlbumSugeridas,
   prendasSugeridas,
   problemaDePrendas,
   ProblemaDePrendas,
@@ -224,6 +225,8 @@ export class DetalleBorradorAdminPage {
   protected readonly moviendoFoto = computed(() => this.mover.isPending());
   /** Los otros borradores en revisión de la publicación: a donde se puede mover una foto. */
   protected readonly hermanos = computed(() => this.consulta.data()?.hermanos ?? []);
+  /** Si la publicación es un álbum, una prenda por SKU impreso (13 de octubre de 2026). */
+  protected readonly prendasDelAlbum = computed(() => this.consulta.data()?.prendasDelAlbum ?? []);
   /** El borrador al que pasó la última foto movida, para enlazarlo desde el aviso. */
   protected readonly fotoMovida = signal<string | null>(null);
   protected readonly errorMover = signal<string | null>(null);
@@ -588,6 +591,19 @@ export class DetalleBorradorAdminPage {
         return;
       }
       this.tonosSugeridosAplicados = borrador.id;
+      const album = this.prendasDelAlbum();
+      if (borradorEditable(borrador) && this.prendas() === SIN_PRENDAS && album.length > 0) {
+        // Un álbum: cada SKU es una prenda con sus fotos y las tallas de su pie, y la tabla de
+        // color y talla se abre ya llena con ellas si alguna no viene en todas.
+        const tallas = borrador.tallas.tipo === 'LISTA' ? borrador.tallas.valores : [];
+        const sugeridas = prendasDelAlbumSugeridas(album, fotos, paleta, tallas);
+        this.prendas.set(sugeridas);
+        this.tallasPorColor.set(
+          tallas.length > 1 &&
+            Object.values(sugeridas.tallasPorPrenda).some((suyas) => suyas.length < tallas.length),
+        );
+        return;
+      }
       if (borradorEditable(borrador) && this.prendas() === SIN_PRENDAS) {
         // Los tonos de la foto de todos y los que nombra el texto llegan como prendas sin foto
         // propia; y si el anuncio reparte las tallas por tono, la tabla de color y talla se abre
@@ -849,6 +865,11 @@ export class DetalleBorradorAdminPage {
   protected readonly ofrecerTallasPorColor = computed(
     () => this.tallasDelProducto().length > 1 && this.variantesQueSeCrean().length > 0,
   );
+
+  /** El SKU del proveedor de una prenda de un álbum, o nulo si no es de un álbum. */
+  protected referenciaDe(prenda: number): string | null {
+    return this.prendas().referenciaPorPrenda[prenda] ?? null;
+  }
 
   /** El atajo del producto que viene en una sola prenda fotografiada desde varios ángulos. */
   protected unaSolaPrenda(): void {
@@ -1363,6 +1384,7 @@ export class DetalleBorradorAdminPage {
               tono,
               colorHex: this.hexDe(tono),
               seVeEn: variante.fotos.length === 0 ? this.fotoEnQueSeVe(variante.prenda) : null,
+              referencia: prendas.referenciaPorPrenda[variante.prenda] ?? null,
               // Desmarcada la casilla, cada color va en todas las tallas, como ella promete: con
               // nulo, la API volvería a recortarlas por lo que el anuncio dijo de cada tono.
               tallas: conTallasPorColor

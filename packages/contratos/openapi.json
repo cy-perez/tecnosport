@@ -434,6 +434,12 @@
             },
             "type" : "array"
           },
+          "prendasDelAlbum" : {
+            "items" : {
+              "$ref" : "#/components/schemas/PrendaDelAlbumRespuesta"
+            },
+            "type" : "array"
+          },
           "textos" : {
             "items" : {
               "type" : "string"
@@ -441,6 +447,9 @@
             "type" : "array"
           }
         },
+        "required" : [
+          "prendasDelAlbum"
+        ],
         "type" : "object"
       },
       "BorradorRespuesta" : {
@@ -3117,6 +3126,9 @@
             "format" : "int32",
             "type" : "integer"
           },
+          "referencia" : {
+            "type" : "string"
+          },
           "seVeEn" : {
             "format" : "uuid",
             "type" : "string"
@@ -3134,6 +3146,32 @@
         "required" : [
           "numero",
           "tono"
+        ],
+        "type" : "object"
+      },
+      "PrendaDelAlbumRespuesta" : {
+        "properties" : {
+          "fotos" : {
+            "items" : {
+              "format" : "uuid",
+              "type" : "string"
+            },
+            "type" : "array"
+          },
+          "referencia" : {
+            "type" : "string"
+          },
+          "tallas" : {
+            "items" : {
+              "type" : "string"
+            },
+            "type" : "array"
+          }
+        },
+        "required" : [
+          "fotos",
+          "referencia",
+          "tallas"
         ],
         "type" : "object"
       },

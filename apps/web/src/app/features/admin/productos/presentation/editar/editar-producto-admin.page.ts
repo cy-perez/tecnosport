@@ -85,7 +85,7 @@ const TIPOS_DE_IMAGEN_SOPORTADOS = ['image/jpeg', 'image/png', 'image/webp'];
  * para decirlo en la ayuda y para no ofrecer un formulario que va a responder 409. Si un día
  * divergen, el que decide sigue siendo el servidor.
  */
-const TOPE_DE_GALERIA = 8;
+const TOPE_DE_GALERIA = 9;
 
 /** El valor de la opción «Otra talla»; ninguna escala tiene una talla así. */
 const OTRA_TALLA = '__otra__';

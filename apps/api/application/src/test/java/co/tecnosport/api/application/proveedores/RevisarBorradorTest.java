@@ -428,4 +428,65 @@ class RevisarBorradorTest {
         detalle.fotos().stream().allMatch(f -> f.tonosVistos().isEmpty()),
         "el borrador de la preparación también conserva la foto");
   }
+
+  /** Un álbum: un SKU en el pie de cada una de las dos fotos de la publicación. */
+  private static InterpreteDeLecturaDeFotos albumDeDosSku() {
+    return json ->
+        Optional.of(
+            new LecturaDeFotos(
+                true,
+                List.of(
+                    new LecturaDeFotos.LecturaDeFoto(
+                        0, List.of(), "RV1", List.of("S", "M"), List.of("negro"), "msm"),
+                    new LecturaDeFotos.LecturaDeFoto(
+                        1, List.of(), "RV2", List.of("L"), List.of("blanco"), "boss")),
+                json));
+  }
+
+  /**
+   * El álbum de La Riverah es un borrador (13 de octubre de 2026), y el panel propone una prenda
+   * por SKU con sus fotos y las tallas de su pie.
+   */
+  @Test
+  void unAlbumTraeUnaPrendaPorSku() {
+    BorradorProducto leido = conLectura(Set.of());
+    borradores.porId.remove(borrador.id());
+
+    VerBorrador.DetalleDeBorrador detalle =
+        new VerBorrador(borradores, publicaciones, mensajes, almacen, albumDeDosSku())
+            .ejecutar(leido.id());
+
+    assertEquals(
+        List.of(
+            new VerBorrador.PrendaDelAlbum("RV1", List.of("S", "M"), List.of(foto.id())),
+            new VerBorrador.PrendaDelAlbum("RV2", List.of("L"), List.of(omitida.id()))),
+        detalle.prendasDelAlbum());
+  }
+
+  /** Un diseño cuyas fotos el borrador descartó todas ya no es una prenda suya. */
+  @Test
+  void unaPrendaDelAlbumSinFotosEnElBorradorNoSePropone() {
+    BorradorProducto leido = conLectura(Set.of(omitida.id()));
+    borradores.porId.remove(borrador.id());
+
+    VerBorrador.DetalleDeBorrador detalle =
+        new VerBorrador(borradores, publicaciones, mensajes, almacen, albumDeDosSku())
+            .ejecutar(leido.id());
+
+    assertEquals(
+        List.of("RV1"),
+        detalle.prendasDelAlbum().stream().map(VerBorrador.PrendaDelAlbum::referencia).toList());
+  }
+
+  @Test
+  void sinAlbumNoHayPrendasDelAlbum() {
+    BorradorProducto leido = conLectura(Set.of());
+    borradores.porId.remove(borrador.id());
+
+    VerBorrador.DetalleDeBorrador detalle =
+        new VerBorrador(borradores, publicaciones, mensajes, almacen, queVio(0, List.of("negro")))
+            .ejecutar(leido.id());
+
+    assertTrue(detalle.prendasDelAlbum().isEmpty());
+  }
 }

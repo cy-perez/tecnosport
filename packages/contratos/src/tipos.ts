@@ -2353,6 +2353,7 @@ export interface components {
             borrador?: components["schemas"]["BorradorRespuesta"];
             fotos?: components["schemas"]["FotoRespuesta"][];
             hermanos?: components["schemas"]["HermanoRespuesta"][];
+            prendasDelAlbum: components["schemas"]["PrendaDelAlbumRespuesta"][];
             textos?: string[];
         };
         BorradorRespuesta: {
@@ -3271,10 +3272,16 @@ export interface components {
             colorHex?: string;
             /** Format: int32 */
             numero: number;
+            referencia?: string;
             /** Format: uuid */
             seVeEn?: string;
             tallas?: string[];
             tono: string;
+        };
+        PrendaDelAlbumRespuesta: {
+            fotos: string[];
+            referencia: string;
+            tallas: string[];
         };
         Producto: {
             /** Format: date-time */

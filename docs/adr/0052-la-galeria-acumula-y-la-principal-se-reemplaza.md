@@ -62,6 +62,10 @@ palabras.
 
 ### 4. Tope de ocho, y no es un dato de negocio
 
+**Subió a nueve el 13 de octubre de 2026** (`ADR-0084`): el negocio pidió diez fotos por producto,
+la principal y nueve de galería, para los álbumes de La Riverah. Lo que sigue explica por qué hay un
+tope, y eso no cambió.
+
 `Producto.TOPE_DE_GALERIA` es una **barandilla**. Las imágenes se suben una por una desde el panel y
 desde un script, y sin tope un bucle equivocado llena la ficha y el bucket sin que nada chille: el
 precio de eso es espacio pagado todos los meses y una ficha que nadie puede recorrer. Ocho es holgado

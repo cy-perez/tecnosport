@@ -247,6 +247,19 @@ export interface HermanoBorrador {
   readonly mismoDiseno: boolean;
 }
 
+/**
+ * Una prenda de un álbum de La Riverah (13 de octubre de 2026): un diseño con el SKU de su pie, sus
+ * fotos y sus tallas. La aprobación deja el SKU en sus variantes, para que el proveedor la pueda
+ * agotar sin agotar las demás.
+ */
+export interface PrendaDelAlbum {
+  readonly referencia: string;
+  /** Las de su pie; vacía si no las dice. */
+  readonly tallas: readonly string[];
+  /** Sus fotos, por `mensajeId` y en orden. */
+  readonly fotos: readonly string[];
+}
+
 export interface BorradorDetalle {
   readonly borrador: Borrador;
   readonly fotos: readonly FotoBorrador[];
@@ -254,6 +267,8 @@ export interface BorradorDetalle {
   readonly textos: readonly string[];
   /** El otro producto del conjunto, los otros diseños del álbum; vacío si no hay. */
   readonly hermanos: readonly HermanoBorrador[];
+  /** Si la publicación es un álbum, una prenda por SKU; vacío si no. */
+  readonly prendasDelAlbum: readonly PrendaDelAlbum[];
 }
 
 export interface BorradoresPaginados {
@@ -329,14 +344,16 @@ export interface PrendaAprobada {
    * Nula = en la de todos.
    */
   readonly seVeEn: string | null;
+  /** El SKU del proveedor, si es la prenda de un álbum; nulo si no. */
+  readonly referencia: string | null;
 }
 
 /**
- * Las fotos que caben en un producto: la principal más las ocho de galería que admite el catálogo
- * (`Producto.TOPE_DE_GALERIA` en la API). Una publicación de ropa trae doce o catorce, así que
- * quien aprueba elige cuáles entran.
+ * Las fotos que caben en un producto: la principal más las nueve de galería que admite el catálogo
+ * (`Producto.TOPE_DE_GALERIA` en la API; subió de ocho a nueve el 13 de octubre de 2026). Una
+ * publicación de ropa trae doce o catorce, así que quien aprueba elige cuáles entran.
  */
-export const MAXIMO_FOTOS_POR_PRODUCTO = 9;
+export const MAXIMO_FOTOS_POR_PRODUCTO = 10;
 
 export function borradorEditable(borrador: Borrador): boolean {
   return borrador.estado === 'EN_REVISION';

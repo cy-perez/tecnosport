@@ -42,6 +42,11 @@ export interface AsignacionDePrendas {
    * otros tonos. Sin entrada = se ve en la de todos, y la ficha no se mueve al elegirla.
    */
   readonly fotoDePrenda: Readonly<Record<number, string>>;
+  /**
+   * El SKU del proveedor de cada prenda de un álbum, por su número (13 de octubre de 2026): la
+   * aprobación lo deja en sus variantes. Sin entrada = la prenda no es de un álbum.
+   */
+  readonly referenciaPorPrenda: Readonly<Record<number, string>>;
 }
 
 export const SIN_PRENDAS: AsignacionDePrendas = {
@@ -51,6 +56,7 @@ export const SIN_PRENDAS: AsignacionDePrendas = {
   pistaPorPrenda: {},
   tallasPorPrenda: {},
   fotoDePrenda: {},
+  referenciaPorPrenda: {},
 };
 
 /** Los números de prenda que existen —con fotos o agregados aparte—, de menor a mayor. */
@@ -92,6 +98,7 @@ function sinPrendasVacias(asignacion: AsignacionDePrendas): AsignacionDePrendas 
     pistaPorPrenda: deLasQueQuedan(asignacion.pistaPorPrenda, quedan),
     tallasPorPrenda: deLasQueQuedan(asignacion.tallasPorPrenda, quedan),
     fotoDePrenda: deLasQueQuedan(asignacion.fotoDePrenda, quedan),
+    referenciaPorPrenda: deLasQueQuedan(asignacion.referenciaPorPrenda, quedan),
   };
 }
 
@@ -391,11 +398,14 @@ export function problemaDePrendas(
     elegidas.map((id) => asignacion.prendaPorFoto[id]).filter((p) => p !== undefined),
   );
   for (const [id, prenda] of Object.entries(asignacion.prendaPorFoto)) {
+    // La prenda de un álbum que no entra no es un error: el álbum trae más diseños que fotos caben
+    // en un producto, y la que se queda fuera simplemente no se crea.
     if (
       !entran.has(id) &&
       !conFotosDentro.has(prenda) &&
       !asignacion.aparte.includes(prenda) &&
-      asignacion.tonoPorPrenda[prenda]
+      asignacion.tonoPorPrenda[prenda] &&
+      asignacion.referenciaPorPrenda[prenda] === undefined
     ) {
       return { tipo: 'FUERA', mensajeId: id };
     }
@@ -550,6 +560,78 @@ export function prendasSugeridas(
     }
   }
   return asignacion;
+}
+
+/** Una prenda de un álbum como la lee la propuesta: su SKU, sus fotos y las tallas de su pie. */
+export interface PrendaDelAlbumParaProponer {
+  readonly referencia: string;
+  readonly tallas: readonly string[];
+  readonly fotos: readonly string[];
+}
+
+/**
+ * Las prendas de un álbum de La Riverah (13 de octubre de 2026): el anuncio es un solo producto y
+ * cada SKU impreso es una prenda, con sus fotos, el color que la lectura vio en ellas si la paleta
+ * lo tiene, las tallas de su pie y su SKU. Una foto que no es de ningún SKU vale para todas.
+ *
+ * <p>Un diseño sin color que la paleta reconozca llega sin color y con la pista de la lectura:
+ * quien aprueba lo elige, como con cualquier prenda.
+ *
+ * @param aprobadas las tallas del producto: las de cada prenda se quedan entre ellas
+ */
+export function prendasDelAlbumSugeridas(
+  album: readonly PrendaDelAlbumParaProponer[],
+  fotos: readonly FotoParaProponer[],
+  paleta: readonly ColorParaProponer[],
+  aprobadas: readonly string[],
+): AsignacionDePrendas {
+  const porClave = new Map<string, string>();
+  for (const color of paleta) {
+    if (color.nombreEn) {
+      porClave.set(claveDeColor(color.nombreEn), color.nombre);
+    }
+  }
+  for (const color of paleta) {
+    porClave.set(claveDeColor(color.nombre), color.nombre);
+  }
+  const sugeridoDe = new Map(fotos.map((foto) => [foto.mensajeId, foto.tonoSugerido]));
+  const presentes = new Set(fotos.map((foto) => foto.mensajeId));
+  const prendaPorFoto: Record<string, number> = {};
+  const tonoPorPrenda: Record<number, string> = {};
+  const pistaPorPrenda: Record<number, string> = {};
+  const tallasPorPrenda: Record<number, readonly string[]> = {};
+  const referenciaPorPrenda: Record<number, string> = {};
+  let numero = 0;
+  for (const prenda of album) {
+    const suyas = prenda.fotos.filter((id) => presentes.has(id));
+    if (suyas.length === 0) {
+      continue;
+    }
+    numero++;
+    for (const id of suyas) {
+      prendaPorFoto[id] = numero;
+    }
+    const pista = suyas.map((id) => sugeridoDe.get(id)).find((tono) => !!tono) ?? null;
+    tonoPorPrenda[numero] = pista ? (porClave.get(claveDeColor(pista)) ?? '') : '';
+    if (pista) {
+      pistaPorPrenda[numero] = pista;
+    }
+    const comunes = aprobadas.filter((talla) =>
+      prenda.tallas.some((suya) => suya.toLowerCase() === talla.toLowerCase()),
+    );
+    if (comunes.length > 0) {
+      tallasPorPrenda[numero] = comunes;
+    }
+    referenciaPorPrenda[numero] = prenda.referencia;
+  }
+  return {
+    ...SIN_PRENDAS,
+    prendaPorFoto,
+    tonoPorPrenda,
+    pistaPorPrenda,
+    tallasPorPrenda,
+    referenciaPorPrenda,
+  };
 }
 
 /**

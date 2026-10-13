@@ -2,6 +2,7 @@ package co.tecnosport.api.application.proveedores;
 
 import co.tecnosport.api.application.catalogo.RepositorioProductos;
 import co.tecnosport.api.application.compartido.Reloj;
+import co.tecnosport.api.application.proveedores.RepositorioProductosDeProveedor.PrendaDeProveedor;
 import co.tecnosport.api.domain.catalogo.LineaCatalogo;
 import co.tecnosport.api.domain.catalogo.Producto;
 import co.tecnosport.api.domain.compartido.Dinero;
@@ -21,6 +22,7 @@ import co.tecnosport.api.domain.proveedores.ProductoExtraido;
 import co.tecnosport.api.domain.proveedores.Proveedor;
 import co.tecnosport.api.domain.proveedores.PublicacionProveedor;
 import co.tecnosport.api.domain.proveedores.TextoDeAnuncio;
+import co.tecnosport.api.domain.proveedores.TopeDeCostoPorTipo;
 import co.tecnosport.api.domain.proveedores.TopesDeGanancia;
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -86,6 +88,12 @@ import java.util.UUID;
  * tipo, o la blusa del anuncio, se agota cuando el proveedor lo anuncia agotado, porque dejarlo a
  * la venta es venderle a alguien lo que no hay.
  *
+ * <h2>Lo que cuesta de más (13 de octubre de 2026)</h2>
+ *
+ * <p>El pantalón, el jogger o el short que el proveedor anuncia por encima de lo que se le paga por
+ * su tipo ({@link TopeDeCostoPorTipo}) se descarta, solo ese producto y no los demás del anuncio, y
+ * sin renovar: si ya estuviera en el catálogo, a ese precio ya no se le compra. Un agotado sí pasa.
+ *
  * <h2>Los sets (12 de octubre de 2026)</h2>
  *
  * <p>A un proveedor que arma sets ({@link Proveedor#armaSets()}, hoy La Riverah) la prenda que
@@ -95,6 +103,13 @@ import java.util.UUID;
  * se reconoce entre los sets con el mismo acompañante: la foto es la de la prenda, y la prenda que
  * ya se vendiera sola se renovaría con el costo del set, o al revés. Un agotado de la prenda agota
  * también sus sets ({@code ADR-0083}).
+ *
+ * <h2>Las prendas de un álbum (13 de octubre de 2026)</h2>
+ *
+ * <p>El álbum de La Riverah es un solo producto, y el SKU de cada diseño quedó al aprobar en las
+ * variantes de su prenda. Un anuncio con ese SKU —«AGOTADO polo RV102376»— es de esa prenda: si
+ * viene agotado, sus variantes salen de la venta y las demás siguen; si se agotan todas, se agota
+ * el producto. Si viene sin agotar, la prenda vuelve a la venta y el producto se renueva.
  *
  * <p>Una renovación no crea un borrador para revisar: actualiza la última vista, reactiva el
  * producto si estaba oculto y deja una constancia {@code RENOVACION_APLICADA}. Un agotado sobre un
@@ -227,17 +242,26 @@ public final class ResolverBorrador {
       resoluciones.add(
           excluido.isPresent() && !evaluada.producto().estaAgotado()
               ? Resolucion.descartada(excluido.get())
-              : vieneEnElDeCaballero
+              : pasaDelTope(evaluada, textoDelAnuncio)
                   ? Resolucion.descartada(
-                      CierreDePublicacion.de(MotivoDePublicacion.VIENE_EN_CHAT_DE_CABALLERO))
-                  : resolverUno(
-                      publicacion,
-                      mensajes,
-                      proveedor,
-                      evaluada,
-                      textoDelAnuncio,
-                      fotosDe(publicacion, evaluada, evaluadas.size(), pHashes),
-                      huellasVisuales));
+                      new CierreDePublicacion(
+                          MotivoDePublicacion.PRECIO_SOBRE_TOPE,
+                          precioDeLaPrenda(
+                                  evaluada.producto(), evaluada.precioProveedor(), textoDelAnuncio)
+                              .valor()
+                              .toBigInteger()
+                              .toString()))
+                  : vieneEnElDeCaballero
+                      ? Resolucion.descartada(
+                          CierreDePublicacion.de(MotivoDePublicacion.VIENE_EN_CHAT_DE_CABALLERO))
+                      : resolverUno(
+                          publicacion,
+                          mensajes,
+                          proveedor,
+                          evaluada,
+                          textoDelAnuncio,
+                          fotosDe(publicacion, evaluada, evaluadas.size(), pHashes),
+                          huellasVisuales));
     }
     if (chat.deCaballero()) {
       rechazarLosDelChatGeneral(proveedor, textoDelAnuncio);
@@ -325,6 +349,29 @@ public final class ResolverBorrador {
     }
     PHash pHash = fotos.isEmpty() ? null : fotos.getFirst();
     Instant ahora = reloj.ahora();
+
+    // El SKU de una prenda de un álbum ya aprobado: el producto es el álbum, y lo que el proveedor
+    // agota o vuelve a anunciar es esa prenda sola. Y el álbum que vuelve con los mismos SKU es el
+    // mismo producto, empiece por la foto que empiece.
+    List<String> referencias =
+        codigo.map(List::of).orElseGet(() -> evaluada.reparto().referenciasDelAlbum());
+    if (!referencias.isEmpty()) {
+      Optional<Resolucion> deLasPrendas =
+          resolverPrendas(
+              publicacion,
+              proveedor,
+              evaluada,
+              extraido,
+              set.map(SetArmado::armado).orElse(null),
+              referencias,
+              huella,
+              pHash,
+              precio,
+              ahora);
+      if (deLasPrendas.isPresent()) {
+        return deLasPrendas.get();
+      }
+    }
 
     // Por la foto, solo entre los de su misma clase: la foto de un set es la de su prenda, y si no
     // la prenda sola que ya estuviera en el catálogo se renovaría con el costo del set, o al revés.
@@ -542,6 +589,109 @@ public final class ResolverBorrador {
     return new Resolucion(tipo, alertas, null);
   }
 
+  /**
+   * El anuncio de SKU que son prendas de un álbum ya aprobado (13 de octubre de 2026): el álbum es
+   * un solo producto y cada SKU quedó en sus variantes. Agotado, esas variantes dejan de venderse y
+   * las demás siguen; si no queda ninguna a la venta, se agota el producto. Si no viene agotado,
+   * las prendas vuelven a la venta y el producto se renueva.
+   *
+   * <p><b>El costo no se toca</b>: el anuncio de un SKU puede ser la prenda sola de un álbum que se
+   * aprobó como set, o al revés, y renovarle el costo con el de la otra clase lo dejaría mal. Un
+   * cambio de precio del álbum entero lo trae el álbum, que se reconoce por su foto. <b>Un anuncio
+   * más viejo que el último visto del producto no cambia nada</b>, como en el producto: dos lotes
+   * fuera de orden no pueden volver a poner a la venta lo que ya se agotó.
+   *
+   * @param referencias el SKU del anuncio, o los del álbum que se vuelve a publicar
+   * @return vacío si ningún SKU es de una prenda
+   */
+  private Optional<Resolucion> resolverPrendas(
+      PublicacionProveedor publicacion,
+      Proveedor proveedor,
+      ExtraccionEvaluada evaluada,
+      ProductoExtraido extraido,
+      ArmadoDeSet set,
+      List<String> referencias,
+      HuellaProveedor huella,
+      PHash pHash,
+      Dinero precio,
+      Instant ahora) {
+    Map<UUID, Producto> productos = new LinkedHashMap<>();
+    Map<UUID, List<PrendaDeProveedor>> prendasPorProducto = new LinkedHashMap<>();
+    for (String referencia : referencias) {
+      for (PrendaDeProveedor prenda :
+          productosDeProveedor.buscarPrendasPorReferencia(proveedor.id(), referencia)) {
+        Optional<Producto> producto =
+            Optional.ofNullable(productos.get(prenda.productoId()))
+                .or(() -> repositorioProductos.buscarPorId(prenda.productoId()));
+        if (producto.isEmpty()) {
+          continue;
+        }
+        productos.put(prenda.productoId(), producto.get());
+        prendasPorProducto
+            .computeIfAbsent(prenda.productoId(), id -> new ArrayList<>())
+            .add(prenda);
+      }
+    }
+    if (productos.isEmpty()) {
+      return Optional.empty();
+    }
+    for (Producto producto : productos.values()) {
+      boolean esViejo =
+          producto.vistoPorUltimaVez().map(publicacion.fecha()::isBefore).orElse(false);
+      List<PrendaDeProveedor> suyas = prendasPorProducto.get(producto.id());
+      if (extraido.estaAgotado()) {
+        if (esViejo) {
+          continue;
+        }
+        List<UUID> variantes = suyas.stream().flatMap(p -> p.variantes().stream()).toList();
+        productosDeProveedor.cambiarDisponibilidadDeVariantes(variantes, false);
+        // Lo que queda a la venta: todo lo del producto que se vendía, menos estas prendas.
+        PrendaDeProveedor primera = suyas.getFirst();
+        int seVendian =
+            primera.otrasALaVenta() + (primera.retirada() ? 0 : primera.variantes().size());
+        int seAgotan =
+            suyas.stream().filter(pr -> !pr.retirada()).mapToInt(pr -> pr.variantes().size()).sum();
+        if (seVendian - seAgotan <= 0) {
+          producto.marcarAgotadoPorProveedor(publicacion.fecha());
+        }
+      } else {
+        if (!esViejo) {
+          List<UUID> retiradas =
+              suyas.stream()
+                  .filter(PrendaDeProveedor::retirada)
+                  .flatMap(p -> p.variantes().stream())
+                  .toList();
+          if (!retiradas.isEmpty()) {
+            productosDeProveedor.cambiarDisponibilidadDeVariantes(retiradas, true);
+          }
+        }
+        producto.renovar(publicacion.fecha());
+      }
+      repositorioProductos.actualizar(producto);
+    }
+    Set<AlertaBorrador> alertas = EnumSet.noneOf(AlertaBorrador.class);
+    alertas.addAll(evaluada.alertas());
+    repositorioBorradores.guardar(
+        BorradorProducto.conSet(
+            BorradorProducto.renovacionAplicada(
+                publicacion.id(),
+                proveedor.id(),
+                productos.keySet().iterator().next(),
+                extraido,
+                evaluada.jsonCrudo(),
+                precio,
+                huella,
+                pHash,
+                alertas,
+                ahora),
+            set));
+    return Optional.of(
+        new Resolucion(
+            extraido.estaAgotado() ? TipoDeResolucion.AGOTADO : TipoDeResolucion.RENOVACION,
+            alertas,
+            null));
+  }
+
   private Resolucion descartar(PublicacionProveedor publicacion, CierreDePublicacion motivo) {
     publicacion.descartar(motivo);
     repositorioPublicaciones.actualizar(publicacion);
@@ -559,6 +709,18 @@ public final class ResolverBorrador {
         .precioProveedorOpcional()
         .filter(p -> !p.equals(delTexto) && ArmadorDeSets.estaEscrito(p, textoDelAnuncio))
         .orElse(delTexto);
+  }
+
+  /**
+   * ¿Cuesta la prenda más de lo que se paga por su tipo? Con el precio de la prenda sola —el mismo
+   * con que se armaría el set ({@link #precioDeLaPrenda}): en «Básica 48.000 / Pantalón 95.000» el
+   * primero del texto es el de la blusa—, y nunca en un agotado ({@link TopeDeCostoPorTipo}).
+   */
+  private static boolean pasaDelTope(ExtraccionEvaluada evaluada, String textoDelAnuncio) {
+    return !evaluada.producto().estaAgotado()
+        && TopeDeCostoPorTipo.loExcede(
+            evaluada.producto().tipo(),
+            precioDeLaPrenda(evaluada.producto(), evaluada.precioProveedor(), textoDelAnuncio));
   }
 
   private static Set<AlertaBorrador> conLasDelSet(
