@@ -94,13 +94,18 @@
           },
           "marcas": { "type": "array", "items": { "type": "string" } },
           "set": {
-            "type": ["object", "null"],
-            "additionalProperties": false,
-            "required": ["descripcion", "alt_en"],
-            "properties": {
-              "descripcion": { "type": ["string", "null"] },
-              "alt_en": { "type": ["string", "null"] }
-            }
+            "anyOf": [
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["descripcion", "alt_en"],
+                "properties": {
+                  "descripcion": { "type": ["string", "null"] },
+                  "alt_en": { "type": ["string", "null"] }
+                }
+              },
+              { "type": "null" }
+            ]
           },
           "precios_adicionales": {
             "type": "array",
@@ -112,7 +117,12 @@
                 "concepto": { "type": "string" },
                 "precio_cop": { "type": "integer" },
                 "clase": { "type": "string", "enum": ["acompanante", "combo", "promocion"] },
-                "prenda": { "type": ["string", "null"], "enum": ["blusa", "gorra", "otra", null] }
+                "prenda": {
+                  "anyOf": [
+                    { "type": "string", "enum": ["blusa", "gorra", "otra"] },
+                    { "type": "null" }
+                  ]
+                }
               }
             }
           }

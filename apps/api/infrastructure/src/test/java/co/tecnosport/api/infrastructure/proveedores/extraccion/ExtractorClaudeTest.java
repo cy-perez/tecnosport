@@ -499,6 +499,41 @@ class ExtractorClaudeTest {
     assertThat(producto.tallasPorTono().estaVacia()).isTrue();
   }
 
+  /**
+   * La API rechaza con 400 un {@code enum} que mezcla {@code null} con un tipo {@code ["string",
+   * "null"]}: «Enum value 'blusa' does not match declared type» (12 de octubre de 2026). El nulo de
+   * un enum va en un {@code anyOf} aparte. Lo dijo la prueba de contrato, que necesita clave y no
+   * corre en el pipeline; esta sí, y recorre el esquema entero.
+   */
+  @Test
+  void ningunEnumDelEsquemaMezclaElNulo() throws Exception {
+    JsonNode esquema = JsonMapper.builder().build().readTree(RecursosDelExtractor.esquema());
+    List<String> mezclados = new java.util.ArrayList<>();
+    buscarEnumsConNulo(esquema, "$", mezclados);
+
+    assertThat(mezclados).isEmpty();
+  }
+
+  private static void buscarEnumsConNulo(JsonNode nodo, String ruta, List<String> mezclados) {
+    if (nodo.isObject()) {
+      JsonNode valores = nodo.path("enum");
+      if (valores.isArray()) {
+        for (JsonNode valor : valores) {
+          if (valor.isNull()) {
+            mezclados.add(ruta);
+          }
+        }
+      }
+      for (var entrada : nodo.properties()) {
+        buscarEnumsConNulo(entrada.getValue(), ruta + "." + entrada.getKey(), mezclados);
+      }
+    } else if (nodo.isArray()) {
+      for (int i = 0; i < nodo.size(); i++) {
+        buscarEnumsConNulo(nodo.get(i), ruta + "[" + i + "]", mezclados);
+      }
+    }
+  }
+
   @Test
   void elEsquemaPideLosCamposNuevos() {
     respuestas.add(new Respuesta(200, exito(PRODUCTO_JSON, "end_turn")));
