@@ -14,10 +14,13 @@ describe('mapeador de proveedores', () => {
       dosChatsEnUnZip: false,
       activo: true,
       tiposExcluidos: ['PANTALON', 'SUDADERA'],
+      armaSets: true,
     });
 
     expect(proveedor.ordenDePublicacion).toBe('TEXTO_PRIMERO');
     expect(proveedor.tiposExcluidos).toEqual(['PANTALON', 'SUDADERA']);
+    expect(proveedor.armaSets).toBe(true);
+    expect(aProveedor({ id: 'prov-2', tiposExcluidos: [] }).armaSets).toBe(false);
   });
 
   /** El servidor lo exige al crear y al editar: si la petición lo pierde, el cuerpo no se lee. */
@@ -33,9 +36,11 @@ describe('mapeador de proveedores', () => {
       dosChatsEnUnZip: false,
       activo: true,
       tiposExcluidos: ['SHORT'],
+      armaSets: false,
     });
 
     expect(peticion.ordenDePublicacion).toBe('FOTOS_PRIMERO');
     expect(peticion.tiposExcluidos).toEqual(['SHORT']);
+    expect(peticion.armaSets).toBe(false);
   });
 });

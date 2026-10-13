@@ -71,6 +71,13 @@ public final class BorradorProducto {
    */
   private String diseno;
 
+  /**
+   * Con qué prenda se armó el set y de dónde salió su costo; nulo si el borrador es la prenda sola
+   * ({@link ArmadorDeSets}, 12 de octubre de 2026). Lo pone la ingesta y lo devuelve el adaptador,
+   * como el diseño.
+   */
+  private ArmadoDeSet set;
+
   public BorradorProducto(
       UUID id,
       UUID publicacionId,
@@ -335,6 +342,16 @@ public final class BorradorProducto {
 
   public Optional<String> diseno() {
     return Optional.ofNullable(diseno);
+  }
+
+  /** Para la ingesta y el adaptador: el borrador es un set, armado así. */
+  public static BorradorProducto conSet(BorradorProducto borrador, ArmadoDeSet set) {
+    borrador.set = set;
+    return borrador;
+  }
+
+  public Optional<ArmadoDeSet> set() {
+    return Optional.ofNullable(set);
   }
 
   /** ¿La lectura de fotos vio el mismo diseño en este y en el otro? */
@@ -693,7 +710,9 @@ public final class BorradorProducto {
             null,
             ahora);
     // Sin la etiqueta: quien parte dice que no son el mismo producto, y el panel no tiene por qué
-    // sugerirle volver a unirlos.
+    // sugerirle volver a unirlos. El set sí: las dos partes salen del mismo anuncio y del mismo
+    // costo.
+    nuevo.set = set;
     fotosDescartadas.addAll(queSeVan);
     queSeVan.forEach(tonosSugeridos::remove);
     this.pHash = null;

@@ -224,6 +224,23 @@ class RepositorioProductosJpaTest {
         .isEmpty();
   }
 
+  /** La gorra de un set (12 de octubre de 2026): el peso adicional va y vuelve, y nace en cero. */
+  @Test
+  void elPesoAdicionalDeUnSetVaYVuelve() {
+    MarcaJpaEntity marca = marca("Genérica");
+    CategoriaJpaEntity categoria = categoria("Polos", "ropa-caballero-polos-t2", "ROPA");
+    producto("Set polo importado y gorra", "set-polo-t2", "BORRADOR", marca, categoria);
+    Producto set = repositorio.buscarPorSlug(new Slug("set-polo-t2")).orElseThrow();
+    assertThat(set.pesoAdicionalGramos()).isZero();
+
+    set.definirPesoAdicional(100);
+    repositorio.actualizar(set);
+
+    assertThat(
+            repositorio.buscarPorSlug(new Slug("set-polo-t2")).orElseThrow().pesoAdicionalGramos())
+        .isEqualTo(100);
+  }
+
   @Test
   void buscarPorSlugDevuelveUnProductoEnBorrador() {
     MarcaJpaEntity marca = marca("TecnoSport");

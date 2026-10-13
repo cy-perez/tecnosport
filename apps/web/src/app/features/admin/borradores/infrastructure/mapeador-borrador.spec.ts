@@ -34,9 +34,12 @@ describe('mapeador-borrador', () => {
     });
 
     expect(conTodo.tallasPorTono).toEqual([{ tono: 'cocoa', tallas: ['ML'] }]);
-    expect(conTodo.preciosAdicionales).toEqual([{ concepto: 'Gorra', precio: 35000 }]);
+    expect(conTodo.preciosAdicionales).toEqual([
+      { concepto: 'Gorra', precio: 35000, clase: null, prenda: null },
+    ]);
     expect(aBorrador({ id: 'b2' }).tallasPorTono).toEqual([]);
     expect(aBorrador({ id: 'b2' }).preciosAdicionales).toEqual([]);
+    expect(aBorrador({ id: 'b2' }).set).toBeNull();
     expect(
       aFoto({
         mensajeId: 'f1',
@@ -151,5 +154,23 @@ describe('mapeador-borrador', () => {
       aFoto({ mensajeId: 'f1', url: 'u', origen: 'PROVEEDOR', tonosVistos: ['negro', 'cocoa'] })
         .tonosVistos,
     ).toEqual(['negro', 'cocoa']);
+  });
+
+  /** El set de La Riverah (12 de octubre de 2026): la clase de cada precio y cómo se armó. */
+  it('lee la clase de cada precio y el set', () => {
+    const set = aBorrador({
+      id: 'b3',
+      preciosAdicionales: [
+        { concepto: 'Falda', precio: 49900, clase: 'PRENDA_SOLA' },
+        { concepto: 'Set falda + básica', precio: 88000, clase: 'COMBO', prenda: 'BLUSA' },
+      ],
+      set: { acompanante: 'BLUSA', origenDelCosto: 'ANUNCIADO' },
+    });
+
+    expect(set.preciosAdicionales).toEqual([
+      { concepto: 'Falda', precio: 49900, clase: 'PRENDA_SOLA', prenda: null },
+      { concepto: 'Set falda + básica', precio: 88000, clase: 'COMBO', prenda: 'BLUSA' },
+    ]);
+    expect(set.set).toEqual({ acompanante: 'BLUSA', origenDelCosto: 'ANUNCIADO' });
   });
 });

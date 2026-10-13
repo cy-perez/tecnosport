@@ -197,6 +197,19 @@ function aplicar(sentencia, nombrePorSlug) {
     guardar(nombrePorSlug, renombra[2], renombra[1]);
     return true;
   }
+  // Un slug que se corrige, con su nombre: «ropa-dama-falta-short» en V113. Lo que siga al `where`
+  // —un `and not exists` que no deja pisar el bueno— no cambia el resultado en este árbol.
+  const cambiaSlug = sinConflicto.match(
+    /^update categoria set slug = '([^']+)', nombre = '([^']*)' where slug = '([^']+)'(?:\s+and\s.*)?$/is,
+  );
+  if (cambiaSlug) {
+    const [, nuevo, nombre, viejo] = cambiaSlug;
+    if (nombrePorSlug.has(viejo) && !nombrePorSlug.has(nuevo)) {
+      nombrePorSlug.delete(viejo);
+      guardar(nombrePorSlug, nuevo, nombre);
+    }
+    return true;
+  }
   if (/^update categoria set /i.test(sinConflicto) && !/\bnombre\s*=/i.test(sinConflicto)) {
     return true;
   }

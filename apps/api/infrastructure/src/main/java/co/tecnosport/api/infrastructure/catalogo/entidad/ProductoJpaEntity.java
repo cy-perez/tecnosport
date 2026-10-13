@@ -60,6 +60,10 @@ public class ProductoJpaEntity {
   @Column(name = "talla_sirve_hasta")
   private String tallaSirveHasta;
 
+  /** Lo que pesa de más sobre el promedio de su categoría: la gorra de un set (V113). */
+  @Column(name = "peso_adicional_gramos", nullable = false)
+  private int pesoAdicionalGramos;
+
   protected ProductoJpaEntity() {}
 
   public ProductoJpaEntity(
@@ -186,6 +190,15 @@ public class ProductoJpaEntity {
 
   public ProductoJpaEntity conTallaSirveHasta(String tallaSirveHasta) {
     this.tallaSirveHasta = tallaSirveHasta;
+    return this;
+  }
+
+  public int getPesoAdicionalGramos() {
+    return pesoAdicionalGramos;
+  }
+
+  public ProductoJpaEntity conPesoAdicionalGramos(int pesoAdicionalGramos) {
+    this.pesoAdicionalGramos = pesoAdicionalGramos;
     return this;
   }
 

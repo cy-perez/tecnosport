@@ -123,19 +123,20 @@ public class RepositorioProveedoresJpa implements RepositorioProveedores {
 
   private static ProveedorJpaEntity aFila(Proveedor p, Instant creadoEn, Instant actualizadoEn) {
     return new ProveedorJpaEntity(
-        p.id(),
-        p.nombre(),
-        p.linea().name(),
-        p.telefonoWhatsApp(),
-        p.nombreEnExportacion(),
-        p.activo(),
-        p.publicacionAutomatica(),
-        p.factorDeMargen().orElse(null),
-        p.ordenDePublicacion().name(),
-        p.subeDosChatsEnUnZip(),
-        p.tiposExcluidos().stream().map(Enum::name).collect(Collectors.toSet()),
-        creadoEn,
-        actualizadoEn);
+            p.id(),
+            p.nombre(),
+            p.linea().name(),
+            p.telefonoWhatsApp(),
+            p.nombreEnExportacion(),
+            p.activo(),
+            p.publicacionAutomatica(),
+            p.factorDeMargen().orElse(null),
+            p.ordenDePublicacion().name(),
+            p.subeDosChatsEnUnZip(),
+            p.tiposExcluidos().stream().map(Enum::name).collect(Collectors.toSet()),
+            creadoEn,
+            actualizadoEn)
+        .conArmaSets(p.armaSets());
   }
 
   private static Proveedor aDominio(ProveedorJpaEntity fila) {
@@ -155,6 +156,7 @@ public class RepositorioProveedoresJpa implements RepositorioProveedores {
         fila.getTiposExcluidos().stream()
             .map(TipoProductoProveedor::valueOf)
             .collect(Collectors.toSet()));
+    proveedor.definirArmaSets(fila.isArmaSets());
     return proveedor;
   }
 }

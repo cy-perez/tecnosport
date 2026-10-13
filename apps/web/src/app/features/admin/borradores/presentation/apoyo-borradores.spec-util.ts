@@ -31,6 +31,7 @@ export function borradorDePrueba(overrides: Partial<Borrador> = {}): Borrador {
     creadoEn: '2026-09-30T15:00:00Z',
     tallasPorTono: [],
     preciosAdicionales: [],
+    set: null,
     ...overrides,
   };
 }

@@ -88,7 +88,10 @@ class ArbolDeCategoriasTest {
                   // `V108`, 11 de octubre de 2026: los blazers y los chalecos de Violeta, que el
                   // extractor dejaba en OTRO porque no tenían dónde caer.
                   "ropa-dama-blazers",
-                  "ropa-dama-chalecos"),
+                  "ropa-dama-chalecos",
+                  // `V113`, 12 de octubre de 2026: la falda con short de La Riverah. En la nube ya
+                  // existía, creada desde el panel con una errata en el slug que V113 corrige.
+                  "ropa-dama-falda-short"),
           "ropa-caballero",
               List.of(
                   "ropa-caballero-camisetas",

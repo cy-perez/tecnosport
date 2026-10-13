@@ -26,7 +26,8 @@
           "codigo_referencia",
           "tallas_por_tono",
           "precios_adicionales",
-          "marcas"
+          "marcas",
+          "set"
         ],
         "properties": {
           "esta_agotado": { "type": "boolean" },
@@ -52,6 +53,7 @@
               "bodi",
               "tenis",
               "falda",
+              "falda_short",
               "sudadera",
               "blazer",
               "chaleco",
@@ -91,15 +93,26 @@
             }
           },
           "marcas": { "type": "array", "items": { "type": "string" } },
+          "set": {
+            "type": ["object", "null"],
+            "additionalProperties": false,
+            "required": ["descripcion", "alt_en"],
+            "properties": {
+              "descripcion": { "type": ["string", "null"] },
+              "alt_en": { "type": ["string", "null"] }
+            }
+          },
           "precios_adicionales": {
             "type": "array",
             "items": {
               "type": "object",
               "additionalProperties": false,
-              "required": ["concepto", "precio_cop"],
+              "required": ["concepto", "precio_cop", "clase", "prenda"],
               "properties": {
                 "concepto": { "type": "string" },
-                "precio_cop": { "type": "integer" }
+                "precio_cop": { "type": "integer" },
+                "clase": { "type": "string", "enum": ["acompanante", "combo", "promocion"] },
+                "prenda": { "type": ["string", "null"], "enum": ["blusa", "gorra", "otra", null] }
               }
             }
           }

@@ -28,6 +28,7 @@ import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.compartido.Sku;
 import co.tecnosport.api.domain.compartido.Slug;
 import co.tecnosport.api.domain.inventario.Inventario;
+import co.tecnosport.api.domain.proveedores.ArmadoDeSet;
 import co.tecnosport.api.domain.proveedores.BorradorProducto;
 import co.tecnosport.api.domain.proveedores.EstadoBorrador;
 import co.tecnosport.api.domain.proveedores.HuellaProveedor;
@@ -266,7 +267,12 @@ final class ApoyoDeCatalogoParaIngesta {
       return porId.values().stream()
           .filter(b -> b.proveedorId().equals(proveedorId))
           .filter(b -> b.productoId().isPresent() && b.pHash().isPresent())
-          .map(b -> new HuellaVisual(b.productoId().get(), b.pHash().get()))
+          .map(
+              b ->
+                  new HuellaVisual(
+                      b.productoId().get(),
+                      b.pHash().get(),
+                      b.set().map(ArmadoDeSet::acompanante).orElse(null)))
           .toList();
     }
 

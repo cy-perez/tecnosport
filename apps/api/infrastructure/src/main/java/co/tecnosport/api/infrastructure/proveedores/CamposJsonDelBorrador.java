@@ -1,7 +1,9 @@
 package co.tecnosport.api.infrastructure.proveedores;
 
 import co.tecnosport.api.domain.compartido.Dinero;
+import co.tecnosport.api.domain.proveedores.ClaseDePrecioAdicional;
 import co.tecnosport.api.domain.proveedores.PrecioAdicional;
+import co.tecnosport.api.domain.proveedores.PrendaAcompanante;
 import co.tecnosport.api.domain.proveedores.TallasPorTono;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -59,6 +61,8 @@ final class CamposJsonDelBorrador {
       ObjectNode nodo = raiz.addObject();
       nodo.put("concepto", precio.concepto());
       nodo.put("precio", precio.precio().valor());
+      precio.claseOpcional().ifPresent(c -> nodo.put("clase", c.name()));
+      precio.prendaOpcional().ifPresent(p -> nodo.put("prenda", p.name()));
     }
     return JSON.writeValueAsString(raiz);
   }
@@ -69,9 +73,15 @@ final class CamposJsonDelBorrador {
     }
     List<PrecioAdicional> precios = new ArrayList<>();
     for (JsonNode nodo : JSON.readTree(texto)) {
+      // Sin clase ni prenda, los guardados antes del 12 de octubre de 2026.
+      String clase = nodo.hasNonNull("clase") ? nodo.get("clase").asString() : null;
+      String prenda = nodo.hasNonNull("prenda") ? nodo.get("prenda").asString() : null;
       precios.add(
           new PrecioAdicional(
-              nodo.path("concepto").asString(), Dinero.deCop(nodo.path("precio").decimalValue())));
+              nodo.path("concepto").asString(),
+              Dinero.deCop(nodo.path("precio").decimalValue()),
+              clase == null ? null : ClaseDePrecioAdicional.valueOf(clase),
+              prenda == null ? null : PrendaAcompanante.valueOf(prenda)));
     }
     return precios;
   }

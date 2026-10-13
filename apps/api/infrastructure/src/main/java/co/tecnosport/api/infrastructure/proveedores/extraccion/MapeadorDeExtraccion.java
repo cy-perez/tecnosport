@@ -4,10 +4,13 @@ import co.tecnosport.api.application.proveedores.ExtraccionFallidaException;
 import co.tecnosport.api.domain.catalogo.LineaCatalogo;
 import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.compartido.ExcepcionDeDominio;
+import co.tecnosport.api.domain.proveedores.ClaseDePrecioAdicional;
 import co.tecnosport.api.domain.proveedores.PrecioAdicional;
+import co.tecnosport.api.domain.proveedores.PrendaAcompanante;
 import co.tecnosport.api.domain.proveedores.ProductoExtraido;
 import co.tecnosport.api.domain.proveedores.Tallas;
 import co.tecnosport.api.domain.proveedores.TallasPorTono;
+import co.tecnosport.api.domain.proveedores.TextosDelSet;
 import co.tecnosport.api.domain.proveedores.TipoDeTalla;
 import co.tecnosport.api.domain.proveedores.TipoProductoProveedor;
 import java.math.BigDecimal;
@@ -79,7 +82,8 @@ final class MapeadorDeExtraccion {
           textoONulo(nodo.path("codigo_referencia")),
           tallasPorTono(nodo.path("tallas_por_tono")),
           preciosAdicionales(nodo.path("precios_adicionales")),
-          lista(nodo.path("marcas")));
+          lista(nodo.path("marcas")),
+          textosDelSet(nodo.path("set")));
     } catch (ExcepcionDeDominio e) {
       throw new ExtraccionFallidaException(
           "El extractor devolvió un valor que el dominio no admite: " + e.getMessage(), e);
@@ -182,11 +186,48 @@ final class MapeadorDeExtraccion {
         String concepto = textoONulo(elemento.path("concepto"));
         Dinero precio = precio(elemento.path("precio_cop"));
         if (concepto != null && precio != null) {
-          precios.add(new PrecioAdicional(concepto, precio));
+          precios.add(
+              new PrecioAdicional(
+                  concepto,
+                  precio,
+                  enumONulo(ClaseDePrecioAdicional.class, elemento.path("clase")),
+                  enumONulo(PrendaAcompanante.class, elemento.path("prenda"))));
         }
       }
     }
     return precios;
+  }
+
+  /**
+   * Lo que el modelo escribió del set; nulo si no lo escribió o si no trae nada que usar. Un set
+   * sin descripción ni nombre en inglés es lo mismo que ninguno: el armador se queda con los de la
+   * prenda.
+   */
+  private static TextosDelSet textosDelSet(JsonNode nodo) {
+    if (nodo == null || !nodo.isObject()) {
+      return null;
+    }
+    TextosDelSet textos =
+        new TextosDelSet(textoONulo(nodo.path("descripcion")), textoONulo(nodo.path("alt_en")));
+    return textos.descripcion() == null && textos.altEn() == null ? null : textos;
+  }
+
+  /**
+   * El valor de un enum del esquema, en minúsculas como lo escribe el modelo; nulo si falta o no es
+   * ninguno de los que se conocen, que es lo mismo que un precio guardado antes de que existiera.
+   * La clase {@code PRENDA_SOLA} no se le acepta al modelo: esa la pone el armador.
+   */
+  private static <E extends Enum<E>> E enumONulo(Class<E> tipo, JsonNode nodo) {
+    String valor = textoONulo(nodo);
+    if (valor == null) {
+      return null;
+    }
+    try {
+      E leido = Enum.valueOf(tipo, valor.strip().toUpperCase(Locale.ROOT));
+      return leido == ClaseDePrecioAdicional.PRENDA_SOLA ? null : leido;
+    } catch (IllegalArgumentException e) {
+      return null;
+    }
   }
 
   private static List<String> lista(JsonNode nodo) {

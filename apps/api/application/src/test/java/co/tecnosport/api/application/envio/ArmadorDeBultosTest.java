@@ -449,6 +449,23 @@ class ArmadorDeBultosTest {
     assertEquals(1000, bultos.getFirst().bulto().paquete().pesoGramos());
   }
 
+  /**
+   * La gorra de un set de camiseta (12 de octubre de 2026): el set se publica en Camisetas y pesa
+   * su promedio más 100 g. Con el jean son 1.100 g y una bolsa de 2 kg, donde sin la gorra la misma
+   * bolsa cae justo en 1 kg (la prueba de arriba).
+   */
+  @Test
+  void la_gorra_de_un_set_suma_su_peso_al_promedio_de_la_categoria() {
+    ArmadorDeBultos conReferencias = armadorConReferencias();
+    Variante jean = prenda(JEANS, "TS-JEAN-1", Dinero.deCop(90_000));
+    Variante set = prenda(CAMISETAS, "TS-SET-1", Dinero.deCop(120_000));
+    catalogo.getLast().definirPesoAdicional(100);
+
+    List<BultoDespachable> bultos = conReferencias.armar(List.of(linea(jean, 1), linea(set, 1)));
+
+    assertEquals(2000, bultos.getFirst().bulto().paquete().pesoGramos());
+  }
+
   /** Lo que el negocio llena en la plataforma con un pedido mixto: la caja medida y la bolsa. */
   @Test
   void un_pedido_mixto_son_dos_bultos_y_la_bolsa_va_al_final() {

@@ -234,6 +234,8 @@ public final class AprobarBorrador {
     if (tallasAprobadas.tipo() == TipoDeTalla.UNICA) {
       producto.definirTallaSirveHasta(tallasAprobadas.sirveHasta());
     }
+    // La gorra de un set de camiseta o polo viaja con el promedio de su categoría y 100 g más.
+    borrador.set().ifPresent(set -> producto.definirPesoAdicional(set.gramosAdicionales()));
     repositorioProductos.guardar(producto);
 
     Map<String, UUID> variantePorTono =

@@ -9,8 +9,11 @@ import co.tecnosport.api.application.proveedores.ResultadoExtraccion;
 import co.tecnosport.api.application.proveedores.TextoDePublicacion;
 import co.tecnosport.api.domain.catalogo.LineaCatalogo;
 import co.tecnosport.api.domain.compartido.Dinero;
+import co.tecnosport.api.domain.proveedores.ClaseDePrecioAdicional;
 import co.tecnosport.api.domain.proveedores.PrecioAdicional;
+import co.tecnosport.api.domain.proveedores.PrendaAcompanante;
 import co.tecnosport.api.domain.proveedores.ProductoExtraido;
+import co.tecnosport.api.domain.proveedores.TextosDelSet;
 import co.tecnosport.api.domain.proveedores.TipoDeTalla;
 import co.tecnosport.api.domain.proveedores.TipoProductoProveedor;
 import com.sun.net.httpserver.HttpExchange;
@@ -425,6 +428,62 @@ class ExtractorClaudeTest {
         .containsExactly(new PrecioAdicional("Gorra", Dinero.deCop(35000)));
   }
 
+  /**
+   * Los sets de La Riverah (12 de octubre de 2026): la clase de cada precio, la prenda que acompaña
+   * y los textos del set. Una clase o una prenda que no se conocen quedan en nulo, como un precio
+   * guardado antes; la de la prenda sola no se le acepta al modelo.
+   */
+  @Test
+  void laClaseLaPrendaYLosTextosDelSetSeLeen() {
+    String falda =
+        BOLSO.replace(
+            "\"notas\":null}",
+            "\"notas\":null,\"precios_adicionales\":["
+                + "{\"concepto\":\"Set falda + básica\",\"precio_cop\":88000,"
+                + "\"clase\":\"combo\",\"prenda\":\"blusa\"},"
+                + "{\"concepto\":\"Promo 2 unidades\",\"precio_cop\":88000,"
+                + "\"clase\":\"promocion\",\"prenda\":null},"
+                + "{\"concepto\":\"Raro\",\"precio_cop\":1000,"
+                + "\"clase\":\"prenda_sola\",\"prenda\":\"sombrero\"}],"
+                + "\"set\":{\"descripcion\":\"Falda con la blusa de la foto.\","
+                + "\"alt_en\":\"Skirt and blouse set\"}}");
+    respuestas.add(new Respuesta(200, exito("{\"productos\":[" + falda + "]}", "end_turn")));
+
+    ProductoExtraido producto = extractor(1).extraer(texto()).productos().getFirst();
+
+    assertThat(producto.preciosAdicionales())
+        .containsExactly(
+            new PrecioAdicional(
+                "Set falda + básica",
+                Dinero.deCop(88000),
+                ClaseDePrecioAdicional.COMBO,
+                PrendaAcompanante.BLUSA),
+            new PrecioAdicional(
+                "Promo 2 unidades", Dinero.deCop(88000), ClaseDePrecioAdicional.PROMOCION, null),
+            new PrecioAdicional("Raro", Dinero.deCop(1000), null, null));
+    assertThat(producto.set())
+        .isEqualTo(new TextosDelSet("Falda con la blusa de la foto.", "Skirt and blouse set"));
+  }
+
+  @Test
+  void sinSetNiTextosElSetEsNulo() {
+    String falda =
+        BOLSO.replace(
+            "\"notas\":null}", "\"notas\":null,\"set\":{\"descripcion\":null,\"alt_en\":\" \"}}");
+    respuestas.add(new Respuesta(200, exito("{\"productos\":[" + falda + "]}", "end_turn")));
+
+    assertThat(extractor(1).extraer(texto()).productos().getFirst().set()).isNull();
+  }
+
+  @Test
+  void laFaldaShortEsSuPropioTipo() {
+    String falda = BOLSO.replace("\"tipo\":\"bolso\"", "\"tipo\":\"falda_short\"");
+    respuestas.add(new Respuesta(200, exito("{\"productos\":[" + falda + "]}", "end_turn")));
+
+    assertThat(extractor(1).extraer(texto()).productos().getFirst().tipo())
+        .isEqualTo(TipoProductoProveedor.FALDA_SHORT);
+  }
+
   /** Un tono repetido no se adivina: el reparto se pierde, no el producto. */
   @Test
   void unTonoRepetidoDejaSinTallasPorTono() {
@@ -457,5 +516,22 @@ class ExtractorClaudeTest {
             .path("items")
             .path("required");
     assertThat(requeridos.toString()).contains("tallas_por_tono").contains("precios_adicionales");
+    assertThat(requeridos.toString()).contains("\"set\"");
+    JsonNode item =
+        peticiones
+            .get(0)
+            .path("output_config")
+            .path("format")
+            .path("schema")
+            .path("properties")
+            .path("productos")
+            .path("items")
+            .path("properties");
+    assertThat(item.path("tipo").path("enum").toString())
+        .contains("falda_short")
+        .doesNotContain("conjunto_falda");
+    assertThat(item.path("precios_adicionales").path("items").path("required").toString())
+        .contains("clase")
+        .contains("prenda");
   }
 }

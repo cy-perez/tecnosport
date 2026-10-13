@@ -19,8 +19,10 @@ import co.tecnosport.api.domain.catalogo.Producto;
 import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.compartido.Slug;
 import co.tecnosport.api.domain.proveedores.AlertaBorrador;
+import co.tecnosport.api.domain.proveedores.ArmadoDeSet;
 import co.tecnosport.api.domain.proveedores.BorradorProducto;
 import co.tecnosport.api.domain.proveedores.CierreDePublicacion;
+import co.tecnosport.api.domain.proveedores.ClaseDePrecioAdicional;
 import co.tecnosport.api.domain.proveedores.EstadoBorrador;
 import co.tecnosport.api.domain.proveedores.EstadoPublicacionProveedor;
 import co.tecnosport.api.domain.proveedores.FotosDelProducto;
@@ -30,11 +32,15 @@ import co.tecnosport.api.domain.proveedores.LoteIngesta;
 import co.tecnosport.api.domain.proveedores.MensajeProveedor;
 import co.tecnosport.api.domain.proveedores.MotivoDePublicacion;
 import co.tecnosport.api.domain.proveedores.OrdenDePublicacion;
+import co.tecnosport.api.domain.proveedores.OrigenDelCostoDeSet;
 import co.tecnosport.api.domain.proveedores.PHash;
+import co.tecnosport.api.domain.proveedores.PrecioAdicional;
+import co.tecnosport.api.domain.proveedores.PrendaAcompanante;
 import co.tecnosport.api.domain.proveedores.ProductoExtraido;
 import co.tecnosport.api.domain.proveedores.Proveedor;
 import co.tecnosport.api.domain.proveedores.PublicacionProveedor;
 import co.tecnosport.api.domain.proveedores.Tallas;
+import co.tecnosport.api.domain.proveedores.TextosDelSet;
 import co.tecnosport.api.domain.proveedores.TipoProductoProveedor;
 import co.tecnosport.api.domain.proveedores.TopesDeGanancia;
 import java.math.BigDecimal;
@@ -995,5 +1001,308 @@ class ResolverBorradorTest {
         null,
         suya,
         true);
+  }
+
+  // --- Los sets de La Riverah (12 de octubre de 2026) ---
+
+  /**
+   * «CAMISETA POLO 1.1 … $55.000 / Promo 4x200.000 / Gorra 🧢 $35.000 / Polo+ gorra $ 85.000», con
+   * el SKU del pie de la foto.
+   */
+  private static ExtraccionEvaluada poloConGorra() {
+    ProductoExtraido polo =
+        new ProductoExtraido(
+            true,
+            false,
+            "Polo importado",
+            LineaCatalogo.ROPA,
+            TipoProductoProveedor.POLO,
+            Dinero.deCop(55000),
+            Tallas.lista(List.of("M", "L", "XL", "XXL")),
+            null,
+            List.of(),
+            null,
+            "Polo de calidad 1.1.",
+            "Imported polo shirt",
+            true,
+            new BigDecimal("0.9"),
+            null,
+            "RV102376",
+            null,
+            List.of(
+                new PrecioAdicional(
+                    "Promo 4 unidades",
+                    Dinero.deCop(200000),
+                    ClaseDePrecioAdicional.PROMOCION,
+                    null),
+                new PrecioAdicional(
+                    "Gorra",
+                    Dinero.deCop(35000),
+                    ClaseDePrecioAdicional.ACOMPANANTE,
+                    PrendaAcompanante.GORRA),
+                new PrecioAdicional(
+                    "Polo + gorra",
+                    Dinero.deCop(85000),
+                    ClaseDePrecioAdicional.COMBO,
+                    PrendaAcompanante.GORRA)),
+            List.of(),
+            new TextosDelSet(
+                "Polo de calidad 1.1 con la gorra que aparece en la foto.",
+                "Polo shirt and cap set"));
+    return new ExtraccionEvaluada(
+        polo, "{}", Dinero.deCop(55000), Set.of(), new UsoDelExtractor("falso", 1, 1, 1));
+  }
+
+  @Test
+  void aQuienArmaSetsLeQuedaElSetConElCostoAnunciado() {
+    proveedor.definirArmaSets(true);
+    PublicacionProveedor publicacion =
+        publicacion("CAMISETA POLO 1.1 $55.000 Gorra $35.000 Polo+ gorra $ 85.000", "foto-polo");
+
+    Resolucion resolucion = resolver(publicacion, poloConGorra());
+
+    assertEquals(TipoDeResolucion.NUEVO, resolucion.tipo());
+    BorradorProducto borrador = borradores.enEstado(EstadoBorrador.EN_REVISION).getFirst();
+    assertEquals(Optional.of("Set polo importado y gorra"), borrador.titulo());
+    assertEquals(TipoProductoProveedor.POLO, borrador.tipo());
+    assertEquals(Optional.of(Dinero.deCop(85000)), borrador.precioProveedor());
+    // 85.000 × 1,30 = 110.500 gana 25.500, dentro de los topes: sube a la unidad de mil.
+    assertEquals(Optional.of(Dinero.deCop(111000)), borrador.precioVentaSugerido());
+    assertEquals(
+        Optional.of(new ArmadoDeSet(PrendaAcompanante.GORRA, OrigenDelCostoDeSet.ANUNCIADO)),
+        borrador.set());
+    assertEquals(
+        Optional.of(
+            HuellaProveedor.deSet(
+                HuellaProveedor.deReferencia(proveedor.id(), "RV102376"), PrendaAcompanante.GORRA)),
+        borrador.huella());
+    assertEquals(
+        Optional.of("Polo de calidad 1.1 con la gorra que aparece en la foto."),
+        borrador.descripcion());
+  }
+
+  @Test
+  void aQuienNoArmaSetsLeQuedaLaPrendaSolaComoAntes() {
+    PublicacionProveedor publicacion =
+        publicacion("CAMISETA POLO 1.1 $55.000 Gorra $35.000 Polo+ gorra $ 85.000", "foto-polo");
+
+    resolver(publicacion, poloConGorra());
+
+    BorradorProducto borrador = borradores.enEstado(EstadoBorrador.EN_REVISION).getFirst();
+    assertEquals(Optional.of("Polo importado"), borrador.titulo());
+    assertEquals(Optional.of(Dinero.deCop(55000)), borrador.precioProveedor());
+    assertTrue(borrador.set().isEmpty());
+    assertEquals(3, borrador.preciosAdicionales().size(), "los precios siguen para mirar");
+  }
+
+  /**
+   * El polo RV102376 ya se vende solo, y su foto ya es su huella visual. El anuncio del set con el
+   * mismo SKU y la misma foto no lo renueva: le pondría el costo del set a la prenda sola.
+   */
+  @Test
+  void elSetNoRenuevaLaPrendaSolaNiPorElCodigoNiPorLaFoto() {
+    Producto poloSolo =
+        productoConCodigo("Polo importado", 55000, "RV102376", EstadoDisponibilidad.DISPONIBLE);
+    resolver(
+        publicacion("Polo importado RV102376 $55.000", "foto-polo"),
+        conCodigo("Polo importado", 55000, "RV102376"));
+    proveedor.definirArmaSets(true);
+
+    Resolucion resolucion =
+        resolver(
+            publicacion("CAMISETA POLO 1.1 $55.000 Polo+ gorra $ 85.000", "foto-polo"),
+            poloConGorra());
+
+    assertEquals(TipoDeResolucion.NUEVO, resolucion.tipo());
+    assertEquals(Optional.of(Dinero.deCop(55000)), poloSolo.precioProveedor());
+    assertEquals(1, borradores.enEstado(EstadoBorrador.EN_REVISION).size());
+  }
+
+  /** El mismo set publicado otra vez sí se reconoce: su huella es la del set. */
+  @Test
+  void elMismoSetConElMismoCodigoRenuevaElSet() {
+    proveedor.definirArmaSets(true);
+    Producto set =
+        productoExistente(
+            "Set polo importado y gorra",
+            85000,
+            HuellaProveedor.deSet(
+                HuellaProveedor.deReferencia(proveedor.id(), "RV102376"), PrendaAcompanante.GORRA),
+            EstadoDisponibilidad.OCULTO_POR_VENCIMIENTO);
+
+    Resolucion resolucion =
+        resolver(
+            publicacion("CAMISETA POLO 1.1 $55.000 Polo+ gorra $ 85.000", "foto-polo"),
+            poloConGorra());
+
+    assertEquals(TipoDeResolucion.RENOVACION, resolucion.tipo());
+    assertEquals(EstadoDisponibilidad.DISPONIBLE, set.estadoDisponibilidad());
+    assertTrue(resolucion.alertas().isEmpty(), "mismo costo de set, sin PRECIO_CAMBIO");
+  }
+
+  // --- Lo que dejó la revisión de los sets (12 de octubre de 2026) ---
+
+  private static final String FALDA_MALLATEX =
+      "✅Falda de dama ✅Tela Mallatex americana Falda 🤑$49.900 Set, falda + básica $ 88.000";
+
+  /** «Falda $49.900 / Set falda + básica $88.000»: sin código, como casi todas las faldas. */
+  private static ExtraccionEvaluada faldaConSet(long precioDelSet) {
+    ProductoExtraido falda =
+        new ProductoExtraido(
+            true,
+            false,
+            "Falda de dama",
+            LineaCatalogo.ROPA,
+            TipoProductoProveedor.FALDA,
+            Dinero.deCop(49900),
+            Tallas.lista(List.of("S", "M", "L")),
+            null,
+            List.of(),
+            null,
+            "Falda en mallatex.",
+            "Skirt",
+            false,
+            new BigDecimal("0.9"),
+            null,
+            null,
+            null,
+            List.of(
+                new PrecioAdicional(
+                    "Set falda + básica",
+                    Dinero.deCop(precioDelSet),
+                    ClaseDePrecioAdicional.COMBO,
+                    PrendaAcompanante.BLUSA)),
+            List.of(),
+            new TextosDelSet("Falda con la blusa de la foto.", "Skirt and blouse set"));
+    return new ExtraccionEvaluada(
+        falda, "{}", Dinero.deCop(49900), Set.of(), new UsoDelExtractor("falso", 1, 1, 1));
+  }
+
+  /**
+   * El set sin código, publicado y reconocido por su huella el día 1, deja su foto como huella
+   * visual de set. El día 8 llega igual: su huella es otra, porque lleva la fecha, y lo reconoce la
+   * foto. Sin eso cada semana salía un borrador nuevo y el set aprobado vencía.
+   */
+  @Test
+  void unSetSinCodigoSeRenuevaPorLaFotoOtroDia() {
+    proveedor.definirArmaSets(true);
+    Producto conjunto =
+        productoExistente(
+            "Conjunto falda y blusa",
+            88000,
+            HuellaProveedor.deSet(
+                HuellaProveedor.deAnuncio(
+                    proveedor.id(),
+                    "Conjunto falda y blusa",
+                    Dinero.deCop(88000),
+                    FECHA_DEL_MENSAJE),
+                PrendaAcompanante.BLUSA),
+            EstadoDisponibilidad.DISPONIBLE);
+    Resolucion primera =
+        resolver(publicacion(FALDA_MALLATEX, "foto-falda", FECHA_DEL_MENSAJE), faldaConSet(88000));
+    assertEquals(TipoDeResolucion.RENOVACION, primera.tipo());
+
+    Resolucion otroDia =
+        resolver(
+            publicacion(FALDA_MALLATEX, "foto-falda", FECHA_DEL_MENSAJE.plusSeconds(7 * 86400)),
+            faldaConSet(88000));
+
+    assertEquals(TipoDeResolucion.RENOVACION, otroDia.tipo());
+    assertEquals(
+        Optional.of(FECHA_DEL_MENSAJE.plusSeconds(7 * 86400)), conjunto.vistoPorUltimaVez());
+    assertEquals(0, borradores.enEstado(EstadoBorrador.EN_REVISION).size());
+  }
+
+  /** La falda sola, con la foto del conjunto, no le baja el costo al conjunto. */
+  @Test
+  void laPrendaSolaNoRenuevaElSetPorLaFoto() {
+    proveedor.definirArmaSets(true);
+    Producto conjunto =
+        productoExistente(
+            "Conjunto falda y blusa",
+            88000,
+            HuellaProveedor.deSet(
+                HuellaProveedor.deAnuncio(
+                    proveedor.id(),
+                    "Conjunto falda y blusa",
+                    Dinero.deCop(88000),
+                    FECHA_DEL_MENSAJE),
+                PrendaAcompanante.BLUSA),
+            EstadoDisponibilidad.DISPONIBLE);
+    resolver(publicacion(FALDA_MALLATEX, "foto-falda", FECHA_DEL_MENSAJE), faldaConSet(88000));
+
+    Resolucion sola =
+        resolver(
+            publicacion(
+                "Falda Mallatex $49.900", "foto-falda", FECHA_DEL_MENSAJE.plusSeconds(86400)),
+            evaluada("Falda de dama", 49900, true, false, Set.of()));
+
+    assertEquals(TipoDeResolucion.NUEVO, sola.tipo());
+    assertEquals(Optional.of(Dinero.deCop(88000)), conjunto.precioProveedor());
+  }
+
+  /** «AGOTADO polo RV102376», sin los precios de la gorra: agota también el set de ese polo. */
+  @Test
+  void elAgotadoDeLaPrendaAgotaTambienSuSet() {
+    proveedor.definirArmaSets(true);
+    Producto set =
+        productoExistente(
+            "Set polo importado y gorra",
+            85000,
+            HuellaProveedor.deSet(
+                HuellaProveedor.deReferencia(proveedor.id(), "RV102376"), PrendaAcompanante.GORRA),
+            EstadoDisponibilidad.DISPONIBLE);
+
+    Resolucion resolucion =
+        resolver(
+            publicacion("AGOTADO polo RV102376", null),
+            evaluada("Polo importado", 55000, true, true, Set.of(), "RV102376"));
+
+    assertEquals(TipoDeResolucion.AGOTADO, resolucion.tipo());
+    assertEquals(EstadoDisponibilidad.AGOTADO_POR_PROVEEDOR, set.estadoDisponibilidad());
+  }
+
+  /** Con la prenda sola y su set en el catálogo, el agotado los alcanza a los dos. */
+  @Test
+  void elAgotadoAlcanzaALaPrendaSolaYASuSet() {
+    proveedor.definirArmaSets(true);
+    Producto solo =
+        productoConCodigo("Polo importado", 55000, "RV102376", EstadoDisponibilidad.DISPONIBLE);
+    Producto set =
+        productoExistente(
+            "Set polo importado y gorra",
+            85000,
+            HuellaProveedor.deSet(
+                HuellaProveedor.deReferencia(proveedor.id(), "RV102376"), PrendaAcompanante.GORRA),
+            EstadoDisponibilidad.DISPONIBLE);
+
+    resolver(
+        publicacion("AGOTADO polo RV102376", null),
+        evaluada("Polo importado", 55000, true, true, Set.of(), "RV102376"));
+
+    assertEquals(EstadoDisponibilidad.AGOTADO_POR_PROVEEDOR, solo.estadoDisponibilidad());
+    assertEquals(EstadoDisponibilidad.AGOTADO_POR_PROVEEDOR, set.estadoDisponibilidad());
+  }
+
+  /** Si el modelo leyó un precio de set que el anuncio no escribe, quien revisa lo sabe. */
+  @Test
+  void unCostoDeSetQueNoEstaEnElAnuncioSeAlerta() {
+    proveedor.definirArmaSets(true);
+
+    Resolucion resolucion = resolver(publicacion(FALDA_MALLATEX, "foto-falda"), faldaConSet(95000));
+
+    assertTrue(resolucion.alertas().contains(AlertaBorrador.PRECIO_INCONSISTENTE));
+    assertEquals(
+        Optional.of(Dinero.deCop(95000)),
+        borradores.enEstado(EstadoBorrador.EN_REVISION).getFirst().precioProveedor());
+  }
+
+  @Test
+  void unCostoDeSetEscritoNoSeAlerta() {
+    proveedor.definirArmaSets(true);
+
+    Resolucion resolucion = resolver(publicacion(FALDA_MALLATEX, "foto-falda"), faldaConSet(88000));
+
+    assertTrue(resolucion.alertas().isEmpty());
   }
 }

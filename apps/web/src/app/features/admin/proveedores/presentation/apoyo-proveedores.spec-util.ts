@@ -13,6 +13,7 @@ export function proveedorDePrueba(overrides: Partial<Proveedor> = {}): Proveedor
     publicacionAutomatica: false,
     dosChatsEnUnZip: false,
     tiposExcluidos: [],
+    armaSets: false,
     activo: true,
     ...overrides,
   };

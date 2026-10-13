@@ -92,6 +92,13 @@ public final class Proveedor {
    */
   private Set<TipoProductoProveedor> tiposExcluidos = Set.of();
 
+  /**
+   * Si la prenda que anuncia con su acompañante —la falda con la blusa, la camiseta con la gorra—
+   * se publica como set y no sola ({@link ArmadorDeSets}). Decidido por el negocio el 12 de octubre
+   * de 2026 solo para La Riverah: a los demás se les sigue comprando la prenda.
+   */
+  private boolean armaSets;
+
   public Proveedor(
       UUID id,
       String nombre,
@@ -250,6 +257,22 @@ public final class Proveedor {
   }
 
   /**
+   * Marca o desmarca que vende sets. Solo quien entra por la exportación del chat tiene anuncios
+   * que armar; el adaptador lo usa también para devolverlo como estaba guardado.
+   */
+  public void definirArmaSets(boolean arma) {
+    if (arma && !entraPorExportacion()) {
+      throw new ExcepcionDeDominio(
+          "Solo un proveedor que entra por la exportación del chat arma sets de sus anuncios.");
+    }
+    this.armaSets = arma;
+  }
+
+  public boolean armaSets() {
+    return armaSets;
+  }
+
+  /**
    * Define los tipos que no se le compran. {@code OTRO} no se puede excluir: es lo que el extractor
    * responde cuando no supo qué es, y excluirlo descartaría lo que nadie miró. Solo quien entra por
    * la exportación del chat tiene anuncios que descartar; el adaptador lo usa también para
@@ -263,6 +286,11 @@ public final class Proveedor {
     if (excluidos.contains(TipoProductoProveedor.OTRO)) {
       throw new ExcepcionDeDominio(
           "No se puede excluir el tipo «otro»: es el de los anuncios que el extractor no reconoció.");
+    }
+    if (excluidos.contains(TipoProductoProveedor.CONJUNTO_FALDA)) {
+      // Lo arma la ingesta después de comparar con las exclusiones: excluirlo no descartaría nada.
+      throw new ExcepcionDeDominio(
+          "No se puede excluir el conjunto con falda: lo arma la ingesta, no lo dice el anuncio.");
     }
     if (!excluidos.isEmpty() && !entraPorExportacion()) {
       throw new ExcepcionDeDominio(

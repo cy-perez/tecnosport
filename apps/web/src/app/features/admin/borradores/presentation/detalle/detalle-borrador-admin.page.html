@@ -579,11 +579,24 @@
       </ul>
     }
 
-    @if (borrador.tallasPorTono.length > 0 || borrador.preciosAdicionales.length > 0) {
+    @if (
+      borrador.set || borrador.tallasPorTono.length > 0 || borrador.preciosAdicionales.length > 0
+    ) {
       <section class="mb-24 flex flex-col gap-8" aria-labelledby="titulo-del-anuncio">
         <h2 id="titulo-del-anuncio" class="m-0 font-display text-lg">
           {{ 'admin.borradores.anuncio.titulo' | transloco }}
         </h2>
+        @if (borrador.set; as set) {
+          <h3 class="m-0 font-display text-base">
+            {{ 'admin.borradores.anuncio.set' | transloco }}
+          </h3>
+          <p class="m-0 text-sm" data-prueba="set-acompanante">
+            {{ 'admin.borradores.anuncio.setCon.' + set.acompanante | transloco }}
+          </p>
+          <p class="m-0 text-sm" data-prueba="set-costo">
+            {{ 'admin.borradores.anuncio.costo.' + set.origenDelCosto | transloco }}
+          </p>
+        }
         @if (borrador.tallasPorTono.length > 0) {
           <h3 class="m-0 font-display text-base">
             {{ 'admin.borradores.anuncio.tallasPorTono' | transloco }}
@@ -613,8 +626,10 @@
             @for (adicional of borrador.preciosAdicionales; track $index) {
               <li>
                 {{
-                  'admin.borradores.anuncio.precioAdicional'
-                    | transloco: { concepto: adicional.concepto, precio: precio(adicional.precio) }
+                  (adicional.clase === 'PRENDA_SOLA'
+                    ? 'admin.borradores.anuncio.precioPrendaSola'
+                    : 'admin.borradores.anuncio.precioAdicional'
+                  ) | transloco: { concepto: adicional.concepto, precio: precio(adicional.precio) }
                 }}
               </li>
             }

@@ -150,6 +150,35 @@ class RepositoriosDeIngestaJpaTest {
         .isZero();
   }
 
+  /** La Riverah arma sets (12 de octubre de 2026); los demás nacen sin, y se puede quitar. */
+  @Test
+  void armaSetsVaYVuelve() {
+    Proveedor riverah =
+        Proveedor.crear(
+            "La Riverah",
+            LineaCatalogo.ROPA,
+            "+57 301 9854097",
+            "La Riverah",
+            null,
+            OrdenDePublicacion.TEXTO_PRIMERO);
+    proveedores.guardar(riverah);
+    entityManager.flush();
+    entityManager.clear();
+    assertThat(proveedores.buscarPorId(riverah.id()).orElseThrow().armaSets()).isFalse();
+
+    riverah.definirArmaSets(true);
+    proveedores.actualizar(riverah);
+    entityManager.flush();
+    entityManager.clear();
+    assertThat(proveedores.buscarPorId(riverah.id()).orElseThrow().armaSets()).isTrue();
+
+    riverah.definirArmaSets(false);
+    proveedores.actualizar(riverah);
+    entityManager.flush();
+    entityManager.clear();
+    assertThat(proveedores.buscarPorId(riverah.id()).orElseThrow().armaSets()).isFalse();
+  }
+
   @Test
   void actualizarConservaLaFechaDeCreacion() {
     Proveedor proveedor = proveedorGuardado(null);

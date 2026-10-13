@@ -79,6 +79,13 @@
           (marcadoCambio)="form.controls.dosChatsEnUnZip.setValue($event)"
         />
 
+        <ts-checkbox
+          idCasilla="proveedor-arma-sets"
+          [etiqueta]="'admin.proveedores.formulario.armaSets' | transloco"
+          [marcado]="form.controls.armaSets.value"
+          (marcadoCambio)="form.controls.armaSets.setValue($event)"
+        />
+
         <fieldset
           class="m-0 flex flex-col gap-8 border-0 p-0"
           aria-describedby="proveedor-tipos-ayuda"

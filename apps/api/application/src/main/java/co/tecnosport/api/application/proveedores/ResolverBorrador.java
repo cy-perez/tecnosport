@@ -6,6 +6,9 @@ import co.tecnosport.api.domain.catalogo.LineaCatalogo;
 import co.tecnosport.api.domain.catalogo.Producto;
 import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.proveedores.AlertaBorrador;
+import co.tecnosport.api.domain.proveedores.ArmadoDeSet;
+import co.tecnosport.api.domain.proveedores.ArmadorDeSets;
+import co.tecnosport.api.domain.proveedores.ArmadorDeSets.SetArmado;
 import co.tecnosport.api.domain.proveedores.BorradorProducto;
 import co.tecnosport.api.domain.proveedores.CalculadoraDeMargen;
 import co.tecnosport.api.domain.proveedores.CierreDePublicacion;
@@ -13,6 +16,7 @@ import co.tecnosport.api.domain.proveedores.HuellaProveedor;
 import co.tecnosport.api.domain.proveedores.MensajeProveedor;
 import co.tecnosport.api.domain.proveedores.MotivoDePublicacion;
 import co.tecnosport.api.domain.proveedores.PHash;
+import co.tecnosport.api.domain.proveedores.PrendaAcompanante;
 import co.tecnosport.api.domain.proveedores.ProductoExtraido;
 import co.tecnosport.api.domain.proveedores.Proveedor;
 import co.tecnosport.api.domain.proveedores.PublicacionProveedor;
@@ -81,6 +85,16 @@ import java.util.UUID;
  * disponibilidad. <b>Lo que sí pasa es un agotado</b>: el jean que se publicó antes de excluir el
  * tipo, o la blusa del anuncio, se agota cuando el proveedor lo anuncia agotado, porque dejarlo a
  * la venta es venderle a alguien lo que no hay.
+ *
+ * <h2>Los sets (12 de octubre de 2026)</h2>
+ *
+ * <p>A un proveedor que arma sets ({@link Proveedor#armaSets()}, hoy La Riverah) la prenda que
+ * anuncia con su blusa o su gorra le queda como set antes de todo lo demás ({@link ArmadorDeSets}):
+ * con el título, el tipo y el costo del set, y el precio de venta sugerido sobre ese costo. Su
+ * huella es la de la prenda más el acompañante ({@link HuellaProveedor#deSet}), y por la foto solo
+ * se reconoce entre los sets con el mismo acompañante: la foto es la de la prenda, y la prenda que
+ * ya se vendiera sola se renovaría con el costo del set, o al revés. Un agotado de la prenda agota
+ * también sus sets ({@code ADR-0083}).
  *
  * <p>Una renovación no crea un borrador para revisar: actualiza la última vista, reactiva el
  * producto si estaba oculto y deja una constancia {@code RENOVACION_APLICADA}. Un agotado sobre un
@@ -260,6 +274,21 @@ public final class ResolverBorrador {
     }
 
     Dinero precio = evaluada.precioProveedor();
+    Set<AlertaBorrador> alertasDelSet = EnumSet.noneOf(AlertaBorrador.class);
+    Optional<SetArmado> set =
+        proveedor.armaSets()
+            ? ArmadorDeSets.armar(extraido, precioDeLaPrenda(extraido, precio, textoDelAnuncio))
+            : Optional.empty();
+    if (set.isPresent()) {
+      extraido = set.get().producto();
+      precio = set.get().costo();
+      // El costo del set sale de lo que el modelo leyó del combo o del acompañante: si no está
+      // escrito en el anuncio, nadie lo contrastó, y quien revisa tiene que saberlo.
+      if (!set.get().preciosEscritosEn(textoDelAnuncio)) {
+        alertasDelSet.add(AlertaBorrador.PRECIO_INCONSISTENTE);
+      }
+    }
+    PrendaAcompanante acompanante = set.map(s -> s.armado().acompanante()).orElse(null);
     Optional<String> codigo = extraido.codigoReferenciaOpcional();
     HuellaProveedor delTexto =
         extraido.tituloOpcional().isPresent() && precio != null
@@ -284,13 +313,53 @@ public final class ResolverBorrador {
     } else {
       huella = null;
     }
+    if (huella != null && set.isPresent()) {
+      huella = HuellaProveedor.deSet(huella, set.get().armado().acompanante());
+    }
     PHash pHash = fotos.isEmpty() ? null : fotos.getFirst();
     Instant ahora = reloj.ahora();
 
-    Optional<Producto> existente = buscarExistente(proveedor.id(), huella, pHash, huellasVisuales);
+    // Por la foto, solo entre los de su misma clase: la foto de un set es la de su prenda, y si no
+    // la prenda sola que ya estuviera en el catálogo se renovaría con el costo del set, o al revés.
+    Optional<Producto> existente =
+        buscarExistente(proveedor.id(), huella, pHash, huellasVisuales, acompanante);
+    if (extraido.estaAgotado() && proveedor.armaSets() && set.isEmpty()) {
+      // «AGOTADO polo RV102376», sin los precios de la gorra: no arma set, pero el set de esa misma
+      // prenda tampoco se puede seguir vendiendo.
+      List<Producto> sets = setsDeLaPrenda(proveedor.id(), huella, pHash, huellasVisuales);
+      sets.stream()
+          .filter(s -> existente.map(e -> !e.id().equals(s.id())).orElse(true))
+          .forEach(
+              s -> {
+                s.marcarAgotadoPorProveedor(publicacion.fecha());
+                repositorioProductos.actualizar(s);
+              });
+      if (existente.isEmpty() && !sets.isEmpty()) {
+        return renovar(
+            publicacion,
+            proveedor,
+            evaluada,
+            extraido,
+            null,
+            sets.getFirst(),
+            huella,
+            pHash,
+            precio,
+            ahora);
+      }
+    }
     if (existente.isPresent()) {
       return renovar(
-          publicacion, proveedor, evaluada, existente.get(), huella, pHash, precio, ahora);
+          publicacion,
+          proveedor,
+          evaluada,
+          extraido,
+          set.map(SetArmado::armado).orElse(null),
+          existente.get(),
+          huella,
+          pHash,
+          precio,
+          ahora);
     }
     if (extraido.estaAgotado()) {
       return Resolucion.descartada(
@@ -327,9 +396,10 @@ public final class ResolverBorrador {
             precioSugerido,
             huella,
             pHash,
-            evaluada.alertas(),
+            conLasDelSet(evaluada.alertas(), alertasDelSet),
             evaluada.reparto(),
             ahora);
+    set.ifPresent(s -> BorradorProducto.conSet(borrador, s.armado()));
     repositorioBorradores.guardar(borrador);
     return new Resolucion(TipoDeResolucion.NUEVO, borrador.alertas(), null);
   }
@@ -418,10 +488,16 @@ public final class ResolverBorrador {
         .anyMatch(u -> otras.stream().anyMatch(o -> u.distanciaHamming(o) <= umbralHamming));
   }
 
+  /**
+   * @param extraido el producto de la evaluación, o el set que se armó con él
+   * @param set cómo se armó; nulo si es la prenda sola
+   */
   private Resolucion renovar(
       PublicacionProveedor publicacion,
       Proveedor proveedor,
       ExtraccionEvaluada evaluada,
+      ProductoExtraido extraido,
+      ArmadoDeSet set,
       Producto producto,
       HuellaProveedor huella,
       PHash pHash,
@@ -430,7 +506,7 @@ public final class ResolverBorrador {
     Set<AlertaBorrador> alertas = EnumSet.noneOf(AlertaBorrador.class);
     alertas.addAll(evaluada.alertas());
     TipoDeResolucion tipo;
-    if (evaluada.producto().estaAgotado()) {
+    if (extraido.estaAgotado()) {
       producto.marcarAgotadoPorProveedor(publicacion.fecha());
       tipo = TipoDeResolucion.AGOTADO;
     } else {
@@ -443,17 +519,19 @@ public final class ResolverBorrador {
     }
     repositorioProductos.actualizar(producto);
     repositorioBorradores.guardar(
-        BorradorProducto.renovacionAplicada(
-            publicacion.id(),
-            proveedor.id(),
-            producto.id(),
-            evaluada.producto(),
-            evaluada.jsonCrudo(),
-            precio,
-            huella,
-            pHash,
-            alertas,
-            ahora));
+        BorradorProducto.conSet(
+            BorradorProducto.renovacionAplicada(
+                publicacion.id(),
+                proveedor.id(),
+                producto.id(),
+                extraido,
+                evaluada.jsonCrudo(),
+                precio,
+                huella,
+                pHash,
+                alertas,
+                ahora),
+            set));
     return new Resolucion(tipo, alertas, null);
   }
 
@@ -463,8 +541,61 @@ public final class ResolverBorrador {
     return Resolucion.descartada(motivo);
   }
 
-  private Optional<Producto> buscarExistente(
+  /**
+   * El precio de la prenda para sumarle su acompañante. El del texto es el primero que el anuncio
+   * escribe, y en «Básica 48.000 / Falda 59.900» ese es el de la blusa: si el extractor leyó otro y
+   * ese sí está escrito, manda el del extractor. La alerta de precio inconsistente queda igual.
+   */
+  private static Dinero precioDeLaPrenda(
+      ProductoExtraido extraido, Dinero delTexto, String textoDelAnuncio) {
+    return extraido
+        .precioProveedorOpcional()
+        .filter(p -> !p.equals(delTexto) && ArmadorDeSets.estaEscrito(p, textoDelAnuncio))
+        .orElse(delTexto);
+  }
+
+  private static Set<AlertaBorrador> conLasDelSet(
+      Set<AlertaBorrador> deLaEvaluacion, Set<AlertaBorrador> delSet) {
+    if (delSet.isEmpty()) {
+      return deLaEvaluacion;
+    }
+    Set<AlertaBorrador> todas = EnumSet.noneOf(AlertaBorrador.class);
+    todas.addAll(deLaEvaluacion);
+    todas.addAll(delSet);
+    return todas;
+  }
+
+  /**
+   * Los sets que se armaron con esta misma prenda, con gorra o con blusa: por la huella de la
+   * prenda con cada acompañante, o por la foto entre los sets.
+   */
+  private List<Producto> setsDeLaPrenda(
       UUID proveedorId, HuellaProveedor huella, PHash pHash, List<HuellaVisual> huellasVisuales) {
+    List<Producto> sets = new ArrayList<>();
+    for (PrendaAcompanante acompanante :
+        List.of(PrendaAcompanante.GORRA, PrendaAcompanante.BLUSA)) {
+      buscarExistente(
+              proveedorId,
+              huella == null ? null : HuellaProveedor.deSet(huella, acompanante),
+              pHash,
+              huellasVisuales,
+              acompanante)
+          .filter(p -> sets.stream().noneMatch(s -> s.id().equals(p.id())))
+          .ifPresent(sets::add);
+    }
+    return sets;
+  }
+
+  /**
+   * @param acompanante el del set que se busca; nulo para la prenda sola. Por la foto solo se
+   *     reconocen los productos de esa misma clase.
+   */
+  private Optional<Producto> buscarExistente(
+      UUID proveedorId,
+      HuellaProveedor huella,
+      PHash pHash,
+      List<HuellaVisual> huellasVisuales,
+      PrendaAcompanante acompanante) {
     if (huella != null) {
       Optional<Producto> porHuella = productosDeProveedor.buscarPorHuella(proveedorId, huella);
       if (porHuella.isPresent()) {
@@ -475,6 +606,7 @@ public final class ResolverBorrador {
       return Optional.empty();
     }
     return huellasVisuales.stream()
+        .filter(h -> h.acompananteDelSet() == acompanante)
         .filter(h -> h.pHash().distanciaHamming(pHash) <= umbralHamming)
         .findFirst()
         .flatMap(h -> repositorioProductos.buscarPorId(h.productoId()));

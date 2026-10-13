@@ -97,7 +97,8 @@ fotos, el «set falda + básica», el dúo, la promoción por cantidad.
 6. **Los precios que no son del producto** —acompañantes, combos y promociones por cantidad— van
    en `precios_adicionales` y el panel solo los muestra. No son productos: no tienen foto ni código,
    y el catálogo no tiene combos. Decidido al ejecutar el plan del 10 de octubre de 2026, con las
-   opciones que el plan recomendaba.
+   opciones que el plan recomendaba. **Desde el 12 de octubre de 2026, a un proveedor que arma
+   sets el acompañante y el combo le arman el borrador** (`ADR-0083`).
 7. **Partir un borrador** desde el panel es la salida cuando el lector juntó dos productos en uno:
    - las fotos elegidas se van a un borrador nuevo de la misma publicación, con los mismos datos y
      una huella derivada (`HuellaProveedor.deParte`);

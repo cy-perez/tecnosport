@@ -135,6 +135,35 @@ describe('FormularioProveedorAdminPage', () => {
     expect(repositorio.creados[0]).toMatchObject({ nombre: 'Meraki', dosChatsEnUnZip: true });
   });
 
+  /** La Riverah arma sets (12 de octubre de 2026): la casilla viaja en lo que se crea. */
+  it('manda que arma sets cuando se marca', async () => {
+    const { repositorio, fixture } = await renderPagina();
+    vi.spyOn(fixture.debugElement.injector.get(Router), 'navigate').mockResolvedValue(true);
+
+    escribir(f.nombre, 'La Riverah');
+    escribir(f.remitente, 'La Riverah');
+    escribir(f.telefono, '573019854097');
+    fireEvent.change(screen.getByLabelText(f.linea), { target: { value: 'ROPA' } });
+    fireEvent.change(screen.getByLabelText(f.orden), { target: { value: 'TEXTO_PRIMERO' } });
+    escribir(f.margen, '1,38');
+    fireEvent.click(await screen.findByLabelText(f.armaSets));
+    fireEvent.click(screen.getByRole('button', { name: f.crear }));
+
+    await vi.waitFor(() => expect(repositorio.creados).toHaveLength(1));
+    expect(repositorio.creados[0]).toMatchObject({ nombre: 'La Riverah', armaSets: true });
+  });
+
+  /** El conjunto con falda lo arma la ingesta: excluirlo no descartaría nada. */
+  it('no ofrece excluir el conjunto con falda', async () => {
+    await renderPagina();
+
+    fireEvent.change(await screen.findByLabelText(f.linea), { target: { value: 'ROPA' } });
+
+    expect(await screen.findByRole('group', { name: f.tiposExcluidos })).toBeTruthy();
+    expect(screen.queryByLabelText(esAdmin.borradores.tipos.CONJUNTO_FALDA)).toBeNull();
+    expect(screen.getByLabelText(esAdmin.borradores.tipos.FALDA_SHORT)).toBeTruthy();
+  });
+
   /** La tecnología llega por listas: no tiene chats que subir y la casilla no aparece. */
   it('no ofrece los dos chats a un proveedor de tecnología', async () => {
     await renderPagina();

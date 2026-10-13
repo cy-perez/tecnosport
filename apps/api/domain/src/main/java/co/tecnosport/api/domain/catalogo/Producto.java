@@ -51,6 +51,13 @@ public final class Producto {
   private EstadoDisponibilidad estadoDisponibilidad;
   private String tallaSirveHasta;
 
+  /**
+   * Lo que pesa de más sobre el promedio de su categoría, en gramos: la gorra de un set de camiseta
+   * o polo, que se publica en Camisetas o en Polos (decidido por el negocio el 12 de octubre de
+   * 2026). Cero en todo lo demás.
+   */
+  private int pesoAdicionalGramos;
+
   /** Un producto creado a mano o reconstruido sin datos de proveedor: origen {@code MANUAL}. */
   public Producto(
       UUID id,
@@ -872,6 +879,21 @@ public final class Producto {
           "«Sirve hasta» es una talla, no una frase: hasta 20 caracteres.");
     }
     this.tallaSirveHasta = limpia;
+  }
+
+  /** Lo que la bolsa del envío le suma al promedio de su categoría por cada unidad. */
+  public int pesoAdicionalGramos() {
+    return pesoAdicionalGramos;
+  }
+
+  /**
+   * @param gramos lo que pesa de más sobre el promedio de su categoría; cero para quitarlo
+   */
+  public void definirPesoAdicional(int gramos) {
+    if (gramos < 0) {
+      throw new ExcepcionDeDominio("El peso adicional de un producto no puede ser negativo.");
+    }
+    this.pesoAdicionalGramos = gramos;
   }
 
   @Override

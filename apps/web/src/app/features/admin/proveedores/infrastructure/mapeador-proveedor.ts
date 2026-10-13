@@ -28,6 +28,7 @@ export function aProveedor(dto: ProveedorDto): Proveedor {
     activo: dto.activo ?? true,
     dosChatsEnUnZip: dto.dosChatsEnUnZip ?? false,
     tiposExcluidos: (dto.tiposExcluidos ?? []) as TipoProductoProveedor[],
+    armaSets: dto.armaSets ?? false,
   };
 }
 
@@ -43,5 +44,6 @@ export function aProveedorPeticion(datos: DatosProveedor): ProveedorPeticionDto 
     activo: datos.activo,
     dosChatsEnUnZip: datos.dosChatsEnUnZip,
     tiposExcluidos: [...datos.tiposExcluidos],
+    armaSets: datos.armaSets,
   };
 }

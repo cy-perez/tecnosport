@@ -8,11 +8,14 @@ import co.tecnosport.api.application.proveedores.RepositorioBorradores;
 import co.tecnosport.api.domain.catalogo.LineaCatalogo;
 import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.proveedores.AlertaBorrador;
+import co.tecnosport.api.domain.proveedores.ArmadoDeSet;
 import co.tecnosport.api.domain.proveedores.BorradorProducto;
 import co.tecnosport.api.domain.proveedores.EstadoBorrador;
 import co.tecnosport.api.domain.proveedores.FotoSubida;
 import co.tecnosport.api.domain.proveedores.HuellaProveedor;
+import co.tecnosport.api.domain.proveedores.OrigenDelCostoDeSet;
 import co.tecnosport.api.domain.proveedores.PHash;
+import co.tecnosport.api.domain.proveedores.PrendaAcompanante;
 import co.tecnosport.api.domain.proveedores.Tallas;
 import co.tecnosport.api.domain.proveedores.TipoDeTalla;
 import co.tecnosport.api.domain.proveedores.TipoProductoProveedor;
@@ -97,7 +100,14 @@ public class RepositorioBorradoresJpa implements RepositorioBorradores {
   public List<HuellaVisual> huellasVisualesDelProveedor(UUID proveedorId) {
     // Cada renovación deja una fila más con el mismo producto y el mismo pHash: se dedupe aquí.
     return jpa.findByProveedorIdAndProductoIdIsNotNullAndPhashIsNotNull(proveedorId).stream()
-        .map(f -> new HuellaVisual(f.getProductoId(), PHash.deHex(f.getPhash())))
+        .map(
+            f ->
+                new HuellaVisual(
+                    f.getProductoId(),
+                    PHash.deHex(f.getPhash()),
+                    f.getSetAcompanante() == null
+                        ? null
+                        : PrendaAcompanante.valueOf(f.getSetAcompanante())))
         .distinct()
         .toList();
   }
@@ -212,6 +222,9 @@ public class RepositorioBorradoresJpa implements RepositorioBorradores {
             b.creadoEn(),
             ahora);
     fila.setDiseno(b.diseno().orElse(null));
+    fila.setSet(
+        b.set().map(set -> set.acompanante().name()).orElse(null),
+        b.set().map(set -> set.origenDelCosto().name()).orElse(null));
     return fila;
   }
 
@@ -262,7 +275,14 @@ public class RepositorioBorradoresJpa implements RepositorioBorradores {
             f.getProductoId(),
             f.getMotivoRechazo(),
             f.getCreadoEn());
-    return BorradorProducto.conDiseno(borrador, f.getDiseno());
+    BorradorProducto conDiseno = BorradorProducto.conDiseno(borrador, f.getDiseno());
+    return f.getSetAcompanante() == null || f.getSetOrigenDelCosto() == null
+        ? conDiseno
+        : BorradorProducto.conSet(
+            conDiseno,
+            new ArmadoDeSet(
+                PrendaAcompanante.valueOf(f.getSetAcompanante()),
+                OrigenDelCostoDeSet.valueOf(f.getSetOrigenDelCosto())));
   }
 
   private static String unir(List<String> valores) {

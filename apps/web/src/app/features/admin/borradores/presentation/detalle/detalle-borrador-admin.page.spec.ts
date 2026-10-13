@@ -105,10 +105,34 @@ const POLOS: Categoria = {
 
 const BLAZERS: Categoria = { ...POLOS, id: 'c7', nombre: 'Blazers', slug: 'ropa-dama-blazers' };
 const CHALECOS: Categoria = { ...POLOS, id: 'c8', nombre: 'Chalecos', slug: 'ropa-dama-chalecos' };
+/** Los de V113 (12 de octubre de 2026): la falda short y los conjuntos de dama. */
+const FALDA_SHORT: Categoria = {
+  ...POLOS,
+  id: 'c9',
+  nombre: 'Falda - Short',
+  slug: 'ropa-dama-falda-short',
+};
+const CONJUNTOS: Categoria = {
+  ...POLOS,
+  id: 'c10',
+  nombre: 'Conjuntos',
+  slug: 'ropa-dama-conjuntos',
+};
 
 class RepositorioCategoriasFalso implements RepositorioCategorias {
   async listarTodas(): Promise<Categoria[]> {
-    return [CATEGORIA, BLUSAS, FALDAS, DAMA, CAMISAS, POLOS, BLAZERS, CHALECOS];
+    return [
+      CATEGORIA,
+      BLUSAS,
+      FALDAS,
+      DAMA,
+      CAMISAS,
+      POLOS,
+      BLAZERS,
+      CHALECOS,
+      FALDA_SHORT,
+      CONJUNTOS,
+    ];
   }
 }
 
@@ -729,6 +753,9 @@ describe('DetalleBorradorAdminPage', () => {
     ['POLO', 'c6', /Polos/],
     ['BLAZER', 'c7', /Blazers/],
     ['CHALECO', 'c8', /Chalecos/],
+    // La falda con short y la falda con su blusa de La Riverah (12 de octubre de 2026).
+    ['FALDA_SHORT', 'c9', /Falda - Short/],
+    ['CONJUNTO_FALDA', 'c10', /Conjuntos/],
   ] as const)('un %s llega con su categoría preseleccionada', async (tipo, id, opcion) => {
     await renderPagina(borradorDePrueba({ tipo }));
     await screen.findByRole('option', { name: opcion });
@@ -1233,7 +1260,7 @@ describe('DetalleBorradorAdminPage', () => {
             { tono: 'negro', tallas: ['SM', 'ML'] },
             { tono: 'cocoa', tallas: ['ML'] },
           ],
-          preciosAdicionales: [{ concepto: 'Gorra', precio: 35000 }],
+          preciosAdicionales: [{ concepto: 'Gorra', precio: 35000, clase: null, prenda: null }],
         }),
       );
 
@@ -1241,6 +1268,36 @@ describe('DetalleBorradorAdminPage', () => {
       expect(screen.getByText('cocoa: ML')).toBeTruthy();
       expect(screen.getByText('negro: SM, ML')).toBeTruthy();
       expect(screen.getByText(/Gorra: \$ 35\.000/)).toBeTruthy();
+    });
+
+    /** El set de La Riverah (12 de octubre de 2026): con qué va, y de dónde salió el costo. */
+    it('dice que es un set, con qué prenda va y de dónde salió su costo', async () => {
+      await renderPagina(
+        borradorDePrueba({
+          set: { acompanante: 'GORRA', origenDelCosto: 'SUMA_DE_PRENDAS' },
+          preciosAdicionales: [
+            { concepto: 'Camiseta oversize', precio: 55000, clase: 'PRENDA_SOLA', prenda: null },
+            { concepto: 'Gorras', precio: 35000, clase: 'ACOMPANANTE', prenda: 'GORRA' },
+          ],
+        }),
+      );
+
+      expect(await screen.findByRole('heading', { name: anuncio.set })).toBeTruthy();
+      expect(screen.getByText(anuncio.setCon.GORRA)).toBeTruthy();
+      expect(screen.getByText(anuncio.costo.SUMA_DE_PRENDAS)).toBeTruthy();
+      expect(
+        screen.getByText(/Camiseta oversize, sin su acompañante: \$ 55\.000/),
+      ).toBeTruthy();
+      expect(screen.getByText(/Gorras: \$ 35\.000/)).toBeTruthy();
+    });
+
+    it('un set con el precio anunciado lo dice así', async () => {
+      await renderPagina(
+        borradorDePrueba({ set: { acompanante: 'BLUSA', origenDelCosto: 'ANUNCIADO' } }),
+      );
+
+      expect(await screen.findByText(anuncio.setCon.BLUSA)).toBeTruthy();
+      expect(screen.getByText(anuncio.costo.ANUNCIADO)).toBeTruthy();
     });
 
     it('sin nada aparte no pinta la sección', async () => {

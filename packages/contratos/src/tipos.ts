@@ -2381,6 +2381,7 @@ export interface components {
             proveedorId?: string;
             /** Format: uuid */
             publicacionId?: string;
+            set?: components["schemas"]["SetRespuesta"];
             tallas?: components["schemas"]["TallasRespuesta"];
             tallasPorTono?: components["schemas"]["TallasDeTonoRespuesta"][];
             tipo?: string;
@@ -3254,9 +3255,11 @@ export interface components {
             verdicto?: string;
         };
         PrecioAdicionalRespuesta: {
+            clase?: string;
             concepto: string;
             /** Format: int64 */
             precio: number;
+            prenda?: string;
         };
         PrecioDeVariantePeticion: {
             /** Format: int64 */
@@ -3362,6 +3365,7 @@ export interface components {
         };
         ProveedorPeticion: {
             activo?: boolean;
+            armaSets?: boolean;
             dosChatsEnUnZip?: boolean;
             factorDeMargen?: number;
             linea: string;
@@ -3374,6 +3378,7 @@ export interface components {
         };
         ProveedorRespuesta: {
             activo?: boolean;
+            armaSets?: boolean;
             dosChatsEnUnZip?: boolean;
             factorDeMargen?: number;
             /** Format: uuid */
@@ -3619,6 +3624,10 @@ export interface components {
             rol?: string;
             /** Format: uuid */
             usuarioId?: string;
+        };
+        SetRespuesta: {
+            acompanante: string;
+            origenDelCosto: string;
         };
         SetRotacionRespuesta: {
             /** Format: date-time */

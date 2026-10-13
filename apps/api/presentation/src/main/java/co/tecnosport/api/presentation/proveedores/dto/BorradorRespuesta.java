@@ -15,7 +15,9 @@ import java.util.UUID;
  * @param tallasPorTono las tallas de cada tono cuando el mensaje no las tiene todas en todos; vacía
  *     si las tiene
  * @param preciosAdicionales los del anuncio que no son de este producto: la gorra, el combo, la
- *     promoción por cantidad. Solo para mirar
+ *     promoción por cantidad, y en un set la prenda sola. Solo para mirar
+ * @param set con qué prenda se armó el set y de dónde salió su costo; nulo si el borrador es la
+ *     prenda sola
  */
 public record BorradorRespuesta(
     UUID id,
@@ -39,7 +41,8 @@ public record BorradorRespuesta(
     String extraccionCruda,
     Instant creadoEn,
     List<TallasDeTonoRespuesta> tallasPorTono,
-    List<PrecioAdicionalRespuesta> preciosAdicionales) {
+    List<PrecioAdicionalRespuesta> preciosAdicionales,
+    SetRespuesta set) {
 
   public static BorradorRespuesta de(BorradorProducto b) {
     return new BorradorRespuesta(
@@ -68,8 +71,17 @@ public record BorradorRespuesta(
             .map(t -> new TallasDeTonoRespuesta(t.tono(), t.tallas()))
             .toList(),
         b.preciosAdicionales().stream()
-            .map(p -> new PrecioAdicionalRespuesta(p.concepto(), entero(p.precio())))
-            .toList());
+            .map(
+                p ->
+                    new PrecioAdicionalRespuesta(
+                        p.concepto(),
+                        entero(p.precio()),
+                        p.claseOpcional().map(Enum::name).orElse(null),
+                        p.prendaOpcional().map(Enum::name).orElse(null)))
+            .toList(),
+        b.set()
+            .map(s -> new SetRespuesta(s.acompanante().name(), s.origenDelCosto().name()))
+            .orElse(null));
   }
 
   private static Long entero(Dinero dinero) {
@@ -83,7 +95,23 @@ public record BorradorRespuesta(
       @Schema(requiredMode = Schema.RequiredMode.REQUIRED) String tono,
       @Schema(requiredMode = Schema.RequiredMode.REQUIRED) List<String> tallas) {}
 
+  /**
+   * @param clase {@code ACOMPANANTE}, {@code COMBO}, {@code PROMOCION} o {@code PRENDA_SOLA}; nula
+   *     en los guardados antes del 12 de octubre de 2026
+   * @param prenda la que acompaña: {@code BLUSA}, {@code GORRA} u {@code OTRA}; nula si no hay
+   */
   public record PrecioAdicionalRespuesta(
       @Schema(requiredMode = Schema.RequiredMode.REQUIRED) String concepto,
-      @Schema(requiredMode = Schema.RequiredMode.REQUIRED) long precio) {}
+      @Schema(requiredMode = Schema.RequiredMode.REQUIRED) long precio,
+      String clase,
+      String prenda) {}
+
+  /**
+   * @param acompanante {@code BLUSA} o {@code GORRA}
+   * @param origenDelCosto {@code ANUNCIADO} si el proveedor dio el precio del set, {@code
+   *     SUMA_DE_PRENDAS} si se sumaron
+   */
+  public record SetRespuesta(
+      @Schema(requiredMode = Schema.RequiredMode.REQUIRED) String acompanante,
+      @Schema(requiredMode = Schema.RequiredMode.REQUIRED) String origenDelCosto) {}
 }

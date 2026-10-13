@@ -10,7 +10,9 @@ import co.tecnosport.api.application.proveedores.HuellaVisual;
 import co.tecnosport.api.domain.catalogo.LineaCatalogo;
 import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.proveedores.AlertaBorrador;
+import co.tecnosport.api.domain.proveedores.ArmadoDeSet;
 import co.tecnosport.api.domain.proveedores.BorradorProducto;
+import co.tecnosport.api.domain.proveedores.ClaseDePrecioAdicional;
 import co.tecnosport.api.domain.proveedores.EstadoBorrador;
 import co.tecnosport.api.domain.proveedores.FalloDeLote;
 import co.tecnosport.api.domain.proveedores.FotoSubida;
@@ -21,8 +23,10 @@ import co.tecnosport.api.domain.proveedores.LoteIngesta;
 import co.tecnosport.api.domain.proveedores.MensajeProveedor;
 import co.tecnosport.api.domain.proveedores.MotivoDeFalloDeLote;
 import co.tecnosport.api.domain.proveedores.OrdenDePublicacion;
+import co.tecnosport.api.domain.proveedores.OrigenDelCostoDeSet;
 import co.tecnosport.api.domain.proveedores.PHash;
 import co.tecnosport.api.domain.proveedores.PrecioAdicional;
+import co.tecnosport.api.domain.proveedores.PrendaAcompanante;
 import co.tecnosport.api.domain.proveedores.ProductoExtraido;
 import co.tecnosport.api.domain.proveedores.Proveedor;
 import co.tecnosport.api.domain.proveedores.PublicacionProveedor;
@@ -31,6 +35,9 @@ import co.tecnosport.api.domain.proveedores.TallasPorTono;
 import co.tecnosport.api.domain.proveedores.TipoDeTalla;
 import co.tecnosport.api.domain.proveedores.TipoMensaje;
 import co.tecnosport.api.domain.proveedores.TipoProductoProveedor;
+import co.tecnosport.api.infrastructure.catalogo.entidad.CategoriaJpaEntity;
+import co.tecnosport.api.infrastructure.catalogo.entidad.MarcaJpaEntity;
+import co.tecnosport.api.infrastructure.catalogo.entidad.ProductoJpaEntity;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import java.math.BigDecimal;
@@ -286,6 +293,64 @@ class RepositorioBorradoresJpaTest {
     assertThat(ninguna).isEmpty();
   }
 
+  /**
+   * La huella visual dice si su producto es un set y con qué acompañante (12 de octubre de 2026):
+   * por la foto, un anuncio solo se compara con los de su misma clase.
+   */
+  @Test
+  void laHuellaVisualDeUnSetTraeSuAcompanante() {
+    unaPublicacion();
+    UUID marca = UUID.randomUUID();
+    em.persist(new MarcaJpaEntity(marca, "Genérica set", Instant.now()));
+    UUID categoria = UUID.randomUUID();
+    em.persist(
+        new CategoriaJpaEntity(
+            categoria, "Polos set", "ropa-caballero-polos-set", "ROPA", null, Instant.now()));
+    UUID productoSet = UUID.randomUUID();
+    UUID productoSolo = UUID.randomUUID();
+    for (UUID id : List.of(productoSet, productoSolo)) {
+      em.persist(
+          new ProductoJpaEntity(
+              id, "Polo " + id, "polo-" + id, "", marca, categoria, "BORRADOR", T, T));
+    }
+    em.flush();
+    BorradorProducto set =
+        BorradorProducto.renovacionAplicada(
+            publicacion.id(),
+            proveedor.id(),
+            productoSet,
+            extraido("Set polo importado y gorra", null),
+            "{}",
+            Dinero.deCop(85000),
+            null,
+            PHash.deHex("00000000000000ff"),
+            Set.of(),
+            T);
+    BorradorProducto.conSet(
+        set, new ArmadoDeSet(PrendaAcompanante.GORRA, OrigenDelCostoDeSet.ANUNCIADO));
+    BorradorProducto solo =
+        BorradorProducto.renovacionAplicada(
+            publicacion.id(),
+            proveedor.id(),
+            productoSolo,
+            extraido("Polo importado", null),
+            "{}",
+            Dinero.deCop(55000),
+            null,
+            PHash.deHex("000000000000ff00"),
+            Set.of(),
+            T);
+    borradores.guardar(set);
+    borradores.guardar(solo);
+    em.flush();
+    em.clear();
+
+    assertThat(borradores.huellasVisualesDelProveedor(proveedor.id()))
+        .containsExactlyInAnyOrder(
+            new HuellaVisual(productoSet, PHash.deHex("00000000000000ff"), PrendaAcompanante.GORRA),
+            new HuellaVisual(productoSolo, PHash.deHex("000000000000ff00"), null));
+  }
+
   /** La lista de una tanda del borrado en bloque: por estado, del más antiguo, con tope. */
   @Test
   void losIdsPorEstadoVanDelMasAntiguoConTopeYSeCuentanAparte() {
@@ -384,7 +449,13 @@ class RepositorioBorradoresJpaTest {
                 List.of(
                     new TallasPorTono.TallasDeUnTono("negro", List.of("SM", "ML")),
                     new TallasPorTono.TallasDeUnTono("cocoa", List.of("ML")))),
-            List.of(new PrecioAdicional("Gorra", Dinero.deCop(35000))));
+            List.of(
+                new PrecioAdicional("Gorra", Dinero.deCop(35000)),
+                new PrecioAdicional(
+                    "Set falda + básica",
+                    Dinero.deCop(88000),
+                    ClaseDePrecioAdicional.COMBO,
+                    PrendaAcompanante.BLUSA)));
     BorradorProducto borrador =
         BorradorProducto.nuevo(
             publicacion.id(),
@@ -402,6 +473,8 @@ class RepositorioBorradoresJpaTest {
                 "{\"album_de_disenos\":false}",
                 "blusa abertura"),
             T);
+    BorradorProducto.conSet(
+        borrador, new ArmadoDeSet(PrendaAcompanante.BLUSA, OrigenDelCostoDeSet.SUMA_DE_PRENDAS));
     borradores.guardar(borrador);
     em.flush();
     em.clear();
@@ -411,7 +484,15 @@ class RepositorioBorradoresJpaTest {
     assertThat(leido.tallasPorTono().tallasDe("cocoa")).contains(List.of("ML"));
     assertThat(leido.tallasPorTono().tonos()).hasSize(2);
     assertThat(leido.preciosAdicionales())
-        .containsExactly(new PrecioAdicional("Gorra", Dinero.deCop(35000)));
+        .containsExactly(
+            new PrecioAdicional("Gorra", Dinero.deCop(35000)),
+            new PrecioAdicional(
+                "Set falda + básica",
+                Dinero.deCop(88000),
+                ClaseDePrecioAdicional.COMBO,
+                PrendaAcompanante.BLUSA));
+    assertThat(leido.set())
+        .contains(new ArmadoDeSet(PrendaAcompanante.BLUSA, OrigenDelCostoDeSet.SUMA_DE_PRENDAS));
     assertThat(leido.tonosSugeridos()).containsExactlyEntriesOf(Map.of(negra, "negro"));
     assertThat(leido.lecturaDeFotos()).contains("{\"album_de_disenos\":false}");
     assertThat(leido.diseno()).contains("blusa abertura");
@@ -437,6 +518,7 @@ class RepositorioBorradoresJpaTest {
     assertThat(vacio.preciosAdicionales()).isEmpty();
     assertThat(vacio.tonosSugeridos()).isEmpty();
     assertThat(vacio.lecturaDeFotos()).isEmpty();
+    assertThat(vacio.set()).isEmpty();
   }
 
   /**
