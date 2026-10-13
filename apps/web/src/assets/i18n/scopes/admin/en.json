@@ -1337,7 +1337,9 @@
       "FOTOS_COMPARTIDAS": "The message announced several products with the same photos. Keep only the ones of this product and mark its main photo.",
       "REPLICA": "The supplier announces it as a replica (1.1 or AAA). It is published under the Generic brand, with the original brand only in the title, such as “Puma - BMW style T-shirt”. Confirm both before approving.",
       "ACOMPANANTE_SIN_LEER": "The post offers the garment with a cap, a set or a duo, but the extraction did not read its price: the draft is the garment on its own. Check the post; if it is a set, reject it and ingest the chat again.",
-      "SET_SIN_DESCRIPCION": "This is a set and it has no description. Write one that mentions the cap or the blouse before approving."
+      "SET_SIN_DESCRIPCION": "This is a set and it has no description. Write one that mentions the cap or the blouse before approving.",
+      "TALLAS_CORRIDAS": "The post names the sizes shifted (small fit, “go up” or EU sizes) and they were moved to the ones sold. Check in the post how many, under “How the supplier names the sizes”.",
+      "TALLAS_SIN_CORRER": "The post names the sizes shifted, but one could not be moved: the post sizes were kept. Write the ones sold before approving."
     },
     "detalle": {
       "miga": "Review",
@@ -1369,6 +1371,11 @@
       "tallasDeLaEscala": "Sizes it comes in, from the category scale",
       "fueraDeEscala": "Outside the category scale: {{tallas}}. Check whether they belong to this product.",
       "separadas": "Comma separated: S, M, L.",
+      "ajusteDeTalla": "How the supplier names the sizes",
+      "ajusteDeTallaAyuda": "The sizes above are the ones sold. If the post says “small fit, order one size up”, “go up 2 sizes” or gives EU sizes, the supplier names them higher, and each order will say which one to order.",
+      "ajusteIgual": "Same as sold",
+      "ajusteArriba": "{{tallas}} up",
+      "tallasPedidas": "Ordered from the supplier, as saved: {{tallas}}. A “?” is a size that cannot be worked out: remove it before approving.",
       "cantidadTonos": "Number of colours",
       "tonosNombrados": "Colours, by name",
       "material": "Material",

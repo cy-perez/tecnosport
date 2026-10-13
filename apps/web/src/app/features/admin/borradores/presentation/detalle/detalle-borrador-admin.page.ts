@@ -53,20 +53,22 @@ import {
 } from '../../application/decidir-borrador.mutacion';
 import { usarVerBorrador } from '../../application/ver-borrador.consulta';
 import {
+  AJUSTE_DE_TALLA_MAXIMO,
   Borrador,
   borradorBorrable,
-  borradorSinProducto,
   borradorEditable,
+  borradorSinProducto,
   CATEGORIA_SUGERIDA_POR_TIPO,
   EstadoBorrador,
   fotoAdmitida,
   HermanoBorrador,
   MARCA_DE_REPLICAS,
   MAXIMO_FOTOS_POR_PRODUCTO,
+  TallaPedida,
   Tallas,
-  TIPOS_PRODUCTO_PROVEEDOR,
   TipoDeTalla,
   TipoProductoProveedor,
+  TIPOS_PRODUCTO_PROVEEDOR,
 } from '../../domain/borrador.model';
 import {
   agregarPrendaAparte,
@@ -282,6 +284,9 @@ export class DetalleBorradorAdminPage {
     tipoDeTalla: new FormControl<TipoDeTalla>('DESCONOCIDA', { nonNullable: true }),
     sirveHasta: new FormControl('', { nonNullable: true }),
     tallas: new FormControl('', { nonNullable: true }),
+    // Cuántas tallas más arriba las nombra el proveedor (ADR-0085). Lo lee la ingesta del anuncio;
+    // aquí se corrige si lo leyó mal.
+    ajusteDeTalla: new FormControl('0', { nonNullable: true }),
     cantidadTonos: new FormControl('0', { nonNullable: true }),
     tonosNombrados: new FormControl('', { nonNullable: true }),
     material: new FormControl('', { nonNullable: true }),
@@ -389,6 +394,22 @@ export class DetalleBorradorAdminPage {
       etiqueta: this.traducir()('admin.borradores.tipos.' + tipo),
     })),
   );
+
+  /** «Igual que se venden» y de 1 a 4 tallas más arriba. */
+  protected readonly opcionesAjusteDeTalla = computed<OpcionSelect[]>(() =>
+    Array.from({ length: AJUSTE_DE_TALLA_MAXIMO + 1 }, (_, tallas) => ({
+      valor: String(tallas),
+      etiqueta:
+        tallas === 0
+          ? this.traducir()('admin.borradores.datos.ajusteIgual')
+          : this.traducir()('admin.borradores.datos.ajusteArriba', { tallas }),
+    })),
+  );
+
+  /** «S → M, XXXL → ?»: cómo se pide cada talla, con lo que está guardado. */
+  protected etiquetaTallasPedidas(pedidas: readonly TallaPedida[]): string {
+    return pedidas.map((p) => `${p.talla} → ${p.delProveedor ?? '?'}`).join(', ');
+  }
 
   protected readonly opcionesTipoDeTalla = computed<OpcionSelect[]>(() =>
     TIPOS_DE_TALLA.map((tipo) => ({
@@ -650,6 +671,7 @@ export class DetalleBorradorAdminPage {
       tipoDeTalla: borrador.tallas.tipo,
       sirveHasta: borrador.tallas.sirveHasta ?? '',
       tallas: borrador.tallas.valores.join(', '),
+      ajusteDeTalla: String(borrador.ajusteDeTalla),
       cantidadTonos: String(borrador.cantidadTonos),
       tonosNombrados: borrador.tonosNombrados.join(', '),
       material: borrador.material ?? '',
@@ -1233,6 +1255,7 @@ export class DetalleBorradorAdminPage {
           tipo: valores.tipo,
           ...(precioSugerido !== null ? { precioVentaSugerido: precioSugerido } : {}),
           tallas: this.tallasDelFormulario(),
+          ajusteDeTalla: Number(valores.ajusteDeTalla),
           cantidadTonos,
           tonosNombrados: separar(valores.tonosNombrados),
           material: valores.material.trim(),
@@ -1359,6 +1382,7 @@ export class DetalleBorradorAdminPage {
           // de esa tarjeta promete que la aprobación parte de ahí.
           ...(datos.titulo.trim() ? { titulo: datos.titulo.trim() } : {}),
           tallas: this.tallasDelFormulario(),
+          ajusteDeTalla: Number(datos.ajusteDeTalla),
           marcaId: valores.marcaId,
           categoriaId: valores.categoriaId,
           precioVenta,

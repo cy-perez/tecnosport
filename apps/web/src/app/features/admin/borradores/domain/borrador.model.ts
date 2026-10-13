@@ -104,7 +104,9 @@ export type AlertaBorrador =
   | 'FOTOS_COMPARTIDAS'
   | 'REPLICA'
   | 'ACOMPANANTE_SIN_LEER'
-  | 'SET_SIN_DESCRIPCION';
+  | 'SET_SIN_DESCRIPCION'
+  | 'TALLAS_CORRIDAS'
+  | 'TALLAS_SIN_CORRER';
 
 /**
  * Cómo se llama la marca con que se publica una réplica («1.1» o «AAA»): la original solo va en el título,
@@ -196,7 +198,20 @@ export interface Borrador {
   readonly preciosAdicionales: readonly PrecioAdicional[];
   /** Cómo se armó el set; `null` si el borrador es la prenda sola. */
   readonly set: SetDelBorrador | null;
+  /** Cuántas tallas más arriba las nombra el proveedor (ADR-0085); 0 si igual. */
+  readonly ajusteDeTalla: number;
+  /** Cómo se le pide al proveedor cada talla, con lo guardado; vacía sin ajuste. */
+  readonly tallasPedidas: readonly TallaPedida[];
 }
+
+/** La talla que se vende y la que se le pide al proveedor; esta, nula si no se puede contar. */
+export interface TallaPedida {
+  readonly talla: string;
+  readonly delProveedor: string | null;
+}
+
+/** Hasta cuántas tallas puede nombrar corridas el proveedor: más es un error de lectura. */
+export const AJUSTE_DE_TALLA_MAXIMO = 4;
 
 /** De dónde salió la foto: del mensaje del proveedor, o de quien revisa, desde el panel. */
 export type OrigenFoto = 'PROVEEDOR' | 'PANEL';
@@ -297,6 +312,7 @@ export interface EditarBorrador {
   readonly material?: string;
   readonly descripcion?: string;
   readonly altEn?: string;
+  readonly ajusteDeTalla?: number;
 }
 
 export interface FotoAprobada {
@@ -330,6 +346,8 @@ export interface AprobarBorrador {
   readonly prendas: readonly PrendaAprobada[];
   /** Si la principal que vale para todos los tonos entra también en la ficha (ADR-0082). */
   readonly principalEnLaFicha: boolean;
+  /** El escrito en el panel, se haya guardado o no; ausente = el del borrador (ADR-0085). */
+  readonly ajusteDeTalla?: number;
 }
 
 /** Una prenda: una variante de color. La que ninguna foto cita se ve en la foto de todos. */

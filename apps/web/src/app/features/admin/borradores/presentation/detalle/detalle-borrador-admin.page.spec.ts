@@ -915,6 +915,57 @@ describe('DetalleBorradorAdminPage', () => {
     });
   });
 
+  /**
+   * Meraki, horma reducida (ADR-0085): la ingesta corrió M-L-XL-XXL a S-M-L-XL con 1 más arriba, el
+   * panel dice cómo se pide cada una, y quien revisa corrige el ajuste y lo guarda.
+   */
+  it('dice cómo se pide cada talla y guarda el ajuste corregido', async () => {
+    const { repositorio } = await renderPagina(
+      borradorDePrueba({
+        tallas: { tipo: 'LISTA', sirveHasta: null, valores: ['S', 'M', 'XXXL'] },
+        ajusteDeTalla: 1,
+        tallasPedidas: [
+          { talla: 'S', delProveedor: 'M' },
+          { talla: 'M', delProveedor: 'L' },
+          { talla: 'XXXL', delProveedor: null },
+        ],
+      }),
+    );
+    const ajuste = (await screen.findByLabelText(d.ajusteDeTalla)) as HTMLSelectElement;
+    await vi.waitFor(() => expect(ajuste.value).toBe('1'));
+    expect(screen.getByText(/S → M, M → L, XXXL → \?/)).toBeTruthy();
+
+    fireEvent.change(ajuste, { target: { value: '2' } });
+    fireEvent.click(screen.getByRole('button', { name: d.guardar }));
+
+    expect(await screen.findByText(d.guardado)).toBeTruthy();
+    expect(repositorio.ediciones[0].cambios).toMatchObject({ ajusteDeTalla: 2 });
+  });
+
+  it('el ajuste escrito viaja con la aprobación, sin guardar antes', async () => {
+    const { repositorio } = await renderPagina(
+      borradorDePrueba({ tallas: { tipo: 'LISTA', sirveHasta: null, valores: ['S', 'M'] } }),
+    );
+    await llenarAprobacion();
+    const ajuste = (await screen.findByLabelText(d.ajusteDeTalla)) as HTMLSelectElement;
+    await vi.waitFor(() => expect(ajuste.value).toBe('0'));
+
+    fireEvent.change(ajuste, { target: { value: '1' } });
+    fireEvent.click(screen.getByRole('button', { name: a.accion }));
+
+    await screen.findByRole('link', { name: a.verProducto });
+    expect(repositorio.aprobaciones[0].aprobacion).toMatchObject({ ajusteDeTalla: 1 });
+  });
+
+  it('sin ajuste no dice nada de cómo se piden las tallas', async () => {
+    await renderPagina(
+      borradorDePrueba({ tallas: { tipo: 'LISTA', sirveHasta: null, valores: ['S', 'M'] } }),
+    );
+    await screen.findByLabelText(d.ajusteDeTalla);
+
+    expect(screen.queryByText(/Al proveedor se le piden/)).toBeNull();
+  });
+
   /** La descripción es la de la ficha: obligatoria desde el 3 de octubre de 2026. */
   it('sin descripción no aprueba y dice dónde escribirla', async () => {
     const { repositorio } = await renderPagina(borradorDePrueba({ descripcion: null }));

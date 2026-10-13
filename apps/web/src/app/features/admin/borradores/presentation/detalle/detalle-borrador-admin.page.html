@@ -725,6 +725,23 @@
           [ayuda]="'admin.borradores.datos.separadas' | transloco"
           formControlName="tallas"
         />
+        <!-- Horma reducida o talla EUR (ADR-0085): las de arriba son las que se venden, y esto
+             dice cómo pedírselas al proveedor. -->
+        <ts-select
+          idCampo="borrador-ajuste-de-talla"
+          [label]="'admin.borradores.datos.ajusteDeTalla' | transloco"
+          [ayuda]="'admin.borradores.datos.ajusteDeTallaAyuda' | transloco"
+          [opciones]="opcionesAjusteDeTalla()"
+          formControlName="ajusteDeTalla"
+        />
+        @if (borrador.tallasPedidas.length > 0) {
+          <p class="m-0 text-sm text-ts-texto">
+            {{
+              'admin.borradores.datos.tallasPedidas'
+                | transloco: { tallas: etiquetaTallasPedidas(borrador.tallasPedidas) }
+            }}
+          </p>
+        }
       }
       <ts-campo
         idCampo="borrador-cantidad-tonos"
