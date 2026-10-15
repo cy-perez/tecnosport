@@ -231,6 +231,40 @@ class SerieFDePoco(unittest.TestCase):
         self.assertIn("la sección Xiaomi abrevia la serie F: se leyó como POCO", ultra["supuestos"])
 
 
+class ProcesadorDelComputador(unittest.TestCase):
+    """15/10/2026: dos portátiles sin referencia entraron al análisis (regla 11).
+
+    `RYZEN 3 (` no traía el código del chip y `CORE i 5` traía un espacio: el
+    procesador no se reconocía, quedaba en la línea y pasaba por referencia.
+    """
+
+    def computador(self, linea):
+        datos = parsear(" 💻🖥️ *COMPUTADORES*\n\n" + linea + "\n")
+        return datos["productos"] + datos["descartados"]
+
+    def test_el_ryzen_sin_codigo_no_es_una_referencia(self):
+        [p] = self.computador('💻*LAPTOP ASUS RYZEN 3 ( 8 RAM + 512 GB SSD) 15.6" $1.320*')
+        self.assertEqual(["referencia"], p["sin_datos"])
+        self.assertIn("Ryzen 3", p["atributos"])
+
+    def test_el_core_con_espacio_y_su_codigo_no_son_una_referencia(self):
+        [p] = self.computador("💻 *LAPTOP ASUS CORE i 5 7520U (12 RAM DDR5 +512GB SSD)  $1.850+ BOLSO*")
+        self.assertEqual(["referencia"], p["sin_datos"])
+        self.assertIn("Core i5 7520U", p["atributos"])
+
+    def test_sin_referencia_va_a_descartados(self):
+        datos = parsear(" 💻🖥️ *COMPUTADORES*\n\n"
+                        '💻*LAPTOP ASUS RYZEN 3 ( 8 RAM + 512 GB SSD) 15.6" $1.320*\n')
+        self.assertEqual([], datos["productos"])
+        self.assertEqual(["computador sin referencia en la lista"],
+                         [d["motivo"] for d in datos["descartados"]])
+
+    def test_con_referencia_sigue_entrando_sin_el_procesador_en_el_titulo(self):
+        [p] = self.computador('💻*LAPTOP ASUS VIVOBOOK X1504 CORE I5-1235U (8 RAM + 512 GB SSD) 15.6" $1.900*')
+        self.assertEqual([], p["sin_datos"])
+        self.assertEqual("Vivobook X1504", p["referencia"])
+
+
 class Bloques(unittest.TestCase):
     """La lista llega en tres mensajes, y la ausencia de un producto solo dice algo
     si llegó el mensaje en que suele venir."""

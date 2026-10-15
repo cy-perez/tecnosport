@@ -650,9 +650,13 @@ def construir_producto(texto, categoria, marca, condicion, seccion, linea):
 
     elif categoria == "computadores":
         es_aio = "TODO EN UNO" in resto or "AIO" in resto
-        cpu = re.search(r"\b(RYZEN\s*\d\s*\w+|ATHLON\s*\w+|CORE\s*I\d[\w-]*|INTEL\s*I\d\s*\w+|I\d[\s-]?\d{4,5}\w*|CELERON\s*\w+)\b", resto, re.I)
+        # El código del chip es opcional y la generación puede venir separada:
+        # `RYZEN 3 (8 RAM…` y `CORE i 5 7520U` (15/10/2026). Si el procesador no
+        # se reconoce, se queda en la línea y pasa por referencia del equipo.
+        cpu = re.search(r"\b(RYZEN\s*\d(?:\s*\w*\d\w*)?|ATHLON\s*\w+|CORE\s*I\s*\d(?:[\s-]*\d{4,5}\w*)?"
+                        r"|INTEL\s*I\d\s*\w+|I\d[\s-]?\d{4,5}\w*|CELERON\s*\w+)\b", resto, re.I)
         if cpu:
-            prod["atributos"].append(titulo_bonito(cpu.group(1)))
+            prod["atributos"].append(titulo_bonito(re.sub(r"\bI\s+(\d)", r"I\1", cpu.group(1), flags=re.I)))
             resto = resto.replace(cpu.group(1), " ")
         prod["ram"], _, alm, resto = extraer_memoria(resto, estilo="computador")
         prod["almacenamiento"] = f"{alm} SSD" if alm else None
