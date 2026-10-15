@@ -174,9 +174,9 @@
 - *BMAX* 10"WIFI(4+64GB)$335 — marca excluida (BMAX): sin precio de mercado admisible en Colombia
 - MEGAPAD WIFI (4+256) $530 — marca excluida (Tecno): sin precio de mercado admisible en Colombia
 - XPAD 30E 4G 11"(4+4+128) $565 — marca excluida (Infinix): sin precio de mercado admisible en Colombia
-- iPhone 16 128 $2.300 — falta información del proveedor: la condición del iPhone (nuevo o activado): la línea no trae viñeta ni ESIM/ACTIVO
-- iPhone 16e 128 $1.500 — falta información del proveedor: la condición del iPhone (nuevo o activado): la línea no trae viñeta ni ESIM/ACTIVO
-- iPhone 15 pro Max 256 $2.900 — falta información del proveedor: la condición del iPhone (nuevo o activado): la línea no trae viñeta ni ESIM/ACTIVO
+- iPhone 16 128 $2.300 — falta información del proveedor: la condición del iPhone (nuevo o activado): la línea no trae ESIM, SIM ni ACTIVO
+- iPhone 16e 128 $1.500 — falta información del proveedor: la condición del iPhone (nuevo o activado): la línea no trae ESIM, SIM ni ACTIVO
+- iPhone 15 pro Max 256 $2.900 — falta información del proveedor: la condición del iPhone (nuevo o activado): la línea no trae ESIM, SIM ni ACTIVO
 
 ## Duplicados fusionados
 - L22: Infinix GT 50 Pro → Infinix GT 50 Pro

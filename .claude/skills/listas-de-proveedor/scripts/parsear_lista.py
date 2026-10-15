@@ -1041,6 +1041,7 @@ def parsear(texto: str, equivalencias=None):
             cat = cat_vineta or categoria_por_palabras(resto) or categoria or "celulares"
             cond = cond_vineta or condicion or "nuevo"
             prod = construir_producto(resto, cat, marca, cond, seccion, i)
+            marcar_iphone_sin_condicion(prod, limpio)
             if generica and generica not in del_dia:
                 prod["revisar"].append(f"viñeta no reconocida ({generica}): verificar que sea un producto")
             if prod["precio_proveedor_cop"] is None:
@@ -1069,13 +1070,7 @@ def parsear(texto: str, equivalencias=None):
             if cat:
                 prod = construir_producto(linea, cat, marca, condicion or "nuevo", seccion, i)
                 prod["revisar"].append("línea sin viñeta: verificar que sea un producto")
-                # Regla 10, 15/10/2026: «15 128 *$1.950*» bajo *IPH NUEVOS*, sin
-                # ✔️ ni ⚠️ y sin ESIM ni ACTIVO, como los activos de arriba. La
-                # sección dice nuevo y la línea no dice nada: puede ser cualquiera.
-                if (prod["marca"] == "Apple" and cat == "celulares" and prod["condicion"] == "nuevo"
-                        and not re.search(r"\b(E?SIM|ACTIVOS?)\b", limpio)):
-                    prod["falta_informacion"] = ("la condición del iPhone (nuevo o activado): la línea "
-                                                 "no trae viñeta ni ESIM/ACTIVO")
+                marcar_iphone_sin_condicion(prod, limpio)
                 clasificar(prod)
                 continue
         sin_clasificar.append({"linea": i, "texto": linea, "motivo": "no se pudo clasificar"})
@@ -1094,6 +1089,22 @@ def parsear(texto: str, equivalencias=None):
         "duplicados_fusionados": duplicados,
         "sin_clasificar": sin_clasificar,
     }
+
+
+def marcar_iphone_sin_condicion(prod, limpio):
+    """Regla 10, 15/10/2026: «15 128 *$1.950*» bajo *IPH NUEVOS*, sin ESIM ni
+    ACTIVO, como los activos de arriba. La sección dice nuevo y la línea no dice
+    nada: puede ser cualquiera.
+
+    La viñeta no lo resuelve. La misma lista llegó primero sin viñeta y después
+    con «✔️15 128 *$1.950*», que es la viñeta de los sellados de arriba, y con
+    ella los tres iPhone entraron como nuevos y el «18 pm» le bajó el precio al
+    sellado. Lo que dice la condición es ESIM, SIM o ACTIVO, no el emoji.
+    """
+    if (prod["marca"] == "Apple" and prod["categoria"] == "celulares" and prod["condicion"] == "nuevo"
+            and not re.search(r"\b(E?SIM|ACTIVOS?)\b", limpio)):
+        prod["falta_informacion"] = ("la condición del iPhone (nuevo o activado): la línea "
+                                     "no trae ESIM, SIM ni ACTIVO")
 
 
 def compatibles(a, b):
