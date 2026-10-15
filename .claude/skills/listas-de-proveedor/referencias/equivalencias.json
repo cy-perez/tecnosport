@@ -107,6 +107,12 @@
       "fecha": "2026-10-02",
       "motivo": "título corregido a mano en la corrida del 02/10/2026"
     },
+    "motorola-moto-g17-power-4g-4gb-ram-256gb": {
+      "id": "motorola-moto-g17-power-4g-4gb-ram-256gb-1-sim",
+      "titulo": "Motorola Moto G17 Power 4G 4GB RAM 256GB 1 SIM",
+      "fecha": "2026-10-10",
+      "motivo": "la lista del 10/10/2026 omitió la anotación *1 SIM* que traía la del 02/10/2026; una línea sin SIM no contradice a la que sí"
+    },
     "motorola-moto-g67-4g-8gb-ram-256gb": {
       "id": "motorola-moto-g67-8gb-ram-256gb",
       "titulo": "Motorola Moto G67 8GB RAM 256GB",
@@ -154,6 +160,12 @@
       "titulo": "Samsung Galaxy Tab A11+ 11\" WiFi 6GB RAM 128GB",
       "fecha": "2026-10-02",
       "motivo": "título corregido a mano en la corrida del 02/10/2026"
+    },
+    "samsung-a11-plus-11-wifi-8gb-ram-256gb": {
+      "id": "samsung-galaxy-tab-a11-plus-11-wifi-8gb-ram-256gb",
+      "titulo": "Samsung Galaxy Tab A11+ 11\" WiFi 8GB RAM 256GB",
+      "fecha": "2026-10-10",
+      "motivo": "misma línea que la configuración de 6GB RAM 128GB, corregida el 02/10/2026"
     },
     "samsung-band-fit-3": {
       "id": "samsung-galaxy-fit3",

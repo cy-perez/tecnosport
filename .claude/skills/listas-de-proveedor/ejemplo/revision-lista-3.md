@@ -5,8 +5,8 @@
 - Modelos distintos: 80
 - Descartados: 168
 - Duplicados fusionados: 9
-- Productos con algún supuesto aplicado: 51
-- Títulos confirmados en una lista anterior: 23
+- Productos con algún supuesto aplicado: 52
+- Títulos confirmados en una lista anterior: 24
 - Líneas sin clasificar: 0
 - Mensajes de la lista: ANDROID, VARIEDAD, GAMA ALTA
 
@@ -28,7 +28,8 @@
   - · asumido: título confirmado el 02/10/2026: la lista lo trae como «Motorola Moto G67 4G 8GB RAM 256GB»
 - **Motorola Moto G17 4G 4GB RAM 256GB 1 SIM** — celulares — 505.000 COP
   - ⚠️ la lista suma RAM virtual (4GB+4GB): publicar la RAM física y mencionar la extendida aparte
-- **Motorola Moto G17 Power 4G 4GB RAM 256GB** — celulares — 550.000 COP
+- **Motorola Moto G17 Power 4G 4GB RAM 256GB 1 SIM** — celulares — 550.000 COP
+  - · asumido: título confirmado el 10/10/2026: la lista lo trae como «Motorola Moto G17 Power 4G 4GB RAM 256GB»
   - ⚠️ la lista suma RAM virtual (4GB+4GB): publicar la RAM física y mencionar la extendida aparte
 - **Motorola Moto G77 5G 8GB RAM 256GB** — celulares — 760.000 COP
   - · asumido: la lista escribe el precio sin «$» (760): se leyó como 760.000 COP
