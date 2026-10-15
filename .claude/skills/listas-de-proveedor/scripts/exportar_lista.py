@@ -3,11 +3,12 @@
 
 Uso, al terminar el paso 6:
 
-    python3 scripts/exportar_lista.py catalogo/productos.json --salida catalogo/lista-api.json
+    python3 scripts/exportar_lista.py catalogo/productos.json
 
 Y luego, con la sesión del panel:
 
-    node tools/importar-lista-tecnologia.mjs catalogo/lista-api.json --proveedor <id> --escribir
+    node tools/importar-lista-tecnologia.mjs catalogo/5-api/lista-api.json --inventario \
+        --proveedor <id> --escribir
 
 La API recibe, por modelo, lo que la skill ya decidió —título, descripción, paleta
 oficial— y, por configuración, la memoria, la SIM, el costo del proveedor, el
@@ -22,6 +23,9 @@ precio de mercado y los colores que sugieren los emojis de la lista. Con eso:
 
 Solo se exportan los modelos terminados (con descripción): uno a medio investigar
 no puede convertirse en un producto. Los demás se informan.
+
+Y solo las configuraciones con al menos un 5 % de margen sobre el costo (regla 18,
+`MARGEN_MINIMO`): las demás van como desaparecidas, y se informan.
 """
 
 import argparse
@@ -32,10 +36,26 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from comparar_lista import colores_sugeridos  # noqa: E402
 from parsear_lista import atributo_sim  # noqa: E402
+import rutas  # noqa: E402
 
 # Lo que caben las columnas de la API (V92). Pasarse tumba la lista entera en una transacción,
 # así que el que no cabe se queda fuera aquí y se dice.
 LARGO_MAXIMO_DEL_ID = 60
+
+# Regla 18 (decisión del negocio, 15/10/2026): una configuración cuyo precio de mercado no le
+# deja al menos un 5 % sobre el costo del proveedor no se ofrece. No se propone si es nueva, y
+# si ya se vendía deja de ofrecerse: mandarla como desaparecida es lo único que la retira, porque
+# la importación no deduce nada de lo que falta en el archivo —sin eso seguiría a la venta con
+# el costo de la lista anterior—. Si nunca se publicó, retirarla no hace nada.
+# La que no tiene precio de mercado no tiene margen que medir y no se toca aquí.
+MARGEN_MINIMO = 0.05
+
+
+def margen(producto) -> float | None:
+    mercado, costo = producto.get("precio_mercado_cop"), producto.get("precio_proveedor_cop")
+    if not mercado or not costo:
+        return None
+    return (mercado - costo) / costo
 
 
 def sim_de(producto) -> str | None:
@@ -73,6 +93,20 @@ def exportar(datos: dict) -> tuple[dict, list]:
     modelos = []
     fuera = [(p["titulo"], f"el id pasa de {LARGO_MAXIMO_DEL_ID} caracteres; acórtalo en las equivalencias")
              for p in datos["productos"] if len(p["id"]) > LARGO_MAXIMO_DEL_ID]
+    sin_margen, modelos_sin_margen = [], []
+    for mid, productos in list(por_modelo.items()):
+        bajos = [p for p in productos if margen(p) is not None and margen(p) < MARGEN_MINIMO]
+        for p in bajos:
+            sin_margen.append(p["id"])
+            fuera.append((p["titulo"], f"margen de {margen(p) * 100:.1f} % frente al mercado, por debajo del "
+                                       f"mínimo de {MARGEN_MINIMO * 100:.0f} %: deja de ofrecerse"))
+        productos = [p for p in productos if p not in bajos]
+        if productos:
+            por_modelo[mid] = productos
+        else:
+            del por_modelo[mid]
+            modelos_sin_margen.append(mid)
+
     for mid, productos in por_modelo.items():
         m = productos[0]
         if not m.get("descripcion"):
@@ -102,15 +136,16 @@ def exportar(datos: dict) -> tuple[dict, list]:
         "fechaLista": datos.get("fecha_lista"),
         "bloques": list(datos.get("bloques") or []),
         "modelos": modelos,
-        "configuracionesDesaparecidas": [d["id"] for d in datos.get("desaparecidos") or []],
-        "modelosDesaparecidos": [d["id_modelo"] for d in datos.get("modelos_desaparecidos") or []],
+        "configuracionesDesaparecidas": [d["id"] for d in datos.get("desaparecidos") or []] + sin_margen,
+        "modelosDesaparecidos": [d["id_modelo"] for d in datos.get("modelos_desaparecidos") or []]
+                                + modelos_sin_margen,
     }, fuera
 
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("productos")
-    ap.add_argument("--salida", default="catalogo/lista-api.json")
+    ap.add_argument("--salida", default=str(rutas.API / "lista-api.json"))
     args = ap.parse_args()
 
     datos = json.loads(Path(args.productos).read_text(encoding="utf-8"))
@@ -120,6 +155,7 @@ def main():
         lista, fuera = exportar(datos)
     except ValueError as error:
         sys.exit(str(error))
+    Path(args.salida).parent.mkdir(parents=True, exist_ok=True)
     Path(args.salida).write_text(json.dumps(lista, ensure_ascii=False, indent=2), encoding="utf-8", newline="")
     n = sum(len(m["configuraciones"]) for m in lista["modelos"])
     print(f"{len(lista['modelos'])} modelos y {n} configuraciones en {args.salida}")

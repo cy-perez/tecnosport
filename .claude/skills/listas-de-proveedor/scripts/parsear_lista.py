@@ -3,11 +3,11 @@
 Convierte una lista de proveedor (mensaje de WhatsApp) en datos estructurados.
 
 Uso:
-    python3 parsear_lista.py lista.txt --salida productos.json
+    python3 parsear_lista.py catalogo/1-lista/lista.txt
 
 Salida:
-    productos.json   -> productos incluidos, descartados y líneas sin clasificar
-    revision.md      -> reporte legible con lo que necesita confirmación humana
+    catalogo/productos.json      -> productos incluidos, descartados y líneas sin clasificar
+    catalogo/1-lista/revision.md -> reporte legible con lo que necesita confirmación humana
 
 El script NO inventa datos: extrae lo que está escrito y marca con `revisar`
 todo lo que quedó ambiguo. La investigación de precios de mercado, la ficha
@@ -18,8 +18,12 @@ import argparse
 import json
 import re
 import unicodedata
+import sys
 from collections import Counter
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import rutas  # noqa: E402
 
 VS16 = "\ufe0f"
 
@@ -1393,14 +1397,16 @@ def reporte(datos: dict) -> str:
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("entrada")
-    ap.add_argument("--salida", default="productos.json")
-    ap.add_argument("--reporte", default="revision.md")
+    ap.add_argument("--salida", default=str(rutas.PRODUCTOS))
+    ap.add_argument("--reporte", default=str(rutas.LISTA / "revision.md"))
     ap.add_argument("--equivalencias", default=str(EQUIVALENCIAS),
                     help="títulos confirmados (por omisión, referencias/equivalencias.json de la skill)")
     args = ap.parse_args()
 
     datos = parsear(Path(args.entrada).read_text(encoding="utf-8"),
                     cargar_equivalencias(args.equivalencias))
+    for destino in (args.salida, args.reporte):
+        Path(destino).parent.mkdir(parents=True, exist_ok=True)
     Path(args.salida).write_text(json.dumps(datos, ensure_ascii=False, indent=2), encoding="utf-8")
     Path(args.reporte).write_text(reporte(datos), encoding="utf-8")
     print(f"{len(datos['productos'])} productos | {len(datos['descartados'])} descartados "

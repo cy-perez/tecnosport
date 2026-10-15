@@ -3,7 +3,7 @@
 Arma los entregables finales a partir de productos.json ya enriquecido.
 
 Uso:
-    python3 construir_entregables.py productos.json --salida catalogo/entregables
+    python3 construir_entregables.py catalogo/productos.json
 
 Produce:
     entregables/fichas/<Modelo>/           una carpeta por modelo, que se queda: su
@@ -29,6 +29,7 @@ from openpyxl.utils import get_column_letter
 import sys  # noqa: E402
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from comparar_lista import texto_de_cambio  # noqa: E402
+import rutas  # noqa: E402
 import fichas  # noqa: E402
 
 
@@ -128,7 +129,7 @@ def escribir_excel(datos: dict, ruta: Path, fecha: str):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("productos")
-    ap.add_argument("--salida", default="catalogo/entregables")
+    ap.add_argument("--salida", default=str(rutas.ENTREGABLES))
     args = ap.parse_args()
 
     datos = json.loads(Path(args.productos).read_text(encoding="utf-8"))

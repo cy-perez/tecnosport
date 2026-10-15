@@ -1,4 +1,4 @@
-"""Pruebas de la carpeta de cada modelo en catalogo/entregables/fichas/."""
+"""Pruebas de la carpeta de cada modelo en catalogo/4-entregables/fichas/."""
 
 import sys
 import tempfile

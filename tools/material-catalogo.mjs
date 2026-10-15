@@ -36,7 +36,7 @@ export const RAIZ = fileURLToPath(new URL("..", import.meta.url));
 export const CATALOGO = join(RAIZ, "catalogo");
 
 /**
- * Las carpetas de modelo: `catalogo/entregables/fichas/<Modelo>/`, con «Fotos originales» y
+ * Las carpetas de modelo: `catalogo/4-entregables/fichas/<Modelo>/`, con «Fotos originales» y
  * «Fotos procesadas» (decisión del 08/10/2026). Antes las tomas vivían en
  * `catalogo/fotos/estudio/<id>/`, una carpeta por SKU que terminó perdiéndose; ahora las fotos son
  * del modelo, y el Galaxy A57 de 256 GB y el de 512 GB comparten las mismas.
@@ -44,7 +44,10 @@ export const CATALOGO = join(RAIZ, "catalogo");
  * La carpeta se reconoce por su archivo `<id del modelo>-ficha.txt`, no por el nombre, igual que en
  * `listas-de-proveedor/scripts/fichas.py`: una corrección del título no la pierde.
  */
-export const FICHAS = join(CATALOGO, "entregables", "fichas");
+// La forma de `catalogo/` por subproceso está en `listas-de-proveedor/scripts/rutas.py`: si allá
+// cambia, aquí también.
+export const FICHAS = join(CATALOGO, "4-entregables", "fichas");
+const REDACCION = join(CATALOGO, "3-redaccion");
 const PROCESADAS = "Fotos procesadas";
 
 let carpetas = null;
@@ -214,7 +217,7 @@ const FICHA_DE_OTRO_PRODUCTO = {
  */
 function empaque(id) {
   if (FICHA_DE_OTRO_PRODUCTO[id]) return null;
-  const ficha = leerJson(join(CATALOGO, "icecat", "fichas", `${id}.json`));
+  const ficha = leerJson(join(REDACCION, "icecat", "fichas", `${id}.json`));
   if (!ficha) return null;
   const especificaciones = (ficha.especificaciones ?? []).flatMap((grupo) =>
     Array.isArray(grupo.valores) ? grupo.valores : Array.isArray(grupo) ? grupo : [grupo],
@@ -258,10 +261,10 @@ function empaque(id) {
  */
 export function leerMaterial() {
   const catalogo = leerJson(join(CATALOGO, "productos.json"));
-  const prosa = leerJson(join(CATALOGO, "prosa.json"));
+  const prosa = leerJson(join(REDACCION, "prosa.json"));
   if (!catalogo || !prosa) {
     throw new Error(
-      "No encuentro catalogo/productos.json o catalogo/prosa.json. Esa carpeta no está versionada:\n" +
+      "No encuentro catalogo/productos.json o catalogo/3-redaccion/prosa.json. Esa carpeta no está versionada:\n" +
         "es material de trabajo y vive solo en la máquina donde se procesó la lista del proveedor.",
     );
   }

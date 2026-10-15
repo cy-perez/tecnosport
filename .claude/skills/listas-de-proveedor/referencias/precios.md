@@ -99,7 +99,7 @@ cuestan una tarde si se descubren sobre la marcha:
 
 Devuelve vecinos con mucha soltura: al pedir «POCO X8 Pro Max» contesta iPhones.
 El emparejamiento final lo hace una persona, producto por producto, y queda
-escrito en `catalogo/alkosto-vitrina.json` con el nombre exacto de la tarjeta.
+escrito en `catalogo/2-precios/alkosto-vitrina.json` con el nombre exacto de la tarjeta.
 Cuatro trampas que aparecieron en la lista del 12/09/2026:
 
 | Lo que devuelve | Por qué no sirve |
@@ -174,7 +174,7 @@ Ninguno de los dos hace ruido: el número sale, parece razonable y está mal.
 Alkosto los puso una persona. Cuando hay precio de Alkosto, las ofertas de
 vitrina que se alejen más del 35 % de él se dejan fuera: casi siempre son otro
 producto. Y lo que una revisión a mano rechaza entero va a
-`catalogo/precios-descartados.json` con el motivo, para que el producto quede
+`catalogo/2-precios/precios-descartados.json` con el motivo, para que el producto quede
 **sin** precio de mercado en vez de con uno inventado.
 
 ## Señal de alarma: generación saliente

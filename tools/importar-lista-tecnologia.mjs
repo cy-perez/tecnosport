@@ -8,7 +8,7 @@
 //
 //   1. El inventario, el día de la lista, al cerrar la skill de listas (bloque 1):
 //
-//        node tools/importar-lista-tecnologia.mjs catalogo/lista-api.json --inventario \
+//        node tools/importar-lista-tecnologia.mjs catalogo/5-api/lista-api.json --inventario \
 //            --proveedor <id> --escribir
 //
 //      Lo que ya se vende se renueva —costo y existencia— y lo desaparecido deja de ofrecerse. No
@@ -17,7 +17,7 @@
 //
 //   2. Los borradores, desde la skill de fichas (bloque 3), cuando la tanda de fotos terminó:
 //
-//        node tools/importar-lista-tecnologia.mjs catalogo/lista-api.json --borradores \
+//        node tools/importar-lista-tecnologia.mjs catalogo/5-api/lista-api.json --borradores \
 //            --proveedor <id> --escribir
 //
 //      Solo lleva lo de `por-proponer.json` que puede revisarse: los modelos nuevos cuyo

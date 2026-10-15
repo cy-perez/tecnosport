@@ -82,5 +82,41 @@ class Exportar(unittest.TestCase):
         self.assertIsNone(exportar_lista.sim_de({"atributos": []}))
 
 
+class MargenMinimo(unittest.TestCase):
+    """Regla 18, 15/10/2026: con menos de un 5 % sobre el costo no se ofrece."""
+
+    def a17(self, sim, costo, mercado):
+        return producto(f"samsung-galaxy-a17-5g-8gb-ram-256gb-{sim}", f"Samsung Galaxy A17 5G 8GB RAM 256GB {sim}",
+                        precio_proveedor_cop=costo, precio_mercado_cop=mercado)
+
+    def exportar(self, *productos):
+        return exportar_lista.exportar({**DATOS, "productos": list(productos)})
+
+    def test_por_debajo_del_cinco_por_ciento_deja_de_ofrecerse_y_se_dice(self):
+        lista, fuera = self.exportar(self.a17("1-sim", 1_000_000, 1_049_000), self.a17("dual-sim", 690_000, 849_900))
+        self.assertEqual(["samsung-galaxy-a17-5g-8gb-ram-256gb-dual-sim"],
+                         [c["sku"] for c in lista["modelos"][0]["configuraciones"]])
+        self.assertIn("samsung-galaxy-a17-5g-8gb-ram-256gb-1-sim", lista["configuracionesDesaparecidas"])
+        self.assertNotIn("samsung-galaxy-a17-5g", lista["modelosDesaparecidos"])
+        self.assertIn("margen de 4.9 %", dict(fuera)["Samsung Galaxy A17 5G 8GB RAM 256GB 1-sim"])
+
+    def test_el_cinco_por_ciento_justo_se_ofrece(self):
+        lista, _ = self.exportar(self.a17("1-sim", 1_000_000, 1_050_000))
+        self.assertEqual(1, len(lista["modelos"]))
+
+    def test_por_debajo_del_costo_tambien(self):
+        lista, _ = self.exportar(self.a17("1-sim", 840_000, 799_010))
+        self.assertEqual([], lista["modelos"])
+
+    def test_si_ninguna_configuracion_alcanza_el_modelo_deja_de_ofrecerse(self):
+        lista, _ = self.exportar(self.a17("1-sim", 1_000_000, 1_000_000), self.a17("dual-sim", 1_000_000, 990_000))
+        self.assertEqual([], lista["modelos"])
+        self.assertIn("samsung-galaxy-a17-5g", lista["modelosDesaparecidos"])
+
+    def test_sin_precio_de_mercado_no_hay_margen_que_medir(self):
+        lista, _ = self.exportar(self.a17("1-sim", 1_000_000, None))
+        self.assertEqual(1, len(lista["modelos"]))
+
+
 if __name__ == "__main__":
     unittest.main()

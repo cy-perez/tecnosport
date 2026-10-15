@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Procesa las fotos de las carpetas de modelo de `catalogo/entregables/fichas/`.
+Procesa las fotos de las carpetas de modelo de `catalogo/4-entregables/fichas/`.
 
 Decisión del 08/10/2026: las fotos de cada modelo viven en su carpeta, y cada
 foto retocada queda junto a su original, **con el mismo nombre** (la extensión
@@ -13,9 +13,9 @@ puede cambiar: la maestra siempre es JPEG):
     └── estado-fotos.json                                      con --tanda: apto, en espera o fuera
 
 Uso:
-    python3 procesar_fichas.py catalogo/entregables/fichas --tanda catalogo/por-proponer.json
-    python3 procesar_fichas.py catalogo/entregables/fichas --tanda catalogo/por-proponer.json --devolver
-    python3 procesar_fichas.py catalogo/entregables/fichas --tanda catalogo/por-proponer.json \\
+    python3 procesar_fichas.py catalogo/4-entregables/fichas --tanda catalogo/5-api/por-proponer.json
+    python3 procesar_fichas.py catalogo/4-entregables/fichas --tanda catalogo/5-api/por-proponer.json --devolver
+    python3 procesar_fichas.py catalogo/4-entregables/fichas --tanda catalogo/5-api/por-proponer.json \\
         --sacar <id del modelo> --motivo "sin material oficial"
 
 No reimplementa nada del estilo: arma un árbol de trabajo en `<fichas>/_estudio/`
@@ -523,7 +523,7 @@ def retoque_en_curso(raiz: Path):
 
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
-    ap.add_argument("fichas", nargs="?", default="catalogo/entregables/fichas")
+    ap.add_argument("fichas", nargs="?", default="catalogo/4-entregables/fichas")
     ap.add_argument("--tanda", help="por-proponer.json: el bloque 2, solo esos modelos y con la compuerta")
     ap.add_argument("--devolver", action="store_true",
                     help="solo copia a cada modelo lo que ya está en _estudio/salida (tras un --segundo-plano)")

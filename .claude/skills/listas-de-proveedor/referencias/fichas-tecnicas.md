@@ -201,10 +201,10 @@ referencia está en el índice. En una corrida, siete productos que `buscar` dio
 por perdidos aparecieron buscando a mano en el índice.
 
 ```bash
-grep -i -E "^[0-9]+,JBL," icecat/indice.csv | grep -i -E "SB180|Xtreme 5|Encore"
+grep -i -E "^[0-9]+,JBL," catalogo/3-redaccion/icecat/indice.csv | grep -i -E "SB180|Xtreme 5|Encore"
 ```
 
-Con el `icecat_id` en la mano, se edita `icecat/coincidencias.csv` —columnas
+Con el `icecat_id` en la mano, se edita `catalogo/3-redaccion/icecat/coincidencias.csv` —columnas
 `icecat_id`, `modelo_icecat`, `puntaje`, `confirmado`— y se vuelve a correr
 `traer`. Es el flujo previsto: la columna `confirmado` existe justamente para
 que una persona la revise.

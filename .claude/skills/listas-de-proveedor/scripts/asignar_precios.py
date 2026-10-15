@@ -5,7 +5,7 @@ escribe en productos.json.
 
 Uso:
     python3 asignar_precios.py productos.json \
-        --vtex precios-vtex.json --alkosto alkosto-vitrina.json
+        --vtex catalogo/2-precios/precios-vtex.json --alkosto catalogo/2-precios/alkosto-vitrina.json
 
 Aplica, tal cual, las reglas de `referencias/precios.md`:
 

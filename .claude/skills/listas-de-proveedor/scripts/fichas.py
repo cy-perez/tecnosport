@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""La carpeta de cada modelo en `catalogo/entregables/fichas/`: todo lo del modelo en un sitio.
+"""La carpeta de cada modelo en `catalogo/4-entregables/fichas/`: todo lo del modelo en un sitio.
 
 Decisión del 08/10/2026. Antes la información de un producto vivía repartida en
 `catalogo/` —la ficha en `icecat/fichas/<id>.json`, las fotos al lado, la prosa
