@@ -41,6 +41,7 @@ Están al inicio de `scripts/parsear_lista.py` y se cambian ahí:
 | Categorías que se publican | celulares, tablets, relojes, audífonos, consolas, computadores, proyectores, parlantes |
 | Condición publicable | solo `nuevo`, es decir sellado y sin activar |
 | Se descartan siempre | usados, "NUEVOS ACTIVOS", "IPH CON CAJA", cables, cargadores, power bank, accesorios sueltos (control de consola, pencil táctil, rastreador tipo tag), lo que quede sin precio, los celulares por debajo de 500.000 COP, los computadores sin marca o sin referencia, lo que la lista no permite identificar (regla 10, con confirmación) y **todo** lo de Krono, BMAX, itel, ZTE, Infinix y Tecno |
+| Margen mínimo para ofrecer | **5 %** del precio de mercado sobre el costo del proveedor; por debajo, la configuración no se propone y, si ya se vendía, deja de ofrecerse (regla 18, `MARGEN_MINIMO` en `scripts/exportar_lista.py`) |
 
 Estas ya están decididas por el negocio y no se vuelven a preguntar en cada
 lista:
@@ -201,10 +202,31 @@ lista:
     pasado con los cables: nacieron en el catálogo el mismo día en que la regla 5
     decidió que nunca entrarían.
 
+18. **Con menos de un 5 % de margen no se ofrece** (decisión del negocio,
+    15/10/2026). El margen es el precio de mercado que asignó el paso 4 sobre el
+    costo del proveedor. La configuración que no llega al 5 % —incluida la que
+    queda en 0 % o por debajo del costo— no se propone si es nueva y deja de
+    ofrecerse si ya se vendía. Si todas las configuraciones de un modelo quedan
+    por debajo, el modelo entero deja de ofrecerse.
+    Lo aplica `exportar_lista.py` al armar `lista-api.json`, y lo hace mandando
+    esas configuraciones **como desaparecidas**. Es la única forma de retirarlas:
+    la importación no deduce nada de lo que falta en el archivo, así que un modelo
+    ya publicado que simplemente no viniera seguiría a la venta con el costo y la
+    existencia de la lista anterior, que es más bajo que el de hoy. Si nunca se
+    publicó, retirarlo no hace nada.
+    Nació con la lista del 15/10/2026: el JBL Grip, el Flip 7, el PartyBox 330 y
+    la Lenovo Tab One, que ya se vendían, y los AirPods Pro 3 y el Apple Watch
+    SE 3, que eran nuevos, quedaban entre −7,8 % y 0 %.
+    La regla no toca lo que no tiene precio de mercado: sin precio no hay margen
+    que medir, y eso se dice en la entrega. Tampoco borra nada de la
+    investigación: el producto sigue en `productos.json`, en la base y en el
+    Excel con su margen, para que la próxima lista lo vuelva a evaluar con el
+    costo de ese día.
+
 Si el negocio cambia de opinión, se ajustan `CATEGORIAS_INCLUIDAS`,
 `CONDICIONES_PUBLICABLES`, `PRECIO_MINIMO_CELULAR_COP`, `DESCARTAR_SIN_PRECIO`,
 `DESCARTAR_COMPUTADOR_SIN_REFERENCIA`, `MARCAS_EXCLUIDAS` o `DATOS_DEL_PROVEEDOR` al inicio
-de `scripts/parsear_lista.py`.
+de `scripts/parsear_lista.py`, y `MARGEN_MINIMO` al inicio de `scripts/exportar_lista.py`.
 
 ## Dónde está corriendo esta skill
 
@@ -485,7 +507,10 @@ node tools/importar-lista-tecnologia.mjs catalogo/lista-api.json --inventario --
 node tools/importar-lista-tecnologia.mjs catalogo/lista-api.json --inventario --proveedor <id> --escribir
 ```
 
-Solo se exportan los modelos con descripción; los demás se dicen. Lo que ya se
+Solo se exportan los modelos con descripción; los demás se dicen. Tampoco se
+exporta la configuración con menos de un 5 % de margen (regla 18): va como
+desaparecida y la salida dice cuál y con cuánto. No la recortes a mano del
+archivo: un modelo publicado que falta no se retira. Lo que ya se
 vende se renueva —costo del día y 2 unidades libres por color— y lo desaparecido
 deja de ofrecerse. **La lista no toca el precio de venta**: si la salida avisa
 que el costo alcanzó el precio, dilo en la entrega.
@@ -506,7 +531,9 @@ Preséntale los dos archivos y, en dos o tres líneas, lo que necesita saber:
 productos listos, productos que quedaron con pendientes, los desaparecidos —la
 hoja del mismo nombre en el Excel— y cualquier caso donde el promedio del
 mercado esté por debajo del precio de lista. Ese caso significa que a
-ese precio se pierde plata: márcalo, no lo publiques callado.
+ese precio se pierde plata: márcalo, no lo publiques callado. Los que la
+regla 18 retiró por margen van aparte, con su margen, y también los que no
+tienen precio de mercado, que la regla no puede evaluar.
 
 Y la entrega al bloque 2: los modelos de `por-proponer.json`, cada uno con la
 ruta de su carpeta, para que la persona descargue **por lo menos 4 fotos** en
