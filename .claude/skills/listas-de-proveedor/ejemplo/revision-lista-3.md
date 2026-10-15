@@ -190,7 +190,7 @@
 - **Apple iPhone 17 Pro 512GB eSIM** — celulares — 4.050.000 COP — colores: Azul
 - **Apple iPhone 17 Pro 256GB eSIM** — celulares — 3.700.000 COP — colores: Naranja
 - **Apple iPhone 16e 128GB eSIM** — celulares — 1.500.000 COP — colores: Negro
-- **Apple Watch SE 2 44mm** — relojes — 1.080.000 COP — colores: Negro
+- **Apple Watch SE 3 44mm** — relojes — 1.080.000 COP — colores: Negro
   - · asumido: título confirmado el 15/10/2026: la lista lo trae como «Apple Watch SE 44mm»
 
 ## Descartados
