@@ -1,9 +1,9 @@
 # Revisión de la lista
 
 - Fecha de la lista: 2026-09-12
-- Productos para publicar: 49
-- Modelos distintos: 37
-- Descartados: 68
+- Productos para publicar: 50
+- Modelos distintos: 38
+- Descartados: 67
 - Duplicados fusionados: 12
 - Productos con algún supuesto aplicado: 24
 - Títulos confirmados en una lista anterior: 10
@@ -32,6 +32,8 @@
   - ⚠️ línea sin viñeta: verificar que sea un producto
 - **Xiaomi Redmi Note 15 4G 8GB RAM 256GB** — celulares — 685.000 COP
   - · asumido: la sección Xiaomi abrevia 'NOTE': se leyó como Redmi Note
+  - ⚠️ línea sin viñeta: verificar que sea un producto
+- **Apple iPhone 16 128GB** — celulares — 2.300.000 COP
   - ⚠️ línea sin viñeta: verificar que sea un producto
 - **Samsung Galaxy S25 Ultra 256GB** — celulares — 2.700.000 COP
   - ⚠️ línea sin viñeta: verificar que sea un producto
@@ -174,7 +176,6 @@
 - *BMAX* 10"WIFI(4+64GB)$335 — marca excluida (BMAX): sin precio de mercado admisible en Colombia
 - MEGAPAD WIFI (4+256) $530 — marca excluida (Tecno): sin precio de mercado admisible en Colombia
 - XPAD 30E 4G 11"(4+4+128) $565 — marca excluida (Infinix): sin precio de mercado admisible en Colombia
-- iPhone 16 128 $2.300 — falta información del proveedor: la condición del iPhone (nuevo o activado): la línea no trae ESIM, SIM ni ACTIVO
 - iPhone 16e 128 $1.500 — falta información del proveedor: la condición del iPhone (nuevo o activado): la línea no trae ESIM, SIM ni ACTIVO
 - iPhone 15 pro Max 256 $2.900 — falta información del proveedor: la condición del iPhone (nuevo o activado): la línea no trae ESIM, SIM ni ACTIVO
 
