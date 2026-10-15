@@ -119,6 +119,12 @@
       "fecha": "2026-10-02",
       "motivo": "título corregido a mano en la corrida del 02/10/2026"
     },
+    "nintendo-switch-2": {
+      "id": "nintendo-switch-2",
+      "titulo": "Nintendo Switch 2",
+      "fecha": "2026-10-15",
+      "motivo": "confirmado por el negocio el 15/10/2026: la consola sola, sin juego; el paquete con Mario Kart World es otra referencia"
+    },
     "nintendo-switch-2-mario-kart": {
       "id": "nintendo-switch-2-mario-kart-world",
       "titulo": "Nintendo Switch 2 + Mario Kart World",
