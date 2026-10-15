@@ -17,11 +17,35 @@
       "fecha": "2026-10-02",
       "motivo": "título corregido a mano en la corrida del 02/10/2026"
     },
+    "apple-iphone-15-128gb": {
+      "id": "apple-iphone-15-128gb",
+      "titulo": "Apple iPhone 15 128GB",
+      "fecha": "2026-10-15",
+      "motivo": "la línea no trae ESIM, SIM ni ACTIVO; el negocio confirmó el 15/10/2026 que es nuevo sellado"
+    },
+    "apple-iphone-16-128gb": {
+      "id": "apple-iphone-16-128gb",
+      "titulo": "Apple iPhone 16 128GB",
+      "fecha": "2026-10-15",
+      "motivo": "la línea no trae ESIM, SIM ni ACTIVO; el negocio confirmó el 15/10/2026 que es nuevo sellado"
+    },
     "apple-iphone-16e-128gb-esim": {
       "id": "apple-iphone-16e-128gb-esim",
       "titulo": "Apple iPhone 16e 128GB eSIM",
       "fecha": "2026-10-02",
       "motivo": "título corregido a mano en la corrida del 02/10/2026"
+    },
+    "apple-iphone-17-256gb": {
+      "id": "apple-iphone-17-256gb",
+      "titulo": "Apple iPhone 17 256GB",
+      "fecha": "2026-10-15",
+      "motivo": "la línea no trae ESIM, SIM ni ACTIVO; el negocio confirmó el 15/10/2026 que es nuevo sellado"
+    },
+    "apple-watch-se-44mm": {
+      "id": "apple-watch-se-3-44mm",
+      "titulo": "Apple Watch SE 3 44mm",
+      "fecha": "2026-10-15",
+      "motivo": "la lista no dice la generación; el negocio confirmó el 15/10/2026 que es el SE 3 (tercera generación). Ese mismo día se había anotado SE 2 por error y se corrigió antes de publicar"
     },
     "fly-go-pad-mouse-teclado-10-4g-4gb-ram-128gb": {
       "id": "fly-go-pad-10-4g-4gb-ram-128gb-con-teclado-y-mouse",
@@ -184,6 +208,12 @@
       "titulo": "Samsung Galaxy Buds4",
       "fecha": "2026-10-02",
       "motivo": "título corregido a mano en la corrida del 02/10/2026"
+    },
+    "samsung-galaxy-a17-5g-8gb-ram-256gb-dual-sim": {
+      "id": "samsung-galaxy-a17-5g-8gb-ram-256gb-dual-sim",
+      "titulo": "Samsung Galaxy A17 5G 8GB RAM 256GB Dual SIM",
+      "fecha": "2026-10-15",
+      "motivo": "el 02/10 vino «1 SIM» y el 15/10 «DUAL SIM»; el 08/10 llegaron las dos a la vez con precios distintos: el negocio confirmó el 15/10/2026 que son dos referencias"
     },
     "xiaomi-pad-2-4g-4gb-ram-128gb": {
       "id": "xiaomi-redmi-pad-2-11-4g-4gb-ram-128gb",

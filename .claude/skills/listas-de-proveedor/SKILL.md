@@ -87,9 +87,11 @@ lista:
     por artículo**, si confirma el descarte o si tiene el dato. Con el dato,
     entra; sin él, queda en la hoja de descartados con lo que faltó. Lo
     detectan dos scripts: el parser, con la tabla `DATOS_DEL_PROVEEDOR`
-    (generaciones que la lista omite) y con el iPhone que llega sin viñeta y sin
-    ESIM ni ACTIVO —«15 128 *$1.950*» bajo *IPH NUEVOS*, igual que los activos
-    de arriba—, que tampoco se fusiona con el sellado del mismo modelo; y la
+    (generaciones que la lista omite) y con el iPhone que llega sin ESIM, SIM
+    ni ACTIVO —«15 128 *$1.950*» bajo *IPH NUEVOS*, igual que los activos de
+    arriba—, traiga viñeta o no: la misma lista llegó después con ✔️ en esas
+    líneas, y la viñeta no dice la condición. Tampoco se fusiona con el sellado
+    del mismo modelo; y la
     comparación, con la SIM que cambió.
     Lo que ningún script detecta y se ve al leer la lista se trata igual.
     El dato se escribe en `referencias/equivalencias.json`, así la lista

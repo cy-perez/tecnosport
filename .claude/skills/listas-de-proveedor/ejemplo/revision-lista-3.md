@@ -1,12 +1,12 @@
 # Revisión de la lista
 
 - Fecha de la lista: 2026-10-08
-- Productos para publicar: 89
-- Modelos distintos: 79
-- Descartados: 167
+- Productos para publicar: 90
+- Modelos distintos: 80
+- Descartados: 166
 - Duplicados fusionados: 9
-- Productos con algún supuesto aplicado: 52
-- Títulos confirmados en una lista anterior: 24
+- Productos con algún supuesto aplicado: 53
+- Títulos confirmados en una lista anterior: 25
 - Líneas sin clasificar: 0
 - Mensajes de la lista: ANDROID, VARIEDAD, GAMA ALTA
 
@@ -190,6 +190,8 @@
 - **Apple iPhone 17 Pro 512GB eSIM** — celulares — 4.050.000 COP — colores: Azul
 - **Apple iPhone 17 Pro 256GB eSIM** — celulares — 3.700.000 COP — colores: Naranja
 - **Apple iPhone 16e 128GB eSIM** — celulares — 1.500.000 COP — colores: Negro
+- **Apple Watch SE 3 44mm** — relojes — 1.080.000 COP — colores: Negro
+  - · asumido: título confirmado el 15/10/2026: la lista lo trae como «Apple Watch SE 44mm»
 
 ## Descartados
 - TV FLY 24" $350 — categoría no publicable: televisores
@@ -358,7 +360,6 @@
 - S25 ULTRA 12/512 🩶💙 — sin precio de proveedor
 - S25 ULTRA 12/256💙🩶 — sin precio de proveedor
 - S25 FE  8/256 🖤💙 — sin precio de proveedor
-- WATCH  SE 44MM $1.080 🖤 — falta información del proveedor: la generación del Apple Watch SE (SE 2 o SE 3)
 
 ## Duplicados fusionados
 - L64: Honor X5D 4G 4GB RAM 128GB → Honor X5D 4G 4GB RAM 128GB 1 SIM

@@ -454,6 +454,14 @@ class BloqueDeIphoneSinCondicion(unittest.TestCase):
         eq = {"apple-iphone-15-128gb": equivalencia("apple-iphone-15-128gb", "Apple iPhone 15 128GB", "2026-10-15")}
         self.assertIn("Apple iPhone 15 128GB", titulos(parsear(self.BLOQUE, eq)))
 
+    def test_la_vineta_no_dice_la_condicion(self):
+        # La misma lista llegó después con ✔️ en esas líneas: entraban como sellados.
+        datos = parsear(self.BLOQUE.replace("\n15 128", "\n✔️15 128").replace("\n18 pm", "\n✔️18 pm"))
+        faltan = [d["texto_origen"] for d in datos["descartados"] if d.get("falta_informacion")]
+        self.assertEqual(["15 128 *$1.950*", "18 pm 256 *$4.850*"], faltan)
+        [p] = [p for p in datos["productos"] if "iPhone 18" in p["titulo"]]
+        self.assertEqual(4_980_000, p["precio_proveedor_cop"])
+
     def test_un_s26_dentro_de_la_seccion_de_iphone_es_samsung_y_la_u_es_ultra(self):
         self.assertIn("Samsung Galaxy S26 Ultra 256GB", titulos(parsear(self.BLOQUE)))
 
