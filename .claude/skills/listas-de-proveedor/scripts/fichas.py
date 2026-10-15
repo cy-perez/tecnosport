@@ -18,10 +18,20 @@ carpeta se sigue encontrando y las fotos que ya tiene no se pierden.
 
 **Nada de esto borra.** La skill escribe la ficha y crea las carpetas que falten;
 las fotos que dejó la persona no se tocan nunca.
+
+**Solo tiene carpeta lo que se va a ofrecer** (regla 18, 15/10/2026): un modelo cuyas
+configuraciones quedan todas con menos de un 5 % de margen no la recibe, porque la
+carpeta es donde la persona descarga fotos y nadie debe buscar fotos de lo que no va
+a entrar. Si el modelo ya tenía carpeta de una lista anterior, no se borra —puede
+tener fotos—: `retirados_con_carpeta` la informa y la persona decide.
 """
 
 import re
+import sys
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from margen import margen, se_ofrece  # noqa: E402
 
 ORIGINALES = "Fotos originales"
 PROCESADAS = "Fotos procesadas"
@@ -73,8 +83,12 @@ def pesos(valor) -> str:
     return f"{valor:,}".replace(",", ".") if valor is not None else "por definir"
 
 
-def texto_de_ficha(productos: list) -> str:
-    """La ficha de un modelo: los datos del equipo y una línea por configuración."""
+def texto_de_ficha(productos: list, retirados: list = ()) -> str:
+    """La ficha de un modelo: los datos del equipo y una línea por configuración.
+
+    `retirados` son las configuraciones del modelo que la regla 18 deja fuera: van aparte,
+    con su margen, para que se vea por qué la lista las trajo y el sitio no las ofrece.
+    """
     m = productos[0]
     paleta = ", ".join(m.get("colores_oficiales") or []) or "por confirmar"
     L = [
@@ -92,6 +106,11 @@ def texto_de_ficha(productos: list) -> str:
         L.append(f"- {p['titulo']} (SKU {p['id']})")
         L.append(f"  costo {pesos(p.get('precio_proveedor_cop'))} · mercado {pesos(p.get('precio_mercado_cop'))}"
                  f" · colores sugeridos: {sugeridos}")
+    if retirados:
+        L += ["", "NO SE OFRECEN: MENOS DE UN 5 % DE MARGEN (REGLA 18)", "-" * 60]
+        for p in retirados:
+            L.append(f"- {p['titulo']}: costo {pesos(p.get('precio_proveedor_cop'))} · mercado "
+                     f"{pesos(p.get('precio_mercado_cop'))} · margen {margen(p) * 100:.1f} %")
     L += ["", f"META TÍTULO: {m.get('meta_titulo', '')}", f"META DESCRIPCIÓN: {m.get('meta_descripcion', '')}",
           "", "DESCRIPCIÓN", "-" * 60, m.get("descripcion") or "(pendiente de redactar)"]
 
@@ -136,10 +155,34 @@ def escribir(datos: dict, raiz: Path) -> list:
         por_modelo.setdefault(p.get("id_modelo") or p["id"], []).append(p)
     carpetas = []
     for mid, productos in por_modelo.items():
-        carpeta = carpeta_de_modelo(raiz, mid, productos[0].get("titulo_modelo") or productos[0]["titulo"])
+        ofrecidos = [p for p in productos if se_ofrece(p)]
+        if not ofrecidos:
+            continue
+        retirados = [p for p in productos if not se_ofrece(p)]
+        carpeta = carpeta_de_modelo(raiz, mid, ofrecidos[0].get("titulo_modelo") or ofrecidos[0]["titulo"])
         (carpeta / ORIGINALES).mkdir(parents=True, exist_ok=True)
-        if productos[0].get("marca") in MARCAS_SIN_LECTURA_AUTOMATICA:
+        if ofrecidos[0].get("marca") in MARCAS_SIN_LECTURA_AUTOMATICA:
             (carpeta / FUENTE_DE_LA_MARCA).mkdir(exist_ok=True)
-        (carpeta / archivo_de_ficha(mid)).write_text(texto_de_ficha(productos), encoding="utf-8", newline="")
+        (carpeta / archivo_de_ficha(mid)).write_text(texto_de_ficha(ofrecidos, retirados),
+                                                     encoding="utf-8", newline="")
         carpetas.append(carpeta)
     return carpetas
+
+
+def retirados_con_carpeta(datos: dict, raiz: Path) -> list:
+    """Los modelos que la regla 18 deja fuera enteros y que ya tenían carpeta: [(título, carpeta)].
+
+    `escribir` no les crea carpeta, pero tampoco borra la que dejó una lista anterior: puede
+    tener fotos que la persona descargó. Se informan para que ella decida.
+    """
+    por_modelo = {}
+    for p in datos["productos"]:
+        por_modelo.setdefault(p.get("id_modelo") or p["id"], []).append(p)
+    salida = []
+    for mid, productos in por_modelo.items():
+        if any(se_ofrece(p) for p in productos):
+            continue
+        carpeta = carpeta_de_modelo(raiz, mid, productos[0].get("titulo_modelo") or productos[0]["titulo"])
+        if (carpeta / archivo_de_ficha(mid)).is_file():
+            salida.append((productos[0].get("titulo_modelo") or productos[0]["titulo"], carpeta))
+    return salida

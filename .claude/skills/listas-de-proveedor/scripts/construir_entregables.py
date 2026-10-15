@@ -41,7 +41,7 @@ def construir(datos: dict, salida: Path):
     escribir_excel(datos, ruta_xlsx, fecha)
     sin_fotos = [c.name for c in carpetas
                  if not any((c / fichas.ORIGINALES).iterdir())]
-    return carpetas, ruta_xlsx, sin_fotos
+    return carpetas, ruta_xlsx, sin_fotos, fichas.retirados_con_carpeta(datos, salida / "fichas")
 
 
 def escribir_excel(datos: dict, ruta: Path, fecha: str):
@@ -133,9 +133,16 @@ def main():
     args = ap.parse_args()
 
     datos = json.loads(Path(args.productos).read_text(encoding="utf-8"))
-    carpetas, xlsx, sin_fotos = construir(datos, Path(args.salida))
-    print(f"FICHAS -> {Path(args.salida) / 'fichas'} ({len(carpetas)} modelos)")
+    carpetas, xlsx, sin_fotos, retirados = construir(datos, Path(args.salida))
+    modelos = {p.get("id_modelo") or p["id"] for p in datos["productos"]}
+    print(f"FICHAS -> {Path(args.salida) / 'fichas'} ({len(carpetas)} modelos; "
+          f"{len(modelos) - len(carpetas)} sin carpeta por tener menos de un 5 % de margen)")
     print(f"XLSX   -> {xlsx}")
+    if retirados:
+        print(f"\n{len(retirados)} carpetas de una lista anterior son de modelos que hoy no se ofrecen "
+              "(regla 18). No se borran porque pueden tener fotos: quítalas si no las necesitas.")
+        for titulo, carpeta in retirados:
+            print(f"  - {titulo}: {carpeta}")
     if sin_fotos:
         print(f"\n{len(sin_fotos)} modelos sin fotos en «{fichas.ORIGINALES}»:")
         for nombre in sin_fotos[:20]:
