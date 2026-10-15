@@ -83,7 +83,12 @@ Y se niega en dos casos, a propósito:
 El inventario de cada lista refresca, además, los borradores que siguen en
 revisión —costo, configuraciones y colores—, y **aprobar se niega si el borrador
 no es de la última lista**: un modelo que dejó de venir no se publica con
-existencia que el proveedor ya no tiene.
+existencia que el proveedor ya no tiene. «Dejó de venir» incluye, desde el
+15/10/2026, lo que vino con menos de un 5 % de margen: la regla 18 del bloque 1
+lo manda como desaparecido. Un borrador de una lista anterior cuyo costo de hoy
+ya no deja ese margen se queda sin poder aprobarse, y es lo esperado: dilo en
+la entrega con su margen, que está en el Excel del bloque 1, en vez de buscar
+cómo aprobarlo.
 
 ### 3. Entregar
 
@@ -96,8 +101,11 @@ ahí con cada uno:
 - elegir la marca y la categoría del catálogo;
 - **aprobar, que publica el producto con sus fotos**, o rechazar con el motivo.
 
-Si en el bloque 1 algún precio de mercado quedó por debajo del costo, recuérdalo
-aquí: es justo el momento en que alguien fija el precio.
+Lo que quedó por debajo del costo, o con menos de un 5 % de margen, ya no llega
+aquí: la regla 18 del bloque 1 lo deja fuera de `lista-api.json`. Lo que sí
+llega sin evaluar es la configuración **sin precio de mercado** —la regla no
+tiene con qué medirla—: recuérdala aquí con su costo, porque es justo el
+momento en que alguien fija el precio, y el panel solo exige que supere el costo.
 
 Un modelo rechazado no se vuelve a proponer en las listas siguientes; las
 configuraciones que se dejen sin colores al aprobar, tampoco.
