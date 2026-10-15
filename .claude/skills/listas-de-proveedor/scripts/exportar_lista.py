@@ -3,11 +3,12 @@
 
 Uso, al terminar el paso 6:
 
-    python3 scripts/exportar_lista.py catalogo/productos.json --salida catalogo/lista-api.json
+    python3 scripts/exportar_lista.py catalogo/productos.json
 
 Y luego, con la sesión del panel:
 
-    node tools/importar-lista-tecnologia.mjs catalogo/lista-api.json --proveedor <id> --escribir
+    node tools/importar-lista-tecnologia.mjs catalogo/5-api/lista-api.json --inventario \
+        --proveedor <id> --escribir
 
 La API recibe, por modelo, lo que la skill ya decidió —título, descripción, paleta
 oficial— y, por configuración, la memoria, la SIM, el costo del proveedor, el
@@ -35,6 +36,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from comparar_lista import colores_sugeridos  # noqa: E402
 from parsear_lista import atributo_sim  # noqa: E402
+import rutas  # noqa: E402
 
 # Lo que caben las columnas de la API (V92). Pasarse tumba la lista entera en una transacción,
 # así que el que no cabe se queda fuera aquí y se dice.
@@ -143,7 +145,7 @@ def exportar(datos: dict) -> tuple[dict, list]:
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("productos")
-    ap.add_argument("--salida", default="catalogo/lista-api.json")
+    ap.add_argument("--salida", default=str(rutas.API / "lista-api.json"))
     args = ap.parse_args()
 
     datos = json.loads(Path(args.productos).read_text(encoding="utf-8"))
@@ -153,6 +155,7 @@ def main():
         lista, fuera = exportar(datos)
     except ValueError as error:
         sys.exit(str(error))
+    Path(args.salida).parent.mkdir(parents=True, exist_ok=True)
     Path(args.salida).write_text(json.dumps(lista, ensure_ascii=False, indent=2), encoding="utf-8", newline="")
     n = sum(len(m["configuraciones"]) for m in lista["modelos"])
     print(f"{len(lista['modelos'])} modelos y {n} configuraciones en {args.salida}")

@@ -31,7 +31,8 @@ cliente elige (decisión del 08/10/2026). Cada producto lleva la paleta del
 modelo en `colores_oficiales` y, en `colores_sugeridos`, los de esa paleta que
 coinciden con los emojis de la lista, para premarcarlos en el panel.
 
-Escribe de vuelta en productos.json y un `cambios.md` para mostrar en el paso 3.
+Escribe de vuelta en productos.json y un `cambios.md`, en `1-lista/` junto a la lista,
+para mostrar en el paso 3.
 Los scripts del paso 4 leen `pendiente` (ver pendientes.py).
 """
 
@@ -48,6 +49,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import conocidos  # noqa: E402
 from asignar_precios import aplicar_margen  # noqa: E402
 from pendientes import TAREAS  # noqa: E402
+import rutas  # noqa: E402
 
 PRECIO = conocidos.PRECIO
 # Las alertas que pone aplicar_margen: se quitan antes de recalcular para que
@@ -331,14 +333,15 @@ def main():
     ap.add_argument("productos", help="productos.json del parser; se escribe en su sitio")
     ap.add_argument("--base", default=str(conocidos.BASE))
     ap.add_argument("--hoy", default=date.today().isoformat(), help="fecha para la vigencia del precio")
-    ap.add_argument("--cambios", help="reporte; por omisión cambios.md junto a productos.json")
+    ap.add_argument("--cambios", help="reporte; por omisión 1-lista/cambios.md junto a productos.json")
     args = ap.parse_args()
 
     ruta = Path(args.productos)
     datos = json.loads(ruta.read_text(encoding="utf-8"))
     comparar(datos, conocidos.cargar(args.base), date.fromisoformat(args.hoy))
     ruta.write_text(json.dumps(datos, ensure_ascii=False, indent=2), encoding="utf-8")
-    cambios = Path(args.cambios) if args.cambios else ruta.with_name("cambios.md")
+    cambios = Path(args.cambios) if args.cambios else ruta.parent / rutas.LISTA.name / "cambios.md"
+    cambios.parent.mkdir(parents=True, exist_ok=True)
     cambios.write_text(reporte(datos), encoding="utf-8", newline="")
     r = datos["comparacion"]["resumen"]
     print(f"{r['nuevo']} nuevos | {r['configuracion_nueva']} memoria nueva | {r['costo_cambio']} costo cambiado | "

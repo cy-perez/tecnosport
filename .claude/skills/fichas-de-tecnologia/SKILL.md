@@ -9,7 +9,7 @@ El tercero de los tres bloques de la ingesta de tecnología (`docs/adr/0079`):
 
 | Bloque | Skill | Qué deja |
 |---|---|---|
-| 1 | `/listas-de-proveedor` | `catalogo/lista-api.json`, `catalogo/por-proponer.json` y el inventario de lo que ya se vende actualizado |
+| 1 | `/listas-de-proveedor` | `catalogo/5-api/lista-api.json`, `catalogo/5-api/por-proponer.json` y el inventario de lo que ya se vende actualizado |
 | 2 | `/fotos-estudio-degradado` | `Fotos procesadas/` y `estado-fotos.json` de cada modelo nuevo; ninguno pasa sin 4 fotos LISTA |
 | 3 | **esta** | el borrador de cada modelo, **con sus fotos**, en `/admin/tecnologia` |
 
@@ -23,7 +23,7 @@ La regla del negocio (10/10/2026) es que **ningún producto llega al panel a
 medias**. Comprueba, sin escribir nada:
 
 ```bash
-node tools/importar-lista-tecnologia.mjs catalogo/lista-api.json --borradores --proveedor <id>
+node tools/importar-lista-tecnologia.mjs catalogo/5-api/lista-api.json --borradores --proveedor <id>
 ```
 
 La salida lista lo que va y, con `se queda`, lo que no:
@@ -50,7 +50,7 @@ modelos que ya se venden, y qué se queda fuera y por qué.
 ### 2. Llevarlo al panel
 
 ```bash
-node tools/importar-lista-tecnologia.mjs catalogo/lista-api.json --borradores --proveedor <id> --escribir
+node tools/importar-lista-tecnologia.mjs catalogo/5-api/lista-api.json --borradores --proveedor <id> --escribir
 ```
 
 Necesita la sesión del panel en `--token` o `TS_TOKEN_ADMIN`. **No la pidas por
@@ -114,7 +114,7 @@ anterior a la última lista importada: le pondrían al borrador el costo de ante
 Si pasa, el bloque 1 ya procesó una lista más nueva; se corre esta skill con la
 de esa lista.
 
-**Borrar `catalogo/entregables/fichas/`.** Las fotos que se suben salen de
+**Borrar `catalogo/4-entregables/fichas/`.** Las fotos que se suben salen de
 `Fotos procesadas/` de cada modelo, y la herramienta se niega si la tanda contó
 una foto que ya no está. Las carpetas viven fuera del repositorio; el registro de
 lo procesado está en `referencias/conocidos.json` de la skill de listas.

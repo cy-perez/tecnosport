@@ -210,13 +210,13 @@ catálogo ajeno, no: lo que hace falta es fidelidad, no interpretación.
 ## El bloque 2 de la ingesta de tecnología: la tanda
 
 La ingesta de tecnología va en tres bloques (`docs/adr/0079`): `/listas-de-proveedor`
-deja la carpeta de cada modelo y `catalogo/por-proponer.json` —los modelos que el
+deja la carpeta de cada modelo y `catalogo/5-api/por-proponer.json` —los modelos que el
 sitio no vende—; **esta skill retoca sus fotos y no deja pasar ninguno a medias**;
 `/fichas-de-tecnologia` lleva al panel el borrador con sus fotos.
 
 ```bash
-python3 "${CLAUDE_SKILL_DIR}/scripts/procesar_fichas.py" catalogo/entregables/fichas \
-    --tanda catalogo/por-proponer.json
+python3 "${CLAUDE_SKILL_DIR}/scripts/procesar_fichas.py" catalogo/4-entregables/fichas \
+    --tanda catalogo/5-api/por-proponer.json
 ```
 
 **La compuerta** (decisión del negocio del 10/10/2026): cada modelo necesita
@@ -264,8 +264,8 @@ no haga falta otra corrida. Con salida 3:
 **Sacar un modelo lo decide la persona**, con su motivo, y nunca tú:
 
 ```bash
-python3 "${CLAUDE_SKILL_DIR}/scripts/procesar_fichas.py" catalogo/entregables/fichas \
-    --tanda catalogo/por-proponer.json --sacar <id del modelo> --motivo "sin material oficial"
+python3 "${CLAUDE_SKILL_DIR}/scripts/procesar_fichas.py" catalogo/4-entregables/fichas \
+    --tanda catalogo/5-api/por-proponer.json --sacar <id del modelo> --motivo "sin material oficial"
 ```
 
 Queda `fuera_de_tanda` y no bloquea la entrega. Vale para la tanda de esa lista:
@@ -289,7 +289,7 @@ LISTA para la tanda.
 Con la revisión hecha:
 
 ```bash
-python3 "${CLAUDE_SKILL_DIR}/../listas-de-proveedor/scripts/conocidos.py" fotos catalogo/entregables/fichas --escribir
+python3 "${CLAUDE_SKILL_DIR}/../listas-de-proveedor/scripts/conocidos.py" fotos catalogo/4-entregables/fichas --escribir
 ```
 
 Anota cada foto procesada en la base de conocidos, con su huella: las carpetas
@@ -300,13 +300,13 @@ Después dile a la persona que siga con `/fichas-de-tecnologia`.
 
 El catálogo de tecnología se surte de esa skill, y **desde el 08/10/2026 el
 traspaso es por carpetas de modelo**. Cada modelo tiene su carpeta en
-`catalogo/entregables/fichas/` —la arma esa skill, con su archivo
+`catalogo/4-entregables/fichas/` —la arma esa skill, con su archivo
 `<id>-ficha.txt`—; la persona deja las fotos en `Fotos originales/` y esta skill
 escribe la retocada en `Fotos procesadas/`, **con el mismo nombre** (la extensión
 puede cambiar: la maestra siempre es JPEG):
 
 ```bash
-python3 "${CLAUDE_SKILL_DIR}/scripts/procesar_fichas.py" catalogo/entregables/fichas
+python3 "${CLAUDE_SKILL_DIR}/scripts/procesar_fichas.py" catalogo/4-entregables/fichas
 ```
 
 ```

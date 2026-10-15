@@ -56,6 +56,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from pendientes import necesita  # noqa: E402
+import rutas  # noqa: E402
 
 BASE = "https://data.icecat.biz"
 INDICE_URL = f"{BASE}/export/freexml/EN/files.index.xml.gz"
@@ -661,21 +662,21 @@ def main():
     i.set_defaults(func=cmd_id)
 
     a = sub.add_parser("indice", help="baja y filtra el índice de Open Icecat")
-    a.add_argument("--productos", default="productos.json")
-    a.add_argument("--salida", default="icecat/indice.csv")
+    a.add_argument("--productos", default=str(rutas.PRODUCTOS))
+    a.add_argument("--salida", default=str(rutas.ICECAT / "indice.csv"))
     a.add_argument("--refrescar", action="store_true", help="vuelve a bajar el índice")
     a.add_argument("--marcas", help="lista separada por comas, en vez de productos.json")
     a.set_defaults(func=cmd_indice)
 
     b = sub.add_parser("buscar", help="empareja la lista con el índice")
-    b.add_argument("--productos", default="productos.json")
-    b.add_argument("--indice", default="icecat/indice.csv")
-    b.add_argument("--coincidencias", default="icecat/coincidencias.csv")
+    b.add_argument("--productos", default=str(rutas.PRODUCTOS))
+    b.add_argument("--indice", default=str(rutas.ICECAT / "indice.csv"))
+    b.add_argument("--coincidencias", default=str(rutas.ICECAT / "coincidencias.csv"))
     b.set_defaults(func=cmd_buscar)
 
     c = sub.add_parser("traer", help="baja fichas y enlaces de fotos")
-    c.add_argument("--coincidencias", default="icecat/coincidencias.csv")
-    c.add_argument("--salida-contenido", default="icecat/fichas")
+    c.add_argument("--coincidencias", default=str(rutas.ICECAT / "coincidencias.csv"))
+    c.add_argument("--salida-contenido", default=str(rutas.ICECAT / "fichas"))
     c.add_argument("--salida-fotos", default="fotos/urls-icecat.csv")
     c.add_argument("--lang", default="ES", help="ES, EN, es_CO segun la tabla de locales")
     c.add_argument("--solo-confirmados", action="store_true",

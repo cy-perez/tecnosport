@@ -164,7 +164,7 @@ lista:
 
 16. **Las fotos tienen su carpeta aquí y su bloque aparte** (decisión del
     negocio, 08/10/2026, y la del 10/10/2026 que las pasó al bloque 2).
-    Cada modelo tiene su carpeta en `catalogo/entregables/fichas/<Modelo>/`
+    Cada modelo tiene su carpeta en `catalogo/4-entregables/fichas/<Modelo>/`
     (`scripts/fichas.py`), que nace en el paso 5 de esta skill: la persona
     descarga las fotos en `Fotos originales/` —`<id del modelo>_1.jpg`,
     `_2.png`…— y `fotos-estudio-degradado` deja la retocada en `Fotos
@@ -243,27 +243,42 @@ Cambia un paso, no el resto:
 Comprueba cuál es el caso antes del paso 4: si un `curl` a un dominio externo
 funciona, estás en Claude Code.
 
-En Claude Code conviene trabajar sobre una carpeta del proyecto, por ejemplo
-`catalogo/`, y mantener fuera del control de versiones lo pesado y lo generado:
-el índice de Icecat pesa 290 MB y los entregables tampoco van al repositorio.
+En Claude Code se trabaja sobre `catalogo/`, en la raíz del repositorio y fuera
+del control de versiones: el índice de Icecat pesa 290 MB y los entregables
+tampoco van al repositorio. Va ordenada por subproceso (15/10/2026), y los
+scripts escriben ahí por omisión; la forma vive en `scripts/rutas.py`:
+
+```
+catalogo/
+├── productos.json   el estado de la corrida: lo crea el parser y cada paso le escribe
+├── 1-lista/         pasos 1 a 3  lista.txt · revision.md · cambios.md
+├── 2-precios/       paso 4       precios-vtex.json y su .log · alkosto-vitrina.json · precios-descartados.json
+├── 3-redaccion/     paso 4       fichas-marca.json · prosa.json · icecat/
+├── 4-entregables/   paso 5       fichas/<Modelo>/ · comparativo-<fecha>.xlsx
+└── 5-api/           paso 6b      lista-api.json · por-proponer.json (la entrega a los bloques 2 y 3)
+```
+
+`productos.json` se queda en la raíz porque no es de un subproceso: todos lo
+leen y lo escriben. `cargados.json` e `ids.json`, si existen, son de
+`tools/cargar-catalogo.mjs`, otro flujo, y también se quedan en la raíz.
 
 ## Flujo
 
 ### 1. Guardar la lista tal cual
 
-Copia el mensaje completo a `lista.txt` **sin corregir nada**: los emojis, los
+Copia el mensaje completo a `catalogo/1-lista/lista.txt` **sin corregir nada**: los emojis, los
 espacios raros y los saltos de línea son justamente las señales que usa el parser.
 Si llegaron dos mensajes (gama alta y variedad), pégalos en el mismo archivo.
 
 ### 2. Parsear y comparar con lo conocido
 
 ```bash
-python3 scripts/parsear_lista.py lista.txt --salida productos.json --reporte revision.md
-python3 scripts/comparar_lista.py productos.json
+python3 scripts/parsear_lista.py catalogo/1-lista/lista.txt
+python3 scripts/comparar_lista.py catalogo/productos.json
 ```
 
-El parser deja `productos.json` (productos, repetidos que se fusionaron,
-descartados y líneas sin clasificar) y `revision.md`, un resumen legible.
+El parser deja `catalogo/productos.json` (productos, repetidos que se fusionaron,
+descartados y líneas sin clasificar) y `catalogo/1-lista/revision.md`, un resumen legible.
 
 La comparación, que se corre **una vez por lista y antes del paso 4**, cruza cada
 producto con `referencias/conocidos.json` y lo clasifica:
@@ -293,7 +308,7 @@ Y anota:
   de información del proveedor (regla 10) y va a la sección del mismo nombre;
 - los conocidos que vinieron pero **no entran** (sin precio, bajo el mínimo).
 
-Escribe `cambios.md` junto a `productos.json`. Lee los dos reportes antes de
+Escribe `catalogo/1-lista/cambios.md`, junto a la lista. Lee los dos reportes antes de
 seguir.
 
 Con la lista del 08/10/2026 fueron 18 nuevos, 7 sin precio vigente, 19 con otro
@@ -390,16 +405,16 @@ tocan. Sin la comparación procesan todo, como antes.
 
 ```bash
 # 1. Cosecha de precios: Éxito, Olímpica y Jumbo por su catálogo VTEX.
-python3 scripts/precios.py catalogo/productos.json --salida catalogo/precios-vtex.json
+python3 scripts/precios.py catalogo/productos.json --salida catalogo/2-precios/precios-vtex.json
 
 # 2. Alkosto va por navegador y el emparejamiento final lo hace una persona,
-#    producto por producto, en catalogo/alkosto-vitrina.json. Ver precios.md.
+#    producto por producto, en catalogo/2-precios/alkosto-vitrina.json. Ver precios.md.
 
 # 3. Decide el precio de mercado y el margen con las reglas de precios.md.
 python3 scripts/asignar_precios.py catalogo/productos.json \
-    --vtex catalogo/precios-vtex.json \
-    --alkosto catalogo/alkosto-vitrina.json \
-    --descartar catalogo/precios-descartados.json
+    --vtex catalogo/2-precios/precios-vtex.json \
+    --alkosto catalogo/2-precios/alkosto-vitrina.json \
+    --descartar catalogo/2-precios/precios-descartados.json
 
 # 4. Ficha técnica oficial de Open Icecat, que es de donde salen las
 #    especificaciones. Detalle del emparejamiento en fichas-tecnicas.md.
@@ -407,14 +422,14 @@ python3 scripts/icecat_local.py diagnostico --icecat-id 12345678
 python3 scripts/icecat_local.py indice --productos catalogo/productos.json
 python3 scripts/icecat_local.py buscar --productos catalogo/productos.json
 python3 scripts/icecat_local.py traer  --solo-confirmados \
-    --salida-contenido catalogo/icecat/fichas
+    --salida-contenido catalogo/3-redaccion/icecat/fichas
 
 # 5. Descripciones y metadatos, una por modelo: la estructura la arma el script,
-#    la prosa la escribes tú en catalogo/prosa.json, por id de modelo, y la ficha
-#    de la marca en catalogo/fichas-marca.json. Ver descripciones.md.
+#    la prosa la escribes tú en catalogo/3-redaccion/prosa.json, por id de modelo, y la ficha
+#    de la marca en catalogo/3-redaccion/fichas-marca.json. Ver descripciones.md.
 python3 scripts/redactar_fichas.py catalogo/productos.json \
-    --prosa catalogo/prosa.json \
-    --marca catalogo/fichas-marca.json --icecat catalogo/icecat/fichas
+    --prosa catalogo/3-redaccion/prosa.json \
+    --marca catalogo/3-redaccion/fichas-marca.json --icecat catalogo/3-redaccion/icecat/fichas
 ```
 
 `fichas-marca.json` lleva, por id de modelo, la fuente, la URL, la fecha de
@@ -451,8 +466,7 @@ marcas que no publican ficha para Colombia.
 ### 5. Armar entregables
 
 ```bash
-python3 scripts/construir_entregables.py catalogo/productos.json \
-    --salida catalogo/entregables
+python3 scripts/construir_entregables.py catalogo/productos.json      # deja todo en catalogo/4-entregables/
 ```
 
 Produce:
@@ -502,9 +516,9 @@ La lista mueve el catálogo por la API, no a mano (`docs/adr/0075`), y esta skil
 solo mueve **el inventario** (`docs/adr/0079`):
 
 ```bash
-python3 scripts/exportar_lista.py catalogo/productos.json --salida catalogo/lista-api.json
-node tools/importar-lista-tecnologia.mjs catalogo/lista-api.json --inventario --proveedor <id>             # simula
-node tools/importar-lista-tecnologia.mjs catalogo/lista-api.json --inventario --proveedor <id> --escribir
+python3 scripts/exportar_lista.py catalogo/productos.json      # deja catalogo/5-api/lista-api.json
+node tools/importar-lista-tecnologia.mjs catalogo/5-api/lista-api.json --inventario --proveedor <id>             # simula
+node tools/importar-lista-tecnologia.mjs catalogo/5-api/lista-api.json --inventario --proveedor <id> --escribir
 ```
 
 Solo se exportan los modelos con descripción; los demás se dicen. Tampoco se
@@ -516,7 +530,7 @@ deja de ofrecerse. **La lista no toca el precio de venta**: si la salida avisa
 que el costo alcanzó el precio, dilo en la entrega.
 
 **Lo nuevo no entra aquí.** La importación de inventario no propone nada: deja en
-`catalogo/por-proponer.json` los modelos que el sitio no vende —los que necesitan
+`catalogo/5-api/por-proponer.json` los modelos que el sitio no vende —los que necesitan
 fotos— y las configuraciones nuevas de los que sí. Ese archivo es la entrega al
 bloque 2. Lo decide la API y no esta skill porque solo ella sabe qué se vende: la
 base de conocidos dice qué se investigó, no qué se aprobó.
@@ -684,15 +698,16 @@ colores es un producto con cuatro variantes.
 ## Archivos
 
 ```
-scripts/parsear_lista.py          paso 2  lista.txt → productos.json + revision.md
-scripts/comparar_lista.py         paso 2  productos.json contra conocidos.json → pendientes + cambios.md
+scripts/rutas.py                  la forma de catalogo/ por subproceso; de ahí salen las rutas por omisión
+scripts/parsear_lista.py          paso 2  1-lista/lista.txt → productos.json + 1-lista/revision.md
+scripts/comparar_lista.py         paso 2  productos.json contra conocidos.json → pendientes + 1-lista/cambios.md
 scripts/pendientes.py             paso 4  qué le toca a cada script según lo pendiente
 scripts/precios.py                paso 4  cosecha precios VTEX de Éxito, Olímpica y Jumbo
 scripts/asignar_precios.py        paso 4  decide el precio de mercado y el margen
 scripts/icecat_local.py           paso 4  trae la ficha técnica oficial de Open Icecat
 scripts/redactar_fichas.py        paso 4  prosa + ficha oficial → descripción y metadatos
 scripts/construir_entregables.py  paso 5  productos.json → carpetas de modelo + Excel
-scripts/fichas.py                 paso 5  la carpeta de cada modelo en catalogo/entregables/fichas
+scripts/fichas.py                 paso 5  la carpeta de cada modelo en catalogo/4-entregables/fichas
 scripts/conocidos.py              paso 6  guarda lo investigado en referencias/conocidos.json;
                                   `fotos` registra las fotos procesadas de cada modelo
 scripts/preparar_fotos.py         enlaces de descarga y pedido de lo que falte (regla 16)

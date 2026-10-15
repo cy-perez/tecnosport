@@ -43,6 +43,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from parsear_lista import id_de_titulo  # noqa: E402
 import fichas  # noqa: E402
+import rutas  # noqa: E402
 
 BASE = Path(__file__).resolve().parent.parent / "referencias" / "conocidos.json"
 
@@ -308,7 +309,7 @@ def main():
                    help="último recurso para un precio sin fecha (por omisión, hoy)")
     c.add_argument("--escribir", action="store_true", help="sin esto, solo informa")
     f = sub.add_parser("fotos", help="anota en la base las fotos procesadas de las carpetas de modelo")
-    f.add_argument("fichas", nargs="?", default="catalogo/entregables/fichas")
+    f.add_argument("fichas", nargs="?", default=str(rutas.FICHAS))
     f.add_argument("--base", default=str(BASE))
     f.add_argument("--escribir", action="store_true", help="sin esto, solo informa")
     args = ap.parse_args()

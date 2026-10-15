@@ -4,8 +4,8 @@ Compone la descripción de cada **modelo** con la estructura de
 `referencias/descripciones.md` y la escribe en todos sus productos de productos.json.
 
 Uso:
-    python3 redactar_fichas.py productos.json --prosa prosa.json \
-        --marca catalogo/fichas-marca.json --icecat catalogo/icecat/fichas
+    python3 redactar_fichas.py catalogo/productos.json --prosa catalogo/3-redaccion/prosa.json \
+        --marca catalogo/3-redaccion/fichas-marca.json --icecat catalogo/3-redaccion/icecat/fichas
 
 Una descripción por modelo, no por SKU: el Galaxy A57 de 256 GB y el de 512 GB
 comparten ficha, y la memoria y el color son variantes que el cliente elige al
