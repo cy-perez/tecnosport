@@ -2,11 +2,11 @@
 
 - Fecha de la lista: 2026-09-12
 - Productos para publicar: 52
-- Modelos distintos: 41
+- Modelos distintos: 40
 - Descartados: 65
 - Duplicados fusionados: 12
-- Productos con algún supuesto aplicado: 23
-- Títulos confirmados en una lista anterior: 9
+- Productos con algún supuesto aplicado: 24
+- Títulos confirmados en una lista anterior: 10
 - Líneas sin clasificar: 0
 - Mensajes de la lista: ANDROID
 
@@ -86,8 +86,8 @@
   - · asumido: título confirmado el 02/10/2026: la lista lo trae como «Samsung A11 7" WiFi 8GB RAM 128GB»
 - **Samsung Galaxy Tab A11+ 11" WiFi 6GB RAM 128GB** — tablets — 735.000 COP
   - · asumido: título confirmado el 02/10/2026: la lista lo trae como «Samsung A11+ Plus 11" WiFi 6GB RAM 128GB»
-- **Samsung A11+ Plus 11" WiFi 8GB RAM 256GB** — tablets — 770.000 COP
-  - ⚠️ tablets: confirmar la línea comercial completa (ej. Galaxy Tab A11)
+- **Samsung Galaxy Tab A11+ 11" WiFi 8GB RAM 256GB** — tablets — 770.000 COP
+  - · asumido: título confirmado el 10/10/2026: la lista lo trae como «Samsung A11+ Plus 11" WiFi 8GB RAM 256GB»
 - **Honor Pad X8b 11" WiFi 4GB RAM 128GB** — tablets — 565.000 COP
   - · asumido: título confirmado el 02/10/2026: la lista lo trae como «Honor X8B 11" WiFi 4GB RAM 128GB»
 - **Xiaomi Redmi Pad 2 9.7" WiFi 4GB RAM 128GB** — tablets — 585.000 COP
