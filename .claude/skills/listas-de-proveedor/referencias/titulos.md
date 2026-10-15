@@ -128,6 +128,7 @@ Ninguno de estos se adivina; salieron de la ficha oficial o de la vitrina:
 | `JBL BARRA DE SONIDO CINEMA SB580` | `JBL Cinema SB580` | Icecat |
 | `F8 ULTRA` bajo *XIAOMI* | `Xiaomi POCO F8 Ultra` | mi.com/co |
 | `NINTENDO SWITCH 2 MARIO KART` | `Nintendo Switch 2 + Mario Kart World` | paquete consola + juego |
+| `NINTENDO SWITCH 2` | `Nintendo Switch 2` | la consola sola, sin juego (negocio, 15/10/2026) |
 | `XIAOMI PAD 2" 4G` / `WIFI` | `Xiaomi Redmi Pad 2 11"` | mi.com/co (la comilla suelta no es la pulgada) |
 
 ### Las pulgadas de la lista mienten seguido

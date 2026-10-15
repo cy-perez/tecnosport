@@ -230,18 +230,56 @@ class PosiblesMismos(unittest.TestCase):
     """Revisión del 08/10/2026: el Moto G17 Power salió como nuevo y como
     desaparecido a la vez, porque el «1 SIM» de la lista anterior era parte del id."""
 
-    def test_un_nuevo_y_un_desaparecido_que_solo_difieren_en_la_sim_se_juntan(self):
-        modelo = dict(id_modelo="motorola-moto-g17-power-4g", titulo_modelo="Motorola Moto G17 Power 4G")
-        base = {"motorola-moto-g17-power-4g-4gb-ram-256gb-1-sim":
-                conocido(titulo="Motorola Moto G17 Power 4G 4GB RAM 256GB 1 SIM", bloques=["ANDROID"], **modelo)}
-        datos = comparar(lista(producto("motorola-moto-g17-power-4g-4gb-ram-256gb",
-                                        "Motorola Moto G17 Power 4G 4GB RAM 256GB", bloques=["ANDROID"], **modelo),
-                               bloques=("ANDROID",)), base)
-        self.assertEqual([], datos["desaparecidos"])
-        self.assertEqual([{"nuevo": "motorola-moto-g17-power-4g-4gb-ram-256gb",
-                           "conocido": "motorola-moto-g17-power-4g-4gb-ram-256gb-1-sim"}],
+    MODELO = dict(id_modelo="samsung-galaxy-a17-5g", titulo_modelo="Samsung Galaxy A17 5G")
+    CONOCIDO = "samsung-galaxy-a17-5g-8gb-ram-256gb-1-sim"
+    NUEVO = "samsung-galaxy-a17-5g-8gb-ram-256gb-dual-sim"
+
+    def base(self):
+        return {self.CONOCIDO: conocido(titulo="Samsung Galaxy A17 5G 8GB RAM 256GB 1 SIM",
+                                        bloques=["ANDROID"], **self.MODELO)}
+
+    def hoy(self, **cambios):
+        return lista(producto(self.NUEVO, "Samsung Galaxy A17 5G 8GB RAM 256GB Dual SIM", costo=690_000,
+                              bloques=["ANDROID"], **self.MODELO, **cambios), bloques=("ANDROID",))
+
+    def test_el_nuevo_se_descarta_por_falta_de_informacion_del_proveedor(self):
+        # Regla 10, 15/10/2026: el A17 5G vino «1 SIM» el 02/10 y «DUAL SIM» hoy.
+        datos = comparar(self.hoy(), self.base())
+        self.assertEqual([], datos["productos"])
+        [d] = datos["descartados"]
+        self.assertEqual((self.NUEVO, self.CONOCIDO), (d["id"], d["posible_mismo_de"]))
+        self.assertTrue(d["motivo"].startswith("falta información del proveedor"), d["motivo"])
+        self.assertEqual([{"nuevo": self.NUEVO, "conocido": self.CONOCIDO}],
                          [{k: d[k] for k in ("nuevo", "conocido")} for d in datos["posibles_mismos"]])
-        self.assertIn("Posibles el mismo", comparar_lista.reporte(datos))
+
+    def test_el_conocido_sigue_faltando_hasta_que_la_persona_decida(self):
+        # Si se confirma el descarte, lo que se vendía como 1 SIM deja de ofrecerse:
+        # la lista de hoy no dice que el proveedor lo tenga.
+        datos = comparar(self.hoy(), self.base())
+        self.assertEqual([self.CONOCIDO], [d["id"] for d in datos["desaparecidos"]])
+
+    def test_el_reporte_pide_confirmar_el_descarte_y_dice_como_resolverlo(self):
+        texto = comparar_lista.reporte(comparar(self.hoy(), self.base()))
+        seccion = texto.split("## Falta información del proveedor")[1].split("\n## ")[0]
+        self.assertIn("Samsung Galaxy A17 5G 8GB RAM 256GB Dual SIM", seccion)
+        self.assertIn(f"`{self.NUEVO}` → `{self.CONOCIDO}`", seccion)
+
+    def test_una_linea_con_equivalencia_ya_la_decidio_una_persona(self):
+        datos = comparar(self.hoy(confirmado_el="2026-10-15"), self.base())
+        self.assertEqual([self.NUEVO], [p["id"] for p in datos["productos"]])
+        self.assertEqual([], datos["posibles_mismos"])
+
+    def test_correrlo_dos_veces_da_lo_mismo(self):
+        una = comparar(self.hoy(), self.base())
+        self.assertEqual(una, comparar(una, self.base()))
+
+    def test_lo_que_descarto_el_parser_por_falta_de_un_dato_tambien_se_pregunta(self):
+        datos = lista()
+        datos["descartados"] = [{"id": "apple-watch-se-44mm", "titulo": "Apple Watch SE 44mm",
+                                 "motivo": "falta información del proveedor: la generación",
+                                 "falta_informacion": "la generación"}]
+        texto = comparar_lista.reporte(comparar(datos, {"jbl-xtreme-4": conocido()}))
+        self.assertIn("Apple Watch SE 44mm", texto.split("## Falta información del proveedor")[1])
 
 
 class Desaparecidos(unittest.TestCase):
@@ -294,7 +332,7 @@ class Resumen(unittest.TestCase):
         datos = comparar(lista(producto(), producto("jbl-grip", "JBL Grip")), base)
         self.assertEqual({"nuevo": 1, "configuracion_nueva": 0, "costo_cambio": 0, "sin_cambios": 1,
                           "sin_precio_vigente": 0, "desaparecidos": 1, "modelos_desaparecidos": 1,
-                          "ausentes": 0, "posibles_mismos": 0},
+                          "ausentes": 0, "posibles_mismos": 0, "falta_informacion": 0},
                          datos["comparacion"]["resumen"])
         self.assertEqual("2026-10-08", datos["comparacion"]["fecha"])
 
@@ -305,6 +343,18 @@ class Resumen(unittest.TestCase):
         self.assertIn("JBL Grip", texto.split("## Nuevos")[1].split("##")[0])
         self.assertIn("1.100.000 → 1.000.000", texto)
         self.assertIn("ganancia 260.400", texto)
+
+    def test_con_el_precio_vencido_el_cambio_de_costo_se_sigue_viendo(self):
+        # 15/10/2026: la lista llegó a los 13 días, los 60 conocidos tenían el
+        # precio vencido y el reporte decía «Costo cambiado: Ninguno» con 19 cambios.
+        base = {"jbl-xtreme-4": conocido(fecha_precio="2026-09-30"), "jbl-grip": conocido(
+            titulo="JBL Grip", fecha_precio="2026-09-30")}
+        texto = comparar_lista.reporte(comparar(lista(producto(costo=1_000_000), producto(
+            "jbl-grip", "JBL Grip")), base))
+        seccion = texto.split("## Sin precio de mercado vigente")[1].split("\n## ")[0]
+        self.assertIn("**JBL Xtreme 4** — costo 1.100.000 → 1.000.000 (−100.000)", seccion)
+        self.assertIn("**JBL Grip** — costo 1.100.000\n", seccion)
+        self.assertIn("1 de ellos cambiaron de costo", seccion)
 
     def test_una_perdida_se_ve_en_pesos(self):
         # Con el margen redondeado, 700.000 contra 699.900 salía «margen -0,0%».
@@ -329,6 +379,9 @@ class TextoDeCambio(unittest.TestCase):
         self.assertEqual("costo +50.000", self.texto(base, producto(costo=1_150_000)))
         self.assertEqual("precio por investigar",
                          self.texto({"jbl-xtreme-4": conocido(fecha_precio="2026-09-01")}, producto()))
+        self.assertEqual("precio por investigar · costo −100.000",
+                         self.texto({"jbl-xtreme-4": conocido(fecha_precio="2026-09-01")},
+                                    producto(costo=1_000_000)))
 
     def test_sin_comparacion_no_dice_nada(self):
         self.assertEqual("", comparar_lista.texto_de_cambio({"titulo": "JBL Grip"}))

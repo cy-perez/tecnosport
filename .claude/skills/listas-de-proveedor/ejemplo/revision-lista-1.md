@@ -150,7 +150,7 @@
 - AIRE ACONDICIONADO CORN TIPO D CONVENCIONAL 12.000BTU/220V $ — categoría no publicable: variedad
 - XIAOMI TAG $55 — categoría no publicable: variedad
 - LAVADORA MABE 11KG $550 — categoría no publicable: variedad
-- 🏽PENCIL TÁCTIL XIAOMI $140 — categoría no publicable: variedad
+- PENCIL TÁCTIL XIAOMI $140 — categoría no publicable: variedad
 - SCOOTER CORN ECO RIDER $900 — categoría no publicable: variedad
 - SCOOTER XIAOMI 4 LITE 2 GEN $1.050 — categoría no publicable: variedad
 - SCOOTER XIAOMI 6 LITE $1.300 — categoría no publicable: variedad

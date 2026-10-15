@@ -88,6 +88,20 @@ DESCARTAR_SIN_PRECIO = True
 # pulgadas describen decenas de equipos distintos; con eso solo no se publica.
 DESCARTAR_COMPUTADOR_SIN_REFERENCIA = True
 
+# Lo que la lista no dice y define el producto se descarta por falta de
+# información del proveedor (regla 10, decisión del negocio del 15/10/2026), y se
+# le pregunta a la persona si confirma el descarte o tiene el dato. Cada entrada
+# es (patrón sobre el título, dato que falta): el patrón casa cuando el dato NO
+# está. Con el dato, la persona escribe la equivalencia con el título completo
+# —«Apple Watch SE 3 44mm»— y el patrón deja de casar. La SIM que cambia entre
+# una lista y otra se decide en comparar_lista.py, que es donde se ve.
+DATOS_DEL_PROVEEDOR = [
+    # «WATCH SE 44MM» (15/10/2026) vale para el SE 2 y el SE 3: los dos traen
+    # caja de 40 y 44 mm, así que el tamaño no dice la generación.
+    (r"^Apple Watch SE(?!\s+[1-9](?!\d))", "la generación del Apple Watch SE (SE 2 o SE 3)"),
+    (r"^Apple AirPods Pro(?!\s+[1-9](?!\d))", "la generación de los AirPods Pro"),
+]
+
 # Cuando el mismo producto aparece con precios distintos se toma el menor.
 # Queda anotado en `supuestos`, no en `revisar`: ya está decidido.
 
@@ -144,6 +158,9 @@ ENCABEZADOS = [
     ("TABLET", ("tablets", None, "nuevo")),
     ("IPAD", ("tablets", "Apple", "nuevo")),
     ("ALEXA", ("parlantes", "Amazon", "nuevo")),
+    # Antes que ACCESORIOS: «COSOLAS Y ACCESORIOS» (15/10/2026) abría la sección de
+    # accesorios y la Switch 2 entraba solo porque su viñeta 👾 la clasificaba.
+    ("CONSOLAS", ("consolas", None, "nuevo")),
     ("AUDIFONOS", ("audifonos", None, "nuevo")),
     ("AUDÍFONOS", ("audifonos", None, "nuevo")),
     ("CARGADORES", ("cargadores", None, "nuevo")),
@@ -157,6 +174,10 @@ ENCABEZADOS = [
     ("PARLANTERIA", ("parlantes", None, "nuevo")),
     ("PARLANTE", ("parlantes", None, "nuevo")),
     ("ROUTERS", ("routers", None, "nuevo")),
+    # 15/10/2026: sin estas dos, el vapeador heredaba la sección de routers y el
+    # encabezado «🪫*UPS*🪫» salía como una power bank sin precio.
+    ("VAPER", ("vapeadores", None, "nuevo")),
+    ("UPS", ("ups", None, "nuevo")),
     ("VARIEDAD", ("variedad", None, "nuevo")),
     ("LECTOR", ("lectores", None, "nuevo")),
     ("IMPRESORAS TERMICA", ("impresoras", None, "nuevo")),
@@ -204,6 +225,7 @@ TYPOS = {
     "LAPTO ": "LAPTOP ", "WACH": "WATCH", "CHOISE": "CHOICE", "TERA": "TB",
     " PM ": " PRO MAX ", "AUDIFONO": "AUDÍFONO", "ACCESSORIOS": "ACCESORIOS",
     "BUNDLEE": "BUNDLE", "MAUSE": "MOUSE", "FUSIÓN": "FUSION",
+    "COSOLAS": "CONSOLAS",
     # El aviso de llegada dice "edición especial" y la lista "ESPECIAL": es el mismo equipo.
     "EDICIÓN ESPECIAL": "ESPECIAL", "EDICION ESPECIAL": "ESPECIAL",
 }
@@ -265,6 +287,7 @@ CASING = {
     "Xpad": "XPAD", "Fe": "FE", "4G": "4G", "5G": "5G", "Nfc": "NFC",
     "Esim": "eSIM", "Gt": "GT", "Gt50": "GT 50", "Lapiz": "Lápiz",
     "Tactil": "Táctil", "Sim/Esim": "SIM + eSIM",
+    "Se": "SE", "Airpods": "AirPods", "Airtag": "AirTag",
 }
 
 RE_PRECIO = re.compile(r"\$\s*([\d][\d.,]*)")
@@ -496,6 +519,10 @@ def categoria_por_palabras(texto: str):
         return "audifonos"
     if re.search(r"\bLAPTOP\b|\bTODO EN UNO\b", t):
         return "computadores"
+    # Desde que CONSOLAS es sección, un control sin la viñeta 🎮 la heredaría y
+    # se publicaría como consola.
+    if re.search(r"\bCONTROL(ES)?\b|\bJOYSTICK\b|\bDUALSENSE\b", t):
+        return "accesorios_consola"
     return None
 
 
@@ -504,7 +531,8 @@ def categoria_por_palabras(texto: str):
 # --------------------------------------------------------------------------
 
 RE_IPHONE = re.compile(r"^(?P<gen>\d{1,2})\s*(?P<e>E\b)?\s*(?P<var>PRO MAX|PRO|PLUS|MAX|MINI|PM)?", re.I)
-RE_GALAXY = re.compile(r"^(?P<serie>[SZAM])\s*(?P<gen>\d{1,3})\s*(?P<var>ULTRA|PLUS|FE|\+)?", re.I)
+# «S26 u 256» (15/10/2026): la U suelta es Ultra.
+RE_GALAXY = re.compile(r"^(?P<serie>[SZAM])\s*(?P<gen>\d{1,3})\s*(?P<var>ULTRA|PLUS|FE|\+|U\b)?", re.I)
 
 
 def modelo_apple(texto: str):
@@ -520,7 +548,7 @@ def modelo_galaxy(texto: str):
     m = RE_GALAXY.match(texto.strip())
     if not m:
         return None
-    var = {"ULTRA": "Ultra", "PLUS": "Plus", "+": "Plus", "FE": "FE"}.get(
+    var = {"ULTRA": "Ultra", "U": "Ultra", "PLUS": "Plus", "+": "Plus", "FE": "FE"}.get(
         (m.group("var") or "").upper(), "")
     return f"Galaxy {m.group('serie').upper()}{m.group('gen')}" + (f" {var}" if var else "")
 
@@ -623,6 +651,12 @@ def construir_producto(texto, categoria, marca, condicion, seccion, linea):
         if prod["almacenamiento"]:
             resto = re.sub(r"(?<!\d)(32|64|128|256|512|1024)(?!\d)", " ", resto)
         nombre = None
+        # «S26 u 256» llegó dentro de *IPH NUEVOS* (15/10/2026) y salía como
+        # «Apple S26 U». Un iPhone nunca empieza por S: es la serie S de Galaxy.
+        if (prod["marca"] or "") == "Apple" and categoria == "celulares" and re.match(r"^\s*S\s*\d{2}\b", resto):
+            prod["marca"] = "Samsung"
+            prod["supuestos"].append(
+                "la línea viene en una sección de iPhone, pero «S##» es la serie S de Galaxy: se leyó como Samsung")
         if (prod["marca"] or "") == "Apple":
             nombre = modelo_apple(resto)
         elif (prod["marca"] or "") == "Samsung" and categoria == "celulares":
@@ -934,7 +968,9 @@ def parsear(texto: str, equivalencias=None):
         t = limpiar(linea).lstrip()
         for e in sorted(list(VINETAS_CATEGORIA) + list(VINETAS_CONDICION), key=len, reverse=True):
             if t.startswith(e):
-                emoji, resto = e, t[len(e):].strip()
+                # El tono de piel va después del emoji base: «✍🏽PENCIL» dejaba
+                # el 🏽 pegado al texto y, con él, al título.
+                emoji, resto = e, t[len(e):].lstrip("🏻🏼🏽🏾🏿").strip()
                 cat_vineta = VINETAS_CATEGORIA.get(e)
                 cond_vineta = VINETAS_CONDICION.get(e)
                 break
@@ -1033,6 +1069,13 @@ def parsear(texto: str, equivalencias=None):
             if cat:
                 prod = construir_producto(linea, cat, marca, condicion or "nuevo", seccion, i)
                 prod["revisar"].append("línea sin viñeta: verificar que sea un producto")
+                # Regla 10, 15/10/2026: «15 128 *$1.950*» bajo *IPH NUEVOS*, sin
+                # ✔️ ni ⚠️ y sin ESIM ni ACTIVO, como los activos de arriba. La
+                # sección dice nuevo y la línea no dice nada: puede ser cualquiera.
+                if (prod["marca"] == "Apple" and cat == "celulares" and prod["condicion"] == "nuevo"
+                        and not re.search(r"\b(E?SIM|ACTIVOS?)\b", limpio)):
+                    prod["falta_informacion"] = ("la condición del iPhone (nuevo o activado): la línea "
+                                                 "no trae viñeta ni ESIM/ACTIVO")
                 clasificar(prod)
                 continue
         sin_clasificar.append({"linea": i, "texto": linea, "motivo": "no se pudo clasificar"})
@@ -1041,6 +1084,7 @@ def parsear(texto: str, equivalencias=None):
     productos, duplicados = fusionar_duplicados(productos)
     productos = filtrar_por_precio(productos, descartados)
     aplicar_equivalencias(productos, equivalencias or {}, descartados, duplicados)
+    productos = filtrar_por_datos_faltantes(productos, descartados)
     return {
         "fecha_lista": fecha,
         "bloques": bloques,
@@ -1054,6 +1098,10 @@ def parsear(texto: str, equivalencias=None):
 
 def compatibles(a, b):
     """Dos entradas son el mismo producto si ningún dato conocido se contradice."""
+    # Lo que no se sabe qué es no se junta con nada: «18 pm 256 $4.850», sin
+    # condición, le bajaba el precio al «18 PRO MAX 256 ESIM $4.980» sellado.
+    if a.get("falta_informacion") or b.get("falta_informacion"):
+        return False
     for campo in ("red", "ram", "marca"):
         if a[campo] and b[campo] and a[campo] != b[campo]:
             return False
@@ -1200,6 +1248,9 @@ def aplicar_equivalencias(productos, equivalencias, descartados=(), duplicados=N
             p["supuestos"].append(f"título confirmado el {fecha}: la lista lo trae como «{p['titulo']}»")
         p["id"], p["titulo"] = e["id"], e["titulo"]
         p["revisar"] = [r for r in p["revisar"] if r not in ALERTAS_DE_NOMBRE]
+        # Una persona miró esta línea exacta: comparar_lista.py no le vuelve a
+        # preguntar si es la misma referencia que un conocido con otra SIM.
+        p["confirmado_el"] = e["fecha"]
 
     # El modelo sale del título definitivo: una equivalencia que corrige el título
     # corrige también el modelo, sin una tabla aparte.
@@ -1255,6 +1306,30 @@ def filtrar_por_precio(productos, descartados):
             descartados.append({**p, "motivo":
                                 f"marca excluida ({p['marca']}): sin precio de "
                                 f"mercado admisible en Colombia"})
+        else:
+            salida.append(p)
+    return salida
+
+
+def filtrar_por_datos_faltantes(productos, descartados):
+    """Descarta lo que la lista no permite identificar (regla 10).
+
+    Va después de las equivalencias: una equivalencia con el título completo es
+    justo la forma de decir que la persona sí tenía el dato.
+    """
+    salida = []
+    for p in productos:
+        # La condición no va en el título: ahí la equivalencia de la línea, la
+        # que sea, es la persona diciendo que es nuevo.
+        dato, resolver = p.get("falta_informacion"), "si es nuevo, equivalencia al mismo id"
+        if p.get("confirmado_el"):
+            dato = None
+        if not dato:
+            dato = next((d for patron, d in DATOS_DEL_PROVEEDOR if re.match(patron, p["titulo"], re.I)), None)
+            resolver = "equivalencia con el título completo"
+        if dato:
+            descartados.append({**p, "motivo": f"falta información del proveedor: {dato}",
+                                "falta_informacion": dato, "resolver": resolver})
         else:
             salida.append(p)
     return salida

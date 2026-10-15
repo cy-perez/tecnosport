@@ -403,6 +403,92 @@ class MasPegado(unittest.TestCase):
         self.assertEqual(["Xiaomi Redmi Note 15 Pro 4G 8GB RAM 256GB"], titulos(datos))
 
 
+class FaltaInformacionDelProveedor(unittest.TestCase):
+    """Regla 10, 15/10/2026: lo que la lista no permite identificar se descarta
+    por falta de información del proveedor, y la persona confirma o da el dato."""
+
+    WATCH = "*APPLE WATCH* 💥\n⌚WATCH  SE 44MM $1.080 🖤\n"
+
+    def test_el_apple_watch_se_sin_generacion_se_descarta(self):
+        datos = parsear(self.WATCH)
+        self.assertEqual([], datos["productos"])
+        [d] = datos["descartados"]
+        self.assertEqual("falta información del proveedor: la generación del Apple Watch SE (SE 2 o SE 3)",
+                         d["motivo"])
+
+    def test_con_la_generacion_en_la_lista_entra(self):
+        datos = parsear("*APPLE WATCH* 💥\n⌚WATCH SE 3 44MM $1.080\n")
+        self.assertEqual(["Apple Watch SE 3 44mm"], titulos(datos))
+
+    def test_la_equivalencia_con_el_titulo_completo_es_tener_el_dato(self):
+        eq = {"apple-watch-se-44mm": equivalencia("apple-watch-se-3-44mm", "Apple Watch SE 3 44mm", "2026-10-15")}
+        self.assertEqual(["Apple Watch SE 3 44mm"], titulos(parsear(self.WATCH, eq)))
+
+    def test_los_airpods_pro_sin_generacion_tambien(self):
+        datos = parsear("*APPLE WATCH* 💥\n🎧AIRPODS PRO $840\n🎧AIRPODS PRO 3 $840\n")
+        self.assertEqual(["Apple AirPods Pro 3"], titulos(datos))
+        self.assertIn("AirPods Pro", datos["descartados"][0]["motivo"])
+
+    def test_la_equivalencia_deja_la_fecha_en_que_la_persona_confirmo(self):
+        eq = {"nintendo-switch-2": equivalencia("nintendo-switch-2", "Nintendo Switch 2", "2026-10-15")}
+        [p] = parsear("*COSOLAS Y ACCESORIOS*\n👾NINTENDO SWITCH 2 $2100\n", eq)["productos"]
+        self.assertEqual("2026-10-15", p["confirmado_el"])
+
+
+class BloqueDeIphoneSinCondicion(unittest.TestCase):
+    """El bloque *IPH NUEVOS* que llegó al final de la lista del 15/10/2026."""
+
+    BLOQUE = ("*IPH NUEVOS* \n✔️18 PRO MAX 256 *ESIM* 🖤🤍$4.980 \n15 128 *$1.950*\n"
+              "18 pm 256 *$4.850*\nS26 u 256 *$3.150*\n")
+
+    def test_un_iphone_sin_vineta_ni_esim_ni_activo_se_descarta_por_la_condicion(self):
+        datos = parsear(self.BLOQUE)
+        faltan = [d["texto_origen"] for d in datos["descartados"] if d.get("falta_informacion")]
+        self.assertEqual(["15 128 *$1.950*", "18 pm 256 *$4.850*"], faltan)
+
+    def test_no_le_baja_el_precio_al_sellado_del_mismo_modelo(self):
+        [p] = [p for p in parsear(self.BLOQUE)["productos"] if "iPhone 18" in p["titulo"]]
+        self.assertEqual(4_980_000, p["precio_proveedor_cop"])
+
+    def test_con_equivalencia_la_persona_dijo_que_es_nuevo(self):
+        eq = {"apple-iphone-15-128gb": equivalencia("apple-iphone-15-128gb", "Apple iPhone 15 128GB", "2026-10-15")}
+        self.assertIn("Apple iPhone 15 128GB", titulos(parsear(self.BLOQUE, eq)))
+
+    def test_un_s26_dentro_de_la_seccion_de_iphone_es_samsung_y_la_u_es_ultra(self):
+        self.assertIn("Samsung Galaxy S26 Ultra 256GB", titulos(parsear(self.BLOQUE)))
+
+    def test_y_se_junta_con_el_s26_ultra_de_gama_alta_que_venia_sin_precio(self):
+        datos = parsear("*SAMSUNG* ✈️\n🚀S26 ULTRA 12/256🖤💜\n" + self.BLOQUE)
+        [p] = [p for p in datos["productos"] if "S26" in p["titulo"]]
+        self.assertEqual(("Samsung Galaxy S26 Ultra 12GB RAM 256GB", 3_150_000),
+                         (p["titulo"], p["precio_proveedor_cop"]))
+
+
+class EncabezadosDel15DeOctubre(unittest.TestCase):
+    """Secciones que la lista del 15/10/2026 trajo y el parser no conocía."""
+
+    def test_consolas_mal_escrito_abre_consolas_y_el_control_no_se_publica(self):
+        datos = parsear("*COSOLAS Y ACCESORIOS*\nCONTROL $300\n👾NINTENDO SWITCH 2 $2100\n")
+        self.assertEqual([("Nintendo Switch 2", "consolas")],
+                         [(p["titulo"], p["categoria"]) for p in datos["productos"]])
+        self.assertEqual(["accesorios_consola"], [d["categoria"] for d in datos["descartados"]])
+
+    def test_el_vapeador_no_hereda_la_seccion_anterior(self):
+        datos = parsear("*ROUTERS* 📡\n📡TP-LINK AX12 $125\n*VAPER*\n✔️50.000 PUFF $35\n")
+        self.assertEqual(["routers", "vapeadores"], [d["categoria"] for d in datos["descartados"]])
+
+    def test_el_encabezado_de_ups_no_es_un_producto(self):
+        datos = parsear("🪫*UPS*🪫\n\n📍8.800mah $110\n")
+        self.assertEqual(["8.800mah $110"], [d["texto_origen"] for d in datos["descartados"]])
+
+    def test_el_tono_de_piel_de_la_vineta_no_queda_en_el_texto(self):
+        [d] = parsear("✍🏽PENCIL TÁCTIL XIAOMI $140\n")["descartados"]
+        self.assertEqual("PENCIL TÁCTIL XIAOMI $140", d["texto_origen"])
+
+    def test_se_y_airpods_con_las_mayusculas_de_apple(self):
+        self.assertEqual("Apple Watch SE 3 AirPods", parsear_lista.titulo_bonito("APPLE WATCH SE 3 AIRPODS"))
+
+
 class ValidacionDeEquivalencias(unittest.TestCase):
     """El archivo se valida al cargarlo: un error ahí renombra productos en silencio."""
 
