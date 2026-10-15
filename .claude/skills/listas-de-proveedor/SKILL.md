@@ -87,12 +87,15 @@ lista:
     por artículo**, si confirma el descarte o si tiene el dato. Con el dato,
     entra; sin él, queda en la hoja de descartados con lo que faltó. Lo
     detectan dos scripts: el parser, con la tabla `DATOS_DEL_PROVEEDOR`
-    (generaciones que la lista omite), y la comparación, con la SIM que cambió.
+    (generaciones que la lista omite) y con el iPhone que llega sin viñeta y sin
+    ESIM ni ACTIVO —«15 128 *$1.950*» bajo *IPH NUEVOS*, igual que los activos
+    de arriba—, que tampoco se fusiona con el sellado del mismo modelo; y la
+    comparación, con la SIM que cambió.
     Lo que ningún script detecta y se ve al leer la lista se trata igual.
     El dato se escribe en `referencias/equivalencias.json`, así la lista
-    siguiente ya no pregunta: el título completo («Apple Watch SE 3 44mm»), o,
+    siguiente ya no pregunta: el título completo («Apple Watch SE 3 44mm»);
     para la SIM, el id del conocido si es el mismo equipo y el propio id si es
-    otra referencia. Mientras tanto el conocido que difería en la SIM sigue
+    otra referencia; para la condición, el propio id si es nuevo. Mientras tanto el conocido que difería en la SIM sigue
     contando como desaparecido: si se confirma el descarte, deja de ofrecerse,
     porque la lista de hoy no dice que el proveedor lo tenga.
 11. **Los computadores no se preguntan: sin marca o sin referencia en la lista,
@@ -569,6 +572,10 @@ No hay que volver a hacerlo a mano en cada lista:
   del 08/10/2026, confirmado por el negocio ese día).
 - **SIM y eSIM**: `SIM/ESIM`, `DUAL SIM`, `1 SIM` y `ESIM` salen como atributo, no
   como parte del nombre.
+- **Un Galaxy dentro de la sección de iPhone.** `S26 u 256` llegó bajo *IPH
+  NUEVOS* (15/10/2026) y salía como «Apple S26 U». Un `S##` en una sección de
+  Apple es la serie S de Galaxy, la `U` suelta es Ultra, y se fusiona con el
+  `S26 ULTRA 12/256` de gama alta, que venía sin precio.
 - **RAM virtual** (`8+8`): se publica solo la física y queda la nota de que el
   proveedor sumaba la virtual.
 - **Submarcas de Xiaomi**: las referencias que el proveedor escribe bajo

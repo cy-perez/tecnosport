@@ -172,7 +172,8 @@ def comparar(datos: dict, base: dict, hoy: date) -> dict:
                 "titulo_conocido": configuraciones[d["posible_mismo_de"]]["titulo"]})
     datos["falta_informacion"] = [
         {"id": d["id"], "titulo": d.get("titulo") or d.get("texto_origen"), "motivo": d["motivo"],
-         "posible_mismo_de": d.get("posible_mismo_de")}
+         "posible_mismo_de": d.get("posible_mismo_de"),
+         "resolver": d.get("resolver") or "equivalencia con el título completo"}
         for d in datos.get("descartados") or [] if d.get("falta_informacion")]
 
     # Desaparecido es el que vino en la última lista de su bloque y hoy no. El
@@ -310,7 +311,7 @@ def reporte(datos: dict) -> str:
             como = (f"si es el mismo equipo, equivalencia `{d['id']}` → `{d['posible_mismo_de']}`; "
                     f"si es otra referencia, equivalencia `{d['id']}` → sí mismo")
         else:
-            como = "si se sabe el dato, equivalencia con el título completo"
+            como = d["resolver"]
         L.append(f"- **{d['titulo']}** — {d['motivo']}. Con el dato: {como}, y volver a parsear")
     if not datos["falta_informacion"]:
         L.append("Ninguno.")

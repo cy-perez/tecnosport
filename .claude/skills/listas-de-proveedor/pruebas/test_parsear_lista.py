@@ -435,6 +435,35 @@ class FaltaInformacionDelProveedor(unittest.TestCase):
         self.assertEqual("2026-10-15", p["confirmado_el"])
 
 
+class BloqueDeIphoneSinCondicion(unittest.TestCase):
+    """El bloque *IPH NUEVOS* que llegó al final de la lista del 15/10/2026."""
+
+    BLOQUE = ("*IPH NUEVOS* \n✔️18 PRO MAX 256 *ESIM* 🖤🤍$4.980 \n15 128 *$1.950*\n"
+              "18 pm 256 *$4.850*\nS26 u 256 *$3.150*\n")
+
+    def test_un_iphone_sin_vineta_ni_esim_ni_activo_se_descarta_por_la_condicion(self):
+        datos = parsear(self.BLOQUE)
+        faltan = [d["texto_origen"] for d in datos["descartados"] if d.get("falta_informacion")]
+        self.assertEqual(["15 128 *$1.950*", "18 pm 256 *$4.850*"], faltan)
+
+    def test_no_le_baja_el_precio_al_sellado_del_mismo_modelo(self):
+        [p] = [p for p in parsear(self.BLOQUE)["productos"] if "iPhone 18" in p["titulo"]]
+        self.assertEqual(4_980_000, p["precio_proveedor_cop"])
+
+    def test_con_equivalencia_la_persona_dijo_que_es_nuevo(self):
+        eq = {"apple-iphone-15-128gb": equivalencia("apple-iphone-15-128gb", "Apple iPhone 15 128GB", "2026-10-15")}
+        self.assertIn("Apple iPhone 15 128GB", titulos(parsear(self.BLOQUE, eq)))
+
+    def test_un_s26_dentro_de_la_seccion_de_iphone_es_samsung_y_la_u_es_ultra(self):
+        self.assertIn("Samsung Galaxy S26 Ultra 256GB", titulos(parsear(self.BLOQUE)))
+
+    def test_y_se_junta_con_el_s26_ultra_de_gama_alta_que_venia_sin_precio(self):
+        datos = parsear("*SAMSUNG* ✈️\n🚀S26 ULTRA 12/256🖤💜\n" + self.BLOQUE)
+        [p] = [p for p in datos["productos"] if "S26" in p["titulo"]]
+        self.assertEqual(("Samsung Galaxy S26 Ultra 12GB RAM 256GB", 3_150_000),
+                         (p["titulo"], p["precio_proveedor_cop"]))
+
+
 class EncabezadosDel15DeOctubre(unittest.TestCase):
     """Secciones que la lista del 15/10/2026 trajo y el parser no conocía."""
 

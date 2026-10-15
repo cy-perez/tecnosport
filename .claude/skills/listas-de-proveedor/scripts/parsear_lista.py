@@ -531,7 +531,8 @@ def categoria_por_palabras(texto: str):
 # --------------------------------------------------------------------------
 
 RE_IPHONE = re.compile(r"^(?P<gen>\d{1,2})\s*(?P<e>E\b)?\s*(?P<var>PRO MAX|PRO|PLUS|MAX|MINI|PM)?", re.I)
-RE_GALAXY = re.compile(r"^(?P<serie>[SZAM])\s*(?P<gen>\d{1,3})\s*(?P<var>ULTRA|PLUS|FE|\+)?", re.I)
+# «S26 u 256» (15/10/2026): la U suelta es Ultra.
+RE_GALAXY = re.compile(r"^(?P<serie>[SZAM])\s*(?P<gen>\d{1,3})\s*(?P<var>ULTRA|PLUS|FE|\+|U\b)?", re.I)
 
 
 def modelo_apple(texto: str):
@@ -547,7 +548,7 @@ def modelo_galaxy(texto: str):
     m = RE_GALAXY.match(texto.strip())
     if not m:
         return None
-    var = {"ULTRA": "Ultra", "PLUS": "Plus", "+": "Plus", "FE": "FE"}.get(
+    var = {"ULTRA": "Ultra", "U": "Ultra", "PLUS": "Plus", "+": "Plus", "FE": "FE"}.get(
         (m.group("var") or "").upper(), "")
     return f"Galaxy {m.group('serie').upper()}{m.group('gen')}" + (f" {var}" if var else "")
 
@@ -650,6 +651,12 @@ def construir_producto(texto, categoria, marca, condicion, seccion, linea):
         if prod["almacenamiento"]:
             resto = re.sub(r"(?<!\d)(32|64|128|256|512|1024)(?!\d)", " ", resto)
         nombre = None
+        # «S26 u 256» llegó dentro de *IPH NUEVOS* (15/10/2026) y salía como
+        # «Apple S26 U». Un iPhone nunca empieza por S: es la serie S de Galaxy.
+        if (prod["marca"] or "") == "Apple" and categoria == "celulares" and re.match(r"^\s*S\s*\d{2}\b", resto):
+            prod["marca"] = "Samsung"
+            prod["supuestos"].append(
+                "la línea viene en una sección de iPhone, pero «S##» es la serie S de Galaxy: se leyó como Samsung")
         if (prod["marca"] or "") == "Apple":
             nombre = modelo_apple(resto)
         elif (prod["marca"] or "") == "Samsung" and categoria == "celulares":
@@ -1062,6 +1069,13 @@ def parsear(texto: str, equivalencias=None):
             if cat:
                 prod = construir_producto(linea, cat, marca, condicion or "nuevo", seccion, i)
                 prod["revisar"].append("línea sin viñeta: verificar que sea un producto")
+                # Regla 10, 15/10/2026: «15 128 *$1.950*» bajo *IPH NUEVOS*, sin
+                # ✔️ ni ⚠️ y sin ESIM ni ACTIVO, como los activos de arriba. La
+                # sección dice nuevo y la línea no dice nada: puede ser cualquiera.
+                if (prod["marca"] == "Apple" and cat == "celulares" and prod["condicion"] == "nuevo"
+                        and not re.search(r"\b(E?SIM|ACTIVOS?)\b", limpio)):
+                    prod["falta_informacion"] = ("la condición del iPhone (nuevo o activado): la línea "
+                                                 "no trae viñeta ni ESIM/ACTIVO")
                 clasificar(prod)
                 continue
         sin_clasificar.append({"linea": i, "texto": linea, "motivo": "no se pudo clasificar"})
@@ -1084,6 +1098,10 @@ def parsear(texto: str, equivalencias=None):
 
 def compatibles(a, b):
     """Dos entradas son el mismo producto si ningún dato conocido se contradice."""
+    # Lo que no se sabe qué es no se junta con nada: «18 pm 256 $4.850», sin
+    # condición, le bajaba el precio al «18 PRO MAX 256 ESIM $4.980» sellado.
+    if a.get("falta_informacion") or b.get("falta_informacion"):
+        return False
     for campo in ("red", "ram", "marca"):
         if a[campo] and b[campo] and a[campo] != b[campo]:
             return False
@@ -1301,10 +1319,17 @@ def filtrar_por_datos_faltantes(productos, descartados):
     """
     salida = []
     for p in productos:
-        dato = next((d for patron, d in DATOS_DEL_PROVEEDOR if re.match(patron, p["titulo"], re.I)), None)
+        # La condición no va en el título: ahí la equivalencia de la línea, la
+        # que sea, es la persona diciendo que es nuevo.
+        dato, resolver = p.get("falta_informacion"), "si es nuevo, equivalencia al mismo id"
+        if p.get("confirmado_el"):
+            dato = None
+        if not dato:
+            dato = next((d for patron, d in DATOS_DEL_PROVEEDOR if re.match(patron, p["titulo"], re.I)), None)
+            resolver = "equivalencia con el título completo"
         if dato:
             descartados.append({**p, "motivo": f"falta información del proveedor: {dato}",
-                                "falta_informacion": dato})
+                                "falta_informacion": dato, "resolver": resolver})
         else:
             salida.append(p)
     return salida
