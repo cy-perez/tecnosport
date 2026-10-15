@@ -64,6 +64,14 @@ alternativa era declarar la lista entera por entorno, y Spring obliga entonces a
 (`TECNOSPORT_TRANSFERENCIAMANUAL_CUENTAS_0_NUMERO`): quien opera el despliegue tiene que poder leer
 lo que escribe.
 
+**En dev los valores no están en el repositorio.** El repo es público, y aunque el checkout enseña
+las cuentas a quien hace un pedido, no es lo mismo que dejar en el historial de GitHub el nombre y
+los celulares de quien tiene las cuentas. Terraform las recibe en la variable
+`cuentas_de_transferencia`, que no tiene valor por omisión, y la llena
+`infra/envs/dev/cuentas.auto.tfvars`, que está en `.gitignore` (la muestra es
+`cuentas.auto.tfvars.example`). Una validación rechaza los valores vacíos y los que dicen
+"pendiente": copiar la muestra sin editarla no pasa el `plan`.
+
 **La lista no puede quedar vacía**: si lo estuviera, el checkout ofrecería "transferencia bancaria"
 y la pantalla siguiente no tendría a dónde mandar a nadie. Falla al arrancar, que es donde un
 despliegue mal configurado tiene que fallar.

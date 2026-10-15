@@ -463,7 +463,15 @@ module "api" {
     # recaudo (ADR-0023). La recogida en el punto, en cambio, va apagada en todos los ambientes:
     # su valor por omisión ya es `false` y no se repite aquí.
     CONTRAENTREGA_HABILITADA = "true"
-    GOOGLE_CLIENT_ID="2132674273-64m082sb4vfika599ja818f2eubnpfdi.apps.googleusercontent.com"
+    GOOGLE_CLIENT_ID         = "2132674273-64m082sb4vfika599ja818f2eubnpfdi.apps.googleusercontent.com"
+    # Las cuentas de transferencia (docs/11-pagos-y-envios.md). Los valores vienen de
+    # `cuentas.auto.tfvars`, que no se versiona porque el repo es público; ver la variable.
+    TRANSFERENCIA_NEQUI_NUMERO      = var.cuentas_de_transferencia.nequi.numero
+    TRANSFERENCIA_NEQUI_TITULAR     = var.cuentas_de_transferencia.nequi.titular
+    TRANSFERENCIA_DAVIPLATA_NUMERO  = var.cuentas_de_transferencia.daviplata.numero
+    TRANSFERENCIA_DAVIPLATA_TITULAR = var.cuentas_de_transferencia.daviplata.titular
+    TRANSFERENCIA_BBVA_NUMERO       = var.cuentas_de_transferencia.bbva.numero
+    TRANSFERENCIA_BBVA_TITULAR      = var.cuentas_de_transferencia.bbva.titular
     }, !var.sistecredito_listo ? {} : {
     # Sistecrédito encendido en dev, y el freno explícito al lado.
     #

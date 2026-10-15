@@ -135,3 +135,24 @@ variable "ruta_confirmacion_sistecredito" {
   type        = string
   default     = "/api/v1/pagos/sistecredito/confirmacion"
 }
+
+variable "cuentas_de_transferencia" {
+  description = "El número y el titular de las tres cuentas a las que el comprador transfiere (docs/11-pagos-y-envios.md). La entidad y el tipo no van aquí: son fijos y viven en `application.yml`. **Sin valor por omisión y fuera del repositorio**: el repo es público, y aunque el checkout enseña estos datos a quien hace un pedido, no es lo mismo que dejar el nombre y los celulares del dueño en el historial de GitHub. Se llena en `cuentas.auto.tfvars`, que no se versiona; la muestra está en `cuentas.auto.tfvars.example`. El titular es quien tiene la cuenta, no el nombre comercial: el negocio es de una persona natural (docs/08-seguridad-legal.md)."
+  type = object({
+    nequi     = object({ numero = string, titular = string })
+    daviplata = object({ numero = string, titular = string })
+    bbva      = object({ numero = string, titular = string })
+  })
+
+  # Un placeholder de la muestra copiado tal cual arrancaría sin quejarse y el checkout mandaría a
+  # la gente a transferir a "pendiente". Y un valor vacío tampoco llega a fallar en Spring: el
+  # `${...:default}` de `application.yml` lo cambia por su propio placeholder.
+  validation {
+    condition = alltrue([
+      for cuenta in values(var.cuentas_de_transferencia) :
+      trimspace(cuenta.numero) != "" && trimspace(cuenta.titular) != "" &&
+      !strcontains(lower("${cuenta.numero} ${cuenta.titular}"), "pendiente")
+    ])
+    error_message = "Cada cuenta necesita número y titular reales: ni vacíos ni con los placeholders de cuentas.auto.tfvars.example."
+  }
+}
