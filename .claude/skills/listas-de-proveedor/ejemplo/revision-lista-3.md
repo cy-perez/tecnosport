@@ -1,9 +1,9 @@
 # Revisión de la lista
 
 - Fecha de la lista: 2026-10-08
-- Productos para publicar: 90
-- Modelos distintos: 80
-- Descartados: 168
+- Productos para publicar: 89
+- Modelos distintos: 79
+- Descartados: 167
 - Duplicados fusionados: 9
 - Productos con algún supuesto aplicado: 52
 - Títulos confirmados en una lista anterior: 24
@@ -190,8 +190,6 @@
 - **Apple iPhone 17 Pro 512GB eSIM** — celulares — 4.050.000 COP — colores: Azul
 - **Apple iPhone 17 Pro 256GB eSIM** — celulares — 3.700.000 COP — colores: Naranja
 - **Apple iPhone 16e 128GB eSIM** — celulares — 1.500.000 COP — colores: Negro
-- **Apple Watch Se 44mm** — relojes — 1.080.000 COP — colores: Negro
-  - ⚠️ confirmar nombre comercial oficial del modelo
 
 ## Descartados
 - TV FLY 24" $350 — categoría no publicable: televisores
@@ -226,13 +224,12 @@
 - TP-LINK AC64 $110 — categoría no publicable: routers
 - REPETIDOR DE WIFI MERCURY MW300 $60 — categoría no publicable: routers
 - REPETIDOR DE WIFI MERCURY AC1200 $80 — categoría no publicable: routers
-- *VAPER* — categoría no publicable: routers
-- 50.000 PUFF $35 — categoría no publicable: routers
+- 50.000 PUFF $35 — categoría no publicable: vapeadores
 - AIRE ACONDICIONADO CORN TIPO D CONVENCIONAL 12.000BTU/110V $ — categoría no publicable: variedad
 - AIRE ACONDICIONADO CORN TIPO D CONVENCIONAL 12.000BTU/220V $ — categoría no publicable: variedad
 - XIAOMI TAG $55 — categoría no publicable: variedad
 - LAVADORA MABE 11KG $550 — categoría no publicable: variedad
-- 🏽PENCIL TÁCTIL XIAOMI $140 — categoría no publicable: variedad
+- PENCIL TÁCTIL XIAOMI $140 — categoría no publicable: variedad
 - SCOOTER CORN ECO RIDER $720 — categoría no publicable: variedad
 - SCOOTER XIAOMI 4 LITE 2 GEN $1.000 — categoría no publicable: variedad
 - SCOOTER XIAOMI 6 ESSENTIAL $1.050 — categoría no publicable: variedad
@@ -242,7 +239,6 @@
 - SCOOTER DT10 DUAL MOTOR $2.950 — categoría no publicable: variedad
 - SCOOTER DT10 SINGLE MOTOR $2.550 — categoría no publicable: variedad
 - SCOOTER M9 $2.750 — categoría no publicable: variedad
-- *UPS*🪫 — categoría no publicable: power_bank
 - 10.400mah $170 — categoría no publicable: variedad
 - JALTECH INALÁMBRICOS $150 — categoría no publicable: lectores
 - JALTECH PLUS 01 $100 — categoría no publicable: lectores
@@ -362,6 +358,7 @@
 - S25 ULTRA 12/512 🩶💙 — sin precio de proveedor
 - S25 ULTRA 12/256💙🩶 — sin precio de proveedor
 - S25 FE  8/256 🖤💙 — sin precio de proveedor
+- WATCH  SE 44MM $1.080 🖤 — falta información del proveedor: la generación del Apple Watch SE (SE 2 o SE 3)
 
 ## Duplicados fusionados
 - L64: Honor X5D 4G 4GB RAM 128GB → Honor X5D 4G 4GB RAM 128GB 1 SIM

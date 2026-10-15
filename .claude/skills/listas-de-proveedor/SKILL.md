@@ -40,7 +40,7 @@ Están al inicio de `scripts/parsear_lista.py` y se cambian ahí:
 | Precios | `$1.850` = **1.850.000 COP**; `$1.960.000` se toma tal cual (6 dígitos o más) |
 | Categorías que se publican | celulares, tablets, relojes, audífonos, consolas, computadores, proyectores, parlantes |
 | Condición publicable | solo `nuevo`, es decir sellado y sin activar |
-| Se descartan siempre | usados, "NUEVOS ACTIVOS", "IPH CON CAJA", cables, cargadores, power bank, accesorios sueltos (control de consola, pencil táctil, rastreador tipo tag), lo que quede sin precio, los celulares por debajo de 500.000 COP, los computadores sin marca o sin referencia y **todo** lo de Krono, BMAX, itel, ZTE, Infinix y Tecno |
+| Se descartan siempre | usados, "NUEVOS ACTIVOS", "IPH CON CAJA", cables, cargadores, power bank, accesorios sueltos (control de consola, pencil táctil, rastreador tipo tag), lo que quede sin precio, los celulares por debajo de 500.000 COP, los computadores sin marca o sin referencia, lo que la lista no permite identificar (regla 10, con confirmación) y **todo** lo de Krono, BMAX, itel, ZTE, Infinix y Tecno |
 
 Estas ya están decididas por el negocio y no se vuelven a preguntar en cada
 lista:
@@ -76,12 +76,25 @@ lista:
    como Redmi Note 15 y `X8 PRO` como POCO X8 Pro. Queda anotado en `supuestos`
    de cada producto, que es distinto de `revisar`: lo asumido no bloquea la
    publicación, solo deja el rastro de por qué el título dice lo que dice.
-10. **Los vacíos de la lista se preguntan siempre, y sin respuesta el producto
-    queda por fuera.** Un "Infinix Buds" sin modelo, un proyector sin fabricante,
-    un PS5 que no dice si es estándar o digital: se le preguntan a la persona en
-    el paso 3, en una sola lista para que se la mande al proveedor. Lo que no se
-    responda no se investiga ni se publica; queda en la hoja de descartados con
-    el dato que faltó.
+10. **Lo que la lista no permite identificar se descarta por falta de
+    información del proveedor, y la persona confirma cada descarte** (decisión
+    del negocio, 15/10/2026). Un Apple Watch SE sin generación —el SE 2 y el
+    SE 3 traen los mismos tamaños—, un equipo que cambió de SIM frente a la
+    lista anterior —el Galaxy A17 5G vino «1 SIM» el 02/10 y «DUAL SIM» el
+    15/10—, un proyector sin fabricante o un PS5 que no dice si es estándar o
+    digital: el producto sale de la lista con el motivo «falta información del
+    proveedor: <dato>», y en el paso 3 se le pregunta a la persona, **artículo
+    por artículo**, si confirma el descarte o si tiene el dato. Con el dato,
+    entra; sin él, queda en la hoja de descartados con lo que faltó. Lo
+    detectan dos scripts: el parser, con la tabla `DATOS_DEL_PROVEEDOR`
+    (generaciones que la lista omite), y la comparación, con la SIM que cambió.
+    Lo que ningún script detecta y se ve al leer la lista se trata igual.
+    El dato se escribe en `referencias/equivalencias.json`, así la lista
+    siguiente ya no pregunta: el título completo («Apple Watch SE 3 44mm»), o,
+    para la SIM, el id del conocido si es el mismo equipo y el propio id si es
+    otra referencia. Mientras tanto el conocido que difería en la SIM sigue
+    contando como desaparecido: si se confirma el descarte, deja de ofrecerse,
+    porque la lista de hoy no dice que el proveedor lo tenga.
 11. **Los computadores no se preguntan: sin marca o sin referencia en la lista,
     quedan por fuera.** "LAPTOP ASUS RYZEN 5 7520U (8+512) 15.6"" describe
     decenas de equipos distintos, y el parser no puede saber cuál es. Entra solo
@@ -185,7 +198,7 @@ lista:
 
 Si el negocio cambia de opinión, se ajustan `CATEGORIAS_INCLUIDAS`,
 `CONDICIONES_PUBLICABLES`, `PRECIO_MINIMO_CELULAR_COP`, `DESCARTAR_SIN_PRECIO`,
-`DESCARTAR_COMPUTADOR_SIN_REFERENCIA` o `MARCAS_EXCLUIDAS` al inicio
+`DESCARTAR_COMPUTADOR_SIN_REFERENCIA`, `MARCAS_EXCLUIDAS` o `DATOS_DEL_PROVEEDOR` al inicio
 de `scripts/parsear_lista.py`.
 
 ## Dónde está corriendo esta skill
@@ -248,8 +261,9 @@ Y anota:
   y hoy no, aunque el mensaje llegó—, que son los que hay que dejar de ofrecer.
   Los que ya faltaban antes quedan como ausentes y no se repiten;
 - los **posibles el mismo**: un nuevo y un desaparecido que solo difieren en la
-  SIM. Casi siempre es la anotación `*1 SIM*` pegada a otra línea. Si es el
-  mismo equipo, agrega la equivalencia que propone el reporte y vuelve a parsear;
+  SIM. Puede ser la anotación `*1 SIM*` pegada a otra línea o una referencia
+  distinta, y la lista no permite saberlo: el nuevo queda descartado por falta
+  de información del proveedor (regla 10) y va a la sección del mismo nombre;
 - los conocidos que vinieron pero **no entran** (sin precio, bajo el mínimo).
 
 Escribe `cambios.md` junto a `productos.json`. Lee los dos reportes antes de
@@ -263,16 +277,26 @@ costo y 46 sin cambios: al paso 4 llegaron 25 de 90 productos.
 Muéstrale en el chat, en pocas líneas: cuántos productos entraron, cuántos se
 descartaron y por qué, la lista de alertas `revisar`, y de `cambios.md` cuántos
 son nuevos, qué costos cambiaron —en especial los que quedan **por debajo del
-costo**— y cuáles desaparecieron, que son los que hay que dejar de ofrecer. Pregunta solo lo que
+costo**— y cuáles desaparecieron, que son los que hay que dejar de ofrecer. Los
+cambios de costo están en dos secciones: «Costo cambiado», para los de precio
+vigente, y «Sin precio de mercado vigente», que también muestra `antes → hoy`.
+Cuando la lista llega más de 7 días después de la anterior, todos caen en la
+segunda: el 15/10/2026 fueron 19 cambios con «Costo cambiado: Ninguno».
+Pregunta solo lo que
 realmente bloquea —un modelo irreconocible, una marca ambigua— y no lo que puedes
 verificar tú mismo buscando. Si algo quedó en `sin_clasificar`, resuélvelo aquí:
 esas líneas son productos que se perderían en silencio.
 
-Los vacíos de la lista van en una sola lista para el proveedor: modelo del
-audífono, marca del proyector, edición de la consola. Se pregunta siempre; el
-producto que se queda sin respuesta se saca del análisis con el motivo "falta
-<dato>" en la hoja de descartados, no se publica a medias. La excepción son los
-computadores, que el parser ya descartó si no traen marca y referencia: se
+**Lo que falta información del proveedor se confirma artículo por artículo**
+(regla 10). Recorre la sección «Falta información del proveedor» de
+`cambios.md`, súmale lo que tú hayas visto al leer la lista —modelo del
+audífono, marca del proyector, edición de la consola— y pregúntale a la persona
+por cada uno: ¿se descarta o tiene el dato? Lo que confirme como descarte queda
+en la hoja de descartados con el dato que faltó, y la lista de esos datos es la
+que la persona le manda al proveedor. Lo que responda va a
+`referencias/equivalencias.json` —el reporte dice qué escribir— y se vuelve a
+correr el paso 2. Nada se publica a medias. La excepción son los computadores,
+que el parser ya descartó si no traen marca y referencia (regla 11): se
 mencionan entre los descartados y no se preguntan.
 
 Detalle de cómo está armada una lista: `referencias/formato-de-listas.md`.

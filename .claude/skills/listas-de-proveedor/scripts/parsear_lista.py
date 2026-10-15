@@ -88,6 +88,20 @@ DESCARTAR_SIN_PRECIO = True
 # pulgadas describen decenas de equipos distintos; con eso solo no se publica.
 DESCARTAR_COMPUTADOR_SIN_REFERENCIA = True
 
+# Lo que la lista no dice y define el producto se descarta por falta de
+# información del proveedor (regla 10, decisión del negocio del 15/10/2026), y se
+# le pregunta a la persona si confirma el descarte o tiene el dato. Cada entrada
+# es (patrón sobre el título, dato que falta): el patrón casa cuando el dato NO
+# está. Con el dato, la persona escribe la equivalencia con el título completo
+# —«Apple Watch SE 3 44mm»— y el patrón deja de casar. La SIM que cambia entre
+# una lista y otra se decide en comparar_lista.py, que es donde se ve.
+DATOS_DEL_PROVEEDOR = [
+    # «WATCH SE 44MM» (15/10/2026) vale para el SE 2 y el SE 3: los dos traen
+    # caja de 40 y 44 mm, así que el tamaño no dice la generación.
+    (r"^Apple Watch SE(?!\s+[1-9](?!\d))", "la generación del Apple Watch SE (SE 2 o SE 3)"),
+    (r"^Apple AirPods Pro(?!\s+[1-9](?!\d))", "la generación de los AirPods Pro"),
+]
+
 # Cuando el mismo producto aparece con precios distintos se toma el menor.
 # Queda anotado en `supuestos`, no en `revisar`: ya está decidido.
 
@@ -144,6 +158,9 @@ ENCABEZADOS = [
     ("TABLET", ("tablets", None, "nuevo")),
     ("IPAD", ("tablets", "Apple", "nuevo")),
     ("ALEXA", ("parlantes", "Amazon", "nuevo")),
+    # Antes que ACCESORIOS: «COSOLAS Y ACCESORIOS» (15/10/2026) abría la sección de
+    # accesorios y la Switch 2 entraba solo porque su viñeta 👾 la clasificaba.
+    ("CONSOLAS", ("consolas", None, "nuevo")),
     ("AUDIFONOS", ("audifonos", None, "nuevo")),
     ("AUDÍFONOS", ("audifonos", None, "nuevo")),
     ("CARGADORES", ("cargadores", None, "nuevo")),
@@ -157,6 +174,10 @@ ENCABEZADOS = [
     ("PARLANTERIA", ("parlantes", None, "nuevo")),
     ("PARLANTE", ("parlantes", None, "nuevo")),
     ("ROUTERS", ("routers", None, "nuevo")),
+    # 15/10/2026: sin estas dos, el vapeador heredaba la sección de routers y el
+    # encabezado «🪫*UPS*🪫» salía como una power bank sin precio.
+    ("VAPER", ("vapeadores", None, "nuevo")),
+    ("UPS", ("ups", None, "nuevo")),
     ("VARIEDAD", ("variedad", None, "nuevo")),
     ("LECTOR", ("lectores", None, "nuevo")),
     ("IMPRESORAS TERMICA", ("impresoras", None, "nuevo")),
@@ -204,6 +225,7 @@ TYPOS = {
     "LAPTO ": "LAPTOP ", "WACH": "WATCH", "CHOISE": "CHOICE", "TERA": "TB",
     " PM ": " PRO MAX ", "AUDIFONO": "AUDÍFONO", "ACCESSORIOS": "ACCESORIOS",
     "BUNDLEE": "BUNDLE", "MAUSE": "MOUSE", "FUSIÓN": "FUSION",
+    "COSOLAS": "CONSOLAS",
     # El aviso de llegada dice "edición especial" y la lista "ESPECIAL": es el mismo equipo.
     "EDICIÓN ESPECIAL": "ESPECIAL", "EDICION ESPECIAL": "ESPECIAL",
 }
@@ -265,6 +287,7 @@ CASING = {
     "Xpad": "XPAD", "Fe": "FE", "4G": "4G", "5G": "5G", "Nfc": "NFC",
     "Esim": "eSIM", "Gt": "GT", "Gt50": "GT 50", "Lapiz": "Lápiz",
     "Tactil": "Táctil", "Sim/Esim": "SIM + eSIM",
+    "Se": "SE", "Airpods": "AirPods", "Airtag": "AirTag",
 }
 
 RE_PRECIO = re.compile(r"\$\s*([\d][\d.,]*)")
@@ -496,6 +519,10 @@ def categoria_por_palabras(texto: str):
         return "audifonos"
     if re.search(r"\bLAPTOP\b|\bTODO EN UNO\b", t):
         return "computadores"
+    # Desde que CONSOLAS es sección, un control sin la viñeta 🎮 la heredaría y
+    # se publicaría como consola.
+    if re.search(r"\bCONTROL(ES)?\b|\bJOYSTICK\b|\bDUALSENSE\b", t):
+        return "accesorios_consola"
     return None
 
 
@@ -934,7 +961,9 @@ def parsear(texto: str, equivalencias=None):
         t = limpiar(linea).lstrip()
         for e in sorted(list(VINETAS_CATEGORIA) + list(VINETAS_CONDICION), key=len, reverse=True):
             if t.startswith(e):
-                emoji, resto = e, t[len(e):].strip()
+                # El tono de piel va después del emoji base: «✍🏽PENCIL» dejaba
+                # el 🏽 pegado al texto y, con él, al título.
+                emoji, resto = e, t[len(e):].lstrip("🏻🏼🏽🏾🏿").strip()
                 cat_vineta = VINETAS_CATEGORIA.get(e)
                 cond_vineta = VINETAS_CONDICION.get(e)
                 break
@@ -1041,6 +1070,7 @@ def parsear(texto: str, equivalencias=None):
     productos, duplicados = fusionar_duplicados(productos)
     productos = filtrar_por_precio(productos, descartados)
     aplicar_equivalencias(productos, equivalencias or {}, descartados, duplicados)
+    productos = filtrar_por_datos_faltantes(productos, descartados)
     return {
         "fecha_lista": fecha,
         "bloques": bloques,
@@ -1200,6 +1230,9 @@ def aplicar_equivalencias(productos, equivalencias, descartados=(), duplicados=N
             p["supuestos"].append(f"título confirmado el {fecha}: la lista lo trae como «{p['titulo']}»")
         p["id"], p["titulo"] = e["id"], e["titulo"]
         p["revisar"] = [r for r in p["revisar"] if r not in ALERTAS_DE_NOMBRE]
+        # Una persona miró esta línea exacta: comparar_lista.py no le vuelve a
+        # preguntar si es la misma referencia que un conocido con otra SIM.
+        p["confirmado_el"] = e["fecha"]
 
     # El modelo sale del título definitivo: una equivalencia que corrige el título
     # corrige también el modelo, sin una tabla aparte.
@@ -1255,6 +1288,23 @@ def filtrar_por_precio(productos, descartados):
             descartados.append({**p, "motivo":
                                 f"marca excluida ({p['marca']}): sin precio de "
                                 f"mercado admisible en Colombia"})
+        else:
+            salida.append(p)
+    return salida
+
+
+def filtrar_por_datos_faltantes(productos, descartados):
+    """Descarta lo que la lista no permite identificar (regla 10).
+
+    Va después de las equivalencias: una equivalencia con el título completo es
+    justo la forma de decir que la persona sí tenía el dato.
+    """
+    salida = []
+    for p in productos:
+        dato = next((d for patron, d in DATOS_DEL_PROVEEDOR if re.match(patron, p["titulo"], re.I)), None)
+        if dato:
+            descartados.append({**p, "motivo": f"falta información del proveedor: {dato}",
+                                "falta_informacion": dato})
         else:
             salida.append(p)
     return salida

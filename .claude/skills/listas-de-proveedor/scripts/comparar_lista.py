@@ -14,6 +14,7 @@ Clasifica cada producto (cada configuración: modelo + memoria + SIM) contra
   ficha del modelo; se investiga solo su precio.
 - **sin_precio_vigente**: configuración conocida, pero su precio de mercado pasó
   de los 7 días o nunca lo tuvo. Hereda la ficha; se investiga solo el precio.
+  Si el costo cambió, el reporte lo dice igual que en costo_cambio.
 - **costo_cambio**: conocida, precio vigente, y el proveedor cambió el costo.
   Hereda todo y el margen se recalcula con el costo de hoy.
 - **sin_cambios**: conocida, precio vigente, mismo costo. Nada que hacer.
@@ -22,7 +23,8 @@ Y anota los **desaparecidos** —configuraciones que vinieron en la última list
 su mensaje y hoy no, aunque el mensaje llegó—, los **modelos desaparecidos**
 —todas sus configuraciones faltan: en el sitio es ocultar el producto, no una
 variante—, los **posibles el mismo** —un nuevo y un faltante que solo difieren
-en la SIM— y los conocidos que vinieron pero no entran.
+en la SIM: el nuevo se descarta por falta de información del proveedor y se
+pregunta— y los conocidos que vinieron pero no entran.
 
 Los colores ya no se heredan como texto de la ficha: son una variante que el
 cliente elige (decisión del 08/10/2026). Cada producto lleva la paleta del
@@ -142,20 +144,36 @@ def comparar(datos: dict, base: dict, hoy: date) -> dict:
     ]
     faltan.sort(key=lambda d: (d["visto_por_ultima_vez"] or "", d["id"]), reverse=True)
 
-    # Un nuevo y un faltante que solo difieren en la SIM son, casi siempre, el
-    # mismo equipo con la anotación de la SIM pegada a otra línea: el Moto G17
-    # Power salió como nuevo y como desaparecido el 08/10/2026. No se juntan
-    # solos —puede ser otra referencia—: se muestran juntos para decidirlo.
+    # Un nuevo y un faltante que solo difieren en la SIM pueden ser el mismo
+    # equipo con la anotación pegada a otra línea —el Moto G17 Power, 08/10/2026—
+    # o dos referencias —el A17 5G llegó «1 SIM» el 02/10 y «DUAL SIM» el 15/10—.
+    # La lista no permite decirlo, así que el nuevo se descarta por falta de
+    # información del proveedor (regla 10) y se le pregunta a la persona. El
+    # conocido sigue faltando: si se confirma el descarte, deja de ofrecerse;
+    # si la persona tiene el dato, la equivalencia lo resuelve al volver a parsear.
+    # Una línea con equivalencia ya la miró una persona y no se pregunta otra vez.
     sin_sim = lambda pid: RE_SUFIJO_SIM.sub("", pid)  # noqa: E731
     datos["posibles_mismos"] = []
-    for p in datos["productos"]:
-        if p["estado_lista"] not in ("nuevo", "configuracion_nueva"):
+    for p in list(datos["productos"]):
+        if p["estado_lista"] not in ("nuevo", "configuracion_nueva") or p.get("confirmado_el"):
             continue
         pareja = next((d for d in faltan if sin_sim(d["id"]) == sin_sim(p["id"])), None)
         if pareja:
-            faltan.remove(pareja)
-            datos["posibles_mismos"].append({"nuevo": p["id"], "titulo_nuevo": p["titulo"],
-                                             "conocido": pareja["id"], "titulo_conocido": pareja["titulo"]})
+            datos["productos"].remove(p)
+            datos.setdefault("descartados", []).append({
+                **p, "motivo": f"falta información del proveedor: si es la misma referencia que "
+                               f"{pareja['titulo']} (solo cambió la SIM)",
+                "falta_informacion": "la SIM", "posible_mismo_de": pareja["id"]})
+    # Desde los descartados, para que correrlo dos veces dé lo mismo.
+    for d in datos.get("descartados") or []:
+        if d.get("posible_mismo_de") in configuraciones:
+            datos["posibles_mismos"].append({
+                "nuevo": d["id"], "titulo_nuevo": d["titulo"], "conocido": d["posible_mismo_de"],
+                "titulo_conocido": configuraciones[d["posible_mismo_de"]]["titulo"]})
+    datos["falta_informacion"] = [
+        {"id": d["id"], "titulo": d.get("titulo") or d.get("texto_origen"), "motivo": d["motivo"],
+         "posible_mismo_de": d.get("posible_mismo_de")}
+        for d in datos.get("descartados") or [] if d.get("falta_informacion")]
 
     # Desaparecido es el que vino en la última lista de su bloque y hoy no. El
     # que ya faltaba entonces se reportó esa vez: queda como ausente, para que la
@@ -186,6 +204,7 @@ def comparar(datos: dict, base: dict, hoy: date) -> dict:
     resumen["modelos_desaparecidos"] = len(datos["modelos_desaparecidos"])
     resumen["ausentes"] = len(datos["ausentes"])
     resumen["posibles_mismos"] = len(datos["posibles_mismos"])
+    resumen["falta_informacion"] = len(datos["falta_informacion"])
     datos["comparacion"] = {"fecha": hoy.isoformat(), "resumen": resumen}
     return datos
 
@@ -198,6 +217,22 @@ def fecha_corta(iso) -> str:
     return "/".join(reversed(iso.split("-"))) if iso else "—"
 
 
+def cambio_de_costo(p: dict):
+    """Cuánto subió (o bajó) el costo frente a la última lista, o None si es igual o no se sabe."""
+    antes = p.get("costo_anterior_cop")
+    if antes is None or antes == p["precio_proveedor_cop"]:
+        return None
+    return p["precio_proveedor_cop"] - antes
+
+
+def costo_con_cambio(p: dict) -> str:
+    delta = cambio_de_costo(p)
+    if delta is None:
+        return pesos(p["precio_proveedor_cop"])
+    return (f"{pesos(p['costo_anterior_cop'])} → {pesos(p['precio_proveedor_cop'])} "
+            f"({'+' if delta > 0 else '−'}{pesos(abs(delta))})")
+
+
 def texto_de_cambio(p: dict) -> str:
     """La columna «Cambio» del Excel. Vive aquí y no en construir_entregables.py
     porque aquel importa openpyxl, que integración continua no instala."""
@@ -205,6 +240,9 @@ def texto_de_cambio(p: dict) -> str:
     if estado == "costo_cambio":
         delta = p["precio_proveedor_cop"] - p["costo_anterior_cop"]
         return f"costo {'+' if delta > 0 else '−'}{pesos(abs(delta))}"
+    delta = cambio_de_costo(p) if estado == "sin_precio_vigente" else None
+    if delta is not None:
+        return f"precio por investigar · costo {'+' if delta > 0 else '−'}{pesos(abs(delta))}"
     return {"nuevo": "nuevo", "configuracion_nueva": "memoria nueva", "sin_cambios": "igual",
             "sin_precio_vigente": "precio por investigar"}.get(estado, "")
 
@@ -233,10 +271,16 @@ def reporte(datos: dict) -> str:
           + ("" if p["pendiente"] else " (ya investigado en esta corrida)")
           for p in por["configuracion_nueva"]] or ["Ninguna."]
 
+    # El costo anterior va aquí también: si no, una lista que llega después de
+    # los 7 días de vigencia esconde todos los cambios de costo —el 15/10/2026
+    # fueron 19, con «Costo cambiado: Ninguno»—.
     L += ["", "## Sin precio de mercado vigente — investigar solo el precio", ""]
-    L += [f"- **{p['titulo']}** — costo {pesos(p['precio_proveedor_cop'])}"
+    L += [f"- **{p['titulo']}** — costo {costo_con_cambio(p)}"
           + ("" if p["pendiente"] else " (ya investigado en esta corrida)")
           for p in por["sin_precio_vigente"]] or ["Ninguno."]
+    cambiaron = [p for p in por["sin_precio_vigente"] if cambio_de_costo(p)]
+    if cambiaron:
+        L += ["", f"{len(cambiaron)} de ellos cambiaron de costo frente a la última lista."]
 
     L += ["", "## Costo cambiado", ""]
     for p in sorted(por["costo_cambio"], key=lambda x: x["precio_proveedor_cop"] - (x["costo_anterior_cop"] or 0)):
@@ -260,10 +304,16 @@ def reporte(datos: dict) -> str:
           f"a {pesos(d['ultimo_costo_cop'])} ({', '.join(d['bloques'])})"
           for d in datos["desaparecidos"]] or ["Ninguno."]
 
-    L += ["", "## Posibles el mismo — cambió solo la SIM", ""]
-    L += [f"- **{d['titulo_nuevo']}** (nuevo) y **{d['titulo_conocido']}** (conocido): si es el mismo "
-          f"equipo, agrega la equivalencia `{d['nuevo']}` → `{d['conocido']}` y vuelve a parsear"
-          for d in datos["posibles_mismos"]] or ["Ninguno."]
+    L += ["", "## Falta información del proveedor — confirmar el descarte con la persona", ""]
+    for d in datos["falta_informacion"]:
+        if d["posible_mismo_de"]:
+            como = (f"si es el mismo equipo, equivalencia `{d['id']}` → `{d['posible_mismo_de']}`; "
+                    f"si es otra referencia, equivalencia `{d['id']}` → sí mismo")
+        else:
+            como = "si se sabe el dato, equivalencia con el título completo"
+        L.append(f"- **{d['titulo']}** — {d['motivo']}. Con el dato: {como}, y volver a parsear")
+    if not datos["falta_informacion"]:
+        L.append("Ninguno.")
     if datos["ausentes"]:
         L += ["", f"{len(datos['ausentes'])} conocidos siguen ausentes desde antes (ya se reportaron como "
               "desaparecidos en su momento)."]
