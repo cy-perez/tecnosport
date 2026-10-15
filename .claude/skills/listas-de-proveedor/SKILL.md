@@ -41,7 +41,7 @@ Están al inicio de `scripts/parsear_lista.py` y se cambian ahí:
 | Categorías que se publican | celulares, tablets, relojes, audífonos, consolas, computadores, proyectores, parlantes |
 | Condición publicable | solo `nuevo`, es decir sellado y sin activar |
 | Se descartan siempre | usados, "NUEVOS ACTIVOS", "IPH CON CAJA", cables, cargadores, power bank, accesorios sueltos (control de consola, pencil táctil, rastreador tipo tag), lo que quede sin precio, los celulares por debajo de 500.000 COP, los computadores sin marca o sin referencia, lo que la lista no permite identificar (regla 10, con confirmación) y **todo** lo de Krono, BMAX, itel, ZTE, Infinix y Tecno |
-| Margen mínimo para ofrecer | **5 %** del precio de mercado sobre el costo del proveedor; por debajo, la configuración no se propone y, si ya se vendía, deja de ofrecerse (regla 18, `MARGEN_MINIMO` en `scripts/exportar_lista.py`) |
+| Margen mínimo para ofrecer | **5 %** del precio de mercado sobre el costo del proveedor; por debajo, la configuración no se propone y, si ya se vendía, deja de ofrecerse y no se le crea carpeta de modelo (regla 18, `MARGEN_MINIMO` en `scripts/margen.py`) |
 
 Estas ya están decididas por el negocio y no se vuelven a preguntar en cada
 lista:
@@ -208,7 +208,14 @@ lista:
     queda en 0 % o por debajo del costo— no se propone si es nueva y deja de
     ofrecerse si ya se vendía. Si todas las configuraciones de un modelo quedan
     por debajo, el modelo entero deja de ofrecerse.
-    Lo aplica `exportar_lista.py` al armar `lista-api.json`, y lo hace mandando
+    La regla vive en `scripts/margen.py` y la aplican dos pasos con el mismo
+    umbral. `construir_entregables.py` no le crea carpeta de modelo a lo que no
+    se va a ofrecer: la carpeta es donde se buscan fotos, y nadie debe buscar
+    fotos de lo que no va a entrar. Si el modelo ya tenía carpeta de una lista
+    anterior, no se borra —puede tener fotos—: la salida la nombra y la persona
+    decide. Una configuración retirada dentro de un modelo que sí se ofrece va
+    aparte en su ficha, con su margen.
+    Y `exportar_lista.py` la aplica al armar `lista-api.json`, mandando
     esas configuraciones **como desaparecidas**. Es la única forma de retirarlas:
     la importación no deduce nada de lo que falta en el archivo, así que un modelo
     ya publicado que simplemente no viniera seguiría a la venta con el costo y la
@@ -226,7 +233,7 @@ lista:
 Si el negocio cambia de opinión, se ajustan `CATEGORIAS_INCLUIDAS`,
 `CONDICIONES_PUBLICABLES`, `PRECIO_MINIMO_CELULAR_COP`, `DESCARTAR_SIN_PRECIO`,
 `DESCARTAR_COMPUTADOR_SIN_REFERENCIA`, `MARCAS_EXCLUIDAS` o `DATOS_DEL_PROVEEDOR` al inicio
-de `scripts/parsear_lista.py`, y `MARGEN_MINIMO` al inicio de `scripts/exportar_lista.py`.
+de `scripts/parsear_lista.py`, y `MARGEN_MINIMO` en `scripts/margen.py`.
 
 ## Dónde está corriendo esta skill
 
@@ -471,8 +478,9 @@ python3 scripts/construir_entregables.py catalogo/productos.json      # deja tod
 
 Produce:
 
-- `fichas/<Modelo>/` — una carpeta por modelo, que se queda de una lista a la
-  siguiente: `<id del modelo>-ficha.txt` (el modelo, sus configuraciones de esta
+- `fichas/<Modelo>/` — una carpeta por modelo **que se va a ofrecer** (regla 18:
+  el que no llega al 5 % de margen en ninguna configuración no la recibe), que se
+  queda de una lista a la siguiente: `<id del modelo>-ficha.txt` (el modelo, sus configuraciones de esta
   lista con costo, precio de mercado y colores sugeridos, la descripción, los
   supuestos, los pendientes y las fuentes) y `Fotos originales/`, vacía la
   primera vez. En las marcas que no se leen de forma automática trae además
@@ -482,8 +490,10 @@ Produce:
   pedidas (título, precio de lista, promedio del mercado, ganancia), más hojas de
   **Detalle** (margen %, colores, fuentes, pendientes) y **Descartados**.
 
-La salida dice qué modelos no tienen fotos todavía. Nada de esto borra: las
-fotos que dejó la persona no se tocan.
+La salida dice qué modelos no tienen fotos todavía, cuántos quedaron sin carpeta
+por margen y qué carpetas de una lista anterior son de modelos que hoy no se
+ofrecen. Nada de esto borra: las fotos que dejó la persona no se tocan, y una
+carpeta vieja se quita solo si la persona lo decide.
 
 ### 6. Guardar lo investigado
 
@@ -699,6 +709,7 @@ colores es un producto con cuatro variantes.
 
 ```
 scripts/rutas.py                  la forma de catalogo/ por subproceso; de ahí salen las rutas por omisión
+scripts/margen.py                 regla 18: el margen mínimo, que usan la exportación y las carpetas de modelo
 scripts/parsear_lista.py          paso 2  1-lista/lista.txt → productos.json + 1-lista/revision.md
 scripts/comparar_lista.py         paso 2  productos.json contra conocidos.json → pendientes + 1-lista/cambios.md
 scripts/pendientes.py             paso 4  qué le toca a cada script según lo pendiente

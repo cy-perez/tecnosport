@@ -37,25 +37,16 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from comparar_lista import colores_sugeridos  # noqa: E402
 from parsear_lista import atributo_sim  # noqa: E402
 import rutas  # noqa: E402
+from margen import MARGEN_MINIMO, margen, se_ofrece  # noqa: E402
 
 # Lo que caben las columnas de la API (V92). Pasarse tumba la lista entera en una transacción,
 # así que el que no cabe se queda fuera aquí y se dice.
 LARGO_MAXIMO_DEL_ID = 60
 
-# Regla 18 (decisión del negocio, 15/10/2026): una configuración cuyo precio de mercado no le
-# deja al menos un 5 % sobre el costo del proveedor no se ofrece. No se propone si es nueva, y
-# si ya se vendía deja de ofrecerse: mandarla como desaparecida es lo único que la retira, porque
-# la importación no deduce nada de lo que falta en el archivo —sin eso seguiría a la venta con
-# el costo de la lista anterior—. Si nunca se publicó, retirarla no hace nada.
-# La que no tiene precio de mercado no tiene margen que medir y no se toca aquí.
-MARGEN_MINIMO = 0.05
-
-
-def margen(producto) -> float | None:
-    mercado, costo = producto.get("precio_mercado_cop"), producto.get("precio_proveedor_cop")
-    if not mercado or not costo:
-        return None
-    return (mercado - costo) / costo
+# La regla 18 (`margen.py`) se aplica aquí mandando como desaparecida la configuración que no
+# llega al mínimo: es lo único que la retira, porque la importación no deduce nada de lo que
+# falta en el archivo —sin eso seguiría a la venta con el costo de la lista anterior—. Si nunca
+# se publicó, retirarla no hace nada.
 
 
 def sim_de(producto) -> str | None:
@@ -95,7 +86,7 @@ def exportar(datos: dict) -> tuple[dict, list]:
              for p in datos["productos"] if len(p["id"]) > LARGO_MAXIMO_DEL_ID]
     sin_margen, modelos_sin_margen = [], []
     for mid, productos in list(por_modelo.items()):
-        bajos = [p for p in productos if margen(p) is not None and margen(p) < MARGEN_MINIMO]
+        bajos = [p for p in productos if not se_ofrece(p)]
         for p in bajos:
             sin_margen.append(p["id"])
             fuera.append((p["titulo"], f"margen de {margen(p) * 100:.1f} % frente al mercado, por debajo del "

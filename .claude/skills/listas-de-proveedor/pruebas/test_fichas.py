@@ -82,5 +82,43 @@ class Escribir(unittest.TestCase):
             self.assertIn("Fuente de la marca", (carpeta / "xiaomi-redmi-15-4g-ficha.txt").read_text(encoding="utf-8"))
 
 
+class SoloLoQueSeOfrece(unittest.TestCase):
+    """Regla 18, 15/10/2026: no se le crea carpeta —donde se buscan fotos— a lo que no va a entrar."""
+
+    GRIP = {"productos": [producto("jbl-grip", "JBL Grip", id_modelo="jbl-grip", titulo_modelo="JBL Grip",
+                                   marca="Samsung", precio_proveedor_cop=290_000, precio_mercado_cop=280_900)]}
+
+    def test_un_modelo_sin_ninguna_configuracion_con_margen_no_recibe_carpeta(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            self.assertEqual([], fichas.escribir(self.GRIP, Path(tmp)))
+            self.assertEqual([], list(Path(tmp).iterdir()))
+
+    def test_la_configuracion_sin_margen_va_aparte_en_la_ficha_del_modelo(self):
+        datos = {"productos": [DOS["productos"][0],
+                               {**DOS["productos"][1], "precio_proveedor_cop": 590_000}]}
+        with tempfile.TemporaryDirectory() as tmp:
+            [carpeta] = fichas.escribir(datos, Path(tmp))
+            texto = (carpeta / "samsung-galaxy-tab-a11-8-7-wifi-ficha.txt").read_text(encoding="utf-8")
+        ofrecidas, retiradas = texto.split("NO SE OFRECEN")
+        self.assertIn("8GB RAM 128GB (SKU", ofrecidas)
+        self.assertNotIn("4GB RAM 64GB", ofrecidas)
+        self.assertIn("4GB RAM 64GB: costo 590.000 · mercado 599.900 · margen 1.7 %", retiradas)
+
+    def test_sin_precio_de_mercado_si_tiene_carpeta(self):
+        datos = {"productos": [producto("tcl-pad-lugh", "TCL Pad Lugh", id_modelo="tcl-pad-lugh",
+                                        titulo_modelo="TCL Pad Lugh", precio_mercado_cop=None)]}
+        with tempfile.TemporaryDirectory() as tmp:
+            self.assertEqual(1, len(fichas.escribir(datos, Path(tmp))))
+
+    def test_la_carpeta_de_una_lista_anterior_no_se_borra_y_se_informa(self):
+        con_margen = {"productos": [{**self.GRIP["productos"][0], "precio_mercado_cop": 349_900}]}
+        with tempfile.TemporaryDirectory() as tmp:
+            [carpeta] = fichas.escribir(con_margen, Path(tmp))
+            (carpeta / "Fotos originales" / "jbl-grip_1.jpg").write_bytes(b"foto")
+            self.assertEqual([], fichas.escribir(self.GRIP, Path(tmp)))
+            self.assertTrue((carpeta / "Fotos originales" / "jbl-grip_1.jpg").is_file())
+            self.assertEqual([("JBL Grip", carpeta)], fichas.retirados_con_carpeta(self.GRIP, Path(tmp)))
+
+
 if __name__ == "__main__":
     unittest.main()
