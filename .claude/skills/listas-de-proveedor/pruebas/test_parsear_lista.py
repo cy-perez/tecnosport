@@ -348,6 +348,21 @@ class Equivalencias(unittest.TestCase):
     LISTA = "*PARLANTE ORIGINALES*🔊\n🔊JBL EXTREME 4 $1.100\n🔊JBL FLIP 7 $450\n"
     EQUIVALENCIAS = {"jbl-extreme-4": equivalencia("jbl-xtreme-4", "JBL Xtreme 4")}
 
+    def test_la_sim_que_corrige_la_equivalencia_corrige_tambien_el_atributo(self):
+        # 15/10/2026: el A27 5G vino «1 SIM» y es Dual SIM. La API lee la SIM del atributo:
+        # sin esto salía titulado Dual SIM y vendido como 1 SIM.
+        eq = {"samsung-galaxy-a27-5g-8gb-ram-256gb-1-sim": equivalencia(
+            "samsung-galaxy-a27-5g-8gb-ram-256gb-dual-sim", "Samsung Galaxy A27 5G 8GB RAM 256GB Dual SIM",
+            "2026-10-15")}
+        [p] = parsear(" *SAMSUNG*\n🎃A27 5G (8+256)$870 *1 SIM* \n", eq)["productos"]
+        self.assertEqual(("samsung-galaxy-a27-5g-8gb-ram-256gb-dual-sim", ["Dual SIM"]), (p["id"], p["atributos"]))
+
+    def test_una_equivalencia_sin_sim_en_el_titulo_no_toca_la_sim(self):
+        eq = {"samsung-galaxy-a27-5g-8gb-ram-256gb-1-sim": equivalencia(
+            "samsung-galaxy-a27-5g-8gb-ram-256gb", "Samsung Galaxy A27 5G 8GB RAM 256GB", "2026-10-15")}
+        [p] = parsear(" *SAMSUNG*\n🎃A27 5G (8+256)$870 *1 SIM* \n", eq)["productos"]
+        self.assertEqual(["1 SIM"], p["atributos"])
+
     def test_el_producto_toma_el_id_y_el_titulo_definitivos(self):
         xtreme, flip = parsear(self.LISTA, self.EQUIVALENCIAS)["productos"]
         self.assertEqual(("jbl-xtreme-4", "JBL Xtreme 4"), (xtreme["id"], xtreme["titulo"]))

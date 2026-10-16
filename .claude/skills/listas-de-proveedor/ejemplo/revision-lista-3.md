@@ -5,8 +5,8 @@
 - Modelos distintos: 80
 - Descartados: 166
 - Duplicados fusionados: 9
-- Productos con algún supuesto aplicado: 53
-- Títulos confirmados en una lista anterior: 25
+- Productos con algún supuesto aplicado: 54
+- Títulos confirmados en una lista anterior: 26
 - Líneas sin clasificar: 0
 - Mensajes de la lista: ANDROID, VARIEDAD, GAMA ALTA
 
@@ -20,7 +20,8 @@
 - **Samsung Galaxy A17 4G 8GB RAM 256GB** — celulares — 620.000 COP
 - **Samsung Galaxy A17 5G 8GB RAM 256GB 1 SIM** — celulares — 675.000 COP
 - **Samsung Galaxy A17 5G 8GB RAM 256GB Dual SIM** — celulares — 690.000 COP
-- **Samsung Galaxy A27 5G 8GB RAM 256GB 1 SIM** — celulares — 870.000 COP
+- **Samsung Galaxy A27 5G 8GB RAM 256GB Dual SIM** — celulares — 870.000 COP
+  - · asumido: título confirmado el 15/10/2026: la lista lo trae como «Samsung Galaxy A27 5G 8GB RAM 256GB 1 SIM»
 - **Samsung Galaxy A37 5G 6GB RAM 128GB** — celulares — 810.000 COP
 - **Samsung Galaxy A57 5G 8GB RAM 256GB** — celulares — 1.290.000 COP
 - **Samsung Galaxy A57 5G 12GB RAM 512GB** — celulares — 1.700.000 COP

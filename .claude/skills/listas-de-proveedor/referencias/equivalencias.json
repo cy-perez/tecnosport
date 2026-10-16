@@ -215,6 +215,12 @@
       "fecha": "2026-10-15",
       "motivo": "el 02/10 vino «1 SIM» y el 15/10 «DUAL SIM»; el 08/10 llegaron las dos a la vez con precios distintos: el negocio confirmó el 15/10/2026 que son dos referencias"
     },
+    "samsung-galaxy-a27-5g-8gb-ram-256gb-1-sim": {
+      "id": "samsung-galaxy-a27-5g-8gb-ram-256gb-dual-sim",
+      "titulo": "Samsung Galaxy A27 5G 8GB RAM 256GB Dual SIM",
+      "fecha": "2026-10-15",
+      "motivo": "la lista lo trae «1 SIM», pero Samsung Colombia solo vende el A27 5G 8/256 en dual SIM (SM-A276B/DS); el negocio confirmó el 15/10/2026 que es Dual SIM"
+    },
     "xiaomi-pad-2-4g-4gb-ram-128gb": {
       "id": "xiaomi-redmi-pad-2-11-4g-4gb-ram-128gb",
       "titulo": "Xiaomi Redmi Pad 2 11\" 4G 4GB RAM 128GB",

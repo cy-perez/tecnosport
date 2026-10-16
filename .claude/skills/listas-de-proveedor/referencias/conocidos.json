@@ -5922,6 +5922,58 @@
       "visto_por_ultima_vez": "2026-10-15",
       "fecha_alta": "2026-10-15"
     },
+    "samsung-galaxy-a27-5g-8gb-ram-256gb-dual-sim": {
+      "id_modelo": "samsung-galaxy-a27-5g",
+      "titulo": "Samsung Galaxy A27 5G 8GB RAM 256GB Dual SIM",
+      "precio_mercado_cop": 949900,
+      "nivel_precio": "inventario propio",
+      "fuentes_precio": [
+        {
+          "tienda": "Alkosto",
+          "nivel": "inventario propio",
+          "nombre": "SAMSUNG Galaxy A27 256GB 5G",
+          "precio_cop": 949050,
+          "precio_antes_cop": null,
+          "enlace": "https://www.alkosto.com/search?text=SAMSUNG+Galaxy+A27+256GB+5G",
+          "consultado": "2026-10-15"
+        },
+        {
+          "tienda": "Éxito",
+          "nivel": "inventario propio",
+          "vendedor": "exito",
+          "nombre": "Celular SAMSUNG Galaxy A27 5G 256 GB 8 GB RAM Negro",
+          "marca": "SAMSUNG",
+          "precio_cop": 949900,
+          "precio_lista_cop": 1499900,
+          "enlace": "https://www.exito.com/celular-samsung-galaxy-a27-256-gb-8-gb-ram-negro-3257523/p",
+          "red_nombre": "5G",
+          "consultado": "2026-10-15"
+        },
+        {
+          "tienda": "Jumbo",
+          "nivel": "inventario propio",
+          "vendedor": "Cencosud - Colombia",
+          "nombre": "Celular Samsung Galaxy A27 5G 8GB / 256GB Negro",
+          "marca": "SAMSUNG",
+          "precio_cop": 1149900,
+          "precio_lista_cop": 1149900,
+          "enlace": "https://www.tiendasjumbo.co/celular-samsung-galaxy-a27-5g-8gb-256gb-negro-443011/p",
+          "red_nombre": "5G",
+          "consultado": "2026-10-15"
+        }
+      ],
+      "notas_precio": [
+        "la tarjeta de Alkosto no dice la RAM ni la SIM"
+      ],
+      "fecha_precio": "2026-10-15",
+      "colores_de_la_lista": [],
+      "bloques": [
+        "ANDROID"
+      ],
+      "ultimo_costo_cop": 870000,
+      "visto_por_ultima_vez": "2026-10-15",
+      "fecha_alta": "2026-10-15"
+    },
     "samsung-galaxy-a37-5g-6gb-ram-128gb": {
       "id_modelo": "samsung-galaxy-a37-5g",
       "titulo": "Samsung Galaxy A37 5G 6GB RAM 128GB",
