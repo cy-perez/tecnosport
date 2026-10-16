@@ -406,6 +406,12 @@ def atributo_sim(texto: str):
     return None
 
 
+def sim_del_titulo(titulo: str):
+    """La SIM con que termina un título definitivo («… 256GB Dual SIM»), o None."""
+    m = re.search(r"(SIM \+ eSIM|Dual SIM|1 SIM)$", titulo.strip())
+    return m.group(1) if m else None
+
+
 def plano(texto: str) -> str:
     """La línea sin emojis ni marcas de WhatsApp, en mayúsculas."""
     return normalizar(sin_emojis(texto).replace("*", " ").replace("_", " "))
@@ -1262,6 +1268,12 @@ def aplicar_equivalencias(productos, equivalencias, descartados=(), duplicados=N
             fecha = "/".join(reversed(e["fecha"].split("-")))
             p["supuestos"].append(f"título confirmado el {fecha}: la lista lo trae como «{p['titulo']}»")
         p["id"], p["titulo"] = e["id"], e["titulo"]
+        # La SIM viaja a la API como atributo, no como título: si la equivalencia la
+        # corrige —el A27 5G «1 SIM» del 15/10/2026 era Dual SIM—, el atributo también,
+        # o el producto saldría titulado con una SIM y vendido con la otra.
+        sim = sim_del_titulo(e["titulo"])
+        if sim:
+            p["atributos"] = [a for a in p.get("atributos") or [] if not atributo_sim(a)] + [sim]
         p["revisar"] = [r for r in p["revisar"] if r not in ALERTAS_DE_NOMBRE]
         # Una persona miró esta línea exacta: comparar_lista.py no le vuelve a
         # preguntar si es la misma referencia que un conocido con otra SIM.
