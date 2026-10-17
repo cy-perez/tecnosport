@@ -103,14 +103,33 @@ export function leerJson(ruta) {
 }
 
 /**
- * Los anchos de la escala del estudio que sirven para la web, del mayor al menor.
+ * El mayor ancho que se sube a la web.
  *
  * <p>**Tope en 1200 y no en 2000 a propósito.** La tarjeta de la rejilla pinta la foto a menos de
  * 400 px en un teléfono y la ficha no llega a 700; mandar 2000 es pagar ancho de banda por píxeles
  * que nadie ve. Se baja de ahí solo cuando la foto original no daba para más: el procesamiento del
  * estudio no amplía, así que un producto cuya toma venía a 600 px no tiene carpeta de 1200.
  */
-const ANCHOS_WEB = [1200, 800, 600, 480];
+const TOPE_WEB = 1200;
+
+/**
+ * Los anchos que el estudio dejó en `web/`, hasta el tope y del mayor al menor.
+ *
+ * <p>**Se leen del disco y no de una lista fija.** Desde el 16/10/2026 el estudio escribe dos por
+ * foto —1200, el carrusel de la ficha, y 480, la miniatura y la tarjeta— y, cuando el producto no
+ * llega a 1200, su lienzo ocupa el lugar del carrusel: `web/1000/`. Con la lista de antes
+ * (1200, 800, 600, 480) esa carpeta no existía para nadie y la ficha se habría servido con la
+ * miniatura.
+ */
+function anchosWeb(procesadas) {
+  const web = join(procesadas, "web");
+  if (!existsSync(web)) return [];
+  return readdirSync(web)
+    .filter((nombre) => /^\d+$/.test(nombre))
+    .map(Number)
+    .filter((ancho) => ancho <= TOPE_WEB)
+    .sort((a, b) => b - a);
+}
 
 /**
  * La variante web de una toma: el AVIF más grande disponible hasta 1200.
@@ -137,11 +156,13 @@ function variantePara(procesadas, rutaMaestra) {
  */
 function variantesPara(procesadas, rutaMaestra) {
   const base = basename(rutaMaestra).replace(/\.jpg$/i, "");
-  return ANCHOS_WEB.map((ancho) => ({
-    ruta: join(procesadas, "web", String(ancho), `${base}.avif`),
-    ancho,
-    contentType: "image/avif",
-  })).filter((v) => existsSync(v.ruta));
+  return anchosWeb(procesadas)
+    .map((ancho) => ({
+      ruta: join(procesadas, "web", String(ancho), `${base}.avif`),
+      ancho,
+      contentType: "image/avif",
+    }))
+    .filter((v) => existsSync(v.ruta));
 }
 
 /**
@@ -153,7 +174,7 @@ function variantesPara(procesadas, rutaMaestra) {
  */
 function vistaPreviaPara(procesadas, rutaMaestra) {
   const base = basename(rutaMaestra).replace(/\.jpg$/i, "");
-  for (const ancho of ANCHOS_WEB) {
+  for (const ancho of anchosWeb(procesadas)) {
     const ruta = join(procesadas, "web", String(ancho), `${base}.jpg`);
     if (existsSync(ruta)) return { ruta, ancho, contentType: "image/jpeg" };
   }

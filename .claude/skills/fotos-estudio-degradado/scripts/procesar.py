@@ -45,7 +45,8 @@ sys.path.insert(0, str(AQUI))
 # La misma lista que EXT_FOTO de procesar_fichas.py. JFIF es JPEG con otra extensión y Pillow
 # lee AVIF sin plugins desde la 11.2: las dos llegan así de los sitios de marca.
 EXTENSIONES = {".jpg", ".jpeg", ".jfif", ".png", ".heic", ".heif", ".webp", ".avif"}
-CLAVES_SALIDA = ("lienzo", "anchos_variantes", "formatos_web", "carpeta_maestras", "carpeta_web")
+CLAVES_SALIDA = ("lienzo", "anchos_variantes", "formatos_web", "formatos_por_ancho", "carpeta_maestras",
+                 "carpeta_web")
 VERSION = "1.0"
 
 
@@ -69,6 +70,7 @@ from PIL import Image, UnidentifiedImageError, features  # noqa: E402
 import hojas  # noqa: E402
 import imagen  # noqa: E402
 import reporte  # noqa: E402
+import salidas  # noqa: E402
 
 
 # =========================================================================== utilidades
@@ -134,23 +136,6 @@ def estimar_lado_producto(ruta: Path) -> int | None:
     ys, xs = np.nonzero(cont)
     lado = max(int(ys.max() - ys.min()) + 1, int(xs.max() - xs.min()) + 1)
     return max(1, int(round(lado * factor)))
-
-
-def elegir_lienzo(lados: list[int], cfg: dict) -> int:
-    """Mayor escalón de `lienzos_escala` que el producto alcanza sin pasar de `ampliacion_tolerada`.
-
-    Si no llega a ninguno devuelve el menor: un producto con poco material se publica al máximo
-    que ese material da, en vez de quedarse fuera del catálogo.
-    """
-    escala = sorted({int(x) for x in cfg.get("lienzos_escala") or []}, reverse=True)
-    if not escala:
-        return int(cfg["lienzo"][0])
-    mejor = max([x for x in lados if x], default=0)
-    ocupacion, tolerada = float(cfg["ocupacion"]), float(cfg.get("ampliacion_tolerada", 1.0))
-    for lado in escala:
-        if mejor * tolerada >= lado * ocupacion:
-            return lado
-    return escala[-1]
 
 
 def leer_mapa(ruta: str) -> dict[str, str]:
@@ -574,10 +559,7 @@ def exportar_web(ctx: Contexto, nombre: str, final: np.ndarray, img8: np.ndarray
     region = imagen.dilatar(producto, 24 * ctx.fpx) < 0.5
     web = []
     escalones: dict[str, list[tuple[int, float, int]]] = {}
-    anchos = {int(x) for x in cfg["anchos_variantes"] if int(x) <= W}
-    if ctx.grupo:
-        anchos.add(W)   # el lienzo del producto siempre se publica, aunque sea menor que los anchos pedidos
-    for w in sorted(anchos, reverse=True):
+    for w, formatos in salidas.anchos_web(cfg, W, bool(ctx.grupo)):
         h = round(w * H / W)
         if (w, h) == (W, H):
             v8, refw, regw = img8, ref, region
@@ -591,7 +573,7 @@ def exportar_web(ctx: Contexto, nombre: str, final: np.ndarray, img8: np.ndarray
             # margen extra: el filtro de reducción arrastra el producto unos píxeles hacia el entorno
             lejos = imagen.dilatar(producto, 24 * ctx.fpx + 4.0 * W / w) < 0.5
             regw = imagen.region_reducida(lejos, w, h)
-        for fmt in cfg["formatos_web"]:
+        for fmt in formatos:
             res = imagen.codificar_web(fmt, v8, v16, refw, regw, cfg, ctx.avif10 if fmt == "avif" else None)
             ruta = ctx.ruta_web(nombre, w, fmt)
             ruta.parent.mkdir(parents=True, exist_ok=True)
@@ -715,7 +697,7 @@ def main() -> int:
                    help="cambia un parámetro del config para esta corrida (claves anidadas con punto)")
     p.add_argument("--mapa", help="CSV archivo,nombre para nombrar las salidas")
     p.add_argument("--variantes", action="store_true",
-                   help="genera los anchos y formatos propuestos (AVIF + WebP de 480 a 2000 px)")
+                   help="genera los anchos y formatos propuestos: 1200 en AVIF y JPEG, 480 en AVIF")
     p.add_argument("--solo", action="append", default=[], metavar="NOMBRES",
                    help="procesa sólo estos nombres (separados por coma); sin entradas, usa las rutas del reporte")
     p.add_argument("--por-producto", dest="por_producto", action="store_true", default=None,
@@ -723,6 +705,11 @@ def main() -> int:
                         "material de cada producto; se activa sola si las fotos vienen en subcarpetas")
     p.add_argument("--plano", dest="por_producto", action="store_false",
                    help="fuerza la salida plana de siempre aunque las fotos vengan en subcarpetas")
+    p.add_argument("--lienzo-minimo", type=int, metavar="PX",
+                   help="por producto: el lienzo lo elige la compuerta de la tanda —el mayor escalón de PX "
+                        "o más con --listas-minimas fotos por debajo de ampliacion_revisar— y no la mejor foto")
+    p.add_argument("--listas-minimas", type=int, default=4, metavar="N",
+                   help="con --lienzo-minimo: cuántas fotos LISTA pide la compuerta (por omisión, 4)")
     p.add_argument("--nuevas", action="store_true",
                    help="salta las fotos ya procesadas cuyo archivo de origen no ha cambiado")
     p.add_argument("--zip", action="store_true", help="empaqueta los entregables al terminar")
@@ -765,6 +752,7 @@ def ejecutar(a, raiz: Path, solo: set[str], avance: Path) -> int:
     if a.variantes:
         cfg["anchos_variantes"] = list(cfg["anchos_variantes_propuestos"])
         cfg["formatos_web"] = list(cfg["formatos_web_propuestos"])
+        cfg["formatos_por_ancho"] = dict(cfg.get("formatos_por_ancho_propuestos") or {})
     # al reprocesar en una carpeta existente se heredan sus opciones de salida, salvo que se pidan otras
     explicitas = bool(a.variantes or a.config) or any(
         x.partition("=")[0].strip().split(".")[0] in CLAVES_SALIDA for x in (a.ajuste or []))
@@ -778,7 +766,7 @@ def ejecutar(a, raiz: Path, solo: set[str], avance: Path) -> int:
     errores = []
     if not 0.3 <= float(cfg["ocupacion"]) <= 0.98:
         errores.append("ocupacion debe estar entre 0.3 y 0.98")
-    for fmt in cfg["formatos_web"]:
+    for fmt in {f for fs in [cfg["formatos_web"], *(cfg.get("formatos_por_ancho") or {}).values()] for f in fs}:
         if fmt not in ("avif", "jpg", "webp"):
             errores.append(f"formato web no soportado: {fmt} (usa avif, jpg o webp)")
     if "webp" in cfg["formatos_web"] and not features.check("webp"):
@@ -879,7 +867,8 @@ def ejecutar(a, raiz: Path, solo: set[str], avance: Path) -> int:
         for ruta, _, grupo in trabajos:
             lados.setdefault(grupo, []).append(estimar_lado_producto(ruta) or 0)
         for grupo, ls in lados.items():
-            lienzo_de[grupo] = elegir_lienzo(ls, cfg)
+            lienzo_de[grupo] = (salidas.elegir_lienzo_tanda(ls, cfg, a.lienzo_minimo, a.listas_minimas)
+                                if a.lienzo_minimo else salidas.elegir_lienzo(ls, cfg))
         reparto = {}
         for grupo, lado in lienzo_de.items():
             reparto[lado] = reparto.get(lado, 0) + 1

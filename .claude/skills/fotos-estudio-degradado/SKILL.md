@@ -56,8 +56,13 @@ SALIDA/
 SALIDA.zip                           maestras + escritorio + hojas + reporte.json
 ```
 
-Con `--variantes`, `escritorio/` lleva además `<nombre>-<ancho>.avif` y
-`<nombre>-<ancho>.jpg` para 480, 800, 1200, 1600 y 2000 px.
+Con `--variantes`, `escritorio/` lleva en su lugar **lo que se sube al sitio, y nada
+más**: `<nombre>-1200.avif` y `<nombre>-1200.jpg` —el carrusel de la ficha, y su JPEG
+para la vista previa de WhatsApp y Facebook, que no muestran AVIF— y
+`<nombre>-480.avif` —la miniatura de la galería y la tarjeta de la rejilla—. Hasta el
+16/10/2026 eran cinco anchos (480 a 2000) en dos formatos: once archivos por foto,
+de los que el sitio usaba cuatro. Los formatos de cada ancho los dice
+`formatos_por_ancho` en el `config.json`.
 
 **Por producto** (`--por-producto`, y sola cuando las fotos vienen en subcarpetas,
 como `crudas/<producto>/`) la salida se agrupa y la carpeta dice el ancho, así que
@@ -66,10 +71,16 @@ el nombre ya no lo repite:
 ```
 SALIDA/
 └── <producto>/
-    ├── maestra/<nombre>.jpg      la maestra, al lienzo del producto
-    ├── 2000/<nombre>.avif        un subdirectorio por ancho
-    └── 1200/<nombre>.avif
+    ├── maestra/<nombre>.jpg      la maestra, al lienzo del producto (el archivo: hasta 2000 px)
+    ├── 1200/<nombre>.avif        el carrusel de la ficha
+    ├── 1200/<nombre>.jpg         la vista previa de WhatsApp
+    └── 480/<nombre>.avif         la miniatura y la tarjeta
 ```
+
+Si el lienzo del producto no llega a 1200, **el lienzo ocupa el lugar del carrusel**
+(`1000/<nombre>.avif` y `.jpg`): la ficha se sirve con lo mejor que da el material,
+no con la miniatura. Si lo pasa, la web se queda en 1200 —el sitio no sirve más
+(ADR-0056)— y la resolución de más vive en la maestra.
 
 `--plano` fuerza la salida de siempre aunque las fotos vengan en subcarpetas. Las fotos REPETIR no
 escriben nada en `maestras/` ni en `escritorio/`: su vista previa queda en
@@ -222,17 +233,36 @@ python3 "${CLAUDE_SKILL_DIR}/scripts/procesar_fichas.py" catalogo/4-entregables/
 **La compuerta** (decisión del negocio del 10/10/2026): cada modelo necesita
 **4 fotos LISTA** en un lienzo de por lo menos **1200 px** —la mayor variante que
 sirve el sitio—. Una REVISAR **no cuenta aunque se apruebe a ojo** con `marcar.py`,
-y una LISTA en un lienzo menor tampoco: el lienzo lo fija la mejor foto del modelo,
-así que lo que falta ahí es una foto de más resolución.
+y una LISTA en un lienzo menor tampoco: si el modelo no reúne cuatro ni en 1200, lo
+que falta son fotos de más resolución.
+
+**En la tanda, el lienzo lo elige la compuerta, no la mejor foto** (16/10/2026).
+`procesar_fichas.py` le pasa a `procesar.py` `--lienzo-minimo 1200 --listas-minimas 4`,
+y el lienzo es el **mayor** escalón de 1200 o más donde caben cuatro fotos por debajo
+de `ampliacion_revisar` (`salidas.elegir_lienzo_tanda`). Hasta esa fecha lo fijaba la
+mejor foto, como en un lote suelto, y fallaba por los dos lados:
+
+- **Por arriba**: una sola foto grande subía el lienzo y dejaba a las demás en
+  REVISAR. El Galaxy A57 tenía una de 1194 px y cinco de 797: lienzo 1600 y una sola
+  LISTA; en 1200, las seis.
+- **Por abajo**: la mejor foto tenía que llegar con `ampliacion_tolerada` (1,25×),
+  más estricta que la compuerta. El Galaxy A27, seis fotos de 800 px, se quedaba en
+  1000 y fuera de la tanda, cuando en 1200 salen a 1,28×: LISTA.
+
+Es el mayor escalón que cumple, y no el que más LISTA deja, para no bajar a 1200 un
+modelo que da para 2000. Si ni en 1200 reúne cuatro, se elige el de más LISTA; si
+ni ahí sale una, la regla de siempre. El lienzo se decide con una estimación del
+tamaño del producto antes del recorte: un modelo justo en el borde puede quedarse
+con tres. La compuerta lo detiene igual, sin que nada pase de más.
 
 **Antes de gastar un retoque**, el script mide las originales: una foto cuyo lado
-mayor no llega a 680 px (1200 × 0,85 / 1,5) no puede salir LISTA, porque el
+mayor no llega a 638 px (1200 × 0,85 / 1,6) no puede salir LISTA, porque el
 producto nunca mide más que la foto. Un modelo con menos de cuatro originales que
 puedan, espera sin procesarse.
 
-**Un modelo que cambió se reprocesa entero**, no solo la foto nueva: el lienzo lo
-fija la mejor foto del modelo, y una foto que se procesara sola elegiría el suyo.
-Por eso agregar una foto de más resolución sí sube el lienzo de las demás.
+**Un modelo que cambió se reprocesa entero**, no solo la foto nueva: el lienzo
+depende de todas las fotos del modelo, y una foto que se procesara sola elegiría el
+suyo.
 
 Cada modelo queda con su `estado-fotos.json`: `apto`, `en_espera` —con cuántas
 LISTA le faltan y la razón de cada foto que falló— o `fuera_de_tanda`. El
@@ -313,13 +343,16 @@ python3 "${CLAUDE_SKILL_DIR}/scripts/procesar_fichas.py" catalogo/4-entregables/
 fichas/Samsung Galaxy S25 Ultra/
 ├── Fotos originales/samsung-galaxy-s25-ultra_1.png
 └── Fotos procesadas/samsung-galaxy-s25-ultra_1.jpg              la maestra
-                     web/<ancho>/samsung-galaxy-s25-ultra_1.avif  lo que va al sitio
+                     web/1200/samsung-galaxy-s25-ultra_1.avif     el carrusel de la ficha
+                     web/1200/samsung-galaxy-s25-ultra_1.jpg      la vista previa de WhatsApp
+                     web/480/samsung-galaxy-s25-ultra_1.avif      la miniatura y la tarjeta
 ```
 
 `procesar_fichas.py` no tiene estilo propio: copia las originales a
 `fichas/_estudio/crudas/<id del modelo>/`, corre `procesar.py` con `--por-producto
 --variantes --nuevas` y devuelve cada resultado a su modelo. Por `--nuevas`,
-correrlo otra vez después de soltar fotos nuevas procesa solo esas. Las hojas de
+correrlo otra vez después de soltar fotos nuevas procesa solo esas; con `--tanda`
+va en su lugar `--solo` con cada modelo entero y la compuerta del lienzo. Las hojas de
 revisión y el reporte quedan en `fichas/_estudio/salida/`, en un sitio para todos
 los modelos: ahí se revisa como siempre (paso 4) y ahí se aprueba con `marcar.py`;
 `--devolver` vuelve a copiar lo aprobado. Las REPETIR no se devuelven. Con
@@ -330,7 +363,9 @@ suelto.
 
 **Si esta skill cambia la forma de su salida** —`<producto>/maestra/` y
 `<producto>/<ancho>/` en modo por producto—, `procesar_fichas.py` deja de
-encontrar los archivos. Lo vigilan sus pruebas en `pruebas/`, que corren en
+encontrar los archivos, y `tools/material-catalogo.mjs`, que sube las tomas, lee los
+anchos de las carpetas de `web/` (los que existan hasta 1200) y la vista previa en
+el JPEG del mayor. Lo vigilan sus pruebas en `pruebas/`, que corren en
 `npm run verificar`. Hubo un `organizar_imagenes.py` que reacomodaba la salida
 plana, y estuvo un tiempo sin hacer nada sin que se notara.
 
@@ -362,12 +397,12 @@ igual:
 | Adornos | se quitan solos los elementos ajenos separados del cuerpo, pequeños (< 15 %) y de un color que no aparece en él (≥ 20 en a*b*): los destellos de «Galaxy AI» y adornos de render parecidos. Las piezas legítimas comparten el color del cuerpo y se conservan |
 | Tono | sólo L*: niveles con recorte ≤ 0,5 %, ganancia ≤ 0,3 EV, microcontraste leve; a* y b* intactos (Δcroma ≤ 2) |
 | Enfoque | después de escalar, sobre L*: radio 1 px, 70 %, umbral 2 |
-| Escala | ≥ 1,5× → REVISAR · ≥ 3× → REPETIR (el producto debe medir ≥ 1700 px en la foto) |
+| Escala | ≥ 1,6× → REVISAR · ≥ 3× → REPETIR (el producto debe medir ≥ 1700 px en la foto) |
 | Máscara | corte en 0,2 para que la malla y el tejido entren enteros |
 | Interior | se compone opaco: alfa 1 a partir de 14 px del borde, cerrando grietas de 31 px y agujeros de menos del 0,5 % del área |
 | Tono y enfoque | apagados: el interior del producto no se retoca |
-| Lienzo por producto | escalones 2000 · 1600 · 1200 · 1000 · 800 · 600 · 480 · 400 · 320; se toma el mayor que la mejor foto alcance sin pasar de 1,25× de ampliación, y si no llega a ninguno, el menor |
-| Web | AVIF a 10 bits con `avifenc` (a 8 bits con Pillow si no lo hay); con `--variantes`, JPEG q88 de respaldo |
+| Lienzo por producto | escalones 2000 · 1600 · 1200 · 1000 · 800 · 600 · 480 · 400 · 320; se toma el mayor que la mejor foto alcance sin pasar de 1,25× de ampliación, y si no llega a ninguno, el menor. En la tanda (`--lienzo-minimo`), el mayor de 1200 o más donde caben cuatro LISTA |
+| Web | AVIF a 10 bits con `avifenc` (a 8 bits con Pillow si no lo hay). Con `--variantes`, dos anchos: 1200 en AVIF y JPEG q88 —el carrusel y la vista previa de WhatsApp— y 480 en AVIF —la miniatura y la tarjeta—; por producto, un lienzo menor que 1200 ocupa el lugar del carrusel |
 
 Los valores en píxeles están pensados para 2000 px y se escalan si cambia el lienzo.
 Para una corrida puntual: `--ajuste clave=valor` (p. ej. `--ajuste tono.activo=false`;
@@ -488,6 +523,38 @@ python3 "${CLAUDE_SKILL_DIR}/scripts/marcar.py" SALIDA --lista
 ```
 
 `--aprobar` sólo levanta los motivos REVISAR automáticos que ya miraste a tamaño
+real; nunca sirve para saltarse un REPETIR. Una marca REPETIR retira los archivos
+de las carpetas de entrega y `--limpiar` los restaura.
+
+### Por qué el corte de REVISAR está en 1,6× y no en 1,5×
+
+`ampliacion_revisar` estuvo en 1,5 hasta el 16/10/2026. Se subió a 1,6 por una
+decisión del negocio, con una medición detrás.
+
+El material oficial de Apple llega en cuadros de 1000 px con el teléfono a unos
+650 px: en el lienzo de 1200 que pide la tanda sale a 1,52–1,58×, y seis iPhone
+(15, 16, 16e, 17, 17 Pro y 18 Pro) no podían reunir cuatro LISTA. Se midió la
+nitidez de bordes (percentil 99,5 del gradiente) en la variante de 1200, con la
+misma foto de un Redmi Pad 2 Pro reducida para que saliera a cada ampliación:
+
+| Ampliación | Nitidez de bordes | Gradiente medio |
+|--:|--:|--:|
+| 1,05× | 100 % | 100 % |
+| 1,44× (ya era LISTA) | 70 % | 98 % |
+| 1,58× (era REVISAR) | 63 % | 96 % |
+
+La pérdida es gradual, sin un salto en 1,5: el umbral de antes ya aceptaba 30
+puntos y 1,58× suma 7. A 1:1 —lo que ve un teléfono de densidad 3× con la
+variante de 1200— el pad a 1,44× y a 1,58× no se distinguen, y en el iPhone 15 a
+1,58× los lentes y el borde del módulo de cámaras se leen bien. Dos límites de la
+prueba: la reducción con Lanczos sobre una fuente limpia es optimista —una foto
+pequeña de verdad trae además compresión— y fue un producto plano de bordes
+duros; en mallas y tejidos la pérdida puede notarse más, y por eso esas fotos
+siguen mirándose al 100 %.
+
+La foto mínima antes de procesar en la tanda bajó con él: 1200 × 0,85 / 1,6 =
+638 px. Si el material mejora, esto vuelve a 1,5.
+
 ### Por qué el corte de ampliación está en 3× y no en 2×
 
 `ampliacion_repetir` estuvo en 2.0 hasta el 19/09/2026. Se subió a 3.0 por una
@@ -509,9 +576,6 @@ Lo que **no** cambió: `REPETIR` sigue retirando los archivos y `marcar.py
 --aprobar` sigue negándose a levantarlo. La compuerta existe; solo se movió
 dónde cae. Si alguna vez el material del catálogo mejora —fotos propias o un
 paquete decente del proveedor—, esto vuelve a 2.0.
-
-real; nunca sirve para saltarse un REPETIR. Una marca REPETIR retira los archivos
-de las carpetas de entrega y `--limpiar` los restaura.
 
 ### 5. Corregir lo corregible
 
@@ -558,7 +622,7 @@ que revisar y por qué, y cuáles hay que repetir y cómo. No copies el reporte.
 | Estado | Motivos automáticos |
 |---|---|
 | REPETIR | archivo dañado o no soportado · producto cortado por el encuadre · ampliación ≥ 2× · recorte vacío o que desaparece al escalar |
-| REVISAR | ampliación ≥ 1,5× · bordes inciertos en más del 8 % del producto · producto parecido a su fondo original en más del 20 % del contorno · producto confundido con el fondo nuevo en más del 25 % del contorno · fragmento descartado apreciable · 3 piezas o más · PNG recortado que llega al borde |
+| REVISAR | ampliación ≥ 1,6× · bordes inciertos en más del 8 % del producto · producto parecido a su fondo original en más del 20 % del contorno · producto confundido con el fondo nuevo en más del 25 % del contorno · fragmento descartado apreciable · 3 piezas o más · PNG recortado que llega al borde |
 | LISTA | ninguno de los anteriores |
 
 Manda el motivo más grave y las marcas a ojo se suman a las automáticas. Las
@@ -626,14 +690,13 @@ bordes poco separados en pocos tramos) son informativas y no cambian el estado.
 
 Los archivos web siguen el patrón `<nombre>-<ancho>.<formato>`, así que un cargador
 de imágenes (por ejemplo, un loader de `NgOptimizedImage` en Angular) traduce el
-ancho que pide el navegador directamente a la URL del archivo. Con `--variantes`,
-sirve AVIF con JPEG de respaldo:
+ancho que pide el navegador directamente a la URL del archivo. Con `--variantes`
+son los dos anchos que usa el sitio —el JPEG de 1200 no entra al `srcset`: es la
+imagen de `og:image`—:
 
 ```html
-<picture>
-  <source type="image/avif" srcset="tenis-blanco-480.avif 480w, tenis-blanco-800.avif 800w, tenis-blanco-2000.avif 2000w">
-  <img src="tenis-blanco-800.jpg" srcset="tenis-blanco-480.jpg 480w, tenis-blanco-800.jpg 800w, tenis-blanco-2000.jpg 2000w" alt="Tenis blanco">
-</picture>
+<img src="tenis-blanco-1200.avif" srcset="tenis-blanco-480.avif 480w, tenis-blanco-1200.avif 1200w"
+     sizes="(min-width: 1024px) 50vw, 100vw" alt="Tenis blanco">
 ```
 
 Si el almacenamiento de la tienda genera los tamaños al subir, basta con las

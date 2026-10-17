@@ -13,7 +13,7 @@ cumple y 1 si algo falla. Los «✗» son fallos y los «·» son avisos.
 | Encuadre | lado mayor al 85 % del lienzo de la foto (1700 ± 2 px en 2000) y centro a ≤ 2 px, medidos de nuevo sobre la máscara guardada en `.trabajo/mascaras/` |
 | Fondo | esquinas en el color de `fondo_esquinas` ± 3 niveles: hoy #FFFFFF, porque el fondo es blanco plano |
 | Color | Δcroma ≤ 2: distancia media en el plano a*b* (Lab) entre la foto original y la maestra decodificada, dentro del producto |
-| Estados | ampliación ≥ 2× o producto cortado deben ser REPETIR; ampliación ≥ 1,5× no puede ser LISTA sin aprobación; ninguna REPETIR puede tener archivos en las carpetas de entrega |
+| Estados | ampliación ≥ 2× o producto cortado deben ser REPETIR; ampliación ≥ 1,6× (`ampliacion_revisar`) no puede ser LISTA sin aprobación; ninguna REPETIR puede tener archivos en las carpetas de entrega |
 | Configuración | aviso si una foto se procesó con parámetros distintos a los del resto |
 
 ## Campos del reporte (`reporte.json`)

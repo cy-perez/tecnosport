@@ -7,13 +7,14 @@
     "fondo_archivo": "Fondo ya generado. Si no coincide con lienzo, colores, dither y semilla, el script lo regenera y lo avisa.",
     "fondo_radio_interior": "Fracción del radio (0–1) que el degradado mantiene en fondo_centro antes de empezar a bajar hacia fondo_esquinas. Medido en la referencia del catálogo: 0.26. No hace nada mientras fondo_centro y fondo_esquinas sean el mismo color; se conserva para no perder la forma del degradado anterior.",
     "sombra": "Sombra de contacto bajo el producto, en modo normal y siempre debajo de él. Sobre el fondo blanco plano es lo único que separa al producto del fondo y lo único que dibuja el resplandor alrededor, así que bajarle la opacidad o el sigma deja los productos claros sin contorno; los valores salen de medir la referencia del catálogo.",
-    "ampliacion": "Factor de escala desde el que la foto se marca REVISAR o REPETIR.",
-    "lienzos_escala": "Escalones de lienzo que puede elegir --por-producto, de mayor a menor. El producto se publica en el mayor que su mejor foto alcance sin pasar de ampliacion_tolerada; si no llega a ninguno se usa el menor, para publicarlo al maximo que su material permita en vez de descartarlo.",
-    "ampliacion_tolerada": "Ampliacion que se acepta al elegir el lienzo de un producto. Por encima de este factor se baja al escalon siguiente.",
+    "ampliacion": "Factor de escala desde el que la foto se marca REVISAR o REPETIR. ampliacion_revisar está en 1.6 desde el 16/10/2026 (antes 1.5): medido en la variante de 1200 al 100 %, la nitidez de bordes cae gradualmente —1,05×: 100 %; 1,44×: 70 %; 1,58×: 63 %— y no hay un salto en 1,5; los iPhone del material de Apple salen a 1,52–1,58×. Ver SKILL.md.",
+    "lienzos_escala": "Escalones de lienzo que puede elegir --por-producto, de mayor a menor. El producto se publica en el mayor que su mejor foto alcance sin pasar de ampliacion_tolerada; si no llega a ninguno se usa el menor, para publicarlo al maximo que su material permita en vez de descartarlo. Con --lienzo-minimo (la tanda) lo elige la compuerta: el mayor escalón de ese mínimo o más donde caben las fotos LISTA que pide; ver salidas.elegir_lienzo_tanda.",
+    "ampliacion_tolerada": "Ampliacion que se acepta al elegir el lienzo de un producto. Por encima de este factor se baja al escalon siguiente. No se usa en la tanda: ahí manda ampliacion_revisar.",
     "avif_10bits": "auto: usa avifenc a 10 bits si está instalado; nunca: sólo Pillow a 8 bits; siempre: falla si no hay avifenc.",
     "banding_umbral": "Máximo error local del degradado en niveles de 8 bits (percentil 99). Por encima se sube la calidad por pasos.",
-    "anchos_variantes": "Anchos web a generar. Por defecto sólo 2000; los propuestos se activan con --variantes.",
+    "anchos_variantes": "Anchos web a generar. Por defecto sólo 2000; los propuestos se activan con --variantes y son los dos que sube tools/material-catalogo.mjs: 1200, el carrusel de la ficha, y 480, la miniatura de la galería y la tarjeta de la rejilla. Por producto, si el lienzo no llega al mayor, el lienzo ocupa su lugar. Hasta el 16/10/2026 eran cinco (480 a 2000) en dos formatos: once archivos por foto, de los que el sitio usaba cuatro.",
     "formatos_web": "avif, jpg o webp. El respaldo propuesto de AVIF es JPEG: WebP con pérdida deja anillos en este degradado (≈1,1–1,25 niveles medidos, aun a calidad 100). WebP sigue disponible con --ajuste si un sistema lo exige.",
+    "formatos_por_ancho": "Formatos de un ancho concreto, si no son los de formatos_web. La miniatura de 480 va solo en AVIF: el JPEG existe para la vista previa de WhatsApp y Facebook, que no muestran AVIF, y para eso basta el de 1200.",
     "pesos_max_kb": "Peso objetivo por formato y ancho. Si se supera, el reporte lo advierte.",
     "tono": "Niveles automáticos acotados sobre L*: nunca toca a* ni b*. activo=false desactiva toda corrección tonal.",
     "separacion": "Diferencia mínima de L* entre el borde del producto y el fondo con la sombra; si falla en más de separacion_sectores_max del contorno, la foto se marca REVISAR. Sobre el fondo blanco los productos claros fallan más sectores que sobre el degradado —el Honor X8B plateado pasó del 30,6 % al 52,8 % del contorno—, así que hay más REVISAR y son los que de verdad hay que mirar: ahí el contorno lo sostiene solo la sombra.",
@@ -37,7 +38,7 @@
   "sombra_dilatacion_px": 6,
   "sombra_sigma_px": 58,
   "sombra_desplazamiento_y_px": 14,
-  "ampliacion_revisar": 1.5,
+  "ampliacion_revisar": 1.6,
   "ampliacion_repetir": 3.0,
   "lienzos_escala": [
     2000,
@@ -76,15 +77,18 @@
   ],
   "anchos_variantes_propuestos": [
     480,
-    800,
-    1200,
-    1600,
-    2000
+    1200
   ],
   "formatos_web_propuestos": [
     "avif",
     "jpg"
   ],
+  "formatos_por_ancho": {},
+  "formatos_por_ancho_propuestos": {
+    "480": [
+      "avif"
+    ]
+  },
   "pesos_max_kb": {
     "avif": {
       "480": 30,
