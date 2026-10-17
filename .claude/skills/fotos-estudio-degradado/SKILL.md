@@ -245,7 +245,7 @@ tamaño del producto antes del recorte: un modelo justo en el borde puede quedar
 con tres. La compuerta lo detiene igual, sin que nada pase de más.
 
 **Antes de gastar un retoque**, el script mide las originales: una foto cuyo lado
-mayor no llega a 680 px (1200 × 0,85 / 1,5) no puede salir LISTA, porque el
+mayor no llega a 638 px (1200 × 0,85 / 1,6) no puede salir LISTA, porque el
 producto nunca mide más que la foto. Un modelo con menos de cuatro originales que
 puedan, espera sin procesarse.
 
@@ -382,7 +382,7 @@ igual:
 | Adornos | se quitan solos los elementos ajenos separados del cuerpo, pequeños (< 15 %) y de un color que no aparece en él (≥ 20 en a*b*): los destellos de «Galaxy AI» y adornos de render parecidos. Las piezas legítimas comparten el color del cuerpo y se conservan |
 | Tono | sólo L*: niveles con recorte ≤ 0,5 %, ganancia ≤ 0,3 EV, microcontraste leve; a* y b* intactos (Δcroma ≤ 2) |
 | Enfoque | después de escalar, sobre L*: radio 1 px, 70 %, umbral 2 |
-| Escala | ≥ 1,5× → REVISAR · ≥ 3× → REPETIR (el producto debe medir ≥ 1700 px en la foto) |
+| Escala | ≥ 1,6× → REVISAR · ≥ 3× → REPETIR (el producto debe medir ≥ 1700 px en la foto) |
 | Máscara | corte en 0,2 para que la malla y el tejido entren enteros |
 | Interior | se compone opaco: alfa 1 a partir de 14 px del borde, cerrando grietas de 31 px y agujeros de menos del 0,5 % del área |
 | Tono y enfoque | apagados: el interior del producto no se retoca |
@@ -508,6 +508,38 @@ python3 "${CLAUDE_SKILL_DIR}/scripts/marcar.py" SALIDA --lista
 ```
 
 `--aprobar` sólo levanta los motivos REVISAR automáticos que ya miraste a tamaño
+real; nunca sirve para saltarse un REPETIR. Una marca REPETIR retira los archivos
+de las carpetas de entrega y `--limpiar` los restaura.
+
+### Por qué el corte de REVISAR está en 1,6× y no en 1,5×
+
+`ampliacion_revisar` estuvo en 1,5 hasta el 16/10/2026. Se subió a 1,6 por una
+decisión del negocio, con una medición detrás.
+
+El material oficial de Apple llega en cuadros de 1000 px con el teléfono a unos
+650 px: en el lienzo de 1200 que pide la tanda sale a 1,52–1,58×, y seis iPhone
+(15, 16, 16e, 17, 17 Pro y 18 Pro) no podían reunir cuatro LISTA. Se midió la
+nitidez de bordes (percentil 99,5 del gradiente) en la variante de 1200, con la
+misma foto de un Redmi Pad 2 Pro reducida para que saliera a cada ampliación:
+
+| Ampliación | Nitidez de bordes | Gradiente medio |
+|--:|--:|--:|
+| 1,05× | 100 % | 100 % |
+| 1,44× (ya era LISTA) | 70 % | 98 % |
+| 1,58× (era REVISAR) | 63 % | 96 % |
+
+La pérdida es gradual, sin un salto en 1,5: el umbral de antes ya aceptaba 30
+puntos y 1,58× suma 7. A 1:1 —lo que ve un teléfono de densidad 3× con la
+variante de 1200— el pad a 1,44× y a 1,58× no se distinguen, y en el iPhone 15 a
+1,58× los lentes y el borde del módulo de cámaras se leen bien. Dos límites de la
+prueba: la reducción con Lanczos sobre una fuente limpia es optimista —una foto
+pequeña de verdad trae además compresión— y fue un producto plano de bordes
+duros; en mallas y tejidos la pérdida puede notarse más, y por eso esas fotos
+siguen mirándose al 100 %.
+
+La foto mínima antes de procesar en la tanda bajó con él: 1200 × 0,85 / 1,6 =
+638 px. Si el material mejora, esto vuelve a 1,5.
+
 ### Por qué el corte de ampliación está en 3× y no en 2×
 
 `ampliacion_repetir` estuvo en 2.0 hasta el 19/09/2026. Se subió a 3.0 por una
@@ -529,9 +561,6 @@ Lo que **no** cambió: `REPETIR` sigue retirando los archivos y `marcar.py
 --aprobar` sigue negándose a levantarlo. La compuerta existe; solo se movió
 dónde cae. Si alguna vez el material del catálogo mejora —fotos propias o un
 paquete decente del proveedor—, esto vuelve a 2.0.
-
-real; nunca sirve para saltarse un REPETIR. Una marca REPETIR retira los archivos
-de las carpetas de entrega y `--limpiar` los restaura.
 
 ### 5. Corregir lo corregible
 
@@ -578,7 +607,7 @@ que revisar y por qué, y cuáles hay que repetir y cómo. No copies el reporte.
 | Estado | Motivos automáticos |
 |---|---|
 | REPETIR | archivo dañado o no soportado · producto cortado por el encuadre · ampliación ≥ 2× · recorte vacío o que desaparece al escalar |
-| REVISAR | ampliación ≥ 1,5× · bordes inciertos en más del 8 % del producto · producto parecido a su fondo original en más del 20 % del contorno · producto confundido con el fondo nuevo en más del 25 % del contorno · fragmento descartado apreciable · 3 piezas o más · PNG recortado que llega al borde |
+| REVISAR | ampliación ≥ 1,6× · bordes inciertos en más del 8 % del producto · producto parecido a su fondo original en más del 20 % del contorno · producto confundido con el fondo nuevo en más del 25 % del contorno · fragmento descartado apreciable · 3 piezas o más · PNG recortado que llega al borde |
 | LISTA | ninguno de los anteriores |
 
 Manda el motivo más grave y las marcas a ojo se suman a las automáticas. Las

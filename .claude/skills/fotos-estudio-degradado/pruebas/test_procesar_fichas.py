@@ -181,7 +181,7 @@ class Devolver(unittest.TestCase):
 # La tanda del bloque 2 (ADR-0079): cuatro LISTA por modelo, o espera
 # --------------------------------------------------------------------------
 
-CFG = {"lienzo_minimo": 1200, "ocupacion": 0.85, "ampliacion_revisar": 1.5}
+CFG = {"lienzo_minimo": 1200, "ocupacion": 0.85, "ampliacion_revisar": 1.6}
 CUATRO = tuple(f"{MODELO}_{i}.jpg" for i in range(1, 5))
 NOMBRES = [f"{MODELO}-{i}" for i in range(1, 5)]
 GRANDE = lambda ruta: (2400, 2400)  # noqa: E731
@@ -230,7 +230,7 @@ class Tanda(unittest.TestCase):
             self.assertIn("LA TANDA ESPERA FOTOS", pf.informe(list(estados.values())))
 
     def test_una_foto_demasiado_pequena_no_cuenta_antes_de_procesar(self):
-        # 1200 × 0,85 / 1,5 = 680 px: una foto de 600 nunca da un producto LISTA en 1200.
+        # 1200 × 0,85 / 1,6 = 638 px: una foto de 600 nunca da un producto LISTA en 1200.
         with tempfile.TemporaryDirectory() as tmp:
             raiz = Path(tmp)
             armar(raiz, CUATRO)
@@ -239,7 +239,7 @@ class Tanda(unittest.TestCase):
             self.assertEqual(0, procesos)
             fallida = estados[MODELO]["fallidas"][0]
             self.assertEqual("PEQUEÑA", fallida["estado"])
-            self.assertIn("680 px", fallida["motivo"])
+            self.assertIn("638 px", fallida["motivo"])
 
     def test_una_foto_que_no_se_puede_medir_la_decide_el_retoque(self):
         with tempfile.TemporaryDirectory() as tmp:

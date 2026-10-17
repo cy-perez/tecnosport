@@ -8,7 +8,7 @@ sencillo; no pegues la lista completa.
 
 | Motivo | Qué pedir |
 |---|---|
-| Ampliación ≥ 1,5× | Acercarse hasta que el producto llene el encuadre dejando margen, con la cámara principal y sin zoom digital. El producto debe medir al menos 1700 px en su lado mayor: con un celular de 12 MP (4032×3024), el producto debe cubrir al menos el 45 % del largo de la foto si va a lo largo, o el 60 % del ancho si va a lo ancho. |
+| Ampliación ≥ 1,6× | Acercarse hasta que el producto llene el encuadre dejando margen, con la cámara principal y sin zoom digital. El producto debe medir al menos 1700 px en su lado mayor: con un celular de 12 MP (4032×3024), el producto debe cubrir al menos el 45 % del largo de la foto si va a lo largo, o el 60 % del ancho si va a lo ancho. |
 | JPEG recomprimido | Enviar por WhatsApp como documento (Adjuntar → Documento), por correo o por Drive, nunca como foto. |
 | Producto cortado | Dejar un margen de al menos 10 % por cada lado. En productos con correas o asas, alejarse y confirmar en pantalla que entran completas. |
 | Parecido a su fondo original / bordes inciertos | Fondo liso que contraste: producto blanco o claro → gris medio, azul o verde; producto negro u oscuro → blanco o gris claro; producto de color → fondo neutro distinto de ese color. Evitar sábanas, madera y otras texturas. |

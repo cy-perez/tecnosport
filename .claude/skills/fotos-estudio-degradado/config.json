@@ -7,7 +7,7 @@
     "fondo_archivo": "Fondo ya generado. Si no coincide con lienzo, colores, dither y semilla, el script lo regenera y lo avisa.",
     "fondo_radio_interior": "Fracción del radio (0–1) que el degradado mantiene en fondo_centro antes de empezar a bajar hacia fondo_esquinas. Medido en la referencia del catálogo: 0.26. No hace nada mientras fondo_centro y fondo_esquinas sean el mismo color; se conserva para no perder la forma del degradado anterior.",
     "sombra": "Sombra de contacto bajo el producto, en modo normal y siempre debajo de él. Sobre el fondo blanco plano es lo único que separa al producto del fondo y lo único que dibuja el resplandor alrededor, así que bajarle la opacidad o el sigma deja los productos claros sin contorno; los valores salen de medir la referencia del catálogo.",
-    "ampliacion": "Factor de escala desde el que la foto se marca REVISAR o REPETIR.",
+    "ampliacion": "Factor de escala desde el que la foto se marca REVISAR o REPETIR. ampliacion_revisar está en 1.6 desde el 16/10/2026 (antes 1.5): medido en la variante de 1200 al 100 %, la nitidez de bordes cae gradualmente —1,05×: 100 %; 1,44×: 70 %; 1,58×: 63 %— y no hay un salto en 1,5; los iPhone del material de Apple salen a 1,52–1,58×. Ver SKILL.md.",
     "lienzos_escala": "Escalones de lienzo que puede elegir --por-producto, de mayor a menor. El producto se publica en el mayor que su mejor foto alcance sin pasar de ampliacion_tolerada; si no llega a ninguno se usa el menor, para publicarlo al maximo que su material permita en vez de descartarlo. Con --lienzo-minimo (la tanda) lo elige la compuerta: el mayor escalón de ese mínimo o más donde caben las fotos LISTA que pide; ver salidas.elegir_lienzo_tanda.",
     "ampliacion_tolerada": "Ampliacion que se acepta al elegir el lienzo de un producto. Por encima de este factor se baja al escalon siguiente. No se usa en la tanda: ahí manda ampliacion_revisar.",
     "avif_10bits": "auto: usa avifenc a 10 bits si está instalado; nunca: sólo Pillow a 8 bits; siempre: falla si no hay avifenc.",
@@ -37,7 +37,7 @@
   "sombra_dilatacion_px": 6,
   "sombra_sigma_px": 58,
   "sombra_desplazamiento_y_px": 14,
-  "ampliacion_revisar": 1.5,
+  "ampliacion_revisar": 1.6,
   "ampliacion_repetir": 3.0,
   "lienzos_escala": [
     2000,

@@ -4,6 +4,7 @@ Los lados de producto de los casos son los medidos en `catalogo/4-entregables/fi
 16/10/2026, cuando la regla de la mejor foto dejaba fuera de la tanda a modelos que en 1200
 reunían de sobra sus cuatro LISTA."""
 
+import json
 import sys
 import unittest
 from pathlib import Path
@@ -11,10 +12,21 @@ from pathlib import Path
 SKILL = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(SKILL / "scripts"))
 
+import procesar_fichas as pf  # noqa: E402
 import salidas  # noqa: E402
 
 CFG = {"lienzos_escala": [2000, 1600, 1200, 1000, 800, 600, 480, 400, 320], "ocupacion": 0.85,
        "ampliacion_revisar": 1.6, "ampliacion_tolerada": 1.25, "lienzo": [2000, 2000]}
+
+
+def config_real(variantes=False) -> dict:
+    """El config.json de la skill, como lo deja `procesar.py` con y sin `--variantes`."""
+    cfg = json.loads((SKILL / "config.json").read_text(encoding="utf-8"))
+    if variantes:
+        cfg["anchos_variantes"] = cfg["anchos_variantes_propuestos"]
+        cfg["formatos_web"] = cfg["formatos_web_propuestos"]
+        cfg["formatos_por_ancho"] = cfg["formatos_por_ancho_propuestos"]
+    return cfg
 
 
 def tanda(lados):
@@ -57,6 +69,17 @@ class LienzoDeLaTanda(unittest.TestCase):
 
     def test_las_fotos_que_no_se_midieron_no_cuentan(self):
         self.assertEqual(0, salidas.listas_en(1200, [0, None, 0], CFG))
+
+
+class ConfigDeLaSkill(unittest.TestCase):
+    """Lo que dice el config.json que se entrega, no el de una prueba."""
+
+    def test_el_umbral_de_revisar_esta_en_1_6(self):
+        self.assertEqual(1.6, config_real()["ampliacion_revisar"])
+
+    def test_la_foto_minima_antes_de_procesar_baja_a_638(self):
+        # 1200 × 0,85 / 1,6 = 637,5
+        self.assertEqual(638, pf.lado_minimo(pf.cargar_config()))
 
 
 if __name__ == "__main__":
