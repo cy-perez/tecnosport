@@ -42,7 +42,9 @@ from pathlib import Path
 AQUI = Path(__file__).resolve().parent
 sys.path.insert(0, str(AQUI))
 
-EXTENSIONES = {".jpg", ".jpeg", ".png", ".heic", ".heif", ".webp"}
+# La misma lista que EXT_FOTO de procesar_fichas.py. JFIF es JPEG con otra extensión y Pillow
+# lee AVIF sin plugins desde la 11.2: las dos llegan así de los sitios de marca.
+EXTENSIONES = {".jpg", ".jpeg", ".jfif", ".png", ".heic", ".heif", ".webp", ".avif"}
 CLAVES_SALIDA = ("lienzo", "anchos_variantes", "formatos_web", "carpeta_maestras", "carpeta_web")
 VERSION = "1.0"
 
@@ -88,7 +90,7 @@ def recolectar(entradas: list[str], excluir: Path) -> list[tuple[Path, str]]:
                                 and not any(parte.startswith(".") for parte in x.relative_to(p).parts))
         elif p.is_file():
             if p.suffix.lower() not in EXTENSIONES:
-                print(f"[aviso] formato no admitido, se omite: {p.name} (usa JPG, PNG, HEIC o WebP)")
+                print(f"[aviso] formato no admitido, se omite: {p.name} (usa JPG, PNG, HEIC, WebP o AVIF)")
                 continue
             candidatos = [p]
         else:
@@ -706,7 +708,7 @@ def main() -> int:
     utf8()
     p = argparse.ArgumentParser(description="Tomas de estudio con fondo blanco (TecnoSport)",
                                 formatter_class=argparse.RawDescriptionHelpFormatter, epilog=__doc__)
-    p.add_argument("entradas", nargs="*", help="fotos o carpetas (JPG, PNG, HEIC, WebP)")
+    p.add_argument("entradas", nargs="*", help="fotos o carpetas (JPG, PNG, HEIC, WebP, AVIF)")
     p.add_argument("-o", "--salida", help="carpeta de salida (se reutiliza para reprocesar)")
     p.add_argument("--config", help="config.json alternativo")
     p.add_argument("--ajuste", action="append", default=[], metavar="CLAVE=VALOR",

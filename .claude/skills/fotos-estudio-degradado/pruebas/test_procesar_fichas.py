@@ -93,6 +93,15 @@ class Preparar(unittest.TestCase):
             self.assertEqual(1, copiadas)
             self.assertEqual(1, len(errores))
 
+    def test_avif_y_jfif_son_originales_y_otro_formato_no(self):
+        # Los sitios de marca entregan AVIF y JFIF; antes se ignoraban sin aviso.
+        with tempfile.TemporaryDirectory() as tmp:
+            raiz = Path(tmp)
+            carpeta = armar(raiz, ("x_1.avif", "x_2.jfif", "x_3.JPG", "x_4.gif"))
+            self.assertEqual(["x_1.avif", "x_2.jfif", "x_3.JPG"],
+                             [f.name for f in pf.originales(carpeta)])
+            self.assertEqual((3, []), pf.preparar(raiz))
+
     def test_una_original_que_ya_no_esta_sale_del_arbol_de_trabajo(self):
         # Si no, procesar.py la volvería a procesar y la nueva saldría como «x-1-2».
         with tempfile.TemporaryDirectory() as tmp:
