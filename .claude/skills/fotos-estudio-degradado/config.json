@@ -12,8 +12,9 @@
     "ampliacion_tolerada": "Ampliacion que se acepta al elegir el lienzo de un producto. Por encima de este factor se baja al escalon siguiente. No se usa en la tanda: ahí manda ampliacion_revisar.",
     "avif_10bits": "auto: usa avifenc a 10 bits si está instalado; nunca: sólo Pillow a 8 bits; siempre: falla si no hay avifenc.",
     "banding_umbral": "Máximo error local del degradado en niveles de 8 bits (percentil 99). Por encima se sube la calidad por pasos.",
-    "anchos_variantes": "Anchos web a generar. Por defecto sólo 2000; los propuestos se activan con --variantes.",
+    "anchos_variantes": "Anchos web a generar. Por defecto sólo 2000; los propuestos se activan con --variantes y son los dos que sube tools/material-catalogo.mjs: 1200, el carrusel de la ficha, y 480, la miniatura de la galería y la tarjeta de la rejilla. Por producto, si el lienzo no llega al mayor, el lienzo ocupa su lugar. Hasta el 16/10/2026 eran cinco (480 a 2000) en dos formatos: once archivos por foto, de los que el sitio usaba cuatro.",
     "formatos_web": "avif, jpg o webp. El respaldo propuesto de AVIF es JPEG: WebP con pérdida deja anillos en este degradado (≈1,1–1,25 niveles medidos, aun a calidad 100). WebP sigue disponible con --ajuste si un sistema lo exige.",
+    "formatos_por_ancho": "Formatos de un ancho concreto, si no son los de formatos_web. La miniatura de 480 va solo en AVIF: el JPEG existe para la vista previa de WhatsApp y Facebook, que no muestran AVIF, y para eso basta el de 1200.",
     "pesos_max_kb": "Peso objetivo por formato y ancho. Si se supera, el reporte lo advierte.",
     "tono": "Niveles automáticos acotados sobre L*: nunca toca a* ni b*. activo=false desactiva toda corrección tonal.",
     "separacion": "Diferencia mínima de L* entre el borde del producto y el fondo con la sombra; si falla en más de separacion_sectores_max del contorno, la foto se marca REVISAR. Sobre el fondo blanco los productos claros fallan más sectores que sobre el degradado —el Honor X8B plateado pasó del 30,6 % al 52,8 % del contorno—, así que hay más REVISAR y son los que de verdad hay que mirar: ahí el contorno lo sostiene solo la sombra.",
@@ -76,15 +77,18 @@
   ],
   "anchos_variantes_propuestos": [
     480,
-    800,
-    1200,
-    1600,
-    2000
+    1200
   ],
   "formatos_web_propuestos": [
     "avif",
     "jpg"
   ],
+  "formatos_por_ancho": {},
+  "formatos_por_ancho_propuestos": {
+    "480": [
+      "avif"
+    ]
+  },
   "pesos_max_kb": {
     "avif": {
       "480": 30,

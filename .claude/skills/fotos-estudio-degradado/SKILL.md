@@ -56,8 +56,13 @@ SALIDA/
 SALIDA.zip                           maestras + escritorio + hojas + reporte.json
 ```
 
-Con `--variantes`, `escritorio/` lleva además `<nombre>-<ancho>.avif` y
-`<nombre>-<ancho>.jpg` para 480, 800, 1200, 1600 y 2000 px.
+Con `--variantes`, `escritorio/` lleva en su lugar **lo que se sube al sitio, y nada
+más**: `<nombre>-1200.avif` y `<nombre>-1200.jpg` —el carrusel de la ficha, y su JPEG
+para la vista previa de WhatsApp y Facebook, que no muestran AVIF— y
+`<nombre>-480.avif` —la miniatura de la galería y la tarjeta de la rejilla—. Hasta el
+16/10/2026 eran cinco anchos (480 a 2000) en dos formatos: once archivos por foto,
+de los que el sitio usaba cuatro. Los formatos de cada ancho los dice
+`formatos_por_ancho` en el `config.json`.
 
 **Por producto** (`--por-producto`, y sola cuando las fotos vienen en subcarpetas,
 como `crudas/<producto>/`) la salida se agrupa y la carpeta dice el ancho, así que
@@ -66,10 +71,16 @@ el nombre ya no lo repite:
 ```
 SALIDA/
 └── <producto>/
-    ├── maestra/<nombre>.jpg      la maestra, al lienzo del producto
-    ├── 2000/<nombre>.avif        un subdirectorio por ancho
-    └── 1200/<nombre>.avif
+    ├── maestra/<nombre>.jpg      la maestra, al lienzo del producto (el archivo: hasta 2000 px)
+    ├── 1200/<nombre>.avif        el carrusel de la ficha
+    ├── 1200/<nombre>.jpg         la vista previa de WhatsApp
+    └── 480/<nombre>.avif         la miniatura y la tarjeta
 ```
+
+Si el lienzo del producto no llega a 1200, **el lienzo ocupa el lugar del carrusel**
+(`1000/<nombre>.avif` y `.jpg`): la ficha se sirve con lo mejor que da el material,
+no con la miniatura. Si lo pasa, la web se queda en 1200 —el sitio no sirve más
+(ADR-0056)— y la resolución de más vive en la maestra.
 
 `--plano` fuerza la salida de siempre aunque las fotos vengan en subcarpetas. Las fotos REPETIR no
 escriben nada en `maestras/` ni en `escritorio/`: su vista previa queda en
@@ -332,7 +343,9 @@ python3 "${CLAUDE_SKILL_DIR}/scripts/procesar_fichas.py" catalogo/4-entregables/
 fichas/Samsung Galaxy S25 Ultra/
 ├── Fotos originales/samsung-galaxy-s25-ultra_1.png
 └── Fotos procesadas/samsung-galaxy-s25-ultra_1.jpg              la maestra
-                     web/<ancho>/samsung-galaxy-s25-ultra_1.avif  lo que va al sitio
+                     web/1200/samsung-galaxy-s25-ultra_1.avif     el carrusel de la ficha
+                     web/1200/samsung-galaxy-s25-ultra_1.jpg      la vista previa de WhatsApp
+                     web/480/samsung-galaxy-s25-ultra_1.avif      la miniatura y la tarjeta
 ```
 
 `procesar_fichas.py` no tiene estilo propio: copia las originales a
@@ -350,7 +363,9 @@ suelto.
 
 **Si esta skill cambia la forma de su salida** —`<producto>/maestra/` y
 `<producto>/<ancho>/` en modo por producto—, `procesar_fichas.py` deja de
-encontrar los archivos. Lo vigilan sus pruebas en `pruebas/`, que corren en
+encontrar los archivos, y `tools/material-catalogo.mjs`, que sube las tomas, lee los
+anchos de las carpetas de `web/` (los que existan hasta 1200) y la vista previa en
+el JPEG del mayor. Lo vigilan sus pruebas en `pruebas/`, que corren en
 `npm run verificar`. Hubo un `organizar_imagenes.py` que reacomodaba la salida
 plana, y estuvo un tiempo sin hacer nada sin que se notara.
 
@@ -387,7 +402,7 @@ igual:
 | Interior | se compone opaco: alfa 1 a partir de 14 px del borde, cerrando grietas de 31 px y agujeros de menos del 0,5 % del área |
 | Tono y enfoque | apagados: el interior del producto no se retoca |
 | Lienzo por producto | escalones 2000 · 1600 · 1200 · 1000 · 800 · 600 · 480 · 400 · 320; se toma el mayor que la mejor foto alcance sin pasar de 1,25× de ampliación, y si no llega a ninguno, el menor. En la tanda (`--lienzo-minimo`), el mayor de 1200 o más donde caben cuatro LISTA |
-| Web | AVIF a 10 bits con `avifenc` (a 8 bits con Pillow si no lo hay); con `--variantes`, JPEG q88 de respaldo |
+| Web | AVIF a 10 bits con `avifenc` (a 8 bits con Pillow si no lo hay). Con `--variantes`, dos anchos: 1200 en AVIF y JPEG q88 —el carrusel y la vista previa de WhatsApp— y 480 en AVIF —la miniatura y la tarjeta—; por producto, un lienzo menor que 1200 ocupa el lugar del carrusel |
 
 Los valores en píxeles están pensados para 2000 px y se escalan si cambia el lienzo.
 Para una corrida puntual: `--ajuste clave=valor` (p. ej. `--ajuste tono.activo=false`;
@@ -675,14 +690,13 @@ bordes poco separados en pocos tramos) son informativas y no cambian el estado.
 
 Los archivos web siguen el patrón `<nombre>-<ancho>.<formato>`, así que un cargador
 de imágenes (por ejemplo, un loader de `NgOptimizedImage` en Angular) traduce el
-ancho que pide el navegador directamente a la URL del archivo. Con `--variantes`,
-sirve AVIF con JPEG de respaldo:
+ancho que pide el navegador directamente a la URL del archivo. Con `--variantes`
+son los dos anchos que usa el sitio —el JPEG de 1200 no entra al `srcset`: es la
+imagen de `og:image`—:
 
 ```html
-<picture>
-  <source type="image/avif" srcset="tenis-blanco-480.avif 480w, tenis-blanco-800.avif 800w, tenis-blanco-2000.avif 2000w">
-  <img src="tenis-blanco-800.jpg" srcset="tenis-blanco-480.jpg 480w, tenis-blanco-800.jpg 800w, tenis-blanco-2000.jpg 2000w" alt="Tenis blanco">
-</picture>
+<img src="tenis-blanco-1200.avif" srcset="tenis-blanco-480.avif 480w, tenis-blanco-1200.avif 1200w"
+     sizes="(min-width: 1024px) 50vw, 100vw" alt="Tenis blanco">
 ```
 
 Si el almacenamiento de la tienda genera los tamaños al subir, basta con las

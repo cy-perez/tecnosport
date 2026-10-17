@@ -46,6 +46,33 @@ test("las tomas salen de «Fotos procesadas», con su maestra y sus anchos web",
   }
 });
 
+test("un carrusel menor que 1200 se encuentra, y lo que pasa del tope no se sube", () => {
+  // Desde el 16/10/2026 el estudio deja el carrusel y la miniatura; un producto que no llega a
+  // 1200 publica su carrusel en el ancho de su lienzo. Con una lista fija de anchos esa carpeta no
+  // la veía nadie y la ficha se servía con la miniatura de 480.
+  const raiz = mkdtempSync(join(tmpdir(), "fichas-"));
+  try {
+    const modelo = join(raiz, "JBL Xtreme 4");
+    const procesadas = join(modelo, "Fotos procesadas");
+    for (const ancho of ["1000", "480", "2000"]) {
+      mkdirSync(join(procesadas, "web", ancho), { recursive: true });
+      writeFileSync(join(procesadas, "web", ancho, "jbl-xtreme-4_1.avif"), "avif");
+    }
+    mkdirSync(join(procesadas, "web", "notas"), { recursive: true });
+    writeFileSync(join(procesadas, "jbl-xtreme-4_1.jpg"), jpeg(1000, 1000));
+    writeFileSync(join(procesadas, "web", "1000", "jbl-xtreme-4_1.jpg"), jpeg(1000, 1000));
+    const [toma] = fotosDeCarpeta(modelo).archivos;
+    assert.deepEqual(
+      toma.variantes.map((v) => v.ancho),
+      [1000, 480],
+    );
+    assert.equal(toma.web.ancho, 1000);
+    assert.equal(toma.vistaPrevia.ancho, 1000);
+  } finally {
+    rmSync(raiz, { recursive: true, force: true });
+  }
+});
+
 test("un modelo sin carpeta o sin fotos procesadas no tiene tomas", () => {
   assert.deepEqual(fotosDeCarpeta(null), { archivos: [], ladoMenor: 0 });
   const raiz = mkdtempSync(join(tmpdir(), "fichas-"));

@@ -1,4 +1,4 @@
-"""Pruebas de `salidas.py`: qué lienzo lleva cada producto.
+"""Pruebas de `salidas.py`: qué lienzo lleva cada producto y qué archivos web salen de cada foto.
 
 Los lados de producto de los casos son los medidos en `catalogo/4-entregables/fichas/` el
 16/10/2026, cuando la regla de la mejor foto dejaba fuera de la tanda a modelos que en 1200
@@ -69,6 +69,26 @@ class LienzoDeLaTanda(unittest.TestCase):
 
     def test_las_fotos_que_no_se_midieron_no_cuentan(self):
         self.assertEqual(0, salidas.listas_en(1200, [0, None, 0], CFG))
+
+
+class AnchosWeb(unittest.TestCase):
+    def test_con_variantes_salen_el_carrusel_y_la_miniatura(self):
+        cfg = config_real(variantes=True)
+        esperado = [(1200, ["avif", "jpg"]), (480, ["avif"])]
+        self.assertEqual(esperado, salidas.anchos_web(cfg, 2000, True), "2000 se queda en la maestra")
+        self.assertEqual(esperado, salidas.anchos_web(cfg, 1600, True))
+        self.assertEqual(esperado, salidas.anchos_web(cfg, 1200, True))
+
+    def test_un_lienzo_menor_que_el_carrusel_ocupa_su_lugar(self):
+        cfg = config_real(variantes=True)
+        self.assertEqual([(1000, ["avif", "jpg"]), (480, ["avif"])], salidas.anchos_web(cfg, 1000, True))
+        self.assertEqual([(400, ["avif", "jpg"])], salidas.anchos_web(cfg, 400, True))
+
+    def test_sin_variantes_el_modo_plano_sigue_igual(self):
+        self.assertEqual([(2000, ["avif"])], salidas.anchos_web(config_real(), 2000, False))
+
+    def test_el_modo_plano_no_agrega_el_lienzo(self):
+        self.assertEqual([(480, ["avif"])], salidas.anchos_web(config_real(variantes=True), 1000, False))
 
 
 class ConfigDeLaSkill(unittest.TestCase):

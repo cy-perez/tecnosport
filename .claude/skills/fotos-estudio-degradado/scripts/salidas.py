@@ -1,9 +1,10 @@
 """
-Qué lienzo lleva cada producto.
+Qué lienzo lleva cada producto y qué archivos web salen de cada foto.
 
 Vive aparte de `procesar.py` por una razón práctica: aquel importa OpenCV al cargarse, y estas
 reglas son las que hay que probar —en `npm run verificar`, donde no está—. Solo usa la biblioteca
-estándar.
+estándar. `verificar.py` lee los anchos de aquí también, para que el que escribe y el que relee
+no puedan tener dos ideas distintas de qué archivos debe haber.
 """
 
 from __future__ import annotations
@@ -60,3 +61,26 @@ def elegir_lienzo_tanda(lados: list[int], cfg: dict, minimo: int, fotos_minimas:
             return lado
     mejor = max(candidatos, key=lambda l: (listas_en(l, lados, cfg), l))
     return mejor if listas_en(mejor, lados, cfg) else elegir_lienzo(lados, cfg)
+
+
+def anchos_web(cfg: dict, lienzo: int, por_producto: bool) -> list[tuple[int, list[str]]]:
+    """Los archivos web de una foto: [(ancho, formatos)], del mayor al menor.
+
+    Salen los `anchos_variantes` que caben en el lienzo, cada uno en `formatos_web` salvo que
+    `formatos_por_ancho` diga otra cosa. Con `--variantes` son dos: 1200 en AVIF y JPEG —el
+    carrusel de la ficha, y la vista previa de WhatsApp, que no muestra AVIF— y 480 en AVIF —la
+    miniatura de la galería y la tarjeta de la rejilla—. Es lo que suben `tools/material-catalogo.mjs`
+    y `subida-de-imagenes.mjs`; hasta el 16/10/2026 salían cinco anchos en dos formatos, once
+    archivos por foto, y al sitio llegaban cuatro.
+
+    Por producto, **el lienzo ocupa el lugar del ancho mayor cuando no lo alcanza**: un producto
+    cuyo material solo da para 1000 px publica su carrusel a 1000, no se queda solo con la
+    miniatura. Cuando lo alcanza o lo pasa, no se añade: el sitio no sirve más de 1200 (ADR-0056),
+    y un lienzo de 2000 se queda en la maestra, que es el archivo.
+    """
+    pedidos = {int(x) for x in cfg.get("anchos_variantes") or []}
+    anchos = {w for w in pedidos if w <= lienzo}
+    if por_producto and (not pedidos or lienzo < max(pedidos)):
+        anchos.add(int(lienzo))
+    por_ancho = cfg.get("formatos_por_ancho") or {}
+    return [(w, list(por_ancho.get(str(w), cfg["formatos_web"]))) for w in sorted(anchos, reverse=True)]

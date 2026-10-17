@@ -9,7 +9,9 @@ puede cambiar: la maestra siempre es JPEG):
     fichas/Samsung Galaxy S25 Ultra/
     ├── Fotos originales/samsung-galaxy-s25-ultra_1.png
     ├── Fotos procesadas/samsung-galaxy-s25-ultra_1.jpg        la maestra
-    │                    web/1200/samsung-galaxy-s25-ultra_1.avif   los anchos para el sitio
+    │                    web/1200/samsung-galaxy-s25-ultra_1.avif   el carrusel de la ficha
+    │                    web/1200/samsung-galaxy-s25-ultra_1.jpg    la vista previa de WhatsApp
+    │                    web/480/samsung-galaxy-s25-ultra_1.avif    la miniatura y la tarjeta
     └── estado-fotos.json                                      con --tanda: apto, en espera o fuera
 
 Uso:

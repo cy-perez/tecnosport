@@ -27,6 +27,7 @@ import numpy as np  # noqa: E402
 from PIL import Image, ImageCms, JpegImagePlugin  # noqa: E402
 
 import imagen  # noqa: E402
+import salidas  # noqa: E402
 import reporte  # noqa: E402
 
 
@@ -40,12 +41,9 @@ def rutas_esperadas(cfg: dict, f: dict) -> dict:
     nombre = f["nombre"]
     ancho, alto = lienzo_de(cfg, f)
     grupo = f.get("grupo") if cfg.get("por_producto") else ""
-    anchos = {int(w) for w in cfg["anchos_variantes"] if int(w) <= ancho}
-    if grupo:
-        anchos.add(ancho)   # el lienzo del producto siempre se publica
     web = []
-    for w in sorted(anchos, reverse=True):
-        for fmt in cfg["formatos_web"]:
+    for w, formatos in salidas.anchos_web(cfg, ancho, bool(grupo)):
+        for fmt in formatos:
             ruta = f"{grupo}/{w}/{nombre}.{fmt}" if grupo else f"{cfg['carpeta_web']}/{nombre}-{w}.{fmt}"
             web.append({"ruta": ruta, "ancho": w, "alto": round(w * alto / ancho), "formato": fmt})
     maestra = f"{grupo}/maestra/{nombre}.jpg" if grupo else f"{cfg['carpeta_maestras']}/{nombre}.jpg"

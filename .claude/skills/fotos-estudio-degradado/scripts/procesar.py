@@ -45,7 +45,8 @@ sys.path.insert(0, str(AQUI))
 # La misma lista que EXT_FOTO de procesar_fichas.py. JFIF es JPEG con otra extensión y Pillow
 # lee AVIF sin plugins desde la 11.2: las dos llegan así de los sitios de marca.
 EXTENSIONES = {".jpg", ".jpeg", ".jfif", ".png", ".heic", ".heif", ".webp", ".avif"}
-CLAVES_SALIDA = ("lienzo", "anchos_variantes", "formatos_web", "carpeta_maestras", "carpeta_web")
+CLAVES_SALIDA = ("lienzo", "anchos_variantes", "formatos_web", "formatos_por_ancho", "carpeta_maestras",
+                 "carpeta_web")
 VERSION = "1.0"
 
 
@@ -558,10 +559,7 @@ def exportar_web(ctx: Contexto, nombre: str, final: np.ndarray, img8: np.ndarray
     region = imagen.dilatar(producto, 24 * ctx.fpx) < 0.5
     web = []
     escalones: dict[str, list[tuple[int, float, int]]] = {}
-    anchos = {int(x) for x in cfg["anchos_variantes"] if int(x) <= W}
-    if ctx.grupo:
-        anchos.add(W)   # el lienzo del producto siempre se publica, aunque sea menor que los anchos pedidos
-    for w in sorted(anchos, reverse=True):
+    for w, formatos in salidas.anchos_web(cfg, W, bool(ctx.grupo)):
         h = round(w * H / W)
         if (w, h) == (W, H):
             v8, refw, regw = img8, ref, region
@@ -575,7 +573,7 @@ def exportar_web(ctx: Contexto, nombre: str, final: np.ndarray, img8: np.ndarray
             # margen extra: el filtro de reducción arrastra el producto unos píxeles hacia el entorno
             lejos = imagen.dilatar(producto, 24 * ctx.fpx + 4.0 * W / w) < 0.5
             regw = imagen.region_reducida(lejos, w, h)
-        for fmt in cfg["formatos_web"]:
+        for fmt in formatos:
             res = imagen.codificar_web(fmt, v8, v16, refw, regw, cfg, ctx.avif10 if fmt == "avif" else None)
             ruta = ctx.ruta_web(nombre, w, fmt)
             ruta.parent.mkdir(parents=True, exist_ok=True)
@@ -699,7 +697,7 @@ def main() -> int:
                    help="cambia un parámetro del config para esta corrida (claves anidadas con punto)")
     p.add_argument("--mapa", help="CSV archivo,nombre para nombrar las salidas")
     p.add_argument("--variantes", action="store_true",
-                   help="genera los anchos y formatos propuestos (AVIF + WebP de 480 a 2000 px)")
+                   help="genera los anchos y formatos propuestos: 1200 en AVIF y JPEG, 480 en AVIF")
     p.add_argument("--solo", action="append", default=[], metavar="NOMBRES",
                    help="procesa sólo estos nombres (separados por coma); sin entradas, usa las rutas del reporte")
     p.add_argument("--por-producto", dest="por_producto", action="store_true", default=None,
@@ -754,6 +752,7 @@ def ejecutar(a, raiz: Path, solo: set[str], avance: Path) -> int:
     if a.variantes:
         cfg["anchos_variantes"] = list(cfg["anchos_variantes_propuestos"])
         cfg["formatos_web"] = list(cfg["formatos_web_propuestos"])
+        cfg["formatos_por_ancho"] = dict(cfg.get("formatos_por_ancho_propuestos") or {})
     # al reprocesar en una carpeta existente se heredan sus opciones de salida, salvo que se pidan otras
     explicitas = bool(a.variantes or a.config) or any(
         x.partition("=")[0].strip().split(".")[0] in CLAVES_SALIDA for x in (a.ajuste or []))
@@ -767,7 +766,7 @@ def ejecutar(a, raiz: Path, solo: set[str], avance: Path) -> int:
     errores = []
     if not 0.3 <= float(cfg["ocupacion"]) <= 0.98:
         errores.append("ocupacion debe estar entre 0.3 y 0.98")
-    for fmt in cfg["formatos_web"]:
+    for fmt in {f for fs in [cfg["formatos_web"], *(cfg.get("formatos_por_ancho") or {}).values()] for f in fs}:
         if fmt not in ("avif", "jpg", "webp"):
             errores.append(f"formato web no soportado: {fmt} (usa avif, jpg o webp)")
     if "webp" in cfg["formatos_web"] and not features.check("webp"):
