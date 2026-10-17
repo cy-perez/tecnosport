@@ -383,6 +383,8 @@ Mira dos o tres fotos del lote (todas, si son pocas) y busca:
 
 - **Nombres**: si son de cámara (`IMG_4521.HEIC`), pide las referencias en un solo
   mensaje o propón nombres descriptivos y pásalos con `--mapa` (CSV `archivo,nombre`).
+- **Formato**: se leen JPG (también `.jfif`), PNG, WebP, HEIC/HEIF y AVIF. Cualquier
+  otro se omite con un aviso, y en el modo de fichas ni siquiera cuenta para las 4.
 - **Problemas evidentes**: producto cortado, foto diminuta o borrosa, varios
   productos distintos, marca de agua o sticker encima del producto. Dilo antes de
   procesar, sin frenar el resto del lote.

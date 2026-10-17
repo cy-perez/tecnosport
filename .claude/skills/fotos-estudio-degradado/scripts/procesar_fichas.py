@@ -74,7 +74,7 @@ WEB = "web"
 TRABAJO = "_estudio"
 ESTADO = "estado-fotos.json"
 SACADOS = "sacados.json"          # en _estudio/: los modelos sacados que no tienen carpeta
-EXT_FOTO = {".jpg", ".jpeg", ".png", ".webp", ".heic", ".heif"}
+EXT_FOTO = {".jpg", ".jpeg", ".jfif", ".png", ".webp", ".heic", ".heif", ".avif"}  # = EXTENSIONES de procesar.py
 CONFIG = Path(__file__).resolve().parent.parent / "config.json"
 
 # Decisión del negocio del 10/10/2026 (ADR-0079): cuatro fotos LISTA por modelo.
