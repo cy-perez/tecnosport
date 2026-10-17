@@ -37,9 +37,14 @@ Para no gastar retoques en vano, y para que el veredicto sea cierto:
   cuyo lado mayor no alcanza `LIENZO_MINIMO × ocupación / ampliación_revisar` no
   puede, porque el producto nunca mide más que la foto. Si no hay cuatro, el
   modelo espera sin procesarse.
+- **El lienzo lo elige la compuerta**, no la mejor foto: `procesar.py` recibe
+  `--lienzo-minimo LIENZO_MINIMO --listas-minimas MINIMO_LISTA` y toma el mayor
+  escalón donde caben cuatro LISTA (`salidas.elegir_lienzo_tanda`). Hasta el
+  16/10/2026 lo fijaba la mejor foto, y una sola foto grande dejaba a las demás en
+  REVISAR.
 - **Un modelo que cambió se reprocesa entero** (`--solo` con todas sus fotos), no
-  solo la foto nueva: el lienzo lo fija la mejor foto del modelo, y una foto que se
-  procesara sola elegiría el suyo.
+  solo la foto nueva: el lienzo depende de todas las fotos del modelo, y una foto que
+  se procesara sola elegiría el suyo.
 - **Un modelo ya decidido no se vuelve a procesar** mientras sus originales no
   cambien: `estado-fotos.json` guarda la huella del contenido de la carpeta. Si la
   persona dice que dejó fotos nuevas y la huella es la misma, la salida lo dice.
@@ -360,8 +365,8 @@ def evaluar(mid: str, carpeta: Path, reporte: dict, cfg: dict) -> dict:
         elif estado == "LISTA" and lienzo < int(cfg["lienzo_minimo"]):
             fallidas.append({"foto": original.name, "estado": "LIENZO",
                              "motivo": f"salió en un lienzo de {lienzo} px; el sitio pide por lo menos "
-                                       f"{cfg['lienzo_minimo']} px, y el lienzo lo fija la mejor foto del modelo: "
-                                       "hace falta una foto de más resolución"})
+                                       f"{cfg['lienzo_minimo']} px, y ni en ese lienzo reúne el modelo "
+                                       f"{MINIMO_LISTA} fotos LISTA: hacen falta fotos de más resolución"})
         elif estado == "LISTA":
             listas.append(f"{original.stem}.jpg")
         else:
@@ -558,8 +563,10 @@ def main() -> int:
         if a.devolver and retoque_en_curso(raiz):
             print("El retoque sigue en segundo plano: espera a que termine y vuelve a correr --devolver.")
             return SALIDA_EN_ESPERA
-        # Cada modelo que cambió se procesa entero, con --solo: el lienzo lo fija su mejor foto.
-        procesar_fn = lambda nombres: correr(base + sum((["--solo", n] for n in nombres), []))  # noqa: E731
+        # Cada modelo que cambió se procesa entero, con --solo: el lienzo depende de todas sus fotos,
+        # y lo elige la compuerta —el mayor escalón donde caben MINIMO_LISTA fotos LISTA—.
+        compuerta = ["--lienzo-minimo", str(LIENZO_MINIMO), "--listas-minimas", str(MINIMO_LISTA)]
+        procesar_fn = lambda nombres: correr(base + compuerta + sum((["--solo", n] for n in nombres), []))  # noqa: E731
         estados = correr_tanda(raiz, ids, cfg, procesar_fn, solo_devolver=a.devolver, fecha_tanda=fecha)
         if not estados:
             return SALIDA_EN_ESPERA   # en segundo plano: la tanda todavía no está completa

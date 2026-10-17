@@ -222,17 +222,36 @@ python3 "${CLAUDE_SKILL_DIR}/scripts/procesar_fichas.py" catalogo/4-entregables/
 **La compuerta** (decisión del negocio del 10/10/2026): cada modelo necesita
 **4 fotos LISTA** en un lienzo de por lo menos **1200 px** —la mayor variante que
 sirve el sitio—. Una REVISAR **no cuenta aunque se apruebe a ojo** con `marcar.py`,
-y una LISTA en un lienzo menor tampoco: el lienzo lo fija la mejor foto del modelo,
-así que lo que falta ahí es una foto de más resolución.
+y una LISTA en un lienzo menor tampoco: si el modelo no reúne cuatro ni en 1200, lo
+que falta son fotos de más resolución.
+
+**En la tanda, el lienzo lo elige la compuerta, no la mejor foto** (16/10/2026).
+`procesar_fichas.py` le pasa a `procesar.py` `--lienzo-minimo 1200 --listas-minimas 4`,
+y el lienzo es el **mayor** escalón de 1200 o más donde caben cuatro fotos por debajo
+de `ampliacion_revisar` (`salidas.elegir_lienzo_tanda`). Hasta esa fecha lo fijaba la
+mejor foto, como en un lote suelto, y fallaba por los dos lados:
+
+- **Por arriba**: una sola foto grande subía el lienzo y dejaba a las demás en
+  REVISAR. El Galaxy A57 tenía una de 1194 px y cinco de 797: lienzo 1600 y una sola
+  LISTA; en 1200, las seis.
+- **Por abajo**: la mejor foto tenía que llegar con `ampliacion_tolerada` (1,25×),
+  más estricta que la compuerta. El Galaxy A27, seis fotos de 800 px, se quedaba en
+  1000 y fuera de la tanda, cuando en 1200 salen a 1,28×: LISTA.
+
+Es el mayor escalón que cumple, y no el que más LISTA deja, para no bajar a 1200 un
+modelo que da para 2000. Si ni en 1200 reúne cuatro, se elige el de más LISTA; si
+ni ahí sale una, la regla de siempre. El lienzo se decide con una estimación del
+tamaño del producto antes del recorte: un modelo justo en el borde puede quedarse
+con tres. La compuerta lo detiene igual, sin que nada pase de más.
 
 **Antes de gastar un retoque**, el script mide las originales: una foto cuyo lado
 mayor no llega a 680 px (1200 × 0,85 / 1,5) no puede salir LISTA, porque el
 producto nunca mide más que la foto. Un modelo con menos de cuatro originales que
 puedan, espera sin procesarse.
 
-**Un modelo que cambió se reprocesa entero**, no solo la foto nueva: el lienzo lo
-fija la mejor foto del modelo, y una foto que se procesara sola elegiría el suyo.
-Por eso agregar una foto de más resolución sí sube el lienzo de las demás.
+**Un modelo que cambió se reprocesa entero**, no solo la foto nueva: el lienzo
+depende de todas las fotos del modelo, y una foto que se procesara sola elegiría el
+suyo.
 
 Cada modelo queda con su `estado-fotos.json`: `apto`, `en_espera` —con cuántas
 LISTA le faltan y la razón de cada foto que falló— o `fuera_de_tanda`. El
@@ -319,7 +338,8 @@ fichas/Samsung Galaxy S25 Ultra/
 `procesar_fichas.py` no tiene estilo propio: copia las originales a
 `fichas/_estudio/crudas/<id del modelo>/`, corre `procesar.py` con `--por-producto
 --variantes --nuevas` y devuelve cada resultado a su modelo. Por `--nuevas`,
-correrlo otra vez después de soltar fotos nuevas procesa solo esas. Las hojas de
+correrlo otra vez después de soltar fotos nuevas procesa solo esas; con `--tanda`
+va en su lugar `--solo` con cada modelo entero y la compuerta del lienzo. Las hojas de
 revisión y el reporte quedan en `fichas/_estudio/salida/`, en un sitio para todos
 los modelos: ahí se revisa como siempre (paso 4) y ahí se aprueba con `marcar.py`;
 `--devolver` vuelve a copiar lo aprobado. Las REPETIR no se devuelven. Con
@@ -366,7 +386,7 @@ igual:
 | Máscara | corte en 0,2 para que la malla y el tejido entren enteros |
 | Interior | se compone opaco: alfa 1 a partir de 14 px del borde, cerrando grietas de 31 px y agujeros de menos del 0,5 % del área |
 | Tono y enfoque | apagados: el interior del producto no se retoca |
-| Lienzo por producto | escalones 2000 · 1600 · 1200 · 1000 · 800 · 600 · 480 · 400 · 320; se toma el mayor que la mejor foto alcance sin pasar de 1,25× de ampliación, y si no llega a ninguno, el menor |
+| Lienzo por producto | escalones 2000 · 1600 · 1200 · 1000 · 800 · 600 · 480 · 400 · 320; se toma el mayor que la mejor foto alcance sin pasar de 1,25× de ampliación, y si no llega a ninguno, el menor. En la tanda (`--lienzo-minimo`), el mayor de 1200 o más donde caben cuatro LISTA |
 | Web | AVIF a 10 bits con `avifenc` (a 8 bits con Pillow si no lo hay); con `--variantes`, JPEG q88 de respaldo |
 
 Los valores en píxeles están pensados para 2000 px y se escalan si cambia el lienzo.

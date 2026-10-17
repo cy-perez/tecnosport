@@ -69,6 +69,7 @@ from PIL import Image, UnidentifiedImageError, features  # noqa: E402
 import hojas  # noqa: E402
 import imagen  # noqa: E402
 import reporte  # noqa: E402
+import salidas  # noqa: E402
 
 
 # =========================================================================== utilidades
@@ -134,23 +135,6 @@ def estimar_lado_producto(ruta: Path) -> int | None:
     ys, xs = np.nonzero(cont)
     lado = max(int(ys.max() - ys.min()) + 1, int(xs.max() - xs.min()) + 1)
     return max(1, int(round(lado * factor)))
-
-
-def elegir_lienzo(lados: list[int], cfg: dict) -> int:
-    """Mayor escalón de `lienzos_escala` que el producto alcanza sin pasar de `ampliacion_tolerada`.
-
-    Si no llega a ninguno devuelve el menor: un producto con poco material se publica al máximo
-    que ese material da, en vez de quedarse fuera del catálogo.
-    """
-    escala = sorted({int(x) for x in cfg.get("lienzos_escala") or []}, reverse=True)
-    if not escala:
-        return int(cfg["lienzo"][0])
-    mejor = max([x for x in lados if x], default=0)
-    ocupacion, tolerada = float(cfg["ocupacion"]), float(cfg.get("ampliacion_tolerada", 1.0))
-    for lado in escala:
-        if mejor * tolerada >= lado * ocupacion:
-            return lado
-    return escala[-1]
 
 
 def leer_mapa(ruta: str) -> dict[str, str]:
@@ -723,6 +707,11 @@ def main() -> int:
                         "material de cada producto; se activa sola si las fotos vienen en subcarpetas")
     p.add_argument("--plano", dest="por_producto", action="store_false",
                    help="fuerza la salida plana de siempre aunque las fotos vengan en subcarpetas")
+    p.add_argument("--lienzo-minimo", type=int, metavar="PX",
+                   help="por producto: el lienzo lo elige la compuerta de la tanda —el mayor escalón de PX "
+                        "o más con --listas-minimas fotos por debajo de ampliacion_revisar— y no la mejor foto")
+    p.add_argument("--listas-minimas", type=int, default=4, metavar="N",
+                   help="con --lienzo-minimo: cuántas fotos LISTA pide la compuerta (por omisión, 4)")
     p.add_argument("--nuevas", action="store_true",
                    help="salta las fotos ya procesadas cuyo archivo de origen no ha cambiado")
     p.add_argument("--zip", action="store_true", help="empaqueta los entregables al terminar")
@@ -879,7 +868,8 @@ def ejecutar(a, raiz: Path, solo: set[str], avance: Path) -> int:
         for ruta, _, grupo in trabajos:
             lados.setdefault(grupo, []).append(estimar_lado_producto(ruta) or 0)
         for grupo, ls in lados.items():
-            lienzo_de[grupo] = elegir_lienzo(ls, cfg)
+            lienzo_de[grupo] = (salidas.elegir_lienzo_tanda(ls, cfg, a.lienzo_minimo, a.listas_minimas)
+                                if a.lienzo_minimo else salidas.elegir_lienzo(ls, cfg))
         reparto = {}
         for grupo, lado in lienzo_de.items():
             reparto[lado] = reparto.get(lado, 0) + 1

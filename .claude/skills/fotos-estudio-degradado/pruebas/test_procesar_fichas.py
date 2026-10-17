@@ -321,7 +321,7 @@ class Tanda(unittest.TestCase):
             estados, procesos = tanda(raiz, procesar=lambda: salida_de_procesar(
                 raiz, [(n, "LISTA") for n in nombres] + [(NOMBRES[3], "REPETIR")]))
             self.assertEqual(1, procesos)
-            self.assertEqual(5, len(tanda.nombres[0]), "el lienzo lo fija la mejor foto del modelo")
+            self.assertEqual(5, len(tanda.nombres[0]), "el lienzo depende de todas las fotos del modelo")
             self.assertEqual(pf.APTO, estados[MODELO]["estado"])
 
     def test_un_modelo_apto_no_se_vuelve_a_procesar(self):
