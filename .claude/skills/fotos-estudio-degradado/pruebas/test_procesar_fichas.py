@@ -205,6 +205,32 @@ def listas(raiz, nombres=NOMBRES, **kw):
     return lambda: salida_de_procesar(raiz, [(n, "LISTA") for n in nombres], **kw)
 
 
+PIEZAS = {"estado": "REVISAR", "codigo": "varias_piezas",
+          "texto": "El recorte tiene 3 piezas separadas: confirma que son un solo producto (par o kit)."}
+
+
+def con_motivos(raiz, motivos, revisadas=(), marcas=None):
+    """Cuatro fotos LISTA salvo las de `motivos`, que salen con esos motivos automáticos y el
+    estado que les daría reporte.estado_final —y `marcas`, a ojo—."""
+    marcas = marcas or {}
+
+    def procesar():
+        salida_de_procesar(raiz, [(n, "LISTA") for n in NOMBRES])
+        ruta = raiz / pf.TRABAJO / "salida" / "reporte.json"
+        datos = json.loads(ruta.read_text(encoding="utf-8"))
+        for f in datos["fotos"]:
+            if f["nombre"] not in motivos:
+                continue
+            f["motivos_auto"] = motivos[f["nombre"]]
+            f["revisada"] = {"nota": "a ojo"} if f["nombre"] in revisadas else None
+            if f["nombre"] in marcas:
+                f["marcas"] = [{"estado": "REVISAR", "motivo": marcas[f["nombre"]]}]
+            f["estado"] = "LISTA" if f["revisada"] and not f.get("marcas") else "REVISAR"
+            f["motivos"] = [] if f["estado"] == "LISTA" else [m["texto"] for m in f["motivos_auto"]]
+        ruta.write_text(json.dumps(datos), encoding="utf-8")
+    return procesar
+
+
 class Tanda(unittest.TestCase):
     def test_con_cuatro_lista_el_modelo_queda_apto_y_lo_escribe(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -399,6 +425,45 @@ class Tanda(unittest.TestCase):
             pf.sacar(raiz, None, otro, "no lo vamos a vender", "2026-10-10")
             estados, _ = tanda(raiz, ids=(otro,), fecha="2026-10-10")
             self.assertEqual(pf.FUERA, estados[otro]["estado"])
+
+    def test_en_un_kit_las_piezas_sueltas_cuentan_y_en_los_demas_no(self):
+        # Decisión del 18/10/2026: la consola con sus Joy-Con sueltos es el producto. En un modelo
+        # que no es kit, tres piezas pueden ser dos productos distintos: sigue sin contar.
+        with tempfile.TemporaryDirectory() as tmp:
+            raiz = Path(tmp)
+            armar(raiz, CUATRO)
+            procesar = con_motivos(raiz, {NOMBRES[3]: [PIEZAS]})
+            estados, _ = tanda(raiz, procesar=procesar)
+            self.assertEqual(pf.EN_ESPERA, estados[MODELO]["estado"])
+            with self.assertRaises(ValueError):
+                pf.declarar_kit(raiz, MODELO, " ")
+            pf.declarar_kit(raiz, MODELO, "consola con los Joy-Con sueltos")
+            estados, procesos = tanda(raiz, procesar=procesar)
+            self.assertEqual(0, procesos, "declarar el kit no pide otro retoque: recalcula el veredicto")
+            self.assertEqual(pf.APTO, estados[MODELO]["estado"])
+            pf.declarar_kit(raiz, MODELO, "", quitar=True)
+            estados, _ = tanda(raiz, procesar=procesar)
+            self.assertEqual(pf.EN_ESPERA, estados[MODELO]["estado"])
+
+    def test_en_un_kit_otro_reparo_o_una_marca_a_ojo_siguen_sin_contar(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            raiz = Path(tmp)
+            armar(raiz, CUATRO)
+            pf.declarar_kit(raiz, MODELO, "tablet con teclado y mouse")
+            ampliada = {"estado": "REVISAR", "codigo": "ampliacion", "texto": MOTIVO_AMPLIACION}
+            estados, _ = tanda(raiz, procesar=con_motivos(raiz, {NOMBRES[2]: [PIEZAS, ampliada],
+                                                                 NOMBRES[3]: [PIEZAS]},
+                                                          marcas={NOMBRES[3]: "se ve una mano"}))
+            self.assertEqual(2, len(estados[MODELO]["listas"]))
+
+    def test_en_un_kit_aprobar_a_ojo_las_piezas_no_la_descarta(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            raiz = Path(tmp)
+            armar(raiz, CUATRO)
+            pf.declarar_kit(raiz, MODELO, "consola con los Joy-Con sueltos")
+            estados, _ = tanda(raiz, procesar=con_motivos(raiz, {NOMBRES[3]: [PIEZAS]},
+                                                          revisadas=(NOMBRES[3],)))
+            self.assertEqual(pf.APTO, estados[MODELO]["estado"])
 
     def test_solo_procesa_los_modelos_de_la_tanda(self):
         with tempfile.TemporaryDirectory() as tmp:

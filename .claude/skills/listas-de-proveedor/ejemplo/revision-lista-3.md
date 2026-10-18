@@ -1,9 +1,9 @@
 # Revisión de la lista
 
 - Fecha de la lista: 2026-10-08
-- Productos para publicar: 90
-- Modelos distintos: 80
-- Descartados: 166
+- Productos para publicar: 89
+- Modelos distintos: 79
+- Descartados: 167
 - Duplicados fusionados: 9
 - Productos con algún supuesto aplicado: 54
 - Títulos confirmados en una lista anterior: 26
@@ -110,8 +110,6 @@
   - · asumido: título confirmado el 02/10/2026: la lista lo trae como «Samsung Band Fit 3»
 - **Honor Watch Choice 2i** — relojes — 130.000 COP
   - · asumido: título confirmado el 02/10/2026: la lista lo trae como «Honor 2i»
-- **Honor 5i** — relojes — 145.000 COP
-  - ⚠️ confirmar nombre comercial oficial del modelo
 - **Xiaomi Smart Band 9 Active** — relojes — 85.000 COP
   - ⚠️ confirmar nombre comercial oficial del modelo
 - **Xiaomi Smart Band 10** — relojes — 160.000 COP
@@ -361,6 +359,7 @@
 - S25 ULTRA 12/512 🩶💙 — sin precio de proveedor
 - S25 ULTRA 12/256💙🩶 — sin precio de proveedor
 - S25 FE  8/256 🖤💙 — sin precio de proveedor
+- HONOR 5i $145 — línea excluida (Honor Band): pulsera de actividad, no reloj inteligente
 
 ## Duplicados fusionados
 - L64: Honor X5D 4G 4GB RAM 128GB → Honor X5D 4G 4GB RAM 128GB 1 SIM

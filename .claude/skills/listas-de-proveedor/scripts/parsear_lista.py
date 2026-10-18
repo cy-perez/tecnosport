@@ -83,6 +83,22 @@ MARCAS_EXCLUIDAS = {
     "krono", "bmax", "itel", "zte", "infinix", "tecno",
 }
 
+# Líneas de producto que no se venden aunque su categoría y su marca sí (decisión
+# del negocio del 18/10/2026). Cada entrada es (categoría, patrón sobre el título
+# ya resuelto, motivo). La Honor Band es una pulsera de actividad, no un reloj
+# inteligente, y el proveedor la lista como «HONOR 5i», sin «Band», entre los
+# relojes. Las Xiaomi Smart Band y la Galaxy Fit3 siguen entrando: la decisión
+# fue solo para la línea de Honor.
+# El patrón va contra el título **después** de las equivalencias, y por eso no
+# se lleva por delante el «HONOR 2i», que es el Honor Watch Choice 2i: su
+# equivalencia le da el nombre completo antes de que el filtro lo mire. Un reloj
+# de Honor que llegue como «HONOR <número>» sin equivalencia cae aquí; si no es
+# una Band, se le escribe la equivalencia y vuelve a entrar.
+LINEAS_EXCLUIDAS = [
+    ("relojes", r"^Honor\s+(?:Band\s+)?\d+[a-z]?$",
+     "línea excluida (Honor Band): pulsera de actividad, no reloj inteligente"),
+]
+
 # Un producto que después de fusionar repetidos sigue sin precio se descarta:
 # sin costo no hay margen que calcular ni precio que publicar.
 DESCARTAR_SIN_PRECIO = True
@@ -1089,6 +1105,7 @@ def parsear(texto: str, equivalencias=None):
     productos, duplicados = fusionar_duplicados(productos)
     productos = filtrar_por_precio(productos, descartados)
     aplicar_equivalencias(productos, equivalencias or {}, descartados, duplicados)
+    productos = filtrar_lineas_excluidas(productos, descartados)
     productos = filtrar_por_datos_faltantes(productos, descartados)
     return {
         "fecha_lista": fecha,
@@ -1333,6 +1350,21 @@ def filtrar_por_precio(productos, descartados):
             descartados.append({**p, "motivo":
                                 f"marca excluida ({p['marca']}): sin precio de "
                                 f"mercado admisible en Colombia"})
+        else:
+            salida.append(p)
+    return salida
+
+
+def filtrar_lineas_excluidas(productos, descartados):
+    """Descarta las líneas de producto que el negocio no vende (`LINEAS_EXCLUIDAS`).
+
+    Va después de las equivalencias: el patrón mira el título resuelto, no el de la lista."""
+    salida = []
+    for p in productos:
+        motivo = next((m for cat, patron, m in LINEAS_EXCLUIDAS
+                       if p["categoria"] == cat and re.match(patron, p["titulo"], re.I)), None)
+        if motivo:
+            descartados.append({**p, "motivo": motivo})
         else:
             salida.append(p)
     return salida
