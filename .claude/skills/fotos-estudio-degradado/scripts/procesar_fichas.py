@@ -19,6 +19,8 @@ Uso:
     python3 procesar_fichas.py catalogo/4-entregables/fichas --tanda catalogo/5-api/por-proponer.json --devolver
     python3 procesar_fichas.py catalogo/4-entregables/fichas --tanda catalogo/5-api/por-proponer.json \\
         --sacar <id del modelo> --motivo "sin material oficial"
+    python3 procesar_fichas.py catalogo/4-entregables/fichas --tanda catalogo/5-api/por-proponer.json \\
+        --kit <id del modelo> --motivo "consola con los Joy-Con sueltos"
 
 No reimplementa nada del estilo: arma un árbol de trabajo en `<fichas>/_estudio/`
 —`crudas/<id del modelo>/` con copias de las originales—, corre `procesar.py` sobre
@@ -54,6 +56,11 @@ Para no gastar retoques en vano, y para que el veredicto sea cierto:
   marcada a ojo como REPETIR después de la tanda deja de contar.
 - **Cada foto se empareja con su registro del reporte por archivo y por huella**, no
   por nombre: un registro de una foto que ya se reemplazó no cuenta.
+- **Un kit lo declara la persona** (`--kit`, decisión del 18/10/2026): en un modelo que
+  se vende con piezas sueltas —la consola con sus Joy-Con, la tablet con teclado y
+  mouse— una foto cuyo único reparo es `varias_piezas` cuenta como LISTA. En los demás
+  modelos sigue sin contar: tres piezas o más pueden ser dos productos distintos o la
+  gama de colores, y eso no lo decide el script.
 
 Sale con 0 si la tanda está completa y con 3 si algún modelo espera fotos o el
 retoque sigue en segundo plano.
@@ -81,6 +88,9 @@ WEB = "web"
 TRABAJO = "_estudio"
 ESTADO = "estado-fotos.json"
 SACADOS = "sacados.json"          # en _estudio/: los modelos sacados que no tienen carpeta
+KITS = "kits.json"                # en _estudio/: los modelos que se venden con piezas sueltas
+# El único motivo REVISAR que un kit perdona: las piezas sueltas son el producto.
+MOTIVO_DE_KIT = "varias_piezas"
 EXT_FOTO = {".jpg", ".jpeg", ".jfif", ".png", ".webp", ".heic", ".heif", ".avif"}  # = EXTENSIONES de procesar.py
 CONFIG = Path(__file__).resolve().parent.parent / "config.json"
 
@@ -328,6 +338,36 @@ def leer_sacados(raiz: Path) -> dict:
     return json.loads(ruta.read_text(encoding="utf-8")) if ruta.is_file() else {}
 
 
+def leer_kits(raiz: Path) -> dict:
+    ruta = Path(raiz) / TRABAJO / KITS
+    return json.loads(ruta.read_text(encoding="utf-8")) if ruta.is_file() else {}
+
+
+def declarar_kit(raiz: Path, mid: str, motivo: str, quitar: bool = False) -> dict:
+    """Anota (o quita) un modelo como kit en `_estudio/kits.json`. Vale para todas las tandas:
+    un kit no deja de serlo con la lista siguiente."""
+    kits = leer_kits(raiz)
+    if quitar:
+        kits.pop(mid, None)
+    else:
+        if not motivo or not motivo.strip():
+            raise ValueError("Declarar un kit pide el motivo: qué piezas sueltas trae el producto.")
+        kits[mid] = {"motivo": motivo.strip(), "fecha": ahora()}
+    ruta = Path(raiz) / TRABAJO / KITS
+    ruta.parent.mkdir(parents=True, exist_ok=True)
+    ruta.write_text(json.dumps(kits, ensure_ascii=False, indent=2) + "\n", encoding="utf-8", newline="")
+    return kits
+
+
+def solo_piezas_sueltas(foto: dict) -> bool:
+    """Si la foto salió REVISAR únicamente por `varias_piezas`, sin marcas a ojo ni otro motivo."""
+    if foto.get("estado") != "REVISAR" or foto.get("marcas"):
+        return False
+    codigos = {m.get("codigo") for m in foto.get("motivos_auto", [])
+               if isinstance(m, dict) and m.get("estado") in ("REVISAR", "REPETIR")}
+    return codigos == {MOTIVO_DE_KIT}
+
+
 def ahora() -> str:
     return datetime.now(timezone.utc).isoformat(timespec="seconds")
 
@@ -340,8 +380,10 @@ def texto_de_motivo(m) -> str:
     return (m or {}).get("texto") or (m or {}).get("codigo", "")
 
 
-def evaluar(mid: str, carpeta: Path, reporte: dict, cfg: dict) -> dict:
-    """Las fotos LISTA del modelo según el reporte, y la razón de cada una que no lo es."""
+def evaluar(mid: str, carpeta: Path, reporte: dict, cfg: dict, kit: bool = False) -> dict:
+    """Las fotos LISTA del modelo según el reporte, y la razón de cada una que no lo es.
+
+    En un kit, una REVISAR cuyo único motivo son las piezas sueltas cuenta como LISTA."""
     registros = reporte.get("fotos", [])
     buenas, _ = unicas(carpeta)
     listas, fallidas = [], []
@@ -353,14 +395,18 @@ def evaluar(mid: str, carpeta: Path, reporte: dict, cfg: dict) -> dict:
                                        "(pip install pillow-heif); si no, se reintenta en la próxima corrida"})
             continue
         estado = foto.get("estado")
+        if kit and solo_piezas_sueltas(foto):
+            estado = "LISTA"
         lienzo = int((foto.get("lienzo") or [0])[0])
         motivos = "; ".join(texto_de_motivo(m) for m in foto.get("motivos", []))
-        # Una aprobación a ojo solo pesa si había algo que aprobar: un REVISAR automático.
-        aprobada_a_ojo = bool(foto.get("revisada")) and any(
-            isinstance(m, dict) and m.get("estado") == "REVISAR" for m in foto.get("motivos_auto", []))
+        # Una aprobación a ojo solo pesa si había algo que aprobar: un REVISAR automático. En un
+        # kit, las piezas sueltas no son algo que aprobar.
+        reparos = [m for m in foto.get("motivos_auto", [])
+                   if isinstance(m, dict) and m.get("estado") == "REVISAR"
+                   and not (kit and m.get("codigo") == MOTIVO_DE_KIT)]
+        aprobada_a_ojo = bool(foto.get("revisada")) and bool(reparos)
         if estado == "LISTA" and aprobada_a_ojo:
-            motivos_auto = "; ".join(m.get("texto", "") for m in foto.get("motivos_auto", [])
-                                     if isinstance(m, dict) and m.get("estado") == "REVISAR")
+            motivos_auto = "; ".join(m.get("texto", "") for m in reparos)
             fallidas.append({"foto": original.name, "estado": "REVISAR",
                              "motivo": "salió REVISAR y se aprobó a ojo; para la tanda solo cuenta una LISTA"
                                        + (f" ({motivos_auto})" if motivos_auto else "")})
@@ -384,7 +430,7 @@ def _evaluado_de_verdad(previo: dict) -> bool:
 
 
 def decidir(mid: str, carpeta, cfg: dict, reporte=None, medidor=medir, fecha_tanda=None,
-            sacados=None) -> tuple:
+            sacados=None, kits=None) -> tuple:
     """(estado del modelo, ¿hay que procesarlo?). Sin `reporte` solo decide lo que se sabe antes de procesar.
 
     Con `reporte` siempre recalcula el veredicto —salvo el de un modelo sacado—: lo que se marcó
@@ -419,7 +465,7 @@ def decidir(mid: str, carpeta, cfg: dict, reporte=None, medidor=medir, fecha_tan
         return dict(base, estado=EN_ESPERA, listas=[], faltan=MINIMO_LISTA, fallidas=antes["fallidas"],
                     motivo="por procesar"), True
 
-    ev = evaluar(mid, carpeta, reporte, cfg)
+    ev = evaluar(mid, carpeta, reporte, cfg, kit=mid in (kits or {}))
     vistas = {x["foto"] for x in antes["fallidas"]}
     fallidas = antes["fallidas"] + [f for f in ev["fallidas"] if f["foto"] not in vistas]
     if len(ev["listas"]) >= MINIMO_LISTA:
@@ -492,6 +538,7 @@ def correr_tanda(raiz: Path, ids: list, cfg: dict, procesar_fn, solo_devolver=Fa
     segundo plano."""
     por_id = modelos(raiz, set(ids))
     sacados = leer_sacados(raiz)
+    kits = leer_kits(raiz)
     decisiones = {}
     if not solo_devolver:
         decisiones = {mid: decidir(mid, por_id.get(mid), cfg, None, medidor, fecha_tanda, sacados)
@@ -508,7 +555,7 @@ def correr_tanda(raiz: Path, ids: list, cfg: dict, procesar_fn, solo_devolver=Fa
     reporte = leer_reporte(raiz)
     estados = []
     for mid in ids:
-        estado, _ = decidir(mid, por_id.get(mid), cfg, reporte, medidor, fecha_tanda, sacados)
+        estado, _ = decidir(mid, por_id.get(mid), cfg, reporte, medidor, fecha_tanda, sacados, kits)
         if mid in decisiones and decisiones[mid][0].get("sin_cambios"):
             # Se dice aunque se reevalúe: quien confirmó fotos nuevas tiene que saber que no llegaron.
             estado = dict(estado, sin_cambios=True)
@@ -536,7 +583,10 @@ def main() -> int:
                     help="solo copia a cada modelo lo que ya está en _estudio/salida (tras un --segundo-plano)")
     ap.add_argument("--segundo-plano", action="store_true", help="lanza procesar.py desacoplado y sale")
     ap.add_argument("--sacar", metavar="ID", help="con --tanda: saca ese modelo de la tanda")
-    ap.add_argument("--motivo", help="con --sacar: por qué, queda escrito en su estado")
+    ap.add_argument("--kit", metavar="ID", help="con --tanda: ese modelo se vende con piezas sueltas, y "
+                                                "sus fotos con varias piezas cuentan como LISTA")
+    ap.add_argument("--quitar-kit", metavar="ID", help="con --tanda: deshace un --kit")
+    ap.add_argument("--motivo", help="con --sacar o --kit: por qué, queda escrito")
     a = ap.parse_args()
     raiz = Path(a.fichas)
     base = [sys.executable, str(Path(__file__).with_name("procesar.py")), str(raiz / TRABAJO / "crudas"),
@@ -561,6 +611,15 @@ def main() -> int:
                 print(f"{a.sacar} no está en la tanda.")
                 return 1
             print(informe([sacar(raiz, modelos(raiz, {a.sacar}).get(a.sacar), a.sacar, a.motivo or "", fecha)]))
+            return 0
+        if a.kit or a.quitar_kit:
+            mid = a.kit or a.quitar_kit
+            if mid not in ids:
+                print(f"{mid} no está en la tanda.")
+                return 1
+            declarar_kit(raiz, mid, a.motivo or "", quitar=bool(a.quitar_kit))
+            print(f"{mid}: {'ya no es un kit' if a.quitar_kit else 'kit, sus piezas sueltas cuentan'}. "
+                  "Vuelve a correr la tanda para recalcular su veredicto.")
             return 0
         if a.devolver and retoque_en_curso(raiz):
             print("El retoque sigue en segundo plano: espera a que termine y vuelve a correr --devolver.")

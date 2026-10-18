@@ -303,6 +303,27 @@ si después aparecen fotos nuevas en su carpeta, o llega la tanda de otra lista,
 vuelve a intentarse. Un modelo que ni siquiera tiene carpeta también se puede
 sacar; queda anotado en `_estudio/sacados.json`.
 
+**Un kit también lo declara la persona** (decisión del 18/10/2026). Hay productos que
+se venden con piezas sueltas —la consola con sus Joy-Con, la tablet con teclado y
+mouse— y su foto de catálogo las muestra separadas: el recorte encuentra tres piezas o
+más y la marca REVISAR (`varias_piezas`), que para la tanda no cuenta. Declarado el
+modelo como kit, **esa foto cuenta como LISTA si las piezas sueltas son su único
+reparo**: una ampliación de más, un borde dudoso o una marca a ojo la siguen dejando
+fuera. En los demás modelos no cambia nada, porque tres piezas también pueden ser dos
+productos distintos o la gama de colores, y eso lo decide una persona, no el script.
+Si en la hoja ves un modelo esperando solo por `varias_piezas`, pregúntale a la persona
+si es un kit; no lo declares por tu cuenta.
+
+```bash
+python3 "${CLAUDE_SKILL_DIR}/scripts/procesar_fichas.py" catalogo/4-entregables/fichas \
+    --tanda catalogo/5-api/por-proponer.json --kit <id del modelo> --motivo "consola con los Joy-Con sueltos"
+```
+
+Queda en `_estudio/kits.json` y vale para todas las tandas; `--quitar-kit <id>` lo
+deshace. No pide otro retoque: la siguiente corrida de la tanda recalcula el veredicto
+contra el reporte. La hoja de revisión sigue mostrando la foto como REVISAR —el retoque
+no sabe de kits—, así que en la revisión a ojo confirma que las piezas son las del kit.
+
 **Con «lo retomo después»**, la espera queda guardada en el `estado-fotos.json`
 de cada modelo: la sesión siguiente corre la misma orden y sigue desde ahí, sin
 reprocesar lo que ya salió LISTA.
@@ -622,7 +643,7 @@ que revisar y por qué, y cuáles hay que repetir y cómo. No copies el reporte.
 | Estado | Motivos automáticos |
 |---|---|
 | REPETIR | archivo dañado o no soportado · producto cortado por el encuadre · ampliación ≥ 2× · recorte vacío o que desaparece al escalar |
-| REVISAR | ampliación ≥ 1,6× · bordes inciertos en más del 8 % del producto · producto parecido a su fondo original en más del 20 % del contorno · producto confundido con el fondo nuevo en más del 25 % del contorno · fragmento descartado apreciable · 3 piezas o más · PNG recortado que llega al borde |
+| REVISAR | ampliación ≥ 1,6× · bordes inciertos en más del 8 % del producto · producto parecido a su fondo original en más del 20 % del contorno · producto confundido con el fondo nuevo en más del 25 % del contorno · fragmento descartado apreciable · 3 piezas o más (en la tanda, un kit declarado las cuenta como LISTA) · PNG recortado que llega al borde |
 | LISTA | ninguno de los anteriores |
 
 Manda el motivo más grave y las marcas a ojo se suman a las automáticas. Las
