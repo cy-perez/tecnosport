@@ -1,9 +1,9 @@
 # Revisión de la lista
 
 - Fecha de la lista: 2026-09-12
-- Productos para publicar: 37
-- Modelos distintos: 37
-- Descartados: 96
+- Productos para publicar: 36
+- Modelos distintos: 36
+- Descartados: 97
 - Duplicados fusionados: 0
 - Productos con algún supuesto aplicado: 19
 - Títulos confirmados en una lista anterior: 11
@@ -17,8 +17,6 @@
   - · asumido: título confirmado el 02/10/2026: la lista lo trae como «Samsung Band Fit 3»
 - **Honor Watch Choice 2i** — relojes — 130.000 COP
   - · asumido: título confirmado el 02/10/2026: la lista lo trae como «Honor 2i»
-- **Honor 5i** — relojes — 155.000 COP
-  - ⚠️ confirmar nombre comercial oficial del modelo
 - **Xiaomi Smart Band 9 Active** — relojes — 85.000 COP
   - ⚠️ confirmar nombre comercial oficial del modelo
 - **Xiaomi Smart Band 10** — relojes — 160.000 COP
@@ -191,3 +189,4 @@
 - *LAPTOP ASUS INTEL i5 1334U (12 DDR4 +512 SSD) 15.6" $1.850* — computador sin referencia en la lista
 - *COMPUTADOR TODO EN UNO RYZEN 3 7320U* °8RAM / °512GB *$1.75 — computador sin marca ni referencia en la lista
 - *COMPUTADOR TODO EN UNO RYZEN 5 7520U* °8RAM / °512GB *$1.95 — computador sin marca ni referencia en la lista
+- HONOR 5i $155 — línea excluida (Honor Band): pulsera de actividad, no reloj inteligente

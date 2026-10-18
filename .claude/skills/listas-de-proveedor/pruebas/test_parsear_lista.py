@@ -585,5 +585,21 @@ class Modelo(unittest.TestCase):
         self.assertEqual(("OPPO", "OPPO A6C 4GB RAM 128GB"), (p["marca"], p["titulo"]))
 
 
+class LineasExcluidas(unittest.TestCase):
+    # Decisión del 18/10/2026: la Honor Band no se vende; las demás bandas, sí.
+    LISTA = "*RELOJES ORIGINALES*\n⌚HONOR 5i $155\n⌚HONOR BAND 9 $180\n⌚HONOR 2i $130\n" \
+            "⌚XIAOMI SMART BAND 10 $160\n"
+
+    def test_la_honor_band_queda_por_fuera_con_su_motivo(self):
+        datos = parsear(self.LISTA, parsear_lista.cargar_equivalencias())
+        fuera = {d["titulo"]: d["motivo"] for d in datos["descartados"]}
+        self.assertEqual({"Honor 5i", "Honor Band 9"}, set(fuera))
+        self.assertIn("Honor Band", fuera["Honor 5i"])
+
+    def test_el_honor_2i_es_un_reloj_y_la_xiaomi_smart_band_sigue_entrando(self):
+        datos = parsear(self.LISTA, parsear_lista.cargar_equivalencias())
+        self.assertEqual(["Honor Watch Choice 2i", "Xiaomi Smart Band 10"], sorted(titulos(datos)))
+
+
 if __name__ == "__main__":
     unittest.main()

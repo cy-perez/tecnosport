@@ -122,6 +122,15 @@ lista:
     poner el esfuerzo, no un juicio sobre el producto: si algún día una de
     estas marcas entra a Alkosto o a Éxito, se saca de la lista y vuelve a
     entrar al análisis.
+    **Tampoco la Honor Band** (decisión del 18/10/2026), aunque la marca sí se
+    vende: es una pulsera de actividad, no un reloj inteligente. El proveedor
+    la lista entre los relojes como «HONOR 5i», sin «Band». Está en
+    `LINEAS_EXCLUIDAS`, que filtra por categoría y título **después** de las
+    equivalencias: por eso el «HONOR 2i», que es el Honor Watch Choice 2i, no
+    cae, y un reloj de Honor que llegue como «HONOR <número>» sin equivalencia
+    sí cae —si no es una Band, se le escribe la equivalencia y vuelve a entrar—.
+    Las Xiaomi Smart Band y la Galaxy Fit3 siguen entrando: la decisión fue solo
+    para la línea de Honor.
 13. **Los colores se publican asumiendo que el proveedor tiene todos los de la
     ficha.** Las listas casi nunca marcan color —en una lista real de 121
     productos solo 2 líneas traían emojis de color—, y esperar a que el
@@ -232,7 +241,7 @@ lista:
 
 Si el negocio cambia de opinión, se ajustan `CATEGORIAS_INCLUIDAS`,
 `CONDICIONES_PUBLICABLES`, `PRECIO_MINIMO_CELULAR_COP`, `DESCARTAR_SIN_PRECIO`,
-`DESCARTAR_COMPUTADOR_SIN_REFERENCIA`, `MARCAS_EXCLUIDAS` o `DATOS_DEL_PROVEEDOR` al inicio
+`DESCARTAR_COMPUTADOR_SIN_REFERENCIA`, `MARCAS_EXCLUIDAS`, `LINEAS_EXCLUIDAS` o `DATOS_DEL_PROVEEDOR` al inicio
 de `scripts/parsear_lista.py`, y `MARGEN_MINIMO` en `scripts/margen.py`.
 
 ## Dónde está corriendo esta skill
