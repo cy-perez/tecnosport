@@ -255,6 +255,16 @@ ni ahí sale una, la regla de siempre. El lienzo se decide con una estimación d
 tamaño del producto antes del recorte: un modelo justo en el borde puede quedarse
 con tres. La compuerta lo detiene igual, sin que nada pase de más.
 
+**La estimación mide contra el fondo de cada foto, no contra el blanco**
+(`estimador.py`, 18/10/2026). Hasta esa fecha el contenido era «lo más oscuro que
+247», y el material de Apple llega sobre gris #F5F5F7: el iPhone 18 Pro, de 712 px
+en un cuadro de 1000, «medía» 1000, la tanda elegía 1600 y salía a 1,91×, en
+REVISAR; en 1200 sale a 1,43×, LISTA. Ahora el fondo se lee en un anillo junto al
+borde —saltando el filete oscuro que trae ese material— y un PNG o WebP recortado
+se mide por su alfa, porque lo transparente puede guardar negro y la foto entera
+pasaba por producto. Si el anillo no es un fondo de estudio (oscuro, o menos del
+60 % parejo: una mesa, una cama), se toma la foto entera, como antes.
+
 **Antes de gastar un retoque**, el script mide las originales: una foto cuyo lado
 mayor no llega a 638 px (1200 × 0,85 / 1,6) no puede salir LISTA, porque el
 producto nunca mide más que la foto. Un modelo con menos de cuatro originales que
@@ -701,6 +711,7 @@ bordes poco separados en pocos tramos) son informativas y no cambian el estado.
 | `ampliar.py` | Zonas al 100 % y foto original con cuadrícula |
 | `marcar.py` | Marcas a ojo, aprobaciones, exclusiones y ZIP |
 | `verificar.py` | Criterios de aceptación releyendo los archivos |
+| `estimador.py` | Tamaño del producto antes del recorte, para elegir el lienzo |
 | `hojas.py` | Regenera las hojas de revisión desde el reporte |
 | `fondo.py` | Genera o verifica la plantilla del fondo |
 | `entorno.py` | Diagnóstico del entorno y comando exacto de instalación |

@@ -67,6 +67,7 @@ import cv2  # noqa: E402
 import numpy as np  # noqa: E402
 from PIL import Image, UnidentifiedImageError, features  # noqa: E402
 
+import estimador  # noqa: E402
 import hojas  # noqa: E402
 import imagen  # noqa: E402
 import reporte  # noqa: E402
@@ -106,36 +107,6 @@ def recolectar(entradas: list[str], excluir: Path) -> list[tuple[Path, str]]:
             padres = x.relative_to(p).parts[:-1] if p.is_dir() else ()
             rutas.append((x, slug(padres[-1]) if padres else ""))
     return rutas
-
-
-def estimar_lado_producto(ruta: Path) -> int | None:
-    """Lado mayor del contenido, antes de recortar: sirve para elegir el lienzo sin gastar el recorte.
-
-    Mide la caja de lo que no es fondo claro. Si el fondo no es claro —una foto sobre una mesa—
-    devuelve la imagen entera, que es la estimación conservadora: el lienzo sale mayor, no menor,
-    y la ampliación real la sigue reportando el aviso de escala tras el recorte.
-    """
-    try:
-        with Image.open(ruta) as im:
-            W0, H0 = im.size
-            if not W0 or not H0:
-                return None
-            g = im.convert("L")
-            if max(W0, H0) > 800:
-                k = 800 / max(W0, H0)
-                g = g.resize((max(1, round(W0 * k)), max(1, round(H0 * k))), Image.BILINEAR)
-            arr = np.asarray(g, np.int16)
-    except Exception:
-        return None
-    if arr.size == 0:
-        return None
-    factor = max(W0, H0) / max(arr.shape)
-    cont = arr < 247
-    if cont.sum() < 20:
-        return max(W0, H0)
-    ys, xs = np.nonzero(cont)
-    lado = max(int(ys.max() - ys.min()) + 1, int(xs.max() - xs.min()) + 1)
-    return max(1, int(round(lado * factor)))
 
 
 def leer_mapa(ruta: str) -> dict[str, str]:
@@ -865,7 +836,7 @@ def ejecutar(a, raiz: Path, solo: set[str], avance: Path) -> int:
     if por_producto:
         lados: dict[str, list[int]] = {}
         for ruta, _, grupo in trabajos:
-            lados.setdefault(grupo, []).append(estimar_lado_producto(ruta) or 0)
+            lados.setdefault(grupo, []).append(estimador.estimar_lado_producto(ruta) or 0)
         for grupo, ls in lados.items():
             lienzo_de[grupo] = (salidas.elegir_lienzo_tanda(ls, cfg, a.lienzo_minimo, a.listas_minimas)
                                 if a.lienzo_minimo else salidas.elegir_lienzo(ls, cfg))
