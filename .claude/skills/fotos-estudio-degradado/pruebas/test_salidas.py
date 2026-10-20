@@ -102,5 +102,16 @@ class ConfigDeLaSkill(unittest.TestCase):
         self.assertEqual(638, pf.lado_minimo(pf.cargar_config()))
 
 
+
+class LienzoPrevio(unittest.TestCase):
+    def test_conserva_el_lienzo_con_que_ya_se_procesaron_las_fotos_del_producto(self):
+        registros = [{"grupo": "iphone", "lienzo": [1200, 1200]}, {"grupo": "iphone", "lienzo": [1200, 1200]},
+                     {"grupo": "iphone", "lienzo": [1600, 1600]}, {"grupo": "otro", "lienzo": [2000, 2000]}]
+        self.assertEqual(1200, salidas.lienzo_previo(registros, "iphone"))
+
+    def test_sin_fotos_previas_no_impone_nada(self):
+        self.assertIsNone(salidas.lienzo_previo([{"grupo": "otro", "lienzo": [2000, 2000]}], "iphone"))
+
+
 if __name__ == "__main__":
     unittest.main()
