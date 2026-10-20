@@ -12,7 +12,7 @@ cumple y 1 si algo falla. Los «✗» son fallos y los «·» son avisos.
 | Web | cada archivo se decodifica y mide lo que dice su nombre; las JPEG sin metadatos; aviso si superan su peso objetivo |
 | Encuadre | lado mayor al 85 % del lienzo de la foto (1700 ± 2 px en 2000) y centro a ≤ 2 px, medidos de nuevo sobre la máscara guardada en `.trabajo/mascaras/` |
 | Fondo | esquinas en el color de `fondo_esquinas` ± 3 niveles: hoy #FFFFFF, porque el fondo es blanco plano |
-| Color | Δcroma ≤ 2: distancia media en el plano a*b* (Lab) entre la foto original y la maestra decodificada, dentro del producto |
+| Color | Δcroma ≤ 2: distancia media en el plano a*b* (Lab) entre la foto original y la maestra decodificada, dentro del producto. Lo mide `procesar.py`, junto con `interior_alterado`: la fracción del interior a más de 10 ΔE del original, luminancia incluida (máximo 1 %), que es la que ve una mancha gris sobre una pantalla blanca |
 | Estados | ampliación ≥ 2× o producto cortado deben ser REPETIR; ampliación ≥ 1,6× (`ampliacion_revisar`) no puede ser LISTA sin aprobación; ninguna REPETIR puede tener archivos en las carpetas de entrega |
 | Configuración | aviso si una foto se procesó con parámetros distintos a los del resto |
 
@@ -30,7 +30,11 @@ Por foto:
   `notas`: datos informativos que no cambian el estado.
 - `entrada`: formato, tamaño, orientación EXIF, calidad JPEG estimada y perfil ICC.
 - `recorte`: método, lados tocados, islas descartadas, piezas, `bordes_inciertos`
-  (fracción del producto con alfa entre 0,15 y 0,85) y `contraste_original`.
+  (fracción del producto con alfa entre 0,15 y 0,85) y `contraste_original`;
+  `completado` (huecos y muescas devueltos al producto, si el fondo de la foto se pudo leer,
+  si iba con `--sin-huecos` y el porcentaje del área que se rellenó) y `huecos_encerrados`
+  (los que quedan en el lienzo, como fracción del producto).
+- `interior_alterado`: fracción del interior que se aparta del original más de 10 ΔE.
 - `escala`, `caja_origen` (en la foto) y `caja_producto` (en el lienzo, con el
   desvío del centro).
 - `tono`: EV aplicado, punto negro, recortes nuevos de blancos y negros, y el

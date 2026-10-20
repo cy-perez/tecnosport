@@ -175,6 +175,7 @@ class Contexto:
         self.sombra_rgb = np.array(imagen.hex_a_rgb(cfg["sombra_color"]), np.float32) / 255.0
         self.trabajo = raiz / reporte.TRABAJO
         self.grupo = ""          # producto en curso; vacío = salida plana
+        self.sin_huecos = False  # el producto en curso no tiene huecos pasantes (celular, tablet)
         self._rec = None
 
     def carpeta_maestra(self) -> Path:
@@ -255,15 +256,18 @@ def procesar_foto(ctx: Contexto, ruta: Path, nombre: str, previo: dict) -> dict:
     else:
         m = imagen.mascara_dos_pasadas(ctx.rec, rgb)
         metodo = f"rembg:{cfg['modelo_recorte']}"
+    excluido = None
     if reg["exclusiones"]:
         area = float((m > 0.5).sum())
         quitado = 0.0
+        excluido = np.zeros(m.shape, bool)
         for zona in reg["exclusiones"]:
             x0, y0, x1, y1 = [int(round(v)) for v in zona]
             x0, x1 = sorted((max(0, min(Wo, x0)), max(0, min(Wo, x1))))
             y0, y1 = sorted((max(0, min(Ho, y0)), max(0, min(Ho, y1))))
             quitado += float((m[y0:y1, x0:x1] > 0.5).sum())
             m[y0:y1, x0:x1] = 0
+            excluido[y0:y1, x0:x1] = True
         notas.append(f"Se excluyeron {len(reg['exclusiones'])} zona(s) marcada(s) a mano "
                      f"({100 * quitado / max(area, 1):.1f} % del recorte).")
     m, adornos = imagen.quitar_adornos(m, rgb, cfg)
@@ -277,6 +281,26 @@ def procesar_foto(ctx: Contexto, ruta: Path, nombre: str, previo: dict) -> dict:
     a = m if alfa_png is not None else imagen.niveles_alfa(m)
     recorte = {"metodo": metodo, "toca_borde": False, "lados": [], **islas, **adornos}
     reg["recorte"] = recorte
+    # ---- 5.2a lo que el recorte dejó fuera dentro del producto vuelve a él (20/10/2026): la
+    # pantalla clara de un celular, la tapa blanca mordida. Un PNG recortado no: su alfa es de quien
+    # lo recortó, y lo transparente puede guardar cualquier color.
+    fondo_foto = None
+    if alfa_png is None:
+        # lo que la persona excluyó a mano no vuelve como «hueco» ni como «muesca»
+        a, completado = imagen.completar_producto(a, rgb, ctx.sin_huecos,
+                                                  float(cfg.get("alfa_umbral_binario", 0.5)), excluido)
+        fondo_foto = completado.pop("fondo")
+        recorte["completado"] = completado
+        if completado["relleno_pct"] > 0:
+            partes = []
+            if completado["huecos_rellenos"]:
+                partes.append(f"{completado['huecos_rellenos']} hueco(s) encerrado(s)")
+            if completado["muescas_rellenas"]:
+                partes.append(f"{completado['muescas_rellenas']} muesca(s) del contorno")
+            notas.append(f"El recorte había dejado fuera {' y '.join(partes)} dentro del producto "
+                         f"({completado['relleno_pct']:.1f} % de su área); se devolvieron con los píxeles "
+                         "de la foto original" + (" —en un celular o una tablet, lo encerrado es la "
+                                                  "pantalla—." if ctx.sin_huecos else "."))
     caja0 = imagen.caja(a, cfg["alfa_caja_min"])
     if caja0 is None:
         motivo("REPETIR", "sin_producto", "No se encontró el producto en la foto (el recorte quedó vacío).")
@@ -374,7 +398,7 @@ def procesar_foto(ctx: Contexto, ruta: Path, nombre: str, previo: dict) -> dict:
         F, ar = imagen.redim_premultiplicado(F0, a_c, nw, nh)
         ref_c = np.clip(imagen.redim(img_c, nw, nh), 0, 1)
     foto.clear()
-    del rgb, m, a
+    del rgb, m, a, excluido
     if descontaminado is False:
         avisos.append("No se pudo descontaminar el borde (pymatting): puede quedar un halo del fondo original.")
     ac = imagen.contraer(ar, contr)
@@ -408,13 +432,30 @@ def procesar_foto(ctx: Contexto, ruta: Path, nombre: str, previo: dict) -> dict:
         ac, subidos = imagen.solidificar_interior(
             ac, banda, float(cfg.get("alfa_agujero_max_frac", 0)),
             float(cfg.get("alfa_umbral_binario", 0.5)),
-            float(cfg.get("alfa_cierre_px", 0)) * fpx)
+            float(cfg.get("alfa_cierre_px", 0)) * fpx,
+            imagen.mapa_de_fondo(ref_c, fondo_foto))
         recorte["alfa_interior_subido"] = subidos
         if subidos > cfg.get("alfa_interior_aviso", 0.25):
             avisos.append(
                 f"El recorte dejaba alfa parcial en el {100 * subidos:.0f} % del interior y se "
                 "compuso opaco. Si el producto es transparente o espejado de verdad, revísalo "
                 "a tamaño real: ahí la opacidad sí cambia lo que se ve.")
+        # Dentro de la silueta, los píxeles del original: lo descontaminado se queda en el borde.
+        # En un PNG recortado no: bajo su transparencia puede haber cualquier color, y el cierre de
+        # grietas llevaría ese color al producto.
+        if alfa_png is None:
+            F = imagen.interior_con_el_original(F, ref_c, ac, banda)
+    interior = imagen.contraer((ac >= 0.99).astype(np.float32), 3 * fpx) > 0.5
+    if interior.sum() < 200:
+        interior = ac >= 0.99
+    # Donde se mide si el interior cambió: la silueta con sus huecos, salvo los que en la foto son
+    # fondo (el aro de una correa). Por un hueco que no lo es se ve la sombra, y eso es lo que
+    # tiene que saltar; con el alfa ≥ 0,99 solo, el hueco quedaba fuera de la medición.
+    silueta = imagen.rellenar_huecos(ac >= 0.5)
+    abierto = imagen.mapa_de_fondo(ref_c, fondo_foto)
+    if abierto is not None:
+        silueta &= ~(abierto & (ac < 0.5))
+    vigilado = imagen.contraer(silueta.astype(np.float32), max(3 * fpx, banda)) > 0.5
 
     # ---- 5.3 tono (sólo L*) y enfoque después de redimensionar
     F2, tono = imagen.corregir_tono(F, ac, cfg["tono"], fpx)
@@ -467,6 +508,20 @@ def procesar_foto(ctx: Contexto, ruta: Path, nombre: str, previo: dict) -> dict:
         notas.append(f"El borde apenas se distingue del fondo nuevo en {sep['sin_separacion']} de {sep['sectores']} "
                      f"tramos ({donde_texto(sep)}).")
 
+    # Un hueco encerrado deja ver la sombra de contacto a través del producto: en un celular o una
+    # tablet no hay huecos pasantes, así que uno que quede es un defecto; en lo demás puede ser un asa.
+    huecos = imagen.huecos_encerrados(alfa_l, 0.5, float(cfg.get("alfa_agujero_max_frac", 0.005)))
+    recorte["huecos_encerrados"] = huecos
+    if huecos and ctx.sin_huecos:
+        motivo("REVISAR", "hueco_interior", f"Quedó un hueco dentro del equipo ({100 * huecos[0]:.1f} % de su "
+                                            "área): por ahí se ve la sombra del fondo. Compáralo con la foto "
+                                            "original a tamaño real.")
+    elif huecos:
+        por_que = ("en la foto original son del color del fondo" if fondo_foto is not None
+                   else "no se pudo comparar con el fondo de la foto")
+        notas.append(f"El producto tiene {len(huecos)} hueco(s) abierto(s) (el mayor, {100 * huecos[0]:.1f} % de "
+                     f"su área): {por_que}. Confirma que es un asa o una correa.")
+
     (ctx.trabajo / "mascaras").mkdir(parents=True, exist_ok=True)
     Image.fromarray(imagen.a_8bits(alfa_l), "L").save(ctx.trabajo / "mascaras" / f"{nombre}.png", optimize=True)
     imagen.miniatura(img8, hojas.MINI).save(hojas.ruta_miniatura(ctx.raiz, nombre, "despues"), quality=90)
@@ -509,6 +564,21 @@ def procesar_foto(ctx: Contexto, ruta: Path, nombre: str, previo: dict) -> dict:
     else:
         reg["delta_croma"] = 0.0
         notas.append("El producto es tan fino que no hay interior para medir la crominancia.")
+    # La crominancia sola no ve una mancha gris sobre una pantalla blanca: el gris no tiene croma.
+    ys, xs = np.nonzero(vigilado)
+    Y, X = ys + oy, xs + ox
+    dentro = (Y >= 0) & (Y < H) & (X >= 0) & (X < W)
+    ys, xs, Y, X = ys[dentro], xs[dentro], Y[dentro], X[dentro]
+    if len(ys) > 400_000:
+        paso = int(math.ceil(len(ys) / 400_000))
+        ys, xs, Y, X = ys[::paso], xs[::paso], Y[::paso], X[::paso]
+    if len(ys):
+        alterado = imagen.fraccion_alterada(ref_c[ys, xs], dec[Y, X])
+        reg["interior_alterado"] = alterado
+        if alterado > imagen.ALTERADO_MAXIMO:
+            motivo("REVISAR", "interior_alterado",
+                   f"El {100 * alterado:.1f} % del interior del producto no coincide con la foto original "
+                   f"(ΔE > {imagen.ALTERADO_DE:.0f}): compáralos a tamaño real.")
     return cerrar()
 
 
@@ -681,6 +751,12 @@ def main() -> int:
                         "o más con --listas-minimas fotos por debajo de ampliacion_revisar— y no la mejor foto")
     p.add_argument("--listas-minimas", type=int, default=4, metavar="N",
                    help="con --lienzo-minimo: cuántas fotos LISTA pide la compuerta (por omisión, 4)")
+    p.add_argument("--sin-huecos", action="append", default=[], metavar="PRODUCTOS",
+                   help="productos (subcarpetas, separados por coma) sin huecos pasantes —celulares y "
+                        "tablets—: todo hueco que el recorte encierre en ellos se devuelve al producto")
+    p.add_argument("--conservar-lienzo", action="store_true",
+                   help="por producto: reprocesa con el lienzo que el producto ya tiene en el reporte, "
+                        "aunque solo se procesen algunas de sus fotos")
     p.add_argument("--nuevas", action="store_true",
                    help="salta las fotos ya procesadas cuyo archivo de origen no ha cambiado")
     p.add_argument("--zip", action="store_true", help="empaqueta los entregables al terminar")
@@ -694,6 +770,7 @@ def main() -> int:
         p.error("falta -o SALIDA")
     raiz = Path(a.salida).resolve()
     solo = {slug(x) for grupo in a.solo for x in grupo.split(",") if x.strip()}
+    a.sin_huecos = {slug(x) for grupo in a.sin_huecos for x in grupo.split(",") if x.strip()}
     if not a.entradas and not solo:
         p.error("indica fotos o carpetas (o --solo NOMBRES para reprocesar lo que ya está en el reporte)")
     if a.segundo_plano:
@@ -840,6 +917,12 @@ def ejecutar(a, raiz: Path, solo: set[str], avance: Path) -> int:
         for grupo, ls in lados.items():
             lienzo_de[grupo] = (salidas.elegir_lienzo_tanda(ls, cfg, a.lienzo_minimo, a.listas_minimas)
                                 if a.lienzo_minimo else salidas.elegir_lienzo(ls, cfg))
+        if a.conservar_lienzo:
+            # Reprocesar unas pocas fotos de un producto no debe moverle el lienzo a las demás.
+            for grupo in lienzo_de:
+                anterior = salidas.lienzo_previo(previas.values(), grupo)
+                if anterior:
+                    lienzo_de[grupo] = anterior
         reparto = {}
         for grupo, lado in lienzo_de.items():
             reparto[lado] = reparto.get(lado, 0) + 1
@@ -847,6 +930,7 @@ def ejecutar(a, raiz: Path, solo: set[str], avance: Path) -> int:
         print(f"Salida por producto: {len(lienzo_de)} producto(s), lienzo según su material ({detalle})")
 
     contextos: dict[int, Contexto] = {}
+    sin_huecos = a.sin_huecos
 
     def contexto_de(lado: int) -> Contexto:
         if lado not in contextos:
@@ -880,6 +964,7 @@ def ejecutar(a, raiz: Path, solo: set[str], avance: Path) -> int:
     for i, (ruta, nombre, grupo) in enumerate(trabajos, 1):
         activo = contexto_de(lienzo_de.get(grupo, int(cfg["lienzo"][0]))) if por_producto else ctx
         activo.grupo = grupo if por_producto else ""
+        activo.sin_huecos = grupo in sin_huecos
         etiqueta = f"{grupo}/{nombre}" if activo.grupo else nombre
         print(f"[{i}/{len(trabajos)}] {ruta.name} → {etiqueta}"
               + (f"  [lienzo {activo.ancho}]" if por_producto else ""), flush=True)

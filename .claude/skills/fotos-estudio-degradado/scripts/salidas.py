@@ -84,3 +84,19 @@ def anchos_web(cfg: dict, lienzo: int, por_producto: bool) -> list[tuple[int, li
         anchos.add(int(lienzo))
     por_ancho = cfg.get("formatos_por_ancho") or {}
     return [(w, list(por_ancho.get(str(w), cfg["formatos_web"]))) for w in sorted(anchos, reverse=True)]
+
+
+def lienzo_previo(registros, grupo: str) -> int | None:
+    """El lienzo con que ya se procesaron las fotos de ese producto, según el reporte: el más
+    repetido, y a igualdad el mayor. None si no hay ninguna.
+
+    Para `--conservar-lienzo`: reprocesar dos fotos de un modelo de seis elegiría el lienzo solo con
+    esas dos, y las otras cuatro quedarían en otro tamaño."""
+    cuenta: dict[int, int] = {}
+    for r in registros:
+        if r.get("grupo") == grupo and r.get("lienzo"):
+            lado = int(r["lienzo"][0])
+            cuenta[lado] = cuenta.get(lado, 0) + 1
+    if not cuenta:
+        return None
+    return max(cuenta, key=lambda l: (cuenta[l], l))

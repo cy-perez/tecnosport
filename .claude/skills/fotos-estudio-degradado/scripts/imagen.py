@@ -481,6 +481,249 @@ def limpiar_islas(m: np.ndarray, fraccion_min: float, fraccion_aviso: float,
     return m * zona, datos
 
 
+# =========================================================================== completar el producto
+#
+# Decisión del 20/10/2026: la pantalla de un celular sale tal cual la foto original. El modelo de
+# recorte toma por fondo lo claro de un fondo de pantalla —el blanco del iPhone 15, el lavanda del
+# Redmi Pad 2— y deja dentro del equipo huecos encerrados por el bisel; `solidificar_interior` solo
+# cierra los menores del 0,5 % (para no tapar un asa), así que por los grandes se veía la sombra de
+# contacto: manchas grises en 40 de las fotos de la tanda del 15/10/2026, varias de ellas LISTA.
+# Con la tapa blanca sobre fondo blanco pasaba lo mismo por el contorno: un mordisco abierto.
+#
+# La regla: lo que el recorte dejó fuera dentro del producto se devuelve al producto, con sus
+# píxeles originales, salvo que en la foto sea fondo. Las constantes viven aquí y no en config.json
+# porque no cambian el estilo del catálogo, y allá entrarían en la huella de la configuración.
+
+# Un píxel es fondo si queda a menos de esta ΔE76 del color del fondo de la foto. Los renders de
+# fabricante traen el fondo plano —el blanco o el #F5F5F7 de Apple, con ruido de compresión de 1
+# o 2—, y una tapa blanca o plateada queda a 3 o más: por eso no puede ser mayor.
+FONDO_TOLERANCIA_DE = 2.5
+# Un fondo de estudio es claro y parejo; una mesa o una cama no, y ahí no se juzga nada por color.
+FONDO_L_MINIMO = 75.0
+FONDO_PAREJO_MINIMO = 0.6
+# Una región es fondo si al menos esta fracción de sus píxeles lo es.
+REGION_FONDO_MINIMO = 0.85
+# Las piezas cuya envolvente convexa se completa: las que pesan algo en el recorte (un lápiz o un
+# audífono suelto también, pero el 2 % deja fuera las motas).
+PIEZA_MINIMA = 0.02
+# Las muescas menores que esto, en fracción del producto, son el antialias de una esquina redonda.
+MUESCA_MINIMA = 0.0005
+# Una muesca se devuelve al producto solo si casi nada en ella es fondo y si continúa el color de
+# lo que tiene al lado: la sombra del piso bajo una fila de teléfonos también cae dentro de la
+# envolvente, y no es producto.
+MUESCA_FONDO_MAXIMO = 0.15
+MUESCA_SALTO_MAXIMO = 6.0
+
+
+def fondo_de_la_foto(rgb: np.ndarray, m: np.ndarray) -> dict | None:
+    """El color del fondo de la foto: la mediana Lab de lo que está lejos del recorte.
+
+    None si no es un fondo de estudio —oscuro, o disparejo como una mesa—: ahí el color no dice
+    qué es fondo y qué es producto, y no se completa nada por color."""
+    alto, ancho = m.shape
+    esc = min(1.0, 512 / max(alto, ancho))
+    tam = (max(1, round(ancho * esc)), max(1, round(alto * esc)))
+    chica = cv2.resize(rgb, tam, interpolation=cv2.INTER_AREA)
+    mchica = (cv2.resize(m, tam, interpolation=cv2.INTER_AREA) > 0.02).astype(np.uint8)
+    lejos = cv2.dilate(mchica, elemento(0.03 * max(tam))) == 0
+    if lejos.sum() < 500:
+        return None
+    lab = rgb_a_lab(chica[lejos].reshape(-1, 1, 3))[:, 0]
+    mediana = np.median(lab, axis=0)
+    parejo = float((np.linalg.norm(lab - mediana, axis=1) <= FONDO_TOLERANCIA_DE).mean())
+    if mediana[0] < FONDO_L_MINIMO or parejo < FONDO_PAREJO_MINIMO:
+        return None
+    return {"lab": mediana.astype(np.float32), "parejo": round(parejo, 3)}
+
+
+def mapa_de_fondo(rgb: np.ndarray, fondo: dict | None) -> np.ndarray | None:
+    """Píxel a píxel, ¿es del color del fondo de la foto?"""
+    if fondo is None:
+        return None
+    lab = rgb_a_lab(rgb)
+    return np.linalg.norm(lab - fondo["lab"], axis=-1) <= FONDO_TOLERANCIA_DE
+
+
+def _salto_por_region(etiquetas: np.ndarray, n: int, producto: np.ndarray, rgb: np.ndarray) -> np.ndarray:
+    """Por región etiquetada, la ΔE76 mediana entre sus píxeles junto al producto y el producto
+    que tienen al lado; NaN donde no hay con qué comparar.
+
+    Una muesca que el recorte le mordió a una tapa continúa el color de la tapa: el salto es de
+    pocas unidades. La sombra del piso de un render no: arranca donde termina el marco del equipo.
+    El color vecino se calcula una vez para todas las regiones."""
+    sigma = 3.0
+    prod = producto.astype(np.float32)
+    peso = cv2.GaussianBlur(prod, (0, 0), sigma)
+    junto = (etiquetas > 0) & (peso > 0.15)
+    salida = np.full(n, np.nan)
+    if not junto.any():
+        return salida
+    vecino = cv2.GaussianBlur(rgb * prod[..., None], (0, 0), sigma)
+    color = vecino[junto] / peso[junto][:, None]
+    de = np.linalg.norm(rgb_a_lab(rgb[junto].reshape(-1, 1, 3))[:, 0]
+                        - rgb_a_lab(color.reshape(-1, 1, 3))[:, 0], axis=1)
+    cual = etiquetas[junto]
+    orden = np.argsort(cual, kind="stable")
+    cual, de = cual[orden], de[orden]
+    cortes = np.flatnonzero(np.diff(cual)) + 1
+    for grupo, valores in zip(np.split(cual, cortes), np.split(de, cortes)):
+        if len(valores) >= 10:
+            salida[grupo[0]] = float(np.median(valores))
+    return salida
+
+
+def _fraccion_por_region(etiquetas: np.ndarray, n: int, mapa: np.ndarray) -> np.ndarray:
+    """Por región etiquetada, la fracción de sus píxeles que cumplen `mapa`. Un solo barrido."""
+    total = np.bincount(etiquetas.ravel(), minlength=n)
+    si = np.bincount(etiquetas.ravel(), weights=mapa.ravel().astype(np.float64), minlength=n)
+    return si / np.maximum(total, 1)
+
+
+# La decisión se toma sobre una copia de este lado mayor como mucho: hay fotos de 8000 px en el
+# catálogo, y la conversión a Lab y los conteos a resolución completa pedían más de 3 GB.
+LADO_DE_DECISION = 2048
+
+
+def completar_producto(a: np.ndarray, rgb: np.ndarray, sin_huecos: bool,
+                       umbral: float = 0.5, prohibido: np.ndarray | None = None) -> tuple[np.ndarray, dict]:
+    """Devuelve al producto lo que el recorte dejó fuera de él, y deja fuera lo que es fondo.
+
+    - **Huecos encerrados**: en un celular o una tablet (`sin_huecos`, la categoría de la ficha)
+      se rellenan siempre: no tienen huecos pasantes, así que lo encerrado por el bisel es la
+      pantalla. En lo demás se rellenan si en la foto no son del color del fondo: el hueco de una
+      correa cerrada sí lo es, y sigue abierto.
+    - **Muescas**: solo en celulares y tablets, cuyas piezas son convexas. Lo que falta hasta la
+      envolvente convexa de cada pieza se rellena si casi nada en ello es fondo y si continúa el
+      color de lo que tiene al lado; la cuña de fondo entre dos teléfonos escalonados y la sombra
+      del piso del render se quedan fuera.
+
+    `prohibido` son las zonas que la persona excluyó a mano (`marcar.py --excluir`): nunca vuelven.
+    Lo rellenado sube a alfa 1: el color lo pone después la foto original (ver procesar.py).
+    """
+    datos = {"sin_huecos": bool(sin_huecos), "fondo_leido": False, "huecos_rellenos": 0,
+             "huecos_abiertos": 0, "muescas_rellenas": 0, "relleno_pct": 0.0, "fondo": None}
+    binaria_full = (a > umbral).astype(np.uint8)
+    area_full = float(binaria_full.sum())
+    if area_full == 0:
+        return a, datos
+    fondo = fondo_de_la_foto(rgb, a)
+    datos["fondo_leido"] = fondo is not None
+    datos["fondo"] = fondo
+
+    alto, ancho = a.shape
+    esc = min(1.0, LADO_DE_DECISION / max(alto, ancho))
+    if esc < 1:
+        tam = (max(1, round(ancho * esc)), max(1, round(alto * esc)))
+        a_d = cv2.resize(a, tam, interpolation=cv2.INTER_AREA)
+        rgb_d = cv2.resize(rgb, tam, interpolation=cv2.INTER_AREA)
+    else:
+        a_d, rgb_d = a, rgb
+    binaria = (a_d > umbral).astype(np.uint8)
+    area = float(binaria.sum())
+    if area == 0:
+        return a, datos
+    es_fondo = mapa_de_fondo(rgb_d, fondo)
+    huecos = np.zeros(binaria.shape, bool)
+    muescas_si = np.zeros(binaria.shape, bool)
+
+    n, etiquetas, stats, _ = cv2.connectedComponentsWithStats(1 - binaria, connectivity=4)
+    borde = np.unique(np.concatenate([etiquetas[0], etiquetas[-1], etiquetas[:, 0], etiquetas[:, -1]]))
+    encerrado = np.ones(n, bool)
+    encerrado[0] = False
+    encerrado[borde] = False
+    if sin_huecos:
+        rellenar = encerrado
+    elif es_fondo is not None:
+        rellenar = encerrado & (_fraccion_por_region(etiquetas, n, es_fondo) < REGION_FONDO_MINIMO)
+    else:
+        rellenar = np.zeros(n, bool)
+    datos["huecos_rellenos"] = int(rellenar.sum())
+    datos["huecos_abiertos"] = int((encerrado & ~rellenar).sum())
+    huecos = rellenar[etiquetas]
+
+    if sin_huecos and es_fondo is not None:
+        lleno = (binaria > 0) | huecos
+        np_, piezas, st, _ = cv2.connectedComponentsWithStats(lleno.astype(np.uint8), connectivity=8)
+        casco = np.zeros(binaria.shape, np.uint8)
+        for j in range(1, np_):
+            if st[j, cv2.CC_STAT_AREA] < PIEZA_MINIMA * area:
+                continue
+            x, y, w, h = st[j, cv2.CC_STAT_LEFT], st[j, cv2.CC_STAT_TOP], st[j, cv2.CC_STAT_WIDTH], st[j, cv2.CC_STAT_HEIGHT]
+            contornos, _ = cv2.findContours((piezas[y:y + h, x:x + w] == j).astype(np.uint8), cv2.RETR_EXTERNAL,
+                                            cv2.CHAIN_APPROX_SIMPLE, offset=(int(x), int(y)))
+            cv2.fillPoly(casco, [cv2.convexHull(np.vstack(contornos))], 1)
+        falta = (casco > 0) & ~lleno
+        nm, muescas, sm, _ = cv2.connectedComponentsWithStats(falta.astype(np.uint8), connectivity=4)
+        if nm > 1:
+            fraccion = _fraccion_por_region(muescas, nm, es_fondo)
+            salto = _salto_por_region(muescas, nm, lleno, rgb_d)
+            si = np.zeros(nm, bool)
+            datos["muescas"] = []
+            for k in range(1, nm):
+                if sm[k, cv2.CC_STAT_AREA] < MUESCA_MINIMA * area:
+                    continue
+                s = None if np.isnan(salto[k]) else round(float(salto[k]), 2)
+                datos["muescas"].append({"fondo": round(float(fraccion[k]), 3), "salto_de": s,
+                                         "area_pct": round(100 * float(sm[k, cv2.CC_STAT_AREA]) / area, 2)})
+                si[k] = fraccion[k] <= MUESCA_FONDO_MAXIMO and s is not None and s <= MUESCA_SALTO_MAXIMO
+            datos["muescas_rellenas"] = int(si.sum())
+            muescas_si = si[muescas]
+
+    if not (huecos.any() or muescas_si.any()):
+        return a, datos
+    # De vuelta a la resolución de la foto: lo rellenado es lo que allá también está fuera del recorte.
+    fuera = binaria_full == 0
+    if esc < 1:
+        huecos = cv2.resize(cv2.dilate(huecos.astype(np.uint8), np.ones((3, 3), np.uint8)), (ancho, alto),
+                            interpolation=cv2.INTER_NEAREST) > 0
+        muescas_si = cv2.resize(muescas_si.astype(np.uint8), (ancho, alto), interpolation=cv2.INTER_NEAREST) > 0
+        # un hueco agrandado no puede derramarse sobre el fondo exterior de la foto
+        exterior = np.pad(fuera.astype(np.uint8), 1, constant_values=1)
+        cv2.floodFill(exterior, None, (0, 0), 2)
+        huecos &= exterior[1:-1, 1:-1] != 2
+    relleno = (huecos | muescas_si) & fuera
+    if prohibido is not None:
+        relleno &= ~prohibido
+    a = a.copy()
+    a[relleno] = 1.0
+    datos["relleno_pct"] = round(100.0 * float(relleno.sum()) / area_full, 2)
+    return a, datos
+
+
+def rellenar_huecos(binaria: np.ndarray) -> np.ndarray:
+    """La máscara con todo lo que encierra relleno: lo que no se alcanza desde el borde."""
+    fuera = np.pad((~binaria.astype(bool)).astype(np.uint8), 1, constant_values=1)
+    cv2.floodFill(fuera, None, (0, 0), 2)
+    return fuera[1:-1, 1:-1] != 2
+
+
+def huecos_encerrados(alfa: np.ndarray, umbral: float = 0.5, fraccion_min: float = 0.005) -> list[float]:
+    """Los huecos que el producto encierra y que miden por lo menos `fraccion_min` de él, como
+    fracción de su área. Por ellos se ve la sombra de contacto: en un celular no debe quedar ninguno."""
+    solido = (alfa >= umbral).astype(np.uint8)
+    area = float(solido.sum())
+    if area == 0:
+        return []
+    n, etiquetas, stats, _ = cv2.connectedComponentsWithStats(1 - solido, connectivity=4)
+    borde = set(np.unique(np.concatenate([etiquetas[0], etiquetas[-1], etiquetas[:, 0], etiquetas[:, -1]])))
+    return sorted((round(float(stats[i, cv2.CC_STAT_AREA]) / area, 4) for i in range(1, n)
+                   if i not in borde and stats[i, cv2.CC_STAT_AREA] >= fraccion_min * area), reverse=True)
+
+
+def interior_con_el_original(color: np.ndarray, original: np.ndarray, alfa: np.ndarray,
+                             banda_px: float, umbral: float = 0.5) -> np.ndarray:
+    """El color del producto: los píxeles de la foto original adentro, el borde descontaminado afuera.
+
+    `descontaminar` estima un color de primer plano en todo píxel con alfa parcial, y el modelo
+    deja alfa parcial en el 40 al 73 % del interior de algunas fotos —una tablet de pantalla oscura,
+    un teléfono blanco—. Subir después el alfa a 1 no devolvía el color: el TCL Pad salía borroso y
+    el «Redmi Pad 2» de la pantalla, ilegible. Con la misma rampa de `solidificar_interior`, a
+    `banda_px` del borde ya se publica el original tal cual."""
+    dist = cv2.distanceTransform((alfa >= umbral).astype(np.uint8), cv2.DIST_L2, 3)
+    w = np.clip(dist / max(float(banda_px), 1e-6), 0.0, 1.0)[..., None]
+    return (color * (1.0 - w) + original * w).astype(np.float32)
+
+
 def niveles_alfa(m: np.ndarray, bajo: float = 0.08, alto: float = 0.92) -> np.ndarray:
     return np.clip((m - bajo) / (alto - bajo), 0, 1).astype(np.float32)
 
@@ -574,7 +817,8 @@ def corregir_tono(color: np.ndarray, alfa: np.ndarray, cfg_t: dict, fpx: float) 
 def solidificar_interior(alfa: np.ndarray, banda_px: float,
                          frac_agujero_max: float = 0.0,
                          umbral: float = 0.5,
-                         cierre_px: float = 0.0) -> tuple[np.ndarray, float]:
+                         cierre_px: float = 0.0,
+                         fondo_px: np.ndarray | None = None) -> tuple[np.ndarray, float]:
     """Lleva a 1 el alfa del interior del producto y deja el borde como estaba.
 
     El modelo de recorte devuelve alfa parcial **dentro** del producto cuando su
@@ -614,10 +858,16 @@ def solidificar_interior(alfa: np.ndarray, banda_px: float,
     # línea estrecha; si esa línea sobrevive, la rampa la trata como borde y el
     # fondo se ve a través de ella como un fleco claro en mitad del producto.
     # Un cierre morfológico une los dos lados sin mover el contorno exterior.
+    # Pero el cierre no sabe de piezas: dos teléfonos a menos de `cierre_px` quedaban unidos por
+    # una franja opaca de fondo —el Galaxy A17 de frente pegado al de perfil—. Con `fondo_px`, lo
+    # que el cierre añade y en la foto es fondo se queda fuera.
     if cierre_px >= 1:
         k = int(cierre_px) | 1
-        solido = cv2.morphologyEx(solido, cv2.MORPH_CLOSE,
-                                  cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (k, k)))
+        cerrado = cv2.morphologyEx(solido, cv2.MORPH_CLOSE,
+                                   cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (k, k)))
+        if fondo_px is not None:
+            cerrado[(cerrado > solido) & fondo_px] = 0
+        solido = cerrado
 
     dist = cv2.distanceTransform(solido, cv2.DIST_L2, 3)
     rampa = np.clip(dist / max(float(banda_px), 1e-6), 0.0, 1.0)
@@ -811,6 +1061,27 @@ def delta_croma(referencia: np.ndarray, salida: np.ndarray) -> float:
     a = rgb_a_lab(referencia.reshape(-1, 1, 3))[:, 0, 1:]
     b = rgb_a_lab(salida.reshape(-1, 1, 3))[:, 0, 1:]
     return round(float(np.hypot(*(a - b).T).mean()), 3)
+
+
+# Un píxel del interior está alterado si se aparta del original más que esto (ΔE76): el JPEG q92 y
+# el remuestreo dejan 1 o 2, y una mancha de la sombra sobre una pantalla blanca pasa de 15.
+ALTERADO_DE = 10.0
+# Y la foto se marca si lo está más que esta fracción del interior.
+ALTERADO_MAXIMO = 0.01
+
+
+def fraccion_alterada(referencia: np.ndarray, salida: np.ndarray) -> float:
+    """Qué fracción de los píxeles se aparta del original más de `ALTERADO_DE`, en luminancia y color.
+
+    `delta_croma` existe para el color, y no ve lo que solo cambia la luminancia: la sombra de
+    contacto vista a través de un hueco en una pantalla blanca es gris, sin croma: así salió
+    LISTA el iPhone 15 del 15/10/2026. procesar.py la mide sobre la silueta con sus huecos —salvo
+    los que en la foto son fondo—, que es donde esa mancha aparece."""
+    if len(referencia) == 0:
+        return 0.0
+    a = rgb_a_lab(referencia.reshape(-1, 1, 3))[:, 0]
+    b = rgb_a_lab(salida.reshape(-1, 1, 3))[:, 0]
+    return round(float((np.linalg.norm(a - b, axis=1) > ALTERADO_DE).mean()), 4)
 
 
 # =========================================================================== codificación

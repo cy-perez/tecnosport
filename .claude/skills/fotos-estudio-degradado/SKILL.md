@@ -132,7 +132,57 @@ de esta skill: **dentro de la silueta se publican los píxeles del original**. L
 que esta skill aporta es el fondo, la sombra de contacto, el resplandor alrededor
 y el encuadre; el interior no se retoca.
 
-De ahí salen tres ajustes que conviene no deshacer sin leer esto.
+De ahí salen los ajustes que siguen, y conviene no deshacer ninguno sin leer esto.
+
+### 0. Lo que el recorte deja fuera del producto vuelve a él (20/10/2026)
+
+Es el que más fotos arreglaba. El modelo de recorte toma por fondo **lo claro de un fondo de
+pantalla** —el blanco del iPhone 15, el lavanda del Redmi Pad 2, el gris perla de los Galaxy— y
+deja dentro del equipo huecos encerrados por el bisel. La regla del punto 1 solo cierra los
+menores del 0,5 % del producto, para no tapar un asa, así que por los grandes se veía la sombra
+de contacto: **manchas grises en la pantalla** de unas 40 fotos de la tanda del 15/10/2026, y
+varias salieron LISTA. Con la tapa blanca sobre fondo blanco pasaba lo mismo por el contorno: un
+mordisco abierto en la parte de abajo.
+
+`imagen.completar_producto()` corre antes de medir la caja, sobre la foto original:
+
+- **Huecos encerrados.** En un **celular o una tablet** —la categoría de la ficha, que
+  `procesar_fichas.py` pasa con `--sin-huecos`— se rellenan siempre: no tienen huecos
+  pasantes, y lo encerrado por el bisel es la pantalla. En lo demás se rellenan si en la foto
+  **no son del color del fondo**: el hueco de una correa cerrada sí lo es, y sigue abierto.
+- **Muescas del contorno**, solo en celulares y tablets, cuyas piezas son convexas: lo que falta
+  hasta la envolvente convexa de cada pieza se rellena si casi nada en ello es fondo (≤ 15 %) y
+  si **continúa el color de lo que tiene al lado** (salto ≤ 6 ΔE). La segunda condición existe
+  por la sombra del piso de los renders: bajo una fila de teléfonos escalonados cae dentro de la
+  envolvente, y sin ella se pintaba como equipo (Galaxy S26 Ultra _1, A17 _1). Una esquina
+  mordida entera solo vuelve a medias —la envolvente recupera el triángulo—; de eso avisa el
+  control del interior.
+
+El fondo de la foto se lee como la mediana Lab de lo que está lejos del recorte, y un píxel es
+fondo a menos de 2,5 ΔE de ella: los renders traen el fondo plano y una tapa blanca queda a 3 o
+más. Si la foto no tiene un fondo de estudio —oscuro o disparejo, una mesa— no se juzga nada por
+color y solo cuenta la categoría. Un PNG que ya viene recortado no pasa por aquí: su alfa es de
+quien lo recortó. Las constantes viven en `imagen.py` y no en `config.json`, porque no cambian el
+estilo del catálogo y allá entrarían en la huella de la configuración.
+
+**Y dentro de la silueta va el color de la foto original, no el estimado.** `descontaminar`
+(pymatting) calcula un color de primer plano en todo píxel con alfa parcial, y el modelo deja
+alfa parcial en el 30 al 73 % del interior de algunas fotos. Subir el alfa a 1 (punto 1) no
+devolvía el color: el TCL Pad salía borroso, los Redmi Buds 6 Active con el estuche lavado y el
+«Redmi Pad 2» de la pantalla, ilegible. `interior_con_el_original()` usa la misma rampa del
+punto 1: en el borde manda lo descontaminado y a 14 px hacia adentro ya va el original tal cual.
+
+Dos controles nuevos lo vigilan, porque `delta_croma` no veía nada de esto —una mancha gris
+sobre una pantalla blanca no tiene croma—: **`interior_alterado`** marca REVISAR si más del 1 %
+del interior se aparta del original más de 10 ΔE (luminancia incluida), y **`hueco_interior`**
+marca REVISAR un celular o una tablet que aún tenga un hueco encerrado. `interior_alterado` se
+mide sobre la silueta con sus huecos —salvo los que en la foto son fondo—, que es donde aparece
+la mancha; en un PNG recortado el interior se queda con el color de su recorte.
+
+**Lo procesado antes del 20/10/2026 no se reprocesa solo**: nada de esto entra en la huella de la
+configuración, así que `--nuevas` y la tanda lo saltan. Para rehacer fotos concretas sin moverle
+el lienzo a las demás del modelo: `procesar.py ... --solo <nombres> --conservar-lienzo
+--sin-huecos <modelos>`, y después `procesar_fichas.py ... --tanda ... --devolver`.
 
 ### 1. El interior se compone opaco (`alfa_solida_banda_px`)
 
@@ -199,9 +249,10 @@ existen por eso:
   esa grieta como borde y dejaba un fleco blanco **en mitad** del producto. Un
   cierre morfológico une los dos lados antes de medir la distancia.
 
-Comprobado que el cierre **no puentea piezas separadas**: los Galaxy Buds Core
-salen con los dos audífonos bien sueltos y en LISTA. Si alguna vez dos piezas
-quedan a menos de 31 px, el motivo `varias_piezas` lo avisa.
+El cierre **sí puenteaba piezas separadas** cuando quedan a menos de 31 px: el Galaxy A17 de
+frente salía pegado al de perfil por una franja opaca de fondo. Desde el 20/10/2026 lo que el
+cierre añade y en la foto original es del color del fondo se queda fuera (`fondo_px` de
+`solidificar_interior`); una grieta dentro del producto, que no es fondo, se sigue cerrando.
 
 ### 2. `tono.activo` está en `false`
 
@@ -248,6 +299,12 @@ mejor foto, como en un lote suelto, y fallaba por los dos lados:
 - **Por abajo**: la mejor foto tenía que llegar con `ampliacion_tolerada` (1,25×),
   más estricta que la compuerta. El Galaxy A27, seis fotos de 800 px, se quedaba en
   1000 y fuera de la tanda, cuando en 1200 salen a 1,28×: LISTA.
+
+**Los celulares y las tablets van con `--sin-huecos`** (20/10/2026): `procesar_fichas.py` lee la
+línea `CATEGORÍA:` de la ficha, y esas dos categorías no tienen huecos pasantes (ver «Lo que el
+recorte deja fuera del producto vuelve a él»). **Una carpeta con fotos que no está en
+`por-proponer.json` se avisa** al final de la tanda: el Redmi Note 17 Pro y el Pro Max se
+quedaron sin procesar sin que nada lo dijera.
 
 Es el mayor escalón que cumple, y no el que más LISTA deja, para no bajar a 1200 un
 modelo que da para 2000. Si ni en 1200 reúne cuatro, se elige el de más LISTA; si
@@ -430,7 +487,8 @@ igual:
 | Enfoque | después de escalar, sobre L*: radio 1 px, 70 %, umbral 2 |
 | Escala | ≥ 1,6× → REVISAR · ≥ 3× → REPETIR (el producto debe medir ≥ 1700 px en la foto) |
 | Máscara | corte en 0,2 para que la malla y el tejido entren enteros |
-| Interior | se compone opaco: alfa 1 a partir de 14 px del borde, cerrando grietas de 31 px y agujeros de menos del 0,5 % del área |
+| Interior | se compone opaco: alfa 1 a partir de 14 px del borde, cerrando grietas de 31 px (salvo las que en la foto son fondo) y agujeros de menos del 0,5 % del área; adentro, los píxeles de la foto original |
+| Huecos y muescas | lo encerrado por un celular o una tablet vuelve al producto siempre; en lo demás, si no es del color del fondo de la foto. En celulares y tablets también las muescas del contorno que continúan el color vecino |
 | Tono y enfoque | apagados: el interior del producto no se retoca |
 | Lienzo por producto | escalones 2000 · 1600 · 1200 · 1000 · 800 · 600 · 480 · 400 · 320; se toma el mayor que la mejor foto alcance sin pasar de 1,25× de ampliación, y si no llega a ninguno, el menor. En la tanda (`--lienzo-minimo`), el mayor de 1200 o más donde caben cuatro LISTA |
 | Web | AVIF a 10 bits con `avifenc` (a 8 bits con Pillow si no lo hay). Con `--variantes`, dos anchos: 1200 en AVIF y JPEG q88 —el carrusel y la vista previa de WhatsApp— y 480 en AVIF —la miniatura y la tarjeta—; por producto, un lienzo menor que 1200 ocupa el lugar del carrusel |
@@ -503,7 +561,9 @@ python3 "${CLAUDE_SKILL_DIR}/scripts/procesar.py" --avance SALIDA      # repetir
 
 Otras opciones: `--mapa nombres.csv`, `--variantes`, `--ajuste clave=valor`,
 `--config otro.json`, `--solo nombre1,nombre2`, `--por-producto`, `--plano`,
-`--nuevas` (todas en `--help`).
+`--nuevas`, `--sin-huecos producto1,producto2` y `--conservar-lienzo` (todas en `--help`).
+`--conservar-lienzo` sirve para reprocesar unas pocas fotos de un producto sin moverle el lienzo
+a las demás: con `--solo`, el lienzo se elegiría solo con las fotos de esa corrida.
 
 Para un árbol que se vuelve a llenar —`catalogo/fotos/crudas/`, que crece con cada
 lote de inventario— el par útil es `--por-producto --nuevas`: agrupa la salida por
@@ -653,7 +713,7 @@ que revisar y por qué, y cuáles hay que repetir y cómo. No copies el reporte.
 | Estado | Motivos automáticos |
 |---|---|
 | REPETIR | archivo dañado o no soportado · producto cortado por el encuadre · ampliación ≥ 2× · recorte vacío o que desaparece al escalar |
-| REVISAR | ampliación ≥ 1,6× · bordes inciertos en más del 8 % del producto · producto parecido a su fondo original en más del 20 % del contorno · producto confundido con el fondo nuevo en más del 25 % del contorno · fragmento descartado apreciable · 3 piezas o más (en la tanda, un kit declarado las cuenta como LISTA) · PNG recortado que llega al borde |
+| REVISAR | ampliación ≥ 1,6× · más del 1 % del interior a más de 10 ΔE del original · un celular o una tablet con un hueco encerrado · bordes inciertos en más del 8 % del producto · producto parecido a su fondo original en más del 20 % del contorno · producto confundido con el fondo nuevo en más del 25 % del contorno · fragmento descartado apreciable · 3 piezas o más (en la tanda, un kit declarado las cuenta como LISTA) · PNG recortado que llega al borde |
 | LISTA | ninguno de los anteriores |
 
 Manda el motivo más grave y las marcas a ojo se suman a las automáticas. Las
