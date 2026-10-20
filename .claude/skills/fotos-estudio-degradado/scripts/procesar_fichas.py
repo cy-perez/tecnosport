@@ -56,6 +56,12 @@ Para no gastar retoques en vano, y para que el veredicto sea cierto:
   marcada a ojo como REPETIR después de la tanda deja de contar.
 - **Cada foto se empareja con su registro del reporte por archivo y por huella**, no
   por nombre: un registro de una foto que ya se reemplazó no cuenta.
+- **Un celular o una tablet no tiene huecos pasantes** (decisión del 20/10/2026): la
+  categoría de la ficha (`CATEGORÍA:`) decide qué modelos van con `--sin-huecos`, y en
+  ellos todo lo que el recorte encierre se devuelve al producto. Así la pantalla sale
+  tal cual la foto original, aunque su fondo de pantalla sea claro.
+- **Una carpeta con fotos que no está en la tanda se avisa**: la tanda solo procesa
+  `por-proponer.json`, y un modelo que falte ahí se quedaba sin fotos sin que nada lo dijera.
 - **Un kit lo declara la persona** (`--kit`, decisión del 18/10/2026): en un modelo que
   se vende con piezas sueltas —la consola con sus Joy-Con, la tablet con teclado y
   mouse— una foto cuyo único reparo es `varias_piezas` cuenta como LISTA. En los demás
@@ -102,6 +108,11 @@ MINIMO_LISTA = 4
 # la configuración y obligaría a reprocesar el catálogo entero.
 LIENZO_MINIMO = 1200
 
+# Decisión del 20/10/2026: estas categorías de la ficha no tienen huecos pasantes —lo que el
+# bisel encierra es la pantalla—, y procesar.py las recibe con --sin-huecos. Un reloj, unos
+# audífonos o una consola pueden tenerlos (la correa cerrada, el arco): ahí decide el color.
+CATEGORIAS_SIN_HUECOS = {"celulares", "tablets"}
+
 APTO, EN_ESPERA, FUERA = "apto", "en_espera", "fuera_de_tanda"
 SALIDA_EN_ESPERA = 3
 # procesar.py sale con 2 cuando no queda ninguna foto por procesar: no es un error.
@@ -136,6 +147,32 @@ def id_de_carpeta(carpeta: Path):
     for f in carpeta.glob("*-ficha.txt"):
         return f.name[: -len("-ficha.txt")]
     return slug(carpeta.name)
+
+
+def categoria_de(carpeta: Path):
+    """La categoría que escribió listas-de-proveedor en la ficha («CATEGORÍA: celulares»), o None."""
+    for f in carpeta.glob("*-ficha.txt"):
+        for linea in f.read_text(encoding="utf-8", errors="replace").splitlines():
+            clave, sep, valor = linea.partition(":")
+            if sep and clave.strip().upper() in ("CATEGORÍA", "CATEGORIA"):
+                return valor.strip().lower() or None
+        return None
+    return None
+
+
+def sin_huecos(raiz: Path, solo=None) -> list:
+    """Los ids de los modelos cuya categoría no tiene huecos pasantes, para `--sin-huecos`."""
+    return [mid for mid, carpeta in modelos(raiz, solo).items()
+            if categoria_de(carpeta) in CATEGORIAS_SIN_HUECOS]
+
+
+def fuera_de_la_tanda(raiz: Path, ids) -> list:
+    """Las carpetas con fotos originales que ninguna tanda ha procesado y cuyo modelo no está en
+    esta: no se procesan, y hay que decirlo. El Redmi Note 17 Pro y el Pro Max se quedaron así sin
+    una sola foto procesada. Las de tandas anteriores ya tienen su `estado-fotos.json` y no se
+    listan: si no, cada tanda nueva repetiría todo el catálogo."""
+    return [carpeta.name for mid, carpeta in modelos(raiz).items()
+            if mid not in set(ids) and originales(carpeta) and not (carpeta / ESTADO).is_file()]
 
 
 def modelos(raiz: Path, solo=None) -> dict:
@@ -591,6 +628,10 @@ def main() -> int:
     raiz = Path(a.fichas)
     base = [sys.executable, str(Path(__file__).with_name("procesar.py")), str(raiz / TRABAJO / "crudas"),
             "-o", str(raiz / TRABAJO / "salida"), "--por-producto", "--variantes"]
+    if raiz.is_dir():
+        celulares = sin_huecos(raiz)
+        if celulares:
+            base += ["--sin-huecos", ",".join(celulares)]
 
     def correr(orden) -> bool:
         if a.segundo_plano:
@@ -632,6 +673,10 @@ def main() -> int:
         if not estados:
             return SALIDA_EN_ESPERA   # en segundo plano: la tanda todavía no está completa
         print(informe(estados))
+        fuera = fuera_de_la_tanda(raiz, ids)
+        if fuera:
+            print(f"\n[aviso] {len(fuera)} carpeta(s) con fotos que no están en la tanda y no se procesaron "
+                  "(no están en por-proponer.json): " + ", ".join(fuera))
         print(f"\nHojas de revisión: {raiz / TRABAJO / 'salida'}")
         return SALIDA_EN_ESPERA if any(e["estado"] == EN_ESPERA for e in estados) else 0
 

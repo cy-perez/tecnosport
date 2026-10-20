@@ -482,5 +482,45 @@ class Tanda(unittest.TestCase):
             self.assertEqual(("2026-10-10", ["a", "b"]), pf.leer_tanda(ruta))
 
 
+
+class CategoriaYTanda(unittest.TestCase):
+    """Decisión del 20/10/2026: los celulares y las tablets van con --sin-huecos, y una carpeta
+    con fotos que no está en la tanda se avisa en lugar de quedarse sin procesar en silencio."""
+
+    def ficha(self, carpeta: Path, mid: str, categoria: str):
+        (carpeta / f"{mid}-ficha.txt").write_text(
+            f"MODELO: X\nID DEL MODELO: {mid}\nCATEGORÍA: {categoria}\nMARCA: X\n", encoding="utf-8")
+
+    def test_la_categoria_sale_de_la_ficha(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            carpeta = armar(Path(tmp))
+            self.ficha(carpeta, MODELO, "celulares")
+            self.assertEqual("celulares", pf.categoria_de(carpeta))
+
+    def test_solo_celulares_y_tablets_van_sin_huecos(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            raiz = Path(tmp)
+            for titulo, mid, cat in (("Galaxy", "galaxy", "celulares"), ("Pad", "pad", "tablets"),
+                                     ("Watch", "watch", "relojes"), ("Buds", "buds", "audifonos")):
+                self.ficha(armar(raiz, ("a_1.jpg",), titulo, mid), mid, cat)
+            self.assertEqual(["galaxy", "pad"], sorted(pf.sin_huecos(raiz)))
+
+    def test_una_ficha_sin_categoria_no_va_sin_huecos(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            armar(Path(tmp))
+            self.assertEqual([], pf.sin_huecos(Path(tmp)))
+
+    def test_avisa_las_carpetas_con_fotos_que_no_estan_en_la_tanda(self):
+        # El Redmi Note 17 Pro y el Pro Max tenían sus fotos y no estaban en por-proponer.json.
+        with tempfile.TemporaryDirectory() as tmp:
+            raiz = Path(tmp)
+            armar(raiz)
+            armar(raiz, ("note_1.webp",), "Xiaomi Redmi Note 17 Pro 5G", "xiaomi-redmi-note-17-pro-5g")
+            armar(raiz, (), "Sin fotos", "sin-fotos")
+            vieja = armar(raiz, ("v_1.jpg",), "De otra tanda", "de-otra-tanda")
+            pf.escribir_estado(vieja, {"modelo": "de-otra-tanda", "estado": pf.APTO})
+            self.assertEqual(["Xiaomi Redmi Note 17 Pro 5G"], pf.fuera_de_la_tanda(raiz, [MODELO]))
+
+
 if __name__ == "__main__":
     unittest.main()
