@@ -9,6 +9,14 @@ no puedan tener dos ideas distintas de qué archivos debe haber.
 
 from __future__ import annotations
 
+# La versión del retoque: cambia cuando el código cambia cómo se ve una foto, no cuando cambia un
+# parámetro (eso ya lo dice la huella de la configuración). Entra en esa huella —así `--nuevas` rehace
+# lo que se procesó con un retoque anterior— y va en cada foto y en cada marca a ojo, que caduca
+# cuando la foto se rehace con otra versión (decisión del 20/10/2026: las tres Tab A11 seguían en
+# REPETIR por una marca que describía un defecto que el retoque nuevo ya no tenía).
+# Vive aquí y no en imagen.py porque procesar_fichas.py la lee, y ese no carga OpenCV.
+VERSION_RETOQUE = "2026-10-20"
+
 
 def _escala(cfg: dict) -> list[int]:
     return sorted({int(x) for x in cfg.get("lienzos_escala") or []}, reverse=True)
@@ -100,3 +108,17 @@ def lienzo_previo(registros, grupo: str) -> int | None:
     if not cuenta:
         return None
     return max(cuenta, key=lambda l: (cuenta[l], l))
+
+
+def con_retoque_anterior(registros, grupos=None) -> list:
+    """Los nombres de las fotos procesadas con un retoque anterior (o sin versión), de esos grupos."""
+    return [r.get("nombre") for r in registros
+            if (grupos is None or r.get("grupo") in grupos) and r.get("salidas")
+            and r.get("version_retoque") != VERSION_RETOQUE]
+
+
+def separar_marcas(marcas) -> tuple[list, list]:
+    """(vigentes, caducadas): una marca a ojo vale para la versión del retoque sobre la que se puso.
+    Las de antes de que existiera la versión no la traen, y también caducan."""
+    vigentes = [m for m in marcas if m.get("version_retoque") == VERSION_RETOQUE]
+    return vigentes, [m for m in marcas if m.get("version_retoque") != VERSION_RETOQUE]

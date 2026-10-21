@@ -133,7 +133,10 @@ def config_publica(cfg: dict) -> dict:
 
 
 def huella_config(cfg: dict) -> str:
-    texto = json.dumps(config_publica(cfg), sort_keys=True, ensure_ascii=False)
+    """Huella de los parámetros y de la versión del retoque: si cualquiera cambia, la foto se hizo
+    distinto, y `--nuevas` la rehace."""
+    texto = json.dumps({**config_publica(cfg), "_version_retoque": salidas.VERSION_RETOQUE},
+                       sort_keys=True, ensure_ascii=False)
     return hashlib.sha1(texto.encode("utf-8")).hexdigest()[:12]
 
 
@@ -219,6 +222,17 @@ def procesar_foto(ctx: Contexto, ruta: Path, nombre: str, previo: dict) -> dict:
            "revisada": None, "salidas": {}}
     if previo and not misma:
         notas.append("Es otra foto para este nombre: se descartaron las marcas y exclusiones de la anterior.")
+    reg["version_retoque"] = salidas.VERSION_RETOQUE
+    # Una marca a ojo describe lo que se vio con un retoque: si el retoque cambió, no se aplica sola.
+    # Pasa a «volver a mirar» hasta que la persona la quite (marcar.py --limpiar) o la ponga de nuevo.
+    vigentes, caducadas = salidas.separar_marcas(reg["marcas"])
+    reg["marcas"] = vigentes
+    reg["marcas_caducadas"] = caducadas
+    for mk in caducadas:
+        motivo("REVISAR", "marca_caducada",
+               f"Se había marcado a ojo como {mk.get('estado')} («{mk.get('motivo', 'sin motivo')}») sobre un "
+               "retoque anterior: mira si sigue aplicando. Si no, quítala con marcar.py --limpiar; si sí, "
+               "vuelve a marcarla.")
 
     def cerrar() -> dict:
         reg["motivos_auto"], reg["avisos"], reg["notas"] = motivos, avisos, notas
@@ -1033,7 +1047,7 @@ def ejecutar(a, raiz: Path, solo: set[str], avance: Path) -> int:
                              if por_producto else set())
     otras = sorted(f["nombre"] for f in rep["fotos"] if f.get("huella_config") not in ({None} | huellas_ok))
     if otras:
-        rep["advertencias_lote"] = [f"Procesadas con otros parámetros (el catálogo no queda uniforme): {', '.join(otras)}"]
+        rep["advertencias_lote"] = [f"Procesadas con otros parámetros o con un retoque anterior (el catálogo no queda uniforme): {', '.join(otras)}"]
     reporte.guardar(raiz, rep)
     rutas_h, ubicacion = hojas.generar(raiz, rep, int(cfg["fotos_por_hoja"]))
     rep["hojas_revision"] = [h.name for h in rutas_h]

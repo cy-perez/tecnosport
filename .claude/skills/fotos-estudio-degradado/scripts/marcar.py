@@ -122,9 +122,11 @@ def main() -> int:
         f = fotos[n]
         antes = reporte.estado_final(f)
         if a.repetir:
-            f.setdefault("marcas", []).append({"estado": "REPETIR", "motivo": a.repetir.strip(), "fecha": reporte.ahora()})
+            f.setdefault("marcas", []).append({"estado": "REPETIR", "motivo": a.repetir.strip(), "fecha": reporte.ahora(),
+                                               "version_retoque": f.get("version_retoque")})
         elif a.revisar:
-            f.setdefault("marcas", []).append({"estado": "REVISAR", "motivo": a.revisar.strip(), "fecha": reporte.ahora()})
+            f.setdefault("marcas", []).append({"estado": "REVISAR", "motivo": a.revisar.strip(), "fecha": reporte.ahora(),
+                                               "version_retoque": f.get("version_retoque")})
         elif a.aprobar is not None:
             if antes == "REPETIR":
                 print(f"{n}: está en REPETIR y eso no se aprueba a ojo; hay que repetir la foto.")
@@ -142,6 +144,9 @@ def main() -> int:
             reprocesar.append(n)
         elif a.limpiar:
             f["marcas"], f["revisada"] = [], None
+            # y la marca de un retoque anterior que pedía volver a mirar: ya se miró
+            f["marcas_caducadas"] = []
+            f["motivos_auto"] = [m for m in f.get("motivos_auto", []) if m.get("codigo") != "marca_caducada"]
         elif a.limpiar_exclusiones:
             if f.get("exclusiones"):
                 reprocesar.append(n)

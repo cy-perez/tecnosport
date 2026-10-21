@@ -100,6 +100,8 @@ SIN_HUECOS = "sin-huecos.json"    # en _estudio/: los modelos que la persona dec
 MOTIVO_DE_KIT = "varias_piezas"
 EXT_FOTO = {".jpg", ".jpeg", ".jfif", ".png", ".webp", ".heic", ".heif", ".avif"}  # = EXTENSIONES de procesar.py
 CONFIG = Path(__file__).resolve().parent.parent / "config.json"
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import salidas  # noqa: E402  (solo biblioteca estándar)
 
 # Decisión del negocio del 10/10/2026 (ADR-0079): cuatro fotos LISTA por modelo.
 MINIMO_LISTA = 4
@@ -721,6 +723,11 @@ def main() -> int:
         if not estados:
             return SALIDA_EN_ESPERA   # en segundo plano: la tanda todavía no está completa
         print(informe(estados))
+        viejas = salidas.con_retoque_anterior(leer_reporte(raiz).get("fotos", []), set(ids))
+        if viejas:
+            print(f"\n[aviso] {len(viejas)} foto(s) de la tanda se procesaron con un retoque anterior al "
+                  f"{salidas.VERSION_RETOQUE}: la tanda no las rehace sola. Para rehacerlas sin mover el lienzo: "
+                  "procesar.py ... --solo <nombres> --conservar-lienzo, y después esta orden con --devolver.")
         fuera = fuera_de_la_tanda(raiz, ids)
         if fuera:
             print(f"\n[aviso] {len(fuera)} carpeta(s) con fotos que no están en la tanda y no se procesaron "

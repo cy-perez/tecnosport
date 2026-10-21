@@ -179,8 +179,17 @@ marca REVISAR un celular o una tablet que aún tenga un hueco encerrado. `interi
 mide sobre la silueta con sus huecos —salvo los que en la foto son fondo—, que es donde aparece
 la mancha; en un PNG recortado el interior se queda con el color de su recorte.
 
-**Lo procesado antes del 20/10/2026 no se reprocesa solo**: nada de esto entra en la huella de la
-configuración, así que `--nuevas` y la tanda lo saltan. Para rehacer fotos concretas sin moverle
+**La versión del retoque** (`salidas.VERSION_RETOQUE`, 20/10/2026) entra en la huella de la
+configuración y va en cada foto y en cada marca a ojo. Se sube cuando el código cambia cómo se ve
+una foto. Con ella:
+
+- `--nuevas` rehace lo que se procesó con un retoque anterior.
+- **Una marca a ojo caduca** cuando la foto se rehace con otra versión: no se aplica sola, pasa a
+  REVISAR (`marca_caducada`) con su texto, para que la persona mire si sigue aplicando. Si no,
+  `marcar.py --limpiar`; si sí, se vuelve a marcar. Las tres Tab A11 seguían en REPETIR por «el
+  recorte se comió la pantalla» cuando el retoque nuevo ya no lo hacía.
+- La tanda **avisa** cuántas de sus fotos se hicieron con un retoque anterior, pero no las rehace
+  sola: el lienzo y las LISTA de un modelo aprobado cambiarían sin que nadie lo pidiera. Para rehacer fotos concretas sin moverle
 el lienzo a las demás del modelo: `procesar.py ... --solo <nombres> --conservar-lienzo
 --sin-huecos <modelos>`, y después `procesar_fichas.py ... --tanda ... --devolver`.
 

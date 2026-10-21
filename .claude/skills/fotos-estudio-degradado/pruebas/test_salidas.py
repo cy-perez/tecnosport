@@ -113,5 +113,28 @@ class LienzoPrevio(unittest.TestCase):
         self.assertIsNone(salidas.lienzo_previo([{"grupo": "otro", "lienzo": [2000, 2000]}], "iphone"))
 
 
+
+class VersionDelRetoque(unittest.TestCase):
+    """Decisión del 20/10/2026: una marca a ojo vale para el retoque sobre el que se puso."""
+
+    def test_una_marca_de_un_retoque_anterior_caduca(self):
+        # Las Tab A11 seguían en REPETIR por «el recorte se comió la pantalla», que el retoque nuevo
+        # ya no hacía.
+        vieja = {"estado": "REPETIR", "motivo": "se comió la pantalla", "version_retoque": "2026-10-01"}
+        sin_version = {"estado": "REVISAR", "motivo": "una mano"}
+        vigente = {"estado": "REPETIR", "motivo": "marca de agua", "version_retoque": salidas.VERSION_RETOQUE}
+        vigentes, caducadas = salidas.separar_marcas([vieja, sin_version, vigente])
+        self.assertEqual([vigente], vigentes)
+        self.assertEqual([vieja, sin_version], caducadas)
+
+    def test_lista_las_fotos_de_la_tanda_hechas_con_un_retoque_anterior(self):
+        registros = [{"nombre": "a", "grupo": "x", "salidas": {"maestra": {}}, "version_retoque": "viejo"},
+                     {"nombre": "b", "grupo": "x", "salidas": {"maestra": {}}, "version_retoque": salidas.VERSION_RETOQUE},
+                     {"nombre": "c", "grupo": "x", "salidas": {"maestra": {}}},
+                     {"nombre": "d", "grupo": "y", "salidas": {"maestra": {}}},
+                     {"nombre": "e", "grupo": "x", "salidas": {}}]
+        self.assertEqual(["a", "c"], salidas.con_retoque_anterior(registros, {"x"}))
+
+
 if __name__ == "__main__":
     unittest.main()
