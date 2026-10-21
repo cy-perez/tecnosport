@@ -206,6 +206,30 @@ class CierreYColor(unittest.TestCase):
         np.testing.assert_allclose(color[60:140, 60:140], original[60:140, 60:140], atol=1e-6)
         np.testing.assert_allclose(color[20, 100], estimado[20, 100], atol=0.05)
 
+    def test_la_zona_vigilada_incluye_el_hueco_de_una_pantalla(self):
+        alfa = np.zeros((200, 200), np.float32)
+        alfa[20:180, 20:180] = 1.0
+        alfa[60:140, 60:140] = 0.0                       # hueco que en la foto no es fondo
+        es_fondo = alfa == 0
+        es_fondo[60:140, 60:140] = False
+        self.assertTrue(imagen.zona_vigilada(alfa, es_fondo, 3.0)[100, 100])
+
+    def test_la_zona_vigilada_deja_fuera_el_aro_de_una_correa(self):
+        alfa = np.zeros((200, 200), np.float32)
+        alfa[20:180, 20:180] = 1.0
+        alfa[60:140, 60:140] = 0.0
+        self.assertFalse(imagen.zona_vigilada(alfa, alfa == 0, 3.0)[100, 100])
+
+    def test_sin_fondo_legible_solo_se_vigila_lo_opaco(self):
+        # JBL Clip 5, PNG recortado: bajo la transparencia del mosquetón la foto no guarda nada, y
+        # medirla marcaba REVISAR una foto sana.
+        alfa = np.zeros((200, 200), np.float32)
+        alfa[20:180, 20:180] = 1.0
+        alfa[60:140, 60:140] = 0.0
+        zona = imagen.zona_vigilada(alfa, None, 3.0)
+        self.assertFalse(zona[100, 100])
+        self.assertTrue(zona[40, 40])
+
     def test_una_mancha_gris_en_una_pantalla_blanca_se_detecta(self):
         # La crominancia no la ve: el gris de la sombra no tiene croma.
         original = np.ones((10000, 3), np.float32)

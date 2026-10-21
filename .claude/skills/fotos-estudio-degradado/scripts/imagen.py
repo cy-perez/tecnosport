@@ -697,6 +697,21 @@ def rellenar_huecos(binaria: np.ndarray) -> np.ndarray:
     return fuera[1:-1, 1:-1] != 2
 
 
+def zona_vigilada(alfa: np.ndarray, es_fondo: np.ndarray | None, margen_px: float) -> np.ndarray:
+    """Dónde se mide si el interior del producto cambió frente a la foto original.
+
+    La silueta con sus huecos, salvo los que en la foto son fondo —el aro de una correa—: por un
+    hueco que no lo es se ve la sombra, y eso es lo que tiene que saltar; con el alfa ≥ 0,99 solo,
+    el hueco quedaba fuera de la medición. **Sin un fondo legible** —un PNG recortado, una foto
+    sobre una mesa— no hay con qué saber qué hueco es real, y bajo la transparencia de un PNG la
+    foto no guarda nada: se mide solo lo opaco. Así marcaba falsamente el mosquetón del JBL Clip 5.
+    """
+    silueta = alfa >= 0.5
+    if es_fondo is not None:
+        silueta = rellenar_huecos(silueta) & ~(es_fondo & ~silueta)
+    return contraer(silueta.astype(np.float32), margen_px) > 0.5
+
+
 def huecos_encerrados(alfa: np.ndarray, umbral: float = 0.5, fraccion_min: float = 0.005) -> list[float]:
     """Los huecos que el producto encierra y que miden por lo menos `fraccion_min` de él, como
     fracción de su área. Por ellos se ve la sombra de contacto: en un celular no debe quedar ninguno."""

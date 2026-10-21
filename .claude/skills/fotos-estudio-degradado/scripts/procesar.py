@@ -448,14 +448,7 @@ def procesar_foto(ctx: Contexto, ruta: Path, nombre: str, previo: dict) -> dict:
     interior = imagen.contraer((ac >= 0.99).astype(np.float32), 3 * fpx) > 0.5
     if interior.sum() < 200:
         interior = ac >= 0.99
-    # Donde se mide si el interior cambió: la silueta con sus huecos, salvo los que en la foto son
-    # fondo (el aro de una correa). Por un hueco que no lo es se ve la sombra, y eso es lo que
-    # tiene que saltar; con el alfa ≥ 0,99 solo, el hueco quedaba fuera de la medición.
-    silueta = imagen.rellenar_huecos(ac >= 0.5)
-    abierto = imagen.mapa_de_fondo(ref_c, fondo_foto)
-    if abierto is not None:
-        silueta &= ~(abierto & (ac < 0.5))
-    vigilado = imagen.contraer(silueta.astype(np.float32), max(3 * fpx, banda)) > 0.5
+    vigilado = imagen.zona_vigilada(ac, imagen.mapa_de_fondo(ref_c, fondo_foto), max(3 * fpx, banda))
 
     # ---- 5.3 tono (sólo L*) y enfoque después de redimensionar
     F2, tono = imagen.corregir_tono(F, ac, cfg["tono"], fpx)
