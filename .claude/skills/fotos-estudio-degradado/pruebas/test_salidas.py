@@ -136,14 +136,6 @@ class VersionDelRetoque(unittest.TestCase):
         self.assertEqual([], vigentes)
         self.assertEqual([caducada], segunda)
 
-    def test_lista_las_fotos_de_la_tanda_hechas_con_un_retoque_anterior(self):
-        registros = [{"nombre": "a", "grupo": "x", "salidas": {"maestra": {}}, "version_retoque": "viejo"},
-                     {"nombre": "b", "grupo": "x", "salidas": {"maestra": {}}, "version_retoque": salidas.VERSION_RETOQUE},
-                     {"nombre": "c", "grupo": "x", "salidas": {"maestra": {}}},
-                     {"nombre": "d", "grupo": "y", "salidas": {"maestra": {}}},
-                     {"nombre": "e", "grupo": "x", "salidas": {}}]
-        self.assertEqual(["a", "c"], salidas.con_retoque_anterior(registros, {"x"}))
-
 
 
 class TamanoOriginal(unittest.TestCase):

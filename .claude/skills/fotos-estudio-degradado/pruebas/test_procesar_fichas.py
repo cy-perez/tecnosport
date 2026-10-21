@@ -632,5 +632,36 @@ class SugerirElKit(unittest.TestCase):
             self.assertNotIn("¿Es un kit?", pf.informe([estado]))
 
 
+
+class AvisoDeRetoqueAnterior(unittest.TestCase):
+    """El aviso cuenta originales por rehacer, no registros del reporte (21/10/2026)."""
+
+    def test_cuenta_las_originales_procesadas_con_un_retoque_anterior(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            raiz = Path(tmp)
+            armar(raiz)
+            salida_de_procesar(raiz, [("samsung-galaxy-s25-ultra-1", "LISTA"), ("samsung-galaxy-s25-ultra-2", "LISTA")])
+            ruta = raiz / pf.TRABAJO / "salida" / "reporte.json"
+            rep = json.loads(ruta.read_text(encoding="utf-8"))
+            rep["fotos"][1]["version_retoque"] = pf.salidas.VERSION_RETOQUE
+            ruta.write_text(json.dumps(rep), encoding="utf-8")
+            viejas = pf.con_retoque_anterior(raiz, [MODELO], pf.leer_reporte(raiz)["fotos"])
+            self.assertEqual(["Samsung Galaxy S25 Ultra/samsung-galaxy-s25-ultra_1.jpg"], viejas)
+
+    def test_no_cuenta_el_registro_de_una_foto_renombrada(self):
+        # «XXiaomi Redmi Pad 2 11″ 4G_6.webp» se renombró; su registro viejo quedó en el reporte.
+        with tempfile.TemporaryDirectory() as tmp:
+            raiz = Path(tmp)
+            armar(raiz, ("samsung-galaxy-s25-ultra_1.jpg",))
+            salida_de_procesar(raiz, [("samsung-galaxy-s25-ultra-1", "LISTA")])
+            ruta = raiz / pf.TRABAJO / "salida" / "reporte.json"
+            rep = json.loads(ruta.read_text(encoding="utf-8"))
+            rep["fotos"][0]["version_retoque"] = pf.salidas.VERSION_RETOQUE
+            rep["fotos"].append({"nombre": "xsamsung-galaxy-s25-ultra-1", "grupo": MODELO, "estado": "LISTA",
+                                 "archivo": "Xsamsung-galaxy-s25-ultra_1.jpg", "salidas": {"maestra": {"ruta": "x"}}})
+            ruta.write_text(json.dumps(rep), encoding="utf-8")
+            self.assertEqual([], pf.con_retoque_anterior(raiz, [MODELO], pf.leer_reporte(raiz)["fotos"]))
+
+
 if __name__ == "__main__":
     unittest.main()
