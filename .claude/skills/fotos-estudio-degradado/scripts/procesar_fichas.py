@@ -515,7 +515,10 @@ def evaluar(mid: str, carpeta: Path, reporte: dict, cfg: dict, kit: bool = False
         elif estado == "LISTA":
             listas.append(f"{original.stem}.jpg")
         else:
-            fallidas.append({"foto": original.name, "estado": estado or "?", "motivo": motivos or "sin motivo"})
+            fallida = {"foto": original.name, "estado": estado or "?", "motivo": motivos or "sin motivo"}
+            if not kit and solo_piezas_sueltas(foto):
+                fallida["solo_piezas"] = True       # para sugerir el kit en el informe
+            fallidas.append(fallida)
     return {"listas": listas, "fallidas": fallidas}
 
 
@@ -610,6 +613,11 @@ def informe(estados: list) -> str:
         lineas.append(f"\nEN ESPERA  {e['modelo']}: faltan {e['faltan']} LISTA ({e.get('motivo')}){nota}")
         for f in e.get("fallidas", []):
             lineas.append(f"  - {f['foto']} [{f['estado']}] {f['motivo']}")
+        piezas = [f for f in e.get("fallidas", []) if f.get("solo_piezas")]
+        if piezas:
+            # Lo decide la persona, nunca el script: tres piezas también pueden ser dos productos.
+            lineas.append(f"  ¿Es un kit? {len(piezas)} foto(s) solo esperan por las piezas sueltas. Si el producto se "
+                          f"vende con ellas: --kit {e['modelo']} --motivo \"qué piezas trae\"")
     for e in fuera:
         lineas.append(f"\nFUERA      {e['modelo']}: {e.get('motivo')}")
     lineas.append("\nTANDA COMPLETA: revisa a ojo las hojas de las LISTA y sigue con /fichas-de-tecnologia"

@@ -147,6 +147,11 @@ def generar(raiz: Path, rep: dict, por_hoja: int = 8) -> tuple[list[Path], dict[
             limite = y + FILA - 40
             renglones = [(t, f_chico, (90, 90, 90), "") for t in _datos_linea(f)]
             renglones += [(m, f_texto, (25, 25, 25), "• ") for m in f.get("motivos", [])]
+            codigos = {m.get("codigo") for m in f.get("motivos_auto", []) if m.get("estado") in ("REVISAR", "REPETIR")}
+            if estado == "REVISAR" and codigos == {"varias_piezas"} and not f.get("marcas"):
+                renglones.append(("¿Es un kit? Si el producto se vende con sus piezas sueltas, declarar el modelo con "
+                                  "procesar_fichas.py --kit hace que esta foto cuente como LISTA en la tanda.",
+                                  f_chico, (40, 90, 170), "? "))
             if f.get("revisada") and estado != "REPETIR":
                 nota = f["revisada"].get("nota") or ""
                 renglones.append(("Revisada a ojo" + (f": {nota}" if nota else ""), f_texto, (20, 125, 60), "✓ "))

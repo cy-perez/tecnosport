@@ -417,7 +417,9 @@ reparo**: una ampliación de más, un borde dudoso o una marca a ojo la siguen d
 fuera. En los demás modelos no cambia nada, porque tres piezas también pueden ser dos
 productos distintos o la gama de colores, y eso lo decide una persona, no el script.
 Si en la hoja ves un modelo esperando solo por `varias_piezas`, pregúntale a la persona
-si es un kit; no lo declares por tu cuenta.
+si es un kit; no lo declares por tu cuenta. Desde el 20/10/2026 el informe de la tanda lo sugiere
+con la orden lista para copiar («¿Es un kit? … --kit <id>»), y la hoja de revisión lo anota en esa
+foto: la sugerencia es para la persona, no para que la apliques.
 
 ```bash
 python3 "${CLAUDE_SKILL_DIR}/scripts/procesar_fichas.py" catalogo/4-entregables/fichas \

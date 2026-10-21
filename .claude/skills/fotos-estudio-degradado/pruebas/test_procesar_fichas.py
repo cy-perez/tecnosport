@@ -595,5 +595,42 @@ class RetirarLoQueYaNoSePublica(unittest.TestCase):
             self.assertEqual([], pf.devolver(raiz)["retiradas"])
 
 
+
+class SugerirElKit(unittest.TestCase):
+    """Un modelo que espera solo por piezas sueltas recibe la sugerencia del kit; nunca se declara solo."""
+
+    def armar_con_piezas(self, raiz):
+        nombres = tuple(f"samsung-galaxy-s25-ultra_{i}.jpg" for i in range(1, 5))
+        carpeta = armar(raiz, nombres)
+        salida_de_procesar(raiz, [(pf.slug(Path(n).stem), "LISTA") for n in nombres[:3]]
+                           + [(pf.slug(Path(nombres[3]).stem), "REVISAR")])
+        ruta = raiz / pf.TRABAJO / "salida" / "reporte.json"
+        rep = json.loads(ruta.read_text(encoding="utf-8"))
+        for f in rep["fotos"]:
+            if f["estado"] == "REVISAR":
+                f["motivos_auto"] = [{"estado": "REVISAR", "codigo": "varias_piezas", "texto": "3 piezas"}]
+                f["motivos"] = ["3 piezas"]
+        ruta.write_text(json.dumps(rep), encoding="utf-8")
+        return carpeta
+
+    def test_el_informe_sugiere_el_kit(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            raiz = Path(tmp)
+            carpeta = self.armar_con_piezas(raiz)
+            estado, _ = pf.decidir(MODELO, carpeta, pf.cargar_config(), pf.leer_reporte(raiz), medidor=lambda r: None)
+            self.assertEqual(pf.EN_ESPERA, estado["estado"])
+            texto = pf.informe([estado])
+            self.assertIn("¿Es un kit?", texto)
+            self.assertIn(f"--kit {MODELO}", texto)
+
+    def test_un_kit_declarado_no_recibe_la_sugerencia(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            raiz = Path(tmp)
+            carpeta = self.armar_con_piezas(raiz)
+            estado, _ = pf.decidir(MODELO, carpeta, pf.cargar_config(), pf.leer_reporte(raiz),
+                                   medidor=lambda r: None, kits={MODELO: {"motivo": "x"}})
+            self.assertNotIn("¿Es un kit?", pf.informe([estado]))
+
+
 if __name__ == "__main__":
     unittest.main()
