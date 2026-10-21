@@ -1224,6 +1224,66 @@ def delta_croma(referencia: np.ndarray, salida: np.ndarray) -> float:
     return round(float(np.hypot(*(a - b).T).mean()), 3)
 
 
+class MapaDeRevision:
+    """El tercer cuadro de la hoja de revisión: la foto original con lo que el retoque cambió.
+
+    Azul, lo que se devolvió al producto (huecos, muescas, regiones de color); rojo, lo que se le
+    quitó (fragmentos descartados, zonas del color del fondo); amarillo, lo que en el interior no
+    coincide con el original. Lo de afuera del producto se apaga. Se arma a tamaño de miniatura en
+    coordenadas de la foto original, así que no pesa en memoria. Los defectos de la tanda del
+    15/10/2026 se veían aquí en segundos; en la hoja de antes había que ampliar foto por foto."""
+
+    AZUL, ROJO, AMARILLO = (40, 110, 255), (235, 40, 40), (255, 210, 0)
+
+    def __init__(self, rgb: np.ndarray, alfa_modelo: np.ndarray, lado: int):
+        alto, ancho = alfa_modelo.shape
+        self.esc = min(1.0, lado / max(alto, ancho))
+        self.tam = (max(1, round(ancho * self.esc)), max(1, round(alto * self.esc)))
+        self.base = cv2.resize(rgb, self.tam, interpolation=cv2.INTER_AREA)
+        self.antes = cv2.resize(alfa_modelo, self.tam, interpolation=cv2.INTER_AREA)
+        self.despues = self.antes
+        self.quitado = np.zeros(self.antes.shape, bool)
+        self.alterado = np.zeros(self.antes.shape, bool)
+
+    def final(self, alfa: np.ndarray) -> None:
+        self.despues = cv2.resize(alfa, self.tam, interpolation=cv2.INTER_AREA)
+
+    def descartadas(self, islas: list) -> None:
+        for x, y, recorte in islas:
+            h, w = recorte.shape
+            chica = cv2.resize(recorte.astype(np.uint8), (max(1, round(w * self.esc)), max(1, round(h * self.esc))),
+                               interpolation=cv2.INTER_NEAREST) > 0
+            y0, x0 = round(y * self.esc), round(x * self.esc)
+            zona = self.quitado[y0:y0 + chica.shape[0], x0:x0 + chica.shape[1]]
+            zona |= chica[:zona.shape[0], :zona.shape[1]]
+
+    def alterados(self, ys: np.ndarray, xs: np.ndarray) -> None:
+        """Píxeles alterados, en coordenadas de la foto original."""
+        yy = np.clip(np.round(ys * self.esc).astype(int), 0, self.tam[1] - 1)
+        xx = np.clip(np.round(xs * self.esc).astype(int), 0, self.tam[0] - 1)
+        self.alterado[yy, xx] = True
+
+    def imagen(self, umbral: float = 0.5) -> Image.Image:
+        antes, despues = self.antes > umbral, self.despues > umbral
+        v = self.base.copy()
+        v[~despues] *= 0.4                                  # lo que no se publica, apagado
+        # rojo solo lo que quedó fuera: una isla descartada que el relleno volvió a encerrar no se perdió
+        for zona, color in ((despues & ~antes, self.AZUL), ((antes | self.quitado) & ~despues, self.ROJO),
+                            (self.alterado, self.AMARILLO)):
+            if zona.any():
+                v[zona] = 0.35 * v[zona] + 0.65 * (np.array(color, np.float32) / 255.0)
+        return Image.fromarray(a_8bits(v), "RGB")
+
+
+def pixeles_alterados(referencia: np.ndarray, salida: np.ndarray) -> np.ndarray:
+    """Por píxel, ¿se aparta del original más de `ALTERADO_DE`?"""
+    if len(referencia) == 0:
+        return np.zeros(0, bool)
+    a = rgb_a_lab(referencia.reshape(-1, 1, 3))[:, 0]
+    b = rgb_a_lab(salida.reshape(-1, 1, 3))[:, 0]
+    return np.linalg.norm(a - b, axis=1) > ALTERADO_DE
+
+
 # Un píxel del interior está alterado si se aparta del original más que esto (ΔE76): el JPEG q92 y
 # el remuestreo dejan 1 o 2, y una mancha de la sombra sobre una pantalla blanca pasa de 15.
 ALTERADO_DE = 10.0
@@ -1240,9 +1300,7 @@ def fraccion_alterada(referencia: np.ndarray, salida: np.ndarray) -> float:
     los que en la foto son fondo—, que es donde esa mancha aparece."""
     if len(referencia) == 0:
         return 0.0
-    a = rgb_a_lab(referencia.reshape(-1, 1, 3))[:, 0]
-    b = rgb_a_lab(salida.reshape(-1, 1, 3))[:, 0]
-    return round(float((np.linalg.norm(a - b, axis=1) > ALTERADO_DE).mean()), 4)
+    return round(float(pixeles_alterados(referencia, salida).mean()), 4)
 
 
 # =========================================================================== codificación

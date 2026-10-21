@@ -639,7 +639,11 @@ procesadas, el script se detiene y pide reprocesar todo o usar otra carpeta.
 
 ### 4. Revisar como un cliente exigente
 
-Mira cada `revision-*.jpg` (primero van las REPETIR, luego REVISAR y LISTA). Para
+Mira cada `revision-*.jpg` (primero van las REPETIR, luego REVISAR y LISTA). Cada foto trae tres
+cuadros: antes, después y el **mapa** (20/10/2026), la foto original con lo que el retoque cambió —en
+azul lo que se devolvió al producto, en rojo lo que se le quitó y quedó fuera, en amarillo lo que en el
+interior no coincide con el original—, y lo que no se publica, apagado. Empieza por el mapa: un
+relleno azul donde no hay producto o una mancha amarilla en una pantalla se ven sin ampliar. Para
 cada REVISAR, y para cualquier LISTA que se vea rara en la miniatura, amplía y mira
 el mosaico que se genera:
 

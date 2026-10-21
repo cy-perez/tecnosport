@@ -301,6 +301,8 @@ def procesar_foto(ctx: Contexto, ruta: Path, nombre: str, previo: dict) -> dict:
                                     float(cfg.get("alfa_umbral_binario", 0.5)))
     descartadas = islas.pop("_descartadas", [])
     a = m if alfa_png is not None else imagen.niveles_alfa(m)
+    mapa = imagen.MapaDeRevision(rgb, a, hojas.MINI)        # el tercer cuadro de la hoja de revisión
+    hojas.ruta_miniatura(ctx.raiz, nombre, "mapa").unlink(missing_ok=True)
     recorte = {"metodo": metodo, "toca_borde": False, "lados": [], **islas, **adornos}
     reg["recorte"] = recorte
     # ---- 5.2a lo que el recorte dejó fuera dentro del producto vuelve a él (20/10/2026): la
@@ -334,6 +336,8 @@ def procesar_foto(ctx: Contexto, ruta: Path, nombre: str, previo: dict) -> dict:
                          f"({completado['relleno_pct']:.1f} % de su área); se devolvieron con los píxeles "
                          "de la foto original" + (" —en un celular o una tablet, lo encerrado es la "
                                                   "pantalla—." if ctx.sin_huecos else "."))
+    mapa.final(a)
+    mapa.descartadas(descartadas)
     caja0 = imagen.caja(a, cfg["alfa_caja_min"])
     if caja0 is None:
         motivo("REPETIR", "sin_producto", "No se encontró el producto en la foto (el recorte quedó vacío).")
@@ -613,12 +617,16 @@ def procesar_foto(ctx: Contexto, ruta: Path, nombre: str, previo: dict) -> dict:
         paso = int(math.ceil(len(ys) / 400_000))
         ys, xs, Y, X = ys[::paso], xs[::paso], Y[::paso], X[::paso]
     if len(ys):
-        alterado = imagen.fraccion_alterada(ref_c[ys, xs], dec[Y, X])
+        cambiados = imagen.pixeles_alterados(ref_c[ys, xs], dec[Y, X])
+        alterado = round(float(cambiados.mean()), 4)
         reg["interior_alterado"] = alterado
+        # al mapa, en coordenadas de la foto cargada: del recorte escalado (nw × nh) a la caja (cw × ch)
+        mapa.alterados(cy0 + ys[cambiados] * (ch / nh), cx0 + xs[cambiados] * (cw / nw))
         if alterado > imagen.ALTERADO_MAXIMO:
             motivo("REVISAR", "interior_alterado",
                    f"El {100 * alterado:.1f} % del interior del producto no coincide con la foto original "
                    f"(ΔE > {imagen.ALTERADO_DE:.0f}): compáralos a tamaño real.")
+    mapa.imagen().save(hojas.ruta_miniatura(ctx.raiz, nombre, "mapa"), quality=90)
     return cerrar()
 
 

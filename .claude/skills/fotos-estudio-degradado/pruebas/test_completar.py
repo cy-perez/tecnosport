@@ -173,6 +173,42 @@ class CompletarProducto(unittest.TestCase):
 
 
 @unittest.skipIf(imagen is None, "pide NumPy y OpenCV")
+class MapaDeRevision(unittest.TestCase):
+    """El tercer cuadro de la hoja: azul lo rellenado, rojo lo quitado, amarillo lo alterado."""
+
+    def test_pinta_cada_cambio_de_su_color(self):
+        rgb = lienzo(200, 200)
+        antes = np.zeros((200, 200), np.float32)
+        antes[40:160, 40:160] = 1.0
+        antes[80:120, 80:120] = 0.0                       # el hueco de la pantalla
+        antes[10:20, 10:20] = 1.0                         # un fragmento que se quita
+        mapa = imagen.MapaDeRevision(rgb, antes, 200)
+        despues = antes.copy()
+        despues[80:120, 80:120] = 1.0
+        despues[10:20, 10:20] = 0.0
+        mapa.final(despues)
+        mapa.alterados(np.array([50]), np.array([140]))
+        v = np.asarray(mapa.imagen()).astype(int)
+        self.assertGreater(v[100, 100, 2], v[100, 100, 0] + 60)       # azul
+        self.assertGreater(v[15, 15, 0], v[15, 15, 2] + 60)           # rojo
+        self.assertGreater(v[50, 140, 1], v[50, 140, 2] + 60)         # amarillo
+        self.assertLess(v[190, 190].max(), 130)                       # el fondo, apagado
+        self.assertEqual(255, v[60, 60].min())                        # el producto, tal cual
+
+    def test_una_isla_descartada_que_volvio_a_quedar_adentro_no_sale_roja(self):
+        alfa = np.zeros((100, 100), np.float32)
+        alfa[10:90, 10:90] = 1.0
+        mapa = imagen.MapaDeRevision(lienzo(100, 100), alfa, 100)
+        mapa.descartadas([(40, 40, np.ones((10, 10), bool))])
+        v = np.asarray(mapa.imagen()).astype(int)
+        self.assertEqual(255, v[45, 45].min())
+
+    def test_se_arma_a_tamano_de_miniatura(self):
+        mapa = imagen.MapaDeRevision(lienzo(2000, 1000), np.zeros((2000, 1000), np.float32), 300)
+        self.assertEqual((150, 300), mapa.imagen().size)
+
+
+@unittest.skipIf(imagen is None, "pide NumPy y OpenCV")
 class CargaReducida(unittest.TestCase):
     def test_una_foto_grande_se_carga_al_lado_pedido_y_dice_cuanto(self):
         import tempfile
