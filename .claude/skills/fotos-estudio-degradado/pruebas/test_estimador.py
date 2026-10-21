@@ -49,6 +49,18 @@ class EstimarLadoProducto(unittest.TestCase):
             ruta = foto(tmp, "blanco.jpg", 1200, 1200, 255, (100, 300, 1100, 900))
             self.assertAlmostEqual(1000, estimador.estimar_lado_producto(ruta), delta=6)
 
+    def test_sobre_una_mesa_no_hay_medida_fiable(self):
+        # La foto entera «mide»: sirve para elegir un lienzo (sale mayor, no menor), pero no para
+        # decidir cuánto reducir la foto al cargarla.
+        with tempfile.TemporaryDirectory() as tmp:
+            arr = (np.random.default_rng(3).random((1000, 1000)) * 120 + 60).astype(np.uint8)
+            ruta = Path(tmp) / "mesa.png"
+            Image.fromarray(arr, "L").save(ruta)
+            self.assertEqual(1000, estimador.estimar_lado_producto(ruta))
+            self.assertIsNone(estimador.estimar_lado_fiable(ruta))
+            blanco = foto(tmp, "blanco.png", 1200, 1200, 255, (100, 300, 1100, 900))
+            self.assertAlmostEqual(1000, estimador.estimar_lado_fiable(blanco), delta=6)
+
     def test_un_png_recortado_se_mide_por_su_alfa(self):
         # Lo transparente guardado en negro hacía que la foto entera «fuera producto».
         with tempfile.TemporaryDirectory() as tmp:

@@ -24,10 +24,13 @@ from PIL import Image, ImageDraw, ImageFont  # noqa: E402
 import reporte  # noqa: E402
 
 MINI = 300
-ANCHO = 1600
+ANCHO = 1800                     # 1600 hasta que entró el tercer cuadro, el mapa
 FILA = 350
 CABECERA = 44
-TEXTO_X = 20 + MINI + 20 + MINI + 30
+# Tres cuadros: antes, después y el mapa de lo que cambió (azul rellenado, rojo quitado, amarillo
+# distinto del original). El mapa existe desde el 20/10/2026; una foto procesada antes no lo tiene.
+CUADROS = ("antes", "despues", "mapa")
+TEXTO_X = 20 + len(CUADROS) * (MINI + 20) + 10
 COLORES = {"LISTA": (20, 125, 60), "REVISAR": (185, 105, 0), "REPETIR": (185, 30, 30)}
 
 
@@ -66,7 +69,10 @@ def _datos_linea(f: dict) -> list[str]:
     e = f.get("entrada") or {}
     lineas = []
     partes = [f.get("archivo", "")]
-    if e.get("ancho"):
+    if e.get("reducida_desde"):
+        ancho, alto = e["reducida_desde"]
+        partes.append(f"{ancho}×{alto} px (cargada a {e['ancho']}×{e['alto']})")
+    elif e.get("ancho"):
         partes.append(f"{e['ancho']}×{e['alto']} px")
     if f.get("escala"):
         partes.append(f"escala {f['escala']:.2f}×")
@@ -114,14 +120,14 @@ def generar(raiz: Path, rep: dict, por_hoja: int = 8) -> tuple[list[Path], dict[
         hoja = Image.new("RGB", (ANCHO, CABECERA + FILA * len(grupo)), (255, 255, 255))
         d = ImageDraw.Draw(hoja)
         d.rectangle([0, 0, ANCHO, CABECERA - 1], fill=(40, 40, 40))
-        for k, etiqueta in enumerate(("antes", "después")):
+        for k, etiqueta in enumerate(("antes", "después", "mapa")):
             x = 20 + k * (MINI + 20) + (MINI - d.textlength(etiqueta, font=f_texto)) / 2
             d.text((x, 11), etiqueta, fill=(210, 210, 210), font=f_texto)
-        d.text((TEXTO_X, 11), f"Hoja {n_hoja} de {total_hojas} · estado, motivos y datos",
-               fill=(255, 255, 255), font=f_texto)
+        d.text((TEXTO_X, 11), f"Hoja {n_hoja} de {total_hojas} · mapa: azul rellenado, rojo quitado, "
+                              "amarillo distinto del original", fill=(255, 255, 255), font=f_texto)
         for j, f in enumerate(grupo):
             y = CABECERA + j * FILA + 20
-            for k, cual in enumerate(("antes", "despues")):
+            for k, cual in enumerate(CUADROS):
                 x = 20 + k * (MINI + 20)
                 d.rectangle([x - 1, y - 1, x + MINI, y + MINI], outline=(215, 215, 215))
                 ruta_m = ruta_miniatura(raiz, f["nombre"], cual)
@@ -144,6 +150,11 @@ def generar(raiz: Path, rep: dict, por_hoja: int = 8) -> tuple[list[Path], dict[
             limite = y + FILA - 40
             renglones = [(t, f_chico, (90, 90, 90), "") for t in _datos_linea(f)]
             renglones += [(m, f_texto, (25, 25, 25), "• ") for m in f.get("motivos", [])]
+            codigos = {m.get("codigo") for m in f.get("motivos_auto", []) if m.get("estado") in ("REVISAR", "REPETIR")}
+            if estado == "REVISAR" and codigos == {"varias_piezas"} and not f.get("marcas"):
+                renglones.append(("¿Es un kit? Si el producto se vende con sus piezas sueltas, declarar el modelo con "
+                                  "procesar_fichas.py --kit hace que esta foto cuente como LISTA en la tanda.",
+                                  f_chico, (40, 90, 170), "? "))
             if f.get("revisada") and estado != "REPETIR":
                 nota = f["revisada"].get("nota") or ""
                 renglones.append(("Revisada a ojo" + (f": {nota}" if nota else ""), f_texto, (20, 125, 60), "✓ "))

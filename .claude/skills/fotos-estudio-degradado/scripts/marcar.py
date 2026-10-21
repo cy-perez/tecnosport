@@ -41,6 +41,7 @@ entorno.exigir()
 
 import hojas  # noqa: E402
 import reporte  # noqa: E402
+import salidas  # noqa: E402
 
 
 def utf8() -> None:
@@ -58,7 +59,7 @@ def leer_zona(texto: str, entrada: dict) -> list[int]:
         raise ValueError(f"zona no válida «{texto}»: usa X0,Y0,X1,Y1 en píxeles")
     x0, x1 = sorted((x0, x1))
     y0, y1 = sorted((y0, y1))
-    ancho, alto = entrada.get("ancho"), entrada.get("alto")
+    ancho, alto = salidas.tamano_original(entrada)   # en px de la foto original, no de la cargada
     if ancho and alto:
         x0, x1 = max(0, x0), min(int(ancho), x1)
         y0, y1 = max(0, y0), min(int(alto), y1)
@@ -121,10 +122,16 @@ def main() -> int:
     for n in a.nombres:
         f = fotos[n]
         antes = reporte.estado_final(f)
+        if a.repetir or a.revisar:
+            # una marca nueva es la decisión de la persona sobre lo que había caducado
+            f["marcas_caducadas"] = []
+            f["motivos_auto"] = [m for m in f.get("motivos_auto", []) if m.get("codigo") != "marca_caducada"]
         if a.repetir:
-            f.setdefault("marcas", []).append({"estado": "REPETIR", "motivo": a.repetir.strip(), "fecha": reporte.ahora()})
+            f.setdefault("marcas", []).append({"estado": "REPETIR", "motivo": a.repetir.strip(), "fecha": reporte.ahora(),
+                                               "version_retoque": f.get("version_retoque")})
         elif a.revisar:
-            f.setdefault("marcas", []).append({"estado": "REVISAR", "motivo": a.revisar.strip(), "fecha": reporte.ahora()})
+            f.setdefault("marcas", []).append({"estado": "REVISAR", "motivo": a.revisar.strip(), "fecha": reporte.ahora(),
+                                               "version_retoque": f.get("version_retoque")})
         elif a.aprobar is not None:
             if antes == "REPETIR":
                 print(f"{n}: está en REPETIR y eso no se aprueba a ojo; hay que repetir la foto.")
@@ -142,6 +149,9 @@ def main() -> int:
             reprocesar.append(n)
         elif a.limpiar:
             f["marcas"], f["revisada"] = [], None
+            # y la marca de un retoque anterior que pedía volver a mirar: ya se miró
+            f["marcas_caducadas"] = []
+            f["motivos_auto"] = [m for m in f.get("motivos_auto", []) if m.get("codigo") != "marca_caducada"]
         elif a.limpiar_exclusiones:
             if f.get("exclusiones"):
                 reprocesar.append(n)

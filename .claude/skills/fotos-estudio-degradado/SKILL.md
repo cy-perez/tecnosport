@@ -154,9 +154,10 @@ mordisco abierto en la parte de abajo.
   hasta la envolvente convexa de cada pieza se rellena si casi nada en ello es fondo (≤ 15 %) y
   si **continúa el color de lo que tiene al lado** (salto ≤ 6 ΔE). La segunda condición existe
   por la sombra del piso de los renders: bajo una fila de teléfonos escalonados cae dentro de la
-  envolvente, y sin ella se pintaba como equipo (Galaxy S26 Ultra _1, A17 _1). Una esquina
-  mordida entera solo vuelve a medias —la envolvente recupera el triángulo—; de eso avisa el
-  control del interior.
+  envolvente, y sin ella se pintaba como equipo (Galaxy S26 Ultra _1, A17 _1). Si la pieza es
+  casi un rectángulo (su envolvente cubre el 95 % de su rectángulo mínimo: un equipo de frente), la
+  referencia es el rectángulo, para que una esquina mordida entera vuelva completa; lo que de la
+  muesca es fondo se queda fuera píxel a píxel, así que una esquina redonda sigue redonda.
 
 El fondo de la foto se lee como la mediana Lab de lo que está lejos del recorte, y un píxel es
 fondo a menos de 2,5 ΔE de ella: los renders traen el fondo plano y una tapa blanca queda a 3 o
@@ -179,10 +180,51 @@ marca REVISAR un celular o una tablet que aún tenga un hueco encerrado. `interi
 mide sobre la silueta con sus huecos —salvo los que en la foto son fondo—, que es donde aparece
 la mancha; en un PNG recortado el interior se queda con el color de su recorte.
 
-**Lo procesado antes del 20/10/2026 no se reprocesa solo**: nada de esto entra en la huella de la
-configuración, así que `--nuevas` y la tanda lo saltan. Para rehacer fotos concretas sin moverle
+**La versión del retoque** (`salidas.VERSION_RETOQUE`, 20/10/2026) entra en la huella de la
+configuración y va en cada foto y en cada marca a ojo. Se sube cuando el código cambia cómo se ve
+una foto. Con ella:
+
+- `--nuevas` rehace lo que se procesó con un retoque anterior.
+- **Una marca a ojo caduca** cuando la foto se rehace con otra versión: no se aplica sola, pasa a
+  REVISAR (`marca_caducada`) con su texto, para que la persona mire si sigue aplicando. Si no,
+  `marcar.py --limpiar`; si sí, se vuelve a marcar. Las tres Tab A11 seguían en REPETIR por «el
+  recorte se comió la pantalla» cuando el retoque nuevo ya no lo hacía.
+- La tanda **avisa** cuántas de sus fotos se hicieron con un retoque anterior, pero no las rehace
+  sola: el lienzo y las LISTA de un modelo aprobado cambiarían sin que nadie lo pidiera. Para rehacer fotos concretas sin moverle
 el lienzo a las demás del modelo: `procesar.py ... --solo <nombres> --conservar-lienzo
 --sin-huecos <modelos>`, y después `procesar_fichas.py ... --tanda ... --devolver`.
+
+### 0.b El color del fondo es la segunda opinión del recorte (20/10/2026)
+
+Casi todo el material es render de fabricante sobre un fondo plano, y ahí el color dice más que el
+modelo. `imagen.segunda_opinion()` corre antes de completar el producto, y solo si el fondo de la
+foto se pudo leer:
+
+- **Suma** las regiones de color (croma C* ≥ 5 en el 60 % de sus píxeles, al menos el 0,5 % del
+  producto) que tocan el producto, no tocan el borde de la foto y el modelo no vio: el panel
+  trasero lavanda del Redmi Pad 2 _5, que se publicaba sin él. La sombra del piso es gris y una
+  tapa blanca no tiene croma: por aquí no entran. Tampoco lo que **se desvanece** hacia el fondo
+  —más del 5 % de la región a menos de 10 ΔE de él—: el reflejo de piso de un celular de color o el
+  halo de un fondo pálido con viñeta (medido: 22 % en un reflejo; 0,5 % en el panel del Redmi Pad
+  2). Y nada que toque una zona excluida a mano.
+- **Quita** lo que el modelo marcó con duda (alfa < 0,9), es del color del fondo y se alcanza desde
+  el borde de la foto sin cruzar producto: el arco blanco sobre el TCL Pad _3. Un teléfono blanco no
+  se pierde, porque lo encierra un marco que no es del color del fondo. Se entra por la franja del
+  borde y no por su primer píxel, porque el filete oscuro del material de Apple la cerraba.
+
+El fondo se lee primero en un anillo junto al borde de la foto —saltando el 1 %, por el filete de
+Apple— y solo si ese anillo no es un fondo de estudio, en lo que está lejos del recorte: «lejos del
+recorte» incluía lo que el modelo no vio, y con el panel del Redmi Pad 2 adentro el fondo salía
+disparejo y sin leer.
+
+### 0.c Un fragmento descartado solo avisa si queda fuera del producto (20/10/2026)
+
+`limpiar_islas` descarta las islas pequeñas antes de completar el producto, y medido sobre la tanda
+del 15/10/2026 casi todas eran **del producto**: los lentes de un OPPO A6k, la manzana de un iPhone
+16e, el «REDMI» de una tablet. El modelo los vio sueltos porque no vio la superficie de alrededor, y
+el relleno de huecos los vuelve a encerrar. El motivo `pieza_descartada` se decide ahora contra el
+producto ya completo (`islas_perdidas`): una isla que quedó adentro es una nota; solo cuenta la que
+sigue fuera en más de la mitad. En la muestra, seis de ocho fotos dejaron de salir REVISAR por eso.
 
 ### 1. El interior se compone opaco (`alfa_solida_banda_px`)
 
@@ -379,7 +421,9 @@ reparo**: una ampliación de más, un borde dudoso o una marca a ojo la siguen d
 fuera. En los demás modelos no cambia nada, porque tres piezas también pueden ser dos
 productos distintos o la gama de colores, y eso lo decide una persona, no el script.
 Si en la hoja ves un modelo esperando solo por `varias_piezas`, pregúntale a la persona
-si es un kit; no lo declares por tu cuenta.
+si es un kit; no lo declares por tu cuenta. Desde el 20/10/2026 el informe de la tanda lo sugiere
+con la orden lista para copiar («¿Es un kit? … --kit <id>»), y la hoja de revisión lo anota en esa
+foto: la sugerencia es para la persona, no para que la apliques.
 
 ```bash
 python3 "${CLAUDE_SKILL_DIR}/scripts/procesar_fichas.py" catalogo/4-entregables/fichas \
@@ -457,7 +501,10 @@ correrlo otra vez después de soltar fotos nuevas procesa solo esas; con `--tand
 va en su lugar `--solo` con cada modelo entero y la compuerta del lienzo. Las hojas de
 revisión y el reporte quedan en `fichas/_estudio/salida/`, en un sitio para todos
 los modelos: ahí se revisa como siempre (paso 4) y ahí se aprueba con `marcar.py`;
-`--devolver` vuelve a copiar lo aprobado. Las REPETIR no se devuelven. Con
+`--devolver` vuelve a copiar lo aprobado. Las REPETIR no se devuelven, y **la versión anterior de
+una foto que pasó a REPETIR se mueve a `Fotos procesadas/_retiradas/`** (20/10/2026):
+`tools/material-catalogo.mjs` sube todo `.jpg` de «Fotos procesadas», y el Redmi Pad 2 _5
+malformado seguía ahí, listo para subirse. Se mueve y no se borra: borrarlo lo decide la persona. Con
 `--segundo-plano` lanza el proceso y, al terminar, se corre `--devolver` —con la
 misma `--tanda`, que es la que decide el estado de cada modelo—. Sin `--tanda`
 procesa todas las carpetas y no decide nada: es el modo de antes, para un lote
@@ -584,6 +631,16 @@ lote de inventario— el par útil es `--por-producto --nuevas`: agrupa la salid
 producto y salta lo ya procesado cuyo archivo de origen no ha cambiado. En Windows las
 rutas van entre comillas (`"C:\fotos\lote 1"`) y el segundo plano funciona igual.
 
+**Una foto enorme se carga reducida** (20/10/2026): el lienzo nunca pasa de 2000 px, así que una
+foto de más de 4000 se carga a 4000 —o a lo que haga falta para que el producto siga midiendo 1,5
+veces lo que pide el lienzo; nunca hasta tener que ampliar (`salidas.lado_de_carga`)—. Solo con una
+medida fiable del producto (fondo de estudio o alfa de un PNG): sobre una mesa el estimador da la
+foto entera, y reducir así dejaba el producto ampliado. Medido en la
+foto de 8000 px del Moto G17 _3: el pico de memoria baja de 4,4 a 2,4 GB, con la misma salida. Un
+reproceso de 83 fotos en segundo plano murió por memoria justo en ella. Aun así, con lotes grandes
+conviene ir en tandas de unas 20 en primer plano. Las exclusiones y `caja_origen` siguen en píxeles
+de la foto original.
+
 Una carpeta de salida acumula rondas: al reprocesar, el reporte se fusiona y las
 hojas se regeneran. Por eso las opciones de salida (lienzo, anchos, formatos y
 carpetas) deben ser las mismas en toda la carpeta; si cambian habiendo otras fotos
@@ -591,7 +648,11 @@ procesadas, el script se detiene y pide reprocesar todo o usar otra carpeta.
 
 ### 4. Revisar como un cliente exigente
 
-Mira cada `revision-*.jpg` (primero van las REPETIR, luego REVISAR y LISTA). Para
+Mira cada `revision-*.jpg` (primero van las REPETIR, luego REVISAR y LISTA). Cada foto trae tres
+cuadros: antes, después y el **mapa** (20/10/2026), la foto original con lo que el retoque cambió —en
+azul lo que se devolvió al producto, en rojo lo que se le quitó y quedó fuera, en amarillo lo que en el
+interior no coincide con el original—, y lo que no se publica, apagado. Empieza por el mapa: un
+relleno azul donde no hay producto o una mancha amarilla en una pantalla se ven sin ampliar. Para
 cada REVISAR, y para cualquier LISTA que se vea rara en la miniatura, amplía y mira
 el mosaico que se genera:
 

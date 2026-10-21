@@ -565,5 +565,72 @@ class SinHuecosPorModelo(unittest.TestCase):
             self.assertTrue(procesar)
 
 
+
+class RetirarLoQueYaNoSePublica(unittest.TestCase):
+    """Una foto que pasa a REPETIR no deja su versión anterior donde material-catalogo.mjs la sube."""
+
+    def test_la_version_anterior_de_una_foto_en_repetir_se_retira(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            raiz = Path(tmp)
+            carpeta = armar(raiz)
+            procesadas = carpeta / pf.PROCESADAS
+            (procesadas / pf.WEB / "1200").mkdir(parents=True)
+            (procesadas / "samsung-galaxy-s25-ultra_1.jpg").write_bytes(b"malformada")
+            (procesadas / pf.WEB / "1200" / "samsung-galaxy-s25-ultra_1.avif").write_bytes(b"avif")
+            salida_de_procesar(raiz, [("samsung-galaxy-s25-ultra-1", "REPETIR"), ("samsung-galaxy-s25-ultra-2", "LISTA")])
+            r = pf.devolver(raiz)
+            self.assertFalse((procesadas / "samsung-galaxy-s25-ultra_1.jpg").exists())
+            self.assertFalse((procesadas / pf.WEB / "1200" / "samsung-galaxy-s25-ultra_1.avif").exists())
+            retiradas = procesadas / pf.RETIRADAS
+            self.assertEqual(b"malformada", (retiradas / "samsung-galaxy-s25-ultra_1.jpg").read_bytes())
+            self.assertTrue((retiradas / pf.WEB / "1200" / "samsung-galaxy-s25-ultra_1.avif").is_file())
+            self.assertTrue((procesadas / "samsung-galaxy-s25-ultra_2.jpg").is_file())
+            self.assertEqual(1, len(r["retiradas"]))
+
+    def test_una_repetir_sin_version_anterior_no_retira_nada(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            raiz = Path(tmp)
+            armar(raiz)
+            salida_de_procesar(raiz, [("samsung-galaxy-s25-ultra-1", "REPETIR")])
+            self.assertEqual([], pf.devolver(raiz)["retiradas"])
+
+
+
+class SugerirElKit(unittest.TestCase):
+    """Un modelo que espera solo por piezas sueltas recibe la sugerencia del kit; nunca se declara solo."""
+
+    def armar_con_piezas(self, raiz):
+        nombres = tuple(f"samsung-galaxy-s25-ultra_{i}.jpg" for i in range(1, 5))
+        carpeta = armar(raiz, nombres)
+        salida_de_procesar(raiz, [(pf.slug(Path(n).stem), "LISTA") for n in nombres[:3]]
+                           + [(pf.slug(Path(nombres[3]).stem), "REVISAR")])
+        ruta = raiz / pf.TRABAJO / "salida" / "reporte.json"
+        rep = json.loads(ruta.read_text(encoding="utf-8"))
+        for f in rep["fotos"]:
+            if f["estado"] == "REVISAR":
+                f["motivos_auto"] = [{"estado": "REVISAR", "codigo": "varias_piezas", "texto": "3 piezas"}]
+                f["motivos"] = ["3 piezas"]
+        ruta.write_text(json.dumps(rep), encoding="utf-8")
+        return carpeta
+
+    def test_el_informe_sugiere_el_kit(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            raiz = Path(tmp)
+            carpeta = self.armar_con_piezas(raiz)
+            estado, _ = pf.decidir(MODELO, carpeta, pf.cargar_config(), pf.leer_reporte(raiz), medidor=lambda r: None)
+            self.assertEqual(pf.EN_ESPERA, estado["estado"])
+            texto = pf.informe([estado])
+            self.assertIn("¿Es un kit?", texto)
+            self.assertIn(f"--kit {MODELO}", texto)
+
+    def test_un_kit_declarado_no_recibe_la_sugerencia(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            raiz = Path(tmp)
+            carpeta = self.armar_con_piezas(raiz)
+            estado, _ = pf.decidir(MODELO, carpeta, pf.cargar_config(), pf.leer_reporte(raiz),
+                                   medidor=lambda r: None, kits={MODELO: {"motivo": "x"}})
+            self.assertNotIn("¿Es un kit?", pf.informe([estado]))
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -86,8 +86,7 @@ class CompletarProducto(unittest.TestCase):
 
     def test_la_tapa_blanca_mordida_por_el_contorno_se_completa(self):
         # Moto G17 _3, iPhone 16e _4: la tapa casi blanca sobre fondo blanco; el modelo le muerde el
-        # borde de abajo. (Una esquina entera no vuelve completa: la envolvente convexa solo
-        # recupera el triángulo; de eso avisa el control del interior.)
+        # borde de abajo.
         rgb = lienzo()
         rgb[60:340, 120:280] = (0.90, 0.93, 0.95)
         alfa = np.zeros((400, 400), np.float32)
@@ -96,6 +95,27 @@ class CompletarProducto(unittest.TestCase):
         nuevo, datos = imagen.completar_producto(alfa, rgb, sin_huecos=True)
         self.assertEqual(1.0, float(nuevo[320, 200]))
         self.assertEqual(1, datos["muescas_rellenas"])
+
+    def test_una_esquina_mordida_entera_vuelve_completa(self):
+        # Hasta el 20/10/2026 la envolvente convexa solo recuperaba el triángulo de la esquina.
+        rgb = lienzo()
+        rgb[60:340, 120:280] = (0.90, 0.93, 0.95)
+        alfa = np.zeros((400, 400), np.float32)
+        alfa[60:340, 120:280] = 1.0
+        alfa[290:340, 120:200] = 0.0
+        nuevo, datos = imagen.completar_producto(alfa, rgb, sin_huecos=True)
+        self.assertEqual(1.0, float(nuevo[335, 125]))
+        self.assertEqual(1, datos.get("piezas_rectangulares"))
+
+    def test_la_esquina_redonda_de_un_telefono_sano_sigue_redonda(self):
+        rgb = lienzo()
+        alfa = np.zeros((400, 400), np.float32)
+        cv2.rectangle(alfa, (120, 60), (280, 340), 1.0, -1)
+        alfa[60:90, 120:150] = 0.0
+        cv2.circle(alfa, (150, 90), 30, 1.0, -1)              # la esquina redonda
+        rgb[alfa > 0] = (0.2, 0.2, 0.2)
+        nuevo, _ = imagen.completar_producto(alfa, rgb, sin_huecos=True)
+        self.assertEqual(0.0, float(nuevo[62, 122]))
 
     def test_la_sombra_del_piso_entre_dos_telefonos_no_es_producto(self):
         # Galaxy S26 Ultra _1 y A17 _1: los teléfonos escalonados forman una sola pieza, y bajo el
@@ -170,6 +190,191 @@ class CompletarProducto(unittest.TestCase):
         lleno = imagen.rellenar_huecos(m)
         self.assertTrue(lleno[25, 25])
         self.assertFalse(lleno[2, 2])
+
+
+@unittest.skipIf(imagen is None, "pide NumPy y OpenCV")
+class MapaDeRevision(unittest.TestCase):
+    """El tercer cuadro de la hoja: azul lo rellenado, rojo lo quitado, amarillo lo alterado."""
+
+    def test_pinta_cada_cambio_de_su_color(self):
+        rgb = lienzo(200, 200)
+        antes = np.zeros((200, 200), np.float32)
+        antes[40:160, 40:160] = 1.0
+        antes[80:120, 80:120] = 0.0                       # el hueco de la pantalla
+        antes[10:20, 10:20] = 1.0                         # un fragmento que se quita
+        mapa = imagen.MapaDeRevision(rgb, antes, 200)
+        despues = antes.copy()
+        despues[80:120, 80:120] = 1.0
+        despues[10:20, 10:20] = 0.0
+        mapa.final(despues)
+        mapa.alterados(np.array([50]), np.array([140]))
+        v = np.asarray(mapa.imagen()).astype(int)
+        self.assertGreater(v[100, 100, 2], v[100, 100, 0] + 60)       # azul
+        self.assertGreater(v[15, 15, 0], v[15, 15, 2] + 60)           # rojo
+        self.assertGreater(v[50, 140, 1], v[50, 140, 2] + 60)         # amarillo
+        self.assertLess(v[190, 190].max(), 130)                       # el fondo, apagado
+        self.assertEqual(255, v[60, 60].min())                        # el producto, tal cual
+
+    def test_una_isla_descartada_que_volvio_a_quedar_adentro_no_sale_roja(self):
+        alfa = np.zeros((100, 100), np.float32)
+        alfa[10:90, 10:90] = 1.0
+        mapa = imagen.MapaDeRevision(lienzo(100, 100), alfa, 100)
+        mapa.descartadas([(40, 40, np.ones((10, 10), bool))])
+        v = np.asarray(mapa.imagen()).astype(int)
+        self.assertEqual(255, v[45, 45].min())
+
+    def test_se_arma_a_tamano_de_miniatura(self):
+        mapa = imagen.MapaDeRevision(lienzo(2000, 1000), np.zeros((2000, 1000), np.float32), 300)
+        self.assertEqual((150, 300), mapa.imagen().size)
+
+
+@unittest.skipIf(imagen is None, "pide NumPy y OpenCV")
+class CargaReducida(unittest.TestCase):
+    def test_una_foto_grande_se_carga_al_lado_pedido_y_dice_cuanto(self):
+        import tempfile
+        from PIL import Image
+        with tempfile.TemporaryDirectory() as tmp:
+            ruta = Path(tmp) / "grande.png"
+            arr = np.full((3000, 2000, 3), 255, np.uint8)
+            arr[1000:2000, 500:1500] = (30, 60, 90)
+            Image.fromarray(arr).save(ruta)
+            foto = imagen.cargar_foto(ruta, 1500)
+            self.assertEqual((1500, 1000), foto["rgb"].shape[:2])
+            self.assertAlmostEqual(0.5, foto["info"]["factor_carga"], places=4)
+            self.assertEqual([2000, 3000], foto["info"]["reducida_desde"])
+            entera = imagen.cargar_foto(ruta)
+            self.assertEqual((3000, 2000), entera["rgb"].shape[:2])
+            self.assertEqual(1.0, entera["info"]["factor_carga"])
+
+
+@unittest.skipIf(imagen is None, "pide NumPy y OpenCV")
+class IslasDescartadas(unittest.TestCase):
+    """Un fragmento que el relleno vuelve a encerrar no se perdió (20/10/2026)."""
+
+    def recorte(self):
+        # La tapa con la manzana: el modelo ve el marco y el logo suelto, no la superficie.
+        m = np.zeros((400, 400), np.float32)
+        m[50:350, 100:300] = 1.0
+        m[60:340, 110:290] = 0.0
+        m[187:193, 197:203] = 1.0                        # el logo, una isla del 0,37 %
+        return m
+
+    def test_la_isla_que_queda_adentro_no_cuenta(self):
+        m = self.recorte()
+        limpio, datos = imagen.limpiar_islas(m, 0.005, 0.001, 0.5)
+        self.assertTrue(datos["aviso_pieza"])                # antes: REVISAR
+        final, _ = imagen.completar_producto(limpio, lienzo(), sin_huecos=True)
+        self.assertEqual(0.0, imagen.islas_perdidas(datos["_descartadas"], final, 0.5, float((final > 0.5).sum())))
+
+    def test_la_isla_que_queda_afuera_sigue_contando(self):
+        m = np.zeros((400, 400), np.float32)
+        m[50:350, 100:300] = 1.0
+        m[20:30, 340:360] = 1.0                          # una antena suelta, fuera del cuerpo
+        limpio, datos = imagen.limpiar_islas(m, 0.005, 0.001, 0.5)
+        perdida = imagen.islas_perdidas(datos["_descartadas"], limpio, 0.5, float((m > 0.5).sum()))
+        self.assertGreater(perdida, 0.0)
+
+
+@unittest.skipIf(imagen is None, "pide NumPy y OpenCV")
+class SegundaOpinion(unittest.TestCase):
+    """El color del fondo como segunda opinión del recorte (20/10/2026)."""
+
+    def foto(self):
+        rgb = lienzo()
+        alfa = np.zeros((400, 400), np.float32)
+        rgb[60:340, 160:300] = (0.1, 0.1, 0.1)               # la tablet de frente, que el modelo ve
+        alfa[60:340, 160:300] = 1.0
+        rgb[70:330, 80:160] = (0.80, 0.76, 0.90)             # el panel trasero lavanda, que no ve
+        return rgb, alfa
+
+    def test_suma_el_panel_de_color_que_el_modelo_no_vio(self):
+        # Redmi Pad 2 _5: se publicaba la tablet de frente sin el panel trasero.
+        rgb, alfa = self.foto()
+        fondo = imagen.fondo_de_la_foto(rgb, alfa)
+        nuevo, datos = imagen.segunda_opinion(alfa, rgb, fondo)
+        self.assertEqual(1.0, float(nuevo[200, 120]))
+        self.assertGreater(datos["sumado_pct"], 0)
+
+    def test_no_suma_la_sombra_gris_del_piso(self):
+        rgb, alfa = self.foto()
+        rgb[70:330, 80:160] = 1.0
+        for i, y in enumerate(range(340, 370)):              # sombra gris bajo la tablet
+            rgb[y, 160:300] = 0.7 + 0.3 * i / 30
+        nuevo, _ = imagen.segunda_opinion(alfa, rgb, imagen.fondo_de_la_foto(rgb, alfa))
+        self.assertEqual(0.0, float(nuevo[350, 230]))
+
+    def test_no_suma_el_reflejo_de_piso_de_un_celular_de_color(self):
+        # Render de fabricante: bajo el celular azul, su reflejo se desvanece hacia el blanco.
+        rgb, alfa = lienzo(), np.zeros((400, 400), np.float32)
+        rgb[60:300, 150:250] = (0.1, 0.25, 0.7)
+        alfa[60:300, 150:250] = 1.0
+        mezcla = np.linspace(0.6, 0.97, 80)[:, None, None]
+        rgb[300:380, 150:250] = np.array([0.1, 0.25, 0.7]) * (1 - mezcla) + mezcla
+        nuevo, datos = imagen.segunda_opinion(alfa, rgb, imagen.fondo_de_la_foto(rgb, alfa))
+        self.assertEqual(0.0, float(nuevo[320, 200]))
+        self.assertEqual(0.0, datos["sumado_pct"])
+
+    def test_no_suma_el_halo_de_un_fondo_de_color_con_vineta(self):
+        yy, xx = np.mgrid[0:400, 0:400]
+        r = np.hypot(yy - 200, xx - 200) / 283
+        rgb = np.stack([0.93 + 0.07 * r, 0.90 + 0.10 * r, 0.97 + 0.03 * r], axis=-1).astype(np.float32)
+        alfa = np.zeros((400, 400), np.float32)
+        rgb[150:250, 170:230] = 0.1
+        alfa[150:250, 170:230] = 1.0
+        nuevo, _ = imagen.segunda_opinion(alfa, rgb, imagen.fondo_de_la_foto(rgb, alfa))
+        self.assertEqual(0.0, float(nuevo[200, 140]))
+
+    def test_no_suma_lo_que_toca_una_zona_excluida_a_mano(self):
+        # Un cable rojo excluido junto al celular: sin esto volvía entero fuera del rectángulo.
+        rgb, alfa = self.foto()
+        prohibido = np.zeros(alfa.shape, bool)
+        prohibido[150:250, 90:150] = True
+        nuevo, _ = imagen.segunda_opinion(alfa, rgb, imagen.fondo_de_la_foto(rgb, alfa), prohibido=prohibido)
+        self.assertEqual(0.0, float(nuevo[100, 120]))
+
+    def test_quita_aunque_la_foto_traiga_el_filete_oscuro_de_apple(self):
+        rgb, alfa = self.foto()
+        rgb[70:330, 80:160] = 1.0
+        rgb[:2, :] = rgb[-2:, :] = rgb[:, :2] = rgb[:, -2:] = 0.89
+        alfa[30:60, 180:280] = 0.5
+        nuevo, datos = imagen.segunda_opinion(alfa, rgb, imagen.fondo_de_la_foto(rgb, alfa), 0.2)
+        self.assertEqual(0.0, float(nuevo[45, 230]))
+
+    def test_quita_el_arco_del_color_del_fondo_que_el_modelo_dudo(self):
+        # TCL Pad _3: un arco blanco sobre la tablet, con alfa parcial, que se pintaba con sombra.
+        rgb, alfa = self.foto()
+        rgb[70:330, 80:160] = 1.0
+        alfa[30:60, 180:280] = 0.5
+        nuevo, datos = imagen.segunda_opinion(alfa, rgb, imagen.fondo_de_la_foto(rgb, alfa), 0.2)
+        self.assertEqual(0.0, float(nuevo[45, 230]))
+        self.assertGreater(datos["quitado_pct"], 0)
+
+    def test_no_quita_la_tapa_blanca_que_rodea_un_marco(self):
+        # Un teléfono blanco con alfa dudoso adentro: el marco gris lo encierra y no se pierde.
+        rgb = lienzo()
+        alfa = np.zeros((400, 400), np.float32)
+        rgb[60:340, 120:280] = (0.7, 0.7, 0.72)
+        rgb[66:334, 126:274] = 1.0
+        alfa[60:340, 120:280] = 0.6
+        nuevo, datos = imagen.segunda_opinion(alfa, rgb, imagen.fondo_de_la_foto(rgb, alfa))
+        self.assertAlmostEqual(0.6, float(nuevo[200, 200]), places=5)
+        self.assertEqual(0.0, datos["quitado_pct"])
+
+    def test_sin_fondo_legible_no_hace_nada(self):
+        rgb, alfa = self.foto()
+        nuevo, datos = imagen.segunda_opinion(alfa, rgb, None)
+        self.assertIs(nuevo, alfa)
+
+    def test_el_fondo_se_lee_aunque_el_modelo_no_vea_casi_nada(self):
+        # Con el recorte reducido a la mariposa de la pantalla, «lejos del recorte» era el panel
+        # lavanda y el fondo salía sin leer. El anillo del borde de la foto lo lee.
+        rgb, alfa = self.foto()
+        rgb[20:380, 20:380] = (0.80, 0.76, 0.90)
+        alfa[:] = 0.0
+        alfa[150:250, 200:260] = 1.0
+        fondo = imagen.fondo_de_la_foto(rgb, alfa)
+        self.assertIsNotNone(fondo)
+        self.assertAlmostEqual(100.0, float(fondo["lab"][0]), delta=0.5)
 
 
 @unittest.skipIf(imagen is None, "pide NumPy y OpenCV")

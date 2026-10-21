@@ -91,6 +91,7 @@ from pathlib import Path
 ORIGINALES = "Fotos originales"   # los mismos nombres que listas-de-proveedor/scripts/fichas.py
 PROCESADAS = "Fotos procesadas"
 WEB = "web"
+RETIRADAS = "_retiradas"          # en «Fotos procesadas»: lo que se retiró porque la foto pasó a REPETIR
 TRABAJO = "_estudio"
 ESTADO = "estado-fotos.json"
 SACADOS = "sacados.json"          # en _estudio/: los modelos sacados que no tienen carpeta
@@ -100,6 +101,8 @@ SIN_HUECOS = "sin-huecos.json"    # en _estudio/: los modelos que la persona dec
 MOTIVO_DE_KIT = "varias_piezas"
 EXT_FOTO = {".jpg", ".jpeg", ".jfif", ".png", ".webp", ".heic", ".heif", ".avif"}  # = EXTENSIONES de procesar.py
 CONFIG = Path(__file__).resolve().parent.parent / "config.json"
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import salidas  # noqa: E402  (solo biblioteca estándar)
 
 # Decisión del negocio del 10/10/2026 (ADR-0079): cuatro fotos LISTA por modelo.
 MINIMO_LISTA = 4
@@ -295,12 +298,32 @@ def registro_de(original: Path, grupo: str, registros: list):
     return None
 
 
+def retirar(procesadas: Path, stem: str) -> int:
+    """Mueve a `_retiradas/` la maestra y los anchos web de una foto que ya no se publica.
+
+    Una foto que pasa a REPETIR no se devuelve, y su versión anterior se quedaba en «Fotos
+    procesadas»: tools/material-catalogo.mjs sube todo `.jpg` de esa carpeta, así que el Redmi Pad 2
+    _5 malformado del 19/10/2026 seguía listo para subirse. Se mueve y no se borra: es de la persona
+    decidir si lo quiere."""
+    movidos = 0
+    candidatos = [procesadas / f"{stem}.jpg"]
+    if (procesadas / WEB).is_dir():
+        candidatos += list((procesadas / WEB).glob(f"*/{stem}.*"))
+    for archivo in candidatos:
+        if archivo.is_file():
+            destino = procesadas / RETIRADAS / archivo.relative_to(procesadas)
+            destino.parent.mkdir(parents=True, exist_ok=True)
+            archivo.replace(destino)
+            movidos += 1
+    return movidos
+
+
 def devolver(raiz: Path) -> dict:
     """Copia cada resultado del reporte a la carpeta de su modelo, con el nombre de su original."""
     raiz = Path(raiz)
     salida = raiz / TRABAJO / "salida"
     registros = leer_reporte(raiz).get("fotos", [])
-    resumen = {"devueltas": 0, "repetir": [], "revisar": [], "sin_original": []}
+    resumen = {"devueltas": 0, "repetir": [], "revisar": [], "sin_original": [], "retiradas": []}
     usados = set()
     for mid, carpeta in modelos(raiz).items():
         buenas, _ = unicas(carpeta)
@@ -314,6 +337,8 @@ def devolver(raiz: Path) -> dict:
             sal = foto.get("salidas") or {}
             if estado == "REPETIR" or not sal.get("maestra"):
                 resumen["repetir"].append(etiqueta)
+                if retirar(carpeta / PROCESADAS, original.stem):
+                    resumen["retiradas"].append(etiqueta)
                 continue
             if estado == "REVISAR":
                 resumen["revisar"].append(etiqueta)
@@ -490,7 +515,10 @@ def evaluar(mid: str, carpeta: Path, reporte: dict, cfg: dict, kit: bool = False
         elif estado == "LISTA":
             listas.append(f"{original.stem}.jpg")
         else:
-            fallidas.append({"foto": original.name, "estado": estado or "?", "motivo": motivos or "sin motivo"})
+            fallida = {"foto": original.name, "estado": estado or "?", "motivo": motivos or "sin motivo"}
+            if not kit and solo_piezas_sueltas(foto):
+                fallida["solo_piezas"] = True       # para sugerir el kit en el informe
+            fallidas.append(fallida)
     return {"listas": listas, "fallidas": fallidas}
 
 
@@ -585,6 +613,11 @@ def informe(estados: list) -> str:
         lineas.append(f"\nEN ESPERA  {e['modelo']}: faltan {e['faltan']} LISTA ({e.get('motivo')}){nota}")
         for f in e.get("fallidas", []):
             lineas.append(f"  - {f['foto']} [{f['estado']}] {f['motivo']}")
+        piezas = [f for f in e.get("fallidas", []) if f.get("solo_piezas")]
+        if piezas:
+            # Lo decide la persona, nunca el script: tres piezas también pueden ser dos productos.
+            lineas.append(f"  ¿Es un kit? {len(piezas)} foto(s) solo esperan por las piezas sueltas. Si el producto se "
+                          f"vende con ellas: --kit {e['modelo']} --motivo \"qué piezas trae\"")
     for e in fuera:
         lineas.append(f"\nFUERA      {e['modelo']}: {e.get('motivo')}")
     lineas.append("\nTANDA COMPLETA: revisa a ojo las hojas de las LISTA y sigue con /fichas-de-tecnologia"
@@ -721,6 +754,11 @@ def main() -> int:
         if not estados:
             return SALIDA_EN_ESPERA   # en segundo plano: la tanda todavía no está completa
         print(informe(estados))
+        viejas = salidas.con_retoque_anterior(leer_reporte(raiz).get("fotos", []), set(ids))
+        if viejas:
+            print(f"\n[aviso] {len(viejas)} foto(s) de la tanda se procesaron con un retoque anterior al "
+                  f"{salidas.VERSION_RETOQUE}: la tanda no las rehace sola. Para rehacerlas sin mover el lienzo: "
+                  "procesar.py ... --solo <nombres> --conservar-lienzo, y después esta orden con --devolver.")
         fuera = fuera_de_la_tanda(raiz, ids)
         if fuera:
             print(f"\n[aviso] {len(fuera)} carpeta(s) con fotos que no están en la tanda y no se procesaron "
@@ -740,7 +778,9 @@ def main() -> int:
     print(f"{r['devueltas']} foto(s) en «{PROCESADAS}»")
     for titulo, lista in (("REVISAR (mira la hoja de revisión antes de subirlas)", r["revisar"]),
                           ("REPETIR (no se devolvieron: hay que conseguir otra)", r["repetir"]),
-                          ("sin original (se borró o se renombró)", r["sin_original"])):
+                          ("sin original (se borró o se renombró)", r["sin_original"]),
+                          (f"retiradas a «{PROCESADAS}/{RETIRADAS}» (su versión anterior ya no se sube)",
+                           r["retiradas"])):
         if lista:
             print(f"\n{titulo}:")
             for x in lista:

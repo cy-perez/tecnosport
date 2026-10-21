@@ -133,7 +133,10 @@ def config_publica(cfg: dict) -> dict:
 
 
 def huella_config(cfg: dict) -> str:
-    texto = json.dumps(config_publica(cfg), sort_keys=True, ensure_ascii=False)
+    """Huella de los parámetros y de la versión del retoque: si cualquiera cambia, la foto se hizo
+    distinto, y `--nuevas` la rehace."""
+    texto = json.dumps({**config_publica(cfg), "_version_retoque": salidas.VERSION_RETOQUE},
+                       sort_keys=True, ensure_ascii=False)
     return hashlib.sha1(texto.encode("utf-8")).hexdigest()[:12]
 
 
@@ -219,6 +222,17 @@ def procesar_foto(ctx: Contexto, ruta: Path, nombre: str, previo: dict) -> dict:
            "revisada": None, "salidas": {}}
     if previo and not misma:
         notas.append("Es otra foto para este nombre: se descartaron las marcas y exclusiones de la anterior.")
+    reg["version_retoque"] = salidas.VERSION_RETOQUE
+    # Una marca a ojo describe lo que se vio con un retoque: si el retoque cambió, no se aplica sola.
+    # Pasa a «volver a mirar» hasta que la persona la quite (marcar.py --limpiar) o la ponga de nuevo.
+    vigentes, caducadas = salidas.separar_marcas(reg["marcas"], previo.get("marcas_caducadas", []) if misma else [])
+    reg["marcas"] = vigentes
+    reg["marcas_caducadas"] = caducadas
+    for mk in caducadas:
+        motivo("REVISAR", "marca_caducada",
+               f"Se había marcado a ojo como {mk.get('estado')} («{mk.get('motivo', 'sin motivo')}») sobre un "
+               "retoque anterior: mira si sigue aplicando. Si no, quítala con marcar.py --limpiar; si sí, "
+               "vuelve a marcarla.")
 
     def cerrar() -> dict:
         reg["motivos_auto"], reg["avisos"], reg["notas"] = motivos, avisos, notas
@@ -226,8 +240,15 @@ def procesar_foto(ctx: Contexto, ruta: Path, nombre: str, previo: dict) -> dict:
         return reg
 
     # ---- 5.1 preparar: orientación EXIF, perfil a sRGB, alfa útil
-    foto = imagen.cargar_foto(ruta)
+    with Image.open(ruta) as _im:
+        lado_foto = max(_im.size)
+    lado_max = salidas.lado_de_carga(lado_foto, estimador.estimar_lado_fiable(ruta), W, float(cfg["ocupacion"]))
+    foto = imagen.cargar_foto(ruta, lado_max)
     rgb, alfa_png, info = foto["rgb"], foto["alfa"], foto["info"]
+    factor = float(info.get("factor_carga", 1.0))
+    if factor < 1:
+        notas.append(f"La foto mide {lado_foto} px y se cargó a {max(rgb.shape[:2])}: el producto sigue midiendo "
+                     "más de lo que pide el lienzo, y así no se agota la memoria.")
     reg["entrada"] = info
     Ho, Wo = rgb.shape[:2]
     if info.get("formato") in ("HEIF", "WEBP"):
@@ -247,6 +268,7 @@ def procesar_foto(ctx: Contexto, ruta: Path, nombre: str, previo: dict) -> dict:
     mini_dir.mkdir(parents=True, exist_ok=True)
     imagen.miniatura(rgb, hojas.MINI).save(hojas.ruta_miniatura(ctx.raiz, nombre, "antes"), quality=90)
     hojas.ruta_miniatura(ctx.raiz, nombre, "despues").unlink(missing_ok=True)
+    hojas.ruta_miniatura(ctx.raiz, nombre, "mapa").unlink(missing_ok=True)   # si algo falla, sin mapa viejo
 
     # ---- 5.2 aislar el producto
     if alfa_png is not None:
@@ -262,7 +284,7 @@ def procesar_foto(ctx: Contexto, ruta: Path, nombre: str, previo: dict) -> dict:
         quitado = 0.0
         excluido = np.zeros(m.shape, bool)
         for zona in reg["exclusiones"]:
-            x0, y0, x1, y1 = [int(round(v)) for v in zona]
+            x0, y0, x1, y1 = [int(round(v * factor)) for v in zona]   # están en px de la foto original
             x0, x1 = sorted((max(0, min(Wo, x0)), max(0, min(Wo, x1))))
             y0, y1 = sorted((max(0, min(Ho, y0)), max(0, min(Ho, y1))))
             quitado += float((m[y0:y1, x0:x1] > 0.5).sum())
@@ -278,7 +300,9 @@ def procesar_foto(ctx: Contexto, ruta: Path, nombre: str, previo: dict) -> dict:
                      "(destellos de render y adornos parecidos). Confirma que no eran parte del producto.")
     m, islas = imagen.limpiar_islas(m, cfg["isla_min_fraccion"], cfg["isla_aviso_fraccion"],
                                     float(cfg.get("alfa_umbral_binario", 0.5)))
+    descartadas = islas.pop("_descartadas", [])
     a = m if alfa_png is not None else imagen.niveles_alfa(m)
+    mapa = imagen.MapaDeRevision(rgb, a, hojas.MINI)        # el tercer cuadro de la hoja de revisión
     recorte = {"metodo": metodo, "toca_borde": False, "lados": [], **islas, **adornos}
     reg["recorte"] = recorte
     # ---- 5.2a lo que el recorte dejó fuera dentro del producto vuelve a él (20/10/2026): la
@@ -286,10 +310,21 @@ def procesar_foto(ctx: Contexto, ruta: Path, nombre: str, previo: dict) -> dict:
     # lo recortó, y lo transparente puede guardar cualquier color.
     fondo_foto = None
     if alfa_png is None:
+        umbral_b = float(cfg.get("alfa_umbral_binario", 0.5))
+        fondo_foto = imagen.fondo_de_la_foto(rgb, a)
+        # Segunda opinión por el color del fondo: suma lo de color que el modelo no vio (el panel
+        # trasero del Redmi Pad 2) y quita lo dudoso del color del fondo (el arco sobre el TCL Pad).
+        a, segunda = imagen.segunda_opinion(a, rgb, fondo_foto, umbral_b, excluido)
+        if excluido is not None:
+            a[excluido] = 0.0
+        recorte["segunda_opinion"] = segunda
+        if segunda["sumado_pct"] or segunda["quitado_pct"]:
+            notas.append(f"El color del fondo corrigió el recorte: se sumó el {segunda['sumado_pct']:.1f} % del "
+                         f"producto (zonas de color que el modelo no vio) y se quitó el {segunda['quitado_pct']:.1f} % "
+                         "(zonas del color del fondo que el modelo dio por producto).")
         # lo que la persona excluyó a mano no vuelve como «hueco» ni como «muesca»
-        a, completado = imagen.completar_producto(a, rgb, ctx.sin_huecos,
-                                                  float(cfg.get("alfa_umbral_binario", 0.5)), excluido)
-        fondo_foto = completado.pop("fondo")
+        a, completado = imagen.completar_producto(a, rgb, ctx.sin_huecos, umbral_b, excluido, fondo_foto)
+        completado.pop("fondo")
         recorte["completado"] = completado
         if completado["relleno_pct"] > 0:
             partes = []
@@ -301,6 +336,8 @@ def procesar_foto(ctx: Contexto, ruta: Path, nombre: str, previo: dict) -> dict:
                          f"({completado['relleno_pct']:.1f} % de su área); se devolvieron con los píxeles "
                          "de la foto original" + (" —en un celular o una tablet, lo encerrado es la "
                                                   "pantalla—." if ctx.sin_huecos else "."))
+    mapa.final(a)
+    mapa.descartadas(descartadas)
     caja0 = imagen.caja(a, cfg["alfa_caja_min"])
     if caja0 is None:
         motivo("REPETIR", "sin_producto", "No se encontró el producto en la foto (el recorte quedó vacío).")
@@ -318,6 +355,18 @@ def procesar_foto(ctx: Contexto, ruta: Path, nombre: str, previo: dict) -> dict:
         recorte["toca_borde"] = True
         motivo("REPETIR", "cortado", f"El producto sale del encuadre por {', '.join(lados)}: está cortado o el "
                                      "recorte incluyó la superficie. Repite la foto dejando margen alrededor.")
+    # El aviso de pieza descartada se decide contra el producto ya completo: una isla que volvió a
+    # quedar adentro (un lente, un logo) no se perdió.
+    if islas.get("aviso_pieza"):
+        perdida = imagen.islas_perdidas(descartadas, a, float(cfg.get("alfa_umbral_binario", 0.5)),
+                                        max(1.0, float((a > float(cfg.get("alfa_umbral_binario", 0.5))).sum())))
+        if not perdida:
+            islas["aviso_pieza"] = recorte["aviso_pieza"] = False
+            notas.append(f"El recorte había dejado sueltos fragmentos del producto (el mayor, "
+                         f"{100 * islas['mayor_isla_descartada']:.2f} %), y al completarlo quedaron dentro.")
+        else:
+            islas["mayor_isla_descartada"] = recorte["mayor_isla_descartada"] = perdida
+    del descartadas
     if islas.get("aviso_pieza"):
         motivo("REVISAR", "pieza_descartada", f"Se descartó un fragmento del {100 * islas['mayor_isla_descartada']:.2f} % "
                                               "del producto: confirma que no era parte de él (cordón, correa, antena).")
@@ -371,7 +420,9 @@ def procesar_foto(ctx: Contexto, ruta: Path, nombre: str, previo: dict) -> dict:
     lado0 = max(bw, bh)
     necesario = int(math.ceil(lado0 * s))
     reg["escala"] = round(s, 3)
-    reg["caja_origen"] = {"x0": x0, "y0": y0, "x1": x1, "y1": y1, "lado_mayor": lado0}
+    # en px de la foto original, como las exclusiones: ampliar.py la dibuja sobre ella
+    reg["caja_origen"] = {k: int(round(v / factor)) for k, v in
+                          {"x0": x0, "y0": y0, "x1": x1, "y1": y1, "lado_mayor": lado0}.items()}
     if s >= cfg["ampliacion_repetir"]:
         motivo("REPETIR", "ampliacion", f"El producto se amplió {s:.2f}× (mide {lado0} px en la foto y necesita "
                                         f"≥ {necesario} px): se verá borroso. Repite la foto más cerca o con más "
@@ -566,12 +617,16 @@ def procesar_foto(ctx: Contexto, ruta: Path, nombre: str, previo: dict) -> dict:
         paso = int(math.ceil(len(ys) / 400_000))
         ys, xs, Y, X = ys[::paso], xs[::paso], Y[::paso], X[::paso]
     if len(ys):
-        alterado = imagen.fraccion_alterada(ref_c[ys, xs], dec[Y, X])
+        cambiados = imagen.pixeles_alterados(ref_c[ys, xs], dec[Y, X])
+        alterado = round(float(cambiados.mean()), 4)
         reg["interior_alterado"] = alterado
+        # al mapa, en coordenadas de la foto cargada: del recorte escalado (nw × nh) a la caja (cw × ch)
+        mapa.alterados(cy0 + ys[cambiados] * (ch / nh), cx0 + xs[cambiados] * (cw / nw))
         if alterado > imagen.ALTERADO_MAXIMO:
             motivo("REVISAR", "interior_alterado",
                    f"El {100 * alterado:.1f} % del interior del producto no coincide con la foto original "
                    f"(ΔE > {imagen.ALTERADO_DE:.0f}): compáralos a tamaño real.")
+    mapa.imagen().save(hojas.ruta_miniatura(ctx.raiz, nombre, "mapa"), quality=90)
     return cerrar()
 
 
@@ -642,6 +697,7 @@ def registro_error(ctx: Contexto, ruta: Path, nombre: str, previo: dict, e: Base
         texto = f"Error inesperado al procesar ({type(e).__name__}: {e}); el detalle quedó en el registro."
     reg = {"nombre": nombre, "archivo": ruta.name, "ruta_origen": str(ruta.resolve()), "procesada": reporte.ahora(),
            "huella_config": ctx.huella_config, "marcas": list(previo.get("marcas", [])),
+           "marcas_caducadas": list(previo.get("marcas_caducadas", [])),
            "exclusiones": list(previo.get("exclusiones", [])), "revisada": None, "salidas": {},
            "motivos_auto": [{"estado": "REPETIR", "codigo": "error", "texto": texto}], "avisos": [], "notas": []}
     try:
@@ -1009,7 +1065,7 @@ def ejecutar(a, raiz: Path, solo: set[str], avance: Path) -> int:
                              if por_producto else set())
     otras = sorted(f["nombre"] for f in rep["fotos"] if f.get("huella_config") not in ({None} | huellas_ok))
     if otras:
-        rep["advertencias_lote"] = [f"Procesadas con otros parámetros (el catálogo no queda uniforme): {', '.join(otras)}"]
+        rep["advertencias_lote"] = [f"Procesadas con otros parámetros o con un retoque anterior (el catálogo no queda uniforme): {', '.join(otras)}"]
     reporte.guardar(raiz, rep)
     rutas_h, ubicacion = hojas.generar(raiz, rep, int(cfg["fotos_por_hoja"]))
     rep["hojas_revision"] = [h.name for h in rutas_h]
