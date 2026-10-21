@@ -203,10 +203,14 @@ foto se pudo leer:
 - **Suma** las regiones de color (croma C* ≥ 5 en el 60 % de sus píxeles, al menos el 0,5 % del
   producto) que tocan el producto, no tocan el borde de la foto y el modelo no vio: el panel
   trasero lavanda del Redmi Pad 2 _5, que se publicaba sin él. La sombra del piso es gris y una
-  tapa blanca no tiene croma: por aquí no entran.
+  tapa blanca no tiene croma: por aquí no entran. Tampoco lo que **se desvanece** hacia el fondo
+  —más del 5 % de la región a menos de 10 ΔE de él—: el reflejo de piso de un celular de color o el
+  halo de un fondo pálido con viñeta (medido: 22 % en un reflejo; 0,5 % en el panel del Redmi Pad
+  2). Y nada que toque una zona excluida a mano.
 - **Quita** lo que el modelo marcó con duda (alfa < 0,9), es del color del fondo y se alcanza desde
   el borde de la foto sin cruzar producto: el arco blanco sobre el TCL Pad _3. Un teléfono blanco no
-  se pierde, porque lo encierra un marco que no es del color del fondo.
+  se pierde, porque lo encierra un marco que no es del color del fondo. Se entra por la franja del
+  borde y no por su primer píxel, porque el filete oscuro del material de Apple la cerraba.
 
 El fondo se lee primero en un anillo junto al borde de la foto —saltando el 1 %, por el filete de
 Apple— y solo si ese anillo no es un fondo de estudio, en lo que está lejos del recorte: «lejos del
@@ -628,8 +632,10 @@ producto y salta lo ya procesado cuyo archivo de origen no ha cambiado. En Windo
 rutas van entre comillas (`"C:\fotos\lote 1"`) y el segundo plano funciona igual.
 
 **Una foto enorme se carga reducida** (20/10/2026): el lienzo nunca pasa de 2000 px, así que una
-foto de más de 4000 se carga a 4000 —o a lo que haga falta para que el producto siga midiendo 1,25
-veces lo que pide el lienzo; nunca hasta tener que ampliar (`salidas.lado_de_carga`)—. Medido en la
+foto de más de 4000 se carga a 4000 —o a lo que haga falta para que el producto siga midiendo 1,5
+veces lo que pide el lienzo; nunca hasta tener que ampliar (`salidas.lado_de_carga`)—. Solo con una
+medida fiable del producto (fondo de estudio o alfa de un PNG): sobre una mesa el estimador da la
+foto entera, y reducir así dejaba el producto ampliado. Medido en la
 foto de 8000 px del Moto G17 _3: el pico de memoria baja de 4,4 a 2,4 GB, con la misma salida. Un
 reproceso de 83 fotos en segundo plano murió por memoria justo en ella. Aun así, con lotes grandes
 conviene ir en tandas de unas 20 en primer plano. Las exclusiones y `caja_origen` siguen en píxeles

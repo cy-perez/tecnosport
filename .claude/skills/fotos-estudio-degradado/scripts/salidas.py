@@ -117,17 +117,22 @@ def con_retoque_anterior(registros, grupos=None) -> list:
             and r.get("version_retoque") != VERSION_RETOQUE]
 
 
-def separar_marcas(marcas) -> tuple[list, list]:
+def separar_marcas(marcas, caducadas_previas=()) -> tuple[list, list]:
     """(vigentes, caducadas): una marca a ojo vale para la versión del retoque sobre la que se puso.
-    Las de antes de que existiera la versión no la traen, y también caducan."""
+    Las de antes de que existiera la versión no la traen, y también caducan.
+
+    Las que ya habían caducado siguen caducadas: un reproceso —una exclusión, un `--solo`— no decide
+    por la persona, y sin esto la marca desaparecía sola en la vuelta siguiente. Solo `marcar.py
+    --limpiar` o una marca nueva las resuelven."""
     vigentes = [m for m in marcas if m.get("version_retoque") == VERSION_RETOQUE]
-    return vigentes, [m for m in marcas if m.get("version_retoque") != VERSION_RETOQUE]
+    nuevas = [m for m in marcas if m.get("version_retoque") != VERSION_RETOQUE]
+    return vigentes, list(caducadas_previas) + nuevas
 
 
 # Una foto se carga reducida si es más grande que esto, siempre que el producto siga midiendo por lo
 # menos MARGEN_DE_CARGA veces lo que pide el lienzo: nunca se reduce hasta tener que ampliar.
 LADO_DE_CARGA = 4000
-MARGEN_DE_CARGA = 1.25
+MARGEN_DE_CARGA = 1.5           # holgado: accesorios o una sombra pueden inflar la estimación
 
 
 def lado_de_carga(lado_foto: int, lado_producto: int | None, lienzo: int, ocupacion: float) -> int | None:
@@ -136,9 +141,17 @@ def lado_de_carga(lado_foto: int, lado_producto: int | None, lienzo: int, ocupac
     El lienzo nunca pasa de 2000 y el producto ocupa el 85 %: una foto de 8000 px no aporta nada que
     una de 4000 no tenga, salvo cuando el producto ocupa poco de ella. Por eso el tope sale también
     del producto: después de reducir, tiene que seguir midiendo MARGEN_DE_CARGA veces lo que necesita."""
-    if lado_foto <= LADO_DE_CARGA:
-        return None
-    producto = lado_producto or lado_foto
+    if lado_foto <= LADO_DE_CARGA or not lado_producto:
+        return None             # sin saber cuánto mide el producto, no se reduce: podría quedar corto
+    producto = lado_producto
     necesario = lienzo * ocupacion * MARGEN_DE_CARGA
     factor = max(LADO_DE_CARGA / lado_foto, necesario / producto)
     return None if factor >= 1 else int(round(lado_foto * factor))
+
+
+def tamano_original(entrada: dict) -> tuple:
+    """(ancho, alto) de la foto tal como es, ya orientada: si se cargó reducida, el de antes de
+    reducirla. Las exclusiones y `ampliar.py --original` hablan en esos píxeles."""
+    if entrada.get("reducida_desde"):
+        return tuple(int(v) for v in entrada["reducida_desde"])
+    return entrada.get("ancho"), entrada.get("alto")

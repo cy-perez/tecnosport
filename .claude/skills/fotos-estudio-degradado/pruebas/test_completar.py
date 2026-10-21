@@ -303,6 +303,43 @@ class SegundaOpinion(unittest.TestCase):
         nuevo, _ = imagen.segunda_opinion(alfa, rgb, imagen.fondo_de_la_foto(rgb, alfa))
         self.assertEqual(0.0, float(nuevo[350, 230]))
 
+    def test_no_suma_el_reflejo_de_piso_de_un_celular_de_color(self):
+        # Render de fabricante: bajo el celular azul, su reflejo se desvanece hacia el blanco.
+        rgb, alfa = lienzo(), np.zeros((400, 400), np.float32)
+        rgb[60:300, 150:250] = (0.1, 0.25, 0.7)
+        alfa[60:300, 150:250] = 1.0
+        mezcla = np.linspace(0.6, 0.97, 80)[:, None, None]
+        rgb[300:380, 150:250] = np.array([0.1, 0.25, 0.7]) * (1 - mezcla) + mezcla
+        nuevo, datos = imagen.segunda_opinion(alfa, rgb, imagen.fondo_de_la_foto(rgb, alfa))
+        self.assertEqual(0.0, float(nuevo[320, 200]))
+        self.assertEqual(0.0, datos["sumado_pct"])
+
+    def test_no_suma_el_halo_de_un_fondo_de_color_con_vineta(self):
+        yy, xx = np.mgrid[0:400, 0:400]
+        r = np.hypot(yy - 200, xx - 200) / 283
+        rgb = np.stack([0.93 + 0.07 * r, 0.90 + 0.10 * r, 0.97 + 0.03 * r], axis=-1).astype(np.float32)
+        alfa = np.zeros((400, 400), np.float32)
+        rgb[150:250, 170:230] = 0.1
+        alfa[150:250, 170:230] = 1.0
+        nuevo, _ = imagen.segunda_opinion(alfa, rgb, imagen.fondo_de_la_foto(rgb, alfa))
+        self.assertEqual(0.0, float(nuevo[200, 140]))
+
+    def test_no_suma_lo_que_toca_una_zona_excluida_a_mano(self):
+        # Un cable rojo excluido junto al celular: sin esto volvía entero fuera del rectángulo.
+        rgb, alfa = self.foto()
+        prohibido = np.zeros(alfa.shape, bool)
+        prohibido[150:250, 90:150] = True
+        nuevo, _ = imagen.segunda_opinion(alfa, rgb, imagen.fondo_de_la_foto(rgb, alfa), prohibido=prohibido)
+        self.assertEqual(0.0, float(nuevo[100, 120]))
+
+    def test_quita_aunque_la_foto_traiga_el_filete_oscuro_de_apple(self):
+        rgb, alfa = self.foto()
+        rgb[70:330, 80:160] = 1.0
+        rgb[:2, :] = rgb[-2:, :] = rgb[:, :2] = rgb[:, -2:] = 0.89
+        alfa[30:60, 180:280] = 0.5
+        nuevo, datos = imagen.segunda_opinion(alfa, rgb, imagen.fondo_de_la_foto(rgb, alfa), 0.2)
+        self.assertEqual(0.0, float(nuevo[45, 230]))
+
     def test_quita_el_arco_del_color_del_fondo_que_el_modelo_dudo(self):
         # TCL Pad _3: un arco blanco sobre la tablet, con alfa parcial, que se pintaba con sombra.
         rgb, alfa = self.foto()

@@ -63,28 +63,44 @@ def lado_de_contenido(gris: np.ndarray) -> int | None:
 
 def estimar_lado_producto(ruta: Path) -> int | None:
     """Lado mayor del producto en la foto, en píxeles de la foto. None si no se puede abrir."""
+    return _estimar(ruta)[0]
+
+
+def estimar_lado_fiable(ruta: Path) -> int | None:
+    """El lado del producto solo si se midió de verdad —contra un fondo de estudio o el alfa de un
+    PNG—; None si la estimación es la foto entera por no saber. Para reducir una foto al cargarla
+    hace falta saber cuánto mide el producto: con una mesa de fondo, la foto entera «medía» y una de
+    8000 px con el producto a 1600 se cargaba a 4000 y salía ampliada 2,13× (20/10/2026)."""
+    lado, fiable = _estimar(ruta)
+    return lado if fiable else None
+
+
+def _estimar(ruta: Path) -> tuple:
+    """(lado, ¿se midió de verdad?)."""
     try:
         with Image.open(ruta) as im:
             ancho0, alto0 = im.size
             if not ancho0 or not alto0:
-                return None
+                return None, False
             if "A" in im.getbands() or (im.mode == "P" and "transparency" in im.info):
                 # Un PNG recortado trae el producto en el alfa: se mide ahí, sin adivinar el
                 # fondo —el color guardado de lo transparente puede ser negro—.
                 alfa = im.convert("RGBA").getchannel("A")
                 if alfa.getextrema()[0] < 255 - UMBRAL_ALFA:
                     caja = alfa.point(lambda v: 255 if v > UMBRAL_ALFA else 0).getbbox()
-                    return max(caja[2] - caja[0], caja[3] - caja[1]) if caja else max(ancho0, alto0)
+                    if caja:
+                        return max(caja[2] - caja[0], caja[3] - caja[1]), True
+                    return max(ancho0, alto0), False
             g = im.convert("L")
             if max(ancho0, alto0) > LADO_DE_TRABAJO:
                 f = LADO_DE_TRABAJO / max(ancho0, alto0)
                 g = g.resize((max(1, round(ancho0 * f)), max(1, round(alto0 * f))), Image.BILINEAR)
             gris = np.asarray(g)
     except Exception:
-        return None
+        return None, False
     if gris.size == 0:
-        return None
+        return None, False
     lado = lado_de_contenido(gris)
     if lado is None:
-        return max(ancho0, alto0)
-    return max(1, int(round(lado * max(ancho0, alto0) / max(gris.shape))))
+        return max(ancho0, alto0), False
+    return max(1, int(round(lado * max(ancho0, alto0) / max(gris.shape)))), True

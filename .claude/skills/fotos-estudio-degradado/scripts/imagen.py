@@ -776,10 +776,16 @@ SUMA_AREA_MIN = 0.005
 # fracción del producto que sobreviven a una apertura: el antialias del borde no se toca.
 QUITA_ALFA_MAX = 0.9
 QUITA_AREA_MIN = 0.002
+# Una región solo se suma si no se desvanece hacia el fondo: como mucho SUMA_CASI_FONDO_MAX de sus
+# píxeles a menos de SUMA_CASI_FONDO_DE del color del fondo. Un fondo de color pálido con viñeta y el
+# reflejo de piso de un celular de color se desvanecen —medido: el 22 % del reflejo queda a menos de
+# 10—; el panel del Redmi Pad 2 corta seco contra el blanco y queda en el 0,5 % (revisión del 20/10/2026).
+SUMA_CASI_FONDO_DE = 10.0
+SUMA_CASI_FONDO_MAX = 0.05
 
 
 def segunda_opinion(a: np.ndarray, rgb: np.ndarray, fondo: dict | None,
-                    umbral: float = 0.5) -> tuple[np.ndarray, dict]:
+                    umbral: float = 0.5, prohibido: np.ndarray | None = None) -> tuple[np.ndarray, dict]:
     """Corrige el recorte con el color del fondo de la foto, cuando es un fondo de estudio.
 
     - **Suma** las regiones de color pegadas al producto que el modelo no vio y que no tocan el
@@ -789,7 +795,9 @@ def segunda_opinion(a: np.ndarray, rgb: np.ndarray, fondo: dict | None,
       blanco no se pierde por aquí: lo rodea un marco que no es del color del fondo, y lo que el
       modelo ve con seguridad (alfa ≥ 0,9) no se toca.
 
-    Sin un fondo legible no hace nada. Decide a escala reducida, como `completar_producto`."""
+    Sin un fondo legible no hace nada. Decide a escala reducida, como `completar_producto`. Una
+    región que toca `prohibido` —lo excluido a mano— no se suma: sumarla devolvería, fuera del
+    rectángulo, el resto de lo que la persona quiso quitar."""
     datos = {"sumado_pct": 0.0, "quitado_pct": 0.0}
     if fondo is None:
         return a, datos
@@ -808,7 +816,8 @@ def segunda_opinion(a: np.ndarray, rgb: np.ndarray, fondo: dict | None,
     binaria = a_d > umbral
     area = float(binaria.sum())
     lab = rgb_a_lab(rgb_d)
-    es_fondo = np.linalg.norm(lab - fondo["lab"], axis=-1) <= FONDO_TOLERANCIA_DE
+    de = np.linalg.norm(lab - fondo["lab"], axis=-1)
+    es_fondo = de <= FONDO_TOLERANCIA_DE
     k = elemento(max(1.0, 1.5 * max(a_d.shape) / 1000))
 
     # ---- sumar: lo que no es fondo, no es producto todavía, tiene color y toca el producto
@@ -823,7 +832,13 @@ def segunda_opinion(a: np.ndarray, rgb: np.ndarray, fondo: dict | None,
         toca = np.bincount(et[vecino].ravel(), minlength=n) > 0
         borde = np.zeros(n, bool)
         borde[np.unique(np.concatenate([et[0], et[-1], et[:, 0], et[:, -1]]))] = True
-        si = (toca & ~borde & (frac_croma >= SUMA_FRACCION_CROMA)
+        se_desvanece = _fraccion_por_region(et, n, de < SUMA_CASI_FONDO_DE) > SUMA_CASI_FONDO_MAX
+        prohibida = np.zeros(n, bool)
+        if prohibido is not None and prohibido.any():
+            p_d = (cv2.resize(prohibido.astype(np.uint8), (a_d.shape[1], a_d.shape[0]),
+                              interpolation=cv2.INTER_AREA) > 0) if esc < 1 else prohibido
+            prohibida[np.unique(et[p_d])] = True
+        si = (toca & ~borde & ~prohibida & ~se_desvanece & (frac_croma >= SUMA_FRACCION_CROMA)
               & (st[:, cv2.CC_STAT_AREA] >= SUMA_AREA_MIN * area))
         si[0] = False
         suma = si[et]
@@ -831,6 +846,12 @@ def segunda_opinion(a: np.ndarray, rgb: np.ndarray, fondo: dict | None,
     # ---- quitar: lo dudoso del color del fondo que se alcanza desde el borde sin cruzar producto
     seguro = a_d >= QUITA_ALFA_MAX
     paso = (es_fondo & ~seguro).astype(np.uint8)
+    # La inundación entra por la franja del borde de la foto, no por su primer píxel: el material de
+    # Apple trae un filete oscuro de 1 a 3 px que no es del color del fondo y la cerraba entera.
+    k_borde = max(2, round(0.01 * max(a_d.shape)))
+    franja = np.zeros(paso.shape, bool)
+    franja[:k_borde], franja[-k_borde:], franja[:, :k_borde], franja[:, -k_borde:] = True, True, True, True
+    paso[franja & ~seguro] = 1
     exterior = np.pad(paso, 1, constant_values=1)
     cv2.floodFill(exterior, None, (0, 0), 2)
     candidato = ((exterior[1:-1, 1:-1] == 2) & binaria).astype(np.uint8)

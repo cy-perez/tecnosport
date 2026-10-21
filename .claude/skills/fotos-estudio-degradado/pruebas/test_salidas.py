@@ -127,6 +127,15 @@ class VersionDelRetoque(unittest.TestCase):
         self.assertEqual([vigente], vigentes)
         self.assertEqual([vieja, sin_version], caducadas)
 
+    def test_una_marca_caducada_no_desaparece_en_el_siguiente_reproceso(self):
+        # La marca caducada quedaba aparte, y la vuelta siguiente ya no la veía: la foto podía salir
+        # LISTA sin que nadie decidiera sobre el REPETIR viejo.
+        caducada = {"estado": "REPETIR", "motivo": "se comió la pantalla", "version_retoque": "2026-10-01"}
+        _, primera = salidas.separar_marcas([caducada])
+        vigentes, segunda = salidas.separar_marcas([], primera)
+        self.assertEqual([], vigentes)
+        self.assertEqual([caducada], segunda)
+
     def test_lista_las_fotos_de_la_tanda_hechas_con_un_retoque_anterior(self):
         registros = [{"nombre": "a", "grupo": "x", "salidas": {"maestra": {}}, "version_retoque": "viejo"},
                      {"nombre": "b", "grupo": "x", "salidas": {"maestra": {}}, "version_retoque": salidas.VERSION_RETOQUE},
@@ -137,6 +146,14 @@ class VersionDelRetoque(unittest.TestCase):
 
 
 
+class TamanoOriginal(unittest.TestCase):
+    def test_una_foto_cargada_reducida_da_su_tamano_de_antes(self):
+        # marcar.py --excluir recortaba contra 4000 una zona dada en px de la foto de 8000.
+        self.assertEqual((8000, 6000), salidas.tamano_original({"ancho": 4000, "alto": 3000,
+                                                                 "reducida_desde": [8000, 6000]}))
+        self.assertEqual((1200, 900), salidas.tamano_original({"ancho": 1200, "alto": 900}))
+
+
 class LadoDeCarga(unittest.TestCase):
     """Decisión del 20/10/2026: una foto enorme se carga reducida, pero nunca hasta tener que ampliar."""
 
@@ -145,13 +162,17 @@ class LadoDeCarga(unittest.TestCase):
         self.assertEqual(4000, salidas.lado_de_carga(8000, 7000, 2000, 0.85))
 
     def test_no_se_reduce_hasta_que_el_producto_quede_corto(self):
-        # Un producto de 2000 px en una foto de 8000 necesita 2125 (1700 × 1,25): se carga a 8500 × …
-        lado = salidas.lado_de_carga(8000, 2400, 2000, 0.85)
+        # Un producto de 2800 px en una foto de 8000 necesita 2550 (1700 × 1,5): apenas se reduce.
+        lado = salidas.lado_de_carga(8000, 2800, 2000, 0.85)
         self.assertIsNotNone(lado)
-        self.assertGreaterEqual(2400 * lado / 8000, 2000 * 0.85 * salidas.MARGEN_DE_CARGA - 1)
+        self.assertGreaterEqual(2800 * lado / 8000, 2000 * 0.85 * salidas.MARGEN_DE_CARGA - 1)
 
     def test_si_reducir_obligaria_a_ampliar_se_carga_entera(self):
         self.assertIsNone(salidas.lado_de_carga(8000, 1800, 2000, 0.85))
+
+    def test_sin_una_medida_fiable_del_producto_no_se_reduce(self):
+        # Sobre una mesa el estimador no sabe: una foto de 8000 con el producto a 1600 salía 2,13×.
+        self.assertIsNone(salidas.lado_de_carga(8000, None, 2000, 0.85))
 
     def test_una_foto_normal_se_carga_entera(self):
         self.assertIsNone(salidas.lado_de_carga(1200, 1000, 1200, 0.85))

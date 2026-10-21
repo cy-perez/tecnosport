@@ -225,7 +225,7 @@ def procesar_foto(ctx: Contexto, ruta: Path, nombre: str, previo: dict) -> dict:
     reg["version_retoque"] = salidas.VERSION_RETOQUE
     # Una marca a ojo describe lo que se vio con un retoque: si el retoque cambió, no se aplica sola.
     # Pasa a «volver a mirar» hasta que la persona la quite (marcar.py --limpiar) o la ponga de nuevo.
-    vigentes, caducadas = salidas.separar_marcas(reg["marcas"])
+    vigentes, caducadas = salidas.separar_marcas(reg["marcas"], previo.get("marcas_caducadas", []) if misma else [])
     reg["marcas"] = vigentes
     reg["marcas_caducadas"] = caducadas
     for mk in caducadas:
@@ -242,7 +242,7 @@ def procesar_foto(ctx: Contexto, ruta: Path, nombre: str, previo: dict) -> dict:
     # ---- 5.1 preparar: orientación EXIF, perfil a sRGB, alfa útil
     with Image.open(ruta) as _im:
         lado_foto = max(_im.size)
-    lado_max = salidas.lado_de_carga(lado_foto, estimador.estimar_lado_producto(ruta), W, float(cfg["ocupacion"]))
+    lado_max = salidas.lado_de_carga(lado_foto, estimador.estimar_lado_fiable(ruta), W, float(cfg["ocupacion"]))
     foto = imagen.cargar_foto(ruta, lado_max)
     rgb, alfa_png, info = foto["rgb"], foto["alfa"], foto["info"]
     factor = float(info.get("factor_carga", 1.0))
@@ -268,6 +268,7 @@ def procesar_foto(ctx: Contexto, ruta: Path, nombre: str, previo: dict) -> dict:
     mini_dir.mkdir(parents=True, exist_ok=True)
     imagen.miniatura(rgb, hojas.MINI).save(hojas.ruta_miniatura(ctx.raiz, nombre, "antes"), quality=90)
     hojas.ruta_miniatura(ctx.raiz, nombre, "despues").unlink(missing_ok=True)
+    hojas.ruta_miniatura(ctx.raiz, nombre, "mapa").unlink(missing_ok=True)   # si algo falla, sin mapa viejo
 
     # ---- 5.2 aislar el producto
     if alfa_png is not None:
@@ -302,7 +303,6 @@ def procesar_foto(ctx: Contexto, ruta: Path, nombre: str, previo: dict) -> dict:
     descartadas = islas.pop("_descartadas", [])
     a = m if alfa_png is not None else imagen.niveles_alfa(m)
     mapa = imagen.MapaDeRevision(rgb, a, hojas.MINI)        # el tercer cuadro de la hoja de revisión
-    hojas.ruta_miniatura(ctx.raiz, nombre, "mapa").unlink(missing_ok=True)
     recorte = {"metodo": metodo, "toca_borde": False, "lados": [], **islas, **adornos}
     reg["recorte"] = recorte
     # ---- 5.2a lo que el recorte dejó fuera dentro del producto vuelve a él (20/10/2026): la
@@ -314,7 +314,7 @@ def procesar_foto(ctx: Contexto, ruta: Path, nombre: str, previo: dict) -> dict:
         fondo_foto = imagen.fondo_de_la_foto(rgb, a)
         # Segunda opinión por el color del fondo: suma lo de color que el modelo no vio (el panel
         # trasero del Redmi Pad 2) y quita lo dudoso del color del fondo (el arco sobre el TCL Pad).
-        a, segunda = imagen.segunda_opinion(a, rgb, fondo_foto, umbral_b)
+        a, segunda = imagen.segunda_opinion(a, rgb, fondo_foto, umbral_b, excluido)
         if excluido is not None:
             a[excluido] = 0.0
         recorte["segunda_opinion"] = segunda
@@ -697,6 +697,7 @@ def registro_error(ctx: Contexto, ruta: Path, nombre: str, previo: dict, e: Base
         texto = f"Error inesperado al procesar ({type(e).__name__}: {e}); el detalle quedó en el registro."
     reg = {"nombre": nombre, "archivo": ruta.name, "ruta_origen": str(ruta.resolve()), "procesada": reporte.ahora(),
            "huella_config": ctx.huella_config, "marcas": list(previo.get("marcas", [])),
+           "marcas_caducadas": list(previo.get("marcas_caducadas", [])),
            "exclusiones": list(previo.get("exclusiones", [])), "revisada": None, "salidas": {},
            "motivos_auto": [{"estado": "REPETIR", "codigo": "error", "texto": texto}], "avisos": [], "notas": []}
     try:

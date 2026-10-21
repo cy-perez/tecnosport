@@ -69,7 +69,10 @@ def _datos_linea(f: dict) -> list[str]:
     e = f.get("entrada") or {}
     lineas = []
     partes = [f.get("archivo", "")]
-    if e.get("ancho"):
+    if e.get("reducida_desde"):
+        ancho, alto = e["reducida_desde"]
+        partes.append(f"{ancho}×{alto} px (cargada a {e['ancho']}×{e['alto']})")
+    elif e.get("ancho"):
         partes.append(f"{e['ancho']}×{e['alto']} px")
     if f.get("escala"):
         partes.append(f"escala {f['escala']:.2f}×")
