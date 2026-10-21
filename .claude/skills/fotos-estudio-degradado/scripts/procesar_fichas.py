@@ -95,6 +95,7 @@ TRABAJO = "_estudio"
 ESTADO = "estado-fotos.json"
 SACADOS = "sacados.json"          # en _estudio/: los modelos sacados que no tienen carpeta
 KITS = "kits.json"                # en _estudio/: los modelos que se venden con piezas sueltas
+SIN_HUECOS = "sin-huecos.json"    # en _estudio/: los modelos que la persona declaró sin huecos pasantes
 # El único motivo REVISAR que un kit perdona: las piezas sueltas son el producto.
 MOTIVO_DE_KIT = "varias_piezas"
 EXT_FOTO = {".jpg", ".jpeg", ".jfif", ".png", ".webp", ".heic", ".heif", ".avif"}  # = EXTENSIONES de procesar.py
@@ -161,9 +162,43 @@ def categoria_de(carpeta: Path):
 
 
 def sin_huecos(raiz: Path, solo=None) -> list:
-    """Los ids de los modelos cuya categoría no tiene huecos pasantes, para `--sin-huecos`."""
+    """Los ids de los modelos sin huecos pasantes, para `--sin-huecos`: los de una categoría que no
+    los tiene y los que la persona declaró uno a uno (`_estudio/sin-huecos.json`)."""
+    declarados = leer_sin_huecos(raiz)
     return [mid for mid, carpeta in modelos(raiz, solo).items()
-            if categoria_de(carpeta) in CATEGORIAS_SIN_HUECOS]
+            if categoria_de(carpeta) in CATEGORIAS_SIN_HUECOS or mid in declarados]
+
+
+def leer_sin_huecos(raiz: Path) -> dict:
+    ruta = Path(raiz) / TRABAJO / SIN_HUECOS
+    return json.loads(ruta.read_text(encoding="utf-8")) if ruta.is_file() else {}
+
+
+def declarar_sin_huecos(raiz: Path, mid: str, motivo: str, quitar: bool = False) -> dict:
+    """Anota (o quita) un modelo sin huecos pasantes en `_estudio/sin-huecos.json` (decisión del
+    20/10/2026). La categoría no basta en todos los casos: unos audífonos de diadema tienen huecos
+    de verdad, pero el estuche transparente de los Redmi Buds 6 Active no, y su interior casi blanco
+    pasaba por fondo y salía mutilado. Lo declara la persona, con su motivo, y no el script.
+
+    Cambia cómo se retoca, así que el modelo queda «por procesar»: la siguiente tanda lo rehace
+    entero aunque sus originales no hayan cambiado."""
+    carpeta = modelos(raiz, {mid}).get(mid)
+    if carpeta is None:
+        raise ValueError(f"{mid} no tiene carpeta con «{ORIGINALES}» en {raiz}.")
+    declarados = leer_sin_huecos(raiz)
+    if quitar:
+        declarados.pop(mid, None)
+    else:
+        if not motivo or not motivo.strip():
+            raise ValueError("Declarar un modelo sin huecos pide el motivo: por qué no tiene huecos pasantes.")
+        declarados[mid] = {"motivo": motivo.strip(), "fecha": ahora()}
+    ruta = Path(raiz) / TRABAJO / SIN_HUECOS
+    ruta.parent.mkdir(parents=True, exist_ok=True)
+    ruta.write_text(json.dumps(declarados, ensure_ascii=False, indent=2) + "\n", encoding="utf-8", newline="")
+    previo = leer_estado(carpeta)
+    if previo is not None:
+        escribir_estado(carpeta, dict(previo, motivo="por procesar"))
+    return declarados
 
 
 def fuera_de_la_tanda(raiz: Path, ids) -> list:
@@ -623,9 +658,22 @@ def main() -> int:
     ap.add_argument("--kit", metavar="ID", help="con --tanda: ese modelo se vende con piezas sueltas, y "
                                                 "sus fotos con varias piezas cuentan como LISTA")
     ap.add_argument("--quitar-kit", metavar="ID", help="con --tanda: deshace un --kit")
-    ap.add_argument("--motivo", help="con --sacar o --kit: por qué, queda escrito")
+    ap.add_argument("--sin-huecos", metavar="ID", help="ese modelo no tiene huecos pasantes aunque su categoría "
+                                                       "los admita: lo que el recorte encierre vuelve al producto")
+    ap.add_argument("--quitar-sin-huecos", metavar="ID", help="deshace un --sin-huecos")
+    ap.add_argument("--motivo", help="con --sacar, --kit o --sin-huecos: por qué, queda escrito")
     a = ap.parse_args()
     raiz = Path(a.fichas)
+    if a.sin_huecos or a.quitar_sin_huecos:
+        mid = a.sin_huecos or a.quitar_sin_huecos
+        try:
+            declarar_sin_huecos(raiz, mid, a.motivo or "", quitar=bool(a.quitar_sin_huecos))
+        except ValueError as e:
+            print(e)
+            return 1
+        print(f"{mid}: {'vuelve a la regla de su categoría' if a.quitar_sin_huecos else 'sin huecos pasantes'}. "
+              "Queda por procesar: la siguiente tanda rehace todas sus fotos.")
+        return 0
     base = [sys.executable, str(Path(__file__).with_name("procesar.py")), str(raiz / TRABAJO / "crudas"),
             "-o", str(raiz / TRABAJO / "salida"), "--por-producto", "--variantes"]
     if raiz.is_dir():

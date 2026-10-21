@@ -522,5 +522,48 @@ class CategoriaYTanda(unittest.TestCase):
             self.assertEqual(["Xiaomi Redmi Note 17 Pro 5G"], pf.fuera_de_la_tanda(raiz, [MODELO]))
 
 
+
+class SinHuecosPorModelo(unittest.TestCase):
+    """Decisión del 20/10/2026: la persona declara un modelo sin huecos pasantes aunque su categoría
+    los admita —el estuche transparente de los Redmi Buds 6 Active—."""
+
+    def test_un_modelo_declarado_va_sin_huecos_aunque_su_categoria_no(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            raiz = Path(tmp)
+            carpeta = armar(raiz, ("b_1.webp",), "Buds", "buds")
+            (carpeta / "buds-ficha.txt").write_text("CATEGORÍA: audifonos\n", encoding="utf-8")
+            self.assertEqual([], pf.sin_huecos(raiz))
+            pf.declarar_sin_huecos(raiz, "buds", "estuche cerrado")
+            self.assertEqual(["buds"], pf.sin_huecos(raiz))
+            self.assertEqual("estuche cerrado", pf.leer_sin_huecos(raiz)["buds"]["motivo"])
+            pf.declarar_sin_huecos(raiz, "buds", "", quitar=True)
+            self.assertEqual([], pf.sin_huecos(raiz))
+
+    def test_declararlo_pide_motivo_y_una_carpeta(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            raiz = Path(tmp)
+            armar(raiz)
+            with self.assertRaises(ValueError):
+                pf.declarar_sin_huecos(raiz, MODELO, "  ")
+            with self.assertRaises(ValueError):
+                pf.declarar_sin_huecos(raiz, "no-existe", "motivo")
+
+    def test_declararlo_deja_el_modelo_por_procesar(self):
+        # Cambia cómo se retoca: un modelo ya decidido tiene que volver a procesarse entero.
+        with tempfile.TemporaryDirectory() as tmp:
+            raiz = Path(tmp)
+            nombres = tuple(f"samsung-galaxy-s25-ultra_{i}.jpg" for i in range(1, 5))
+            carpeta = armar(raiz, nombres)
+            salida_de_procesar(raiz, [(pf.slug(Path(n).stem), "LISTA") for n in nombres])
+            cfg = dict(pf.cargar_config())
+            estado, _ = pf.decidir(MODELO, carpeta, cfg, pf.leer_reporte(raiz), medidor=lambda r: None)
+            pf.escribir_estado(carpeta, estado)
+            _, procesar = pf.decidir(MODELO, carpeta, cfg, None, medidor=lambda r: None)
+            self.assertFalse(procesar)
+            pf.declarar_sin_huecos(raiz, MODELO, "sin huecos")
+            _, procesar = pf.decidir(MODELO, carpeta, cfg, None, medidor=lambda r: None)
+            self.assertTrue(procesar)
+
+
 if __name__ == "__main__":
     unittest.main()
