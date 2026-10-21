@@ -533,6 +533,11 @@ MUESCA_MINIMA = 0.0005
 # envolvente, y no es producto.
 MUESCA_FONDO_MAXIMO = 0.15
 MUESCA_SALTO_MAXIMO = 6.0
+# Una pieza es «rectangular» si su envolvente convexa cubre al menos esto de su rectángulo mínimo:
+# un celular o una tablet de frente. Ahí la referencia de las muescas es el rectángulo, porque la
+# envolvente convexa no recupera una esquina mordida entera, solo su triángulo. Un render en
+# perspectiva no llega y se queda con la envolvente.
+PIEZA_RECTANGULAR = 0.95
 
 
 def fondo_de_la_foto(rgb: np.ndarray, m: np.ndarray) -> dict | None:
@@ -688,7 +693,14 @@ def completar_producto(a: np.ndarray, rgb: np.ndarray, sin_huecos: bool,
             x, y, w, h = st[j, cv2.CC_STAT_LEFT], st[j, cv2.CC_STAT_TOP], st[j, cv2.CC_STAT_WIDTH], st[j, cv2.CC_STAT_HEIGHT]
             contornos, _ = cv2.findContours((piezas[y:y + h, x:x + w] == j).astype(np.uint8), cv2.RETR_EXTERNAL,
                                             cv2.CHAIN_APPROX_SIMPLE, offset=(int(x), int(y)))
-            cv2.fillPoly(casco, [cv2.convexHull(np.vstack(contornos))], 1)
+            envolvente = cv2.convexHull(np.vstack(contornos))
+            rect = cv2.minAreaRect(envolvente)
+            area_rect = rect[1][0] * rect[1][1]
+            if area_rect > 0 and cv2.contourArea(envolvente) >= PIEZA_RECTANGULAR * area_rect:
+                cv2.fillPoly(casco, [np.round(cv2.boxPoints(rect)).astype(np.int32)], 1)
+                datos["piezas_rectangulares"] = datos.get("piezas_rectangulares", 0) + 1
+            else:
+                cv2.fillPoly(casco, [envolvente], 1)
         falta = (casco > 0) & ~lleno
         nm, muescas, sm, _ = cv2.connectedComponentsWithStats(falta.astype(np.uint8), connectivity=4)
         if nm > 1:
@@ -704,7 +716,9 @@ def completar_producto(a: np.ndarray, rgb: np.ndarray, sin_huecos: bool,
                                          "area_pct": round(100 * float(sm[k, cv2.CC_STAT_AREA]) / area, 2)})
                 si[k] = fraccion[k] <= MUESCA_FONDO_MAXIMO and s is not None and s <= MUESCA_SALTO_MAXIMO
             datos["muescas_rellenas"] = int(si.sum())
-            muescas_si = si[muescas]
+            # Píxel a píxel, lo que es fondo se queda fuera: más allá de la esquina redonda de un
+            # teléfono hay fondo, y con el rectángulo como referencia esa esquina saldría cuadrada.
+            muescas_si = si[muescas] & ~es_fondo
 
     if not (huecos.any() or muescas_si.any()):
         return a, datos

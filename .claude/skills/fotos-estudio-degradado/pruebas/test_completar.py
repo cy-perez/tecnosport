@@ -86,8 +86,7 @@ class CompletarProducto(unittest.TestCase):
 
     def test_la_tapa_blanca_mordida_por_el_contorno_se_completa(self):
         # Moto G17 _3, iPhone 16e _4: la tapa casi blanca sobre fondo blanco; el modelo le muerde el
-        # borde de abajo. (Una esquina entera no vuelve completa: la envolvente convexa solo
-        # recupera el triángulo; de eso avisa el control del interior.)
+        # borde de abajo.
         rgb = lienzo()
         rgb[60:340, 120:280] = (0.90, 0.93, 0.95)
         alfa = np.zeros((400, 400), np.float32)
@@ -96,6 +95,27 @@ class CompletarProducto(unittest.TestCase):
         nuevo, datos = imagen.completar_producto(alfa, rgb, sin_huecos=True)
         self.assertEqual(1.0, float(nuevo[320, 200]))
         self.assertEqual(1, datos["muescas_rellenas"])
+
+    def test_una_esquina_mordida_entera_vuelve_completa(self):
+        # Hasta el 20/10/2026 la envolvente convexa solo recuperaba el triángulo de la esquina.
+        rgb = lienzo()
+        rgb[60:340, 120:280] = (0.90, 0.93, 0.95)
+        alfa = np.zeros((400, 400), np.float32)
+        alfa[60:340, 120:280] = 1.0
+        alfa[290:340, 120:200] = 0.0
+        nuevo, datos = imagen.completar_producto(alfa, rgb, sin_huecos=True)
+        self.assertEqual(1.0, float(nuevo[335, 125]))
+        self.assertEqual(1, datos.get("piezas_rectangulares"))
+
+    def test_la_esquina_redonda_de_un_telefono_sano_sigue_redonda(self):
+        rgb = lienzo()
+        alfa = np.zeros((400, 400), np.float32)
+        cv2.rectangle(alfa, (120, 60), (280, 340), 1.0, -1)
+        alfa[60:90, 120:150] = 0.0
+        cv2.circle(alfa, (150, 90), 30, 1.0, -1)              # la esquina redonda
+        rgb[alfa > 0] = (0.2, 0.2, 0.2)
+        nuevo, _ = imagen.completar_producto(alfa, rgb, sin_huecos=True)
+        self.assertEqual(0.0, float(nuevo[62, 122]))
 
     def test_la_sombra_del_piso_entre_dos_telefonos_no_es_producto(self):
         # Galaxy S26 Ultra _1 y A17 _1: los teléfonos escalonados forman una sola pieza, y bajo el

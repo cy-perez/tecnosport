@@ -154,9 +154,10 @@ mordisco abierto en la parte de abajo.
   hasta la envolvente convexa de cada pieza se rellena si casi nada en ello es fondo (≤ 15 %) y
   si **continúa el color de lo que tiene al lado** (salto ≤ 6 ΔE). La segunda condición existe
   por la sombra del piso de los renders: bajo una fila de teléfonos escalonados cae dentro de la
-  envolvente, y sin ella se pintaba como equipo (Galaxy S26 Ultra _1, A17 _1). Una esquina
-  mordida entera solo vuelve a medias —la envolvente recupera el triángulo—; de eso avisa el
-  control del interior.
+  envolvente, y sin ella se pintaba como equipo (Galaxy S26 Ultra _1, A17 _1). Si la pieza es
+  casi un rectángulo (su envolvente cubre el 95 % de su rectángulo mínimo: un equipo de frente), la
+  referencia es el rectángulo, para que una esquina mordida entera vuelva completa; lo que de la
+  muesca es fondo se queda fuera píxel a píxel, así que una esquina redonda sigue redonda.
 
 El fondo de la foto se lee como la mediana Lab de lo que está lejos del recorte, y un píxel es
 fondo a menos de 2,5 ΔE de ella: los renders traen el fondo plano y una tapa blanca queda a 3 o
