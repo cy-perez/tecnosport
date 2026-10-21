@@ -278,6 +278,7 @@ def procesar_foto(ctx: Contexto, ruta: Path, nombre: str, previo: dict) -> dict:
                      "(destellos de render y adornos parecidos). Confirma que no eran parte del producto.")
     m, islas = imagen.limpiar_islas(m, cfg["isla_min_fraccion"], cfg["isla_aviso_fraccion"],
                                     float(cfg.get("alfa_umbral_binario", 0.5)))
+    descartadas = islas.pop("_descartadas", [])
     a = m if alfa_png is not None else imagen.niveles_alfa(m)
     recorte = {"metodo": metodo, "toca_borde": False, "lados": [], **islas, **adornos}
     reg["recorte"] = recorte
@@ -329,6 +330,18 @@ def procesar_foto(ctx: Contexto, ruta: Path, nombre: str, previo: dict) -> dict:
         recorte["toca_borde"] = True
         motivo("REPETIR", "cortado", f"El producto sale del encuadre por {', '.join(lados)}: está cortado o el "
                                      "recorte incluyó la superficie. Repite la foto dejando margen alrededor.")
+    # El aviso de pieza descartada se decide contra el producto ya completo: una isla que volvió a
+    # quedar adentro (un lente, un logo) no se perdió.
+    if islas.get("aviso_pieza"):
+        perdida = imagen.islas_perdidas(descartadas, a, float(cfg.get("alfa_umbral_binario", 0.5)),
+                                        max(1.0, float((a > float(cfg.get("alfa_umbral_binario", 0.5))).sum())))
+        if not perdida:
+            islas["aviso_pieza"] = recorte["aviso_pieza"] = False
+            notas.append(f"El recorte había dejado sueltos fragmentos del producto (el mayor, "
+                         f"{100 * islas['mayor_isla_descartada']:.2f} %), y al completarlo quedaron dentro.")
+        else:
+            islas["mayor_isla_descartada"] = recorte["mayor_isla_descartada"] = perdida
+    del descartadas
     if islas.get("aviso_pieza"):
         motivo("REVISAR", "pieza_descartada", f"Se descartó un fragmento del {100 * islas['mayor_isla_descartada']:.2f} % "
                                               "del producto: confirma que no era parte de él (cordón, correa, antena).")

@@ -173,6 +173,34 @@ class CompletarProducto(unittest.TestCase):
 
 
 @unittest.skipIf(imagen is None, "pide NumPy y OpenCV")
+class IslasDescartadas(unittest.TestCase):
+    """Un fragmento que el relleno vuelve a encerrar no se perdió (20/10/2026)."""
+
+    def recorte(self):
+        # La tapa con la manzana: el modelo ve el marco y el logo suelto, no la superficie.
+        m = np.zeros((400, 400), np.float32)
+        m[50:350, 100:300] = 1.0
+        m[60:340, 110:290] = 0.0
+        m[187:193, 197:203] = 1.0                        # el logo, una isla del 0,37 %
+        return m
+
+    def test_la_isla_que_queda_adentro_no_cuenta(self):
+        m = self.recorte()
+        limpio, datos = imagen.limpiar_islas(m, 0.005, 0.001, 0.5)
+        self.assertTrue(datos["aviso_pieza"])                # antes: REVISAR
+        final, _ = imagen.completar_producto(limpio, lienzo(), sin_huecos=True)
+        self.assertEqual(0.0, imagen.islas_perdidas(datos["_descartadas"], final, 0.5, float((final > 0.5).sum())))
+
+    def test_la_isla_que_queda_afuera_sigue_contando(self):
+        m = np.zeros((400, 400), np.float32)
+        m[50:350, 100:300] = 1.0
+        m[20:30, 340:360] = 1.0                          # una antena suelta, fuera del cuerpo
+        limpio, datos = imagen.limpiar_islas(m, 0.005, 0.001, 0.5)
+        perdida = imagen.islas_perdidas(datos["_descartadas"], limpio, 0.5, float((m > 0.5).sum()))
+        self.assertGreater(perdida, 0.0)
+
+
+@unittest.skipIf(imagen is None, "pide NumPy y OpenCV")
 class SegundaOpinion(unittest.TestCase):
     """El color del fondo como segunda opinión del recorte (20/10/2026)."""
 

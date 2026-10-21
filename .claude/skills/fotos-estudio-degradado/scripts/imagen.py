@@ -474,6 +474,14 @@ def limpiar_islas(m: np.ndarray, fraccion_min: float, fraccion_aviso: float,
     datos["islas_descartadas"] = int(len(descartar))
     datos["mayor_isla_descartada"] = round(float(areas[descartar].max() / total), 5) if len(descartar) else 0.0
     datos["aviso_pieza"] = bool(len(descartar) and areas[descartar].max() >= fraccion_aviso * total)
+    # Las islas que merecen aviso, recortadas a su caja: si al final quedan dentro del producto
+    # —un lente o un logo que el modelo vio solo, y el relleno de huecos volvió a encerrar— no se
+    # perdió nada (ver `islas_perdidas`).
+    datos["_descartadas"] = [
+        (int(stats[i + 1, 0]), int(stats[i + 1, 1]),
+         etiquetas[stats[i + 1, 1]:stats[i + 1, 1] + stats[i + 1, 3],
+                   stats[i + 1, 0]:stats[i + 1, 0] + stats[i + 1, 2]] == i + 1)
+        for i in descartar if areas[i] >= fraccion_aviso * total]
     datos["piezas"] = int((areas[conservar] >= 0.05 * areas[conservar].sum()).sum())
     zona = np.isin(etiquetas, conservar + 1).astype(np.uint8)
     k = max(3, int(round(max(m.shape) * 0.004)) | 1)
@@ -846,6 +854,23 @@ def interior_con_el_original(color: np.ndarray, original: np.ndarray, alfa: np.n
     dist = cv2.distanceTransform((alfa >= umbral).astype(np.uint8), cv2.DIST_L2, 3)
     w = np.clip(dist / max(float(banda_px), 1e-6), 0.0, 1.0)[..., None]
     return (color * (1.0 - w) + original * w).astype(np.float32)
+
+
+def islas_perdidas(descartadas: list, alfa: np.ndarray, umbral: float, total: float) -> float:
+    """La mayor isla descartada que sigue fuera del producto final, como fracción de `total`.
+
+    `limpiar_islas` descarta las islas pequeñas antes de que el producto se complete, y medido sobre
+    la tanda del 15/10/2026 casi todas eran del producto: los lentes de un OPPO A6k, la manzana de un
+    iPhone 16e, el «REDMI» de una tablet, que el modelo vio sueltos porque no vio la superficie de
+    alrededor. El relleno de huecos los vuelve a encerrar, así que avisar por ellos dejaba en REVISAR
+    fotos sin nada perdido. Una isla cuenta si más de la mitad de ella queda fuera."""
+    mayor = 0.0
+    for x, y, recorte in descartadas:
+        h, w = recorte.shape
+        fuera = recorte & (alfa[y:y + h, x:x + w] <= umbral)
+        if fuera.sum() > 0.5 * recorte.sum():
+            mayor = max(mayor, float(recorte.sum()) / total)
+    return round(mayor, 5)
 
 
 def niveles_alfa(m: np.ndarray, bajo: float = 0.08, alto: float = 0.92) -> np.ndarray:

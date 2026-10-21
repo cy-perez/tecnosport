@@ -203,6 +203,15 @@ Apple— y solo si ese anillo no es un fondo de estudio, en lo que está lejos d
 recorte» incluía lo que el modelo no vio, y con el panel del Redmi Pad 2 adentro el fondo salía
 disparejo y sin leer.
 
+### 0.c Un fragmento descartado solo avisa si queda fuera del producto (20/10/2026)
+
+`limpiar_islas` descarta las islas pequeñas antes de completar el producto, y medido sobre la tanda
+del 15/10/2026 casi todas eran **del producto**: los lentes de un OPPO A6k, la manzana de un iPhone
+16e, el «REDMI» de una tablet. El modelo los vio sueltos porque no vio la superficie de alrededor, y
+el relleno de huecos los vuelve a encerrar. El motivo `pieza_descartada` se decide ahora contra el
+producto ya completo (`islas_perdidas`): una isla que quedó adentro es una nota; solo cuenta la que
+sigue fuera en más de la mitad. En la muestra, seis de ocho fotos dejaron de salir REVISAR por eso.
+
 ### 1. El interior se compone opaco (`alfa_solida_banda_px`)
 
 Es el que motivó la regla. El modelo de recorte devuelve **alfa parcial dentro
