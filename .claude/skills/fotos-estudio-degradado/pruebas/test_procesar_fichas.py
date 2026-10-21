@@ -565,5 +565,35 @@ class SinHuecosPorModelo(unittest.TestCase):
             self.assertTrue(procesar)
 
 
+
+class RetirarLoQueYaNoSePublica(unittest.TestCase):
+    """Una foto que pasa a REPETIR no deja su versión anterior donde material-catalogo.mjs la sube."""
+
+    def test_la_version_anterior_de_una_foto_en_repetir_se_retira(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            raiz = Path(tmp)
+            carpeta = armar(raiz)
+            procesadas = carpeta / pf.PROCESADAS
+            (procesadas / pf.WEB / "1200").mkdir(parents=True)
+            (procesadas / "samsung-galaxy-s25-ultra_1.jpg").write_bytes(b"malformada")
+            (procesadas / pf.WEB / "1200" / "samsung-galaxy-s25-ultra_1.avif").write_bytes(b"avif")
+            salida_de_procesar(raiz, [("samsung-galaxy-s25-ultra-1", "REPETIR"), ("samsung-galaxy-s25-ultra-2", "LISTA")])
+            r = pf.devolver(raiz)
+            self.assertFalse((procesadas / "samsung-galaxy-s25-ultra_1.jpg").exists())
+            self.assertFalse((procesadas / pf.WEB / "1200" / "samsung-galaxy-s25-ultra_1.avif").exists())
+            retiradas = procesadas / pf.RETIRADAS
+            self.assertEqual(b"malformada", (retiradas / "samsung-galaxy-s25-ultra_1.jpg").read_bytes())
+            self.assertTrue((retiradas / pf.WEB / "1200" / "samsung-galaxy-s25-ultra_1.avif").is_file())
+            self.assertTrue((procesadas / "samsung-galaxy-s25-ultra_2.jpg").is_file())
+            self.assertEqual(1, len(r["retiradas"]))
+
+    def test_una_repetir_sin_version_anterior_no_retira_nada(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            raiz = Path(tmp)
+            armar(raiz)
+            salida_de_procesar(raiz, [("samsung-galaxy-s25-ultra-1", "REPETIR")])
+            self.assertEqual([], pf.devolver(raiz)["retiradas"])
+
+
 if __name__ == "__main__":
     unittest.main()

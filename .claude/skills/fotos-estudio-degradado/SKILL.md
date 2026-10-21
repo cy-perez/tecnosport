@@ -494,7 +494,10 @@ correrlo otra vez después de soltar fotos nuevas procesa solo esas; con `--tand
 va en su lugar `--solo` con cada modelo entero y la compuerta del lienzo. Las hojas de
 revisión y el reporte quedan en `fichas/_estudio/salida/`, en un sitio para todos
 los modelos: ahí se revisa como siempre (paso 4) y ahí se aprueba con `marcar.py`;
-`--devolver` vuelve a copiar lo aprobado. Las REPETIR no se devuelven. Con
+`--devolver` vuelve a copiar lo aprobado. Las REPETIR no se devuelven, y **la versión anterior de
+una foto que pasó a REPETIR se mueve a `Fotos procesadas/_retiradas/`** (20/10/2026):
+`tools/material-catalogo.mjs` sube todo `.jpg` de «Fotos procesadas», y el Redmi Pad 2 _5
+malformado seguía ahí, listo para subirse. Se mueve y no se borra: borrarlo lo decide la persona. Con
 `--segundo-plano` lanza el proceso y, al terminar, se corre `--devolver` —con la
 misma `--tanda`, que es la que decide el estado de cada modelo—. Sin `--tanda`
 procesa todas las carpetas y no decide nada: es el modo de antes, para un lote

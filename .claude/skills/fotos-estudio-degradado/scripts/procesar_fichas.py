@@ -91,6 +91,7 @@ from pathlib import Path
 ORIGINALES = "Fotos originales"   # los mismos nombres que listas-de-proveedor/scripts/fichas.py
 PROCESADAS = "Fotos procesadas"
 WEB = "web"
+RETIRADAS = "_retiradas"          # en «Fotos procesadas»: lo que se retiró porque la foto pasó a REPETIR
 TRABAJO = "_estudio"
 ESTADO = "estado-fotos.json"
 SACADOS = "sacados.json"          # en _estudio/: los modelos sacados que no tienen carpeta
@@ -297,12 +298,32 @@ def registro_de(original: Path, grupo: str, registros: list):
     return None
 
 
+def retirar(procesadas: Path, stem: str) -> int:
+    """Mueve a `_retiradas/` la maestra y los anchos web de una foto que ya no se publica.
+
+    Una foto que pasa a REPETIR no se devuelve, y su versión anterior se quedaba en «Fotos
+    procesadas»: tools/material-catalogo.mjs sube todo `.jpg` de esa carpeta, así que el Redmi Pad 2
+    _5 malformado del 19/10/2026 seguía listo para subirse. Se mueve y no se borra: es de la persona
+    decidir si lo quiere."""
+    movidos = 0
+    candidatos = [procesadas / f"{stem}.jpg"]
+    if (procesadas / WEB).is_dir():
+        candidatos += list((procesadas / WEB).glob(f"*/{stem}.*"))
+    for archivo in candidatos:
+        if archivo.is_file():
+            destino = procesadas / RETIRADAS / archivo.relative_to(procesadas)
+            destino.parent.mkdir(parents=True, exist_ok=True)
+            archivo.replace(destino)
+            movidos += 1
+    return movidos
+
+
 def devolver(raiz: Path) -> dict:
     """Copia cada resultado del reporte a la carpeta de su modelo, con el nombre de su original."""
     raiz = Path(raiz)
     salida = raiz / TRABAJO / "salida"
     registros = leer_reporte(raiz).get("fotos", [])
-    resumen = {"devueltas": 0, "repetir": [], "revisar": [], "sin_original": []}
+    resumen = {"devueltas": 0, "repetir": [], "revisar": [], "sin_original": [], "retiradas": []}
     usados = set()
     for mid, carpeta in modelos(raiz).items():
         buenas, _ = unicas(carpeta)
@@ -316,6 +337,8 @@ def devolver(raiz: Path) -> dict:
             sal = foto.get("salidas") or {}
             if estado == "REPETIR" or not sal.get("maestra"):
                 resumen["repetir"].append(etiqueta)
+                if retirar(carpeta / PROCESADAS, original.stem):
+                    resumen["retiradas"].append(etiqueta)
                 continue
             if estado == "REVISAR":
                 resumen["revisar"].append(etiqueta)
@@ -747,7 +770,9 @@ def main() -> int:
     print(f"{r['devueltas']} foto(s) en «{PROCESADAS}»")
     for titulo, lista in (("REVISAR (mira la hoja de revisión antes de subirlas)", r["revisar"]),
                           ("REPETIR (no se devolvieron: hay que conseguir otra)", r["repetir"]),
-                          ("sin original (se borró o se renombró)", r["sin_original"])):
+                          ("sin original (se borró o se renombró)", r["sin_original"]),
+                          (f"retiradas a «{PROCESADAS}/{RETIRADAS}» (su versión anterior ya no se sube)",
+                           r["retiradas"])):
         if lista:
             print(f"\n{titulo}:")
             for x in lista:
