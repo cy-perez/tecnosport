@@ -624,6 +624,14 @@ lote de inventario— el par útil es `--por-producto --nuevas`: agrupa la salid
 producto y salta lo ya procesado cuyo archivo de origen no ha cambiado. En Windows las
 rutas van entre comillas (`"C:\fotos\lote 1"`) y el segundo plano funciona igual.
 
+**Una foto enorme se carga reducida** (20/10/2026): el lienzo nunca pasa de 2000 px, así que una
+foto de más de 4000 se carga a 4000 —o a lo que haga falta para que el producto siga midiendo 1,25
+veces lo que pide el lienzo; nunca hasta tener que ampliar (`salidas.lado_de_carga`)—. Medido en la
+foto de 8000 px del Moto G17 _3: el pico de memoria baja de 4,4 a 2,4 GB, con la misma salida. Un
+reproceso de 83 fotos en segundo plano murió por memoria justo en ella. Aun así, con lotes grandes
+conviene ir en tandas de unas 20 en primer plano. Las exclusiones y `caja_origen` siguen en píxeles
+de la foto original.
+
 Una carpeta de salida acumula rondas: al reprocesar, el reporte se fusiona y las
 hojas se regeneran. Por eso las opciones de salida (lienzo, anchos, formatos y
 carpetas) deben ser las mismas en toda la carpeta; si cambian habiendo otras fotos

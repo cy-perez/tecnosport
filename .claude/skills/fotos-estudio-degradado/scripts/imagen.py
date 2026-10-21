@@ -257,11 +257,15 @@ def estimar_calidad_jpeg(im: Image.Image) -> int | None:
     return int(round(min(100, max(1, q))))
 
 
-def cargar_foto(ruta: Path) -> dict:
+def cargar_foto(ruta: Path, lado_max: int | None = None) -> dict:
     """Abre la foto, aplica la orientación EXIF y convierte su perfil ICC a sRGB.
 
     La orientación se aplica antes de descartar metadatos (si no, las fotos de celular
     quedan giradas) y el perfil se convierte, no se borra (una foto Display P3 cambiaría de color).
+
+    Con `lado_max`, una foto mayor se reduce **antes** de pasar a float: una de 8000 px ocupa 768 MB
+    en float32 y el reproceso del 20/10/2026 murió por memoria en ella. `info["factor_carga"]` dice
+    cuánto se redujo, para llevar las coordenadas de la foto original (las exclusiones) a esta.
     """
     im = Image.open(ruta)
     info = {"formato": im.format, "ancho_archivo": im.width, "alto_archivo": im.height}
@@ -273,6 +277,14 @@ def cargar_foto(ruta: Path) -> dict:
         info["calidad_jpeg_estimada"] = estimar_calidad_jpeg(im)
     icc = im.info.get("icc_profile")
     im = ImageOps.exif_transpose(im)
+    info["factor_carga"] = 1.0
+    if lado_max and max(im.size) > lado_max:
+        f = lado_max / max(im.size)
+        if im.mode == "P":
+            im = im.convert("RGBA")
+        info["reducida_desde"] = [im.width, im.height]
+        im = im.resize((max(1, round(im.width * f)), max(1, round(im.height * f))), LANCZOS, reducing_gap=3.0)
+        info["factor_carga"] = round(f, 6)
 
     if im.mode in ("I;16", "I;16B", "I;16L", "I"):
         arr = np.asarray(im, dtype=np.float32)

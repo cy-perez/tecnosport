@@ -136,5 +136,26 @@ class VersionDelRetoque(unittest.TestCase):
         self.assertEqual(["a", "c"], salidas.con_retoque_anterior(registros, {"x"}))
 
 
+
+class LadoDeCarga(unittest.TestCase):
+    """Decisión del 20/10/2026: una foto enorme se carga reducida, pero nunca hasta tener que ampliar."""
+
+    def test_una_foto_de_8000_con_el_producto_grande_se_carga_a_4000(self):
+        # El Moto G17 _3: 8000 px, el teléfono a lo alto. El reproceso murió por memoria en ella.
+        self.assertEqual(4000, salidas.lado_de_carga(8000, 7000, 2000, 0.85))
+
+    def test_no_se_reduce_hasta_que_el_producto_quede_corto(self):
+        # Un producto de 2000 px en una foto de 8000 necesita 2125 (1700 × 1,25): se carga a 8500 × …
+        lado = salidas.lado_de_carga(8000, 2400, 2000, 0.85)
+        self.assertIsNotNone(lado)
+        self.assertGreaterEqual(2400 * lado / 8000, 2000 * 0.85 * salidas.MARGEN_DE_CARGA - 1)
+
+    def test_si_reducir_obligaria_a_ampliar_se_carga_entera(self):
+        self.assertIsNone(salidas.lado_de_carga(8000, 1800, 2000, 0.85))
+
+    def test_una_foto_normal_se_carga_entera(self):
+        self.assertIsNone(salidas.lado_de_carga(1200, 1000, 1200, 0.85))
+
+
 if __name__ == "__main__":
     unittest.main()

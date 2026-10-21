@@ -122,3 +122,23 @@ def separar_marcas(marcas) -> tuple[list, list]:
     Las de antes de que existiera la versión no la traen, y también caducan."""
     vigentes = [m for m in marcas if m.get("version_retoque") == VERSION_RETOQUE]
     return vigentes, [m for m in marcas if m.get("version_retoque") != VERSION_RETOQUE]
+
+
+# Una foto se carga reducida si es más grande que esto, siempre que el producto siga midiendo por lo
+# menos MARGEN_DE_CARGA veces lo que pide el lienzo: nunca se reduce hasta tener que ampliar.
+LADO_DE_CARGA = 4000
+MARGEN_DE_CARGA = 1.25
+
+
+def lado_de_carga(lado_foto: int, lado_producto: int | None, lienzo: int, ocupacion: float) -> int | None:
+    """A cuántos px de lado mayor cargar una foto, o None si se carga entera.
+
+    El lienzo nunca pasa de 2000 y el producto ocupa el 85 %: una foto de 8000 px no aporta nada que
+    una de 4000 no tenga, salvo cuando el producto ocupa poco de ella. Por eso el tope sale también
+    del producto: después de reducir, tiene que seguir midiendo MARGEN_DE_CARGA veces lo que necesita."""
+    if lado_foto <= LADO_DE_CARGA:
+        return None
+    producto = lado_producto or lado_foto
+    necesario = lienzo * ocupacion * MARGEN_DE_CARGA
+    factor = max(LADO_DE_CARGA / lado_foto, necesario / producto)
+    return None if factor >= 1 else int(round(lado_foto * factor))

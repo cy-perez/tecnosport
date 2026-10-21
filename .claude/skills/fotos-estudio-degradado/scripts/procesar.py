@@ -240,8 +240,15 @@ def procesar_foto(ctx: Contexto, ruta: Path, nombre: str, previo: dict) -> dict:
         return reg
 
     # ---- 5.1 preparar: orientación EXIF, perfil a sRGB, alfa útil
-    foto = imagen.cargar_foto(ruta)
+    with Image.open(ruta) as _im:
+        lado_foto = max(_im.size)
+    lado_max = salidas.lado_de_carga(lado_foto, estimador.estimar_lado_producto(ruta), W, float(cfg["ocupacion"]))
+    foto = imagen.cargar_foto(ruta, lado_max)
     rgb, alfa_png, info = foto["rgb"], foto["alfa"], foto["info"]
+    factor = float(info.get("factor_carga", 1.0))
+    if factor < 1:
+        notas.append(f"La foto mide {lado_foto} px y se cargó a {max(rgb.shape[:2])}: el producto sigue midiendo "
+                     "más de lo que pide el lienzo, y así no se agota la memoria.")
     reg["entrada"] = info
     Ho, Wo = rgb.shape[:2]
     if info.get("formato") in ("HEIF", "WEBP"):
@@ -276,7 +283,7 @@ def procesar_foto(ctx: Contexto, ruta: Path, nombre: str, previo: dict) -> dict:
         quitado = 0.0
         excluido = np.zeros(m.shape, bool)
         for zona in reg["exclusiones"]:
-            x0, y0, x1, y1 = [int(round(v)) for v in zona]
+            x0, y0, x1, y1 = [int(round(v * factor)) for v in zona]   # están en px de la foto original
             x0, x1 = sorted((max(0, min(Wo, x0)), max(0, min(Wo, x1))))
             y0, y1 = sorted((max(0, min(Ho, y0)), max(0, min(Ho, y1))))
             quitado += float((m[y0:y1, x0:x1] > 0.5).sum())
@@ -409,7 +416,9 @@ def procesar_foto(ctx: Contexto, ruta: Path, nombre: str, previo: dict) -> dict:
     lado0 = max(bw, bh)
     necesario = int(math.ceil(lado0 * s))
     reg["escala"] = round(s, 3)
-    reg["caja_origen"] = {"x0": x0, "y0": y0, "x1": x1, "y1": y1, "lado_mayor": lado0}
+    # en px de la foto original, como las exclusiones: ampliar.py la dibuja sobre ella
+    reg["caja_origen"] = {k: int(round(v / factor)) for k, v in
+                          {"x0": x0, "y0": y0, "x1": x1, "y1": y1, "lado_mayor": lado0}.items()}
     if s >= cfg["ampliacion_repetir"]:
         motivo("REPETIR", "ampliacion", f"El producto se amplió {s:.2f}× (mide {lado0} px en la foto y necesita "
                                         f"≥ {necesario} px): se verá borroso. Repite la foto más cerca o con más "

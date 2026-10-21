@@ -173,6 +173,25 @@ class CompletarProducto(unittest.TestCase):
 
 
 @unittest.skipIf(imagen is None, "pide NumPy y OpenCV")
+class CargaReducida(unittest.TestCase):
+    def test_una_foto_grande_se_carga_al_lado_pedido_y_dice_cuanto(self):
+        import tempfile
+        from PIL import Image
+        with tempfile.TemporaryDirectory() as tmp:
+            ruta = Path(tmp) / "grande.png"
+            arr = np.full((3000, 2000, 3), 255, np.uint8)
+            arr[1000:2000, 500:1500] = (30, 60, 90)
+            Image.fromarray(arr).save(ruta)
+            foto = imagen.cargar_foto(ruta, 1500)
+            self.assertEqual((1500, 1000), foto["rgb"].shape[:2])
+            self.assertAlmostEqual(0.5, foto["info"]["factor_carga"], places=4)
+            self.assertEqual([2000, 3000], foto["info"]["reducida_desde"])
+            entera = imagen.cargar_foto(ruta)
+            self.assertEqual((3000, 2000), entera["rgb"].shape[:2])
+            self.assertEqual(1.0, entera["info"]["factor_carga"])
+
+
+@unittest.skipIf(imagen is None, "pide NumPy y OpenCV")
 class IslasDescartadas(unittest.TestCase):
     """Un fragmento que el relleno vuelve a encerrar no se perdió (20/10/2026)."""
 
