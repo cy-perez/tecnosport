@@ -386,7 +386,21 @@ python3 "${CLAUDE_SKILL_DIR}/scripts/procesar_fichas.py" catalogo/4-entregables/
     --tanda catalogo/5-api/por-proponer.json --kit <id del modelo> --motivo "consola con los Joy-Con sueltos"
 ```
 
-Queda en `_estudio/kits.json` y vale para todas las tandas; `--quitar-kit <id>` lo
+**Un modelo sin huecos lo declara también la persona** (20/10/2026). La categoría decide casi siempre
+—celulares y tablets van con `--sin-huecos`; relojes y audífonos no, porque una correa cerrada o
+una diadema sí tienen huecos—, pero hay modelos de esas categorías que no los tienen y cuyo
+interior claro pasa por fondo: el estuche transparente de los Redmi Buds 6 Active salía mutilado.
+Si en la hoja ves eso, pregúntale a la persona; no lo declares por tu cuenta:
+
+```bash
+python3 "${CLAUDE_SKILL_DIR}/scripts/procesar_fichas.py" catalogo/4-entregables/fichas \
+    --sin-huecos <id del modelo> --motivo "estuche cerrado, sin huecos pasantes"
+```
+
+Queda en `_estudio/sin-huecos.json`, vale para todas las tandas, y el modelo queda «por procesar»:
+la siguiente tanda rehace todas sus fotos. `--quitar-sin-huecos <id>` lo deshace.
+
+Un kit queda en `_estudio/kits.json` y vale para todas las tandas; `--quitar-kit <id>` lo
 deshace. No pide otro retoque: la siguiente corrida de la tanda recalcula el veredicto
 contra el reporte. La hoja de revisión sigue mostrando la foto como REVISAR —el retoque
 no sabe de kits—, así que en la revisión a ojo confirma que las piezas son las del kit.
