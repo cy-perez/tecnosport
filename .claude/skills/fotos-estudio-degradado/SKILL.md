@@ -184,6 +184,25 @@ configuración, así que `--nuevas` y la tanda lo saltan. Para rehacer fotos con
 el lienzo a las demás del modelo: `procesar.py ... --solo <nombres> --conservar-lienzo
 --sin-huecos <modelos>`, y después `procesar_fichas.py ... --tanda ... --devolver`.
 
+### 0.b El color del fondo es la segunda opinión del recorte (20/10/2026)
+
+Casi todo el material es render de fabricante sobre un fondo plano, y ahí el color dice más que el
+modelo. `imagen.segunda_opinion()` corre antes de completar el producto, y solo si el fondo de la
+foto se pudo leer:
+
+- **Suma** las regiones de color (croma C* ≥ 5 en el 60 % de sus píxeles, al menos el 0,5 % del
+  producto) que tocan el producto, no tocan el borde de la foto y el modelo no vio: el panel
+  trasero lavanda del Redmi Pad 2 _5, que se publicaba sin él. La sombra del piso es gris y una
+  tapa blanca no tiene croma: por aquí no entran.
+- **Quita** lo que el modelo marcó con duda (alfa < 0,9), es del color del fondo y se alcanza desde
+  el borde de la foto sin cruzar producto: el arco blanco sobre el TCL Pad _3. Un teléfono blanco no
+  se pierde, porque lo encierra un marco que no es del color del fondo.
+
+El fondo se lee primero en un anillo junto al borde de la foto —saltando el 1 %, por el filete de
+Apple— y solo si ese anillo no es un fondo de estudio, en lo que está lejos del recorte: «lejos del
+recorte» incluía lo que el modelo no vio, y con el panel del Redmi Pad 2 adentro el fondo salía
+disparejo y sin leer.
+
 ### 1. El interior se compone opaco (`alfa_solida_banda_px`)
 
 Es el que motivó la regla. El modelo de recorte devuelve **alfa parcial dentro

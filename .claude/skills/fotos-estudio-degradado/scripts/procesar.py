@@ -286,10 +286,21 @@ def procesar_foto(ctx: Contexto, ruta: Path, nombre: str, previo: dict) -> dict:
     # lo recortó, y lo transparente puede guardar cualquier color.
     fondo_foto = None
     if alfa_png is None:
+        umbral_b = float(cfg.get("alfa_umbral_binario", 0.5))
+        fondo_foto = imagen.fondo_de_la_foto(rgb, a)
+        # Segunda opinión por el color del fondo: suma lo de color que el modelo no vio (el panel
+        # trasero del Redmi Pad 2) y quita lo dudoso del color del fondo (el arco sobre el TCL Pad).
+        a, segunda = imagen.segunda_opinion(a, rgb, fondo_foto, umbral_b)
+        if excluido is not None:
+            a[excluido] = 0.0
+        recorte["segunda_opinion"] = segunda
+        if segunda["sumado_pct"] or segunda["quitado_pct"]:
+            notas.append(f"El color del fondo corrigió el recorte: se sumó el {segunda['sumado_pct']:.1f} % del "
+                         f"producto (zonas de color que el modelo no vio) y se quitó el {segunda['quitado_pct']:.1f} % "
+                         "(zonas del color del fondo que el modelo dio por producto).")
         # lo que la persona excluyó a mano no vuelve como «hueco» ni como «muesca»
-        a, completado = imagen.completar_producto(a, rgb, ctx.sin_huecos,
-                                                  float(cfg.get("alfa_umbral_binario", 0.5)), excluido)
-        fondo_foto = completado.pop("fondo")
+        a, completado = imagen.completar_producto(a, rgb, ctx.sin_huecos, umbral_b, excluido, fondo_foto)
+        completado.pop("fondo")
         recorte["completado"] = completado
         if completado["relleno_pct"] > 0:
             partes = []

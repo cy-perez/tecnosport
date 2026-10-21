@@ -516,7 +516,12 @@ MUESCA_SALTO_MAXIMO = 6.0
 
 
 def fondo_de_la_foto(rgb: np.ndarray, m: np.ndarray) -> dict | None:
-    """El color del fondo de la foto: la mediana Lab de lo que está lejos del recorte.
+    """El color del fondo de la foto: la mediana Lab del anillo del borde de la foto, fuera del
+    recorte; si ese anillo no sirve, la de lo que está lejos del recorte.
+
+    El anillo va primero porque «lejos del recorte» incluye lo que el modelo no vio: en el Redmi
+    Pad 2 _5 era el panel trasero lavanda, y el fondo salía disparejo y sin leer. Se salta el 1 %
+    del borde, como `estimador.py`, por el filete oscuro del material de Apple.
 
     None si no es un fondo de estudio —oscuro, o disparejo como una mesa—: ahí el color no dice
     qué es fondo y qué es producto, y no se completa nada por color."""
@@ -525,15 +530,25 @@ def fondo_de_la_foto(rgb: np.ndarray, m: np.ndarray) -> dict | None:
     tam = (max(1, round(ancho * esc)), max(1, round(alto * esc)))
     chica = cv2.resize(rgb, tam, interpolation=cv2.INTER_AREA)
     mchica = (cv2.resize(m, tam, interpolation=cv2.INTER_AREA) > 0.02).astype(np.uint8)
-    lejos = cv2.dilate(mchica, elemento(0.03 * max(tam))) == 0
-    if lejos.sum() < 500:
-        return None
-    lab = rgb_a_lab(chica[lejos].reshape(-1, 1, 3))[:, 0]
-    mediana = np.median(lab, axis=0)
-    parejo = float((np.linalg.norm(lab - mediana, axis=1) <= FONDO_TOLERANCIA_DE).mean())
-    if mediana[0] < FONDO_L_MINIMO or parejo < FONDO_PAREJO_MINIMO:
-        return None
-    return {"lab": mediana.astype(np.float32), "parejo": round(parejo, 3)}
+
+    def leer(zona: np.ndarray, minimo: int):
+        if zona.sum() < minimo:
+            return None
+        lab = rgb_a_lab(chica[zona].reshape(-1, 1, 3))[:, 0]
+        mediana = np.median(lab, axis=0)
+        parejo = float((np.linalg.norm(lab - mediana, axis=1) <= FONDO_TOLERANCIA_DE).mean())
+        if mediana[0] < FONDO_L_MINIMO or parejo < FONDO_PAREJO_MINIMO:
+            return None
+        return {"lab": mediana.astype(np.float32), "parejo": round(parejo, 3)}
+
+    k = max(1, round(0.01 * max(tam)))
+    anillo = np.zeros(mchica.shape, bool)
+    anillo[k:k + 3, k:-k] = anillo[-k - 3:-k, k:-k] = True
+    anillo[k:-k, k:k + 3] = anillo[k:-k, -k - 3:-k] = True
+    leido = leer(anillo & (mchica == 0), 200)
+    if leido is not None:
+        return leido
+    return leer(cv2.dilate(mchica, elemento(0.03 * max(tam))) == 0, 500)
 
 
 def mapa_de_fondo(rgb: np.ndarray, fondo: dict | None) -> np.ndarray | None:
@@ -585,7 +600,8 @@ LADO_DE_DECISION = 2048
 
 
 def completar_producto(a: np.ndarray, rgb: np.ndarray, sin_huecos: bool,
-                       umbral: float = 0.5, prohibido: np.ndarray | None = None) -> tuple[np.ndarray, dict]:
+                       umbral: float = 0.5, prohibido: np.ndarray | None = None,
+                       fondo: dict | None | str = "leer") -> tuple[np.ndarray, dict]:
     """Devuelve al producto lo que el recorte dejó fuera de él, y deja fuera lo que es fondo.
 
     - **Huecos encerrados**: en un celular o una tablet (`sin_huecos`, la categoría de la ficha)
@@ -606,7 +622,8 @@ def completar_producto(a: np.ndarray, rgb: np.ndarray, sin_huecos: bool,
     area_full = float(binaria_full.sum())
     if area_full == 0:
         return a, datos
-    fondo = fondo_de_la_foto(rgb, a)
+    if fondo == "leer":       # quien ya lo leyó (procesar.py) lo pasa, y no se lee dos veces
+        fondo = fondo_de_la_foto(rgb, a)
     datos["fondo_leido"] = fondo is not None
     datos["fondo"] = fondo
 
@@ -710,6 +727,98 @@ def zona_vigilada(alfa: np.ndarray, es_fondo: np.ndarray | None, margen_px: floa
     if es_fondo is not None:
         silueta = rellenar_huecos(silueta) & ~(es_fondo & ~silueta)
     return contraer(silueta.astype(np.float32), margen_px) > 0.5
+
+
+# Segunda opinión del recorte por el color del fondo (20/10/2026). Casi todo el material es render
+# de fabricante sobre un fondo plano: ahí lo que no es del color del fondo y está pegado al producto
+# es producto, y lo que es del color del fondo y se alcanza desde el borde de la foto no lo es.
+# Una región de color se suma si al menos esta fracción de sus píxeles tiene croma (C*) de esto o más:
+# la sombra del piso de un render es gris, y una tapa blanca no se suma por aquí (la cuida el modelo).
+SUMA_CROMA_MIN = 5.0
+SUMA_FRACCION_CROMA = 0.6
+# Y si mide por lo menos esta fracción del producto: el panel trasero del Redmi Pad 2 es un 40 %.
+SUMA_AREA_MIN = 0.005
+# Lo que se quita: solo donde el modelo dudó (alfa bajo esto), y solo manchas de por lo menos esta
+# fracción del producto que sobreviven a una apertura: el antialias del borde no se toca.
+QUITA_ALFA_MAX = 0.9
+QUITA_AREA_MIN = 0.002
+
+
+def segunda_opinion(a: np.ndarray, rgb: np.ndarray, fondo: dict | None,
+                    umbral: float = 0.5) -> tuple[np.ndarray, dict]:
+    """Corrige el recorte con el color del fondo de la foto, cuando es un fondo de estudio.
+
+    - **Suma** las regiones de color pegadas al producto que el modelo no vio y que no tocan el
+      borde de la foto: el panel trasero lavanda del Redmi Pad 2, que salía sin él.
+    - **Quita** lo que el modelo marcó con duda, es del color del fondo y se alcanza desde el borde
+      de la foto sin cruzar producto: el arco blanco que aparecía sobre el TCL Pad. Un teléfono
+      blanco no se pierde por aquí: lo rodea un marco que no es del color del fondo, y lo que el
+      modelo ve con seguridad (alfa ≥ 0,9) no se toca.
+
+    Sin un fondo legible no hace nada. Decide a escala reducida, como `completar_producto`."""
+    datos = {"sumado_pct": 0.0, "quitado_pct": 0.0}
+    if fondo is None:
+        return a, datos
+    binaria_full = a > umbral
+    area_full = float(binaria_full.sum())
+    if area_full == 0:
+        return a, datos
+    alto, ancho = a.shape
+    esc = min(1.0, LADO_DE_DECISION / max(alto, ancho))
+    if esc < 1:
+        tam = (max(1, round(ancho * esc)), max(1, round(alto * esc)))
+        a_d = cv2.resize(a, tam, interpolation=cv2.INTER_AREA)
+        rgb_d = cv2.resize(rgb, tam, interpolation=cv2.INTER_AREA)
+    else:
+        a_d, rgb_d = a, rgb
+    binaria = a_d > umbral
+    area = float(binaria.sum())
+    lab = rgb_a_lab(rgb_d)
+    es_fondo = np.linalg.norm(lab - fondo["lab"], axis=-1) <= FONDO_TOLERANCIA_DE
+    k = elemento(max(1.0, 1.5 * max(a_d.shape) / 1000))
+
+    # ---- sumar: lo que no es fondo, no es producto todavía, tiene color y toca el producto
+    otro = (~es_fondo & ~binaria).astype(np.uint8)
+    otro = cv2.morphologyEx(otro, cv2.MORPH_OPEN, k)
+    n, et, st, _ = cv2.connectedComponentsWithStats(otro, connectivity=8)
+    suma = np.zeros(binaria.shape, bool)
+    if n > 1:
+        croma = np.hypot(lab[..., 1], lab[..., 2]) >= SUMA_CROMA_MIN
+        frac_croma = _fraccion_por_region(et, n, croma)
+        vecino = cv2.dilate(binaria.astype(np.uint8), elemento(3)) > 0
+        toca = np.bincount(et[vecino].ravel(), minlength=n) > 0
+        borde = np.zeros(n, bool)
+        borde[np.unique(np.concatenate([et[0], et[-1], et[:, 0], et[:, -1]]))] = True
+        si = (toca & ~borde & (frac_croma >= SUMA_FRACCION_CROMA)
+              & (st[:, cv2.CC_STAT_AREA] >= SUMA_AREA_MIN * area))
+        si[0] = False
+        suma = si[et]
+
+    # ---- quitar: lo dudoso del color del fondo que se alcanza desde el borde sin cruzar producto
+    seguro = a_d >= QUITA_ALFA_MAX
+    paso = (es_fondo & ~seguro).astype(np.uint8)
+    exterior = np.pad(paso, 1, constant_values=1)
+    cv2.floodFill(exterior, None, (0, 0), 2)
+    candidato = ((exterior[1:-1, 1:-1] == 2) & binaria).astype(np.uint8)
+    candidato = cv2.morphologyEx(candidato, cv2.MORPH_OPEN, k)
+    n, et, st, _ = cv2.connectedComponentsWithStats(candidato, connectivity=8)
+    si = st[:, cv2.CC_STAT_AREA] >= QUITA_AREA_MIN * area
+    si[0] = False
+    quita = si[et]
+
+    if not (suma.any() or quita.any()):
+        return a, datos
+    if esc < 1:
+        suma = cv2.resize(suma.astype(np.uint8), (ancho, alto), interpolation=cv2.INTER_NEAREST) > 0
+        quita = cv2.resize(cv2.dilate(quita.astype(np.uint8), np.ones((3, 3), np.uint8)), (ancho, alto),
+                           interpolation=cv2.INTER_NEAREST) > 0
+        quita &= a < QUITA_ALFA_MAX
+    a = a.copy()
+    a[suma & ~binaria_full] = 1.0
+    a[quita] = 0.0
+    datos["sumado_pct"] = round(100.0 * float((suma & ~binaria_full).sum()) / area_full, 2)
+    datos["quitado_pct"] = round(100.0 * float(quita.sum()) / area_full, 2)
+    return a, datos
 
 
 def huecos_encerrados(alfa: np.ndarray, umbral: float = 0.5, fraccion_min: float = 0.005) -> list[float]:

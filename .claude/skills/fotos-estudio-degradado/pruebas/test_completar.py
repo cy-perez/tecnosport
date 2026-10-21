@@ -173,6 +173,71 @@ class CompletarProducto(unittest.TestCase):
 
 
 @unittest.skipIf(imagen is None, "pide NumPy y OpenCV")
+class SegundaOpinion(unittest.TestCase):
+    """El color del fondo como segunda opinión del recorte (20/10/2026)."""
+
+    def foto(self):
+        rgb = lienzo()
+        alfa = np.zeros((400, 400), np.float32)
+        rgb[60:340, 160:300] = (0.1, 0.1, 0.1)               # la tablet de frente, que el modelo ve
+        alfa[60:340, 160:300] = 1.0
+        rgb[70:330, 80:160] = (0.80, 0.76, 0.90)             # el panel trasero lavanda, que no ve
+        return rgb, alfa
+
+    def test_suma_el_panel_de_color_que_el_modelo_no_vio(self):
+        # Redmi Pad 2 _5: se publicaba la tablet de frente sin el panel trasero.
+        rgb, alfa = self.foto()
+        fondo = imagen.fondo_de_la_foto(rgb, alfa)
+        nuevo, datos = imagen.segunda_opinion(alfa, rgb, fondo)
+        self.assertEqual(1.0, float(nuevo[200, 120]))
+        self.assertGreater(datos["sumado_pct"], 0)
+
+    def test_no_suma_la_sombra_gris_del_piso(self):
+        rgb, alfa = self.foto()
+        rgb[70:330, 80:160] = 1.0
+        for i, y in enumerate(range(340, 370)):              # sombra gris bajo la tablet
+            rgb[y, 160:300] = 0.7 + 0.3 * i / 30
+        nuevo, _ = imagen.segunda_opinion(alfa, rgb, imagen.fondo_de_la_foto(rgb, alfa))
+        self.assertEqual(0.0, float(nuevo[350, 230]))
+
+    def test_quita_el_arco_del_color_del_fondo_que_el_modelo_dudo(self):
+        # TCL Pad _3: un arco blanco sobre la tablet, con alfa parcial, que se pintaba con sombra.
+        rgb, alfa = self.foto()
+        rgb[70:330, 80:160] = 1.0
+        alfa[30:60, 180:280] = 0.5
+        nuevo, datos = imagen.segunda_opinion(alfa, rgb, imagen.fondo_de_la_foto(rgb, alfa), 0.2)
+        self.assertEqual(0.0, float(nuevo[45, 230]))
+        self.assertGreater(datos["quitado_pct"], 0)
+
+    def test_no_quita_la_tapa_blanca_que_rodea_un_marco(self):
+        # Un teléfono blanco con alfa dudoso adentro: el marco gris lo encierra y no se pierde.
+        rgb = lienzo()
+        alfa = np.zeros((400, 400), np.float32)
+        rgb[60:340, 120:280] = (0.7, 0.7, 0.72)
+        rgb[66:334, 126:274] = 1.0
+        alfa[60:340, 120:280] = 0.6
+        nuevo, datos = imagen.segunda_opinion(alfa, rgb, imagen.fondo_de_la_foto(rgb, alfa))
+        self.assertAlmostEqual(0.6, float(nuevo[200, 200]), places=5)
+        self.assertEqual(0.0, datos["quitado_pct"])
+
+    def test_sin_fondo_legible_no_hace_nada(self):
+        rgb, alfa = self.foto()
+        nuevo, datos = imagen.segunda_opinion(alfa, rgb, None)
+        self.assertIs(nuevo, alfa)
+
+    def test_el_fondo_se_lee_aunque_el_modelo_no_vea_casi_nada(self):
+        # Con el recorte reducido a la mariposa de la pantalla, «lejos del recorte» era el panel
+        # lavanda y el fondo salía sin leer. El anillo del borde de la foto lo lee.
+        rgb, alfa = self.foto()
+        rgb[20:380, 20:380] = (0.80, 0.76, 0.90)
+        alfa[:] = 0.0
+        alfa[150:250, 200:260] = 1.0
+        fondo = imagen.fondo_de_la_foto(rgb, alfa)
+        self.assertIsNotNone(fondo)
+        self.assertAlmostEqual(100.0, float(fondo["lab"][0]), delta=0.5)
+
+
+@unittest.skipIf(imagen is None, "pide NumPy y OpenCV")
 class CierreYColor(unittest.TestCase):
     def test_el_cierre_no_une_dos_equipos_a_traves_del_fondo(self):
         # Galaxy A17 _1: el de frente y el de perfil a 10 px; el cierre de 31 px los pegaba.
