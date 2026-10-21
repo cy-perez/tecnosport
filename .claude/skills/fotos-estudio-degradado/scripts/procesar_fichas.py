@@ -298,6 +298,23 @@ def registro_de(original: Path, grupo: str, registros: list):
     return None
 
 
+def con_retoque_anterior(raiz: Path, ids, registros: list) -> list:
+    """Las originales de esos modelos cuyo registro se procesó con un retoque anterior.
+
+    Se parte de las originales que hay en la carpeta, no de los registros del reporte: uno de una
+    foto renombrada o borrada —el `XXiaomi Redmi Pad 2 11″ 4G_6.webp` que se corrigió a `Xiaomi …`—
+    se quedaba en el reporte con la versión vieja, y el aviso lo contaba como una foto por rehacer
+    aunque no había nada que rehacer (21/10/2026)."""
+    viejas = []
+    for mid, carpeta in modelos(raiz, set(ids)).items():
+        buenas, _ = unicas(carpeta)
+        for original in buenas:
+            foto = registro_de(original, mid, registros)
+            if foto is not None and foto.get("salidas") and foto.get("version_retoque") != salidas.VERSION_RETOQUE:
+                viejas.append(f"{carpeta.name}/{original.name}")
+    return viejas
+
+
 def retirar(procesadas: Path, stem: str) -> int:
     """Mueve a `_retiradas/` la maestra y los anchos web de una foto que ya no se publica.
 
@@ -754,7 +771,7 @@ def main() -> int:
         if not estados:
             return SALIDA_EN_ESPERA   # en segundo plano: la tanda todavía no está completa
         print(informe(estados))
-        viejas = salidas.con_retoque_anterior(leer_reporte(raiz).get("fotos", []), set(ids))
+        viejas = con_retoque_anterior(raiz, ids, leer_reporte(raiz).get("fotos", []))
         if viejas:
             print(f"\n[aviso] {len(viejas)} foto(s) de la tanda se procesaron con un retoque anterior al "
                   f"{salidas.VERSION_RETOQUE}: la tanda no las rehace sola. Para rehacerlas sin mover el lienzo: "

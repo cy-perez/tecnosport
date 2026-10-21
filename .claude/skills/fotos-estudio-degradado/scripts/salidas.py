@@ -110,13 +110,6 @@ def lienzo_previo(registros, grupo: str) -> int | None:
     return max(cuenta, key=lambda l: (cuenta[l], l))
 
 
-def con_retoque_anterior(registros, grupos=None) -> list:
-    """Los nombres de las fotos procesadas con un retoque anterior (o sin versión), de esos grupos."""
-    return [r.get("nombre") for r in registros
-            if (grupos is None or r.get("grupo") in grupos) and r.get("salidas")
-            and r.get("version_retoque") != VERSION_RETOQUE]
-
-
 def separar_marcas(marcas, caducadas_previas=()) -> tuple[list, list]:
     """(vigentes, caducadas): una marca a ojo vale para la versión del retoque sobre la que se puso.
     Las de antes de que existiera la versión no la traen, y también caducan.
