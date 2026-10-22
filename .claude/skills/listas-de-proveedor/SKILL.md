@@ -558,6 +558,13 @@ La sesión es `--token` o `TS_TOKEN_ADMIN`; no la pidas por terminal. La misma
 lista no entra dos veces en inventario —repondría lo vendido entre las dos—: si
 hay que corregirla, se corrige el archivo y la huella cambia.
 
+**Lo que entró no se pisa.** El inventario deja en `5-api/` una copia exacta de
+lo que mandó, `entro-<fecha>-<huella>.json`, y `exportar_lista.py` se niega a
+escribir otra exportación de la misma fecha encima de la que entró: los
+borradores del bloque 3 se negarían, y el 15/10/2026 pasó así, sin copia de dónde
+recuperarla. Si de verdad hay que corregir la lista, `--reemplazar-la-que-entro`
+y otra vez el inventario, con el archivo nuevo.
+
 ### 7. Entregar
 
 Preséntale los dos archivos y, en dos o tres líneas, lo que necesita saber:
