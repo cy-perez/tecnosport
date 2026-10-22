@@ -343,8 +343,12 @@ def procesar_foto(ctx: Contexto, ruta: Path, nombre: str, previo: dict) -> dict:
         motivo("REPETIR", "sin_producto", "No se encontró el producto en la foto (el recorte quedó vacío).")
         return cerrar()
 
-    lados = imagen.lados_tocados(a, cfg["borde_corte_fraccion"])
+    lados, rasantes = imagen.separar_rasantes(a, imagen.lados_tocados(a, cfg["borde_corte_fraccion"]))
     recorte["lados"] = lados
+    recorte["rasantes"] = rasantes
+    if rasantes:
+        notas.append(f"El producto roza el borde de la foto ({', '.join(rasantes)}) sin salirse: la foto está "
+                     "recortada al ras, y el contacto se angosta hacia afuera como una curva tangente al marco.")
     if alfa_png is not None:
         if imagen.al_ras(a, cfg["alfa_caja_min"]):
             notas.append("El PNG viene recortado al ras del producto.")
