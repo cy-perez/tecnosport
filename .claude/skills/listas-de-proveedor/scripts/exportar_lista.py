@@ -36,6 +36,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from comparar_lista import colores_sugeridos  # noqa: E402
+import descripciones  # noqa: E402
 from parsear_lista import atributo_sim  # noqa: E402
 import rutas  # noqa: E402
 from margen import MARGEN_MINIMO, margen, se_ofrece  # noqa: E402
@@ -104,12 +105,18 @@ def exportar(datos: dict) -> tuple[dict, list]:
         if not m.get("descripcion"):
             fuera.append((m["titulo_modelo"], "sin descripción: falta terminar el paso 4"))
             continue
+        # La última compuerta antes de la API: lo vacío no se publica, y un marcador tampoco.
+        descripcion = descripciones.sanear(m["descripcion"])
+        bloquean = descripciones.bloqueantes(descripcion)
+        if bloquean:
+            fuera.append((m["titulo_modelo"], "la descripción " + "; ".join(bloquean)))
+            continue
         modelos.append({
             "idModelo": mid,
             "titulo": m["titulo_modelo"],
             "marca": m.get("marca"),
             "categoria": m.get("categoria"),
-            "descripcion": m["descripcion"],
+            "descripcion": descripcion,
             "metaDescripcion": m.get("meta_descripcion"),
             "paleta": list(m.get("colores_oficiales") or []),
             "configuraciones": [{

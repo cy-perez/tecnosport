@@ -118,6 +118,27 @@ class MargenMinimo(unittest.TestCase):
         self.assertEqual(1, len(lista["modelos"]))
 
 
+class DescripcionQueSePublica(unittest.TestCase):
+    """La última compuerta antes de la API: lo vacío no se publica, y un marcador tampoco."""
+
+    def exportar(self, descripcion):
+        datos = {"fecha_lista": "2026-10-15", "productos": [
+            producto("samsung-galaxy-a17-5g-8gb-ram-256gb", "Samsung Galaxy A17 5G 8GB RAM 256GB",
+                     descripcion=descripcion)]}
+        return exportar_lista.exportar(datos)
+
+    def test_la_ficha_vacia_no_llega_a_la_api(self):
+        lista, _ = self.exportar("El Galaxy A17 5G.\n\n## Ficha técnica\n\n| Atributo | Detalle |\n|---|---|\n\n"
+                                 "## Garantía y notas\n\n- Producto nuevo.\n")
+        self.assertEqual("El Galaxy A17 5G.\n\n## Garantía y notas\n\n- Producto nuevo.\n",
+                         lista["modelos"][0]["descripcion"])
+
+    def test_un_marcador_deja_el_modelo_fuera_y_se_dice(self):
+        lista, fuera = self.exportar("El Galaxy A17 5G.\n\n## Garantía y notas\n\n- Llega en [[PLAZO]] días.\n")
+        self.assertEqual([], lista["modelos"])
+        self.assertIn("marcador", dict(fuera)["Samsung Galaxy A17 5G"])
+
+
 class LaQueEntro(unittest.TestCase):
     """Una exportación no pisa la que ya entró como inventario (15/10/2026)."""
 

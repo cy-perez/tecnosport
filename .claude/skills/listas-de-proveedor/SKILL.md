@@ -313,6 +313,13 @@ tarea `colores` pendiente: confírmalos contra la paleta oficial (regla 13) y
 escribe `colores_oficiales`; la sección se rehace al consolidar. Ningún script
 hace esta tarea.
 
+**La descripción heredada se valida** (`scripts/descripciones.py`). Una sección que
+quedó vacía —la ficha técnica con el encabezado solo, como llegaron 12 modelos a la
+lista del 15/10/2026— se quita sola, porque quitarla no inventa nada. Lo que no se
+arregla sin datos —la ficha que falta, el peso, el contenido de la caja— queda en
+`revisar` como «descripción de la base: …» para el paso 4 y la entrega. Y la
+exportación deja fuera el modelo cuya descripción tenga un marcador `[[ ]]`.
+
 Y anota:
 
 - los **desaparecidos** —conocidos que vinieron en la última lista de su mensaje
@@ -728,6 +735,7 @@ scripts/rutas.py                  la forma de catalogo/ por subproceso; de ahí 
 scripts/margen.py                 regla 18: el margen mínimo, que usan la exportación y las carpetas de modelo
 scripts/parsear_lista.py          paso 2  1-lista/lista.txt → productos.json + 1-lista/revision.md
 scripts/comparar_lista.py         paso 2  productos.json contra conocidos.json → pendientes + 1-lista/cambios.md
+scripts/descripciones.py          pasos 2, 6 y 6b  quita lo que quedó vacío y dice lo que le falta a una descripción
 scripts/pendientes.py             paso 4  qué le toca a cada script según lo pendiente
 scripts/precios.py                paso 4  cosecha precios VTEX de Éxito, Olímpica y Jumbo
 scripts/asignar_precios.py        paso 4  decide el precio de mercado y el margen
