@@ -1,0 +1,74 @@
+"""Pruebas de lo que una descripción ya escrita tiene que cumplir antes de volver a publicarse."""
+
+import sys
+import unittest
+from pathlib import Path
+
+SKILL = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(SKILL / "scripts"))
+
+import descripciones  # noqa: E402
+
+APERTURA = "El iPhone 16 lleva el chip A18.\n\n"
+VINETAS = "## Características principales\n\n- Pantalla de 6,1 pulgadas.\n\n"
+CAJA = "## Contenido de la caja\n\n- iPhone 16\n- Cable USB-C\n\n"
+GARANTIA = "## Garantía y notas\n\n- Producto nuevo, sellado y sin activar.\n"
+FICHA_VACIA = "## Ficha técnica\n\n| Atributo | Detalle |\n|---|---|\n\n"
+FICHA = ("## Ficha técnica\n\n| Atributo | Detalle |\n|---|---|\n| Pantalla | OLED 6,1\" |\n"
+         "| Dimensiones y peso | 147,6 x 71,6 x 7,8 mm · 170 g |\n\n")
+PIE_ICECAT = "\n---\n\nFicha técnica: Database Right data-sheet 2026 Icecat. All rights reserved.\n"
+
+
+class Sanear(unittest.TestCase):
+    def test_la_ficha_tecnica_sin_filas_se_quita(self):
+        # El caso del 21/10/2026: 12 modelos de la lista del 15/10 llevaban así la tabla.
+        texto = APERTURA + VINETAS + FICHA_VACIA + CAJA + GARANTIA
+        self.assertEqual(APERTURA + VINETAS + CAJA + GARANTIA, descripciones.sanear(texto))
+
+    def test_una_descripcion_completa_no_cambia_ni_un_caracter(self):
+        texto = APERTURA + VINETAS + FICHA + CAJA + GARANTIA + PIE_ICECAT
+        self.assertEqual(texto, descripciones.sanear(texto))
+
+    def test_sanear_dos_veces_es_sanear_una(self):
+        una = descripciones.sanear(APERTURA + FICHA_VACIA + CAJA + GARANTIA)
+        self.assertEqual(una, descripciones.sanear(una))
+
+    def test_sin_la_ficha_se_va_tambien_su_fuente(self):
+        # Atribuir a Icecat una tabla que no se publica es decir algo falso.
+        saneada = descripciones.sanear(APERTURA + FICHA_VACIA + GARANTIA + PIE_ICECAT)
+        self.assertNotIn("Icecat", saneada)
+        self.assertNotIn("---", saneada)
+        self.assertTrue(saneada.endswith("sin activar.\n"))
+
+    def test_una_lista_sin_vinetas_tambien_se_quita(self):
+        texto = APERTURA + "## Contenido de la caja\n\n" + GARANTIA
+        self.assertEqual(APERTURA + GARANTIA, descripciones.sanear(texto))
+
+    def test_sin_texto_no_hay_nada_que_sanear(self):
+        self.assertIsNone(descripciones.sanear(None))
+        self.assertEqual("", descripciones.sanear(""))
+
+
+class Defectos(unittest.TestCase):
+    def test_una_descripcion_completa_no_tiene_defectos(self):
+        self.assertEqual([], descripciones.defectos(APERTURA + VINETAS + FICHA + CAJA + GARANTIA))
+
+    def test_dice_lo_que_falta_sin_inventarlo(self):
+        hallados = descripciones.defectos(APERTURA + VINETAS + GARANTIA)
+        self.assertEqual([descripciones.SIN_FICHA, descripciones.SIN_CAJA], hallados)
+
+    def test_una_ficha_sin_peso_ni_medidas_se_dice(self):
+        ficha = "## Ficha técnica\n\n| Atributo | Detalle |\n|---|---|\n| Pantalla | OLED |\n\n"
+        self.assertIn(descripciones.SIN_PESO, descripciones.defectos(APERTURA + ficha + CAJA + GARANTIA))
+
+    def test_sin_garantia_y_notas_se_dice(self):
+        self.assertIn(descripciones.SIN_GARANTIA, descripciones.defectos(APERTURA + FICHA + CAJA))
+
+    def test_solo_el_marcador_bloquea(self):
+        con_marcador = APERTURA + FICHA + CAJA + "## Garantía y notas\n\n- Plazo de [[PLAZO]] días.\n"
+        self.assertEqual([descripciones.MARCADOR], descripciones.bloqueantes(con_marcador))
+        self.assertEqual([], descripciones.bloqueantes(APERTURA + GARANTIA))
+
+
+if __name__ == "__main__":
+    unittest.main()

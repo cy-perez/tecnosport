@@ -42,6 +42,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from parsear_lista import id_de_titulo  # noqa: E402
+import descripciones  # noqa: E402
 import fichas  # noqa: E402
 import rutas  # noqa: E402
 
@@ -70,12 +71,16 @@ RE_NOTAS_DE_CONFIGURACION = re.compile(
 
 
 def descripcion_de_modelo(descripcion: str) -> str:
-    """La descripción sin lo que depende de la configuración o del color."""
+    """La descripción sin lo que depende de la configuración o del color.
+
+    Y sin la sección que eso dejó vacía: si «Memoria» era la única fila de la ficha
+    técnica, quedaba el encabezado solo, y se guardaba así para cada lista siguiente.
+    """
     d = descripcion or ""
     d = RE_SECCION_COLORES.sub("", d)
     d = RE_FILA_MEMORIA.sub("", d)
     d = RE_NOTAS_DE_CONFIGURACION.sub("", d)
-    return d.rstrip("\n") + "\n" if d.strip() else d
+    return descripciones.sanear(d.rstrip("\n") + "\n") if d.strip() else d
 
 
 def precio_vigente(entrada: dict, hoy: date) -> bool:

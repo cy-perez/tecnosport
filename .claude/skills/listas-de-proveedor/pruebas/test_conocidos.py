@@ -80,6 +80,14 @@ class Modelos(unittest.TestCase):
         base, _ = consolidar(conocidos.base_vacia(), lista(producto()))
         self.assertEqual(DESCRIPCION_DE_MODELO, base["modelos"]["samsung-galaxy-a57-5g"]["descripcion"])
 
+    def test_si_la_memoria_era_la_unica_fila_la_ficha_no_queda_vacia(self):
+        # Así quedaron 15 modelos en la base hasta el 21/10/2026: el encabezado de la tabla, solo.
+        descripcion = ("El iPhone 16 lleva el chip A18.\n\n## Ficha técnica\n\n| Atributo | Detalle |\n"
+                       "|---|---|\n| Memoria | 128 GB |\n\n## Garantía y notas\n\n- Producto nuevo.\n")
+        guardada = conocidos.descripcion_de_modelo(descripcion)
+        self.assertNotIn("## Ficha técnica", guardada)
+        self.assertEqual("El iPhone 16 lleva el chip A18.\n\n## Garantía y notas\n\n- Producto nuevo.\n", guardada)
+
     def test_el_modelo_guarda_la_paleta_y_de_donde_salio_la_ficha(self):
         base, _ = consolidar(conocidos.base_vacia(), lista(producto()))
         m = base["modelos"]["samsung-galaxy-a57-5g"]

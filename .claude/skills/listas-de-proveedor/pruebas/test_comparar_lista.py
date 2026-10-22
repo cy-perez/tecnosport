@@ -177,6 +177,33 @@ class Colores(unittest.TestCase):
         self.assertEqual([], p["pendiente"])
 
 
+class DescripcionDeLaBase(unittest.TestCase):
+    """Una descripción guardada por una versión vieja de la skill no se vuelve a publicar rota."""
+
+    VACIA = ("El JBL Xtreme 4 es un parlante portátil.\n\n## Ficha técnica\n\n| Atributo | Detalle |\n"
+             "|---|---|\n\n## Garantía y notas\n\n- Producto nuevo.\n")
+
+    def heredada(self, descripcion):
+        base = base_de({"jbl-xtreme-4": conocido(descripcion=descripcion)})
+        [p] = comparar(lista(producto()), base)["productos"]
+        return p
+
+    def test_la_ficha_vacia_se_quita_al_heredarla(self):
+        p = self.heredada(self.VACIA)
+        self.assertNotIn("## Ficha técnica", p["descripcion"])
+        self.assertTrue(p["descripcion"].startswith("El JBL Xtreme 4 es un parlante portátil."))
+
+    def test_lo_que_falta_queda_para_revisar_una_sola_vez(self):
+        p = self.heredada(self.VACIA)
+        faltas = [r for r in p["revisar"] if r.startswith(comparar_lista.ALERTA_DESCRIPCION)]
+        self.assertIn(f"{comparar_lista.ALERTA_DESCRIPCION} no tiene «Ficha técnica»: falta la ficha oficial "
+                      "del fabricante", faltas)
+        # Comparar otra vez —volver a correrlo después del paso 4— no las duplica.
+        base = base_de({"jbl-xtreme-4": conocido(descripcion=self.VACIA)})
+        [otra] = comparar(lista(dict(p)), base)["productos"]
+        self.assertEqual(faltas, [r for r in otra["revisar"] if r.startswith(comparar_lista.ALERTA_DESCRIPCION)])
+
+
 class ConfiguracionNueva(unittest.TestCase):
     """Una memoria nueva de un modelo conocido hereda la ficha y solo pide el precio."""
 

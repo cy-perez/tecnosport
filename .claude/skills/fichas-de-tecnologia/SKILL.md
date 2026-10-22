@@ -75,8 +75,10 @@ la principal y la galería entera del producto.
 Y se niega en dos casos, a propósito:
 
 - `lista-api.json` cambió después de que su inventario entró: los borradores
-  llevarían un contenido que el inventario nunca vio. Se vuelve a exportar desde
-  la misma corrida, o se corre el inventario de esa versión con el bloque 1.
+  llevarían un contenido que el inventario nunca vio. Si la salida nombra la
+  copia de lo que entró (`5-api/entro-<fecha>-<huella>.json`), se corren los
+  borradores con ese archivo; si no hay copia —inventarios de antes del
+  21/10/2026—, se corre el inventario de esa versión con el bloque 1.
 - El inventario de esa lista no es el último que entró (la API responde 409): o
   no se importó, o ya entró una lista más nueva.
 

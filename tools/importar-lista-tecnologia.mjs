@@ -13,7 +13,9 @@
 //
 //      Lo que ya se vende se renueva —costo y existencia— y lo desaparecido deja de ofrecerse. No
 //      propone nada: deja en `por-proponer.json`, junto a la lista, los modelos que no se venden
-//      —los que necesitan fotos— y las configuraciones nuevas de los que sí.
+//      —los que necesitan fotos— y las configuraciones nuevas de los que sí. Y deja, también junto
+//      a la lista, una copia exacta de lo que entró (`entro-<fecha>-<huella>.json`): si alguien
+//      vuelve a exportar encima, los borradores todavía tienen de dónde salir.
 //
 //   2. Los borradores, desde la skill de fichas (bloque 3), cuando la tanda de fotos terminó:
 //
@@ -126,6 +128,29 @@ export function porProponerDe(lista, resultado, huellaLista = null) {
     modelos: resultado.modelosPorProponer ?? [],
     configuraciones: resultado.configuracionesPorProponer ?? [],
   };
+}
+
+/**
+ * El nombre de la copia de lo que entró como inventario. Lleva la huella porque es lo que la
+ * identifica: dos exportaciones del mismo día son dos archivos distintos.
+ */
+export function nombreDeLaQueEntro(fechaLista, huella) {
+  return `entro-${fechaLista}-${huella.slice(0, 12)}.json`;
+}
+
+/**
+ * Por qué los borradores se niegan cuando el archivo no es el que entró. Si la copia de lo que
+ * entró existe, se dice cuál: con ella los borradores salen del contenido que vio el inventario.
+ * Sin copia —un inventario de antes del 21/10/2026— no hay de dónde recuperarlo.
+ */
+export function mensajeDeListaCambiada(ruta, copia) {
+  const base =
+    `${ruta} cambió después de que su inventario entró: los borradores llevarían un contenido ` +
+    "que el inventario nunca vio.";
+  if (copia) {
+    return `${base} Lo que entró está en ${copia}: corre --borradores con ese archivo.`;
+  }
+  return `${base} Vuelve a exportar desde la misma corrida, o corre el inventario de esta versión.`;
 }
 
 /**
@@ -261,11 +286,14 @@ async function importarInventario(ruta, lista, contenido) {
     body: JSON.stringify(cuerpo),
   });
   console.log(informeDeImportacion(resultado));
+  // Antes que por-proponer.json: si la copia no se pudo escribir, que no quede una entrega que
+  // apunte a un contenido que nadie guardó.
+  const huella = huellaDeArchivo(contenido);
+  const copia = join(dirname(ruta), nombreDeLaQueEntro(lista.fechaLista, huella));
+  writeFileSync(copia, contenido);
+  console.log(`Lo que entró quedó copiado en ${copia}`);
   const destino = join(dirname(ruta), "por-proponer.json");
-  writeFileSync(
-    destino,
-    JSON.stringify(porProponerDe(cuerpo, resultado, huellaDeArchivo(contenido)), null, 2) + "\n",
-  );
+  writeFileSync(destino, JSON.stringify(porProponerDe(cuerpo, resultado, huella), null, 2) + "\n");
   console.log(`Lo que espera borrador quedó en ${destino}`);
 }
 
@@ -284,11 +312,11 @@ async function importarBorradores(ruta, lista, contenido) {
     );
   }
   if (porProponer.huellaLista && porProponer.huellaLista !== huellaDeArchivo(contenido)) {
-    throw new Error(
-      `${ruta} cambió después de que su inventario entró: los borradores llevarían un contenido ` +
-        "que el inventario nunca vio. Vuelve a exportar desde la misma corrida, o corre el " +
-        "inventario de esta versión.",
+    const copia = join(
+      dirname(ruta),
+      nombreDeLaQueEntro(porProponer.fechaLista, porProponer.huellaLista),
     );
+    throw new Error(mensajeDeListaCambiada(ruta, existsSync(copia) ? copia : null));
   }
   const estados = Object.fromEntries(
     (porProponer.modelos ?? []).map((id) => [id, estadoDeFotos(id)]),

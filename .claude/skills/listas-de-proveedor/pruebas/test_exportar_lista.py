@@ -118,5 +118,58 @@ class MargenMinimo(unittest.TestCase):
         self.assertEqual(1, len(lista["modelos"]))
 
 
+class DescripcionQueSePublica(unittest.TestCase):
+    """La última compuerta antes de la API: lo vacío no se publica, y un marcador tampoco."""
+
+    def exportar(self, descripcion):
+        datos = {"fecha_lista": "2026-10-15", "productos": [
+            producto("samsung-galaxy-a17-5g-8gb-ram-256gb", "Samsung Galaxy A17 5G 8GB RAM 256GB",
+                     descripcion=descripcion)]}
+        return exportar_lista.exportar(datos)
+
+    def test_la_ficha_vacia_no_llega_a_la_api(self):
+        lista, _ = self.exportar("El Galaxy A17 5G.\n\n## Ficha técnica\n\n| Atributo | Detalle |\n|---|---|\n\n"
+                                 "## Garantía y notas\n\n- Producto nuevo.\n")
+        self.assertEqual("El Galaxy A17 5G.\n\n## Garantía y notas\n\n- Producto nuevo.\n",
+                         lista["modelos"][0]["descripcion"])
+
+    def test_un_marcador_deja_el_modelo_fuera_y_se_dice(self):
+        lista, fuera = self.exportar("El Galaxy A17 5G.\n\n## Garantía y notas\n\n- Llega en [[PLAZO]] días.\n")
+        self.assertEqual([], lista["modelos"])
+        self.assertIn("marcador", dict(fuera)["Samsung Galaxy A17 5G"])
+
+
+class LaQueEntro(unittest.TestCase):
+    """Una exportación no pisa la que ya entró como inventario (15/10/2026)."""
+
+    LISTA = '{\n  "fechaLista": "2026-10-15",\n  "modelos": []\n}'
+
+    def por_proponer(self, contenido, fecha="2026-10-15"):
+        return {"fechaLista": fecha, "huellaLista": exportar_lista.huella(contenido), "modelos": []}
+
+    def test_otra_exportacion_de_la_misma_lista_se_niega(self):
+        ya_entro = self.por_proponer('{\n  "fechaLista": "2026-10-15",\n  "modelos": [1]\n}')
+        motivo = exportar_lista.choque_con_lo_que_entro(self.LISTA, ya_entro)
+        self.assertIn("ya entró con otra exportación", motivo)
+        self.assertIn("--reemplazar-la-que-entro", motivo)
+
+    def test_la_misma_exportacion_otra_vez_pasa(self):
+        self.assertIsNone(exportar_lista.choque_con_lo_que_entro(self.LISTA, self.por_proponer(self.LISTA)))
+
+    def test_una_lista_de_otra_fecha_pasa(self):
+        de_ayer = self.por_proponer('{"fechaLista": "2026-10-14"}', fecha="2026-10-14")
+        self.assertIsNone(exportar_lista.choque_con_lo_que_entro(self.LISTA, de_ayer))
+
+    def test_sin_inventario_no_hay_con_que_chocar(self):
+        self.assertIsNone(exportar_lista.choque_con_lo_que_entro(self.LISTA, None))
+        sin_huella = {"fechaLista": "2026-10-15", "huellaLista": None}
+        self.assertIsNone(exportar_lista.choque_con_lo_que_entro(self.LISTA, sin_huella))
+
+    def test_la_huella_es_la_del_importador(self):
+        # El SHA-256 del texto tal cual: si cambiara, toda exportación chocaría con su propio inventario.
+        self.assertEqual("44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+                         exportar_lista.huella("{}"))
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -29,12 +29,14 @@ Y solo las configuraciones con al menos un 5 % de margen sobre el costo (regla 1
 """
 
 import argparse
+import hashlib
 import json
 import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from comparar_lista import colores_sugeridos  # noqa: E402
+import descripciones  # noqa: E402
 from parsear_lista import atributo_sim  # noqa: E402
 import rutas  # noqa: E402
 from margen import MARGEN_MINIMO, margen, se_ofrece  # noqa: E402
@@ -103,12 +105,18 @@ def exportar(datos: dict) -> tuple[dict, list]:
         if not m.get("descripcion"):
             fuera.append((m["titulo_modelo"], "sin descripción: falta terminar el paso 4"))
             continue
+        # La última compuerta antes de la API: lo vacío no se publica, y un marcador tampoco.
+        descripcion = descripciones.sanear(m["descripcion"])
+        bloquean = descripciones.bloqueantes(descripcion)
+        if bloquean:
+            fuera.append((m["titulo_modelo"], "la descripción " + "; ".join(bloquean)))
+            continue
         modelos.append({
             "idModelo": mid,
             "titulo": m["titulo_modelo"],
             "marca": m.get("marca"),
             "categoria": m.get("categoria"),
-            "descripcion": m["descripcion"],
+            "descripcion": descripcion,
             "metaDescripcion": m.get("meta_descripcion"),
             "paleta": list(m.get("colores_oficiales") or []),
             "configuraciones": [{
@@ -133,10 +141,37 @@ def exportar(datos: dict) -> tuple[dict, list]:
     }, fuera
 
 
+def huella(contenido: str) -> str:
+    """La misma de `huellaDeArchivo` en tools/importar-lista-tecnologia.mjs: el SHA-256 del texto."""
+    return hashlib.sha256(contenido.encode("utf-8")).hexdigest()
+
+
+def choque_con_lo_que_entro(contenido: str, por_proponer: dict | None) -> str | None:
+    """Por qué no se puede escribir esta exportación encima de la que ya entró, o None.
+
+    El 15/10/2026 el inventario entró con una exportación y después se exportó otra
+    encima: los borradores se negaban, con razón, y la que entró ya no estaba en
+    ningún lado. Una lista de otra fecha es otra lista, y la misma exportación otra
+    vez no cambia nada: las dos pasan.
+    """
+    if not por_proponer or not por_proponer.get("huellaLista"):
+        return None
+    if por_proponer.get("fechaLista") != json.loads(contenido).get("fechaLista"):
+        return None
+    if por_proponer["huellaLista"] == huella(contenido):
+        return None
+    return (f"El inventario de la lista del {por_proponer['fechaLista']} ya entró con otra exportación, "
+            "y escribir esta encima deja a los borradores sin el contenido que el inventario vio. "
+            "Si de verdad hay que corregir la lista, pasa --reemplazar-la-que-entro y vuelve a "
+            "correr el inventario con el archivo nuevo: es otro archivo, así que la API lo acepta.")
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("productos")
     ap.add_argument("--salida", default=str(rutas.API / "lista-api.json"))
+    ap.add_argument("--reemplazar-la-que-entro", action="store_true",
+                    help="escribe aunque el inventario de esta lista ya haya entrado con otra exportación")
     args = ap.parse_args()
 
     datos = json.loads(Path(args.productos).read_text(encoding="utf-8"))
@@ -146,8 +181,15 @@ def main():
         lista, fuera = exportar(datos)
     except ValueError as error:
         sys.exit(str(error))
+    contenido = json.dumps(lista, ensure_ascii=False, indent=2)
+    ruta_por_proponer = Path(args.salida).parent / "por-proponer.json"
+    por_proponer = (json.loads(ruta_por_proponer.read_text(encoding="utf-8"))
+                    if ruta_por_proponer.exists() else None)
+    choque = choque_con_lo_que_entro(contenido, por_proponer)
+    if choque and not args.reemplazar_la_que_entro:
+        sys.exit(choque)
     Path(args.salida).parent.mkdir(parents=True, exist_ok=True)
-    Path(args.salida).write_text(json.dumps(lista, ensure_ascii=False, indent=2), encoding="utf-8", newline="")
+    Path(args.salida).write_text(contenido, encoding="utf-8", newline="")
     n = sum(len(m["configuraciones"]) for m in lista["modelos"])
     print(f"{len(lista['modelos'])} modelos y {n} configuraciones en {args.salida}")
     print(f"{len(lista['configuracionesDesaparecidas'])} configuraciones y "

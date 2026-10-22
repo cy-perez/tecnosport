@@ -9,7 +9,9 @@ import {
   porProponerDe,
   resumenDeLista,
   huellaDeArchivo,
+  mensajeDeListaCambiada,
   mismasFotos,
+  nombreDeLaQueEntro,
   seleccionParaBorradores,
   TOPE_DE_FOTOS,
   tomasListas,
@@ -184,4 +186,25 @@ test("las fotos del borrador son las mismas solo con los mismos hashes en el mis
 test("la huella del archivo cambia si cambia la lista", () => {
   assert.equal(huellaDeArchivo("{}"), huellaDeArchivo("{}"));
   assert.notEqual(huellaDeArchivo("{}"), huellaDeArchivo("{ }"));
+});
+
+test("la copia de lo que entró se nombra por la fecha y la huella", () => {
+  const huella = huellaDeArchivo('{"fechaLista":"2026-10-15"}');
+  const nombre = nombreDeLaQueEntro("2026-10-15", huella);
+  assert.equal(nombre, `entro-2026-10-15-${huella.slice(0, 12)}.json`);
+  // Dos exportaciones del mismo día no comparten copia: la segunda no pisa a la primera.
+  assert.notEqual(nombre, nombreDeLaQueEntro("2026-10-15", huellaDeArchivo("{}")));
+});
+
+test("con la copia de lo que entró, la negativa dice con qué archivo correr los borradores", () => {
+  const mensaje = mensajeDeListaCambiada("5-api/lista-api.json", "5-api/entro-2026-10-15-abc.json");
+  assert.match(mensaje, /lista-api\.json cambió después de que su inventario entró/);
+  assert.match(mensaje, /Lo que entró está en 5-api\/entro-2026-10-15-abc\.json/);
+  assert.doesNotMatch(mensaje, /Vuelve a exportar/);
+});
+
+test("sin la copia, la negativa manda a exportar otra vez o a correr el inventario", () => {
+  const mensaje = mensajeDeListaCambiada("5-api/lista-api.json", null);
+  assert.match(mensaje, /Vuelve a exportar desde la misma corrida/);
+  assert.doesNotMatch(mensaje, /Lo que entró está en/);
 });

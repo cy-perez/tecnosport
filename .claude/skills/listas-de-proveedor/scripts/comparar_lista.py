@@ -47,6 +47,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import conocidos  # noqa: E402
+import descripciones  # noqa: E402
 from asignar_precios import aplicar_margen  # noqa: E402
 from pendientes import TAREAS  # noqa: E402
 import rutas  # noqa: E402
@@ -56,6 +57,8 @@ PRECIO = conocidos.PRECIO
 # correr esto dos veces no las duplique.
 ALERTAS_DE_MARGEN = ("POR DEBAJO DEL COSTO", "margen inusual")
 ALERTA_CAPACIDAD = "la descripción del modelo nombra un almacenamiento"
+# Lo que la descripción guardada no cumple: se recalcula en cada comparación, como las de margen.
+ALERTA_DESCRIPCION = "descripción de la base:"
 ESTADOS = ("nuevo", "configuracion_nueva", "costo_cambio", "sin_cambios", "sin_precio_vigente")
 # El sufijo de SIM del id: sin él, dos ids pueden ser el mismo equipo.
 RE_SUFIJO_SIM = re.compile(r"-(1-sim|dual-sim|sim-esim|esim)$")
@@ -92,7 +95,9 @@ def comparar(datos: dict, base: dict, hoy: date) -> dict:
             p["estado_lista"], p["pendiente"] = "nuevo", list(TAREAS)
             continue
 
-        p["descripcion"] = m["descripcion"]
+        # La de la base puede venir de una versión vieja de la skill: lo que quedó vacío se
+        # quita, y lo que falta se dice para el paso 4, en vez de volver a publicarlo en silencio.
+        p["descripcion"] = descripciones.sanear(m["descripcion"])
         p["meta_titulo"] = m["meta_titulo"]
         p["meta_descripcion"] = m["meta_descripcion"]
         p["colores_oficiales"] = deepcopy(m["paleta"])
@@ -101,7 +106,8 @@ def comparar(datos: dict, base: dict, hoy: date) -> dict:
         p["supuestos"] = list(dict.fromkeys(
             p["supuestos_lista"] + m["supuestos_investigacion"] + m["supuestos_paleta"]))
         p["revisar"] = [r for r in p.get("revisar") or []
-                        if not r.startswith(ALERTAS_DE_MARGEN + (ALERTA_CAPACIDAD,))]
+                        if not r.startswith(ALERTAS_DE_MARGEN + (ALERTA_CAPACIDAD, ALERTA_DESCRIPCION))]
+        p["revisar"] += [f"{ALERTA_DESCRIPCION} {d}" for d in descripciones.defectos(p["descripcion"])]
 
         if e is not None and conocidos.precio_vigente(e, hoy):
             for campo in PRECIO:
