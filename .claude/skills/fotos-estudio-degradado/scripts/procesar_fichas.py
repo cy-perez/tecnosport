@@ -62,6 +62,9 @@ Para no gastar retoques en vano, y para que el veredicto sea cierto:
   tal cual la foto original, aunque su fondo de pantalla sea claro.
 - **Una carpeta con fotos que no está en la tanda se avisa**: la tanda solo procesa
   `por-proponer.json`, y un modelo que falte ahí se quedaba sin fotos sin que nada lo dijera.
+- **Un modelo `sinFicha` no bloquea la tanda** (22/10/2026): la API lo espera pero la lista no lo
+  trae —el bloque 1 no lo exportó, casi siempre por falta de descripción—, así que no puede salir
+  borrador de él. Sus fotos se procesan igual, para no perder el trabajo, y el informe lo dice.
 - **Un kit lo declara la persona** (`--kit`, decisión del 18/10/2026): en un modelo que
   se vende con piezas sueltas —la consola con sus Joy-Con, la tablet con teclado y
   mouse— una foto cuyo único reparo es `varias_piezas` cuenta como LISTA. En los demás
@@ -617,17 +620,27 @@ def sacar(raiz: Path, carpeta, mid: str, motivo: str, fecha_tanda) -> dict:
 
 
 def leer_tanda(ruta: Path) -> tuple:
-    """(fecha de la lista, ids de los modelos que esperan fotos)."""
+    """(fecha de la lista, ids de los modelos que esperan fotos, ids sin ficha en la lista).
+
+    Los `sinFicha` los anota el inventario (tools/importar-lista-tecnologia.mjs): la API los espera
+    pero la lista no los trae, porque el bloque 1 no los exportó —casi siempre por falta de
+    descripción—. Sus fotos se procesan para no perder el trabajo, pero no bloquean la tanda: el
+    bloque 3 no puede hacerles borrador, y el Note 17 Pro Max retuvo la tanda entera del 15/10/2026
+    esperando la cuarta foto de un borrador que no podía existir."""
     datos = json.loads(Path(ruta).read_text(encoding="utf-8"))
-    return datos.get("fechaLista"), list(dict.fromkeys(datos.get("modelos") or []))
+    ids = list(dict.fromkeys(datos.get("modelos") or []))
+    return datos.get("fechaLista"), ids, set(datos.get("sinFicha") or [])
 
 
-def informe(estados: list) -> str:
+def informe(estados: list, sin_ficha=frozenset()) -> str:
+    sin_ficha = set(sin_ficha)
     lineas = []
-    aptos = [e for e in estados if e["estado"] == APTO]
+    aptos = [e for e in estados if e["estado"] == APTO and e["modelo"] not in sin_ficha]
     fuera = [e for e in estados if e["estado"] == FUERA]
-    espera = [e for e in estados if e["estado"] == EN_ESPERA]
-    lineas.append(f"Tanda: {len(aptos)} aptos, {len(espera)} en espera, {len(fuera)} fuera de la tanda")
+    espera = [e for e in estados if e["estado"] == EN_ESPERA and e["modelo"] not in sin_ficha]
+    pendientes_de_ficha = [e for e in estados if e["modelo"] in sin_ficha and e["estado"] != FUERA]
+    lineas.append(f"Tanda: {len(aptos)} aptos, {len(espera)} en espera, {len(fuera)} fuera de la tanda"
+                  + (f", {len(pendientes_de_ficha)} sin ficha en la lista" if pendientes_de_ficha else ""))
     for e in espera:
         nota = " · sin fotos nuevas desde el último intento" if e.get("sin_cambios") else ""
         lineas.append(f"\nEN ESPERA  {e['modelo']}: faltan {e['faltan']} LISTA ({e.get('motivo')}){nota}")
@@ -638,6 +651,11 @@ def informe(estados: list) -> str:
             # Lo decide la persona, nunca el script: tres piezas también pueden ser dos productos.
             lineas.append(f"  ¿Es un kit? {len(piezas)} foto(s) solo esperan por las piezas sueltas. Si el producto se "
                           f"vende con ellas: --kit {e['modelo']} --motivo \"qué piezas trae\"")
+    for e in pendientes_de_ficha:
+        n = len(e.get("listas") or [])
+        lineas.append(f"\nSIN FICHA  {e['modelo']}: la lista no lo trae —el bloque 1 no lo exportó, casi siempre "
+                      f"por falta de descripción— y no saldrá borrador ({n} LISTA; no bloquea la tanda). "
+                      "Complétalo en el bloque 1 o sácalo con --sacar.")
     for e in fuera:
         lineas.append(f"\nFUERA      {e['modelo']}: {e.get('motivo')}")
     lineas.append("\nTANDA COMPLETA: revisa a ojo las hojas de las LISTA y sigue con /fichas-de-tecnologia"
@@ -755,7 +773,7 @@ def main() -> int:
         return True
 
     if a.tanda:
-        fecha, ids = leer_tanda(Path(a.tanda))
+        fecha, ids, sin_ficha = leer_tanda(Path(a.tanda))
         cfg = cargar_config()
         if a.sacar:
             if a.sacar not in ids:
@@ -782,7 +800,7 @@ def main() -> int:
         estados = correr_tanda(raiz, ids, cfg, procesar_fn, solo_devolver=a.devolver, fecha_tanda=fecha)
         if not estados:
             return SALIDA_EN_ESPERA   # en segundo plano: la tanda todavía no está completa
-        print(informe(estados))
+        print(informe(estados, sin_ficha))
         viejas = con_retoque_anterior(raiz, ids, leer_reporte(raiz).get("fotos", []))
         if viejas:
             print(f"\n[aviso] {len(viejas)} foto(s) de la tanda se procesaron con un retoque anterior al "
@@ -793,7 +811,10 @@ def main() -> int:
             print(f"\n[aviso] {len(fuera)} carpeta(s) con fotos que no están en la tanda y no se procesaron "
                   "(no están en por-proponer.json): " + ", ".join(fuera))
         print(f"\nHojas de revisión: {raiz / TRABAJO / 'salida'}")
-        return SALIDA_EN_ESPERA if any(e["estado"] == EN_ESPERA for e in estados) else 0
+        # Un modelo sin ficha en la lista no detiene la entrega: el bloque 3 no puede hacerle
+        # borrador de todas formas, y la tanda se entrega con lo que sí puede llegar al panel.
+        return (SALIDA_EN_ESPERA
+                if any(e["estado"] == EN_ESPERA and e["modelo"] not in sin_ficha for e in estados) else 0)
 
     if not a.devolver:
         copiadas, errores = preparar(raiz)

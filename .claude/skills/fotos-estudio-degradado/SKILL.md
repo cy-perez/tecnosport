@@ -357,6 +357,14 @@ recorte deja fuera del producto vuelve a él»). **Una carpeta con fotos que no 
 `por-proponer.json` se avisa** al final de la tanda: el Redmi Note 17 Pro y el Pro Max se
 quedaron sin procesar sin que nada lo dijera.
 
+**Un modelo `sinFicha` no bloquea la tanda** (22/10/2026). `por-proponer.json` anota en `sinFicha`
+lo que la API espera pero la lista no trae: el bloque 1 no lo exportó, casi siempre por falta de
+descripción, así que el bloque 3 no puede hacerle borrador. Sus fotos se procesan igual —el
+trabajo no se pierde— y el informe lo lista aparte (`SIN FICHA`), pero la tanda se
+entrega sin esperarlo: el Pro Max retuvo la tanda entera del 15/10/2026 esperando la cuarta foto
+de un borrador que no podía existir. La salida es completar la ficha en el bloque 1 —que la lista
+siguiente lo exporte— o sacarlo con `--sacar`.
+
 Es el mayor escalón que cumple, y no el que más LISTA deja, para no bajar a 1200 un
 modelo que da para 2000. Si ni en 1200 reúne cuatro, se elige el de más LISTA; si
 ni ahí sale una, la regla de siempre. El lienzo se decide con una estimación del

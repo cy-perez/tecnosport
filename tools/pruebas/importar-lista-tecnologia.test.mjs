@@ -97,16 +97,34 @@ test("el inventario entrega lo que espera borrador y lo dice", () => {
     modelosPorProponer: ["xiaomi-poco-f9-ultra-5g", "apple-airpods-pro-3"],
     configuracionesPorProponer: ["samsung-galaxy-a17-5g-8gb-ram-256gb-dual-sim"],
   };
-  assert.deepEqual(porProponerDe({ fechaLista: "2026-10-10" }, resultado, "h"), {
+  const lista = {
+    fechaLista: "2026-10-10",
+    modelos: [{ idModelo: "xiaomi-poco-f9-ultra-5g" }, { idModelo: "apple-airpods-pro-3" }],
+  };
+  assert.deepEqual(porProponerDe(lista, resultado, "h"), {
     fechaLista: "2026-10-10",
     huellaLista: "h",
     modelos: ["xiaomi-poco-f9-ultra-5g", "apple-airpods-pro-3"],
+    sinFicha: [],
     configuraciones: ["samsung-galaxy-a17-5g-8gb-ram-256gb-dual-sim"],
   });
   assert.match(
     informeDeImportacion(resultado),
     /Esperan borrador: 2 modelos[\s\S]*y 1 configuraciones/,
   );
+});
+
+test("lo propuesto que la lista no trae queda anotado sin ficha", () => {
+  // El Note 17 Pro y el Pro Max: la API los esperaba de una lista anterior y el bloque 1 no los
+  // exportó (sin descripción). El bloque 3 no puede hacerles borrador, y hay que decirlo aquí.
+  const resultado = {
+    modelosPorProponer: ["xiaomi-redmi-note-17-pro-max", "oppo-a6k"],
+    configuracionesPorProponer: [],
+  };
+  const lista = { fechaLista: "2026-10-15", modelos: [{ idModelo: "oppo-a6k" }] };
+  const entrega = porProponerDe(lista, resultado, "h");
+  assert.deepEqual(entrega.sinFicha, ["xiaomi-redmi-note-17-pro-max"]);
+  assert.deepEqual(entrega.modelos, ["xiaomi-redmi-note-17-pro-max", "oppo-a6k"]);
 });
 
 const LISTA = {
@@ -159,6 +177,21 @@ test("un modelo nuevo que no pasó por la tanda no entra", () => {
   );
   assert.equal(omitidos.length, 3);
   assert.match(omitidos[0].motivo, /no pasó por la tanda/);
+});
+
+test("un modelo propuesto que la lista no trae se queda y dice que le falta la ficha", () => {
+  const porProponer = { ...POR_PROPONER, modelos: [...POR_PROPONER.modelos, "note-17-pro-max"] };
+  const { lista, omitidos } = seleccionParaBorradores(LISTA, porProponer, {
+    "poco-f9-ultra": { estado: "apto", listas: ["a.jpg"] },
+    "airpods-pro-3": { estado: "apto", listas: ["b.jpg"] },
+    "honor-5i": { estado: "apto", listas: ["c.jpg"] },
+    "note-17-pro-max": { estado: "apto", listas: ["d.jpg"] },
+  });
+  assert.ok(!lista.modelos.some((m) => m.idModelo === "note-17-pro-max"));
+  const [omitido] = omitidos;
+  assert.equal(omitido.titulo, "note-17-pro-max");
+  assert.match(omitido.motivo, /sin ficha en la lista/);
+  assert.match(omitido.motivo, /sin descripción no hay borrador/);
 });
 
 test("las tomas que se suben son las LISTA, en el orden de la tanda", () => {

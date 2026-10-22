@@ -588,6 +588,12 @@ ruta de su carpeta, para que la persona descargue **por lo menos 4 fotos** en
 tenga siga con `/fotos-estudio-degradado`. Las configuraciones nuevas de un
 modelo que ya se vende no piden fotos: van directo al bloque 3.
 
+Si el inventario avisó modelos `sinFicha` —la API los espera pero esta lista no
+los exportó, casi siempre por falta de descripción—, dilos aparte: no vale la
+pena conseguirles fotos todavía, porque el bloque 3 no puede hacerles borrador.
+La salida es completar su ficha (la descripción del paso 4) para que la lista
+siguiente los exporte.
+
 ## De dónde salen las fotos
 
 Las consigue la persona para el bloque 2; esta sección es lo que se le dice al

@@ -493,7 +493,52 @@ class Tanda(unittest.TestCase):
             ruta = Path(tmp) / "por-proponer.json"
             ruta.write_text(json.dumps({"fechaLista": "2026-10-10", "modelos": ["a", "b", "a"],
                                         "configuraciones": ["c"]}), encoding="utf-8")
-            self.assertEqual(("2026-10-10", ["a", "b"]), pf.leer_tanda(ruta))
+            self.assertEqual(("2026-10-10", ["a", "b"], set()), pf.leer_tanda(ruta))
+
+    def test_la_tanda_lee_los_modelos_sin_ficha(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            ruta = Path(tmp) / "por-proponer.json"
+            ruta.write_text(json.dumps({"fechaLista": "2026-10-15", "modelos": ["a", "b"],
+                                        "sinFicha": ["b"], "configuraciones": []}), encoding="utf-8")
+            self.assertEqual(("2026-10-15", ["a", "b"], {"b"}), pf.leer_tanda(ruta))
+
+
+class SinFichaEnLaLista(unittest.TestCase):
+    """Decisión del 22/10/2026: un modelo que la lista no exporta —sin descripción— no puede tener
+    borrador, así que no bloquea la tanda; sus fotos se procesan para no perder el trabajo."""
+
+    def test_un_modelo_sin_ficha_en_espera_no_detiene_la_tanda(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            raiz = Path(tmp)
+            armar(raiz, CUATRO)
+            armar(raiz, ("note_1.jpg", "note_2.jpg"), "Xiaomi Redmi Note 17 Pro Max",
+                  "xiaomi-redmi-note-17-pro-max")
+            estados, _ = tanda(raiz, ids=(MODELO, "xiaomi-redmi-note-17-pro-max"), procesar=listas(raiz))
+            self.assertEqual(pf.APTO, estados[MODELO]["estado"])
+            self.assertEqual(pf.EN_ESPERA, estados["xiaomi-redmi-note-17-pro-max"]["estado"])
+            texto = pf.informe(list(estados.values()), sin_ficha={"xiaomi-redmi-note-17-pro-max"})
+            self.assertIn("TANDA COMPLETA", texto, "el que espera no tiene borrador posible: no bloquea")
+            self.assertIn("SIN FICHA", texto)
+            self.assertIn("1 sin ficha en la lista", texto)
+            self.assertNotIn("LA TANDA ESPERA FOTOS", texto)
+
+    def test_sin_el_campo_nada_cambia(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            raiz = Path(tmp)
+            armar(raiz, CUATRO[:3])
+            estados, _ = tanda(raiz)
+            texto = pf.informe(list(estados.values()))
+            self.assertIn("LA TANDA ESPERA FOTOS", texto)
+            self.assertNotIn("SIN FICHA", texto)
+
+    def test_un_sin_ficha_apto_no_se_cuenta_como_apto_de_la_tanda(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            raiz = Path(tmp)
+            armar(raiz, CUATRO)
+            estados, _ = tanda(raiz, procesar=listas(raiz))
+            texto = pf.informe(list(estados.values()), sin_ficha={MODELO})
+            self.assertIn("Tanda: 0 aptos", texto)
+            self.assertIn("4 LISTA; no bloquea la tanda", texto)
 
 
 

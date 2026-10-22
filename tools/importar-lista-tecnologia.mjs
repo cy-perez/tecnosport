@@ -122,10 +122,17 @@ export function huellaDeArchivo(contenido) {
  * propondrían a la API un contenido que el inventario nunca vio.
  */
 export function porProponerDe(lista, resultado, huellaLista = null) {
+  const enLaLista = new Set((lista.modelos ?? []).map((m) => m.idModelo));
+  const modelos = resultado.modelosPorProponer ?? [];
   return {
     fechaLista: lista.fechaLista,
     huellaLista,
-    modelos: resultado.modelosPorProponer ?? [],
+    modelos,
+    // Lo que la API espera proponer pero esta lista no trae: el bloque 1 no lo exportó —casi
+    // siempre por falta de descripción— y el bloque 3 no puede hacerle borrador. La tanda de
+    // fotos lo procesa sin bloquearse por él: el Note 17 Pro Max retuvo la tanda entera del
+    // 15/10/2026 esperando la cuarta foto de un borrador que no podía existir.
+    sinFicha: modelos.filter((id) => !enLaLista.has(id)),
     configuraciones: resultado.configuracionesPorProponer ?? [],
   };
 }
@@ -192,6 +199,19 @@ export function seleccionParaBorradores(lista, porProponer, estados) {
   const configuraciones = new Set(porProponer.configuraciones ?? []);
   const modelos = [];
   const omitidos = [];
+  // Se deriva de la lista y no del campo `sinFicha`, para que un por-proponer.json de antes de
+  // que existiera diga lo mismo.
+  const enLaLista = new Set(lista.modelos.map((m) => m.idModelo));
+  for (const id of nuevos) {
+    if (!enLaLista.has(id)) {
+      omitidos.push({
+        titulo: id,
+        motivo:
+          "sin ficha en la lista: el bloque 1 no lo exportó —casi siempre por falta de " +
+          "descripción—; complétalo ahí, que sin descripción no hay borrador",
+      });
+    }
+  }
   for (const modelo of lista.modelos) {
     if (nuevos.has(modelo.idModelo)) {
       const estado = estados[modelo.idModelo];
@@ -315,8 +335,17 @@ async function importarInventario(ruta, lista, contenido) {
   const { copia, huella } = guardarLaQueEntro(dirname(ruta), lista.fechaLista, contenido);
   console.log(`Lo que entró quedó copiado en ${copia}`);
   const destino = join(dirname(ruta), "por-proponer.json");
-  writeFileSync(destino, JSON.stringify(porProponerDe(cuerpo, resultado, huella), null, 2) + "\n");
+  const entrega = porProponerDe(cuerpo, resultado, huella);
+  writeFileSync(destino, JSON.stringify(entrega, null, 2) + "\n");
   console.log(`Lo que espera borrador quedó en ${destino}`);
+  if (entrega.sinFicha.length) {
+    console.log(
+      `OJO: ${entrega.sinFicha.length} modelo(s) esperan borrador y no vienen en la lista —el ` +
+        "bloque 1 no los exportó, casi siempre por falta de descripción—. Sus fotos se procesan " +
+        "pero no saldrá borrador de ellos: " +
+        entrega.sinFicha.join(", "),
+    );
+  }
 }
 
 async function importarBorradores(ruta, lista, contenido) {

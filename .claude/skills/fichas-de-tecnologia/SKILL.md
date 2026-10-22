@@ -34,6 +34,10 @@ La salida lista lo que va y, con `se queda`, lo que no:
   entrega completa.
 - `fuera de la tanda` → la persona sacó ese modelo a mano, con su motivo. Se
   queda fuera de esta corrida y no la bloquea; dilo en la entrega.
+- `sin ficha en la lista` → la API lo espera pero el bloque 1 no lo exportó,
+  casi siempre por falta de descripción. No bloquea esta corrida ni la tanda del
+  bloque 2; dilo en la entrega: su borrador saldrá cuando el bloque 1 complete
+  la ficha y la lista siguiente lo traiga.
 
 Y comprueba que `por-proponer.json` es de la misma lista que `lista-api.json`: la
 herramienta se niega si las fechas no coinciden, porque los borradores de una
