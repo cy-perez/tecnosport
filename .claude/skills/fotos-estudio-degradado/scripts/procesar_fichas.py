@@ -497,10 +497,14 @@ def texto_de_motivo(m) -> str:
 def evaluar(mid: str, carpeta: Path, reporte: dict, cfg: dict, kit: bool = False) -> dict:
     """Las fotos LISTA del modelo según el reporte, y la razón de cada una que no lo es.
 
-    En un kit, una REVISAR cuyo único motivo son las piezas sueltas cuenta como LISTA."""
+    En un kit, una REVISAR cuyo único motivo son las piezas sueltas cuenta como LISTA. Y desde el
+    22/10/2026 cuenta también la REVISAR que una persona aprobó a ojo con `marcar.py --aprobar`:
+    hasta entonces no contaba, y cuatro modelos de la lista del 15/10 esperaban fotos nuevas con
+    tomas que, miradas a tamaño real, estaban bien. Cuáles contaron así queda en
+    `aprobadas_a_ojo`, para que se sepa qué pasó la compuerta por una persona y no por el script."""
     registros = reporte.get("fotos", [])
     buenas, _ = unicas(carpeta)
-    listas, fallidas = [], []
+    listas, fallidas, aprobadas = [], [], []
     for original in buenas:
         foto = registro_de(original, mid, registros)
         if foto is None:
@@ -519,24 +523,21 @@ def evaluar(mid: str, carpeta: Path, reporte: dict, cfg: dict, kit: bool = False
                    if isinstance(m, dict) and m.get("estado") == "REVISAR"
                    and not (kit and m.get("codigo") == MOTIVO_DE_KIT)]
         aprobada_a_ojo = bool(foto.get("revisada")) and bool(reparos)
-        if estado == "LISTA" and aprobada_a_ojo:
-            motivos_auto = "; ".join(m.get("texto", "") for m in reparos)
-            fallidas.append({"foto": original.name, "estado": "REVISAR",
-                             "motivo": "salió REVISAR y se aprobó a ojo; para la tanda solo cuenta una LISTA"
-                                       + (f" ({motivos_auto})" if motivos_auto else "")})
-        elif estado == "LISTA" and lienzo < int(cfg["lienzo_minimo"]):
+        if estado == "LISTA" and lienzo < int(cfg["lienzo_minimo"]):
             fallidas.append({"foto": original.name, "estado": "LIENZO",
                              "motivo": f"salió en un lienzo de {lienzo} px; el sitio pide por lo menos "
                                        f"{cfg['lienzo_minimo']} px, y ni en ese lienzo reúne el modelo "
                                        f"{MINIMO_LISTA} fotos LISTA: hacen falta fotos de más resolución"})
         elif estado == "LISTA":
             listas.append(f"{original.stem}.jpg")
+            if aprobada_a_ojo:
+                aprobadas.append(f"{original.stem}.jpg")
         else:
             fallida = {"foto": original.name, "estado": estado or "?", "motivo": motivos or "sin motivo"}
             if not kit and solo_piezas_sueltas(foto):
                 fallida["solo_piezas"] = True       # para sugerir el kit en el informe
             fallidas.append(fallida)
-    return {"listas": listas, "fallidas": fallidas}
+    return {"listas": listas, "fallidas": fallidas, "aprobadas_a_ojo": aprobadas}
 
 
 def _evaluado_de_verdad(previo: dict) -> bool:
@@ -586,10 +587,12 @@ def decidir(mid: str, carpeta, cfg: dict, reporte=None, medidor=medir, fecha_tan
     vistas = {x["foto"] for x in antes["fallidas"]}
     fallidas = antes["fallidas"] + [f for f in ev["fallidas"] if f["foto"] not in vistas]
     if len(ev["listas"]) >= MINIMO_LISTA:
-        return dict(base, estado=APTO, listas=ev["listas"], faltan=0, fallidas=fallidas, motivo=None), False
+        return dict(base, estado=APTO, listas=ev["listas"], faltan=0, fallidas=fallidas, motivo=None,
+                    aprobadas_a_ojo=ev["aprobadas_a_ojo"]), False
     faltan = MINIMO_LISTA - len(ev["listas"])
     return dict(base, estado=EN_ESPERA, listas=ev["listas"], faltan=faltan, fallidas=fallidas,
-                motivo=f"salieron {len(ev['listas'])} fotos LISTA y necesita {MINIMO_LISTA}"), False
+                motivo=f"salieron {len(ev['listas'])} fotos LISTA y necesita {MINIMO_LISTA}",
+                aprobadas_a_ojo=ev["aprobadas_a_ojo"]), False
 
 
 def sacar(raiz: Path, carpeta, mid: str, motivo: str, fecha_tanda) -> dict:

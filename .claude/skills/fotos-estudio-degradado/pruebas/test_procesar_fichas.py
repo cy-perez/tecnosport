@@ -295,14 +295,26 @@ class Tanda(unittest.TestCase):
             self.assertEqual("REPETIR", estados[MODELO]["fallidas"][0]["estado"])
             self.assertIn("3.40×", estados[MODELO]["fallidas"][0]["motivo"])
 
-    def test_una_revisar_aprobada_a_ojo_no_cuenta(self):
+    def test_una_revisar_aprobada_a_ojo_cuenta_y_queda_anotada(self):
+        # Decisión del 22/10/2026: hasta entonces no contaba.
         with tempfile.TemporaryDirectory() as tmp:
             raiz = Path(tmp)
             armar(raiz, CUATRO)
             estados, _ = tanda(raiz, procesar=listas(raiz, revisadas=(NOMBRES[3],)))
+            self.assertEqual(pf.APTO, estados[MODELO]["estado"])
+            self.assertEqual(4, len(estados[MODELO]["listas"]))
+            self.assertEqual([CUATRO[3]], estados[MODELO]["aprobadas_a_ojo"])
+            self.assertEqual([], estados[MODELO]["fallidas"])
+
+    def test_una_revisar_sin_aprobar_sigue_sin_contar(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            raiz = Path(tmp)
+            armar(raiz, CUATRO)
+            estados, _ = tanda(raiz, procesar=lambda: salida_de_procesar(
+                raiz, [(n, "LISTA") for n in NOMBRES[:3]] + [(NOMBRES[3], "REVISAR")]))
             self.assertEqual(pf.EN_ESPERA, estados[MODELO]["estado"])
             self.assertEqual(3, len(estados[MODELO]["listas"]))
-            self.assertEqual("REVISAR", estados[MODELO]["fallidas"][0]["estado"])
+            self.assertEqual([], estados[MODELO]["aprobadas_a_ojo"])
 
     def test_aprobar_a_ojo_una_lista_que_no_tenia_nada_que_aprobar_no_la_descarta(self):
         with tempfile.TemporaryDirectory() as tmp:
