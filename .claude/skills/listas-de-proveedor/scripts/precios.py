@@ -178,7 +178,16 @@ def red_de(texto):
 
 
 def tokens_de(texto):
-    return [x for x in re.split(r"[^\w.]+", normalizar(texto)) if x]
+    # Un «+» pegado a un modelo es Plus (A11+), igual que en el parser: si no, se
+    # pierde al partir y la A11 de 8.7" pasaba por la A11+ (22/10/2026). Solo
+    # detrás de un token que empieza por letra, para no tocar la memoria (8+256).
+    t = re.sub(r"\b([a-z][a-z0-9]*)\+", r"\1 plus ", normalizar(texto))
+    return [x for x in re.split(r"[^\w.]+", t) if x]
+
+
+def wifi_de(texto):
+    """La tablet WiFi y la 4G son dos referencias; solo cuenta si no declara 4G ni 5G."""
+    return "WiFi" if re.search(r"\bwi-?fi\b", texto, re.I) else None
 
 
 def coincide(nombre, titulo):
@@ -249,14 +258,27 @@ def coincide(nombre, titulo):
     # 6. El número que sigue al nombre de la línea distingue generaciones:
     #    «xtreme5» no está en «parlante jbl xtreme 4 negro».
     for a, b in zip(tt, tt[1:]):
-        if a.isalpha() and len(a) >= 3 and b.isdigit():
+        # Un calificador no es nombre de línea: en «A11+ 11"» el 11 son pulgadas.
+        if a.isalpha() and len(a) >= 3 and b.isdigit() and a not in CALIFICADORES:
             if (a + b) not in n_junto:
+                return False
+
+    # 6.b La generación que lleva letra —15C, 17T, 16e— no es un número ni un
+    #     código, y ninguna de las dos reglas la miraba: el 22/10/2026 cualquier
+    #     Xiaomi de 256GB pasaba por el Redmi 15C y por el 17T. La red (4G, 5G)
+    #     tiene la misma forma y la regla 7 ya la cuida.
+    for x in tt:
+        if re.fullmatch(r"\d{1,3}[a-z]", x) and not re.fullmatch(r"\d+g", x):
+            if x not in n_junto:
                 return False
 
     # 7. 4G y 5G son dos productos. Si el nombre declara una red distinta a la
     #    del título, no es el mismo equipo; si no declara ninguna, pasa pero
     #    queda marcado para pesarlo distinto (ver `red_sin_declarar`).
-    red_t, red_n = red_de(titulo), red_de(nombre)
+    #    La WiFi también es una red aquí (22/10/2026: la Redmi Pad 2 4G tomaba el
+    #    precio de la WiFi), pero no en `red_de`, que decide cómo se pesa la oferta.
+    red_t = red_de(titulo) or wifi_de(titulo)
+    red_n = red_de(nombre) or wifi_de(nombre)
     if red_t and red_n and red_t != red_n:
         return False
 
