@@ -166,6 +166,11 @@ VINETAS_CATEGORIA = {
     "🐦": "lectores",
 }
 
+# Viñetas que también son adorno: el 🔥 abre los cables, pero el 22/10/2026 abrió
+# un MacBook y lo volvió cable. Con ellas manda el texto de la línea, si dice algo;
+# si no dice nada, la viñeta.
+VINETAS_DEBILES = {"🔥"}
+
 # Palabra clave del encabezado -> (categoría, marca fija, condición)
 ENCABEZADOS = [
     ("IPH NUEVOS", ("celulares", "Apple", "nuevo")),
@@ -543,7 +548,7 @@ def categoria_por_palabras(texto: str):
         return "cables"
     if re.search(r"\bBUDS\b|\bDIADEMA\b|\bAUDÍFONO", t):
         return "audifonos"
-    if re.search(r"\bLAPTOP\b|\bTODO EN UNO\b", t):
+    if re.search(r"\bLAPTOP\b|\bMACBOOK\b|\bTODO EN UNO\b", t):
         return "computadores"
     # Desde que CONSOLAS es sección, un control sin la viñeta 🎮 la heredaría y
     # se publicaría como consola.
@@ -653,6 +658,10 @@ def construir_producto(texto, categoria, marca, condicion, seccion, linea):
     if "ACTIVO" in texto_plano:
         prod["condicion"] = "nuevo_activado"
         texto_plano = texto_plano.replace("ACTIVO", " ")
+    # CPO es «certified pre-owned»: reacondicionado, no sellado (22/10/2026).
+    if re.search(r"\bCPO\b", texto_plano):
+        prod["condicion"] = "reacondicionado"
+        texto_plano = re.sub(r"\bCPO\b", " ", texto_plano)
     texto_plano = re.sub(r"\s+", " ", texto_plano).strip()
 
     resto = RE_PRECIO.sub(" ", texto_plano)
@@ -698,6 +707,20 @@ def construir_producto(texto, categoria, marca, condicion, seccion, linea):
                 prod["modelo"] = "POCO " + modelo
                 prod["supuestos"].append(
                     f"la sección Xiaomi abrevia la serie {modelo[0]}: se leyó como POCO")
+            elif (m := re.match(r"^Mi\s+(\d+)(.*)$", modelo)) and int(m.group(1)) >= 12:
+                # «MI 17T» (22/10/2026): el 11T fue el último Mi; desde el 12 el
+                # equipo se llama Xiaomi 12, Xiaomi 17T.
+                prod["modelo"] = m.group(1) + m.group(2)
+                prod["supuestos"].append(
+                    f"Xiaomi dejó el prefijo «Mi» desde la serie 12: se leyó como Xiaomi {prod['modelo']}")
+        if (prod["marca"] or "") == "Motorola" and categoria == "celulares":
+            modelo = prod["modelo"] or ""
+            if re.match(r"^\d{2}\s+(Fusion|Neo|Pro|Ultra)\b", modelo):
+                # «50 FUSIÓN» (22/10/2026): la serie de número con apellido es Edge;
+                # la Moto G ya llega con su MOTO delante.
+                prod["modelo"] = "Edge " + modelo
+                prod["supuestos"].append(
+                    f"la sección Motorola abrevia la serie Edge: se leyó como {prod['modelo']}")
         if prod["ram_virtual"]:
             prod["revisar"].append(
                 f"la lista suma RAM virtual ({prod['ram']}+{prod['ram_virtual']}): "
@@ -1064,7 +1087,10 @@ def parsear(texto: str, equivalencias=None):
 
         if emoji:
             cerrar_pendiente()
-            cat = cat_vineta or categoria_por_palabras(resto) or categoria or "celulares"
+            if emoji in VINETAS_DEBILES:
+                cat = categoria_por_palabras(resto) or cat_vineta
+            else:
+                cat = cat_vineta or categoria_por_palabras(resto) or categoria or "celulares"
             cond = cond_vineta or condicion or "nuevo"
             prod = construir_producto(resto, cat, marca, cond, seccion, i)
             marcar_iphone_sin_condicion(prod, limpio)

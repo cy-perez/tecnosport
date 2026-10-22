@@ -23,7 +23,7 @@ la sección:
 | 📲 | celular usado → se descarta |
 | ⌚ 🎧 | reloj, audífono |
 | 🔌 🪫 🔋 | cargador, power bank → **no se publican**, caen en descartados |
-| 🔥 | cable (va en la sección `*CABLE*`, debajo de cargadores) → **no se publica** |
+| 🔥 | cable (va en la sección `*CABLE*`, debajo de cargadores) → **no se publica**. También es adorno: si el texto dice otra cosa (`🔥MacBook Neo 2`), manda el texto |
 
 Las viñetas ✔️, ⚠️ y 📲 solo indican la condición: la categoría la pone la sección
 (`*TABLET SAMSUNG*`) o el propio texto de la línea. Un encabezado de solo marca
