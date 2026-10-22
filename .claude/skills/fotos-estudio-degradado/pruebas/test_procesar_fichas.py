@@ -6,6 +6,8 @@ No corren procesar.py (pide OpenCV): el reporte y las salidas se fabrican aquí,
 como diccionarios pasaba mientras el código se caía con el primer reporte real."""
 
 import json
+import os
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -661,6 +663,32 @@ class AvisoDeRetoqueAnterior(unittest.TestCase):
                                  "archivo": "Xsamsung-galaxy-s25-ultra_1.jpg", "salidas": {"maestra": {"ruta": "x"}}})
             ruta.write_text(json.dumps(rep), encoding="utf-8")
             self.assertEqual([], pf.con_retoque_anterior(raiz, [MODELO], pf.leer_reporte(raiz)["fotos"]))
+
+
+class RetoqueEnCurso(unittest.TestCase):
+    """Un avance en «procesando» de un proceso que ya murió no bloquea el --devolver (21/10/2026)."""
+
+    def avance(self, raiz: Path, **datos):
+        ruta = raiz / pf.TRABAJO / "salida" / ".trabajo" / "avance.json"
+        ruta.parent.mkdir(parents=True)
+        ruta.write_text(json.dumps({"total": 1, "hechas": 1, **datos}), encoding="utf-8")
+
+    def test_un_proceso_vivo_sigue_en_curso(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            self.avance(Path(tmp), estado="procesando", pid=os.getpid())
+            self.assertIsNotNone(pf.retoque_en_curso(Path(tmp)))
+
+    def test_un_proceso_que_murio_sin_terminar_no_esta_en_curso(self):
+        muerto = subprocess.Popen([sys.executable, "-c", "pass"])
+        muerto.wait()
+        with tempfile.TemporaryDirectory() as tmp:
+            self.avance(Path(tmp), estado="procesando", pid=muerto.pid)
+            self.assertIsNone(pf.retoque_en_curso(Path(tmp)))
+
+    def test_un_avance_terminado_no_esta_en_curso(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            self.avance(Path(tmp), estado="terminado", pid=os.getpid())
+            self.assertIsNone(pf.retoque_en_curso(Path(tmp)))
 
 
 if __name__ == "__main__":

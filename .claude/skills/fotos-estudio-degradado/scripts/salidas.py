@@ -9,6 +9,8 @@ no puedan tener dos ideas distintas de qué archivos debe haber.
 
 from __future__ import annotations
 
+import os
+
 # La versión del retoque: cambia cuando el código cambia cómo se ve una foto, no cuando cambia un
 # parámetro (eso ya lo dice la huella de la configuración). Entra en esa huella —así `--nuevas` rehace
 # lo que se procesó con un retoque anterior— y va en cada foto y en cada marca a ojo, que caduca
@@ -16,6 +18,30 @@ from __future__ import annotations
 # REPETIR por una marca que describía un defecto que el retoque nuevo ya no tenía).
 # Vive aquí y no en imagen.py porque procesar_fichas.py la lee, y ese no carga OpenCV.
 VERSION_RETOQUE = "2026-10-20"
+
+
+# Si el proceso que registró un avance sigue vivo. Vive aquí porque procesar_fichas.py lo pregunta
+# antes de esperar un retoque en segundo plano, y ese no carga OpenCV.
+def vivo(pid: int) -> bool:
+    if not pid:
+        return False
+    if os.name == "nt":  # os.kill(pid, 0) en Windows enviaría Ctrl+C: se consulta con la API
+        import ctypes
+        k32 = ctypes.windll.kernel32
+        h = k32.OpenProcess(0x1000, False, int(pid))
+        if not h:
+            return False
+        codigo = ctypes.c_ulong()
+        ok = k32.GetExitCodeProcess(h, ctypes.byref(codigo))
+        k32.CloseHandle(h)
+        return bool(ok) and codigo.value == 259
+    try:
+        os.kill(int(pid), 0)
+        return True
+    except ProcessLookupError:
+        return False
+    except PermissionError:
+        return True
 
 
 def _escala(cfg: dict) -> list[int]:
