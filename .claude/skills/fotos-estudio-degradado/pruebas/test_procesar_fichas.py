@@ -655,6 +655,67 @@ class RetirarLoQueYaNoSePublica(unittest.TestCase):
 
 
 
+class PrepararLaAprobacionAOjo(unittest.TestCase):
+    """Decisión del 22/10/2026: la espera deja la revisión a un paso del --aprobar. Tres de los
+    cuatro modelos en espera del 15/10 lo estaban por una sola foto REVISAR que estaba bien."""
+
+    def estados_con_revisar(self, raiz):
+        armar(raiz, CUATRO)
+        estados, _ = tanda(raiz, procesar=lambda: salida_de_procesar(
+            raiz, [(n, "LISTA") for n in NOMBRES[:3]] + [(NOMBRES[3], "REVISAR")]))
+        return list(estados.values())
+
+    def test_el_informe_deja_los_comandos_de_revision_listos(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            raiz = Path(tmp)
+            estados = self.estados_con_revisar(raiz)
+            texto = pf.informe(estados, salida=raiz / pf.TRABAJO / "salida")
+            self.assertIn("se aprueba y cuenta como LISTA", texto)
+            self.assertIn(f"ampliar.py\" \"{raiz / pf.TRABAJO / 'salida'}\" {NOMBRES[3]}", texto)
+            self.assertIn(f"--aprobar", texto)
+
+    def test_sin_salida_el_informe_no_inventa_comandos(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            texto = pf.informe(self.estados_con_revisar(Path(tmp)))
+            self.assertNotIn("ampliar.py", texto)
+
+    def test_una_repetir_o_una_pequena_no_se_sugiere(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            raiz = Path(tmp)
+            armar(raiz, CUATRO)
+            estados, _ = tanda(raiz, procesar=lambda: salida_de_procesar(
+                raiz, [(n, "LISTA") for n in NOMBRES[:3]] + [(NOMBRES[3], "REPETIR")]))
+            texto = pf.informe(list(estados.values()), salida=raiz / pf.TRABAJO / "salida")
+            self.assertNotIn("--aprobar", texto)
+
+    def test_los_mosaicos_se_generan_solo_para_lo_que_detiene_y_esta_cerca(self):
+        pedidos = []
+
+        def falso_ampliar(nombre):
+            pedidos.append(nombre)
+            return f"zoom/{nombre}-zonas.jpg"
+
+        estados = [
+            {"modelo": "cerca", "estado": pf.EN_ESPERA, "faltan": 1,
+             "fallidas": [{"foto": "cerca_2.jpg", "estado": "REVISAR", "motivo": "ampliación"}]},
+            {"modelo": "lejos", "estado": pf.EN_ESPERA, "faltan": 3,
+             "fallidas": [{"foto": "lejos_1.jpg", "estado": "REVISAR", "motivo": "ampliación"}]},
+            {"modelo": "kit-pendiente", "estado": pf.EN_ESPERA, "faltan": 1,
+             "fallidas": [{"foto": "k_1.jpg", "estado": "REVISAR", "motivo": "piezas", "solo_piezas": True}]},
+            {"modelo": "sin-ficha", "estado": pf.EN_ESPERA, "faltan": 1,
+             "fallidas": [{"foto": "s_1.jpg", "estado": "REVISAR", "motivo": "ampliación"}]},
+            {"modelo": "listo", "estado": pf.APTO, "faltan": 0, "fallidas": []},
+        ]
+        mosaicos = pf.preparar_revision(Path("."), estados, sin_ficha={"sin-ficha"}, ampliar_fn=falso_ampliar)
+        self.assertEqual(["cerca-2"], pedidos)
+        self.assertEqual([("cerca/cerca_2.jpg", "zoom/cerca-2-zonas.jpg")], mosaicos)
+
+    def test_un_ampliar_que_falla_no_rompe_nada(self):
+        estados = [{"modelo": "m", "estado": pf.EN_ESPERA, "faltan": 1,
+                    "fallidas": [{"foto": "m_1.jpg", "estado": "REVISAR", "motivo": "x"}]}]
+        self.assertEqual([], pf.preparar_revision(Path("."), estados, ampliar_fn=lambda n: None))
+
+
 class SugerirElKit(unittest.TestCase):
     """Un modelo que espera solo por piezas sueltas recibe la sugerencia del kit; nunca se declara solo."""
 

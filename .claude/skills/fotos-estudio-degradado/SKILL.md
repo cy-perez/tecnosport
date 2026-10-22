@@ -408,6 +408,12 @@ no haga falta otra corrida. Con salida 3:
    «el borde se confunde con el fondo»— y cuántas LISTA le faltan. Dile dónde
    está la carpeta, y de dónde salen las fotos (`listas-de-proveedor`, sección
    «De dónde salen las fotos»). Muéstrale las hojas de revisión de las que fallaron.
+   **La espera ya trae la revisión preparada** (22/10/2026): el informe deja los
+   comandos de `ampliar.py` y `marcar.py --aprobar` listos para cada REVISAR que
+   detiene la tanda, y los mosaicos al 100 % de los modelos a los que les faltan
+   hasta 2 LISTA se generan de una vez. Muéstraselos: si al 100 % la foto está
+   bien, aprobarla cuenta como LISTA y evita esperar una foto nueva. Aprobar
+   sigue siendo de la persona, nunca tuyo.
 2. **Espera su confirmación** con `AskUserQuestion`: «ya dejé fotos nuevas»,
    «sacar un modelo de la tanda» o «lo retomo después». No sigas sin respuesta.
 3. Con «ya dejé fotos nuevas», vuelve a correr la tanda. El script reprocesa los

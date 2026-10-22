@@ -30,10 +30,14 @@ modelo. Las hojas de revisión y el reporte quedan en `_estudio/salida/`.
 **La tanda es el bloque 2 de la ingesta de tecnología** (ADR-0079). Con `--tanda`
 solo se procesan los modelos de `por-proponer.json` —los que el sitio no vende—, y
 cada uno necesita `MINIMO_LISTA` fotos LISTA en un lienzo de por lo menos
-`LIENZO_MINIMO` px. Una REVISAR no cuenta, aunque se apruebe a ojo: decisión del
-negocio del 10/10/2026. El modelo que no llega queda **en espera**, con la razón de
-cada foto que falló, y la tanda no se da por terminada hasta que todos pasen o la
-persona saque alguno a mano con `--sacar`.
+`LIENZO_MINIMO` px. Una REVISAR no cuenta, salvo que una persona la apruebe a ojo
+tras mirarla al 100 % (`marcar.py --aprobar`, decisión del 22/10/2026). El modelo
+que no llega queda **en espera**, con la razón de cada foto que falló, y la tanda
+no se da por terminada hasta que todos pasen o la persona saque alguno a mano con
+`--sacar`. Para acortar esa espera, el informe deja los comandos de revisión
+listos y los mosaicos al 100 % de las REVISAR que detienen la tanda se generan
+de una vez (`preparar_revision`): tres de los cuatro modelos en espera del
+15/10/2026 esperaban por una sola foto que, mirada a tamaño real, estaba bien.
 
 Para no gastar retoques en vano, y para que el veredicto sea cierto:
 
@@ -632,7 +636,13 @@ def leer_tanda(ruta: Path) -> tuple:
     return datos.get("fechaLista"), ids, set(datos.get("sinFicha") or [])
 
 
-def informe(estados: list, sin_ficha=frozenset()) -> str:
+def candidatas_a_ojo(e: dict) -> list:
+    """Las fotos REVISAR de un modelo en espera que una persona puede aprobar tras mirarlas al
+    100 % (decisión del 22/10/2026). Las de solo piezas sueltas no: su salida es el kit."""
+    return [f for f in e.get("fallidas", []) if f.get("estado") == "REVISAR" and not f.get("solo_piezas")]
+
+
+def informe(estados: list, sin_ficha=frozenset(), salida=None) -> str:
     sin_ficha = set(sin_ficha)
     lineas = []
     aptos = [e for e in estados if e["estado"] == APTO and e["modelo"] not in sin_ficha]
@@ -651,6 +661,15 @@ def informe(estados: list, sin_ficha=frozenset()) -> str:
             # Lo decide la persona, nunca el script: tres piezas también pueden ser dos productos.
             lineas.append(f"  ¿Es un kit? {len(piezas)} foto(s) solo esperan por las piezas sueltas. Si el producto se "
                           f"vende con ellas: --kit {e['modelo']} --motivo \"qué piezas trae\"")
+        if salida is not None and candidatas_a_ojo(e):
+            # La revisión queda a un paso: mirar el mosaico y, si está bien, aprobar. La decide
+            # la persona, nunca el script (ver «Una REVISAR aprobada a ojo sí cuenta»).
+            lineas.append("  Una REVISAR que al 100 % se ve bien se aprueba y cuenta como LISTA (22/10/2026):")
+            for f in candidatas_a_ojo(e):
+                nombre = slug(Path(f["foto"]).stem)
+                lineas.append(f"    python \"{Path(__file__).with_name('ampliar.py')}\" \"{salida}\" {nombre}")
+                lineas.append(f"    python \"{Path(__file__).with_name('marcar.py')}\" \"{salida}\" {nombre} "
+                              "--aprobar \"revisada al 100 %: qué se miró\"")
     for e in pendientes_de_ficha:
         n = len(e.get("listas") or [])
         lineas.append(f"\nSIN FICHA  {e['modelo']}: la lista no lo trae —el bloque 1 no lo exportó, casi siempre "
@@ -662,6 +681,32 @@ def informe(estados: list, sin_ficha=frozenset()) -> str:
                   if not espera
                   else "\nLA TANDA ESPERA FOTOS: deja las nuevas en «Fotos originales» y vuelve a correrla")
     return "\n".join(lineas)
+
+
+def preparar_revision(raiz: Path, estados: list, sin_ficha=frozenset(), ampliar_fn=None) -> list:
+    """Los mosaicos al 100 % de las REVISAR que detienen la tanda, generados de una vez.
+
+    Tres de los cuatro modelos en espera del 15/10/2026 esperaban por una sola foto REVISAR que,
+    mirada a tamaño real, estaba bien; el ciclo llevó siete días porque cada revisión pedía correr
+    `ampliar.py` a mano. Solo para los modelos a los que les falta poco (hasta 2 LISTA): a los
+    demás les hacen falta fotos nuevas de todas formas. Si `ampliar.py` falla —sin OpenCV, por
+    ejemplo—, no pasa nada: los comandos impresos en el informe siguen valiendo."""
+    salida = Path(raiz) / TRABAJO / "salida"
+    if ampliar_fn is None:
+        def ampliar_fn(nombre):
+            r = subprocess.run([sys.executable, str(Path(__file__).with_name("ampliar.py")), str(salida), nombre],
+                               capture_output=True, text=True)
+            lineas = (r.stdout or "").strip().splitlines()
+            return lineas[-1] if r.returncode == 0 and lineas else None
+    mosaicos = []
+    for e in estados:
+        if e.get("estado") != EN_ESPERA or e.get("modelo") in set(sin_ficha) or (e.get("faltan") or 0) > 2:
+            continue
+        for f in candidatas_a_ojo(e):
+            ruta = ampliar_fn(slug(Path(f["foto"]).stem))
+            if ruta:
+                mosaicos.append((f"{e['modelo']}/{f['foto']}", ruta))
+    return mosaicos
 
 
 def nombres_de(raiz: Path, ids) -> list:
@@ -806,7 +851,12 @@ def main() -> int:
         estados = correr_tanda(raiz, ids, cfg, procesar_fn, solo_devolver=a.devolver, fecha_tanda=fecha)
         if not estados:
             return SALIDA_EN_ESPERA   # en segundo plano: la tanda todavía no está completa
-        print(informe(estados, sin_ficha))
+        print(informe(estados, sin_ficha, salida=raiz / TRABAJO / "salida"))
+        mosaicos = preparar_revision(raiz, estados, sin_ficha)
+        if mosaicos:
+            print("\nMosaicos al 100 % de las REVISAR que detienen la tanda, listos para mirar:")
+            for etiqueta, ruta in mosaicos:
+                print(f"  - {etiqueta}: {ruta}")
         viejas = con_retoque_anterior(raiz, ids, leer_reporte(raiz).get("fotos", []))
         if viejas:
             print(f"\n[aviso] {len(viejas)} foto(s) de la tanda se procesaron con un retoque anterior al "
