@@ -34,6 +34,10 @@ La salida lista lo que va y, con `se queda`, lo que no:
   entrega completa.
 - `fuera de la tanda` → la persona sacó ese modelo a mano, con su motivo. Se
   queda fuera de esta corrida y no la bloquea; dilo en la entrega.
+- `sin ficha en la lista` → la API lo espera pero el bloque 1 no lo exportó,
+  casi siempre por falta de descripción. No bloquea esta corrida ni la tanda del
+  bloque 2; dilo en la entrega: su borrador saldrá cuando el bloque 1 complete
+  la ficha y la lista siguiente lo traiga.
 
 Y comprueba que `por-proponer.json` es de la misma lista que `lista-api.json`: la
 herramienta se niega si las fechas no coinciden, porque los borradores de una
@@ -63,8 +67,9 @@ Hace dos cosas, en este orden:
    el borrador de cada modelo nuevo apto, y el de las configuraciones nuevas de
    los que ya se venden. No toca costo ni existencia: eso ya lo hizo el bloque 1.
 2. **Sube al borrador las fotos LISTA** de cada modelo nuevo, en el orden de su
-   `estado-fotos.json` —la primera es la principal—, con sus anchos AVIF y la
-   vista previa, al bucket privado del proveedor.
+   `estado-fotos.json` —la primera es la principal: la elegida con `marcar.py
+   --principal` en el bloque 2, o la primera por orden natural—, con sus anchos
+   AVIF y la vista previa, al bucket privado del proveedor.
 
 Se puede correr otra vez sin miedo. Un borrador que ya tiene exactamente esas
 fotos —los mismos hashes, en el mismo orden— no se toca; uno con otras —una
@@ -93,6 +98,15 @@ la entrega con su margen, que está en el Excel del bloque 1, en vez de buscar
 cómo aprobarlo.
 
 ### 3. Entregar
+
+Lee **`catalogo/5-api/avisos-panel.json`** —lo deja la exportación del bloque 1—
+y repítele a la persona, por borrador, lo que tiene que resolver a mano al
+revisarlo: la configuración **sin precio de mercado** (con su costo, porque el
+panel solo exige superar el costo y sin referencia se fija un precio a ciegas),
+la **paleta vacía** (los colores se marcan a mano) y las **notas de datos
+pendientes** que la descripción publica tal cual («se le pidió al proveedor»,
+«por confirmar»): aprobar es el momento de resolverlas o de aceptarlas a
+sabiendas.
 
 Dile a la persona que los borradores están en **`/admin/tecnologia`**, y qué hace
 ahí con cada uno:

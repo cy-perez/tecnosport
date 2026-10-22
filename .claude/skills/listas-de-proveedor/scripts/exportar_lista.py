@@ -141,6 +141,50 @@ def exportar(datos: dict) -> tuple[dict, list]:
     }, fuera
 
 
+def avisos_para_el_panel(lista: dict) -> dict:
+    """Lo que quien revisa los borradores tiene que resolver a mano, por modelo.
+
+    Va en `avisos-panel.json`, aparte de `lista-api.json`, por dos razones: la API valida su
+    esquema y un campo de más es un 400 que tumba la lista entera; y el aviso es para la persona
+    del paso 3 del bloque 3, no para el servidor. Tres cosas, y las tres existieron en la lista
+    del 15/10/2026 sin que nada las dijera: 10 configuraciones sin precio de mercado —el panel
+    solo exige superar el costo, y sin referencia se fija un precio a ciegas—, 4 modelos sin
+    paleta —los colores se marcan a mano—, y 6 descripciones con notas de datos pendientes del
+    proveedor, que se publican tal cual si nadie las mira al aprobar."""
+    avisos = {}
+    for m in lista["modelos"]:
+        aviso = {}
+        sin_precio = [{"sku": c["sku"], "titulo": c["titulo"], "costoProveedor": c["costoProveedor"]}
+                      for c in m["configuraciones"] if not c.get("precioMercado")]
+        if sin_precio:
+            aviso["sinPrecioMercado"] = sin_precio
+        if not m.get("paleta"):
+            aviso["paletaVacia"] = True
+        notas = descripciones.notas_pendientes(m["descripcion"])
+        if notas:
+            aviso["notasDescripcion"] = notas
+        faltantes = [d for d in descripciones.defectos(m["descripcion"]) if d not in descripciones.BLOQUEAN]
+        if faltantes:
+            aviso["defectosDescripcion"] = faltantes
+        if aviso:
+            avisos[m["idModelo"]] = {"titulo": m["titulo"], **aviso}
+    return {"fechaLista": lista["fechaLista"], "modelos": avisos}
+
+
+def resumen_de_aviso(aviso: dict) -> str:
+    partes = []
+    if aviso.get("sinPrecioMercado"):
+        n = len(aviso["sinPrecioMercado"])
+        partes.append(f"{n} configuración(es) sin precio de mercado: el precio se fija solo contra el costo")
+    if aviso.get("paletaVacia"):
+        partes.append("sin paleta: los colores se marcan a mano en el panel")
+    if aviso.get("notasDescripcion"):
+        partes.append("la descripción avisa datos pendientes del proveedor")
+    if aviso.get("defectosDescripcion"):
+        partes.append("a la descripción le falta algo (ver defectosDescripcion)")
+    return "; ".join(partes)
+
+
 def huella(contenido: str) -> str:
     """La misma de `huellaDeArchivo` en tools/importar-lista-tecnologia.mjs: el SHA-256 del texto."""
     return hashlib.sha256(contenido.encode("utf-8")).hexdigest()
@@ -196,6 +240,16 @@ def main():
           f"{len(lista['modelosDesaparecidos'])} modelos desaparecidos")
     for titulo, motivo in fuera:
         print(f"  no se exporta {titulo}: {motivo}")
+    # Antes del inventario, no después: lo que se corrija aquí entra con la huella correcta,
+    # y lo que no, por lo menos llega al panel con el aviso a la vista (bloque 3, paso 3).
+    avisos = avisos_para_el_panel(lista)
+    ruta_avisos = Path(args.salida).parent / "avisos-panel.json"
+    ruta_avisos.write_text(json.dumps(avisos, ensure_ascii=False, indent=2) + "\n",
+                           encoding="utf-8", newline="")
+    if avisos["modelos"]:
+        print(f"{len(avisos['modelos'])} modelos con algo por resolver en el panel → {ruta_avisos}")
+        for aviso in avisos["modelos"].values():
+            print(f"  - {aviso['titulo']}: {resumen_de_aviso(aviso)}")
 
 
 if __name__ == "__main__":

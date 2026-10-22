@@ -272,6 +272,7 @@ catalogo/
 ├── 3-redaccion/     paso 4       fichas-marca.json · prosa.json · icecat/
 ├── 4-entregables/   paso 5       fichas/<Modelo>/ · comparativo-<fecha>.xlsx
 └── 5-api/           paso 6b      lista-api.json · por-proponer.json (la entrega a los bloques 2 y 3)
+                                  avisos-panel.json (lo que se resuelve a mano al aprobar, para el bloque 3)
 ```
 
 `productos.json` se queda en la raíz porque no es de un subproceso: todos lo
@@ -319,6 +320,13 @@ lista del 15/10/2026— se quita sola, porque quitarla no inventa nada. Lo que n
 arregla sin datos —la ficha que falta, el peso, el contenido de la caja— queda en
 `revisar` como «descripción de la base: …» para el paso 4 y la entrega. Y la
 exportación deja fuera el modelo cuya descripción tenga un marcador `[[ ]]`.
+
+**Lo que el negocio decidió no vender se descarta aquí, sin investigar.**
+`referencias/excluidos.json` guarda esas decisiones —el TCL Pad Lugh, sacado de
+la tanda del 15/10/2026 «excluido del catálogo», habría vuelto en la lista
+siguiente a investigarse y a pedir fotos—. La registra la persona, nunca un
+script: `python scripts/conocidos.py excluir <id del modelo> --motivo "…"`, y
+`--quitar` lo readmite. El reporte los lista en su propia sección, con el motivo.
 
 Y anota:
 
@@ -549,7 +557,16 @@ node tools/importar-lista-tecnologia.mjs catalogo/5-api/lista-api.json --inventa
 
 Solo se exportan los modelos con descripción; los demás se dicen. Tampoco se
 exporta la configuración con menos de un 5 % de margen (regla 18): va como
-desaparecida y la salida dice cuál y con cuánto. No la recortes a mano del
+desaparecida y la salida dice cuál y con cuánto.
+
+La exportación deja además `5-api/avisos-panel.json`: por modelo, las
+configuraciones **sin precio de mercado** (con su costo), la **paleta vacía** y
+las **notas de datos pendientes** en la descripción («se le pidió al
+proveedor», «por confirmar»), que se publican tal cual si nadie las mira al
+aprobar. La salida los imprime: lo que se pueda resolver aquí —completar la
+paleta, cerrar una nota— se resuelve **antes** de importar el inventario,
+porque después la huella congela la lista; lo que no, lo repite el bloque 3 al
+entregar los borradores. No la recortes a mano del
 archivo: un modelo publicado que falta no se retira. Lo que ya se
 vende se renueva —costo del día y 2 unidades libres por color— y lo desaparecido
 deja de ofrecerse. **La lista no toca el precio de venta**: si la salida avisa
@@ -587,6 +604,12 @@ ruta de su carpeta, para que la persona descargue **por lo menos 4 fotos** en
 `Fotos originales/` —de dónde, en la sección siguiente—. Dile que cuando las
 tenga siga con `/fotos-estudio-degradado`. Las configuraciones nuevas de un
 modelo que ya se vende no piden fotos: van directo al bloque 3.
+
+Si el inventario avisó modelos `sinFicha` —la API los espera pero esta lista no
+los exportó, casi siempre por falta de descripción—, dilos aparte: no vale la
+pena conseguirles fotos todavía, porque el bloque 3 no puede hacerles borrador.
+La salida es completar su ficha (la descripción del paso 4) para que la lista
+siguiente los exporte.
 
 ## De dónde salen las fotos
 
@@ -752,6 +775,8 @@ referencias/formato-de-listas.md  anatomía de los mensajes de proveedor
 referencias/titulos.md            fórmula de títulos y nombres ya confirmados
 referencias/equivalencias.json    id de la lista → id y título definitivos; lo aplica el parser
 referencias/conocidos.json        productos ya investigados; lo escribe conocidos.py, no a mano
+referencias/excluidos.json        modelos que el negocio decidió no vender; los descarta la
+                                  comparación. `conocidos.py excluir`, nunca a mano
 referencias/descripciones.md      estructura de la descripción y metadatos
 referencias/fichas-tecnicas.md    de dónde sale la ficha oficial de cada marca
 referencias/precios.md            método de investigación de precios

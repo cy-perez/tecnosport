@@ -25,6 +25,10 @@ RE_FILA_DE_TABLA = re.compile(r"^\|(.+)\|\s*$")
 RE_SEPARADOR_DE_TABLA = re.compile(r"^\|(\s*:?-+:?\s*\|)+\s*$")
 RE_MARCADOR = re.compile(r"\[\[|\bTODO\b")
 RE_PESO_O_MEDIDAS = re.compile(r"peso|dimensiones|medidas", re.I)
+# Las frases con que una descripción avisa un dato pendiente del proveedor. Acotadas a propósito:
+# «pendiente» a secas marcaba el «posicionamiento GNSS independiente» de la Smart Band 10 Pro.
+RE_NOTA_PENDIENTE = re.compile(
+    r"se le pidió al proveedor|por confirmar|queda(?:n)? pendientes?\b|no se afirma(?:n)? aquí", re.I)
 
 FICHA = "Ficha técnica"
 GARANTIA = "Garantía y notas"
@@ -121,3 +125,16 @@ def defectos(texto: str) -> list[str]:
 
 def bloqueantes(texto: str) -> list[str]:
     return [d for d in defectos(texto) if d in BLOQUEAN]
+
+
+def notas_pendientes(texto: str) -> list[str]:
+    """Las líneas de la descripción que avisan un dato pendiente del proveedor.
+
+    Son honestas a propósito —«la ficha técnica completa se le pidió al proveedor»— y se publican
+    así (un producto sin ficha oficial no se inventa una). Pero quien aprueba el borrador tiene que
+    verlas: es justo el momento en que puede resolverlas, y `npm run marcadores` no las ve porque
+    no son `[[ ]]`."""
+    if not texto:
+        return []
+    return [linea.strip().lstrip("- ").strip()
+            for linea in texto.splitlines() if RE_NOTA_PENDIENTE.search(linea)]

@@ -76,12 +76,52 @@ def base_de(planos):
     return {"modelos": modelos, "configuraciones": configuraciones}
 
 
-def comparar(datos, base, hoy=HOY):
+def comparar(datos, base, hoy=HOY, excluidos=None):
     datos = deepcopy(datos)
     if "modelos" not in base:
         base = base_de(base)
-    comparar_lista.comparar(datos, base, hoy)
+    comparar_lista.comparar(datos, base, hoy, excluidos)
     return datos
+
+
+class ExcluidosDelCatalogo(unittest.TestCase):
+    """Un modelo que el negocio decidió no vender se descarta sin investigar, con su motivo.
+
+    El TCL Pad Lugh se sacó de la tanda del 15/10/2026 «excluido del catálogo» y nada lo
+    recordaba: la lista siguiente lo habría vuelto a proponer, a investigar y a pedirle fotos."""
+
+    EXCLUIDOS = {"tcl-pad-lugh-10-wifi": {"motivo": "no se vende", "fecha": "2026-10-21"}}
+
+    def test_un_excluido_va_a_descartados_con_su_motivo_y_sin_pendientes(self):
+        datos = comparar(lista(producto("tcl-pad-lugh-10-wifi", "TCL Pad Lugh 10″ WiFi")),
+                         {"jbl-xtreme-4": conocido()}, excluidos=self.EXCLUIDOS)
+        self.assertEqual([], datos["productos"])
+        [d] = datos["descartados"]
+        self.assertEqual("excluido del catálogo (21/10/2026): no se vende", d["motivo"])
+        [e] = datos["excluidos_del_catalogo"]
+        self.assertEqual("TCL Pad Lugh 10″ WiFi", e["titulo"])
+        self.assertEqual(1, datos["comparacion"]["resumen"]["excluidos"])
+
+    def test_el_reporte_tiene_su_seccion_y_dice_como_readmitirlo(self):
+        datos = comparar(lista(producto("tcl-pad-lugh-10-wifi", "TCL Pad Lugh 10″ WiFi")),
+                         {"jbl-xtreme-4": conocido()}, excluidos=self.EXCLUIDOS)
+        texto = comparar_lista.reporte(datos)
+        self.assertIn("## Excluidos del catálogo", texto)
+        self.assertIn("conocidos.py excluir", texto)
+
+    def test_un_excluido_conocido_no_se_repite_entre_los_que_no_entran(self):
+        base = {"tcl-pad-lugh-10-wifi": conocido(titulo="TCL Pad Lugh 10″ WiFi")}
+        datos = comparar(lista(producto("tcl-pad-lugh-10-wifi", "TCL Pad Lugh 10″ WiFi")),
+                         base, excluidos=self.EXCLUIDOS)
+        self.assertEqual([], datos["conocidos_descartados"])
+        self.assertEqual(1, len(datos["excluidos_del_catalogo"]))
+        self.assertEqual([], datos["desaparecidos"], "vino: no desapareció, se excluyó")
+
+    def test_sin_exclusiones_nada_cambia(self):
+        datos = comparar(lista(producto()), {"jbl-xtreme-4": conocido()})
+        self.assertEqual([], datos["excluidos_del_catalogo"])
+        self.assertEqual(0, datos["comparacion"]["resumen"]["excluidos"])
+        self.assertNotIn("## Excluidos del catálogo", comparar_lista.reporte(datos))
 
 
 class Estados(unittest.TestCase):
@@ -359,7 +399,7 @@ class Resumen(unittest.TestCase):
         datos = comparar(lista(producto(), producto("jbl-grip", "JBL Grip")), base)
         self.assertEqual({"nuevo": 1, "configuracion_nueva": 0, "costo_cambio": 0, "sin_cambios": 1,
                           "sin_precio_vigente": 0, "desaparecidos": 1, "modelos_desaparecidos": 1,
-                          "ausentes": 0, "posibles_mismos": 0, "falta_informacion": 0},
+                          "ausentes": 0, "posibles_mismos": 0, "falta_informacion": 0, "excluidos": 0},
                          datos["comparacion"]["resumen"])
         self.assertEqual("2026-10-08", datos["comparacion"]["fecha"])
 

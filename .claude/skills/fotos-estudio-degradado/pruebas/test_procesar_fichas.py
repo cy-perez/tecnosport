@@ -411,6 +411,41 @@ class Tanda(unittest.TestCase):
             estados, _ = tanda(raiz, procesar=listas(raiz, [f"{MODELO}-{i}" for i in (1, 2, 10, 11)]))
             self.assertEqual([f"{MODELO}_{i}.jpg" for i in (1, 2, 10, 11)], estados[MODELO]["listas"])
 
+    def test_la_foto_marcada_principal_encabeza_las_listas(self):
+        # Decisión del 22/10/2026: sin marca, la principal era la _1 que se descargó primero.
+        with tempfile.TemporaryDirectory() as tmp:
+            raiz = Path(tmp)
+            armar(raiz, CUATRO)
+
+            def con_principal():
+                salida_de_procesar(raiz, [(n, "LISTA") for n in NOMBRES])
+                ruta = raiz / pf.TRABAJO / "salida" / "reporte.json"
+                datos = json.loads(ruta.read_text(encoding="utf-8"))
+                for f in datos["fotos"]:
+                    if f["nombre"] == NOMBRES[2]:  # marcar.py --principal
+                        f["principal"] = {"fecha": "2026-10-22"}
+                ruta.write_text(json.dumps(datos), encoding="utf-8")
+
+            estados, _ = tanda(raiz, procesar=con_principal)
+            self.assertEqual([CUATRO[2], CUATRO[0], CUATRO[1], CUATRO[3]], estados[MODELO]["listas"])
+
+    def test_una_principal_que_no_salio_lista_no_cambia_el_orden(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            raiz = Path(tmp)
+            armar(raiz, CUATRO)
+
+            def con_principal_revisar():
+                salida_de_procesar(raiz, [(n, "LISTA") for n in NOMBRES[:3]] + [(NOMBRES[3], "REVISAR")])
+                ruta = raiz / pf.TRABAJO / "salida" / "reporte.json"
+                datos = json.loads(ruta.read_text(encoding="utf-8"))
+                for f in datos["fotos"]:
+                    if f["nombre"] == NOMBRES[3]:
+                        f["principal"] = {"fecha": "2026-10-22"}
+                ruta.write_text(json.dumps(datos), encoding="utf-8")
+
+            estados, _ = tanda(raiz, procesar=con_principal_revisar)
+            self.assertEqual([CUATRO[0], CUATRO[1], CUATRO[2]], estados[MODELO]["listas"])
+
     def test_sacarlo_es_de_la_persona_y_vuelve_con_fotos_nuevas_o_con_otra_lista(self):
         with tempfile.TemporaryDirectory() as tmp:
             raiz = Path(tmp)
@@ -493,7 +528,52 @@ class Tanda(unittest.TestCase):
             ruta = Path(tmp) / "por-proponer.json"
             ruta.write_text(json.dumps({"fechaLista": "2026-10-10", "modelos": ["a", "b", "a"],
                                         "configuraciones": ["c"]}), encoding="utf-8")
-            self.assertEqual(("2026-10-10", ["a", "b"]), pf.leer_tanda(ruta))
+            self.assertEqual(("2026-10-10", ["a", "b"], set()), pf.leer_tanda(ruta))
+
+    def test_la_tanda_lee_los_modelos_sin_ficha(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            ruta = Path(tmp) / "por-proponer.json"
+            ruta.write_text(json.dumps({"fechaLista": "2026-10-15", "modelos": ["a", "b"],
+                                        "sinFicha": ["b"], "configuraciones": []}), encoding="utf-8")
+            self.assertEqual(("2026-10-15", ["a", "b"], {"b"}), pf.leer_tanda(ruta))
+
+
+class SinFichaEnLaLista(unittest.TestCase):
+    """Decisión del 22/10/2026: un modelo que la lista no exporta —sin descripción— no puede tener
+    borrador, así que no bloquea la tanda; sus fotos se procesan para no perder el trabajo."""
+
+    def test_un_modelo_sin_ficha_en_espera_no_detiene_la_tanda(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            raiz = Path(tmp)
+            armar(raiz, CUATRO)
+            armar(raiz, ("note_1.jpg", "note_2.jpg"), "Xiaomi Redmi Note 17 Pro Max",
+                  "xiaomi-redmi-note-17-pro-max")
+            estados, _ = tanda(raiz, ids=(MODELO, "xiaomi-redmi-note-17-pro-max"), procesar=listas(raiz))
+            self.assertEqual(pf.APTO, estados[MODELO]["estado"])
+            self.assertEqual(pf.EN_ESPERA, estados["xiaomi-redmi-note-17-pro-max"]["estado"])
+            texto = pf.informe(list(estados.values()), sin_ficha={"xiaomi-redmi-note-17-pro-max"})
+            self.assertIn("TANDA COMPLETA", texto, "el que espera no tiene borrador posible: no bloquea")
+            self.assertIn("SIN FICHA", texto)
+            self.assertIn("1 sin ficha en la lista", texto)
+            self.assertNotIn("LA TANDA ESPERA FOTOS", texto)
+
+    def test_sin_el_campo_nada_cambia(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            raiz = Path(tmp)
+            armar(raiz, CUATRO[:3])
+            estados, _ = tanda(raiz)
+            texto = pf.informe(list(estados.values()))
+            self.assertIn("LA TANDA ESPERA FOTOS", texto)
+            self.assertNotIn("SIN FICHA", texto)
+
+    def test_un_sin_ficha_apto_no_se_cuenta_como_apto_de_la_tanda(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            raiz = Path(tmp)
+            armar(raiz, CUATRO)
+            estados, _ = tanda(raiz, procesar=listas(raiz))
+            texto = pf.informe(list(estados.values()), sin_ficha={MODELO})
+            self.assertIn("Tanda: 0 aptos", texto)
+            self.assertIn("4 LISTA; no bloquea la tanda", texto)
 
 
 
@@ -608,6 +688,134 @@ class RetirarLoQueYaNoSePublica(unittest.TestCase):
             salida_de_procesar(raiz, [("samsung-galaxy-s25-ultra-1", "REPETIR")])
             self.assertEqual([], pf.devolver(raiz)["retiradas"])
 
+
+
+class ParConEstuche(unittest.TestCase):
+    """Decisión del 22/10/2026: en audífonos, hasta 4 piezas son el par con su estuche y no
+    detienen la tanda; con 5 o más —o con otro reparo— sigue decidiendo la persona."""
+
+    def armar_audifonos(self, raiz, piezas, motivos_extra=()):
+        carpeta = armar(raiz, CUATRO)
+        (carpeta / f"{MODELO}-ficha.txt").write_text(
+            f"MODELO: X\nID DEL MODELO: {MODELO}\nCATEGORÍA: audifonos\n", encoding="utf-8")
+        salida_de_procesar(raiz, [(n, "LISTA") for n in NOMBRES])
+        ruta = raiz / pf.TRABAJO / "salida" / "reporte.json"
+        datos = json.loads(ruta.read_text(encoding="utf-8"))
+        for f in datos["fotos"]:
+            if f["nombre"] == NOMBRES[3]:
+                f["motivos_auto"] = [PIEZAS] + list(motivos_extra)
+                f["estado"] = "REVISAR"
+                f["motivos"] = [m["texto"] for m in f["motivos_auto"]]
+                f["recorte"] = {"piezas": piezas}
+        ruta.write_text(json.dumps(datos), encoding="utf-8")
+        return carpeta
+
+    def decidir(self, raiz, carpeta):
+        estado, _ = pf.decidir(MODELO, carpeta, pf.cargar_config(), pf.leer_reporte(raiz),
+                               medidor=lambda r: None)
+        return estado
+
+    def test_el_par_con_su_estuche_cuenta_como_lista(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            raiz = Path(tmp)
+            estado = self.decidir(raiz, self.armar_audifonos(raiz, piezas=3))
+            self.assertEqual(pf.APTO, estado["estado"])
+            self.assertEqual([], estado.get("aprobadas_a_ojo"), "no lo aprobó una persona: es la categoría")
+
+    def test_cinco_piezas_siguen_esperando_y_sugieren_el_kit(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            raiz = Path(tmp)
+            estado = self.decidir(raiz, self.armar_audifonos(raiz, piezas=5))
+            self.assertEqual(pf.EN_ESPERA, estado["estado"])
+            self.assertTrue(estado["fallidas"][0].get("solo_piezas"))
+
+    def test_otro_reparo_ademas_de_las_piezas_sigue_esperando(self):
+        ampliada = {"estado": "REVISAR", "codigo": "ampliacion", "texto": MOTIVO_AMPLIACION}
+        with tempfile.TemporaryDirectory() as tmp:
+            raiz = Path(tmp)
+            estado = self.decidir(raiz, self.armar_audifonos(raiz, piezas=3, motivos_extra=[ampliada]))
+            self.assertEqual(pf.EN_ESPERA, estado["estado"])
+
+    def test_en_otra_categoria_nada_cambia(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            raiz = Path(tmp)
+            carpeta = self.armar_audifonos(raiz, piezas=3)
+            (carpeta / f"{MODELO}-ficha.txt").write_text("CATEGORÍA: parlantes\n", encoding="utf-8")
+            estado = self.decidir(raiz, carpeta)
+            self.assertEqual(pf.EN_ESPERA, estado["estado"])
+
+    def test_un_reporte_sin_el_conteo_de_piezas_no_perdona(self):
+        # Un reporte viejo no trae `recorte`: ante la duda, decide la persona.
+        with tempfile.TemporaryDirectory() as tmp:
+            raiz = Path(tmp)
+            carpeta = self.armar_audifonos(raiz, piezas=3)
+            ruta = raiz / pf.TRABAJO / "salida" / "reporte.json"
+            datos = json.loads(ruta.read_text(encoding="utf-8"))
+            for f in datos["fotos"]:
+                f.pop("recorte", None)
+            ruta.write_text(json.dumps(datos), encoding="utf-8")
+            self.assertEqual(pf.EN_ESPERA, self.decidir(raiz, carpeta)["estado"])
+
+
+class PrepararLaAprobacionAOjo(unittest.TestCase):
+    """Decisión del 22/10/2026: la espera deja la revisión a un paso del --aprobar. Tres de los
+    cuatro modelos en espera del 15/10 lo estaban por una sola foto REVISAR que estaba bien."""
+
+    def estados_con_revisar(self, raiz):
+        armar(raiz, CUATRO)
+        estados, _ = tanda(raiz, procesar=lambda: salida_de_procesar(
+            raiz, [(n, "LISTA") for n in NOMBRES[:3]] + [(NOMBRES[3], "REVISAR")]))
+        return list(estados.values())
+
+    def test_el_informe_deja_los_comandos_de_revision_listos(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            raiz = Path(tmp)
+            estados = self.estados_con_revisar(raiz)
+            texto = pf.informe(estados, salida=raiz / pf.TRABAJO / "salida")
+            self.assertIn("se aprueba y cuenta como LISTA", texto)
+            self.assertIn(f"ampliar.py\" \"{raiz / pf.TRABAJO / 'salida'}\" {NOMBRES[3]}", texto)
+            self.assertIn(f"--aprobar", texto)
+
+    def test_sin_salida_el_informe_no_inventa_comandos(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            texto = pf.informe(self.estados_con_revisar(Path(tmp)))
+            self.assertNotIn("ampliar.py", texto)
+
+    def test_una_repetir_o_una_pequena_no_se_sugiere(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            raiz = Path(tmp)
+            armar(raiz, CUATRO)
+            estados, _ = tanda(raiz, procesar=lambda: salida_de_procesar(
+                raiz, [(n, "LISTA") for n in NOMBRES[:3]] + [(NOMBRES[3], "REPETIR")]))
+            texto = pf.informe(list(estados.values()), salida=raiz / pf.TRABAJO / "salida")
+            self.assertNotIn("--aprobar", texto)
+
+    def test_los_mosaicos_se_generan_solo_para_lo_que_detiene_y_esta_cerca(self):
+        pedidos = []
+
+        def falso_ampliar(nombre):
+            pedidos.append(nombre)
+            return f"zoom/{nombre}-zonas.jpg"
+
+        estados = [
+            {"modelo": "cerca", "estado": pf.EN_ESPERA, "faltan": 1,
+             "fallidas": [{"foto": "cerca_2.jpg", "estado": "REVISAR", "motivo": "ampliación"}]},
+            {"modelo": "lejos", "estado": pf.EN_ESPERA, "faltan": 3,
+             "fallidas": [{"foto": "lejos_1.jpg", "estado": "REVISAR", "motivo": "ampliación"}]},
+            {"modelo": "kit-pendiente", "estado": pf.EN_ESPERA, "faltan": 1,
+             "fallidas": [{"foto": "k_1.jpg", "estado": "REVISAR", "motivo": "piezas", "solo_piezas": True}]},
+            {"modelo": "sin-ficha", "estado": pf.EN_ESPERA, "faltan": 1,
+             "fallidas": [{"foto": "s_1.jpg", "estado": "REVISAR", "motivo": "ampliación"}]},
+            {"modelo": "listo", "estado": pf.APTO, "faltan": 0, "fallidas": []},
+        ]
+        mosaicos = pf.preparar_revision(Path("."), estados, sin_ficha={"sin-ficha"}, ampliar_fn=falso_ampliar)
+        self.assertEqual(["cerca-2"], pedidos)
+        self.assertEqual([("cerca/cerca_2.jpg", "zoom/cerca-2-zonas.jpg")], mosaicos)
+
+    def test_un_ampliar_que_falla_no_rompe_nada(self):
+        estados = [{"modelo": "m", "estado": pf.EN_ESPERA, "faltan": 1,
+                    "fallidas": [{"foto": "m_1.jpg", "estado": "REVISAR", "motivo": "x"}]}]
+        self.assertEqual([], pf.preparar_revision(Path("."), estados, ampliar_fn=lambda n: None))
 
 
 class SugerirElKit(unittest.TestCase):

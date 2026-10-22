@@ -70,5 +70,28 @@ class Defectos(unittest.TestCase):
         self.assertEqual([], descripciones.bloqueantes(APERTURA + GARANTIA))
 
 
+class NotasPendientes(unittest.TestCase):
+    """Las notas honestas de un dato pendiente del proveedor: se publican, pero quien aprueba el
+    borrador tiene que verlas, y `npm run marcadores` no las ve porque no son `[[ ]]`."""
+
+    def test_encuentra_las_frases_de_dato_pendiente(self):
+        texto = (APERTURA + "## Garantía y notas\n\n"
+                 "- La ficha técnica completa se le pidió al proveedor.\n"
+                 "- El contenido del paquete está por confirmar con el proveedor, y no se afirman aquí.\n"
+                 "- Producto nuevo, sellado y sin activar.\n")
+        notas = descripciones.notas_pendientes(texto)
+        self.assertEqual(2, len(notas))
+        self.assertEqual("La ficha técnica completa se le pidió al proveedor.", notas[0])
+
+    def test_un_pendiente_que_no_es_nota_no_marca(self):
+        # «posicionamiento GNSS independiente» contiene «pendiente» y no avisa nada.
+        texto = APERTURA + "- Marco de aluminio y posicionamiento GNSS independiente.\n" + GARANTIA
+        self.assertEqual([], descripciones.notas_pendientes(texto))
+
+    def test_sin_texto_no_hay_notas(self):
+        self.assertEqual([], descripciones.notas_pendientes(None))
+        self.assertEqual([], descripciones.notas_pendientes(""))
+
+
 if __name__ == "__main__":
     unittest.main()

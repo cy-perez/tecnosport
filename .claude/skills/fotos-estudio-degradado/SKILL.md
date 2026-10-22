@@ -357,6 +357,14 @@ recorte deja fuera del producto vuelve a él»). **Una carpeta con fotos que no 
 `por-proponer.json` se avisa** al final de la tanda: el Redmi Note 17 Pro y el Pro Max se
 quedaron sin procesar sin que nada lo dijera.
 
+**Un modelo `sinFicha` no bloquea la tanda** (22/10/2026). `por-proponer.json` anota en `sinFicha`
+lo que la API espera pero la lista no trae: el bloque 1 no lo exportó, casi siempre por falta de
+descripción, así que el bloque 3 no puede hacerle borrador. Sus fotos se procesan igual —el
+trabajo no se pierde— y el informe lo lista aparte (`SIN FICHA`), pero la tanda se
+entrega sin esperarlo: el Pro Max retuvo la tanda entera del 15/10/2026 esperando la cuarta foto
+de un borrador que no podía existir. La salida es completar la ficha en el bloque 1 —que la lista
+siguiente lo exporte— o sacarlo con `--sacar`.
+
 Es el mayor escalón que cumple, y no el que más LISTA deja, para no bajar a 1200 un
 modelo que da para 2000. Si ni en 1200 reúne cuatro, se elige el de más LISTA; si
 ni ahí sale una, la regla de siempre. El lienzo se decide con una estimación del
@@ -400,6 +408,12 @@ no haga falta otra corrida. Con salida 3:
    «el borde se confunde con el fondo»— y cuántas LISTA le faltan. Dile dónde
    está la carpeta, y de dónde salen las fotos (`listas-de-proveedor`, sección
    «De dónde salen las fotos»). Muéstrale las hojas de revisión de las que fallaron.
+   **La espera ya trae la revisión preparada** (22/10/2026): el informe deja los
+   comandos de `ampliar.py` y `marcar.py --aprobar` listos para cada REVISAR que
+   detiene la tanda, y los mosaicos al 100 % de los modelos a los que les faltan
+   hasta 2 LISTA se generan de una vez. Muéstraselos: si al 100 % la foto está
+   bien, aprobarla cuenta como LISTA y evita esperar una foto nueva. Aprobar
+   sigue siendo de la persona, nunca tuyo.
 2. **Espera su confirmación** con `AskUserQuestion`: «ya dejé fotos nuevas»,
    «sacar un modelo de la tanda» o «lo retomo después». No sigas sin respuesta.
 3. Con «ya dejé fotos nuevas», vuelve a correr la tanda. El script reprocesa los
@@ -420,6 +434,19 @@ Queda `fuera_de_tanda` y no bloquea la entrega. Vale para la tanda de esa lista:
 si después aparecen fotos nuevas en su carpeta, o llega la tanda de otra lista,
 vuelve a intentarse. Un modelo que ni siquiera tiene carpeta también se puede
 sacar; queda anotado en `_estudio/sacados.json`.
+
+Si el motivo es que el modelo **no se va a vender** —no solo en esta tanda—, la
+salida imprime el comando para registrarlo en `referencias/excluidos.json` de
+`listas-de-proveedor` (`conocidos.py excluir`): sin ese registro, la lista
+siguiente lo vuelve a proponer, a investigar y a pedirle fotos. También lo
+decide la persona.
+
+**En audífonos, el par con su estuche cuenta solo** (decisión del 22/10/2026). Dos
+auriculares y el estuche —a veces con la tapa aparte— son 3 o 4 piezas, y casi toda
+foto buena de unos TWS disparaba `varias_piezas`: 11 fotos de la tanda del 15/10.
+En la categoría `audifonos`, una foto de hasta 4 piezas cuyo único reparo son las
+piezas sueltas cuenta como LISTA; con 5 o más, o con cualquier otro reparo, sigue
+decidiendo la persona. Las demás categorías no cambian.
 
 **Un kit también lo declara la persona** (decisión del 18/10/2026). Hay productos que
 se venden con piezas sueltas —la consola con sus Joy-Con, la tablet con teclado y
@@ -470,6 +497,14 @@ dos productos en la toma—. Si una no sirve, márcala con `marcar.py --repetir
 "motivo"` y vuelve a correr la tanda: deja de contar, y si el modelo baja de
 cuatro, vuelve a esperar. Una REVISAR aprobada a ojo, en cambio, cuenta como LISTA
 para la tanda desde el 22/10/2026.
+
+**Y la foto principal se elige aquí** (22/10/2026). La primera del
+`estado-fotos.json` es la que el borrador sube de principal, y sin decir nada es
+la `_1` que la persona descargó primero, no necesariamente la mejor toma
+frontal. Si en la revisión otra se ve mejor de portada, pregúntale a la persona
+y márcala: `marcar.py SALIDA <nombre> --principal`, y la siguiente corrida de la
+tanda la pone de primera. Una por producto; marcar otra le quita la marca a la
+anterior, y una REPETIR no puede ser principal.
 
 Con la revisión hecha:
 

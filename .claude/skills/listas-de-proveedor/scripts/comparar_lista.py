@@ -59,6 +59,9 @@ ALERTAS_DE_MARGEN = ("POR DEBAJO DEL COSTO", "margen inusual")
 ALERTA_CAPACIDAD = "la descripción del modelo nombra un almacenamiento"
 # Lo que la descripción guardada no cumple: se recalcula en cada comparación, como las de margen.
 ALERTA_DESCRIPCION = "descripción de la base:"
+# El prefijo del motivo con que se descarta un modelo que el negocio decidió no vender
+# (referencias/excluidos.json, escrito por `conocidos.py excluir`).
+MOTIVO_EXCLUIDO = "excluido del catálogo"
 ESTADOS = ("nuevo", "configuracion_nueva", "costo_cambio", "sin_cambios", "sin_precio_vigente")
 # El sufijo de SIM del id: sin él, dos ids pueden ser el mismo equipo.
 RE_SUFIJO_SIM = re.compile(r"-(1-sim|dual-sim|sim-esim|esim)$")
@@ -81,9 +84,22 @@ def colores_sugeridos(familias, paleta):
     return [c for c in paleta or [] if any(k in sin_tildes(c) for k in claves)]
 
 
-def comparar(datos: dict, base: dict, hoy: date) -> dict:
+def comparar(datos: dict, base: dict, hoy: date, excluidos: dict | None = None) -> dict:
     """Escribe la comparación en `datos`, en su sitio, y lo devuelve."""
     modelos, configuraciones = base["modelos"], base["configuraciones"]
+    # Lo que el negocio decidió no vender se descarta antes de clasificar: no se investiga, no
+    # recibe carpeta y no vuelve a proponerse. La decisión la registró una persona con
+    # `conocidos.py excluir`, con su motivo, y aquí solo se aplica.
+    for p in list(datos["productos"]):
+        ex = (excluidos or {}).get(p["id_modelo"])
+        if ex:
+            datos["productos"].remove(p)
+            datos.setdefault("descartados", []).append({
+                **p, "motivo": f"{MOTIVO_EXCLUIDO} ({fecha_corta(ex.get('fecha'))}): {ex.get('motivo')}"})
+    datos["excluidos_del_catalogo"] = [
+        {"id": d["id"], "titulo": d.get("titulo"), "motivo": d["motivo"]}
+        for d in datos.get("descartados") or []
+        if str(d.get("motivo") or "").startswith(MOTIVO_EXCLUIDO)]
     for p in datos["productos"]:
         # Los supuestos que puso el parser, aparte de los que se heredan: al
         # consolidar solo se guardan los de la investigación.
@@ -140,6 +156,8 @@ def comparar(datos: dict, base: dict, hoy: date) -> dict:
     datos["conocidos_descartados"] = [
         {"id": cid, "titulo": c["titulo"], "motivo": descartados[cid].get("motivo")}
         for cid, c in sorted(configuraciones.items()) if cid not in presentes and cid in descartados
+        # Los excluidos del catálogo tienen su propia sección: aquí repetirían el mismo motivo.
+        and not str(descartados[cid].get("motivo") or "").startswith(MOTIVO_EXCLUIDO)
     ]
     presentes |= set(descartados)
     llegaron = set(datos.get("bloques") or [])
@@ -214,6 +232,7 @@ def comparar(datos: dict, base: dict, hoy: date) -> dict:
     resumen["ausentes"] = len(datos["ausentes"])
     resumen["posibles_mismos"] = len(datos["posibles_mismos"])
     resumen["falta_informacion"] = len(datos["falta_informacion"])
+    resumen["excluidos"] = len(datos["excluidos_del_catalogo"])
     datos["comparacion"] = {"fecha": hoy.isoformat(), "resumen": resumen}
     return datos
 
@@ -327,6 +346,12 @@ def reporte(datos: dict) -> str:
         L += ["", f"{len(datos['ausentes'])} conocidos siguen ausentes desde antes (ya se reportaron como "
               "desaparecidos en su momento)."]
 
+    if datos.get("excluidos_del_catalogo"):
+        L += ["", "## Excluidos del catálogo — decisión del negocio, no se investigan", ""]
+        L += [f"- **{d['titulo']}** — {d['motivo']}" for d in datos["excluidos_del_catalogo"]]
+        L += ["", "Para readmitir uno: `python scripts/conocidos.py excluir <id del modelo> --quitar` "
+                  "y volver a correr la comparación."]
+
     L += ["", "## Conocidos que vinieron pero no entran", ""]
     L += [f"- **{d['titulo']}** — {d['motivo']}" for d in datos["conocidos_descartados"]] or ["Ninguno."]
 
@@ -338,13 +363,15 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("productos", help="productos.json del parser; se escribe en su sitio")
     ap.add_argument("--base", default=str(conocidos.BASE))
+    ap.add_argument("--excluidos", default=str(conocidos.EXCLUIDOS))
     ap.add_argument("--hoy", default=date.today().isoformat(), help="fecha para la vigencia del precio")
     ap.add_argument("--cambios", help="reporte; por omisión 1-lista/cambios.md junto a productos.json")
     args = ap.parse_args()
 
     ruta = Path(args.productos)
     datos = json.loads(ruta.read_text(encoding="utf-8"))
-    comparar(datos, conocidos.cargar(args.base), date.fromisoformat(args.hoy))
+    comparar(datos, conocidos.cargar(args.base), date.fromisoformat(args.hoy),
+             conocidos.cargar_excluidos(args.excluidos))
     ruta.write_text(json.dumps(datos, ensure_ascii=False, indent=2), encoding="utf-8")
     cambios = Path(args.cambios) if args.cambios else ruta.parent / rutas.LISTA.name / "cambios.md"
     cambios.parent.mkdir(parents=True, exist_ok=True)
@@ -353,6 +380,8 @@ def main():
     print(f"{r['nuevo']} nuevos | {r['configuracion_nueva']} memoria nueva | {r['costo_cambio']} costo cambiado | "
           f"{r['sin_cambios']} sin cambios | {r['sin_precio_vigente']} sin precio vigente | "
           f"{r['desaparecidos']} desaparecidos ({r['modelos_desaparecidos']} modelos)")
+    if r.get("excluidos"):
+        print(f"{r['excluidos']} excluidos del catálogo por decisión del negocio (ver el reporte)")
     print(f"Reporte en {cambios}")
 
 

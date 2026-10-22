@@ -30,10 +30,14 @@ modelo. Las hojas de revisión y el reporte quedan en `_estudio/salida/`.
 **La tanda es el bloque 2 de la ingesta de tecnología** (ADR-0079). Con `--tanda`
 solo se procesan los modelos de `por-proponer.json` —los que el sitio no vende—, y
 cada uno necesita `MINIMO_LISTA` fotos LISTA en un lienzo de por lo menos
-`LIENZO_MINIMO` px. Una REVISAR no cuenta, aunque se apruebe a ojo: decisión del
-negocio del 10/10/2026. El modelo que no llega queda **en espera**, con la razón de
-cada foto que falló, y la tanda no se da por terminada hasta que todos pasen o la
-persona saque alguno a mano con `--sacar`.
+`LIENZO_MINIMO` px. Una REVISAR no cuenta, salvo que una persona la apruebe a ojo
+tras mirarla al 100 % (`marcar.py --aprobar`, decisión del 22/10/2026). El modelo
+que no llega queda **en espera**, con la razón de cada foto que falló, y la tanda
+no se da por terminada hasta que todos pasen o la persona saque alguno a mano con
+`--sacar`. Para acortar esa espera, el informe deja los comandos de revisión
+listos y los mosaicos al 100 % de las REVISAR que detienen la tanda se generan
+de una vez (`preparar_revision`): tres de los cuatro modelos en espera del
+15/10/2026 esperaban por una sola foto que, mirada a tamaño real, estaba bien.
 
 Para no gastar retoques en vano, y para que el veredicto sea cierto:
 
@@ -62,11 +66,18 @@ Para no gastar retoques en vano, y para que el veredicto sea cierto:
   tal cual la foto original, aunque su fondo de pantalla sea claro.
 - **Una carpeta con fotos que no está en la tanda se avisa**: la tanda solo procesa
   `por-proponer.json`, y un modelo que falte ahí se quedaba sin fotos sin que nada lo dijera.
+- **Un modelo `sinFicha` no bloquea la tanda** (22/10/2026): la API lo espera pero la lista no lo
+  trae —el bloque 1 no lo exportó, casi siempre por falta de descripción—, así que no puede salir
+  borrador de él. Sus fotos se procesan igual, para no perder el trabajo, y el informe lo dice.
 - **Un kit lo declara la persona** (`--kit`, decisión del 18/10/2026): en un modelo que
   se vende con piezas sueltas —la consola con sus Joy-Con, la tablet con teclado y
   mouse— una foto cuyo único reparo es `varias_piezas` cuenta como LISTA. En los demás
   modelos sigue sin contar: tres piezas o más pueden ser dos productos distintos o la
   gama de colores, y eso no lo decide el script.
+- **En audífonos, el par con su estuche no es una anomalía** (22/10/2026): hasta
+  `PIEZAS_DE_UN_PAR` piezas cuentan como LISTA si `varias_piezas` es su único reparo, porque
+  dos auriculares y el estuche disparaban el motivo en casi toda foto buena de unos TWS. Con
+  cinco o más piezas sigue decidiendo la persona.
 
 Sale con 0 si la tanda está completa y con 3 si algún modelo espera fotos o el
 retoque sigue en segundo plano.
@@ -116,6 +127,14 @@ LIENZO_MINIMO = 1200
 # bisel encierra es la pantalla—, y procesar.py las recibe con --sin-huecos. Un reloj, unos
 # audífonos o una consola pueden tenerlos (la correa cerrada, el arco): ahí decide el color.
 CATEGORIAS_SIN_HUECOS = {"celulares", "tablets"}
+
+# Decisión del 22/10/2026: en audífonos, dos auriculares y su estuche —a veces con la tapa— son 3
+# o 4 piezas, y casi toda foto buena de unos TWS disparaba `varias_piezas` (11 fotos de la tanda
+# del 15/10). Hasta PIEZAS_DE_UN_PAR piezas cuentan como LISTA si ese es su único reparo; con 5 o
+# más sigue decidiendo la persona (un kit declarado, que no tiene tope, o REPETIR si son dos
+# productos). Las demás categorías no cambian.
+CATEGORIAS_DE_PARES = {"audifonos"}
+PIEZAS_DE_UN_PAR = 4
 
 APTO, EN_ESPERA, FUERA = "apto", "en_espera", "fuera_de_tanda"
 SALIDA_EN_ESPERA = 3
@@ -494,17 +513,23 @@ def texto_de_motivo(m) -> str:
     return (m or {}).get("texto") or (m or {}).get("codigo", "")
 
 
-def evaluar(mid: str, carpeta: Path, reporte: dict, cfg: dict, kit: bool = False) -> dict:
+def evaluar(mid: str, carpeta: Path, reporte: dict, cfg: dict, kit: bool = False,
+            par: bool = False) -> dict:
     """Las fotos LISTA del modelo según el reporte, y la razón de cada una que no lo es.
 
     En un kit, una REVISAR cuyo único motivo son las piezas sueltas cuenta como LISTA. Y desde el
     22/10/2026 cuenta también la REVISAR que una persona aprobó a ojo con `marcar.py --aprobar`:
     hasta entonces no contaba, y cuatro modelos de la lista del 15/10 esperaban fotos nuevas con
     tomas que, miradas a tamaño real, estaban bien. Cuáles contaron así queda en
-    `aprobadas_a_ojo`, para que se sepa qué pasó la compuerta por una persona y no por el script."""
+    `aprobadas_a_ojo`, para que se sepa qué pasó la compuerta por una persona y no por el script.
+
+    El orden de `listas` es el orden en que el borrador sube las fotos, y **la primera es la
+    principal**: sin decir nada manda el orden natural de los nombres —la `_1` que se descargó
+    primero—, y una foto marcada con `marcar.py --principal` pasa al frente (22/10/2026)."""
     registros = reporte.get("fotos", [])
     buenas, _ = unicas(carpeta)
     listas, fallidas, aprobadas = [], [], []
+    principal = None
     for original in buenas:
         foto = registro_de(original, mid, registros)
         if foto is None:
@@ -513,15 +538,19 @@ def evaluar(mid: str, carpeta: Path, reporte: dict, cfg: dict, kit: bool = False
                                        "(pip install pillow-heif); si no, se reintenta en la próxima corrida"})
             continue
         estado = foto.get("estado")
-        if kit and solo_piezas_sueltas(foto):
+        # En un kit las piezas sueltas son el producto, sin tope; en audífonos (`par`), hasta
+        # PIEZAS_DE_UN_PAR piezas son el par con su estuche y también se perdonan (22/10/2026).
+        piezas = int((foto.get("recorte") or {}).get("piezas") or 0)
+        perdona_piezas = kit or (par and 0 < piezas <= PIEZAS_DE_UN_PAR)
+        if perdona_piezas and solo_piezas_sueltas(foto):
             estado = "LISTA"
         lienzo = int((foto.get("lienzo") or [0])[0])
         motivos = "; ".join(texto_de_motivo(m) for m in foto.get("motivos", []))
         # Una aprobación a ojo solo pesa si había algo que aprobar: un REVISAR automático. En un
-        # kit, las piezas sueltas no son algo que aprobar.
+        # kit, o en un par con su estuche, las piezas sueltas no son algo que aprobar.
         reparos = [m for m in foto.get("motivos_auto", [])
                    if isinstance(m, dict) and m.get("estado") == "REVISAR"
-                   and not (kit and m.get("codigo") == MOTIVO_DE_KIT)]
+                   and not (perdona_piezas and m.get("codigo") == MOTIVO_DE_KIT)]
         aprobada_a_ojo = bool(foto.get("revisada")) and bool(reparos)
         if estado == "LISTA" and lienzo < int(cfg["lienzo_minimo"]):
             fallidas.append({"foto": original.name, "estado": "LIENZO",
@@ -530,13 +559,19 @@ def evaluar(mid: str, carpeta: Path, reporte: dict, cfg: dict, kit: bool = False
                                        f"{MINIMO_LISTA} fotos LISTA: hacen falta fotos de más resolución"})
         elif estado == "LISTA":
             listas.append(f"{original.stem}.jpg")
+            if foto.get("principal"):
+                principal = f"{original.stem}.jpg"
             if aprobada_a_ojo:
                 aprobadas.append(f"{original.stem}.jpg")
         else:
             fallida = {"foto": original.name, "estado": estado or "?", "motivo": motivos or "sin motivo"}
-            if not kit and solo_piezas_sueltas(foto):
+            if not perdona_piezas and solo_piezas_sueltas(foto):
                 fallida["solo_piezas"] = True       # para sugerir el kit en el informe
             fallidas.append(fallida)
+    if principal in listas:
+        # La primera es la que el borrador sube de principal; sin marca manda el orden natural.
+        listas.remove(principal)
+        listas.insert(0, principal)
     return {"listas": listas, "fallidas": fallidas, "aprobadas_a_ojo": aprobadas}
 
 
@@ -583,7 +618,8 @@ def decidir(mid: str, carpeta, cfg: dict, reporte=None, medidor=medir, fecha_tan
         return dict(base, estado=EN_ESPERA, listas=[], faltan=MINIMO_LISTA, fallidas=antes["fallidas"],
                     motivo="por procesar"), True
 
-    ev = evaluar(mid, carpeta, reporte, cfg, kit=mid in (kits or {}))
+    ev = evaluar(mid, carpeta, reporte, cfg, kit=mid in (kits or {}),
+                 par=categoria_de(carpeta) in CATEGORIAS_DE_PARES)
     vistas = {x["foto"] for x in antes["fallidas"]}
     fallidas = antes["fallidas"] + [f for f in ev["fallidas"] if f["foto"] not in vistas]
     if len(ev["listas"]) >= MINIMO_LISTA:
@@ -617,17 +653,33 @@ def sacar(raiz: Path, carpeta, mid: str, motivo: str, fecha_tanda) -> dict:
 
 
 def leer_tanda(ruta: Path) -> tuple:
-    """(fecha de la lista, ids de los modelos que esperan fotos)."""
+    """(fecha de la lista, ids de los modelos que esperan fotos, ids sin ficha en la lista).
+
+    Los `sinFicha` los anota el inventario (tools/importar-lista-tecnologia.mjs): la API los espera
+    pero la lista no los trae, porque el bloque 1 no los exportó —casi siempre por falta de
+    descripción—. Sus fotos se procesan para no perder el trabajo, pero no bloquean la tanda: el
+    bloque 3 no puede hacerles borrador, y el Note 17 Pro Max retuvo la tanda entera del 15/10/2026
+    esperando la cuarta foto de un borrador que no podía existir."""
     datos = json.loads(Path(ruta).read_text(encoding="utf-8"))
-    return datos.get("fechaLista"), list(dict.fromkeys(datos.get("modelos") or []))
+    ids = list(dict.fromkeys(datos.get("modelos") or []))
+    return datos.get("fechaLista"), ids, set(datos.get("sinFicha") or [])
 
 
-def informe(estados: list) -> str:
+def candidatas_a_ojo(e: dict) -> list:
+    """Las fotos REVISAR de un modelo en espera que una persona puede aprobar tras mirarlas al
+    100 % (decisión del 22/10/2026). Las de solo piezas sueltas no: su salida es el kit."""
+    return [f for f in e.get("fallidas", []) if f.get("estado") == "REVISAR" and not f.get("solo_piezas")]
+
+
+def informe(estados: list, sin_ficha=frozenset(), salida=None) -> str:
+    sin_ficha = set(sin_ficha)
     lineas = []
-    aptos = [e for e in estados if e["estado"] == APTO]
+    aptos = [e for e in estados if e["estado"] == APTO and e["modelo"] not in sin_ficha]
     fuera = [e for e in estados if e["estado"] == FUERA]
-    espera = [e for e in estados if e["estado"] == EN_ESPERA]
-    lineas.append(f"Tanda: {len(aptos)} aptos, {len(espera)} en espera, {len(fuera)} fuera de la tanda")
+    espera = [e for e in estados if e["estado"] == EN_ESPERA and e["modelo"] not in sin_ficha]
+    pendientes_de_ficha = [e for e in estados if e["modelo"] in sin_ficha and e["estado"] != FUERA]
+    lineas.append(f"Tanda: {len(aptos)} aptos, {len(espera)} en espera, {len(fuera)} fuera de la tanda"
+                  + (f", {len(pendientes_de_ficha)} sin ficha en la lista" if pendientes_de_ficha else ""))
     for e in espera:
         nota = " · sin fotos nuevas desde el último intento" if e.get("sin_cambios") else ""
         lineas.append(f"\nEN ESPERA  {e['modelo']}: faltan {e['faltan']} LISTA ({e.get('motivo')}){nota}")
@@ -638,12 +690,52 @@ def informe(estados: list) -> str:
             # Lo decide la persona, nunca el script: tres piezas también pueden ser dos productos.
             lineas.append(f"  ¿Es un kit? {len(piezas)} foto(s) solo esperan por las piezas sueltas. Si el producto se "
                           f"vende con ellas: --kit {e['modelo']} --motivo \"qué piezas trae\"")
+        if salida is not None and candidatas_a_ojo(e):
+            # La revisión queda a un paso: mirar el mosaico y, si está bien, aprobar. La decide
+            # la persona, nunca el script (ver «Una REVISAR aprobada a ojo sí cuenta»).
+            lineas.append("  Una REVISAR que al 100 % se ve bien se aprueba y cuenta como LISTA (22/10/2026):")
+            for f in candidatas_a_ojo(e):
+                nombre = slug(Path(f["foto"]).stem)
+                lineas.append(f"    python \"{Path(__file__).with_name('ampliar.py')}\" \"{salida}\" {nombre}")
+                lineas.append(f"    python \"{Path(__file__).with_name('marcar.py')}\" \"{salida}\" {nombre} "
+                              "--aprobar \"revisada al 100 %: qué se miró\"")
+    for e in pendientes_de_ficha:
+        n = len(e.get("listas") or [])
+        lineas.append(f"\nSIN FICHA  {e['modelo']}: la lista no lo trae —el bloque 1 no lo exportó, casi siempre "
+                      f"por falta de descripción— y no saldrá borrador ({n} LISTA; no bloquea la tanda). "
+                      "Complétalo en el bloque 1 o sácalo con --sacar.")
     for e in fuera:
         lineas.append(f"\nFUERA      {e['modelo']}: {e.get('motivo')}")
     lineas.append("\nTANDA COMPLETA: revisa a ojo las hojas de las LISTA y sigue con /fichas-de-tecnologia"
                   if not espera
                   else "\nLA TANDA ESPERA FOTOS: deja las nuevas en «Fotos originales» y vuelve a correrla")
     return "\n".join(lineas)
+
+
+def preparar_revision(raiz: Path, estados: list, sin_ficha=frozenset(), ampliar_fn=None) -> list:
+    """Los mosaicos al 100 % de las REVISAR que detienen la tanda, generados de una vez.
+
+    Tres de los cuatro modelos en espera del 15/10/2026 esperaban por una sola foto REVISAR que,
+    mirada a tamaño real, estaba bien; el ciclo llevó siete días porque cada revisión pedía correr
+    `ampliar.py` a mano. Solo para los modelos a los que les falta poco (hasta 2 LISTA): a los
+    demás les hacen falta fotos nuevas de todas formas. Si `ampliar.py` falla —sin OpenCV, por
+    ejemplo—, no pasa nada: los comandos impresos en el informe siguen valiendo."""
+    salida = Path(raiz) / TRABAJO / "salida"
+    if ampliar_fn is None:
+        def ampliar_fn(nombre):
+            r = subprocess.run([sys.executable, str(Path(__file__).with_name("ampliar.py")), str(salida), nombre],
+                               capture_output=True, text=True)
+            lineas = (r.stdout or "").strip().splitlines()
+            return lineas[-1] if r.returncode == 0 and lineas else None
+    mosaicos = []
+    for e in estados:
+        if e.get("estado") != EN_ESPERA or e.get("modelo") in set(sin_ficha) or (e.get("faltan") or 0) > 2:
+            continue
+        for f in candidatas_a_ojo(e):
+            ruta = ampliar_fn(slug(Path(f["foto"]).stem))
+            if ruta:
+                mosaicos.append((f"{e['modelo']}/{f['foto']}", ruta))
+    return mosaicos
 
 
 def nombres_de(raiz: Path, ids) -> list:
@@ -755,13 +847,19 @@ def main() -> int:
         return True
 
     if a.tanda:
-        fecha, ids = leer_tanda(Path(a.tanda))
+        fecha, ids, sin_ficha = leer_tanda(Path(a.tanda))
         cfg = cargar_config()
         if a.sacar:
             if a.sacar not in ids:
                 print(f"{a.sacar} no está en la tanda.")
                 return 1
             print(informe([sacar(raiz, modelos(raiz, {a.sacar}).get(a.sacar), a.sacar, a.motivo or "", fecha)]))
+            # Sacarlo vale para esta tanda. Si la decisión es no venderlo, hay que registrarla
+            # donde la lista siguiente la vea, o volverá a proponerse (el TCL Pad Lugh, 21/10/2026).
+            print("\nSi la decisión es no vender este modelo —no solo en esta tanda—, regístralo para "
+                  "que la próxima lista no lo vuelva a proponer:\n"
+                  f"  python .claude/skills/listas-de-proveedor/scripts/conocidos.py excluir {a.sacar} "
+                  "--motivo \"por qué\"")
             return 0
         if a.kit or a.quitar_kit:
             mid = a.kit or a.quitar_kit
@@ -782,7 +880,12 @@ def main() -> int:
         estados = correr_tanda(raiz, ids, cfg, procesar_fn, solo_devolver=a.devolver, fecha_tanda=fecha)
         if not estados:
             return SALIDA_EN_ESPERA   # en segundo plano: la tanda todavía no está completa
-        print(informe(estados))
+        print(informe(estados, sin_ficha, salida=raiz / TRABAJO / "salida"))
+        mosaicos = preparar_revision(raiz, estados, sin_ficha)
+        if mosaicos:
+            print("\nMosaicos al 100 % de las REVISAR que detienen la tanda, listos para mirar:")
+            for etiqueta, ruta in mosaicos:
+                print(f"  - {etiqueta}: {ruta}")
         viejas = con_retoque_anterior(raiz, ids, leer_reporte(raiz).get("fotos", []))
         if viejas:
             print(f"\n[aviso] {len(viejas)} foto(s) de la tanda se procesaron con un retoque anterior al "
@@ -793,7 +896,10 @@ def main() -> int:
             print(f"\n[aviso] {len(fuera)} carpeta(s) con fotos que no están en la tanda y no se procesaron "
                   "(no están en por-proponer.json): " + ", ".join(fuera))
         print(f"\nHojas de revisión: {raiz / TRABAJO / 'salida'}")
-        return SALIDA_EN_ESPERA if any(e["estado"] == EN_ESPERA for e in estados) else 0
+        # Un modelo sin ficha en la lista no detiene la entrega: el bloque 3 no puede hacerle
+        # borrador de todas formas, y la tanda se entrega con lo que sí puede llegar al panel.
+        return (SALIDA_EN_ESPERA
+                if any(e["estado"] == EN_ESPERA and e["modelo"] not in sin_ficha for e in estados) else 0)
 
     if not a.devolver:
         copiadas, errores = preparar(raiz)
