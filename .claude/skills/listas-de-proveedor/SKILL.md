@@ -272,6 +272,7 @@ catalogo/
 ├── 3-redaccion/     paso 4       fichas-marca.json · prosa.json · icecat/
 ├── 4-entregables/   paso 5       fichas/<Modelo>/ · comparativo-<fecha>.xlsx
 └── 5-api/           paso 6b      lista-api.json · por-proponer.json (la entrega a los bloques 2 y 3)
+                                  avisos-panel.json (lo que se resuelve a mano al aprobar, para el bloque 3)
 ```
 
 `productos.json` se queda en la raíz porque no es de un subproceso: todos lo
@@ -556,7 +557,16 @@ node tools/importar-lista-tecnologia.mjs catalogo/5-api/lista-api.json --inventa
 
 Solo se exportan los modelos con descripción; los demás se dicen. Tampoco se
 exporta la configuración con menos de un 5 % de margen (regla 18): va como
-desaparecida y la salida dice cuál y con cuánto. No la recortes a mano del
+desaparecida y la salida dice cuál y con cuánto.
+
+La exportación deja además `5-api/avisos-panel.json`: por modelo, las
+configuraciones **sin precio de mercado** (con su costo), la **paleta vacía** y
+las **notas de datos pendientes** en la descripción («se le pidió al
+proveedor», «por confirmar»), que se publican tal cual si nadie las mira al
+aprobar. La salida los imprime: lo que se pueda resolver aquí —completar la
+paleta, cerrar una nota— se resuelve **antes** de importar el inventario,
+porque después la huella congela la lista; lo que no, lo repite el bloque 3 al
+entregar los borradores. No la recortes a mano del
 archivo: un modelo publicado que falta no se retira. Lo que ya se
 vende se renueva —costo del día y 2 unidades libres por color— y lo desaparecido
 deja de ofrecerse. **La lista no toca el precio de venta**: si la salida avisa

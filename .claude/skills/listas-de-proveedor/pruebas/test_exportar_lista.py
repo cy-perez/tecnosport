@@ -7,6 +7,7 @@ from pathlib import Path
 SKILL = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(SKILL / "scripts"))
 
+import descripciones  # noqa: E402
 import exportar_lista  # noqa: E402
 
 
@@ -137,6 +138,52 @@ class DescripcionQueSePublica(unittest.TestCase):
         lista, fuera = self.exportar("El Galaxy A17 5G.\n\n## Garantía y notas\n\n- Llega en [[PLAZO]] días.\n")
         self.assertEqual([], lista["modelos"])
         self.assertIn("marcador", dict(fuera)["Samsung Galaxy A17 5G"])
+
+
+class AvisosParaElPanel(unittest.TestCase):
+    """Lo que quien aprueba el borrador resuelve a mano: sin precio de mercado, sin paleta, o una
+    descripción con notas de datos pendientes. En la lista del 15/10/2026 las tres cosas llegaron
+    al panel sin que nada las dijera."""
+
+    def avisos(self, **cambios):
+        datos = {**DATOS, "productos": [producto(
+            "samsung-galaxy-a17-5g-8gb-ram-256gb", "Samsung Galaxy A17 5G 8GB RAM 256GB", **cambios)]}
+        lista, _ = exportar_lista.exportar(datos)
+        return exportar_lista.avisos_para_el_panel(lista)
+
+    def test_una_configuracion_sin_precio_de_mercado_se_avisa_con_su_costo(self):
+        avisos = self.avisos(precio_mercado_cop=None)
+        [aviso] = avisos["modelos"].values()
+        self.assertEqual([{"sku": "samsung-galaxy-a17-5g-8gb-ram-256gb",
+                           "titulo": "Samsung Galaxy A17 5G 8GB RAM 256GB",
+                           "costoProveedor": 675_000}], aviso["sinPrecioMercado"])
+        self.assertEqual("2026-10-08", avisos["fechaLista"])
+
+    def test_la_paleta_vacia_se_avisa(self):
+        avisos = self.avisos(colores_oficiales=[], colores_sugeridos=[])
+        self.assertTrue(avisos["modelos"]["samsung-galaxy-a17-5g"]["paletaVacia"])
+
+    def test_una_nota_de_dato_pendiente_se_avisa_con_su_texto(self):
+        descripcion = ("El Galaxy A17 5G.\n\n## Garantía y notas\n\n"
+                       "- La ficha técnica completa se le pidió al proveedor.\n")
+        avisos = self.avisos(descripcion=descripcion)
+        aviso = avisos["modelos"]["samsung-galaxy-a17-5g"]
+        self.assertEqual(["La ficha técnica completa se le pidió al proveedor."],
+                         aviso["notasDescripcion"])
+        self.assertIn(descripciones.SIN_CAJA, aviso["defectosDescripcion"])
+
+    def test_un_modelo_sin_nada_que_resolver_no_aparece(self):
+        descripcion = ("El Galaxy A17 5G.\n\n## Ficha técnica\n\n| Atributo | Detalle |\n|---|---|\n"
+                       "| Dimensiones y peso | 164 × 77 mm · 192 g |\n\n## Contenido de la caja\n\n"
+                       "- El equipo\n\n## Garantía y notas\n\n- Producto nuevo.\n")
+        avisos = self.avisos(descripcion=descripcion)
+        self.assertEqual({}, avisos["modelos"])
+
+    def test_el_resumen_dice_cada_cosa_en_palabras(self):
+        avisos = self.avisos(precio_mercado_cop=None, colores_oficiales=[], colores_sugeridos=[])
+        texto = exportar_lista.resumen_de_aviso(avisos["modelos"]["samsung-galaxy-a17-5g"])
+        self.assertIn("sin precio de mercado", texto)
+        self.assertIn("sin paleta", texto)
 
 
 class LaQueEntro(unittest.TestCase):

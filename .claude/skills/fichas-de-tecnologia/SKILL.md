@@ -98,6 +98,15 @@ cómo aprobarlo.
 
 ### 3. Entregar
 
+Lee **`catalogo/5-api/avisos-panel.json`** —lo deja la exportación del bloque 1—
+y repítele a la persona, por borrador, lo que tiene que resolver a mano al
+revisarlo: la configuración **sin precio de mercado** (con su costo, porque el
+panel solo exige superar el costo y sin referencia se fija un precio a ciegas),
+la **paleta vacía** (los colores se marcan a mano) y las **notas de datos
+pendientes** que la descripción publica tal cual («se le pidió al proveedor»,
+«por confirmar»): aprobar es el momento de resolverlas o de aceptarlas a
+sabiendas.
+
 Dile a la persona que los borradores están en **`/admin/tecnologia`**, y qué hace
 ahí con cada uno:
 
