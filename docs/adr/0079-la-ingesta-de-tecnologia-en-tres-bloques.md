@@ -47,7 +47,8 @@ independientes, cada uno con su skill, que se entregan el trabajo por archivos.
    aprobado no tiene producto. Solo la API sabe qué hay en el catálogo.
 3. **Bloque 2, `/fotos-estudio-degradado`: fotos publicables o espera.** Procesa
    solo los modelos de `por-proponer.json`. Cada modelo necesita **4 fotos
-   LISTA**; una REVISAR no cuenta aunque se apruebe a ojo. Antes de gastar el
+   LISTA**; una REVISAR cuenta solo si una persona la aprueba a ojo, mirada a
+   tamaño real (cambio del 22/10/2026: hasta entonces no contaba). Antes de gastar el
    retoque se revisa que haya 4 originales con resolución suficiente. Si un modelo
    no llega, el bloque **se detiene**, dice qué foto falló y por qué, y espera a
    que la persona confirme que dejó fotos nuevas; comprueba que la carpeta cambió

@@ -325,9 +325,18 @@ python3 "${CLAUDE_SKILL_DIR}/scripts/procesar_fichas.py" catalogo/4-entregables/
 
 **La compuerta** (decisión del negocio del 10/10/2026): cada modelo necesita
 **4 fotos LISTA** en un lienzo de por lo menos **1200 px** —la mayor variante que
-sirve el sitio—. Una REVISAR **no cuenta aunque se apruebe a ojo** con `marcar.py`,
-y una LISTA en un lienzo menor tampoco: si el modelo no reúne cuatro ni en 1200, lo
-que falta son fotos de más resolución.
+sirve el sitio—. Una LISTA en un lienzo menor no cuenta: si el modelo no reúne
+cuatro ni en 1200, lo que falta son fotos de más resolución.
+
+**Una REVISAR aprobada a ojo sí cuenta** (decisión del 22/10/2026). Hasta esa fecha
+no contaba, y cuatro modelos de la lista del 15/10 esperaban fotos nuevas con tomas
+que, miradas a tamaño real, estaban bien: los contornos completos de unos audífonos
+blancos, el canto claro de un celular. Se aprueba con `marcar.py --aprobar
+"motivo"` **después de mirarla al 100 %** en la zona que dice su motivo, y la
+siguiente corrida de la tanda la cuenta. El lienzo mínimo sigue valiendo, y una
+REPETIR no se aprueba. `estado-fotos.json` anota en `aprobadas_a_ojo` cuáles
+pasaron la compuerta por una persona y no por el script. No apruebes por tu
+cuenta: muéstrale a la persona la foto con su motivo y que decida.
 
 **En la tanda, el lienzo lo elige la compuerta, no la mejor foto** (16/10/2026).
 `procesar_fichas.py` le pasa a `procesar.py` `--lienzo-minimo 1200 --listas-minimas 4`,
@@ -459,8 +468,8 @@ reprocesar lo que ya salió LISTA.
 fotos LISTA: hay defectos que solo ve una persona —una mano, una marca de agua,
 dos productos en la toma—. Si una no sirve, márcala con `marcar.py --repetir
 "motivo"` y vuelve a correr la tanda: deja de contar, y si el modelo baja de
-cuatro, vuelve a esperar. Una aprobación a ojo, en cambio, no sube una REVISAR a
-LISTA para la tanda.
+cuatro, vuelve a esperar. Una REVISAR aprobada a ojo, en cambio, cuenta como LISTA
+para la tanda desde el 22/10/2026.
 
 Con la revisión hecha:
 
