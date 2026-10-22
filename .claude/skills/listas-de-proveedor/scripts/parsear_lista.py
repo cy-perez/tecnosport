@@ -1283,7 +1283,9 @@ def validar_equivalencias(equivalencias: dict) -> dict:
         if e["id"] != esperado:
             errores.append(f"{clave}: el id {e['id']} no corresponde al título «{e['titulo']}» "
                            f"(sería {esperado})")
-        if e["id"] != clave and e["id"] in equivalencias:
+        # Un destino que se apunta a sí mismo es un título confirmado, no un eslabón.
+        destino = equivalencias.get(e["id"])
+        if e["id"] != clave and destino is not None and destino.get("id") != e["id"]:
             errores.append(f"{clave}: apunta a {e['id']}, que también es una clave; "
                            "la cadena se resuelve en el archivo, no al aplicarlo")
     if errores:

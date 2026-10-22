@@ -538,6 +538,11 @@ class ValidacionDeEquivalencias(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "también es una clave"):
             self.validar({"a": equivalencia("b", "B"), "b": equivalencia("c", "C")})
 
+    def test_puede_apuntar_a_una_clave_que_se_apunta_a_si_misma(self):
+        # 22/10/2026: el Edge 50 Fusion sin SIM es el «SIM + eSIM», que tiene su
+        # propia entrada de título confirmado. Eso no es una cadena: el destino es final.
+        self.validar({"a": equivalencia("b", "B"), "b": equivalencia("b", "B")})
+
     def test_cada_entrada_dice_cuando_y_por_que(self):
         with self.assertRaisesRegex(ValueError, "faltan motivo"):
             self.validar({"a": {"id": "b", "titulo": "B", "fecha": "2026-10-02"}})
