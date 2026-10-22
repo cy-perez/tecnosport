@@ -429,6 +429,12 @@ si después aparecen fotos nuevas en su carpeta, o llega la tanda de otra lista,
 vuelve a intentarse. Un modelo que ni siquiera tiene carpeta también se puede
 sacar; queda anotado en `_estudio/sacados.json`.
 
+Si el motivo es que el modelo **no se va a vender** —no solo en esta tanda—, la
+salida imprime el comando para registrarlo en `referencias/excluidos.json` de
+`listas-de-proveedor` (`conocidos.py excluir`): sin ese registro, la lista
+siguiente lo vuelve a proponer, a investigar y a pedirle fotos. También lo
+decide la persona.
+
 **Un kit también lo declara la persona** (decisión del 18/10/2026). Hay productos que
 se venden con piezas sueltas —la consola con sus Joy-Con, la tablet con teclado y
 mouse— y su foto de catálogo las muestra separadas: el recorte encuentra tres piezas o

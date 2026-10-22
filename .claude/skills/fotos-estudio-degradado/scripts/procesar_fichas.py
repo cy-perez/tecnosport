@@ -780,6 +780,12 @@ def main() -> int:
                 print(f"{a.sacar} no está en la tanda.")
                 return 1
             print(informe([sacar(raiz, modelos(raiz, {a.sacar}).get(a.sacar), a.sacar, a.motivo or "", fecha)]))
+            # Sacarlo vale para esta tanda. Si la decisión es no venderlo, hay que registrarla
+            # donde la lista siguiente la vea, o volverá a proponerse (el TCL Pad Lugh, 21/10/2026).
+            print("\nSi la decisión es no vender este modelo —no solo en esta tanda—, regístralo para "
+                  "que la próxima lista no lo vuelva a proponer:\n"
+                  f"  python .claude/skills/listas-de-proveedor/scripts/conocidos.py excluir {a.sacar} "
+                  "--motivo \"por qué\"")
             return 0
         if a.kit or a.quitar_kit:
             mid = a.kit or a.quitar_kit

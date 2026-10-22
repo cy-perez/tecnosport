@@ -1,0 +1,10 @@
+{
+  "_leeme": [
+    "Modelos que el negocio decidió no vender: la comparación los descarta sin investigar.",
+    "Lo escribe `scripts/conocidos.py excluir` (con --quitar los readmite); no se edita a mano."
+  ],
+  "tcl-pad-lugh-10-wifi": {
+    "motivo": "decisión de la persona al sacarlo de la tanda del 15/10/2026",
+    "fecha": "2026-10-21"
+  }
+}

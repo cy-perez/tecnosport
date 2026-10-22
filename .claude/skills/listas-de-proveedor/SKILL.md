@@ -320,6 +320,13 @@ arregla sin datos —la ficha que falta, el peso, el contenido de la caja— que
 `revisar` como «descripción de la base: …» para el paso 4 y la entrega. Y la
 exportación deja fuera el modelo cuya descripción tenga un marcador `[[ ]]`.
 
+**Lo que el negocio decidió no vender se descarta aquí, sin investigar.**
+`referencias/excluidos.json` guarda esas decisiones —el TCL Pad Lugh, sacado de
+la tanda del 15/10/2026 «excluido del catálogo», habría vuelto en la lista
+siguiente a investigarse y a pedir fotos—. La registra la persona, nunca un
+script: `python scripts/conocidos.py excluir <id del modelo> --motivo "…"`, y
+`--quitar` lo readmite. El reporte los lista en su propia sección, con el motivo.
+
 Y anota:
 
 - los **desaparecidos** —conocidos que vinieron en la última lista de su mensaje
@@ -758,6 +765,8 @@ referencias/formato-de-listas.md  anatomía de los mensajes de proveedor
 referencias/titulos.md            fórmula de títulos y nombres ya confirmados
 referencias/equivalencias.json    id de la lista → id y título definitivos; lo aplica el parser
 referencias/conocidos.json        productos ya investigados; lo escribe conocidos.py, no a mano
+referencias/excluidos.json        modelos que el negocio decidió no vender; los descarta la
+                                  comparación. `conocidos.py excluir`, nunca a mano
 referencias/descripciones.md      estructura de la descripción y metadatos
 referencias/fichas-tecnicas.md    de dónde sale la ficha oficial de cada marca
 referencias/precios.md            método de investigación de precios

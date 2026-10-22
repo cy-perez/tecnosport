@@ -47,6 +47,7 @@ import fichas  # noqa: E402
 import rutas  # noqa: E402
 
 BASE = Path(__file__).resolve().parent.parent / "referencias" / "conocidos.json"
+EXCLUIDOS = Path(__file__).resolve().parent.parent / "referencias" / "excluidos.json"
 
 # Decisión del negocio, 08/10/2026: un precio de mercado vale siete días. Pasado
 # eso, la configuración se vuelve a investigar aunque sea conocida.
@@ -253,6 +254,40 @@ def guardar(base: dict, ruta=BASE):
                           encoding="utf-8", newline="")
 
 
+def cargar_excluidos(ruta=EXCLUIDOS) -> dict:
+    """{id del modelo: {motivo, fecha}} de lo que el negocio decidió no vender."""
+    ruta = Path(ruta)
+    if not ruta.exists():
+        return {}
+    datos = json.loads(ruta.read_text(encoding="utf-8"))
+    return {k: v for k, v in datos.items() if not k.startswith("_")}
+
+
+def excluir(mid: str, motivo: str, fecha: str, ruta=EXCLUIDOS, quitar: bool = False) -> dict:
+    """Registra un modelo que el negocio decidió no vender; con `quitar`, lo readmite.
+
+    Es la memoria de una decisión que no tenía dónde vivir: el TCL Pad Lugh se sacó de la tanda
+    del 15/10/2026 «excluido del catálogo», y la lista siguiente lo habría vuelto a proponer, a
+    investigar y a pedirle fotos. Distinto del rechazo en el panel, que la API sí recuerda: esto
+    corta antes, en la comparación, para no gastar investigación en lo que no se va a vender.
+    Lo decide la persona, con su motivo, y no un script."""
+    excluidos = cargar_excluidos(ruta)
+    if quitar:
+        excluidos.pop(mid, None)
+    else:
+        if not motivo or not motivo.strip():
+            raise ValueError("Excluir un modelo pide el motivo: queda escrito para la lista siguiente.")
+        excluidos[mid] = {"motivo": motivo.strip(), "fecha": fecha}
+    documento = {
+        "_leeme": ["Modelos que el negocio decidió no vender: la comparación los descarta sin investigar.",
+                   "Lo escribe `scripts/conocidos.py excluir` (con --quitar los readmite); no se edita a mano."],
+        **dict(sorted(excluidos.items())),
+    }
+    Path(ruta).write_text(json.dumps(documento, ensure_ascii=False, indent=2) + "\n",
+                          encoding="utf-8", newline="")
+    return excluidos
+
+
 def _slug(texto: str) -> str:
     """El slug con que fotos-estudio-degradado nombra cada salida (procesar.py)."""
     t = unicodedata.normalize("NFKD", texto).encode("ascii", "ignore").decode()
@@ -317,7 +352,24 @@ def main():
     f.add_argument("fichas", nargs="?", default=str(rutas.FICHAS))
     f.add_argument("--base", default=str(BASE))
     f.add_argument("--escribir", action="store_true", help="sin esto, solo informa")
+    e = sub.add_parser("excluir", help="registra un modelo que el negocio decidió no vender")
+    e.add_argument("modelo", help="el id del modelo (id_modelo)")
+    e.add_argument("--motivo", help="por qué no se vende: queda escrito para la lista siguiente")
+    e.add_argument("--quitar", action="store_true", help="readmite el modelo al análisis")
+    e.add_argument("--excluidos", default=str(EXCLUIDOS))
+    e.add_argument("--fecha", default=date.today().isoformat())
     args = ap.parse_args()
+
+    if args.orden == "excluir":
+        try:
+            excluir(args.modelo, args.motivo or "", args.fecha, args.excluidos, quitar=args.quitar)
+        except ValueError as error:
+            sys.exit(str(error))
+        if args.quitar:
+            print(f"{args.modelo} vuelve al análisis: la próxima lista lo trata como cualquier conocido.")
+        else:
+            print(f"{args.modelo} queda excluido del catálogo: la comparación lo descartará con su motivo.")
+        return
 
     if args.orden == "fotos":
         base, r = registrar_fotos(cargar(args.base), Path(args.fichas))

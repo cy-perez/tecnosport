@@ -296,5 +296,29 @@ class Guardar(unittest.TestCase):
             self.assertEqual(base, {"modelos": documento["modelos"], "configuraciones": documento["configuraciones"]})
 
 
+class Excluidos(unittest.TestCase):
+    """La memoria de «este modelo no se vende»: lo registra una persona y lo aplica la comparación."""
+
+    def test_excluir_y_readmitir(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            ruta = Path(tmp) / "excluidos.json"
+            conocidos.excluir("tcl-pad-lugh-10-wifi", "  no se vende ", "2026-10-21", ruta)
+            self.assertEqual({"tcl-pad-lugh-10-wifi": {"motivo": "no se vende", "fecha": "2026-10-21"}},
+                             conocidos.cargar_excluidos(ruta))
+            documento = json.loads(ruta.read_text(encoding="utf-8"))
+            self.assertIn("_leeme", documento, "el archivo dice quién lo escribe")
+            conocidos.excluir("tcl-pad-lugh-10-wifi", "", "2026-10-22", ruta, quitar=True)
+            self.assertEqual({}, conocidos.cargar_excluidos(ruta))
+
+    def test_excluir_pide_el_motivo(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            with self.assertRaises(ValueError):
+                conocidos.excluir("x", "  ", "2026-10-21", Path(tmp) / "excluidos.json")
+
+    def test_sin_archivo_no_hay_excluidos(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            self.assertEqual({}, conocidos.cargar_excluidos(Path(tmp) / "no-existe.json"))
+
+
 if __name__ == "__main__":
     unittest.main()
