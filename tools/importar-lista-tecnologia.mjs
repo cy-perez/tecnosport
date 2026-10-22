@@ -139,6 +139,25 @@ export function nombreDeLaQueEntro(fechaLista, huella) {
 }
 
 /**
+ * Guarda la copia exacta de lo que entró como inventario y la verifica releyéndola. La lista del
+ * 15/10/2026 quedó con huella en por-proponer.json y sin copia en ninguna parte: los borradores se
+ * negaban, con razón, y no había de dónde recuperar lo que el inventario vio. Si la copia no queda
+ * idéntica byte a byte, mejor fallar aquí que descubrirlo en el bloque 3.
+ */
+export function guardarLaQueEntro(carpeta, fechaLista, contenido) {
+  const huella = huellaDeArchivo(contenido);
+  const copia = join(carpeta, nombreDeLaQueEntro(fechaLista, huella));
+  writeFileSync(copia, contenido);
+  if (huellaDeArchivo(readFileSync(copia, "utf8")) !== huella) {
+    throw new Error(
+      `La copia de lo que entró quedó distinta del original (${copia}): sin ella, si la lista se ` +
+        "vuelve a exportar, los borradores no tienen de dónde salir. Revisa el disco antes de seguir.",
+    );
+  }
+  return { copia, huella };
+}
+
+/**
  * Por qué los borradores se niegan cuando el archivo no es el que entró. Si la copia de lo que
  * entró existe, se dice cuál: con ella los borradores salen del contenido que vio el inventario.
  * Sin copia —un inventario de antes del 21/10/2026— no hay de dónde recuperarlo.
@@ -150,7 +169,12 @@ export function mensajeDeListaCambiada(ruta, copia) {
   if (copia) {
     return `${base} Lo que entró está en ${copia}: corre --borradores con ese archivo.`;
   }
-  return `${base} Vuelve a exportar desde la misma corrida, o corre el inventario de esta versión.`;
+  return (
+    `${base} Y la copia de lo que entró no está. Dos salidas: si productos.json no cambió, ` +
+    "vuelve a exportar desde la misma corrida, que da el mismo archivo; si cambió, exporta con " +
+    "--reemplazar-la-que-entro y corre otra vez el inventario con el archivo nuevo — repone " +
+    "existencias, así que decídelo con la persona antes."
+  );
 }
 
 /**
@@ -288,9 +312,7 @@ async function importarInventario(ruta, lista, contenido) {
   console.log(informeDeImportacion(resultado));
   // Antes que por-proponer.json: si la copia no se pudo escribir, que no quede una entrega que
   // apunte a un contenido que nadie guardó.
-  const huella = huellaDeArchivo(contenido);
-  const copia = join(dirname(ruta), nombreDeLaQueEntro(lista.fechaLista, huella));
-  writeFileSync(copia, contenido);
+  const { copia, huella } = guardarLaQueEntro(dirname(ruta), lista.fechaLista, contenido);
   console.log(`Lo que entró quedó copiado en ${copia}`);
   const destino = join(dirname(ruta), "por-proponer.json");
   writeFileSync(destino, JSON.stringify(porProponerDe(cuerpo, resultado, huella), null, 2) + "\n");

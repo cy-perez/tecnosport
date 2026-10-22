@@ -3,8 +3,12 @@
 // modelos que no se volvieron a proponer.
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import { mkdtempSync, readdirSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import {
   cuerpoParaModo,
+  guardarLaQueEntro,
   informeDeImportacion,
   porProponerDe,
   resumenDeLista,
@@ -203,8 +207,23 @@ test("con la copia de lo que entró, la negativa dice con qué archivo correr lo
   assert.doesNotMatch(mensaje, /Vuelve a exportar/);
 });
 
-test("sin la copia, la negativa manda a exportar otra vez o a correr el inventario", () => {
+test("sin la copia, la negativa dice las dos salidas reales", () => {
   const mensaje = mensajeDeListaCambiada("5-api/lista-api.json", null);
-  assert.match(mensaje, /Vuelve a exportar desde la misma corrida/);
+  assert.match(mensaje, /vuelve a exportar desde la misma corrida/);
+  assert.match(mensaje, /--reemplazar-la-que-entro/);
+  assert.match(mensaje, /repone\s+existencias/);
   assert.doesNotMatch(mensaje, /Lo que entró está en/);
+});
+
+test("la copia de lo que entró se escribe con su nombre y se verifica releyéndola", () => {
+  const carpeta = mkdtempSync(join(tmpdir(), "entro-"));
+  try {
+    const contenido = '{\n  "fechaLista": "2026-10-22",\n  "modelos": []\n}';
+    const { copia, huella } = guardarLaQueEntro(carpeta, "2026-10-22", contenido);
+    assert.equal(huella, huellaDeArchivo(contenido));
+    assert.deepEqual(readdirSync(carpeta), [nombreDeLaQueEntro("2026-10-22", huella)]);
+    assert.equal(copia, join(carpeta, nombreDeLaQueEntro("2026-10-22", huella)));
+  } finally {
+    rmSync(carpeta, { recursive: true, force: true });
+  }
 });
