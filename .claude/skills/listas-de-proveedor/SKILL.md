@@ -376,21 +376,27 @@ Detalle de cómo está armada una lista: `referencias/formato-de-listas.md`.
 
 ### 4. Investigar cada producto
 
-**La ficha técnica sale, en este orden** (decisión del negocio, 08/10/2026):
+**La ficha técnica sale, en este orden** (decisión del negocio del 22/10/2026,
+que invierte la del 08/10/2026):
 
-1. **El sitio oficial de la marca.** Samsung, Apple, Honor, Motorola, OPPO,
-   realme, TCL y Lenovo (su PSREF) se leen directamente; JBL publica la ficha en
-   PDF, que también se lee. **Xiaomi, JBL (la página), Amazon y Nintendo no se
-   leen de forma automática**: Xiaomi responde 403 a los agentes de IA, JBL pone
-   un captcha y Amazon y Nintendo excluyen a Claude en su robots.txt. Esas
-   barreras no se eluden —ni con otro agente de usuario ni desde el navegador
-   de la persona—: la persona guarda la página de especificaciones en la carpeta
-   «Fuente de la marca» del modelo y se lee de ahí. Detalle por marca en
+1. **Open Icecat, primero y solo por código**: la tabla la arma
+   `redactar_fichas.py`, y la prosa nunca se escribe a partir de una ficha de
+   Icecat. Su licencia anula el permiso si los datos se usan para «automated
+   synthetic content creation» (cláusula 10).
+2. **El sitio oficial de la marca**, para lo que Icecat no cubra. Samsung,
+   Apple, Honor, Motorola (la página de producto), OPPO, realme, TCL y Lenovo
+   (su PSREF) se leen directamente; JBL publica la ficha en PDF, que también se
+   lee. **Xiaomi, el soporte de Motorola, JBL (la página), Amazon y Nintendo no
+   se leen de forma automática**: Xiaomi y el soporte de Motorola responden 403
+   a los agentes de IA, JBL pone un captcha y Amazon y Nintendo excluyen a
+   Claude en su robots.txt. Esas barreras no se eluden —ni con otro agente de
+   usuario, ni desde el navegador de la persona, ni resolviendo el captcha—: la
+   persona guarda la página de especificaciones en la carpeta «Fuente de la
+   marca» del modelo y se lee de ahí. Como el paso solo aplica a modelos nuevos
+   que Icecat no cubrió, son pocas páginas por lista. El 22/10/2026 se pidió
+   leerlas igual, por lo esporádico de la consulta, y no se hace: la consulta
+   es esporádica, pero la barrera es la misma. Detalle por marca en
    `referencias/fichas-tecnicas.md`.
-2. **Open Icecat**, solo si la marca no da la ficha, y **solo por código**: la
-   tabla la arma `redactar_fichas.py`, y la prosa nunca se escribe a partir de
-   una ficha de Icecat. Su licencia anula el permiso si los datos se usan para
-   «automated synthetic content creation» (cláusula 10).
 3. **La caja del producto**, cuando no hay ninguna de las dos.
 
 Para cada producto con algo `pendiente` —los nuevos, entero; los de precio

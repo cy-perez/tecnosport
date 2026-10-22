@@ -196,12 +196,12 @@ def componer(producto, prosa, ficha_icecat, ficha_marca, fecha):
         partes += ["## Características principales", ""]
         partes += [f"- {v}" for v in vinetas] + [""]
 
-    # La marca primero; Icecat solo si la marca no dio filas.
-    filas = tabla_mi(ficha_marca) if ficha_marca else []
-    origen = "marca" if filas else None
-    if not filas and ficha_icecat:
-        filas = tabla_icecat(ficha_icecat)
-        origen = "Open Icecat" if filas else None
+    # Icecat primero (22/10/2026); la marca solo si Icecat no dio filas.
+    filas = tabla_icecat(ficha_icecat) if ficha_icecat else []
+    origen = "Open Icecat" if filas else None
+    if not filas and ficha_marca:
+        filas = tabla_mi(ficha_marca)
+        origen = "marca" if filas else None
 
     if filas:
         partes += ["## Ficha técnica", "", "| Atributo | Detalle |", "|---|---|"]
@@ -251,7 +251,7 @@ def main():
     ap.add_argument("productos")
     ap.add_argument("--prosa", required=True, help="JSON de prosa por id de modelo")
     ap.add_argument("--marca", help="JSON de fichas del sitio oficial de la marca, por id de modelo")
-    ap.add_argument("--icecat", help="carpeta de fichas de icecat_local.py (segunda opción)")
+    ap.add_argument("--icecat", help="carpeta de fichas de icecat_local.py (primera opción)")
     ap.add_argument("--mi", help="(compatibilidad) JSON de fichas de mi.com, por la clave `mi` de la prosa")
     ap.add_argument("--fecha", default=date.today().isoformat(), help="fecha de la composición")
     a = ap.parse_args()
@@ -285,7 +285,7 @@ def main():
         ficha_ice = leer_icecat(dir_ice, ids) if dir_ice and prosa.get("icecat") is not False else None
         referencia = grupo[0]
         descripcion = componer(referencia, prosa, ficha_ice, ficha_marca, a.fecha)
-        origen = "marca" if ficha_marca and tabla_mi(ficha_marca) else ("icecat" if ficha_ice and tabla_icecat(ficha_ice) else None)
+        origen = "icecat" if ficha_ice and tabla_icecat(ficha_ice) else ("marca" if ficha_marca and tabla_mi(ficha_marca) else None)
         fuente = fuente_ficha(origen, ficha_marca or {}, a.fecha)
         for p in grupo:
             p["descripcion"] = descripcion
