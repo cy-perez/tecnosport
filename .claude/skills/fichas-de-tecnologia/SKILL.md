@@ -67,8 +67,9 @@ Hace dos cosas, en este orden:
    el borrador de cada modelo nuevo apto, y el de las configuraciones nuevas de
    los que ya se venden. No toca costo ni existencia: eso ya lo hizo el bloque 1.
 2. **Sube al borrador las fotos LISTA** de cada modelo nuevo, en el orden de su
-   `estado-fotos.json` —la primera es la principal—, con sus anchos AVIF y la
-   vista previa, al bucket privado del proveedor.
+   `estado-fotos.json` —la primera es la principal: la elegida con `marcar.py
+   --principal` en el bloque 2, o la primera por orden natural—, con sus anchos
+   AVIF y la vista previa, al bucket privado del proveedor.
 
 Se puede correr otra vez sin miedo. Un borrador que ya tiene exactamente esas
 fotos —los mismos hashes, en el mismo orden— no se toca; uno con otras —una

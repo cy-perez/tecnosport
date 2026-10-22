@@ -508,10 +508,15 @@ def evaluar(mid: str, carpeta: Path, reporte: dict, cfg: dict, kit: bool = False
     22/10/2026 cuenta también la REVISAR que una persona aprobó a ojo con `marcar.py --aprobar`:
     hasta entonces no contaba, y cuatro modelos de la lista del 15/10 esperaban fotos nuevas con
     tomas que, miradas a tamaño real, estaban bien. Cuáles contaron así queda en
-    `aprobadas_a_ojo`, para que se sepa qué pasó la compuerta por una persona y no por el script."""
+    `aprobadas_a_ojo`, para que se sepa qué pasó la compuerta por una persona y no por el script.
+
+    El orden de `listas` es el orden en que el borrador sube las fotos, y **la primera es la
+    principal**: sin decir nada manda el orden natural de los nombres —la `_1` que se descargó
+    primero—, y una foto marcada con `marcar.py --principal` pasa al frente (22/10/2026)."""
     registros = reporte.get("fotos", [])
     buenas, _ = unicas(carpeta)
     listas, fallidas, aprobadas = [], [], []
+    principal = None
     for original in buenas:
         foto = registro_de(original, mid, registros)
         if foto is None:
@@ -537,6 +542,8 @@ def evaluar(mid: str, carpeta: Path, reporte: dict, cfg: dict, kit: bool = False
                                        f"{MINIMO_LISTA} fotos LISTA: hacen falta fotos de más resolución"})
         elif estado == "LISTA":
             listas.append(f"{original.stem}.jpg")
+            if foto.get("principal"):
+                principal = f"{original.stem}.jpg"
             if aprobada_a_ojo:
                 aprobadas.append(f"{original.stem}.jpg")
         else:
@@ -544,6 +551,10 @@ def evaluar(mid: str, carpeta: Path, reporte: dict, cfg: dict, kit: bool = False
             if not kit and solo_piezas_sueltas(foto):
                 fallida["solo_piezas"] = True       # para sugerir el kit en el informe
             fallidas.append(fallida)
+    if principal in listas:
+        # La primera es la que el borrador sube de principal; sin marca manda el orden natural.
+        listas.remove(principal)
+        listas.insert(0, principal)
     return {"listas": listas, "fallidas": fallidas, "aprobadas_a_ojo": aprobadas}
 
 

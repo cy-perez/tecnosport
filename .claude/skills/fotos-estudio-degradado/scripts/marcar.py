@@ -6,6 +6,7 @@ Marcas a ojo sobre el reporte de fotos-estudio-degradado.
     python marcar.py SALIDA NOMBRE [NOMBRE ...] --repetir "motivo"
     python marcar.py SALIDA NOMBRE --revisar "motivo"
     python marcar.py SALIDA NOMBRE --aprobar ["nota"]
+    python marcar.py SALIDA NOMBRE --principal           # encabeza la galería del borrador
     python marcar.py SALIDA NOMBRE --excluir X0,Y0,X1,Y1 [--excluir ...]
     python marcar.py SALIDA NOMBRE --limpiar                # quita marcas y aprobación
     python marcar.py SALIDA NOMBRE --limpiar-exclusiones
@@ -72,6 +73,8 @@ def listar(rep: dict) -> None:
     for f in reporte.ordenar(rep["fotos"]):
         estado = reporte.estado_final(f)
         extra = []
+        if f.get("principal"):
+            extra.append("principal")
         if f.get("revisada") and estado != "REPETIR":
             extra.append("revisada a ojo")
         if f.get("exclusiones"):
@@ -93,6 +96,8 @@ def main() -> int:
     g.add_argument("--repetir", metavar="MOTIVO")
     g.add_argument("--revisar", metavar="MOTIVO")
     g.add_argument("--aprobar", nargs="?", const="", metavar="NOTA")
+    g.add_argument("--principal", action="store_true",
+                   help="esa foto encabeza la galería del borrador; la que lo era deja de serlo")
     g.add_argument("--excluir", action="append", metavar="X0,Y0,X1,Y1")
     g.add_argument("--limpiar", action="store_true", help="quita las marcas a ojo y la aprobación")
     g.add_argument("--limpiar-exclusiones", action="store_true")
@@ -105,7 +110,8 @@ def main() -> int:
         print(f"No hay {reporte.NOMBRE} en {raiz}")
         return 1
     fotos = {f["nombre"]: f for f in rep["fotos"]}
-    accion = a.repetir or a.revisar or a.aprobar is not None or a.excluir or a.limpiar or a.limpiar_exclusiones
+    accion = (a.repetir or a.revisar or a.aprobar is not None or a.principal or a.excluir
+              or a.limpiar or a.limpiar_exclusiones)
     if a.lista or not accion:
         listar(rep)
         if a.zip:
@@ -113,6 +119,8 @@ def main() -> int:
         return 0
     if not a.nombres:
         p.error("indica al menos un NOMBRE")
+    if a.principal and len(a.nombres) != 1:
+        p.error("--principal es una sola foto: la que encabeza la galería")
     desconocidos = [n for n in a.nombres if n not in fotos]
     if desconocidos:
         print(f"No están en el reporte: {', '.join(desconocidos)}\nNombres: {', '.join(sorted(fotos))}")
@@ -139,6 +147,17 @@ def main() -> int:
             if any(m["estado"] == "REVISAR" for m in f.get("marcas", [])):
                 print(f"{n}: conserva marcas REVISAR puestas a ojo; quítalas con --limpiar si ya no aplican.")
             f["revisada"] = {"fecha": reporte.ahora(), "nota": a.aprobar.strip()}
+        elif a.principal:
+            if antes == "REPETIR":
+                print(f"{n}: está en REPETIR; la principal tiene que poderse publicar.")
+                continue
+            # Una sola principal por producto: la que lo era deja de serlo. En las carpetas de
+            # modelo, procesar_fichas.py la pone de primera en estado-fotos.json, y el borrador
+            # del panel la sube de primera (la primera es la principal).
+            for otra in rep["fotos"]:
+                if otra is not f and otra.get("grupo") == f.get("grupo") and otra.get("principal"):
+                    otra["principal"] = None
+            f["principal"] = {"fecha": reporte.ahora()}
         elif a.excluir:
             try:
                 zonas = [leer_zona(z, f.get("entrada") or {}) for z in a.excluir]

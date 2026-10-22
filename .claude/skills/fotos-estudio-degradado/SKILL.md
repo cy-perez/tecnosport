@@ -491,6 +491,14 @@ dos productos en la toma—. Si una no sirve, márcala con `marcar.py --repetir
 cuatro, vuelve a esperar. Una REVISAR aprobada a ojo, en cambio, cuenta como LISTA
 para la tanda desde el 22/10/2026.
 
+**Y la foto principal se elige aquí** (22/10/2026). La primera del
+`estado-fotos.json` es la que el borrador sube de principal, y sin decir nada es
+la `_1` que la persona descargó primero, no necesariamente la mejor toma
+frontal. Si en la revisión otra se ve mejor de portada, pregúntale a la persona
+y márcala: `marcar.py SALIDA <nombre> --principal`, y la siguiente corrida de la
+tanda la pone de primera. Una por producto; marcar otra le quita la marca a la
+anterior, y una REPETIR no puede ser principal.
+
 Con la revisión hecha:
 
 ```bash

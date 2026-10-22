@@ -411,6 +411,41 @@ class Tanda(unittest.TestCase):
             estados, _ = tanda(raiz, procesar=listas(raiz, [f"{MODELO}-{i}" for i in (1, 2, 10, 11)]))
             self.assertEqual([f"{MODELO}_{i}.jpg" for i in (1, 2, 10, 11)], estados[MODELO]["listas"])
 
+    def test_la_foto_marcada_principal_encabeza_las_listas(self):
+        # Decisión del 22/10/2026: sin marca, la principal era la _1 que se descargó primero.
+        with tempfile.TemporaryDirectory() as tmp:
+            raiz = Path(tmp)
+            armar(raiz, CUATRO)
+
+            def con_principal():
+                salida_de_procesar(raiz, [(n, "LISTA") for n in NOMBRES])
+                ruta = raiz / pf.TRABAJO / "salida" / "reporte.json"
+                datos = json.loads(ruta.read_text(encoding="utf-8"))
+                for f in datos["fotos"]:
+                    if f["nombre"] == NOMBRES[2]:  # marcar.py --principal
+                        f["principal"] = {"fecha": "2026-10-22"}
+                ruta.write_text(json.dumps(datos), encoding="utf-8")
+
+            estados, _ = tanda(raiz, procesar=con_principal)
+            self.assertEqual([CUATRO[2], CUATRO[0], CUATRO[1], CUATRO[3]], estados[MODELO]["listas"])
+
+    def test_una_principal_que_no_salio_lista_no_cambia_el_orden(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            raiz = Path(tmp)
+            armar(raiz, CUATRO)
+
+            def con_principal_revisar():
+                salida_de_procesar(raiz, [(n, "LISTA") for n in NOMBRES[:3]] + [(NOMBRES[3], "REVISAR")])
+                ruta = raiz / pf.TRABAJO / "salida" / "reporte.json"
+                datos = json.loads(ruta.read_text(encoding="utf-8"))
+                for f in datos["fotos"]:
+                    if f["nombre"] == NOMBRES[3]:
+                        f["principal"] = {"fecha": "2026-10-22"}
+                ruta.write_text(json.dumps(datos), encoding="utf-8")
+
+            estados, _ = tanda(raiz, procesar=con_principal_revisar)
+            self.assertEqual([CUATRO[0], CUATRO[1], CUATRO[2]], estados[MODELO]["listas"])
+
     def test_sacarlo_es_de_la_persona_y_vuelve_con_fotos_nuevas_o_con_otra_lista(self):
         with tempfile.TemporaryDirectory() as tmp:
             raiz = Path(tmp)
