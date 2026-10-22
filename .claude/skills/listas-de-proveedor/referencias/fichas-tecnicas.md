@@ -5,10 +5,13 @@ dónde salen los datos**, que es la parte que cuesta: cada afirmación técnica
 tiene que venir de la ficha oficial del fabricante, y no todos los fabricantes
 la publican en Colombia.
 
-El orden es siempre el mismo: sitio oficial del fabricante en Colombia → Open
-Icecat (solo por código: la prosa no se escribe a partir de él) → la caja del
-producto. Nunca al revés, y nunca "de memoria". Decisión del negocio del
-08/10/2026, después de leer los términos de cada sitio: todos prohíben el uso
+El orden es siempre el mismo: Open Icecat (solo por código: la prosa no se
+escribe a partir de él) → sitio oficial del fabricante en Colombia, para lo que
+Icecat no cubra → la caja del producto. Nunca "de memoria". Icecat va primero
+desde el 22/10/2026, por decisión del negocio: es la única fuente con licencia
+comercial expresa, y así a la marca solo se le pregunta lo que falta. La
+decisión del 08/10/2026 ponía la marca primero, después de leer los términos de
+cada sitio: todos prohíben el uso
 comercial del contenido y casi todos el acceso automatizado, y el negocio asume
 ese riesgo por lo esporádico de la consulta —las fichas iniciales y después solo
 los modelos nuevos—. Lo que no se asume es eludir una barrera técnica: ver
@@ -120,8 +123,8 @@ productos en la misma corrida.
 
 Trae también los enlaces de las fotos (`fotos/urls-icecat.csv`): desde el
 08/10/2026 sirven como lista de dónde descargar a mano lo que falte en
-«Fotos originales» de cada modelo. La ficha de Icecat es segunda opción, después
-del sitio de la marca, y solo la usa el código.
+«Fotos originales» de cada modelo. La ficha de Icecat es la primera opción desde
+el 22/10/2026, antes del sitio de la marca, y solo la usa el código.
 
 ### Cobertura real
 
@@ -250,7 +253,7 @@ citados en el expediente del abogado, `docs/14-consultas-al-abogado.md`):
 | Samsung | página de cada SKU en samsung.com/co; colores y caja en sus preguntas frecuentes | Sí |
 | Apple | apple.com/co/<modelo>/specs/; los modelos que salen de línea, en support.apple.com/es-co | Sí |
 | Honor | honor.com/co/…/spec/ (los valores vienen en atributos del HTML) | Sí |
-| Motorola | motorola.com/co/es/p/… (la tabla viene en un JSON del HTML) | Sí |
+| Motorola | motorola.com/co/es/p/… (la tabla viene en un JSON del HTML) | Sí; **el soporte no** (es-latam.support.motorola.com responde 403, comprobado el 22/10/2026) |
 | OPPO, realme | oppo.com/co/…/specs/, realme.com/co/…/specs | Sí |
 | TCL | tcl.com/co/es/…; la tabla la pinta el navegador | Sí, cargando la página |
 | Lenovo | el PDF de PSREF (psref.lenovo.com) | Sí |
@@ -259,10 +262,12 @@ citados en el expediente del abogado, `docs/14-consultas-al-abogado.md`):
 | **Xiaomi** | mi.com/co/product/<slug>/specs/ | **No**: 403 a los agentes de IA |
 | **Amazon, Nintendo** | — | **No**: su robots.txt excluye a Claude |
 
-En las tres marcas de **No** la persona guarda la página en «Fuente de la
+En las marcas y páginas de **No** la persona guarda la página en «Fuente de la
 marca». No se cambia el agente de usuario, no se pasa por el navegador de la
 persona y no se resuelve un captcha: son barreras puestas para impedir
-exactamente esto.
+exactamente esto. Que la consulta sea esporádica no cambia la barrera; lo que sí
+cambia, con Icecat primero, es cuántas páginas hay que guardar: solo las de los
+modelos nuevos que Icecat no cubrió.
 
 ## Lo que no se inventa nunca
 

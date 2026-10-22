@@ -1,5 +1,5 @@
-"""Pruebas del redactor de fichas: una descripción por modelo, con la ficha de la
-marca primero y la de Icecat como segunda opción, siempre con su aviso."""
+"""Pruebas del redactor de fichas: una descripción por modelo, con la ficha de
+Icecat primero y la de la marca para lo que Icecat no cubre, siempre con su aviso."""
 
 import json
 import subprocess
@@ -72,19 +72,22 @@ class UnaPorModelo(unittest.TestCase):
 
 
 class OrdenDeFuentes(unittest.TestCase):
-    def test_la_marca_va_primero(self):
+    """Desde el 22/10/2026 Icecat va primero y la marca cubre lo que Icecat no tiene."""
+
+    def test_icecat_va_primero_y_sin_la_memoria(self):
         [a, _] = redactar(DOS, marca=MARCA, icecat=ICECAT)
+        self.assertIn("| Batería | 5000 mAh |", a["descripcion"])
+        self.assertNotIn("256 GB", a["descripcion"])
+        self.assertNotIn("samsung.com/co", a["descripcion"])
+        self.assertEqual("Open Icecat", a["fuentes_ficha"][0]["fuente"])
+
+    def test_la_marca_entra_si_icecat_no_tiene_la_ficha(self):
+        [a, _] = redactar(DOS, marca=MARCA)
         self.assertIn("| Pantalla | 6,7\" Super AMOLED Plus |", a["descripcion"])
         self.assertIn("Ficha técnica: samsung.com/co, consultado el 2026-10-08.", a["descripcion"])
         self.assertNotIn("Icecat", a["descripcion"])
         self.assertEqual([{"fuente": "samsung.com/co", "url": "https://www.samsung.com/co/", "fecha": "2026-10-08"}],
                          a["fuentes_ficha"])
-
-    def test_icecat_entra_si_no_hay_ficha_de_marca_y_sin_la_memoria(self):
-        [a, _] = redactar(DOS, icecat=ICECAT)
-        self.assertIn("| Batería | 5000 mAh |", a["descripcion"])
-        self.assertNotIn("256 GB", a["descripcion"])
-        self.assertEqual("Open Icecat", a["fuentes_ficha"][0]["fuente"])
 
 
 class AvisoDeIcecat(unittest.TestCase):
