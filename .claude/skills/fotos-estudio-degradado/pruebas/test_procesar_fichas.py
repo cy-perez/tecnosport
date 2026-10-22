@@ -690,6 +690,73 @@ class RetirarLoQueYaNoSePublica(unittest.TestCase):
 
 
 
+class ParConEstuche(unittest.TestCase):
+    """Decisión del 22/10/2026: en audífonos, hasta 4 piezas son el par con su estuche y no
+    detienen la tanda; con 5 o más —o con otro reparo— sigue decidiendo la persona."""
+
+    def armar_audifonos(self, raiz, piezas, motivos_extra=()):
+        carpeta = armar(raiz, CUATRO)
+        (carpeta / f"{MODELO}-ficha.txt").write_text(
+            f"MODELO: X\nID DEL MODELO: {MODELO}\nCATEGORÍA: audifonos\n", encoding="utf-8")
+        salida_de_procesar(raiz, [(n, "LISTA") for n in NOMBRES])
+        ruta = raiz / pf.TRABAJO / "salida" / "reporte.json"
+        datos = json.loads(ruta.read_text(encoding="utf-8"))
+        for f in datos["fotos"]:
+            if f["nombre"] == NOMBRES[3]:
+                f["motivos_auto"] = [PIEZAS] + list(motivos_extra)
+                f["estado"] = "REVISAR"
+                f["motivos"] = [m["texto"] for m in f["motivos_auto"]]
+                f["recorte"] = {"piezas": piezas}
+        ruta.write_text(json.dumps(datos), encoding="utf-8")
+        return carpeta
+
+    def decidir(self, raiz, carpeta):
+        estado, _ = pf.decidir(MODELO, carpeta, pf.cargar_config(), pf.leer_reporte(raiz),
+                               medidor=lambda r: None)
+        return estado
+
+    def test_el_par_con_su_estuche_cuenta_como_lista(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            raiz = Path(tmp)
+            estado = self.decidir(raiz, self.armar_audifonos(raiz, piezas=3))
+            self.assertEqual(pf.APTO, estado["estado"])
+            self.assertEqual([], estado.get("aprobadas_a_ojo"), "no lo aprobó una persona: es la categoría")
+
+    def test_cinco_piezas_siguen_esperando_y_sugieren_el_kit(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            raiz = Path(tmp)
+            estado = self.decidir(raiz, self.armar_audifonos(raiz, piezas=5))
+            self.assertEqual(pf.EN_ESPERA, estado["estado"])
+            self.assertTrue(estado["fallidas"][0].get("solo_piezas"))
+
+    def test_otro_reparo_ademas_de_las_piezas_sigue_esperando(self):
+        ampliada = {"estado": "REVISAR", "codigo": "ampliacion", "texto": MOTIVO_AMPLIACION}
+        with tempfile.TemporaryDirectory() as tmp:
+            raiz = Path(tmp)
+            estado = self.decidir(raiz, self.armar_audifonos(raiz, piezas=3, motivos_extra=[ampliada]))
+            self.assertEqual(pf.EN_ESPERA, estado["estado"])
+
+    def test_en_otra_categoria_nada_cambia(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            raiz = Path(tmp)
+            carpeta = self.armar_audifonos(raiz, piezas=3)
+            (carpeta / f"{MODELO}-ficha.txt").write_text("CATEGORÍA: parlantes\n", encoding="utf-8")
+            estado = self.decidir(raiz, carpeta)
+            self.assertEqual(pf.EN_ESPERA, estado["estado"])
+
+    def test_un_reporte_sin_el_conteo_de_piezas_no_perdona(self):
+        # Un reporte viejo no trae `recorte`: ante la duda, decide la persona.
+        with tempfile.TemporaryDirectory() as tmp:
+            raiz = Path(tmp)
+            carpeta = self.armar_audifonos(raiz, piezas=3)
+            ruta = raiz / pf.TRABAJO / "salida" / "reporte.json"
+            datos = json.loads(ruta.read_text(encoding="utf-8"))
+            for f in datos["fotos"]:
+                f.pop("recorte", None)
+            ruta.write_text(json.dumps(datos), encoding="utf-8")
+            self.assertEqual(pf.EN_ESPERA, self.decidir(raiz, carpeta)["estado"])
+
+
 class PrepararLaAprobacionAOjo(unittest.TestCase):
     """Decisión del 22/10/2026: la espera deja la revisión a un paso del --aprobar. Tres de los
     cuatro modelos en espera del 15/10 lo estaban por una sola foto REVISAR que estaba bien."""

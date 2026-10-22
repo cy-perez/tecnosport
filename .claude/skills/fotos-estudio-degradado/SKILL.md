@@ -441,6 +441,13 @@ salida imprime el comando para registrarlo en `referencias/excluidos.json` de
 siguiente lo vuelve a proponer, a investigar y a pedirle fotos. También lo
 decide la persona.
 
+**En audífonos, el par con su estuche cuenta solo** (decisión del 22/10/2026). Dos
+auriculares y el estuche —a veces con la tapa aparte— son 3 o 4 piezas, y casi toda
+foto buena de unos TWS disparaba `varias_piezas`: 11 fotos de la tanda del 15/10.
+En la categoría `audifonos`, una foto de hasta 4 piezas cuyo único reparo son las
+piezas sueltas cuenta como LISTA; con 5 o más, o con cualquier otro reparo, sigue
+decidiendo la persona. Las demás categorías no cambian.
+
 **Un kit también lo declara la persona** (decisión del 18/10/2026). Hay productos que
 se venden con piezas sueltas —la consola con sus Joy-Con, la tablet con teclado y
 mouse— y su foto de catálogo las muestra separadas: el recorte encuentra tres piezas o

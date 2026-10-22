@@ -74,6 +74,10 @@ Para no gastar retoques en vano, y para que el veredicto sea cierto:
   mouse— una foto cuyo único reparo es `varias_piezas` cuenta como LISTA. En los demás
   modelos sigue sin contar: tres piezas o más pueden ser dos productos distintos o la
   gama de colores, y eso no lo decide el script.
+- **En audífonos, el par con su estuche no es una anomalía** (22/10/2026): hasta
+  `PIEZAS_DE_UN_PAR` piezas cuentan como LISTA si `varias_piezas` es su único reparo, porque
+  dos auriculares y el estuche disparaban el motivo en casi toda foto buena de unos TWS. Con
+  cinco o más piezas sigue decidiendo la persona.
 
 Sale con 0 si la tanda está completa y con 3 si algún modelo espera fotos o el
 retoque sigue en segundo plano.
@@ -123,6 +127,14 @@ LIENZO_MINIMO = 1200
 # bisel encierra es la pantalla—, y procesar.py las recibe con --sin-huecos. Un reloj, unos
 # audífonos o una consola pueden tenerlos (la correa cerrada, el arco): ahí decide el color.
 CATEGORIAS_SIN_HUECOS = {"celulares", "tablets"}
+
+# Decisión del 22/10/2026: en audífonos, dos auriculares y su estuche —a veces con la tapa— son 3
+# o 4 piezas, y casi toda foto buena de unos TWS disparaba `varias_piezas` (11 fotos de la tanda
+# del 15/10). Hasta PIEZAS_DE_UN_PAR piezas cuentan como LISTA si ese es su único reparo; con 5 o
+# más sigue decidiendo la persona (un kit declarado, que no tiene tope, o REPETIR si son dos
+# productos). Las demás categorías no cambian.
+CATEGORIAS_DE_PARES = {"audifonos"}
+PIEZAS_DE_UN_PAR = 4
 
 APTO, EN_ESPERA, FUERA = "apto", "en_espera", "fuera_de_tanda"
 SALIDA_EN_ESPERA = 3
@@ -501,7 +513,8 @@ def texto_de_motivo(m) -> str:
     return (m or {}).get("texto") or (m or {}).get("codigo", "")
 
 
-def evaluar(mid: str, carpeta: Path, reporte: dict, cfg: dict, kit: bool = False) -> dict:
+def evaluar(mid: str, carpeta: Path, reporte: dict, cfg: dict, kit: bool = False,
+            par: bool = False) -> dict:
     """Las fotos LISTA del modelo según el reporte, y la razón de cada una que no lo es.
 
     En un kit, una REVISAR cuyo único motivo son las piezas sueltas cuenta como LISTA. Y desde el
@@ -525,15 +538,19 @@ def evaluar(mid: str, carpeta: Path, reporte: dict, cfg: dict, kit: bool = False
                                        "(pip install pillow-heif); si no, se reintenta en la próxima corrida"})
             continue
         estado = foto.get("estado")
-        if kit and solo_piezas_sueltas(foto):
+        # En un kit las piezas sueltas son el producto, sin tope; en audífonos (`par`), hasta
+        # PIEZAS_DE_UN_PAR piezas son el par con su estuche y también se perdonan (22/10/2026).
+        piezas = int((foto.get("recorte") or {}).get("piezas") or 0)
+        perdona_piezas = kit or (par and 0 < piezas <= PIEZAS_DE_UN_PAR)
+        if perdona_piezas and solo_piezas_sueltas(foto):
             estado = "LISTA"
         lienzo = int((foto.get("lienzo") or [0])[0])
         motivos = "; ".join(texto_de_motivo(m) for m in foto.get("motivos", []))
         # Una aprobación a ojo solo pesa si había algo que aprobar: un REVISAR automático. En un
-        # kit, las piezas sueltas no son algo que aprobar.
+        # kit, o en un par con su estuche, las piezas sueltas no son algo que aprobar.
         reparos = [m for m in foto.get("motivos_auto", [])
                    if isinstance(m, dict) and m.get("estado") == "REVISAR"
-                   and not (kit and m.get("codigo") == MOTIVO_DE_KIT)]
+                   and not (perdona_piezas and m.get("codigo") == MOTIVO_DE_KIT)]
         aprobada_a_ojo = bool(foto.get("revisada")) and bool(reparos)
         if estado == "LISTA" and lienzo < int(cfg["lienzo_minimo"]):
             fallidas.append({"foto": original.name, "estado": "LIENZO",
@@ -548,7 +565,7 @@ def evaluar(mid: str, carpeta: Path, reporte: dict, cfg: dict, kit: bool = False
                 aprobadas.append(f"{original.stem}.jpg")
         else:
             fallida = {"foto": original.name, "estado": estado or "?", "motivo": motivos or "sin motivo"}
-            if not kit and solo_piezas_sueltas(foto):
+            if not perdona_piezas and solo_piezas_sueltas(foto):
                 fallida["solo_piezas"] = True       # para sugerir el kit en el informe
             fallidas.append(fallida)
     if principal in listas:
@@ -601,7 +618,8 @@ def decidir(mid: str, carpeta, cfg: dict, reporte=None, medidor=medir, fecha_tan
         return dict(base, estado=EN_ESPERA, listas=[], faltan=MINIMO_LISTA, fallidas=antes["fallidas"],
                     motivo="por procesar"), True
 
-    ev = evaluar(mid, carpeta, reporte, cfg, kit=mid in (kits or {}))
+    ev = evaluar(mid, carpeta, reporte, cfg, kit=mid in (kits or {}),
+                 par=categoria_de(carpeta) in CATEGORIAS_DE_PARES)
     vistas = {x["foto"] for x in antes["fallidas"]}
     fallidas = antes["fallidas"] + [f for f in ev["fallidas"] if f["foto"] not in vistas]
     if len(ev["listas"]) >= MINIMO_LISTA:
