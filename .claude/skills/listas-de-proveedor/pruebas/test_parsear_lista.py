@@ -538,6 +538,11 @@ class ValidacionDeEquivalencias(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "también es una clave"):
             self.validar({"a": equivalencia("b", "B"), "b": equivalencia("c", "C")})
 
+    def test_puede_apuntar_a_una_clave_que_se_apunta_a_si_misma(self):
+        # 22/10/2026: el Edge 50 Fusion sin SIM es el «SIM + eSIM», que tiene su
+        # propia entrada de título confirmado. Eso no es una cadena: el destino es final.
+        self.validar({"a": equivalencia("b", "B"), "b": equivalencia("b", "B")})
+
     def test_cada_entrada_dice_cuando_y_por_que(self):
         with self.assertRaisesRegex(ValueError, "faltan motivo"):
             self.validar({"a": {"id": "b", "titulo": "B", "fecha": "2026-10-02"}})
@@ -599,6 +604,40 @@ class LineasExcluidas(unittest.TestCase):
     def test_el_honor_2i_es_un_reloj_y_la_xiaomi_smart_band_sigue_entrando(self):
         datos = parsear(self.LISTA, parsear_lista.cargar_equivalencias())
         self.assertEqual(["Honor Watch Choice 2i", "Xiaomi Smart Band 10"], sorted(titulos(datos)))
+
+
+class NombresDel22DeOctubre(unittest.TestCase):
+    """22/10/2026: dos equipos ya conocidos salían con otro nombre.
+
+    Un nombre distinto es un id distinto: la comparación los daba por nuevos y
+    retiraba del sitio al conocido, que sí había venido en la lista.
+    """
+
+    def test_el_mi_que_xiaomi_dejo_en_la_serie_11_no_va_en_el_titulo(self):
+        datos = parsear(" *XIAOMI* \n🎃MI 17T 5G (12+256) $1.900\n🎃MI 11T 5G (8+128) $900\n")
+        self.assertEqual(["Xiaomi 17T 5G 12GB RAM 256GB", "Xiaomi Mi 11T 5G 8GB RAM 128GB"],
+                         titulos(datos))
+        self.assertIn("Xiaomi dejó el prefijo «Mi» desde la serie 12: se leyó como Xiaomi 17T",
+                      datos["productos"][0]["supuestos"])
+
+    def test_la_serie_fusion_de_motorola_es_edge(self):
+        datos = parsear(" *MOTOROLA*\n🎃50 FUSIÓN 5G (8+256) $755\n🎃MOTO G67 4G (8+256) $730\n")
+        self.assertEqual(["Motorola Edge 50 Fusion 5G 8GB RAM 256GB",
+                          "Motorola Moto G67 4G 8GB RAM 256GB"], titulos(datos))
+        self.assertIn("la sección Motorola abrevia la serie Edge: se leyó como Edge 50 Fusion",
+                      datos["productos"][0]["supuestos"])
+
+    def test_el_fuego_delante_de_un_macbook_no_lo_vuelve_cable(self):
+        # El 🔥 es la viñeta de los cables, pero también adorno: aquí abre un
+        # MacBook reacondicionado (CPO), sin precio y en tres líneas.
+        datos = parsear(" *TABLET XIAOMI* \n📲XIAOMI PAD 2 PRO 11\" WIFI (8+256) $920\n"
+                        "------\n\n🔥MacBook Neo 2\nCPO\n256\n")
+        [d] = [d for d in datos["descartados"] if "MacBook" in d["texto_origen"]]
+        self.assertEqual(("computadores", "reacondicionado"), (d["categoria"], d["condicion"]))
+
+    def test_el_fuego_delante_de_un_cable_sigue_siendo_cable(self):
+        [d] = parsear("*CABLE*\n🔥TIPO C - LIGHTNING $45\n")["descartados"]
+        self.assertEqual("cables", d["categoria"])
 
 
 if __name__ == "__main__":
