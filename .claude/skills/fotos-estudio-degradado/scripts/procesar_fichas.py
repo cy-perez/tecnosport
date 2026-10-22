@@ -688,13 +688,22 @@ def correr_tanda(raiz: Path, ids: list, cfg: dict, procesar_fn, solo_devolver=Fa
 
 
 def retoque_en_curso(raiz: Path):
-    """El avance de un retoque en segundo plano que no ha terminado, o None."""
+    """El avance de un retoque en segundo plano que no ha terminado, o None.
+
+    Un avance en «procesando» cuyo proceso ya no existe no es un retoque en curso: el proceso murió
+    —se cerró la sesión, lo mató la memoria— sin escribir «terminado», y esperarlo dejaba el
+    `--devolver` bloqueado para siempre (21/10/2026, la JBL Tune 730BT _1).
+    """
     ruta = Path(raiz) / TRABAJO / "salida" / ".trabajo" / "avance.json"
     try:
         datos = json.loads(ruta.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError):
         return None
-    return datos if datos.get("estado") in ("iniciando", "procesando") else None
+    if datos.get("estado") not in ("iniciando", "procesando"):
+        return None
+    if datos.get("pid") and not salidas.vivo(datos["pid"]):
+        return None
+    return datos
 
 
 def main() -> int:

@@ -140,26 +140,7 @@ def huella_config(cfg: dict) -> str:
     return hashlib.sha1(texto.encode("utf-8")).hexdigest()[:12]
 
 
-def vivo(pid: int) -> bool:
-    if not pid:
-        return False
-    if os.name == "nt":  # os.kill(pid, 0) en Windows enviaría Ctrl+C: se consulta con la API
-        import ctypes
-        k32 = ctypes.windll.kernel32
-        h = k32.OpenProcess(0x1000, False, int(pid))
-        if not h:
-            return False
-        codigo = ctypes.c_ulong()
-        ok = k32.GetExitCodeProcess(h, ctypes.byref(codigo))
-        k32.CloseHandle(h)
-        return bool(ok) and codigo.value == 259
-    try:
-        os.kill(int(pid), 0)
-        return True
-    except ProcessLookupError:
-        return False
-    except PermissionError:
-        return True
+vivo = salidas.vivo
 
 
 # =========================================================================== contexto del lote
