@@ -229,6 +229,28 @@ class MapaDeRevision(unittest.TestCase):
 
 
 @unittest.skipIf(imagen is None, "pide NumPy y OpenCV")
+class ProductoAlRas(unittest.TestCase):
+    """Rozar el borde de la foto no es estar cortado (21/10/2026, JBL Tune 730BT _1)."""
+
+    def test_un_aro_que_roza_tres_lados_no_esta_cortado(self):
+        # La diadema de unos audífonos, tangente al marco por arriba y por los lados.
+        alfa = np.zeros((401, 401), np.float32)
+        cv2.circle(alfa, (200, 200), 180, 1.0, 40)       # el borde exterior, tangente al marco
+        lados = imagen.lados_tocados(alfa, 0.005)
+        self.assertTrue(lados)
+        cortados, rasantes = imagen.separar_rasantes(alfa, lados)
+        self.assertEqual([], cortados)
+        self.assertIn("arriba", rasantes)
+
+    def test_un_producto_que_atraviesa_el_borde_sigue_cortado(self):
+        alfa = np.zeros((400, 400), np.float32)
+        alfa[100:400, 100:300] = 1.0                       # sale por abajo con todo su ancho
+        cortados, rasantes = imagen.separar_rasantes(alfa, imagen.lados_tocados(alfa, 0.005))
+        self.assertEqual(["abajo"], cortados)
+        self.assertEqual([], rasantes)
+
+
+@unittest.skipIf(imagen is None, "pide NumPy y OpenCV")
 class CargaReducida(unittest.TestCase):
     def test_una_foto_grande_se_carga_al_lado_pedido_y_dice_cuanto(self):
         import tempfile

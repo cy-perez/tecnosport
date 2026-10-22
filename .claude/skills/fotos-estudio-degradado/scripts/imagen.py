@@ -938,6 +938,40 @@ def lados_tocados(m: np.ndarray, fraccion: float) -> list[str]:
     return lados
 
 
+# Un producto que roza el borde de la foto —recortada al ras, como el JBL Tune 730BT _1— no está
+# cortado: su contacto con el borde se angosta hacia afuera, porque es una curva tangente al marco.
+# Uno cortado atraviesa el borde con casi el mismo ancho que tiene un poco más adentro. Medido el
+# 21/10/2026: en los roces del Tune el contacto es como mucho el 22 % de lo que hay a un 3 % hacia
+# adentro y el 5 % del lado del producto; recortando esa foto a propósito, el corte da 1,03 y el 78 %.
+RASANTE_ANGOSTO_MAX = 0.5
+RASANTE_LARGO_MAX = 0.10
+
+
+def separar_rasantes(m: np.ndarray, lados: list[str], umbral: float = 0.5) -> tuple[list[str], list[str]]:
+    """(cortados, rasantes): de los lados que el producto toca, cuáles lo cortan y cuáles solo roza."""
+    b = m > umbral
+    c = caja(m, umbral)
+    if c is None:
+        return list(lados), []
+    x0, y0, x1, y1 = c
+    alto, ancho = b.shape
+    cortados, rasantes = [], []
+    for lado in lados:
+        horizontal = lado in ("arriba", "abajo")
+        prof = max(4, round(0.03 * (alto if horizontal else ancho)))
+        borde, adentro = {"arriba": (b[0], b[min(prof, alto - 1)]), "abajo": (b[-1], b[max(-prof - 1, -alto)]),
+                          "izquierda": (b[:, 0], b[:, min(prof, ancho - 1)]),
+                          "derecha": (b[:, -1], b[:, max(-prof - 1, -ancho)])}[lado]
+        extension = (x1 - x0) if horizontal else (y1 - y0)
+        n_borde, n_adentro = float(borde.sum()), float(adentro.sum())
+        if (n_adentro > 0 and n_borde <= RASANTE_ANGOSTO_MAX * n_adentro
+                and n_borde <= RASANTE_LARGO_MAX * max(extension, 1)):
+            rasantes.append(lado)
+        else:
+            cortados.append(lado)
+    return cortados, rasantes
+
+
 def toca_borde(m: np.ndarray, fraccion: float) -> bool:
     return bool(lados_tocados(m, fraccion))
 

@@ -795,6 +795,12 @@ Manda el motivo más grave y las marcas a ojo se suman a las automáticas. Las
 notas (dominante de color, luces quemadas, JPEG recomprimido, par de piezas,
 bordes poco separados en pocos tramos) son informativas y no cambian el estado.
 
+Rozar el borde no es estar cortado. Una foto recortada al ras —la diadema de
+unos audífonos tangente al marco— toca el borde con un contacto que se angosta
+hacia afuera: como mucho la mitad de lo que hay un 3 % hacia adentro y el 10 %
+del lado del producto (`separar_rasantes`). Ese lado queda como nota, no como
+corte; uno que atraviesa el borde con casi el mismo ancho sigue en REPETIR.
+
 ## Límites que debes decir sin rodeos
 
 - **Resolución**: si el producto mide menos de 1700 px en la foto, se amplía y
