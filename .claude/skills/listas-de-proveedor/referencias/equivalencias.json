@@ -245,6 +245,12 @@
       "fecha": "2026-10-02",
       "motivo": "título corregido a mano en la corrida del 02/10/2026"
     },
+    "xiaomi-poco-f9-ultra-12gb-ram-256gb": {
+      "id": "xiaomi-poco-f9-ultra-5g-12gb-ram-256gb",
+      "titulo": "Xiaomi POCO F9 Ultra 5G 12GB RAM 256GB",
+      "fecha": "2026-10-22",
+      "motivo": "la lista no trae la red; mi.com/co publica el POCO F9 Ultra con 5G y la configuración de 12GB+256GB (consultado el 22/10/2026)"
+    },
     "xiaomi-poco-x8-pro-256gb": {
       "id": "xiaomi-poco-x8-pro-5g-8gb-ram-256gb",
       "titulo": "Xiaomi POCO X8 Pro 5G 8GB RAM 256GB",
