@@ -148,6 +148,20 @@ def separar_marcas(marcas, caducadas_previas=()) -> tuple[list, list]:
     return vigentes, list(caducadas_previas) + nuevas
 
 
+def heredado_del_previo(previo: dict, huella_origen, huella_config) -> dict:
+    """Lo que una foto reprocesada conserva de su registro anterior: {principal, revisada}.
+
+    Hasta el 22/10/2026 no conservaba nada: un modelo que cambiaba se reprocesa entero, y perdía la
+    principal y las aprobaciones a ojo que la persona ya había decidido.
+    - La **principal** es la toma, y vale mientras la foto de origen sea la misma.
+    - La **aprobación** miró un resultado: vale solo si además la configuración es la misma —su
+      huella incluye el lienzo y la versión del retoque—, porque si no el resultado es otro."""
+    previo = previo or {}
+    misma = bool(huella_origen) and previo.get("huella_origen") == huella_origen
+    return {"principal": previo.get("principal") if misma else None,
+            "revisada": previo.get("revisada") if misma and previo.get("huella_config") == huella_config else None}
+
+
 # Una foto se carga reducida si es más grande que esto, siempre que el producto siga midiendo por lo
 # menos MARGEN_DE_CARGA veces lo que pide el lienzo: nunca se reduce hasta tener que ampliar.
 LADO_DE_CARGA = 4000

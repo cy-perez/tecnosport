@@ -388,7 +388,19 @@ puedan, espera sin procesarse.
 
 **Un modelo que cambió se reprocesa entero**, no solo la foto nueva: el lienzo
 depende de todas las fotos del modelo, y una foto que se procesara sola elegiría el
-suyo.
+suyo. **La principal y las aprobaciones a ojo sobreviven al reproceso** (22/10/2026,
+`salidas.heredado_del_previo`): la principal mientras la foto de origen sea la misma, y
+la aprobación solo si además la configuración —lienzo y versión del retoque— es la
+misma, porque si no el resultado que se aprobó ya es otro. Hasta esa fecha un
+reproceso las borraba en silencio.
+
+**Una carpeta de salida, un proceso** (22/10/2026, `candado.py`). `procesar.py`,
+`marcar.py` y `hojas.py` toman un candado en `.trabajo/candado.json` con su pid, y se
+niegan si otro proceso vivo lo tiene; uno de un proceso que murió no bloquea. Dos a la
+vez se pisaban el reporte: la parte 12 de la tanda del 22/10 corrió mientras la 11
+seguía en segundo plano y borró del reporte sus 18 fotos. Y si aun así al reporte le
+faltan fotos que están en «Fotos originales», la tanda rehace ese modelo **en la misma
+corrida** en vez de darlo por «sin fotos nuevas» con 0 LISTA.
 
 Cada modelo queda con su `estado-fotos.json`: `apto`, `en_espera` —con cuántas
 LISTA le faltan y la razón de cada foto que falló— o `fuera_de_tanda`. El

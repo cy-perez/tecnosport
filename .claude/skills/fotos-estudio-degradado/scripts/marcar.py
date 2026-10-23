@@ -40,6 +40,7 @@ import entorno  # noqa: E402  (sólo biblioteca estándar)
 
 entorno.exigir()
 
+import candado  # noqa: E402
 import hojas  # noqa: E402
 import reporte  # noqa: E402
 import salidas  # noqa: E402
@@ -105,6 +106,21 @@ def main() -> int:
     a = p.parse_args()
 
     raiz = Path(a.salida)
+    accion = (a.repetir or a.revisar or a.aprobar is not None or a.principal or a.excluir
+              or a.limpiar or a.limpiar_exclusiones)
+    if accion and not a.lista:
+        # Una marca puesta mientras corre un procesar.py se perdía: aquel guarda al final la copia
+        # del reporte que tomó al empezar. Ver candado.py.
+        try:
+            with candado.Candado(raiz, "marcar.py"):
+                return marcar(p, a, raiz)
+        except candado.CarpetaOcupada as e:
+            print(e)
+            return 1
+    return marcar(p, a, raiz)
+
+
+def marcar(p, a, raiz: Path) -> int:
     rep = reporte.cargar(raiz)
     if not rep:
         print(f"No hay {reporte.NOMBRE} en {raiz}")

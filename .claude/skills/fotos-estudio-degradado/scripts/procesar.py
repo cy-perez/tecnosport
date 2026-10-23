@@ -67,6 +67,7 @@ import cv2  # noqa: E402
 import numpy as np  # noqa: E402
 from PIL import Image, UnidentifiedImageError, features  # noqa: E402
 
+import candado  # noqa: E402
 import estimador  # noqa: E402
 import hojas  # noqa: E402
 import imagen  # noqa: E402
@@ -201,6 +202,8 @@ def procesar_foto(ctx: Contexto, ruta: Path, nombre: str, previo: dict) -> dict:
            "marcas": list(previo.get("marcas", [])) if misma else [],
            "exclusiones": list(previo.get("exclusiones", [])) if misma else [],
            "revisada": None, "salidas": {}}
+    # La principal y la aprobación a ojo sobreviven al reproceso de la misma foto (22/10/2026).
+    reg.update(salidas.heredado_del_previo(previo, huella, ctx.huella_config))
     if previo and not misma:
         notas.append("Es otra foto para este nombre: se descartaron las marcas y exclusiones de la anterior.")
     reg["version_retoque"] = salidas.VERSION_RETOQUE
@@ -689,6 +692,8 @@ def registro_error(ctx: Contexto, ruta: Path, nombre: str, previo: dict, e: Base
         reg["huella_origen"] = imagen.huella_archivo(ruta)
     except OSError:
         pass
+    # Un error pasajero —la memoria— no le quita a la foto la principal que la persona eligió.
+    reg["principal"] = salidas.heredado_del_previo(previo, reg.get("huella_origen"), ctx.huella_config)["principal"]
     return reg
 
 
@@ -807,12 +812,23 @@ def main() -> int:
     a.sin_huecos = {slug(x) for grupo in a.sin_huecos for x in grupo.split(",") if x.strip()}
     if not a.entradas and not solo:
         p.error("indica fotos o carpetas (o --solo NOMBRES para reprocesar lo que ya está en el reporte)")
+    otro = candado.ocupante(raiz)
+    if otro:
+        # Antes de lanzar nada, ni en segundo plano: dos corridas a la vez se pisan el reporte.
+        print(candado.mensaje(raiz, otro))
+        return 1
     if a.segundo_plano:
         return lanzar_segundo_plano(raiz)
 
     avance = raiz / reporte.TRABAJO / "avance.json"
+    raiz.mkdir(parents=True, exist_ok=True)     # antes del candado, que no crea carpetas
     try:
-        return ejecutar(a, raiz, solo, avance)
+        with candado.Candado(raiz, "procesar.py"):
+            return ejecutar(a, raiz, solo, avance)
+    except candado.CarpetaOcupada as e:
+        # No se toca el avance: es del otro proceso.
+        print(e)
+        return 1
     except SystemExit:
         raise
     except BaseException as e:  # deja constancia para quien consulte --avance

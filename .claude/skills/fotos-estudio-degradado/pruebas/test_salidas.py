@@ -137,6 +137,35 @@ class VersionDelRetoque(unittest.TestCase):
         self.assertEqual([caducada], segunda)
 
 
+class LoQueSobreviveAlReproceso(unittest.TestCase):
+    """22/10/2026: reprocesar un modelo borraba su principal y sus aprobaciones a ojo.
+
+    procesar.py armaba el registro nuevo con `revisada` en None y sin `principal`, así que un modelo
+    que cambiaba —y se reprocesa entero— perdía lo que la persona ya había decidido sobre sus fotos."""
+
+    PREVIO = {"huella_origen": "abc", "huella_config": "cfg-1200", "principal": {"fecha": "2026-10-22"},
+              "revisada": {"fecha": "2026-10-22", "nota": "revisada al 100 %"}}
+
+    def test_la_misma_foto_con_el_mismo_retoque_conserva_principal_y_aprobacion(self):
+        heredado = salidas.heredado_del_previo(self.PREVIO, "abc", "cfg-1200")
+        self.assertEqual(self.PREVIO["principal"], heredado["principal"])
+        self.assertEqual(self.PREVIO["revisada"], heredado["revisada"])
+
+    def test_otro_lienzo_o_otro_retoque_conserva_la_principal_y_no_la_aprobacion(self):
+        # La aprobación miró un resultado; con otro lienzo o retoque el resultado es otro. La
+        # principal es la toma, y la toma no cambió.
+        heredado = salidas.heredado_del_previo(self.PREVIO, "abc", "cfg-1600")
+        self.assertEqual(self.PREVIO["principal"], heredado["principal"])
+        self.assertIsNone(heredado["revisada"])
+
+    def test_otra_foto_con_el_mismo_nombre_no_hereda_nada(self):
+        self.assertEqual({"principal": None, "revisada": None},
+                         salidas.heredado_del_previo(self.PREVIO, "otra", "cfg-1200"))
+
+    def test_sin_registro_previo_no_hereda_nada(self):
+        self.assertEqual({"principal": None, "revisada": None}, salidas.heredado_del_previo({}, "abc", "cfg"))
+
+
 
 class TamanoOriginal(unittest.TestCase):
     def test_una_foto_cargada_reducida_da_su_tamano_de_antes(self):

@@ -192,13 +192,19 @@ def main() -> int:
                                 formatter_class=argparse.RawDescriptionHelpFormatter, epilog=__doc__)
     p.add_argument("salida", help="carpeta de salida (la que tiene reporte.json)")
     raiz = Path(p.parse_args().salida)
-    rep = reporte.cargar(raiz)
-    if not rep:
-        print(f"No hay {reporte.NOMBRE} en {raiz}")
+    import candado
+    try:
+        with candado.Candado(raiz, "hojas.py"):
+            rep = reporte.cargar(raiz)
+            if not rep:
+                print(f"No hay {reporte.NOMBRE} en {raiz}")
+                return 1
+            rutas, _ = generar(raiz, rep, int(rep.get("configuracion", {}).get("fotos_por_hoja", 8)))
+            rep["hojas_revision"] = [r.name for r in rutas]
+            reporte.guardar(raiz, rep)
+    except candado.CarpetaOcupada as e:
+        print(e)
         return 1
-    rutas, _ = generar(raiz, rep, int(rep.get("configuracion", {}).get("fotos_por_hoja", 8)))
-    rep["hojas_revision"] = [r.name for r in rutas]
-    reporte.guardar(raiz, rep)
     print("Hojas: " + ", ".join(str(r) for r in rutas))
     return 0
 

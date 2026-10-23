@@ -395,6 +395,29 @@ class Tanda(unittest.TestCase):
             self.assertEqual(1, procesos, "se vuelve a intentar aunque la carpeta no cambió")
             self.assertEqual(pf.APTO, estados[MODELO]["estado"])
 
+    def test_un_apto_al_que_otra_corrida_le_borro_el_reporte_se_rehace_en_la_misma_corrida(self):
+        # 22/10/2026: la parte 12 de la tanda pisó el reporte de la 11. Sus modelos quedaron aptos en
+        # estado-fotos.json, sin registros en el reporte, y la tanda los daba por «sin fotos nuevas»
+        # con 0 LISTA en vez de rehacerlos.
+        with tempfile.TemporaryDirectory() as tmp:
+            raiz = Path(tmp)
+            armar(raiz, CUATRO)
+            tanda(raiz, procesar=listas(raiz))
+            (raiz / pf.TRABAJO / "salida" / "reporte.json").write_text(json.dumps({"fotos": []}), encoding="utf-8")
+            estados, procesos = tanda(raiz, procesar=listas(raiz))
+            self.assertEqual(1, procesos, "se rehace en esta corrida, no en la siguiente")
+            self.assertEqual(pf.APTO, estados[MODELO]["estado"])
+            self.assertFalse(estados[MODELO].get("sin_cambios"))
+
+    def test_una_foto_sin_registro_dice_que_falta_en_el_reporte_y_no_habla_de_heic(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            raiz = Path(tmp)
+            armar(raiz, CUATRO)
+            estados, _ = tanda(raiz, procesar=lambda: None)
+            motivo = estados[MODELO]["fallidas"][0]["motivo"]
+            self.assertIn("no tiene registro en el reporte", motivo)
+            self.assertNotIn("pillow-heif", motivo)
+
     def test_dos_originales_con_el_mismo_nombre_no_cuentan_doble(self):
         with tempfile.TemporaryDirectory() as tmp:
             raiz = Path(tmp)

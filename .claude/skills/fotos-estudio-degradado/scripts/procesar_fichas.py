@@ -533,9 +533,7 @@ def evaluar(mid: str, carpeta: Path, reporte: dict, cfg: dict, kit: bool = False
     for original in buenas:
         foto = registro_de(original, mid, registros)
         if foto is None:
-            fallidas.append({"foto": original.name, "estado": SIN_PROCESAR,
-                             "motivo": "el retoque no la procesó: si es HEIC, falta pillow-heif "
-                                       "(pip install pillow-heif); si no, se reintenta en la próxima corrida"})
+            fallidas.append({"foto": original.name, "estado": SIN_PROCESAR, "motivo": motivo_sin_registro(original)})
             continue
         estado = foto.get("estado")
         # En un kit las piezas sueltas son el producto, sin tope; en audífonos (`par`), hasta
@@ -575,6 +573,28 @@ def evaluar(mid: str, carpeta: Path, reporte: dict, cfg: dict, kit: bool = False
     return {"listas": listas, "fallidas": fallidas, "aprobadas_a_ojo": aprobadas}
 
 
+def motivo_sin_registro(original: Path) -> str:
+    """Por qué una original no tiene registro en el reporte. Una HEIC sin pillow-heif es la causa de
+    siempre; cualquier otra —dos corridas que se pisaron el reporte (22/10/2026)— no tiene que ver
+    con HEIC, y decirlo mandaba a buscar donde no era."""
+    if original.suffix.lower() in (".heic", ".heif"):
+        return ("el retoque no la procesó: es HEIC y probablemente falta pillow-heif "
+                "(pip install pillow-heif); se reintenta en la próxima corrida")
+    return ("no tiene registro en el reporte de _estudio/salida —¿se pisaron dos corridas?—: "
+            "el modelo se rehace")
+
+
+def faltan_en_el_reporte(mid: str, carpeta: Path, registros) -> list:
+    """Las originales del modelo que no tienen registro en el reporte. Un modelo apto no se vuelve a
+    procesar mientras su carpeta no cambie, pero si otra corrida le borró los registros —la parte 12 de
+    la tanda del 22/10/2026 pisó el reporte de la 11— el veredicto sale con 0 LISTA y la tanda lo daba
+    por «sin fotos nuevas»: hay que rehacerlo, y en esta misma corrida."""
+    if registros is None:
+        return []
+    buenas, _ = unicas(carpeta)
+    return [f.name for f in buenas if registro_de(f, mid, registros) is None]
+
+
 def _evaluado_de_verdad(previo: dict) -> bool:
     """Si el estado guardado salió de mirar el reporte. Uno «por procesar», o con fotos que el
     retoque no procesó, no se puede dar por decidido aunque la carpeta no haya cambiado."""
@@ -583,7 +603,7 @@ def _evaluado_de_verdad(previo: dict) -> bool:
 
 
 def decidir(mid: str, carpeta, cfg: dict, reporte=None, medidor=medir, fecha_tanda=None,
-            sacados=None, kits=None) -> tuple:
+            sacados=None, kits=None, registros=None) -> tuple:
     """(estado del modelo, ¿hay que procesarlo?). Sin `reporte` solo decide lo que se sabe antes de procesar.
 
     Con `reporte` siempre recalcula el veredicto —salvo el de un modelo sacado—: lo que se marcó
@@ -613,7 +633,8 @@ def decidir(mid: str, carpeta, cfg: dict, reporte=None, medidor=medir, fecha_tan
                            f"{MINIMO_LISTA}: no se procesó"), False
 
     if reporte is None:
-        if mismo and previo.get("estado") in (APTO, EN_ESPERA) and _evaluado_de_verdad(previo):
+        if (mismo and previo.get("estado") in (APTO, EN_ESPERA) and _evaluado_de_verdad(previo)
+                and not faltan_en_el_reporte(mid, carpeta, registros)):
             return dict(previo, sin_cambios=previo.get("estado") == EN_ESPERA), False
         return dict(base, estado=EN_ESPERA, listas=[], faltan=MINIMO_LISTA, fallidas=antes["fallidas"],
                     motivo="por procesar"), True
@@ -758,7 +779,9 @@ def correr_tanda(raiz: Path, ids: list, cfg: dict, procesar_fn, solo_devolver=Fa
     kits = leer_kits(raiz)
     decisiones = {}
     if not solo_devolver:
-        decisiones = {mid: decidir(mid, por_id.get(mid), cfg, None, medidor, fecha_tanda, sacados)
+        registros = leer_reporte(raiz).get("fotos", [])
+        decisiones = {mid: decidir(mid, por_id.get(mid), cfg, None, medidor, fecha_tanda, sacados,
+                                   registros=registros)
                       for mid in ids}
         a_procesar = [mid for mid, (_, p) in decisiones.items() if p]
         if a_procesar:
