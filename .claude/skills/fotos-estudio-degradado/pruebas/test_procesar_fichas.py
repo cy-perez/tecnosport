@@ -611,6 +611,79 @@ class PorPartes(unittest.TestCase):
             self.assertEqual({pf.APTO}, {e["estado"] for e in estados})
 
 
+class ValidarAntesDeProcesar(unittest.TestCase):
+    """22/10/2026: antes de gastar horas de retoque se validaron 297 fotos a mano (nombres, formatos,
+    duplicados, LISTA estimadas). `--validar` lo hace sin retocar nada."""
+
+    LADOS = {"chica": 500}
+
+    def estimar(self, ruta):
+        return 300 if "chica" in ruta.name else 1600
+
+    def test_informa_nombres_formatos_pequenas_y_estimadas_por_modelo(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            raiz = Path(tmp)
+            carpeta = armar(raiz, (f"{MODELO}_1.jpg", f"{MODELO}_2.jpg", "Samsung Galaxy S25 Ultra_3.webp",
+                                   f"{MODELO}_4.jpg", "chica_5.png"))
+            (carpeta / pf.ORIGINALES / "nota.bmp").write_bytes(b"bmp")
+            v = pf.validar(raiz, [MODELO], pf.cargar_config(), medidor=lambda r: (400, 400) if "chica" in r.name
+                           else (2000, 2000), estimar=self.estimar)
+            m = v["modelos"][MODELO]
+            self.assertEqual({"Samsung Galaxy S25 Ultra_3.webp", "chica_5.png"}, set(m["nombres_fuera"]))
+            self.assertEqual(["nota.bmp"], m["no_admitidos"])
+            self.assertEqual(["chica_5.png"], m["pequenas"])
+            self.assertEqual(4, m["listas_estimadas"])
+            self.assertTrue(v["completa"])
+
+    def test_detecta_fotos_identicas_en_dos_modelos(self):
+        # La Redmi Pad 2 bundle y la 4G compartían sus seis fotos byte a byte.
+        with tempfile.TemporaryDirectory() as tmp:
+            raiz = Path(tmp)
+            a = armar(raiz, ("uno_1.jpg",), titulo="Uno", mid="uno")
+            b = armar(raiz, ("dos_1.jpg",), titulo="Dos", mid="dos")
+            (b / pf.ORIGINALES / "dos_1.jpg").write_bytes((a / pf.ORIGINALES / "uno_1.jpg").read_bytes())
+            v = pf.validar(raiz, ["uno", "dos"], pf.cargar_config(), medidor=lambda r: None, estimar=lambda r: None)
+            self.assertEqual([["Dos/dos_1.jpg", "Uno/uno_1.jpg"]], v["duplicados"])
+            self.assertIn("idénticas", pf.informe_validacion(v))
+
+    def test_un_modelo_que_no_reune_cuatro_estimadas_deja_la_tanda_incompleta(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            raiz = Path(tmp)
+            armar(raiz, CUATRO)
+            v = pf.validar(raiz, [MODELO], pf.cargar_config(), medidor=lambda r: None, estimar=lambda r: 300)
+            self.assertEqual(0, v["modelos"][MODELO]["listas_estimadas"])
+            self.assertFalse(v["completa"])
+
+    def test_sin_estimador_no_se_inventa_el_numero(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            raiz = Path(tmp)
+            armar(raiz, CUATRO)
+            v = pf.validar(raiz, [MODELO], pf.cargar_config(), medidor=lambda r: None, estimar=None)
+            self.assertIsNone(v["modelos"][MODELO]["listas_estimadas"])
+
+    def test_renombrar_deja_el_id_en_orden_natural_y_un_registro(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            raiz = Path(tmp)
+            carpeta = armar(raiz, ("Foto_10.jpg", "Foto_2.png", "Foto_1.webp"))
+            registro = pf.renombrar(raiz, [MODELO])
+            self.assertEqual([f"{MODELO}_1.webp", f"{MODELO}_2.png", f"{MODELO}_3.jpg"],
+                             [f.name for f in pf.originales(carpeta)])
+            self.assertEqual("Foto_10.jpg", registro["renombradas"][-1]["antes"])
+            self.assertTrue(Path(registro["archivo"]).is_file())
+
+    def test_renombrar_se_niega_si_el_modelo_ya_tiene_procesadas(self):
+        # Renombrar cambia la huella: fuerza el reproceso y caduca aprobaciones.
+        with tempfile.TemporaryDirectory() as tmp:
+            raiz = Path(tmp)
+            carpeta = armar(raiz, ("Foto_1.jpg",))
+            (carpeta / pf.PROCESADAS).mkdir()
+            (carpeta / pf.PROCESADAS / "Foto_1.jpg").write_bytes(b"maestra")
+            registro = pf.renombrar(raiz, [MODELO])
+            self.assertEqual([], registro["renombradas"])
+            self.assertIn(MODELO, registro["negados"])
+            self.assertEqual(["Foto_1.jpg"], [f.name for f in pf.originales(carpeta)])
+
+
 class SinFichaEnLaLista(unittest.TestCase):
     """Decisión del 22/10/2026: un modelo que la lista no exporta —sin descripción— no puede tener
     borrador, así que no bloquea la tanda; sus fotos se procesan para no perder el trabajo."""

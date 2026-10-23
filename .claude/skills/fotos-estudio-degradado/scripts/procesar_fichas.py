@@ -852,6 +852,122 @@ def retoque_en_curso(raiz: Path):
     return datos
 
 
+# --------------------------------------------------------------------------
+# Validar antes de procesar (22/10/2026)
+# --------------------------------------------------------------------------
+
+def estimar_producto(ruta: Path):
+    """El lado del producto que mide el estimador de la skill, o None. El estimador pide NumPy y
+    Pillow; sin ellos no se estima nada y la validación lo dice, en vez de inventar el número."""
+    try:
+        import estimador
+    except ImportError:
+        return None
+    try:
+        return estimador.estimar_lado_fiable(ruta)
+    except Exception:
+        return None
+
+
+def validar(raiz: Path, ids, cfg: dict, medidor=medir, estimar=estimar_producto) -> dict:
+    """Lo que hay que saber de las originales antes de gastar un retoque, sin retocar nada.
+
+    Por modelo: los nombres que no siguen `<id>_N` —la convención de la skill de listas, que el
+    resto del flujo da por hecha—, los archivos de un formato que no se lee (hoy se ignoran sin
+    avisar), las fotos bajo el lado mínimo y cuántas LISTA se estiman en un lienzo de
+    LIENZO_MINIMO con el mismo estimador y la misma regla que usa la tanda. Y en toda la tanda, las
+    fotos idénticas en dos modelos: la Redmi Pad 2 bundle y la 4G compartían sus seis fotos.
+    Es lo que el 22/10/2026 se validó a mano, foto por foto, antes de procesar 297."""
+    minimo = lado_minimo(cfg)
+    por_modelo, huellas = {}, {}
+    for mid, carpeta in modelos(raiz, set(ids) if ids else None).items():
+        todos = sorted((f for f in (carpeta / ORIGINALES).iterdir() if f.is_file()),
+                       key=lambda f: orden_natural(f.name))
+        fotos = [f for f in todos if f.suffix.lower() in EXT_FOTO]
+        patron = re.compile(rf"{re.escape(mid)}_\d+")
+        lados = []
+        datos = {"carpeta": carpeta.name, "fotos": len(fotos),
+                 "nombres_fuera": [f.name for f in fotos if not patron.fullmatch(f.stem)],
+                 "no_admitidos": [f.name for f in todos if f.suffix.lower() not in EXT_FOTO
+                                  and not f.name.startswith(".")],
+                 "pequenas": []}
+        for f in fotos:
+            huellas.setdefault(huella_archivo(f), []).append(f"{carpeta.name}/{f.name}")
+            medida = medidor(f)
+            if medida is not None and max(medida) < minimo:
+                datos["pequenas"].append(f.name)
+            if estimar is not None:
+                lados.append(estimar(f) or 0)
+        datos["listas_estimadas"] = (salidas.listas_en(int(cfg["lienzo_minimo"]), lados, cfg)
+                                     if estimar is not None else None)
+        por_modelo[mid] = datos
+    duplicados = sorted(sorted(v) for v in huellas.values() if len({x.split("/")[0] for x in v}) > 1)
+    completa = all(d["listas_estimadas"] is None or d["listas_estimadas"] >= MINIMO_LISTA
+                   for d in por_modelo.values())
+    return {"modelos": por_modelo, "duplicados": duplicados, "completa": completa, "lado_minimo": minimo}
+
+
+def informe_validacion(v: dict) -> str:
+    lineas = []
+    for mid, d in v["modelos"].items():
+        est = d["listas_estimadas"]
+        ok = (est is None or est >= MINIMO_LISTA) and not (d["nombres_fuera"] or d["no_admitidos"])
+        texto = "sin estimar (falta NumPy o Pillow)" if est is None else f"{est} LISTA estimadas en {LIENZO_MINIMO}"
+        lineas.append(f"[{'OK' if ok else 'ATENCIÓN'}] {d['carpeta']} ({mid}) · {d['fotos']} fotos · {texto}")
+        if d["nombres_fuera"]:
+            lineas.append(f"    nombres que no siguen «{mid}_N»: {', '.join(d['nombres_fuera'])}")
+        if d["no_admitidos"]:
+            lineas.append(f"    formato que no se lee (no cuenta): {', '.join(d['no_admitidos'])}")
+        if d["pequenas"]:
+            lineas.append(f"    bajo el mínimo de {v['lado_minimo']} px (no puede salir LISTA): {', '.join(d['pequenas'])}")
+    por_modelos: dict = {}
+    for grupo in v["duplicados"]:
+        clave = tuple(sorted({x.split("/")[0] for x in grupo}))
+        por_modelos.setdefault(clave, []).append(" = ".join(x.split("/", 1)[1] for x in grupo))
+    for clave, iguales in por_modelos.items():
+        lineas.append(f"\n[aviso] {len(iguales)} foto(s) idénticas en {' y '.join(clave)}: si son productos "
+                      f"distintos, sus fotos deberían mostrar la diferencia ({'; '.join(iguales)})")
+    nombres = sum(len(d["nombres_fuera"]) for d in v["modelos"].values())
+    if nombres:
+        lineas.append(f"\n{nombres} foto(s) no siguen «<id>_N»: --renombrar las deja así en orden natural, en los "
+                      "modelos que todavía no tienen procesadas.")
+    lineas.append("\nVALIDACIÓN: " + ("todos los modelos pueden reunir sus " + str(MINIMO_LISTA) + " LISTA"
+                                       if v["completa"] else "hay modelos que no reúnen " + str(MINIMO_LISTA)
+                                       + " LISTA estimadas: faltan fotos de más resolución"))
+    return "\n".join(lineas)
+
+
+def renombrar(raiz: Path, ids) -> dict:
+    """Deja las originales de cada modelo como `<id>_N`, en orden natural, en dos pasos para que un
+    nombre no pise a otro, y escribe el registro en `_estudio/renombradas-<fecha>.json`.
+
+    Se niega en un modelo que ya tiene «Fotos procesadas» o `estado-fotos.json`: el nombre entra en
+    la huella de la carpeta, así que renombrar fuerza el reproceso y caduca las aprobaciones."""
+    hechas, negados = [], []
+    for mid, carpeta in modelos(raiz, set(ids) if ids else None).items():
+        procesadas = carpeta / PROCESADAS
+        if (carpeta / ESTADO).is_file() or (procesadas.is_dir() and any(procesadas.iterdir())):
+            negados.append(mid)
+            continue
+        plan = []
+        for i, f in enumerate(originales(carpeta), 1):
+            nuevo = f.with_name(f"{mid}_{i}{f.suffix.lower()}")
+            if f.name != nuevo.name:
+                plan.append((f, nuevo))
+        temporales = [(f, f.with_name(f"__renombrando__{k}{f.suffix}"), n) for k, (f, n) in enumerate(plan)]
+        for f, t, _ in temporales:
+            f.rename(t)
+        for _, t, n in temporales:
+            t.rename(n)
+        hechas += [{"carpeta": carpeta.name, "antes": f.name, "despues": n.name} for f, n in plan]
+    archivo = None
+    if hechas:
+        archivo = Path(raiz) / TRABAJO / f"renombradas-{datetime.now().strftime('%Y-%m-%d-%H%M%S')}.json"
+        archivo.parent.mkdir(parents=True, exist_ok=True)
+        archivo.write_text(json.dumps(hechas, ensure_ascii=False, indent=2) + "\n", encoding="utf-8", newline="")
+    return {"renombradas": hechas, "negados": negados, "archivo": str(archivo) if archivo else None}
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     ap.add_argument("fichas", nargs="?", default="catalogo/4-entregables/fichas")
@@ -870,10 +986,29 @@ def main() -> int:
                                                        "los admita: lo que el recorte encierre vuelve al producto")
     ap.add_argument("--quitar-sin-huecos", metavar="ID", help="deshace un --sin-huecos")
     ap.add_argument("--motivo", help="con --sacar, --kit o --sin-huecos: por qué, queda escrito")
+    ap.add_argument("--validar", action="store_true",
+                    help="no retoca nada: informa nombres, formatos, duplicados y LISTA estimadas por modelo")
+    ap.add_argument("--renombrar", action="store_true",
+                    help="con --validar: deja las originales como <id>_N en orden natural (solo en modelos "
+                         "sin procesadas)")
     a = ap.parse_args()
     raiz = Path(a.fichas)
     if a.lote is not None and (a.lote < 1 or a.segundo_plano):
         ap.error("--lote pide un número positivo y va en primer plano: las partes corren una tras otra")
+    if a.renombrar and not a.validar:
+        ap.error("--renombrar va con --validar: primero se ve qué cambia")
+    if a.validar:
+        ids = leer_tanda(Path(a.tanda))[1] if a.tanda else None
+        if a.renombrar:
+            r = renombrar(raiz, ids)
+            print(f"{len(r['renombradas'])} foto(s) renombradas" + (f"; registro en {r['archivo']}" if r["archivo"] else ""))
+            for mid in r["negados"]:
+                print(f"[no se renombró] {mid}: ya tiene fotos procesadas o estado-fotos.json, y renombrar cambia "
+                      "la huella de la carpeta —fuerza el reproceso y caduca las aprobaciones—. Si de verdad hay "
+                      "que hacerlo, renómbralas a mano sabiendo eso.")
+        v = validar(raiz, ids, cargar_config())
+        print(informe_validacion(v))
+        return 0 if v["completa"] else SALIDA_EN_ESPERA
     if a.sin_huecos or a.quitar_sin_huecos:
         mid = a.sin_huecos or a.quitar_sin_huecos
         try:

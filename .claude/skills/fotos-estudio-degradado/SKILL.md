@@ -400,6 +400,26 @@ mayor no llega a 638 px (1200 × 0,85 / 1,6) no puede salir LISTA, porque el
 producto nunca mide más que la foto. Un modelo con menos de cuatro originales que
 puedan, espera sin procesarse.
 
+**Y antes de lanzar una tanda grande, `--validar`** (22/10/2026). No retoca nada; por
+modelo dice:
+- los nombres que no siguen `<id>_N`;
+- los archivos de un formato que no se lee, que la tanda ignora sin avisar;
+- las fotos bajo el lado mínimo;
+- cuántas LISTA se estiman en 1200, con el mismo estimador y la misma regla de la tanda.
+
+Y en toda la tanda, las fotos idénticas en dos modelos (la Redmi Pad 2 bundle y la 4G
+compartían sus seis). Sale con 3 si algún modelo no reúne cuatro. Con `--renombrar`
+deja las originales como `<id>_N` en orden natural y anota el cambio en
+`_estudio/renombradas-<fecha>.json`, pero solo en los modelos que todavía no tienen
+procesadas: el nombre entra en la huella de la carpeta, así que renombrar un modelo
+procesado fuerza su reproceso y caduca sus aprobaciones. El 22/10 se validaron 297
+fotos a mano antes de procesarlas; esto es eso mismo.
+
+```bash
+python3 "${CLAUDE_SKILL_DIR}/scripts/procesar_fichas.py" catalogo/4-entregables/fichas \
+    --tanda catalogo/5-api/por-proponer.json --validar [--renombrar]
+```
+
 **Un modelo que cambió se reprocesa entero**, no solo la foto nueva: el lienzo
 depende de todas las fotos del modelo, y una foto que se procesara sola elegiría el
 suyo. **La principal y las aprobaciones a ojo sobreviven al reproceso** (22/10/2026,
