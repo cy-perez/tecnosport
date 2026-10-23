@@ -684,6 +684,54 @@ class ValidarAntesDeProcesar(unittest.TestCase):
             self.assertEqual(["Foto_1.jpg"], [f.name for f in pf.originales(carpeta)])
 
 
+class Portadas(unittest.TestCase):
+    """22/10/2026: ninguna de las 56 fotos de portada de la tanda se había elegido; el borrador subía
+    la _1 que se descargó primero. Al quedar la tanda completa se arma la hoja para elegirlas."""
+
+    def test_las_filas_son_los_aptos_con_sus_lista_y_la_principal_primero(self):
+        estados = [{"modelo": "a", "estado": pf.APTO, "listas": ["a_3.jpg", "a_1.jpg", "a_2.jpg"]},
+                   {"modelo": "b", "estado": pf.EN_ESPERA, "listas": ["b_1.jpg"]},
+                   {"modelo": "c", "estado": pf.APTO, "listas": ["c_1.jpg", "c_2.jpg"]}]
+        filas = pf.filas_de_portadas(estados, sin_ficha={"c"})
+        self.assertEqual([("a", ["a-3", "a-1", "a-2"])], filas)
+
+    def test_la_orden_para_cambiar_principales_va_en_una_sola_llamada(self):
+        texto = pf.orden_de_portadas([("a", ["a-3", "a-1"]), ("b", ["b-1"])], Path("SAL"))
+        self.assertIn("a: a-3", texto)
+        self.assertEqual(1, texto.count("--principal"))
+        self.assertIn("--sin-hojas", texto)
+
+
+class PistaDeKit(unittest.TestCase):
+    """Antes de procesar: un modelo que por su ficha parece un kit recibe la sugerencia, sin declararlo.
+    El 22/10/2026 el Switch 2, el PartyBox Encore 2 y la Fly Go Pad «con teclado y mouse» esperaron
+    una corrida entera por piezas sueltas que la ficha ya anunciaba."""
+
+    def ficha(self, raiz, modelo, categoria):
+        carpeta = armar(raiz, CUATRO)
+        (carpeta / f"{MODELO}-ficha.txt").write_text(f"MODELO: {modelo}\nCATEGORÍA: {categoria}\n", encoding="utf-8")
+        return carpeta
+
+    def test_con_teclado_o_una_consola_dan_pista(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            self.assertIsNotNone(pf.pista_de_kit(self.ficha(Path(tmp), 'Fly Go Pad 10″ 4G con teclado y mouse', "tablets")))
+        with tempfile.TemporaryDirectory() as tmp:
+            self.assertIsNotNone(pf.pista_de_kit(self.ficha(Path(tmp), "Nintendo Switch 2", "consolas")))
+
+    def test_un_celular_comun_no_da_pista(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            self.assertIsNone(pf.pista_de_kit(self.ficha(Path(tmp), "Samsung Galaxy A37 5G", "celulares")))
+
+    def test_la_tanda_avisa_la_pista_y_no_declara_el_kit(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            raiz = Path(tmp)
+            self.ficha(raiz, "Nintendo Switch 2", "consolas")
+            avisos = pf.pistas_de_kit(raiz, [MODELO], kits={})
+            self.assertEqual([MODELO], [mid for mid, _ in avisos])
+            self.assertEqual({}, pf.leer_kits(raiz))
+            self.assertEqual([], pf.pistas_de_kit(raiz, [MODELO], kits={MODELO: {"motivo": "x"}}))
+
+
 class SinFichaEnLaLista(unittest.TestCase):
     """Decisión del 22/10/2026: un modelo que la lista no exporta —sin descripción— no puede tener
     borrador, así que no bloquea la tanda; sus fotos se procesan para no perder el trabajo."""

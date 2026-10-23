@@ -295,6 +295,42 @@ def preparar(raiz: Path, solo=None) -> tuple:
     return copiadas, errores
 
 
+# Pistas de kit desde la ficha (22/10/2026): el Switch 2, el PartyBox Encore 2 y la Fly Go Pad «con
+# teclado y mouse» esperaron una corrida entera por piezas sueltas que la ficha ya anunciaba. Es una
+# pista para la persona, no una declaración: tres piezas también pueden ser dos productos.
+RE_PISTA_DE_KIT = re.compile(r"\bcon (?:teclado|mouse|rat[oó]n|l[aá]piz|joy-?con|micr[oó]fonos?|controles?)\b"
+                             r"|\bbundle\b|\bkit\b|\bcombo\b|\s\+\s", re.IGNORECASE)
+CATEGORIAS_DE_KIT = {"consolas"}
+
+
+def dato_de_ficha(carpeta: Path, *claves):
+    """El valor de una línea `CLAVE: valor` de la ficha que escribió listas-de-proveedor, o None."""
+    buscadas = {c.upper() for c in claves}
+    for f in carpeta.glob("*-ficha.txt"):
+        for linea in f.read_text(encoding="utf-8", errors="replace").splitlines():
+            clave, sep, valor = linea.partition(":")
+            if sep and clave.strip().upper() in buscadas:
+                return valor.strip() or None
+        return None
+    return None
+
+
+def pista_de_kit(carpeta: Path):
+    """Por qué el modelo parece venderse con piezas sueltas, o None."""
+    if (categoria_de(carpeta) or "") in CATEGORIAS_DE_KIT:
+        return "es una consola: su foto de catálogo suele mostrar los controles sueltos"
+    titulo = dato_de_ficha(carpeta, "MODELO") or carpeta.name
+    m = RE_PISTA_DE_KIT.search(titulo)
+    return f"el título dice «{m.group(0).strip()}»" if m else None
+
+
+def pistas_de_kit(raiz: Path, ids, kits=None) -> list:
+    """[(id, razón)] de los modelos que parecen un kit y no están declarados como tal."""
+    kits = kits or {}
+    return [(mid, razon) for mid, carpeta in modelos(raiz, set(ids)).items()
+            if mid not in kits and (razon := pista_de_kit(carpeta))]
+
+
 def leer_reporte(raiz: Path) -> dict:
     ruta = Path(raiz) / TRABAJO / "salida" / "reporte.json"
     return json.loads(ruta.read_text(encoding="utf-8")) if ruta.is_file() else {"fotos": []}
@@ -808,6 +844,10 @@ def correr_tanda(raiz: Path, ids: list, cfg: dict, procesar_fn, solo_devolver=Fa
                                    registros=registros)
                       for mid in ids}
         a_procesar = [mid for mid, (_, p) in decisiones.items() if p]
+        for mid, razon in pistas_de_kit(raiz, a_procesar, kits):
+            # Antes de procesar, para no esperar una corrida entera por las piezas sueltas.
+            print(f"[pista] {mid} parece un kit ({razon}). Si se vende con piezas sueltas: "
+                  f"--kit {mid} --motivo \"qué piezas trae\"")
         if a_procesar:
             copiadas, errores = preparar(raiz, set(a_procesar))
             for e in errores:
@@ -831,6 +871,75 @@ def correr_tanda(raiz: Path, ids: list, cfg: dict, procesar_fn, solo_devolver=Fa
             escribir_estado(por_id[mid], {k: v for k, v in estado.items() if k != "sin_cambios"})
         estados.append(estado)
     return estados
+
+
+# --------------------------------------------------------------------------
+# Las portadas (22/10/2026)
+# --------------------------------------------------------------------------
+
+def filas_de_portadas(estados: list, sin_ficha=frozenset()) -> list:
+    """[(id, [nombres de sus LISTA en el orden en que se suben])] de los modelos aptos que van a
+    borrador. El primero es la principal: la portada del producto en el sitio."""
+    return [(e["modelo"], [slug(Path(x).stem) for x in e.get("listas") or []])
+            for e in estados if e.get("estado") == APTO and e["modelo"] not in set(sin_ficha)]
+
+
+def orden_de_portadas(filas: list, salida: Path) -> str:
+    """La portada actual de cada modelo y la orden para cambiar las que haga falta en una sola llamada."""
+    lineas = ["Portada de cada modelo (la primera es la que se sube de principal):"]
+    for mid, nombres in filas:
+        lineas.append(f"  {mid}: {nombres[0]}" + (f"   otras: {', '.join(nombres[1:])}" if nombres[1:] else ""))
+    lineas.append("Para cambiar portadas, una por modelo y en una sola llamada (las hojas se regeneran al final):")
+    lineas.append(f"  python \"{Path(__file__).with_name('marcar.py')}\" \"{salida}\" <nombre> <nombre> ... "
+                  "--principal --sin-hojas")
+    lineas.append(f"  python \"{Path(__file__).with_name('hojas.py')}\" \"{salida}\"")
+    lineas.append("Y vuelve a correr la tanda para que la nueva principal pase al frente de estado-fotos.json.")
+    return "\n".join(lineas)
+
+
+def hacer_portadas(salida: Path, filas: list, por_hoja: int = 8, lado: int = 180) -> list:
+    """`portadas-N.jpg` en la salida: una fila por modelo con sus LISTA numeradas, la principal
+    resaltada. Sale de las miniaturas que ya guardó el retoque; sin Pillow, no se arma y no pasa nada."""
+    try:
+        from PIL import Image, ImageDraw, ImageFont
+    except ImportError:
+        return []
+    try:
+        fuente = ImageFont.truetype("arial.ttf", 18)
+    except OSError:
+        fuente = ImageFont.load_default()
+    for vieja in Path(salida).glob("portadas-*.jpg"):
+        vieja.unlink()
+    rutas, maximo = [], max((len(n) for _, n in filas), default=0)
+    ancho = 20 + max(maximo, 1) * (lado + 12) + 20
+    for h in range(0, len(filas), por_hoja):
+        bloque = filas[h:h + por_hoja]
+        hoja = Image.new("RGB", (ancho, 20 + len(bloque) * (lado + 66)), "white")
+        d = ImageDraw.Draw(hoja)
+        for i, (mid, nombres) in enumerate(bloque):
+            y = 20 + i * (lado + 66)
+            d.text((20, y), mid, fill=(20, 20, 20), font=fuente)
+            for k, nombre in enumerate(nombres):
+                x = 20 + k * (lado + 12)
+                mini = Path(salida) / ".trabajo" / "miniaturas" / f"{nombre}-despues.jpg"
+                if mini.is_file():
+                    with Image.open(mini) as im:
+                        im = im.convert("RGB")
+                        im.thumbnail((lado, lado))
+                        hoja.paste(im, (x, y + 26))
+                color = (20, 125, 60) if k == 0 else (70, 70, 70)
+                d.rectangle([x - 3, y + 23, x + lado + 2, y + 26 + lado + 2], outline=color if k == 0 else (200, 200, 200),
+                            width=4 if k == 0 else 1)
+                d.text((x + 4, y + 28), f"{k + 1}{' principal' if k == 0 else ''}", fill=color, font=fuente)
+                etiqueta = nombre
+                while len(etiqueta) > 4 and d.textlength(etiqueta, font=fuente) > lado:
+                    etiqueta = etiqueta[2:]
+                d.text((x, y + 32 + lado), etiqueta if etiqueta == nombre else "…" + etiqueta[1:],
+                       fill=(90, 90, 90), font=fuente)
+        ruta = Path(salida) / f"portadas-{h // por_hoja + 1}.jpg"
+        hoja.save(ruta, quality=85)
+        rutas.append(ruta)
+    return rutas
 
 
 def retoque_en_curso(raiz: Path):
@@ -1087,6 +1196,15 @@ def main() -> int:
         if fuera:
             print(f"\n[aviso] {len(fuera)} carpeta(s) con fotos que no están en la tanda y no se procesaron "
                   "(no están en por-proponer.json): " + ", ".join(fuera))
+        espera = any(e["estado"] == EN_ESPERA and e["modelo"] not in sin_ficha for e in estados)
+        if not espera:
+            filas = filas_de_portadas(estados, sin_ficha)
+            if filas:
+                salida = raiz / TRABAJO / "salida"
+                rutas = hacer_portadas(salida, filas)
+                print("\n" + orden_de_portadas(filas, salida))
+                for r in rutas:
+                    print(f"  hoja de portadas: {r}")
         print(f"\nHojas de revisión: {raiz / TRABAJO / 'salida'}")
         # Un modelo sin ficha en la lista no detiene la entrega: el bloque 3 no puede hacerle
         # borrador de todas formas, y la tanda se entrega con lo que sí puede llegar al panel.

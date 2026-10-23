@@ -505,7 +505,11 @@ productos distintos o la gama de colores, y eso lo decide una persona, no el scr
 Si en la hoja ves un modelo esperando solo por `varias_piezas`, pregúntale a la persona
 si es un kit; no lo declares por tu cuenta. Desde el 20/10/2026 el informe de la tanda lo sugiere
 con la orden lista para copiar («¿Es un kit? … --kit <id>»), y la hoja de revisión lo anota en esa
-foto: la sugerencia es para la persona, no para que la apliques.
+foto: la sugerencia es para la persona, no para que la apliques. **Y desde el 22/10/2026 la tanda
+avisa antes de procesar** (`[pista] … parece un kit`) cuando la ficha lo anuncia —categoría
+consolas, o un título con «con teclado», «con mouse», «bundle», «kit», « + »—: el Switch 2, el
+PartyBox Encore 2 y la Fly Go Pad «con teclado y mouse» esperaron una corrida entera por piezas
+sueltas que su ficha ya decía. Pregúntale a la persona antes de que corra el retoque.
 
 ```bash
 python3 "${CLAUDE_SKILL_DIR}/scripts/procesar_fichas.py" catalogo/4-entregables/fichas \
@@ -556,6 +560,13 @@ las hojas —unos 4 minutos con una tanda de 300 fotos—, y elegir las portadas
 modelos de a una eran casi cuatro horas. Para varias decisiones seguidas, `--sin-hojas`
 en cada llamada y `hojas.py SALIDA` al final. Y la principal sobrevive al reproceso de
 la misma foto (ver «Un modelo que cambió se reprocesa entero»).
+
+**Para elegirlas, la hoja de portadas** (22/10/2026). Cuando la tanda queda completa
+deja `_estudio/salida/portadas-N.jpg`, una fila por modelo con sus LISTA numeradas en
+el orden en que se suben y la principal resaltada, e imprime la portada actual de cada
+modelo con la orden de `marcar.py` lista para cambiarlas en una sola llamada.
+Muéstrasela a la persona: en la tanda del 22/10 ninguna de las 56 portadas se había
+elegido, y todas iban a ser la `_1` que se descargó primero.
 
 Con la revisión hecha:
 
