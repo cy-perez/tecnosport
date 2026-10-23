@@ -827,6 +827,11 @@ siguen mirándose al 100 %.
 La foto mínima antes de procesar en la tanda bajó con él: 1200 × 0,85 / 1,6 =
 638 px. Si el material mejora, esto vuelve a 1,5.
 
+**El corte se aplica a la escala que se guarda**, redondeada a 3 decimales
+(`salidas.estado_por_ampliacion`, 22/10/2026). Hasta esa fecha `procesar.py` comparaba
+la de antes de redondear y guardaba la redondeada, que es la que relee `verificar.py`:
+el Xiaomi 17T _6, a 1,5996×, salió LISTA y la verificación dijo que debía ser REVISAR.
+
 ### Por qué el corte de ampliación está en 3× y no en 2×
 
 `ampliacion_repetir` estuvo en 2.0 hasta el 19/09/2026. Se subió a 3.0 por una

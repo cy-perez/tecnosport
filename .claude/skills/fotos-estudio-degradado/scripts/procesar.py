@@ -411,11 +411,12 @@ def procesar_foto(ctx: Contexto, ruta: Path, nombre: str, previo: dict) -> dict:
     # en px de la foto original, como las exclusiones: ampliar.py la dibuja sobre ella
     reg["caja_origen"] = {k: int(round(v / factor)) for k, v in
                           {"x0": x0, "y0": y0, "x1": x1, "y1": y1, "lado_mayor": lado0}.items()}
-    if s >= cfg["ampliacion_repetir"]:
+    por_ampliacion = salidas.estado_por_ampliacion(s, cfg)   # con la escala que se guarda, como verificar.py
+    if por_ampliacion == "REPETIR":
         motivo("REPETIR", "ampliacion", f"El producto se amplió {s:.2f}× (mide {lado0} px en la foto y necesita "
                                         f"≥ {necesario} px): se verá borroso. Repite la foto más cerca o con más "
                                         "resolución y envíala como documento, no como foto de WhatsApp.")
-    elif s >= cfg["ampliacion_revisar"]:
+    elif por_ampliacion == "REVISAR":
         motivo("REVISAR", "ampliacion", f"El producto se amplió {s:.2f}× (mide {lado0} px; lo ideal es ≥ {necesario} px): "
                                         "revisa la nitidez a tamaño real.")
     elif s > 1.005:

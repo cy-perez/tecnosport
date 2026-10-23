@@ -148,6 +148,19 @@ def separar_marcas(marcas, caducadas_previas=()) -> tuple[list, list]:
     return vigentes, list(caducadas_previas) + nuevas
 
 
+def estado_por_ampliacion(escala: float, cfg: dict):
+    """"REPETIR", "REVISAR" o None según la ampliación, **con la escala que se guarda en el reporte**
+    (redondeada a 3 decimales). procesar.py comparaba la de antes de redondear y guardaba la redondeada,
+    que es la que relee verificar.py: el 22/10/2026 el Xiaomi 17T _6 (1,5996×) salió LISTA y la
+    verificación dijo que debía ser REVISAR. Así los dos ven el mismo número."""
+    s = round(float(escala), 3)
+    if s >= float(cfg["ampliacion_repetir"]):
+        return "REPETIR"
+    if s >= float(cfg["ampliacion_revisar"]):
+        return "REVISAR"
+    return None
+
+
 def heredado_del_previo(previo: dict, huella_origen, huella_config) -> dict:
     """Lo que una foto reprocesada conserva de su registro anterior: {principal, revisada}.
 

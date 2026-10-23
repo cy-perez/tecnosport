@@ -137,6 +137,30 @@ class VersionDelRetoque(unittest.TestCase):
         self.assertEqual([caducada], segunda)
 
 
+class EscalaEnElBorde(unittest.TestCase):
+    """22/10/2026: el Xiaomi 17T _6 salió LISTA en procesar.py y verificar.py dijo que debía ser REVISAR.
+
+    procesar.py comparaba la escala sin redondear (1,5996 < 1,6: LISTA) y guardaba la redondeada
+    (1,6), que es la que lee verificar.py (1,6 ≥ 1,6: REVISAR). Se decide con la que se guarda."""
+
+    CFG = {"ampliacion_revisar": 1.6, "ampliacion_repetir": 3.0}
+
+    def test_lo_que_se_guarda_como_1_6_es_revisar(self):
+        self.assertEqual("REVISAR", salidas.estado_por_ampliacion(1.5996, self.CFG))
+
+    def test_justo_por_debajo_sigue_siendo_lista(self):
+        self.assertIsNone(salidas.estado_por_ampliacion(1.5994, self.CFG))
+
+    def test_el_borde_de_repetir_tambien(self):
+        self.assertEqual("REPETIR", salidas.estado_por_ampliacion(2.9996, self.CFG))
+
+    def test_y_coincide_con_lo_que_relee_verificar(self):
+        s = 1.59961
+        guardada = round(s, 3)
+        self.assertEqual(guardada >= self.CFG["ampliacion_revisar"],
+                         salidas.estado_por_ampliacion(s, self.CFG) == "REVISAR")
+
+
 class LoQueSobreviveAlReproceso(unittest.TestCase):
     """22/10/2026: reprocesar un modelo borraba su principal y sus aprobaciones a ojo.
 
