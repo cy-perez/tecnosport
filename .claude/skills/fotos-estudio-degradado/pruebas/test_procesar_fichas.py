@@ -654,6 +654,22 @@ class ValidarAntesDeProcesar(unittest.TestCase):
             self.assertEqual(0, v["modelos"][MODELO]["listas_estimadas"])
             self.assertFalse(v["completa"])
 
+    def test_una_foto_sobre_una_mesa_se_estima_como_en_la_tanda(self):
+        # Revisión del PR #268: validar usaba el estimador «fiable», que no da número sin un fondo de
+        # estudio, y contaba 0 LISTA donde la tanda —con el estimador del producto— sí procesa.
+        try:
+            import numpy as np
+            from PIL import Image
+        except ImportError:
+            self.skipTest("sin NumPy o Pillow")
+        with tempfile.TemporaryDirectory() as tmp:
+            ruta = Path(tmp) / "mesa.png"
+            ruido = np.random.default_rng(7).integers(0, 255, (900, 1200, 3), dtype=np.uint8)
+            Image.fromarray(ruido).save(ruta)
+            import estimador
+            self.assertIsNone(estimador.estimar_lado_fiable(ruta))
+            self.assertEqual(estimador.estimar_lado_producto(ruta), pf.estimar_producto(ruta))
+
     def test_sin_estimador_no_se_inventa_el_numero(self):
         with tempfile.TemporaryDirectory() as tmp:
             raiz = Path(tmp)

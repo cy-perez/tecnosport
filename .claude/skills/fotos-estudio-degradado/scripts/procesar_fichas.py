@@ -966,14 +966,17 @@ def retoque_en_curso(raiz: Path):
 # --------------------------------------------------------------------------
 
 def estimar_producto(ruta: Path):
-    """El lado del producto que mide el estimador de la skill, o None. El estimador pide NumPy y
-    Pillow; sin ellos no se estima nada y la validación lo dice, en vez de inventar el número."""
+    """El lado del producto como lo mide la tanda para elegir el lienzo (`estimar_lado_producto`,
+    procesar.py), o None. Sin fondo de estudio esa medida es la foto entera, y así cuenta también
+    aquí: con el estimador «fiable» —el de la carga reducida— una foto sobre una mesa daba 0 LISTA
+    donde la tanda sí la procesa (revisión del PR #268). El estimador pide NumPy y Pillow; sin ellos
+    no se estima nada y la validación lo dice, en vez de inventar el número."""
     try:
         import estimador
     except ImportError:
         return None
     try:
-        return estimador.estimar_lado_fiable(ruta)
+        return estimador.estimar_lado_producto(ruta)
     except Exception:
         return None
 
