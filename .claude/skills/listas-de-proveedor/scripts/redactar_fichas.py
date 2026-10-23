@@ -12,15 +12,22 @@ comparten ficha, y la memoria y el color son variantes que el cliente elige al
 comprar. Por eso la descripción no lleva fila de memoria, ni sección de colores,
 ni las notas de RAM virtual y de SIM (decisión del 08/10/2026).
 
-La ficha técnica sale, en este orden (decisión del 08/10/2026):
+La ficha técnica sale, en este orden (decisión del 22/10/2026, que invierte la
+del 08/10/2026):
 
-1. **El sitio oficial de la marca**, en `--marca`: un JSON por id de modelo con
-   la fuente, la URL, la fecha de consulta y las filas.
-2. **Open Icecat**, en `--icecat`, y solo por código: la tabla la arma este
+1. **Open Icecat**, en `--icecat`, y solo por código: la tabla la arma este
    script y la prosa no se escribe nunca a partir de ella. La licencia anula el
    permiso si los datos se usan para «automated synthetic content creation»
    (cláusula 10), y exige el aviso de derechos, el descargo y la nota de lo que
    se modificó (cláusulas 1 y 2): ver `aviso_icecat`.
+2. **El sitio oficial de la marca**, en `--marca`: un JSON por id de modelo con
+   la fuente, la URL, la fecha de consulta, las filas y, si los da, la caja y la
+   paleta. Va si Icecat no dio filas, **y también si las dos se contradicen** en la
+   resistencia, el cargador incluido o el Bluetooth (`cotejar`): la de Icecat puede
+   ser de otro mercado, como la del Moto G15 el 22/10/2026.
+
+Y completa las descripciones heredadas que la comparación dejó con la tarea
+`completar`: solo la ficha y la caja que les faltan (`completar`).
 
 Reparte el trabajo como lo reparte la skill: **la estructura y la tabla las
 arma el script** con los datos de la ficha oficial, y **la prosa la escribe una
@@ -58,6 +65,7 @@ from pendientes import COMPLETAR, necesita  # noqa: E402
 
 # Lo que comparar_lista.py anota de una descripción heredada: se recalcula al completarla.
 ALERTA_DESCRIPCION = "descripción de la base:"
+AVISO_COTEJO = "la ficha de Icecat no coincide con la de la marca"
 
 LIMITE_META_TITULO = 60
 LIMITE_META_DESCRIPCION = 155
@@ -193,16 +201,67 @@ def notas_obligatorias(producto):
     return notas
 
 
-def elegir_tabla(ficha_icecat, ficha_marca):
-    """(filas, origen): Icecat primero (22/10/2026); la marca solo si Icecat no dio filas.
+RE_IP = re.compile(r"\bIP\s?(\d{2}K?)\b", re.I)
+RE_BLUETOOTH = re.compile(r"Bluetooth\s*v?(\d+(?:\.\d+)?)", re.I)
+RE_CARGADOR = re.compile(r"cargador|adaptador", re.I)
 
-    `origen` es «Open Icecat», «marca» o None.
+
+def _datos_de_icecat(ficha):
+    por = {limpiar(e["atributo"]): limpiar(e["valor"]) for e in (ficha or {}).get("especificaciones") or []}
+    ip = RE_IP.search(por.get("Código IP (International Protection)", ""))
+    bt = re.match(r"v?(\d+(?:\.\d+)?)", por.get("Versión de Bluetooth", ""))
+    cargador = por.get("Adaptador AC incluido")
+    return {"IP": ip and f"IP{ip.group(1).upper()}",
+            "Bluetooth": bt and bt.group(1),
+            "cargador incluido": {"si": "sí", "sí": "sí", "no": "no"}.get((cargador or "").lower())}
+
+
+def _datos_de_marca(ficha, caja):
+    texto = " · ".join(limpiar(v) for v in ((ficha or {}).get("f") or {}).values())
+    ips = sorted({f"IP{m.upper()}" for m in RE_IP.findall(texto)})
+    bt = RE_BLUETOOTH.search(texto)
+    # La caja que publica la marca manda; la de la prosa, si la marca no la da.
+    caja = list((ficha or {}).get("caja") or caja or [])
+    return {"IP": ips, "Bluetooth": bt and bt.group(1),
+            "cargador incluido": (("sí" if any(RE_CARGADOR.search(c) for c in caja) else "no") if caja else None)}
+
+
+def cotejar(ficha_icecat, ficha_marca, caja=None) -> list[str]:
+    """Lo que la ficha de Icecat dice distinto que la de la marca: resistencia, cargador y Bluetooth.
+
+    El 22/10/2026 la ficha de Icecat del Moto G15 era la de otro mercado —IP54 contra el IP52 de
+    Motorola Colombia, «adaptador incluido: No» cuando la caja trae cargador, Bluetooth 5.0— y
+    con Icecat primero se habría publicado una descripción que se contradice. Solo compara lo que
+    las dos fichas dicen.
+    """
+    if not ficha_icecat or not ficha_marca:
+        return []
+    ice, marca = _datos_de_icecat(ficha_icecat), _datos_de_marca(ficha_marca, caja)
+    difieren = []
+    if ice["IP"] and marca["IP"] and ice["IP"] not in marca["IP"]:
+        difieren.append(f"resistencia {ice['IP']} contra {', '.join(marca['IP'])}")
+    for dato in ("Bluetooth", "cargador incluido"):
+        if ice[dato] and marca[dato] and ice[dato] != marca[dato]:
+            difieren.append(f"{dato} {ice[dato]} contra {marca[dato]}")
+    return difieren
+
+
+def elegir_tabla(ficha_icecat, ficha_marca, caja=None):
+    """(filas, origen, avisos): Icecat primero (22/10/2026); la marca si Icecat no dio filas.
+
+    Si las dos existen y se contradicen (`cotejar`), manda la de la marca —es la del mercado que
+    se vende— y el aviso dice qué difería. `origen` es «Open Icecat», «marca» o None.
     """
     filas = tabla_icecat(ficha_icecat) if ficha_icecat else []
-    if filas:
-        return filas, "Open Icecat"
-    filas = tabla_mi(ficha_marca) if ficha_marca else []
-    return filas, ("marca" if filas else None)
+    difieren = cotejar(ficha_icecat, ficha_marca, caja) if filas else []
+    filas_marca = tabla_mi(ficha_marca) if ficha_marca else []
+    if filas and not (difieren and filas_marca):
+        return filas, "Open Icecat", []
+    if filas_marca:
+        avisos = [f"{AVISO_COTEJO} ({'; '.join(difieren)}): se publicó la de la marca; la de Icecat puede ser "
+                  "de otro mercado"] if difieren else []
+        return filas_marca, "marca", avisos
+    return [], None, []
 
 
 def texto_de_tabla(filas):
@@ -228,7 +287,7 @@ def componer(producto, prosa, ficha_icecat, ficha_marca, fecha):
         partes += ["## Características principales", ""]
         partes += [f"- {v}" for v in vinetas] + [""]
 
-    filas, origen = elegir_tabla(ficha_icecat, ficha_marca)
+    filas, origen, _ = elegir_tabla(ficha_icecat, ficha_marca, prosa.get("caja"))
     if filas:
         partes += ["## Ficha técnica", "", texto_de_tabla(filas), ""]
 
@@ -249,7 +308,7 @@ def componer(producto, prosa, ficha_icecat, ficha_marca, fecha):
 
 
 def completar(descripcion, ficha_icecat, ficha_marca, caja, fecha):
-    """(descripción, origen de la ficha, secciones agregadas) de una descripción heredada.
+    """(descripción, origen de la ficha, secciones agregadas, avisos del cotejo) de una heredada.
 
     Inserta en su sitio solo lo que le falta y se puede afirmar con la fuente: la ficha técnica
     —con el mismo orden de fuentes que `componer`— y el contenido de la caja. La apertura, las
@@ -257,9 +316,9 @@ def completar(descripcion, ficha_icecat, ficha_marca, caja, fecha):
     prosa nueva sería inventar.
     """
     faltan = descripciones.faltantes(descripcion)
-    agregadas, origen = [], None
+    agregadas, origen, avisos = [], None, []
     if descripciones.FICHA in faltan:
-        filas, origen = elegir_tabla(ficha_icecat, ficha_marca)
+        filas, origen, avisos = elegir_tabla(ficha_icecat, ficha_marca, caja)
         if filas:
             descripcion = descripciones.insertar(descripcion, descripciones.FICHA, texto_de_tabla(filas),
                                                  linea_de_fuente(origen, ficha_marca, fecha))
@@ -273,7 +332,7 @@ def completar(descripcion, ficha_icecat, ficha_marca, caja, fecha):
         descripcion = descripciones.insertar(descripcion, descripciones.CAJA,
                                              "\n".join(f"- {c}" for c in caja), pie)
         agregadas.append(descripciones.CAJA)
-    return descripcion, (origen if descripciones.FICHA in agregadas else None), agregadas
+    return descripcion, (origen if descripciones.FICHA in agregadas else None), agregadas, avisos
 
 
 def fuente_ficha(origen_ficha, ficha_marca, fecha):
@@ -358,9 +417,10 @@ def main():
         ficha_ice = leer_icecat(dir_ice, ids) if dir_ice and prosa.get("icecat") is not False else None
         referencia = grupo[0]
         descripcion = componer(referencia, prosa, ficha_ice, ficha_marca, a.fecha)
-        _, origen = elegir_tabla(ficha_ice, ficha_marca)
+        _, origen, avisos = elegir_tabla(ficha_ice, ficha_marca, prosa.get("caja"))
         fuente = fuente_ficha({"Open Icecat": "icecat"}.get(origen, origen), ficha_marca or {}, a.fecha)
         for p in grupo:
+            p["revisar"] = [r for r in p["revisar"] if not r.startswith(AVISO_COTEJO)] + avisos
             p["descripcion"] = descripcion
             p["meta_titulo"] = meta_titulo(p)
             p["meta_descripcion"] = meta_descripcion(p, prosa)
@@ -382,7 +442,7 @@ def main():
         ficha_marca = marca.get(mid) or {}
         ficha_ice = leer_icecat(dir_ice, ids) if dir_ice and prosa.get("icecat") is not False else None
         caja = ficha_marca.get("caja") or prosa.get("caja") or []
-        texto, origen, agregadas = completar(grupo[0]["descripcion"], ficha_ice, ficha_marca, caja, a.fecha)
+        texto, origen, agregadas, avisos = completar(grupo[0]["descripcion"], ficha_ice, ficha_marca, caja, a.fecha)
         if not agregadas:
             sin_fuente.append(grupo[0].get("titulo_modelo") or grupo[0]["titulo"])
             continue
@@ -391,8 +451,8 @@ def main():
             p["descripcion"] = texto
             if fuente and fuente not in (p.get("fuentes_ficha") or []):
                 p["fuentes_ficha"] = list(p.get("fuentes_ficha") or []) + [fuente]
-            p["revisar"] = [r for r in p["revisar"] if not r.startswith(ALERTA_DESCRIPCION)]
-            p["revisar"] += [f"{ALERTA_DESCRIPCION} {d}" for d in descripciones.defectos(texto)]
+            p["revisar"] = [r for r in p["revisar"] if not r.startswith((ALERTA_DESCRIPCION, AVISO_COTEJO))]
+            p["revisar"] += [f"{ALERTA_DESCRIPCION} {d}" for d in descripciones.defectos(texto)] + avisos
         completadas += 1
 
     for p in datos["productos"]:

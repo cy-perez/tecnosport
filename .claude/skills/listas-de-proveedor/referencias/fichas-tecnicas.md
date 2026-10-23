@@ -7,7 +7,10 @@ la publican en Colombia.
 
 El orden es siempre el mismo: Open Icecat (solo por código: la prosa no se
 escribe a partir de él) → sitio oficial del fabricante en Colombia, para lo que
-Icecat no cubra → la caja del producto. Nunca "de memoria". Icecat va primero
+Icecat no cubra → la caja del producto. Cuando están las dos y se contradicen en
+la resistencia IP, el cargador incluido o el Bluetooth, manda la de la marca y el
+aviso queda en `revisar` (`redactar_fichas.cotejar`): una ficha de Icecat puede
+ser la de otro mercado, como la del Moto G15 el 22/10/2026. Nunca "de memoria". Icecat va primero
 desde el 22/10/2026, por decisión del negocio: es la única fuente con licencia
 comercial expresa, y así a la marca solo se le pregunta lo que falta. La
 decisión del 08/10/2026 ponía la marca primero, después de leer los términos de

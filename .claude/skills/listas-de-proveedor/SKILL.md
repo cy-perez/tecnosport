@@ -407,7 +407,11 @@ que invierte la del 08/10/2026):
 1. **Open Icecat, primero y solo por código**: la tabla la arma
    `redactar_fichas.py`, y la prosa nunca se escribe a partir de una ficha de
    Icecat. Su licencia anula el permiso si los datos se usan para «automated
-   synthetic content creation» (cláusula 10).
+   synthetic content creation» (cláusula 10). **Si hay ficha de la marca y las
+   dos se contradicen** en la resistencia IP, el cargador incluido o el
+   Bluetooth, se publica la de la marca y `revisar` dice qué difería: el
+   22/10/2026 la de Icecat del Moto G15 era la de otro mercado (IP54 contra IP52,
+   sin cargador cuando la caja lo trae).
 2. **El sitio oficial de la marca**, para lo que Icecat no cubra. Samsung,
    Apple, Honor, Motorola (la página de producto), OPPO, realme, TCL y Lenovo
    (su PSREF) se leen directamente; JBL publica la ficha en PDF, que también se

@@ -156,6 +156,41 @@ class CompletarHeredada(unittest.TestCase):
         self.assertTrue(a["descripcion"].startswith("El Galaxy A57 es un celular 5G.\n\n## Ficha técnica"))
 
 
+class CotejoIcecatMarca(unittest.TestCase):
+    """22/10/2026: la ficha de Icecat del Moto G15 era la de otro mercado —IP54, sin adaptador,
+    Bluetooth 5.0— frente a la de Motorola Colombia: IP52, cargador en la caja."""
+
+    ICECAT_OTRO_MERCADO = {"especificaciones": [
+        {"atributo": "Diagonal de la pantalla", "valor": "17,1 cm (6.72\")"},
+        {"atributo": "Código IP (International Protection)", "valor": "IP54"},
+        {"atributo": "Adaptador AC incluido", "valor": "No"},
+        {"atributo": "Versión de Bluetooth", "valor": "5.0"}]}
+    MARCA_CO = {"samsung-galaxy-a57-5g": {
+        "fuente": "motorola.com/co", "fecha": "2026-10-22",
+        "f": {"Pantalla": "LTPS de 6,72 pulgadas", "Resistencia": "IP52 (salpicaduras)",
+              "Conectividad": "Wi-Fi 5 · Bluetooth 5.4 · NFC"},
+        "caja": ["Teléfono", "Cargador de viaje", "Cable"]}}
+
+    def test_si_se_contradicen_manda_la_marca_y_queda_el_aviso_con_los_valores(self):
+        [a, _] = redactar(DOS, marca=self.MARCA_CO, icecat=self.ICECAT_OTRO_MERCADO)
+        self.assertIn("| Resistencia | IP52 (salpicaduras) |", a["descripcion"])
+        self.assertNotIn("Icecat", a["descripcion"])
+        [aviso] = [r for r in a["revisar"] if r.startswith("la ficha de Icecat no coincide")]
+        for dato in ("resistencia IP54 contra IP52", "Bluetooth 5.0 contra 5.4", "cargador incluido no contra sí"):
+            self.assertIn(dato, aviso)
+
+    def test_si_coinciden_va_icecat(self):
+        icecat = {"especificaciones": [{"atributo": "Diagonal de la pantalla", "valor": "17,1 cm (6.72\")"},
+                                       {"atributo": "Código IP (International Protection)", "valor": "IP52"}]}
+        [a, _] = redactar(DOS, marca=self.MARCA_CO, icecat=icecat)
+        self.assertIn("Database Right data-sheet 2026 Icecat", a["descripcion"])
+        self.assertFalse(any(r.startswith("la ficha de Icecat no coincide") for r in a["revisar"]))
+
+    def test_solo_compara_lo_que_las_dos_dicen(self):
+        self.assertEqual([], redactar_fichas.cotejar({"especificaciones": [
+            {"atributo": "Versión de Bluetooth", "valor": "5.4"}]}, {"f": {"Pantalla": "OLED"}}))
+
+
 class PaletaDeLaMarca(unittest.TestCase):
     """22/10/2026: la paleta de mi.com y de JBL se escribía a mano en el paso 4 con un script suelto."""
 
