@@ -182,6 +182,8 @@ def marcar(p, a, raiz: Path) -> int:
                 print(f"{n}: {e}")
                 return 1
             f.setdefault("exclusiones", []).extend(zonas)
+            # La aprobación miró el recorte sin esta zona: con ella el resultado es otro.
+            f["revisada"] = None
             reprocesar.append(n)
         elif a.limpiar:
             f["marcas"], f["revisada"] = [], None
@@ -191,6 +193,7 @@ def marcar(p, a, raiz: Path) -> int:
         elif a.limpiar_exclusiones:
             if f.get("exclusiones"):
                 reprocesar.append(n)
+                f["revisada"] = None
             f["exclusiones"] = []
         despues = reporte.estado_final(f)
         if despues == "REPETIR" and f.get("salidas"):

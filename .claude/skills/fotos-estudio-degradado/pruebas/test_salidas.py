@@ -189,6 +189,40 @@ class LoQueSobreviveAlReproceso(unittest.TestCase):
     def test_sin_registro_previo_no_hereda_nada(self):
         self.assertEqual({"principal": None, "revisada": None}, salidas.heredado_del_previo({}, "abc", "cfg"))
 
+    def test_si_cambia_el_trato_sin_huecos_la_aprobacion_no_sobrevive(self):
+        # Revisión del PR #268: --sin-huecos cambia el recorte sin entrar en huella_config, y la
+        # aprobación vieja tapaba los motivos REVISAR nuevos del resultado distinto.
+        previo = dict(self.PREVIO, sin_huecos=False)
+        heredado = salidas.heredado_del_previo(previo, "abc", "cfg-1200", sin_huecos=True)
+        self.assertEqual(self.PREVIO["principal"], heredado["principal"])
+        self.assertIsNone(heredado["revisada"])
+        self.assertEqual(self.PREVIO["revisada"],
+                         salidas.heredado_del_previo(dict(previo, sin_huecos=True), "abc", "cfg-1200",
+                                                     sin_huecos=True)["revisada"])
+
+
+class ExcluirQuitaLaAprobacion(unittest.TestCase):
+    """Revisión del PR #268: una zona excluida cambia el recorte; la aprobación miró el anterior."""
+
+    def test_excluir_limpia_la_aprobacion(self):
+        import json
+        import os
+        import subprocess
+        import tempfile
+        with tempfile.TemporaryDirectory() as tmp:
+            raiz = Path(tmp)
+            foto = {"nombre": "x-1", "grupo": "x", "estado": "REVISAR", "motivos_auto": [], "marcas": [],
+                    "revisada": {"fecha": "2026-10-22", "nota": "vista"}, "entrada": {}, "salidas": {}}
+            (raiz / "reporte.json").write_text(json.dumps({"fotos": [foto]}), encoding="utf-8")
+            r = subprocess.run([sys.executable, "-B", str(Path(__file__).resolve().parent.parent / "scripts" / "marcar.py"),
+                                str(raiz), "x-1", "--excluir", "10,10,50,50", "--sin-hojas"],
+                               capture_output=True, text=True, encoding="utf-8",
+                               env=dict(os.environ, PYTHONIOENCODING="utf-8"))
+            self.assertEqual(0, r.returncode, r.stdout + r.stderr)
+            [f] = json.loads((raiz / "reporte.json").read_text(encoding="utf-8"))["fotos"]
+            self.assertEqual([[10, 10, 50, 50]], f["exclusiones"])
+            self.assertIsNone(f["revisada"])
+
 
 
 class TamanoOriginal(unittest.TestCase):

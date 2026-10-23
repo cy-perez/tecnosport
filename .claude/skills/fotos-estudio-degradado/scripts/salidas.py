@@ -161,18 +161,23 @@ def estado_por_ampliacion(escala: float, cfg: dict):
     return None
 
 
-def heredado_del_previo(previo: dict, huella_origen, huella_config) -> dict:
+def heredado_del_previo(previo: dict, huella_origen, huella_config, sin_huecos: bool = False) -> dict:
     """Lo que una foto reprocesada conserva de su registro anterior: {principal, revisada}.
 
     Hasta el 22/10/2026 no conservaba nada: un modelo que cambiaba se reprocesa entero, y perdía la
     principal y las aprobaciones a ojo que la persona ya había decidido.
     - La **principal** es la toma, y vale mientras la foto de origen sea la misma.
     - La **aprobación** miró un resultado: vale solo si además la configuración es la misma —su
-      huella incluye el lienzo y la versión del retoque—, porque si no el resultado es otro."""
+      huella incluye el lienzo y la versión del retoque—, porque si no el resultado es otro. Tampoco
+      si cambió el trato sin huecos del modelo, que cambia el recorte sin entrar en esa huella
+      (revisión del PR #268); un registro sin ese dato cuenta como «con huecos». Las zonas excluidas
+      no hace falta mirarlas aquí: `marcar.py --excluir` ya borra la aprobación al ponerlas."""
     previo = previo or {}
     misma = bool(huella_origen) and previo.get("huella_origen") == huella_origen
+    mismo_resultado = (misma and previo.get("huella_config") == huella_config
+                       and bool(previo.get("sin_huecos", False)) == bool(sin_huecos))
     return {"principal": previo.get("principal") if misma else None,
-            "revisada": previo.get("revisada") if misma and previo.get("huella_config") == huella_config else None}
+            "revisada": previo.get("revisada") if mismo_resultado else None}
 
 
 # Una foto se carga reducida si es más grande que esto, siempre que el producto siga midiendo por lo

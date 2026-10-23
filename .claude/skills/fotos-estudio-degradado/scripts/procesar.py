@@ -201,9 +201,9 @@ def procesar_foto(ctx: Contexto, ruta: Path, nombre: str, previo: dict) -> dict:
            "procesada": reporte.ahora(), "huella_config": ctx.huella_config,
            "marcas": list(previo.get("marcas", [])) if misma else [],
            "exclusiones": list(previo.get("exclusiones", [])) if misma else [],
-           "revisada": None, "salidas": {}}
+           "revisada": None, "salidas": {}, "sin_huecos": bool(ctx.sin_huecos)}
     # La principal y la aprobación a ojo sobreviven al reproceso de la misma foto (22/10/2026).
-    reg.update(salidas.heredado_del_previo(previo, huella, ctx.huella_config))
+    reg.update(salidas.heredado_del_previo(previo, huella, ctx.huella_config, ctx.sin_huecos))
     if previo and not misma:
         notas.append("Es otra foto para este nombre: se descartaron las marcas y exclusiones de la anterior.")
     reg["version_retoque"] = salidas.VERSION_RETOQUE
