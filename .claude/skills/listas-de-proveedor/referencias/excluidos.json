@@ -3,6 +3,10 @@
     "Modelos que el negocio decidió no vender: la comparación los descarta sin investigar.",
     "Lo escribe `scripts/conocidos.py excluir` (con --quitar los readmite); no se edita a mano."
   ],
+  "fly-go-pad-10-4g-con-teclado-y-mouse": {
+    "motivo": "sin ficha oficial del fabricante: no hay de dónde sacar la ficha técnica ni el contenido de la caja (decisión de la persona, 22/10/2026)",
+    "fecha": "2026-10-22"
+  },
   "tcl-pad-lugh-10-wifi": {
     "motivo": "decisión de la persona al sacarlo de la tanda del 15/10/2026",
     "fecha": "2026-10-21"
