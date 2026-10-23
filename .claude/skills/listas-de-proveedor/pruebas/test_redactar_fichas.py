@@ -186,6 +186,22 @@ class CotejoIcecatMarca(unittest.TestCase):
         self.assertIn("Database Right data-sheet 2026 Icecat", a["descripcion"])
         self.assertFalse(any(r.startswith("la ficha de Icecat no coincide") for r in a["revisar"]))
 
+    def test_un_adaptador_que_no_es_cargador_no_cuenta(self):
+        # Revisión del PR #268: «Adaptador USB-C a 3,5 mm», «Adaptador de SIM» o «Cargador no
+        # incluido» se leían como cargador en la caja.
+        icecat = {"especificaciones": [{"atributo": "Adaptador AC incluido", "valor": "No"}]}
+        for caja in (["Teléfono", "Adaptador USB-C a 3,5 mm"], ["Teléfono", "Adaptador de SIM"],
+                     ["Teléfono", "Cargador no incluido"]):
+            self.assertEqual([], redactar_fichas.cotejar(icecat, {"f": {"Pantalla": "OLED"}, "caja": caja}), caja)
+        self.assertEqual(["cargador incluido no contra sí"], redactar_fichas.cotejar(
+            icecat, {"f": {"Pantalla": "OLED"}, "caja": ["Teléfono", "Adaptador de corriente de 33 W"]}))
+
+    def test_bluetooth_5_es_5_0_y_se_lee_con_la_marca_registrada(self):
+        icecat = {"especificaciones": [{"atributo": "Versión de Bluetooth", "valor": "5.0"}]}
+        self.assertEqual([], redactar_fichas.cotejar(icecat, {"f": {"Conectividad": "Bluetooth 5"}}))
+        self.assertEqual(["Bluetooth 5.0 contra 5.4"],
+                         redactar_fichas.cotejar(icecat, {"f": {"Conectividad": "Bluetooth® 5.4"}}))
+
     def test_solo_compara_lo_que_las_dos_dicen(self):
         self.assertEqual([], redactar_fichas.cotejar({"especificaciones": [
             {"atributo": "Versión de Bluetooth", "valor": "5.4"}]}, {"f": {"Pantalla": "OLED"}}))

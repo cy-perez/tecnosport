@@ -202,8 +202,20 @@ def notas_obligatorias(producto):
 
 
 RE_IP = re.compile(r"\bIP\s?(\d{2}K?)\b", re.I)
-RE_BLUETOOTH = re.compile(r"Bluetooth\s*v?(\d+(?:\.\d+)?)", re.I)
-RE_CARGADOR = re.compile(r"cargador|adaptador", re.I)
+RE_BLUETOOTH = re.compile(r"Bluetooth\s*[®™]?\s*v?(\d+(?:\.\d+)?)", re.I)
+# Solo un cargador afirmado: «Adaptador USB-C a 3,5 mm», «Adaptador de SIM» o «Cargador no
+# incluido» no son un cargador en la caja (revisión del PR #268).
+RE_CARGADOR = re.compile(r"\bcargador\b|\badaptador (?:de corriente|de pared|de carga|AC)\b", re.I)
+RE_NO_INCLUIDO = re.compile(r"\bno\s+(?:se\s+)?inclu", re.I)
+
+
+def _version(v):
+    """«5» y «5.0» son la misma versión de Bluetooth."""
+    return v and str(float(v))
+
+
+def _trae_cargador(caja):
+    return any(RE_CARGADOR.search(c) and not RE_NO_INCLUIDO.search(c) for c in caja)
 
 
 def _datos_de_icecat(ficha):
@@ -212,7 +224,7 @@ def _datos_de_icecat(ficha):
     bt = re.match(r"v?(\d+(?:\.\d+)?)", por.get("Versión de Bluetooth", ""))
     cargador = por.get("Adaptador AC incluido")
     return {"IP": ip and f"IP{ip.group(1).upper()}",
-            "Bluetooth": bt and bt.group(1),
+            "Bluetooth": bt and _version(bt.group(1)),
             "cargador incluido": {"si": "sí", "sí": "sí", "no": "no"}.get((cargador or "").lower())}
 
 
@@ -222,8 +234,8 @@ def _datos_de_marca(ficha, caja):
     bt = RE_BLUETOOTH.search(texto)
     # La caja que publica la marca manda; la de la prosa, si la marca no la da.
     caja = list((ficha or {}).get("caja") or caja or [])
-    return {"IP": ips, "Bluetooth": bt and bt.group(1),
-            "cargador incluido": (("sí" if any(RE_CARGADOR.search(c) for c in caja) else "no") if caja else None)}
+    return {"IP": ips, "Bluetooth": bt and _version(bt.group(1)),
+            "cargador incluido": (("sí" if _trae_cargador(caja) else "no") if caja else None)}
 
 
 def cotejar(ficha_icecat, ficha_marca, caja=None) -> list[str]:
