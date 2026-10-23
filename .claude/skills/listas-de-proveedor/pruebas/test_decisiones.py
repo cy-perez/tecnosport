@@ -62,6 +62,66 @@ class Aplicar(unittest.TestCase):
         self.assertEqual([], decisiones.cargar(Path("no-existe.json")))
 
 
+class DescartadoDelParser(unittest.TestCase):
+    """Revisión del PR #268: un descartado «sin precio» sale del parser sin `id_modelo` ni título
+    definitivo —el filtro de precio corre antes que las equivalencias—, y devolverlo tal cual
+    tumbaba la comparación con `KeyError: 'id_modelo'`."""
+
+    def parsear(self, texto, equivalencias=None):
+        import parsear_lista
+        return parsear_lista.parsear(texto, equivalencias or {})
+
+    def test_sin_titulo_queda_como_un_producto_parseado_y_la_comparacion_no_falla(self):
+        import comparar_lista
+        from datetime import date
+        datos = self.parsear("*SAMSUNG*\n🚀S25 ULTRA 12/256🖤\n")
+        [d] = datos["descartados"]
+        self.assertEqual("sin precio de proveedor", d["motivo"])
+        self.assertEqual([], decisiones.aplicar(datos, [{"id_lista": d["id_lista"], "costo_cop": 3_000_000,
+                                                          "motivo": "precio dado por el proveedor por chat",
+                                                          "fecha": "2026-10-22"}], equivalencias={}))
+        [p] = datos["productos"]
+        self.assertEqual(("Samsung Galaxy S25 Ultra", "samsung-galaxy-s25-ultra"), (p["titulo_modelo"], p["id_modelo"]))
+        comparar_lista.comparar(datos, {"modelos": {}, "configuraciones": {}}, date(2026, 10, 22))
+        self.assertEqual("nuevo", p["estado_lista"])
+
+    def test_un_descartado_con_equivalencia_toma_el_titulo_definitivo(self):
+        eq = {"samsung-galaxy-s25-ultra-12gb-ram-256gb": {
+            "id": "samsung-galaxy-s25-ultra-5g-12gb-ram-256gb", "titulo": "Samsung Galaxy S25 Ultra 5G 12GB RAM 256GB",
+            "fecha": "2026-10-02", "motivo": "prueba"}}
+        datos = self.parsear("*SAMSUNG*\n🚀S25 ULTRA 12/256🖤\n", eq)
+        [d] = datos["descartados"]
+        decisiones.aplicar(datos, [{"id_lista": d["id_lista"], "costo_cop": 3_000_000, "motivo": "m",
+                                    "fecha": "2026-10-22"}], equivalencias=eq)
+        [p] = datos["productos"]
+        self.assertEqual(("samsung-galaxy-s25-ultra-5g-12gb-ram-256gb", "Samsung Galaxy S25 Ultra 5G 12GB RAM 256GB"),
+                         (p["id"], p["titulo"]))
+        self.assertEqual("samsung-galaxy-s25-ultra-5g", p["id_modelo"])
+
+    def test_los_dos_iphone_de_la_corrida_con_su_titulo_esim(self):
+        datos = self.parsear("     *IPH NUEVOS* \n✔️18 PRO 256 🤍\n✔️17 PRO MAX 256 🧡\n")
+        ids = {d["id_lista"] for d in datos["descartados"]}
+        self.assertEqual({"apple-iphone-18-pro-256gb", "apple-iphone-17-pro-max-256gb"}, ids)
+        decisiones.aplicar(datos, [
+            dict(DECISION),
+            {"id_lista": "apple-iphone-17-pro-max-256gb", "costo_cop": 4_080_000,
+             "titulo": "Apple iPhone 17 Pro Max 256GB eSIM", "atributos": ["eSIM"], "motivo": "m", "fecha": "2026-10-22"},
+        ], equivalencias={})
+        self.assertEqual({("apple-iphone-18-pro-256gb-esim", "apple-iphone-18-pro"),
+                          ("apple-iphone-17-pro-max-256gb-esim", "apple-iphone-17-pro-max")},
+                         {(p["id"], p["id_modelo"]) for p in datos["productos"]})
+
+    def test_si_la_lista_no_permite_identificarlo_vuelve_a_los_descartados(self):
+        # El Watch SE sin generación (regla 10): darle costo no da el dato que falta.
+        datos = self.parsear("*APPLE WATCH* 💥\n⌚WATCH  SE 44MM 🖤\n")
+        [d] = datos["descartados"]
+        decisiones.aplicar(datos, [{"id_lista": d["id_lista"], "costo_cop": 1_000_000, "motivo": "m",
+                                    "fecha": "2026-10-22"}], equivalencias={})
+        self.assertEqual([], datos["productos"])
+        [d] = datos["descartados"]
+        self.assertIn("falta información del proveedor", d["motivo"])
+
+
 class ComparacionRepetible(unittest.TestCase):
     """Correr la comparación dos veces da lo mismo, y la decisión se aplica en las dos."""
 

@@ -31,6 +31,12 @@ Formato:
 - `titulo`: el título definitivo, si cambia (el id y el modelo se recalculan de él).
 - `atributos`: los que se suman, como la SIM que la línea no dice.
 - `motivo` y `fecha`, obligatorios: quedan en `supuestos`, como cualquier decisión.
+
+Un descartado que vuelve queda como cualquier producto del parser: el filtro de precio corre
+antes que las equivalencias, así que el descartado «sin precio» no tiene título definitivo ni
+`id_modelo`. Se le aplican las equivalencias, y él y todo producto cuyo título cambió pasan
+otra vez por los filtros de líneas excluidas y de datos faltantes (regla 10): darle costo a un
+Apple Watch SE sin generación no da la generación que falta.
 """
 
 import json
@@ -38,6 +44,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+import parsear_lista  # noqa: E402
 from parsear_lista import id_de_titulo, titulo_de_modelo  # noqa: E402
 
 OBLIGATORIOS = ("id_lista", "motivo", "fecha")
@@ -55,9 +62,15 @@ def cargar(ruta) -> list:
     return decisiones
 
 
-def aplicar(datos: dict, decisiones: list) -> list:
-    """Aplica las decisiones en su sitio y devuelve los avisos (las que no encontraron su producto)."""
-    avisos = []
+def aplicar(datos: dict, decisiones: list, equivalencias: dict | None = None) -> list:
+    """Aplica las decisiones en su sitio y devuelve los avisos (las que no encontraron su producto).
+
+    `equivalencias` por omisión es `referencias/equivalencias.json`, el mismo del parser."""
+    if not decisiones:
+        return []
+    if equivalencias is None:
+        equivalencias = parsear_lista.cargar_equivalencias()
+    avisos, tocados = [], []
     for d in decisiones:
         clave = d["id_lista"]
         en_productos = [p for p in datos["productos"] if clave in (p.get("id_lista"), p.get("id"))]
@@ -71,6 +84,10 @@ def aplicar(datos: dict, decisiones: list) -> list:
                 continue
             datos["descartados"].remove(x)
             x = {k: v for k, v in x.items() if k not in ("motivo", "falta_informacion", "resolver")}
+            x["id"] = x.get("id_lista") or x["id"]
+            for campo in ("supuestos", "revisar", "atributos"):
+                x[campo] = list(x.get(campo) or [])
+            parsear_lista.aplicar_equivalencias([x], equivalencias)
             datos["productos"].append(x)
             en_productos.append(x)
         for p in en_productos:
@@ -81,9 +98,21 @@ def aplicar(datos: dict, decisiones: list) -> list:
                 p["id"] = id_de_titulo(d["titulo"])
                 p["titulo_modelo"] = titulo_de_modelo(d["titulo"])
                 p["id_modelo"] = id_de_titulo(p["titulo_modelo"])
+            if p not in tocados:
+                tocados.append(p)
             for a in d.get("atributos") or []:
                 if a not in (p.get("atributos") or []):
                     p["atributos"] = list(p.get("atributos") or []) + [a]
             nota = f"decisión de la persona ({'/'.join(reversed(d['fecha'].split('-')))}): {d['motivo']}"
             p["supuestos"] = list(dict.fromkeys((p.get("supuestos") or []) + [nota]))
+
+    # Los filtros que el parser aplica después de las equivalencias, otra vez sobre lo tocado.
+    otros = [p for p in datos["productos"] if p not in tocados]
+    descartados = datos.setdefault("descartados", [])
+    antes = len(descartados)
+    vuelven = parsear_lista.filtrar_lineas_excluidas(tocados, descartados)
+    vuelven = parsear_lista.filtrar_por_datos_faltantes(vuelven, descartados)
+    for x in descartados[antes:]:
+        avisos.append(f"{x.get('id_lista') or x['id']}: la decisión se aplicó, pero sigue fuera ({x['motivo']})")
+    datos["productos"] = otros + vuelven
     return avisos
