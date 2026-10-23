@@ -95,6 +95,43 @@ cuestan una tarde si se descubren sobre la marcha:
   un POST a un servidor local: la CSP de Alkosto lo bloquea y congela la
   pestaña.
 
+#### El fragmento, tal como funcionó el 22/10/2026
+
+Una consulta por navegación (`https://www.alkosto.com/search?text=redmi+watch+6`), y en
+la página, con la herramienta de JavaScript del navegador:
+
+```js
+await new Promise(r => setTimeout(r, 4000));      // Algolia pinta en el cliente
+const q = new URLSearchParams(location.search).get('text');
+const items = [...document.querySelectorAll('.product__item')].slice(0, 12).map(e => {
+  const t = e.innerText.split('\n').map(s => s.trim()).filter(Boolean);
+  const a = e.querySelector('a[href*="/p/"]');
+  return { n: t[0],                                                  // el nombre de la tarjeta
+           p: t.filter(s => /^\$\s?[\d.]+$/.test(s)).slice(0, 2),     // vigente y antes
+           u: a ? a.getAttribute('href').split('?')[0] : null };      // sin el ?algEvent=…
+});
+let acc = {};
+try { acc = JSON.parse(localStorage.getItem('ts_alk') || '{}'); } catch (e) {}
+acc[q] = items;
+localStorage.setItem('ts_alk', JSON.stringify(acc));
+q + ': ' + items.length                                              // solo el contador
+```
+
+Al final, en la misma pestaña, se arma un texto legible —`## consulta` y una línea
+`nombre $vigente / $antes` por tarjeta— y se lee por trozos de unos 950 caracteres
+(`localStorage.getItem('ts_txt').slice(0, 950)`, `slice(950, 1900)`…), doce por
+llamada. Tres cosas de esa corrida:
+
+- **Cuatro segundos no siempre alcanzan.** La consulta «tablet fly go pad» devolvió
+  las tarjetas de la búsqueda anterior: el buscador no había repintado. Si una
+  consulta trae justo lo de la anterior, repítela con 7 segundos y mira que el
+  título de la página diga la consulta nueva.
+- **El enlace trae `?algEvent=…`**, varios cientos de caracteres de seguimiento: se
+  corta en el `?`.
+- **Una llamada larga pasa a segundo plano y la siguiente no espera.** Con diez
+  consultas por llamada y 4 s cada una se está cerca del límite: deja que termine
+  antes de lanzar la siguiente, porque dos tandas a la vez se pisan en `ts_alk`.
+
 ### El buscador de Alkosto es difuso, y eso no se arregla con código
 
 Devuelve vecinos con mucha soltura: al pedir «POCO X8 Pro Max» contesta iPhones.
