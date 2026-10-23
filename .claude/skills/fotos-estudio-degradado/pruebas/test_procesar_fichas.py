@@ -687,6 +687,36 @@ class ValidarAntesDeProcesar(unittest.TestCase):
             self.assertEqual("Foto_10.jpg", registro["renombradas"][-1]["antes"])
             self.assertTrue(Path(registro["archivo"]).is_file())
 
+    def test_renombrar_conserva_los_numeros_que_ya_siguen_la_convencion(self):
+        # Revisión del PR #268: con x_1, x_2 e IMG, la IMG pasaba a x_1 y la portada por omisión
+        # —la _1 que la persona eligió— bajaba a _2.
+        with tempfile.TemporaryDirectory() as tmp:
+            raiz = Path(tmp)
+            carpeta = armar(raiz, (f"{MODELO}_1.jpg", f"{MODELO}_2.jpg", "IMG.jpg"))
+            primera = (carpeta / pf.ORIGINALES / f"{MODELO}_1.jpg").read_bytes()
+            registro = pf.renombrar(raiz, [MODELO])
+            self.assertEqual([{"carpeta": carpeta.name, "antes": "IMG.jpg", "despues": f"{MODELO}_3.jpg"}],
+                             registro["renombradas"])
+            self.assertEqual(primera, (carpeta / pf.ORIGINALES / f"{MODELO}_1.jpg").read_bytes())
+
+    def test_si_falla_a_mitad_deja_los_nombres_como_estaban(self):
+        from unittest import mock
+        with tempfile.TemporaryDirectory() as tmp:
+            raiz = Path(tmp)
+            carpeta = armar(raiz, ("Foto_1.jpg", "Foto_2.jpg"))
+            real, llamadas = Path.rename, []
+
+            def rename(self, destino):
+                llamadas.append(destino)
+                if len(llamadas) == 3:          # el primer renombre definitivo
+                    raise PermissionError("archivo abierto")
+                return real(self, destino)
+
+            with mock.patch.object(Path, "rename", rename), self.assertRaises(PermissionError):
+                pf.renombrar(raiz, [MODELO])
+            self.assertEqual(["Foto_1.jpg", "Foto_2.jpg"],
+                             sorted(f.name for f in (carpeta / pf.ORIGINALES).iterdir()))
+
     def test_renombrar_se_niega_si_el_modelo_ya_tiene_procesadas(self):
         # Renombrar cambia la huella: fuerza el reproceso y caduca aprobaciones.
         with tempfile.TemporaryDirectory() as tmp:

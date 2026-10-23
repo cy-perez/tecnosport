@@ -1077,16 +1077,34 @@ def renombrar(raiz: Path, ids) -> dict:
         if (carpeta / ESTADO).is_file() or (procesadas.is_dir() and any(procesadas.iterdir())):
             negados.append(mid)
             continue
+        # Las que ya siguen `<id>_N` conservan su número —la _1 es la portada por omisión, y la eligió
+        # la persona—; las demás toman los siguientes, en orden natural (revisión del PR #268).
+        patron = re.compile(rf"{re.escape(mid)}_(\d+)")
+        fotos = originales(carpeta)
+        usados = {int(m.group(1)) for f in fotos if (m := patron.fullmatch(f.stem))}
+        siguiente = max(usados, default=0)
         plan = []
-        for i, f in enumerate(originales(carpeta), 1):
-            nuevo = f.with_name(f"{mid}_{i}{f.suffix.lower()}")
-            if f.name != nuevo.name:
-                plan.append((f, nuevo))
+        for f in fotos:
+            if patron.fullmatch(f.stem):
+                continue
+            siguiente += 1
+            plan.append((f, f.with_name(f"{mid}_{siguiente}{f.suffix.lower()}")))
         temporales = [(f, f.with_name(f"__renombrando__{k}{f.suffix}"), n) for k, (f, n) in enumerate(plan)]
-        for f, t, _ in temporales:
-            f.rename(t)
-        for _, t, n in temporales:
-            t.rename(n)
+        hechos = []                     # (desde, hasta) ya renombrados, para deshacer si algo falla
+        try:
+            for f, t, _ in temporales:
+                f.rename(t)
+                hechos.append((f, t))
+            for _, t, n in temporales:
+                t.rename(n)
+                hechos.append((t, n))
+        except OSError:
+            for desde, hasta in reversed(hechos):
+                try:
+                    hasta.rename(desde)
+                except OSError:
+                    pass
+            raise
         hechas += [{"carpeta": carpeta.name, "antes": f.name, "despues": n.name} for f, n in plan]
     archivo = None
     if hechas:
