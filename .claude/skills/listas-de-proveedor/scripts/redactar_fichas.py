@@ -53,6 +53,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import descripciones  # noqa: E402
+from colores import SUPUESTO_PALETA_COMPLETA  # noqa: E402
 from pendientes import COMPLETAR, necesita  # noqa: E402
 
 # Lo que comparar_lista.py anota de una descripción heredada: se recalcula al completarla.
@@ -283,6 +284,32 @@ def fuente_ficha(origen_ficha, ficha_marca, fecha):
     return None
 
 
+def llevar_paletas(productos, marca) -> int:
+    """La paleta de `fichas-marca.json` a `colores_oficiales` de los modelos que no la tienen.
+
+    Es la paleta que publica la marca: la que la base guarda del modelo y la que el panel ofrece.
+    Antes se escribía a mano en el paso 4; el 22/10/2026 hubo que hacerlo en cuatro modelos con un
+    script suelto. No pisa una paleta que ya existe. Y si la lista no marca colores, deja dicho que
+    se sugiere la paleta completa (regla 13): `exportar_lista.py` la manda así al panel.
+    """
+    llevadas = 0
+    for p in productos:
+        entrada = marca.get(p.get("id_modelo") or p["id"]) or {}
+        if entrada.get("paleta") and not p.get("colores_oficiales"):
+            p["colores_oficiales"] = list(entrada["paleta"])
+            donde = entrada.get("fuente") or "el sitio oficial del fabricante"
+            nota = f"colores: la paleta que publica {donde}" + (f" ({entrada['fecha']})" if entrada.get("fecha") else "")
+            p["supuestos"] = list(dict.fromkeys((p.get("supuestos") or []) + [nota]))
+            llevadas += 1
+        if p.get("colores_oficiales") and not p.get("colores_familia"):
+            lista = p.setdefault("supuestos_lista", [])
+            if SUPUESTO_PALETA_COMPLETA not in lista:
+                lista.append(SUPUESTO_PALETA_COMPLETA)
+            if SUPUESTO_PALETA_COMPLETA not in (p.get("supuestos") or []):
+                p["supuestos"] = (p.get("supuestos") or []) + [SUPUESTO_PALETA_COMPLETA]
+    return llevadas
+
+
 def leer_icecat(dir_ice, ids):
     for i in ids:
         ruta = dir_ice / f"{i}.json"
@@ -341,6 +368,8 @@ def main():
             p["revisar"] = [r for r in p["revisar"] if "sin descripcion" not in r]
         hechas += 1
 
+    paletas = llevar_paletas(datos["productos"], marca)
+
     # Las heredadas que comparar_lista.py dejó por completar: solo las secciones que faltan.
     por_completar = {}
     for p in datos["productos"]:
@@ -375,6 +404,8 @@ def main():
     Path(a.productos).write_text(json.dumps(datos, ensure_ascii=False, indent=2),
                                  encoding="utf-8")
     print(f"{hechas} modelos con descripción | {len(sin_prosa)} productos sin prosa autorada")
+    if paletas:
+        print(f"{paletas} productos con la paleta de fichas-marca.json")
     if por_completar:
         print(f"{completadas} descripciones heredadas completadas | {len(sin_fuente)} sin ficha ni caja con qué "
               "completarlas")

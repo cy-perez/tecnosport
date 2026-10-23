@@ -31,6 +31,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+from colores import colores_sugeridos  # noqa: E402
 from margen import margen, se_ofrece  # noqa: E402
 
 ORIGINALES = "Fotos originales"
@@ -102,7 +103,11 @@ def texto_de_ficha(productos: list, retirados: list = ()) -> str:
         "-" * 60,
     ]
     for p in productos:
-        sugeridos = ", ".join(p.get("colores_sugeridos") or []) or "sin emojis en la lista"
+        # Lo mismo que llega al panel (exportar_lista.sugeridos): sin emojis, la paleta completa.
+        lista = p.get("colores_sugeridos") or colores_sugeridos(p.get("colores_familia"), p.get("colores_oficiales"))
+        sugeridos = ", ".join(lista) or "ninguno (falta la paleta del modelo)"
+        if lista and not p.get("colores_familia"):
+            sugeridos += " (la paleta completa: la lista no marca colores)"
         L.append(f"- {p['titulo']} (SKU {p['id']})")
         L.append(f"  costo {pesos(p.get('precio_proveedor_cop'))} · mercado {pesos(p.get('precio_mercado_cop'))}"
                  f" · colores sugeridos: {sugeridos}")

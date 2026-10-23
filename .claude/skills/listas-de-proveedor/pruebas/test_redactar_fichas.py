@@ -156,6 +156,28 @@ class CompletarHeredada(unittest.TestCase):
         self.assertTrue(a["descripcion"].startswith("El Galaxy A57 es un celular 5G.\n\n## Ficha técnica"))
 
 
+class PaletaDeLaMarca(unittest.TestCase):
+    """22/10/2026: la paleta de mi.com y de JBL se escribía a mano en el paso 4 con un script suelto."""
+
+    MARCA_CON_PALETA = {"samsung-galaxy-a57-5g": dict(MARCA["samsung-galaxy-a57-5g"], paleta=["Negro", "Lila"])}
+
+    def test_lleva_la_paleta_a_los_que_no_tienen_y_dice_de_donde_salio(self):
+        [a, _] = redactar([dict(p, colores_oficiales=[]) for p in DOS], marca=self.MARCA_CON_PALETA)
+        self.assertEqual(["Negro", "Lila"], a["colores_oficiales"])
+        self.assertIn("colores: la paleta que publica samsung.com/co (2026-10-08)", a["supuestos"])
+
+    def test_no_pisa_una_paleta_que_ya_existe(self):
+        [a, _] = redactar(DOS, marca=self.MARCA_CON_PALETA)
+        self.assertEqual(["Azul", "Gris"], a["colores_oficiales"])
+
+    def test_sin_emojis_deja_dicho_que_se_sugiere_la_paleta_completa(self):
+        [a, _] = redactar([dict(p, colores_familia=[], supuestos=[], supuestos_lista=[]) for p in DOS],
+                          marca=self.MARCA_CON_PALETA)
+        self.assertTrue(any(s.startswith("colores sugeridos: la lista no marca colores") for s in a["supuestos"]))
+        self.assertTrue(any(s.startswith("colores sugeridos:") for s in a["supuestos_lista"]),
+                        "es de esta lista: consolidar no lo lleva a la base")
+
+
 class Filas(unittest.TestCase):
     def test_la_ficha_de_marca_suelta_las_filas_de_memoria(self):
         filas = redactar_fichas.tabla_mi({"f": {"Memoria": "8GB", "RAM": "8GB", "Almacenamiento": "256GB",

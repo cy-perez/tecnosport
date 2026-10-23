@@ -307,12 +307,12 @@ producto con `referencias/conocidos.json` y lo clasifica:
 | costo cambiado | todo, con el margen recalculado al costo de hoy | nada |
 | sin cambios | todo | nada |
 
-**Los colores se heredan solo si la lista marca hoy los mismos emojis** que la vez
-en que se decidieron. Si marca otros —o ninguno, cuando antes marcaba—, el
-producto queda sin colores, sin la sección de colores en la descripción y con la
-tarea `colores` pendiente: confírmalos contra la paleta oficial (regla 13) y
-escribe `colores_oficiales`; la sección se rehace al consolidar. Ningún script
-hace esta tarea.
+**Los colores son variantes, no texto de la descripción** (08/10/2026). Un
+conocido hereda la paleta del modelo en `colores_oficiales`, y en
+`colores_sugeridos` van los de esa paleta que nombran los emojis de la lista;
+**sin emojis, la paleta completa** (22/10/2026, regla 13), con la constancia en
+`supuestos`. Son los que el panel premarca: la persona quita lo que no haya.
+Detalle en `referencias/colores.md`.
 
 **La descripción heredada se valida** (`scripts/descripciones.py`). Una sección que
 quedó vacía —la ficha técnica con el encabezado solo, como llegaron 12 modelos a la
@@ -433,9 +433,11 @@ de la primera vez que se investigó el producto.
   del modelo: no nombra la capacidad ni los colores, que son variantes.
 - **Paleta oficial completa** — en `colores_oficiales` van **todos** los colores
   que el fabricante publica para el modelo, no solo los que marca la lista: la
-  base la guarda como la paleta del modelo. Los que marca la lista los sugiere
-  `comparar_lista.py` en `colores_sugeridos` (`referencias/colores.md`), y se
-  confirman en el panel al revisar el borrador.
+  base la guarda como la paleta del modelo. Escríbela en `fichas-marca.json`
+  (`"paleta": [...]`) y `redactar_fichas.py` la lleva a `colores_oficiales`. Los
+  que marca la lista —o la paleta entera, si no marca ninguno— se sugieren en
+  `colores_sugeridos` (`referencias/colores.md`), y se confirman en el panel al
+  revisar el borrador.
 - **¿Esa configuración existe?** La ficha oficial dice qué combinaciones de RAM y
   almacenamiento vende el fabricante, y el proveedor a veces ofrece otras. En la
   lista del 12/09/2026 aparecieron dos: un Redmi Note 15 Pro 5G de 8+512 cuando
@@ -484,7 +486,8 @@ python3 scripts/redactar_fichas.py catalogo/productos.json \
 consulta y las filas: `{"samsung-galaxy-a57-5g": {"fuente": "samsung.com/co",
 "url": "https://…", "fecha": "2026-10-08", "f": {"Pantalla": "…", "Batería":
 "…"}}}`. Las filas de memoria se descartan solas: son de la configuración. Con
-`"caja": ["…", "…"]` lleva además el contenido de la caja que publica la marca.
+`"caja": ["…", "…"]` lleva además el contenido de la caja que publica la marca, y
+con `"paleta": ["…"]` los colores que publica para el modelo.
 
 **Completar una descripción heredada** (tarea `completar`): `redactar_fichas.py`
 inserta en su sitio solo lo que falta —la tabla, con el mismo orden de fuentes, y
@@ -780,6 +783,7 @@ colores es un producto con cuatro variantes.
 ```
 scripts/rutas.py                  la forma de catalogo/ por subproceso; de ahí salen las rutas por omisión
 scripts/margen.py                 regla 18: el margen mínimo, que usan la exportación y las carpetas de modelo
+scripts/colores.py                los colores sugeridos al panel: los de los emojis, o la paleta completa sin ellos
 scripts/parsear_lista.py          paso 2  1-lista/lista.txt → productos.json + 1-lista/revision.md
 scripts/comparar_lista.py         paso 2  productos.json contra conocidos.json → pendientes + 1-lista/cambios.md
 scripts/descripciones.py          pasos 2, 6 y 6b  quita lo que quedó vacío y dice lo que le falta a una descripción

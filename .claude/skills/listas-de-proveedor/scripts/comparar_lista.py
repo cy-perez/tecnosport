@@ -29,7 +29,8 @@ pregunta— y los conocidos que vinieron pero no entran.
 Los colores ya no se heredan como texto de la ficha: son una variante que el
 cliente elige (decisión del 08/10/2026). Cada producto lleva la paleta del
 modelo en `colores_oficiales` y, en `colores_sugeridos`, los de esa paleta que
-coinciden con los emojis de la lista, para premarcarlos en el panel.
+coinciden con los emojis de la lista —o la paleta entera si no marca ninguno,
+regla 13—, para premarcarlos en el panel (`colores.py`).
 
 Escribe de vuelta en productos.json y un `cambios.md`, en `1-lista/` junto a la lista,
 para mostrar en el paso 3.
@@ -40,12 +41,12 @@ import argparse
 import json
 import re
 import sys
-import unicodedata
 from copy import deepcopy
 from datetime import date
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+from colores import SUPUESTO_PALETA_COMPLETA, colores_sugeridos, sin_tildes  # noqa: E402,F401
 import conocidos  # noqa: E402
 import descripciones  # noqa: E402
 from asignar_precios import aplicar_margen  # noqa: E402
@@ -68,20 +69,6 @@ MOTIVO_EXCLUIDO = "excluido del catálogo"
 ESTADOS = ("nuevo", "configuracion_nueva", "costo_cambio", "sin_cambios", "sin_precio_vigente")
 # El sufijo de SIM del id: sin él, dos ids pueden ser el mismo equipo.
 RE_SUFIJO_SIM = re.compile(r"-(1-sim|dual-sim|sim-esim|esim)$")
-
-
-def sin_tildes(texto: str) -> str:
-    return unicodedata.normalize("NFKD", texto).encode("ascii", "ignore").decode().lower()
-
-
-def colores_sugeridos(familias, paleta):
-    """Los colores de la paleta que nombran alguna de las familias que marcó la lista.
-
-    Una sugerencia, no una decisión: la persona confirma en el panel contra el
-    mensaje del proveedor. Sin emojis no se sugiere nada.
-    """
-    claves = [sin_tildes(f).split()[0] for f in familias or []]
-    return [c for c in paleta or [] if any(k in sin_tildes(c) for k in claves)]
 
 
 def comparar(datos: dict, base: dict, hoy: date, excluidos: dict | None = None) -> dict:
@@ -118,6 +105,10 @@ def comparar(datos: dict, base: dict, hoy: date, excluidos: dict | None = None) 
         p["meta_descripcion"] = m["meta_descripcion"]
         p["colores_oficiales"] = deepcopy(m["paleta"])
         p["colores_sugeridos"] = colores_sugeridos(p.get("colores_familia"), m["paleta"])
+        if not p.get("colores_familia") and m["paleta"] and SUPUESTO_PALETA_COMPLETA not in p["supuestos_lista"]:
+            # En los de la lista y no en los de la investigación: es un hecho de esta lista, y
+            # consolidar no lo lleva a la base.
+            p["supuestos_lista"].append(SUPUESTO_PALETA_COMPLETA)
         p["fuentes_ficha"] = deepcopy(m["fuentes_ficha"])
         p["supuestos"] = list(dict.fromkeys(
             p["supuestos_lista"] + m["supuestos_investigacion"] + m["supuestos_paleta"]))

@@ -186,7 +186,7 @@ class Herencia(unittest.TestCase):
         self.assertTrue(any(r.startswith("POR DEBAJO DEL COSTO") for r in p["revisar"]), p["revisar"])
 
     def test_los_supuestos_de_la_investigacion_vuelven_y_los_de_la_lista_quedan_aparte(self):
-        [p] = comparar(lista(producto()), self.BASE)["productos"]
+        [p] = comparar(lista(producto(colores_familia=["Negro"])), self.BASE)["productos"]
         self.assertEqual(["título confirmado el 02/10/2026", "colores: jbl.com"], p["supuestos"])
         self.assertEqual(["título confirmado el 02/10/2026"], p["supuestos_lista"])
 
@@ -214,9 +214,20 @@ class Colores(unittest.TestCase):
     def test_sin_tildes_y_sin_mayusculas(self):
         self.assertEqual(["Café oscuro"], comparar_lista.colores_sugeridos(["Cafe"], ["Café oscuro", "Negro"]))
 
-    def test_sin_emojis_no_se_sugiere_nada(self):
+    def test_sin_emojis_se_sugiere_la_paleta_completa(self):
+        # Decisión del 22/10/2026 (regla 13): en esa lista 62 de 63 configuraciones llegaban al
+        # panel sin ningún color premarcado.
         [p] = comparar(lista(producto()), self.BASE)["productos"]
-        self.assertEqual([], p["colores_sugeridos"])
+        self.assertEqual(["Plata", "Naranja cósmico", "Azul profundo"], p["colores_sugeridos"])
+        self.assertIn(comparar_lista.SUPUESTO_PALETA_COMPLETA, p["supuestos"])
+        # Es un hecho de esta lista: va con los de la lista, que consolidar no lleva a la base.
+        self.assertIn(comparar_lista.SUPUESTO_PALETA_COMPLETA, p["supuestos_lista"])
+
+    def test_sin_emojis_y_sin_paleta_no_hay_nada_que_sugerir(self):
+        self.assertEqual([], comparar_lista.colores_sugeridos([], []))
+
+    def test_con_emojis_que_no_coinciden_no_se_sugiere_nada(self):
+        self.assertEqual([], comparar_lista.colores_sugeridos(["Rojo"], ["Negro", "Azul"]))
 
     def test_la_descripcion_del_modelo_se_hereda_tal_cual(self):
         [p] = comparar(lista(producto(colores_familia=["Naranja"])), self.BASE)["productos"]
