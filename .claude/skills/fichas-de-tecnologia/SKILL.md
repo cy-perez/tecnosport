@@ -69,13 +69,17 @@ Hace dos cosas, en este orden:
 2. **Sube al borrador las fotos LISTA** de cada modelo nuevo, en el orden de su
    `estado-fotos.json` —la primera es la principal: la elegida con `marcar.py
    --principal` en el bloque 2, o la primera por orden natural—, con sus anchos
-   AVIF y la vista previa, al bucket privado del proveedor.
+   AVIF y la vista previa, al bucket privado del proveedor. La principal es la
+   portada del producto en el sitio: si nadie la eligió, sube la `_1` que la
+   persona descargó primero. El bloque 2 deja `portadas.jpg` para elegirlas
+   todas de una vez (22/10/2026); si la entrega va sin elegir, dilo.
 
 Se puede correr otra vez sin miedo. Un borrador que ya tiene exactamente esas
 fotos —los mismos hashes, en el mismo orden— no se toca; uno con otras —una
 corrida que se cayó, o una tanda que se repitió con fotos nuevas— se rehace
-entero, para que la principal siga siendo la primera. Nunca se suben más de 9:
-la principal y la galería entera del producto.
+entero, para que la principal siga siendo la primera. Nunca se suben más de 10:
+la principal y las 9 de la galería del producto, el mismo tope que
+`BorradorTecnologia.TOPE_DE_FOTOS` en la API.
 
 Y se niega en dos casos, a propósito:
 
@@ -112,7 +116,9 @@ Dile a la persona que los borradores están en **`/admin/tecnologia`**, y qué h
 ahí con cada uno:
 
 - marcar qué colores hay de cada configuración —los que sugiere la lista vienen
-  marcados—;
+  marcados; si la lista no trae colores, la sugerencia es la paleta completa del
+  modelo (regla 13 del bloque 1, decisión del 22/10/2026), así que se desmarca lo
+  que no haya en vez de marcarlo todo a mano—;
 - fijar el precio de venta, que tiene que superar el costo;
 - elegir la marca y la categoría del catálogo;
 - **aprobar, que publica el producto con sus fotos**, o rechazar con el motivo.
