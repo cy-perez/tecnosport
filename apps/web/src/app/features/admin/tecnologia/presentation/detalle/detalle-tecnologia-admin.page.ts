@@ -66,12 +66,16 @@ interface ControlesDeConfiguracion {
  * La revisión de un modelo de tecnología: qué colores de la paleta oficial se venden de cada
  * configuración y a qué precio, y la marca y la categoría del catálogo si el modelo es nuevo.
  *
- * <p>Los colores arrancan con lo que sugiere la lista y nada más: vender un color que el proveedor
- * no dijo tener es lo que esta revisión existe para evitar. El precio arranca en el de mercado,
- * que es un punto de partida y no una recomendación. Una configuración sin colores no se vende.
+ * <p>Los colores arrancan con lo que sugiere la lista y nada más. Cuando la lista marca colores,
+ * son esos; cuando no marca ninguno, la sugerencia es la paleta oficial completa, que es la premisa
+ * del negocio para las listas sin colores (regla 13 de `listas-de-proveedor`). Quitar el que el
+ * proveedor no tenga es lo que esta revisión existe para hacer. El precio arranca en el de
+ * mercado, que es un punto de partida y no una recomendación. Una configuración sin colores no se
+ * vende.
  *
- * <p>Aprobar guarda primero lo que está en pantalla. El producto nace en borrador: sus fotos salen
- * de la carpeta de fichas del modelo.
+ * <p>Aprobar guarda primero lo que está en pantalla y publica el producto con las fotos del
+ * borrador: el servidor las copia del bucket privado del proveedor al público, la primera como
+ * principal.
  */
 @Component({
   selector: 'app-detalle-tecnologia-admin',
