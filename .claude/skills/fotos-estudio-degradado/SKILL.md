@@ -550,7 +550,12 @@ la `_1` que la persona descargó primero, no necesariamente la mejor toma
 frontal. Si en la revisión otra se ve mejor de portada, pregúntale a la persona
 y márcala: `marcar.py SALIDA <nombre> --principal`, y la siguiente corrida de la
 tanda la pone de primera. Una por producto; marcar otra le quita la marca a la
-anterior, y una REPETIR no puede ser principal.
+anterior, y una REPETIR no puede ser principal. **Varias en una sola llamada**, una
+por producto (`marcar.py SALIDA a-3 b-2 c-1 --principal`): cada llamada regenera todas
+las hojas —unos 4 minutos con una tanda de 300 fotos—, y elegir las portadas de 56
+modelos de a una eran casi cuatro horas. Para varias decisiones seguidas, `--sin-hojas`
+en cada llamada y `hojas.py SALIDA` al final. Y la principal sobrevive al reproceso de
+la misma foto (ver «Un modelo que cambió se reprocesa entero»).
 
 Con la revisión hecha:
 

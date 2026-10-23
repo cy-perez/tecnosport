@@ -6,7 +6,8 @@ Marcas a ojo sobre el reporte de fotos-estudio-degradado.
     python marcar.py SALIDA NOMBRE [NOMBRE ...] --repetir "motivo"
     python marcar.py SALIDA NOMBRE --revisar "motivo"
     python marcar.py SALIDA NOMBRE --aprobar ["nota"]
-    python marcar.py SALIDA NOMBRE --principal           # encabeza la galería del borrador
+    python marcar.py SALIDA NOMBRE [NOMBRE ...] --principal   # una por producto: encabeza su galería
+    python marcar.py SALIDA NOMBRE ... --aprobar "nota" --sin-hojas   # sin regenerar las hojas
     python marcar.py SALIDA NOMBRE --excluir X0,Y0,X1,Y1 [--excluir ...]
     python marcar.py SALIDA NOMBRE --limpiar                # quita marcas y aprobación
     python marcar.py SALIDA NOMBRE --limpiar-exclusiones
@@ -27,7 +28,9 @@ algo encima del producto, porque eso sería borrar parte del producto. Se aplica
 reprocesar:  python procesar.py -o SALIDA --solo NOMBRE
 
 Las fotos REPETIR salen de las carpetas de entrega (quedan en .trabajo/retenidas) y
-vuelven si se quita la marca. Después de cada cambio se regeneran las hojas.
+vuelven si se quita la marca. Después de cada cambio se regeneran todas las hojas —unos
+4 minutos con una tanda de 300 fotos—: junta los nombres en una llamada, o pasa
+--sin-hojas y regenéralas al final con  python hojas.py SALIDA
 """
 from __future__ import annotations
 
@@ -98,11 +101,15 @@ def main() -> int:
     g.add_argument("--revisar", metavar="MOTIVO")
     g.add_argument("--aprobar", nargs="?", const="", metavar="NOTA")
     g.add_argument("--principal", action="store_true",
-                   help="esa foto encabeza la galería del borrador; la que lo era deja de serlo")
+                   help="esas fotos —una por producto— encabezan la galería de su borrador; la que lo era "
+                        "deja de serlo")
     g.add_argument("--excluir", action="append", metavar="X0,Y0,X1,Y1")
     g.add_argument("--limpiar", action="store_true", help="quita las marcas a ojo y la aprobación")
     g.add_argument("--limpiar-exclusiones", action="store_true")
     p.add_argument("--zip", action="store_true", help="vuelve a generar el ZIP de entrega")
+    p.add_argument("--sin-hojas", action="store_true",
+                   help="no regenera las hojas de revisión (unos 4 minutos con 300 fotos); hazlo al final "
+                        "con hojas.py SALIDA")
     a = p.parse_args()
 
     raiz = Path(a.salida)
@@ -135,12 +142,15 @@ def marcar(p, a, raiz: Path) -> int:
         return 0
     if not a.nombres:
         p.error("indica al menos un NOMBRE")
-    if a.principal and len(a.nombres) != 1:
-        p.error("--principal es una sola foto: la que encabeza la galería")
     desconocidos = [n for n in a.nombres if n not in fotos]
     if desconocidos:
         print(f"No están en el reporte: {', '.join(desconocidos)}\nNombres: {', '.join(sorted(fotos))}")
         return 1
+    if a.principal:
+        problemas = reporte.problemas_de_principales(rep["fotos"], a.nombres)
+        if problemas:
+            print("No se marcó ninguna principal:\n  - " + "\n  - ".join(problemas))
+            return 1
 
     cambios, reprocesar = [], []
     for n in a.nombres:
@@ -164,16 +174,7 @@ def marcar(p, a, raiz: Path) -> int:
                 print(f"{n}: conserva marcas REVISAR puestas a ojo; quítalas con --limpiar si ya no aplican.")
             f["revisada"] = {"fecha": reporte.ahora(), "nota": a.aprobar.strip()}
         elif a.principal:
-            if antes == "REPETIR":
-                print(f"{n}: está en REPETIR; la principal tiene que poderse publicar.")
-                continue
-            # Una sola principal por producto: la que lo era deja de serlo. En las carpetas de
-            # modelo, procesar_fichas.py la pone de primera en estado-fotos.json, y el borrador
-            # del panel la sube de primera (la primera es la principal).
-            for otra in rep["fotos"]:
-                if otra is not f and otra.get("grupo") == f.get("grupo") and otra.get("principal"):
-                    otra["principal"] = None
-            f["principal"] = {"fecha": reporte.ahora()}
+            reporte.poner_principal(rep["fotos"], f)
         elif a.excluir:
             try:
                 zonas = [leer_zona(z, f.get("entrada") or {}) for z in a.excluir]
@@ -201,12 +202,16 @@ def marcar(p, a, raiz: Path) -> int:
         cambios.append((n, antes, despues))
 
     reporte.guardar(raiz, rep)
-    rutas, ubicacion = hojas.generar(raiz, rep, int(rep.get("configuracion", {}).get("fotos_por_hoja", 8)))
-    rep["hojas_revision"] = [r.name for r in rutas]
-    reporte.guardar(raiz, rep)
+    ubicacion = {}
+    if not a.sin_hojas:
+        rutas, ubicacion = hojas.generar(raiz, rep, int(rep.get("configuracion", {}).get("fotos_por_hoja", 8)))
+        rep["hojas_revision"] = [r.name for r in rutas]
+        reporte.guardar(raiz, rep)
     for n, antes, despues in cambios:
         flecha = f"{antes} → {despues}" if antes != despues else despues
-        print(f"{n}: {flecha} · {raiz / ubicacion.get(n, '?')}")
+        print(f"{n}: {flecha}" + (f" · {raiz / ubicacion.get(n, '?')}" if ubicacion else ""))
+    if a.sin_hojas:
+        print(f"Las hojas no se regeneraron: python \"{Path(__file__).with_name('hojas.py')}\" \"{raiz}\"")
     if reprocesar:
         script = Path(__file__).resolve().parent / "procesar.py"
         print(f"Para aplicar las exclusiones: python {script} -o \"{raiz}\" --solo {','.join(reprocesar)}")
