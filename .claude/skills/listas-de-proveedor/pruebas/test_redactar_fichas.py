@@ -2,6 +2,7 @@
 Icecat primero y la de la marca para lo que Icecat no cubre, siempre con su aviso."""
 
 import json
+import os
 import subprocess
 import sys
 import tempfile
@@ -11,6 +12,10 @@ from pathlib import Path
 SKILL = Path(__file__).resolve().parent.parent
 SCRIPTS = SKILL / "scripts"
 sys.path.insert(0, str(SCRIPTS))
+
+# Los scripts escriben acentos y flechas: con la consola de Windows en cp1252 el hijo fallaba al
+# imprimir y la prueba dependía de la codificación de quien la corre (revisión del PR #268).
+ENTORNO_UTF8 = {**os.environ, "PYTHONIOENCODING": "utf-8"}
 
 import redactar_fichas  # noqa: E402
 
@@ -48,7 +53,7 @@ def redactar(productos, marca=None, icecat=None, prosa=PROSA):
             (tmp / "icecat").mkdir()
             (tmp / "icecat" / "samsung-galaxy-a57-5g.json").write_text(json.dumps(icecat), encoding="utf-8")
             args += ["--icecat", str(tmp / "icecat")]
-        subprocess.run(args, check=True, capture_output=True)
+        subprocess.run(env=ENTORNO_UTF8, args=args, check=True, capture_output=True)
         return json.loads((tmp / "p.json").read_text(encoding="utf-8"))["productos"]
 
 

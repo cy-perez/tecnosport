@@ -5,6 +5,7 @@ volviera a escribir en la raíz de catalogo/, el paso siguiente no encontraría 
 """
 
 import json
+import os
 import subprocess
 import sys
 import tempfile
@@ -15,13 +16,17 @@ SKILL = Path(__file__).resolve().parent.parent
 SCRIPTS = SKILL / "scripts"
 sys.path.insert(0, str(SCRIPTS))
 
+# Los scripts escriben acentos y flechas: con la consola de Windows en cp1252 el hijo fallaba al
+# imprimir y la prueba dependía de la codificación de quien la corre (revisión del PR #268).
+ENTORNO_UTF8 = {**os.environ, "PYTHONIOENCODING": "utf-8"}
+
 import rutas  # noqa: E402
 
 LISTA = "*15/OCTUBRE/2026*\n*LISTADO DE ANDROID*\n *SAMSUNG*\n🎃A17 4G (8+256)$650\n"
 
 
 def correr(raiz, script, *argumentos):
-    subprocess.run([sys.executable, "-B", str(SCRIPTS / script), *argumentos],
+    subprocess.run(env=ENTORNO_UTF8, args=[sys.executable, "-B", str(SCRIPTS / script), *argumentos],
                    cwd=raiz, check=True, capture_output=True, timeout=60)
 
 

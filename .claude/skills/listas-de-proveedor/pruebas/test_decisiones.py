@@ -6,6 +6,7 @@ había que correr a mano entre el parser y la comparación.
 """
 
 import json
+import os
 import subprocess
 import sys
 import tempfile
@@ -15,6 +16,10 @@ from pathlib import Path
 SKILL = Path(__file__).resolve().parent.parent
 SCRIPTS = SKILL / "scripts"
 sys.path.insert(0, str(SCRIPTS))
+
+# Los scripts escriben acentos y flechas: con la consola de Windows en cp1252 el hijo fallaba al
+# imprimir y la prueba dependía de la codificación de quien la corre (revisión del PR #268).
+ENTORNO_UTF8 = {**os.environ, "PYTHONIOENCODING": "utf-8"}
 
 import decisiones  # noqa: E402
 
@@ -126,7 +131,7 @@ class ComparacionRepetible(unittest.TestCase):
     """Correr la comparación dos veces da lo mismo, y la decisión se aplica en las dos."""
 
     def correr(self, tmp):
-        subprocess.run([sys.executable, "-B", str(SCRIPTS / "comparar_lista.py"), str(tmp / "productos.json"),
+        subprocess.run(env=ENTORNO_UTF8, args=[sys.executable, "-B", str(SCRIPTS / "comparar_lista.py"), str(tmp / "productos.json"),
                         "--hoy", "2026-10-22", "--cambios", str(tmp / "cambios.md")],
                        check=True, capture_output=True)
         return (tmp / "productos.json").read_text(encoding="utf-8"), (tmp / "cambios.md").read_text(encoding="utf-8")
@@ -148,7 +153,7 @@ class ComparacionRepetible(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             tmp = Path(tmp)
             (tmp / "productos.json").write_text(json.dumps({**lista(), "comparacion": {}}), encoding="utf-8")
-            r = subprocess.run([sys.executable, "-B", str(SCRIPTS / "comparar_lista.py"), str(tmp / "productos.json")],
+            r = subprocess.run(env=ENTORNO_UTF8, args=[sys.executable, "-B", str(SCRIPTS / "comparar_lista.py"), str(tmp / "productos.json")],
                                capture_output=True, text=True, encoding="utf-8")
             self.assertNotEqual(0, r.returncode)
             self.assertIn("vuelve a correr el parser", r.stderr)

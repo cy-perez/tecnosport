@@ -1,6 +1,7 @@
 """Pruebas del paso de diferencias: qué trae la lista de hoy frente a lo conocido."""
 
 import json
+import os
 import subprocess
 import sys
 import tempfile
@@ -12,6 +13,10 @@ from pathlib import Path
 SKILL = Path(__file__).resolve().parent.parent
 SCRIPTS = SKILL / "scripts"
 sys.path.insert(0, str(SCRIPTS))
+
+# Los scripts escriben acentos y flechas: con la consola de Windows en cp1252 el hijo fallaba al
+# imprimir y la prueba dependía de la codificación de quien la corre (revisión del PR #268).
+ENTORNO_UTF8 = {**os.environ, "PYTHONIOENCODING": "utf-8"}
 
 import comparar_lista  # noqa: E402
 from pendientes import necesita  # noqa: E402
@@ -533,7 +538,7 @@ class PasoCuatroRespetaLoPendiente(unittest.TestCase):
             (tmp / "vtex.json").write_text("{}", encoding="utf-8")
             (tmp / "alk.json").write_text(json.dumps({"jbl-grip": {"precio": 300_000, "nombre": "JBL Grip"}}),
                                           encoding="utf-8")
-            subprocess.run([sys.executable, "-B", str(SCRIPTS / "asignar_precios.py"), str(tmp / "p.json"),
+            subprocess.run(env=ENTORNO_UTF8, args=[sys.executable, "-B", str(SCRIPTS / "asignar_precios.py"), str(tmp / "p.json"),
                             "--vtex", str(tmp / "vtex.json"), "--alkosto", str(tmp / "alk.json"),
                             "--fecha", "2026-10-09"],
                            check=True, capture_output=True)
@@ -554,7 +559,7 @@ class PasoCuatroRespetaLoPendiente(unittest.TestCase):
             (tmp / "vtex.json").write_text("{}", encoding="utf-8")
             (tmp / "alk.json").write_text("{}", encoding="utf-8")
             for _ in range(3):
-                subprocess.run([sys.executable, "-B", str(SCRIPTS / "asignar_precios.py"), str(tmp / "p.json"),
+                subprocess.run(env=ENTORNO_UTF8, args=[sys.executable, "-B", str(SCRIPTS / "asignar_precios.py"), str(tmp / "p.json"),
                                 "--vtex", str(tmp / "vtex.json"), "--alkosto", str(tmp / "alk.json")],
                                check=True, capture_output=True)
             [grip] = json.loads((tmp / "p.json").read_text(encoding="utf-8"))["productos"]
@@ -577,7 +582,7 @@ class PasoCuatroRespetaLoPendiente(unittest.TestCase):
             tmp = Path(tmp)
             (tmp / "p.json").write_text(json.dumps(datos), encoding="utf-8")
             (tmp / "prosa.json").write_text("{}", encoding="utf-8")
-            subprocess.run([sys.executable, "-B", str(SCRIPTS / "redactar_fichas.py"), str(tmp / "p.json"),
+            subprocess.run(env=ENTORNO_UTF8, args=[sys.executable, "-B", str(SCRIPTS / "redactar_fichas.py"), str(tmp / "p.json"),
                             "--prosa", str(tmp / "prosa.json")], check=True, capture_output=True)
             [p] = json.loads((tmp / "p.json").read_text(encoding="utf-8"))["productos"]
         self.assertEqual(DESCRIPCION, p["descripcion"])
@@ -590,7 +595,7 @@ class PasoCuatroRespetaLoPendiente(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             tmp = Path(tmp)
             (tmp / "p.json").write_text(json.dumps(datos), encoding="utf-8")
-            subprocess.run([sys.executable, "-B", str(SCRIPTS / "precios.py"), str(tmp / "p.json"),
+            subprocess.run(env=ENTORNO_UTF8, args=[sys.executable, "-B", str(SCRIPTS / "precios.py"), str(tmp / "p.json"),
                             "--salida", str(tmp / "vtex.json")], check=True, capture_output=True, timeout=30)
             self.assertEqual({}, json.loads((tmp / "vtex.json").read_text(encoding="utf-8")))
 
