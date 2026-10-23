@@ -111,6 +111,51 @@ class SinProsa(unittest.TestCase):
         self.assertTrue(any(r.startswith("sin descripcion") for r in b["revisar"]))
 
 
+class CompletarHeredada(unittest.TestCase):
+    """La descripción heredada de la base se completa con la ficha y la caja, sin tocar la prosa."""
+
+    HEREDADA = ("El Galaxy A57 es un celular 5G.\n\n## Características principales\n\n- Pantalla de 6,7\".\n\n"
+                "## Garantía y notas\n\n- Producto nuevo, sellado y sin activar.\n")
+    MARCA_CON_CAJA = {"samsung-galaxy-a57-5g": dict(MARCA["samsung-galaxy-a57-5g"],
+                                                     caja=["Galaxy A57", "Cable USB-C"])}
+
+    def heredados(self):
+        return [producto(p["id"], p["titulo"], descripcion=self.HEREDADA, pendiente=["ficha", "completar"],
+                         fuentes_ficha=[], revisar=["descripción de la base: no tiene «Contenido de la caja»"])
+                for p in DOS]
+
+    def test_inserta_la_ficha_y_la_caja_de_la_marca_sin_tocar_la_prosa(self):
+        a, b = redactar(self.heredados(), marca=self.MARCA_CON_CAJA, prosa={})
+        d = a["descripcion"]
+        self.assertTrue(d.startswith("El Galaxy A57 es un celular 5G.\n\n## Características principales\n\n"
+                                     "- Pantalla de 6,7\"."), d)
+        self.assertIn("| Pantalla | 6,7\" Super AMOLED Plus |", d)
+        self.assertIn("## Contenido de la caja\n\n- Galaxy A57\n- Cable USB-C", d)
+        self.assertLess(d.index("## Ficha técnica"), d.index("## Contenido de la caja"))
+        self.assertLess(d.index("## Contenido de la caja"), d.index("## Garantía y notas"))
+        self.assertIn("Ficha técnica: samsung.com/co, consultado el 2026-10-08.", d)
+        self.assertIn("Contenido de la caja: samsung.com/co, consultado el 2026-10-08.", d)
+        self.assertEqual(d, b["descripcion"])
+        self.assertEqual("samsung.com/co", a["fuentes_ficha"][0]["fuente"])
+        # Lo que faltaba ya no se pide; lo que la ficha de la marca no trae —el peso— se sigue diciendo.
+        self.assertEqual(["descripción de la base: la ficha técnica no dice peso ni dimensiones"],
+                         [r for r in a["revisar"] if r.startswith("descripción de la base")])
+
+    def test_icecat_va_primero_tambien_al_completar(self):
+        [a, _] = redactar(self.heredados(), marca=MARCA, icecat=ICECAT, prosa={})
+        self.assertIn("Database Right data-sheet 2026 Icecat", a["descripcion"])
+        self.assertIn("| Batería | 5000 mAh |", a["descripcion"])
+
+    def test_sin_fuente_no_inventa_y_la_deja_como_estaba(self):
+        [a, _] = redactar(self.heredados(), prosa={})
+        self.assertEqual(self.HEREDADA, a["descripcion"])
+
+    def test_una_redaccion_nueva_no_se_completa(self):
+        # La que tiene `descripcion` pendiente se redacta entera; `completar` es solo para heredadas.
+        [a, _] = redactar([dict(p, pendiente=["descripcion", "completar"]) for p in DOS], marca=MARCA)
+        self.assertTrue(a["descripcion"].startswith("El Galaxy A57 es un celular 5G.\n\n## Ficha técnica"))
+
+
 class Filas(unittest.TestCase):
     def test_la_ficha_de_marca_suelta_las_filas_de_memoria(self):
         filas = redactar_fichas.tabla_mi({"f": {"Memoria": "8GB", "RAM": "8GB", "Almacenamiento": "256GB",

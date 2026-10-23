@@ -17,7 +17,14 @@ import comparar_lista  # noqa: E402
 from pendientes import necesita  # noqa: E402
 
 HOY = date(2026, 10, 8)
-DESCRIPCION = "El JBL Xtreme 4 es un parlante portátil.\n"
+# Completa: la ficha, la caja y la garantía. Una heredada a la que le falta algo queda por completar.
+def completa(apertura):
+    return (f"{apertura}\n\n## Ficha técnica\n\n| Atributo | Detalle |\n|---|---|\n"
+            "| Dimensiones y peso | 297 x 149 x 141 mm · 2,1 kg |\n\n## Contenido de la caja\n\n- El equipo\n\n"
+            "## Garantía y notas\n\n- Producto nuevo.\n")
+
+
+DESCRIPCION = completa("El JBL Xtreme 4 es un parlante portátil.")
 
 
 def conocido(**cambios):
@@ -244,12 +251,56 @@ class DescripcionDeLaBase(unittest.TestCase):
         self.assertEqual(faltas, [r for r in otra["revisar"] if r.startswith(comparar_lista.ALERTA_DESCRIPCION)])
 
 
+class PorCompletar(unittest.TestCase):
+    """22/10/2026: 20 de los 56 borradores iban al panel con la descripción de la base sin ficha o
+    sin caja, porque solo se investigaba lo nuevo. Ahora queda la tarea de completarla."""
+
+    SIN_FICHA_NI_CAJA = "El JBL Xtreme 4 es un parlante portátil.\n\n## Garantía y notas\n\n- Producto nuevo.\n"
+    SIN_CAJA = ("El JBL Xtreme 4 es un parlante portátil.\n\n## Ficha técnica\n\n| Atributo | Detalle |\n"
+                "|---|---|\n| Dimensiones y peso | 2,1 kg |\n\n## Garantía y notas\n\n- Producto nuevo.\n")
+
+    def heredado(self, descripcion, **cambios):
+        [p] = comparar(lista(producto()), {"jbl-xtreme-4": conocido(descripcion=descripcion, **cambios)})["productos"]
+        return p
+
+    def test_sin_ficha_pide_la_ficha_y_completar_y_conserva_el_precio_heredado(self):
+        p = self.heredado(self.SIN_FICHA_NI_CAJA)
+        self.assertEqual(["ficha", "completar"], p["pendiente"])
+        self.assertEqual("sin_cambios", p["estado_lista"])
+        self.assertEqual(1_260_400, p["precio_mercado_cop"])
+        self.assertFalse(necesita(p, "descripcion"), "la prosa heredada no se vuelve a redactar")
+        self.assertTrue(necesita(p, "completar"))
+
+    def test_sin_caja_solo_pide_completar(self):
+        self.assertEqual(["completar"], self.heredado(self.SIN_CAJA)["pendiente"])
+
+    def test_con_el_precio_vencido_pide_las_dos_cosas(self):
+        p = self.heredado(self.SIN_CAJA, fecha_precio="2026-09-01")
+        self.assertEqual(["precio", "completar"], p["pendiente"])
+
+    def test_completa_no_pide_nada(self):
+        self.assertEqual([], self.heredado(DESCRIPCION)["pendiente"])
+
+    def test_sin_comparacion_no_se_completa(self):
+        self.assertFalse(necesita({}, "completar"))
+
+    def test_el_reporte_las_lista(self):
+        datos = comparar(lista(producto()), {"jbl-xtreme-4": conocido(descripcion=self.SIN_CAJA)})
+        seccion = comparar_lista.reporte(datos).split("## Descripciones heredadas por completar")[1].split("##")[0]
+        self.assertIn("**JBL Xtreme 4** — falta «Contenido de la caja»", seccion)
+
+    def test_dos_corridas_dan_lo_mismo(self):
+        base = {"jbl-xtreme-4": conocido(descripcion=self.SIN_FICHA_NI_CAJA)}
+        una = comparar(lista(producto()), base)
+        self.assertEqual(una, comparar(una, base))
+
+
 class ConfiguracionNueva(unittest.TestCase):
     """Una memoria nueva de un modelo conocido hereda la ficha y solo pide el precio."""
 
     BASE = {"samsung-galaxy-a57-5g-8gb-ram-256gb": conocido(
         titulo="Samsung Galaxy A57 5G 8GB RAM 256GB", id_modelo="samsung-galaxy-a57-5g",
-        titulo_modelo="Samsung Galaxy A57 5G", descripcion="El Galaxy A57 es un celular 5G.\n")}
+        titulo_modelo="Samsung Galaxy A57 5G", descripcion=completa("El Galaxy A57 es un celular 5G."))}
     NUEVA = dict(id_="samsung-galaxy-a57-5g-12gb-ram-512gb", titulo="Samsung Galaxy A57 5G 12GB RAM 512GB",
                  id_modelo="samsung-galaxy-a57-5g", titulo_modelo="Samsung Galaxy A57 5G")
 
@@ -257,13 +308,14 @@ class ConfiguracionNueva(unittest.TestCase):
         [p] = comparar(lista(producto(**self.NUEVA)), self.BASE)["productos"]
         self.assertEqual("configuracion_nueva", p["estado_lista"])
         self.assertEqual(["precio"], p["pendiente"])
-        self.assertEqual("El Galaxy A57 es un celular 5G.\n", p["descripcion"])
+        self.assertEqual(completa("El Galaxy A57 es un celular 5G."), p["descripcion"])
         self.assertIsNone(p["precio_mercado_cop"])
 
     def test_si_la_descripcion_nombra_una_capacidad_lo_marca(self):
-        base = {k: dict(v, descripcion="El Galaxy A57 de 256 GB es un celular 5G.\n") for k, v in self.BASE.items()}
+        base = {k: dict(v, descripcion=completa("El Galaxy A57 de 256 GB es un celular 5G."))
+                for k, v in self.BASE.items()}
         [p] = comparar(lista(producto(**self.NUEVA)), base)["productos"]
-        self.assertTrue(any(r.startswith("la descripción del modelo nombra un almacenamiento") for r in p["revisar"]))
+        self.assertTrue(any("nombra una configuración («de 256 GB»)" in r for r in p["revisar"]), p["revisar"])
 
     def test_el_reporte_la_cuenta_aparte(self):
         datos = comparar(lista(producto(**self.NUEVA)), self.BASE)

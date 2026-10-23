@@ -52,7 +52,11 @@ from datetime import date
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from pendientes import necesita  # noqa: E402
+import descripciones  # noqa: E402
+from pendientes import COMPLETAR, necesita  # noqa: E402
+
+# Lo que comparar_lista.py anota de una descripción heredada: se recalcula al completarla.
+ALERTA_DESCRIPCION = "descripción de la base:"
 
 LIMITE_META_TITULO = 60
 LIMITE_META_DESCRIPCION = 155
@@ -188,6 +192,33 @@ def notas_obligatorias(producto):
     return notas
 
 
+def elegir_tabla(ficha_icecat, ficha_marca):
+    """(filas, origen): Icecat primero (22/10/2026); la marca solo si Icecat no dio filas.
+
+    `origen` es «Open Icecat», «marca» o None.
+    """
+    filas = tabla_icecat(ficha_icecat) if ficha_icecat else []
+    if filas:
+        return filas, "Open Icecat"
+    filas = tabla_mi(ficha_marca) if ficha_marca else []
+    return filas, ("marca" if filas else None)
+
+
+def texto_de_tabla(filas):
+    return "\n".join(["| Atributo | Detalle |", "|---|---|"] + [f"| {a} | {b} |" for a, b in filas])
+
+
+def linea_de_fuente(origen, ficha_marca, fecha):
+    """La línea del pie que atribuye la ficha técnica."""
+    if origen == "Open Icecat":
+        return aviso_icecat(fecha)
+    if origen == "marca":
+        donde = ficha_marca.get("fuente") or "el sitio oficial del fabricante"
+        cuando = ficha_marca.get("fecha")
+        return f"Ficha técnica: {donde}" + (f", consultado el {cuando}." if cuando else ".")
+    return None
+
+
 def componer(producto, prosa, ficha_icecat, ficha_marca, fecha):
     partes = [prosa["apertura"].strip(), ""]
 
@@ -196,16 +227,9 @@ def componer(producto, prosa, ficha_icecat, ficha_marca, fecha):
         partes += ["## Características principales", ""]
         partes += [f"- {v}" for v in vinetas] + [""]
 
-    # Icecat primero (22/10/2026); la marca solo si Icecat no dio filas.
-    filas = tabla_icecat(ficha_icecat) if ficha_icecat else []
-    origen = "Open Icecat" if filas else None
-    if not filas and ficha_marca:
-        filas = tabla_mi(ficha_marca)
-        origen = "marca" if filas else None
-
+    filas, origen = elegir_tabla(ficha_icecat, ficha_marca)
     if filas:
-        partes += ["## Ficha técnica", "", "| Atributo | Detalle |", "|---|---|"]
-        partes += [f"| {a} | {b} |" for a, b in filas] + [""]
+        partes += ["## Ficha técnica", "", texto_de_tabla(filas), ""]
 
     caja = prosa.get("caja") or []
     if caja:
@@ -216,17 +240,39 @@ def componer(producto, prosa, ficha_icecat, ficha_marca, fecha):
     partes += [f"- {n}" for n in (prosa.get("notas") or []) + notas_obligatorias(producto)]
     partes += [""]
 
-    fuentes = []
-    if origen == "Open Icecat":
-        fuentes.append(aviso_icecat(fecha))
-    elif origen == "marca":
-        donde = ficha_marca.get("fuente") or "el sitio oficial del fabricante"
-        cuando = ficha_marca.get("fecha")
-        fuentes.append(f"Ficha técnica: {donde}" + (f", consultado el {cuando}." if cuando else "."))
-    if fuentes:
-        partes += ["---", ""] + fuentes
+    fuente = linea_de_fuente(origen, ficha_marca, fecha)
+    if fuente:
+        partes += ["---", "", fuente]
 
     return "\n".join(partes).strip() + "\n"
+
+
+def completar(descripcion, ficha_icecat, ficha_marca, caja, fecha):
+    """(descripción, origen de la ficha, secciones agregadas) de una descripción heredada.
+
+    Inserta en su sitio solo lo que le falta y se puede afirmar con la fuente: la ficha técnica
+    —con el mismo orden de fuentes que `componer`— y el contenido de la caja. La apertura, las
+    viñetas y las notas no se tocan: las escribió una persona en otra lista, y reescribirlas sin
+    prosa nueva sería inventar.
+    """
+    faltan = descripciones.faltantes(descripcion)
+    agregadas, origen = [], None
+    if descripciones.FICHA in faltan:
+        filas, origen = elegir_tabla(ficha_icecat, ficha_marca)
+        if filas:
+            descripcion = descripciones.insertar(descripcion, descripciones.FICHA, texto_de_tabla(filas),
+                                                 linea_de_fuente(origen, ficha_marca, fecha))
+            agregadas.append(descripciones.FICHA)
+    if descripciones.CAJA in faltan and caja:
+        pie = None
+        if ficha_marca and ficha_marca.get("caja"):
+            donde = ficha_marca.get("fuente") or "el sitio oficial del fabricante"
+            cuando = ficha_marca.get("fecha")
+            pie = f"Contenido de la caja: {donde}" + (f", consultado el {cuando}." if cuando else ".")
+        descripcion = descripciones.insertar(descripcion, descripciones.CAJA,
+                                             "\n".join(f"- {c}" for c in caja), pie)
+        agregadas.append(descripciones.CAJA)
+    return descripcion, (origen if descripciones.FICHA in agregadas else None), agregadas
 
 
 def fuente_ficha(origen_ficha, ficha_marca, fecha):
@@ -285,8 +331,8 @@ def main():
         ficha_ice = leer_icecat(dir_ice, ids) if dir_ice and prosa.get("icecat") is not False else None
         referencia = grupo[0]
         descripcion = componer(referencia, prosa, ficha_ice, ficha_marca, a.fecha)
-        origen = "icecat" if ficha_ice and tabla_icecat(ficha_ice) else ("marca" if ficha_marca and tabla_mi(ficha_marca) else None)
-        fuente = fuente_ficha(origen, ficha_marca or {}, a.fecha)
+        _, origen = elegir_tabla(ficha_ice, ficha_marca)
+        fuente = fuente_ficha({"Open Icecat": "icecat"}.get(origen, origen), ficha_marca or {}, a.fecha)
         for p in grupo:
             p["descripcion"] = descripcion
             p["meta_titulo"] = meta_titulo(p)
@@ -294,6 +340,31 @@ def main():
             p["fuentes_ficha"] = [fuente] if fuente else []
             p["revisar"] = [r for r in p["revisar"] if "sin descripcion" not in r]
         hechas += 1
+
+    # Las heredadas que comparar_lista.py dejó por completar: solo las secciones que faltan.
+    por_completar = {}
+    for p in datos["productos"]:
+        if necesita(p, COMPLETAR) and not necesita(p, "descripcion") and p.get("descripcion"):
+            por_completar.setdefault(p.get("id_modelo") or p["id"], []).append(p)
+    completadas, sin_fuente = 0, []
+    for mid, grupo in por_completar.items():
+        ids = [mid] + [p["id"] for p in grupo]
+        prosa = next((prosas[i] for i in ids if i in prosas), {})
+        ficha_marca = marca.get(mid) or {}
+        ficha_ice = leer_icecat(dir_ice, ids) if dir_ice and prosa.get("icecat") is not False else None
+        caja = ficha_marca.get("caja") or prosa.get("caja") or []
+        texto, origen, agregadas = completar(grupo[0]["descripcion"], ficha_ice, ficha_marca, caja, a.fecha)
+        if not agregadas:
+            sin_fuente.append(grupo[0].get("titulo_modelo") or grupo[0]["titulo"])
+            continue
+        fuente = fuente_ficha({"Open Icecat": "icecat"}.get(origen, origen), ficha_marca, a.fecha)
+        for p in grupo:
+            p["descripcion"] = texto
+            if fuente and fuente not in (p.get("fuentes_ficha") or []):
+                p["fuentes_ficha"] = list(p.get("fuentes_ficha") or []) + [fuente]
+            p["revisar"] = [r for r in p["revisar"] if not r.startswith(ALERTA_DESCRIPCION)]
+            p["revisar"] += [f"{ALERTA_DESCRIPCION} {d}" for d in descripciones.defectos(texto)]
+        completadas += 1
 
     for p in datos["productos"]:
         if p["titulo"] in sin_prosa and "sin descripcion" not in " ".join(p["revisar"]):
@@ -304,6 +375,11 @@ def main():
     Path(a.productos).write_text(json.dumps(datos, ensure_ascii=False, indent=2),
                                  encoding="utf-8")
     print(f"{hechas} modelos con descripción | {len(sin_prosa)} productos sin prosa autorada")
+    if por_completar:
+        print(f"{completadas} descripciones heredadas completadas | {len(sin_fuente)} sin ficha ni caja con qué "
+              "completarlas")
+        for t in sin_fuente:
+            print("   sin fuente para completar:", t)
     largos = [p["titulo"] for p in datos["productos"]
               if len(p.get("meta_titulo") or "") > LIMITE_META_TITULO
               or len(p.get("meta_descripcion") or "") > LIMITE_META_DESCRIPCION]

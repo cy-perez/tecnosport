@@ -49,13 +49,16 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import conocidos  # noqa: E402
 import descripciones  # noqa: E402
 from asignar_precios import aplicar_margen  # noqa: E402
-from pendientes import TAREAS  # noqa: E402
+from pendientes import COMPLETAR, TAREAS  # noqa: E402
 import rutas  # noqa: E402
 
 PRECIO = conocidos.PRECIO
 # Las alertas que pone aplicar_margen: se quitan antes de recalcular para que
 # correr esto dos veces no las duplique.
 ALERTAS_DE_MARGEN = ("POR DEBAJO DEL COSTO", "margen inusual")
+# Una alerta de versiones anteriores: hoy la frase de configuración es un defecto de la
+# descripción (`descripciones.NOMBRA_CONFIGURACION`) y se avisa siempre. Se sigue filtrando
+# para que un productos.json viejo no la arrastre.
 ALERTA_CAPACIDAD = "la descripción del modelo nombra un almacenamiento"
 # Lo que la descripción guardada no cumple: se recalcula en cada comparación, como las de margen.
 ALERTA_DESCRIPCION = "descripción de la base:"
@@ -65,9 +68,6 @@ MOTIVO_EXCLUIDO = "excluido del catálogo"
 ESTADOS = ("nuevo", "configuracion_nueva", "costo_cambio", "sin_cambios", "sin_precio_vigente")
 # El sufijo de SIM del id: sin él, dos ids pueden ser el mismo equipo.
 RE_SUFIJO_SIM = re.compile(r"-(1-sim|dual-sim|sim-esim|esim)$")
-# Una descripción de modelo que nombra un almacenamiento se escribió para una sola
-# configuración: con una segunda, dice algo falso de ella.
-RE_ALMACENAMIENTO = re.compile(r"\d+\s?(?:GB|TB) de almacenamiento|\bde \d+\s?(?:GB|TB)\b")
 
 
 def sin_tildes(texto: str) -> str:
@@ -124,6 +124,11 @@ def comparar(datos: dict, base: dict, hoy: date, excluidos: dict | None = None) 
         p["revisar"] = [r for r in p.get("revisar") or []
                         if not r.startswith(ALERTAS_DE_MARGEN + (ALERTA_CAPACIDAD, ALERTA_DESCRIPCION))]
         p["revisar"] += [f"{ALERTA_DESCRIPCION} {d}" for d in descripciones.defectos(p["descripcion"])]
+        # Lo que le falta y se puede completar con la ficha oficial —la tabla, la caja— queda para
+        # el paso 4, sin reescribir la prosa: si no, el borrador llegaba al panel así, lista tras
+        # lista. `ficha` además para que Icecat la busque, porque va primero (22/10/2026).
+        faltan = descripciones.faltantes(p["descripcion"])
+        por_completar = (["ficha"] if descripciones.FICHA in faltan else []) + ([COMPLETAR] if faltan else [])
 
         if e is not None and conocidos.precio_vigente(e, hoy):
             for campo in PRECIO:
@@ -142,10 +147,7 @@ def comparar(datos: dict, base: dict, hoy: date, excluidos: dict | None = None) 
                     p[campo] = [] if campo in ("fuentes_precio", "notas_precio") else None
             p["pendiente"] = [] if fresco else ["precio"]
             p["estado_lista"] = "configuracion_nueva" if e is None else "sin_precio_vigente"
-            if e is None and RE_ALMACENAMIENTO.search(m["descripcion"]):
-                p["revisar"].append(
-                    f"{ALERTA_CAPACIDAD} y llegó otra configuración: quitar la capacidad de la descripción "
-                    "para que valga para todas")
+        p["pendiente"] += por_completar
 
         aplicar_margen(p)
 
@@ -278,7 +280,12 @@ def texto_de_cambio(p: dict) -> str:
 def reporte(datos: dict) -> str:
     r = datos["comparacion"]["resumen"]
     por = {estado: [p for p in datos["productos"] if p["estado_lista"] == estado] for estado in ESTADOS}
-    solo_precio = [p for p in por["sin_precio_vigente"] + por["configuracion_nueva"] if p["pendiente"]]
+    solo_precio = [p for p in por["sin_precio_vigente"] + por["configuracion_nueva"] if "precio" in p["pendiente"]]
+    por_completar = {}
+    for p in datos["productos"]:
+        if COMPLETAR in (p.get("pendiente") or []):
+            por_completar.setdefault(p["id_modelo"], (p.get("titulo_modelo") or p["titulo"],
+                                                      descripciones.faltantes(p.get("descripcion"))))
     modelos_nuevos = {p["id_modelo"] for p in por["nuevo"]}
     L = [
         "# Cambios frente a lo conocido", "",
@@ -296,7 +303,7 @@ def reporte(datos: dict) -> str:
 
     L += ["", "## Memoria nueva de un modelo conocido — investigar solo el precio", ""]
     L += [f"- **{p['titulo']}** — costo {pesos(p['precio_proveedor_cop'])}"
-          + ("" if p["pendiente"] else " (ya investigado en esta corrida)")
+          + ("" if "precio" in p["pendiente"] else " (ya investigado en esta corrida)")
           for p in por["configuracion_nueva"]] or ["Ninguna."]
 
     # El costo anterior va aquí también: si no, una lista que llega después de
@@ -304,11 +311,15 @@ def reporte(datos: dict) -> str:
     # fueron 19, con «Costo cambiado: Ninguno»—.
     L += ["", "## Sin precio de mercado vigente — investigar solo el precio", ""]
     L += [f"- **{p['titulo']}** — costo {costo_con_cambio(p)}"
-          + ("" if p["pendiente"] else " (ya investigado en esta corrida)")
+          + ("" if "precio" in p["pendiente"] else " (ya investigado en esta corrida)")
           for p in por["sin_precio_vigente"]] or ["Ninguno."]
     cambiaron = [p for p in por["sin_precio_vigente"] if cambio_de_costo(p)]
     if cambiaron:
         L += ["", f"{len(cambiaron)} de ellos cambiaron de costo frente a la última lista."]
+
+    L += ["", "## Descripciones heredadas por completar — solo la ficha técnica o la caja", ""]
+    L += [f"- **{t}** — falta {' y '.join(f'«{s}»' for s in faltan)}"
+          for t, faltan in por_completar.values()] or ["Ninguna."]
 
     L += ["", "## Costo cambiado", ""]
     for p in sorted(por["costo_cambio"], key=lambda x: x["precio_proveedor_cop"] - (x["costo_anterior_cop"] or 0)):

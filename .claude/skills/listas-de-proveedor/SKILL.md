@@ -321,6 +321,16 @@ arregla sin datos —la ficha que falta, el peso, el contenido de la caja— que
 `revisar` como «descripción de la base: …» para el paso 4 y la entrega. Y la
 exportación deja fuera el modelo cuya descripción tenga un marcador `[[ ]]`.
 
+**Y lo que le falta y se puede completar queda pendiente** (22/10/2026). Un
+conocido cuya descripción no tiene «Ficha técnica» o «Contenido de la caja» recibe
+la tarea `completar` —y `ficha`, si falta la tabla, para que Icecat la busque—,
+aunque su precio esté vigente: el paso 4 inserta solo esas secciones, sin
+reescribir la prosa. Antes se heredaba tal cual, lista tras lista: de los 56
+borradores de la lista del 22/10/2026, 20 iban así al panel. `cambios.md` los lista
+en «Descripciones heredadas por completar». Una frase que nombra una
+configuración —«Esta versión trae 6GB de RAM…»— también se avisa siempre, no solo
+cuando llega otra memoria; esa no se completa: se corrige a mano.
+
 **Lo que el negocio decidió no vender se descarta aquí, sin investigar.**
 `referencias/excluidos.json` guarda esas decisiones —el TCL Pad Lugh, sacado de
 la tanda del 15/10/2026 «excluido del catálogo», habría vuelto en la lista
@@ -400,8 +410,9 @@ que invierte la del 08/10/2026):
 3. **La caja del producto**, cuando no hay ninguna de las dos.
 
 Para cada producto con algo `pendiente` —los nuevos, entero; los de precio
-vencido, solo el precio—, en una sola pasada de búsquedas. Lo que se heredó de la
-base no se vuelve a investigar. **El aviso de retiro (regla 15) sí se revisa para
+vencido, solo el precio; los heredados con `completar`, la ficha y la caja que les
+faltan—, en una sola pasada de búsquedas. Lo demás que se heredó de la base no se
+vuelve a investigar. **El aviso de retiro (regla 15) sí se revisa para
 todas las marcas de la lista**, conocidas o no: un retiro puede publicarse después
 de la primera vez que se investigó el producto.
 
@@ -472,7 +483,14 @@ python3 scripts/redactar_fichas.py catalogo/productos.json \
 `fichas-marca.json` lleva, por id de modelo, la fuente, la URL, la fecha de
 consulta y las filas: `{"samsung-galaxy-a57-5g": {"fuente": "samsung.com/co",
 "url": "https://…", "fecha": "2026-10-08", "f": {"Pantalla": "…", "Batería":
-"…"}}}`. Las filas de memoria se descartan solas: son de la configuración.
+"…"}}}`. Las filas de memoria se descartan solas: son de la configuración. Con
+`"caja": ["…", "…"]` lleva además el contenido de la caja que publica la marca.
+
+**Completar una descripción heredada** (tarea `completar`): `redactar_fichas.py`
+inserta en su sitio solo lo que falta —la tabla, con el mismo orden de fuentes, y
+la caja, de `fichas-marca.json` o de `"caja"` en `prosa.json`— y agrega la fuente
+al pie. La apertura, las viñetas y las notas quedan como estaban. Si no hay fuente
+para completarla, no se toca y la salida lo dice («sin fuente para completar»).
 
 `traer` escribe además un `fotos/urls-icecat.csv` con enlaces de fotos: es una
 lista de dónde descargar a mano lo que falte en `Fotos originales/`.
