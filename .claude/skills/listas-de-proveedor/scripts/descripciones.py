@@ -199,6 +199,10 @@ def insertar(texto: str, titulo: str, cuerpo: str, linea_de_pie: str | None = No
     secciones.insert(i, nueva)
     lineas_pie = [l for l in pie.splitlines() if l.strip()]
     if linea_de_pie and linea_de_pie not in lineas_pie:
+        # Una atribución vieja de la misma sección —«Ficha técnica: …» sin la sección, que `sanear`
+        # no quita si nada está vacío— se reemplaza, no se duplica (revisión del PR #268).
+        rotulo = linea_de_pie.split(":", 1)[0] + ":"
+        lineas_pie = [l for l in lineas_pie if not l.startswith(rotulo)]
         lineas_pie.append(linea_de_pie)
     partes = [inicio.rstrip("\n")] + [f"## {t}\n\n{c.strip(chr(10))}" for t, c in secciones]
     resultado = "\n\n".join(p for p in partes if p.strip()) + "\n"

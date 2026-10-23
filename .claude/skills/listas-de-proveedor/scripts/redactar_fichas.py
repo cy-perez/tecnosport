@@ -347,6 +347,19 @@ def completar(descripcion, ficha_icecat, ficha_marca, caja, fecha):
     return descripcion, (origen if descripciones.FICHA in agregadas else None), agregadas, avisos
 
 
+def _quitar_pendientes(grupo, faltan) -> None:
+    """Saca `completar` —y `ficha`, si ya hay ficha— del pendiente de lo que ya no le falta nada de
+    eso: una segunda corrida lo reportaba «sin fuente para completar» y icecat_local lo volvía a
+    buscar (revisión del PR #268)."""
+    for p in grupo:
+        pendiente = list(p.get("pendiente") or [])
+        if not faltan and COMPLETAR in pendiente:
+            pendiente.remove(COMPLETAR)
+        if descripciones.FICHA not in faltan and "ficha" in pendiente and p.get("descripcion"):
+            pendiente.remove("ficha")
+        p["pendiente"] = pendiente
+
+
 def fuente_ficha(origen_ficha, ficha_marca, fecha):
     if origen_ficha == "marca":
         return {"fuente": ficha_marca.get("fuente"), "url": ficha_marca.get("url"), "fecha": ficha_marca.get("fecha")}
@@ -454,6 +467,10 @@ def main():
         ficha_marca = marca.get(mid) or {}
         ficha_ice = leer_icecat(dir_ice, ids) if dir_ice and prosa.get("icecat") is not False else None
         caja = ficha_marca.get("caja") or prosa.get("caja") or []
+        if not descripciones.faltantes(grupo[0]["descripcion"]):
+            # Ya completa —una corrida anterior la completó—: no hay nada que buscar (revisión del PR #268).
+            _quitar_pendientes(grupo, descripciones.faltantes(grupo[0]["descripcion"]))
+            continue
         texto, origen, agregadas, avisos = completar(grupo[0]["descripcion"], ficha_ice, ficha_marca, caja, a.fecha)
         if not agregadas:
             sin_fuente.append(grupo[0].get("titulo_modelo") or grupo[0]["titulo"])
@@ -465,6 +482,7 @@ def main():
                 p["fuentes_ficha"] = list(p.get("fuentes_ficha") or []) + [fuente]
             p["revisar"] = [r for r in p["revisar"] if not r.startswith((ALERTA_DESCRIPCION, AVISO_COTEJO))]
             p["revisar"] += [f"{ALERTA_DESCRIPCION} {d}" for d in descripciones.defectos(texto)] + avisos
+        _quitar_pendientes(grupo, descripciones.faltantes(texto))
         completadas += 1
 
     for p in datos["productos"]:

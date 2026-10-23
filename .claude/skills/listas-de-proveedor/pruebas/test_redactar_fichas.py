@@ -155,6 +155,30 @@ class CompletarHeredada(unittest.TestCase):
         [a, _] = redactar(self.heredados(), prosa={})
         self.assertEqual(self.HEREDADA, a["descripcion"])
 
+    def test_completada_ya_no_queda_pendiente(self):
+        # Revisión del PR #268: `completar` y `ficha` seguían pendientes y una segunda corrida la
+        # reportaba «sin fuente para completar», e icecat_local la volvía a buscar.
+        [a, _] = redactar(self.heredados(), marca=self.MARCA_CON_CAJA, prosa={})
+        self.assertNotIn("completar", a["pendiente"])
+        self.assertNotIn("ficha", a["pendiente"])
+
+    def test_una_segunda_corrida_no_la_da_por_sin_fuente(self):
+        primera = redactar(self.heredados(), marca=self.MARCA_CON_CAJA, prosa={})
+        segunda = redactar([dict(p, pendiente=["ficha", "completar"]) for p in primera],
+                           marca=self.MARCA_CON_CAJA, prosa={})
+        self.assertEqual(primera[0]["descripcion"], segunda[0]["descripcion"])
+        self.assertNotIn("completar", segunda[0]["pendiente"])
+
+    def test_no_duplica_la_atribucion_de_la_ficha_en_el_pie(self):
+        # Revisión del PR #268: una heredada sin «## Ficha técnica» pero con «Ficha técnica: …» en el
+        # pie quedaba, al completarse, con dos atribuciones.
+        heredada = self.HEREDADA + "\n---\n\nFicha técnica: una fuente vieja, consultado el 2026-09-01.\n"
+        [a, _] = redactar([dict(p, descripcion=heredada) for p in self.heredados()],
+                          marca=self.MARCA_CON_CAJA, prosa={})
+        pie = a["descripcion"].split("\n---\n")[-1]
+        self.assertEqual(1, pie.count("Ficha técnica:"), pie)
+        self.assertIn("Ficha técnica: samsung.com/co", pie)
+
     def test_una_redaccion_nueva_no_se_completa(self):
         # La que tiene `descripcion` pendiente se redacta entera; `completar` es solo para heredadas.
         [a, _] = redactar([dict(p, pendiente=["descripcion", "completar"]) for p in DOS], marca=MARCA)
