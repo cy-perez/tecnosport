@@ -535,8 +535,14 @@ Produce:
   lista con costo, precio de mercado y colores sugeridos, la descripción, los
   supuestos, los pendientes y las fuentes) y `Fotos originales/`, vacía la
   primera vez. En las marcas que no se leen de forma automática trae además
-  `Fuente de la marca/`. La carpeta se reconoce por el archivo de ficha, no por
-  el nombre; las pulgadas van con `″` porque Windows no admite `"`.
+  `Fuente de la marca/` —y en Motorola, por si su página de producto no trae la
+  ficha completa—, y la ficha dice **qué página guardar**: en Xiaomi la URL
+  `/specs/` armada desde el título, con una alternativa, porque mi.com no es del
+  todo regular; en JBL, el specsheet en PDF. Antes de redactar, `python3
+  scripts/fuente_de_marca.py validar catalogo/4-entregables/fichas` dice si lo
+  guardado es la pestaña de especificaciones o la «General», que no trae peso,
+  caja ni configuraciones (22/10/2026). La carpeta se reconoce por el archivo de
+  ficha, no por el nombre; las pulgadas van con `″` porque Windows no admite `"`.
 - `comparativo-<fecha>.xlsx` — hoja **Comparativo** con las cuatro columnas
   pedidas (título, precio de lista, promedio del mercado, ganancia), más hojas de
   **Detalle** (margen %, colores, fuentes, pendientes) y **Descartados**.
@@ -793,7 +799,9 @@ scripts/asignar_precios.py        paso 4  decide el precio de mercado y el marge
 scripts/icecat_local.py           paso 4  trae la ficha técnica oficial de Open Icecat
 scripts/redactar_fichas.py        paso 4  prosa + ficha oficial → descripción y metadatos
 scripts/construir_entregables.py  paso 5  productos.json → carpetas de modelo + Excel
-scripts/fichas.py                 paso 5  la carpeta de cada modelo en catalogo/4-entregables/fichas
+scripts/fichas.py                 paso 5  la carpeta de cada modelo en catalogo/4-entregables/fichas,
+                                  con la página de la marca que hay que guardar
+scripts/fuente_de_marca.py        paso 4  ¿lo guardado en «Fuente de la marca» es la ficha de especificaciones?
 scripts/conocidos.py              paso 6  guarda lo investigado en referencias/conocidos.json;
                                   `fotos` registra las fotos procesadas de cada modelo
 scripts/preparar_fotos.py         enlaces de descarga y pedido de lo que falte (regla 16)
