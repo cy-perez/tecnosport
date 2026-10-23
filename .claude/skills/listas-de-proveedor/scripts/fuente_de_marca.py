@@ -34,6 +34,8 @@ RE_CANONICA = re.compile(r"<link[^>]+rel=[\"']canonical[\"'][^>]*>", re.I)
 RE_HREF = re.compile(r"href=[\"']([^\"']+)[\"']", re.I)
 # Lo que Chrome deja al guardar con «solo HTML»: <!-- saved from url=(0047)https://… -->
 RE_GUARDADA_DESDE = re.compile(r"saved from url=\(\d+\)(\S+?)\s*-->", re.I)
+# «Página web, un solo archivo» (.mhtml) no deja ese comentario: la ubicación va en la cabecera.
+RE_UBICACION_MHTML = re.compile(r"^(?:Snapshot-)?Content-Location:\s*(\S+)", re.I | re.M)
 EXTENSIONES = {".html", ".htm", ".mhtml", ".pdf"}
 
 ESPECIFICACIONES, SPECSHEET, GENERAL, SIN_RECONOCER, FALTA = (
@@ -41,13 +43,17 @@ ESPECIFICACIONES, SPECSHEET, GENERAL, SIN_RECONOCER, FALTA = (
 
 
 def url_de(texto: str):
+    """La URL de lo guardado. Lo que el navegador anota que guardó manda sobre la canónica: una
+    /specs/ que apunta su canónica a la página de producto salía «General» (revisión del PR #268)."""
+    guardada = RE_GUARDADA_DESDE.search(texto) or RE_UBICACION_MHTML.search(texto)
+    if guardada:
+        return guardada.group(1)
     canonica = RE_CANONICA.search(texto)
     if canonica:
         href = RE_HREF.search(canonica.group(0))
         if href:
             return html.unescape(href.group(1))
-    guardada = RE_GUARDADA_DESDE.search(texto)
-    return guardada.group(1) if guardada else None
+    return None
 
 
 def clasificar(archivo: Path) -> tuple[str, str]:

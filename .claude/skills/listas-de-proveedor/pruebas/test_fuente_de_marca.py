@@ -82,6 +82,26 @@ class Validar(unittest.TestCase):
             clases = [c for _, c, _ in fuente_de_marca.validar(Path(tmp))]
         self.assertEqual([fuente_de_marca.ESPECIFICACIONES] * 2, clases)
 
+    def test_lo_guardado_manda_sobre_la_canonica(self):
+        # Revisión del PR #268: si la /specs/ apunta su canónica a la página de producto, una página
+        # buena salía GENERAL. Lo que Chrome anota que guardó es lo que se guardó.
+        pagina = ('<!-- saved from url=(0046)https://www.mi.com/co/product/poco-f9-ultra/specs/ -->'
+                  '<html><head><title>POCO F9 Ultra Especificaciones</title>'
+                  '<link rel="canonical" href="https://www.mi.com/co/product/poco-f9-ultra/"></head></html>')
+        with tempfile.TemporaryDirectory() as tmp:
+            self.carpeta(tmp, "Xiaomi POCO F9 Ultra 5G", "Xiaomi", {"a.html": pagina})
+            [(_, clase, _)] = fuente_de_marca.validar(Path(tmp))
+        self.assertEqual(fuente_de_marca.ESPECIFICACIONES, clase)
+
+    def test_un_mhtml_se_lee_por_su_ubicacion_guardada(self):
+        # «Página web, un solo archivo» no deja el comentario «saved from url».
+        mhtml = ("From: <Saved by Blink>\r\nSnapshot-Content-Location: https://www.mi.com/co/product/poco-f9-ultra/specs/"
+                 "\r\nSubject: POCO F9 Ultra Especificaciones\r\n")
+        with tempfile.TemporaryDirectory() as tmp:
+            self.carpeta(tmp, "Xiaomi POCO F9 Ultra 5G", "Xiaomi", {"a.mhtml": mhtml})
+            [(_, clase, _)] = fuente_de_marca.validar(Path(tmp))
+        self.assertEqual(fuente_de_marca.ESPECIFICACIONES, clase)
+
     def test_el_specsheet_de_jbl_y_la_de_motorola(self):
         with tempfile.TemporaryDirectory() as tmp:
             self.carpeta(tmp, "JBL Go 5", "JBL", {"JBL_GO_5_Specsheet_EN.pdf": "%PDF-1.7"})
