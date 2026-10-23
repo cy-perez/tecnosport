@@ -561,6 +561,56 @@ class Tanda(unittest.TestCase):
             self.assertEqual(("2026-10-15", ["a", "b"], {"b"}), pf.leer_tanda(ruta))
 
 
+class PorPartes(unittest.TestCase):
+    """22/10/2026: 297 fotos en una sola llamada a procesar.py no caben en primer plano, y en segundo
+    plano ya murió una por memoria. `--lote N` las corre por partes de modelos enteros."""
+
+    def armar_tres(self, raiz):
+        ids = []
+        for k in range(1, 4):
+            mid = f"modelo-{k}"
+            armar(raiz, tuple(f"{mid}_{i}.jpg" for i in range(1, 5)), titulo=f"Modelo {k}", mid=mid)
+            ids.append(mid)
+        return ids
+
+    def test_las_partes_son_de_modelos_enteros_y_no_pasan_del_lote(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            raiz = Path(tmp)
+            ids = self.armar_tres(raiz)
+            self.assertEqual([["modelo-1", "modelo-2"], ["modelo-3"]], pf.partes(raiz, ids, 8))
+
+    def test_un_modelo_mas_grande_que_el_lote_va_solo_y_entero(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            raiz = Path(tmp)
+            ids = self.armar_tres(raiz)
+            self.assertEqual([["modelo-1"], ["modelo-2"], ["modelo-3"]], pf.partes(raiz, ids, 3))
+
+    def test_sin_lote_es_una_sola_parte(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            raiz = Path(tmp)
+            ids = self.armar_tres(raiz)
+            self.assertEqual([ids], pf.partes(raiz, ids, None))
+
+    def test_la_tanda_por_partes_llama_al_retoque_una_vez_por_parte_y_decide_al_final(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            raiz = Path(tmp)
+            ids = self.armar_tres(raiz)
+            llamadas = []
+
+            def procesar_fn(nombres):
+                llamadas.append(list(nombres))
+                grupos = sorted({n.rsplit("-", 1)[0] for n in nombres})
+                for g in grupos:
+                    salida_de_procesar(raiz, [(n, "LISTA") for n in nombres if n.startswith(g + "-")],
+                                       grupo=g, sumar=True)
+                return True
+
+            estados = pf.correr_tanda(raiz, ids, CFG, procesar_fn, medidor=GRANDE, lote=8)
+            self.assertEqual(2, len(llamadas))
+            self.assertEqual(8, len(llamadas[0]))
+            self.assertEqual({pf.APTO}, {e["estado"] for e in estados})
+
+
 class SinFichaEnLaLista(unittest.TestCase):
     """Decisión del 22/10/2026: un modelo que la lista no exporta —sin descripción— no puede tener
     borrador, así que no bloquea la tanda; sus fotos se procesan para no perder el trabajo."""

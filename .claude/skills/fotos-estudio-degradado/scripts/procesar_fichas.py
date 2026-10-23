@@ -768,12 +768,36 @@ def nombres_de(raiz: Path, ids) -> list:
     return nombres
 
 
+def partes(raiz: Path, ids: list, lote) -> list:
+    """Los modelos a procesar, repartidos en partes de modelos enteros de hasta `lote` fotos.
+
+    Un modelo se procesa entero —el lienzo depende de todas sus fotos—, así que uno más grande que el
+    lote va solo. Sin lote, una sola parte: el comportamiento de siempre. Existe por la tanda del
+    22/10/2026: 297 fotos en una sola llamada a procesar.py no caben en el límite de una terminal en
+    primer plano, y en segundo plano un reproceso de 83 ya había muerto por memoria (SKILL.md)."""
+    if not lote:
+        return [list(ids)] if ids else []
+    carpetas = modelos(raiz, set(ids))
+    salida, actual, n = [], [], 0
+    for mid in ids:
+        k = len(unicas(carpetas[mid])[0]) if mid in carpetas else 0
+        if actual and n + k > int(lote):
+            salida.append(actual)
+            actual, n = [], 0
+        actual.append(mid)
+        n += k
+    if actual:
+        salida.append(actual)
+    return salida
+
+
 def correr_tanda(raiz: Path, ids: list, cfg: dict, procesar_fn, solo_devolver=False, medidor=medir,
-                 fecha_tanda=None) -> list:
+                 fecha_tanda=None, lote=None) -> list:
     """Decide, procesa lo que haga falta, devuelve y vuelve a decidir. Escribe el estado de cada modelo.
 
     `procesar_fn(nombres)` corre el retoque sobre esas fotos y devuelve False si quedó en
-    segundo plano."""
+    segundo plano. Con `lote`, una llamada por parte (`partes`), en serie; se devuelve y se decide
+    una sola vez, al final."""
     por_id = modelos(raiz, set(ids))
     sacados = leer_sacados(raiz)
     kits = leer_kits(raiz)
@@ -789,8 +813,12 @@ def correr_tanda(raiz: Path, ids: list, cfg: dict, procesar_fn, solo_devolver=Fa
             for e in errores:
                 print(f"[error] {e}")
             print(f"{copiadas} foto(s) nuevas o cambiadas; se procesan enteros {len(a_procesar)} modelo(s)")
-            if procesar_fn(nombres_de(raiz, a_procesar)) is False:
-                return []   # quedó en segundo plano: se termina con --devolver
+            repartidos = partes(raiz, a_procesar, lote)
+            for i, parte in enumerate(repartidos, 1):
+                if len(repartidos) > 1:
+                    print(f"\n— parte {i} de {len(repartidos)}: {', '.join(parte)}", flush=True)
+                if procesar_fn(nombres_de(raiz, parte)) is False:
+                    return []   # quedó en segundo plano: se termina con --devolver
     devolver(raiz)
     reporte = leer_reporte(raiz)
     estados = []
@@ -831,6 +859,9 @@ def main() -> int:
     ap.add_argument("--devolver", action="store_true",
                     help="solo copia a cada modelo lo que ya está en _estudio/salida (tras un --segundo-plano)")
     ap.add_argument("--segundo-plano", action="store_true", help="lanza procesar.py desacoplado y sale")
+    ap.add_argument("--lote", type=int, metavar="N",
+                    help="con --tanda: procesa por partes de modelos enteros de hasta N fotos, en serie y en "
+                         "primer plano (20 es un buen tamaño)")
     ap.add_argument("--sacar", metavar="ID", help="con --tanda: saca ese modelo de la tanda")
     ap.add_argument("--kit", metavar="ID", help="con --tanda: ese modelo se vende con piezas sueltas, y "
                                                 "sus fotos con varias piezas cuentan como LISTA")
@@ -841,6 +872,8 @@ def main() -> int:
     ap.add_argument("--motivo", help="con --sacar, --kit o --sin-huecos: por qué, queda escrito")
     a = ap.parse_args()
     raiz = Path(a.fichas)
+    if a.lote is not None and (a.lote < 1 or a.segundo_plano):
+        ap.error("--lote pide un número positivo y va en primer plano: las partes corren una tras otra")
     if a.sin_huecos or a.quitar_sin_huecos:
         mid = a.sin_huecos or a.quitar_sin_huecos
         try:
@@ -900,7 +933,8 @@ def main() -> int:
         # y lo elige la compuerta —el mayor escalón donde caben MINIMO_LISTA fotos LISTA—.
         compuerta = ["--lienzo-minimo", str(LIENZO_MINIMO), "--listas-minimas", str(MINIMO_LISTA)]
         procesar_fn = lambda nombres: correr(base + compuerta + sum((["--solo", n] for n in nombres), []))  # noqa: E731
-        estados = correr_tanda(raiz, ids, cfg, procesar_fn, solo_devolver=a.devolver, fecha_tanda=fecha)
+        estados = correr_tanda(raiz, ids, cfg, procesar_fn, solo_devolver=a.devolver, fecha_tanda=fecha,
+                               lote=a.lote)
         if not estados:
             return SALIDA_EN_ESPERA   # en segundo plano: la tanda todavía no está completa
         print(informe(estados, sin_ficha, salida=raiz / TRABAJO / "salida"))

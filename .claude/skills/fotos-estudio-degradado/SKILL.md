@@ -323,6 +323,20 @@ python3 "${CLAUDE_SKILL_DIR}/scripts/procesar_fichas.py" catalogo/4-entregables/
     --tanda catalogo/5-api/por-proponer.json
 ```
 
+**Una tanda grande va por partes** (22/10/2026): `--lote 20` reparte los modelos que hay
+que procesar en partes de modelos enteros de hasta 20 fotos y corre `procesar.py` una vez
+por parte, en serie; devuelve y decide una sola vez, al final. Un modelo más grande que el
+lote va solo. La tanda del 22/10 tenía 297 fotos: en una sola llamada no cabe en el
+límite de una terminal en primer plano, y un `procesar.py` de 83 fotos en segundo plano ya
+había muerto por memoria. Con `--lote` cada parte es un proceso aparte, así que la tanda
+entera puede correr en segundo plano —en Claude Code, con `run_in_background` del Bash—
+sin acumular memoria; `--lote` no se combina con `--segundo-plano`.
+
+```bash
+python3 "${CLAUDE_SKILL_DIR}/scripts/procesar_fichas.py" catalogo/4-entregables/fichas \
+    --tanda catalogo/5-api/por-proponer.json --lote 20
+```
+
 **La compuerta** (decisión del negocio del 10/10/2026): cada modelo necesita
 **4 fotos LISTA** en un lienzo de por lo menos **1200 px** —la mayor variante que
 sirve el sitio—. Una LISTA en un lienzo menor no cuenta: si el modelo no reúne
