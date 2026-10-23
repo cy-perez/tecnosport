@@ -338,8 +338,11 @@ def completar(descripcion, ficha_icecat, ficha_marca, caja, fecha):
     if descripciones.CAJA in faltan and caja:
         pie = None
         if ficha_marca and ficha_marca.get("caja"):
-            donde = ficha_marca.get("fuente") or "el sitio oficial del fabricante"
-            cuando = ficha_marca.get("fecha")
+            # La caja puede venir de otra página que la ficha —el 22/10/2026 la del Watch8 salió de
+            # samsung.com/es porque la colombiana no la publica—: entonces lleva su propia fuente.
+            donde = (ficha_marca.get("fuente_caja") or ficha_marca.get("fuente")
+                     or "el sitio oficial del fabricante")
+            cuando = ficha_marca.get("fecha_caja") or ficha_marca.get("fecha")
             pie = f"Contenido de la caja: {donde}" + (f", consultado el {cuando}." if cuando else ".")
         descripcion = descripciones.insertar(descripcion, descripciones.CAJA,
                                              "\n".join(f"- {c}" for c in caja), pie)

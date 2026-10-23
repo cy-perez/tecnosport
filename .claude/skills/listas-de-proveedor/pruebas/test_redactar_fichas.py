@@ -146,6 +146,16 @@ class CompletarHeredada(unittest.TestCase):
         self.assertEqual(["descripción de la base: la ficha técnica no dice peso ni dimensiones"],
                          [r for r in a["revisar"] if r.startswith("descripción de la base")])
 
+    def test_la_caja_de_otra_pagina_lleva_su_propia_fuente(self):
+        # 22/10/2026: samsung.com/co no publica la caja del Watch8; la persona decidió tomarla de
+        # samsung.com/es, y el pie no puede atribuirla a la página colombiana de la ficha.
+        marca = {"samsung-galaxy-a57-5g": dict(MARCA["samsung-galaxy-a57-5g"], caja=["Galaxy A57"],
+                                               fuente_caja="samsung.com/es", fecha_caja="2026-10-22")}
+        [a, _] = redactar(self.heredados(), marca=marca, prosa={})
+        self.assertIn("Ficha técnica: samsung.com/co, consultado el 2026-10-08.", a["descripcion"])
+        self.assertIn("Contenido de la caja: samsung.com/es, consultado el 2026-10-22.", a["descripcion"])
+        self.assertNotIn("Contenido de la caja: samsung.com/co", a["descripcion"])
+
     def test_icecat_va_primero_tambien_al_completar(self):
         [a, _] = redactar(self.heredados(), marca=MARCA, icecat=ICECAT, prosa={})
         self.assertIn("Database Right data-sheet 2026 Icecat", a["descripcion"])
