@@ -201,6 +201,15 @@ class LoQueSobreviveAlReproceso(unittest.TestCase):
                                                      sin_huecos=True)["revisada"])
 
 
+def _faltan_dependencias_del_retoque() -> bool:
+    """marcar.py revisa el entorno entero al arrancar y sale con 2 si falta algo: en la integración
+    continua no está instalado el retoque, y ahí las pruebas que lo lanzan se saltan."""
+    import importlib.util
+    return any(importlib.util.find_spec(m) is None
+               for m in ("numpy", "PIL", "cv2", "rembg", "onnxruntime", "pymatting"))
+
+
+@unittest.skipIf(_faltan_dependencias_del_retoque(), "marcar.py pide el entorno del retoque")
 class ExcluirQuitaLaAprobacion(unittest.TestCase):
     """Revisión del PR #268: una zona excluida cambia el recorte; la aprobación miró el anterior."""
 
