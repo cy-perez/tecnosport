@@ -95,13 +95,20 @@ def resumir(filas):
     return int(statistics.median([f["precio_cop"] for f in usadas])), usadas, fuera
 
 
+# Las notas que este script deja en `revisar`. Se reemplazan, no se suman: cada corrida las
+# agregaba otra vez, y el 22/10/2026 hubo que quitar 20 repetidas a mano.
+SIN_PRECIO = "sin precio de mercado"
+ALERTAS_DE_MARGEN = ("POR DEBAJO DEL COSTO", "margen inusual")
+
+
 def aplicar_margen(p):
     """Ganancia y margen sobre el costo, con las dos alertas de siempre.
 
     La usa también `comparar_lista.py` con el precio heredado de la base y el
     costo del día: un margen no puede tener dos fórmulas según de dónde salió el
-    precio.
+    precio. La alerta anterior se quita antes: el margen de hoy reemplaza al de ayer.
     """
+    p["revisar"] = [r for r in p.get("revisar") or [] if not r.startswith(ALERTAS_DE_MARGEN)]
     precio = p.get("precio_mercado_cop")
     if precio is None:
         p["ganancia_cop"] = None
@@ -247,9 +254,10 @@ def main():
         p["nivel_precio"] = nivel if precio else None
         p["fuentes_precio"] = usadas
 
+        p["revisar"] = [r for r in p.get("revisar") or [] if not r.startswith(SIN_PRECIO)]
         if precio is None:
             p["revisar"].append(
-                "sin precio de mercado: no se encontro la referencia en ninguna "
+                f"{SIN_PRECIO}: no se encontro la referencia en ninguna "
                 "tienda admisible; el margen no se puede calcular")
         else:
             tiendas = {f["tienda"] for f in usadas}

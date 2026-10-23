@@ -297,8 +297,23 @@ python3 scripts/comparar_lista.py catalogo/productos.json
 El parser deja `catalogo/productos.json` (productos, repetidos que se fusionaron,
 descartados y líneas sin clasificar) y `catalogo/1-lista/revision.md`, un resumen legible.
 
-La comparación, que se corre **una vez por lista y antes del paso 4**, cruza cada
-producto con `referencias/conocidos.json` y lo clasifica:
+La comparación, que se corre **antes del paso 4**, cruza cada producto con
+`referencias/conocidos.json` y lo clasifica. **Se puede volver a correr**
+(22/10/2026): la primera vez guarda lo que dejó el parser en
+`1-lista/productos-del-parser.json`, y las siguientes parten de ahí, así que dan
+lo mismo —antes heredaba sobre su propia salida, y cada exclusión obligaba a
+rehacer la corrida desde el parser—. Si ya se hizo el paso 4, se vuelven a correr
+`asignar_precios.py` y `redactar_fichas.py`, que leen lo que está en disco.
+
+**Las decisiones de la persona sobre esta lista** van en
+`catalogo/1-lista/decisiones.json` y la comparación las aplica antes de comparar:
+un costo para una línea que vino sin precio, el título definitivo o la SIM que la
+línea no dice, siempre con `motivo` y `fecha` (formato en `scripts/decisiones.py`).
+Son de la lista, no del catálogo: lo que vale para todas va en `equivalencias.json`
+o en `excluidos.json`. El 22/10/2026 dos iPhone sin precio entraron con el costo de
+la lista anterior, y eso vivió en un script suelto que había que correr a mano.
+
+La clasificación:
 
 | Estado | Qué hereda de la base | Qué queda pendiente para el paso 4 |
 |---|---|---|
@@ -791,7 +806,9 @@ scripts/rutas.py                  la forma de catalogo/ por subproceso; de ahí 
 scripts/margen.py                 regla 18: el margen mínimo, que usan la exportación y las carpetas de modelo
 scripts/colores.py                los colores sugeridos al panel: los de los emojis, o la paleta completa sin ellos
 scripts/parsear_lista.py          paso 2  1-lista/lista.txt → productos.json + 1-lista/revision.md
-scripts/comparar_lista.py         paso 2  productos.json contra conocidos.json → pendientes + 1-lista/cambios.md
+scripts/comparar_lista.py         paso 2  productos.json contra conocidos.json → pendientes + 1-lista/cambios.md;
+                                  se puede volver a correr: parte de 1-lista/productos-del-parser.json
+scripts/decisiones.py             paso 2  aplica 1-lista/decisiones.json, las decisiones de la persona sobre la lista
 scripts/descripciones.py          pasos 2, 6 y 6b  quita lo que quedó vacío y dice lo que le falta a una descripción
 scripts/pendientes.py             paso 4  qué le toca a cada script según lo pendiente
 scripts/precios.py                paso 4  cosecha precios VTEX de Éxito, Olímpica y Jumbo

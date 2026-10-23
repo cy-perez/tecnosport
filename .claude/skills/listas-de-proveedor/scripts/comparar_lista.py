@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """Paso de diferencias: qué trae la lista de hoy frente a lo que ya se investigó.
 
-Corre entre el parser (paso 2) y la revisión con la persona (paso 3), y una sola
-vez por lista:
+Corre entre el parser (paso 2) y la revisión con la persona (paso 3). Se puede
+volver a correr: parte siempre de lo que dejó el parser (`1-lista/productos-del-parser.json`)
+y aplica antes las decisiones de la persona (`1-lista/decisiones.json`, ver decisiones.py):
 
     python3 scripts/comparar_lista.py catalogo/productos.json
 
@@ -48,15 +49,13 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from colores import SUPUESTO_PALETA_COMPLETA, colores_sugeridos, sin_tildes  # noqa: E402,F401
 import conocidos  # noqa: E402
+import decisiones as decisiones_de_la_persona  # noqa: E402
 import descripciones  # noqa: E402
-from asignar_precios import aplicar_margen  # noqa: E402
+from asignar_precios import ALERTAS_DE_MARGEN, aplicar_margen  # noqa: E402
 from pendientes import COMPLETAR, TAREAS  # noqa: E402
 import rutas  # noqa: E402
 
 PRECIO = conocidos.PRECIO
-# Las alertas que pone aplicar_margen: se quitan antes de recalcular para que
-# correr esto dos veces no las duplique.
-ALERTAS_DE_MARGEN = ("POR DEBAJO DEL COSTO", "margen inusual")
 # Una alerta de versiones anteriores: hoy la frase de configuración es un defecto de la
 # descripción (`descripciones.NOMBRA_CONFIGURACION`) y se avisa siempre. Se sigue filtrando
 # para que un productos.json viejo no la arrastre.
@@ -368,10 +367,28 @@ def main():
     ap.add_argument("--excluidos", default=str(conocidos.EXCLUIDOS))
     ap.add_argument("--hoy", default=date.today().isoformat(), help="fecha para la vigencia del precio")
     ap.add_argument("--cambios", help="reporte; por omisión 1-lista/cambios.md junto a productos.json")
+    ap.add_argument("--decisiones", help="decisiones de la persona; por omisión 1-lista/decisiones.json")
     args = ap.parse_args()
 
     ruta = Path(args.productos)
     datos = json.loads(ruta.read_text(encoding="utf-8"))
+    # Repetible (22/10/2026): la comparación hereda datos al escribir, así que correrla otra vez
+    # sobre su propia salida no da lo mismo —ese día cada exclusión obligó a rehacer la corrida
+    # desde el parser—. La primera vez guarda lo que dejó el parser; las siguientes parten de ahí.
+    copia = ruta.parent / rutas.LISTA.name / "productos-del-parser.json"
+    if "comparacion" in datos:
+        if not copia.is_file():
+            raise SystemExit(f"{ruta} ya pasó por la comparación y no está {copia.name}, la copia de lo que dejó "
+                             "el parser: vuelve a correr el parser.")
+        datos = json.loads(copia.read_text(encoding="utf-8"))
+        print(f"Parto de {copia.name}, lo que dejó el parser: si ya hiciste el paso 4, vuelve a correr "
+              "asignar_precios.py y redactar_fichas.py, que leen lo que está en disco.")
+    else:
+        copia.parent.mkdir(parents=True, exist_ok=True)
+        copia.write_text(json.dumps(datos, ensure_ascii=False, indent=2), encoding="utf-8")
+    ruta_decisiones = Path(args.decisiones) if args.decisiones else ruta.parent / rutas.LISTA.name / "decisiones.json"
+    for aviso in decisiones_de_la_persona.aplicar(datos, decisiones_de_la_persona.cargar(ruta_decisiones)):
+        print("decisión sin aplicar:", aviso)
     comparar(datos, conocidos.cargar(args.base), date.fromisoformat(args.hoy),
              conocidos.cargar_excluidos(args.excluidos))
     ruta.write_text(json.dumps(datos, ensure_ascii=False, indent=2), encoding="utf-8")

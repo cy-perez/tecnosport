@@ -545,6 +545,31 @@ class PasoCuatroRespetaLoPendiente(unittest.TestCase):
         # en que se consolide.
         self.assertEqual("2026-10-09", grip["fecha_precio"])
 
+    def test_asignar_precios_no_repite_sus_notas_al_correr_otra_vez(self):
+        # 22/10/2026: «sin precio de mercado» quedó tres veces en cada producto sin precio.
+        datos = comparar(lista(producto("jbl-grip", "JBL Grip")), {"jbl-xtreme-4": conocido()})
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            (tmp / "p.json").write_text(json.dumps(datos), encoding="utf-8")
+            (tmp / "vtex.json").write_text("{}", encoding="utf-8")
+            (tmp / "alk.json").write_text("{}", encoding="utf-8")
+            for _ in range(3):
+                subprocess.run([sys.executable, "-B", str(SCRIPTS / "asignar_precios.py"), str(tmp / "p.json"),
+                                "--vtex", str(tmp / "vtex.json"), "--alkosto", str(tmp / "alk.json")],
+                               check=True, capture_output=True)
+            [grip] = json.loads((tmp / "p.json").read_text(encoding="utf-8"))["productos"]
+        self.assertEqual(1, sum(r.startswith("sin precio de mercado") for r in grip["revisar"]), grip["revisar"])
+
+    def test_el_margen_de_hoy_reemplaza_la_alerta_de_ayer(self):
+        from asignar_precios import aplicar_margen
+        p = {"precio_mercado_cop": 900_000, "precio_proveedor_cop": 1_000_000, "revisar": []}
+        aplicar_margen(p)
+        aplicar_margen(p)
+        self.assertEqual(1, sum(r.startswith("POR DEBAJO DEL COSTO") for r in p["revisar"]))
+        p["precio_proveedor_cop"] = 800_000
+        aplicar_margen(p)
+        self.assertEqual([], [r for r in p["revisar"] if r.startswith("POR DEBAJO DEL COSTO")])
+
     def test_redactar_fichas_no_marca_sin_descripcion_a_un_heredado(self):
         base = {"jbl-xtreme-4": conocido()}
         datos = comparar(lista(producto()), base)
