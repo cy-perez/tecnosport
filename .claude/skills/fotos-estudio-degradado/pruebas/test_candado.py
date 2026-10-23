@@ -24,6 +24,18 @@ def muerto() -> int:
 
 
 class Candado(unittest.TestCase):
+    def test_un_candado_muy_viejo_de_un_pid_vivo_se_toma_como_huerfano(self):
+        # Revisión del PR #268: procesar.py muere por memoria, deja el candado, y Windows le da su
+        # PID a otro proceso vivo: sin un límite, toda corrida se negaba hasta borrarlo a mano.
+        with tempfile.TemporaryDirectory() as tmp:
+            raiz = Path(tmp)
+            candado.ruta(raiz).parent.mkdir(parents=True, exist_ok=True)
+            candado.ruta(raiz).write_text(json.dumps(
+                {"pid": os.getppid(), "quien": "procesar.py", "desde": "2026-01-01T00:00:00+00:00"}), encoding="utf-8")
+            self.assertIsNone(candado.ocupante(raiz))
+            with candado.Candado(raiz, "marcar.py"):
+                self.assertEqual(os.getpid(), json.loads(candado.ruta(raiz).read_text(encoding="utf-8"))["pid"])
+
     def test_toma_la_carpeta_y_la_suelta_al_terminar(self):
         with tempfile.TemporaryDirectory() as tmp:
             raiz = Path(tmp)

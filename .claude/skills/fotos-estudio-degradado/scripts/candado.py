@@ -10,7 +10,12 @@ procesar» y hubo que rehacerlas. La escritura atómica del reporte (reporte.esc
 JSON a medias, no esto.
 
 El candado es un archivo en `.trabajo/` con el pid de quien escribe. Uno de un proceso que ya no
-existe —lo mató la memoria, se cerró la sesión— no bloquea: se toma. Solo biblioteca estándar.
+existe —lo mató la memoria, se cerró la sesión— no bloquea: se toma. Tampoco uno de más de
+`VIGENCIA_HORAS` (variable de entorno `FOTOS_CANDADO_HORAS`, 12 por omisión): Windows reasigna el
+PID de un proceso muerto, y sin un límite un candado huérfano se tomaba por vivo para siempre
+(revisión del PR #268). Leer la hora de arranque de otro proceso no se puede sin dependencias en
+todos los sistemas; una tanda de 300 fotos tarda cerca de una hora, así que 12 sobra. Solo
+biblioteca estándar.
 """
 
 from __future__ import annotations
@@ -22,6 +27,7 @@ from pathlib import Path
 
 import salidas
 
+VIGENCIA_HORAS = float(os.environ.get("FOTOS_CANDADO_HORAS") or 12)
 TRABAJO = ".trabajo"               # = reporte.TRABAJO; se repite para no cargar reporte aquí
 ARCHIVO = "candado.json"
 
@@ -49,7 +55,22 @@ def ocupante(raiz: Path):
     pid = int(datos.get("pid") or 0)
     if pid == os.getpid() or not salidas.vivo(pid):
         return None
+    if _horas_desde(datos.get("desde")) > VIGENCIA_HORAS:
+        print(f"[aviso] el candado de {raiz} ({datos.get('quien', '?')}, PID {pid}) es de {datos.get('desde')}, "
+              f"de hace más de {VIGENCIA_HORAS:g} h: se toma como huérfano —ese PID puede ser ya de otro proceso—.")
+        return None
     return datos
+
+
+def _horas_desde(desde) -> float:
+    """Horas desde la marca ISO del candado; 0 si no se puede leer, para no tomar uno que sí vive."""
+    try:
+        cuando = datetime.fromisoformat(str(desde))
+    except ValueError:
+        return 0.0
+    if cuando.tzinfo is None:
+        cuando = cuando.replace(tzinfo=timezone.utc)
+    return (datetime.now(timezone.utc) - cuando).total_seconds() / 3600
 
 
 def mensaje(raiz: Path, datos: dict) -> str:

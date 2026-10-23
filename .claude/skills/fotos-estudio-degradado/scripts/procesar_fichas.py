@@ -958,7 +958,23 @@ def retoque_en_curso(raiz: Path):
         return None
     if datos.get("pid") and not salidas.vivo(datos["pid"]):
         return None
+    if not datos.get("pid") and datos.get("estado") == "iniciando" and _minutos_desde(datos.get("inicio")) > 10:
+        # El hijo no llegó a escribir su pid —chocó con el candado o murió al arrancar— y el
+        # «iniciando» se quedaba para siempre (revisión del PR #268). Arrancar toma segundos.
+        return None
     return datos
+
+
+def _minutos_desde(cuando) -> float:
+    """Minutos desde una marca ISO; 0 si no se puede leer, para no soltar uno que sí arranca."""
+    import datetime as _dt
+    try:
+        t = _dt.datetime.fromisoformat(str(cuando))
+    except ValueError:
+        return 0.0
+    if t.tzinfo is None:
+        t = t.astimezone()
+    return (_dt.datetime.now(_dt.timezone.utc) - t).total_seconds() / 60
 
 
 # --------------------------------------------------------------------------

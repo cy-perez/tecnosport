@@ -1115,6 +1115,20 @@ class RetoqueEnCurso(unittest.TestCase):
             self.avance(Path(tmp), estado="procesando", pid=muerto.pid)
             self.assertIsNone(pf.retoque_en_curso(Path(tmp)))
 
+    def test_un_iniciando_sin_pid_viejo_no_esta_en_curso(self):
+        # Revisión del PR #268: el hijo en segundo plano chocó con el candado antes de escribir su
+        # pid, y el «iniciando» sin pid dejaba el --devolver bloqueado para siempre.
+        with tempfile.TemporaryDirectory() as tmp:
+            self.avance(Path(tmp), estado="iniciando", inicio="2026-01-01T00:00:00-05:00")
+            self.assertIsNone(pf.retoque_en_curso(Path(tmp)))
+
+    def test_un_iniciando_sin_pid_reciente_si_esta_en_curso(self):
+        import datetime
+        with tempfile.TemporaryDirectory() as tmp:
+            self.avance(Path(tmp), estado="iniciando",
+                        inicio=datetime.datetime.now().astimezone().isoformat(timespec="seconds"))
+            self.assertIsNotNone(pf.retoque_en_curso(Path(tmp)))
+
     def test_un_avance_terminado_no_esta_en_curso(self):
         with tempfile.TemporaryDirectory() as tmp:
             self.avance(Path(tmp), estado="terminado", pid=os.getpid())
