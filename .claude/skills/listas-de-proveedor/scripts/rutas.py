@@ -6,7 +6,9 @@ corrida quedaban sueltos en la raíz y había que saber de memoria cuál era de 
 
     catalogo/
     ├── productos.json   el estado de la corrida: lo crea el parser y cada paso le escribe
-    ├── 1-lista/         pasos 1 a 3: lista.txt, revision.md, cambios.md
+    ├── 1-lista/         pasos 1 a 3: lista.txt, revision.md, cambios.md, decisiones.json (las
+    │                    escribe la persona) y productos-del-parser.json (la copia de la que parte
+    │                    la comparación cada vez que se corre)
     ├── 2-precios/       paso 4, el precio: precios-vtex.json y su .log, alkosto-vitrina.json,
     │                    precios-descartados.json
     ├── 3-redaccion/     paso 4, la ficha y la prosa: fichas-marca.json, prosa.json, icecat/

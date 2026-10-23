@@ -1,6 +1,7 @@
 """Pruebas del paso de diferencias: qué trae la lista de hoy frente a lo conocido."""
 
 import json
+import os
 import subprocess
 import sys
 import tempfile
@@ -13,11 +14,22 @@ SKILL = Path(__file__).resolve().parent.parent
 SCRIPTS = SKILL / "scripts"
 sys.path.insert(0, str(SCRIPTS))
 
+# Los scripts escriben acentos y flechas: con la consola de Windows en cp1252 el hijo fallaba al
+# imprimir y la prueba dependía de la codificación de quien la corre (revisión del PR #268).
+ENTORNO_UTF8 = {**os.environ, "PYTHONIOENCODING": "utf-8"}
+
 import comparar_lista  # noqa: E402
 from pendientes import necesita  # noqa: E402
 
 HOY = date(2026, 10, 8)
-DESCRIPCION = "El JBL Xtreme 4 es un parlante portátil.\n"
+# Completa: la ficha, la caja y la garantía. Una heredada a la que le falta algo queda por completar.
+def completa(apertura):
+    return (f"{apertura}\n\n## Ficha técnica\n\n| Atributo | Detalle |\n|---|---|\n"
+            "| Dimensiones y peso | 297 x 149 x 141 mm · 2,1 kg |\n\n## Contenido de la caja\n\n- El equipo\n\n"
+            "## Garantía y notas\n\n- Producto nuevo.\n")
+
+
+DESCRIPCION = completa("El JBL Xtreme 4 es un parlante portátil.")
 
 
 def conocido(**cambios):
@@ -179,7 +191,7 @@ class Herencia(unittest.TestCase):
         self.assertTrue(any(r.startswith("POR DEBAJO DEL COSTO") for r in p["revisar"]), p["revisar"])
 
     def test_los_supuestos_de_la_investigacion_vuelven_y_los_de_la_lista_quedan_aparte(self):
-        [p] = comparar(lista(producto()), self.BASE)["productos"]
+        [p] = comparar(lista(producto(colores_familia=["Negro"])), self.BASE)["productos"]
         self.assertEqual(["título confirmado el 02/10/2026", "colores: jbl.com"], p["supuestos"])
         self.assertEqual(["título confirmado el 02/10/2026"], p["supuestos_lista"])
 
@@ -207,9 +219,20 @@ class Colores(unittest.TestCase):
     def test_sin_tildes_y_sin_mayusculas(self):
         self.assertEqual(["Café oscuro"], comparar_lista.colores_sugeridos(["Cafe"], ["Café oscuro", "Negro"]))
 
-    def test_sin_emojis_no_se_sugiere_nada(self):
+    def test_sin_emojis_se_sugiere_la_paleta_completa(self):
+        # Decisión del 22/10/2026 (regla 13): en esa lista 62 de 63 configuraciones llegaban al
+        # panel sin ningún color premarcado.
         [p] = comparar(lista(producto()), self.BASE)["productos"]
-        self.assertEqual([], p["colores_sugeridos"])
+        self.assertEqual(["Plata", "Naranja cósmico", "Azul profundo"], p["colores_sugeridos"])
+        self.assertIn(comparar_lista.SUPUESTO_PALETA_COMPLETA, p["supuestos"])
+        # Es un hecho de esta lista: va con los de la lista, que consolidar no lleva a la base.
+        self.assertIn(comparar_lista.SUPUESTO_PALETA_COMPLETA, p["supuestos_lista"])
+
+    def test_sin_emojis_y_sin_paleta_no_hay_nada_que_sugerir(self):
+        self.assertEqual([], comparar_lista.colores_sugeridos([], []))
+
+    def test_con_emojis_que_no_coinciden_no_se_sugiere_nada(self):
+        self.assertEqual([], comparar_lista.colores_sugeridos(["Rojo"], ["Negro", "Azul"]))
 
     def test_la_descripcion_del_modelo_se_hereda_tal_cual(self):
         [p] = comparar(lista(producto(colores_familia=["Naranja"])), self.BASE)["productos"]
@@ -244,12 +267,56 @@ class DescripcionDeLaBase(unittest.TestCase):
         self.assertEqual(faltas, [r for r in otra["revisar"] if r.startswith(comparar_lista.ALERTA_DESCRIPCION)])
 
 
+class PorCompletar(unittest.TestCase):
+    """22/10/2026: 20 de los 56 borradores iban al panel con la descripción de la base sin ficha o
+    sin caja, porque solo se investigaba lo nuevo. Ahora queda la tarea de completarla."""
+
+    SIN_FICHA_NI_CAJA = "El JBL Xtreme 4 es un parlante portátil.\n\n## Garantía y notas\n\n- Producto nuevo.\n"
+    SIN_CAJA = ("El JBL Xtreme 4 es un parlante portátil.\n\n## Ficha técnica\n\n| Atributo | Detalle |\n"
+                "|---|---|\n| Dimensiones y peso | 2,1 kg |\n\n## Garantía y notas\n\n- Producto nuevo.\n")
+
+    def heredado(self, descripcion, **cambios):
+        [p] = comparar(lista(producto()), {"jbl-xtreme-4": conocido(descripcion=descripcion, **cambios)})["productos"]
+        return p
+
+    def test_sin_ficha_pide_la_ficha_y_completar_y_conserva_el_precio_heredado(self):
+        p = self.heredado(self.SIN_FICHA_NI_CAJA)
+        self.assertEqual(["ficha", "completar"], p["pendiente"])
+        self.assertEqual("sin_cambios", p["estado_lista"])
+        self.assertEqual(1_260_400, p["precio_mercado_cop"])
+        self.assertFalse(necesita(p, "descripcion"), "la prosa heredada no se vuelve a redactar")
+        self.assertTrue(necesita(p, "completar"))
+
+    def test_sin_caja_solo_pide_completar(self):
+        self.assertEqual(["completar"], self.heredado(self.SIN_CAJA)["pendiente"])
+
+    def test_con_el_precio_vencido_pide_las_dos_cosas(self):
+        p = self.heredado(self.SIN_CAJA, fecha_precio="2026-09-01")
+        self.assertEqual(["precio", "completar"], p["pendiente"])
+
+    def test_completa_no_pide_nada(self):
+        self.assertEqual([], self.heredado(DESCRIPCION)["pendiente"])
+
+    def test_sin_comparacion_no_se_completa(self):
+        self.assertFalse(necesita({}, "completar"))
+
+    def test_el_reporte_las_lista(self):
+        datos = comparar(lista(producto()), {"jbl-xtreme-4": conocido(descripcion=self.SIN_CAJA)})
+        seccion = comparar_lista.reporte(datos).split("## Descripciones heredadas por completar")[1].split("##")[0]
+        self.assertIn("**JBL Xtreme 4** — falta «Contenido de la caja»", seccion)
+
+    def test_dos_corridas_dan_lo_mismo(self):
+        base = {"jbl-xtreme-4": conocido(descripcion=self.SIN_FICHA_NI_CAJA)}
+        una = comparar(lista(producto()), base)
+        self.assertEqual(una, comparar(una, base))
+
+
 class ConfiguracionNueva(unittest.TestCase):
     """Una memoria nueva de un modelo conocido hereda la ficha y solo pide el precio."""
 
     BASE = {"samsung-galaxy-a57-5g-8gb-ram-256gb": conocido(
         titulo="Samsung Galaxy A57 5G 8GB RAM 256GB", id_modelo="samsung-galaxy-a57-5g",
-        titulo_modelo="Samsung Galaxy A57 5G", descripcion="El Galaxy A57 es un celular 5G.\n")}
+        titulo_modelo="Samsung Galaxy A57 5G", descripcion=completa("El Galaxy A57 es un celular 5G."))}
     NUEVA = dict(id_="samsung-galaxy-a57-5g-12gb-ram-512gb", titulo="Samsung Galaxy A57 5G 12GB RAM 512GB",
                  id_modelo="samsung-galaxy-a57-5g", titulo_modelo="Samsung Galaxy A57 5G")
 
@@ -257,13 +324,14 @@ class ConfiguracionNueva(unittest.TestCase):
         [p] = comparar(lista(producto(**self.NUEVA)), self.BASE)["productos"]
         self.assertEqual("configuracion_nueva", p["estado_lista"])
         self.assertEqual(["precio"], p["pendiente"])
-        self.assertEqual("El Galaxy A57 es un celular 5G.\n", p["descripcion"])
+        self.assertEqual(completa("El Galaxy A57 es un celular 5G."), p["descripcion"])
         self.assertIsNone(p["precio_mercado_cop"])
 
     def test_si_la_descripcion_nombra_una_capacidad_lo_marca(self):
-        base = {k: dict(v, descripcion="El Galaxy A57 de 256 GB es un celular 5G.\n") for k, v in self.BASE.items()}
+        base = {k: dict(v, descripcion=completa("El Galaxy A57 de 256 GB es un celular 5G."))
+                for k, v in self.BASE.items()}
         [p] = comparar(lista(producto(**self.NUEVA)), base)["productos"]
-        self.assertTrue(any(r.startswith("la descripción del modelo nombra un almacenamiento") for r in p["revisar"]))
+        self.assertTrue(any("nombra una configuración («de 256 GB»)" in r for r in p["revisar"]), p["revisar"])
 
     def test_el_reporte_la_cuenta_aparte(self):
         datos = comparar(lista(producto(**self.NUEVA)), self.BASE)
@@ -470,7 +538,7 @@ class PasoCuatroRespetaLoPendiente(unittest.TestCase):
             (tmp / "vtex.json").write_text("{}", encoding="utf-8")
             (tmp / "alk.json").write_text(json.dumps({"jbl-grip": {"precio": 300_000, "nombre": "JBL Grip"}}),
                                           encoding="utf-8")
-            subprocess.run([sys.executable, "-B", str(SCRIPTS / "asignar_precios.py"), str(tmp / "p.json"),
+            subprocess.run(env=ENTORNO_UTF8, args=[sys.executable, "-B", str(SCRIPTS / "asignar_precios.py"), str(tmp / "p.json"),
                             "--vtex", str(tmp / "vtex.json"), "--alkosto", str(tmp / "alk.json"),
                             "--fecha", "2026-10-09"],
                            check=True, capture_output=True)
@@ -482,6 +550,31 @@ class PasoCuatroRespetaLoPendiente(unittest.TestCase):
         # en que se consolide.
         self.assertEqual("2026-10-09", grip["fecha_precio"])
 
+    def test_asignar_precios_no_repite_sus_notas_al_correr_otra_vez(self):
+        # 22/10/2026: «sin precio de mercado» quedó tres veces en cada producto sin precio.
+        datos = comparar(lista(producto("jbl-grip", "JBL Grip")), {"jbl-xtreme-4": conocido()})
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            (tmp / "p.json").write_text(json.dumps(datos), encoding="utf-8")
+            (tmp / "vtex.json").write_text("{}", encoding="utf-8")
+            (tmp / "alk.json").write_text("{}", encoding="utf-8")
+            for _ in range(3):
+                subprocess.run(env=ENTORNO_UTF8, args=[sys.executable, "-B", str(SCRIPTS / "asignar_precios.py"), str(tmp / "p.json"),
+                                "--vtex", str(tmp / "vtex.json"), "--alkosto", str(tmp / "alk.json")],
+                               check=True, capture_output=True)
+            [grip] = json.loads((tmp / "p.json").read_text(encoding="utf-8"))["productos"]
+        self.assertEqual(1, sum(r.startswith("sin precio de mercado") for r in grip["revisar"]), grip["revisar"])
+
+    def test_el_margen_de_hoy_reemplaza_la_alerta_de_ayer(self):
+        from asignar_precios import aplicar_margen
+        p = {"precio_mercado_cop": 900_000, "precio_proveedor_cop": 1_000_000, "revisar": []}
+        aplicar_margen(p)
+        aplicar_margen(p)
+        self.assertEqual(1, sum(r.startswith("POR DEBAJO DEL COSTO") for r in p["revisar"]))
+        p["precio_proveedor_cop"] = 800_000
+        aplicar_margen(p)
+        self.assertEqual([], [r for r in p["revisar"] if r.startswith("POR DEBAJO DEL COSTO")])
+
     def test_redactar_fichas_no_marca_sin_descripcion_a_un_heredado(self):
         base = {"jbl-xtreme-4": conocido()}
         datos = comparar(lista(producto()), base)
@@ -489,7 +582,7 @@ class PasoCuatroRespetaLoPendiente(unittest.TestCase):
             tmp = Path(tmp)
             (tmp / "p.json").write_text(json.dumps(datos), encoding="utf-8")
             (tmp / "prosa.json").write_text("{}", encoding="utf-8")
-            subprocess.run([sys.executable, "-B", str(SCRIPTS / "redactar_fichas.py"), str(tmp / "p.json"),
+            subprocess.run(env=ENTORNO_UTF8, args=[sys.executable, "-B", str(SCRIPTS / "redactar_fichas.py"), str(tmp / "p.json"),
                             "--prosa", str(tmp / "prosa.json")], check=True, capture_output=True)
             [p] = json.loads((tmp / "p.json").read_text(encoding="utf-8"))["productos"]
         self.assertEqual(DESCRIPCION, p["descripcion"])
@@ -502,7 +595,7 @@ class PasoCuatroRespetaLoPendiente(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             tmp = Path(tmp)
             (tmp / "p.json").write_text(json.dumps(datos), encoding="utf-8")
-            subprocess.run([sys.executable, "-B", str(SCRIPTS / "precios.py"), str(tmp / "p.json"),
+            subprocess.run(env=ENTORNO_UTF8, args=[sys.executable, "-B", str(SCRIPTS / "precios.py"), str(tmp / "p.json"),
                             "--salida", str(tmp / "vtex.json")], check=True, capture_output=True, timeout=30)
             self.assertEqual({}, json.loads((tmp / "vtex.json").read_text(encoding="utf-8")))
 

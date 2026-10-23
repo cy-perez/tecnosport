@@ -297,8 +297,23 @@ python3 scripts/comparar_lista.py catalogo/productos.json
 El parser deja `catalogo/productos.json` (productos, repetidos que se fusionaron,
 descartados y líneas sin clasificar) y `catalogo/1-lista/revision.md`, un resumen legible.
 
-La comparación, que se corre **una vez por lista y antes del paso 4**, cruza cada
-producto con `referencias/conocidos.json` y lo clasifica:
+La comparación, que se corre **antes del paso 4**, cruza cada producto con
+`referencias/conocidos.json` y lo clasifica. **Se puede volver a correr**
+(22/10/2026): la primera vez guarda lo que dejó el parser en
+`1-lista/productos-del-parser.json`, y las siguientes parten de ahí, así que dan
+lo mismo —antes heredaba sobre su propia salida, y cada exclusión obligaba a
+rehacer la corrida desde el parser—. Si ya se hizo el paso 4, se vuelven a correr
+`asignar_precios.py` y `redactar_fichas.py`, que leen lo que está en disco.
+
+**Las decisiones de la persona sobre esta lista** van en
+`catalogo/1-lista/decisiones.json` y la comparación las aplica antes de comparar:
+un costo para una línea que vino sin precio, el título definitivo o la SIM que la
+línea no dice, siempre con `motivo` y `fecha` (formato en `scripts/decisiones.py`).
+Son de la lista, no del catálogo: lo que vale para todas va en `equivalencias.json`
+o en `excluidos.json`. El 22/10/2026 dos iPhone sin precio entraron con el costo de
+la lista anterior, y eso vivió en un script suelto que había que correr a mano.
+
+La clasificación:
 
 | Estado | Qué hereda de la base | Qué queda pendiente para el paso 4 |
 |---|---|---|
@@ -307,12 +322,12 @@ producto con `referencias/conocidos.json` y lo clasifica:
 | costo cambiado | todo, con el margen recalculado al costo de hoy | nada |
 | sin cambios | todo | nada |
 
-**Los colores se heredan solo si la lista marca hoy los mismos emojis** que la vez
-en que se decidieron. Si marca otros —o ninguno, cuando antes marcaba—, el
-producto queda sin colores, sin la sección de colores en la descripción y con la
-tarea `colores` pendiente: confírmalos contra la paleta oficial (regla 13) y
-escribe `colores_oficiales`; la sección se rehace al consolidar. Ningún script
-hace esta tarea.
+**Los colores son variantes, no texto de la descripción** (08/10/2026). Un
+conocido hereda la paleta del modelo en `colores_oficiales`, y en
+`colores_sugeridos` van los de esa paleta que nombran los emojis de la lista;
+**sin emojis, la paleta completa** (22/10/2026, regla 13), con la constancia en
+`supuestos`. Son los que el panel premarca: la persona quita lo que no haya.
+Detalle en `referencias/colores.md`.
 
 **La descripción heredada se valida** (`scripts/descripciones.py`). Una sección que
 quedó vacía —la ficha técnica con el encabezado solo, como llegaron 12 modelos a la
@@ -320,6 +335,16 @@ lista del 15/10/2026— se quita sola, porque quitarla no inventa nada. Lo que n
 arregla sin datos —la ficha que falta, el peso, el contenido de la caja— queda en
 `revisar` como «descripción de la base: …» para el paso 4 y la entrega. Y la
 exportación deja fuera el modelo cuya descripción tenga un marcador `[[ ]]`.
+
+**Y lo que le falta y se puede completar queda pendiente** (22/10/2026). Un
+conocido cuya descripción no tiene «Ficha técnica» o «Contenido de la caja» recibe
+la tarea `completar` —y `ficha`, si falta la tabla, para que Icecat la busque—,
+aunque su precio esté vigente: el paso 4 inserta solo esas secciones, sin
+reescribir la prosa. Antes se heredaba tal cual, lista tras lista: de los 56
+borradores de la lista del 22/10/2026, 20 iban así al panel. `cambios.md` los lista
+en «Descripciones heredadas por completar». Una frase que nombra una
+configuración —«Esta versión trae 6GB de RAM…»— también se avisa siempre, no solo
+cuando llega otra memoria; esa no se completa: se corrige a mano.
 
 **Lo que el negocio decidió no vender se descarta aquí, sin investigar.**
 `referencias/excluidos.json` guarda esas decisiones —el TCL Pad Lugh, sacado de
@@ -382,7 +407,11 @@ que invierte la del 08/10/2026):
 1. **Open Icecat, primero y solo por código**: la tabla la arma
    `redactar_fichas.py`, y la prosa nunca se escribe a partir de una ficha de
    Icecat. Su licencia anula el permiso si los datos se usan para «automated
-   synthetic content creation» (cláusula 10).
+   synthetic content creation» (cláusula 10). **Si hay ficha de la marca y las
+   dos se contradicen** en la resistencia IP, el cargador incluido o el
+   Bluetooth, se publica la de la marca y `revisar` dice qué difería: el
+   22/10/2026 la de Icecat del Moto G15 era la de otro mercado (IP54 contra IP52,
+   sin cargador cuando la caja lo trae).
 2. **El sitio oficial de la marca**, para lo que Icecat no cubra. Samsung,
    Apple, Honor, Motorola (la página de producto), OPPO, realme, TCL y Lenovo
    (su PSREF) se leen directamente; JBL publica la ficha en PDF, que también se
@@ -400,8 +429,9 @@ que invierte la del 08/10/2026):
 3. **La caja del producto**, cuando no hay ninguna de las dos.
 
 Para cada producto con algo `pendiente` —los nuevos, entero; los de precio
-vencido, solo el precio—, en una sola pasada de búsquedas. Lo que se heredó de la
-base no se vuelve a investigar. **El aviso de retiro (regla 15) sí se revisa para
+vencido, solo el precio; los heredados con `completar`, la ficha y la caja que les
+faltan—, en una sola pasada de búsquedas. Lo demás que se heredó de la base no se
+vuelve a investigar. **El aviso de retiro (regla 15) sí se revisa para
 todas las marcas de la lista**, conocidas o no: un retiro puede publicarse después
 de la primera vez que se investigó el producto.
 
@@ -422,9 +452,11 @@ de la primera vez que se investigó el producto.
   del modelo: no nombra la capacidad ni los colores, que son variantes.
 - **Paleta oficial completa** — en `colores_oficiales` van **todos** los colores
   que el fabricante publica para el modelo, no solo los que marca la lista: la
-  base la guarda como la paleta del modelo. Los que marca la lista los sugiere
-  `comparar_lista.py` en `colores_sugeridos` (`referencias/colores.md`), y se
-  confirman en el panel al revisar el borrador.
+  base la guarda como la paleta del modelo. Escríbela en `fichas-marca.json`
+  (`"paleta": [...]`) y `redactar_fichas.py` la lleva a `colores_oficiales`. Los
+  que marca la lista —o la paleta entera, si no marca ninguno— se sugieren en
+  `colores_sugeridos` (`referencias/colores.md`), y se confirman en el panel al
+  revisar el borrador.
 - **¿Esa configuración existe?** La ficha oficial dice qué combinaciones de RAM y
   almacenamiento vende el fabricante, y el proveedor a veces ofrece otras. En la
   lista del 12/09/2026 aparecieron dos: un Redmi Note 15 Pro 5G de 8+512 cuando
@@ -472,7 +504,15 @@ python3 scripts/redactar_fichas.py catalogo/productos.json \
 `fichas-marca.json` lleva, por id de modelo, la fuente, la URL, la fecha de
 consulta y las filas: `{"samsung-galaxy-a57-5g": {"fuente": "samsung.com/co",
 "url": "https://…", "fecha": "2026-10-08", "f": {"Pantalla": "…", "Batería":
-"…"}}}`. Las filas de memoria se descartan solas: son de la configuración.
+"…"}}}`. Las filas de memoria se descartan solas: son de la configuración. Con
+`"caja": ["…", "…"]` lleva además el contenido de la caja que publica la marca, y
+con `"paleta": ["…"]` los colores que publica para el modelo.
+
+**Completar una descripción heredada** (tarea `completar`): `redactar_fichas.py`
+inserta en su sitio solo lo que falta —la tabla, con el mismo orden de fuentes, y
+la caja, de `fichas-marca.json` o de `"caja"` en `prosa.json`— y agrega la fuente
+al pie. La apertura, las viñetas y las notas quedan como estaban. Si no hay fuente
+para completarla, no se toca y la salida lo dice («sin fuente para completar»).
 
 `traer` escribe además un `fotos/urls-icecat.csv` con enlaces de fotos: es una
 lista de dónde descargar a mano lo que falte en `Fotos originales/`.
@@ -514,8 +554,14 @@ Produce:
   lista con costo, precio de mercado y colores sugeridos, la descripción, los
   supuestos, los pendientes y las fuentes) y `Fotos originales/`, vacía la
   primera vez. En las marcas que no se leen de forma automática trae además
-  `Fuente de la marca/`. La carpeta se reconoce por el archivo de ficha, no por
-  el nombre; las pulgadas van con `″` porque Windows no admite `"`.
+  `Fuente de la marca/` —y en Motorola, por si su página de producto no trae la
+  ficha completa—, y la ficha dice **qué página guardar**: en Xiaomi la URL
+  `/specs/` armada desde el título, con una alternativa, porque mi.com no es del
+  todo regular; en JBL, el specsheet en PDF. Antes de redactar, `python3
+  scripts/fuente_de_marca.py validar catalogo/4-entregables/fichas` dice si lo
+  guardado es la pestaña de especificaciones o la «General», que no trae peso,
+  caja ni configuraciones (22/10/2026). La carpeta se reconoce por el archivo de
+  ficha, no por el nombre; las pulgadas van con `″` porque Windows no admite `"`.
 - `comparativo-<fecha>.xlsx` — hoja **Comparativo** con las cuatro columnas
   pedidas (título, precio de lista, promedio del mercado, ganancia), más hojas de
   **Detalle** (margen %, colores, fuentes, pendientes) y **Descartados**.
@@ -762,8 +808,11 @@ colores es un producto con cuatro variantes.
 ```
 scripts/rutas.py                  la forma de catalogo/ por subproceso; de ahí salen las rutas por omisión
 scripts/margen.py                 regla 18: el margen mínimo, que usan la exportación y las carpetas de modelo
+scripts/colores.py                los colores sugeridos al panel: los de los emojis, o la paleta completa sin ellos
 scripts/parsear_lista.py          paso 2  1-lista/lista.txt → productos.json + 1-lista/revision.md
-scripts/comparar_lista.py         paso 2  productos.json contra conocidos.json → pendientes + 1-lista/cambios.md
+scripts/comparar_lista.py         paso 2  productos.json contra conocidos.json → pendientes + 1-lista/cambios.md;
+                                  se puede volver a correr: parte de 1-lista/productos-del-parser.json
+scripts/decisiones.py             paso 2  aplica 1-lista/decisiones.json, las decisiones de la persona sobre la lista
 scripts/descripciones.py          pasos 2, 6 y 6b  quita lo que quedó vacío y dice lo que le falta a una descripción
 scripts/pendientes.py             paso 4  qué le toca a cada script según lo pendiente
 scripts/precios.py                paso 4  cosecha precios VTEX de Éxito, Olímpica y Jumbo
@@ -771,7 +820,9 @@ scripts/asignar_precios.py        paso 4  decide el precio de mercado y el marge
 scripts/icecat_local.py           paso 4  trae la ficha técnica oficial de Open Icecat
 scripts/redactar_fichas.py        paso 4  prosa + ficha oficial → descripción y metadatos
 scripts/construir_entregables.py  paso 5  productos.json → carpetas de modelo + Excel
-scripts/fichas.py                 paso 5  la carpeta de cada modelo en catalogo/4-entregables/fichas
+scripts/fichas.py                 paso 5  la carpeta de cada modelo en catalogo/4-entregables/fichas,
+                                  con la página de la marca que hay que guardar
+scripts/fuente_de_marca.py        paso 4  ¿lo guardado en «Fuente de la marca» es la ficha de especificaciones?
 scripts/conocidos.py              paso 6  guarda lo investigado en referencias/conocidos.json;
                                   `fotos` registra las fotos procesadas de cada modelo
 scripts/preparar_fotos.py         enlaces de descarga y pedido de lo que falte (regla 16)

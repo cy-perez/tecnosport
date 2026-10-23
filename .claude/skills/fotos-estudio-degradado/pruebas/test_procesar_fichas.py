@@ -395,6 +395,29 @@ class Tanda(unittest.TestCase):
             self.assertEqual(1, procesos, "se vuelve a intentar aunque la carpeta no cambió")
             self.assertEqual(pf.APTO, estados[MODELO]["estado"])
 
+    def test_un_apto_al_que_otra_corrida_le_borro_el_reporte_se_rehace_en_la_misma_corrida(self):
+        # 22/10/2026: la parte 12 de la tanda pisó el reporte de la 11. Sus modelos quedaron aptos en
+        # estado-fotos.json, sin registros en el reporte, y la tanda los daba por «sin fotos nuevas»
+        # con 0 LISTA en vez de rehacerlos.
+        with tempfile.TemporaryDirectory() as tmp:
+            raiz = Path(tmp)
+            armar(raiz, CUATRO)
+            tanda(raiz, procesar=listas(raiz))
+            (raiz / pf.TRABAJO / "salida" / "reporte.json").write_text(json.dumps({"fotos": []}), encoding="utf-8")
+            estados, procesos = tanda(raiz, procesar=listas(raiz))
+            self.assertEqual(1, procesos, "se rehace en esta corrida, no en la siguiente")
+            self.assertEqual(pf.APTO, estados[MODELO]["estado"])
+            self.assertFalse(estados[MODELO].get("sin_cambios"))
+
+    def test_una_foto_sin_registro_dice_que_falta_en_el_reporte_y_no_habla_de_heic(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            raiz = Path(tmp)
+            armar(raiz, CUATRO)
+            estados, _ = tanda(raiz, procesar=lambda: None)
+            motivo = estados[MODELO]["fallidas"][0]["motivo"]
+            self.assertIn("no tiene registro en el reporte", motivo)
+            self.assertNotIn("pillow-heif", motivo)
+
     def test_dos_originales_con_el_mismo_nombre_no_cuentan_doble(self):
         with tempfile.TemporaryDirectory() as tmp:
             raiz = Path(tmp)
@@ -536,6 +559,223 @@ class Tanda(unittest.TestCase):
             ruta.write_text(json.dumps({"fechaLista": "2026-10-15", "modelos": ["a", "b"],
                                         "sinFicha": ["b"], "configuraciones": []}), encoding="utf-8")
             self.assertEqual(("2026-10-15", ["a", "b"], {"b"}), pf.leer_tanda(ruta))
+
+
+class PorPartes(unittest.TestCase):
+    """22/10/2026: 297 fotos en una sola llamada a procesar.py no caben en primer plano, y en segundo
+    plano ya murió una por memoria. `--lote N` las corre por partes de modelos enteros."""
+
+    def armar_tres(self, raiz):
+        ids = []
+        for k in range(1, 4):
+            mid = f"modelo-{k}"
+            armar(raiz, tuple(f"{mid}_{i}.jpg" for i in range(1, 5)), titulo=f"Modelo {k}", mid=mid)
+            ids.append(mid)
+        return ids
+
+    def test_las_partes_son_de_modelos_enteros_y_no_pasan_del_lote(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            raiz = Path(tmp)
+            ids = self.armar_tres(raiz)
+            self.assertEqual([["modelo-1", "modelo-2"], ["modelo-3"]], pf.partes(raiz, ids, 8))
+
+    def test_un_modelo_mas_grande_que_el_lote_va_solo_y_entero(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            raiz = Path(tmp)
+            ids = self.armar_tres(raiz)
+            self.assertEqual([["modelo-1"], ["modelo-2"], ["modelo-3"]], pf.partes(raiz, ids, 3))
+
+    def test_sin_lote_es_una_sola_parte(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            raiz = Path(tmp)
+            ids = self.armar_tres(raiz)
+            self.assertEqual([ids], pf.partes(raiz, ids, None))
+
+    def test_la_tanda_por_partes_llama_al_retoque_una_vez_por_parte_y_decide_al_final(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            raiz = Path(tmp)
+            ids = self.armar_tres(raiz)
+            llamadas = []
+
+            def procesar_fn(nombres):
+                llamadas.append(list(nombres))
+                grupos = sorted({n.rsplit("-", 1)[0] for n in nombres})
+                for g in grupos:
+                    salida_de_procesar(raiz, [(n, "LISTA") for n in nombres if n.startswith(g + "-")],
+                                       grupo=g, sumar=True)
+                return True
+
+            estados = pf.correr_tanda(raiz, ids, CFG, procesar_fn, medidor=GRANDE, lote=8)
+            self.assertEqual(2, len(llamadas))
+            self.assertEqual(8, len(llamadas[0]))
+            self.assertEqual({pf.APTO}, {e["estado"] for e in estados})
+
+
+class ValidarAntesDeProcesar(unittest.TestCase):
+    """22/10/2026: antes de gastar horas de retoque se validaron 297 fotos a mano (nombres, formatos,
+    duplicados, LISTA estimadas). `--validar` lo hace sin retocar nada."""
+
+    LADOS = {"chica": 500}
+
+    def estimar(self, ruta):
+        return 300 if "chica" in ruta.name else 1600
+
+    def test_informa_nombres_formatos_pequenas_y_estimadas_por_modelo(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            raiz = Path(tmp)
+            carpeta = armar(raiz, (f"{MODELO}_1.jpg", f"{MODELO}_2.jpg", "Samsung Galaxy S25 Ultra_3.webp",
+                                   f"{MODELO}_4.jpg", "chica_5.png"))
+            (carpeta / pf.ORIGINALES / "nota.bmp").write_bytes(b"bmp")
+            v = pf.validar(raiz, [MODELO], pf.cargar_config(), medidor=lambda r: (400, 400) if "chica" in r.name
+                           else (2000, 2000), estimar=self.estimar)
+            m = v["modelos"][MODELO]
+            self.assertEqual({"Samsung Galaxy S25 Ultra_3.webp", "chica_5.png"}, set(m["nombres_fuera"]))
+            self.assertEqual(["nota.bmp"], m["no_admitidos"])
+            self.assertEqual(["chica_5.png"], m["pequenas"])
+            self.assertEqual(4, m["listas_estimadas"])
+            self.assertTrue(v["completa"])
+
+    def test_detecta_fotos_identicas_en_dos_modelos(self):
+        # La Redmi Pad 2 bundle y la 4G compartían sus seis fotos byte a byte.
+        with tempfile.TemporaryDirectory() as tmp:
+            raiz = Path(tmp)
+            a = armar(raiz, ("uno_1.jpg",), titulo="Uno", mid="uno")
+            b = armar(raiz, ("dos_1.jpg",), titulo="Dos", mid="dos")
+            (b / pf.ORIGINALES / "dos_1.jpg").write_bytes((a / pf.ORIGINALES / "uno_1.jpg").read_bytes())
+            v = pf.validar(raiz, ["uno", "dos"], pf.cargar_config(), medidor=lambda r: None, estimar=lambda r: None)
+            self.assertEqual([["Dos/dos_1.jpg", "Uno/uno_1.jpg"]], v["duplicados"])
+            self.assertIn("idénticas", pf.informe_validacion(v))
+
+    def test_un_modelo_que_no_reune_cuatro_estimadas_deja_la_tanda_incompleta(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            raiz = Path(tmp)
+            armar(raiz, CUATRO)
+            v = pf.validar(raiz, [MODELO], pf.cargar_config(), medidor=lambda r: None, estimar=lambda r: 300)
+            self.assertEqual(0, v["modelos"][MODELO]["listas_estimadas"])
+            self.assertFalse(v["completa"])
+
+    def test_una_foto_sobre_una_mesa_se_estima_como_en_la_tanda(self):
+        # Revisión del PR #268: validar usaba el estimador «fiable», que no da número sin un fondo de
+        # estudio, y contaba 0 LISTA donde la tanda —con el estimador del producto— sí procesa.
+        try:
+            import numpy as np
+            from PIL import Image
+        except ImportError:
+            self.skipTest("sin NumPy o Pillow")
+        with tempfile.TemporaryDirectory() as tmp:
+            ruta = Path(tmp) / "mesa.png"
+            ruido = np.random.default_rng(7).integers(0, 255, (900, 1200, 3), dtype=np.uint8)
+            Image.fromarray(ruido).save(ruta)
+            import estimador
+            self.assertIsNone(estimador.estimar_lado_fiable(ruta))
+            self.assertEqual(estimador.estimar_lado_producto(ruta), pf.estimar_producto(ruta))
+
+    def test_sin_estimador_no_se_inventa_el_numero(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            raiz = Path(tmp)
+            armar(raiz, CUATRO)
+            v = pf.validar(raiz, [MODELO], pf.cargar_config(), medidor=lambda r: None, estimar=None)
+            self.assertIsNone(v["modelos"][MODELO]["listas_estimadas"])
+
+    def test_renombrar_deja_el_id_en_orden_natural_y_un_registro(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            raiz = Path(tmp)
+            carpeta = armar(raiz, ("Foto_10.jpg", "Foto_2.png", "Foto_1.webp"))
+            registro = pf.renombrar(raiz, [MODELO])
+            self.assertEqual([f"{MODELO}_1.webp", f"{MODELO}_2.png", f"{MODELO}_3.jpg"],
+                             [f.name for f in pf.originales(carpeta)])
+            self.assertEqual("Foto_10.jpg", registro["renombradas"][-1]["antes"])
+            self.assertTrue(Path(registro["archivo"]).is_file())
+
+    def test_renombrar_conserva_los_numeros_que_ya_siguen_la_convencion(self):
+        # Revisión del PR #268: con x_1, x_2 e IMG, la IMG pasaba a x_1 y la portada por omisión
+        # —la _1 que la persona eligió— bajaba a _2.
+        with tempfile.TemporaryDirectory() as tmp:
+            raiz = Path(tmp)
+            carpeta = armar(raiz, (f"{MODELO}_1.jpg", f"{MODELO}_2.jpg", "IMG.jpg"))
+            primera = (carpeta / pf.ORIGINALES / f"{MODELO}_1.jpg").read_bytes()
+            registro = pf.renombrar(raiz, [MODELO])
+            self.assertEqual([{"carpeta": carpeta.name, "antes": "IMG.jpg", "despues": f"{MODELO}_3.jpg"}],
+                             registro["renombradas"])
+            self.assertEqual(primera, (carpeta / pf.ORIGINALES / f"{MODELO}_1.jpg").read_bytes())
+
+    def test_si_falla_a_mitad_deja_los_nombres_como_estaban(self):
+        from unittest import mock
+        with tempfile.TemporaryDirectory() as tmp:
+            raiz = Path(tmp)
+            carpeta = armar(raiz, ("Foto_1.jpg", "Foto_2.jpg"))
+            real, llamadas = Path.rename, []
+
+            def rename(self, destino):
+                llamadas.append(destino)
+                if len(llamadas) == 3:          # el primer renombre definitivo
+                    raise PermissionError("archivo abierto")
+                return real(self, destino)
+
+            with mock.patch.object(Path, "rename", rename), self.assertRaises(PermissionError):
+                pf.renombrar(raiz, [MODELO])
+            self.assertEqual(["Foto_1.jpg", "Foto_2.jpg"],
+                             sorted(f.name for f in (carpeta / pf.ORIGINALES).iterdir()))
+
+    def test_renombrar_se_niega_si_el_modelo_ya_tiene_procesadas(self):
+        # Renombrar cambia la huella: fuerza el reproceso y caduca aprobaciones.
+        with tempfile.TemporaryDirectory() as tmp:
+            raiz = Path(tmp)
+            carpeta = armar(raiz, ("Foto_1.jpg",))
+            (carpeta / pf.PROCESADAS).mkdir()
+            (carpeta / pf.PROCESADAS / "Foto_1.jpg").write_bytes(b"maestra")
+            registro = pf.renombrar(raiz, [MODELO])
+            self.assertEqual([], registro["renombradas"])
+            self.assertIn(MODELO, registro["negados"])
+            self.assertEqual(["Foto_1.jpg"], [f.name for f in pf.originales(carpeta)])
+
+
+class Portadas(unittest.TestCase):
+    """22/10/2026: ninguna de las 56 fotos de portada de la tanda se había elegido; el borrador subía
+    la _1 que se descargó primero. Al quedar la tanda completa se arma la hoja para elegirlas."""
+
+    def test_las_filas_son_los_aptos_con_sus_lista_y_la_principal_primero(self):
+        estados = [{"modelo": "a", "estado": pf.APTO, "listas": ["a_3.jpg", "a_1.jpg", "a_2.jpg"]},
+                   {"modelo": "b", "estado": pf.EN_ESPERA, "listas": ["b_1.jpg"]},
+                   {"modelo": "c", "estado": pf.APTO, "listas": ["c_1.jpg", "c_2.jpg"]}]
+        filas = pf.filas_de_portadas(estados, sin_ficha={"c"})
+        self.assertEqual([("a", ["a-3", "a-1", "a-2"])], filas)
+
+    def test_la_orden_para_cambiar_principales_va_en_una_sola_llamada(self):
+        texto = pf.orden_de_portadas([("a", ["a-3", "a-1"]), ("b", ["b-1"])], Path("SAL"))
+        self.assertIn("a: a-3", texto)
+        self.assertEqual(1, texto.count("--principal"))
+        self.assertIn("--sin-hojas", texto)
+
+
+class PistaDeKit(unittest.TestCase):
+    """Antes de procesar: un modelo que por su ficha parece un kit recibe la sugerencia, sin declararlo.
+    El 22/10/2026 el Switch 2, el PartyBox Encore 2 y la Fly Go Pad «con teclado y mouse» esperaron
+    una corrida entera por piezas sueltas que la ficha ya anunciaba."""
+
+    def ficha(self, raiz, modelo, categoria):
+        carpeta = armar(raiz, CUATRO)
+        (carpeta / f"{MODELO}-ficha.txt").write_text(f"MODELO: {modelo}\nCATEGORÍA: {categoria}\n", encoding="utf-8")
+        return carpeta
+
+    def test_con_teclado_o_una_consola_dan_pista(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            self.assertIsNotNone(pf.pista_de_kit(self.ficha(Path(tmp), 'Fly Go Pad 10″ 4G con teclado y mouse', "tablets")))
+        with tempfile.TemporaryDirectory() as tmp:
+            self.assertIsNotNone(pf.pista_de_kit(self.ficha(Path(tmp), "Nintendo Switch 2", "consolas")))
+
+    def test_un_celular_comun_no_da_pista(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            self.assertIsNone(pf.pista_de_kit(self.ficha(Path(tmp), "Samsung Galaxy A37 5G", "celulares")))
+
+    def test_la_tanda_avisa_la_pista_y_no_declara_el_kit(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            raiz = Path(tmp)
+            self.ficha(raiz, "Nintendo Switch 2", "consolas")
+            avisos = pf.pistas_de_kit(raiz, [MODELO], kits={})
+            self.assertEqual([MODELO], [mid for mid, _ in avisos])
+            self.assertEqual({}, pf.leer_kits(raiz))
+            self.assertEqual([], pf.pistas_de_kit(raiz, [MODELO], kits={MODELO: {"motivo": "x"}}))
 
 
 class SinFichaEnLaLista(unittest.TestCase):
@@ -904,6 +1144,20 @@ class RetoqueEnCurso(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             self.avance(Path(tmp), estado="procesando", pid=muerto.pid)
             self.assertIsNone(pf.retoque_en_curso(Path(tmp)))
+
+    def test_un_iniciando_sin_pid_viejo_no_esta_en_curso(self):
+        # Revisión del PR #268: el hijo en segundo plano chocó con el candado antes de escribir su
+        # pid, y el «iniciando» sin pid dejaba el --devolver bloqueado para siempre.
+        with tempfile.TemporaryDirectory() as tmp:
+            self.avance(Path(tmp), estado="iniciando", inicio="2026-01-01T00:00:00-05:00")
+            self.assertIsNone(pf.retoque_en_curso(Path(tmp)))
+
+    def test_un_iniciando_sin_pid_reciente_si_esta_en_curso(self):
+        import datetime
+        with tempfile.TemporaryDirectory() as tmp:
+            self.avance(Path(tmp), estado="iniciando",
+                        inicio=datetime.datetime.now().astimezone().isoformat(timespec="seconds"))
+            self.assertIsNotNone(pf.retoque_en_curso(Path(tmp)))
 
     def test_un_avance_terminado_no_esta_en_curso(self):
         with tempfile.TemporaryDirectory() as tmp:

@@ -55,6 +55,13 @@ class Escribir(unittest.TestCase):
             self.assertIn("costo 380.000", texto)
             self.assertIn("PALETA OFICIAL: Gris, Plata", texto)
 
+    def test_sin_emojis_la_ficha_dice_que_se_sugiere_la_paleta_completa(self):
+        datos = {"productos": [producto("samsung-galaxy-tab-a11-8-7-wifi-8gb-ram-128gb",
+                                        'Samsung Galaxy Tab A11 8.7" WiFi 8GB RAM 128GB',
+                                        colores_sugeridos=[], colores_familia=[])]}
+        texto = fichas.texto_de_ficha(datos["productos"])
+        self.assertIn("colores sugeridos: Gris, Plata (la paleta completa: la lista no marca colores)", texto)
+
     def test_no_borra_las_fotos_que_dejo_la_persona(self):
         with tempfile.TemporaryDirectory() as tmp:
             [carpeta] = fichas.escribir(DOS, Path(tmp))

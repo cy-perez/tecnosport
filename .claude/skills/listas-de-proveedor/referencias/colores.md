@@ -50,6 +50,21 @@ Dos condiciones para que la premisa no se convierta en una mentira:
   inventario sepa que esas cantidades hay que confirmarlas antes de prometer
   entrega.
 
+**Los scripts la aplican desde el 22/10/2026**: sin emojis, `colores_sugeridos`
+(`scripts/colores.py`) devuelve la paleta completa, y así la manda la exportación
+en `coloresSugeridos`: el panel la premarca y quien revisa el borrador solo quita
+lo que no haya. Hasta esa fecha la premisa estaba escrita aquí y ningún script la
+aplicaba: en la lista del 22/10 62 de 63 configuraciones llegaban al panel sin un
+solo color premarcado. La constancia queda en `supuestos` como «colores
+sugeridos: la lista no marca colores…», entre los de la lista y no en la base,
+porque es un hecho de esa lista y no del modelo. Con emojis, se sugieren solo los
+de la paleta que nombran su familia.
+
+**La paleta sale de la ficha de la marca.** Si `fichas-marca.json` trae
+`"paleta": [...]` para el modelo, `redactar_fichas.py` la lleva a
+`colores_oficiales` cuando estén vacíos, con el supuesto «colores: la paleta que
+publica …». No pisa una paleta que ya exista.
+
 ## Cómo queda en el sitio
 
 Un modelo con cuatro colores es **un producto con cuatro variantes**, no cuatro

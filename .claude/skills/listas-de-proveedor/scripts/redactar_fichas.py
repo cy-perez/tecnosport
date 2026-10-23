@@ -12,15 +12,22 @@ comparten ficha, y la memoria y el color son variantes que el cliente elige al
 comprar. Por eso la descripción no lleva fila de memoria, ni sección de colores,
 ni las notas de RAM virtual y de SIM (decisión del 08/10/2026).
 
-La ficha técnica sale, en este orden (decisión del 08/10/2026):
+La ficha técnica sale, en este orden (decisión del 22/10/2026, que invierte la
+del 08/10/2026):
 
-1. **El sitio oficial de la marca**, en `--marca`: un JSON por id de modelo con
-   la fuente, la URL, la fecha de consulta y las filas.
-2. **Open Icecat**, en `--icecat`, y solo por código: la tabla la arma este
+1. **Open Icecat**, en `--icecat`, y solo por código: la tabla la arma este
    script y la prosa no se escribe nunca a partir de ella. La licencia anula el
    permiso si los datos se usan para «automated synthetic content creation»
    (cláusula 10), y exige el aviso de derechos, el descargo y la nota de lo que
    se modificó (cláusulas 1 y 2): ver `aviso_icecat`.
+2. **El sitio oficial de la marca**, en `--marca`: un JSON por id de modelo con
+   la fuente, la URL, la fecha de consulta, las filas y, si los da, la caja y la
+   paleta. Va si Icecat no dio filas, **y también si las dos se contradicen** en la
+   resistencia, el cargador incluido o el Bluetooth (`cotejar`): la de Icecat puede
+   ser de otro mercado, como la del Moto G15 el 22/10/2026.
+
+Y completa las descripciones heredadas que la comparación dejó con la tarea
+`completar`: solo la ficha y la caja que les faltan (`completar`).
 
 Reparte el trabajo como lo reparte la skill: **la estructura y la tabla las
 arma el script** con los datos de la ficha oficial, y **la prosa la escribe una
@@ -52,7 +59,13 @@ from datetime import date
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from pendientes import necesita  # noqa: E402
+import descripciones  # noqa: E402
+from colores import SUPUESTO_PALETA_COMPLETA  # noqa: E402
+from pendientes import COMPLETAR, necesita  # noqa: E402
+
+# Lo que comparar_lista.py anota de una descripción heredada: se recalcula al completarla.
+ALERTA_DESCRIPCION = "descripción de la base:"
+AVISO_COTEJO = "la ficha de Icecat no coincide con la de la marca"
 
 LIMITE_META_TITULO = 60
 LIMITE_META_DESCRIPCION = 155
@@ -188,6 +201,96 @@ def notas_obligatorias(producto):
     return notas
 
 
+RE_IP = re.compile(r"\bIP\s?(\d{2}K?)\b", re.I)
+RE_BLUETOOTH = re.compile(r"Bluetooth\s*[®™]?\s*v?(\d+(?:\.\d+)?)", re.I)
+# Solo un cargador afirmado: «Adaptador USB-C a 3,5 mm», «Adaptador de SIM» o «Cargador no
+# incluido» no son un cargador en la caja (revisión del PR #268).
+RE_CARGADOR = re.compile(r"\bcargador\b|\badaptador (?:de corriente|de pared|de carga|AC)\b", re.I)
+RE_NO_INCLUIDO = re.compile(r"\bno\s+(?:se\s+)?inclu", re.I)
+
+
+def _version(v):
+    """«5» y «5.0» son la misma versión de Bluetooth."""
+    return v and str(float(v))
+
+
+def _trae_cargador(caja):
+    return any(RE_CARGADOR.search(c) and not RE_NO_INCLUIDO.search(c) for c in caja)
+
+
+def _datos_de_icecat(ficha):
+    por = {limpiar(e["atributo"]): limpiar(e["valor"]) for e in (ficha or {}).get("especificaciones") or []}
+    ip = RE_IP.search(por.get("Código IP (International Protection)", ""))
+    bt = re.match(r"v?(\d+(?:\.\d+)?)", por.get("Versión de Bluetooth", ""))
+    cargador = por.get("Adaptador AC incluido")
+    return {"IP": ip and f"IP{ip.group(1).upper()}",
+            "Bluetooth": bt and _version(bt.group(1)),
+            "cargador incluido": {"si": "sí", "sí": "sí", "no": "no"}.get((cargador or "").lower())}
+
+
+def _datos_de_marca(ficha, caja):
+    texto = " · ".join(limpiar(v) for v in ((ficha or {}).get("f") or {}).values())
+    ips = sorted({f"IP{m.upper()}" for m in RE_IP.findall(texto)})
+    bt = RE_BLUETOOTH.search(texto)
+    # La caja que publica la marca manda; la de la prosa, si la marca no la da.
+    caja = list((ficha or {}).get("caja") or caja or [])
+    return {"IP": ips, "Bluetooth": bt and _version(bt.group(1)),
+            "cargador incluido": (("sí" if _trae_cargador(caja) else "no") if caja else None)}
+
+
+def cotejar(ficha_icecat, ficha_marca, caja=None) -> list[str]:
+    """Lo que la ficha de Icecat dice distinto que la de la marca: resistencia, cargador y Bluetooth.
+
+    El 22/10/2026 la ficha de Icecat del Moto G15 era la de otro mercado —IP54 contra el IP52 de
+    Motorola Colombia, «adaptador incluido: No» cuando la caja trae cargador, Bluetooth 5.0— y
+    con Icecat primero se habría publicado una descripción que se contradice. Solo compara lo que
+    las dos fichas dicen.
+    """
+    if not ficha_icecat or not ficha_marca:
+        return []
+    ice, marca = _datos_de_icecat(ficha_icecat), _datos_de_marca(ficha_marca, caja)
+    difieren = []
+    if ice["IP"] and marca["IP"] and ice["IP"] not in marca["IP"]:
+        difieren.append(f"resistencia {ice['IP']} contra {', '.join(marca['IP'])}")
+    for dato in ("Bluetooth", "cargador incluido"):
+        if ice[dato] and marca[dato] and ice[dato] != marca[dato]:
+            difieren.append(f"{dato} {ice[dato]} contra {marca[dato]}")
+    return difieren
+
+
+def elegir_tabla(ficha_icecat, ficha_marca, caja=None):
+    """(filas, origen, avisos): Icecat primero (22/10/2026); la marca si Icecat no dio filas.
+
+    Si las dos existen y se contradicen (`cotejar`), manda la de la marca —es la del mercado que
+    se vende— y el aviso dice qué difería. `origen` es «Open Icecat», «marca» o None.
+    """
+    filas = tabla_icecat(ficha_icecat) if ficha_icecat else []
+    difieren = cotejar(ficha_icecat, ficha_marca, caja) if filas else []
+    filas_marca = tabla_mi(ficha_marca) if ficha_marca else []
+    if filas and not (difieren and filas_marca):
+        return filas, "Open Icecat", []
+    if filas_marca:
+        avisos = [f"{AVISO_COTEJO} ({'; '.join(difieren)}): se publicó la de la marca; la de Icecat puede ser "
+                  "de otro mercado"] if difieren else []
+        return filas_marca, "marca", avisos
+    return [], None, []
+
+
+def texto_de_tabla(filas):
+    return "\n".join(["| Atributo | Detalle |", "|---|---|"] + [f"| {a} | {b} |" for a, b in filas])
+
+
+def linea_de_fuente(origen, ficha_marca, fecha):
+    """La línea del pie que atribuye la ficha técnica."""
+    if origen == "Open Icecat":
+        return aviso_icecat(fecha)
+    if origen == "marca":
+        donde = ficha_marca.get("fuente") or "el sitio oficial del fabricante"
+        cuando = ficha_marca.get("fecha")
+        return f"Ficha técnica: {donde}" + (f", consultado el {cuando}." if cuando else ".")
+    return None
+
+
 def componer(producto, prosa, ficha_icecat, ficha_marca, fecha):
     partes = [prosa["apertura"].strip(), ""]
 
@@ -196,16 +299,9 @@ def componer(producto, prosa, ficha_icecat, ficha_marca, fecha):
         partes += ["## Características principales", ""]
         partes += [f"- {v}" for v in vinetas] + [""]
 
-    # Icecat primero (22/10/2026); la marca solo si Icecat no dio filas.
-    filas = tabla_icecat(ficha_icecat) if ficha_icecat else []
-    origen = "Open Icecat" if filas else None
-    if not filas and ficha_marca:
-        filas = tabla_mi(ficha_marca)
-        origen = "marca" if filas else None
-
+    filas, origen, _ = elegir_tabla(ficha_icecat, ficha_marca, prosa.get("caja"))
     if filas:
-        partes += ["## Ficha técnica", "", "| Atributo | Detalle |", "|---|---|"]
-        partes += [f"| {a} | {b} |" for a, b in filas] + [""]
+        partes += ["## Ficha técnica", "", texto_de_tabla(filas), ""]
 
     caja = prosa.get("caja") or []
     if caja:
@@ -216,17 +312,52 @@ def componer(producto, prosa, ficha_icecat, ficha_marca, fecha):
     partes += [f"- {n}" for n in (prosa.get("notas") or []) + notas_obligatorias(producto)]
     partes += [""]
 
-    fuentes = []
-    if origen == "Open Icecat":
-        fuentes.append(aviso_icecat(fecha))
-    elif origen == "marca":
-        donde = ficha_marca.get("fuente") or "el sitio oficial del fabricante"
-        cuando = ficha_marca.get("fecha")
-        fuentes.append(f"Ficha técnica: {donde}" + (f", consultado el {cuando}." if cuando else "."))
-    if fuentes:
-        partes += ["---", ""] + fuentes
+    fuente = linea_de_fuente(origen, ficha_marca, fecha)
+    if fuente:
+        partes += ["---", "", fuente]
 
     return "\n".join(partes).strip() + "\n"
+
+
+def completar(descripcion, ficha_icecat, ficha_marca, caja, fecha):
+    """(descripción, origen de la ficha, secciones agregadas, avisos del cotejo) de una heredada.
+
+    Inserta en su sitio solo lo que le falta y se puede afirmar con la fuente: la ficha técnica
+    —con el mismo orden de fuentes que `componer`— y el contenido de la caja. La apertura, las
+    viñetas y las notas no se tocan: las escribió una persona en otra lista, y reescribirlas sin
+    prosa nueva sería inventar.
+    """
+    faltan = descripciones.faltantes(descripcion)
+    agregadas, origen, avisos = [], None, []
+    if descripciones.FICHA in faltan:
+        filas, origen, avisos = elegir_tabla(ficha_icecat, ficha_marca, caja)
+        if filas:
+            descripcion = descripciones.insertar(descripcion, descripciones.FICHA, texto_de_tabla(filas),
+                                                 linea_de_fuente(origen, ficha_marca, fecha))
+            agregadas.append(descripciones.FICHA)
+    if descripciones.CAJA in faltan and caja:
+        pie = None
+        if ficha_marca and ficha_marca.get("caja"):
+            donde = ficha_marca.get("fuente") or "el sitio oficial del fabricante"
+            cuando = ficha_marca.get("fecha")
+            pie = f"Contenido de la caja: {donde}" + (f", consultado el {cuando}." if cuando else ".")
+        descripcion = descripciones.insertar(descripcion, descripciones.CAJA,
+                                             "\n".join(f"- {c}" for c in caja), pie)
+        agregadas.append(descripciones.CAJA)
+    return descripcion, (origen if descripciones.FICHA in agregadas else None), agregadas, avisos
+
+
+def _quitar_pendientes(grupo, faltan) -> None:
+    """Saca `completar` —y `ficha`, si ya hay ficha— del pendiente de lo que ya no le falta nada de
+    eso: una segunda corrida lo reportaba «sin fuente para completar» y icecat_local lo volvía a
+    buscar (revisión del PR #268)."""
+    for p in grupo:
+        pendiente = list(p.get("pendiente") or [])
+        if not faltan and COMPLETAR in pendiente:
+            pendiente.remove(COMPLETAR)
+        if descripciones.FICHA not in faltan and "ficha" in pendiente and p.get("descripcion"):
+            pendiente.remove("ficha")
+        p["pendiente"] = pendiente
 
 
 def fuente_ficha(origen_ficha, ficha_marca, fecha):
@@ -235,6 +366,32 @@ def fuente_ficha(origen_ficha, ficha_marca, fecha):
     if origen_ficha == "icecat":
         return {"fuente": "Open Icecat", "url": "https://icecat.biz", "fecha": fecha}
     return None
+
+
+def llevar_paletas(productos, marca) -> int:
+    """La paleta de `fichas-marca.json` a `colores_oficiales` de los modelos que no la tienen.
+
+    Es la paleta que publica la marca: la que la base guarda del modelo y la que el panel ofrece.
+    Antes se escribía a mano en el paso 4; el 22/10/2026 hubo que hacerlo en cuatro modelos con un
+    script suelto. No pisa una paleta que ya existe. Y si la lista no marca colores, deja dicho que
+    se sugiere la paleta completa (regla 13): `exportar_lista.py` la manda así al panel.
+    """
+    llevadas = 0
+    for p in productos:
+        entrada = marca.get(p.get("id_modelo") or p["id"]) or {}
+        if entrada.get("paleta") and not p.get("colores_oficiales"):
+            p["colores_oficiales"] = list(entrada["paleta"])
+            donde = entrada.get("fuente") or "el sitio oficial del fabricante"
+            nota = f"colores: la paleta que publica {donde}" + (f" ({entrada['fecha']})" if entrada.get("fecha") else "")
+            p["supuestos"] = list(dict.fromkeys((p.get("supuestos") or []) + [nota]))
+            llevadas += 1
+        if p.get("colores_oficiales") and not p.get("colores_familia"):
+            lista = p.setdefault("supuestos_lista", [])
+            if SUPUESTO_PALETA_COMPLETA not in lista:
+                lista.append(SUPUESTO_PALETA_COMPLETA)
+            if SUPUESTO_PALETA_COMPLETA not in (p.get("supuestos") or []):
+                p["supuestos"] = (p.get("supuestos") or []) + [SUPUESTO_PALETA_COMPLETA]
+    return llevadas
 
 
 def leer_icecat(dir_ice, ids):
@@ -285,15 +442,48 @@ def main():
         ficha_ice = leer_icecat(dir_ice, ids) if dir_ice and prosa.get("icecat") is not False else None
         referencia = grupo[0]
         descripcion = componer(referencia, prosa, ficha_ice, ficha_marca, a.fecha)
-        origen = "icecat" if ficha_ice and tabla_icecat(ficha_ice) else ("marca" if ficha_marca and tabla_mi(ficha_marca) else None)
-        fuente = fuente_ficha(origen, ficha_marca or {}, a.fecha)
+        _, origen, avisos = elegir_tabla(ficha_ice, ficha_marca, prosa.get("caja"))
+        fuente = fuente_ficha({"Open Icecat": "icecat"}.get(origen, origen), ficha_marca or {}, a.fecha)
         for p in grupo:
+            p["revisar"] = [r for r in p["revisar"] if not r.startswith(AVISO_COTEJO)] + avisos
             p["descripcion"] = descripcion
             p["meta_titulo"] = meta_titulo(p)
             p["meta_descripcion"] = meta_descripcion(p, prosa)
             p["fuentes_ficha"] = [fuente] if fuente else []
             p["revisar"] = [r for r in p["revisar"] if "sin descripcion" not in r]
         hechas += 1
+
+    paletas = llevar_paletas(datos["productos"], marca)
+
+    # Las heredadas que comparar_lista.py dejó por completar: solo las secciones que faltan.
+    por_completar = {}
+    for p in datos["productos"]:
+        if necesita(p, COMPLETAR) and not necesita(p, "descripcion") and p.get("descripcion"):
+            por_completar.setdefault(p.get("id_modelo") or p["id"], []).append(p)
+    completadas, sin_fuente = 0, []
+    for mid, grupo in por_completar.items():
+        ids = [mid] + [p["id"] for p in grupo]
+        prosa = next((prosas[i] for i in ids if i in prosas), {})
+        ficha_marca = marca.get(mid) or {}
+        ficha_ice = leer_icecat(dir_ice, ids) if dir_ice and prosa.get("icecat") is not False else None
+        caja = ficha_marca.get("caja") or prosa.get("caja") or []
+        if not descripciones.faltantes(grupo[0]["descripcion"]):
+            # Ya completa —una corrida anterior la completó—: no hay nada que buscar (revisión del PR #268).
+            _quitar_pendientes(grupo, descripciones.faltantes(grupo[0]["descripcion"]))
+            continue
+        texto, origen, agregadas, avisos = completar(grupo[0]["descripcion"], ficha_ice, ficha_marca, caja, a.fecha)
+        if not agregadas:
+            sin_fuente.append(grupo[0].get("titulo_modelo") or grupo[0]["titulo"])
+            continue
+        fuente = fuente_ficha({"Open Icecat": "icecat"}.get(origen, origen), ficha_marca, a.fecha)
+        for p in grupo:
+            p["descripcion"] = texto
+            if fuente and fuente not in (p.get("fuentes_ficha") or []):
+                p["fuentes_ficha"] = list(p.get("fuentes_ficha") or []) + [fuente]
+            p["revisar"] = [r for r in p["revisar"] if not r.startswith((ALERTA_DESCRIPCION, AVISO_COTEJO))]
+            p["revisar"] += [f"{ALERTA_DESCRIPCION} {d}" for d in descripciones.defectos(texto)] + avisos
+        _quitar_pendientes(grupo, descripciones.faltantes(texto))
+        completadas += 1
 
     for p in datos["productos"]:
         if p["titulo"] in sin_prosa and "sin descripcion" not in " ".join(p["revisar"]):
@@ -304,6 +494,13 @@ def main():
     Path(a.productos).write_text(json.dumps(datos, ensure_ascii=False, indent=2),
                                  encoding="utf-8")
     print(f"{hechas} modelos con descripción | {len(sin_prosa)} productos sin prosa autorada")
+    if paletas:
+        print(f"{paletas} productos con la paleta de fichas-marca.json")
+    if por_completar:
+        print(f"{completadas} descripciones heredadas completadas | {len(sin_fuente)} sin ficha ni caja con qué "
+              "completarlas")
+        for t in sin_fuente:
+            print("   sin fuente para completar:", t)
     largos = [p["titulo"] for p in datos["productos"]
               if len(p.get("meta_titulo") or "") > LIMITE_META_TITULO
               or len(p.get("meta_descripcion") or "") > LIMITE_META_DESCRIPCION]

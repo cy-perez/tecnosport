@@ -207,6 +207,12 @@ test("las tomas que se suben son las LISTA, en el orden de la tanda", () => {
   assert.throws(() => tomasListas(archivos, ["x_9.jpg"]), /ya no está/);
 });
 
+test("el tope es el del borrador en la API: la principal y las 9 de la galería", () => {
+  // BorradorTecnologia.TOPE_DE_FOTOS = 1 + Producto.TOPE_DE_GALERIA. Con 9 aquí, la décima foto
+  // LISTA de un modelo nunca llegaba al borrador aunque la API la admitía (22/10/2026).
+  assert.equal(TOPE_DE_FOTOS, 10);
+});
+
 test("nunca se suben más fotos de las que caben en el borrador", () => {
   const archivos = Array.from({ length: 12 }, (_, i) => ({ ruta: `/f/x_${i + 1}.jpg` }));
   const listas = archivos.map((a) => a.ruta.slice(3));

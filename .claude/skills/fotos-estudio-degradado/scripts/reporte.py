@@ -52,6 +52,37 @@ def estado_final(f: dict) -> str:
     return f["estado"]
 
 
+def problemas_de_principales(fotos: list, nombres: list) -> list:
+    """Por qué esas fotos no pueden ser principales a la vez: una por modelo, y ninguna REPETIR.
+
+    Desde el 22/10/2026 `marcar.py --principal` acepta varias en una llamada —cada llamada regenera
+    todas las hojas, unos 4 minutos, y elegir las portadas de una tanda de 56 modelos eran horas—."""
+    por_nombre = {f["nombre"]: f for f in fotos}
+    problemas, por_grupo = [], {}
+    for n in nombres:
+        f = por_nombre.get(n)
+        if f is None:
+            continue
+        por_grupo.setdefault(f.get("grupo") or "", []).append(n)
+        if estado_final(dict(f)) == "REPETIR":
+            problemas.append(f"{n}: está en REPETIR; la principal tiene que poderse publicar.")
+    for grupo, ns in por_grupo.items():
+        if len(ns) > 1:
+            problemas.append(f"{', '.join(ns)} son del mismo producto ({grupo or 'sin grupo'}): la principal es una "
+                             "por producto")
+    return problemas
+
+
+def poner_principal(fotos: list, f: dict) -> None:
+    """Una sola principal por producto: la que lo era deja de serlo. En las carpetas de modelo,
+    procesar_fichas.py la pone de primera en estado-fotos.json, y el borrador del panel la sube de
+    primera (la primera es la principal)."""
+    for otra in fotos:
+        if otra is not f and otra.get("grupo") == f.get("grupo") and otra.get("principal"):
+            otra["principal"] = None
+    f["principal"] = {"fecha": ahora()}
+
+
 def cargar(raiz: Path) -> dict:
     ruta = Path(raiz) / NOMBRE
     if ruta.exists():

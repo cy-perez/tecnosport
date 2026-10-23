@@ -295,6 +295,42 @@ def preparar(raiz: Path, solo=None) -> tuple:
     return copiadas, errores
 
 
+# Pistas de kit desde la ficha (22/10/2026): el Switch 2, el PartyBox Encore 2 y la Fly Go Pad «con
+# teclado y mouse» esperaron una corrida entera por piezas sueltas que la ficha ya anunciaba. Es una
+# pista para la persona, no una declaración: tres piezas también pueden ser dos productos.
+RE_PISTA_DE_KIT = re.compile(r"\bcon (?:teclado|mouse|rat[oó]n|l[aá]piz|joy-?con|micr[oó]fonos?|controles?)\b"
+                             r"|\bbundle\b|\bkit\b|\bcombo\b|\s\+\s", re.IGNORECASE)
+CATEGORIAS_DE_KIT = {"consolas"}
+
+
+def dato_de_ficha(carpeta: Path, *claves):
+    """El valor de una línea `CLAVE: valor` de la ficha que escribió listas-de-proveedor, o None."""
+    buscadas = {c.upper() for c in claves}
+    for f in carpeta.glob("*-ficha.txt"):
+        for linea in f.read_text(encoding="utf-8", errors="replace").splitlines():
+            clave, sep, valor = linea.partition(":")
+            if sep and clave.strip().upper() in buscadas:
+                return valor.strip() or None
+        return None
+    return None
+
+
+def pista_de_kit(carpeta: Path):
+    """Por qué el modelo parece venderse con piezas sueltas, o None."""
+    if (categoria_de(carpeta) or "") in CATEGORIAS_DE_KIT:
+        return "es una consola: su foto de catálogo suele mostrar los controles sueltos"
+    titulo = dato_de_ficha(carpeta, "MODELO") or carpeta.name
+    m = RE_PISTA_DE_KIT.search(titulo)
+    return f"el título dice «{m.group(0).strip()}»" if m else None
+
+
+def pistas_de_kit(raiz: Path, ids, kits=None) -> list:
+    """[(id, razón)] de los modelos que parecen un kit y no están declarados como tal."""
+    kits = kits or {}
+    return [(mid, razon) for mid, carpeta in modelos(raiz, set(ids)).items()
+            if mid not in kits and (razon := pista_de_kit(carpeta))]
+
+
 def leer_reporte(raiz: Path) -> dict:
     ruta = Path(raiz) / TRABAJO / "salida" / "reporte.json"
     return json.loads(ruta.read_text(encoding="utf-8")) if ruta.is_file() else {"fotos": []}
@@ -533,9 +569,7 @@ def evaluar(mid: str, carpeta: Path, reporte: dict, cfg: dict, kit: bool = False
     for original in buenas:
         foto = registro_de(original, mid, registros)
         if foto is None:
-            fallidas.append({"foto": original.name, "estado": SIN_PROCESAR,
-                             "motivo": "el retoque no la procesó: si es HEIC, falta pillow-heif "
-                                       "(pip install pillow-heif); si no, se reintenta en la próxima corrida"})
+            fallidas.append({"foto": original.name, "estado": SIN_PROCESAR, "motivo": motivo_sin_registro(original)})
             continue
         estado = foto.get("estado")
         # En un kit las piezas sueltas son el producto, sin tope; en audífonos (`par`), hasta
@@ -575,6 +609,28 @@ def evaluar(mid: str, carpeta: Path, reporte: dict, cfg: dict, kit: bool = False
     return {"listas": listas, "fallidas": fallidas, "aprobadas_a_ojo": aprobadas}
 
 
+def motivo_sin_registro(original: Path) -> str:
+    """Por qué una original no tiene registro en el reporte. Una HEIC sin pillow-heif es la causa de
+    siempre; cualquier otra —dos corridas que se pisaron el reporte (22/10/2026)— no tiene que ver
+    con HEIC, y decirlo mandaba a buscar donde no era."""
+    if original.suffix.lower() in (".heic", ".heif"):
+        return ("el retoque no la procesó: es HEIC y probablemente falta pillow-heif "
+                "(pip install pillow-heif); se reintenta en la próxima corrida")
+    return ("no tiene registro en el reporte de _estudio/salida —¿se pisaron dos corridas?—: "
+            "el modelo se rehace")
+
+
+def faltan_en_el_reporte(mid: str, carpeta: Path, registros) -> list:
+    """Las originales del modelo que no tienen registro en el reporte. Un modelo apto no se vuelve a
+    procesar mientras su carpeta no cambie, pero si otra corrida le borró los registros —la parte 12 de
+    la tanda del 22/10/2026 pisó el reporte de la 11— el veredicto sale con 0 LISTA y la tanda lo daba
+    por «sin fotos nuevas»: hay que rehacerlo, y en esta misma corrida."""
+    if registros is None:
+        return []
+    buenas, _ = unicas(carpeta)
+    return [f.name for f in buenas if registro_de(f, mid, registros) is None]
+
+
 def _evaluado_de_verdad(previo: dict) -> bool:
     """Si el estado guardado salió de mirar el reporte. Uno «por procesar», o con fotos que el
     retoque no procesó, no se puede dar por decidido aunque la carpeta no haya cambiado."""
@@ -583,7 +639,7 @@ def _evaluado_de_verdad(previo: dict) -> bool:
 
 
 def decidir(mid: str, carpeta, cfg: dict, reporte=None, medidor=medir, fecha_tanda=None,
-            sacados=None, kits=None) -> tuple:
+            sacados=None, kits=None, registros=None) -> tuple:
     """(estado del modelo, ¿hay que procesarlo?). Sin `reporte` solo decide lo que se sabe antes de procesar.
 
     Con `reporte` siempre recalcula el veredicto —salvo el de un modelo sacado—: lo que se marcó
@@ -613,7 +669,8 @@ def decidir(mid: str, carpeta, cfg: dict, reporte=None, medidor=medir, fecha_tan
                            f"{MINIMO_LISTA}: no se procesó"), False
 
     if reporte is None:
-        if mismo and previo.get("estado") in (APTO, EN_ESPERA) and _evaluado_de_verdad(previo):
+        if (mismo and previo.get("estado") in (APTO, EN_ESPERA) and _evaluado_de_verdad(previo)
+                and not faltan_en_el_reporte(mid, carpeta, registros)):
             return dict(previo, sin_cambios=previo.get("estado") == EN_ESPERA), False
         return dict(base, estado=EN_ESPERA, listas=[], faltan=MINIMO_LISTA, fallidas=antes["fallidas"],
                     motivo="por procesar"), True
@@ -747,27 +804,61 @@ def nombres_de(raiz: Path, ids) -> list:
     return nombres
 
 
+def partes(raiz: Path, ids: list, lote) -> list:
+    """Los modelos a procesar, repartidos en partes de modelos enteros de hasta `lote` fotos.
+
+    Un modelo se procesa entero —el lienzo depende de todas sus fotos—, así que uno más grande que el
+    lote va solo. Sin lote, una sola parte: el comportamiento de siempre. Existe por la tanda del
+    22/10/2026: 297 fotos en una sola llamada a procesar.py no caben en el límite de una terminal en
+    primer plano, y en segundo plano un reproceso de 83 ya había muerto por memoria (SKILL.md)."""
+    if not lote:
+        return [list(ids)] if ids else []
+    carpetas = modelos(raiz, set(ids))
+    salida, actual, n = [], [], 0
+    for mid in ids:
+        k = len(unicas(carpetas[mid])[0]) if mid in carpetas else 0
+        if actual and n + k > int(lote):
+            salida.append(actual)
+            actual, n = [], 0
+        actual.append(mid)
+        n += k
+    if actual:
+        salida.append(actual)
+    return salida
+
+
 def correr_tanda(raiz: Path, ids: list, cfg: dict, procesar_fn, solo_devolver=False, medidor=medir,
-                 fecha_tanda=None) -> list:
+                 fecha_tanda=None, lote=None) -> list:
     """Decide, procesa lo que haga falta, devuelve y vuelve a decidir. Escribe el estado de cada modelo.
 
     `procesar_fn(nombres)` corre el retoque sobre esas fotos y devuelve False si quedó en
-    segundo plano."""
+    segundo plano. Con `lote`, una llamada por parte (`partes`), en serie; se devuelve y se decide
+    una sola vez, al final."""
     por_id = modelos(raiz, set(ids))
     sacados = leer_sacados(raiz)
     kits = leer_kits(raiz)
     decisiones = {}
     if not solo_devolver:
-        decisiones = {mid: decidir(mid, por_id.get(mid), cfg, None, medidor, fecha_tanda, sacados)
+        registros = leer_reporte(raiz).get("fotos", [])
+        decisiones = {mid: decidir(mid, por_id.get(mid), cfg, None, medidor, fecha_tanda, sacados,
+                                   registros=registros)
                       for mid in ids}
         a_procesar = [mid for mid, (_, p) in decisiones.items() if p]
+        for mid, razon in pistas_de_kit(raiz, a_procesar, kits):
+            # Antes de procesar, para no esperar una corrida entera por las piezas sueltas.
+            print(f"[pista] {mid} parece un kit ({razon}). Si se vende con piezas sueltas: "
+                  f"--kit {mid} --motivo \"qué piezas trae\"")
         if a_procesar:
             copiadas, errores = preparar(raiz, set(a_procesar))
             for e in errores:
                 print(f"[error] {e}")
             print(f"{copiadas} foto(s) nuevas o cambiadas; se procesan enteros {len(a_procesar)} modelo(s)")
-            if procesar_fn(nombres_de(raiz, a_procesar)) is False:
-                return []   # quedó en segundo plano: se termina con --devolver
+            repartidos = partes(raiz, a_procesar, lote)
+            for i, parte in enumerate(repartidos, 1):
+                if len(repartidos) > 1:
+                    print(f"\n— parte {i} de {len(repartidos)}: {', '.join(parte)}", flush=True)
+                if procesar_fn(nombres_de(raiz, parte)) is False:
+                    return []   # quedó en segundo plano: se termina con --devolver
     devolver(raiz)
     reporte = leer_reporte(raiz)
     estados = []
@@ -780,6 +871,75 @@ def correr_tanda(raiz: Path, ids: list, cfg: dict, procesar_fn, solo_devolver=Fa
             escribir_estado(por_id[mid], {k: v for k, v in estado.items() if k != "sin_cambios"})
         estados.append(estado)
     return estados
+
+
+# --------------------------------------------------------------------------
+# Las portadas (22/10/2026)
+# --------------------------------------------------------------------------
+
+def filas_de_portadas(estados: list, sin_ficha=frozenset()) -> list:
+    """[(id, [nombres de sus LISTA en el orden en que se suben])] de los modelos aptos que van a
+    borrador. El primero es la principal: la portada del producto en el sitio."""
+    return [(e["modelo"], [slug(Path(x).stem) for x in e.get("listas") or []])
+            for e in estados if e.get("estado") == APTO and e["modelo"] not in set(sin_ficha)]
+
+
+def orden_de_portadas(filas: list, salida: Path) -> str:
+    """La portada actual de cada modelo y la orden para cambiar las que haga falta en una sola llamada."""
+    lineas = ["Portada de cada modelo (la primera es la que se sube de principal):"]
+    for mid, nombres in filas:
+        lineas.append(f"  {mid}: {nombres[0]}" + (f"   otras: {', '.join(nombres[1:])}" if nombres[1:] else ""))
+    lineas.append("Para cambiar portadas, una por modelo y en una sola llamada (las hojas se regeneran al final):")
+    lineas.append(f"  python \"{Path(__file__).with_name('marcar.py')}\" \"{salida}\" <nombre> <nombre> ... "
+                  "--principal --sin-hojas")
+    lineas.append(f"  python \"{Path(__file__).with_name('hojas.py')}\" \"{salida}\"")
+    lineas.append("Y vuelve a correr la tanda para que la nueva principal pase al frente de estado-fotos.json.")
+    return "\n".join(lineas)
+
+
+def hacer_portadas(salida: Path, filas: list, por_hoja: int = 8, lado: int = 180) -> list:
+    """`portadas-N.jpg` en la salida: una fila por modelo con sus LISTA numeradas, la principal
+    resaltada. Sale de las miniaturas que ya guardó el retoque; sin Pillow, no se arma y no pasa nada."""
+    try:
+        from PIL import Image, ImageDraw, ImageFont
+    except ImportError:
+        return []
+    try:
+        fuente = ImageFont.truetype("arial.ttf", 18)
+    except OSError:
+        fuente = ImageFont.load_default()
+    for vieja in Path(salida).glob("portadas-*.jpg"):
+        vieja.unlink()
+    rutas, maximo = [], max((len(n) for _, n in filas), default=0)
+    ancho = 20 + max(maximo, 1) * (lado + 12) + 20
+    for h in range(0, len(filas), por_hoja):
+        bloque = filas[h:h + por_hoja]
+        hoja = Image.new("RGB", (ancho, 20 + len(bloque) * (lado + 66)), "white")
+        d = ImageDraw.Draw(hoja)
+        for i, (mid, nombres) in enumerate(bloque):
+            y = 20 + i * (lado + 66)
+            d.text((20, y), mid, fill=(20, 20, 20), font=fuente)
+            for k, nombre in enumerate(nombres):
+                x = 20 + k * (lado + 12)
+                mini = Path(salida) / ".trabajo" / "miniaturas" / f"{nombre}-despues.jpg"
+                if mini.is_file():
+                    with Image.open(mini) as im:
+                        im = im.convert("RGB")
+                        im.thumbnail((lado, lado))
+                        hoja.paste(im, (x, y + 26))
+                color = (20, 125, 60) if k == 0 else (70, 70, 70)
+                d.rectangle([x - 3, y + 23, x + lado + 2, y + 26 + lado + 2], outline=color if k == 0 else (200, 200, 200),
+                            width=4 if k == 0 else 1)
+                d.text((x + 4, y + 28), f"{k + 1}{' principal' if k == 0 else ''}", fill=color, font=fuente)
+                etiqueta = nombre
+                while len(etiqueta) > 4 and d.textlength(etiqueta, font=fuente) > lado:
+                    etiqueta = etiqueta[2:]
+                d.text((x, y + 32 + lado), etiqueta if etiqueta == nombre else "…" + etiqueta[1:],
+                       fill=(90, 90, 90), font=fuente)
+        ruta = Path(salida) / f"portadas-{h // por_hoja + 1}.jpg"
+        hoja.save(ruta, quality=85)
+        rutas.append(ruta)
+    return rutas
 
 
 def retoque_en_curso(raiz: Path):
@@ -798,7 +958,160 @@ def retoque_en_curso(raiz: Path):
         return None
     if datos.get("pid") and not salidas.vivo(datos["pid"]):
         return None
+    if not datos.get("pid") and datos.get("estado") == "iniciando" and _minutos_desde(datos.get("inicio")) > 10:
+        # El hijo no llegó a escribir su pid —chocó con el candado o murió al arrancar— y el
+        # «iniciando» se quedaba para siempre (revisión del PR #268). Arrancar toma segundos.
+        return None
     return datos
+
+
+def _minutos_desde(cuando) -> float:
+    """Minutos desde una marca ISO; 0 si no se puede leer, para no soltar uno que sí arranca."""
+    import datetime as _dt
+    try:
+        t = _dt.datetime.fromisoformat(str(cuando))
+    except ValueError:
+        return 0.0
+    if t.tzinfo is None:
+        t = t.astimezone()
+    return (_dt.datetime.now(_dt.timezone.utc) - t).total_seconds() / 60
+
+
+# --------------------------------------------------------------------------
+# Validar antes de procesar (22/10/2026)
+# --------------------------------------------------------------------------
+
+def estimar_producto(ruta: Path):
+    """El lado del producto como lo mide la tanda para elegir el lienzo (`estimar_lado_producto`,
+    procesar.py), o None. Sin fondo de estudio esa medida es la foto entera, y así cuenta también
+    aquí: con el estimador «fiable» —el de la carga reducida— una foto sobre una mesa daba 0 LISTA
+    donde la tanda sí la procesa (revisión del PR #268). El estimador pide NumPy y Pillow; sin ellos
+    no se estima nada y la validación lo dice, en vez de inventar el número."""
+    try:
+        import estimador
+    except ImportError:
+        return None
+    try:
+        return estimador.estimar_lado_producto(ruta)
+    except Exception:
+        return None
+
+
+def validar(raiz: Path, ids, cfg: dict, medidor=medir, estimar=estimar_producto) -> dict:
+    """Lo que hay que saber de las originales antes de gastar un retoque, sin retocar nada.
+
+    Por modelo: los nombres que no siguen `<id>_N` —la convención de la skill de listas, que el
+    resto del flujo da por hecha—, los archivos de un formato que no se lee (hoy se ignoran sin
+    avisar), las fotos bajo el lado mínimo y cuántas LISTA se estiman en un lienzo de
+    LIENZO_MINIMO con el mismo estimador y la misma regla que usa la tanda. Y en toda la tanda, las
+    fotos idénticas en dos modelos: la Redmi Pad 2 bundle y la 4G compartían sus seis fotos.
+    Es lo que el 22/10/2026 se validó a mano, foto por foto, antes de procesar 297."""
+    minimo = lado_minimo(cfg)
+    por_modelo, huellas = {}, {}
+    for mid, carpeta in modelos(raiz, set(ids) if ids else None).items():
+        todos = sorted((f for f in (carpeta / ORIGINALES).iterdir() if f.is_file()),
+                       key=lambda f: orden_natural(f.name))
+        fotos = [f for f in todos if f.suffix.lower() in EXT_FOTO]
+        patron = re.compile(rf"{re.escape(mid)}_\d+")
+        lados = []
+        datos = {"carpeta": carpeta.name, "fotos": len(fotos),
+                 "nombres_fuera": [f.name for f in fotos if not patron.fullmatch(f.stem)],
+                 "no_admitidos": [f.name for f in todos if f.suffix.lower() not in EXT_FOTO
+                                  and not f.name.startswith(".")],
+                 "pequenas": []}
+        for f in fotos:
+            huellas.setdefault(huella_archivo(f), []).append(f"{carpeta.name}/{f.name}")
+            medida = medidor(f)
+            if medida is not None and max(medida) < minimo:
+                datos["pequenas"].append(f.name)
+            if estimar is not None:
+                lados.append(estimar(f) or 0)
+        datos["listas_estimadas"] = (salidas.listas_en(int(cfg["lienzo_minimo"]), lados, cfg)
+                                     if estimar is not None else None)
+        por_modelo[mid] = datos
+    duplicados = sorted(sorted(v) for v in huellas.values() if len({x.split("/")[0] for x in v}) > 1)
+    completa = all(d["listas_estimadas"] is None or d["listas_estimadas"] >= MINIMO_LISTA
+                   for d in por_modelo.values())
+    return {"modelos": por_modelo, "duplicados": duplicados, "completa": completa, "lado_minimo": minimo}
+
+
+def informe_validacion(v: dict) -> str:
+    lineas = []
+    for mid, d in v["modelos"].items():
+        est = d["listas_estimadas"]
+        ok = (est is None or est >= MINIMO_LISTA) and not (d["nombres_fuera"] or d["no_admitidos"])
+        texto = "sin estimar (falta NumPy o Pillow)" if est is None else f"{est} LISTA estimadas en {LIENZO_MINIMO}"
+        lineas.append(f"[{'OK' if ok else 'ATENCIÓN'}] {d['carpeta']} ({mid}) · {d['fotos']} fotos · {texto}")
+        if d["nombres_fuera"]:
+            lineas.append(f"    nombres que no siguen «{mid}_N»: {', '.join(d['nombres_fuera'])}")
+        if d["no_admitidos"]:
+            lineas.append(f"    formato que no se lee (no cuenta): {', '.join(d['no_admitidos'])}")
+        if d["pequenas"]:
+            lineas.append(f"    bajo el mínimo de {v['lado_minimo']} px (no puede salir LISTA): {', '.join(d['pequenas'])}")
+    por_modelos: dict = {}
+    for grupo in v["duplicados"]:
+        clave = tuple(sorted({x.split("/")[0] for x in grupo}))
+        por_modelos.setdefault(clave, []).append(" = ".join(x.split("/", 1)[1] for x in grupo))
+    for clave, iguales in por_modelos.items():
+        lineas.append(f"\n[aviso] {len(iguales)} foto(s) idénticas en {' y '.join(clave)}: si son productos "
+                      f"distintos, sus fotos deberían mostrar la diferencia ({'; '.join(iguales)})")
+    nombres = sum(len(d["nombres_fuera"]) for d in v["modelos"].values())
+    if nombres:
+        lineas.append(f"\n{nombres} foto(s) no siguen «<id>_N»: --renombrar las deja así en orden natural, en los "
+                      "modelos que todavía no tienen procesadas.")
+    lineas.append("\nVALIDACIÓN: " + ("todos los modelos pueden reunir sus " + str(MINIMO_LISTA) + " LISTA"
+                                       if v["completa"] else "hay modelos que no reúnen " + str(MINIMO_LISTA)
+                                       + " LISTA estimadas: faltan fotos de más resolución"))
+    return "\n".join(lineas)
+
+
+def renombrar(raiz: Path, ids) -> dict:
+    """Deja las originales de cada modelo como `<id>_N`, en orden natural, en dos pasos para que un
+    nombre no pise a otro, y escribe el registro en `_estudio/renombradas-<fecha>.json`.
+
+    Se niega en un modelo que ya tiene «Fotos procesadas» o `estado-fotos.json`: el nombre entra en
+    la huella de la carpeta, así que renombrar fuerza el reproceso y caduca las aprobaciones."""
+    hechas, negados = [], []
+    for mid, carpeta in modelos(raiz, set(ids) if ids else None).items():
+        procesadas = carpeta / PROCESADAS
+        if (carpeta / ESTADO).is_file() or (procesadas.is_dir() and any(procesadas.iterdir())):
+            negados.append(mid)
+            continue
+        # Las que ya siguen `<id>_N` conservan su número —la _1 es la portada por omisión, y la eligió
+        # la persona—; las demás toman los siguientes, en orden natural (revisión del PR #268).
+        patron = re.compile(rf"{re.escape(mid)}_(\d+)")
+        fotos = originales(carpeta)
+        usados = {int(m.group(1)) for f in fotos if (m := patron.fullmatch(f.stem))}
+        siguiente = max(usados, default=0)
+        plan = []
+        for f in fotos:
+            if patron.fullmatch(f.stem):
+                continue
+            siguiente += 1
+            plan.append((f, f.with_name(f"{mid}_{siguiente}{f.suffix.lower()}")))
+        temporales = [(f, f.with_name(f"__renombrando__{k}{f.suffix}"), n) for k, (f, n) in enumerate(plan)]
+        hechos = []                     # (desde, hasta) ya renombrados, para deshacer si algo falla
+        try:
+            for f, t, _ in temporales:
+                f.rename(t)
+                hechos.append((f, t))
+            for _, t, n in temporales:
+                t.rename(n)
+                hechos.append((t, n))
+        except OSError:
+            for desde, hasta in reversed(hechos):
+                try:
+                    hasta.rename(desde)
+                except OSError:
+                    pass
+            raise
+        hechas += [{"carpeta": carpeta.name, "antes": f.name, "despues": n.name} for f, n in plan]
+    archivo = None
+    if hechas:
+        archivo = Path(raiz) / TRABAJO / f"renombradas-{datetime.now().strftime('%Y-%m-%d-%H%M%S')}.json"
+        archivo.parent.mkdir(parents=True, exist_ok=True)
+        archivo.write_text(json.dumps(hechas, ensure_ascii=False, indent=2) + "\n", encoding="utf-8", newline="")
+    return {"renombradas": hechas, "negados": negados, "archivo": str(archivo) if archivo else None}
 
 
 def main() -> int:
@@ -808,6 +1121,9 @@ def main() -> int:
     ap.add_argument("--devolver", action="store_true",
                     help="solo copia a cada modelo lo que ya está en _estudio/salida (tras un --segundo-plano)")
     ap.add_argument("--segundo-plano", action="store_true", help="lanza procesar.py desacoplado y sale")
+    ap.add_argument("--lote", type=int, metavar="N",
+                    help="con --tanda: procesa por partes de modelos enteros de hasta N fotos, en serie y en "
+                         "primer plano (20 es un buen tamaño)")
     ap.add_argument("--sacar", metavar="ID", help="con --tanda: saca ese modelo de la tanda")
     ap.add_argument("--kit", metavar="ID", help="con --tanda: ese modelo se vende con piezas sueltas, y "
                                                 "sus fotos con varias piezas cuentan como LISTA")
@@ -816,8 +1132,29 @@ def main() -> int:
                                                        "los admita: lo que el recorte encierre vuelve al producto")
     ap.add_argument("--quitar-sin-huecos", metavar="ID", help="deshace un --sin-huecos")
     ap.add_argument("--motivo", help="con --sacar, --kit o --sin-huecos: por qué, queda escrito")
+    ap.add_argument("--validar", action="store_true",
+                    help="no retoca nada: informa nombres, formatos, duplicados y LISTA estimadas por modelo")
+    ap.add_argument("--renombrar", action="store_true",
+                    help="con --validar: deja las originales como <id>_N en orden natural (solo en modelos "
+                         "sin procesadas)")
     a = ap.parse_args()
     raiz = Path(a.fichas)
+    if a.lote is not None and (a.lote < 1 or a.segundo_plano):
+        ap.error("--lote pide un número positivo y va en primer plano: las partes corren una tras otra")
+    if a.renombrar and not a.validar:
+        ap.error("--renombrar va con --validar: primero se ve qué cambia")
+    if a.validar:
+        ids = leer_tanda(Path(a.tanda))[1] if a.tanda else None
+        if a.renombrar:
+            r = renombrar(raiz, ids)
+            print(f"{len(r['renombradas'])} foto(s) renombradas" + (f"; registro en {r['archivo']}" if r["archivo"] else ""))
+            for mid in r["negados"]:
+                print(f"[no se renombró] {mid}: ya tiene fotos procesadas o estado-fotos.json, y renombrar cambia "
+                      "la huella de la carpeta —fuerza el reproceso y caduca las aprobaciones—. Si de verdad hay "
+                      "que hacerlo, renómbralas a mano sabiendo eso.")
+        v = validar(raiz, ids, cargar_config())
+        print(informe_validacion(v))
+        return 0 if v["completa"] else SALIDA_EN_ESPERA
     if a.sin_huecos or a.quitar_sin_huecos:
         mid = a.sin_huecos or a.quitar_sin_huecos
         try:
@@ -877,7 +1214,8 @@ def main() -> int:
         # y lo elige la compuerta —el mayor escalón donde caben MINIMO_LISTA fotos LISTA—.
         compuerta = ["--lienzo-minimo", str(LIENZO_MINIMO), "--listas-minimas", str(MINIMO_LISTA)]
         procesar_fn = lambda nombres: correr(base + compuerta + sum((["--solo", n] for n in nombres), []))  # noqa: E731
-        estados = correr_tanda(raiz, ids, cfg, procesar_fn, solo_devolver=a.devolver, fecha_tanda=fecha)
+        estados = correr_tanda(raiz, ids, cfg, procesar_fn, solo_devolver=a.devolver, fecha_tanda=fecha,
+                               lote=a.lote)
         if not estados:
             return SALIDA_EN_ESPERA   # en segundo plano: la tanda todavía no está completa
         print(informe(estados, sin_ficha, salida=raiz / TRABAJO / "salida"))
@@ -895,6 +1233,15 @@ def main() -> int:
         if fuera:
             print(f"\n[aviso] {len(fuera)} carpeta(s) con fotos que no están en la tanda y no se procesaron "
                   "(no están en por-proponer.json): " + ", ".join(fuera))
+        espera = any(e["estado"] == EN_ESPERA and e["modelo"] not in sin_ficha for e in estados)
+        if not espera:
+            filas = filas_de_portadas(estados, sin_ficha)
+            if filas:
+                salida = raiz / TRABAJO / "salida"
+                rutas = hacer_portadas(salida, filas)
+                print("\n" + orden_de_portadas(filas, salida))
+                for r in rutas:
+                    print(f"  hoja de portadas: {r}")
         print(f"\nHojas de revisión: {raiz / TRABAJO / 'salida'}")
         # Un modelo sin ficha en la lista no detiene la entrega: el bloque 3 no puede hacerle
         # borrador de todas formas, y la tanda se entrega con lo que sí puede llegar al panel.

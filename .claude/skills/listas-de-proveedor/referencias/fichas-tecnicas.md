@@ -7,7 +7,10 @@ la publican en Colombia.
 
 El orden es siempre el mismo: Open Icecat (solo por código: la prosa no se
 escribe a partir de él) → sitio oficial del fabricante en Colombia, para lo que
-Icecat no cubra → la caja del producto. Nunca "de memoria". Icecat va primero
+Icecat no cubra → la caja del producto. Cuando están las dos y se contradicen en
+la resistencia IP, el cargador incluido o el Bluetooth, manda la de la marca y el
+aviso queda en `revisar` (`redactar_fichas.cotejar`): una ficha de Icecat puede
+ser la de otro mercado, como la del Moto G15 el 22/10/2026. Nunca "de memoria". Icecat va primero
 desde el 22/10/2026, por decisión del negocio: es la única fuente con licencia
 comercial expresa, y así a la marca solo se le pregunta lo que falta. La
 decisión del 08/10/2026 ponía la marca primero, después de leer los términos de
@@ -78,6 +81,14 @@ Comprobado así, las 26 referencias Xiaomi de la lista del 12/09/2026 tenían
 ficha, incluidas las que el listado no mostraba.
 
 **2. La ficha está en `/specs/`:** `https://www.mi.com/co/product/<slug>/specs/`.
+`fichas.slugs_de_mi` arma el slug desde el título —sin «Xiaomi» delante de Redmi y
+POCO, sin la red ni la conectividad, las pulgadas como `9-7-inch`— y da una
+alternativa con la red, porque mi.com no es del todo regular: el 22/10/2026 el POCO F9
+Ultra estaba en `poco-f9-ultra` y el Redmi Note 17 Pro Max en `redmi-note-17-pro-max-5g`.
+La ficha del modelo trae las dos URL. **Tiene que guardarse la pestaña Especificaciones,
+no la General**: la general no trae peso, caja ni configuraciones, y su título también
+dice «Todas las especificaciones», así que lo que distingue es la URL. `python3
+scripts/fuente_de_marca.py validar catalogo/4-entregables/fichas` lo comprueba.
 
 **3. Extraer emparejando etiqueta y valor.** Las páginas de celulares ponen el
 valor en la línea siguiente al encabezado, pero **las de wearables y accesorios

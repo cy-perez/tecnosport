@@ -137,6 +137,102 @@ class VersionDelRetoque(unittest.TestCase):
         self.assertEqual([caducada], segunda)
 
 
+class EscalaEnElBorde(unittest.TestCase):
+    """22/10/2026: el Xiaomi 17T _6 salió LISTA en procesar.py y verificar.py dijo que debía ser REVISAR.
+
+    procesar.py comparaba la escala sin redondear (1,5996 < 1,6: LISTA) y guardaba la redondeada
+    (1,6), que es la que lee verificar.py (1,6 ≥ 1,6: REVISAR). Se decide con la que se guarda."""
+
+    CFG = {"ampliacion_revisar": 1.6, "ampliacion_repetir": 3.0}
+
+    def test_lo_que_se_guarda_como_1_6_es_revisar(self):
+        self.assertEqual("REVISAR", salidas.estado_por_ampliacion(1.5996, self.CFG))
+
+    def test_justo_por_debajo_sigue_siendo_lista(self):
+        self.assertIsNone(salidas.estado_por_ampliacion(1.5994, self.CFG))
+
+    def test_el_borde_de_repetir_tambien(self):
+        self.assertEqual("REPETIR", salidas.estado_por_ampliacion(2.9996, self.CFG))
+
+    def test_y_coincide_con_lo_que_relee_verificar(self):
+        s = 1.59961
+        guardada = round(s, 3)
+        self.assertEqual(guardada >= self.CFG["ampliacion_revisar"],
+                         salidas.estado_por_ampliacion(s, self.CFG) == "REVISAR")
+
+
+class LoQueSobreviveAlReproceso(unittest.TestCase):
+    """22/10/2026: reprocesar un modelo borraba su principal y sus aprobaciones a ojo.
+
+    procesar.py armaba el registro nuevo con `revisada` en None y sin `principal`, así que un modelo
+    que cambiaba —y se reprocesa entero— perdía lo que la persona ya había decidido sobre sus fotos."""
+
+    PREVIO = {"huella_origen": "abc", "huella_config": "cfg-1200", "principal": {"fecha": "2026-10-22"},
+              "revisada": {"fecha": "2026-10-22", "nota": "revisada al 100 %"}}
+
+    def test_la_misma_foto_con_el_mismo_retoque_conserva_principal_y_aprobacion(self):
+        heredado = salidas.heredado_del_previo(self.PREVIO, "abc", "cfg-1200")
+        self.assertEqual(self.PREVIO["principal"], heredado["principal"])
+        self.assertEqual(self.PREVIO["revisada"], heredado["revisada"])
+
+    def test_otro_lienzo_o_otro_retoque_conserva_la_principal_y_no_la_aprobacion(self):
+        # La aprobación miró un resultado; con otro lienzo o retoque el resultado es otro. La
+        # principal es la toma, y la toma no cambió.
+        heredado = salidas.heredado_del_previo(self.PREVIO, "abc", "cfg-1600")
+        self.assertEqual(self.PREVIO["principal"], heredado["principal"])
+        self.assertIsNone(heredado["revisada"])
+
+    def test_otra_foto_con_el_mismo_nombre_no_hereda_nada(self):
+        self.assertEqual({"principal": None, "revisada": None},
+                         salidas.heredado_del_previo(self.PREVIO, "otra", "cfg-1200"))
+
+    def test_sin_registro_previo_no_hereda_nada(self):
+        self.assertEqual({"principal": None, "revisada": None}, salidas.heredado_del_previo({}, "abc", "cfg"))
+
+    def test_si_cambia_el_trato_sin_huecos_la_aprobacion_no_sobrevive(self):
+        # Revisión del PR #268: --sin-huecos cambia el recorte sin entrar en huella_config, y la
+        # aprobación vieja tapaba los motivos REVISAR nuevos del resultado distinto.
+        previo = dict(self.PREVIO, sin_huecos=False)
+        heredado = salidas.heredado_del_previo(previo, "abc", "cfg-1200", sin_huecos=True)
+        self.assertEqual(self.PREVIO["principal"], heredado["principal"])
+        self.assertIsNone(heredado["revisada"])
+        self.assertEqual(self.PREVIO["revisada"],
+                         salidas.heredado_del_previo(dict(previo, sin_huecos=True), "abc", "cfg-1200",
+                                                     sin_huecos=True)["revisada"])
+
+
+def _faltan_dependencias_del_retoque() -> bool:
+    """marcar.py revisa el entorno entero al arrancar y sale con 2 si falta algo: en la integración
+    continua no está instalado el retoque, y ahí las pruebas que lo lanzan se saltan."""
+    import importlib.util
+    return any(importlib.util.find_spec(m) is None
+               for m in ("numpy", "PIL", "cv2", "rembg", "onnxruntime", "pymatting"))
+
+
+@unittest.skipIf(_faltan_dependencias_del_retoque(), "marcar.py pide el entorno del retoque")
+class ExcluirQuitaLaAprobacion(unittest.TestCase):
+    """Revisión del PR #268: una zona excluida cambia el recorte; la aprobación miró el anterior."""
+
+    def test_excluir_limpia_la_aprobacion(self):
+        import json
+        import os
+        import subprocess
+        import tempfile
+        with tempfile.TemporaryDirectory() as tmp:
+            raiz = Path(tmp)
+            foto = {"nombre": "x-1", "grupo": "x", "estado": "REVISAR", "motivos_auto": [], "marcas": [],
+                    "revisada": {"fecha": "2026-10-22", "nota": "vista"}, "entrada": {}, "salidas": {}}
+            (raiz / "reporte.json").write_text(json.dumps({"fotos": [foto]}), encoding="utf-8")
+            r = subprocess.run([sys.executable, "-B", str(Path(__file__).resolve().parent.parent / "scripts" / "marcar.py"),
+                                str(raiz), "x-1", "--excluir", "10,10,50,50", "--sin-hojas"],
+                               capture_output=True, text=True, encoding="utf-8",
+                               env=dict(os.environ, PYTHONIOENCODING="utf-8"))
+            self.assertEqual(0, r.returncode, r.stdout + r.stderr)
+            [f] = json.loads((raiz / "reporte.json").read_text(encoding="utf-8"))["fotos"]
+            self.assertEqual([[10, 10, 50, 50]], f["exclusiones"])
+            self.assertIsNone(f["revisada"])
+
+
 
 class TamanoOriginal(unittest.TestCase):
     def test_una_foto_cargada_reducida_da_su_tamano_de_antes(self):

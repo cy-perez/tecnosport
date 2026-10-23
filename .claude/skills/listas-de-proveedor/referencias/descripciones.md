@@ -55,6 +55,16 @@ comparó en tres sitios: lo que convence es el dato exacto, no el adjetivo.
   declare.
 - Español neutro, medidas en el sistema métrico, precios en pesos.
 
+## La descripción es del modelo, no de una memoria
+
+Vale para todas las configuraciones del modelo: no dice «Esta versión trae 6 GB de
+RAM y 256 GB de almacenamiento» ni «el Galaxy A57 de 256 GB». La memoria y el color
+son variantes que el cliente elige. `descripciones.py` lo avisa siempre como
+«nombra una configuración»: el 22/10/2026 el Redmi 17 decía 6 GB también en su
+versión de 4 GB. La RAM sola no cuenta cuando es la misma en todas las memorias
+(el Moto G15 trae 4 GB en las tres), y la tabla de la ficha sí puede nombrar
+capacidades («microSD de hasta 1 TB»).
+
 ## Declaraciones que no se pueden omitir
 
 - **Equipos activados**: decir que la garantía del fabricante ya está corriendo y

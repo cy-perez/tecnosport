@@ -30,15 +30,33 @@ RE_PESO_O_MEDIDAS = re.compile(r"peso|dimensiones|medidas", re.I)
 RE_NOTA_PENDIENTE = re.compile(
     r"se le pidió al proveedor|por confirmar|queda(?:n)? pendientes?\b|no se afirma(?:n)? aquí", re.I)
 
+# La descripción es del modelo y vale para todas sus memorias: una frase que nombra una
+# configuración —«Esta versión trae 6GB de RAM física y 256GB de almacenamiento»— es falsa para
+# las demás. El 22/10/2026 el Redmi 17 decía 6GB también en su versión de 4GB, y nada lo avisó
+# porque la alerta solo saltaba cuando llegaba una memoria nueva. La RAM sola no cuenta: casi
+# siempre es del modelo entero (el Moto G15 trae 4 GB en las tres memorias).
+RE_CONFIGURACION = re.compile(
+    r"Esta versi[oó]n trae[^.\n]*|\d+\s?(?:GB|TB) de almacenamiento|\bde \d+\s?(?:GB|TB)\b", re.I)
+# «de N GB» solo fija la configuración si no es la RAM ni una tarjeta: «Memoria RAM de 8 GB»,
+# «microSD de 1 TB», «la versión de 4 GB de RAM» o «de hasta 2 TB» son del modelo entero o de lo que
+# admite (revisión del PR #268).
+RE_NO_ES_CONFIGURACION_ANTES = re.compile(r"(?:RAM|microSD|micro SD|tarjetas?|expandible|ampliable)\s*$", re.I)
+RE_NO_ES_CONFIGURACION_DESPUES = re.compile(r"^\s*(?:de\s+)?RAM\b", re.I)
+
+CARACTERISTICAS = "Características principales"
 FICHA = "Ficha técnica"
 GARANTIA = "Garantía y notas"
 CAJA = "Contenido de la caja"
+# El orden de las secciones de `referencias/descripciones.md`: una sección que se completa
+# entra en su sitio, no al final.
+ORDEN = (CARACTERISTICAS, FICHA, CAJA, GARANTIA)
 
 MARCADOR = "tiene un marcador [[ ]] o un TODO: se publicaría tal cual"
 SIN_GARANTIA = f"le falta la sección «{GARANTIA}», con las declaraciones que no se pueden omitir"
 SIN_FICHA = f"no tiene «{FICHA}»: falta la ficha oficial del fabricante"
 SIN_PESO = "la ficha técnica no dice peso ni dimensiones"
 SIN_CAJA = f"no tiene «{CAJA}»"
+NOMBRA_CONFIGURACION = "nombra una configuración"
 
 # Lo que deja al modelo fuera de la exportación. El resto se informa y sigue.
 BLOQUEAN = (MARCADOR,)
@@ -120,7 +138,77 @@ def defectos(texto: str) -> list[str]:
         hallados.append(SIN_PESO)
     if CAJA not in por_titulo or not por_titulo[CAJA].strip():
         hallados.append(SIN_CAJA)
+    frase = frase_de_configuracion(texto)
+    if frase:
+        hallados.append(f"{NOMBRA_CONFIGURACION} («{frase}»): la descripción es del modelo y vale para "
+                        "todas sus memorias")
     return hallados
+
+
+def frase_de_configuracion(texto: str):
+    """La primera frase de la prosa que nombra una configuración, o None.
+
+    Se busca fuera de la tabla y del pie: la ficha técnica sí puede decir «microSD de hasta 1 TB».
+    """
+    if not texto:
+        return None
+    inicio, secciones, _ = _partes(texto)
+    prosa = [inicio] + [c for t, c in secciones if t != FICHA]
+    lineas = [l for parte in prosa for l in parte.splitlines() if not l.strip().startswith("|")]
+    prosa_plana = "\n".join(lineas)
+    for m in RE_CONFIGURACION.finditer(prosa_plana):
+        if m.group(0).lower().startswith("de "):
+            antes = prosa_plana[max(0, m.start() - 20):m.start()]
+            despues = prosa_plana[m.end():m.end() + 12]
+            if RE_NO_ES_CONFIGURACION_ANTES.search(antes) or RE_NO_ES_CONFIGURACION_DESPUES.match(despues):
+                continue
+        return m.group(0).strip()[:80]
+    return None
+
+
+def faltantes(texto: str) -> list[str]:
+    """Las secciones que se pueden completar con datos de la marca o de Icecat: la ficha y la caja.
+
+    Las demás faltas —la garantía, una frase de configuración, un marcador— no se arreglan
+    insertando una sección: las corrige quien redacta.
+    """
+    if not texto or not texto.strip():
+        return []
+    _, secciones, _ = _partes(texto)
+    por_titulo = dict(secciones)
+    faltan = []
+    if FICHA not in por_titulo or not _filas(por_titulo[FICHA]):
+        faltan.append(FICHA)
+    if CAJA not in por_titulo or not por_titulo[CAJA].strip():
+        faltan.append(CAJA)
+    return faltan
+
+
+def insertar(texto: str, titulo: str, cuerpo: str, linea_de_pie: str | None = None) -> str:
+    """La descripción con la sección `titulo` en su sitio del ORDEN, y su fuente al pie.
+
+    No toca la apertura, las viñetas ni las demás secciones. Si la sección ya existía vacía, se
+    reemplaza. La línea de pie va después de las que ya había.
+    """
+    inicio, secciones, pie = _partes(texto)
+    secciones = [(t, c) for t, c in secciones if t != titulo]
+    nueva = (titulo, "\n\n" + cuerpo.strip("\n") + "\n\n")
+    posicion = ORDEN.index(titulo) if titulo in ORDEN else len(ORDEN)
+    i = next((k for k, (t, _) in enumerate(secciones)
+              if (ORDEN.index(t) if t in ORDEN else len(ORDEN)) > posicion), len(secciones))
+    secciones.insert(i, nueva)
+    lineas_pie = [l for l in pie.splitlines() if l.strip()]
+    if linea_de_pie and linea_de_pie not in lineas_pie:
+        # Una atribución vieja de la misma sección —«Ficha técnica: …» sin la sección, que `sanear`
+        # no quita si nada está vacío— se reemplaza, no se duplica (revisión del PR #268).
+        rotulo = linea_de_pie.split(":", 1)[0] + ":"
+        lineas_pie = [l for l in lineas_pie if not l.startswith(rotulo)]
+        lineas_pie.append(linea_de_pie)
+    partes = [inicio.rstrip("\n")] + [f"## {t}\n\n{c.strip(chr(10))}" for t, c in secciones]
+    resultado = "\n\n".join(p for p in partes if p.strip()) + "\n"
+    if lineas_pie:
+        resultado += "\n---\n\n" + "\n".join(lineas_pie) + "\n"
+    return resultado
 
 
 def bloqueantes(texto: str) -> list[str]:

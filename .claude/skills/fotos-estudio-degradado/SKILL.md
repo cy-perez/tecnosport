@@ -323,6 +323,20 @@ python3 "${CLAUDE_SKILL_DIR}/scripts/procesar_fichas.py" catalogo/4-entregables/
     --tanda catalogo/5-api/por-proponer.json
 ```
 
+**Una tanda grande va por partes** (22/10/2026): `--lote 20` reparte los modelos que hay
+que procesar en partes de modelos enteros de hasta 20 fotos y corre `procesar.py` una vez
+por parte, en serie; devuelve y decide una sola vez, al final. Un modelo más grande que el
+lote va solo. La tanda del 22/10 tenía 297 fotos: en una sola llamada no cabe en el
+límite de una terminal en primer plano, y un `procesar.py` de 83 fotos en segundo plano ya
+había muerto por memoria. Con `--lote` cada parte es un proceso aparte, así que la tanda
+entera puede correr en segundo plano —en Claude Code, con `run_in_background` del Bash—
+sin acumular memoria; `--lote` no se combina con `--segundo-plano`.
+
+```bash
+python3 "${CLAUDE_SKILL_DIR}/scripts/procesar_fichas.py" catalogo/4-entregables/fichas \
+    --tanda catalogo/5-api/por-proponer.json --lote 20
+```
+
 **La compuerta** (decisión del negocio del 10/10/2026): cada modelo necesita
 **4 fotos LISTA** en un lienzo de por lo menos **1200 px** —la mayor variante que
 sirve el sitio—. Una LISTA en un lienzo menor no cuenta: si el modelo no reúne
@@ -386,9 +400,41 @@ mayor no llega a 638 px (1200 × 0,85 / 1,6) no puede salir LISTA, porque el
 producto nunca mide más que la foto. Un modelo con menos de cuatro originales que
 puedan, espera sin procesarse.
 
+**Y antes de lanzar una tanda grande, `--validar`** (22/10/2026). No retoca nada; por
+modelo dice:
+- los nombres que no siguen `<id>_N`;
+- los archivos de un formato que no se lee, que la tanda ignora sin avisar;
+- las fotos bajo el lado mínimo;
+- cuántas LISTA se estiman en 1200, con el mismo estimador y la misma regla de la tanda.
+
+Y en toda la tanda, las fotos idénticas en dos modelos (la Redmi Pad 2 bundle y la 4G
+compartían sus seis). Sale con 3 si algún modelo no reúne cuatro. Con `--renombrar`
+deja las originales como `<id>_N` en orden natural y anota el cambio en
+`_estudio/renombradas-<fecha>.json`, pero solo en los modelos que todavía no tienen
+procesadas: el nombre entra en la huella de la carpeta, así que renombrar un modelo
+procesado fuerza su reproceso y caduca sus aprobaciones. El 22/10 se validaron 297
+fotos a mano antes de procesarlas; esto es eso mismo.
+
+```bash
+python3 "${CLAUDE_SKILL_DIR}/scripts/procesar_fichas.py" catalogo/4-entregables/fichas \
+    --tanda catalogo/5-api/por-proponer.json --validar [--renombrar]
+```
+
 **Un modelo que cambió se reprocesa entero**, no solo la foto nueva: el lienzo
 depende de todas las fotos del modelo, y una foto que se procesara sola elegiría el
-suyo.
+suyo. **La principal y las aprobaciones a ojo sobreviven al reproceso** (22/10/2026,
+`salidas.heredado_del_previo`): la principal mientras la foto de origen sea la misma, y
+la aprobación solo si además la configuración —lienzo y versión del retoque— es la
+misma, porque si no el resultado que se aprobó ya es otro. Hasta esa fecha un
+reproceso las borraba en silencio.
+
+**Una carpeta de salida, un proceso** (22/10/2026, `candado.py`). `procesar.py`,
+`marcar.py` y `hojas.py` toman un candado en `.trabajo/candado.json` con su pid, y se
+niegan si otro proceso vivo lo tiene; uno de un proceso que murió no bloquea. Dos a la
+vez se pisaban el reporte: la parte 12 de la tanda del 22/10 corrió mientras la 11
+seguía en segundo plano y borró del reporte sus 18 fotos. Y si aun así al reporte le
+faltan fotos que están en «Fotos originales», la tanda rehace ese modelo **en la misma
+corrida** en vez de darlo por «sin fotos nuevas» con 0 LISTA.
 
 Cada modelo queda con su `estado-fotos.json`: `apto`, `en_espera` —con cuántas
 LISTA le faltan y la razón de cada foto que falló— o `fuera_de_tanda`. El
@@ -459,7 +505,11 @@ productos distintos o la gama de colores, y eso lo decide una persona, no el scr
 Si en la hoja ves un modelo esperando solo por `varias_piezas`, pregúntale a la persona
 si es un kit; no lo declares por tu cuenta. Desde el 20/10/2026 el informe de la tanda lo sugiere
 con la orden lista para copiar («¿Es un kit? … --kit <id>»), y la hoja de revisión lo anota en esa
-foto: la sugerencia es para la persona, no para que la apliques.
+foto: la sugerencia es para la persona, no para que la apliques. **Y desde el 22/10/2026 la tanda
+avisa antes de procesar** (`[pista] … parece un kit`) cuando la ficha lo anuncia —categoría
+consolas, o un título con «con teclado», «con mouse», «bundle», «kit», « + »—: el Switch 2, el
+PartyBox Encore 2 y la Fly Go Pad «con teclado y mouse» esperaron una corrida entera por piezas
+sueltas que su ficha ya decía. Pregúntale a la persona antes de que corra el retoque.
 
 ```bash
 python3 "${CLAUDE_SKILL_DIR}/scripts/procesar_fichas.py" catalogo/4-entregables/fichas \
@@ -504,7 +554,19 @@ la `_1` que la persona descargó primero, no necesariamente la mejor toma
 frontal. Si en la revisión otra se ve mejor de portada, pregúntale a la persona
 y márcala: `marcar.py SALIDA <nombre> --principal`, y la siguiente corrida de la
 tanda la pone de primera. Una por producto; marcar otra le quita la marca a la
-anterior, y una REPETIR no puede ser principal.
+anterior, y una REPETIR no puede ser principal. **Varias en una sola llamada**, una
+por producto (`marcar.py SALIDA a-3 b-2 c-1 --principal`): cada llamada regenera todas
+las hojas —unos 4 minutos con una tanda de 300 fotos—, y elegir las portadas de 56
+modelos de a una eran casi cuatro horas. Para varias decisiones seguidas, `--sin-hojas`
+en cada llamada y `hojas.py SALIDA` al final. Y la principal sobrevive al reproceso de
+la misma foto (ver «Un modelo que cambió se reprocesa entero»).
+
+**Para elegirlas, la hoja de portadas** (22/10/2026). Cuando la tanda queda completa
+deja `_estudio/salida/portadas-N.jpg`, una fila por modelo con sus LISTA numeradas en
+el orden en que se suben y la principal resaltada, e imprime la portada actual de cada
+modelo con la orden de `marcar.py` lista para cambiarlas en una sola llamada.
+Muéstrasela a la persona: en la tanda del 22/10 ninguna de las 56 portadas se había
+elegido, y todas iban a ser la `_1` que se descargó primero.
 
 Con la revisión hecha:
 
@@ -764,6 +826,11 @@ siguen mirándose al 100 %.
 
 La foto mínima antes de procesar en la tanda bajó con él: 1200 × 0,85 / 1,6 =
 638 px. Si el material mejora, esto vuelve a 1,5.
+
+**El corte se aplica a la escala que se guarda**, redondeada a 3 decimales
+(`salidas.estado_por_ampliacion`, 22/10/2026). Hasta esa fecha `procesar.py` comparaba
+la de antes de redondear y guardaba la redondeada, que es la que relee `verificar.py`:
+el Xiaomi 17T _6, a 1,5996×, salió LISTA y la verificación dijo que debía ser REVISAR.
 
 ### Por qué el corte de ampliación está en 3× y no en 2×
 

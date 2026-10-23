@@ -68,8 +68,11 @@ const INVENTARIO = bandera("--inventario");
 const BORRADORES = bandera("--borradores");
 /** El mismo nombre que escribe `fotos-estudio-degradado/scripts/procesar_fichas.py`. */
 const ESTADO_FOTOS = "estado-fotos.json";
-/** El mismo tope que `BorradorTecnologia.TOPE_DE_FOTOS`: la principal y la galería entera. */
-export const TOPE_DE_FOTOS = 9;
+/**
+ * El mismo tope que `BorradorTecnologia.TOPE_DE_FOTOS` (1 + `Producto.TOPE_DE_GALERIA`): la
+ * principal y la galería entera. Estuvo en 9 hasta el 22/10/2026, una menos que la API.
+ */
+export const TOPE_DE_FOTOS = 10;
 
 async function pedir(ruta, opciones = {}) {
   const respuesta = await fetch(`${API}${ruta}`, {

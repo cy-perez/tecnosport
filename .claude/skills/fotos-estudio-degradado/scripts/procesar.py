@@ -67,6 +67,7 @@ import cv2  # noqa: E402
 import numpy as np  # noqa: E402
 from PIL import Image, UnidentifiedImageError, features  # noqa: E402
 
+import candado  # noqa: E402
 import estimador  # noqa: E402
 import hojas  # noqa: E402
 import imagen  # noqa: E402
@@ -200,7 +201,9 @@ def procesar_foto(ctx: Contexto, ruta: Path, nombre: str, previo: dict) -> dict:
            "procesada": reporte.ahora(), "huella_config": ctx.huella_config,
            "marcas": list(previo.get("marcas", [])) if misma else [],
            "exclusiones": list(previo.get("exclusiones", [])) if misma else [],
-           "revisada": None, "salidas": {}}
+           "revisada": None, "salidas": {}, "sin_huecos": bool(ctx.sin_huecos)}
+    # La principal y la aprobación a ojo sobreviven al reproceso de la misma foto (22/10/2026).
+    reg.update(salidas.heredado_del_previo(previo, huella, ctx.huella_config, ctx.sin_huecos))
     if previo and not misma:
         notas.append("Es otra foto para este nombre: se descartaron las marcas y exclusiones de la anterior.")
     reg["version_retoque"] = salidas.VERSION_RETOQUE
@@ -408,11 +411,12 @@ def procesar_foto(ctx: Contexto, ruta: Path, nombre: str, previo: dict) -> dict:
     # en px de la foto original, como las exclusiones: ampliar.py la dibuja sobre ella
     reg["caja_origen"] = {k: int(round(v / factor)) for k, v in
                           {"x0": x0, "y0": y0, "x1": x1, "y1": y1, "lado_mayor": lado0}.items()}
-    if s >= cfg["ampliacion_repetir"]:
+    por_ampliacion = salidas.estado_por_ampliacion(s, cfg)   # con la escala que se guarda, como verificar.py
+    if por_ampliacion == "REPETIR":
         motivo("REPETIR", "ampliacion", f"El producto se amplió {s:.2f}× (mide {lado0} px en la foto y necesita "
                                         f"≥ {necesario} px): se verá borroso. Repite la foto más cerca o con más "
                                         "resolución y envíala como documento, no como foto de WhatsApp.")
-    elif s >= cfg["ampliacion_revisar"]:
+    elif por_ampliacion == "REVISAR":
         motivo("REVISAR", "ampliacion", f"El producto se amplió {s:.2f}× (mide {lado0} px; lo ideal es ≥ {necesario} px): "
                                         "revisa la nitidez a tamaño real.")
     elif s > 1.005:
@@ -689,6 +693,8 @@ def registro_error(ctx: Contexto, ruta: Path, nombre: str, previo: dict, e: Base
         reg["huella_origen"] = imagen.huella_archivo(ruta)
     except OSError:
         pass
+    # Un error pasajero —la memoria— no le quita a la foto la principal que la persona eligió.
+    reg["principal"] = salidas.heredado_del_previo(previo, reg.get("huella_origen"), ctx.huella_config)["principal"]
     return reg
 
 
@@ -807,12 +813,23 @@ def main() -> int:
     a.sin_huecos = {slug(x) for grupo in a.sin_huecos for x in grupo.split(",") if x.strip()}
     if not a.entradas and not solo:
         p.error("indica fotos o carpetas (o --solo NOMBRES para reprocesar lo que ya está en el reporte)")
+    otro = candado.ocupante(raiz)
+    if otro:
+        # Antes de lanzar nada, ni en segundo plano: dos corridas a la vez se pisan el reporte.
+        print(candado.mensaje(raiz, otro))
+        return 1
     if a.segundo_plano:
         return lanzar_segundo_plano(raiz)
 
     avance = raiz / reporte.TRABAJO / "avance.json"
+    raiz.mkdir(parents=True, exist_ok=True)     # antes del candado, que no crea carpetas
     try:
-        return ejecutar(a, raiz, solo, avance)
+        with candado.Candado(raiz, "procesar.py"):
+            return ejecutar(a, raiz, solo, avance)
+    except candado.CarpetaOcupada as e:
+        # No se toca el avance: es del otro proceso.
+        print(e)
+        return 1
     except SystemExit:
         raise
     except BaseException as e:  # deja constancia para quien consulte --avance

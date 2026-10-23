@@ -35,7 +35,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from comparar_lista import colores_sugeridos  # noqa: E402
+from colores import colores_sugeridos  # noqa: E402
 import descripciones  # noqa: E402
 from parsear_lista import atributo_sim  # noqa: E402
 import rutas  # noqa: E402

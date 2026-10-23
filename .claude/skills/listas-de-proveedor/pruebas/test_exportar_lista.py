@@ -65,6 +65,15 @@ class Exportar(unittest.TestCase):
         lista, _ = exportar_lista.exportar(datos)
         self.assertEqual(["Azul claro"], lista["modelos"][0]["configuraciones"][0]["coloresSugeridos"])
 
+    def test_sin_emojis_va_la_paleta_completa_para_que_el_panel_la_premarque(self):
+        # Decisión del 22/10/2026 (regla 13): 62 de 63 configuraciones llegaban sin ningún color.
+        datos = {**DATOS, "productos": [producto(
+            "samsung-galaxy-a17-5g-8gb-ram-256gb-1-sim", "Samsung Galaxy A17 5G 8GB RAM 256GB 1 SIM",
+            atributos=["1 SIM"], colores_sugeridos=[], colores_familia=[],
+            colores_oficiales=["Negro", "Azul claro"])]}
+        lista, _ = exportar_lista.exportar(datos)
+        self.assertEqual(["Negro", "Azul claro"], lista["modelos"][0]["configuraciones"][0]["coloresSugeridos"])
+
     def test_un_id_que_no_cabe_se_queda_fuera_y_se_dice(self):
         largo = "x" * 61
         datos = {**DATOS, "productos": [producto(largo, "Equipo con nombre larguísimo")] + DATOS["productos"]}
