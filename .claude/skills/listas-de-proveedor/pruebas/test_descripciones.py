@@ -90,6 +90,13 @@ class NombraUnaConfiguracion(unittest.TestCase):
         texto = "El Moto G15 tiene 4 GB de RAM física.\n\n" + FICHA + CAJA + GARANTIA
         self.assertIsNone(descripciones.frase_de_configuracion(texto))
 
+    def test_la_ram_o_la_microsd_con_de_no_son_una_configuracion(self):
+        # Revisión del PR #268: «de N GB» atrapaba la RAM y la tarjeta en la prosa.
+        for frase in ("Trae Memoria RAM de 8 GB.", "Admite una microSD de 1 TB.", "La versión de 4 GB de RAM es rápida.",
+                      "Acepta tarjetas de hasta 1 TB.", "Con almacenamiento expandible de hasta 2 TB."):
+            texto = f"El equipo es un celular 4G. {frase}\n\n" + FICHA + CAJA + GARANTIA
+            self.assertIsNone(descripciones.frase_de_configuracion(texto), frase)
+
     def test_la_tabla_puede_nombrar_capacidades(self):
         ficha = ("## Ficha técnica\n\n| Atributo | Detalle |\n|---|---|\n| Expansión | microSD de 1 TB |\n"
                  "| Dimensiones y peso | 170 g |\n\n")

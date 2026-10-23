@@ -37,6 +37,11 @@ RE_NOTA_PENDIENTE = re.compile(
 # siempre es del modelo entero (el Moto G15 trae 4 GB en las tres memorias).
 RE_CONFIGURACION = re.compile(
     r"Esta versi[oó]n trae[^.\n]*|\d+\s?(?:GB|TB) de almacenamiento|\bde \d+\s?(?:GB|TB)\b", re.I)
+# «de N GB» solo fija la configuración si no es la RAM ni una tarjeta: «Memoria RAM de 8 GB»,
+# «microSD de 1 TB», «la versión de 4 GB de RAM» o «de hasta 2 TB» son del modelo entero o de lo que
+# admite (revisión del PR #268).
+RE_NO_ES_CONFIGURACION_ANTES = re.compile(r"(?:RAM|microSD|micro SD|tarjetas?|expandible|ampliable)\s*$", re.I)
+RE_NO_ES_CONFIGURACION_DESPUES = re.compile(r"^\s*(?:de\s+)?RAM\b", re.I)
 
 CARACTERISTICAS = "Características principales"
 FICHA = "Ficha técnica"
@@ -150,8 +155,15 @@ def frase_de_configuracion(texto: str):
     inicio, secciones, _ = _partes(texto)
     prosa = [inicio] + [c for t, c in secciones if t != FICHA]
     lineas = [l for parte in prosa for l in parte.splitlines() if not l.strip().startswith("|")]
-    m = RE_CONFIGURACION.search("\n".join(lineas))
-    return m.group(0).strip()[:80] if m else None
+    prosa_plana = "\n".join(lineas)
+    for m in RE_CONFIGURACION.finditer(prosa_plana):
+        if m.group(0).lower().startswith("de "):
+            antes = prosa_plana[max(0, m.start() - 20):m.start()]
+            despues = prosa_plana[m.end():m.end() + 12]
+            if RE_NO_ES_CONFIGURACION_ANTES.search(antes) or RE_NO_ES_CONFIGURACION_DESPUES.match(despues):
+                continue
+        return m.group(0).strip()[:80]
+    return None
 
 
 def faltantes(texto: str) -> list[str]:
