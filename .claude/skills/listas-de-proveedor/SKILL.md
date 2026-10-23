@@ -506,7 +506,10 @@ consulta y las filas: `{"samsung-galaxy-a57-5g": {"fuente": "samsung.com/co",
 "url": "https://…", "fecha": "2026-10-08", "f": {"Pantalla": "…", "Batería":
 "…"}}}`. Las filas de memoria se descartan solas: son de la configuración. Con
 `"caja": ["…", "…"]` lleva además el contenido de la caja que publica la marca, y
-con `"paleta": ["…"]` los colores que publica para el modelo.
+con `"paleta": ["…"]` los colores que publica para el modelo. Si la caja sale de
+otra página que la ficha —otro país de la misma marca, porque la de Colombia no la
+publica—, `"fuente_caja"` y `"fecha_caja"` la atribuyen bien en el pie: el Watch8
+del 22/10/2026 tenía la ficha en samsung.com/co y la caja solo en samsung.com/es.
 
 **Completar una descripción heredada** (tarea `completar`): `redactar_fichas.py`
 inserta en su sitio solo lo que falta —la tabla, con el mismo orden de fuentes, y
