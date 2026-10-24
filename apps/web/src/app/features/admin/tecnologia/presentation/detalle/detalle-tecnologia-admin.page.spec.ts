@@ -1,4 +1,4 @@
-import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
+import { ActivatedRoute, convertToParamMap, provideRouter, Router } from '@angular/router';
 import { TranslocoTestingModule } from '@jsverse/transloco';
 import { QueryClient, provideTanStackQuery } from '@tanstack/angular-query-experimental';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/angular';
@@ -310,7 +310,7 @@ describe('DetalleTecnologiaAdminPage', () => {
       expect(repositorio.ordenes).toEqual([
         { id: 'bt-1', fotoIds: ['foto-3', 'foto-1', 'foto-2', 'foto-4'] },
       ]);
-      expect(ordenDeFotos()).toEqual(['foto-3', 'foto-1', 'foto-2', 'foto-4']);
+      await waitFor(() => expect(ordenDeFotos()).toEqual(['foto-3', 'foto-1', 'foto-2', 'foto-4']));
     });
 
     it('bajar la primera la cambia con la segunda, y en los extremos no hay botón de más', async () => {
@@ -387,7 +387,7 @@ describe('DetalleTecnologiaAdminPage', () => {
             },
           },
         ]);
-        expect(ordenDeFotos().at(-1)).toBe('subida-1');
+        await waitFor(() => expect(ordenDeFotos().at(-1)).toBe('subida-1'));
       } finally {
         vi.unstubAllGlobals();
         crear.mockRestore();
@@ -481,6 +481,43 @@ describe('DetalleTecnologiaAdminPage', () => {
       await renderPagina(borradorTecnologiaDePrueba({ estado: 'APROBADO', productoId: 'prod-1' }));
 
       expect(screen.queryByRole('button', { name: FI.editar })).toBeNull();
+    });
+  });
+
+  describe('eliminar el borrador (24/10/2026)', () => {
+    const EL = esAdmin.tecnologia.eliminar;
+
+    it('pide confirmación, lo borra y vuelve a la bandeja diciendo cuál', async () => {
+      const { repositorio, fixture } = await renderPagina();
+      const router = fixture.debugElement.injector.get(Router);
+      const navegar = vi.spyOn(router, 'navigate').mockResolvedValue(true);
+
+      fireEvent.click(screen.getByRole('button', { name: EL.accion }));
+      expect(repositorio.eliminados).toEqual([]);
+      fireEvent.click(screen.getByRole('button', { name: EL.confirmar }));
+
+      await waitFor(() => expect(repositorio.eliminados).toEqual(['bt-1']));
+      await waitFor(() =>
+        expect(navegar).toHaveBeenCalledWith(['/', 'es', 'admin', 'tecnologia'], {
+          state: { borradorTecnologiaEliminado: 'Samsung Galaxy A17 5G' },
+        }),
+      );
+    });
+
+    it('cancelar no borra nada', async () => {
+      const { repositorio } = await renderPagina();
+
+      fireEvent.click(screen.getByRole('button', { name: EL.accion }));
+      fireEvent.click(screen.getByRole('button', { name: EL.cancelar }));
+
+      expect(screen.queryByRole('button', { name: EL.confirmar })).toBeNull();
+      expect(repositorio.eliminados).toEqual([]);
+    });
+
+    it('un aprobado no ofrece eliminarse', async () => {
+      await renderPagina(borradorTecnologiaDePrueba({ estado: 'APROBADO', productoId: 'prod-1' }));
+
+      expect(screen.queryByRole('button', { name: EL.accion })).toBeNull();
     });
   });
 

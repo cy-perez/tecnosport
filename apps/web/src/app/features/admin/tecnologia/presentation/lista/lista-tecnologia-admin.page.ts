@@ -1,4 +1,13 @@
-import { ChangeDetectionStrategy, Component, computed, effect, inject } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  ElementRef,
+  inject,
+  signal,
+  viewChild,
+} from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -10,10 +19,13 @@ import { OpcionSelect, TsSelect } from '../../../../../shared/ui/select/ts-selec
 import { TsSelectControl } from '../../../../../shared/ui/select/ts-select-control';
 import { TsEsqueleto } from '../../../../../shared/ts-esqueleto/ts-esqueleto';
 import { TsMigas } from '../../../../../shared/ts-migas/ts-migas';
+import { usarFoco } from '../../../../../shared/foco/foco';
 import { clasesDeEstadoBorrador } from '../../../borradores/presentation/estado-borrador';
 import { usarMigasAdmin } from '../../../migas-admin';
 import { usarProveedoresAdmin } from '../../../proveedores/application/listar-proveedores.consulta';
 import { usarListarBorradoresTecnologia } from '../../application/borradores-tecnologia.consulta';
+import { ESTADO_BORRADOR_ELIMINADO } from '../detalle/ts-eliminar-borrador-tecnologia';
+import { TsLimpiarBorradoresTecnologia } from './ts-limpiar-borradores-tecnologia';
 import {
   BorradorTecnologia,
   ESTADOS_BORRADOR_TECNOLOGIA,
@@ -38,6 +50,7 @@ function estadoDesde(valor: unknown): EstadoBorradorTecnologia {
     TranslocoPipe,
     TsBoton,
     TsEsqueleto,
+    TsLimpiarBorradoresTecnologia,
     TsMigas,
     TsSelect,
     TsSelectControl,
@@ -77,9 +90,20 @@ export class ListaTecnologiaAdminPage {
     () => new Map((this.proveedores.data() ?? []).map((p) => [p.id, p.nombre] as const)),
   );
 
+  /** El modelo cuyo borrador se acaba de borrar desde su revisión, si se llegó así. */
+  protected readonly eliminado = signal<string | null>(
+    (this.router.getCurrentNavigation()?.extras.state?.[ESTADO_BORRADOR_ELIMINADO] as
+      string | undefined) ?? null,
+  );
+  private readonly avisoEliminadoRef = viewChild<ElementRef<HTMLElement>>('avisoEliminadoRef');
+
   constructor() {
     // Con "atrás" del navegador cambia la URL y el desplegable tiene que seguirla.
     effect(() => this.estadoFiltro.setValue(this.estado(), { emitEvent: false }));
+    if (this.eliminado()) {
+      // El botón que se pulsó quedó en otra página: el foco va al aviso de lo que pasó.
+      usarFoco()(() => this.avisoEliminadoRef()?.nativeElement);
+    }
   }
 
   protected nombreDelProveedor(borrador: BorradorTecnologia): string {

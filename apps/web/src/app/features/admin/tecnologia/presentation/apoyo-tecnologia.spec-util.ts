@@ -81,6 +81,9 @@ export class RepositorioBorradoresTecnologiaFalso implements RepositorioBorrador
   readonly quitadas: { id: string; fotoId: string }[] = [];
   readonly ordenes: { id: string; fotoIds: readonly string[] }[] = [];
   readonly fichas: { id: string; descripcion: string | null }[] = [];
+  readonly eliminados: string[] = [];
+  /** Cuántos borra cada tanda del borrado en bloque. */
+  tandaDeBorrado = 100;
   /** Si se pone, editar la ficha revienta con esto. */
   falloAlEditarFicha: unknown = null;
   /** Si se pone, aprobar revienta con esto. */
@@ -164,6 +167,29 @@ export class RepositorioBorradoresTecnologiaFalso implements RepositorioBorrador
     const fotos = fotoIds.map((fid) => actual.fotos.find((f) => f.id === fid)!);
     this.reemplazar({ ...actual, fotos });
     return this.obtener(id);
+  }
+
+  async eliminar(id: string): Promise<void> {
+    const borrador = await this.obtener(id);
+    if (borrador.estado === 'APROBADO') {
+      throw new Error('aprobado');
+    }
+    this.eliminados.push(id);
+    this.borradores = this.borradores.filter((b) => b.id !== id);
+  }
+
+  async contarSinAprobar(): Promise<number> {
+    return this.borradores.filter((b) => b.estado !== 'APROBADO').length;
+  }
+
+  async eliminarSinAprobar(): Promise<{ eliminados: number; quedan: number }> {
+    const tanda = this.borradores
+      .filter((b) => b.estado !== 'APROBADO')
+      .slice(0, this.tandaDeBorrado);
+    for (const borrador of tanda) {
+      await this.eliminar(borrador.id);
+    }
+    return { eliminados: tanda.length, quedan: await this.contarSinAprobar() };
   }
 
   async editarFicha(id: string, descripcion: string | null): Promise<BorradorTecnologia> {

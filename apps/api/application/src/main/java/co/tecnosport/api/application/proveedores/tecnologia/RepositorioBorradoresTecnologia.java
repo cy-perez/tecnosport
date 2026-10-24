@@ -4,6 +4,7 @@ import co.tecnosport.api.domain.proveedores.BorradorTecnologia;
 import co.tecnosport.api.domain.proveedores.EstadoBorrador;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 /** Los borradores de tecnología: un modelo de la lista esperando a que alguien lo revise. */
@@ -33,4 +34,12 @@ public interface RepositorioBorradoresTecnologia {
 
   /** Del más reciente al más viejo. */
   List<BorradorTecnologia> listarPorEstado(EstadoBorrador estado);
+
+  /** Borra la fila; sus configuraciones y sus fotos se van en cascada. Los archivos, no. */
+  void eliminar(UUID id);
+
+  long contarEnEstados(Set<EstadoBorrador> estados);
+
+  /** Como mucho {@code limite}, del más viejo al más reciente. */
+  List<UUID> idsEnEstados(Set<EstadoBorrador> estados, int limite);
 }

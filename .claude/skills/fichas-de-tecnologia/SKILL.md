@@ -167,6 +167,14 @@ de esta skill. **Y una corrida de esta skill sobre un borrador que alguien
 reordenó o al que le subió fotos lo rehace entero** (otros hashes, otro orden):
 si ya se trabajó el borrador a mano, no se vuelve a correr sobre él.
 
+**Rehacer una tanda rechazando.** Un rechazado no se vuelve a proponer: rechazar
+es decidir que ese modelo no se vende. Para rehacer una tanda desde cero se
+**borran** los borradores (24/10/2026): «Borrar los no aprobados» en la bandeja de
+`/admin/tecnologia`, «Eliminar el borrador» en cada uno, o
+`DELETE /api/v1/admin/borradores-tecnologia/sin-aprobar` por tandas. Se van con
+sus fotos del bucket, y la siguiente corrida de esta skill los vuelve a crear.
+**Los aprobados no se borran**: son la constancia del producto publicado.
+
 **Correr los borradores de una lista vieja.** La API rechaza los de una fecha
 anterior a la última lista importada: le pondrían al borrador el costo de antes.
 Si pasa, el bloque 1 ya procesó una lista más nueva; se corre esta skill con la

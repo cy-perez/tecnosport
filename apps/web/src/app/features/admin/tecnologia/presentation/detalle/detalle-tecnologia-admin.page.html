@@ -244,5 +244,11 @@
         </div>
       </form>
     }
+
+    <!-- Borrar es la forma de rehacer una tanda desde cero; rechazar no, porque un rechazado no se
+         vuelve a proponer. Un aprobado es la constancia del producto publicado y no se borra. -->
+    @if (borrador.estado !== 'APROBADO') {
+      <ts-eliminar-borrador-tecnologia [borrador]="borrador" />
+    }
   }
 </section>

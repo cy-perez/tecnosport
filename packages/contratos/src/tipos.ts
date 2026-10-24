@@ -84,6 +84,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/borradores-tecnologia/sin-aprobar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["contarSinAprobar_1"];
+        put?: never;
+        post?: never;
+        delete: operations["eliminarSinAprobar_1"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/borradores-tecnologia/{id}": {
         parameters: {
             query?: never;
@@ -94,7 +110,7 @@ export interface paths {
         get: operations["ver_3"];
         put?: never;
         post?: never;
-        delete?: never;
+        delete: operations["eliminar_5"];
         options?: never;
         head?: never;
         patch: operations["elegir"];
@@ -606,7 +622,7 @@ export interface paths {
         get: operations["ver_6"];
         put?: never;
         post?: never;
-        delete: operations["eliminar_5"];
+        delete: operations["eliminar_6"];
         options?: never;
         head?: never;
         patch?: never;
@@ -782,7 +798,7 @@ export interface paths {
         get?: never;
         put?: never;
         post?: never;
-        delete: operations["eliminar_7"];
+        delete: operations["eliminar_8"];
         options?: never;
         head?: never;
         patch?: never;
@@ -1470,7 +1486,7 @@ export interface paths {
         get?: never;
         put?: never;
         post?: never;
-        delete: operations["eliminar_6"];
+        delete: operations["eliminar_7"];
         options?: never;
         head?: never;
         patch?: never;
@@ -4043,6 +4059,46 @@ export interface operations {
             };
         };
     };
+    contarSinAprobar_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["BorradoresSinAprobarRespuesta"];
+                };
+            };
+        };
+    };
+    eliminarSinAprobar_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["BorradoresEliminadosRespuesta"];
+                };
+            };
+        };
+    };
     ver_3: {
         parameters: {
             query?: never;
@@ -4062,6 +4118,26 @@ export interface operations {
                 content: {
                     "*/*": components["schemas"]["BorradorTecnologiaRespuesta"];
                 };
+            };
+        };
+    };
+    eliminar_5: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
@@ -4996,7 +5072,7 @@ export interface operations {
             };
         };
     };
-    eliminar_5: {
+    eliminar_6: {
         parameters: {
             query?: never;
             header?: never;
@@ -5286,7 +5362,7 @@ export interface operations {
             };
         };
     };
-    eliminar_7: {
+    eliminar_8: {
         parameters: {
             query?: never;
             header?: never;
@@ -6596,7 +6672,7 @@ export interface operations {
             };
         };
     };
-    eliminar_6: {
+    eliminar_7: {
         parameters: {
             query?: never;
             header?: never;

@@ -19,8 +19,11 @@ import {
 } from '../apoyo-tecnologia.spec-util';
 import { ListaTecnologiaAdminPage } from './lista-tecnologia-admin.page';
 
-async function renderPagina(borradores: BorradorTecnologia[] = []) {
-  return render(ListaTecnologiaAdminPage, {
+async function renderPagina(
+  borradores: BorradorTecnologia[] = [],
+  repositorio = new RepositorioBorradoresTecnologiaFalso(borradores),
+) {
+  const resultado = await render(ListaTecnologiaAdminPage, {
     imports: [
       TranslocoTestingModule.forRoot({
         langs: { es, en, 'admin/es': esAdmin } as never,
@@ -31,16 +34,14 @@ async function renderPagina(borradores: BorradorTecnologia[] = []) {
     providers: [
       provideRouter([]),
       provideTanStackQuery(new QueryClient({ defaultOptions: { queries: { retry: false } } })),
-      {
-        provide: REPOSITORIO_BORRADORES_TECNOLOGIA,
-        useValue: new RepositorioBorradoresTecnologiaFalso(borradores),
-      },
+      { provide: REPOSITORIO_BORRADORES_TECNOLOGIA, useValue: repositorio },
       {
         provide: REPOSITORIO_PROVEEDORES_ADMIN,
         useValue: new RepositorioProveedoresAdminFalso([proveedorDePrueba()]),
       },
     ],
   });
+  return { ...resultado, repositorio };
 }
 
 describe('ListaTecnologiaAdminPage', () => {
@@ -104,6 +105,53 @@ describe('ListaTecnologiaAdminPage', () => {
       [],
       expect.objectContaining({ queryParams: { estado: 'RECHAZADO' } }),
     );
+  });
+
+  describe('borrar los no aprobados (24/10/2026)', () => {
+    const LI = esAdmin.tecnologia.limpiar;
+    const aprobado = borradorTecnologiaDePrueba({
+      id: 'bt-ok',
+      titulo: 'OPPO A6k',
+      estado: 'APROBADO',
+      productoId: 'p-1',
+    });
+    const sinAprobar = [
+      borradorTecnologiaDePrueba(),
+      borradorTecnologiaDePrueba({ id: 'bt-2', titulo: 'JBL Flip 7' }),
+      borradorTecnologiaDePrueba({ id: 'bt-3', titulo: 'JBL Go 5', estado: 'RECHAZADO' }),
+    ];
+
+    it('dice cuántos hay, pide confirmación y los borra por tandas sin tocar los aprobados', async () => {
+      const repositorio = new RepositorioBorradoresTecnologiaFalso([...sinAprobar, aprobado]);
+      repositorio.tandaDeBorrado = 2;
+      await renderPagina([], repositorio);
+
+      expect(await screen.findByText(LI.explicacion.replace('{{cantidad}}', '3'))).toBeTruthy();
+      fireEvent.click(screen.getByRole('button', { name: LI.accion }));
+      expect(repositorio.eliminados).toEqual([]);
+      fireEvent.click(screen.getByRole('button', { name: LI.confirmar }));
+
+      expect(await screen.findByText(LI.hecho.replace('{{borrados}}', '3'))).toBeTruthy();
+      expect(repositorio.eliminados).toEqual(['bt-1', 'bt-2', 'bt-3']);
+      expect(await repositorio.listar('APROBADO')).toEqual([aprobado]);
+    });
+
+    it('cancelar no borra nada', async () => {
+      const { repositorio } = await renderPagina(sinAprobar);
+
+      fireEvent.click(await screen.findByRole('button', { name: LI.accion }));
+      fireEvent.click(screen.getByRole('button', { name: LI.cancelar }));
+
+      expect(screen.queryByRole('button', { name: LI.confirmar })).toBeNull();
+      expect(repositorio.eliminados).toEqual([]);
+    });
+
+    it('sin ninguno sin aprobar no ofrece borrar', async () => {
+      await renderPagina([aprobado]);
+
+      await screen.findByText(esAdmin.tecnologia.ninguno);
+      expect(screen.queryByRole('button', { name: LI.accion })).toBeNull();
+    });
   });
 
   it('no tiene violaciones de accesibilidad', async () => {

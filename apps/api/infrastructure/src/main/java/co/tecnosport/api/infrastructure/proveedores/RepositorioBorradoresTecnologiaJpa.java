@@ -17,7 +17,9 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Repository;
 
 @Repository
@@ -80,6 +82,25 @@ public class RepositorioBorradoresTecnologiaJpa implements RepositorioBorradores
     return jpa.findByEstadoOrderByCreadoEnDesc(estado.name()).stream()
         .map(RepositorioBorradoresTecnologiaJpa::aDominio)
         .toList();
+  }
+
+  @Override
+  public void eliminar(UUID id) {
+    jpa.deleteById(id);
+  }
+
+  @Override
+  public long contarEnEstados(Set<EstadoBorrador> estados) {
+    return jpa.countByEstadoIn(nombres(estados));
+  }
+
+  @Override
+  public List<UUID> idsEnEstados(Set<EstadoBorrador> estados, int limite) {
+    return jpa.idsEnEstados(nombres(estados), PageRequest.of(0, limite));
+  }
+
+  private static List<String> nombres(Set<EstadoBorrador> estados) {
+    return estados.stream().map(EstadoBorrador::name).toList();
   }
 
   private static BorradorTecnologiaJpaEntity aFila(BorradorTecnologia b, Instant ahora) {

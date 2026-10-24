@@ -1320,6 +1320,31 @@
       "guardada": "Description saved: it's the one that will be published on approval.",
       "vueltaALaSkill": "The description prepared by the skill will be published.",
       "errorGuardar": "The description couldn't be saved. Please try again."
+    },
+    "limpiar": {
+      "titulo": "Clear the inbox",
+      "explicacion": "There are {{cantidad}} unapproved draft(s): in review or rejected. You can delete them all to redo the batch with the product sheet skill.",
+      "accion": "Delete unapproved drafts",
+      "pregunta": "Delete the {{cantidad}} unapproved draft(s)?",
+      "loQueImplica": "They're deleted with their photos from private storage and can't be recovered. Approved drafts aren't touched. The models will be proposed again when you run the product sheet skill with the list.",
+      "confirmar": "Yes, delete them all",
+      "cancelar": "Cancel",
+      "borrando": "Deleting… {{borrados}} so far",
+      "hecho": "{{borrados}} unapproved draft(s) deleted.",
+      "error": "Not all of them could be deleted. The ones already deleted are gone; try again to finish.",
+      "ninguno": "None were deleted: someone else is deciding the remaining ones right now. Reload the page and try again."
+    },
+    "eliminar": {
+      "titulo": "Delete draft",
+      "explicacion": "Delete it to redo it from scratch with the product sheet skill. Rejecting it won't do that: a rejected draft isn't proposed again.",
+      "accion": "Delete draft",
+      "pregunta": "Delete the draft for {{modelo}}?",
+      "loQueImplica": "It's deleted with its photos from private storage and can't be recovered. The model will be proposed again when you run the product sheet skill with the list.",
+      "confirmar": "Yes, delete it",
+      "cancelar": "Cancel",
+      "eliminando": "Deleting…",
+      "hecho": "The draft for {{modelo}} was deleted.",
+      "error": "The draft couldn't be deleted. Please try again."
     }
   },
   "borradores": {

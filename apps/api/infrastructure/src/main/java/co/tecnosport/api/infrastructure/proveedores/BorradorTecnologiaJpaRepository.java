@@ -2,9 +2,11 @@ package co.tecnosport.api.infrastructure.proveedores;
 
 import co.tecnosport.api.infrastructure.proveedores.entidad.BorradorTecnologiaJpaEntity;
 import jakarta.persistence.LockModeType;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
@@ -28,4 +30,11 @@ public interface BorradorTecnologiaJpaRepository
       UUID proveedorId, String idModelo, String estado);
 
   List<BorradorTecnologiaJpaEntity> findByEstadoOrderByCreadoEnDesc(String estado);
+
+  long countByEstadoIn(Collection<String> estados);
+
+  @Query(
+      "select b.id from BorradorTecnologiaJpaEntity b where b.estado in :estados"
+          + " order by b.creadoEn, b.id")
+  List<UUID> idsEnEstados(@Param("estados") Collection<String> estados, Pageable pagina);
 }

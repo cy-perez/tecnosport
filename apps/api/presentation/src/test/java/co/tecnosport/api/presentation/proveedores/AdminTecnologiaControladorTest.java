@@ -26,6 +26,8 @@ import co.tecnosport.api.application.proveedores.tecnologia.AgregarFotoABorrador
 import co.tecnosport.api.application.proveedores.tecnologia.AprobarBorradorTecnologia;
 import co.tecnosport.api.application.proveedores.tecnologia.EditarBorradorTecnologia;
 import co.tecnosport.api.application.proveedores.tecnologia.EditarFichaBorradorTecnologia;
+import co.tecnosport.api.application.proveedores.tecnologia.EliminarBorradorTecnologia;
+import co.tecnosport.api.application.proveedores.tecnologia.EliminarBorradoresTecnologiaSinAprobar;
 import co.tecnosport.api.application.proveedores.tecnologia.FotosFirmadasDeBorradorTecnologia;
 import co.tecnosport.api.application.proveedores.tecnologia.ImportarListaDeTecnologia;
 import co.tecnosport.api.application.proveedores.tecnologia.ListarBorradoresTecnologia;
@@ -39,6 +41,7 @@ import co.tecnosport.api.application.proveedores.tecnologia.SolicitarSubidaDeFot
 import co.tecnosport.api.application.proveedores.tecnologia.VerBorradorTecnologia;
 import co.tecnosport.api.domain.catalogo.LineaCatalogo;
 import co.tecnosport.api.domain.catalogo.Producto;
+import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.proveedores.BorradorTecnologia;
 import co.tecnosport.api.domain.proveedores.EstadoBorrador;
 import co.tecnosport.api.domain.proveedores.FotoDeBorradorTecnologia;
@@ -58,6 +61,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -579,6 +583,61 @@ class AdminTecnologiaControladorTest {
   }
 
   @Test
+  void borrarUnBorradorSeLlevaSusArchivos() throws Exception {
+    UUID id = importarYTomarElBorrador();
+    String mayor = subir(id, "image/avif");
+    String menor = subir(id, "image/avif");
+    String vistaPrevia = subir(id, "image/jpeg");
+    mockMvc.perform(
+        post("/api/v1/admin/borradores-tecnologia/{id}/fotos", id)
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(cuerpoDeFoto(mayor, menor, vistaPrevia, "e".repeat(64))));
+
+    mockMvc
+        .perform(delete("/api/v1/admin/borradores-tecnologia/{id}", id))
+        .andExpect(status().isNoContent());
+
+    assertTrue(borradores.porId.isEmpty());
+    assertTrue(almacen.objetos.isEmpty(), "los tres archivos de la foto se fueron");
+    mockMvc
+        .perform(get("/api/v1/admin/borradores-tecnologia/{id}", id))
+        .andExpect(status().isNotFound());
+  }
+
+  @Test
+  void unAprobadoNoSeBorraY409() throws Exception {
+    UUID id = importarYTomarElBorrador();
+    conCuatroFotos(id);
+    BorradorTecnologia borrador = borradores.porId.get(id);
+    borrador.elegir(
+        List.of(
+            new BorradorTecnologia.Eleccion("a17-1-sim", List.of("Negro"), Dinero.deCop(849_900))));
+    borrador.aprobar(UUID.randomUUID());
+
+    mockMvc
+        .perform(delete("/api/v1/admin/borradores-tecnologia/{id}", id))
+        .andExpect(status().isConflict())
+        .andExpect(jsonPath("$.codigo").value("BORRADOR_TECNOLOGIA_NO_ELIMINABLE"));
+    assertTrue(borradores.porId.containsKey(id));
+  }
+
+  @Test
+  void elBorradoEnBloqueCuentaYBorraLosSinAprobar() throws Exception {
+    importarYTomarElBorrador();
+
+    mockMvc
+        .perform(get("/api/v1/admin/borradores-tecnologia/sin-aprobar"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.cantidad").value(1));
+    mockMvc
+        .perform(delete("/api/v1/admin/borradores-tecnologia/sin-aprobar"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.eliminados").value(1))
+        .andExpect(jsonPath("$.quedan").value(0));
+    assertTrue(borradores.porId.isEmpty());
+  }
+
+  @Test
   void unTipoQueNoEsImagenWebEs422() throws Exception {
     UUID id = importarYTomarElBorrador();
     mockMvc
@@ -700,6 +759,26 @@ class AdminTecnologiaControladorTest {
       return porId.values().stream()
           .filter(b -> b.estado() == estado)
           .sorted(Comparator.comparing(BorradorTecnologia::creadoEn).reversed())
+          .toList();
+    }
+
+    @Override
+    public void eliminar(UUID id) {
+      porId.remove(id);
+    }
+
+    @Override
+    public long contarEnEstados(Set<EstadoBorrador> estados) {
+      return porId.values().stream().filter(b -> estados.contains(b.estado())).count();
+    }
+
+    @Override
+    public List<UUID> idsEnEstados(Set<EstadoBorrador> estados, int limite) {
+      return porId.values().stream()
+          .filter(b -> estados.contains(b.estado()))
+          .sorted(Comparator.comparing(BorradorTecnologia::creadoEn))
+          .limit(limite)
+          .map(BorradorTecnologia::id)
           .toList();
     }
   }
@@ -831,6 +910,18 @@ class AdminTecnologiaControladorTest {
     @Bean
     EditarFichaBorradorTecnologia editarFichaBorradorTecnologia(BorradoresDoble borradores) {
       return new EditarFichaBorradorTecnologia(borradores);
+    }
+
+    @Bean
+    EliminarBorradorTecnologia eliminarBorradorTecnologia(
+        BorradoresDoble borradores, AlmacenDoble almacen) {
+      return new EliminarBorradorTecnologia(borradores, almacen);
+    }
+
+    @Bean
+    EliminarBorradoresTecnologiaSinAprobar eliminarBorradoresTecnologiaSinAprobar(
+        BorradoresDoble borradores, EliminarBorradorTecnologia eliminarBorrador) {
+      return new EliminarBorradoresTecnologiaSinAprobar(borradores, eliminarBorrador);
     }
 
     @Bean

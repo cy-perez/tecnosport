@@ -1,0 +1,70 @@
+<!-- Siempre en el DOM: la región viva cambia de contenido, no de existencia. Recibe el foco cuando la
+     caja de confirmación desaparece con el botón dentro. -->
+<p #avisoRef class="m-0 mb-16 text-ts-exito" role="status" tabindex="-1">
+  @if (aviso(); as texto) {
+    {{ texto }}
+  }
+</p>
+
+@if (cantidad() > 0 || confirmando()) {
+  <section
+    class="mb-24 flex flex-col gap-16 rounded-lg border border-ts-borde bg-ts-superficie p-16"
+    aria-labelledby="limpiar-tecnologia-titulo"
+  >
+    <h2 id="limpiar-tecnologia-titulo" class="m-0 font-display text-lg">
+      {{ 'admin.tecnologia.limpiar.titulo' | transloco }}
+    </h2>
+    <p class="m-0 text-ts-texto-suave">
+      {{ 'admin.tecnologia.limpiar.explicacion' | transloco: { cantidad: cantidad() } }}
+    </p>
+    <div>
+      <ts-boton
+        #boton
+        variante="secundario"
+        [expandido]="confirmando()"
+        controla="limpiar-tecnologia-confirmar"
+        (click)="preguntar()"
+      >
+        {{ 'admin.tecnologia.limpiar.accion' | transloco }}
+      </ts-boton>
+    </div>
+
+    @if (confirmando()) {
+      <div
+        #caja
+        id="limpiar-tecnologia-confirmar"
+        class="flex flex-col gap-16 border border-ts-borde-control p-16"
+        role="group"
+        tabindex="-1"
+        aria-labelledby="limpiar-tecnologia-pregunta"
+        aria-describedby="limpiar-tecnologia-implica"
+        (keydown.escape)="cancelar()"
+      >
+        <p id="limpiar-tecnologia-pregunta" class="m-0">
+          {{ 'admin.tecnologia.limpiar.pregunta' | transloco: { cantidad: cantidad() } }}
+        </p>
+        <p id="limpiar-tecnologia-implica" class="m-0 text-ts-texto-suave">
+          {{ 'admin.tecnologia.limpiar.loQueImplica' | transloco }}
+        </p>
+        @if (error(); as mensaje) {
+          <p class="m-0 text-ts-error" role="alert">{{ mensaje }}</p>
+        }
+        <div class="flex flex-wrap gap-16">
+          <ts-boton
+            variante="peligro"
+            [ocupado]="borrando()"
+            [etiquetaCargando]="
+              'admin.tecnologia.limpiar.borrando' | transloco: { borrados: borradosHastaAhora() }
+            "
+            (click)="confirmar()"
+          >
+            {{ 'admin.tecnologia.limpiar.confirmar' | transloco }}
+          </ts-boton>
+          <ts-boton variante="secundario" (click)="cancelar()">
+            {{ 'admin.tecnologia.limpiar.cancelar' | transloco }}
+          </ts-boton>
+        </div>
+      </div>
+    }
+  </section>
+}
