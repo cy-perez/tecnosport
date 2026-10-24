@@ -17,6 +17,7 @@ import co.tecnosport.api.application.proveedores.ApoyoDeIngesta.RepositorioProve
 import co.tecnosport.api.application.proveedores.tecnologia.AprobarBorradorTecnologia;
 import co.tecnosport.api.application.proveedores.tecnologia.AprobarBorradorTecnologiaComando;
 import co.tecnosport.api.application.proveedores.tecnologia.EditarBorradorTecnologia;
+import co.tecnosport.api.application.proveedores.tecnologia.EditarFichaBorradorTecnologia;
 import co.tecnosport.api.application.proveedores.tecnologia.ImportarListaDeTecnologia;
 import co.tecnosport.api.application.proveedores.tecnologia.ImportarListaDeTecnologiaComando;
 import co.tecnosport.api.application.proveedores.tecnologia.ImportarListaDeTecnologiaComando.Modo;
@@ -25,6 +26,7 @@ import co.tecnosport.api.application.proveedores.tecnologia.ListaDeTecnologiaDes
 import co.tecnosport.api.application.proveedores.tecnologia.ListaDeTecnologiaYaImportadaException;
 import co.tecnosport.api.application.proveedores.tecnologia.ProveedorSinListasException;
 import co.tecnosport.api.application.proveedores.tecnologia.RechazarBorradorTecnologia;
+import co.tecnosport.api.application.proveedores.tecnologia.ReordenarFotosBorradorTecnologia;
 import co.tecnosport.api.application.proveedores.tecnologia.RepositorioBorradoresTecnologia;
 import co.tecnosport.api.application.proveedores.tecnologia.RepositorioListasDeTecnologia;
 import co.tecnosport.api.application.proveedores.tecnologia.RepositorioVariantesDeProveedor;
@@ -51,6 +53,7 @@ import co.tecnosport.api.domain.proveedores.VarianteDeProveedor;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -518,6 +521,76 @@ class TecnologiaPorListasTest {
         "las demás van a la galería");
     // 4 fotos × (2 anchos + vista previa)
     assertEquals(12, publico.objetos.size());
+  }
+
+  // --- Lo que quien revisa edita del borrador (23/10/2026) --------------------------------------
+
+  /** Importa el A17, elige la de una SIM en negro y le pone sus cuatro fotos, sin aprobar. */
+  private BorradorTecnologia unA17ListoParaAprobar() {
+    proponer(LUNES, List.of(config(UNA_SIM, 675_000, "1 SIM")));
+    BorradorTecnologia borrador = enRevision();
+    new EditarBorradorTecnologia(borradores)
+        .ejecutar(
+            borrador.id(), List.of(new Eleccion(UNA_SIM, List.of("Negro"), Dinero.deCop(849_900))));
+    conCuatroFotos(enRevision());
+    return enRevision();
+  }
+
+  @Test
+  void aprobarPublicaLaFichaEditadaYNoLaDeLaSkill() {
+    BorradorTecnologia borrador = unA17ListoParaAprobar();
+
+    new EditarFichaBorradorTecnologia(borradores)
+        .ejecutar(borrador.id(), "El Galaxy A17 5G, sin la nota que no queremos publicar.");
+    Producto producto = aprobar(borrador.id());
+
+    assertEquals("El Galaxy A17 5G, sin la nota que no queremos publicar.", producto.descripcion());
+  }
+
+  @Test
+  void otraListaNoPisaLaFichaEditada() {
+    BorradorTecnologia borrador = unA17ListoParaAprobar();
+    new EditarFichaBorradorTecnologia(borradores).ejecutar(borrador.id(), "Editada a mano.");
+
+    proponer(JUEVES, List.of(config(UNA_SIM, 660_000, "1 SIM")));
+
+    assertEquals("Editada a mano.", enRevision().descripcion());
+  }
+
+  @Test
+  void laPrincipalQueSeEligeEnElPanelEsLaPrincipalDelProducto() {
+    BorradorTecnologia borrador = unA17ListoParaAprobar();
+    List<UUID> orden = new ArrayList<>(borrador.fotos().stream().map(f -> f.id()).toList());
+    Collections.reverse(orden);
+
+    new ReordenarFotosBorradorTecnologia(borradores).ejecutar(borrador.id(), orden);
+    Producto producto = aprobar(borrador.id());
+
+    assertEquals(
+        String.valueOf(BorradorTecnologia.MINIMO_DE_FOTOS).repeat(64),
+        producto.imagenPrincipal().orElseThrow().hash().valor(),
+        "la última que entró quedó primera");
+  }
+
+  @Test
+  void unBorradorRechazadoNoSeEditaNiSeReordena() {
+    BorradorTecnologia borrador = unA17ListoParaAprobar();
+    List<UUID> orden = borrador.fotos().stream().map(f -> f.id()).toList();
+    new RechazarBorradorTecnologia(borradores).ejecutar(borrador.id(), "No vendemos esta gama");
+
+    assertThrows(
+        BorradorNoEditableException.class,
+        () -> new EditarFichaBorradorTecnologia(borradores).ejecutar(borrador.id(), "Otra."));
+    assertThrows(
+        BorradorNoEditableException.class,
+        () -> new ReordenarFotosBorradorTecnologia(borradores).ejecutar(borrador.id(), orden));
+  }
+
+  @Test
+  void unBorradorQueNoExisteNoSeEdita() {
+    assertThrows(
+        BorradorNoEncontradoException.class,
+        () -> new EditarFichaBorradorTecnologia(borradores).ejecutar(UUID.randomUUID(), "Otra."));
   }
 
   @Test
