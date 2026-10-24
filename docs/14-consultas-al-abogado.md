@@ -521,6 +521,18 @@ sus titulares. No afirma tener licencia ni permiso de las marcas, y decir que
 son de sus titulares es reconocer que no son nuestras: es parte de lo que se
 pregunta.
 
+**Lo que cambió el 23 de octubre de 2026, y agrava la pregunta 3.** Por
+decisión del negocio, las fichas **dejaron de publicar sus fuentes**: ni el pie
+con la marca y la fecha consultada, ni el aviso de Icecat. Hasta ese día cada
+tabla de Icecat llevaba al pie el aviso literal, el descargo y la nota de
+modificación (`aviso_icecat`, retirado de `redactar_fichas.py` ese día). Desde
+entonces una tabla de Icecat se publica **sin las condiciones de las cláusulas
+1 y 2**, y el negocio lo decidió sabiéndolo. El 23/10/2026 ninguno de los cuatro
+productos de tecnología publicados en dev tenía una tabla de Icecat; de los 95
+modelos de la base de la ingesta, 29 sí la tienen, y saldrían así al publicarse.
+La fuente de cada tabla sigue registrada, sin publicarse, en `fuentes_ficha` de
+`conocidos.json`.
+
 **Las preguntas.**
 
 1. Si mostrar en la ficha de venta las fotos y especificaciones oficiales de un
@@ -531,8 +543,17 @@ pregunta.
    empeora la posición frente a la marca o frente a Icecat.
 3. Si la cláusula de licenciar igual lo derivado (cl. 2 de Icecat) alcanza las
    descripciones que se redactan a partir de sus fichas.
+4. Qué riesgo concreto corre la tienda por publicar tablas armadas con datos de
+   Open Icecat **sin** el aviso de derechos, el descargo y la nota de
+   modificación que piden sus cláusulas 1 y 2 (decisión del 23/10/2026), y si
+   basta con que el aviso esté en otra página del sitio —los términos, una página
+   de créditos— en vez de en cada ficha.
 
-**Qué cambia según la respuesta:** si el uso es defendible, nada. Si no, la
+**Qué cambia según la respuesta:** si el uso es defendible, nada. Para la
+pregunta 4: si un aviso general en otra página basta, se escribe ahí y las
+fichas siguen sin fuentes; si tiene que ir junto a los datos, **las tablas
+dejan de salir de Icecat** (`redactar_fichas.elegir_tabla` se queda con la de la
+marca) antes que volver a publicar el pie. Para las demás: si no, la
 skill deja de usar esa fuente —o la ficha se redacta sin ella— y las fotos de
 tecnología se toman en estudio de la unidad, como las de prendas; los
 numerales 4 y 13 de los términos vuelven a decir que son propias.

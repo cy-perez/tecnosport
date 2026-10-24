@@ -508,13 +508,15 @@ consulta y las filas: `{"samsung-galaxy-a57-5g": {"fuente": "samsung.com/co",
 `"caja": ["…", "…"]` lleva además el contenido de la caja que publica la marca, y
 con `"paleta": ["…"]` los colores que publica para el modelo. Si la caja sale de
 otra página que la ficha —otro país de la misma marca, porque la de Colombia no la
-publica—, `"fuente_caja"` y `"fecha_caja"` la atribuyen bien en el pie: el Watch8
-del 22/10/2026 tenía la ficha en samsung.com/co y la caja solo en samsung.com/es.
+publica—, `"fuente_caja"` y `"fecha_caja"` la atribuyen bien en `fuentes_ficha`: el
+Watch8 del 22/10/2026 tenía la ficha en samsung.com/co y la caja solo en
+samsung.com/es. **Ninguna fuente se publica** (23/10/2026, «Sin fuentes» en
+`referencias/descripciones.md`): todas van a `fuentes_ficha`, nunca al texto.
 
 **Completar una descripción heredada** (tarea `completar`): `redactar_fichas.py`
 inserta en su sitio solo lo que falta —la tabla, con el mismo orden de fuentes, y
 la caja, de `fichas-marca.json` o de `"caja"` en `prosa.json`— y agrega la fuente
-al pie. La apertura, las viñetas y las notas quedan como estaban. Si no hay fuente
+a `fuentes_ficha`. La apertura, las viñetas y las notas quedan como estaban. Si no hay fuente
 para completarla, no se toca y la salida lo dice («sin fuente para completar»).
 
 `traer` escribe además un `fotos/urls-icecat.csv` con enlaces de fotos: es una
