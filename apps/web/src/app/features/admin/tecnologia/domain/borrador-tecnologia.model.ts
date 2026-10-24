@@ -88,6 +88,12 @@ export interface FotoNuevaDeBorrador {
   readonly altEn: string;
 }
 
+/** Lo que dejó una tanda del borrado en bloque: el panel pide otra mientras `quedan` no sea cero. */
+export interface TandaDeBorradoresTecnologiaEliminados {
+  readonly eliminados: number;
+  readonly quedan: number;
+}
+
 export interface EleccionDeConfiguracion {
   readonly sku: string;
   readonly colores: readonly string[];

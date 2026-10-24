@@ -5,6 +5,7 @@ import {
   EleccionDeConfiguracion,
   EstadoBorradorTecnologia,
   FotoNuevaDeBorrador,
+  TandaDeBorradoresTecnologiaEliminados,
 } from './borrador-tecnologia.model';
 
 /**
@@ -24,6 +25,12 @@ export interface RepositorioBorradoresTecnologia {
   reordenarFotos(id: string, fotoIds: readonly string[]): Promise<BorradorTecnologia>;
   /** `null` vuelve a la ficha que preparó la skill. */
   editarFicha(id: string, descripcion: string | null): Promise<BorradorTecnologia>;
+  /** En revisión o rechazado, con sus fotos; uno aprobado no se borra. */
+  eliminar(id: string): Promise<void>;
+  /** Cuántos borraría el borrado en bloque: en revisión y rechazados. */
+  contarSinAprobar(): Promise<number>;
+  /** Una tanda del borrado en bloque. */
+  eliminarSinAprobar(): Promise<TandaDeBorradoresTecnologiaEliminados>;
 }
 
 export const REPOSITORIO_BORRADORES_TECNOLOGIA =

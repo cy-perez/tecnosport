@@ -10,6 +10,7 @@ import {
   EleccionDeConfiguracion,
   EstadoBorradorTecnologia,
   FotoNuevaDeBorrador,
+  TandaDeBorradoresTecnologiaEliminados,
 } from '../domain/borrador-tecnologia.model';
 import { RepositorioBorradoresTecnologia } from '../domain/repositorio-borradores-tecnologia.puerto';
 import { aBorradorTecnologia, aElegirPeticion } from './mapeador-borrador-tecnologia';
@@ -121,5 +122,25 @@ export class BorradoresTecnologiaHttpRepositorio implements RepositorioBorradore
       { params: { path: { id } }, body: descripcion === null ? {} : { descripcion } },
     );
     return aBorradorTecnologia(desempaquetar(respuesta, 'no se pudo guardar la ficha'));
+  }
+
+  async eliminar(id: string): Promise<void> {
+    const respuesta = await this.cliente.DELETE('/api/v1/admin/borradores-tecnologia/{id}', {
+      params: { path: { id } },
+    });
+    exigirExito(respuesta, 'no se pudo eliminar el borrador');
+  }
+
+  async contarSinAprobar(): Promise<number> {
+    const respuesta = await this.cliente.GET('/api/v1/admin/borradores-tecnologia/sin-aprobar');
+    return (
+      desempaquetar(respuesta, 'no se pudieron contar los borradores sin aprobar').cantidad ?? 0
+    );
+  }
+
+  async eliminarSinAprobar(): Promise<TandaDeBorradoresTecnologiaEliminados> {
+    const respuesta = await this.cliente.DELETE('/api/v1/admin/borradores-tecnologia/sin-aprobar');
+    const tanda = desempaquetar(respuesta, 'no se pudieron eliminar los borradores sin aprobar');
+    return { eliminados: tanda.eliminados ?? 0, quedan: tanda.quedan ?? 0 };
   }
 }
