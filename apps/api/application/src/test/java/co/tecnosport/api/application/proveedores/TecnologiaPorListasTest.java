@@ -520,6 +520,7 @@ class TecnologiaPorListasTest {
         url.startsWith("https://publico.local/productos/" + producto.id() + "/principal-"), url);
     assertTrue(url.endsWith(".avif"), url);
     assertTrue(principal.urlVistaPrevia().orElseThrow().endsWith(".jpg"));
+    assertTrue(principal.enLaFicha(), "la principal también abre la galería de la ficha");
     assertTrue(
         producto.galeria().getFirst().variantes().getFirst().url().contains("/galeria-"),
         "las demás van a la galería");

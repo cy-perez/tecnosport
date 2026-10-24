@@ -55,9 +55,9 @@ import java.util.UUID;
  * <p>Un borrador de un modelo nuevo crea el producto; uno de configuraciones nuevas las añade al
  * producto que ya existe. El producto nuevo <b>sale publicado</b> (ADR-0079): las fotos llegaron
  * con el borrador, quien aprueba ya las vio con los colores y el precio, y aprobar las copia del
- * bucket privado del proveedor al público —la primera como principal, las demás a la galería—. Las
- * variantes salen por {@link AgregarVariante}, para que el SKU, los atributos y el libro de
- * inventario sigan las mismas reglas que en el panel.
+ * bucket privado del proveedor al público —la primera como principal, que también se ve en la
+ * ficha, y las demás a la galería—. Las variantes salen por {@link AgregarVariante}, para que el
+ * SKU, los atributos y el libro de inventario sigan las mismas reglas que en el panel.
  *
  * <p><b>Solo se aprueba un borrador de la última lista que entró.</b> El inventario de cada lista
  * refresca el borrador en revisión —costo, configuraciones, colores—; uno que se quedó en una lista
@@ -236,8 +236,11 @@ public final class AprobarBorradorTecnologia {
                 ? null
                 : almacenDeImagenes.urlPublica(
                     copiar(producto.id(), principal, foto.referenciaVistaPrevia(), subidas));
+        // La principal entra también en la ficha (ADR-0082): las cuatro fotos retratan el mismo
+        // equipo en todos sus colores, y sin la casilla la ficha abría en la segunda y la que
+        // quien aprueba vio primero solo se veía en la tarjeta del catálogo.
         ImagenProducto imagen =
-            ImagenProducto.crear(
+            ImagenProducto.crearDeVariante(
                 principal ? TipoImagen.PRINCIPAL : TipoImagen.GALERIA,
                 principal ? 0 : producto.siguienteOrdenDeGaleria(),
                 variantes,
@@ -245,7 +248,10 @@ public final class AprobarBorradorTecnologia {
                 foto.alto(),
                 new HashContenido(foto.hash()),
                 foto.altEs(),
-                foto.altEn());
+                foto.altEn(),
+                null,
+                principal,
+                List.of());
         if (principal) {
           producto.asignarImagenPrincipal(imagen);
           repositorioProductos.guardarImagenPrincipal(producto.id(), imagen);
