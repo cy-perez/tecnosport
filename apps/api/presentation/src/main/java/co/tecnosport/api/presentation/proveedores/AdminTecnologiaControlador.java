@@ -6,6 +6,8 @@ import co.tecnosport.api.application.proveedores.tecnologia.AprobarBorradorTecno
 import co.tecnosport.api.application.proveedores.tecnologia.AprobarBorradorTecnologiaComando;
 import co.tecnosport.api.application.proveedores.tecnologia.EditarBorradorTecnologia;
 import co.tecnosport.api.application.proveedores.tecnologia.EditarFichaBorradorTecnologia;
+import co.tecnosport.api.application.proveedores.tecnologia.EliminarBorradorTecnologia;
+import co.tecnosport.api.application.proveedores.tecnologia.EliminarBorradoresTecnologiaSinAprobar;
 import co.tecnosport.api.application.proveedores.tecnologia.FotosFirmadasDeBorradorTecnologia;
 import co.tecnosport.api.application.proveedores.tecnologia.ImportarListaDeTecnologia;
 import co.tecnosport.api.application.proveedores.tecnologia.ListarBorradoresTecnologia;
@@ -22,6 +24,8 @@ import co.tecnosport.api.presentation.catalogo.dto.ProductoAdminRespuesta;
 import co.tecnosport.api.presentation.proveedores.dto.AgregarFotoBorradorTecnologiaPeticion;
 import co.tecnosport.api.presentation.proveedores.dto.AprobarBorradorTecnologiaPeticion;
 import co.tecnosport.api.presentation.proveedores.dto.BorradorTecnologiaRespuesta;
+import co.tecnosport.api.presentation.proveedores.dto.BorradoresEliminadosRespuesta;
+import co.tecnosport.api.presentation.proveedores.dto.BorradoresSinAprobarRespuesta;
 import co.tecnosport.api.presentation.proveedores.dto.EditarFichaBorradorTecnologiaPeticion;
 import co.tecnosport.api.presentation.proveedores.dto.ElegirConfiguracionesPeticion;
 import co.tecnosport.api.presentation.proveedores.dto.ImportacionTecnologiaRespuesta;
@@ -63,6 +67,12 @@ public class AdminTecnologiaControlador {
 
   private static final Logger log = LoggerFactory.getLogger(AdminTecnologiaControlador.class);
 
+  /**
+   * Borradores por tanda del borrado en bloque. Diez y no los cien de las prendas: cada uno lleva
+   * unas quince piezas en el bucket —cada foto con sus anchos y su vista previa—.
+   */
+  static final int TANDA_DE_BORRADO = 10;
+
   private final ImportarListaDeTecnologia importarLista;
   private final ListarBorradoresTecnologia listarBorradores;
   private final VerBorradorTecnologia verBorrador;
@@ -74,6 +84,8 @@ public class AdminTecnologiaControlador {
   private final QuitarFotoDeBorradorTecnologia quitarFoto;
   private final ReordenarFotosBorradorTecnologia reordenarFotos;
   private final EditarFichaBorradorTecnologia editarFicha;
+  private final EliminarBorradorTecnologia eliminarBorrador;
+  private final EliminarBorradoresTecnologiaSinAprobar eliminarSinAprobar;
   private final FotosFirmadasDeBorradorTecnologia fotosFirmadas;
   private final MapeadorRespuestasProductoAdmin mapeadorProducto;
   private final TransactionTemplate transaccion;
@@ -90,6 +102,8 @@ public class AdminTecnologiaControlador {
       QuitarFotoDeBorradorTecnologia quitarFoto,
       ReordenarFotosBorradorTecnologia reordenarFotos,
       EditarFichaBorradorTecnologia editarFicha,
+      EliminarBorradorTecnologia eliminarBorrador,
+      EliminarBorradoresTecnologiaSinAprobar eliminarSinAprobar,
       FotosFirmadasDeBorradorTecnologia fotosFirmadas,
       MapeadorRespuestasProductoAdmin mapeadorProducto,
       PlatformTransactionManager transactionManager) {
@@ -104,6 +118,8 @@ public class AdminTecnologiaControlador {
     this.quitarFoto = Objects.requireNonNull(quitarFoto);
     this.reordenarFotos = Objects.requireNonNull(reordenarFotos);
     this.editarFicha = Objects.requireNonNull(editarFicha);
+    this.eliminarBorrador = Objects.requireNonNull(eliminarBorrador);
+    this.eliminarSinAprobar = Objects.requireNonNull(eliminarSinAprobar);
     this.fotosFirmadas = Objects.requireNonNull(fotosFirmadas);
     this.mapeadorProducto = Objects.requireNonNull(mapeadorProducto);
     this.transaccion = new TransactionTemplate(Objects.requireNonNull(transactionManager));
@@ -132,6 +148,36 @@ public class AdminTecnologiaControlador {
     return listarBorradores.ejecutar(EstadoBorrador.valueOf(estado)).stream()
         .map(BorradorTecnologiaRespuesta::de)
         .toList();
+  }
+
+  /** Cuántos borraría el borrado en bloque —en revisión y rechazados—: el panel lo dice antes. */
+  @GetMapping("/borradores-tecnologia/sin-aprobar")
+  public BorradoresSinAprobarRespuesta contarSinAprobar() {
+    return new BorradoresSinAprobarRespuesta(eliminarSinAprobar.contar());
+  }
+
+  /**
+   * Una tanda del borrado en bloque de los borradores de tecnología sin aprobar, con sus fotos.
+   * Responde cuántos quedan; el panel repite mientras no sea cero. Los aprobados se quedan.
+   */
+  @DeleteMapping("/borradores-tecnologia/sin-aprobar")
+  public BorradoresEliminadosRespuesta eliminarSinAprobar() {
+    var resultado = transaccion.execute(estado -> eliminarSinAprobar.ejecutar(TANDA_DE_BORRADO));
+    log.warn(
+        "Borradores de tecnología sin aprobar eliminados: {} ({} archivos borrados del bucket,"
+            + " quedan {})",
+        resultado.eliminados(),
+        resultado.archivosBorrados(),
+        resultado.quedan());
+    return BorradoresEliminadosRespuesta.de(resultado);
+  }
+
+  /** Borra un borrador en revisión o rechazado con sus fotos; uno aprobado responde 409. */
+  @DeleteMapping("/borradores-tecnologia/{id}")
+  @ResponseStatus(HttpStatus.NO_CONTENT)
+  public void eliminar(@PathVariable UUID id) {
+    Integer objetos = transaccion.execute(estado -> eliminarBorrador.ejecutar(id));
+    log.warn("Borrador de tecnología eliminado: {} ({} archivos borrados del bucket)", id, objetos);
   }
 
   @GetMapping("/borradores-tecnologia/{id}")

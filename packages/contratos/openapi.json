@@ -5048,7 +5048,67 @@
         ]
       }
     },
+    "/api/v1/admin/borradores-tecnologia/sin-aprobar" : {
+      "delete" : {
+        "operationId" : "eliminarSinAprobar_1",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/BorradoresEliminadosRespuesta"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "admin-tecnologia-controlador"
+        ]
+      },
+      "get" : {
+        "operationId" : "contarSinAprobar_1",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/BorradoresSinAprobarRespuesta"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "admin-tecnologia-controlador"
+        ]
+      }
+    },
     "/api/v1/admin/borradores-tecnologia/{id}" : {
+      "delete" : {
+        "operationId" : "eliminar_5",
+        "parameters" : [
+          {
+            "in" : "path",
+            "name" : "id",
+            "required" : true,
+            "schema" : {
+              "format" : "uuid",
+              "type" : "string"
+            }
+          }
+        ],
+        "responses" : {
+          "204" : {
+            "description" : "No Content"
+          }
+        },
+        "tags" : [
+          "admin-tecnologia-controlador"
+        ]
+      },
       "get" : {
         "operationId" : "ver_3",
         "parameters" : [
@@ -6427,7 +6487,7 @@
     },
     "/api/v1/admin/ingestas/{id}" : {
       "delete" : {
-        "operationId" : "eliminar_5",
+        "operationId" : "eliminar_6",
         "parameters" : [
           {
             "in" : "path",
@@ -6863,7 +6923,7 @@
     },
     "/api/v1/admin/pedidos/{id}" : {
       "delete" : {
-        "operationId" : "eliminar_7",
+        "operationId" : "eliminar_8",
         "parameters" : [
           {
             "in" : "path",
@@ -8806,7 +8866,7 @@
     },
     "/api/v1/admin/sets-rotacion/{id}" : {
       "delete" : {
-        "operationId" : "eliminar_6",
+        "operationId" : "eliminar_7",
         "parameters" : [
           {
             "in" : "path",

@@ -97,6 +97,7 @@ import co.tecnosport.api.application.proveedores.TallaDelProveedorDesconocidaExc
 import co.tecnosport.api.application.proveedores.TallasDeCadaTonoDesconocidasException;
 import co.tecnosport.api.application.proveedores.TipoDeExportacionNoAdmitidoException;
 import co.tecnosport.api.application.proveedores.TipoDeFotoNoAdmitidoException;
+import co.tecnosport.api.application.proveedores.tecnologia.BorradorTecnologiaNoEliminableException;
 import co.tecnosport.api.application.proveedores.tecnologia.InventarioDeLaListaPendienteException;
 import co.tecnosport.api.application.proveedores.tecnologia.ListaDeTecnologiaDesactualizadaException;
 import co.tecnosport.api.application.proveedores.tecnologia.ListaDeTecnologiaYaImportadaException;
@@ -422,6 +423,13 @@ public class ManejadorDeErrores {
   @ExceptionHandler(ProductoSinDescripcionException.class)
   public ProblemDetail productoSinDescripcion(ProductoSinDescripcionException excepcion) {
     return problema(HttpStatus.UNPROCESSABLE_CONTENT, "Falta la descripción", excepcion);
+  }
+
+  // 409: un borrador de tecnología aprobado es la constancia del producto publicado.
+  @ExceptionHandler(BorradorTecnologiaNoEliminableException.class)
+  public ProblemDetail borradorTecnologiaNoEliminable(
+      BorradorTecnologiaNoEliminableException excepcion) {
+    return problema(HttpStatus.CONFLICT, "El borrador no se puede borrar", excepcion);
   }
 
   // 409: aprobado o renovación. Es la huella con que la ingesta reconoce el producto.
