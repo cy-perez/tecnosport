@@ -29,6 +29,7 @@ import { hojasConRuta } from '../../../../catalogo/domain/arbol-categorias';
 import { claveDeLinea } from '../../../../catalogo/domain/filtro-productos.model';
 import { clasesDeEstadoBorrador } from '../../../borradores/presentation/estado-borrador';
 import { usarMigasAdmin } from '../../../migas-admin';
+import { TsEliminarBorradorTecnologia } from './ts-eliminar-borrador-tecnologia';
 import { TsFichaBorradorTecnologia } from './ts-ficha-borrador-tecnologia';
 import { TsFotosBorradorTecnologia } from './ts-fotos-borrador-tecnologia';
 import { usarProveedoresAdmin } from '../../../proveedores/application/listar-proveedores.consulta';
@@ -88,6 +89,7 @@ interface ControlesDeConfiguracion {
     TsCampo,
     TsCheckbox,
     TsEsqueleto,
+    TsEliminarBorradorTecnologia,
     TsFichaBorradorTecnologia,
     TsFotosBorradorTecnologia,
     TsMigas,

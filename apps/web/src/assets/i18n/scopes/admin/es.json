@@ -1320,6 +1320,31 @@
       "guardada": "Ficha guardada: es la que se publicará al aprobar.",
       "vueltaALaSkill": "Se publicará la ficha que preparó la skill.",
       "errorGuardar": "No se pudo guardar la ficha. Inténtalo de nuevo."
+    },
+    "limpiar": {
+      "titulo": "Limpiar la bandeja",
+      "explicacion": "Hay {{cantidad}} borrador(es) sin aprobar: en revisión o rechazados. Puedes borrarlos todos para rehacer la tanda con la skill de fichas.",
+      "accion": "Borrar los no aprobados",
+      "pregunta": "¿Borrar los {{cantidad}} borrador(es) sin aprobar?",
+      "loQueImplica": "Se borran con sus fotos del almacenamiento privado y no se pueden recuperar. Los aprobados no se tocan. Los modelos vuelven a proponerse cuando corras otra vez la skill de fichas con la lista.",
+      "confirmar": "Sí, borrar todos",
+      "cancelar": "Cancelar",
+      "borrando": "Borrando… {{borrados}} hasta ahora",
+      "hecho": "Se borraron {{borrados}} borrador(es) sin aprobar.",
+      "error": "No se pudieron borrar todos. Los que alcanzaron a borrarse ya no están; intenta de nuevo para terminar.",
+      "ninguno": "No se borró ninguno: los que quedan los está decidiendo alguien más en este momento. Recarga la página e intenta de nuevo."
+    },
+    "eliminar": {
+      "titulo": "Eliminar el borrador",
+      "explicacion": "Bórralo para rehacerlo desde cero con la skill de fichas. Rechazarlo no sirve para eso: un rechazado no se vuelve a proponer.",
+      "accion": "Eliminar el borrador",
+      "pregunta": "¿Eliminar el borrador de {{modelo}}?",
+      "loQueImplica": "Se borra con sus fotos del almacenamiento privado y no se puede recuperar. El modelo vuelve a proponerse cuando corras otra vez la skill de fichas con la lista.",
+      "confirmar": "Sí, eliminarlo",
+      "cancelar": "Cancelar",
+      "eliminando": "Eliminando…",
+      "hecho": "Se eliminó el borrador de {{modelo}}.",
+      "error": "No se pudo eliminar el borrador. Inténtalo de nuevo."
     }
   },
   "borradores": {
