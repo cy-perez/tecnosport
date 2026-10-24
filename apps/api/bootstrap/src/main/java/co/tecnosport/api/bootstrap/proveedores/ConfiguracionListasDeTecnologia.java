@@ -15,6 +15,8 @@ import co.tecnosport.api.application.proveedores.tecnologia.AgregarFotoABorrador
 import co.tecnosport.api.application.proveedores.tecnologia.AprobarBorradorTecnologia;
 import co.tecnosport.api.application.proveedores.tecnologia.EditarBorradorTecnologia;
 import co.tecnosport.api.application.proveedores.tecnologia.EditarFichaBorradorTecnologia;
+import co.tecnosport.api.application.proveedores.tecnologia.EliminarBorradorTecnologia;
+import co.tecnosport.api.application.proveedores.tecnologia.EliminarBorradoresTecnologiaSinAprobar;
 import co.tecnosport.api.application.proveedores.tecnologia.FotosFirmadasDeBorradorTecnologia;
 import co.tecnosport.api.application.proveedores.tecnologia.ImportarListaDeTecnologia;
 import co.tecnosport.api.application.proveedores.tecnologia.ListarBorradoresTecnologia;
@@ -106,6 +108,18 @@ public class ConfiguracionListasDeTecnologia {
   public EditarFichaBorradorTecnologia editarFichaBorradorTecnologia(
       RepositorioBorradoresTecnologia borradores) {
     return new EditarFichaBorradorTecnologia(borradores);
+  }
+
+  @Bean
+  public EliminarBorradorTecnologia eliminarBorradorTecnologia(
+      RepositorioBorradoresTecnologia borradores, AlmacenDeArchivosDeProveedor almacen) {
+    return new EliminarBorradorTecnologia(borradores, almacen);
+  }
+
+  @Bean
+  public EliminarBorradoresTecnologiaSinAprobar eliminarBorradoresTecnologiaSinAprobar(
+      RepositorioBorradoresTecnologia borradores, EliminarBorradorTecnologia eliminarBorrador) {
+    return new EliminarBorradoresTecnologiaSinAprobar(borradores, eliminarBorrador);
   }
 
   @Bean

@@ -32,6 +32,7 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -365,6 +366,56 @@ class RepositoriosDeTecnologiaJpaTest {
     assertEquals(
         List.of(b.id(), a.id()),
         releido.fotos().stream().map(FotoDeBorradorTecnologia::id).toList());
+  }
+
+  /**
+   * Borrar (24/10/2026): la fila se va con sus configuraciones y sus fotos, y la tanda se acota.
+   */
+  @Test
+  void borrarSeLlevaConfiguracionesYFotosYLaTandaRespetaElLimite() {
+    Proveedor proveedor = proveedor();
+    BorradorTecnologia uno =
+        BorradorTecnologia.nuevo(
+            proveedor.id(), a17(), List.of(config("a17-a", "1 SIM", null)), null, LUNES, LUNES);
+    uno.agregarFoto(foto("a"));
+    borradores.guardar(uno);
+    for (int i = 0; i < 2; i++) {
+      borradores.guardar(
+          BorradorTecnologia.nuevo(
+              proveedor.id(),
+              new ModeloDeLista(
+                  "modelo-" + i, "Modelo " + i, null, null, "Ficha.", null, List.of()),
+              List.of(config("sku-" + i, "1 SIM", null)),
+              null,
+              LUNES,
+              LUNES.plusSeconds(i + 1)));
+    }
+    em.flush();
+    em.clear();
+
+    Set<EstadoBorrador> sinAprobar = Set.of(EstadoBorrador.EN_REVISION, EstadoBorrador.RECHAZADO);
+    assertEquals(3, borradores.contarEnEstados(sinAprobar));
+    assertEquals(List.of(uno.id()), borradores.idsEnEstados(sinAprobar, 1), "el más viejo");
+    assertEquals(3, borradores.idsEnEstados(sinAprobar, 10).size());
+
+    borradores.eliminar(uno.id());
+    em.flush();
+    em.clear();
+
+    assertTrue(borradores.buscarPorId(uno.id()).isEmpty());
+    assertEquals(2, borradores.contarEnEstados(sinAprobar));
+    assertEquals(
+        0L,
+        em.createNativeQuery(
+                "select count(*) from borrador_tecnologia_foto where borrador_id = :id")
+            .setParameter("id", uno.id())
+            .getSingleResult());
+    assertEquals(
+        0L,
+        em.createNativeQuery(
+                "select count(*) from borrador_tecnologia_configuracion where borrador_id = :id")
+            .setParameter("id", uno.id())
+            .getSingleResult());
   }
 
   @Test

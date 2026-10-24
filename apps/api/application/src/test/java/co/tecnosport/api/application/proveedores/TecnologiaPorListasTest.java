@@ -16,8 +16,11 @@ import co.tecnosport.api.application.proveedores.ApoyoDeCatalogoParaIngesta.Repo
 import co.tecnosport.api.application.proveedores.ApoyoDeIngesta.RepositorioProveedoresEnMemoria;
 import co.tecnosport.api.application.proveedores.tecnologia.AprobarBorradorTecnologia;
 import co.tecnosport.api.application.proveedores.tecnologia.AprobarBorradorTecnologiaComando;
+import co.tecnosport.api.application.proveedores.tecnologia.BorradorTecnologiaNoEliminableException;
 import co.tecnosport.api.application.proveedores.tecnologia.EditarBorradorTecnologia;
 import co.tecnosport.api.application.proveedores.tecnologia.EditarFichaBorradorTecnologia;
+import co.tecnosport.api.application.proveedores.tecnologia.EliminarBorradorTecnologia;
+import co.tecnosport.api.application.proveedores.tecnologia.EliminarBorradoresTecnologiaSinAprobar;
 import co.tecnosport.api.application.proveedores.tecnologia.ImportarListaDeTecnologia;
 import co.tecnosport.api.application.proveedores.tecnologia.ImportarListaDeTecnologiaComando;
 import co.tecnosport.api.application.proveedores.tecnologia.ImportarListaDeTecnologiaComando.Modo;
@@ -59,6 +62,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import org.junit.jupiter.api.BeforeEach;
@@ -593,6 +597,84 @@ class TecnologiaPorListasTest {
         () -> new EditarFichaBorradorTecnologia(borradores).ejecutar(UUID.randomUUID(), "Otra."));
   }
 
+  // --- Borrar borradores (24/10/2026) -------------------------------------------------------
+
+  private EliminarBorradorTecnologia eliminar() {
+    return new EliminarBorradorTecnologia(borradores, privado);
+  }
+
+  @Test
+  void borrarUnoEnRevisionSeLlevaSusFotosDelBucket() {
+    BorradorTecnologia borrador = unA17ListoParaAprobar();
+    int antes = privado.objetos.size();
+
+    int borrados = eliminar().ejecutar(borrador.id());
+
+    assertEquals(BorradorTecnologia.MINIMO_DE_FOTOS * 3, borrados, "dos anchos y la vista previa");
+    assertEquals(antes - borrados, privado.objetos.size());
+    assertTrue(borradores.porId.isEmpty());
+  }
+
+  @Test
+  void unAprobadoNoSeBorraNiPierdeSusFotos() {
+    BorradorTecnologia borrador = unA17ListoParaAprobar();
+    aprobar(borrador.id());
+    int antes = privado.objetos.size();
+
+    assertThrows(
+        BorradorTecnologiaNoEliminableException.class, () -> eliminar().ejecutar(borrador.id()));
+    assertEquals(antes, privado.objetos.size());
+    assertTrue(borradores.porId.containsKey(borrador.id()));
+  }
+
+  @Test
+  void borrarUnRechazadoDejaQueLaListaLoVuelvaAProponer() {
+    proponer(LUNES, List.of(config(UNA_SIM, 675_000, "1 SIM")));
+    BorradorTecnologia borrador = enRevision();
+    new RechazarBorradorTecnologia(borradores).ejecutar(borrador.id(), "No vendemos esta gama");
+    assertEquals(0, proponer(LUNES, List.of(config(UNA_SIM, 675_000, "1 SIM"))).borradoresNuevos());
+
+    eliminar().ejecutar(borrador.id());
+
+    assertEquals(1, proponer(LUNES, List.of(config(UNA_SIM, 675_000, "1 SIM"))).borradoresNuevos());
+  }
+
+  @Test
+  void unoQueNoExisteNoSeBorra() {
+    assertThrows(BorradorNoEncontradoException.class, () -> eliminar().ejecutar(UUID.randomUUID()));
+  }
+
+  @Test
+  void elBorradoEnBloqueVaPorTandasYDejaLosAprobados() {
+    BorradorTecnologia aprobado = unA17ListoParaAprobar();
+    aprobar(aprobado.id());
+    for (int i = 0; i < 3; i++) {
+      BorradorTecnologia otro =
+          BorradorTecnologia.nuevo(
+              proveedor.id(),
+              new ModeloDeLista(
+                  "modelo-" + i, "Modelo " + i, null, null, "Ficha " + i, null, List.of()),
+              List.of(config("sku-" + i, 600_000, "1 SIM")),
+              null,
+              AHORA,
+              AHORA);
+      borradores.guardar(otro);
+    }
+    EliminarBorradoresTecnologiaSinAprobar enBloque =
+        new EliminarBorradoresTecnologiaSinAprobar(borradores, eliminar());
+    assertEquals(3, enBloque.contar());
+
+    BorradoresEliminados primera = enBloque.ejecutar(2);
+    BorradoresEliminados segunda = enBloque.ejecutar(2);
+
+    assertEquals(2, primera.eliminados());
+    assertEquals(1, primera.quedan());
+    assertEquals(1, segunda.eliminados());
+    assertEquals(0, segunda.quedan());
+    assertEquals(1, borradores.porId.size(), "el aprobado se queda");
+    assertTrue(borradores.porId.containsKey(aprobado.id()));
+  }
+
   @Test
   void unBorradorQueNoVinoEnLaUltimaListaNoSeAprueba() {
     proponer(LUNES, List.of(config(UNA_SIM, 675_000, "1 SIM")));
@@ -906,6 +988,26 @@ class TecnologiaPorListasTest {
       return porId.values().stream()
           .filter(b -> b.estado() == estado)
           .sorted(Comparator.comparing(BorradorTecnologia::creadoEn).reversed())
+          .toList();
+    }
+
+    @Override
+    public void eliminar(UUID id) {
+      porId.remove(id);
+    }
+
+    @Override
+    public long contarEnEstados(Set<EstadoBorrador> estados) {
+      return porId.values().stream().filter(b -> estados.contains(b.estado())).count();
+    }
+
+    @Override
+    public List<UUID> idsEnEstados(Set<EstadoBorrador> estados, int limite) {
+      return porId.values().stream()
+          .filter(b -> estados.contains(b.estado()))
+          .sorted(Comparator.comparing(BorradorTecnologia::creadoEn))
+          .limit(limite)
+          .map(BorradorTecnologia::id)
           .toList();
     }
 
