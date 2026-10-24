@@ -1,4 +1,5 @@
-"""Regla 18: con menos de un 5 % de margen no se ofrece (decisión del negocio, 15/10/2026).
+"""Regla 18: con menos de un 10 % de margen no se ofrece (decisión del negocio, 15/10/2026;
+el umbral subió del 5 % al 10 % el 24/10/2026).
 
 El margen es el precio de mercado que asignó el paso 4 sobre el costo del proveedor. La
 configuración que no llega no se propone si es nueva y deja de ofrecerse si ya se vendía.
@@ -9,7 +10,7 @@ que la manda como desaparecida a la API, y `fichas.py`, que no le crea carpeta d
 tienen que leer el mismo umbral: si difirieran, se buscarían fotos de lo que nunca va a entrar.
 """
 
-MARGEN_MINIMO = 0.05
+MARGEN_MINIMO = 0.10
 
 
 def margen(producto) -> float | None:
