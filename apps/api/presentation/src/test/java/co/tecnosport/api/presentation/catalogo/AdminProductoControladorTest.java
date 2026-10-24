@@ -991,7 +991,8 @@ class AdminProductoControladorTest {
             new Slug("tenis-runner-importado"),
             "",
             Marca.crear("TecnoSport"),
-            Categoria.crear("Tenis", new Slug("calzado-tenis"), LineaCatalogo.CALZADO),
+            Categoria.crear(
+                "Deportivo", new Slug("calzado-caballero-deportivo"), LineaCatalogo.CALZADO),
             proveedorId,
             Dinero.deCop(90000),
             HuellaProveedor.calcular(proveedorId, "Tenis Runner importado", Dinero.deCop(90000)),
