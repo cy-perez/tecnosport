@@ -3266,6 +3266,9 @@
           "estado" : {
             "type" : "string"
           },
+          "estadoDisponibilidad" : {
+            "type" : "string"
+          },
           "galeria" : {
             "items" : {
               "$ref" : "#/components/schemas/ImagenDeGaleriaRespuesta"
@@ -3300,6 +3303,10 @@
               "$ref" : "#/components/schemas/VarianteResumenAdminRespuesta"
             },
             "type" : "array"
+          },
+          "vistoPorUltimaVez" : {
+            "format" : "date-time",
+            "type" : "string"
           }
         },
         "type" : "object"
@@ -3313,6 +3320,9 @@
             "type" : "string"
           },
           "estado" : {
+            "type" : "string"
+          },
+          "estadoDisponibilidad" : {
             "type" : "string"
           },
           "id" : {
@@ -3334,6 +3344,10 @@
           "totalVariantes" : {
             "format" : "int32",
             "type" : "integer"
+          },
+          "vistoPorUltimaVez" : {
+            "format" : "date-time",
+            "type" : "string"
           }
         },
         "type" : "object"
