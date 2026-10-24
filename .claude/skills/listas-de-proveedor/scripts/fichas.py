@@ -189,7 +189,8 @@ def texto_de_ficha(productos: list, retirados: list = ()) -> str:
     fuentes = [f for p in productos[:1] for f in p.get("fuentes_ficha") or []]
     if fuentes:
         L += ["", "FUENTES DE LA FICHA", "-" * 60]
-        L += [f"- {f.get('fuente')}" + (f" — {f['url']}" if f.get("url") else "")
+        L += [f"- {'Contenido de la caja: ' if f.get('seccion') == 'caja' else ''}"
+              f"{f.get('fuente') or f.get('texto')}" + (f" — {f['url']}" if f.get("url") else "")
               + (f" (consultado el {f['fecha']})" if f.get("fecha") else "") for f in fuentes]
     con_fuentes = [p for p in productos if p.get("fuentes_precio")]
     if con_fuentes:

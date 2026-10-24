@@ -26,8 +26,21 @@ class Sanear(unittest.TestCase):
         self.assertEqual(APERTURA + VINETAS + CAJA + GARANTIA, descripciones.sanear(texto))
 
     def test_una_descripcion_completa_no_cambia_ni_un_caracter(self):
-        texto = APERTURA + VINETAS + FICHA + CAJA + GARANTIA + PIE_ICECAT
+        texto = APERTURA + VINETAS + FICHA + CAJA + GARANTIA
         self.assertEqual(texto, descripciones.sanear(texto))
+
+    def test_el_pie_de_fuentes_se_quita_siempre(self):
+        # Decisión del negocio del 23/10/2026: la ficha no dice de dónde salió un dato, tampoco el
+        # aviso de Icecat. La fuente queda en `fuentes_ficha`.
+        saneada = descripciones.sanear(APERTURA + VINETAS + FICHA + CAJA + GARANTIA + PIE_ICECAT)
+        self.assertEqual(APERTURA + VINETAS + FICHA + CAJA + GARANTIA, saneada)
+
+    def test_la_vineta_que_nombra_icecat_se_quita(self):
+        # La del OPPO A6k, publicada en dev hasta el 23/10/2026.
+        nota = ("- La tabla técnica sale de Open Icecat y describe una versión regional con NFC, "
+                "Wi-Fi 6 y sin cargador en la caja.\n")
+        texto = APERTURA + FICHA + CAJA + GARANTIA.rstrip("\n") + "\n" + nota
+        self.assertEqual(APERTURA + FICHA + CAJA + GARANTIA, descripciones.sanear(texto))
 
     def test_sanear_dos_veces_es_sanear_una(self):
         una = descripciones.sanear(APERTURA + FICHA_VACIA + CAJA + GARANTIA)
@@ -138,20 +151,41 @@ class Completar(unittest.TestCase):
 
     def test_la_ficha_entra_despues_de_las_vinetas_y_antes_de_la_caja(self):
         texto = descripciones.insertar(APERTURA + VINETAS + CAJA + GARANTIA, descripciones.FICHA,
-                                       "| Atributo | Detalle |\n|---|---|\n| Peso | 170 g |",
-                                       "Ficha técnica: apple.com/co, consultado el 2026-10-22.")
+                                       "| Atributo | Detalle |\n|---|---|\n| Peso | 170 g |")
         orden = [texto.index(s) for s in ("El iPhone 16", "## Características", "## Ficha técnica",
-                                          "## Contenido de la caja", "## Garantía y notas", "\n---\n")]
+                                          "## Contenido de la caja", "## Garantía y notas")]
         self.assertEqual(sorted(orden), orden)
-        self.assertTrue(texto.endswith("Ficha técnica: apple.com/co, consultado el 2026-10-22.\n"))
+        self.assertNotIn("\n---\n", texto)
         self.assertTrue(texto.startswith(APERTURA + VINETAS.rstrip("\n")))
 
-    def test_la_caja_va_antes_de_la_garantia_y_conserva_el_pie(self):
+    def test_la_caja_va_antes_de_la_garantia_y_el_pie_viejo_se_va(self):
         texto = descripciones.insertar(APERTURA + FICHA + GARANTIA + PIE_ICECAT, descripciones.CAJA,
                                        "- iPhone 16\n- Cable USB-C")
         self.assertLess(texto.index("## Contenido de la caja"), texto.index("## Garantía y notas"))
-        self.assertIn("Database Right data-sheet 2026 Icecat", texto.split("\n---\n")[1])
+        self.assertNotIn("Icecat", texto)
         self.assertEqual([], descripciones.defectos(texto))
+
+
+class Fuentes(unittest.TestCase):
+    """23/10/2026: la descripción no dice de dónde salió un dato; la que lo dice no se exporta."""
+
+    def test_una_frase_que_cita_la_ficha_bloquea(self):
+        for nota in ("- Resistencia al agua y al polvo IP68, según la ficha de JBL.\n",
+                     "- La ficha de Xiaomi Colombia indica que este modelo no tiene NFC.\n",
+                     "- La ficha del fabricante no declara GPS integrado en este modelo.\n",
+                     "- Según el proveedor, esta unidad funciona con una sola SIM.\n",
+                     "- El peso de la tabla técnica es el de la versión LTE.\n"):
+            with self.subTest(nota=nota):
+                texto = APERTURA + VINETAS + FICHA + CAJA + GARANTIA + nota
+                self.assertTrue(any(d.startswith(descripciones.HABLA_DE_LA_FUENTE)
+                                    for d in descripciones.bloqueantes(texto)), nota)
+
+    def test_el_subtitulo_la_tabla_y_un_dato_pendiente_no_son_citas(self):
+        texto = (APERTURA + VINETAS + FICHA + CAJA + GARANTIA
+                 + "- La ficha técnica completa se le pidió al proveedor.\n"
+                 + "- El contenido de la caja puede variar según la región.\n")
+        self.assertIsNone(descripciones.frase_de_fuente(texto))
+        self.assertEqual([], descripciones.bloqueantes(texto))
 
 
 class NotasPendientes(unittest.TestCase):

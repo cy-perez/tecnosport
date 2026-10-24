@@ -89,23 +89,22 @@ class OrdenDeFuentes(unittest.TestCase):
     def test_la_marca_entra_si_icecat_no_tiene_la_ficha(self):
         [a, _] = redactar(DOS, marca=MARCA)
         self.assertIn("| Pantalla | 6,7\" Super AMOLED Plus |", a["descripcion"])
-        self.assertIn("Ficha técnica: samsung.com/co, consultado el 2026-10-08.", a["descripcion"])
+        self.assertNotIn("samsung.com/co", a["descripcion"])
         self.assertNotIn("Icecat", a["descripcion"])
         self.assertEqual([{"fuente": "samsung.com/co", "url": "https://www.samsung.com/co/", "fecha": "2026-10-08"}],
                          a["fuentes_ficha"])
 
 
-class AvisoDeIcecat(unittest.TestCase):
-    """Open Content License v1.4 (11/02/2026), cláusulas 1 y 2. Auditoría del 08/10/2026:
-    el aviso anterior («Specs Icecat…») no era el que pide la licencia."""
+class SinFuentesEnLaDescripcion(unittest.TestCase):
+    """Decisión del negocio del 23/10/2026: la descripción no dice de dónde salió un dato, tampoco
+    el aviso que pide la Open Content License de Icecat (cláusulas 1 y 2) —el riesgo está en
+    `docs/14-consultas-al-abogado.md`—. La fuente queda en `fuentes_ficha`, que no se publica."""
 
-    def test_lleva_el_aviso_literal_la_licencia_y_la_nota_de_modificacion(self):
+    def test_una_tabla_de_icecat_no_lleva_pie_y_la_fuente_queda_aparte(self):
         [a, _] = redactar(DOS, icecat=ICECAT)
-        d = a["descripcion"]
-        self.assertIn("Database Right data-sheet 2026 Icecat. All rights reserved.", d)
-        self.assertIn("https://iceclog.com/open-content-license-opl/", d)
-        self.assertIn("sin garantía de ningún tipo", d)
-        self.assertIn("Modificado por TecnoSport el 2026-10-09", d)
+        self.assertNotIn("Icecat", a["descripcion"])
+        self.assertNotIn("\n---\n", a["descripcion"])
+        self.assertEqual("Open Icecat", a["fuentes_ficha"][0]["fuente"])
 
 
 class SinProsa(unittest.TestCase):
@@ -138,10 +137,11 @@ class CompletarHeredada(unittest.TestCase):
         self.assertIn("## Contenido de la caja\n\n- Galaxy A57\n- Cable USB-C", d)
         self.assertLess(d.index("## Ficha técnica"), d.index("## Contenido de la caja"))
         self.assertLess(d.index("## Contenido de la caja"), d.index("## Garantía y notas"))
-        self.assertIn("Ficha técnica: samsung.com/co, consultado el 2026-10-08.", d)
-        self.assertIn("Contenido de la caja: samsung.com/co, consultado el 2026-10-08.", d)
+        self.assertNotIn("samsung.com", d)
         self.assertEqual(d, b["descripcion"])
         self.assertEqual("samsung.com/co", a["fuentes_ficha"][0]["fuente"])
+        self.assertEqual({"seccion": "caja", "fuente": "samsung.com/co", "url": "https://www.samsung.com/co/",
+                          "fecha": "2026-10-08"}, a["fuentes_ficha"][1])
         # Lo que faltaba ya no se pide; lo que la ficha de la marca no trae —el peso— se sigue diciendo.
         self.assertEqual(["descripción de la base: la ficha técnica no dice peso ni dimensiones"],
                          [r for r in a["revisar"] if r.startswith("descripción de la base")])
@@ -152,13 +152,13 @@ class CompletarHeredada(unittest.TestCase):
         marca = {"samsung-galaxy-a57-5g": dict(MARCA["samsung-galaxy-a57-5g"], caja=["Galaxy A57"],
                                                fuente_caja="samsung.com/es", fecha_caja="2026-10-22")}
         [a, _] = redactar(self.heredados(), marca=marca, prosa={})
-        self.assertIn("Ficha técnica: samsung.com/co, consultado el 2026-10-08.", a["descripcion"])
-        self.assertIn("Contenido de la caja: samsung.com/es, consultado el 2026-10-22.", a["descripcion"])
-        self.assertNotIn("Contenido de la caja: samsung.com/co", a["descripcion"])
+        [caja] = [f for f in a["fuentes_ficha"] if f.get("seccion") == "caja"]
+        self.assertEqual(("samsung.com/es", "2026-10-22"), (caja["fuente"], caja["fecha"]))
+        self.assertNotIn("samsung.com", a["descripcion"])
 
     def test_icecat_va_primero_tambien_al_completar(self):
         [a, _] = redactar(self.heredados(), marca=MARCA, icecat=ICECAT, prosa={})
-        self.assertIn("Database Right data-sheet 2026 Icecat", a["descripcion"])
+        self.assertEqual("Open Icecat", a["fuentes_ficha"][0]["fuente"])
         self.assertIn("| Batería | 5000 mAh |", a["descripcion"])
 
     def test_sin_fuente_no_inventa_y_la_deja_como_estaba(self):
@@ -179,15 +179,12 @@ class CompletarHeredada(unittest.TestCase):
         self.assertEqual(primera[0]["descripcion"], segunda[0]["descripcion"])
         self.assertNotIn("completar", segunda[0]["pendiente"])
 
-    def test_no_duplica_la_atribucion_de_la_ficha_en_el_pie(self):
-        # Revisión del PR #268: una heredada sin «## Ficha técnica» pero con «Ficha técnica: …» en el
-        # pie quedaba, al completarse, con dos atribuciones.
+    def test_el_pie_viejo_de_una_heredada_se_va_al_completarla(self):
         heredada = self.HEREDADA + "\n---\n\nFicha técnica: una fuente vieja, consultado el 2026-09-01.\n"
         [a, _] = redactar([dict(p, descripcion=heredada) for p in self.heredados()],
                           marca=self.MARCA_CON_CAJA, prosa={})
-        pie = a["descripcion"].split("\n---\n")[-1]
-        self.assertEqual(1, pie.count("Ficha técnica:"), pie)
-        self.assertIn("Ficha técnica: samsung.com/co", pie)
+        self.assertNotIn("una fuente vieja", a["descripcion"])
+        self.assertNotIn("\n---\n", a["descripcion"])
 
     def test_una_redaccion_nueva_no_se_completa(self):
         # La que tiene `descripcion` pendiente se redacta entera; `completar` es solo para heredadas.
@@ -222,7 +219,7 @@ class CotejoIcecatMarca(unittest.TestCase):
         icecat = {"especificaciones": [{"atributo": "Diagonal de la pantalla", "valor": "17,1 cm (6.72\")"},
                                        {"atributo": "Código IP (International Protection)", "valor": "IP52"}]}
         [a, _] = redactar(DOS, marca=self.MARCA_CO, icecat=icecat)
-        self.assertIn("Database Right data-sheet 2026 Icecat", a["descripcion"])
+        self.assertEqual("Open Icecat", a["fuentes_ficha"][0]["fuente"])
         self.assertFalse(any(r.startswith("la ficha de Icecat no coincide") for r in a["revisar"]))
 
     def test_un_adaptador_que_no_es_cargador_no_cuenta(self):

@@ -19,7 +19,10 @@ del 08/10/2026):
    script y la prosa no se escribe nunca a partir de ella. La licencia anula el
    permiso si los datos se usan para «automated synthetic content creation»
    (cláusula 10), y exige el aviso de derechos, el descargo y la nota de lo que
-   se modificó (cláusulas 1 y 2): ver `aviso_icecat`.
+   se modificó (cláusulas 1 y 2). **Desde el 23/10/2026 ese aviso no se publica**:
+   la descripción no dice de dónde salió un dato, por decisión del negocio, y el
+   riesgo de la licencia está en `docs/14-consultas-al-abogado.md`. La fuente de
+   cada sección queda en `fuentes_ficha`, que no se publica.
 2. **El sitio oficial de la marca**, en `--marca`: un JSON por id de modelo con
    la fuente, la URL, la fecha de consulta, las filas y, si los da, la caja y la
    paleta. Va si Icecat no dio filas, **y también si las dos se contradicen** en la
@@ -152,21 +155,6 @@ def tabla_mi(ficha):
     return filas
 
 
-def aviso_icecat(fecha: str) -> str:
-    """El aviso que exige la Open Content License de Icecat (v1.4, 11/02/2026).
-
-    Cláusula 1: aviso de derechos literal y descargo de garantía, con la licencia
-    a mano de quien recibe el contenido. Cláusula 2: nota visible de que se
-    modificó, en qué y cuándo. El aviso de derechos va en inglés porque así lo
-    fija la licencia.
-    """
-    return (f"Ficha técnica: Database Right data-sheet {fecha[:4]} Icecat. All rights reserved. "
-            "Datos de Open Icecat (https://icecat.biz) bajo la Open Content License "
-            "(https://iceclog.com/open-content-license-opl/), sin garantía de ningún tipo. "
-            f"Modificado por TecnoSport el {fecha}: selección de atributos, traducción de rótulos "
-            "y formato de la tabla.")
-
-
 def meta_titulo(producto):
     t = producto.get("titulo_modelo") or producto["titulo"]
     return t if len(t) <= LIMITE_META_TITULO else t[:LIMITE_META_TITULO].rstrip(" ,·-")
@@ -290,17 +278,6 @@ def texto_de_tabla(filas):
                      + [f"| {_celda(a)} | {_celda(b)} |" for a, b in filas])
 
 
-def linea_de_fuente(origen, ficha_marca, fecha):
-    """La línea del pie que atribuye la ficha técnica."""
-    if origen == "Open Icecat":
-        return aviso_icecat(fecha)
-    if origen == "marca":
-        donde = ficha_marca.get("fuente") or "el sitio oficial del fabricante"
-        cuando = ficha_marca.get("fecha")
-        return f"Ficha técnica: {donde}" + (f", consultado el {cuando}." if cuando else ".")
-    return None
-
-
 def componer(producto, prosa, ficha_icecat, ficha_marca, fecha):
     partes = [prosa["apertura"].strip(), ""]
 
@@ -322,10 +299,6 @@ def componer(producto, prosa, ficha_icecat, ficha_marca, fecha):
     partes += [f"- {n}" for n in (prosa.get("notas") or []) + notas_obligatorias(producto)]
     partes += [""]
 
-    fuente = linea_de_fuente(origen, ficha_marca, fecha)
-    if fuente:
-        partes += ["---", "", fuente]
-
     return "\n".join(partes).strip() + "\n"
 
 
@@ -342,20 +315,11 @@ def completar(descripcion, ficha_icecat, ficha_marca, caja, fecha):
     if descripciones.FICHA in faltan:
         filas, origen, avisos = elegir_tabla(ficha_icecat, ficha_marca, caja)
         if filas:
-            descripcion = descripciones.insertar(descripcion, descripciones.FICHA, texto_de_tabla(filas),
-                                                 linea_de_fuente(origen, ficha_marca, fecha))
+            descripcion = descripciones.insertar(descripcion, descripciones.FICHA, texto_de_tabla(filas))
             agregadas.append(descripciones.FICHA)
     if descripciones.CAJA in faltan and caja:
-        pie = None
-        if ficha_marca and ficha_marca.get("caja"):
-            # La caja puede venir de otra página que la ficha —el 22/10/2026 la del Watch8 salió de
-            # samsung.com/es porque la colombiana no la publica—: entonces lleva su propia fuente.
-            donde = (ficha_marca.get("fuente_caja") or ficha_marca.get("fuente")
-                     or "el sitio oficial del fabricante")
-            cuando = ficha_marca.get("fecha_caja") or ficha_marca.get("fecha")
-            pie = f"Contenido de la caja: {donde}" + (f", consultado el {cuando}." if cuando else ".")
         descripcion = descripciones.insertar(descripcion, descripciones.CAJA,
-                                             "\n".join(f"- {c}" for c in caja), pie)
+                                             "\n".join(f"- {c}" for c in caja))
         agregadas.append(descripciones.CAJA)
     return descripcion, (origen if descripciones.FICHA in agregadas else None), agregadas, avisos
 
@@ -371,6 +335,21 @@ def _quitar_pendientes(grupo, faltan) -> None:
         if descripciones.FICHA not in faltan and "ficha" in pendiente and p.get("descripcion"):
             pendiente.remove("ficha")
         p["pendiente"] = pendiente
+
+
+def fuente_caja(ficha_marca):
+    """La fuente del contenido de la caja, para `fuentes_ficha`; None si no salió de la marca.
+
+    La caja puede venir de otra página que la ficha —el 22/10/2026 la del Watch8 salió de
+    samsung.com/es porque la colombiana no la publica—: entonces lleva su propia fuente.
+    """
+    if not (ficha_marca and ficha_marca.get("caja")):
+        return None
+    return {"seccion": "caja",
+            "fuente": ficha_marca.get("fuente_caja") or ficha_marca.get("fuente")
+            or "el sitio oficial del fabricante",
+            "url": ficha_marca.get("url_caja") or ficha_marca.get("url"),
+            "fecha": ficha_marca.get("fecha_caja") or ficha_marca.get("fecha")}
 
 
 def fuente_ficha(origen_ficha, ficha_marca, fecha):
@@ -488,11 +467,13 @@ def main():
         if not agregadas:
             sin_fuente.append(grupo[0].get("titulo_modelo") or grupo[0]["titulo"])
             continue
-        fuente = fuente_ficha({"Open Icecat": "icecat"}.get(origen, origen), ficha_marca, a.fecha)
+        fuentes = [fuente_ficha({"Open Icecat": "icecat"}.get(origen, origen), ficha_marca, a.fecha),
+                   fuente_caja(ficha_marca) if descripciones.CAJA in agregadas else None]
         for p in grupo:
             p["descripcion"] = texto
-            if fuente and fuente not in (p.get("fuentes_ficha") or []):
-                p["fuentes_ficha"] = list(p.get("fuentes_ficha") or []) + [fuente]
+            for fuente in fuentes:
+                if fuente and fuente not in (p.get("fuentes_ficha") or []):
+                    p["fuentes_ficha"] = list(p.get("fuentes_ficha") or []) + [fuente]
             p["revisar"] = [r for r in p["revisar"] if not r.startswith((ALERTA_DESCRIPCION, AVISO_COTEJO))]
             p["revisar"] += [f"{ALERTA_DESCRIPCION} {d}" for d in descripciones.defectos(texto)] + avisos
         _quitar_pendientes(grupo, descripciones.faltantes(texto))

@@ -13,9 +13,17 @@ Dos cosas distintas, a propósito:
 - `sanear` quita una sección que quedó sin contenido. Publicarla vacía nunca está
   bien, y quitarla no inventa nada, así que se hace sola.
 - `defectos` dice lo que no se arregla sin datos: una ficha que falta, un peso que
-  no está, un marcador que alguien dejó. Esos se informan; solo el marcador deja
-  al modelo fuera de la exportación (`BLOQUEAN`), porque la plantilla lo pintaría
-  tal cual (`ADR-0025`).
+  no está, un marcador que alguien dejó. Esos se informan; el marcador y la frase
+  que nombra una fuente dejan al modelo fuera de la exportación (`BLOQUEAN`): la
+  plantilla pintaría el primero tal cual (`ADR-0025`), y la segunda rompe la regla
+  del 23/10/2026.
+
+**La descripción no dice de dónde salió un dato** (decisión del negocio del
+23/10/2026). Ni el pie de fuentes tras `---` ni notas como «La tabla técnica sale
+de Open Icecat…» o «según la ficha de JBL». Las fuentes se guardan en
+`fuentes_ficha` del modelo, que no se publica. Eso incluye el aviso de Open
+Icecat aunque su licencia lo exija (cláusulas 1 y 2): el riesgo lo asumió el
+negocio y está en `docs/14-consultas-al-abogado.md`.
 """
 
 import re
@@ -57,10 +65,21 @@ SIN_FICHA = f"no tiene «{FICHA}»: falta la ficha oficial del fabricante"
 SIN_PESO = "la ficha técnica no dice peso ni dimensiones"
 SIN_CAJA = f"no tiene «{CAJA}»"
 NOMBRA_CONFIGURACION = "nombra una configuración"
+HABLA_DE_LA_FUENTE = "nombra de dónde salió un dato"
+
+# Una frase de la prosa que cita su fuente. Sin `re.I` a propósito: «Ficha de JBL» es una cita y
+# «ficha de la» no. «ficha técnica» tampoco cuenta: «La ficha técnica completa se le pidió al
+# proveedor» es una nota de dato pendiente (`notas_pendientes`), y esa sí se publica. Y «según
+# Apple» o «según el fabricante» tampoco: dicen quién declara una cifra —la autonomía es la que
+# declara el fabricante, no una promesa de la tienda—, no qué página se consultó.
+RE_FUENTE = re.compile(
+    r"Icecat|[Tt]abla técnica|\bficha (?:oficial|del fabricante|de [A-ZÁÉÍÓÚ])"
+    r"|\b[Ss]egún (?:la|el) (?:ficha|sitio|página|proveedor|línea del proveedor)"
+    r"|\bconsultad[oa] el\b|\bmi\.com\b|[Pp]ágina oficial")
 FORMATO_NO_SE_PINTA = "usa un formato que la ficha del sitio no pinta"
 
-# La ficha del sitio pinta párrafos, subtítulos «## », viñetas «- », tablas de dos columnas y el
-# pie de fuentes tras «---» (`apps/web/src/app/shared/ui/descripcion/leer-descripcion.ts`), y nada
+# La ficha del sitio pinta párrafos, subtítulos «## », viñetas «- » y tablas de dos columnas
+# (`apps/web/src/app/shared/ui/descripcion/leer-descripcion.ts`) —el pie tras «---» lo descarta—, y nada
 # más: no hay librería de Markdown detrás. Lo demás sale tal cual, con los asteriscos a la vista.
 FORMATOS_QUE_NO_SE_PINTAN = (
     (re.compile(r"^(?:#|#{3,6}) ", re.M), "un subtítulo que no es «## »"),
@@ -71,7 +90,7 @@ FORMATOS_QUE_NO_SE_PINTAN = (
 )
 
 # Lo que deja al modelo fuera de la exportación. El resto se informa y sigue.
-BLOQUEAN = (MARCADOR,)
+BLOQUEAN = (MARCADOR, HABLA_DE_LA_FUENTE)
 
 
 def _partes(texto: str) -> tuple[str, list[tuple[str, str]], str]:
@@ -110,25 +129,30 @@ def _vacia(titulo: str, cuerpo: str) -> bool:
     return not cuerpo.strip()
 
 
-def sanear(texto: str) -> str:
-    """La descripción sin las secciones que quedaron vacías.
+def _sin_vinetas_de_icecat(cuerpo: str) -> str:
+    """El cuerpo de una sección sin las viñetas que nombran Icecat: hablan de la fuente y nada más
+    —«La tabla técnica sale de Open Icecat y describe una versión regional…»—. Una que cita otra
+    fuente lleva casi siempre un dato del producto, y esa la reescribe una persona (`defectos`)."""
+    return "\n".join(l for l in cuerpo.split("\n")
+                     if not (l.lstrip().startswith("- ") and "Icecat" in l))
 
-    Si la que se va es la ficha técnica, se va también la línea de su fuente en el
-    pie —«Ficha técnica: …»—: atribuir datos que no se publican es decir algo falso.
+
+def sanear(texto: str) -> str:
+    """La descripción sin pie de fuentes, sin las viñetas sobre Icecat y sin secciones vacías.
+
+    El pie y esas viñetas se van siempre (decisión del 23/10/2026: la ficha no dice de dónde
+    salió un dato); las fuentes se guardan en `fuentes_ficha`. Una sección que se queda sin
+    contenido se va también: publicarla vacía nunca está bien.
     """
     if not texto:
         return texto
     inicio, secciones, pie = _partes(texto)
-    quedan = [(t, c) for t, c in secciones if not _vacia(t, c)]
-    if len(quedan) == len(secciones):
+    limpias = [(t, c if t == FICHA else _sin_vinetas_de_icecat(c)) for t, c in secciones]
+    quedan = [(t, c) for t, c in limpias if not _vacia(t, c)]
+    if quedan == secciones and not pie and "\n---\n" not in texto:
         return texto
-    lineas_pie = pie.splitlines()
-    if not any(t == FICHA for t, _ in quedan):
-        lineas_pie = [l for l in lineas_pie if not l.startswith(f"{FICHA}:")]
     partes = [inicio.rstrip("\n")] + [f"## {t}{c.rstrip()}" for t, c in quedan]
     resultado = "\n\n".join(p for p in partes if p.strip())
-    if any(l.strip() for l in lineas_pie):
-        resultado += "\n\n---\n" + "\n".join(lineas_pie).rstrip()
     return resultado.rstrip("\n") + "\n"
 
 
@@ -141,6 +165,10 @@ def defectos(texto: str) -> list[str]:
     hallados = []
     if RE_MARCADOR.search(texto):
         hallados.append(MARCADOR)
+    cita = frase_de_fuente(texto)
+    if cita:
+        hallados.append(f"{HABLA_DE_LA_FUENTE} («{cita}»): la ficha no dice de dónde salió un dato; "
+                        "se reescribe con el dato solo y la fuente queda en fuentes_ficha")
     if GARANTIA not in por_titulo:
         hallados.append(SIN_GARANTIA)
     ficha = por_titulo.get(FICHA)
@@ -173,6 +201,23 @@ def formatos_que_no_se_pintan(texto: str) -> list[str]:
                 hallados.append(f"una barra dentro de una celda («{linea[:60]}»)")
                 break
     return hallados
+
+
+def _prosa(texto: str) -> str:
+    """La prosa de la descripción: sin la tabla técnica, sin los subtítulos y sin el pie."""
+    inicio, secciones, _ = _partes(texto)
+    partes = [inicio] + [c for t, c in secciones if t != FICHA]
+    return "\n".join(l for parte in partes for l in parte.splitlines() if not l.strip().startswith("|"))
+
+
+def frase_de_fuente(texto: str):
+    """La primera línea de la prosa que nombra de dónde salió un dato, o None."""
+    if not texto:
+        return None
+    for linea in _prosa(texto).splitlines():
+        if RE_FUENTE.search(linea):
+            return linea.strip().lstrip("- ").strip()[:80]
+    return None
 
 
 def frase_de_configuracion(texto: str):
@@ -214,35 +259,31 @@ def faltantes(texto: str) -> list[str]:
     return faltan
 
 
-def insertar(texto: str, titulo: str, cuerpo: str, linea_de_pie: str | None = None) -> str:
-    """La descripción con la sección `titulo` en su sitio del ORDEN, y su fuente al pie.
+def insertar(texto: str, titulo: str, cuerpo: str) -> str:
+    """La descripción con la sección `titulo` en su sitio del ORDEN.
 
     No toca la apertura, las viñetas ni las demás secciones. Si la sección ya existía vacía, se
-    reemplaza. La línea de pie va después de las que ya había.
+    reemplaza. Un pie de fuentes que traiga se va: desde el 23/10/2026 no se publica.
     """
-    inicio, secciones, pie = _partes(texto)
+    inicio, secciones, _ = _partes(texto)
     secciones = [(t, c) for t, c in secciones if t != titulo]
     nueva = (titulo, "\n\n" + cuerpo.strip("\n") + "\n\n")
     posicion = ORDEN.index(titulo) if titulo in ORDEN else len(ORDEN)
     i = next((k for k, (t, _) in enumerate(secciones)
               if (ORDEN.index(t) if t in ORDEN else len(ORDEN)) > posicion), len(secciones))
     secciones.insert(i, nueva)
-    lineas_pie = [l for l in pie.splitlines() if l.strip()]
-    if linea_de_pie and linea_de_pie not in lineas_pie:
-        # Una atribución vieja de la misma sección —«Ficha técnica: …» sin la sección, que `sanear`
-        # no quita si nada está vacío— se reemplaza, no se duplica (revisión del PR #268).
-        rotulo = linea_de_pie.split(":", 1)[0] + ":"
-        lineas_pie = [l for l in lineas_pie if not l.startswith(rotulo)]
-        lineas_pie.append(linea_de_pie)
     partes = [inicio.rstrip("\n")] + [f"## {t}\n\n{c.strip(chr(10))}" for t, c in secciones]
-    resultado = "\n\n".join(p for p in partes if p.strip()) + "\n"
-    if lineas_pie:
-        resultado += "\n---\n\n" + "\n".join(lineas_pie) + "\n"
-    return resultado
+    return "\n\n".join(p for p in partes if p.strip()) + "\n"
 
 
 def bloqueantes(texto: str) -> list[str]:
-    return [d for d in defectos(texto) if d in BLOQUEAN]
+    return [d for d in defectos(texto) if es_bloqueante(d)]
+
+
+def es_bloqueante(defecto: str) -> bool:
+    """Si el defecto deja al modelo fuera de la exportación. Por prefijo: el de la fuente lleva la
+    frase que lo disparó."""
+    return any(defecto.startswith(b) for b in BLOQUEAN)
 
 
 def notas_pendientes(texto: str) -> list[str]:
