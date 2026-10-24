@@ -123,10 +123,14 @@ Dile a la persona que los borradores están en **`/admin/tecnologia`**, y qué h
 ahí con cada uno:
 
 - abrir **«Ficha»** y leerla como la va a leer el cliente: el panel la pinta con
-  el mismo componente que la ficha del sitio —subtítulos, viñetas, la ficha
-  técnica en tabla y las fuentes al pie—. Si algo sale con `##`, `|` o `**` a la
-  vista, la descripción usa un formato que el sitio no pinta: se corrige en el
-  bloque 1 (`referencias/descripciones.md` de `/listas-de-proveedor`), no aquí;
+  el mismo componente que la ficha del sitio —subtítulos, viñetas y la ficha
+  técnica en tabla, **sin fuentes**—. Si algo sale con `##`, `|` o `**` a la
+  vista, o una frase dice de dónde salió un dato («según la ficha de…», «la
+  tabla técnica sale de…»), se corrige en el bloque 1
+  (`referencias/descripciones.md` de `/listas-de-proveedor`), no aquí. Desde el
+  23/10/2026 la descripción no nombra su fuente, tampoco el aviso de Open Icecat
+  que pide su licencia: es un riesgo que asumió el negocio
+  (`docs/14-consultas-al-abogado.md`, numeral 8);
 - marcar qué colores hay de cada configuración —los que sugiere la lista vienen
   marcados; si la lista no trae colores, la sugerencia es la paleta completa del
   modelo (regla 13 del bloque 1, decisión del 22/10/2026), así que se desmarca lo

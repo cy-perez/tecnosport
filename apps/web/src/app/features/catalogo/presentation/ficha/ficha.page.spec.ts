@@ -357,12 +357,13 @@ describe('FichaPage', () => {
       buscarPorSlug: () => Promise.resolve({ ...productoDePrueba(), descripcion: DESCRIPCION }),
     };
 
-    it('enseña subtítulos y la ficha técnica en tabla, sin la sintaxis a la vista', async () => {
+    it('enseña subtítulos y la ficha técnica en tabla, sin la sintaxis ni las fuentes', async () => {
       const { container } = await renderFicha(repositorio);
 
       expect(await screen.findByRole('heading', { level: 2, name: 'Ficha técnica' })).toBeTruthy();
       expect(screen.getByRole('rowheader', { name: 'Sonido' })).toBeTruthy();
-      expect(screen.getByRole('link', { name: 'https://icecat.biz' })).toBeTruthy();
+      // Decisión del negocio del 23/10/2026: la ficha no dice de dónde salió cada dato.
+      expect(container.textContent).not.toContain('Icecat');
       expect(container.textContent).not.toContain('##');
       expect(container.textContent).not.toContain('|---');
     });

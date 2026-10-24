@@ -45,8 +45,8 @@ exactamente lo de la plantilla de arriba, y nada más:
 | `## Subtítulo` | subtítulo de sección |
 | `- viñeta` | lista con viñetas |
 | `\| Atributo \| Detalle \|` + `\|---\|---\|` + filas | tabla de dos columnas, el atributo como encabezado de fila |
-| `---` y, debajo, una fuente por línea | pie de fuentes en letra pequeña |
-| una dirección `https://…` | enlace (la mención de Icecat lo exige) |
+| una dirección `https://…` | enlace |
+| `---` y lo que vaya debajo | **nada**: no se pinta (ver «Sin fuentes») |
 
 Lo demás sale **tal cual, con la sintaxis a la vista**: `###` o `#`, negrita con
 `**`, listas numeradas, citas con `>` y enlaces `[texto](dirección)`.
@@ -101,9 +101,37 @@ capacidades («microSD de hasta 1 TB»).
 - **Garantía**: quién responde y por cuánto tiempo. En Colombia la garantía legal
   aplica aunque no se mencione; lo que evita el reclamo es que esté escrita.
 
-Cuando la ficha use contenido de Open Icecat, la plantilla debe llevar la
-mención "Specs Icecat" con enlace y el descargo de responsabilidad. Es condición
-de la licencia, no un crédito opcional.
+## Sin fuentes: la descripción no dice de dónde salió un dato
+
+**Decisión del negocio del 23/10/2026.** La descripción que se publica no nombra
+la fuente consultada: ni un pie de fuentes tras `---`, ni frases como «La tabla
+técnica sale de Open Icecat…», «según la ficha de JBL», «la ficha de Xiaomi
+Colombia indica…», «según la página oficial» o «según el proveedor». El dato se
+escribe solo: «Este modelo no tiene NFC», no «La ficha de Xiaomi indica que este
+modelo no tiene NFC». Y la nota que solo explicaba de dónde salió algo —«la ficha
+del fabricante no declara X, así que no se promete»— no se escribe: lo que no se
+declara basta con no prometerlo.
+
+- **La fuente no se pierde**: va en `fuentes_ficha` del modelo en
+  `conocidos.json` —la de la ficha y, con `"seccion": "caja"`, la de la caja—,
+  y la ficha interna de la carpeta del modelo la lista. Si un cliente reclama un
+  dato, de ahí se sabe de dónde salió.
+- **Lo hace el código**: `redactar_fichas.py` ya no escribe el pie;
+  `descripciones.sanear` quita el pie y las viñetas que nombran Icecat de una
+  descripción heredada; y `descripciones.defectos` avisa cualquier otra frase
+  que cite su fuente («nombra de dónde salió un dato») y **deja al modelo fuera
+  de la exportación** hasta que se reescriba. El sitio, además, no pinta el pie
+  aunque llegue.
+- **«según Apple» o «según el fabricante» sí se quedan**: no dicen qué página
+  se consultó sino quién declara la cifra, y en la autonomía eso es lo que evita
+  prometer horas que la tienda no puede garantizar (ver «Tono»).
+- **Incluye a Open Icecat, y es un riesgo asumido.** Su Open Content License
+  (cláusulas 1 y 2) pide el aviso de derechos, el descargo de garantía y la nota
+  de lo que se modificó junto a los datos. Publicar una tabla de Icecat sin ese
+  aviso incumple la licencia; el negocio lo decidió así sabiéndolo, y la
+  pregunta quedó en el numeral 8 de `docs/14-consultas-al-abogado.md`. Si la
+  respuesta es que no se puede, la salida es dejar de usar Icecat para las
+  tablas, no volver a publicar el pie.
 
 Para los textos legales del sitio (términos, garantías, retracto, datos
 personales) usa la skill `textos-legales-comerciales`, no los redactes aquí.

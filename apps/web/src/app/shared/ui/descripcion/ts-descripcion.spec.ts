@@ -36,7 +36,7 @@ describe('TsDescripcion', () => {
     expect(texto).not.toContain('##');
     expect(texto).not.toContain('|---');
     expect(texto).not.toContain('| Pantalla');
-    expect(container.querySelectorAll('p').length).toBeGreaterThan(1);
+    expect(container.querySelectorAll('h2, li, table').length).toBeGreaterThan(1);
   });
 
   it('cada subtítulo es un encabezado de nivel 2 por omisión', async () => {
@@ -79,14 +79,21 @@ describe('TsDescripcion', () => {
     }
   });
 
-  it('las fuentes enlazan su dirección sin espacios de más alrededor', async () => {
-    await renderDescripcion(DESCRIPCION);
-    const enlace = screen.getByRole('link', { name: 'https://icecat.biz' });
+  // Decisión del negocio del 23/10/2026: la ficha no dice de dónde salió cada dato.
+  it('no pinta el pie de fuentes, ni como párrafo', async () => {
+    const { container } = await renderDescripcion(DESCRIPCION);
 
-    expect(enlace.getAttribute('href')).toBe('https://icecat.biz');
-    expect(enlace.closest('p')?.textContent).toBe(
-      'Ficha técnica: Datos de Open Icecat (https://icecat.biz) sin garantía de ningún tipo.',
-    );
+    expect(container.textContent).not.toContain('Icecat');
+    expect(container.textContent).not.toContain('Ficha técnica:');
+    expect(screen.queryByRole('link')).toBeNull();
+  });
+
+  it('una dirección dentro del texto sí es enlace, sin espacios de más alrededor', async () => {
+    await renderDescripcion('Manual en https://ejemplo.co/manual.');
+    const enlace = screen.getByRole('link', { name: 'https://ejemplo.co/manual' });
+
+    expect(enlace.getAttribute('href')).toBe('https://ejemplo.co/manual');
+    expect(enlace.closest('p')?.textContent).toBe('Manual en https://ejemplo.co/manual.');
   });
 
   it('un texto escrito a mano se ve como se escribió, con sus saltos de línea', async () => {

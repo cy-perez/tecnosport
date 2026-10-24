@@ -163,7 +163,7 @@ def avisos_para_el_panel(lista: dict) -> dict:
         notas = descripciones.notas_pendientes(m["descripcion"])
         if notas:
             aviso["notasDescripcion"] = notas
-        faltantes = [d for d in descripciones.defectos(m["descripcion"]) if d not in descripciones.BLOQUEAN]
+        faltantes = [d for d in descripciones.defectos(m["descripcion"]) if not descripciones.es_bloqueante(d)]
         if faltantes:
             aviso["defectosDescripcion"] = faltantes
         if aviso:
