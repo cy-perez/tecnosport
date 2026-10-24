@@ -116,6 +116,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/borradores-tecnologia/{id}/descripcion": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["editarFicha"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/borradores-tecnologia/{id}/fotos": {
         parameters: {
             query?: never;
@@ -126,6 +142,22 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["agregarFoto"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/borradores-tecnologia/{id}/fotos/orden": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["reordenarFotos"];
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -2402,7 +2434,10 @@ export interface components {
             /** Format: date-time */
             creadoEn: string;
             descripcion: string;
+            descripcionDeLaSkill: string;
             estado: string;
+            fichaEditada: boolean;
+            fichaNuevaDeLaSkill: boolean;
             fotos: components["schemas"]["FotoDeBorradorTecnologiaRespuesta"][];
             /** Format: int32 */
             fotosQueFaltan: number;
@@ -2677,6 +2712,9 @@ export interface components {
             /** Format: uuid */
             padreId?: string;
             slug?: string;
+        };
+        EditarFichaBorradorTecnologiaPeticion: {
+            descripcion?: string;
         };
         EditarMarcaPeticion: {
             nombre: string;
@@ -3152,6 +3190,9 @@ export interface components {
             /** Format: int32 */
             diasEstimados: number;
             transportadora: string;
+        };
+        OrdenDeFotosBorradorTecnologiaPeticion: {
+            fotoIds: string[];
         };
         PagoSinPedidoRespuesta: {
             correo: string;
@@ -4076,6 +4117,32 @@ export interface operations {
             };
         };
     };
+    editarFicha: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EditarFichaBorradorTecnologiaPeticion"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["BorradorTecnologiaRespuesta"];
+                };
+            };
+        };
+    };
     agregarFoto: {
         parameters: {
             query?: never;
@@ -4093,6 +4160,32 @@ export interface operations {
         responses: {
             /** @description Created */
             201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["BorradorTecnologiaRespuesta"];
+                };
+            };
+        };
+    };
+    reordenarFotos: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OrdenDeFotosBorradorTecnologiaPeticion"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
                 headers: {
                     [name: string]: unknown;
                 };

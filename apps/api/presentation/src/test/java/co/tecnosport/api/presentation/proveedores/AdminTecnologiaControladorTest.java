@@ -5,6 +5,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -24,11 +25,13 @@ import co.tecnosport.api.application.proveedores.RepositorioProveedores;
 import co.tecnosport.api.application.proveedores.tecnologia.AgregarFotoABorradorTecnologia;
 import co.tecnosport.api.application.proveedores.tecnologia.AprobarBorradorTecnologia;
 import co.tecnosport.api.application.proveedores.tecnologia.EditarBorradorTecnologia;
+import co.tecnosport.api.application.proveedores.tecnologia.EditarFichaBorradorTecnologia;
 import co.tecnosport.api.application.proveedores.tecnologia.FotosFirmadasDeBorradorTecnologia;
 import co.tecnosport.api.application.proveedores.tecnologia.ImportarListaDeTecnologia;
 import co.tecnosport.api.application.proveedores.tecnologia.ListarBorradoresTecnologia;
 import co.tecnosport.api.application.proveedores.tecnologia.QuitarFotoDeBorradorTecnologia;
 import co.tecnosport.api.application.proveedores.tecnologia.RechazarBorradorTecnologia;
+import co.tecnosport.api.application.proveedores.tecnologia.ReordenarFotosBorradorTecnologia;
 import co.tecnosport.api.application.proveedores.tecnologia.RepositorioBorradoresTecnologia;
 import co.tecnosport.api.application.proveedores.tecnologia.RepositorioListasDeTecnologia;
 import co.tecnosport.api.application.proveedores.tecnologia.RepositorioVariantesDeProveedor;
@@ -47,6 +50,8 @@ import co.tecnosport.api.presentation.catalogo.MapeadorRespuestasCatalogo;
 import co.tecnosport.api.presentation.catalogo.MapeadorRespuestasProductoAdmin;
 import java.lang.reflect.Proxy;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -501,6 +506,79 @@ class AdminTecnologiaControladorTest {
   }
 
   @Test
+  void reordenarLasFotosDejaLaPrimeraComoPrincipal() throws Exception {
+    UUID id = importarYTomarElBorrador();
+    conCuatroFotos(id);
+    List<UUID> ids =
+        new ArrayList<>(
+            borradores.porId.get(id).fotos().stream().map(FotoDeBorradorTecnologia::id).toList());
+    Collections.reverse(ids);
+
+    mockMvc
+        .perform(
+            put("/api/v1/admin/borradores-tecnologia/{id}/fotos/orden", id)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    "{\"fotoIds\": ["
+                        + String.join(",", ids.stream().map(u -> "\"" + u + "\"").toList())
+                        + "]}"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.fotos[0].id").value(ids.getFirst().toString()))
+        .andExpect(jsonPath("$.fotos[0].hash").value("4".repeat(64)));
+  }
+
+  @Test
+  void unOrdenQueDejaFueraUnaFotoEs422() throws Exception {
+    UUID id = importarYTomarElBorrador();
+    conCuatroFotos(id);
+    UUID una = borradores.porId.get(id).fotos().getFirst().id();
+
+    mockMvc
+        .perform(
+            put("/api/v1/admin/borradores-tecnologia/{id}/fotos/orden", id)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"fotoIds\": [\"" + una + "\"]}"))
+        .andExpect(status().isUnprocessableContent());
+  }
+
+  @Test
+  void editarLaFichaLaPublicaYEnBlancoVuelveALaDeLaSkill() throws Exception {
+    UUID id = importarYTomarElBorrador();
+
+    mockMvc
+        .perform(
+            put("/api/v1/admin/borradores-tecnologia/{id}/descripcion", id)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"descripcion\": \"El Galaxy A17 5G, editado a mano.\"}"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.descripcion").value("El Galaxy A17 5G, editado a mano."))
+        .andExpect(jsonPath("$.descripcionDeLaSkill").value("El Galaxy A17 5G."))
+        .andExpect(jsonPath("$.fichaEditada").value(true))
+        .andExpect(jsonPath("$.fichaNuevaDeLaSkill").value(false));
+
+    mockMvc
+        .perform(
+            put("/api/v1/admin/borradores-tecnologia/{id}/descripcion", id)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"descripcion\": null}"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.descripcion").value("El Galaxy A17 5G."))
+        .andExpect(jsonPath("$.fichaEditada").value(false));
+  }
+
+  @Test
+  void unaFichaConMarcadorEs422() throws Exception {
+    UUID id = importarYTomarElBorrador();
+
+    mockMvc
+        .perform(
+            put("/api/v1/admin/borradores-tecnologia/{id}/descripcion", id)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"descripcion\": \"Garantía de [[PLAZO]] meses.\"}"))
+        .andExpect(status().isUnprocessableContent());
+  }
+
+  @Test
   void unTipoQueNoEsImagenWebEs422() throws Exception {
     UUID id = importarYTomarElBorrador();
     mockMvc
@@ -743,6 +821,16 @@ class AdminTecnologiaControladorTest {
     @Bean
     QuitarFotoDeBorradorTecnologia quitarFoto(BorradoresDoble borradores, AlmacenDoble almacen) {
       return new QuitarFotoDeBorradorTecnologia(borradores, almacen);
+    }
+
+    @Bean
+    ReordenarFotosBorradorTecnologia reordenarFotosBorradorTecnologia(BorradoresDoble borradores) {
+      return new ReordenarFotosBorradorTecnologia(borradores);
+    }
+
+    @Bean
+    EditarFichaBorradorTecnologia editarFichaBorradorTecnologia(BorradoresDoble borradores) {
+      return new EditarFichaBorradorTecnologia(borradores);
     }
 
     @Bean

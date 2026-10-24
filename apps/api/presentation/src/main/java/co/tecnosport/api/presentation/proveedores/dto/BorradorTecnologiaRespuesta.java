@@ -18,6 +18,10 @@ import java.util.UUID;
  * @param fotosQueFaltan cuántas le faltan para aprobarse; cero en uno de configuraciones nuevas
  * @param fotos las fotos con su URL firmada, en el orden en que se publican; vacía en la bandeja,
  *     que no las firma (ADR-0079)
+ * @param descripcion la ficha que se publicará al aprobar: la editada a mano si la hay
+ * @param descripcionDeLaSkill la que preparó la skill, aunque se haya editado
+ * @param fichaEditada si {@code descripcion} es una edición a mano
+ * @param fichaNuevaDeLaSkill si una lista trajo otra ficha de la skill después de la edición
  */
 public record BorradorTecnologiaRespuesta(
     @Schema(requiredMode = Schema.RequiredMode.REQUIRED) UUID id,
@@ -38,7 +42,10 @@ public record BorradorTecnologiaRespuesta(
     @Schema(requiredMode = Schema.RequiredMode.REQUIRED) int cantidadDeFotos,
     @Schema(requiredMode = Schema.RequiredMode.REQUIRED) int fotosQueFaltan,
     @Schema(requiredMode = Schema.RequiredMode.REQUIRED)
-        List<FotoDeBorradorTecnologiaRespuesta> fotos) {
+        List<FotoDeBorradorTecnologiaRespuesta> fotos,
+    @Schema(requiredMode = Schema.RequiredMode.REQUIRED) String descripcionDeLaSkill,
+    @Schema(requiredMode = Schema.RequiredMode.REQUIRED) boolean fichaEditada,
+    @Schema(requiredMode = Schema.RequiredMode.REQUIRED) boolean fichaNuevaDeLaSkill) {
 
   /** Para la bandeja: sin firmar las fotos. */
   public static BorradorTecnologiaRespuesta de(BorradorTecnologia b) {
@@ -54,7 +61,7 @@ public record BorradorTecnologiaRespuesta(
         b.modelo().titulo(),
         b.modelo().marca(),
         b.modelo().categoria(),
-        b.modelo().descripcion(),
+        b.descripcion(),
         b.modelo().paleta(),
         b.configuraciones().stream().map(ConfiguracionRespuesta::de).toList(),
         b.productoId().orElse(null),
@@ -64,7 +71,10 @@ public record BorradorTecnologiaRespuesta(
         b.creadoEn(),
         b.fotos().size(),
         b.fotosQueFaltan(),
-        fotos.stream().map(FotoDeBorradorTecnologiaRespuesta::de).toList());
+        fotos.stream().map(FotoDeBorradorTecnologiaRespuesta::de).toList(),
+        b.modelo().descripcion(),
+        b.descripcionEditada().isPresent(),
+        b.fichaNuevaDeLaSkill());
   }
 
   /** Una foto del borrador; la primera es la principal. */
