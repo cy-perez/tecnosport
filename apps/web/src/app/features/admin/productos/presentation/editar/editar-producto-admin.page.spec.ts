@@ -114,6 +114,8 @@ function productoDePrueba(galeria: readonly ImagenDeGaleriaAdmin[] = []): Produc
     imagenPrincipalUrl: null,
     imagenPrincipalVarianteId: null,
     totalVariantes: 0,
+    estadoDisponibilidad: 'DISPONIBLE',
+    vistoPorUltimaVez: null,
     galeria,
     tallaSirveHasta: null,
     variantes: [],
@@ -437,6 +439,21 @@ describe('EditarProductoAdminPage', () => {
   // opción" con el producto ya cargado, y como los dos campos son obligatorios,
   // editar solo el nombre obligaba a volver a elegirlos. Encontrado en el
   // navegador; la prueba de arriba no lo veía porque solo miraba los textos.
+  it('junto al estado dice si la tienda lo esconde porque el proveedor dejó de anunciarlo', async () => {
+    await renderPagina(
+      new RepositorioProductosAdminFalso({
+        ...productoDePrueba(),
+        estado: 'PUBLICADO',
+        estadoDisponibilidad: 'OCULTO_POR_VENCIMIENTO',
+        vistoPorUltimaVez: '2026-10-14T15:30:00Z',
+      }),
+    );
+
+    expect(
+      await screen.findByText('Oculto: el proveedor no lo anuncia desde el 14 de octubre de 2026'),
+    ).toBeTruthy();
+  });
+
   it('prellena también la marca y la categoría, que vienen de otra consulta', async () => {
     await renderPagina(new RepositorioProductosAdminFalso());
     await screen.findByDisplayValue('Morral urbano');

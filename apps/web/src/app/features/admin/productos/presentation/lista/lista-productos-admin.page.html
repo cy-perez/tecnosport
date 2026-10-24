@@ -115,9 +115,14 @@
                   <td>{{ producto.marca.nombre }}</td>
                   <td>{{ producto.categoria.nombre }}</td>
                   <td>
-                    <span [class]="clasesEstado(producto.estado)">{{
-                      etiquetaEstado(producto.estado)
-                    }}</span>
+                    <div class="flex flex-col items-start gap-4">
+                      <span [class]="clasesEstado(producto.estado)">{{
+                        etiquetaEstado(producto.estado)
+                      }}</span>
+                      @if (disponibilidad(producto); as aviso) {
+                        <span [class]="clasesDisponibilidad" data-disponibilidad>{{ aviso }}</span>
+                      }
+                    </div>
                   </td>
                   <td>{{ producto.totalVariantes }}</td>
                   <td>

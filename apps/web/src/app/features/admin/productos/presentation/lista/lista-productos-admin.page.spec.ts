@@ -36,6 +36,8 @@ function productoDePrueba(overrides: Partial<ProductoAdmin> = {}): ProductoAdmin
     categoria: { id: 'c1', nombre: 'Morrales', slug: 'bolsos-dama-morrales', linea: 'BOLSOS' },
     imagenPrincipalUrl: null,
     totalVariantes: 2,
+    estadoDisponibilidad: 'DISPONIBLE',
+    vistoPorUltimaVez: null,
     ...overrides,
   };
 }
@@ -378,6 +380,48 @@ describe('ListaProductosAdminPage', () => {
     expect(screen.getByText('TecnoSport')).toBeTruthy();
     expect(screen.getByText('Morrales')).toBeTruthy();
     expect(screen.getByRole('cell', { name: 'Borrador' })).toBeTruthy();
+  });
+
+  /**
+   * "Publicado" no basta: la tienda solo muestra lo publicado **y** disponible, y el panel decía
+   * publicado de siete productos que el sistema había ocultado por vencimiento. La insignia dice
+   * por qué no se ve y desde cuándo, con la fecha en hora de Colombia.
+   */
+  it('un publicado que el proveedor dejó de anunciar dice que está oculto y desde cuándo', async () => {
+    await renderLista([
+      productoDePrueba({
+        estado: 'PUBLICADO',
+        estadoDisponibilidad: 'OCULTO_POR_VENCIMIENTO',
+        vistoPorUltimaVez: '2026-10-14T15:30:00Z',
+      }),
+    ]);
+
+    expect(
+      await screen.findByText('Oculto: el proveedor no lo anuncia desde el 14 de octubre de 2026'),
+    ).toBeTruthy();
+    expect(screen.getByText('Publicado')).toBeTruthy();
+  });
+
+  it('un agotado por el proveedor lo dice con su propio texto', async () => {
+    await renderLista([
+      productoDePrueba({
+        estado: 'PUBLICADO',
+        estadoDisponibilidad: 'AGOTADO_POR_PROVEEDOR',
+        vistoPorUltimaVez: '2026-10-14T15:30:00Z',
+      }),
+    ]);
+
+    expect(
+      await screen.findByText('Agotado por el proveedor (aviso del 14 de octubre de 2026)'),
+    ).toBeTruthy();
+  });
+
+  /** Un disponible —y todo manual lo es— no lleva la segunda insignia. */
+  it('un producto disponible no lleva insignia de disponibilidad', async () => {
+    const { container } = await renderLista([productoDePrueba({ estado: 'PUBLICADO' })]);
+    await screen.findByText('Morral urbano');
+
+    expect(container.querySelector('[data-disponibilidad]')).toBeNull();
   });
 
   /**

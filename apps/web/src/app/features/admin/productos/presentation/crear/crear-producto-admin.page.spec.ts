@@ -79,6 +79,8 @@ class RepositorioProductosAdminFalso implements RepositorioProductosAdmin {
       categoria: CATEGORIA,
       imagenPrincipalUrl: null,
       totalVariantes: 0,
+      estadoDisponibilidad: 'DISPONIBLE',
+      vistoPorUltimaVez: null,
     };
   }
 

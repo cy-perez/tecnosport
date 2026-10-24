@@ -2,9 +2,12 @@
   <ts-migas [ruta]="migas()" />
 
   @if (estado()) {
-    <p class="m-0 mb-16 flex items-center gap-8 text-sm text-ts-texto-suave">
+    <p class="m-0 mb-16 flex flex-wrap items-center gap-8 text-sm text-ts-texto-suave">
       {{ 'admin.productos.editar.estado' | transloco }}
       <span [class]="clasesEstado()">{{ etiquetaEstado() }}</span>
+      @if (disponibilidad(); as aviso) {
+        <span [class]="clasesDisponibilidad" data-disponibilidad>{{ aviso }}</span>
+      }
     </p>
   }
 

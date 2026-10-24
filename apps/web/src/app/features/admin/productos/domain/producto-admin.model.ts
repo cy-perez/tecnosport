@@ -1,5 +1,13 @@
 export type EstadoProducto = 'BORRADOR' | 'PUBLICADO';
 
+/**
+ * Si el proveedor todavía lo tiene. Es otro eje que `EstadoProducto`: publicar lo decide una
+ * persona, y esto lo deciden los mensajes del proveedor y el tiempo. La tienda solo muestra lo que
+ * está `PUBLICADO` **y** `DISPONIBLE`; un producto manual siempre es `DISPONIBLE`.
+ */
+export type EstadoDisponibilidad =
+  'DISPONIBLE' | 'OCULTO_POR_VENCIMIENTO' | 'AGOTADO_POR_PROVEEDOR';
+
 export interface MarcaAdmin {
   readonly id: string;
   readonly nombre: string;
@@ -22,6 +30,9 @@ export interface ProductoAdmin {
   readonly categoria: CategoriaAdmin;
   readonly imagenPrincipalUrl: string | null;
   readonly totalVariantes: number;
+  readonly estadoDisponibilidad: EstadoDisponibilidad;
+  /** La fecha del último mensaje o lista del proveedor que lo trajo; `null` en un manual. */
+  readonly vistoPorUltimaVez: string | null;
 }
 
 export interface ProductosPaginadosAdmin {

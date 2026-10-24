@@ -1,4 +1,5 @@
-import { EstadoProducto } from '../domain/producto-admin.model';
+import { fechaLarga } from '../../../../core/i18n/fecha-colombia';
+import { EstadoProducto, ProductoAdmin } from '../domain/producto-admin.model';
 
 /**
  * En su propio archivo y no en la página de la lista: la edición también la usa, y importarla desde
@@ -27,6 +28,36 @@ const CLASES_INSIGNIA_ESTADO: Record<EstadoProducto, string> = {
 
 export function clasesDeEstadoProducto(estado: EstadoProducto): string {
   return CLASES_INSIGNIA + ' ' + CLASES_INSIGNIA_ESTADO[estado];
+}
+
+/**
+ * La segunda insignia: la tienda no lo muestra aunque diga "publicado". Contorno de aviso por lo
+ * mismo que la de estado, y aviso y no error porque no hay nada roto que arreglar: el siguiente
+ * mensaje del proveedor que lo traiga lo vuelve a mostrar solo.
+ */
+export const CLASES_INSIGNIA_DISPONIBILIDAD = CLASES_INSIGNIA + ' border-ts-aviso text-ts-aviso';
+
+/**
+ * El texto de la insignia de disponibilidad, o `null` si no hace falta ninguna. Un `DISPONIBLE` —y
+ * todo manual lo es— no lleva nada: una insignia en cada fila que no dice nada entrena a no leerla.
+ * La fecha es la del último mensaje del proveedor, que es la que dice cuándo se dejó de saber de él.
+ */
+export function textoDeDisponibilidad(
+  producto: Pick<ProductoAdmin, 'estadoDisponibilidad' | 'vistoPorUltimaVez'>,
+  traducir: (clave: string, parametros?: Record<string, unknown>) => string,
+  idioma: string,
+): string | null {
+  if (producto.estadoDisponibilidad === 'DISPONIBLE') {
+    return null;
+  }
+  const base =
+    producto.estadoDisponibilidad === 'AGOTADO_POR_PROVEEDOR'
+      ? 'admin.productos.disponibilidad.agotado'
+      : 'admin.productos.disponibilidad.oculto';
+  if (!producto.vistoPorUltimaVez) {
+    return traducir(base);
+  }
+  return traducir(base + 'Desde', { fecha: fechaLarga(producto.vistoPorUltimaVez, idioma) });
 }
 
 /** Lo que se puede hacer con un producto entero, y lo que cada acción arrastra al confirmarse. */

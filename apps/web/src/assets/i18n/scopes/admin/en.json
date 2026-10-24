@@ -277,6 +277,12 @@
       "borrador": "Draft",
       "publicado": "Published"
     },
+    "disponibilidad": {
+      "ocultoDesde": "Hidden: the supplier hasn't listed it since {{fecha}}",
+      "oculto": "Hidden: the supplier stopped listing it",
+      "agotadoDesde": "Sold out at the supplier (notice of {{fecha}})",
+      "agotado": "Sold out at the supplier"
+    },
     "crear": {
       "faltanCampos": "Required fields are missing: name, description, brand and category.",
       "titulo": "New product",

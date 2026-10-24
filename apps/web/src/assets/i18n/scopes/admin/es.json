@@ -277,6 +277,12 @@
       "borrador": "Borrador",
       "publicado": "Publicado"
     },
+    "disponibilidad": {
+      "ocultoDesde": "Oculto: el proveedor no lo anuncia desde el {{fecha}}",
+      "oculto": "Oculto: el proveedor dejó de anunciarlo",
+      "agotadoDesde": "Agotado por el proveedor (aviso del {{fecha}})",
+      "agotado": "Agotado por el proveedor"
+    },
     "crear": {
       "faltanCampos": "Faltan datos obligatorios: el nombre, la descripción, la marca y la categoría.",
       "titulo": "Nuevo producto",
