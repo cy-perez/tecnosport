@@ -129,10 +129,13 @@
             }
           </p>
         </div>
-
-        <p class="text-ts-texto">{{ p.descripcion }}</p>
       </div>
     </div>
+
+    <!-- Bajo la rejilla y no en la columna de compra: con la ficha técnica en tabla, la
+         descripción es lo más largo de la página, y en la mitad derecha del escritorio dejaba la
+         galería sola frente a un muro de texto. Al ancho de lectura, no al de la sección. -->
+    <ts-descripcion class="mt-48 max-w-lectura" [texto]="p.descripcion" />
   } @else {
     <p class="text-ts-error" role="alert">{{ 'catalogo.ficha.no_encontrado' | transloco }}</p>
     <!-- Un enlace roto o un producto despublicado no puede ser un callejón sin

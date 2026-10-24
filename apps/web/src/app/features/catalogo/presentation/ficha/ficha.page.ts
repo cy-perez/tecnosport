@@ -27,6 +27,7 @@ import { resumirDescripcion } from '../../../../core/seo/resumen-descripcion';
 import { usarDatosEstructurados, usarMetadatos } from '../../../../core/seo/usar-metadatos';
 import { AltoEnVariable } from '../../../../shared/alto-en-variable/alto-en-variable';
 import { TsBoton } from '../../../../shared/ui/boton/ts-boton';
+import { TsDescripcion } from '../../../../shared/ui/descripcion/ts-descripcion';
 import { TsEsqueleto } from '../../../../shared/ts-esqueleto/ts-esqueleto';
 import { TsEtiquetaStock } from '../etiqueta-stock/ts-etiqueta-stock';
 import { TsGaleria } from '../galeria/ts-galeria';
@@ -71,6 +72,7 @@ import {
     TsEtiquetaStock,
     TsEsqueleto,
     TsBoton,
+    TsDescripcion,
     TsMigas,
     TsVisor360,
   ],
