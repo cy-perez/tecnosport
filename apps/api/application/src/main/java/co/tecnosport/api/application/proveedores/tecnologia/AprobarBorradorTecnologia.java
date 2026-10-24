@@ -320,7 +320,7 @@ public final class AprobarBorradorTecnologia {
         Producto.crearDeProveedor(
             borrador.modelo().titulo(),
             slugDisponible(Slug.generarDesde(borrador.modelo().titulo())),
-            borrador.modelo().descripcion(),
+            borrador.descripcion(),
             marca,
             categoria,
             borrador.proveedorId(),

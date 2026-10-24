@@ -5,11 +5,13 @@ import co.tecnosport.api.application.proveedores.tecnologia.AgregarFotoABorrador
 import co.tecnosport.api.application.proveedores.tecnologia.AprobarBorradorTecnologia;
 import co.tecnosport.api.application.proveedores.tecnologia.AprobarBorradorTecnologiaComando;
 import co.tecnosport.api.application.proveedores.tecnologia.EditarBorradorTecnologia;
+import co.tecnosport.api.application.proveedores.tecnologia.EditarFichaBorradorTecnologia;
 import co.tecnosport.api.application.proveedores.tecnologia.FotosFirmadasDeBorradorTecnologia;
 import co.tecnosport.api.application.proveedores.tecnologia.ImportarListaDeTecnologia;
 import co.tecnosport.api.application.proveedores.tecnologia.ListarBorradoresTecnologia;
 import co.tecnosport.api.application.proveedores.tecnologia.QuitarFotoDeBorradorTecnologia;
 import co.tecnosport.api.application.proveedores.tecnologia.RechazarBorradorTecnologia;
+import co.tecnosport.api.application.proveedores.tecnologia.ReordenarFotosBorradorTecnologia;
 import co.tecnosport.api.application.proveedores.tecnologia.SolicitarSubidaDeFotoDeBorradorTecnologia;
 import co.tecnosport.api.application.proveedores.tecnologia.VerBorradorTecnologia;
 import co.tecnosport.api.domain.catalogo.Producto;
@@ -20,9 +22,11 @@ import co.tecnosport.api.presentation.catalogo.dto.ProductoAdminRespuesta;
 import co.tecnosport.api.presentation.proveedores.dto.AgregarFotoBorradorTecnologiaPeticion;
 import co.tecnosport.api.presentation.proveedores.dto.AprobarBorradorTecnologiaPeticion;
 import co.tecnosport.api.presentation.proveedores.dto.BorradorTecnologiaRespuesta;
+import co.tecnosport.api.presentation.proveedores.dto.EditarFichaBorradorTecnologiaPeticion;
 import co.tecnosport.api.presentation.proveedores.dto.ElegirConfiguracionesPeticion;
 import co.tecnosport.api.presentation.proveedores.dto.ImportacionTecnologiaRespuesta;
 import co.tecnosport.api.presentation.proveedores.dto.ImportarListaTecnologiaPeticion;
+import co.tecnosport.api.presentation.proveedores.dto.OrdenDeFotosBorradorTecnologiaPeticion;
 import co.tecnosport.api.presentation.proveedores.dto.RechazarBorradorPeticion;
 import co.tecnosport.api.presentation.proveedores.dto.SolicitarSubidaDeFotoPeticion;
 import co.tecnosport.api.presentation.proveedores.dto.SubidaDeFotoRespuesta;
@@ -39,6 +43,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -67,6 +72,8 @@ public class AdminTecnologiaControlador {
   private final SolicitarSubidaDeFotoDeBorradorTecnologia solicitarSubidaDeFoto;
   private final AgregarFotoABorradorTecnologia agregarFoto;
   private final QuitarFotoDeBorradorTecnologia quitarFoto;
+  private final ReordenarFotosBorradorTecnologia reordenarFotos;
+  private final EditarFichaBorradorTecnologia editarFicha;
   private final FotosFirmadasDeBorradorTecnologia fotosFirmadas;
   private final MapeadorRespuestasProductoAdmin mapeadorProducto;
   private final TransactionTemplate transaccion;
@@ -81,6 +88,8 @@ public class AdminTecnologiaControlador {
       SolicitarSubidaDeFotoDeBorradorTecnologia solicitarSubidaDeFoto,
       AgregarFotoABorradorTecnologia agregarFoto,
       QuitarFotoDeBorradorTecnologia quitarFoto,
+      ReordenarFotosBorradorTecnologia reordenarFotos,
+      EditarFichaBorradorTecnologia editarFicha,
       FotosFirmadasDeBorradorTecnologia fotosFirmadas,
       MapeadorRespuestasProductoAdmin mapeadorProducto,
       PlatformTransactionManager transactionManager) {
@@ -93,6 +102,8 @@ public class AdminTecnologiaControlador {
     this.solicitarSubidaDeFoto = Objects.requireNonNull(solicitarSubidaDeFoto);
     this.agregarFoto = Objects.requireNonNull(agregarFoto);
     this.quitarFoto = Objects.requireNonNull(quitarFoto);
+    this.reordenarFotos = Objects.requireNonNull(reordenarFotos);
+    this.editarFicha = Objects.requireNonNull(editarFicha);
     this.fotosFirmadas = Objects.requireNonNull(fotosFirmadas);
     this.mapeadorProducto = Objects.requireNonNull(mapeadorProducto);
     this.transaccion = new TransactionTemplate(Objects.requireNonNull(transactionManager));
@@ -184,6 +195,23 @@ public class AdminTecnologiaControlador {
   @ResponseStatus(HttpStatus.NO_CONTENT)
   public void quitarFoto(@PathVariable UUID id, @PathVariable UUID fotoId) {
     transaccion.executeWithoutResult(estado -> quitarFoto.ejecutar(id, fotoId));
+  }
+
+  /** Cambia el orden de las fotos: la primera es la principal del producto al aprobar. */
+  @PutMapping("/borradores-tecnologia/{id}/fotos/orden")
+  public BorradorTecnologiaRespuesta reordenarFotos(
+      @PathVariable UUID id, @RequestBody OrdenDeFotosBorradorTecnologiaPeticion cuerpo) {
+    return conFotos(transaccion.execute(estado -> reordenarFotos.ejecutar(id, cuerpo.fotoIds())));
+  }
+
+  /**
+   * La ficha que se publicará al aprobar, editada a mano. En blanco vuelve a la que preparó la
+   * skill.
+   */
+  @PutMapping("/borradores-tecnologia/{id}/descripcion")
+  public BorradorTecnologiaRespuesta editarFicha(
+      @PathVariable UUID id, @RequestBody EditarFichaBorradorTecnologiaPeticion cuerpo) {
+    return conFotos(transaccion.execute(estado -> editarFicha.ejecutar(id, cuerpo.descripcion())));
   }
 
   private BorradorTecnologiaRespuesta conFotos(BorradorTecnologia borrador) {

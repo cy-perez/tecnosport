@@ -42,7 +42,17 @@ import java.util.UUID;
  *
  * <p>Desde ADR-0079 la skill de fichas sube al borrador las fotos ya retocadas del modelo, en el
  * orden en que se publicarán: la primera es la principal. Quien revisa ve el producto antes de
- * decidir colores y precio, y aprobar las pasa al producto.
+ * decidir colores y precio, y aprobar las pasa al producto. Desde el 23/10/2026 quien revisa
+ * también puede subir, quitar y reordenar fotos desde el panel: lo que entra por ahí no pasó por la
+ * revisión de calidad del bloque 2, y lo decide esa persona.
+ *
+ * <h2>La ficha que preparó la skill se puede editar</h2>
+ *
+ * <p>Quien revisa corrige o recorta la descripción antes de aprobar ({@link
+ * #editarDescripcion(String)}), y aprobar publica la editada ({@link #descripcion()}). La edición
+ * se guarda aparte de la de la lista: una lista nueva actualiza la de la skill y <b>no pisa la
+ * edición</b> (decisión del negocio del 23/10/2026); solo deja dicho que trajo otra ficha ({@link
+ * #fichaNuevaDeLaSkill()}), para que quien revisa decida si vuelve a ella.
  */
 public final class BorradorTecnologia {
 
@@ -67,6 +77,8 @@ public final class BorradorTecnologia {
   private String motivoRechazo;
   private Instant vistoEn;
   private final Instant creadoEn;
+  private String descripcionEditada;
+  private boolean fichaNuevaDeLaSkill;
 
   public BorradorTecnologia(
       UUID id,
@@ -78,7 +90,9 @@ public final class BorradorTecnologia {
       String motivoRechazo,
       Instant vistoEn,
       Instant creadoEn,
-      List<FotoDeBorradorTecnologia> fotos) {
+      List<FotoDeBorradorTecnologia> fotos,
+      String descripcionEditada,
+      boolean fichaNuevaDeLaSkill) {
     this.id = Objects.requireNonNull(id, "El id del borrador no puede ser nulo.");
     this.proveedorId = Objects.requireNonNull(proveedorId, "Un borrador es de un proveedor.");
     this.modelo = Objects.requireNonNull(modelo, "Un borrador de tecnología es de un modelo.");
@@ -96,6 +110,8 @@ public final class BorradorTecnologia {
       throw new ExcepcionDeDominio("Un borrador rechazado dice por qué.");
     }
     this.fotos = new ArrayList<>(fotos == null ? List.of() : fotos);
+    this.descripcionEditada = enBlancoEsNulo(descripcionEditada);
+    this.fichaNuevaDeLaSkill = this.descripcionEditada != null && fichaNuevaDeLaSkill;
   }
 
   /**
@@ -119,7 +135,9 @@ public final class BorradorTecnologia {
         null,
         vistoEn,
         ahora,
-        List.of());
+        List.of(),
+        null,
+        false);
   }
 
   /**
@@ -127,6 +145,9 @@ public final class BorradorTecnologia {
    * configuraciones, colores sugeridos, descripción—, y lo que ya se había elegido sobre una
    * configuración que sigue en la lista se conserva. Lo elegido sobre una que ya no viene se pierde
    * con ella. Una lista más vieja que la última vista no cambia nada.
+   *
+   * <p>La ficha editada a mano tampoco se pierde: la de la skill se actualiza debajo, y si cambió,
+   * {@link #fichaNuevaDeLaSkill()} lo avisa.
    */
   public void actualizarConLista(
       ModeloDeLista deHoy, List<ConfiguracionTecnologia> deLaLista, Instant visto) {
@@ -143,6 +164,9 @@ public final class BorradorTecnologia {
     for (ConfiguracionTecnologia hoy : configuracionesValidas(deLaLista)) {
       ConfiguracionTecnologia anterior = anteriores.get(hoy.sku());
       nuevas.add(anterior == null ? hoy : hoy.conLaEleccionDe(anterior, deHoy.paleta()));
+    }
+    if (descripcionEditada != null && !deHoy.descripcion().equals(modelo.descripcion())) {
+      this.fichaNuevaDeLaSkill = true;
     }
     this.modelo = deHoy;
     this.configuraciones.clear();
@@ -179,6 +203,42 @@ public final class BorradorTecnologia {
             .orElseThrow(() -> new ExcepcionDeDominio("Esa foto no es de este borrador."));
     fotos.remove(foto);
     return foto;
+  }
+
+  /**
+   * Deja las fotos en el orden de {@code ids}: la primera pasa a ser la principal. Tienen que ser
+   * exactamente las del borrador —ni una de más, ni una de menos, ni repetidas—: un orden a medias
+   * dejaría fuera una foto sin que nadie lo pidiera.
+   */
+  public void reordenarFotos(List<UUID> ids) {
+    exigirEnRevision("reordenar las fotos de");
+    Objects.requireNonNull(ids, "El orden de las fotos no puede ser nulo.");
+    Map<UUID, FotoDeBorradorTecnologia> porId = new LinkedHashMap<>();
+    for (FotoDeBorradorTecnologia foto : fotos) {
+      porId.put(foto.id(), foto);
+    }
+    if (ids.size() != porId.size() || !porId.keySet().equals(new LinkedHashSet<>(ids))) {
+      throw new ExcepcionDeDominio(
+          "El orden tiene que nombrar cada foto del borrador una sola vez.");
+    }
+    List<FotoDeBorradorTecnologia> ordenadas = ids.stream().map(porId::get).toList();
+    fotos.clear();
+    fotos.addAll(ordenadas);
+  }
+
+  /**
+   * La ficha que se publicará en vez de la de la skill. En blanco o nula vuelve a la de la skill.
+   * No admite marcadores {@code [[ ]]}: la ficha los pintaría tal cual (ADR-0025).
+   */
+  public void editarDescripcion(String texto) {
+    exigirEnRevision("editar la ficha de");
+    String limpio = enBlancoEsNulo(texto);
+    if (limpio != null && limpio.contains("[[")) {
+      throw new ExcepcionDeDominio(
+          "La ficha tiene un marcador [[ ]]: se publicaría tal cual. Quítalo antes de guardar.");
+    }
+    this.descripcionEditada = limpio;
+    this.fichaNuevaDeLaSkill = false;
   }
 
   /** Lo que quien revisa decide de una configuración. */
@@ -346,6 +406,21 @@ public final class BorradorTecnologia {
 
   public ModeloDeLista modelo() {
     return modelo;
+  }
+
+  /** La ficha que se publica al aprobar: la editada a mano si la hay, la de la skill si no. */
+  public String descripcion() {
+    return descripcionEditada != null ? descripcionEditada : modelo.descripcion();
+  }
+
+  /** La edición a mano; vacía mientras se publique la de la skill. */
+  public Optional<String> descripcionEditada() {
+    return Optional.ofNullable(descripcionEditada);
+  }
+
+  /** Si una lista trajo otra ficha de la skill después de la edición a mano. */
+  public boolean fichaNuevaDeLaSkill() {
+    return fichaNuevaDeLaSkill;
   }
 
   public HuellaProveedor huella() {

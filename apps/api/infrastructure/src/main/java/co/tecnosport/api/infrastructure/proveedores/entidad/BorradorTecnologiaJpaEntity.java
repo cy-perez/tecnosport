@@ -78,6 +78,12 @@ public class BorradorTecnologiaJpaEntity {
   @Column(name = "actualizado_en", nullable = false)
   private Instant actualizadoEn;
 
+  @Column(name = "descripcion_editada")
+  private String descripcionEditada;
+
+  @Column(name = "ficha_nueva_de_la_skill", nullable = false)
+  private boolean fichaNuevaDeLaSkill;
+
   protected BorradorTecnologiaJpaEntity() {}
 
   public BorradorTecnologiaJpaEntity(
@@ -98,7 +104,9 @@ public class BorradorTecnologiaJpaEntity {
       Instant vistoEn,
       Instant creadoEn,
       Instant actualizadoEn,
-      List<FotoTecnologiaJpaEmbeddable> fotos) {
+      List<FotoTecnologiaJpaEmbeddable> fotos,
+      String descripcionEditada,
+      boolean fichaNuevaDeLaSkill) {
     this.id = id;
     this.proveedorId = proveedorId;
     this.idModelo = idModelo;
@@ -117,6 +125,16 @@ public class BorradorTecnologiaJpaEntity {
     this.creadoEn = creadoEn;
     this.actualizadoEn = actualizadoEn;
     this.fotos = new ArrayList<>(fotos);
+    this.descripcionEditada = descripcionEditada;
+    this.fichaNuevaDeLaSkill = fichaNuevaDeLaSkill;
+  }
+
+  public String getDescripcionEditada() {
+    return descripcionEditada;
+  }
+
+  public boolean isFichaNuevaDeLaSkill() {
+    return fichaNuevaDeLaSkill;
   }
 
   public List<FotoTecnologiaJpaEmbeddable> getFotos() {

@@ -582,8 +582,17 @@
           "descripcion" : {
             "type" : "string"
           },
+          "descripcionDeLaSkill" : {
+            "type" : "string"
+          },
           "estado" : {
             "type" : "string"
+          },
+          "fichaEditada" : {
+            "type" : "boolean"
+          },
+          "fichaNuevaDeLaSkill" : {
+            "type" : "boolean"
           },
           "fotos" : {
             "items" : {
@@ -635,7 +644,10 @@
           "configuraciones",
           "creadoEn",
           "descripcion",
+          "descripcionDeLaSkill",
           "estado",
+          "fichaEditada",
+          "fichaNuevaDeLaSkill",
           "fotos",
           "fotosQueFaltan",
           "id",
@@ -1429,6 +1441,14 @@
             "type" : "string"
           },
           "slug" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "EditarFichaBorradorTecnologiaPeticion" : {
+        "properties" : {
+          "descripcion" : {
             "type" : "string"
           }
         },
@@ -2757,6 +2777,21 @@
           "costoEnvio",
           "diasEstimados",
           "transportadora"
+        ],
+        "type" : "object"
+      },
+      "OrdenDeFotosBorradorTecnologiaPeticion" : {
+        "properties" : {
+          "fotoIds" : {
+            "items" : {
+              "format" : "uuid",
+              "type" : "string"
+            },
+            "type" : "array"
+          }
+        },
+        "required" : [
+          "fotoIds"
         ],
         "type" : "object"
       },
@@ -5124,6 +5159,47 @@
         ]
       }
     },
+    "/api/v1/admin/borradores-tecnologia/{id}/descripcion" : {
+      "put" : {
+        "operationId" : "editarFicha",
+        "parameters" : [
+          {
+            "in" : "path",
+            "name" : "id",
+            "required" : true,
+            "schema" : {
+              "format" : "uuid",
+              "type" : "string"
+            }
+          }
+        ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/EditarFichaBorradorTecnologiaPeticion"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/BorradorTecnologiaRespuesta"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "admin-tecnologia-controlador"
+        ]
+      }
+    },
     "/api/v1/admin/borradores-tecnologia/{id}/fotos" : {
       "post" : {
         "operationId" : "agregarFoto",
@@ -5158,6 +5234,47 @@
               }
             },
             "description" : "Created"
+          }
+        },
+        "tags" : [
+          "admin-tecnologia-controlador"
+        ]
+      }
+    },
+    "/api/v1/admin/borradores-tecnologia/{id}/fotos/orden" : {
+      "put" : {
+        "operationId" : "reordenarFotos",
+        "parameters" : [
+          {
+            "in" : "path",
+            "name" : "id",
+            "required" : true,
+            "schema" : {
+              "format" : "uuid",
+              "type" : "string"
+            }
+          }
+        ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/OrdenDeFotosBorradorTecnologiaPeticion"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/BorradorTecnologiaRespuesta"
+                }
+              }
+            },
+            "description" : "OK"
           }
         },
         "tags" : [

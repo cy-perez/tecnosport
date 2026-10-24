@@ -1,0 +1,78 @@
+<details
+  class="mb-24 rounded-lg border border-ts-borde bg-ts-superficie p-16"
+  [open]="abierta() || editando()"
+  (toggle)="alternar($event)"
+>
+  <summary class="anillo-foco cursor-pointer font-medio">
+    {{ 'admin.tecnologia.detalle.ficha' | transloco }}
+    @if (borrador().fichaEditada) {
+      <span class="ms-8 text-sm text-ts-texto-suave">{{
+        'admin.tecnologia.ficha.editada' | transloco
+      }}</span>
+    }
+  </summary>
+
+  @if (borrador().fichaNuevaDeLaSkill) {
+    <p class="m-0 mt-12 text-sm text-ts-texto-suave">
+      {{ 'admin.tecnologia.ficha.nuevaDeLaSkill' | transloco }}
+    </p>
+  }
+
+  <!-- Siempre en el DOM: la región viva cambia de contenido, no de existencia. Recibe el foco al
+       guardar, porque el área y sus botones desaparecen. -->
+  <p #avisoRef class="m-0 mt-12 text-sm text-ts-exito" role="status" tabindex="-1">
+    @if (aviso(); as clave) {
+      {{ clave | transloco }}
+    }
+  </p>
+
+  @if (editando()) {
+    <div
+      #areaEdicion
+      class="mt-12 flex flex-col gap-12"
+      role="group"
+      tabindex="-1"
+      [attr.aria-label]="'admin.tecnologia.ficha.edicion' | transloco"
+      (keydown.escape)="cancelar()"
+    >
+      <ts-area-texto
+        idCampo="ficha-borrador-texto-campo"
+        [label]="'admin.tecnologia.ficha.campo' | transloco"
+        [ayuda]="'admin.tecnologia.ficha.ayuda' | transloco"
+        [obligatorio]="true"
+        [filas]="18"
+        [error]="error()"
+        [formControl]="texto"
+      />
+      <div class="flex flex-wrap gap-12">
+        <ts-boton
+          tipo="button"
+          [ocupado]="guardando()"
+          [etiquetaCargando]="'admin.tecnologia.ficha.guardando' | transloco"
+          (click)="guardar()"
+        >
+          {{ 'admin.tecnologia.ficha.guardar' | transloco }}
+        </ts-boton>
+        <ts-boton variante="secundario" tipo="button" (click)="cancelar()">
+          {{ 'admin.tecnologia.ficha.cancelar' | transloco }}
+        </ts-boton>
+        @if (borrador().fichaEditada) {
+          <ts-boton variante="secundario" tipo="button" (click)="volverALaDeLaSkill()">
+            {{ 'admin.tecnologia.ficha.volver' | transloco }}
+          </ts-boton>
+        }
+      </div>
+    </div>
+  } @else {
+    @if (editable()) {
+      <div class="mt-12">
+        <ts-boton #botonEditar variante="secundario" tipo="button" (click)="empezar()">
+          {{ 'admin.tecnologia.ficha.editar' | transloco }}
+        </ts-boton>
+      </div>
+    }
+    <!-- El mismo componente que la ficha del catálogo: lo que se aprueba aquí es lo que verá el
+         cliente. Subtítulos en h3 porque la página ya ordena sus secciones con h2. -->
+    <ts-descripcion class="mt-12" [texto]="borrador().descripcion" [nivelDeTitulo]="3" />
+  }
+</details>

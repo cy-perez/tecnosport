@@ -126,11 +126,19 @@ ahí con cada uno:
   el mismo componente que la ficha del sitio —subtítulos, viñetas y la ficha
   técnica en tabla, **sin fuentes**—. Si algo sale con `##`, `|` o `**` a la
   vista, o una frase dice de dónde salió un dato («según la ficha de…», «la
-  tabla técnica sale de…»), se corrige en el bloque 1
-  (`referencias/descripciones.md` de `/listas-de-proveedor`), no aquí. Desde el
-  23/10/2026 la descripción no nombra su fuente, tampoco el aviso de Open Icecat
-  que pide su licencia: es un riesgo que asumió el negocio
+  tabla técnica sale de…»), la regla se corrige en el bloque 1
+  (`referencias/descripciones.md` de `/listas-de-proveedor`) para las fichas que
+  vengan. Desde el 23/10/2026 la descripción no nombra su fuente, tampoco el aviso
+  de Open Icecat que pide su licencia: es un riesgo que asumió el negocio
   (`docs/14-consultas-al-abogado.md`, numeral 8);
+- **editar la ficha** si hay algo que no se quiere publicar —«Editar la ficha»,
+  desde el 23/10/2026—: aprobar publica la editada. La edición se guarda aparte de
+  la de la skill, así que **correr esta skill otra vez no la pisa**; si la lista
+  nueva trae otra ficha, el panel lo avisa y «Volver a la de la skill» la toma.
+  Una corrección que deba valer para las listas siguientes va, además, al bloque 1;
+- **subir, quitar o reordenar fotos** y elegir la principal, también desde el
+  panel. Lo que se sube ahí no pasa por la revisión LISTA del bloque 2: lo decide
+  quien revisa (ver «Cosas que se rompen»);
 - marcar qué colores hay de cada configuración —los que sugiere la lista vienen
   marcados; si la lista no trae colores, la sugerencia es la paleta completa del
   modelo (regla 13 del bloque 1, decisión del 22/10/2026), así que se desmarca lo
@@ -151,9 +159,13 @@ configuraciones que se dejen sin colores al aprobar, tampoco.
 ## Cosas que se rompen si no se cuidan
 
 **Llevar un modelo sin pasar por la tanda.** La herramienta lo deja fuera, y el
-servidor no aprueba un modelo nuevo con menos de 4 fotos; pero si alguien sube
-fotos a mano al borrador, se salta la compuerta de calidad —solo LISTA— que el
-servidor no puede ver. Las fotos de un borrador salen siempre de esta skill.
+servidor no aprueba un modelo nuevo con menos de 4 fotos. Desde el 23/10/2026 el
+panel deja subir fotos al borrador a mano, y esas se saltan la compuerta de
+calidad —solo LISTA— que el servidor no puede ver: es para corregir una o dos
+tomas, no para llenar un modelo que no pasó por la tanda. Las de la tanda salen
+de esta skill. **Y una corrida de esta skill sobre un borrador que alguien
+reordenó o al que le subió fotos lo rehace entero** (otros hashes, otro orden):
+si ya se trabajó el borrador a mano, no se vuelve a correr sobre él.
 
 **Correr los borradores de una lista vieja.** La API rechaza los de una fecha
 anterior a la última lista importada: le pondrían al borrador el costo de antes.

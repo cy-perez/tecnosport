@@ -14,11 +14,13 @@ import co.tecnosport.api.application.proveedores.RepositorioProveedores;
 import co.tecnosport.api.application.proveedores.tecnologia.AgregarFotoABorradorTecnologia;
 import co.tecnosport.api.application.proveedores.tecnologia.AprobarBorradorTecnologia;
 import co.tecnosport.api.application.proveedores.tecnologia.EditarBorradorTecnologia;
+import co.tecnosport.api.application.proveedores.tecnologia.EditarFichaBorradorTecnologia;
 import co.tecnosport.api.application.proveedores.tecnologia.FotosFirmadasDeBorradorTecnologia;
 import co.tecnosport.api.application.proveedores.tecnologia.ImportarListaDeTecnologia;
 import co.tecnosport.api.application.proveedores.tecnologia.ListarBorradoresTecnologia;
 import co.tecnosport.api.application.proveedores.tecnologia.QuitarFotoDeBorradorTecnologia;
 import co.tecnosport.api.application.proveedores.tecnologia.RechazarBorradorTecnologia;
+import co.tecnosport.api.application.proveedores.tecnologia.ReordenarFotosBorradorTecnologia;
 import co.tecnosport.api.application.proveedores.tecnologia.RepositorioBorradoresTecnologia;
 import co.tecnosport.api.application.proveedores.tecnologia.RepositorioListasDeTecnologia;
 import co.tecnosport.api.application.proveedores.tecnologia.RepositorioVariantesDeProveedor;
@@ -98,6 +100,18 @@ public class ConfiguracionListasDeTecnologia {
   public EditarBorradorTecnologia editarBorradorTecnologia(
       RepositorioBorradoresTecnologia borradores) {
     return new EditarBorradorTecnologia(borradores);
+  }
+
+  @Bean
+  public EditarFichaBorradorTecnologia editarFichaBorradorTecnologia(
+      RepositorioBorradoresTecnologia borradores) {
+    return new EditarFichaBorradorTecnologia(borradores);
+  }
+
+  @Bean
+  public ReordenarFotosBorradorTecnologia reordenarFotosBorradorTecnologia(
+      RepositorioBorradoresTecnologia borradores) {
+    return new ReordenarFotosBorradorTecnologia(borradores);
   }
 
   @Bean

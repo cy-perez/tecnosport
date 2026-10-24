@@ -20,7 +20,6 @@ import { formatearPrecio } from '../../../../../shared/ts-precio/formato-precio'
 import { TsBoton } from '../../../../../shared/ui/boton/ts-boton';
 import { TsCampo } from '../../../../../shared/ui/campo/ts-campo';
 import { TsCheckbox } from '../../../../../shared/ui/checkbox/ts-checkbox';
-import { TsDescripcion } from '../../../../../shared/ui/descripcion/ts-descripcion';
 import { OpcionSelect, TsSelect } from '../../../../../shared/ui/select/ts-select';
 import { TsSelectControl } from '../../../../../shared/ui/select/ts-select-control';
 import { TsEsqueleto } from '../../../../../shared/ts-esqueleto/ts-esqueleto';
@@ -30,6 +29,8 @@ import { hojasConRuta } from '../../../../catalogo/domain/arbol-categorias';
 import { claveDeLinea } from '../../../../catalogo/domain/filtro-productos.model';
 import { clasesDeEstadoBorrador } from '../../../borradores/presentation/estado-borrador';
 import { usarMigasAdmin } from '../../../migas-admin';
+import { TsFichaBorradorTecnologia } from './ts-ficha-borrador-tecnologia';
+import { TsFotosBorradorTecnologia } from './ts-fotos-borrador-tecnologia';
 import { usarProveedoresAdmin } from '../../../proveedores/application/listar-proveedores.consulta';
 import { usarVerBorradorTecnologia } from '../../application/borradores-tecnologia.consulta';
 import {
@@ -42,7 +43,6 @@ import {
   borradorTecnologiaEditable,
   coloresIniciales,
   completaUnProductoExistente,
-  FotoDeBorradorTecnologia,
   ConfiguracionTecnologia,
   EleccionDeConfiguracion,
   mismoColor,
@@ -87,8 +87,9 @@ interface ControlesDeConfiguracion {
     TsBoton,
     TsCampo,
     TsCheckbox,
-    TsDescripcion,
     TsEsqueleto,
+    TsFichaBorradorTecnologia,
+    TsFotosBorradorTecnologia,
     TsMigas,
     TsSelect,
     TsSelectControl,
@@ -130,11 +131,7 @@ export class DetalleTecnologiaAdminPage {
     const borrador = this.borrador();
     return borrador !== null && completaUnProductoExistente(borrador);
   });
-  /** Cuántas fotos le faltan para aprobarse; las sube la skill de fichas (ADR-0079). */
-  /** El texto alternativo con que se publicará la foto, en el idioma del panel. */
-  protected altDe(foto: FotoDeBorradorTecnologia): string {
-    return this.idioma() === 'en' ? foto.altEn : foto.altEs;
-  }
+  /** Cuántas fotos le faltan para aprobarse; las sube la skill o quien revisa (ADR-0079). */
   protected readonly faltanFotos = computed(() => this.borrador()?.fotosQueFaltan ?? 0);
   protected readonly nombreDelProveedor = computed(() => {
     const borrador = this.borrador();

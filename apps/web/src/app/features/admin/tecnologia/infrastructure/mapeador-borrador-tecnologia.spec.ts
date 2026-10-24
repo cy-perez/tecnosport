@@ -7,7 +7,10 @@ describe('mapeador del borrador de tecnología', () => {
       proveedorId: 'p-1',
       idModelo: 'samsung-galaxy-a17-5g',
       titulo: 'Samsung Galaxy A17 5G',
-      descripcion: 'El A17.',
+      descripcion: 'El A17, editado.',
+      descripcionDeLaSkill: 'El A17.',
+      fichaEditada: true,
+      fichaNuevaDeLaSkill: true,
       paleta: ['Negro', 'Gris'],
       configuraciones: [
         {
@@ -36,6 +39,10 @@ describe('mapeador del borrador de tecnología', () => {
       ],
     });
 
+    expect(borrador.descripcion).toBe('El A17, editado.');
+    expect(borrador.descripcionDeLaSkill).toBe('El A17.');
+    expect(borrador.fichaEditada).toBe(true);
+    expect(borrador.fichaNuevaDeLaSkill).toBe(true);
     expect(borrador.marcaSugerida).toBeNull();
     expect(borrador.productoId).toBeNull();
     const [config] = borrador.configuraciones;

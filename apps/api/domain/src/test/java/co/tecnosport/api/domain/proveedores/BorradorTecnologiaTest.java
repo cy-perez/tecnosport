@@ -1,6 +1,7 @@
 package co.tecnosport.api.domain.proveedores;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -440,5 +441,142 @@ class BorradorTecnologiaTest {
     BorradorTecnologia borrador = nuevo();
     borrador.agregarFoto(foto("a"));
     assertEquals(BorradorTecnologia.MINIMO_DE_FOTOS - 1, borrador.fotosQueFaltan());
+  }
+
+  @Test
+  void reordenarDejaLaPrimeraComoPrincipal() {
+    BorradorTecnologia borrador = nuevo();
+    FotoDeBorradorTecnologia a = foto("a");
+    FotoDeBorradorTecnologia b = foto("b");
+    FotoDeBorradorTecnologia c = foto("c");
+    borrador.agregarFoto(a);
+    borrador.agregarFoto(b);
+    borrador.agregarFoto(c);
+
+    borrador.reordenarFotos(List.of(c.id(), a.id(), b.id()));
+
+    assertEquals(
+        List.of(c.id(), a.id(), b.id()), borrador.fotos().stream().map(f -> f.id()).toList());
+  }
+
+  @Test
+  void unOrdenQueNoNombraCadaFotoUnaVezNoSeAplica() {
+    BorradorTecnologia borrador = nuevo();
+    FotoDeBorradorTecnologia a = foto("a");
+    FotoDeBorradorTecnologia b = foto("b");
+    borrador.agregarFoto(a);
+    borrador.agregarFoto(b);
+
+    for (List<UUID> orden :
+        List.of(
+            List.of(a.id()),
+            List.of(a.id(), a.id()),
+            List.of(a.id(), b.id(), UUID.randomUUID()),
+            List.of(a.id(), UUID.randomUUID()))) {
+      assertThrows(ExcepcionDeDominio.class, () -> borrador.reordenarFotos(orden));
+    }
+    assertEquals(List.of(a.id(), b.id()), borrador.fotos().stream().map(f -> f.id()).toList());
+  }
+
+  @Test
+  void unBorradorRechazadoNoSeReordena() {
+    BorradorTecnologia borrador = nuevo();
+    FotoDeBorradorTecnologia a = foto("a");
+    borrador.agregarFoto(a);
+    borrador.rechazar("No vendemos esta gama");
+
+    assertThrows(ExcepcionDeDominio.class, () -> borrador.reordenarFotos(List.of(a.id())));
+  }
+
+  @Test
+  void laFichaEditadaEsLaQueSePublica() {
+    BorradorTecnologia borrador = nuevo();
+    assertEquals("El Galaxy A17 5G.", borrador.descripcion());
+
+    borrador.editarDescripcion("  El Galaxy A17 5G, sin la nota del proveedor.  ");
+
+    assertEquals("El Galaxy A17 5G, sin la nota del proveedor.", borrador.descripcion());
+    assertEquals("El Galaxy A17 5G.", borrador.modelo().descripcion(), "la de la skill no cambia");
+  }
+
+  @Test
+  void enBlancoLaFichaVuelveALaDeLaSkill() {
+    BorradorTecnologia borrador = nuevo();
+    borrador.editarDescripcion("Otra ficha.");
+
+    borrador.editarDescripcion("   ");
+
+    assertTrue(borrador.descripcionEditada().isEmpty());
+    assertEquals("El Galaxy A17 5G.", borrador.descripcion());
+  }
+
+  @Test
+  void unaFichaConMarcadorNoSeGuarda() {
+    BorradorTecnologia borrador = nuevo();
+
+    assertThrows(
+        ExcepcionDeDominio.class, () -> borrador.editarDescripcion("Garantía de [[PLAZO]] meses."));
+    assertTrue(borrador.descripcionEditada().isEmpty());
+  }
+
+  @Test
+  void unaListaNuevaNoPisaLaFichaEditadaYAvisaSiTrajoOtra() {
+    BorradorTecnologia borrador = nuevo();
+    borrador.editarDescripcion("Editada a mano.");
+
+    borrador.actualizarConLista(
+        new ModeloDeLista(
+            "samsung-galaxy-a17-5g",
+            "Samsung Galaxy A17 5G",
+            "Samsung",
+            "celulares",
+            "La ficha nueva de la skill.",
+            null,
+            List.of("Negro", "Gris", "Azul")),
+        List.of(config("a17-256", 660_000)),
+        JUEVES);
+
+    assertEquals("Editada a mano.", borrador.descripcion());
+    assertEquals("La ficha nueva de la skill.", borrador.modelo().descripcion());
+    assertTrue(borrador.fichaNuevaDeLaSkill());
+
+    borrador.editarDescripcion(null);
+    assertEquals("La ficha nueva de la skill.", borrador.descripcion());
+    assertFalse(borrador.fichaNuevaDeLaSkill(), "volver a la de la skill apaga el aviso");
+  }
+
+  @Test
+  void unaListaConLaMismaFichaNoAvisaNadaNiSinEdicion() {
+    BorradorTecnologia editado = nuevo();
+    editado.editarDescripcion("Editada a mano.");
+    editado.actualizarConLista(
+        a17(List.of("Negro", "Gris", "Azul")), List.of(config("a17-256", 660_000)), JUEVES);
+    assertFalse(editado.fichaNuevaDeLaSkill());
+
+    BorradorTecnologia sinEditar = nuevo();
+    sinEditar.actualizarConLista(
+        new ModeloDeLista(
+            "samsung-galaxy-a17-5g",
+            "Samsung Galaxy A17 5G",
+            "Samsung",
+            "celulares",
+            "Otra.",
+            null,
+            List.of()),
+        List.of(config("a17-256", 660_000)),
+        JUEVES);
+    assertFalse(sinEditar.fichaNuevaDeLaSkill());
+    assertEquals("Otra.", sinEditar.descripcion());
+  }
+
+  @Test
+  void unBorradorAprobadoNoSeEditaLaFicha() {
+    BorradorTecnologia borrador = conCuatroFotos(nuevo());
+    borrador.elegir(
+        List.of(
+            new BorradorTecnologia.Eleccion("a17-256", List.of("Negro"), Dinero.deCop(849_900))));
+    borrador.aprobar(UUID.randomUUID());
+
+    assertThrows(ExcepcionDeDominio.class, () -> borrador.editarDescripcion("Otra."));
   }
 }
