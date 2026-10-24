@@ -4,6 +4,7 @@ import {
   BorradorTecnologia,
   EleccionDeConfiguracion,
   EstadoBorradorTecnologia,
+  FotoNuevaDeBorrador,
 } from './borrador-tecnologia.model';
 
 /**
@@ -16,6 +17,13 @@ export interface RepositorioBorradoresTecnologia {
   elegir(id: string, elecciones: readonly EleccionDeConfiguracion[]): Promise<BorradorTecnologia>;
   aprobar(id: string, aprobacion: AprobarBorradorTecnologia): Promise<string>;
   rechazar(id: string, motivo: string): Promise<BorradorTecnologia>;
+  /** La deja al final: no cambia la principal. */
+  subirFoto(id: string, foto: FotoNuevaDeBorrador): Promise<BorradorTecnologia>;
+  quitarFoto(id: string, fotoId: string): Promise<void>;
+  /** Cada foto del borrador una vez; la primera queda de principal. */
+  reordenarFotos(id: string, fotoIds: readonly string[]): Promise<BorradorTecnologia>;
+  /** `null` vuelve a la ficha que preparó la skill. */
+  editarFicha(id: string, descripcion: string | null): Promise<BorradorTecnologia>;
 }
 
 export const REPOSITORIO_BORRADORES_TECNOLOGIA =

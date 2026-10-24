@@ -46,7 +46,13 @@ export interface BorradorTecnologia {
   readonly titulo: string;
   readonly marcaSugerida: string | null;
   readonly categoriaSugerida: string | null;
+  /** La ficha que se publicará al aprobar: la editada a mano si la hay, la de la skill si no. */
   readonly descripcion: string;
+  /** La que preparó la skill, aunque se haya editado: es a la que se vuelve. */
+  readonly descripcionDeLaSkill: string;
+  readonly fichaEditada: boolean;
+  /** Una lista trajo otra ficha de la skill después de la edición a mano, y no la pisó. */
+  readonly fichaNuevaDeLaSkill: boolean;
   /** Los colores oficiales del modelo; vacía si no se conocen, y entonces se escriben a mano. */
   readonly paleta: readonly string[];
   readonly configuraciones: readonly ConfiguracionTecnologia[];
@@ -68,6 +74,18 @@ export interface BorradorTecnologia {
   readonly fotosQueFaltan: number;
   /** Solo en el detalle; vacía en la bandeja. */
   readonly fotos: readonly FotoDeBorradorTecnologia[];
+}
+
+/**
+ * Una foto que sube quien revisa desde el panel: un solo ancho, el del archivo. La escalera de
+ * anchos y la vista previa las arma la skill; desde aquí no hay de dónde sacarlas.
+ */
+export interface FotoNuevaDeBorrador {
+  readonly archivo: File;
+  readonly ancho: number;
+  readonly alto: number;
+  readonly altEs: string;
+  readonly altEn: string;
 }
 
 export interface EleccionDeConfiguracion {
