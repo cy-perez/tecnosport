@@ -1,6 +1,7 @@
 import type { components } from '@tecnosport/contratos';
 import {
   CategoriaAdmin,
+  EstadoDisponibilidad,
   EstadoProducto,
   ImagenAdmin,
   ImagenDeGaleriaAdmin,
@@ -51,6 +52,8 @@ export function aProductoAdmin(dto: ProductoDto): ProductoAdmin {
     categoria: aCategoria(dto.categoria),
     imagenPrincipalUrl: dto.imagenPrincipalUrl ?? null,
     totalVariantes: dto.totalVariantes ?? 0,
+    estadoDisponibilidad: (dto.estadoDisponibilidad ?? 'DISPONIBLE') as EstadoDisponibilidad,
+    vistoPorUltimaVez: dto.vistoPorUltimaVez ?? null,
   };
 }
 

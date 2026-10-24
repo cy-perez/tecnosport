@@ -59,6 +59,7 @@ import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.compartido.HashContenido;
 import co.tecnosport.api.domain.compartido.Sku;
 import co.tecnosport.api.domain.compartido.Slug;
+import co.tecnosport.api.domain.proveedores.HuellaProveedor;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
@@ -114,6 +115,43 @@ class AdminProductoControladorTest {
         .andExpect(jsonPath("$.pagina").value(0))
         .andExpect(jsonPath("$.totalPaginas").value(2))
         .andExpect(jsonPath("$.totalProductos").value(3));
+  }
+
+  /**
+   * El panel decía "publicado" de un producto que la vitrina no mostraba: la disponibilidad del
+   * proveedor no viajaba. Un publicado oculto por vencimiento tiene que llegar como tal, con la
+   * fecha en que el proveedor lo anunció por última vez.
+   */
+  @Test
+  void laListaDiceSiElProveedorDejoDeAnunciarloYDesdeCuando() throws Exception {
+    Producto oculto = productoDeProveedorOculto();
+    Producto manual = productoEnBorrador();
+    repositorio.devolverEnBusquedaAdmin(new ProductosPaginados(List.of(oculto, manual), 0, 1, 2));
+
+    mockMvc
+        .perform(get("/api/v1/admin/productos"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.items[0].estado").value("PUBLICADO"))
+        .andExpect(jsonPath("$.items[0].estadoDisponibilidad").value("OCULTO_POR_VENCIMIENTO"))
+        .andExpect(
+            jsonPath("$.items[0].vistoPorUltimaVez").value(VISTO_POR_EL_PROVEEDOR.toString()))
+        .andExpect(jsonPath("$.items[1].estadoDisponibilidad").value("DISPONIBLE"))
+        .andExpect(jsonPath("$.items[1].vistoPorUltimaVez").isEmpty());
+  }
+
+  @Test
+  void elDetalleDiceSiElProveedorLoDioPorAgotado() throws Exception {
+    Producto agotado = productoDeProveedorOculto();
+    agotado.marcarAgotadoPorProveedor(VISTO_POR_EL_PROVEEDOR.plusSeconds(3600));
+    repositorio.conProductos(agotado);
+
+    mockMvc
+        .perform(get("/api/v1/admin/productos/{id}", agotado.id()))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.estadoDisponibilidad").value("AGOTADO_POR_PROVEEDOR"))
+        .andExpect(
+            jsonPath("$.vistoPorUltimaVez")
+                .value(VISTO_POR_EL_PROVEEDOR.plusSeconds(3600).toString()));
   }
 
   @Test
@@ -940,6 +978,37 @@ class AdminProductoControladorTest {
             new HashContenido("%064x".formatted(0)),
             "alt es",
             "alt en"));
+    return producto;
+  }
+
+  private static final Instant VISTO_POR_EL_PROVEEDOR = Instant.parse("2026-10-14T15:30:00Z");
+
+  private static Producto productoDeProveedorOculto() {
+    UUID proveedorId = UUID.randomUUID();
+    Producto producto =
+        Producto.crearDeProveedor(
+            "Tenis Runner importado",
+            new Slug("tenis-runner-importado"),
+            "",
+            Marca.crear("TecnoSport"),
+            Categoria.crear(
+                "Deportivo", new Slug("calzado-caballero-deportivo"), LineaCatalogo.CALZADO),
+            proveedorId,
+            Dinero.deCop(90000),
+            HuellaProveedor.calcular(proveedorId, "Tenis Runner importado", Dinero.deCop(90000)),
+            VISTO_POR_EL_PROVEEDOR);
+    producto.asignarImagenPrincipal(
+        ImagenProducto.crear(
+            TipoImagen.PRINCIPAL,
+            0,
+            List.of(new VarianteDeImagen(800, "https://x/0.jpg", 1000)),
+            null,
+            600,
+            new HashContenido("%064x".formatted(0)),
+            "alt es",
+            "alt en"));
+    producto.publicar();
+    producto.ocultarPorVencimiento();
     return producto;
   }
 

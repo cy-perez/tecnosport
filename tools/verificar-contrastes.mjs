@@ -164,6 +164,15 @@ const PARES = [
   // pintan en verde directamente sobre el lienzo, no sobre una superficie. El guardian solo
   // miraba el verde sobre superficie-alt, asi que ese par no lo vigilaba nadie.
   ["--color-exito", "--color-fondo", UMBRAL_TEXTO, "acuses del panel sobre el lienzo"],
+  // La insignia de "oculto" o "agotado por el proveedor" junto a la de estado: ambar como texto y
+  // como borde, en la tarjeta de la lista. En la edicion vive sobre el lienzo, que ya mide el par
+  // del plazo de la transferencia.
+  [
+    "--color-aviso",
+    "--color-superficie",
+    UMBRAL_TEXTO,
+    "insignia de disponibilidad en la lista del panel",
+  ],
   // El borde de las cajas de confirmacion en linea, que es lo unico que las separa de la fila de
   // arriba. `--color-borde` da 1,19:1 sobre el lienzo y era invisible.
   ["--color-borde-control", "--color-fondo", UMBRAL_GRANDE, "borde de una caja de confirmacion"],

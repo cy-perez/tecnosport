@@ -1,5 +1,6 @@
 package co.tecnosport.api.presentation.catalogo.dto;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
@@ -34,4 +35,13 @@ public record ProductoAdminDetalleRespuesta(
      * Las variantes con sus atributos —talla, color—, para que la edición diga cuáles hay y deje
      * marcar de qué color es cada foto de la galería.
      */
-    List<VarianteResumenAdminRespuesta> variantes) {}
+    List<VarianteResumenAdminRespuesta> variantes,
+    /**
+     * Si el proveedor todavía lo tiene: {@code DISPONIBLE}, {@code OCULTO_POR_VENCIMIENTO} o {@code
+     * AGOTADO_POR_PROVEEDOR}. La vitrina exige {@code PUBLICADO} <b>y</b> {@code DISPONIBLE}; sin
+     * esto el panel decía "publicado" de un producto que la tienda no mostraba. Un manual siempre
+     * es {@code DISPONIBLE}.
+     */
+    String estadoDisponibilidad,
+    /** La fecha del último mensaje o lista del proveedor que lo trajo; nula en un manual. */
+    Instant vistoPorUltimaVez) {}

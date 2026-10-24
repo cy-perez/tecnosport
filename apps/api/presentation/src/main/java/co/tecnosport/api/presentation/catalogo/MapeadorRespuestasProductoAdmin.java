@@ -38,7 +38,9 @@ public class MapeadorRespuestasProductoAdmin {
         mapeadorCatalogo.aRespuesta(producto.marca()),
         mapeadorCatalogo.aRespuesta(producto.categoria()),
         producto.imagenPrincipal().map(imagen -> imagen.url()).orElse(null),
-        producto.variantes().size());
+        producto.variantes().size(),
+        producto.estadoDisponibilidad().name(),
+        producto.vistoPorUltimaVez().orElse(null));
   }
 
   public ProductoAdminDetalleRespuesta aDetalle(Producto producto) {
@@ -62,7 +64,9 @@ public class MapeadorRespuestasProductoAdmin {
                         variante.sku().valor(),
                         mapeadorCatalogo.aRespuesta(variante, false).atributos(),
                         variante.precio().valor().longValueExact()))
-            .toList());
+            .toList(),
+        producto.estadoDisponibilidad().name(),
+        producto.vistoPorUltimaVez().orElse(null));
   }
 
   public ImagenRespuesta aRespuesta(ImagenProducto imagen) {

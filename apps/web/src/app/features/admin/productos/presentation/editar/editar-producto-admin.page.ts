@@ -73,8 +73,10 @@ import { usarPaletaDeColores } from '../../../../catalogo/application/listar-pal
 import {
   AccionDeProducto,
   CLAVE_ERROR,
+  CLASES_INSIGNIA_DISPONIBILIDAD,
   CLAVE_ETIQUETA_ESTADO,
   clasesDeEstadoProducto,
+  textoDeDisponibilidad,
   TEXTOS_DE_CONFIRMACION,
 } from '../estado-producto';
 
@@ -372,6 +374,16 @@ export class EditarProductoAdminPage {
     const estado = this.estado();
     return estado ? clasesDeEstadoProducto(estado) : '';
   }
+
+  protected readonly clasesDisponibilidad = CLASES_INSIGNIA_DISPONIBILIDAD;
+
+  /** Si la tienda lo esconde aunque esté publicado: lo que el estado solo no dice. */
+  protected readonly disponibilidad = computed(() => {
+    const producto = this.consulta.data();
+    return producto
+      ? textoDeDisponibilidad(producto, this.traducir(), this.transloco.activeLang())
+      : null;
+  });
 
   /** La acción que está preguntando: una sola a la vez, como en la lista. */
   protected readonly confirmandoAccion = signal<AccionDeProducto | null>(null);

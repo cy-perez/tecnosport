@@ -114,6 +114,8 @@ function productoDePrueba(galeria: readonly ImagenDeGaleriaAdmin[] = []): Produc
     imagenPrincipalUrl: null,
     imagenPrincipalVarianteId: null,
     totalVariantes: 0,
+    estadoDisponibilidad: 'DISPONIBLE',
+    vistoPorUltimaVez: null,
     galeria,
     tallaSirveHasta: null,
     variantes: [],
@@ -429,6 +431,22 @@ describe('EditarProductoAdminPage', () => {
 
     expect(await screen.findByDisplayValue('Morral urbano')).toBeTruthy();
     expect(screen.getByDisplayValue('Descripción original')).toBeTruthy();
+  });
+
+  // Las 22:00 del 14 en Bogotá, que en UTC ya son el 15: sin la zona de Colombia diría 15.
+  it('junto al estado dice si la tienda lo esconde porque el proveedor dejó de anunciarlo', async () => {
+    await renderPagina(
+      new RepositorioProductosAdminFalso({
+        ...productoDePrueba(),
+        estado: 'PUBLICADO',
+        estadoDisponibilidad: 'OCULTO_POR_VENCIMIENTO',
+        vistoPorUltimaVez: '2026-10-15T03:00:00Z',
+      }),
+    );
+
+    expect(
+      await screen.findByText('Oculto: el proveedor no lo anuncia desde el 14 de octubre de 2026'),
+    ).toBeTruthy();
   });
 
   // La marca y la categoría vienen de una consulta distinta a la del producto.

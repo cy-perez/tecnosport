@@ -30,8 +30,10 @@ import { filtroDesdeQueryParams, queryParamsDesdeFiltro } from '../../domain/que
 import {
   AccionDeProducto,
   CLAVE_ERROR,
+  CLASES_INSIGNIA_DISPONIBILIDAD,
   CLAVE_ETIQUETA_ESTADO,
   clasesDeEstadoProducto,
+  textoDeDisponibilidad,
   TEXTOS_DE_CONFIRMACION,
 } from '../estado-producto';
 import {
@@ -118,6 +120,12 @@ export class ListaProductosAdminPage {
 
   protected clasesEstado(estado: EstadoProducto): string {
     return clasesDeEstadoProducto(estado);
+  }
+
+  protected readonly clasesDisponibilidad = CLASES_INSIGNIA_DISPONIBILIDAD;
+
+  protected disponibilidad(producto: ProductoAdmin): string | null {
+    return textoDeDisponibilidad(producto, this.traducir(), this.transloco.activeLang());
   }
 
   /**

@@ -3360,6 +3360,7 @@ export interface components {
             categoria?: components["schemas"]["CategoriaRespuesta"];
             descripcion?: string;
             estado?: string;
+            estadoDisponibilidad?: string;
             galeria?: components["schemas"]["ImagenDeGaleriaRespuesta"][];
             /** Format: uuid */
             id?: string;
@@ -3371,11 +3372,14 @@ export interface components {
             /** Format: int32 */
             totalVariantes?: number;
             variantes?: components["schemas"]["VarianteResumenAdminRespuesta"][];
+            /** Format: date-time */
+            vistoPorUltimaVez?: string;
         };
         ProductoAdminRespuesta: {
             categoria?: components["schemas"]["CategoriaRespuesta"];
             descripcion?: string;
             estado?: string;
+            estadoDisponibilidad?: string;
             /** Format: uuid */
             id?: string;
             imagenPrincipalUrl?: string;
@@ -3384,6 +3388,8 @@ export interface components {
             slug?: string;
             /** Format: int32 */
             totalVariantes?: number;
+            /** Format: date-time */
+            vistoPorUltimaVez?: string;
         };
         ProductoRespuesta: {
             categoria?: components["schemas"]["CategoriaRespuesta"];

@@ -45,6 +45,26 @@ describe('aProductoAdminDetalle', () => {
     expect(aProductoAdminDetalle(detalle(undefined)).imagenPrincipalUrl).toBeNull();
   });
 
+  /** Sin esto el panel decía "publicado" de lo que la tienda tenía oculto por el proveedor. */
+  it('lleva la disponibilidad del proveedor y la fecha en que lo anunció por última vez', () => {
+    const producto = aProductoAdminDetalle({
+      ...detalle(undefined),
+      estado: 'PUBLICADO',
+      estadoDisponibilidad: 'OCULTO_POR_VENCIMIENTO',
+      vistoPorUltimaVez: '2026-10-14T15:30:00Z',
+    });
+
+    expect(producto.estadoDisponibilidad).toBe('OCULTO_POR_VENCIMIENTO');
+    expect(producto.vistoPorUltimaVez).toBe('2026-10-14T15:30:00Z');
+  });
+
+  it('sin disponibilidad en la respuesta la da por disponible y sin fecha', () => {
+    const producto = aProductoAdminDetalle(detalle(undefined));
+
+    expect(producto.estadoDisponibilidad).toBe('DISPONIBLE');
+    expect(producto.vistoPorUltimaVez).toBeNull();
+  });
+
   /** El precio de cada variante llega a la edición: es lo que el campo muestra para cambiarlo. */
   it('lleva el precio de cada variante', () => {
     const producto = aProductoAdminDetalle({
