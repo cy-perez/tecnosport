@@ -310,7 +310,7 @@ describe('DetalleTecnologiaAdminPage', () => {
       expect(repositorio.ordenes).toEqual([
         { id: 'bt-1', fotoIds: ['foto-3', 'foto-1', 'foto-2', 'foto-4'] },
       ]);
-      expect(ordenDeFotos()).toEqual(['foto-3', 'foto-1', 'foto-2', 'foto-4']);
+      await waitFor(() => expect(ordenDeFotos()).toEqual(['foto-3', 'foto-1', 'foto-2', 'foto-4']));
     });
 
     it('bajar la primera la cambia con la segunda, y en los extremos no hay botón de más', async () => {
@@ -387,7 +387,7 @@ describe('DetalleTecnologiaAdminPage', () => {
             },
           },
         ]);
-        expect(ordenDeFotos().at(-1)).toBe('subida-1');
+        await waitFor(() => expect(ordenDeFotos().at(-1)).toBe('subida-1'));
       } finally {
         vi.unstubAllGlobals();
         crear.mockRestore();
