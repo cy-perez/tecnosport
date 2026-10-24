@@ -96,7 +96,9 @@
       <summary class="anillo-foco cursor-pointer font-medio">
         {{ 'admin.tecnologia.detalle.ficha' | transloco }}
       </summary>
-      <p class="m-0 mt-12 whitespace-pre-line text-sm">{{ borrador.descripcion }}</p>
+      <!-- El mismo componente que la ficha del catálogo: lo que se aprueba aquí es lo que verá el
+           cliente. Subtítulos en h3 porque la página ya ordena sus secciones con h2. -->
+      <ts-descripcion class="mt-12" [texto]="borrador.descripcion" [nivelDeTitulo]="3" />
     </details>
 
     @if (listo()) {
