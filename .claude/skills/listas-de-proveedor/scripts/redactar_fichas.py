@@ -276,8 +276,18 @@ def elegir_tabla(ficha_icecat, ficha_marca, caja=None):
     return [], None, []
 
 
+def _celda(texto):
+    """El texto de una celda sin barras: cada una abriría otra columna en la ficha del sitio.
+
+    Icecat escribe «GPS | Galileo | Glonass» dentro del valor de Conectividad, y así llegaron cuatro
+    relojes al 23/10/2026 con cinco columnas bajo un encabezado de dos.
+    """
+    return re.sub(r"\s*\|\s*", ", ", str(texto))
+
+
 def texto_de_tabla(filas):
-    return "\n".join(["| Atributo | Detalle |", "|---|---|"] + [f"| {a} | {b} |" for a, b in filas])
+    return "\n".join(["| Atributo | Detalle |", "|---|---|"]
+                     + [f"| {_celda(a)} | {_celda(b)} |" for a, b in filas])
 
 
 def linea_de_fuente(origen, ficha_marca, fecha):

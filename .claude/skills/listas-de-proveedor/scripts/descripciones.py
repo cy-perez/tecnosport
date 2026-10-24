@@ -57,6 +57,18 @@ SIN_FICHA = f"no tiene «{FICHA}»: falta la ficha oficial del fabricante"
 SIN_PESO = "la ficha técnica no dice peso ni dimensiones"
 SIN_CAJA = f"no tiene «{CAJA}»"
 NOMBRA_CONFIGURACION = "nombra una configuración"
+FORMATO_NO_SE_PINTA = "usa un formato que la ficha del sitio no pinta"
+
+# La ficha del sitio pinta párrafos, subtítulos «## », viñetas «- », tablas de dos columnas y el
+# pie de fuentes tras «---» (`apps/web/src/app/shared/ui/descripcion/leer-descripcion.ts`), y nada
+# más: no hay librería de Markdown detrás. Lo demás sale tal cual, con los asteriscos a la vista.
+FORMATOS_QUE_NO_SE_PINTAN = (
+    (re.compile(r"^(?:#|#{3,6}) ", re.M), "un subtítulo que no es «## »"),
+    (re.compile(r"\*\*|__"), "negrita con ** o __"),
+    (re.compile(r"^\d+[.)] ", re.M), "una lista numerada"),
+    (re.compile(r"^> ", re.M), "una cita con >"),
+    (re.compile(r"\[[^\]\n]+\]\([^)\n]+\)"), "un enlace [texto](dirección)"),
+)
 
 # Lo que deja al modelo fuera de la exportación. El resto se informa y sigue.
 BLOQUEAN = (MARCADOR,)
@@ -138,10 +150,28 @@ def defectos(texto: str) -> list[str]:
         hallados.append(SIN_PESO)
     if CAJA not in por_titulo or not por_titulo[CAJA].strip():
         hallados.append(SIN_CAJA)
+    formatos = formatos_que_no_se_pintan(texto)
+    if formatos:
+        hallados.append(f"{FORMATO_NO_SE_PINTA}: {'; '.join(formatos)}")
     frase = frase_de_configuracion(texto)
     if frase:
         hallados.append(f"{NOMBRA_CONFIGURACION} («{frase}»): la descripción es del modelo y vale para "
                         "todas sus memorias")
+    return hallados
+
+
+def formatos_que_no_se_pintan(texto: str) -> list[str]:
+    """Lo que la descripción escribe y la ficha del sitio mostraría con su sintaxis a la vista."""
+    if not texto:
+        return []
+    hallados = [nombre for patron, nombre in FORMATOS_QUE_NO_SE_PINTAN if patron.search(texto)]
+    for linea in texto.splitlines():
+        linea = linea.strip()
+        if RE_FILA_DE_TABLA.match(linea) and not RE_SEPARADOR_DE_TABLA.match(linea):
+            celdas = re.split(r"(?<!\\)\|", linea[1:-1])
+            if len(celdas) > 2:
+                hallados.append(f"una barra dentro de una celda («{linea[:60]}»)")
+                break
     return hallados
 
 

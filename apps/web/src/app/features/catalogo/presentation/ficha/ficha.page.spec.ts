@@ -332,6 +332,49 @@ describe('FichaPage', () => {
     );
   });
 
+  /**
+   * La ficha pintaba la descripción en un solo `<p>`: el cliente leía «## Ficha técnica |
+   * Atributo | Detalle |---|---|» en un bloque corrido. Las descripciones de tecnología llegan con
+   * secciones, y la ficha tiene que enseñarlas como secciones.
+   */
+  describe('la descripción por secciones', () => {
+    const DESCRIPCION = [
+      'Parlante inteligente con Alexa.',
+      '',
+      '## Ficha técnica',
+      '',
+      '| Atributo | Detalle |',
+      '|---|---|',
+      '| Sonido | altavoz frontal de 44 mm |',
+      '',
+      '---',
+      '',
+      'Ficha técnica: Datos de Open Icecat (https://icecat.biz).',
+    ].join('\n');
+    const repositorio: RepositorioProductos = {
+      buscar: () =>
+        Promise.resolve<ResultadoPaginado<Producto>>({ items: [], cursorSiguiente: null }),
+      buscarPorSlug: () => Promise.resolve({ ...productoDePrueba(), descripcion: DESCRIPCION }),
+    };
+
+    it('enseña subtítulos y la ficha técnica en tabla, sin la sintaxis a la vista', async () => {
+      const { container } = await renderFicha(repositorio);
+
+      expect(await screen.findByRole('heading', { level: 2, name: 'Ficha técnica' })).toBeTruthy();
+      expect(screen.getByRole('rowheader', { name: 'Sonido' })).toBeTruthy();
+      expect(screen.getByRole('link', { name: 'https://icecat.biz' })).toBeTruthy();
+      expect(container.textContent).not.toContain('##');
+      expect(container.textContent).not.toContain('|---');
+    });
+
+    it('no tiene violaciones de WCAG 2.2 AA', async () => {
+      const { container } = await renderFicha(repositorio);
+      await screen.findByRole('heading', { level: 2, name: 'Ficha técnica' });
+
+      await esperarSinViolaciones(container);
+    });
+  });
+
   describe('las fotos de referencia', () => {
     const repositorioCon = (producto: Producto): RepositorioProductos => ({
       buscar: () =>

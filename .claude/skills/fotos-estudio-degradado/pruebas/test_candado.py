@@ -10,6 +10,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from datetime import datetime, timezone
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "scripts"))
@@ -58,8 +59,11 @@ class Candado(unittest.TestCase):
             raiz = Path(tmp)
             candado.ruta(raiz).parent.mkdir(parents=True, exist_ok=True)
             # el proceso padre de las pruebas está vivo y no somos nosotros
+            # «desde» es de ahora: una fecha fija caduca a las 12 h (`VIGENCIA_HORAS`) y la prueba
+            # empezó a fallar sola el 23/10/2026, con el candado tomado por huérfano.
+            ahora = datetime.now(timezone.utc).isoformat(timespec="seconds")
             candado.ruta(raiz).write_text(json.dumps({"pid": os.getppid(), "quien": "procesar.py",
-                                                      "desde": "2026-10-22T17:00:00"}), encoding="utf-8")
+                                                      "desde": ahora}), encoding="utf-8")
             with self.assertRaises(candado.CarpetaOcupada) as e:
                 with candado.Candado(raiz, "marcar.py"):
                     pass

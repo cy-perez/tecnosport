@@ -33,6 +33,28 @@ lo distingue de su versión anterior o de su competencia directa.]
 - [garantía, condición del equipo, aclaraciones de eSIM o compatibilidad]
 ```
 
+## Lo que la ficha del sitio sabe pintar
+
+La ficha del producto no tiene una librería de Markdown detrás: la lee
+`apps/web/src/app/shared/ui/descripcion/leer-descripcion.ts`, que reconoce
+exactamente lo de la plantilla de arriba, y nada más:
+
+| Se escribe | Se ve |
+|---|---|
+| un párrafo, separado por una línea en blanco | párrafo; sus saltos de línea se respetan |
+| `## Subtítulo` | subtítulo de sección |
+| `- viñeta` | lista con viñetas |
+| `\| Atributo \| Detalle \|` + `\|---\|---\|` + filas | tabla de dos columnas, el atributo como encabezado de fila |
+| `---` y, debajo, una fuente por línea | pie de fuentes en letra pequeña |
+| una dirección `https://…` | enlace (la mención de Icecat lo exige) |
+
+Lo demás sale **tal cual, con la sintaxis a la vista**: `###` o `#`, negrita con
+`**`, listas numeradas, citas con `>` y enlaces `[texto](dirección)`.
+`descripciones.py` lo avisa como «usa un formato que la ficha del sitio no
+pinta». Y **ninguna barra `|` dentro de un valor de la tabla**: abre otra columna.
+`redactar_fichas.py` la cambia por una coma («GPS, Galileo, Glonass») y
+`descripciones.py` avisa si una descripción heredada todavía la trae.
+
 Los atributos de la ficha cambian por categoría: un parlante lleva potencia,
 autonomía, resistencia al agua y versión de Bluetooth; un portátil lleva
 pantalla, procesador, RAM, almacenamiento, gráficos, puertos y peso.

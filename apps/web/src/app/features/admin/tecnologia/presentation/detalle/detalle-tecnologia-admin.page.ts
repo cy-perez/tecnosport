@@ -20,6 +20,7 @@ import { formatearPrecio } from '../../../../../shared/ts-precio/formato-precio'
 import { TsBoton } from '../../../../../shared/ui/boton/ts-boton';
 import { TsCampo } from '../../../../../shared/ui/campo/ts-campo';
 import { TsCheckbox } from '../../../../../shared/ui/checkbox/ts-checkbox';
+import { TsDescripcion } from '../../../../../shared/ui/descripcion/ts-descripcion';
 import { OpcionSelect, TsSelect } from '../../../../../shared/ui/select/ts-select';
 import { TsSelectControl } from '../../../../../shared/ui/select/ts-select-control';
 import { TsEsqueleto } from '../../../../../shared/ts-esqueleto/ts-esqueleto';
@@ -86,6 +87,7 @@ interface ControlesDeConfiguracion {
     TsBoton,
     TsCampo,
     TsCheckbox,
+    TsDescripcion,
     TsEsqueleto,
     TsMigas,
     TsSelect,

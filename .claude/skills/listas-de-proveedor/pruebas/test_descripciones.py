@@ -97,6 +97,30 @@ class NombraUnaConfiguracion(unittest.TestCase):
             texto = f"El equipo es un celular 4G. {frase}\n\n" + FICHA + CAJA + GARANTIA
             self.assertIsNone(descripciones.frase_de_configuracion(texto), frase)
 
+    def test_un_formato_que_el_sitio_no_pinta_se_dice(self):
+        for formato in ("### Batería\n", "**8 GB** de RAM\n", "1. Encender\n", "> Nota\n",
+                        "[manual](https://x.co)\n"):
+            with self.subTest(formato=formato):
+                defectos = descripciones.defectos(APERTURA + formato + VINETAS + FICHA + CAJA + GARANTIA)
+                self.assertTrue(any(d.startswith(descripciones.FORMATO_NO_SE_PINTA) for d in defectos))
+
+    def test_una_barra_dentro_de_una_celda_se_dice(self):
+        # Los relojes del 23/10/2026: «GPS | Galileo | Glonass» partía la fila en cinco columnas.
+        tabla = FICHA.replace("OLED 6,1\"", "Bluetooth 5.3 · GPS | Galileo | Glonass")
+        defectos = descripciones.defectos(APERTURA + VINETAS + tabla + CAJA + GARANTIA)
+        self.assertTrue(any("barra dentro de una celda" in d for d in defectos))
+
+    def test_una_barra_escapada_no_es_otra_columna(self):
+        tabla = FICHA.replace("OLED 6,1\"", "USB-C \\| HDMI")
+        self.assertEqual([], descripciones.formatos_que_no_se_pintan(tabla))
+
+    def test_el_formato_de_la_plantilla_se_pinta_entero(self):
+        texto = APERTURA + VINETAS + FICHA + CAJA + GARANTIA + PIE_ICECAT
+        self.assertEqual([], descripciones.formatos_que_no_se_pintan(texto))
+
+    def test_el_formato_no_bloquea_la_exportacion(self):
+        self.assertNotIn(descripciones.FORMATO_NO_SE_PINTA, descripciones.BLOQUEAN)
+
     def test_la_tabla_puede_nombrar_capacidades(self):
         ficha = ("## Ficha técnica\n\n| Atributo | Detalle |\n|---|---|\n| Expansión | microSD de 1 TB |\n"
                  "| Dimensiones y peso | 170 g |\n\n")
