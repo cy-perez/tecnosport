@@ -325,6 +325,48 @@ class RepositoriosDeTecnologiaJpaTest {
     assertEquals("p/b/a.jpg", fotos.getFirst().referenciaVistaPrevia());
   }
 
+  /** Lo que quien revisa edita en el panel (23/10/2026): la ficha, el aviso y el orden. */
+  @Test
+  void laFichaEditadaElAvisoYElNuevoOrdenDeLasFotosSeGuardan() {
+    Proveedor proveedor = proveedor();
+    BorradorTecnologia borrador =
+        BorradorTecnologia.nuevo(
+            proveedor.id(), a17(), List.of(config("a17-a", "1 SIM", null)), null, LUNES, LUNES);
+    FotoDeBorradorTecnologia a = foto("a");
+    FotoDeBorradorTecnologia b = foto("b");
+    borrador.agregarFoto(a);
+    borrador.agregarFoto(b);
+    borradores.guardar(borrador);
+    em.flush();
+    em.clear();
+
+    BorradorTecnologia leido = borradores.buscarPorIdParaActualizar(borrador.id()).orElseThrow();
+    leido.editarDescripcion("Editada a mano.");
+    leido.reordenarFotos(List.of(b.id(), a.id()));
+    leido.actualizarConLista(
+        new ModeloDeLista(
+            a17().idModelo(),
+            a17().titulo(),
+            a17().marca(),
+            a17().categoria(),
+            "La ficha nueva de la skill.",
+            null,
+            a17().paleta()),
+        List.of(config("a17-a", "1 SIM", null)),
+        LUNES.plusSeconds(86_400));
+    borradores.actualizar(leido);
+    em.flush();
+    em.clear();
+
+    BorradorTecnologia releido = borradores.buscarPorId(borrador.id()).orElseThrow();
+    assertEquals("Editada a mano.", releido.descripcion());
+    assertEquals("La ficha nueva de la skill.", releido.modelo().descripcion());
+    assertTrue(releido.fichaNuevaDeLaSkill());
+    assertEquals(
+        List.of(b.id(), a.id()),
+        releido.fotos().stream().map(FotoDeBorradorTecnologia::id).toList());
+  }
+
   @Test
   void lasListasImportadasSeRecuerdanPorContenidoYPorFecha() {
     Proveedor proveedor = proveedor();

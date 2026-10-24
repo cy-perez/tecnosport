@@ -132,7 +132,9 @@ public class RepositorioBorradoresTecnologiaJpa implements RepositorioBorradores
                         f.altEs(),
                         f.altEn(),
                         f.subidaEn()))
-            .toList());
+            .toList(),
+        b.descripcionEditada().orElse(null),
+        b.fichaNuevaDeLaSkill());
   }
 
   private static BorradorTecnologia aDominio(BorradorTecnologiaJpaEntity f) {
@@ -167,7 +169,9 @@ public class RepositorioBorradoresTecnologiaJpa implements RepositorioBorradores
         f.getMotivoRechazo(),
         f.getVistoEn(),
         f.getCreadoEn(),
-        f.getFotos().stream().map(RepositorioBorradoresTecnologiaJpa::foto).toList());
+        f.getFotos().stream().map(RepositorioBorradoresTecnologiaJpa::foto).toList(),
+        f.getDescripcionEditada(),
+        f.isFichaNuevaDeLaSkill());
   }
 
   private static FotoDeBorradorTecnologia foto(FotoTecnologiaJpaEmbeddable f) {
