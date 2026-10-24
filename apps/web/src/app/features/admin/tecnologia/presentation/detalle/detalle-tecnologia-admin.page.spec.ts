@@ -1,7 +1,7 @@
 import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
 import { TranslocoTestingModule } from '@jsverse/transloco';
 import { QueryClient, provideTanStackQuery } from '@tanstack/angular-query-experimental';
-import { fireEvent, render, screen, within } from '@testing-library/angular';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/angular';
 import { of } from 'rxjs';
 import en from '../../../../../../assets/i18n/en.json';
 import es from '../../../../../../assets/i18n/es.json';
@@ -286,6 +286,202 @@ describe('DetalleTecnologiaAdminPage', () => {
 
     expect(screen.queryByRole('heading', { name: esAdmin.tecnologia.detalle.fotos })).toBeNull();
     expect(screen.queryByText(/fotos para aprobarse/)).toBeNull();
+  });
+
+  describe('fotos editables (23/10/2026)', () => {
+    const F = esAdmin.tecnologia.fotos;
+
+    function ordenDeFotos(): string[] {
+      return screen
+        .getAllByRole('img')
+        .map((img) => img.getAttribute('src') ?? '')
+        .filter((src) => src.startsWith('https://firmada.local/'))
+        .map((src) => src.replace('https://firmada.local/', '').replace(/\.\w+$/, ''));
+    }
+
+    it('usar una foto como principal la pone primera y lo dice', async () => {
+      const { repositorio } = await renderPagina();
+
+      fireEvent.click(
+        screen.getByRole('button', { name: F.usarComoPrincipalFoto.replace('{{numero}}', '3') }),
+      );
+
+      expect(await screen.findByText(F.principalCambiada)).toBeTruthy();
+      expect(repositorio.ordenes).toEqual([
+        { id: 'bt-1', fotoIds: ['foto-3', 'foto-1', 'foto-2', 'foto-4'] },
+      ]);
+      expect(ordenDeFotos()).toEqual(['foto-3', 'foto-1', 'foto-2', 'foto-4']);
+    });
+
+    it('bajar la primera la cambia con la segunda, y en los extremos no hay botón de más', async () => {
+      const { repositorio } = await renderPagina();
+
+      expect(
+        screen.queryByRole('button', { name: F.subirFoto.replace('{{numero}}', '1') }),
+      ).toBeNull();
+      expect(
+        screen.queryByRole('button', { name: F.bajarFoto.replace('{{numero}}', '4') }),
+      ).toBeNull();
+      fireEvent.click(screen.getByRole('button', { name: F.bajarFoto.replace('{{numero}}', '1') }));
+
+      expect(await screen.findByText(F.ordenGuardado)).toBeTruthy();
+      expect(repositorio.ordenes[0].fotoIds).toEqual(['foto-2', 'foto-1', 'foto-3', 'foto-4']);
+    });
+
+    it('quitar pide confirmación y después quita', async () => {
+      const { repositorio } = await renderPagina();
+
+      fireEvent.click(
+        screen.getByRole('button', { name: F.quitarFoto.replace('{{numero}}', '2') }),
+      );
+      expect(repositorio.quitadas).toEqual([]);
+      fireEvent.click(screen.getByRole('button', { name: F.confirmarQuitarAccion }));
+
+      expect(await screen.findByText(F.quitada)).toBeTruthy();
+      expect(repositorio.quitadas).toEqual([{ id: 'bt-1', fotoId: 'foto-2' }]);
+      await waitFor(() => expect(ordenDeFotos()).toEqual(['foto-1', 'foto-3', 'foto-4']));
+    });
+
+    it('subir sin archivo dice qué falta y no envía nada', async () => {
+      const { repositorio } = await renderPagina();
+
+      fireEvent.click(screen.getByRole('button', { name: F.agregar }));
+
+      expect(await screen.findByText(F.faltanCampos)).toBeTruthy();
+      expect(repositorio.subidas).toEqual([]);
+    });
+
+    it('subir una foto la agrega al final con su texto alternativo', async () => {
+      // jsdom no decodifica imágenes ni crea URL de objetos: se simulan las dos cosas.
+      vi.stubGlobal(
+        'Image',
+        class {
+          onload: (() => void) | null = null;
+          naturalWidth = 1600;
+          naturalHeight = 1600;
+          set src(_: string) {
+            setTimeout(() => this.onload?.());
+          }
+        },
+      );
+      const crear = vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:local/1');
+      const revocar = vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => undefined);
+      try {
+        const { repositorio } = await renderPagina();
+        const archivo = new File(['x'], 'frente.jpg', { type: 'image/jpeg' });
+
+        fireEvent.change(screen.getByLabelText(F.archivo), { target: { files: [archivo] } });
+        await screen.findByAltText(F.previsualizacion);
+        fireEvent.click(screen.getByRole('button', { name: F.agregar }));
+
+        expect(await screen.findByText(F.agregada)).toBeTruthy();
+        expect(repositorio.subidas).toEqual([
+          {
+            id: 'bt-1',
+            foto: {
+              archivo,
+              ancho: 1600,
+              alto: 1600,
+              altEs: 'Samsung Galaxy A17 5G sobre fondo blanco',
+              altEn: 'Samsung Galaxy A17 5G on a white background',
+            },
+          },
+        ]);
+        expect(ordenDeFotos().at(-1)).toBe('subida-1');
+      } finally {
+        vi.unstubAllGlobals();
+        crear.mockRestore();
+        revocar.mockRestore();
+      }
+    });
+
+    it('un borrador rechazado muestra las fotos sin acciones', async () => {
+      await renderPagina(
+        borradorTecnologiaDePrueba({ estado: 'RECHAZADO', motivoRechazo: 'No vendemos esta gama' }),
+      );
+
+      expect(
+        screen.queryByRole('button', { name: F.quitarFoto.replace('{{numero}}', '1') }),
+      ).toBeNull();
+      expect(screen.queryByRole('button', { name: F.agregar })).toBeNull();
+    });
+  });
+
+  describe('ficha editable (23/10/2026)', () => {
+    const FI = esAdmin.tecnologia.ficha;
+
+    function abrirEditor(): HTMLTextAreaElement {
+      fireEvent.click(screen.getByRole('button', { name: FI.editar }));
+      return screen.getByLabelText(new RegExp(FI.campo)) as HTMLTextAreaElement;
+    }
+
+    it('editar arranca con la ficha vigente y guardar publica la editada', async () => {
+      const { repositorio } = await renderPagina();
+
+      const area = abrirEditor();
+      expect(area.value).toBe('El Galaxy A17 5G.');
+      fireEvent.input(area, { target: { value: 'El Galaxy A17 5G, sin la nota.' } });
+      fireEvent.click(screen.getByRole('button', { name: FI.guardar }));
+
+      expect(await screen.findByText(FI.guardada)).toBeTruthy();
+      expect(repositorio.fichas).toEqual([
+        { id: 'bt-1', descripcion: 'El Galaxy A17 5G, sin la nota.' },
+      ]);
+      expect(await screen.findByText('El Galaxy A17 5G, sin la nota.')).toBeTruthy();
+      expect(screen.getByText(FI.editada)).toBeTruthy();
+    });
+
+    it('guardar el mismo texto de la skill vuelve a ella en vez de guardar una copia', async () => {
+      const { repositorio } = await renderPagina(
+        borradorTecnologiaDePrueba({ descripcion: 'Editada.', fichaEditada: true }),
+      );
+
+      abrirEditor();
+      fireEvent.click(screen.getByRole('button', { name: FI.volver }));
+      fireEvent.click(screen.getByRole('button', { name: FI.guardar }));
+
+      expect(await screen.findByText(FI.vueltaALaSkill)).toBeTruthy();
+      expect(repositorio.fichas).toEqual([{ id: 'bt-1', descripcion: null }]);
+    });
+
+    it('una ficha vacía no se envía', async () => {
+      const { repositorio } = await renderPagina();
+
+      fireEvent.input(abrirEditor(), { target: { value: '   ' } });
+      fireEvent.click(screen.getByRole('button', { name: FI.guardar }));
+
+      expect(await screen.findByText(FI.vacia)).toBeTruthy();
+      expect(repositorio.fichas).toEqual([]);
+    });
+
+    it('cancelar deja la ficha como estaba', async () => {
+      const { repositorio } = await renderPagina();
+
+      fireEvent.input(abrirEditor(), { target: { value: 'Otra cosa.' } });
+      fireEvent.click(screen.getByRole('button', { name: FI.cancelar }));
+
+      expect(screen.queryByLabelText(new RegExp(FI.campo))).toBeNull();
+      expect(screen.getByText('El Galaxy A17 5G.')).toBeTruthy();
+      expect(repositorio.fichas).toEqual([]);
+    });
+
+    it('avisa que una lista trajo otra ficha de la skill', async () => {
+      await renderPagina(
+        borradorTecnologiaDePrueba({
+          descripcion: 'Editada.',
+          fichaEditada: true,
+          fichaNuevaDeLaSkill: true,
+        }),
+      );
+
+      expect(screen.getByText(FI.nuevaDeLaSkill)).toBeTruthy();
+    });
+
+    it('un borrador aprobado no ofrece editar la ficha', async () => {
+      await renderPagina(borradorTecnologiaDePrueba({ estado: 'APROBADO', productoId: 'prod-1' }));
+
+      expect(screen.queryByRole('button', { name: FI.editar })).toBeNull();
+    });
   });
 
   it('no tiene violaciones de accesibilidad', async () => {

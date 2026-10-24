@@ -50,56 +50,12 @@
       </p>
     }
 
+    <!-- Las fotos son del modelo nuevo: uno de configuraciones nuevas usa las del producto. -->
     @if (!completaExistente()) {
-      <h2 class="m-0 mb-12 font-display text-lg">
-        {{ 'admin.tecnologia.detalle.fotos' | transloco }}
-      </h2>
-      @if (borrador.fotos.length === 0) {
-        <p class="mb-24 text-ts-texto-suave">
-          {{ 'admin.tecnologia.detalle.sinFotos' | transloco }}
-        </p>
-      } @else {
-        <ul class="m-0 mb-24 grid list-none grid-cols-2 gap-12 p-0 desde-tableta:grid-cols-4">
-          @for (foto of borrador.fotos; track foto.id; let i = $index) {
-            <li>
-              <figure class="m-0 flex flex-col gap-8">
-                <!-- `<img>` a secas y no NgOptimizedImage: la URL es firmada, caduca y lleva su
-                     propia query; el cargador del catálogo la partiría en variantes que no existen. -->
-                <img
-                  class="aspect-square w-full rounded-md object-cover"
-                  [src]="foto.url"
-                  [width]="foto.ancho"
-                  [height]="foto.alto"
-                  [alt]="
-                    altDe(foto) ||
-                    ('admin.tecnologia.detalle.fotoAlt'
-                      | transloco: { modelo: borrador.titulo, numero: i + 1 })
-                  "
-                />
-                <!-- El texto que se publicará como alternativo: quien aprueba lo ve antes. -->
-                <figcaption class="flex flex-col gap-4 text-xs text-ts-texto-suave">
-                  @if (i === 0) {
-                    <span class="font-medio">{{
-                      'admin.tecnologia.detalle.principal' | transloco
-                    }}</span>
-                  }
-                  <span>{{ altDe(foto) }}</span>
-                </figcaption>
-              </figure>
-            </li>
-          }
-        </ul>
-      }
+      <ts-fotos-borrador-tecnologia [borrador]="borrador" [editable]="editable()" />
     }
 
-    <details class="mb-24 rounded-lg border border-ts-borde bg-ts-superficie p-16">
-      <summary class="anillo-foco cursor-pointer font-medio">
-        {{ 'admin.tecnologia.detalle.ficha' | transloco }}
-      </summary>
-      <!-- El mismo componente que la ficha del catálogo: lo que se aprueba aquí es lo que verá el
-           cliente. Subtítulos en h3 porque la página ya ordena sus secciones con h2. -->
-      <ts-descripcion class="mt-12" [texto]="borrador.descripcion" [nivelDeTitulo]="3" />
-    </details>
+    <ts-ficha-borrador-tecnologia [borrador]="borrador" [editable]="editable()" />
 
     @if (listo()) {
       <form class="mb-32 flex flex-col gap-16" (submit)="$event.preventDefault(); guardar()">

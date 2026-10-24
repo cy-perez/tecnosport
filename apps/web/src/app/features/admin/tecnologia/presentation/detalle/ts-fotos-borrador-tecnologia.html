@@ -1,0 +1,208 @@
+<h2 class="m-0 mb-12 font-display text-lg">
+  {{ 'admin.tecnologia.detalle.fotos' | transloco }}
+</h2>
+@if (editable()) {
+  <p class="m-0 mb-12 text-sm text-ts-texto-suave">
+    {{ 'admin.tecnologia.fotos.ayuda' | transloco: { tope: tope } }}
+  </p>
+}
+
+@if (fotos().length === 0) {
+  <p class="mb-24 text-ts-texto-suave">
+    {{ 'admin.tecnologia.detalle.sinFotos' | transloco }}
+  </p>
+} @else {
+  <ul class="m-0 mb-16 grid list-none grid-cols-2 gap-12 p-0 desde-tableta:grid-cols-4">
+    @for (foto of fotos(); track foto.id; let i = $index; let ultima = $last) {
+      <li class="flex flex-col gap-8" [attr.data-foto-id]="foto.id">
+        <figure class="m-0 flex flex-col gap-8">
+          <!-- `<img>` a secas y no NgOptimizedImage: la URL es firmada, caduca y lleva su propia
+               query; el cargador del catálogo la partiría en variantes que no existen. -->
+          <img
+            class="aspect-square w-full rounded-md object-cover"
+            [src]="foto.url"
+            [width]="foto.ancho"
+            [height]="foto.alto"
+            [alt]="
+              altDe(foto) ||
+              ('admin.tecnologia.detalle.fotoAlt'
+                | transloco: { modelo: borrador().titulo, numero: i + 1 })
+            "
+          />
+          <!-- El texto que se publicará como alternativo: quien aprueba lo ve antes. -->
+          <figcaption class="flex flex-col gap-4 text-xs text-ts-texto-suave">
+            @if (i === 0) {
+              <span class="font-medio">{{ 'admin.tecnologia.detalle.principal' | transloco }}</span>
+            }
+            <span>{{ altDe(foto) }}</span>
+          </figcaption>
+        </figure>
+
+        @if (editable()) {
+          <!-- En cada extremo el botón que no lleva a ningún sitio se quita, no se deshabilita:
+               uno deshabilitado no es enfocable y para un lector de pantalla no está. -->
+          <div class="flex flex-wrap gap-8">
+            @if (i > 0) {
+              <ts-boton
+                variante="secundario"
+                tipo="button"
+                data-mover="subir"
+                [ocupado]="reordenando()"
+                [etiquetaAccesible]="
+                  'admin.tecnologia.fotos.subirFoto' | transloco: { numero: i + 1 }
+                "
+                (click)="mover(foto, -1)"
+              >
+                {{ 'admin.tecnologia.fotos.subir' | transloco }}
+              </ts-boton>
+            }
+            @if (!ultima) {
+              <ts-boton
+                variante="secundario"
+                tipo="button"
+                data-mover="bajar"
+                [ocupado]="reordenando()"
+                [etiquetaAccesible]="
+                  'admin.tecnologia.fotos.bajarFoto' | transloco: { numero: i + 1 }
+                "
+                (click)="mover(foto, 1)"
+              >
+                {{ 'admin.tecnologia.fotos.bajar' | transloco }}
+              </ts-boton>
+            }
+          </div>
+          @if (i > 0) {
+            <ts-boton
+              variante="secundario"
+              tipo="button"
+              data-principal
+              [ocupado]="reordenando()"
+              [etiquetaAccesible]="
+                'admin.tecnologia.fotos.usarComoPrincipalFoto' | transloco: { numero: i + 1 }
+              "
+              (click)="usarComoPrincipal(foto)"
+            >
+              {{ 'admin.tecnologia.fotos.usarComoPrincipal' | transloco }}
+            </ts-boton>
+          }
+          <ts-boton
+            variante="secundario"
+            tipo="button"
+            data-quitar
+            [etiquetaAccesible]="'admin.tecnologia.fotos.quitarFoto' | transloco: { numero: i + 1 }"
+            [expandido]="confirmandoQuitar() === foto.id"
+            [controla]="'quitar-foto-caja-' + foto.id"
+            (click)="preguntarSiQuitar(foto)"
+          >
+            {{ 'admin.tecnologia.fotos.quitar' | transloco }}
+          </ts-boton>
+
+          @if (confirmandoQuitar() === foto.id) {
+            <div
+              class="flex flex-col gap-12 rounded-md border border-ts-borde-control p-12"
+              role="group"
+              tabindex="-1"
+              [id]="'quitar-foto-caja-' + foto.id"
+              [attr.aria-labelledby]="'quitar-foto-pregunta-' + foto.id"
+              (keydown.escape)="cancelarQuitar()"
+            >
+              <p class="m-0 text-sm" [id]="'quitar-foto-pregunta-' + foto.id">
+                {{ 'admin.tecnologia.fotos.confirmarQuitar' | transloco: { numero: i + 1 } }}
+              </p>
+              <div class="flex flex-wrap gap-8">
+                <ts-boton
+                  tipo="button"
+                  [ocupado]="quitando()"
+                  [etiquetaCargando]="'admin.tecnologia.fotos.quitando' | transloco"
+                  (click)="confirmarQuitar(foto)"
+                >
+                  {{ 'admin.tecnologia.fotos.confirmarQuitarAccion' | transloco }}
+                </ts-boton>
+                <ts-boton variante="secundario" tipo="button" (click)="cancelarQuitar()">
+                  {{ 'admin.tecnologia.fotos.cancelar' | transloco }}
+                </ts-boton>
+              </div>
+            </div>
+          }
+        }
+      </li>
+    }
+  </ul>
+}
+
+@if (error(); as mensaje) {
+  <p class="m-0 mb-12 text-ts-error" role="alert">{{ mensaje }}</p>
+}
+
+<!-- Siempre en el DOM: la región viva cambia de contenido, no de existencia. Recibe el foco cuando
+     el botón que se pulsó desaparece con su fila. -->
+<p #avisoRef class="m-0 mb-12 text-sm text-ts-exito" role="status" tabindex="-1">
+  @if (aviso(); as clave) {
+    {{ clave | transloco }}
+  }
+</p>
+
+@if (editable()) {
+  <!-- Permanente, porque el tope se alcanza con la pantalla abierta, al subir la décima. -->
+  <p class="m-0 mb-12 text-sm text-ts-texto-suave" role="status">
+    @if (llena()) {
+      {{ 'admin.tecnologia.fotos.llena' | transloco: { tope: tope } }}
+    }
+  </p>
+
+  @if (!llena()) {
+    <div
+      class="mb-24 flex flex-col gap-12 rounded-lg border border-ts-borde bg-ts-superficie p-16"
+      [formGroup]="formulario"
+    >
+      <h3 class="m-0 font-medio">{{ 'admin.tecnologia.fotos.agregarTitulo' | transloco }}</h3>
+      <p class="m-0 text-sm text-ts-texto-suave">
+        {{ 'admin.tecnologia.fotos.agregarAyuda' | transloco }}
+      </p>
+      @if (previsualizacion(); as url) {
+        <img
+          class="size-[var(--ancho-min-vista-previa)] rounded-md object-cover"
+          [src]="url"
+          [alt]="'admin.tecnologia.fotos.previsualizacion' | transloco"
+        />
+      }
+      <label for="borrador-tecnologia-foto-archivo">
+        {{ 'admin.tecnologia.fotos.archivo' | transloco }}
+      </label>
+      <input
+        #campoArchivo
+        class="anillo-foco min-h-tactil"
+        id="borrador-tecnologia-foto-archivo"
+        type="file"
+        accept="image/jpeg,image/png,image/webp,image/avif"
+        (change)="elegirArchivo($event)"
+      />
+      <ts-campo
+        idCampo="borrador-tecnologia-foto-alt-es"
+        [label]="'admin.tecnologia.fotos.altEs' | transloco"
+        [obligatorio]="true"
+        formControlName="altEs"
+      />
+      <ts-campo
+        idCampo="borrador-tecnologia-foto-alt-en"
+        [label]="'admin.tecnologia.fotos.altEn' | transloco"
+        [obligatorio]="true"
+        formControlName="altEn"
+      />
+      @if (errorSubida(); as mensaje) {
+        <p class="m-0 text-ts-error" role="alert">{{ mensaje }}</p>
+      }
+      <div>
+        <ts-boton
+          variante="secundario"
+          tipo="button"
+          [ocupado]="subiendo()"
+          [etiquetaCargando]="'admin.tecnologia.fotos.agregando' | transloco"
+          (click)="agregar()"
+        >
+          {{ 'admin.tecnologia.fotos.agregar' | transloco }}
+        </ts-boton>
+      </div>
+    </div>
+  }
+}
