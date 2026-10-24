@@ -385,14 +385,15 @@ describe('ListaProductosAdminPage', () => {
   /**
    * "Publicado" no basta: la tienda solo muestra lo publicado **y** disponible, y el panel decía
    * publicado de siete productos que el sistema había ocultado por vencimiento. La insignia dice
-   * por qué no se ve y desde cuándo, con la fecha en hora de Colombia.
+   * por qué no se ve y desde cuándo, con la fecha en hora de Colombia: las 22:00 del 14 en Bogotá
+   * ya son el 15 en UTC, y sin la zona la insignia diría 15.
    */
   it('un publicado que el proveedor dejó de anunciar dice que está oculto y desde cuándo', async () => {
     await renderLista([
       productoDePrueba({
         estado: 'PUBLICADO',
         estadoDisponibilidad: 'OCULTO_POR_VENCIMIENTO',
-        vistoPorUltimaVez: '2026-10-14T15:30:00Z',
+        vistoPorUltimaVez: '2026-10-15T03:00:00Z',
       }),
     ]);
 
@@ -407,7 +408,7 @@ describe('ListaProductosAdminPage', () => {
       productoDePrueba({
         estado: 'PUBLICADO',
         estadoDisponibilidad: 'AGOTADO_POR_PROVEEDOR',
-        vistoPorUltimaVez: '2026-10-14T15:30:00Z',
+        vistoPorUltimaVez: '2026-10-15T03:00:00Z',
       }),
     ]);
 
