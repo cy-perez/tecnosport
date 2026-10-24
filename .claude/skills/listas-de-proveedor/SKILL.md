@@ -41,7 +41,7 @@ Están al inicio de `scripts/parsear_lista.py` y se cambian ahí:
 | Categorías que se publican | celulares, tablets, relojes, audífonos, consolas, computadores, proyectores, parlantes |
 | Condición publicable | solo `nuevo`, es decir sellado y sin activar |
 | Se descartan siempre | usados, "NUEVOS ACTIVOS", "IPH CON CAJA", cables, cargadores, power bank, accesorios sueltos (control de consola, pencil táctil, rastreador tipo tag), lo que quede sin precio, los celulares por debajo de 500.000 COP, los computadores sin marca o sin referencia, lo que la lista no permite identificar (regla 10, con confirmación) y **todo** lo de Krono, BMAX, itel, ZTE, Infinix y Tecno |
-| Margen mínimo para ofrecer | **5 %** del precio de mercado sobre el costo del proveedor; por debajo, la configuración no se propone y, si ya se vendía, deja de ofrecerse y no se le crea carpeta de modelo (regla 18, `MARGEN_MINIMO` en `scripts/margen.py`) |
+| Margen mínimo para ofrecer | **10 %** del precio de mercado sobre el costo del proveedor; por debajo, la configuración no se propone y, si ya se vendía, deja de ofrecerse y no se le crea carpeta de modelo (regla 18, `MARGEN_MINIMO` en `scripts/margen.py`) |
 
 Estas ya están decididas por el negocio y no se vuelven a preguntar en cada
 lista:
@@ -211,11 +211,12 @@ lista:
     pasado con los cables: nacieron en el catálogo el mismo día en que la regla 5
     decidió que nunca entrarían.
 
-18. **Con menos de un 5 % de margen no se ofrece** (decisión del negocio,
-    15/10/2026). El margen es el precio de mercado que asignó el paso 4 sobre el
-    costo del proveedor. La configuración que no llega al 5 % —incluida la que
-    queda en 0 % o por debajo del costo— no se propone si es nueva y deja de
-    ofrecerse si ya se vendía. Si todas las configuraciones de un modelo quedan
+18. **Con menos de un 10 % de margen no se ofrece** (decisión del negocio,
+    15/10/2026; el umbral subió del 5 % al 10 % el 24/10/2026). El margen es
+    el precio de mercado que asignó el paso 4 sobre el costo del proveedor. La
+    configuración que no llega al 10 % —incluida la que queda en 0 % o por
+    debajo del costo— no se propone si es nueva y deja de ofrecerse si ya se
+    vendía. Si todas las configuraciones de un modelo quedan
     por debajo, el modelo entero deja de ofrecerse.
     La regla vive en `scripts/margen.py` y la aplican dos pasos con el mismo
     umbral. `construir_entregables.py` no le crea carpeta de modelo a lo que no
@@ -554,7 +555,7 @@ python3 scripts/construir_entregables.py catalogo/productos.json      # deja tod
 Produce:
 
 - `fichas/<Modelo>/` — una carpeta por modelo **que se va a ofrecer** (regla 18:
-  el que no llega al 5 % de margen en ninguna configuración no la recibe), que se
+  el que no llega al 10 % de margen en ninguna configuración no la recibe), que se
   queda de una lista a la siguiente: `<id del modelo>-ficha.txt` (el modelo, sus configuraciones de esta
   lista con costo, precio de mercado y colores sugeridos, la descripción, los
   supuestos, los pendientes y las fuentes) y `Fotos originales/`, vacía la
@@ -613,7 +614,7 @@ node tools/importar-lista-tecnologia.mjs catalogo/5-api/lista-api.json --inventa
 ```
 
 Solo se exportan los modelos con descripción; los demás se dicen. Tampoco se
-exporta la configuración con menos de un 5 % de margen (regla 18): va como
+exporta la configuración con menos de un 10 % de margen (regla 18): va como
 desaparecida y la salida dice cuál y con cuánto.
 
 La exportación deja además `5-api/avisos-panel.json`: por modelo, las

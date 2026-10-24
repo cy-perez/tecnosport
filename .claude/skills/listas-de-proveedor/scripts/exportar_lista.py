@@ -24,7 +24,7 @@ precio de mercado y los colores que sugieren los emojis de la lista. Con eso:
 Solo se exportan los modelos terminados (con descripción): uno a medio investigar
 no puede convertirse en un producto. Los demás se informan.
 
-Y solo las configuraciones con al menos un 5 % de margen sobre el costo (regla 18,
+Y solo las configuraciones con al menos un 10 % de margen sobre el costo (regla 18,
 `MARGEN_MINIMO`): las demás van como desaparecidas, y se informan.
 """
 
