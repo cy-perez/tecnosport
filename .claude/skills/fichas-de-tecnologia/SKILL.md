@@ -17,6 +17,13 @@ El tercero de los tres bloques de la ingesta de tecnología (`docs/adr/0079`):
 los otros dos bloques y lo lleva al panel. Si algo falta, se vuelve al bloque que
 lo produce; no se completa aquí.
 
+Tampoco redacta: la descripción —con sus secciones y su orden— la escribe el
+bloque 1 con la plantilla de `referencias/descripciones.md`, y el sitio la pinta
+por secciones con `shared/ui/descripcion` (23/10/2026). Antes de esa fecha la
+ficha la mostraba en un solo párrafo con la sintaxis a la vista: si alguien
+pide «ordenar la ficha», el arreglo está en el texto del bloque 1 o en ese
+componente, nunca en esta skill.
+
 ## Antes de empezar: ¿terminó la tanda?
 
 La regla del negocio (10/10/2026) es que **ningún producto llega al panel a
@@ -115,6 +122,11 @@ sabiendas.
 Dile a la persona que los borradores están en **`/admin/tecnologia`**, y qué hace
 ahí con cada uno:
 
+- abrir **«Ficha»** y leerla como la va a leer el cliente: el panel la pinta con
+  el mismo componente que la ficha del sitio —subtítulos, viñetas, la ficha
+  técnica en tabla y las fuentes al pie—. Si algo sale con `##`, `|` o `**` a la
+  vista, la descripción usa un formato que el sitio no pinta: se corrige en el
+  bloque 1 (`referencias/descripciones.md` de `/listas-de-proveedor`), no aquí;
 - marcar qué colores hay de cada configuración —los que sugiere la lista vienen
   marcados; si la lista no trae colores, la sugerencia es la paleta completa del
   modelo (regla 13 del bloque 1, decisión del 22/10/2026), así que se desmarca lo
