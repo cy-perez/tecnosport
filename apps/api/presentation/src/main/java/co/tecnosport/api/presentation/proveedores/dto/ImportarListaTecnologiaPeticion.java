@@ -6,7 +6,9 @@ import co.tecnosport.api.domain.proveedores.ConfiguracionTecnologia;
 import co.tecnosport.api.domain.proveedores.ModeloDeLista;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.LocalDate;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -39,7 +41,24 @@ public record ImportarListaTecnologiaPeticion(
         modo,
         modelos.stream().map(ModeloPeticion::aDominio).toList(),
         configuracionesDesaparecidas,
-        modelosDesaparecidos);
+        modelosDesaparecidos,
+        coloresMarcados());
+  }
+
+  /**
+   * Por id de configuración, los colores que la lista marca con sus emojis. Solo las que los traen
+   * aparte: las demás los deducen de los sugeridos (ADR-0086).
+   */
+  private Map<String, List<String>> coloresMarcados() {
+    Map<String, List<String>> marcados = new HashMap<>();
+    for (ModeloPeticion modelo : modelos) {
+      for (ConfiguracionPeticion c : modelo.configuraciones()) {
+        if (c.coloresMarcados() != null) {
+          marcados.put(c.sku().strip(), c.coloresMarcados());
+        }
+      }
+    }
+    return marcados;
   }
 
   public record ModeloPeticion(
@@ -76,7 +95,12 @@ public record ImportarListaTecnologiaPeticion(
       String sim,
       @Schema(requiredMode = Schema.RequiredMode.REQUIRED) Long costoProveedor,
       Long precioMercado,
-      List<String> coloresSugeridos) {
+      List<String> coloresSugeridos,
+      @Schema(
+              description =
+                  "Los colores que la lista marca con sus emojis, sin la paleta que se sugiere"
+                      + " cuando no marca ninguno. Nulo si la exportación no los separa.")
+          List<String> coloresMarcados) {
 
     public ConfiguracionPeticion {
       Objects.requireNonNull(sku, "La configuración tiene su id.");

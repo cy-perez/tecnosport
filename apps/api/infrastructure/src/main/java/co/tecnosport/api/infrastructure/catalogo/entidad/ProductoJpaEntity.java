@@ -68,6 +68,13 @@ public class ProductoJpaEntity {
   @Column(name = "ajuste_de_talla", nullable = false)
   private int ajusteDeTalla;
 
+  /** Entre los colores de {@link #paleta}: uno por línea, como la del borrador de tecnología. */
+  public static final String SEPARADOR_DE_PALETA = "\n";
+
+  /** Los colores oficiales del modelo, uno por línea (V117). */
+  @Column(name = "paleta")
+  private String paleta;
+
   protected ProductoJpaEntity() {}
 
   public ProductoJpaEntity(
@@ -212,6 +219,15 @@ public class ProductoJpaEntity {
 
   public ProductoJpaEntity conAjusteDeTalla(int ajusteDeTalla) {
     this.ajusteDeTalla = ajusteDeTalla;
+    return this;
+  }
+
+  public String getPaleta() {
+    return paleta;
+  }
+
+  public ProductoJpaEntity conPaleta(String paleta) {
+    this.paleta = paleta;
     return this;
   }
 

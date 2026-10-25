@@ -14,11 +14,13 @@ import co.tecnosport.api.domain.compartido.ZonaDelNegocio;
 import co.tecnosport.api.domain.inventario.Inventario;
 import co.tecnosport.api.domain.proveedores.BorradorTecnologia;
 import co.tecnosport.api.domain.proveedores.ConfiguracionTecnologia;
+import co.tecnosport.api.domain.proveedores.ConfirmacionDeColor;
 import co.tecnosport.api.domain.proveedores.HuellaProveedor;
 import co.tecnosport.api.domain.proveedores.Proveedor;
 import co.tecnosport.api.domain.proveedores.VarianteDeProveedor;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -142,6 +144,8 @@ public final class ImportarListaDeTecnologia {
 
     // Variante → existencia libre que tiene que quedar. Ordenado por id: es el orden de bloqueo.
     Map<UUID, Integer> objetivos = new TreeMap<>();
+    // Variante → si su color hay que confirmarlo con el proveedor antes de venderla (ADR-0086).
+    Map<UUID, Boolean> colorPorConfirmar = new HashMap<>();
 
     for (String desaparecida : comando.configuracionesDesaparecidas()) {
       for (VarianteDeProveedor v :
@@ -161,6 +165,10 @@ public final class ImportarListaDeTecnologia {
         Producto existente = producto.get();
         if (inventario) {
           existente.renovar(visto);
+          // La paleta la decide el panel una vez que existe; la lista solo llena la que falta.
+          if (existente.paleta().isEmpty() && !entrada.modelo().paleta().isEmpty()) {
+            existente.definirPaleta(entrada.modelo().paleta());
+          }
           repositorioProductos.actualizar(existente);
           cuenta.renovados++;
         }
@@ -177,8 +185,12 @@ public final class ImportarListaDeTecnologia {
           if (!inventario) {
             continue;
           }
+          List<String> marcados = comando.marcadosDe(c, entrada.modelo().paleta());
           for (VarianteDeProveedor v : variantes) {
             variantesDeProveedor.guardar(v.conCosto(c.costoProveedor(), visto));
+            colorPorConfirmar.put(
+                v.varianteId(),
+                ConfirmacionDeColor.requiere(existente.paleta(), marcados, v.color()));
             objetivos.put(v.varianteId(), hoyLoTiene(c, v.color()) ? existenciaPorVariante : 0);
             Dinero precio = precioPorVariante.get(v.varianteId());
             if (precio != null && precio.valor().compareTo(c.costoProveedor().valor()) <= 0) {
@@ -237,6 +249,7 @@ public final class ImportarListaDeTecnologia {
     }
 
     listas.registrar(proveedor.id(), comando.fechaLista(), huellaDeLista, ahora);
+    productosDeProveedor.marcarColoresPorConfirmar(colorPorConfirmar);
 
     for (Map.Entry<UUID, Integer> objetivo : objetivos.entrySet()) {
       Inventario libro = repositorioInventario.abrirLibroConBloqueo(objetivo.getKey());

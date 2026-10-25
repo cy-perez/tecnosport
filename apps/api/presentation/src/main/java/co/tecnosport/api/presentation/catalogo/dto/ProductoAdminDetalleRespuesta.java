@@ -1,5 +1,6 @@
 package co.tecnosport.api.presentation.catalogo.dto;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
@@ -44,4 +45,6 @@ public record ProductoAdminDetalleRespuesta(
      */
     String estadoDisponibilidad,
     /** La fecha del último mensaje o lista del proveedor que lo trajo; nula en un manual. */
-    Instant vistoPorUltimaVez) {}
+    Instant vistoPorUltimaVez,
+    /** Los colores oficiales del modelo, que la ficha dice al pie de las fotos (ADR-0086). */
+    @Schema(requiredMode = Schema.RequiredMode.REQUIRED) List<String> paleta) {}

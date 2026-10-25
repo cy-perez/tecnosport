@@ -27,4 +27,10 @@ public record VarianteRespuesta(
     // agotada** sin una sola prueba en rojo ni una linea en el registro. El primitivo garantiza que
     // siempre va; lo que faltaba era que el contrato lo dijera.
     @Schema(requiredMode = Schema.RequiredMode.REQUIRED) boolean disponible,
-    List<AtributoValorRespuesta> atributos) {}
+    List<AtributoValorRespuesta> atributos,
+    /**
+     * Su color de tecnología no está confirmado con el proveedor (ADR-0086): la ficha no la deja
+     * agregar al carrito sin un enlace de compra y ofrece preguntar por WhatsApp. El pedido lo
+     * vuelve a exigir.
+     */
+    @Schema(requiredMode = Schema.RequiredMode.REQUIRED) boolean colorPorConfirmar) {}

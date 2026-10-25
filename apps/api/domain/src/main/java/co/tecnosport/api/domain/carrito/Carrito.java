@@ -61,6 +61,28 @@ public final class Carrito {
     return actualizadoEn;
   }
 
+  /**
+   * La unidad de un color confirmado con el proveedor, con el enlace que la habilita (ADR-0086). El
+   * enlace aparta una sola unidad, así que la línea queda con una, aunque ya estuviera con más: es
+   * lo que el pedido va a aceptar.
+   */
+  public void agregarConEnlace(UUID varianteId, String enlaceCompra, Instant ahora) {
+    Objects.requireNonNull(varianteId, "El id de la variante no puede ser nulo.");
+    if (enlaceCompra == null || enlaceCompra.isBlank()) {
+      throw new ExcepcionDeDominio("Una línea con enlace de compra trae el enlace.");
+    }
+    for (int i = 0; i < lineas.size(); i++) {
+      LineaCarrito existente = lineas.get(i);
+      if (existente.varianteId().equals(varianteId)) {
+        lineas.set(i, new LineaCarrito(existente.id(), varianteId, 1, enlaceCompra));
+        marcarActividad(ahora);
+        return;
+      }
+    }
+    lineas.add(new LineaCarrito(GeneradorIdentificador.nuevo(), varianteId, 1, enlaceCompra));
+    marcarActividad(ahora);
+  }
+
   /** Si ya hay una línea con esa variante, suma la cantidad en vez de duplicar la línea. */
   public void agregarLinea(UUID varianteId, int cantidad, Instant ahora) {
     Objects.requireNonNull(varianteId, "El id de la variante no puede ser nulo.");

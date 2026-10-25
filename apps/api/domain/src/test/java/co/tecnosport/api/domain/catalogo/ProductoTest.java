@@ -94,6 +94,36 @@ class ProductoTest {
         ImagenProductoInvalidaException.class, () -> producto.asignarImagenPrincipal(galeria));
   }
 
+  @Test
+  void la_paleta_se_guarda_limpia_y_en_el_orden_del_fabricante() {
+    Producto producto = productoDePrueba();
+
+    producto.definirPaleta(List.of(" Morado ", "Plata", "", "morado", "Negro"));
+
+    assertEquals(List.of("Morado", "Plata", "Negro"), producto.paleta());
+  }
+
+  @Test
+  void la_paleta_vacia_o_nula_la_quita() {
+    Producto producto = productoDePrueba();
+    producto.definirPaleta(List.of("Negro"));
+
+    producto.definirPaleta(null);
+
+    assertEquals(List.of(), producto.paleta());
+  }
+
+  @Test
+  void una_paleta_desmedida_es_un_pegado_equivocado() {
+    Producto producto = productoDePrueba();
+    List<String> colores =
+        java.util.stream.IntStream.rangeClosed(0, Producto.TOPE_DE_PALETA)
+            .mapToObj(i -> "Color " + i)
+            .toList();
+
+    assertThrows(ExcepcionDeDominio.class, () -> producto.definirPaleta(colores));
+  }
+
   private static Producto productoDePrueba() {
     Marca marca = Marca.crear("TecnoSport");
     Categoria categoria =

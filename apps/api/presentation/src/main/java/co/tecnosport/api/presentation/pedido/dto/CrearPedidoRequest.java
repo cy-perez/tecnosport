@@ -78,7 +78,15 @@ public record CrearPedidoRequest(
     }
   }
 
-  public record LineaRequest(UUID varianteId, int cantidad) {
+  /**
+   * @param enlaceCompra el token del enlace de compra de un color de tecnología confirmado con el
+   *     proveedor (ADR-0086), tal como lo guardó la línea del carrito; nulo en las demás
+   */
+  public record LineaRequest(UUID varianteId, int cantidad, String enlaceCompra) {
+
+    public LineaRequest(UUID varianteId, int cantidad) {
+      this(varianteId, cantidad, null);
+    }
 
     public LineaRequest {
       if (varianteId == null) {

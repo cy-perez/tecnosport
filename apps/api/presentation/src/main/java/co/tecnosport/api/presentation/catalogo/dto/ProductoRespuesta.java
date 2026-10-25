@@ -1,5 +1,6 @@
 package co.tecnosport.api.presentation.catalogo.dto;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
 
 public record ProductoRespuesta(
@@ -24,4 +25,9 @@ public record ProductoRespuesta(
      */
     List<String> escalaTallas,
     /** Hasta qué talla le sirve una prenda de talla única, si el proveedor lo dijo. */
-    String tallaSirveHasta) {}
+    String tallaSirveHasta,
+    /**
+     * Los colores en que el fabricante publica el modelo (ADR-0086): la ficha de tecnología los
+     * dice al pie de las fotos. No son los que hay; vacía si no se conocen.
+     */
+    @Schema(requiredMode = Schema.RequiredMode.REQUIRED) List<String> paleta) {}

@@ -103,7 +103,8 @@ public class CarritoControlador {
       @PathVariable UUID id, @RequestBody AgregarLineaRequest cuerpo) {
     return mapeador.aRespuesta(
         agregarLineaAlCarrito.ejecutar(
-            new AgregarLineaAlCarritoComando(id, cuerpo.varianteId(), cuerpo.cantidad())));
+            new AgregarLineaAlCarritoComando(
+                id, cuerpo.varianteId(), cuerpo.cantidad(), cuerpo.enlaceCompra())));
   }
 
   @PatchMapping("/{id}/lineas/{lineaId}")

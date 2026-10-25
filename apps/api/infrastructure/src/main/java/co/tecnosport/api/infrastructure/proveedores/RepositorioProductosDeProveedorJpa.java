@@ -105,4 +105,17 @@ public class RepositorioProductosDeProveedorJpa implements RepositorioProductosD
         .forEach(v -> cambiadas.add(v.conAgotadaPorProveedor(!aLaVenta)));
     variantes.saveAll(cambiadas);
   }
+
+  @Override
+  public void marcarColoresPorConfirmar(Map<UUID, Boolean> porConfirmarPorVariante) {
+    if (porConfirmarPorVariante.isEmpty()) {
+      return;
+    }
+    List<VarianteJpaEntity> cambiadas = new ArrayList<>();
+    variantes
+        .findAllById(porConfirmarPorVariante.keySet())
+        .forEach(
+            v -> cambiadas.add(v.conColorPorConfirmar(porConfirmarPorVariante.get(v.getId()))));
+    variantes.saveAll(cambiadas);
+  }
 }

@@ -1146,7 +1146,8 @@ class PedidoControladorTest {
           Duration.ofMinutes(60),
           repositorioAutorizaciones,
           "2026-09-07",
-          new ModalidadesDeEntrega(true));
+          new ModalidadesDeEntrega(true),
+          new RepositorioEnlacesDeCompraDobleDePrueba());
     }
 
     @Bean

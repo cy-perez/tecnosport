@@ -60,5 +60,14 @@ public record CrearPedidoComando(
         null);
   }
 
-  public record LineaComando(UUID varianteId, int cantidad) {}
+  /**
+   * @param enlaceCompra el token del enlace de compra con que entró la línea, si el color de la
+   *     variante estaba por confirmar (ADR-0086); nulo en todas las demás
+   */
+  public record LineaComando(UUID varianteId, int cantidad, String enlaceCompra) {
+
+    public LineaComando(UUID varianteId, int cantidad) {
+      this(varianteId, cantidad, null);
+    }
+  }
 }

@@ -13,6 +13,7 @@ import co.tecnosport.api.application.proveedores.RepositorioProductosDeProveedor
 import co.tecnosport.api.application.proveedores.RepositorioProveedores;
 import co.tecnosport.api.application.proveedores.tecnologia.AgregarFotoABorradorTecnologia;
 import co.tecnosport.api.application.proveedores.tecnologia.AprobarBorradorTecnologia;
+import co.tecnosport.api.application.proveedores.tecnologia.DefinirPaletaDeTecnologia;
 import co.tecnosport.api.application.proveedores.tecnologia.EditarBorradorTecnologia;
 import co.tecnosport.api.application.proveedores.tecnologia.EditarFichaBorradorTecnologia;
 import co.tecnosport.api.application.proveedores.tecnologia.EliminarBorradorTecnologia;
@@ -85,6 +86,16 @@ public class ConfiguracionListasDeTecnologia {
         almacenPrivado,
         almacenDeImagenes,
         propiedades.tecnologia().existenciaPorVariante());
+  }
+
+  @Bean
+  public DefinirPaletaDeTecnologia definirPaletaDeTecnologia(
+      RepositorioProductos productos,
+      RepositorioProductosDeProveedor productosDeProveedor,
+      RepositorioVariantesDeProveedor variantes,
+      AgregarVariante agregarVariante) {
+    return new DefinirPaletaDeTecnologia(
+        productos, productosDeProveedor, variantes, agregarVariante);
   }
 
   @Bean

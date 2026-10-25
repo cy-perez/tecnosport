@@ -131,7 +131,11 @@ public class RepositorioProductosJpa implements RepositorioProductos {
                 producto.estadoDisponibilidad().name())
             .conTallaSirveHasta(producto.tallaSirveHasta().orElse(null))
             .conPesoAdicionalGramos(producto.pesoAdicionalGramos())
-            .conAjusteDeTalla(producto.ajusteDeTalla().tallas()));
+            .conAjusteDeTalla(producto.ajusteDeTalla().tallas())
+            .conPaleta(
+                producto.paleta().isEmpty()
+                    ? null
+                    : String.join(ProductoJpaEntity.SEPARADOR_DE_PALETA, producto.paleta())));
   }
 
   @Override
@@ -171,7 +175,11 @@ public class RepositorioProductosJpa implements RepositorioProductos {
                 producto.estadoDisponibilidad().name())
             .conTallaSirveHasta(producto.tallaSirveHasta().orElse(null))
             .conPesoAdicionalGramos(producto.pesoAdicionalGramos())
-            .conAjusteDeTalla(producto.ajusteDeTalla().tallas()));
+            .conAjusteDeTalla(producto.ajusteDeTalla().tallas())
+            .conPaleta(
+                producto.paleta().isEmpty()
+                    ? null
+                    : String.join(ProductoJpaEntity.SEPARADOR_DE_PALETA, producto.paleta())));
   }
 
   @Override
@@ -461,7 +469,8 @@ public class RepositorioProductosJpa implements RepositorioProductos {
                 existente.getEstado(),
                 existente.getCreadoEn())
             .conReferenciaProveedor(existente.getReferenciaProveedor())
-            .conAgotadaPorProveedor(existente.isAgotadaPorProveedor()));
+            .conAgotadaPorProveedor(existente.isAgotadaPorProveedor())
+            .conColorPorConfirmar(existente.isColorPorConfirmar()));
   }
 
   /**
@@ -494,7 +503,8 @@ public class RepositorioProductosJpa implements RepositorioProductos {
                 existente.getEstado(),
                 existente.getCreadoEn())
             .conReferenciaProveedor(existente.getReferenciaProveedor())
-            .conAgotadaPorProveedor(existente.isAgotadaPorProveedor()));
+            .conAgotadaPorProveedor(existente.isAgotadaPorProveedor())
+            .conColorPorConfirmar(existente.isColorPorConfirmar()));
   }
 
   @Override

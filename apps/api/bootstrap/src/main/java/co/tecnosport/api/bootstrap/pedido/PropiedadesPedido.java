@@ -8,7 +8,10 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * spring-boot-starter-validation} en el classpath todavía y esto no lo justifica.
  */
 @ConfigurationProperties(prefix = "tecnosport.pedido")
-public record PropiedadesPedido(int minutosReservaInventario, int horasVencimientoTransferencia) {
+public record PropiedadesPedido(
+    int minutosReservaInventario,
+    int horasVencimientoTransferencia,
+    int horasVigenciaEnlaceCompra) {
 
   public PropiedadesPedido {
     if (minutosReservaInventario <= 0) {
@@ -18,6 +21,10 @@ public record PropiedadesPedido(int minutosReservaInventario, int horasVencimien
     if (horasVencimientoTransferencia <= 0) {
       throw new IllegalStateException(
           "tecnosport.pedido.horas-vencimiento-transferencia debe ser mayor que cero.");
+    }
+    if (horasVigenciaEnlaceCompra <= 0) {
+      throw new IllegalStateException(
+          "tecnosport.pedido.horas-vigencia-enlace-compra debe ser mayor que cero.");
     }
   }
 }

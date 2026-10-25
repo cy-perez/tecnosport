@@ -93,6 +93,25 @@ class CarritoControladorTest {
         .andExpect(jsonPath("$.lineas[0].cantidad").value(2));
   }
 
+  /** Con enlace de compra la línea es de una unidad y recuerda el enlace (ADR-0086). */
+  @Test
+  void agregarConEnlaceDejaUnaUnidadYDevuelveElEnlace() throws Exception {
+    Carrito carrito = Carrito.crear(null, Instant.now());
+    repositorio.guardar(carrito);
+    UUID varianteId = UUID.randomUUID();
+
+    mockMvc
+        .perform(
+            post("/api/v1/carritos/{id}/lineas", carrito.id())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    json.writeValueAsString(new AgregarLineaRequest(varianteId, 3, "token-1"))))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.lineas", hasSize(1)))
+        .andExpect(jsonPath("$.lineas[0].cantidad").value(1))
+        .andExpect(jsonPath("$.lineas[0].enlaceCompra").value("token-1"));
+  }
+
   @Test
   void agregarLaMismaVarianteDosVecesSumaCantidad() throws Exception {
     Carrito carrito = Carrito.crear(null, Instant.now());

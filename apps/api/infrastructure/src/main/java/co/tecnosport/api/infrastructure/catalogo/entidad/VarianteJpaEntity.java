@@ -66,6 +66,13 @@ public class VarianteJpaEntity {
   @Column(name = "agotada_por_proveedor", nullable = false)
   private boolean agotadaPorProveedor;
 
+  /**
+   * Su color de tecnología no está confirmado con el proveedor (V117): no se compra sin enlace de
+   * compra. Fuera del constructor, como {@link #agotadaPorProveedor}, y por lo mismo.
+   */
+  @Column(name = "color_por_confirmar", nullable = false)
+  private boolean colorPorConfirmar;
+
   protected VarianteJpaEntity() {}
 
   public VarianteJpaEntity(
@@ -160,6 +167,16 @@ public class VarianteJpaEntity {
   /** Esta misma entidad, agotada por el proveedor o de nuevo a la venta. */
   public VarianteJpaEntity conAgotadaPorProveedor(boolean agotada) {
     this.agotadaPorProveedor = agotada;
+    return this;
+  }
+
+  public boolean isColorPorConfirmar() {
+    return colorPorConfirmar;
+  }
+
+  /** Esta misma entidad, con su color por confirmar o ya sabido. */
+  public VarianteJpaEntity conColorPorConfirmar(boolean porConfirmar) {
+    this.colorPorConfirmar = porConfirmar;
     return this;
   }
 }

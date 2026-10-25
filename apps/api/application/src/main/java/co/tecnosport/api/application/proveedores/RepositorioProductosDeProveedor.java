@@ -48,6 +48,13 @@ public interface RepositorioProductosDeProveedor {
   void cambiarDisponibilidadDeVariantes(List<UUID> varianteIds, boolean aLaVenta);
 
   /**
+   * Deja el color de cada variante por confirmar con el proveedor —{@code true}— o ya sabido
+   * (ADR-0086). Lo deciden la lista y la aprobación del borrador de tecnología; la variante no sabe
+   * nada de listas.
+   */
+  void marcarColoresPorConfirmar(Map<UUID, Boolean> porConfirmarPorVariante);
+
+  /**
    * Las variantes de un producto que llevan un mismo SKU del proveedor: una por talla.
    *
    * @param retirada todas están agotadas por el proveedor

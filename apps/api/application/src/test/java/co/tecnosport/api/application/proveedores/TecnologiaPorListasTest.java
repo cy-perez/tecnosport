@@ -17,6 +17,7 @@ import co.tecnosport.api.application.proveedores.ApoyoDeIngesta.RepositorioProve
 import co.tecnosport.api.application.proveedores.tecnologia.AprobarBorradorTecnologia;
 import co.tecnosport.api.application.proveedores.tecnologia.AprobarBorradorTecnologiaComando;
 import co.tecnosport.api.application.proveedores.tecnologia.BorradorTecnologiaNoEliminableException;
+import co.tecnosport.api.application.proveedores.tecnologia.DefinirPaletaDeTecnologia;
 import co.tecnosport.api.application.proveedores.tecnologia.EditarBorradorTecnologia;
 import co.tecnosport.api.application.proveedores.tecnologia.EditarFichaBorradorTecnologia;
 import co.tecnosport.api.application.proveedores.tecnologia.EliminarBorradorTecnologia;
@@ -915,6 +916,107 @@ class TecnologiaPorListasTest {
     assertEquals(
         List.of("Samsung Galaxy A17 5G 8GB RAM 256GB 1 SIM · Azul"),
         resultado.coloresSinVariante());
+  }
+
+  // --- El color que se confirma con el proveedor (ADR-0086) ----------------------------------
+
+  private boolean porConfirmar(Variante variante) {
+    return productosDeProveedor.colorPorConfirmar.get(variante.id());
+  }
+
+  @Test
+  void aprobarDejaLaPaletaEnElProductoYLoQueLaListaNoMarcoPorConfirmar() {
+    Producto producto = unA17QueYaSeVende();
+
+    assertEquals(List.of("Negro", "Gris", "Azul"), producto.paleta());
+    assertTrue(porConfirmar(variante(producto, "Negro")));
+    assertTrue(porConfirmar(variante(producto, "Gris")));
+  }
+
+  @Test
+  void elColorQueLaListaMarcaSeVendeSinConfirmarYElQueNoSeConfirma() {
+    Producto producto = unA17QueYaSeVende();
+
+    importar(
+        lista(
+            JUEVES, List.of(conColores(UNA_SIM, 660_000, "1 SIM", "Negro")), List.of(), List.of()));
+
+    assertEquals(false, porConfirmar(variante(producto, "Negro")));
+    assertTrue(porConfirmar(variante(producto, "Gris")));
+  }
+
+  @Test
+  void unosSugeridosQueCubrenLaPaletaNoConfirmanNada() {
+    Producto producto = unA17QueYaSeVende();
+
+    importar(
+        lista(
+            JUEVES,
+            List.of(conColores(UNA_SIM, 660_000, "1 SIM", "Negro", "Gris", "Azul")),
+            List.of(),
+            List.of()));
+
+    assertTrue(porConfirmar(variante(producto, "Negro")));
+    assertTrue(porConfirmar(variante(producto, "Gris")));
+  }
+
+  @Test
+  void losColoresMarcadosQueLaExportacionMandaAparteMandanSobreLosSugeridos() {
+    Producto producto = unA17QueYaSeVende();
+
+    importar(
+        new ImportarListaDeTecnologiaComando(
+            proveedor.id(),
+            JUEVES,
+            Modo.INVENTARIO,
+            delA17(List.of(conColores(UNA_SIM, 660_000, "1 SIM", "Negro", "Gris", "Azul"))),
+            List.of(),
+            List.of(),
+            Map.of(UNA_SIM, List.of("Gris"))));
+
+    assertTrue(porConfirmar(variante(producto, "Negro")));
+    assertEquals(false, porConfirmar(variante(producto, "Gris")));
+  }
+
+  @Test
+  void laPaletaDelPanelCompletaLosColoresDeCadaConfiguracionQueSeVende() {
+    Producto producto = unA17QueYaSeVende();
+
+    int nacidas =
+        new DefinirPaletaDeTecnologia(
+                productos,
+                productosDeProveedor,
+                vinculos,
+                new AgregarVariante(productos, atributos, inventario, reloj, false))
+            .ejecutar(producto.id(), List.of("Negro", "Gris", "Azul", "Verde"));
+
+    assertEquals(2, nacidas, "azul y verde de la de una SIM; la dual no se vende");
+    Producto completo = productos.buscarPorId(producto.id()).orElseThrow();
+    assertEquals(List.of("Negro", "Gris", "Azul", "Verde"), completo.paleta());
+    Variante verde = variante(completo, "Verde");
+    assertEquals(Dinero.deCop(849_900), verde.precio());
+    assertEquals("1 SIM", valor(verde, "SIM"));
+    assertEquals(0, disponible(verde.id()), "sin existencia hasta que el proveedor lo confirme");
+    assertTrue(porConfirmar(verde));
+    VarianteDeProveedor vinculo = vinculos.porVariante.get(verde.id());
+    assertEquals(UNA_SIM, vinculo.configuracion());
+    assertEquals(Dinero.deCop(675_000), vinculo.costo());
+  }
+
+  @Test
+  void unaPaletaDeUnProductoQueNoVieneDeUnaListaNoSeDefine() {
+    Producto producto = unA17QueYaSeVende();
+    vinculos.porVariante.clear();
+
+    assertThrows(
+        ExcepcionDeDominio.class,
+        () ->
+            new DefinirPaletaDeTecnologia(
+                    productos,
+                    productosDeProveedor,
+                    vinculos,
+                    new AgregarVariante(productos, atributos, inventario, reloj, false))
+                .ejecutar(producto.id(), List.of("Negro")));
   }
 
   private static Variante variante(Producto producto, String color) {

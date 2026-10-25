@@ -65,11 +65,12 @@ public class RepositorioCarritoJpa implements RepositorioCarrito {
   }
 
   private LineaCarrito aLinea(LineaCarritoJpaEntity l) {
-    return new LineaCarrito(l.getId(), l.getVarianteId(), l.getCantidad());
+    return new LineaCarrito(l.getId(), l.getVarianteId(), l.getCantidad(), l.getEnlaceCompra());
   }
 
   private LineaCarritoJpaEntity aEntidad(UUID carritoId, LineaCarrito linea) {
-    return new LineaCarritoJpaEntity(linea.id(), carritoId, linea.varianteId(), linea.cantidad());
+    return new LineaCarritoJpaEntity(
+        linea.id(), carritoId, linea.varianteId(), linea.cantidad(), linea.enlaceCompra());
   }
 
   @Override

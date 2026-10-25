@@ -70,7 +70,8 @@ public class MapeadorRespuestasCatalogo {
             .toList(),
         producto.estadoDisponibilidad().name(),
         escalaTallas,
-        producto.tallaSirveHasta().orElse(null));
+        producto.tallaSirveHasta().orElse(null),
+        producto.paleta());
   }
 
   public ResultadoPaginadoRespuesta<ProductoRespuesta> aRespuesta(CatalogoPaginado catalogo) {
@@ -155,7 +156,8 @@ public class MapeadorRespuestasCatalogo {
         variante.sku().valor(),
         aRespuesta(variante.precio()),
         disponible,
-        variante.atributos().stream().map(this::aRespuesta).toList());
+        variante.atributos().stream().map(this::aRespuesta).toList(),
+        variante.colorPorConfirmar());
   }
 
   /** Público: {@code MapeadorRespuestasProductoAdmin} lo reutiliza para la respuesta admin. */
