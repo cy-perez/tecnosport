@@ -122,18 +122,14 @@ export class EstadoPage {
   });
 
   /**
-   * El formulario se queda puesto **mientras la consulta vuela** y también cuando lo consultado no
-   * existe o falló.
+   * El formulario se queda puesto siempre que no haya pedido que mostrar: antes, durante y después
+   * de pedir el enlace.
    *
-   * <p>Esto decía `criteriosSeguimiento() === null || noEncontrado()`, y con eso el formulario se
-   * desmontaba justo al pulsar "Consultar": lo sustituía un esqueleto, el botón que la persona
-   * acababa de pulsar dejaba de existir —el foco se iba a `<body>`—, el `[cargando]` del botón no
-   * se llegaba a ver nunca, y con lector de pantalla no había ni un anuncio entre el envío y la
-   * respuesta. Lo levantó la auditoría de accesibilidad.
-   *
-   * <p>Ahora el esqueleto solo cubre el camino del enlace del correo, donde no hay formulario que
-   * conservar; en el del formulario, el estado lo cuenta el propio botón con su `aria-busy` y su
-   * anillo.
+   * <p>Llegó a desmontarse al pulsar el botón —lo sustituía un esqueleto, el botón que la persona
+   * acababa de pulsar dejaba de existir y el foco se iba a `<body>`—, y lo levantó la auditoría de
+   * accesibilidad. El esqueleto solo cubre el camino del enlace del correo, donde no hay formulario
+   * que conservar; en el del formulario, el estado lo cuenta el botón con su `aria-busy` y su
+   * anillo, y el resultado, las dos regiones vivas.
    */
   protected readonly pidiendoDatos = computed(
     () => this.criteriosSeguimiento() === null && this.pedido() === null,
@@ -213,6 +209,11 @@ export class EstadoPage {
       return;
     }
     this.error.set(null);
+    // Guarda de reentrada, porque el botón va con `[ocupado]` y no con `[cargando]`: no se
+    // deshabilita, así que un segundo Enter mientras vuela la primera llegaría hasta aquí.
+    if (this.solicitud.isPending()) {
+      return;
+    }
     const { numeroPedido, correo } = this.form.getRawValue();
     // Una mutación y no una consulta: reenviar lo mismo vuelve a pedir el enlace, que es lo que
     // espera quien no lo vio llegar. El tope de tres por hora lo pone el servidor.
@@ -253,14 +254,11 @@ export class EstadoPage {
   });
 
   /**
-   * El botón de reintentar necesita el `id` del pedido, y el seguimiento por número <b>no lo
-   * devuelve</b>: ese UUID es la credencial de `/pagos/intentos` y de `/reintentar-pago`, y
-   * entregarlo por una puerta que se abre adivinando un número secuencial convertiría una fuga de
-   * lectura en una de escritura (ver `MapeadorSeguimiento.aRespuestaSinIdInterno`).
-   *
-   * <p>`aSeguimiento` mapea el `id` ausente a cadena vacía, así que la comprobación es esa. Quien
-   * llegó escribiendo el número y tiene un pago fallido reintenta desde el enlace de su correo, que
-   * es donde ese botón siempre tuvo sentido.
+   * El botón de reintentar necesita el `id` del pedido, que es la credencial de `/pagos/intentos` y
+   * de `/reintentar-pago`. Hubo un camino que entraba por el número y no lo traía; desde ADR-0088
+   * el pedido solo se ve por el enlace del correo, que sí lo trae. La comprobación del `id` vacío
+   * se queda porque `aSeguimiento` mapea un `id` ausente a cadena vacía, y sin él no hay a qué
+   * reintentar.
    */
   protected readonly puedeReintentar = computed(() => {
     const pedido = this.pedido();

@@ -315,6 +315,33 @@ describe('EstadoPage', () => {
     expect(screen.queryByText(/Si el número y el correo son de un mismo pedido/)).toBeNull();
   });
 
+  it('con la red caída dice que lo intente de nuevo, y no que el enlace va en camino', async () => {
+    const pedidos = new RepositorioPedidosFalso();
+    pedidos.falloDeSolicitud = new ErrorHttp(503, 'no se pudo pedir el enlace de seguimiento');
+    await renderConProviders(pedidos, new RepositorioPagosFalso());
+
+    llenarYEnviar('TS-2026-000001', 'cliente@tecnosport.co');
+
+    expect(
+      await screen.findByText(
+        'No pudimos pedir el enlace ahora mismo. Intenta de nuevo en un momento.',
+      ),
+    ).toBeTruthy();
+    expect(screen.queryByText(/Si el número y el correo son de un mismo pedido/)).toBeNull();
+  });
+
+  /** Quien no vio llegar el correo lo pide otra vez, y tiene que volver a salir la petición. */
+  it('enviar otra vez lo mismo vuelve a pedir el enlace', async () => {
+    const pedidos = new RepositorioPedidosFalso();
+    await renderConProviders(pedidos, new RepositorioPagosFalso());
+
+    llenarYEnviar('TS-2026-000001', 'cliente@tecnosport.co');
+    await screen.findByText(/Si el número y el correo son de un mismo pedido/);
+    fireEvent.click(screen.getByRole('button', { name: 'Enviarme el enlace' }));
+
+    await vi.waitFor(() => expect(pedidos.solicitudesDeEnlace).toHaveLength(2));
+  });
+
   it('con un campo vacío no pide nada y dice cuál falta', async () => {
     const pedidos = new RepositorioPedidosFalso();
     await renderConProviders(pedidos, new RepositorioPagosFalso());

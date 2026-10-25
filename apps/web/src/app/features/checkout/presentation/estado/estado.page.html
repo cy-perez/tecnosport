@@ -244,10 +244,9 @@
 
         <!-- Región viva permanente: un `role="alert"` que nace ya lleno dentro de un `@if` no se
              anuncia (docs/06-testing.md). Lo que cambia es el contenido, no el nodo.
-             Distingue tres cosas que antes eran una: lo que no existe, lo que falló por red o por
-             límite de intentos, y lo que falta por escribir. Decir "no encontramos este pedido" a
-             quien acaba de chocar con el límite es la peor frase posible para alguien que acaba de
-             pagar. -->
+             Distingue el límite de intentos de la red: "intenta de nuevo en un momento" a quien
+             chocó con el límite lo haría chocar otra vez. "No encontramos tu pedido" ya no lo
+             dice nadie: el servidor no lo sabe decir, a propósito (ADR-0088). -->
         <p class="m-0 text-ts-error" role="alert">{{ mensajeDeConsulta() }}</p>
 
         <!-- Igual de permanente que la de arriba, y `status` y no `alert`: no es un problema. Dice
@@ -258,10 +257,13 @@
           }
         </p>
 
+        <!-- `[ocupado]` y no `[cargando]`: el formulario se queda puesto para poder pedirlo otra
+             vez, y `cargando` deshabilita el botón, que manda el foco a `<body>` justo cuando la
+             región de arriba anuncia el resultado. La reentrada la frena `solicitarEnlace`. -->
         <ts-boton
           variante="primario"
           tipo="submit"
-          [cargando]="solicitud.isPending()"
+          [ocupado]="solicitud.isPending()"
           [etiquetaCargando]="'checkout.estado.consulta.buscando' | transloco"
         >
           {{ 'checkout.estado.consulta.buscar' | transloco }}

@@ -43,10 +43,11 @@ function tieneCuerpo(req: Request): boolean {
  * Cabeceras de salto: describen la conexión con *este* servidor, no la petición del visitante.
  * Reenviarlas corrompe la conexión de más allá.
  *
- * `x-forwarded-for` **no** está en la lista, y es deliberado: el backend lo lee para limitar
- * intentos por IP y para dejar constancia de la IP en `autorizacion_datos` (`ADR-0019`). Si el
- * proxy lo borrara, todas las peticiones del sitio le llegarían al backend con la misma IP —la de
- * este servidor— y el limitador pasaría a contar a todos los visitantes como uno solo.
+ * `x-forwarded-for` **sí** está, desde ADR-0087, y no es un descuido que haya que deshacer: su
+ * primer valor lo escribe el visitante, y la API lo tomaba por su IP. La IP real no se pierde por
+ * quitarla: viaja en `x-ip-cliente`, que pone este proxy con el valor que agregó el frente de Cloud
+ * Run y que la API solo cree con la clave compartida (`cabecerasParaElBackend`). Volver a dejarla
+ * pasar reabre la evasión de los límites de intentos y de la constancia de `autorizacion_datos`.
  */
 const CABECERAS_QUE_NO_VIAJAN = new Set([
   // ADR-0087. Las tres de la IP las escribe el visitante y la API no puede creerle ninguna: la
@@ -56,6 +57,10 @@ const CABECERAS_QUE_NO_VIAJAN = new Set([
   'x-forwarded-for',
   'x-ip-cliente',
   'x-clave-proxy',
+  // La forma estándar de lo mismo, y con el mismo problema: el visitante escribe lo que quiera
+  // delante. Hoy la API no la lee, pero el día que alguien encienda `forward-headers-strategy`,
+  // `getRemoteAddr()` —el último recurso de `FiltroIpDelCliente`— saldría de ella.
+  'forwarded',
   'host',
   'connection',
   'keep-alive',

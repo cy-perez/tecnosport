@@ -94,7 +94,6 @@ class RepositorioPedidosFalso implements RepositorioPedidos {
     return this.seguimiento;
   }
 
-  /** El mismo pedido por los dos caminos: lo que cambia en el servidor es por dónde se entra. */
   async solicitarEnlaceDeSeguimiento(): Promise<void> {
     throw new Error('no usado en esta prueba');
   }

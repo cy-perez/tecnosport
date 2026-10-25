@@ -79,8 +79,10 @@ describe('cabecerasParaElBackend', () => {
       'x-forwarded-for': '203.0.113.7, 190.0.0.1',
       'x-ip-cliente': '203.0.113.8',
       'x-clave-proxy': 'adivinada',
+      forwarded: 'for=203.0.113.9',
     } as Request['headers']);
 
+    expect(salida.get('forwarded')).toBeNull();
     expect(salida.get('x-forwarded-for')).toBeNull();
     expect(salida.get('x-ip-cliente')).toBeNull();
     expect(salida.get('x-clave-proxy')).toBeNull();
