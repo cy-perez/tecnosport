@@ -1,6 +1,11 @@
 import type { Request, Response } from 'express';
 import { Readable, Writable } from 'node:stream';
-import { cabecerasParaElBackend, copiarCabecerasAlNavegador, crearProxyApi } from './proxy-api';
+import {
+  cabecerasParaElBackend,
+  copiarCabecerasAlNavegador,
+  crearProxyApi,
+  ipDelVisitante,
+} from './proxy-api';
 
 const DESTINO = 'http://api.interna:8080/api/v1';
 
@@ -67,13 +72,39 @@ async function hastaQueTermine(respuesta: RespuestaFalsa): Promise<void> {
 }
 
 describe('cabecerasParaElBackend', () => {
+  // ADR-0087. Reenviarla tal cual fue el hueco: su primer valor lo escribe el visitante, y la API
+  // lo tomaba por la IP real. Once consultas con uno inventado en cada una y ninguna frenada.
+  it('no reenvía las cabeceras de IP que manda el visitante', () => {
+    const salida = cabecerasParaElBackend({
+      'x-forwarded-for': '203.0.113.7, 190.0.0.1',
+      'x-ip-cliente': '203.0.113.8',
+      'x-clave-proxy': 'adivinada',
+    } as Request['headers']);
+
+    expect(salida.get('x-forwarded-for')).toBeNull();
+    expect(salida.get('x-ip-cliente')).toBeNull();
+    expect(salida.get('x-clave-proxy')).toBeNull();
+  });
+
   // Sin esto, el backend vería la IP de este servidor en todas las peticiones: el limitador de
   // intentos contaría a todos los visitantes como uno solo y la IP guardada en la autorización de
-  // datos sería siempre la misma. Es la cabecera que NO se puede perder.
-  it('conserva x-forwarded-for', () => {
-    const salida = cabecerasParaElBackend({ 'x-forwarded-for': '190.0.0.1' } as Request['headers']);
+  // datos sería siempre la misma.
+  it('con la clave, le dice a la API la IP del visitante y la reemplaza si venía inventada', () => {
+    const salida = cabecerasParaElBackend(
+      { 'x-ip-cliente': '203.0.113.8', 'x-clave-proxy': 'adivinada' } as Request['headers'],
+      '190.0.0.1',
+      'clave-de-prueba',
+    );
 
-    expect(salida.get('x-forwarded-for')).toBe('190.0.0.1');
+    expect(salida.get('x-ip-cliente')).toBe('190.0.0.1');
+    expect(salida.get('x-clave-proxy')).toBe('clave-de-prueba');
+  });
+
+  it('sin clave no manda ninguna de las dos', () => {
+    const salida = cabecerasParaElBackend({} as Request['headers'], '190.0.0.1', undefined);
+
+    expect(salida.get('x-ip-cliente')).toBeNull();
+    expect(salida.get('x-clave-proxy')).toBeNull();
   });
 
   it('no reenvía las cabeceras de la conexión con este servidor', () => {
@@ -86,6 +117,22 @@ describe('cabecerasParaElBackend', () => {
     expect(salida.get('host')).toBeNull();
     expect(salida.get('connection')).toBeNull();
     expect(salida.get('cookie')).toBe('refresco=abc');
+  });
+});
+
+describe('ipDelVisitante', () => {
+  // El frente de Cloud Run agrega al final la IP de quien se le conectó; lo de antes es del
+  // visitante.
+  it('es el último valor de x-forwarded-for, no el primero', () => {
+    const req = peticionFalsa({ headers: { 'x-forwarded-for': '203.0.113.7, 190.0.0.1' } });
+
+    expect(ipDelVisitante(req)).toBe('190.0.0.1');
+  });
+
+  it('sin la cabecera cae a la dirección del socket', () => {
+    const req = Object.assign(peticionFalsa({}), { socket: { remoteAddress: '127.0.0.1' } });
+
+    expect(ipDelVisitante(req as Request)).toBe('127.0.0.1');
   });
 });
 
@@ -179,6 +226,26 @@ describe('crearProxyApi', () => {
     expect(cuerpoEnviado).toBeUndefined();
     expect(largoVisto).toBe('0');
     expect(respuesta.estado).toBe(204);
+  });
+
+  it('con la clave manda la IP del visitante que agregó el frente', async () => {
+    let cabecerasVistas = new Headers();
+    const buscar = vi.fn(async (_url: unknown, init?: RequestInit) => {
+      cabecerasVistas = new Headers(init?.headers);
+      return new Response('[]', { status: 200 });
+    });
+    const respuesta = new RespuestaFalsa();
+
+    crearProxyApi(DESTINO, buscar as unknown as typeof fetch, 'clave-de-prueba')(
+      peticionFalsa({ headers: { 'x-forwarded-for': '203.0.113.7, 190.0.0.1' } }),
+      respuesta.comoExpress(),
+      () => undefined,
+    );
+    await hastaQueTermine(respuesta);
+
+    expect(cabecerasVistas.get('x-ip-cliente')).toBe('190.0.0.1');
+    expect(cabecerasVistas.get('x-clave-proxy')).toBe('clave-de-prueba');
+    expect(cabecerasVistas.get('x-forwarded-for')).toBeNull();
   });
 
   it('un GET no lleva cuerpo', async () => {

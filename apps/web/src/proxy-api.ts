@@ -49,6 +49,13 @@ function tieneCuerpo(req: Request): boolean {
  * este servidor— y el limitador pasaría a contar a todos los visitantes como uno solo.
  */
 const CABECERAS_QUE_NO_VIAJAN = new Set([
+  // ADR-0087. Las tres de la IP las escribe el visitante y la API no puede creerle ninguna: la
+  // primera trae lo que él quiera delante de la real, y las otras dos son las que este proxy usa
+  // para decirle a la API quién es el cliente. Si viajaran, una petición con `X-Ip-Cliente`
+  // inventada llegaría al otro lado junto a la buena.
+  'x-forwarded-for',
+  'x-ip-cliente',
+  'x-clave-proxy',
   'host',
   'connection',
   'keep-alive',
@@ -73,13 +80,39 @@ const CABECERAS_QUE_NO_VUELVEN = new Set([
   'transfer-encoding',
 ]);
 
-export function cabecerasParaElBackend(cabeceras: Request['headers']): Headers {
+export function cabecerasParaElBackend(
+  cabeceras: Request['headers'],
+  ipDelCliente?: string,
+  claveProxy?: string,
+): Headers {
   const salida = new Headers();
   for (const [nombre, valor] of Object.entries(cabeceras)) {
     if (valor === undefined || CABECERAS_QUE_NO_VIAJAN.has(nombre.toLowerCase())) continue;
     for (const uno of Array.isArray(valor) ? valor : [valor]) salida.append(nombre, uno);
   }
+  // Sin clave no se manda ninguna de las dos: la API no creería la IP y la clave vacía no prueba
+  // nada. Lo que ve entonces es la IP de salida de este servidor, la misma para todos.
+  if (claveProxy && ipDelCliente) {
+    salida.set('x-ip-cliente', ipDelCliente);
+    salida.set('x-clave-proxy', claveProxy);
+  }
   return salida;
+}
+
+/**
+ * La IP de quien le habla a este servidor: el **último** valor de `X-Forwarded-For`, que es el que
+ * agregó el frente de Cloud Run. Los de antes los escribió el visitante —medido contra dev el 25 de
+ * octubre de 2026: once consultas con uno inventado y ninguna frenada (ADR-0087)—.
+ *
+ * El último y no un número configurable de saltos porque este proxy solo existe mientras la web
+ * se publique directo en `run.app`: el día del balanceador, `/api` va de él a la API sin pasar por
+ * aquí (`docs/07-infra-gcp.md`).
+ */
+export function ipDelVisitante(req: Request): string | undefined {
+  const adelante = req.headers['x-forwarded-for'];
+  const lista = Array.isArray(adelante) ? adelante.join(',') : adelante;
+  const ultima = lista?.split(',').at(-1)?.trim();
+  return ultima || req.socket?.remoteAddress || undefined;
 }
 
 export function copiarCabecerasAlNavegador(respuesta: Response, cabeceras: Headers): void {
@@ -90,13 +123,17 @@ export function copiarCabecerasAlNavegador(respuesta: Response, cabeceras: Heade
   if (cookies.length > 0) respuesta.setHeader('set-cookie', cookies);
 }
 
-export function crearProxyApi(destino: string, buscar: Buscar = fetch): RequestHandler {
+export function crearProxyApi(
+  destino: string,
+  buscar: Buscar = fetch,
+  claveProxy?: string,
+): RequestHandler {
   // `API_URL_PUBLICA` incluye la ruta base (`.../api/v1`), igual que la lee `baseUrl()`. Aquí solo
   // interesa el origen: la ruta la trae la petición del visitante.
   const origen = new URL(destino).origin;
 
   return (req, res) => {
-    reenviar(origen, buscar, req, res).catch((error: unknown) => {
+    reenviar(origen, buscar, claveProxy, req, res).catch((error: unknown) => {
       // A la salida estándar de errores: en Cloud Run eso es un registro, y sin él un 502 no dice
       // nada sobre qué se cayó.
       console.error('proxy /api:', error);
@@ -120,6 +157,7 @@ async function recolectar(req: Request): Promise<Buffer[]> {
 async function reenviar(
   origen: string,
   buscar: Buscar,
+  claveProxy: string | undefined,
   req: Request,
   res: Response,
 ): Promise<void> {
@@ -131,7 +169,7 @@ async function reenviar(
 
   const respuesta = await buscar(origen + req.originalUrl, {
     method: req.method,
-    headers: cabecerasParaElBackend(req.headers),
+    headers: cabecerasParaElBackend(req.headers, ipDelVisitante(req), claveProxy),
     body: cuerpo,
     // Una redirección la decide el cliente, no el proxy.
     redirect: 'manual',
