@@ -8,8 +8,6 @@ import co.tecnosport.api.domain.pedido.EstadoPedido;
 import co.tecnosport.api.domain.pedido.LineaPedido;
 import co.tecnosport.api.domain.pedido.Pedido;
 import co.tecnosport.api.domain.pedido.TipoEntrega;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
@@ -140,7 +138,9 @@ public final class EnviarComprobantesDeCompra {
     cuerpo.append(entrega(pedido));
     cuerpo.append(textos.texto(pago(pedido)));
     cuerpo.append(textos.texto(TextoDeCorreo.PEDIDO_COMPROBANTE_VENDEDOR));
-    cuerpo.append(textos.texto(TextoDeCorreo.PEDIDO_COMPROBANTE_CIERRE, enlaceDeEstado(pedido)));
+    cuerpo.append(
+        textos.texto(
+            TextoDeCorreo.PEDIDO_COMPROBANTE_CIERRE, EnlaceDeEstado.de(urlBaseEstado, pedido)));
 
     enviadorDeCorreo.enviar(
         pedido.correo(),
@@ -180,17 +180,5 @@ public final class EnviarComprobantesDeCompra {
       case TRANSFERENCIA_MANUAL -> TextoDeCorreo.PEDIDO_COMPROBANTE_PAGO_TRANSFERENCIA;
       case WOMPI, SISTECREDITO -> TextoDeCorreo.PEDIDO_COMPROBANTE_PAGO_EN_LINEA;
     };
-  }
-
-  private String enlaceDeEstado(Pedido pedido) {
-    return urlBaseEstado
-        + "?pedidoId="
-        + URLEncoder.encode(pedido.id().toString(), StandardCharsets.UTF_8)
-        // En el fragmento y no en la consulta: el navegador nunca manda lo que va después del #,
-        // así
-        // que el correo no queda en los registros del servidor ni en el Referer. La pantalla de
-        // estado lo lee de ahí.
-        + "#correo="
-        + URLEncoder.encode(pedido.correo().valor(), StandardCharsets.UTF_8);
   }
 }
