@@ -134,6 +134,15 @@ class FiltroIpDelClienteTest {
     assertThat(vista.get()).isEqualTo("190.24.10.5");
   }
 
+  /** Dos líneas de la cabecera: la primera es entera del cliente, y su último valor también. */
+  @Test
+  void conVariasLineasDeLaCabeceraTomaElFinalDeLaUltima() {
+    MockHttpServletRequest request = peticion("203.0.113.7, 203.0.113.8");
+    request.addHeader("X-Forwarded-For", "190.24.10.5");
+
+    assertThat(directo.resolver(request)).isEqualTo("190.24.10.5");
+  }
+
   @Test
   void rechazaMenosDeUnSalto() {
     assertThatThrownBy(() -> new FiltroIpDelCliente(null, 0))

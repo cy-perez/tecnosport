@@ -7,10 +7,13 @@ import co.tecnosport.api.application.envio.CotizadorEnvio;
 import co.tecnosport.api.application.envio.EmisorDeGuias;
 import co.tecnosport.api.infrastructure.envio.siembra.CotizadorEnvioSembrado;
 import co.tecnosport.api.infrastructure.envio.siembra.EmisorDeGuiasSembrado;
+import co.tecnosport.api.presentation.compartido.FiltroIpDelCliente;
+import co.tecnosport.api.presentation.compartido.FiltroLimiteIntentos;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.ApplicationContext;
 import org.springframework.test.context.ActiveProfiles;
 import org.testcontainers.junit.jupiter.Container;
@@ -67,5 +70,26 @@ class ContextoBajoPerfilE2eTest {
     assertThat(contexto.getBean(CotizadorEnvio.class)).isInstanceOf(CotizadorEnvioSembrado.class);
     assertThat(contexto.getBean(EmisorDeGuias.class)).isInstanceOf(EmisorDeGuiasSembrado.class);
     assertThat(contexto.getBeanNamesForType(ConsultorDeSeguimiento.class)).hasSize(1);
+  }
+
+  /**
+   * ADR-0087. Sin el filtro de IP registrado, o registrado después de los de límite, {@code
+   * IpDelCliente} cae a {@code getRemoteAddr()} —en Cloud Run, la IP del frente de Google— y todo
+   * el tráfico comparte un cubo. Ninguna otra prueba lo vería: las de {@code presentation} ponen la
+   * IP resuelta a mano. Lo levantó la revisión de arquitectura.
+   */
+  @Test
+  void elFiltroDeIpCubreTodasLasRutasYCorreAntesQueLosLimites() {
+    var registros =
+        contexto.getBeansOfType(FilterRegistrationBean.class).values().stream().toList();
+    var deIp = registros.stream().filter(r -> r.getFilter() instanceof FiltroIpDelCliente).toList();
+    assertThat(deIp).hasSize(1);
+    assertThat(deIp.getFirst().getUrlPatterns()).containsExactly("/*");
+
+    var deLimite =
+        registros.stream().filter(r -> r.getFilter() instanceof FiltroLimiteIntentos).toList();
+    assertThat(deLimite).isNotEmpty();
+    assertThat(deLimite)
+        .allSatisfy(r -> assertThat(r.getOrder()).isGreaterThan(deIp.getFirst().getOrder()));
   }
 }

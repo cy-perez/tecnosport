@@ -43,7 +43,9 @@ public class FiltroLimiteIntentos extends OncePerRequestFilter {
   protected void doFilterInternal(
       HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
       throws ServletException, IOException {
-    String clave = "ip:" + request.getRequestURI() + ":" + IpDelCliente.de(request);
+    // Por cubo y no por dirección: una IPv6 se cuenta por su /64, o cada dirección del mismo rango
+    // estrenaría presupuesto (CuboDeIp, ADR-0087).
+    String clave = "ip:" + request.getRequestURI() + ":" + CuboDeIp.de(IpDelCliente.de(request));
     boolean permitido = limitador.permitir(clave, maximoIntentos, ventana, reloj.ahora());
     if (!permitido) {
       responderLimiteExcedido(request, response);

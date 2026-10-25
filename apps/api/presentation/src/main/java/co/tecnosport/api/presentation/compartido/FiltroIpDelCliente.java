@@ -90,7 +90,7 @@ public class FiltroIpDelCliente extends OncePerRequestFilter {
         return delProxy;
       }
     }
-    String adelante = request.getHeader(CABECERA_ADELANTE);
+    String adelante = adelanteCompleto(request);
     if (adelante != null) {
       String[] saltos = adelante.split(",", -1);
       int posicion = saltos.length - saltosConfiables;
@@ -102,6 +102,19 @@ public class FiltroIpDelCliente extends OncePerRequestFilter {
       }
     }
     return request.getRemoteAddr();
+  }
+
+  /**
+   * Todas las líneas de {@code X-Forwarded-For} unidas en una lista, y no solo la primera, que es
+   * lo que devuelve {@code getHeader}. Con dos líneas, la primera puede ser entera del cliente, y
+   * su último valor también: leer solo esa reabría el hueco sin depender de lo que el frente de
+   * Google haga con las cabeceras repetidas. Unidas, el final de la lista sigue siendo lo que
+   * agregó la infraestructura. Lo levantó la revisión de seguridad.
+   */
+  private static String adelanteCompleto(HttpServletRequest request) {
+    java.util.List<String> lineas =
+        java.util.Collections.list(request.getHeaders(CABECERA_ADELANTE));
+    return lineas.isEmpty() ? null : String.join(",", lineas);
   }
 
   /** En tiempo constante: compararla con {@code equals} dejaría adivinarla letra por letra. */
