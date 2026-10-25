@@ -8,6 +8,7 @@ import {
   seleccionAlElegir,
   separarTallas,
   tallaNormalizada,
+  coloresConMuestra,
   coloresDe,
   ejesDeAtributos,
   opcionDisponible,
@@ -598,5 +599,35 @@ describe('la muestra de los colores', () => {
   it('sin porciones la muestra es el colorHex solo', () => {
     expect(muestraDe(blanco)).toEqual([{ patron: null, colores: ['#FFFFFF'] }]);
     expect(muestraDe({ colorHex: null })).toEqual([]);
+  });
+});
+
+describe('coloresConMuestra', () => {
+  const color = (valor: string, colorHex: string | null) => [
+    { nombre: 'Color', valor, colorHex, unidad: null },
+  ];
+
+  /** El OPPO A6k: «Azul» trae muestra y «Violeta» no. Pintar solo el azul decía que era el único. */
+  it('no da ninguno si algún color del producto no tiene muestra', () => {
+    const producto = productoDePrueba([
+      variante('V', true, color('Violeta', null)),
+      variante('A', true, color('Azul', '#1565C0')),
+    ]);
+
+    expect(coloresConMuestra(producto)).toEqual([]);
+    expect(coloresDe(producto).map((c) => c.valor)).toEqual(['Azul']);
+  });
+
+  it('con todos sus colores con muestra, los da todos', () => {
+    const producto = productoDePrueba([
+      variante('N', true, color('Negro', '#111111')),
+      variante('A', true, color('Azul', '#1565C0')),
+    ]);
+
+    expect(coloresConMuestra(producto).map((c) => c.valor)).toEqual(['Negro', 'Azul']);
+  });
+
+  it('sin eje de color no da ninguno', () => {
+    expect(coloresConMuestra(productoDePrueba([variante('X', true, [])]))).toEqual([]);
   });
 });

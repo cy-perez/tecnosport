@@ -17,7 +17,7 @@ import { TsEtiquetaStock } from '../etiqueta-stock/ts-etiqueta-stock';
 import { usarPaletaDeColores } from '../../application/listar-paleta-colores.consulta';
 import { usarIdiomaActivo } from '../../../../core/i18n/traductor';
 import {
-  coloresDe,
+  coloresConMuestra,
   imagenDelColor,
   nombreDeColor,
   tallaUnicaDe,
@@ -94,7 +94,7 @@ export class TsTarjetaProducto {
   /** El color que el visitante eligió en esta tarjeta; nulo, la foto principal. */
   protected readonly colorElegido = signal<string | null>(null);
 
-  protected readonly colores = computed(() => coloresDe(this.producto()));
+  protected readonly colores = computed(() => coloresConMuestra(this.producto()));
   protected readonly coloresVisibles = computed(() => this.colores().slice(0, MUESTRAS_VISIBLES));
   protected readonly coloresOcultos = computed(() =>
     Math.max(0, this.colores().length - MUESTRAS_VISIBLES),
