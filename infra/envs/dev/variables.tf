@@ -34,6 +34,12 @@ variable "bucket_proveedores" {
   default     = "tecnosport-dev-proveedores"
 }
 
+variable "proxy_web_listo" {
+  description = "Si el secreto `proxy-web-clave` ya tiene version cargada (ADR-0087). Mientras sea false no se monta en ninguno de los dos servicios y la API no cree la IP que le manda el proxy de la web. Misma secuencia que `meta_listo`: aplicar con false para crear el recipiente y el permiso, cargar el valor con gcloud, poner esto en true, aplicar."
+  type        = bool
+  default     = false
+}
+
 variable "ingesta_lista" {
   description = "Si el secreto `anthropic-api-key` ya tiene version cargada. Mientras sea false no se monta y la extraccion queda sembrada: solo lee el precio y todo borrador sale con alertas. Misma secuencia que `meta_listo`: cargar el valor con gcloud, poner esto en true, aplicar."
   type        = bool

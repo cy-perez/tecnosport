@@ -66,4 +66,9 @@ sistecredito_listo = true
 #   printf %s "<token>" | gcloud secrets versions add meta-token --project tecnosport-dev --data-file=-
 meta_listo              = true
 meta_publicar_de_verdad = true
-ingesta_lista			= true
+ingesta_lista           = true
+
+# ADR-0087. La primera vez se aplica con `-var "proxy_web_listo=false"` para que exista el
+# recipiente, y despues se carga una clave aleatoria:
+#   node -e "process.stdout.write(require('crypto').randomBytes(32).toString('base64url'))" | gcloud secrets versions add proxy-web-clave --project tecnosport-dev --data-file=-
+proxy_web_listo = true
