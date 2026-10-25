@@ -807,6 +807,19 @@ una lista no entre dos veces ni más vieja que la última. Las configuraciones d
 un borrador no llevan un único por sku: Hibernate las reescribe por posición, y
 lo sostiene el agregado.
 
+**El color se confirma antes de venderse** (`ADR-0086`, V117). `producto.paleta`
+guarda los colores oficiales del modelo, uno por línea, que la ficha dice al pie
+de las fotos. `variante.color_por_confirmar` lo recalcula cada lista: falso si la
+lista de hoy marca ese color o si la paleta tiene uno solo. Una variante por
+confirmar no se compra sin un enlace de compra:
+
+| Tabla | Contenido | Nota |
+|---|---|---|
+| `enlace_de_compra` | token (32 bytes, en claro), variante, reserva, creado, vence, usado en y pedido, anulado en | Un solo uso. Aparta una unidad con una reserva de inventario de la misma vigencia (`ENLACE_COMPRA_HORAS_VIGENCIA`); al crear el pedido se libera y se toma la del pedido en el mismo bloqueo. Se usa o se anula, nunca las dos |
+
+`linea_carrito.enlace_compra` recuerda con qué enlace entró una línea, para que
+el checkout lo presente al crear el pedido.
+
 ## Convenciones de base de datos
 
 - Nombres en español, `snake_case`, tablas en singular: `producto`,
