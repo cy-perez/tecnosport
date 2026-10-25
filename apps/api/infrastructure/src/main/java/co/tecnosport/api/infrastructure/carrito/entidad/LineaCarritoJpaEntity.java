@@ -21,6 +21,10 @@ public class LineaCarritoJpaEntity {
   @Column(nullable = false)
   private int cantidad;
 
+  /** El token del enlace de compra con que entró la línea (V117), si lo trajo. */
+  @Column(name = "enlace_compra")
+  private String enlaceCompra;
+
   protected LineaCarritoJpaEntity() {}
 
   public LineaCarritoJpaEntity(UUID id, UUID carritoId, UUID varianteId, int cantidad) {
@@ -28,6 +32,12 @@ public class LineaCarritoJpaEntity {
     this.carritoId = carritoId;
     this.varianteId = varianteId;
     this.cantidad = cantidad;
+  }
+
+  public LineaCarritoJpaEntity(
+      UUID id, UUID carritoId, UUID varianteId, int cantidad, String enlaceCompra) {
+    this(id, carritoId, varianteId, cantidad);
+    this.enlaceCompra = enlaceCompra;
   }
 
   public UUID getId() {
@@ -44,5 +54,9 @@ public class LineaCarritoJpaEntity {
 
   public int getCantidad() {
     return cantidad;
+  }
+
+  public String getEnlaceCompra() {
+    return enlaceCompra;
   }
 }

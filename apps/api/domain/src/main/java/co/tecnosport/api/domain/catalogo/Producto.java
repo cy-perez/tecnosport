@@ -37,6 +37,12 @@ public final class Producto {
    */
   public static final int TOPE_DE_GALERIA = 9;
 
+  /** El de la columna de colores del borrador de tecnología (V92). */
+  public static final int LARGO_MAXIMO_DE_UN_COLOR = 80;
+
+  /** Ningún modelo se publica en tantos; uno que pase de aquí es un pegado equivocado. */
+  public static final int TOPE_DE_PALETA = 20;
+
   private final UUID id;
   private String nombre;
   private final Slug slug;
@@ -69,6 +75,13 @@ public final class Producto {
    * pide salga de la talla de hoy, también la de una variante cambiada o agregada después.
    */
   private AjusteDeTalla ajusteDeTalla = AjusteDeTalla.NINGUNO;
+
+  /**
+   * Los colores en que el fabricante publica el modelo (ADR-0086): la ficha los dice al pie de las
+   * fotos. No son los que hay: los que se venden son las variantes, y en tecnología su color se
+   * confirma con el proveedor. Vacía si no se conocen.
+   */
+  private List<String> paleta = List.of();
 
   /** Un producto creado a mano o reconstruido sin datos de proveedor: origen {@code MANUAL}. */
   public Producto(
@@ -922,6 +935,40 @@ public final class Producto {
       throw new ExcepcionDeDominio("Solo un producto de proveedor nombra sus tallas corridas.");
     }
     this.ajusteDeTalla = ajuste;
+  }
+
+  /** Los colores oficiales del modelo, en el orden del fabricante. */
+  public List<String> paleta() {
+    return paleta;
+  }
+
+  /**
+   * @param colores los colores oficiales del modelo; vacía o nula la quita. Sin vacíos ni
+   *     repetidos, sin importar mayúsculas: «Negro» y «negro» son uno
+   */
+  public void definirPaleta(List<String> colores) {
+    List<String> limpios = new ArrayList<>();
+    for (String color : Objects.requireNonNullElse(colores, List.<String>of())) {
+      if (color == null || color.isBlank()) {
+        continue;
+      }
+      String uno = color.strip();
+      if (uno.contains("\n") || uno.contains("\r")) {
+        throw new ExcepcionDeDominio("Un color va en una sola línea: '" + uno + "'.");
+      }
+      if (uno.length() > LARGO_MAXIMO_DE_UN_COLOR) {
+        throw new ExcepcionDeDominio(
+            "El color '" + uno + "' pasa de " + LARGO_MAXIMO_DE_UN_COLOR + " caracteres.");
+      }
+      if (limpios.stream().noneMatch(c -> c.equalsIgnoreCase(uno))) {
+        limpios.add(uno);
+      }
+    }
+    if (limpios.size() > TOPE_DE_PALETA) {
+      throw new ExcepcionDeDominio(
+          "Una paleta de más de " + TOPE_DE_PALETA + " colores no es la de un modelo.");
+    }
+    this.paleta = List.copyOf(limpios);
   }
 
   /**

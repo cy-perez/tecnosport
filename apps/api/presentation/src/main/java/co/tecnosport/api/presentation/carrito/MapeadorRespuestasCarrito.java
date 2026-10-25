@@ -18,6 +18,7 @@ public class MapeadorRespuestasCarrito {
   }
 
   private LineaCarritoRespuesta aRespuesta(LineaCarrito linea) {
-    return new LineaCarritoRespuesta(linea.id(), linea.varianteId(), linea.cantidad());
+    return new LineaCarritoRespuesta(
+        linea.id(), linea.varianteId(), linea.cantidad(), linea.enlaceCompra());
   }
 }

@@ -26,7 +26,13 @@ public final class AgregarLineaAlCarrito {
         repositorioCarrito
             .buscarPorId(comando.carritoId())
             .orElseThrow(() -> new CarritoNoEncontradoException(comando.carritoId()));
-    carrito.agregarLinea(comando.varianteId(), comando.cantidad(), reloj.ahora());
+    if (comando.enlaceCompra() == null || comando.enlaceCompra().isBlank()) {
+      carrito.agregarLinea(comando.varianteId(), comando.cantidad(), reloj.ahora());
+    } else {
+      // Sin comprobar aquí si el enlace sigue vigente: el carrito tampoco comprueba existencias, y
+      // quien decide es el pedido, que lo bloquea y lo consume (ADR-0086).
+      carrito.agregarConEnlace(comando.varianteId(), comando.enlaceCompra(), reloj.ahora());
+    }
     repositorioCarrito.guardar(carrito);
     return carrito;
   }

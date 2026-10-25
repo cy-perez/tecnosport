@@ -131,15 +131,17 @@ lista:
     sí cae —si no es una Band, se le escribe la equivalencia y vuelve a entrar—.
     Las Xiaomi Smart Band y la Galaxy Fit3 siguen entrando: la decisión fue solo
     para la línea de Honor.
-13. **Los colores se publican asumiendo que el proveedor tiene todos los de la
-    ficha.** Las listas casi nunca marcan color —en una lista real de 121
-    productos solo 2 líneas traían emojis de color—, y esperar a que el
-    proveedor confirme bloquea la publicación entera. La premisa es que están
-    disponibles todos los colores que trae la ficha oficial del producto, y así
-    queda anotado en cada ficha para que quien carga el inventario sepa de
-    dónde salieron. Los emojis de la lista, cuando los hay, siguen mandando
-    sobre la premisa: si la línea dice `🖤💙`, esos dos son los que hay.
-    Cuando llegue una devolución por un color que no era, se revisa esta regla.
+13. **Los colores se publican todos los de la ficha, pero solo se venden sin
+    preguntar los que marca la lista** (ADR-0086, 25/10/2026). Las listas casi
+    nunca marcan color —en una lista real de 121 productos solo 2 líneas traían
+    emojis—, así que la paleta oficial completa se sigue publicando y
+    sugiriendo, para que nada espere. Lo que cambió es venderla: un color que la
+    lista no marcó queda **por confirmar**, y quien lo quiere lo pregunta por
+    WhatsApp antes de comprar. Por eso la exportación manda aparte
+    `coloresMarcados` —solo los de los emojis, vacía sin ellos— además de
+    `coloresSugeridos`: con la paleta entera en los sugeridos, la API ya no
+    podía distinguir un emoji de una suposición. Un modelo de un solo color no
+    se pregunta.
 
 14. **Los accesorios sueltos no se publican.** El control de consola, el pencil
     táctil y el rastreador tipo tag quedan por fuera: se venden solos, con margen

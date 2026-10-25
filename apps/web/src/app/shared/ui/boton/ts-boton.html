@@ -37,6 +37,19 @@
   >
     <ng-container [ngTemplateOutlet]="contenido" />
   </a>
+} @else if (enlaceExterno(); as url) {
+  <!-- Fuera del sitio —WhatsApp—: `href` y no `routerLink`, en pestaña nueva, y sin `opener`
+       para que la página de destino no pueda tocar esta. -->
+  <a
+    [class]="clases()"
+    [href]="url"
+    target="_blank"
+    rel="noopener noreferrer"
+    [attr.aria-label]="etiquetaAccesible()"
+    [attr.aria-describedby]="descritoPor()"
+  >
+    <ng-container [ngTemplateOutlet]="contenido" />
+  </a>
 } @else {
   <button
     [class]="clases()"

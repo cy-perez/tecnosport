@@ -146,6 +146,9 @@
             "format" : "int32",
             "type" : "integer"
           },
+          "enlaceCompra" : {
+            "type" : "string"
+          },
           "varianteId" : {
             "format" : "uuid",
             "type" : "string"
@@ -942,6 +945,13 @@
           "almacenamiento" : {
             "type" : "string"
           },
+          "coloresMarcados" : {
+            "description" : "Los colores que la lista marca con sus emojis, sin la paleta que se sugiere cuando no marca ninguno. Nulo si la exportación no los separa.",
+            "items" : {
+              "type" : "string"
+            },
+            "type" : "array"
+          },
           "coloresSugeridos" : {
             "items" : {
               "type" : "string"
@@ -1285,6 +1295,20 @@
         },
         "type" : "object"
       },
+      "DefinirPaletaPeticion" : {
+        "properties" : {
+          "colores" : {
+            "items" : {
+              "type" : "string"
+            },
+            "type" : "array"
+          }
+        },
+        "required" : [
+          "colores"
+        ],
+        "type" : "object"
+      },
       "DespacharPedidoRequest" : {
         "properties" : {
           "guias" : {
@@ -1616,6 +1640,71 @@
         },
         "type" : "object"
       },
+      "EnlaceDeCompraPublicoRespuesta" : {
+        "properties" : {
+          "expiraEn" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "varianteId" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        },
+        "required" : [
+          "expiraEn",
+          "varianteId"
+        ],
+        "type" : "object"
+      },
+      "EnlaceDeCompraRespuesta" : {
+        "properties" : {
+          "creadoEn" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "detalle" : {
+            "type" : "string"
+          },
+          "estado" : {
+            "type" : "string"
+          },
+          "expiraEn" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "id" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "pedidoId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "producto" : {
+            "type" : "string"
+          },
+          "slug" : {
+            "type" : "string"
+          },
+          "token" : {
+            "type" : "string"
+          },
+          "varianteId" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        },
+        "required" : [
+          "creadoEn",
+          "estado",
+          "expiraEn",
+          "id",
+          "token",
+          "varianteId"
+        ],
+        "type" : "object"
+      },
       "EnviarSugerenciaRequest" : {
         "properties" : {
           "autorizaDatos" : {
@@ -1937,6 +2026,18 @@
             "type" : "integer"
           }
         },
+        "type" : "object"
+      },
+      "GenerarEnlaceDeCompraRequest" : {
+        "properties" : {
+          "varianteId" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        },
+        "required" : [
+          "varianteId"
+        ],
         "type" : "object"
       },
       "GuiaDespachadaRequest" : {
@@ -2388,6 +2489,9 @@
             "format" : "int32",
             "type" : "integer"
           },
+          "enlaceCompra" : {
+            "type" : "string"
+          },
           "id" : {
             "format" : "uuid",
             "type" : "string"
@@ -2439,6 +2543,9 @@
           "cantidad" : {
             "format" : "int32",
             "type" : "integer"
+          },
+          "enlaceCompra" : {
+            "type" : "string"
           },
           "varianteId" : {
             "format" : "uuid",
@@ -2838,6 +2945,18 @@
           "pagoId",
           "pedidoId",
           "referencia"
+        ],
+        "type" : "object"
+      },
+      "PaletaDefinidaRespuesta" : {
+        "properties" : {
+          "variantesNuevas" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        },
+        "required" : [
+          "variantesNuevas"
         ],
         "type" : "object"
       },
@@ -3288,6 +3407,12 @@
           "nombre" : {
             "type" : "string"
           },
+          "paleta" : {
+            "items" : {
+              "type" : "string"
+            },
+            "type" : "array"
+          },
           "slug" : {
             "type" : "string"
           },
@@ -3309,6 +3434,9 @@
             "type" : "string"
           }
         },
+        "required" : [
+          "paleta"
+        ],
         "type" : "object"
       },
       "ProductoAdminRespuesta" : {
@@ -3384,6 +3512,12 @@
           "nombre" : {
             "type" : "string"
           },
+          "paleta" : {
+            "items" : {
+              "type" : "string"
+            },
+            "type" : "array"
+          },
           "rotacion" : {
             "$ref" : "#/components/schemas/RotacionRespuesta"
           },
@@ -3400,6 +3534,9 @@
             "type" : "array"
           }
         },
+        "required" : [
+          "paleta"
+        ],
         "type" : "object"
       },
       "ProductosAdminPaginadosRespuesta" : {
@@ -4700,6 +4837,9 @@
             },
             "type" : "array"
           },
+          "colorPorConfirmar" : {
+            "type" : "boolean"
+          },
           "disponible" : {
             "type" : "boolean"
           },
@@ -4715,6 +4855,7 @@
           }
         },
         "required" : [
+          "colorPorConfirmar",
           "disponible"
         ],
         "type" : "object"
@@ -4726,6 +4867,9 @@
               "$ref" : "#/components/schemas/AtributoValorRespuesta"
             },
             "type" : "array"
+          },
+          "colorPorConfirmar" : {
+            "type" : "boolean"
           },
           "id" : {
             "format" : "uuid",
@@ -4740,6 +4884,7 @@
           }
         },
         "required" : [
+          "colorPorConfirmar",
           "precio"
         ],
         "type" : "object"
@@ -4823,7 +4968,7 @@
   "paths" : {
     "/api/v1/admin/atencion" : {
       "get" : {
-        "operationId" : "listar_7",
+        "operationId" : "listar_8",
         "parameters" : [
           {
             "in" : "query",
@@ -4971,7 +5116,7 @@
     },
     "/api/v1/admin/borradores" : {
       "get" : {
-        "operationId" : "listar_16",
+        "operationId" : "listar_17",
         "parameters" : [
           {
             "in" : "query",
@@ -5030,7 +5175,7 @@
     },
     "/api/v1/admin/borradores-tecnologia" : {
       "get" : {
-        "operationId" : "listar_17",
+        "operationId" : "listar_18",
         "parameters" : [
           {
             "in" : "query",
@@ -5925,7 +6070,7 @@
     },
     "/api/v1/admin/categorias" : {
       "get" : {
-        "operationId" : "listar_6",
+        "operationId" : "listar_7",
         "responses" : {
           "200" : {
             "content" : {
@@ -6034,6 +6179,88 @@
         ]
       }
     },
+    "/api/v1/admin/enlaces-de-compra" : {
+      "get" : {
+        "operationId" : "listar_6",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/EnlaceDeCompraRespuesta"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "admin-enlaces-de-compra-controlador"
+        ]
+      },
+      "post" : {
+        "operationId" : "generar",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/GenerarEnlaceDeCompraRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/EnlaceDeCompraRespuesta"
+                }
+              }
+            },
+            "description" : "Created"
+          }
+        },
+        "tags" : [
+          "admin-enlaces-de-compra-controlador"
+        ]
+      }
+    },
+    "/api/v1/admin/enlaces-de-compra/{id}/anular" : {
+      "post" : {
+        "operationId" : "anular",
+        "parameters" : [
+          {
+            "in" : "path",
+            "name" : "id",
+            "required" : true,
+            "schema" : {
+              "format" : "uuid",
+              "type" : "string"
+            }
+          }
+        ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/EnlaceDeCompraRespuesta"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "admin-enlaces-de-compra-controlador"
+        ]
+      }
+    },
     "/api/v1/admin/envios/paquetes/{pedidoId}" : {
       "get" : {
         "operationId" : "consultarPaquetes",
@@ -6067,7 +6294,7 @@
     },
     "/api/v1/admin/envios/referencias" : {
       "get" : {
-        "operationId" : "consultar",
+        "operationId" : "consultar_1",
         "responses" : {
           "200" : {
             "content" : {
@@ -6180,7 +6407,7 @@
     },
     "/api/v1/admin/envios/revision" : {
       "get" : {
-        "operationId" : "listar_15",
+        "operationId" : "listar_16",
         "parameters" : [
           {
             "in" : "query",
@@ -6375,7 +6602,7 @@
     },
     "/api/v1/admin/ingestas" : {
       "get" : {
-        "operationId" : "listar_14",
+        "operationId" : "listar_15",
         "parameters" : [
           {
             "in" : "query",
@@ -6830,7 +7057,7 @@
     },
     "/api/v1/admin/pagos/sin-pedido" : {
       "get" : {
-        "operationId" : "listar_13",
+        "operationId" : "listar_14",
         "responses" : {
           "200" : {
             "content" : {
@@ -6887,7 +7114,7 @@
     },
     "/api/v1/admin/pedidos" : {
       "get" : {
-        "operationId" : "listar_12",
+        "operationId" : "listar_13",
         "parameters" : [
           {
             "in" : "query",
@@ -8291,6 +8518,47 @@
         ]
       }
     },
+    "/api/v1/admin/productos/{id}/paleta" : {
+      "put" : {
+        "operationId" : "definir",
+        "parameters" : [
+          {
+            "in" : "path",
+            "name" : "id",
+            "required" : true,
+            "schema" : {
+              "format" : "uuid",
+              "type" : "string"
+            }
+          }
+        ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/DefinirPaletaPeticion"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PaletaDefinidaRespuesta"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "admin-paleta-controlador"
+        ]
+      }
+    },
     "/api/v1/admin/productos/{id}/precios" : {
       "put" : {
         "operationId" : "cambiarPrecios",
@@ -9192,7 +9460,7 @@
     },
     "/api/v1/atributos" : {
       "get" : {
-        "operationId" : "listar_11",
+        "operationId" : "listar_12",
         "responses" : {
           "200" : {
             "content" : {
@@ -9704,7 +9972,7 @@
     },
     "/api/v1/categorias" : {
       "get" : {
-        "operationId" : "listar_10",
+        "operationId" : "listar_11",
         "responses" : {
           "200" : {
             "content" : {
@@ -9724,7 +9992,7 @@
     },
     "/api/v1/colores" : {
       "get" : {
-        "operationId" : "listar_9",
+        "operationId" : "listar_10",
         "responses" : {
           "200" : {
             "content" : {
@@ -9742,6 +10010,36 @@
         },
         "tags" : [
           "paleta-de-colores-controlador"
+        ]
+      }
+    },
+    "/api/v1/enlaces-de-compra/{token}" : {
+      "get" : {
+        "operationId" : "consultar",
+        "parameters" : [
+          {
+            "in" : "path",
+            "name" : "token",
+            "required" : true,
+            "schema" : {
+              "type" : "string"
+            }
+          }
+        ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/EnlaceDeCompraPublicoRespuesta"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "enlace-de-compra-controlador"
         ]
       }
     },
@@ -9841,7 +10139,7 @@
     },
     "/api/v1/marcas" : {
       "get" : {
-        "operationId" : "listar_8",
+        "operationId" : "listar_9",
         "responses" : {
           "200" : {
             "content" : {

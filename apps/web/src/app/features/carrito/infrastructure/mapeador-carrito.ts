@@ -20,6 +20,7 @@ function aLineaCarrito(dto: LineaCarritoDto): LineaCarrito {
     id: dto.id ?? '',
     varianteId: dto.varianteId ?? '',
     cantidad: dto.cantidad ?? 0,
+    enlaceCompra: dto.enlaceCompra ?? null,
   };
 }
 

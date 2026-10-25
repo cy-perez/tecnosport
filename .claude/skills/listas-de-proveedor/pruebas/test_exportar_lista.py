@@ -74,6 +74,25 @@ class Exportar(unittest.TestCase):
         lista, _ = exportar_lista.exportar(datos)
         self.assertEqual(["Negro", "Azul claro"], lista["modelos"][0]["configuraciones"][0]["coloresSugeridos"])
 
+    def test_sin_emojis_no_va_ningun_color_marcado_aunque_se_sugiera_la_paleta(self):
+        # ADR-0086: el color que la lista no marcó se confirma con el proveedor antes de venderse.
+        datos = {**DATOS, "productos": [producto(
+            "samsung-galaxy-a17-5g-8gb-ram-256gb-1-sim", "Samsung Galaxy A17 5G 8GB RAM 256GB 1 SIM",
+            atributos=["1 SIM"], colores_sugeridos=[], colores_familia=[],
+            colores_oficiales=["Negro", "Azul claro"])]}
+        lista, _ = exportar_lista.exportar(datos)
+        [config] = lista["modelos"][0]["configuraciones"]
+        self.assertEqual(["Negro", "Azul claro"], config["coloresSugeridos"])
+        self.assertEqual([], config["coloresMarcados"])
+
+    def test_los_marcados_son_los_de_los_emojis_en_nombres_de_la_paleta(self):
+        datos = {**DATOS, "productos": [producto(
+            "samsung-galaxy-a17-5g-8gb-ram-256gb-1-sim", "Samsung Galaxy A17 5G 8GB RAM 256GB 1 SIM",
+            atributos=["1 SIM"], colores_sugeridos=[], colores_familia=["Azul"],
+            colores_oficiales=["Negro", "Azul claro"])]}
+        lista, _ = exportar_lista.exportar(datos)
+        self.assertEqual(["Azul claro"], lista["modelos"][0]["configuraciones"][0]["coloresMarcados"])
+
     def test_un_id_que_no_cabe_se_queda_fuera_y_se_dice(self):
         largo = "x" * 61
         datos = {**DATOS, "productos": [producto(largo, "Equipo con nombre larguísimo")] + DATOS["productos"]}

@@ -57,6 +57,8 @@ import { REPOSITORIO_BORRADORES_ADMIN } from './borradores/domain/repositorio-bo
 import { BorradoresAdminHttpRepositorio } from './borradores/infrastructure/borradores-admin-http.repositorio';
 import { REPOSITORIO_BORRADORES_TECNOLOGIA } from './tecnologia/domain/repositorio-borradores-tecnologia.puerto';
 import { BorradoresTecnologiaHttpRepositorio } from './tecnologia/infrastructure/borradores-tecnologia-http.repositorio';
+import { REPOSITORIO_ENLACES_DE_COMPRA_ADMIN } from './enlaces-de-compra/domain/repositorio-enlaces-de-compra-admin.puerto';
+import { EnlacesDeCompraAdminHttpRepositorio } from './enlaces-de-compra/infrastructure/enlaces-de-compra-admin-http.repositorio';
 
 // Sin proveedor de puerto aquí: REPOSITORIO_SESION es compartido y se
 // provee en app.config.ts (SesionStore lo va a necesitar también
@@ -306,6 +308,21 @@ export const adminRoutes: Routes = [
             ],
           },
           {
+            // Los enlaces de compra de colores de tecnología confirmados con el proveedor
+            // (ADR-0086). Se generan desde la edición del producto; aquí se copian y se anulan.
+            path: 'enlaces-de-compra',
+            providers: [
+              {
+                provide: REPOSITORIO_ENLACES_DE_COMPRA_ADMIN,
+                useClass: EnlacesDeCompraAdminHttpRepositorio,
+              },
+            ],
+            loadComponent: () =>
+              import('./enlaces-de-compra/presentation/bandeja/enlaces-de-compra-admin.page').then(
+                (m) => m.EnlacesDeCompraAdminPage,
+              ),
+          },
+          {
             path: 'productos',
             providers: [
               { provide: REPOSITORIO_PRODUCTOS_ADMIN, useClass: ProductosAdminHttpRepositorio },
@@ -374,6 +391,12 @@ export const adminRoutes: Routes = [
                   // Ninguna prueba lo vio porque los specs de página proveen los puertos a mano:
                   // lo cubre `admin.routes.spec.ts`, que mira esta configuración y no un montaje.
                   { provide: REPOSITORIO_DIFUSION, useClass: DifusionHttpRepositorio },
+                  // Los colores de tecnología —paleta y enlaces de compra— se editan aquí
+                  // (ADR-0086).
+                  {
+                    provide: REPOSITORIO_ENLACES_DE_COMPRA_ADMIN,
+                    useClass: EnlacesDeCompraAdminHttpRepositorio,
+                  },
                 ],
                 loadComponent: () =>
                   import('./productos/presentation/editar/editar-producto-admin.page').then(

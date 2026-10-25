@@ -22,6 +22,8 @@ import co.tecnosport.api.domain.envio.TarifaEnvio;
 import co.tecnosport.api.domain.inventario.Inventario;
 import co.tecnosport.api.domain.inventario.MovimientoInventario;
 import co.tecnosport.api.domain.legal.AutorizacionDatos;
+import co.tecnosport.api.domain.pedido.EnlaceDeCompra;
+import co.tecnosport.api.domain.pedido.EnlaceDeCompraNoVigenteException;
 import co.tecnosport.api.domain.pedido.LineaPedido;
 import co.tecnosport.api.domain.pedido.MetodoPago;
 import co.tecnosport.api.domain.pedido.NumeroPedido;
@@ -30,11 +32,13 @@ import co.tecnosport.api.domain.pedido.TipoEntrega;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.UUID;
 
 /**
@@ -73,6 +77,7 @@ public final class CrearPedido {
   private final String versionPolitica;
 
   private final ModalidadesDeEntrega modalidadesDeEntrega;
+  private final RepositorioEnlacesDeCompra repositorioEnlaces;
 
   public CrearPedido(
       RepositorioProductos repositorioProductos,
@@ -88,7 +93,8 @@ public final class CrearPedido {
       Duration ventanaIntentosPorCuenta,
       RepositorioAutorizaciones repositorioAutorizaciones,
       String versionPolitica,
-      ModalidadesDeEntrega modalidadesDeEntrega) {
+      ModalidadesDeEntrega modalidadesDeEntrega,
+      RepositorioEnlacesDeCompra repositorioEnlaces) {
     this.repositorioProductos =
         Objects.requireNonNull(
             repositorioProductos, "El repositorio de productos no puede ser nulo.");
@@ -124,6 +130,9 @@ public final class CrearPedido {
     this.modalidadesDeEntrega =
         Objects.requireNonNull(
             modalidadesDeEntrega, "Las modalidades de entrega no pueden ser nulas.");
+    this.repositorioEnlaces =
+        Objects.requireNonNull(
+            repositorioEnlaces, "El repositorio de enlaces de compra no puede ser nulo.");
   }
 
   public Pedido ejecutar(CrearPedidoComando comando) {
@@ -192,13 +201,14 @@ public final class CrearPedido {
     // transacciones que pidan los mismos libros los piden en la misma secuencia, así que la
     // segunda espera a la primera en el primero que compartan en vez de esperarse mutuamente.
     Map<UUID, LineaPedido> congeladasPorVariante = new HashMap<>();
+    List<EnlaceDeCompra> enlacesUsados = new ArrayList<>();
     comando.lineas().stream()
         .sorted(Comparator.comparing(CrearPedidoComando.LineaComando::varianteId))
         .forEach(
             lineaComando ->
                 congeladasPorVariante.put(
                     lineaComando.varianteId(),
-                    congelarLinea(lineaComando, vigenciaReserva, ahora)));
+                    congelarLinea(lineaComando, vigenciaReserva, ahora, enlacesUsados)));
 
     // El pedido conserva el orden del comprador: lo que se ordenó fue la toma de bloqueos, no las
     // líneas que verá en su comprobante.
@@ -225,6 +235,10 @@ public final class CrearPedido {
             comando.contacto());
 
     repositorioPedidos.guardar(pedido);
+    for (EnlaceDeCompra enlace : enlacesUsados) {
+      enlace.usar(pedido.id(), ahora);
+      repositorioEnlaces.actualizar(enlace);
+    }
     repositorioAutorizaciones.guardar(
         AutorizacionDatos.enCheckout(
             comando.autorizaDatos(),
@@ -315,16 +329,28 @@ public final class CrearPedido {
   }
 
   private LineaPedido congelarLinea(
-      CrearPedidoComando.LineaComando lineaComando, Duration vigenciaReserva, Instant ahora) {
+      CrearPedidoComando.LineaComando lineaComando,
+      Duration vigenciaReserva,
+      Instant ahora,
+      List<EnlaceDeCompra> enlacesUsados) {
     Producto producto = buscarProductoVendible(lineaComando.varianteId());
     Variante variante = buscarVarianteVendible(producto, lineaComando.varianteId());
+    Optional<EnlaceDeCompra> enlace = enlaceDeLaLinea(lineaComando, producto, variante, ahora);
 
     Inventario inventario =
         repositorioInventario
             .buscarPorVarianteId(lineaComando.varianteId())
             .orElseThrow(() -> new VarianteNoEncontradaException(lineaComando.varianteId()));
+    // La unidad que apartó el enlace pasa al pedido: se libera su reserva y se toma la del pedido
+    // en el mismo bloqueo, así que nadie más alcanza a llevársela en medio.
+    enlace.ifPresent(
+        e -> {
+          inventario.liberar(e.reservaId(), "Pasa al pedido con su enlace de compra", ahora);
+          enlacesUsados.add(e);
+        });
     MovimientoInventario reserva =
-        inventario.reservar(lineaComando.cantidad(), vigenciaReserva, ahora);
+        inventario.reservar(
+            lineaComando.cantidad(), vigenciaConEnlace(vigenciaReserva, enlace, ahora), ahora);
     repositorioInventario.guardar(inventario);
 
     // La foto del tono que se compró, si la galería la tiene; si no, la principal. El estado del
@@ -361,6 +387,56 @@ public final class CrearPedido {
             valor ->
                 valor.atributo().unidad().map(u -> valor.valor() + " " + u).orElse(valor.valor()))
         .collect(java.util.stream.Collectors.joining(" · "));
+  }
+
+  /**
+   * El enlace de compra de la línea, si trae uno vigente de esta variante (ADR-0086).
+   *
+   * <p>Una variante con el color por confirmar no se compra sin él. Una que no lo tiene por
+   * confirmar lo usa igual si llega vigente —la lista pudo confirmar el color mientras tanto, y la
+   * unidad apartada no se puede quedar apartada—, y si llega vencido lo ignora: no hay nada que
+   * proteger.
+   */
+  private Optional<EnlaceDeCompra> enlaceDeLaLinea(
+      CrearPedidoComando.LineaComando linea, Producto producto, Variante variante, Instant ahora) {
+    String token = linea.enlaceCompra();
+    Optional<EnlaceDeCompra> enlace =
+        token == null || token.isBlank()
+            ? Optional.empty()
+            : repositorioEnlaces
+                .buscarParaUsar(token.strip(), variante.id())
+                .filter(e -> e.vigente(ahora));
+    if (!variante.colorPorConfirmar()) {
+      return enlace;
+    }
+    if (enlace.isEmpty()) {
+      if (token != null && !token.isBlank()) {
+        throw new EnlaceDeCompraNoVigenteException();
+      }
+      throw new ColorPorConfirmarException(producto.nombre(), detalleDe(variante));
+    }
+    if (linea.cantidad() != 1) {
+      throw new ExcepcionDeDominio(
+          "Un enlace de compra aparta una unidad: la línea de "
+              + producto.nombre()
+              + " va con cantidad 1.");
+    }
+    return enlace;
+  }
+
+  /**
+   * La unidad que apartó el enlace sigue apartada por lo menos hasta que el enlace habría vencido.
+   * Sin esto, las 24 horas confirmadas con el proveedor se volvían los 30 minutos del pago en
+   * línea: un PSE abandonado dejaba el enlace usado y la unidad suelta, sin forma de comprarla sin
+   * volver a preguntar. Contraentrega no vence, así que se queda sin vencer.
+   */
+  private static Duration vigenciaConEnlace(
+      Duration vigenciaReserva, Optional<EnlaceDeCompra> enlace, Instant ahora) {
+    if (vigenciaReserva == null || enlace.isEmpty()) {
+      return vigenciaReserva;
+    }
+    Duration hastaQueVence = Duration.between(ahora, enlace.get().expiraEn());
+    return hastaQueVence.compareTo(vigenciaReserva) > 0 ? hastaQueVence : vigenciaReserva;
   }
 
   private Producto buscarProductoVendible(UUID varianteId) {

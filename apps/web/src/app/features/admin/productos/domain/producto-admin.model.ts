@@ -126,6 +126,8 @@ export interface VarianteResumenAdmin {
     readonly valor: string;
     readonly colorHex: string | null;
   }[];
+  /** Su color de tecnología se confirma con el proveedor antes de venderse (ADR-0086). */
+  readonly colorPorConfirmar?: boolean;
 }
 
 export interface AsignarColorAImagenAdmin {
@@ -184,6 +186,8 @@ export interface ProductoAdminDetalle extends ProductoAdmin {
   readonly galeria: readonly ImagenDeGaleriaAdmin[];
   readonly tallaSirveHasta: string | null;
   readonly variantes: readonly VarianteResumenAdmin[];
+  /** Los colores oficiales del modelo, que la ficha dice al pie de las fotos (ADR-0086). */
+  readonly paleta?: readonly string[];
 }
 
 export interface SubirImagenDeGaleriaAdmin {

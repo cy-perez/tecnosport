@@ -558,6 +558,49 @@ skill deja de usar esa fuente —o la ficha se redacta sin ella— y las fotos d
 tecnología se toman en estudio de la unidad, como las de prendas; los
 numerales 4 y 13 de los términos vuelven a decir que son propias.
 
+## 9. WhatsApp como paso de la compra de tecnología
+
+> Nació el 25 de octubre de 2026 con `ADR-0086`.
+
+**El hecho.** El color de un equipo de tecnología que la lista del proveedor no
+marcó se confirma antes de venderse. En la ficha, el botón de compra de ese color
+abre el chat de WhatsApp del negocio con un mensaje ya escrito —producto,
+configuración, color y enlace a la ficha—; una persona le pregunta al proveedor y,
+si lo tiene, le manda a quien preguntó un enlace de compra que aparta una unidad
+por 24 horas. WhatsApp deja de ser solo un canal de atención y pasa a ser un paso
+del camino de compra, **antes** de la casilla de autorización del checkout. Quien
+presta el servicio fuera de la región europea es WhatsApp LLC (sus términos,
+consultados el 25/10/2026). Al proveedor no se le dan datos de quien pregunta: solo
+el producto y el color.
+
+**Qué dice el texto publicado (versión `2026-10-25.1`).** Términos, numeral 5: el
+camino entero —se pregunta, el enlace es de un solo uso, aparta una unidad, vence
+en la fecha que dice, quien lo tenga lo puede usar, nunca se cambia el color sin
+preguntar— y que pedir la confirmación no obliga a comprar. Política de datos: los
+datos de la conversación (número, nombre del perfil, lo escrito) en el numeral 5,
+la finalidad en el 7, WhatsApp LLC en el 8 con su propia política, y su
+procesamiento fuera de Colombia en el 9. La versión subió, a diferencia de los
+cambios de `docs/12`: esta vez sí se agregó una finalidad.
+
+**Las tres preguntas.**
+
+1. **La autorización de quien escribe por WhatsApp.** Esos datos llegan antes de
+   la casilla del checkout, y quien pregunta puede no comprar nunca. El texto se
+   apoya en que la persona es quien inicia la conversación para pedir algo
+   concreto, y en que la política publicada dice para qué se usa lo que escribe.
+   ¿Basta, o hace falta un aviso de privacidad en el propio chat —el saludo
+   automático de WhatsApp Business, por ejemplo— antes de responder?
+2. **¿WhatsApp LLC es un encargado nuestro o un responsable aparte?** El texto lo
+   presenta como el servicio por el que pasa la conversación, que trata lo que
+   recibe bajo su propia política —el mismo criterio que el botón de Google del
+   punto 7—, y no afirma tener un contrato de transmisión con él. Si la cuenta
+   es de WhatsApp Business, sus términos para empresas son los que habría que
+   leer.
+3. **Subir la versión por una finalidad nueva.** Las autorizaciones ya otorgadas
+   apuntan a `2026-10-08.3`, que no tenía esta finalidad. La nueva no usa datos
+   de nadie que no haya escrito por WhatsApp después de publicada, así que no se
+   comunicó a los titulares anteriores. ¿Es suficiente?
+
 ## Antes de la consulta
 
 - [x] ~~Leer el contrato y la documentación de Resend y anotar la región de

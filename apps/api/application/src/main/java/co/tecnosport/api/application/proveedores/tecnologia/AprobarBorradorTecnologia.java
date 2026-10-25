@@ -35,6 +35,7 @@ import co.tecnosport.api.domain.compartido.Slug;
 import co.tecnosport.api.domain.compartido.ZonaDelNegocio;
 import co.tecnosport.api.domain.proveedores.BorradorTecnologia;
 import co.tecnosport.api.domain.proveedores.ConfiguracionTecnologia;
+import co.tecnosport.api.domain.proveedores.ConfirmacionDeColor;
 import co.tecnosport.api.domain.proveedores.EstadoBorrador;
 import co.tecnosport.api.domain.proveedores.FotoDeBorradorTecnologia;
 import co.tecnosport.api.domain.proveedores.VarianteDeProveedor;
@@ -42,8 +43,10 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -168,7 +171,15 @@ public final class AprobarBorradorTecnologia {
                     () -> new ProductoNoEncontradoPorIdException(borrador.productoId().get()))
             : crearProducto(borrador, marcaId, categoriaId);
 
+    // La paleta del borrador pasa al producto si el producto no tiene una: la ficha la enseña al
+    // pie
+    // de las fotos, y es con ella que se sabe si el modelo tiene un único color (ADR-0086).
+    List<String> paleta =
+        producto.paleta().isEmpty() ? borrador.modelo().paleta() : producto.paleta();
+    Map<UUID, Boolean> colorPorConfirmar = new HashMap<>();
     for (ConfiguracionTecnologia c : borrador.configuracionesQueSeVenden()) {
+      List<String> marcados =
+          ConfirmacionDeColor.marcadosSegunLosSugeridos(paleta, c.coloresSugeridos());
       for (String color : c.coloresElegidos()) {
         VarianteCreada creada =
             agregarVariante.ejecutar(
@@ -193,15 +204,22 @@ public final class AprobarBorradorTecnologia {
                 color,
                 c.costoProveedor(),
                 borrador.vistoEn()));
+        colorPorConfirmar.put(
+            creada.variante().id(), ConfirmacionDeColor.requiere(paleta, marcados, color));
       }
     }
+    productosDeProveedor.marcarColoresPorConfirmar(colorPorConfirmar);
 
     if (borrador.productoId().isEmpty()) {
       // Releído: agregarVariante dejó las variantes guardadas y el agregado en memoria no las ve.
       Producto conVariantes = repositorioProductos.buscarPorId(producto.id()).orElseThrow();
       publicarFotos(conVariantes, borrador);
+      conVariantes.definirPaleta(paleta);
       conVariantes.publicar();
       repositorioProductos.actualizar(conVariantes);
+    } else if (producto.paleta().isEmpty() && !paleta.isEmpty()) {
+      producto.definirPaleta(paleta);
+      repositorioProductos.actualizar(producto);
     }
 
     borrador.aprobar(producto.id());

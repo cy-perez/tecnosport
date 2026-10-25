@@ -63,7 +63,10 @@ POST /api/v1/envios/cotizacion              costo de envío y plazo para este ca
 GET /api/v1/envios/modalidades              qué formas de entrega se ofrecen hoy: {envioADomicilio, retiroEnPunto} (adr/0072)
                                              POST /pedidos con RETIRO_EN_PUNTO y la recogida apagada: 409 RETIRO_EN_PUNTO_NO_DISPONIBLE
 POST /api/v1/pedidos/metodos-de-pago-disponibles   qué métodos ofrece el negocio hoy y aplican a este carrito y destino
-POST /api/v1/pedidos                        revalida precios, existencias y costo de envío, reserva
+POST /api/v1/pedidos                        revalida precios, existencias y costo de envío, reserva; una línea de color
+                                             por confirmar sin `enlaceCompra` vigente: 409 COLOR_POR_CONFIRMAR, o 410
+                                             ENLACE_DE_COMPRA_NO_VIGENTE si lo trae vencido, usado o anulado (adr/0086)
+GET  /api/v1/enlaces-de-compra/{token}      la variante que habilita y hasta cuándo; 410 si ya no sirve, sin decir por qué
 POST /api/v1/pagos/intentos                 crea el intento en la pasarela
 PATCH /api/v1/pagos/intentos/{referencia}   registra el id de transacción de Wompi al volver del checkout
 POST /api/v1/pagos/webhook                  eventos de Wompi, firma verificada
@@ -432,6 +435,10 @@ PUT /api/v1/admin/productos/{id}/tallas/{modeloId}           corrige la talla ({
                                                              204, 422 TALLA_REPETIDA si algún color ya la tiene
 PUT /api/v1/admin/productos/{id}/precios                     cambia el precio de venta ({precios: [{varianteId, precio}]}, pesos enteros) de las que vengan;
                                                              204, 422 si alguno no es mayor que cero, la variante es ajena o viene dos veces; todo o nada
+PUT /api/v1/admin/productos/{id}/paleta                      la paleta oficial de un equipo de tecnología ({colores}); completa las variantes de los
+                                                             colores que falten en cada configuración que se vende; {variantesNuevas} (adr/0086)
+GET/POST /api/v1/admin/enlaces-de-compra                     los de la última semana con su estado, y generar uno ({varianteId}): aparta una unidad
+POST /api/v1/admin/enlaces-de-compra/{id}/anular             la unidad apartada vuelve a quedar libre; 422 si ya se usó
 POST /api/v1/admin/productos/{id}/galeria/url-subida         igual que la principal, con su propio prefijo: la limpieza de una no toca a la otra
 POST /api/v1/admin/productos/{id}/galeria                    confirma y suma a la galería; 409 si la foto ya está o si no caben más (adr/0052)
 DELETE /api/v1/admin/productos/{id}/galeria/{imagenId}       la saca de la ficha y borra su objeto; 204, y 404 si no era de ese producto

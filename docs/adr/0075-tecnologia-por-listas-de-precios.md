@@ -64,7 +64,9 @@ Decisiones del negocio del 08/10/2026:
 5. **La tecnología vence con su propia ventana**, 7 días
    (`PROVEEDORES_TECNOLOGIA_VENTANA_DISPONIBILIDAD`): con los 3 días de los
    mensajes, todo lo de una lista se ocultaría antes de la siguiente.
-6. **Los colores arrancan con lo que sugiere la lista y nada más.** Vender un
+6. **Los colores arrancan con lo que sugiere la lista y nada más.** *(Reemplazado
+   por ADR-0086: el color que la lista no marca se confirma con el proveedor
+   antes de venderse.)* Vender un
    color que el proveedor no dijo tener es lo que la revisión existe para evitar.
 7. **El producto nace en borrador y visto en la fecha de la lista.** Las fotos
    las sube `tools/importar-lista-tecnologia.mjs --fotos` desde la carpeta del

@@ -76,7 +76,9 @@ export function aProductoAdminDetalle(dto: ProductoDetalleDto): ProductoAdminDet
         valor: atributo.valor ?? '',
         colorHex: atributo.colorHex ?? null,
       })),
+      colorPorConfirmar: variante.colorPorConfirmar,
     })),
+    paleta: dto.paleta,
   };
 }
 

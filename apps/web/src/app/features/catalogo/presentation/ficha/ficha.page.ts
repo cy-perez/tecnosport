@@ -36,6 +36,8 @@ import { TsPrecio } from '../../../../shared/ts-precio/ts-precio';
 import { TsSelectorVariante } from '../selector-variante/ts-selector-variante';
 import { TsVisor360 } from '../../../../shared/ts-visor-360/ts-visor-360';
 import { usarFichaProducto } from '../../application/buscar-ficha-producto.consulta';
+import { usarEnlaceDeCompra } from '../../application/consultar-enlace-de-compra.consulta';
+import { fechaConHora } from '../../../../core/i18n/fecha-colombia';
 import { CarritoStore } from '../../../carrito/application/carrito.store';
 import { hayExistencia, Imagen } from '../../domain/producto.model';
 import { usarPaletaDeColores } from '../../application/listar-paleta-colores.consulta';
@@ -105,6 +107,85 @@ export class FichaPage {
   protected readonly consulta = usarFichaProducto(() => this.slug().get('slug') ?? '');
 
   protected readonly producto = computed(() => this.consulta.data());
+
+  private readonly parametros = toSignal(this.route.queryParamMap, {
+    initialValue: this.route.snapshot.queryParamMap,
+  });
+
+  /**
+   * El enlace de compra que llega por WhatsApp cuando el proveedor confirmó el color (ADR-0086):
+   * `?enlace=…`. Mientras esté vigente, la variante que nombra se puede agregar al carrito aunque
+   * su color esté por confirmar, y aunque la única unidad sea justo la que el enlace aparta.
+   */
+  private readonly tokenEnlace = computed(() => this.parametros().get('enlace'));
+  private readonly consultaEnlace = usarEnlaceDeCompra(() => this.tokenEnlace());
+  private readonly enlace = computed(() => this.consultaEnlace.data() ?? null);
+
+  /** Llegó un enlace y la API dice que ya no sirve: se dice, para que no parezca un error mudo. */
+  protected readonly enlaceNoVigente = computed(
+    () => this.tokenEnlace() !== null && this.consultaEnlace.isSuccess() && this.enlace() === null,
+  );
+
+  /** El enlace, solo si es de la variante que está elegida: el de otro color no compra este. */
+  protected readonly enlaceDeLaVariante = computed(() => {
+    const enlace = this.enlace();
+    const variante = this.varianteActiva();
+    return enlace && variante && enlace.varianteId === variante.id ? enlace : null;
+  });
+
+  /** «hasta el 25 oct 2026, 3:00 p. m.», en la hora de Colombia y el idioma de quien mira. */
+  protected readonly vigenteHasta = computed(() => {
+    const enlace = this.enlaceDeLaVariante();
+    return enlace ? fechaConHora(enlace.expiraEn, this.idiomaActivo()) : '';
+  });
+
+  /**
+   * Un color de tecnología sin confirmar y sin enlace no se agrega al carrito: se pregunta por
+   * WhatsApp (ADR-0086). El servidor lo vuelve a exigir al crear el pedido.
+   */
+  protected readonly consultaPorWhatsapp = computed(() => {
+    const variante = this.varianteActiva();
+    return variante !== null && variante.colorPorConfirmar && this.enlaceDeLaVariante() === null;
+  });
+
+  /**
+   * El chat con el mensaje ya escrito: el producto, la variante elegida —memoria, color, SIM— y el
+   * enlace a esta ficha, para que nadie tenga que preguntar cuál equipo. El número es el mismo del
+   * botón flotante y del pie (`pie.whatsapp_numero`).
+   */
+  protected readonly enlaceWhatsapp = computed(() => {
+    const producto = this.producto();
+    const variante = this.varianteActiva();
+    if (!producto || !variante) {
+      return null;
+    }
+    const traducir = this.traducir();
+    const url = urlAbsoluta(
+      origenPublico(),
+      rutaCanonica(`/${this.transloco.activeLang()}/productos/${producto.slug}`),
+    );
+    const mensaje = traducir('catalogo.ficha.whatsapp_mensaje', {
+      producto: producto.nombre,
+      detalle: detalleDeVariante(variante),
+      url,
+    });
+    return `https://wa.me/${traducir('pie.whatsapp_numero')}?text=${encodeURIComponent(mensaje)}`;
+  });
+
+  /**
+   * «Morado, Plata y Negro»: la paleta del fabricante, con cada color en el idioma de quien mira y
+   * unida como se une una lista en ese idioma. Vacía si el producto no la trae.
+   */
+  protected readonly coloresDelModelo = computed(() => {
+    const producto = this.producto();
+    if (!producto || producto.paleta.length === 0) {
+      return '';
+    }
+    const idioma = this.idiomaActivo();
+    const paleta = this.paletaDeColores.data() ?? [];
+    const nombres = producto.paleta.map((color) => nombreDeColor(color, paleta, idioma));
+    return new Intl.ListFormat(idioma, { type: 'conjunction' }).format(nombres);
+  });
 
   // `usarTraductor`, no `transloco.translate()` directo: dentro de un
   // `computed` ese no es reactivo y las etiquetas se quedarían en el idioma
@@ -218,13 +299,13 @@ export class FichaPage {
     return producto ? tallaUnicaDe(producto) : null;
   });
 
-  private readonly paleta = usarPaletaDeColores();
+  private readonly paletaDeColores = usarPaletaDeColores();
   private readonly idiomaActivo = usarIdiomaActivo();
 
   /** El nombre de cada color en el idioma de quien mira, para el selector. */
   protected readonly nombresDeColor = computed<Record<string, string>>(() => {
     const producto = this.producto();
-    const paleta = this.paleta.data() ?? [];
+    const paleta = this.paletaDeColores.data() ?? [];
     const idioma = this.idiomaActivo();
     return Object.fromEntries(
       (producto ? coloresDe(producto) : []).map((color) => [
@@ -358,30 +439,53 @@ export class FichaPage {
     usarMetadatos(() => this.metadatos());
     usarDatosEstructurados(() => this.datosEstructurados());
 
+    // Un solo efecto y no dos, para no depender del orden en que Angular los corre.
+    //
     // Reinicia la selección a la variante por defecto solo al cargar otro producto (primer render,
-    // o al navegar de una ficha a otra), nunca porque el mismo producto haya vuelto del servidor.
+    // o al navegar de una ficha a otra), nunca porque el mismo producto haya vuelto del servidor. Y
+    // con un enlace de compra vigente (ADR-0086) abre en la configuración y el color que el enlace
+    // compra, una vez por ficha: si después la persona cambia de color a mano, el enlace no se lo
+    // vuelve a cambiar, y al volver a la ficha desde otra se aplica de nuevo.
     effect(() => {
-      if (!this.slugCargado()) {
+      const slug = this.slugCargado();
+      const enlace = this.enlace();
+      if (!slug) {
         return;
       }
       // `untracked`: leer el producto aquí volvería a atar el efecto a su identidad, que es
       // justamente lo que se quiere evitar.
       const producto = untracked(() => this.producto());
-      // Otro producto, otro anuncio: el "Agregado" del anterior ya no habla de lo que hay en
-      // pantalla.
-      untracked(() => this.resultadoAgregar.set(null));
-      if (!producto) {
+      if (untracked(() => this.slugSeleccionado()) !== slug) {
+        this.slugSeleccionado.set(slug);
+        this.enlaceAplicado.set(null);
+        // Otro producto, otro anuncio: el "Agregado" del anterior ya no habla de lo que hay en
+        // pantalla.
+        untracked(() => this.resultadoAgregar.set(null));
+        if (producto) {
+          const variante = variantePorDefecto(producto);
+          this.seleccion.set(variante ? seleccionDeVariante(variante) : {});
+          // Otro producto, otra galería: vuelve a abrir en la principal.
+          untracked(() => {
+            this.colorElegidoAMano.set(false);
+            this.fotoTocada.set(null);
+          });
+        }
+      }
+      const delEnlace = enlace && producto?.variantes.find((v) => v.id === enlace.varianteId);
+      if (!enlace || !delEnlace || untracked(() => this.enlaceAplicado()) === enlace.token) {
         return;
       }
-      const variante = variantePorDefecto(producto);
-      this.seleccion.set(variante ? seleccionDeVariante(variante) : {});
-      // Otro producto, otra galería: vuelve a abrir en la principal.
-      untracked(() => {
-        this.colorElegidoAMano.set(false);
-        this.fotoTocada.set(null);
-      });
+      this.enlaceAplicado.set(enlace.token);
+      this.seleccion.set(seleccionDeVariante(delEnlace));
+      untracked(() => this.colorElegidoAMano.set(true));
     });
   }
+
+  /** El producto cuya selección ya se puso, para reiniciarla solo al cambiar de producto. */
+  private readonly slugSeleccionado = signal<string | null>(null);
+
+  /** El token del enlace que ya eligió su variante en esta ficha. */
+  private readonly enlaceAplicado = signal<string | null>(null);
 
   /**
    * El selector manda la selección con la opción pulsada; si esa combinación no existe, se salta a
@@ -425,7 +529,13 @@ export class FichaPage {
     // Guarda de reentrada en vez de deshabilitar el botón (`[ocupado]`): deshabilitarlo bajo el
     // dedo mandaba el foco a `<body>`. Y agotada no agrega: el botón la anuncia con
     // `aria-disabled`, pero sigue recibiendo el clic.
-    if (!producto || !variante || !variante.disponible || this.carrito.agregando()) {
+    const enlace = this.enlaceDeLaVariante();
+    // Con enlace, la unidad apartada es suya aunque el libro ya no la cuente como libre.
+    if (!producto || !variante || (!variante.disponible && !enlace) || this.carrito.agregando()) {
+      return;
+    }
+    // Un color por confirmar no se agrega sin enlace: la acción de la barra es el chat.
+    if (this.consultaPorWhatsapp()) {
       return;
     }
     this.resultadoAgregar.set(null);
@@ -434,16 +544,21 @@ export class FichaPage {
     const imagen = imagenDelColor(producto, eje ? (this.seleccion()[eje] ?? null) : null);
     const detalle = detalleDeVariante(variante);
     this.carrito
-      .agregarAlCarrito(variante.id, 1, {
-        varianteId: variante.id,
-        nombreProducto: producto.nombre,
-        slugProducto: producto.slug,
-        sku: variante.sku,
-        imagenUrl: imagen?.url ?? null,
-        precioValor: variante.precio.valor,
-        precioMoneda: variante.precio.moneda,
-        detalleVariante: detalle || null,
-      })
+      .agregarAlCarrito(
+        variante.id,
+        1,
+        {
+          varianteId: variante.id,
+          nombreProducto: producto.nombre,
+          slugProducto: producto.slug,
+          sku: variante.sku,
+          imagenUrl: imagen?.url ?? null,
+          precioValor: variante.precio.valor,
+          precioMoneda: variante.precio.moneda,
+          detalleVariante: detalle || null,
+        },
+        enlace?.token ?? null,
+      )
       .then(
         () => this.resultadoAgregar.set({ tipo: 'agregado', nombre: producto.nombre }),
         // El rechazo se atrapa aquí y se dice. Antes el `void` lo dejaba como una promesa

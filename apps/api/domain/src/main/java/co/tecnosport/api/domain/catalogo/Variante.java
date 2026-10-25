@@ -47,6 +47,7 @@ public final class Variante {
   private final List<ValorAtributo> atributos;
   private final SetRotacion setRotacionPropio;
   private final boolean agotadaPorProveedor;
+  private final boolean colorPorConfirmar;
 
   public Variante(
       UUID id,
@@ -82,6 +83,38 @@ public final class Variante {
       List<ValorAtributo> atributos,
       SetRotacion setRotacionPropio,
       boolean agotadaPorProveedor) {
+    this(
+        id,
+        sku,
+        precio,
+        tasaIva,
+        codigoBarras,
+        paquete,
+        estado,
+        atributos,
+        setRotacionPropio,
+        agotadaPorProveedor,
+        false);
+  }
+
+  /**
+   * Reconstrucción completa.
+   *
+   * @param colorPorConfirmar el color de esta variante de tecnología nadie lo ha confirmado con el
+   *     proveedor (ADR-0086): no se compra sin un enlace de compra
+   */
+  public Variante(
+      UUID id,
+      Sku sku,
+      Dinero precio,
+      BigDecimal tasaIva,
+      String codigoBarras,
+      Paquete paquete,
+      EstadoVariante estado,
+      List<ValorAtributo> atributos,
+      SetRotacion setRotacionPropio,
+      boolean agotadaPorProveedor,
+      boolean colorPorConfirmar) {
     this.id = Objects.requireNonNull(id, "El id de la variante no puede ser nulo.");
     this.sku = Objects.requireNonNull(sku, "El SKU de la variante no puede ser nulo.");
     this.precio = Objects.requireNonNull(precio, "El precio de la variante no puede ser nulo.");
@@ -95,6 +128,7 @@ public final class Variante {
     this.atributos = List.copyOf(Objects.requireNonNullElse(atributos, List.of()));
     this.setRotacionPropio = setRotacionPropio;
     this.agotadaPorProveedor = agotadaPorProveedor;
+    this.colorPorConfirmar = colorPorConfirmar;
   }
 
   public static Variante crear(
@@ -138,7 +172,8 @@ public final class Variante {
         estado,
         atributos,
         setRotacionPropio,
-        agotadaPorProveedor);
+        agotadaPorProveedor,
+        colorPorConfirmar);
   }
 
   /**
@@ -164,7 +199,8 @@ public final class Variante {
         estado,
         atributos,
         setRotacionPropio,
-        agotadaPorProveedor);
+        agotadaPorProveedor,
+        colorPorConfirmar);
   }
 
   /**
@@ -189,7 +225,8 @@ public final class Variante {
         estado,
         con,
         setRotacionPropio,
-        agotadaPorProveedor);
+        agotadaPorProveedor,
+        colorPorConfirmar);
   }
 
   /**
@@ -216,7 +253,8 @@ public final class Variante {
         estado,
         con,
         setRotacionPropio,
-        agotadaPorProveedor);
+        agotadaPorProveedor,
+        colorPorConfirmar);
   }
 
   /** Su talla, si tiene: el valor del atributo que es eje de talla. */
@@ -276,6 +314,16 @@ public final class Variante {
    */
   public boolean agotadaPorProveedor() {
     return agotadaPorProveedor;
+  }
+
+  /**
+   * Su color no está confirmado con el proveedor (ADR-0086): se ve y se elige en la ficha, pero no
+   * se compra sin un enlace de compra, que se genera cuando el proveedor confirma que lo tiene. Es
+   * de tecnología: la lista del proveedor rara vez dice colores, y la paleta oficial dice qué
+   * colores existen, no cuáles tiene hoy.
+   */
+  public boolean colorPorConfirmar() {
+    return colorPorConfirmar;
   }
 
   /** Si quien compra la puede elegir: activa y sin agotar por el proveedor. */

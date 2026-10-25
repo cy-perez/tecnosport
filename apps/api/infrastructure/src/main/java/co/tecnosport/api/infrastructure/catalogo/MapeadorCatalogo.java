@@ -238,6 +238,10 @@ public class MapeadorCatalogo {
     producto.definirTallaSirveHasta(p.getTallaSirveHasta());
     producto.definirPesoAdicional(p.getPesoAdicionalGramos());
     producto.definirAjusteDeTalla(new AjusteDeTalla(p.getAjusteDeTalla()));
+    producto.definirPaleta(
+        p.getPaleta() == null || p.getPaleta().isBlank()
+            ? List.of()
+            : List.of(p.getPaleta().split(ProductoJpaEntity.SEPARADOR_DE_PALETA)));
     return producto;
   }
 
@@ -279,7 +283,8 @@ public class MapeadorCatalogo {
         EstadoVariante.valueOf(v.getEstado()),
         atributos,
         setRotacionPropio,
-        v.isAgotadaPorProveedor());
+        v.isAgotadaPorProveedor(),
+        v.isColorPorConfirmar());
   }
 
   private static boolean estaPublicado(SetRotacionJpaEntity set) {

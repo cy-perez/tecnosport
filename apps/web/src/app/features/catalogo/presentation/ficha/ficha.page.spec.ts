@@ -22,6 +22,11 @@ import {
 } from '../../domain/repositorio-productos.puerto';
 import { ResultadoPaginado } from '../../domain/resultado-paginado.model';
 import { FichaPage } from './ficha.page';
+import { EnlaceDeCompra } from '../../domain/enlace-de-compra.model';
+import {
+  REPOSITORIO_ENLACES_DE_COMPRA,
+  RepositorioEnlacesDeCompra,
+} from '../../domain/repositorio-enlaces-de-compra.puerto';
 import { esperarSinViolaciones } from '../../../../../testing/axe';
 import { proveerAlmacenesCarrito } from '../../../../../testing/carrito';
 
@@ -79,14 +84,23 @@ class RepositorioCarritoQueAgrega extends RepositorioCarritoFalso {
 
 /** El que acepta la línea y anota qué variante le llegó: qué se compró, no solo que se compró. */
 const variantesAgregadas: string[] = [];
+/** Y con qué enlace de compra llegó cada una: `null` si llegó sin ninguno. */
+const enlacesAgregados: (string | null)[] = [];
 class RepositorioCarritoQueAnota extends RepositorioCarritoQueAgrega {
   // Con resto y no con la firma del puerto: la base la declara sin parámetros, y una sobrescritura
   // que los exija no le es asignable.
   override agregarLinea(...argumentos: unknown[]): Promise<Carrito> {
     variantesAgregadas.push(argumentos[1] as string);
+    enlacesAgregados.push((argumentos[3] as string | null | undefined) ?? null);
     return super.agregarLinea();
   }
 }
+
+/** Los enlaces de compra que la API reconoce en estas pruebas; cualquier otro ya no sirve. */
+const enlacesVigentes = new Map<string, EnlaceDeCompra>();
+const repositorioEnlaces: RepositorioEnlacesDeCompra = {
+  consultar: (token) => Promise.resolve(enlacesVigentes.get(token) ?? null),
+};
 
 function productoDePrueba(): Producto {
   return {
@@ -108,12 +122,14 @@ function productoDePrueba(): Producto {
     rotacion: null,
     escalaTallas: [],
     tallaSirveHasta: null,
+    paleta: [],
     variantes: [
       {
         id: 'variante-1',
         sku: 'SKU-1',
         precio: { valor: 150_000, moneda: 'COP' },
         disponible: true,
+        colorPorConfirmar: false,
         atributos: [],
       },
     ],
@@ -140,12 +156,14 @@ function productoConVariantes(): Producto {
     rotacion: null,
     escalaTallas: [],
     tallaSirveHasta: null,
+    paleta: [],
     variantes: [
       {
         id: 'variante-az',
         sku: 'SKU-AZ',
         precio: { valor: 89_900, moneda: 'COP' },
         disponible: true,
+        colorPorConfirmar: false,
         atributos: [{ nombre: 'Color', valor: 'Azul marino', colorHex: '#1E3A8A', unidad: null }],
       },
       {
@@ -153,6 +171,7 @@ function productoConVariantes(): Producto {
         sku: 'SKU-NG',
         precio: { valor: 99_900, moneda: 'COP' },
         disponible: true,
+        colorPorConfirmar: false,
         atributos: [{ nombre: 'Color', valor: 'Negro', colorHex: '#111111', unidad: null }],
       },
     ],
@@ -247,15 +266,21 @@ function productoConRotacion(): Producto {
 
 /** Espera real: el observador de TanStack propaga a la senal fuera del ciclo de `whenStable`. */
 
-function activatedRouteConSlug(slug: string) {
+function activatedRouteConSlug(slug: string, enlace: string | null = null) {
   const paramMap = convertToParamMap({ slug });
-  return { paramMap: of(paramMap), snapshot: { paramMap } };
+  const queryParamMap = convertToParamMap(enlace ? { enlace } : {});
+  return {
+    paramMap: of(paramMap),
+    queryParamMap: of(queryParamMap),
+    snapshot: { paramMap, queryParamMap },
+  };
 }
 
 async function renderFicha(
   repositorio: RepositorioProductos,
   slug = 'morral-urbano',
   repositorioCarrito: new () => RepositorioCarrito = RepositorioCarritoFalso,
+  enlace: string | null = null,
 ) {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   const resultado = await render(FichaPage, {
@@ -273,7 +298,8 @@ async function renderFicha(
       provideTanStackQuery(queryClient),
       { provide: REPOSITORIO_PRODUCTOS, useValue: repositorio },
       { provide: REPOSITORIO_CARRITO, useClass: repositorioCarrito },
-      { provide: ActivatedRoute, useValue: activatedRouteConSlug(slug) },
+      { provide: REPOSITORIO_ENLACES_DE_COMPRA, useValue: repositorioEnlaces },
+      { provide: ActivatedRoute, useValue: activatedRouteConSlug(slug, enlace) },
     ],
   });
   return { ...resultado, queryClient };
@@ -301,9 +327,14 @@ async function renderFichaNavegable(repositorio: RepositorioProductos, slugInici
       provideTanStackQuery(queryClient),
       { provide: REPOSITORIO_PRODUCTOS, useValue: repositorio },
       { provide: REPOSITORIO_CARRITO, useClass: RepositorioCarritoFalso },
+      { provide: REPOSITORIO_ENLACES_DE_COMPRA, useValue: repositorioEnlaces },
       {
         provide: ActivatedRoute,
-        useValue: { paramMap, snapshot: { paramMap: paramMap.value } },
+        useValue: {
+          paramMap,
+          queryParamMap: of(convertToParamMap({})),
+          snapshot: { paramMap: paramMap.value, queryParamMap: convertToParamMap({}) },
+        },
       },
     ],
   });
@@ -796,6 +827,7 @@ describe('FichaPage', () => {
       ...productoDePrueba(),
       slug: 'bodi',
       tallaSirveHasta: 'L',
+      paleta: [],
       escalaTallas: ['XS', 'S', 'M', 'L'],
       variantes: [
         {
@@ -803,6 +835,7 @@ describe('FichaPage', () => {
           sku: 'PRV-1',
           precio: { valor: 60_000, moneda: 'COP' },
           disponible: true,
+          colorPorConfirmar: false,
           atributos: [{ nombre: 'Talla', valor: 'Única', colorHex: null, unidad: null }],
         },
       ],
@@ -837,6 +870,7 @@ describe('FichaPage', () => {
           sku: 'SKU-M',
           precio: { valor: 50_000, moneda: 'COP' },
           disponible: true,
+          colorPorConfirmar: false,
           atributos: talla('M'),
         },
         {
@@ -844,6 +878,7 @@ describe('FichaPage', () => {
           sku: 'SKU-L',
           precio: { valor: 50_000, moneda: 'COP' },
           disponible: false,
+          colorPorConfirmar: false,
           atributos: talla('L'),
         },
       ],
@@ -874,6 +909,7 @@ describe('FichaPage', () => {
       precio: { valor: 50_000, moneda: 'COP' as const },
       disponible,
       atributos: atributos(color, hex, t),
+      colorPorConfirmar: false,
     });
     const camiseta: Producto = {
       ...productoDePrueba(),
@@ -923,6 +959,7 @@ describe('FichaPage', () => {
           sku: 'CEL-128',
           precio: { valor: 900_000, moneda: 'COP' },
           disponible: true,
+          colorPorConfirmar: false,
           atributos: atributos('128GB', '6GB'),
         },
         {
@@ -930,6 +967,7 @@ describe('FichaPage', () => {
           sku: 'CEL-256',
           precio: { valor: 1_100_000, moneda: 'COP' },
           disponible: true,
+          colorPorConfirmar: false,
           atributos: atributos('256GB', '8GB'),
         },
       ],
@@ -1079,5 +1117,114 @@ describe('FichaPage', () => {
     await screen.findByRole('heading', { name: 'Morral urbano' });
 
     await esperarSinViolaciones(container);
+  });
+
+  describe('el color de tecnología por confirmar (ADR-0086)', () => {
+    const color = (valor: string, hex: string) => [
+      { nombre: 'Color', valor, colorHex: hex, unidad: null },
+      { nombre: 'Almacenamiento', valor: '256', colorHex: null, unidad: 'GB' },
+    ];
+    const iphone = (): Producto => ({
+      ...productoDePrueba(),
+      slug: 'iphone-18-pro',
+      nombre: 'Apple iPhone 18 Pro',
+      categoria: { ...productoDePrueba().categoria, nombre: 'Celulares', linea: 'TECNOLOGIA' },
+      paleta: ['Negro', 'Morado', 'Plata'],
+      variantes: [
+        {
+          id: 'v-negro',
+          sku: 'IPH-NE',
+          precio: { valor: 6_000_000, moneda: 'COP' },
+          disponible: true,
+          colorPorConfirmar: false,
+          atributos: color('Negro', '#111111'),
+        },
+        {
+          id: 'v-morado',
+          sku: 'IPH-MO',
+          precio: { valor: 6_000_000, moneda: 'COP' },
+          disponible: false,
+          colorPorConfirmar: true,
+          atributos: color('Morado', '#6B3FA0'),
+        },
+      ],
+    });
+    const repositorio: RepositorioProductos = {
+      buscar: () =>
+        Promise.resolve<ResultadoPaginado<Producto>>({ items: [], cursorSiguiente: null }),
+      buscarPorSlug: () => Promise.resolve(iphone()),
+    };
+
+    beforeEach(() => {
+      variantesAgregadas.length = 0;
+      enlacesAgregados.length = 0;
+      enlacesVigentes.clear();
+    });
+
+    it('dice al pie de las fotos los colores del fabricante y que son de referencia', async () => {
+      await renderFicha(repositorio, 'iphone-18-pro');
+
+      expect(
+        await screen.findByText('Colores del modelo según el fabricante: Negro, Morado y Plata.'),
+      ).toBeTruthy();
+      expect(
+        screen.getByText('Las imágenes son de referencia: muestran el modelo, no cada color.'),
+      ).toBeTruthy();
+    });
+
+    it('un color sin confirmar no se agrega: se pregunta por WhatsApp con el mensaje', async () => {
+      await renderFicha(repositorio, 'iphone-18-pro');
+      await screen.findByRole('heading', { name: 'Apple iPhone 18 Pro' });
+
+      fireEvent.click(screen.getByRole('button', { name: 'Morado' }));
+
+      const chat = await screen.findByRole('link', {
+        name: 'Consultar disponibilidad por WhatsApp (se abre en otra pestaña)',
+      });
+      const href = chat.getAttribute('href') ?? '';
+      expect(href.startsWith('https://wa.me/')).toBe(true);
+      const mensaje = decodeURIComponent(href.split('?text=')[1]);
+      expect(mensaje).toContain('Apple iPhone 18 Pro (256 GB · Morado)');
+      expect(mensaje).toContain('/es/productos/iphone-18-pro');
+      expect(screen.queryByRole('button', { name: 'Agregar al carrito' })).toBeNull();
+    });
+
+    it('el color que la lista confirmó se agrega como siempre', async () => {
+      await renderFicha(repositorio, 'iphone-18-pro', RepositorioCarritoQueAnota);
+      await screen.findByRole('heading', { name: 'Apple iPhone 18 Pro' });
+
+      fireEvent.click(screen.getByRole('button', { name: 'Agregar al carrito' }));
+
+      await vi.waitFor(() => expect(variantesAgregadas).toEqual(['v-negro']));
+      expect(enlacesAgregados).toEqual([null]);
+    });
+
+    it('con su enlace vigente abre en ese color y lo agrega con el enlace', async () => {
+      enlacesVigentes.set('token-1', {
+        token: 'token-1',
+        varianteId: 'v-morado',
+        expiraEn: '2026-10-25T20:00:00Z',
+      });
+      await renderFicha(repositorio, 'iphone-18-pro', RepositorioCarritoQueAnota, 'token-1');
+
+      await screen.findByText(/^Color confirmado\. Tu unidad está apartada hasta el/);
+      expect(screen.getByRole('button', { name: 'Morado' }).getAttribute('aria-pressed')).toBe(
+        'true',
+      );
+      fireEvent.click(screen.getByRole('button', { name: 'Agregar al carrito' }));
+
+      await vi.waitFor(() => expect(variantesAgregadas).toEqual(['v-morado']));
+      expect(enlacesAgregados).toEqual(['token-1']);
+    });
+
+    it('un enlace que ya no sirve se dice', async () => {
+      await renderFicha(repositorio, 'iphone-18-pro', RepositorioCarritoFalso, 'vencido');
+
+      expect(
+        await screen.findByText(
+          'Este enlace de compra ya no está vigente. Escríbenos por WhatsApp y te confirmamos el color de nuevo.',
+        ),
+      ).toBeTruthy();
+    });
   });
 });

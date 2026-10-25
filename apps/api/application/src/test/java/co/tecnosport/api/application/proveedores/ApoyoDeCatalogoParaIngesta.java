@@ -265,6 +265,14 @@ final class ApoyoDeCatalogoParaIngesta {
         retiradas.addAll(varianteIds);
       }
     }
+
+    /** Lo último que se dijo del color de cada variante: por confirmar o sabido. */
+    final Map<UUID, Boolean> colorPorConfirmar = new HashMap<>();
+
+    @Override
+    public void marcarColoresPorConfirmar(Map<UUID, Boolean> porConfirmarPorVariante) {
+      colorPorConfirmar.putAll(porConfirmarPorVariante);
+    }
   }
 
   static final class RepositorioBorradoresEnMemoria implements RepositorioBorradores {

@@ -1,6 +1,7 @@
 package co.tecnosport.api.application.proveedores.tecnologia;
 
 import co.tecnosport.api.domain.proveedores.ConfiguracionTecnologia;
+import co.tecnosport.api.domain.proveedores.ConfirmacionDeColor;
 import co.tecnosport.api.domain.proveedores.ModeloDeLista;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -8,6 +9,7 @@ import java.security.NoSuchAlgorithmException;
 import java.time.LocalDate;
 import java.util.HexFormat;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -29,9 +31,29 @@ public record ImportarListaDeTecnologiaComando(
     Modo modo,
     List<Modelo> modelos,
     List<String> configuracionesDesaparecidas,
-    List<String> modelosDesaparecidos) {
+    List<String> modelosDesaparecidos,
+    Map<String, List<String>> coloresMarcados) {
+
+  /** Sin los colores marcados aparte: se deducen de los sugeridos (ADR-0086). */
+  public ImportarListaDeTecnologiaComando(
+      UUID proveedorId,
+      LocalDate fechaLista,
+      Modo modo,
+      List<Modelo> modelos,
+      List<String> configuracionesDesaparecidas,
+      List<String> modelosDesaparecidos) {
+    this(
+        proveedorId,
+        fechaLista,
+        modo,
+        modelos,
+        configuracionesDesaparecidas,
+        modelosDesaparecidos,
+        Map.of());
+  }
 
   public ImportarListaDeTecnologiaComando {
+    coloresMarcados = coloresMarcados == null ? Map.of() : Map.copyOf(coloresMarcados);
     Objects.requireNonNull(proveedorId, "La lista es de un proveedor.");
     Objects.requireNonNull(fechaLista, "La lista tiene fecha.");
     Objects.requireNonNull(modo, "La lista dice qué parte se aplica.");
@@ -98,6 +120,21 @@ public record ImportarListaDeTecnologiaComando(
     } catch (NoSuchAlgorithmException e) {
       throw new IllegalStateException("La JVM no ofrece SHA-256.", e);
     }
+  }
+
+  /**
+   * Los colores que la lista marca de esta configuración con sus emojis (ADR-0086): solo esos se
+   * venden sin confirmar con el proveedor. Si la exportación no los mandó aparte, se deducen de los
+   * sugeridos.
+   *
+   * <p>No entran en la {@link #huella()}, por lo mismo que el modo: cambiarían la de las listas ya
+   * registradas. Lo que marcan los emojis ya está en los sugeridos, que sí entran.
+   */
+  public List<String> marcadosDe(ConfiguracionTecnologia configuracion, List<String> paleta) {
+    List<String> marcados = coloresMarcados.get(configuracion.sku());
+    return marcados != null
+        ? marcados
+        : ConfirmacionDeColor.marcadosSegunLosSugeridos(paleta, configuracion.coloresSugeridos());
   }
 
   /** Un modelo con las configuraciones que trae la lista de hoy. */

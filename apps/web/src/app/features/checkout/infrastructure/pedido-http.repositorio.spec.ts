@@ -181,4 +181,34 @@ describe('PedidoHttpRepositorio: la transportadora elegida', () => {
 
     expect(cuerpos[0]).toMatchObject({ transportadora: 'Servientrega', telefono: '3138816711' });
   });
+
+  /**
+   * ADR-0086: la línea de un color de tecnología confirmado con el proveedor lleva su enlace de
+   * compra. Si el adaptador lo perdiera, el servidor rechazaría el pedido con el color ya
+   * confirmado y la unidad apartada.
+   */
+  it('el enlace de compra de una línea va en el cuerpo al crear el pedido', async () => {
+    const cuerpos = capturarCuerpos({ id: 'pedido-1', lineas: [], historial: [] });
+
+    await new PedidoHttpRepositorio().crear({
+      correo: 'cliente@tecnosport.co',
+      contacto: { nombre: 'Cliente de prueba', telefono: '3001234567' },
+      lineas: [
+        { varianteId: 'variante-1', cantidad: 1, enlaceCompra: 'token-1' },
+        { varianteId: 'variante-2', cantidad: 2 },
+      ],
+      tipoEntrega: 'ENVIO_A_DOMICILIO',
+      direccion: DIRECCION,
+      metodoPago: 'WOMPI',
+      autorizaDatos: true,
+      transportadora: 'Servientrega',
+    });
+
+    expect(cuerpos[0]).toMatchObject({
+      lineas: [
+        { varianteId: 'variante-1', cantidad: 1, enlaceCompra: 'token-1' },
+        { varianteId: 'variante-2', cantidad: 2 },
+      ],
+    });
+  });
 });

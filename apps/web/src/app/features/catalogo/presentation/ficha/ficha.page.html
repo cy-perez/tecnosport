@@ -16,26 +16,40 @@
 
            Dos fotogramas es el mínimo con el que `ts-visor-360` pinta algo. La condición se repite
            aquí para no dejar un hueco de rejilla con un visor vacío dentro. -->
-      @if (fotogramas360().length > 1) {
-        <div class="flex flex-col gap-24">
-          <ts-visor-360 [imagenes]="fotogramas360()" />
+      <div class="flex flex-col gap-12">
+        @if (fotogramas360().length > 1) {
+          <div class="flex flex-col gap-24">
+            <ts-visor-360 [imagenes]="fotogramas360()" />
+            <ts-galeria
+              [imagenes]="imagenesGaleria()"
+              [indiceInicial]="indiceEnLaGaleria()"
+              (fotoElegida)="elegirFoto($event)"
+              [nombreProducto]="p.nombre"
+              [prioritaria]="false"
+            />
+          </div>
+        } @else {
           <ts-galeria
             [imagenes]="imagenesGaleria()"
             [indiceInicial]="indiceEnLaGaleria()"
             (fotoElegida)="elegirFoto($event)"
             [nombreProducto]="p.nombre"
-            [prioritaria]="false"
+            [prioritaria]="true"
           />
-        </div>
-      } @else {
-        <ts-galeria
-          [imagenes]="imagenesGaleria()"
-          [indiceInicial]="indiceEnLaGaleria()"
-          (fotoElegida)="elegirFoto($event)"
-          [nombreProducto]="p.nombre"
-          [prioritaria]="true"
-        />
-      }
+        }
+
+        <!-- El pie de las fotos de tecnología (ADR-0086): son del modelo y no de cada color, y los
+             colores que se dicen son los que publica el fabricante, no los que hay. Cuáles tiene
+             hoy el proveedor se confirma por WhatsApp. -->
+        @if (p.categoria.linea === 'TECNOLOGIA') {
+          <div class="flex flex-col gap-4 text-sm text-ts-texto-suave">
+            <p class="m-0">{{ 'catalogo.ficha.imagen_de_referencia' | transloco }}</p>
+            @if (coloresDelModelo(); as colores) {
+              <p class="m-0">{{ 'catalogo.ficha.colores_del_modelo' | transloco: { colores } }}</p>
+            }
+          </div>
+        }
+      </div>
 
       <div class="flex flex-col gap-8">
         <p class="text-sm text-ts-texto-suave">
@@ -64,11 +78,9 @@
           />
         }
 
-        <!-- Las fotos de tecnología son del modelo y no de cada color (ADR-0075): el color que
-             llega es el que se elige aquí, y la ficha lo dice antes de que alguien lo pregunte. -->
-        @if (p.categoria.linea === 'TECNOLOGIA') {
-          <p class="m-0 text-sm text-ts-texto-suave">
-            {{ 'catalogo.ficha.imagen_de_referencia' | transloco }}
+        @if (enlaceNoVigente()) {
+          <p class="m-0 text-sm text-ts-error" role="alert">
+            {{ 'catalogo.ficha.enlace_no_vigente' | transloco }}
           </p>
         }
 
@@ -94,19 +106,41 @@
         >
           @if (varianteActiva(); as variante) {
             <ts-precio [valor]="variante.precio.valor" [moneda]="variante.precio.moneda" />
-            <ts-etiqueta-stock [disponible]="variante.disponible" />
-            <!-- `ocupado` y no `cargando`, e `inactivo` y no `deshabilitado` para la agotada: las dos
-                 versiones anteriores sacaban al botón del orden de tabulación justo al pulsarlo, y
-                 el foco caía en `<body>`. Las guardas están en `agregarAlCarrito()`. -->
-            <ts-boton
-              variante="primario"
-              [inactivo]="!variante.disponible"
-              [ocupado]="carrito.agregando()"
-              [etiquetaCargando]="'carrito.agregando' | transloco"
-              (click)="agregarAlCarrito()"
-            >
-              {{ 'carrito.agregar_al_carrito' | transloco }}
-            </ts-boton>
+            @if (consultaPorWhatsapp()) {
+              <!-- Un color de tecnología sin confirmar se pregunta antes de comprarse (ADR-0086).
+                   Un enlace y no un botón: abre el chat, no hace nada en esta página. -->
+              <p class="m-0 basis-full text-sm text-ts-texto-suave">
+                {{ 'catalogo.ficha.color_por_confirmar' | transloco }}
+              </p>
+              <ts-boton
+                variante="primario"
+                [enlaceExterno]="enlaceWhatsapp()"
+                [etiquetaAccesible]="'catalogo.ficha.consultar_whatsapp_accesible' | transloco"
+              >
+                {{ 'catalogo.ficha.consultar_whatsapp' | transloco }}
+              </ts-boton>
+            } @else {
+              @if (enlaceDeLaVariante()) {
+                <p class="m-0 basis-full text-sm text-ts-exito">
+                  {{ 'catalogo.ficha.enlace_vigente' | transloco: { fecha: vigenteHasta() } }}
+                </p>
+              } @else {
+                <ts-etiqueta-stock [disponible]="variante.disponible" />
+              }
+              <!-- `ocupado` y no `cargando`, e `inactivo` y no `deshabilitado` para la agotada: las
+                   dos versiones anteriores sacaban al botón del orden de tabulación justo al
+                   pulsarlo, y el foco caía en `<body>`. Las guardas están en `agregarAlCarrito()`.
+                   Con enlace vigente no está agotada para quien lo trae: la unidad es la suya. -->
+              <ts-boton
+                variante="primario"
+                [inactivo]="!variante.disponible && !enlaceDeLaVariante()"
+                [ocupado]="carrito.agregando()"
+                [etiquetaCargando]="'carrito.agregando' | transloco"
+                (click)="agregarAlCarrito()"
+              >
+                {{ 'carrito.agregar_al_carrito' | transloco }}
+              </ts-boton>
+            }
           } @else {
             <p class="m-0 text-ts-error" role="alert">
               {{ 'catalogo.ficha.combinacion_no_disponible' | transloco }}

@@ -373,6 +373,7 @@ export class ConfirmarPage {
       lineas: datosCarrito.lineas.map((linea) => ({
         varianteId: linea.varianteId,
         cantidad: linea.cantidad,
+        enlaceCompra: linea.enlaceCompra,
       })),
       tipoEntrega: datos.tipoEntrega,
       direccion: datos.direccion,
@@ -441,6 +442,15 @@ export class ConfirmarPage {
       this.rechazoDeCredito.set(false);
       void this.olvidarCotizacion();
       return this.transloco.translate('checkout.confirmar.transportadora_no_disponible');
+    }
+    // El color de tecnología se confirma antes de comprarse (ADR-0086): el enlace venció entre el
+    // carrito y este botón, o la línea nunca lo tuvo. Lo que sirve es volver a escribir.
+    if (
+      error instanceof ErrorHttp &&
+      (error.codigo === 'ENLACE_DE_COMPRA_NO_VIGENTE' || error.codigo === 'COLOR_POR_CONFIRMAR')
+    ) {
+      this.rechazoDeCredito.set(false);
+      return this.transloco.translate('checkout.confirmar.color_por_confirmar');
     }
     const datos = error instanceof ErrorHttp ? error.datos : {};
     // El servidor ya clasificó el rechazo (`motivoSistecredito`); aquí solo se elige el texto. La

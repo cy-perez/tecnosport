@@ -159,6 +159,13 @@ class RepositorioPedidosSinRetiro extends RepositorioPedidosFalso {
   }
 }
 
+/** El enlace de compra del color de tecnología venció entre el carrito y este botón (ADR-0086). */
+class RepositorioPedidosConEnlaceVencido extends RepositorioPedidosFalso {
+  override async crear(): Promise<Pedido> {
+    throw new ErrorHttp(410, 'enlace vencido', 'ENLACE_DE_COMPRA_NO_VIGENTE');
+  }
+}
+
 class RepositorioPedidosQueFalla implements RepositorioPedidos {
   async crear(): Promise<Pedido> {
     throw new Error('el servidor rechazó el pedido');
@@ -698,6 +705,33 @@ describe('ConfirmarPage', () => {
       expect(pedidos.ultimoComando?.transportadora).toBe('Servientrega');
     });
 
+    /** ADR-0086: la línea de un color confirmado con el proveedor lleva su enlace al pedido. */
+    it('el pedido lleva el enlace de compra que guardó la línea del carrito', async () => {
+      sembrarCarritoId('carrito-1');
+      sembrarSnapshotLinea(snapshotDePrueba('variante-1'));
+      const pedidos = new RepositorioPedidosFalso();
+
+      const { fixture } = await renderConDatos(
+        'TRANSFERENCIA_MANUAL',
+        new RepositorioCarritoFalso({
+          ...CARRITO_CON_LINEAS,
+          lineas: [{ id: 'linea-1', varianteId: 'variante-1', cantidad: 1, enlaceCompra: 'tk' }],
+        }),
+        pedidos,
+        new RepositorioPagosFalso(),
+        { ...DATOS_ENTREGA_A_DOMICILIO, transportadora: 'Servientrega' },
+        new RepositorioEnviosFalso(CON_OPCIONES),
+      );
+      await esperarCarritoCargado(fixture);
+      await screen.findByText('Con Servientrega');
+
+      fireEvent.click(screen.getByRole('button', { name: 'Confirmar pedido' }));
+      await vi.waitFor(() => expect(pedidos.llamadasCrear).toBe(1));
+      expect(pedidos.ultimoComando?.lineas).toEqual([
+        { varianteId: 'variante-1', cantidad: 1, enlaceCompra: 'tk' },
+      ]);
+    });
+
     it('si la elegida ya no cotiza, no deja confirmar y pide elegir otra', async () => {
       sembrarCarritoId('carrito-1');
       sembrarSnapshotLinea(snapshotDePrueba('variante-1'));
@@ -770,6 +804,22 @@ describe('ConfirmarPage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Confirmar pedido' }));
 
     expect(await screen.findByText(esCheckout.confirmar.retiro_no_disponible)).toBeTruthy();
+  });
+
+  it('un enlace de compra vencido dice que se vuelve a escribir por WhatsApp', async () => {
+    sembrarCarritoId('carrito-1');
+    sembrarSnapshotLinea(snapshotDePrueba('variante-1'));
+
+    const { fixture } = await renderConDatos(
+      'WOMPI',
+      new RepositorioCarritoFalso(CARRITO_CON_LINEAS),
+      new RepositorioPedidosConEnlaceVencido(),
+    );
+    await esperarCarritoCargado(fixture);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Confirmar pedido' }));
+
+    expect(await screen.findByText(esCheckout.confirmar.color_por_confirmar)).toBeTruthy();
   });
 
   /**

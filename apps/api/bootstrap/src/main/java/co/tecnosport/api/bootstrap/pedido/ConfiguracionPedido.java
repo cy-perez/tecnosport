@@ -13,24 +13,29 @@ import co.tecnosport.api.application.envio.RepositorioEmisiones;
 import co.tecnosport.api.application.envio.RepositorioEnvios;
 import co.tecnosport.api.application.inventario.RepositorioInventario;
 import co.tecnosport.api.application.legal.RepositorioAutorizaciones;
+import co.tecnosport.api.application.pedido.AnularEnlaceDeCompra;
 import co.tecnosport.api.application.pedido.AvisarPlazosDeEntregaVencidos;
 import co.tecnosport.api.application.pedido.BorradoDePedidos;
 import co.tecnosport.api.application.pedido.CancelarPedido;
 import co.tecnosport.api.application.pedido.ConciliarRecaudo;
 import co.tecnosport.api.application.pedido.ConciliarTransferencia;
 import co.tecnosport.api.application.pedido.ConfirmarInventarioDePedidoPagado;
+import co.tecnosport.api.application.pedido.ConsultarEnlaceDeCompra;
 import co.tecnosport.api.application.pedido.ConsultarSeguimientoPedido;
 import co.tecnosport.api.application.pedido.ConsultarSeguimientoPorNumero;
 import co.tecnosport.api.application.pedido.CrearPedido;
 import co.tecnosport.api.application.pedido.DespacharPedido;
 import co.tecnosport.api.application.pedido.EliminarPedido;
 import co.tecnosport.api.application.pedido.EnviarComprobantesDeCompra;
+import co.tecnosport.api.application.pedido.GenerarEnlaceDeCompra;
+import co.tecnosport.api.application.pedido.ListarEnlacesDeCompra;
 import co.tecnosport.api.application.pedido.ListarPedidosAdmin;
 import co.tecnosport.api.application.pedido.MarcarEntregado;
 import co.tecnosport.api.application.pedido.ModalidadesDeEntrega;
 import co.tecnosport.api.application.pedido.RechazarEnEntrega;
 import co.tecnosport.api.application.pedido.RecibirPedidoRechazado;
 import co.tecnosport.api.application.pedido.ReintentarPago;
+import co.tecnosport.api.application.pedido.RepositorioEnlacesDeCompra;
 import co.tecnosport.api.application.pedido.RepositorioPedidos;
 import co.tecnosport.api.application.pedido.VencerContraentregaSinVerificar;
 import co.tecnosport.api.application.pedido.VerificarContraentrega;
@@ -75,7 +80,8 @@ public class ConfiguracionPedido {
       PropiedadesLimitePedidos propiedadesLimite,
       RepositorioAutorizaciones repositorioAutorizaciones,
       PropiedadesLegal propiedadesLegal,
-      ModalidadesDeEntrega modalidadesDeEntrega) {
+      ModalidadesDeEntrega modalidadesDeEntrega,
+      RepositorioEnlacesDeCompra repositorioEnlaces) {
     return new CrearPedido(
         repositorioProductos,
         repositorioInventario,
@@ -90,7 +96,45 @@ public class ConfiguracionPedido {
         Duration.ofMinutes(propiedadesLimite.cuentaMinutos()),
         repositorioAutorizaciones,
         propiedadesLegal.politicaDatosVersion(),
-        modalidadesDeEntrega);
+        modalidadesDeEntrega,
+        repositorioEnlaces);
+  }
+
+  @Bean
+  public GenerarEnlaceDeCompra generarEnlaceDeCompra(
+      RepositorioProductos repositorioProductos,
+      RepositorioInventario repositorioInventario,
+      RepositorioEnlacesDeCompra repositorioEnlaces,
+      Reloj reloj,
+      PropiedadesPedido propiedades) {
+    return new GenerarEnlaceDeCompra(
+        repositorioProductos,
+        repositorioInventario,
+        repositorioEnlaces,
+        reloj,
+        Duration.ofHours(propiedades.horasVigenciaEnlaceCompra()));
+  }
+
+  @Bean
+  public AnularEnlaceDeCompra anularEnlaceDeCompra(
+      RepositorioEnlacesDeCompra repositorioEnlaces,
+      RepositorioInventario repositorioInventario,
+      Reloj reloj) {
+    return new AnularEnlaceDeCompra(repositorioEnlaces, repositorioInventario, reloj);
+  }
+
+  @Bean
+  public ConsultarEnlaceDeCompra consultarEnlaceDeCompra(
+      RepositorioEnlacesDeCompra repositorioEnlaces, Reloj reloj) {
+    return new ConsultarEnlaceDeCompra(repositorioEnlaces, reloj);
+  }
+
+  @Bean
+  public ListarEnlacesDeCompra listarEnlacesDeCompra(
+      RepositorioEnlacesDeCompra repositorioEnlaces,
+      RepositorioProductos repositorioProductos,
+      Reloj reloj) {
+    return new ListarEnlacesDeCompra(repositorioEnlaces, repositorioProductos, reloj);
   }
 
   @Bean

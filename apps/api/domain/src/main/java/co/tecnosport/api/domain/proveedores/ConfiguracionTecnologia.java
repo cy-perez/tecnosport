@@ -160,6 +160,11 @@ public record ConfiguracionTecnologia(
    * Determinista: el mismo color de la misma configuración da siempre el mismo SKU.
    */
   public String skuDeVariante(String color) {
+    return skuDeVariante(sku, color);
+  }
+
+  /** El de {@link #skuDeVariante(String)}, para una configuración de la que solo se tiene el id. */
+  public static String skuDeVariante(String sku, String color) {
     String prefijo =
         sku.length() > LARGO_DEL_PREFIJO_DE_SKU ? sku.substring(0, LARGO_DEL_PREFIJO_DE_SKU) : sku;
     String resumen = HuellaProveedor.sha256(sku + "|" + normalizar(color)).substring(0, 8);

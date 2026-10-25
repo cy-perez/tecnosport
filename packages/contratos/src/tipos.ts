@@ -11,7 +11,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["listar_7"];
+        get: operations["listar_8"];
         put?: never;
         post: operations["radicar_3"];
         delete?: never;
@@ -59,7 +59,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["listar_16"];
+        get: operations["listar_17"];
         put?: never;
         post?: never;
         delete?: never;
@@ -75,7 +75,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["listar_17"];
+        get: operations["listar_18"];
         put?: never;
         post?: never;
         delete?: never;
@@ -395,7 +395,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["listar_6"];
+        get: operations["listar_7"];
         put?: never;
         post: operations["crear_8"];
         delete?: never;
@@ -415,6 +415,38 @@ export interface paths {
         put: operations["editar_2"];
         post?: never;
         delete: operations["eliminar_2"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/enlaces-de-compra": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listar_6"];
+        put?: never;
+        post: operations["generar"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/enlaces-de-compra/{id}/anular": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["anular"];
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -443,7 +475,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["consultar"];
+        get: operations["consultar_1"];
         put?: never;
         post?: never;
         delete?: never;
@@ -491,7 +523,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["listar_15"];
+        get: operations["listar_16"];
         put?: never;
         post?: never;
         delete?: never;
@@ -571,7 +603,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["listar_14"];
+        get: operations["listar_15"];
         put?: never;
         post?: never;
         delete?: never;
@@ -747,7 +779,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["listar_13"];
+        get: operations["listar_14"];
         put?: never;
         post?: never;
         delete?: never;
@@ -779,7 +811,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["listar_12"];
+        get: operations["listar_13"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1268,6 +1300,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/productos/{id}/paleta": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["definir"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/productos/{id}/precios": {
         parameters: {
             query?: never;
@@ -1643,7 +1691,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["listar_11"];
+        get: operations["listar_12"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1915,7 +1963,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["listar_10"];
+        get: operations["listar_11"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1931,7 +1979,23 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["listar_9"];
+        get: operations["listar_10"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/enlaces-de-compra/{token}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["consultar"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2011,7 +2075,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["listar_8"];
+        get: operations["listar_9"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2297,6 +2361,7 @@ export interface components {
         AgregarLineaRequest: {
             /** Format: int32 */
             cantidad?: number;
+            enlaceCompra?: string;
             /** Format: uuid */
             varianteId?: string;
         };
@@ -2565,6 +2630,8 @@ export interface components {
         };
         ConfiguracionPeticion: {
             almacenamiento?: string;
+            /** @description Los colores que la lista marca con sus emojis, sin la paleta que se sugiere cuando no marca ninguno. Nulo si la exportación no los separa. */
+            coloresMarcados?: string[];
             coloresSugeridos?: string[];
             /** Format: int64 */
             costoProveedor: number;
@@ -2676,6 +2743,9 @@ export interface components {
             cuentas?: components["schemas"]["CuentaDeTransferenciaRespuesta"][];
             referencia?: string;
         };
+        DefinirPaletaPeticion: {
+            colores: string[];
+        };
         DespacharPedidoRequest: {
             guias?: components["schemas"]["GuiaDespachadaRequest"][];
         };
@@ -2786,6 +2856,29 @@ export interface components {
             estado?: string;
             /** Format: date-time */
             resueltaEn?: string;
+        };
+        EnlaceDeCompraPublicoRespuesta: {
+            /** Format: date-time */
+            expiraEn: string;
+            /** Format: uuid */
+            varianteId: string;
+        };
+        EnlaceDeCompraRespuesta: {
+            /** Format: date-time */
+            creadoEn: string;
+            detalle?: string;
+            estado: string;
+            /** Format: date-time */
+            expiraEn: string;
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            pedidoId?: string;
+            producto?: string;
+            slug?: string;
+            token: string;
+            /** Format: uuid */
+            varianteId: string;
         };
         EnviarSugerenciaRequest: {
             autorizaDatos?: boolean;
@@ -2904,6 +2997,10 @@ export interface components {
             objectKey?: string;
             /** Format: int32 */
             orden?: number;
+        };
+        GenerarEnlaceDeCompraRequest: {
+            /** Format: uuid */
+            varianteId: string;
         };
         GuiaDespachadaRequest: {
             /** Format: int64 */
@@ -3059,6 +3156,7 @@ export interface components {
         LineaCarritoRespuesta: {
             /** Format: int32 */
             cantidad?: number;
+            enlaceCompra?: string;
             /** Format: uuid */
             id?: string;
             /** Format: uuid */
@@ -3081,6 +3179,7 @@ export interface components {
         LineaRequest: {
             /** Format: int32 */
             cantidad?: number;
+            enlaceCompra?: string;
             /** Format: uuid */
             varianteId?: string;
         };
@@ -3223,6 +3322,10 @@ export interface components {
             /** Format: uuid */
             pedidoId: string;
             referencia: string;
+        };
+        PaletaDefinidaRespuesta: {
+            /** Format: int32 */
+            variantesNuevas: number;
         };
         PaqueteRespuesta: {
             /** Format: int32 */
@@ -3367,6 +3470,7 @@ export interface components {
             imagenPrincipal?: components["schemas"]["ImagenRespuesta"];
             marca?: components["schemas"]["MarcaRespuesta"];
             nombre?: string;
+            paleta: string[];
             slug?: string;
             tallaSirveHasta?: string;
             /** Format: int32 */
@@ -3400,6 +3504,7 @@ export interface components {
             imagenPrincipal?: components["schemas"]["ImagenRespuesta"];
             marca?: components["schemas"]["MarcaRespuesta"];
             nombre?: string;
+            paleta: string[];
             rotacion?: components["schemas"]["RotacionRespuesta"];
             slug?: string;
             tallaSirveHasta?: string;
@@ -3870,6 +3975,7 @@ export interface components {
         };
         VarianteRespuesta: {
             atributos?: components["schemas"]["AtributoValorRespuesta"][];
+            colorPorConfirmar: boolean;
             disponible: boolean;
             /** Format: uuid */
             id?: string;
@@ -3878,6 +3984,7 @@ export interface components {
         };
         VarianteResumenAdminRespuesta: {
             atributos?: components["schemas"]["AtributoValorRespuesta"][];
+            colorPorConfirmar: boolean;
             /** Format: uuid */
             id?: string;
             /** Format: int64 */
@@ -3920,7 +4027,7 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
-    listar_7: {
+    listar_8: {
         parameters: {
             query?: {
                 estado?: "RADICADA" | "PRORROGADA" | "RESPONDIDA";
@@ -4018,7 +4125,7 @@ export interface operations {
             };
         };
     };
-    listar_16: {
+    listar_17: {
         parameters: {
             query?: {
                 estado?: string;
@@ -4043,7 +4150,7 @@ export interface operations {
             };
         };
     };
-    listar_17: {
+    listar_18: {
         parameters: {
             query?: {
                 estado?: string;
@@ -4660,7 +4767,7 @@ export interface operations {
             };
         };
     };
-    listar_6: {
+    listar_7: {
         parameters: {
             query?: never;
             header?: never;
@@ -4750,6 +4857,72 @@ export interface operations {
             };
         };
     };
+    listar_6: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["EnlaceDeCompraRespuesta"][];
+                };
+            };
+        };
+    };
+    generar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GenerarEnlaceDeCompraRequest"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["EnlaceDeCompraRespuesta"];
+                };
+            };
+        };
+    };
+    anular: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["EnlaceDeCompraRespuesta"];
+                };
+            };
+        };
+    };
     consultarPaquetes: {
         parameters: {
             query?: never;
@@ -4772,7 +4945,7 @@ export interface operations {
             };
         };
     };
-    consultar: {
+    consultar_1: {
         parameters: {
             query?: never;
             header?: never;
@@ -4862,7 +5035,7 @@ export interface operations {
             };
         };
     };
-    listar_15: {
+    listar_16: {
         parameters: {
             query?: {
                 maximo?: number;
@@ -4988,7 +5161,7 @@ export interface operations {
             };
         };
     };
-    listar_14: {
+    listar_15: {
         parameters: {
             query?: {
                 proveedorId?: string;
@@ -5300,7 +5473,7 @@ export interface operations {
             };
         };
     };
-    listar_13: {
+    listar_14: {
         parameters: {
             query?: never;
             header?: never;
@@ -5344,7 +5517,7 @@ export interface operations {
             };
         };
     };
-    listar_12: {
+    listar_13: {
         parameters: {
             query?: {
                 pagina?: number;
@@ -6271,6 +6444,32 @@ export interface operations {
             };
         };
     };
+    definir: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DefinirPaletaPeticion"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PaletaDefinidaRespuesta"];
+                };
+            };
+        };
+    };
     cambiarPrecios: {
         parameters: {
             query?: never;
@@ -6908,7 +7107,7 @@ export interface operations {
             };
         };
     };
-    listar_11: {
+    listar_12: {
         parameters: {
             query?: never;
             header?: never;
@@ -7319,7 +7518,7 @@ export interface operations {
             };
         };
     };
-    listar_10: {
+    listar_11: {
         parameters: {
             query?: never;
             header?: never;
@@ -7339,7 +7538,7 @@ export interface operations {
             };
         };
     };
-    listar_9: {
+    listar_10: {
         parameters: {
             query?: never;
             header?: never;
@@ -7355,6 +7554,28 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["ColorDePaletaRespuesta"][];
+                };
+            };
+        };
+    };
+    consultar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["EnlaceDeCompraPublicoRespuesta"];
                 };
             };
         };
@@ -7445,7 +7666,7 @@ export interface operations {
             };
         };
     };
-    listar_8: {
+    listar_9: {
         parameters: {
             query?: never;
             header?: never;

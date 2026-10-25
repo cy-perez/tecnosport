@@ -163,7 +163,10 @@ public class PedidoControlador {
   private CrearPedidoComando aComando(CrearPedidoRequest cuerpo, String direccionIp) {
     List<CrearPedidoComando.LineaComando> lineas =
         cuerpo.lineas().stream()
-            .map(l -> new CrearPedidoComando.LineaComando(l.varianteId(), l.cantidad()))
+            .map(
+                l ->
+                    new CrearPedidoComando.LineaComando(
+                        l.varianteId(), l.cantidad(), l.enlaceCompra()))
             .toList();
     Direccion direccion = cuerpo.direccion() == null ? null : aDireccion(cuerpo.direccion());
     return new CrearPedidoComando(

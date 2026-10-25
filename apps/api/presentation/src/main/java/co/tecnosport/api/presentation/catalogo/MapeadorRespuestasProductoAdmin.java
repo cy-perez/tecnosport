@@ -63,10 +63,12 @@ public class MapeadorRespuestasProductoAdmin {
                         variante.id(),
                         variante.sku().valor(),
                         mapeadorCatalogo.aRespuesta(variante, false).atributos(),
-                        variante.precio().valor().longValueExact()))
+                        variante.precio().valor().longValueExact(),
+                        variante.colorPorConfirmar()))
             .toList(),
         producto.estadoDisponibilidad().name(),
-        producto.vistoPorUltimaVez().orElse(null));
+        producto.vistoPorUltimaVez().orElse(null),
+        producto.paleta());
   }
 
   public ImagenRespuesta aRespuesta(ImagenProducto imagen) {

@@ -51,7 +51,14 @@
     "error": "No se pudo cargar el producto. Intenta de nuevo.",
     "combinacion_no_disponible": "Esta combinación no está disponible.",
     "volver_al_catalogo": "Volver al catálogo",
-    "imagen_de_referencia": "Las imágenes son de referencia: recibes el color que elijas."
+    "imagen_de_referencia": "Las imágenes son de referencia: muestran el modelo, no cada color.",
+    "colores_del_modelo": "Colores del modelo según el fabricante: {{colores}}.",
+    "color_por_confirmar": "Este color lo confirmamos con nuestro proveedor antes de que lo compres.",
+    "consultar_whatsapp": "Consultar disponibilidad por WhatsApp",
+    "consultar_whatsapp_accesible": "Consultar disponibilidad por WhatsApp (se abre en otra pestaña)",
+    "whatsapp_mensaje": "Hola, quiero comprar {{producto}} ({{detalle}}). ¿Tienen este color disponible? {{url}}",
+    "enlace_vigente": "Color confirmado. Tu unidad está apartada hasta el {{fecha}}.",
+    "enlace_no_vigente": "Este enlace de compra ya no está vigente. Escríbenos por WhatsApp y te confirmamos el color de nuevo."
   },
   "seo": {
     "rejilla": {

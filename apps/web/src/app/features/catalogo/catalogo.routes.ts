@@ -2,6 +2,7 @@ import { ActivatedRouteSnapshot, Routes } from '@angular/router';
 import { provideTranslocoScope } from '@jsverse/transloco';
 import { precargarScopeI18n } from '../../core/i18n/precargar-scope';
 import { precargarFichaProducto } from './application/buscar-ficha-producto.consulta';
+import { precargarEnlaceDeCompra } from './application/consultar-enlace-de-compra.consulta';
 import { precargarProductos } from './application/buscar-productos.consulta';
 import {
   precargarCategorias,
@@ -10,9 +11,11 @@ import {
 import { FILTRO_NOVEDADES } from './domain/filtro-productos.model';
 import { filtroDesdeQueryParams } from './domain/query-params-filtro';
 import { REPOSITORIO_CATEGORIAS } from './domain/repositorio-categorias.puerto';
+import { REPOSITORIO_ENLACES_DE_COMPRA } from './domain/repositorio-enlaces-de-compra.puerto';
 import { REPOSITORIO_MARCAS_DE_VITRINA } from './domain/repositorio-marcas.puerto';
 import { REPOSITORIO_PRODUCTOS } from './domain/repositorio-productos.puerto';
 import { CategoriasHttpRepositorio } from './infrastructure/categorias-http.repositorio';
+import { EnlacesDeCompraHttpRepositorio } from './infrastructure/enlaces-de-compra-http.repositorio';
 import { MarcasHttpRepositorio } from './infrastructure/marcas-http.repositorio';
 import { ProductosHttpRepositorio } from './infrastructure/productos-http.repositorio';
 
@@ -27,6 +30,7 @@ export const catalogoRoutes: Routes = [
       { provide: REPOSITORIO_PRODUCTOS, useClass: ProductosHttpRepositorio },
       { provide: REPOSITORIO_CATEGORIAS, useClass: CategoriasHttpRepositorio },
       { provide: REPOSITORIO_MARCAS_DE_VITRINA, useClass: MarcasHttpRepositorio },
+      { provide: REPOSITORIO_ENLACES_DE_COMPRA, useClass: EnlacesDeCompraHttpRepositorio },
       provideTranslocoScope('catalogo'),
     ],
     children: [
@@ -102,6 +106,7 @@ export const catalogoRoutes: Routes = [
               _precarga: (route: ActivatedRouteSnapshot) =>
                 Promise.all([
                   precargarFichaProducto(route.paramMap.get('slug') ?? ''),
+                  precargarEnlaceDeCompra(route.queryParamMap.get('enlace')),
                   precargarScopeI18n('catalogo'),
                   precargarScopeI18n('carrito'),
                 ]),

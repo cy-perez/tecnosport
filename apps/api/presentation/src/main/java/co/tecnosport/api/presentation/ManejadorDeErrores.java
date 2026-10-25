@@ -54,7 +54,9 @@ import co.tecnosport.api.application.pago.ReferenciaDePagoYaExisteException;
 import co.tecnosport.api.application.pago.SistecreditoNoEntregoLaUrlDePagoException;
 import co.tecnosport.api.application.pago.SistecreditoNoRespondeException;
 import co.tecnosport.api.application.pago.TransaccionDeOtroPagoException;
+import co.tecnosport.api.application.pedido.ColorPorConfirmarException;
 import co.tecnosport.api.application.pedido.ContraentregaNoDisponibleException;
+import co.tecnosport.api.application.pedido.EnlaceDeCompraNoEncontradoException;
 import co.tecnosport.api.application.pedido.InventarioSinConfirmarException;
 import co.tecnosport.api.application.pedido.MetodoDePagoNoEsTransferenciaManualException;
 import co.tecnosport.api.application.pedido.MetodoDePagoNoHabilitadoException;
@@ -123,6 +125,7 @@ import co.tecnosport.api.domain.catalogo.ProductoSinImagenPrincipalException;
 import co.tecnosport.api.domain.compartido.ExcepcionDeDominio;
 import co.tecnosport.api.domain.difusion.ProductoNoDifundibleException;
 import co.tecnosport.api.domain.inventario.ExistenciaInsuficienteException;
+import co.tecnosport.api.domain.pedido.EnlaceDeCompraNoVigenteException;
 import co.tecnosport.api.domain.usuario.CorreoSinVerificarException;
 import co.tecnosport.api.domain.usuario.CorreoYaRegistradoException;
 import java.net.URI;
@@ -622,6 +625,23 @@ public class ManejadorDeErrores {
   @ExceptionHandler(LineaCarritoNoEncontradaException.class)
   public ProblemDetail lineaCarritoNoEncontrada(LineaCarritoNoEncontradaException excepcion) {
     return problema(HttpStatus.NOT_FOUND, "Línea de carrito no encontrada", excepcion);
+  }
+
+  // Las tres del enlace de compra (ADR-0086). La de color por confirmar es un 409 y no un 422: la
+  // solicitud está bien formada, lo que falta es la confirmación del proveedor.
+  @ExceptionHandler(ColorPorConfirmarException.class)
+  public ProblemDetail colorPorConfirmar(ColorPorConfirmarException excepcion) {
+    return problema(HttpStatus.CONFLICT, "El color se confirma antes de comprarlo", excepcion);
+  }
+
+  @ExceptionHandler(EnlaceDeCompraNoVigenteException.class)
+  public ProblemDetail enlaceDeCompraNoVigente(EnlaceDeCompraNoVigenteException excepcion) {
+    return problema(HttpStatus.GONE, "El enlace de compra ya no está vigente", excepcion);
+  }
+
+  @ExceptionHandler(EnlaceDeCompraNoEncontradoException.class)
+  public ProblemDetail enlaceDeCompraNoEncontrado(EnlaceDeCompraNoEncontradoException excepcion) {
+    return problema(HttpStatus.NOT_FOUND, "Enlace de compra no encontrado", excepcion);
   }
 
   @ExceptionHandler(VarianteNoEncontradaException.class)

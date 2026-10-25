@@ -11,6 +11,7 @@ function detalle(imagenPrincipal: unknown) {
     categoria: { id: 'c1', nombre: 'Morrales', slug: 'bolsos-dama-morrales', linea: 'BOLSOS' },
     totalVariantes: 0,
     galeria: [],
+    paleta: [],
     imagenPrincipal,
   } as Parameters<typeof aProductoAdminDetalle>[0];
 }
@@ -69,9 +70,11 @@ describe('aProductoAdminDetalle', () => {
   it('lleva el precio de cada variante', () => {
     const producto = aProductoAdminDetalle({
       ...detalle(undefined),
-      variantes: [{ id: 'v1', sku: 'TS-1', precio: 79000, atributos: [] }],
+      variantes: [{ id: 'v1', sku: 'TS-1', precio: 79000, atributos: [], colorPorConfirmar: true }],
     });
 
-    expect(producto.variantes).toEqual([{ id: 'v1', sku: 'TS-1', precio: 79000, atributos: [] }]);
+    expect(producto.variantes).toEqual([
+      { id: 'v1', sku: 'TS-1', precio: 79000, atributos: [], colorPorConfirmar: true },
+    ]);
   });
 });

@@ -107,8 +107,11 @@ export class CarritoStore {
   }
 
   private readonly mutacionAgregar = injectMutation(() => ({
-    mutationFn: (variables: { varianteId: string; cantidad: number }) =>
-      this.agregarInterno(variables.varianteId, variables.cantidad),
+    mutationFn: (variables: {
+      varianteId: string;
+      cantidad: number;
+      enlaceCompra: string | null;
+    }) => this.agregarInterno(variables.varianteId, variables.cantidad, variables.enlaceCompra),
   }));
 
   private readonly mutacionActualizar = injectMutation(() => ({
@@ -122,13 +125,18 @@ export class CarritoStore {
 
   readonly agregando = computed(() => this.mutacionAgregar.isPending());
 
+  /**
+   * @param enlaceCompra el del color de tecnología confirmado con el proveedor (ADR-0086); con él
+   *     la línea queda con una unidad
+   */
   async agregarAlCarrito(
     varianteId: string,
     cantidad: number,
     snapshot: SnapshotLinea,
+    enlaceCompra: string | null = null,
   ): Promise<void> {
     this.almacenSnapshots.guardar(snapshot);
-    await this.mutacionAgregar.mutateAsync({ varianteId, cantidad });
+    await this.mutacionAgregar.mutateAsync({ varianteId, cantidad, enlaceCompra });
   }
 
   /**
@@ -164,11 +172,20 @@ export class CarritoStore {
     await this.mutacionEliminar.mutateAsync(lineaId);
   }
 
-  private async agregarInterno(varianteId: string, cantidad: number): Promise<Carrito> {
+  private async agregarInterno(
+    varianteId: string,
+    cantidad: number,
+    enlaceCompra: string | null,
+  ): Promise<Carrito> {
     const guardado = this.carritoId();
     if (guardado) {
       try {
-        const actualizado = await this.repositorio.agregarLinea(guardado, varianteId, cantidad);
+        const actualizado = await this.repositorio.agregarLinea(
+          guardado,
+          varianteId,
+          cantidad,
+          enlaceCompra,
+        );
         this.actualizarCache(actualizado);
         return actualizado;
       } catch (error) {
@@ -193,7 +210,7 @@ export class CarritoStore {
       this.carritoId.set(id);
       this.almacenCarritoId.guardar(id);
     }
-    const actualizado = await this.repositorio.agregarLinea(id, varianteId, cantidad);
+    const actualizado = await this.repositorio.agregarLinea(id, varianteId, cantidad, enlaceCompra);
     this.actualizarCache(actualizado);
     return actualizado;
   }
