@@ -1,8 +1,8 @@
 {
   "comun": {
     "version_etiqueta": "Versión",
-    "version": "2026-10-08.3",
-    "vigencia": "Vigente desde el 8 de octubre de 2026.",
+    "version": "2026-10-25.1",
+    "vigencia": "Vigente desde el 25 de octubre de 2026.",
     "otros_documentos": "Otros documentos legales",
     "titular_aviso": "Este sitio lo opera Cristhian Yurday Pérez Hoyos, NIT 1054994043-9, Carrera 26C # 38B-31, Medellín, Antioquia, Colombia.",
     "traduccion_cortesia": "Este documento está redactado en castellano, que es el idioma en el que rige. La versión en inglés de este sitio es una traducción de cortesía y no produce efectos legales; en caso de discrepancia, prevalece el texto en castellano."
@@ -56,7 +56,8 @@
           "Tipo y número de documento de identidad, únicamente si eliges pagar a cuotas con Sistecrédito: es el dato con el que ellos consultan tu cupo. Se lo enviamos a Sistecrédito para esa compra y no lo conservamos.",
           "De la cuenta, si decides crearla: correo y contraseña, que se almacena cifrada con un algoritmo de un solo sentido y nunca en texto claro. Si la creas o entras con tu cuenta de Google, no hay contraseña: Google nos entrega tu correo, la confirmación de que está verificado y un identificador de tu cuenta de Google. Nunca recibimos tu contraseña de Google.",
           "Técnicos: dirección IP y fecha y hora de las acciones relevantes, como el otorgamiento de esta autorización o los intentos de inicio de sesión.",
-          "De navegación: los estrictamente necesarios para que el sitio funcione. Ver la política de cookies."
+          "De navegación: los estrictamente necesarios para que el sitio funcione. Ver la política de cookies.",
+          "De la conversación, si nos escribes por WhatsApp: tu número de teléfono, el nombre de tu perfil y lo que nos escribes, por ejemplo el producto y el color que quieres."
         ]
       },
       {
@@ -74,6 +75,7 @@
           "Procesar, confirmar y despachar tu pedido, cotizar el costo del envío con tu ciudad de destino, generar la guía de transporte y mantenerte informado del estado del envío.",
           "Verificar la disponibilidad del pago contraentrega en tu ciudad y coordinar la entrega.",
           "Atender peticiones, quejas, reclamos, garantías y solicitudes de retracto.",
+          "Responder tus consultas por WhatsApp, entre ellas confirmar con nuestro proveedor si hay el color de un equipo de tecnología que quieres y enviarte el enlace para comprarlo. Para preguntarle al proveedor no le damos tus datos: solo el producto y el color.",
           "Cumplir obligaciones legales, contables y tributarias.",
           "Prevenir el fraude y proteger la seguridad de las cuentas.",
           "Gestionar tu cuenta, si decides crearla."
@@ -93,7 +95,8 @@
           "Google Cloud Platform, como proveedor de infraestructura donde se alojan la aplicación y la base de datos.",
           "Google, únicamente si eliges crear tu cuenta o entrar con tu cuenta de Google: Google confirma tu identidad y nos entrega los datos de la sección 5. Nosotros no le enviamos datos tuyos, pero al abrir las páginas de iniciar sesión y crear cuenta tu navegador carga el botón de Google desde sus servidores, y Google trata lo que recibe bajo su propia política de privacidad.",
           "Skydropx S.A.S., sociedad colombiana con NIT 901.508.804-5 y domicilio en Bogotá D.C., como plataforma de logística y envíos, y las empresas de transporte que ella contrata para entregar tu pedido; reciben tu nombre, teléfono, dirección de entrega y ciudad, y el valor a recaudar cuando pagas contra entrega.",
-          "Resend, como proveedor de correo transaccional, para enviarte los correos de verificación de cuenta, recuperación de contraseña y estado del pedido."
+          "Resend, como proveedor de correo transaccional, para enviarte los correos de verificación de cuenta, recuperación de contraseña y estado del pedido.",
+          "WhatsApp LLC, como servicio de mensajería, únicamente si nos escribes por WhatsApp: la conversación pasa por sus servidores, y WhatsApp trata lo que recibe bajo sus propios términos y su propia política de privacidad."
         ],
         "cierre": [
           "No vendemos, arrendamos ni cedemos datos personales a terceros para fines propios de esos terceros."
@@ -102,7 +105,7 @@
       {
         "titulo": "9. Transferencia y transmisión internacional",
         "parrafos": [
-          "Nuestra infraestructura se apoya en servicios de computación en la nube que pueden almacenar o procesar información en servidores ubicados fuera de Colombia; eso incluye al proveedor de infraestructura y al de correo transaccional. La plataforma de logística y envíos con la que contratamos es una sociedad colombiana, y su propia política de tratamiento contempla la transmisión y la transferencia de datos, tanto nacional como internacional. Esas transmisiones se hacen bajo contrato con cada proveedor y con el único fin de prestar el servicio descrito en esta política."
+          "Nuestra infraestructura se apoya en servicios de computación en la nube que pueden almacenar o procesar información en servidores ubicados fuera de Colombia; eso incluye al proveedor de infraestructura, al de correo transaccional y al servicio de mensajería WhatsApp, cuando nos escribes por ese medio. La plataforma de logística y envíos con la que contratamos es una sociedad colombiana, y su propia política de tratamiento contempla la transmisión y la transferencia de datos, tanto nacional como internacional. Esas transmisiones se hacen bajo contrato con cada proveedor y con el único fin de prestar el servicio descrito en esta política."
         ]
       },
       {
@@ -185,7 +188,7 @@
       {
         "titulo": "4. Productos, imágenes y precios",
         "parrafos": [
-          "Las fotografías de ropa, calzado y bolsos muestran el producto que vendemos, tomadas por nosotros o por el proveedor que nos lo surte. Las de tecnología son imágenes de referencia del modelo, tomadas de la información que publica la marca o un catálogo de fichas técnicas, y no de la unidad que recibes: el modelo, la memoria y las demás características son las que dice la ficha, y el color es el que eliges en ella, aunque la foto muestre otro. Las imágenes y los visores de rotación son representaciones a escala del producto real; el color puede variar levemente según la pantalla con la que las mires.",
+          "Las fotografías de ropa, calzado y bolsos muestran el producto que vendemos, tomadas por nosotros o por el proveedor que nos lo surte. Las de tecnología son imágenes de referencia del modelo, tomadas de la información que publica la marca o un catálogo de fichas técnicas, y no de la unidad que recibes: el modelo, la memoria y las demás características son las que dice la ficha, y el color es el que eliges en ella, aunque la foto muestre otro. Debajo de las fotos de cada equipo te decimos en qué colores publica el fabricante ese modelo: eso no significa que tengamos todos. Las imágenes y los visores de rotación son representaciones a escala del producto real; el color puede variar levemente según la pantalla con la que las mires.",
           "Todos los precios se muestran en pesos colombianos (COP) y son el valor final de cada producto: Tecno Sport no es responsable del impuesto sobre las ventas (IVA), así que al precio publicado no se le suma ningún impuesto. El precio de cada producto no incluye el costo del envío: ese valor depende de la ciudad de destino y del tamaño y peso de lo que compras, y se calcula al momento de tu compra. Antes de pagar te mostramos el detalle completo: el precio de cada producto, el subtotal, el costo del envío por separado y el total que vas a pagar.",
           "Si por un error evidente de sistema o de digitación un producto aparece con un precio manifiestamente equivocado, te lo informaremos antes de despachar y podrás confirmar la compra al precio correcto o cancelarla sin costo.",
           "Consulta las restricciones de uso y cuidado en la ficha de cada producto; en calzado y prendas de vestir, el uso distinto del previsto puede afectar la garantía."
@@ -194,7 +197,9 @@
       {
         "titulo": "5. Disponibilidad",
         "parrafos": [
-          "La existencia se verifica en el momento de crear el pedido. Si un producto deja de estar disponible después de tu compra, te lo comunicaremos de inmediato para que decidas si esperas una nueva fecha o prefieres la devolución de tu dinero, que se hará dentro de los quince (15) días calendario siguientes."
+          "La existencia se verifica en el momento de crear el pedido. Si un producto deja de estar disponible después de tu compra, te lo comunicaremos de inmediato para que decidas si esperas una nueva fecha o prefieres la devolución de tu dinero, que se hará dentro de los quince (15) días calendario siguientes.",
+          "En tecnología, qué colores hay de cada equipo depende de lo que tenga nuestro proveedor. Cuando la ficha dice que un color lo confirmamos antes de que lo compres, ese color no se puede agregar al carrito: el botón te lleva a escribirnos por WhatsApp, le preguntamos al proveedor y te respondemos por el mismo medio. Pedir la confirmación no te obliga a comprar.",
+          "Si el color está disponible, te enviamos un enlace de compra. Sirve para una sola compra, deja apartada una unidad mientras esté vigente y vence en la fecha y hora que te indicamos con él; si vence sin que compres, la unidad deja de estar apartada y puedes volver a escribirnos. Quien tenga el enlace puede usarlo, así que no lo compartas. Si el color no está disponible, te lo decimos y te contamos qué colores sí hay: el color de tu compra es siempre el que tú aceptas, nunca lo cambiamos sin preguntarte."
         ]
       },
       {

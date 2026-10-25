@@ -1,8 +1,8 @@
 {
   "comun": {
     "version_etiqueta": "Version",
-    "version": "2026-10-08.3",
-    "vigencia": "In force since 8 October 2026.",
+    "version": "2026-10-25.1",
+    "vigencia": "In force since 25 October 2026.",
     "otros_documentos": "Other legal documents",
     "titular_aviso": "This site is operated by Cristhian Yurday Pérez Hoyos, NIT 1054994043-9, Carrera 26C # 38B-31, Medellín, Antioquia, Colombia.",
     "traduccion_cortesia": "This is a courtesy translation and has no legal effect. These documents are governed by Colombian law, and the Spanish version available on this site is the one that governs; in case of any discrepancy, the Spanish text prevails."
@@ -56,7 +56,8 @@
           "Identity document type and number, only if you choose to pay in instalments with Sistecrédito: it is the data they use to look up your credit limit. We send it to Sistecrédito for that purchase and we do not keep it.",
           "Account data, if you choose to create one: email and password, which is stored using a one-way hash and never in plain text. If you create it or sign in with your Google account, there is no password: Google gives us your email, confirmation that it is verified, and an identifier for your Google account. We never receive your Google password.",
           "Technical: IP address and the date and time of relevant actions, such as granting this authorisation or sign-in attempts.",
-          "Browsing: only what is strictly necessary for the site to work. See the cookie policy."
+          "Browsing: only what is strictly necessary for the site to work. See the cookie policy.",
+          "From the conversation, if you message us on WhatsApp: your phone number, your profile name and what you write to us, for example the product and colour you want."
         ]
       },
       {
@@ -74,6 +75,7 @@
           "Process, confirm, and ship your order, quote the shipping cost using your destination city, generate the shipping label, and keep you informed of the shipment status.",
           "Check whether cash on delivery is available in your city and coordinate the delivery.",
           "Handle requests, complaints, claims, warranties, and withdrawal requests.",
+          "Answer your enquiries on WhatsApp, including confirming with our supplier whether the colour of a technology device you want is available and sending you the link to buy it. We do not give the supplier your data to ask: only the product and the colour.",
           "Comply with legal, accounting, and tax obligations.",
           "Prevent fraud and protect account security.",
           "Manage your account, if you choose to create one."
@@ -93,7 +95,8 @@
           "Google Cloud Platform, as the infrastructure provider hosting the application and the database.",
           "Google, only if you choose to create your account or sign in with your Google account: Google confirms your identity and gives us the data in section 5. We do not send Google any of your data, but when you open the sign-in and create-account pages your browser loads the Google button from Google's servers, and Google processes what it receives under its own privacy policy.",
           "Skydropx S.A.S., a Colombian company with tax ID (NIT) 901.508.804-5 and registered office in Bogotá D.C., as our logistics and shipping platform, and the carrier companies it engages to deliver your order; they receive your name, phone number, delivery address and city, and the amount to be collected when you pay on delivery.",
-          "Resend, as our transactional email provider, to send you account verification, password recovery, and order status emails."
+          "Resend, as our transactional email provider, to send you account verification, password recovery, and order status emails.",
+          "WhatsApp LLC, as messaging service, only if you message us on WhatsApp: the conversation goes through its servers, and WhatsApp processes what it receives under its own terms and its own privacy policy."
         ],
         "cierre": [
           "We do not sell, rent, or transfer personal data to third parties for those third parties' own purposes."
@@ -102,7 +105,7 @@
       {
         "titulo": "9. International transfer and transmission",
         "parrafos": [
-          "Our infrastructure relies on cloud computing services that may store or process information on servers located outside Colombia; this includes both our infrastructure provider and our transactional email provider. The logistics and shipping platform we contract with is a Colombian company, and its own data processing policy contemplates the transmission and transfer of data, both domestic and international. Those transmissions take place under contract with each provider and solely to deliver the service described in this policy."
+          "Our infrastructure relies on cloud computing services that may store or process information on servers located outside Colombia; this includes our infrastructure provider, our transactional email provider, and the WhatsApp messaging service when you message us there. The logistics and shipping platform we contract with is a Colombian company, and its own data processing policy contemplates the transmission and transfer of data, both domestic and international. Those transmissions take place under contract with each provider and solely to deliver the service described in this policy."
         ]
       },
       {
@@ -185,7 +188,7 @@
       {
         "titulo": "4. Products, images, and prices",
         "parrafos": [
-          "Photographs of clothing, footwear, and bags show the product we sell, taken by us or by the supplier who provides it. Technology photographs are reference images of the model, taken from information published by the brand or by a product-data catalogue, and not of the unit you receive: the model, memory, and other features are those stated on the product page, and the colour is the one you choose there, even if the photo shows another. Images and rotation viewers are to-scale representations of the actual product; colour may vary slightly depending on your screen.",
+          "Photographs of clothing, footwear, and bags show the product we sell, taken by us or by the supplier who provides it. Technology photographs are reference images of the model, taken from information published by the brand or by a product-data catalogue, and not of the unit you receive: the model, memory, and other features are those stated on the product page, and the colour is the one you choose there, even if the photo shows another. Below the photos of each device we list the colours in which the manufacturer publishes that model: that does not mean we have all of them. Images and rotation viewers are to-scale representations of the actual product; colour may vary slightly depending on your screen.",
           "All prices are shown in Colombian pesos (COP) and are the final price of each product: Tecno Sport is not a VAT (IVA) taxpayer in Colombia, so no tax is added to the published price. The price of each product does not include the shipping cost: that amount depends on the destination city and on the size and weight of your order, and is calculated at the time of purchase. Before you pay, we show you the full breakdown: the price of each product, the subtotal, the shipping cost listed separately, and the total you will pay.",
           "If an obvious system or typing error shows a product at a manifestly wrong price, we will tell you before shipping and you may either confirm the purchase at the correct price or cancel it at no cost.",
           "Check the use and care restrictions on each product page; for footwear and clothing, use other than intended may affect the warranty."
@@ -194,7 +197,9 @@
       {
         "titulo": "5. Availability",
         "parrafos": [
-          "Stock is verified at the moment the order is created. If a product becomes unavailable after your purchase, we will tell you immediately so you can decide whether to wait for a new date or prefer a refund, which will be made within fifteen (15) calendar days."
+          "Stock is verified at the moment the order is created. If a product becomes unavailable after your purchase, we will tell you immediately so you can decide whether to wait for a new date or prefer a refund, which will be made within fifteen (15) calendar days.",
+          "For technology, which colours are available for each device depends on what our supplier has. When the product page says that we confirm a colour before you buy it, that colour cannot be added to the cart: the button takes you to message us on WhatsApp, we ask the supplier and reply through the same channel. Asking for confirmation does not oblige you to buy.",
+          "If the colour is available, we send you a purchase link. It is good for a single purchase, keeps one unit reserved while it is valid, and expires on the date and time we give you with it; if it expires without a purchase, the unit is no longer reserved and you can message us again. Anyone who has the link can use it, so do not share it. If the colour is not available, we tell you and let you know which colours are: the colour of your purchase is always the one you accept, and we never change it without asking you."
         ]
       },
       {
