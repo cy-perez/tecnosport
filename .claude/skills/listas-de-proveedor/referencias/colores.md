@@ -65,6 +65,19 @@ de la paleta que nombran su familia.
 `colores_oficiales` cuando estén vacíos, con el supuesto «colores: la paleta que
 publica …». No pisa una paleta que ya exista.
 
+**Y si la marca no la da, se busca hasta tenerla** (ADR-0086, 25/10/2026): un
+modelo sin paleta no llega al panel. El orden de fuentes está en el paso 4 de
+`SKILL.md`; lo que se escribe con `scripts/paletas.py fijar` lleva su fuente en
+`supuestos_paleta` («colores: según …, consultado el …»).
+
+**Un solo acabado es un color.** En la base del 25/10/2026 había cuatro modelos
+con la paleta vacía porque «el fabricante no publica variantes de color»: los
+AirPods Pro 3, las dos Nintendo Switch 2 y el proyector Xiaomi L1. Los cuatro se
+venden en un único acabado, y ese acabado es su paleta —Blanco, Negro, Negro,
+Negro—. Con la paleta vacía la ficha no decía el color y cada compra se
+preguntaba por WhatsApp; con un color, el sitio sabe que no hay nada que
+confirmar.
+
 ## Cómo queda en el sitio
 
 Un modelo con cuatro colores es **un producto con cuatro variantes**, no cuatro

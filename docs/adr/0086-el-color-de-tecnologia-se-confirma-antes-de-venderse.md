@@ -75,3 +75,7 @@ color que la lista marcó y el modelo de un solo color.
   panel. Para los modelos sin paleta, la skill la busca en el sitio de la marca y
   en las tiendas grandes de Colombia (decisión del 24/10/2026), y se carga por el
   mismo endpoint.
+- **Desde el 25/10/2026 ningún modelo nuevo llega al panel sin paleta**: el bloque 3
+  (`importar-lista-tecnologia.mjs --borradores`) lo deja fuera con el motivo, y la
+  skill la completa con `scripts/paletas.py`. Un modelo de un solo acabado lleva
+  ese color como paleta: vacía, cada compra se preguntaría por WhatsApp.

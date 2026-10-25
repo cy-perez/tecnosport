@@ -130,9 +130,19 @@ test("lo propuesto que la lista no trae queda anotado sin ficha", () => {
 const LISTA = {
   fechaLista: "2026-10-10",
   modelos: [
-    { idModelo: "poco-f9-ultra", titulo: "POCO F9 Ultra", configuraciones: [{ sku: "f9-512" }] },
-    { idModelo: "airpods-pro-3", titulo: "AirPods Pro 3", configuraciones: [{ sku: "app3" }] },
-    { idModelo: "honor-5i", titulo: "Honor 5i", configuraciones: [{ sku: "h5i" }] },
+    {
+      idModelo: "poco-f9-ultra",
+      titulo: "POCO F9 Ultra",
+      paleta: ["Negro", "Plata"],
+      configuraciones: [{ sku: "f9-512" }],
+    },
+    {
+      idModelo: "airpods-pro-3",
+      titulo: "AirPods Pro 3",
+      paleta: ["Blanco"],
+      configuraciones: [{ sku: "app3" }],
+    },
+    { idModelo: "honor-5i", titulo: "Honor 5i", paleta: [], configuraciones: [{ sku: "h5i" }] },
     {
       idModelo: "galaxy-a17",
       titulo: "Galaxy A17",
@@ -177,6 +187,31 @@ test("un modelo nuevo que no pasó por la tanda no entra", () => {
   );
   assert.equal(omitidos.length, 3);
   assert.match(omitidos[0].motivo, /no pasó por la tanda/);
+});
+
+test("un modelo nuevo sin paleta del fabricante no llega al panel, aunque tenga sus fotos", () => {
+  const { lista, omitidos } = seleccionParaBorradores(LISTA, POR_PROPONER, {
+    "poco-f9-ultra": { estado: "apto", listas: ["a.jpg"] },
+    "airpods-pro-3": { estado: "apto", listas: ["b.jpg"] },
+    "honor-5i": { estado: "apto", listas: ["c.jpg"] },
+  });
+  assert.deepEqual(
+    lista.modelos.map((m) => m.idModelo),
+    ["poco-f9-ultra", "airpods-pro-3", "galaxy-a17"],
+    "la de un solo color entra: su paleta es ese color",
+  );
+  const [omitido] = omitidos;
+  assert.equal(omitido.titulo, "Honor 5i");
+  assert.match(omitido.motivo, /sin paleta del fabricante/);
+  assert.match(omitido.motivo, /paletas\.py fijar honor-5i/);
+});
+
+test("las configuraciones nuevas de un modelo que ya se vende no piden paleta: la tiene el producto", () => {
+  const { lista } = seleccionParaBorradores(LISTA, POR_PROPONER, {});
+  assert.deepEqual(
+    lista.modelos.map((m) => m.idModelo),
+    ["galaxy-a17"],
+  );
 });
 
 test("un modelo propuesto que la lista no trae se queda y dice que le falta la ficha", () => {

@@ -114,7 +114,9 @@ Lee **`catalogo/5-api/avisos-panel.json`** —lo deja la exportación del bloque
 y repítele a la persona, por borrador, lo que tiene que resolver a mano al
 revisarlo: la configuración **sin precio de mercado** (con su costo, porque el
 panel solo exige superar el costo y sin referencia se fija un precio a ciegas),
-la **paleta vacía** (los colores se marcan a mano) y las **notas de datos
+la **paleta vacía** —ese modelo no se propone: `--borradores` lo deja fuera
+hasta que el bloque 1 la fije con `scripts/paletas.py`, porque sin paleta la
+ficha no dice los colores del fabricante (ADR-0086)— y las **notas de datos
 pendientes** que la descripción publica tal cual («se le pidió al proveedor»,
 «por confirmar»): aprobar es el momento de resolverlas o de aceptarlas a
 sabiendas.
