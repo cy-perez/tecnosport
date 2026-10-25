@@ -14,52 +14,26 @@ class IpDelClienteTest {
   }
 
   @Test
-  void sinCabeceraUsaLaDireccionRemota() {
+  void devuelveLaQueDejoResueltaElFiltro() {
+    MockHttpServletRequest request = peticion();
+    request.setAttribute(IpDelCliente.ATRIBUTO, "190.24.10.5");
+
+    assertThat(IpDelCliente.de(request)).isEqualTo("190.24.10.5");
+  }
+
+  @Test
+  void sinFiltroDelanteUsaLaDireccionRemota() {
     assertThat(IpDelCliente.de(peticion())).isEqualTo("10.0.0.1");
   }
 
-  /** Detrás del balanceador, getRemoteAddr() es el balanceador y no sirve de nada. */
-  @Test
-  void conCabeceraPrefiereLaDelCliente() {
-    MockHttpServletRequest request = peticion();
-    request.addHeader("X-Forwarded-For", "190.24.10.5");
-
-    assertThat(IpDelCliente.de(request)).isEqualTo("190.24.10.5");
-  }
-
-  /** El primero de la lista es el cliente original; los demás son proxies intermedios. */
-  @Test
-  void conVariosSaltosSeQuedaConElPrimero() {
-    MockHttpServletRequest request = peticion();
-    request.addHeader("X-Forwarded-For", "190.24.10.5, 34.120.0.1, 10.4.0.2");
-
-    assertThat(IpDelCliente.de(request)).isEqualTo("190.24.10.5");
-  }
-
-  @Test
-  void recortaLosEspaciosDelValor() {
-    MockHttpServletRequest request = peticion();
-    request.addHeader("X-Forwarded-For", "   190.24.10.5   ");
-
-    assertThat(IpDelCliente.de(request)).isEqualTo("190.24.10.5");
-  }
-
-  @Test
-  void conCabeceraEnBlancoCaeALaDireccionRemota() {
-    MockHttpServletRequest request = peticion();
-    request.addHeader("X-Forwarded-For", "   ");
-
-    assertThat(IpDelCliente.de(request)).isEqualTo("10.0.0.1");
-  }
-
   /**
-   * Una cabecera que empieza por coma dejaría un valor vacío: como llave del límite de intentos
-   * metería a todo el mundo en el mismo cubo, y como constancia de autorización no diría nada.
+   * Es lo que hacía hasta ADR-0087 y lo que no puede volver a hacer: sin el filtro, la cabecera es
+   * un texto del cliente.
    */
   @Test
-  void conPrimerValorVacioCaeALaDireccionRemota() {
+  void sinFiltroDelanteNoLeCreeALaCabecera() {
     MockHttpServletRequest request = peticion();
-    request.addHeader("X-Forwarded-For", ", 34.120.0.1");
+    request.addHeader("X-Forwarded-For", "190.24.10.5");
 
     assertThat(IpDelCliente.de(request)).isEqualTo("10.0.0.1");
   }

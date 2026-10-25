@@ -64,13 +64,27 @@ class FiltroLimiteIntentosTest {
   }
 
   @Test
-  void usaLaPrimeraIpDeXForwardedForCuandoViene() throws Exception {
+  void usaLaIpQueDejoResueltaElFiltroDeIp() throws Exception {
+    MockHttpServletRequest request = peticion("10.0.0.1", null);
+    request.setAttribute(IpDelCliente.ATRIBUTO, "203.0.113.9");
+
+    filtro.doFilter(request, new MockHttpServletResponse(), (req, res) -> {});
+
+    assertThat(limitador.ultimaClave()).contains("203.0.113.9").doesNotContain("10.0.0.1");
+  }
+
+  /**
+   * ADR-0087: el primer valor de la cabecera lo escribe el cliente. Si este filtro volviera a
+   * leerla por su cuenta, una cabecera distinta en cada petición estrenaría cubo cada vez.
+   */
+  @Test
+  void noLeCreeAXForwardedForPorSuCuenta() throws Exception {
     filtro.doFilter(
         peticion("10.0.0.1", "203.0.113.9, 10.0.0.1"),
         new MockHttpServletResponse(),
         (req, res) -> {});
 
-    assertThat(limitador.ultimaClave()).contains("203.0.113.9").doesNotContain("10.0.0.1");
+    assertThat(limitador.ultimaClave()).contains("10.0.0.1").doesNotContain("203.0.113.9");
   }
 
   @Test
