@@ -113,6 +113,7 @@
     "ir_a_ingestas": "Imports",
     "ir_a_borradores": "Drafts",
     "ir_a_tecnologia": "Technology",
+    "ir_a_enlaces_compra": "Purchase links",
     "ir_a_referencias_envio": "Shipping weights and sizes"
   },
   "pedidos": {
@@ -1708,5 +1709,53 @@
     "bolsa_plastica": "Plastic film bag",
     "centimetros": "{{largo}} × {{ancho}} × {{alto}} cm",
     "kilos": "{{peso}} kg"
+  },
+  "enlacesCompra": {
+    "seccion": {
+      "titulo": "Technology colors",
+      "explicacion": "The palette is the set of colors the manufacturer publishes for this model: the product page lists it under the photos. Every color can be chosen on the product page; the ones the supplier's list did not mark are confirmed on WhatsApp before they are sold.",
+      "paleta": "Model palette, one color per line",
+      "guardarPaleta": "Save palette",
+      "guardando": "Saving…",
+      "paletaGuardada": "Palette saved. {{nuevas}} new variants were created to complete it.",
+      "errorPaleta": "We couldn't save the palette.",
+      "porConfirmar": "Colors to confirm with the supplier",
+      "ningunoPorConfirmar": "There are no colors to confirm: the list marked all of them.",
+      "generar": "Create purchase link",
+      "generarDe": "Create purchase link for {{detalle}}",
+      "generando": "Creating…",
+      "errorGenerar": "We couldn't create the purchase link.",
+      "generado": "Purchase link for {{detalle}}, valid until {{fecha}}. The unit is reserved.",
+      "irABandeja": "See purchase links"
+    },
+    "bandeja": {
+      "titulo": "Purchase links",
+      "explicacion": "Links that allow buying a technology color already confirmed with the supplier. Each one is good for one purchase, reserves one unit and expires on the date shown in its row. They are created from the product edit page.",
+      "ninguno": "There are no purchase links from the last week.",
+      "error": "We couldn't load the purchase links.",
+      "producto": "Product",
+      "variante": "Configuration and color",
+      "estado": "Status",
+      "vence": "Expires",
+      "acciones": "Actions",
+      "productoBorrado": "Deleted product",
+      "estados": {
+        "VIGENTE": "Valid",
+        "USADO": "Used in an order",
+        "ANULADO": "Voided",
+        "VENCIDO": "Expired"
+      },
+      "copiarEnlace": "Copy link",
+      "copiarEnlaceDe": "Copy the purchase link for {{producto}}, {{detalle}}",
+      "copiarMensaje": "Copy WhatsApp message",
+      "copiarMensajeDe": "Copy the WhatsApp message for {{producto}}, {{detalle}}",
+      "copiado": "Copied to the clipboard.",
+      "errorCopiar": "We couldn't copy it. Select the link and copy it by hand: {{url}}",
+      "anular": "Void",
+      "anularDe": "Void the purchase link for {{producto}}, {{detalle}}",
+      "anulado": "Link voided: the reserved unit is free again.",
+      "errorAnular": "We couldn't void the link.",
+      "mensaje": "Hi! We confirmed your {{producto}} ({{detalle}}). You can buy it with this link until {{fecha}}: {{url}}"
+    }
   }
 }

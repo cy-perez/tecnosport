@@ -348,6 +348,17 @@
       </section>
     }
 
+    <!-- La paleta del modelo y los enlaces de compra de los colores por confirmar (ADR-0086). Solo
+         en tecnología: es la única línea cuyo color se confirma con el proveedor. -->
+    @if (consulta.data(); as producto) {
+      @if (producto.categoria.linea === 'TECNOLOGIA') {
+        <ts-colores-tecnologia
+          class="mt-32 block border-t border-ts-borde pt-24"
+          [producto]="producto"
+        />
+      }
+    }
+
     <section
       class="mt-32 flex flex-col gap-16 border-t border-ts-borde pt-24"
       aria-labelledby="editar-producto-galeria-titulo"

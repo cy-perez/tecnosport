@@ -59,6 +59,7 @@ import {
 } from '../../application/publicar-producto.mutacion';
 import { usarEliminarProducto } from '../../application/eliminar-producto.mutacion';
 import { TsPreciosVariantes } from './ts-precios-variantes';
+import { TsColoresTecnologia } from '../../../enlaces-de-compra/presentation/colores/ts-colores-tecnologia';
 import {
   ParteDeMuestra,
   separarColores,
@@ -106,6 +107,7 @@ import { PanelDeDifusion } from '../../../difusion/presentation/panel-de-difusio
     TsCampo,
     TsEsqueleto,
     TsMigas,
+    TsColoresTecnologia,
     TsPreciosVariantes,
     TsSelect,
     TsSelectControl,

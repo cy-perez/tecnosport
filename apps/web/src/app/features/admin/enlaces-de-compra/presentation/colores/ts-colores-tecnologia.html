@@ -1,0 +1,90 @@
+<section class="flex flex-col gap-16" aria-labelledby="colores-tecnologia-titulo">
+  <h2 id="colores-tecnologia-titulo" class="m-0 font-display text-xl">
+    {{ 'admin.enlacesCompra.seccion.titulo' | transloco }}
+  </h2>
+  <p class="m-0 text-ts-texto-suave">{{ 'admin.enlacesCompra.seccion.explicacion' | transloco }}</p>
+
+  <form class="flex flex-col gap-12" (submit)="$event.preventDefault(); guardarPaleta()">
+    <ts-campo
+      idCampo="colores-tecnologia-paleta"
+      [label]="'admin.enlacesCompra.seccion.paleta' | transloco"
+      [multilinea]="true"
+      [filas]="5"
+      [formControl]="paleta"
+    />
+    @if (errorPaleta(); as mensaje) {
+      <p class="m-0 text-ts-error" role="alert">{{ mensaje }}</p>
+    }
+    <p class="m-0 text-ts-exito" role="status">{{ avisoPaleta() }}</p>
+    <div>
+      <ts-boton
+        variante="secundario"
+        tipo="submit"
+        [ocupado]="guardando()"
+        [etiquetaCargando]="'admin.enlacesCompra.seccion.guardando' | transloco"
+      >
+        {{ 'admin.enlacesCompra.seccion.guardarPaleta' | transloco }}
+      </ts-boton>
+    </div>
+  </form>
+
+  <h3 class="m-0 font-display text-lg">
+    {{ 'admin.enlacesCompra.seccion.porConfirmar' | transloco }}
+  </h3>
+  @if (porConfirmar().length === 0) {
+    <p class="m-0 text-ts-texto-suave">
+      {{ 'admin.enlacesCompra.seccion.ningunoPorConfirmar' | transloco }}
+    </p>
+  } @else {
+    <ul class="m-0 flex list-none flex-col gap-8 p-0">
+      @for (variante of porConfirmar(); track variante.id) {
+        <li class="flex flex-wrap items-center gap-12 border-b border-ts-borde py-8">
+          <span class="grow">{{ detalle(variante) }}</span>
+          <ts-boton
+            variante="secundario"
+            [ocupado]="generando() === variante.id"
+            [etiquetaCargando]="'admin.enlacesCompra.seccion.generando' | transloco"
+            [etiquetaAccesible]="
+              'admin.enlacesCompra.seccion.generarDe' | transloco: { detalle: detalle(variante) }
+            "
+            (click)="generar(variante)"
+          >
+            {{ 'admin.enlacesCompra.seccion.generar' | transloco }}
+          </ts-boton>
+        </li>
+      }
+    </ul>
+  }
+
+  @if (errorGenerar(); as mensaje) {
+    <p class="m-0 text-ts-error" role="alert">{{ mensaje }}</p>
+  }
+  <!-- El enlace recién generado, con lo que hace falta para mandarlo: la URL a la vista —se puede
+       seleccionar a mano si el portapapeles falla— y el mensaje entero para pegar en el chat. -->
+  <!-- Solo los textos van en la región viva: con los botones dentro, cada cambio se leería entero.
+       La URL queda a la vista —se puede seleccionar a mano si el portapapeles falla—. -->
+  <p class="m-0 text-ts-exito" role="status">
+    @if (generado(); as enlace) {
+      {{
+        'admin.enlacesCompra.seccion.generado'
+          | transloco: { detalle: enlace.detalle, fecha: vigenteHasta() }
+      }}
+    }
+  </p>
+  @if (compra(); as compra) {
+    <p class="m-0 break-all text-sm">{{ compra.url }}</p>
+    <div class="flex flex-wrap gap-12">
+      <ts-boton variante="secundario" (click)="copiar(compra.url, compra.url)">
+        {{ 'admin.enlacesCompra.bandeja.copiarEnlace' | transloco }}
+      </ts-boton>
+      <ts-boton variante="primario" (click)="copiar(compra.mensaje, compra.url)">
+        {{ 'admin.enlacesCompra.bandeja.copiarMensaje' | transloco }}
+      </ts-boton>
+    </div>
+  }
+  <p class="m-0 text-sm" role="status">{{ avisoCopia() }}</p>
+
+  <a class="text-ts-primario" [routerLink]="['/', idioma(), 'admin', 'enlaces-de-compra']">
+    {{ 'admin.enlacesCompra.seccion.irABandeja' | transloco }}
+  </a>
+</section>

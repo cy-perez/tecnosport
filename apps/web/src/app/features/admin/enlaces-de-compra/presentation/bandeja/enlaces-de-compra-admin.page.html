@@ -1,0 +1,71 @@
+<section class="mx-auto max-w-contenido px-16 py-32">
+  <ts-migas [ruta]="migas()" />
+
+  <h1 class="m-0 mb-16 font-display text-2xl">
+    {{ 'admin.enlacesCompra.bandeja.titulo' | transloco }}
+  </h1>
+  <p class="mb-24 text-ts-texto-suave">
+    {{ 'admin.enlacesCompra.bandeja.explicacion' | transloco }}
+  </p>
+
+  <!-- Las dos regiones viven siempre en el DOM y lo que cambia es el texto: una región que nace
+       ya llena no la anuncia NVDA (`docs/06-testing.md`). -->
+  <p #avisoRef class="m-0 text-ts-exito" role="status" tabindex="-1">{{ aviso() }}</p>
+  <p class="m-0 text-ts-error" role="alert">{{ error() }}</p>
+
+  @if (consulta.isPending()) {
+    <ts-esqueleto />
+  } @else if (consulta.isError()) {
+    <p class="text-ts-error" role="alert">{{ 'admin.enlacesCompra.bandeja.error' | transloco }}</p>
+  } @else if (enlaces().length === 0) {
+    <p class="text-ts-texto-suave">{{ 'admin.enlacesCompra.bandeja.ninguno' | transloco }}</p>
+  } @else {
+    <ul class="m-0 mt-16 flex list-none flex-col p-0">
+      @for (enlace of enlaces(); track enlace.id) {
+        @let producto =
+          enlace.producto ?? ('admin.enlacesCompra.bandeja.productoBorrado' | transloco);
+        @let detalle = enlace.detalle ?? '';
+        <li class="flex flex-col gap-8 border-b border-ts-borde py-12">
+          <p class="m-0 font-fuerte">{{ producto }}</p>
+          <p class="m-0 text-sm">{{ detalle }}</p>
+          <p class="m-0 text-sm text-ts-texto-suave">
+            {{ 'admin.enlacesCompra.bandeja.estados.' + enlace.estado | transloco }} ·
+            {{ 'admin.enlacesCompra.bandeja.vence' | transloco }} {{ vence(enlace) }}
+          </p>
+          @if (enlace.estado === 'VIGENTE' && enlace.slug) {
+            <div class="flex flex-wrap gap-12">
+              <ts-boton
+                variante="secundario"
+                [etiquetaAccesible]="
+                  'admin.enlacesCompra.bandeja.copiarEnlaceDe' | transloco: { producto, detalle }
+                "
+                (click)="copiar(enlace, 'url')"
+              >
+                {{ 'admin.enlacesCompra.bandeja.copiarEnlace' | transloco }}
+              </ts-boton>
+              <ts-boton
+                variante="secundario"
+                [etiquetaAccesible]="
+                  'admin.enlacesCompra.bandeja.copiarMensajeDe' | transloco: { producto, detalle }
+                "
+                (click)="copiar(enlace, 'mensaje')"
+              >
+                {{ 'admin.enlacesCompra.bandeja.copiarMensaje' | transloco }}
+              </ts-boton>
+              <ts-boton
+                variante="peligro"
+                [ocupado]="anulando() === enlace.id"
+                [etiquetaAccesible]="
+                  'admin.enlacesCompra.bandeja.anularDe' | transloco: { producto, detalle }
+                "
+                (click)="anular(enlace)"
+              >
+                {{ 'admin.enlacesCompra.bandeja.anular' | transloco }}
+              </ts-boton>
+            </div>
+          }
+        </li>
+      }
+    </ul>
+  }
+</section>
