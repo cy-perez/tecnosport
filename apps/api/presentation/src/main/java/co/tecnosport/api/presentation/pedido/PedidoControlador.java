@@ -24,10 +24,13 @@ import co.tecnosport.api.presentation.pedido.dto.ReintentarPagoRequest;
 import co.tecnosport.api.presentation.pedido.dto.SeguimientoPorIdRequest;
 import co.tecnosport.api.presentation.pedido.dto.SeguimientoPorNumeroRequest;
 import jakarta.servlet.http.HttpServletRequest;
+import java.time.Duration;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -48,6 +51,11 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/v1/pedidos")
 public class PedidoControlador {
+
+  private static final Logger log = LoggerFactory.getLogger(PedidoControlador.class);
+
+  /** Más que el peor caso medible del acierto contra la base; ver {@link #esperarElPiso}. */
+  static final Duration PISO_DEL_SEGUIMIENTO = Duration.ofMillis(400);
 
   private final CrearPedido crearPedido;
   private final MetodosDePagoDisponibles metodosDePagoDisponibles;
@@ -148,17 +156,45 @@ public class PedidoControlador {
    * que no compite con el de arriba. El correo va en el cuerpo, no en la URL: ver {@link
    * SeguimientoPorNumeroRequest}.
    *
-   * <p>Con transacción, a diferencia del de arriba: escribe en el limitador y en la bandeja de
-   * salida. Y sigue detrás del límite por IP de {@code ConfiguracionLimiteIntentos}, que ahora
-   * frena a quien recorre números y el tope por pedido protege al titular.
+   * <p><b>Sin transacción, a propósito.</b> El limitador abre la suya ({@code REQUIRES_NEW}), y con
+   * una abierta aquí cada petición retendría una conexión mientras pide otra: diez a la vez, dentro
+   * del límite por IP y con un pedido propio, agotaban el pool. La bandeja de salida confirma su
+   * fila sola, como en las tareas. Y sigue detrás del límite por IP de {@code
+   * ConfiguracionLimiteIntentos}, que frena a quien recorre números; el tope por pedido protege al
+   * titular.
    */
   @PostMapping("/seguimiento")
   @ResponseStatus(HttpStatus.ACCEPTED)
   public void seguimientoPorNumero(@RequestBody SeguimientoPorNumeroRequest cuerpo) {
-    transaccion.executeWithoutResult(
-        estado ->
-            solicitarEnlaceDeSeguimiento.ejecutar(
-                new SolicitarEnlaceDeSeguimientoComando(cuerpo.numeroPedido(), cuerpo.correo())));
+    long inicio = System.nanoTime();
+    try {
+      solicitarEnlaceDeSeguimiento.ejecutar(
+          new SolicitarEnlaceDeSeguimientoComando(cuerpo.numeroPedido(), cuerpo.correo()));
+    } catch (RuntimeException fallo) {
+      // Solo el camino que acierta llega a escribir, así que un 500 aquí diría que el número y el
+      // correo son de un pedido. Se registra para quien opera, y quien pidió el enlace recibe lo
+      // mismo que todos.
+      log.error("No se pudo encolar el enlace de seguimiento", fallo);
+    }
+    esperarElPiso(inicio);
+  }
+
+  /**
+   * Cuando el pedido existe, el servidor hace más trabajo —el agregado, el limitador, la bandeja de
+   * salida— y eso son decenas de milisegundos constantes y promediables contra la base. Dicen si un
+   * correo es de un cliente y, por el número, más o menos cuándo compró: dato personal. Responder
+   * siempre después del mismo piso lo esconde. Lo levantó la revisión de seguridad.
+   */
+  private static void esperarElPiso(long inicio) {
+    long restante = PISO_DEL_SEGUIMIENTO.toNanos() - (System.nanoTime() - inicio);
+    if (restante <= 0) {
+      return;
+    }
+    try {
+      Thread.sleep(Duration.ofNanos(restante));
+    } catch (InterruptedException interrupcion) {
+      Thread.currentThread().interrupt();
+    }
   }
 
   private CrearPedidoComando aComando(CrearPedidoRequest cuerpo, String direccionIp) {

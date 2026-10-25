@@ -36,10 +36,10 @@ import java.util.Optional;
  * existe, correo que no coincide, tope alcanzado y correo enviado. Cualquier diferencia entre ellos
  * sería un oráculo para quien prueba a ciegas.
  *
- * <p>Una diferencia de tiempo sí queda: cuando el pedido existe se escribe en el limitador y en la
- * bandeja de salida, y cuando no existe no. Son milisegundos contra el ruido de internet, y no
- * dicen nada que el atacante no supiera ya —que acertó el número de alguien cuyo correo conoce— sin
- * darle el pedido. Queda dicho por si alguien la mide.
+ * <p>El tiempo, en cambio, sí distingue: cuando el pedido existe se carga el agregado y se escribe
+ * en el limitador y en la bandeja de salida, y eso diría si un correo es de un cliente. Esta clase
+ * no lo puede esconder sin dormir, así que lo esconde quien la llama: {@code PedidoControlador}
+ * responde siempre después de un piso fijo.
  */
 public final class SolicitarEnlaceDeSeguimiento {
 
