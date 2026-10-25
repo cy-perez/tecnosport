@@ -57,6 +57,8 @@ public enum TextoDeCorreo {
   PEDIDO_COMPROBANTE_PAGO_EN_LINEA("pedido.comprobante.pago_en_linea"),
   PEDIDO_COMPROBANTE_VENDEDOR("pedido.comprobante.vendedor"),
   PEDIDO_COMPROBANTE_CIERRE("pedido.comprobante.cierre"),
+  PEDIDO_ENLACE_SEGUIMIENTO_ASUNTO("pedido.enlace_seguimiento.asunto"),
+  PEDIDO_ENLACE_SEGUIMIENTO_CUERPO("pedido.enlace_seguimiento.cuerpo"),
   PEDIDO_PLAZO_VENCIDO_ASUNTO("pedido.plazo_vencido.asunto"),
   PEDIDO_PLAZO_VENCIDO_CUERPO("pedido.plazo_vencido.cuerpo"),
   PEDIDO_PLAZO_VENCIDO_EN_CAMINO("pedido.plazo_vencido.en_camino"),

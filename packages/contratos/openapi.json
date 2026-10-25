@@ -10383,15 +10383,8 @@
           "required" : true
         },
         "responses" : {
-          "200" : {
-            "content" : {
-              "*/*" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/PedidoSeguimientoRespuesta"
-                }
-              }
-            },
-            "description" : "OK"
+          "202" : {
+            "description" : "Accepted"
           }
         },
         "tags" : [

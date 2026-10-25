@@ -5,4 +5,4 @@ package co.tecnosport.api.application.pedido;
  * correo y el correo mismo. Ninguno de los dos es el {@code id}, que es un UUID y no aparece en
  * nada que una persona lea.
  */
-public record ConsultarSeguimientoPorNumeroComando(String numeroPedido, String correo) {}
+public record SolicitarEnlaceDeSeguimientoComando(String numeroPedido, String correo) {}
