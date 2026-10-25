@@ -283,6 +283,7 @@ ninguno dice en voz alta cuál es la causa:
 | `API_URL_PUBLICA` | **la petición se cuelga y nunca responde** | Sin ella, el SSR resuelve `baseUrl()` a `localhost:8080`, que dentro del contenedor **es el propio servidor web**: cada render se pide a sí mismo, y ese render vuelve a pedirse. Recursión, sin ningún error en el registro |
 | `APP_URL_PUBLICA` | canónicos y `hreflang` apuntando al puerto local | Ya estaba documentada; aquí se confirma que el contenedor la necesita |
 | `NG_TRUST_PROXY_HEADERS` | aviso en consola en cada petición | Detrás de Cloud Run todo llega con `forwarded` **y** con `x-forwarded-*`; la que no esté declarada, `@angular/ssr` la descarta y avisa. Van las dos formas: solo con las `x-forwarded-*` el render salía bien, pero cada visita dejaba dos líneas de aviso por la `forwarded` |
+| `PROXY_WEB_CLAVE` (las dos imágenes) | **todos los que pasan por la web cuentan como una sola IP** en el límite de intentos | ADR-0087. El proxy de `/api` ya no reenvía el `X-Forwarded-For` del visitante, porque su primer valor lo escribe él; le dice la IP a la API con `X-Ip-Cliente`, y la API solo la cree con la clave. Sin la clave nada se cae: los límites se vuelven más estrictos, no más laxos |
 
 ### El SSR se pedía sus propias traducciones, y ya no
 
@@ -347,6 +348,20 @@ Cómo saber por dónde entró una visita, la próxima vez: si `/es` no aparece e
 peticiones de `tecnosport-web` y sí aparecen sus `/api/v1/...`, la sirvió el service worker desde
 caché. Y el arranque de la JVM se lee en el `stdout` de `tecnosport-api`, en la línea "Started
 TecnosportApiApplication in N seconds".
+
+### De qué IP fiarse
+
+Hoy no hay balanceador: la web y la API son dos servicios publicados en `run.app`, y la API
+está abierta a internet (por ahí llegan los webhooks y Cloud Tasks). El frente de Cloud Run
+**agrega** al final de `X-Forwarded-For` la IP de quien se le conectó y conserva lo que venía
+antes, que lo escribe cualquiera. Medido el 25 de octubre de 2026: once consultas con un valor
+inventado en cada una y ninguna frenada (ADR-0087).
+
+`FiltroIpDelCliente` resuelve la IP una sola vez: cree `X-Ip-Cliente` si llega con la clave del
+proxy, y si no toma el valor que está `IP_CLIENTE_SALTOS_CONFIABLES` posiciones antes del final
+(1 hoy). **El día del balanceador hay que cambiar dos cosas juntas**: los saltos a 2, y la API a
+`ingress = internal-and-cloud-load-balancing`. Si se cambia solo una de las dos, el hueco vuelve
+a abrirse.
 
 ### Despliegue del ambiente de desarrollo
 

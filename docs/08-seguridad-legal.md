@@ -25,7 +25,10 @@ el panel administrativo, el asistente de captura y la cuenta opcional del client
   originó — perder el control de la clave es más grave que un refresco
   reutilizado.
 - Límite de intentos por IP y por cuenta en inicio de sesión, registro,
-  recuperación y creación de pedidos.
+  recuperación y creación de pedidos. La IP sale de `FiltroIpDelCliente` y no del
+  primer valor de `X-Forwarded-For`, que lo escribe el cliente: hasta el 25 de
+  octubre de 2026 eso dejaba evadir los cuatro límites y le dejaba al titular
+  escribir la IP de su propia constancia de autorización (ADR-0087).
 - El asistente de captura exige rol `ADMIN` y una sesión activa; las URL firmadas
   de subida se emiten con vencimiento corto y para un objeto específico.
 - **Entrar con Google, desde el 8 de octubre de 2026** (`ADR-0074`). Google prueba
