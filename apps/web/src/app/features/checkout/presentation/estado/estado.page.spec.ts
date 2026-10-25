@@ -1,3 +1,4 @@
+import { ErrorHttp } from '../../../../core/http/respuesta-http';
 import { Component, inject } from '@angular/core';
 import { ActivatedRoute, convertToParamMap, Router } from '@angular/router';
 import { TranslocoTestingModule } from '@jsverse/transloco';
@@ -106,9 +107,15 @@ class RepositorioPedidosFalso implements RepositorioPedidos {
     return this.seguimiento;
   }
 
-  /** El mismo pedido por los dos caminos: lo que cambia en el servidor es por dónde se entra. */
-  async consultarSeguimientoPorNumero(): Promise<Seguimiento | null> {
-    return this.seguimiento;
+  readonly solicitudesDeEnlace: { numeroPedido: string; correo: string }[] = [];
+  falloDeSolicitud: unknown = null;
+
+  /** El servidor responde lo mismo acierte o no (ADR-0088): el doble no devuelve nada. */
+  async solicitarEnlaceDeSeguimiento(numeroPedido: string, correo: string): Promise<void> {
+    this.solicitudesDeEnlace.push({ numeroPedido, correo });
+    if (this.falloDeSolicitud) {
+      throw this.falloDeSolicitud;
+    }
   }
 }
 
@@ -260,46 +267,62 @@ describe('EstadoPage', () => {
     expect(screen.queryByText('No encontramos este pedido.')).toBeNull();
   });
 
-  it('el formulario consulta por número y pinta el pedido encontrado', async () => {
+  function llenarYEnviar(numero: string, correo: string): void {
+    fireEvent.input(screen.getByLabelText('Número del pedido'), { target: { value: numero } });
+    fireEvent.input(screen.getByLabelText('Correo del pedido'), { target: { value: correo } });
+    fireEvent.click(screen.getByRole('button', { name: 'Enviarme el enlace' }));
+  }
+
+  /**
+   * ADR-0088. El formulario ya no pinta el pedido: el número es secuencial, y mostrarlo dejaba que
+   * quien conociera el correo de alguien recorriera números hasta dar con un pedido suyo. Pide que
+   * el enlace llegue al correo, y dice lo mismo acierte o no.
+   */
+  it('el formulario pide el enlace al correo y no pinta el pedido aunque exista', async () => {
     const pedidos = new RepositorioPedidosFalso(
       seguimientoDePrueba({ estado: 'PAGADO', metodoPago: 'WOMPI' }),
     );
     await renderConProviders(pedidos, new RepositorioPagosFalso());
 
-    fireEvent.input(screen.getByLabelText('Número del pedido'), {
-      target: { value: 'TS-2026-000001' },
-    });
-    fireEvent.input(screen.getByLabelText('Correo del pedido'), {
-      target: { value: 'cliente@tecnosport.co' },
-    });
-    fireEvent.click(screen.getByRole('button', { name: 'Consultar' }));
+    llenarYEnviar('  TS-2026-000001 ', 'cliente@tecnosport.co');
 
-    expect(await screen.findByText('Pedido TS-2026-000001')).toBeTruthy();
+    expect(await screen.findByText(/Si el número y el correo son de un mismo pedido/)).toBeTruthy();
+    expect(pedidos.solicitudesDeEnlace).toEqual([
+      { numeroPedido: 'TS-2026-000001', correo: 'cliente@tecnosport.co' },
+    ]);
+    expect(screen.queryByText('Pedido TS-2026-000001')).toBeNull();
+    // El formulario se queda puesto: no se lleva el foco ni impide pedirlo otra vez.
+    expect(screen.getByLabelText('Número del pedido')).toBeTruthy();
   });
 
-  /**
-   * Lo que no existe se dice **sin sacar a nadie del formulario**: quien se equivocó de número lo
-   * corrige ahí mismo. Antes de que el formulario existiera, este camino era una pantalla muerta.
-   */
-  it('un número que no existe deja el formulario puesto y lo dice', async () => {
-    // Sin seguimiento: el doble devuelve `null`, que es como el adaptador traduce el 404.
+  /** Si el límite de intentos frenó la solicitud, decir "te lo enviamos" haría esperar en vano. */
+  it('con el límite de intentos dice que espere, y no que el enlace va en camino', async () => {
     const pedidos = new RepositorioPedidosFalso();
+    pedidos.falloDeSolicitud = new ErrorHttp(
+      429,
+      'no se pudo pedir el enlace de seguimiento',
+      'LIMITE_DE_INTENTOS_EXCEDIDO',
+    );
     await renderConProviders(pedidos, new RepositorioPagosFalso());
 
-    fireEvent.input(screen.getByLabelText('Número del pedido'), {
-      target: { value: 'TS-2026-999999' },
-    });
-    fireEvent.input(screen.getByLabelText('Correo del pedido'), {
-      target: { value: 'cliente@tecnosport.co' },
-    });
-    fireEvent.click(screen.getByRole('button', { name: 'Consultar' }));
+    llenarYEnviar('TS-2026-000001', 'cliente@tecnosport.co');
 
     expect(
       await screen.findByText(
-        'No encontramos un pedido con ese número y ese correo. Revísalos en tu comprobante; si siguen sin funcionar, escríbenos.',
+        'Pediste el enlace muchas veces seguidas. Espera unos minutos y vuelve a intentarlo.',
       ),
     ).toBeTruthy();
-    expect(screen.getByLabelText('Número del pedido')).toBeTruthy();
+    expect(screen.queryByText(/Si el número y el correo son de un mismo pedido/)).toBeNull();
+  });
+
+  it('con un campo vacío no pide nada y dice cuál falta', async () => {
+    const pedidos = new RepositorioPedidosFalso();
+    await renderConProviders(pedidos, new RepositorioPagosFalso());
+
+    llenarYEnviar('', 'cliente@tecnosport.co');
+
+    expect(await screen.findByText('Escribe el número de tu pedido.')).toBeTruthy();
+    expect(pedidos.solicitudesDeEnlace).toEqual([]);
   });
 
   it('un pedido PAGO_FALLIDO muestra el botón de reintentar; uno confirmado no', async () => {

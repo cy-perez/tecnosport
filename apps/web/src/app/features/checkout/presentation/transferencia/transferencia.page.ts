@@ -42,7 +42,7 @@ export class TransferenciaPage {
     const correo = pedidoId
       ? correoDelPedido(pedidoId, this.route.snapshot.fragment, this.correosDePedido)
       : null;
-    return pedidoId && correo ? { tipo: 'ID', pedidoId, correo } : null;
+    return pedidoId && correo ? { pedidoId, correo } : null;
   });
 
   protected readonly consulta = usarSeguimientoPedido(() => this.criteriosSeguimiento());

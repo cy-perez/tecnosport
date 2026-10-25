@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { crearClienteContratos } from '@tecnosport/contratos';
 import { baseUrl } from '../../../core/http/base-url';
-import { desempaquetar } from '../../../core/http/respuesta-http';
+import { desempaquetar, exigirExito } from '../../../core/http/respuesta-http';
 import { CrearPedidoComando, MetodosDePagoDisponiblesComando } from '../domain/pedido.comandos';
 import { Direccion, MetodoPago, Pedido, Seguimiento } from '../domain/pedido.model';
 import { RepositorioPedidos } from '../domain/repositorio-pedidos.puerto';
@@ -114,25 +114,15 @@ export class PedidoHttpRepositorio implements RepositorioPedidos {
   }
 
   /**
-   * `POST` y no `GET`, que es lo que desentona en esta clase: el correo va en el cuerpo para que no
-   * acabe en los registros de acceso ni en el historial del navegador. El hermano de arriba lo
-   * lleva en la URL porque a él se llega desde el enlace de un correo.
-   *
-   * El 404 se traduce a `null` como en el hermano. Y el 429 **no**: el límite de intentos por IP de
-   * este endpoint es más estrecho que el de los demás —el número es adivinable— y confundirlo con
-   * "no encontramos tu pedido" le diría a quien consulta de buena fe que su número está mal. Cae
-   * por `desempaquetar`, que es quien traduce el código del servidor al mensaje de la pantalla.
+   * 202 sin cuerpo en todos los casos, acierte o no (ADR-0088). El 429 **no** se traga: el límite
+   * por IP de este endpoint es el más estrecho de todos, y decirle "te enviamos el enlace" a quien
+   * chocó con él le haría esperar un correo que no va a llegar. Sale por `exigirExito`, que es quien
+   * le pone el código del servidor para que la pantalla lo distinga.
    */
-  async consultarSeguimientoPorNumero(
-    numeroPedido: string,
-    correo: string,
-  ): Promise<Seguimiento | null> {
+  async solicitarEnlaceDeSeguimiento(numeroPedido: string, correo: string): Promise<void> {
     const respuesta = await this.cliente.POST('/api/v1/pedidos/seguimiento', {
       body: { numeroPedido, correo },
     });
-    if (respuesta.response.status === 404) {
-      return null;
-    }
-    return aSeguimiento(desempaquetar(respuesta, 'no se pudo consultar el estado del pedido'));
+    exigirExito(respuesta, 'no se pudo pedir el enlace de seguimiento');
   }
 }

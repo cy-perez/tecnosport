@@ -147,7 +147,7 @@ class RepositorioPedidosFalso implements RepositorioPedidos {
     throw new Error('no usado en esta prueba');
   }
 
-  async consultarSeguimientoPorNumero(): Promise<Seguimiento | null> {
+  async solicitarEnlaceDeSeguimiento(): Promise<void> {
     throw new Error('no usado en esta prueba');
   }
 }
@@ -183,7 +183,7 @@ class RepositorioPedidosQueFalla implements RepositorioPedidos {
     throw new Error('no usado en esta prueba');
   }
 
-  async consultarSeguimientoPorNumero(): Promise<Seguimiento | null> {
+  async solicitarEnlaceDeSeguimiento(): Promise<void> {
     throw new Error('no usado en esta prueba');
   }
 }
