@@ -6,14 +6,20 @@ describe('aCarrito', () => {
       id: 'carrito-1',
       usuarioId: 'usuario-1',
       creadoEn: '2026-09-02T12:00:00Z',
-      lineas: [{ id: 'linea-1', varianteId: 'variante-1', cantidad: 2 }],
+      lineas: [
+        { id: 'linea-1', varianteId: 'variante-1', cantidad: 2 },
+        { id: 'linea-2', varianteId: 'variante-2', cantidad: 1, enlaceCompra: 'token-1' },
+      ],
     });
 
     expect(carrito).toEqual({
       id: 'carrito-1',
       usuarioId: 'usuario-1',
       creadoEn: '2026-09-02T12:00:00Z',
-      lineas: [{ id: 'linea-1', varianteId: 'variante-1', cantidad: 2 }],
+      lineas: [
+        { id: 'linea-1', varianteId: 'variante-1', cantidad: 2, enlaceCompra: null },
+        { id: 'linea-2', varianteId: 'variante-2', cantidad: 1, enlaceCompra: 'token-1' },
+      ],
     });
   });
 

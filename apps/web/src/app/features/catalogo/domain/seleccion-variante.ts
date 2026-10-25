@@ -1,4 +1,4 @@
-import { Imagen, muestraDe, ParteDeMuestra, Producto, Variante } from './producto.model';
+import { Imagen, muestraDe, ParteDeMuestra, Producto, seElige, Variante } from './producto.model';
 
 export interface OpcionEje {
   readonly valor: string;
@@ -160,7 +160,7 @@ export function seleccionAlElegir(
   };
   const mejor = [...candidatas].sort(
     (una, otra) =>
-      Number(otra.disponible) - Number(una.disponible) || coincidencias(otra) - coincidencias(una),
+      Number(seElige(otra)) - Number(seElige(una)) || coincidencias(otra) - coincidencias(una),
   )[0];
   return mejor ? seleccionDeVariante(mejor) : deseada;
 }
@@ -187,7 +187,7 @@ export function opcionDisponible(
   valor: string,
 ): boolean {
   return producto.variantes.some((variante) => {
-    if (!variante.disponible) {
+    if (!seElige(variante)) {
       return false;
     }
     const valores = seleccionDeVariante(variante);
@@ -241,10 +241,16 @@ export function detalleDeVariante(variante: Variante): string {
     .join(' · ');
 }
 
-/** La primera variante disponible; si ninguna lo está, la primera de todas. */
+/**
+ * La primera variante disponible; si ninguna lo está, la primera cuyo color se puede preguntar
+ * (ADR-0086); y si tampoco, la primera de todas.
+ */
 export function variantePorDefecto(producto: Producto): Variante | null {
   return (
-    producto.variantes.find((variante) => variante.disponible) ?? producto.variantes[0] ?? null
+    producto.variantes.find((variante) => variante.disponible) ??
+    producto.variantes.find(seElige) ??
+    producto.variantes[0] ??
+    null
   );
 }
 

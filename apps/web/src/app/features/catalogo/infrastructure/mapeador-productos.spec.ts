@@ -21,12 +21,14 @@ describe('mapeador-productos', () => {
         altEn: 'alt en',
       },
       galeria: [],
+      paleta: ['Morado', 'Plata'],
       variantes: [
         {
           id: 'v1',
           sku: 'TS-CAM-AZ-M',
           precio: { valor: 89900, moneda: 'COP' },
           disponible: true,
+          colorPorConfirmar: false,
           atributos: [
             { nombre: 'Color', valor: 'Azul marino', colorHex: '#1E3A8A' },
             { nombre: 'Garantía', valor: '12', unidad: 'meses' },
@@ -47,6 +49,8 @@ describe('mapeador-productos', () => {
     expect(producto.variantes).toHaveLength(1);
     expect(producto.variantes[0].id).toBe('v1');
     expect(producto.variantes[0].precio.valor).toBe(89900);
+    expect(producto.paleta).toEqual(['Morado', 'Plata']);
+    expect(producto.variantes[0].colorPorConfirmar).toBe(false);
     expect(producto.variantes[0].atributos[0].colorHex).toBe('#1E3A8A');
     // La unidad viaja con el valor; sin ella en el DTO queda en null, no en cadena vacía.
     expect(producto.variantes[0].atributos[0].unidad).toBeNull();
@@ -54,7 +58,7 @@ describe('mapeador-productos', () => {
   });
 
   it('no truena con campos ausentes del DTO', () => {
-    const producto = aProducto({});
+    const producto = aProducto({ paleta: [] });
 
     expect(producto.slug).toBe('');
     expect(producto.marca).toEqual({ id: '', nombre: '' });
@@ -73,6 +77,7 @@ describe('mapeador-productos', () => {
    */
   it('sin variantes en el DTO arma una con el ancho y la URL de la imagen', () => {
     const producto = aProducto({
+      paleta: [],
       slug: 'camiseta',
       imagenPrincipal: {
         url: 'https://x/unica.avif',
@@ -90,6 +95,7 @@ describe('mapeador-productos', () => {
 
   it('ordena los fotogramas de la rotación por `orden`, llegue como llegue el arreglo', () => {
     const producto = aProducto({
+      paleta: [],
       slug: 'tenis',
       rotacion: {
         fotogramas: 4,

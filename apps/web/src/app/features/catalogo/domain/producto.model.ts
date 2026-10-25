@@ -86,6 +86,11 @@ export interface Variante {
    */
   readonly disponible: boolean;
   readonly atributos: readonly ValorAtributo[];
+  /**
+   * Su color de tecnología no está confirmado con el proveedor (ADR-0086): se elige en la ficha,
+   * pero se compra con el enlace que llega por WhatsApp cuando el proveedor confirma que lo tiene.
+   */
+  readonly colorPorConfirmar: boolean;
 }
 
 export interface Marca {
@@ -178,6 +183,11 @@ export interface Producto {
   /** Hasta qué talla le sirve una prenda de talla única, si el proveedor lo dijo. */
   readonly tallaSirveHasta: string | null;
   /**
+   * Los colores en que el fabricante publica el modelo (ADR-0086). La ficha de tecnología los dice
+   * al pie de las fotos; no son los que hay. Vacía si no se conocen.
+   */
+  readonly paleta: readonly string[];
+  /**
    * Si las fotos sin variante —casi siempre la principal— acompañan a las de cada color en la
    * galería. Falso en el producto que solo trae fotos por color: ahí la general es la de uno de
    * ellos y se colaría en los demás.
@@ -234,6 +244,15 @@ export function precioDesde(producto: Producto): Dinero | null {
     (menor, variante) => (variante.precio.valor < menor.valor ? variante.precio : menor),
     producto.variantes[0].precio,
   );
+}
+
+/**
+ * Si quien compra la puede elegir en la ficha: hay existencia, o su color de tecnología se pregunta
+ * por WhatsApp (ADR-0086). Un color sin confirmar puede no tener unidades contadas —nació de la
+ * paleta del fabricante— y aun así es justo lo que se quiere poder preguntar.
+ */
+export function seElige(variante: Variante): boolean {
+  return variante.disponible || variante.colorPorConfirmar;
 }
 
 export function hayExistencia(producto: Producto): boolean {

@@ -211,6 +211,11 @@ export class TsBoton {
   readonly enlace = input<unknown[] | string | null>(null);
   /** Los `queryParams` del enlace. Solo se usa junto con `enlace`. */
   readonly parametrosEnlace = input<Record<string, unknown> | null>(null);
+  /**
+   * Una URL fuera del sitio —el chat de WhatsApp de la ficha de tecnología (ADR-0086)—: un `<a
+   * href>` que abre en pestaña nueva. `enlace` es para las rutas propias y manda si vienen los dos.
+   */
+  readonly enlaceExterno = input<string | null>(null);
 
   protected readonly clases = computed(() => cn(BASE, VARIANTES[this.variante()], this.clase()));
 }

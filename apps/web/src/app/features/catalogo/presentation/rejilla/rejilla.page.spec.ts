@@ -56,12 +56,14 @@ function productoDePrueba(slug: string): Producto {
     rotacion: null,
     escalaTallas: [],
     tallaSirveHasta: null,
+    paleta: [],
     variantes: [
       {
         id: `id-${slug}`,
         sku: `SKU-${slug}`,
         precio: { valor: 10_000, moneda: 'COP' },
         disponible: true,
+        colorPorConfirmar: false,
         atributos: [],
       },
     ],

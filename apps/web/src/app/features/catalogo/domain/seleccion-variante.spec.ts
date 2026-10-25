@@ -20,7 +20,14 @@ import {
 } from './seleccion-variante';
 
 function variante(sku: string, disponible: boolean, atributos: Variante['atributos']): Variante {
-  return { id: `id-${sku}`, sku, precio: { valor: 100_000, moneda: 'COP' }, disponible, atributos };
+  return {
+    id: `id-${sku}`,
+    sku,
+    precio: { valor: 100_000, moneda: 'COP' },
+    disponible,
+    atributos,
+    colorPorConfirmar: false,
+  };
 }
 
 function productoDePrueba(variantes: Variante[]): Producto {
@@ -44,6 +51,7 @@ function productoDePrueba(variantes: Variante[]): Producto {
     variantes,
     escalaTallas: [],
     tallaSirveHasta: null,
+    paleta: [],
   };
 }
 

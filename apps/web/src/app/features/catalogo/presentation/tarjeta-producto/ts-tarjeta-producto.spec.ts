@@ -43,12 +43,14 @@ function productoDePrueba(): Producto {
     rotacion: null,
     escalaTallas: [],
     tallaSirveHasta: null,
+    paleta: [],
     variantes: [
       {
         id: 'variante-1',
         sku: 'SKU-1',
         precio: { valor: 150_000, moneda: 'COP' },
         disponible: true,
+        colorPorConfirmar: false,
         atributos: [],
       },
     ],
@@ -101,12 +103,14 @@ function bodiDePrueba(): Producto {
     imagenPrincipal: imagenDePrueba('negro', null),
     galeria: [imagenDePrueba('vino', 'v-vino')],
     tallaSirveHasta: 'L',
+    paleta: [],
     variantes: [
       {
         id: 'v-negro',
         sku: 'PRV-1',
         precio: { valor: 60_000, moneda: 'COP' },
         disponible: true,
+        colorPorConfirmar: false,
         atributos: atributos('Negro', '#111111'),
       },
       {
@@ -114,6 +118,7 @@ function bodiDePrueba(): Producto {
         sku: 'PRV-2',
         precio: { valor: 60_000, moneda: 'COP' },
         disponible: true,
+        colorPorConfirmar: false,
         atributos: atributos('Vino', '#722F37'),
       },
     ],
@@ -238,6 +243,7 @@ describe('TsTarjetaProducto', () => {
         sku: 'SKU-' + i,
         precio: { valor: 60_000, moneda: 'COP' },
         disponible: true,
+        colorPorConfirmar: false,
         atributos: [{ nombre: 'Color', valor: color, colorHex: '#111111', unidad: null }],
       })),
     };

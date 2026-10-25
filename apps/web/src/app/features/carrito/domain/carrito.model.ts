@@ -2,6 +2,11 @@ export interface LineaCarrito {
   readonly id: string;
   readonly varianteId: string;
   readonly cantidad: number;
+  /**
+   * El enlace de compra con que entró, si el color de la variante se confirmó con el proveedor
+   * (ADR-0086). El checkout lo devuelve al crear el pedido; el servidor decide si sigue vigente.
+   */
+  readonly enlaceCompra?: string | null;
 }
 
 export interface Carrito {

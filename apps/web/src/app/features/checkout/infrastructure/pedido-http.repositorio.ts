@@ -58,6 +58,7 @@ export class PedidoHttpRepositorio implements RepositorioPedidos {
         lineas: comando.lineas.map((linea) => ({
           varianteId: linea.varianteId,
           cantidad: linea.cantidad,
+          enlaceCompra: linea.enlaceCompra ?? undefined,
         })),
         tipoEntrega: comando.tipoEntrega,
         direccion: aDireccionRequest(comando.direccion),

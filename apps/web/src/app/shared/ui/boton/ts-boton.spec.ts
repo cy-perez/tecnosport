@@ -49,6 +49,16 @@ function boton(): HTMLButtonElement {
 })
 class AnfitrionEnlace {}
 
+@Component({
+  imports: [TsBoton],
+  template: `
+    <ts-boton variante="primario" enlaceExterno="https://wa.me/573000000000?text=Hola"
+      >Consultar por WhatsApp</ts-boton
+    >
+  `,
+})
+class AnfitrionEnlaceExterno {}
+
 // `ocupado` no está en el anfitrión de arriba a propósito: ese ya liga once entradas y añadirle
 // una duodécima señal solo para una prueba lo vuelve ilegible. Aquí va fijo en `true`.
 @Component({
@@ -58,6 +68,16 @@ class AnfitrionEnlace {}
 class AnfitrionOcupado {}
 
 describe('TsBoton', () => {
+  it('con enlace externo es un enlace de verdad, en pestaña nueva y sin opener', async () => {
+    await render(AnfitrionEnlaceExterno);
+
+    const enlace = screen.getByRole('link', { name: 'Consultar por WhatsApp' });
+    expect(enlace.getAttribute('href')).toBe('https://wa.me/573000000000?text=Hola');
+    expect(enlace.getAttribute('target')).toBe('_blank');
+    expect(enlace.getAttribute('rel')).toBe('noopener noreferrer');
+    expect(screen.queryByRole('button')).toBeNull();
+  });
+
   it('proyecta su contenido como nombre accesible', async () => {
     await render(Anfitrion);
 

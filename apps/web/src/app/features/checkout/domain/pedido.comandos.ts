@@ -6,6 +6,11 @@ import { Contacto, Direccion, MetodoPago, TipoEntrega } from './pedido.model';
 export interface LineaComando {
   readonly varianteId: string;
   readonly cantidad: number;
+  /**
+   * El enlace de compra de un color de tecnología confirmado con el proveedor (ADR-0086), tal como
+   * lo guardó la línea del carrito. Solo lo lleva el pedido: cotizar no lo necesita.
+   */
+  readonly enlaceCompra?: string | null;
 }
 
 export interface CrearPedidoComando {

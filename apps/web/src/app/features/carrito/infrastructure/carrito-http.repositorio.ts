@@ -36,10 +36,15 @@ export class CarritoHttpRepositorio implements RepositorioCarrito {
     return aCarritoCotizado(desempaquetar(respuesta, 'no se pudo cotizar el carrito'));
   }
 
-  async agregarLinea(carritoId: string, varianteId: string, cantidad: number): Promise<Carrito> {
+  async agregarLinea(
+    carritoId: string,
+    varianteId: string,
+    cantidad: number,
+    enlaceCompra?: string | null,
+  ): Promise<Carrito> {
     const respuesta = await this.cliente.POST('/api/v1/carritos/{id}/lineas', {
       params: { path: { id: carritoId } },
-      body: { varianteId, cantidad },
+      body: { varianteId, cantidad, enlaceCompra: enlaceCompra ?? undefined },
     });
     siElCarritoNoExiste(respuesta);
     return aCarrito(desempaquetar(respuesta, 'no se pudo agregar la línea al carrito'));
