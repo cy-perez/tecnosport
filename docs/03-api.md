@@ -74,7 +74,7 @@ POST /api/v1/pagos/sistecredito/intentos    crea la transaccion y devuelve la UR
 POST /api/v1/pagos/sistecredito/confirmacion  notificaciones de Sistecredito, SIN firma: se contrastan
 POST /api/v1/envios/webhook                 eventos de seguimiento de Skydropx, firma verificada
 POST /api/v1/pedidos/{id}/reintentar-pago   PAGO_FALLIDO -> PAGO_PENDIENTE
-GET  /api/v1/pedidos/{id}/seguimiento       con token del correo, sin sesión
+POST /api/v1/pedidos/{id}/seguimiento       el del enlace de los correos, sin sesión
 POST /api/v1/pedidos/seguimiento            manda ese enlace al correo, por el número legible (202)
 ```
 

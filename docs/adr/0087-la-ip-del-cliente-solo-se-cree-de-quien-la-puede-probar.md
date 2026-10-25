@@ -54,6 +54,17 @@ que pasan por la web en un solo cubo.
    una propiedad obligatoria nueva habría roto el despliegue y no el PR.
 5. Solo se acepta un valor con forma de IP, de hasta 45 caracteres. Va a la
    constancia legal y a la llave del limitador.
+6. **Una IPv6 se cuenta por su /64** en la llave del limitador (`CuboDeIp`); la
+   constancia guarda la dirección completa. La API publica registros AAAA, y
+   cualquier servidor alquilado trae un /64: contada entera, cada dirección nueva
+   del mismo rango estrenaba cubo, que es lo mismo que cambiar la cabecera.
+7. **Las varias líneas de `X-Forwarded-For` se unen** antes de contar desde el
+   final. `getHeader` devuelve solo la primera, y con dos líneas la primera
+   puede ser entera del cliente.
+8. El proxy tampoco reenvía `Forwarded`: hoy nadie la lee, pero es la misma
+   cabecera escrita de otra forma.
+
+Los puntos 6 a 8 los levantó la revisión de seguridad del mismo PR.
 
 ## Alternativas descartadas
 
@@ -68,9 +79,20 @@ que pasan por la web en un solo cubo.
 
 - **El orden del despliegue importa.** Si el código llega antes que la clave, el
   proxy ya no reenvía la cabecera del visitante y la API ve a todos los que pasan
-  por la web con la misma IP: los límites se vuelven más estrictos, nunca más
-  laxos. La secuencia es aplicar con `proxy_web_listo=false`, cargar la clave,
-  aplicar con `true` y solo entonces fusionar.
+  por la web con la misma IP. No es solo más estricto: quince peticiones a
+  `/auth/sesion` dejarían a todo el sitio sin poder entrar durante quince
+  minutos. La secuencia es aplicar con `proxy_web_listo=false`, cargar la clave,
+  aplicar con `true` y solo entonces fusionar. **Y aplicar con `true` antes de
+  cargar la clave deja dev sin poder desplegar**: Cloud Run no arranca una
+  revisión que monta un secreto sin versiones.
+- **Pasa lo mismo, por minutos, en cada despliegue**: la API sale antes que la
+  web, y mientras conviven una nueva y una vieja, la API ve la IP de salida de
+  la web. También al rotar la clave, hasta que las dos instancias la relean.
+- **Que el frente de Cloud Run agrega exactamente un valor está medido de forma
+  indirecta, no leído.** Se comprueba después de desplegar: diez consultas
+  directas y una por la web, cada una con un `X-Forwarded-For` inventado
+  distinto, tienen que compartir cubo. Si el último valor fuera de Google y no
+  del cliente, los dos caminos no coincidirían.
 - **El día del balanceador**, `/api` va de él a la API sin pasar por el proxy.
   Ese día `IP_CLIENTE_SALTOS_CONFIABLES` pasa a 2 y la API deja de aceptar
   tráfico que no venga del balanceador. Si alguno de los dos cambios se hace sin

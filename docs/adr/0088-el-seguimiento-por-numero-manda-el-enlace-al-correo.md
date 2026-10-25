@@ -50,9 +50,21 @@ persona le llegue su propio enlace.
 
 - Quien perdió el correo y no recuerda cuál usó no puede ver su pedido por el
   sitio. Antes tampoco podía: el formulario ya pedía ese mismo correo.
-- Queda una diferencia de tiempo de milisegundos: cuando el pedido existe, el
-  servidor escribe en el limitador y en la bandeja de salida, y cuando no existe
-  no. Le dice al atacante algo que ya sabía —que acertó el número de un correo
-  que conoce— y no le da el pedido. Queda dicho en `SolicitarEnlaceDeSeguimiento`.
+- **El acierto hace más trabajo que el fallo**: carga el agregado, escribe en el
+  limitador y en la bandeja de salida. Contra la base son decenas de
+  milisegundos, constantes y promediables, y dirían si un correo es de un
+  cliente y, por el número, más o menos cuándo compró: dato personal. Por eso el
+  controlador **responde siempre después de un piso de 400 ms**, y un fallo al
+  encolar se registra y responde 202 como todo lo demás: un 500 solo podría
+  darse en el camino que acierta. Lo levantó la revisión de seguridad; el primer
+  borrador de este ADR lo daba por inofensivo.
+- **El endpoint no abre transacción.** El limitador abre la suya, y con otra
+  abierta en el controlador cada petición retenía una conexión mientras pedía
+  una segunda: diez a la vez agotaban el pool. La bandeja de salida confirma su
+  fila sola, como en las tareas.
+- Quien conozca el número y el correo de alguien puede gastarle los tres
+  correos de la hora. La pantalla le dirá a esa persona lo mismo de siempre, y
+  el enlace le llegará en la hora siguiente. Se acepta: hacerlo exige conocer los
+  dos datos, y no expone nada del pedido.
 - `POST /pedidos/{id}/seguimiento` no cambia. El id es un UUID v7: recorrerlo no
   es una opción, y es el único camino por el que se ve un pedido sin sesión.
