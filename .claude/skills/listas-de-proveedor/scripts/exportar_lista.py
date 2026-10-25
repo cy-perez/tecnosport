@@ -73,6 +73,19 @@ def sugeridos(producto) -> list:
     return colores_sugeridos(producto.get("colores_familia"), producto.get("colores_oficiales"))
 
 
+def marcados(producto) -> list:
+    """Los colores que la lista marca con sus emojis, en nombres de la paleta; sin emojis, ninguno.
+
+    No son los sugeridos: sin emojis se sugiere la paleta completa para que el panel la premarque,
+    y eso no dice nada de lo que tiene el proveedor. La API vende sin confirmar solo el color que
+    la lista marcó; los demás se confirman por WhatsApp antes de comprarse (ADR-0086).
+    """
+    familias = producto.get("colores_familia")
+    if not familias:
+        return []
+    return colores_sugeridos(familias, producto.get("colores_oficiales"))
+
+
 def exportar(datos: dict) -> tuple[dict, list]:
     """Devuelve (lo que va a la API, los modelos que no se exportaron con su motivo)."""
     if not datos.get("fecha_lista"):
@@ -128,6 +141,7 @@ def exportar(datos: dict) -> tuple[dict, list]:
                 "costoProveedor": p["precio_proveedor_cop"],
                 "precioMercado": p.get("precio_mercado_cop"),
                 "coloresSugeridos": sugeridos(p),
+                "coloresMarcados": marcados(p),
             } for p in productos],
         })
 
