@@ -648,6 +648,13 @@ tecnosport:
     dias-reclamo-datos: ${ATENCION_DIAS_RECLAMO_DATOS:15}
     dias-prorroga-reclamo-datos: ${ATENCION_DIAS_PRORROGA_RECLAMO_DATOS:8}
     dias-consumidor: ${ATENCION_DIAS_CONSUMIDOR:15}
+  # ADR-0087. De qué valor de X-Forwarded-For fiarse: 1 mientras la API se publique directo en
+  # run.app (el frente de Cloud Run agrega uno), 2 el día que haya un balanceador delante. La clave
+  # la comparte el proxy de /api de la web y sale de Secret Manager; vacía, la IP que el proxy dice
+  # no se cree, que es lo seguro cuando falta.
+  ip-cliente:
+    clave-proxy: ${PROXY_WEB_CLAVE:}
+    saltos-confiables: ${IP_CLIENTE_SALTOS_CONFIABLES:1}
   limite-intentos:
     # docs/08-seguridad-legal.md pide el límite, pero no da números — dato de seguridad, no de
     # negocio, ajustable. "auth" agrupa sesión/registro/recuperación (mismo tipo de abuso);
@@ -664,9 +671,10 @@ tecnosport:
       ip-maximo: ${LIMITE_COTIZACION_IP_MAXIMO:60}
       ip-minutos: ${LIMITE_COTIZACION_IP_MINUTOS:30}
     # El seguimiento por número legible es el único endpoint público con un identificador
-    # adivinable —los números van del 000001 hacia arriba—, así que el correo es lo único que
-    # protege el pedido. El tope es el más estrecho de los cuatro: consultar el propio pedido unas
-    # pocas veces al día cabe de sobra, recorrer números no.
+    # adivinable —los números van del 000001 hacia arriba—. Desde ADR-0088 manda el enlace al
+    # correo en vez de devolver el pedido, y aun así cada acierto encola un correo. El tope es el
+    # más estrecho de los cuatro: pedir el propio enlace unas pocas veces cabe de sobra, recorrer
+    # números no.
     seguimiento:
       ip-maximo: ${LIMITE_SEGUIMIENTO_IP_MAXIMO:10}
       ip-minutos: ${LIMITE_SEGUIMIENTO_IP_MINUTOS:10}

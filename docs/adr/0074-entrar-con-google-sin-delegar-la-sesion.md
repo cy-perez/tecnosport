@@ -62,7 +62,7 @@ probar quién es la persona.
   límite por IP ya no se borra con cada credencial válida. Quedan aceptados y
   anotados: no hay `nonce` (el modo popup y la falta de CORS lo mitigan), el
   JWKS se refresca sin límite ante un `kid` desconocido, y `X-Forwarded-For` lo
-  pone el cliente.
+  pone el cliente. Lo último quedó cerrado el 25 de octubre de 2026 (`ADR-0087`).
 - El botón de Google no cambia de idioma ni de tema si se cambian con la
   pantalla abierta: se pinta una vez, al montar. Recargar lo corrige.
 - **Falta crear el cliente OAuth** en Google Cloud Console: la pantalla de

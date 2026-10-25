@@ -109,8 +109,9 @@ public class ConfiguracionLimiteIntentos {
   /**
    * El seguimiento por número legible, y es el perfil más estrecho de los cuatro: es el único
    * endpoint público cuyo identificador se puede recorrer. Los números van del {@code 000001} hacia
-   * arriba dentro de cada año, así que lo único que protege el pedido es que el correo coincida —y
-   * quien ya conozca el correo de una persona puede probar números hasta dar con uno suyo.
+   * arriba dentro de cada año. Desde ADR-0088 el endpoint ya no devuelve el pedido —manda el enlace
+   * al correo—, así que recorrerlo no muestra nada; este límite frena a quien lo intenta, y el tope
+   * por pedido de {@code SolicitarEnlaceDeSeguimiento} protege el buzón del titular.
    *
    * <p>El hermano que entra por {@code id} no está aquí y no hace falta: ese id es un UUID v7, y
    * recorrerlo no es una opción. Es exactamente la misma distinción que separa los dos casos de

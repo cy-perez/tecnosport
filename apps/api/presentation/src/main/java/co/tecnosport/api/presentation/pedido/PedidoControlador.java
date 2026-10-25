@@ -4,12 +4,12 @@ import co.tecnosport.api.application.envio.MetodosDePagoDisponibles;
 import co.tecnosport.api.application.envio.MetodosDePagoDisponiblesComando;
 import co.tecnosport.api.application.pedido.ConsultarSeguimientoPedido;
 import co.tecnosport.api.application.pedido.ConsultarSeguimientoPedidoComando;
-import co.tecnosport.api.application.pedido.ConsultarSeguimientoPorNumero;
-import co.tecnosport.api.application.pedido.ConsultarSeguimientoPorNumeroComando;
 import co.tecnosport.api.application.pedido.CrearPedido;
 import co.tecnosport.api.application.pedido.CrearPedidoComando;
 import co.tecnosport.api.application.pedido.ReintentarPago;
 import co.tecnosport.api.application.pedido.ReintentarPagoComando;
+import co.tecnosport.api.application.pedido.SolicitarEnlaceDeSeguimiento;
+import co.tecnosport.api.application.pedido.SolicitarEnlaceDeSeguimientoComando;
 import co.tecnosport.api.domain.pedido.Contacto;
 import co.tecnosport.api.domain.pedido.Direccion;
 import co.tecnosport.api.domain.pedido.MetodoPago;
@@ -24,16 +24,21 @@ import co.tecnosport.api.presentation.pedido.dto.ReintentarPagoRequest;
 import co.tecnosport.api.presentation.pedido.dto.SeguimientoPorIdRequest;
 import co.tecnosport.api.presentation.pedido.dto.SeguimientoPorNumeroRequest;
 import jakarta.servlet.http.HttpServletRequest;
+import java.time.Duration;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
@@ -47,11 +52,16 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/v1/pedidos")
 public class PedidoControlador {
 
+  private static final Logger log = LoggerFactory.getLogger(PedidoControlador.class);
+
+  /** Más que el peor caso medible del acierto contra la base; ver {@link #esperarElPiso}. */
+  static final Duration PISO_DEL_SEGUIMIENTO = Duration.ofMillis(400);
+
   private final CrearPedido crearPedido;
   private final MetodosDePagoDisponibles metodosDePagoDisponibles;
   private final ReintentarPago reintentarPago;
   private final ConsultarSeguimientoPedido consultarSeguimientoPedido;
-  private final ConsultarSeguimientoPorNumero consultarSeguimientoPorNumero;
+  private final SolicitarEnlaceDeSeguimiento solicitarEnlaceDeSeguimiento;
   private final MapeadorRespuestasPedido mapeador;
   private final MapeadorSeguimiento mapeadorSeguimiento;
   private final TransactionTemplate transaccion;
@@ -61,7 +71,7 @@ public class PedidoControlador {
       MetodosDePagoDisponibles metodosDePagoDisponibles,
       ReintentarPago reintentarPago,
       ConsultarSeguimientoPedido consultarSeguimientoPedido,
-      ConsultarSeguimientoPorNumero consultarSeguimientoPorNumero,
+      SolicitarEnlaceDeSeguimiento solicitarEnlaceDeSeguimiento,
       MapeadorRespuestasPedido mapeador,
       MapeadorSeguimiento mapeadorSeguimiento,
       PlatformTransactionManager transactionManager) {
@@ -70,7 +80,7 @@ public class PedidoControlador {
     this.metodosDePagoDisponibles = Objects.requireNonNull(metodosDePagoDisponibles);
     this.reintentarPago = Objects.requireNonNull(reintentarPago);
     this.consultarSeguimientoPedido = Objects.requireNonNull(consultarSeguimientoPedido);
-    this.consultarSeguimientoPorNumero = Objects.requireNonNull(consultarSeguimientoPorNumero);
+    this.solicitarEnlaceDeSeguimiento = Objects.requireNonNull(solicitarEnlaceDeSeguimiento);
     this.mapeador = Objects.requireNonNull(mapeador);
     this.transaccion = new TransactionTemplate(Objects.requireNonNull(transactionManager));
   }
@@ -133,31 +143,58 @@ public class PedidoControlador {
   }
 
   /**
-   * El mismo seguimiento, entrando por el número legible del pedido: es el único identificador que
-   * el comprador tiene, porque el {@code id} es un UUID que no aparece en nada que una persona lea.
-   * Es lo que sostiene el formulario de "Estado del pedido" del pie.
+   * El formulario de "Estado del pedido" del pie, entrando por el número legible: es el único
+   * identificador que el comprador tiene, porque el {@code id} es un UUID que no aparece en nada
+   * que una persona lea.
    *
-   * <p>{@code POST} aunque no cree nada, y la ruta es literal —{@code /seguimiento}, sin {@code
-   * &#123;id&#125;} delante—, así que no compite con el {@code GET} de arriba. Lo de POST es por el
-   * cuerpo: ver {@link SeguimientoPorNumeroRequest}, el correo no viaja en la URL.
+   * <p><b>Desde el 25 de octubre de 2026 no devuelve el pedido</b> (ADR-0088): si el número y el
+   * correo coinciden, le manda a ese correo el enlace a la pantalla de estado, y responde 202 sin
+   * cuerpo en todos los casos. Devolverlo dejaba que quien conociera el correo de alguien
+   * recorriera números —van en orden— hasta dar con un pedido suyo.
    *
-   * <p>Sin {@code TransactionTemplate}: es una lectura, y las lecturas de este controlador no abren
-   * transacción propia — el hermano de arriba tampoco.
+   * <p>{@code POST} y ruta literal —{@code /seguimiento}, sin {@code &#123;id&#125;} delante—, así
+   * que no compite con el de arriba. El correo va en el cuerpo, no en la URL: ver {@link
+   * SeguimientoPorNumeroRequest}.
    *
-   * <p><b>Va detrás del límite de intentos por IP</b>, con su propio presupuesto y más estrecho que
-   * el de los demás ({@code ConfiguracionLimiteIntentos}): el número es secuencial y adivinable, y
-   * lo único que protege el pedido es el correo.
+   * <p><b>Sin transacción, a propósito.</b> El limitador abre la suya ({@code REQUIRES_NEW}), y con
+   * una abierta aquí cada petición retendría una conexión mientras pide otra: diez a la vez, dentro
+   * del límite por IP y con un pedido propio, agotaban el pool. La bandeja de salida confirma su
+   * fila sola, como en las tareas. Y sigue detrás del límite por IP de {@code
+   * ConfiguracionLimiteIntentos}, que frena a quien recorre números; el tope por pedido protege al
+   * titular.
    */
   @PostMapping("/seguimiento")
-  public PedidoSeguimientoRespuesta seguimientoPorNumero(
-      @RequestBody SeguimientoPorNumeroRequest cuerpo) {
-    Pedido pedido =
-        consultarSeguimientoPorNumero.ejecutar(
-            new ConsultarSeguimientoPorNumeroComando(cuerpo.numeroPedido(), cuerpo.correo()));
-    // Sin el `id`: ver el javadoc de `aRespuestaSinIdInterno`. Ese UUID es la credencial de
-    // `/pagos/intentos` y de `/pedidos/{id}/reintentar-pago`, y entregarlo por una puerta que se
-    // abre adivinando un número secuencial convierte una fuga de lectura en una de escritura.
-    return mapeadorSeguimiento.aRespuestaSinIdInterno(pedido);
+  @ResponseStatus(HttpStatus.ACCEPTED)
+  public void seguimientoPorNumero(@RequestBody SeguimientoPorNumeroRequest cuerpo) {
+    long inicio = System.nanoTime();
+    try {
+      solicitarEnlaceDeSeguimiento.ejecutar(
+          new SolicitarEnlaceDeSeguimientoComando(cuerpo.numeroPedido(), cuerpo.correo()));
+    } catch (RuntimeException fallo) {
+      // Solo el camino que acierta llega a escribir, así que un 500 aquí diría que el número y el
+      // correo son de un pedido. Se registra para quien opera, y quien pidió el enlace recibe lo
+      // mismo que todos.
+      log.error("No se pudo encolar el enlace de seguimiento", fallo);
+    }
+    esperarElPiso(inicio);
+  }
+
+  /**
+   * Cuando el pedido existe, el servidor hace más trabajo —el agregado, el limitador, la bandeja de
+   * salida— y eso son decenas de milisegundos constantes y promediables contra la base. Dicen si un
+   * correo es de un cliente y, por el número, más o menos cuándo compró: dato personal. Responder
+   * siempre después del mismo piso lo esconde. Lo levantó la revisión de seguridad.
+   */
+  private static void esperarElPiso(long inicio) {
+    long restante = PISO_DEL_SEGUIMIENTO.toNanos() - (System.nanoTime() - inicio);
+    if (restante <= 0) {
+      return;
+    }
+    try {
+      Thread.sleep(Duration.ofNanos(restante));
+    } catch (InterruptedException interrupcion) {
+      Thread.currentThread().interrupt();
+    }
   }
 
   private CrearPedidoComando aComando(CrearPedidoRequest cuerpo, String direccionIp) {

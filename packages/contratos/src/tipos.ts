@@ -7869,14 +7869,12 @@ export interface operations {
             };
         };
         responses: {
-            /** @description OK */
-            200: {
+            /** @description Accepted */
+            202: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    "*/*": components["schemas"]["PedidoSeguimientoRespuesta"];
-                };
+                content?: never;
             };
         };
     };

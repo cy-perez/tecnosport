@@ -22,7 +22,6 @@ import co.tecnosport.api.application.pedido.ConciliarTransferencia;
 import co.tecnosport.api.application.pedido.ConfirmarInventarioDePedidoPagado;
 import co.tecnosport.api.application.pedido.ConsultarEnlaceDeCompra;
 import co.tecnosport.api.application.pedido.ConsultarSeguimientoPedido;
-import co.tecnosport.api.application.pedido.ConsultarSeguimientoPorNumero;
 import co.tecnosport.api.application.pedido.CrearPedido;
 import co.tecnosport.api.application.pedido.DespacharPedido;
 import co.tecnosport.api.application.pedido.EliminarPedido;
@@ -37,6 +36,7 @@ import co.tecnosport.api.application.pedido.RecibirPedidoRechazado;
 import co.tecnosport.api.application.pedido.ReintentarPago;
 import co.tecnosport.api.application.pedido.RepositorioEnlacesDeCompra;
 import co.tecnosport.api.application.pedido.RepositorioPedidos;
+import co.tecnosport.api.application.pedido.SolicitarEnlaceDeSeguimiento;
 import co.tecnosport.api.application.pedido.VencerContraentregaSinVerificar;
 import co.tecnosport.api.application.pedido.VerificarContraentrega;
 import co.tecnosport.api.application.reintegro.RepositorioReintegros;
@@ -299,9 +299,20 @@ public class ConfiguracionPedido {
   }
 
   @Bean
-  public ConsultarSeguimientoPorNumero consultarSeguimientoPorNumero(
-      RepositorioPedidos repositorioPedidos) {
-    return new ConsultarSeguimientoPorNumero(repositorioPedidos);
+  public SolicitarEnlaceDeSeguimiento solicitarEnlaceDeSeguimiento(
+      RepositorioPedidos repositorioPedidos,
+      EnviadorDeCorreo enviadorDeCorreo,
+      TextosDeCorreo textos,
+      LimitadorDeIntentos limitadorDeIntentos,
+      Reloj reloj,
+      PropiedadesApp propiedadesApp) {
+    return new SolicitarEnlaceDeSeguimiento(
+        repositorioPedidos,
+        enviadorDeCorreo,
+        textos,
+        limitadorDeIntentos,
+        reloj,
+        propiedadesApp.urlPublica() + "/es/checkout/estado");
   }
 
   @Bean

@@ -72,7 +72,9 @@ app.use(compression());
  */
 const apiPublica = process.env['API_URL_PUBLICA'];
 if (apiPublica) {
-  app.use('/api', crearProxyApi(apiPublica));
+  // La clave con la que la API cree la IP del visitante que este proxy le dice (ADR-0087). Sale
+  // de Secret Manager; sin ella el proxy funciona igual, pero la API ve a todos con una sola IP.
+  app.use('/api', crearProxyApi(apiPublica, fetch, process.env['PROXY_WEB_CLAVE']));
 }
 
 /**

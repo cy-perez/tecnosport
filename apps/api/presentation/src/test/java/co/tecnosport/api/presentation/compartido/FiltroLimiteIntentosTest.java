@@ -64,13 +64,42 @@ class FiltroLimiteIntentosTest {
   }
 
   @Test
-  void usaLaPrimeraIpDeXForwardedForCuandoViene() throws Exception {
+  void usaLaIpQueDejoResueltaElFiltroDeIp() throws Exception {
+    MockHttpServletRequest request = peticion("10.0.0.1", null);
+    request.setAttribute(IpDelCliente.ATRIBUTO, "203.0.113.9");
+
+    filtro.doFilter(request, new MockHttpServletResponse(), (req, res) -> {});
+
+    assertThat(limitador.ultimaClave()).contains("203.0.113.9").doesNotContain("10.0.0.1");
+  }
+
+  /**
+   * ADR-0087: el primer valor de la cabecera lo escribe el cliente. Si este filtro volviera a
+   * leerla por su cuenta, una cabecera distinta en cada petición estrenaría cubo cada vez.
+   */
+  @Test
+  void noLeCreeAXForwardedForPorSuCuenta() throws Exception {
     filtro.doFilter(
         peticion("10.0.0.1", "203.0.113.9, 10.0.0.1"),
         new MockHttpServletResponse(),
         (req, res) -> {});
 
-    assertThat(limitador.ultimaClave()).contains("203.0.113.9").doesNotContain("10.0.0.1");
+    assertThat(limitador.ultimaClave()).contains("10.0.0.1").doesNotContain("203.0.113.9");
+  }
+
+  /** Una IPv6 nueva del mismo /64 no estrena presupuesto (CuboDeIp). */
+  @Test
+  void cuentaUnaIpv6PorSuSlash64() throws Exception {
+    MockHttpServletRequest primera = peticion("10.0.0.1", null);
+    primera.setAttribute(IpDelCliente.ATRIBUTO, "2800:e2:1f00:12::1");
+    MockHttpServletRequest segunda = peticion("10.0.0.1", null);
+    segunda.setAttribute(IpDelCliente.ATRIBUTO, "2800:e2:1f00:12::2");
+
+    filtro.doFilter(primera, new MockHttpServletResponse(), (req, res) -> {});
+    String clavePrimera = limitador.ultimaClave();
+    filtro.doFilter(segunda, new MockHttpServletResponse(), (req, res) -> {});
+
+    assertThat(limitador.ultimaClave()).isEqualTo(clavePrimera).endsWith("2800:e2:1f00:12::/64");
   }
 
   @Test

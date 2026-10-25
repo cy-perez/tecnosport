@@ -74,8 +74,8 @@ POST /api/v1/pagos/sistecredito/intentos    crea la transaccion y devuelve la UR
 POST /api/v1/pagos/sistecredito/confirmacion  notificaciones de Sistecredito, SIN firma: se contrastan
 POST /api/v1/envios/webhook                 eventos de seguimiento de Skydropx, firma verificada
 POST /api/v1/pedidos/{id}/reintentar-pago   PAGO_FALLIDO -> PAGO_PENDIENTE
-GET  /api/v1/pedidos/{id}/seguimiento       con token del correo, sin sesión
-POST /api/v1/pedidos/seguimiento            el mismo, por el número legible del pedido
+POST /api/v1/pedidos/{id}/seguimiento       el del enlace de los correos, sin sesión
+POST /api/v1/pedidos/seguimiento            manda ese enlace al correo, por el número legible (202)
 ```
 
 **Los dos seguimientos no son el mismo endpoint con otra llave**, y la
@@ -84,22 +84,28 @@ diferencia es de seguridad, no de comodidad:
 - El de `{id}` es adonde lleva el enlace del correo. El id es un UUID v7:
   recorrerlo no es una opción, así que no necesita techo de intentos.
 - El de número es el que sostiene el formulario de "Estado del pedido", porque
-  el comprador **nunca ve el id** — lo único que tiene es `TS-2026-000123`. Ese
-  número es secuencial y adivinable, así que lo único que protege el pedido es
-  que el correo coincida, y el endpoint va detrás de `FiltroLimiteIntentos` con
-  el presupuesto por IP más estrecho de los cuatro (diez cada diez minutos,
-  `LIMITE_SEGUIMIENTO_IP_*`). Queda un ataque en pie y está dicho en voz alta en
-  `ConsultarSeguimientoPorNumero`: quien ya conozca el correo de una persona
-  puede recorrer números. El límite lo encarece; no lo cierra.
+  el comprador **nunca ve el id** — lo único que tiene es `TS-2026-000123`.
+  **Desde el 25 de octubre de 2026 no devuelve el pedido** (`ADR-0088`): si el
+  número y el correo coinciden, le manda a ese correo el enlace del de `{id}`, y
+  responde 202 sin cuerpo en todos los casos. Hasta entonces devolvía el pedido,
+  y quien conociera el correo de una persona podía recorrer números —son
+  secuenciales— hasta dar con uno suyo; el límite lo encarecía y no lo cerraba.
+  Sigue detrás de `FiltroLimiteIntentos` con el presupuesto por IP más estrecho
+  (diez cada diez minutos, `LIMITE_SEGUIMIENTO_IP_*`), y el caso de uso añade un
+  tope de **tres correos por hora para cada pedido**, que protege el buzón del
+  titular.
 
 Es `POST` aunque no cree nada: el correo va en el cuerpo para que no acabe en los
 registros de acceso de Cloud Run, en el historial del navegador ni en el
 `Referer`. El de `{id}` lo lleva en la URL porque a él se llega desde un enlace y
 un `GET` no tiene cuerpo.
 
-**Los tres caminos de fallo responden lo mismo** —número mal escrito, número que
-no existe, correo que no coincide—: 404 con el mismo `detail`. Un 422 "el formato
-es TS-AAAA-NNNNNN" sería un oráculo gratis para quien prueba a ciegas.
+**El de número responde lo mismo acierte o no** —número mal escrito, número que
+no existe, correo que no coincide, tope alcanzado—: 202 sin cuerpo. Un 422 "el
+formato es TS-AAAA-NNNNNN" o un 404 distinto del acierto serían un oráculo gratis
+para quien prueba a ciegas. El único que se distingue es el 429 del límite por IP,
+y a propósito: decirle "te enviamos el enlace" a quien chocó con él le haría
+esperar un correo que no va a llegar.
 
 Los dos de Sistecrédito no son gemelos de los de Wompi, y conviene no leerlos
 así (`ADR-0048`):

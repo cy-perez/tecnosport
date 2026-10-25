@@ -5,12 +5,15 @@ import static org.hamcrest.Matchers.matchesPattern;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import co.tecnosport.api.application.catalogo.RepositorioProductos;
 import co.tecnosport.api.application.compartido.LimitadorDeIntentos;
 import co.tecnosport.api.application.compartido.Reloj;
+import co.tecnosport.api.application.compartido.TextoDeCorreo;
+import co.tecnosport.api.application.compartido.TextosDeCorreo;
 import co.tecnosport.api.application.envio.ArmadorDeBultos;
 import co.tecnosport.api.application.envio.CotizadorEnvio;
 import co.tecnosport.api.application.envio.CotizarEnvio;
@@ -20,11 +23,11 @@ import co.tecnosport.api.application.envio.ResultadoCotizacion;
 import co.tecnosport.api.application.inventario.RepositorioInventario;
 import co.tecnosport.api.application.legal.RepositorioAutorizaciones;
 import co.tecnosport.api.application.pedido.ConsultarSeguimientoPedido;
-import co.tecnosport.api.application.pedido.ConsultarSeguimientoPorNumero;
 import co.tecnosport.api.application.pedido.CrearPedido;
 import co.tecnosport.api.application.pedido.ModalidadesDeEntrega;
 import co.tecnosport.api.application.pedido.ReintentarPago;
 import co.tecnosport.api.application.pedido.RepositorioPedidos;
+import co.tecnosport.api.application.pedido.SolicitarEnlaceDeSeguimiento;
 import co.tecnosport.api.application.reintegro.RepositorioReintegros;
 import co.tecnosport.api.application.reintegro.TopeDeReintegro;
 import co.tecnosport.api.application.retracto.RepositorioSolicitudesRetracto;
@@ -86,6 +89,7 @@ class PedidoControladorTest {
   @Autowired private RepositorioInventarioDobleDePrueba inventarios;
   @Autowired private RepositorioPedidosDobleDePrueba pedidos;
   @Autowired private LimitadorDeIntentosDobleDePrueba limitadorDeIntentos;
+  @Autowired private EnviadorDeCorreoDobleDePrueba correos;
 
   @BeforeEach
   void reiniciarElEstadoCompartido() {
@@ -98,6 +102,7 @@ class PedidoControladorTest {
     inventarios.limpiar();
     productos.limpiar();
     limitadorDeIntentos.reiniciar();
+    correos.limpiar();
   }
 
   private final ObjectMapper json = new ObjectMapper();
@@ -667,120 +672,56 @@ class PedidoControladorTest {
     return pedido;
   }
 
+  private String cuerpoPorNumero(String numero, String correo) {
+    return "{\"numeroPedido\":\"" + numero + "\",\"correo\":\"" + correo + "\"}";
+  }
+
   /**
-   * El seguimiento por el número legible, que es el único identificador que el comprador tiene: el
-   * {@code id} es un UUID y no aparece en nada que una persona lea. Es lo que sostiene el
-   * formulario de "Estado del pedido".
-   *
-   * <p>{@code POST} aunque no cree nada: el correo va en el cuerpo y no en la URL, para que no
-   * acabe en los registros de acceso ni en el historial del navegador.
+   * ADR-0088. El formulario de "Estado del pedido" ya no devuelve el pedido: le escribe al correo
+   * del pedido con el enlace, y responde 202 sin cuerpo. Devolverlo dejaba que quien conociera el
+   * correo de alguien recorriera números, que van en orden, hasta dar con un pedido suyo.
    */
   @Test
-  void seguimientoPorNumeroConElCorreoCorrectoDevuelveElPedido() throws Exception {
+  void seguimientoPorNumeroConElCorreoCorrectoLeEscribeAlCorreoYNoDevuelveElPedido()
+      throws Exception {
     Pedido pedido = pedidoDePruebaContraentrega("cliente@tecnosport.co");
 
     mockMvc
         .perform(
             post("/api/v1/pedidos/seguimiento")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(
-                    "{\"numeroPedido\":\""
-                        + pedido.numeroPedido().valor()
-                        + "\",\"correo\":\"cliente@tecnosport.co\"}"))
-        .andExpect(status().isOk())
-        .andExpect(jsonPath("$.numeroPedido").value(pedido.numeroPedido().valor()))
-        .andExpect(jsonPath("$.estado").value("CONFIRMADO_CONTRAENTREGA"));
-  }
-
-  /**
-   * <b>El {@code id} no sale por esta puerta</b>, y es lo que separa una fuga de lectura de una de
-   * escritura.
-   *
-   * <p>Ese UUID es la credencial de {@code POST /pagos/intentos} —que pide solo el id, sin correo y
-   * sin límite de intentos, y crea una fila de pago firmando contra la pasarela— y de {@code
-   * /pedidos/&#123;id&#125;/reintentar-pago}, que re-reserva inventario. Todo el diseño del límite
-   * se apoyaba en "el id es un UUID, recorrerlo no es una opción"; recorrer el número sí lo es, y
-   * al principio el número devolvía el id. Lo levantó la revisión de pagos.
-   *
-   * <p>El hermano que entra por {@code id} sí lo devuelve, y debe: quien abre el enlace de su
-   * correo ya lo tenía.
-   */
-  @Test
-  void seguimientoPorNumeroNoDevuelveElIdInterno() throws Exception {
-    Pedido pedido = pedidoDePruebaContraentrega("cliente@tecnosport.co");
-
-    mockMvc
-        .perform(
-            post("/api/v1/pedidos/seguimiento")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(
-                    "{\"numeroPedido\":\""
-                        + pedido.numeroPedido().valor()
-                        + "\",\"correo\":\"cliente@tecnosport.co\"}"))
-        .andExpect(status().isOk())
-        .andExpect(jsonPath("$.id").doesNotExist());
-
-    mockMvc
-        .perform(
-            post("/api/v1/pedidos/{id}/seguimiento", pedido.id())
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"correo\":\"" + "cliente@tecnosport.co" + "\"}"))
-        .andExpect(status().isOk())
-        .andExpect(jsonPath("$.id").value(pedido.id().toString()));
-  }
-
-  /**
-   * <b>La prueba que importa de este endpoint.</b> El número es secuencial y adivinable, así que lo
-   * único que protege el pedido es el correo — y un correo que no coincide tiene que responder
-   * exactamente igual que un número que no existe, o recorrer números diría cuáles existen.
-   */
-  @Test
-  void seguimientoPorNumeroNoDistingueElCorreoEquivocadoDeUnNumeroInexistente() throws Exception {
-    Pedido pedido = pedidoDePruebaContraentrega("cliente@tecnosport.co");
-
-    String conCorreoAjeno =
-        mockMvc
-            .perform(
-                post("/api/v1/pedidos/seguimiento")
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(
-                        "{\"numeroPedido\":\""
-                            + pedido.numeroPedido().valor()
-                            + "\",\"correo\":\"otro@tecnosport.co\"}"))
-            .andExpect(status().isNotFound())
-            .andReturn()
-            .getResponse()
-            .getContentAsString();
-
-    String conNumeroInexistente =
-        mockMvc
-            .perform(
-                post("/api/v1/pedidos/seguimiento")
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(
-                        "{\"numeroPedido\":\"TS-2026-999999\",\"correo\":\"cliente@tecnosport.co\"}"))
-            .andExpect(status().isNotFound())
-            .andReturn()
-            .getResponse()
-            .getContentAsString();
+                .content(cuerpoPorNumero(pedido.numeroPedido().valor(), "cliente@tecnosport.co")))
+        .andExpect(status().isAccepted())
+        .andExpect(content().string(""));
 
     org.junit.jupiter.api.Assertions.assertEquals(
-        json.readTree(conCorreoAjeno).get("detail").asText(),
-        json.readTree(conNumeroInexistente).get("detail").asText());
+        List.of("cliente@tecnosport.co"), correos.destinatarios());
   }
 
   /**
-   * Un número mal escrito responde 404 y no 422: distinguirlos le diría a quien prueba a ciegas
-   * cuándo su patrón es el bueno, sin llegar a acertar un pedido.
+   * <b>La prueba que importa de este endpoint.</b> Correo ajeno, número inexistente y número mal
+   * escrito responden exactamente lo mismo que el acierto —202 sin cuerpo—, y ninguno le escribe a
+   * nadie. Cualquier diferencia diría cuáles números existen.
    */
   @Test
-  void seguimientoPorNumeroConUnNumeroMalEscritoResponde404() throws Exception {
-    mockMvc
-        .perform(
-            post("/api/v1/pedidos/seguimiento")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"numeroPedido\":\"hola\",\"correo\":\"cliente@tecnosport.co\"}"))
-        .andExpect(status().isNotFound());
+  void seguimientoPorNumeroRespondeLoMismoAcierteONoYSoloEscribeSiAcierta() throws Exception {
+    Pedido pedido = pedidoDePruebaContraentrega("cliente@tecnosport.co");
+
+    for (String cuerpo :
+        List.of(
+            cuerpoPorNumero(pedido.numeroPedido().valor(), "otro@tecnosport.co"),
+            cuerpoPorNumero("TS-2026-999999", "cliente@tecnosport.co"),
+            cuerpoPorNumero("hola", "cliente@tecnosport.co"))) {
+      mockMvc
+          .perform(
+              post("/api/v1/pedidos/seguimiento")
+                  .contentType(MediaType.APPLICATION_JSON)
+                  .content(cuerpo))
+          .andExpect(status().isAccepted())
+          .andExpect(content().string(""));
+    }
+
+    org.junit.jupiter.api.Assertions.assertEquals(List.of(), correos.destinatarios());
   }
 
   @Test
@@ -1049,9 +990,35 @@ class PedidoControladorTest {
     }
 
     @Bean
-    ConsultarSeguimientoPorNumero consultarSeguimientoPorNumero(
-        RepositorioPedidos repositorioPedidos) {
-      return new ConsultarSeguimientoPorNumero(repositorioPedidos);
+    EnviadorDeCorreoDobleDePrueba enviadorDeCorreo() {
+      return new EnviadorDeCorreoDobleDePrueba();
+    }
+
+    @Bean
+    SolicitarEnlaceDeSeguimiento solicitarEnlaceDeSeguimiento(
+        RepositorioPedidos repositorioPedidos,
+        EnviadorDeCorreoDobleDePrueba enviadorDeCorreo,
+        LimitadorDeIntentos limitadorDeIntentos,
+        Reloj reloj) {
+      TextosDeCorreo textos =
+          new TextosDeCorreo() {
+            @Override
+            public String texto(TextoDeCorreo texto, Object... argumentos) {
+              return texto.clave();
+            }
+
+            @Override
+            public String dinero(Dinero valor) {
+              return valor.valor().toPlainString();
+            }
+          };
+      return new SolicitarEnlaceDeSeguimiento(
+          repositorioPedidos,
+          enviadorDeCorreo,
+          textos,
+          limitadorDeIntentos,
+          reloj,
+          "https://tecnosport.co/es/checkout/estado");
     }
 
     @Bean

@@ -1,3 +1,4 @@
+import { esLimiteDeIntentos } from '../../../core/errores/mensaje-de-error';
 import { CrearPedidoComando } from '../domain/pedido.comandos';
 import { PedidoHttpRepositorio } from './pedido-http.repositorio';
 
@@ -210,5 +211,65 @@ describe('PedidoHttpRepositorio: la transportadora elegida', () => {
         { varianteId: 'variante-2', cantidad: 2 },
       ],
     });
+  });
+});
+
+/**
+ * ADR-0088. El servidor responde 202 sin cuerpo acierte o no, y eso no puede leerse como un fallo;
+ * el 429 sí tiene que salir como error y con el código que la pantalla reconoce, o le diría "te
+ * enviamos el enlace" a quien chocó con el límite.
+ */
+describe('PedidoHttpRepositorio: pedir el enlace de seguimiento', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  function responder(respuesta: () => Response): Request[] {
+    const peticiones: Request[] = [];
+    vi.stubGlobal('window', undefined);
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (entrada: Request) => {
+        peticiones.push(entrada.clone());
+        return respuesta();
+      }),
+    );
+    return peticiones;
+  }
+
+  it('un 202 sin cuerpo termina sin error y el correo viaja en el cuerpo', async () => {
+    const peticiones = responder(() => new Response(null, { status: 202 }));
+
+    await new PedidoHttpRepositorio().solicitarEnlaceDeSeguimiento(
+      'TS-2026-000001',
+      'cliente@tecnosport.co',
+    );
+
+    expect(peticiones[0].method).toBe('POST');
+    expect(new URL(peticiones[0].url).pathname).toBe('/api/v1/pedidos/seguimiento');
+    expect(new URL(peticiones[0].url).search).toBe('');
+    expect(await peticiones[0].json()).toEqual({
+      numeroPedido: 'TS-2026-000001',
+      correo: 'cliente@tecnosport.co',
+    });
+  });
+
+  it('un 429 sale como límite de intentos', async () => {
+    responder(
+      () =>
+        new Response(JSON.stringify({ status: 429, codigo: 'LIMITE_DE_INTENTOS_EXCEDIDO' }), {
+          status: 429,
+          headers: { 'Content-Type': 'application/problem+json' },
+        }),
+    );
+
+    const fallo = await new PedidoHttpRepositorio()
+      .solicitarEnlaceDeSeguimiento('TS-2026-000001', 'cliente@tecnosport.co')
+      .then(
+        () => null,
+        (error: unknown) => error,
+      );
+
+    expect(esLimiteDeIntentos(fallo)).toBe(true);
   });
 });

@@ -6,11 +6,11 @@ import co.tecnosport.api.domain.pedido.Pedido;
 import java.util.Objects;
 
 /**
- * Seguimiento sin sesión ({@code GET /pedidos/{id}/seguimiento}, "con token del correo, sin
- * sesión", docs/03-api.md). No hay verificación de correo ni envío de enlaces firmados todavía
- * (Fase 4, docs/09-plan-de-arranque.md — tampoco existe infraestructura de correo transaccional
- * hoy): el "token" es el correo mismo, que junto con el id del pedido (un UUID, no adivinable) es
- * la prueba de que quien consulta es quien hizo el pedido.
+ * Seguimiento sin sesión ({@code POST /pedidos/{id}/seguimiento}, docs/03-api.md), adonde llevan
+ * los enlaces de los correos: el comprobante, el despacho y, desde ADR-0088, el que pide el
+ * formulario de "Estado del pedido" ({@code SolicitarEnlaceDeSeguimiento}). El "token" es el correo
+ * mismo, que junto con el id del pedido (un UUID, no adivinable) es la prueba de que quien consulta
+ * es quien hizo el pedido. Es el único camino por el que se ve un pedido sin sesión.
  *
  * <p>Un correo que no coincide se trata exactamente igual que un id inexistente — {@link
  * PedidoNoEncontradoException} en los dos casos, con el mismo mensaje— para no filtrar si el id

@@ -199,24 +199,13 @@
         {{ 'checkout.estado.reintentar' | transloco }}
       </ts-boton>
     }
-
-    <!-- La salida, que faltaba: con el pedido encontrado no había forma de consultar otro sin
-         editar la URL. El método y su clave existían y no los llamaba nadie. Solo aparece cuando
-         se llegó por el formulario: quien viene del enlace de su correo no tiene un formulario al
-         que volver. -->
-    @if (vinoDelFormulario()) {
-      <ts-boton variante="texto" clase="mt-16" (click)="otraConsulta()">
-        {{ 'checkout.estado.consulta.otra_consulta' | transloco }}
-      </ts-boton>
-    }
   } @else if (consulta.isPending() && !pidiendoDatos()) {
     <ts-esqueleto />
   } @else if (pidiendoDatos()) {
-    <!-- El formulario, y es lo que esta pantalla no tenía: sin parámetros en la URL solo sabía
-         decir "No encontramos este pedido", que es adonde llevaba el enlace del pie. El comprador
-         no conoce el `id` —es un UUID—, así que se consulta por el número del comprobante.
-         También se pinta cuando la consulta no encontró nada, para poder corregir el número sin
-         salir de aquí. -->
+    <!-- El formulario del enlace del pie. El comprador no conoce el `id` —es un UUID—, así que
+         escribe el número del comprobante y el correo, y el enlace le llega a ese correo: la
+         pantalla no muestra el pedido por número (ADR-0088). El formulario se queda puesto
+         después de enviar, para no mover el foco y poder pedirlo otra vez. -->
     <div class="mx-auto max-w-formulario">
       <h1 class="m-0 mb-8 font-display text-2xl">
         {{ 'checkout.estado.consulta.titulo' | transloco }}
@@ -228,7 +217,7 @@
       <form
         class="flex flex-col gap-16"
         [formGroup]="form"
-        (submit)="$event.preventDefault(); consultarPorNumero()"
+        (submit)="$event.preventDefault(); solicitarEnlace()"
       >
         <!-- `[error]` en los dos campos, y no solo `markAllAsTouched()` en el manejador:
              `apps/web/CLAUDE.md` lo dice con estas palabras —"sin un `[error]` enganchado no pinta
@@ -255,16 +244,26 @@
 
         <!-- Región viva permanente: un `role="alert"` que nace ya lleno dentro de un `@if` no se
              anuncia (docs/06-testing.md). Lo que cambia es el contenido, no el nodo.
-             Distingue tres cosas que antes eran una: lo que no existe, lo que falló por red o por
-             límite de intentos, y lo que falta por escribir. Decir "no encontramos este pedido" a
-             quien acaba de chocar con el límite es la peor frase posible para alguien que acaba de
-             pagar. -->
+             Distingue el límite de intentos de la red: "intenta de nuevo en un momento" a quien
+             chocó con el límite lo haría chocar otra vez. "No encontramos tu pedido" ya no lo
+             dice nadie: el servidor no lo sabe decir, a propósito (ADR-0088). -->
         <p class="m-0 text-ts-error" role="alert">{{ mensajeDeConsulta() }}</p>
 
+        <!-- Igual de permanente que la de arriba, y `status` y no `alert`: no es un problema. Dice
+             lo mismo acierte o no, porque el servidor no dice cuál de los dos fue. -->
+        <p class="m-0" role="status">
+          @if (solicitud.isSuccess()) {
+            {{ 'checkout.estado.consulta.enviado' | transloco }}
+          }
+        </p>
+
+        <!-- `[ocupado]` y no `[cargando]`: el formulario se queda puesto para poder pedirlo otra
+             vez, y `cargando` deshabilita el botón, que manda el foco a `<body>` justo cuando la
+             región de arriba anuncia el resultado. La reentrada la frena `solicitarEnlace`. -->
         <ts-boton
           variante="primario"
           tipo="submit"
-          [cargando]="consulta.isFetching()"
+          [ocupado]="solicitud.isPending()"
           [etiquetaCargando]="'checkout.estado.consulta.buscando' | transloco"
         >
           {{ 'checkout.estado.consulta.buscar' | transloco }}

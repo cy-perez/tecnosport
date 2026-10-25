@@ -367,6 +367,11 @@ locals {
     # vacio y no se monta: existe para que el dia que llegue el adaptador no haya que tocar
     # esta lista ni el binding de IAM.
     "whatsapp-cloud-api-token",
+    # ADR-0087. La clave con la que el proxy de /api de la web prueba que la IP del visitante que
+    # le manda a la API la escribio el y no el visitante. La leen los dos servicios: la API para
+    # comparar, la web para mandarla. Sin ella la IP del proxy no se cree y todo el trafico que
+    # pasa por la web cae en un solo cubo del limite de intentos.
+    "proxy-web-clave",
   ]
 }
 
@@ -379,6 +384,14 @@ resource "google_secret_manager_secret" "api" {
   }
 
   depends_on = [google_project_service.apis]
+}
+
+# La web solo lee este. Es el unico secreto que comparten los dos servicios, y por eso el binding
+# va aparte en vez de abrirle la lista entera.
+resource "google_secret_manager_secret_iam_member" "web_lee_la_clave_del_proxy" {
+  secret_id = google_secret_manager_secret.api["proxy-web-clave"].id
+  role      = "roles/secretmanager.secretAccessor"
+  member    = "serviceAccount:${google_service_account.web.email}"
 }
 
 resource "google_secret_manager_secret_iam_member" "api_lee_sus_secretos" {
@@ -546,6 +559,8 @@ module "api" {
     # La clave de la API de Claude. Con ella montada la ingesta extrae de verdad; sin ella, el
     # sembrado. El nombre de la variable es el que el SDK y la documentacion esperan.
     ANTHROPIC_API_KEY = "anthropic-api-key"
+    } : {}, var.proxy_web_listo ? {
+    PROXY_WEB_CLAVE = "proxy-web-clave"
     } : {}, var.sistecredito_listo ? {
     SISTECREDITO_SUBSCRIPTION_KEY = "sistecredito-llave-suscripcion"
     SISTECREDITO_STORE_ID         = "sistecredito-store-id"
@@ -584,5 +599,14 @@ module "web" {
     NG_TRUST_PROXY_HEADERS = "forwarded,x-forwarded-proto,x-forwarded-host,x-forwarded-for"
   }
 
-  depends_on = [google_project_service.apis]
+  # La misma clave que la API (ADR-0087), y con la misma bandera: montarla en un servicio y no en el
+  # otro es justo el estado en que la API no cree la IP que el proxy le manda.
+  secretos = var.proxy_web_listo ? {
+    PROXY_WEB_CLAVE = "proxy-web-clave"
+  } : {}
+
+  depends_on = [
+    google_project_service.apis,
+    google_secret_manager_secret_iam_member.web_lee_la_clave_del_proxy,
+  ]
 }

@@ -18,6 +18,7 @@ import {
   CriteriosSeguimiento,
   usarSeguimientoPedido,
 } from '../../application/seguimiento-pedido.consulta';
+import { usarSolicitarEnlaceDeSeguimiento } from '../../application/solicitar-enlace-de-seguimiento.mutacion';
 import { EnvioPublico, EstadoPedido, Pedido, RetractoPublico } from '../../domain/pedido.model';
 import {
   esMetodoPagoSistecredito,
@@ -90,14 +91,13 @@ export class EstadoPage {
 
   protected readonly error = signal<string | null>(null);
 
-  /**
-   * Lo que el formulario pidió, cuando se pidió. Vacío mientras nadie lo haya enviado: sin esto la
-   * consulta arrancaría con el formulario en blanco y la pantalla diría "no encontramos tu pedido"
-   * antes de que nadie escribiera nada.
-   */
   private readonly correosDePedido = inject(ALMACEN_CORREO_DE_PEDIDO);
 
-  private readonly consultado = signal<{ numeroPedido: string; correo: string } | null>(null);
+  /**
+   * El formulario ya no consulta el pedido: pide que el enlace llegue al correo (ADR-0088). La
+   * respuesta es la misma acierte o no, así que lo que se le dice a la persona también.
+   */
+  protected readonly solicitud = usarSolicitarEnlaceDeSeguimiento();
 
   protected readonly form = inject(FormBuilder).nonNullable.group({
     numeroPedido: ['', [Validators.required]],
@@ -105,11 +105,8 @@ export class EstadoPage {
   });
 
   /**
-   * De dónde sale el pedido, por orden: el store —lo acaba de crear esta misma visita—, los
-   * parámetros del enlace del correo, y lo que se haya consultado en el formulario.
-   *
-   * <p>El formulario va el último a propósito: quien llega desde el enlace de su correo no tiene
-   * que volver a escribir nada.
+   * De dónde sale el pedido, por orden: el store —lo acaba de crear esta misma visita— y los
+   * parámetros del enlace del correo. Sin ninguno de los dos, el formulario.
    */
   protected readonly criteriosSeguimiento = computed<CriteriosSeguimiento | null>(() => {
     if (this.checkout.pedido() !== null) {
@@ -121,62 +118,34 @@ export class EstadoPage {
     const correo = pedidoId
       ? correoDelPedido(pedidoId, this.route.snapshot.fragment, this.correosDePedido)
       : null;
-    if (pedidoId && correo) {
-      return { tipo: 'ID', pedidoId, correo };
-    }
-    const delFormulario = this.consultado();
-    return delFormulario === null
-      ? null
-      : {
-          tipo: 'NUMERO',
-          numeroPedido: delFormulario.numeroPedido,
-          correo: delFormulario.correo,
-        };
+    return pedidoId && correo ? { pedidoId, correo } : null;
   });
 
   /**
-   * El formulario se queda puesto **mientras la consulta vuela** y también cuando lo consultado no
-   * existe o falló.
+   * El formulario se queda puesto siempre que no haya pedido que mostrar: antes, durante y después
+   * de pedir el enlace.
    *
-   * <p>Esto decía `criteriosSeguimiento() === null || noEncontrado()`, y con eso el formulario se
-   * desmontaba justo al pulsar "Consultar": lo sustituía un esqueleto, el botón que la persona
-   * acababa de pulsar dejaba de existir —el foco se iba a `<body>`—, el `[cargando]` del botón no
-   * se llegaba a ver nunca, y con lector de pantalla no había ni un anuncio entre el envío y la
-   * respuesta. Lo levantó la auditoría de accesibilidad.
-   *
-   * <p>Ahora el esqueleto solo cubre el camino del enlace del correo, donde no hay formulario que
-   * conservar; en el del formulario, el estado lo cuenta el propio botón con su `aria-busy` y su
-   * anillo.
+   * <p>Llegó a desmontarse al pulsar el botón —lo sustituía un esqueleto, el botón que la persona
+   * acababa de pulsar dejaba de existir y el foco se iba a `<body>`—, y lo levantó la auditoría de
+   * accesibilidad. El esqueleto solo cubre el camino del enlace del correo, donde no hay formulario
+   * que conservar; en el del formulario, el estado lo cuenta el botón con su `aria-busy` y su
+   * anillo, y el resultado, las dos regiones vivas.
    */
   protected readonly pidiendoDatos = computed(
-    () => this.criteriosSeguimiento()?.tipo !== 'ID' && this.pedido() === null,
+    () => this.criteriosSeguimiento() === null && this.pedido() === null,
   );
 
   /**
-   * `null` es "el servidor dijo que no existe", que es distinto de `undefined` —todavía no se ha
-   * preguntado—. El adaptador traduce el 404 a `null` precisamente para poder distinguirlos aquí.
-   */
-  protected readonly noEncontrado = computed(
-    () => this.consulta.isSuccess() && this.consulta.data() === null,
-  );
-
-  /**
-   * Lo que se le dice a quien consultó y no obtuvo su pedido.
-   *
-   * <p>Tres casos distintos, y antes los tres acababan en el mismo sitio: la pantalla caía al
-   * `@else` final y decía <b>"No encontramos este pedido"</b> también cuando la consulta había
-   * fallado por red o por límite de intentos. Es la peor frase posible para alguien que acaba de
-   * pagar, y el javadoc del adaptador prometía una traducción que no llegaba a ninguna parte — el
-   * error de la consulta no estaba enganchado a nada. Lo levantó la revisión.
+   * Lo que se le dice a quien pidió el enlace y no se le pudo mandar: el límite de intentos y la
+   * red son dos cosas distintas, y "intenta de nuevo en un momento" a quien chocó con el límite lo
+   * haría chocar otra vez. Lo que ya no existe es "no encontramos tu pedido": el servidor no lo
+   * dice, a propósito (ADR-0088).
    */
   protected readonly mensajeDeConsulta = computed(() => {
     if (this.error() !== null) {
       return this.error();
     }
-    if (this.noEncontrado()) {
-      return this.traducir()('checkout.estado.consulta.no_encontrado');
-    }
-    const fallo = this.consulta.error();
+    const fallo = this.solicitud.error();
     if (!fallo) {
       return null;
     }
@@ -221,7 +190,7 @@ export class EstadoPage {
 
   private readonly enfocar = usarFoco();
 
-  protected consultarPorNumero(): void {
+  protected solicitarEnlace(): void {
     this.form.markAllAsTouched();
     this.revision.update((n) => n + 1);
     if (this.form.invalid) {
@@ -240,32 +209,15 @@ export class EstadoPage {
       return;
     }
     this.error.set(null);
-    const { numeroPedido, correo } = this.form.getRawValue();
-    const criterios = { numeroPedido: numeroPedido.trim(), correo: correo.trim() };
-    // Reenviar lo mismo tiene que volver a preguntar. Con `staleTime` y la misma `queryKey`, fijar
-    // el mismo valor no dispara nada: el botón no gira, el mensaje no cambia, y quien no vio el
-    // error cree que la página se colgó.
-    const mismosDeAntes =
-      this.consultado()?.numeroPedido === criterios.numeroPedido &&
-      this.consultado()?.correo === criterios.correo;
-    if (mismosDeAntes) {
-      void this.consulta.refetch();
+    // Guarda de reentrada, porque el botón va con `[ocupado]` y no con `[cargando]`: no se
+    // deshabilita, así que un segundo Enter mientras vuela la primera llegaría hasta aquí.
+    if (this.solicitud.isPending()) {
       return;
     }
-    this.consultado.set(criterios);
-  }
-
-  /** Si a este pedido se llegó escribiendo el número, y no desde el enlace del correo. */
-  protected readonly vinoDelFormulario = computed(
-    () => this.criteriosSeguimiento()?.tipo === 'NUMERO',
-  );
-
-  /** Vuelve al formulario en blanco, para consultar otro pedido. */
-  protected otraConsulta(): void {
-    this.consultado.set(null);
-    this.form.reset();
-    this.error.set(null);
-    this.revision.update((n) => n + 1);
+    const { numeroPedido, correo } = this.form.getRawValue();
+    // Una mutación y no una consulta: reenviar lo mismo vuelve a pedir el enlace, que es lo que
+    // espera quien no lo vio llegar. El tope de tres por hora lo pone el servidor.
+    this.solicitud.mutate({ numeroPedido: numeroPedido.trim(), correo: correo.trim() });
   }
 
   protected readonly consulta = usarSeguimientoPedido(() => this.criteriosSeguimiento());
@@ -302,14 +254,11 @@ export class EstadoPage {
   });
 
   /**
-   * El botón de reintentar necesita el `id` del pedido, y el seguimiento por número <b>no lo
-   * devuelve</b>: ese UUID es la credencial de `/pagos/intentos` y de `/reintentar-pago`, y
-   * entregarlo por una puerta que se abre adivinando un número secuencial convertiría una fuga de
-   * lectura en una de escritura (ver `MapeadorSeguimiento.aRespuestaSinIdInterno`).
-   *
-   * <p>`aSeguimiento` mapea el `id` ausente a cadena vacía, así que la comprobación es esa. Quien
-   * llegó escribiendo el número y tiene un pago fallido reintenta desde el enlace de su correo, que
-   * es donde ese botón siempre tuvo sentido.
+   * El botón de reintentar necesita el `id` del pedido, que es la credencial de `/pagos/intentos` y
+   * de `/reintentar-pago`. Hubo un camino que entraba por el número y no lo traía; desde ADR-0088
+   * el pedido solo se ve por el enlace del correo, que sí lo trae. La comprobación del `id` vacío
+   * se queda porque `aSeguimiento` mapea un `id` ausente a cadena vacía, y sin él no hay a qué
+   * reintentar.
    */
   protected readonly puedeReintentar = computed(() => {
     const pedido = this.pedido();

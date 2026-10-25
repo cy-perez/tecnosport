@@ -8,10 +8,11 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * adivinable</strong>.
  *
  * <p>El seguimiento por {@code id} no necesitaba techo porque el id es un UUID v7: recorrerlo no es
- * una opción. El número legible sí lo es — van del {@code 000001} hacia arriba dentro de cada año—,
- * así que lo único que protege el pedido es que el correo coincida. Quien ya conozca el correo de
- * una persona puede recorrer números hasta dar con uno suyo, y contra eso el caso de uso no puede
- * hacer nada: lo que se puede hacer es encarecer el intento.
+ * una opción. El número legible sí lo es — van del {@code 000001} hacia arriba dentro de cada año.
+ * Hasta el 25 de octubre de 2026 este endpoint devolvía el pedido, y quien conociera el correo de
+ * una persona podía recorrer números hasta dar con uno suyo; desde ADR-0088 manda el enlace al
+ * correo y no devuelve nada. El límite sigue: cada acierto encola un correo, y eso no puede ser
+ * gratis.
  *
  * <p>Más estrecho que el de pedidos y mucho más que el de cotización porque el uso legítimo es
  * mínimo: alguien consulta su pedido unas pocas veces al día, y copia el número de un correo. Un

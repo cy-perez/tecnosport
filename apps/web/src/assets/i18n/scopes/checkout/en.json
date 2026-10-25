@@ -179,19 +179,18 @@
     },
     "consulta": {
       "titulo": "Check your order",
-      "entradilla": "Enter your order number and the email address you used. Both are on the receipt we sent you.",
+      "entradilla": "Enter your order number and the email address you used. Both are on the receipt we sent you. We will send the link to see the status to that email address.",
       "numero": "Order number",
       "numero_ayuda": "It looks like TS-2026-000123.",
       "correo": "Order email address",
-      "buscar": "Check",
-      "buscando": "Checking…",
-      "no_encontrado": "We could not find an order with that number and that email address. Check them on your receipt; if they still do not work, write to us.",
-      "otra_consulta": "Check another order",
+      "buscar": "Send me the link",
+      "buscando": "Sending…",
+      "enviado": "If the number and the email address belong to the same order, the link to see it will reach that email address in a few minutes. If it does not arrive, check your spam folder and that the number is the one on your receipt.",
       "numero_requerido": "Enter your order number.",
       "correo_requerido": "Enter the email address you used for the order.",
       "correo_invalido": "That email address does not look valid.",
-      "error_consulta": "We could not check your order right now. Try again in a moment.",
-      "demasiados_intentos": "You made too many checks in a row. Wait a few minutes and try again."
+      "error_consulta": "We could not request the link right now. Try again in a moment.",
+      "demasiados_intentos": "You requested the link too many times in a row. Wait a few minutes and try again."
     }
   },
   "transferencia": {

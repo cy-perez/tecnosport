@@ -10,8 +10,6 @@ import co.tecnosport.api.domain.envio.Envio;
 import co.tecnosport.api.domain.envio.GuiaEnvio;
 import co.tecnosport.api.domain.pedido.EstadoPedido;
 import co.tecnosport.api.domain.pedido.Pedido;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
@@ -121,13 +119,13 @@ public final class DespacharPedido {
                 pedido.numeroPedido().valor(),
                 guias.getFirst().transportadora(),
                 guias.getFirst().guia(),
-                enlaceDeEstado(pedido))
+                EnlaceDeEstado.de(urlBaseEstado, pedido))
             : textos.texto(
                 TextoDeCorreo.PEDIDO_DESPACHO_CUERPO_VARIAS,
                 pedido.numeroPedido().valor(),
                 String.valueOf(guias.size()),
                 listadoDeGuias(guias),
-                enlaceDeEstado(pedido));
+                EnlaceDeEstado.de(urlBaseEstado, pedido));
     try {
       enviadorDeCorreo.enviar(
           pedido.correo(),
@@ -156,22 +154,5 @@ public final class DespacharPedido {
     return guias.stream()
         .map(guia -> guia.transportadora() + " " + guia.guia())
         .collect(Collectors.joining(", "));
-  }
-
-  /**
-   * El mismo camino que ya usa el retorno de Wompi: la pantalla de estado no pide sesión, se abre
-   * con el id y el correo. Los dos van codificados — el correo lleva una arroba y puede llevar un
-   * {@code +}, que en una cadena de consulta significa un espacio.
-   */
-  private String enlaceDeEstado(Pedido pedido) {
-    return urlBaseEstado
-        + "?pedidoId="
-        + URLEncoder.encode(pedido.id().toString(), StandardCharsets.UTF_8)
-        // En el fragmento y no en la consulta: el navegador nunca manda lo que va después del #,
-        // así
-        // que el correo no queda en los registros del servidor ni en el Referer. La pantalla de
-        // estado lo lee de ahí.
-        + "#correo="
-        + URLEncoder.encode(pedido.correo().valor(), StandardCharsets.UTF_8);
   }
 }
