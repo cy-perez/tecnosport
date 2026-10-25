@@ -164,6 +164,61 @@ describe('TsSelectorVariante', () => {
     expect(emitido).toEqual({ Color: 'Azul marino', Talla: 'L' });
   });
 
+  /**
+   * El OPPO A6k: «Azul» está en la paleta de colores del sitio y trae muestra; «Violeta» no. Se
+   * pintaba un círculo y un botón en el mismo eje. Un eje se pinta de una sola forma.
+   */
+  describe('un eje de color con una opción sin muestra', () => {
+    const mixto: EjeAtributo[] = [
+      {
+        nombre: 'Color',
+        unidad: null,
+        opciones: [
+          { valor: 'Violeta', colorHex: null, existe: true },
+          { valor: 'Azul', colorHex: '#1565C0', existe: true },
+        ],
+      },
+    ];
+
+    it('se pinta entero con botones que dicen el nombre del color', async () => {
+      const { container } = await render(TsSelectorVariante, {
+        inputs: {
+          ejes: mixto,
+          seleccion: { Color: 'Violeta' },
+          nombresDeColor: { Violeta: 'Violet', Azul: 'Blue' },
+        },
+      });
+
+      expect(container.querySelectorAll('ts-muestra-color')).toHaveLength(0);
+      expect(screen.getByRole('button', { name: 'Violet' }).textContent?.trim()).toBe('Violet');
+      expect(screen.getByRole('button', { name: 'Blue' }).textContent?.trim()).toBe('Blue');
+    });
+
+    it('y ninguno de sus colores se tacha', async () => {
+      await render(TsSelectorVariante, {
+        inputs: {
+          ejes: mixto,
+          seleccion: { Color: 'Violeta' },
+          noDisponibles: { Color: ['Violeta', 'Azul'] },
+          textoNoDisponible: 'no disponible',
+        },
+      });
+
+      expect(screen.getByRole('button', { name: 'Azul' }).className).not.toContain('line-through');
+      expect(screen.getByRole('button', { name: 'Violeta' }).className).not.toContain(
+        'line-through',
+      );
+    });
+
+    it('con todas sus muestras sigue siendo de círculos', async () => {
+      const { container } = await render(TsSelectorVariante, {
+        inputs: { ejes, seleccion: { Color: 'Azul marino', Talla: 'M' } },
+      });
+
+      expect(container.querySelectorAll('ts-muestra-color')).toHaveLength(2);
+    });
+  });
+
   it('marca la opción activa con aria-pressed', async () => {
     await render(TsSelectorVariante, {
       inputs: { ejes, seleccion: { Color: 'Azul marino', Talla: 'M' } },

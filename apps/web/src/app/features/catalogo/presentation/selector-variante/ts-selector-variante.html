@@ -3,7 +3,7 @@
     <legend class="mb-8 p-0 text-sm text-ts-texto-suave">{{ eje.nombre }}</legend>
     <div class="flex flex-wrap gap-8">
       @for (opcion of eje.opciones; track opcion.valor) {
-        @if (esColor(opcion)) {
+        @if (conMuestras(eje)) {
           <!-- El color va en un <span> interno y no en el <button>. El botón
                medía 32 x 32, que es el tamaño que el swatch debe *verse*; ahora
                el botón es el objetivo táctil de 44 y el span conserva los 32 con
@@ -29,7 +29,7 @@
             [presionado]="estaSeleccionada(eje.nombre, opcion)"
             [inactivo]="bloqueada(opcion)"
             [etiquetaAccesible]="etiquetaAccesible(eje, opcion)"
-            [clase]="claseOpcion(eje.nombre, opcion)"
+            [clase]="claseOpcion(eje, opcion)"
             (click)="elegir(eje.nombre, opcion)"
           >
             {{ etiqueta(eje, opcion) }}

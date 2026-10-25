@@ -299,6 +299,23 @@ export function coloresDe(producto: Producto): ColorDeProducto[] {
   return [...vistos.values()];
 }
 
+/**
+ * Los colores para pintar en círculos, o ninguno si alguno no tiene muestra. El OPPO A6k trae
+ * «Azul», que está en la paleta del sitio, y «Violeta», que no: `coloresDe` daba solo el azul y la
+ * tarjeta lo anunciaba como el único color. Los equipos de tecnología llevan nombres comerciales
+ * que casi nunca están en la paleta, y entonces la tarjeta no pinta ninguno: la ficha los dice.
+ */
+export function coloresConMuestra(producto: Producto): ColorDeProducto[] {
+  const eje = ejeDeColor(producto);
+  if (eje === null) {
+    return [];
+  }
+  const sinMuestra = producto.variantes.some((variante) =>
+    variante.atributos.some((valor) => valor.nombre === eje && valor.colorHex === null),
+  );
+  return sinMuestra ? [] : coloresDe(producto);
+}
+
 function variantesDelColor(producto: Producto, color: string): Set<string> {
   return new Set(
     producto.variantes

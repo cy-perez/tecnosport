@@ -78,20 +78,35 @@ export class TsSelectorVariante {
   readonly textoNoDisponible = input('');
   readonly seleccionCambio = output<Seleccion>();
 
-  protected esColor(opcion: OpcionEje): boolean {
-    return opcion.colorHex !== null;
+  /**
+   * Si el eje se pinta con círculos: solo cuando **todas** sus opciones tienen muestra. Se decidía
+   * por opción, y el OPPO A6k salió con «Violeta» en botón y «Azul» en círculo, porque «Azul» está
+   * en la paleta de colores del sitio y «Violeta» no. Los nombres comerciales de tecnología
+   * —Arándano, Lavanda Asombroso— casi nunca están, así que un eje mixto se pinta entero con
+   * botones, como los de los demás equipos.
+   */
+  protected conMuestras(eje: EjeAtributo): boolean {
+    return eje.opciones.length > 0 && eje.opciones.every((opcion) => opcion.colorHex !== null);
+  }
+
+  /** Si es el eje del color, aunque se pinte con botones: alguna opción trae muestra. */
+  protected esEjeDeColor(eje: EjeAtributo): boolean {
+    return eje.opciones.some((opcion) => opcion.colorHex !== null);
   }
 
   protected estaSeleccionada(nombreEje: string, opcion: OpcionEje): boolean {
     return this.seleccion()[nombreEje] === opcion.valor;
   }
 
-  protected noDisponible(nombreEje: string, opcion: OpcionEje): boolean {
-    return !this.esColor(opcion) && (this.noDisponibles()[nombreEje] ?? []).includes(opcion.valor);
+  /** Un color no se tacha nunca, ni pintado en botón: ver `noDisponibles`. */
+  protected noDisponible(eje: EjeAtributo, opcion: OpcionEje): boolean {
+    return (
+      !this.esEjeDeColor(eje) && (this.noDisponibles()[eje.nombre] ?? []).includes(opcion.valor)
+    );
   }
 
   protected etiquetaAccesible(eje: EjeAtributo, opcion: OpcionEje): string | null {
-    return this.noDisponible(eje.nombre, opcion)
+    return this.noDisponible(eje, opcion)
       ? `${this.etiqueta(eje, opcion)}, ${this.textoNoDisponible()}`
       : null;
   }
@@ -101,11 +116,11 @@ export class TsSelectorVariante {
    * donde esa talla está agotada—, solo tachada: el texto suave sobre el fondo primario no cumple
    * el contraste.
    */
-  protected claseOpcion(nombreEje: string, opcion: OpcionEje): string {
-    if (!this.noDisponible(nombreEje, opcion)) {
+  protected claseOpcion(eje: EjeAtributo, opcion: OpcionEje): string {
+    if (!this.noDisponible(eje, opcion)) {
       return TALLA;
     }
-    return this.estaSeleccionada(nombreEje, opcion)
+    return this.estaSeleccionada(eje.nombre, opcion)
       ? `${TALLA} line-through`
       : `${TALLA} line-through text-ts-texto-suave border-ts-borde`;
   }
@@ -131,7 +146,8 @@ export class TsSelectorVariante {
     this.seleccionCambio.emit({ ...this.seleccion(), [nombreEje]: opcion.valor });
   }
 
+  /** El color en botón dice su nombre en el idioma de quien mira, como el círculo en su leyenda. */
   protected etiqueta(eje: EjeAtributo, opcion: OpcionEje): string {
-    return etiquetaDeOpcion(eje, opcion);
+    return this.esEjeDeColor(eje) ? this.nombreDeColor(opcion) : etiquetaDeOpcion(eje, opcion);
   }
 }
