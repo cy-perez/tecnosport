@@ -190,8 +190,11 @@ export function mensajeDeListaCambiada(ruta, copia) {
 /**
  * Lo que va en los borradores: de lo que espera borrador, solo lo que se puede revisar.
  *
- * <p>Un modelo nuevo entra si la tanda de fotos lo dejó `apto`; uno en espera o fuera de la tanda
- * se queda, con el motivo. Las configuraciones nuevas de un modelo que ya se vende entran sin
+ * <p>Un modelo nuevo entra si la tanda de fotos lo dejó `apto` **y trae la paleta del fabricante**;
+ * uno en espera o fuera de la tanda, o sin paleta, se queda, con el motivo. Sin paleta la ficha no
+ * dice en qué colores existe el modelo, ningún color se puede elegir más que los que marcó la
+ * lista, y todo pasa por WhatsApp (ADR-0086): eso se arregla en el bloque 1 con
+ * `scripts/paletas.py`, no en el panel. Las configuraciones nuevas de un modelo que ya se vende entran sin
  * mirar fotos —el producto tiene las suyas—, y solo esas: el resto del modelo ya se renovó con el
  * inventario.
  *
@@ -218,8 +221,16 @@ export function seleccionParaBorradores(lista, porProponer, estados) {
   for (const modelo of lista.modelos) {
     if (nuevos.has(modelo.idModelo)) {
       const estado = estados[modelo.idModelo];
-      if (estado?.estado === "apto") {
+      if (estado?.estado === "apto" && (modelo.paleta ?? []).length > 0) {
         modelos.push(modelo);
+      } else if (estado?.estado === "apto") {
+        omitidos.push({
+          titulo: modelo.titulo,
+          motivo:
+            "sin paleta del fabricante: fíjala en el bloque 1 con `python scripts/paletas.py " +
+            `fijar ${modelo.idModelo} --colores … --fuente …\` y vuelve a exportar; un modelo de un ` +
+            "solo acabado lleva ese color",
+        });
       } else {
         omitidos.push({
           titulo: modelo.titulo,

@@ -453,13 +453,35 @@ de la primera vez que se investigó el producto.
   `referencias/descripciones.md`; **de dónde salen los datos** arriba y en
   `referencias/fichas-tecnicas.md`. La descripción vale para todas las memorias
   del modelo: no nombra la capacidad ni los colores, que son variantes.
-- **Paleta oficial completa** — en `colores_oficiales` van **todos** los colores
-  que el fabricante publica para el modelo, no solo los que marca la lista: la
-  base la guarda como la paleta del modelo. Escríbela en `fichas-marca.json`
-  (`"paleta": [...]`) y `redactar_fichas.py` la lleva a `colores_oficiales`. Los
-  que marca la lista —o la paleta entera, si no marca ninguno— se sugieren en
-  `colores_sugeridos` (`referencias/colores.md`), y se confirman en el panel al
-  revisar el borrador.
+- **Paleta oficial completa, siempre** — en `colores_oficiales` van **todos** los
+  colores que el fabricante publica para el modelo, no solo los que marca la
+  lista: la base la guarda como la paleta del modelo, la ficha la dice al pie de
+  las fotos y cada color de ella se puede elegir (ADR-0086). **Ningún modelo nuevo
+  termina el paso 4 sin paleta**, porque el bloque 3 no lo propone
+  (`importar-lista-tecnologia.mjs --borradores` lo deja fuera con el motivo):
+  - **De dónde sale, en este orden**, y siempre con su fuente: el sitio de la
+    marca en Colombia; el de otro país de la misma marca; su página de
+    especificaciones o de soporte; las tiendas grandes de Colombia —Alkosto,
+    Ktronix, Falabella, Éxito—, que publican una referencia por color; y, para
+    confirmar un acabado único, las fotos del fabricante que ya están en la
+    carpeta del modelo. Icecat **no** trae colores: que la ficha salga de Icecat
+    no exime de buscar la paleta. GSMArena sirve para comparar, no como fuente.
+  - **Un solo acabado es un color, no una paleta vacía.** «La marca no publica
+    variantes de color» quiere decir que el modelo existe en uno: ese es su
+    paleta («Blanco», «Negro»). Vacía, la ficha no dice el color y todo se
+    pregunta por WhatsApp; con un color, se vende sin preguntar.
+  - **Dónde se escribe:** con la ficha de la marca, en `fichas-marca.json`
+    (`"paleta": [...]`), y `redactar_fichas.py` la lleva a `colores_oficiales`.
+    Si salió de otra fuente, o para corregir una que ya está en la base,
+    `python scripts/paletas.py fijar <id_modelo> --colores "A,B" --fuente … --url …`,
+    que la escribe en la corrida y en `conocidos.json` y reemplaza el supuesto
+    viejo. `python scripts/paletas.py pendientes` dice cuáles faltan, de la
+    corrida y de la base: córrelo al cerrar el paso 4.
+  - **Sin modelo identificado no hay paleta**, y no se inventa: el modelo queda
+    pendiente hasta que el proveedor confirme la referencia, y no llega al panel.
+  Los que marca la lista —o la paleta entera, si no marca ninguno— se sugieren
+  en `colores_sugeridos` (`referencias/colores.md`), y se confirman en el panel
+  al revisar el borrador.
 - **¿Esa configuración existe?** La ficha oficial dice qué combinaciones de RAM y
   almacenamiento vende el fabricante, y el proveedor a veces ofrece otras. En la
   lista del 12/09/2026 aparecieron dos: un Redmi Note 15 Pro 5G de 8+512 cuando
@@ -817,6 +839,8 @@ colores es un producto con cuatro variantes.
 scripts/rutas.py                  la forma de catalogo/ por subproceso; de ahí salen las rutas por omisión
 scripts/margen.py                 regla 18: el margen mínimo, que usan la exportación y las carpetas de modelo
 scripts/colores.py                los colores sugeridos al panel: los de los emojis, o la paleta completa sin ellos
+scripts/paletas.py                paso 4  qué modelos no tienen la paleta del fabricante, y fijarla con su fuente
+                                  en la corrida y en la base (ADR-0086)
 scripts/parsear_lista.py          paso 2  1-lista/lista.txt → productos.json + 1-lista/revision.md
 scripts/comparar_lista.py         paso 2  productos.json contra conocidos.json → pendientes + 1-lista/cambios.md;
                                   se puede volver a correr: parte de 1-lista/productos-del-parser.json

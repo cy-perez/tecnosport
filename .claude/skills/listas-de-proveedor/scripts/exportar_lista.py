@@ -191,7 +191,7 @@ def resumen_de_aviso(aviso: dict) -> str:
         n = len(aviso["sinPrecioMercado"])
         partes.append(f"{n} configuración(es) sin precio de mercado: el precio se fija solo contra el costo")
     if aviso.get("paletaVacia"):
-        partes.append("sin paleta: los colores se marcan a mano en el panel")
+        partes.append("sin paleta del fabricante: el bloque 3 no lo propone hasta fijarla con scripts/paletas.py")
     if aviso.get("notasDescripcion"):
         partes.append("la descripción avisa datos pendientes del proveedor")
     if aviso.get("defectosDescripcion"):
