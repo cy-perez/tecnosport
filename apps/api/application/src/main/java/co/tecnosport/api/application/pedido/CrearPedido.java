@@ -144,10 +144,6 @@ public final class CrearPedido {
     if (comando.contacto() == null) {
       throw new ExcepcionDeDominio("Un pedido exige el nombre y el teléfono de quien recibe.");
     }
-    // Antes de reservar: la recogida depende de que todo el carrito venga de proveedores locales.
-    recogidaEnPunto.exigirDisponible(
-        comando.tipoEntrega(),
-        comando.lineas().stream().map(CrearPedidoComando.LineaComando::varianteId).toList());
     Instant ahora = reloj.ahora();
     CorreoElectronico correoComprador = new CorreoElectronico(comando.correo());
     if (!limitadorDeIntentos.permitir(
@@ -165,6 +161,12 @@ public final class CrearPedido {
     // repetida: tomaría dos veces el mismo bloqueo y haría dos reservas separadas sobre el mismo
     // libro. El agregado lo vuelve a exigir al crearse; aquí se adelanta para no reservar nada.
     Pedido.exigirVariantesSinRepetir(
+        comando.lineas().stream().map(CrearPedidoComando.LineaComando::varianteId).toList());
+
+    // Antes de reservar, y después de lo de arriba: la recogida lee el catálogo por cada línea
+    // (ADR-0093), así que va detrás del límite por cuenta y del rechazo barato de los repetidos.
+    recogidaEnPunto.exigirDisponible(
+        comando.tipoEntrega(),
         comando.lineas().stream().map(CrearPedidoComando.LineaComando::varianteId).toList());
 
     // La cotización va antes de la comprobación de contraentrega y no al revés: la tarifa que sale

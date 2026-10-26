@@ -6,12 +6,16 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import co.tecnosport.api.domain.catalogo.Categoria;
+import co.tecnosport.api.domain.catalogo.ImagenProducto;
 import co.tecnosport.api.domain.catalogo.LineaCatalogo;
 import co.tecnosport.api.domain.catalogo.Marca;
 import co.tecnosport.api.domain.catalogo.Paquete;
 import co.tecnosport.api.domain.catalogo.Producto;
+import co.tecnosport.api.domain.catalogo.TipoImagen;
 import co.tecnosport.api.domain.catalogo.Variante;
+import co.tecnosport.api.domain.catalogo.VarianteDeImagen;
 import co.tecnosport.api.domain.compartido.Dinero;
+import co.tecnosport.api.domain.compartido.HashContenido;
 import co.tecnosport.api.domain.compartido.Sku;
 import co.tecnosport.api.domain.compartido.Slug;
 import co.tecnosport.api.domain.pedido.TipoEntrega;
@@ -41,6 +45,7 @@ class RecogidaEnPuntoTest {
   private final Variante delMayorista;
   private final Variante manual;
   private final Variante deProveedorBorrado;
+  private final Variante enBorradorDeVioleta;
 
   RecogidaEnPuntoTest() {
     proveedores.conProveedores(riverah, violeta, mayorista);
@@ -55,7 +60,12 @@ class RecogidaEnPuntoTest {
     delMayorista = conVariante(pMayorista, "TS-3");
     deProveedorBorrado = conVariante(pBorrado, "TS-4");
     manual = conVariante(pManual, "TS-5");
-    productos.conProductos(pRiverah, pVioleta, pMayorista, pBorrado, pManual);
+    for (Producto p : List.of(pRiverah, pVioleta, pMayorista, pBorrado, pManual)) {
+      publicar(p);
+    }
+    Producto pBorrador = deProveedor("Chaqueta", violeta.id());
+    enBorradorDeVioleta = conVariante(pBorrador, "TS-6");
+    productos.conProductos(pRiverah, pVioleta, pMayorista, pBorrado, pManual, pBorrador);
   }
 
   private RecogidaEnPunto recogida(boolean encendida) {
@@ -134,12 +144,76 @@ class RecogidaEnPuntoTest {
                 .exigirDisponible(TipoEntrega.RETIRO_EN_PUNTO, List.of(UUID.randomUUID())));
   }
 
+  /**
+   * Lo que no se vende no se recoge, aunque sea de un local: y al exigir no decide, para que el
+   * caso de uso responda su 404 sin confirmar que la variante existe.
+   */
+  @Test
+  void loQueNoEstaALaVentaNoSeRecogeNiDecideAlExigir() {
+    RecogidaEnPunto recogida = recogida(true);
+
+    assertFalse(recogida.disponiblePara(List.of(enBorradorDeVioleta.id())));
+    assertDoesNotThrow(
+        () ->
+            recogida.exigirDisponible(
+                TipoEntrega.RETIRO_EN_PUNTO, List.of(deRiverah.id(), enBorradorDeVioleta.id())));
+  }
+
+  /** Un proveedor desactivado no surte: lo suyo deja de llegar al punto. */
+  @Test
+  void unProveedorLocalDesactivadoNoHabilitaLaRecogida() {
+    violeta.editar(
+        "Violeta",
+        LineaCatalogo.ROPA,
+        "+57 300",
+        "Violeta",
+        false,
+        false,
+        null,
+        OrdenDePublicacion.TEXTO_PRIMERO);
+
+    assertTrue(violeta.esLocal());
+    assertFalse(recogida(true).disponiblePara(List.of(deVioleta.id())));
+  }
+
+  /** La consulta es pública: los repetidos no cuentan y una lista desmedida no lee nada. */
+  @Test
+  void losRepetidosNoCuentanYUnaListaDesmedidaNoSeRecoge() {
+    RecogidaEnPunto recogida = recogida(true);
+    java.util.List<UUID> repetida = java.util.Collections.nCopies(10_000, deRiverah.id());
+    java.util.List<UUID> desmedida = new java.util.ArrayList<>(List.of(deRiverah.id()));
+    for (int i = 0; i < RecogidaEnPunto.MAXIMO_VARIANTES; i++) {
+      desmedida.add(UUID.randomUUID());
+    }
+    java.util.List<UUID> conHueco = new java.util.ArrayList<>(List.of(deRiverah.id()));
+    conHueco.add(null);
+
+    assertTrue(recogida.disponiblePara(repetida));
+    assertFalse(recogida.disponiblePara(desmedida));
+    assertFalse(recogida.disponiblePara(conHueco));
+  }
+
   private static Proveedor proveedor(String nombre, boolean local) {
     Proveedor proveedor =
         Proveedor.crear(
             nombre, LineaCatalogo.ROPA, "+57 300", nombre, null, OrdenDePublicacion.TEXTO_PRIMERO);
     proveedor.definirLocal(local);
     return proveedor;
+  }
+
+  /** Lo que se vende está publicado, y publicar pide la imagen principal. */
+  private static void publicar(Producto producto) {
+    producto.asignarImagenPrincipal(
+        ImagenProducto.crear(
+            TipoImagen.PRINCIPAL,
+            0,
+            List.of(new VarianteDeImagen(800, "https://cdn.tecnosport.co/img.jpg", 1000)),
+            null,
+            600,
+            new HashContenido("%064x".formatted(1)),
+            "alt es",
+            "alt en"));
+    producto.publicar();
   }
 
   private static Categoria ropa() {

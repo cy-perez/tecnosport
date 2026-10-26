@@ -225,8 +225,8 @@ class AdminProveedorControladorTest {
   }
 
   /**
-   * Violeta es local (ADR-0093): se marca al crearla, editar sin el campo lo conserva y {@code
-   * false} lo quita. Sin marcar, nadie es local.
+   * Violeta es local (ADR-0093): sin marcar nadie es local, se marca al editar, editar sin el campo
+   * lo conserva y {@code false} lo quita. El alta marcada va aparte, abajo.
    */
   @Test
   void localSeMarcaAlCrearYEditarSinElCampoLoConserva() throws Exception {
@@ -265,6 +265,23 @@ class AdminProveedorControladorTest {
                 .content(violeta + ",\"local\":false}"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.local").value(false));
+  }
+
+  @Test
+  void localSeMarcaEnElAlta() throws Exception {
+    mockMvc
+        .perform(
+            post("/api/v1/admin/proveedores")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    "{\"nombre\":\"La Riverah\",\"linea\":\"ROPA\",\"telefonoWhatsApp\":\"+57 301\","
+                        + "\"nombreEnExportacion\":\"La Riverah\",\"ordenDePublicacion\":\"TEXTO_PRIMERO\","
+                        + "\"local\":true}"))
+        .andExpect(status().isCreated())
+        .andExpect(jsonPath("$.local").value(true));
+    UUID id = proveedores.porId.keySet().iterator().next();
+
+    org.junit.jupiter.api.Assertions.assertTrue(proveedores.porId.get(id).esLocal());
   }
 
   /**

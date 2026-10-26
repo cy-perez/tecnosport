@@ -77,6 +77,7 @@ class MigracionProveedorLocalTest {
     UUID meraki = proveedor("Meraki", "ROPA");
     UUID tenis = proveedor("Tenis Al Pie", "CALZADO");
     UUID tecnologia = proveedor("Mayorista", "TECNOLOGIA");
+    UUID homonimo = proveedor("Violeta Tech", "TECNOLOGIA");
 
     flywayHasta("122").migrate();
 
@@ -85,5 +86,6 @@ class MigracionProveedorLocalTest {
     assertThat(esLocal(meraki)).isFalse();
     assertThat(esLocal(tenis)).isFalse();
     assertThat(esLocal(tecnologia)).isFalse();
+    assertThat(esLocal(homonimo)).as("un nombre parecido en tecnologia no se marca").isFalse();
   }
 }

@@ -6,5 +6,7 @@
 -- desarrollo que en la nube, y si no existen no pasa nada: se marcan desde el panel.
 alter table proveedor add column es_local boolean not null default false;
 
+-- Las dos son de ropa y bolsos: un proveedor de tecnologia con un nombre parecido no se marca.
 update proveedor set es_local = true
-where lower(nombre) like '%riverah%' or lower(nombre) like '%violeta%';
+where (lower(nombre) like '%riverah%' or lower(nombre) like '%violeta%')
+  and linea <> 'TECNOLOGIA';

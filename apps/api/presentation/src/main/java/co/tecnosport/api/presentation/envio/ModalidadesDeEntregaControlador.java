@@ -4,9 +4,7 @@ import co.tecnosport.api.application.pedido.ModalidadesDeEntrega;
 import co.tecnosport.api.application.pedido.RecogidaEnPunto;
 import co.tecnosport.api.presentation.envio.dto.ModalidadesDeEntregaRequest;
 import co.tecnosport.api.presentation.envio.dto.ModalidadesDeEntregaRespuesta;
-import java.util.List;
 import java.util.Objects;
-import java.util.UUID;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -19,8 +17,9 @@ import org.springframework.web.bind.annotation.RestController;
  *
  * <p>Es {@code POST} y no {@code GET} desde el 26 de octubre de 2026 porque la respuesta depende
  * del carrito: la recogida se ofrece solo si todo lo que lleva viene de proveedores locales
- * (ADR-0093). Es una lectura de la base, sin llamadas a terceros, así que no lleva el límite por IP
- * de la cotización.
+ * (ADR-0093). Es una lectura de la base, sin terceros, pero cuántas lecturas hace lo decide quien
+ * llama, así que va bajo el límite por IP de la cotización y {@code RecogidaEnPunto} le pone tope a
+ * la lista.
  */
 @RestController
 @RequestMapping("/api/v1/envios/modalidades")
@@ -38,8 +37,8 @@ public class ModalidadesDeEntregaControlador {
   @PostMapping
   public ModalidadesDeEntregaRespuesta consultarModalidades(
       @RequestBody ModalidadesDeEntregaRequest cuerpo) {
-    List<UUID> varianteIds = cuerpo == null ? null : cuerpo.varianteIds();
     return new ModalidadesDeEntregaRespuesta(
-        modalidadesDeEntrega.envioADomicilio(), recogidaEnPunto.disponiblePara(varianteIds));
+        modalidadesDeEntrega.envioADomicilio(),
+        recogidaEnPunto.disponiblePara(cuerpo.varianteIds()));
   }
 }

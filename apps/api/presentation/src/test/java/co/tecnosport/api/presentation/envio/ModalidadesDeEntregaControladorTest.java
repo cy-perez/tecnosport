@@ -10,12 +10,16 @@ import co.tecnosport.api.application.pedido.RecogidaEnPunto;
 import co.tecnosport.api.application.proveedores.DependenciasDeProveedor;
 import co.tecnosport.api.application.proveedores.RepositorioProveedores;
 import co.tecnosport.api.domain.catalogo.Categoria;
+import co.tecnosport.api.domain.catalogo.ImagenProducto;
 import co.tecnosport.api.domain.catalogo.LineaCatalogo;
 import co.tecnosport.api.domain.catalogo.Marca;
 import co.tecnosport.api.domain.catalogo.Paquete;
 import co.tecnosport.api.domain.catalogo.Producto;
+import co.tecnosport.api.domain.catalogo.TipoImagen;
 import co.tecnosport.api.domain.catalogo.Variante;
+import co.tecnosport.api.domain.catalogo.VarianteDeImagen;
 import co.tecnosport.api.domain.compartido.Dinero;
+import co.tecnosport.api.domain.compartido.HashContenido;
 import co.tecnosport.api.domain.compartido.Sku;
 import co.tecnosport.api.domain.compartido.Slug;
 import co.tecnosport.api.domain.proveedores.HuellaProveedor;
@@ -62,6 +66,8 @@ class ModalidadesDeEntregaControladorTest {
     Producto pOtro = deProveedor("celular", mayorista.id());
     deRiverah = conVariante(pRiverah, "TS-1");
     deOtro = conVariante(pOtro, "TS-2");
+    publicar(pRiverah);
+    publicar(pOtro);
     productos.conProductos(pRiverah, pOtro);
   }
 
@@ -97,13 +103,30 @@ class ModalidadesDeEntregaControladorTest {
         .andExpect(jsonPath("$.retiroEnPunto").value(false));
   }
 
+  /** El contrato dice que la lista es obligatoria, y el servidor lo exige: 422, no un 200 mudo. */
   @Test
-  void sinVariantesNoHayRecogida() throws Exception {
+  void sinLaListaOConUnHuecoEsUnCuerpoMalFormado() throws Exception {
     mockMvc
         .perform(
             post("/api/v1/envios/modalidades")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{}"))
+        .andExpect(status().isUnprocessableContent());
+    mockMvc
+        .perform(
+            post("/api/v1/envios/modalidades")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"varianteIds\":[null]}"))
+        .andExpect(status().isUnprocessableContent());
+  }
+
+  @Test
+  void conLaListaVaciaNoHayRecogida() throws Exception {
+    mockMvc
+        .perform(
+            post("/api/v1/envios/modalidades")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"varianteIds\":[]}"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.retiroEnPunto").value(false));
   }
@@ -133,6 +156,21 @@ class ModalidadesDeEntregaControladorTest {
         Dinero.deCop(40_000),
         HuellaProveedor.calcular(proveedorId, slug, Dinero.deCop(40_000)),
         Instant.parse("2026-10-26T15:00:00Z"));
+  }
+
+  /** Lo que se vende está publicado, y publicar pide la imagen principal. */
+  private static void publicar(Producto producto) {
+    producto.asignarImagenPrincipal(
+        ImagenProducto.crear(
+            TipoImagen.PRINCIPAL,
+            0,
+            List.of(new VarianteDeImagen(800, "https://cdn.tecnosport.co/img.jpg", 1000)),
+            null,
+            600,
+            new HashContenido("%064x".formatted(1)),
+            "alt es",
+            "alt en"));
+    producto.publicar();
   }
 
   private static Variante conVariante(Producto producto, String sku) {

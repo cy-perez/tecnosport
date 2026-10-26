@@ -514,6 +514,31 @@ class CrearPedidoTest {
   }
 
   /**
+   * Un retiro con la misma variante repetida se rechaza por lo barato —las líneas repetidas— antes
+   * de que la recogida lea el catálogo por cada una.
+   */
+  @Test
+  void unRetiroConLineasRepetidasSeRechazaAntesDeMirarLaRecogida() {
+    CrearPedido caso = crear();
+    publicarProductoConVarianteYExistencia(5);
+    CrearPedidoComando repetido =
+        new CrearPedidoComando(
+            null,
+            "cliente@tecnosport.co",
+            CONTACTO,
+            List.of(
+                new CrearPedidoComando.LineaComando(variante.id(), 1),
+                new CrearPedidoComando.LineaComando(variante.id(), 1)),
+            TipoEntrega.RETIRO_EN_PUNTO,
+            null,
+            MetodoPago.WOMPI,
+            true,
+            IP);
+
+    assertThrows(LineasDuplicadasException.class, () -> caso.ejecutar(repetido));
+  }
+
+  /**
    * Un solo artículo que no es local quita la recogida al carrito entero: no hay pedido parcial.
    */
   @Test
