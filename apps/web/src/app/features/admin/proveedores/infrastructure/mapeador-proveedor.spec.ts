@@ -47,8 +47,7 @@ describe('mapeador de proveedores', () => {
       diasDeVigencia: 5,
       tallasPorGenero: { dama: ['36', '37'], caballero: ['40', '41'], ajuste: 1 },
     });
-    const { id: _id, ...datos } = proveedor;
-    expect(aProveedorPeticion(datos).ajustesDeIngesta).toEqual({
+    expect(aProveedorPeticion(proveedor).ajustesDeIngesta).toEqual({
       unaFotoUnProducto: true,
       ventaBajoConfirmacion: true,
       diasDeVigencia: 5,
