@@ -160,7 +160,9 @@ export class ResumenPage {
     tipoEntregaRequiereDireccion(this.tipoEntregaElegido()),
   );
 
-  private readonly modalidades = usarModalidadesDeEntrega();
+  private readonly modalidades = usarModalidadesDeEntrega(() =>
+    (this.carrito.consulta.data()?.lineas ?? []).map((linea) => linea.varianteId),
+  );
 
   /**
    * Si hoy se ofrece la recogida en el punto. Mientras la respuesta no llega vale `false`: el

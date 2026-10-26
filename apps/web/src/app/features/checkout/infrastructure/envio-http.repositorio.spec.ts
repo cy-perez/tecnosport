@@ -162,9 +162,30 @@ describe('EnvioHttpRepositorio.cotizar', () => {
   it('las modalidades de entrega se leen tal como las dice el servidor', async () => {
     const repositorio = conRespuesta(json({ envioADomicilio: true, retiroEnPunto: false }, 200));
 
-    await expect(repositorio.modalidades()).resolves.toEqual({
+    await expect(repositorio.modalidades(['variante-1'])).resolves.toEqual({
       envioADomicilio: true,
       retiroEnPunto: false,
     });
+  });
+
+  /** La recogida depende del carrito (ADR-0093): el servidor necesita saber cuáles variantes lleva. */
+  it('las modalidades se preguntan con las variantes del carrito', async () => {
+    let cuerpo: unknown = null;
+    let metodo = '';
+    vi.stubGlobal('window', undefined);
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (peticion: Request) => {
+        metodo = peticion.method;
+        cuerpo = await peticion.json();
+        return json({ envioADomicilio: true, retiroEnPunto: true }, 200);
+      }),
+    );
+    const repositorio = new EnvioHttpRepositorio();
+
+    await repositorio.modalidades(['variante-1', 'variante-2']);
+
+    expect(metodo).toBe('POST');
+    expect(cuerpo).toEqual({ varianteIds: ['variante-1', 'variante-2'] });
   });
 });

@@ -202,7 +202,9 @@ export class ConfirmarPage {
       .join(', '),
   );
 
-  private readonly modalidades = usarModalidadesDeEntrega();
+  private readonly modalidades = usarModalidadesDeEntrega(() =>
+    (this.carrito.consulta.data()?.lineas ?? []).map((linea) => linea.varianteId),
+  );
 
   /** Mismo criterio que en el resumen: mientras no se sabe, como si estuviera apagada. */
   protected readonly retiroDisponible = computed(
