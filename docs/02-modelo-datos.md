@@ -750,7 +750,8 @@ variante tiene hoy, así que cambiar una talla o agregar un color después de ap
 vieja ni ausente. El comprador no la ve.
 
 **Los ajustes de ingesta del proveedor** (`V118`, `ADR-0089`, 25 de octubre de 2026), nacidos con
-Tenis Al Pie: `proveedor.una_foto_un_producto` parte la tanda en un borrador por foto;
+Tenis Al Pie: `proveedor.una_foto_un_producto` parte la tanda en un borrador por foto —en calzado,
+uno por tenis, con las fotos que el lector dice que son el mismo (`ADR-0090`)—;
 `proveedor.venta_bajo_confirmacion` hace nacer por confirmar las variantes que se aprueban;
 `proveedor.dias_de_vigencia` (nulo es la ventana general, de 1 a 30) es su ventana propia; y
 `proveedor.tallas_dama`, `tallas_caballero` —separadas por coma, como las nombra el proveedor— y
