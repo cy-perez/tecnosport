@@ -1021,7 +1021,17 @@
       "enviando": "Saving…",
       "guardar": "Save changes",
       "crear": "Create supplier",
-      "error": "The supplier could not be saved. Try again."
+      "error": "The supplier could not be saved. Try again.",
+      "unaFotoUnProducto": "One photo, one product: each photo in a batch is a different model, as in the Tenis Al Pie chat",
+      "ventaBajoConfirmacion": "Sold on confirmation: the size is confirmed on WhatsApp before charging, with a purchase link",
+      "diasDeVigencia": "Days on sale",
+      "diasDeVigenciaAyuda": "How many days something that does not show up again in the chat stays on sale, from 1 to 30. Empty means the general window.",
+      "tallasDama": "Supplier's women's sizes",
+      "tallasCaballero": "Supplier's men's sizes",
+      "tallasAyuda": "As the supplier names them, separated by spaces: 36 37 38 39. Leave empty if each post states them.",
+      "ajusteDeTalla": "How many sizes up the supplier names them",
+      "ajusteDeTallaAyuda": "1 for EUR sizes: the shop sells the national size, which is the EUR size minus one. From -4 to 4.",
+      "ajustesInvalidos": "Check the ingestion settings: days go from 1 to 30, sizes are numbers separated by spaces and the adjustment goes from -4 to 4."
     },
     "eliminar": {
       "titulo": "Delete supplier",

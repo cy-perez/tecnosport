@@ -9,6 +9,7 @@ import {
   EditarBorrador,
   EstadoBorrador,
   FotoBorrador,
+  GeneroDeCalzado,
   OrigenDelCostoDeSet,
   PrendaAcompanante,
   SetDelBorrador,
@@ -86,6 +87,7 @@ export function aBorrador(dto: BorradorDto): Borrador {
       talla: t.talla,
       delProveedor: t.delProveedor ?? null,
     })),
+    generoDeCalzado: (dto.generoDeCalzado ?? null) as GeneroDeCalzado | null,
   };
 }
 

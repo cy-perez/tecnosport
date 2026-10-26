@@ -1021,7 +1021,17 @@
       "enviando": "Guardando…",
       "guardar": "Guardar cambios",
       "crear": "Crear proveedor",
-      "error": "No se pudo guardar el proveedor. Intenta de nuevo."
+      "error": "No se pudo guardar el proveedor. Intenta de nuevo.",
+      "unaFotoUnProducto": "Una foto, un producto: cada foto de una tanda es un modelo distinto, como en el chat de Tenis Al Pie",
+      "ventaBajoConfirmacion": "Venta bajo confirmación: la talla se confirma por WhatsApp antes de cobrar, con un enlace de compra",
+      "diasDeVigencia": "Días de vigencia",
+      "diasDeVigenciaAyuda": "Cuántos días sigue a la venta lo que no vuelve a aparecer en el chat, de 1 a 30. Vacío es la ventana general.",
+      "tallasDama": "Tallas de dama del proveedor",
+      "tallasCaballero": "Tallas de caballero del proveedor",
+      "tallasAyuda": "Como las nombra el proveedor, separadas por espacios: 36 37 38 39. Vacías si las dice cada anuncio.",
+      "ajusteDeTalla": "Cuántas tallas más arriba las nombra",
+      "ajusteDeTallaAyuda": "1 si son tallas EUR: la tienda vende la nacional, que es la EUR menos una. De -4 a 4.",
+      "ajustesInvalidos": "Revisa los ajustes de ingesta: los días van de 1 a 30, las tallas son números separados por espacios y el ajuste va de -4 a 4."
     },
     "eliminar": {
       "titulo": "Eliminar proveedor",

@@ -1,3 +1,4 @@
+import { AJUSTES_DE_INGESTA_POR_OMISION } from '../domain/proveedor.model';
 import { aProveedor, aProveedorPeticion } from './mapeador-proveedor';
 
 describe('mapeador de proveedores', () => {
@@ -15,12 +16,44 @@ describe('mapeador de proveedores', () => {
       activo: true,
       tiposExcluidos: ['PANTALON', 'SUDADERA'],
       armaSets: true,
+      ajustesDeIngesta: {},
     });
 
     expect(proveedor.ordenDePublicacion).toBe('TEXTO_PRIMERO');
     expect(proveedor.tiposExcluidos).toEqual(['PANTALON', 'SUDADERA']);
     expect(proveedor.armaSets).toBe(true);
-    expect(aProveedor({ id: 'prov-2', tiposExcluidos: [] }).armaSets).toBe(false);
+    expect(proveedor.ajustesDeIngesta).toEqual(AJUSTES_DE_INGESTA_POR_OMISION);
+    expect(aProveedor({ id: 'prov-2', tiposExcluidos: [], ajustesDeIngesta: {} }).armaSets).toBe(
+      false,
+    );
+  });
+
+  /** Los ajustes de Tenis Al Pie (ADR-0089) van y vuelven. */
+  it('lee y manda los ajustes de ingesta', () => {
+    const proveedor = aProveedor({
+      id: 'prov-3',
+      tiposExcluidos: [],
+      ajustesDeIngesta: {
+        unaFotoUnProducto: true,
+        ventaBajoConfirmacion: true,
+        diasDeVigencia: 5,
+        tallasPorGenero: { dama: ['36', '37'], caballero: ['40', '41'], ajuste: 1 },
+      },
+    });
+
+    expect(proveedor.ajustesDeIngesta).toEqual({
+      unaFotoUnProducto: true,
+      ventaBajoConfirmacion: true,
+      diasDeVigencia: 5,
+      tallasPorGenero: { dama: ['36', '37'], caballero: ['40', '41'], ajuste: 1 },
+    });
+    const { id: _id, ...datos } = proveedor;
+    expect(aProveedorPeticion(datos).ajustesDeIngesta).toEqual({
+      unaFotoUnProducto: true,
+      ventaBajoConfirmacion: true,
+      diasDeVigencia: 5,
+      tallasPorGenero: { dama: ['36', '37'], caballero: ['40', '41'], ajuste: 1 },
+    });
   });
 
   /** El servidor lo exige al crear y al editar: si la petición lo pierde, el cuerpo no se lee. */
@@ -37,6 +70,7 @@ describe('mapeador de proveedores', () => {
       activo: true,
       tiposExcluidos: ['SHORT'],
       armaSets: false,
+      ajustesDeIngesta: AJUSTES_DE_INGESTA_POR_OMISION,
     });
 
     expect(peticion.ordenDePublicacion).toBe('FOTOS_PRIMERO');

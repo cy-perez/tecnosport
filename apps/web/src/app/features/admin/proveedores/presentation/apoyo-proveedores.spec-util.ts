@@ -1,4 +1,8 @@
-import { DatosProveedor, Proveedor } from '../domain/proveedor.model';
+import {
+  AJUSTES_DE_INGESTA_POR_OMISION,
+  DatosProveedor,
+  Proveedor,
+} from '../domain/proveedor.model';
 import { RepositorioProveedoresAdmin } from '../domain/repositorio-proveedores-admin.puerto';
 
 export function proveedorDePrueba(overrides: Partial<Proveedor> = {}): Proveedor {
@@ -14,6 +18,7 @@ export function proveedorDePrueba(overrides: Partial<Proveedor> = {}): Proveedor
     dosChatsEnUnZip: false,
     tiposExcluidos: [],
     armaSets: false,
+    ajustesDeIngesta: AJUSTES_DE_INGESTA_POR_OMISION,
     activo: true,
     ...overrides,
   };

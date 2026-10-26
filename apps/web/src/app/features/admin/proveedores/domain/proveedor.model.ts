@@ -62,7 +62,41 @@ export interface Proveedor {
    * chat.
    */
   readonly armaSets: boolean;
+  /**
+   * Lo que su chat tiene de distinto (ADR-0089): nacieron con Tenis Al Pie, que manda tandas de
+   * modelos distintos sin SKU, sin tallas en el anuncio y sin existencias. Solo para quien entra por
+   * el chat; las tallas por género, solo para el calzado.
+   */
+  readonly ajustesDeIngesta: AjustesDeIngesta;
 }
+
+/**
+ * Las tallas que un proveedor de calzado maneja siempre, como él las nombra, y cuántas tallas más
+ * arriba las nombra: las EUR son la nacional más una (ADR-0085).
+ */
+export interface TallasPorGenero {
+  readonly dama: readonly string[];
+  readonly caballero: readonly string[];
+  readonly ajuste: number;
+}
+
+export interface AjustesDeIngesta {
+  /** Cada foto de la publicación es un producto distinto. */
+  readonly unaFotoUnProducto: boolean;
+  /** La talla se confirma por WhatsApp antes de cobrar, con un enlace de compra (ADR-0086). */
+  readonly ventaBajoConfirmacion: boolean;
+  /** Cuántos días sigue a la venta lo que no vuelve a aparecer; `null` es la ventana general. */
+  readonly diasDeVigencia: number | null;
+  /** `null` si las tallas las dice cada anuncio. */
+  readonly tallasPorGenero: TallasPorGenero | null;
+}
+
+export const AJUSTES_DE_INGESTA_POR_OMISION: AjustesDeIngesta = {
+  unaFotoUnProducto: false,
+  ventaBajoConfirmacion: false,
+  diasDeVigencia: null,
+  tallasPorGenero: null,
+};
 
 /** Lo que se escribe al crear o al editar. El `id` lo pone el servidor. */
 export type DatosProveedor = Omit<Proveedor, 'id'>;

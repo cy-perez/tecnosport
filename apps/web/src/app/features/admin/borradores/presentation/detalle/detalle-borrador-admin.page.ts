@@ -58,7 +58,7 @@ import {
   borradorBorrable,
   borradorEditable,
   borradorSinProducto,
-  CATEGORIA_SUGERIDA_POR_TIPO,
+  categoriaSugerida,
   EstadoBorrador,
   fotoAdmitida,
   HermanoBorrador,
@@ -601,7 +601,7 @@ export class DetalleBorradorAdminPage {
         return;
       }
       this.sugeridaAplicada = borrador.id;
-      const slug = CATEGORIA_SUGERIDA_POR_TIPO[borrador.tipo];
+      const slug = categoriaSugerida(borrador);
       const sugerida = slug ? categorias.find((categoria) => categoria.slug === slug) : undefined;
       const control = this.formAprobar.controls.categoriaId;
       if (sugerida && borradorEditable(borrador) && control.value === '') {

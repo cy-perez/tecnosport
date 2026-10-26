@@ -34,6 +34,7 @@ export function borradorDePrueba(overrides: Partial<Borrador> = {}): Borrador {
     preciosAdicionales: [],
     set: null,
     ajusteDeTalla: 0,
+    generoDeCalzado: null,
     tallasPedidas: [],
     ...overrides,
   };

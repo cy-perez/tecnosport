@@ -86,6 +86,48 @@
           (marcadoCambio)="form.controls.armaSets.setValue($event)"
         />
 
+        <ts-checkbox
+          idCasilla="proveedor-una-foto"
+          [etiqueta]="'admin.proveedores.formulario.unaFotoUnProducto' | transloco"
+          [marcado]="form.controls.unaFotoUnProducto.value"
+          (marcadoCambio)="form.controls.unaFotoUnProducto.setValue($event)"
+        />
+
+        <ts-checkbox
+          idCasilla="proveedor-bajo-confirmacion"
+          [etiqueta]="'admin.proveedores.formulario.ventaBajoConfirmacion' | transloco"
+          [marcado]="form.controls.ventaBajoConfirmacion.value"
+          (marcadoCambio)="form.controls.ventaBajoConfirmacion.setValue($event)"
+        />
+
+        <ts-campo
+          idCampo="proveedor-dias-vigencia"
+          [label]="'admin.proveedores.formulario.diasDeVigencia' | transloco"
+          [ayuda]="'admin.proveedores.formulario.diasDeVigenciaAyuda' | transloco"
+          formControlName="diasDeVigencia"
+        />
+
+        @if (form.controls.linea.value === 'CALZADO') {
+          <ts-campo
+            idCampo="proveedor-tallas-dama"
+            [label]="'admin.proveedores.formulario.tallasDama' | transloco"
+            [ayuda]="'admin.proveedores.formulario.tallasAyuda' | transloco"
+            formControlName="tallasDama"
+          />
+          <ts-campo
+            idCampo="proveedor-tallas-caballero"
+            [label]="'admin.proveedores.formulario.tallasCaballero' | transloco"
+            [ayuda]="'admin.proveedores.formulario.tallasAyuda' | transloco"
+            formControlName="tallasCaballero"
+          />
+          <ts-campo
+            idCampo="proveedor-ajuste-talla"
+            [label]="'admin.proveedores.formulario.ajusteDeTalla' | transloco"
+            [ayuda]="'admin.proveedores.formulario.ajusteDeTallaAyuda' | transloco"
+            formControlName="ajusteDeTalla"
+          />
+        }
+
         <fieldset
           class="m-0 flex flex-col gap-8 border-0 p-0"
           aria-describedby="proveedor-tipos-ayuda"
