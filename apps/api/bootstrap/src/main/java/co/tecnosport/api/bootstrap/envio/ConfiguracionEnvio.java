@@ -44,7 +44,9 @@ import co.tecnosport.api.application.pedido.DespacharPedido;
 import co.tecnosport.api.application.pedido.MarcarEntregado;
 import co.tecnosport.api.application.pedido.ModalidadesDeEntrega;
 import co.tecnosport.api.application.pedido.RechazarEnEntrega;
+import co.tecnosport.api.application.pedido.RecogidaEnPunto;
 import co.tecnosport.api.application.pedido.RepositorioPedidos;
+import co.tecnosport.api.application.proveedores.RepositorioProveedores;
 import co.tecnosport.api.bootstrap.pago.PropiedadesMetodosDeWompi;
 import co.tecnosport.api.bootstrap.pago.PropiedadesSistecredito;
 import co.tecnosport.api.domain.catalogo.LineaCatalogo;
@@ -365,6 +367,14 @@ public class ConfiguracionEnvio {
   @Bean
   public ModalidadesDeEntrega modalidadesDeEntrega(PropiedadesRetiroEnPunto propiedades) {
     return new ModalidadesDeEntrega(propiedades.habilitado());
+  }
+
+  @Bean
+  public RecogidaEnPunto recogidaEnPunto(
+      ModalidadesDeEntrega modalidadesDeEntrega,
+      RepositorioProductos repositorioProductos,
+      RepositorioProveedores repositorioProveedores) {
+    return new RecogidaEnPunto(modalidadesDeEntrega, repositorioProductos, repositorioProveedores);
   }
 
   @Bean

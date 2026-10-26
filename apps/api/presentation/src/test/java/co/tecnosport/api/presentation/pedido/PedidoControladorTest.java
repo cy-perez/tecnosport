@@ -25,9 +25,12 @@ import co.tecnosport.api.application.legal.RepositorioAutorizaciones;
 import co.tecnosport.api.application.pedido.ConsultarSeguimientoPedido;
 import co.tecnosport.api.application.pedido.CrearPedido;
 import co.tecnosport.api.application.pedido.ModalidadesDeEntrega;
+import co.tecnosport.api.application.pedido.RecogidaEnPunto;
 import co.tecnosport.api.application.pedido.ReintentarPago;
 import co.tecnosport.api.application.pedido.RepositorioPedidos;
 import co.tecnosport.api.application.pedido.SolicitarEnlaceDeSeguimiento;
+import co.tecnosport.api.application.proveedores.DependenciasDeProveedor;
+import co.tecnosport.api.application.proveedores.RepositorioProveedores;
 import co.tecnosport.api.application.reintegro.RepositorioReintegros;
 import co.tecnosport.api.application.reintegro.TopeDeReintegro;
 import co.tecnosport.api.application.retracto.RepositorioSolicitudesRetracto;
@@ -58,6 +61,9 @@ import co.tecnosport.api.domain.pedido.MetodoPago;
 import co.tecnosport.api.domain.pedido.NumeroPedido;
 import co.tecnosport.api.domain.pedido.Pedido;
 import co.tecnosport.api.domain.pedido.TipoEntrega;
+import co.tecnosport.api.domain.proveedores.HuellaProveedor;
+import co.tecnosport.api.domain.proveedores.OrdenDePublicacion;
+import co.tecnosport.api.domain.proveedores.Proveedor;
 import co.tecnosport.api.presentation.compartido.RepositorioSolicitudesReversionVacio;
 import co.tecnosport.api.presentation.pedido.dto.CrearPedidoRequest;
 import co.tecnosport.api.presentation.pedido.dto.MetodosDePagoDisponiblesRequest;
@@ -67,7 +73,9 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -121,13 +129,21 @@ class PedidoControladorTest {
     Marca marca = Marca.crear("TecnoSport");
     Categoria categoria =
         Categoria.crear("Camisetas", new Slug("ropa-caballero-camisetas"), LineaCatalogo.ROPA);
+    // De un proveedor local: el retiro en punto de estas pruebas solo se acepta para lo suyo
+    // (RecogidaEnPunto). En este contexto todo proveedor es local; la regla se prueba en
+    // aplicación.
+    UUID proveedorId = UUID.randomUUID();
     Producto producto =
-        Producto.crear(
+        Producto.crearDeProveedor(
             "Camiseta running Dry-Fit",
             new Slug("camiseta-running-dry-fit"),
             "Descripción",
             marca,
-            categoria);
+            categoria,
+            proveedorId,
+            Dinero.deCop(30_000),
+            HuellaProveedor.calcular(proveedorId, "Camiseta running Dry-Fit", Dinero.deCop(30_000)),
+            Instant.now());
     producto.asignarImagenPrincipal(
         ImagenProducto.crear(
             TipoImagen.PRINCIPAL,
@@ -1021,6 +1037,46 @@ class PedidoControladorTest {
           "https://tecnosport.co/es/checkout/estado");
     }
 
+    /** La recogida encendida y todo proveedor local: aquí se prueba el HTTP, no la regla. */
+    static RecogidaEnPunto recogidaDeProveedoresLocales(RepositorioProductos repositorioProductos) {
+      RepositorioProveedores proveedores =
+          new RepositorioProveedores() {
+            @Override
+            public void guardar(Proveedor proveedor) {}
+
+            @Override
+            public void actualizar(Proveedor proveedor) {}
+
+            @Override
+            public List<Proveedor> listar() {
+              return List.of();
+            }
+
+            @Override
+            public DependenciasDeProveedor dependenciasDe(UUID id) {
+              throw new UnsupportedOperationException();
+            }
+
+            @Override
+            public void eliminarConSuHistorial(UUID id) {}
+
+            @Override
+            public Optional<Proveedor> buscarPorId(UUID id) {
+              Proveedor local =
+                  Proveedor.crear(
+                      "La Riverah",
+                      LineaCatalogo.ROPA,
+                      "+57 300",
+                      "La Riverah",
+                      null,
+                      OrdenDePublicacion.TEXTO_PRIMERO);
+              local.definirLocal(true);
+              return Optional.of(local);
+            }
+          };
+      return new RecogidaEnPunto(new ModalidadesDeEntrega(true), repositorioProductos, proveedores);
+    }
+
     @Bean
     ReintentarPago reintentarPago(
         RepositorioPedidos repositorioPedidos,
@@ -1033,7 +1089,7 @@ class PedidoControladorTest {
           repositorioInventario,
           reloj,
           Duration.ofMinutes(30),
-          new ModalidadesDeEntrega(true));
+          recogidaDeProveedoresLocales(repositorioProductos));
     }
 
     @Bean
@@ -1113,7 +1169,7 @@ class PedidoControladorTest {
           Duration.ofMinutes(60),
           repositorioAutorizaciones,
           "2026-09-07",
-          new ModalidadesDeEntrega(true),
+          recogidaDeProveedoresLocales(repositorioProductos),
           new RepositorioEnlacesDeCompraDobleDePrueba());
     }
 

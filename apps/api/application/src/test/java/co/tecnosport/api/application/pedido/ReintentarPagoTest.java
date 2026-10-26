@@ -30,6 +30,8 @@ import co.tecnosport.api.domain.pedido.Pedido;
 import co.tecnosport.api.domain.pedido.TipoEntrega;
 import co.tecnosport.api.domain.pedido.TransicionDeEstadoInvalidaException;
 import co.tecnosport.api.domain.proveedores.HuellaProveedor;
+import co.tecnosport.api.domain.proveedores.OrdenDePublicacion;
+import co.tecnosport.api.domain.proveedores.Proveedor;
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.Instant;
@@ -50,23 +52,28 @@ class ReintentarPagoTest {
   private RepositorioInventarioFalso inventarios;
   private UUID varianteId;
   private ModalidadesDeEntrega modalidadesDeEntrega = new ModalidadesDeEntrega(true);
+  private RepositorioProveedoresFalso proveedores;
 
   private ReintentarPago crear() {
     pedidos = new RepositorioPedidosFalso();
     productos = new RepositorioProductosFalso();
     inventarios = new RepositorioInventarioFalso();
+    proveedores = new RepositorioProveedoresFalso();
     return new ReintentarPago(
         pedidos,
         productos,
         inventarios,
         new RelojFalso(AHORA),
         RESERVA_PAGO_EN_LINEA,
-        modalidadesDeEntrega);
+        new RecogidaEnPunto(modalidadesDeEntrega, productos, proveedores));
   }
 
   /** Un producto de proveedor publicado con esa variante; agotado por el proveedor si se pide. */
   private Producto seVende(UUID varianteId, boolean agotadoPorElProveedor) {
-    UUID proveedorId = UUID.randomUUID();
+    return seVende(varianteId, agotadoPorElProveedor, UUID.randomUUID());
+  }
+
+  private Producto seVende(UUID varianteId, boolean agotadoPorElProveedor, UUID proveedorId) {
     Producto producto =
         Producto.crearDeProveedor(
             "Samsung Galaxy A17 5G",
@@ -335,6 +342,71 @@ class ReintentarPagoTest {
     assertEquals(
         EstadoPedido.PAGO_FALLIDO, pedidos.buscarPorId(pedido.id()).orElseThrow().estado());
     assertEquals(5, inventarios.buscarPorVarianteId(variante).orElseThrow().saldoDisponible(AHORA));
+  }
+
+  /** Un pedido de recogida fallido con una variante de ese proveedor y cinco unidades. */
+  private Pedido retiroFallido(UUID proveedorId) {
+    UUID variante = UUID.randomUUID();
+    varianteId = variante;
+    Inventario inventario = Inventario.crear(variante);
+    inventario.registrarEntrada(5, "siembra de prueba", AHORA);
+    inventarios.conInventario(inventario);
+    seVende(variante, false, proveedorId);
+    Pedido pedido =
+        Pedido.crear(
+            NumeroPedido.de(2026, 4),
+            null,
+            new CorreoElectronico("cliente@tecnosport.co"),
+            List.of(linea(variante)),
+            TipoEntrega.RETIRO_EN_PUNTO,
+            null,
+            MetodoPago.WOMPI,
+            "cliente@tecnosport.co",
+            AHORA);
+    pedido.transicionar(EstadoPedido.PAGO_FALLIDO, "webhook-wompi", "pago rechazado", AHORA);
+    pedidos.guardar(pedido);
+    return pedido;
+  }
+
+  /** Lo de un proveedor local se sigue pudiendo recoger: el reintento reserva y vuelve a cobrar. */
+  @Test
+  void unRetiroDeProveedorLocalSeReintenta() {
+    ReintentarPago caso = crear();
+    Proveedor violeta =
+        Proveedor.crear(
+            "Violeta",
+            LineaCatalogo.ROPA,
+            "+57 300",
+            "Violeta",
+            null,
+            OrdenDePublicacion.TEXTO_PRIMERO);
+    violeta.definirLocal(true);
+    proveedores.conProveedores(violeta);
+    Pedido pedido = retiroFallido(violeta.id());
+
+    caso.ejecutar(new ReintentarPagoComando(pedido.id(), "cliente@tecnosport.co"));
+
+    assertEquals(
+        EstadoPedido.PAGO_PENDIENTE, pedidos.buscarPorId(pedido.id()).orElseThrow().estado());
+  }
+
+  /**
+   * Un retiro de antes del 26/10/2026 con algo que no es de un proveedor local —un celular del
+   * mayorista— no se vuelve a cobrar como recogida, y no reserva nada antes de negarse.
+   */
+  @Test
+  void unRetiroDeProveedorNoLocalNoSeReintentaNiReserva() {
+    ReintentarPago caso = crear();
+    Pedido pedido = retiroFallido(UUID.randomUUID());
+
+    org.junit.jupiter.api.Assertions.assertThrows(
+        RetiroEnPuntoNoDisponibleException.class,
+        () -> caso.ejecutar(new ReintentarPagoComando(pedido.id(), "cliente@tecnosport.co")));
+
+    assertEquals(
+        EstadoPedido.PAGO_FALLIDO, pedidos.buscarPorId(pedido.id()).orElseThrow().estado());
+    assertEquals(
+        5, inventarios.buscarPorVarianteId(varianteId).orElseThrow().saldoDisponible(AHORA));
   }
 
   private static LineaPedido linea(UUID variante) {

@@ -30,9 +30,9 @@ import co.tecnosport.api.application.pedido.GenerarEnlaceDeCompra;
 import co.tecnosport.api.application.pedido.ListarEnlacesDeCompra;
 import co.tecnosport.api.application.pedido.ListarPedidosAdmin;
 import co.tecnosport.api.application.pedido.MarcarEntregado;
-import co.tecnosport.api.application.pedido.ModalidadesDeEntrega;
 import co.tecnosport.api.application.pedido.RechazarEnEntrega;
 import co.tecnosport.api.application.pedido.RecibirPedidoRechazado;
+import co.tecnosport.api.application.pedido.RecogidaEnPunto;
 import co.tecnosport.api.application.pedido.ReintentarPago;
 import co.tecnosport.api.application.pedido.RepositorioEnlacesDeCompra;
 import co.tecnosport.api.application.pedido.RepositorioPedidos;
@@ -80,7 +80,7 @@ public class ConfiguracionPedido {
       PropiedadesLimitePedidos propiedadesLimite,
       RepositorioAutorizaciones repositorioAutorizaciones,
       PropiedadesLegal propiedadesLegal,
-      ModalidadesDeEntrega modalidadesDeEntrega,
+      RecogidaEnPunto recogidaEnPunto,
       RepositorioEnlacesDeCompra repositorioEnlaces) {
     return new CrearPedido(
         repositorioProductos,
@@ -96,7 +96,7 @@ public class ConfiguracionPedido {
         Duration.ofMinutes(propiedadesLimite.cuentaMinutos()),
         repositorioAutorizaciones,
         propiedadesLegal.politicaDatosVersion(),
-        modalidadesDeEntrega,
+        recogidaEnPunto,
         repositorioEnlaces);
   }
 
@@ -322,13 +322,13 @@ public class ConfiguracionPedido {
       RepositorioInventario repositorioInventario,
       Reloj reloj,
       PropiedadesPedido propiedades,
-      ModalidadesDeEntrega modalidadesDeEntrega) {
+      RecogidaEnPunto recogidaEnPunto) {
     return new ReintentarPago(
         repositorioPedidos,
         repositorioProductos,
         repositorioInventario,
         reloj,
         Duration.ofMinutes(propiedades.minutosReservaInventario()),
-        modalidadesDeEntrega);
+        recogidaEnPunto);
   }
 }
