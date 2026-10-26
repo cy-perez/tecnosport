@@ -572,9 +572,14 @@ sistema y hay que mantenerlo así.
 recaude en un mostrador propio. Quien recoge paga en línea antes o paga en el
 punto, y eso último es un método de pago distinto, no una contraentrega.
 
-`TODO: dirección exacta del punto de recogida, horario y días de atención.` El
-horario de atención sigue siendo un dato de negocio pendiente y por eso tampoco se
-emite `openingHours` en los datos estructurados (`docs/09-plan-de-arranque.md`).
+**Solo para lo de proveedores locales** (`adr/0093`): con la bandera encendida, la
+recogida se ofrece si todo el carrito viene de un proveedor marcado como local —La
+Riverah y Violeta—, y `RecogidaEnPunto` lo exige en el servidor.
+
+El punto es la dirección de despacho (`ORIGEN_DIRECCION`): Cra. 26C # 38B-31, apto.
+401, La Milagrosa, Medellín, todos los días de 8:00 a. m. a 9:00 p. m. (dato del
+negocio del 26 de octubre de 2026). Los datos estructurados todavía no emiten
+`openingHours`.
 
 ## Seguimiento del envío
 
