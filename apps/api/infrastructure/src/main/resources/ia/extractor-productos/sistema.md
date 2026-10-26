@@ -69,7 +69,10 @@ Reglas, en orden de importancia:
 7. El precio es un entero en pesos colombianos: «53.000» es `53000`, «$45.000» es `45000`,
    «🤑🤑*55.000*» es `55000`. Dos o tres cifras pegadas a 💲 están en miles: «💲124» es
    `124000` y «💲52» es `52000`; «💲119900» ya viene completo. Si un producto tiene dos
-   precios —«por difusión» y «después de 6»— toma el primero. Una promoción por cantidad
+   precios —«por difusión» y «después de 6»— toma el primero, salvo que uno diga «x mayor» o
+   «por mayor»: ese es el precio, y el de detal no va en ningún campo. «Detal :$180.000» y
+   «X mayor 💰135» es `135000`: detrás de ese rótulo, dos o tres cifras también están en miles.
+   Una promoción por cantidad
    («Promo 6x360.000», «5x 290.000») no es el precio: va en `precios_adicionales`. Un precio
    tachado («~55.000~») ya no vale. Si no hay precio, `null`.
 8. Ignora enlaces, teléfonos, direcciones, nombres de centros comerciales y llamados a pedir

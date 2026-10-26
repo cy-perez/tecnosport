@@ -169,4 +169,37 @@ class PatronDePrecioTest {
     assertEquals(List.of(), PatronDePrecio.extraerTodos("Tallas M-L-XL-XXL"));
     assertEquals(List.of(), PatronDePrecio.extraerTodos(null));
   }
+
+  /**
+   * Tenis Al Pie, 16 y 23 de octubre de 2026: el detal va primero, y el que paga la tienda es el
+   * por mayor, escrito en miles detrás de 💰. El detal no cuenta ni en la lista.
+   */
+  @Test
+  void elPrecioPorMayorMandaSobreElDeDetal() {
+    assertEquals(
+        Optional.of(Dinero.deCop(135000)),
+        PatronDePrecio.extraer("Detal :$180.000 \nX mayor 💰135"));
+    assertEquals(
+        List.of(Dinero.deCop(135000)),
+        PatronDePrecio.extraerTodos("Detal :$180.000 \nX mayor unidad 💰135"));
+    assertEquals(
+        Optional.of(Dinero.deCop(140000)),
+        PatronDePrecio.extraer("Detal :$190.000 \nPor mayor $140.000"));
+  }
+
+  /** Sin el rótulo, dos o tres cifras detrás de 💰 siguen sin ser un precio. */
+  @Test
+  void sinElRotuloLasCifrasSueltasNoSonMiles() {
+    assertEquals(Optional.empty(), PatronDePrecio.extraer("💰135"));
+    assertEquals(
+        Optional.of(Dinero.deCop(180000)),
+        PatronDePrecio.extraer("Detal :$180.000 \nMayorista 💰135"));
+  }
+
+  /** «Mayor» como palabra suelta no rotula nada: el rótulo es «x mayor», «por mayor». */
+  @Test
+  void elRotuloNecesitaElXOElPor() {
+    assertEquals(
+        Optional.of(Dinero.deCop(60000)), PatronDePrecio.extraer("Para mayor comodidad 💰60.000"));
+  }
 }
