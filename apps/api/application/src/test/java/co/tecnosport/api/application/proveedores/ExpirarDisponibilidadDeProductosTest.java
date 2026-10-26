@@ -12,6 +12,7 @@ import co.tecnosport.api.domain.catalogo.LineaCatalogo;
 import co.tecnosport.api.domain.catalogo.Producto;
 import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.compartido.Slug;
+import co.tecnosport.api.domain.proveedores.AjustesDeIngesta;
 import co.tecnosport.api.domain.proveedores.HuellaProveedor;
 import co.tecnosport.api.domain.proveedores.OrdenDePublicacion;
 import co.tecnosport.api.domain.proveedores.Proveedor;
@@ -167,6 +168,37 @@ class ExpirarDisponibilidadDeProductosTest {
     reloj.ahora = VISTO.plus(Duration.ofMinutes(11));
     assertEquals(1, caso.ejecutar().ocultados());
     assertEquals(EstadoDisponibilidad.OCULTO_POR_VENCIMIENTO, celular.estadoDisponibilidad());
+  }
+
+  /**
+   * Tenis Al Pie tiene cinco días propios (ADR-0089): a los cuatro sigue a la venta aunque la
+   * ventana general ya venció, y a los seis se oculta.
+   */
+  @Test
+  void unProveedorConVigenciaPropiaVenceConLaSuya() {
+    Proveedor alPie =
+        Proveedor.crear(
+            "Tenis Al Pie",
+            LineaCatalogo.CALZADO,
+            "+57 300 000 0000",
+            "tenis.alpie",
+            null,
+            OrdenDePublicacion.FOTOS_PRIMERO);
+    alPie.definirAjustesDeIngesta(new AjustesDeIngesta(true, true, 5, null));
+    proveedores.guardar(alPie);
+    Producto tenis = deProveedor(alPie.id(), "Tenis importados estilo Nike Air Force 1");
+    Producto bolso = deProveedor(proveedorA, "Bolso");
+    RelojAjustable reloj = new RelojAjustable();
+    reloj.ahora = VISTO.plus(Duration.ofDays(4));
+    ExpirarDisponibilidadDeProductos caso = caso(reloj, Duration.ofDays(3), Duration.ofDays(7));
+
+    assertEquals(1, caso.ejecutar().ocultados());
+    assertEquals(EstadoDisponibilidad.OCULTO_POR_VENCIMIENTO, bolso.estadoDisponibilidad());
+    assertEquals(EstadoDisponibilidad.DISPONIBLE, tenis.estadoDisponibilidad());
+
+    reloj.ahora = VISTO.plus(Duration.ofDays(6));
+    assertEquals(1, caso.ejecutar().ocultados());
+    assertEquals(EstadoDisponibilidad.OCULTO_POR_VENCIMIENTO, tenis.estadoDisponibilidad());
   }
 
   @Test

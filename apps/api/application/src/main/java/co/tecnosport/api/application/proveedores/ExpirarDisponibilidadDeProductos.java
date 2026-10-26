@@ -6,11 +6,13 @@ import co.tecnosport.api.domain.catalogo.Producto;
 import co.tecnosport.api.domain.proveedores.Proveedor;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
+import java.util.stream.Stream;
 
 /**
  * Oculta lo que el proveedor lleva demasiado sin anunciar.
@@ -29,6 +31,13 @@ import java.util.UUID;
  * días, y lo que trae vale hasta la siguiente. Con la ventana de los mensajes, todo lo de una lista
  * se ocultaría a los tres días aunque el proveedor lo siguiera teniendo. Se busca con la ventana
  * más corta y lo de tecnología se perdona hasta que pase la suya.
+ *
+ * <h2>Y un proveedor puede tener la suya (25 de octubre de 2026)</h2>
+ *
+ * <p>Tenis Al Pie manda tandas cada dos o tres días: con la ventana de tres, un modelo que se
+ * saltaba una tanda se ocultaba. El negocio le dio cinco ({@code AjustesDeIngesta#diasDeVigencia},
+ * ADR-0089). Como una propia puede ser más corta que las dos generales, la búsqueda arranca en la
+ * más corta posible —un día— y cada producto se mide con la de su proveedor.
  */
 public final class ExpirarDisponibilidadDeProductos {
 
@@ -66,21 +75,23 @@ public final class ExpirarDisponibilidadDeProductos {
     Instant ahora = reloj.ahora();
     Instant limite = ahora.minus(ventana);
     Instant limiteTecnologia = ahora.minus(ventanaTecnologia);
-    Instant limiteDeBusqueda = limite.isAfter(limiteTecnologia) ? limite : limiteTecnologia;
-    Map<UUID, Boolean> esDeTecnologia = new HashMap<>();
+    Instant limiteDeBusqueda =
+        Stream.of(limite, limiteTecnologia, ahora.minus(Duration.ofDays(1)))
+            .max(Comparator.naturalOrder())
+            .orElseThrow();
+    Map<UUID, Instant> limiteDelProveedor = new HashMap<>();
     Map<UUID, Integer> porProveedor = new LinkedHashMap<>();
     int ocultados = 0;
     for (Producto producto : productosDeProveedor.disponiblesVistosAntesDe(limiteDeBusqueda)) {
       UUID proveedorId = producto.proveedorId().orElseThrow();
-      boolean tecnologia =
-          esDeTecnologia.computeIfAbsent(
+      Instant suLimite =
+          limiteDelProveedor.computeIfAbsent(
               proveedorId,
               id ->
                   repositorioProveedores
                       .buscarPorId(id)
-                      .map(Proveedor::entraPorLista)
-                      .orElse(false));
-      Instant suLimite = tecnologia ? limiteTecnologia : limite;
+                      .map(p -> limiteDe(p, ahora, limite, limiteTecnologia))
+                      .orElse(limite));
       if (!producto.vistoPorUltimaVez().orElseThrow().isBefore(suLimite)) {
         continue;
       }
@@ -90,6 +101,16 @@ public final class ExpirarDisponibilidadDeProductos {
       ocultados++;
     }
     return new Resultado(ocultados, porProveedor, limite);
+  }
+
+  /** El de su ventana propia si la tiene; si no, el de la tecnología o el general. */
+  private static Instant limiteDe(
+      Proveedor proveedor, Instant ahora, Instant limite, Instant limiteTecnologia) {
+    return proveedor
+        .ajustesDeIngesta()
+        .diasDeVigenciaOpcional()
+        .map(dias -> ahora.minus(Duration.ofDays(dias)))
+        .orElse(proveedor.entraPorLista() ? limiteTecnologia : limite);
   }
 
   /** Cuántos se ocultaron y de quién, para el registro. */
