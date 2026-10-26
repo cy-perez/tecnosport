@@ -7,12 +7,15 @@ import {
   signal,
   viewChild,
 } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { ActivatedRoute, Router } from '@angular/router';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { usarTraductor } from '../../../../../core/i18n/traductor';
 import { usarFoco } from '../../../../../shared/foco/foco';
 import { TsBoton } from '../../../../../shared/ui/boton/ts-boton';
 import { TsCampo } from '../../../../../shared/ui/campo/ts-campo';
+import { TsCheckbox } from '../../../../../shared/ui/checkbox/ts-checkbox';
 import { TsEsqueleto } from '../../../../../shared/ts-esqueleto/ts-esqueleto';
 import { TsMigas } from '../../../../../shared/ts-migas/ts-migas';
 import { usarMigasAdmin } from '../../../migas-admin';
@@ -27,6 +30,12 @@ const CLAVE_ETIQUETA_ESTADO: Record<EstadoProducto, string> = {
 };
 
 /**
+ * El valor de `?filtro=` que deja solo lo que falta. Es también adonde llevan el aviso del panel y
+ * la ruta vieja de `sin-medir`, que redirige aquí.
+ */
+export const FILTRO_SIN_MEDIR = 'sin-medir';
+
+/**
  * Las medidas del catálogo: las que faltan y las que ya se tomaron, con el formulario para
  * escribirlas o corregirlas.
  *
@@ -35,6 +44,11 @@ const CLAVE_ETIQUETA_ESTADO: Record<EstadoProducto, string> = {
  * reemplazar desde `ADR-0046` y hasta ahora no había puerta: la única salida era escribir en la
  * base a mano. Pasó de verdad — el JBL Go 5 se cargó con 13x9x6 donde su ficha dice 14x10x6.
  *
+ * <p>Fue dos pantallas hasta el 25 de octubre de 2026: esta y una de sin-medir que solo listaba lo
+ * que faltaba, con un formulario en blanco y sin el arreglo del foco de abajo —Escape no cancelaba
+ * nada allí—. Lo que la otra daba es este filtro, y vive en la URL para que el aviso del panel
+ * pueda llegar con él puesto.
+ *
  * <p><b>El formulario arranca con las cifras que ya tiene la variante</b>, no en blanco. Corregir
  * un peso mal tecleado es cambiar un número, no volver a medir el paquete entero, y un formulario
  * vacío obliga a copiar tres cifras correctas para tocar la cuarta — que es justo como se
@@ -42,7 +56,7 @@ const CLAVE_ETIQUETA_ESTADO: Record<EstadoProducto, string> = {
  */
 @Component({
   selector: 'app-medidas-admin',
-  imports: [ReactiveFormsModule, TranslocoPipe, TsBoton, TsCampo, TsEsqueleto, TsMigas],
+  imports: [ReactiveFormsModule, TranslocoPipe, TsBoton, TsCampo, TsCheckbox, TsEsqueleto, TsMigas],
   templateUrl: './medidas-admin.page.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -56,13 +70,28 @@ export class MedidasAdminPage {
 
   private readonly transloco = inject(TranslocoService);
   private readonly traducir = usarTraductor();
+  private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
+
+  private readonly queryParams = toSignal(this.route.queryParams, {
+    initialValue: this.route.snapshot.queryParams,
+  });
+  protected readonly soloSinMedir = computed(
+    () => this.queryParams()['filtro'] === FILTRO_SIN_MEDIR,
+  );
 
   protected readonly consulta = usarMedidas();
   private readonly mutacion = usarMedirVariante();
 
-  protected readonly variantes = computed<readonly MedidaDeVariante[]>(
-    () => this.consulta.data()?.items ?? [],
-  );
+  /**
+   * Con el filtro puesto, la fila recién medida desaparece de la tabla, que es lo que se busca
+   * cuando se está vaciando la cuenta pendiente. La confirmación no se pierde con ella: vive fuera
+   * de la tabla, en `#avisoMedidas`.
+   */
+  protected readonly variantes = computed<readonly MedidaDeVariante[]>(() => {
+    const items = this.consulta.data()?.items ?? [];
+    return this.soloSinMedir() ? items.filter((variante) => variante.sinMedir) : items;
+  });
   protected readonly total = computed(() => this.consulta.data()?.total ?? 0);
   protected readonly totalSinMedir = computed(() => this.consulta.data()?.totalSinMedir ?? 0);
 
@@ -100,6 +129,19 @@ export class MedidasAdminPage {
       validators: [Validators.required, Validators.min(1)],
     }),
   });
+
+  /**
+   * Cierra el formulario abierto: con el filtro puesto, su fila puede dejar de estar en la tabla, y
+   * un formulario sin fila retendría el foco en un elemento que ya no existe.
+   */
+  protected filtrarSinMedir(marcado: boolean): void {
+    this.midiendo.set(null);
+    this.error.set(null);
+    void this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: marcado ? { filtro: FILTRO_SIN_MEDIR } : {},
+    });
+  }
 
   protected etiquetaEstado(estado: EstadoProducto): string {
     return this.traducir()(CLAVE_ETIQUETA_ESTADO[estado]);

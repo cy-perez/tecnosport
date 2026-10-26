@@ -455,27 +455,6 @@
       "quitarAtributoAccesible": "Quitar el atributo {{numero}}"
     },
     "capturar360": "Capturar 360",
-    "sinMedir": {
-      "titulo": "Variantes sin medir",
-      "explicacion": "Una variante sin peso ni dimensiones se vende igual. Si es de ropa, calzado o bolsos, su envío se cotiza con el peso promedio de su categoría (\"Pesos y medidas de envío\"); si es de tecnología, o su categoría no tiene peso, no se puede enviar a domicilio, y sin recogida en el punto no se vende en el sitio. Las medidas son las del producto ya empacado, no las del producto desnudo.",
-      "resumen": "{{total}} sin medir, {{publicados}} en productos ya publicados.",
-      "ninguna": "No queda ninguna variante sin medir.",
-      "medida": "Listo: {{sku}} ya tiene sus medidas y se puede cotizar su envío a domicilio.",
-      "errorLista": "No se pudo cargar la lista de variantes sin medir.",
-      "columnas": {
-        "producto": "Producto",
-        "sku": "SKU",
-        "estado": "Estado"
-      },
-      "medir": "Medir",
-      "medirVariante": "Medir la variante {{sku}}",
-      "paqueteDe": "Paquete de {{sku}}",
-      "paqueteAyuda": "Del producto ya empacado, con su caja y sus accesorios dentro. Peso en gramos, medidas en centímetros enteros.",
-      "guardar": "Guardar medidas",
-      "cancelar": "Cancelar",
-      "faltanCampos": "Hacen falta las cuatro medidas, y todas mayores que cero.",
-      "error": "No se pudieron guardar las medidas."
-    },
     "existencias": {
       "titulo": "Existencias",
       "explicacion": "Dos cifras por variante, y no son lo mismo. La del libro es lo que hay, porque es la suma de todos los movimientos; la disponible es esa misma menos lo que ya está comprometido en pedidos en curso, y es la que decide si la tienda deja comprar. Contar escribe un movimiento de ajuste con su motivo: el número no se edita, se corrige.",
@@ -510,6 +489,8 @@
       "explicacion": "Cada variante activa con el peso y las medidas de su caja, las tenga o no. Sin las cuatro cifras, la tecnología no se puede cotizar ni enviar a domicilio, y sin recogida en el punto no se vende en el sitio; la ropa, el calzado y los bolsos se cotizan con los promedios de \"Pesos y medidas de envío\", y medirlos aquí solo afina el flete. Una medida ya tomada se puede corregir: si está mal, se cobra el flete equivocado en cada pedido de esa variante.",
       "resumen": "{{total}} variante(s) activas, {{sinMedir}} sin medir.",
       "ninguna": "Todavía no hay variantes activas en el catálogo.",
+      "soloSinMedir": "Solo las que faltan por medir ({{total}})",
+      "ningunaSinMedir": "No queda ninguna variante sin medir.",
       "errorLista": "No pudimos cargar las medidas. Vuelve a intentarlo.",
       "sinMedir": "Sin medir",
       "gramos": "{{peso}} g",

@@ -1,4 +1,6 @@
-import { provideRouter } from '@angular/router';
+import { TestBed } from '@angular/core/testing';
+import { provideRouter, Router } from '@angular/router';
+import { RouterTestingHarness } from '@angular/router/testing';
 import { TranslocoTestingModule } from '@jsverse/transloco';
 import { QueryClient, provideTanStackQuery } from '@tanstack/angular-query-experimental';
 import { fireEvent, render, screen, waitFor } from '@testing-library/angular';
@@ -51,12 +53,16 @@ function catalogo(items: readonly MedidaDeVariante[]): MedidasDelCatalogo {
   };
 }
 
-async function renderPagina(items: readonly MedidaDeVariante[]) {
-  const repositorio = new RepositorioMedicionFalso(
+function repositorioCon(items: readonly MedidaDeVariante[]) {
+  return new RepositorioMedicionFalso(
     { total: 0, totalEnPublicados: 0, items: [] },
     { total: 0, totalSinExistencia: 0, totalSinExistenciaEnPublicados: 0, items: [] },
     catalogo(items),
   );
+}
+
+async function renderPagina(items: readonly MedidaDeVariante[]) {
+  const repositorio = repositorioCon(items);
   const resultado = await render(MedidasAdminPage, {
     imports: [
       TranslocoTestingModule.forRoot({
@@ -74,6 +80,38 @@ async function renderPagina(items: readonly MedidaDeVariante[]) {
   return { ...resultado, repositorio };
 }
 
+/**
+ * Con un router de verdad y la página montada en una ruta, porque el filtro vive en la URL: lo que
+ * se prueba es que la URL y la tabla digan lo mismo, y un `ActivatedRoute` falso solo comprobaría
+ * la mitad.
+ */
+async function navegarAPagina(url: string, items: readonly MedidaDeVariante[]) {
+  const repositorio = repositorioCon(items);
+  TestBed.configureTestingModule({
+    imports: [
+      TranslocoTestingModule.forRoot({
+        langs: { es, en, 'admin/es': esAdmin } as never,
+        translocoConfig: { availableLangs: ['es', 'en'], defaultLang: 'es' },
+        preloadLangs: true,
+      }),
+    ],
+    providers: [
+      provideRouter([{ path: 'medidas', component: MedidasAdminPage }]),
+      provideTanStackQuery(new QueryClient()),
+      { provide: REPOSITORIO_PRODUCTOS_ADMIN, useValue: repositorio },
+    ],
+  });
+  const harness = await RouterTestingHarness.create();
+  await harness.navigateByUrl(url);
+  return { repositorio, router: TestBed.inject(Router), harness };
+}
+
+function casillaSoloSinMedir(total: number): HTMLInputElement {
+  return screen.getByLabelText(
+    esAdmin.productos.medidas.soloSinMedir.replace('{{total}}', String(total)),
+  ) as HTMLInputElement;
+}
+
 async function abrirFormulario(etiqueta: string, sku: string) {
   const boton = await screen.findByRole('button', { name: etiqueta.replace('{{sku}}', sku) });
   fireEvent.click(boton);
@@ -81,8 +119,8 @@ async function abrirFormulario(etiqueta: string, sku: string) {
 
 describe('MedidasAdminPage', () => {
   /**
-   * Lo que separa esta pantalla de la de sin-medir: la variante ya medida sale, y con sus cifras.
-   * Es la razón entera de que exista — en la otra desaparece justo cuando se mide.
+   * Lo que separaba esta pantalla de la de sin-medir, cuando eran dos: la variante ya medida sale,
+   * y con sus cifras. En la otra desaparecía justo cuando se medía.
    */
   it('lista también las variantes ya medidas, con su peso y sus dimensiones', async () => {
     await renderPagina([medida()]);
@@ -194,5 +232,89 @@ describe('MedidasAdminPage', () => {
     await screen.findByLabelText(esAdmin.productos.agregarVariante.pesoGramos);
 
     await esperarSinViolaciones(container);
+  });
+
+  /**
+   * El filtro reemplazó a la pantalla de sin-medir, y es adonde lleva el aviso del panel: entrar
+   * con él puesto tiene que enseñar solo lo que falta, con la casilla marcada.
+   */
+  describe('con el filtro de lo que falta', () => {
+    it('al entrar con ?filtro=sin-medir solo enseña las que faltan', async () => {
+      await navegarAPagina('/medidas?filtro=sin-medir', [medida(), sinMedir()]);
+
+      expect(await screen.findByText('Moto G17')).toBeTruthy();
+      expect(screen.queryByText('JBL Go 5')).toBeNull();
+      expect(casillaSoloSinMedir(1).checked).toBe(true);
+    });
+
+    it('sin el filtro enseña todas, con la casilla sin marcar', async () => {
+      await navegarAPagina('/medidas', [medida(), sinMedir()]);
+
+      expect(await screen.findByText('JBL Go 5')).toBeTruthy();
+      expect(screen.getByText('Moto G17')).toBeTruthy();
+      expect(casillaSoloSinMedir(1).checked).toBe(false);
+    });
+
+    /** Ida y vuelta: el filtro que se pone se puede quitar, y la URL sigue a la casilla. */
+    it('la casilla pone y quita el filtro en la URL', async () => {
+      const { router } = await navegarAPagina('/medidas', [medida(), sinMedir()]);
+      await screen.findByText('JBL Go 5');
+
+      fireEvent.click(casillaSoloSinMedir(1));
+      await waitFor(() => expect(router.url).toBe('/medidas?filtro=sin-medir'));
+      await waitFor(() => expect(screen.queryByText('JBL Go 5')).toBeNull());
+
+      fireEvent.click(casillaSoloSinMedir(1));
+      await waitFor(() => expect(router.url).toBe('/medidas'));
+      expect(await screen.findByText('JBL Go 5')).toBeTruthy();
+    });
+
+    /**
+     * Lo que hacía la pantalla vieja y no se puede perder: la fila medida sale de la lista, y la
+     * confirmación queda, porque vive fuera de la tabla.
+     */
+    it('medir una variante la saca de la lista y deja la confirmación', async () => {
+      const { repositorio } = await navegarAPagina('/medidas?filtro=sin-medir', [
+        medida(),
+        sinMedir(),
+      ]);
+      await abrirFormulario(esAdmin.productos.medidas.medirVariante, 'TS-MOTO-G17');
+
+      for (const [etiqueta, valor] of [
+        [esAdmin.productos.agregarVariante.pesoGramos, '430'],
+        [esAdmin.productos.agregarVariante.largoCm, '18'],
+        [esAdmin.productos.agregarVariante.anchoCm, '10'],
+        [esAdmin.productos.agregarVariante.altoCm, '5'],
+      ]) {
+        fireEvent.input(await screen.findByLabelText(etiqueta), { target: { value: valor } });
+      }
+      fireEvent.click(screen.getByRole('button', { name: esAdmin.productos.medidas.guardar }));
+
+      expect(
+        await screen.findByText(esAdmin.productos.medidas.medida.replace('{{sku}}', 'TS-MOTO-G17')),
+      ).toBeTruthy();
+      await waitFor(() => expect(screen.queryByText('Moto G17')).toBeNull());
+      expect(repositorio.medidas).toHaveLength(1);
+      expect(await screen.findByText(esAdmin.productos.medidas.ningunaSinMedir)).toBeTruthy();
+    });
+
+    /**
+     * Con todo medido no queda una tabla vacía, y la casilla sigue ahí: sin ella no habría por
+     * dónde volver a ver las medidas ya tomadas.
+     */
+    it('si no falta ninguna lo dice, y deja la casilla para quitar el filtro', async () => {
+      await navegarAPagina('/medidas?filtro=sin-medir', [medida()]);
+
+      expect(await screen.findByText(esAdmin.productos.medidas.ningunaSinMedir)).toBeTruthy();
+      expect(screen.queryByRole('table')).toBeNull();
+      expect(casillaSoloSinMedir(0).checked).toBe(true);
+    });
+
+    it('no tiene violaciones de accesibilidad', async () => {
+      const { harness } = await navegarAPagina('/medidas?filtro=sin-medir', [medida(), sinMedir()]);
+      await screen.findByText('Moto G17');
+
+      await esperarSinViolaciones(harness.routeNativeElement as HTMLElement);
+    });
   });
 });

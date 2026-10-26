@@ -12,9 +12,10 @@ export function usarMedirVariante() {
   return injectMutation(() => ({
     mutationFn: (comando: MedirVarianteAdmin): Promise<VarianteMedida> =>
       repositorio.medirVariante(comando),
-    // Dos listas miran esto y medir cambia lo que enseñan las dos: en la de sin-medir la fila
-    // desaparece y el aviso del panel baja; en la de medidas la fila se queda con las cifras
-    // nuevas. Por eso se invalidan ambas y no solo la que tenía el formulario abierto.
+    // Dos consultas miran esto y medir cambia lo que enseñan las dos: la de sin-medir alimenta el
+    // aviso del panel, que baja; la de medidas, la pantalla, donde la fila se queda con las cifras
+    // nuevas —o sale, con el filtro de lo que falta puesto—. Por eso se invalidan ambas y no solo
+    // la que tenía el formulario abierto.
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: CLAVE_VARIANTES_SIN_MEDIR });
       await queryClient.invalidateQueries({ queryKey: CLAVE_MEDIDAS });

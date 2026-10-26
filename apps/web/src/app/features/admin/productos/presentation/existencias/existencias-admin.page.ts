@@ -32,7 +32,7 @@ const CLAVE_ETIQUETA_ESTADO: Record<EstadoProducto, string> = {
 
 /**
  * Las existencias del catálogo y el formulario para contarlas, en la misma pantalla y con el mismo
- * criterio que la de sin-medir: contar es recorrer la bodega con la lista delante, y sacar a quien
+ * criterio que la de medidas: contar es recorrer la bodega con la lista delante, y sacar a quien
  * cuenta de la lista para devolverlo después alarga la única tarea que esta pantalla tiene.
  *
  * <p>Dos cifras por variante —lo que hay y lo que se puede vender—, que son dos cosas distintas:
@@ -146,7 +146,7 @@ export class ExistenciasAdminPage {
       this.enfocarPrimerInvalido();
       // Decir qué falta en vez de solo marcar, y sin deshabilitar el botón: un `<button disabled>`
       // sale del orden de tabulación y quien navega con teclado no llega a enterarse de por qué no
-      // pasa nada. Mismo criterio que la pantalla de sin-medir.
+      // pasa nada. Mismo criterio que la pantalla de medidas.
       this.error.set(this.transloco.translate('admin.productos.existencias.faltanCampos'));
       return;
     }

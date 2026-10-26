@@ -1,4 +1,5 @@
-import { Routes } from '@angular/router';
+import { inject } from '@angular/core';
+import { ActivatedRouteSnapshot, CanActivateFn, Router, Routes } from '@angular/router';
 import { provideTranslocoScope } from '@jsverse/transloco';
 import { REPOSITORIO_ATRIBUTOS } from '../catalogo/domain/repositorio-atributos.puerto';
 import { REPOSITORIO_CATEGORIAS } from '../catalogo/domain/repositorio-categorias.puerto';
@@ -63,6 +64,25 @@ import { EnlacesDeCompraAdminHttpRepositorio } from './enlaces-de-compra/infrast
 // Sin proveedor de puerto aquí: REPOSITORIO_SESION es compartido y se
 // provee en app.config.ts (SesionStore lo va a necesitar también
 // features/cuenta más adelante) — mismo criterio que REPOSITORIO_CARRITO.
+/**
+ * La ruta vieja de sin-medir, a medidas con el filtro puesto.
+ *
+ * <p>Es una guarda y no un `redirectTo: 'medidas?filtro=sin-medir'` porque ese **pierde el
+ * filtro**: el router solo conserva los query params de una redirección absoluta —en una relativa
+ * se queda con los segmentos y sigue emparejando—, y una absoluta tendría que nombrar el `:lang`
+ * de un ancestro, que no está a su alcance. Comprobado en la fuente de `@angular/router` 22.1 y en
+ * `admin.routes.spec.ts`, que con el `redirectTo` fallaba.
+ *
+ * <p>El `'sin-medir'` repite el `FILTRO_SIN_MEDIR` de la página: importarlo de allí metería la
+ * página en el bundle de las rutas, que la carga perezosa existe para evitar.
+ */
+const aMedidasSinMedir: CanActivateFn = (ruta: ActivatedRouteSnapshot) => {
+  const segmentos = ruta.pathFromRoot.flatMap((r) => r.url.map((segmento) => segmento.path));
+  return inject(Router).createUrlTree(['/', ...segmentos.slice(0, -1), 'medidas'], {
+    queryParams: { filtro: 'sin-medir' },
+  });
+};
+
 export const adminRoutes: Routes = [
   {
     path: '',
@@ -339,13 +359,9 @@ export const adminRoutes: Routes = [
                     (m) => m.ListaProductosAdminPage,
                   ),
               },
-              {
-                path: 'sin-medir',
-                loadComponent: () =>
-                  import('./productos/presentation/sin-medir/variantes-sin-medir-admin.page').then(
-                    (m) => m.VariantesSinMedirAdminPage,
-                  ),
-              },
+              // Fue una pantalla propia hasta el 25 de octubre de 2026; hoy es el filtro de la de
+              // medidas. Se redirige para que un marcador o un enlace viejo no acabe en el 404.
+              { path: 'sin-medir', canActivate: [aMedidasSinMedir], children: [] },
               {
                 path: 'medidas',
                 loadComponent: () =>

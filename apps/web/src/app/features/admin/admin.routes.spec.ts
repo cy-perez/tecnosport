@@ -1,4 +1,7 @@
-import { Route, Routes } from '@angular/router';
+import { Component } from '@angular/core';
+import { TestBed } from '@angular/core/testing';
+import { provideRouter, Route, Router, Routes } from '@angular/router';
+import { RouterTestingHarness } from '@angular/router/testing';
 import { describe, expect, it } from 'vitest';
 import { adminRoutes } from './admin.routes';
 import { REPOSITORIO_DIFUSION } from './difusion/domain/repositorio-difusion.puerto';
@@ -50,6 +53,46 @@ describe('adminRoutes', () => {
     expect(proveeTokens(buscarRuta(adminRoutes, 'panel'))).not.toContain(
       REPOSITORIO_PRODUCTOS_NO_PUBLICADOS,
     );
+  });
+
+  /**
+   * La pantalla de sin-medir se fusionó con la de medidas el 25 de octubre de 2026 y su ruta
+   * quedó como redirección. Se navega de verdad, con la ruta tal como está en el árbol: lo que no
+   * se ve en la configuración es si el `?filtro=` sobrevive al redirigir.
+   */
+  it('la ruta vieja de sin-medir lleva a medidas con el filtro puesto', async () => {
+    @Component({ template: '' })
+    class Medidas {}
+
+    TestBed.configureTestingModule({
+      providers: [
+        // Con el prefijo del idioma por encima, como en la aplicación: es justo lo que un
+        // `redirectTo` absoluto no puede nombrar.
+        provideRouter([
+          {
+            path: ':lang',
+            children: [
+              {
+                path: 'admin',
+                children: [
+                  {
+                    path: 'productos',
+                    children: [
+                      buscarRuta(adminRoutes, 'sin-medir'),
+                      { path: 'medidas', component: Medidas },
+                    ],
+                  },
+                ],
+              },
+            ],
+          },
+        ]),
+      ],
+    });
+    const harness = await RouterTestingHarness.create();
+    await harness.navigateByUrl('/en/admin/productos/sin-medir');
+
+    expect(TestBed.inject(Router).url).toBe('/en/admin/productos/medidas?filtro=sin-medir');
   });
 
   /** El historial de zips cuelga de ingestas y no tiene ruta propia con proveedores. */
