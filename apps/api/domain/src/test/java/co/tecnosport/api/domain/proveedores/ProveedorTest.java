@@ -348,4 +348,40 @@ class ProveedorTest {
         () -> tecnologia.definirTiposExcluidos(Set.of(TipoProductoProveedor.PANTALON)));
     tecnologia.definirTiposExcluidos(Set.of());
   }
+
+  /**
+   * Nadie nace local: lo marca una persona. Vale para cualquier línea, y editar los demás datos no
+   * lo borra, porque {@code editar} no lo recibe.
+   */
+  @Test
+  void serLocalSeMarcaSinImportarLaLineaYEditarNoLoBorra() {
+    Proveedor proveedor = bolsos();
+    assertFalse(proveedor.esLocal());
+
+    proveedor.definirLocal(true);
+    proveedor.editar(
+        "Bolsos del Centro",
+        LineaCatalogo.BOLSOS,
+        "+57 300 123 4567",
+        "Bolsos Centro",
+        true,
+        false,
+        null,
+        OrdenDePublicacion.FOTOS_PRIMERO);
+    assertTrue(proveedor.esLocal());
+
+    proveedor.definirLocal(false);
+    assertFalse(proveedor.esLocal());
+
+    Proveedor tecnologia =
+        Proveedor.crear(
+            "Fénix",
+            LineaCatalogo.TECNOLOGIA,
+            "+57 323",
+            "Fénix",
+            null,
+            OrdenDePublicacion.TEXTO_PRIMERO);
+    tecnologia.definirLocal(true);
+    assertTrue(tecnologia.esLocal());
+  }
 }

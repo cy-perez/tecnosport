@@ -182,6 +182,35 @@ class RepositoriosDeIngestaJpaTest {
     assertThat(proveedores.buscarPorId(riverah.id()).orElseThrow().armaSets()).isFalse();
   }
 
+  /** Ser local (V122) va y vuelve: nadie nace local, y se puede quitar. */
+  @Test
+  void serLocalVaYVuelve() {
+    Proveedor violeta =
+        Proveedor.crear(
+            "Violeta",
+            LineaCatalogo.ROPA,
+            "+57 300 1112233",
+            "Violeta",
+            null,
+            OrdenDePublicacion.TEXTO_PRIMERO);
+    proveedores.guardar(violeta);
+    entityManager.flush();
+    entityManager.clear();
+    assertThat(proveedores.buscarPorId(violeta.id()).orElseThrow().esLocal()).isFalse();
+
+    violeta.definirLocal(true);
+    proveedores.actualizar(violeta);
+    entityManager.flush();
+    entityManager.clear();
+    assertThat(proveedores.buscarPorId(violeta.id()).orElseThrow().esLocal()).isTrue();
+
+    violeta.definirLocal(false);
+    proveedores.actualizar(violeta);
+    entityManager.flush();
+    entityManager.clear();
+    assertThat(proveedores.buscarPorId(violeta.id()).orElseThrow().esLocal()).isFalse();
+  }
+
   /** Los ajustes de Tenis Al Pie (V118) van y vuelven, y se pueden quitar. */
   @Test
   void losAjustesDeIngestaVanYVuelven() {
