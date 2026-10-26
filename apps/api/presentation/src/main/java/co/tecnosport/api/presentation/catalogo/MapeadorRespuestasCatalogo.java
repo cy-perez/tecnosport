@@ -157,7 +157,7 @@ public class MapeadorRespuestasCatalogo {
         aRespuesta(variante.precio()),
         disponible,
         variante.atributos().stream().map(this::aRespuesta).toList(),
-        variante.colorPorConfirmar());
+        variante.disponibilidadPorConfirmar());
   }
 
   /** Público: {@code MapeadorRespuestasProductoAdmin} lo reutiliza para la respuesta admin. */

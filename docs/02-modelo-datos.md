@@ -809,7 +809,7 @@ lo sostiene el agregado.
 
 **El color se confirma antes de venderse** (`ADR-0086`, V117). `producto.paleta`
 guarda los colores oficiales del modelo, uno por línea, que la ficha dice al pie
-de las fotos. `variante.color_por_confirmar` lo recalcula cada lista: falso si la
+de las fotos. `variante.disponibilidad_por_confirmar` lo recalcula cada lista: falso si la
 lista de hoy marca ese color o si la paleta tiene uno solo. Una variante por
 confirmar no se compra sin un enlace de compra:
 

@@ -64,7 +64,7 @@ public class MapeadorRespuestasProductoAdmin {
                         variante.sku().valor(),
                         mapeadorCatalogo.aRespuesta(variante, false).atributos(),
                         variante.precio().valor().longValueExact(),
-                        variante.colorPorConfirmar()))
+                        variante.disponibilidadPorConfirmar()))
             .toList(),
         producto.estadoDisponibilidad().name(),
         producto.vistoPorUltimaVez().orElse(null),

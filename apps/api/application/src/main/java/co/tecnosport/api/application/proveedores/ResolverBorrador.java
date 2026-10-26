@@ -141,6 +141,7 @@ public final class ResolverBorrador {
   private final Map<LineaCatalogo, BigDecimal> factorPorLinea;
   private final TopesDeGanancia topesDeGanancia;
   private final int umbralHamming;
+  private final ExistenciaBajoConfirmacion existenciaBajoConfirmacion;
 
   public ResolverBorrador(
       RepositorioBorradores repositorioBorradores,
@@ -153,6 +154,37 @@ public final class ResolverBorrador {
       Map<LineaCatalogo, BigDecimal> factorPorLinea,
       TopesDeGanancia topesDeGanancia,
       int umbralHamming) {
+    this(
+        repositorioBorradores,
+        productosDeProveedor,
+        repositorioProductos,
+        repositorioPublicaciones,
+        almacen,
+        calculadorDePHash,
+        reloj,
+        factorPorLinea,
+        topesDeGanancia,
+        umbralHamming,
+        null);
+  }
+
+  /**
+   * @param existenciaBajoConfirmacion repone lo que se vende bajo confirmación cuando vuelve a
+   *     aparecer (ADR-0089); nula solo donde ningún proveedor vende así
+   */
+  public ResolverBorrador(
+      RepositorioBorradores repositorioBorradores,
+      RepositorioProductosDeProveedor productosDeProveedor,
+      RepositorioProductos repositorioProductos,
+      RepositorioPublicacionesProveedor repositorioPublicaciones,
+      AlmacenDeArchivosDeProveedor almacen,
+      CalculadorDePHash calculadorDePHash,
+      Reloj reloj,
+      Map<LineaCatalogo, BigDecimal> factorPorLinea,
+      TopesDeGanancia topesDeGanancia,
+      int umbralHamming,
+      ExistenciaBajoConfirmacion existenciaBajoConfirmacion) {
+    this.existenciaBajoConfirmacion = existenciaBajoConfirmacion;
     this.repositorioBorradores = Objects.requireNonNull(repositorioBorradores);
     this.productosDeProveedor = Objects.requireNonNull(productosDeProveedor);
     this.repositorioProductos = Objects.requireNonNull(repositorioProductos);
@@ -640,6 +672,12 @@ public final class ResolverBorrador {
       tipo = TipoDeResolucion.RENOVACION;
     }
     repositorioProductos.actualizar(producto);
+    // Lo que se vende bajo confirmación vuelve a la existencia nominal cuando reaparece (ADR-0089).
+    if (!extraido.estaAgotado()
+        && proveedor.ajustesDeIngesta().ventaBajoConfirmacion()
+        && existenciaBajoConfirmacion != null) {
+      existenciaBajoConfirmacion.reponer(producto);
+    }
     // El de caballero de un anuncio unisex vive y se agota con el de dama: es el mismo par en otra
     // talla (ADR-0085). Sin esto, un «AGOTADO» dejaba a la venta al otro sin existencias.
     gemeloDe(proveedor.id(), producto)

@@ -107,7 +107,7 @@ const IPHONE: ProductoAdminDetalle = {
       sku: 'IPH-NE',
       precio: 6_000_000,
       atributos: [{ nombre: 'Color', valor: 'Negro', colorHex: null }],
-      colorPorConfirmar: false,
+      disponibilidadPorConfirmar: false,
     },
     {
       id: 'v-morado',
@@ -117,7 +117,7 @@ const IPHONE: ProductoAdminDetalle = {
         { nombre: 'Almacenamiento', valor: '256', colorHex: null },
         { nombre: 'Color', valor: 'Morado', colorHex: null },
       ],
-      colorPorConfirmar: true,
+      disponibilidadPorConfirmar: true,
     },
   ],
 };

@@ -28,7 +28,7 @@ describe('mapeador-productos', () => {
           sku: 'TS-CAM-AZ-M',
           precio: { valor: 89900, moneda: 'COP' },
           disponible: true,
-          colorPorConfirmar: false,
+          disponibilidadPorConfirmar: false,
           atributos: [
             { nombre: 'Color', valor: 'Azul marino', colorHex: '#1E3A8A' },
             { nombre: 'Garantía', valor: '12', unidad: 'meses' },
@@ -50,7 +50,7 @@ describe('mapeador-productos', () => {
     expect(producto.variantes[0].id).toBe('v1');
     expect(producto.variantes[0].precio.valor).toBe(89900);
     expect(producto.paleta).toEqual(['Morado', 'Plata']);
-    expect(producto.variantes[0].colorPorConfirmar).toBe(false);
+    expect(producto.variantes[0].disponibilidadPorConfirmar).toBe(false);
     expect(producto.variantes[0].atributos[0].colorHex).toBe('#1E3A8A');
     // La unidad viaja con el valor; sin ella en el DTO queda en null, no en cadena vacía.
     expect(producto.variantes[0].atributos[0].unidad).toBeNull();

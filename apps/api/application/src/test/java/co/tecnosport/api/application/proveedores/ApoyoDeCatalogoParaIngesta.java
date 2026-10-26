@@ -267,11 +267,11 @@ final class ApoyoDeCatalogoParaIngesta {
     }
 
     /** Lo último que se dijo del color de cada variante: por confirmar o sabido. */
-    final Map<UUID, Boolean> colorPorConfirmar = new HashMap<>();
+    final Map<UUID, Boolean> disponibilidadPorConfirmar = new HashMap<>();
 
     @Override
-    public void marcarColoresPorConfirmar(Map<UUID, Boolean> porConfirmarPorVariante) {
-      colorPorConfirmar.putAll(porConfirmarPorVariante);
+    public void marcarDisponibilidadesPorConfirmar(Map<UUID, Boolean> porConfirmarPorVariante) {
+      disponibilidadPorConfirmar.putAll(porConfirmarPorVariante);
     }
   }
 

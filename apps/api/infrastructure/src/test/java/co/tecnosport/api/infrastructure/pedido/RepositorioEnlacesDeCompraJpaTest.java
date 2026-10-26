@@ -125,7 +125,7 @@ class RepositorioEnlacesDeCompraJpaTest {
   }
 
   @Test
-  void laPaletaYElColorPorConfirmarSobrevivenAGuardarElProductoYCambiarElPrecio() {
+  void laPaletaYElDisponibilidadPorConfirmarSobrevivenAGuardarElProductoYCambiarElPrecio() {
     Sembrado sembrado = variantePropia("PALETA-1");
     new TransactionTemplate(transactionManager)
         .executeWithoutResult(
@@ -133,7 +133,8 @@ class RepositorioEnlacesDeCompraJpaTest {
               Producto producto = productosJpa.buscarPorId(sembrado.productoId()).orElseThrow();
               producto.definirPaleta(List.of("Morado", "Plata", "Negro"));
               productosJpa.actualizar(producto);
-              productosDeProveedor.marcarColoresPorConfirmar(Map.of(sembrado.varianteId(), true));
+              productosDeProveedor.marcarDisponibilidadesPorConfirmar(
+                  Map.of(sembrado.varianteId(), true));
             });
     new TransactionTemplate(transactionManager)
         .executeWithoutResult(
@@ -141,6 +142,6 @@ class RepositorioEnlacesDeCompraJpaTest {
 
     Producto leido = productosJpa.buscarPorId(sembrado.productoId()).orElseThrow();
     assertThat(leido.paleta()).containsExactly("Morado", "Plata", "Negro");
-    assertThat(leido.variantes().getFirst().colorPorConfirmar()).isTrue();
+    assertThat(leido.variantes().getFirst().disponibilidadPorConfirmar()).isTrue();
   }
 }

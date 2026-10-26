@@ -284,7 +284,7 @@ public class MapeadorCatalogo {
         atributos,
         setRotacionPropio,
         v.isAgotadaPorProveedor(),
-        v.isColorPorConfirmar());
+        v.isDisponibilidadPorConfirmar());
   }
 
   private static boolean estaPublicado(SetRotacionJpaEntity set) {

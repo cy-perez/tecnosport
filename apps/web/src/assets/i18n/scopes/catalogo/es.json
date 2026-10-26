@@ -53,7 +53,7 @@
     "volver_al_catalogo": "Volver al catálogo",
     "imagen_de_referencia": "Las imágenes son de referencia: muestran el modelo, no cada color.",
     "colores_del_modelo": "Colores del modelo según el fabricante: {{colores}}.",
-    "color_por_confirmar": "Este color lo confirmamos con nuestro proveedor antes de que lo compres.",
+    "disponibilidad_por_confirmar": "Este color lo confirmamos con nuestro proveedor antes de que lo compres.",
     "consultar_whatsapp": "Consultar disponibilidad por WhatsApp",
     "consultar_whatsapp_accesible": "Consultar disponibilidad por WhatsApp (se abre en otra pestaña)",
     "whatsapp_mensaje": "Hola, quiero comprar {{producto}} ({{detalle}}). ¿Tienen este color disponible? {{url}}",

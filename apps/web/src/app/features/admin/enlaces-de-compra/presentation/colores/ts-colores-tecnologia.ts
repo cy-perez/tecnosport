@@ -63,7 +63,7 @@ export class TsColoresTecnologia {
   protected readonly avisoCopia = signal<string | null>(null);
 
   protected readonly porConfirmar = computed(() =>
-    this.producto().variantes.filter((variante) => variante.colorPorConfirmar === true),
+    this.producto().variantes.filter((variante) => variante.disponibilidadPorConfirmar === true),
   );
 
   protected readonly compra = computed(() => {

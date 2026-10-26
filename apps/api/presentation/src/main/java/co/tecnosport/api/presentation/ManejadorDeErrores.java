@@ -54,8 +54,8 @@ import co.tecnosport.api.application.pago.ReferenciaDePagoYaExisteException;
 import co.tecnosport.api.application.pago.SistecreditoNoEntregoLaUrlDePagoException;
 import co.tecnosport.api.application.pago.SistecreditoNoRespondeException;
 import co.tecnosport.api.application.pago.TransaccionDeOtroPagoException;
-import co.tecnosport.api.application.pedido.ColorPorConfirmarException;
 import co.tecnosport.api.application.pedido.ContraentregaNoDisponibleException;
+import co.tecnosport.api.application.pedido.DisponibilidadPorConfirmarException;
 import co.tecnosport.api.application.pedido.EnlaceDeCompraNoEncontradoException;
 import co.tecnosport.api.application.pedido.InventarioSinConfirmarException;
 import co.tecnosport.api.application.pedido.MetodoDePagoNoEsTransferenciaManualException;
@@ -627,11 +627,12 @@ public class ManejadorDeErrores {
     return problema(HttpStatus.NOT_FOUND, "Línea de carrito no encontrada", excepcion);
   }
 
-  // Las tres del enlace de compra (ADR-0086). La de color por confirmar es un 409 y no un 422: la
-  // solicitud está bien formada, lo que falta es la confirmación del proveedor.
-  @ExceptionHandler(ColorPorConfirmarException.class)
-  public ProblemDetail colorPorConfirmar(ColorPorConfirmarException excepcion) {
-    return problema(HttpStatus.CONFLICT, "El color se confirma antes de comprarlo", excepcion);
+  // Las tres del enlace de compra (ADR-0086). La de disponibilidad por confirmar es un 409 y no un
+  // 422: la solicitud está bien formada, lo que falta es la confirmación del proveedor.
+  @ExceptionHandler(DisponibilidadPorConfirmarException.class)
+  public ProblemDetail disponibilidadPorConfirmar(DisponibilidadPorConfirmarException excepcion) {
+    return problema(
+        HttpStatus.CONFLICT, "La disponibilidad se confirma antes de comprar", excepcion);
   }
 
   @ExceptionHandler(EnlaceDeCompraNoVigenteException.class)

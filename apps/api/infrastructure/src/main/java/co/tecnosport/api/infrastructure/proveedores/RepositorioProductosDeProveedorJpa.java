@@ -107,7 +107,7 @@ public class RepositorioProductosDeProveedorJpa implements RepositorioProductosD
   }
 
   @Override
-  public void marcarColoresPorConfirmar(Map<UUID, Boolean> porConfirmarPorVariante) {
+  public void marcarDisponibilidadesPorConfirmar(Map<UUID, Boolean> porConfirmarPorVariante) {
     if (porConfirmarPorVariante.isEmpty()) {
       return;
     }
@@ -115,7 +115,9 @@ public class RepositorioProductosDeProveedorJpa implements RepositorioProductosD
     variantes
         .findAllById(porConfirmarPorVariante.keySet())
         .forEach(
-            v -> cambiadas.add(v.conColorPorConfirmar(porConfirmarPorVariante.get(v.getId()))));
+            v ->
+                cambiadas.add(
+                    v.conDisponibilidadPorConfirmar(porConfirmarPorVariante.get(v.getId()))));
     variantes.saveAll(cambiadas);
   }
 }

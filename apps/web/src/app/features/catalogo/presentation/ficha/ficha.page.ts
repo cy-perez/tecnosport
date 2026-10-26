@@ -145,7 +145,7 @@ export class FichaPage {
    */
   protected readonly consultaPorWhatsapp = computed(() => {
     const variante = this.varianteActiva();
-    return variante !== null && variante.colorPorConfirmar && this.enlaceDeLaVariante() === null;
+    return variante !== null && variante.disponibilidadPorConfirmar && this.enlaceDeLaVariante() === null;
   });
 
   /**

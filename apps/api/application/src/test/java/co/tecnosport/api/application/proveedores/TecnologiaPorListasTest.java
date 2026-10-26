@@ -921,7 +921,7 @@ class TecnologiaPorListasTest {
   // --- El color que se confirma con el proveedor (ADR-0086) ----------------------------------
 
   private boolean porConfirmar(Variante variante) {
-    return productosDeProveedor.colorPorConfirmar.get(variante.id());
+    return productosDeProveedor.disponibilidadPorConfirmar.get(variante.id());
   }
 
   @Test

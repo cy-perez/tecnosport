@@ -70,11 +70,11 @@ describe('aProductoAdminDetalle', () => {
   it('lleva el precio de cada variante', () => {
     const producto = aProductoAdminDetalle({
       ...detalle(undefined),
-      variantes: [{ id: 'v1', sku: 'TS-1', precio: 79000, atributos: [], colorPorConfirmar: true }],
+      variantes: [{ id: 'v1', sku: 'TS-1', precio: 79000, atributos: [], disponibilidadPorConfirmar: true }],
     });
 
     expect(producto.variantes).toEqual([
-      { id: 'v1', sku: 'TS-1', precio: 79000, atributos: [], colorPorConfirmar: true },
+      { id: 'v1', sku: 'TS-1', precio: 79000, atributos: [], disponibilidadPorConfirmar: true },
     ]);
   });
 });

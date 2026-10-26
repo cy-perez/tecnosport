@@ -52,7 +52,7 @@ public interface RepositorioProductosDeProveedor {
    * (ADR-0086). Lo deciden la lista y la aprobación del borrador de tecnología; la variante no sabe
    * nada de listas.
    */
-  void marcarColoresPorConfirmar(Map<UUID, Boolean> porConfirmarPorVariante);
+  void marcarDisponibilidadesPorConfirmar(Map<UUID, Boolean> porConfirmarPorVariante);
 
   /**
    * Las variantes de un producto que llevan un mismo SKU del proveedor: una por talla.

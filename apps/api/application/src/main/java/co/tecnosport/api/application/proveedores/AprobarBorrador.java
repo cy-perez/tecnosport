@@ -81,6 +81,7 @@ public final class AprobarBorrador {
   private final RepositorioPublicacionesProveedor repositorioPublicaciones;
   private final RepositorioMensajesProveedor repositorioMensajes;
   private final RepositorioProveedores repositorioProveedores;
+  private final ExistenciaBajoConfirmacion existenciaBajoConfirmacion;
   private final RepositorioProductos repositorioProductos;
   private final RepositorioProductosDeProveedor productosDeProveedor;
   private final RepositorioMarcas repositorioMarcas;
@@ -109,6 +110,47 @@ public final class AprobarBorrador {
       ProcesadorDeImagenes procesador,
       CalculadorDePHash calculadorDePHash,
       Reloj reloj) {
+    this(
+        repositorioBorradores,
+        repositorioPublicaciones,
+        repositorioMensajes,
+        repositorioProveedores,
+        repositorioProductos,
+        productosDeProveedor,
+        repositorioMarcas,
+        repositorioCategorias,
+        repositorioAtributos,
+        agregarVariante,
+        almacenPrivado,
+        almacenDeImagenes,
+        procesador,
+        calculadorDePHash,
+        reloj,
+        null);
+  }
+
+  /**
+   * @param existenciaBajoConfirmacion la de lo que se vende bajo confirmación (ADR-0089); nula solo
+   *     donde ningún proveedor vende así
+   */
+  public AprobarBorrador(
+      RepositorioBorradores repositorioBorradores,
+      RepositorioPublicacionesProveedor repositorioPublicaciones,
+      RepositorioMensajesProveedor repositorioMensajes,
+      RepositorioProveedores repositorioProveedores,
+      RepositorioProductos repositorioProductos,
+      RepositorioProductosDeProveedor productosDeProveedor,
+      RepositorioMarcas repositorioMarcas,
+      RepositorioCategorias repositorioCategorias,
+      RepositorioAtributos repositorioAtributos,
+      AgregarVariante agregarVariante,
+      AlmacenDeArchivosDeProveedor almacenPrivado,
+      AlmacenDeImagenes almacenDeImagenes,
+      ProcesadorDeImagenes procesador,
+      CalculadorDePHash calculadorDePHash,
+      Reloj reloj,
+      ExistenciaBajoConfirmacion existenciaBajoConfirmacion) {
+    this.existenciaBajoConfirmacion = existenciaBajoConfirmacion;
     this.repositorioBorradores = Objects.requireNonNull(repositorioBorradores);
     this.repositorioPublicaciones = Objects.requireNonNull(repositorioPublicaciones);
     this.repositorioMensajes = Objects.requireNonNull(repositorioMensajes);
@@ -255,6 +297,16 @@ public final class AprobarBorrador {
     // Las fotos se releen del repositorio: agregarVariante las dejó ya guardadas y el agregado en
     // memoria tiene que verlas para poder publicar.
     Producto conVariantes = repositorioProductos.buscarPorId(producto.id()).orElseThrow();
+    // Lo de un proveedor que vende bajo confirmación nace con cada talla por confirmar y con la
+    // existencia nominal, como la tecnología (ADR-0089).
+    if (proveedor.ajustesDeIngesta().ventaBajoConfirmacion()) {
+      if (existenciaBajoConfirmacion == null) {
+        throw new IllegalStateException(
+            "El proveedor vende bajo confirmación y la aprobación no tiene con qué reponer.");
+      }
+      existenciaBajoConfirmacion.alAprobar(conVariantes);
+      conVariantes = repositorioProductos.buscarPorId(producto.id()).orElseThrow();
+    }
     PHash pHashDeLaPrincipal =
         publicarFotos(
             conVariantes,

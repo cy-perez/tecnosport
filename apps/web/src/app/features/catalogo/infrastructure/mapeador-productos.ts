@@ -140,7 +140,7 @@ function aVariante(dto: VarianteDto): Variante {
     // una sola prueba en rojo. Ahora el tipo no deja que falte.
     disponible: dto.disponible,
     atributos: (dto.atributos ?? []).map(aValorAtributo),
-    colorPorConfirmar: dto.colorPorConfirmar,
+    disponibilidadPorConfirmar: dto.disponibilidadPorConfirmar,
   };
 }
 

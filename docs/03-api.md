@@ -64,7 +64,7 @@ GET /api/v1/envios/modalidades              qué formas de entrega se ofrecen ho
                                              POST /pedidos con RETIRO_EN_PUNTO y la recogida apagada: 409 RETIRO_EN_PUNTO_NO_DISPONIBLE
 POST /api/v1/pedidos/metodos-de-pago-disponibles   qué métodos ofrece el negocio hoy y aplican a este carrito y destino
 POST /api/v1/pedidos                        revalida precios, existencias y costo de envío, reserva; una línea de color
-                                             por confirmar sin `enlaceCompra` vigente: 409 COLOR_POR_CONFIRMAR, o 410
+                                             por confirmar sin `enlaceCompra` vigente: 409 DISPONIBILIDAD_POR_CONFIRMAR, o 410
                                              ENLACE_DE_COMPRA_NO_VIGENTE si lo trae vencido, usado o anulado (adr/0086)
 GET  /api/v1/enlaces-de-compra/{token}      la variante que habilita y hasta cuándo; 410 si ya no sirve, sin decir por qué
 POST /api/v1/pagos/intentos                 crea el intento en la pasarela

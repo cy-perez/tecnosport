@@ -27,7 +27,7 @@ function variante(sku: string, disponible: boolean, atributos: Variante['atribut
     precio: { valor: 100_000, moneda: 'COP' },
     disponible,
     atributos,
-    colorPorConfirmar: false,
+    disponibilidadPorConfirmar: false,
   };
 }
 
