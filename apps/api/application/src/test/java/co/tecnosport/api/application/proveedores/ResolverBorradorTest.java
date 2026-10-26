@@ -1995,6 +1995,12 @@ class ResolverBorradorTest {
     assertEquals(Optional.of("Tenis importados estilo Nike Air Force 1"), borrador.titulo());
     // 135.000 × 1,20 = 162.000: gana 27.000, dentro de los topes.
     assertEquals(Optional.of(Dinero.deCop(162000)), borrador.precioVentaSugerido());
+    // Con las tallas que se venden, no con las EUR del proveedor (ADR-0092).
+    assertEquals(
+        Optional.of(
+            "Tenis importados estilo Nike Air Force 1 para dama. Disponibles desde la talla 35"
+                + " hasta la 38."),
+        borrador.descripcion());
   }
 
   /** Sin género leído, el tenis es unisex y lleva las dos escalas. */
@@ -2010,5 +2016,144 @@ class ResolverBorradorTest {
         Tallas.lista(List.of("35", "36", "37", "38", "39", "40", "41", "42", "43")),
         borrador.tallas());
     assertEquals(Optional.of(GeneroDeCalzado.UNISEX), borrador.generoDeCalzado());
+  }
+
+  // --- La descripción del tenis y el calzado que no es un tenis (ADR-0092) ---
+
+  /** Un tenis de Imperio Wicho, con lo que el extractor escribió de cómo está hecho. */
+  private static ExtraccionEvaluada tenisDeWicho(List<String> tallas, LecturaDeCalzado calzado) {
+    ProductoExtraido extraido =
+        new ProductoExtraido(
+            true,
+            false,
+            "Tenis importados estilo Nike",
+            LineaCatalogo.CALZADO,
+            TipoProductoProveedor.TENIS,
+            Dinero.deCop(85000),
+            Tallas.lista(tallas),
+            null,
+            List.of(),
+            null,
+            "Ultralivianos y con suela importada.",
+            null,
+            false,
+            new BigDecimal("0.9"),
+            null,
+            null);
+    return new ExtraccionEvaluada(
+        extraido,
+        "{}",
+        Dinero.deCop(85000),
+        Set.of(),
+        new UsoDelExtractor("falso", 1, 1, 1),
+        List.of(),
+        null,
+        null,
+        false,
+        null,
+        calzado);
+  }
+
+  /**
+   * «IMPORTADO CABALLERO · Tallas disponibles 40 a la 45 · Aumentar 2 tallas»: la descripción dice
+   * el género del texto, las tallas que se venden y, al final, cómo está hecho.
+   */
+  @Test
+  void elTenisDeWichoSeDescribeConSuGeneroSusTallasYComoEstaHecho() {
+    PublicacionProveedor publicacion =
+        publicacion(
+            "IMPORTADO CABALLERO👟👟\nSUELA IMPORTADA💯\nTallas disponibles 40 a la 45\n"
+                + "Aumentar 2 tallas⚠️⚠️\n*$85,000*",
+            "foto-tenis");
+
+    resolver(publicacion, tenisDeWicho(List.of("40", "41", "42", "43", "44", "45"), null));
+
+    BorradorProducto borrador = borradores.enEstado(EstadoBorrador.EN_REVISION).getFirst();
+    assertEquals(Optional.of(GeneroDeCalzado.CABALLERO), borrador.generoDeCalzado());
+    assertEquals(
+        Optional.of(
+            "Tenis importados estilo Nike para caballero. Disponibles desde la talla 38 hasta la"
+                + " 43. Ultralivianos y con suela importada."),
+        borrador.descripcion());
+  }
+
+  /** Lo que escribe el proveedor manda sobre el género que el lector cree ver en la foto. */
+  @Test
+  void elGeneroDelTextoMandaSobreElDeLaFoto() {
+    PublicacionProveedor publicacion =
+        publicacion("Tenis para dama 💕\nTallas 35 a la 38\n*$85,000*", "foto-tenis");
+    LecturaDeCalzado unisex =
+        new LecturaDeCalzado("Air Max", false, GeneroDeCalzado.UNISEX, TipoDeCalzado.TENIS, true);
+
+    resolver(publicacion, tenisDeWicho(List.of("35", "36", "37", "38"), unisex));
+
+    BorradorProducto borrador = borradores.enEstado(EstadoBorrador.EN_REVISION).getFirst();
+    assertEquals(Optional.of(GeneroDeCalzado.DAMA), borrador.generoDeCalzado());
+    assertTrue(borrador.descripcion().orElseThrow().contains(" para dama. "));
+  }
+
+  /** Sin género en el texto, el que se ve en las fotos. */
+  @Test
+  void sinGeneroEnElTextoValeElDeLaFoto() {
+    PublicacionProveedor publicacion =
+        publicacion("NIKE ULTRALIVIANO🔥\nTallas 35 a la 38\n*$85,000*", "foto-tenis");
+    LecturaDeCalzado dama =
+        new LecturaDeCalzado("Air Max", false, GeneroDeCalzado.DAMA, TipoDeCalzado.TENIS, true);
+
+    resolver(publicacion, tenisDeWicho(List.of("35", "36", "37", "38"), dama));
+
+    assertEquals(
+        Optional.of(GeneroDeCalzado.DAMA),
+        borradores.enEstado(EstadoBorrador.EN_REVISION).getFirst().generoDeCalzado());
+  }
+
+  /** Los gemelos de un anuncio unisex: cada uno dice su género y sus tallas. */
+  @Test
+  void cadaGemeloDelUnisexSeDescribeConLoSuyo() {
+    PublicacionProveedor publicacion =
+        publicacion(
+            "NIKE UNISEX ULTRALIVIANO🔥\nTallas disponibles en la foto!\n"
+                + "Horma normal Dama, Aumenta 1 Cab⚠️⚠️\n💰*$85,000*",
+            "foto-nike");
+
+    resolver(publicacion, tenisDeWicho(List.of("41", "42", "43"), null));
+
+    List<BorradorProducto> enRevision = borradores.enEstado(EstadoBorrador.EN_REVISION);
+    BorradorProducto dama =
+        enRevision.stream()
+            .filter(b -> b.generoDeCalzado().equals(Optional.of(GeneroDeCalzado.DAMA)))
+            .findFirst()
+            .orElseThrow();
+    BorradorProducto caballero =
+        enRevision.stream()
+            .filter(b -> b.generoDeCalzado().equals(Optional.of(GeneroDeCalzado.CABALLERO)))
+            .findFirst()
+            .orElseThrow();
+    assertEquals(
+        Optional.of(
+            "Tenis importados estilo Nike para dama. Disponibles desde la talla 41 hasta la 43."
+                + " Ultralivianos y con suela importada."),
+        dama.descripcion());
+    assertEquals(
+        Optional.of(
+            "Tenis importados estilo Nike para caballero. Disponibles desde la talla 40 hasta la"
+                + " 42. Ultralivianos y con suela importada."),
+        caballero.descripcion());
+  }
+
+  /** El calzado que no es un tenis se descarta con su motivo y no deja borrador. */
+  @Test
+  void laChanclaSeDescartaSinBorrador() {
+    PublicacionProveedor publicacion = publicacion("CHANCLA DAMA *$55,000*", "foto-chancla");
+    CierreDePublicacion chancla =
+        new CierreDePublicacion(MotivoDePublicacion.CALZADO_QUE_NO_ES_TENIS, "CHANCLA");
+
+    Resolucion resolucion =
+        resolver(publicacion, tenisDeWicho(List.of("36", "37"), null).descartada(chancla));
+
+    assertEquals(TipoDeResolucion.DESCARTADA, resolucion.tipo());
+    assertTrue(borradores.enEstado(EstadoBorrador.EN_REVISION).isEmpty());
+    PublicacionProveedor guardada = publicaciones.buscarPorId(publicacion.id()).orElseThrow();
+    assertEquals(Optional.of(chancla), guardada.cierre());
   }
 }

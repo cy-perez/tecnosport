@@ -246,9 +246,18 @@ public final class AprobarBorrador {
         comando.titulo() == null || comando.titulo().isBlank()
             ? borrador.titulo().orElseThrow(BorradorSinTituloException::new)
             : comando.titulo().strip();
+    boolean descripcionIntacta =
+        comando.descripcion() == null
+            || comando.descripcion().isBlank()
+            || borrador.descripcion().map(comando.descripcion().strip()::equals).orElse(false);
+    // El modelo corregido en el título al aprobar, sin guardar antes: la descripción del tenis lo
+    // sigue si nadie la reescribió (ADR-0092).
     String descripcion =
-        comando.descripcion() == null || comando.descripcion().isBlank()
-            ? borrador.descripcion().orElseThrow(BorradorSinDescripcionException::new)
+        descripcionIntacta
+            ? borrador
+                .descripcionDelTenisCon(titulo, tallasAprobadas)
+                .or(borrador::descripcion)
+                .orElseThrow(BorradorSinDescripcionException::new)
             : comando.descripcion().strip();
     HuellaProveedor huella =
         borrador

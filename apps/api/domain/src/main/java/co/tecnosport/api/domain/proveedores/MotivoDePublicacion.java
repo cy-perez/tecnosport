@@ -33,6 +33,16 @@ public enum MotivoDePublicacion {
    * en pesos y sin separadores.
    */
   PRECIO_SOBRE_TOPE,
+  /**
+   * Un proveedor de calzado anuncia algo que no es un tenis: ninguna de sus fotos muestra uno
+   * (ADR-0092). El dato es el calzado que más se ve ({@link TipoDeCalzado}): «CHANCLA», «SANDALIA».
+   */
+  CALZADO_QUE_NO_ES_TENIS,
+  /**
+   * Un anuncio de un proveedor de calzado sin fotos, o con fotos que no se pudieron leer: nadie vio
+   * que fuera un tenis, y se descarta (ADR-0092).
+   */
+  CALZADO_SIN_FOTOS_LEIDAS,
   /** El extractor no pudo: la API rechazó la petición, se negó, o respondió algo ilegible. */
   EXTRACCION_FALLIDA,
   /** Algo falló al decidir qué hacer con lo extraído; el dato es el tipo de la excepción. */
