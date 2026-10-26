@@ -14,7 +14,8 @@ La tecnología del mayorista, los productos cargados a mano y lo de los demás p
 yendo a domicilio.
 
 El punto es el mismo de los despachos (`ORIGEN_DIRECCION`): Cra. 26C # 38B-31, apto. 401, La
-Milagrosa, Medellín. Atiende todos los días de 8:00 a. m. a 9:00 p. m.
+Milagrosa, Medellín. Es un apartamento: la entrega se acuerda con el comprador, cualquier día entre
+las 8:00 a. m. y las 9:00 p. m.
 
 ## Decisión
 
@@ -22,17 +23,22 @@ Milagrosa, Medellín. Atiende todos los días de 8:00 a. m. a 9:00 p. m.
    `proveedor.es_local` (V122), que se marca desde el panel y vale para cualquier línea. La V122
    marca a La Riverah y a Violeta por nombre, como hizo la V113 con los sets, porque el id no es
    el mismo en desarrollo que en la nube.
-2. **La recogida se ofrece solo si todo el carrito es de proveedores locales**
+2. **La recogida se ofrece solo si todo el carrito es de proveedores locales y activos**
    (`RecogidaEnPunto`). Un solo artículo de otro origen la quita para el carrito entero, porque el
    sistema no tiene pedidos parciales. Un producto manual no tiene proveedor y por eso no es local.
+   Lo que no está a la venta (borrador, oculto, agotado) no se recoge.
 3. **La bandera sigue siendo el interruptor general.** `RETIRO_EN_PUNTO_HABILITADO` apagada quita la
    recogida aunque todo el carrito sea local; encendida, decide el carrito.
 4. **La exige el servidor con los productos reales.** `CrearPedido` y `ReintentarPago` responden 409
-   `RETIRO_EN_PUNTO_NO_DISPONIBLE` antes de reservar. Al exigirla, una variante que no existe no
-   decide: el caso de uso responde por ella su 404, como antes.
+   `RETIRO_EN_PUNTO_NO_DISPONIBLE` antes de reservar, y después del rechazo barato de las líneas
+   repetidas. Al exigirla, lo que no se vende no decide por sí solo: si todo lo demás es local, el
+   caso de uso responde su 404 como antes; si hay además algo que no es local, responde el 409.
 5. **El checkout pregunta por carrito.** `GET /envios/modalidades` pasa a ser
    `POST /envios/modalidades` con `{varianteIds}`: la respuesta ya no es la misma para todos. El
-   `GET` se retiró en vez de dejarlo diciendo que hay recogida para cualquier carrito.
+   `GET` se retiró en vez de dejarlo diciendo que hay recogida para cualquier carrito; un cliente
+   viejo recibe 405 y lo trata como recogida apagada, que es el lado seguro. La ruta va bajo el
+   límite por IP de la cotización, y `RecogidaEnPunto` quita repetidos y no lee más de 50 variantes
+   distintas: cada una es una lectura del catálogo y la consulta es pública.
 
 ## Lo que falta para encenderla
 

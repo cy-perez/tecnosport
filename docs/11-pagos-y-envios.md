@@ -577,9 +577,10 @@ recogida se ofrece si todo el carrito viene de un proveedor marcado como local �
 Riverah y Violeta—, y `RecogidaEnPunto` lo exige en el servidor.
 
 El punto es la dirección de despacho (`ORIGEN_DIRECCION`): Cra. 26C # 38B-31, apto.
-401, La Milagrosa, Medellín, todos los días de 8:00 a. m. a 9:00 p. m. (dato del
-negocio del 26 de octubre de 2026). Los datos estructurados todavía no emiten
-`openingHours`.
+401, La Milagrosa, Medellín. La entrega se acuerda con el comprador, cualquier día
+de 8:00 a. m. a 9:00 p. m. (dato del negocio del 26 de octubre de 2026). Es un
+apartamento y no un mostrador abierto, por eso los datos estructurados no emiten
+`openingHours` (`core/seo/datos-estructurados.ts`).
 
 ## Seguimiento del envío
 
