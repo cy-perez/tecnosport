@@ -318,7 +318,7 @@ class IngestaRealContraVerdadTest {
   }
 
   /** El bucket privado en memoria: el zip y cada foto, por nombre. */
-  private static final class AlmacenEnMemoria implements AlmacenDeArchivosDeProveedor {
+  static final class AlmacenEnMemoria implements AlmacenDeArchivosDeProveedor {
     private final Map<String, byte[]> objetos = new HashMap<>();
 
     @Override
