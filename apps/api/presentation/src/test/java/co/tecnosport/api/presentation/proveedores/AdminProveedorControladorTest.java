@@ -225,6 +225,50 @@ class AdminProveedorControladorTest {
   }
 
   /**
+   * Los ajustes de ingesta de Tenis Al Pie (ADR-0089): se definen al crearlo, editar sin el bloque
+   * los conserva, y un bloque nuevo los reemplaza entero.
+   */
+  @Test
+  void losAjustesDeIngestaSeDefinenYEditarSinElBloqueLosConserva() throws Exception {
+    String alPie =
+        "{\"nombre\":\"Tenis Al Pie\",\"linea\":\"CALZADO\",\"telefonoWhatsApp\":\"+57 300\","
+            + "\"nombreEnExportacion\":\"tenis.alpie\",\"ordenDePublicacion\":\"FOTOS_PRIMERO\"";
+    String ajustes =
+        ",\"ajustesDeIngesta\":{\"unaFotoUnProducto\":true,\"ventaBajoConfirmacion\":true,"
+            + "\"diasDeVigencia\":5,\"tallasPorGenero\":{\"dama\":[\"36\",\"37\",\"38\",\"39\"],"
+            + "\"caballero\":[\"40\",\"41\",\"42\",\"43\",\"44\"],\"ajuste\":1}}";
+    mockMvc
+        .perform(
+            post("/api/v1/admin/proveedores")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(alPie + ajustes + "}"))
+        .andExpect(status().isCreated())
+        .andExpect(jsonPath("$.ajustesDeIngesta.unaFotoUnProducto").value(true))
+        .andExpect(jsonPath("$.ajustesDeIngesta.diasDeVigencia").value(5))
+        .andExpect(jsonPath("$.ajustesDeIngesta.tallasPorGenero.caballero[4]").value("44"))
+        .andExpect(jsonPath("$.ajustesDeIngesta.tallasPorGenero.ajuste").value(1));
+    UUID id = proveedores.porId.keySet().iterator().next();
+
+    mockMvc
+        .perform(
+            put("/api/v1/admin/proveedores/{id}", id)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(alPie + "}"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.ajustesDeIngesta.ventaBajoConfirmacion").value(true));
+
+    mockMvc
+        .perform(
+            put("/api/v1/admin/proveedores/{id}", id)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(alPie + ",\"ajustesDeIngesta\":{\"unaFotoUnProducto\":true}}"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.ajustesDeIngesta.ventaBajoConfirmacion").value(false))
+        .andExpect(jsonPath("$.ajustesDeIngesta.diasDeVigencia").doesNotExist())
+        .andExpect(jsonPath("$.ajustesDeIngesta.tallasPorGenero").doesNotExist());
+  }
+
+  /**
    * A Violeta no se le compran prendas inferiores: se marcan al crearla, salen en el orden del
    * enum, editar sin el campo las conserva y una lista vacía las quita.
    */

@@ -51,6 +51,26 @@ public class ProveedorJpaEntity {
   @Column(name = "arma_sets", nullable = false)
   private boolean armaSets;
 
+  /** Los ajustes de ingesta (V118): ver {@code AjustesDeIngesta}. */
+  @Column(name = "una_foto_un_producto", nullable = false)
+  private boolean unaFotoUnProducto;
+
+  @Column(name = "venta_bajo_confirmacion", nullable = false)
+  private boolean ventaBajoConfirmacion;
+
+  @Column(name = "dias_de_vigencia")
+  private Short diasDeVigencia;
+
+  /** Separadas por coma; nulas con las otras dos si las dice cada anuncio. */
+  @Column(name = "tallas_dama")
+  private String tallasDama;
+
+  @Column(name = "tallas_caballero")
+  private String tallasCaballero;
+
+  @Column(name = "ajuste_de_talla")
+  private Short ajusteDeTalla;
+
   @ElementCollection(fetch = FetchType.EAGER)
   @CollectionTable(
       name = "proveedor_tipo_excluido",
@@ -147,6 +167,47 @@ public class ProveedorJpaEntity {
   public ProveedorJpaEntity conArmaSets(boolean armaSets) {
     this.armaSets = armaSets;
     return this;
+  }
+
+  /** Como {@link #conArmaSets}: los ajustes de ingesta los pone el adaptador. */
+  public ProveedorJpaEntity conAjustesDeIngesta(
+      boolean unaFotoUnProducto,
+      boolean ventaBajoConfirmacion,
+      Short diasDeVigencia,
+      String tallasDama,
+      String tallasCaballero,
+      Short ajusteDeTalla) {
+    this.unaFotoUnProducto = unaFotoUnProducto;
+    this.ventaBajoConfirmacion = ventaBajoConfirmacion;
+    this.diasDeVigencia = diasDeVigencia;
+    this.tallasDama = tallasDama;
+    this.tallasCaballero = tallasCaballero;
+    this.ajusteDeTalla = ajusteDeTalla;
+    return this;
+  }
+
+  public boolean isUnaFotoUnProducto() {
+    return unaFotoUnProducto;
+  }
+
+  public boolean isVentaBajoConfirmacion() {
+    return ventaBajoConfirmacion;
+  }
+
+  public Short getDiasDeVigencia() {
+    return diasDeVigencia;
+  }
+
+  public String getTallasDama() {
+    return tallasDama;
+  }
+
+  public String getTallasCaballero() {
+    return tallasCaballero;
+  }
+
+  public Short getAjusteDeTalla() {
+    return ajusteDeTalla;
   }
 
   public Instant getCreadoEn() {

@@ -17,6 +17,8 @@ import java.util.Objects;
  *     el alta es ninguno, y al editar deja los que tenía
  * @param armaSets si la prenda que anuncia con su acompañante se publica como set; nulo en el alta
  *     es que no, y al editar deja lo que tenía
+ * @param ajustesDeIngesta cómo se ingiere su chat; nulo en el alta es como el de todos, y al editar
+ *     deja los que tenía. Si viene, reemplaza los cuatro
  */
 public record ProveedorPeticion(
     @Schema(requiredMode = Schema.RequiredMode.REQUIRED) String nombre,
@@ -29,7 +31,8 @@ public record ProveedorPeticion(
     @Schema(requiredMode = Schema.RequiredMode.REQUIRED) String ordenDePublicacion,
     Boolean dosChatsEnUnZip,
     List<String> tiposExcluidos,
-    Boolean armaSets) {
+    Boolean armaSets,
+    AjustesDeIngestaDto ajustesDeIngesta) {
 
   public ProveedorPeticion {
     Objects.requireNonNull(nombre, "El nombre es obligatorio.");
