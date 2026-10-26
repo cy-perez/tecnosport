@@ -76,7 +76,7 @@ Reglas, en orden de importancia:
    las que **lees**, no las que el anuncio dice.
 10. `calzado` describe el calzado que se vende en la foto. Si la foto no muestra calzado —una
     blusa, un bolso, una caja vacía—, `tipo` es `no_es_calzado`, `marca` y `modelo` son `""`,
-    `modelo_seguro` es `false`, `genero` es `no_se_sabe`, `producto_solo` es `false` y
+    `modelo_seguro` es `false`, `genero` es `no_se_sabe`, `foto_publicable` es `false` y
     `mismo_tenis_que` es el número de la propia foto.
     - `tipo`: `tenis` para cualquier tenis, deportivo o de moda, de caña baja o alta —un Air
       Force 1, un Jordan 4, un Samba, un tenis de suela gruesa de diseñador—. `chancla` para la
@@ -105,24 +105,20 @@ Reglas, en orden de importancia:
       caballero —el rótulo «HOMBRE»—; `unisex` si se vende para los dos, que es lo normal en un
       tenis blanco, negro o gris como un Air Force 1, un Jordan 1 o un 9060. `no_se_sabe` si la
       foto no deja verlo.
-    - `producto_solo`: `true` si el calzado se ve solo, sobre una superficie o sostenido en la
-      mano. `false` en cualquiera de estos casos, aunque el tenis se vea bien:
-      - está puesto: hay un pie dentro del tenis que se vende, con su media o la bota del pantalón
-        encima. **Las piernas o los pies de quien lo sostiene no cuentan**: si el tenis que se vende
-        está en la mano o sobre una superficie, se ve solo, aunque al fondo se vean unas piernas o
-        el otro tenis del par puesto;
+    - `foto_publicable`: `true` si la foto se puede publicar tal como está. **El tenis puesto se
+      publica**, con pies, piernas, medias o pantalón, y **también la foto con artículos de otras
+      marcas** —una bolsa Dior, un libro Cartier, una caja Supreme, un balón—. `false` solo si:
       - es una captura de pantalla de otra aplicación: la barra del teléfono con la hora y la
         batería, una historia de Instagram, botones de responder o de reaccionar;
-      - la foto lo ambienta con artículos de otras marcas: una bolsa Dior, un libro Cartier, una
-        caja Supreme, aunque el tenis esté en la mano. La caja de la misma marca del tenis no
-        cuenta como ambientación.
+      - es un fotograma de un video: el ícono de silencio o de reproducir encima de la foto.
     - `mismo_tenis_que`: el número de la **primera foto de este anuncio que muestra este mismo
       tenis**, en cualquier color; el de la propia foto si es la primera. Es el mismo tenis cuando
       es el mismo modelo, con la misma horma, la misma suela y las mismas piezas: el Shox R4 en
       negro con rojo, en plata y en gris son uno solo, y la foto 7 lleva el número de la primera
       de ellas. También es el mismo tenis la misma foto con otro encuadre o con un rótulo encima.
       No es el mismo si cambia el modelo, aunque sea de la misma marca y del mismo color: un Air
-      Max Plus y un Air Max 95 negros son dos. Vale para todas las fotos, también para las que no
-      se venden: un tenis puesto apunta a la foto donde ese tenis se ve solo, si la hay.
+      Max Plus y un Air Max 95 negros son dos. El mismo tenis puesto y en la mano es uno solo.
+      Vale para todas las fotos, también para las que no se publican: una captura apunta a la
+      foto donde ese tenis se ve, si la hay.
 
 Responde solo con el JSON.

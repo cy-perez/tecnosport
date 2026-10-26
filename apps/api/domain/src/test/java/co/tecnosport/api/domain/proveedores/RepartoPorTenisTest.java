@@ -55,7 +55,7 @@ class RepartoPorTenisTest {
         modelo, seguro, GeneroDeCalzado.UNISEX, TipoDeCalzado.TENIS, true, marca, mismoTenisQue);
   }
 
-  private static LecturaDeCalzado puesto(Integer mismoTenisQue) {
+  private static LecturaDeCalzado captura(Integer mismoTenisQue) {
     return new LecturaDeCalzado(
         "Shox R4", true, GeneroDeCalzado.UNISEX, TipoDeCalzado.TENIS, false, "Nike", mismoTenisQue);
   }
@@ -159,17 +159,17 @@ class RepartoPorTenisTest {
   }
 
   /**
-   * El tenis puesto no se publica, pero las fotos solas que apuntan a él son del mismo tenis: el
-   * grupo no se parte porque su primera foto no se venda.
+   * La captura de pantalla no se publica, pero las fotos que apuntan a ella son del mismo tenis: el
+   * grupo no se parte porque su primera foto no se publique.
    */
   @Test
-  void laFotoPuestaNoEntraNiParteElTenis() {
+  void laCapturaNoEntraNiParteElTenis() {
     List<UUID> fotos = tanda(3);
 
     List<ProductoRepartido> repartidos =
         repartir(
             fotos,
-            foto(0, "negro", puesto(0)),
+            foto(0, "negro", captura(0)),
             foto(1, "negro", tenis("Nike", "Shox R4", true, 0)),
             foto(2, "plata", tenis("Nike", "Shox R4", true, 0)));
 

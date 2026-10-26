@@ -14,16 +14,17 @@ import java.util.UUID;
 import org.junit.jupiter.api.Test;
 
 /**
- * Una tanda de Tenis Al Pie: cada foto un producto, y solo los tenis que se ven solos (ADR-0089).
+ * Una tanda de Tenis Al Pie: cada foto un producto, y solo los tenis en una foto que se puede
+ * publicar (ADR-0089 y ADR-0091).
  */
 class RepartoUnaPorFotoTest {
 
   private final UUID airForce = UUID.randomUUID();
-  private final UUID puesto = UUID.randomUUID();
+  private final UUID captura = UUID.randomUUID();
   private final UUID crocs = UUID.randomUUID();
   private final UUID samba = UUID.randomUUID();
   private final UUID cajaVacia = UUID.randomUUID();
-  private final List<UUID> tanda = List.of(airForce, puesto, crocs, samba, cajaVacia);
+  private final List<UUID> tanda = List.of(airForce, captura, crocs, samba, cajaVacia);
 
   /** El texto de la tanda: solo el precio. */
   private static ProductoExtraido soloElPrecio() {
@@ -84,11 +85,11 @@ class RepartoUnaPorFotoTest {
   }
 
   @Test
-  void soloLosTenisQueSeVenSolosLleganABorrador() {
+  void soloLosTenisEnUnaFotoPublicableLleganABorrador() {
     List<ProductoRepartido> repartidos =
         RepartoDeFotos.unaPorFoto(soloElPrecio(), tanda, lectura(), true);
 
-    assertEquals(2, repartidos.size(), "ni el puesto, ni la Crocs, ni la caja vacía");
+    assertEquals(2, repartidos.size(), "ni la captura, ni la Crocs, ni la caja vacía");
     assertEquals(List.of(airForce), repartidos.get(0).fotos());
     assertEquals(List.of(samba), repartidos.get(1).fotos());
   }

@@ -48,7 +48,7 @@
               "modelo",
               "modelo_seguro",
               "genero",
-              "producto_solo",
+              "foto_publicable",
               "mismo_tenis_que"
             ],
             "properties": {
@@ -60,7 +60,7 @@
               "modelo": { "type": "string" },
               "modelo_seguro": { "type": "boolean" },
               "genero": { "type": "string", "enum": ["dama", "caballero", "unisex", "no_se_sabe"] },
-              "producto_solo": { "type": "boolean" },
+              "foto_publicable": { "type": "boolean" },
               "mismo_tenis_que": { "type": "integer" }
             }
           }

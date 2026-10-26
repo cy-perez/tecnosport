@@ -92,15 +92,14 @@ public final class RepartoDeFotos {
    * foto es su propio producto, con su exclusiva para la huella visual: la misma foto en otra tanda
    * reconoce el producto.
    *
-   * <p>De una tanda de calzado solo pasan los <b>tenis que se ven solos</b> —sobre una superficie o
-   * en la mano—: la Crocs, la chancla y la bota no se venden, y la foto del tenis puesto no se
-   * publica (decidido por el negocio el 25 de octubre de 2026). La foto sin calzado —la de la caja
-   * vacía— tampoco. Y desde el 26 de octubre de 2026 <b>el producto es el tenis, no la foto</b>
-   * ({@link #porTenis}). Sin lectura no se sabe nada de eso: cada foto sale con el producto del
-   * texto, y quien revisa lo descarta.
+   * <p>De una tanda de calzado solo pasan los <b>tenis</b>: la Crocs, la chancla y la bota no se
+   * venden, y la foto sin calzado —la de la caja vacía— tampoco. La foto del tenis puesto o con
+   * utilería de otras marcas sí pasa desde el 26 de octubre de 2026 (ADR-0091); la captura de
+   * pantalla y el fotograma de un video, no. Y desde el 26 de octubre de 2026 <b>el producto es el
+   * tenis, no la foto</b> ({@link #porTenis}). Sin lectura no se sabe nada de eso: cada foto sale
+   * con el producto del texto, y quien revisa lo descarta.
    *
-   * @param calzado si el proveedor es de calzado: entonces solo pasan los tenis solos, juntos por
-   *     tenis
+   * @param calzado si el proveedor es de calzado: entonces solo pasan los tenis, juntos por tenis
    */
   public static List<ProductoRepartido> unaPorFoto(
       ProductoExtraido producto, List<UUID> fotos, LecturaDeFotos lectura, boolean calzado) {

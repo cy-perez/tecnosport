@@ -120,7 +120,10 @@ public final class InterpreteDeLecturaDeFotosJson implements InterpreteDeLectura
           case "bota" -> TipoDeCalzado.BOTA;
           default -> TipoDeCalzado.OTRO;
         },
-        nodo.path("producto_solo").asBoolean(false),
+        // «producto_solo» en las lecturas de antes del 26 de octubre de 2026 (ADR-0091).
+        nodo.has("foto_publicable")
+            ? nodo.path("foto_publicable").asBoolean(false)
+            : nodo.path("producto_solo").asBoolean(false),
         texto(nodo.path("marca")),
         mismoTenisQue(nodo.path("mismo_tenis_que")));
   }
