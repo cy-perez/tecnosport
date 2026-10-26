@@ -120,7 +120,21 @@ public final class InterpreteDeLecturaDeFotosJson implements InterpreteDeLectura
           case "bota" -> TipoDeCalzado.BOTA;
           default -> TipoDeCalzado.OTRO;
         },
-        nodo.path("producto_solo").asBoolean(false));
+        nodo.path("producto_solo").asBoolean(false),
+        texto(nodo.path("marca")),
+        mismoTenisQue(nodo.path("mismo_tenis_que")));
+  }
+
+  /**
+   * La posición, desde 0, de la foto que el lector nombra con su número, desde 1, como venía
+   * rotulada. Nula si no lo trae —las lecturas de antes del 26 de octubre de 2026— o si no es un
+   * número de foto (ADR-0090).
+   */
+  private static Integer mismoTenisQue(JsonNode nodo) {
+    if (nodo == null || !nodo.isIntegralNumber() || nodo.asInt() < 1) {
+      return null;
+    }
+    return nodo.asInt() - 1;
   }
 
   /** «09/10/2026», como lo imprime La Riverah; nula si no se lee así. */

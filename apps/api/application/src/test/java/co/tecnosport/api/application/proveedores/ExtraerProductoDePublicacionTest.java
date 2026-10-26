@@ -21,6 +21,7 @@ import co.tecnosport.api.domain.proveedores.TipoDeCalzado;
 import co.tecnosport.api.domain.proveedores.TipoProductoProveedor;
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -817,5 +818,202 @@ class ExtraerProductoDePublicacionTest {
     assertEquals(1, airForce.fotos().size());
     assertTrue(airForce.calzadoOpcional().isPresent());
     assertFalse(airForce.alertas().contains(AlertaBorrador.FOTOS_COMPARTIDAS));
+    assertFalse(airForce.alertas().contains(AlertaBorrador.MODELO_POR_CONFIRMAR));
+  }
+
+  /**
+   * La tanda de calzado la lee el lector de calzado, no el de siempre (ADR-0090): el Shox R4 en dos
+   * colores sale en un borrador con sus dos fotos y sus dos tonos, y como el lector no vio las
+   * columnas del talón, el modelo queda por confirmar.
+   */
+  @Test
+  void laTandaDeCalzadoLaLeeElLectorDeCalzadoYSaleUnBorradorPorTenis() {
+    PublicacionProveedor publicacion =
+        PublicacionProveedor.abrir(texto("Detal :$180.000 \nX mayor 💰135"));
+    publicacion.anexar(foto("p/1.jpg"));
+    publicacion.anexar(foto("p/2.jpg"));
+    List<FotosParaLeer> leidasPorElDeSiempre = new ArrayList<>();
+    LectorDeFotos deSiempre =
+        fotos -> {
+          leidasPorElDeSiempre.add(fotos);
+          return Optional.empty();
+        };
+    LectorDeFotos deCalzado =
+        fotos ->
+            Optional.of(
+                new LecturaDeFotos(
+                    false,
+                    List.of(
+                        new LecturaDeFoto(
+                            0,
+                            List.of(),
+                            null,
+                            List.of(),
+                            List.of("negro"),
+                            null,
+                            List.of(),
+                            List.of(),
+                            new LecturaDeCalzado(
+                                "Shox R4",
+                                false,
+                                GeneroDeCalzado.UNISEX,
+                                TipoDeCalzado.TENIS,
+                                true,
+                                "Nike",
+                                0)),
+                        new LecturaDeFoto(
+                            1,
+                            List.of(),
+                            null,
+                            List.of(),
+                            List.of("plata"),
+                            null,
+                            List.of(),
+                            List.of(),
+                            new LecturaDeCalzado(
+                                "Shox R4",
+                                false,
+                                GeneroDeCalzado.UNISEX,
+                                TipoDeCalzado.TENIS,
+                                true,
+                                "Nike",
+                                0))),
+                    "{}"));
+
+    List<ExtraccionEvaluada> evaluadas =
+        new ExtraerProductoDePublicacion(
+                ApoyoDeIngesta.ExtractorFalso.varios(List.of()),
+                deSiempre,
+                deCalzado,
+                almacenCon("p/1.jpg", "p/2.jpg"),
+                UMBRAL)
+            .ejecutar(publicacion, mensajes, LineaCatalogo.CALZADO, true);
+
+    assertTrue(leidasPorElDeSiempre.isEmpty());
+    assertEquals(1, evaluadas.size());
+    ExtraccionEvaluada shox = evaluadas.getFirst();
+    assertEquals(
+        Optional.of("Tenis importados estilo Nike Shox R4"), shox.producto().tituloOpcional());
+    assertEquals(2, shox.fotos().size());
+    assertEquals(List.of("negro", "plata"), shox.producto().tonosNombrados());
+    assertTrue(shox.alertas().contains(AlertaBorrador.MODELO_POR_CONFIRMAR));
+    assertTrue(shox.exclusivaOpcional().isPresent(), "la primera foto da la huella visual");
+  }
+
+  /**
+   * Imperio Wicho, que sí escribe un texto por anuncio (ADR-0090): «NIKE UNISEX ULTRALIVIANO» dice
+   * la marca y no el modelo. Las fotos de un proveedor de calzado las lee el lector de calzado, y
+   * el título del tenis se completa con el modelo que ve en ellas, por confirmar.
+   */
+  @Test
+  void elTenisDeOtroProveedorSeTitulaConElModeloDeSusFotos() {
+    PublicacionProveedor publicacion =
+        PublicacionProveedor.abrir(
+            texto(
+                "NIKE UNISEX ULTRALIVIANO🔥" + "\n" + "SUELA IMPORTADA💯" + "\n" + "💰*$85,000*"));
+    publicacion.anexar(foto("p/1.jpg"));
+    publicacion.anexar(foto("p/2.jpg"));
+    List<FotosParaLeer> leidasPorElDeSiempre = new ArrayList<>();
+    LectorDeFotos deSiempre =
+        fotos -> {
+          leidasPorElDeSiempre.add(fotos);
+          return Optional.empty();
+        };
+    LecturaDeCalzado airMaxPlus =
+        new LecturaDeCalzado(
+            "Air Max Plus", false, GeneroDeCalzado.UNISEX, TipoDeCalzado.TENIS, false, "Nike", 0);
+    LectorDeFotos deCalzado =
+        fotos ->
+            Optional.of(
+                new LecturaDeFotos(
+                    false,
+                    List.of(
+                        new LecturaDeFoto(
+                            0,
+                            List.of(),
+                            null,
+                            List.of(),
+                            List.of("negro"),
+                            null,
+                            List.of("Nike"),
+                            List.of(),
+                            airMaxPlus),
+                        new LecturaDeFoto(
+                            1,
+                            List.of(),
+                            null,
+                            List.of(),
+                            List.of("azul"),
+                            null,
+                            List.of(),
+                            List.of(),
+                            airMaxPlus)),
+                    "{}"));
+    ProductoExtraido delTexto =
+        new ProductoExtraido(
+            true,
+            false,
+            "Tenis Nike unisex ultraliviano",
+            LineaCatalogo.CALZADO,
+            TipoProductoProveedor.TENIS,
+            Dinero.deCop(85000),
+            Tallas.desconocida(),
+            null,
+            List.of(),
+            null,
+            "Suela importada.",
+            null,
+            false,
+            new BigDecimal("0.9"),
+            null,
+            null,
+            null,
+            List.of(),
+            List.of("Nike"),
+            null);
+
+    ExtraccionEvaluada tenis =
+        new ExtraerProductoDePublicacion(
+                ApoyoDeIngesta.ExtractorFalso.varios(List.of(delTexto)),
+                deSiempre,
+                deCalzado,
+                almacenCon("p/1.jpg", "p/2.jpg"),
+                UMBRAL)
+            .ejecutar(publicacion, mensajes, LineaCatalogo.CALZADO)
+            .getFirst();
+
+    assertTrue(leidasPorElDeSiempre.isEmpty());
+    assertEquals(
+        Optional.of("Tenis importados estilo Nike Air Max Plus"),
+        tenis.producto().tituloOpcional());
+    assertTrue(tenis.alertas().contains(AlertaBorrador.MODELO_POR_CONFIRMAR));
+    assertTrue(tenis.calzadoOpcional().isEmpty(), "el género sigue saliendo del texto");
+  }
+
+  /** Fuera del calzado, las fotos las sigue leyendo el lector de siempre. */
+  @Test
+  void laRopaLaLeeElLectorDeSiempre() {
+    PublicacionProveedor publicacion =
+        PublicacionProveedor.abrir(texto("Camisetas seda fría para Caballero $35.000"));
+    publicacion.anexar(foto("p/1.jpg"));
+    List<FotosParaLeer> deSiempre = new ArrayList<>();
+    List<FotosParaLeer> deCalzado = new ArrayList<>();
+
+    new ExtraerProductoDePublicacion(
+            ApoyoDeIngesta.ExtractorFalso.varios(List.of(prenda("Camiseta seda fría", null))),
+            fotos -> {
+              deSiempre.add(fotos);
+              return Optional.empty();
+            },
+            fotos -> {
+              deCalzado.add(fotos);
+              return Optional.empty();
+            },
+            almacenCon("p/1.jpg"),
+            UMBRAL)
+        .ejecutar(publicacion, mensajes, LineaCatalogo.ROPA);
+
+    assertEquals(1, deSiempre.size());
+    assertTrue(deCalzado.isEmpty());
   }
 }

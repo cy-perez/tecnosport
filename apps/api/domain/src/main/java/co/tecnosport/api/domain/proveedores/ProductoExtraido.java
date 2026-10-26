@@ -486,18 +486,23 @@ public record ProductoExtraido(
           Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE);
 
   /**
-   * El tenis de una sola foto de una tanda (ADR-0089): Tenis Al Pie no dice en el texto ni la
-   * marca, ni el modelo, ni de qué se trata —solo el precio—, y todo eso sale de la foto. El título
-   * es el de un tenis con la marca que se lee y el modelo que el lector da por seguro ({@link
-   * TituloDeTenis}); con marca es una réplica para revisar. El texto no describe este tenis, así
-   * que no le deja descripción ni código.
+   * El tenis de una tanda (ADR-0089 y ADR-0090): Tenis Al Pie no dice en el texto ni la marca, ni
+   * el modelo, ni de qué se trata —solo el precio—, y todo eso sale de las fotos. El título es el
+   * de un tenis ({@link TituloDeTenis}) con la marca a la que se parece —el gallo de Le Coq Sportif
+   * no es un texto que se lea, pero dice la marca—, o si el lector no la reconoce, las que se leen;
+   * y con el modelo que el lector cree ver, aunque dude. Con marca es una réplica para revisar. El
+   * texto no describe este tenis, así que no le deja descripción ni código.
    *
    * @param calzado lo que el lector vio del tenis
    * @param marcasDeLaFoto las que se leen en él
    */
   public ProductoExtraido delTenisDeLaFoto(LecturaDeCalzado calzado, List<String> marcasDeLaFoto) {
     Objects.requireNonNull(calzado, "El tenis de la foto necesita su lectura.");
-    List<String> lasMarcas = marcasDeLaFoto == null ? List.of() : marcasDeLaFoto;
+    List<String> lasMarcas =
+        calzado
+            .marcaOpcional()
+            .map(List::of)
+            .orElse(marcasDeLaFoto == null ? List.of() : marcasDeLaFoto);
     String marca = lasMarcas.isEmpty() ? null : String.join(" - ", lasMarcas);
     String modelo = calzado.modeloParaElTitulo().orElse(null);
     return new ProductoExtraido(
@@ -521,6 +526,70 @@ public record ProductoExtraido(
         List.of(),
         lasMarcas,
         null);
+  }
+
+  /**
+   * El tenis de otro proveedor —Imperio Wicho, con su texto— titulado también con lo que se ve en
+   * sus fotos (ADR-0090, 26 de octubre de 2026): «Tenis Nike unisex ultraliviano» decía solo la
+   * marca, y la foto deja ver que es un Air Max Plus.
+   *
+   * <ul>
+   *   <li><b>El texto manda</b> si ya nombra un modelo: lo escribió el proveedor, que tiene el
+   *       tenis en la mano.
+   *   <li>Si el texto nombra solo la marca, o ninguna, la del texto se queda y el modelo sale de
+   *       las fotos; sin marca en el texto, la que el lector reconoce, o las que se leen.
+   *   <li>Con una marca nueva en el título queda como réplica para revisar, como todo el calzado
+   *       (ADR-0089).
+   * </ul>
+   *
+   * @param calzado lo que el lector vio del tenis en las fotos de este producto
+   * @param marcasLeidas las que se leen escritas en ellas
+   * @return el mismo producto si no es un tenis o si el texto ya decía el modelo
+   */
+  public ProductoExtraido conElTenisDeSusFotos(
+      LecturaDeCalzado calzado, List<String> marcasLeidas) {
+    Objects.requireNonNull(calzado, "El tenis de las fotos necesita su lectura.");
+    if (tipo != TipoProductoProveedor.TENIS) {
+      return this;
+    }
+    Optional<String> delTexto = TituloDeTenis.nombreEn(titulo);
+    boolean soloLaMarca =
+        delTexto.isEmpty()
+            || marcas.stream().anyMatch(m -> m.equalsIgnoreCase(delTexto.get()))
+            || calzado.marcaOpcional().map(m -> m.equalsIgnoreCase(delTexto.get())).orElse(false);
+    if (!soloLaMarca) {
+      return this;
+    }
+    List<String> lasMarcas =
+        delTexto.isPresent()
+            ? marcas
+            : calzado
+                .marcaOpcional()
+                .map(List::of)
+                .orElse(marcasLeidas == null ? List.of() : marcasLeidas);
+    String marca = delTexto.orElse(lasMarcas.isEmpty() ? null : String.join(" - ", lasMarcas));
+    String modelo = calzado.modeloParaElTitulo().orElse(null);
+    return new ProductoExtraido(
+        esProducto,
+        estaAgotado,
+        TituloDeTenis.componer(marca, modelo),
+        linea,
+        tipo,
+        precioProveedor,
+        tallas,
+        cantidadTonos,
+        tonosNombrados,
+        material,
+        descripcion,
+        TituloDeTenis.enIngles(marca, modelo),
+        esReplica || marca != null,
+        confianza,
+        notas,
+        codigoReferencia,
+        tallasPorTono,
+        preciosAdicionales,
+        lasMarcas,
+        set);
   }
 
   /** Este mismo producto con otras tallas: las que un proveedor de calzado maneja siempre. */

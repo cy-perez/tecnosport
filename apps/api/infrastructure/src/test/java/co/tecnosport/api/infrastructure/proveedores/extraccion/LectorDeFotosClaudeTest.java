@@ -7,6 +7,7 @@ import co.tecnosport.api.application.proveedores.ExtraccionFallidaException;
 import co.tecnosport.api.application.proveedores.FotosParaLeer;
 import co.tecnosport.api.application.proveedores.FotosParaLeer.FotoParaLeer;
 import co.tecnosport.api.application.proveedores.FotosParaLeer.ProductoNombrado;
+import co.tecnosport.api.domain.proveedores.LecturaDeCalzado;
 import co.tecnosport.api.domain.proveedores.LecturaDeFotos;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
@@ -76,17 +77,22 @@ class LectorDeFotosClaudeTest {
   }
 
   private LectorDeFotosClaude lector() {
+    return lector("claude-haiku-4-5-20251001", null);
+  }
+
+  private LectorDeFotosClaude lector(String modelo, String esfuerzo) {
     return new LectorDeFotosClaude(
         URI.create("http://127.0.0.1:" + servidor.getAddress().getPort()),
         "sk-prueba",
-        "claude-haiku-4-5-20251001",
+        modelo,
         4096,
         Duration.ofSeconds(5),
         1,
         Duration.ofSeconds(1),
         duracion -> {},
         RecursosDelExtractor.promptDelLector(),
-        RecursosDelExtractor.esquemaDelLector());
+        RecursosDelExtractor.esquemaDelLector(),
+        esfuerzo);
   }
 
   private static byte[] jpeg(int ancho, int alto) throws IOException {
@@ -228,6 +234,49 @@ class LectorDeFotosClaudeTest {
         ImageIO.read(new ByteArrayInputStream(Base64.getDecoder().decode(base64)));
     assertThat(enviada.getWidth()).isEqualTo(LectorDeFotosClaude.LADO_MAYOR);
     assertThat(enviada.getHeight()).isEqualTo(LectorDeFotosClaude.LADO_MAYOR / 2);
+  }
+
+  /**
+   * El lector de calzado (ADR-0090) es Sonnet 5.5, que rechaza con un 400 la temperatura y razona
+   * siempre: se le pide el esfuerzo, sin temperatura, y su respuesta trae primero el bloque de
+   * razonamiento, vacío. La lectura sale del bloque de texto que viene después.
+   */
+  @Test
+  void elLectorQueRazonaPideElEsfuerzoSinTemperaturaYLeeElBloqueDeTexto() throws IOException {
+    respuestas.add(
+        "{\"model\":\"claude-sonnet-5-5\",\"stop_reason\":\"end_turn\",\"content\":["
+            + "{\"type\":\"thinking\",\"thinking\":\"\",\"signature\":\"x\"},"
+            + "{\"type\":\"text\",\"text\":"
+            + JSON.writeValueAsString(
+                "{\"album_de_disenos\":false,\"fotos\":[{\"foto\":1,\"codigos\":[],"
+                    + "\"pie\":[],\"colores\":[\"negro\"],\"diseno\":null,\"marcas\":[],"
+                    + "\"tallas\":[],\"calzado\":{\"tipo\":\"tenis\",\"marca\":\"Nike\","
+                    + "\"modelo\":\"Shox R4\",\"modelo_seguro\":false,\"genero\":\"unisex\","
+                    + "\"producto_solo\":true,\"mismo_tenis_que\":1}}]}")
+            + "}],\"usage\":{\"input_tokens\":4100,\"output_tokens\":210}}");
+
+    LecturaDeFotos lectura =
+        lector("claude-sonnet-5-5", "low")
+            .leer(violeta(List.of(new FotoParaLeer(0, jpeg(10, 10)))))
+            .orElseThrow();
+
+    assertThat(peticiones.get(0).has("temperature")).isFalse();
+    assertThat(peticiones.get(0).path("output_config").path("effort").asString()).isEqualTo("low");
+    assertThat(peticiones.get(0).path("output_config").path("format").path("type").asString())
+        .isEqualTo("json_schema");
+    LecturaDeCalzado calzado = lectura.deLaFoto(0).orElseThrow().calzadoOpcional().orElseThrow();
+    assertThat(calzado.marcaOpcional()).contains("Nike");
+    assertThat(calzado.modeloPorConfirmar()).isTrue();
+    assertThat(calzado.mismoTenisQueOpcional()).contains(0);
+  }
+
+  @Test
+  void elLectorDeSiempreNoPideEsfuerzo() throws IOException {
+    respuestas.add(exito("{\"album_de_disenos\":false,\"fotos\":[]}"));
+
+    lector().leer(violeta(List.of(new FotoParaLeer(0, jpeg(5, 5)))));
+
+    assertThat(peticiones.get(0).path("output_config").has("effort")).isFalse();
   }
 
   @Test

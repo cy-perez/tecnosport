@@ -82,20 +82,45 @@ class InterpreteDeLecturaDeFotosJsonTest {
     assertTrue(lectura.fotos().get(3).calzadoOpcional().isEmpty());
   }
 
-  /** Un modelo del que el lector duda no va al título, aunque lo escriba. */
+  /**
+   * Un modelo del que el lector duda va al título igual, por confirmar (ADR-0090); y la marca por
+   * parecido y el grupo se leen, con el número de foto pasado a posición.
+   */
   @Test
-  void unModeloDudosoNoVaAlTitulo() {
+  void unModeloDudosoVaAlTituloPorConfirmarConSuMarcaYSuGrupo() {
     LecturaDeFotos lectura =
         interprete
             .interpretar(
-                "{\"fotos\":[{\"foto\":1,\"calzado\":{\"tipo\":\"tenis\",\"modelo\":\"Jordan 4\","
+                "{\"fotos\":[{\"foto\":3,\"calzado\":{\"tipo\":\"tenis\",\"marca\":\"Jordan\",\"modelo\":\"Jordan 4\","
                     + "\"modelo_seguro\":false,\"genero\":\"caballero\","
-                    + "\"producto_solo\":true}}]}")
+                    + "\"producto_solo\":true,\"mismo_tenis_que\":1}}]}")
             .orElseThrow();
 
-    assertEquals(
-        Optional.empty(),
-        lectura.fotos().get(0).calzadoOpcional().orElseThrow().modeloParaElTitulo());
+    LecturaDeCalzado calzado = lectura.fotos().get(0).calzadoOpcional().orElseThrow();
+    assertEquals(Optional.of("Jordan 4"), calzado.modeloParaElTitulo());
+    assertTrue(calzado.modeloPorConfirmar());
+    assertEquals(Optional.of("Jordan"), calzado.marcaOpcional());
+    assertEquals(Optional.of(0), calzado.mismoTenisQueOpcional());
+  }
+
+  /** Una lectura de antes, o un número que no es de foto: sin grupo, y la foto queda sola. */
+  @Test
+  void sinGrupoONumeroInvalidoNoHayGrupo() {
+    LecturaDeFotos lectura =
+        interprete
+            .interpretar(
+                "{\"fotos\":[{\"foto\":1,\"calzado\":{\"tipo\":\"tenis\",\"modelo\":\"\","
+                    + "\"modelo_seguro\":false,\"genero\":\"no_se_sabe\",\"producto_solo\":true}},"
+                    + "{\"foto\":2,\"calzado\":{\"tipo\":\"tenis\",\"marca\":\"\",\"modelo\":\"\","
+                    + "\"modelo_seguro\":false,\"genero\":\"no_se_sabe\",\"producto_solo\":true,"
+                    + "\"mismo_tenis_que\":0}}]}")
+            .orElseThrow();
+
+    assertTrue(
+        lectura.fotos().get(0).calzadoOpcional().orElseThrow().mismoTenisQueOpcional().isEmpty());
+    LecturaDeCalzado segunda = lectura.fotos().get(1).calzadoOpcional().orElseThrow();
+    assertTrue(segunda.mismoTenisQueOpcional().isEmpty());
+    assertTrue(segunda.marcaOpcional().isEmpty());
   }
 
   @Test

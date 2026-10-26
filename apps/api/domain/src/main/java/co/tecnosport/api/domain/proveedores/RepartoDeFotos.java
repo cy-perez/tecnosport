@@ -90,46 +90,43 @@ public final class RepartoDeFotos {
    * 25 a 35 tenis distintos sin SKU y un solo precio al final: con la regla de siempre —sin SKU no
    * se parte— la tanda entera quedaba en un borrador. Para el proveedor que lo tiene marcado, cada
    * foto es su propio producto, con su exclusiva para la huella visual: la misma foto en otra tanda
-   * reconoce el producto. Los colores del mismo modelo en fotos distintas se juntan en el panel.
+   * reconoce el producto.
    *
    * <p>De una tanda de calzado solo pasan los <b>tenis que se ven solos</b> —sobre una superficie o
    * en la mano—: la Crocs, la chancla y la bota no se venden, y la foto del tenis puesto no se
    * publica (decidido por el negocio el 25 de octubre de 2026). La foto sin calzado —la de la caja
-   * vacía— tampoco. Sin lectura no se sabe nada de eso: cada foto sale con el producto del texto, y
-   * quien revisa lo descarta.
+   * vacía— tampoco. Y desde el 26 de octubre de 2026 <b>el producto es el tenis, no la foto</b>
+   * ({@link #porTenis}). Sin lectura no se sabe nada de eso: cada foto sale con el producto del
+   * texto, y quien revisa lo descarta.
    *
-   * @param calzado si el proveedor es de calzado: entonces solo pasan los tenis solos
+   * @param calzado si el proveedor es de calzado: entonces solo pasan los tenis solos, juntos por
+   *     tenis
    */
   public static List<ProductoRepartido> unaPorFoto(
       ProductoExtraido producto, List<UUID> fotos, LecturaDeFotos lectura, boolean calzado) {
     Objects.requireNonNull(producto, "El producto del texto no puede ser nulo.");
     Objects.requireNonNull(fotos, "Las fotos no pueden ser nulas.");
+    if (calzado && lectura != null) {
+      return porTenis(producto, fotos, lectura);
+    }
     List<ProductoRepartido> repartidos = new ArrayList<>(fotos.size());
     for (int i = 0; i < fotos.size(); i++) {
       UUID foto = fotos.get(i);
       List<UUID> propia = List.of(foto);
       Optional<LecturaDeFoto> leida = lectura == null ? Optional.empty() : lectura.deLaFoto(i);
       Optional<LecturaDeCalzado> delCalzado = leida.flatMap(LecturaDeFoto::calzadoOpcional);
-      if (calzado && lectura != null) {
-        boolean seVende = delCalzado.map(c -> c.tipo().seVende() && c.productoSolo()).orElse(false);
-        if (!seVende) {
-          continue;
-        }
-      }
-      ProductoExtraido delaFoto =
-          delCalzado.isPresent()
-              ? producto.delTenisDeLaFoto(
-                  delCalzado.get(), leida.map(LecturaDeFoto::marcas).orElse(List.of()))
-              : producto;
+      List<String> marcasLeidas = leida.map(LecturaDeFoto::marcas).orElse(List.of());
       repartidos.add(
           new ProductoRepartido(
-              delaFoto,
+              delCalzado.map(c -> producto.delTenisDeLaFoto(c, marcasLeidas)).orElse(producto),
               propia,
               new FotosDelProducto(
                   ajenas(fotos, propia),
                   lectura == null ? Map.of() : tonosSugeridos(fotos, lectura, propia),
                   lectura == null ? null : lectura.jsonCrudo(),
-                  disenoDelTenis(leida, delCalzado)),
+                  delCalzado
+                      .map(c -> disenoDelTenis(c, marcasLeidas))
+                      .orElse(leida.map(LecturaDeFoto::diseno).orElse(null))),
               Respaldo.UNA_POR_FOTO,
               foto,
               true,
@@ -141,19 +138,99 @@ public final class RepartoDeFotos {
   }
 
   /**
-   * La etiqueta de diseño de un tenis de la tanda: la marca y el modelo que el lector cree ver,
-   * aunque dude, porque solo le sirve al panel para decir «posible mismo diseño» de dos borradores
-   * de la misma tanda —el mismo Shox R4 en negro y en plata—; si no reconoce el modelo, la etiqueta
-   * del lector.
+   * <b>Un producto por tenis</b> (ADR-0090, 26 de octubre de 2026). La tanda trae el mismo Shox R4
+   * en negro, en plata y en gris, en fotos seguidas, y el mismo McQueen dos veces con otro
+   * encuadre; con una foto por producto eran cinco borradores que alguien tenía que unir a mano, y
+   * la pista del panel para unirlos —la etiqueta de diseño— juntaba ocho tenis que no se parecían.
+   *
+   * <p>El lector ve la tanda entera de una vez y dice, de cada foto, cuál es la primera que muestra
+   * ese mismo tenis ({@link LecturaDeCalzado#mismoTenisQue}). No es la etiqueta de texto libre que
+   * en ADR-0078 cambiaba por un detalle: es el número de otra foto que el lector tiene delante. Las
+   * fotos que apuntan a la misma, directa o en cadena, son un producto, y cada una aporta su color.
+   * Si junta de más, el panel tiene «Partir»; lo normal en esta tanda es un modelo en varios
+   * colores, y eso es lo que deja de costar trabajo.
+   *
+   * <p>La exclusiva del producto es su primera foto, que da la huella visual. Una lectura de antes
+   * del 26 de octubre de 2026 no dice nada del grupo, y cada foto queda sola, como antes.
    */
-  private static String disenoDelTenis(
-      Optional<LecturaDeFoto> leida, Optional<LecturaDeCalzado> calzado) {
-    Optional<String> modelo = calzado.map(LecturaDeCalzado::modelo);
-    if (modelo.isEmpty()) {
-      return leida.map(LecturaDeFoto::diseno).orElse(null);
+  private static List<ProductoRepartido> porTenis(
+      ProductoExtraido producto, List<UUID> fotos, LecturaDeFotos lectura) {
+    Map<Integer, List<Integer>> tenis = new LinkedHashMap<>();
+    for (int i = 0; i < fotos.size(); i++) {
+      Optional<LecturaDeCalzado> delCalzado =
+          lectura.deLaFoto(i).flatMap(LecturaDeFoto::calzadoOpcional);
+      if (delCalzado.isEmpty() || !delCalzado.get().seVende()) {
+        continue;
+      }
+      tenis
+          .computeIfAbsent(primeraDelTenis(i, fotos.size(), lectura), t -> new ArrayList<>())
+          .add(i);
     }
-    List<String> marcas = leida.map(LecturaDeFoto::marcas).orElse(List.of());
-    return (String.join(" ", marcas) + " " + modelo.get()).strip().toLowerCase(Locale.ROOT);
+    List<ProductoRepartido> repartidos = new ArrayList<>(tenis.size());
+    for (List<Integer> posiciones : tenis.values()) {
+      List<UUID> propias = posiciones.stream().map(fotos::get).toList();
+      List<LecturaDeFoto> leidas =
+          posiciones.stream().map(lectura::deLaFoto).flatMap(Optional::stream).toList();
+      LecturaDeCalzado delTenis = LecturaDelTenis.de(leidas);
+      List<String> marcasLeidas = LecturaDelTenis.marcasLeidas(leidas);
+      repartidos.add(
+          new ProductoRepartido(
+              producto.delTenisDeLaFoto(delTenis, marcasLeidas),
+              propias,
+              new FotosDelProducto(
+                  ajenas(fotos, propias),
+                  tonosSugeridos(fotos, lectura, propias),
+                  lectura.jsonCrudo(),
+                  disenoDelTenis(delTenis, marcasLeidas)),
+              Respaldo.UNA_POR_FOTO,
+              propias.getFirst(),
+              true,
+              List.of(),
+              false,
+              delTenis));
+    }
+    return repartidos;
+  }
+
+  /**
+   * La primera foto del tenis de la foto {@code posicion}: sigue lo que el lector dice hasta la
+   * foto que apunta a sí misma, o fuera de la tanda, o que no dice nada. Si la cadena da la vuelta,
+   * la menor de la vuelta: cualquier foto que entre en ella llega a la misma.
+   */
+  private static int primeraDelTenis(int posicion, int cuantas, LecturaDeFotos lectura) {
+    List<Integer> camino = new ArrayList<>();
+    int actual = posicion;
+    while (true) {
+      camino.add(actual);
+      Optional<Integer> siguiente =
+          lectura
+              .deLaFoto(actual)
+              .flatMap(LecturaDeFoto::calzadoOpcional)
+              .flatMap(LecturaDeCalzado::mismoTenisQueOpcional)
+              .filter(s -> s < cuantas);
+      if (siguiente.isEmpty() || siguiente.get() == actual) {
+        return actual;
+      }
+      int vuelta = camino.indexOf(siguiente.get());
+      if (vuelta >= 0) {
+        return Collections.min(camino.subList(vuelta, camino.size()));
+      }
+      actual = siguiente.get();
+    }
+  }
+
+  /**
+   * La etiqueta de diseño de un tenis de la tanda: la marca y el modelo que el lector cree ver,
+   * aunque dude. Le sirve al panel para decir «posible mismo diseño» de dos borradores de la misma
+   * tanda que el lector no juntó. Sin modelo no hay etiqueta: la del lector era tan general —«tenis
+   * suela gruesa»— que juntaba un McQueen, un Dior y un Nike (26 de octubre de 2026).
+   */
+  private static String disenoDelTenis(LecturaDeCalzado calzado, List<String> marcasLeidas) {
+    if (calzado.modeloParaElTitulo().isEmpty()) {
+      return null;
+    }
+    String marca = calzado.marcaOpcional().orElse(String.join(" ", marcasLeidas));
+    return (marca + " " + calzado.modelo()).strip().toLowerCase(Locale.ROOT);
   }
 
   private static ProductoRepartido sinReparto(

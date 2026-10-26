@@ -3,7 +3,10 @@ package co.tecnosport.api.application.proveedores;
 import co.tecnosport.api.domain.catalogo.LineaCatalogo;
 import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.proveedores.AlertaBorrador;
+import co.tecnosport.api.domain.proveedores.LecturaDeCalzado;
 import co.tecnosport.api.domain.proveedores.LecturaDeFotos;
+import co.tecnosport.api.domain.proveedores.LecturaDeFotos.LecturaDeFoto;
+import co.tecnosport.api.domain.proveedores.LecturaDelTenis;
 import co.tecnosport.api.domain.proveedores.MensajeProveedor;
 import co.tecnosport.api.domain.proveedores.PatronDePrecio;
 import co.tecnosport.api.domain.proveedores.ProductoExtraido;
@@ -15,6 +18,7 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -70,7 +74,15 @@ import java.util.UUID;
  * parte en un producto por foto con {@link RepartoDeFotos#unaPorFoto}, todos con el precio del
  * texto. El texto de Tenis Al Pie es solo el precio —«Detal :$180.000 / X mayor 💰135»—, y el
  * extractor puede no ver en él ningún producto: entonces la tanda se parte igual, desde un producto
- * que solo tiene ese precio (ADR-0089).
+ * que solo tiene ese precio (ADR-0089). En calzado, el producto es el tenis y no la foto.
+ *
+ * <h2>El calzado (26 de octubre de 2026)</h2>
+ *
+ * <p>Las fotos de todo proveedor de calzado las lee el lector de calzado, un modelo más capaz que
+ * reconoce la marca y el modelo de un tenis por la forma, y el título de un tenis de cualquier
+ * proveedor se completa con lo que se ve en sus fotos si el texto no dice el modelo ({@link
+ * ProductoExtraido#conElTenisDeSusFotos}). El título que lleva un modelo dudoso alerta {@code
+ * MODELO_POR_CONFIRMAR} (ADR-0090).
  */
 public final class ExtraerProductoDePublicacion {
 
@@ -79,6 +91,7 @@ public final class ExtraerProductoDePublicacion {
 
   private final ExtractorDeProductos extractor;
   private final LectorDeFotos lector;
+  private final LectorDeFotos lectorDeCalzado;
   private final AlmacenDeArchivosDeProveedor almacen;
   private final BigDecimal umbralDeConfianza;
 
@@ -97,8 +110,24 @@ public final class ExtraerProductoDePublicacion {
       LectorDeFotos lector,
       AlmacenDeArchivosDeProveedor almacen,
       BigDecimal umbralDeConfianza) {
+    this(extractor, lector, lector, almacen, umbralDeConfianza);
+  }
+
+  /**
+   * @param lectorDeCalzado el que lee las fotos de un proveedor de calzado (ADR-0090): tiene que
+   *     reconocer la marca y el modelo de un tenis por la forma
+   * @param almacen de donde se leen las fotos para el lector; puede ser nulo solo si el lector está
+   *     apagado
+   */
+  public ExtraerProductoDePublicacion(
+      ExtractorDeProductos extractor,
+      LectorDeFotos lector,
+      LectorDeFotos lectorDeCalzado,
+      AlmacenDeArchivosDeProveedor almacen,
+      BigDecimal umbralDeConfianza) {
     this.extractor = Objects.requireNonNull(extractor);
     this.lector = Objects.requireNonNull(lector);
+    this.lectorDeCalzado = Objects.requireNonNull(lectorDeCalzado);
     this.almacen = almacen;
     Objects.requireNonNull(umbralDeConfianza, "El umbral de confianza no puede ser nulo.");
     if (umbralDeConfianza.compareTo(BigDecimal.ZERO) < 0
@@ -160,14 +189,17 @@ public final class ExtraerProductoDePublicacion {
           contrastados.isEmpty()
               ? soloConElPrecio(preciosDelTexto, lineaDelProveedor)
               : contrastados.getFirst();
-      lectura = leerFotos(publicacion, mensajes, texto, List.of(base));
-      repartidos =
-          RepartoDeFotos.unaPorFoto(
-              base, publicacion.medios(), lectura, lineaDelProveedor == LineaCatalogo.CALZADO);
+      boolean calzado = lineaDelProveedor == LineaCatalogo.CALZADO;
+      lectura =
+          leerFotos(
+              calzado ? lectorDeCalzado : lector, publicacion, mensajes, texto, List.of(base));
+      repartidos = RepartoDeFotos.unaPorFoto(base, publicacion.medios(), lectura, calzado);
       varios = false;
       productosDelTexto = 1;
     } else {
-      lectura = sinFotos ? null : leerFotos(publicacion, mensajes, texto, contrastados);
+      LectorDeFotos elLector =
+          lineaDelProveedor == LineaCatalogo.CALZADO ? lectorDeCalzado : lector;
+      lectura = sinFotos ? null : leerFotos(elLector, publicacion, mensajes, texto, contrastados);
       repartidos = RepartoDeFotos.repartir(contrastados, publicacion.medios(), lectura);
     }
 
@@ -187,6 +219,18 @@ public final class ExtraerProductoDePublicacion {
                           .filter(Objects::nonNull)
                           .toList())
                   .conTallasDeLasFotos(tallasImpresas(publicacion, repartido.fotos(), lectura));
+      // El tenis de otro proveedor, titulado también con lo que se ve en sus fotos (ADR-0090). Solo
+      // si las fotos son suyas: con varios productos, la marca de la foto puede ser del otro.
+      Optional<LecturaDeCalzado> delTenis = repartido.calzadoOpcional();
+      if (delTenis.isEmpty() && !varios && !repartido.compartidas()) {
+        List<LecturaDeFoto> deSusFotos = lecturasDe(publicacion, repartido.fotos(), lectura);
+        delTenis = LecturaDelTenis.deLasQueMuestranUnTenis(deSusFotos);
+        if (delTenis.isPresent()) {
+          producto =
+              producto.conElTenisDeSusFotos(
+                  delTenis.get(), LecturaDelTenis.marcasLeidas(deSusFotos));
+        }
+      }
       Set<AlertaBorrador> alertas = EnumSet.noneOf(AlertaBorrador.class);
       // Los diseños de un álbum comparten el único precio del texto.
       boolean album = repartido.disenoDeAlbum();
@@ -206,6 +250,9 @@ public final class ExtraerProductoDePublicacion {
       }
       if (producto.esReplica()) {
         alertas.add(AlertaBorrador.REPLICA);
+      }
+      if (llevaUnModeloPorConfirmar(producto, delTenis)) {
+        alertas.add(AlertaBorrador.MODELO_POR_CONFIRMAR);
       }
       if (sinFotos) {
         alertas.add(AlertaBorrador.SIN_FOTOS);
@@ -266,6 +313,7 @@ public final class ExtraerProductoDePublicacion {
    * ExtractorNoDisponibleException}, que no cierra el lote sino que lo pausa.
    */
   private LecturaDeFotos leerFotos(
+      LectorDeFotos elLector,
       PublicacionProveedor publicacion,
       Map<UUID, MensajeProveedor> mensajes,
       TextoDePublicacion texto,
@@ -274,7 +322,7 @@ public final class ExtraerProductoDePublicacion {
       return null;
     }
     try {
-      return leerFotosSinProteger(publicacion, mensajes, texto, productos);
+      return leerFotosSinProteger(elLector, publicacion, mensajes, texto, productos);
     } catch (ExtractorNoDisponibleException e) {
       // La cuenta, no la foto: la publicación siguiente fallaría igual, y sin lectura saldrían
       // borradores peor repartidos. Que el lote se pause, como con el extractor.
@@ -285,6 +333,7 @@ public final class ExtraerProductoDePublicacion {
   }
 
   private LecturaDeFotos leerFotosSinProteger(
+      LectorDeFotos elLector,
       PublicacionProveedor publicacion,
       Map<UUID, MensajeProveedor> mensajes,
       TextoDePublicacion texto,
@@ -308,7 +357,7 @@ public final class ExtraerProductoDePublicacion {
                     new FotosParaLeer.ProductoNombrado(
                         p.titulo(), p.codigoReferenciaOpcional().orElse(null), p.marcas()))
             .toList();
-    return lector.leer(new FotosParaLeer(texto.completo(), nombrados, fotos)).orElse(null);
+    return elLector.leer(new FotosParaLeer(texto.completo(), nombrados, fotos)).orElse(null);
   }
 
   /**
@@ -348,6 +397,33 @@ public final class ExtraerProductoDePublicacion {
           "La publicación apunta a un mensaje que no está en el lote: " + id);
     }
     return mensaje;
+  }
+
+  /** El título lleva el modelo que el lector cree ver sin estar seguro (ADR-0090). */
+  private static boolean llevaUnModeloPorConfirmar(
+      ProductoExtraido producto, Optional<LecturaDeCalzado> delTenis) {
+    return delTenis.filter(LecturaDeCalzado::modeloPorConfirmar).isPresent()
+        && producto
+            .tituloOpcional()
+            .map(t -> t.toLowerCase(Locale.ROOT))
+            .map(t -> t.contains(delTenis.get().modelo().toLowerCase(Locale.ROOT)))
+            .orElse(false);
+  }
+
+  /** Lo que el lector vio en las fotos de este producto, en el orden de la publicación. */
+  private static List<LecturaDeFoto> lecturasDe(
+      PublicacionProveedor publicacion, List<UUID> suyas, LecturaDeFotos lectura) {
+    if (lectura == null) {
+      return List.of();
+    }
+    List<LecturaDeFoto> leidas = new ArrayList<>();
+    List<UUID> medios = publicacion.medios();
+    for (int i = 0; i < medios.size(); i++) {
+      if (suyas.contains(medios.get(i))) {
+        lectura.deLaFoto(i).ifPresent(leidas::add);
+      }
+    }
+    return leidas;
   }
 
   /**

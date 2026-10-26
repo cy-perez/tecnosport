@@ -75,28 +75,54 @@ Reglas, en orden de importancia:
    prenda ni un número de la caja. Si la foto no trae ese rótulo, `[]`. Como con los códigos: solo
    las que **lees**, no las que el anuncio dice.
 10. `calzado` describe el calzado que se vende en la foto. Si la foto no muestra calzado —una
-    blusa, un bolso, una caja vacía—, `tipo` es `no_es_calzado`, `modelo` es `""`,
-    `modelo_seguro` es `false`, `genero` es `no_se_sabe` y `producto_solo` es `false`.
+    blusa, un bolso, una caja vacía—, `tipo` es `no_es_calzado`, `marca` y `modelo` son `""`,
+    `modelo_seguro` es `false`, `genero` es `no_se_sabe`, `producto_solo` es `false` y
+    `mismo_tenis_que` es el número de la propia foto.
     - `tipo`: `tenis` para cualquier tenis, deportivo o de moda, de caña baja o alta —un Air
       Force 1, un Jordan 4, un Samba, un tenis de suela gruesa de diseñador—. `chancla` para la
       chancla y la sandalia de baño de una sola tira; `zueco` para los zuecos tipo Crocs, con o
       sin correa; `sandalia` para la de tiras; `bota` para la bota y el botín, también los de
       montaña como un Timberland; `otro` para el resto.
-    - `modelo`: el modelo comercial que reconoces por la forma —«Air Force 1», «Air Max 90»,
-      «Jordan 4», «Dunk Low», «Shox TL», «Samba», «Campus 00s», «9060», «Trainer»—, sin la marca
-      y sin el color. `""` si no reconoces ninguno.
-    - `modelo_seguro`: `true` solo si no dudas entre dos modelos parecidos de la misma marca
-      —Jordan 3 o Jordan 4, Shox TL o Shox R4, 9060 o 1906—. Si dudas, `false`: el modelo no irá
-      al título.
+    - `marca`: la marca a la que se parece el tenis, **aunque no se lea escrita**. Aquí sí vale
+      reconocerla por el logo dibujado o por la forma: el swoosh es Nike, el Jumpman es Jordan,
+      las tres franjas son Adidas, la N es New Balance, el gallo es Le Coq Sportif, la franja
+      cruzada es Onitsuka Tiger; la suela blanca alta y lisa del Oversized es Alexander McQueen, la
+      malla con suela de bloques del B22 es Dior, la flecha lateral del Out of Office es
+      Off-White. Escríbela como la escribe la marca: «Nike», «New Balance», «Le Coq Sportif»,
+      «Alexander McQueen», «Off-White». Un Air Jordan va con la marca «Jordan». `""` si no
+      reconoces ninguna. A diferencia de `marcas`, que sigue siendo solo lo que se lee.
+    - `modelo`: el modelo comercial que reconoces por la forma —«Air Force 1», «Air Max Plus»,
+      «Jordan 1 Low», «Dunk Low», «Shox R4», «Samba», «Campus 00s», «9060», «Oversized», «B22»—,
+      sin la marca y sin el color. **Escribe el que más se parece aunque dudes**: va al título y
+      quien aprueba lo confirma. `""` solo si no se parece a ningún modelo que conozcas.
+    - `modelo_seguro`: `true` si viste en la foto el rasgo que lo distingue de su parecido de la
+      misma marca: el Shox R4 tiene cuatro columnas redondas solo en el talón y el Shox TL las
+      lleva a todo lo largo de la suela; el Jordan 4 tiene las alas plásticas de los cordones y
+      la rejilla en los lados, y el Jordan 3 no. `false` si la foto no deja ver ese rasgo o si
+      dudas entre dos: el modelo irá al título igual, marcado para confirmar.
     - `genero`: `dama` si la horma, los colores o el anuncio lo hacen claramente de dama —un tono
       rosado o lila, una plataforma de dama, el rótulo «DAMA»—; `caballero` si es claramente de
       caballero —el rótulo «HOMBRE»—; `unisex` si se vende para los dos, que es lo normal en un
       tenis blanco, negro o gris como un Air Force 1, un Jordan 1 o un 9060. `no_se_sabe` si la
       foto no deja verlo.
     - `producto_solo`: `true` si el calzado se ve solo, sobre una superficie o sostenido en la
-      mano. `false` si está puesto, si se ven pies o piernas, si es una captura de pantalla de
-      otra aplicación o si la foto lo ambienta con artículos de otras marcas —una bolsa Dior, un
-      libro Cartier, una caja Supreme—. La caja de la misma marca del tenis no cuenta como
-      ambientación.
+      mano. `false` en cualquiera de estos casos, aunque el tenis se vea bien:
+      - está puesto: hay un pie dentro del tenis que se vende, con su media o la bota del pantalón
+        encima. **Las piernas o los pies de quien lo sostiene no cuentan**: si el tenis que se vende
+        está en la mano o sobre una superficie, se ve solo, aunque al fondo se vean unas piernas o
+        el otro tenis del par puesto;
+      - es una captura de pantalla de otra aplicación: la barra del teléfono con la hora y la
+        batería, una historia de Instagram, botones de responder o de reaccionar;
+      - la foto lo ambienta con artículos de otras marcas: una bolsa Dior, un libro Cartier, una
+        caja Supreme, aunque el tenis esté en la mano. La caja de la misma marca del tenis no
+        cuenta como ambientación.
+    - `mismo_tenis_que`: el número de la **primera foto de este anuncio que muestra este mismo
+      tenis**, en cualquier color; el de la propia foto si es la primera. Es el mismo tenis cuando
+      es el mismo modelo, con la misma horma, la misma suela y las mismas piezas: el Shox R4 en
+      negro con rojo, en plata y en gris son uno solo, y la foto 7 lleva el número de la primera
+      de ellas. También es el mismo tenis la misma foto con otro encuadre o con un rótulo encima.
+      No es el mismo si cambia el modelo, aunque sea de la misma marca y del mismo color: un Air
+      Max Plus y un Air Max 95 negros son dos. Vale para todas las fotos, también para las que no
+      se venden: un tenis puesto apunta a la foto donde ese tenis se ve solo, si la hay.
 
 Responde solo con el JSON.

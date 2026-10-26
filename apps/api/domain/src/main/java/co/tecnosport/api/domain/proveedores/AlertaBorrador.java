@@ -49,5 +49,11 @@ public enum AlertaBorrador {
    * El anuncio nombra las tallas corridas pero alguna no se pudo correr —la XS una más abajo, la
    * talla única—: el borrador se quedó con las del anuncio, y quien aprueba las corrige.
    */
-  TALLAS_SIN_CORRER
+  TALLAS_SIN_CORRER,
+  /**
+   * El título de un tenis lleva el modelo que el lector cree ver sin estar seguro —un Shox R4 que
+   * podría ser un Shox TL— (ADR-0090). Quien aprueba lo confirma o lo corrige: un modelo mal
+   * nombrado es información falsa para quien compra.
+   */
+  MODELO_POR_CONFIRMAR
 }

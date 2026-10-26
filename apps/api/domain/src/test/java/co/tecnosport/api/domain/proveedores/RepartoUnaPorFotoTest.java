@@ -106,9 +106,12 @@ class RepartoUnaPorFotoTest {
     assertEquals("nike air force 1", airForce1.reparto().diseno());
   }
 
-  /** El título sale de la foto: el modelo seguro va, el dudoso no. */
+  /**
+   * El título sale de la foto, con el modelo aunque el lector dude (ADR-0090): el dudoso queda por
+   * confirmar.
+   */
   @Test
-  void elTituloLlevaLaMarcaYSoloElModeloSeguro() {
+  void elTituloLlevaLaMarcaYElModeloAunqueDude() {
     List<ProductoRepartido> repartidos =
         RepartoDeFotos.unaPorFoto(soloElPrecio(), tanda, lectura(), true);
 
@@ -118,8 +121,9 @@ class RepartoUnaPorFotoTest {
     assertEquals(TipoProductoProveedor.TENIS, airForce1.tipo());
     assertTrue(airForce1.esReplica());
     assertEquals(
-        Optional.of("Tenis importados estilo Adidas"),
+        Optional.of("Tenis importados estilo Adidas Samba"),
         repartidos.get(1).producto().tituloOpcional());
+    assertTrue(repartidos.get(1).calzadoOpcional().orElseThrow().modeloPorConfirmar());
     assertEquals(
         Optional.of(GeneroDeCalzado.DAMA),
         repartidos.get(1).calzadoOpcional().flatMap(LecturaDeCalzado::generoOpcional));
