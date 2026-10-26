@@ -33,4 +33,4 @@ public record VarianteRespuesta(
      * agregar al carrito sin un enlace de compra y ofrece preguntar por WhatsApp. El pedido lo
      * vuelve a exigir.
      */
-    @Schema(requiredMode = Schema.RequiredMode.REQUIRED) boolean colorPorConfirmar) {}
+    @Schema(requiredMode = Schema.RequiredMode.REQUIRED) boolean disponibilidadPorConfirmar) {}

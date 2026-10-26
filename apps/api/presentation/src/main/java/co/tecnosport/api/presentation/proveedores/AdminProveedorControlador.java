@@ -87,7 +87,10 @@ public class AdminProveedorControlador {
                         OrdenDePublicacion.valueOf(cuerpo.ordenDePublicacion()),
                         Boolean.TRUE.equals(cuerpo.dosChatsEnUnZip()),
                         tiposDe(cuerpo.tiposExcluidos()),
-                        Boolean.TRUE.equals(cuerpo.armaSets()))));
+                        Boolean.TRUE.equals(cuerpo.armaSets()),
+                        cuerpo.ajustesDeIngesta() == null
+                            ? null
+                            : cuerpo.ajustesDeIngesta().aDominio())));
     return ProveedorRespuesta.de(proveedor);
   }
 
@@ -118,7 +121,10 @@ public class AdminProveedorControlador {
                             ? cuerpo.dosChatsEnUnZip()
                             : actual.subeDosChatsEnUnZip(),
                         tiposAlEditar(cuerpo, actual),
-                        cuerpo.armaSets() != null ? cuerpo.armaSets() : actual.armaSets())));
+                        cuerpo.armaSets() != null ? cuerpo.armaSets() : actual.armaSets(),
+                        cuerpo.ajustesDeIngesta() != null
+                            ? cuerpo.ajustesDeIngesta().aDominio()
+                            : actual.ajustesDeIngesta())));
     return ProveedorRespuesta.de(proveedor);
   }
 

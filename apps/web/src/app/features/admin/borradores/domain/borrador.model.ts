@@ -202,6 +202,26 @@ export interface Borrador {
   readonly ajusteDeTalla: number;
   /** Cómo se le pide al proveedor cada talla, con lo guardado; vacía sin ajuste. */
   readonly tallasPedidas: readonly TallaPedida[];
+  /**
+   * Para quién es el tenis, según la foto o el anuncio (ADR-0089); `null` si no es calzado o no se
+   * sabe. Decide la rama del calzado que se propone al aprobar.
+   */
+  readonly generoDeCalzado: GeneroDeCalzado | null;
+}
+
+export type GeneroDeCalzado = 'DAMA' | 'CABALLERO' | 'UNISEX';
+
+/**
+ * La categoría que se propone al aprobar: la del tipo, y en un tenis la rama de su género
+ * —«calzado-dama», «calzado-caballero», «calzado-unisex»—. `undefined` si no hay una sola.
+ */
+export function categoriaSugerida(borrador: Pick<Borrador, 'tipo' | 'generoDeCalzado'>) {
+  if (borrador.tipo === 'TENIS') {
+    return borrador.generoDeCalzado
+      ? 'calzado-' + borrador.generoDeCalzado.toLowerCase()
+      : undefined;
+  }
+  return CATEGORIA_SUGERIDA_POR_TIPO[borrador.tipo];
 }
 
 /** La talla que se vende y la que se le pide al proveedor; esta, nula si no se puede contar. */

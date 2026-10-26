@@ -1,6 +1,8 @@
 import type { components } from '@tecnosport/contratos';
 import { TipoProductoProveedor } from '../../borradores/domain/borrador.model';
 import {
+  AJUSTES_DE_INGESTA_POR_OMISION,
+  AjustesDeIngesta,
   DatosProveedor,
   LineaProveedor,
   OrdenDePublicacion,
@@ -29,6 +31,22 @@ export function aProveedor(dto: ProveedorDto): Proveedor {
     dosChatsEnUnZip: dto.dosChatsEnUnZip ?? false,
     tiposExcluidos: (dto.tiposExcluidos ?? []) as TipoProductoProveedor[],
     armaSets: dto.armaSets ?? false,
+    ajustesDeIngesta: aAjustes(dto.ajustesDeIngesta),
+  };
+}
+
+function aAjustes(dto: ProveedorDto['ajustesDeIngesta'] | undefined): AjustesDeIngesta {
+  if (!dto) {
+    return AJUSTES_DE_INGESTA_POR_OMISION;
+  }
+  const tallas = dto.tallasPorGenero;
+  return {
+    unaFotoUnProducto: dto.unaFotoUnProducto ?? false,
+    ventaBajoConfirmacion: dto.ventaBajoConfirmacion ?? false,
+    diasDeVigencia: dto.diasDeVigencia ?? null,
+    tallasPorGenero: tallas
+      ? { dama: [...tallas.dama], caballero: [...tallas.caballero], ajuste: tallas.ajuste }
+      : null,
   };
 }
 
@@ -45,5 +63,17 @@ export function aProveedorPeticion(datos: DatosProveedor): ProveedorPeticionDto 
     dosChatsEnUnZip: datos.dosChatsEnUnZip,
     tiposExcluidos: [...datos.tiposExcluidos],
     armaSets: datos.armaSets,
+    ajustesDeIngesta: {
+      unaFotoUnProducto: datos.ajustesDeIngesta.unaFotoUnProducto,
+      ventaBajoConfirmacion: datos.ajustesDeIngesta.ventaBajoConfirmacion,
+      diasDeVigencia: datos.ajustesDeIngesta.diasDeVigencia ?? undefined,
+      tallasPorGenero: datos.ajustesDeIngesta.tallasPorGenero
+        ? {
+            dama: [...datos.ajustesDeIngesta.tallasPorGenero.dama],
+            caballero: [...datos.ajustesDeIngesta.tallasPorGenero.caballero],
+            ajuste: datos.ajustesDeIngesta.tallasPorGenero.ajuste,
+          }
+        : undefined,
+    },
   };
 }

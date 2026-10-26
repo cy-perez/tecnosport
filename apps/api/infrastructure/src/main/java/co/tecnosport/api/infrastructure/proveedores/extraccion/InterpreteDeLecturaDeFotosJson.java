@@ -2,13 +2,17 @@ package co.tecnosport.api.infrastructure.proveedores.extraccion;
 
 import co.tecnosport.api.application.proveedores.ExtraccionFallidaException;
 import co.tecnosport.api.application.proveedores.InterpreteDeLecturaDeFotos;
+import co.tecnosport.api.domain.proveedores.GeneroDeCalzado;
+import co.tecnosport.api.domain.proveedores.LecturaDeCalzado;
 import co.tecnosport.api.domain.proveedores.LecturaDeFotos;
 import co.tecnosport.api.domain.proveedores.LecturaDeFotos.LecturaDeFoto;
+import co.tecnosport.api.domain.proveedores.TipoDeCalzado;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.IntPredicate;
 import tools.jackson.databind.JsonNode;
@@ -81,9 +85,42 @@ public final class InterpreteDeLecturaDeFotosJson implements InterpreteDeLectura
               texto(foto.path("diseno")),
               lista(foto.path("marcas")),
               // Ausente en las lecturas guardadas antes del 13 de octubre de 2026: vacía.
-              lista(foto.path("tallas"))));
+              lista(foto.path("tallas")),
+              calzado(foto.path("calzado"))));
     }
     return new LecturaDeFotos(raiz.path("album_de_disenos").asBoolean(false), lecturas, jsonCrudo);
+  }
+
+  /**
+   * Lo que el lector vio de un calzado (ADR-0089). Nulo si la foto no muestra calzado, y también en
+   * las lecturas guardadas antes del 25 de octubre de 2026, que no traen el campo.
+   */
+  private static LecturaDeCalzado calzado(JsonNode nodo) {
+    if (nodo == null || !nodo.isObject()) {
+      return null;
+    }
+    String tipo = texto(nodo.path("tipo"));
+    if (tipo == null || tipo.equals("no_es_calzado")) {
+      return null;
+    }
+    return new LecturaDeCalzado(
+        texto(nodo.path("modelo")),
+        nodo.path("modelo_seguro").asBoolean(false),
+        switch (Objects.requireNonNullElse(texto(nodo.path("genero")), "")) {
+          case "dama" -> GeneroDeCalzado.DAMA;
+          case "caballero" -> GeneroDeCalzado.CABALLERO;
+          case "unisex" -> GeneroDeCalzado.UNISEX;
+          default -> null;
+        },
+        switch (tipo) {
+          case "tenis" -> TipoDeCalzado.TENIS;
+          case "chancla" -> TipoDeCalzado.CHANCLA;
+          case "sandalia" -> TipoDeCalzado.SANDALIA;
+          case "zueco" -> TipoDeCalzado.ZUECO;
+          case "bota" -> TipoDeCalzado.BOTA;
+          default -> TipoDeCalzado.OTRO;
+        },
+        nodo.path("producto_solo").asBoolean(false));
   }
 
   /** «09/10/2026», como lo imprime La Riverah; nula si no se lee así. */

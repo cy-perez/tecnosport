@@ -5,6 +5,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import co.tecnosport.api.application.proveedores.LotesPaginados;
 import co.tecnosport.api.domain.catalogo.LineaCatalogo;
+import co.tecnosport.api.domain.proveedores.AjusteDeTalla;
+import co.tecnosport.api.domain.proveedores.AjustesDeIngesta;
 import co.tecnosport.api.domain.proveedores.ChatDelZip;
 import co.tecnosport.api.domain.proveedores.EstadoLote;
 import co.tecnosport.api.domain.proveedores.FalloDeLote;
@@ -16,6 +18,7 @@ import co.tecnosport.api.domain.proveedores.OrdenDePublicacion;
 import co.tecnosport.api.domain.proveedores.PHash;
 import co.tecnosport.api.domain.proveedores.Proveedor;
 import co.tecnosport.api.domain.proveedores.ResumenIngesta;
+import co.tecnosport.api.domain.proveedores.TallasPorGenero;
 import co.tecnosport.api.domain.proveedores.TipoMensaje;
 import co.tecnosport.api.domain.proveedores.TipoProductoProveedor;
 import jakarta.persistence.EntityManager;
@@ -177,6 +180,41 @@ class RepositoriosDeIngestaJpaTest {
     entityManager.flush();
     entityManager.clear();
     assertThat(proveedores.buscarPorId(riverah.id()).orElseThrow().armaSets()).isFalse();
+  }
+
+  /** Los ajustes de Tenis Al Pie (V118) van y vuelven, y se pueden quitar. */
+  @Test
+  void losAjustesDeIngestaVanYVuelven() {
+    Proveedor alPie =
+        Proveedor.crear(
+            "Tenis Al Pie",
+            LineaCatalogo.CALZADO,
+            "+57 300 0000000",
+            "tenis.alpie",
+            new BigDecimal("1.20"),
+            OrdenDePublicacion.FOTOS_PRIMERO);
+    AjustesDeIngesta ajustes =
+        new AjustesDeIngesta(
+            true,
+            true,
+            5,
+            new TallasPorGenero(
+                List.of("36", "37", "38", "39"),
+                List.of("40", "41", "42", "43", "44"),
+                new AjusteDeTalla(1)));
+    alPie.definirAjustesDeIngesta(ajustes);
+    proveedores.guardar(alPie);
+    entityManager.flush();
+    entityManager.clear();
+    assertThat(proveedores.buscarPorId(alPie.id()).orElseThrow().ajustesDeIngesta())
+        .isEqualTo(ajustes);
+
+    alPie.definirAjustesDeIngesta(null);
+    proveedores.actualizar(alPie);
+    entityManager.flush();
+    entityManager.clear();
+    assertThat(proveedores.buscarPorId(alPie.id()).orElseThrow().ajustesDeIngesta().porOmision())
+        .isTrue();
   }
 
   @Test

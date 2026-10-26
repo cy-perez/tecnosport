@@ -43,6 +43,15 @@ import java.util.regex.Pattern;
  * tramo tachado: el que abre con virgulillas al principio de la línea o detrás de un espacio, como
  * abre WhatsApp, y cierra con virgulillas en la misma línea. El cierre doble de arriba no se
  * confunde con eso porque va pegado al número: {@code 🎽55.000~~} no abre nada.
+ *
+ * <h2>El precio por mayor manda</h2>
+ *
+ * <p>Tenis Al Pie escribe los dos: {@code Detal :$180.000} y debajo {@code X mayor 💰135}
+ * (exportación del 23 de octubre de 2026). El primero es lo que él sugiere cobrarle al público; el
+ * que paga la tienda es el segundo. Por eso, si el texto rotula algún precio «x mayor», «por mayor»
+ * o «al por mayor», <b>solo cuentan los rotulados</b>, en su orden, y el de detal no entra ni como
+ * precio ni en la lista. Detrás del rótulo, dos o tres cifras también se leen en miles, como detrás
+ * de 💲: el rótulo ya dice que lo que sigue es un precio. «Mayorista» no es el rótulo.
  */
 public final class PatronDePrecio {
 
@@ -72,6 +81,19 @@ public final class PatronDePrecio {
               + "\\s*\\*?\\s*(?:💰|_|~~))",
           Pattern.CASE_INSENSITIVE);
 
+  /**
+   * El precio rotulado por mayor: el rótulo, hasta doce caracteres sin cifras en la misma línea
+   * —«unidad 💰», «* $»— y el número completo o en miles.
+   */
+  private static final Pattern POR_MAYOR =
+      Pattern.compile(
+          "(?<!\\p{L})(?:x|por)\\s*mayor(?!\\p{L})[^\\d\\n]{0,12}?(?:"
+              + NUMERO
+              + "|"
+              + EN_MILES
+              + ")",
+          Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE);
+
   /** Un tramo tachado de WhatsApp con alguna cifra dentro, sin salir de su línea. */
   private static final Pattern TACHADO = Pattern.compile("(?<!\\S)~+[^~\\n]*\\d[^~\\n]*~+");
 
@@ -85,14 +107,8 @@ public final class PatronDePrecio {
     if (texto == null || texto.isBlank()) {
       return Optional.empty();
     }
-    Matcher m = CANDIDATO.matcher(sinTachado(texto));
-    while (m.find()) {
-      BigDecimal valor = valorDe(m);
-      if (valor.compareTo(MINIMO) >= 0) {
-        return Optional.of(Dinero.deCop(valor));
-      }
-    }
-    return Optional.empty();
+    List<Dinero> todos = extraerTodos(texto);
+    return todos.isEmpty() ? Optional.empty() : Optional.of(todos.getFirst());
   }
 
   /**
@@ -103,8 +119,23 @@ public final class PatronDePrecio {
     if (texto == null || texto.isBlank()) {
       return List.of();
     }
+    String legible = sinTachado(texto);
+    List<Dinero> porMayor = new ArrayList<>();
+    Matcher rotulado = POR_MAYOR.matcher(legible);
+    while (rotulado.find()) {
+      BigDecimal valor =
+          rotulado.group(1) != null
+              ? new BigDecimal(rotulado.group(1).replace(".", "").replace(",", ""))
+              : new BigDecimal(rotulado.group(2)).multiply(MIL);
+      if (valor.compareTo(MINIMO) >= 0) {
+        porMayor.add(Dinero.deCop(valor));
+      }
+    }
+    if (!porMayor.isEmpty()) {
+      return List.copyOf(porMayor);
+    }
     List<Dinero> precios = new ArrayList<>();
-    Matcher m = CANDIDATO.matcher(sinTachado(texto));
+    Matcher m = CANDIDATO.matcher(legible);
     while (m.find()) {
       BigDecimal valor = valorDe(m);
       if (valor.compareTo(MINIMO) >= 0) {

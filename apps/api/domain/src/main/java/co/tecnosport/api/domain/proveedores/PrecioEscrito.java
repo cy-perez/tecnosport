@@ -10,7 +10,8 @@ import java.util.regex.Pattern;
  * el modelo puso además una blusa a 38.100, la resta del set y la falda (12 de octubre de 2026).
  *
  * <p>Cuenta como escrito el valor completo —«88.000», «$ 88.000», «88000»—, los miles con la
- * palabra —«35mil», «35 mil»— y los miles pegados a 💲 —«💲124»—, nunca como parte de otra cifra.
+ * palabra —«35mil», «35 mil»—, los miles pegados a 💲 —«💲124»— y los que siguen al rótulo del
+ * precio por mayor —«X mayor 💰135», de Tenis Al Pie—, nunca como parte de otra cifra.
  */
 public final class PrecioEscrito {
 
@@ -32,7 +33,7 @@ public final class PrecioEscrito {
     }
     long miles = valor / 1000;
     return aparece("(?<!\\d)" + miles + "mil", compacto)
-        || aparece("💲" + miles + "(?!\\d)", compacto);
+        || aparece("(?:💲|mayor\\D{0,12}?)" + miles + "(?!\\d)", compacto);
   }
 
   private static boolean aparece(String patron, String texto) {

@@ -1,6 +1,7 @@
 package co.tecnosport.api.application.proveedores;
 
 import co.tecnosport.api.domain.catalogo.LineaCatalogo;
+import co.tecnosport.api.domain.proveedores.AjustesDeIngesta;
 import co.tecnosport.api.domain.proveedores.OrdenDePublicacion;
 import co.tecnosport.api.domain.proveedores.TipoProductoProveedor;
 import java.math.BigDecimal;
@@ -11,6 +12,7 @@ import java.util.UUID;
  * @param factorDeMargen nulo para usar el de la línea
  * @param tiposExcluidos los que no se le compran; vacío para comprarle todo
  * @param armaSets si la prenda que anuncia con su acompañante se publica como set
+ * @param ajustesDeIngesta cómo se ingiere su chat; nulo es como el de todos
  */
 public record EditarProveedorComando(
     UUID id,
@@ -24,10 +26,42 @@ public record EditarProveedorComando(
     OrdenDePublicacion ordenDePublicacion,
     boolean dosChatsEnUnZip,
     Set<TipoProductoProveedor> tiposExcluidos,
-    boolean armaSets) {
+    boolean armaSets,
+    AjustesDeIngesta ajustesDeIngesta) {
 
   public EditarProveedorComando {
     tiposExcluidos = tiposExcluidos == null ? Set.of() : Set.copyOf(tiposExcluidos);
+    ajustesDeIngesta = ajustesDeIngesta == null ? AjustesDeIngesta.POR_OMISION : ajustesDeIngesta;
+  }
+
+  /** Sin ajustes de ingesta: su chat se ingiere como el de todos. */
+  public EditarProveedorComando(
+      UUID id,
+      String nombre,
+      LineaCatalogo linea,
+      String telefonoWhatsApp,
+      String nombreEnExportacion,
+      boolean activo,
+      boolean publicacionAutomatica,
+      BigDecimal factorDeMargen,
+      OrdenDePublicacion ordenDePublicacion,
+      boolean dosChatsEnUnZip,
+      Set<TipoProductoProveedor> tiposExcluidos,
+      boolean armaSets) {
+    this(
+        id,
+        nombre,
+        linea,
+        telefonoWhatsApp,
+        nombreEnExportacion,
+        activo,
+        publicacionAutomatica,
+        factorDeMargen,
+        ordenDePublicacion,
+        dosChatsEnUnZip,
+        tiposExcluidos,
+        armaSets,
+        AjustesDeIngesta.POR_OMISION);
   }
 
   /** Sin sets: la prenda que anuncia con su acompañante se publica sola. */

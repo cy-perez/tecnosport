@@ -1021,7 +1021,17 @@
       "enviando": "Saving…",
       "guardar": "Save changes",
       "crear": "Create supplier",
-      "error": "The supplier could not be saved. Try again."
+      "error": "The supplier could not be saved. Try again.",
+      "unaFotoUnProducto": "One photo, one product: each photo in a batch is a different model, as in the Tenis Al Pie chat",
+      "ventaBajoConfirmacion": "Sold on confirmation: the size is confirmed on WhatsApp before charging, with a purchase link",
+      "diasDeVigencia": "Days on sale",
+      "diasDeVigenciaAyuda": "How many days something that does not show up again in the chat stays on sale, from 1 to 30. Empty means the general window.",
+      "tallasDama": "Supplier's women's sizes",
+      "tallasCaballero": "Supplier's men's sizes",
+      "tallasAyuda": "As the supplier names them, separated by spaces: 36 37 38 39. Leave empty if each post states them.",
+      "ajusteDeTalla": "How many sizes up the supplier names them",
+      "ajusteDeTallaAyuda": "1 for EUR sizes: the shop sells the national size, which is the EUR size minus one. From -4 to 4.",
+      "ajustesInvalidos": "Check the ingestion settings: days go from 1 to 30, sizes are numbers separated by spaces and the adjustment goes from -4 to 4."
     },
     "eliminar": {
       "titulo": "Delete supplier",
@@ -1726,15 +1736,19 @@
       "generando": "Creating…",
       "errorGenerar": "We couldn't create the purchase link.",
       "generado": "Purchase link for {{detalle}}, valid until {{fecha}}. The unit is reserved.",
-      "irABandeja": "See purchase links"
+      "irABandeja": "See purchase links",
+      "tituloCalzado": "Sizes to confirm",
+      "explicacionCalzado": "These sneakers are sold on confirmation: the supplier does not say which sizes it has of each model. When a customer asks on WhatsApp and the supplier confirms the size, generate the purchase link for that size.",
+      "porConfirmarCalzado": "Sizes to confirm with the supplier",
+      "ningunoPorConfirmarCalzado": "There are no sizes to confirm."
     },
     "bandeja": {
       "titulo": "Purchase links",
-      "explicacion": "Links that allow buying a technology color already confirmed with the supplier. Each one is good for one purchase, reserves one unit and expires on the date shown in its row. They are created from the product edit page.",
+      "explicacion": "The links that allow buying what is confirmed with the supplier before it is sold: the color of a tech device or the size of a pair of sneakers. Each one is good for one purchase, reserves one unit and expires on the date in its row. They are generated from the product's edit page.",
       "ninguno": "There are no purchase links from the last week.",
       "error": "We couldn't load the purchase links.",
       "producto": "Product",
-      "variante": "Configuration and color",
+      "variante": "Variant",
       "estado": "Status",
       "vence": "Expires",
       "acciones": "Actions",

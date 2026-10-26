@@ -293,6 +293,9 @@ public record ProductoExtraido(
       tituloContrastado =
           TituloDePolo.componer(
               replica ? PatronDeReplica.tituloDeReplica(sinAjenos) : sinAjenos, replica);
+    } else if (tipoContrastado == TipoProductoProveedor.TENIS) {
+      // Todo el calzado lleva el título de un tenis, sin el género (ADR-0089).
+      tituloContrastado = TituloDeTenis.desde(sinAjenos, marcas);
     } else {
       tituloContrastado =
           replica
@@ -481,6 +484,69 @@ public record ProductoExtraido(
           "(?<!\\p{L})estilo\\s+.*?(?=\\s+(?:importad[oa]s?|para|de|del|con|en|tipo|manga|talla)"
               + "(?!\\p{L})|$)",
           Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE);
+
+  /**
+   * El tenis de una sola foto de una tanda (ADR-0089): Tenis Al Pie no dice en el texto ni la
+   * marca, ni el modelo, ni de qué se trata —solo el precio—, y todo eso sale de la foto. El título
+   * es el de un tenis con la marca que se lee y el modelo que el lector da por seguro ({@link
+   * TituloDeTenis}); con marca es una réplica para revisar. El texto no describe este tenis, así
+   * que no le deja descripción ni código.
+   *
+   * @param calzado lo que el lector vio del tenis
+   * @param marcasDeLaFoto las que se leen en él
+   */
+  public ProductoExtraido delTenisDeLaFoto(LecturaDeCalzado calzado, List<String> marcasDeLaFoto) {
+    Objects.requireNonNull(calzado, "El tenis de la foto necesita su lectura.");
+    List<String> lasMarcas = marcasDeLaFoto == null ? List.of() : marcasDeLaFoto;
+    String marca = lasMarcas.isEmpty() ? null : String.join(" - ", lasMarcas);
+    String modelo = calzado.modeloParaElTitulo().orElse(null);
+    return new ProductoExtraido(
+        true,
+        estaAgotado,
+        TituloDeTenis.componer(marca, modelo),
+        LineaCatalogo.CALZADO,
+        TipoProductoProveedor.TENIS,
+        precioProveedor,
+        Tallas.desconocida(),
+        null,
+        List.of(),
+        null,
+        null,
+        TituloDeTenis.enIngles(marca, modelo),
+        esReplica || marca != null,
+        confianza,
+        notas,
+        null,
+        TallasPorTono.ninguna(),
+        List.of(),
+        lasMarcas,
+        null);
+  }
+
+  /** Este mismo producto con otras tallas: las que un proveedor de calzado maneja siempre. */
+  public ProductoExtraido conTallas(Tallas otras) {
+    return new ProductoExtraido(
+        esProducto,
+        estaAgotado,
+        titulo,
+        linea,
+        tipo,
+        precioProveedor,
+        otras,
+        cantidadTonos,
+        tonosNombrados,
+        material,
+        descripcion,
+        altEn,
+        esReplica,
+        confianza,
+        notas,
+        codigoReferencia,
+        tallasPorTono,
+        preciosAdicionales,
+        marcas,
+        set);
+  }
 
   /**
    * Este mismo producto sin código de referencia. Para los borradores de un anuncio de varias

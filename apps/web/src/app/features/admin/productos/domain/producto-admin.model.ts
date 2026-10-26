@@ -127,7 +127,7 @@ export interface VarianteResumenAdmin {
     readonly colorHex: string | null;
   }[];
   /** Su color de tecnología se confirma con el proveedor antes de venderse (ADR-0086). */
-  readonly colorPorConfirmar?: boolean;
+  readonly disponibilidadPorConfirmar?: boolean;
 }
 
 export interface AsignarColorAImagenAdmin {

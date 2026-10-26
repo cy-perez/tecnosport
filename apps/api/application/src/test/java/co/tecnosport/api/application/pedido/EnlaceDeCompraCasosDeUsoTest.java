@@ -41,7 +41,7 @@ class EnlaceDeCompraCasosDeUsoTest {
   private final RepositorioEnlacesDeCompraFalso enlaces = new RepositorioEnlacesDeCompraFalso();
   private final RelojFalso reloj = new RelojFalso(AHORA);
 
-  private Variante publicar(boolean colorPorConfirmar, int existencia) {
+  private Variante publicar(boolean disponibilidadPorConfirmar, int existencia) {
     Producto producto =
         Producto.crear(
             "Apple iPhone 18 Pro",
@@ -71,7 +71,7 @@ class EnlaceDeCompraCasosDeUsoTest {
             List.of(),
             null,
             false,
-            colorPorConfirmar);
+            disponibilidadPorConfirmar);
     producto.agregarVariante(variante);
     producto.publicar();
     productos.conProductos(producto);

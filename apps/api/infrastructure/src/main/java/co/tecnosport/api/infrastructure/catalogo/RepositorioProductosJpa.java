@@ -470,7 +470,7 @@ public class RepositorioProductosJpa implements RepositorioProductos {
                 existente.getCreadoEn())
             .conReferenciaProveedor(existente.getReferenciaProveedor())
             .conAgotadaPorProveedor(existente.isAgotadaPorProveedor())
-            .conColorPorConfirmar(existente.isColorPorConfirmar()));
+            .conDisponibilidadPorConfirmar(existente.isDisponibilidadPorConfirmar()));
   }
 
   /**
@@ -504,7 +504,7 @@ public class RepositorioProductosJpa implements RepositorioProductos {
                 existente.getCreadoEn())
             .conReferenciaProveedor(existente.getReferenciaProveedor())
             .conAgotadaPorProveedor(existente.isAgotadaPorProveedor())
-            .conColorPorConfirmar(existente.isColorPorConfirmar()));
+            .conDisponibilidadPorConfirmar(existente.isDisponibilidadPorConfirmar()));
   }
 
   @Override

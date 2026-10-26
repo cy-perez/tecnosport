@@ -7,6 +7,7 @@ import co.tecnosport.api.application.catalogo.RepositorioCategorias;
 import co.tecnosport.api.application.catalogo.RepositorioMarcas;
 import co.tecnosport.api.application.catalogo.RepositorioProductos;
 import co.tecnosport.api.application.compartido.Reloj;
+import co.tecnosport.api.application.inventario.RepositorioInventario;
 import co.tecnosport.api.application.proveedores.AlmacenDeArchivosDeProveedor;
 import co.tecnosport.api.application.proveedores.AprobarBorrador;
 import co.tecnosport.api.application.proveedores.CalculadorDePHash;
@@ -15,6 +16,7 @@ import co.tecnosport.api.application.proveedores.DescartarFotoDeBorrador;
 import co.tecnosport.api.application.proveedores.EditarBorrador;
 import co.tecnosport.api.application.proveedores.EliminarBorrador;
 import co.tecnosport.api.application.proveedores.EliminarBorradoresSinAprobar;
+import co.tecnosport.api.application.proveedores.ExistenciaBajoConfirmacion;
 import co.tecnosport.api.application.proveedores.ExpirarDisponibilidadDeProductos;
 import co.tecnosport.api.application.proveedores.MoverFotoDeBorrador;
 import co.tecnosport.api.application.proveedores.PartirBorrador;
@@ -52,6 +54,20 @@ public class ConfiguracionBorradores {
     return new ProcesadorDeImagenesNulo();
   }
 
+  /**
+   * La existencia nominal de lo que se vende bajo confirmación es la de la tecnología, que se vende
+   * igual (ADR-0089): el negocio la fijó para las listas y no hay otra decidida para el calzado.
+   */
+  @Bean
+  public ExistenciaBajoConfirmacion existenciaBajoConfirmacion(
+      RepositorioInventario inventario,
+      RepositorioProductosDeProveedor productosDeProveedor,
+      Reloj reloj,
+      PropiedadesProveedores propiedades) {
+    return new ExistenciaBajoConfirmacion(
+        inventario, productosDeProveedor, reloj, propiedades.tecnologia().existenciaPorVariante());
+  }
+
   @Bean
   public ResolverBorrador resolverBorrador(
       RepositorioBorradores borradores,
@@ -61,7 +77,8 @@ public class ConfiguracionBorradores {
       AlmacenDeArchivosDeProveedor almacen,
       CalculadorDePHash calculadorDePHash,
       Reloj reloj,
-      PropiedadesProveedores propiedades) {
+      PropiedadesProveedores propiedades,
+      ExistenciaBajoConfirmacion existenciaBajoConfirmacion) {
     return new ResolverBorrador(
         borradores,
         productosDeProveedor,
@@ -72,7 +89,8 @@ public class ConfiguracionBorradores {
         reloj,
         propiedades.margenPorLinea(),
         propiedades.ganancia().aTopes(),
-        propiedades.huella().umbralHamming());
+        propiedades.huella().umbralHamming(),
+        existenciaBajoConfirmacion);
   }
 
   @Bean
@@ -91,7 +109,8 @@ public class ConfiguracionBorradores {
       AlmacenDeImagenes almacenDeImagenes,
       ProcesadorDeImagenes procesador,
       CalculadorDePHash calculadorDePHash,
-      Reloj reloj) {
+      Reloj reloj,
+      ExistenciaBajoConfirmacion existenciaBajoConfirmacion) {
     return new AprobarBorrador(
         borradores,
         publicaciones,
@@ -107,7 +126,8 @@ public class ConfiguracionBorradores {
         almacenDeImagenes,
         procesador,
         calculadorDePHash,
-        reloj);
+        reloj,
+        existenciaBajoConfirmacion);
   }
 
   @Bean

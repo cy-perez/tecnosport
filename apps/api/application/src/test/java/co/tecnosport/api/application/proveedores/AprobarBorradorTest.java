@@ -34,7 +34,9 @@ import co.tecnosport.api.domain.catalogo.Producto;
 import co.tecnosport.api.domain.catalogo.TipoImagen;
 import co.tecnosport.api.domain.catalogo.Variante;
 import co.tecnosport.api.domain.compartido.Dinero;
+import co.tecnosport.api.domain.inventario.Inventario;
 import co.tecnosport.api.domain.proveedores.AjusteDeTalla;
+import co.tecnosport.api.domain.proveedores.AjustesDeIngesta;
 import co.tecnosport.api.domain.proveedores.ArmadoDeSet;
 import co.tecnosport.api.domain.proveedores.BorradorProducto;
 import co.tecnosport.api.domain.proveedores.EstadoBorrador;
@@ -1554,5 +1556,114 @@ class AprobarBorradorTest {
                 List.of(new PrendaAprobada(1, "Azul", "#1E4FA0", null))));
 
     assertTrue(productosDeProveedor.referencias.isEmpty());
+  }
+
+  /**
+   * Lo de un proveedor que vende bajo confirmación (ADR-0089) nace con cada variante por confirmar
+   * y con la existencia nominal, aunque quien aprueba haya escrito una: la de verdad la confirma
+   * WhatsApp.
+   */
+  @Test
+  void loQueSeVendeBajoConfirmacionNacePorConfirmarYConLaExistenciaNominal() {
+    proveedor.definirAjustesDeIngesta(new AjustesDeIngesta(false, true, null, null));
+    proveedores.guardar(proveedor);
+    AgregarVariante agregarVariante =
+        new AgregarVariante(productos, atributos, inventario, new RelojFalso(AHORA), false);
+    AprobarBorrador caso =
+        new AprobarBorrador(
+            borradores,
+            publicaciones,
+            mensajes,
+            proveedores,
+            productos,
+            productosDeProveedor,
+            new RepositorioMarcasFijo(),
+            new RepositorioCategoriasFijo(),
+            atributos,
+            agregarVariante,
+            almacenPrivado,
+            almacenPublico,
+            new ProcesadorNulo(),
+            new CalculadorDePHashPorContenido(),
+            new RelojFalso(AHORA),
+            new ExistenciaBajoConfirmacion(
+                inventario, productosDeProveedor, new RelojFalso(AHORA), 2));
+
+    Producto producto =
+        caso.ejecutar(
+            comando(
+                List.of(
+                    new FotoAprobada(foto1.id(), "Negro", "#000000"),
+                    new FotoAprobada(foto2.id(), "Vino", null))));
+
+    for (Variante variante : productos.buscarPorId(producto.id()).orElseThrow().variantes()) {
+      assertEquals(
+          Boolean.TRUE,
+          productosDeProveedor.disponibilidadPorConfirmar.get(variante.id()),
+          "por confirmar");
+      assertEquals(
+          2, inventario.buscarPorVarianteId(variante.id()).orElseThrow().saldoTotal(), "nominal");
+    }
+  }
+
+  /** Sin con qué reponer, la aprobación de lo que se vende bajo confirmación no sigue a medias. */
+  @Test
+  void sinConQueReponerNoSeApruebaLoQueSeVendeBajoConfirmacion() {
+    proveedor.definirAjustesDeIngesta(new AjustesDeIngesta(false, true, null, null));
+    proveedores.guardar(proveedor);
+
+    assertThrows(
+        IllegalStateException.class,
+        () -> caso().ejecutar(comando(List.of(new FotoAprobada(foto1.id(), "Negro", null)))));
+  }
+
+  /**
+   * Cuando el modelo reaparece en el chat, la talla que se vendió vuelve a la nominal, y la que
+   * alguien contó por encima no baja.
+   */
+  @Test
+  void alReaparecerReponeLoQueFaltaYNoBajaLoQueSobra() {
+    proveedor.definirAjustesDeIngesta(new AjustesDeIngesta(false, true, null, null));
+    proveedores.guardar(proveedor);
+    ExistenciaBajoConfirmacion existencia =
+        new ExistenciaBajoConfirmacion(inventario, productosDeProveedor, new RelojFalso(AHORA), 2);
+    AprobarBorrador caso =
+        new AprobarBorrador(
+            borradores,
+            publicaciones,
+            mensajes,
+            proveedores,
+            productos,
+            productosDeProveedor,
+            new RepositorioMarcasFijo(),
+            new RepositorioCategoriasFijo(),
+            atributos,
+            new AgregarVariante(productos, atributos, inventario, new RelojFalso(AHORA), false),
+            almacenPrivado,
+            almacenPublico,
+            new ProcesadorNulo(),
+            new CalculadorDePHashPorContenido(),
+            new RelojFalso(AHORA),
+            existencia);
+    Producto producto =
+        caso.ejecutar(
+            comando(
+                List.of(
+                    new FotoAprobada(foto1.id(), "Negro", "#000000"),
+                    new FotoAprobada(foto2.id(), "Vino", null))));
+    List<Variante> variantes = productos.buscarPorId(producto.id()).orElseThrow().variantes();
+    Inventario vendida = inventario.abrirLibroConBloqueo(variantes.get(0).id());
+    vendida.registrarAjuste(-2, "se vendieron", AHORA);
+    inventario.guardar(vendida);
+    Inventario contada = inventario.abrirLibroConBloqueo(variantes.get(1).id());
+    contada.registrarEntrada(3, "se contaron más", AHORA);
+    inventario.guardar(contada);
+
+    existencia.reponer(productos.buscarPorId(producto.id()).orElseThrow());
+
+    assertEquals(
+        2, inventario.buscarPorVarianteId(variantes.get(0).id()).orElseThrow().saldoTotal());
+    assertEquals(
+        5, inventario.buscarPorVarianteId(variantes.get(1).id()).orElseThrow().saldoTotal());
   }
 }

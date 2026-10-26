@@ -85,6 +85,13 @@ public final class BorradorProducto {
    */
   private AjusteDeTalla ajusteDeTalla = AjusteDeTalla.NINGUNO;
 
+  /**
+   * Para quién es el tenis, según la foto o el anuncio (ADR-0089): decide la rama del calzado que
+   * el panel propone al aprobar. Nulo si no es calzado o no se sabe. Lo pone la ingesta y lo
+   * devuelve el adaptador, como el ajuste de talla.
+   */
+  private GeneroDeCalzado generoDeCalzado;
+
   public BorradorProducto(
       UUID id,
       UUID publicacionId,
@@ -369,6 +376,17 @@ public final class BorradorProducto {
 
   public AjusteDeTalla ajusteDeTalla() {
     return ajusteDeTalla;
+  }
+
+  /** Para la ingesta y el adaptador: para quién es el tenis. */
+  public static BorradorProducto conGeneroDeCalzado(
+      BorradorProducto borrador, GeneroDeCalzado genero) {
+    borrador.generoDeCalzado = genero;
+    return borrador;
+  }
+
+  public Optional<GeneroDeCalzado> generoDeCalzado() {
+    return Optional.ofNullable(generoDeCalzado);
   }
 
   /**

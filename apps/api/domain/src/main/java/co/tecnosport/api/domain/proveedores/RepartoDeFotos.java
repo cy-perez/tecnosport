@@ -85,6 +85,77 @@ public final class RepartoDeFotos {
             null));
   }
 
+  /**
+   * <b>Una foto, un producto</b> (ADR-0089, 25 de octubre de 2026). Tenis Al Pie manda una tanda de
+   * 25 a 35 tenis distintos sin SKU y un solo precio al final: con la regla de siempre —sin SKU no
+   * se parte— la tanda entera quedaba en un borrador. Para el proveedor que lo tiene marcado, cada
+   * foto es su propio producto, con su exclusiva para la huella visual: la misma foto en otra tanda
+   * reconoce el producto. Los colores del mismo modelo en fotos distintas se juntan en el panel.
+   *
+   * <p>De una tanda de calzado solo pasan los <b>tenis que se ven solos</b> —sobre una superficie o
+   * en la mano—: la Crocs, la chancla y la bota no se venden, y la foto del tenis puesto no se
+   * publica (decidido por el negocio el 25 de octubre de 2026). La foto sin calzado —la de la caja
+   * vacía— tampoco. Sin lectura no se sabe nada de eso: cada foto sale con el producto del texto, y
+   * quien revisa lo descarta.
+   *
+   * @param calzado si el proveedor es de calzado: entonces solo pasan los tenis solos
+   */
+  public static List<ProductoRepartido> unaPorFoto(
+      ProductoExtraido producto, List<UUID> fotos, LecturaDeFotos lectura, boolean calzado) {
+    Objects.requireNonNull(producto, "El producto del texto no puede ser nulo.");
+    Objects.requireNonNull(fotos, "Las fotos no pueden ser nulas.");
+    List<ProductoRepartido> repartidos = new ArrayList<>(fotos.size());
+    for (int i = 0; i < fotos.size(); i++) {
+      UUID foto = fotos.get(i);
+      List<UUID> propia = List.of(foto);
+      Optional<LecturaDeFoto> leida = lectura == null ? Optional.empty() : lectura.deLaFoto(i);
+      Optional<LecturaDeCalzado> delCalzado = leida.flatMap(LecturaDeFoto::calzadoOpcional);
+      if (calzado && lectura != null) {
+        boolean seVende = delCalzado.map(c -> c.tipo().seVende() && c.productoSolo()).orElse(false);
+        if (!seVende) {
+          continue;
+        }
+      }
+      ProductoExtraido delaFoto =
+          delCalzado.isPresent()
+              ? producto.delTenisDeLaFoto(
+                  delCalzado.get(), leida.map(LecturaDeFoto::marcas).orElse(List.of()))
+              : producto;
+      repartidos.add(
+          new ProductoRepartido(
+              delaFoto,
+              propia,
+              new FotosDelProducto(
+                  ajenas(fotos, propia),
+                  lectura == null ? Map.of() : tonosSugeridos(fotos, lectura, propia),
+                  lectura == null ? null : lectura.jsonCrudo(),
+                  disenoDelTenis(leida, delCalzado)),
+              Respaldo.UNA_POR_FOTO,
+              foto,
+              true,
+              List.of(),
+              false,
+              delCalzado.orElse(null)));
+    }
+    return repartidos;
+  }
+
+  /**
+   * La etiqueta de diseño de un tenis de la tanda: la marca y el modelo que el lector cree ver,
+   * aunque dude, porque solo le sirve al panel para decir «posible mismo diseño» de dos borradores
+   * de la misma tanda —el mismo Shox R4 en negro y en plata—; si no reconoce el modelo, la etiqueta
+   * del lector.
+   */
+  private static String disenoDelTenis(
+      Optional<LecturaDeFoto> leida, Optional<LecturaDeCalzado> calzado) {
+    Optional<String> modelo = calzado.map(LecturaDeCalzado::modelo);
+    if (modelo.isEmpty()) {
+      return leida.map(LecturaDeFoto::diseno).orElse(null);
+    }
+    List<String> marcas = leida.map(LecturaDeFoto::marcas).orElse(List.of());
+    return (String.join(" ", marcas) + " " + modelo.get()).strip().toLowerCase(Locale.ROOT);
+  }
+
   private static ProductoRepartido sinReparto(
       ProductoExtraido producto, List<UUID> fotos, LecturaDeFotos lectura) {
     return new ProductoRepartido(
@@ -408,7 +479,9 @@ public final class RepartoDeFotos {
     /** Por un código o un SKU impreso en la foto. */
     TEXTO_IMPRESO,
     /** Por la marca que se lee en la foto, cuando el texto nombra varias. */
-    MARCA_VISIBLE
+    MARCA_VISIBLE,
+    /** Cada foto es un producto: el proveedor lo tiene marcado (ADR-0089). */
+    UNA_POR_FOTO
   }
 
   /**
@@ -423,6 +496,8 @@ public final class RepartoDeFotos {
    *     la misma referencia (10 de octubre de 2026). Vacía sin reparto
    * @param compartidas lleva fotos que también son de otro producto de la publicación porque no se
    *     supo de cuál eran: la foto sin marca legible de un anuncio de varias marcas
+   * @param calzado lo que el lector vio del tenis de su foto, cuando cada foto es un producto: de
+   *     ahí salen el género y las tallas. Nulo en los demás repartos
    */
   public record ProductoRepartido(
       ProductoExtraido producto,
@@ -432,7 +507,29 @@ public final class RepartoDeFotos {
       UUID exclusiva,
       boolean disenoDeAlbum,
       List<UUID> conSuCodigo,
-      boolean compartidas) {
+      boolean compartidas,
+      LecturaDeCalzado calzado) {
+
+    public ProductoRepartido(
+        ProductoExtraido producto,
+        List<UUID> fotos,
+        FotosDelProducto reparto,
+        Respaldo respaldo,
+        UUID exclusiva,
+        boolean disenoDeAlbum,
+        List<UUID> conSuCodigo,
+        boolean compartidas) {
+      this(
+          producto,
+          fotos,
+          reparto,
+          respaldo,
+          exclusiva,
+          disenoDeAlbum,
+          conSuCodigo,
+          compartidas,
+          null);
+    }
 
     public ProductoRepartido(
         ProductoExtraido producto,
@@ -464,6 +561,10 @@ public final class RepartoDeFotos {
 
     public Optional<UUID> exclusivaOpcional() {
       return Optional.ofNullable(exclusiva);
+    }
+
+    public Optional<LecturaDeCalzado> calzadoOpcional() {
+      return Optional.ofNullable(calzado);
     }
   }
 }

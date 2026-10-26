@@ -265,7 +265,7 @@ class CrearPedidoTest {
    * La variante del primer producto, con el color por confirmar con el proveedor (ADR-0086): un
    * equipo de tecnología cuya lista no marcó el color.
    */
-  private void conColorPorConfirmar() {
+  private void conDisponibilidadPorConfirmar() {
     Variante porConfirmar =
         new Variante(
             variante.id(),
@@ -310,13 +310,14 @@ class CrearPedidoTest {
   }
 
   @Test
-  void unColorPorConfirmarNoSeCompraSinEnlaceNiReservaNada() {
+  void unDisponibilidadPorConfirmarNoSeCompraSinEnlaceNiReservaNada() {
     CrearPedido caso = crear();
     publicarProductoConVarianteYExistencia(2);
-    conColorPorConfirmar();
+    conDisponibilidadPorConfirmar();
 
     assertThrows(
-        ColorPorConfirmarException.class, () -> caso.ejecutar(comando(MetodoPago.WOMPI, 1)));
+        DisponibilidadPorConfirmarException.class,
+        () -> caso.ejecutar(comando(MetodoPago.WOMPI, 1)));
 
     assertEquals(
         2, inventarios.buscarPorVarianteId(variante.id()).orElseThrow().saldoDisponible(AHORA));
@@ -327,7 +328,7 @@ class CrearPedidoTest {
   void conSuEnlaceVigenteSeCompraYLaUnidadApartadaPasaAlPedido() {
     CrearPedido caso = crear();
     publicarProductoConVarianteYExistencia(2);
-    conColorPorConfirmar();
+    conDisponibilidadPorConfirmar();
     String token = enlaceVigente();
     assertEquals(
         1, inventarios.buscarPorVarianteId(variante.id()).orElseThrow().saldoDisponible(AHORA));
@@ -350,7 +351,7 @@ class CrearPedidoTest {
   void laReservaDelPedidoNoVenceAntesQueElEnlace() {
     CrearPedido caso = crear();
     publicarProductoConVarianteYExistencia(1);
-    conColorPorConfirmar();
+    conDisponibilidadPorConfirmar();
     String token = enlaceVigente();
 
     caso.ejecutar(comandoConEnlace(token, 1));
@@ -364,7 +365,7 @@ class CrearPedidoTest {
   void unEnlaceDeOtraVarianteNoCompraEsta() {
     CrearPedido caso = crear();
     publicarProductoConVarianteYExistencia(2);
-    conColorPorConfirmar();
+    conDisponibilidadPorConfirmar();
     var otro =
         co.tecnosport.api.domain.pedido.EnlaceDeCompra.generar(
             UUID.randomUUID(), UUID.randomUUID(), Duration.ofHours(24), AHORA);
@@ -380,7 +381,7 @@ class CrearPedidoTest {
   void elEnlaceSirveUnaSolaVez() {
     CrearPedido caso = crear();
     publicarProductoConVarianteYExistencia(2);
-    conColorPorConfirmar();
+    conDisponibilidadPorConfirmar();
     String token = enlaceVigente();
     caso.ejecutar(comandoConEnlace(token, 1));
 
@@ -393,7 +394,7 @@ class CrearPedidoTest {
   void unEnlaceVencidoNoCompra() {
     CrearPedido caso = crear();
     publicarProductoConVarianteYExistencia(2);
-    conColorPorConfirmar();
+    conDisponibilidadPorConfirmar();
     String token =
         new GenerarEnlaceDeCompra(
                 productos,
@@ -414,7 +415,7 @@ class CrearPedidoTest {
   void unEnlaceInventadoNoCompra() {
     CrearPedido caso = crear();
     publicarProductoConVarianteYExistencia(2);
-    conColorPorConfirmar();
+    conDisponibilidadPorConfirmar();
 
     assertThrows(
         EnlaceDeCompraNoVigenteException.class,
@@ -425,7 +426,7 @@ class CrearPedidoTest {
   void elEnlaceApartaUnaUnidadYNoCompraDos() {
     CrearPedido caso = crear();
     publicarProductoConVarianteYExistencia(5);
-    conColorPorConfirmar();
+    conDisponibilidadPorConfirmar();
     String token = enlaceVigente();
 
     assertThrows(ExcepcionDeDominio.class, () -> caso.ejecutar(comandoConEnlace(token, 2)));

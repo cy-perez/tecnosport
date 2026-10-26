@@ -14,7 +14,9 @@ import co.tecnosport.api.domain.proveedores.ArmadorDeSets.SetArmado;
 import co.tecnosport.api.domain.proveedores.BorradorProducto;
 import co.tecnosport.api.domain.proveedores.CalculadoraDeMargen;
 import co.tecnosport.api.domain.proveedores.CierreDePublicacion;
+import co.tecnosport.api.domain.proveedores.GeneroDeCalzado;
 import co.tecnosport.api.domain.proveedores.HuellaProveedor;
+import co.tecnosport.api.domain.proveedores.LecturaDeCalzado;
 import co.tecnosport.api.domain.proveedores.MensajeProveedor;
 import co.tecnosport.api.domain.proveedores.MotivoDePublicacion;
 import co.tecnosport.api.domain.proveedores.PHash;
@@ -22,7 +24,10 @@ import co.tecnosport.api.domain.proveedores.PrendaAcompanante;
 import co.tecnosport.api.domain.proveedores.ProductoExtraido;
 import co.tecnosport.api.domain.proveedores.Proveedor;
 import co.tecnosport.api.domain.proveedores.PublicacionProveedor;
+import co.tecnosport.api.domain.proveedores.Tallas;
+import co.tecnosport.api.domain.proveedores.TallasPorGenero;
 import co.tecnosport.api.domain.proveedores.TextoDeAnuncio;
+import co.tecnosport.api.domain.proveedores.TipoProductoProveedor;
 import co.tecnosport.api.domain.proveedores.TituloPorGenero;
 import co.tecnosport.api.domain.proveedores.TopeDeCostoPorTipo;
 import co.tecnosport.api.domain.proveedores.TopesDeGanancia;
@@ -136,6 +141,7 @@ public final class ResolverBorrador {
   private final Map<LineaCatalogo, BigDecimal> factorPorLinea;
   private final TopesDeGanancia topesDeGanancia;
   private final int umbralHamming;
+  private final ExistenciaBajoConfirmacion existenciaBajoConfirmacion;
 
   public ResolverBorrador(
       RepositorioBorradores repositorioBorradores,
@@ -148,6 +154,37 @@ public final class ResolverBorrador {
       Map<LineaCatalogo, BigDecimal> factorPorLinea,
       TopesDeGanancia topesDeGanancia,
       int umbralHamming) {
+    this(
+        repositorioBorradores,
+        productosDeProveedor,
+        repositorioProductos,
+        repositorioPublicaciones,
+        almacen,
+        calculadorDePHash,
+        reloj,
+        factorPorLinea,
+        topesDeGanancia,
+        umbralHamming,
+        null);
+  }
+
+  /**
+   * @param existenciaBajoConfirmacion repone lo que se vende bajo confirmación cuando vuelve a
+   *     aparecer (ADR-0089); nula solo donde ningún proveedor vende así
+   */
+  public ResolverBorrador(
+      RepositorioBorradores repositorioBorradores,
+      RepositorioProductosDeProveedor productosDeProveedor,
+      RepositorioProductos repositorioProductos,
+      RepositorioPublicacionesProveedor repositorioPublicaciones,
+      AlmacenDeArchivosDeProveedor almacen,
+      CalculadorDePHash calculadorDePHash,
+      Reloj reloj,
+      Map<LineaCatalogo, BigDecimal> factorPorLinea,
+      TopesDeGanancia topesDeGanancia,
+      int umbralHamming,
+      ExistenciaBajoConfirmacion existenciaBajoConfirmacion) {
+    this.existenciaBajoConfirmacion = existenciaBajoConfirmacion;
     this.repositorioBorradores = Objects.requireNonNull(repositorioBorradores);
     this.productosDeProveedor = Objects.requireNonNull(productosDeProveedor);
     this.repositorioProductos = Objects.requireNonNull(repositorioProductos);
@@ -322,6 +359,25 @@ public final class ResolverBorrador {
       alertasDelSet.add(AlertaBorrador.ACOMPANANTE_SIN_LEER);
     }
     PrendaAcompanante acompanante = set.map(s -> s.armado().acompanante()).orElse(null);
+    // Las tallas que el proveedor de calzado maneja siempre, por el género que se vio en la foto:
+    // el
+    // tenis de dama de Tenis Al Pie va de la 36 a la 39 EUR, el de caballero de la 40 a la 44, y el
+    // unisex con las dos (ADR-0089). Sin género leído, unisex: quien revisa lo corrige.
+    Optional<TallasPorGenero> tallasDelProveedor =
+        extraido.tipo() == TipoProductoProveedor.TENIS
+            ? proveedor.ajustesDeIngesta().tallasPorGeneroOpcional()
+            : Optional.empty();
+    GeneroDeCalzado genero =
+        evaluada
+            .calzadoOpcional()
+            .flatMap(LecturaDeCalzado::generoOpcional)
+            .orElse(
+                tallasDelProveedor.isPresent() || evaluada.calzadoOpcional().isPresent()
+                    ? GeneroDeCalzado.UNISEX
+                    : null);
+    if (tallasDelProveedor.isPresent()) {
+      extraido = extraido.conTallas(Tallas.lista(tallasDelProveedor.get().delProveedor(genero)));
+    }
     Optional<String> codigo = extraido.codigoReferenciaOpcional();
     HuellaProveedor delTexto =
         extraido.tituloOpcional().isPresent() && precio != null
@@ -458,16 +514,32 @@ public final class ResolverBorrador {
     set.ifPresent(s -> BorradorProducto.conSet(borrador, s.armado()));
     // Un bolso, un morral o una tula del mismo anuncio no tallan: ni se corren ni se parten.
     boolean talla = extraido.linea() != LineaCatalogo.BOLSOS;
+    BorradorProducto.conGeneroDeCalzado(borrador, genero);
+    if (tallasDelProveedor.isPresent()) {
+      // Las del proveedor ya son las de su género: se corren con su ajuste, y el texto no las
+      // vuelve a correr ni las parte.
+      BorradorProducto.conTallasCorridas(borrador, tallasDelProveedor.get().ajuste());
+      repositorioBorradores.guardar(borrador);
+      return new Resolucion(TipoDeResolucion.NUEVO, borrador.alertas(), null);
+    }
     Optional<AjusteDelAnuncio.PorGenero> porGenero =
         talla ? AjusteDelAnuncio.porGenero(textoDelAnuncio) : Optional.empty();
     if (porGenero.isPresent()) {
       // «Horma normal Dama, Aumenta 1 Cab»: el mismo par es la 42 de dama y la 41 de caballero.
       // Un borrador por género, cada uno con sus tallas y su ajuste (ADR-0085).
+      // El título de un tenis no lleva el género: queda en la categoría (ADR-0089).
       String titulo = borrador.titulo().orElse(null);
+      boolean tenis = extraido.tipo() == TipoProductoProveedor.TENIS;
       BorradorProducto caballero =
           borrador.delOtroGenero(
-              TituloPorGenero.para(titulo, "caballero"), porGenero.get().caballero(), ahora);
-      borrador.titularPorGenero(TituloPorGenero.para(titulo, "dama"));
+              tenis ? titulo : TituloPorGenero.para(titulo, "caballero"),
+              porGenero.get().caballero(),
+              ahora);
+      if (!tenis) {
+        borrador.titularPorGenero(TituloPorGenero.para(titulo, "dama"));
+      }
+      BorradorProducto.conGeneroDeCalzado(borrador, GeneroDeCalzado.DAMA);
+      BorradorProducto.conGeneroDeCalzado(caballero, GeneroDeCalzado.CABALLERO);
       BorradorProducto.conTallasCorridas(borrador, porGenero.get().dama());
       repositorioBorradores.guardar(borrador);
       repositorioBorradores.guardar(caballero);
@@ -600,6 +672,12 @@ public final class ResolverBorrador {
       tipo = TipoDeResolucion.RENOVACION;
     }
     repositorioProductos.actualizar(producto);
+    // Lo que se vende bajo confirmación vuelve a la existencia nominal cuando reaparece (ADR-0089).
+    if (!extraido.estaAgotado()
+        && proveedor.ajustesDeIngesta().ventaBajoConfirmacion()
+        && existenciaBajoConfirmacion != null) {
+      existenciaBajoConfirmacion.reponer(producto);
+    }
     // El de caballero de un anuncio unisex vive y se agota con el de dama: es el mismo par en otra
     // talla (ADR-0085). Sin esto, un «AGOTADO» dejaba a la venta al otro sin existencias.
     gemeloDe(proveedor.id(), producto)

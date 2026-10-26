@@ -59,18 +59,18 @@ public final class GenerarEnlaceDeCompra {
             .filter(Variante::seVende)
             .findFirst()
             .orElseThrow(() -> new VarianteNoEncontradaException(varianteId));
-    if (!variante.colorPorConfirmar()) {
+    if (!variante.disponibilidadPorConfirmar()) {
       throw new ExcepcionDeDominio(
-          "El color de "
-              + producto.nombre()
-              + " ya está confirmado por la lista del proveedor: se compra sin enlace.");
+          producto.nombre()
+              + " no se confirma con el proveedor antes de venderse: se compra sin enlace.");
     }
 
     Instant ahora = reloj.ahora();
     Inventario libro = repositorioInventario.abrirLibroConBloqueo(varianteId);
     boolean entradaPropia = libro.saldoDisponible(ahora) < 1;
     if (entradaPropia) {
-      libro.registrarEntrada(1, "El proveedor confirmó el color para un enlace de compra", ahora);
+      libro.registrarEntrada(
+          1, "El proveedor confirmó la disponibilidad para un enlace de compra", ahora);
     }
     MovimientoInventario reserva = libro.reservar(1, vigencia, ahora);
     repositorioInventario.guardar(libro);

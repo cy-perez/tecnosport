@@ -406,14 +406,14 @@ public final class CrearPedido {
             : repositorioEnlaces
                 .buscarParaUsar(token.strip(), variante.id())
                 .filter(e -> e.vigente(ahora));
-    if (!variante.colorPorConfirmar()) {
+    if (!variante.disponibilidadPorConfirmar()) {
       return enlace;
     }
     if (enlace.isEmpty()) {
       if (token != null && !token.isBlank()) {
         throw new EnlaceDeCompraNoVigenteException();
       }
-      throw new ColorPorConfirmarException(producto.nombre(), detalleDe(variante));
+      throw new DisponibilidadPorConfirmarException(producto.nombre(), detalleDe(variante));
     }
     if (linea.cantidad() != 1) {
       throw new ExcepcionDeDominio(

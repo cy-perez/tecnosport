@@ -176,7 +176,7 @@ public final class AprobarBorradorTecnologia {
     // de las fotos, y es con ella que se sabe si el modelo tiene un único color (ADR-0086).
     List<String> paleta =
         producto.paleta().isEmpty() ? borrador.modelo().paleta() : producto.paleta();
-    Map<UUID, Boolean> colorPorConfirmar = new HashMap<>();
+    Map<UUID, Boolean> disponibilidadPorConfirmar = new HashMap<>();
     for (ConfiguracionTecnologia c : borrador.configuracionesQueSeVenden()) {
       List<String> marcados =
           ConfirmacionDeColor.marcadosSegunLosSugeridos(paleta, c.coloresSugeridos());
@@ -204,11 +204,11 @@ public final class AprobarBorradorTecnologia {
                 color,
                 c.costoProveedor(),
                 borrador.vistoEn()));
-        colorPorConfirmar.put(
+        disponibilidadPorConfirmar.put(
             creada.variante().id(), ConfirmacionDeColor.requiere(paleta, marcados, color));
       }
     }
-    productosDeProveedor.marcarColoresPorConfirmar(colorPorConfirmar);
+    productosDeProveedor.marcarDisponibilidadesPorConfirmar(disponibilidadPorConfirmar);
 
     if (borrador.productoId().isEmpty()) {
       // Releído: agregarVariante dejó las variantes guardadas y el agregado en memoria no las ve.

@@ -14,4 +14,4 @@ public record VarianteResumenAdminRespuesta(
     List<AtributoValorRespuesta> atributos,
     @Schema(requiredMode = Schema.RequiredMode.REQUIRED) long precio,
     /** Su color de tecnología se confirma con el proveedor antes de venderse (ADR-0086). */
-    @Schema(requiredMode = Schema.RequiredMode.REQUIRED) boolean colorPorConfirmar) {}
+    @Schema(requiredMode = Schema.RequiredMode.REQUIRED) boolean disponibilidadPorConfirmar) {}

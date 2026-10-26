@@ -145,7 +145,7 @@ public final class ImportarListaDeTecnologia {
     // Variante → existencia libre que tiene que quedar. Ordenado por id: es el orden de bloqueo.
     Map<UUID, Integer> objetivos = new TreeMap<>();
     // Variante → si su color hay que confirmarlo con el proveedor antes de venderla (ADR-0086).
-    Map<UUID, Boolean> colorPorConfirmar = new HashMap<>();
+    Map<UUID, Boolean> disponibilidadPorConfirmar = new HashMap<>();
 
     for (String desaparecida : comando.configuracionesDesaparecidas()) {
       for (VarianteDeProveedor v :
@@ -188,7 +188,7 @@ public final class ImportarListaDeTecnologia {
           List<String> marcados = comando.marcadosDe(c, entrada.modelo().paleta());
           for (VarianteDeProveedor v : variantes) {
             variantesDeProveedor.guardar(v.conCosto(c.costoProveedor(), visto));
-            colorPorConfirmar.put(
+            disponibilidadPorConfirmar.put(
                 v.varianteId(),
                 ConfirmacionDeColor.requiere(existente.paleta(), marcados, v.color()));
             objetivos.put(v.varianteId(), hoyLoTiene(c, v.color()) ? existenciaPorVariante : 0);
@@ -249,7 +249,7 @@ public final class ImportarListaDeTecnologia {
     }
 
     listas.registrar(proveedor.id(), comando.fechaLista(), huellaDeLista, ahora);
-    productosDeProveedor.marcarColoresPorConfirmar(colorPorConfirmar);
+    productosDeProveedor.marcarDisponibilidadesPorConfirmar(disponibilidadPorConfirmar);
 
     for (Map.Entry<UUID, Integer> objetivo : objetivos.entrySet()) {
       Inventario libro = repositorioInventario.abrirLibroConBloqueo(objetivo.getKey());

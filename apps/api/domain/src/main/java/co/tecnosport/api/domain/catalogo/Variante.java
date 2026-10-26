@@ -47,7 +47,7 @@ public final class Variante {
   private final List<ValorAtributo> atributos;
   private final SetRotacion setRotacionPropio;
   private final boolean agotadaPorProveedor;
-  private final boolean colorPorConfirmar;
+  private final boolean disponibilidadPorConfirmar;
 
   public Variante(
       UUID id,
@@ -100,8 +100,8 @@ public final class Variante {
   /**
    * Reconstrucción completa.
    *
-   * @param colorPorConfirmar el color de esta variante de tecnología nadie lo ha confirmado con el
-   *     proveedor (ADR-0086): no se compra sin un enlace de compra
+   * @param disponibilidadPorConfirmar el color de esta variante de tecnología nadie lo ha
+   *     confirmado con el proveedor (ADR-0086): no se compra sin un enlace de compra
    */
   public Variante(
       UUID id,
@@ -114,7 +114,7 @@ public final class Variante {
       List<ValorAtributo> atributos,
       SetRotacion setRotacionPropio,
       boolean agotadaPorProveedor,
-      boolean colorPorConfirmar) {
+      boolean disponibilidadPorConfirmar) {
     this.id = Objects.requireNonNull(id, "El id de la variante no puede ser nulo.");
     this.sku = Objects.requireNonNull(sku, "El SKU de la variante no puede ser nulo.");
     this.precio = Objects.requireNonNull(precio, "El precio de la variante no puede ser nulo.");
@@ -128,7 +128,7 @@ public final class Variante {
     this.atributos = List.copyOf(Objects.requireNonNullElse(atributos, List.of()));
     this.setRotacionPropio = setRotacionPropio;
     this.agotadaPorProveedor = agotadaPorProveedor;
-    this.colorPorConfirmar = colorPorConfirmar;
+    this.disponibilidadPorConfirmar = disponibilidadPorConfirmar;
   }
 
   public static Variante crear(
@@ -173,7 +173,7 @@ public final class Variante {
         atributos,
         setRotacionPropio,
         agotadaPorProveedor,
-        colorPorConfirmar);
+        disponibilidadPorConfirmar);
   }
 
   /**
@@ -200,7 +200,7 @@ public final class Variante {
         atributos,
         setRotacionPropio,
         agotadaPorProveedor,
-        colorPorConfirmar);
+        disponibilidadPorConfirmar);
   }
 
   /**
@@ -226,7 +226,7 @@ public final class Variante {
         con,
         setRotacionPropio,
         agotadaPorProveedor,
-        colorPorConfirmar);
+        disponibilidadPorConfirmar);
   }
 
   /**
@@ -254,7 +254,7 @@ public final class Variante {
         con,
         setRotacionPropio,
         agotadaPorProveedor,
-        colorPorConfirmar);
+        disponibilidadPorConfirmar);
   }
 
   /** Su talla, si tiene: el valor del atributo que es eje de talla. */
@@ -322,8 +322,8 @@ public final class Variante {
    * de tecnología: la lista del proveedor rara vez dice colores, y la paleta oficial dice qué
    * colores existen, no cuáles tiene hoy.
    */
-  public boolean colorPorConfirmar() {
-    return colorPorConfirmar;
+  public boolean disponibilidadPorConfirmar() {
+    return disponibilidadPorConfirmar;
   }
 
   /** Si quien compra la puede elegir: activa y sin agotar por el proveedor. */

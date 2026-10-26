@@ -348,10 +348,11 @@
       </section>
     }
 
-    <!-- La paleta del modelo y los enlaces de compra de los colores por confirmar (ADR-0086). Solo
-         en tecnología: es la única línea cuyo color se confirma con el proveedor. -->
+    <!-- La paleta del modelo y los enlaces de compra de los colores por confirmar (ADR-0086), en
+         tecnología; y los de las tallas por confirmar del calzado que se vende bajo confirmación
+         (ADR-0089), en cuanto tenga alguna. -->
     @if (consulta.data(); as producto) {
-      @if (producto.categoria.linea === 'TECNOLOGIA') {
+      @if (producto.categoria.linea === 'TECNOLOGIA' || tieneVariantesPorConfirmar(producto)) {
         <ts-colores-tecnologia
           class="mt-32 block border-t border-ts-borde pt-24"
           [producto]="producto"

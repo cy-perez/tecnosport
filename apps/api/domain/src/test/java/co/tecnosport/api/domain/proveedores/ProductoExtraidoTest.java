@@ -318,7 +318,8 @@ class ProductoExtraidoTest {
 
   /**
    * Imperio Wicho, 9 de octubre de 2026: «Importado» sin «1.1» ni «AAA». El modelo lo marcó como
-   * réplica, y no se le cree: el texto no lo respalda.
+   * réplica, y no se le cree: el texto no lo respalda. Sin marca, el título es el de un tenis sin
+   * marca (ADR-0089): ni el género ni «tipo media» quedan en él.
    */
   @Test
   void importadoNoEsReplicaAunqueElExtractorLoDiga() {
@@ -329,8 +330,7 @@ class ProductoExtraidoTest {
         tenis("Tenis para caballero tipo media ultraliviano", true).contrastadoCon(texto);
 
     assertFalse(contrastado.esReplica());
-    assertEquals(
-        Optional.of("Tenis para caballero tipo media ultraliviano"), contrastado.tituloOpcional());
+    assertEquals(Optional.of("Tenis importados"), contrastado.tituloOpcional());
   }
 
   /** Cuando el texto escribe «réplica», al extractor sí se le cree. */

@@ -819,7 +819,7 @@ describe('ConfirmarPage', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Confirmar pedido' }));
 
-    expect(await screen.findByText(esCheckout.confirmar.color_por_confirmar)).toBeTruthy();
+    expect(await screen.findByText(esCheckout.confirmar.disponibilidad_por_confirmar)).toBeTruthy();
   });
 
   /**

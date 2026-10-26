@@ -116,8 +116,8 @@ class CodigosDeCableTest {
           Map.entry(RetiroEnPuntoNoDisponibleException.class, "RETIRO_EN_PUNTO_NO_DISPONIBLE"),
           Map.entry(TransportadoraNoDisponibleException.class, "TRANSPORTADORA_NO_DISPONIBLE"),
           Map.entry(
-              co.tecnosport.api.application.pedido.ColorPorConfirmarException.class,
-              "COLOR_POR_CONFIRMAR"),
+              co.tecnosport.api.application.pedido.DisponibilidadPorConfirmarException.class,
+              "DISPONIBILIDAD_POR_CONFIRMAR"),
           Map.entry(
               co.tecnosport.api.domain.pedido.EnlaceDeCompraNoVigenteException.class,
               "ENLACE_DE_COMPRA_NO_VIGENTE"),

@@ -90,7 +90,7 @@ export interface Variante {
    * Su color de tecnología no está confirmado con el proveedor (ADR-0086): se elige en la ficha,
    * pero se compra con el enlace que llega por WhatsApp cuando el proveedor confirma que lo tiene.
    */
-  readonly colorPorConfirmar: boolean;
+  readonly disponibilidadPorConfirmar: boolean;
 }
 
 export interface Marca {
@@ -252,7 +252,7 @@ export function precioDesde(producto: Producto): Dinero | null {
  * paleta del fabricante— y aun así es justo lo que se quiere poder preguntar.
  */
 export function seElige(variante: Variante): boolean {
-  return variante.disponible || variante.colorPorConfirmar;
+  return variante.disponible || variante.disponibilidadPorConfirmar;
 }
 
 export function hayExistencia(producto: Producto): boolean {

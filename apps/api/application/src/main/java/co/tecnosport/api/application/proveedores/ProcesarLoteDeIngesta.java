@@ -452,7 +452,12 @@ public final class ProcesarLoteDeIngesta {
       Progreso progreso) {
     List<ExtraccionEvaluada> evaluadas;
     try {
-      evaluadas = extraer.ejecutar(publicacion, mensajes, proveedor.linea());
+      evaluadas =
+          extraer.ejecutar(
+              publicacion,
+              mensajes,
+              proveedor.linea(),
+              proveedor.ajustesDeIngesta().unaFotoUnProducto());
     } catch (ExtraccionFallidaException e) {
       fallarPublicacion(
           publicacion,

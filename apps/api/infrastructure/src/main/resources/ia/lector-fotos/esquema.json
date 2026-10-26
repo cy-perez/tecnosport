@@ -9,7 +9,16 @@
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["foto", "codigos", "pie", "colores", "diseno", "marcas", "tallas"],
+        "required": [
+          "foto",
+          "codigos",
+          "pie",
+          "colores",
+          "diseno",
+          "marcas",
+          "tallas",
+          "calzado"
+        ],
         "properties": {
           "foto": { "type": "integer" },
           "codigos": { "type": "array", "items": { "type": "string" } },
@@ -29,7 +38,22 @@
           "colores": { "type": "array", "items": { "type": "string" } },
           "diseno": { "type": ["string", "null"] },
           "marcas": { "type": "array", "items": { "type": "string" } },
-          "tallas": { "type": "array", "items": { "type": "string" } }
+          "tallas": { "type": "array", "items": { "type": "string" } },
+          "calzado": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["tipo", "modelo", "modelo_seguro", "genero", "producto_solo"],
+            "properties": {
+              "tipo": {
+                "type": "string",
+                "enum": ["no_es_calzado", "tenis", "chancla", "sandalia", "zueco", "bota", "otro"]
+              },
+              "modelo": { "type": "string" },
+              "modelo_seguro": { "type": "boolean" },
+              "genero": { "type": "string", "enum": ["dama", "caballero", "unisex", "no_se_sabe"] },
+              "producto_solo": { "type": "boolean" }
+            }
+          }
         }
       }
     }

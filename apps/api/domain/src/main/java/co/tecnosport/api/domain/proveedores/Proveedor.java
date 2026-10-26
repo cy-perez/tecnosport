@@ -99,6 +99,9 @@ public final class Proveedor {
    */
   private boolean armaSets;
 
+  /** Lo que su chat tiene de distinto: ver {@link AjustesDeIngesta}. */
+  private AjustesDeIngesta ajustesDeIngesta = AjustesDeIngesta.POR_OMISION;
+
   public Proveedor(
       UUID id,
       String nombre,
@@ -270,6 +273,27 @@ public final class Proveedor {
 
   public boolean armaSets() {
     return armaSets;
+  }
+
+  /**
+   * Define cómo se ingiere su chat. Solo quien entra por la exportación del chat tiene un chat que
+   * ingerir, y solo el calzado tiene tallas por género; el adaptador lo usa también para devolverlo
+   * como estaba guardado.
+   */
+  public void definirAjustesDeIngesta(AjustesDeIngesta ajustes) {
+    AjustesDeIngesta definidos = ajustes == null ? AjustesDeIngesta.POR_OMISION : ajustes;
+    if (!definidos.porOmision() && !entraPorExportacion()) {
+      throw new ExcepcionDeDominio(
+          "Solo un proveedor que entra por la exportación del chat tiene ajustes de ingesta.");
+    }
+    if (definidos.tallasPorGenero() != null && linea != LineaCatalogo.CALZADO) {
+      throw new ExcepcionDeDominio("Solo un proveedor de calzado tiene tallas por género.");
+    }
+    this.ajustesDeIngesta = definidos;
+  }
+
+  public AjustesDeIngesta ajustesDeIngesta() {
+    return ajustesDeIngesta;
   }
 
   /**

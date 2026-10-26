@@ -80,7 +80,7 @@
 
         @if (enlaceNoVigente()) {
           <p class="m-0 text-sm text-ts-error" role="alert">
-            {{ 'catalogo.ficha.enlace_no_vigente' | transloco }}
+            {{ 'catalogo.ficha.enlace_no_vigente.' + queSeConfirma() | transloco }}
           </p>
         }
 
@@ -107,10 +107,11 @@
           @if (varianteActiva(); as variante) {
             <ts-precio [valor]="variante.precio.valor" [moneda]="variante.precio.moneda" />
             @if (consultaPorWhatsapp()) {
-              <!-- Un color de tecnología sin confirmar se pregunta antes de comprarse (ADR-0086).
-                   Un enlace y no un botón: abre el chat, no hace nada en esta página. -->
+              <!-- El color de un equipo o la talla de un tenis sin confirmar se preguntan antes de
+                   comprarse (ADR-0086, ADR-0089). Un enlace y no un botón: abre el chat, no hace
+                   nada en esta página. -->
               <p class="m-0 basis-full text-sm text-ts-texto-suave">
-                {{ 'catalogo.ficha.color_por_confirmar' | transloco }}
+                {{ 'catalogo.ficha.por_confirmar.' + queSeConfirma() | transloco }}
               </p>
               <ts-boton
                 variante="primario"
@@ -122,7 +123,10 @@
             } @else {
               @if (enlaceDeLaVariante()) {
                 <p class="m-0 basis-full text-sm text-ts-exito">
-                  {{ 'catalogo.ficha.enlace_vigente' | transloco: { fecha: vigenteHasta() } }}
+                  {{
+                    'catalogo.ficha.enlace_vigente.' + queSeConfirma()
+                      | transloco: { fecha: vigenteHasta() }
+                  }}
                 </p>
               } @else {
                 <ts-etiqueta-stock [disponible]="variante.disponible" />

@@ -13,6 +13,7 @@ import co.tecnosport.api.domain.proveedores.ArmadoDeSet;
 import co.tecnosport.api.domain.proveedores.BorradorProducto;
 import co.tecnosport.api.domain.proveedores.EstadoBorrador;
 import co.tecnosport.api.domain.proveedores.FotoSubida;
+import co.tecnosport.api.domain.proveedores.GeneroDeCalzado;
 import co.tecnosport.api.domain.proveedores.HuellaProveedor;
 import co.tecnosport.api.domain.proveedores.OrigenDelCostoDeSet;
 import co.tecnosport.api.domain.proveedores.PHash;
@@ -224,6 +225,7 @@ public class RepositorioBorradoresJpa implements RepositorioBorradores {
             ahora);
     fila.setDiseno(b.diseno().orElse(null));
     fila.setAjusteDeTalla(b.ajusteDeTalla().tallas());
+    fila.setGeneroDeCalzado(b.generoDeCalzado().map(Enum::name).orElse(null));
     fila.setSet(
         b.set().map(set -> set.acompanante().name()).orElse(null),
         b.set().map(set -> set.origenDelCosto().name()).orElse(null));
@@ -281,6 +283,9 @@ public class RepositorioBorradoresJpa implements RepositorioBorradores {
         BorradorProducto.conAjusteDeTalla(
             BorradorProducto.conDiseno(borrador, f.getDiseno()),
             new AjusteDeTalla(f.getAjusteDeTalla()));
+    BorradorProducto.conGeneroDeCalzado(
+        conDiseno,
+        f.getGeneroDeCalzado() == null ? null : GeneroDeCalzado.valueOf(f.getGeneroDeCalzado()));
     return f.getSetAcompanante() == null || f.getSetOrigenDelCosto() == null
         ? conDiseno
         : BorradorProducto.conSet(

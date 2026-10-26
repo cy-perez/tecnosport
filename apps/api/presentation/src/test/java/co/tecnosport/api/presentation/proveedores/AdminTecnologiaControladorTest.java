@@ -827,7 +827,8 @@ class AdminTecnologiaControladorTest {
     public void cambiarDisponibilidadDeVariantes(List<UUID> varianteIds, boolean aLaVenta) {}
 
     @Override
-    public void marcarColoresPorConfirmar(java.util.Map<UUID, Boolean> porConfirmarPorVariante) {}
+    public void marcarDisponibilidadesPorConfirmar(
+        java.util.Map<UUID, Boolean> porConfirmarPorVariante) {}
   }
 
   /** El bucket privado del proveedor, en memoria. */

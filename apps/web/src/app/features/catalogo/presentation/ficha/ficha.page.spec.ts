@@ -129,7 +129,7 @@ function productoDePrueba(): Producto {
         sku: 'SKU-1',
         precio: { valor: 150_000, moneda: 'COP' },
         disponible: true,
-        colorPorConfirmar: false,
+        disponibilidadPorConfirmar: false,
         atributos: [],
       },
     ],
@@ -163,7 +163,7 @@ function productoConVariantes(): Producto {
         sku: 'SKU-AZ',
         precio: { valor: 89_900, moneda: 'COP' },
         disponible: true,
-        colorPorConfirmar: false,
+        disponibilidadPorConfirmar: false,
         atributos: [{ nombre: 'Color', valor: 'Azul marino', colorHex: '#1E3A8A', unidad: null }],
       },
       {
@@ -171,7 +171,7 @@ function productoConVariantes(): Producto {
         sku: 'SKU-NG',
         precio: { valor: 99_900, moneda: 'COP' },
         disponible: true,
-        colorPorConfirmar: false,
+        disponibilidadPorConfirmar: false,
         atributos: [{ nombre: 'Color', valor: 'Negro', colorHex: '#111111', unidad: null }],
       },
     ],
@@ -835,7 +835,7 @@ describe('FichaPage', () => {
           sku: 'PRV-1',
           precio: { valor: 60_000, moneda: 'COP' },
           disponible: true,
-          colorPorConfirmar: false,
+          disponibilidadPorConfirmar: false,
           atributos: [{ nombre: 'Talla', valor: 'Única', colorHex: null, unidad: null }],
         },
       ],
@@ -870,7 +870,7 @@ describe('FichaPage', () => {
           sku: 'SKU-M',
           precio: { valor: 50_000, moneda: 'COP' },
           disponible: true,
-          colorPorConfirmar: false,
+          disponibilidadPorConfirmar: false,
           atributos: talla('M'),
         },
         {
@@ -878,7 +878,7 @@ describe('FichaPage', () => {
           sku: 'SKU-L',
           precio: { valor: 50_000, moneda: 'COP' },
           disponible: false,
-          colorPorConfirmar: false,
+          disponibilidadPorConfirmar: false,
           atributos: talla('L'),
         },
       ],
@@ -909,7 +909,7 @@ describe('FichaPage', () => {
       precio: { valor: 50_000, moneda: 'COP' as const },
       disponible,
       atributos: atributos(color, hex, t),
-      colorPorConfirmar: false,
+      disponibilidadPorConfirmar: false,
     });
     const camiseta: Producto = {
       ...productoDePrueba(),
@@ -959,7 +959,7 @@ describe('FichaPage', () => {
           sku: 'CEL-128',
           precio: { valor: 900_000, moneda: 'COP' },
           disponible: true,
-          colorPorConfirmar: false,
+          disponibilidadPorConfirmar: false,
           atributos: atributos('128GB', '6GB'),
         },
         {
@@ -967,7 +967,7 @@ describe('FichaPage', () => {
           sku: 'CEL-256',
           precio: { valor: 1_100_000, moneda: 'COP' },
           disponible: true,
-          colorPorConfirmar: false,
+          disponibilidadPorConfirmar: false,
           atributos: atributos('256GB', '8GB'),
         },
       ],
@@ -1136,7 +1136,7 @@ describe('FichaPage', () => {
           sku: 'IPH-NE',
           precio: { valor: 6_000_000, moneda: 'COP' },
           disponible: true,
-          colorPorConfirmar: false,
+          disponibilidadPorConfirmar: false,
           atributos: color('Negro', '#111111'),
         },
         {
@@ -1144,7 +1144,7 @@ describe('FichaPage', () => {
           sku: 'IPH-MO',
           precio: { valor: 6_000_000, moneda: 'COP' },
           disponible: false,
-          colorPorConfirmar: true,
+          disponibilidadPorConfirmar: true,
           atributos: color('Morado', '#6B3FA0'),
         },
       ],
@@ -1225,6 +1225,45 @@ describe('FichaPage', () => {
           'Este enlace de compra ya no está vigente. Escríbenos por WhatsApp y te confirmamos el color de nuevo.',
         ),
       ).toBeTruthy();
+    });
+  });
+
+  describe('la talla de un tenis por confirmar (ADR-0089)', () => {
+    const tenis = (): Producto => ({
+      ...productoDePrueba(),
+      slug: 'tenis-importados-estilo-nike-air-force-1',
+      nombre: 'Tenis importados estilo Nike Air Force 1',
+      categoria: { ...productoDePrueba().categoria, nombre: 'Unisex', linea: 'CALZADO' },
+      variantes: [
+        {
+          id: 'v-40',
+          sku: 'PRV-40',
+          precio: { valor: 162_000, moneda: 'COP' },
+          disponible: true,
+          disponibilidadPorConfirmar: true,
+          atributos: [{ nombre: 'Talla', valor: '40', colorHex: null, unidad: null }],
+        },
+      ],
+    });
+    const repositorio: RepositorioProductos = {
+      buscar: () =>
+        Promise.resolve<ResultadoPaginado<Producto>>({ items: [], cursorSiguiente: null }),
+      buscarPorSlug: () => Promise.resolve(tenis()),
+    };
+
+    it('pregunta por la talla, no por el color', async () => {
+      await renderFicha(repositorio, 'tenis-importados-estilo-nike-air-force-1');
+      await screen.findByRole('heading', { name: 'Tenis importados estilo Nike Air Force 1' });
+
+      expect(
+        screen.getByText('Tu talla la confirmamos con nuestro proveedor antes de que lo compres.'),
+      ).toBeTruthy();
+      const chat = screen.getByRole('link', {
+        name: 'Consultar disponibilidad por WhatsApp (se abre en otra pestaña)',
+      });
+      const mensaje = decodeURIComponent((chat.getAttribute('href') ?? '').split('?text=')[1]);
+      expect(mensaje).toContain('¿Tienen esta talla disponible?');
+      expect(screen.queryByRole('button', { name: 'Agregar al carrito' })).toBeNull();
     });
   });
 });

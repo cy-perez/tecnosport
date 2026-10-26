@@ -111,6 +111,10 @@ public class BorradorProductoJpaEntity {
   @Column(name = "ajuste_de_talla", nullable = false)
   private int ajusteDeTalla;
 
+  /** Para quién es el tenis (V119); nulo si no es calzado o no se sabe. */
+  @Column(name = "genero_de_calzado")
+  private String generoDeCalzado;
+
   @Column(nullable = false)
   private String estado;
 
@@ -248,6 +252,15 @@ public class BorradorProductoJpaEntity {
   /** Fuera del constructor, como el diseño. */
   public void setAjusteDeTalla(int ajusteDeTalla) {
     this.ajusteDeTalla = ajusteDeTalla;
+  }
+
+  public String getGeneroDeCalzado() {
+    return generoDeCalzado;
+  }
+
+  /** Fuera del constructor, como el diseño. */
+  public void setGeneroDeCalzado(String generoDeCalzado) {
+    this.generoDeCalzado = generoDeCalzado;
   }
 
   /** Ids de mensaje separados por salto de línea, en orden; nulo si no hay. */

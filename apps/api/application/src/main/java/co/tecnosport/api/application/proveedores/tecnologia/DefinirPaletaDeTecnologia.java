@@ -76,7 +76,7 @@ public final class DefinirPaletaDeTecnologia {
     for (VarianteDeProveedor v : vinculos) {
       porConfiguracion.computeIfAbsent(v.configuracion(), k -> new ArrayList<>()).add(v);
     }
-    Map<UUID, Boolean> colorPorConfirmar = new HashMap<>();
+    Map<UUID, Boolean> disponibilidadPorConfirmar = new HashMap<>();
     int nacidas = 0;
     for (Map.Entry<String, List<VarianteDeProveedor>> entrada : porConfiguracion.entrySet()) {
       List<VarianteDeProveedor> hermanas = entrada.getValue();
@@ -112,13 +112,13 @@ public final class DefinirPaletaDeTecnologia {
                 color,
                 costoDeHoy.costo(),
                 costoDeHoy.actualizadoEn()));
-        colorPorConfirmar.put(
+        disponibilidadPorConfirmar.put(
             creada.variante().id(),
             ConfirmacionDeColor.requiere(producto.paleta(), List.of(), color));
         nacidas++;
       }
     }
-    productosDeProveedor.marcarColoresPorConfirmar(colorPorConfirmar);
+    productosDeProveedor.marcarDisponibilidadesPorConfirmar(disponibilidadPorConfirmar);
     return nacidas;
   }
 

@@ -153,6 +153,56 @@ describe('FormularioProveedorAdminPage', () => {
     expect(repositorio.creados[0]).toMatchObject({ nombre: 'La Riverah', armaSets: true });
   });
 
+  /** Tenis Al Pie (ADR-0089): una foto por producto, bajo confirmación, cinco días y tallas EUR. */
+  it('manda los ajustes de ingesta de un proveedor de calzado', async () => {
+    const { repositorio, fixture } = await renderPagina();
+    vi.spyOn(fixture.debugElement.injector.get(Router), 'navigate').mockResolvedValue(true);
+
+    escribir(f.nombre, 'Tenis Al Pie');
+    escribir(f.remitente, 'tenis.alpie');
+    escribir(f.telefono, '573000000000');
+    fireEvent.change(screen.getByLabelText(f.linea), { target: { value: 'CALZADO' } });
+    fireEvent.change(screen.getByLabelText(f.orden), { target: { value: 'FOTOS_PRIMERO' } });
+    escribir(f.margen, '1,20');
+    fireEvent.click(await screen.findByLabelText(f.unaFotoUnProducto));
+    fireEvent.click(screen.getByLabelText(f.ventaBajoConfirmacion));
+    escribir(f.diasDeVigencia, '5');
+    escribir(f.tallasDama, '36 37 38 39');
+    escribir(f.tallasCaballero, '40, 41, 42, 43, 44');
+    escribir(f.ajusteDeTalla, '1');
+    fireEvent.click(screen.getByRole('button', { name: f.crear }));
+
+    await vi.waitFor(() => expect(repositorio.creados).toHaveLength(1));
+    expect(repositorio.creados[0].ajustesDeIngesta).toEqual({
+      unaFotoUnProducto: true,
+      ventaBajoConfirmacion: true,
+      diasDeVigencia: 5,
+      tallasPorGenero: {
+        dama: ['36', '37', '38', '39'],
+        caballero: ['40', '41', '42', '43', '44'],
+        ajuste: 1,
+      },
+    });
+  });
+
+  /** Una talla que no es número no se manda: el servidor la rechazaría con un error genérico. */
+  it('no manda tallas que no son números', async () => {
+    const { repositorio } = await renderPagina();
+
+    escribir(f.nombre, 'Tenis Al Pie');
+    escribir(f.remitente, 'tenis.alpie');
+    escribir(f.telefono, '573000000000');
+    fireEvent.change(screen.getByLabelText(f.linea), { target: { value: 'CALZADO' } });
+    fireEvent.change(screen.getByLabelText(f.orden), { target: { value: 'FOTOS_PRIMERO' } });
+    escribir(f.margen, '1,20');
+    await screen.findByLabelText(f.tallasDama);
+    escribir(f.tallasDama, 'M L');
+    fireEvent.click(screen.getByRole('button', { name: f.crear }));
+
+    expect(await screen.findByText(f.ajustesInvalidos)).toBeTruthy();
+    expect(repositorio.creados).toEqual([]);
+  });
+
   /** El conjunto con falda lo arma la ingesta: excluirlo no descartaría nada. */
   it('no ofrece excluir el conjunto con falda', async () => {
     await renderPagina();

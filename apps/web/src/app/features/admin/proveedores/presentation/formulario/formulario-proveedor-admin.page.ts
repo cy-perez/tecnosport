@@ -32,12 +32,15 @@ import {
 } from '../../application/guardar-proveedor.mutacion';
 import { usarVerProveedorAdmin } from '../../application/ver-proveedor.consulta';
 import {
+  AJUSTES_DE_INGESTA_POR_OMISION,
+  AjustesDeIngesta,
   DatosProveedor,
   LINEAS_PROVEEDOR,
   LineaProveedor,
   ORDENES_DE_PUBLICACION,
   OrdenDePublicacion,
   Proveedor,
+  TallasPorGenero,
 } from '../../domain/proveedor.model';
 import {
   TIPOS_PRODUCTO_PROVEEDOR,
@@ -136,6 +139,12 @@ export class FormularioProveedorAdminPage {
     dosChatsEnUnZip: new FormControl(false, { nonNullable: true }),
     tiposExcluidos: new FormControl<readonly TipoProductoProveedor[]>([], { nonNullable: true }),
     armaSets: new FormControl(false, { nonNullable: true }),
+    unaFotoUnProducto: new FormControl(false, { nonNullable: true }),
+    ventaBajoConfirmacion: new FormControl(false, { nonNullable: true }),
+    diasDeVigencia: new FormControl('', { nonNullable: true }),
+    tallasDama: new FormControl('', { nonNullable: true }),
+    tallasCaballero: new FormControl('', { nonNullable: true }),
+    ajusteDeTalla: new FormControl('0', { nonNullable: true }),
   });
 
   /** «Otro» no se ofrece: es lo que el extractor no reconoció, y el servidor no deja excluirlo. */
@@ -184,6 +193,54 @@ export class FormularioProveedorAdminPage {
       dosChatsEnUnZip: proveedor.dosChatsEnUnZip,
       tiposExcluidos: proveedor.tiposExcluidos,
       armaSets: proveedor.armaSets,
+      unaFotoUnProducto: proveedor.ajustesDeIngesta.unaFotoUnProducto,
+      ventaBajoConfirmacion: proveedor.ajustesDeIngesta.ventaBajoConfirmacion,
+      diasDeVigencia: proveedor.ajustesDeIngesta.diasDeVigencia?.toString() ?? '',
+      tallasDama: proveedor.ajustesDeIngesta.tallasPorGenero?.dama.join(' ') ?? '',
+      tallasCaballero: proveedor.ajustesDeIngesta.tallasPorGenero?.caballero.join(' ') ?? '',
+      ajusteDeTalla: String(proveedor.ajustesDeIngesta.tallasPorGenero?.ajuste ?? 0),
+    };
+  }
+
+  /**
+   * Los ajustes de ingesta del formulario, o `null` si alguno no se entiende: los días van de 1 a
+   * 30, las tallas son números de una o dos cifras separados por espacios o comas, y el ajuste va
+   * de -4 a 4. La tecnología no tiene chat que ingerir, y solo el calzado tiene tallas por género.
+   */
+  private ajustesDelFormulario(linea: LineaProveedor): AjustesDeIngesta | null {
+    if (linea === 'TECNOLOGIA') {
+      return AJUSTES_DE_INGESTA_POR_OMISION;
+    }
+    const valores = this.form.getRawValue();
+    const dias = valores.diasDeVigencia.trim();
+    const diasDeVigencia = dias === '' ? null : Number(dias);
+    if (
+      diasDeVigencia !== null &&
+      (!Number.isInteger(diasDeVigencia) || diasDeVigencia < 1 || diasDeVigencia > 30)
+    ) {
+      return null;
+    }
+    let tallasPorGenero: TallasPorGenero | null = null;
+    if (linea === 'CALZADO') {
+      const dama = tallasDe(valores.tallasDama);
+      const caballero = tallasDe(valores.tallasCaballero);
+      const ajuste = Number(valores.ajusteDeTalla.trim() || '0');
+      if (
+        dama === null ||
+        caballero === null ||
+        !Number.isInteger(ajuste) ||
+        Math.abs(ajuste) > 4
+      ) {
+        return null;
+      }
+      tallasPorGenero =
+        dama.length === 0 && caballero.length === 0 ? null : { dama, caballero, ajuste };
+    }
+    return {
+      unaFotoUnProducto: valores.unaFotoUnProducto,
+      ventaBajoConfirmacion: valores.ventaBajoConfirmacion,
+      diasDeVigencia,
+      tallasPorGenero,
     };
   }
 
@@ -209,6 +266,13 @@ export class FormularioProveedorAdminPage {
       this.error.set(this.transloco.translate('admin.proveedores.formulario.faltanCampos'));
       return;
     }
+    const ajustesDeIngesta = this.ajustesDelFormulario(
+      this.form.controls.linea.value as LineaProveedor,
+    );
+    if (ajustesDeIngesta === null) {
+      this.error.set(this.transloco.translate('admin.proveedores.formulario.ajustesInvalidos'));
+      return;
+    }
     this.error.set(null);
     this.guardado.set(null);
 
@@ -228,6 +292,7 @@ export class FormularioProveedorAdminPage {
       tiposExcluidos: valores.linea === 'TECNOLOGIA' ? [] : valores.tiposExcluidos,
       // Y con los sets: la tecnología no tiene anuncios que armar.
       armaSets: valores.linea !== 'TECNOLOGIA' && valores.armaSets,
+      ajustesDeIngesta,
     };
 
     const manejadores = {
@@ -285,4 +350,10 @@ export class FormularioProveedorAdminPage {
     }
     return mensajeDeError(error, this.transloco, 'admin.proveedores.eliminar.error');
   }
+}
+
+/** «36 37 38 39» o «36, 37»: números de una o dos cifras; `null` si alguno no lo es. */
+function tallasDe(texto: string): string[] | null {
+  const tallas = texto.split(/[\s,]+/).filter((t) => t !== '');
+  return tallas.every((t) => /^\d{1,2}$/.test(t)) ? tallas : null;
 }

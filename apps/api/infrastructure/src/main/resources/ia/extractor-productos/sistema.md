@@ -29,8 +29,7 @@ Reglas, en orden de importancia:
    ni emojis. Solo la primera palabra y los nombres propios van con mayúscula. Ejemplos:
    «Bolso de dama mediano», «Morral dúo», «Conjunto pantalón tela burda strech». Un body se
    escribe «bodi» —«bodis» en plural—: «Body  Herraje» es «Bodi herraje». «Cab» es la
-   abreviatura de caballero, no una marca: «Nueva Colección Cab» en unos tenis es «Tenis para
-   caballero».
+   abreviatura de caballero, no una marca: «Nueva Colección Cab» en unos tenis no nombra marca.
    Una prenda se nombra como su categoría, nunca con un diminutivo: «Busito Manga larga» es
    «Buzo manga larga», «Camisetica slim» es «Camiseta slim», «Blusita» es «Blusa»,
    «Pantaloncito» es «Pantalón». El buzo se escribe con zeta, aunque el proveedor escriba
@@ -38,9 +37,8 @@ Reglas, en orden de importancia:
    Cuando el mensaje anuncia una réplica —la marca «1.1» o «AAA»—, el título es el artículo, la
    palabra «estilo» y la marca o el modelo que nombra, sin el «1.1», el «AAA», «Importado» ni
    adornos: «*NUEVA COLECCIÓN 1.1* *SUPERDRY*» en una camiseta es «Camiseta estilo Superdry»;
-   «*NUEVA COLECCIÓN 1.1* *MARCA P U M A BMW*» en una camiseta es «Camiseta estilo Puma - BMW»; «Superstar
-   Importado AAA» en unos tenis es «Tenis estilo Superstar», y «Adidas Importado AAA» es «Tenis
-   estilo Adidas». Las marcas se escriben como la marca las escribe, y dos marcas juntas se
+   «*NUEVA COLECCIÓN 1.1* *MARCA P U M A BMW*» en una camiseta es «Camiseta estilo Puma - BMW».
+   Las marcas se escriben como la marca las escribe, y dos marcas juntas se
    separan con « - ». Si el mensaje marca la réplica pero no nombra marca ni modelo, no hay
    «estilo» que escribir: el título es el artículo y la palabra «importado» al final.
    «*Pantalón Jogger para dama* ✨Calidad 1.1» es «Pantalón jogger para dama importado».
@@ -52,6 +50,11 @@ Reglas, en orden de importancia:
    «Polo» y lo demás, nunca «Camiseta» ni «Camisa»: «Polo importado» si es réplica, y con «estilo»
    y la marca solo si la nombra: «*NUEVA POLO 1.1🍯* *MARCA P U M A BMW*» es «Polo importado estilo
    Puma - BMW». En un polo, «Polo» es la prenda, no la marca.
+   **Todo tenis se titula «Tenis importados estilo» y la marca y el modelo que el anuncio
+   nombra**, sea réplica o no, y **sin el género**, que va en la categoría: «Superstar Importado
+   AAA» es «Tenis importados estilo Superstar», «Adidas Importado AAA» es «Tenis importados estilo
+   Adidas», «NIKE UNISEX ULTRALIVIANO» es «Tenis importados estilo Nike», y «Nueva Colección Cab»
+   sin marca es «Tenis importados».
 6. `linea` es `bolsos` para bolsos, morrales, canguros, manos libres y porta celulares;
    `ropa` para conjuntos, enterizos, chalecos, blusones, polos y prendas; `calzado` para tenis,
    zapatillas y zapatos; `otra` si no es ninguna. `tipo` es el artículo concreto: `bolso`, `morral`, `canguro` (también
@@ -69,7 +72,10 @@ Reglas, en orden de importancia:
 7. El precio es un entero en pesos colombianos: «53.000» es `53000`, «$45.000» es `45000`,
    «🤑🤑*55.000*» es `55000`. Dos o tres cifras pegadas a 💲 están en miles: «💲124» es
    `124000` y «💲52» es `52000`; «💲119900» ya viene completo. Si un producto tiene dos
-   precios —«por difusión» y «después de 6»— toma el primero. Una promoción por cantidad
+   precios —«por difusión» y «después de 6»— toma el primero, salvo que uno diga «x mayor» o
+   «por mayor»: ese es el precio, y el de detal no va en ningún campo. «Detal :$180.000» y
+   «X mayor 💰135» es `135000`: detrás de ese rótulo, dos o tres cifras también están en miles.
+   Una promoción por cantidad
    («Promo 6x360.000», «5x 290.000») no es el precio: va en `precios_adicionales`. Un precio
    tachado («~55.000~») ya no vale. Si no hay precio, `null`.
 8. Ignora enlaces, teléfonos, direcciones, nombres de centros comerciales y llamados a pedir
@@ -99,7 +105,7 @@ Reglas, en orden de importancia:
     y no la traducción literal: un bodi es «Bodysuit», un buzo «Sweatshirt», un canguro o
     manos libres «Fanny pack», un morral «Backpack», un conjunto pantalón «Pants set». Las
     marcas no se traducen: «Camiseta estilo Superdry» es «Superdry-style T-shirt», y «Tenis
-    estilo Superstar» es «Superstar-style sneakers». `null` si no hay título.
+    importados estilo Superstar» es «Imported Superstar-style sneakers». `null` si no hay título.
 13. `es_replica` es `true` cuando el mensaje anuncia el producto como réplica: la marca «1.1» o
     «1:1», o dice réplica o «AAA». «Pilas AAA» no: es el tamaño de una pila. «Importado» tampoco:
     un producto importado no es una réplica, y sin «1.1», «AAA» ni la palabra réplica,

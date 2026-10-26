@@ -145,8 +145,19 @@ export class FichaPage {
    */
   protected readonly consultaPorWhatsapp = computed(() => {
     const variante = this.varianteActiva();
-    return variante !== null && variante.colorPorConfirmar && this.enlaceDeLaVariante() === null;
+    return (
+      variante !== null && variante.disponibilidadPorConfirmar && this.enlaceDeLaVariante() === null
+    );
   });
+
+  /**
+   * Qué se confirma con el proveedor antes de vender (ADR-0089): en un tenis, la talla —el
+   * proveedor no dice qué tallas tiene de cada modelo—; en un equipo de tecnología, el color. Elige
+   * la versión de los textos: `catalogo.ficha.por_confirmar.talla` o `….color`.
+   */
+  protected readonly queSeConfirma = computed(() =>
+    this.producto()?.categoria.linea === 'CALZADO' ? 'talla' : 'color',
+  );
 
   /**
    * El chat con el mensaje ya escrito: el producto, la variante elegida —memoria, color, SIM— y el
@@ -164,7 +175,7 @@ export class FichaPage {
       origenPublico(),
       rutaCanonica(`/${this.transloco.activeLang()}/productos/${producto.slug}`),
     );
-    const mensaje = traducir('catalogo.ficha.whatsapp_mensaje', {
+    const mensaje = traducir('catalogo.ficha.whatsapp_mensaje.' + this.queSeConfirma(), {
       producto: producto.nombre,
       detalle: detalleDeVariante(variante),
       url,

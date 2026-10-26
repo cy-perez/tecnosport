@@ -4,12 +4,16 @@ import co.tecnosport.api.application.compartido.Reloj;
 import co.tecnosport.api.application.proveedores.DependenciasDeProveedor;
 import co.tecnosport.api.application.proveedores.RepositorioProveedores;
 import co.tecnosport.api.domain.catalogo.LineaCatalogo;
+import co.tecnosport.api.domain.proveedores.AjusteDeTalla;
+import co.tecnosport.api.domain.proveedores.AjustesDeIngesta;
 import co.tecnosport.api.domain.proveedores.OrdenDePublicacion;
 import co.tecnosport.api.domain.proveedores.Proveedor;
+import co.tecnosport.api.domain.proveedores.TallasPorGenero;
 import co.tecnosport.api.domain.proveedores.TipoProductoProveedor;
 import co.tecnosport.api.infrastructure.proveedores.entidad.ProveedorJpaEntity;
 import jakarta.persistence.EntityManager;
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -136,7 +140,44 @@ public class RepositorioProveedoresJpa implements RepositorioProveedores {
             p.tiposExcluidos().stream().map(Enum::name).collect(Collectors.toSet()),
             creadoEn,
             actualizadoEn)
-        .conArmaSets(p.armaSets());
+        .conArmaSets(p.armaSets())
+        .conAjustesDeIngesta(
+            p.ajustesDeIngesta().unaFotoUnProducto(),
+            p.ajustesDeIngesta().ventaBajoConfirmacion(),
+            p.ajustesDeIngesta().diasDeVigenciaOpcional().map(Integer::shortValue).orElse(null),
+            p.ajustesDeIngesta()
+                .tallasPorGeneroOpcional()
+                .map(t -> String.join(",", t.dama()))
+                .orElse(null),
+            p.ajustesDeIngesta()
+                .tallasPorGeneroOpcional()
+                .map(t -> String.join(",", t.caballero()))
+                .orElse(null),
+            p.ajustesDeIngesta()
+                .tallasPorGeneroOpcional()
+                .map(t -> (short) t.ajuste().tallas())
+                .orElse(null));
+  }
+
+  private static AjustesDeIngesta ajustesDe(ProveedorJpaEntity fila) {
+    TallasPorGenero tallas =
+        fila.getAjusteDeTalla() == null
+            ? null
+            : new TallasPorGenero(
+                listaDe(fila.getTallasDama()),
+                listaDe(fila.getTallasCaballero()),
+                new AjusteDeTalla(fila.getAjusteDeTalla()));
+    return new AjustesDeIngesta(
+        fila.isUnaFotoUnProducto(),
+        fila.isVentaBajoConfirmacion(),
+        fila.getDiasDeVigencia() == null ? null : fila.getDiasDeVigencia().intValue(),
+        tallas);
+  }
+
+  private static List<String> listaDe(String separadas) {
+    return separadas == null || separadas.isBlank()
+        ? List.of()
+        : Arrays.stream(separadas.split(",")).map(String::strip).toList();
   }
 
   private static Proveedor aDominio(ProveedorJpaEntity fila) {
@@ -157,6 +198,7 @@ public class RepositorioProveedoresJpa implements RepositorioProveedores {
             .map(TipoProductoProveedor::valueOf)
             .collect(Collectors.toSet()));
     proveedor.definirArmaSets(fila.isArmaSets());
+    proveedor.definirAjustesDeIngesta(ajustesDe(fila));
     return proveedor;
   }
 }

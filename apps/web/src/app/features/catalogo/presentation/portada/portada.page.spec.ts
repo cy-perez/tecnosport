@@ -47,7 +47,7 @@ function productoDePrueba(slug: string): Producto {
         sku: `SKU-${slug}`,
         precio: { valor: 10_000, moneda: 'COP' },
         disponible: true,
-        colorPorConfirmar: false,
+        disponibilidadPorConfirmar: false,
         atributos: [],
       },
     ],

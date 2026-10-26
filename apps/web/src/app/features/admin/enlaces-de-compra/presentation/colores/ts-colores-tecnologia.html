@@ -1,39 +1,41 @@
 <section class="flex flex-col gap-16" aria-labelledby="colores-tecnologia-titulo">
   <h2 id="colores-tecnologia-titulo" class="m-0 font-display text-xl">
-    {{ 'admin.enlacesCompra.seccion.titulo' | transloco }}
+    {{ clave('titulo') | transloco }}
   </h2>
-  <p class="m-0 text-ts-texto-suave">{{ 'admin.enlacesCompra.seccion.explicacion' | transloco }}</p>
+  <p class="m-0 text-ts-texto-suave">{{ clave('explicacion') | transloco }}</p>
 
-  <form class="flex flex-col gap-12" (submit)="$event.preventDefault(); guardarPaleta()">
-    <ts-campo
-      idCampo="colores-tecnologia-paleta"
-      [label]="'admin.enlacesCompra.seccion.paleta' | transloco"
-      [multilinea]="true"
-      [filas]="5"
-      [formControl]="paleta"
-    />
-    @if (errorPaleta(); as mensaje) {
-      <p class="m-0 text-ts-error" role="alert">{{ mensaje }}</p>
-    }
-    <p class="m-0 text-ts-exito" role="status">{{ avisoPaleta() }}</p>
-    <div>
-      <ts-boton
-        variante="secundario"
-        tipo="submit"
-        [ocupado]="guardando()"
-        [etiquetaCargando]="'admin.enlacesCompra.seccion.guardando' | transloco"
-      >
-        {{ 'admin.enlacesCompra.seccion.guardarPaleta' | transloco }}
-      </ts-boton>
-    </div>
-  </form>
+  @if (esTecnologia()) {
+    <form class="flex flex-col gap-12" (submit)="$event.preventDefault(); guardarPaleta()">
+      <ts-campo
+        idCampo="colores-tecnologia-paleta"
+        [label]="'admin.enlacesCompra.seccion.paleta' | transloco"
+        [multilinea]="true"
+        [filas]="5"
+        [formControl]="paleta"
+      />
+      @if (errorPaleta(); as mensaje) {
+        <p class="m-0 text-ts-error" role="alert">{{ mensaje }}</p>
+      }
+      <p class="m-0 text-ts-exito" role="status">{{ avisoPaleta() }}</p>
+      <div>
+        <ts-boton
+          variante="secundario"
+          tipo="submit"
+          [ocupado]="guardando()"
+          [etiquetaCargando]="'admin.enlacesCompra.seccion.guardando' | transloco"
+        >
+          {{ 'admin.enlacesCompra.seccion.guardarPaleta' | transloco }}
+        </ts-boton>
+      </div>
+    </form>
+  }
 
   <h3 class="m-0 font-display text-lg">
-    {{ 'admin.enlacesCompra.seccion.porConfirmar' | transloco }}
+    {{ clave('porConfirmar') | transloco }}
   </h3>
   @if (porConfirmar().length === 0) {
     <p class="m-0 text-ts-texto-suave">
-      {{ 'admin.enlacesCompra.seccion.ningunoPorConfirmar' | transloco }}
+      {{ clave('ningunoPorConfirmar') | transloco }}
     </p>
   } @else {
     <ul class="m-0 flex list-none flex-col gap-8 p-0">

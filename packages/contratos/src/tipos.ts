@@ -2390,6 +2390,13 @@ export interface components {
             cantidadContada?: number;
             motivo?: string;
         };
+        AjustesDeIngestaDto: {
+            /** Format: int32 */
+            diasDeVigencia?: number;
+            tallasPorGenero?: components["schemas"]["TallasPorGeneroDto"];
+            unaFotoUnProducto?: boolean;
+            ventaBajoConfirmacion?: boolean;
+        };
         AprobarBorradorPeticion: {
             /** Format: int32 */
             ajusteDeTalla?: number;
@@ -2483,6 +2490,7 @@ export interface components {
             descripcion?: string;
             estado?: string;
             extraccionCruda?: string;
+            generoDeCalzado?: string;
             /** Format: uuid */
             id?: string;
             linea?: string;
@@ -3551,6 +3559,7 @@ export interface components {
         };
         ProveedorPeticion: {
             activo?: boolean;
+            ajustesDeIngesta?: components["schemas"]["AjustesDeIngestaDto"];
             armaSets?: boolean;
             dosChatsEnUnZip?: boolean;
             factorDeMargen?: number;
@@ -3564,6 +3573,7 @@ export interface components {
         };
         ProveedorRespuesta: {
             activo?: boolean;
+            ajustesDeIngesta: components["schemas"]["AjustesDeIngestaDto"];
             armaSets?: boolean;
             dosChatsEnUnZip?: boolean;
             factorDeMargen?: number;
@@ -3935,6 +3945,12 @@ export interface components {
             tipo?: string;
             valores?: string[];
         };
+        TallasPorGeneroDto: {
+            /** Format: int32 */
+            ajuste: number;
+            caballero: string[];
+            dama: string[];
+        };
         TallasRespuesta: {
             sirveHasta?: string;
             tipo?: string;
@@ -3975,7 +3991,7 @@ export interface components {
         };
         VarianteRespuesta: {
             atributos?: components["schemas"]["AtributoValorRespuesta"][];
-            colorPorConfirmar: boolean;
+            disponibilidadPorConfirmar: boolean;
             disponible: boolean;
             /** Format: uuid */
             id?: string;
@@ -3984,7 +4000,7 @@ export interface components {
         };
         VarianteResumenAdminRespuesta: {
             atributos?: components["schemas"]["AtributoValorRespuesta"][];
-            colorPorConfirmar: boolean;
+            disponibilidadPorConfirmar: boolean;
             /** Format: uuid */
             id?: string;
             /** Format: int64 */

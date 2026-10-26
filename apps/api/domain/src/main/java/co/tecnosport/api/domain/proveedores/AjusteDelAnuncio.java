@@ -50,9 +50,14 @@ public final class AjusteDelAnuncio {
               + "\\s*(?:tallas?\\s+)?(?:para\\s+)?cab(?:alleros?)?\\b",
           Pattern.UNICODE_CHARACTER_CLASS);
 
-  /** «36 a la 45 eur», «tallas eur»: la marca EUR va con las tallas, no suelta en el texto. */
+  /**
+   * «36 a la 45 eur», «tallas eur»: la marca EUR va con las tallas, no suelta en el texto. Delante
+   * también, y abreviada: «Tallas hombre Eu 40 41 42 43 44» de Tenis Al Pie (23 de octubre de
+   * 2026).
+   */
   private static final Pattern EUR =
-      Pattern.compile("(\\d{2}|tallas?)\\s*eur\\b", Pattern.UNICODE_CHARACTER_CLASS);
+      Pattern.compile(
+          "(\\d{2}|tallas?)\\s*eur\\b|\\beur?\\s*\\d{2}", Pattern.UNICODE_CHARACTER_CLASS);
 
   private AjusteDelAnuncio() {}
 
