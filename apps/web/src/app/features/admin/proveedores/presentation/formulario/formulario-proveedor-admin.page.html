@@ -71,6 +71,13 @@
         formControlName="factorDeMargen"
       />
 
+      <ts-checkbox
+        idCasilla="proveedor-local"
+        [etiqueta]="'admin.proveedores.formulario.local' | transloco"
+        [marcado]="form.controls.local.value"
+        (marcadoCambio)="form.controls.local.setValue($event)"
+      />
+
       @if (form.controls.linea.value !== 'TECNOLOGIA') {
         <ts-checkbox
           idCasilla="proveedor-dos-chats"

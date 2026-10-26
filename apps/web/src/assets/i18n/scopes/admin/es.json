@@ -995,6 +995,7 @@
       "tiposExcluidos": "No se le compran",
       "tiposExcluidosAyuda": "El anuncio que traiga una de estas prendas se descarta entero, aunque venga con otras: no deja borrador ni para las demás.",
       "armaSets": "Arma sets: la prenda que anuncia con su acompañante se publica junta, como la falda con la blusa o la camiseta con la gorra de la foto",
+      "local": "Proveedor local: surte desde Medellín y lo suyo se puede recoger en el punto. La recogida se ofrece solo si todo el carrito es de proveedores locales",
       "publicacionAutomatica": "Publicar sin revisar (todavía no aplica: todo borrador pasa por el panel)",
       "activo": "Activo. Desmarcado, no se le pueden subir exportaciones.",
       "faltanCampos": "Faltan datos: nombre, nombre en el chat, teléfono, línea, orden en que publica y un margen de por lo menos 1.",

@@ -139,6 +139,7 @@ export class FormularioProveedorAdminPage {
     dosChatsEnUnZip: new FormControl(false, { nonNullable: true }),
     tiposExcluidos: new FormControl<readonly TipoProductoProveedor[]>([], { nonNullable: true }),
     armaSets: new FormControl(false, { nonNullable: true }),
+    local: new FormControl(false, { nonNullable: true }),
     unaFotoUnProducto: new FormControl(false, { nonNullable: true }),
     ventaBajoConfirmacion: new FormControl(false, { nonNullable: true }),
     diasDeVigencia: new FormControl('', { nonNullable: true }),
@@ -193,6 +194,7 @@ export class FormularioProveedorAdminPage {
       dosChatsEnUnZip: proveedor.dosChatsEnUnZip,
       tiposExcluidos: proveedor.tiposExcluidos,
       armaSets: proveedor.armaSets,
+      local: proveedor.local,
       unaFotoUnProducto: proveedor.ajustesDeIngesta.unaFotoUnProducto,
       ventaBajoConfirmacion: proveedor.ajustesDeIngesta.ventaBajoConfirmacion,
       diasDeVigencia: proveedor.ajustesDeIngesta.diasDeVigencia?.toString() ?? '',
@@ -292,6 +294,8 @@ export class FormularioProveedorAdminPage {
       tiposExcluidos: valores.linea === 'TECNOLOGIA' ? [] : valores.tiposExcluidos,
       // Y con los sets: la tecnología no tiene anuncios que armar.
       armaSets: valores.linea !== 'TECNOLOGIA' && valores.armaSets,
+      // Ser local no depende de la línea: lo dice dónde está, no cómo manda su surtido.
+      local: valores.local,
       ajustesDeIngesta,
     };
 

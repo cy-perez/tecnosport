@@ -31,6 +31,7 @@ public final class EditarProveedor {
     proveedor.definirTiposExcluidos(comando.tiposExcluidos());
     proveedor.definirArmaSets(comando.armaSets());
     proveedor.definirAjustesDeIngesta(comando.ajustesDeIngesta());
+    proveedor.definirLocal(comando.local());
     repositorioProveedores.actualizar(proveedor);
     return proveedor;
   }

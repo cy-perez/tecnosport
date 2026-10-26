@@ -995,6 +995,7 @@
       "tiposExcluidos": "Not bought from this supplier",
       "tiposExcluidosAyuda": "A post that includes one of these garments is discarded whole, even if it comes with others: none of them leaves a draft.",
       "armaSets": "Builds sets: the garment it posts with a companion piece is published together, like the skirt with the blouse or the T-shirt with the cap in the photo",
+      "local": "Local supplier: supplies from Medellín and its products can be picked up at our location. Pickup is offered only if the whole cart comes from local suppliers",
       "publicacionAutomatica": "Publish without review (not in effect yet: every draft goes through the panel)",
       "activo": "Active. Unchecked, no exports can be uploaded for it.",
       "faltanCampos": "Missing data: name, name in the chat, phone, line, posting order and a margin of at least 1.",

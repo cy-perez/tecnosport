@@ -3567,6 +3567,7 @@ export interface components {
             dosChatsEnUnZip?: boolean;
             factorDeMargen?: number;
             linea: string;
+            local?: boolean;
             nombre: string;
             nombreEnExportacion: string;
             ordenDePublicacion: string;
@@ -3583,6 +3584,7 @@ export interface components {
             /** Format: uuid */
             id?: string;
             linea?: string;
+            local?: boolean;
             nombre?: string;
             nombreEnExportacion?: string;
             ordenDePublicacion?: string;

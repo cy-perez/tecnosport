@@ -17,15 +17,18 @@ describe('mapeador de proveedores', () => {
       tiposExcluidos: ['PANTALON', 'SUDADERA'],
       armaSets: true,
       ajustesDeIngesta: {},
+      local: true,
     });
 
     expect(proveedor.ordenDePublicacion).toBe('TEXTO_PRIMERO');
     expect(proveedor.tiposExcluidos).toEqual(['PANTALON', 'SUDADERA']);
     expect(proveedor.armaSets).toBe(true);
+    expect(proveedor.local).toBe(true);
     expect(proveedor.ajustesDeIngesta).toEqual(AJUSTES_DE_INGESTA_POR_OMISION);
     expect(aProveedor({ id: 'prov-2', tiposExcluidos: [], ajustesDeIngesta: {} }).armaSets).toBe(
       false,
     );
+    expect(aProveedor({ id: 'prov-2', tiposExcluidos: [], ajustesDeIngesta: {} }).local).toBe(false);
   });
 
   /** Los ajustes de Tenis Al Pie (ADR-0089) van y vuelven. */
@@ -70,10 +73,12 @@ describe('mapeador de proveedores', () => {
       tiposExcluidos: ['SHORT'],
       armaSets: false,
       ajustesDeIngesta: AJUSTES_DE_INGESTA_POR_OMISION,
+      local: true,
     });
 
     expect(peticion.ordenDePublicacion).toBe('FOTOS_PRIMERO');
     expect(peticion.tiposExcluidos).toEqual(['SHORT']);
     expect(peticion.armaSets).toBe(false);
+    expect(peticion.local).toBe(true);
   });
 });

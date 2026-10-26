@@ -90,7 +90,8 @@ public class AdminProveedorControlador {
                         Boolean.TRUE.equals(cuerpo.armaSets()),
                         cuerpo.ajustesDeIngesta() == null
                             ? null
-                            : cuerpo.ajustesDeIngesta().aDominio())));
+                            : cuerpo.ajustesDeIngesta().aDominio(),
+                        Boolean.TRUE.equals(cuerpo.local()))));
     return ProveedorRespuesta.de(proveedor);
   }
 
@@ -124,7 +125,8 @@ public class AdminProveedorControlador {
                         cuerpo.armaSets() != null ? cuerpo.armaSets() : actual.armaSets(),
                         cuerpo.ajustesDeIngesta() != null
                             ? cuerpo.ajustesDeIngesta().aDominio()
-                            : actual.ajustesDeIngesta())));
+                            : actual.ajustesDeIngesta(),
+                        cuerpo.local() != null ? cuerpo.local() : actual.esLocal())));
     return ProveedorRespuesta.de(proveedor);
   }
 

@@ -31,6 +31,7 @@ export function aProveedor(dto: ProveedorDto): Proveedor {
     dosChatsEnUnZip: dto.dosChatsEnUnZip ?? false,
     tiposExcluidos: (dto.tiposExcluidos ?? []) as TipoProductoProveedor[],
     armaSets: dto.armaSets ?? false,
+    local: dto.local ?? false,
     ajustesDeIngesta: aAjustes(dto.ajustesDeIngesta),
   };
 }
@@ -63,6 +64,7 @@ export function aProveedorPeticion(datos: DatosProveedor): ProveedorPeticionDto 
     dosChatsEnUnZip: datos.dosChatsEnUnZip,
     tiposExcluidos: [...datos.tiposExcluidos],
     armaSets: datos.armaSets,
+    local: datos.local,
     ajustesDeIngesta: {
       unaFotoUnProducto: datos.ajustesDeIngesta.unaFotoUnProducto,
       ventaBajoConfirmacion: datos.ajustesDeIngesta.ventaBajoConfirmacion,

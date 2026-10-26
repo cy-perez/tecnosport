@@ -3687,6 +3687,9 @@
           "linea" : {
             "type" : "string"
           },
+          "local" : {
+            "type" : "boolean"
+          },
           "nombre" : {
             "type" : "string"
           },
@@ -3741,6 +3744,9 @@
           },
           "linea" : {
             "type" : "string"
+          },
+          "local" : {
+            "type" : "boolean"
           },
           "nombre" : {
             "type" : "string"
