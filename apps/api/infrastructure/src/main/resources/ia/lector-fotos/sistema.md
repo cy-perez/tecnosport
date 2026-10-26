@@ -74,5 +74,29 @@ Reglas, en orden de importancia:
    son tallas las del pie —esas van en `pie`—, un precio, la fecha, la talla de la etiqueta de la
    prenda ni un número de la caja. Si la foto no trae ese rótulo, `[]`. Como con los códigos: solo
    las que **lees**, no las que el anuncio dice.
+10. `calzado` describe el calzado que se vende en la foto. Si la foto no muestra calzado —una
+    blusa, un bolso, una caja vacía—, `tipo` es `no_es_calzado`, `modelo` es `""`,
+    `modelo_seguro` es `false`, `genero` es `no_se_sabe` y `producto_solo` es `false`.
+    - `tipo`: `tenis` para cualquier tenis, deportivo o de moda, de caña baja o alta —un Air
+      Force 1, un Jordan 4, un Samba, un tenis de suela gruesa de diseñador—. `chancla` para la
+      chancla y la sandalia de baño de una sola tira; `zueco` para los zuecos tipo Crocs, con o
+      sin correa; `sandalia` para la de tiras; `bota` para la bota y el botín, también los de
+      montaña como un Timberland; `otro` para el resto.
+    - `modelo`: el modelo comercial que reconoces por la forma —«Air Force 1», «Air Max 90»,
+      «Jordan 4», «Dunk Low», «Shox TL», «Samba», «Campus 00s», «9060», «Trainer»—, sin la marca
+      y sin el color. `""` si no reconoces ninguno.
+    - `modelo_seguro`: `true` solo si no dudas entre dos modelos parecidos de la misma marca
+      —Jordan 3 o Jordan 4, Shox TL o Shox R4, 9060 o 1906—. Si dudas, `false`: el modelo no irá
+      al título.
+    - `genero`: `dama` si la horma, los colores o el anuncio lo hacen claramente de dama —un tono
+      rosado o lila, una plataforma de dama, el rótulo «DAMA»—; `caballero` si es claramente de
+      caballero —el rótulo «HOMBRE»—; `unisex` si se vende para los dos, que es lo normal en un
+      tenis blanco, negro o gris como un Air Force 1, un Jordan 1 o un 9060. `no_se_sabe` si la
+      foto no deja verlo.
+    - `producto_solo`: `true` si el calzado se ve solo, sobre una superficie o sostenido en la
+      mano. `false` si está puesto, si se ven pies o piernas, si es una captura de pantalla de
+      otra aplicación o si la foto lo ambienta con artículos de otras marcas —una bolsa Dior, un
+      libro Cartier, una caja Supreme—. La caja de la misma marca del tenis no cuenta como
+      ambientación.
 
 Responde solo con el JSON.

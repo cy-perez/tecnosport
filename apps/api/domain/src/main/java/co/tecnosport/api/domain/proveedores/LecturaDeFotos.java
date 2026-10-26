@@ -51,6 +51,8 @@ public record LecturaDeFotos(boolean albumDeDisenos, List<LecturaDeFoto> fotos, 
    *     ambienta—, como la marca se escribe. Vacía si no se lee ninguna. Con varias marcas en un
    *     anuncio dice cuál foto es de cuál. No alerta la réplica: esa la dice solo el texto
    *     (decidido por el negocio el 11 de octubre de 2026)
+   * @param calzado lo que se ve de un calzado —modelo, género, tipo y si está solo—; nulo si la
+   *     foto no muestra calzado o si la lectura es de antes del 25 de octubre de 2026 (ADR-0089)
    */
   public record LecturaDeFoto(
       int posicion,
@@ -60,7 +62,8 @@ public record LecturaDeFotos(boolean albumDeDisenos, List<LecturaDeFoto> fotos, 
       List<String> colores,
       String diseno,
       List<String> marcas,
-      List<String> tallasImpresas) {
+      List<String> tallasImpresas,
+      LecturaDeCalzado calzado) {
 
     /** Un prefijo de tipo, como la «C:» de camiseta o la «J:» de jogger en las de Violeta. */
     private static final Pattern PREFIJO = Pattern.compile("^[A-Z]{1,2}:");
@@ -116,6 +119,19 @@ public record LecturaDeFotos(boolean albumDeDisenos, List<LecturaDeFoto> fotos, 
                   .filter(t -> !t.isEmpty())
                   .distinct()
                   .toList();
+    }
+
+    /** Sin lectura de calzado: la forma de antes del 25 de octubre de 2026. */
+    public LecturaDeFoto(
+        int posicion,
+        List<String> codigos,
+        String sku,
+        List<String> tallasDelPie,
+        List<String> colores,
+        String diseno,
+        List<String> marcas,
+        List<String> tallasImpresas) {
+      this(posicion, codigos, sku, tallasDelPie, colores, diseno, marcas, tallasImpresas, null);
     }
 
     /**
@@ -184,6 +200,21 @@ public record LecturaDeFotos(boolean albumDeDisenos, List<LecturaDeFoto> fotos, 
         String diseno,
         List<String> marcas,
         List<String> tallasImpresas) {
+      return conPie(posicion, codigos, pie, colores, diseno, marcas, tallasImpresas, null);
+    }
+
+    /**
+     * @param calzado lo que se ve de un calzado; nulo si no muestra calzado (ADR-0089)
+     */
+    public static LecturaDeFoto conPie(
+        int posicion,
+        List<String> codigos,
+        List<BloqueDePie> pie,
+        List<String> colores,
+        String diseno,
+        List<String> marcas,
+        List<String> tallasImpresas,
+        LecturaDeCalzado calzado) {
       Optional<BloqueDePie> vigente = BloqueDePie.vigente(pie == null ? List.of() : pie);
       return new LecturaDeFoto(
           posicion,
@@ -193,7 +224,12 @@ public record LecturaDeFotos(boolean albumDeDisenos, List<LecturaDeFoto> fotos, 
           colores,
           diseno,
           marcas,
-          tallasImpresas);
+          tallasImpresas,
+          calzado);
+    }
+
+    public Optional<LecturaDeCalzado> calzadoOpcional() {
+      return Optional.ofNullable(calzado);
     }
 
     /**
