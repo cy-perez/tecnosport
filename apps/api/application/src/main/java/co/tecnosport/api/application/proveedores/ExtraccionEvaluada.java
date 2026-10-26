@@ -3,6 +3,7 @@ package co.tecnosport.api.application.proveedores;
 import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.proveedores.AlertaBorrador;
 import co.tecnosport.api.domain.proveedores.FotosDelProducto;
+import co.tecnosport.api.domain.proveedores.LecturaDeCalzado;
 import co.tecnosport.api.domain.proveedores.ProductoExtraido;
 import java.util.List;
 import java.util.Objects;
@@ -25,6 +26,8 @@ import java.util.UUID;
  * @param fotosParaSumar las que, si la misma referencia ya espera revisión en otro borrador, se le
  *     suman a ese: todas las de la publicación si es de un solo producto; con varios, o en un
  *     álbum, solo las que llevan impreso su código o su SKU
+ * @param calzado lo que el lector vio del tenis cuando cada foto es un producto (ADR-0089): de ahí
+ *     salen su género y sus tallas. Nulo en los demás
  */
 public record ExtraccionEvaluada(
     ProductoExtraido producto,
@@ -36,7 +39,8 @@ public record ExtraccionEvaluada(
     FotosDelProducto reparto,
     UUID exclusiva,
     boolean disenoDeAlbum,
-    List<UUID> fotosParaSumar) {
+    List<UUID> fotosParaSumar,
+    LecturaDeCalzado calzado) {
 
   public ExtraccionEvaluada {
     fotosParaSumar = fotosParaSumar == null ? List.of() : List.copyOf(fotosParaSumar);
@@ -46,6 +50,32 @@ public record ExtraccionEvaluada(
     Objects.requireNonNull(uso);
     fotos = fotos == null ? List.of() : List.copyOf(fotos);
     reparto = reparto == null ? FotosDelProducto.todas() : reparto;
+  }
+
+  /** Sin lectura de calzado: la forma de antes del 25 de octubre de 2026. */
+  public ExtraccionEvaluada(
+      ProductoExtraido producto,
+      String jsonCrudo,
+      Dinero precioProveedor,
+      Set<AlertaBorrador> alertas,
+      UsoDelExtractor uso,
+      List<UUID> fotos,
+      FotosDelProducto reparto,
+      UUID exclusiva,
+      boolean disenoDeAlbum,
+      List<UUID> fotosParaSumar) {
+    this(
+        producto,
+        jsonCrudo,
+        precioProveedor,
+        alertas,
+        uso,
+        fotos,
+        reparto,
+        exclusiva,
+        disenoDeAlbum,
+        fotosParaSumar,
+        null);
   }
 
   /** Sin reparto de fotos: la forma de antes del 10 de octubre de 2026. */
@@ -88,5 +118,9 @@ public record ExtraccionEvaluada(
 
   public Optional<UUID> exclusivaOpcional() {
     return Optional.ofNullable(exclusiva);
+  }
+
+  public Optional<LecturaDeCalzado> calzadoOpcional() {
+    return Optional.ofNullable(calzado);
   }
 }

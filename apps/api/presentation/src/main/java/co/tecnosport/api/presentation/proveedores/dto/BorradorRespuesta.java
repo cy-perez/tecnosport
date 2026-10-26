@@ -49,7 +49,12 @@ public record BorradorRespuesta(
      * Cómo se le pide al proveedor cada talla, con el paso del tipo de prenda; vacía sin ajuste. La
      * del proveedor es nula si no se puede contar.
      */
-    List<TallaPedidaRespuesta> tallasPedidas) {
+    List<TallaPedidaRespuesta> tallasPedidas,
+    /**
+     * Para quién es el tenis —{@code DAMA}, {@code CABALLERO} o {@code UNISEX}—, que decide la rama
+     * del calzado que el panel propone (ADR-0089); nulo si no es calzado o no se sabe.
+     */
+    String generoDeCalzado) {
 
   /**
    * @param talla la que se vende
@@ -99,7 +104,8 @@ public record BorradorRespuesta(
         b.ajusteDeTalla().tallas(),
         b.tallasPedidas().stream()
             .map(t -> new TallaPedidaRespuesta(t.talla(), t.delProveedor()))
-            .toList());
+            .toList(),
+        b.generoDeCalzado().map(Enum::name).orElse(null));
   }
 
   private static Long entero(Dinero dinero) {

@@ -8,13 +8,16 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import co.tecnosport.api.domain.catalogo.LineaCatalogo;
 import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.proveedores.AlertaBorrador;
+import co.tecnosport.api.domain.proveedores.GeneroDeCalzado;
 import co.tecnosport.api.domain.proveedores.IdExternoDeMensaje;
+import co.tecnosport.api.domain.proveedores.LecturaDeCalzado;
 import co.tecnosport.api.domain.proveedores.LecturaDeFotos;
 import co.tecnosport.api.domain.proveedores.LecturaDeFotos.LecturaDeFoto;
 import co.tecnosport.api.domain.proveedores.MensajeProveedor;
 import co.tecnosport.api.domain.proveedores.ProductoExtraido;
 import co.tecnosport.api.domain.proveedores.PublicacionProveedor;
 import co.tecnosport.api.domain.proveedores.Tallas;
+import co.tecnosport.api.domain.proveedores.TipoDeCalzado;
 import co.tecnosport.api.domain.proveedores.TipoProductoProveedor;
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -735,5 +738,84 @@ class ExtraerProductoDePublicacionTest {
         almacenCon());
 
     assertTrue(leidas.isEmpty());
+  }
+
+  /**
+   * Una tanda de Tenis Al Pie (ADR-0089): el texto es solo el precio y el extractor no ve en él
+   * ningún producto. La tanda se parte igual, una foto por producto, con el costo por mayor; la
+   * Crocs y el tenis puesto no llegan.
+   */
+  @Test
+  void unaTandaDeUnaFotoPorProductoSeParteAunqueElTextoSeaSoloElPrecio() {
+    PublicacionProveedor publicacion =
+        PublicacionProveedor.abrir(texto("Detal :$180.000 \nX mayor 💰135"));
+    publicacion.anexar(foto("p/1.jpg"));
+    publicacion.anexar(foto("p/2.jpg"));
+    publicacion.anexar(foto("p/3.jpg"));
+    LectorDeFotos lector =
+        fotos ->
+            Optional.of(
+                new LecturaDeFotos(
+                    false,
+                    List.of(
+                        new LecturaDeFoto(
+                            0,
+                            List.of(),
+                            null,
+                            List.of(),
+                            List.of("blanco"),
+                            null,
+                            List.of("Nike"),
+                            List.of(),
+                            new LecturaDeCalzado(
+                                "Air Force 1",
+                                true,
+                                GeneroDeCalzado.UNISEX,
+                                TipoDeCalzado.TENIS,
+                                true)),
+                        new LecturaDeFoto(
+                            1,
+                            List.of(),
+                            null,
+                            List.of(),
+                            List.of("azul"),
+                            null,
+                            List.of(),
+                            List.of(),
+                            new LecturaDeCalzado(null, false, null, TipoDeCalzado.ZUECO, true)),
+                        new LecturaDeFoto(
+                            2,
+                            List.of(),
+                            null,
+                            List.of(),
+                            List.of("negro"),
+                            null,
+                            List.of("Nike"),
+                            List.of(),
+                            new LecturaDeCalzado(
+                                "Shox TL",
+                                true,
+                                GeneroDeCalzado.UNISEX,
+                                TipoDeCalzado.TENIS,
+                                false))),
+                    "{}"));
+
+    List<ExtraccionEvaluada> evaluadas =
+        new ExtraerProductoDePublicacion(
+                ApoyoDeIngesta.ExtractorFalso.varios(List.of()),
+                lector,
+                almacenCon("p/1.jpg", "p/2.jpg", "p/3.jpg"),
+                UMBRAL)
+            .ejecutar(publicacion, mensajes, LineaCatalogo.CALZADO, true);
+
+    assertEquals(1, evaluadas.size());
+    ExtraccionEvaluada airForce = evaluadas.getFirst();
+    assertEquals(Dinero.deCop(135000), airForce.precioProveedor());
+    assertEquals(
+        Optional.of("Tenis importados estilo Nike Air Force 1"),
+        airForce.producto().tituloOpcional());
+    assertEquals(1, airForce.fotos().size());
+    assertTrue(airForce.calzadoOpcional().isPresent());
+    assertFalse(airForce.alertas().contains(AlertaBorrador.FOTOS_COMPARTIDAS));
   }
 }

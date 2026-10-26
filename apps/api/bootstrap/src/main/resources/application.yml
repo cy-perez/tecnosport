@@ -369,9 +369,13 @@ tecnosport:
       # imagenes. Otro modelo tiene que hacer las dos cosas; comprobarlo antes de cambiarlo.
       modelo: ${PROVEEDORES_LECTURA_FOTOS_MODELO:claude-haiku-4-5-20251001}
       # Un album de La Riverah trae hasta 23 fotos, y cada lectura ronda los 60 tokens de salida.
-      max-tokens: ${PROVEEDORES_LECTURA_FOTOS_MAX_TOKENS:4096}
-      # Una peticion con veinte fotos tarda bastante mas que una de texto.
-      timeout: ${PROVEEDORES_LECTURA_FOTOS_TIMEOUT:PT90S}
+      # Desde el 25 de octubre de 2026 cada una lleva ademas el calzado (ADR-0089), unos 50 mas, y
+      # una tanda de Tenis Al Pie trae 35 fotos: con 4096 el JSON se cortaba y no habia lectura.
+      max-tokens: ${PROVEEDORES_LECTURA_FOTOS_MAX_TOKENS:8192}
+      # Una peticion con treinta y cinco fotos tarda bastante mas que una de texto: 8192 tokens de
+      # salida no caben en 90 segundos. Con los reintentos tiene que seguir cabiendo en el tramo
+      # de 10 minutos (ADR-0080).
+      timeout: ${PROVEEDORES_LECTURA_FOTOS_TIMEOUT:PT150S}
 
   meta:
     # La version va dentro de la ruta y Meta retira versiones con calendario publicado: congelarla

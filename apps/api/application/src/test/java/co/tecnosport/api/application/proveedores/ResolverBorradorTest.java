@@ -22,6 +22,7 @@ import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.compartido.Sku;
 import co.tecnosport.api.domain.compartido.Slug;
 import co.tecnosport.api.domain.proveedores.AjusteDeTalla;
+import co.tecnosport.api.domain.proveedores.AjustesDeIngesta;
 import co.tecnosport.api.domain.proveedores.AlertaBorrador;
 import co.tecnosport.api.domain.proveedores.ArmadoDeSet;
 import co.tecnosport.api.domain.proveedores.BorradorProducto;
@@ -30,8 +31,10 @@ import co.tecnosport.api.domain.proveedores.ClaseDePrecioAdicional;
 import co.tecnosport.api.domain.proveedores.EstadoBorrador;
 import co.tecnosport.api.domain.proveedores.EstadoPublicacionProveedor;
 import co.tecnosport.api.domain.proveedores.FotosDelProducto;
+import co.tecnosport.api.domain.proveedores.GeneroDeCalzado;
 import co.tecnosport.api.domain.proveedores.HuellaProveedor;
 import co.tecnosport.api.domain.proveedores.IdExternoDeMensaje;
+import co.tecnosport.api.domain.proveedores.LecturaDeCalzado;
 import co.tecnosport.api.domain.proveedores.LoteIngesta;
 import co.tecnosport.api.domain.proveedores.MensajeProveedor;
 import co.tecnosport.api.domain.proveedores.MotivoDePublicacion;
@@ -44,7 +47,9 @@ import co.tecnosport.api.domain.proveedores.ProductoExtraido;
 import co.tecnosport.api.domain.proveedores.Proveedor;
 import co.tecnosport.api.domain.proveedores.PublicacionProveedor;
 import co.tecnosport.api.domain.proveedores.Tallas;
+import co.tecnosport.api.domain.proveedores.TallasPorGenero;
 import co.tecnosport.api.domain.proveedores.TextosDelSet;
+import co.tecnosport.api.domain.proveedores.TipoDeCalzado;
 import co.tecnosport.api.domain.proveedores.TipoProductoProveedor;
 import co.tecnosport.api.domain.proveedores.TopesDeGanancia;
 import java.math.BigDecimal;
@@ -334,12 +339,12 @@ class ResolverBorradorTest {
     assertEquals(2, enRevision.size());
     BorradorProducto dama =
         enRevision.stream()
-            .filter(b -> b.titulo().orElse("").endsWith("dama"))
+            .filter(b -> b.generoDeCalzado().equals(Optional.of(GeneroDeCalzado.DAMA)))
             .findFirst()
             .orElseThrow();
     BorradorProducto caballero =
         enRevision.stream()
-            .filter(b -> b.titulo().orElse("").endsWith("caballero"))
+            .filter(b -> b.generoDeCalzado().equals(Optional.of(GeneroDeCalzado.CABALLERO)))
             .findFirst()
             .orElseThrow();
     assertEquals(Tallas.lista(List.of("41", "42", "43")), dama.tallas());
@@ -363,12 +368,12 @@ class ResolverBorradorTest {
     resolver(publicacion(texto, "foto-nike"), tenis(List.of("41", "42", "43")));
     BorradorProducto dama =
         borradores.enEstado(EstadoBorrador.EN_REVISION).stream()
-            .filter(b -> b.titulo().orElse("").endsWith("dama"))
+            .filter(b -> b.generoDeCalzado().equals(Optional.of(GeneroDeCalzado.DAMA)))
             .findFirst()
             .orElseThrow();
     BorradorProducto caballero =
         borradores.enEstado(EstadoBorrador.EN_REVISION).stream()
-            .filter(b -> b.titulo().orElse("").endsWith("caballero"))
+            .filter(b -> b.generoDeCalzado().equals(Optional.of(GeneroDeCalzado.CABALLERO)))
             .findFirst()
             .orElseThrow();
     Producto deDama =
@@ -1907,5 +1912,103 @@ class ResolverBorradorTest {
     assertEquals(
         new CierreDePublicacion(MotivoDePublicacion.PRECIO_SOBRE_TOPE, "95000"),
         resolucion.cierre());
+  }
+
+  /**
+   * Tenis Al Pie (ADR-0089): calzado, una foto por producto, tallas EUR por género y factor 1,20.
+   */
+  private void tenisAlPie() {
+    proveedor =
+        Proveedor.crear(
+            "Tenis Al Pie",
+            LineaCatalogo.CALZADO,
+            "+57 300 0000000",
+            "tenis.alpie",
+            new BigDecimal("1.20"),
+            OrdenDePublicacion.FOTOS_PRIMERO);
+    proveedor.definirAjustesDeIngesta(
+        new AjustesDeIngesta(
+            true,
+            true,
+            5,
+            new TallasPorGenero(
+                List.of("36", "37", "38", "39"),
+                List.of("40", "41", "42", "43", "44"),
+                new AjusteDeTalla(1))));
+    lote = LoteIngesta.recibirExportacion(proveedor.id(), "p/exportaciones/b.zip", AHORA);
+  }
+
+  /** El tenis de una foto de la tanda, como lo deja la extracción: con lo que el lector vio. */
+  private static ExtraccionEvaluada tenisDeLaFoto(GeneroDeCalzado genero) {
+    LecturaDeCalzado calzado =
+        new LecturaDeCalzado("Air Force 1", true, genero, TipoDeCalzado.TENIS, true);
+    ProductoExtraido extraido =
+        new ProductoExtraido(
+                true,
+                false,
+                null,
+                LineaCatalogo.CALZADO,
+                TipoProductoProveedor.OTRO,
+                Dinero.deCop(135000),
+                null,
+                null,
+                List.of(),
+                null,
+                null,
+                null,
+                false,
+                new BigDecimal("0.9"),
+                null,
+                null)
+            .delTenisDeLaFoto(calzado, List.of("Nike"));
+    return new ExtraccionEvaluada(
+        extraido,
+        "{}",
+        Dinero.deCop(135000),
+        Set.of(),
+        new UsoDelExtractor("falso", 1, 1, 1),
+        List.of(),
+        null,
+        null,
+        true,
+        null,
+        calzado);
+  }
+
+  /**
+   * Un tenis de dama de Tenis Al Pie nace con las tallas nacionales de dama, el ajuste para
+   * pedirlas en EUR, su género para la categoría, el título de un tenis y el 20 % sobre el costo.
+   */
+  @Test
+  void elTenisDeDamaDeLaTandaNaceConSusTallasNacionalesYSuGenero() {
+    tenisAlPie();
+    PublicacionProveedor publicacion =
+        publicacion("Detal :$180.000 \nX mayor 💰135", "foto-af1-rosado");
+
+    Resolucion resolucion = resolver(publicacion, tenisDeLaFoto(GeneroDeCalzado.DAMA));
+
+    assertEquals(TipoDeResolucion.NUEVO, resolucion.tipo());
+    BorradorProducto borrador = borradores.enEstado(EstadoBorrador.EN_REVISION).getFirst();
+    assertEquals(Tallas.lista(List.of("35", "36", "37", "38")), borrador.tallas());
+    assertEquals(new AjusteDeTalla(1), borrador.ajusteDeTalla());
+    assertEquals(Optional.of(GeneroDeCalzado.DAMA), borrador.generoDeCalzado());
+    assertEquals(Optional.of("Tenis importados estilo Nike Air Force 1"), borrador.titulo());
+    // 135.000 × 1,20 = 162.000: gana 27.000, dentro de los topes.
+    assertEquals(Optional.of(Dinero.deCop(162000)), borrador.precioVentaSugerido());
+  }
+
+  /** Sin género leído, el tenis es unisex y lleva las dos escalas. */
+  @Test
+  void elTenisSinGeneroEsUnisexConLasDosEscalas() {
+    tenisAlPie();
+    PublicacionProveedor publicacion = publicacion("Detal :$180.000 \nX mayor 💰135", "foto-af1");
+
+    resolver(publicacion, tenisDeLaFoto(null));
+
+    BorradorProducto borrador = borradores.enEstado(EstadoBorrador.EN_REVISION).getFirst();
+    assertEquals(
+        Tallas.lista(List.of("35", "36", "37", "38", "39", "40", "41", "42", "43")),
+        borrador.tallas());
+    assertEquals(Optional.of(GeneroDeCalzado.UNISEX), borrador.generoDeCalzado());
   }
 }

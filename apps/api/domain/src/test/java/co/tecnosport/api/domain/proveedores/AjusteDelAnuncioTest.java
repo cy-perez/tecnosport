@@ -48,6 +48,9 @@ class AjusteDelAnuncioTest {
     assertEquals(
         de(1), AjusteDelAnuncio.de("ADIDAS IMPORTADO AAA🔥\nTallas disponibles 41 la 44 eur"));
     assertEquals(de(1), AjusteDelAnuncio.de("Tallas disponibles 36 a la 39 EUR"));
+    // Tenis Al Pie, 23 de octubre de 2026: la marca delante y abreviada.
+    assertEquals(de(1), AjusteDelAnuncio.de("Tallas hombre \nEu 40 41 42 43 44"));
+    assertEquals(de(1), AjusteDelAnuncio.de("Talla dama EUR 36 37 38 39"));
   }
 
   @Test

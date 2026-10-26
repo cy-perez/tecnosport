@@ -63,6 +63,14 @@ import java.util.UUID;
  * escritos en el texto. El diseño que el lector separó sin nada impreso que lo confirme lleva
  * {@code CONFIANZA_BAJA}. Si la lectura falla, la publicación sigue como antes de existir: todas
  * las fotos para todos.
+ *
+ * <h2>Una foto, un producto (25 de octubre de 2026)</h2>
+ *
+ * <p>Al proveedor que lo tiene marcado ({@code AjustesDeIngesta#unaFotoUnProducto}), la tanda se
+ * parte en un producto por foto con {@link RepartoDeFotos#unaPorFoto}, todos con el precio del
+ * texto. El texto de Tenis Al Pie es solo el precio —«Detal :$180.000 / X mayor 💰135»—, y el
+ * extractor puede no ver en él ningún producto: entonces la tanda se parte igual, desde un producto
+ * que solo tiene ese precio (ADR-0089).
  */
 public final class ExtraerProductoDePublicacion {
 
@@ -109,6 +117,17 @@ public final class ExtraerProductoDePublicacion {
       PublicacionProveedor publicacion,
       Map<UUID, MensajeProveedor> mensajes,
       LineaCatalogo lineaDelProveedor) {
+    return ejecutar(publicacion, mensajes, lineaDelProveedor, false);
+  }
+
+  /**
+   * @param unaFotoUnProducto si el proveedor manda cada producto en su propia foto (ADR-0089)
+   */
+  public List<ExtraccionEvaluada> ejecutar(
+      PublicacionProveedor publicacion,
+      Map<UUID, MensajeProveedor> mensajes,
+      LineaCatalogo lineaDelProveedor,
+      boolean unaFotoUnProducto) {
     MensajeProveedor principal = mensajeDe(mensajes, publicacion.mensajePrincipalId());
     List<String> adicionales = new ArrayList<>();
     for (UUID id : publicacion.textosAdicionales()) {
@@ -133,10 +152,24 @@ public final class ExtraerProductoDePublicacion {
 
     List<ProductoExtraido> contrastados =
         productos.stream().map(p -> p.contrastadoCon(texto.completo())).toList();
-    LecturaDeFotos lectura =
-        sinFotos ? null : leerFotos(publicacion, mensajes, texto, contrastados);
-    List<ProductoRepartido> repartidos =
-        RepartoDeFotos.repartir(contrastados, publicacion.medios(), lectura);
+    List<ProductoRepartido> repartidos;
+    LecturaDeFotos lectura;
+    int productosDelTexto = contrastados.size();
+    if (unaFotoUnProducto && !sinFotos) {
+      ProductoExtraido base =
+          contrastados.isEmpty()
+              ? soloConElPrecio(preciosDelTexto, lineaDelProveedor)
+              : contrastados.getFirst();
+      lectura = leerFotos(publicacion, mensajes, texto, List.of(base));
+      repartidos =
+          RepartoDeFotos.unaPorFoto(
+              base, publicacion.medios(), lectura, lineaDelProveedor == LineaCatalogo.CALZADO);
+      varios = false;
+      productosDelTexto = 1;
+    } else {
+      lectura = sinFotos ? null : leerFotos(publicacion, mensajes, texto, contrastados);
+      repartidos = RepartoDeFotos.repartir(contrastados, publicacion.medios(), lectura);
+    }
 
     List<ExtraccionEvaluada> evaluadas = new ArrayList<>(repartidos.size());
     for (int i = 0; i < repartidos.size(); i++) {
@@ -159,7 +192,7 @@ public final class ExtraerProductoDePublicacion {
       boolean album = repartido.disenoDeAlbum();
       int posicionEnElTexto = album ? 0 : i;
       Optional<Dinero> delTexto =
-          precioDelTexto(preciosDelTexto, posicionEnElTexto, contrastados.size());
+          precioDelTexto(preciosDelTexto, posicionEnElTexto, productosDelTexto);
       Dinero precio = contrastarPrecio(delTexto, producto.precioProveedorOpcional(), alertas);
 
       if (producto.tituloOpcional().isEmpty()) {
@@ -190,9 +223,38 @@ public final class ExtraerProductoDePublicacion {
               repartido.reparto(),
               varios || album ? repartido.exclusiva() : null,
               album,
-              varios || album ? repartido.conSuCodigo() : repartido.fotos()));
+              varios || album ? repartido.conSuCodigo() : repartido.fotos(),
+              repartido.calzado()));
     }
     return evaluadas;
+  }
+
+  /**
+   * El producto de una tanda cuyo texto es solo el precio: sin título, sin tipo y con el precio que
+   * el texto escribe. El título, el tipo y la marca los pone después la foto. La confianza es la
+   * del umbral: no hay nada del modelo en que confiar ni que desconfiar.
+   */
+  private ProductoExtraido soloConElPrecio(List<Dinero> preciosDelTexto, LineaCatalogo linea) {
+    return new ProductoExtraido(
+        true,
+        false,
+        null,
+        linea,
+        TipoProductoProveedor.OTRO,
+        preciosDelTexto.isEmpty() ? null : preciosDelTexto.getFirst(),
+        null,
+        null,
+        List.of(),
+        null,
+        null,
+        null,
+        false,
+        umbralDeConfianza,
+        null,
+        null,
+        null,
+        List.of(),
+        List.of());
   }
 
   /**
