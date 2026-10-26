@@ -165,9 +165,9 @@ export class ResumenPage {
   );
 
   /**
-   * Si hoy se ofrece la recogida en el punto. Mientras la respuesta no llega vale `false`: el
-   * servidor la rechaza si está apagada, y ofrecerla para que falle dos pantallas después es peor
-   * que no ofrecerla un instante.
+   * Si este carrito se puede recoger en el punto: depende de lo que lleva (`ADR-0093`). Mientras
+   * la respuesta no llega vale `false`: el servidor la rechaza si no aplica, y ofrecerla para que
+   * falle dos pantallas después es peor que no ofrecerla un instante.
    */
   protected readonly retiroDisponible = computed(
     () => this.modalidades.data()?.retiroEnPunto === true,
@@ -532,6 +532,20 @@ export class ResumenPage {
       const cotizada = this.tarifa();
       if (cotizada) {
         this.ultimaCotizacion.set(cotizada);
+      }
+    });
+
+    // Si el carrito cambia y deja de poderse recoger, la recogida elegida vuelve al envío a
+    // domicilio. Sin esto el selector desaparecía con `RETIRO_EN_PUNTO` puesto y oculto, y el
+    // comprador se enteraba con el 409 de la confirmación. Solo con la respuesta en la mano o con
+    // la consulta caída: mientras carga no se sabe, y no se cambia lo elegido por un instante de
+    // espera.
+    effect(() => {
+      const sabidoQueNo =
+        this.modalidades.isError() ||
+        (this.modalidades.isSuccess() && this.modalidades.data()?.retiroEnPunto === false);
+      if (sabidoQueNo && this.form.controls.tipoEntrega.value === 'RETIRO_EN_PUNTO') {
+        this.form.controls.tipoEntrega.setValue('ENVIO_A_DOMICILIO');
       }
     });
 

@@ -721,6 +721,32 @@ describe('ResumenPage', () => {
     expect(envios.preguntadas).toEqual([['variante-1']]);
   });
 
+  /**
+   * Si el carrito deja de poderse recoger con la recogida elegida, vuelve al envío a domicilio: el
+   * selector desaparece y la recogida no puede quedarse puesta y oculta (ADR-0093).
+   */
+  it('si la recogida deja de aplicar, la entrega vuelve a domicilio', async () => {
+    sembrarCarritoId('carrito-1');
+    sembrarSnapshotLinea(snapshotDePrueba('variante-1'));
+    const envios = new RepositorioEnviosFalso(null);
+    const { fixture } = await renderResumen(
+      new RepositorioCarritoFalso(CARRITO_CON_LINEAS),
+      envios,
+    );
+    fireEvent.change(await screen.findByLabelText('Tipo de entrega'), {
+      target: { value: 'RETIRO_EN_PUNTO' },
+    });
+    expect(screen.queryByLabelText('Dirección')).toBeNull();
+
+    envios.retiroEnPunto = false;
+    await fixture.debugElement.injector
+      .get(QueryClient)
+      .invalidateQueries({ queryKey: ['checkout', 'modalidades-de-entrega'] });
+
+    expect(await screen.findByLabelText('Dirección')).toBeTruthy();
+    expect(screen.queryByLabelText('Tipo de entrega')).toBeNull();
+  });
+
   it('elegir retiro en punto oculta los campos de dirección', async () => {
     sembrarCarritoId('carrito-1');
     sembrarSnapshotLinea(snapshotDePrueba('variante-1'));
