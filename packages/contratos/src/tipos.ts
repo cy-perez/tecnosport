@@ -2027,9 +2027,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["consultarModalidades"];
+        get?: never;
         put?: never;
-        post?: never;
+        post: operations["consultarModalidades"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3289,6 +3289,9 @@ export interface components {
             telefono?: string;
             tipoEntrega?: string;
             transportadora?: string;
+        };
+        ModalidadesDeEntregaRequest: {
+            varianteIds: string[];
         };
         ModalidadesDeEntregaRespuesta: {
             envioADomicilio: boolean;
@@ -7627,7 +7630,11 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ModalidadesDeEntregaRequest"];
+            };
+        };
         responses: {
             /** @description OK */
             200: {

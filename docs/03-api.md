@@ -60,8 +60,9 @@ POST /api/v1/carritos/{id}/lineas
 PATCH /api/v1/carritos/{id}/lineas/{lineaId}
 DELETE /api/v1/carritos/{id}/lineas/{lineaId}
 POST /api/v1/envios/cotizacion              costo de envío y plazo para este carrito y destino; `opciones`: una por transportadora, de la más barata a la más cara (adr/0073)
-GET /api/v1/envios/modalidades              qué formas de entrega se ofrecen hoy: {envioADomicilio, retiroEnPunto} (adr/0072)
-                                             POST /pedidos con RETIRO_EN_PUNTO y la recogida apagada: 409 RETIRO_EN_PUNTO_NO_DISPONIBLE
+POST /api/v1/envios/modalidades             qué formas de entrega tiene este carrito ({varianteIds}): {envioADomicilio,
+                                             retiroEnPunto}; la recogida solo si todo es de proveedores locales (adr/0093)
+                                             POST /pedidos con RETIRO_EN_PUNTO fuera de eso: 409 RETIRO_EN_PUNTO_NO_DISPONIBLE
 POST /api/v1/pedidos/metodos-de-pago-disponibles   qué métodos ofrece el negocio hoy y aplican a este carrito y destino
 POST /api/v1/pedidos                        revalida precios, existencias y costo de envío, reserva; una línea de color
                                              por confirmar sin `enlaceCompra` vigente: 409 DISPONIBILIDAD_POR_CONFIRMAR, o 410
