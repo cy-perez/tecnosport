@@ -449,7 +449,8 @@ export class ConfirmarPage {
     // carrito y este botón, o la línea nunca lo tuvo. Lo que sirve es volver a escribir.
     if (
       error instanceof ErrorHttp &&
-      (error.codigo === 'ENLACE_DE_COMPRA_NO_VIGENTE' || error.codigo === 'DISPONIBILIDAD_POR_CONFIRMAR')
+      (error.codigo === 'ENLACE_DE_COMPRA_NO_VIGENTE' ||
+        error.codigo === 'DISPONIBILIDAD_POR_CONFIRMAR')
     ) {
       this.rechazoDeCredito.set(false);
       return this.transloco.translate('checkout.confirmar.disponibilidad_por_confirmar');

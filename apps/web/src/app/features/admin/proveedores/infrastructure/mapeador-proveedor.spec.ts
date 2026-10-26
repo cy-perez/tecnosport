@@ -28,7 +28,9 @@ describe('mapeador de proveedores', () => {
     expect(aProveedor({ id: 'prov-2', tiposExcluidos: [], ajustesDeIngesta: {} }).armaSets).toBe(
       false,
     );
-    expect(aProveedor({ id: 'prov-2', tiposExcluidos: [], ajustesDeIngesta: {} }).local).toBe(false);
+    expect(aProveedor({ id: 'prov-2', tiposExcluidos: [], ajustesDeIngesta: {} }).local).toBe(
+      false,
+    );
   });
 
   /** Los ajustes de Tenis Al Pie (ADR-0089) van y vuelven. */
