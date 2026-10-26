@@ -19,7 +19,8 @@ public record ProveedorRespuesta(
     boolean dosChatsEnUnZip,
     @Schema(requiredMode = Schema.RequiredMode.REQUIRED) List<String> tiposExcluidos,
     boolean armaSets,
-    @Schema(requiredMode = Schema.RequiredMode.REQUIRED) AjustesDeIngestaDto ajustesDeIngesta) {
+    @Schema(requiredMode = Schema.RequiredMode.REQUIRED) AjustesDeIngestaDto ajustesDeIngesta,
+    boolean local) {
 
   public static ProveedorRespuesta de(Proveedor p) {
     return new ProveedorRespuesta(
@@ -36,6 +37,7 @@ public record ProveedorRespuesta(
         // En el orden del enum, que es el del formulario: un Set.of no tiene orden estable.
         p.tiposExcluidos().stream().sorted().map(Enum::name).toList(),
         p.armaSets(),
-        AjustesDeIngestaDto.de(p.ajustesDeIngesta()));
+        AjustesDeIngestaDto.de(p.ajustesDeIngesta()),
+        p.esLocal());
   }
 }

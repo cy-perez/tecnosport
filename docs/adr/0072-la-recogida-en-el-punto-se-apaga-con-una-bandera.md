@@ -2,7 +2,9 @@
 
 **Fecha:** 2026-10-08
 **Estado:** aceptado. Cambia la salida que daban `ADR-0036`, `ADR-0046` y
-`ADR-0071` a los carritos que no pueden ir a domicilio.
+`ADR-0071` a los carritos que no pueden ir a domicilio. Matizado por `ADR-0093`:
+la bandera pasó a ser el interruptor general, la recogida depende del carrito y
+el `GET /envios/modalidades` es ahora un `POST` con sus variantes.
 
 ## Contexto
 

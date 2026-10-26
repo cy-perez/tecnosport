@@ -56,8 +56,9 @@ export interface CotizacionEnvio {
 }
 
 /**
- * Qué formas de entrega ofrece hoy el negocio. La recogida en el punto se apagó el 8 de octubre de
- * 2026 y la decide el servidor (`RETIRO_EN_PUNTO_HABILITADO`): la pantalla solo la deja de ofrecer.
+ * Qué formas de entrega tiene un carrito. La recogida en el punto la decide el servidor: con la
+ * bandera `RETIRO_EN_PUNTO_HABILITADO` encendida, y solo si todo el carrito es de proveedores
+ * locales (`ADR-0093`). La pantalla solo la deja de ofrecer.
  */
 export interface ModalidadesDeEntrega {
   readonly envioADomicilio: boolean;

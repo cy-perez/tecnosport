@@ -41,7 +41,7 @@ public final class ReintentarPago {
   private final RepositorioInventario repositorioInventario;
   private final Reloj reloj;
   private final Duration duracionReservaPagoEnLinea;
-  private final ModalidadesDeEntrega modalidadesDeEntrega;
+  private final RecogidaEnPunto recogidaEnPunto;
 
   public ReintentarPago(
       RepositorioPedidos repositorioPedidos,
@@ -49,13 +49,13 @@ public final class ReintentarPago {
       RepositorioInventario repositorioInventario,
       Reloj reloj,
       Duration duracionReservaPagoEnLinea,
-      ModalidadesDeEntrega modalidadesDeEntrega) {
+      RecogidaEnPunto recogidaEnPunto) {
     this.repositorioPedidos = Objects.requireNonNull(repositorioPedidos);
     this.repositorioProductos = Objects.requireNonNull(repositorioProductos);
     this.repositorioInventario = Objects.requireNonNull(repositorioInventario);
     this.reloj = Objects.requireNonNull(reloj);
     this.duracionReservaPagoEnLinea = Objects.requireNonNull(duracionReservaPagoEnLinea);
-    this.modalidadesDeEntrega = Objects.requireNonNull(modalidadesDeEntrega);
+    this.recogidaEnPunto = Objects.requireNonNull(recogidaEnPunto);
   }
 
   public Pedido ejecutar(ReintentarPagoComando comando) {
@@ -80,8 +80,10 @@ public final class ReintentarPago {
     // Un pedido de recogida que falló en la pasarela antes de que la recogida se apagara no vence:
     // se puede reintentar cuando sea. Cobrarlo hoy es contratar una recogida que los términos
     // vigentes ya no ofrecen (ADR-0072), así que responde lo mismo que `CrearPedido` — y antes de
-    // reservar, por lo mismo que la comprobación de arriba.
-    modalidadesDeEntrega.exigirDisponible(pedido.tipoEntrega());
+    // reservar, por lo mismo que la comprobación de arriba. Desde el 26/10/2026 eso incluye que
+    // todo el pedido venga de proveedores locales: uno de antes con tecnología no se recoge.
+    recogidaEnPunto.exigirDisponible(
+        pedido.tipoEntrega(), pedido.lineas().stream().map(LineaPedido::varianteId).toList());
     // Lo que ya no se vende no se cobra otra vez: un modelo que el proveedor agotó o que venció
     // sigue con existencia en el libro —agotar no toca el inventario— y sin esto el reintento lo
     // reservaba y Wompi lo cobraba. Antes de reservar, por lo mismo que las de arriba.

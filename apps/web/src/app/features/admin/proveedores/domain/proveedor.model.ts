@@ -63,6 +63,12 @@ export interface Proveedor {
    */
   readonly armaSets: boolean;
   /**
+   * Si surte desde Medellín: lo suyo llega al punto de TecnoSport y el comprador puede recogerlo.
+   * La recogida se ofrece solo si todo el carrito es de proveedores locales (ADR-0093). La Riverah
+   * y Violeta (26 de octubre de 2026), y vale para cualquier línea.
+   */
+  readonly local: boolean;
+  /**
    * Lo que su chat tiene de distinto (ADR-0089): nacieron con Tenis Al Pie, que manda tandas de
    * modelos distintos sin SKU, sin tallas en el anuncio y sin existencias. Solo para quien entra por
    * el chat; las tallas por género, solo para el calzado.

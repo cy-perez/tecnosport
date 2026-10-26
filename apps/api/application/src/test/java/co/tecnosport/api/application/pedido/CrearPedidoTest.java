@@ -54,6 +54,8 @@ import co.tecnosport.api.domain.pedido.MetodoPago;
 import co.tecnosport.api.domain.pedido.Pedido;
 import co.tecnosport.api.domain.pedido.TipoEntrega;
 import co.tecnosport.api.domain.proveedores.HuellaProveedor;
+import co.tecnosport.api.domain.proveedores.OrdenDePublicacion;
+import co.tecnosport.api.domain.proveedores.Proveedor;
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.Instant;
@@ -86,6 +88,7 @@ class CrearPedidoTest {
   private RepositorioAutorizacionesFalso autorizaciones;
   private CotizadorEnvioFalso cotizador;
   private RepositorioEnlacesDeCompraFalso enlaces;
+  private RepositorioProveedoresFalso proveedores;
 
   /** Lo que devuelve el cotizador en todas las pruebas que no digan otra cosa. */
   private static final TarifaEnvio TARIFA =
@@ -128,6 +131,7 @@ class CrearPedidoTest {
     autorizaciones = new RepositorioAutorizacionesFalso();
     cotizador = new CotizadorEnvioFalso();
     enlaces = new RepositorioEnlacesDeCompraFalso();
+    proveedores = new RepositorioProveedoresFalso();
     cotizador.conTarifas(TARIFA);
     cotizador.recaudaEnElDestino(recaudaEnElDestino);
     CotizarEnvio cotizarEnvio =
@@ -158,7 +162,7 @@ class CrearPedidoTest {
         VENTANA_INTENTOS_POR_CUENTA,
         autorizaciones,
         VERSION_POLITICA,
-        modalidadesDeEntrega,
+        new RecogidaEnPunto(modalidadesDeEntrega, productos, proveedores),
         enlaces);
   }
 
@@ -477,14 +481,93 @@ class CrearPedidoTest {
   void conLaRecogidaApagadaUnRetiroNoCreaElPedidoNiReservaNada() {
     modalidadesDeEntrega = new ModalidadesDeEntrega(false);
     CrearPedido caso = crear();
-    publicarProductoConVarianteYExistencia(5);
+    variante = publicarProductoLocal();
 
     assertThrows(
         RetiroEnPuntoNoDisponibleException.class,
         () -> caso.ejecutar(comandoRetiroEnPunto(MetodoPago.WOMPI, 1)));
 
-    assertEquals(
-        5, inventarios.buscarPorVarianteId(variante.id()).orElseThrow().saldoDisponible(AHORA));
+    assertEquals(2, disponible(variante));
+    assertTrue(pedidos.todos().isEmpty());
+  }
+
+  /**
+   * Encendida, la recogida es solo para lo de proveedores locales (26/10/2026): un producto manual
+   * o de un proveedor que no es local no se recoge, aunque el cliente la pida, y no reserva nada.
+   */
+  @Test
+  void loQueNoEsDeUnProveedorLocalNoSeRecogeNiReserva() {
+    CrearPedido caso = crear();
+    publicarProductoConVarianteYExistencia(5);
+
+    assertThrows(
+        RetiroEnPuntoNoDisponibleException.class,
+        () -> caso.ejecutar(comandoRetiroEnPunto(MetodoPago.WOMPI, 1)));
+    assertEquals(5, disponible(variante));
+
+    variante = publicarProductoDeProveedor(UUID.randomUUID(), p -> {});
+    assertThrows(
+        RetiroEnPuntoNoDisponibleException.class,
+        () -> caso.ejecutar(comandoRetiroEnPunto(MetodoPago.WOMPI, 1)));
+    assertEquals(2, disponible(variante));
+    assertTrue(pedidos.todos().isEmpty());
+  }
+
+  /**
+   * Un retiro con la misma variante repetida se rechaza por lo barato —las líneas repetidas— antes
+   * de que la recogida lea el catálogo por cada una.
+   */
+  @Test
+  void unRetiroConLineasRepetidasSeRechazaAntesDeMirarLaRecogida() {
+    CrearPedido caso = crear();
+    publicarProductoConVarianteYExistencia(5);
+    CrearPedidoComando repetido =
+        new CrearPedidoComando(
+            null,
+            "cliente@tecnosport.co",
+            CONTACTO,
+            List.of(
+                new CrearPedidoComando.LineaComando(variante.id(), 1),
+                new CrearPedidoComando.LineaComando(variante.id(), 1)),
+            TipoEntrega.RETIRO_EN_PUNTO,
+            null,
+            MetodoPago.WOMPI,
+            true,
+            IP);
+
+    assertThrows(LineasDuplicadasException.class, () -> caso.ejecutar(repetido));
+  }
+
+  /**
+   * Un solo artículo que no es local quita la recogida al carrito entero: no hay pedido parcial.
+   */
+  @Test
+  void unCarritoMixtoNoSeRecogeNiReservaNada() {
+    CrearPedido caso = crear();
+    publicarProductoConVarianteYExistencia(5);
+    Variante manual = variante;
+    Producto manualProducto = primerProducto;
+    Producto[] local = new Producto[1];
+    Variante deLaRiverah = publicarProductoDeProveedor(proveedorLocal(), p -> local[0] = p);
+    productos.conProductos(manualProducto, local[0]);
+    CrearPedidoComando mixto =
+        new CrearPedidoComando(
+            null,
+            "cliente@tecnosport.co",
+            CONTACTO,
+            List.of(
+                new CrearPedidoComando.LineaComando(deLaRiverah.id(), 1),
+                new CrearPedidoComando.LineaComando(manual.id(), 1)),
+            TipoEntrega.RETIRO_EN_PUNTO,
+            null,
+            MetodoPago.WOMPI,
+            true,
+            IP);
+
+    assertThrows(RetiroEnPuntoNoDisponibleException.class, () -> caso.ejecutar(mixto));
+
+    assertEquals(2, disponible(deLaRiverah));
+    assertEquals(5, disponible(manual));
     assertTrue(pedidos.todos().isEmpty());
   }
 
@@ -672,7 +755,7 @@ class CrearPedidoTest {
   @Test
   void elRetiroEnPuntoNiCotizaNiCobraEnvio() {
     CrearPedido caso = crear();
-    publicarProductoConVarianteYExistencia(5);
+    variante = publicarProductoLocal();
 
     Pedido pedido = caso.ejecutar(comandoRetiroEnPunto(MetodoPago.WOMPI, 2));
 
@@ -973,7 +1056,7 @@ class CrearPedidoTest {
   @Test
   void contraentregaSeRechazaEnRetiroEnPunto() {
     CrearPedido caso = crear();
-    publicarProductoConVarianteYExistencia(5);
+    variante = publicarProductoLocal();
     CrearPedidoComando comandoRetiroEnPunto =
         new CrearPedidoComando(
             null,
@@ -1143,10 +1226,34 @@ class CrearPedidoTest {
   }
 
   private Variante publicarProductoDeProveedor(java.util.function.Consumer<Producto> despues) {
+    return publicarProductoDeProveedor(UUID.randomUUID(), despues);
+  }
+
+  /** Un proveedor local registrado, como La Riverah: lo suyo se puede recoger en el punto. */
+  private UUID proveedorLocal() {
+    Proveedor riverah =
+        Proveedor.crear(
+            "La Riverah",
+            LineaCatalogo.ROPA,
+            "+57 301 9854097",
+            "La Riverah",
+            null,
+            OrdenDePublicacion.TEXTO_PRIMERO);
+    riverah.definirLocal(true);
+    proveedores.conProveedores(riverah);
+    return riverah.id();
+  }
+
+  /** Un producto de un proveedor local, publicado y con dos unidades. */
+  private Variante publicarProductoLocal() {
+    return publicarProductoDeProveedor(proveedorLocal(), p -> {});
+  }
+
+  private Variante publicarProductoDeProveedor(
+      UUID proveedorId, java.util.function.Consumer<Producto> despues) {
     Marca marca = Marca.crear("Samsung");
     Categoria categoria =
         Categoria.crear("Celulares", new Slug("celulares"), LineaCatalogo.TECNOLOGIA);
-    UUID proveedorId = UUID.randomUUID();
     Producto producto =
         Producto.crearDeProveedor(
             "Samsung Galaxy A57 5G",

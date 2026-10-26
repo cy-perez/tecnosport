@@ -17,8 +17,11 @@ export interface RepositorioEnvios {
    */
   cotizar(comando: CotizarEnvioComando): Promise<ResultadoCotizacion>;
 
-  /** Qué formas de entrega se ofrecen hoy. */
-  modalidades(): Promise<ModalidadesDeEntrega>;
+  /**
+   * Qué formas de entrega tiene el carrito con estas variantes. La recogida depende de él: solo si
+   * todo viene de proveedores locales (`ADR-0093`).
+   */
+  modalidades(varianteIds: readonly string[]): Promise<ModalidadesDeEntrega>;
 }
 
 export const REPOSITORIO_ENVIOS = new InjectionToken<RepositorioEnvios>('RepositorioEnvios');

@@ -51,6 +51,10 @@ public class ProveedorJpaEntity {
   @Column(name = "arma_sets", nullable = false)
   private boolean armaSets;
 
+  /** Si surte desde Medellín y lo suyo se puede recoger en el punto (V122). */
+  @Column(name = "es_local", nullable = false)
+  private boolean esLocal;
+
   /** Los ajustes de ingesta (V118): ver {@code AjustesDeIngesta}. */
   @Column(name = "una_foto_un_producto", nullable = false)
   private boolean unaFotoUnProducto;
@@ -166,6 +170,16 @@ public class ProveedorJpaEntity {
   /** Fuera del constructor para no alargarlo más: lo pone el adaptador al armar la fila. */
   public ProveedorJpaEntity conArmaSets(boolean armaSets) {
     this.armaSets = armaSets;
+    return this;
+  }
+
+  public boolean isEsLocal() {
+    return esLocal;
+  }
+
+  /** Como {@link #conArmaSets}. */
+  public ProveedorJpaEntity conEsLocal(boolean esLocal) {
+    this.esLocal = esLocal;
     return this;
   }
 

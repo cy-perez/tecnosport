@@ -225,6 +225,66 @@ class AdminProveedorControladorTest {
   }
 
   /**
+   * Violeta es local (ADR-0093): sin marcar nadie es local, se marca al editar, editar sin el campo
+   * lo conserva y {@code false} lo quita. El alta marcada va aparte, abajo.
+   */
+  @Test
+  void localSeMarcaAlCrearYEditarSinElCampoLoConserva() throws Exception {
+    String violeta =
+        "{\"nombre\":\"Violeta\",\"linea\":\"ROPA\",\"telefonoWhatsApp\":\"+57 300\","
+            + "\"nombreEnExportacion\":\"Violeta\",\"ordenDePublicacion\":\"TEXTO_PRIMERO\"";
+    mockMvc
+        .perform(
+            post("/api/v1/admin/proveedores")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(violeta + "}"))
+        .andExpect(status().isCreated())
+        .andExpect(jsonPath("$.local").value(false));
+    UUID id = proveedores.porId.keySet().iterator().next();
+
+    mockMvc
+        .perform(
+            put("/api/v1/admin/proveedores/{id}", id)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(violeta + ",\"local\":true}"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.local").value(true));
+
+    mockMvc
+        .perform(
+            put("/api/v1/admin/proveedores/{id}", id)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(violeta + "}"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.local").value(true));
+
+    mockMvc
+        .perform(
+            put("/api/v1/admin/proveedores/{id}", id)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(violeta + ",\"local\":false}"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.local").value(false));
+  }
+
+  @Test
+  void localSeMarcaEnElAlta() throws Exception {
+    mockMvc
+        .perform(
+            post("/api/v1/admin/proveedores")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    "{\"nombre\":\"La Riverah\",\"linea\":\"ROPA\",\"telefonoWhatsApp\":\"+57 301\","
+                        + "\"nombreEnExportacion\":\"La Riverah\",\"ordenDePublicacion\":\"TEXTO_PRIMERO\","
+                        + "\"local\":true}"))
+        .andExpect(status().isCreated())
+        .andExpect(jsonPath("$.local").value(true));
+    UUID id = proveedores.porId.keySet().iterator().next();
+
+    org.junit.jupiter.api.Assertions.assertTrue(proveedores.porId.get(id).esLocal());
+  }
+
+  /**
    * Los ajustes de ingesta de Tenis Al Pie (ADR-0089): se definen al crearlo, editar sin el bloque
    * los conserva, y un bloque nuevo los reemplaza entero.
    */

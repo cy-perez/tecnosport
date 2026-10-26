@@ -76,7 +76,7 @@ public final class CrearPedido {
   private final RepositorioAutorizaciones repositorioAutorizaciones;
   private final String versionPolitica;
 
-  private final ModalidadesDeEntrega modalidadesDeEntrega;
+  private final RecogidaEnPunto recogidaEnPunto;
   private final RepositorioEnlacesDeCompra repositorioEnlaces;
 
   public CrearPedido(
@@ -93,7 +93,7 @@ public final class CrearPedido {
       Duration ventanaIntentosPorCuenta,
       RepositorioAutorizaciones repositorioAutorizaciones,
       String versionPolitica,
-      ModalidadesDeEntrega modalidadesDeEntrega,
+      RecogidaEnPunto recogidaEnPunto,
       RepositorioEnlacesDeCompra repositorioEnlaces) {
     this.repositorioProductos =
         Objects.requireNonNull(
@@ -127,9 +127,8 @@ public final class CrearPedido {
     this.cotizarEnvio = Objects.requireNonNull(cotizarEnvio, "El cotizador no puede ser nulo.");
     this.versionPolitica =
         Objects.requireNonNull(versionPolitica, "La versión de la política no puede ser nula.");
-    this.modalidadesDeEntrega =
-        Objects.requireNonNull(
-            modalidadesDeEntrega, "Las modalidades de entrega no pueden ser nulas.");
+    this.recogidaEnPunto =
+        Objects.requireNonNull(recogidaEnPunto, "La recogida en el punto no puede ser nula.");
     this.repositorioEnlaces =
         Objects.requireNonNull(
             repositorioEnlaces, "El repositorio de enlaces de compra no puede ser nulo.");
@@ -145,7 +144,6 @@ public final class CrearPedido {
     if (comando.contacto() == null) {
       throw new ExcepcionDeDominio("Un pedido exige el nombre y el teléfono de quien recibe.");
     }
-    modalidadesDeEntrega.exigirDisponible(comando.tipoEntrega());
     Instant ahora = reloj.ahora();
     CorreoElectronico correoComprador = new CorreoElectronico(comando.correo());
     if (!limitadorDeIntentos.permitir(
@@ -163,6 +161,12 @@ public final class CrearPedido {
     // repetida: tomaría dos veces el mismo bloqueo y haría dos reservas separadas sobre el mismo
     // libro. El agregado lo vuelve a exigir al crearse; aquí se adelanta para no reservar nada.
     Pedido.exigirVariantesSinRepetir(
+        comando.lineas().stream().map(CrearPedidoComando.LineaComando::varianteId).toList());
+
+    // Antes de reservar, y después de lo de arriba: la recogida lee el catálogo por cada línea
+    // (ADR-0093), así que va detrás del límite por cuenta y del rechazo barato de los repetidos.
+    recogidaEnPunto.exigirDisponible(
+        comando.tipoEntrega(),
         comando.lineas().stream().map(CrearPedidoComando.LineaComando::varianteId).toList());
 
     // La cotización va antes de la comprobación de contraentrega y no al revés: la tarifa que sale

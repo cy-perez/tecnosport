@@ -19,6 +19,8 @@ import java.util.Objects;
  *     es que no, y al editar deja lo que tenía
  * @param ajustesDeIngesta cómo se ingiere su chat; nulo en el alta es como el de todos, y al editar
  *     deja los que tenía. Si viene, reemplaza los cuatro
+ * @param local si surte desde Medellín y lo suyo se puede recoger en el punto (ADR-0093); nulo en
+ *     el alta es que no, y al editar deja lo que tenía
  */
 public record ProveedorPeticion(
     @Schema(requiredMode = Schema.RequiredMode.REQUIRED) String nombre,
@@ -32,7 +34,8 @@ public record ProveedorPeticion(
     Boolean dosChatsEnUnZip,
     List<String> tiposExcluidos,
     Boolean armaSets,
-    AjustesDeIngestaDto ajustesDeIngesta) {
+    AjustesDeIngestaDto ajustesDeIngesta,
+    Boolean local) {
 
   public ProveedorPeticion {
     Objects.requireNonNull(nombre, "El nombre es obligatorio.");

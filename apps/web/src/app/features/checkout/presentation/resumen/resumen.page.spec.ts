@@ -114,8 +114,10 @@ class RepositorioPedidosFalso implements RepositorioPedidos {
 
 class RepositorioEnviosFalso implements RepositorioEnvios {
   retiroEnPunto = true;
+  readonly preguntadas: (readonly string[])[] = [];
 
-  async modalidades(): Promise<ModalidadesDeEntrega> {
+  async modalidades(varianteIds: readonly string[]): Promise<ModalidadesDeEntrega> {
+    this.preguntadas.push(varianteIds);
     return { envioADomicilio: true, retiroEnPunto: this.retiroEnPunto };
   }
 
@@ -633,7 +635,7 @@ describe('ResumenPage', () => {
     await renderResumen(new RepositorioCarritoFalso(CARRITO_CON_LINEAS), envios);
     await screen.findByText('Morral urbano');
 
-    fireEvent.change(screen.getByLabelText('Tipo de entrega'), {
+    fireEvent.change(await screen.findByLabelText('Tipo de entrega'), {
       target: { value: 'RETIRO_EN_PUNTO' },
     });
 
@@ -654,7 +656,7 @@ describe('ResumenPage', () => {
     await llenarDireccionEnMedellin();
     await screen.findAllByText(/9\.540/);
 
-    fireEvent.change(screen.getByLabelText('Tipo de entrega'), {
+    fireEvent.change(await screen.findByLabelText('Tipo de entrega'), {
       target: { value: 'RETIRO_EN_PUNTO' },
     });
 
@@ -683,7 +685,7 @@ describe('ResumenPage', () => {
     fireEvent.change(screen.getByLabelText('Ciudad'), { target: { value: '11001' } });
     await screen.findByText(/No tenemos transporte hasta esta dirección/);
 
-    fireEvent.change(screen.getByLabelText('Tipo de entrega'), {
+    fireEvent.change(await screen.findByLabelText('Tipo de entrega'), {
       target: { value: 'RETIRO_EN_PUNTO' },
     });
 
@@ -707,6 +709,44 @@ describe('ResumenPage', () => {
     expect(screen.getByLabelText('Dirección')).toBeTruthy();
   });
 
+  /** La recogida depende del carrito (ADR-0093): se pregunta con lo que lleva, no en general. */
+  it('pregunta por la recogida con las variantes de su carrito', async () => {
+    sembrarCarritoId('carrito-1');
+    sembrarSnapshotLinea(snapshotDePrueba('variante-1'));
+    const envios = new RepositorioEnviosFalso(null);
+
+    await renderResumen(new RepositorioCarritoFalso(CARRITO_CON_LINEAS), envios);
+    await screen.findByLabelText('Tipo de entrega');
+
+    expect(envios.preguntadas).toEqual([['variante-1']]);
+  });
+
+  /**
+   * Si el carrito deja de poderse recoger con la recogida elegida, vuelve al envío a domicilio: el
+   * selector desaparece y la recogida no puede quedarse puesta y oculta (ADR-0093).
+   */
+  it('si la recogida deja de aplicar, la entrega vuelve a domicilio', async () => {
+    sembrarCarritoId('carrito-1');
+    sembrarSnapshotLinea(snapshotDePrueba('variante-1'));
+    const envios = new RepositorioEnviosFalso(null);
+    const { fixture } = await renderResumen(
+      new RepositorioCarritoFalso(CARRITO_CON_LINEAS),
+      envios,
+    );
+    fireEvent.change(await screen.findByLabelText('Tipo de entrega'), {
+      target: { value: 'RETIRO_EN_PUNTO' },
+    });
+    expect(screen.queryByLabelText('Dirección')).toBeNull();
+
+    envios.retiroEnPunto = false;
+    await fixture.debugElement.injector
+      .get(QueryClient)
+      .invalidateQueries({ queryKey: ['checkout', 'modalidades-de-entrega'] });
+
+    expect(await screen.findByLabelText('Dirección')).toBeTruthy();
+    expect(screen.queryByLabelText('Tipo de entrega')).toBeNull();
+  });
+
   it('elegir retiro en punto oculta los campos de dirección', async () => {
     sembrarCarritoId('carrito-1');
     sembrarSnapshotLinea(snapshotDePrueba('variante-1'));
@@ -714,7 +754,7 @@ describe('ResumenPage', () => {
     await renderResumen(new RepositorioCarritoFalso(CARRITO_CON_LINEAS));
     await screen.findByText('Morral urbano');
 
-    fireEvent.change(screen.getByLabelText('Tipo de entrega'), {
+    fireEvent.change(await screen.findByLabelText('Tipo de entrega'), {
       target: { value: 'RETIRO_EN_PUNTO' },
     });
 
@@ -953,7 +993,7 @@ describe('ResumenPage', () => {
     });
     await llenarDireccionEnMedellin();
     fireEvent.input(screen.getByLabelText('Barrio (opcional)'), { target: { value: '@#$%' } });
-    fireEvent.change(screen.getByLabelText('Tipo de entrega'), {
+    fireEvent.change(await screen.findByLabelText('Tipo de entrega'), {
       target: { value: 'RETIRO_EN_PUNTO' },
     });
     fireEvent.click(screen.getByRole('checkbox'));

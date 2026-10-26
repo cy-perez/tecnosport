@@ -141,6 +141,7 @@ public class RepositorioProveedoresJpa implements RepositorioProveedores {
             creadoEn,
             actualizadoEn)
         .conArmaSets(p.armaSets())
+        .conEsLocal(p.esLocal())
         .conAjustesDeIngesta(
             p.ajustesDeIngesta().unaFotoUnProducto(),
             p.ajustesDeIngesta().ventaBajoConfirmacion(),
@@ -198,6 +199,7 @@ public class RepositorioProveedoresJpa implements RepositorioProveedores {
             .map(TipoProductoProveedor::valueOf)
             .collect(Collectors.toSet()));
     proveedor.definirArmaSets(fila.isArmaSets());
+    proveedor.definirLocal(fila.isEsLocal());
     proveedor.definirAjustesDeIngesta(ajustesDe(fila));
     return proveedor;
   }

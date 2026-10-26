@@ -2820,6 +2820,21 @@
         },
         "type" : "object"
       },
+      "ModalidadesDeEntregaRequest" : {
+        "properties" : {
+          "varianteIds" : {
+            "items" : {
+              "format" : "uuid",
+              "type" : "string"
+            },
+            "type" : "array"
+          }
+        },
+        "required" : [
+          "varianteIds"
+        ],
+        "type" : "object"
+      },
       "ModalidadesDeEntregaRespuesta" : {
         "properties" : {
           "envioADomicilio" : {
@@ -3672,6 +3687,9 @@
           "linea" : {
             "type" : "string"
           },
+          "local" : {
+            "type" : "boolean"
+          },
           "nombre" : {
             "type" : "string"
           },
@@ -3726,6 +3744,9 @@
           },
           "linea" : {
             "type" : "string"
+          },
+          "local" : {
+            "type" : "boolean"
           },
           "nombre" : {
             "type" : "string"
@@ -10128,8 +10149,18 @@
       }
     },
     "/api/v1/envios/modalidades" : {
-      "get" : {
+      "post" : {
         "operationId" : "consultarModalidades",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ModalidadesDeEntregaRequest"
+              }
+            }
+          },
+          "required" : true
+        },
         "responses" : {
           "200" : {
             "content" : {

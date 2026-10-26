@@ -99,6 +99,14 @@ public final class Proveedor {
    */
   private boolean armaSets;
 
+  /**
+   * Si surte desde Medellín: lo que vende llega al punto de TecnoSport a tiempo para recogerlo.
+   * Decidido por el negocio el 26 de octubre de 2026 para La Riverah y Violeta; un pedido se puede
+   * recoger en el punto solo si todo lo que lleva viene de un proveedor local. Vale para cualquier
+   * línea: que sea local lo dice dónde está, no cómo manda su surtido.
+   */
+  private boolean local;
+
   /** Lo que su chat tiene de distinto: ver {@link AjustesDeIngesta}. */
   private AjustesDeIngesta ajustesDeIngesta = AjustesDeIngesta.POR_OMISION;
 
@@ -273,6 +281,15 @@ public final class Proveedor {
 
   public boolean armaSets() {
     return armaSets;
+  }
+
+  /** Marca o desmarca que surte desde Medellín; el adaptador lo usa también para devolverlo. */
+  public void definirLocal(boolean local) {
+    this.local = local;
+  }
+
+  public boolean esLocal() {
+    return local;
   }
 
   /**

@@ -109,9 +109,11 @@ export class EnvioHttpRepositorio implements RepositorioEnvios {
     }
   }
 
-  async modalidades(): Promise<ModalidadesDeEntrega> {
+  async modalidades(varianteIds: readonly string[]): Promise<ModalidadesDeEntrega> {
     const dto = desempaquetar(
-      await this.cliente.GET('/api/v1/envios/modalidades'),
+      await this.cliente.POST('/api/v1/envios/modalidades', {
+        body: { varianteIds: [...varianteIds] },
+      }),
       'no se pudieron consultar las formas de entrega',
     );
     return { envioADomicilio: dto.envioADomicilio, retiroEnPunto: dto.retiroEnPunto };

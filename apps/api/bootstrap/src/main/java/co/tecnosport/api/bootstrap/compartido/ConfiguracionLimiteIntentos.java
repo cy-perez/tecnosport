@@ -102,7 +102,11 @@ public class ConfiguracionLimiteIntentos {
                 propiedades.ipMaximo(),
                 Duration.ofMinutes(propiedades.ipMinutos())));
     registro.addUrlPatterns(
-        "/api/v1/envios/cotizacion", "/api/v1/pedidos/metodos-de-pago-disponibles");
+        "/api/v1/envios/cotizacion",
+        "/api/v1/pedidos/metodos-de-pago-disponibles",
+        // ADR-0093: no llama a terceros, pero cada variante de la lista es una lectura del
+        // catálogo.
+        "/api/v1/envios/modalidades");
     return registro;
   }
 

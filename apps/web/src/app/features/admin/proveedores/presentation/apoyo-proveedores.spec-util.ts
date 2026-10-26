@@ -18,6 +18,7 @@ export function proveedorDePrueba(overrides: Partial<Proveedor> = {}): Proveedor
     dosChatsEnUnZip: false,
     tiposExcluidos: [],
     armaSets: false,
+    local: false,
     ajustesDeIngesta: AJUSTES_DE_INGESTA_POR_OMISION,
     activo: true,
     ...overrides,

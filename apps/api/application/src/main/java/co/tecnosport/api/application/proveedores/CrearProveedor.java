@@ -26,6 +26,7 @@ public final class CrearProveedor {
     proveedor.definirTiposExcluidos(comando.tiposExcluidos());
     proveedor.definirArmaSets(comando.armaSets());
     proveedor.definirAjustesDeIngesta(comando.ajustesDeIngesta());
+    proveedor.definirLocal(comando.local());
     repositorioProveedores.guardar(proveedor);
     return proveedor;
   }

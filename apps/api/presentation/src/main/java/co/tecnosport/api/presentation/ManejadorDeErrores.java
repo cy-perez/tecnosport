@@ -939,9 +939,9 @@ public class ManejadorDeErrores {
     return problema(HttpStatus.NOT_FOUND, "Entrar con Google no está habilitado", excepcion);
   }
 
-  // Un cliente que no leyó GET /envios/modalidades —uno viejo, o hecho a mano— y pide recoger con
-  // la recogida apagada. 409 como contraentrega: el pedido está bien formado, el negocio no lo
-  // ofrece.
+  // Un cliente que no leyó POST /envios/modalidades —uno viejo, o hecho a mano— y pide recoger con
+  // la recogida apagada o con algo que no es de un proveedor local (ADR-0093). 409 como
+  // contraentrega: el pedido está bien formado, el negocio no lo ofrece.
   @ExceptionHandler(RetiroEnPuntoNoDisponibleException.class)
   public ProblemDetail retiroEnPuntoNoDisponible(RetiroEnPuntoNoDisponibleException excepcion) {
     return problema(HttpStatus.CONFLICT, "Recogida en el punto no disponible", excepcion);

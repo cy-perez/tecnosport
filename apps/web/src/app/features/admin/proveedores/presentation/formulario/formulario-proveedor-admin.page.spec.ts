@@ -153,6 +153,40 @@ describe('FormularioProveedorAdminPage', () => {
     expect(repositorio.creados[0]).toMatchObject({ nombre: 'La Riverah', armaSets: true });
   });
 
+  /** Violeta surte desde Medellín (ADR-0093): lo suyo se recoge en el punto. Vale en cualquier línea. */
+  it('manda que es local cuando se marca, también para la tecnología', async () => {
+    const { repositorio, fixture } = await renderPagina();
+    vi.spyOn(fixture.debugElement.injector.get(Router), 'navigate').mockResolvedValue(true);
+
+    escribir(f.nombre, 'Violeta');
+    escribir(f.remitente, 'Violeta');
+    escribir(f.telefono, '573000000000');
+    fireEvent.change(screen.getByLabelText(f.linea), { target: { value: 'TECNOLOGIA' } });
+    fireEvent.change(screen.getByLabelText(f.orden), { target: { value: 'TEXTO_PRIMERO' } });
+    escribir(f.margen, '1,30');
+    fireEvent.click(await screen.findByLabelText(f.local));
+    fireEvent.click(screen.getByRole('button', { name: f.crear }));
+
+    await vi.waitFor(() => expect(repositorio.creados).toHaveLength(1));
+    expect(repositorio.creados[0]).toMatchObject({ nombre: 'Violeta', local: true });
+  });
+
+  it('sin marcarlo, nadie es local', async () => {
+    const { repositorio, fixture } = await renderPagina();
+    vi.spyOn(fixture.debugElement.injector.get(Router), 'navigate').mockResolvedValue(true);
+
+    escribir(f.nombre, 'Mayorista');
+    escribir(f.remitente, 'Mayorista');
+    escribir(f.telefono, '573000000000');
+    fireEvent.change(screen.getByLabelText(f.linea), { target: { value: 'ROPA' } });
+    fireEvent.change(screen.getByLabelText(f.orden), { target: { value: 'TEXTO_PRIMERO' } });
+    escribir(f.margen, '1,30');
+    fireEvent.click(screen.getByRole('button', { name: f.crear }));
+
+    await vi.waitFor(() => expect(repositorio.creados).toHaveLength(1));
+    expect(repositorio.creados[0]).toMatchObject({ local: false });
+  });
+
   /** Tenis Al Pie (ADR-0089): una foto por producto, bajo confirmación, cinco días y tallas EUR. */
   it('manda los ajustes de ingesta de un proveedor de calzado', async () => {
     const { repositorio, fixture } = await renderPagina();

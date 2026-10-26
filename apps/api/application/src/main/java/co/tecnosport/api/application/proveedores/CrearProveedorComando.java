@@ -12,6 +12,7 @@ import java.util.Set;
  * @param tiposExcluidos los que no se le compran; vacío para comprarle todo
  * @param armaSets si la prenda que anuncia con su acompañante se publica como set
  * @param ajustesDeIngesta cómo se ingiere su chat; nulo es como el de todos
+ * @param local si surte desde Medellín y lo suyo se puede recoger en el punto (ADR-0093)
  */
 public record CrearProveedorComando(
     String nombre,
@@ -23,11 +24,38 @@ public record CrearProveedorComando(
     boolean dosChatsEnUnZip,
     Set<TipoProductoProveedor> tiposExcluidos,
     boolean armaSets,
-    AjustesDeIngesta ajustesDeIngesta) {
+    AjustesDeIngesta ajustesDeIngesta,
+    boolean local) {
 
   public CrearProveedorComando {
     tiposExcluidos = tiposExcluidos == null ? Set.of() : Set.copyOf(tiposExcluidos);
     ajustesDeIngesta = ajustesDeIngesta == null ? AjustesDeIngesta.POR_OMISION : ajustesDeIngesta;
+  }
+
+  /** Sin marcarlo local: lo suyo no se recoge en el punto. */
+  public CrearProveedorComando(
+      String nombre,
+      LineaCatalogo linea,
+      String telefonoWhatsApp,
+      String nombreEnExportacion,
+      BigDecimal factorDeMargen,
+      OrdenDePublicacion ordenDePublicacion,
+      boolean dosChatsEnUnZip,
+      Set<TipoProductoProveedor> tiposExcluidos,
+      boolean armaSets,
+      AjustesDeIngesta ajustesDeIngesta) {
+    this(
+        nombre,
+        linea,
+        telefonoWhatsApp,
+        nombreEnExportacion,
+        factorDeMargen,
+        ordenDePublicacion,
+        dosChatsEnUnZip,
+        tiposExcluidos,
+        armaSets,
+        ajustesDeIngesta,
+        false);
   }
 
   /** Sin ajustes de ingesta: su chat se ingiere como el de todos. */

@@ -135,7 +135,10 @@ identifica al comprador, aunque sea solo por correo.
   artículo 50 de la Ley 1480 de 2011, además de ser lo que el negocio decidió.
 - **La recogida en el punto está apagada desde el 8 de octubre de 2026**
   (`adr/0072`): todos los pedidos van a domicilio. Cuando estaba encendida no
-  pagaba envío, y el checkout mostraba el ahorro junto a la opción.
+  pagaba envío, y el checkout mostraba el ahorro junto a la opción. Desde el 26
+  de octubre de 2026, encendida, se ofrece solo si todo el carrito es de
+  proveedores locales (`adr/0093`); para encenderla faltan la entrega en el
+  punto y los textos legales.
 - **Sin tarifa cotizada no hay envío a domicilio.** Si el destino no tiene
   cobertura o el proveedor no responde, el pedido no se toma en el sitio y se
   remite a WhatsApp. No se inventa un flete ni se aplica una tarifa de respaldo.
