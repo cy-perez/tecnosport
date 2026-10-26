@@ -30,6 +30,11 @@ import tools.jackson.databind.node.ObjectNode;
  * se mandan en JPEG: el pie impreso y una etiqueta se leen a ese tamaño, y una foto de WhatsApp a
  * tamaño completo cuesta el triple en tokens sin decir nada más. Una foto que no se puede
  * decodificar se salta; la lectura de las demás sigue sirviendo.
+ *
+ * <p><b>Dos modelos con dos formas de pedir</b> (ADR-0090, 26 de octubre de 2026). Haiku 4.5 lee
+ * con temperatura 0 y sin razonar. El lector de calzado es Sonnet 5.5, que rechaza con un 400 una
+ * temperatura distinta de la de siempre y razona siempre: a ese se le pide el esfuerzo, no la
+ * temperatura.
  */
 public final class LectorDeFotosClaude implements LectorDeFotos {
 
@@ -42,6 +47,7 @@ public final class LectorDeFotosClaude implements LectorDeFotos {
   private final int maxTokens;
   private final String promptDeSistema;
   private final JsonNode esquema;
+  private final String esfuerzo;
 
   public LectorDeFotosClaude(
       URI urlBase,
@@ -63,7 +69,37 @@ public final class LectorDeFotosClaude implements LectorDeFotos {
         esperaInicial,
         Thread::sleep,
         promptDeSistema,
-        esquemaJson);
+        esquemaJson,
+        null);
+  }
+
+  /**
+   * @param esfuerzo el de {@code output_config.effort} —«low», «medium», «high»— para un modelo que
+   *     razona; nulo para Haiku 4.5, que no lo admite y lee con temperatura 0
+   */
+  public LectorDeFotosClaude(
+      URI urlBase,
+      String apiKey,
+      String modelo,
+      int maxTokens,
+      Duration timeout,
+      int intentos,
+      Duration esperaInicial,
+      String promptDeSistema,
+      String esquemaJson,
+      String esfuerzo) {
+    this(
+        urlBase,
+        apiKey,
+        modelo,
+        maxTokens,
+        timeout,
+        intentos,
+        esperaInicial,
+        Thread::sleep,
+        promptDeSistema,
+        esquemaJson,
+        esfuerzo);
   }
 
   LectorDeFotosClaude(
@@ -76,7 +112,8 @@ public final class LectorDeFotosClaude implements LectorDeFotos {
       Duration esperaInicial,
       LlamadaAClaude.Pausador pausador,
       String promptDeSistema,
-      String esquemaJson) {
+      String esquemaJson,
+      String esfuerzo) {
     this.llamada =
         new LlamadaAClaude(
             urlBase,
@@ -94,6 +131,7 @@ public final class LectorDeFotosClaude implements LectorDeFotos {
     this.promptDeSistema =
         LlamadaAClaude.exigir(promptDeSistema, "El prompt de sistema es obligatorio.");
     this.esquema = json.readTree(LlamadaAClaude.exigir(esquemaJson, "El esquema es obligatorio."));
+    this.esfuerzo = esfuerzo == null || esfuerzo.isBlank() ? null : esfuerzo.strip();
   }
 
   @Override
@@ -113,9 +151,10 @@ public final class LectorDeFotosClaude implements LectorDeFotos {
     cuerpo.put("max_tokens", maxTokens);
     // Temperatura 0: en tres corridas seguidas contra la verdad el lector leyó distinto las
     // mismas fotos (10 de octubre de 2026). Haiku 4.5 admite los parámetros de muestreo; los
-    // modelos desde Opus 4.7 los rechazan con un 400, así que cambiar de modelo obliga a revisar
-    // esta línea.
-    cuerpo.put("temperature", 0);
+    // modelos desde Opus 4.7 los rechazan con un 400. A esos se les pide el esfuerzo.
+    if (esfuerzo == null) {
+      cuerpo.put("temperature", 0);
+    }
     cuerpo.put("system", promptDeSistema);
     ObjectNode mensaje = cuerpo.putArray("messages").addObject();
     mensaje.put("role", "user");
@@ -135,7 +174,11 @@ public final class LectorDeFotosClaude implements LectorDeFotos {
       fuente.put("media_type", "image/jpeg");
       fuente.put("data", Base64.getEncoder().encodeToString(jpeg.get()));
     }
-    ObjectNode formato = cuerpo.putObject("output_config").putObject("format");
+    ObjectNode configuracion = cuerpo.putObject("output_config");
+    if (esfuerzo != null) {
+      configuracion.put("effort", esfuerzo);
+    }
+    ObjectNode formato = configuracion.putObject("format");
     formato.put("type", "json_schema");
     formato.set("schema", esquema);
     return json.writeValueAsString(cuerpo);
