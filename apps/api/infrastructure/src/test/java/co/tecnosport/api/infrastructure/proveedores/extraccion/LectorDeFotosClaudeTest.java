@@ -252,7 +252,7 @@ class LectorDeFotosClaudeTest {
                     + "\"pie\":[],\"colores\":[\"negro\"],\"diseno\":null,\"marcas\":[],"
                     + "\"tallas\":[],\"calzado\":{\"tipo\":\"tenis\",\"marca\":\"Nike\","
                     + "\"modelo\":\"Shox R4\",\"modelo_seguro\":false,\"genero\":\"unisex\","
-                    + "\"producto_solo\":true,\"mismo_tenis_que\":1}}]}")
+                    + "\"foto_publicable\":true,\"mismo_tenis_que\":1}}]}")
             + "}],\"usage\":{\"input_tokens\":4100,\"output_tokens\":210}}");
 
     LecturaDeFotos lectura =

@@ -744,7 +744,7 @@ class ExtraerProductoDePublicacionTest {
   /**
    * Una tanda de Tenis Al Pie (ADR-0089): el texto es solo el precio y el extractor no ve en él
    * ningún producto. La tanda se parte igual, una foto por producto, con el costo por mayor; la
-   * Crocs y el tenis puesto no llegan.
+   * Crocs y la captura de pantalla no llegan.
    */
   @Test
   void unaTandaDeUnaFotoPorProductoSeParteAunqueElTextoSeaSoloElPrecio() {

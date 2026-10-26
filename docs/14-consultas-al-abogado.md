@@ -611,8 +611,9 @@ Vuitton, Dior, Alexander McQueen, Valentino, Off-White, Diesel—. El negocio de
 venderlas todas, deportivas y de moda. El título dice «Tenis importados estilo
 Nike Air Force 1», pero **el logo de la marca se ve en el tenis y en sus fotos**, y
 varias fotos las ambienta el proveedor con artículos de otras marcas (bolsas Dior,
-libros Cartier, cajas Supreme). La ingesta descarta las fotos con utilería de otras
-marcas y las del tenis puesto, pero no puede quitar el logo del propio tenis.
+libros Cartier, cajas Supreme). Hasta el 26 de octubre de 2026 la ingesta descartaba
+las fotos con utilería de otras marcas y las del tenis puesto; desde `ADR-0091` las
+publica, y en ningún caso puede quitar el logo del propio tenis.
 
 Además, desde este cambio, la talla de ese calzado se confirma por WhatsApp antes de
 venderse, con el mismo camino del punto 9: el proveedor no dice qué tallas tiene de
@@ -630,7 +631,9 @@ talla. Nada de los textos habla de réplicas, de marcas ni de su relación con e
    el título describe, pero el producto lleva el signo de la marca. ¿Cabe dentro de
    la Decisión 486 de la Comunidad Andina y del Código Penal sobre el uso de signos
    distintivos, o el riesgo es el del producto y no el del título? ¿Cambia algo que
-   sean marcas de lujo?
+   sean marcas de lujo? ¿Y que la foto publicada muestre junto al tenis artículos de
+   otras marcas que no se venden —un libro Cartier, una bolsa Dior—, como si la tienda
+   se asociara con ellas?
 2. **¿Las pasarelas lo admiten?** Wompi y Sistecrédito tienen listas de productos
    prohibidos en sus condiciones de vinculación; este expediente no las ha leído. Un
    cierre de la cuenta de pagos por esto apagaría toda la tienda, no solo el calzado.

@@ -1,6 +1,7 @@
 package co.tecnosport.api.infrastructure.proveedores.extraccion;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import co.tecnosport.api.domain.proveedores.GeneroDeCalzado;
@@ -57,13 +58,13 @@ class InterpreteDeLecturaDeFotosJsonTest {
             .interpretar(
                 "{\"fotos\":["
                     + "{\"foto\":1,\"calzado\":{\"tipo\":\"tenis\",\"modelo\":\"Air Force 1\","
-                    + "\"modelo_seguro\":true,\"genero\":\"unisex\",\"producto_solo\":true}},"
+                    + "\"modelo_seguro\":true,\"genero\":\"unisex\",\"foto_publicable\":true}},"
                     + "{\"foto\":2,\"calzado\":{\"tipo\":\"zueco\",\"modelo\":\"\","
                     + "\"modelo_seguro\":false,\"genero\":\"no_se_sabe\","
-                    + "\"producto_solo\":false}},"
+                    + "\"foto_publicable\":false}},"
                     + "{\"foto\":3,\"calzado\":{\"tipo\":\"no_es_calzado\",\"modelo\":\"\","
                     + "\"modelo_seguro\":false,\"genero\":\"no_se_sabe\","
-                    + "\"producto_solo\":false}},"
+                    + "\"foto_publicable\":false}},"
                     + "{\"foto\":4,\"colores\":[\"negro\"]}]}")
             .orElseThrow();
 
@@ -71,7 +72,7 @@ class InterpreteDeLecturaDeFotosJsonTest {
     assertEquals(TipoDeCalzado.TENIS, tenis.tipo());
     assertEquals(Optional.of("Air Force 1"), tenis.modeloParaElTitulo());
     assertEquals(Optional.of(GeneroDeCalzado.UNISEX), tenis.generoOpcional());
-    assertTrue(tenis.productoSolo());
+    assertTrue(tenis.fotoPublicable());
 
     LecturaDeCalzado crocs = lectura.fotos().get(1).calzadoOpcional().orElseThrow();
     assertEquals(TipoDeCalzado.ZUECO, crocs.tipo());
@@ -121,6 +122,25 @@ class InterpreteDeLecturaDeFotosJsonTest {
     LecturaDeCalzado segunda = lectura.fotos().get(1).calzadoOpcional().orElseThrow();
     assertTrue(segunda.mismoTenisQueOpcional().isEmpty());
     assertTrue(segunda.marcaOpcional().isEmpty());
+  }
+
+  /**
+   * Desde el 26 de octubre de 2026 (ADR-0091) el lector dice si la foto se puede publicar; una
+   * lectura guardada antes decía si el tenis se veía solo, y se sigue entendiendo así.
+   */
+  @Test
+  void laFotoPublicableSeLeeYLaLecturaViejaDiceSiSeVeiaSolo() {
+    LecturaDeFotos lectura =
+        interprete
+            .interpretar(
+                "{\"fotos\":[{\"foto\":1,\"calzado\":{\"tipo\":\"tenis\",\"modelo\":\"\",\"modelo_seguro\":false,"
+                    + "\"genero\":\"unisex\",\"foto_publicable\":true,\"producto_solo\":false}},"
+                    + "{\"foto\":2,\"calzado\":{\"tipo\":\"tenis\",\"modelo\":\"\",\"modelo_seguro\":false,"
+                    + "\"genero\":\"unisex\",\"producto_solo\":false}}]}")
+            .orElseThrow();
+
+    assertTrue(lectura.fotos().get(0).calzadoOpcional().orElseThrow().fotoPublicable());
+    assertFalse(lectura.fotos().get(1).calzadoOpcional().orElseThrow().fotoPublicable());
   }
 
   @Test

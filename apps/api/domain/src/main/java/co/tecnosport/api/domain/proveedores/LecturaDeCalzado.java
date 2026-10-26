@@ -20,8 +20,8 @@ import java.util.Optional;
  * @param modeloSeguro si el lector lo reconoce sin dudar entre dos parecidos
  * @param genero para quién es, por la horma, los colores y el contexto; nulo si no lo sabe
  * @param tipo qué calzado es
- * @param productoSolo si la foto muestra el calzado solo: sobre una superficie o sostenido en la
- *     mano, sin estar puesto, sin pies ni piernas y sin utilería de otras marcas
+ * @param fotoPublicable si la foto se puede publicar tal como está: todas, puesto el tenis o con
+ *     utilería de otras marcas (ADR-0091), salvo la captura de pantalla y el fotograma de un video
  * @param marca la marca a la que se parece el tenis, por el logo, la silueta o la forma, aunque no
  *     se lea escrita —el gallo de Le Coq Sportif, el Oversized de Alexander McQueen—; nula si no
  *     reconoce ninguna. Las marcas que <b>se leen</b> siguen en la lectura de la foto
@@ -34,7 +34,7 @@ public record LecturaDeCalzado(
     boolean modeloSeguro,
     GeneroDeCalzado genero,
     TipoDeCalzado tipo,
-    boolean productoSolo,
+    boolean fotoPublicable,
     String marca,
     Integer mismoTenisQue) {
 
@@ -52,8 +52,8 @@ public record LecturaDeCalzado(
       boolean modeloSeguro,
       GeneroDeCalzado genero,
       TipoDeCalzado tipo,
-      boolean productoSolo) {
-    this(modelo, modeloSeguro, genero, tipo, productoSolo, null, null);
+      boolean fotoPublicable) {
+    this(modelo, modeloSeguro, genero, tipo, fotoPublicable, null, null);
   }
 
   /** El modelo que va al título: el que el lector cree reconocer, aunque dude (ADR-0090). */
@@ -78,8 +78,8 @@ public record LecturaDeCalzado(
     return Optional.ofNullable(mismoTenisQue);
   }
 
-  /** Si es un tenis que se puede publicar: un tenis, y visto solo. */
+  /** Si es un tenis que se puede publicar: un tenis, en una foto que no es una captura. */
   public boolean seVende() {
-    return tipo.seVende() && productoSolo;
+    return tipo.seVende() && fotoPublicable;
   }
 }
