@@ -43,7 +43,8 @@
         </p>
         <a
           class="anillo-foco inline-flex min-h-tactil items-center text-ts-primario"
-          routerLink="../productos/sin-medir"
+          routerLink="../productos/medidas"
+          [queryParams]="{ filtro: 'sin-medir' }"
           >{{ 'admin.panel.sinMedir.enlace' | transloco }}</a
         >
       </div>

@@ -455,27 +455,6 @@
       "quitarAtributoAccesible": "Remove attribute {{numero}}"
     },
     "capturar360": "Capture 360",
-    "sinMedir": {
-      "titulo": "Variants without measurements",
-      "explicacion": "A variant without weight and dimensions is still sold. If it is clothing, footwear or a bag, its shipping is quoted with its category's average weight (\"Shipping weights and sizes\"); if it is electronics, or its category has no weight, it cannot be delivered to an address, and with store pickup off it is not sold on the site. Measurements are those of the packed product, not the bare product.",
-      "resumen": "{{total}} without measurements, {{publicados}} on already published products.",
-      "ninguna": "Every variant has its measurements.",
-      "medida": "Done: {{sku}} now has its measurements and home delivery can be quoted.",
-      "errorLista": "The list of variants without measurements could not be loaded.",
-      "columnas": {
-        "producto": "Product",
-        "sku": "SKU",
-        "estado": "Status"
-      },
-      "medir": "Measure",
-      "medirVariante": "Measure variant {{sku}}",
-      "paqueteDe": "Package for {{sku}}",
-      "paqueteAyuda": "Of the packaged product, box and accessories included. Weight in grams, dimensions in whole centimeters.",
-      "guardar": "Save measurements",
-      "cancelar": "Cancel",
-      "faltanCampos": "All four measurements are required, and all greater than zero.",
-      "error": "The measurements could not be saved."
-    },
     "existencias": {
       "titulo": "Stock",
       "explicacion": "Two figures per variant, and they are not the same. The ledger one is what there is, because it is the sum of every movement; the available one is that minus whatever is already committed to orders in progress, and it is the one that decides whether the shop allows buying. Counting writes an adjustment movement with its reason: the number is not edited, it is corrected.",
@@ -510,6 +489,8 @@
       "explicacion": "Every active variant with the weight and dimensions of its box, whether it has them or not. Without all four figures, electronics cannot be quoted or delivered to an address, and with store pickup off they are not sold on the site; clothing, footwear and bags are quoted with the averages in \"Shipping weights and sizes\", and measuring them here only refines the shipping cost. A measurement already taken can be corrected: if it is wrong, the wrong shipping cost is charged on every order of that variant.",
       "resumen": "{{total}} active variant(s), {{sinMedir}} not measured.",
       "ninguna": "There are no active variants in the catalogue yet.",
+      "soloSinMedir": "Only the ones still to measure ({{total}})",
+      "ningunaSinMedir": "Every variant has its measurements.",
       "errorLista": "We could not load the measurements. Please try again.",
       "sinMedir": "Not measured",
       "gramos": "{{peso}} g",

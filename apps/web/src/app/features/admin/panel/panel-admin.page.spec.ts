@@ -116,6 +116,18 @@ describe('PanelAdminPage', () => {
   });
 
   /**
+   * La pantalla propia de sin-medir se fusionó con la de medidas el 25 de octubre de 2026. El
+   * aviso tiene que llegar con el filtro puesto: sin él, quien pulsa "Ver y medir" cae en la lista
+   * entera y tiene que buscar lo que falta entre lo que ya está medido.
+   */
+  it('el enlace lleva a las medidas con el filtro de lo que falta', async () => {
+    await renderPanel({ total: 3, totalEnPublicados: 1, items: [] });
+
+    const enlace = await screen.findByRole('link', { name: esAdmin.panel.sinMedir.enlace });
+    expect(enlace.getAttribute('href')).toMatch(/\/productos\/medidas\?filtro=sin-medir$/);
+  });
+
+  /**
    * El otro vigilante. Avisó del descuadre entre catálogo y libro hasta `ADR-0050`, que borró la
    * columna del catálogo; ahora avisa de lo que sí puede ver un comprador: algo publicado sin una
    * sola unidad en el libro, que en la vitrina se ve agotado.
