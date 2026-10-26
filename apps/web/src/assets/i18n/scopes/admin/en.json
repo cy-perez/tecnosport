@@ -1736,15 +1736,19 @@
       "generando": "Creating…",
       "errorGenerar": "We couldn't create the purchase link.",
       "generado": "Purchase link for {{detalle}}, valid until {{fecha}}. The unit is reserved.",
-      "irABandeja": "See purchase links"
+      "irABandeja": "See purchase links",
+      "tituloCalzado": "Sizes to confirm",
+      "explicacionCalzado": "These sneakers are sold on confirmation: the supplier does not say which sizes it has of each model. When a customer asks on WhatsApp and the supplier confirms the size, generate the purchase link for that size.",
+      "porConfirmarCalzado": "Sizes to confirm with the supplier",
+      "ningunoPorConfirmarCalzado": "There are no sizes to confirm."
     },
     "bandeja": {
       "titulo": "Purchase links",
-      "explicacion": "Links that allow buying a technology color already confirmed with the supplier. Each one is good for one purchase, reserves one unit and expires on the date shown in its row. They are created from the product edit page.",
+      "explicacion": "The links that allow buying what is confirmed with the supplier before it is sold: the color of a tech device or the size of a pair of sneakers. Each one is good for one purchase, reserves one unit and expires on the date in its row. They are generated from the product's edit page.",
       "ninguno": "There are no purchase links from the last week.",
       "error": "We couldn't load the purchase links.",
       "producto": "Product",
-      "variante": "Configuration and color",
+      "variante": "Variant",
       "estado": "Status",
       "vence": "Expires",
       "acciones": "Actions",

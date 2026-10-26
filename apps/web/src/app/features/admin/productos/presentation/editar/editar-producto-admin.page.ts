@@ -36,7 +36,7 @@ import { usarQuitarImagenDeGaleriaAdmin } from '../../application/quitar-imagen-
 import { usarReordenarGaleriaAdmin } from '../../application/reordenar-galeria-admin.mutacion';
 import { usarFoco } from '../../../../../shared/foco/foco';
 import { mensajeDeError } from '../../../../../core/errores/mensaje-de-error';
-import { ImagenDeGaleriaAdmin } from '../../domain/producto-admin.model';
+import { ImagenDeGaleriaAdmin, ProductoAdminDetalle } from '../../domain/producto-admin.model';
 import {
   esEjeDeTalla,
   esTallaUnica,
@@ -658,6 +658,11 @@ export class EditarProductoAdminPage {
    * del de agregar: se pinta donde pasó.
    */
   protected readonly errorReordenar = signal<string | null>(null);
+
+  /** Lo que se vende bajo confirmación tiene variantes por confirmar, sea de la línea que sea. */
+  protected tieneVariantesPorConfirmar(producto: ProductoAdminDetalle): boolean {
+    return producto.variantes.some((variante) => variante.disponibilidadPorConfirmar === true);
+  }
 
   constructor() {
     effect(() => {

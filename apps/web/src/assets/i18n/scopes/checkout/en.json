@@ -106,7 +106,7 @@
   "confirmar": {
     "con_transportadora": "With {{transportadora}}",
     "transportadora_no_disponible": "The carrier you chose is no longer available for this shipment. Go back and choose another one.",
-    "disponibilidad_por_confirmar": "The colour of a device in your cart is confirmed with us before purchase, and its purchase link is no longer valid. Message us on WhatsApp and we'll confirm it again.",
+    "disponibilidad_por_confirmar": "The availability of an item in your cart is confirmed with us before purchase, and its purchase link is no longer valid. Message us on WhatsApp and we'll confirm it again.",
     "retiro_no_disponible": "Pickup at our location is no longer available. Go back and choose home delivery.",
     "titulo": "Confirm order",
     "volver": "‹ Change payment method",

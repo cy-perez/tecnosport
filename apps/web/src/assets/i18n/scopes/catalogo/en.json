@@ -52,12 +52,24 @@
     "combinacion_no_disponible": "This combination is not available.",
     "imagen_de_referencia": "Images are for reference only: they show the model, not each color.",
     "colores_del_modelo": "Colors of this model according to the manufacturer: {{colores}}.",
-    "disponibilidad_por_confirmar": "We confirm this color with our supplier before you buy it.",
+    "por_confirmar": {
+      "color": "We confirm this color with our supplier before you buy it.",
+      "talla": "We confirm your size with our supplier before you buy it."
+    },
     "consultar_whatsapp": "Check availability on WhatsApp",
     "consultar_whatsapp_accesible": "Check availability on WhatsApp (opens in a new tab)",
-    "whatsapp_mensaje": "Hi, I'd like to buy the {{producto}} ({{detalle}}). Do you have this color available? {{url}}",
-    "enlace_vigente": "Color confirmed. Your unit is reserved until {{fecha}}.",
-    "enlace_no_vigente": "This purchase link is no longer valid. Message us on WhatsApp and we'll confirm the color again.",
+    "whatsapp_mensaje": {
+      "color": "Hi, I'd like to buy the {{producto}} ({{detalle}}). Do you have this color available? {{url}}",
+      "talla": "Hi, I'd like to buy the {{producto}} ({{detalle}}). Do you have this size available? {{url}}"
+    },
+    "enlace_vigente": {
+      "color": "Color confirmed. Your unit is reserved until {{fecha}}.",
+      "talla": "Size confirmed. Your pair is reserved until {{fecha}}."
+    },
+    "enlace_no_vigente": {
+      "color": "This purchase link is no longer valid. Message us on WhatsApp and we'll confirm the color again.",
+      "talla": "This purchase link is no longer valid. Message us on WhatsApp and we'll confirm the size again."
+    },
     "volver_al_catalogo": "Back to the catalog"
   },
   "seo": {

@@ -182,6 +182,37 @@ describe('TsColoresTecnologia', () => {
     expect(await screen.findByText('Copiado al portapapeles.')).toBeTruthy();
     await esperarSinViolaciones(container);
   });
+
+  /** El tenis que se vende bajo confirmación (ADR-0089): las tallas, sin paleta. */
+  it('en calzado ofrece las tallas por confirmar y no la paleta', async () => {
+    const repositorio = new RepositorioFalso();
+    const { fixture } = await render(Anfitrion, {
+      imports: [TRANSLOCO],
+      providers: proveedores(repositorio, new PortapapelesFalso()),
+    });
+    fixture.componentInstance.producto.set({
+      ...IPHONE,
+      nombre: 'Tenis importados estilo Nike Air Force 1',
+      categoria: { id: 'c2', nombre: 'Unisex', slug: 'calzado-unisex', linea: 'CALZADO' },
+      paleta: [],
+      variantes: [
+        {
+          id: 'v-40',
+          sku: 'PRV-40',
+          precio: 162_000,
+          atributos: [{ nombre: 'Talla', valor: '40', colorHex: null }],
+          disponibilidadPorConfirmar: true,
+        },
+      ],
+    });
+
+    expect(
+      await screen.findByRole('heading', { name: 'Tallas por confirmar con el proveedor' }),
+    ).toBeTruthy();
+    expect(screen.queryByLabelText('Paleta del modelo, un color por línea')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Generar enlace de compra de 40' }));
+    await vi.waitFor(() => expect(repositorio.generados).toEqual(['v-40']));
+  });
 });
 
 describe('EnlacesDeCompraAdminPage', () => {

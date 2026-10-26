@@ -1227,4 +1227,43 @@ describe('FichaPage', () => {
       ).toBeTruthy();
     });
   });
+
+  describe('la talla de un tenis por confirmar (ADR-0089)', () => {
+    const tenis = (): Producto => ({
+      ...productoDePrueba(),
+      slug: 'tenis-importados-estilo-nike-air-force-1',
+      nombre: 'Tenis importados estilo Nike Air Force 1',
+      categoria: { ...productoDePrueba().categoria, nombre: 'Unisex', linea: 'CALZADO' },
+      variantes: [
+        {
+          id: 'v-40',
+          sku: 'PRV-40',
+          precio: { valor: 162_000, moneda: 'COP' },
+          disponible: true,
+          disponibilidadPorConfirmar: true,
+          atributos: [{ nombre: 'Talla', valor: '40', colorHex: null, unidad: null }],
+        },
+      ],
+    });
+    const repositorio: RepositorioProductos = {
+      buscar: () =>
+        Promise.resolve<ResultadoPaginado<Producto>>({ items: [], cursorSiguiente: null }),
+      buscarPorSlug: () => Promise.resolve(tenis()),
+    };
+
+    it('pregunta por la talla, no por el color', async () => {
+      await renderFicha(repositorio, 'tenis-importados-estilo-nike-air-force-1');
+      await screen.findByRole('heading', { name: 'Tenis importados estilo Nike Air Force 1' });
+
+      expect(
+        screen.getByText('Tu talla la confirmamos con nuestro proveedor antes de que lo compres.'),
+      ).toBeTruthy();
+      const chat = screen.getByRole('link', {
+        name: 'Consultar disponibilidad por WhatsApp (se abre en otra pestaña)',
+      });
+      const mensaje = decodeURIComponent((chat.getAttribute('href') ?? '').split('?text=')[1]);
+      expect(mensaje).toContain('¿Tienen esta talla disponible?');
+      expect(screen.queryByRole('button', { name: 'Agregar al carrito' })).toBeNull();
+    });
+  });
 });

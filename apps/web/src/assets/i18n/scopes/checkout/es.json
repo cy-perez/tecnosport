@@ -106,7 +106,7 @@
   "confirmar": {
     "con_transportadora": "Con {{transportadora}}",
     "transportadora_no_disponible": "La transportadora que elegiste ya no está disponible para este envío. Vuelve atrás y elige otra.",
-    "disponibilidad_por_confirmar": "El color de un equipo de tu carrito se confirma con nosotros antes de comprarlo, y su enlace de compra ya no está vigente. Escríbenos por WhatsApp y te lo confirmamos de nuevo.",
+    "disponibilidad_por_confirmar": "La disponibilidad de un producto de tu carrito se confirma con nosotros antes de comprarlo, y su enlace de compra ya no está vigente. Escríbenos por WhatsApp y te la confirmamos de nuevo.",
     "retiro_no_disponible": "La recogida en el punto ya no está disponible. Vuelve atrás y elige el envío a domicilio.",
     "titulo": "Confirmar pedido",
     "volver": "‹ Cambiar método de pago",

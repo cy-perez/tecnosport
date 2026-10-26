@@ -62,6 +62,18 @@ export class TsColoresTecnologia {
   protected readonly errorGenerar = signal<string | null>(null);
   protected readonly avisoCopia = signal<string | null>(null);
 
+  /**
+   * La paleta es de tecnología, y lo demás se confirma igual en el calzado (ADR-0089): ahí lo que
+   * falta confirmar es la talla. Elige la versión de los textos, `…Calzado` o la de siempre.
+   */
+  protected readonly esTecnologia = computed(
+    () => this.producto().categoria.linea === 'TECNOLOGIA',
+  );
+
+  protected clave(base: string): string {
+    return 'admin.enlacesCompra.seccion.' + base + (this.esTecnologia() ? '' : 'Calzado');
+  }
+
   protected readonly porConfirmar = computed(() =>
     this.producto().variantes.filter((variante) => variante.disponibilidadPorConfirmar === true),
   );

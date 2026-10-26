@@ -1736,15 +1736,19 @@
       "generando": "Generando…",
       "errorGenerar": "No se pudo generar el enlace de compra.",
       "generado": "Enlace de compra de {{detalle}}, vigente hasta el {{fecha}}. La unidad quedó apartada.",
-      "irABandeja": "Ver los enlaces de compra"
+      "irABandeja": "Ver los enlaces de compra",
+      "tituloCalzado": "Tallas por confirmar",
+      "explicacionCalzado": "Este tenis se vende bajo confirmación: el proveedor no dice qué tallas tiene de cada modelo. Cuando un cliente pregunte por WhatsApp y el proveedor confirme la talla, genera el enlace de compra de esa talla.",
+      "porConfirmarCalzado": "Tallas por confirmar con el proveedor",
+      "ningunoPorConfirmarCalzado": "No hay tallas por confirmar."
     },
     "bandeja": {
       "titulo": "Enlaces de compra",
-      "explicacion": "Los enlaces que habilitan comprar un color de tecnología ya confirmado con el proveedor. Cada uno sirve para una compra, aparta una unidad y vence en la fecha que dice su fila. Se generan desde la edición del producto.",
+      "explicacion": "Los enlaces que habilitan comprar lo que se confirma con el proveedor antes de venderse: el color de un equipo de tecnología o la talla de un tenis. Cada uno sirve para una compra, aparta una unidad y vence en la fecha que dice su fila. Se generan desde la edición del producto.",
       "ninguno": "No hay enlaces de compra de la última semana.",
       "error": "No se pudo cargar la lista de enlaces de compra.",
       "producto": "Producto",
-      "variante": "Configuración y color",
+      "variante": "Variante",
       "estado": "Estado",
       "vence": "Vence",
       "acciones": "Acciones",
