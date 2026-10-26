@@ -1,7 +1,8 @@
 # ADR-0089: el calzado de Tenis Al Pie se ingiere por foto y se vende bajo confirmación
 
 Fecha: 2026-10-25
-Estado: aceptada; las decisiones 5 y 7 las cambia `ADR-0090` (26 de octubre de 2026)
+Estado: aceptada; las decisiones 5 y 7 las cambia `ADR-0090`, y el filtro de las fotos de las
+decisiones 4 y 5, `ADR-0091` (26 de octubre de 2026)
 Amplía: `ADR-0067` (ingesta por exportación), `ADR-0078` y `ADR-0084` (el reparto de las fotos),
 `ADR-0085` (las tallas), `ADR-0066` (la ventana de disponibilidad) y `ADR-0086` (la confirmación
 por WhatsApp con enlace de compra).

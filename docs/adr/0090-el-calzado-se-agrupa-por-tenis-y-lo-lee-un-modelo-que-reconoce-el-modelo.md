@@ -1,7 +1,7 @@
 # ADR-0090: el calzado se agrupa por tenis y lo lee un modelo que reconoce el modelo
 
 Fecha: 2026-10-26
-Estado: aceptada
+Estado: aceptada; la decisión 6 la cambia `ADR-0091` el mismo día
 Cambia: `ADR-0089`, decisiones 5 (una foto, un producto) y 7 (solo el modelo seguro va al título).
 Amplía: `ADR-0078` (el lector de fotos).
 
