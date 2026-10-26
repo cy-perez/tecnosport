@@ -1186,9 +1186,19 @@
         "VIENE_EN_CHAT_DE_CABALLERO": "the post is in the supplier's men's chat and is processed from that file.",
         "TIPO_EXCLUIDO": "it includes a garment that is not bought from this supplier ({{dato}}), so the whole post is discarded.",
         "PRECIO_SOBRE_TOPE": "it costs {{dato}}, more than is paid to a supplier for trousers, joggers, Bermuda shorts or shorts.",
+        "CALZADO_QUE_NO_ES_TENIS": "it isn't a sneaker: its photos show {{dato}}, and the store only sells sneakers.",
+        "CALZADO_QUE_NO_ES_TENIS_SIN_TIPO": "none of its photos shows a sneaker, and the store only sells sneakers.",
+        "CALZADO_SIN_FOTOS_LEIDAS": "it has no photos, or they couldn't be read: nobody saw that it was a sneaker.",
         "EXTRACCION_FALLIDA": "the extractor couldn't read it: the API rejected the request or answered something unreadable.",
         "ERROR_AL_RESOLVER": "a program error happened while deciding what to do with it ({{dato}}).",
         "DESCONOCIDO": "the reason is unknown: it's from before reasons were saved."
+      },
+      "calzados": {
+        "CHANCLA": "a flip-flop",
+        "SANDALIA": "a sandal",
+        "ZUECO": "a clog",
+        "BOTA": "a boot",
+        "OTRO": "other footwear"
       }
     }
   },
