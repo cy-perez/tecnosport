@@ -42,16 +42,26 @@
           "calzado": {
             "type": "object",
             "additionalProperties": false,
-            "required": ["tipo", "modelo", "modelo_seguro", "genero", "producto_solo"],
+            "required": [
+              "tipo",
+              "marca",
+              "modelo",
+              "modelo_seguro",
+              "genero",
+              "producto_solo",
+              "mismo_tenis_que"
+            ],
             "properties": {
               "tipo": {
                 "type": "string",
                 "enum": ["no_es_calzado", "tenis", "chancla", "sandalia", "zueco", "bota", "otro"]
               },
+              "marca": { "type": "string" },
               "modelo": { "type": "string" },
               "modelo_seguro": { "type": "boolean" },
               "genero": { "type": "string", "enum": ["dama", "caballero", "unisex", "no_se_sabe"] },
-              "producto_solo": { "type": "boolean" }
+              "producto_solo": { "type": "boolean" },
+              "mismo_tenis_que": { "type": "integer" }
             }
           }
         }

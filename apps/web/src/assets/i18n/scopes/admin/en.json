@@ -1414,7 +1414,8 @@
       "ACOMPANANTE_SIN_LEER": "The post offers the garment with a cap, a set or a duo, but the extraction did not read its price: the draft is the garment on its own. Check the post; if it is a set, reject it and ingest the chat again.",
       "SET_SIN_DESCRIPCION": "This is a set and it has no description. Write one that mentions the cap or the blouse before approving.",
       "TALLAS_CORRIDAS": "The post names the sizes shifted (small fit, “go up” or EU sizes) and they were moved to the ones sold. Check in the post how many, under “How the supplier names the sizes”.",
-      "TALLAS_SIN_CORRER": "The post names the sizes shifted, but one could not be moved: the post sizes were kept. Write the ones sold before approving."
+      "TALLAS_SIN_CORRER": "The post names the sizes shifted, but one could not be moved: the post sizes were kept. Write the ones sold before approving.",
+      "MODELO_POR_CONFIRMAR": "The title carries the model the photo reader thinks it sees, but it is not sure: it could be one of two look-alikes, like a Shox R4 and a Shox TL. Confirm it in the photos or fix the title before approving."
     },
     "detalle": {
       "miga": "Review",

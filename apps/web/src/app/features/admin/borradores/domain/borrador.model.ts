@@ -106,7 +106,8 @@ export type AlertaBorrador =
   | 'ACOMPANANTE_SIN_LEER'
   | 'SET_SIN_DESCRIPCION'
   | 'TALLAS_CORRIDAS'
-  | 'TALLAS_SIN_CORRER';
+  | 'TALLAS_SIN_CORRER'
+  | 'MODELO_POR_CONFIRMAR';
 
 /**
  * Cómo se llama la marca con que se publica una réplica («1.1» o «AAA»): la original solo va en el título,

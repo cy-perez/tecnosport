@@ -82,6 +82,33 @@ public class ConfiguracionExtraccion {
         RecursosDelExtractor.esquemaDelLector());
   }
 
+  /**
+   * El de las fotos de un proveedor de calzado (ADR-0090). No es un bean: hay un solo {@link
+   * LectorDeFotos} que inyectar, y este solo lo usa la extracción. Apagado cuando el de siempre lo
+   * está.
+   */
+  private static LectorDeFotos lectorDeCalzado(
+      PropiedadesExtraccion extraccion, PropiedadesLecturaFotos lectura, LectorDeFotos deSiempre) {
+    if (deSiempre instanceof LectorDeFotosApagado) {
+      return deSiempre;
+    }
+    log.info(
+        "Lectura de fotos de calzado REAL con el modelo {} y esfuerzo {}.",
+        lectura.calzado().modelo(),
+        lectura.calzado().esfuerzo());
+    return new LectorDeFotosClaude(
+        URI.create(extraccion.urlBase()),
+        extraccion.apiKey(),
+        lectura.calzado().modelo(),
+        lectura.calzado().maxTokens(),
+        lectura.timeout(),
+        extraccion.intentos(),
+        extraccion.esperaInicial(),
+        RecursosDelExtractor.promptDelLector(),
+        RecursosDelExtractor.esquemaDelLector(),
+        lectura.calzado().esfuerzo());
+  }
+
   @Bean
   public AgrupadorDePublicaciones agrupadorDePublicaciones(PropiedadesExtraccion propiedades) {
     return new AgrupadorDePublicaciones(propiedades.ventanaAgrupacion());
@@ -102,8 +129,13 @@ public class ConfiguracionExtraccion {
       ExtractorDeProductos extractor,
       LectorDeFotos lector,
       AlmacenDeArchivosDeProveedor almacen,
-      PropiedadesExtraccion propiedades) {
+      PropiedadesExtraccion propiedades,
+      PropiedadesLecturaFotos lectura) {
     return new ExtraerProductoDePublicacion(
-        extractor, lector, almacen, propiedades.umbralConfianza());
+        extractor,
+        lector,
+        lectorDeCalzado(propiedades, lectura, lector),
+        almacen,
+        propiedades.umbralConfianza());
   }
 }

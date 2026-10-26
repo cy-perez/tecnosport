@@ -3,6 +3,7 @@ package co.tecnosport.api.domain.proveedores;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -14,8 +15,10 @@ import java.util.regex.Pattern;
  * <ul>
  *   <li><b>Sin el género</b>: dama, caballero o unisex quedan solo en la categoría. Un título «para
  *       dama» de un tenis que se publica en Unisex diría una cosa y la categoría otra.
- *   <li><b>Sin modelo</b> si no se sabe con seguridad: «Tenis importados estilo Nike».
- *   <li><b>Sin marca</b> si no se lee ninguna: «Tenis importados».
+ *   <li><b>Con el modelo aunque el lector dude</b> (ADR-0090, 26 de octubre de 2026): el borrador
+ *       lleva {@code MODELO_POR_CONFIRMAR} y quien aprueba lo confirma. Sin modelo: «Tenis
+ *       importados estilo Nike».
+ *   <li><b>Sin marca</b> si el lector no reconoce ninguna: «Tenis importados».
  * </ul>
  *
  * <p>El prompt pide lo mismo; esto existe para que no dependa de que el modelo lo recuerde.
@@ -41,8 +44,8 @@ public final class TituloDeTenis {
   private TituloDeTenis() {}
 
   /**
-   * @param marca la que se lee en el tenis; nula o en blanco si ninguna
-   * @param modelo el que el lector da por seguro; nulo si no. Si empieza por la marca, no se repite
+   * @param marca a la que se parece el tenis; nula o en blanco si ninguna
+   * @param modelo el que el lector cree ver; nulo si ninguno. Si empieza por la marca, no se repite
    */
   public static String componer(String marca, String modelo) {
     String limpiaMarca = limpio(marca);
@@ -92,6 +95,18 @@ public final class TituloDeTenis {
       nombre = String.join(" - ", lasMarcas);
     }
     return componer(nombre, null);
+  }
+
+  /**
+   * Lo que sigue a «estilo» en un título que ya tiene la forma de un tenis: «Nike Air Force 1» de
+   * «Tenis importados estilo Nike Air Force 1»; vacío en «Tenis importados» o en otro título.
+   */
+  public static Optional<String> nombreEn(String titulo) {
+    String prefijo = BASE + " estilo ";
+    if (titulo == null || !titulo.regionMatches(true, 0, prefijo, 0, prefijo.length())) {
+      return Optional.empty();
+    }
+    return Optional.ofNullable(limpio(titulo.substring(prefijo.length())));
   }
 
   /**

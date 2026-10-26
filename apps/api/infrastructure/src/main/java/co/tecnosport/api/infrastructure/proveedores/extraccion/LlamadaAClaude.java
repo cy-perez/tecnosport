@@ -108,7 +108,15 @@ final class LlamadaAClaude {
     if (!contenido.isArray() || contenido.isEmpty()) {
       throw new ExtraccionFallidaException(quien + " respondió sin contenido.");
     }
-    String jsonCrudo = contenido.get(0).path("text").asString();
+    // El primer bloque de texto, no el primer bloque: un modelo que razona —el lector de calzado
+    // (ADR-0090)— responde primero con su bloque de razonamiento, vacío.
+    String jsonCrudo = null;
+    for (JsonNode bloque : contenido) {
+      if ("text".equals(bloque.path("type").asString())) {
+        jsonCrudo = bloque.path("text").asString();
+        break;
+      }
+    }
     if (jsonCrudo == null || jsonCrudo.isBlank()) {
       throw new ExtraccionFallidaException(quien + " respondió con un bloque vacío.");
     }

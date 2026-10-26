@@ -376,6 +376,16 @@ tecnosport:
       # salida no caben en 90 segundos. Con los reintentos tiene que seguir cabiendo en el tramo
       # de 10 minutos (ADR-0080).
       timeout: ${PROVEEDORES_LECTURA_FOTOS_TIMEOUT:PT150S}
+      # Las fotos de un proveedor de calzado (ADR-0090). Haiku 4.5 no reconocia el modelo
+      # de un tenis -de 39 borradores de Tenis Al Pie, 7 con modelo y 15 sin marca- y dejaba pasar
+      # el tenis puesto y la foto con utileria. Sonnet 5.5 cuesta el doble por token; razona, asi
+      # que no admite temperatura y se le pide el esfuerzo. El experimento que lo compara contra
+      # Haiku es LecturaDeCalzadoComparadaTest.
+      calzado:
+        modelo: ${PROVEEDORES_LECTURA_FOTOS_CALZADO_MODELO:claude-sonnet-5-5}
+        # Treinta y cinco fotos con marca, modelo y grupo, mas el razonamiento.
+        max-tokens: ${PROVEEDORES_LECTURA_FOTOS_CALZADO_MAX_TOKENS:16000}
+        esfuerzo: ${PROVEEDORES_LECTURA_FOTOS_CALZADO_ESFUERZO:low}
 
   meta:
     # La version va dentro de la ruta y Meta retira versiones con calendario publicado: congelarla

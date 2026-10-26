@@ -1414,7 +1414,8 @@
       "ACOMPANANTE_SIN_LEER": "El anuncio ofrece la prenda con una gorra, un set o un dúo, pero la extracción no leyó su precio: el borrador quedó como la prenda sola. Revisa el anuncio; si es un set, recházalo y vuelve a ingerir el chat.",
       "SET_SIN_DESCRIPCION": "Es un set y no tiene descripción. Escríbela, nombrando la gorra o la blusa, antes de aprobar.",
       "TALLAS_CORRIDAS": "El anuncio nombra las tallas corridas (horma reducida, «aumentar» o tallas EUR) y se corrieron a las que se venden. Confirma en el anuncio cuántas, en «Cómo nombra las tallas el proveedor».",
-      "TALLAS_SIN_CORRER": "El anuncio nombra las tallas corridas, pero alguna no se pudo correr: se quedaron las del anuncio. Escribe las que se venden antes de aprobar."
+      "TALLAS_SIN_CORRER": "El anuncio nombra las tallas corridas, pero alguna no se pudo correr: se quedaron las del anuncio. Escribe las que se venden antes de aprobar.",
+      "MODELO_POR_CONFIRMAR": "El título lleva el modelo que el lector de fotos cree ver, pero no está seguro: pueden ser dos parecidos, como un Shox R4 y un Shox TL. Confírmalo en las fotos o corrígelo en el título antes de aprobar."
     },
     "detalle": {
       "miga": "Revisión",
