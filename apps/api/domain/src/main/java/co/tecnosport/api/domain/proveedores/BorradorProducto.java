@@ -750,6 +750,16 @@ public final class BorradorProducto {
       String descripcion,
       String altEn) {
     exigirEnRevision("editar");
+    // Quien corrige el modelo en el título, o las tallas, sin tocar la descripción del tenis: la
+    // descripción los sigue (ADR-0092). Si la reescribió, manda lo que escribió.
+    boolean descripcionIntacta =
+        descripcion == null || Objects.equals(enBlancoEsNulo(descripcion), this.descripcion);
+    Optional<String> recompuesta =
+        descripcionIntacta
+            ? descripcionDelTenisCon(
+                titulo != null ? enBlancoEsNulo(titulo) : this.titulo,
+                tallas != null ? tallas : this.tallas)
+            : Optional.empty();
     if (titulo != null) {
       this.titulo = enBlancoEsNulo(titulo);
     }
@@ -780,6 +790,51 @@ public final class BorradorProducto {
     if (altEn != null) {
       this.altEn = enBlancoEsNulo(altEn);
     }
+    recompuesta.ifPresent(texto -> this.descripcion = texto);
+  }
+
+  /**
+   * Para la ingesta, con el título, el género y las tallas que se venden ya resueltos: la
+   * descripción de un tenis es la de {@link DescripcionDeTenis}, y lo que el extractor escribió
+   * —cómo está hecho— va al final (ADR-0092). Se llama una vez: la segunda tomaría la descripción
+   * compuesta por características.
+   */
+  public void describirComoTenis() {
+    if (tipo != TipoProductoProveedor.TENIS) {
+      return;
+    }
+    String compuesta =
+        DescripcionDeTenis.componer(titulo, generoDeCalzado, tallasNumericas(tallas), descripcion);
+    if (compuesta != null) {
+      this.descripcion = compuesta;
+    }
+  }
+
+  /**
+   * La descripción de este tenis con otro título u otras tallas, si sigue siendo la que se compuso
+   * con los de ahora: así sigue al modelo que corrige quien revisa (ADR-0092).
+   *
+   * @return vacía si no es un tenis, o si su descripción no es la compuesta —alguien la reescribió,
+   *     o es de antes—
+   */
+  public Optional<String> descripcionDelTenisCon(String otroTitulo, Tallas otrasTallas) {
+    if (tipo != TipoProductoProveedor.TENIS) {
+      return Optional.empty();
+    }
+    return DescripcionDeTenis.caracteristicasDe(
+            descripcion, titulo, generoDeCalzado, tallasNumericas(tallas))
+        .map(
+            caracteristicas ->
+                DescripcionDeTenis.componer(
+                    otroTitulo,
+                    generoDeCalzado,
+                    tallasNumericas(otrasTallas == null ? tallas : otrasTallas),
+                    caracteristicas))
+        .filter(Objects::nonNull);
+  }
+
+  private static List<String> tallasNumericas(Tallas tallas) {
+    return tallas != null && tallas.tipo() == TipoDeTalla.LISTA ? tallas.valores() : List.of();
   }
 
   /**

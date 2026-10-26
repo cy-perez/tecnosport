@@ -426,14 +426,17 @@ export class ListaIngestasAdminPage {
 
   protected textoDelMotivo(publicacion: PublicacionCerrada): string {
     const traducir = this.traducir();
-    // El tipo excluido llega como el nombre del enum —«PANTALON»—: se lee como «Pantalón». El
-    // precio sobre el tope llega en pesos, sin separadores: se lee como un precio.
+    // El tipo excluido llega como el nombre del enum —«PANTALON»—: se lee como «Pantalón», y el
+    // calzado que no es un tenis igual —«CHANCLA»—. El precio sobre el tope llega en pesos, sin
+    // separadores: se lee como un precio.
     const dato =
       publicacion.motivo === 'TIPO_EXCLUIDO' && publicacion.dato
         ? traducir('admin.borradores.tipos.' + publicacion.dato)
-        : publicacion.motivo === 'PRECIO_SOBRE_TOPE' && publicacion.dato
-          ? formatearPrecio(Number(publicacion.dato), 'COP', this.transloco.activeLang())
-          : (publicacion.dato ?? '');
+        : publicacion.motivo === 'CALZADO_QUE_NO_ES_TENIS' && publicacion.dato
+          ? traducir('admin.ingestas.cerradas.calzados.' + publicacion.dato)
+          : publicacion.motivo === 'PRECIO_SOBRE_TOPE' && publicacion.dato
+            ? formatearPrecio(Number(publicacion.dato), 'COP', this.transloco.activeLang())
+            : (publicacion.dato ?? '');
     return traducir(claveDelMotivo(publicacion), { dato });
   }
 

@@ -15,6 +15,7 @@ import co.tecnosport.api.domain.proveedores.BorradorProducto;
 import co.tecnosport.api.domain.proveedores.CalculadoraDeMargen;
 import co.tecnosport.api.domain.proveedores.CierreDePublicacion;
 import co.tecnosport.api.domain.proveedores.GeneroDeCalzado;
+import co.tecnosport.api.domain.proveedores.GeneroDelAnuncio;
 import co.tecnosport.api.domain.proveedores.HuellaProveedor;
 import co.tecnosport.api.domain.proveedores.LecturaDeCalzado;
 import co.tecnosport.api.domain.proveedores.MensajeProveedor;
@@ -278,6 +279,11 @@ public final class ResolverBorrador {
             && chat.textosDeCaballero().stream()
                 .anyMatch(t -> TextoDeAnuncio.mismoAnuncio(t, textoDelAnuncio));
     for (ExtraccionEvaluada evaluada : evaluadas) {
+      // El calzado que no es un tenis, o que nadie vio, se descartó al leer sus fotos (ADR-0092).
+      if (evaluada.descarteOpcional().isPresent()) {
+        resoluciones.add(Resolucion.descartada(evaluada.descarteOpcional().get()));
+        continue;
+      }
       resoluciones.add(
           excluido.isPresent() && !evaluada.producto().estaAgotado()
               ? Resolucion.descartada(excluido.get())
@@ -360,17 +366,23 @@ public final class ResolverBorrador {
     }
     PrendaAcompanante acompanante = set.map(s -> s.armado().acompanante()).orElse(null);
     // Las tallas que el proveedor de calzado maneja siempre, por el género que se vio en la foto:
-    // el
-    // tenis de dama de Tenis Al Pie va de la 36 a la 39 EUR, el de caballero de la 40 a la 44, y el
-    // unisex con las dos (ADR-0089). Sin género leído, unisex: quien revisa lo corrige.
+    // el tenis de dama de Tenis Al Pie va de la 36 a la 39 EUR, el de caballero de la 40 a la 44, y
+    // el unisex con las dos (ADR-0089). Sin género leído, unisex: quien revisa lo corrige.
     Optional<TallasPorGenero> tallasDelProveedor =
         extraido.tipo() == TipoProductoProveedor.TENIS
             ? proveedor.ajustesDeIngesta().tallasPorGeneroOpcional()
             : Optional.empty();
+    // El texto de un anuncio por tenis —Imperio Wicho: «IMPORTADO CABALLERO»— dice para quién es, y
+    // manda sobre la foto (ADR-0092). El de una tanda de Tenis Al Pie es de todos sus tenis: ahí
+    // manda la foto de cada uno.
+    Optional<GeneroDeCalzado> delTextoDelAnuncio =
+        extraido.tipo() == TipoProductoProveedor.TENIS
+                && !proveedor.ajustesDeIngesta().unaFotoUnProducto()
+            ? GeneroDelAnuncio.de(textoDelAnuncio)
+            : Optional.empty();
     GeneroDeCalzado genero =
-        evaluada
-            .calzadoOpcional()
-            .flatMap(LecturaDeCalzado::generoOpcional)
+        delTextoDelAnuncio
+            .or(() -> evaluada.calzadoOpcional().flatMap(LecturaDeCalzado::generoOpcional))
             .orElse(
                 tallasDelProveedor.isPresent() || evaluada.calzadoOpcional().isPresent()
                     ? GeneroDeCalzado.UNISEX
@@ -519,6 +531,7 @@ public final class ResolverBorrador {
       // Las del proveedor ya son las de su género: se corren con su ajuste, y el texto no las
       // vuelve a correr ni las parte.
       BorradorProducto.conTallasCorridas(borrador, tallasDelProveedor.get().ajuste());
+      borrador.describirComoTenis();
       repositorioBorradores.guardar(borrador);
       return new Resolucion(TipoDeResolucion.NUEVO, borrador.alertas(), null);
     }
@@ -541,6 +554,9 @@ public final class ResolverBorrador {
       BorradorProducto.conGeneroDeCalzado(borrador, GeneroDeCalzado.DAMA);
       BorradorProducto.conGeneroDeCalzado(caballero, GeneroDeCalzado.CABALLERO);
       BorradorProducto.conTallasCorridas(borrador, porGenero.get().dama());
+      // Cada gemelo con su género y sus tallas: el de caballero no dice «para dama» (ADR-0092).
+      borrador.describirComoTenis();
+      caballero.describirComoTenis();
       repositorioBorradores.guardar(borrador);
       repositorioBorradores.guardar(caballero);
       Set<AlertaBorrador> alertas = EnumSet.noneOf(AlertaBorrador.class);
@@ -554,6 +570,8 @@ public final class ResolverBorrador {
       AjusteDelAnuncio.de(textoDelAnuncio)
           .ifPresent(ajuste -> BorradorProducto.conTallasCorridas(borrador, ajuste));
     }
+    // Con las tallas ya corridas: la descripción dice las que se venden (ADR-0092).
+    borrador.describirComoTenis();
     repositorioBorradores.guardar(borrador);
     return new Resolucion(TipoDeResolucion.NUEVO, borrador.alertas(), null);
   }

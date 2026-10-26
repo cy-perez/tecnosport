@@ -649,6 +649,24 @@ describe('ListaIngestasAdminPage', () => {
           extracto: 'JEANS Importado para Caballero',
           fotos: 12,
         },
+        {
+          id: 'p5',
+          fecha: '2026-10-26T10:00:00Z',
+          estado: 'DESCARTADA',
+          motivo: 'CALZADO_QUE_NO_ES_TENIS',
+          dato: 'CHANCLA',
+          extracto: 'CHANCLA IMPORTADA DAMA',
+          fotos: 3,
+        },
+        {
+          id: 'p6',
+          fecha: '2026-10-26T10:01:00Z',
+          estado: 'DESCARTADA',
+          motivo: 'CALZADO_QUE_NO_ES_TENIS',
+          dato: null,
+          extracto: 'SANDALIA PLATAFORMA',
+          fotos: 1,
+        },
       ];
 
       const ver = await screen.findByRole('button', { name: /Ver las publicaciones/ });
@@ -663,6 +681,9 @@ describe('ListaIngestasAdminPage', () => {
       ).toBeTruthy();
       // El costo llega en pesos sin separadores y se lee como un precio.
       expect(screen.getByText(/cuesta \$\s?125\.000, más de lo que se le paga/)).toBeTruthy();
+      // El calzado que no es un tenis llega como el nombre del enum y se lee en español.
+      expect(screen.getByText(/no es un tenis: sus fotos muestran una chancla/)).toBeTruthy();
+      expect(screen.getByText(new RegExp(c.motivos.CALZADO_QUE_NO_ES_TENIS_SIN_TIPO))).toBeTruthy();
       expect(screen.getByText(c.soloFotos)).toBeTruthy();
       expect(repositorio.cerradasPedidas).toEqual(['lote-1']);
       expect(ver.getAttribute('aria-expanded')).toBe('true');

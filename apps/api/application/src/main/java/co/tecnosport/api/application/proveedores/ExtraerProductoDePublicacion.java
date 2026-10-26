@@ -3,6 +3,8 @@ package co.tecnosport.api.application.proveedores;
 import co.tecnosport.api.domain.catalogo.LineaCatalogo;
 import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.proveedores.AlertaBorrador;
+import co.tecnosport.api.domain.proveedores.CalzadoSinTenis;
+import co.tecnosport.api.domain.proveedores.CierreDePublicacion;
 import co.tecnosport.api.domain.proveedores.LecturaDeCalzado;
 import co.tecnosport.api.domain.proveedores.LecturaDeFotos;
 import co.tecnosport.api.domain.proveedores.LecturaDeFotos.LecturaDeFoto;
@@ -184,8 +186,9 @@ public final class ExtraerProductoDePublicacion {
     List<ProductoRepartido> repartidos;
     LecturaDeFotos lectura;
     int productosDelTexto = contrastados.size();
+    ProductoExtraido base = null;
     if (unaFotoUnProducto && !sinFotos) {
-      ProductoExtraido base =
+      base =
           contrastados.isEmpty()
               ? soloConElPrecio(preciosDelTexto, lineaDelProveedor)
               : contrastados.getFirst();
@@ -203,7 +206,20 @@ public final class ExtraerProductoDePublicacion {
       repartidos = RepartoDeFotos.repartir(contrastados, publicacion.medios(), lectura);
     }
 
+    // La tienda solo vende tenis: el anuncio de calzado en el que ninguna foto muestra uno no deja
+    // borrador, y tampoco el que no tiene fotos que leer (ADR-0092). Un agotado sí sigue: agota lo
+    // que ya se vende.
+    Optional<CierreDePublicacion> sinTenis =
+        lineaDelProveedor == LineaCatalogo.CALZADO ? CalzadoSinTenis.en(lectura) : Optional.empty();
     List<ExtraccionEvaluada> evaluadas = new ArrayList<>(repartidos.size());
+    if (repartidos.isEmpty() && base != null && sinTenis.isPresent()) {
+      // La tanda de Tenis Al Pie sin un tenis: el reparto ya dejó fuera sus fotos, y queda dicho
+      // por qué en vez de «sin producto».
+      evaluadas.add(
+          new ExtraccionEvaluada(
+                  base, resultado.jsonCrudo(), base.precioProveedor(), Set.of(), resultado.uso())
+              .descartada(sinTenis.get()));
+    }
     for (int i = 0; i < repartidos.size(); i++) {
       ProductoRepartido repartido = repartidos.get(i);
       // Solo si sus fotos son suyas: con varios productos en el texto o fotos de todos, los colores
@@ -271,7 +287,9 @@ public final class ExtraerProductoDePublicacion {
               varios || album ? repartido.exclusiva() : null,
               album,
               varios || album ? repartido.conSuCodigo() : repartido.fotos(),
-              repartido.calzado()));
+              // El de otro proveedor también: de ahí sale su género si el texto no lo dice.
+              delTenis.orElse(null),
+              producto.estaAgotado() ? null : sinTenis.orElse(null)));
     }
     return evaluadas;
   }

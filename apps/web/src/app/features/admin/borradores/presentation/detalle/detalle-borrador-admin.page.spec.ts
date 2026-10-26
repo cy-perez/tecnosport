@@ -940,6 +940,26 @@ describe('DetalleBorradorAdminPage', () => {
   });
 
   /**
+   * Quien corrige el modelo de un tenis en el título y guarda: el servidor recompone la descripción
+   * con el modelo nuevo (ADR-0092), y el formulario muestra la que quedó, no la que estaba escrita.
+   */
+  it('después de guardar muestra la descripción que devolvió el servidor', async () => {
+    const { repositorio } = await renderPagina();
+    const titulo = (await screen.findByLabelText(d.tituloProducto)) as HTMLInputElement;
+    await vi.waitFor(() => expect(titulo.value).toBe('Bolso tote en cuero sintético'));
+    const recompuesta =
+      'Tenis importados estilo Nike Air Max Plus para dama. Disponibles desde la talla 35 hasta la 38.';
+    repositorio.descripcionRecompuesta = recompuesta;
+
+    fireEvent.input(titulo, { target: { value: 'Tenis importados estilo Nike Air Max Plus' } });
+    fireEvent.click(screen.getByRole('button', { name: d.guardar }));
+
+    expect(await screen.findByText(d.guardado)).toBeTruthy();
+    const descripcion = screen.getByLabelText(d.descripcion) as HTMLTextAreaElement;
+    await vi.waitFor(() => expect(descripcion.value).toBe(recompuesta));
+  });
+
+  /**
    * Meraki, horma reducida (ADR-0085): la ingesta corrió M-L-XL-XXL a S-M-L-XL con 1 más arriba, el
    * panel dice cómo se pide cada una, y quien revisa corrige el ajuste y lo guarda.
    */

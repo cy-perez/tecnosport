@@ -1286,6 +1286,9 @@ export class DetalleBorradorAdminPage {
       {
         onSuccess: (borrador) => {
           this.avisoDatos.set(borrador.titulo);
+          // La descripción de un tenis sigue al modelo y a las tallas corregidos (ADR-0092): la
+          // que devuelve el servidor puede no ser la que estaba escrita.
+          this.formDatos.controls.descripcion.setValue(borrador.descripcion ?? '');
           // Lo que se acaba de corregir alimenta la aprobación: el precio y el alt parten de ahí.
           this.formAprobar.patchValue({
             precioVenta:

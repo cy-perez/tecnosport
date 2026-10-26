@@ -8,12 +8,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import co.tecnosport.api.domain.catalogo.LineaCatalogo;
 import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.proveedores.AlertaBorrador;
+import co.tecnosport.api.domain.proveedores.CierreDePublicacion;
 import co.tecnosport.api.domain.proveedores.GeneroDeCalzado;
 import co.tecnosport.api.domain.proveedores.IdExternoDeMensaje;
 import co.tecnosport.api.domain.proveedores.LecturaDeCalzado;
 import co.tecnosport.api.domain.proveedores.LecturaDeFotos;
 import co.tecnosport.api.domain.proveedores.LecturaDeFotos.LecturaDeFoto;
 import co.tecnosport.api.domain.proveedores.MensajeProveedor;
+import co.tecnosport.api.domain.proveedores.MotivoDePublicacion;
 import co.tecnosport.api.domain.proveedores.ProductoExtraido;
 import co.tecnosport.api.domain.proveedores.PublicacionProveedor;
 import co.tecnosport.api.domain.proveedores.Tallas;
@@ -987,7 +989,195 @@ class ExtraerProductoDePublicacionTest {
         Optional.of("Tenis importados estilo Nike Air Max Plus"),
         tenis.producto().tituloOpcional());
     assertTrue(tenis.alertas().contains(AlertaBorrador.MODELO_POR_CONFIRMAR));
-    assertTrue(tenis.calzadoOpcional().isEmpty(), "el género sigue saliendo del texto");
+    // La lectura llega también aquí, para el género si el texto no lo dice; el texto manda al
+    // resolver (ADR-0092).
+    assertEquals(
+        Optional.of(GeneroDeCalzado.UNISEX),
+        tenis.calzadoOpcional().flatMap(LecturaDeCalzado::generoOpcional));
+    assertTrue(tenis.descarteOpcional().isEmpty(), "hay un tenis en sus fotos");
+  }
+
+  // --- El calzado que no es un tenis (ADR-0092) ---
+
+  /** Un lector de calzado que ve, en cada foto, ese tipo de calzado. */
+  private static LectorDeFotos ve(TipoDeCalzado... tipos) {
+    List<LecturaDeFoto> leidas = new ArrayList<>();
+    for (int i = 0; i < tipos.length; i++) {
+      leidas.add(
+          new LecturaDeFoto(
+              i,
+              List.of(),
+              null,
+              List.of(),
+              List.of("negro"),
+              null,
+              List.of(),
+              List.of(),
+              new LecturaDeCalzado(
+                  null, false, GeneroDeCalzado.DAMA, tipos[i], true, null, i == 0 ? null : 0)));
+    }
+    return fotos -> Optional.of(new LecturaDeFotos(false, leidas, "{}"));
+  }
+
+  /** Lo que el extractor lee de un anuncio de Imperio Wicho. */
+  private static ProductoExtraido deWicho(String titulo, boolean agotado) {
+    return new ProductoExtraido(
+        true,
+        agotado,
+        titulo,
+        LineaCatalogo.CALZADO,
+        TipoProductoProveedor.OTRO,
+        Dinero.deCop(55000),
+        Tallas.lista(List.of("36", "37", "38")),
+        null,
+        List.of(),
+        null,
+        null,
+        null,
+        false,
+        new BigDecimal("0.9"),
+        null,
+        null);
+  }
+
+  private List<ExtraccionEvaluada> evaluarCalzado(
+      PublicacionProveedor publicacion,
+      ProductoExtraido producto,
+      LectorDeFotos lector,
+      String... fotos) {
+    return new ExtraerProductoDePublicacion(
+            ApoyoDeIngesta.ExtractorFalso.varios(List.of(producto)),
+            lector,
+            lector,
+            almacenCon(fotos),
+            UMBRAL)
+        .ejecutar(publicacion, mensajes, LineaCatalogo.CALZADO);
+  }
+
+  /** Imperio Wicho manda también chanclas: ninguna de sus fotos muestra un tenis. */
+  @Test
+  void laChanclaDeUnProveedorDeCalzadoSeDescarta() {
+    PublicacionProveedor publicacion =
+        PublicacionProveedor.abrir(texto("CHANCLA IMPORTADA DAMA 💰*$55,000*"));
+    publicacion.anexar(foto("p/1.jpg"));
+    publicacion.anexar(foto("p/2.jpg"));
+
+    ExtraccionEvaluada chancla =
+        evaluarCalzado(
+                publicacion,
+                deWicho("Chancla importada para dama", false),
+                ve(TipoDeCalzado.CHANCLA, TipoDeCalzado.CHANCLA),
+                "p/1.jpg",
+                "p/2.jpg")
+            .getFirst();
+
+    assertEquals(
+        Optional.of(
+            new CierreDePublicacion(MotivoDePublicacion.CALZADO_QUE_NO_ES_TENIS, "CHANCLA")),
+        chancla.descarteOpcional());
+  }
+
+  /** Con un tenis y una sandalia no se sabe de cuál es el precio: lo decide quien revisa. */
+  @Test
+  void conUnTenisEntreLasFotosNoSeDescarta() {
+    PublicacionProveedor publicacion =
+        PublicacionProveedor.abrir(texto("IMPORTADO DAMA 💰*$55,000*"));
+    publicacion.anexar(foto("p/1.jpg"));
+    publicacion.anexar(foto("p/2.jpg"));
+
+    ExtraccionEvaluada mezcla =
+        evaluarCalzado(
+                publicacion,
+                deWicho("Tenis importados", false),
+                ve(TipoDeCalzado.SANDALIA, TipoDeCalzado.TENIS),
+                "p/1.jpg",
+                "p/2.jpg")
+            .getFirst();
+
+    assertTrue(mezcla.descarteOpcional().isEmpty());
+  }
+
+  /** Sin fotos nadie vio que fuera un tenis. */
+  @Test
+  void sinFotosElCalzadoSeDescarta() {
+    PublicacionProveedor publicacion =
+        PublicacionProveedor.abrir(texto("IMPORTADO DAMA 💰*$55,000*"));
+
+    ExtraccionEvaluada sinFotos =
+        evaluarCalzado(publicacion, deWicho("Tenis importados", false), ve()).getFirst();
+
+    assertEquals(
+        Optional.of(CierreDePublicacion.de(MotivoDePublicacion.CALZADO_SIN_FOTOS_LEIDAS)),
+        sinFotos.descarteOpcional());
+  }
+
+  /** Las fotos están, pero el lector no pudo con ellas: tampoco se vio un tenis. */
+  @Test
+  void conFotosSinLeerElCalzadoSeDescarta() {
+    PublicacionProveedor publicacion =
+        PublicacionProveedor.abrir(texto("IMPORTADO DAMA 💰*$55,000*"));
+    publicacion.anexar(foto("p/1.jpg"));
+
+    ExtraccionEvaluada sinLeer =
+        evaluarCalzado(
+                publicacion,
+                deWicho("Tenis importados", false),
+                fotos -> Optional.empty(),
+                "p/1.jpg")
+            .getFirst();
+
+    assertEquals(
+        Optional.of(CierreDePublicacion.de(MotivoDePublicacion.CALZADO_SIN_FOTOS_LEIDAS)),
+        sinLeer.descarteOpcional());
+  }
+
+  /** Un «AGOTADO» sin fotos agota lo que ya se vende: no se descarta. */
+  @Test
+  void elAgotadoDeCalzadoSigueAunqueNoTraigaFotos() {
+    PublicacionProveedor publicacion = PublicacionProveedor.abrir(texto("AGOTADO 🚫"));
+
+    ExtraccionEvaluada agotado =
+        evaluarCalzado(publicacion, deWicho("Tenis importados", true), ve()).getFirst();
+
+    assertTrue(agotado.descarteOpcional().isEmpty());
+  }
+
+  /** La ropa no pasa por aquí, aunque no tenga fotos. */
+  @Test
+  void laRopaSinFotosNoSeDescartaPorCalzado() {
+    PublicacionProveedor publicacion =
+        PublicacionProveedor.abrir(texto("Camisetas seda fría para Caballero $35.000"));
+
+    ExtraccionEvaluada camiseta =
+        new ExtraerProductoDePublicacion(
+                ApoyoDeIngesta.ExtractorFalso.varios(List.of(prenda("Camiseta", null))), UMBRAL)
+            .ejecutar(publicacion, mensajes, LineaCatalogo.ROPA)
+            .getFirst();
+
+    assertTrue(camiseta.descarteOpcional().isEmpty());
+  }
+
+  /** La tanda de Tenis Al Pie con solo Crocs: queda dicho por qué, no «sin producto». */
+  @Test
+  void laTandaSinNingunTenisDiceQueNoEsUnTenis() {
+    PublicacionProveedor publicacion =
+        PublicacionProveedor.abrir(texto("Detal :$80.000 X mayor 💰55"));
+    publicacion.anexar(foto("p/1.jpg"));
+    publicacion.anexar(foto("p/2.jpg"));
+    LectorDeFotos crocs = ve(TipoDeCalzado.ZUECO, TipoDeCalzado.ZUECO);
+
+    List<ExtraccionEvaluada> evaluadas =
+        new ExtraerProductoDePublicacion(
+                ApoyoDeIngesta.ExtractorFalso.varios(List.of()),
+                crocs,
+                almacenCon("p/1.jpg", "p/2.jpg"),
+                UMBRAL)
+            .ejecutar(publicacion, mensajes, LineaCatalogo.CALZADO, true);
+
+    assertEquals(1, evaluadas.size());
+    assertEquals(
+        Optional.of(new CierreDePublicacion(MotivoDePublicacion.CALZADO_QUE_NO_ES_TENIS, "ZUECO")),
+        evaluadas.getFirst().descarteOpcional());
   }
 
   /** Fuera del calzado, las fotos las sigue leyendo el lector de siempre. */

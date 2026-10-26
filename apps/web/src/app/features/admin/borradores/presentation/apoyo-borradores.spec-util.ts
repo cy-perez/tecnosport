@@ -70,6 +70,11 @@ export class RepositorioBorradoresAdminFalso implements RepositorioBorradoresAdm
   falloAlUnir: unknown = null;
   /** Por nombre de archivo: si se pone, subir ese revienta con esto. */
   readonly fallosAlSubir = new Map<string, unknown>();
+  /**
+   * Si se pone, `editar` devuelve esta descripción y no la escrita: la del tenis que el servidor
+   * recompone con el modelo corregido (ADR-0092).
+   */
+  descripcionRecompuesta: string | null = null;
   /** Si se pone, `eliminar` revienta con esto: el 409 de un borrador que no se borra. */
   falloAlEliminar: unknown = null;
   /** El tamaño de tanda del borrado en bloque; chico para que las pruebas vean varias. */
@@ -108,7 +113,10 @@ export class RepositorioBorradoresAdminFalso implements RepositorioBorradoresAdm
 
   async editar(id: string, cambios: EditarBorrador): Promise<Borrador> {
     this.ediciones.push({ id, cambios });
-    return this.reemplazar(id, { ...cambios });
+    return this.reemplazar(id, {
+      ...cambios,
+      ...(this.descripcionRecompuesta === null ? {} : { descripcion: this.descripcionRecompuesta }),
+    });
   }
 
   async aprobar(id: string, aprobacion: AprobarBorrador): Promise<Borrador> {

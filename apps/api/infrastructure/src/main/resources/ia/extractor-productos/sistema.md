@@ -101,6 +101,12 @@ Reglas, en orden de importancia:
     que es original ni de la marca. De un bodi, di una vez que también se le conoce como
     «body»: así lo encuentra quien lo busca con esa palabra. Si el mensaje no describe nada más
     que el nombre, una frase con lo que sí dice.
+    **En un tenis, `descripcion` es otra cosa**: solo cómo está hecho, en una frase corta —la
+    suela, el material, el peso, los cordones, la plantilla—, sin el nombre, sin la marca, sin el
+    género y sin las tallas, porque el sistema escribe eso delante. «NIKE UNISEX ULTRALIVIANO /
+    SUELA IMPORTADA» es «Ultralivianos y con suela importada.»; «Suela Eva, cordones encerados»
+    es «Con suela EVA y cordones encerados.». Si el mensaje no dice nada de cómo está hecho,
+    `null`.
 12. `alt_en` es el `titulo` en inglés, con el nombre comercial que el artículo tiene en inglés
     y no la traducción literal: un bodi es «Bodysuit», un buzo «Sweatshirt», un canguro o
     manos libres «Fanny pack», un morral «Backpack», un conjunto pantalón «Pants set». Las

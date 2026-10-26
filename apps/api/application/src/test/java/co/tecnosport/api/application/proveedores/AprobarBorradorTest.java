@@ -42,6 +42,7 @@ import co.tecnosport.api.domain.proveedores.BorradorProducto;
 import co.tecnosport.api.domain.proveedores.EstadoBorrador;
 import co.tecnosport.api.domain.proveedores.FotoSubida;
 import co.tecnosport.api.domain.proveedores.FotosDelProducto;
+import co.tecnosport.api.domain.proveedores.GeneroDeCalzado;
 import co.tecnosport.api.domain.proveedores.HuellaProveedor;
 import co.tecnosport.api.domain.proveedores.IdExternoDeMensaje;
 import co.tecnosport.api.domain.proveedores.LoteIngesta;
@@ -359,6 +360,90 @@ class AprobarBorradorTest {
                     1));
 
     assertEquals(new AjusteDeTalla(1), producto.ajusteDeTalla());
+  }
+
+  /** Un tenis de dama de la 40 a la 41, con la descripción que le compuso la ingesta. */
+  private BorradorProducto tenisDescrito() {
+    BorradorProducto tenis =
+        BorradorProducto.nuevo(
+            borrador.publicacionId(),
+            proveedor.id(),
+            new ProductoExtraido(
+                true,
+                false,
+                "Tenis importados estilo Nike",
+                LineaCatalogo.CALZADO,
+                TipoProductoProveedor.TENIS,
+                Dinero.deCop(85000),
+                Tallas.lista(List.of("40", "41")),
+                null,
+                List.of(),
+                null,
+                "Con suela EVA.",
+                null,
+                true,
+                new BigDecimal("0.9"),
+                null),
+            "{}",
+            Dinero.deCop(85000),
+            Dinero.deCop(102000),
+            HuellaProveedor.calcular(
+                proveedor.id(), "Tenis importados estilo Nike", Dinero.deCop(85000)),
+            null,
+            Set.of(),
+            AHORA);
+    BorradorProducto.conGeneroDeCalzado(tenis, GeneroDeCalzado.CABALLERO);
+    tenis.describirComoTenis();
+    borradores.guardar(tenis);
+    return tenis;
+  }
+
+  private Producto aprobarTenis(BorradorProducto tenis, String titulo, String descripcion) {
+    return caso()
+        .ejecutar(
+            new AprobarBorradorComando(
+                tenis.id(),
+                titulo,
+                descripcion,
+                ApoyoDeCatalogoParaIngesta.CALZADO_CABALLERO.id(),
+                ApoyoDeCatalogoParaIngesta.MARCA.id(),
+                102000,
+                Tallas.lista(List.of("40", "41")),
+                0,
+                titulo,
+                "Imported sneakers",
+                List.of(new FotoAprobada(foto1.id(), null, null)),
+                List.of(),
+                false,
+                1));
+  }
+
+  /**
+   * Quien revisa corrige el modelo en el título y aprueba sin guardar: la descripción que estaba
+   * escrita se publica con el modelo corregido (ADR-0092).
+   */
+  @Test
+  void aprobarConElModeloCorregidoRecomponeLaDescripcionDelTenis() {
+    BorradorProducto tenis = tenisDescrito();
+
+    Producto producto =
+        aprobarTenis(
+            tenis, "Tenis importados estilo Nike Shox R4", tenis.descripcion().orElseThrow());
+
+    assertEquals(
+        "Tenis importados estilo Nike Shox R4 para caballero. Disponibles desde la talla 40 hasta"
+            + " la 41. Con suela EVA.",
+        producto.descripcion());
+  }
+
+  @Test
+  void unaDescripcionReescritaSePublicaComoSeEscribio() {
+    BorradorProducto tenis = tenisDescrito();
+
+    Producto producto =
+        aprobarTenis(tenis, "Tenis importados estilo Nike Shox R4", "Un clásico de la calle.");
+
+    assertEquals("Un clásico de la calle.", producto.descripcion());
   }
 
   /** Sin escala numérica no se sabe el paso: la 38 en bolsos de mano no tiene cómo pedirse. */

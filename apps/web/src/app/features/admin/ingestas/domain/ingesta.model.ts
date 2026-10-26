@@ -150,6 +150,8 @@ export const MOTIVOS_DE_PUBLICACION = [
   'VIENE_EN_CHAT_DE_CABALLERO',
   'TIPO_EXCLUIDO',
   'PRECIO_SOBRE_TOPE',
+  'CALZADO_QUE_NO_ES_TENIS',
+  'CALZADO_SIN_FOTOS_LEIDAS',
   'EXTRACCION_FALLIDA',
   'ERROR_AL_RESOLVER',
   'DESCONOCIDO',
@@ -186,9 +188,14 @@ export interface PublicacionCerrada {
  */
 export function claveDelMotivo(publicacion: PublicacionCerrada): string {
   const base = 'admin.ingestas.cerradas.motivos.' + publicacion.motivo;
-  return publicacion.motivo === 'MISMA_REFERENCIA_EN_REVISION' && publicacion.dato
-    ? base + '_CON_FOTOS'
-    : base;
+  if (publicacion.motivo === 'MISMA_REFERENCIA_EN_REVISION' && publicacion.dato) {
+    return base + '_CON_FOTOS';
+  }
+  // Las fotos se leyeron y ninguna mostró un calzado reconocible: no hay tipo que nombrar.
+  if (publicacion.motivo === 'CALZADO_QUE_NO_ES_TENIS' && !publicacion.dato) {
+    return base + '_SIN_TIPO';
+  }
+  return base;
 }
 
 /** ¿Hay algo cerrado que mirar? Solo cuando el lote ya contó. */
