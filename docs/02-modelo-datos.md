@@ -749,6 +749,15 @@ proveedor no se guarda**: el listado de pedidos del panel la cuenta desde la tal
 variante tiene hoy, así que cambiar una talla o agregar un color después de aprobar no la deja
 vieja ni ausente. El comprador no la ve.
 
+**Los ajustes de ingesta del proveedor** (`V118`, `ADR-0089`, 25 de octubre de 2026), nacidos con
+Tenis Al Pie: `proveedor.una_foto_un_producto` parte la tanda en un borrador por foto;
+`proveedor.venta_bajo_confirmacion` hace nacer por confirmar las variantes que se aprueban;
+`proveedor.dias_de_vigencia` (nulo es la ventana general, de 1 a 30) es su ventana propia; y
+`proveedor.tallas_dama`, `tallas_caballero` —separadas por coma, como las nombra el proveedor— y
+`ajuste_de_talla` son las tallas que maneja siempre, las tres nulas o las tres puestas.
+`borrador_producto.genero_de_calzado` (`V119`: `DAMA`, `CABALLERO`, `UNISEX` o nulo) es para quién
+es el tenis, y decide la categoría que el panel propone.
+
 **Dos formas de reconocer que un mensaje es un producto que ya existe:**
 
 - **La huella**, que desde el 9 de octubre de 2026 es una de dos (`ADR-0067`):
@@ -807,7 +816,7 @@ una lista no entre dos veces ni más vieja que la última. Las configuraciones d
 un borrador no llevan un único por sku: Hibernate las reescribe por posición, y
 lo sostiene el agregado.
 
-**El color se confirma antes de venderse** (`ADR-0086`, V117). `producto.paleta`
+**El color —y desde `ADR-0089` la talla del calzado— se confirma antes de venderse** (`ADR-0086`, V117; la columna se llamaba `color_por_confirmar` hasta `V120`). En el calzado de un proveedor que vende bajo confirmación, la marca la pone la aprobación y la existencia es la nominal de la tecnología, que se repone cuando el modelo reaparece. `producto.paleta`
 guarda los colores oficiales del modelo, uno por línea, que la ficha dice al pie
 de las fotos. `variante.disponibilidad_por_confirmar` lo recalcula cada lista: falso si la
 lista de hoy marca ese color o si la paleta tiene uno solo. Una variante por

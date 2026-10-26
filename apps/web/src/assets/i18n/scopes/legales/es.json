@@ -1,7 +1,7 @@
 {
   "comun": {
     "version_etiqueta": "Versión",
-    "version": "2026-10-25.1",
+    "version": "2026-10-25.2",
     "vigencia": "Vigente desde el 25 de octubre de 2026.",
     "otros_documentos": "Otros documentos legales",
     "titular_aviso": "Este sitio lo opera Cristhian Yurday Pérez Hoyos, NIT 1054994043-9, Carrera 26C # 38B-31, Medellín, Antioquia, Colombia.",
@@ -57,7 +57,7 @@
           "De la cuenta, si decides crearla: correo y contraseña, que se almacena cifrada con un algoritmo de un solo sentido y nunca en texto claro. Si la creas o entras con tu cuenta de Google, no hay contraseña: Google nos entrega tu correo, la confirmación de que está verificado y un identificador de tu cuenta de Google. Nunca recibimos tu contraseña de Google.",
           "Técnicos: dirección IP y fecha y hora de las acciones relevantes, como el otorgamiento de esta autorización o los intentos de inicio de sesión.",
           "De navegación: los estrictamente necesarios para que el sitio funcione. Ver la política de cookies.",
-          "De la conversación, si nos escribes por WhatsApp: tu número de teléfono, el nombre de tu perfil y lo que nos escribes, por ejemplo el producto y el color que quieres."
+          "De la conversación, si nos escribes por WhatsApp: tu número de teléfono, el nombre de tu perfil y lo que nos escribes, por ejemplo el producto, el color o la talla que quieres."
         ]
       },
       {
@@ -75,7 +75,7 @@
           "Procesar, confirmar y despachar tu pedido, cotizar el costo del envío con tu ciudad de destino, generar la guía de transporte y mantenerte informado del estado del envío.",
           "Verificar la disponibilidad del pago contraentrega en tu ciudad y coordinar la entrega.",
           "Atender peticiones, quejas, reclamos, garantías y solicitudes de retracto.",
-          "Responder tus consultas por WhatsApp, entre ellas confirmar con nuestro proveedor si hay el color de un equipo de tecnología que quieres y enviarte el enlace para comprarlo. Para preguntarle al proveedor no le damos tus datos: solo el producto y el color.",
+          "Responder tus consultas por WhatsApp, entre ellas confirmar con nuestro proveedor si hay el color de un equipo de tecnología o la talla de un calzado que quieres y enviarte el enlace para comprarlo. Para preguntarle al proveedor no le damos tus datos: solo el producto, el color y la talla.",
           "Cumplir obligaciones legales, contables y tributarias.",
           "Prevenir el fraude y proteger la seguridad de las cuentas.",
           "Gestionar tu cuenta, si decides crearla."
@@ -198,8 +198,8 @@
         "titulo": "5. Disponibilidad",
         "parrafos": [
           "La existencia se verifica en el momento de crear el pedido. Si un producto deja de estar disponible después de tu compra, te lo comunicaremos de inmediato para que decidas si esperas una nueva fecha o prefieres la devolución de tu dinero, que se hará dentro de los quince (15) días calendario siguientes.",
-          "En tecnología, qué colores hay de cada equipo depende de lo que tenga nuestro proveedor. Cuando la ficha dice que un color lo confirmamos antes de que lo compres, ese color no se puede agregar al carrito: el botón te lleva a escribirnos por WhatsApp, le preguntamos al proveedor y te respondemos por el mismo medio. Pedir la confirmación no te obliga a comprar.",
-          "Si el color está disponible, te enviamos un enlace de compra. Sirve para una sola compra, deja apartada una unidad mientras esté vigente y vence en la fecha y hora que te indicamos con él; si vence sin que compres, la unidad deja de estar apartada y puedes volver a escribirnos. Quien tenga el enlace puede usarlo, así que no lo compartas. Si el color no está disponible, te lo decimos y te contamos qué colores sí hay: el color de tu compra es siempre el que tú aceptas, nunca lo cambiamos sin preguntarte."
+          "Hay productos cuya disponibilidad depende de lo que tenga nuestro proveedor, y la confirmamos antes de venderlos: en tecnología, el color de cada equipo; en calzado, la talla de cada modelo. Cuando la ficha dice que el color o la talla los confirmamos antes de que lo compres, ese producto no se puede agregar al carrito: el botón te lleva a escribirnos por WhatsApp, le preguntamos al proveedor y te respondemos por el mismo medio. Pedir la confirmación no te obliga a comprar.",
+          "Si el color o la talla están disponibles, te enviamos un enlace de compra. Sirve para una sola compra, deja apartada una unidad mientras esté vigente y vence en la fecha y hora que te indicamos con él; si vence sin que compres, la unidad deja de estar apartada y puedes volver a escribirnos. Quien tenga el enlace puede usarlo, así que no lo compartas. Si no están disponibles, te lo decimos y te contamos qué colores o tallas sí hay: el color y la talla de tu compra son siempre los que tú aceptas, nunca los cambiamos sin preguntarte."
         ]
       },
       {

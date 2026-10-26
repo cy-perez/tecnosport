@@ -601,6 +601,45 @@ cambios de `docs/12`: esta vez sí se agregó una finalidad.
    de nadie que no haya escrito por WhatsApp después de publicada, así que no se
    comunicó a los titulares anteriores. ¿Es suficiente?
 
+## 10. Réplicas de marcas registradas, y la talla por WhatsApp
+
+> Nació el 25 de octubre de 2026 con `ADR-0089`.
+
+**El hecho.** Tenis Al Pie, el proveedor principal de calzado, vende réplicas
+importadas: Nike, Adidas, New Balance, Jordan, y también marcas de lujo —Louis
+Vuitton, Dior, Alexander McQueen, Valentino, Off-White, Diesel—. El negocio decidió
+venderlas todas, deportivas y de moda. El título dice «Tenis importados estilo
+Nike Air Force 1», pero **el logo de la marca se ve en el tenis y en sus fotos**, y
+varias fotos las ambienta el proveedor con artículos de otras marcas (bolsas Dior,
+libros Cartier, cajas Supreme). La ingesta descarta las fotos con utilería de otras
+marcas y las del tenis puesto, pero no puede quitar el logo del propio tenis.
+
+Además, desde este cambio, la talla de ese calzado se confirma por WhatsApp antes de
+venderse, con el mismo camino del punto 9: el proveedor no dice qué tallas tiene de
+cada modelo.
+
+**Qué dice el texto publicado (versión `2026-10-25.2`).** Términos, numeral 5: el
+color de tecnología **y la talla del calzado** se confirman antes de venderse, con el
+mismo enlace de compra. Política de datos, numerales 5 y 7: la conversación puede
+incluir la talla, y al proveedor solo se le pregunta por el producto, el color y la
+talla. Nada de los textos habla de réplicas, de marcas ni de su relación con ellas.
+
+**Las tres preguntas.**
+
+1. **¿Se pueden vender réplicas con el logo de una marca registrada?** «Estilo» en
+   el título describe, pero el producto lleva el signo de la marca. ¿Cabe dentro de
+   la Decisión 486 de la Comunidad Andina y del Código Penal sobre el uso de signos
+   distintivos, o el riesgo es el del producto y no el del título? ¿Cambia algo que
+   sean marcas de lujo?
+2. **¿Las pasarelas lo admiten?** Wompi y Sistecrédito tienen listas de productos
+   prohibidos en sus condiciones de vinculación; este expediente no las ha leído. Un
+   cierre de la cuenta de pagos por esto apagaría toda la tienda, no solo el calzado.
+3. **¿Hace falta decirlo en los términos?** Hoy el comprador lee «estilo» en el
+   título y nada más. ¿Conviene una cláusula que diga que el calzado y la ropa
+   «estilo» de una marca no son de esa marca ni tienen relación con ella, para que
+   la información sea veraz y suficiente (Ley 1480), o eso empeora la posición
+   frente al titular de la marca?
+
 ## Antes de la consulta
 
 - [x] ~~Leer el contrato y la documentación de Resend y anotar la región de

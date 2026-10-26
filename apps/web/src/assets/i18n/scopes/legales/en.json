@@ -1,7 +1,7 @@
 {
   "comun": {
     "version_etiqueta": "Version",
-    "version": "2026-10-25.1",
+    "version": "2026-10-25.2",
     "vigencia": "In force since 25 October 2026.",
     "otros_documentos": "Other legal documents",
     "titular_aviso": "This site is operated by Cristhian Yurday Pérez Hoyos, NIT 1054994043-9, Carrera 26C # 38B-31, Medellín, Antioquia, Colombia.",
@@ -57,7 +57,7 @@
           "Account data, if you choose to create one: email and password, which is stored using a one-way hash and never in plain text. If you create it or sign in with your Google account, there is no password: Google gives us your email, confirmation that it is verified, and an identifier for your Google account. We never receive your Google password.",
           "Technical: IP address and the date and time of relevant actions, such as granting this authorisation or sign-in attempts.",
           "Browsing: only what is strictly necessary for the site to work. See the cookie policy.",
-          "From the conversation, if you message us on WhatsApp: your phone number, your profile name and what you write to us, for example the product and colour you want."
+          "From the conversation, if you message us on WhatsApp: your phone number, your profile name and what you write to us, for example the product, colour or size you want."
         ]
       },
       {
@@ -75,7 +75,7 @@
           "Process, confirm, and ship your order, quote the shipping cost using your destination city, generate the shipping label, and keep you informed of the shipment status.",
           "Check whether cash on delivery is available in your city and coordinate the delivery.",
           "Handle requests, complaints, claims, warranties, and withdrawal requests.",
-          "Answer your enquiries on WhatsApp, including confirming with our supplier whether the colour of a technology device you want is available and sending you the link to buy it. We do not give the supplier your data to ask: only the product and the colour.",
+          "Answer your enquiries on WhatsApp, including confirming with our supplier whether the colour of a technology device or the size of a pair of shoes you want is available and sending you the link to buy it. We do not give the supplier your data to ask: only the product, the colour and the size.",
           "Comply with legal, accounting, and tax obligations.",
           "Prevent fraud and protect account security.",
           "Manage your account, if you choose to create one."
@@ -198,8 +198,8 @@
         "titulo": "5. Availability",
         "parrafos": [
           "Stock is verified at the moment the order is created. If a product becomes unavailable after your purchase, we will tell you immediately so you can decide whether to wait for a new date or prefer a refund, which will be made within fifteen (15) calendar days.",
-          "For technology, which colours are available for each device depends on what our supplier has. When the product page says that we confirm a colour before you buy it, that colour cannot be added to the cart: the button takes you to message us on WhatsApp, we ask the supplier and reply through the same channel. Asking for confirmation does not oblige you to buy.",
-          "If the colour is available, we send you a purchase link. It is good for a single purchase, keeps one unit reserved while it is valid, and expires on the date and time we give you with it; if it expires without a purchase, the unit is no longer reserved and you can message us again. Anyone who has the link can use it, so do not share it. If the colour is not available, we tell you and let you know which colours are: the colour of your purchase is always the one you accept, and we never change it without asking you."
+          "Some products depend on what our supplier has, and we confirm their availability before selling them: for technology, the colour of each device; for footwear, the size of each model. When the product page says that we confirm the colour or the size before you buy it, that product cannot be added to the cart: the button takes you to message us on WhatsApp, we ask the supplier and reply through the same channel. Asking for confirmation does not oblige you to buy.",
+          "If the colour or the size is available, we send you a purchase link. It is good for a single purchase, keeps one unit reserved while it is valid, and expires on the date and time we give you with it; if it expires without a purchase, the unit is no longer reserved and you can message us again. Anyone who has the link can use it, so do not share it. If it is not available, we tell you and let you know which colours or sizes are: the colour and size of your purchase are always the ones you accept, and we never change them without asking you."
         ]
       },
       {
