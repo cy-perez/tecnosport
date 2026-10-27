@@ -53,27 +53,46 @@ function almacenDesde(query: Record<string, string> = {}): AlmacenCorreoEnMemori
 /** Qué carrito salió a pagarse en la pasarela, en memoria. */
 class CarritosPorPagarEnMemoria implements AlmacenCarritoPorPagar {
   readonly anotados = new Map<string, string>();
-  anotar(pedidoId: string, carritoId: string): void {
+  readonly lineas = new Map<string, readonly string[]>();
+  /** Sin `lineaIds`, como lo que se anotó antes de que existiera la selección. */
+  anotar(pedidoId: string, carritoId: string, lineaIds?: readonly string[]): void {
     this.anotados.set(pedidoId, carritoId);
+    if (lineaIds) {
+      this.lineas.set(pedidoId, lineaIds);
+    }
   }
   carritoDe(pedidoId: string): string | null {
     return this.anotados.get(pedidoId) ?? null;
   }
+  lineasDe(pedidoId: string): readonly string[] | null {
+    return this.lineas.get(pedidoId) ?? null;
+  }
   olvidar(pedidoId: string): void {
     this.anotados.delete(pedidoId);
+    this.lineas.delete(pedidoId);
   }
 }
 
 let carritosPorPagar = new CarritosPorPagarEnMemoria();
 
-/** El carrito del navegador: solo hace falta que exista, la pantalla no pinta sus líneas. */
+/**
+ * El carrito del navegador: la pantalla no pinta sus líneas, pero al volver pagado quita las que
+ * fueron al pedido, así que `lineasDelCarrito` las simula y `eliminadas` anota lo que se quitó.
+ */
+let lineasDelCarrito: { id: string; varianteId: string; cantidad: number }[] = [];
+let eliminadas: string[] = [];
 const repositorioCarrito: Partial<RepositorioCarrito> = {
   ver: async (id: string) => ({
     id,
     usuarioId: null,
     creadoEn: '2026-01-01T00:00:00Z',
-    lineas: [],
+    lineas: lineasDelCarrito,
   }),
+  eliminarLinea: async (id: string, lineaId: string) => {
+    eliminadas.push(lineaId);
+    lineasDelCarrito = lineasDelCarrito.filter((linea) => linea.id !== lineaId);
+    return { id, usuarioId: null, creadoEn: '2026-01-01T00:00:00Z', lineas: lineasDelCarrito };
+  },
 };
 
 /** Lo que toda pantalla con `CarritoStore` necesita, más el almacén de carritos por pagar. */
@@ -300,6 +319,8 @@ describe('EstadoPage', () => {
   beforeEach(() => {
     window.localStorage.clear();
     carritosPorPagar = new CarritosPorPagarEnMemoria();
+    lineasDelCarrito = [];
+    eliminadas = [];
   });
 
   describe('el carrito que salió a pagarse en la pasarela', () => {
@@ -324,6 +345,21 @@ describe('EstadoPage', () => {
       const carrito = await volverConElPedido('PAGADO');
 
       await vi.waitFor(() => expect(carrito.carritoId()).toBeNull());
+      expect(carritosPorPagar.carritoDe('pedido-1')).toBeNull();
+    });
+
+    it('al volver pagado quita solo las líneas que fueron al pedido', async () => {
+      sembrarCarritoId('carrito-1');
+      lineasDelCarrito = [
+        { id: 'linea-1', varianteId: 'variante-1', cantidad: 1 },
+        { id: 'linea-2', varianteId: 'variante-2', cantidad: 1 },
+      ];
+      carritosPorPagar.anotar('pedido-1', 'carrito-1', ['linea-1']);
+
+      const carrito = await volverConElPedido('PAGADO');
+
+      await vi.waitFor(() => expect(eliminadas).toEqual(['linea-1']));
+      expect(carrito.carritoId()).toBe('carrito-1');
       expect(carritosPorPagar.carritoDe('pedido-1')).toBeNull();
     });
 

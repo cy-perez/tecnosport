@@ -118,7 +118,7 @@ export class ConfirmarPage {
     if (!datos || datos.tipoEntrega !== 'ENVIO_A_DOMICILIO' || !datos.direccion) {
       return null;
     }
-    const lineas = (this.carrito.consulta.data()?.lineas ?? []).map((linea) => ({
+    const lineas = this.carrito.lineasPorPagar().map((linea) => ({
       varianteId: linea.varianteId,
       cantidad: linea.cantidad,
     }));
@@ -225,7 +225,7 @@ export class ConfirmarPage {
   );
 
   private readonly modalidades = usarModalidadesDeEntrega(() =>
-    (this.carrito.consulta.data()?.lineas ?? []).map((linea) => linea.varianteId),
+    this.carrito.lineasPorPagar().map((linea) => linea.varianteId),
   );
 
   /** Mismo criterio que en el resumen: mientras no se sabe, como si estuviera apagada. */
@@ -335,7 +335,7 @@ export class ConfirmarPage {
    */
   private readonly criteriosMetodos = computed<MetodosDePagoDisponiblesComando | null>(() => {
     const datos = this.checkout.datosEntrega();
-    const lineas = this.carrito.consulta.data()?.lineas ?? [];
+    const lineas = this.carrito.lineasPorPagar();
     return datos && lineas.length > 0 ? comandoMetodosDePago(datos, lineas) : null;
   });
 
@@ -402,7 +402,8 @@ export class ConfirmarPage {
       const datosCarrito = this.carrito.consulta.data();
       const sinDatosEntrega = this.checkout.datosEntrega() === null;
       const sinMetodoPago = this.checkout.metodoPago() === null;
-      const carritoVacio = !!datosCarrito && datosCarrito.lineas.length === 0;
+      // Vacío o sin nada marcado: el resumen sabe decir cada caso.
+      const carritoVacio = !!datosCarrito && this.carrito.lineasPorPagar().length === 0;
 
       if (carritoVacio || sinDatosEntrega) {
         void this.router.navigate(['../resumen'], { relativeTo: this.route });
@@ -435,10 +436,12 @@ export class ConfirmarPage {
     }
     const datos = this.checkout.datosEntrega();
     const metodoPago = this.checkout.metodoPago();
-    const datosCarrito = this.carrito.consulta.data();
-    if (!datos || !metodoPago || !datosCarrito || datosCarrito.lineas.length === 0) {
+    const lineasPorPagar = this.carrito.lineasPorPagar();
+    if (!datos || !metodoPago || lineasPorPagar.length === 0) {
       return;
     }
+    // Las que van a este pedido: al terminar salen del carrito solo estas.
+    const pagadas = lineasPorPagar.map((linea) => linea.id);
     // Sin el precio fresco del medio no se confirma: mientras carga, el botón ya va ocupado, pero
     // un clic que llegue antes de pintarse, o con la consulta en error, no puede mandar un pedido
     // cuyo total nadie vio.
@@ -477,7 +480,7 @@ export class ConfirmarPage {
     const comando: CrearPedidoComando = {
       correo: datos.correo,
       contacto: datos.contacto,
-      lineas: datosCarrito.lineas.map((linea) => ({
+      lineas: lineasPorPagar.map((linea) => ({
         varianteId: linea.varianteId,
         cantidad: linea.cantidad,
         enlaceCompra: linea.enlaceCompra,
@@ -497,7 +500,7 @@ export class ConfirmarPage {
       // cobraría el total viejo y después le borraría el carrito nuevo. La huella decide.
       const pedido =
         this.checkout.pedidoReutilizable(comando) ?? (await this.checkout.crearPedido(comando));
-      const continuo = await this.continuarSegunMetodoPago(pedido);
+      const continuo = await this.continuarSegunMetodoPago(pedido, pagadas);
       if (!continuo) {
         // No se pudo seguir y ya se navegó a donde falta algo. Limpiar el carrito aquí dejaría al
         // comprador con un pedido creado, sus líneas fuera de toda pantalla y la guarda del
@@ -514,7 +517,7 @@ export class ConfirmarPage {
       // le negaban el crédito. Ese carrito lo vacía la pantalla de estado cuando el pedido vuelve
       // pagado (`AlmacenCarritoPorPagar`).
       if (this.terminado()) {
-        this.carrito.limpiar();
+        void this.carrito.quitarPagadas(pagadas);
         this.checkout.terminarCompra();
       }
     } catch (error) {
@@ -595,15 +598,21 @@ export class ConfirmarPage {
     void this.router.navigate(['../metodo-pago'], { relativeTo: this.route });
   }
 
-  /** Para que la pantalla de estado vacíe este carrito, y solo este, cuando el pedido vuelva pagado. */
-  private anotarCarritoPorPagar(pedidoId: string): void {
+  /**
+   * Para que la pantalla de estado quite de este carrito, y solo de este, las líneas que fueron al
+   * pedido cuando vuelva pagado.
+   */
+  private anotarCarritoPorPagar(pedidoId: string, pagadas: readonly string[]): void {
     const carritoId = this.carrito.carritoId();
     if (carritoId) {
-      this.carritosPorPagar.anotar(pedidoId, carritoId);
+      this.carritosPorPagar.anotar(pedidoId, carritoId, pagadas);
     }
   }
 
-  private async continuarSegunMetodoPago(pedido: Pedido): Promise<boolean> {
+  private async continuarSegunMetodoPago(
+    pedido: Pedido,
+    pagadas: readonly string[],
+  ): Promise<boolean> {
     // Antes de cualquier salida: la pasarela, la transferencia o el estado lo leen de aquí.
     this.correosDePedido.recordar(pedido.id, pedido.correo);
     if (esMetodoPagoSistecredito(pedido.metodoPago)) {
@@ -620,7 +629,7 @@ export class ConfirmarPage {
         documento,
         this.transloco.activeLang(),
       );
-      this.anotarCarritoPorPagar(pedido.id);
+      this.anotarCarritoPorPagar(pedido.id, pagadas);
       // La URL la arma la pasarela y es de un solo uso: no se compone nada aquí, solo se va. Y a
       // dónde vuelve el comprador NO se decide en esta llamada —va en `urlResponse`, que el
       // backend fija desde su configuración—, a diferencia de Wompi.
@@ -644,7 +653,7 @@ export class ConfirmarPage {
         pedidoId: pedido.id,
       });
       const urlRetorno = `${window.location.origin}/${idioma}/checkout/retorno-wompi?${parametrosRetorno.toString()}`;
-      this.anotarCarritoPorPagar(pedido.id);
+      this.anotarCarritoPorPagar(pedido.id, pagadas);
       window.location.href = urlWebCheckoutWompi(intento, urlRetorno);
       return true;
     }

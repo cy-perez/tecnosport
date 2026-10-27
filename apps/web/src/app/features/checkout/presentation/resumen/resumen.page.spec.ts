@@ -32,6 +32,7 @@ import { esperarSinViolaciones } from '../../../../../testing/axe';
 import {
   proveerAlmacenesCarrito,
   sembrarCarritoId,
+  sembrarLineasSinMarcar,
   sembrarSnapshotLinea,
 } from '../../../../../testing/carrito';
 
@@ -743,6 +744,46 @@ describe('ResumenPage', () => {
 
     expect(await screen.findByText('Morral urbano')).toBeTruthy();
     expect(screen.queryByText(/Ahorras/)).toBeNull();
+  });
+
+  describe('con una parte del carrito sin marcar', () => {
+    const carritoDeDos: Carrito = {
+      ...CARRITO_CON_LINEAS,
+      lineas: [
+        { id: 'linea-1', varianteId: 'variante-1', cantidad: 2 },
+        { id: 'linea-2', varianteId: 'variante-2', cantidad: 1 },
+      ],
+    };
+
+    beforeEach(() => {
+      sembrarCarritoId('carrito-1');
+      sembrarSnapshotLinea(snapshotDePrueba('variante-1'));
+      sembrarSnapshotLinea({ ...snapshotDePrueba('variante-2'), nombreProducto: 'Gorra plana' });
+    });
+
+    it('pinta y suma solo lo marcado, y dice que lo demás se queda', async () => {
+      sembrarLineasSinMarcar(['linea-2']);
+
+      await renderResumen(new RepositorioCarritoFalso(carritoDeDos));
+
+      expect(await screen.findByText('Morral urbano')).toBeTruthy();
+      expect(screen.queryByText('Gorra plana')).toBeNull();
+      expect(
+        screen.getByText('Lo que no marcaste se queda en tu carrito para otra compra.'),
+      ).toBeTruthy();
+      // 2 × 150.000 y no las tres unidades.
+      expect((await screen.findAllByText(/300\.000/)).length).toBeGreaterThan(0);
+      expect(screen.queryByText(/450\.000/)).toBeNull();
+    });
+
+    it('sin nada marcado lo dice y manda al carrito a elegir', async () => {
+      sembrarLineasSinMarcar(['linea-1', 'linea-2']);
+
+      await renderResumen(new RepositorioCarritoFalso(carritoDeDos));
+
+      expect(await screen.findByText('No marcaste ningún producto para pagar.')).toBeTruthy();
+      expect(screen.getByRole('link', { name: 'Volver al carrito' })).toBeTruthy();
+    });
   });
 
   it('sin carrito guardado, muestra el mensaje de vacío', async () => {

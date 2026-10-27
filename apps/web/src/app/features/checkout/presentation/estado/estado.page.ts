@@ -294,7 +294,9 @@ export class EstadoPage {
         return;
       }
       if (delPedido === carritoId) {
-        untracked(() => this.carrito.limpiar());
+        // Solo las líneas que fueron al pedido: lo que se dejó sin marcar sigue en el carrito.
+        const pagadas = this.carritosPorPagar.lineasDe(pedido.id);
+        untracked(() => void this.carrito.quitarPagadas(pagadas));
       }
       this.carritosPorPagar.olvidar(pedido.id);
     });

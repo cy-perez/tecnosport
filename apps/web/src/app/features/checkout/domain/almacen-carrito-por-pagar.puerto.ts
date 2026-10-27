@@ -9,10 +9,18 @@ import { InjectionToken } from '@angular/core';
  * de nuevo. Ahora el carrito se queda, y la pantalla de estado lo vacía cuando el pedido vuelve
  * pagado **y** el carrito de este navegador es el mismo que lo originó: a esa pantalla también se
  * llega desde el enlace de un correo, días después y con otra compra a medias.
+ *
+ * Desde que se elige qué pagar, anota también **qué líneas** fueron al pedido: al volver pagado
+ * salen solo esas, y lo que se dejó fuera sigue en el carrito.
  */
 export interface AlmacenCarritoPorPagar {
-  anotar(pedidoId: string, carritoId: string): void;
+  anotar(pedidoId: string, carritoId: string, lineaIds: readonly string[]): void;
   carritoDe(pedidoId: string): string | null;
+  /**
+   * `null` si no se sabe: un pedido anotado antes de que existiera la selección. Quien lo lee
+   * vacía entonces el carrito entero, que era lo que ese pedido llevaba.
+   */
+  lineasDe(pedidoId: string): readonly string[] | null;
   olvidar(pedidoId: string): void;
 }
 

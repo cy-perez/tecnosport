@@ -125,11 +125,11 @@ export class MetodoPagoPage {
 
   protected readonly comando = computed<MetodosDePagoDisponiblesComando | null>(() => {
     const datos = this.checkout.datosEntrega();
-    const datosCarrito = this.carrito.consulta.data();
-    if (!datos || !datosCarrito || datosCarrito.lineas.length === 0) {
+    const lineas = this.carrito.lineasPorPagar();
+    if (!datos || lineas.length === 0) {
       return null;
     }
-    return comandoMetodosDePago(datos, datosCarrito.lineas);
+    return comandoMetodosDePago(datos, lineas);
   });
 
   protected readonly consulta = usarMetodosDePagoDisponibles(() => this.comando());
@@ -251,7 +251,8 @@ export class MetodoPagoPage {
     effect(() => {
       const datosCarrito = this.carrito.consulta.data();
       const sinDatosEntrega = this.checkout.datosEntrega() === null;
-      const carritoVacio = !!datosCarrito && datosCarrito.lineas.length === 0;
+      // Vacío o sin nada marcado: el resumen sabe decir cada caso.
+      const carritoVacio = !!datosCarrito && this.carrito.lineasPorPagar().length === 0;
       if (sinDatosEntrega || carritoVacio) {
         void this.router.navigate(['../resumen'], { relativeTo: this.route });
       }

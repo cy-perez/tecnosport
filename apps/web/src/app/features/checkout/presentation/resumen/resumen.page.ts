@@ -171,7 +171,7 @@ export class ResumenPage {
   );
 
   private readonly modalidades = usarModalidadesDeEntrega(() =>
-    (this.carrito.consulta.data()?.lineas ?? []).map((linea) => linea.varianteId),
+    this.carrito.lineasPorPagar().map((linea) => linea.varianteId),
   );
 
   /**
@@ -351,7 +351,7 @@ export class ResumenPage {
     if (!this.requiereDireccion()) {
       return null;
     }
-    const lineas = (this.carrito.consulta.data()?.lineas ?? []).map((linea) => ({
+    const lineas = this.carrito.lineasPorPagar().map((linea) => ({
       varianteId: linea.varianteId,
       cantidad: linea.cantidad,
     }));
