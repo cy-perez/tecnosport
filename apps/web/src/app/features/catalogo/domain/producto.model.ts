@@ -248,41 +248,6 @@ export function ahorroDe(variante: Variante): number {
   return Math.max(0, variante.precio.valor - variante.precioContado.valor);
 }
 
-/** El ahorro que anuncia la tarjeta de un producto: el menor de sus variantes. */
-export interface AhorroDeProducto {
-  readonly valor: number;
-  readonly moneda: string;
-  /** Si otras variantes ahorran más: la tarjeta dice entonces "o más". */
-  readonly varia: boolean;
-}
-
-/**
- * El ahorro sin pasarela que anuncia la tarjeta, que es un "desde" (ADR-0095).
- *
- * **El menor de las variantes, y no el de la variante que da el "desde".** Con la fórmula del
- * publicado los dos casi siempre coinciden, pero el redondeo a la unidad de mil puede empatar dos
- * publicados con contados distintos; el mínimo es la única cifra que vale para cualquier variante
- * que se elija. Si las variantes no ahorran lo mismo, `varia` lo dice y el texto lleva "o más".
- *
- * `null` si alguna variante no ahorra nada: anunciar un ahorro que una de ellas no da sería
- * prometer de más, y el caso solo existe con un precio mal cargado.
- */
-export function ahorroDesde(producto: Producto): AhorroDeProducto | null {
-  if (producto.variantes.length === 0) {
-    return null;
-  }
-  const ahorros = producto.variantes.map(ahorroDe);
-  const menor = Math.min(...ahorros);
-  if (menor <= 0) {
-    return null;
-  }
-  return {
-    valor: menor,
-    moneda: producto.variantes[0].precio.moneda,
-    varia: Math.max(...ahorros) !== menor,
-  };
-}
-
 /**
  * Si quien compra la puede elegir en la ficha: hay existencia, o su color de tecnología se pregunta
  * por WhatsApp (ADR-0086). Un color sin confirmar puede no tener unidades contadas —nació de la

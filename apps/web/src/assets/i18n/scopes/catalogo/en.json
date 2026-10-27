@@ -16,7 +16,6 @@
   "marca": "Brand:",
   "precio_desde": "From",
   "ahorro_sin_pasarela": "Save {{ahorro}} when paying by bank transfer, at our location or cash on delivery",
-  "ahorro_sin_pasarela_o_mas": "Save {{ahorro}} or more when paying by bank transfer, at our location or cash on delivery",
   "filtros": {
     "linea_label": "Category group",
     "categoria": "Category",
