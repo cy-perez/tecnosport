@@ -6,6 +6,7 @@ import co.tecnosport.api.application.catalogo.RepositorioAtributos;
 import co.tecnosport.api.application.catalogo.RepositorioCategorias;
 import co.tecnosport.api.application.catalogo.RepositorioMarcas;
 import co.tecnosport.api.application.catalogo.RepositorioProductos;
+import co.tecnosport.api.application.compartido.EnTransaccionPropia;
 import co.tecnosport.api.application.compartido.Reloj;
 import co.tecnosport.api.application.inventario.RepositorioInventario;
 import co.tecnosport.api.application.proveedores.AlmacenDeArchivosDeProveedor;
@@ -131,8 +132,10 @@ public class ConfiguracionListasDeTecnologia {
 
   @Bean
   public EliminarBorradorTecnologia eliminarBorradorTecnologia(
-      RepositorioBorradoresTecnologia borradores, AlmacenDeArchivosDeProveedor almacen) {
-    return new EliminarBorradorTecnologia(borradores, almacen);
+      RepositorioBorradoresTecnologia borradores,
+      AlmacenDeArchivosDeProveedor almacen,
+      EnTransaccionPropia enTransaccionPropia) {
+    return new EliminarBorradorTecnologia(borradores, almacen, enTransaccionPropia);
   }
 
   @Bean

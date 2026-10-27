@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import co.tecnosport.api.application.catalogo.AgregarVariante;
 import co.tecnosport.api.application.catalogo.ObjetoDeImagenNoEncontradoException;
 import co.tecnosport.api.application.catalogo.TarifasDePrueba;
+import co.tecnosport.api.application.compartido.EnTransaccionPropia;
 import co.tecnosport.api.application.compartido.RelojFalso;
 import co.tecnosport.api.application.proveedores.ApoyoDeCatalogoParaIngesta.RepositorioAtributosFijo;
 import co.tecnosport.api.application.proveedores.ApoyoDeCatalogoParaIngesta.RepositorioCategoriasFijo;
@@ -608,8 +609,43 @@ class TecnologiaPorListasTest {
 
   // --- Borrar borradores (24/10/2026) -------------------------------------------------------
 
+  /**
+   * La transacción propia del borrado, que anota cuántos objetos tenía el bucket al confirmar: los
+   * objetos se borran después, nunca dentro.
+   */
+  private final class TransaccionQueMiraElBucket implements EnTransaccionPropia {
+    int veces;
+    final List<Integer> objetosAlConfirmar = new ArrayList<>();
+
+    @Override
+    public <T> T ejecutar(java.util.function.Supplier<T> trabajo) {
+      T resultado = trabajo.get();
+      veces++;
+      objetosAlConfirmar.add(privado.objetos.size());
+      return resultado;
+    }
+  }
+
+  private final TransaccionQueMiraElBucket transaccionDelBorrado = new TransaccionQueMiraElBucket();
+
   private EliminarBorradorTecnologia eliminar() {
-    return new EliminarBorradorTecnologia(borradores, privado);
+    return new EliminarBorradorTecnologia(borradores, privado, transaccionDelBorrado);
+  }
+
+  /**
+   * Revisión adversarial del 27 de octubre de 2026: las fotos se borraban del bucket antes que la
+   * fila y dentro de la transacción. Un fallo después las dejaba borradas con la fila revertida.
+   */
+  @Test
+  void borrarUnoConfirmaLaFilaAntesDeTocarElBucket() {
+    BorradorTecnologia borrador = unA17ListoParaAprobar();
+    int antes = privado.objetos.size();
+
+    int borrados = eliminar().ejecutar(borrador.id());
+
+    assertEquals(1, transaccionDelBorrado.veces);
+    assertEquals(List.of(antes), transaccionDelBorrado.objetosAlConfirmar, "nada antes del commit");
+    assertEquals(antes - borrados, privado.objetos.size(), "y todo después");
   }
 
   @Test
@@ -682,6 +718,7 @@ class TecnologiaPorListasTest {
     assertEquals(0, segunda.quedan());
     assertEquals(1, borradores.porId.size(), "el aprobado se queda");
     assertTrue(borradores.porId.containsKey(aprobado.id()));
+    assertEquals(3, transaccionDelBorrado.veces, "una transacción por borrador, no por tanda");
   }
 
   @Test

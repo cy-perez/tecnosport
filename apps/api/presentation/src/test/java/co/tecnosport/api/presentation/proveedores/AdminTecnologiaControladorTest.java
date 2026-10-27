@@ -967,7 +967,16 @@ class AdminTecnologiaControladorTest {
     @Bean
     EliminarBorradorTecnologia eliminarBorradorTecnologia(
         BorradoresDoble borradores, AlmacenDoble almacen) {
-      return new EliminarBorradorTecnologia(borradores, almacen);
+      // Sin base de datos detrás, la transacción propia solo corre el trabajo.
+      return new EliminarBorradorTecnologia(
+          borradores,
+          almacen,
+          new co.tecnosport.api.application.compartido.EnTransaccionPropia() {
+            @Override
+            public <T> T ejecutar(java.util.function.Supplier<T> trabajo) {
+              return trabajo.get();
+            }
+          });
     }
 
     @Bean

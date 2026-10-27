@@ -172,7 +172,8 @@ public class AdminTecnologiaControlador {
    */
   @DeleteMapping("/borradores-tecnologia/sin-aprobar")
   public BorradoresEliminadosRespuesta eliminarSinAprobar() {
-    var resultado = transaccion.execute(estado -> eliminarSinAprobar.ejecutar(TANDA_DE_BORRADO));
+    // Sin transacción aquí: cada borrador abre la suya, y el bucket se borra al confirmarla.
+    var resultado = eliminarSinAprobar.ejecutar(TANDA_DE_BORRADO);
     log.warn(
         "Borradores de tecnología sin aprobar eliminados: {} ({} archivos borrados del bucket,"
             + " quedan {})",
@@ -186,7 +187,8 @@ public class AdminTecnologiaControlador {
   @DeleteMapping("/borradores-tecnologia/{id}")
   @ResponseStatus(HttpStatus.NO_CONTENT)
   public void eliminar(@PathVariable UUID id) {
-    Integer objetos = transaccion.execute(estado -> eliminarBorrador.ejecutar(id));
+    // Sin transacción aquí: el caso de uso abre la suya y borra el bucket al confirmarla.
+    int objetos = eliminarBorrador.ejecutar(id);
     log.warn("Borrador de tecnología eliminado: {} ({} archivos borrados del bucket)", id, objetos);
   }
 
