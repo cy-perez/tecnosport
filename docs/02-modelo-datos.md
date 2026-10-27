@@ -17,16 +17,15 @@
   contado con la comisión de Wompi dentro:
 
   ```
-  exacto    = (contado + fija × (1 + IVA)) / (1 − variable × (1 + IVA))
-  publicado = a la centena siguiente si exacto < 100.000; a la unidad de mil siguiente si no
+  publicado = unidad de mil siguiente de (contado + fija × (1 + IVA)) / (1 − variable × (1 + IVA))
   ```
 
   Lo calcula `ComisionDePasarela` con las tarifas de `tecnosport.wompi.comision.*`
   (`WOMPI_COMISION_VARIABLE`, `_FIJA`, `_IVA`: 2,65 % + $700 + IVA del 19 %, leídas
-  en el portal el 26 de octubre). Con esas, 8.000 de contado se publica a 9.200,
+  en el portal el 26 de octubre). Con esas, 8.000 de contado se publica a 10.000,
   100.000 a 105.000 y 230.000 a 239.000. El publicado **se sube, nunca se baja**:
-  bajarlo dejaría la venta por Wompi unos pesos por debajo del contado. El umbral de
-  los 100.000 mira el exacto, antes de redondear (decisión 9 del ADR, 27 de octubre).
+  bajarlo dejaría la venta por Wompi unos pesos por debajo del contado. Va a la unidad
+  de mil también en lo barato (decisión 9 del ADR, 27 de octubre).
   Un `check` exige `precio >= precio_contado`, y el dominio lo exige al construir la
   variante.
 - **Qué precio se cobra lo decide el medio de pago** (`MetodoPago.precioDe`): el

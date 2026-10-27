@@ -219,9 +219,9 @@ class AprobarBorradorTest {
     List<Variante> variantes = producto.variantes();
     assertEquals(2, variantes.size());
     // El precio que se aprueba es el de contado; el publicado lleva la comisión de Wompi encima
-    // (ADR-0095): (71.600 + 833) / 0,968465 = 74.791 → 74.800 (a la centena: queda bajo 100.000).
+    // (ADR-0095): (71.600 + 833) / 0,968465 = 74.791 → 75.000.
     assertEquals(Dinero.deCop(71600), variantes.get(0).precioContado());
-    assertEquals(Dinero.deCop(74800), variantes.get(0).precio());
+    assertEquals(Dinero.deCop(75000), variantes.get(0).precio());
     assertEquals("Negro", variantes.get(0).atributos().get(0).valor());
     assertEquals("#000000", variantes.get(0).atributos().get(0).colorHex());
     assertEquals("Vino", variantes.get(1).atributos().get(0).valor());

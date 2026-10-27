@@ -2,7 +2,7 @@
 
 Fecha: 2026-10-26
 Estado: aceptada. El negocio cerró las tres preguntas abiertas el mismo día (decisiones 6 a 8),
-y el 27 de octubre cambió el redondeo de lo barato (decisión 9) y la forma de anunciar el
+y el 27 de octubre decidió el redondeo de lo barato (decisión 9) y la forma de anunciar el
 descuento (decisión 10).
 Relacionados: `adr/0048` (Sistecrédito es una segunda pasarela), `adr/0094` (pago en el punto),
 `docs/11-pagos-y-envios.md`, `CalculadoraDeMargen`.
@@ -48,8 +48,7 @@ Aprobada por el negocio el 26 de octubre de 2026:
    único que se anuncia como precio del producto:
 
    ```
-   exacto    = (contado + fija × (1 + IVA)) / (1 − variable × (1 + IVA))
-   publicado = centenaSiguiente(exacto) si exacto < 100.000; unidadDeMilSiguiente(exacto) si no
+   publicado = unidadDeMilSiguiente( (contado + fija × (1 + IVA)) / (1 − variable × (1 + IVA)) )
    ```
 
    Con las tarifas de hoy: `(contado + 833) / (1 − 0,031535)`, subido como dice la decisión 9. El
@@ -75,9 +74,9 @@ Aprobada por el negocio el 26 de octubre de 2026:
 6. **Los precios que ya están en el catálogo son de contado.** La migración los copia al precio
    de contado y calcula el publicado con la fórmula de la decisión 1. Cuánto sube el precio de
    vitrina depende del valor, porque el cargo fijo y el redondeo a la unidad de mil pesan más en
-   lo barato: $8.000 pasa a $9.200 (15 %), $50.000 a $52.500 (5 %), $100.000 a $105.000 (5 %),
-   $230.000 a $239.000 (3,9 %) y $1.000.000 a $1.034.000 (3,4 %). Una transferencia sigue
-   dejando lo mismo que hoy.
+   lo barato: $8.000 pasa a $10.000 (25 %), $50.000 a $53.000 (6 %), $100.000 a $105.000
+   (5 %), $230.000 a $239.000 (3,9 %) y $1.000.000 a $1.034.000 (3,4 %). Una transferencia
+   sigue dejando lo mismo que hoy.
 7. **La comisión sobre el envío la absorbe el negocio.** El flete se cobra igual con cualquier
    medio de pago y no lleva comisión adentro: con un flete de $15.000 pagado con Wompi son unos
    $473 por pedido. No se le suma nada al flete, porque eso sería un recargo sobre el envío.
@@ -91,10 +90,11 @@ Aprobada por el negocio el 26 de octubre de 2026:
    con menos de un 5 % de margen. Una configuración sin precio de mercado sigue sin sugerencia,
    y quien revisa fija el precio de contado. Como la ropa, la sugerencia no obliga.
 
-9. **Por debajo de $100.000 el publicado se sube a la centena, no a la unidad de mil**
-   (27/10/2026). Con el cargo fijo dentro, subir a la unidad de mil publicaba un cable de $8.000
-   a $10.000, un 25 % más, cuando la comisión solo explica $9.200: en lo barato el redondeo
-   pesaba más que la comisión. El umbral mira el resultado exacto, antes de redondear.
+9. **El publicado se sube siempre a la unidad de mil, también en lo barato** (27/10/2026). En
+   lo barato el redondeo pesa más que la comisión: un cable de $8.000 se publica a $10.000, un
+   25 % más, cuando la comisión sola daría $9.200. Se probó subir a la centena por debajo de
+   $100.000 y el negocio volvió a la unidad de mil el mismo día: la vitrina va en miles
+   redondos en todo el catálogo, y la diferencia en lo barato queda como margen.
 10. **La vitrina no muestra un segundo precio, muestra el ahorro** (27/10/2026). El artículo 26
    de la Ley 1480 dice que, cuando aparezcan dos o más precios, el consumidor solo está
    obligado a pagar el más bajo. La ficha, la tarjeta y el carrito dicen «Ahorras $X pagando por

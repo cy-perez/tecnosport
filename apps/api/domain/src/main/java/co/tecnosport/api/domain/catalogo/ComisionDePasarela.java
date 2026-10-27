@@ -14,19 +14,12 @@ import java.util.Objects;
  * paga por la pasarela le deja al negocio por lo menos el de contado:
  *
  * <pre>
- * exacto    = (contado + fija × (1 + iva)) / (1 − variable × (1 + iva))
- * publicado = centenaSiguiente(exacto)      si exacto &lt; 100.000
- *             unidadDeMilSiguiente(exacto)  si no
+ * publicado = unidadDeMilSiguiente( (contado + fija × (1 + iva)) / (1 − variable × (1 + iva)) )
  * </pre>
  *
  * <p>El IVA multiplica las dos partes porque Wompi lo cobra sobre su comisión, no sobre la venta.
- * Se sube —nunca se baja—: bajar dejaría al negocio unos pesos por debajo del contado justo en la
- * venta por la pasarela, que es la que este cálculo protege.
- *
- * <p>Por debajo de 100.000 se sube a la centena y no a la unidad de mil (decisión del negocio del
- * 27 de octubre de 2026): con el cargo fijo dentro, subir a la unidad de mil publicaba un producto
- * de 8.000 a 10.000, un 25 % más, cuando la comisión solo explica 9.200. En lo barato el redondeo
- * pesaba más que la comisión; desde 100.000 la vitrina vuelve a los miles redondos.
+ * Se sube a la unidad de mil siguiente —nunca se baja—: bajar dejaría al negocio unos pesos por
+ * debajo del contado justo en la venta por la pasarela, que es la que este cálculo protege.
  *
  * <p>Las tres tarifas son configuración ({@code tecnosport.wompi.comision.*}), no constantes: si
  * Wompi cambia el plan, cambian sin desplegar, pero los precios ya publicados no se mueven solos —
@@ -39,11 +32,6 @@ import java.util.Objects;
 public record ComisionDePasarela(BigDecimal variable, Dinero fija, BigDecimal iva) {
 
   private static final BigDecimal MIL = BigDecimal.valueOf(1000);
-
-  private static final BigDecimal CIEN = BigDecimal.valueOf(100);
-
-  /** Desde este publicado se redondea a la unidad de mil; por debajo, a la centena. */
-  public static final BigDecimal UMBRAL_DE_LOS_MILES = BigDecimal.valueOf(100_000);
 
   /** Suficiente para que el redondeo a la unidad de mil no dependa de la división. */
   private static final int ESCALA_DEL_CALCULO = 10;
@@ -74,8 +62,8 @@ public record ComisionDePasarela(BigDecimal variable, Dinero fija, BigDecimal iv
 
   /**
    * El precio que se anuncia para que una venta por la pasarela deje por lo menos {@code contado}.
-   * El redondeo es sobre el resultado: si ya es múltiplo de la unidad que le toca queda igual; un
-   * contado redondo lleva la comisión encima igual que cualquiera.
+   * El redondeo es sobre el resultado: si ya es múltiplo de mil queda igual; un contado redondo
+   * lleva la comisión encima igual que cualquiera.
    */
   public Dinero publicadoDesde(Dinero contado) {
     Objects.requireNonNull(contado, "El precio de contado no puede ser nulo.");
@@ -85,8 +73,7 @@ public record ComisionDePasarela(BigDecimal variable, Dinero fija, BigDecimal iv
     // CEILING también aquí y no HALF_UP: un resultado unas diezmilésimas por encima de un múltiplo
     // de mil, redondeado hacia abajo en la división, se quedaría en ese múltiplo.
     BigDecimal exacto = numerador.divide(denominador, ESCALA_DEL_CALCULO, RoundingMode.CEILING);
-    BigDecimal unidad = exacto.compareTo(UMBRAL_DE_LOS_MILES) < 0 ? CIEN : MIL;
-    BigDecimal unidades = exacto.divide(unidad, 0, RoundingMode.CEILING);
-    return Dinero.deCop(unidades.multiply(unidad));
+    BigDecimal miles = exacto.divide(MIL, 0, RoundingMode.CEILING);
+    return Dinero.deCop(miles.multiply(MIL));
   }
 }

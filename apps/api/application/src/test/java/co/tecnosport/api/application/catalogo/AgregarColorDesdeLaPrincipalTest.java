@@ -109,9 +109,9 @@ class AgregarColorDesdeLaPrincipalTest {
     assertEquals("L-XL", rojoL.atributosSinColor().get(0).valor());
     // El contado de la talla y el publicado por la fórmula (ADR-0095), no el de la hermana: el de
     // ella es el contado más 2.000, que no es lo que da la comisión vigente.
-    // (60.000 + 833) / 0,968465 = 62.813,8 → 62.900; (65.000 + 833) / 0,968465 = 67.976,6 → 68.000.
+    // (60.000 + 833) / 0,968465 = 62.813,8 → 63.000; (65.000 + 833) / 0,968465 = 67.976,6 → 68.000.
     assertEquals(Dinero.deCop(60_000), rojoS.precioContado());
-    assertEquals(Dinero.deCop(62_900), rojoS.precio());
+    assertEquals(Dinero.deCop(63_000), rojoS.precio());
     assertEquals(Dinero.deCop(65_000), rojoL.precioContado());
     assertEquals(Dinero.deCop(68_000), rojoL.precio());
     assertEquals(Optional.of(new Paquete(300, 30, 25, 4)), rojoS.paquete());

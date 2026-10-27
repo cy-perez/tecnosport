@@ -83,9 +83,9 @@ class AdminVarianteControladorTest {
         .andExpect(status().isCreated())
         .andExpect(jsonPath("$.sku").value("TS-CAM-AZ-M"))
         // El que llega es el de contado; el publicado lo calcula el servidor (ADR-0095):
-        // (89.900 + 833) / 0,968465 = 93.686,8 → 93.700 (a la centena).
+        // (89.900 + 833) / 0,968465 = 93.686,8 → 94.000.
         .andExpect(jsonPath("$.precioContado.valor").value(89900))
-        .andExpect(jsonPath("$.precio.valor").value(93700))
+        .andExpect(jsonPath("$.precio.valor").value(94000))
         .andExpect(jsonPath("$.disponible").value(true))
         .andExpect(jsonPath("$.atributos[0].valor").value("Azul marino"));
   }

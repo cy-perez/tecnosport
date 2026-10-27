@@ -89,7 +89,7 @@ class MigracionPrecioDeContadoTest {
 
   @Test
   void elPrecioDeHoyPasaAContadoYElPublicadoEsElDeJava() {
-    long[] precios = {230_000, 1_000_000, 100_000, 50_000, 8_000, 96_000, 96_100, 89_900, 1};
+    long[] precios = {230_000, 1_000_000, 100_000, 50_000, 89_900, 1};
     UUID[] ids = new UUID[precios.length];
     for (int i = 0; i < precios.length; i++) {
       ids[i] = variante("V123-" + i, precios[i]);
@@ -108,11 +108,7 @@ class MigracionPrecioDeContadoTest {
     assertThat(columna("precio", ids[0])).isEqualByComparingTo("239000");
     assertThat(columna("precio", ids[1])).isEqualByComparingTo("1034000");
     assertThat(columna("precio", ids[2])).isEqualByComparingTo("105000");
-    assertThat(columna("precio", ids[3])).isEqualByComparingTo("52500");
-    // Por debajo de 100.000 a la centena, desde ahí a miles: los dos lados del umbral.
-    assertThat(columna("precio", ids[4])).isEqualByComparingTo("9200");
-    assertThat(columna("precio", ids[5])).isEqualByComparingTo("100000");
-    assertThat(columna("precio", ids[6])).isEqualByComparingTo("101000");
+    assertThat(columna("precio", ids[3])).isEqualByComparingTo("53000");
   }
 
   @Test
