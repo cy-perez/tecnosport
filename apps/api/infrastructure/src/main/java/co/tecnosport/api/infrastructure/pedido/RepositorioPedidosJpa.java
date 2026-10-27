@@ -181,7 +181,7 @@ public class RepositorioPedidosJpa implements RepositorioPedidos {
   @Override
   public List<UUID> buscarIdsEnEstadoDesdeAntesDe(
       EstadoPedido estado, MetodoPago metodoPago, Instant desdeAntesDe, int maximo) {
-    return pedidos.findIdsByEstadoAndMetodoPagoDesdeAntesDe(
+    return pedidos.findIdsByEstadoAndMetodoPagoEnteredBefore(
         estado.name(), metodoPago.name(), desdeAntesDe, PageRequest.of(0, maximo));
   }
 

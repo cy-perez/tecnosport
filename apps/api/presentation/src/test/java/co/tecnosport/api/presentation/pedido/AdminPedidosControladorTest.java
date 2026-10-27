@@ -305,7 +305,10 @@ class AdminPedidosControladorTest {
                     """
                     {"medioDePago":"EFECTIVO"}
                     """))
-        .andExpect(status().isUnprocessableContent());
+        .andExpect(status().isUnprocessableContent())
+        // Lo rechaza el DTO, no el caso de uso: sin el `requireNonNull` saldría
+        // NUMERO_DE_PEDIDO_NO_COINCIDE, también 422.
+        .andExpect(jsonPath("$.codigo").value("HTTP_MESSAGE_NOT_READABLE"));
   }
 
   private Pedido pedidoConMetodo(MetodoPago metodoPago, UUID varianteId) {

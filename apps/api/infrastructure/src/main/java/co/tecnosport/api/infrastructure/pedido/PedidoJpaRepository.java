@@ -36,7 +36,7 @@ public interface PedidoJpaRepository extends JpaRepository<PedidoJpaEntity, UUID
           + " and (select max(h.fecha) from HistorialPedidoJpaEntity h"
           + " where h.pedidoId = p.id and h.estado = :estado) < :corte"
           + " order by p.creadoEn asc")
-  List<UUID> findIdsByEstadoAndMetodoPagoDesdeAntesDe(
+  List<UUID> findIdsByEstadoAndMetodoPagoEnteredBefore(
       @Param("estado") String estado,
       @Param("metodo") String metodo,
       @Param("corte") Instant corte,

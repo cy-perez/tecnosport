@@ -6,15 +6,24 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import co.tecnosport.api.application.compartido.RelojFalso;
+import co.tecnosport.api.domain.compartido.CorreoElectronico;
 import co.tecnosport.api.domain.compartido.Dinero;
+import co.tecnosport.api.domain.compartido.Sku;
+import co.tecnosport.api.domain.pedido.Direccion;
 import co.tecnosport.api.domain.pedido.EstadoPedido;
+import co.tecnosport.api.domain.pedido.LineaPedido;
 import co.tecnosport.api.domain.pedido.MedioDePagoEnPunto;
 import co.tecnosport.api.domain.pedido.MetodoPago;
+import co.tecnosport.api.domain.pedido.NumeroPedido;
 import co.tecnosport.api.domain.pedido.Pedido;
+import co.tecnosport.api.domain.pedido.TipoEntrega;
 import co.tecnosport.api.domain.pedido.TransicionDeEstadoInvalidaException;
+import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.List;
 import java.util.Locale;
+import java.util.UUID;
 import org.junit.jupiter.api.Test;
 
 /** La entrega en el punto, a quien muestra el número de pedido (ADR-0094). */
@@ -121,5 +130,42 @@ class EntregarEnPuntoTest {
             casoDeUso()
                 .ejecutar(
                     comando(pedido, pedido.numeroPedido().valor(), MedioDePagoEnPunto.EFECTIVO)));
+  }
+
+  /**
+   * Un envío a domicilio despachado puede pasar a ENTREGADO en el grafo; por aquí se saltaría
+   * MarcarEntregado y, en contraentrega, el recaudo pendiente.
+   */
+  @Test
+  void unEnvioADomicilioNoSeEntregaEnElPunto() {
+    Pedido pedido =
+        Pedido.crear(
+            NumeroPedido.de(2026, 77),
+            null,
+            new CorreoElectronico("cliente@tecnosport.co"),
+            List.of(
+                new LineaPedido(
+                    UUID.randomUUID(),
+                    UUID.randomUUID(),
+                    new Sku("TS-CAM-AZ-M"),
+                    "Camiseta",
+                    1,
+                    Dinero.deCop(50_000),
+                    BigDecimal.ZERO,
+                    null,
+                    UUID.randomUUID())),
+            TipoEntrega.ENVIO_A_DOMICILIO,
+            Direccion.sinBarrio("05", "Antioquia", "05001", "Medellín", "Cra. 26C #38B-31", null),
+            MetodoPago.CONTRAENTREGA,
+            "cliente@tecnosport.co",
+            CREADO);
+    pedido.transicionar(EstadoPedido.EN_PREPARACION, "admin:1", "verificado", CREADO);
+    pedido.transicionar(EstadoPedido.DESPACHADO, "admin:1", "guía 1", CREADO);
+    pedidos.guardar(pedido);
+
+    assertThrows(
+        EntregaNoAplicaException.class,
+        () -> casoDeUso().ejecutar(comando(pedido, pedido.numeroPedido().valor(), null)));
+    assertEquals(EstadoPedido.DESPACHADO, pedido.estado());
   }
 }
