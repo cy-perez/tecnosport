@@ -125,6 +125,9 @@ class PedidoControladorTest {
       new CrearPedidoRequest.DireccionRequest(
           "11", "Bogotá D.C.", "11001", "Bogotá", "Cra. 7 #12-34", null, null);
 
+  /** Cuánto se anuncia por encima del contado (ADR-0095); cero en las pruebas que no lo miran. */
+  private long publicadoSobreElContado = 0;
+
   private Variante publicarProductoConVarianteYExistencia(int existencia) {
     Marca marca = Marca.crear("TecnoSport");
     Categoria categoria =
@@ -158,6 +161,7 @@ class PedidoControladorTest {
         Variante.crear(
             new Sku("TS-CAM-AZ-M"),
             Dinero.deCop(50_000),
+            Dinero.deCop(50_000 + publicadoSobreElContado),
             new BigDecimal("0.19"),
             null,
             new Paquete(180, 30, 25, 4),
@@ -500,6 +504,80 @@ class PedidoControladorTest {
         .andExpect(jsonPath("$.codigo").value("CONTRAENTREGA_NO_DISPONIBLE"));
   }
 
+  /**
+   * ADR-0095 por HTTP: por transferencia se cobra el contado, y la respuesta dice el publicado de
+   * cada línea y el descuento del pedido.
+   */
+  @Test
+  void crearPedidoSinPasarelaDevuelveElDescuento() throws Exception {
+    publicadoSobreElContado = 3_000;
+    Variante variante = publicarProductoConVarianteYExistencia(5);
+    CrearPedidoRequest cuerpo =
+        solicitud(
+            variante, "ENVIO_A_DOMICILIO", DIRECCION_MEDELLIN, MetodoPago.TRANSFERENCIA_MANUAL);
+
+    mockMvc
+        .perform(
+            post("/api/v1/pedidos")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(json.writeValueAsString(cuerpo)))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.lineas[0].precioUnitario.valor").value(50_000))
+        .andExpect(jsonPath("$.lineas[0].precioPublicado.valor").value(53_000))
+        .andExpect(jsonPath("$.subtotal.valor").value(100_000))
+        .andExpect(jsonPath("$.descuento.valor").value(6_000))
+        .andExpect(jsonPath("$.descuento.moneda").value("COP"))
+        .andExpect(jsonPath("$.total.valor").value(114_900));
+  }
+
+  /** Con Wompi el publicado, y el descuento en cero, no ausente. */
+  @Test
+  void crearPedidoConWompiDevuelveDescuentoCero() throws Exception {
+    publicadoSobreElContado = 3_000;
+    Variante variante = publicarProductoConVarianteYExistencia(5);
+    CrearPedidoRequest cuerpo =
+        solicitud(variante, "ENVIO_A_DOMICILIO", DIRECCION_MEDELLIN, MetodoPago.WOMPI);
+
+    mockMvc
+        .perform(
+            post("/api/v1/pedidos")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(json.writeValueAsString(cuerpo)))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.lineas[0].precioUnitario.valor").value(53_000))
+        .andExpect(jsonPath("$.subtotal.valor").value(106_000))
+        .andExpect(jsonPath("$.descuento.valor").value(0));
+  }
+
+  /** La consulta con precio: cada medio con su subtotal de mercancía y su descuento. */
+  @Test
+  void metodosDePagoConPrecioDiceCuantoSePagaConCadaMedio() throws Exception {
+    publicadoSobreElContado = 3_000;
+    Variante variante = publicarProductoConVarianteYExistencia(5);
+    MetodosDePagoDisponiblesRequest cuerpo =
+        new MetodosDePagoDisponiblesRequest(
+            List.of(new CrearPedidoRequest.LineaRequest(variante.id(), 2)),
+            "cliente@tecnosport.co",
+            "ENVIO_A_DOMICILIO",
+            DIRECCION_MEDELLIN);
+
+    mockMvc
+        .perform(
+            post("/api/v1/pedidos/metodos-de-pago-con-precio")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(json.writeValueAsString(cuerpo)))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.metodos[*].metodo", hasItem("CONTRAENTREGA")))
+        .andExpect(jsonPath("$.metodos[?(@.metodo == 'WOMPI')].subtotal.valor", hasItem(106_000)))
+        .andExpect(jsonPath("$.metodos[?(@.metodo == 'WOMPI')].descuento.valor", hasItem(0)))
+        .andExpect(
+            jsonPath(
+                "$.metodos[?(@.metodo == 'TRANSFERENCIA_MANUAL')].subtotal.valor",
+                hasItem(100_000)))
+        .andExpect(
+            jsonPath("$.metodos[?(@.metodo == 'CONTRAENTREGA')].descuento.valor", hasItem(6_000)));
+  }
+
   @Test
   void metodosDePagoDisponiblesIncluyeContraentregaCuandoLaCiudadEstaCubierta() throws Exception {
     Variante variante = publicarProductoConVarianteYExistencia(5);
@@ -828,15 +906,18 @@ class PedidoControladorTest {
             .andExpect(jsonPath("$.envio.guias[0].*", org.hamcrest.Matchers.hasSize(2)))
             .andExpect(jsonPath("$.envio.despachadoEn").exists())
             .andExpect(jsonPath("$.envio.*", org.hamcrest.Matchers.hasSize(2)))
-            // El juego de llaves de la raiz: los dieciocho campos de PedidoSeguimientoRespuesta.
+            // El juego de llaves de la raiz: los diecinueve campos de PedidoSeguimientoRespuesta.
             // Dieciocho desde el 8 de octubre de 2026: `transportadora` es el nombre de la que el
             // comprador eligio (ADR-0073), no un costo — es un dato suyo, como el metodo de pago.
-            .andExpect(jsonPath("$.*", org.hamcrest.Matchers.hasSize(18)))
+            // Diecinueve desde el 27 de octubre: `descuento` es lo que el comprador se ahorro por
+            // pagar sin pasarela (ADR-0095), no un margen del negocio.
+            .andExpect(jsonPath("$.*", org.hamcrest.Matchers.hasSize(19)))
             // Y el de la linea, que es un objeto que este mapeador NO escribe a mano: lo copia
             // entero del panel. Un campo nuevo ahi sale bajo $.lineas[0] y la cuenta de la raiz
             // ni se entera — comprobado agregandolo a proposito. Nueve desde el 3 de octubre de
-            // 2026: `detalleVariante` ("Negro · M") es lo que el propio comprador eligio.
-            .andExpect(jsonPath("$.lineas[0].*", org.hamcrest.Matchers.hasSize(9)))
+            // 2026: `detalleVariante` ("Negro · M") es lo que el propio comprador eligio. Diez
+            // desde el 27 de octubre: `precioPublicado` es el precio que se le anuncio (ADR-0095).
+            .andExpect(jsonPath("$.lineas[0].*", org.hamcrest.Matchers.hasSize(10)))
             // Y el costo de envio del pedido es el precio congelado, no el costo real del flete.
             // Este pedido es de retiro en punto, asi que su precio de envio es 0; si alguien
             // mapeara aqui `Envio.costoEnvio`, saldrian 12.000 y esta linea lo dice.

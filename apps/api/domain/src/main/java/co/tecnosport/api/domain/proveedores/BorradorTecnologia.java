@@ -241,7 +241,12 @@ public final class BorradorTecnologia {
     this.fichaNuevaDeLaSkill = false;
   }
 
-  /** Lo que quien revisa decide de una configuración. */
+  /**
+   * Lo que quien revisa decide de una configuración.
+   *
+   * @param precioVenta el <b>precio de contado</b> (ADR-0095); el publicado lo calcula el catálogo
+   *     al aprobar, con la comisión de la pasarela
+   */
   public record Eleccion(String sku, List<String> colores, Dinero precioVenta) {
     public Eleccion {
       Objects.requireNonNull(sku, "La elección dice de qué configuración es.");
@@ -275,7 +280,7 @@ public final class BorradorTecnologia {
         }
       }
       if (eleccion.precioVenta() != null && eleccion.precioVenta().valor().signum() == 0) {
-        throw new ExcepcionDeDominio("El precio de venta no puede ser cero.");
+        throw new ExcepcionDeDominio("El precio de contado no puede ser cero.");
       }
       actuales.put(actual.sku(), actual.elegir(colores, eleccion.precioVenta()));
     }
@@ -316,13 +321,14 @@ public final class BorradorTecnologia {
     }
     for (ConfiguracionTecnologia c : vendibles) {
       if (c.precioVenta() == null) {
-        throw new ExcepcionDeDominio("Falta el precio de venta de " + c.titulo() + ".");
+        throw new ExcepcionDeDominio("Falta el precio de contado de " + c.titulo() + ".");
       }
       // Vender al costo no es vender (tools/cargar-catalogo.mjs): un cero de menos al teclear se
-      // publicaría y se vendería con pérdida en cada unidad.
+      // publicaría y se vendería con pérdida en cada unidad. Se compara el de contado, que es lo
+      // que el negocio recibe: el publicado lleva encima la comisión, que no es ganancia.
       if (c.precioVenta().valor().compareTo(c.costoProveedor().valor()) <= 0) {
         throw new ExcepcionDeDominio(
-            "El precio de venta de " + c.titulo() + " no supera su costo.");
+            "El precio de contado de " + c.titulo() + " no supera su costo.");
       }
     }
   }

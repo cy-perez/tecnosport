@@ -15,6 +15,7 @@ import co.tecnosport.api.domain.pedido.MetodoPago;
 import co.tecnosport.api.domain.pedido.NumeroPedido;
 import co.tecnosport.api.domain.pedido.Pedido;
 import co.tecnosport.api.domain.pedido.TipoEntrega;
+import jakarta.persistence.EntityManager;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.Collections;
@@ -54,6 +55,7 @@ class RepositorioPedidosJpaTest {
       new PostgreSQLContainer(DockerImageName.parse("postgres:16"));
 
   @Autowired private RepositorioPedidosJpa repositorio;
+  @Autowired private EntityManager entityManager;
 
   private static final Direccion DIRECCION_MEDELLIN =
       Direccion.sinBarrio("05", "Antioquia", "05001", "Medellín", "Cra. 26C #38B-31", "Casa azul");
@@ -229,6 +231,70 @@ class RepositorioPedidosJpaTest {
     assertThat(encontrado.lineas().get(0).detalleVariante()).isEqualTo("Azul · M");
     assertThat(encontrado.total()).isEqualTo(Dinero.deCop(100_000));
     assertThat(encontrado.historial()).hasSize(1);
+  }
+
+  /**
+   * ADR-0095: el precio que se cobra y el publicado vuelven los dos de la base, y con ellos el
+   * descuento. Si el mapeo dejara el publicado fuera, volvería igual al cobrado y el descuento se
+   * perdería en silencio.
+   */
+  @Test
+  void elPrecioPublicadoYElDescuentoVuelvenDeLaBase() {
+    LineaPedido conDescuento =
+        new LineaPedido(
+            UUID.randomUUID(),
+            UUID.randomUUID(),
+            new Sku("TS-BOL-1"),
+            "Bolso",
+            2,
+            Dinero.deCop(230_000),
+            BigDecimal.ZERO,
+            null,
+            UUID.randomUUID(),
+            null,
+            Dinero.deCop(239_000));
+    Pedido pedido =
+        Pedido.crear(
+            NUMERO,
+            null,
+            new CorreoElectronico("cliente@tecnosport.co"),
+            List.of(conDescuento),
+            TipoEntrega.RETIRO_EN_PUNTO,
+            null,
+            MetodoPago.TRANSFERENCIA_MANUAL,
+            "cliente@tecnosport.co",
+            Instant.now());
+
+    repositorio.guardar(pedido);
+
+    Pedido encontrado = repositorio.buscarPorId(pedido.id()).orElseThrow();
+    LineaPedido linea = encontrado.lineas().get(0);
+    assertThat(linea.precioUnitario()).isEqualTo(Dinero.deCop(230_000));
+    assertThat(linea.precioPublicado()).isEqualTo(Dinero.deCop(239_000));
+    assertThat(encontrado.descuento()).isEqualTo(Dinero.deCop(18_000));
+    assertThat(encontrado.total()).isEqualTo(Dinero.deCop(460_000));
+  }
+
+  /**
+   * Una línea que creó la revisión anterior durante el despliegue de V124 no trae publicado: se
+   * cobró al único precio que conocía, así que vuelve con el publicado igual al cobrado y sin
+   * descuento.
+   */
+  @Test
+  void unaLineaSinPublicadoVuelveSinDescuento() {
+    Pedido pedido = pedidoAlDomicilio(MetodoPago.WOMPI);
+    repositorio.guardar(pedido);
+    entityManager.flush();
+    entityManager
+        .createNativeQuery("update linea_pedido set precio_publicado = null where pedido_id = ?1")
+        .setParameter(1, pedido.id())
+        .executeUpdate();
+    entityManager.clear();
+
+    Pedido encontrado = repositorio.buscarPorId(pedido.id()).orElseThrow();
+    LineaPedido linea = encontrado.lineas().get(0);
+    assertThat(linea.precioPublicado()).isEqualTo(Dinero.deCop(50_000));
+    assertThat(encontrado.descuento()).isEqualTo(Dinero.deCop(0));
   }
 
   @Test

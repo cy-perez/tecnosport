@@ -27,6 +27,7 @@ describe('mapeador-productos', () => {
           id: 'v1',
           sku: 'TS-CAM-AZ-M',
           precio: { valor: 89900, moneda: 'COP' },
+          precioContado: { valor: 86000, moneda: 'COP' },
           disponible: true,
           disponibilidadPorConfirmar: false,
           atributos: [
@@ -49,6 +50,7 @@ describe('mapeador-productos', () => {
     expect(producto.variantes).toHaveLength(1);
     expect(producto.variantes[0].id).toBe('v1');
     expect(producto.variantes[0].precio.valor).toBe(89900);
+    expect(producto.variantes[0].precioContado).toEqual({ valor: 86000, moneda: 'COP' });
     expect(producto.paleta).toEqual(['Morado', 'Plata']);
     expect(producto.variantes[0].disponibilidadPorConfirmar).toBe(false);
     expect(producto.variantes[0].atributos[0].colorHex).toBe('#1E3A8A');

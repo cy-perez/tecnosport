@@ -6,16 +6,20 @@ import { TsCampo } from '../../../../../shared/ui/campo/ts-campo';
 import { TsMuestraColor } from '../../../../../shared/ui/muestra-color/ts-muestra-color';
 import { ParteDeMuestra } from '../../../../../shared/ui/muestra-color/muestra-color.model';
 import { mensajeDeError } from '../../../../../core/errores/mensaje-de-error';
+import { formatearPrecio } from '../../../../../shared/ts-precio/formato-precio';
 import { usarCambiarPreciosAdmin } from '../../application/cambiar-precios-admin.mutacion';
 
-/** Una variante como la pinta la lista de precios: lo que la distingue y su precio de hoy. */
+/** Una variante como la pinta la lista de precios: lo que la distingue y sus precios de hoy. */
 export interface VarianteConPrecio {
   readonly id: string;
   readonly sku: string;
   /** «Negro · M»; vacío si la variante no tiene atributos. */
   readonly detalle: string;
   readonly muestra: readonly ParteDeMuestra[] | null;
-  readonly precio: number;
+  /** El que se edita. */
+  readonly precioContado: number;
+  /** El que se anuncia hoy, calculado por el servidor: se enseña, no se edita (ADR-0095). */
+  readonly precioPublicado: number;
 }
 
 /** El campo de una variante y el precio del servidor con que se llenó por última vez. */
@@ -25,7 +29,9 @@ interface CampoDePrecio {
 }
 
 /**
- * El precio de venta de cada variante, editable desde la edición del producto. Es por variante y
+ * El precio de contado de cada variante, editable desde la edición del producto. El publicado no
+ * se escribe: lo calcula el servidor sumándole la comisión de Wompi, y aquí solo se enseña el que
+ * tiene hoy (ADR-0095). Es por variante y
  * no por producto porque así lo guarda la API: en ropa suelen ser iguales, en tecnología la de
  * 256 GB cuesta más que la de 128. «Aplicar a todas» cubre el caso común sin quitar el otro.
  *
@@ -70,11 +76,11 @@ export class TsPreciosVariantes {
           const anterior = anteriores.get(variante.id);
           nuevos.set(
             variante.id,
-            anterior && anterior.delServidor === variante.precio
+            anterior && anterior.delServidor === variante.precioContado
               ? anterior
               : {
-                  delServidor: variante.precio,
-                  control: new FormControl<string | null>(String(variante.precio)),
+                  delServidor: variante.precioContado,
+                  control: new FormControl<string | null>(String(variante.precioContado)),
                 },
           );
         }
@@ -85,6 +91,11 @@ export class TsPreciosVariantes {
 
   protected etiqueta(variante: VarianteConPrecio): string {
     return variante.detalle ? `${variante.sku} — ${variante.detalle}` : variante.sku;
+  }
+
+  /** «Hoy se publica a $ 239.000»: el que tiene ahora, no el que saldría de lo tecleado. */
+  protected publicadoDe(variante: VarianteConPrecio): string {
+    return formatearPrecio(variante.precioPublicado, 'COP', this.transloco.activeLang());
   }
 
   protected aplicarATodas(): void {
@@ -118,8 +129,8 @@ export class TsPreciosVariantes {
     }
     this.error.set(null);
     const precios = leidos
-      .filter((l) => l.precio !== l.variante.precio)
-      .map((l) => ({ varianteId: l.variante.id, precio: l.precio as number }));
+      .filter((l) => l.precio !== l.variante.precioContado)
+      .map((l) => ({ varianteId: l.variante.id, precioContado: l.precio as number }));
     if (precios.length === 0) {
       this.aviso.set(this.transloco.translate('admin.productos.editar.precios.sinCambios'));
       return;

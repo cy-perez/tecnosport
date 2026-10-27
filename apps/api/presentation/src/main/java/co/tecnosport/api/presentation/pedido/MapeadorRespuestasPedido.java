@@ -73,7 +73,8 @@ public class MapeadorRespuestasPedido {
         aRespuesta(tope.yaDevuelto(pedido.id())),
         plazoDeEntrega(pedido),
         pedido.tarifaEnvio().map(TarifaEnvio::transportadora).orElse(null),
-        pedido.recogidaVenceEn().orElse(null));
+        pedido.recogidaVenceEn().orElse(null),
+        aRespuesta(pedido.descuento()));
   }
 
   /** El veredicto lo decide el pedido (`Pedido.verdictoDelPlazoDeEntrega`); aquí solo se mapea. */
@@ -121,7 +122,8 @@ public class MapeadorRespuestasPedido {
         aRespuesta(linea.precioUnitario()),
         linea.tasaIva(),
         linea.imagenUrl(),
-        linea.detalleVariante());
+        linea.detalleVariante(),
+        aRespuesta(linea.precioPublicado()));
   }
 
   private ContactoRespuesta aRespuesta(Contacto contacto) {

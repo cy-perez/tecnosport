@@ -2,6 +2,8 @@ package co.tecnosport.api.infrastructure.catalogo.siembra;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import co.tecnosport.api.domain.catalogo.ComisionDePasarela;
+import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.infrastructure.catalogo.AtributoJpaRepository;
 import co.tecnosport.api.infrastructure.catalogo.CategoriaJpaRepository;
 import co.tecnosport.api.infrastructure.catalogo.ImagenProductoJpaRepository;
@@ -14,6 +16,7 @@ import co.tecnosport.api.infrastructure.catalogo.VarianteJpaRepository;
 import co.tecnosport.api.infrastructure.catalogo.entidad.AtributoJpaEntity;
 import co.tecnosport.api.infrastructure.catalogo.entidad.MarcaJpaEntity;
 import co.tecnosport.api.infrastructure.inventario.RepositorioInventarioJpa;
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
@@ -92,6 +95,8 @@ class SembradorSobreBaseConDatosTest {
         imagenes,
         variantesDeImagen,
         setsRotacion,
-        inventarios);
+        inventarios,
+        new ComisionDePasarela(
+            new BigDecimal("0.0265"), Dinero.deCop(700), new BigDecimal("0.19")));
   }
 }

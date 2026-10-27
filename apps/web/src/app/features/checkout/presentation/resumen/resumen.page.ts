@@ -98,6 +98,16 @@ export class ResumenPage {
   protected readonly subtotal = computed(() => this.carrito.subtotal());
 
   /**
+   * Lo que se ahorra el carrito pagando sin pasarela, ya formateado; `null` si nada. El medio aún
+   * no se ha elegido, así que el total es el publicado y esto lo acompaña como ahorro posible, no
+   * como un segundo total (ADR-0095, art. 26 de la Ley 1480).
+   */
+  protected readonly ahorroSinPasarela = computed(() => {
+    const ahorro = this.carrito.ahorroSinPasarela();
+    return ahorro > 0 ? formatearPrecio(ahorro, 'COP', this.idioma()) : null;
+  });
+
+  /**
    * La cotización de envío se pide aquí y no en un paso aparte porque aquí es
    * donde el comprador escribe la ciudad. El artículo 50 de la Ley 1480 de 2011
    * exige mostrar el costo del envío separado y el total antes de finalizar la

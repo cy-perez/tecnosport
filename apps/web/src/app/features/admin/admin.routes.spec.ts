@@ -8,6 +8,7 @@ import { REPOSITORIO_DIFUSION } from './difusion/domain/repositorio-difusion.pue
 import { REPOSITORIO_CATEGORIAS } from '../catalogo/domain/repositorio-categorias.puerto';
 import { REPOSITORIO_PRODUCTOS_NO_PUBLICADOS } from './productos/domain/productos-no-publicados.puerto';
 import { REPOSITORIO_ARCHIVOS_DE_INGESTA } from './ingestas/domain/repositorio-archivos-de-ingesta.puerto';
+import { REPOSITORIO_RECALCULO_PRECIOS } from './productos/domain/recalculo-precios.puerto';
 
 /**
  * Lo que los specs de página **no** pueden ver.
@@ -93,6 +94,13 @@ describe('adminRoutes', () => {
     await harness.navigateByUrl('/en/admin/productos/sin-medir');
 
     expect(TestBed.inject(Router).url).toBe('/en/admin/productos/medidas?filtro=sin-medir');
+  });
+
+  /** El recálculo de precios publicados inyecta su propio puerto, y lo provee su ruta. */
+  it('la pantalla de precios provee el puerto del recálculo', () => {
+    expect(proveeTokens(buscarRuta(adminRoutes, 'precios'))).toContain(
+      REPOSITORIO_RECALCULO_PRECIOS,
+    );
   });
 
   /** El historial de zips cuelga de ingestas y no tiene ruta propia con proveedores. */

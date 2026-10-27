@@ -111,8 +111,11 @@ export class AgregarVarianteAdminPage {
   protected readonly form = new FormGroup(
     {
       sku: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
-      precio: new FormControl<number | null>(null, {
-        validators: [Validators.required, Validators.min(0)],
+      // De contado: el publicado lo calcula el servidor con la comisión de Wompi (ADR-0095). Mínimo
+      // 1, como exige el dominio al crear: un precio en cero es un producto regalado, y el panel lo
+      // para antes de que el servidor lo rechace con 422.
+      precioContado: new FormControl<number | null>(null, {
+        validators: [Validators.required, Validators.min(1)],
       }),
       // Cero, y no 0.19, porque el negocio no es responsable de IVA (par. 3 del art. 437 del
       // Estatuto Tributario). El campo se queda —la calidad se pierde al cruzar los topes y ese día
@@ -275,7 +278,7 @@ export class AgregarVarianteAdminPage {
       {
         productoId: this.productoId(),
         sku: valores.sku,
-        precio: valores.precio ?? 0,
+        precioContado: valores.precioContado ?? 0,
         tasaIva: valores.tasaIva,
         codigoBarras: valores.codigoBarras || null,
         existenciaInicial: valores.existenciaInicial,

@@ -646,7 +646,7 @@ class AdminProductoControladorTest {
     org.junit.jupiter.api.Assertions.assertTrue(repositorio.atributosReemplazados.isEmpty());
   }
 
-  /** Cambia solo las que vienen, y la respuesta de la edición trae el precio nuevo. */
+  /** Cambia solo las que vienen, y la respuesta de la edición trae los dos precios nuevos. */
   @Test
   void cambiarPreciosDevuelve204YGrabaLosQueCambiaron() throws Exception {
     Atributo color = Atributo.crear("Color", TipoAtributo.COLOR, List.of());
@@ -665,17 +665,23 @@ class AdminProductoControladorTest {
                 .content(
                     "{\"precios\":[{\"varianteId\":\""
                         + negra.id()
-                        + "\",\"precio\":65000},{\"varianteId\":\""
+                        + "\",\"precioContado\":65000},{\"varianteId\":\""
                         + vino.id()
-                        + "\",\"precio\":60000}]}"))
+                        + "\",\"precioContado\":60000}]}"))
         .andExpect(status().isNoContent());
 
+    // Lo que llega es el de contado; el publicado lo calcula el servidor con la comisión de Wompi
+    // (ADR-0095): (65.000 + 833) / 0,968465 = 67.977,6 → 68.000.
     org.junit.jupiter.api.Assertions.assertEquals(
-        java.util.Map.of(negra.id(), Dinero.deCop(65000)), repositorio.preciosGrabados);
+        java.util.Map.of(negra.id(), Dinero.deCop(65000)), repositorio.contadosGrabados);
+    org.junit.jupiter.api.Assertions.assertEquals(
+        java.util.Map.of(negra.id(), Dinero.deCop(68000)), repositorio.preciosGrabados);
     mockMvc
         .perform(get("/api/v1/admin/productos/{id}", producto.id()))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.variantes[0].precio").value(65000))
+        .andExpect(jsonPath("$.variantes[0].precioContado").value(65000))
+        .andExpect(jsonPath("$.variantes[0].precio").value(68000))
+        .andExpect(jsonPath("$.variantes[1].precioContado").value(60000))
         .andExpect(jsonPath("$.variantes[1].precio").value(60000));
   }
 
@@ -698,9 +704,9 @@ class AdminProductoControladorTest {
                 .content(
                     "{\"precios\":[{\"varianteId\":\""
                         + negra.id()
-                        + "\",\"precio\":65000},{\"varianteId\":\""
+                        + "\",\"precioContado\":65000},{\"varianteId\":\""
                         + vino.id()
-                        + "\",\"precio\":0}]}"))
+                        + "\",\"precioContado\":0}]}"))
         .andExpect(status().isUnprocessableContent());
 
     org.junit.jupiter.api.Assertions.assertTrue(repositorio.preciosGrabados.isEmpty());
@@ -719,7 +725,7 @@ class AdminProductoControladorTest {
             "S-M");
     producto.agregarVariante(negra);
     repositorio.conProductos(producto);
-    String una = "{\"varianteId\":\"" + negra.id() + "\",\"precio\":65000}";
+    String una = "{\"varianteId\":\"" + negra.id() + "\",\"precioContado\":65000}";
 
     mockMvc
         .perform(
@@ -1264,7 +1270,8 @@ class AdminProductoControladorTest {
               new RepositorioInventarioDobleDePrueba(),
               Instant::now,
               false,
-              paleta));
+              paleta,
+              TarifasDePrueba.WOMPI));
     }
 
     @Bean
@@ -1274,7 +1281,7 @@ class AdminProductoControladorTest {
 
     @Bean
     CambiarPrecios cambiarPrecios(RepositorioProductos repositorioProductos) {
-      return new CambiarPrecios(repositorioProductos);
+      return new CambiarPrecios(repositorioProductos, TarifasDePrueba.WOMPI);
     }
 
     @Bean

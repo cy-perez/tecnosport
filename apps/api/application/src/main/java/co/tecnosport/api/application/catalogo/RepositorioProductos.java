@@ -106,10 +106,11 @@ public interface RepositorioProductos {
   void actualizarPaquete(UUID varianteId, Paquete paquete);
 
   /**
-   * Graba el precio de venta de una variante existente. Las reglas —mayor que cero, que la variante
-   * sea del producto— ya las aplicó {@code Producto#cambiarPrecios}; el puerto solo escribe.
+   * Graba los dos precios de una variante existente: el de contado y el publicado (ADR-0095). Las
+   * reglas —mayor que cero, el publicado no por debajo del contado, que la variante sea del
+   * producto— ya las aplicó {@code Producto#cambiarPrecios}; el puerto solo escribe.
    */
-  void actualizarPrecio(UUID varianteId, Dinero precio);
+  void actualizarPrecios(UUID varianteId, Dinero contado, Dinero publicado);
 
   /**
    * Las variantes {@code ACTIVA} de todo el catálogo, sin paginar — la lista que el panel necesita

@@ -29,12 +29,20 @@ import co.tecnosport.api.application.proveedores.tecnologia.RepositorioListasDeT
 import co.tecnosport.api.application.proveedores.tecnologia.RepositorioVariantesDeProveedor;
 import co.tecnosport.api.application.proveedores.tecnologia.SolicitarSubidaDeFotoDeBorradorTecnologia;
 import co.tecnosport.api.application.proveedores.tecnologia.VerBorradorTecnologia;
+import co.tecnosport.api.domain.proveedores.SugerenciaDePrecioTecnologia;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 /** La tecnología por listas de precios (ADR-0075). */
 @Configuration
 public class ConfiguracionListasDeTecnologia {
+
+  /** El precio de contado sugerido de cada configuración, con su tope (ADR-0095, decisión 8). */
+  @Bean
+  public SugerenciaDePrecioTecnologia sugerenciaDePrecioTecnologia(
+      PropiedadesProveedores propiedades) {
+    return propiedades.tecnologia().aSugerencia();
+  }
 
   @Bean
   public ImportarListaDeTecnologia importarListaDeTecnologia(

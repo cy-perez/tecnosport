@@ -225,7 +225,7 @@ public class AdminVarianteControlador {
     return new AgregarVarianteComando(
         cuerpo.productoId(),
         cuerpo.sku(),
-        cuerpo.precio(),
+        cuerpo.precioContado(),
         cuerpo.tasaIva(),
         cuerpo.codigoBarras(),
         cuerpo.existenciaInicial(),

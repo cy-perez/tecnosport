@@ -1,5 +1,6 @@
 package co.tecnosport.api.application.envio;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -598,6 +599,88 @@ class MetodosDePagoDisponiblesTest {
         caso.ejecutar(comando(TipoEntrega.ENVIO_A_DOMICILIO, DIRECCION_MEDELLIN));
 
     assertFalse(disponibles.contains(MetodoPago.CONTRAENTREGA));
+  }
+
+  /**
+   * Reemplaza el catálogo por una camiseta con dos precios (ADR-0095): se anuncia a {@code
+   * publicado} y de contado vale {@code contado}.
+   */
+  private void publicarConDosPrecios(long contado, long publicado) {
+    Producto producto =
+        Producto.crear(
+            "Camiseta con descuento",
+            new Slug("camiseta-con-descuento"),
+            "Descripción",
+            Marca.crear("TecnoSport"),
+            Categoria.crear("Camisetas", new Slug("ropa-caballero-camisetas"), LineaCatalogo.ROPA));
+    variante =
+        Variante.crear(
+            new Sku("TS-CAM-DOS"),
+            Dinero.deCop(contado),
+            Dinero.deCop(publicado),
+            BigDecimal.ZERO,
+            null,
+            new Paquete(180, 30, 25, 4),
+            List.of());
+    producto.agregarVariante(variante);
+    productos.conProductos(producto);
+  }
+
+  /**
+   * Sistecrédito cobra el publicado, así que su mínimo se mide contra el publicado: de contado el
+   * carrito no llega a los 30.000, anunciado sí.
+   */
+  @Test
+  void elMinimoDeSistecreditoSeMideContraElPublicado() {
+    MetodosDePagoDisponibles caso =
+        crear(CRITERIOS_PERMISIVOS, EnumSet.of(MetodoPago.WOMPI, MetodoPago.SISTECREDITO));
+    publicarConDosPrecios(28_000, 31_000);
+
+    Set<MetodoPago> disponibles = caso.ejecutar(comando(TipoEntrega.RETIRO_EN_PUNTO, null));
+
+    assertTrue(disponibles.contains(MetodoPago.SISTECREDITO));
+  }
+
+  /**
+   * Contraentrega cobra el contado, así que el tope se mide contra el contado más el flete: 50.000
+   * + 14.900 = 64.900 cabe en 70.000; al publicado serían 74.900 y no cabría.
+   */
+  @Test
+  void elTopeDeLaContraentregaSeMideContraElContado() {
+    CriteriosContraentrega tope =
+        new CriteriosContraentrega(true, Dinero.deCop(1), Dinero.deCop(70_000), Set.of());
+    MetodosDePagoDisponibles caso = crear(tope);
+    publicarConDosPrecios(50_000, 60_000);
+    cotizador.conTarifaQueRecauda();
+
+    Set<MetodoPago> disponibles =
+        caso.ejecutar(comando(TipoEntrega.ENVIO_A_DOMICILIO, DIRECCION_MEDELLIN));
+
+    assertTrue(disponibles.contains(MetodoPago.CONTRAENTREGA));
+  }
+
+  /** Cada medio con lo que se pagaría de mercancía: publicado con pasarela, contado sin ella. */
+  @Test
+  void cadaMedioDiceCuantoSePagariaConEl() {
+    MetodosDePagoDisponibles caso = crear(CRITERIOS_PERMISIVOS);
+    publicarConDosPrecios(50_000, 53_000);
+    cotizador.conTarifaQueRecauda();
+
+    List<MedioDePagoConPrecio> medios =
+        caso.conPrecios(comando(TipoEntrega.ENVIO_A_DOMICILIO, DIRECCION_MEDELLIN, 2));
+
+    assertEquals(
+        List.of(MetodoPago.CONTRAENTREGA, MetodoPago.TRANSFERENCIA_MANUAL, MetodoPago.WOMPI),
+        medios.stream().map(MedioDePagoConPrecio::metodo).toList());
+    for (MedioDePagoConPrecio medio : medios) {
+      if (medio.metodo() == MetodoPago.WOMPI) {
+        assertEquals(Dinero.deCop(106_000), medio.subtotal());
+        assertEquals(Dinero.deCop(0), medio.descuento());
+      } else {
+        assertEquals(Dinero.deCop(100_000), medio.subtotal());
+        assertEquals(Dinero.deCop(6_000), medio.descuento());
+      }
+    }
   }
 
   /** Doble de prueba escrito a mano, sin Mockito, ver docs/06-testing.md. */

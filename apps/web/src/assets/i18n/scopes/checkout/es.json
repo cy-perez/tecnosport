@@ -1,5 +1,6 @@
 {
   "resumen": {
+    "ahorro_sin_pasarela": "Ahorras {{ahorro}} pagando por transferencia, en el punto o contra entrega",
     "foto_de": "Foto de {{nombre}}",
     "titulo": "Resumen del pedido",
     "carrito_vacio": "Tu carrito está vacío.",
@@ -60,6 +61,8 @@
     "precio_final": "El precio de cada producto es el valor final: no se le suma ningún impuesto."
   },
   "metodoPago": {
+    "medio_ya_no_disponible": "El medio de pago que elegiste ya no está disponible para este pedido. Elige otro.",
+    "ahorro": "Ahorras {{ahorro}}.",
     "titulo": "Método de pago",
     "wompi": "Tarjeta, PSE o Bancolombia",
     "wompi_detalle": "Pagar en Wompi con tarjeta de crédito o débito, PSE o el botón de Bancolombia.",
@@ -107,6 +110,10 @@
     "continuar": "Continuar"
   },
   "confirmar": {
+    "total_sin_precio": "Falta el precio con este medio de pago",
+    "precios_calculando": "Calculando el precio…",
+    "precios_error": "No pudimos calcular el precio con este medio de pago. Vuelve a intentarlo en unos minutos.",
+    "descuento": "Descuento por medio de pago",
     "con_transportadora": "Con {{transportadora}}",
     "transportadora_no_disponible": "La transportadora que elegiste ya no está disponible para este envío. Vuelve atrás y elige otra.",
     "disponibilidad_por_confirmar": "La disponibilidad de un producto de tu carrito se confirma con nosotros antes de comprarlo, y su enlace de compra ya no está vigente. Escríbenos por WhatsApp y te la confirmamos de nuevo.",
@@ -142,6 +149,7 @@
     "volver_inicio": "Volver al inicio"
   },
   "estado": {
+    "descuento_incluido": "Incluye un descuento de {{valor}} por el medio de pago.",
     "titulo": "Pedido {{numero}}",
     "sin_datos": "No encontramos este pedido.",
     "reintentar": "Reintentar pago",
@@ -199,6 +207,7 @@
     }
   },
   "transferencia": {
+    "descuento_incluido": "Ya incluye un descuento de {{valor}} por pagar por transferencia.",
     "titulo": "Transfiere a esta cuenta",
     "instrucciones": "Transfiere a una de estas cuentas, la que prefieras. Tu pedido queda reservado 24 horas. Cuando hagas la transferencia, envíanos el comprobante - lo conciliamos y confirmamos tu pedido.",
     "entidad": "Entidad",

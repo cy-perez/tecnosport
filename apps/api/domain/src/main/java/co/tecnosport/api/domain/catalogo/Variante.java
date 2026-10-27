@@ -40,6 +40,7 @@ public final class Variante {
   private final UUID id;
   private final Sku sku;
   private final Dinero precio;
+  private final Dinero precioContado;
   private final BigDecimal tasaIva;
   private final String codigoBarras;
   private final Paquete paquete;
@@ -98,7 +99,9 @@ public final class Variante {
   }
 
   /**
-   * Reconstrucción completa.
+   * Con un solo precio, que es a la vez el publicado y el de contado: sin descuento por pagar sin
+   * pasarela. Es la forma de antes del ADR-0095 y la siguen usando las pruebas que no miran el
+   * descuento.
    *
    * @param disponibilidadPorConfirmar el color de esta variante de tecnología nadie lo ha
    *     confirmado con el proveedor (ADR-0086): no se compra sin un enlace de compra
@@ -115,9 +118,49 @@ public final class Variante {
       SetRotacion setRotacionPropio,
       boolean agotadaPorProveedor,
       boolean disponibilidadPorConfirmar) {
+    this(
+        id,
+        sku,
+        precio,
+        precio,
+        tasaIva,
+        codigoBarras,
+        paquete,
+        estado,
+        atributos,
+        setRotacionPropio,
+        agotadaPorProveedor,
+        disponibilidadPorConfirmar);
+  }
+
+  /**
+   * Reconstrucción completa.
+   *
+   * @param precio el publicado: el que se anuncia y el que paga quien usa la pasarela (ADR-0095)
+   * @param precioContado el que el negocio quiere recibir neto, el que paga quien compra sin
+   *     pasarela; nunca mayor que el publicado
+   * @param disponibilidadPorConfirmar el color de esta variante de tecnología nadie lo ha
+   *     confirmado con el proveedor (ADR-0086): no se compra sin un enlace de compra
+   */
+  public Variante(
+      UUID id,
+      Sku sku,
+      Dinero precio,
+      Dinero precioContado,
+      BigDecimal tasaIva,
+      String codigoBarras,
+      Paquete paquete,
+      EstadoVariante estado,
+      List<ValorAtributo> atributos,
+      SetRotacion setRotacionPropio,
+      boolean agotadaPorProveedor,
+      boolean disponibilidadPorConfirmar) {
     this.id = Objects.requireNonNull(id, "El id de la variante no puede ser nulo.");
     this.sku = Objects.requireNonNull(sku, "El SKU de la variante no puede ser nulo.");
     this.precio = Objects.requireNonNull(precio, "El precio de la variante no puede ser nulo.");
+    this.precioContado =
+        Objects.requireNonNull(precioContado, "El precio de contado no puede ser nulo.");
+    validarPrecios(sku, precioContado, precio);
     this.tasaIva = validarTasaIva(tasaIva);
     this.codigoBarras = codigoBarras == null || codigoBarras.isBlank() ? null : codigoBarras.trim();
     // Puede ser nulo: una variante sin medir se vende, pero solo con recogida en el punto. Quien
@@ -131,6 +174,7 @@ public final class Variante {
     this.disponibilidadPorConfirmar = disponibilidadPorConfirmar;
   }
 
+  /** Con un solo precio, publicado y de contado a la vez. */
   public static Variante crear(
       Sku sku,
       Dinero precio,
@@ -138,16 +182,36 @@ public final class Variante {
       String codigoBarras,
       Paquete paquete,
       List<ValorAtributo> atributos) {
+    return crear(sku, precio, precio, tasaIva, codigoBarras, paquete, atributos);
+  }
+
+  /**
+   * @param precioContado el que el negocio quiere recibir neto
+   * @param precioPublicado el que se anuncia, con la comisión de la pasarela dentro ({@link
+   *     ComisionDePasarela#publicadoDesde})
+   */
+  public static Variante crear(
+      Sku sku,
+      Dinero precioContado,
+      Dinero precioPublicado,
+      BigDecimal tasaIva,
+      String codigoBarras,
+      Paquete paquete,
+      List<ValorAtributo> atributos) {
+    exigirMayorQueCero(sku, precioContado);
     return new Variante(
         GeneradorIdentificador.nuevo(),
         sku,
-        precio,
+        precioPublicado,
+        precioContado,
         tasaIva,
         codigoBarras,
         paquete,
         EstadoVariante.ACTIVA,
         atributos,
-        null);
+        null,
+        false,
+        false);
   }
 
   /**
@@ -166,6 +230,7 @@ public final class Variante {
         id,
         sku,
         precio,
+        precioContado,
         tasaIva,
         codigoBarras,
         paquete,
@@ -177,22 +242,21 @@ public final class Variante {
   }
 
   /**
-   * La misma variante con otro precio de venta. Copia, como {@link #medida}, y por lo mismo.
-   *
-   * <p>Cero no es un precio: el constructor lo admite porque {@link Dinero} lo admite, pero cambiar
-   * un precio a cero desde el panel solo puede ser un error de digitación, y lo que se publicaría
-   * es un producto regalado. Los pedidos ya creados no cambian: cada línea congeló su precio.
+   * La misma variante con otro precio de contado y otro publicado. Copia, como {@link #medida}. El
+   * publicado lo calcula quien llama con {@link ComisionDePasarela#publicadoDesde}: la variante no
+   * sabe de pasarelas, solo exige que el contado sea mayor que cero y que el publicado no quede por
+   * debajo de él. Es la única puerta para cambiar el precio: no hay una que cambie el publicado
+   * solo, porque escribirlo sin la comisión es justo lo que el ADR-0095 quiere evitar.
    */
-  public Variante conPrecio(Dinero nuevo) {
-    Objects.requireNonNull(nuevo, "El precio no puede ser nulo.");
-    if (nuevo.valor().signum() <= 0) {
-      throw new ExcepcionDeDominio(
-          "El precio de la variante '" + sku.valor() + "' tiene que ser mayor que cero.");
-    }
+  public Variante conPrecios(Dinero contado, Dinero publicado) {
+    Objects.requireNonNull(contado, "El precio de contado no puede ser nulo.");
+    Objects.requireNonNull(publicado, "El precio publicado no puede ser nulo.");
+    exigirMayorQueCero(sku, contado);
     return new Variante(
         id,
         sku,
-        nuevo,
+        publicado,
+        contado,
         tasaIva,
         codigoBarras,
         paquete,
@@ -219,6 +283,7 @@ public final class Variante {
         id,
         sku,
         precio,
+        precioContado,
         tasaIva,
         codigoBarras,
         paquete,
@@ -247,6 +312,7 @@ public final class Variante {
         id,
         sku,
         precio,
+        precioContado,
         tasaIva,
         codigoBarras,
         paquete,
@@ -272,6 +338,38 @@ public final class Variante {
     return atributos.stream().filter(a -> a.atributo().tipo() != TipoAtributo.COLOR).toList();
   }
 
+  /**
+   * Lo que vale siempre, también al reconstruir desde la base: el publicado es el máximo que
+   * alguien paga (ADR-0095) —por debajo del contado, el descuento por pagar sin pasarela sería un
+   * recargo—; negativo ya no puede ser ninguno, porque {@link Dinero} no lo admite. Cero sí pasa
+   * aquí: una variante guardada en cero antes de que el panel lo impidiera se tiene que poder leer,
+   * o la ficha entera deja de cargar.
+   */
+  private static void validarPrecios(Sku sku, Dinero contado, Dinero publicado) {
+    if (publicado.valor().compareTo(contado.valor()) < 0) {
+      throw new ExcepcionDeDominio(
+          "El precio publicado de la variante '"
+              + sku.valor()
+              + "' ("
+              + publicado.valor().toPlainString()
+              + ") no puede ser menor que el de contado ("
+              + contado.valor().toPlainString()
+              + ").");
+    }
+  }
+
+  /**
+   * Cero no es un precio: {@link Dinero} lo admite, pero un precio en cero desde el panel solo
+   * puede ser un error de digitación, y lo que se publicaría es un producto regalado. Se exige al
+   * crear y al cambiar el precio, no al reconstruir ({@link #validarPrecios}).
+   */
+  private static void exigirMayorQueCero(Sku sku, Dinero contado) {
+    if (contado.valor().signum() <= 0) {
+      throw new ExcepcionDeDominio(
+          "El precio de la variante '" + sku.valor() + "' tiene que ser mayor que cero.");
+    }
+  }
+
   private static BigDecimal validarTasaIva(BigDecimal tasaIva) {
     Objects.requireNonNull(tasaIva, "La tasa de IVA no puede ser nula.");
     if (tasaIva.signum() < 0 || tasaIva.compareTo(BigDecimal.ONE) > 0) {
@@ -288,8 +386,17 @@ public final class Variante {
     return sku;
   }
 
+  /**
+   * El publicado: el que se anuncia, el que filtra la vitrina y el que paga quien usa la pasarela.
+   * Lleva la comisión de Wompi dentro (ADR-0095).
+   */
   public Dinero precio() {
     return precio;
+  }
+
+  /** El que el negocio recibe neto: el que paga quien compra sin pasarela (ADR-0095). */
+  public Dinero precioContado() {
+    return precioContado;
   }
 
   public BigDecimal tasaIva() {

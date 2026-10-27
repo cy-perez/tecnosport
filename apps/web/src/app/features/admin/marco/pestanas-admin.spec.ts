@@ -38,6 +38,7 @@ describe('pestanaActiva', () => {
   it('con dos coincidencias gana la más específica', () => {
     expect(pestanaActiva('/es/admin/productos/existencias')).toBe('admin.panel.ir_a_existencias');
     expect(pestanaActiva('/es/admin/productos/medidas')).toBe('admin.panel.ir_a_medidas');
+    expect(pestanaActiva('/es/admin/productos/precios')).toBe('admin.panel.ir_a_precios');
     expect(pestanaActiva('/es/admin/envios/referencias')).toBe(
       'admin.panel.ir_a_referencias_envio',
     );
@@ -83,6 +84,7 @@ describe('PestanasAdmin', () => {
       esAdmin.panel.ir_a_productos,
       esAdmin.panel.ir_a_existencias,
       esAdmin.panel.ir_a_medidas,
+      esAdmin.panel.ir_a_precios,
       esAdmin.panel.ir_a_marcas,
       esAdmin.panel.ir_a_categorias,
       esAdmin.panel.ir_a_atencion,

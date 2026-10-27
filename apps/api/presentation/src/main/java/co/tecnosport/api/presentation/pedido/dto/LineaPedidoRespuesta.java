@@ -1,6 +1,7 @@
 package co.tecnosport.api.presentation.pedido.dto;
 
 import co.tecnosport.api.presentation.compartido.dto.DineroRespuesta;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.math.BigDecimal;
 import java.util.UUID;
 
@@ -14,4 +15,10 @@ public record LineaPedidoRespuesta(
     BigDecimal tasaIva,
     String imagenUrl,
     /** Lo que se eligió de la variante, «Negro · M»; nulo en las líneas anteriores a V76. */
-    String detalleVariante) {}
+    String detalleVariante,
+    /**
+     * El precio anunciado al comprar (ADR-0095). Mayor que {@code precioUnitario} cuando se pagó
+     * sin pasarela y se aplicó el descuento; igual con Wompi, con Sistecrédito y en las líneas de
+     * antes.
+     */
+    @Schema(requiredMode = Schema.RequiredMode.REQUIRED) DineroRespuesta precioPublicado) {}

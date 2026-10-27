@@ -1,0 +1,121 @@
+<section class="mx-auto max-w-contenido px-16 py-32">
+  <ts-migas [ruta]="migas()" />
+
+  <h1 class="m-0 mb-16 font-display text-2xl">
+    {{ 'admin.productos.precios.titulo' | transloco }}
+  </h1>
+
+  <p class="mb-24 text-ts-texto-suave">
+    {{ 'admin.productos.precios.explicacion' | transloco }}
+  </p>
+
+  <!-- Siempre en el DOM, fuera de cualquier rama: al recalcular, la lista se vacía y la rama de la
+       tabla desaparece, pero el resultado tiene que quedarse y anunciarse. Una región cortés que
+       nace llena no se anuncia (apps/web/CLAUDE.md). -->
+  <p
+    #avisoRef
+    class="m-0 text-ts-exito"
+    role="status"
+    tabindex="-1"
+    [class.mb-16]="aviso() !== null"
+  >
+    @if (aviso(); as texto) {
+      {{ texto }}
+    }
+  </p>
+
+  @if (consulta.isPending()) {
+    <ts-esqueleto />
+  } @else if (consulta.isError()) {
+    <p class="text-ts-error" role="alert">
+      {{ 'admin.productos.precios.errorLista' | transloco }}
+    </p>
+  } @else if (total() === 0) {
+    <p class="text-ts-texto-suave">{{ 'admin.productos.precios.alDia' | transloco }}</p>
+  } @else {
+    <p class="mb-16">
+      {{ 'admin.productos.precios.resumen' | transloco: { total: total() } }}
+    </p>
+
+    <div class="mb-24 flex flex-col gap-16">
+      <div>
+        <ts-boton
+          #boton
+          [expandido]="confirmando()"
+          controla="precios-recalcular-confirmar"
+          (click)="preguntar()"
+        >
+          {{ 'admin.productos.precios.recalcular' | transloco: { total: total() } }}
+        </ts-boton>
+      </div>
+
+      @if (confirmando()) {
+        <div
+          #caja
+          id="precios-recalcular-confirmar"
+          class="flex flex-col gap-16 rounded-lg border border-ts-borde-control p-16"
+          role="group"
+          tabindex="-1"
+          aria-labelledby="precios-recalcular-pregunta"
+          aria-describedby="precios-recalcular-implica"
+          (keydown.escape)="cancelar()"
+        >
+          <p id="precios-recalcular-pregunta" class="m-0">
+            {{ 'admin.productos.precios.pregunta' | transloco: { total: total() } }}
+          </p>
+          <p id="precios-recalcular-implica" class="m-0 text-ts-texto-suave">
+            {{ 'admin.productos.precios.loQueImplica' | transloco }}
+          </p>
+          @if (error(); as mensaje) {
+            <p class="m-0 text-ts-error" role="alert">{{ mensaje }}</p>
+          }
+          <div class="flex flex-wrap gap-16">
+            <!-- `ocupado` y no `cargando`: deshabilitar el botón recién pulsado manda el foco a
+                 <body>. La guarda de reentrada está en `confirmar`. -->
+            <ts-boton
+              [ocupado]="recalculando()"
+              [etiquetaCargando]="'admin.productos.precios.recalculando' | transloco"
+              (click)="confirmar()"
+            >
+              {{ 'admin.productos.precios.confirmar' | transloco }}
+            </ts-boton>
+            <ts-boton variante="secundario" (click)="cancelar()">
+              {{ 'admin.productos.precios.cancelar' | transloco }}
+            </ts-boton>
+          </div>
+        </div>
+      }
+    </div>
+
+    <div class="overflow-x-auto">
+      <table
+        class="w-full border-collapse [&_:is(th,td)]:border-b [&_:is(th,td)]:border-ts-borde [&_:is(th,td)]:px-16 [&_:is(th,td)]:py-8 [&_:is(th,td)]:text-left"
+      >
+        <thead>
+          <tr>
+            <th scope="col">{{ 'admin.productos.precios.columnas.producto' | transloco }}</th>
+            <th scope="col">{{ 'admin.productos.precios.columnas.sku' | transloco }}</th>
+            <th scope="col">{{ 'admin.productos.precios.columnas.contado' | transloco }}</th>
+            <th scope="col">
+              {{ 'admin.productos.precios.columnas.publicadoActual' | transloco }}
+            </th>
+            <th scope="col">
+              {{ 'admin.productos.precios.columnas.publicadoNuevo' | transloco }}
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (variante of variantes(); track variante.varianteId) {
+            <tr>
+              <td>{{ variante.nombreProducto }}</td>
+              <td>{{ variante.sku }}</td>
+              <td class="tabular-nums">{{ precio(variante.precioContado) }}</td>
+              <td class="tabular-nums">{{ precio(variante.publicadoActual) }}</td>
+              <td class="font-medio tabular-nums">{{ precio(variante.publicadoNuevo) }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</section>

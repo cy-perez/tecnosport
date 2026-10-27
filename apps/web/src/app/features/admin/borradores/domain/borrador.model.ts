@@ -177,7 +177,13 @@ export interface Borrador {
   readonly linea: string | null;
   /** En pesos, entero; `null` si el proveedor no puso precio (y hay alerta). */
   readonly precioProveedor: number | null;
+  /** El de contado: lo que el negocio quiere recibir neto (ADR-0095). */
   readonly precioVentaSugerido: number | null;
+  /**
+   * El sugerido con la comisión de Wompi encima, como lo calcula el servidor: es el que se
+   * anunciaría. `null` cuando no hay sugerencia de contado.
+   */
+  readonly precioPublicadoSugerido: number | null;
   readonly tallas: Tallas;
   readonly cantidadTonos: number;
   readonly tonosNombrados: readonly string[];

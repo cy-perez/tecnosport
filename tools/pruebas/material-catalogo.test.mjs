@@ -6,7 +6,7 @@ import { tmpdir } from "node:os";
 import { basename, join } from "node:path";
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { fotosDeCarpeta } from "../material-catalogo.mjs";
+import { contadoSugeridoDe, fotosDeCarpeta } from "../material-catalogo.mjs";
 
 /** Lo mínimo que `dimensionesJpeg` sabe leer: el inicio y un marco SOF0 con alto y ancho. */
 function jpeg(ancho, alto) {
@@ -98,4 +98,28 @@ test("las tomas van en orden natural: la _10 después de la _2", () => {
   } finally {
     rmSync(raiz, { recursive: true, force: true });
   }
+});
+
+// El contado que carga el cargador es la sugerencia del panel (ADR-0095, decisión 8).
+test("el contado es el de mercado cuando no le gana al costo más de 400.000", () => {
+  assert.equal(
+    contadoSugeridoDe({ precio_proveedor_cop: 675_000, precio_mercado_cop: 849_900 }),
+    849_900,
+  );
+});
+
+test("cuando manda el tope, el contado baja a la unidad de mil", () => {
+  // 675.500 + 400.000 = 1.075.500: subir a 1.076.000 rompería el tope.
+  assert.equal(
+    contadoSugeridoDe({ precio_proveedor_cop: 675_500, precio_mercado_cop: 1_200_000 }),
+    1_075_000,
+  );
+});
+
+test("sin costo en la lista, el contado es el de mercado", () => {
+  assert.equal(contadoSugeridoDe({ precio_mercado_cop: 1_200_000 }), 1_200_000);
+});
+
+test("sin precio de mercado no hay contado que sugerir", () => {
+  assert.equal(contadoSugeridoDe({ precio_proveedor_cop: 675_000 }), null);
 });

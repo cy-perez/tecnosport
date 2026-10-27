@@ -680,6 +680,54 @@ de la entrega para el retracto y la garantía.
    al recibir, y no dicen qué pasa si el comprador demora la recogida. El sistema deja
    de vigilar el plazo mientras el pedido está listo.
 
+## 12. El descuento por medio de pago y la regla de los dos precios
+
+> Nació el 27 de octubre de 2026 con `ADR-0095`.
+
+**El hecho.** El precio publicado de cada producto incluye lo que cuesta cobrar con
+la pasarela. Quien paga por transferencia, al recoger o contra entrega recibe un
+descuento exacto por producto: el publicado menos el de contado. Se escogió el
+descuento en lugar de un recargo para que el precio anunciado fuera el máximo
+(artículo 26 de la Ley 1480: el consumidor solo está obligado a pagar el precio
+anunciado). El descuento varía por producto: por el cargo fijo de la pasarela y el
+redondeo a la unidad de mil, es de un 3 % en lo caro y crece en lo barato —6 % en un
+producto de $50.000, 20 % en uno de $8.000 que se publica a $10.000—.
+
+**Qué dice el texto publicado (versión `2026-10-27.1`).** Términos, numeral 4: el
+precio publicado es el máximo y el detalle antes de pagar muestra el descuento.
+Numeral 6: un párrafo «Descuento por medio de pago» con los medios a los que aplica
+y a los que no, que no aplica al envío, dónde se ve el valor, y que rige mientras
+esté en los términos y se respeta en las compras hechas. Numeral 7: lo que cobra la
+transportadora ya lleva el descuento. En la vitrina y el carrito no se pinta un
+segundo precio: se dice «Ahorras $X pagando por transferencia, en el punto o contra
+entrega».
+
+**Las cuatro preguntas.**
+
+1. **¿Mostrar el ahorro junto al precio choca con la regla de los dos precios?** El
+   mismo artículo 26 dice que, cuando aparezcan dos o más precios, el consumidor
+   solo está obligado a pagar el más bajo. Si alguien que paga con tarjeta reclama
+   el precio con descuento porque lo vio en la ficha, ¿se defiende con que es una
+   promoción condicionada al medio de pago (artículo 33) y no un segundo precio?
+   ¿La redacción «Ahorras $X pagando por…» es suficiente, o hace falta otra forma
+   de presentarlo?
+2. **¿Es una promoción del artículo 33, con las condiciones de tiempo, modo y
+   lugar?** Los términos dicen que rige mientras aparezca en ellos y que se
+   anunciará su retiro. ¿Basta, o hace falta una fecha o un reglamento aparte?
+3. **¿Un descuento distinto en cada producto informa lo bastante?** El porcentaje
+   no es uno solo: se ve en pesos en cada ficha y en el checkout. ¿Hay que publicar
+   cómo se calcula?
+4. **¿El anuncio nombra medios que ese pedido quizá no tenga?** La ficha dice «pagando
+   por transferencia, en el punto o contra entrega», pero el pago en el punto solo se
+   ofrece con recogida de proveedores de Medellín y la contraentrega depende de la
+   ciudad y del valor. La transferencia sí está siempre. Los términos dicen que no todos
+   los medios están habilitados para todos los pedidos. ¿Basta, o el anuncio debería
+   nombrar solo la transferencia?
+
+Este punto no tiene respaldo en un concepto de la SIC con número: las notas de
+prensa citan una postura de la SIC que tolera el recargo informado, pero no se
+encontró el concepto, y este diseño no depende de él.
+
 ## Antes de la consulta
 
 - [x] ~~Leer el contrato y la documentación de Resend y anotar la región de

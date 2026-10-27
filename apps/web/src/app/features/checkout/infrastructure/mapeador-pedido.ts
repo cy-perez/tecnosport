@@ -7,6 +7,7 @@ import {
   EnvioPublico,
   EstadoPedido,
   LineaPedido,
+  MetodoDePagoConPrecio,
   MetodoPago,
   EstadoRetracto,
   Pedido,
@@ -23,6 +24,8 @@ type DireccionDto = components['schemas']['DireccionRespuesta'];
 type ContactoDto = components['schemas']['ContactoRespuesta'];
 type LineaPedidoDto = components['schemas']['LineaPedidoRespuesta'];
 type DatosTransferenciaDto = components['schemas']['DatosTransferenciaRespuesta'];
+type MetodoConPrecioDto = components['schemas']['MetodoDePagoConPrecioRespuesta'];
+type DineroDto = components['schemas']['DineroRespuesta'];
 
 /**
  * DTO generado -> modelo propio del front. Ningún componente ve la forma de
@@ -60,11 +63,27 @@ export function aPedido(dto: PedidoDto): Pedido {
     metodoPago: dto.metodoPago ?? 'WOMPI',
     estado: (dto.estado ?? 'PAGO_PENDIENTE') as EstadoPedido,
     subtotal: { valor: dto.subtotal?.valor ?? 0, moneda: dto.subtotal?.moneda ?? 'COP' },
+    // Obligatorio en el contrato: un pedido de antes de ADR-0095 llega con descuento cero.
+    descuento: aDinero(dto.descuento),
     costoEnvio: { valor: dto.costoEnvio?.valor ?? 0, moneda: dto.costoEnvio?.moneda ?? 'COP' },
     total: { valor: dto.total?.valor ?? 0, moneda: dto.total?.moneda ?? 'COP' },
     creadoEn: dto.creadoEn ?? '',
     datosTransferencia: dto.datosTransferencia ? aDatosTransferencia(dto.datosTransferencia) : null,
     transportadora: dto.transportadora ?? null,
+  };
+}
+
+/** Sin relleno: los campos que pasan por aquí son obligatorios en el contrato. */
+function aDinero(dto: DineroDto): { valor: number; moneda: string } {
+  return { valor: dto.valor, moneda: dto.moneda };
+}
+
+/** Un medio con su precio. El contrato los declara obligatorios: no hay nada que rellenar. */
+export function aMetodoDePagoConPrecio(dto: MetodoConPrecioDto): MetodoDePagoConPrecio {
+  return {
+    metodo: dto.metodo,
+    subtotal: aDinero(dto.subtotal),
+    descuento: aDinero(dto.descuento),
   };
 }
 
@@ -138,6 +157,8 @@ export function aSeguimiento(dto: SeguimientoDto): Seguimiento {
     metodoPago: dto.metodoPago ?? 'WOMPI',
     estado: (dto.estado ?? 'PAGO_PENDIENTE') as EstadoPedido,
     subtotal: { valor: dto.subtotal?.valor ?? 0, moneda: dto.subtotal?.moneda ?? 'COP' },
+    // Obligatorio en el contrato: un pedido de antes de ADR-0095 llega con descuento cero.
+    descuento: aDinero(dto.descuento),
     costoEnvio: { valor: dto.costoEnvio?.valor ?? 0, moneda: dto.costoEnvio?.moneda ?? 'COP' },
     total: { valor: dto.total?.valor ?? 0, moneda: dto.total?.moneda ?? 'COP' },
     creadoEn: dto.creadoEn ?? '',

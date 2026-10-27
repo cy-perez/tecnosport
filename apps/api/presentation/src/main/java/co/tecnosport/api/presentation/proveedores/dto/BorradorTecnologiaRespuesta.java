@@ -1,9 +1,11 @@
 package co.tecnosport.api.presentation.proveedores.dto;
 
 import co.tecnosport.api.application.proveedores.tecnologia.FotosFirmadasDeBorradorTecnologia;
+import co.tecnosport.api.domain.catalogo.ComisionDePasarela;
 import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.proveedores.BorradorTecnologia;
 import co.tecnosport.api.domain.proveedores.ConfiguracionTecnologia;
+import co.tecnosport.api.domain.proveedores.SugerenciaDePrecioTecnologia;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.Instant;
 import java.util.List;
@@ -47,13 +49,21 @@ public record BorradorTecnologiaRespuesta(
     @Schema(requiredMode = Schema.RequiredMode.REQUIRED) boolean fichaEditada,
     @Schema(requiredMode = Schema.RequiredMode.REQUIRED) boolean fichaNuevaDeLaSkill) {
 
+  /**
+   * Cómo se calculan los dos precios sugeridos de cada configuración (ADR-0095): el de contado con
+   * su tope de ganancia, y el publicado con la comisión de la pasarela.
+   */
+  public record Precios(SugerenciaDePrecioTecnologia sugerencia, ComisionDePasarela comision) {}
+
   /** Para la bandeja: sin firmar las fotos. */
-  public static BorradorTecnologiaRespuesta de(BorradorTecnologia b) {
-    return de(b, List.of());
+  public static BorradorTecnologiaRespuesta de(BorradorTecnologia b, Precios precios) {
+    return de(b, List.of(), precios);
   }
 
   public static BorradorTecnologiaRespuesta de(
-      BorradorTecnologia b, List<FotosFirmadasDeBorradorTecnologia.FotoVista> fotos) {
+      BorradorTecnologia b,
+      List<FotosFirmadasDeBorradorTecnologia.FotoVista> fotos,
+      Precios precios) {
     return new BorradorTecnologiaRespuesta(
         b.id(),
         b.proveedorId(),
@@ -63,7 +73,7 @@ public record BorradorTecnologiaRespuesta(
         b.modelo().categoria(),
         b.descripcion(),
         b.modelo().paleta(),
-        b.configuraciones().stream().map(ConfiguracionRespuesta::de).toList(),
+        b.configuraciones().stream().map(c -> ConfiguracionRespuesta.de(c, precios)).toList(),
         b.productoId().orElse(null),
         b.estado().name(),
         b.motivoRechazo().orElse(null),
@@ -93,6 +103,14 @@ public record BorradorTecnologiaRespuesta(
     }
   }
 
+  /**
+   * @param precioMercado el que investigó la skill; nulo si no lo encontró
+   * @param precioContadoSugerido {@code min(precioMercado, costo + ganancia máxima)} (ADR-0095,
+   *     decisión 8); nulo sin precio de mercado. Es el que se precarga como {@code precioVenta}
+   * @param precioPublicadoSugerido el que se anunciaría con ese contado, con la comisión de la
+   *     pasarela encima. Solo para mirar; nulo sin contado sugerido
+   * @param precioVenta el <b>precio de contado</b> que fijó quien revisa; nulo hasta entonces
+   */
   public record ConfiguracionRespuesta(
       @Schema(requiredMode = Schema.RequiredMode.REQUIRED) String sku,
       @Schema(requiredMode = Schema.RequiredMode.REQUIRED) String titulo,
@@ -101,11 +119,14 @@ public record BorradorTecnologiaRespuesta(
       String sim,
       @Schema(requiredMode = Schema.RequiredMode.REQUIRED) long costoProveedor,
       Long precioMercado,
+      Long precioContadoSugerido,
+      Long precioPublicadoSugerido,
       @Schema(requiredMode = Schema.RequiredMode.REQUIRED) List<String> coloresSugeridos,
       @Schema(requiredMode = Schema.RequiredMode.REQUIRED) List<String> coloresElegidos,
       Long precioVenta) {
 
-    static ConfiguracionRespuesta de(ConfiguracionTecnologia c) {
+    static ConfiguracionRespuesta de(ConfiguracionTecnologia c, Precios precios) {
+      Dinero contado = precios.sugerencia().contadoSugerido(c);
       return new ConfiguracionRespuesta(
           c.sku(),
           c.titulo(),
@@ -114,6 +135,8 @@ public record BorradorTecnologiaRespuesta(
           c.sim(),
           entero(c.costoProveedor()),
           c.precioMercado() == null ? null : entero(c.precioMercado()),
+          contado == null ? null : entero(contado),
+          contado == null ? null : entero(precios.comision().publicadoDesde(contado)),
           c.coloresSugeridos(),
           c.coloresElegidos(),
           c.precioVenta() == null ? null : entero(c.precioVenta()));

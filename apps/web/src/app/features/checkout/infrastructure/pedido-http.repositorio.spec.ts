@@ -44,6 +44,7 @@ describe('PedidoHttpRepositorio: la llave de idempotencia', () => {
     correo: 'cliente@tecnosport.co',
     metodoPago: 'WOMPI',
     subtotal: { valor: '100000', moneda: 'COP' },
+    descuento: { valor: '0', moneda: 'COP' },
     costoEnvio: { valor: '10000', moneda: 'COP' },
     total: { valor: '110000', moneda: 'COP' },
     lineas: [],
@@ -152,7 +153,12 @@ describe('PedidoHttpRepositorio: la transportadora elegida', () => {
   };
 
   it('va en el cuerpo al crear el pedido', async () => {
-    const cuerpos = capturarCuerpos({ id: 'pedido-1', lineas: [], historial: [] });
+    const cuerpos = capturarCuerpos({
+      id: 'pedido-1',
+      lineas: [],
+      historial: [],
+      descuento: { valor: 0, moneda: 'COP' },
+    });
 
     await new PedidoHttpRepositorio().crear({
       correo: 'cliente@tecnosport.co',
@@ -169,9 +175,9 @@ describe('PedidoHttpRepositorio: la transportadora elegida', () => {
   });
 
   it('va en el cuerpo al pedir los métodos de pago', async () => {
-    const cuerpos = capturarCuerpos(['WOMPI']);
+    const cuerpos = capturarCuerpos({ metodos: [] });
 
-    await new PedidoHttpRepositorio().metodosDePagoDisponibles({
+    await new PedidoHttpRepositorio().metodosDePagoConPrecio({
       correo: 'cliente@tecnosport.co',
       lineas: [{ varianteId: 'variante-1', cantidad: 1 }],
       tipoEntrega: 'ENVIO_A_DOMICILIO',
@@ -183,13 +189,70 @@ describe('PedidoHttpRepositorio: la transportadora elegida', () => {
     expect(cuerpos[0]).toMatchObject({ transportadora: 'Servientrega', telefono: '3138816711' });
   });
 
+  /** ADR-0095: la ruta nueva, y lo que devuelve, mapeado al modelo del front. */
+  it('pide los métodos con precio a su ruta y devuelve cada uno con su subtotal y descuento', async () => {
+    const urls: string[] = [];
+    vi.stubGlobal('window', undefined);
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (entrada: Request) => {
+        urls.push(entrada.url);
+        return new Response(
+          JSON.stringify({
+            metodos: [
+              {
+                metodo: 'WOMPI',
+                subtotal: { valor: 239_000, moneda: 'COP' },
+                descuento: { valor: 0, moneda: 'COP' },
+              },
+              {
+                metodo: 'TRANSFERENCIA_MANUAL',
+                subtotal: { valor: 230_000, moneda: 'COP' },
+                descuento: { valor: 9_000, moneda: 'COP' },
+              },
+            ],
+          }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } },
+        );
+      }),
+    );
+
+    const metodos = await new PedidoHttpRepositorio().metodosDePagoConPrecio({
+      correo: 'cliente@tecnosport.co',
+      lineas: [{ varianteId: 'variante-1', cantidad: 1 }],
+      tipoEntrega: 'RETIRO_EN_PUNTO',
+      direccion: null,
+      transportadora: null,
+      telefono: '3138816711',
+    });
+
+    expect(urls[0]).toContain('/api/v1/pedidos/metodos-de-pago-con-precio');
+    expect(metodos).toEqual([
+      {
+        metodo: 'WOMPI',
+        subtotal: { valor: 239_000, moneda: 'COP' },
+        descuento: { valor: 0, moneda: 'COP' },
+      },
+      {
+        metodo: 'TRANSFERENCIA_MANUAL',
+        subtotal: { valor: 230_000, moneda: 'COP' },
+        descuento: { valor: 9_000, moneda: 'COP' },
+      },
+    ]);
+  });
+
   /**
    * ADR-0086: la línea de un color de tecnología confirmado con el proveedor lleva su enlace de
    * compra. Si el adaptador lo perdiera, el servidor rechazaría el pedido con el color ya
    * confirmado y la unidad apartada.
    */
   it('el enlace de compra de una línea va en el cuerpo al crear el pedido', async () => {
-    const cuerpos = capturarCuerpos({ id: 'pedido-1', lineas: [], historial: [] });
+    const cuerpos = capturarCuerpos({
+      id: 'pedido-1',
+      lineas: [],
+      historial: [],
+      descuento: { valor: 0, moneda: 'COP' },
+    });
 
     await new PedidoHttpRepositorio().crear({
       correo: 'cliente@tecnosport.co',

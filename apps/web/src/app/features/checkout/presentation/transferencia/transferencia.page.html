@@ -38,7 +38,15 @@
 
       @if (pedido(); as p) {
         <dt>{{ 'checkout.transferencia.monto' | transloco }}</dt>
-        <dd><ts-precio [valor]="p.total.valor" [moneda]="p.total.moneda" /></dd>
+        <dd>
+          <ts-precio [valor]="p.total.valor" [moneda]="p.total.moneda" />
+          <!-- Dentro del `<dd>` del monto: es de esa cifra de lo que habla (ADR-0095). -->
+          @if (descuento(); as valor) {
+            <span class="block font-texto text-sm text-ts-texto-suave">{{
+              'checkout.transferencia.descuento_incluido' | transloco: { valor }
+            }}</span>
+          }
+        </dd>
       }
     </dl>
 

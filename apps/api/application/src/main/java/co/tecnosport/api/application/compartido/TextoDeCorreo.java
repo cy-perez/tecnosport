@@ -58,6 +58,13 @@ public enum TextoDeCorreo {
   PEDIDO_COMPROBANTE_CUERPO("pedido.comprobante.cuerpo"),
   PEDIDO_COMPROBANTE_LINEA("pedido.comprobante.linea"),
   PEDIDO_COMPROBANTE_TOTALES("pedido.comprobante.totales"),
+
+  /**
+   * Los totales de un pedido pagado sin pasarela (ADR-0095): subtotal al precio publicado, envío,
+   * descuento y total. Un texto entero y no una línea suelta que se intercala, porque el HTML vive
+   * aquí y los argumentos se escapan.
+   */
+  PEDIDO_COMPROBANTE_TOTALES_CON_DESCUENTO("pedido.comprobante.totales_con_descuento"),
   PEDIDO_COMPROBANTE_ENTREGA_DOMICILIO("pedido.comprobante.entrega_domicilio"),
   PEDIDO_COMPROBANTE_ENTREGA_DOMICILIO_CON_TRANSPORTADORA(
       "pedido.comprobante.entrega_domicilio_con_transportadora"),

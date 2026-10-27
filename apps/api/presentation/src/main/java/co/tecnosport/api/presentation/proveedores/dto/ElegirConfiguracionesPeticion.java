@@ -27,6 +27,8 @@ public record ElegirConfiguracionesPeticion(
 
   /**
    * @param colores los que se venden; vacío es «esta configuración no se vende»
+   * @param precioVenta el <b>precio de contado</b> (ADR-0095); el publicado lo calcula el servidor
+   *     al aprobar
    */
   public record EleccionPeticion(
       @Schema(requiredMode = Schema.RequiredMode.REQUIRED) String sku,

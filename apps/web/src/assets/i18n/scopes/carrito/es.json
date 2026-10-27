@@ -4,6 +4,7 @@
   "ir_al_catalogo": "Ir al catálogo",
   "error": "No se pudo cargar el carrito. Intenta de nuevo.",
   "total": "Total",
+  "ahorro_sin_pasarela": "Ahorras {{ahorro}} pagando por transferencia, en el punto o contra entrega",
   "ir_a_pagar": "Ir a pagar",
   "producto_sin_foto": "Producto",
   "disminuir": "Disminuir cantidad",

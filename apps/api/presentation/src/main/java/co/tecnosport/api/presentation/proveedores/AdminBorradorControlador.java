@@ -15,6 +15,7 @@ import co.tecnosport.api.application.proveedores.RepositorioBorradores;
 import co.tecnosport.api.application.proveedores.SolicitarSubidaDeFotoDeBorrador;
 import co.tecnosport.api.application.proveedores.UnirBorradores;
 import co.tecnosport.api.application.proveedores.VerBorrador;
+import co.tecnosport.api.domain.catalogo.ComisionDePasarela;
 import co.tecnosport.api.domain.catalogo.Producto;
 import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.proveedores.EstadoBorrador;
@@ -91,6 +92,9 @@ public class AdminBorradorControlador {
   private final MapeadorRespuestasProductoAdmin mapeadorProducto;
   private final TransactionTemplate transaccion;
 
+  /** Para mostrar junto al contado sugerido el precio que se anunciaría (ADR-0095). */
+  private final ComisionDePasarela comision;
+
   public AdminBorradorControlador(
       RepositorioBorradores repositorioBorradores,
       VerBorrador verBorrador,
@@ -106,7 +110,8 @@ public class AdminBorradorControlador {
       UnirBorradores unirBorradores,
       MoverFotoDeBorrador moverFoto,
       MapeadorRespuestasProductoAdmin mapeadorProducto,
-      PlatformTransactionManager transactionManager) {
+      PlatformTransactionManager transactionManager,
+      ComisionDePasarela comision) {
     this.repositorioBorradores = Objects.requireNonNull(repositorioBorradores);
     this.verBorrador = Objects.requireNonNull(verBorrador);
     this.editarBorrador = Objects.requireNonNull(editarBorrador);
@@ -122,6 +127,7 @@ public class AdminBorradorControlador {
     this.moverFoto = Objects.requireNonNull(moverFoto);
     this.mapeadorProducto = Objects.requireNonNull(mapeadorProducto);
     this.transaccion = new TransactionTemplate(Objects.requireNonNull(transactionManager));
+    this.comision = Objects.requireNonNull(comision);
   }
 
   @GetMapping
@@ -133,7 +139,7 @@ public class AdminBorradorControlador {
     EstadoBorrador filtro =
         estado == null || estado.isBlank() ? null : EstadoBorrador.valueOf(estado);
     return BorradoresPaginadosRespuesta.de(
-        repositorioBorradores.listar(filtro, proveedorId, pagina, tamano));
+        repositorioBorradores.listar(filtro, proveedorId, pagina, tamano), comision);
   }
 
   /** Cuántos borraría {@link #eliminarSinAprobar()}: el panel lo dice antes de confirmar. */
@@ -159,7 +165,7 @@ public class AdminBorradorControlador {
 
   @GetMapping("/{id}")
   public BorradorDetalleRespuesta ver(@PathVariable UUID id) {
-    return BorradorDetalleRespuesta.de(verBorrador.ejecutar(id));
+    return BorradorDetalleRespuesta.de(verBorrador.ejecutar(id), comision);
   }
 
   @PatchMapping("/{id}")
@@ -182,7 +188,8 @@ public class AdminBorradorControlador {
                         cuerpo.material(),
                         cuerpo.descripcion(),
                         cuerpo.altEn(),
-                        cuerpo.ajusteDeTalla()))));
+                        cuerpo.ajusteDeTalla()))),
+        comision);
   }
 
   @PostMapping("/{id}/aprobar")
@@ -202,7 +209,7 @@ public class AdminBorradorControlador {
   public BorradorRespuesta rechazar(
       @PathVariable UUID id, @RequestBody RechazarBorradorPeticion cuerpo) {
     return BorradorRespuesta.de(
-        transaccion.execute(estado -> rechazarBorrador.ejecutar(id, cuerpo.motivo())));
+        transaccion.execute(estado -> rechazarBorrador.ejecutar(id, cuerpo.motivo())), comision);
   }
 
   /**
@@ -244,7 +251,7 @@ public class AdminBorradorControlador {
   public BorradorRespuesta partir(
       @PathVariable UUID id, @RequestBody PartirBorradorPeticion cuerpo) {
     return BorradorRespuesta.de(
-        transaccion.execute(estado -> partirBorrador.ejecutar(id, cuerpo.fotos())));
+        transaccion.execute(estado -> partirBorrador.ejecutar(id, cuerpo.fotos())), comision);
   }
 
   /**
@@ -255,7 +262,8 @@ public class AdminBorradorControlador {
   public BorradorRespuesta unir(@PathVariable UUID id, @RequestBody UnirBorradorPeticion cuerpo) {
     BorradorRespuesta unido =
         BorradorRespuesta.de(
-            transaccion.execute(estado -> unirBorradores.ejecutar(id, cuerpo.borradorId())));
+            transaccion.execute(estado -> unirBorradores.ejecutar(id, cuerpo.borradorId())),
+            comision);
     log.info("Borrador {} unido al {}", cuerpo.borradorId(), id);
     return unido;
   }

@@ -107,6 +107,7 @@
       "enlace": "Ver las existencias y contar"
     },
     "ir_a_medidas": "Medidas del paquete",
+    "ir_a_precios": "Precios publicados",
     "ir_a_clave": "Cambiar mi clave",
     "ir_a_categorias": "Categorías",
     "ir_a_panel": "Resumen",
@@ -336,8 +337,9 @@
       "variantes": "Variantes",
       "variantesAyuda": "Cada una con su SKU y lo que la distingue. Se agregan con «Agregar variante».",
       "precios": {
-        "ayuda": "El precio de venta de cada variante, en pesos. Los pedidos ya hechos conservan el precio con que se compraron.",
-        "precioDe": "Precio de {{variante}}",
+        "ayuda": "El precio de contado de cada variante, en pesos: lo que recibes pagando por transferencia, en el punto o contra entrega. El publicado se calcula sumándole la comisión de Wompi. Los pedidos ya hechos conservan el precio con que se compraron.",
+        "precioDe": "Precio de contado de {{variante}}",
+        "sePublicaA": "Hoy se publica a {{precio}}.",
         "paraTodas": "Precio para todas",
         "paraTodasAyuda": "Lo copia en todas las variantes; se guarda con «Guardar precios».",
         "aplicarATodas": "Aplicar a todas",
@@ -451,7 +453,8 @@
     "agregarVariante": {
       "titulo": "Agregar variante",
       "sku": "SKU",
-      "precio": "Precio",
+      "precioContado": "Precio de contado",
+      "precioContadoAyuda": "En pesos, mayor que cero. El precio publicado se calcula sumándole la comisión de Wompi.",
       "tasaIva": "Tasa de IVA",
       "codigoBarras": "Código de barras",
       "existenciaInicial": "Existencia inicial",
@@ -540,6 +543,29 @@
         "estado": "Estado",
         "peso": "Peso",
         "dimensiones": "Largo × ancho × alto"
+      }
+    },
+    "precios": {
+      "titulo": "Precios publicados",
+      "explicacion": "El precio publicado de cada variante es el de contado más la comisión de Wompi. Si la tarifa de Wompi cambia, aquí ves qué precios anunciados quedaron desactualizados y a cuánto pasarían. Ninguno cambia hasta que lo apliques.",
+      "errorLista": "No se pudieron cargar los precios por recalcular. Intenta de nuevo.",
+      "alDia": "Todos los precios publicados están al día con la tarifa de Wompi.",
+      "resumen": "{{total}} variante(s) tienen el precio publicado desactualizado.",
+      "recalcular": "Recalcular {{total}} precio(s)",
+      "pregunta": "¿Recalcular el precio publicado de {{total}} variante(s)?",
+      "loQueImplica": "La tienda empezará a anunciar el precio nuevo de cada una. El precio de contado no cambia, y los pedidos ya hechos conservan el precio con que se compraron.",
+      "confirmar": "Sí, recalcular",
+      "recalculando": "Recalculando…",
+      "cancelar": "Cancelar",
+      "hecho": "Se recalcularon {{recalculadas}} precio(s) publicado(s).",
+      "hechoConOmitidas": "Se recalcularon {{recalculadas}} precio(s) publicado(s). {{omitidas}} cambiaron mientras revisabas y no se tocaron: revisa la lista de nuevo.",
+      "error": "No se pudieron recalcular los precios. Intenta de nuevo.",
+      "columnas": {
+        "producto": "Producto",
+        "sku": "SKU",
+        "contado": "De contado",
+        "publicadoActual": "Publicado hoy",
+        "publicadoNuevo": "Publicado nuevo"
       }
     },
     "publicar": {
@@ -1263,8 +1289,9 @@
       "coloresDe": "Colores de {{configuracion}}",
       "coloresEscritos": "Colores",
       "coloresEscritosAyuda": "Por ejemplo: Negro, Azul claro",
-      "precioVenta": "Precio de venta",
-      "ayudaPrecio": "Costo {{costo}} · precio de mercado {{mercado}}",
+      "precioVenta": "Precio de contado",
+      "ayudaPrecio": "Costo {{costo}} · precio de mercado {{mercado}}. El publicado se calcula sumándole la comisión de Wompi.",
+      "ayudaPrecioConSugerido": "Costo {{costo}} · precio de mercado {{mercado}} · sugerido de contado {{contado}}, que se publica a {{publicado}} con la comisión de Wompi.",
       "precioIlegible": "Escribe el precio en pesos, sin decimales: 849.900 o 849900.",
       "guardar": "Guardar la elección",
       "guardando": "Guardando…",
@@ -1394,6 +1421,7 @@
     "todosLosProveedores": "Todos los proveedores",
     "sinTitulo": "(sin título)",
     "precioProveedor": "Proveedor: {{precio}}",
+    "publicadoSugerido": "Se publicaría a {{precio}}",
     "revisar": "Revisar",
     "estados": {
       "EN_REVISION": "En revisión",
@@ -1403,7 +1431,7 @@
     },
     "columnas": {
       "titulo": "Producto",
-      "precios": "Precio sugerido",
+      "precios": "Precio sugerido de contado",
       "alertas": "Alertas",
       "estado": "Estado",
       "acciones": "Acciones"
@@ -1475,8 +1503,9 @@
       "explicacion": "Lo que la extracción entendió. Corrige aquí lo que esté mal y guarda; la aprobación de abajo parte de estos datos.",
       "tituloProducto": "Título",
       "tipo": "Tipo de producto",
-      "precioSugerido": "Precio de venta sugerido",
+      "precioSugerido": "Precio de contado sugerido",
       "precioSugeridoAyuda": "En pesos, sin decimales. Sale del precio del proveedor por el margen; puedes ajustarlo.",
+      "precioSugeridoAyudaConPublicado": "En pesos, sin decimales. Sale del precio del proveedor por el margen; puedes ajustarlo. Con el sugerido guardado se publica a {{publicado}}, que incluye la comisión de Wompi.",
       "tipoDeTalla": "Tallas",
       "sirveHasta": "Sirve hasta",
       "sirveHastaAyuda": "Solo si el proveedor escribió «sirve hasta». Si no lo dijo, déjalo en blanco.",
@@ -1507,8 +1536,9 @@
       "marca": "Marca",
       "categoria": "Categoría",
       "seleccionar": "Selecciona una opción",
-      "precioVenta": "Precio de venta",
-      "precioVentaAyuda": "El definitivo, en pesos. Parte del sugerido.",
+      "precioVenta": "Precio de contado",
+      "precioVentaAyuda": "El definitivo, en pesos. Parte del sugerido. El precio publicado se calcula sumándole la comisión de Wompi.",
+      "precioVentaAyudaConPublicado": "El definitivo, en pesos. Parte del sugerido. El precio publicado se calcula sumándole la comisión de Wompi: con el sugerido, {{publicado}}.",
       "existenciaInicial": "Unidades por variante",
       "existenciaInicialAyuda": "Las que entran al inventario por cada tono y talla. Cero deja el producto agotado hasta que cuentes.",
       "altEs": "Texto alternativo de las fotos (español)",

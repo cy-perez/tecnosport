@@ -97,6 +97,7 @@ class RepositorioInventarioJpaTest {
                 producto.getId(),
                 sku,
                 new BigDecimal("10000"),
+                new BigDecimal("10000"),
                 new BigDecimal("0.19"),
                 null,
                 180,

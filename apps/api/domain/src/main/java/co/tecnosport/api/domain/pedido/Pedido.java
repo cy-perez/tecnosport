@@ -17,6 +17,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.function.Function;
 
 /**
  * Raíz transaccional (docs/02-modelo-datos.md). El número legible ({@link NumeroPedido}) no lo
@@ -435,10 +436,27 @@ public final class Pedido {
     return tarifaEnvio == null ? Dinero.deCop(0L) : tarifaEnvio.costo();
   }
 
-  /** Suma de las líneas congeladas. */
+  /** Suma de las líneas congeladas, a lo que se cobra: ya lleva el descuento, si hubo. */
   public Dinero subtotal() {
+    return sumar(LineaPedido::subtotal);
+  }
+
+  /** Suma de las líneas al precio anunciado: el subtotal antes del descuento. */
+  public Dinero subtotalPublicado() {
+    return sumar(LineaPedido::subtotalPublicado);
+  }
+
+  /**
+   * El descuento por pagar sin pasarela (ADR-0095), ya restado en {@link #subtotal()}. Solo sobre
+   * la mercancía: el flete se cobra igual con cualquier medio (decisión 7).
+   */
+  public Dinero descuento() {
+    return sumar(LineaPedido::descuento);
+  }
+
+  private Dinero sumar(Function<LineaPedido, Dinero> cifra) {
     BigDecimal suma =
-        lineas.stream().map(l -> l.subtotal().valor()).reduce(BigDecimal.ZERO, BigDecimal::add);
+        lineas.stream().map(l -> cifra.apply(l).valor()).reduce(BigDecimal.ZERO, BigDecimal::add);
     return Dinero.deCop(suma);
   }
 
@@ -572,7 +590,8 @@ public final class Pedido {
               linea.tasaIva(),
               linea.imagenUrl(),
               nuevaReserva,
-              linea.detalleVariante()));
+              linea.detalleVariante(),
+              linea.precioPublicado()));
     }
     this.lineas = actualizadas;
   }

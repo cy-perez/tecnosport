@@ -66,15 +66,34 @@ describe('aProductoAdminDetalle', () => {
     expect(producto.vistoPorUltimaVez).toBeNull();
   });
 
-  /** El precio de cada variante llega a la edición: es lo que el campo muestra para cambiarlo. */
-  it('lleva el precio de cada variante', () => {
+  /**
+   * Los dos precios de cada variante llegan a la edición: el de contado es el que el campo muestra
+   * para cambiarlo, y el publicado —el `precio` de la respuesta— el que se enseña al lado (ADR-0095).
+   */
+  it('lleva el precio de contado y el publicado de cada variante', () => {
     const producto = aProductoAdminDetalle({
       ...detalle(undefined),
-      variantes: [{ id: 'v1', sku: 'TS-1', precio: 79000, atributos: [], disponibilidadPorConfirmar: true }],
+      variantes: [
+        {
+          id: 'v1',
+          sku: 'TS-1',
+          precioContado: 230000,
+          precio: 239000,
+          atributos: [],
+          disponibilidadPorConfirmar: true,
+        },
+      ],
     });
 
     expect(producto.variantes).toEqual([
-      { id: 'v1', sku: 'TS-1', precio: 79000, atributos: [], disponibilidadPorConfirmar: true },
+      {
+        id: 'v1',
+        sku: 'TS-1',
+        precioContado: 230000,
+        precioPublicado: 239000,
+        atributos: [],
+        disponibilidadPorConfirmar: true,
+      },
     ]);
   });
 });

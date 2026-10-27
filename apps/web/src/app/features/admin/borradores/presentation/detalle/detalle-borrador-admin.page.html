@@ -675,7 +675,12 @@
       <ts-campo
         idCampo="borrador-precio-sugerido"
         [label]="'admin.borradores.datos.precioSugerido' | transloco"
-        [ayuda]="'admin.borradores.datos.precioSugeridoAyuda' | transloco"
+        [ayuda]="
+          borrador.precioPublicadoSugerido === null
+            ? ('admin.borradores.datos.precioSugeridoAyuda' | transloco)
+            : ('admin.borradores.datos.precioSugeridoAyudaConPublicado'
+              | transloco: { publicado: precio(borrador.precioPublicadoSugerido) })
+        "
         formControlName="precioVentaSugerido"
       />
       <ts-select
@@ -823,7 +828,12 @@
         <ts-campo
           idCampo="aprobar-precio"
           [label]="'admin.borradores.aprobar.precioVenta' | transloco"
-          [ayuda]="'admin.borradores.aprobar.precioVentaAyuda' | transloco"
+          [ayuda]="
+            borrador.precioPublicadoSugerido === null
+              ? ('admin.borradores.aprobar.precioVentaAyuda' | transloco)
+              : ('admin.borradores.aprobar.precioVentaAyudaConPublicado'
+                | transloco: { publicado: precio(borrador.precioPublicadoSugerido) })
+          "
           [obligatorio]="true"
           formControlName="precioVenta"
         />

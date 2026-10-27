@@ -365,8 +365,13 @@ public final class Producto {
   }
 
   /**
-   * Cambia el precio de venta de varias de sus variantes a la vez: las que estén en {@code precios}
-   * —por id— y nada más. Las que ya tenían ese precio no cuentan como cambio.
+   * Cambia el precio de varias de sus variantes a la vez: las que estén en {@code contados} —por
+   * id— y nada más. Lo que llega es el <b>precio de contado</b>; el publicado sale de él con la
+   * {@code comision} (ADR-0095), y nadie lo escribe a mano.
+   *
+   * <p>Las que ya tenían ese precio de contado no cuentan como cambio, <b>aunque su publicado se
+   * haya calculado con otras tarifas</b>: un precio anunciado no cambia sin que una persona lo vea,
+   * y eso lo hace el recálculo del panel, que enseña la lista antes de aplicarla.
    *
    * <p><b>Todo o nada</b>: se valida cada precio y que cada variante sea de este producto antes de
    * tocar ninguna, para que un precio en cero en la última no deje las primeras ya cambiadas. Pasa
@@ -378,9 +383,11 @@ public final class Producto {
    *
    * @return lo que cambió, en el orden de las variantes del producto; vacía si nada cambió
    */
-  public List<CambioDePrecio> cambiarPrecios(Map<UUID, Dinero> precios) {
-    Objects.requireNonNull(precios, "Los precios no pueden ser nulos.");
-    for (UUID varianteId : precios.keySet()) {
+  public List<CambioDePrecio> cambiarPrecios(
+      Map<UUID, Dinero> contados, ComisionDePasarela comision) {
+    Objects.requireNonNull(contados, "Los precios no pueden ser nulos.");
+    Objects.requireNonNull(comision, "La comisión de la pasarela no puede ser nula.");
+    for (UUID varianteId : contados.keySet()) {
       if (variantes.stream().noneMatch(v -> v.id().equals(varianteId))) {
         throw new ExcepcionDeDominio(
             "La variante '" + varianteId + "' no pertenece al producto '" + nombre + "'.");
@@ -389,14 +396,22 @@ public final class Producto {
     List<Variante> nuevas = new ArrayList<>(variantes.size());
     List<CambioDePrecio> cambios = new ArrayList<>();
     for (Variante variante : variantes) {
-      Dinero precio = precios.get(variante.id());
-      if (precio == null || precio.valor().compareTo(variante.precio().valor()) == 0) {
+      Dinero contado = contados.get(variante.id());
+      if (contado == null || contado.valor().compareTo(variante.precioContado().valor()) == 0) {
         nuevas.add(variante);
         continue;
       }
-      // Valida antes de reemplazar nada: conPrecio rechaza el cero y la lista aún no se toca.
-      nuevas.add(variante.conPrecio(precio));
-      cambios.add(new CambioDePrecio(variante.id(), variante.sku(), variante.precio(), precio));
+      Dinero publicado = comision.publicadoDesde(contado);
+      // Valida antes de reemplazar nada: conPrecios rechaza el cero y la lista aún no se toca.
+      nuevas.add(variante.conPrecios(contado, publicado));
+      cambios.add(
+          new CambioDePrecio(
+              variante.id(),
+              variante.sku(),
+              variante.precioContado(),
+              contado,
+              variante.precio(),
+              publicado));
     }
     for (int i = 0; i < nuevas.size(); i++) {
       variantes.set(i, nuevas.get(i));

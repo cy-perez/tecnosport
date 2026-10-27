@@ -3,6 +3,7 @@ package co.tecnosport.api.application.catalogo;
 import co.tecnosport.api.application.compartido.Reloj;
 import co.tecnosport.api.application.inventario.RepositorioInventario;
 import co.tecnosport.api.domain.catalogo.Atributo;
+import co.tecnosport.api.domain.catalogo.ComisionDePasarela;
 import co.tecnosport.api.domain.catalogo.MuestraDeColor;
 import co.tecnosport.api.domain.catalogo.Paquete;
 import co.tecnosport.api.domain.catalogo.Producto;
@@ -22,6 +23,9 @@ import java.util.Optional;
  * agregados distintos (`Producto`/`Variante` e `Inventario`) en una sola operación — quien llama
  * (la capa de presentación) tiene que envolver {@link #ejecutar} en una única transacción, mismo
  * criterio que {@code CrearPedido}.
+ *
+ * <p>El precio del comando es el <b>de contado</b>; el publicado —el que se anuncia— lo calcula
+ * aquí la {@link ComisionDePasarela} (ADR-0095). Nadie lo escribe a mano.
  */
 public final class AgregarVariante {
 
@@ -31,6 +35,7 @@ public final class AgregarVariante {
   private final Reloj reloj;
   private final boolean negocioResponsableDeIva;
   private final RepositorioPaletaDeColores paleta;
+  private final ComisionDePasarela comision;
 
   /** Sin paleta: un color solo se pinta si trae su HEX. Lo usan las pruebas que no la miran. */
   public AgregarVariante(
@@ -38,14 +43,16 @@ public final class AgregarVariante {
       RepositorioAtributos repositorioAtributos,
       RepositorioInventario repositorioInventario,
       Reloj reloj,
-      boolean negocioResponsableDeIva) {
+      boolean negocioResponsableDeIva,
+      ComisionDePasarela comision) {
     this(
         repositorioProductos,
         repositorioAtributos,
         repositorioInventario,
         reloj,
         negocioResponsableDeIva,
-        List::of);
+        List::of,
+        comision);
   }
 
   public AgregarVariante(
@@ -54,13 +61,15 @@ public final class AgregarVariante {
       RepositorioInventario repositorioInventario,
       Reloj reloj,
       boolean negocioResponsableDeIva,
-      RepositorioPaletaDeColores paleta) {
+      RepositorioPaletaDeColores paleta,
+      ComisionDePasarela comision) {
     this.repositorioProductos = Objects.requireNonNull(repositorioProductos);
     this.repositorioAtributos = Objects.requireNonNull(repositorioAtributos);
     this.repositorioInventario = Objects.requireNonNull(repositorioInventario);
     this.reloj = Objects.requireNonNull(reloj);
     this.negocioResponsableDeIva = negocioResponsableDeIva;
     this.paleta = Objects.requireNonNull(paleta);
+    this.comision = Objects.requireNonNull(comision);
   }
 
   public VarianteCreada ejecutar(AgregarVarianteComando comando) {
@@ -84,10 +93,13 @@ public final class AgregarVariante {
 
     List<ValorAtributo> atributos = comando.atributos().stream().map(this::aValorAtributo).toList();
 
+    Dinero contado = Dinero.deCop(comando.precioContado());
+    Dinero publicado = comision.publicadoDesde(contado);
     Variante variante =
         Variante.crear(
             sku,
-            Dinero.deCop(comando.precio()),
+            contado,
+            publicado,
             comando.tasaIva(),
             comando.codigoBarras(),
             comando.traePaquete()

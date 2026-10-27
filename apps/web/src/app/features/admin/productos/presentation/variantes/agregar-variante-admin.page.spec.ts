@@ -262,7 +262,7 @@ describe('AgregarVarianteAdminPage', () => {
     const navegar = vi.spyOn(router, 'navigate');
 
     fireEvent.input(screen.getByLabelText('SKU'), { target: { value: 'TS-1' } });
-    fireEvent.input(screen.getByLabelText('Precio'), { target: { value: '1000' } });
+    fireEvent.input(screen.getByLabelText('Precio de contado'), { target: { value: '1000' } });
     fireEvent.click(screen.getByRole('button', { name: 'Crear variante' }));
 
     await vi.waitFor(() => expect(repositorio.llamadasAgregarVariante).toHaveLength(1));
@@ -279,8 +279,21 @@ describe('AgregarVarianteAdminPage', () => {
     await renderPagina(repositorio);
 
     fireEvent.input(screen.getByLabelText('SKU'), { target: { value: 'TS-1' } });
-    fireEvent.input(screen.getByLabelText('Precio'), { target: { value: '1000' } });
+    fireEvent.input(screen.getByLabelText('Precio de contado'), { target: { value: '1000' } });
     fireEvent.input(screen.getByLabelText('Largo (cm)'), { target: { value: '30' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Crear variante' }));
+
+    expect(await screen.findByText(/Faltan datos obligatorios/)).toBeTruthy();
+    expect(repositorio.llamadasAgregarVariante).toHaveLength(0);
+  });
+
+  it('con el precio de contado en cero no se crea', async () => {
+    const repositorio = new RepositorioProductosAdminFalso();
+    await renderPagina(repositorio);
+
+    fireEvent.input(screen.getByLabelText('SKU'), { target: { value: 'TS-1' } });
+    fireEvent.input(screen.getByLabelText('Precio de contado'), { target: { value: '0' } });
+    llenarPaquete();
     fireEvent.click(screen.getByRole('button', { name: 'Crear variante' }));
 
     expect(await screen.findByText(/Faltan datos obligatorios/)).toBeTruthy();
@@ -292,7 +305,7 @@ describe('AgregarVarianteAdminPage', () => {
     await renderPagina(repositorio);
 
     fireEvent.input(screen.getByLabelText('SKU'), { target: { value: 'TS-1' } });
-    fireEvent.input(screen.getByLabelText('Precio'), { target: { value: '1000' } });
+    fireEvent.input(screen.getByLabelText('Precio de contado'), { target: { value: '1000' } });
     llenarPaquete();
     fireEvent.input(screen.getByLabelText('Largo (cm)'), { target: { value: '0' } });
     fireEvent.click(screen.getByRole('button', { name: 'Crear variante' }));
@@ -311,7 +324,7 @@ describe('AgregarVarianteAdminPage', () => {
     vi.spyOn(fixture.debugElement.injector.get(Router), 'navigate').mockResolvedValue(true);
 
     fireEvent.input(screen.getByLabelText('SKU'), { target: { value: 'TS-1' } });
-    fireEvent.input(screen.getByLabelText('Precio'), { target: { value: '1000' } });
+    fireEvent.input(screen.getByLabelText('Precio de contado'), { target: { value: '1000' } });
     llenarPaquete();
     fireEvent.click(screen.getByRole('button', { name: 'Agregar atributo' }));
     await screen.findByRole('option', { name: 'Color' });
@@ -344,7 +357,7 @@ describe('AgregarVarianteAdminPage', () => {
     vi.spyOn(fixture.debugElement.injector.get(Router), 'navigate').mockResolvedValue(true);
 
     fireEvent.input(screen.getByLabelText('SKU'), { target: { value: 'TS-1' } });
-    fireEvent.input(screen.getByLabelText('Precio'), { target: { value: '1000' } });
+    fireEvent.input(screen.getByLabelText('Precio de contado'), { target: { value: '1000' } });
     fireEvent.click(screen.getByRole('button', { name: 'Agregar atributo' }));
     await screen.findByRole('option', { name: 'Talla' });
     fireEvent.change(screen.getByLabelText('Atributo'), { target: { value: 'a2' } });
@@ -371,7 +384,7 @@ describe('AgregarVarianteAdminPage', () => {
     vi.spyOn(fixture.debugElement.injector.get(Router), 'navigate').mockResolvedValue(true);
 
     fireEvent.input(screen.getByLabelText('SKU'), { target: { value: 'TS-1' } });
-    fireEvent.input(screen.getByLabelText('Precio'), { target: { value: '1000' } });
+    fireEvent.input(screen.getByLabelText('Precio de contado'), { target: { value: '1000' } });
     fireEvent.click(screen.getByRole('button', { name: 'Agregar atributo' }));
     await screen.findByRole('option', { name: 'Talla' });
     fireEvent.change(screen.getByLabelText('Atributo'), { target: { value: 'a2' } });
@@ -406,7 +419,7 @@ describe('AgregarVarianteAdminPage', () => {
     const navegar = vi.spyOn(router, 'navigate');
 
     fireEvent.input(screen.getByLabelText('SKU'), { target: { value: 'TS-CAM-AZ-M' } });
-    fireEvent.input(screen.getByLabelText('Precio'), { target: { value: '89900' } });
+    fireEvent.input(screen.getByLabelText('Precio de contado'), { target: { value: '89900' } });
     llenarPaquete();
     fireEvent.click(screen.getByRole('button', { name: 'Crear variante' }));
     await vi.waitFor(() => expect(repositorio.llamadasAgregarVariante).toHaveLength(1));
@@ -415,7 +428,7 @@ describe('AgregarVarianteAdminPage', () => {
       {
         productoId: 'p1',
         sku: 'TS-CAM-AZ-M',
-        precio: 89900,
+        precioContado: 89900,
         tasaIva: 0,
         codigoBarras: null,
         existenciaInicial: 0,
@@ -450,7 +463,7 @@ describe('AgregarVarianteAdminPage', () => {
     await renderPagina(new RepositorioProductosAdminFalso(true));
 
     fireEvent.input(screen.getByLabelText('SKU'), { target: { value: 'TS-1' } });
-    fireEvent.input(screen.getByLabelText('Precio'), { target: { value: '1000' } });
+    fireEvent.input(screen.getByLabelText('Precio de contado'), { target: { value: '1000' } });
     llenarPaquete();
     fireEvent.click(screen.getByRole('button', { name: 'Crear variante' }));
 

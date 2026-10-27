@@ -5,7 +5,7 @@ import {
   LineaComando,
   MetodosDePagoDisponiblesComando,
 } from '../domain/pedido.comandos';
-import { MetodoPago } from '../domain/pedido.model';
+import { MetodoDePagoConPrecio } from '../domain/pedido.model';
 import { REPOSITORIO_PEDIDOS, RepositorioPedidos } from '../domain/repositorio-pedidos.puerto';
 
 /**
@@ -32,9 +32,9 @@ function opcionesMetodosDePago(
   valor: MetodosDePagoDisponiblesComando | null,
 ) {
   return {
-    queryKey: ['checkout', 'metodos-de-pago-disponibles', valor] as const,
-    queryFn: (): Promise<MetodoPago[]> =>
-      repositorio.metodosDePagoDisponibles(valor as MetodosDePagoDisponiblesComando),
+    queryKey: ['checkout', 'metodos-de-pago-con-precio', valor] as const,
+    queryFn: (): Promise<MetodoDePagoConPrecio[]> =>
+      repositorio.metodosDePagoConPrecio(valor as MetodosDePagoDisponiblesComando),
     // Depende de existencia y de reglas de cobertura de contraentrega, que sí
     // pueden cambiar en minutos (`docs/11-pagos-y-envios.md`) — más corto que
     // el catálogo (60s), pero no cero: evita un refetch en cada tecla si el
@@ -53,12 +53,20 @@ function opcionesMetodosDePago(
  */
 export function usarMetodosDePagoDisponibles(
   criterios: () => MetodosDePagoDisponiblesComando | null,
+  opciones: { readonly siempreFresco?: boolean } = {},
 ) {
   const repositorio = inject(REPOSITORIO_PEDIDOS);
 
   return injectQuery(() => {
     const valor = criterios();
-    return { ...opcionesMetodosDePago(repositorio, valor), enabled: valor !== null };
+    return {
+      ...opcionesMetodosDePago(repositorio, valor),
+      enabled: valor !== null,
+      // Confirmar no se fía de la caché: el precio que enseña es el que se va a cobrar. Las dos
+      // cosas, porque la consulta nace apagada —sin carrito todavía— y `refetchOnMount` solo mira
+      // el montaje: lo que la hace pedir al encenderse es que lo guardado ya cuente como viejo.
+      ...(opciones.siempreFresco ? { staleTime: 0, refetchOnMount: 'always' as const } : {}),
+    };
   });
 }
 

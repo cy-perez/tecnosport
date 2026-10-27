@@ -92,7 +92,28 @@ const UNA_SIM = 'Samsung Galaxy A17 5G 8GB RAM 256GB 1 SIM';
 const DUAL = 'Samsung Galaxy A17 5G 8GB RAM 256GB Dual SIM';
 
 describe('DetalleTecnologiaAdminPage', () => {
-  it('arranca con los colores que sugiere la lista y el precio de mercado', async () => {
+  /**
+   * El campo es de contado; la ayuda dice costo, mercado y la sugerencia en sus dos caras, la de
+   * contado y la publicada con la comisión de Wompi (ADR-0095). Sin mercado no hay sugerencia.
+   */
+  it('la ayuda del precio dice costo, mercado y el sugerido de contado y publicado', async () => {
+    await renderPagina();
+
+    expect(esAdmin.tecnologia.detalle.precioVenta).toMatch(/contado/);
+    // Intl separa el símbolo con un espacio duro: se normaliza para comparar.
+    const ayudaDe = (titulo: string) => {
+      const campo = grupoDe(titulo).getByLabelText(esAdmin.tecnologia.detalle.precioVenta);
+      const ayuda = document.getElementById(campo.getAttribute('aria-describedby') ?? '');
+      return ayuda?.textContent?.replace(/\s+/g, ' ') ?? '';
+    };
+    expect(ayudaDe(UNA_SIM)).toContain('$ 675.000');
+    expect(ayudaDe(UNA_SIM)).toContain('$ 849.900');
+    expect(ayudaDe(UNA_SIM)).toContain('$ 879.000');
+    expect(ayudaDe(DUAL)).toContain('$ 690.000');
+    expect(ayudaDe(DUAL)).not.toMatch(/sugerido/i);
+  });
+
+  it('arranca con los colores que sugiere la lista y el precio de contado sugerido', async () => {
     await renderPagina();
 
     const unaSim = grupoDe(UNA_SIM);

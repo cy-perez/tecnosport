@@ -128,7 +128,10 @@ public final class AgregarColorDesdeLaPrincipal {
               new AgregarVarianteComando(
                   producto.id(),
                   skuLibre(modelo.sku(), color, skusTomados),
-                  modelo.precio().valor().longValueExact(),
+                  // El contado de la talla; el publicado lo calcula AgregarVariante con la
+                  // comisión vigente (ADR-0095). Si la hermana se publicó con otras tarifas, la
+                  // diferencia la muestra el recálculo del panel, no la hereda el color nuevo.
+                  modelo.precioContado().valor().longValueExact(),
                   modelo.tasaIva(),
                   null,
                   existenciaPorModelo.get(modelo.id()),

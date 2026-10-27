@@ -85,6 +85,7 @@ class RepositorioEnlacesDeCompraJpaTest {
                 producto.getId(),
                 sku,
                 new BigDecimal("10000"),
+                new BigDecimal("10000"),
                 BigDecimal.ZERO,
                 null,
                 180,
@@ -138,7 +139,9 @@ class RepositorioEnlacesDeCompraJpaTest {
             });
     new TransactionTemplate(transactionManager)
         .executeWithoutResult(
-            estado -> productosJpa.actualizarPrecio(sembrado.varianteId(), Dinero.deCop(12_000)));
+            estado ->
+                productosJpa.actualizarPrecios(
+                    sembrado.varianteId(), Dinero.deCop(12_000), Dinero.deCop(13_000)));
 
     Producto leido = productosJpa.buscarPorId(sembrado.productoId()).orElseThrow();
     assertThat(leido.paleta()).containsExactly("Morado", "Plata", "Negro");

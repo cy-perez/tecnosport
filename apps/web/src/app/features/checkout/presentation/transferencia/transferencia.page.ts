@@ -4,6 +4,8 @@ import { TranslocoPipe } from '@jsverse/transloco';
 import { TsBoton } from '../../../../shared/ui/boton/ts-boton';
 import { TsEsqueleto } from '../../../../shared/ts-esqueleto/ts-esqueleto';
 import { TsPrecio } from '../../../../shared/ts-precio/ts-precio';
+import { formatearPrecio } from '../../../../shared/ts-precio/formato-precio';
+import { usarIdiomaActivo } from '../../../../core/i18n/traductor';
 import { CheckoutStore } from '../../application/checkout.store';
 import {
   CriteriosSeguimiento,
@@ -50,6 +52,19 @@ export class TransferenciaPage {
   protected readonly pedido = computed<Pedido | null>(
     () => this.checkout.pedido() ?? this.consulta.data() ?? null,
   );
+
+  private readonly idioma = usarIdiomaActivo();
+
+  /**
+   * El descuento por pagar por transferencia (ADR-0095), formateado; `null` si no hubo. El monto a
+   * transferir ya lo trae restado: decirlo es lo que explica por qué no es el precio de la vitrina.
+   */
+  protected readonly descuento = computed(() => {
+    const pedido = this.pedido();
+    return pedido && pedido.descuento.valor > 0
+      ? formatearPrecio(pedido.descuento.valor, pedido.descuento.moneda, this.idioma())
+      : null;
+  });
 
   protected readonly datosTransferencia = computed(() => {
     const pedido = this.pedido();

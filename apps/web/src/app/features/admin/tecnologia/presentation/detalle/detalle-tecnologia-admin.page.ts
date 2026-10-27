@@ -303,10 +303,23 @@ export class DetalleTecnologiaAdminPage {
     return valor === null ? '-' : formatearPrecio(valor, 'COP', this.idioma());
   }
 
+  /**
+   * Costo, mercado y la sugerencia en sus dos caras: de contado, que es lo que se escribe, y la
+   * publicada, que es la que vería quien compra (ADR-0095). Sin precio de mercado no hay
+   * sugerencia, y la frase no la menciona en vez de enseñar dos guiones.
+   */
   protected ayudaDePrecio(configuracion: ConfiguracionTecnologia): string {
-    return this.traducir()('admin.tecnologia.detalle.ayudaPrecio', {
+    const costoYMercado = {
       costo: this.precio(configuracion.costoProveedor),
       mercado: this.precio(configuracion.precioMercado),
+    };
+    if (configuracion.precioContadoSugerido === null) {
+      return this.traducir()('admin.tecnologia.detalle.ayudaPrecio', costoYMercado);
+    }
+    return this.traducir()('admin.tecnologia.detalle.ayudaPrecioConSugerido', {
+      ...costoYMercado,
+      contado: this.precio(configuracion.precioContadoSugerido),
+      publicado: this.precio(configuracion.precioPublicadoSugerido),
     });
   }
 

@@ -105,14 +105,16 @@ const IPHONE: ProductoAdminDetalle = {
     {
       id: 'v-negro',
       sku: 'IPH-NE',
-      precio: 6_000_000,
+      precioContado: 6_000_000,
+      precioPublicado: 6_197_000,
       atributos: [{ nombre: 'Color', valor: 'Negro', colorHex: null }],
       disponibilidadPorConfirmar: false,
     },
     {
       id: 'v-morado',
       sku: 'IPH-MO',
-      precio: 6_000_000,
+      precioContado: 6_000_000,
+      precioPublicado: 6_197_000,
       atributos: [
         { nombre: 'Almacenamiento', valor: '256', colorHex: null },
         { nombre: 'Color', valor: 'Morado', colorHex: null },
@@ -199,7 +201,8 @@ describe('TsColoresTecnologia', () => {
         {
           id: 'v-40',
           sku: 'PRV-40',
-          precio: 162_000,
+          precioContado: 162_000,
+          precioPublicado: 169_000,
           atributos: [{ nombre: 'Talla', valor: '40', colorHex: null }],
           disponibilidadPorConfirmar: true,
         },

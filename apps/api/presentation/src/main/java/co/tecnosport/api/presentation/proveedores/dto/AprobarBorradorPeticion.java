@@ -6,6 +6,12 @@ import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 
+/**
+ * La aprobación de un borrador de ropa, bolsos o calzado.
+ *
+ * @param precioVenta el <b>precio de contado</b> (ADR-0095): el publicado lo calcula el servidor
+ *     con la comisión de la pasarela. Se llama así desde antes de que existieran los dos precios
+ */
 public record AprobarBorradorPeticion(
     String titulo,
     String descripcion,

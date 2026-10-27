@@ -48,6 +48,7 @@ describe('ListaBorradoresAdminPage', () => {
         titulo: 'Morral',
         estado: 'RECHAZADO',
         precioVentaSugerido: null,
+        precioPublicadoSugerido: null,
         alertas: ['SIN_PRECIO', 'CONFIANZA_BAJA'],
       }),
     ]);
@@ -55,6 +56,10 @@ describe('ListaBorradoresAdminPage', () => {
     const tabla = within(await screen.findByRole('table'));
     expect(tabla.getByText('Bolso tote en cuero sintético')).toBeTruthy();
     expect(tabla.getByText('$ 72.000')).toBeTruthy();
+    // El sugerido es de contado; debajo, el que se anunciaría con la comisión de Wompi encima.
+    expect(
+      tabla.getByText(esAdmin.borradores.publicadoSugerido.replace('{{precio}}', '$ 76.000')),
+    ).toBeTruthy();
     expect(tabla.getByText(esAdmin.borradores.estados.RECHAZADO)).toBeTruthy();
     expect(tabla.getByText('2')).toBeTruthy();
     expect(screen.getAllByRole('link', { name: esAdmin.borradores.revisar })).toHaveLength(2);

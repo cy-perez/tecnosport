@@ -28,12 +28,15 @@ function aLineaCarrito(dto: LineaCarritoDto): LineaCarrito {
 export function aCarritoCotizado(dto: CarritoCotizadoDto): CarritoCotizado {
   return {
     subtotal: dto.subtotal.valor,
+    subtotalContado: dto.subtotalContado.valor,
     lineas: dto.lineas.map((linea) => ({
       lineaId: linea.lineaId,
       varianteId: linea.varianteId,
       cantidad: linea.cantidad,
       precioUnitario: linea.precioUnitario?.valor ?? null,
       subtotal: linea.subtotal?.valor ?? null,
+      precioContado: linea.precioContado?.valor ?? null,
+      subtotalContado: linea.subtotalContado?.valor ?? null,
     })),
   };
 }

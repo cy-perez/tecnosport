@@ -28,6 +28,32 @@ export function margenDe(producto) {
 /** Por debajo de esto se trabaja gratis. Lo usan el informe y el filtro del cargador. */
 export const MARGEN_MINIMO_SUGERIDO = 5;
 
+/**
+ * Lo más que el precio de contado sugerido de tecnología le gana al costo (ADR-0095, decisión 8).
+ * Es el valor por omisión de `PROVEEDORES_TECNOLOGIA_GANANCIA_MAXIMA` en la API; si allá cambia,
+ * aquí también.
+ */
+export const GANANCIA_MAXIMA_TECNOLOGIA = 400_000;
+
+/**
+ * El **precio de contado** que se carga, con la misma regla que la API sugiere en el panel
+ * (`SugerenciaDePrecioTecnologia`, ADR-0095, decisión 8): `min(mercado, costo + ganancia máxima)`.
+ * Cuando manda el mercado va tal cual —es el precio contra el que se compite—; cuando manda el
+ * tope se baja a la unidad de mil, porque subir lo rompería. El publicado no se manda: lo calcula
+ * el servidor sumándole la comisión de Wompi.
+ *
+ * **Sin costo en la lista, el contado es el de mercado**, sin tope: no hay contra qué medirlo. Es
+ * lo que hacía el cargador antes del ADR-0095, cuando mandaba el mercado como único precio.
+ */
+export function contadoSugeridoDe(producto, gananciaMaxima = GANANCIA_MAXIMA_TECNOLOGIA) {
+  const mercado = producto.precio_mercado_cop;
+  const costo = producto.precio_proveedor_cop;
+  if (!mercado) return null;
+  if (!costo) return mercado;
+  const tope = costo + gananciaMaxima;
+  return mercado <= tope ? mercado : Math.floor(tope / 1000) * 1000;
+}
+
 // `fileURLToPath` y no `.pathname`, que viene percent-encoded: con el repositorio bajo
 // `D:/Mis Proyectos/` o `C:/Users/José/`, `RAIZ` salía con `%20` dentro, `CATALOGO` apuntaba a una
 // carpeta inexistente y el error que se veía era "esa carpeta no está versionada", que manda a

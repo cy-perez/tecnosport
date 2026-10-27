@@ -63,6 +63,7 @@ public class MapeadorRespuestasProductoAdmin {
                         variante.id(),
                         variante.sku().valor(),
                         mapeadorCatalogo.aRespuesta(variante, false).atributos(),
+                        variante.precioContado().valor().longValueExact(),
                         variante.precio().valor().longValueExact(),
                         variante.disponibilidadPorConfirmar()))
             .toList(),

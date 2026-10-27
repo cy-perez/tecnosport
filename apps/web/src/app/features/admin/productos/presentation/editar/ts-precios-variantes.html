@@ -25,6 +25,10 @@
             'admin.productos.editar.precios.precioDe' | transloco: { variante: etiqueta(variante) }
           "
           [obligatorio]="true"
+          [ayuda]="
+            'admin.productos.editar.precios.sePublicaA'
+              | transloco: { precio: publicadoDe(variante) }
+          "
           [error]="
             invalidas().has(variante.id)
               ? ('admin.productos.editar.precios.invalido' | transloco)

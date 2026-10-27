@@ -43,6 +43,12 @@ class CotizarCarritoTest {
   }
 
   private Variante publicada(String sku, long precio, boolean publicar, boolean agotada) {
+    return publicada(sku, precio, precio, publicar, agotada);
+  }
+
+  /** Con dos precios (ADR-0095): se anuncia a {@code precio} y de contado vale {@code contado}. */
+  private Variante publicada(
+      String sku, long precio, long contado, boolean publicar, boolean agotada) {
     Producto producto =
         Producto.crear(
             "Producto " + sku,
@@ -65,13 +71,15 @@ class CotizarCarritoTest {
             java.util.UUID.randomUUID(),
             new Sku(sku),
             Dinero.deCop(precio),
+            Dinero.deCop(contado),
             BigDecimal.ZERO,
             null,
             new Paquete(150, 28, 22, 3),
             co.tecnosport.api.domain.catalogo.EstadoVariante.ACTIVA,
             List.of(),
             null,
-            agotada);
+            agotada,
+            false);
     producto.agregarVariante(variante);
     if (publicar) {
       producto.publicar();
@@ -99,6 +107,33 @@ class CotizarCarritoTest {
     assertEquals(Dinero.deCop(130_000), cotizado.subtotal());
     assertEquals(Dinero.deCop(50_000), cotizado.lineas().get(0).precioUnitario());
     assertEquals(Dinero.deCop(100_000), cotizado.lineas().get(0).subtotal());
+  }
+
+  /**
+   * Las dos cifras de la vitrina (ADR-0095): el publicado en los campos de siempre y el de contado
+   * aparte, por línea y en el carrito. Una variante que ya no se vende no suma en ninguno.
+   */
+  @Test
+  void cotizaTambienElPrecioDeContado() {
+    Variante bolso = publicada("TS-BOL", 239_000, 230_000, true, false);
+    Variante gorra = publicada("TS-GOR", 53_000, 50_000, true, false);
+    Variante retirada = publicada("TS-RET", 99_000, 95_000, false, false);
+    Carrito carrito = Carrito.crear(null, AHORA);
+    carrito.agregarLinea(bolso.id(), 1, AHORA);
+    carrito.agregarLinea(gorra.id(), 2, AHORA);
+    carrito.agregarLinea(retirada.id(), 1, AHORA);
+    carritos.guardar(carrito);
+
+    CarritoCotizado cotizado = casoDeUso().ejecutar(carrito.id());
+
+    assertEquals(Dinero.deCop(345_000), cotizado.subtotal());
+    assertEquals(Dinero.deCop(330_000), cotizado.subtotalContado());
+    CarritoCotizado.LineaCotizada lineaGorra = cotizado.lineas().get(1);
+    assertEquals(Dinero.deCop(53_000), lineaGorra.precioUnitario());
+    assertEquals(Dinero.deCop(50_000), lineaGorra.precioContado());
+    assertEquals(Dinero.deCop(100_000), lineaGorra.subtotalContado());
+    assertNull(cotizado.lineas().get(2).precioContado());
+    assertNull(cotizado.lineas().get(2).subtotalContado());
   }
 
   /** Una variante que ya no se vende no suma: el pedido la rechazaría igual. */

@@ -20,6 +20,7 @@ export function borradorDePrueba(overrides: Partial<Borrador> = {}): Borrador {
     linea: 'BOLSOS',
     precioProveedor: 53000,
     precioVentaSugerido: 72000,
+    precioPublicadoSugerido: 76000,
     tallas: { tipo: 'UNICA', sirveHasta: 'L', valores: [] },
     cantidadTonos: 2,
     tonosNombrados: ['Negro', 'Café'],

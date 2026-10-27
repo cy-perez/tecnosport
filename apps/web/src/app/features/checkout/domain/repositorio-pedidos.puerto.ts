@@ -1,10 +1,16 @@
 import { InjectionToken } from '@angular/core';
 import { CrearPedidoComando, MetodosDePagoDisponiblesComando } from './pedido.comandos';
-import { MetodoPago, Pedido, Seguimiento } from './pedido.model';
+import { MetodoDePagoConPrecio, Pedido, Seguimiento } from './pedido.model';
 
 export interface RepositorioPedidos {
   crear(comando: CrearPedidoComando): Promise<Pedido>;
-  metodosDePagoDisponibles(comando: MetodosDePagoDisponiblesComando): Promise<MetodoPago[]>;
+  /**
+   * Los medios de pago que el servidor acepta para este carrito y esta entrega, cada uno con el
+   * subtotal de mercancía y el descuento que tendría (ADR-0095).
+   */
+  metodosDePagoConPrecio(
+    comando: MetodosDePagoDisponiblesComando,
+  ): Promise<MetodoDePagoConPrecio[]>;
   /**
    * El `correo` no es un dato más: es lo que autoriza el reintento, igual que en el seguimiento.
    * El servidor trata el que no coincide como si el pedido no existiera.

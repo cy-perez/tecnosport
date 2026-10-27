@@ -45,6 +45,8 @@ import { REPOSITORIO_PRODUCTOS_ADMIN } from './productos/domain/repositorio-prod
 import { ProductosAdminHttpRepositorio } from './productos/infrastructure/productos-admin-http.repositorio';
 import { REPOSITORIO_PRODUCTOS_NO_PUBLICADOS } from './productos/domain/productos-no-publicados.puerto';
 import { ProductosNoPublicadosHttpRepositorio } from './productos/infrastructure/productos-no-publicados-http.repositorio';
+import { REPOSITORIO_RECALCULO_PRECIOS } from './productos/domain/recalculo-precios.puerto';
+import { RecalculoPreciosHttpRepositorio } from './productos/infrastructure/recalculo-precios-http.repositorio';
 import { precargarScopeI18n } from '../../core/i18n/precargar-scope';
 import { REPOSITORIO_PROVEEDORES_ADMIN } from './proveedores/domain/repositorio-proveedores-admin.puerto';
 import { ProveedoresAdminHttpRepositorio } from './proveedores/infrastructure/proveedores-admin-http.repositorio';
@@ -374,6 +376,21 @@ export const adminRoutes: Routes = [
                 loadComponent: () =>
                   import('./productos/presentation/existencias/existencias-admin.page').then(
                     (m) => m.ExistenciasAdminPage,
+                  ),
+              },
+              {
+                // El recálculo de los precios publicados cuando cambia la tarifa de Wompi
+                // (ADR-0095). Su puerto solo aquí: ninguna otra pantalla de productos lo usa.
+                path: 'precios',
+                providers: [
+                  {
+                    provide: REPOSITORIO_RECALCULO_PRECIOS,
+                    useClass: RecalculoPreciosHttpRepositorio,
+                  },
+                ],
+                loadComponent: () =>
+                  import('./productos/presentation/precios/precios-admin.page').then(
+                    (m) => m.PreciosAdminPage,
                   ),
               },
               {

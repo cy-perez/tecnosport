@@ -39,6 +39,7 @@ import co.tecnosport.api.application.proveedores.tecnologia.RepositorioListasDeT
 import co.tecnosport.api.application.proveedores.tecnologia.RepositorioVariantesDeProveedor;
 import co.tecnosport.api.application.proveedores.tecnologia.SolicitarSubidaDeFotoDeBorradorTecnologia;
 import co.tecnosport.api.application.proveedores.tecnologia.VerBorradorTecnologia;
+import co.tecnosport.api.domain.catalogo.ComisionDePasarela;
 import co.tecnosport.api.domain.catalogo.LineaCatalogo;
 import co.tecnosport.api.domain.catalogo.Producto;
 import co.tecnosport.api.domain.compartido.Dinero;
@@ -48,9 +49,11 @@ import co.tecnosport.api.domain.proveedores.FotoDeBorradorTecnologia;
 import co.tecnosport.api.domain.proveedores.HuellaProveedor;
 import co.tecnosport.api.domain.proveedores.OrdenDePublicacion;
 import co.tecnosport.api.domain.proveedores.Proveedor;
+import co.tecnosport.api.domain.proveedores.SugerenciaDePrecioTecnologia;
 import co.tecnosport.api.presentation.ManejadorDeErrores;
 import co.tecnosport.api.presentation.catalogo.MapeadorRespuestasCatalogo;
 import co.tecnosport.api.presentation.catalogo.MapeadorRespuestasProductoAdmin;
+import co.tecnosport.api.presentation.catalogo.TarifasDePrueba;
 import java.lang.reflect.Proxy;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -195,6 +198,32 @@ class AdminTecnologiaControladorTest {
         .andExpect(jsonPath("$[0].configuraciones[0].precioMercado").value(849900))
         .andExpect(jsonPath("$[0].configuraciones[1].precioMercado").doesNotExist())
         .andExpect(jsonPath("$[0].configuraciones[0].coloresSugeridos[0]").value("Negro"));
+  }
+
+  /**
+   * Los dos precios sugeridos de cada configuración (ADR-0095, decisión 8). Con el tope de prueba
+   * de 150.000, al A17 de 675.000 lo limita el tope y no su mercado de 849.900: contado 825.000, y
+   * publicado {@code (825.000 + 833) / 0,968465} = 852.708, subido a 853.000. Sin mercado no hay
+   * ninguno de los dos.
+   */
+  @Test
+  void cadaConfiguracionTraeSuContadoYSuPublicadoSugeridos() throws Exception {
+    UUID id = importarYTomarElBorrador();
+
+    mockMvc
+        .perform(get("/api/v1/admin/borradores-tecnologia"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$[0].configuraciones[0].precioContadoSugerido").value(825000))
+        .andExpect(jsonPath("$[0].configuraciones[0].precioPublicadoSugerido").value(853000))
+        .andExpect(jsonPath("$[0].configuraciones[1].precioContadoSugerido").doesNotExist())
+        .andExpect(jsonPath("$[0].configuraciones[1].precioPublicadoSugerido").doesNotExist());
+    mockMvc
+        .perform(get("/api/v1/admin/borradores-tecnologia/{id}", id))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.configuraciones[0].precioContadoSugerido").value(825000))
+        .andExpect(jsonPath("$.configuraciones[0].precioPublicadoSugerido").value(853000))
+        // La sugerencia no se escribe sola en el precio de quien revisa.
+        .andExpect(jsonPath("$.configuraciones[0].precioVenta").doesNotExist());
   }
 
   @Test
@@ -869,6 +898,17 @@ class AdminTecnologiaControladorTest {
   @TestConfiguration
   static class Configuracion {
 
+    /** Menor que los 400.000 del negocio, para que el tope actúe sobre la lista de prueba. */
+    @Bean
+    SugerenciaDePrecioTecnologia sugerenciaDePrecioTecnologia() {
+      return new SugerenciaDePrecioTecnologia(Dinero.deCop(150_000));
+    }
+
+    @Bean
+    ComisionDePasarela comisionDePasarela() {
+      return TarifasDePrueba.WOMPI;
+    }
+
     @Bean
     ProveedoresDoble proveedores() {
       return new ProveedoresDoble();
@@ -968,7 +1008,8 @@ class AdminTecnologiaControladorTest {
               noUsado(RepositorioAtributos.class),
               noUsado(RepositorioInventario.class),
               reloj,
-              false),
+              false,
+              TarifasDePrueba.WOMPI),
           almacen,
           noUsado(AlmacenDeImagenes.class),
           2);

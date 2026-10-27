@@ -94,7 +94,9 @@ public final class DefinirPaletaDeTecnologia {
                 new AgregarVarianteComando(
                     productoId,
                     ConfiguracionTecnologia.skuDeVariante(entrada.getKey(), color),
-                    modelo.get().precio().valor().longValueExact(),
+                    // El contado de la hermana; el publicado lo calcula AgregarVariante con la
+                    // comisión vigente (ADR-0095), no se copia.
+                    modelo.get().precioContado().valor().longValueExact(),
                     modelo.get().tasaIva(),
                     null,
                     0,

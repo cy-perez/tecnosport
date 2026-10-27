@@ -59,7 +59,13 @@ final class RepositorioProductosFalso implements RepositorioProductos {
   private final Set<UUID> idsBorrados = new HashSet<>();
   UUID ultimaVarianteMedida;
   Paquete ultimoPaqueteGrabado;
+
+  /** El publicado que se grabó, por variante. */
   final Map<UUID, Dinero> preciosGrabados = new LinkedHashMap<>();
+
+  /** El de contado que se grabó, por variante. */
+  final Map<UUID, Dinero> contadosGrabados = new LinkedHashMap<>();
+
   private List<MedidaDeVariante> sinMedir = List.of();
   private final Set<String> skusEnUso = new HashSet<>();
 
@@ -205,8 +211,9 @@ final class RepositorioProductosFalso implements RepositorioProductos {
   }
 
   @Override
-  public void actualizarPrecio(UUID varianteId, Dinero precio) {
-    preciosGrabados.put(varianteId, precio);
+  public void actualizarPrecios(UUID varianteId, Dinero contado, Dinero publicado) {
+    preciosGrabados.put(varianteId, publicado);
+    contadosGrabados.put(varianteId, contado);
   }
 
   /** Lo usa el listado de existencias, que vive en el paquete de inventario y trae el suyo. */

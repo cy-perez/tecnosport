@@ -11,8 +11,21 @@ describe('mapeador-borrador', () => {
 
     expect(borrador.precioProveedor).toBeNull();
     expect(borrador.precioVentaSugerido).toBeNull();
+    expect(borrador.precioPublicadoSugerido).toBeNull();
     expect(borrador.alertas).toEqual(['SIN_PRECIO']);
     expect(borrador.tallas).toEqual({ tipo: 'DESCONOCIDA', sirveHasta: null, valores: [] });
+  });
+
+  /** El sugerido es de contado; el publicado lo calcula el servidor y llega aparte (ADR-0095). */
+  it('lleva el sugerido de contado y el publicado sugerido', () => {
+    const borrador = aBorrador({
+      id: 'b1',
+      precioVentaSugerido: 230000,
+      precioPublicadoSugerido: 239000,
+    });
+
+    expect(borrador.precioVentaSugerido).toBe(230000);
+    expect(borrador.precioPublicadoSugerido).toBe(239000);
   });
 
   /** Del origen depende qué promete eliminarla: que el archivo se queda, o que se borra. */

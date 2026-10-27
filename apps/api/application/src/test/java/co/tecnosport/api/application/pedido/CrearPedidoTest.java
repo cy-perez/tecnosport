@@ -107,6 +107,17 @@ class CrearPedidoTest {
 
   private Variante variante;
   private Producto primerProducto;
+
+  /**
+   * Cuánto se anuncia por encima del precio de contado en los productos que se publican de aquí en
+   * adelante (ADR-0095). Cero por omisión: las pruebas que no miran el descuento siguen con un solo
+   * precio.
+   */
+  private long publicadoSobreElContado = 0;
+
+  /** Los métodos que la cuenta de las pasarelas tiene activados; se lee al llamar a crear(). */
+  private Set<MetodoPago> habilitadosEnPasarela = HABILITADOS_EN_PASARELA;
+
   private ModalidadesDeEntrega modalidadesDeEntrega = new ModalidadesDeEntrega(true);
 
   private CrearPedido crear() {
@@ -146,7 +157,7 @@ class CrearPedidoTest {
             cotizarEnvio,
             pedidos,
             criterios,
-            HABILITADOS_EN_PASARELA,
+            habilitadosEnPasarela,
             MONTO_MINIMO_SISTECREDITO);
     return new CrearPedido(
         productos,
@@ -248,6 +259,7 @@ class CrearPedidoTest {
         Variante.crear(
             new Sku("TS-CAM-AZ-M"),
             Dinero.deCop(50_000),
+            Dinero.deCop(50_000 + publicadoSobreElContado),
             new BigDecimal("0.19"),
             null,
             new Paquete(180, 30, 25, 4),
@@ -928,6 +940,85 @@ class CrearPedidoTest {
     assertEquals(AHORA.plus(RESERVA_TRANSFERENCIA), reserva.expiraEn());
   }
 
+  /**
+   * ADR-0095, decisión 3: sin pasarela se cobra el precio de contado, y la línea guarda también el
+   * publicado para que el descuento quede auditable. La camiseta se anuncia a $53.000 y de contado
+   * vale $50.000.
+   */
+  @Test
+  void porTransferenciaSeCobraElContadoYQuedaElDescuento() {
+    CrearPedido caso = crear();
+    publicadoSobreElContado = 3_000;
+    publicarProductoConVarianteYExistencia(5);
+
+    Pedido pedido = caso.ejecutar(comando(MetodoPago.TRANSFERENCIA_MANUAL, 2));
+
+    LineaPedido linea = pedido.lineas().get(0);
+    assertEquals(Dinero.deCop(50_000), linea.precioUnitario());
+    assertEquals(Dinero.deCop(53_000), linea.precioPublicado());
+    assertEquals(Dinero.deCop(6_000), pedido.descuento());
+    assertEquals(Dinero.deCop(100_000), pedido.subtotal());
+    // El flete no lleva descuento (decisión 7): se cobra igual con cualquier medio.
+    assertEquals(Dinero.deCop(114_900), pedido.total());
+  }
+
+  @Test
+  void contraentregaCobraElContado() {
+    CrearPedido caso = crear();
+    publicadoSobreElContado = 3_000;
+    publicarProductoConVarianteYExistencia(5);
+
+    Pedido pedido = caso.ejecutar(comando(MetodoPago.CONTRAENTREGA, 2));
+
+    assertEquals(Dinero.deCop(50_000), pedido.lineas().get(0).precioUnitario());
+    assertEquals(Dinero.deCop(6_000), pedido.descuento());
+    assertEquals(Dinero.deCop(114_900), pedido.total());
+  }
+
+  @Test
+  void elPagoEnElPuntoCobraElContado() {
+    CrearPedido caso = crear();
+    publicadoSobreElContado = 66_100;
+    variante = publicarProductoLocal();
+
+    Pedido pedido = caso.ejecutar(comandoRetiroEnPunto(MetodoPago.PAGO_EN_PUNTO, 1));
+
+    assertEquals(Dinero.deCop(1_599_900), pedido.lineas().get(0).precioUnitario());
+    assertEquals(Dinero.deCop(1_666_000), pedido.lineas().get(0).precioPublicado());
+    assertEquals(Dinero.deCop(66_100), pedido.descuento());
+    assertEquals(Dinero.deCop(1_599_900), pedido.total());
+  }
+
+  /** Con Wompi se paga el publicado: la comisión va dentro y no hay descuento. */
+  @Test
+  void conWompiSeCobraElPublicadoSinDescuento() {
+    CrearPedido caso = crear();
+    publicadoSobreElContado = 3_000;
+    publicarProductoConVarianteYExistencia(5);
+
+    Pedido pedido = caso.ejecutar(comando(MetodoPago.WOMPI, 2));
+
+    assertEquals(Dinero.deCop(53_000), pedido.lineas().get(0).precioUnitario());
+    assertEquals(Dinero.deCop(53_000), pedido.lineas().get(0).precioPublicado());
+    assertEquals(Dinero.deCop(0), pedido.descuento());
+    assertEquals(Dinero.deCop(120_900), pedido.total());
+  }
+
+  /** Con Sistecrédito también el publicado: el negocio absorbe la diferencia de comisión. */
+  @Test
+  void conSistecreditoSeCobraElPublicadoSinDescuento() {
+    habilitadosEnPasarela = EnumSet.of(MetodoPago.WOMPI, MetodoPago.SISTECREDITO);
+    CrearPedido caso = crear();
+    publicadoSobreElContado = 3_000;
+    publicarProductoConVarianteYExistencia(5);
+
+    Pedido pedido = caso.ejecutar(comando(MetodoPago.SISTECREDITO, 2));
+
+    assertEquals(Dinero.deCop(53_000), pedido.lineas().get(0).precioUnitario());
+    assertEquals(Dinero.deCop(0), pedido.descuento());
+    assertEquals(Dinero.deCop(120_900), pedido.total());
+  }
+
   @Test
   void contraentregaReservaSinVencimiento() {
     CrearPedido caso = crear();
@@ -1279,6 +1370,7 @@ class CrearPedidoTest {
         Variante.crear(
             new Sku("TEC-A57-256"),
             Dinero.deCop(1_599_900),
+            Dinero.deCop(1_599_900 + publicadoSobreElContado),
             new BigDecimal("0.19"),
             null,
             new Paquete(400, 20, 12, 8),

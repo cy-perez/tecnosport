@@ -21,7 +21,7 @@ import {
 } from '../../domain/envio.model';
 import { REPOSITORIO_ENVIOS, RepositorioEnvios } from '../../domain/repositorio-envios.puerto';
 import { DatosEntrega, MetodosDePagoDisponiblesComando } from '../../domain/pedido.comandos';
-import { MetodoPago } from '../../domain/pedido.model';
+import { MetodoDePagoConPrecio } from '../../domain/pedido.model';
 import { REPOSITORIO_PAGOS } from '../../domain/repositorio-pagos.puerto';
 import { REPOSITORIO_PEDIDOS } from '../../domain/repositorio-pedidos.puerto';
 import { TransportadoraPage } from './transportadora.page';
@@ -40,8 +40,14 @@ class RepositorioCarritoFalso implements RepositorioCarrito {
       cantidad: linea.cantidad,
       precioUnitario: 150_000,
       subtotal: 150_000 * linea.cantidad,
+      precioContado: 150_000,
+      subtotalContado: 150_000 * linea.cantidad,
     }));
-    return { lineas, subtotal: lineas.reduce((suma, linea) => suma + linea.subtotal, 0) };
+    return {
+      lineas,
+      subtotal: lineas.reduce((suma, linea) => suma + linea.subtotal, 0),
+      subtotalContado: lineas.reduce((suma, linea) => suma + linea.subtotalContado, 0),
+    };
   }
 
   async ver(carritoId: string): Promise<Carrito | null> {
@@ -136,9 +142,17 @@ class RutaMuda {}
 class PedidosQueCuentan {
   readonly consultas: MetodosDePagoDisponiblesComando[] = [];
 
-  async metodosDePagoDisponibles(comando: MetodosDePagoDisponiblesComando): Promise<MetodoPago[]> {
+  async metodosDePagoConPrecio(
+    comando: MetodosDePagoDisponiblesComando,
+  ): Promise<MetodoDePagoConPrecio[]> {
     this.consultas.push(comando);
-    return ['WOMPI'];
+    return [
+      {
+        metodo: 'WOMPI',
+        subtotal: { valor: 150_000, moneda: 'COP' },
+        descuento: { valor: 0, moneda: 'COP' },
+      },
+    ];
   }
 }
 

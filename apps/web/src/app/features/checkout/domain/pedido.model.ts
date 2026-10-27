@@ -115,8 +115,13 @@ export interface Pedido {
   readonly direccion: Direccion | null;
   readonly metodoPago: MetodoPago;
   readonly estado: EstadoPedido;
-  /** Solo las líneas. */
+  /** Solo las líneas, a lo que se cobró: con el descuento del medio de pago ya aplicado. */
   readonly subtotal: Dinero;
+  /**
+   * Lo que se descontó por pagar sin pasarela (ADR-0095): publicado menos cobrado. Ya está fuera
+   * de `subtotal` y de `total`; se guarda para poder decirlo. Cero con Wompi o Sistecrédito.
+   */
+  readonly descuento: Dinero;
   /** Lo que el comprador paga de flete, ya cobrado: no es la cotización, es lo que quedó congelado. */
   readonly costoEnvio: Dinero;
   /** Líneas más envío. */
@@ -125,6 +130,22 @@ export interface Pedido {
   readonly datosTransferencia: DatosTransferencia | null;
   /** La transportadora que eligió el comprador (`ADR-0073`); `null` en recogida o en pedidos de antes. */
   readonly transportadora: string | null;
+}
+
+/**
+ * Un medio de pago que el servidor ofrece para este carrito y esta entrega, con lo que costaría la
+ * mercancía pagando con él (`POST /pedidos/metodos-de-pago-con-precio`, ADR-0095). Sin el flete:
+ * el envío cuesta lo mismo con cualquier medio.
+ *
+ * Es lo que la pantalla de confirmar enseña como subtotal, descuento y total. Lo calcula el
+ * servidor con la misma regla que aplica al crear el pedido; el navegador no suma precios.
+ */
+export interface MetodoDePagoConPrecio {
+  readonly metodo: MetodoPago;
+  /** Lo que se cobra de mercancía con este medio, ya con el descuento. */
+  readonly subtotal: Dinero;
+  /** Cero con los medios que pagan el publicado. */
+  readonly descuento: Dinero;
 }
 
 export type EstadoRetracto = 'RADICADA' | 'PRODUCTO_RECIBIDO' | 'REEMBOLSADA' | 'RECHAZADA';

@@ -170,9 +170,9 @@
         <!-- Sin flete no hay total. Mostrar el subtotal bajo la etiqueta "Total a pagar" sería
              decir un precio que no es el precio, justo donde el artículo 50 de la Ley 1480 de
              2011 exige el desglose completo antes de finalizar. -->
-        <div class="flex items-baseline justify-between text-lg font-medio">
+        <div class="flex items-baseline justify-between gap-16 text-lg font-medio">
           <dt>{{ 'checkout.resumen.total' | transloco }}</dt>
-          <dd class="m-0">
+          <dd class="m-0 text-right">
             @if (totalConocido()) {
               <ts-precio [valor]="total()" moneda="COP" />
             } @else if (cotizando()) {
@@ -184,6 +184,13 @@
             } @else {
               <span class="text-base font-regular text-ts-texto-suave">{{
                 'checkout.resumen.total_pendiente' | transloco
+              }}</span>
+            }
+            <!-- Dentro del `<dd>` del total, y no suelto: el `<dl>` solo admite pares, y así el
+                 `aria-live` de arriba lo lee junto al total que acompaña. -->
+            @if (ahorroSinPasarela(); as ahorro) {
+              <span class="block text-sm font-regular text-ts-texto-suave">{{
+                'checkout.resumen.ahorro_sin_pasarela' | transloco: { ahorro }
               }}</span>
             }
           </dd>

@@ -17,6 +17,7 @@ import co.tecnosport.api.domain.catalogo.ParteDeMuestra;
 import co.tecnosport.api.domain.catalogo.Producto;
 import co.tecnosport.api.domain.catalogo.TipoAtributo;
 import co.tecnosport.api.domain.catalogo.ValorAtributo;
+import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.compartido.Slug;
 import co.tecnosport.api.domain.inventario.TipoMovimientoInventario;
 import java.math.BigDecimal;
@@ -37,7 +38,12 @@ class AgregarVarianteTest {
   // tienen su propia prueba al final.
   private final AgregarVariante agregarVariante =
       new AgregarVariante(
-          repositorioProductos, repositorioAtributos, repositorioInventario, reloj, false);
+          repositorioProductos,
+          repositorioAtributos,
+          repositorioInventario,
+          reloj,
+          false,
+          TarifasDePrueba.WOMPI);
 
   private Producto productoDePrueba() {
     Marca marca = Marca.crear("TecnoSport");
@@ -81,6 +87,35 @@ class AgregarVarianteTest {
     var movimiento = repositorioInventario.ultimoGuardado.movimientos().get(0);
     assertEquals(TipoMovimientoInventario.ENTRADA, movimiento.tipo());
     assertEquals(5, movimiento.cantidad());
+  }
+
+  /**
+   * El precio que llega es el de contado; el publicado lo calcula el servidor con la comisión de
+   * Wompi (ADR-0095): (230.000 + 833) / 0,968465 = 238.349,7 → 239.000.
+   */
+  @Test
+  void elPrecioQueLlegaEsElDeContadoYElPublicadoLoCalculaElServidor() {
+    Producto producto = productoDePrueba();
+    repositorioProductos.conProductos(producto);
+
+    var creada =
+        agregarVariante.ejecutar(
+            new AgregarVarianteComando(
+                producto.id(),
+                "TS-BOLSO",
+                230_000,
+                BigDecimal.ZERO,
+                null,
+                0,
+                null,
+                null,
+                null,
+                null,
+                List.of()));
+
+    assertEquals(Dinero.deCop(230_000), creada.variante().precioContado());
+    assertEquals(Dinero.deCop(239_000), creada.variante().precio());
+    assertEquals(Dinero.deCop(239_000), repositorioProductos.ultimaVarianteAgregada.precio());
   }
 
   @Test
@@ -229,7 +264,12 @@ class AgregarVarianteTest {
     repositorioProductos.conProductos(producto);
     AgregarVariante conIva =
         new AgregarVariante(
-            repositorioProductos, repositorioAtributos, repositorioInventario, reloj, true);
+            repositorioProductos,
+            repositorioAtributos,
+            repositorioInventario,
+            reloj,
+            true,
+            TarifasDePrueba.WOMPI);
 
     var creada =
         conIva.ejecutar(
@@ -269,7 +309,8 @@ class AgregarVarianteTest {
             () ->
                 List.of(
                     new ColorDePaleta(UUID.randomUUID(), "Negro", "Black", "#111111", 1),
-                    new ColorDePaleta(UUID.randomUUID(), "Rojo", "Red", "#C62828", 2)));
+                    new ColorDePaleta(UUID.randomUUID(), "Rojo", "Red", "#C62828", 2)),
+            TarifasDePrueba.WOMPI);
 
     var creada =
         conPaleta.ejecutar(

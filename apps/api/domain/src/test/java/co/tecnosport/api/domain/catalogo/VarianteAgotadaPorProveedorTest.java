@@ -53,7 +53,7 @@ class VarianteAgotadaPorProveedorTest {
   void lasCopiasConservanElAgotado() {
     Variante agotada = variante(EstadoVariante.ACTIVA, true);
 
-    assertFalse(agotada.conPrecio(Dinero.deCop(119000)).seVende());
+    assertFalse(agotada.conPrecios(Dinero.deCop(115000), Dinero.deCop(119000)).seVende());
     assertFalse(agotada.medida(new Paquete(300, 30, 25, 5)).seVende());
   }
 }

@@ -78,7 +78,14 @@ export interface ValorAtributo {
 export interface Variante {
   readonly id: string;
   readonly sku: string;
+  /** El publicado: el único que se anuncia como precio, y el que se cobra con pasarela. */
   readonly precio: Dinero;
+  /**
+   * Lo que se cobra pagando sin pasarela —transferencia, en el punto o contra entrega— (ADR-0095).
+   * No se muestra como un segundo precio: la vitrina enseña la diferencia como un ahorro
+   * condicionado al medio de pago (`ahorroDe`). Igual al publicado si no hay descuento.
+   */
+  readonly precioContado: Dinero;
   /**
    * Si se puede comprar ahora mismo. Un booleano y no un número desde `ADR-0050`: el servidor lo
    * calcula sobre el libro de movimientos —descontando las reservas de los pedidos en vuelo— y la
@@ -244,6 +251,50 @@ export function precioDesde(producto: Producto): Dinero | null {
     (menor, variante) => (variante.precio.valor < menor.valor ? variante.precio : menor),
     producto.variantes[0].precio,
   );
+}
+
+/**
+ * Lo que se ahorra quien paga la variante sin pasarela: publicado menos contado (ADR-0095). Nunca
+ * negativo — un contado mayor que el publicado sería un dato mal cargado, y la vitrina no anuncia
+ * un ahorro que no existe.
+ */
+export function ahorroDe(variante: Variante): number {
+  return Math.max(0, variante.precio.valor - variante.precioContado.valor);
+}
+
+/** El ahorro que anuncia la tarjeta de un producto: el menor de sus variantes. */
+export interface AhorroDeProducto {
+  readonly valor: number;
+  readonly moneda: string;
+  /** Si otras variantes ahorran más: la tarjeta dice entonces "o más". */
+  readonly varia: boolean;
+}
+
+/**
+ * El ahorro sin pasarela que anuncia la tarjeta, que es un "desde" (ADR-0095).
+ *
+ * **El menor de las variantes, y no el de la variante que da el "desde".** Con la fórmula del
+ * publicado los dos casi siempre coinciden, pero el redondeo a la unidad de mil puede empatar dos
+ * publicados con contados distintos; el mínimo es la única cifra que vale para cualquier variante
+ * que se elija. Si las variantes no ahorran lo mismo, `varia` lo dice y el texto lleva "o más".
+ *
+ * `null` si alguna variante no ahorra nada: anunciar un ahorro que una de ellas no da sería
+ * prometer de más, y el caso solo existe con un precio mal cargado.
+ */
+export function ahorroDesde(producto: Producto): AhorroDeProducto | null {
+  if (producto.variantes.length === 0) {
+    return null;
+  }
+  const ahorros = producto.variantes.map(ahorroDe);
+  const menor = Math.min(...ahorros);
+  if (menor <= 0) {
+    return null;
+  }
+  return {
+    valor: menor,
+    moneda: producto.variantes[0].precio.moneda,
+    varia: Math.max(...ahorros) !== menor,
+  };
 }
 
 /**

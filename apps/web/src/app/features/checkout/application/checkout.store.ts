@@ -67,12 +67,32 @@ export class CheckoutStore {
     this.guardarDatosEntrega({ ...datos, transportadora });
   }
 
-  /** Mismo criterio que `datosEntrega`: en memoria, poblado por la página de
-   * selección de método de pago para que la de creación del pedido lo lea. */
+  /**
+   * Mismo criterio que `datosEntrega`: en memoria, poblado por la página de selección de método de
+   * pago para que la de creación del pedido lo lea. **Solo el medio, sin su precio** (ADR-0095).
+   * Guardaba también el subtotal y el descuento que el servidor dio al elegir, y confirmar los
+   * enseñaba: una copia que nada invalidaba si después cambiaba el carrito, un precio o la tarifa,
+   * mientras el pedido se cobra con el carrito vivo. Confirmar vuelve a pedir el precio de cada
+   * medio y toma este por su nombre.
+   */
   readonly metodoPago = signal<MetodoPago | null>(null);
+
+  /**
+   * Confirmar descubrió que el medio elegido ya no se ofrece para este carrito y esta entrega, y
+   * devolvió al comprador a elegir otro: la página de métodos de pago lo dice.
+   */
+  readonly medioYaNoDisponible = signal(false);
+
+  /** Lo llama confirmar cuando la consulta fresca ya no trae el medio elegido. */
+  descartarMetodoNoDisponible(): void {
+    this.metodoPago.set(null);
+    this.pedido.set(null);
+    this.medioYaNoDisponible.set(true);
+  }
 
   elegirMetodoPago(metodo: MetodoPago): void {
     this.metodoPago.set(metodo);
+    this.medioYaNoDisponible.set(false);
     // Mismo motivo que en guardarDatosEntrega: el método de pago queda
     // congelado en el pedido ya creado, así que cambiarlo exige uno nuevo.
     this.pedido.set(null);

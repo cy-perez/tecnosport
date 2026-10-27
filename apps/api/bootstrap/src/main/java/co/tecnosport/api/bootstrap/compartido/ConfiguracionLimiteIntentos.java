@@ -104,6 +104,8 @@ public class ConfiguracionLimiteIntentos {
     registro.addUrlPatterns(
         "/api/v1/envios/cotizacion",
         "/api/v1/pedidos/metodos-de-pago-disponibles",
+        // ADR-0095: la misma consulta con el precio de cada medio; cotiza igual con recaudo.
+        "/api/v1/pedidos/metodos-de-pago-con-precio",
         // ADR-0093: no llama a terceros, pero cada variante de la lista es una lectura del
         // catálogo.
         "/api/v1/envios/modalidades");

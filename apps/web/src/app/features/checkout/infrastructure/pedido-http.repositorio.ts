@@ -3,9 +3,9 @@ import { crearClienteContratos } from '@tecnosport/contratos';
 import { baseUrl } from '../../../core/http/base-url';
 import { desempaquetar, exigirExito } from '../../../core/http/respuesta-http';
 import { CrearPedidoComando, MetodosDePagoDisponiblesComando } from '../domain/pedido.comandos';
-import { Direccion, MetodoPago, Pedido, Seguimiento } from '../domain/pedido.model';
+import { Direccion, MetodoDePagoConPrecio, Pedido, Seguimiento } from '../domain/pedido.model';
 import { RepositorioPedidos } from '../domain/repositorio-pedidos.puerto';
-import { aPedido, aSeguimiento } from './mapeador-pedido';
+import { aMetodoDePagoConPrecio, aPedido, aSeguimiento } from './mapeador-pedido';
 import { nuevaLlaveDeIdempotencia } from '../../../core/http/llave-de-idempotencia';
 
 function aDireccionRequest(direccion: Direccion | null) {
@@ -74,8 +74,15 @@ export class PedidoHttpRepositorio implements RepositorioPedidos {
     return pedido;
   }
 
-  async metodosDePagoDisponibles(comando: MetodosDePagoDisponiblesComando): Promise<MetodoPago[]> {
-    const respuesta = await this.cliente.POST('/api/v1/pedidos/metodos-de-pago-disponibles', {
+  /**
+   * `metodos-de-pago-con-precio` y no `metodos-de-pago-disponibles`, que el servidor conserva: es
+   * la misma decisión de cuáles se ofrecen, más lo que costaría la mercancía con cada uno
+   * (ADR-0095). Desde que existe, el frontend no usa la otra.
+   */
+  async metodosDePagoConPrecio(
+    comando: MetodosDePagoDisponiblesComando,
+  ): Promise<MetodoDePagoConPrecio[]> {
+    const respuesta = await this.cliente.POST('/api/v1/pedidos/metodos-de-pago-con-precio', {
       body: {
         correo: comando.correo,
         lineas: comando.lineas.map((linea) => ({
@@ -89,8 +96,11 @@ export class PedidoHttpRepositorio implements RepositorioPedidos {
       },
     });
     // Sin afirmación de tipo: el endpoint publica el enum en el OpenAPI y el cliente generado
-    // devuelve la unión (`docs/09`, deuda 25). Era `as MetodoPago[]` sobre un `string[]`.
-    return desempaquetar(respuesta, 'no se pudieron consultar los métodos de pago disponibles');
+    // devuelve la unión (`docs/09`, deuda 25).
+    return desempaquetar(
+      respuesta,
+      'no se pudieron consultar los métodos de pago disponibles',
+    ).metodos.map(aMetodoDePagoConPrecio);
   }
 
   async reintentarPago(pedidoId: string, correo: string): Promise<Pedido> {

@@ -87,9 +87,12 @@ public class CarritoControlador {
                         linea.cantidad(),
                         dinero(linea.precioUnitario()),
                         dinero(linea.subtotal()),
-                        linea.disponible()))
+                        linea.disponible(),
+                        dinero(linea.precioContado()),
+                        dinero(linea.subtotalContado())))
             .toList(),
-        dinero(cotizado.subtotal()));
+        dinero(cotizado.subtotal()),
+        dinero(cotizado.subtotalContado()));
   }
 
   private static DineroRespuesta dinero(Dinero valor) {

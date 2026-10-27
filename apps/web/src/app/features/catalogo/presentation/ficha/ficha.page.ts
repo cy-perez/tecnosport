@@ -39,7 +39,8 @@ import { usarFichaProducto } from '../../application/buscar-ficha-producto.consu
 import { usarEnlaceDeCompra } from '../../application/consultar-enlace-de-compra.consulta';
 import { fechaConHora } from '../../../../core/i18n/fecha-colombia';
 import { CarritoStore } from '../../../carrito/application/carrito.store';
-import { hayExistencia, Imagen } from '../../domain/producto.model';
+import { ahorroDe, hayExistencia, Imagen } from '../../domain/producto.model';
+import { formatearPrecio } from '../../../../shared/ts-precio/formato-precio';
 import { usarPaletaDeColores } from '../../application/listar-paleta-colores.consulta';
 import { usarIdiomaActivo } from '../../../../core/i18n/traductor';
 import {
@@ -351,6 +352,19 @@ export class FichaPage {
   protected readonly varianteActiva = computed(() => {
     const producto = this.producto();
     return producto ? varianteSeleccionada(producto, this.seleccion()) : null;
+  });
+
+  /**
+   * Lo que se ahorra la variante elegida pagando sin pasarela, ya formateado; `null` si no ahorra
+   * nada. Se dice como ahorro y no como un segundo precio (ADR-0095): con dos precios a la vista,
+   * el artículo 26 de la Ley 1480 obliga a cobrar el más bajo. El JSON-LD sigue con el publicado.
+   */
+  protected readonly ahorroDeLaVariante = computed(() => {
+    const variante = this.varianteActiva();
+    const ahorro = variante ? ahorroDe(variante) : 0;
+    return variante && ahorro > 0
+      ? formatearPrecio(ahorro, variante.precio.moneda, this.idiomaActivo())
+      : null;
   });
 
   /**

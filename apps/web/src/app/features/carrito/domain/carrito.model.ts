@@ -23,7 +23,13 @@ export interface Carrito {
  */
 export interface CarritoCotizado {
   readonly lineas: readonly LineaCotizada[];
+  /** Al precio publicado: lo que se paga con pasarela, y el único que se anuncia como precio. */
   readonly subtotal: number;
+  /**
+   * Al precio de contado: lo que se paga por transferencia, en el punto o contra entrega
+   * (ADR-0095). No se pinta como un segundo total: la diferencia se dice como ahorro.
+   */
+  readonly subtotalContado: number;
 }
 
 export interface LineaCotizada {
@@ -33,4 +39,7 @@ export interface LineaCotizada {
   /** `null` si la variante ya no se vende. */
   readonly precioUnitario: number | null;
   readonly subtotal: number | null;
+  /** Al precio de contado (ADR-0095); `null` si la variante ya no se vende. */
+  readonly precioContado: number | null;
+  readonly subtotalContado: number | null;
 }

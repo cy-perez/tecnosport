@@ -6,7 +6,8 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { correoValido } from '../../../../shared/formularios/validadores';
 import { ActivatedRoute, Router } from '@angular/router';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
-import { usarTraductor } from '../../../../core/i18n/traductor';
+import { usarIdiomaActivo, usarTraductor } from '../../../../core/i18n/traductor';
+import { formatearPrecio } from '../../../../shared/ts-precio/formato-precio';
 import { usarFoco } from '../../../../shared/foco/foco';
 import { esLimiteDeIntentos } from '../../../../core/errores/mensaje-de-error';
 import { TsBoton } from '../../../../shared/ui/boton/ts-boton';
@@ -226,6 +227,16 @@ export class EstadoPage {
   protected readonly pedido = computed<Pedido | null>(
     () => this.checkout.pedido() ?? this.consulta.data() ?? null,
   );
+
+  private readonly idioma = usarIdiomaActivo();
+
+  /** El descuento del medio de pago (ADR-0095), formateado para ir dentro de la frase. */
+  protected readonly descuento = computed(() => {
+    const pedido = this.pedido();
+    return pedido && pedido.descuento.valor > 0
+      ? formatearPrecio(pedido.descuento.valor, pedido.descuento.moneda, this.idioma())
+      : '';
+  });
 
   /**
    * Solo del seguimiento, nunca del store: el pedido que `CheckoutStore` guarda es el que acaba de

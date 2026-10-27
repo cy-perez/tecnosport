@@ -5,7 +5,9 @@ import { ChangeDetectionStrategy, Component, computed, inject, input, signal } f
 import { RouterLink } from '@angular/router';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { TsPrecio } from '../../../../shared/ts-precio/ts-precio';
+import { formatearPrecio } from '../../../../shared/ts-precio/formato-precio';
 import {
+  ahorroDesde,
   descriptoresDe,
   hayExistencia,
   parametrosDe,
@@ -108,6 +110,23 @@ export class TsTarjetaProducto {
   protected readonly tallaUnica = computed(() => tallaUnicaDe(this.producto()));
 
   protected readonly precio = computed(() => precioDesde(this.producto()));
+
+  /**
+   * El beneficio de pagar sin pasarela, dicho como ahorro y no como un segundo precio (ADR-0095):
+   * con dos precios a la vista, el artículo 26 de la Ley 1480 obliga a cobrar el más bajo. Ya
+   * formateado porque va dentro de una frase de Transloco.
+   */
+  protected readonly ahorro = computed(() => {
+    const ahorro = ahorroDesde(this.producto());
+    return ahorro
+      ? {
+          texto: formatearPrecio(ahorro.valor, ahorro.moneda, this.idioma()),
+          clave: ahorro.varia
+            ? 'catalogo.ahorro_sin_pasarela_o_mas'
+            : 'catalogo.ahorro_sin_pasarela',
+        }
+      : null;
+  });
   protected readonly disponible = computed(() => hayExistencia(this.producto()));
 
   /** «Negro» en la vitrina en español, «Black» en la de inglés. */

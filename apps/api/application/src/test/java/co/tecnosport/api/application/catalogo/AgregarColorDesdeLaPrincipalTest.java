@@ -55,7 +55,13 @@ class AgregarColorDesdeLaPrincipalTest {
           atributos,
           paleta,
           new AgregarVariante(
-              productos, atributos, inventario, new RelojFalso(AHORA), false, paleta));
+              productos,
+              atributos,
+              inventario,
+              new RelojFalso(AHORA),
+              false,
+              paleta,
+              TarifasDePrueba.WOMPI));
 
   private final Producto producto =
       Producto.crear(
@@ -101,8 +107,13 @@ class AgregarColorDesdeLaPrincipalTest {
     assertEquals("#C62828", rojoS.color().orElseThrow().colorHex());
     assertEquals("S-M", rojoS.atributosSinColor().get(0).valor());
     assertEquals("L-XL", rojoL.atributosSinColor().get(0).valor());
-    assertEquals(Dinero.deCop(60_000), rojoS.precio());
-    assertEquals(Dinero.deCop(65_000), rojoL.precio());
+    // El contado de la talla y el publicado por la fórmula (ADR-0095), no el de la hermana: el de
+    // ella es el contado más 2.000, que no es lo que da la comisión vigente.
+    // (60.000 + 833) / 0,968465 = 62.813,8 → 63.000; (65.000 + 833) / 0,968465 = 67.976,6 → 68.000.
+    assertEquals(Dinero.deCop(60_000), rojoS.precioContado());
+    assertEquals(Dinero.deCop(63_000), rojoS.precio());
+    assertEquals(Dinero.deCop(65_000), rojoL.precioContado());
+    assertEquals(Dinero.deCop(68_000), rojoL.precio());
     assertEquals(Optional.of(new Paquete(300, 30, 25, 4)), rojoS.paquete());
     assertEquals(Optional.empty(), rojoL.paquete());
     assertEquals(
@@ -227,6 +238,7 @@ class AgregarColorDesdeLaPrincipalTest {
                 new AgregarColorDesdeLaPrincipalComando(sinPrincipal.id(), "Rojo", null)));
   }
 
+  /** Con el publicado 2.000 por encima del contado, para saber cuál de los dos se copió. */
   private static Variante variante(
       String sku, String talla, String color, long precio, Paquete paquete) {
     List<ValorAtributo> valores =
@@ -235,7 +247,13 @@ class AgregarColorDesdeLaPrincipalTest {
             : List.of(
                 ValorAtributo.deColor(COLOR, color, "#111111"), ValorAtributo.de(TALLA, talla));
     return Variante.crear(
-        new Sku(sku), Dinero.deCop(precio), BigDecimal.ZERO, null, paquete, valores);
+        new Sku(sku),
+        Dinero.deCop(precio),
+        Dinero.deCop(precio + 2_000),
+        BigDecimal.ZERO,
+        null,
+        paquete,
+        valores);
   }
 
   private static ImagenProducto principal() {

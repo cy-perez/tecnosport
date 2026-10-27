@@ -33,10 +33,12 @@ import co.tecnosport.api.application.catalogo.ListarPaletaDeColores;
 import co.tecnosport.api.application.catalogo.ListarProductosAdmin;
 import co.tecnosport.api.application.catalogo.ListarVariantesSinMedir;
 import co.tecnosport.api.application.catalogo.MedirVariante;
+import co.tecnosport.api.application.catalogo.PreciosDelCatalogo;
 import co.tecnosport.api.application.catalogo.ProductosNoPublicados;
 import co.tecnosport.api.application.catalogo.PublicarProducto;
 import co.tecnosport.api.application.catalogo.PublicarSetRotacion;
 import co.tecnosport.api.application.catalogo.QuitarImagenDeGaleria;
+import co.tecnosport.api.application.catalogo.RecalcularPreciosPublicados;
 import co.tecnosport.api.application.catalogo.RenombrarMarca;
 import co.tecnosport.api.application.catalogo.ReordenarGaleria;
 import co.tecnosport.api.application.catalogo.RepositorioAtributos;
@@ -59,6 +61,7 @@ import co.tecnosport.api.application.inventario.ListarExistencias;
 import co.tecnosport.api.application.inventario.RepositorioInventario;
 import co.tecnosport.api.application.pedido.RepositorioPedidos;
 import co.tecnosport.api.bootstrap.negocio.PropiedadesNegocio;
+import co.tecnosport.api.domain.catalogo.ComisionDePasarela;
 import co.tecnosport.api.infrastructure.catalogo.AlmacenDeImagenesGcs;
 import com.google.cloud.storage.Storage;
 import com.google.cloud.storage.StorageOptions;
@@ -173,8 +176,15 @@ public class ConfiguracionCatalogo {
   }
 
   @Bean
-  public CambiarPrecios cambiarPrecios(RepositorioProductos repositorioProductos) {
-    return new CambiarPrecios(repositorioProductos);
+  public CambiarPrecios cambiarPrecios(
+      RepositorioProductos repositorioProductos, ComisionDePasarela comision) {
+    return new CambiarPrecios(repositorioProductos, comision);
+  }
+
+  @Bean
+  public RecalcularPreciosPublicados recalcularPreciosPublicados(
+      PreciosDelCatalogo preciosDelCatalogo, ComisionDePasarela comision) {
+    return new RecalcularPreciosPublicados(preciosDelCatalogo, comision);
   }
 
   @Bean
@@ -336,14 +346,16 @@ public class ConfiguracionCatalogo {
       RepositorioInventario repositorioInventario,
       Reloj reloj,
       PropiedadesNegocio propiedadesNegocio,
-      RepositorioPaletaDeColores paleta) {
+      RepositorioPaletaDeColores paleta,
+      ComisionDePasarela comision) {
     return new AgregarVariante(
         repositorioProductos,
         repositorioAtributos,
         repositorioInventario,
         reloj,
         propiedadesNegocio.responsableDeIva(),
-        paleta);
+        paleta,
+        comision);
   }
 
   @Bean

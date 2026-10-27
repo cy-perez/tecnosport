@@ -190,6 +190,7 @@ public class RepositorioProductosJpa implements RepositorioProductos {
             productoId,
             variante.sku().valor(),
             variante.precio().valor(),
+            variante.precioContado().valor(),
             variante.tasaIva(),
             variante.codigoBarras().orElse(null),
             variante.paquete().map(Paquete::pesoGramos).orElse(null),
@@ -460,6 +461,7 @@ public class RepositorioProductosJpa implements RepositorioProductos {
                 existente.getProductoId(),
                 existente.getSku(),
                 existente.getPrecio(),
+                existente.getPrecioContado(),
                 existente.getTasaIva(),
                 existente.getCodigoBarras(),
                 paquete.pesoGramos(),
@@ -478,7 +480,7 @@ public class RepositorioProductosJpa implements RepositorioProductos {
    * y un {@code update} por SQL dejaría esa entidad con el precio viejo para quien la lea después.
    */
   @Override
-  public void actualizarPrecio(UUID varianteId, Dinero precio) {
+  public void actualizarPrecios(UUID varianteId, Dinero contado, Dinero publicado) {
     VarianteJpaEntity existente =
         varianteJpaRepository
             .findById(varianteId)
@@ -493,7 +495,8 @@ public class RepositorioProductosJpa implements RepositorioProductos {
                 existente.getId(),
                 existente.getProductoId(),
                 existente.getSku(),
-                precio.valor(),
+                publicado.valor(),
+                contado.valor(),
                 existente.getTasaIva(),
                 existente.getCodigoBarras(),
                 existente.getPesoGramos(),

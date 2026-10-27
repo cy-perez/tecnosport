@@ -2,13 +2,40 @@
 
 ## Métodos de pago
 
-| Método | Comprende | Proveedor | Cuándo entra el dinero |
-|---|---|---|---|
-| **`WOMPI`** | Tarjeta débito y crédito, PSE, Bancolombia a la mano y botón Bancolombia | Wompi | Al aprobar |
-| **`SISTECREDITO`** | — | Sistecrédito (pasarela propia) | Al aprobar el crédito |
-| `TRANSFERENCIA_MANUAL` | Nequi, Daviplata, BBVA | Ninguno | Al conciliar el comprobante |
-| **`CONTRAENTREGA`** | — | Transportadora con recaudo, vía Skydropx | Días después de la entrega |
-| `PAGO_EN_PUNTO` | Efectivo o transferencia, al recoger (`adr/0094`) | Ninguno | Al entregar en el punto |
+| Método | Comprende | Proveedor | Precio que paga | Cuándo entra el dinero |
+|---|---|---|---|---|
+| **`WOMPI`** | Tarjeta débito y crédito, PSE, Bancolombia a la mano y botón Bancolombia | Wompi | Publicado | Al aprobar |
+| **`SISTECREDITO`** | — | Sistecrédito (pasarela propia) | Publicado | Al aprobar el crédito |
+| `TRANSFERENCIA_MANUAL` | Nequi, Daviplata, BBVA | Ninguno | De contado | Al conciliar el comprobante |
+| **`CONTRAENTREGA`** | — | Transportadora con recaudo, vía Skydropx | De contado | Días después de la entrega |
+| `PAGO_EN_PUNTO` | Efectivo o transferencia, al recoger (`adr/0094`) | Ninguno | De contado | Al entregar en el punto |
+
+### Qué precio paga cada método
+
+**Desde el 26 de octubre de 2026 cada variante tiene dos precios** (`ADR-0095`). El
+**publicado** es el que se anuncia y lleva dentro la comisión de Wompi; el **de
+contado** es el que el negocio quiere recibir neto. Quien paga con una pasarela paga el
+publicado, y quien paga sin ella recibe la diferencia como **descuento por pagar sin
+pasarela**: `MetodoPago.precioDe` lo decide y `CrearPedido` lo congela en la línea. La
+fórmula y el redondeo están en `docs/02-modelo-datos.md`.
+
+Se descartó cobrarle la comisión aparte a quien eligiera una pasarela: un recargo que
+aparece al elegir el medio choca con el precio anunciado del artículo 26 de la Ley 1480,
+y el convenio de Sistecrédito no es público. Un descuento da el mismo resultado sin esos
+riesgos, porque **el precio anunciado es el máximo que alguien paga**.
+
+- **El descuento es solo de la mercancía.** El flete cuesta lo mismo con cualquier medio y
+  no lleva comisión adentro; la de Wompi sobre el flete (unos $473 en uno de $15.000) la
+  absorbe el negocio.
+- **La vitrina no muestra un segundo precio, muestra el ahorro** (decisión 10): la ficha,
+  la tarjeta y el carrito dicen «Ahorras $X pagando por transferencia, en el punto o
+  contra entrega». El desglose con el descuento solo aparece en el checkout, con el medio
+  ya elegido: `POST /pedidos/metodos-de-pago-con-precio` da la mercancía al precio de cada
+  medio, y el resumen, la pantalla de transferencia, la de estado y el comprobante por
+  correo muestran el descuento en su propia línea. Si con eso basta frente al artículo 26
+  es el punto 12 de `docs/14-consultas-al-abogado.md`.
+- **El reintegro devuelve lo que se pagó**, que es el precio congelado en la línea: nada
+  cambia en retracto, garantía ni recogida no retirada.
 
 ### Por qué los medios de Wompi son un solo método
 
@@ -135,6 +162,19 @@ no es código: es qué medios activa la cuenta de Wompi (`WOMPI_METODOS_HABILITA
 
 ## Wompi
 
+- **La comisión va dentro del precio publicado** (`ADR-0095`). La tarifa del plan, leída
+  en el portal el 26 de octubre de 2026, es 2,65 % + $700 + IVA del 19 % por transacción
+  exitosa: un costo real de 3,1535 % + $833. Es configuración y no constante
+  (`tecnosport.wompi.comision.variable`, `.fija` e `.iva`, desde `WOMPI_COMISION_VARIABLE`,
+  `WOMPI_COMISION_FIJA` y `WOMPI_COMISION_IVA`, en fracciones y la fija sin IVA), validada al
+  arrancar. Con ella, un producto de $230.000 de contado se publica a $239.000 y, pagado
+  con Wompi, deja $230.630. **Cambiarla no mueve ningún precio**: el panel (**Precios
+  publicados**, `GET/POST /api/v1/admin/precios/recalculo`) enseña qué publicados quedaron
+  desalineados y a cuánto pasarían, y una persona lo aplica. Las mismas cifras están
+  escritas a mano en la `V123`, que convirtió el catálogo una sola vez.
+- **El cargo fijo va dentro de cada producto**, y Wompi lo cobra una vez por transacción:
+  en un carrito de tres productos el negocio recupera tres veces $833. Queda a favor del
+  negocio, y se aceptó.
 - **La aprobación no se decide con lo que trae el navegador.** El parámetro de
   retorno solo sirve para mostrar una pantalla. La verdad es el webhook firmado
   más una consulta directa a la transacción.
@@ -177,6 +217,15 @@ con la URL de pago entregada por sondeo, y con su propia traducción de estados.
 Por eso tiene su puerto (`PasarelaSistecredito`), su caso de uso
 (`CrearIntentoDePagoSistecredito`), su endpoint de confirmación y su
 conciliación.
+
+**Paga el precio publicado, y el negocio absorbe el resto** (`ADR-0095`, decisión 3).
+Sistecrédito cobra un 5,0 % de «gasto financiero por descuento de negociación», que se
+ve en el cierre contable, y el publicado solo lleva dentro la comisión de Wompi
+(≈ 3,15 %): la diferencia, cerca de 1,85 %, la pone el margen. Cobrarle más a quien
+compra a crédito se descartó porque puede leerse como un costo de financiación que no
+está en el crédito, y el convenio de aliado no es público. Por lo mismo, **el monto
+mínimo de Sistecrédito se compara contra la mercancía al precio publicado**, sin flete
+(`MetodosDePagoDisponibles`): es por lo que se pide el crédito.
 
 **El flujo es al revés que el de Wompi.** Allá el backend firma unos datos y el
 navegador arma la URL; aquí el backend llama a `POST /pay/create`, recibe un
@@ -345,10 +394,22 @@ señalado en los logs del backend para revisión manual (`ADR-0014`).
 
 ## Envío
 
-**Se cotiza.** El precio publicado de cada producto es un precio base con IVA y
-**sin flete**; el costo de envío se calcula contra el destino real y se cobra
-aparte (`ADR-0021`, que supera a `ADR-0012`). El total del pedido es la suma de
-las líneas más el envío, y así se muestra antes de pagar.
+**Se cotiza.** El precio publicado de cada producto es el valor final de la
+mercancía —sin IVA que sumarle, porque el negocio no es responsable del impuesto
+(`adr/0041`), y con la comisión de Wompi dentro (`ADR-0095`)— y **sin flete**; el
+costo de envío se calcula contra el destino real y se cobra aparte (`ADR-0021`, que
+supera a `ADR-0012`). El total del pedido es la suma de las líneas, al precio del
+medio de pago elegido, más el envío, y así se muestra antes de pagar. Esta línea
+decía «un precio base con IVA», y ya era inexacta antes de los dos precios.
+
+**El valor declarado sin pedido depende de quién pregunta** (`ADR-0095`). Con pedido
+se declara lo que la línea cobra. En el checkout todavía no hay pedido, y la
+cotización solo sabe si lleva recaudo: con recaudo es contraentrega y declara el de
+contado, que es lo que el mensajero cobra; sin recaudo declara el publicado, porque si
+el comprador paga con pasarela la guía saldrá con ese, y declarar el de contado dejaría
+pasar un artículo al filo del techo asegurable que la emisión rechazaría después. Así,
+la cotización de una transferencia o de un pago en el punto lleva un seguro calculado un
+poco por encima de lo que su guía declarará, que es el lado barato del error.
 
 No es solo una decisión comercial: el **artículo 50 de la Ley 1480 de 2011** exige
 que, antes de finalizar la transacción, el comprador vea el precio individual de
@@ -579,6 +640,12 @@ recaude en un mostrador propio. Quien recoge paga en línea antes o paga al reco
 Ese se verifica por llamada o WhatsApp dentro de las 48 horas siguientes a la compra,
 como la contraentrega, o se cancela.
 
+**El precio depende de cómo se pague, no de que se recoja** (`ADR-0095`). Quien recoge y
+paga en línea con Wompi o Sistecrédito paga el publicado; quien paga al recoger
+(`PAGO_EN_PUNTO`), en efectivo o por transferencia, paga el de contado, y el descuento se
+suma al flete que ya no paga. Lo que se cobra en el punto es el total del pedido con ese
+descuento ya restado.
+
 **Solo para lo de proveedores locales** (`adr/0093`): con la bandera encendida, la
 recogida se ofrece si todo el carrito viene de un proveedor marcado como local —La
 Riverah y Violeta—, y `RecogidaEnPunto` lo exige en el servidor.
@@ -657,7 +724,9 @@ Es el método con más riesgo operativo del sistema, y el diseño lo refleja.
 - **Rango del monto.** Configurable en `CONTRAENTREGA_MONTO_MINIMO` y
   `CONTRAENTREGA_MONTO_MAXIMO`, y **se comparan contra el total del pedido, con el
   flete dentro** (`adr/0023`): es lo que el mensajero cobra en la puerta, no la
-  mercancía sola. El techo existe porque un celular de cuatro millones contra
+  mercancía sola. Desde el `ADR-0095` ese total va **al precio de contado**, porque la
+  contraentrega no pasa por pasarela y lleva el descuento: un carrito puede caber bajo
+  el techo pagando contra entrega aunque su precio publicado lo pase. El techo existe porque un celular de cuatro millones contra
   entrega es una pérdida esperando ocurrir; **el piso existe porque la
   transportadora no recauda por debajo de cierto valor**, y ofrecerlo ahí sería
   prometer un medio de pago que nadie puede ejecutar. Los dos valores del 14 de
@@ -712,7 +781,13 @@ cotización**: sin tarifa no hay envío, y sin envío no hay recaudo.
 
 **El valor a recaudar es el total del pedido, con el flete incluido**, porque
 desde `ADR-0021` el envío se cobra aparte. Sale de `Pedido.total()`, nunca del
-cliente.
+cliente, y desde el `ADR-0095` ya lleva el descuento: las líneas de un pedido contra
+entrega se congelan al precio de contado. Antes del pedido, `MetodosDePagoDisponibles`
+mide el tope contra la mercancía al contado más el flete con recaudo, y
+`ArmadorDeBultos.armarParaRecaudo` declara cada bulto al contado: lo mismo que el
+pedido cobrará. **El recaudo de 99minutes no lleva recargo** (`docs/13`), pero eso
+solo cubre esa transportadora: si otra cobra por recaudar, el descuento lo paga el
+margen.
 
 **Solo efectivo.** Las transportadoras no aceptan otro medio en el recaudo, y eso
 se le dice al comprador **antes** de que elija el método, no en el correo de
@@ -815,4 +890,8 @@ Se muestran los datos de la cuenta y una referencia única. El pedido queda en
 concilia el comprobante en el panel. Vencido el plazo sin comprobante, se libera.
 
 El valor a transferir es el total del pedido, flete incluido: no se pide una
-transferencia por la mercancía y otra por el envío.
+transferencia por la mercancía y otra por el envío. Desde el `ADR-0095` ese total
+**ya lleva el descuento por pagar sin pasarela** —las líneas se congelan al precio de
+contado—, y la pantalla de transferencia lo dice («Ya incluye un descuento de $X por
+pagar por transferencia») para que quien transfiere no busque el precio de la vitrina.
+Quien concilia compara el comprobante contra ese total, no contra el publicado.

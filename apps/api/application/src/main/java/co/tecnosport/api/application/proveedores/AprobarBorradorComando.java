@@ -13,6 +13,8 @@ import java.util.UUID;
  * en qué tallas viene cada una, en qué foto se ve la que no tiene foto propia y si la principal que
  * vale para todos los tonos entra en la ficha.
  *
+ * @param precioVenta el <b>precio de contado</b> (ADR-0095), que pasa tal cual a {@code
+ *     AgregarVarianteComando.precioContado}; el publicado lo calcula el catálogo
  * @param fotos en el orden en que van a publicarse; la primera es la principal
  * @param existenciaInicial por variante; el checkout no vende lo que el libro no tiene
  * @param prendas las prendas del producto, dichas aparte de las fotos (12 de octubre de 2026): una
@@ -47,7 +49,7 @@ public record AprobarBorradorComando(
     Objects.requireNonNull(categoriaId, "La categoría es obligatoria.");
     Objects.requireNonNull(marcaId, "La marca es obligatoria.");
     if (precioVenta <= 0) {
-      throw new IllegalArgumentException("El precio de venta tiene que ser mayor que cero.");
+      throw new IllegalArgumentException("El precio de contado tiene que ser mayor que cero.");
     }
     if (existenciaInicial < 0) {
       throw new IllegalArgumentException("La existencia inicial no puede ser negativa.");

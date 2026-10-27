@@ -23,6 +23,11 @@ import java.util.UUID;
  * <p>{@code detalleVariante} congela lo que la variante era —«Negro · M»— desde el 3 de octubre de
  * 2026, cuando la vitrina empezó a ofrecer tallas: con el SKU solo, quien despacha no sabía qué
  * talla empacar sin ir a buscarla. Nulo en las líneas anteriores y en un producto sin variaciones.
+ *
+ * <p>{@code precioPublicado} congela el precio anunciado de la variante al comprar, y {@code
+ * precioUnitario} el que se cobra, que depende del medio de pago (ADR-0095): el publicado con
+ * pasarela, el de contado sin ella. La diferencia es el descuento por pagar sin pasarela, y queda
+ * guardada para poder auditarla. En las líneas anteriores al ADR-0095 los dos son el mismo.
  */
 public record LineaPedido(
     UUID id,
@@ -34,7 +39,34 @@ public record LineaPedido(
     BigDecimal tasaIva,
     String imagenUrl,
     UUID idReserva,
-    String detalleVariante) {
+    String detalleVariante,
+    Dinero precioPublicado) {
+
+  /** Sin descuento: el precio que se cobra es el publicado. Las líneas de antes del ADR-0095. */
+  public LineaPedido(
+      UUID id,
+      UUID varianteId,
+      Sku sku,
+      String nombre,
+      int cantidad,
+      Dinero precioUnitario,
+      BigDecimal tasaIva,
+      String imagenUrl,
+      UUID idReserva,
+      String detalleVariante) {
+    this(
+        id,
+        varianteId,
+        sku,
+        nombre,
+        cantidad,
+        precioUnitario,
+        tasaIva,
+        imagenUrl,
+        idReserva,
+        detalleVariante,
+        precioUnitario);
+  }
 
   /** Sin detalle de variante: las líneas de antes y un producto que no varía. */
   public LineaPedido(
@@ -58,6 +90,15 @@ public record LineaPedido(
     Objects.requireNonNull(varianteId, "El id de la variante no puede ser nulo.");
     Objects.requireNonNull(sku, "El SKU no puede ser nulo.");
     Objects.requireNonNull(precioUnitario, "El precio unitario no puede ser nulo.");
+    Objects.requireNonNull(precioPublicado, "El precio publicado no puede ser nulo.");
+    if (precioPublicado.valor().compareTo(precioUnitario.valor()) < 0) {
+      throw new ExcepcionDeDominio(
+          "El precio que se cobra ("
+              + precioUnitario.valor().toPlainString()
+              + ") no puede superar el publicado ("
+              + precioPublicado.valor().toPlainString()
+              + "): el publicado es el máximo que alguien paga.");
+    }
     Objects.requireNonNull(tasaIva, "La tasa de IVA no puede ser nula.");
     Objects.requireNonNull(idReserva, "El id de la reserva no puede ser nulo.");
     if (nombre == null || nombre.isBlank()) {
@@ -79,7 +120,21 @@ public record LineaPedido(
     return detalleVariante == null ? nombre : nombre + " (" + detalleVariante + ")";
   }
 
+  /** Lo que se cobra por la línea: el precio unitario por la cantidad. */
   public Dinero subtotal() {
     return Dinero.deCop(precioUnitario.valor().multiply(BigDecimal.valueOf(cantidad)));
+  }
+
+  /** Lo que la línea habría costado al precio anunciado. */
+  public Dinero subtotalPublicado() {
+    return Dinero.deCop(precioPublicado.valor().multiply(BigDecimal.valueOf(cantidad)));
+  }
+
+  /**
+   * El descuento por pagar sin pasarela (ADR-0095): publicado menos cobrado, por la cantidad. Cero
+   * con Wompi, con Sistecrédito y en las líneas anteriores.
+   */
+  public Dinero descuento() {
+    return Dinero.deCop(subtotalPublicado().valor().subtract(subtotal().valor()));
   }
 }

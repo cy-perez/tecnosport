@@ -104,7 +104,7 @@ final class RepositorioProductosFalso implements RepositorioProductos {
   }
 
   @Override
-  public void actualizarPrecio(UUID varianteId, Dinero precio) {}
+  public void actualizarPrecios(UUID varianteId, Dinero contado, Dinero publicado) {}
 
   @Override
   public void guardarOrdenDeGaleria(UUID productoId, List<ImagenProducto> galeria) {}

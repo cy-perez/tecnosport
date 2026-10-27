@@ -44,33 +44,42 @@ public final class CotizarCarrito {
             .orElseThrow(() -> new CarritoNoEncontradoException(carritoId));
     List<CarritoCotizado.LineaCotizada> lineas = new ArrayList<>();
     BigDecimal subtotal = BigDecimal.ZERO;
+    BigDecimal subtotalContado = BigDecimal.ZERO;
     for (LineaCarrito linea : carrito.lineas()) {
-      Optional<Dinero> precio = precioVigente(linea.varianteId());
-      Dinero subtotalLinea =
-          precio
-              .map(p -> Dinero.deCop(p.valor().multiply(BigDecimal.valueOf(linea.cantidad()))))
-              .orElse(null);
+      Optional<Variante> variante = varianteVendible(linea.varianteId());
+      Dinero precio = variante.map(Variante::precio).orElse(null);
+      Dinero precioContado = variante.map(Variante::precioContado).orElse(null);
+      Dinero subtotalLinea = porCantidad(precio, linea.cantidad());
+      Dinero subtotalContadoLinea = porCantidad(precioContado, linea.cantidad());
       if (subtotalLinea != null) {
         subtotal = subtotal.add(subtotalLinea.valor());
+        subtotalContado = subtotalContado.add(subtotalContadoLinea.valor());
       }
       lineas.add(
           new CarritoCotizado.LineaCotizada(
               linea.id(),
               linea.varianteId(),
               linea.cantidad(),
-              precio.orElse(null),
-              subtotalLinea));
+              precio,
+              subtotalLinea,
+              precioContado,
+              subtotalContadoLinea));
     }
-    return new CarritoCotizado(lineas, Dinero.deCop(subtotal));
+    return new CarritoCotizado(lineas, Dinero.deCop(subtotal), Dinero.deCop(subtotalContado));
   }
 
-  private Optional<Dinero> precioVigente(UUID varianteId) {
+  private static Dinero porCantidad(Dinero precio, int cantidad) {
+    return precio == null
+        ? null
+        : Dinero.deCop(precio.valor().multiply(BigDecimal.valueOf(cantidad)));
+  }
+
+  private Optional<Variante> varianteVendible(UUID varianteId) {
     return repositorioProductos
         .buscarPorVarianteId(varianteId)
         .filter(producto -> producto.estado() == EstadoProducto.PUBLICADO)
         .flatMap(producto -> variante(producto, varianteId))
-        .filter(Variante::seVende)
-        .map(Variante::precio);
+        .filter(Variante::seVende);
   }
 
   private static Optional<Variante> variante(Producto producto, UUID varianteId) {

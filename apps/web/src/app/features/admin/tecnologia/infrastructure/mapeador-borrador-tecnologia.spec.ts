@@ -1,6 +1,43 @@
 import { aBorradorTecnologia, aElegirPeticion } from './mapeador-borrador-tecnologia';
 
 describe('mapeador del borrador de tecnología', () => {
+  /** Los dos sugeridos los calcula el servidor (ADR-0095); el panel solo los lleva. */
+  it('lleva el sugerido de contado y el publicado de cada configuración', () => {
+    const borrador = aBorradorTecnologia({
+      id: 'b-1',
+      proveedorId: 'p-1',
+      idModelo: 'm',
+      titulo: 'M',
+      descripcion: '',
+      descripcionDeLaSkill: '',
+      fichaEditada: false,
+      fichaNuevaDeLaSkill: false,
+      paleta: [],
+      configuraciones: [
+        {
+          sku: 'a',
+          titulo: 'A',
+          costoProveedor: 675000,
+          precioMercado: 1200000,
+          precioContadoSugerido: 1075000,
+          precioPublicadoSugerido: 1111000,
+          coloresSugeridos: [],
+          coloresElegidos: [],
+        },
+      ],
+      estado: 'EN_REVISION',
+      vistoEn: '2026-10-08T05:00:00Z',
+      creadoEn: '2026-10-08T15:00:00Z',
+      cantidadDeFotos: 0,
+      fotosQueFaltan: 4,
+      fotos: [],
+    });
+
+    const [config] = borrador.configuraciones;
+    expect(config.precioContadoSugerido).toBe(1075000);
+    expect(config.precioPublicadoSugerido).toBe(1111000);
+  });
+
   it('lo opcional que no viene queda en nulo, y las listas tal cual', () => {
     const borrador = aBorradorTecnologia({
       id: 'b-1',
@@ -47,6 +84,8 @@ describe('mapeador del borrador de tecnología', () => {
     expect(borrador.productoId).toBeNull();
     const [config] = borrador.configuraciones;
     expect(config.precioMercado).toBeNull();
+    expect(config.precioContadoSugerido).toBeNull();
+    expect(config.precioPublicadoSugerido).toBeNull();
     expect(config.precioVenta).toBeNull();
     expect(config.ram).toBeNull();
     expect(config.coloresSugeridos).toEqual(['Negro']);

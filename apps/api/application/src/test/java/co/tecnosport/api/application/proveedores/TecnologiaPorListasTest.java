@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import co.tecnosport.api.application.catalogo.AgregarVariante;
 import co.tecnosport.api.application.catalogo.ObjetoDeImagenNoEncontradoException;
+import co.tecnosport.api.application.catalogo.TarifasDePrueba;
 import co.tecnosport.api.application.compartido.RelojFalso;
 import co.tecnosport.api.application.proveedores.ApoyoDeCatalogoParaIngesta.RepositorioAtributosFijo;
 import co.tecnosport.api.application.proveedores.ApoyoDeCatalogoParaIngesta.RepositorioCategoriasFijo;
@@ -35,6 +36,7 @@ import co.tecnosport.api.application.proveedores.tecnologia.RepositorioBorradore
 import co.tecnosport.api.application.proveedores.tecnologia.RepositorioListasDeTecnologia;
 import co.tecnosport.api.application.proveedores.tecnologia.RepositorioVariantesDeProveedor;
 import co.tecnosport.api.domain.catalogo.Atributo;
+import co.tecnosport.api.domain.catalogo.ComisionDePasarela;
 import co.tecnosport.api.domain.catalogo.EstadoDisponibilidad;
 import co.tecnosport.api.domain.catalogo.EstadoProducto;
 import co.tecnosport.api.domain.catalogo.LineaCatalogo;
@@ -54,6 +56,7 @@ import co.tecnosport.api.domain.proveedores.ModeloDeLista;
 import co.tecnosport.api.domain.proveedores.OrdenDePublicacion;
 import co.tecnosport.api.domain.proveedores.Proveedor;
 import co.tecnosport.api.domain.proveedores.VarianteDeProveedor;
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -219,7 +222,8 @@ class TecnologiaPorListasTest {
             new RepositorioMarcasFijo(),
             new RepositorioCategoriasFijo(),
             atributos,
-            new AgregarVariante(productos, atributos, inventario, reloj, false),
+            new AgregarVariante(
+                productos, atributos, inventario, reloj, false, TarifasDePrueba.WOMPI),
             privado,
             publico,
             EXISTENCIA)
@@ -333,7 +337,9 @@ class TecnologiaPorListasTest {
     assertEquals("8GB", valor(negra, "RAM"));
     assertEquals("256GB", valor(negra, "Almacenamiento"));
     assertEquals("1 SIM", valor(negra, "SIM"));
-    assertEquals(Dinero.deCop(849_900), negra.precio());
+    // De contado el que se aprobó; publicado con la comisión: (849.900 + 833) / 0,968465 → 879.000.
+    assertEquals(Dinero.deCop(849_900), negra.precioContado());
+    assertEquals(Dinero.deCop(879_000), negra.precio());
     assertEquals(EXISTENCIA, disponible(negra.id()));
     VarianteDeProveedor vinculo = vinculos.porVariante.get(negra.id());
     assertEquals(UNA_SIM, vinculo.configuracion());
@@ -762,7 +768,7 @@ class TecnologiaPorListasTest {
     assertEquals(Dinero.deCop(660_000), vinculos.porVariante.get(negra.id()).costo());
     assertEquals(
         Dinero.deCop(849_900),
-        productos.buscarPorId(producto.id()).orElseThrow().variantes().getFirst().precio());
+        productos.buscarPorId(producto.id()).orElseThrow().variantes().getFirst().precioContado());
     assertEquals(0, resultado.borradoresNuevos(), "la dual quedó sin colores al aprobar: decidida");
   }
 
@@ -981,20 +987,26 @@ class TecnologiaPorListasTest {
   @Test
   void laPaletaDelPanelCompletaLosColoresDeCadaConfiguracionQueSeVende() {
     Producto producto = unA17QueYaSeVende();
+    // Wompi subió la variable al 3 % después de publicar las hermanas a 879.000.
+    ComisionDePasarela nueva =
+        new ComisionDePasarela(new BigDecimal("0.03"), Dinero.deCop(700), new BigDecimal("0.19"));
 
     int nacidas =
         new DefinirPaletaDeTecnologia(
                 productos,
                 productosDeProveedor,
                 vinculos,
-                new AgregarVariante(productos, atributos, inventario, reloj, false))
+                new AgregarVariante(productos, atributos, inventario, reloj, false, nueva))
             .ejecutar(producto.id(), List.of("Negro", "Gris", "Azul", "Verde"));
 
     assertEquals(2, nacidas, "azul y verde de la de una SIM; la dual no se vende");
     Producto completo = productos.buscarPorId(producto.id()).orElseThrow();
     assertEquals(List.of("Negro", "Gris", "Azul", "Verde"), completo.paleta());
     Variante verde = variante(completo, "Verde");
-    assertEquals(Dinero.deCop(849_900), verde.precio());
+    // El contado de la hermana y el publicado por la comisión vigente, no el 879.000 de ella:
+    // (849.900 + 833) / (1 − 0,03 × 1,19) = 882.228,6 → 883.000.
+    assertEquals(Dinero.deCop(849_900), verde.precioContado());
+    assertEquals(Dinero.deCop(883_000), verde.precio());
     assertEquals("1 SIM", valor(verde, "SIM"));
     assertEquals(0, disponible(verde.id()), "sin existencia hasta que el proveedor lo confirme");
     assertTrue(porConfirmar(verde));
@@ -1015,7 +1027,8 @@ class TecnologiaPorListasTest {
                     productos,
                     productosDeProveedor,
                     vinculos,
-                    new AgregarVariante(productos, atributos, inventario, reloj, false))
+                    new AgregarVariante(
+                        productos, atributos, inventario, reloj, false, TarifasDePrueba.WOMPI))
                 .ejecutar(producto.id(), List.of("Negro")));
   }
 

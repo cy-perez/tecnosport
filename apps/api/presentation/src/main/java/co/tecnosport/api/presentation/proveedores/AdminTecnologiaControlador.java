@@ -16,9 +16,11 @@ import co.tecnosport.api.application.proveedores.tecnologia.RechazarBorradorTecn
 import co.tecnosport.api.application.proveedores.tecnologia.ReordenarFotosBorradorTecnologia;
 import co.tecnosport.api.application.proveedores.tecnologia.SolicitarSubidaDeFotoDeBorradorTecnologia;
 import co.tecnosport.api.application.proveedores.tecnologia.VerBorradorTecnologia;
+import co.tecnosport.api.domain.catalogo.ComisionDePasarela;
 import co.tecnosport.api.domain.catalogo.Producto;
 import co.tecnosport.api.domain.proveedores.BorradorTecnologia;
 import co.tecnosport.api.domain.proveedores.EstadoBorrador;
+import co.tecnosport.api.domain.proveedores.SugerenciaDePrecioTecnologia;
 import co.tecnosport.api.presentation.catalogo.MapeadorRespuestasProductoAdmin;
 import co.tecnosport.api.presentation.catalogo.dto.ProductoAdminRespuesta;
 import co.tecnosport.api.presentation.proveedores.dto.AgregarFotoBorradorTecnologiaPeticion;
@@ -90,6 +92,9 @@ public class AdminTecnologiaControlador {
   private final MapeadorRespuestasProductoAdmin mapeadorProducto;
   private final TransactionTemplate transaccion;
 
+  /** Los dos precios sugeridos de cada configuración (ADR-0095, decisión 8). */
+  private final BorradorTecnologiaRespuesta.Precios precios;
+
   public AdminTecnologiaControlador(
       ImportarListaDeTecnologia importarLista,
       ListarBorradoresTecnologia listarBorradores,
@@ -106,7 +111,9 @@ public class AdminTecnologiaControlador {
       EliminarBorradoresTecnologiaSinAprobar eliminarSinAprobar,
       FotosFirmadasDeBorradorTecnologia fotosFirmadas,
       MapeadorRespuestasProductoAdmin mapeadorProducto,
-      PlatformTransactionManager transactionManager) {
+      PlatformTransactionManager transactionManager,
+      SugerenciaDePrecioTecnologia sugerenciaDePrecio,
+      ComisionDePasarela comision) {
     this.importarLista = Objects.requireNonNull(importarLista);
     this.listarBorradores = Objects.requireNonNull(listarBorradores);
     this.verBorrador = Objects.requireNonNull(verBorrador);
@@ -123,6 +130,9 @@ public class AdminTecnologiaControlador {
     this.fotosFirmadas = Objects.requireNonNull(fotosFirmadas);
     this.mapeadorProducto = Objects.requireNonNull(mapeadorProducto);
     this.transaccion = new TransactionTemplate(Objects.requireNonNull(transactionManager));
+    this.precios =
+        new BorradorTecnologiaRespuesta.Precios(
+            Objects.requireNonNull(sugerenciaDePrecio), Objects.requireNonNull(comision));
   }
 
   @PostMapping("/proveedores/{proveedorId}/listas-tecnologia")
@@ -146,7 +156,7 @@ public class AdminTecnologiaControlador {
   public List<BorradorTecnologiaRespuesta> listar(
       @RequestParam(defaultValue = "EN_REVISION") String estado) {
     return listarBorradores.ejecutar(EstadoBorrador.valueOf(estado)).stream()
-        .map(BorradorTecnologiaRespuesta::de)
+        .map(b -> BorradorTecnologiaRespuesta.de(b, precios))
         .toList();
   }
 
@@ -261,6 +271,6 @@ public class AdminTecnologiaControlador {
   }
 
   private BorradorTecnologiaRespuesta conFotos(BorradorTecnologia borrador) {
-    return BorradorTecnologiaRespuesta.de(borrador, fotosFirmadas.ejecutar(borrador));
+    return BorradorTecnologiaRespuesta.de(borrador, fotosFirmadas.ejecutar(borrador), precios);
   }
 }

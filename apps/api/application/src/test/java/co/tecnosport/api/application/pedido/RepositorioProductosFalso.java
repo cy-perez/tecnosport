@@ -136,7 +136,7 @@ final class RepositorioProductosFalso implements RepositorioProductos {
   }
 
   @Override
-  public void actualizarPrecio(UUID varianteId, Dinero precio) {
+  public void actualizarPrecios(UUID varianteId, Dinero contado, Dinero publicado) {
     throw new UnsupportedOperationException("No usado por las pruebas de pedido.");
   }
 

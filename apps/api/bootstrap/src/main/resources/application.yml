@@ -168,6 +168,16 @@ tecnosport:
     conciliacion:
       intervalo-minutos: ${WOMPI_CONCILIACION_INTERVALO_MINUTOS:15}
       antiguedad-minima-minutos: ${WOMPI_CONCILIACION_ANTIGUEDAD_MINIMA_MINUTOS:15}
+    comision:
+      # La tarifa del plan de Wompi, LEIDA EN EL PORTAL EL 26 DE OCTUBRE DE 2026: 2,65 % + $700 + IVA
+      # del 19 % por transaccion exitosa. Con ella se calcula el precio publicado desde el de
+      # contado (ADR-0095). Fracciones, no porcentajes: 0.0265 es el 2,65 %. La fija va en pesos y
+      # sin IVA. Las mismas cifras estan escritas a mano en V123__precio_de_contado.sql, que
+      # recalculo el catalogo una vez. CAMBIARLAS NO MUEVE NINGUN PRECIO: el panel ensena el
+      # recalculo y una persona lo aplica (RecalcularPreciosPublicados).
+      variable: ${WOMPI_COMISION_VARIABLE:0.0265}
+      fija: ${WOMPI_COMISION_FIJA:700}
+      iva: ${WOMPI_COMISION_IVA:0.19}
   sistecredito:
     # La SEGUNDA pasarela (adr/0048). Arranca apagada, y no por prudencia generica: falta el monto
     # minimo del credito, que lo define Sistecredito y no es publico. Encenderla sin ese dato no
@@ -322,6 +332,10 @@ tecnosport:
       # Cuanto vale una lista de precios antes de ocultar lo que trajo. Siete dias: la vigencia
       # que el negocio le dio al precio de mercado de la lista (8 de octubre de 2026).
       ventana-disponibilidad: ${PROVEEDORES_TECNOLOGIA_VENTANA_DISPONIBILIDAD:P7D}
+      # Lo mas que el precio de contado sugerido le gana al costo, en pesos: el de mercado, sin
+      # pasarse de costo + esto. Decision del negocio del 26 de octubre de 2026 (ADR-0095,
+      # decision 8). Ajusta la sugerencia; quien revisa puede poner otro precio.
+      ganancia-maxima: ${PROVEEDORES_TECNOLOGIA_GANANCIA_MAXIMA:400000}
     cola-de-tareas:
       # La cola de ingestas en Cloud Tasks (ADR-0080): cada tramo de un lote es una tarea que llama
       # al endpoint interno. VACIA, la ingesta corre en un hilo con la cola en memoria, que es lo de
@@ -635,7 +649,7 @@ tecnosport:
     # en los JSON de Transloco de este mismo repositorio: cambiar el texto y cambiar esta fecha son
     # el mismo commit. La variable existe para poder corregirla sin redesplegar, no para tener que
     # fijarla en cada entorno.
-    politica-datos-version: ${POLITICA_DATOS_VERSION:2026-10-26.1}
+    politica-datos-version: ${POLITICA_DATOS_VERSION:2026-10-27.1}
   verificacion-correo:
     # Ningún doc especifica esta duración (solo la de recuperación, 30 min) — parámetro técnico,
     # no un dato de negocio.
