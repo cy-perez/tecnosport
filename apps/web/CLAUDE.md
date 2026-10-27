@@ -19,8 +19,7 @@ src/app/features/catalogo/
   presentation/    componentes y rutas
 ```
 
-Funcionalidades: `catalogo`, `carrito`, `checkout`, `cuenta`, `admin`,
-`captura360`.
+Funcionalidades: `catalogo`, `carrito`, `checkout`, `cuenta`, `admin`.
 
 Un componente **nunca** inyecta `HttpClient` ni una clase de `infrastructure`:
 inyecta el puerto declarado en `domain`, y el proveedor de la ruta decide la
@@ -186,7 +185,7 @@ Meterlo en la regla convertiría un diseño decidido en un aviso permanente.
     la misma URL en todos los descriptores (aviso 2963). Comprobado en la
     fuente de `@angular/common` instalada.
   - **Una imagen que se publica en un solo ancho lleva `disableOptimizedSrcset`**
-    —el hero de la portada, la línea del carrito, los fotogramas del visor 360—,
+    —el hero de la portada, la línea del carrito—,
     o Angular anuncia un 2x que es exactamente el mismo archivo.
   - Los descriptores viven en **una sola función del dominio**, igual que antes
     vivía ahí la elección de formato: así fue como el visor terminó sirviendo la
@@ -200,8 +199,8 @@ Meterlo en la regla convertiría un diseño decidido en un aviso permanente.
     Angular avisa (`NG02952`) con razón: no se silencia el aviso, se elige el
     modo correcto.
   - **`priority` solo en la candidata a LCP de cada pantalla**, nunca en más de
-    una: priorizar todo es no priorizar nada. Es el fotograma frontal de la
-    ficha, y la **primera tarjeta** de la portada y de la rejilla — la portada no
+    una: priorizar todo es no priorizar nada. Es la primera imagen de la
+    galería de la ficha, y la **primera tarjeta** de la portada y de la rejilla — la portada no
     tiene `<img>` de hero, su hero es un bloque de CSS, así que el LCP le toca a
     esa tarjeta (`NG02955`). Por eso `ts-tarjeta-producto` recibe
     `prioritaria` como `input()` en vez de decidirlo por su cuenta: quién es la
@@ -213,8 +212,7 @@ Meterlo en la regla convertiría un diseño decidido en un aviso permanente.
     defecto.
   - **Las entradas de `NgOptimizedImage` distintas de `ngSrc` están congeladas
     tras inicializar** (`assertNoPostInitInputChange`, comprobado en la fuente de
-    `@angular/common`). `ngSrc` sí se puede cambiar en caliente — por eso el
-    visor 360 es un solo `<img>` que cambia de `ngSrc` y no N apilados. Y por eso
+    `@angular/common`). `ngSrc` sí se puede cambiar en caliente. Y por eso
     una plantilla que muestre la misma imagen con `prioritaria` distinta según la
     rama repite el elemento en cada rama con un literal, en vez de ligar el input
     a una expresión: ligarlo revienta al navegar entre dos pantallas que no
@@ -224,7 +222,7 @@ Meterlo en la regla convertiría un diseño decidido en un aviso permanente.
   precargan en el `resolve` de la ruta, no dentro del componente — ver "Notas
   de SSR con TanStack Query" más abajo y ADR-0011.
 - **Rutas:** `loadComponent` o `loadChildren` en todo. Nada eager salvo el
-  layout. `/admin` y `captura360` en sus propios bundles.
+  layout. `/admin` en su propio bundle.
 - **Estado de listas y filtros: en los query params de la URL, nunca en una
   señal de componente.** Compartible, sobrevive un refresh, funciona con
   "atrás" del navegador. Ver ADR-0011.
@@ -238,16 +236,16 @@ Meterlo en la regla convertiría un diseño decidido en un aviso permanente.
 
 ## APIs del navegador
 
-`getUserMedia`, `DeviceOrientationEvent`, `Canvas` y `Wake Lock` se usan solo en
-`captura360` —`PointerEvent` también en el visor 360 y en el carrusel de portada,
-para arrastrar— y siempre detrás de:
+`localStorage`, el portapapeles y `PointerEvent` —el carrusel de portada, para
+arrastrar— se usan siempre detrás de:
 
 1. Guardia de plataforma, porque no existen en el servidor.
 2. Verificación de disponibilidad real.
-3. Solicitud de permiso disparada por un gesto del usuario.
+3. Solicitud de permiso disparada por un gesto del usuario, cuando la API la pide.
 4. **Un camino degradado cuando el permiso se niega o la API no existe.**
 
-Detalle en `docs/10-captura-360.md`.
+La cámara, los sensores de orientación y `Wake Lock` los usaba el asistente de
+captura 360, retirado en `ADR-0097`; la `Permissions-Policy` los tiene apagados.
 
 ### La captura de puntero se toma cuando el gesto se confirma, no al empezar
 
@@ -350,16 +348,16 @@ escrito para no repetirlo. Detalle completo en ADR-0011.
   en segundo plano (cambio de pestaña pasado el `staleTime`) devuelve un objeto
   nuevo si cambió *cualquier* cosa del producto —el precio, la existencia—, y
   todo `effect()` que dependa de esa referencia se dispara sin que haya pasado
-  nada que le importe. Así el visor 360 volvía al fotograma frontal y la ficha
-  perdía la variante elegida, encontrado en Fase 5 (el de la variante venía
-  desde la Fase 1). **Depende del dato que de verdad define el cambio, no de la
-  referencia**: `ts-visor-360` depende de una clave derivada del contenido del
-  set, y la ficha del `slug` cargado, leyendo el producto con `untracked`. Si
+  nada que le importe. Así la ficha perdía la variante elegida (desde la
+  Fase 1, encontrado en la Fase 5, cuando el visor 360 —hoy retirado— volvía
+  por lo mismo al fotograma frontal). **Depende del dato que de verdad define el
+  cambio, no de la referencia**: la ficha depende del `slug` cargado, leyendo el
+  producto con `untracked`. Si
   los datos vuelven idénticos no hace falta nada: TanStack hace *structural
   sharing* por omisión y conserva la referencia anterior.
   Con una prueba para **cada lado**: "no reiniciar en un refetch" no puede
   volverse "no reiniciar nunca" — navegar a otro producto sí tiene que soltar la
-  variante y el fotograma.
+  variante.
 
 ## i18n con scopes perezosos
 
