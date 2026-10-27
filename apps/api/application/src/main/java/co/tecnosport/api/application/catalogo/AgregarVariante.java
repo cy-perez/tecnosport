@@ -94,10 +94,7 @@ public final class AgregarVariante {
     List<ValorAtributo> atributos = comando.atributos().stream().map(this::aValorAtributo).toList();
 
     Dinero contado = Dinero.deCop(comando.precioContado());
-    Dinero publicado =
-        comando.precioPublicado() == null
-            ? comision.publicadoDesde(contado)
-            : Dinero.deCop(comando.precioPublicado());
+    Dinero publicado = comision.publicadoDesde(contado);
     Variante variante =
         Variante.crear(
             sku,

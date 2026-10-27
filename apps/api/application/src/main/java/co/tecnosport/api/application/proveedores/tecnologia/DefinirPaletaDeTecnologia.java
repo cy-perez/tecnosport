@@ -94,8 +94,8 @@ public final class DefinirPaletaDeTecnologia {
                 new AgregarVarianteComando(
                     productoId,
                     ConfiguracionTecnologia.skuDeVariante(entrada.getKey(), color),
-                    // Los dos precios de la hermana: el color nuevo se anuncia igual que ella
-                    // (ADR-0095), aunque las tarifas hayan cambiado desde entonces.
+                    // El contado de la hermana; el publicado lo calcula AgregarVariante con la
+                    // comisión vigente (ADR-0095), no se copia.
                     modelo.get().precioContado().valor().longValueExact(),
                     modelo.get().tasaIva(),
                     null,
@@ -104,8 +104,7 @@ public final class DefinirPaletaDeTecnologia {
                     null,
                     null,
                     null,
-                    atributosCon(modelo.get(), color),
-                    modelo.get().precio().valor().longValueExact()));
+                    atributosCon(modelo.get(), color)));
         variantesDeProveedor.guardar(
             new VarianteDeProveedor(
                 creada.variante().id(),

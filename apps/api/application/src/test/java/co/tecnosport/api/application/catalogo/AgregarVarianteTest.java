@@ -118,35 +118,6 @@ class AgregarVarianteTest {
     assertEquals(Dinero.deCop(239_000), repositorioProductos.ultimaVarianteAgregada.precio());
   }
 
-  /**
-   * Quien copia una variante que ya existe —un color nuevo de la misma talla— trae los dos precios
-   * de la hermana, y se respetan: el color nuevo se anuncia igual que los que ya están.
-   */
-  @Test
-  void unPublicadoQueVieneDeUnaHermanaSeRespeta() {
-    Producto producto = productoDePrueba();
-    repositorioProductos.conProductos(producto);
-
-    var creada =
-        agregarVariante.ejecutar(
-            new AgregarVarianteComando(
-                producto.id(),
-                "TS-BOLSO-VINO",
-                230_000,
-                BigDecimal.ZERO,
-                null,
-                0,
-                null,
-                null,
-                null,
-                null,
-                List.of(),
-                238_000L));
-
-    assertEquals(Dinero.deCop(230_000), creada.variante().precioContado());
-    assertEquals(Dinero.deCop(238_000), creada.variante().precio());
-  }
-
   @Test
   void conExistenciaInicialCeroNoRegistraNingunMovimiento() {
     Producto producto = productoDePrueba();

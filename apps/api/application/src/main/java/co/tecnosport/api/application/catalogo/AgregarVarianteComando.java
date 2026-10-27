@@ -6,10 +6,9 @@ import java.util.UUID;
 
 /**
  * El precio que entra es el <b>de contado</b> (ADR-0095): el que el negocio quiere recibir neto. El
- * publicado lo calcula {@link AgregarVariante} con la comisión de la pasarela, salvo que venga en
- * {@code precioPublicado}, que solo usa quien copia una variante que ya existe —un color nuevo de
- * la misma talla o configuración— para que las dos hermanas se anuncien igual. El panel nunca lo
- * manda.
+ * publicado lo calcula siempre {@link AgregarVariante} con la comisión de la pasarela vigente. No
+ * hay forma de traerlo hecho, tampoco al copiar una hermana: un publicado copiado de una variante
+ * creada con otras tarifas se anunciaría sin la fórmula.
  *
  * <p>Las cuatro medidas son opcionales desde {@code adr/0046}: una variante sin medir se vende,
  * pero solo con recogida en el punto. Van completas o ausentes — con tres, el {@code Paquete}
@@ -26,36 +25,7 @@ public record AgregarVarianteComando(
     Integer largoCm,
     Integer anchoCm,
     Integer altoCm,
-    List<ValorAtributoComando> atributos,
-    Long precioPublicado) {
-
-  /** Con el publicado por calcular: es lo normal. */
-  public AgregarVarianteComando(
-      UUID productoId,
-      String sku,
-      long precioContado,
-      BigDecimal tasaIva,
-      String codigoBarras,
-      int existenciaInicial,
-      Integer pesoGramos,
-      Integer largoCm,
-      Integer anchoCm,
-      Integer altoCm,
-      List<ValorAtributoComando> atributos) {
-    this(
-        productoId,
-        sku,
-        precioContado,
-        tasaIva,
-        codigoBarras,
-        existenciaInicial,
-        pesoGramos,
-        largoCm,
-        anchoCm,
-        altoCm,
-        atributos,
-        null);
-  }
+    List<ValorAtributoComando> atributos) {
 
   public AgregarVarianteComando {
     boolean algunaPresente =
