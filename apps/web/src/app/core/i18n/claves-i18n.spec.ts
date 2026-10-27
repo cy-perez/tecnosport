@@ -10,8 +10,6 @@ import enCatalogo from '../../../assets/i18n/scopes/catalogo/en.json';
 import esCatalogo from '../../../assets/i18n/scopes/catalogo/es.json';
 import enCheckout from '../../../assets/i18n/scopes/checkout/en.json';
 import esCheckout from '../../../assets/i18n/scopes/checkout/es.json';
-import enCaptura360 from '../../../assets/i18n/scopes/captura360/en.json';
-import esCaptura360 from '../../../assets/i18n/scopes/captura360/es.json';
 import enCuenta from '../../../assets/i18n/scopes/cuenta/en.json';
 import esCuenta from '../../../assets/i18n/scopes/cuenta/es.json';
 import enLegales from '../../../assets/i18n/scopes/legales/en.json';
@@ -55,7 +53,7 @@ describe('claves de i18n', () => {
     expect(clavesOrdenadas(esCuenta)).toEqual(clavesOrdenadas(enCuenta));
   });
 
-  // `legales` y `captura360` faltaban desde que se crearon: la regla dice
+  // `legales` faltaba desde que se creó: la regla dice
   // "es.json y en.json tienen exactamente las mismas claves", y un scope que
   // nadie compara es un scope donde una clave se puede quedar sin traducir sin
   // que nada avise. Se notó al agregarles los metadatos de SEO.
@@ -69,13 +67,9 @@ describe('claves de i18n', () => {
     expect(clavesOrdenadas(esLegales)).toEqual(clavesOrdenadas(enLegales));
   });
 
-  it('el scope captura360 tiene las mismas claves en los dos idiomas', () => {
-    expect(clavesOrdenadas(esCaptura360)).toEqual(clavesOrdenadas(enCaptura360));
-  });
-
   // `ayuda` nació el 25 de septiembre de 2026 y llegó a esta lista con un día de retraso: la rama
   // que creó las dos páginas no añadió su comparación, y lo levantó la revisión de arquitectura.
-  // Es el mismo descuido que el comentario de arriba describe para `legales` y `captura360`, en el
+  // Es el mismo descuido que el comentario de arriba describe para `legales`, en el
   // mismo archivo que lo advierte — y pesa más aquí que en ningún otro scope, porque estas dos
   // páginas son texto puro: ninguna otra prueba mira su contenido.
   it('el scope ayuda tiene las mismas claves en los dos idiomas', () => {
@@ -116,8 +110,6 @@ describe('textos de i18n', () => {
     enCatalogo,
     esCheckout,
     enCheckout,
-    esCaptura360,
-    enCaptura360,
     esCuenta,
     enCuenta,
     esLegales,

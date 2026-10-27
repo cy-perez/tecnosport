@@ -54,7 +54,7 @@ export interface RepositorioProductosAdmin {
   despublicar(id: string): Promise<ProductoAdmin>;
 
   /**
-   * Borra el producto entero: sus variantes, su inventario, sus imágenes y sus sets de rotación.
+   * Borra el producto entero: sus variantes, su inventario y sus imágenes.
    * No tiene vuelta.
    *
    * <p>El servidor rechaza con 409 si está publicado —hay que retirarlo primero— o si alguna de sus

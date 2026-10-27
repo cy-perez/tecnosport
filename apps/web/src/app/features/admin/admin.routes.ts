@@ -16,19 +16,6 @@ import { REPOSITORIO_SEGUNDO_FACTOR } from './segundo-factor/domain/repositorio-
 import { SegundoFactorHttpRepositorio } from './segundo-factor/infrastructure/segundo-factor-http.repositorio';
 import { REPOSITORIO_ATENCION } from './atencion/domain/repositorio-atencion.puerto';
 import { AtencionHttpRepositorio } from './atencion/infrastructure/atencion-http.repositorio';
-import { CapturaStore } from '../captura360/application/captura.store';
-import { ALMACEN_LOCAL_DE_CAPTURAS } from '../captura360/domain/almacen-local-capturas.puerto';
-import { PROCESADOR_DE_FOTOGRAMAS } from '../captura360/domain/procesador-fotogramas.puerto';
-import { REPOSITORIO_SETS_ROTACION } from '../captura360/domain/repositorio-sets-rotacion.puerto';
-import { AlmacenLocalIndexedDb } from '../captura360/infrastructure/almacen-local-indexeddb';
-import { ProcesadorCanvas } from '../captura360/infrastructure/procesador-canvas';
-import { SetsRotacionHttpRepositorio } from '../captura360/infrastructure/sets-rotacion-http.repositorio';
-import { CAMARA } from '../captura360/domain/camara.puerto';
-import { PANTALLA_DESPIERTA } from '../captura360/domain/pantalla-despierta.puerto';
-import { SENSOR_ORIENTACION } from '../captura360/domain/sensor-orientacion.puerto';
-import { CamaraNavegador } from '../captura360/infrastructure/camara-navegador';
-import { PantallaDespiertaNavegador } from '../captura360/infrastructure/pantalla-despierta-navegador';
-import { SensorOrientacionNavegador } from '../captura360/infrastructure/sensor-orientacion-navegador';
 import { REPOSITORIO_REVISION_ENVIOS } from './envios/domain/repositorio-revision-envios.puerto';
 import { RevisionEnviosHttpRepositorio } from './envios/infrastructure/revision-envios-http.repositorio';
 import { REPOSITORIO_REFERENCIAS_ENVIO } from './envios/domain/repositorio-referencias-envio.puerto';
@@ -94,8 +81,8 @@ export const adminRoutes: Routes = [
     // Declarado una sola vez arriba y heredado por las siete pantallas del
     // panel: ninguna se indexa, y ninguna necesita un título propio porque solo
     // las ve quien ya entró. `MetadatosSeo` se queda con la declaración más
-    // profunda de la rama, así que una pantalla puede afinarlo —la captura 360
-    // lo hace— sin que las demás repitan nada.
+    // profunda de la rama, así que una pantalla podría afinarlo sin que las
+    // demás repitan nada.
     data: { seo: { clave: 'seo.admin' } },
     // El scope de i18n se precarga como cualquier otro dato de la primera
     // pantalla (ADR-0011): si llega después del primer render, toda etiqueta
@@ -461,27 +448,6 @@ export const adminRoutes: Routes = [
                 loadComponent: () =>
                   import('./productos/presentation/editar/editar-producto-admin.page').then(
                     (m) => m.EditarProductoAdminPage,
-                  ),
-              },
-              {
-                path: ':productoId/captura-360',
-                // Scope propio y no una sección más de `admin`: el asistente es su propio bundle y
-                // sus textos no le hacen falta a nadie más del panel.
-                providers: [
-                  provideTranslocoScope('captura360'),
-                  { provide: ALMACEN_LOCAL_DE_CAPTURAS, useClass: AlmacenLocalIndexedDb },
-                  { provide: CAMARA, useClass: CamaraNavegador },
-                  { provide: PROCESADOR_DE_FOTOGRAMAS, useClass: ProcesadorCanvas },
-                  { provide: REPOSITORIO_SETS_ROTACION, useClass: SetsRotacionHttpRepositorio },
-                  { provide: SENSOR_ORIENTACION, useClass: SensorOrientacionNavegador },
-                  { provide: PANTALLA_DESPIERTA, useClass: PantallaDespiertaNavegador },
-                  CapturaStore,
-                ],
-                data: { seo: { clave: 'seo.captura360' } },
-                resolve: { _i18nCaptura: () => Promise.all([precargarScopeI18n('captura360')]) },
-                loadComponent: () =>
-                  import('../captura360/presentation/captura-360.page').then(
-                    (m) => m.Captura360Page,
                   ),
               },
               {

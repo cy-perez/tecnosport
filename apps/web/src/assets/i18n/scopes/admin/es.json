@@ -531,7 +531,6 @@
       "atributoNumero": "Atributo {{numero}}",
       "quitarAtributoAccesible": "Quitar el atributo {{numero}}"
     },
-    "capturar360": "Capturar 360",
     "existencias": {
       "titulo": "Existencias",
       "explicacion": "Dos cifras por variante, y no son lo mismo. La del libro es lo que hay, porque es la suma de todos los movimientos; la disponible es esa misma menos lo que ya está comprometido en pedidos en curso, y es la que decide si la tienda deja comprar. Contar escribe un movimiento de ajuste con su motivo: el número no se edita, se corrige.",
@@ -640,7 +639,7 @@
     },
     "eliminar": {
       "confirmar": "¿Eliminar «{{nombre}}» del catálogo? Esto no se puede deshacer.",
-      "loQueImplica": "Se borran también sus variantes, su inventario, sus fotos y su visor 360°. Solo se puede eliminar un producto en borrador que nunca se haya vendido.",
+      "loQueImplica": "Se borran también sus variantes, su inventario y sus fotos. Solo se puede eliminar un producto en borrador que nunca se haya vendido.",
       "accion": "Sí, eliminar",
       "hecho": "{{nombre}} se eliminó del catálogo.",
       "error": "No pudimos eliminar el producto. Vuelve a intentarlo."

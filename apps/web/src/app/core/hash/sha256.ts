@@ -7,8 +7,7 @@
  * corresponda al archivo sin descargarlo (ADR-0016); lo que sí exige es que sea un SHA-256 bien
  * formado.
  *
- * `crypto.subtle` solo existe en un contexto seguro (HTTPS o localhost) — el mismo requisito que ya
- * imponen la cámara y el sensor de orientación del asistente de captura.
+ * `crypto.subtle` solo existe en un contexto seguro (HTTPS o localhost).
  */
 export async function sha256Hex(archivo: Blob): Promise<string> {
   const resumen = await crypto.subtle.digest('SHA-256', await archivo.arrayBuffer());

@@ -210,17 +210,16 @@ function opcion(nombre: string) {
 
 describe('ListaProductosAdminPage', () => {
   /**
-   * Las cuatro acciones de una fila, y que son exactamente cuatro: si alguien añade una quinta sin
-   * decidir dónde va, esta prueba lo para. Editar y capturar son enlaces —se abren en otra
-   * pestaña—, las otras dos abren una confirmación.
+   * Las tres acciones de una fila, y que son exactamente tres: si alguien añade una cuarta sin
+   * decidir dónde va, esta prueba lo para. Editar es un enlace —se abre en otra pestaña—, las otras
+   * dos abren una confirmación.
    */
-  it('el menú de una fila ofrece las cuatro acciones, y publicar cuando está en borrador', async () => {
+  it('el menú de una fila ofrece las tres acciones, y publicar cuando está en borrador', async () => {
     await renderLista([productoDePrueba()]);
     await abrirMenuDe('Morral urbano');
 
-    expect(screen.getAllByRole('menuitem')).toHaveLength(4);
+    expect(screen.getAllByRole('menuitem')).toHaveLength(3);
     expect(opcion(esAdmin.productos.editarEnlace).tagName).toBe('A');
-    expect(opcion(esAdmin.productos.capturar360).tagName).toBe('A');
     expect(opcion(esAdmin.productos.publicar.accion)).toBeTruthy();
     expect(opcion(esAdmin.productos.acciones.eliminar)).toBeTruthy();
   });
@@ -309,7 +308,7 @@ describe('ListaProductosAdminPage', () => {
 
   /**
    * El borrado es lo único de esta pantalla que no tiene vuelta, así que la pregunta dice qué más
-   * se lleva —variantes, inventario, fotos y visor— antes de que alguien pulse.
+   * se lleva —variantes, inventario y fotos— antes de que alguien pulse.
    */
   it('eliminar pregunta antes y dice todo lo que se lleva', async () => {
     const { repositorio } = await renderLista([productoDePrueba()]);

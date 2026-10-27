@@ -129,11 +129,11 @@ export class ListaProductosAdminPage {
   }
 
   /**
-   * Las cuatro opciones de una fila, en el orden en que se usan.
+   * Las tres opciones de una fila, en el orden en que se usan.
    *
-   * <p>Editar y capturar llevan `enlace` y por eso el menú las pinta como `<a>`: son destinos, y
-   * abrirlos en otra pestaña es algo que quien carga catálogo hace todo el día. Las otras dos
-   * emiten y abren la confirmación.
+   * <p>Editar lleva `enlace` y por eso el menú la pinta como `<a>`: es un destino, y abrirlo en
+   * otra pestaña es algo que quien carga catálogo hace todo el día. Las otras dos emiten y abren la
+   * confirmación.
    *
    * <p>La segunda cambia de identidad según el estado: publicar un borrador, retirar un publicado.
    * Son dos acciones distintas y no una alternancia, porque lo que arrastran no es simétrico.
@@ -151,11 +151,6 @@ export class ListaProductosAdminPage {
         etiqueta: this.traducir()(
           publicado ? 'admin.productos.publicar.accionRetirar' : 'admin.productos.publicar.accion',
         ),
-      },
-      {
-        id: 'captura',
-        etiqueta: this.traducir()('admin.productos.capturar360'),
-        enlace: [producto.id, 'captura-360'],
       },
       {
         id: 'eliminar',

@@ -83,8 +83,8 @@ function alInicioDeSesion(
   const destino = router.parseUrl(`/${idiomaDe(route)}/admin/iniciar-sesion`);
   // A dónde iba, para volver ahí después de iniciar sesión. Sin esto, abrir un
   // enlace directo a una pantalla de /admin sin sesión terminaba en el panel y
-  // había que volver a buscar el enlace — encontrado probando el asistente de
-  // captura desde un teléfono, que es justo el caso donde uno llega por enlace.
+  // había que volver a buscar el enlace — encontrado probando desde un teléfono,
+  // que es justo el caso donde uno llega por enlace.
   if (estado?.url) {
     destino.queryParams = { destino: estado.url };
   }

@@ -531,7 +531,6 @@
       "atributoNumero": "Attribute {{numero}}",
       "quitarAtributoAccesible": "Remove attribute {{numero}}"
     },
-    "capturar360": "Capture 360",
     "existencias": {
       "titulo": "Stock",
       "explicacion": "Two figures per variant, and they are not the same. The ledger one is what there is, because it is the sum of every movement; the available one is that minus whatever is already committed to orders in progress, and it is the one that decides whether the shop allows buying. Counting writes an adjustment movement with its reason: the number is not edited, it is corrected.",
@@ -640,7 +639,7 @@
     },
     "eliminar": {
       "confirmar": "Delete “{{nombre}}” from the catalog? This cannot be undone.",
-      "loQueImplica": "Its variants, stock, photos and 360° viewer go with it. Only a draft product that has never been sold can be deleted.",
+      "loQueImplica": "Its variants, stock and photos go with it. Only a draft product that has never been sold can be deleted.",
       "accion": "Yes, delete",
       "hecho": "{{nombre}} was deleted from the catalog.",
       "error": "We couldn't delete the product. Please try again."

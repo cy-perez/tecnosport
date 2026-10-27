@@ -198,7 +198,7 @@ describe('IniciarSesionAdminPage', () => {
         accessToken: 'jwt',
         segundoFactorPorActivar: false,
       }),
-      '/es/admin/productos/abc-123/captura-360',
+      '/es/admin/productos/abc-123/variantes/crear',
     );
     const router = fixture.debugElement.injector.get(Router);
     const navegar = vi.spyOn(router, 'navigateByUrl');
@@ -206,7 +206,7 @@ describe('IniciarSesionAdminPage', () => {
     await llenarYEnviar();
 
     await vi.waitFor(() =>
-      expect(navegar).toHaveBeenCalledWith('/es/admin/productos/abc-123/captura-360'),
+      expect(navegar).toHaveBeenCalledWith('/es/admin/productos/abc-123/variantes/crear'),
     );
   });
 

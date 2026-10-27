@@ -9,7 +9,7 @@ export const serverRoutes: ServerRoute[] = [
   // que no tiene con qué decidir—, de modo que el servidor pintaba la pantalla
   // de administración y un instante después el cliente redirigía al login. Quien
   // abre un enlace directo sin sesión ve la pantalla protegida parpadear:
-  // encontrado probando el asistente de captura desde un teléfono.
+  // encontrado probando el panel desde un teléfono.
   //
   // No renderizarla en el servidor lo cierra de raíz, y no cuesta nada: `/admin`
   // no necesita SEO ni primer pintado rápido, y sus datos ya venían del cliente
