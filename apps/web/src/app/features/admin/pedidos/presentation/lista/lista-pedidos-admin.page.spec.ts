@@ -13,6 +13,7 @@ import es from '../../../../../../assets/i18n/es.json';
 import esAdmin from '../../../../../../assets/i18n/scopes/admin/es.json';
 import { MedioReintegro } from '../../../retractos/domain/retracto.model';
 import {
+  MedioDePagoEnPunto,
   EmisionDeGuiaAdmin,
   ModalidadRecaudo,
   MotivoCancelacion,
@@ -133,6 +134,7 @@ function pedidoDePrueba(overrides: Partial<PedidoAdmin> = {}): PedidoAdmin {
     historial: [],
     plazoDeEntrega: null,
     transportadora: null,
+    recogidaVenceEn: null,
     ...overrides,
   };
 }
@@ -195,6 +197,28 @@ class RepositorioPedidosAdminFalso implements RepositorioPedidosAdmin {
   }
 
   async rechazarEnEntrega(): Promise<PedidoAdmin> {
+    return this.items[0];
+  }
+
+  listos: string[] = [];
+
+  async marcarListoParaRecoger(pedidoId: string): Promise<PedidoAdmin> {
+    this.listos.push(pedidoId);
+    return this.items[0];
+  }
+
+  entregasEnPunto: {
+    pedidoId: string;
+    numeroPedido: string;
+    medioDePago: MedioDePagoEnPunto | null;
+  }[] = [];
+
+  async entregarEnPunto(entrada: {
+    pedidoId: string;
+    numeroPedido: string;
+    medioDePago: MedioDePagoEnPunto | null;
+  }): Promise<PedidoAdmin> {
+    this.entregasEnPunto.push(entrada);
     return this.items[0];
   }
 
@@ -670,15 +694,125 @@ describe('ListaPedidosAdminPage', () => {
   });
 
   /** El retiro en punto no tiene a dónde despachar, así que no se le ofrece emitir nada. */
-  it('un retiro en punto no ofrece emitir guía', async () => {
-    await renderLista([
+  /** La recogida no lleva guía (ADR-0094): se marca lista y el servidor avisa al comprador. */
+  it('un retiro en punto no se despacha: se marca listo para recoger', async () => {
+    const { repositorio } = await renderLista([
       pedidoDePrueba({ estado: 'EN_PREPARACION', tipoEntrega: 'RETIRO_EN_PUNTO' }),
     ]);
     fireEvent.click(await screen.findByRole('button', { name: 'Ver detalle' }));
 
-    expect(await screen.findByRole('button', { name: 'Despachar' })).toBeTruthy();
+    fireEvent.click(await screen.findByRole('button', { name: 'Marcar listo para recoger' }));
+
+    await vi.waitFor(() => expect(repositorio.listos).toEqual(['p1']));
+    expect(screen.queryByRole('button', { name: 'Despachar' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Emitir guía con la transportadora' })).toBeNull();
     expect(screen.queryByText(/La guía se crea a mano en Skydropx/)).toBeNull();
+  });
+
+  it('una recogida con pago en el punto se entrega con el número y cómo pagó', async () => {
+    const { repositorio } = await renderLista([
+      pedidoDePrueba({
+        estado: 'LISTO_PARA_RECOGER',
+        tipoEntrega: 'RETIRO_EN_PUNTO',
+        metodoPago: 'PAGO_EN_PUNTO',
+        dineroRecibido: { valor: 0, moneda: 'COP' },
+        recogidaVenceEn: '2099-01-01T12:00:00Z',
+      }),
+    ]);
+    fireEvent.click(await screen.findByRole('button', { name: 'Ver detalle' }));
+
+    expect(await screen.findByText(/Cobra al entregar/)).toBeTruthy();
+    expect(screen.getByText(/Se guarda hasta el/)).toBeTruthy();
+    fireEvent.input(screen.getByLabelText('Número de pedido que te muestra'), {
+      target: { value: ' TS-2026-000123 ' },
+    });
+    fireEvent.change(screen.getByLabelText('Cómo pagó'), { target: { value: 'TRANSFERENCIA' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Entregar en el punto' }));
+
+    await vi.waitFor(() => expect(repositorio.entregasEnPunto.length).toBe(1));
+    expect(repositorio.entregasEnPunto[0]).toEqual({
+      pedidoId: 'p1',
+      numeroPedido: 'TS-2026-000123',
+      medioDePago: 'TRANSFERENCIA',
+    });
+  });
+
+  it('sin el número de pedido no se entrega y dice qué falta', async () => {
+    const { repositorio } = await renderLista([
+      pedidoDePrueba({
+        estado: 'LISTO_PARA_RECOGER',
+        tipoEntrega: 'RETIRO_EN_PUNTO',
+        metodoPago: 'PAGO_EN_PUNTO',
+        recogidaVenceEn: '2099-01-01T12:00:00Z',
+      }),
+    ]);
+    fireEvent.click(await screen.findByRole('button', { name: 'Ver detalle' }));
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Entregar en el punto' }));
+
+    expect(
+      await screen.findByText('Escribe el número de pedido que te mostró quien vino a recoger.'),
+    ).toBeTruthy();
+    expect(repositorio.entregasEnPunto).toEqual([]);
+  });
+
+  /** Ya se cobró en línea: no se pregunta cómo pagó, y no viaja ningún medio. */
+  it('una recogida pagada en línea se entrega sin medio de pago', async () => {
+    const { repositorio } = await renderLista([
+      pedidoDePrueba({
+        estado: 'LISTO_PARA_RECOGER',
+        tipoEntrega: 'RETIRO_EN_PUNTO',
+        metodoPago: 'WOMPI',
+        recogidaVenceEn: '2099-01-01T12:00:00Z',
+      }),
+    ]);
+    fireEvent.click(await screen.findByRole('button', { name: 'Ver detalle' }));
+
+    fireEvent.input(await screen.findByLabelText('Número de pedido que te muestra'), {
+      target: { value: 'TS-2026-000123' },
+    });
+    expect(screen.queryByLabelText('Cómo pagó')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Entregar en el punto' }));
+
+    await vi.waitFor(() => expect(repositorio.entregasEnPunto.length).toBe(1));
+    expect(repositorio.entregasEnPunto[0].medioDePago).toBeNull();
+  });
+
+  /** Pagada y vencida: se cancela aquí, con el motivo que es verdad y con el reintegro. */
+  it('una recogida pagada y vencida se marca en la fila y se cancela por no recogida', async () => {
+    const { repositorio } = await renderLista([
+      pedidoDePrueba({
+        estado: 'LISTO_PARA_RECOGER',
+        tipoEntrega: 'RETIRO_EN_PUNTO',
+        metodoPago: 'WOMPI',
+        recogidaVenceEn: '2026-01-01T12:00:00Z',
+      }),
+    ]);
+
+    expect(await screen.findByText('Recogida vencida')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Ver detalle' }));
+    expect(await screen.findByText(/cancélalo abajo con el motivo/)).toBeTruthy();
+    fireEvent.input(screen.getByLabelText('Monto a devolver'), { target: { value: '50000' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Cancelar pedido' }));
+
+    await vi.waitFor(() => expect(repositorio.cancelaciones.length).toBe(1));
+    expect(repositorio.cancelaciones[0].motivo).toBe('NO_RECOGIDO');
+  });
+
+  it('antes de que venza, «no la recogió» no se ofrece como motivo', async () => {
+    await renderLista([
+      pedidoDePrueba({
+        estado: 'LISTO_PARA_RECOGER',
+        tipoEntrega: 'RETIRO_EN_PUNTO',
+        metodoPago: 'WOMPI',
+        recogidaVenceEn: '2099-01-01T12:00:00Z',
+      }),
+    ]);
+    fireEvent.click(await screen.findByRole('button', { name: 'Ver detalle' }));
+    await screen.findByRole('button', { name: 'Cancelar pedido' });
+
+    expect(screen.queryByText('Recogida vencida')).toBeNull();
+    expect(screen.queryByRole('option', { name: 'Nadie vino a recogerlo a tiempo' })).toBeNull();
   });
 
   /**

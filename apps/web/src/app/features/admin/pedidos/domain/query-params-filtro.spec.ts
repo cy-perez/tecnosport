@@ -13,6 +13,7 @@ const TODOS: Record<EstadoPedido, true> = {
   CONFIRMADO_CONTRAENTREGA: true,
   EN_PREPARACION: true,
   DESPACHADO: true,
+  LISTO_PARA_RECOGER: true,
   ENTREGADO: true,
   RECHAZADO_EN_ENTREGA: true,
   DEVUELTO: true,

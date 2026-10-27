@@ -50,6 +50,8 @@ import {
   FiltroPedidosAdmin,
   MODALIDADES_RECAUDO,
   ModalidadRecaudo,
+  MEDIOS_DE_PAGO_EN_PUNTO,
+  MedioDePagoEnPunto,
   MOTIVOS_CANCELACION,
   MotivoCancelacion,
   PedidoAdmin,
@@ -77,6 +79,7 @@ const CLAVE_ETIQUETA_ESTADO: Record<EstadoPedido, string> = {
   CONFIRMADO_CONTRAENTREGA: 'admin.pedidos.estados.confirmado_contraentrega',
   EN_PREPARACION: 'admin.pedidos.estados.en_preparacion',
   DESPACHADO: 'admin.pedidos.estados.despachado',
+  LISTO_PARA_RECOGER: 'admin.pedidos.estados.listo_para_recoger',
   ENTREGADO: 'admin.pedidos.estados.entregado',
   RECHAZADO_EN_ENTREGA: 'admin.pedidos.estados.rechazado_en_entrega',
   DEVUELTO: 'admin.pedidos.estados.devuelto',
@@ -131,7 +134,18 @@ const CLAVE_MODALIDAD_RECAUDO: Record<ModalidadRecaudo, string> = {
 const CLAVE_MOTIVO_CANCELACION: Record<MotivoCancelacion, string> = {
   NO_DISPONIBILIDAD: 'admin.pedidos.cancelacion.motivos.no_disponibilidad',
   PLAZO_INCUMPLIDO: 'admin.pedidos.cancelacion.motivos.plazo_incumplido',
+  NO_RECOGIDO: 'admin.pedidos.cancelacion.motivos.no_recogido',
 };
+
+const CLAVE_MEDIO_EN_PUNTO: Record<MedioDePagoEnPunto, string> = {
+  EFECTIVO: 'admin.pedidos.recogida.medios.efectivo',
+  TRANSFERENCIA: 'admin.pedidos.recogida.medios.transferencia',
+};
+
+interface FormularioEntregaEnPunto {
+  numeroPedido: FormControl<string>;
+  medioDePago: FormControl<string>;
+}
 
 /**
  * Fila expandible en vez de una pantalla de detalle aparte: no existe
@@ -223,6 +237,10 @@ export class ListaPedidosAdminPage {
   private readonly formulariosRecaudo = new Map<string, FormGroup<FormularioRecaudo>>();
   private readonly formulariosCancelacion = new Map<string, FormGroup<FormularioCancelacion>>();
   private readonly formulariosDevolucion = new Map<string, FormGroup<FormularioDevolucion>>();
+  private readonly formulariosEntregaEnPunto = new Map<
+    string,
+    FormGroup<FormularioEntregaEnPunto>
+  >();
 
   constructor() {
     effect(() => {
@@ -339,7 +357,12 @@ export class ListaPedidosAdminPage {
     let form = this.formulariosCancelacion.get(pedidoId);
     if (!form) {
       form = new FormGroup({
-        motivo: new FormControl<string>('NO_DISPONIBILIDAD', { nonNullable: true }),
+        // Una recogida vencida casi siempre se cancela por eso, y los otros dos motivos le dirían
+        // al comprador algo que no pasó.
+        motivo: new FormControl<string>(
+          this.recogidaVencida(pedido) ? 'NO_RECOGIDO' : 'NO_DISPONIBILIDAD',
+          { nonNullable: true },
+        ),
         monto: new FormControl<number | null>(null),
         medio: new FormControl<string>(MEDIO_POR_METODO[pedido.metodoPago], { nonNullable: true }),
         comprobante: new FormControl('', { nonNullable: true }),
@@ -403,12 +426,87 @@ export class ListaPedidosAdminPage {
     })),
   );
 
-  protected readonly opcionesMotivoCancelacion = computed<OpcionSelect[]>(() =>
-    MOTIVOS_CANCELACION.map((motivo) => ({
+  /** «No la recogió» solo para una recogida cuyo plazo venció: el servidor rechaza los demás. */
+  protected opcionesMotivoCancelacion(pedido: PedidoAdmin): OpcionSelect[] {
+    return MOTIVOS_CANCELACION.filter(
+      (motivo) => motivo !== 'NO_RECOGIDO' || this.recogidaVencida(pedido),
+    ).map((motivo) => ({
       valor: motivo,
       etiqueta: this.traducir()(CLAVE_MOTIVO_CANCELACION[motivo]),
+    }));
+  }
+
+  protected readonly opcionesMedioEnPunto = computed<OpcionSelect[]>(() =>
+    MEDIOS_DE_PAGO_EN_PUNTO.map((medio) => ({
+      valor: medio,
+      etiqueta: this.traducir()(CLAVE_MEDIO_EN_PUNTO[medio]),
     })),
   );
+
+  /**
+   * Si una recogida lista ya pasó sus 48 horas. Lo decide el reloj de quien mira, y está bien: es
+   * para avisar y para ofrecer el motivo; quien cancela de verdad, y lo comprueba, es el servidor.
+   */
+  protected recogidaVencida(pedido: PedidoAdmin): boolean {
+    return pedido.recogidaVenceEn !== null && Date.parse(pedido.recogidaVenceEn) <= Date.now();
+  }
+
+  protected formularioEntregaEnPunto(pedidoId: string): FormGroup<FormularioEntregaEnPunto> {
+    let form = this.formulariosEntregaEnPunto.get(pedidoId);
+    if (!form) {
+      form = new FormGroup({
+        numeroPedido: new FormControl('', {
+          nonNullable: true,
+          validators: [Validators.required],
+        }),
+        medioDePago: new FormControl<string>('EFECTIVO', { nonNullable: true }),
+      });
+      this.formulariosEntregaEnPunto.set(pedidoId, form);
+    }
+    return form;
+  }
+
+  /** Con guarda de reentrada: el botón usa `ocupado` y no se deshabilita (foco de fila). */
+  protected async marcarListoParaRecoger(pedidoId: string): Promise<void> {
+    if (this.acciones.marcarListoParaRecoger.isPending()) {
+      return;
+    }
+    await this.ejecutar(() => this.acciones.marcarListoParaRecoger.mutateAsync(pedidoId));
+  }
+
+  protected marcandoListo(pedidoId: string): boolean {
+    return (
+      this.acciones.marcarListoParaRecoger.isPending() &&
+      this.acciones.marcarListoParaRecoger.variables() === pedidoId
+    );
+  }
+
+  /** El número lo compara el servidor: aquí solo se exige que alguien lo haya escrito. */
+  protected async entregarEnPunto(pedido: PedidoAdmin): Promise<void> {
+    const form = this.formularioEntregaEnPunto(pedido.id);
+    if (form.invalid) {
+      form.markAllAsTouched();
+      return;
+    }
+    const valores = form.getRawValue();
+    await this.ejecutar(() =>
+      this.acciones.entregarEnPunto.mutateAsync({
+        pedidoId: pedido.id,
+        numeroPedido: valores.numeroPedido.trim(),
+        medioDePago:
+          pedido.metodoPago === 'PAGO_EN_PUNTO'
+            ? (valores.medioDePago as MedioDePagoEnPunto)
+            : null,
+      }),
+    );
+  }
+
+  protected entregandoEnPunto(pedidoId: string): boolean {
+    return (
+      this.acciones.entregarEnPunto.isPending() &&
+      this.acciones.entregarEnPunto.variables()?.pedidoId === pedidoId
+    );
+  }
 
   protected puedeCancelar(pedido: PedidoAdmin): boolean {
     return (ESTADOS_QUE_ADMITEN_CANCELACION as readonly string[]).includes(pedido.estado);

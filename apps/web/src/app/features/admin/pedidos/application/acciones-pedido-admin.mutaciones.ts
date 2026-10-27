@@ -3,6 +3,7 @@ import { injectMutation, QueryClient } from '@tanstack/angular-query-experimenta
 import { MedioReintegro } from '../../retractos/domain/retracto.model';
 import {
   EmisionDeGuiaAdmin,
+  MedioDePagoEnPunto,
   ModalidadRecaudo,
   MotivoCancelacion,
   PedidoAdmin,
@@ -52,6 +53,21 @@ export function usarAccionesPedidoAdmin() {
 
   const marcarEntregado = injectMutation(() => ({
     mutationFn: (pedidoId: string): Promise<PedidoAdmin> => repositorio.marcarEntregado(pedidoId),
+    onSuccess: invalidarLista,
+  }));
+
+  const marcarListoParaRecoger = injectMutation(() => ({
+    mutationFn: (pedidoId: string): Promise<PedidoAdmin> =>
+      repositorio.marcarListoParaRecoger(pedidoId),
+    onSuccess: invalidarLista,
+  }));
+
+  const entregarEnPunto = injectMutation(() => ({
+    mutationFn: (variables: {
+      pedidoId: string;
+      numeroPedido: string;
+      medioDePago: MedioDePagoEnPunto | null;
+    }): Promise<PedidoAdmin> => repositorio.entregarEnPunto(variables),
     onSuccess: invalidarLista,
   }));
 
@@ -107,6 +123,8 @@ export function usarAccionesPedidoAdmin() {
     despachar,
     emitirGuia,
     marcarEntregado,
+    marcarListoParaRecoger,
+    entregarEnPunto,
     confirmarInventario,
     rechazarEnEntrega,
     recibirDevolucion,

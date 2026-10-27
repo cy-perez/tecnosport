@@ -83,6 +83,7 @@ export function aPedidoAdmin(
     historial: (dto.historial ?? []).map(aHistorial),
     plazoDeEntrega: dto.plazoDeEntrega ? aPlazoDeEntrega(dto.plazoDeEntrega) : null,
     transportadora: dto.transportadora ?? null,
+    recogidaVenceEn: dto.recogidaVenceEn ?? null,
   };
 }
 

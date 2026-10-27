@@ -69,7 +69,9 @@
     "borrador_con_fotos_subidas": "El otro borrador tiene fotos subidas desde el panel. Súbelas en este antes de unirlos: se irían con el otro.",
     "tallas_de_cada_tono_desconocidas": "Las tallas de los dos no son las mismas y uno no dice sus tonos. Escribe los tonos de los dos antes de unirlos, para que cada color quede con sus tallas.",
     "talla_del_proveedor_desconocida": "El proveedor nombra estas tallas corridas y una de ellas no tiene con qué nombre pedírsela, como la XXXL una talla más arriba. Quítala de las tallas antes de aprobar.",
-    "ajustes_de_talla_distintos": "El proveedor nombra distinto las tallas de los dos, como el de dama y el de caballero de un mismo anuncio: unidos, no se sabría qué talla pedirle."
+    "ajustes_de_talla_distintos": "El proveedor nombra distinto las tallas de los dos, como el de dama y el de caballero de un mismo anuncio: unidos, no se sabría qué talla pedirle.",
+    "entrega_no_aplica": "Ese no es el camino de entrega de este pedido: una recogida se marca lista y se entrega en el punto, y un envío a domicilio se despacha con guía.",
+    "numero_de_pedido_no_coincide": "Ese número no es el de este pedido. Pídele a quien vino que te muestre el número del correo o de la pantalla de su pedido. No lo entregues."
   },
   "iniciarSesion": {
     "titulo": "Panel administrativo",
@@ -135,9 +137,10 @@
       "pago_pendiente": "Pago pendiente",
       "pagado": "Pagado",
       "pago_fallido": "Pago fallido",
-      "confirmado_contraentrega": "Confirmado contraentrega",
+      "confirmado_contraentrega": "Por verificar · paga al recibir",
       "en_preparacion": "En preparación",
       "despachado": "Despachado",
+      "listo_para_recoger": "Listo para recoger",
       "entregado": "Entregado",
       "rechazado_en_entrega": "Rechazado en la entrega",
       "devuelto": "Devuelto",
@@ -185,6 +188,7 @@
       "motivo": "Motivo",
       "conciliar_transferencia": "Conciliar transferencia",
       "verificar_contraentrega": "Verificar contraentrega",
+      "verificar_pago_en_punto": "Verificar pago en el punto",
       "transportadora": "Transportadora",
       "guia": "Guía",
       "costo_envio": "Costo de envío",
@@ -234,7 +238,7 @@
     },
     "cancelacion": {
       "titulo": "Cancelar el pedido",
-      "ayuda": "Por causa nuestra y antes de despachar: el producto dejo de estar disponible, o no lo entregamos dentro del plazo.",
+      "ayuda": "Antes de despachar o de entregar: el producto dejó de estar disponible, no lo entregamos dentro del plazo, o una recogida estuvo lista 48 horas y nadie vino por ella.",
       "motivo": "Motivo",
       "dinero_ayuda": "Este pedido ya tenia el dinero recibido, así que cancelarlo exige devolverlo. Sin monto no se puede cancelar.",
       "sin_dinero": "Este pedido todavia no habia cobrado nada, así que no hay dinero que devolver.",
@@ -243,7 +247,8 @@
       "cancelar": "Cancelar pedido",
       "motivos": {
         "no_disponibilidad": "El producto dejo de estar disponible",
-        "plazo_incumplido": "No entregamos dentro del plazo"
+        "plazo_incumplido": "No entregamos dentro del plazo",
+        "no_recogido": "Nadie vino a recogerlo a tiempo"
       }
     },
     "eliminar": {
@@ -257,6 +262,24 @@
       "eliminando": "Eliminando…",
       "hecho": "Se eliminó el pedido {{numero}}.",
       "error": "No se pudo eliminar el pedido. Intenta de nuevo."
+    },
+    "recogida": {
+      "listo_ayuda": "Se recoge en el punto, sin guía. Cuando el pedido esté allí, márcalo listo: el comprador recibe el aviso con la dirección, el horario y su número de pedido, y desde ese momento se le guarda 48 horas.",
+      "marcar_listo": "Marcar listo para recoger",
+      "se_guarda_hasta": "Se guarda hasta el {{fecha}}.",
+      "vencida": "Recogida vencida",
+      "vencida_sin_cobro": "Venció el {{fecha}} y nadie lo recogió. El sistema lo cancela solo en la próxima vuelta y libera los productos; no hay dinero que devolver.",
+      "vencida_con_reintegro": "Venció el {{fecha}} y nadie lo recogió. Ya está pagado: cancélalo abajo con el motivo «Nadie vino a recogerlo a tiempo» y devuelve el dinero.",
+      "numero": "Número de pedido que te muestra",
+      "numero_ayuda": "Entrégalo solo si coincide con el de este pedido: es lo que acordamos pedir para saber que va a quien lo compró.",
+      "numero_requerido": "Escribe el número de pedido que te mostró quien vino a recoger.",
+      "cobrar": "Cobra al entregar:",
+      "medio": "Cómo pagó",
+      "medios": {
+        "efectivo": "Efectivo",
+        "transferencia": "Transferencia"
+      },
+      "entregar": "Entregar en el punto"
     }
   },
   "productos": {
