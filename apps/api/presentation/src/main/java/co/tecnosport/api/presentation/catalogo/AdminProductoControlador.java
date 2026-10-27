@@ -438,36 +438,40 @@ public class AdminProductoControlador {
   }
 
   /**
-   * Cambia el precio de venta de las variantes que vengan —una, o todas con «aplicar a todas»—.
-   * {@code 204}: el panel vuelve a pedir el producto.
+   * Cambia el precio de contado de las variantes que vengan —una, o todas con «aplicar a todas»—;
+   * el publicado lo calcula el servidor con la comisión de la pasarela (ADR-0095). {@code 204}: el
+   * panel vuelve a pedir el producto.
    *
    * <p>Con {@code TransactionTemplate} por lo mismo que la talla: una fila por variante, y una que
    * fallara a mitad dejaría el producto con unos precios nuevos y otros viejos. Cada cambio queda
-   * en el registro con el precio anterior, que es lo único que permite reconstruir qué se cobraba
-   * antes; los pedidos ya creados no cambian porque cada línea congeló el suyo.
+   * en el registro con los precios anteriores, que es lo único que permite reconstruir qué se
+   * cobraba antes; los pedidos ya creados no cambian porque cada línea congeló el suyo.
    */
   @PutMapping("/{id}/precios")
   @ResponseStatus(HttpStatus.NO_CONTENT)
   public void cambiarPrecios(
       @PathVariable("id") UUID id, @RequestBody CambiarPreciosPeticion cuerpo) {
-    Map<UUID, Dinero> precios = new LinkedHashMap<>();
+    Map<UUID, Dinero> contados = new LinkedHashMap<>();
     for (PrecioDeVariantePeticion precio : cuerpo.precios()) {
-      if (precios.put(precio.varianteId(), Dinero.deCop(precio.precio())) != null) {
+      if (contados.put(precio.varianteId(), Dinero.deCop(precio.precioContado())) != null) {
         throw new IllegalArgumentException(
             "La variante '" + precio.varianteId() + "' viene dos veces.");
       }
     }
     List<CambioDePrecio> cambios =
         transaccion.execute(
-            estado -> cambiarPrecios.ejecutar(new CambiarPreciosComando(id, precios)));
+            estado -> cambiarPrecios.ejecutar(new CambiarPreciosComando(id, contados)));
     for (CambioDePrecio cambio : cambios) {
       log.info(
-          "Producto {}: precio de la variante {} ({}) cambiado de {} a {}.",
+          "Producto {}: precio de la variante {} ({}) cambiado de {} a {} de contado, y de {} a {}"
+              + " publicado.",
           id,
           cambio.varianteId(),
           cambio.sku().valor(),
-          cambio.anterior().valor().toPlainString(),
-          cambio.nuevo().valor().toPlainString());
+          cambio.contadoAnterior().valor().toPlainString(),
+          cambio.contadoNuevo().valor().toPlainString(),
+          cambio.publicadoAnterior().valor().toPlainString(),
+          cambio.publicadoNuevo().valor().toPlainString());
     }
   }
 

@@ -277,6 +277,7 @@ public class MapeadorCatalogo {
         v.getId(),
         new Sku(v.getSku()),
         Dinero.deCop(v.getPrecio()),
+        Dinero.deCop(v.getPrecioContado()),
         v.getTasaIva(),
         v.getCodigoBarras(),
         paqueteDe(v),

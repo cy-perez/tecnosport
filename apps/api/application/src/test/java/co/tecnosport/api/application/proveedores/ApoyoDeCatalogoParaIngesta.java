@@ -148,7 +148,7 @@ final class ApoyoDeCatalogoParaIngesta {
     }
 
     @Override
-    public void actualizarPrecio(UUID varianteId, Dinero precio) {
+    public void actualizarPrecios(UUID varianteId, Dinero contado, Dinero publicado) {
       throw new UnsupportedOperationException();
     }
 

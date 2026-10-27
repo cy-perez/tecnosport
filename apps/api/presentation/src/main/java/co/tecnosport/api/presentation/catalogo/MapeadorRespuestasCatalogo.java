@@ -155,6 +155,7 @@ public class MapeadorRespuestasCatalogo {
         variante.id(),
         variante.sku().valor(),
         aRespuesta(variante.precio()),
+        aRespuesta(variante.precioContado()),
         disponible,
         variante.atributos().stream().map(this::aRespuesta).toList(),
         variante.disponibilidadPorConfirmar());

@@ -128,7 +128,10 @@ public final class AgregarColorDesdeLaPrincipal {
               new AgregarVarianteComando(
                   producto.id(),
                   skuLibre(modelo.sku(), color, skusTomados),
-                  modelo.precio().valor().longValueExact(),
+                  // Los dos precios de la talla, y no el publicado recalculado: el color nuevo se
+                  // anuncia igual que los que ya están, aunque las tarifas hayan cambiado desde
+                  // entonces (ADR-0095; eso lo arregla el recálculo, para todos a la vez).
+                  modelo.precioContado().valor().longValueExact(),
                   modelo.tasaIva(),
                   null,
                   existenciaPorModelo.get(modelo.id()),
@@ -136,7 +139,8 @@ public final class AgregarColorDesdeLaPrincipal {
                   paquete == null ? null : paquete.largoCm(),
                   paquete == null ? null : paquete.anchoCm(),
                   paquete == null ? null : paquete.altoCm(),
-                  atributos));
+                  atributos,
+                  modelo.precio().valor().longValueExact()));
       if (primera == null) {
         primera = creada.variante().id();
       }

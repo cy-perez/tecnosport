@@ -57,7 +57,13 @@ class RepositorioProductosDobleDePrueba implements RepositorioProductos {
 
   UUID ultimaVarianteMedida;
   Paquete ultimoPaqueteGrabado;
+
+  /** El publicado que se grabó, por variante. */
   final Map<UUID, Dinero> preciosGrabados = new LinkedHashMap<>();
+
+  /** El de contado que se grabó, por variante. */
+  final Map<UUID, Dinero> contadosGrabados = new LinkedHashMap<>();
+
   private List<MedidaDeVariante> sinMedir = List.of();
   private final Set<String> skusEnUso = new HashSet<>();
 
@@ -89,6 +95,7 @@ class RepositorioProductosDobleDePrueba implements RepositorioProductos {
     this.ultimaVarianteMedida = null;
     this.ultimoPaqueteGrabado = null;
     this.preciosGrabados.clear();
+    this.contadosGrabados.clear();
     this.sinMedir = List.of();
     this.skusEnUso.clear();
     this.productosEliminados.clear();
@@ -238,8 +245,9 @@ class RepositorioProductosDobleDePrueba implements RepositorioProductos {
   }
 
   @Override
-  public void actualizarPrecio(UUID varianteId, Dinero precio) {
-    preciosGrabados.put(varianteId, precio);
+  public void actualizarPrecios(UUID varianteId, Dinero contado, Dinero publicado) {
+    preciosGrabados.put(varianteId, publicado);
+    contadosGrabados.put(varianteId, contado);
   }
 
   @Override

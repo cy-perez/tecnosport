@@ -1,7 +1,9 @@
 package co.tecnosport.api.infrastructure.catalogo.siembra;
 
 import co.tecnosport.api.application.inventario.RepositorioInventario;
+import co.tecnosport.api.domain.catalogo.ComisionDePasarela;
 import co.tecnosport.api.domain.catalogo.Paquete;
+import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.compartido.GeneradorIdentificador;
 import co.tecnosport.api.domain.inventario.Inventario;
 import co.tecnosport.api.infrastructure.catalogo.AtributoJpaRepository;
@@ -125,6 +127,7 @@ public class SembradorCatalogo implements ApplicationRunner {
   private final VarianteImagenJpaRepository variantesDeImagen;
   private final SetRotacionJpaRepository setsRotacion;
   private final RepositorioInventario inventarios;
+  private final ComisionDePasarela comision;
 
   public SembradorCatalogo(
       MarcaJpaRepository marcas,
@@ -136,7 +139,8 @@ public class SembradorCatalogo implements ApplicationRunner {
       ImagenProductoJpaRepository imagenes,
       VarianteImagenJpaRepository variantesDeImagen,
       SetRotacionJpaRepository setsRotacion,
-      RepositorioInventario inventarios) {
+      RepositorioInventario inventarios,
+      ComisionDePasarela comision) {
     this.marcas = marcas;
     this.categorias = categorias;
     this.atributos = atributos;
@@ -147,6 +151,7 @@ public class SembradorCatalogo implements ApplicationRunner {
     this.variantesDeImagen = variantesDeImagen;
     this.setsRotacion = setsRotacion;
     this.inventarios = inventarios;
+    this.comision = comision;
   }
 
   @Override
@@ -431,13 +436,18 @@ public class SembradorCatalogo implements ApplicationRunner {
       Paquete paquete,
       Instant ahora,
       List<ValorPendiente> valores) {
+    // El precio de la siembra es el de contado, como los del catálogo de verdad desde la V123, y el
+    // publicado sale de él con las tarifas configuradas: así la vitrina de ejemplo enseña las dos
+    // cifras del ADR-0095.
+    BigDecimal contado = new BigDecimal(precio);
     VarianteJpaEntity variante =
         variantes.save(
             new VarianteJpaEntity(
                 GeneradorIdentificador.nuevo(),
                 producto.getId(),
                 sku,
-                new BigDecimal(precio),
+                comision.publicadoDesde(Dinero.deCop(contado)).valor(),
+                contado,
                 TASA_IVA,
                 null,
                 paquete.pesoGramos(),

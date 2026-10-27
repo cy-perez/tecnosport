@@ -60,6 +60,7 @@ import co.tecnosport.api.domain.proveedores.TipoProductoProveedor;
 import co.tecnosport.api.presentation.ManejadorDeErrores;
 import co.tecnosport.api.presentation.catalogo.MapeadorRespuestasCatalogo;
 import co.tecnosport.api.presentation.catalogo.MapeadorRespuestasProductoAdmin;
+import co.tecnosport.api.presentation.catalogo.TarifasDePrueba;
 import java.lang.reflect.Proxy;
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -858,7 +859,8 @@ class AdminBorradorControladorTest {
               inerte(RepositorioAtributos.class),
               inerte(RepositorioInventario.class),
               (Reloj) () -> T,
-              false),
+              false,
+              TarifasDePrueba.WOMPI),
           almacen,
           inerte(AlmacenDeImagenes.class),
           inerte(ProcesadorDeImagenes.class),

@@ -51,6 +51,7 @@ import co.tecnosport.api.domain.proveedores.Proveedor;
 import co.tecnosport.api.presentation.ManejadorDeErrores;
 import co.tecnosport.api.presentation.catalogo.MapeadorRespuestasCatalogo;
 import co.tecnosport.api.presentation.catalogo.MapeadorRespuestasProductoAdmin;
+import co.tecnosport.api.presentation.catalogo.TarifasDePrueba;
 import java.lang.reflect.Proxy;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -968,7 +969,8 @@ class AdminTecnologiaControladorTest {
               noUsado(RepositorioAtributos.class),
               noUsado(RepositorioInventario.class),
               reloj,
-              false),
+              false,
+              TarifasDePrueba.WOMPI),
           almacen,
           noUsado(AlmacenDeImagenes.class),
           2);

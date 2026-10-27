@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import co.tecnosport.api.application.catalogo.FiltroProductos;
 import co.tecnosport.api.application.catalogo.MedidaDeVariante;
 import co.tecnosport.api.application.catalogo.OrdenProductos;
+import co.tecnosport.api.application.catalogo.PreciosDeVariante;
 import co.tecnosport.api.application.catalogo.ProductosNoPublicados;
 import co.tecnosport.api.application.catalogo.ProductosPaginados;
 import co.tecnosport.api.application.catalogo.VarianteActiva;
@@ -69,6 +70,7 @@ class RepositorioProductosJpaTest {
       new PostgreSQLContainer(DockerImageName.parse("postgres:16"));
 
   @Autowired private RepositorioProductosJpa repositorio;
+  @Autowired private PreciosDelCatalogoJdbc preciosDelCatalogo;
   @Autowired private MarcaJpaRepository marcas;
   @Autowired private CategoriaJpaRepository categorias;
   @Autowired private AtributoJpaRepository atributos;
@@ -184,6 +186,7 @@ class RepositorioProductosJpaTest {
             UUID.randomUUID(),
             producto.getId(),
             "SKU-T7-INACTIVA",
+            new BigDecimal("1000000"),
             new BigDecimal("1000000"),
             new BigDecimal("0.19"),
             null,
@@ -732,9 +735,11 @@ class RepositorioProductosJpaTest {
     assertThat(p.variantes().get(0).precio()).isEqualTo(Dinero.deCop(890_000));
   }
 
-  /** El precio nuevo se lee de vuelta, y la medida que ya tenía no se pierde por el camino. */
+  /**
+   * Los dos precios nuevos se leen de vuelta, y la medida que ya tenía no se pierde por el camino.
+   */
   @Test
-  void actualizarPrecioCambiaElPrecioYConservaLaMedida() {
+  void actualizarPreciosCambiaLosDosPreciosYConservaLaMedida() {
     MarcaJpaEntity marca = marca("Marca precio T1");
     CategoriaJpaEntity categoria = categoria("Celulares", "celulares-pr1", "TECNOLOGIA");
     ProductoJpaEntity productoJpa =
@@ -743,14 +748,65 @@ class RepositorioProductosJpaTest {
     repositorio.actualizarPaquete(variante.getId(), new Paquete(500, 20, 12, 7));
     entityManager.flush();
 
-    repositorio.actualizarPrecio(variante.getId(), Dinero.deCop(849_000));
+    repositorio.actualizarPrecios(variante.getId(), Dinero.deCop(849_000), Dinero.deCop(878_000));
     entityManager.flush();
     entityManager.clear();
 
     Producto p = repositorio.buscarPorSlug(new Slug("galaxy-a17-precio")).orElseThrow();
-    assertThat(p.variantes().get(0).precio()).isEqualTo(Dinero.deCop(849_000));
+    assertThat(p.variantes().get(0).precioContado()).isEqualTo(Dinero.deCop(849_000));
+    assertThat(p.variantes().get(0).precio()).isEqualTo(Dinero.deCop(878_000));
     assertThat(p.variantes().get(0).paquete()).contains(new Paquete(500, 20, 12, 7));
     assertThat(p.variantes().get(0).sku().valor()).isEqualTo("TS-PRECIO-1");
+  }
+
+  /** El recálculo (ADR-0095) lee los dos precios con el nombre del producto. */
+  @Test
+  void losPreciosDelCatalogoTraenElContadoYElPublicadoDeCadaVariante() {
+    MarcaJpaEntity marca = marca("Marca precios T2");
+    CategoriaJpaEntity categoria = categoria("Bolsos", "bolsos-pr2", "BOLSOS");
+    ProductoJpaEntity productoJpa =
+        producto("Bolso Lucía", "bolso-lucia-precios", "PUBLICADO", marca, categoria);
+    VarianteJpaEntity variante = variante(productoJpa, "TS-PRECIOS-2", "230000");
+    repositorio.actualizarPrecios(variante.getId(), Dinero.deCop(230_000), Dinero.deCop(239_000));
+    entityManager.flush();
+
+    PreciosDeVariante leida =
+        preciosDelCatalogo.listar().stream()
+            .filter(v -> v.sku().equals("TS-PRECIOS-2"))
+            .findFirst()
+            .orElseThrow();
+
+    assertThat(leida.varianteId()).isEqualTo(variante.getId());
+    assertThat(leida.nombreProducto()).isEqualTo("Bolso Lucía");
+    assertThat(leida.contado()).isEqualTo(Dinero.deCop(230_000));
+    assertThat(leida.publicado()).isEqualTo(Dinero.deCop(239_000));
+  }
+
+  /** Recalcular toca el publicado y deja el de contado como estaba. */
+  @Test
+  void actualizarElPublicadoNoTocaElContado() {
+    MarcaJpaEntity marca = marca("Marca precios T3");
+    CategoriaJpaEntity categoria = categoria("Bolsos", "bolsos-pr3", "BOLSOS");
+    ProductoJpaEntity productoJpa =
+        producto("Bolso Ana", "bolso-ana-precios", "PUBLICADO", marca, categoria);
+    VarianteJpaEntity variante = variante(productoJpa, "TS-PRECIOS-3", "230000");
+    entityManager.flush();
+
+    preciosDelCatalogo.actualizarPublicado(variante.getId(), Dinero.deCop(239_000));
+    entityManager.clear();
+
+    Producto p = repositorio.buscarPorSlug(new Slug("bolso-ana-precios")).orElseThrow();
+    assertThat(p.variantes().get(0).precio()).isEqualTo(Dinero.deCop(239_000));
+    assertThat(p.variantes().get(0).precioContado()).isEqualTo(Dinero.deCop(230_000));
+  }
+
+  @Test
+  void actualizarElPublicadoDeUnaVarianteQueNoExisteFalla() {
+    UUID inexistente = UUID.randomUUID();
+
+    org.assertj.core.api.Assertions.assertThatThrownBy(
+            () -> preciosDelCatalogo.actualizarPublicado(inexistente, Dinero.deCop(1_000)))
+        .hasMessageContaining(inexistente.toString());
   }
 
   /** Y una medida sí vuelve completa, para que la de arriba no pase por no leer nada. */
@@ -1289,6 +1345,7 @@ class RepositorioProductosJpaTest {
             producto.getId(),
             sku,
             new BigDecimal(precio),
+            new BigDecimal(precio),
             new BigDecimal("0.19"),
             null,
             180,
@@ -1306,6 +1363,7 @@ class RepositorioProductosJpaTest {
             UUID.randomUUID(),
             producto.getId(),
             sku,
+            new BigDecimal("190000"),
             new BigDecimal("190000"),
             new BigDecimal("0.00"),
             null,

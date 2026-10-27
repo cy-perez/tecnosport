@@ -91,4 +91,89 @@ class VarianteTest {
 
     assertTrue(variante.codigoBarras().isEmpty());
   }
+
+  // --- Precio de contado y publicado (ADR-0095) ---
+
+  private static Variante deContadoYPublicado(long contado, long publicado) {
+    return Variante.crear(
+        new Sku("TS-1"),
+        Dinero.deCop(contado),
+        Dinero.deCop(publicado),
+        BigDecimal.ZERO,
+        null,
+        PAQUETE,
+        List.of());
+  }
+
+  @Test
+  void guardaLosDosPrecios() {
+    Variante variante = deContadoYPublicado(230_000, 239_000);
+
+    assertEquals(Dinero.deCop(230_000), variante.precioContado());
+    assertEquals(Dinero.deCop(239_000), variante.precio());
+  }
+
+  /** Sin descuento por pagar sin pasarela, los dos precios son el mismo, y eso vale. */
+  @Test
+  void conUnSoloPrecioElContadoEsElPublicado() {
+    Variante variante =
+        Variante.crear(
+            new Sku("TS-1"), Dinero.deCop(100_000), BigDecimal.ZERO, null, null, List.of());
+
+    assertEquals(variante.precio(), variante.precioContado());
+  }
+
+  /**
+   * El publicado es el máximo que alguien paga: por debajo del contado, el descuento es recargo.
+   */
+  @Test
+  void rechazaUnPublicadoMenorQueElContado() {
+    ExcepcionDeDominio error =
+        assertThrows(ExcepcionDeDominio.class, () -> deContadoYPublicado(230_000, 229_999));
+
+    assertTrue(error.getMessage().contains("TS-1"));
+  }
+
+  @Test
+  void rechazaUnContadoEnCero() {
+    assertThrows(ExcepcionDeDominio.class, () -> deContadoYPublicado(0, 1_000));
+  }
+
+  @Test
+  void conPreciosCambiaLosDosYNadaMas() {
+    Variante variante = deContadoYPublicado(230_000, 239_000);
+
+    Variante cambiada = variante.conPrecios(Dinero.deCop(100_000), Dinero.deCop(105_000));
+
+    assertEquals(Dinero.deCop(100_000), cambiada.precioContado());
+    assertEquals(Dinero.deCop(105_000), cambiada.precio());
+    assertEquals(variante.id(), cambiada.id());
+    assertEquals(variante.paquete(), cambiada.paquete());
+  }
+
+  @Test
+  void conPreciosNoAceptaUnPublicadoMenorQueElContado() {
+    Variante variante = deContadoYPublicado(230_000, 239_000);
+
+    assertThrows(
+        ExcepcionDeDominio.class,
+        () -> variante.conPrecios(Dinero.deCop(240_000), Dinero.deCop(239_000)));
+  }
+
+  /** Medirla, cambiarle el publicado o un atributo no le borra el precio de contado. */
+  @Test
+  void lasCopiasConservanElContado() {
+    Variante variante = deContadoYPublicado(230_000, 239_000);
+
+    assertEquals(
+        Dinero.deCop(230_000), variante.medida(new Paquete(300, 30, 25, 5)).precioContado());
+    Variante republicada = variante.conPrecio(Dinero.deCop(240_000));
+    assertEquals(Dinero.deCop(230_000), republicada.precioContado());
+    assertEquals(Dinero.deCop(240_000), republicada.precio());
+    Atributo color = Atributo.crear("Color", TipoAtributo.COLOR, List.of());
+    Variante conColor = variante.conAtributo(ValorAtributo.de(color, "Negro"));
+    assertEquals(Dinero.deCop(230_000), conColor.precioContado());
+    assertEquals(
+        Dinero.deCop(230_000), conColor.conValor(ValorAtributo.de(color, "Vino")).precioContado());
+  }
 }

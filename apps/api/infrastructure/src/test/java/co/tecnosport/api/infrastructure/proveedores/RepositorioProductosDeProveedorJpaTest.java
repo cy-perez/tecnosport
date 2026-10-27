@@ -307,7 +307,7 @@ class RepositorioProductosDeProveedorJpaTest {
     deProveedor.asignarReferencias(java.util.Map.of(negroM.id(), "RV102376"));
     deProveedor.cambiarDisponibilidadDeVariantes(java.util.List.of(negroM.id()), false);
 
-    productos.actualizarPrecio(negroM.id(), Dinero.deCop(119000));
+    productos.actualizarPrecios(negroM.id(), Dinero.deCop(119000), Dinero.deCop(124000));
 
     var prendas = deProveedor.buscarPrendasPorReferencia(proveedor.id(), "RV102376");
     assertThat(prendas).hasSize(1);

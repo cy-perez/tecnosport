@@ -16,11 +16,16 @@ import java.util.UUID;
  * inventario no es asunto de quien mira la página. Un número, además, ya está viejo entre el render
  * y el clic; el sí/no también, pero el servidor lo vuelve a comprobar al reservar, que es donde
  * importa.
+ *
+ * <p>{@code precio} es el publicado, el que se anuncia; {@code precioContado} es el que se paga sin
+ * pasarela —transferencia, en el punto o contra entrega— y la vitrina lo pinta como segunda cifra
+ * (ADR-0095). Iguales cuando la variante no tiene descuento.
  */
 public record VarianteRespuesta(
     UUID id,
     String sku,
     DineroRespuesta precio,
+    DineroRespuesta precioContado,
     // `@Schema` porque springdoc no lo deduce: sin esto el OpenAPI lo publica como opcional, el
     // cliente TypeScript lo genera como `disponible?: boolean` y el mapeador del front cae a
     // `?? false`. O sea que el dia que el campo dejara de serializarse, **la tienda entera saldria

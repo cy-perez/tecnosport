@@ -350,7 +350,8 @@ public final class ImportarListaDeTecnologia {
   private static Map<UUID, Dinero> preciosDe(Producto producto) {
     Map<UUID, Dinero> precios = new LinkedHashMap<>();
     for (Variante v : producto.variantes()) {
-      precios.put(v.id(), v.precio());
+      // El de contado: es lo que el negocio recibe neto, y contra eso se mide si queda margen.
+      precios.put(v.id(), v.precioContado());
     }
     return precios;
   }

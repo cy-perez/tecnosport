@@ -9,6 +9,9 @@ import java.util.UUID;
  * adr/0046}): una variante se puede cargar sin medir, y entonces solo se vende con recogida en el
  * punto.
  *
+ * <p>{@code precioContado} es el que el negocio quiere recibir neto (ADR-0095). El publicado no
+ * viaja: lo calcula el servidor con la comisión de la pasarela.
+ *
  * <p>Iban como {@code int} a propósito y el motivo era bueno: Jackson 3 no rellena los componentes
  * que falten de un record, así que un cuerpo incompleto moría en 422 antes de llegar al dominio.
  * Con el envoltorio esa red desaparece —un campo ausente llega en nulo, no revienta— y por eso la
@@ -23,7 +26,7 @@ import java.util.UUID;
 public record AgregarVariantePeticion(
     UUID productoId,
     String sku,
-    long precio,
+    long precioContado,
     BigDecimal tasaIva,
     String codigoBarras,
     int existenciaInicial,

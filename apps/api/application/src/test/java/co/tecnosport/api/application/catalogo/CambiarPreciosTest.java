@@ -20,11 +20,11 @@ import java.util.Map;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 
-/** El precio de venta, cambiado desde la edición del producto. */
+/** El precio de contado, cambiado desde la edición del producto; el publicado sale de él. */
 class CambiarPreciosTest {
 
   private final RepositorioProductosFalso productos = new RepositorioProductosFalso();
-  private final CambiarPrecios caso = new CambiarPrecios(productos);
+  private final CambiarPrecios caso = new CambiarPrecios(productos, TarifasDePrueba.WOMPI);
 
   private final Producto producto =
       Producto.crear(
@@ -43,9 +43,12 @@ class CambiarPreciosTest {
     productos.conProductos(producto);
   }
 
-  /** Graba solo las que cambiaron: la que ya tenía ese precio no se escribe. */
+  /**
+   * Graba solo las que cambiaron —la que ya tenía ese contado no se escribe— y el publicado lo
+   * calcula el servidor: (579.000 + 833) / 0,968465 = 598.707,4 → 599.000.
+   */
   @Test
-  void grabaElPrecioNuevoSoloDeLasQueCambiaron() {
+  void grabaLosPreciosNuevosSoloDeLasQueCambiaron() {
     List<CambioDePrecio> cambios =
         caso.ejecutar(
             new CambiarPreciosComando(
@@ -55,9 +58,15 @@ class CambiarPreciosTest {
     assertEquals(
         List.of(
             new CambioDePrecio(
-                de128.id(), new Sku("MG17-128"), Dinero.deCop(599_900), Dinero.deCop(579_000))),
+                de128.id(),
+                new Sku("MG17-128"),
+                Dinero.deCop(599_900),
+                Dinero.deCop(579_000),
+                Dinero.deCop(599_900),
+                Dinero.deCop(599_000))),
         cambios);
-    assertEquals(Map.of(de128.id(), Dinero.deCop(579_000)), productos.preciosGrabados);
+    assertEquals(Map.of(de128.id(), Dinero.deCop(579_000)), productos.contadosGrabados);
+    assertEquals(Map.of(de128.id(), Dinero.deCop(599_000)), productos.preciosGrabados);
   }
 
   @Test

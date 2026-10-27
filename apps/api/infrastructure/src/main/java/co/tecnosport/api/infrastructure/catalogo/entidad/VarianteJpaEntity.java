@@ -20,8 +20,13 @@ public class VarianteJpaEntity {
   @Column(nullable = false)
   private String sku;
 
+  /** El publicado: el que se anuncia, con la comisión de la pasarela dentro (ADR-0095). */
   @Column(nullable = false)
   private BigDecimal precio;
+
+  /** El que el negocio recibe neto: el que paga quien compra sin pasarela (V123, ADR-0095). */
+  @Column(name = "precio_contado", nullable = false)
+  private BigDecimal precioContado;
 
   @Column(name = "tasa_iva", nullable = false)
   private BigDecimal tasaIva;
@@ -80,6 +85,7 @@ public class VarianteJpaEntity {
       UUID productoId,
       String sku,
       BigDecimal precio,
+      BigDecimal precioContado,
       BigDecimal tasaIva,
       String codigoBarras,
       Integer pesoGramos,
@@ -92,6 +98,7 @@ public class VarianteJpaEntity {
     this.productoId = productoId;
     this.sku = sku;
     this.precio = precio;
+    this.precioContado = precioContado;
     this.tasaIva = tasaIva;
     this.codigoBarras = codigoBarras;
     this.pesoGramos = pesoGramos;
@@ -116,6 +123,10 @@ public class VarianteJpaEntity {
 
   public BigDecimal getPrecio() {
     return precio;
+  }
+
+  public BigDecimal getPrecioContado() {
+    return precioContado;
   }
 
   public BigDecimal getTasaIva() {

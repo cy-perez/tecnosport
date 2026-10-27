@@ -6,13 +6,13 @@ import java.util.Objects;
 import java.util.UUID;
 
 /**
- * @param precios el precio de venta como tiene que quedar, por id de variante; las que no estén no
- *     se tocan
+ * @param contados el precio <b>de contado</b> como tiene que quedar, por id de variante; las que no
+ *     estén no se tocan. El publicado no viaja: lo calcula el servidor (ADR-0095)
  */
-public record CambiarPreciosComando(UUID productoId, Map<UUID, Dinero> precios) {
+public record CambiarPreciosComando(UUID productoId, Map<UUID, Dinero> contados) {
 
   public CambiarPreciosComando {
     Objects.requireNonNull(productoId, "El id del producto no puede ser nulo.");
-    precios = Map.copyOf(Objects.requireNonNull(precios, "Los precios no pueden ser nulos."));
+    contados = Map.copyOf(Objects.requireNonNull(contados, "Los precios no pueden ser nulos."));
   }
 }

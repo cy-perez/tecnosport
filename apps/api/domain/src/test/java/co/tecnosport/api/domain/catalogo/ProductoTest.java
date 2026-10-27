@@ -175,8 +175,12 @@ class ProductoTest {
     assertTrue(excepcion.getMessage().contains(ajena.toString()));
   }
 
+  /** Las tarifas de Wompi del 26 de octubre de 2026: 2,65 % + $700 + IVA. */
+  private static final ComisionDePasarela WOMPI =
+      new ComisionDePasarela(new BigDecimal("0.0265"), Dinero.deCop(700), new BigDecimal("0.19"));
+
   @Test
-  void cambiarPreciosCambiaSoloLasPedidasYDevuelveElPrecioAnterior() {
+  void cambiarPreciosCambiaSoloLasPedidasYCalculaElPublicadoDesdeElContado() {
     Producto producto = productoDePrueba();
     Variante negra = deTallaYColor("N-S", "S-M", "Negro");
     Variante vino = deTallaYColor("V-S", "S-M", "Vino");
@@ -184,15 +188,23 @@ class ProductoTest {
     producto.agregarVariante(vino);
 
     List<CambioDePrecio> cambios =
-        producto.cambiarPrecios(Map.of(negra.id(), Dinero.deCop(95_000)));
+        producto.cambiarPrecios(Map.of(negra.id(), Dinero.deCop(95_000)), WOMPI);
 
+    // (95.000 + 833) / 0,968465 = 98.953,6 → 99.000
     assertEquals(
         List.of(
             new CambioDePrecio(
-                negra.id(), new Sku("N-S"), Dinero.deCop(89_900), Dinero.deCop(95_000))),
+                negra.id(),
+                new Sku("N-S"),
+                Dinero.deCop(89_900),
+                Dinero.deCop(95_000),
+                Dinero.deCop(89_900),
+                Dinero.deCop(99_000))),
         cambios);
-    assertEquals(Dinero.deCop(95_000), producto.variantes().get(0).precio());
+    assertEquals(Dinero.deCop(95_000), producto.variantes().get(0).precioContado());
+    assertEquals(Dinero.deCop(99_000), producto.variantes().get(0).precio());
     assertEquals(Dinero.deCop(89_900), producto.variantes().get(1).precio());
+    assertEquals(Dinero.deCop(89_900), producto.variantes().get(1).precioContado());
     // El resto de la variante no se toca: el precio es lo único que viaja.
     assertEquals(negra.atributos(), producto.variantes().get(0).atributos());
     assertEquals(negra.sku(), producto.variantes().get(0).sku());
@@ -200,12 +212,15 @@ class ProductoTest {
 
   /** «Aplicar a todas» manda el mismo precio a la que ya lo tenía: eso no es un cambio. */
   @Test
-  void elMismoPrecioNoCuentaComoCambio() {
+  void elMismoPrecioDeContadoNoCuentaComoCambio() {
     Producto producto = productoDePrueba();
     Variante negra = deTallaYColor("N-S", "S-M", "Negro");
     producto.agregarVariante(negra);
 
-    assertEquals(List.of(), producto.cambiarPrecios(Map.of(negra.id(), Dinero.deCop(89_900))));
+    assertEquals(
+        List.of(), producto.cambiarPrecios(Map.of(negra.id(), Dinero.deCop(89_900)), WOMPI));
+    // Ni siquiera con el publicado viejo: recalcularlo es una tarea que se ve antes de aplicarse.
+    assertEquals(Dinero.deCop(89_900), producto.variantes().get(0).precio());
   }
 
   /**
@@ -223,7 +238,7 @@ class ProductoTest {
     precios.put(negra.id(), Dinero.deCop(95_000));
     precios.put(vino.id(), Dinero.deCop(0));
 
-    assertThrows(ExcepcionDeDominio.class, () -> producto.cambiarPrecios(precios));
+    assertThrows(ExcepcionDeDominio.class, () -> producto.cambiarPrecios(precios, WOMPI));
     assertEquals(Dinero.deCop(89_900), producto.variantes().get(0).precio());
     assertEquals(Dinero.deCop(89_900), producto.variantes().get(1).precio());
   }
@@ -239,7 +254,7 @@ class ProductoTest {
     precios.put(ajena, Dinero.deCop(95_000));
 
     ExcepcionDeDominio excepcion =
-        assertThrows(ExcepcionDeDominio.class, () -> producto.cambiarPrecios(precios));
+        assertThrows(ExcepcionDeDominio.class, () -> producto.cambiarPrecios(precios, WOMPI));
     assertTrue(excepcion.getMessage().contains(ajena.toString()));
     assertEquals(propia.precio(), producto.variantes().get(0).precio());
   }
