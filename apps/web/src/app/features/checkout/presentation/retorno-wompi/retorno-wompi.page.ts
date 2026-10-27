@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { afterNextRender, ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { TsEsqueleto } from '../../../../shared/ts-esqueleto/ts-esqueleto';
@@ -43,7 +43,13 @@ export class RetornoWompiPage {
       return;
     }
 
-    void this.procesarRetorno(referencia, idTransaccionWompi, pedidoId);
+    // Solo en el navegador, y una sola vez. En el constructor corría también durante el SSR: el
+    // servidor mandaba el PATCH del id de transacción y navegaba, y al hidratar el navegador lo
+    // repetía todo. `afterNextRender` no corre en el servidor, que sirve la pantalla de "verificando"
+    // y nada más (mismo patrón que `VerificarCorreoPage`).
+    afterNextRender(() => {
+      void this.procesarRetorno(referencia, idTransaccionWompi, pedidoId);
+    });
   }
 
   private async procesarRetorno(

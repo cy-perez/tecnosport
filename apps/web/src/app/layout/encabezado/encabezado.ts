@@ -162,9 +162,11 @@ export class Encabezado {
     setTimeout(terminar, TIEMPO_MAXIMO_DE_SALIDA_MS);
   }
 
-  // Un fallo de red al cerrar sesión no puede dejar al visitante atrapado en
-  // el encabezado: se navega igual. El access token vive solo en memoria, así
-  // que recargar ya lo deja sin sesión.
+  // Un fallo de red al cerrar sesión no puede dejar al visitante atrapado en el encabezado: se
+  // navega igual, y `SesionStore.cerrarSesion` ya soltó la sesión en la pestaña aunque el POST
+  // fallara. Decía que recargar dejaba sin sesión, y no es así: si el servidor no revocó la cookie
+  // de refresco, recargar la reabre. Aquí no se avisa porque la portada no tiene dónde; el panel sí
+  // lo dice (`PanelAdminPage`).
   protected async cerrarSesion(): Promise<void> {
     this.cerrarMenu();
     await this.sesion.cerrarSesion().catch(() => undefined);

@@ -40,8 +40,13 @@ class RepositorioSesionFalso implements RepositorioSesion {
     return null;
   }
 
+  falloAlCerrar = false;
+
   async cerrarSesion(): Promise<void> {
     this.llamadasCerrar++;
+    if (this.falloAlCerrar) {
+      throw new Error('sin conexión');
+    }
   }
 }
 
@@ -95,6 +100,29 @@ describe('PanelAdminPage', () => {
       expect(sesion.llamadasCerrar).toBe(1);
       expect(navegar).toHaveBeenCalledWith(['/es', 'admin', 'iniciar-sesion']);
     });
+  });
+
+  /**
+   * Con el POST de cierre caído, el panel dejaba una promesa rechazada sin manejar y no se movía,
+   * con la sesión todavía abierta en pantalla. Ahora sale igual y la pantalla de entrada lo dice.
+   */
+  it('si el servidor no confirma el cierre, sale igual y avisa en la pantalla de entrada', async () => {
+    const { fixture, sesion } = await renderPanel();
+    sesion.falloAlCerrar = true;
+    const sesionStore = fixture.debugElement.injector.get(SesionStore);
+    sesionStore.sesion.set({ usuarioId: 'u1', rol: 'ADMIN', accessToken: 'jwt' });
+    fixture.detectChanges();
+    const router = fixture.debugElement.injector.get(Router);
+    const navegar = vi.spyOn(router, 'navigate');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Cerrar sesión' }));
+
+    await vi.waitFor(() =>
+      expect(navegar).toHaveBeenCalledWith(['/es', 'admin', 'iniciar-sesion'], {
+        queryParams: { cierre: 'sin-confirmar' },
+      }),
+    );
+    expect(sesionStore.sesion()).toBeNull();
   });
 
   /**

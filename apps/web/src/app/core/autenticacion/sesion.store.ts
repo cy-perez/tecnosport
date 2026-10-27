@@ -81,9 +81,18 @@ export class SesionStore {
     this.sesion.set(sesion);
   }
 
+  /**
+   * La sesión se suelta en esta pestaña **pase lo que pase**: con el `set` después del `await`, un
+   * POST que fallaba dejaba la sesión abierta en pantalla y al visitante sin forma de salir. Pero el
+   * fallo no se traga: si el servidor no revocó la cookie de refresco, la sesión puede reabrirse
+   * sola al recargar, y quien llama tiene que poder decirlo. Por eso la promesa sigue rechazando.
+   */
   async cerrarSesion(): Promise<void> {
-    await this.repositorio.cerrarSesion();
-    this.sesion.set(null);
+    try {
+      await this.repositorio.cerrarSesion();
+    } finally {
+      this.sesion.set(null);
+    }
   }
 
   private refrescoEnCurso: Promise<void> | null = null;

@@ -4,6 +4,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { correoValido } from '../../../../shared/formularios/validadores';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
+import { usarTraductor } from '../../../../core/i18n/traductor';
 import { REPOSITORIO_CUENTA } from '../../domain/repositorio-cuenta.puerto';
 import { TsBoton } from '../../../../shared/ui/boton/ts-boton';
 import { TsPaginaFormulario } from '../../../../shared/ui/pagina-formulario/ts-pagina-formulario';
@@ -27,6 +28,7 @@ export class RecuperarClavePage {
   private readonly enfocarPrimerInvalido = usarFocoEnPrimerInvalido();
   private readonly repositorio = inject(REPOSITORIO_CUENTA);
   protected readonly transloco = inject(TranslocoService);
+  private readonly traducir = usarTraductor();
 
   protected readonly error = signal<string | null>(null);
   protected readonly enviando = signal(false);
@@ -64,9 +66,9 @@ export class RecuperarClavePage {
       return null;
     }
     if (control.hasError('required')) {
-      return this.transloco.translate('cuenta.recuperarClave.errores.correo_requerido');
+      return this.traducir()('cuenta.recuperarClave.errores.correo_requerido');
     }
-    return this.transloco.translate('cuenta.recuperarClave.errores.correo_invalido');
+    return this.traducir()('cuenta.recuperarClave.errores.correo_invalido');
   });
 
   protected async enviar(): Promise<void> {

@@ -1,4 +1,11 @@
 <ts-pagina-formulario [titulo]="'admin.iniciarSesion.titulo' | transloco">
+  <!-- `alert` y no `status`: nace con la página, y una región cortés que nace llena no se anuncia
+       (apps/web/CLAUDE.md). -->
+  @if (cierreSinConfirmar) {
+    <p class="m-0 mb-16 text-ts-error" role="alert">
+      {{ 'admin.iniciarSesion.cierre_sin_confirmar' | transloco }}
+    </p>
+  }
   <form
     class="flex flex-col gap-16"
     [formGroup]="form"

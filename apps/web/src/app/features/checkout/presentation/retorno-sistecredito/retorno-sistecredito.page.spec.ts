@@ -192,4 +192,50 @@ describe('RetornoSistecreditoPage', () => {
     expect(navegar).not.toHaveBeenCalled();
     navegar.mockRestore();
   });
+
+  /**
+   * En el constructor corría también en el SSR: el servidor navegaba y recordaba el correo en un
+   * almacén que no es el del navegador, y al hidratar se repetía. Con `ngServerMode` —lo que
+   * Angular mira para saber que está en el servidor— `afterNextRender` no corre.
+   */
+  it('en el servidor no navega ni recuerda nada: eso le toca al navegador', async () => {
+    const navegar = vi.spyOn(Router.prototype, 'navigate');
+    const almacenServidor = almacenDesde();
+    const global = globalThis as { ngServerMode?: boolean };
+    global.ngServerMode = true;
+    try {
+      await render(RetornoSistecreditoPage, {
+        imports: [
+          TranslocoTestingModule.forRoot({
+            langs: { es, en, 'checkout/es': esCheckout } as never,
+            translocoConfig: { availableLangs: ['es', 'en'], defaultLang: 'es' },
+            preloadLangs: true,
+          }),
+        ],
+        providers: [
+          { provide: ALMACEN_CORREO_DE_PEDIDO, useValue: almacenServidor },
+          provideRouter([]),
+          {
+            provide: ActivatedRoute,
+            useValue: {
+              snapshot: {
+                paramMap: convertToParamMap({
+                  pedidoId: 'pedido-1',
+                  correo: 'cliente@tecnosport.co',
+                }),
+              },
+              parent: null,
+            },
+          },
+        ],
+      });
+      await new Promise((resolver) => setTimeout(resolver, 0));
+    } finally {
+      delete global.ngServerMode;
+    }
+
+    expect(navegar).not.toHaveBeenCalled();
+    expect(almacenServidor.correoDe('pedido-1')).toBeNull();
+    navegar.mockRestore();
+  });
 });

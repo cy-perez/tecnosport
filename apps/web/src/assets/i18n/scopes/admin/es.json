@@ -82,6 +82,7 @@
     "error": "Correo o clave incorrectos.",
     "no_es_admin": "Esta cuenta no tiene acceso al panel.",
     "error_demasiados_intentos": "Demasiados intentos seguidos. Espera unos minutos y vuelve a probar: tu clave no es el problema.",
+    "cierre_sin_confirmar": "Saliste en esta pestaña, pero el servidor no confirmó el cierre y la sesión podría reabrirse sola en este navegador. Si el equipo es compartido, entra otra vez y cierra sesión cuando tengas conexión.",
     "errores": {
       "correo_requerido": "Escribe el correo.",
       "correo_invalido": "Ese correo no tiene una forma válida.",

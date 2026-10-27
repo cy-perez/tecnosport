@@ -74,9 +74,22 @@ export class PanelAdminPage {
    */
   protected readonly haySinExistencia = computed(() => this.sinExistenciaEnPublicados() > 0);
 
+  /**
+   * Se navega pase lo que pase: la sesión ya se soltó en esta pestaña (`SesionStore.cerrarSesion`).
+   * Antes, un POST caído dejaba una promesa rechazada sin manejar y el panel quieto. Si el servidor
+   * no confirmó el cierre, la pantalla de entrada lo dice: la cookie de refresco sigue viva y la
+   * sesión podría reabrirse sola al recargar, que en un equipo compartido importa.
+   */
   protected async cerrarSesion(): Promise<void> {
-    await this.sesionStore.cerrarSesion();
-    const idioma = this.transloco.activeLang();
-    void this.router.navigate(['/' + idioma, 'admin', 'iniciar-sesion']);
+    const confirmado = await this.sesionStore.cerrarSesion().then(
+      () => true,
+      () => false,
+    );
+    const destino = ['/' + this.transloco.activeLang(), 'admin', 'iniciar-sesion'];
+    if (confirmado) {
+      void this.router.navigate(destino);
+    } else {
+      void this.router.navigate(destino, { queryParams: { cierre: 'sin-confirmar' } });
+    }
   }
 }

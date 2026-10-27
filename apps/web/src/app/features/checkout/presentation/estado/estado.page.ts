@@ -1,10 +1,30 @@
-import { NgOptimizedImage } from '@angular/common';
+import { isPlatformBrowser, NgOptimizedImage } from '@angular/common';
 import { iconoEnvio, iconoUbicacion } from '../../../../shared/ui/icono/iconos';
 import { TsIcono } from '../../../../shared/ui/icono/ts-icono';
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  inject,
+  PLATFORM_ID,
+  signal,
+  untracked,
+} from '@angular/core';
+import { CarritoStore } from '../../../carrito/application/carrito.store';
+import { ALMACEN_CARRITO_POR_PAGAR } from '../../domain/almacen-carrito-por-pagar.puerto';
+import {
+  FormBuilder,
+  NonNullableFormBuilder,
+  ReactiveFormsModule,
+  Validators,
+} from '@angular/forms';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { ErrorHttp } from '../../../../core/http/respuesta-http';
+import { TsSelect } from '../../../../shared/ui/select/ts-select';
+import { TsSelectControl } from '../../../../shared/ui/select/ts-select-control';
 import { correoValido } from '../../../../shared/formularios/validadores';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { usarIdiomaActivo, usarTraductor } from '../../../../core/i18n/traductor';
 import { formatearPrecio } from '../../../../shared/ts-precio/formato-precio';
@@ -20,10 +40,17 @@ import {
   usarSeguimientoPedido,
 } from '../../application/seguimiento-pedido.consulta';
 import { usarSolicitarEnlaceDeSeguimiento } from '../../application/solicitar-enlace-de-seguimiento.mutacion';
-import { EnvioPublico, EstadoPedido, Pedido, RetractoPublico } from '../../domain/pedido.model';
+import {
+  EnvioPublico,
+  EstadoPedido,
+  Pedido,
+  RetractoPublico,
+  TipoDocumento,
+} from '../../domain/pedido.model';
 import {
   esMetodoPagoSistecredito,
   esMetodoPagoWompi,
+  pagoConfirmado,
   puedeReintentarPago,
 } from '../../domain/reglas-pedido';
 import { urlWebCheckoutWompi } from '../../domain/wompi';
@@ -45,6 +72,9 @@ const CLAVE_ETIQUETA_ESTADO: Record<EstadoPedido, string> = {
   RECAUDO_PENDIENTE: 'checkout.estado.estados.recaudo_pendiente',
   RECAUDO_CONCILIADO: 'checkout.estado.estados.recaudo_conciliado',
 };
+
+/** Los que acepta la pasarela de Sistecrédito (`adr/0048`); los mismos que en `MetodoPagoPage`. */
+const TIPOS_DE_DOCUMENTO: readonly TipoDocumento[] = ['CC', 'TI', 'TIE', 'NIT'];
 
 /**
  * Último paso del checkout (Fase 3, paso 4f de `docs/09-plan-de-arranque.md`)
@@ -68,6 +98,8 @@ const CLAVE_ETIQUETA_ESTADO: Record<EstadoPedido, string> = {
     TsEsqueleto,
     TsIcono,
     TsPrecio,
+    TsSelect,
+    TsSelectControl,
   ],
   templateUrl: './estado.page.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -78,7 +110,6 @@ export class EstadoPage {
 
   private readonly route = inject(ActivatedRoute);
   private readonly transloco = inject(TranslocoService);
-  private readonly router = inject(Router);
   private readonly traducir = usarTraductor();
   protected readonly checkout = inject(CheckoutStore);
 
@@ -134,8 +165,22 @@ export class EstadoPage {
    * anillo, y el resultado, las dos regiones vivas.
    */
   protected readonly pidiendoDatos = computed(
-    () => this.criteriosSeguimiento() === null && this.pedido() === null,
+    () =>
+      this.criteriosSeguimiento() === null &&
+      this.pedido() === null &&
+      !this.correoSoloEnElNavegador,
   );
+
+  /**
+   * En el servidor, con `pedidoId` en la URL, el correo todavía no se puede saber: viene en el
+   * fragmento —que el navegador nunca manda— o en el `sessionStorage`. El SSR servía entonces el
+   * formulario de «pide el enlace», y al hidratar lo cambiaba por el esqueleto y luego por el
+   * pedido: un parpadeo, y un formulario en el HTML que ve quien llega por el enlace de un correo.
+   * Se sirve el esqueleto; si en el navegador tampoco aparece el correo, ahí sí cae al formulario.
+   */
+  private readonly correoSoloEnElNavegador =
+    !isPlatformBrowser(inject(PLATFORM_ID)) &&
+    this.route.snapshot.queryParamMap.get('pedidoId') !== null;
 
   /**
    * Lo que se le dice a quien pidió el enlace y no se le pudo mandar: el límite de intentos y la
@@ -230,6 +275,31 @@ export class EstadoPage {
 
   private readonly idioma = usarIdiomaActivo();
 
+  private readonly carrito = inject(CarritoStore);
+  private readonly carritosPorPagar = inject(ALMACEN_CARRITO_POR_PAGAR);
+
+  constructor() {
+    // El carrito que salió a pagarse en la pasarela se vacía aquí, al volver pagado, y no al salir
+    // (`AlmacenCarritoPorPagar`). Solo si es el mismo carrito que originó el pedido: a esta
+    // pantalla también se llega por el enlace de un correo, con otra compra a medias. `carritoId`
+    // se lee en `afterNextRender`, así que hasta entonces vale `null` y no se decide nada.
+    effect(() => {
+      const pedido = this.pedido();
+      const carritoId = this.carrito.carritoId();
+      if (!pedido || carritoId === null || !pagoConfirmado(pedido.estado)) {
+        return;
+      }
+      const delPedido = this.carritosPorPagar.carritoDe(pedido.id);
+      if (delPedido === null) {
+        return;
+      }
+      if (delPedido === carritoId) {
+        untracked(() => this.carrito.limpiar());
+      }
+      this.carritosPorPagar.olvidar(pedido.id);
+    });
+  }
+
   /** El descuento del medio de pago (ADR-0095), formateado para ir dentro de la frase. */
   protected readonly descuento = computed(() => {
     const pedido = this.pedido();
@@ -282,46 +352,140 @@ export class EstadoPage {
    */
   protected readonly puedeReintentar = computed(() => {
     const pedido = this.pedido();
-    return pedido !== null && pedido.id !== '' && puedeReintentarPago(pedido.estado);
+    if (pedido === null || pedido.id === '') {
+      return false;
+    }
+    return (
+      puedeReintentarPago(pedido.estado) ||
+      (this.pedidoReabierto() === pedido.id && pedido.estado === 'PAGO_PENDIENTE')
+    );
   });
+
+  /**
+   * El pedido que esta visita ya devolvió a `PAGO_PENDIENTE` con `reintentarPago`, sin que llegara a
+   * abrirse el intento en la pasarela —falló la red, la pasarela rechazó el documento—. Sin esto el
+   * botón desaparecía, porque solo se ofrece en `PAGO_FALLIDO`, y el pedido quedaba pendiente y sin
+   * salida. Con esto el botón sigue, y el siguiente intento ya no vuelve a reabrir el pedido.
+   */
+  private readonly pedidoReabierto = signal<string | null>(null);
 
   protected readonly reintentando = signal(false);
 
+  /** El pedido es de Sistecrédito: el botón abre el formulario del documento antes de nada. */
+  protected readonly esSistecredito = computed(() => {
+    const pedido = this.pedido();
+    return pedido !== null && esMetodoPagoSistecredito(pedido.metodoPago);
+  });
+
+  /**
+   * El documento de quien pide el crédito, pedido **en esta misma pantalla**. Mandaba a la de
+   * método de pago, que sin datos de entrega —y tras volver de la pasarela no los hay: la SPA se
+   * recargó entera— redirigía al resumen: el pedido quedaba en `PAGO_PENDIENTE`, reabierto y sin
+   * botón. Aquí se pide antes de reabrir el pedido, así que un comprador que no lo escribe no deja
+   * nada a medias.
+   */
+  protected readonly pideDocumento = signal(false);
+
+  private readonly fb = inject(NonNullableFormBuilder);
+
+  protected readonly formularioDocumento = this.fb.group({
+    tipoDocumento: this.fb.control<TipoDocumento>('CC', Validators.required),
+    documento: this.fb.control('', [
+      Validators.required,
+      Validators.pattern(/^[A-Za-z0-9]{4,20}$/),
+    ]),
+  });
+
+  protected readonly opcionesTipoDocumento = computed(() =>
+    TIPOS_DE_DOCUMENTO.map((tipo) => ({
+      valor: tipo,
+      etiqueta: this.traducir()(`checkout.metodoPago.documento.tipo.${tipo.toLowerCase()}`),
+    })),
+  );
+
+  /** Mismo motivo que `revision`: `markAllAsTouched()` no emite nada que un `computed` vea. */
+  private readonly intentoConDocumento = signal(0);
+
+  private readonly estadoDocumento = toSignal(this.formularioDocumento.valueChanges, {
+    initialValue: this.formularioDocumento.getRawValue(),
+  });
+
+  protected readonly errorDocumento = computed(() => {
+    this.estadoDocumento();
+    if (this.intentoConDocumento() === 0) {
+      return null;
+    }
+    return this.formularioDocumento.controls.documento.invalid
+      ? this.traducir()('checkout.metodoPago.documento.invalido')
+      : null;
+  });
+
   protected async reintentar(): Promise<void> {
     const pedido = this.pedido();
-    if (!pedido) {
+    // Guarda de reentrada y de pedido, como en `confirmar()`.
+    if (!pedido || this.reintentando()) {
       return;
     }
     this.error.set(null);
+    // Sistecrédito antes que Wompi, con su propia rama: sin documento la pasarela no encuentra al
+    // cliente, y el documento no sobrevive a la recarga de la SPA (vive solo en memoria, a
+    // propósito). El primer clic abre el formulario; ni siquiera se reabre el pedido todavía.
+    if (esMetodoPagoSistecredito(pedido.metodoPago)) {
+      if (!this.pideDocumento()) {
+        this.pideDocumento.set(true);
+        this.enfocar(() => document.getElementById('reintento-numero-documento'));
+        return;
+      }
+      this.intentoConDocumento.update((n) => n + 1);
+      this.formularioDocumento.markAllAsTouched();
+      if (this.formularioDocumento.invalid) {
+        this.enfocar(() => document.getElementById('reintento-numero-documento'));
+        return;
+      }
+    }
     this.reintentando.set(true);
     try {
-      const actualizado = await this.checkout.reintentarPago(pedido.id, pedido.correo);
-      // Sistecrédito antes que Wompi, con su propia rama. Este `if` era el único del archivo
-      // porque hasta ahora solo un pedido de Wompi podía llegar a PAGO_FALLIDO. Ya no —los
-      // estados Rejected/Cancelled/Expired/Abandoned de Sistecrédito también llevan ahí— y sin
-      // esta rama el botón dejaba el pedido de vuelta en PAGO_PENDIENTE sin intento vivo, sin
-      // redirección y sin un solo mensaje. Es el mismo fork que `ConfirmarPage`: si uno cambia,
-      // el otro también.
+      const actualizado =
+        this.pedidoReabierto() === pedido.id
+          ? pedido
+          : await this.checkout.reintentarPago(pedido.id, pedido.correo);
+      this.pedidoReabierto.set(actualizado.id);
+      // La pantalla de retorno de las dos pasarelas lee el correo de aquí, no de la URL.
+      this.correosDePedido.recordar(actualizado.id, actualizado.correo);
+      // Es el mismo fork que `ConfirmarPage`: si uno cambia, el otro también.
       if (esMetodoPagoSistecredito(actualizado.metodoPago)) {
-        // El documento no sobrevive a la recarga de la SPA (vive solo en memoria, a propósito) y
-        // a esta pantalla se llega justo después de volver de un dominio externo. Se vuelve a
-        // pedir donde se pide siempre.
-        void this.router.navigate(['/', this.transloco.activeLang(), 'checkout', 'metodo-pago']);
+        const { tipoDocumento, documento } = this.formularioDocumento.getRawValue();
+        const intento = await this.checkout.crearIntentoSistecredito(
+          actualizado.id,
+          { tipoDocumento, documento: documento.trim() },
+          this.transloco.activeLang(),
+        );
+        // La URL la arma la pasarela y es de un solo uso; a dónde vuelve lo fija el backend.
+        window.location.href = intento.urlRedireccion;
         return;
       }
       if (esMetodoPagoWompi(actualizado.metodoPago)) {
         const intento = await this.checkout.crearIntentoPago(actualizado.id);
         const idioma = this.transloco.activeLang();
+        // Sin el correo en la URL, igual que en `ConfirmarPage`: ahí quedaba en los registros de la
+        // web y de la API, en el historial y en los de Wompi. Ya se recordó arriba.
         const parametrosRetorno = new URLSearchParams({
           referencia: intento.referencia,
           pedidoId: actualizado.id,
-          correo: actualizado.correo,
         });
         const urlRetorno = `${window.location.origin}/${idioma}/checkout/retorno-wompi?${parametrosRetorno.toString()}`;
         window.location.href = urlWebCheckoutWompi(intento, urlRetorno);
       }
-    } catch {
-      this.error.set(this.transloco.translate('checkout.estado.error_reintento'));
+    } catch (error) {
+      // "Ya hay una solicitud en curso con ese documento" pide esperar, no reintentar ya: es el
+      // único rechazo de la pasarela que cambia lo que el comprador debe hacer desde aquí.
+      const enCurso =
+        error instanceof ErrorHttp && error.datos['motivoSistecredito'] === 'SOLICITUD_EN_CURSO';
+      this.error.set(
+        this.transloco.translate(
+          enCurso ? 'checkout.confirmar.sistecredito_801' : 'checkout.estado.error_reintento',
+        ),
+      );
     } finally {
       this.reintentando.set(false);
     }

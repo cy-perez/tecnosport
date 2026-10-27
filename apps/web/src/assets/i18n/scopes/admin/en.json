@@ -82,6 +82,7 @@
     "error": "Incorrect email or password.",
     "no_es_admin": "This account doesn't have access to the panel.",
     "error_demasiados_intentos": "Too many attempts in a row. Wait a few minutes and try again - your password is not the problem.",
+    "cierre_sin_confirmar": "You signed out in this tab, but the server didn't confirm it and the session could reopen on its own in this browser. If this is a shared computer, sign in again and sign out once you're back online.",
     "errores": {
       "correo_requerido": "Enter the email.",
       "correo_invalido": "That email address isn't valid.",
