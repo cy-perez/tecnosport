@@ -4,6 +4,7 @@ import co.tecnosport.api.application.proveedores.ListarVariantesSinMargen;
 import co.tecnosport.api.presentation.proveedores.dto.VariantesSinMargenRespuesta;
 import java.util.Objects;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
@@ -13,6 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
  * catálogo.
  */
 @RestController
+@RequestMapping("/api/v1/admin/variantes")
 public class AdminVariantesSinMargenControlador {
 
   private final ListarVariantesSinMargen listarVariantesSinMargen;
@@ -22,7 +24,7 @@ public class AdminVariantesSinMargenControlador {
   }
 
   /** Sin paginar: es una lista de pendientes que tiene que llegar a cero. */
-  @GetMapping("/api/v1/admin/variantes/sin-margen")
+  @GetMapping("/sin-margen")
   public VariantesSinMargenRespuesta sinMargen() {
     return VariantesSinMargenRespuesta.de(listarVariantesSinMargen.ejecutar());
   }
