@@ -19,9 +19,11 @@
 //     Del panel y no del catálogo público porque un borrador también tiene sus fotos subidas, y
 //     desde fuera no se ven: darlas por huérfanas sería justo el error caro.
 //
-// Lo que este informe **no juzga** son los fotogramas de `rotacion/`: un set sin publicar no
-// expone sus imágenes por ninguna API, así que desde aquí no hay forma de distinguir "es de un
-// set en preparación" de "no lo reclama nadie". Se cuentan aparte y se dice por qué.
+// Lo que este informe **no juzga** son las fotos encajadas de `redes/`: las reclama la constancia
+// de cada difusión y ninguna API las expone. Se cuentan aparte y se dice por qué.
+//
+// Los fotogramas de `rotacion/` sí se juzgan desde el 27 de octubre de 2026: el sistema 360 se
+// retiró (`ADR-0097`), nadie los reclama ya y salen en la lista de huérfanos como lo que son.
 //
 // **Y tampoco juzga lo que es de otro ambiente.** Esto nació porque `tecnosport-dev-imagenes` lo
 // compartían local y dev: una carga contra `localhost` dejaba en ese bucket objetos con ids que la
@@ -44,7 +46,7 @@
 // **Ojo con lo que eso prueba y lo que no**: prueba de qué ambiente es el producto, no que el
 // objeto esté vivo. Un objeto de otro ambiente puede ser igual de huérfano —una subida firmada
 // que allá tampoco se confirmó— y desde aquí no hay forma de saberlo. Por eso no se cuenta
-// como reclamado sino como **no juzgable**, la misma categoría honesta que `rotacion/`: para
+// como reclamado sino como **no juzgable**, la misma categoría honesta que `redes/`: para
 // juzgarlo hay que correr el informe contra esa otra API.
 //
 // Desde ADR-0057 una imagen se publica en **varios anchos**, y se reclaman todos: los de la
@@ -382,13 +384,12 @@ for (const producto of productos) {
 
 const { ruta: rutaRegistro, porProducto } = ambientesPorProducto();
 
-const deRotacion = objetos.filter((o) => o.key.includes("/rotacion/"));
-// Las fotos encajadas para redes (ADR-0069) tampoco se juzgan, y por la misma razón que las de
-// rotación: las reclama `publicacion_en_red.urls_imagenes`, que ninguna API expone. Desde aquí
-// saldrían como huérfanas — o sea, en una lista de cosas que alguien puede borrar, y borrarlas
-// deja sin miniatura las difusiones que el panel ya enseña.
+// Las fotos encajadas para redes (ADR-0069) no se juzgan: las reclama
+// `publicacion_en_red.urls_imagenes`, que ninguna API expone. Desde aquí saldrían como huérfanas
+// — o sea, en una lista de cosas que alguien puede borrar, y borrarlas deja sin miniatura las
+// difusiones que el panel ya enseña.
 const deRedes = objetos.filter((o) => o.key.includes("/redes/"));
-const noJuzgable = (o) => o.key.includes("/rotacion/") || o.key.includes("/redes/");
+const noJuzgable = (o) => o.key.includes("/redes/");
 const juzgables = objetos.filter((o) => !noJuzgable(o));
 const sinReclamarAqui = juzgables.filter((o) => !reclamadas.has(o.key));
 
@@ -430,7 +431,7 @@ if (!porProducto) {
 }
 
 if (huerfanos.length === 0) {
-  console.log("Ningún objeto de 'principal-' ni de 'galeria-' está sin reclamar.");
+  console.log("Ningún objeto juzgable está sin reclamar.");
 } else {
   const ordenados = [...huerfanos].sort((a, b) => a.fecha.localeCompare(b.fecha));
   console.log(`${huerfanos.length} sin reclamar · ${enMiB(sumar(huerfanos))}:\n`);
@@ -449,6 +450,15 @@ if (huerfanos.length === 0) {
       " lo sabe:\nlo sabe quien lo mudó. Pasó el 23 de septiembre de 2026 con 348 objetos" +
       " (ADR-0058).",
   );
+  // Una tercera que sí se distingue por la key: los fotogramas del sistema 360, retirado. Se
+  // dice aparte para que nadie los busque entre las subidas sin confirmar.
+  const deRotacion = huerfanos.filter((o) => o.key.includes("/rotacion/"));
+  if (deRotacion.length > 0) {
+    console.log(
+      `\nDe esos, ${deRotacion.length} (${enMiB(sumar(deRotacion))}) son fotogramas de` +
+        " 'rotacion/': el sistema 360 se retiró (ADR-0097)\ny ya no los reclama nadie.",
+    );
+  }
 }
 
 if (deOtroAmbiente.length > 0) {
@@ -469,14 +479,6 @@ if (deOtroAmbiente.length > 0) {
     "\nQue el producto sea de allá **no prueba que el objeto esté vivo**: puede ser una" +
       " subida firmada\nque allá tampoco se confirmó. Para juzgarlos, corre este informe" +
       " con --api apuntando a ese ambiente.",
-  );
-}
-
-if (deRotacion.length > 0) {
-  console.log(
-    `\nY ${deRotacion.length} fotogramas de 'rotacion/' (${enMiB(sumar(deRotacion))}) que este` +
-      " informe no juzga:\nun set sin publicar no expone sus imágenes por ninguna API, así que" +
-      " desde aquí no se distingue\nun set en preparación de un resto que nadie reclama.",
   );
 }
 

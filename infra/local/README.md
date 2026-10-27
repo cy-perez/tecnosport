@@ -44,7 +44,7 @@ llave dentro del perfil de otro usuario de la máquina.
 
 La llave privada es lo que de verdad hace falta: sin ella el SDK arranca igual,
 pero `signUrl` falla con `Signing key was not provided and could not be derived`
-y `POST /api/v1/admin/sets-rotacion/{id}/subidas` responde 500.
+y `POST /api/v1/admin/productos/{id}/galeria/url-subida` responde 500.
 
 ## Un bucket por ambiente, y por qué el script se niega
 
@@ -66,11 +66,10 @@ La cuenta de servicio de local **no tiene ningún permiso sobre el bucket de dev
 y eso es la mitad que importa de la separación: dos nombres con una sola llave que
 puede escribir en los dos sitios no separan nada.
 
-## Para probar la captura desde un teléfono
+## Para subir desde otro origen
 
-La cámara y los sensores exigen HTTPS fuera de `localhost`, así que el asistente
-se sirve por un túnel. Ese origen también tiene que estar en el CORS del bucket,
-o el `PUT` firmado muere en el preflight:
+Un origen distinto de `http://localhost:4200` —un túnel HTTPS, por ejemplo— tiene
+que estar en el CORS del bucket, o el `PUT` firmado muere en el preflight:
 
 ```
 GCS_ORIGENES_CORS=http://localhost:4200,https://tu-tunel.example node infra/local/bucket-imagenes.mjs

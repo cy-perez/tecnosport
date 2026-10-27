@@ -156,8 +156,8 @@ resource "google_storage_bucket" "imagenes" {
   # Los permisos se dan por IAM, nunca por ACL de objeto.
   uniform_bucket_level_access = true
 
-  # La red de la que depende el borrado de un set de rotación: `EliminarSetRotacion` borra los
-  # objetos, y sin versionado eso sería irreversible — quince fotos que hay que volver a tomar.
+  # La red de la que depende el borrado de imágenes: quitar una imagen borra su objeto, y sin
+  # versionado eso sería irreversible.
   versioning {
     enabled = true
   }
@@ -165,7 +165,7 @@ resource "google_storage_bucket" "imagenes" {
   # Sin esto las versiones no vigentes se acumulan y el espacio no se reclama nunca, que era justo
   # el problema que el versionado creaba.
   # TODO(negocio): DIAS_RETENCION_VERSIONES_IMAGEN. 30 días es un valor de arranque, no una
-  # decisión tomada: es el plazo para darse cuenta de que se borró un set por error. Confirmar
+  # decisión tomada: es el plazo para darse cuenta de que se borró una imagen por error. Confirmar
   # antes de producción. Mismo TODO que en infra/local/bucket-imagenes.mjs.
   lifecycle_rule {
     action {

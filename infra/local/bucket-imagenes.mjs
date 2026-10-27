@@ -77,8 +77,8 @@ const REGION = config('GCP_REGION_DEV') ?? 'us-east1';
 // firma cuál cosa.
 const CUENTA = config('GCP_CUENTA_IMAGENES') ?? BUCKET;
 const LLAVE = config('GOOGLE_APPLICATION_CREDENTIALS') ?? `${homedir()}/.gcp/${BUCKET}.json`;
-// El origen del túnel HTTPS del teléfono se agrega aquí cuando exista, separado
-// por comas: sin él, el asistente de captura no puede subir desde el celular.
+// Cualquier otro origen que suba al bucket —un túnel HTTPS, por ejemplo— se
+// agrega aquí, separado por comas: sin él, el `PUT` firmado muere en el preflight.
 const ORIGENES = (config('GCS_ORIGENES_CORS') ?? 'http://localhost:4200').split(',');
 
 const correo = `${CUENTA}@${PROYECTO}.iam.gserviceaccount.com`;
@@ -131,17 +131,16 @@ if (existe(['storage', 'buckets', 'describe', `gs://${BUCKET}`, '--format=value(
   ]);
 }
 
-// 2. Versionado de objetos: la red de docs/07-infra-gcp.md — "un borrado
-//    accidental de un set de rotación son quince fotos que hay que volver a
-//    tomar". Borrar un set borra sus objetos del bucket, y es esto lo que hace
-//    que eso no sea irreversible: la versión anterior queda como no vigente.
+// 2. Versionado de objetos: la red de docs/07-infra-gcp.md. Quitar una imagen
+//    borra su objeto del bucket, y es esto lo que hace que eso no sea
+//    irreversible: la versión anterior queda como no vigente.
 gcloud(['storage', 'buckets', 'update', `gs://${BUCKET}`, '--versioning']);
 
 // Sin una regla de ciclo de vida, esas versiones no vigentes se acumulan y el
 // espacio nunca se reclama — que era justo el problema a resolver.
 // TODO(negocio): DIAS_RETENCION_VERSIONES_IMAGEN. 30 días es un valor de
 // arranque, no una decisión tomada: es el plazo para darse cuenta de que se
-// borró un set por error y poder recuperarlo. Confirmar antes de producción.
+// borró una imagen por error y poder recuperarla. Confirmar antes de producción.
 const DIAS_RETENCION = Number(config('GCS_DIAS_RETENCION_VERSIONES') ?? 30);
 const cicloDeVida = JSON.stringify({
   rule: [
