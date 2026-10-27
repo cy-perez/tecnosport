@@ -18,7 +18,7 @@
           {
             "pregunta": "Which payment methods do you accept?",
             "respuesta": [
-              "Credit and debit cards, PSE and the Bancolombia button, processed by the Wompi payment gateway; transfers to our Nequi, Daviplata or BBVA accounts; instalment payments with Sistecrédito; and cash on delivery, where it is enabled for your city and your order.",
+              "Credit and debit cards, PSE and the Bancolombia button, processed by the Wompi payment gateway; transfers to our Nequi, Daviplata or BBVA accounts; instalment payments with Sistecrédito; cash on delivery, where it is enabled for your city and your order; and pay at pickup, in cash or by transfer, when you pick the order up at our Medellín location.",
               "The methods you see at checkout are the ones available for that order: not all of them are enabled for every order.",
               "We do not store card details: that information is handled entirely by the gateway."
             ]
@@ -73,7 +73,10 @@
           {
             "pregunta": "Can I pick my order up instead of having it shipped?",
             "respuesta": [
-              "No. All orders are delivered to your address through a carrier, and there is no walk-in counter."
+              "Yes, at no cost, at our location (Carrera 26C # 38B-31, apartment 401, La Milagrosa neighbourhood, Medellín), when every product in the order comes from our Medellín suppliers. Before you pay we show you whether your order can be picked up.",
+              "It is an apartment, not a shop: when the order is ready we let you know and agree on a time with you, any day between 8:00 a.m. and 9:00 p.m. We hand it over to whoever shows the order number.",
+              "We hold it for 48 hours from the notice. If you do not pick it up, we cancel the order and, if you had already paid, we refund your money.",
+              "You can pay online or when you pick it up, in cash or by transfer."
             ]
           },
           {
@@ -163,7 +166,7 @@
     ],
     "vendedor_titulo": "Who sells",
     "punto_titulo": "Deliveries",
-    "punto_nota": "All orders are delivered to your address through a carrier. There is no walk-in counter and no pickup at our premises.",
+    "punto_nota": "We ship to your address through carriers. Orders of products from our Medellín suppliers can also be picked up at no cost at our location (Carrera 26C # 38B-31, apartment 401, La Milagrosa neighbourhood, Medellín): it is an apartment, not a shop, so there is no walk-in counter and the time is agreed with you, any day between 8:00 a.m. and 9:00 p.m.",
     "enlaces_titulo": "You may also need",
     "enlace_preguntas": "Frequently asked questions",
     "enlace_estado": "Check the status of an order",

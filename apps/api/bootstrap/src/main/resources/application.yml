@@ -234,10 +234,9 @@ tecnosport:
     url-llaves: ${GOOGLE_URL_LLAVES:https://www.googleapis.com/oauth2/v3/certs}
     url-script: ${GOOGLE_URL_SCRIPT:https://accounts.google.com/gsi/client}
   retiro-en-punto:
-    # Decision de negocio del 8 de octubre de 2026: la recogida en el punto de Medellin se apaga.
-    # El servidor rechaza RETIRO_EN_PUNTO con 409 y el checkout deja de ofrecerla; los carritos que
-    # solo se podian recoger remiten a WhatsApp. Encenderla exige devolver antes los textos que la
-    # prometian (PropiedadesRetiroEnPunto).
+    # Apagada por omision desde el 8 de octubre de 2026. Desde el 26 de octubre vuelve, solo para
+    # carritos de proveedores locales (ADR-0093) y con entrega en el punto (ADR-0094); dev la
+    # enciende con los terminos 2026-10-26.1 publicados (PropiedadesRetiroEnPunto).
     habilitado: ${RETIRO_EN_PUNTO_HABILITADO:false}
     # Cada cuanto se cancelan las recogidas con pago en el punto que llevan 48 horas listas y sin
     # recoger (ADR-0094). Las 48 horas son del negocio y viven en Pedido.PLAZO_PARA_RECOGER.
@@ -636,7 +635,7 @@ tecnosport:
     # en los JSON de Transloco de este mismo repositorio: cambiar el texto y cambiar esta fecha son
     # el mismo commit. La variable existe para poder corregirla sin redesplegar, no para tener que
     # fijarla en cada entorno.
-    politica-datos-version: ${POLITICA_DATOS_VERSION:2026-10-25.2}
+    politica-datos-version: ${POLITICA_DATOS_VERSION:2026-10-26.1}
   verificacion-correo:
     # Ningún doc especifica esta duración (solo la de recuperación, 30 min) — parámetro técnico,
     # no un dato de negocio.
