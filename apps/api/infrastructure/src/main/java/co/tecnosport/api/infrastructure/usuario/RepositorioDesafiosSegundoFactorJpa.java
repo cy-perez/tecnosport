@@ -4,10 +4,12 @@ import co.tecnosport.api.application.usuario.RepositorioDesafiosSegundoFactor;
 import co.tecnosport.api.domain.usuario.DesafioSegundoFactor;
 import co.tecnosport.api.domain.usuario.HuellaDeToken;
 import co.tecnosport.api.infrastructure.usuario.entidad.DesafioSegundoFactorJpaEntity;
+import java.time.Instant;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 @Component
 public class RepositorioDesafiosSegundoFactorJpa implements RepositorioDesafiosSegundoFactor {
@@ -33,6 +35,13 @@ public class RepositorioDesafiosSegundoFactorJpa implements RepositorioDesafiosS
             desafio.creadoEn(),
             desafio.expiraEn(),
             desafio.usadoEn().orElse(null)));
+  }
+
+  /** Abre su propia transacción: la llama una tarea programada, no un caso de uso. */
+  @Override
+  @Transactional
+  public int purgarVencidos(Instant ahora) {
+    return desafios.borrarVencidos(ahora);
   }
 
   private static DesafioSegundoFactor aDominio(UUID id, DesafioSegundoFactorJpaEntity entidad) {

@@ -684,6 +684,10 @@ tecnosport:
     minutos-activacion-pendiente: ${SEGUNDO_FACTOR_MINUTOS_ACTIVACION_PENDIENTE:15}
     # El nombre con que la cuenta aparece en la aplicación de autenticación.
     emisor: ${SEGUNDO_FACTOR_EMISOR:TecnoSport}
+    purga:
+      # Cada cuánto se borran los desafíos vencidos. Viven cinco minutos y no guardan más que la
+      # huella y el usuario: no hay prisa, solo que la tabla no crezca sin techo.
+      intervalo-minutos: ${SEGUNDO_FACTOR_PURGA_INTERVALO_MINUTOS:60}
   garantia:
     # Doce meses para producto nuevo, que es lo que prometen los terminos publicados. Un productor
     # puede anunciar uno mayor: eso va en meses-por-categoria.

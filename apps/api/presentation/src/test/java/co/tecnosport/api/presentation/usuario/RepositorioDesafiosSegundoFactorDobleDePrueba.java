@@ -2,6 +2,7 @@ package co.tecnosport.api.presentation.usuario;
 
 import co.tecnosport.api.application.usuario.RepositorioDesafiosSegundoFactor;
 import co.tecnosport.api.domain.usuario.DesafioSegundoFactor;
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -23,6 +24,13 @@ final class RepositorioDesafiosSegundoFactorDobleDePrueba
   @Override
   public void guardar(DesafioSegundoFactor desafio) {
     desafios.put(desafio.id(), copia(desafio));
+  }
+
+  @Override
+  public int purgarVencidos(Instant ahora) {
+    int antes = desafios.size();
+    desafios.values().removeIf(d -> d.expiraEn().isBefore(ahora));
+    return antes - desafios.size();
   }
 
   void limpiar() {

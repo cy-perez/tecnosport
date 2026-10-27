@@ -1,6 +1,7 @@
 package co.tecnosport.api.application.usuario;
 
 import co.tecnosport.api.domain.usuario.DesafioSegundoFactor;
+import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -14,4 +15,11 @@ public interface RepositorioDesafiosSegundoFactor {
   Optional<DesafioSegundoFactor> buscarParaConsumir(UUID id);
 
   void guardar(DesafioSegundoFactor desafio);
+
+  /**
+   * Borra los desafíos que vencieron antes de {@code ahora}, usados o no: vencido, ninguno sirve ya
+   * para entrar, y sin esto quedaba una fila por cada inicio de sesión de un ADMIN. Devuelve
+   * cuántos borró.
+   */
+  int purgarVencidos(Instant ahora);
 }

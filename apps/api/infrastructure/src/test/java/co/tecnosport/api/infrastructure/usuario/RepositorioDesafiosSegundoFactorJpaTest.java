@@ -74,6 +74,30 @@ class RepositorioDesafiosSegundoFactorJpaTest {
   }
 
   @Test
+  void laPurgaBorraSoloLosVencidosUsadosONo() {
+    UUID usuarioId = crearUsuario();
+    Instant ahora = Instant.now();
+    DesafioSegundoFactor vencido =
+        DesafioSegundoFactor.crear(usuarioId, ahora.minusSeconds(600), Duration.ofMinutes(5));
+    DesafioSegundoFactor usadoYVencido =
+        DesafioSegundoFactor.crear(usuarioId, ahora.minusSeconds(600), Duration.ofMinutes(5));
+    usadoYVencido.marcarUsado(ahora.minusSeconds(590));
+    DesafioSegundoFactor vigente =
+        DesafioSegundoFactor.crear(usuarioId, ahora, Duration.ofMinutes(5));
+    repositorio.guardar(vencido);
+    repositorio.guardar(usadoYVencido);
+    repositorio.guardar(vigente);
+    entityManager.flush();
+
+    assertThat(repositorio.purgarVencidos(ahora)).isEqualTo(2);
+    entityManager.clear();
+
+    assertThat(repositorio.buscarParaConsumir(vencido.id())).isEmpty();
+    assertThat(repositorio.buscarParaConsumir(usadoYVencido.id())).isEmpty();
+    assertThat(repositorio.buscarParaConsumir(vigente.id())).isPresent();
+  }
+
+  @Test
   void unoQueNoExisteNoSeEncuentra() {
     assertThat(repositorio.buscarParaConsumir(UUID.randomUUID())).isEmpty();
   }
