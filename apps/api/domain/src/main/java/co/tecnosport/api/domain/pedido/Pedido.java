@@ -547,6 +547,16 @@ public final class Pedido {
   }
 
   /**
+   * Si la recogida ya venció: el pedido espera a que lo recojan y {@link #recogidaVenceEn} quedó
+   * atrás —en el instante exacto del vencimiento ya cuenta como vencida—. Una sola formulación para
+   * quien cancela, quien vence la recogida y el panel, que tenían cada uno la suya.
+   */
+  public boolean recogidaVencida(Instant ahora) {
+    Objects.requireNonNull(ahora, "El instante no puede ser nulo.");
+    return recogidaVenceEn().map(vence -> !vence.isAfter(ahora)).orElse(false);
+  }
+
+  /**
    * Cuándo se le avisó al comprador que el plazo de entrega venció, o vacío si todavía no.
    *
    * <p>Este sí es un campo propio y no algo derivable del historial, a diferencia de los dos de

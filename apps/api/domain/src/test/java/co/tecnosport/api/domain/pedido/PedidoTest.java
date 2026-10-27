@@ -601,6 +601,20 @@ class PedidoTest {
     assertEquals(listo.plusSeconds(48 * 3600), pedido.recogidaVenceEn().orElseThrow());
   }
 
+  /** Vence en el instante exacto del plazo, no un instante después, y solo si espera recogida. */
+  @Test
+  void laRecogidaVenceAlCumplirseElPlazo() {
+    Pedido pedido = recogidaConPagoEnPunto();
+    pedido.transicionar(EstadoPedido.EN_PREPARACION, "admin:1", "verificado", AHORA);
+
+    assertFalse(pedido.recogidaVencida(AHORA.plus(Pedido.PLAZO_PARA_RECOGER).plusSeconds(1)));
+
+    pedido.transicionar(EstadoPedido.LISTO_PARA_RECOGER, "admin:1", "listo", AHORA);
+
+    assertFalse(pedido.recogidaVencida(AHORA.plus(Pedido.PLAZO_PARA_RECOGER).minusSeconds(1)));
+    assertTrue(pedido.recogidaVencida(AHORA.plus(Pedido.PLAZO_PARA_RECOGER)));
+  }
+
   @Test
   void laFechaDeEntregaDeUnaRecogidaEsLaDeLaEntregaEnElPunto() {
     Instant entrega = AHORA.plusSeconds(3600);
