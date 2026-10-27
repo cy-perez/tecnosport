@@ -103,6 +103,10 @@
       "enlace": "Review and measure"
     },
     "ir_a_marcas": "Brands",
+    "sinMargen": {
+      "aviso": "{{total}} variant(s) stopped selling because the supplier's new cost leaves them less than a 10 % margin over the cash price. Raise the cash price on the product page, or they come back on their own when the cost drops.",
+      "skus": "({{skus}})"
+    },
     "existencias": {
       "aviso": "{{total}} catalog variant(s) have not a single unit in the inventory ledger, {{publicados}} of them on published products. Anyone seeing them in the shop sees them sold out.",
       "enlace": "Review stock and count"

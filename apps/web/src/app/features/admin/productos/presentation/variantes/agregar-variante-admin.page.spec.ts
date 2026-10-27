@@ -117,6 +117,10 @@ class RepositorioProductosAdminFalso implements RepositorioProductosAdmin {
     throw new Error('no usado por esta prueba');
   }
 
+  listarSinMargen(): Promise<never> {
+    throw new Error('no usado por esta prueba');
+  }
+
   listarMedidas(): Promise<MedidasDelCatalogo> {
     throw new Error('no usado por esta prueba');
   }

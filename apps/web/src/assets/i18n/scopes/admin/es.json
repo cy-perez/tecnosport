@@ -103,6 +103,10 @@
       "enlace": "Ver y medir"
     },
     "ir_a_marcas": "Marcas",
+    "sinMargen": {
+      "aviso": "{{total}} variante(s) dejaron de venderse porque el costo nuevo del proveedor les deja menos del 10 % de margen sobre el precio de contado. Sube el contado en la ficha del producto, o vuelven solas cuando el costo baje.",
+      "skus": "({{skus}})"
+    },
     "existencias": {
       "aviso": "{{total}} variante(s) no tienen una sola unidad en el libro de inventario, {{publicados}} de ellas en productos publicados. Quien las vea en la tienda las ve agotadas.",
       "enlace": "Ver las existencias y contar"
