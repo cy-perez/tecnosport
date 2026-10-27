@@ -702,7 +702,7 @@ transportadora ya lleva el descuento. En la vitrina y el carrito no se pinta un
 segundo precio: se dice «Ahorras $X pagando por transferencia, en el punto o contra
 entrega».
 
-**Las tres preguntas.**
+**Las cuatro preguntas.**
 
 1. **¿Mostrar el ahorro junto al precio choca con la regla de los dos precios?** El
    mismo artículo 26 dice que, cuando aparezcan dos o más precios, el consumidor
@@ -717,6 +717,12 @@ entrega».
 3. **¿Un descuento distinto en cada producto informa lo bastante?** El porcentaje
    no es uno solo: se ve en pesos en cada ficha y en el checkout. ¿Hay que publicar
    cómo se calcula?
+4. **¿El anuncio nombra medios que ese pedido quizá no tenga?** La ficha dice «pagando
+   por transferencia, en el punto o contra entrega», pero el pago en el punto solo se
+   ofrece con recogida de proveedores de Medellín y la contraentrega depende de la
+   ciudad y del valor. La transferencia sí está siempre. Los términos dicen que no todos
+   los medios están habilitados para todos los pedidos. ¿Basta, o el anuncio debería
+   nombrar solo la transferencia?
 
 Este punto no tiene respaldo en un concepto de la SIC con número: las notas de
 prensa citan una postura de la SIC que tolera el recargo informado, pero no se

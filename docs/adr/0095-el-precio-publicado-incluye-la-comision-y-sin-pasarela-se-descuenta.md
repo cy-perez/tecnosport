@@ -84,7 +84,8 @@ Aprobada por el negocio el 26 de octubre de 2026:
 8. **Tecnología tiene un tope de ganancia de $400.000 y la comisión se suma después.** Hoy la
    configuración trae `precioMercado` y nadie le sugiere un precio: quien revisa lo fija en el
    panel. Desde ahora el **precio de contado sugerido** es el de mercado, pero sin ganarle al
-   costo más de $400.000: `min(precioMercado, costo + 400.000)`. El precio publicado sugerido
+   costo más de $400.000: `min(precioMercado, costo + 400.000)`; cuando manda el tope, se baja a
+   la unidad de mil para no pasarse de él. El precio publicado sugerido
    sale de ese con la fórmula de la decisión 1. Tecnología no tiene ganancia mínima: el piso lo
    pone la regla 18 de `listas-de-proveedor`, que ya excluye lo que queda por debajo del costo o
    con menos de un 5 % de margen. Una configuración sin precio de mercado sigue sin sugerencia,
@@ -135,6 +136,7 @@ Un caso de uso a la vez, cada uno con su prueba y en su propio PR:
 1. El dominio: `ComisionDePasarela` (la fórmula de la decisión 1) y el precio de contado en
    `Variante`. La migración copia el precio actual al de contado y calcula el publicado.
 2. `CalculadoraDeMargen` devuelve el precio de contado. La sugerencia de tecnología, con su tope.
-3. `CrearPedido` elige el precio según el medio de pago y guarda el descuento.
+3. `CrearPedido` elige el precio según el medio de pago y congela el publicado por línea, del
+   que sale el descuento.
 4. La vitrina y el carrito muestran el ahorro, y el checkout el descuento, en español y en inglés.
 5. Los términos y condiciones, con la skill de textos legales y luego la de vacíos legales.

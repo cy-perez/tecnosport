@@ -3,7 +3,7 @@
 -- Cada variante pasa a tener dos precios. `precio_contado` es el que el negocio quiere recibir
 -- neto, y lo paga quien compra sin pasarela (transferencia, en el punto, contra entrega). `precio`
 -- sigue siendo la columna que leen la vitrina, los filtros, el carrito y Wompi, y desde aqui es el
--- PUBLICADO: el de contado con la comision de Wompi dentro, subido a la unidad de mil.
+-- PUBLICADO: el de contado con la comision de Wompi dentro, subido a la centena por debajo de 100.000 y a la unidad de mil desde ahi.
 --
 -- Los precios que ya estan en el catalogo son de contado (decision 6 del ADR, del negocio): se
 -- copian a `precio_contado` y `precio` se recalcula con la formula de `ComisionDePasarela`:
