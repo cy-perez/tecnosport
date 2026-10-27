@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.regex.Pattern;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import tools.jackson.core.JacksonException;
@@ -64,6 +65,9 @@ public final class WompiClient implements PasarelaDePagos {
   private static final String URL_BASE_PRODUCCION = "https://production.wompi.co/v1";
   private static final BigDecimal CENTAVOS_POR_PESO = BigDecimal.valueOf(100);
   private static final Duration TIMEOUT_CONSULTA = Duration.ofSeconds(10);
+
+  /** {@code 1234-1610641025-49201}, con holgura: dígitos, letras y guiones. */
+  private static final Pattern FORMA_DEL_ID = Pattern.compile("^[0-9A-Za-z-]{1,64}$");
 
   private final String secretoIntegridad;
   private final String secretoEventos;
@@ -125,6 +129,13 @@ public final class WompiClient implements PasarelaDePagos {
   @Override
   public Optional<TransaccionDePasarela> consultarTransaccion(String idTransaccionPasarela) {
     Objects.requireNonNull(idTransaccionPasarela, "El id de transacción no puede ser nulo.");
+    // El id se pega a la ruta tal cual. El caso de uso del PATCH público ya lo valida, pero este
+    // adaptador lo usan también el webhook y la conciliación, y una ruta alterada sale con nuestra
+    // llave: lo que no tenga la forma de un id de Wompi no se consulta.
+    if (!FORMA_DEL_ID.matcher(idTransaccionPasarela).matches()) {
+      log.warn("Id de transacción con forma inválida; no se consulta a Wompi.");
+      return Optional.empty();
+    }
     try {
       HttpRequest peticion =
           HttpRequest.newBuilder()
