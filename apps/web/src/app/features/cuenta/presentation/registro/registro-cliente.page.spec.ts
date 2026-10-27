@@ -1,7 +1,7 @@
 import { ConfiguracionGoogle } from '../../domain/boton-google.puerto';
 import { vi } from 'vitest';
 import { provideRouter, Router } from '@angular/router';
-import { TranslocoTestingModule } from '@jsverse/transloco';
+import { TranslocoService, TranslocoTestingModule } from '@jsverse/transloco';
 import { fireEvent, render, screen } from '@testing-library/angular';
 import { esperarSinViolaciones } from '../../../../../testing/axe';
 import en from '../../../../../assets/i18n/en.json';
@@ -34,10 +34,7 @@ class RepositorioCuentaFalso implements RepositorioCuenta {
 
   constructor(
     private errorAlRegistrar:
-      | 'generico'
-      | 'codigo-correo-invalido'
-      | 'demasiados-intentos'
-      | null = null,
+      'generico' | 'codigo-correo-invalido' | 'demasiados-intentos' | null = null,
   ) {}
 
   /** Lo que de verdad importa comprobar: que la autorización viaja, y no que el servidor la
@@ -160,6 +157,21 @@ describe('RegistroClientePage', () => {
     fireEvent.click(boton);
 
     expect(await screen.findByText('Escribe tu correo.')).toBeTruthy();
+  });
+
+  /**
+   * `transloco.translate()` dentro de un `computed` no lee ninguna señal: el error se quedaba en el
+   * idioma en que se pintó por primera vez aunque el visitante cambiara de idioma.
+   */
+  it('el error de un campo cambia de idioma con el sitio', async () => {
+    const { fixture } = await renderPagina(new RepositorioCuentaFalso());
+    fireEvent.click(screen.getByRole('button', { name: 'Crear cuenta' }));
+    expect(await screen.findByText(esCuenta.registro.errores.correo_requerido)).toBeTruthy();
+
+    fixture.debugElement.injector.get(TranslocoService).setActiveLang('en');
+
+    expect(await screen.findByText(enCuenta.registro.errores.correo_requerido)).toBeTruthy();
+    expect(screen.queryByText(esCuenta.registro.errores.correo_requerido)).toBeNull();
   });
 
   it('registrar exitosamente muestra el mensaje de revisa tu correo', async () => {

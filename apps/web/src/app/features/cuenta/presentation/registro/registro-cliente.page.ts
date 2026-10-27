@@ -10,6 +10,7 @@ import {
 } from '@angular/forms';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { mensajeDeError } from '../../../../core/errores/mensaje-de-error';
+import { usarTraductor } from '../../../../core/i18n/traductor';
 import { correoValido } from '../../../../shared/formularios/validadores';
 import { TsBoton } from '../../../../shared/ui/boton/ts-boton';
 import { TsPaginaFormulario } from '../../../../shared/ui/pagina-formulario/ts-pagina-formulario';
@@ -52,6 +53,7 @@ export class RegistroClientePage {
   private readonly enfocarPrimerInvalido = usarFocoEnPrimerInvalido();
   private readonly repositorio = inject(REPOSITORIO_CUENTA);
   private readonly transloco = inject(TranslocoService);
+  private readonly traducir = usarTraductor();
 
   /** Mismo patrón que el pie: las rutas viven bajo /:lang. */
   protected readonly idioma = this.transloco.activeLang;
@@ -111,7 +113,7 @@ export class RegistroClientePage {
     this.tickClave();
     const control = this.form.controls.clave;
     return control.touched && control.hasError('required')
-      ? this.transloco.translate('cuenta.registro.errores.clave_requerida')
+      ? this.traducir()('cuenta.registro.errores.clave_requerida')
       : null;
   });
 
@@ -122,7 +124,7 @@ export class RegistroClientePage {
     this.tickConfirmarClave();
     const control = this.form.controls.confirmarClave;
     return control.touched && control.hasError('required')
-      ? this.transloco.translate('cuenta.registro.errores.confirmar_requerida')
+      ? this.traducir()('cuenta.registro.errores.confirmar_requerida')
       : null;
   });
 
@@ -143,8 +145,8 @@ export class RegistroClientePage {
       return null;
     }
     return control.hasError('required')
-      ? this.transloco.translate('cuenta.registro.errores.correo_requerido')
-      : this.transloco.translate('cuenta.registro.errores.correo_invalido');
+      ? this.traducir()('cuenta.registro.errores.correo_requerido')
+      : this.traducir()('cuenta.registro.errores.correo_invalido');
   });
 
   /**
@@ -160,7 +162,7 @@ export class RegistroClientePage {
     this.tickAutorizacion();
     const control = this.form.controls.autorizaDatos;
     return control.touched && control.invalid
-      ? this.transloco.translate('cuenta.registro.errores.autorizacion_requerida')
+      ? this.traducir()('cuenta.registro.errores.autorizacion_requerida')
       : null;
   });
 
