@@ -228,6 +228,14 @@
         "resumen": "Reference {{referencia}} · order {{numero}} · {{correo}} · created {{fecha}} ·",
         "revisado": "Reviewed in Wompi",
         "revisado_de": "Mark payment {{referencia}} as reviewed in Wompi"
+      },
+      "en_preparacion": {
+        "titulo": "Orders stuck in preparation ({{cuantos}})",
+        "ayuda": "Orders that have been in preparation for more than {{dias}} days. Pickup and cash-on-delivery orders hold their unit with no expiry: if nobody moves them, it never goes back on sale. Ship them, mark them ready for pickup or cancel them from the list below.",
+        "resumen": "Order {{numero}} · {{correo}} · {{entrega}} · in preparation since {{fecha}}",
+        "entrega_recogida": "pickup at our location",
+        "entrega_domicilio": "home delivery",
+        "entrega_contraentrega": "cash on delivery"
       }
     },
     "pagos_sin_pedido": {

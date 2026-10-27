@@ -19,6 +19,7 @@ import {
   ModalidadRecaudo,
   MotivoCancelacion,
   AlertaPagosSinTransaccion,
+  AlertaPedidosDetenidos,
   PagoSinPedidoAdmin,
   PedidoAdmin,
   PedidosPaginadosAdmin,
@@ -242,6 +243,12 @@ class RepositorioPedidosAdminFalso implements RepositorioPedidosAdmin {
       ...this.alertaPagosSinTransaccion,
       pagos: this.alertaPagosSinTransaccion.pagos.filter((p) => p.pagoId !== pagoId),
     };
+  }
+
+  alertaPedidosDetenidos: AlertaPedidosDetenidos = { umbralDias: 3, pedidos: [] };
+
+  async listarPedidosDetenidosEnPreparacion(): Promise<AlertaPedidosDetenidos> {
+    return this.alertaPedidosDetenidos;
   }
 
   pagosSinPedido: PagoSinPedidoAdmin[] = [];
@@ -1175,6 +1182,38 @@ describe('ListaPedidosAdminPage', () => {
 
     await vi.waitFor(() => expect(repositorio.pagosRevisados).toEqual(['pago-7']));
     await vi.waitFor(() => expect(screen.queryByText(/Pagos de Wompi sin transacción/)).toBeNull());
+  });
+
+  /** La contraentrega se nombra aparte: no cobró nada y aun así aparta la unidad sin vencer. */
+  it('un pedido detenido en preparación sale en las alertas con su entrega y el umbral', async () => {
+    const repositorio = new RepositorioPedidosAdminFalso([pedidoDePrueba()]);
+    repositorio.alertaPedidosDetenidos = {
+      umbralDias: 3,
+      pedidos: [
+        {
+          pedidoId: 'p1',
+          numeroPedido: 'TS-2026-000456',
+          correo: 'cliente@example.com',
+          tipoEntrega: 'ENVIO_A_DOMICILIO',
+          metodoPago: 'CONTRAENTREGA',
+          desde: '2026-10-22T15:00:00Z',
+        },
+      ],
+    };
+    await renderListaCon(repositorio);
+
+    await screen.findByText('Pedidos detenidos en preparación (1)');
+    expect(screen.getByText(/más de 3 días en preparación/)).toBeTruthy();
+    expect(
+      screen.getByText(/Pedido TS-2026-000456 · cliente@example.com · contraentrega/),
+    ).toBeTruthy();
+  });
+
+  it('sin pedidos detenidos, la alerta no ocupa nada', async () => {
+    await renderLista([pedidoDePrueba()]);
+    await screen.findByRole('button', { name: 'Ver detalle' });
+
+    expect(screen.queryByText(/Pedidos detenidos en preparación/)).toBeNull();
   });
 
   it('sin pagos por devolver, la bandeja no ocupa nada', async () => {

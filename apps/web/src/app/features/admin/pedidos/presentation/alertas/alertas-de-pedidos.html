@@ -1,3 +1,35 @@
+@if (detenidos().length > 0) {
+  <section
+    class="mb-24 border border-ts-borde bg-ts-superficie p-16 rounded-md"
+    aria-labelledby="titulo-pedidos-detenidos"
+  >
+    <h2 id="titulo-pedidos-detenidos" class="mt-0 mb-8 text-base font-medio">
+      {{
+        'admin.pedidos.alertas.en_preparacion.titulo' | transloco: { cuantos: detenidos().length }
+      }}
+    </h2>
+    <p class="mt-0 mb-16 text-ts-texto-suave">
+      {{ 'admin.pedidos.alertas.en_preparacion.ayuda' | transloco: { dias: umbralDias() } }}
+    </p>
+    <ul class="m-0 list-none p-0">
+      @for (pedido of detenidos(); track pedido.pedidoId) {
+        <li class="mb-8">
+          {{
+            'admin.pedidos.alertas.en_preparacion.resumen'
+              | transloco
+                : {
+                    numero: pedido.numeroPedido,
+                    correo: pedido.correo,
+                    entrega: claveEntrega(pedido) | transloco,
+                    fecha: formatearFecha(pedido.desde),
+                  }
+          }}
+        </li>
+      }
+    </ul>
+  </section>
+}
+
 @if (pagos().length > 0) {
   <section
     class="mb-24 border border-ts-borde bg-ts-superficie p-16 rounded-md"

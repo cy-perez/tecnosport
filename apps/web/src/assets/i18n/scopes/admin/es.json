@@ -228,6 +228,14 @@
         "resumen": "Referencia {{referencia}} · pedido {{numero}} · {{correo}} · creado {{fecha}} ·",
         "revisado": "Ya lo revisé en Wompi",
         "revisado_de": "Marcar como revisado en Wompi el pago {{referencia}}"
+      },
+      "en_preparacion": {
+        "titulo": "Pedidos detenidos en preparación ({{cuantos}})",
+        "ayuda": "Pedidos que llevan más de {{dias}} días en preparación. Los de recogida y los de contraentrega tienen su unidad apartada sin vencimiento: si nadie los mueve, no vuelve a la venta. Despáchalos, márcalos listos para recoger o cancélalos desde la lista de abajo.",
+        "resumen": "Pedido {{numero}} · {{correo}} · {{entrega}} · en preparación desde {{fecha}}",
+        "entrega_recogida": "recogida en el punto",
+        "entrega_domicilio": "envío a domicilio",
+        "entrega_contraentrega": "contraentrega"
       }
     },
     "pagos_sin_pedido": {

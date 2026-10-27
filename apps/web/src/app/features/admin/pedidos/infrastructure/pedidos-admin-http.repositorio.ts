@@ -13,9 +13,11 @@ import {
   MetodoPago,
   MotivoCancelacion,
   AlertaPagosSinTransaccion,
+  AlertaPedidosDetenidos,
   PagoSinPedidoAdmin,
   PedidoAdmin,
   PedidosPaginadosAdmin,
+  TipoEntrega,
 } from '../domain/pedido-admin.model';
 import {
   GuiaDespachada,
@@ -142,6 +144,22 @@ export class PedidosAdminHttpRepositorio implements RepositorioPedidosAdmin {
       { params: { path: { pagoId } } },
     );
     exigirExito(respuesta, 'no se pudo marcar el pago como revisado');
+  }
+
+  async listarPedidosDetenidosEnPreparacion(): Promise<AlertaPedidosDetenidos> {
+    const respuesta = await this.cliente.GET('/api/v1/admin/alertas/pedidos-en-preparacion');
+    const alerta = desempaquetar(respuesta, 'no se pudieron cargar los pedidos en preparación');
+    return {
+      umbralDias: alerta.umbralDias,
+      pedidos: alerta.pedidos.map((p) => ({
+        pedidoId: p.pedidoId,
+        numeroPedido: p.numeroPedido,
+        correo: p.correo,
+        tipoEntrega: p.tipoEntrega as TipoEntrega,
+        metodoPago: p.metodoPago as MetodoPago,
+        desde: p.desde,
+      })),
+    };
   }
 
   async listarPagosSinPedido(): Promise<PagoSinPedidoAdmin[]> {

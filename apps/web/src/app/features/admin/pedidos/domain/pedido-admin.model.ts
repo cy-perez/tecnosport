@@ -294,6 +294,22 @@ export interface AlertaPagosSinTransaccion {
   readonly pagos: readonly PagoSinTransaccionAdmin[];
 }
 
+/** Un pedido que lleva más del umbral en preparación; `desde` es su llegada a ese estado. */
+export interface PedidoDetenidoAdmin {
+  readonly pedidoId: string;
+  readonly numeroPedido: string;
+  readonly correo: string;
+  readonly tipoEntrega: TipoEntrega;
+  readonly metodoPago: MetodoPago;
+  readonly desde: string;
+}
+
+/** Los pedidos detenidos en preparación, con el umbral en días que aplicó el servidor. */
+export interface AlertaPedidosDetenidos {
+  readonly umbralDias: number;
+  readonly pedidos: readonly PedidoDetenidoAdmin[];
+}
+
 export interface PagoSinPedidoAdmin {
   readonly pagoId: string;
   readonly referencia: string;
