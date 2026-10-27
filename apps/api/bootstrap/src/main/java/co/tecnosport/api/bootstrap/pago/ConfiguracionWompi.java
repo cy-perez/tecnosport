@@ -50,8 +50,10 @@ public class ConfiguracionWompi {
       RepositorioPedidos repositorioPedidos,
       RepositorioPagos repositorioPagos,
       PasarelaDePagos pasarelaDePagos,
+      RepositorioInventario repositorioInventario,
       Reloj reloj) {
-    return new CrearIntentoDePago(repositorioPedidos, repositorioPagos, pasarelaDePagos, reloj);
+    return new CrearIntentoDePago(
+        repositorioPedidos, repositorioPagos, pasarelaDePagos, repositorioInventario, reloj);
   }
 
   @Bean

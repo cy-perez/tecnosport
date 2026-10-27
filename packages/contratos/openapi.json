@@ -3085,6 +3085,67 @@
         ],
         "type" : "object"
       },
+      "PagoSinTransaccionRespuesta" : {
+        "properties" : {
+          "correo" : {
+            "type" : "string"
+          },
+          "creadoEn" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "estadoPedido" : {
+            "type" : "string"
+          },
+          "monto" : {
+            "$ref" : "#/components/schemas/DineroRespuesta"
+          },
+          "numeroPedido" : {
+            "type" : "string"
+          },
+          "pagoId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "pedidoId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "referencia" : {
+            "type" : "string"
+          }
+        },
+        "required" : [
+          "correo",
+          "creadoEn",
+          "estadoPedido",
+          "monto",
+          "numeroPedido",
+          "pagoId",
+          "pedidoId",
+          "referencia"
+        ],
+        "type" : "object"
+      },
+      "PagosSinTransaccionRespuesta" : {
+        "properties" : {
+          "pagos" : {
+            "items" : {
+              "$ref" : "#/components/schemas/PagoSinTransaccionRespuesta"
+            },
+            "type" : "array"
+          },
+          "umbralHoras" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        },
+        "required" : [
+          "pagos",
+          "umbralHoras"
+        ],
+        "type" : "object"
+      },
       "PaletaDefinidaRespuesta" : {
         "properties" : {
           "variantesNuevas" : {
@@ -3176,6 +3237,39 @@
         },
         "required" : [
           "fotos"
+        ],
+        "type" : "object"
+      },
+      "PedidoDetenidoRespuesta" : {
+        "properties" : {
+          "correo" : {
+            "type" : "string"
+          },
+          "desde" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "metodoPago" : {
+            "type" : "string"
+          },
+          "numeroPedido" : {
+            "type" : "string"
+          },
+          "pedidoId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "tipoEntrega" : {
+            "type" : "string"
+          }
+        },
+        "required" : [
+          "correo",
+          "desde",
+          "metodoPago",
+          "numeroPedido",
+          "pedidoId",
+          "tipoEntrega"
         ],
         "type" : "object"
       },
@@ -3353,6 +3447,25 @@
         },
         "required" : [
           "descuento"
+        ],
+        "type" : "object"
+      },
+      "PedidosDetenidosRespuesta" : {
+        "properties" : {
+          "pedidos" : {
+            "items" : {
+              "$ref" : "#/components/schemas/PedidoDetenidoRespuesta"
+            },
+            "type" : "array"
+          },
+          "umbralDias" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        },
+        "required" : [
+          "pedidos",
+          "umbralDias"
         ],
         "type" : "object"
       },
@@ -5262,6 +5375,70 @@
   },
   "openapi" : "3.1.0",
   "paths" : {
+    "/api/v1/admin/alertas/pagos-sin-transaccion" : {
+      "get" : {
+        "operationId" : "pagosSinTransaccion",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PagosSinTransaccionRespuesta"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "admin-alertas-controlador"
+        ]
+      }
+    },
+    "/api/v1/admin/alertas/pagos-sin-transaccion/{pagoId}/revision" : {
+      "post" : {
+        "operationId" : "marcarRevisado",
+        "parameters" : [
+          {
+            "in" : "path",
+            "name" : "pagoId",
+            "required" : true,
+            "schema" : {
+              "format" : "uuid",
+              "type" : "string"
+            }
+          }
+        ],
+        "responses" : {
+          "204" : {
+            "description" : "No Content"
+          }
+        },
+        "tags" : [
+          "admin-alertas-controlador"
+        ]
+      }
+    },
+    "/api/v1/admin/alertas/pedidos-en-preparacion" : {
+      "get" : {
+        "operationId" : "pedidosDetenidosEnPreparacion",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PedidosDetenidosRespuesta"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "admin-alertas-controlador"
+        ]
+      }
+    },
     "/api/v1/admin/atencion" : {
       "get" : {
         "operationId" : "listar_8",

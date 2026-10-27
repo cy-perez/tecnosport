@@ -18,6 +18,8 @@ import co.tecnosport.api.application.pedido.RepositorioPedidos;
 import co.tecnosport.api.domain.compartido.CorreoElectronico;
 import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.compartido.Sku;
+import co.tecnosport.api.domain.inventario.Inventario;
+import co.tecnosport.api.domain.inventario.MovimientoInventario;
 import co.tecnosport.api.domain.pago.EstadoPago;
 import co.tecnosport.api.domain.pago.Pago;
 import co.tecnosport.api.domain.pago.ReferenciaPago;
@@ -32,6 +34,7 @@ import co.tecnosport.api.presentation.pago.dto.CrearIntentoDePagoRequest;
 import co.tecnosport.api.presentation.pago.dto.RegistrarIdTransaccionWompiRequest;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.math.BigDecimal;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
@@ -55,6 +58,7 @@ class PagoControladorTest {
   @Autowired private PasarelaDePagosDobleDePrueba pasarela;
   @Autowired private RepositorioPedidosDobleDePrueba pedidos;
   @Autowired private RepositorioPagosDobleDePrueba pagos;
+  @Autowired private RepositorioInventarioDobleDePrueba inventario;
 
   @BeforeEach
   void reiniciarElEstadoCompartido() {
@@ -76,6 +80,18 @@ class PagoControladorTest {
   private static final AtomicInteger SECUENCIAL = new AtomicInteger();
 
   private Pedido pedidoConMetodo(MetodoPago metodoPago) {
+    return pedidoConMetodo(metodoPago, Instant.now());
+  }
+
+  /**
+   * La línea lleva su reserva de 30 minutos hecha en {@code reservadaEn}, como la deja el pedido.
+   */
+  private Pedido pedidoConMetodo(MetodoPago metodoPago, Instant reservadaEn) {
+    UUID varianteId = UUID.randomUUID();
+    Inventario libro = Inventario.crear(varianteId);
+    libro.registrarEntrada(5, "siembra", reservadaEn);
+    MovimientoInventario reserva = libro.reservar(2, Duration.ofMinutes(30), reservadaEn);
+    inventario.conInventario(libro);
     Pedido pedido =
         Pedido.crear(
             NumeroPedido.de(2026, SECUENCIAL.incrementAndGet()),
@@ -84,14 +100,14 @@ class PagoControladorTest {
             List.of(
                 new LineaPedido(
                     UUID.randomUUID(),
-                    UUID.randomUUID(),
+                    varianteId,
                     new Sku("TS-CAM-AZ-M"),
                     "Camiseta running Dry-Fit",
                     2,
                     Dinero.deCop(50_000),
                     new BigDecimal("0.19"),
                     "https://cdn.tecnosport.co/img.jpg",
-                    UUID.randomUUID())),
+                    reserva.id())),
             TipoEntrega.ENVIO_A_DOMICILIO,
             DIRECCION_MEDELLIN,
             metodoPago,
@@ -141,6 +157,8 @@ class PagoControladorTest {
   void webhookAprobadoTransicionaElPagoYElPedido() throws Exception {
     Pedido pedido = pedidoConMetodo(MetodoPago.WOMPI);
     Pago pago = pagoPendienteParaElPedido(pedido);
+    // Un APPROVED se confirma con la pasarela antes de aplicarse.
+    pasarela.conTransaccionAprobada("wompi-tx-1", pago.referencia().valor(), pago.monto());
 
     mockMvc
         .perform(
@@ -151,7 +169,29 @@ class PagoControladorTest {
 
     assertEquals(
         EstadoPago.APROBADO, pagos.buscarPorReferencia(pago.referencia()).orElseThrow().estado());
-    assertEquals(EstadoPedido.PAGADO, pedidos.buscarPorId(pedido.id()).orElseThrow().estado());
+    // EN_PREPARACION y no PAGADO: la línea lleva una reserva real y el aprobado la confirma. Con
+    // la reserva inventada que tenía antes, el pedido se quedaba en PAGADO sin inventario detrás.
+    assertEquals(
+        EstadoPedido.EN_PREPARACION, pedidos.buscarPorId(pedido.id()).orElseThrow().estado());
+  }
+
+  /** Sin la confirmación de la pasarela, un APPROVED firmado no paga el pedido. */
+  @Test
+  void webhookAprobadoQueLaPasarelaNoConfirmaNoTransiciona() throws Exception {
+    Pedido pedido = pedidoConMetodo(MetodoPago.WOMPI);
+    Pago pago = pagoPendienteParaElPedido(pedido);
+
+    mockMvc
+        .perform(
+            post("/api/v1/pagos/webhook")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(cuerpoWebhook(pago.referencia().valor(), "APPROVED", "checksum-valido")))
+        .andExpect(status().isOk());
+
+    assertEquals(
+        EstadoPago.PENDIENTE, pagos.buscarPorReferencia(pago.referencia()).orElseThrow().estado());
+    assertEquals(
+        EstadoPedido.PAGO_PENDIENTE, pedidos.buscarPorId(pedido.id()).orElseThrow().estado());
   }
 
   @Test
@@ -231,6 +271,19 @@ class PagoControladorTest {
                 .content(json.writeValueAsString(new CrearIntentoDePagoRequest(pedido.id()))))
         .andExpect(status().isConflict())
         .andExpect(jsonPath("$.codigo").value("PEDIDO_NO_ESTA_EN_PAGO_PENDIENTE"));
+  }
+
+  @Test
+  void pedidoConLaReservaVencidaDevuelve409ConSuCodigo() throws Exception {
+    Pedido pedido = pedidoConMetodo(MetodoPago.WOMPI, Instant.now().minus(Duration.ofMinutes(31)));
+
+    mockMvc
+        .perform(
+            post("/api/v1/pagos/intentos")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(json.writeValueAsString(new CrearIntentoDePagoRequest(pedido.id()))))
+        .andExpect(status().isConflict())
+        .andExpect(jsonPath("$.codigo").value("RESERVA_DEL_PEDIDO_VENCIDA"));
   }
 
   @Test
@@ -352,9 +405,14 @@ class PagoControladorTest {
     CrearIntentoDePago crearIntentoDePago(
         RepositorioPedidos repositorioPedidos,
         RepositorioPagos repositorioPagos,
-        PasarelaDePagos pasarelaDePagos) {
+        PasarelaDePagos pasarelaDePagos,
+        RepositorioInventario repositorioInventario) {
       return new CrearIntentoDePago(
-          repositorioPedidos, repositorioPagos, pasarelaDePagos, Instant::now);
+          repositorioPedidos,
+          repositorioPagos,
+          pasarelaDePagos,
+          repositorioInventario,
+          Instant::now);
     }
 
     @Bean

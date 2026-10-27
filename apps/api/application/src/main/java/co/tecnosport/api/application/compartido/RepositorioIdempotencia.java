@@ -18,7 +18,11 @@ import java.util.Optional;
  */
 public interface RepositorioIdempotencia {
 
-  /** Vacío si no hay fila, si sigue pendiente, o si ya venció (24 horas). */
+  /**
+   * Vacío si no hay fila, si sigue pendiente, o si ya venció (24 horas). La respuesta trae el
+   * método y la ruta con que se reclamó la llave, para que quien llama no repita la de otro
+   * recurso.
+   */
   Optional<RespuestaIdempotente> buscarCompletada(String llave, Instant ahora);
 
   /**

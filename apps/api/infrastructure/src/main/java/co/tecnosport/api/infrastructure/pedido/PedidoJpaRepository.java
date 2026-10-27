@@ -42,6 +42,15 @@ public interface PedidoJpaRepository extends JpaRepository<PedidoJpaEntity, UUID
       @Param("corte") Instant corte,
       Pageable pagina);
 
+  /** Como la de arriba, sin filtrar por método de pago. */
+  @Query(
+      "select p.id from PedidoJpaEntity p where p.estado = :estado"
+          + " and (select max(h.fecha) from HistorialPedidoJpaEntity h"
+          + " where h.pedidoId = p.id and h.estado = :estado) < :corte"
+          + " order by p.creadoEn asc")
+  List<UUID> findIdsByEstadoEnteredBefore(
+      @Param("estado") String estado, @Param("corte") Instant corte, Pageable pagina);
+
   @Query(
       nativeQuery = true,
       value =

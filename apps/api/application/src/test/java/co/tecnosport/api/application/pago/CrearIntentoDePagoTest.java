@@ -8,6 +8,8 @@ import co.tecnosport.api.application.compartido.RelojFalso;
 import co.tecnosport.api.domain.compartido.CorreoElectronico;
 import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.compartido.Sku;
+import co.tecnosport.api.domain.inventario.Inventario;
+import co.tecnosport.api.domain.inventario.MovimientoInventario;
 import co.tecnosport.api.domain.pago.EstadoPago;
 import co.tecnosport.api.domain.pago.Pago;
 import co.tecnosport.api.domain.pedido.Direccion;
@@ -17,6 +19,7 @@ import co.tecnosport.api.domain.pedido.NumeroPedido;
 import co.tecnosport.api.domain.pedido.Pedido;
 import co.tecnosport.api.domain.pedido.TipoEntrega;
 import java.math.BigDecimal;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
@@ -31,25 +34,55 @@ class CrearIntentoDePagoTest {
 
   private RepositorioPedidosFalso pedidos;
   private RepositorioPagosFalso pagos;
+  private RepositorioInventarioFalso inventario = new RepositorioInventarioFalso();
 
   private CrearIntentoDePago crear() {
     pedidos = new RepositorioPedidosFalso();
     pagos = new RepositorioPagosFalso();
+    inventario = new RepositorioInventarioFalso();
     return new CrearIntentoDePago(
-        pedidos, pagos, new PasarelaDePagosFalsa(), new RelojFalso(AHORA));
+        pedidos, pagos, new PasarelaDePagosFalsa(), inventario, new RelojFalso(AHORA));
   }
 
   private LineaPedido linea() {
+    return lineaReservadaEn(AHORA);
+  }
+
+  /**
+   * Una línea con su reserva de 30 minutos hecha en {@code reservadaEn}, como la deja el pedido.
+   */
+  private LineaPedido lineaReservadaEn(Instant reservadaEn) {
+    UUID varianteId = UUID.randomUUID();
+    Inventario libro = Inventario.crear(varianteId);
+    libro.registrarEntrada(5, "siembra", reservadaEn);
+    MovimientoInventario reserva = libro.reservar(2, Duration.ofMinutes(30), reservadaEn);
+    inventario.conInventario(libro);
     return new LineaPedido(
         UUID.randomUUID(),
-        UUID.randomUUID(),
+        varianteId,
         new Sku("TS-CAM-AZ-M"),
         "Camiseta running Dry-Fit",
         2,
         Dinero.deCop(50_000),
         new BigDecimal("0.19"),
         "https://cdn.tecnosport.co/img.webp",
-        UUID.randomUUID());
+        reserva.id());
+  }
+
+  private Pedido pedidoConLinea(MetodoPago metodoPago, LineaPedido linea) {
+    Pedido pedido =
+        Pedido.crear(
+            NumeroPedido.de(2026, 7),
+            null,
+            CORREO,
+            List.of(linea),
+            TipoEntrega.ENVIO_A_DOMICILIO,
+            DIRECCION_MEDELLIN,
+            metodoPago,
+            "cliente@tecnosport.co",
+            AHORA);
+    pedidos.conPedido(pedido);
+    return pedido;
   }
 
   private Pedido pedidoConMetodo(MetodoPago metodoPago, int secuencial) {
@@ -124,5 +157,37 @@ class CrearIntentoDePagoTest {
     assertThrows(
         MetodoDePagoNoSoportadoPorWompiException.class,
         () -> caso.ejecutar(new CrearIntentoDePagoComando(pedido.id())));
+  }
+
+  /**
+   * La reserva del pago en línea dura 30 minutos. Un pedido que se quedó en {@code PAGO_PENDIENTE}
+   * más que eso ya no tiene la unidad apartada: cobrarlo era dejarlo {@code PAGADO} sin mercancía
+   * detrás si otro comprador se la llevó entretanto.
+   */
+  @Test
+  void conLaReservaVencidaNoSeCreaElPago() {
+    CrearIntentoDePago caso = crear();
+    Pedido pedido =
+        pedidoConLinea(MetodoPago.WOMPI, lineaReservadaEn(AHORA.minus(Duration.ofMinutes(31))));
+
+    assertThrows(
+        ReservaDelPedidoVencidaException.class,
+        () -> caso.ejecutar(new CrearIntentoDePagoComando(pedido.id())));
+    assertTrue(pagos.buscarPorPedidoId(pedido.id()).isEmpty());
+  }
+
+  @Test
+  void conLaReservaLiberadaNoSeCreaElPago() {
+    CrearIntentoDePago caso = crear();
+    LineaPedido linea = lineaReservadaEn(AHORA);
+    Inventario libro = inventario.buscarPorVarianteId(linea.varianteId()).orElseThrow();
+    libro.liberar(linea.idReserva(), "otro camino la soltó", AHORA);
+    inventario.guardar(libro);
+    Pedido pedido = pedidoConLinea(MetodoPago.WOMPI, linea);
+
+    assertThrows(
+        ReservaDelPedidoVencidaException.class,
+        () -> caso.ejecutar(new CrearIntentoDePagoComando(pedido.id())));
+    assertTrue(pagos.buscarPorPedidoId(pedido.id()).isEmpty());
   }
 }

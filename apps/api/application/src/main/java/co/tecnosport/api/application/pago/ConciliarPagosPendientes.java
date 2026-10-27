@@ -21,8 +21,8 @@ import java.util.Optional;
  * perderse con ellos"). Solo revisa pagos con {@link Pago#idTransaccionPasarela()} registrado — sin
  * él no hay cómo consultar la API de Wompi, que busca por su id, no por la referencia propia. Un
  * pago sin ese id (el cliente cerró la pestaña antes de volver del checkout, y tampoco llegó el
- * webhook) queda fuera de este mecanismo, para seguimiento manual en el panel — la vista de
- * operación mínima de esta fase, no construida todavía.
+ * webhook) queda fuera de este mecanismo, para seguimiento manual en el panel: pasado el umbral lo
+ * enseña {@link ListarPagosSinTransaccion}, en las alertas del panel de pedidos.
  */
 public final class ConciliarPagosPendientes {
 

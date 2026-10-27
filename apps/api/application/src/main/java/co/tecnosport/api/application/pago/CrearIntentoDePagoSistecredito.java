@@ -2,6 +2,7 @@ package co.tecnosport.api.application.pago;
 
 import co.tecnosport.api.application.compartido.EnTransaccionPropia;
 import co.tecnosport.api.application.compartido.Reloj;
+import co.tecnosport.api.application.inventario.RepositorioInventario;
 import co.tecnosport.api.application.pedido.PedidoNoEncontradoException;
 import co.tecnosport.api.application.pedido.RepositorioPedidos;
 import co.tecnosport.api.domain.pago.Pago;
@@ -67,6 +68,7 @@ public final class CrearIntentoDePagoSistecredito {
   private final RepositorioPedidos repositorioPedidos;
   private final RepositorioPagos repositorioPagos;
   private final PasarelaSistecredito pasarela;
+  private final RepositorioInventario repositorioInventario;
   private final EnTransaccionPropia enTransaccionPropia;
   private final Reloj reloj;
   private final String urlRespuesta;
@@ -78,6 +80,7 @@ public final class CrearIntentoDePagoSistecredito {
       RepositorioPedidos repositorioPedidos,
       RepositorioPagos repositorioPagos,
       PasarelaSistecredito pasarela,
+      RepositorioInventario repositorioInventario,
       EnTransaccionPropia enTransaccionPropia,
       Reloj reloj,
       String urlRespuesta,
@@ -89,6 +92,9 @@ public final class CrearIntentoDePagoSistecredito {
     this.repositorioPagos =
         Objects.requireNonNull(repositorioPagos, "El repositorio de pagos no puede ser nulo.");
     this.pasarela = Objects.requireNonNull(pasarela, "La pasarela no puede ser nula.");
+    this.repositorioInventario =
+        Objects.requireNonNull(
+            repositorioInventario, "El repositorio de inventario no puede ser nulo.");
     this.enTransaccionPropia =
         Objects.requireNonNull(enTransaccionPropia, "El ejecutor transaccional no puede ser nulo.");
     this.reloj = Objects.requireNonNull(reloj, "El reloj no puede ser nulo.");
@@ -189,6 +195,8 @@ public final class CrearIntentoDePagoSistecredito {
     if (pedido.metodoPago().pasarela() != ProveedorDePago.SISTECREDITO) {
       throw new MetodoDePagoNoEsDeSistecreditoException(pedido.metodoPago());
     }
+    // Antes de abrir la solicitud de crédito, por lo mismo que en `CrearIntentoDePago`.
+    ReservasDelPedido.exigirVigentes(pedido, repositorioInventario, reloj.ahora());
     int numeroDeIntento = repositorioPagos.buscarPorPedidoId(pedido.id()).size() + 1;
     ReferenciaPago referencia =
         new ReferenciaPago(pedido.numeroPedido().valor() + "-" + numeroDeIntento);

@@ -47,10 +47,12 @@ import co.tecnosport.api.application.garantia.ReclamacionGarantiaNoEncontradaExc
 import co.tecnosport.api.application.pago.MetodoDePagoNoEsDeSistecreditoException;
 import co.tecnosport.api.application.pago.MetodoDePagoNoSoportadoPorWompiException;
 import co.tecnosport.api.application.pago.PagoConPedidoQueLoEsperaException;
+import co.tecnosport.api.application.pago.PagoConTransaccionOResueltoException;
 import co.tecnosport.api.application.pago.PagoNoEncontradoException;
 import co.tecnosport.api.application.pago.PagoSinPedidoYaDevueltoException;
 import co.tecnosport.api.application.pago.PedidoNoEstaEnPagoPendienteException;
 import co.tecnosport.api.application.pago.ReferenciaDePagoYaExisteException;
+import co.tecnosport.api.application.pago.ReservaDelPedidoVencidaException;
 import co.tecnosport.api.application.pago.SistecreditoNoEntregoLaUrlDePagoException;
 import co.tecnosport.api.application.pago.SistecreditoNoRespondeException;
 import co.tecnosport.api.application.pago.TransaccionDeOtroPagoException;
@@ -684,6 +686,12 @@ public class ManejadorDeErrores {
         HttpStatus.UNPROCESSABLE_CONTENT, "La transacción no es de este pago", excepcion);
   }
 
+  // La alerta del panel estaba vieja: el pago ya tiene su transacción o ya se resolvió.
+  @ExceptionHandler(PagoConTransaccionOResueltoException.class)
+  public ProblemDetail pagoConTransaccionOResuelto(PagoConTransaccionOResueltoException excepcion) {
+    return problema(HttpStatus.CONFLICT, "El pago ya no está sin transacción", excepcion);
+  }
+
   @ExceptionHandler(PagoNoEncontradoException.class)
   public ProblemDetail pagoNoEncontrado(PagoNoEncontradoException excepcion) {
     return problema(HttpStatus.NOT_FOUND, "Pago no encontrado", excepcion);
@@ -701,6 +709,14 @@ public class ManejadorDeErrores {
   @ExceptionHandler(PedidoNoEstaEnPagoPendienteException.class)
   public ProblemDetail pedidoNoEstaEnPagoPendiente(PedidoNoEstaEnPagoPendienteException excepcion) {
     return problema(HttpStatus.CONFLICT, "Pedido no admite un intento de pago", excepcion);
+  }
+
+  // Mismo criterio que ExistenciaInsuficienteException: la reserva de alguna línea venció o se
+  // liberó y la unidad pudo venderse a otro. El checkout olvida el pedido y crea uno nuevo, que
+  // vuelve a reservar contra la existencia de ahora.
+  @ExceptionHandler(ReservaDelPedidoVencidaException.class)
+  public ProblemDetail reservaDelPedidoVencida(ReservaDelPedidoVencidaException excepcion) {
+    return problema(HttpStatus.CONFLICT, "La reserva del pedido venció", excepcion);
   }
 
   // Mismo criterio que ExistenciaInsuficienteException: la solicitud está bien formada, pero

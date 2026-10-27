@@ -568,6 +568,14 @@ export class ConfirmarPage {
       this.rechazoDeCredito.set(false);
       return this.transloco.translate('checkout.confirmar.disponibilidad_por_confirmar');
     }
+    // El pedido se creó, pero su reserva venció antes del intento de pago (30 minutos) y la unidad
+    // pudo venderse. Ese pedido ya no se cobra: se olvida, y el siguiente clic crea uno nuevo que
+    // vuelve a reservar. El carrito sigue lleno porque `confirmar()` no llegó a limpiarlo.
+    if (error instanceof ErrorHttp && error.codigo === 'RESERVA_DEL_PEDIDO_VENCIDA') {
+      this.rechazoDeCredito.set(false);
+      this.checkout.olvidarPedido();
+      return this.transloco.translate('checkout.confirmar.reserva_vencida');
+    }
     const datos = error instanceof ErrorHttp ? error.datos : {};
     // El servidor ya clasificó el rechazo (`motivoSistecredito`); aquí solo se elige el texto. La
     // tabla de códigos y estados de la pasarela vivía en este componente, distinta de la del

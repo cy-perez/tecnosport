@@ -53,6 +53,26 @@ final class RepositorioPedidosDobleDePrueba implements RepositorioPedidos {
   }
 
   @Override
+  public java.util.List<UUID> buscarIdsEnEstadoDesdeAntesDe(
+      co.tecnosport.api.domain.pedido.EstadoPedido estado,
+      java.time.Instant desdeAntesDe,
+      int maximo) {
+    return pedidos.values().stream()
+        .filter(p -> p.estado() == estado)
+        .filter(
+            p ->
+                p.historial().stream()
+                    .filter(h -> h.estado() == estado)
+                    .reduce((primero, ultimo) -> ultimo)
+                    .map(h -> h.fecha().isBefore(desdeAntesDe))
+                    .orElse(false))
+        .sorted(java.util.Comparator.comparing(Pedido::creadoEn))
+        .limit(maximo)
+        .map(Pedido::id)
+        .toList();
+  }
+
+  @Override
   public void guardar(Pedido pedido) {
     rechazarSiElNumeroYaEsDeOtro(pedido);
     pedidos.put(pedido.id(), pedido);

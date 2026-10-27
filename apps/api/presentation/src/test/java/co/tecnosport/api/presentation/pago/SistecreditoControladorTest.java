@@ -228,11 +228,13 @@ class SistecreditoControladorTest {
     CrearIntentoDePagoSistecredito crearIntentoDePagoSistecredito(
         RepositorioPedidos repositorioPedidos,
         RepositorioPagos repositorioPagos,
-        PasarelaSistecredito pasarela) {
+        PasarelaSistecredito pasarela,
+        RepositorioInventario repositorioInventario) {
       return new CrearIntentoDePagoSistecredito(
           repositorioPedidos,
           repositorioPagos,
           pasarela,
+          repositorioInventario,
           new EnTransaccionPropia() {
             @Override
             public <T> T ejecutar(Supplier<T> trabajo) {

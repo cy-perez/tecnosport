@@ -140,6 +140,11 @@ class CodigosDeCableTest {
               SistecreditoNoEntregoLaUrlDePagoException.class,
               "SISTECREDITO_NO_ENTREGO_LA_URL_DE_PAGO"),
           Map.entry(MontoDeReintegroInvalidoException.class, "MONTO_DE_REINTEGRO_INVALIDO"),
+          // `confirmar.page.ts` lo usa para olvidar el pedido viejo y crear uno que vuelva a
+          // reservar: con el genérico, el siguiente clic repetía el mismo 409 para siempre.
+          Map.entry(
+              co.tecnosport.api.application.pago.ReservaDelPedidoVencidaException.class,
+              "RESERVA_DEL_PEDIDO_VENCIDA"),
           // Los siete rechazos del árbol de categorías, que `categorias-admin-http.repositorio.ts`
           // traduce a un resultado con nombre para que la pantalla diga qué hacer: "mueve primero
           // sus productos", "borra antes sus subcategorías". Sin esto, renombrar la excepción deja
@@ -157,6 +162,9 @@ class CodigosDeCableTest {
   private static final Map<Class<? extends Exception>, String> CABLEADOS_EN_TRADUCCIONES =
       Map.ofEntries(
           Map.entry(AcuseNoAplicableException.class, "ACUSE_NO_APLICABLE"),
+          Map.entry(
+              co.tecnosport.api.application.pago.PagoConTransaccionOResueltoException.class,
+              "PAGO_CON_TRANSACCION_O_RESUELTO"),
           Map.entry(ContraentregaNoDisponibleException.class, "CONTRAENTREGA_NO_DISPONIBLE"),
           Map.entry(EmisionNoEncontradaException.class, "EMISION_NO_ENCONTRADA"),
           Map.entry(ExcepcionDeDominio.class, "EXCEPCION_DE_DOMINIO"),

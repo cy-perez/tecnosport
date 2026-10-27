@@ -30,13 +30,30 @@ public class FiltroLimiteIntentos extends OncePerRequestFilter {
   private final Reloj reloj;
   private final int maximoIntentos;
   private final Duration ventana;
+  private final String grupo;
 
   public FiltroLimiteIntentos(
       LimitadorDeIntentos limitador, Reloj reloj, int maximoIntentos, Duration ventana) {
+    this(limitador, reloj, maximoIntentos, ventana, null);
+  }
+
+  /**
+   * Con {@code grupo}, todas las rutas del filtro comparten un solo presupuesto por IP con ese
+   * nombre, en vez de uno por URI. Hace falta para una ruta con un parámetro en el camino ({@code
+   * /pagos/intentos/{referencia}}): contada por URI, cada referencia estrenaba presupuesto, y
+   * recorrer referencias —que es justo el abuso— no tenía techo.
+   */
+  public FiltroLimiteIntentos(
+      LimitadorDeIntentos limitador,
+      Reloj reloj,
+      int maximoIntentos,
+      Duration ventana,
+      String grupo) {
     this.limitador = Objects.requireNonNull(limitador);
     this.reloj = Objects.requireNonNull(reloj);
     this.maximoIntentos = maximoIntentos;
     this.ventana = Objects.requireNonNull(ventana);
+    this.grupo = grupo;
   }
 
   @Override
@@ -45,7 +62,8 @@ public class FiltroLimiteIntentos extends OncePerRequestFilter {
       throws ServletException, IOException {
     // Por cubo y no por dirección: una IPv6 se cuenta por su /64, o cada dirección del mismo rango
     // estrenaría presupuesto (CuboDeIp, ADR-0087).
-    String clave = "ip:" + request.getRequestURI() + ":" + CuboDeIp.de(IpDelCliente.de(request));
+    String ruta = grupo != null ? grupo : request.getRequestURI();
+    String clave = "ip:" + ruta + ":" + CuboDeIp.de(IpDelCliente.de(request));
     boolean permitido = limitador.permitir(clave, maximoIntentos, ventana, reloj.ahora());
     if (!permitido) {
       responderLimiteExcedido(request, response);

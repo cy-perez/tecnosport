@@ -127,9 +127,15 @@ class ProcesarEventoDePagoTest {
     return pedido;
   }
 
+  /**
+   * La pasarela confirma por omisión que {@code ID_TRANSACCION} es la transacción aprobada de este
+   * pago: un APPROVED se consulta antes de aplicarse, y lo normal es que la consulta lo respalde.
+   * Las pruebas que necesitan otra respuesta la sobrescriben.
+   */
   private Pago pagoPendienteParaElPedido(Pedido pedido) {
     Pago pago = Pago.crear(pedido.id(), REFERENCIA, pedido.metodoPago(), pedido.total(), AHORA);
     pagos.guardar(pago);
+    pasarela.conTransaccionDe(ID_TRANSACCION, "APPROVED", pago);
     return pago;
   }
 
@@ -530,7 +536,150 @@ class ProcesarEventoDePagoTest {
                 centavosDelPago(),
                 "COP"));
 
-    assertEquals(ResultadoEventoDePago.ESTADO_SIN_FIRMAR, resultado);
+    assertEquals(ResultadoEventoDePago.PROPIEDADES_SIN_FIRMAR, resultado);
+    assertEquals(
+        EstadoPago.PENDIENTE, pagos.buscarPorReferencia(REFERENCIA).orElseThrow().estado());
+  }
+
+  /** Sin el monto firmado, el monto que se compara con el del pago no lo respalda nadie. */
+  @Test
+  void unaFirmaQueNoCubreElMontoNoAplicaNada() {
+    ProcesarEventoDePago caso = crear();
+    pagoPendienteParaElPedido(pedidoConMetodo(MetodoPago.WOMPI));
+
+    ResultadoEventoDePago resultado =
+        caso.ejecutar(
+            comandoCompleto(
+                "APPROVED",
+                null,
+                CHECKSUM,
+                List.of("transaction.id", "transaction.status"),
+                centavosDelPago(),
+                "COP"));
+
+    assertEquals(ResultadoEventoDePago.PROPIEDADES_SIN_FIRMAR, resultado);
+    assertEquals(
+        EstadoPago.PENDIENTE, pagos.buscarPorReferencia(REFERENCIA).orElseThrow().estado());
+  }
+
+  /** Sin el id firmado, el id que se registraría y se consultaría no lo respalda nadie. */
+  @Test
+  void unaFirmaQueNoCubreElIdNoAplicaNada() {
+    ProcesarEventoDePago caso = crear();
+    pagoPendienteParaElPedido(pedidoConMetodo(MetodoPago.WOMPI));
+
+    ResultadoEventoDePago resultado =
+        caso.ejecutar(
+            comandoCompleto(
+                "APPROVED",
+                null,
+                CHECKSUM,
+                List.of("transaction.status", "transaction.amount_in_cents"),
+                centavosDelPago(),
+                "COP"));
+
+    assertEquals(ResultadoEventoDePago.PROPIEDADES_SIN_FIRMAR, resultado);
+    assertTrue(
+        pagos.buscarPorReferencia(REFERENCIA).orElseThrow().idTransaccionPasarela().isEmpty());
+  }
+
+  /**
+   * Wompi advierte que la lista de propiedades "puede variar": una propiedad firmada de más no le
+   * quita autenticidad a las tres que se leen, y el evento se aplica.
+   */
+  @Test
+  void unaPropiedadFirmadaDeMasNoImpideAplicarlo() {
+    ProcesarEventoDePago caso = crear();
+    Pedido pedido = pedidoConMetodo(MetodoPago.WOMPI);
+    pagoPendienteParaElPedido(pedido);
+
+    ResultadoEventoDePago resultado =
+        caso.ejecutar(
+            comandoCompleto(
+                "APPROVED",
+                null,
+                CHECKSUM,
+                List.of(
+                    "transaction.id",
+                    "transaction.status",
+                    "transaction.amount_in_cents",
+                    "transaction.reference"),
+                centavosDelPago(),
+                "COP"));
+
+    assertEquals(ResultadoEventoDePago.APLICADO, resultado);
+  }
+
+  /**
+   * El pago ya tiene registrada su transacción —verificada contra la pasarela—, y llega un evento
+   * firmado de otra con la misma referencia: no es de este pago y no lo mueve.
+   */
+  @Test
+  void unEventoDeOtraTransaccionQueLaYaRegistradaNoAplicaNada() {
+    ProcesarEventoDePago caso = crear();
+    Pedido pedido = pedidoConMetodo(MetodoPago.WOMPI);
+    Pago pago = pagoPendienteParaElPedido(pedido);
+    pago.registrarIdTransaccionPasarela("wompi-tx-registrada");
+    pagos.guardar(pago);
+
+    ResultadoEventoDePago resultado = caso.ejecutar(comando("APPROVED"));
+
+    assertEquals(ResultadoEventoDePago.TRANSACCION_DE_OTRO_PAGO, resultado);
+    Pago guardado = pagos.buscarPorReferencia(REFERENCIA).orElseThrow();
+    assertEquals(EstadoPago.PENDIENTE, guardado.estado());
+    assertEquals(Optional.of("wompi-tx-registrada"), guardado.idTransaccionPasarela());
+    assertEquals(
+        EstadoPedido.PAGO_PENDIENTE, pedidos.buscarPorId(pedido.id()).orElseThrow().estado());
+  }
+
+  /**
+   * La referencia no va firmada. Un APPROVED firmado de una transacción ajena con el mismo importe
+   * pagaría este pedido; la consulta a la pasarela dice de quién es de verdad.
+   */
+  @Test
+  void unAprobadoQueLaPasarelaReportaDeOtraReferenciaNoAplicaNada() {
+    ProcesarEventoDePago caso = crear();
+    Pedido pedido = pedidoConMetodo(MetodoPago.WOMPI);
+    Pago pago = pagoPendienteParaElPedido(pedido);
+    pasarela.conTransaccionAjena(ID_TRANSACCION, "APPROVED", "TS-2026-000999-1", pago.monto());
+
+    ResultadoEventoDePago resultado = caso.ejecutar(comando("APPROVED"));
+
+    assertEquals(ResultadoEventoDePago.TRANSACCION_DE_OTRO_PAGO, resultado);
+    Pago guardado = pagos.buscarPorReferencia(REFERENCIA).orElseThrow();
+    assertEquals(EstadoPago.PENDIENTE, guardado.estado());
+    assertTrue(guardado.idTransaccionPasarela().isEmpty());
+    assertEquals(
+        EstadoPedido.PAGO_PENDIENTE, pedidos.buscarPorId(pedido.id()).orElseThrow().estado());
+  }
+
+  /** La consulta no responde: no se aplica, pero el id queda para que la conciliación lo cierre. */
+  @Test
+  void unAprobadoQueLaPasarelaNoConfirmaQuedaParaLaConciliacion() {
+    ProcesarEventoDePago caso = crear();
+    Pedido pedido = pedidoConMetodo(MetodoPago.WOMPI);
+    pagos.guardar(Pago.crear(pedido.id(), REFERENCIA, pedido.metodoPago(), pedido.total(), AHORA));
+
+    ResultadoEventoDePago resultado = caso.ejecutar(comando("APPROVED"));
+
+    assertEquals(ResultadoEventoDePago.APROBACION_SIN_CONFIRMAR, resultado);
+    Pago guardado = pagos.buscarPorReferencia(REFERENCIA).orElseThrow();
+    assertEquals(EstadoPago.PENDIENTE, guardado.estado());
+    assertEquals(Optional.of(ID_TRANSACCION), guardado.idTransaccionPasarela());
+    assertEquals(
+        EstadoPedido.PAGO_PENDIENTE, pedidos.buscarPorId(pedido.id()).orElseThrow().estado());
+  }
+
+  /** La pasarela dice que esa transacción no está aprobada: el evento no se cree. */
+  @Test
+  void unAprobadoQueLaPasarelaReportaRechazadoNoAplicaNada() {
+    ProcesarEventoDePago caso = crear();
+    Pedido pedido = pedidoConMetodo(MetodoPago.WOMPI);
+    Pago pago = pagoPendienteParaElPedido(pedido);
+    pasarela.conTransaccionDe(ID_TRANSACCION, "DECLINED", pago);
+
+    assertEquals(
+        ResultadoEventoDePago.APROBACION_SIN_CONFIRMAR, caso.ejecutar(comando("APPROVED")));
     assertEquals(
         EstadoPago.PENDIENTE, pagos.buscarPorReferencia(REFERENCIA).orElseThrow().estado());
   }

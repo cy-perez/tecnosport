@@ -361,4 +361,51 @@ class RepositorioPagosJpaTest {
         .contains(desde);
     assertThat(repositorio.buscarSinPedidoQueLosEspere()).extracting(Pago::id).contains(pago.id());
   }
+
+  /**
+   * La alerta del panel: pendientes sin id, más viejos que el corte, y sin revisar. Un pago con id,
+   * uno reciente y uno ya revisado no salen; marcar dos veces conserva la primera marca.
+   */
+  @Test
+  void losPendientesSinTransaccionSalenHastaQueAlguienLosRevisa() {
+    UUID pedidoId = crearYGuardarPedido();
+    Instant ahora = Instant.now();
+    Pago viejo =
+        Pago.crear(
+            pedidoId,
+            new ReferenciaPago("TS-" + UUID.randomUUID()),
+            MetodoPago.WOMPI,
+            Dinero.deCop(100_000),
+            ahora.minus(Duration.ofHours(13)));
+    Pago reciente =
+        Pago.crear(
+            pedidoId,
+            new ReferenciaPago("TS-" + UUID.randomUUID()),
+            MetodoPago.WOMPI,
+            Dinero.deCop(100_000),
+            ahora.minus(Duration.ofHours(1)));
+    Pago conId =
+        Pago.crear(
+            pedidoId,
+            new ReferenciaPago("TS-" + UUID.randomUUID()),
+            MetodoPago.WOMPI,
+            Dinero.deCop(100_000),
+            ahora.minus(Duration.ofHours(13)));
+    conId.registrarIdTransaccionPasarela("1234-1610641025-49201");
+    repositorio.guardar(viejo);
+    repositorio.guardar(reciente);
+    repositorio.guardar(conId);
+    Instant corte = ahora.minus(Duration.ofHours(12));
+
+    assertThat(repositorio.buscarPendientesSinTransaccionSinRevisar(corte))
+        .extracting(Pago::id)
+        .contains(viejo.id())
+        .doesNotContain(reciente.id(), conId.id());
+
+    assertThat(repositorio.marcarRevisadoSinTransaccion(viejo.id(), "admin:1", ahora)).isTrue();
+    assertThat(repositorio.marcarRevisadoSinTransaccion(viejo.id(), "admin:2", ahora)).isFalse();
+    assertThat(repositorio.buscarPendientesSinTransaccionSinRevisar(corte))
+        .extracting(Pago::id)
+        .doesNotContain(viejo.id());
+  }
 }

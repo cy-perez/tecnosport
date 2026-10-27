@@ -57,6 +57,19 @@ public class RepositorioPagosJpa implements RepositorioPagos {
   }
 
   @Override
+  public List<Pago> buscarPendientesSinTransaccionSinRevisar(Instant creadosAntesDe) {
+    return pagos.buscarPendientesSinTransaccionSinRevisar(creadosAntesDe).stream()
+        .map(this::aPago)
+        .toList();
+  }
+
+  /** Exige una transacción abierta: la abre el controlador del panel. */
+  @Override
+  public boolean marcarRevisadoSinTransaccion(UUID pagoId, String actor, Instant ahora) {
+    return pagos.marcarRevisadoSinTransaccion(pagoId, actor, ahora) == 1;
+  }
+
+  @Override
   public Optional<Pago> buscarPorReferenciaParaModificar(ReferenciaPago referencia) {
     return pagos.findByReferenciaParaModificar(referencia.valor()).map(this::aPago);
   }

@@ -335,4 +335,37 @@ class InventarioTest {
     assertThrows(
         ReservaYaProcesadaException.class, () -> inventario.confirmarTarde(reserva.id(), AHORA));
   }
+
+  @Test
+  void unaReservaRecienHechaSigueVigente() {
+    Inventario inventario = conExistencia(2);
+    MovimientoInventario reserva = inventario.reservar(1, Duration.ofMinutes(30), AHORA);
+
+    assertTrue(inventario.reservaSigueVigente(reserva.id(), AHORA.plusSeconds(60)));
+  }
+
+  @Test
+  void unaReservaVencidaYaNoSigueVigenteAunqueNadieLaHayaLiberado() {
+    Inventario inventario = conExistencia(2);
+    MovimientoInventario reserva = inventario.reservar(1, Duration.ofMinutes(30), AHORA);
+
+    assertFalse(inventario.reservaSigueVigente(reserva.id(), AHORA.plus(Duration.ofMinutes(30))));
+  }
+
+  @Test
+  void unaReservaLiberadaOConfirmadaYaNoSigueVigente() {
+    Inventario inventario = conExistencia(2);
+    MovimientoInventario liberada = inventario.reservar(1, Duration.ofMinutes(30), AHORA);
+    MovimientoInventario confirmada = inventario.reservar(1, Duration.ofMinutes(30), AHORA);
+    inventario.liberar(liberada.id(), "pago rechazado", AHORA);
+    inventario.confirmar(confirmada.id(), AHORA);
+
+    assertFalse(inventario.reservaSigueVigente(liberada.id(), AHORA));
+    assertFalse(inventario.reservaSigueVigente(confirmada.id(), AHORA));
+  }
+
+  @Test
+  void unaReservaQueNoEsDeEsteLibroNoSigueVigente() {
+    assertFalse(conExistencia(2).reservaSigueVigente(UUID.randomUUID(), AHORA));
+  }
 }

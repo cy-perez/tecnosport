@@ -125,6 +125,16 @@ public interface RepositorioPedidos {
   }
 
   /**
+   * Lo mismo que {@link #buscarIdsEnEstadoDesdeAntesDe(EstadoPedido, MetodoPago, Instant, int)},
+   * para cualquier método de pago. Es la pregunta de la alerta de pedidos detenidos en preparación:
+   * cuánto llevan ahí, no cuándo se crearon.
+   */
+  default List<UUID> buscarIdsEnEstadoDesdeAntesDe(
+      EstadoPedido estado, Instant desdeAntesDe, int maximo) {
+    return List.of();
+  }
+
+  /**
    * Reclama el derecho a avisarle a un pedido que su plazo de entrega venció. Devuelve {@code true}
    * si lo ganó quien llama, {@code false} si ya estaba reclamado.
    *

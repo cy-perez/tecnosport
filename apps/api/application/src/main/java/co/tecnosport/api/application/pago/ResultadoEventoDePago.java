@@ -27,10 +27,25 @@ public enum ResultadoEventoDePago {
   FIRMA_INVALIDA,
 
   /**
-   * La firma es válida pero no cubre el estado: lo que mueve el pedido no estaría autenticado. No
-   * se aplica; la conciliación, que consulta a la pasarela, lo resuelve.
+   * La firma es válida pero no cubre todo lo que se lee del evento —el id de la transacción, el
+   * estado y el monto—: lo que mueve el pedido no estaría autenticado. No se aplica; la
+   * conciliación, que consulta a la pasarela, lo resuelve.
    */
-  ESTADO_SIN_FIRMAR,
+  PROPIEDADES_SIN_FIRMAR,
+
+  /**
+   * El evento es de una transacción distinta de la que el pago ya tiene registrada, o la pasarela
+   * reporta esa transacción con otra referencia u otro monto. No se aplica ni se registra nada: la
+   * conciliación sigue consultando la transacción que el pago ya tenía.
+   */
+  TRANSACCION_DE_OTRO_PAGO,
+
+  /**
+   * Un APPROVED firmado que la pasarela no confirmó al consultarlo: la consulta falló, o la
+   * transacción no está aprobada. No se aplica; el id queda registrado y la conciliación lo
+   * resuelve con la siguiente consulta.
+   */
+  APROBACION_SIN_CONFIRMAR,
 
   /**
    * El evento es de esta referencia, pero el monto o la moneda no son los del pago. No se aplica:

@@ -1,6 +1,7 @@
 package co.tecnosport.api.application.pago;
 
 import co.tecnosport.api.application.compartido.Reloj;
+import co.tecnosport.api.application.inventario.RepositorioInventario;
 import co.tecnosport.api.application.pedido.PedidoNoEncontradoException;
 import co.tecnosport.api.application.pedido.RepositorioPedidos;
 import co.tecnosport.api.domain.pago.Pago;
@@ -26,12 +27,14 @@ public final class CrearIntentoDePago {
   private final RepositorioPedidos repositorioPedidos;
   private final RepositorioPagos repositorioPagos;
   private final PasarelaDePagos pasarelaDePagos;
+  private final RepositorioInventario repositorioInventario;
   private final Reloj reloj;
 
   public CrearIntentoDePago(
       RepositorioPedidos repositorioPedidos,
       RepositorioPagos repositorioPagos,
       PasarelaDePagos pasarelaDePagos,
+      RepositorioInventario repositorioInventario,
       Reloj reloj) {
     this.repositorioPedidos =
         Objects.requireNonNull(repositorioPedidos, "El repositorio de pedidos no puede ser nulo.");
@@ -39,6 +42,9 @@ public final class CrearIntentoDePago {
         Objects.requireNonNull(repositorioPagos, "El repositorio de pagos no puede ser nulo.");
     this.pasarelaDePagos =
         Objects.requireNonNull(pasarelaDePagos, "La pasarela de pagos no puede ser nula.");
+    this.repositorioInventario =
+        Objects.requireNonNull(
+            repositorioInventario, "El repositorio de inventario no puede ser nulo.");
     this.reloj = Objects.requireNonNull(reloj, "El reloj no puede ser nulo.");
   }
 
@@ -55,11 +61,15 @@ public final class CrearIntentoDePago {
       throw new MetodoDePagoNoSoportadoPorWompiException(pedido.metodoPago());
     }
 
+    Instant ahora = reloj.ahora();
+    // Antes de crear el pago: con la reserva vencida, la unidad pudo venderse a otro y lo que se
+    // cobraría es un pedido sin mercancía detrás.
+    ReservasDelPedido.exigirVigentes(pedido, repositorioInventario, ahora);
+
     int numeroDeIntento = repositorioPagos.buscarPorPedidoId(pedido.id()).size() + 1;
     ReferenciaPago referencia =
         new ReferenciaPago(pedido.numeroPedido().valor() + "-" + numeroDeIntento);
 
-    Instant ahora = reloj.ahora();
     Pago pago = Pago.crear(pedido.id(), referencia, pedido.metodoPago(), pedido.total(), ahora);
     repositorioPagos.guardar(pago);
 

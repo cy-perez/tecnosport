@@ -28,6 +28,11 @@ final class PasarelaDePagosDobleDePrueba implements PasarelaDePagos {
     transacciones.put(id, new TransaccionDePasarela("PENDING", null, referencia, monto));
   }
 
+  /** Una transacción aprobada de esa referencia y ese monto: lo que confirma un APPROVED. */
+  void conTransaccionAprobada(String id, String referencia, Dinero monto) {
+    transacciones.put(id, new TransaccionDePasarela("APPROVED", null, referencia, monto));
+  }
+
   void limpiar() {
     transacciones.clear();
   }

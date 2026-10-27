@@ -11,6 +11,8 @@ import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.compartido.DocumentoIdentidad;
 import co.tecnosport.api.domain.compartido.Sku;
 import co.tecnosport.api.domain.compartido.TipoDocumento;
+import co.tecnosport.api.domain.inventario.Inventario;
+import co.tecnosport.api.domain.inventario.MovimientoInventario;
 import co.tecnosport.api.domain.pago.EstadoPago;
 import co.tecnosport.api.domain.pago.Pago;
 import co.tecnosport.api.domain.pago.ReferenciaPago;
@@ -21,6 +23,7 @@ import co.tecnosport.api.domain.pedido.NumeroPedido;
 import co.tecnosport.api.domain.pedido.Pedido;
 import co.tecnosport.api.domain.pedido.TipoEntrega;
 import java.math.BigDecimal;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
@@ -38,6 +41,7 @@ class CrearIntentoDePagoSistecreditoTest {
 
   private RepositorioPedidosFalso pedidos;
   private RepositorioPagosFalso pagos;
+  private RepositorioInventarioFalso inventario = new RepositorioInventarioFalso();
   private PasarelaSistecreditoFalsa pasarela;
   private EnTransaccionPropiaFalsa transacciones;
 
@@ -48,6 +52,7 @@ class CrearIntentoDePagoSistecreditoTest {
   private CrearIntentoDePagoSistecredito crear(boolean sandbox, String estadoSimulado) {
     pedidos = new RepositorioPedidosFalso();
     pagos = new RepositorioPagosFalso();
+    inventario = new RepositorioInventarioFalso();
     pasarela = new PasarelaSistecreditoFalsa();
     pasarela.responder(transaccion("Pending", URL_PAGO, null, null));
     transacciones = new EnTransaccionPropiaFalsa();
@@ -55,6 +60,7 @@ class CrearIntentoDePagoSistecreditoTest {
         pedidos,
         pagos,
         pasarela,
+        inventario,
         transacciones,
         new RelojFalso(AHORA),
         "https://tecnosport.co/{idioma}/checkout/sistecredito/retorno",
@@ -86,16 +92,44 @@ class CrearIntentoDePagoSistecreditoTest {
   }
 
   private LineaPedido linea() {
+    return lineaReservadaEn(AHORA);
+  }
+
+  /**
+   * Una línea con su reserva de 30 minutos hecha en {@code reservadaEn}, como la deja el pedido.
+   */
+  private LineaPedido lineaReservadaEn(Instant reservadaEn) {
+    UUID varianteId = UUID.randomUUID();
+    Inventario libro = Inventario.crear(varianteId);
+    libro.registrarEntrada(5, "siembra", reservadaEn);
+    MovimientoInventario reserva = libro.reservar(2, Duration.ofMinutes(30), reservadaEn);
+    inventario.conInventario(libro);
     return new LineaPedido(
         UUID.randomUUID(),
-        UUID.randomUUID(),
+        varianteId,
         new Sku("TS-CAM-AZ-M"),
         "Camiseta running Dry-Fit",
         2,
         Dinero.deCop(50_000),
         new BigDecimal("0.19"),
         "https://cdn.tecnosport.co/img.webp",
-        UUID.randomUUID());
+        reserva.id());
+  }
+
+  private Pedido pedidoConLinea(MetodoPago metodoPago, LineaPedido linea) {
+    Pedido pedido =
+        Pedido.crear(
+            NumeroPedido.de(2026, 7),
+            null,
+            CORREO,
+            List.of(linea),
+            TipoEntrega.ENVIO_A_DOMICILIO,
+            DIRECCION_MEDELLIN,
+            metodoPago,
+            "cliente@tecnosport.co",
+            AHORA);
+    pedidos.conPedido(pedido);
+    return pedido;
   }
 
   @Test
@@ -293,6 +327,22 @@ class CrearIntentoDePagoSistecreditoTest {
     assertThrows(
         NullPointerException.class,
         () -> caso.ejecutar(new CrearIntentoDePagoSistecreditoComando(pedido.id(), null, "es")));
+    assertTrue(pasarela.solicitudes().isEmpty());
+  }
+
+  /** Con la reserva vencida no se abre una solicitud de crédito a nombre de nadie. */
+  @Test
+  void conLaReservaVencidaNoSeLlamaALaPasarelaNiSeCreaElPago() {
+    CrearIntentoDePagoSistecredito caso = crear();
+    Pedido pedido =
+        pedidoConLinea(
+            MetodoPago.SISTECREDITO, lineaReservadaEn(AHORA.minus(Duration.ofMinutes(31))));
+
+    assertThrows(
+        ReservaDelPedidoVencidaException.class,
+        () ->
+            caso.ejecutar(new CrearIntentoDePagoSistecreditoComando(pedido.id(), DOCUMENTO, "es")));
+    assertTrue(pagos.buscarPorPedidoId(pedido.id()).isEmpty());
     assertTrue(pasarela.solicitudes().isEmpty());
   }
 }

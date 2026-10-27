@@ -4,6 +4,54 @@
  */
 
 export interface paths {
+    "/api/v1/admin/alertas/pagos-sin-transaccion": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["pagosSinTransaccion"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/alertas/pagos-sin-transaccion/{pagoId}/revision": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["marcarRevisado"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/alertas/pedidos-en-preparacion": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["pedidosDetenidosEnPreparacion"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/atencion": {
         parameters: {
             query?: never;
@@ -3426,6 +3474,24 @@ export interface components {
             pedidoId: string;
             referencia: string;
         };
+        PagoSinTransaccionRespuesta: {
+            correo: string;
+            /** Format: date-time */
+            creadoEn: string;
+            estadoPedido: string;
+            monto: components["schemas"]["DineroRespuesta"];
+            numeroPedido: string;
+            /** Format: uuid */
+            pagoId: string;
+            /** Format: uuid */
+            pedidoId: string;
+            referencia: string;
+        };
+        PagosSinTransaccionRespuesta: {
+            pagos: components["schemas"]["PagoSinTransaccionRespuesta"][];
+            /** Format: int64 */
+            umbralHoras: number;
+        };
         PaletaDefinidaRespuesta: {
             /** Format: int32 */
             variantesNuevas: number;
@@ -3452,6 +3518,16 @@ export interface components {
         };
         PartirBorradorPeticion: {
             fotos: string[];
+        };
+        PedidoDetenidoRespuesta: {
+            correo: string;
+            /** Format: date-time */
+            desde: string;
+            metodoPago: string;
+            numeroPedido: string;
+            /** Format: uuid */
+            pedidoId: string;
+            tipoEntrega: string;
         };
         PedidoRespuesta: {
             contacto?: components["schemas"]["ContactoRespuesta"];
@@ -3506,6 +3582,11 @@ export interface components {
             tipoEntrega?: string;
             total?: components["schemas"]["DineroRespuesta"];
             transportadora?: string;
+        };
+        PedidosDetenidosRespuesta: {
+            pedidos: components["schemas"]["PedidoDetenidoRespuesta"][];
+            /** Format: int64 */
+            umbralDias: number;
         };
         PedidosPaginadosRespuesta: {
             items?: components["schemas"]["PedidoRespuesta"][];
@@ -4178,6 +4259,66 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    pagosSinTransaccion: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PagosSinTransaccionRespuesta"];
+                };
+            };
+        };
+    };
+    marcarRevisado: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                pagoId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    pedidosDetenidosEnPreparacion: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PedidosDetenidosRespuesta"];
+                };
+            };
+        };
+    };
     listar_8: {
         parameters: {
             query?: {

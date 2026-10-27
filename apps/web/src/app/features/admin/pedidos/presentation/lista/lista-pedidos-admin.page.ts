@@ -40,6 +40,7 @@ import { usarListarPedidosAdmin } from '../../application/listar-pedidos-admin.c
 import { MEDIO_POR_METODO, MEDIOS_DE_REINTEGRO } from '../../domain/medio-de-reintegro';
 import { CLAVE_MEDIO } from '../clave-medio';
 import { BandejaPagosSinPedido } from '../pagos-sin-pedido/bandeja-pagos-sin-pedido';
+import { AlertasDePedidos } from '../alertas/alertas-de-pedidos';
 import { MedioReintegro } from '../../../retractos/domain/retracto.model';
 import {
   EmisionDeGuiaAdmin,
@@ -157,6 +158,7 @@ interface FormularioEntregaEnPunto {
   selector: 'app-lista-pedidos-admin',
   imports: [
     BandejaPagosSinPedido,
+    AlertasDePedidos,
     PanelGarantia,
     PaquetesParaGuia,
     PanelRetracto,

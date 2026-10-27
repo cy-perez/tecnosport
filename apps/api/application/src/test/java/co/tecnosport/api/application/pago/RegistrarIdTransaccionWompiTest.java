@@ -45,6 +45,25 @@ class RegistrarIdTransaccionWompiTest {
     assertEquals("1234-1610641025-49201", pagoActualizado.idTransaccionPasarela().orElseThrow());
   }
 
+  /**
+   * El id va después a la URL de la consulta a Wompi. Con una barra o un signo de interrogación le
+   * cambiaba la ruta a una petición que sale con nuestra llave; se rechaza antes de llamar a nadie.
+   */
+  @Test
+  void unIdConCaracteresFueraDeSuFormaSeRechazaSinConsultarALaPasarela() {
+    RegistrarIdTransaccionWompi caso = crear();
+    Pago pago = pago();
+    pasarela.conTransaccionDe("../merchants/x", "APPROVED", pago);
+
+    for (String id : java.util.List.of("../merchants/x", "1234?x=1", "a b", "x".repeat(65))) {
+      assertThrows(
+          TransaccionDeOtroPagoException.class,
+          () -> caso.ejecutar(new RegistrarIdTransaccionWompiComando(REFERENCIA.valor(), id)));
+    }
+    assertTrue(
+        pagos.buscarPorReferencia(REFERENCIA).orElseThrow().idTransaccionPasarela().isEmpty());
+  }
+
   @Test
   void referenciaInexistenteLanzaPagoNoEncontrado() {
     RegistrarIdTransaccionWompi caso = crear();
