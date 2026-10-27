@@ -34,6 +34,18 @@ describe('filtroDesdeQueryParams', () => {
   });
 
   /**
+   * El router entrega `?texto=a&texto=b` como lista. Con `Params` de `@angular/router` (`any`) esa
+   * lista entraba al filtro como si fuera texto y viajaba así a la API; con el tipo propio de domain
+   * el compilador obliga a decidir, y lo que se decide es ignorarla.
+   */
+  it('un parámetro repetido en la URL no entra como texto', () => {
+    const filtro = filtroDesdeQueryParams({ texto: ['morral', 'bolso'], marca: ['a', 'b'] });
+
+    expect(filtro.texto).toBeUndefined();
+    expect(filtro.marca).toBeUndefined();
+  });
+
+  /**
    * El rango de precio salió del filtro el 24 de septiembre de 2026 y de aquí también: una URL
    * vieja con `?precioMin=` no vuelve a entrar por esta puerta. Se comprueba porque el fallo
    * natural al quitar un campo es dejar el parseo puesto "por si acaso", y entonces el filtro

@@ -476,10 +476,9 @@ export class ListaPedidosAdminPage {
 
   /** Con guarda de reentrada: el botón usa `ocupado` y no se deshabilita (foco de fila). */
   protected async marcarListoParaRecoger(pedidoId: string): Promise<void> {
-    if (this.acciones.marcarListoParaRecoger.isPending()) {
-      return;
-    }
-    await this.ejecutar(() => this.acciones.marcarListoParaRecoger.mutateAsync(pedidoId));
+    await this.unaALaVez('marcarListoParaRecoger', () =>
+      this.ejecutar(() => this.acciones.marcarListoParaRecoger.mutateAsync(pedidoId)),
+    );
   }
 
   protected marcandoListo(pedidoId: string): boolean {
@@ -643,8 +642,11 @@ export class ListaPedidosAdminPage {
     );
   }
 
+  /** Con guarda de reentrada: el botón usa `ocupado` y no se deshabilita (foco de fila). */
   protected async confirmarInventario(pedidoId: string): Promise<void> {
-    await this.ejecutar(() => this.acciones.confirmarInventario.mutateAsync(pedidoId));
+    await this.unaALaVez('confirmarInventario', () =>
+      this.ejecutar(() => this.acciones.confirmarInventario.mutateAsync(pedidoId)),
+    );
   }
 
   protected confirmandoInventario(pedidoId: string): boolean {
@@ -687,6 +689,26 @@ export class ListaPedidosAdminPage {
         comisionRecaudo: valores.comisionRecaudo ?? 0,
       }),
     );
+  }
+
+  /**
+   * Guarda de reentrada para las acciones cuyo botón usa `ocupado`, que **no** deshabilita.
+   *
+   * Una marca propia y no `isPending()`: la mutación no pasa a pendiente en el mismo tic del
+   * `mutateAsync`, así que dos clics seguidos pasaban los dos la guarda y mandaban dos POST.
+   */
+  private readonly accionesEnVuelo = new Set<string>();
+
+  private async unaALaVez(accion: string, hacer: () => Promise<void>): Promise<void> {
+    if (this.accionesEnVuelo.has(accion)) {
+      return;
+    }
+    this.accionesEnVuelo.add(accion);
+    try {
+      await hacer();
+    } finally {
+      this.accionesEnVuelo.delete(accion);
+    }
   }
 
   private async ejecutar(accion: () => Promise<unknown>): Promise<void> {

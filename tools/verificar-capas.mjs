@@ -8,8 +8,9 @@
 // dispara es peor que no tener guardián, porque da confianza falsa.
 //
 // Esto no reemplaza al plugin en general: solo aplica las cuatro reglas que
-// este proyecto necesita, sobre los imports relativos entre capas. Es corto a
-// propósito — se lee entero en un minuto y se prueba metiendo una violación.
+// este proyecto necesita, sobre los imports relativos entre capas, y una quinta
+// sobre los paquetes: `domain` no importa framework. Es corto a propósito — se
+// lee entero en un minuto y se prueba metiendo una violación.
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join, relative, resolve, dirname, sep } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -98,6 +99,55 @@ const IMPORTS = [
   /\bimport\(\s*['"](\.[^'"]+)['"]\s*\)/g,
 ];
 
+// La quinta regla, que los imports relativos no podían ver: `domain` va sin framework, y un paquete
+// se importa por su nombre, no por una ruta. Cinco `domain/query-params-filtro.ts` importaron
+// `Params` de `@angular/router` sin que este guardián se enterara, hasta el 27 de octubre de 2026.
+//
+// **Una excepción, y es el patrón del proyecto, no un descuido**: `InjectionToken` de
+// `@angular/core`. El puerto vive en `domain` y su token con él, porque es lo que inyecta quien lo
+// usa y lo que provee la ruta (`apps/web/CLAUDE.md`). Cualquier otro nombre de `@angular/core`
+// —`inject`, `signal`, `computed`— ya es comportamiento de Angular y no cabe.
+const FRAMEWORK = /^(?:@angular\/|@tanstack\/|@jsverse\/|rxjs(?:\/|$))/;
+const PERMITIDO_EN_DOMAIN = { "@angular/core": new Set(["InjectionToken"]) };
+
+const PAQUETES = [
+  /(?:^|\n)\s*(?:import|export)\s([^;]*?)from\s+['"]([^.'"][^'"]*)['"]/g,
+  /(?:^|\n)\s*import\s+()['"]([^.'"][^'"]*)['"]/g,
+  /\bimport\(\s*()['"]([^.'"][^'"]*)['"]\s*\)/g,
+];
+
+/**
+ * Lo que nombra un `import { a, type B as C }`: `["a", "B"]`. `null` si además trae algo fuera de
+ * las llaves —un import por omisión o un `* as`—, que ya no se puede reducir a una lista de nombres.
+ */
+function nombresImportados(clausula) {
+  const llaves = clausula.match(/\{([^}]*)\}/);
+  const fuera = clausula
+    .replace(/\{[^}]*\}/, "")
+    .replace(/^\s*type\b/, "")
+    .trim();
+  if (!llaves || fuera !== "") return null;
+  return llaves[1]
+    .split(",")
+    .map(
+      (nombre) =>
+        nombre
+          .trim()
+          .replace(/^type\s+/, "")
+          .split(/\s+as\s+/)[0],
+    )
+    .filter(Boolean);
+}
+
+/** ¿Este import de paquete se sale de lo que `domain` admite? */
+function frameworkProhibido(clausula, paquete) {
+  if (!FRAMEWORK.test(paquete)) return false;
+  const permitidos = PERMITIDO_EN_DOMAIN[paquete];
+  if (!permitidos) return true;
+  const nombres = nombresImportados(clausula);
+  return nombres === null || nombres.length === 0 || nombres.some((n) => !permitidos.has(n));
+}
+
 /** Las dependencias invertidas de un árbol, separadas entre código y pruebas. */
 export function revisar(raiz) {
   const violaciones = [];
@@ -122,6 +172,20 @@ export function revisar(raiz) {
             motivo: regla.motivo,
           });
         }
+      }
+    }
+    if (desde !== "domain") continue;
+    for (const expresion of PAQUETES) {
+      for (const m of fuente.matchAll(expresion)) {
+        if (!frameworkProhibido(m[1], m[2])) continue;
+        (ES_PRUEBA.test(archivo) ? enPruebas : violaciones).push({
+          archivo: relative(".", archivo).split(sep).join("/"),
+          desde,
+          destino: "framework",
+          especificador: m[2],
+          motivo:
+            "domain no importa framework: ni Angular (salvo InjectionToken para el puerto), ni TanStack, ni Transloco, ni RxJS. Si hace falta un tipo, se declara aquí.",
+        });
       }
     }
   }

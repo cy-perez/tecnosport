@@ -346,6 +346,9 @@ def css(d, tip, esp, rad, tipo, extra=None, fuentes_ok=False):
         L.append("  --ancho-{}: {}px;".format(k.replace("_", "-"), v))
     for k, v in (extra.get("anchos_min_px") or {}).items():
         L.append("  --ancho-min-{}: {}px;".format(k.replace("_", "-"), v))
+    # En `ch` y no en px: miden un texto que cambia, y tienen que seguirlo si se amplia la letra.
+    for k, v in (extra.get("anchos_min_ch") or {}).items():
+        L.append("  --ancho-min-{}: {}ch;".format(k.replace("_", "-"), v))
     for k, v in (extra.get("controles_px") or {}).items():
         L.append("  --control-{}: {}px;".format(k.replace("_", "-"), v))
     for k, v in (extra.get("imagenes_px") or {}).items():
@@ -685,6 +688,7 @@ def main():
              "anchos_px": t.get("anchos_px") or {},
              "hero_px": t.get("hero_px") or {},
              "anchos_min_px": t.get("anchos_min_px") or {},
+             "anchos_min_ch": t.get("anchos_min_ch") or {},
              "controles_px": t.get("controles_px") or {},
              "imagenes_px": t.get("imagenes_px") or {},
              "foco_px": t.get("foco_px") or {},
