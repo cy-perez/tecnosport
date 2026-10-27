@@ -575,7 +575,11 @@ class PedidoControladorTest {
                 "$.metodos[?(@.metodo == 'TRANSFERENCIA_MANUAL')].subtotal.valor",
                 hasItem(100_000)))
         .andExpect(
-            jsonPath("$.metodos[?(@.metodo == 'CONTRAENTREGA')].descuento.valor", hasItem(6_000)));
+            jsonPath("$.metodos[?(@.metodo == 'CONTRAENTREGA')].descuento.valor", hasItem(6_000)))
+        // El flete que contraentrega cobra: el de la tarifa con recaudo que el pedido congelará.
+        .andExpect(
+            jsonPath(
+                "$.metodos[?(@.metodo == 'CONTRAENTREGA')].costoEnvio.valor", hasItem(14_900)));
   }
 
   @Test

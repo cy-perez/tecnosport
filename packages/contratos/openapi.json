@@ -2857,6 +2857,9 @@
       },
       "MetodoDePagoConPrecioRespuesta" : {
         "properties" : {
+          "costoEnvio" : {
+            "$ref" : "#/components/schemas/DineroRespuesta"
+          },
           "descuento" : {
             "$ref" : "#/components/schemas/DineroRespuesta"
           },

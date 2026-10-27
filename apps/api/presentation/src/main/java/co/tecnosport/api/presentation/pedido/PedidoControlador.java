@@ -136,7 +136,10 @@ public class PedidoControlador {
   private static MetodosDePagoConPrecioRespuesta.MetodoDePagoConPrecioRespuesta aRespuesta(
       MedioDePagoConPrecio medio) {
     return new MetodosDePagoConPrecioRespuesta.MetodoDePagoConPrecioRespuesta(
-        medio.metodo(), dinero(medio.subtotal()), dinero(medio.descuento()));
+        medio.metodo(),
+        dinero(medio.subtotal()),
+        dinero(medio.descuento()),
+        medio.costoEnvio() == null ? null : dinero(medio.costoEnvio()));
   }
 
   private static DineroRespuesta dinero(Dinero valor) {

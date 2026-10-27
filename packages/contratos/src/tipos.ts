@@ -3366,6 +3366,7 @@ export interface components {
             pesoGramos?: number;
         };
         MetodoDePagoConPrecioRespuesta: {
+            costoEnvio?: components["schemas"]["DineroRespuesta"];
             descuento: components["schemas"]["DineroRespuesta"];
             /** @enum {string} */
             metodo: "WOMPI" | "SISTECREDITO" | "TRANSFERENCIA_MANUAL" | "CONTRAENTREGA" | "PAGO_EN_PUNTO";

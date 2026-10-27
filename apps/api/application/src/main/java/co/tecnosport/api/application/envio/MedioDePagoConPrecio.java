@@ -11,8 +11,12 @@ import java.util.Objects;
  *
  * @param subtotal la mercancía al precio que corresponde a este medio, sin flete
  * @param descuento lo que este medio ahorra frente al precio publicado; cero con pasarela
+ * @param costoEnvio el flete que se cobra con este medio cuando no es el de la cotización sin
+ *     recaudo: el de la tarifa con recaudo en contraentrega, cero en un retiro en punto. Nulo si es
+ *     el de la cotización sin recaudo, que este cálculo no pide
  */
-public record MedioDePagoConPrecio(MetodoPago metodo, Dinero subtotal, Dinero descuento) {
+public record MedioDePagoConPrecio(
+    MetodoPago metodo, Dinero subtotal, Dinero descuento, Dinero costoEnvio) {
 
   public MedioDePagoConPrecio {
     Objects.requireNonNull(metodo, "El método no puede ser nulo.");
