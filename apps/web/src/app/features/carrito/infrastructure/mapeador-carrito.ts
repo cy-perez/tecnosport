@@ -12,6 +12,7 @@ export function aCarrito(dto: CarritoDto): Carrito {
     usuarioId: dto.usuarioId ?? null,
     lineas: (dto.lineas ?? []).map(aLineaCarrito),
     creadoEn: dto.creadoEn ?? '',
+    cantidadMaximaPorLinea: dto.cantidadMaximaPorLinea,
   };
 }
 

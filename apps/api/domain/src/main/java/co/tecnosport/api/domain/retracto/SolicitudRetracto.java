@@ -2,6 +2,7 @@ package co.tecnosport.api.domain.retracto;
 
 import co.tecnosport.api.domain.compartido.CalendarioHabil;
 import co.tecnosport.api.domain.compartido.ExcepcionDeDominio;
+import co.tecnosport.api.domain.compartido.GeneradorIdentificador;
 import co.tecnosport.api.domain.compartido.VerdictoPlazo;
 import co.tecnosport.api.domain.reintegro.MedioReintegro;
 import java.time.Instant;
@@ -97,7 +98,7 @@ public final class SolicitudRetracto {
       CalendarioHabil calendario) {
     Objects.requireNonNull(entregadoEn, "Un pedido sin entregar no admite retracto.");
     return new SolicitudRetracto(
-        UUID.randomUUID(),
+        GeneradorIdentificador.nuevo(),
         pedidoId,
         ahora,
         radicadaPor,

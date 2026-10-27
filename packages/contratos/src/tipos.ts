@@ -2292,23 +2292,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/pedidos/metodos-de-pago-disponibles": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** @deprecated */
-        post: operations["metodosDePagoDisponibles"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v1/pedidos/seguimiento": {
         parameters: {
             query?: never;
@@ -2705,6 +2688,8 @@ export interface components {
             subtotalContado: components["schemas"]["DineroRespuesta"];
         };
         CarritoRespuesta: {
+            /** Format: int32 */
+            cantidadMaximaPorLinea: number;
             /** Format: date-time */
             creadoEn?: string;
             /** Format: uuid */
@@ -3414,6 +3399,7 @@ export interface components {
             pesoGramos?: number;
         };
         MetodoDePagoConPrecioRespuesta: {
+            costoEnvio?: components["schemas"]["DineroRespuesta"];
             descuento: components["schemas"]["DineroRespuesta"];
             /** @enum {string} */
             metodo: "WOMPI" | "SISTECREDITO" | "TRANSFERENCIA_MANUAL" | "CONTRAENTREGA" | "PAGO_EN_PUNTO";
@@ -8240,30 +8226,6 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["MetodosDePagoConPrecioRespuesta"];
-                };
-            };
-        };
-    };
-    metodosDePagoDisponibles: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["MetodosDePagoDisponiblesRequest"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": ("WOMPI" | "SISTECREDITO" | "TRANSFERENCIA_MANUAL" | "CONTRAENTREGA" | "PAGO_EN_PUNTO")[];
                 };
             };
         };

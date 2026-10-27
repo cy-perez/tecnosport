@@ -57,13 +57,12 @@ import co.tecnosport.api.application.pago.SistecreditoNoEntregoLaUrlDePagoExcept
 import co.tecnosport.api.application.pago.SistecreditoNoRespondeException;
 import co.tecnosport.api.application.pago.TransaccionDeOtroPagoException;
 import co.tecnosport.api.application.pedido.ContraentregaNoDisponibleException;
+import co.tecnosport.api.application.pedido.ContraentregaNoVerificableException;
 import co.tecnosport.api.application.pedido.DisponibilidadPorConfirmarException;
 import co.tecnosport.api.application.pedido.EnlaceDeCompraNoEncontradoException;
-import co.tecnosport.api.application.pedido.EntregaNoAplicaException;
 import co.tecnosport.api.application.pedido.InventarioSinConfirmarException;
 import co.tecnosport.api.application.pedido.MetodoDePagoNoEsTransferenciaManualException;
 import co.tecnosport.api.application.pedido.MetodoDePagoNoHabilitadoException;
-import co.tecnosport.api.application.pedido.NumeroDePedidoNoCoincideException;
 import co.tecnosport.api.application.pedido.PagoEnPuntoNoDisponibleException;
 import co.tecnosport.api.application.pedido.PedidoNoEliminableException;
 import co.tecnosport.api.application.pedido.PedidoNoEncontradoException;
@@ -131,6 +130,8 @@ import co.tecnosport.api.domain.compartido.ExcepcionDeDominio;
 import co.tecnosport.api.domain.difusion.ProductoNoDifundibleException;
 import co.tecnosport.api.domain.inventario.ExistenciaInsuficienteException;
 import co.tecnosport.api.domain.pedido.EnlaceDeCompraNoVigenteException;
+import co.tecnosport.api.domain.pedido.EntregaNoAplicaException;
+import co.tecnosport.api.domain.pedido.NumeroDePedidoNoCoincideException;
 import co.tecnosport.api.domain.usuario.CorreoSinVerificarException;
 import java.net.URI;
 import java.util.List;
@@ -1005,6 +1006,14 @@ public class ManejadorDeErrores {
   public ProblemDetail metodoDePagoNoSoportadoPorWompi(
       MetodoDePagoNoSoportadoPorWompiException excepcion) {
     return problema(HttpStatus.CONFLICT, "Método de pago no soportado por Wompi", excepcion);
+  }
+
+  // Verificar un pedido que no se cobra al recibir, o que ya no espera la verificación. 409, como
+  // la
+  // conciliación de transferencia: el pedido existe, no está en el estado que esa acción pide.
+  @ExceptionHandler(ContraentregaNoVerificableException.class)
+  public ProblemDetail contraentregaNoVerificable(ContraentregaNoVerificableException excepcion) {
+    return problema(HttpStatus.CONFLICT, "El pedido no espera verificación", excepcion);
   }
 
   @ExceptionHandler(MetodoDePagoNoEsTransferenciaManualException.class)

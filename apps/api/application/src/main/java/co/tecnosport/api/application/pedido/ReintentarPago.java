@@ -3,8 +3,12 @@ package co.tecnosport.api.application.pedido;
 import co.tecnosport.api.application.catalogo.RepositorioProductos;
 import co.tecnosport.api.application.compartido.Reloj;
 import co.tecnosport.api.application.inventario.RepositorioInventario;
+import co.tecnosport.api.domain.catalogo.Producto;
+import co.tecnosport.api.domain.catalogo.Variante;
 import co.tecnosport.api.domain.inventario.Inventario;
 import co.tecnosport.api.domain.inventario.MovimientoInventario;
+import co.tecnosport.api.domain.pedido.EnlaceDeCompra;
+import co.tecnosport.api.domain.pedido.EnlaceDeCompraNoVigenteException;
 import co.tecnosport.api.domain.pedido.EstadoPedido;
 import co.tecnosport.api.domain.pedido.LineaPedido;
 import co.tecnosport.api.domain.pedido.Pedido;
@@ -42,6 +46,7 @@ public final class ReintentarPago {
   private final Reloj reloj;
   private final Duration duracionReservaPagoEnLinea;
   private final RecogidaEnPunto recogidaEnPunto;
+  private final RepositorioEnlacesDeCompra repositorioEnlaces;
 
   public ReintentarPago(
       RepositorioPedidos repositorioPedidos,
@@ -49,7 +54,9 @@ public final class ReintentarPago {
       RepositorioInventario repositorioInventario,
       Reloj reloj,
       Duration duracionReservaPagoEnLinea,
-      RecogidaEnPunto recogidaEnPunto) {
+      RecogidaEnPunto recogidaEnPunto,
+      RepositorioEnlacesDeCompra repositorioEnlaces) {
+    this.repositorioEnlaces = Objects.requireNonNull(repositorioEnlaces);
     this.repositorioPedidos = Objects.requireNonNull(repositorioPedidos);
     this.repositorioProductos = Objects.requireNonNull(repositorioProductos);
     this.repositorioInventario = Objects.requireNonNull(repositorioInventario);
@@ -87,11 +94,21 @@ public final class ReintentarPago {
     // Lo que ya no se vende no se cobra otra vez: un modelo que el proveedor agotó o que venció
     // sigue con existencia en el libro —agotar no toca el inventario— y sin esto el reintento lo
     // reservaba y Wompi lo cobraba. Antes de reservar, por lo mismo que las de arriba.
-    for (LineaPedido linea : pedido.lineas()) {
-      ProductoVendible.exigir(repositorioProductos, linea.varianteId());
-    }
+    // Variante por variante, con las mismas dos reglas que CrearPedido: la prenda agotada por el
+    // proveedor no se vende, y la que se confirma con el proveedor (ADR-0086) solo se cobra
+    // mientras el enlace con el que se compró siga dentro de su plazo.
     Instant ahora = reloj.ahora();
-    Map<UUID, UUID> nuevasReservasPorLineaId = reReservar(pedido, ahora);
+    Map<UUID, Instant> vencimientoDelEnlacePorVariante = new LinkedHashMap<>();
+    for (LineaPedido linea : pedido.lineas()) {
+      Producto producto = ProductoVendible.exigir(repositorioProductos, linea.varianteId());
+      Variante variante = ProductoVendible.exigirVariante(producto, linea.varianteId());
+      if (variante.disponibilidadPorConfirmar()) {
+        vencimientoDelEnlacePorVariante.put(
+            linea.varianteId(), vencimientoDelEnlace(pedido, linea, ahora));
+      }
+    }
+    Map<UUID, UUID> nuevasReservasPorLineaId =
+        reReservar(pedido, ahora, vencimientoDelEnlacePorVariante);
     pedido.actualizarReservas(nuevasReservasPorLineaId);
     pedido.transicionar(
         EstadoPedido.PAGO_PENDIENTE, pedido.correo().valor(), "reintento de pago", ahora);
@@ -99,7 +116,30 @@ public final class ReintentarPago {
     return pedido;
   }
 
-  private Map<UUID, UUID> reReservar(Pedido pedido, Instant ahora) {
+  /**
+   * Hasta cuándo vale el enlace con el que se compró esa línea. Decisión del 27/10/2026: el enlace
+   * se usó al crear el pedido, pero lo que el proveedor confirmó vale lo que dura el enlace —24
+   * horas—, no lo que tarde el comprador en reintentar. Vencido, no se cobra: el comprador pide
+   * otro por WhatsApp, igual que si llegara con él vencido a {@code CrearPedido}, y con la misma
+   * excepción. Sin enlace —la variante pasó a «por confirmar» después de comprarse— responde lo
+   * mismo que {@code CrearPedido} sin enlace.
+   */
+  private Instant vencimientoDelEnlace(Pedido pedido, LineaPedido linea, Instant ahora) {
+    EnlaceDeCompra enlace =
+        repositorioEnlaces
+            .buscarUsadoEnPedido(pedido.id(), linea.varianteId())
+            .orElseThrow(
+                () ->
+                    new DisponibilidadPorConfirmarException(
+                        linea.nombre(), linea.detalleVariante()));
+    if (!enlace.expiraEn().isAfter(ahora)) {
+      throw new EnlaceDeCompraNoVigenteException();
+    }
+    return enlace.expiraEn();
+  }
+
+  private Map<UUID, UUID> reReservar(
+      Pedido pedido, Instant ahora, Map<UUID, Instant> vencimientoDelEnlacePorVariante) {
     Map<UUID, UUID> nuevasReservasPorLineaId = new LinkedHashMap<>();
     // En orden de `varianteId`, como CrearPedido: cada `buscarPorVarianteId` toma un bloqueo
     // pesimista, y dos transacciones que bloquean las mismas variantes en órdenes distintos se
@@ -111,8 +151,17 @@ public final class ReintentarPago {
           repositorioInventario
               .buscarPorVarianteId(linea.varianteId())
               .orElseThrow(() -> new VarianteNoEncontradaException(linea.varianteId()));
-      MovimientoInventario reserva =
-          inventario.reservar(linea.cantidad(), duracionReservaPagoEnLinea, ahora);
+      // La unidad que apartó el enlace sigue apartada hasta que el enlace habría vencido, como en
+      // CrearPedido: si no, las 24 horas confirmadas se volvían los 30 minutos del pago en línea.
+      Duration vigencia = duracionReservaPagoEnLinea;
+      Instant venceElEnlace = vencimientoDelEnlacePorVariante.get(linea.varianteId());
+      if (venceElEnlace != null) {
+        Duration hastaQueVence = Duration.between(ahora, venceElEnlace);
+        if (hastaQueVence.compareTo(vigencia) > 0) {
+          vigencia = hastaQueVence;
+        }
+      }
+      MovimientoInventario reserva = inventario.reservar(linea.cantidad(), vigencia, ahora);
       repositorioInventario.guardar(inventario);
       nuevasReservasPorLineaId.put(linea.id(), reserva.id());
     }

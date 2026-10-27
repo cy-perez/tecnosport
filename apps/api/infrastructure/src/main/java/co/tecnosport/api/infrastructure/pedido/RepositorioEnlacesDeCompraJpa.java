@@ -50,6 +50,13 @@ public class RepositorioEnlacesDeCompraJpa implements RepositorioEnlacesDeCompra
   }
 
   @Override
+  public Optional<EnlaceDeCompra> buscarUsadoEnPedido(UUID pedidoId, UUID varianteId) {
+    return enlaces
+        .findFirstByPedidoIdAndVarianteIdOrderByExpiraEnDesc(pedidoId, varianteId)
+        .map(RepositorioEnlacesDeCompraJpa::aDominio);
+  }
+
+  @Override
   public List<EnlaceDeCompra> listarCreadosDesde(Instant desde) {
     return enlaces.findByCreadoEnGreaterThanEqualOrderByCreadoEnDesc(desde).stream()
         .map(RepositorioEnlacesDeCompraJpa::aDominio)

@@ -48,6 +48,7 @@
             [linea]="item.linea"
             [snapshot]="item.snapshot"
             [precioUnitario]="item.precio"
+            [cantidadMaxima]="cantidadMaximaPorLinea()"
             (cantidadCambio)="cambiarCantidad(item.linea.id, $event, item.snapshot?.nombreProducto)"
             (eliminar)="eliminarLinea(item.linea.id, $index, item.snapshot?.nombreProducto)"
           />

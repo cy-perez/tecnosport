@@ -28,6 +28,12 @@ public interface RepositorioEnlacesDeCompra {
    */
   Optional<EnlaceDeCompra> buscarParaUsar(String token, UUID varianteId);
 
+  /**
+   * El que se usó en ese pedido para esa variante, si hubo uno. El reintento de pago lo pide para
+   * saber si lo que el proveedor confirmó sigue dentro de su plazo.
+   */
+  Optional<EnlaceDeCompra> buscarUsadoEnPedido(UUID pedidoId, UUID varianteId);
+
   /** Los creados desde {@code desde}, los más nuevos primero: la bandeja del panel. */
   List<EnlaceDeCompra> listarCreadosDesde(Instant desde);
 }

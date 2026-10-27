@@ -11,7 +11,8 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 public record PropiedadesPedido(
     int minutosReservaInventario,
     int horasVencimientoTransferencia,
-    int horasVigenciaEnlaceCompra) {
+    int horasVigenciaEnlaceCompra,
+    int maximoUnidadesPorLinea) {
 
   public PropiedadesPedido {
     if (minutosReservaInventario <= 0) {
@@ -25,6 +26,10 @@ public record PropiedadesPedido(
     if (horasVigenciaEnlaceCompra <= 0) {
       throw new IllegalStateException(
           "tecnosport.pedido.horas-vigencia-enlace-compra debe ser mayor que cero.");
+    }
+    if (maximoUnidadesPorLinea <= 0) {
+      throw new IllegalStateException(
+          "tecnosport.pedido.maximo-unidades-por-linea debe ser mayor que cero.");
     }
   }
 }

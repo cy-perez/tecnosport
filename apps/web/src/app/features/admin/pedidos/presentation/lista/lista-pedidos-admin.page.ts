@@ -58,6 +58,7 @@ import {
   PedidoAdmin,
 } from '../../domain/pedido-admin.model';
 import { filtroDesdeQueryParams, queryParamsDesdeFiltro } from '../../domain/query-params-filtro';
+import { recogidaVencida } from '../../domain/recogida-vencida';
 import { mensajeDeError } from '../../../../../core/errores/mensaje-de-error';
 import { fechaConHora, ultimoDia } from '../../../../../core/i18n/fecha-colombia';
 
@@ -446,11 +447,12 @@ export class ListaPedidosAdminPage {
   );
 
   /**
-   * Si una recogida lista ya pasó sus 48 horas. Lo decide el reloj de quien mira, y está bien: es
-   * para avisar y para ofrecer el motivo; quien cancela de verdad, y lo comprueba, es el servidor.
+   * Si una recogida lista ya pasó sus 48 horas, con la regla del dominio y el reloj de quien mira:
+   * es para avisar y para ofrecer el motivo; quien cancela de verdad, y lo comprueba, es el
+   * servidor.
    */
   protected recogidaVencida(pedido: PedidoAdmin): boolean {
-    return pedido.recogidaVenceEn !== null && Date.parse(pedido.recogidaVenceEn) <= Date.now();
+    return recogidaVencida(pedido, Date.now());
   }
 
   /**

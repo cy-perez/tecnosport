@@ -10,6 +10,7 @@ import co.tecnosport.api.application.carrito.RepositorioCarrito;
 import co.tecnosport.api.application.carrito.VerCarrito;
 import co.tecnosport.api.application.catalogo.RepositorioProductos;
 import co.tecnosport.api.application.compartido.Reloj;
+import co.tecnosport.api.domain.compartido.TopeDeUnidadesPorLinea;
 import java.time.Duration;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
@@ -38,14 +39,14 @@ public class ConfiguracionCarrito {
 
   @Bean
   public AgregarLineaAlCarrito agregarLineaAlCarrito(
-      RepositorioCarrito repositorioCarrito, Reloj reloj) {
-    return new AgregarLineaAlCarrito(repositorioCarrito, reloj);
+      RepositorioCarrito repositorioCarrito, Reloj reloj, TopeDeUnidadesPorLinea tope) {
+    return new AgregarLineaAlCarrito(repositorioCarrito, reloj, tope);
   }
 
   @Bean
   public ActualizarCantidadDeLinea actualizarCantidadDeLinea(
-      RepositorioCarrito repositorioCarrito, Reloj reloj) {
-    return new ActualizarCantidadDeLinea(repositorioCarrito, reloj);
+      RepositorioCarrito repositorioCarrito, Reloj reloj, TopeDeUnidadesPorLinea tope) {
+    return new ActualizarCantidadDeLinea(repositorioCarrito, reloj, tope);
   }
 
   @Bean

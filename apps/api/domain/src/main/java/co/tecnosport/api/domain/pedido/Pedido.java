@@ -12,6 +12,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -546,6 +547,16 @@ public final class Pedido {
   }
 
   /**
+   * Si la recogida ya venció: el pedido espera a que lo recojan y {@link #recogidaVenceEn} quedó
+   * atrás —en el instante exacto del vencimiento ya cuenta como vencida—. Una sola formulación para
+   * quien cancela, quien vence la recogida y el panel, que tenían cada uno la suya.
+   */
+  public boolean recogidaVencida(Instant ahora) {
+    Objects.requireNonNull(ahora, "El instante no puede ser nulo.");
+    return recogidaVenceEn().map(vence -> !vence.isAfter(ahora)).orElse(false);
+  }
+
+  /**
    * Cuándo se le avisó al comprador que el plazo de entrega venció, o vacío si todavía no.
    *
    * <p>Este sí es un campo propio y no algo derivable del historial, a diferencia de los dos de
@@ -600,12 +611,105 @@ public final class Pedido {
    * Única puerta de cambio de estado: valida contra {@link EstadoPedido#puedeTransicionarA} y
    * registra el motivo, para que un {@code ENTREGADO} nunca vuelva a {@code PAGADO} por más que
    * quien llame se equivoque (docs/00-producto.md).
+   *
+   * <p><b>Y contra el camino de entrega</b> (ADR-0094), que el grafo de estados no conoce: una
+   * recogida no se despacha con transportadora, un envío a domicilio no queda listo para recoger, y
+   * una recogida no se entrega sin el número de pedido —eso es {@link #entregarEnPunto}—. Hasta el
+   * 27/10/2026 lo repetían cuatro casos de uso cada uno a su manera, y el que aplica los eventos de
+   * la transportadora no lo miraba.
    */
   public void transicionar(EstadoPedido siguiente, String actor, String motivo, Instant ahora) {
     Objects.requireNonNull(siguiente, "El estado siguiente no puede ser nulo.");
     if (!estado.puedeTransicionarA(siguiente)) {
       throw new TransicionDeEstadoInvalidaException(estado, siguiente);
     }
+    exigirCaminoDeEntrega(siguiente);
+    registrar(siguiente, actor, motivo, ahora);
+  }
+
+  /**
+   * Si {@link #transicionar} aceptaría ir a {@code siguiente}: el grafo de estados y el camino de
+   * entrega. Para quien quiere preguntar antes de intentar —un evento de la transportadora que no
+   * aplica no es un error, es un evento que no mueve nada—.
+   */
+  public boolean puedeTransicionarA(EstadoPedido siguiente) {
+    return estado.puedeTransicionarA(siguiente) && caminoDeEntregaNoAplica(siguiente) == null;
+  }
+
+  /**
+   * Entrega en el punto a quien muestre el número de este pedido (ADR-0094). El número se compara
+   * aquí y no en la pantalla —si solo lo mirara el panel, bastaría un clic para saltárselo—, sin
+   * mayúsculas ni espacios alrededor: se dicta en voz alta o se lee de un teléfono.
+   *
+   * <p>En {@code PAGO_EN_PUNTO} el dinero entra en este acto y hay que decir cómo: efectivo o
+   * transferencia. Un pedido ya pagado no lleva medio, y uno en él sería un dato falso.
+   *
+   * @param medio cómo pagó en el punto; nulo si el pedido ya estaba pagado
+   */
+  public void entregarEnPunto(
+      String numeroPresentado, MedioDePagoEnPunto medio, String actor, Instant ahora) {
+    if (tipoEntrega != TipoEntrega.RETIRO_EN_PUNTO) {
+      throw new EntregaNoAplicaException(id, "va a domicilio y no se recoge en el punto");
+    }
+    if (!numeroCoincide(numeroPresentado)) {
+      throw new NumeroDePedidoNoCoincideException();
+    }
+    boolean pagaAlRecoger = metodoPago == MetodoPago.PAGO_EN_PUNTO;
+    if (pagaAlRecoger && medio == null) {
+      throw new IllegalArgumentException("Falta cómo pagó en el punto: efectivo o transferencia.");
+    }
+    if (!pagaAlRecoger && medio != null) {
+      throw new IllegalArgumentException(
+          "Este pedido ya se pagó: no lleva medio de pago en el punto.");
+    }
+    if (!estado.puedeTransicionarA(EstadoPedido.ENTREGADO)) {
+      throw new TransicionDeEstadoInvalidaException(estado, EstadoPedido.ENTREGADO);
+    }
+    registrar(EstadoPedido.ENTREGADO, actor, motivoDeEntregaEnPunto(medio), ahora);
+  }
+
+  private boolean numeroCoincide(String presentado) {
+    return presentado != null
+        && presentado
+            .strip()
+            .toUpperCase(Locale.ROOT)
+            .equals(numeroPedido.valor().toUpperCase(Locale.ROOT));
+  }
+
+  private static String motivoDeEntregaEnPunto(MedioDePagoEnPunto medio) {
+    if (medio == null) {
+      return "entregado en el punto";
+    }
+    return medio == MedioDePagoEnPunto.EFECTIVO
+        ? "entregado en el punto; pagó en efectivo"
+        : "entregado en el punto; pagó por transferencia";
+  }
+
+  private void exigirCaminoDeEntrega(EstadoPedido siguiente) {
+    String motivo = caminoDeEntregaNoAplica(siguiente);
+    if (motivo != null) {
+      throw new EntregaNoAplicaException(id, motivo);
+    }
+  }
+
+  /** Por qué {@code siguiente} no es el camino de entrega de este pedido, o nulo si lo es. */
+  private String caminoDeEntregaNoAplica(EstadoPedido siguiente) {
+    boolean recoge = tipoEntrega == TipoEntrega.RETIRO_EN_PUNTO;
+    return switch (siguiente) {
+      case DESPACHADO ->
+          recoge ? "se recoge en el punto y no se despacha con transportadora" : null;
+      case LISTO_PARA_RECOGER -> recoge ? null : "va a domicilio y no se recoge en el punto";
+      // Una recogida llega a ENTREGADO por entregarEnPunto, que pide el número: por aquí bastaría
+      // un clic para saltárselo.
+      case ENTREGADO ->
+          estado == EstadoPedido.LISTO_PARA_RECOGER
+              ? "se recoge en el punto y se entrega con el número de pedido"
+              : null;
+      default -> null;
+    };
+  }
+
+  private void registrar(EstadoPedido siguiente, String actor, String motivo, Instant ahora) {
     estado = siguiente;
     historial.add(
         new HistorialPedido(GeneradorIdentificador.nuevo(), siguiente, ahora, actor, motivo));

@@ -3,10 +3,10 @@ package co.tecnosport.api.infrastructure.correo;
 import co.tecnosport.api.application.compartido.EnviadorDeCorreo;
 import co.tecnosport.api.application.compartido.Reloj;
 import co.tecnosport.api.domain.compartido.CorreoElectronico;
+import co.tecnosport.api.domain.compartido.GeneradorIdentificador;
 import co.tecnosport.api.infrastructure.correo.entidad.CorreoPendienteJpaEntity;
 import java.time.Instant;
 import java.util.Objects;
-import java.util.UUID;
 
 /**
  * El {@link EnviadorDeCorreo} de producción desde {@code adr/0045}: <b>no manda nada, encola</b>.
@@ -52,7 +52,8 @@ public class EnviadorDeCorreoBandejaDeSalida implements EnviadorDeCorreo {
     // tarea. El espaciado solo empieza a contar cuando algo falla.
     correos.save(
         new CorreoPendienteJpaEntity(
-            UUID.randomUUID(),
+            // UUID v7, como todo identificador del sistema: ordena por creación en el índice.
+            GeneradorIdentificador.nuevo(),
             destinatario.valor(),
             asunto,
             cuerpoHtml,

@@ -61,7 +61,9 @@ class CarritoControladorTest {
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.id").exists())
         .andExpect(jsonPath("$.usuarioId").isEmpty())
-        .andExpect(jsonPath("$.lineas", hasSize(0)));
+        .andExpect(jsonPath("$.lineas", hasSize(0)))
+        // El tope de unidades por línea viaja con el carrito: el selector se limita con él.
+        .andExpect(jsonPath("$.cantidadMaximaPorLinea").value(5));
   }
 
   /** Un carrito vacío cotiza en cero: la ruta existe y responde con el mismo carrito. */
@@ -294,12 +296,18 @@ class CarritoControladorTest {
 
     @Bean
     AgregarLineaAlCarrito agregarLineaAlCarrito(RepositorioCarrito repositorio) {
-      return new AgregarLineaAlCarrito(repositorio, Instant::now);
+      return new AgregarLineaAlCarrito(
+          repositorio,
+          Instant::now,
+          new co.tecnosport.api.domain.compartido.TopeDeUnidadesPorLinea(5));
     }
 
     @Bean
     ActualizarCantidadDeLinea actualizarCantidadDeLinea(RepositorioCarrito repositorio) {
-      return new ActualizarCantidadDeLinea(repositorio, Instant::now);
+      return new ActualizarCantidadDeLinea(
+          repositorio,
+          Instant::now,
+          new co.tecnosport.api.domain.compartido.TopeDeUnidadesPorLinea(5));
     }
 
     @Bean
@@ -309,7 +317,8 @@ class CarritoControladorTest {
 
     @Bean
     MapeadorRespuestasCarrito mapeadorRespuestasCarrito() {
-      return new MapeadorRespuestasCarrito();
+      return new MapeadorRespuestasCarrito(
+          new co.tecnosport.api.domain.compartido.TopeDeUnidadesPorLinea(5));
     }
   }
 }

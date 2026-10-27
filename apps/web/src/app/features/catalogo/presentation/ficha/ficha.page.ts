@@ -33,6 +33,7 @@ import { TsEtiquetaStock } from '../etiqueta-stock/ts-etiqueta-stock';
 import { TsGaleria } from '../galeria/ts-galeria';
 import { Miga, TsMigas } from '../../../../shared/ts-migas/ts-migas';
 import { TsPrecio } from '../../../../shared/ts-precio/ts-precio';
+import { ErrorHttp } from '../../../../core/http/respuesta-http';
 import { TsSelectorVariante } from '../selector-variante/ts-selector-variante';
 import { TsVisor360 } from '../../../../shared/ts-visor-360/ts-visor-360';
 import { usarFichaProducto } from '../../application/buscar-ficha-producto.consulta';
@@ -96,7 +97,10 @@ export class FichaPage {
    * dice camiseta aunque la pantalla ya enseñe otra cosa.
    */
   protected readonly resultadoAgregar = signal<
-    { readonly tipo: 'agregado'; readonly nombre: string } | { readonly tipo: 'error' } | null
+    | { readonly tipo: 'agregado'; readonly nombre: string }
+    | { readonly tipo: 'error' }
+    | { readonly tipo: 'maximo' }
+    | null
   >(null);
   /** Para el enlace de vuelta al catálogo cuando el producto no existe. */
   protected readonly idioma = this.transloco.activeLang;
@@ -588,7 +592,15 @@ export class FichaPage {
         () => this.resultadoAgregar.set({ tipo: 'agregado', nombre: producto.nombre }),
         // El rechazo se atrapa aquí y se dice. Antes el `void` lo dejaba como una promesa
         // rechazada sin dueño: la persona pulsaba, no pasaba nada y nadie le decía por qué.
-        () => this.resultadoAgregar.set({ tipo: 'error' }),
+        // El tope de unidades por línea no es un fallo de conexión: decirle "revisa tu conexión"
+        // a quien ya tiene el máximo lo manda a reintentar algo que no va a pasar.
+        (error: unknown) =>
+          this.resultadoAgregar.set({
+            tipo:
+              error instanceof ErrorHttp && error.codigo === 'CANTIDAD_POR_LINEA_EXCEDIDA'
+                ? 'maximo'
+                : 'error',
+          }),
       );
   }
 }

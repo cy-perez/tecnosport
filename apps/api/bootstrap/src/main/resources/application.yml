@@ -97,6 +97,10 @@ tecnosport:
     # El enlace de compra de un color de tecnologia confirmado con el proveedor, y la unidad que
     # aparta (ADR-0086). Dato del negocio, decidido el 24 de octubre de 2026.
     horas-vigencia-enlace-compra: ${ENLACE_COMPRA_HORAS_VIGENCIA:24}
+    # Cuantas unidades de una misma variante caben en una linea del carrito o del pedido: sin tope,
+    # pedidos anonimos que nunca se pagan apartaban todas las unidades de una variante. Dato del
+    # negocio, decidido el 27 de octubre de 2026.
+    maximo-unidades-por-linea: ${PEDIDO_MAXIMO_UNIDADES_POR_LINEA:5}
     vigilancia-plazo:
       # El plazo vigilado es de 30 dias calendario (Ley 1480 de 2011, art. 18), asi que medio dia de
       # retraso en detectarlo no le cuesta nada a nadie. No es un dato de negocio: el 30 vive en

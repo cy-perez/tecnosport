@@ -67,7 +67,7 @@ public final class VencerRecogidasSinRetirar {
     Instant ahora = reloj.ahora();
     if (pedido == null
         || pedido.metodoPago() != MetodoPago.PAGO_EN_PUNTO
-        || pedido.recogidaVenceEn().map(vence -> vence.isAfter(ahora)).orElse(true)) {
+        || !pedido.recogidaVencida(ahora)) {
       return false;
     }
     pedido.transicionar(

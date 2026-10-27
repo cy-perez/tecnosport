@@ -13,6 +13,7 @@ import co.tecnosport.api.domain.inventario.Inventario;
 import co.tecnosport.api.domain.inventario.MovimientoInventario;
 import co.tecnosport.api.domain.inventario.TipoMovimientoInventario;
 import co.tecnosport.api.domain.pedido.Direccion;
+import co.tecnosport.api.domain.pedido.EntregaNoAplicaException;
 import co.tecnosport.api.domain.pedido.EstadoPedido;
 import co.tecnosport.api.domain.pedido.LineaPedido;
 import co.tecnosport.api.domain.pedido.MetodoPago;

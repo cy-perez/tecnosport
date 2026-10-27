@@ -123,6 +123,12 @@ class RepositorioEnlacesDeCompraJpaTest {
 
     assertThat(enlaces.buscarPorId(enlace.id()).orElseThrow().pedidoId()).contains(pedido);
     assertThat(enlaces.buscarPorToken("otro")).isEmpty();
+    // El reintento de pago lo encuentra por el pedido y la variante, y solo así.
+    assertThat(enlaces.buscarUsadoEnPedido(pedido, sembrado.varianteId()))
+        .map(EnlaceDeCompra::id)
+        .contains(enlace.id());
+    assertThat(enlaces.buscarUsadoEnPedido(pedido, UUID.randomUUID())).isEmpty();
+    assertThat(enlaces.buscarUsadoEnPedido(UUID.randomUUID(), sembrado.varianteId())).isEmpty();
   }
 
   @Test

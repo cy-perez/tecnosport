@@ -45,6 +45,14 @@ final class RepositorioEnlacesDeCompraDobleDePrueba implements RepositorioEnlace
   }
 
   @Override
+  public Optional<EnlaceDeCompra> buscarUsadoEnPedido(UUID pedidoId, UUID varianteId) {
+    return porId.values().stream()
+        .filter(e -> e.pedidoId().filter(pedidoId::equals).isPresent())
+        .filter(e -> e.varianteId().equals(varianteId))
+        .findFirst();
+  }
+
+  @Override
   public List<EnlaceDeCompra> listarCreadosDesde(Instant desde) {
     return porId.values().stream().filter(e -> !e.creadoEn().isBefore(desde)).toList();
   }

@@ -160,6 +160,23 @@ class ArquitecturaTest {
   }
 
   /**
+   * La zona del negocio vive en un solo sitio, {@code ZonaDelNegocio.ZONA}. Tres casos de uso la
+   * redefinían cada uno con su {@code ZoneId.of("America/Bogota")}, y una copia que cambie sin las
+   * otras parte el día en dos según quién lo calcule.
+   */
+  @Test
+  void laZonaDelNegocioSeDefineUnaSolaVez() {
+    noClasses()
+        .that()
+        .resideInAnyPackage(RAIZ + ".domain..", RAIZ + ".application..")
+        .and()
+        .doNotHaveSimpleName("ZonaDelNegocio")
+        .should()
+        .callMethod(java.time.ZoneId.class, "of", String.class)
+        .check(clases);
+  }
+
+  /**
    * La otra mitad de la regla dura #1, y es una <b>lista blanca</b> desde el 27 de octubre de 2026.
    * Era una lista negra —Spring, JPA, Bean Validation, Jackson, Hibernate— y no nombraba {@code
    * com.google}, {@code jakarta.mail}, {@code jakarta.servlet}, {@code jakarta.annotation}, {@code

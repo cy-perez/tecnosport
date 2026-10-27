@@ -48,6 +48,14 @@ final class RepositorioEnlacesDeCompraFalso implements RepositorioEnlacesDeCompr
   }
 
   @Override
+  public Optional<EnlaceDeCompra> buscarUsadoEnPedido(UUID pedidoId, UUID varianteId) {
+    return porId.values().stream()
+        .filter(e -> e.pedidoId().filter(pedidoId::equals).isPresent())
+        .filter(e -> e.varianteId().equals(varianteId))
+        .findFirst();
+  }
+
+  @Override
   public List<EnlaceDeCompra> listarCreadosDesde(Instant desde) {
     List<EnlaceDeCompra> desdeAhi = new ArrayList<>();
     for (EnlaceDeCompra e : porId.values()) {

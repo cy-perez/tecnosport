@@ -47,6 +47,7 @@ import co.tecnosport.api.application.reintegro.TopeDeReintegro;
 import co.tecnosport.api.bootstrap.compartido.PropiedadesApp;
 import co.tecnosport.api.bootstrap.compartido.PropiedadesLimitePedidos;
 import co.tecnosport.api.bootstrap.legal.PropiedadesLegal;
+import co.tecnosport.api.domain.compartido.TopeDeUnidadesPorLinea;
 import co.tecnosport.api.presentation.pedido.PropiedadesTransferenciaManual;
 import java.time.Duration;
 import org.springframework.beans.factory.annotation.Value;
@@ -84,7 +85,8 @@ public class ConfiguracionPedido {
       RepositorioAutorizaciones repositorioAutorizaciones,
       PropiedadesLegal propiedadesLegal,
       RecogidaEnPunto recogidaEnPunto,
-      RepositorioEnlacesDeCompra repositorioEnlaces) {
+      RepositorioEnlacesDeCompra repositorioEnlaces,
+      TopeDeUnidadesPorLinea topePorLinea) {
     return new CrearPedido(
         repositorioProductos,
         repositorioInventario,
@@ -100,7 +102,14 @@ public class ConfiguracionPedido {
         repositorioAutorizaciones,
         propiedadesLegal.politicaDatosVersion(),
         recogidaEnPunto,
-        repositorioEnlaces);
+        repositorioEnlaces,
+        topePorLinea);
+  }
+
+  /** Lo exigen el pedido y el carrito, y el carrito se lo dice al selector de cantidad. */
+  @Bean
+  public TopeDeUnidadesPorLinea topeDeUnidadesPorLinea(PropiedadesPedido propiedades) {
+    return new TopeDeUnidadesPorLinea(propiedades.maximoUnidadesPorLinea());
   }
 
   @Bean
@@ -359,13 +368,15 @@ public class ConfiguracionPedido {
       RepositorioInventario repositorioInventario,
       Reloj reloj,
       PropiedadesPedido propiedades,
-      RecogidaEnPunto recogidaEnPunto) {
+      RecogidaEnPunto recogidaEnPunto,
+      RepositorioEnlacesDeCompra repositorioEnlaces) {
     return new ReintentarPago(
         repositorioPedidos,
         repositorioProductos,
         repositorioInventario,
         reloj,
         Duration.ofMinutes(propiedades.minutosReservaInventario()),
-        recogidaEnPunto);
+        recogidaEnPunto,
+        repositorioEnlaces);
   }
 }
