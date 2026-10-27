@@ -5,6 +5,7 @@ import {
   copiarCabecerasAlNavegador,
   crearProxyApi,
   ipDelVisitante,
+  TOPE_DEL_CUERPO_EN_BYTES,
 } from './proxy-api';
 
 const DESTINO = 'http://api.interna:8080/api/v1';
@@ -285,5 +286,72 @@ describe('crearProxyApi', () => {
 
     expect(respuesta.estado).toBe(502);
     expect(respuesta.cuerpoJson).toEqual({ codigo: 'API_NO_DISPONIBLE' });
+  });
+
+  // Sin tope, el servidor de la web juntaba en memoria cualquier cuerpo antes de reenviarlo.
+  it('responde 413 sin leer nada cuando el cuerpo declarado pasa del tope', async () => {
+    const buscar = vi.fn(async () => new Response(null, { status: 204 }));
+    const respuesta = new RespuestaFalsa();
+
+    crearProxyApi(DESTINO, buscar as unknown as typeof fetch)(
+      peticionFalsa({
+        method: 'POST',
+        headers: { 'content-length': String(TOPE_DEL_CUERPO_EN_BYTES + 1) },
+        cuerpo: '{}',
+      }),
+      respuesta.comoExpress(),
+      () => undefined,
+    );
+    await vi.waitFor(() => expect(respuesta.cuerpoJson).toBeDefined());
+
+    expect(respuesta.estado).toBe(413);
+    expect(respuesta.cuerpoJson).toEqual({ codigo: 'CUERPO_DEMASIADO_GRANDE' });
+    expect(buscar).not.toHaveBeenCalled();
+  });
+
+  // El content-length lo escribe el cliente: una petición troceada, o una que miente, se cuenta
+  // por lo que de verdad llega.
+  it('responde 413 cuando lo que llega pasa del tope aunque declare menos', async () => {
+    const buscar = vi.fn(async () => new Response(null, { status: 204 }));
+    const respuesta = new RespuestaFalsa();
+    const trozo = Buffer.alloc(64 * 1024, 'a');
+    const trozos = Array.from(
+      { length: Math.ceil(TOPE_DEL_CUERPO_EN_BYTES / trozo.length) + 1 },
+      () => trozo,
+    );
+    const peticion = Object.assign(Readable.from(trozos), {
+      method: 'POST',
+      originalUrl: '/api/v1/pedidos',
+      headers: { 'transfer-encoding': 'chunked' },
+    }) as unknown as Request;
+
+    crearProxyApi(DESTINO, buscar as unknown as typeof fetch)(
+      peticion,
+      respuesta.comoExpress(),
+      () => undefined,
+    );
+    await vi.waitFor(() => expect(respuesta.cuerpoJson).toBeDefined());
+
+    expect(respuesta.estado).toBe(413);
+    expect(buscar).not.toHaveBeenCalled();
+  });
+
+  it('un cuerpo justo en el tope sí pasa', async () => {
+    let largo = 0;
+    const buscar = vi.fn(async (_url: unknown, init?: RequestInit) => {
+      largo = (init?.body as Buffer).length;
+      return new Response(null, { status: 204 });
+    });
+    const respuesta = new RespuestaFalsa();
+
+    crearProxyApi(DESTINO, buscar as unknown as typeof fetch)(
+      peticionFalsa({ method: 'POST', cuerpo: 'a'.repeat(TOPE_DEL_CUERPO_EN_BYTES) }),
+      respuesta.comoExpress(),
+      () => undefined,
+    );
+    await hastaQueTermine(respuesta);
+
+    expect(respuesta.estado).toBe(204);
+    expect(largo).toBe(TOPE_DEL_CUERPO_EN_BYTES);
   });
 });
