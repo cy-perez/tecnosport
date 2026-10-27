@@ -6,7 +6,7 @@ import en from '../../../../../../assets/i18n/en.json';
 import es from '../../../../../../assets/i18n/es.json';
 import esAdmin from '../../../../../../assets/i18n/scopes/admin/es.json';
 import { esperarSinViolaciones } from '../../../../../../testing/axe';
-import { PrecioPorRecalcular } from '../../domain/producto-admin.model';
+import { PrecioPorRecalcular, ResultadoRecalculo } from '../../domain/producto-admin.model';
 import {
   REPOSITORIO_RECALCULO_PRECIOS,
   RepositorioRecalculoPrecios,
@@ -31,6 +31,9 @@ function precio(overrides: Partial<PrecioPorRecalcular> = {}): PrecioPorRecalcul
 class RepositorioRecalculoFalso implements RepositorioRecalculoPrecios {
   aplicaciones = 0;
   falloAlAplicar: unknown = null;
+  recibidas: readonly PrecioPorRecalcular[] = [];
+  /** Las que el servidor encontraría cambiadas entre la revisión y la aplicación. */
+  cambiadas = new Set<string>();
 
   constructor(private pendientes: readonly PrecioPorRecalcular[]) {}
 
@@ -38,14 +41,16 @@ class RepositorioRecalculoFalso implements RepositorioRecalculoPrecios {
     return this.pendientes;
   }
 
-  async aplicar(): Promise<number> {
+  async aplicar(revisadas: readonly PrecioPorRecalcular[]): Promise<ResultadoRecalculo> {
     this.aplicaciones++;
     if (this.falloAlAplicar) {
       throw this.falloAlAplicar;
     }
-    const cuantas = this.pendientes.length;
-    this.pendientes = [];
-    return cuantas;
+    this.recibidas = revisadas;
+    const omitidas = revisadas.filter((r) => this.cambiadas.has(r.varianteId));
+    // Las omitidas siguen desalineadas: la lista, vuelta a pedir, las vuelve a enseñar.
+    this.pendientes = omitidas;
+    return { recalculadas: revisadas.length - omitidas.length, omitidas: omitidas.length };
   }
 }
 
@@ -143,8 +148,31 @@ describe('PreciosAdminPage', () => {
       expect(estado.textContent?.trim()).toBe(t.hecho.replace('{{recalculadas}}', '2')),
     );
     expect(repositorio.aplicaciones).toBe(1);
+    expect(repositorio.recibidas).toEqual(DOS);
     expect(await screen.findByText(t.alDia)).toBeTruthy();
     expect(screen.queryByRole('group')).toBeNull();
+  });
+
+  /**
+   * Entre la revisión y la confirmación alguien cambió el precio del bolso desde la ficha: el
+   * servidor no lo pisa, y la pantalla dice cuántas se omitieron y que hay que revisar de nuevo.
+   */
+  it('si alguna cambió mientras se revisaba, dice cuántas se omitieron y vuelve a listarlas', async () => {
+    const { repositorio } = await renderPagina(DOS);
+    repositorio.cambiadas.add('v1');
+
+    fireEvent.click(await botonRecalcular(2));
+    const caja = await screen.findByRole('group');
+    fireEvent.click(within(caja).getByRole('button', { name: t.confirmar }));
+
+    const estado = await screen.findByRole('status');
+    await vi.waitFor(() =>
+      expect(estado.textContent?.trim()).toBe(
+        t.hechoConOmitidas.replace('{{recalculadas}}', '1').replace('{{omitidas}}', '1'),
+      ),
+    );
+    expect(await screen.findByText(t.resumen.replace('{{total}}', '1'))).toBeTruthy();
+    expect(screen.getByText('TS-BOLSO-NEGRO')).toBeTruthy();
   });
 
   it('si falla, lo dice dentro de la confirmación y no la cierra', async () => {

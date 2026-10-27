@@ -234,6 +234,20 @@
         },
         "type" : "object"
       },
+      "AplicarRecalculoPeticion" : {
+        "properties" : {
+          "variantes" : {
+            "items" : {
+              "$ref" : "#/components/schemas/PrecioRevisadoPeticion"
+            },
+            "type" : "array"
+          }
+        },
+        "required" : [
+          "variantes"
+        ],
+        "type" : "object"
+      },
       "AprobarBorradorPeticion" : {
         "properties" : {
           "ajusteDeTalla" : {
@@ -3471,6 +3485,33 @@
         ],
         "type" : "object"
       },
+      "PrecioRevisadoPeticion" : {
+        "properties" : {
+          "precioContado" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "publicadoActual" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "publicadoNuevo" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "varianteId" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        },
+        "required" : [
+          "precioContado",
+          "publicadoActual",
+          "publicadoNuevo",
+          "varianteId"
+        ],
+        "type" : "object"
+      },
       "PreciosPorRecalcularRespuesta" : {
         "properties" : {
           "variantes" : {
@@ -4060,12 +4101,17 @@
       },
       "RecalculoAplicadoRespuesta" : {
         "properties" : {
+          "omitidas" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
           "recalculadas" : {
             "format" : "int32",
             "type" : "integer"
           }
         },
         "required" : [
+          "omitidas",
           "recalculadas"
         ],
         "type" : "object"
@@ -8141,6 +8187,16 @@
       },
       "post" : {
         "operationId" : "aplicar",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/AplicarRecalculoPeticion"
+              }
+            }
+          },
+          "required" : true
+        },
         "responses" : {
           "200" : {
             "content" : {

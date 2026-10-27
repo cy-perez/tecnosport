@@ -40,17 +40,22 @@ public class PreciosDelCatalogoJdbc implements PreciosDelCatalogo {
                 Dinero.deCop(rs.getBigDecimal("precio"))));
   }
 
+  /**
+   * Condicional en el mismo {@code update}: Postgres toma el candado de la fila y vuelve a evaluar
+   * el {@code where} con lo que dejó la transacción que la tenía, así que un cambio de precio
+   * concurrente desde la ficha no se pisa, aunque llegue un instante antes.
+   */
   @Override
-  public void actualizarPublicado(UUID varianteId, Dinero publicado) {
-    int filas =
-        jdbc.update(
-            "update variante set precio = :precio where id = :id",
+  public boolean actualizarPublicado(
+      UUID varianteId, Dinero contado, Dinero publicadoActual, Dinero publicadoNuevo) {
+    return jdbc.update(
+            "update variante set precio = :nuevo "
+                + "where id = :id and precio_contado = :contado and precio = :actual",
             new MapSqlParameterSource()
-                .addValue("precio", publicado.valor())
-                .addValue("id", varianteId));
-    if (filas != 1) {
-      throw new IllegalStateException(
-          "No existe la variante '" + varianteId + "' a la que se recalcula el precio.");
-    }
+                .addValue("nuevo", publicadoNuevo.valor())
+                .addValue("id", varianteId)
+                .addValue("contado", contado.valor())
+                .addValue("actual", publicadoActual.valor()))
+        == 1;
   }
 }

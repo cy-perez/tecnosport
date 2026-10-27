@@ -2461,6 +2461,9 @@ export interface components {
             unaFotoUnProducto?: boolean;
             ventaBajoConfirmacion?: boolean;
         };
+        AplicarRecalculoPeticion: {
+            variantes: components["schemas"]["PrecioRevisadoPeticion"][];
+        };
         AprobarBorradorPeticion: {
             /** Format: int32 */
             ajusteDeTalla?: number;
@@ -3554,6 +3557,16 @@ export interface components {
             /** Format: uuid */
             varianteId: string;
         };
+        PrecioRevisadoPeticion: {
+            /** Format: int64 */
+            precioContado: number;
+            /** Format: int64 */
+            publicadoActual: number;
+            /** Format: int64 */
+            publicadoNuevo: number;
+            /** Format: uuid */
+            varianteId: string;
+        };
         PreciosPorRecalcularRespuesta: {
             variantes: components["schemas"]["PrecioPorRecalcularRespuesta"][];
         };
@@ -3752,6 +3765,8 @@ export interface components {
             tipo?: string;
         };
         RecalculoAplicadoRespuesta: {
+            /** Format: int32 */
+            omitidas: number;
             /** Format: int32 */
             recalculadas: number;
         };
@@ -6181,7 +6196,11 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AplicarRecalculoPeticion"];
+            };
+        };
         responses: {
             /** @description OK */
             200: {

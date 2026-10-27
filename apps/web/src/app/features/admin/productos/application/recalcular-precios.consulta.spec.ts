@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { provideTanStackQuery, QueryClient } from '@tanstack/angular-query-experimental';
-import { PrecioPorRecalcular } from '../domain/producto-admin.model';
+import { PrecioPorRecalcular, ResultadoRecalculo } from '../domain/producto-admin.model';
 import {
   REPOSITORIO_RECALCULO_PRECIOS,
   RepositorioRecalculoPrecios,
@@ -24,16 +24,17 @@ const BOLSO: PrecioPorRecalcular = {
 class RepositorioRecalculoFalso implements RepositorioRecalculoPrecios {
   pendientes: PrecioPorRecalcular[] = [BOLSO];
   aplicaciones = 0;
+  recibidas: readonly PrecioPorRecalcular[] = [];
 
   async previsualizar(): Promise<readonly PrecioPorRecalcular[]> {
     return this.pendientes;
   }
 
-  async aplicar(): Promise<number> {
+  async aplicar(revisadas: readonly PrecioPorRecalcular[]): Promise<ResultadoRecalculo> {
     this.aplicaciones++;
-    const cuantas = this.pendientes.length;
+    this.recibidas = revisadas;
     this.pendientes = [];
-    return cuantas;
+    return { recalculadas: revisadas.length, omitidas: 0 };
   }
 }
 
@@ -69,10 +70,11 @@ describe('recálculo de precios publicados', () => {
     await vi.waitFor(() => expect(consulta.data()).toEqual([BOLSO]));
     const invalidar = vi.spyOn(queryClient, 'invalidateQueries');
 
-    const recalculadas = await mutacion.mutateAsync();
+    const resultado = await mutacion.mutateAsync([BOLSO]);
 
-    expect(recalculadas).toBe(1);
+    expect(resultado).toEqual({ recalculadas: 1, omitidas: 0 });
     expect(repositorio.aplicaciones).toBe(1);
+    expect(repositorio.recibidas).toEqual([BOLSO]);
     const llaves = invalidar.mock.calls.map(([filtros]) => filtros?.queryKey);
     expect(llaves).toEqual(
       expect.arrayContaining([CLAVE_PRECIOS_POR_RECALCULAR, ['admin', 'productos'], ['catalogo']]),

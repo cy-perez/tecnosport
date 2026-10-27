@@ -375,3 +375,12 @@ export interface PrecioPorRecalcular {
   readonly publicadoActual: number;
   readonly publicadoNuevo: number;
 }
+
+/**
+ * Lo que hizo el recálculo con la lista revisada. Las omitidas cambiaron entre la revisión y la
+ * aplicación —otro precio desde la ficha, otra tarifa— y no se tocaron: hay que revisarlas de nuevo.
+ */
+export interface ResultadoRecalculo {
+  readonly recalculadas: number;
+  readonly omitidas: number;
+}

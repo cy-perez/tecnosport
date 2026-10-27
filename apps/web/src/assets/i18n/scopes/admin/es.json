@@ -558,6 +558,7 @@
       "recalculando": "Recalculando…",
       "cancelar": "Cancelar",
       "hecho": "Se recalcularon {{recalculadas}} precio(s) publicado(s).",
+      "hechoConOmitidas": "Se recalcularon {{recalculadas}} precio(s) publicado(s). {{omitidas}} cambiaron mientras revisabas y no se tocaron: revisa la lista de nuevo.",
       "error": "No se pudieron recalcular los precios. Intenta de nuevo.",
       "columnas": {
         "producto": "Producto",

@@ -792,21 +792,72 @@ class RepositorioProductosJpaTest {
     VarianteJpaEntity variante = variante(productoJpa, "TS-PRECIOS-3", "230000");
     entityManager.flush();
 
-    preciosDelCatalogo.actualizarPublicado(variante.getId(), Dinero.deCop(239_000));
+    boolean grabado =
+        preciosDelCatalogo.actualizarPublicado(
+            variante.getId(), Dinero.deCop(230_000), Dinero.deCop(230_000), Dinero.deCop(239_000));
     entityManager.clear();
+
+    assertThat(grabado).isTrue();
 
     Producto p = repositorio.buscarPorSlug(new Slug("bolso-ana-precios")).orElseThrow();
     assertThat(p.variantes().get(0).precio()).isEqualTo(Dinero.deCop(239_000));
     assertThat(p.variantes().get(0).precioContado()).isEqualTo(Dinero.deCop(230_000));
   }
 
+  /**
+   * Entre la revisión y la aplicación del recálculo alguien cambió el contado desde la ficha: la
+   * escritura es condicional y no pisa el precio nuevo con un publicado calculado sobre el viejo.
+   */
   @Test
-  void actualizarElPublicadoDeUnaVarianteQueNoExisteFalla() {
-    UUID inexistente = UUID.randomUUID();
+  void actualizarElPublicadoNoPisaUnContadoQueCambio() {
+    MarcaJpaEntity marca = marca("Marca precios T4");
+    CategoriaJpaEntity categoria = categoria("Bolsos", "bolsos-pr4", "BOLSOS");
+    ProductoJpaEntity productoJpa =
+        producto("Bolso Eva", "bolso-eva-precios", "PUBLICADO", marca, categoria);
+    VarianteJpaEntity variante = variante(productoJpa, "TS-PRECIOS-4", "230000");
+    entityManager.flush();
+    repositorio.actualizarPrecios(variante.getId(), Dinero.deCop(240_000), Dinero.deCop(249_000));
+    entityManager.flush();
+    entityManager.clear();
 
-    org.assertj.core.api.Assertions.assertThatThrownBy(
-            () -> preciosDelCatalogo.actualizarPublicado(inexistente, Dinero.deCop(1_000)))
-        .hasMessageContaining(inexistente.toString());
+    boolean grabado =
+        preciosDelCatalogo.actualizarPublicado(
+            variante.getId(), Dinero.deCop(230_000), Dinero.deCop(230_000), Dinero.deCop(239_000));
+
+    assertThat(grabado).isFalse();
+    Producto p = repositorio.buscarPorSlug(new Slug("bolso-eva-precios")).orElseThrow();
+    assertThat(p.variantes().get(0).precioContado()).isEqualTo(Dinero.deCop(240_000));
+    assertThat(p.variantes().get(0).precio()).isEqualTo(Dinero.deCop(249_000));
+  }
+
+  /** Lo mismo si lo que cambió fue el publicado, con el contado igual. */
+  @Test
+  void actualizarElPublicadoNoPisaUnPublicadoQueCambio() {
+    MarcaJpaEntity marca = marca("Marca precios T5");
+    CategoriaJpaEntity categoria = categoria("Bolsos", "bolsos-pr5", "BOLSOS");
+    ProductoJpaEntity productoJpa =
+        producto("Bolso Sol", "bolso-sol-precios", "PUBLICADO", marca, categoria);
+    VarianteJpaEntity variante = variante(productoJpa, "TS-PRECIOS-5", "230000");
+    entityManager.flush();
+    repositorio.actualizarPrecios(variante.getId(), Dinero.deCop(230_000), Dinero.deCop(239_000));
+    entityManager.flush();
+    entityManager.clear();
+
+    boolean grabado =
+        preciosDelCatalogo.actualizarPublicado(
+            variante.getId(), Dinero.deCop(230_000), Dinero.deCop(230_000), Dinero.deCop(241_000));
+
+    assertThat(grabado).isFalse();
+    Producto p = repositorio.buscarPorSlug(new Slug("bolso-sol-precios")).orElseThrow();
+    assertThat(p.variantes().get(0).precio()).isEqualTo(Dinero.deCop(239_000));
+  }
+
+  @Test
+  void actualizarElPublicadoDeUnaVarianteQueNoExisteNoGrabaNada() {
+    assertThat(
+            preciosDelCatalogo.actualizarPublicado(
+                UUID.randomUUID(), Dinero.deCop(1_000), Dinero.deCop(1_000), Dinero.deCop(2_700)))
+        .isFalse();
   }
 
   /** Y una medida sí vuelve completa, para que la de arriba no pase por no leer nada. */

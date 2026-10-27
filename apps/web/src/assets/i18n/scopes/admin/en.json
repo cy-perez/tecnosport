@@ -558,6 +558,7 @@
       "recalculando": "Recalculating…",
       "cancelar": "Cancel",
       "hecho": "{{recalculadas}} published price(s) were recalculated.",
+      "hechoConOmitidas": "{{recalculadas}} published price(s) were recalculated. {{omitidas}} changed while you were reviewing and were left as they were: review the list again.",
       "error": "The prices could not be recalculated. Try again.",
       "columnas": {
         "producto": "Product",

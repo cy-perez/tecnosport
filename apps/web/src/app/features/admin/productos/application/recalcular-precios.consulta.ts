@@ -1,6 +1,6 @@
 import { inject } from '@angular/core';
 import { injectMutation, injectQuery, QueryClient } from '@tanstack/angular-query-experimental';
-import { PrecioPorRecalcular } from '../domain/producto-admin.model';
+import { PrecioPorRecalcular, ResultadoRecalculo } from '../domain/producto-admin.model';
 import { REPOSITORIO_RECALCULO_PRECIOS } from '../domain/recalculo-precios.puerto';
 
 /** Bajo `admin`, como el resto del panel; no cuelga de un producto porque los cruza todos. */
@@ -19,7 +19,7 @@ export function usarPreciosPorRecalcular() {
 }
 
 /**
- * Aplica el recálculo. Invalida la previsualización —que tiene que quedar vacía—, los productos
+ * Aplica el recálculo a la lista revisada. Invalida la previsualización —que tiene que quedar vacía—, los productos
  * del panel, cuyo publicado se enseña en la edición, y el catálogo público, cuya tarjeta y ficha
  * anuncian el publicado y se quedarían con el viejo hasta caducar.
  */
@@ -28,7 +28,8 @@ export function usarRecalcularPrecios() {
   const queryClient = inject(QueryClient);
 
   return injectMutation(() => ({
-    mutationFn: (): Promise<number> => repositorio.aplicar(),
+    mutationFn: (revisadas: readonly PrecioPorRecalcular[]): Promise<ResultadoRecalculo> =>
+      repositorio.aplicar(revisadas),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: CLAVE_PRECIOS_POR_RECALCULAR });
       await queryClient.invalidateQueries({ queryKey: ['admin', 'productos'] });

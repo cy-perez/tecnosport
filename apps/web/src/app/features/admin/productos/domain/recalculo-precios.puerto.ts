@@ -1,5 +1,5 @@
 import { InjectionToken } from '@angular/core';
-import { PrecioPorRecalcular } from './producto-admin.model';
+import { PrecioPorRecalcular, ResultadoRecalculo } from './producto-admin.model';
 
 /**
  * El recálculo de los precios publicados cuando cambia la tarifa de Wompi (ADR-0095). Es una tarea
@@ -10,8 +10,11 @@ import { PrecioPorRecalcular } from './producto-admin.model';
 export interface RepositorioRecalculoPrecios {
   /** Las variantes cuyo publicado no corresponde a la tarifa de hoy; vacía si todo está al día. */
   previsualizar(): Promise<readonly PrecioPorRecalcular[]>;
-  /** Recalcula todas las desactualizadas y devuelve cuántas cambió. */
-  aplicar(): Promise<number>;
+  /**
+   * Recalcula la lista que la persona revisó, no lo que esté desalineado al llegar la orden: el
+   * servidor solo graba las filas que siguen como se vieron, y cuenta aparte las que cambiaron.
+   */
+  aplicar(revisadas: readonly PrecioPorRecalcular[]): Promise<ResultadoRecalculo>;
 }
 
 export const REPOSITORIO_RECALCULO_PRECIOS = new InjectionToken<RepositorioRecalculoPrecios>(

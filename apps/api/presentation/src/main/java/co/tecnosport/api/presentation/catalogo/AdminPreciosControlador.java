@@ -1,8 +1,13 @@
 package co.tecnosport.api.presentation.catalogo;
 
 import co.tecnosport.api.application.catalogo.PrecioPorRecalcular;
+import co.tecnosport.api.application.catalogo.PrecioRevisado;
 import co.tecnosport.api.application.catalogo.RecalcularPreciosPublicados;
+import co.tecnosport.api.application.catalogo.RecalculoAplicado;
+import co.tecnosport.api.domain.compartido.Dinero;
+import co.tecnosport.api.presentation.catalogo.dto.AplicarRecalculoPeticion;
 import co.tecnosport.api.presentation.catalogo.dto.PrecioPorRecalcularRespuesta;
+import co.tecnosport.api.presentation.catalogo.dto.PrecioRevisadoPeticion;
 import co.tecnosport.api.presentation.catalogo.dto.PreciosPorRecalcularRespuesta;
 import co.tecnosport.api.presentation.catalogo.dto.RecalculoAplicadoRespuesta;
 import java.util.List;
@@ -13,6 +18,7 @@ import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -21,9 +27,10 @@ import org.springframework.web.bind.annotation.RestController;
  * {@code GET} que enseña lo que cambiaría y un {@code POST} que lo aplica: un precio anunciado no
  * cambia sin que una persona lo vea.
  *
- * <p>El {@code POST} recalcula lo que esté desalineado <b>en ese momento</b>, no la lista que vio
- * quien lo pidió: si entre los dos alguien cambió un precio desde la edición, ese ya sale al día y
- * no se toca. Con transacción propia, para que un fallo a mitad no deje el catálogo a medias.
+ * <p>El {@code POST} recibe <b>la lista que vio</b> quien lo confirma y graba solo las filas que
+ * siguen como se vieron: si entre los dos alguien cambió un precio desde la ficha, o cambió la
+ * tarifa, esa fila se omite y se cuenta, y no se pisa. Con transacción propia, para que un fallo a
+ * mitad no deje el catálogo a medias.
  */
 @RestController
 @RequestMapping("/api/v1/admin/precios/recalculo")
@@ -48,18 +55,34 @@ public class AdminPreciosControlador {
 
   /** Cada cambio queda en el registro: es lo único que permite saber qué se anunciaba antes. */
   @PostMapping
-  public RecalculoAplicadoRespuesta aplicar() {
-    List<PrecioPorRecalcular> aplicados = transaccion.execute(estado -> recalcular.aplicar());
-    for (PrecioPorRecalcular aplicado : aplicados) {
+  public RecalculoAplicadoRespuesta aplicar(@RequestBody AplicarRecalculoPeticion cuerpo) {
+    List<PrecioRevisado> revisadas =
+        cuerpo.variantes().stream().map(AdminPreciosControlador::aRevisado).toList();
+    RecalculoAplicado resultado = transaccion.execute(estado -> recalcular.aplicar(revisadas));
+    for (PrecioRevisado aplicado : resultado.recalculadas()) {
       log.info(
-          "Precio publicado de la variante {} ({}) recalculado de {} a {}; de contado sigue en {}.",
+          "Precio publicado de la variante {} recalculado de {} a {}; de contado sigue en {}.",
           aplicado.varianteId(),
-          aplicado.sku(),
           aplicado.publicadoActual().valor().toPlainString(),
           aplicado.publicadoNuevo().valor().toPlainString(),
           aplicado.contado().valor().toPlainString());
     }
-    return new RecalculoAplicadoRespuesta(aplicados.size());
+    if (!resultado.omitidas().isEmpty()) {
+      log.info(
+          "Recálculo de precios publicados: {} variante(s) omitida(s) porque cambiaron entre la"
+              + " revisión y la aplicación.",
+          resultado.omitidas().size());
+    }
+    return new RecalculoAplicadoRespuesta(
+        resultado.recalculadas().size(), resultado.omitidas().size());
+  }
+
+  private static PrecioRevisado aRevisado(PrecioRevisadoPeticion fila) {
+    return new PrecioRevisado(
+        fila.varianteId(),
+        Dinero.deCop(fila.precioContado()),
+        Dinero.deCop(fila.publicadoActual()),
+        Dinero.deCop(fila.publicadoNuevo()));
   }
 
   private static PrecioPorRecalcularRespuesta aRespuesta(PrecioPorRecalcular precio) {

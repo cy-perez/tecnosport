@@ -57,7 +57,10 @@ export class PreciosAdminPage {
   /** Una marca propia y no `recalculando()`: `isPending` no cambia en el mismo tic del `mutate`. */
   private enVuelo = false;
   protected readonly error = signal<string | null>(null);
-  /** El texto de la región viva: «Se recalcularon 12 precios publicados». */
+  /**
+   * El texto de la región viva: «Se recalcularon 12 precios publicados», y cuántas se omitieron si
+   * alguna cambió entre la revisión y la confirmación.
+   */
   protected readonly aviso = signal<string | null>(null);
 
   private readonly enfocarDespuesDePintar = usarFoco();
@@ -91,11 +94,19 @@ export class PreciosAdminPage {
     }
     this.enVuelo = true;
     this.error.set(null);
-    this.recalcular.mutate(undefined, {
+    // La lista que la persona está viendo: el servidor graba esas filas y no otras.
+    this.recalcular.mutate(this.variantes(), {
       onSettled: () => (this.enVuelo = false),
-      onSuccess: (recalculadas) => {
+      onSuccess: ({ recalculadas, omitidas }) => {
         this.confirmando.set(false);
-        this.aviso.set(this.transloco.translate('admin.productos.precios.hecho', { recalculadas }));
+        this.aviso.set(
+          omitidas > 0
+            ? this.transloco.translate('admin.productos.precios.hechoConOmitidas', {
+                recalculadas,
+                omitidas,
+              })
+            : this.transloco.translate('admin.productos.precios.hecho', { recalculadas }),
+        );
         this.enfocarDespuesDePintar(() => this.avisoRef()?.nativeElement);
       },
       onError: (error: unknown) =>

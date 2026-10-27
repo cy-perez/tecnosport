@@ -14,6 +14,14 @@ public interface PreciosDelCatalogo {
   /** Todas las variantes del catálogo, con el nombre de su producto, ordenadas por ese nombre. */
   List<PreciosDeVariante> listar();
 
-  /** Graba el publicado de una variante y nada más: el de contado no cambia con las tarifas. */
-  void actualizarPublicado(UUID varianteId, Dinero publicado);
+  /**
+   * Graba el publicado nuevo de una variante, y nada más —el de contado no cambia con las tarifas—,
+   * <b>solo si sigue teniendo ese contado y ese publicado</b>. Es una sola escritura condicional,
+   * no una lectura seguida de una escritura: si alguien cambió el precio entre la revisión y la
+   * aplicación, no se pisa.
+   *
+   * @return {@code false} si la variante cambió (o ya no existe) y no se grabó nada
+   */
+  boolean actualizarPublicado(
+      UUID varianteId, Dinero contado, Dinero publicadoActual, Dinero publicadoNuevo);
 }
