@@ -1,5 +1,6 @@
 package co.tecnosport.api.application.usuario;
 
+import co.tecnosport.api.domain.usuario.AlcanceDeAcceso;
 import co.tecnosport.api.domain.usuario.Usuario;
 import java.time.Instant;
 
@@ -10,5 +11,9 @@ import java.time.Instant;
  */
 public interface GeneradorDeTokens {
 
-  String generarAcceso(Usuario usuario, Instant ahora);
+  /**
+   * @param alcance lo decide quien emite, en cada emisión (ADR-0096): un administrador al que el
+   *     panel le exige segundo factor y no lo tiene recibe un token que solo sirve para activarlo.
+   */
+  String generarAcceso(Usuario usuario, AlcanceDeAcceso alcance, Instant ahora);
 }

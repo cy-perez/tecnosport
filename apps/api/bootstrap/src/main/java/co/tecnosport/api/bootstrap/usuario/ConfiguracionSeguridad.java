@@ -60,9 +60,11 @@ public class ConfiguracionSeguridad {
                     .requestMatchers(HttpMethod.POST, "/api/v1/auth/segundo-factor/verificacion")
                     .permitAll()
                     // El resto del segundo factor es del panel: sin sesión, 401; con la de un
-                    // cliente, 403.
+                    // cliente, 403. Y lo abre también la sesión restringida de un administrador
+                    // al que el panel le exige el factor y no lo tiene: es lo único que abre.
+                    // /api/v1/admin/** de arriba sigue pidiendo ROLE_ADMIN, y a esa le da 403.
                     .requestMatchers("/api/v1/auth/segundo-factor/**")
-                    .hasRole("ADMIN")
+                    .hasAnyRole("ADMIN", FiltroAutenticacionJwt.ROL_ADMIN_POR_ACTIVAR)
                     .requestMatchers(FiltroTareasDeIngesta.RUTA + "**")
                     .hasRole(FiltroTareasDeIngesta.ROL)
                     .anyRequest()

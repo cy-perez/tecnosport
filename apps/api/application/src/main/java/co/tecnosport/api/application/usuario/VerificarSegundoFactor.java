@@ -7,6 +7,7 @@ import co.tecnosport.api.application.compartido.Reloj;
 import co.tecnosport.api.application.compartido.TextoDeCorreo;
 import co.tecnosport.api.application.compartido.TextosDeCorreo;
 import co.tecnosport.api.domain.compartido.GeneradorIdentificador;
+import co.tecnosport.api.domain.usuario.AlcanceDeAcceso;
 import co.tecnosport.api.domain.usuario.DesafioSegundoFactor;
 import co.tecnosport.api.domain.usuario.DesafioSegundoFactorInvalidoException;
 import co.tecnosport.api.domain.usuario.HuellaDeToken;
@@ -152,7 +153,7 @@ public final class VerificarSegundoFactor {
     SesionRefresco sesion =
         SesionRefresco.crear(usuario.id(), GeneradorIdentificador.nuevo(), ahora, vigenciaRefresco);
     repositorioSesiones.guardar(sesion);
-    String accessToken = generadorDeTokens.generarAcceso(usuario, ahora);
-    return new TokensDeSesion(usuario.id(), usuario.rol(), accessToken, sesion.id());
+    String accessToken = generadorDeTokens.generarAcceso(usuario, AlcanceDeAcceso.COMPLETO, ahora);
+    return new TokensDeSesion(usuario.id(), usuario.rol(), accessToken, sesion.id(), false);
   }
 }

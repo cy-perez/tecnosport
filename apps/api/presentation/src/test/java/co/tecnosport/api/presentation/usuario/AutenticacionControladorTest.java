@@ -27,6 +27,7 @@ import co.tecnosport.api.application.usuario.RepositorioUsuarios;
 import co.tecnosport.api.application.usuario.SolicitarRecuperacion;
 import co.tecnosport.api.application.usuario.VerificarCorreo;
 import co.tecnosport.api.domain.compartido.CorreoElectronico;
+import co.tecnosport.api.domain.usuario.PoliticaDeSegundoFactor;
 import co.tecnosport.api.domain.usuario.Rol;
 import co.tecnosport.api.domain.usuario.SegundoFactor;
 import co.tecnosport.api.domain.usuario.SesionRefresco;
@@ -81,6 +82,12 @@ class AutenticacionControladorTest {
   private static final String VERSION_POLITICA = "2026-09-07";
   private static final int MAXIMO_INTENTOS_POR_CUENTA = 5;
   private static final Duration VENTANA_INTENTOS_POR_CUENTA = Duration.ofMinutes(15);
+
+  /**
+   * Encendida, como en dev: el ADMIN sin factor entra restringido y el CLIENTE no. Las pruebas que
+   * no miran el alcance no cambian por ella.
+   */
+  private static final PoliticaDeSegundoFactor POLITICA = new PoliticaDeSegundoFactor(true);
 
   @AfterEach
   void limpiarContextoDeSeguridad() {
@@ -172,6 +179,43 @@ class AutenticacionControladorTest {
         .andExpect(jsonPath("$.accessToken").doesNotExist())
         .andExpect(cookie().doesNotExist("refresco"));
     org.junit.jupiter.api.Assertions.assertTrue(sesiones.todas().isEmpty());
+  }
+
+  /**
+   * ADR-0096: con la bandera, el ADMIN sin factor entra con la sesión que solo sirve para
+   * activarlo.
+   */
+  @Test
+  void conLaBanderaElAdminSinFactorEntraRestringidoYElClienteNo() throws Exception {
+    conUsuarioAdmin("admin@tecnosport.co", "clave-correcta");
+    Usuario cliente =
+        Usuario.crear(
+            new CorreoElectronico("cliente@tecnosport.co"),
+            "hash:clave-correcta",
+            Rol.CLIENTE,
+            Instant.now());
+    cliente.verificarCorreo(Instant.now());
+    usuarios.conUsuario(cliente);
+
+    mockMvc
+        .perform(
+            post("/api/v1/auth/sesion")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    json.writeValueAsString(
+                        new IniciarSesionRequest("admin@tecnosport.co", "clave-correcta"))))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.segundoFactorPorActivar").value(true))
+        .andExpect(cookie().exists("refresco"));
+    mockMvc
+        .perform(
+            post("/api/v1/auth/sesion")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    json.writeValueAsString(
+                        new IniciarSesionRequest("cliente@tecnosport.co", "clave-correcta"))))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.segundoFactorPorActivar").value(false));
   }
 
   @Test
@@ -652,7 +696,8 @@ class AutenticacionControladorTest {
         RepositorioSesiones repositorioSesiones,
         CodificadorDeClaves codificadorDeClaves,
         GeneradorDeTokens generadorDeTokens,
-        LimitadorDeIntentos limitadorDeIntentos) {
+        LimitadorDeIntentos limitadorDeIntentos,
+        RepositorioSegundosFactores repositorioSegundosFactores) {
       return new CambiarClave(
           repositorioUsuarios,
           repositorioSesiones,
@@ -662,7 +707,9 @@ class AutenticacionControladorTest {
           VIGENCIA,
           limitadorDeIntentos,
           MAXIMO_INTENTOS_POR_CUENTA,
-          VENTANA_INTENTOS_POR_CUENTA);
+          VENTANA_INTENTOS_POR_CUENTA,
+          repositorioSegundosFactores,
+          POLITICA);
     }
 
     @Bean
@@ -746,7 +793,8 @@ class AutenticacionControladorTest {
           VENTANA_INTENTOS_POR_CUENTA,
           repositorioSegundosFactores,
           repositorioDesafios,
-          Duration.ofMinutes(5));
+          Duration.ofMinutes(5),
+          POLITICA);
     }
 
     @Bean
@@ -763,9 +811,16 @@ class AutenticacionControladorTest {
     RefrescarToken refrescarToken(
         RepositorioSesiones repositorioSesiones,
         RepositorioUsuarios repositorioUsuarios,
-        GeneradorDeTokens generadorDeTokens) {
+        GeneradorDeTokens generadorDeTokens,
+        RepositorioSegundosFactores repositorioSegundosFactores) {
       return new RefrescarToken(
-          repositorioSesiones, repositorioUsuarios, generadorDeTokens, Instant::now, VIGENCIA);
+          repositorioSesiones,
+          repositorioUsuarios,
+          generadorDeTokens,
+          Instant::now,
+          VIGENCIA,
+          repositorioSegundosFactores,
+          POLITICA);
     }
 
     @Bean

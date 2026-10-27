@@ -32,7 +32,11 @@ final class SesionConCookie {
   }
 
   static SesionRespuesta cuerpo(TokensDeSesion tokens) {
-    return new SesionRespuesta(tokens.usuarioId(), tokens.rol().name(), tokens.accessToken());
+    return new SesionRespuesta(
+        tokens.usuarioId(),
+        tokens.rol().name(),
+        tokens.accessToken(),
+        tokens.segundoFactorPorActivar());
   }
 
   static ResponseCookie cookie(String valor, Duration vigencia) {

@@ -4113,6 +4113,7 @@ export interface components {
         SesionRespuesta: {
             accessToken?: string;
             rol?: string;
+            segundoFactorPorActivar: boolean;
             /** Format: uuid */
             usuarioId?: string;
         };

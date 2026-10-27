@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import co.tecnosport.api.application.usuario.ClaimsAcceso;
 import co.tecnosport.api.domain.compartido.CorreoElectronico;
+import co.tecnosport.api.domain.usuario.AlcanceDeAcceso;
 import co.tecnosport.api.domain.usuario.Rol;
 import co.tecnosport.api.domain.usuario.Usuario;
 import java.time.Duration;
@@ -31,7 +32,7 @@ class TokensJwtTest {
     GeneradorDeTokensJwt generador = new GeneradorDeTokensJwt(SECRETO, VIGENCIA);
     VerificadorDeTokensJwt verificador = new VerificadorDeTokensJwt(SECRETO);
 
-    String token = generador.generarAcceso(USUARIO, Instant.now());
+    String token = generador.generarAcceso(USUARIO, AlcanceDeAcceso.COMPLETO, Instant.now());
     Optional<ClaimsAcceso> claims = verificador.verificar(token);
 
     assertTrue(claims.isPresent());
@@ -44,7 +45,7 @@ class TokensJwtTest {
     GeneradorDeTokensJwt generador = new GeneradorDeTokensJwt(SECRETO, VIGENCIA);
     VerificadorDeTokensJwt verificadorConOtroSecreto = new VerificadorDeTokensJwt("o".repeat(32));
 
-    String token = generador.generarAcceso(USUARIO, Instant.now());
+    String token = generador.generarAcceso(USUARIO, AlcanceDeAcceso.COMPLETO, Instant.now());
 
     assertTrue(verificadorConOtroSecreto.verificar(token).isEmpty());
   }
@@ -55,7 +56,7 @@ class TokensJwtTest {
     VerificadorDeTokensJwt verificador = new VerificadorDeTokensJwt(SECRETO);
     Instant haceMuchoTiempo = Instant.parse("2020-01-01T00:00:00Z");
 
-    String token = generador.generarAcceso(USUARIO, haceMuchoTiempo);
+    String token = generador.generarAcceso(USUARIO, AlcanceDeAcceso.COMPLETO, haceMuchoTiempo);
 
     assertTrue(verificador.verificar(token).isEmpty());
   }
@@ -78,8 +79,9 @@ class TokensJwtTest {
         Usuario.crear(new CorreoElectronico("otro@tecnosport.co"), "hash", Rol.CLIENTE, AHORA);
     Instant ahora = Instant.now();
 
-    String[] propio = generador.generarAcceso(USUARIO, ahora).split("\\.");
-    String[] ajeno = generador.generarAcceso(otro, ahora).split("\\.");
+    String[] propio =
+        generador.generarAcceso(USUARIO, AlcanceDeAcceso.COMPLETO, ahora).split("\\.");
+    String[] ajeno = generador.generarAcceso(otro, AlcanceDeAcceso.COMPLETO, ahora).split("\\.");
     String suplantado = propio[0] + "." + ajeno[1] + "." + propio[2];
 
     // Sin tocar, ese mismo token sí verifica: lo que falla abajo es la firma, no la vigencia.
@@ -95,5 +97,42 @@ class TokensJwtTest {
   @Test
   void unSecretoDemasiadoCortoSeRechazaAlConstruirElVerificador() {
     assertThrows(IllegalArgumentException.class, () -> new VerificadorDeTokensJwt("corto"));
+  }
+
+  @Test
+  void elAlcanceVaYVuelve() {
+    GeneradorDeTokensJwt generador = new GeneradorDeTokensJwt(SECRETO, VIGENCIA);
+    VerificadorDeTokensJwt verificador = new VerificadorDeTokensJwt(SECRETO);
+
+    for (AlcanceDeAcceso alcance : AlcanceDeAcceso.values()) {
+      String token = generador.generarAcceso(USUARIO, alcance, Instant.now());
+      assertEquals(alcance, verificador.verificar(token).orElseThrow().alcance());
+    }
+  }
+
+  /** Los tokens de antes de ADR-0096 no traen el claim, y siguen vivos quince minutos. */
+  @Test
+  void sinElClaimElAlcanceEsCompleto() {
+    VerificadorDeTokensJwt verificador = new VerificadorDeTokensJwt(SECRETO);
+    org.springframework.security.oauth2.jwt.JwtEncoder codificador =
+        org.springframework.security.oauth2.jwt.NimbusJwtEncoder.withSecretKey(
+                GeneradorDeTokensJwt.clave(SECRETO))
+            .algorithm(org.springframework.security.oauth2.jose.jws.MacAlgorithm.HS256)
+            .build();
+    Instant ahora = Instant.now();
+    String token =
+        codificador
+            .encode(
+                org.springframework.security.oauth2.jwt.JwtEncoderParameters.from(
+                    org.springframework.security.oauth2.jwt.JwtClaimsSet.builder()
+                        .issuer(GeneradorDeTokensJwt.EMISOR)
+                        .subject(USUARIO.id().toString())
+                        .issuedAt(ahora)
+                        .expiresAt(ahora.plus(VIGENCIA))
+                        .claim(GeneradorDeTokensJwt.CLAIM_ROL, "ADMIN")
+                        .build()))
+            .getTokenValue();
+
+    assertEquals(AlcanceDeAcceso.COMPLETO, verificador.verificar(token).orElseThrow().alcance());
   }
 }

@@ -11,6 +11,7 @@ import co.tecnosport.api.application.compartido.LimiteDeIntentosExcedidoExceptio
 import co.tecnosport.api.domain.compartido.CorreoElectronico;
 import co.tecnosport.api.domain.usuario.CorreoSinVerificarException;
 import co.tecnosport.api.domain.usuario.DesafioSegundoFactor;
+import co.tecnosport.api.domain.usuario.PoliticaDeSegundoFactor;
 import co.tecnosport.api.domain.usuario.Rol;
 import co.tecnosport.api.domain.usuario.SegundoFactor;
 import co.tecnosport.api.domain.usuario.TokenRecuperacionClave;
@@ -40,6 +41,7 @@ class IniciarSesionTest {
   private RepositorioDesafiosSegundoFactorFalso desafios =
       new RepositorioDesafiosSegundoFactorFalso();
   private static final Duration VIGENCIA_DESAFIO = Duration.ofMinutes(5);
+  private boolean exigido;
 
   private static TokensDeSesion abierta(ResultadoInicioSesion resultado) {
     return ((ResultadoInicioSesion.SesionAbierta) resultado).tokens();
@@ -72,7 +74,8 @@ class IniciarSesionTest {
         VENTANA_INTENTOS_POR_CUENTA,
         factores,
         desafios,
-        VIGENCIA_DESAFIO);
+        VIGENCIA_DESAFIO,
+        new PoliticaDeSegundoFactor(exigido));
   }
 
   private void conUsuarioAdmin(String claveTextoPlano) {
@@ -280,7 +283,8 @@ class IniciarSesionTest {
             VENTANA_INTENTOS_POR_CUENTA,
             factores,
             desafios,
-            VIGENCIA_DESAFIO);
+            VIGENCIA_DESAFIO,
+            new PoliticaDeSegundoFactor(exigido));
     usuarios.conUsuario(Usuario.crearConGoogle(CORREO, "sub-1", AHORA));
 
     assertThrows(
@@ -347,6 +351,33 @@ class IniciarSesionTest {
         ResultadoInicioSesion.SesionAbierta.class,
         caso.ejecutar(new IniciarSesionComando("admin@tecnosport.co", "clave-correcta", IP)));
     assertTrue(desafios.todos().isEmpty());
+  }
+
+  @Test
+  void conLaBanderaElAdminSinFactorEntraRestringidoYElClienteNo() {
+    exigido = true;
+    IniciarSesion caso = crear();
+    conUsuarioAdmin("clave-correcta");
+    Usuario cliente =
+        Usuario.crear(
+            new CorreoElectronico("cliente@tecnosport.co"),
+            codificador.codificar("clave-correcta"),
+            Rol.CLIENTE,
+            AHORA);
+    cliente.verificarCorreo(AHORA);
+    usuarios.conUsuario(cliente);
+
+    TokensDeSesion admin =
+        abierta(
+            caso.ejecutar(new IniciarSesionComando("admin@tecnosport.co", "clave-correcta", IP)));
+    TokensDeSesion delCliente =
+        abierta(
+            caso.ejecutar(new IniciarSesionComando("cliente@tecnosport.co", "clave-correcta", IP)));
+
+    assertTrue(admin.segundoFactorPorActivar());
+    assertTrue(admin.accessToken().endsWith(":SOLO_ACTIVAR_SEGUNDO_FACTOR"));
+    assertTrue(!delCliente.segundoFactorPorActivar());
+    assertTrue(delCliente.accessToken().endsWith(":COMPLETO"));
   }
 
   /**

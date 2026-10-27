@@ -8,6 +8,7 @@ import co.tecnosport.api.application.compartido.TextoDeCorreo;
 import co.tecnosport.api.application.compartido.TextosDeCorreo;
 import co.tecnosport.api.domain.compartido.GeneradorIdentificador;
 import co.tecnosport.api.domain.usuario.ActivacionSegundoFactorNoIniciadaException;
+import co.tecnosport.api.domain.usuario.AlcanceDeAcceso;
 import co.tecnosport.api.domain.usuario.CodigoDeRespaldo;
 import co.tecnosport.api.domain.usuario.SegundoFactor;
 import co.tecnosport.api.domain.usuario.SesionRefresco;
@@ -98,7 +99,7 @@ public final class ConfirmarActivacionSegundoFactor {
     SesionRefresco sesion =
         SesionRefresco.crear(usuario.id(), GeneradorIdentificador.nuevo(), ahora, vigenciaRefresco);
     repositorioSesiones.guardar(sesion);
-    String accessToken = generadorDeTokens.generarAcceso(usuario, ahora);
+    String accessToken = generadorDeTokens.generarAcceso(usuario, AlcanceDeAcceso.COMPLETO, ahora);
 
     enviadorDeCorreo.enviar(
         usuario.correo(),
@@ -106,7 +107,7 @@ public final class ConfirmarActivacionSegundoFactor {
         textos.texto(TextoDeCorreo.USUARIO_SEGUNDO_FACTOR_ACTIVADO_CUERPO));
 
     return new ActivacionConfirmada(
-        new TokensDeSesion(usuario.id(), usuario.rol(), accessToken, sesion.id()),
+        new TokensDeSesion(usuario.id(), usuario.rol(), accessToken, sesion.id(), false),
         codigos.stream().map(CodigoDeRespaldo::mostrado).toList());
   }
 }

@@ -4856,11 +4856,17 @@
           "rol" : {
             "type" : "string"
           },
+          "segundoFactorPorActivar" : {
+            "type" : "boolean"
+          },
           "usuarioId" : {
             "format" : "uuid",
             "type" : "string"
           }
         },
+        "required" : [
+          "segundoFactorPorActivar"
+        ],
         "type" : "object"
       },
       "SetRespuesta" : {

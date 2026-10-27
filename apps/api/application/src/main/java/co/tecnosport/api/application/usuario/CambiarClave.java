@@ -4,6 +4,8 @@ import co.tecnosport.api.application.compartido.LimitadorDeIntentos;
 import co.tecnosport.api.application.compartido.LimiteDeIntentosExcedidoException;
 import co.tecnosport.api.application.compartido.Reloj;
 import co.tecnosport.api.domain.compartido.GeneradorIdentificador;
+import co.tecnosport.api.domain.usuario.AlcanceDeAcceso;
+import co.tecnosport.api.domain.usuario.PoliticaDeSegundoFactor;
 import co.tecnosport.api.domain.usuario.SesionRefresco;
 import co.tecnosport.api.domain.usuario.Usuario;
 import java.time.Duration;
@@ -37,6 +39,9 @@ public final class CambiarClave {
   private final int maximoIntentosPorCuenta;
   private final Duration ventanaIntentosPorCuenta;
 
+  private final RepositorioSegundosFactores repositorioSegundosFactores;
+  private final PoliticaDeSegundoFactor politicaDeSegundoFactor;
+
   public CambiarClave(
       RepositorioUsuarios repositorioUsuarios,
       RepositorioSesiones repositorioSesiones,
@@ -46,7 +51,9 @@ public final class CambiarClave {
       Duration vigenciaRefresco,
       LimitadorDeIntentos limitadorDeIntentos,
       int maximoIntentosPorCuenta,
-      Duration ventanaIntentosPorCuenta) {
+      Duration ventanaIntentosPorCuenta,
+      RepositorioSegundosFactores repositorioSegundosFactores,
+      PoliticaDeSegundoFactor politicaDeSegundoFactor) {
     this.repositorioUsuarios = Objects.requireNonNull(repositorioUsuarios);
     this.repositorioSesiones = Objects.requireNonNull(repositorioSesiones);
     this.codificadorDeClaves = Objects.requireNonNull(codificadorDeClaves);
@@ -56,6 +63,8 @@ public final class CambiarClave {
     this.limitadorDeIntentos = Objects.requireNonNull(limitadorDeIntentos);
     this.maximoIntentosPorCuenta = maximoIntentosPorCuenta;
     this.ventanaIntentosPorCuenta = Objects.requireNonNull(ventanaIntentosPorCuenta);
+    this.repositorioSegundosFactores = Objects.requireNonNull(repositorioSegundosFactores);
+    this.politicaDeSegundoFactor = Objects.requireNonNull(politicaDeSegundoFactor);
   }
 
   public TokensDeSesion ejecutar(CambiarClaveComando comando) {
@@ -95,7 +104,17 @@ public final class CambiarClave {
         SesionRefresco.crear(usuario.id(), GeneradorIdentificador.nuevo(), ahora, vigenciaRefresco);
     repositorioSesiones.guardar(sesion);
 
-    String accessToken = generadorDeTokens.generarAcceso(usuario, ahora);
-    return new TokensDeSesion(usuario.id(), usuario.rol(), accessToken, sesion.id());
+    // El alcance se recalcula en cada emisión (ADR-0096): encender la bandera alcanza a las
+    // sesiones abiertas en cuanto refrescan, y activar el factor las libera.
+    AlcanceDeAcceso alcance =
+        politicaDeSegundoFactor.alcance(
+            usuario, repositorioSegundosFactores.estaActivo(usuario.id()));
+    String accessToken = generadorDeTokens.generarAcceso(usuario, alcance, ahora);
+    return new TokensDeSesion(
+        usuario.id(),
+        usuario.rol(),
+        accessToken,
+        sesion.id(),
+        alcance == AlcanceDeAcceso.SOLO_ACTIVAR_SEGUNDO_FACTOR);
   }
 }

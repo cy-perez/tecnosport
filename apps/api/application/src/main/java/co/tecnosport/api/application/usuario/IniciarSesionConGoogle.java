@@ -7,6 +7,7 @@ import co.tecnosport.api.application.legal.RepositorioAutorizaciones;
 import co.tecnosport.api.domain.compartido.CorreoElectronico;
 import co.tecnosport.api.domain.compartido.GeneradorIdentificador;
 import co.tecnosport.api.domain.legal.AutorizacionDatos;
+import co.tecnosport.api.domain.usuario.AlcanceDeAcceso;
 import co.tecnosport.api.domain.usuario.Rol;
 import co.tecnosport.api.domain.usuario.SesionRefresco;
 import co.tecnosport.api.domain.usuario.Usuario;
@@ -127,8 +128,10 @@ public final class IniciarSesionConGoogle {
     SesionRefresco sesion =
         SesionRefresco.crear(usuario.id(), GeneradorIdentificador.nuevo(), ahora, vigenciaRefresco);
     repositorioSesiones.guardar(sesion);
-    String accessToken = generadorDeTokens.generarAcceso(usuario, ahora);
-    return new TokensDeSesion(usuario.id(), usuario.rol(), accessToken, sesion.id());
+    // Completo siempre: esta puerta no deja entrar a un ADMIN (ver arriba), y el segundo factor
+    // es del panel (ADR-0096).
+    String accessToken = generadorDeTokens.generarAcceso(usuario, AlcanceDeAcceso.COMPLETO, ahora);
+    return new TokensDeSesion(usuario.id(), usuario.rol(), accessToken, sesion.id(), false);
   }
 
   private Optional<Usuario> unirPorCorreo(IdentidadGoogle identidad, Instant ahora) {

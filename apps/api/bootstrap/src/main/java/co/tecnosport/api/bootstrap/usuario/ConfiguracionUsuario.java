@@ -31,6 +31,7 @@ import co.tecnosport.api.application.usuario.VerificarSegundoFactor;
 import co.tecnosport.api.bootstrap.compartido.PropiedadesApp;
 import co.tecnosport.api.bootstrap.compartido.PropiedadesLimiteAuth;
 import co.tecnosport.api.bootstrap.legal.PropiedadesLegal;
+import co.tecnosport.api.domain.usuario.PoliticaDeSegundoFactor;
 import co.tecnosport.api.infrastructure.usuario.CifradorAesGcm;
 import co.tecnosport.api.infrastructure.usuario.CodificadorDeClavesBCrypt;
 import co.tecnosport.api.infrastructure.usuario.GeneradorDeTokensJwt;
@@ -89,7 +90,8 @@ public class ConfiguracionUsuario {
       PropiedadesLimiteAuth propiedadesLimite,
       RepositorioSegundosFactores repositorioSegundosFactores,
       RepositorioDesafiosSegundoFactor repositorioDesafios,
-      PropiedadesSegundoFactor propiedadesSegundoFactor) {
+      PropiedadesSegundoFactor propiedadesSegundoFactor,
+      PoliticaDeSegundoFactor politicaDeSegundoFactor) {
     return new IniciarSesion(
         repositorioUsuarios,
         repositorioSesiones,
@@ -103,7 +105,14 @@ public class ConfiguracionUsuario {
         Duration.ofMinutes(propiedadesLimite.cuentaMinutos()),
         repositorioSegundosFactores,
         repositorioDesafios,
-        Duration.ofMinutes(propiedadesSegundoFactor.minutosDesafio()));
+        Duration.ofMinutes(propiedadesSegundoFactor.minutosDesafio()),
+        politicaDeSegundoFactor);
+  }
+
+  /** ADR-0096: {@code ADMIN_EXIGE_SEGUNDO_FACTOR}. */
+  @Bean
+  public PoliticaDeSegundoFactor politicaDeSegundoFactor(PropiedadesSegundoFactor propiedades) {
+    return new PoliticaDeSegundoFactor(propiedades.adminObligatorio());
   }
 
   /** ADR-0096: los tres topes del segundo paso salen de {@link PropiedadesSegundoFactor}. */
@@ -192,7 +201,9 @@ public class ConfiguracionUsuario {
       Reloj reloj,
       PropiedadesJwt propiedades,
       LimitadorDeIntentos limitadorDeIntentos,
-      PropiedadesLimiteAuth propiedadesLimite) {
+      PropiedadesLimiteAuth propiedadesLimite,
+      RepositorioSegundosFactores repositorioSegundosFactores,
+      PoliticaDeSegundoFactor politicaDeSegundoFactor) {
     return new CambiarClave(
         repositorioUsuarios,
         repositorioSesiones,
@@ -202,7 +213,9 @@ public class ConfiguracionUsuario {
         Duration.ofDays(propiedades.diasRefresco()),
         limitadorDeIntentos,
         propiedadesLimite.cuentaMaximo(),
-        Duration.ofMinutes(propiedadesLimite.cuentaMinutos()));
+        Duration.ofMinutes(propiedadesLimite.cuentaMinutos()),
+        repositorioSegundosFactores,
+        politicaDeSegundoFactor);
   }
 
   @Bean
@@ -211,13 +224,17 @@ public class ConfiguracionUsuario {
       RepositorioUsuarios repositorioUsuarios,
       GeneradorDeTokens generadorDeTokens,
       Reloj reloj,
-      PropiedadesJwt propiedades) {
+      PropiedadesJwt propiedades,
+      RepositorioSegundosFactores repositorioSegundosFactores,
+      PoliticaDeSegundoFactor politicaDeSegundoFactor) {
     return new RefrescarToken(
         repositorioSesiones,
         repositorioUsuarios,
         generadorDeTokens,
         reloj,
-        Duration.ofDays(propiedades.diasRefresco()));
+        Duration.ofDays(propiedades.diasRefresco()),
+        repositorioSegundosFactores,
+        politicaDeSegundoFactor);
   }
 
   @Bean

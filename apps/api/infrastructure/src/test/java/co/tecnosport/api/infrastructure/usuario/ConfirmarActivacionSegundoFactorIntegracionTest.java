@@ -99,7 +99,7 @@ class ConfirmarActivacionSegundoFactorIntegracionTest {
             repositorioUsuarios,
             repositorioSegundosFactores,
             repositorioSesiones,
-            (u, instante) -> "token",
+            (u, alcance, instante) -> "token",
             (destinatario, asunto, cuerpo) -> {},
             TEXTOS,
             () -> ahora,

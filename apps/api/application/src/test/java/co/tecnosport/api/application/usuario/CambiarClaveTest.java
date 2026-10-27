@@ -44,8 +44,13 @@ class CambiarClaveTest {
         VIGENCIA_REFRESCO,
         limitadorDeIntentos,
         MAXIMO_INTENTOS_POR_CUENTA,
-        VENTANA_INTENTOS_POR_CUENTA);
+        VENTANA_INTENTOS_POR_CUENTA,
+        factores,
+        new co.tecnosport.api.domain.usuario.PoliticaDeSegundoFactor(exigido));
   }
+
+  private RepositorioSegundosFactoresFalso factores = new RepositorioSegundosFactoresFalso();
+  private boolean exigido;
 
   private Usuario conAdmin(String claveTextoPlano) {
     Usuario usuario =

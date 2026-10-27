@@ -1,6 +1,8 @@
 package co.tecnosport.api.application.usuario;
 
 import co.tecnosport.api.application.compartido.Reloj;
+import co.tecnosport.api.domain.usuario.AlcanceDeAcceso;
+import co.tecnosport.api.domain.usuario.PoliticaDeSegundoFactor;
 import co.tecnosport.api.domain.usuario.SesionRefresco;
 import co.tecnosport.api.domain.usuario.SesionRefrescoReutilizadaException;
 import co.tecnosport.api.domain.usuario.SesionRefrescoVencidaException;
@@ -22,17 +24,24 @@ public final class RefrescarToken {
   private final Reloj reloj;
   private final Duration vigenciaRefresco;
 
+  private final RepositorioSegundosFactores repositorioSegundosFactores;
+  private final PoliticaDeSegundoFactor politicaDeSegundoFactor;
+
   public RefrescarToken(
       RepositorioSesiones repositorioSesiones,
       RepositorioUsuarios repositorioUsuarios,
       GeneradorDeTokens generadorDeTokens,
       Reloj reloj,
-      Duration vigenciaRefresco) {
+      Duration vigenciaRefresco,
+      RepositorioSegundosFactores repositorioSegundosFactores,
+      PoliticaDeSegundoFactor politicaDeSegundoFactor) {
     this.repositorioSesiones = Objects.requireNonNull(repositorioSesiones);
     this.repositorioUsuarios = Objects.requireNonNull(repositorioUsuarios);
     this.generadorDeTokens = Objects.requireNonNull(generadorDeTokens);
     this.reloj = Objects.requireNonNull(reloj);
     this.vigenciaRefresco = Objects.requireNonNull(vigenciaRefresco);
+    this.repositorioSegundosFactores = Objects.requireNonNull(repositorioSegundosFactores);
+    this.politicaDeSegundoFactor = Objects.requireNonNull(politicaDeSegundoFactor);
   }
 
   public TokensDeSesion ejecutar(RefrescarTokenComando comando) {
@@ -63,7 +72,17 @@ public final class RefrescarToken {
         SesionRefresco.crear(usuario.id(), sesion.familiaId(), ahora, vigenciaRefresco);
     repositorioSesiones.guardar(nuevaSesion);
 
-    String accessToken = generadorDeTokens.generarAcceso(usuario, ahora);
-    return new TokensDeSesion(usuario.id(), usuario.rol(), accessToken, nuevaSesion.id());
+    // El alcance se recalcula en cada emisión (ADR-0096): encender la bandera alcanza a las
+    // sesiones abiertas en cuanto refrescan, y activar el factor las libera.
+    AlcanceDeAcceso alcance =
+        politicaDeSegundoFactor.alcance(
+            usuario, repositorioSegundosFactores.estaActivo(usuario.id()));
+    String accessToken = generadorDeTokens.generarAcceso(usuario, alcance, ahora);
+    return new TokensDeSesion(
+        usuario.id(),
+        usuario.rol(),
+        accessToken,
+        nuevaSesion.id(),
+        alcance == AlcanceDeAcceso.SOLO_ACTIVAR_SEGUNDO_FACTOR);
   }
 }

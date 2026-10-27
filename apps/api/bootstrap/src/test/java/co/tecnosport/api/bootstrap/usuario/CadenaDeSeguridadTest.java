@@ -7,6 +7,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import co.tecnosport.api.application.usuario.GeneradorDeTokens;
 import co.tecnosport.api.domain.compartido.CorreoElectronico;
+import co.tecnosport.api.domain.usuario.AlcanceDeAcceso;
 import co.tecnosport.api.domain.usuario.Rol;
 import co.tecnosport.api.domain.usuario.Usuario;
 import java.time.Instant;
@@ -46,10 +47,35 @@ class CadenaDeSeguridadTest {
   @Autowired private GeneradorDeTokens generadorDeTokens;
 
   private String tokenDe(Rol rol) {
+    return tokenDe(rol, AlcanceDeAcceso.COMPLETO);
+  }
+
+  private String tokenDe(Rol rol, AlcanceDeAcceso alcance) {
     Usuario usuario =
         Usuario.crear(
             new CorreoElectronico("prueba-cadena@tecnosport.co"), "hash", rol, Instant.now());
-    return generadorDeTokens.generarAcceso(usuario, Instant.now());
+    return generadorDeTokens.generarAcceso(usuario, alcance, Instant.now());
+  }
+
+  /**
+   * ADR-0096. La sesión restringida de un administrador sin segundo factor —el panel se lo exige—
+   * no abre el panel, y sí abre la activación. Con un 401 en el panel el frontend refrescaría en
+   * bucle; con un 403 sabe que tiene que llevarla a activar el factor.
+   */
+  @Test
+  void laSesionRestringidaSoloAbreElSegundoFactor() throws Exception {
+    String restringido = tokenDe(Rol.ADMIN, AlcanceDeAcceso.SOLO_ACTIVAR_SEGUNDO_FACTOR);
+    mockMvc
+        .perform(get("/api/v1/admin/pedidos").header("Authorization", "Bearer " + restringido))
+        .andExpect(status().isForbidden());
+    mockMvc
+        .perform(
+            post("/api/v1/auth/segundo-factor/activacion")
+                .header("Authorization", "Bearer " + restringido)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"claveActual\":\"x\"}"))
+        .andExpect(status().isUnauthorized())
+        .andExpect(jsonPath("$.codigo").value("CREDENCIALES_INVALIDAS"));
   }
 
   @Test
