@@ -271,7 +271,7 @@
       "vencida_sin_cobro": "Venció el {{fecha}} y nadie lo recogió. El sistema lo cancela solo en la próxima vuelta y libera los productos; no hay dinero que devolver.",
       "vencida_con_reintegro": "Venció el {{fecha}} y nadie lo recogió. Ya está pagado: cancélalo abajo con el motivo «Nadie vino a recogerlo a tiempo» y devuelve el dinero.",
       "numero": "Número de pedido que te muestra",
-      "numero_ayuda": "Entrégalo solo si coincide con el de este pedido: es lo que acordamos pedir para saber que va a quien lo compró.",
+      "numero_ayuda": "Entrégalo solo si coincide con el de este pedido: es lo que acordamos pedir para saber que va a quien lo compró. Compara también el nombre con el de quien recibe, arriba, y con quien acordaste la hora.",
       "numero_requerido": "Escribe el número de pedido que te mostró quien vino a recoger.",
       "cobrar": "Cobra al entregar:",
       "medio": "Cómo pagó",
@@ -279,7 +279,10 @@
         "efectivo": "Efectivo",
         "transferencia": "Transferencia"
       },
-      "entregar": "Entregar en el punto"
+      "entregar": "Entregar en el punto",
+      "medio_elige": "Elige cómo pagó",
+      "medio_ayuda": "Si pagó por transferencia, revisa que el dinero llegó a la cuenta antes de entregar: una captura de pantalla no es el pago.",
+      "medio_requerido": "Elige si pagó en efectivo o por transferencia: queda en el historial del pedido."
     }
   },
   "productos": {

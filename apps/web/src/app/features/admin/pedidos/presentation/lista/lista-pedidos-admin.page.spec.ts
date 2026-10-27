@@ -5,6 +5,7 @@ import {
 import { PaquetesDePedido } from '../../../envios/domain/paquetes-de-pedido.model';
 import { ActivatedRoute, provideRouter, Router } from '@angular/router';
 import { TranslocoTestingModule } from '@jsverse/transloco';
+import { ErrorHttp } from '../../../../../core/http/respuesta-http';
 import { provideTanStackQuery, QueryClient } from '@tanstack/angular-query-experimental';
 import { fireEvent, render, screen } from '@testing-library/angular';
 import { of } from 'rxjs';
@@ -213,11 +214,16 @@ class RepositorioPedidosAdminFalso implements RepositorioPedidosAdmin {
     medioDePago: MedioDePagoEnPunto | null;
   }[] = [];
 
+  errorAlEntregar: Error | null = null;
+
   async entregarEnPunto(entrada: {
     pedidoId: string;
     numeroPedido: string;
     medioDePago: MedioDePagoEnPunto | null;
   }): Promise<PedidoAdmin> {
+    if (this.errorAlEntregar) {
+      throw this.errorAlEntregar;
+    }
     this.entregasEnPunto.push(entrada);
     return this.items[0];
   }
@@ -754,6 +760,53 @@ describe('ListaPedidosAdminPage', () => {
       await screen.findByText('Escribe el número de pedido que te mostró quien vino a recoger.'),
     ).toBeTruthy();
     expect(repositorio.entregasEnPunto).toEqual([]);
+  });
+
+  /** Preseleccionado, el historial diría «pagó en efectivo» sin que nadie lo hubiera elegido. */
+  it('sin elegir cómo pagó no se entrega y dice qué falta', async () => {
+    const { repositorio } = await renderLista([
+      pedidoDePrueba({
+        estado: 'LISTO_PARA_RECOGER',
+        tipoEntrega: 'RETIRO_EN_PUNTO',
+        metodoPago: 'PAGO_EN_PUNTO',
+        recogidaVenceEn: '2099-01-01T12:00:00Z',
+      }),
+    ]);
+    fireEvent.click(await screen.findByRole('button', { name: 'Ver detalle' }));
+    fireEvent.input(await screen.findByLabelText('Número de pedido que te muestra'), {
+      target: { value: 'TS-2026-000123' },
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Entregar en el punto' }));
+
+    expect(
+      await screen.findByText(
+        'Elige si pagó en efectivo o por transferencia: queda en el historial del pedido.',
+      ),
+    ).toBeTruthy();
+    expect(repositorio.entregasEnPunto).toEqual([]);
+  });
+
+  /** El mensaje que le dice a quien atiende que no lo entregue sale del código del servidor. */
+  it('si el número no coincide, dice que no lo entregue', async () => {
+    const repositorio = new RepositorioPedidosAdminFalso([
+      pedidoDePrueba({
+        estado: 'LISTO_PARA_RECOGER',
+        tipoEntrega: 'RETIRO_EN_PUNTO',
+        metodoPago: 'WOMPI',
+        recogidaVenceEn: '2099-01-01T12:00:00Z',
+      }),
+    ]);
+    repositorio.errorAlEntregar = new ErrorHttp(422, 'no coincide', 'NUMERO_DE_PEDIDO_NO_COINCIDE');
+    await renderListaCon(repositorio);
+    fireEvent.click(await screen.findByRole('button', { name: 'Ver detalle' }));
+    fireEvent.input(await screen.findByLabelText('Número de pedido que te muestra'), {
+      target: { value: 'TS-2026-000999' },
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Entregar en el punto' }));
+
+    expect(await screen.findByText(/Ese número no es el de este pedido/)).toBeTruthy();
   });
 
   /** Ya se cobró en línea: no se pregunta cómo pagó, y no viaja ningún medio. */

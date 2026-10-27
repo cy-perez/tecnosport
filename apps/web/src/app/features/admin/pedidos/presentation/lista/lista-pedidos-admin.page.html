@@ -536,7 +536,7 @@
                         }
                       }
                       <form
-                        [formGroup]="formularioEntregaEnPunto(pedido.id)"
+                        [formGroup]="formularioEntregaEnPunto(pedido)"
                         (submit)="$event.preventDefault(); entregarEnPunto(pedido)"
                       >
                         <ts-campo
@@ -546,7 +546,7 @@
                           [ayuda]="'admin.pedidos.recogida.numero_ayuda' | transloco"
                           [error]="
                             errorDe(
-                              formularioEntregaEnPunto(pedido.id).controls.numeroPedido,
+                              formularioEntregaEnPunto(pedido).controls.numeroPedido,
                               'admin.pedidos.recogida.numero_requerido'
                             )
                           "
@@ -563,7 +563,16 @@
                           <ts-select
                             [idCampo]="'medio-recogida-' + pedido.id"
                             [label]="'admin.pedidos.recogida.medio' | transloco"
+                            [obligatorio]="true"
+                            [placeholder]="'admin.pedidos.recogida.medio_elige' | transloco"
+                            [ayuda]="'admin.pedidos.recogida.medio_ayuda' | transloco"
                             [opciones]="opcionesMedioEnPunto()"
+                            [error]="
+                              errorDe(
+                                formularioEntregaEnPunto(pedido).controls.medioDePago,
+                                'admin.pedidos.recogida.medio_requerido'
+                              )
+                            "
                             formControlName="medioDePago"
                           />
                         }

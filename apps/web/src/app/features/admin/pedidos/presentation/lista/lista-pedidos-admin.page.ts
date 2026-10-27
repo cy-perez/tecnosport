@@ -451,7 +451,12 @@ export class ListaPedidosAdminPage {
     return pedido.recogidaVenceEn !== null && Date.parse(pedido.recogidaVenceEn) <= Date.now();
   }
 
-  protected formularioEntregaEnPunto(pedidoId: string): FormGroup<FormularioEntregaEnPunto> {
+  /**
+   * El medio arranca vacío y es obligatorio solo si se paga en el punto: preseleccionado, el
+   * historial diría «pagó en efectivo» aunque nadie lo hubiera elegido.
+   */
+  protected formularioEntregaEnPunto(pedido: PedidoAdmin): FormGroup<FormularioEntregaEnPunto> {
+    const pedidoId = pedido.id;
     let form = this.formulariosEntregaEnPunto.get(pedidoId);
     if (!form) {
       form = new FormGroup({
@@ -459,7 +464,10 @@ export class ListaPedidosAdminPage {
           nonNullable: true,
           validators: [Validators.required],
         }),
-        medioDePago: new FormControl<string>('EFECTIVO', { nonNullable: true }),
+        medioDePago: new FormControl<string>('', {
+          nonNullable: true,
+          validators: pedido.metodoPago === 'PAGO_EN_PUNTO' ? [Validators.required] : [],
+        }),
       });
       this.formulariosEntregaEnPunto.set(pedidoId, form);
     }
@@ -483,7 +491,10 @@ export class ListaPedidosAdminPage {
 
   /** El número lo compara el servidor: aquí solo se exige que alguien lo haya escrito. */
   protected async entregarEnPunto(pedido: PedidoAdmin): Promise<void> {
-    const form = this.formularioEntregaEnPunto(pedido.id);
+    if (this.acciones.entregarEnPunto.isPending()) {
+      return;
+    }
+    const form = this.formularioEntregaEnPunto(pedido);
     if (form.invalid) {
       form.markAllAsTouched();
       return;

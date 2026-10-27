@@ -271,7 +271,7 @@
       "vencida_sin_cobro": "It expired on {{fecha}} and nobody picked it up. The system cancels it on its next run and releases the products; there is no money to refund.",
       "vencida_con_reintegro": "It expired on {{fecha}} and nobody picked it up. It is already paid: cancel it below with the reason “Nobody picked it up in time” and refund the money.",
       "numero": "Order number they show you",
-      "numero_ayuda": "Hand it over only if it matches this order’s: it is what we agreed to ask for, so it goes to whoever bought it.",
+      "numero_ayuda": "Hand it over only if it matches this order’s: it is what we agreed to ask for, so it goes to whoever bought it. Also compare the name with the recipient above and with whoever you agreed the time with.",
       "numero_requerido": "Type the order number shown by the person picking up.",
       "cobrar": "Collect on handover:",
       "medio": "How they paid",
@@ -279,7 +279,10 @@
         "efectivo": "Cash",
         "transferencia": "Bank transfer"
       },
-      "entregar": "Hand over at our location"
+      "entregar": "Hand over at our location",
+      "medio_elige": "Choose how they paid",
+      "medio_ayuda": "If they paid by transfer, check the money reached the account before handing it over: a screenshot is not a payment.",
+      "medio_requerido": "Choose whether they paid in cash or by transfer: it is recorded in the order history."
     }
   },
   "productos": {
