@@ -143,11 +143,24 @@ public class PagoControlador {
 
   private void registrar(ResultadoEventoDePago resultado, ProcesarEventoDePagoComando comando) {
     switch (resultado) {
-      case ESTADO_SIN_FIRMAR ->
+      case PROPIEDADES_SIN_FIRMAR ->
           log.warn(
-              "Webhook de Wompi con firma válida que no cubre el estado; no se aplicó, queda para la"
-                  + " conciliación. referencia={}",
-              comando.referencia());
+              "Webhook de Wompi con firma válida que no cubre el id, el estado y el monto; no se"
+                  + " aplicó, queda para la conciliación. referencia={}, firmadas={}",
+              comando.referencia(),
+              comando.propiedadesFirmadas());
+      case TRANSACCION_DE_OTRO_PAGO ->
+          log.warn(
+              "Webhook de Wompi de una transacción que no es la de este pago; no se aplicó."
+                  + " referencia={}, transaccion={}",
+              comando.referencia(),
+              comando.idTransaccion());
+      case APROBACION_SIN_CONFIRMAR ->
+          log.warn(
+              "Webhook de Wompi APPROVED que la consulta a la pasarela no confirmó; no se aplicó,"
+                  + " queda para la conciliación. referencia={}, transaccion={}",
+              comando.referencia(),
+              comando.idTransaccion());
       case MONTO_NO_COINCIDE ->
           log.error(
               "Webhook de Wompi cuyo monto o moneda no son los del pago. NO se aplicó: despacharlo"

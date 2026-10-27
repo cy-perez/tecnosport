@@ -157,6 +157,8 @@ class PagoControladorTest {
   void webhookAprobadoTransicionaElPagoYElPedido() throws Exception {
     Pedido pedido = pedidoConMetodo(MetodoPago.WOMPI);
     Pago pago = pagoPendienteParaElPedido(pedido);
+    // Un APPROVED se confirma con la pasarela antes de aplicarse.
+    pasarela.conTransaccionAprobada("wompi-tx-1", pago.referencia().valor(), pago.monto());
 
     mockMvc
         .perform(
@@ -171,6 +173,25 @@ class PagoControladorTest {
     // la reserva inventada que tenía antes, el pedido se quedaba en PAGADO sin inventario detrás.
     assertEquals(
         EstadoPedido.EN_PREPARACION, pedidos.buscarPorId(pedido.id()).orElseThrow().estado());
+  }
+
+  /** Sin la confirmación de la pasarela, un APPROVED firmado no paga el pedido. */
+  @Test
+  void webhookAprobadoQueLaPasarelaNoConfirmaNoTransiciona() throws Exception {
+    Pedido pedido = pedidoConMetodo(MetodoPago.WOMPI);
+    Pago pago = pagoPendienteParaElPedido(pedido);
+
+    mockMvc
+        .perform(
+            post("/api/v1/pagos/webhook")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(cuerpoWebhook(pago.referencia().valor(), "APPROVED", "checksum-valido")))
+        .andExpect(status().isOk());
+
+    assertEquals(
+        EstadoPago.PENDIENTE, pagos.buscarPorReferencia(pago.referencia()).orElseThrow().estado());
+    assertEquals(
+        EstadoPedido.PAGO_PENDIENTE, pedidos.buscarPorId(pedido.id()).orElseThrow().estado());
   }
 
   @Test

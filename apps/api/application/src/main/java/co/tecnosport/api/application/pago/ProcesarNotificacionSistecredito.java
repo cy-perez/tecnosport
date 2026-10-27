@@ -239,7 +239,10 @@ public final class ProcesarNotificacionSistecredito {
       case ESTADO_NO_SOPORTADO -> ResultadoNotificacionSistecredito.ESTADO_NO_SOPORTADO;
       // No puede llegar: aquí no hay firma que validar. Se nombra en vez de caer en un `default`
       // para que, si algún día el aplicador devuelve algo nuevo, esto no compile.
-      case FIRMA_INVALIDA, ESTADO_SIN_FIRMAR ->
+      case FIRMA_INVALIDA,
+          PROPIEDADES_SIN_FIRMAR,
+          TRANSACCION_DE_OTRO_PAGO,
+          APROBACION_SIN_CONFIRMAR ->
           ResultadoNotificacionSistecredito.DISCREPANCIA_CON_LA_PASARELA;
       case MONTO_NO_COINCIDE -> ResultadoNotificacionSistecredito.MONTO_NO_COINCIDE;
     };
