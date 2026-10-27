@@ -1199,6 +1199,79 @@ describe('ConfirmarPage', () => {
     await vi.waitFor(() => expect(pedidos.llamadasCrear).toBe(1));
   });
 
+  /**
+   * La otra cara del reintento: el pedido que quedó de un intento fallido se creó con dos unidades,
+   * el comprador volvió al carrito, dejó una y regresó con «Atrás». Reutilizarlo cobraba las dos y
+   * después borraba el carrito de una.
+   */
+  it('si el carrito cambió desde el pedido creado, crea otro con el carrito de ahora', async () => {
+    sembrarCarritoId('carrito-1');
+    const pedidos = new RepositorioPedidosFalso(pedidoDePrueba({ metodoPago: 'CONTRAENTREGA' }));
+
+    const { fixture } = await renderConDatos(
+      'CONTRAENTREGA',
+      new RepositorioCarritoFalso(CARRITO_CON_LINEAS),
+      pedidos,
+    );
+    await screen.findByText('compra@ejemplo.co');
+    await esperarCarritoCargado(fixture);
+    const checkout = fixture.debugElement.injector.get(CheckoutStore);
+    await checkout.crearPedido({
+      correo: 'compra@ejemplo.co',
+      lineas: [{ varianteId: 'variante-1', cantidad: 2 }],
+      tipoEntrega: 'RETIRO_EN_PUNTO',
+      direccion: null,
+      metodoPago: 'CONTRAENTREGA',
+      contacto: { nombre: 'Ana Pérez', telefono: '3138816711' },
+      autorizaDatos: true,
+      transportadora: null,
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Confirmar pedido' }));
+
+    await vi.waitFor(() => expect(pedidos.llamadasCrear).toBe(2));
+    expect(pedidos.ultimoComando?.lineas).toEqual([
+      { varianteId: 'variante-1', cantidad: 1, enlaceCompra: undefined },
+    ]);
+  });
+
+  /**
+   * Terminada la compra, el checkout no guarda con qué volver a cobrarla: sin esto, una segunda
+   * compra idéntica en la misma visita reutilizaba el pedido ya confirmado en vez de crear otro.
+   */
+  it('con la contraentrega confirmada, suelta los datos de entrega, el medio y el pedido', async () => {
+    sembrarCarritoId('carrito-1');
+    const pedidos = new RepositorioPedidosFalso(pedidoDePrueba({ metodoPago: 'CONTRAENTREGA' }));
+
+    const { fixture } = await renderConDatos(
+      'CONTRAENTREGA',
+      new RepositorioCarritoFalso(CARRITO_CON_LINEAS),
+      pedidos,
+    );
+    await screen.findByText('compra@ejemplo.co');
+    await esperarCarritoCargado(fixture);
+    const checkout = fixture.debugElement.injector.get(CheckoutStore);
+    const router = fixture.debugElement.injector.get(Router);
+    const navegar = vi.spyOn(router, 'navigate');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Confirmar pedido' }));
+
+    await vi.waitFor(() => {
+      expect(checkout.datosEntrega()).toBeNull();
+      expect(checkout.metodoPago()).toBeNull();
+    });
+    expect(pedidos.ultimoComando).not.toBeNull();
+    expect(checkout.pedidoReutilizable(pedidos.ultimoComando!)).toBeNull();
+    // Y la pantalla de estado, no el resumen al que mandaría la guarda al ver faltar los datos.
+    fixture.detectChanges();
+    await fixture.whenStable();
+    expect(navegar).toHaveBeenCalledTimes(1);
+    expect(navegar).toHaveBeenCalledWith(
+      ['../estado'],
+      expect.objectContaining({ queryParams: { pedidoId: 'pedido-1' } }),
+    );
+  });
+
   // Las dos caras de la misma decisión: el carrito se limpia cuando ya no hay vuelta atrás, no
   // cuando se crea el pedido. Ver el comentario en `confirmar()`.
   it('al terminar el pedido, el carrito queda limpio', async () => {

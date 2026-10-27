@@ -375,8 +375,18 @@ export class ConfirmarPage {
     () => this.checkout.creando() || this.checkout.iniciandoPago() || this.esperandoCotizacion(),
   );
 
+  /**
+   * La compra quedó hecha y ya se navegó a su pantalla final. Desde ahí el carrito se vacía y el
+   * store suelta los datos de entrega y el medio (`CheckoutStore.terminarCompra`), y la guarda de
+   * abajo los vería faltar y mandaría al resumen, compitiendo con la navegación que ya va en vuelo.
+   */
+  private readonly terminado = signal(false);
+
   constructor() {
     effect(() => {
+      if (this.terminado()) {
+        return;
+      }
       const datosCarrito = this.carrito.consulta.data();
       const sinDatosEntrega = this.checkout.datosEntrega() === null;
       const sinMetodoPago = this.checkout.metodoPago() === null;
@@ -468,12 +478,13 @@ export class ConfirmarPage {
     };
 
     try {
-      // Un reintento tras un fallo a mitad de camino (p. ej. creando el
-      // intento de pago) no vuelve a crear el pedido: ya existe, `POST
-      // /pedidos` no es el paso a repetir. `CheckoutStore.guardarDatosEntrega`
-      // y `elegirMetodoPago` limpian `pedido` cada vez que cambia algo que lo
-      // volvería inválido, así que si sigue ahí es el mismo intento.
-      const pedido = this.checkout.pedido() ?? (await this.checkout.crearPedido(comando));
+      // Un reintento tras un fallo a mitad de camino (p. ej. creando el intento de pago) no vuelve
+      // a crear el pedido: ya existe, `POST /pedidos` no es el paso a repetir. **Pero solo si es el
+      // mismo pedido**: el carrito no pasa por `CheckoutStore`, así que quien cambió una cantidad
+      // después del fallo y volvió con «Atrás» trae otro comando, y reutilizar el pedido viejo le
+      // cobraría el total viejo y después le borraría el carrito nuevo. La huella decide.
+      const pedido =
+        this.checkout.pedidoReutilizable(comando) ?? (await this.checkout.crearPedido(comando));
       const continuo = await this.continuarSegunMetodoPago(pedido);
       if (!continuo) {
         // No se pudo seguir y ya se navegó a donde falta algo. Limpiar el carrito aquí dejaría al
@@ -487,6 +498,9 @@ export class ConfirmarPage {
       // `continuarSegunMetodoPago` falla —el intento de pago de Wompi, por ejemplo— no se llega
       // hasta acá y el carrito queda intacto para volver a intentarlo.
       this.carrito.limpiar();
+      if (this.terminado()) {
+        this.checkout.terminarCompra();
+      }
     } catch (error) {
       this.error.set(this.mensajeDeError(error));
     }
@@ -601,6 +615,8 @@ export class ConfirmarPage {
       return true;
     }
 
+    // Sin pasarela, la compra termina aquí: lo que sigue es su pantalla final.
+    this.terminado.set(true);
     if (pedido.metodoPago === 'TRANSFERENCIA_MANUAL') {
       // Con parámetros, igual que el retorno de Wompi: un refresh en la
       // pantalla de transferencia (el comprador copiando el número de
@@ -612,7 +628,11 @@ export class ConfirmarPage {
       return true;
     }
 
-    void this.router.navigate(['../estado'], { relativeTo: this.route });
+    // Con el pedido en la URL por lo mismo que la transferencia: un refresh no lo pierde.
+    void this.router.navigate(['../estado'], {
+      relativeTo: this.route,
+      queryParams: { pedidoId: pedido.id },
+    });
     return true;
   }
 }
