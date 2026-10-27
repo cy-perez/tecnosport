@@ -53,4 +53,8 @@ final class RepositorioSesionesDobleDePrueba implements RepositorioSesiones {
   void limpiar() {
     sesiones.clear();
   }
+
+  List<SesionRefresco> todas() {
+    return List.copyOf(sesiones);
+  }
 }

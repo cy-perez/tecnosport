@@ -1972,6 +1972,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/auth/segundo-factor/verificacion": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["verificarSegundoFactor"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/auth/sesion": {
         parameters: {
             query?: never;
@@ -2924,6 +2940,12 @@ export interface components {
         };
         DefinirPaletaPeticion: {
             colores: string[];
+        };
+        DesafioSegundoFactorRespuesta: {
+            /** Format: uuid */
+            desafio: string;
+            /** Format: date-time */
+            venceEn: string;
         };
         DespacharPedidoRequest: {
             guias?: components["schemas"]["GuiaDespachadaRequest"][];
@@ -4314,6 +4336,10 @@ export interface components {
         };
         VerificarCorreoRequest: {
             token?: string;
+        };
+        VerificarSegundoFactorRequest: {
+            codigo: string;
+            desafio: string;
         };
     };
     responses: never;
@@ -7827,6 +7853,30 @@ export interface operations {
             };
         };
     };
+    verificarSegundoFactor: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VerificarSegundoFactorRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SesionRespuesta"];
+                };
+            };
+        };
+    };
     iniciarSesion: {
         parameters: {
             query?: never;
@@ -7840,13 +7890,22 @@ export interface operations {
             };
         };
         responses: {
-            /** @description OK */
+            /** @description Sesión abierta: el token de acceso en el cuerpo y el de refresco en la cookie */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "*/*": components["schemas"]["SesionRespuesta"];
+                };
+            };
+            /** @description La cuenta tiene segundo factor: falta el código. Sin cookie ni token */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["DesafioSegundoFactorRespuesta"];
                 };
             };
         };

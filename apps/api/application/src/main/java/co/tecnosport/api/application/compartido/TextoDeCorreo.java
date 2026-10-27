@@ -109,6 +109,8 @@ public enum TextoDeCorreo {
   USUARIO_CUENTA_EXISTENTE_CUERPO("usuario.cuenta_existente.cuerpo"),
   USUARIO_SEGUNDO_FACTOR_ACTIVADO_ASUNTO("usuario.segundo_factor.activado.asunto"),
   USUARIO_SEGUNDO_FACTOR_ACTIVADO_CUERPO("usuario.segundo_factor.activado.cuerpo"),
+  USUARIO_SEGUNDO_FACTOR_RESPALDO_USADO_ASUNTO("usuario.segundo_factor.respaldo_usado.asunto"),
+  USUARIO_SEGUNDO_FACTOR_RESPALDO_USADO_CUERPO("usuario.segundo_factor.respaldo_usado.cuerpo"),
   SUGERENCIA_ASUNTO("sugerencia.asunto"),
   SUGERENCIA_CUERPO("sugerencia.cuerpo"),
   SUGERENCIA_ANONIMA("sugerencia.anonima");

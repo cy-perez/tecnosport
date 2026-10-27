@@ -73,6 +73,15 @@ class ConfiguracionLimiteIntentosTest {
         "PATCH /pagos/intentos/{referencia} no puede quedar sin límite por IP");
   }
 
+  /**
+   * ADR-0096. El segundo paso del inicio de sesión es público como el primero: un patrón exacto no
+   * cubre subrutas, y sin nombrarla quedaría fuera del techo por IP.
+   */
+  @Test
+  void elSegundoPasoDelInicioDeSesionTieneTecho() {
+    assertTrue(rutasConTecho().contains("/api/v1/auth/segundo-factor/verificacion"));
+  }
+
   @Test
   void lasRutasQueYaLoTenianLoSiguenTeniendo() {
     Set<String> rutas = rutasConTecho();

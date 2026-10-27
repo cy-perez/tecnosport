@@ -135,6 +135,7 @@ import co.tecnosport.api.domain.pedido.NumeroDePedidoNoCoincideException;
 import co.tecnosport.api.domain.usuario.ActivacionSegundoFactorNoIniciadaException;
 import co.tecnosport.api.domain.usuario.CodigoSegundoFactorInvalidoException;
 import co.tecnosport.api.domain.usuario.CorreoSinVerificarException;
+import co.tecnosport.api.domain.usuario.DesafioSegundoFactorInvalidoException;
 import co.tecnosport.api.domain.usuario.SegundoFactorYaActivoException;
 import java.net.URI;
 import java.util.List;
@@ -1050,6 +1051,14 @@ public class ManejadorDeErrores {
   @ExceptionHandler(CodigoSegundoFactorInvalidoException.class)
   public ProblemDetail codigoSegundoFactorInvalido(CodigoSegundoFactorInvalidoException excepcion) {
     return problema(HttpStatus.UNAUTHORIZED, "Código inválido", excepcion);
+  }
+
+  // 401: el segundo paso venció, se usó o agotó sus intentos. La salida es volver a escribir la
+  // clave, que es lo que el frontend hace con este código.
+  @ExceptionHandler(DesafioSegundoFactorInvalidoException.class)
+  public ProblemDetail desafioSegundoFactorInvalido(
+      DesafioSegundoFactorInvalidoException excepcion) {
+    return problema(HttpStatus.UNAUTHORIZED, "El inicio de sesión venció", excepcion);
   }
 
   @ExceptionHandler(ActivacionSegundoFactorNoIniciadaException.class)

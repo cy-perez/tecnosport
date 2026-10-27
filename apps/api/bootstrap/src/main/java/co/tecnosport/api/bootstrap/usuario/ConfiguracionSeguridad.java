@@ -54,7 +54,12 @@ public class ConfiguracionSeguridad {
                     .hasRole("ADMIN")
                     .requestMatchers(HttpMethod.POST, "/api/v1/auth/clave")
                     .authenticated()
-                    // ADR-0096. El segundo factor es del panel: sin sesión, 401; con la de un
+                    // ADR-0096. El segundo paso del inicio de sesión es público: quien llega
+                    // todavía no tiene sesión, y lo que lo protege es el desafío más el código.
+                    // Antes de la regla de abajo, que lo cerraría.
+                    .requestMatchers(HttpMethod.POST, "/api/v1/auth/segundo-factor/verificacion")
+                    .permitAll()
+                    // El resto del segundo factor es del panel: sin sesión, 401; con la de un
                     // cliente, 403.
                     .requestMatchers("/api/v1/auth/segundo-factor/**")
                     .hasRole("ADMIN")

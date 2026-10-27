@@ -1422,6 +1422,23 @@
         ],
         "type" : "object"
       },
+      "DesafioSegundoFactorRespuesta" : {
+        "properties" : {
+          "desafio" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "venceEn" : {
+            "format" : "date-time",
+            "type" : "string"
+          }
+        },
+        "required" : [
+          "desafio",
+          "venceEn"
+        ],
+        "type" : "object"
+      },
       "DespacharPedidoRequest" : {
         "properties" : {
           "guias" : {
@@ -5474,6 +5491,21 @@
             "type" : "string"
           }
         },
+        "type" : "object"
+      },
+      "VerificarSegundoFactorRequest" : {
+        "properties" : {
+          "codigo" : {
+            "type" : "string"
+          },
+          "desafio" : {
+            "type" : "string"
+          }
+        },
+        "required" : [
+          "codigo",
+          "desafio"
+        ],
         "type" : "object"
       }
     }
@@ -10465,6 +10497,36 @@
         ]
       }
     },
+    "/api/v1/auth/segundo-factor/verificacion" : {
+      "post" : {
+        "operationId" : "verificarSegundoFactor",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/VerificarSegundoFactorRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SesionRespuesta"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "segundo-factor-controlador"
+        ]
+      }
+    },
     "/api/v1/auth/sesion" : {
       "post" : {
         "operationId" : "iniciarSesion",
@@ -10487,7 +10549,17 @@
                 }
               }
             },
-            "description" : "OK"
+            "description" : "Sesión abierta: el token de acceso en el cuerpo y el de refresco en la cookie"
+          },
+          "202" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/DesafioSegundoFactorRespuesta"
+                }
+              }
+            },
+            "description" : "La cuenta tiene segundo factor: falta el código. Sin cookie ni token"
           }
         },
         "tags" : [

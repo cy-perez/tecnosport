@@ -17,6 +17,7 @@ import co.tecnosport.api.application.usuario.IniciarSesionConGoogle;
 import co.tecnosport.api.application.usuario.ReenviarVerificacion;
 import co.tecnosport.api.application.usuario.RefrescarToken;
 import co.tecnosport.api.application.usuario.RegistrarUsuario;
+import co.tecnosport.api.application.usuario.RepositorioDesafiosSegundoFactor;
 import co.tecnosport.api.application.usuario.RepositorioSegundosFactores;
 import co.tecnosport.api.application.usuario.RepositorioSesiones;
 import co.tecnosport.api.application.usuario.RepositorioTokensRecuperacion;
@@ -26,6 +27,7 @@ import co.tecnosport.api.application.usuario.SolicitarRecuperacion;
 import co.tecnosport.api.application.usuario.VerificadorDeCredencialGoogle;
 import co.tecnosport.api.application.usuario.VerificadorDeTokens;
 import co.tecnosport.api.application.usuario.VerificarCorreo;
+import co.tecnosport.api.application.usuario.VerificarSegundoFactor;
 import co.tecnosport.api.bootstrap.compartido.PropiedadesApp;
 import co.tecnosport.api.bootstrap.compartido.PropiedadesLimiteAuth;
 import co.tecnosport.api.bootstrap.legal.PropiedadesLegal;
@@ -84,7 +86,10 @@ public class ConfiguracionUsuario {
       Reloj reloj,
       PropiedadesJwt propiedades,
       LimitadorDeIntentos limitadorDeIntentos,
-      PropiedadesLimiteAuth propiedadesLimite) {
+      PropiedadesLimiteAuth propiedadesLimite,
+      RepositorioSegundosFactores repositorioSegundosFactores,
+      RepositorioDesafiosSegundoFactor repositorioDesafios,
+      PropiedadesSegundoFactor propiedadesSegundoFactor) {
     return new IniciarSesion(
         repositorioUsuarios,
         repositorioSesiones,
@@ -95,7 +100,41 @@ public class ConfiguracionUsuario {
         limitadorDeIntentos,
         propiedadesLimite.cuentaMaximo(),
         propiedadesLimite.cuentaGlobalMaximo(),
-        Duration.ofMinutes(propiedadesLimite.cuentaMinutos()));
+        Duration.ofMinutes(propiedadesLimite.cuentaMinutos()),
+        repositorioSegundosFactores,
+        repositorioDesafios,
+        Duration.ofMinutes(propiedadesSegundoFactor.minutosDesafio()));
+  }
+
+  /** ADR-0096: los tres topes del segundo paso salen de {@link PropiedadesSegundoFactor}. */
+  @Bean
+  public VerificarSegundoFactor verificarSegundoFactor(
+      RepositorioDesafiosSegundoFactor repositorioDesafios,
+      RepositorioSegundosFactores repositorioSegundosFactores,
+      RepositorioUsuarios repositorioUsuarios,
+      RepositorioSesiones repositorioSesiones,
+      GeneradorDeTokens generadorDeTokens,
+      EnviadorDeCorreo enviadorDeCorreo,
+      TextosDeCorreo textos,
+      Reloj reloj,
+      PropiedadesJwt propiedadesJwt,
+      LimitadorDeIntentos limitadorDeIntentos,
+      PropiedadesSegundoFactor propiedades) {
+    return new VerificarSegundoFactor(
+        repositorioDesafios,
+        repositorioSegundosFactores,
+        repositorioUsuarios,
+        repositorioSesiones,
+        generadorDeTokens,
+        enviadorDeCorreo,
+        textos,
+        reloj,
+        Duration.ofDays(propiedadesJwt.diasRefresco()),
+        limitadorDeIntentos,
+        propiedades.intentosPorDesafio(),
+        propiedades.intentosCuentaIp(),
+        propiedades.intentosCuenta(),
+        Duration.ofMinutes(propiedades.minutosVentana()));
   }
 
   @Bean

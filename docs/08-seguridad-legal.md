@@ -160,8 +160,12 @@ Hay que tenerlo presente al decidir qué se prueba ahí y con qué clave se entr
   prueba de una solicitud de crédito real a nombre de una persona.
 - **La clave del administrador de dev tiene que ser distinta de la de
   producción**, y el panel tiene que llevar **segundo factor antes de abrir
-  producción**. Hoy no lo tiene: el inicio de sesión es correo y clave, y el
-  correo del administrador es el mismo público de contacto. Separar los dos
+  producción**. ~~Hoy no lo tiene~~ **Lo tiene desde el 27 de octubre de 2026**
+  (`adr/0096`): TOTP de seis dígitos con diez códigos de respaldo, inicio de
+  sesión en dos pasos (202 con un desafío de cinco minutos, y el código abre la
+  sesión), y con `ADMIN_EXIGE_SEGUNDO_FACTOR=true` —encendida en dev— un ADMIN sin
+  factor entra con una sesión que solo sirve para activarlo. El correo del
+  administrador sigue siendo el mismo público de contacto; separar los dos
   correos es una decisión pendiente del dueño.
 - La federación de GitHub con el proyecto exige desde el 27 de octubre de 2026
   el repositorio **y** la rama `main` (`attribute_condition` en

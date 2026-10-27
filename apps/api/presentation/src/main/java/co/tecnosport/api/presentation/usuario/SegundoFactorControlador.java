@@ -7,10 +7,18 @@ import co.tecnosport.api.application.usuario.ConfirmarActivacionSegundoFactorCom
 import co.tecnosport.api.application.usuario.IniciarActivacionSegundoFactor;
 import co.tecnosport.api.application.usuario.IniciarActivacionSegundoFactorComando;
 import co.tecnosport.api.application.usuario.SesionDeRefrescoInvalidaException;
+import co.tecnosport.api.application.usuario.TokensDeSesion;
+import co.tecnosport.api.application.usuario.VerificarSegundoFactor;
+import co.tecnosport.api.application.usuario.VerificarSegundoFactorComando;
+import co.tecnosport.api.presentation.compartido.CuboDeIp;
+import co.tecnosport.api.presentation.compartido.IpDelCliente;
 import co.tecnosport.api.presentation.usuario.dto.ActivacionConfirmadaRespuesta;
 import co.tecnosport.api.presentation.usuario.dto.ActivacionSegundoFactorRespuesta;
 import co.tecnosport.api.presentation.usuario.dto.CodigoSegundoFactorRequest;
 import co.tecnosport.api.presentation.usuario.dto.IniciarActivacionSegundoFactorRequest;
+import co.tecnosport.api.presentation.usuario.dto.SesionRespuesta;
+import co.tecnosport.api.presentation.usuario.dto.VerificarSegundoFactorRequest;
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.Objects;
 import java.util.UUID;
 import org.springframework.http.HttpHeaders;
@@ -36,14 +44,17 @@ public class SegundoFactorControlador {
 
   private final IniciarActivacionSegundoFactor iniciarActivacion;
   private final ConfirmarActivacionSegundoFactor confirmarActivacion;
+  private final VerificarSegundoFactor verificar;
   private final TransactionTemplate transaccion;
 
   public SegundoFactorControlador(
       IniciarActivacionSegundoFactor iniciarActivacion,
       ConfirmarActivacionSegundoFactor confirmarActivacion,
+      VerificarSegundoFactor verificar,
       PlatformTransactionManager transactionManager) {
     this.iniciarActivacion = Objects.requireNonNull(iniciarActivacion);
     this.confirmarActivacion = Objects.requireNonNull(confirmarActivacion);
+    this.verificar = Objects.requireNonNull(verificar);
     this.transaccion = new TransactionTemplate(Objects.requireNonNull(transactionManager));
   }
 
@@ -82,6 +93,24 @@ public class SegundoFactorControlador {
         .body(
             new ActivacionConfirmadaRespuesta(
                 SesionConCookie.cuerpo(confirmada.sesion()), confirmada.codigosDeRespaldo()));
+  }
+
+  /**
+   * El segundo paso del inicio de sesión: el desafío del 202 y el código abren la sesión, con la
+   * misma respuesta y la misma cookie que el inicio de sesión sin factor. Es la única ruta de este
+   * controlador que no pide sesión —quien llega aquí todavía no la tiene—, y por eso la abre {@code
+   * ConfiguracionSeguridad} y la frena también el filtro por IP de {@code /auth}.
+   */
+  @PostMapping("/verificacion")
+  public ResponseEntity<SesionRespuesta> verificarSegundoFactor(
+      @RequestBody VerificarSegundoFactorRequest cuerpo, HttpServletRequest peticion) {
+    String origen = CuboDeIp.de(IpDelCliente.de(peticion));
+    TokensDeSesion tokens =
+        transaccion.execute(
+            estado ->
+                verificar.ejecutar(
+                    new VerificarSegundoFactorComando(cuerpo.desafio(), cuerpo.codigo(), origen)));
+    return SesionConCookie.respuesta(tokens);
   }
 
   /** Ver {@code AutenticacionControlador.usuarioAutenticadoId}. */

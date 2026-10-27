@@ -55,6 +55,7 @@
 //
 // Uso:  node tools/huerfanos-bucket.mjs --bucket <nombre> --correo <correo>
 //       node tools/huerfanos-bucket.mjs --bucket <nombre> --token <jwt> --api <url>
+// Con segundo factor (ADR-0096), --correo pide además --codigo <seis dígitos> o TS_CODIGO_2FA.
 import { spawnSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
@@ -84,6 +85,7 @@ const API = (valor("--api") ?? "").replace(/[/]$/, "");
 const BUCKET = valor("--bucket", process.env.GCS_BUCKET_IMAGENES);
 const CORREO = valor("--correo");
 let TOKEN = valor("--token", process.env.TS_TOKEN_ADMIN);
+const CODIGO_2FA = valor("--codigo", process.env.TS_CODIGO_2FA);
 
 // El nombre va dentro de `gs://${BUCKET}/productos/**` en una invocación con `shell: true`
 // —que hace falta porque en Windows gcloud es un `.cmd`—, así que un valor con `&`, `|` o
@@ -217,6 +219,40 @@ function ambientesPorProducto() {
   return { ruta, porProducto };
 }
 
+/**
+ * El segundo paso del inicio de sesión (ADR-0096). Con el segundo factor activo, la clave correcta
+ * responde **202** con un desafío y sin token, y hace falta el código de la aplicación de
+ * autenticación. No se pregunta en la terminal: los prompts no funcionan en los comandos que se
+ * corren con `!`, y un código vacío fallaría lejos y diciendo otra cosa. Se pasa con `--codigo` o
+ * con `TS_CODIGO_2FA`, y caduca en treinta segundos: va en el mismo comando que lo usa.
+ */
+async function segundoPaso(respuesta) {
+  const { desafio } = await respuesta.json();
+  if (!CODIGO_2FA) {
+    throw new Error(
+      "La cuenta tiene segundo factor: pasa el código de tu aplicación con --codigo 123456 o en" +
+        " la variable TS_CODIGO_2FA, en el mismo comando (dura treinta segundos). O usa --token.",
+    );
+  }
+  const verificada = await fetch(`${API}/api/v1/auth/segundo-factor/verificacion`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ desafio, codigo: CODIGO_2FA }),
+  });
+  if (!verificada.ok) {
+    const cuerpo = await verificada.json().catch(() => ({}));
+    throw new Error(
+      `El segundo paso respondió ${verificada.status}` +
+        (cuerpo.codigo === "CODIGO_SEGUNDO_FACTOR_INVALIDO"
+          ? ": el código no es válido (¿venció mientras escribías la clave?)."
+          : cuerpo.codigo === "DESAFIO_SEGUNDO_FACTOR_INVALIDO"
+            ? ": el inicio de sesión venció; vuelve a correr el comando."
+            : "."),
+    );
+  }
+  return verificada.json();
+}
+
 if (CORREO && !TOKEN) {
   const clave = await preguntarClave(`Clave de ${CORREO}: `);
   const respuesta = await fetch(`${API}/api/v1/auth/sesion`, {
@@ -228,7 +264,14 @@ if (CORREO && !TOKEN) {
     console.error(`El inicio de sesión respondió ${respuesta.status}.`);
     process.exit(1);
   }
-  const sesion = await respuesta.json();
+  // 202 también es `ok`: con segundo factor (ADR-0096) la clave deja un desafío y ningún token.
+  let sesion;
+  try {
+    sesion = respuesta.status === 202 ? await segundoPaso(respuesta) : await respuesta.json();
+  } catch (error) {
+    console.error(error.message);
+    process.exit(1);
+  }
   if (sesion.rol !== "ADMIN" || !sesion.accessToken) {
     console.error(`Esa cuenta no sirve: rol ${sesion.rol}.`);
     process.exit(1);

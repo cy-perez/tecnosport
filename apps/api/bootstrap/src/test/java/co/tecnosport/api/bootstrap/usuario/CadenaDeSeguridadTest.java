@@ -135,6 +135,22 @@ class CadenaDeSeguridadTest {
   }
 
   /**
+   * El segundo paso del inicio de sesión es público: quien llega todavía no tiene token. Si la
+   * regla de arriba lo cerrara, el 401 sería {@code NO_AUTENTICADO} y nadie con segundo factor
+   * podría entrar; abierto, responde el caso de uso.
+   */
+  @Test
+  void elSegundoPasoDelInicioDeSesionEsPublico() throws Exception {
+    mockMvc
+        .perform(
+            post("/api/v1/auth/segundo-factor/verificacion")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"desafio\":\"no-es-un-uuid\",\"codigo\":\"123456\"}"))
+        .andExpect(status().isUnauthorized())
+        .andExpect(jsonPath("$.codigo").value("DESAFIO_SEGUNDO_FACTOR_INVALIDO"));
+  }
+
+  /**
    * El endpoint de Cloud Tasks (ADR-0080) no lo abre una sesión del panel, ni siquiera la de un
    * administrador: solo el token de la cuenta de las tareas. Sin cola configurada —como aquí—, no
    * lo abre nada. Si esta regla se cayera, el {@code anyRequest().permitAll()} lo dejaría abierto a

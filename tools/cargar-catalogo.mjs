@@ -25,6 +25,8 @@
 //   --escribir      hace los cambios de verdad
 //   --api URL       por omisión http://localhost:8080
 //   --token JWT     o la variable de entorno TS_TOKEN_ADMIN
+//   --codigo N      el código de seis dígitos de la aplicación de autenticación, o la variable
+//                   TS_CODIGO_2FA, si la cuenta tiene segundo factor (ADR-0096). Solo con --correo.
 //   --correo X      inicia sesión él mismo: pregunta la clave en la terminal, sin eco. La clave
 //                   no pasa por `argv` ni por el historial, y el token no se imprime nunca.
 //   --medir SKU=peso,largo,ancho,alto   corrige el paquete de una variante que ya existe, por el
@@ -92,6 +94,7 @@ const valores = (nombre) =>
 const API = valor("--api", "http://localhost:8080").replace(/\/$/, "");
 const CORREO = valor("--correo");
 let TOKEN = valor("--token", process.env.TS_TOKEN_ADMIN);
+const CODIGO_2FA = valor("--codigo", process.env.TS_CODIGO_2FA);
 const ESCRIBIR = bandera("--escribir");
 const PUBLICAR = bandera("--publicar");
 const EXISTENCIA = Number.parseInt(valor("--existencia", "0"), 10);
@@ -246,7 +249,8 @@ async function iniciarSesion(correo) {
         (respuesta.status === 401 ? " Correo o clave incorrectos." : ""),
     );
   }
-  const sesion = await respuesta.json();
+  // 202 también es `ok`: decidir por el estado, no por `ok`, o el desafío pasaría por sesión.
+  const sesion = respuesta.status === 202 ? await segundoPaso(respuesta) : await respuesta.json();
   if (sesion.rol !== "ADMIN") {
     throw new Error(`Esa cuenta tiene rol ${sesion.rol}, y el panel exige ADMIN.`);
   }
@@ -254,6 +258,40 @@ async function iniciarSesion(correo) {
     throw new Error("El inicio de sesión no devolvió token.");
   }
   return sesion.accessToken;
+}
+
+/**
+ * El segundo paso del inicio de sesión (ADR-0096). Con el segundo factor activo, la clave correcta
+ * responde **202** con un desafío y sin token, y hace falta el código de la aplicación de
+ * autenticación. No se pregunta en la terminal: los prompts no funcionan en los comandos que se
+ * corren con `!`, y un código vacío fallaría lejos y diciendo otra cosa. Se pasa con `--codigo` o
+ * con `TS_CODIGO_2FA`, y caduca en treinta segundos: va en el mismo comando que lo usa.
+ */
+async function segundoPaso(respuesta) {
+  const { desafio } = await respuesta.json();
+  if (!CODIGO_2FA) {
+    throw new Error(
+      "La cuenta tiene segundo factor: pasa el código de tu aplicación con --codigo 123456 o en" +
+        " la variable TS_CODIGO_2FA, en el mismo comando (dura treinta segundos). O usa --token.",
+    );
+  }
+  const verificada = await fetch(`${API}/api/v1/auth/segundo-factor/verificacion`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ desafio, codigo: CODIGO_2FA }),
+  });
+  if (!verificada.ok) {
+    const cuerpo = await verificada.json().catch(() => ({}));
+    throw new Error(
+      `El segundo paso respondió ${verificada.status}` +
+        (cuerpo.codigo === "CODIGO_SEGUNDO_FACTOR_INVALIDO"
+          ? ": el código no es válido (¿venció mientras escribías la clave?)."
+          : cuerpo.codigo === "DESAFIO_SEGUNDO_FACTOR_INVALIDO"
+            ? ": el inicio de sesión venció; vuelve a correr el comando."
+            : "."),
+    );
+  }
+  return verificada.json();
 }
 
 async function pedir(ruta, opciones = {}) {

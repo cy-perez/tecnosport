@@ -18,6 +18,8 @@ import co.tecnosport.api.application.usuario.IniciarSesion;
 import co.tecnosport.api.application.usuario.ReenviarVerificacion;
 import co.tecnosport.api.application.usuario.RefrescarToken;
 import co.tecnosport.api.application.usuario.RegistrarUsuario;
+import co.tecnosport.api.application.usuario.RepositorioDesafiosSegundoFactor;
+import co.tecnosport.api.application.usuario.RepositorioSegundosFactores;
 import co.tecnosport.api.application.usuario.RepositorioSesiones;
 import co.tecnosport.api.application.usuario.RepositorioTokensRecuperacion;
 import co.tecnosport.api.application.usuario.RepositorioTokensVerificacion;
@@ -26,9 +28,11 @@ import co.tecnosport.api.application.usuario.SolicitarRecuperacion;
 import co.tecnosport.api.application.usuario.VerificarCorreo;
 import co.tecnosport.api.domain.compartido.CorreoElectronico;
 import co.tecnosport.api.domain.usuario.Rol;
+import co.tecnosport.api.domain.usuario.SegundoFactor;
 import co.tecnosport.api.domain.usuario.SesionRefresco;
 import co.tecnosport.api.domain.usuario.TokenRecuperacionClave;
 import co.tecnosport.api.domain.usuario.TokenVerificacionCorreo;
+import co.tecnosport.api.domain.usuario.Totp;
 import co.tecnosport.api.domain.usuario.Usuario;
 import co.tecnosport.api.presentation.compartido.TextosDeCorreoDobleDePrueba;
 import co.tecnosport.api.presentation.usuario.dto.CambiarClaveRequest;
@@ -67,6 +71,8 @@ class AutenticacionControladorTest {
   @Autowired private RepositorioTokensRecuperacionDobleDePrueba tokensRecuperacion;
   @Autowired private RepositorioAutorizacionesDobleDePrueba autorizaciones;
   @Autowired private LimitadorDeIntentosDobleDePrueba limitadorDeIntentos;
+  @Autowired private RepositorioSegundosFactoresDobleDePrueba factores;
+  @Autowired private RepositorioDesafiosSegundoFactorDobleDePrueba desafios;
 
   private final ObjectMapper json = new ObjectMapper();
   private static final Duration VIGENCIA = Duration.ofDays(30);
@@ -100,6 +106,8 @@ class AutenticacionControladorTest {
     tokensRecuperacion.limpiar();
     autorizaciones.limpiar();
     limitadorDeIntentos.reiniciar();
+    factores.limpiar();
+    desafios.limpiar();
   }
 
   private Usuario conUsuarioAdmin(String correo, String claveTextoPlano) {
@@ -135,6 +143,35 @@ class AutenticacionControladorTest {
         .andExpect(jsonPath("$.accessToken").exists())
         .andExpect(cookie().exists("refresco"))
         .andExpect(cookie().httpOnly("refresco", true));
+  }
+
+  /**
+   * ADR-0096. Con el segundo factor activo la clave correcta no abre sesión: 202 con el desafío, y
+   * ni cookie ni token, que es lo que el frontend y las herramientas tienen que distinguir.
+   */
+  @Test
+  void iniciarSesionConSegundoFactorDevuelve202SinCookieNiToken() throws Exception {
+    Usuario usuario = conUsuarioAdmin("admin@tecnosport.co", "clave-correcta");
+    SegundoFactor factor = SegundoFactor.iniciar(usuario.id(), Instant.now());
+    factor.confirmar(
+        Totp.codigoEn(factor.clave(), Totp.pasoDe(Instant.now())),
+        Instant.now(),
+        Duration.ofMinutes(15));
+    factores.con(factor);
+
+    mockMvc
+        .perform(
+            post("/api/v1/auth/sesion")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    json.writeValueAsString(
+                        new IniciarSesionRequest("admin@tecnosport.co", "clave-correcta"))))
+        .andExpect(status().isAccepted())
+        .andExpect(jsonPath("$.desafio").value(desafios.todos().get(0).id().toString()))
+        .andExpect(jsonPath("$.venceEn").isString())
+        .andExpect(jsonPath("$.accessToken").doesNotExist())
+        .andExpect(cookie().doesNotExist("refresco"));
+    org.junit.jupiter.api.Assertions.assertTrue(sesiones.todas().isEmpty());
   }
 
   @Test
@@ -693,7 +730,9 @@ class AutenticacionControladorTest {
         RepositorioSesiones repositorioSesiones,
         CodificadorDeClaves codificadorDeClaves,
         GeneradorDeTokens generadorDeTokens,
-        LimitadorDeIntentos limitadorDeIntentos) {
+        LimitadorDeIntentos limitadorDeIntentos,
+        RepositorioSegundosFactores repositorioSegundosFactores,
+        RepositorioDesafiosSegundoFactor repositorioDesafios) {
       return new IniciarSesion(
           repositorioUsuarios,
           repositorioSesiones,
@@ -704,7 +743,20 @@ class AutenticacionControladorTest {
           limitadorDeIntentos,
           MAXIMO_INTENTOS_POR_CUENTA,
           MAXIMO_INTENTOS_POR_CUENTA,
-          VENTANA_INTENTOS_POR_CUENTA);
+          VENTANA_INTENTOS_POR_CUENTA,
+          repositorioSegundosFactores,
+          repositorioDesafios,
+          Duration.ofMinutes(5));
+    }
+
+    @Bean
+    RepositorioSegundosFactoresDobleDePrueba repositorioSegundosFactores() {
+      return new RepositorioSegundosFactoresDobleDePrueba();
+    }
+
+    @Bean
+    RepositorioDesafiosSegundoFactorDobleDePrueba repositorioDesafios() {
+      return new RepositorioDesafiosSegundoFactorDobleDePrueba();
     }
 
     @Bean

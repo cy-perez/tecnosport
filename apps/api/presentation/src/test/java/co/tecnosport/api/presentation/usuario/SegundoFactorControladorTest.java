@@ -13,10 +13,13 @@ import co.tecnosport.api.application.usuario.CodificadorDeClaves;
 import co.tecnosport.api.application.usuario.ConfirmarActivacionSegundoFactor;
 import co.tecnosport.api.application.usuario.GeneradorDeTokens;
 import co.tecnosport.api.application.usuario.IniciarActivacionSegundoFactor;
+import co.tecnosport.api.application.usuario.RepositorioDesafiosSegundoFactor;
 import co.tecnosport.api.application.usuario.RepositorioSegundosFactores;
 import co.tecnosport.api.application.usuario.RepositorioSesiones;
 import co.tecnosport.api.application.usuario.RepositorioUsuarios;
+import co.tecnosport.api.application.usuario.VerificarSegundoFactor;
 import co.tecnosport.api.domain.compartido.CorreoElectronico;
+import co.tecnosport.api.domain.usuario.DesafioSegundoFactor;
 import co.tecnosport.api.domain.usuario.Rol;
 import co.tecnosport.api.domain.usuario.SegundoFactor;
 import co.tecnosport.api.domain.usuario.Totp;
@@ -49,6 +52,7 @@ class SegundoFactorControladorTest {
   @Autowired private RepositorioSegundosFactoresDobleDePrueba factores;
   @Autowired private LimitadorDeIntentosDobleDePrueba limitador;
   @Autowired private RepositorioSesionesDobleDePrueba sesiones;
+  @Autowired private RepositorioDesafiosSegundoFactorDobleDePrueba desafios;
 
   private Usuario admin;
 
@@ -58,6 +62,7 @@ class SegundoFactorControladorTest {
     factores.limpiar();
     limitador.reiniciar();
     sesiones.limpiar();
+    desafios.limpiar();
     admin =
         Usuario.crear(
             new CorreoElectronico("admin@tecnosport.co"), "hash:clave", Rol.ADMIN, Instant.now());
@@ -186,6 +191,64 @@ class SegundoFactorControladorTest {
         .andExpect(jsonPath("$.codigo").value("SEGUNDO_FACTOR_YA_ACTIVO"));
   }
 
+  private org.springframework.test.web.servlet.ResultActions verificar(
+      String desafio, String codigo) throws Exception {
+    // Sin sesión: quien llega al segundo paso todavía no la tiene.
+    SecurityContextHolder.clearContext();
+    return mockMvc.perform(
+        post("/api/v1/auth/segundo-factor/verificacion")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content("{\"desafio\":\"" + desafio + "\",\"codigo\":\"" + codigo + "\"}"));
+  }
+
+  private SegundoFactor activoDesdeHaceUnaHora() {
+    Instant antes = Instant.now().minus(Duration.ofHours(1));
+    SegundoFactor factor = SegundoFactor.iniciar(admin.id(), antes);
+    factor.confirmar(Totp.codigoEn(factor.clave(), Totp.pasoDe(antes)), antes, VENTANA);
+    factores.con(factor);
+    return factor;
+  }
+
+  private DesafioSegundoFactor desafio() {
+    DesafioSegundoFactor desafio =
+        DesafioSegundoFactor.crear(admin.id(), Instant.now(), Duration.ofMinutes(5));
+    desafios.guardar(desafio);
+    return desafio;
+  }
+
+  @Test
+  void verificarConElCodigoAbreLaSesionConCookie() throws Exception {
+    SegundoFactor factor = activoDesdeHaceUnaHora();
+
+    verificar(desafio().id().toString(), Totp.codigoEn(factor.clave(), Totp.pasoDe(Instant.now())))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.accessToken").isString())
+        .andExpect(jsonPath("$.rol").value("ADMIN"))
+        .andExpect(cookie().exists("refresco"))
+        .andExpect(cookie().httpOnly("refresco", true));
+  }
+
+  @Test
+  void verificarConUnCodigoEquivocadoResponde401ConSuCodigo() throws Exception {
+    SegundoFactor factor = activoDesdeHaceUnaHora();
+
+    verificar(
+            desafio().id().toString(),
+            Totp.codigoEn(factor.clave(), Totp.pasoDe(Instant.now()) + 10))
+        .andExpect(status().isUnauthorized())
+        .andExpect(jsonPath("$.codigo").value("CODIGO_SEGUNDO_FACTOR_INVALIDO"))
+        .andExpect(cookie().doesNotExist("refresco"));
+  }
+
+  @Test
+  void verificarConUnDesafioQueNoSirveResponde401ConSuCodigo() throws Exception {
+    activoDesdeHaceUnaHora();
+
+    verificar("no-es-un-uuid", "123456")
+        .andExpect(status().isUnauthorized())
+        .andExpect(jsonPath("$.codigo").value("DESAFIO_SEGUNDO_FACTOR_INVALIDO"));
+  }
+
   @TestConfiguration
   static class Configuracion {
 
@@ -249,6 +312,37 @@ class SegundoFactorControladorTest {
           VENTANA,
           limitadorDeIntentos,
           5,
+          VENTANA);
+    }
+
+    @Bean
+    RepositorioDesafiosSegundoFactorDobleDePrueba repositorioDesafios() {
+      return new RepositorioDesafiosSegundoFactorDobleDePrueba();
+    }
+
+    @Bean
+    VerificarSegundoFactor verificarSegundoFactor(
+        RepositorioDesafiosSegundoFactor repositorioDesafios,
+        RepositorioSegundosFactores repositorioSegundosFactores,
+        RepositorioUsuarios repositorioUsuarios,
+        RepositorioSesiones repositorioSesiones,
+        GeneradorDeTokens generadorDeTokens,
+        EnviadorDeCorreo enviadorDeCorreo,
+        LimitadorDeIntentos limitadorDeIntentos) {
+      return new VerificarSegundoFactor(
+          repositorioDesafios,
+          repositorioSegundosFactores,
+          repositorioUsuarios,
+          repositorioSesiones,
+          generadorDeTokens,
+          enviadorDeCorreo,
+          new TextosDeCorreoDobleDePrueba(),
+          Instant::now,
+          Duration.ofDays(30),
+          limitadorDeIntentos,
+          5,
+          5,
+          10,
           VENTANA);
     }
 

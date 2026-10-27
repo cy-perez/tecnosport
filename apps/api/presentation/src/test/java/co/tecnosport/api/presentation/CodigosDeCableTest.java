@@ -156,7 +156,16 @@ class CodigosDeCableTest {
           Map.entry(CategoriaNoEsHojaException.class, "CATEGORIA_NO_ES_HOJA"),
           Map.entry(
               ProfundidadDeCategoriaExcedidaException.class, "PROFUNDIDAD_DE_CATEGORIA_EXCEDIDA"),
-          Map.entry(CicloDeCategoriasException.class, "CICLO_DE_CATEGORIAS"));
+          Map.entry(CicloDeCategoriasException.class, "CICLO_DE_CATEGORIAS"),
+          // ADR-0096. El segundo paso del inicio de sesión: `sesion-http.repositorio.ts` decide
+          // con ellos si el código estaba mal —se corrige escribiendo— o si el desafío venció y hay
+          // que volver a la clave.
+          Map.entry(
+              co.tecnosport.api.domain.usuario.CodigoSegundoFactorInvalidoException.class,
+              "CODIGO_SEGUNDO_FACTOR_INVALIDO"),
+          Map.entry(
+              co.tecnosport.api.domain.usuario.DesafioSegundoFactorInvalidoException.class,
+              "DESAFIO_SEGUNDO_FACTOR_INVALIDO"));
 
   /** Los que tienen una clave de traducción en `admin.errores.*`. */
   private static final Map<Class<? extends Exception>, String> CABLEADOS_EN_TRADUCCIONES =
