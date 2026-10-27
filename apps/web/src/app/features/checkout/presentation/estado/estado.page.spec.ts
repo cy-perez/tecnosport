@@ -1,6 +1,6 @@
 import { ErrorHttp } from '../../../../core/http/respuesta-http';
 import { Component, inject } from '@angular/core';
-import { ActivatedRoute, convertToParamMap, Router } from '@angular/router';
+import { ActivatedRoute, convertToParamMap } from '@angular/router';
 import { TranslocoTestingModule } from '@jsverse/transloco';
 import { provideTanStackQuery, QueryClient } from '@tanstack/angular-query-experimental';
 import { fireEvent, render, screen } from '@testing-library/angular';
@@ -10,7 +10,7 @@ import es from '../../../../../assets/i18n/es.json';
 import esCheckout from '../../../../../assets/i18n/scopes/checkout/es.json';
 import { CheckoutStore } from '../../application/checkout.store';
 import { IntentoDePago } from '../../domain/intento-pago.model';
-import { IntentoSistecredito } from '../../domain/intento-sistecredito.model';
+import { DocumentoComprador, IntentoSistecredito } from '../../domain/intento-sistecredito.model';
 import { MetodoDePagoConPrecio, Pedido, Seguimiento } from '../../domain/pedido.model';
 import { REPOSITORIO_PAGOS, RepositorioPagos } from '../../domain/repositorio-pagos.puerto';
 import { REPOSITORIO_PEDIDOS, RepositorioPedidos } from '../../domain/repositorio-pedidos.puerto';
@@ -180,8 +180,24 @@ class RepositorioPagosFalso implements RepositorioPagos {
     };
   }
 
-  async crearIntentoSistecredito(): Promise<IntentoSistecredito> {
-    throw new Error('no usado en esta prueba');
+  readonly intentosSistecredito: { pedidoId: string; documento: DocumentoComprador }[] = [];
+  /** Cuántas veces falla la pasarela antes de entregar la URL. */
+  fallosSistecredito = 0;
+
+  async crearIntentoSistecredito(
+    pedidoId: string,
+    documento: DocumentoComprador,
+  ): Promise<IntentoSistecredito> {
+    this.intentosSistecredito.push({ pedidoId, documento });
+    if (this.fallosSistecredito > 0) {
+      this.fallosSistecredito--;
+      throw new Error('la pasarela no respondió');
+    }
+    return {
+      referencia: 'TS-2026-000001-2',
+      monto: { valor: 300_000, moneda: 'COP' },
+      urlRedireccion: 'https://pagos.sistecredito.test/pago/abc',
+    };
   }
 
   async registrarIdTransaccion(): Promise<void> {
@@ -592,33 +608,112 @@ describe('EstadoPage', () => {
    * —sin intento vivo—, el spinner terminaba y no pasaba absolutamente nada más: ni redirección,
    * ni mensaje, ni error. El pedido quedaba peor que antes.
    *
-   * <p>Va al paso del método de pago y no directo a la pasarela porque hace falta el documento,
-   * que vive solo en memoria y no sobrevive a la recarga de la SPA al volver de un dominio
-   * externo — y a esta pantalla se llega justo después de ese viaje.
+   * <p>Después la rama mandaba a la pantalla de método de pago a pedir el documento, y esa, sin
+   * datos de entrega —tras volver de la pasarela no los hay—, redirigía al resumen: el pedido ya
+   * reabierto quedaba en `PAGO_PENDIENTE` y sin botón. El documento se pide aquí, antes de reabrir.
    */
-  it('reintentar con Sistecrédito vuelve a pedir el documento en vez de no hacer nada', async () => {
-    const navegar = vi.spyOn(Router.prototype, 'navigate');
-    const pedidos = new RepositorioPedidosFalso(
-      null,
-      pedidoDePrueba({ estado: 'PAGO_PENDIENTE', metodoPago: 'SISTECREDITO' }),
-    );
-    const pagos = new RepositorioPagosFalso();
-    await renderConPedidoEnMemoria(
-      pedidoDePrueba({ estado: 'PAGO_FALLIDO', metodoPago: 'SISTECREDITO' }),
-      pedidos,
-      pagos,
-    );
-    await screen.findByRole('button', { name: 'Reintentar pago' });
+  describe('reintentar con Sistecrédito', () => {
+    let ubicacionOriginal: Location;
 
-    fireEvent.click(screen.getByRole('button', { name: 'Reintentar pago' }));
+    beforeEach(() => {
+      ubicacionOriginal = window.location;
+      Object.defineProperty(window, 'location', {
+        configurable: true,
+        value: { ...ubicacionOriginal, href: '', origin: 'https://tecnosport.co' },
+      });
+    });
 
-    await vi.waitFor(() => expect(pedidos.llamadasReintentar).toBe(1));
-    await vi.waitFor(() =>
-      expect(navegar).toHaveBeenCalledWith(['/', 'es', 'checkout', 'metodo-pago']),
-    );
-    // Y NO se crea un intento a ciegas: sin documento la pasarela no puede encontrar al cliente.
-    expect(pagos.llamadasCrearIntento).toBe(0);
-    navegar.mockRestore();
+    afterEach(() => {
+      Object.defineProperty(window, 'location', { configurable: true, value: ubicacionOriginal });
+    });
+
+    async function conPedidoFallido(pagos = new RepositorioPagosFalso()) {
+      const pedidos = new RepositorioPedidosFalso(
+        null,
+        pedidoDePrueba({ estado: 'PAGO_PENDIENTE', metodoPago: 'SISTECREDITO' }),
+      );
+      const { fixture } = await renderConPedidoEnMemoria(
+        pedidoDePrueba({ estado: 'PAGO_FALLIDO', metodoPago: 'SISTECREDITO' }),
+        pedidos,
+        pagos,
+      );
+      await screen.findByRole('button', { name: 'Reintentar pago' });
+      return { pedidos, pagos, fixture };
+    }
+
+    it('el primer clic pide el documento aquí y todavía no reabre el pedido', async () => {
+      const { pedidos, pagos } = await conPedidoFallido();
+
+      fireEvent.click(screen.getByRole('button', { name: 'Reintentar pago' }));
+
+      expect(await screen.findByLabelText('Número de documento')).toBeTruthy();
+      expect(
+        screen.getByRole('button', { name: 'Reintentar pago' }).getAttribute('aria-expanded'),
+      ).toBe('true');
+      expect(pedidos.llamadasReintentar).toBe(0);
+      expect(pagos.intentosSistecredito).toEqual([]);
+    });
+
+    it('sin documento válido no reabre el pedido y dice qué falta', async () => {
+      const { pedidos } = await conPedidoFallido();
+      fireEvent.click(screen.getByRole('button', { name: 'Reintentar pago' }));
+      await screen.findByLabelText('Número de documento');
+
+      fireEvent.click(screen.getByRole('button', { name: 'Reintentar pago' }));
+
+      expect(await screen.findByText(esCheckout.metodoPago.documento.invalido)).toBeTruthy();
+      expect(pedidos.llamadasReintentar).toBe(0);
+    });
+
+    it('con el documento, reabre el pedido, abre el intento y va a la pasarela', async () => {
+      const { pedidos, pagos, fixture } = await conPedidoFallido();
+      fireEvent.click(screen.getByRole('button', { name: 'Reintentar pago' }));
+      fireEvent.input(await screen.findByLabelText('Número de documento'), {
+        target: { value: '1017254896' },
+      });
+
+      fireEvent.click(screen.getByRole('button', { name: 'Reintentar pago' }));
+
+      await vi.waitFor(() =>
+        expect(window.location.href).toBe('https://pagos.sistecredito.test/pago/abc'),
+      );
+      expect(pedidos.llamadasReintentar).toBe(1);
+      expect(pagos.intentosSistecredito).toEqual([
+        { pedidoId: 'pedido-1', documento: { tipoDocumento: 'CC', documento: '1017254896' } },
+      ]);
+      // El retorno de Sistecrédito lee el correo de aquí, no de la URL.
+      const correos = fixture.debugElement.injector.get(ALMACEN_CORREO_DE_PEDIDO);
+      expect(correos.correoDe('pedido-1')).toBe('cliente@tecnosport.co');
+    });
+
+    /**
+     * Reabierto el pedido, si la pasarela falla queda en `PAGO_PENDIENTE`: el botón no puede
+     * desaparecer, y el segundo intento no vuelve a reabrirlo.
+     */
+    it('si la pasarela falla, el botón sigue y el siguiente intento no reabre otra vez', async () => {
+      const pagos = new RepositorioPagosFalso();
+      pagos.fallosSistecredito = 1;
+      const { pedidos } = await conPedidoFallido(pagos);
+      fireEvent.click(screen.getByRole('button', { name: 'Reintentar pago' }));
+      fireEvent.input(await screen.findByLabelText('Número de documento'), {
+        target: { value: '1017254896' },
+      });
+      fireEvent.click(screen.getByRole('button', { name: 'Reintentar pago' }));
+      expect(await screen.findByText(esCheckout.estado.error_reintento)).toBeTruthy();
+
+      await vi.waitFor(() =>
+        expect(
+          (screen.getByRole('button', { name: 'Reintentar pago' }) as HTMLButtonElement).disabled,
+        ).toBe(false),
+      );
+      fireEvent.click(screen.getByRole('button', { name: 'Reintentar pago' }));
+
+      await vi.waitFor(() =>
+        expect(window.location.href).toBe('https://pagos.sistecredito.test/pago/abc'),
+      );
+      expect(pedidos.llamadasReintentar).toBe(1);
+      expect(pagos.intentosSistecredito).toHaveLength(2);
+    });
   });
 
   // Es la última pantalla del recorrido y la que alguien vuelve a abrir días después para ver
