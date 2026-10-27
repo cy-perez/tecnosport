@@ -87,7 +87,9 @@
                "calculando", total $ 99.440. Si hay cotización se muestra; si llega otra, se
                reemplaza. -->
           @if (envioElegido(); as envio) {
-            <ts-precio [valor]="envio.costoEnvio" [moneda]="envio.moneda" />
+            <!-- `costoEnvio()` y no `envio.costoEnvio`: con contraentrega el medio trae su propio
+                 flete, con el recaudo (`fleteDelMedio`), y la fila tiene que sumar con el total. -->
+            <ts-precio [valor]="costoEnvio()" [moneda]="envio.moneda" />
             <!-- La transportadora que eligió en el resumen (ADR-0073), al lado de lo que cuesta:
                  es lo que está aceptando pagar. Nombre propio, no pasa por Transloco. -->
             <span class="block text-sm text-ts-texto-suave">

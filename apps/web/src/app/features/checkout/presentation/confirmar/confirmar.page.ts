@@ -33,6 +33,7 @@ import { CrearPedidoComando, MetodosDePagoDisponiblesComando } from '../../domai
 import { MetodoDePagoConPrecio, MetodoPago, Pedido } from '../../domain/pedido.model';
 import { ErrorHttp } from '../../../../core/http/respuesta-http';
 import { esMetodoPagoSistecredito, esMetodoPagoWompi } from '../../domain/reglas-pedido';
+import { fleteDelMedio } from '../../domain/flete-del-medio';
 import { urlWebCheckoutWompi } from '../../domain/wompi';
 import { ALMACEN_CORREO_DE_PEDIDO } from '../../domain/almacen-correo-de-pedido.puerto';
 import { ALMACEN_CARRITO_POR_PAGAR } from '../../domain/almacen-carrito-por-pagar.puerto';
@@ -157,7 +158,16 @@ export class ConfirmarPage {
     () => this.tarifa() !== null && this.envioElegido() === null,
   );
 
-  protected readonly costoEnvio = computed(() => this.envioElegido()?.costoEnvio ?? 0);
+  /**
+   * El flete que se cobra con el medio elegido: el que manda el servidor para ese medio —con
+   * contraentrega, el que lleva el recaudo— y, mientras el contrato no lo traiga, el de la
+   * cotización (`fleteDelMedio`). Sin tarifa sigue en cero, y `totalConocido` no deja pintar total.
+   */
+  protected readonly costoEnvio = computed(() =>
+    this.muestraEnvio() && this.envioElegido() === null
+      ? 0
+      : fleteDelMedio(this.eleccionVigente(), this.envioElegido()?.costoEnvio ?? 0),
+  );
 
   /**
    * Lo que se cobra: la mercancía **con el medio elegido**, del servidor, más el flete (ADR-0095).

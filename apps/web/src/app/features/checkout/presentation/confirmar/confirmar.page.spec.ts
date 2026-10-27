@@ -606,6 +606,34 @@ describe('ConfirmarPage', () => {
   });
 
   /**
+   * Con contraentrega la transportadora cobra además el recaudo, y el flete de la cotización —sin
+   * recaudo— no es el que se cobra. Cuando el medio trae el suyo, la fila y el total salen de ese.
+   * Pendiente de integrar con el contrato: hoy el mapeador no lo llena y esto no se ejercita.
+   */
+  it('con un medio que trae su propio flete, la fila y el total salen de ese', async () => {
+    sembrarCarritoId('carrito-1');
+    sembrarSnapshotLinea(snapshotDePrueba('variante-1'));
+
+    await renderConDatos(
+      {
+        metodo: 'CONTRAENTREGA',
+        subtotal: { valor: 150_000, moneda: 'COP' },
+        descuento: { valor: 0, moneda: 'COP' },
+        costoEnvio: { valor: 14_200, moneda: 'COP' },
+      },
+      new RepositorioCarritoFalso(CARRITO_CON_LINEAS),
+      new RepositorioPedidosFalso(),
+      new RepositorioPagosFalso(),
+      DATOS_ENTREGA_A_DOMICILIO,
+    );
+
+    expect((await screen.findAllByText(/164\.200/)).length).toBeGreaterThan(0);
+    expect(screen.getByText(/14\.200/)).toBeTruthy();
+    expect(screen.queryByText(/9\.540/)).toBeNull();
+    expect(screen.queryByText(/159\.540/)).toBeNull();
+  });
+
+  /**
    * La regresión que esto cierra: confirmar enseñaba el subtotal guardado al elegir el medio, y el
    * pedido se cobra con el carrito vivo. Con dos unidades en el carrito, el total es el de dos,
    * dado por el servidor para ese comando.
