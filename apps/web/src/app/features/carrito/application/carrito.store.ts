@@ -1,11 +1,12 @@
 import { afterNextRender, computed, inject, Injectable, signal } from '@angular/core';
 import { injectMutation, injectQuery, QueryClient } from '@tanstack/angular-query-experimental';
 import { CarritoInexistenteError } from '../domain/carrito.errores';
-import { Carrito, CarritoCotizado } from '../domain/carrito.model';
+import { Carrito, CarritoCotizado, LineaCarrito, LineaCotizada } from '../domain/carrito.model';
 import { REPOSITORIO_CARRITO } from '../domain/repositorio-carrito.puerto';
 import { SnapshotLinea } from '../domain/snapshot-linea.model';
 import { ALMACEN_CARRITO_ID } from '../domain/almacen-carrito-id.puerto';
 import { ALMACEN_SNAPSHOT_LINEAS } from '../domain/almacen-snapshot-lineas.puerto';
+import { ALMACEN_LINEAS_SIN_MARCAR } from '../domain/almacen-lineas-sin-marcar.puerto';
 
 /**
  * Único en toda la app (`providedIn: 'root'`), no una función de fábrica como
@@ -24,9 +25,13 @@ export class CarritoStore {
   private readonly repositorio = inject(REPOSITORIO_CARRITO);
   private readonly almacenCarritoId = inject(ALMACEN_CARRITO_ID);
   private readonly almacenSnapshots = inject(ALMACEN_SNAPSHOT_LINEAS);
+  private readonly almacenSinMarcar = inject(ALMACEN_LINEAS_SIN_MARCAR);
   private readonly queryClient = inject(QueryClient);
 
   readonly carritoId = signal<string | null>(null);
+
+  /** Las líneas que el comprador desmarcó; ver `AlmacenLineasSinMarcar`. */
+  private readonly sinMarcar = signal<ReadonlySet<string>>(new Set());
 
   constructor() {
     afterNextRender(() => {
@@ -34,6 +39,7 @@ export class CarritoStore {
       if (id) {
         this.carritoId.set(id);
       }
+      this.sinMarcar.set(new Set(this.almacenSinMarcar.leer()));
     });
   }
 
@@ -81,20 +87,97 @@ export class CarritoStore {
   });
 
   /**
-   * Lo que el comprador ve como subtotal: el del servidor. Antes cada pantalla sumaba el precio
-   * guardado en el navegador al agregar, que podía estar viejo o faltar (y entonces sumaba cero).
-   * Cero solo con el carrito vacío o mientras la cotización llega.
+   * Si la línea se puede pagar: la cotización no la trae sin precio. Mientras la cotización no ha
+   * llegado, o si todavía no incluye una línea recién agregada, se da por vendible: decidirlo es
+   * del servidor, que rechaza al crear el pedido la que ya no se vende.
    */
-  readonly subtotal = computed(() => this.cotizacion.data()?.subtotal ?? 0);
+  lineaSeVende(lineaId: string): boolean {
+    const cotizada = this.cotizacion.data()?.lineas.find((linea) => linea.lineaId === lineaId);
+    return cotizada === undefined || cotizada.precioUnitario !== null;
+  }
+
+  private readonly lineasVendibles = computed(() =>
+    (this.consulta.data()?.lineas ?? []).filter((linea) => this.lineaSeVende(linea.id)),
+  );
 
   /**
-   * Lo que se ahorra el carrito entero pagando sin pasarela —transferencia, en el punto o contra
+   * Las casillas solo aparecen con dos líneas vendibles o más: con una no hay nada que elegir. Y
+   * sin casillas todo cuenta como marcado, para que una línea desmarcada cuando había dos no se
+   * quede fuera del pago, sin casilla con que volver a marcarla, al quitar la otra.
+   */
+  readonly seleccionHabilitada = computed(() => this.lineasVendibles().length >= 2);
+
+  /**
+   * Lo que se va a pagar: las líneas vendibles que siguen marcadas. Es lo único que el checkout
+   * cotiza, consulta y manda en el pedido; las demás se quedan en el carrito para otra compra.
+   */
+  readonly lineasPorPagar = computed<readonly LineaCarrito[]>(() => {
+    const vendibles = this.lineasVendibles();
+    if (!this.seleccionHabilitada()) {
+      return vendibles;
+    }
+    const sinMarcar = this.sinMarcar();
+    return vendibles.filter((linea) => !sinMarcar.has(linea.id));
+  });
+
+  estaMarcada(lineaId: string): boolean {
+    return !this.seleccionHabilitada() || !this.sinMarcar().has(lineaId);
+  }
+
+  readonly todasMarcadas = computed(
+    () => this.lineasPorPagar().length === this.lineasVendibles().length,
+  );
+
+  marcar(lineaId: string, marcada: boolean): void {
+    const siguiente = new Set(this.sinMarcar());
+    if (marcada) {
+      siguiente.delete(lineaId);
+    } else {
+      siguiente.add(lineaId);
+    }
+    this.fijarSinMarcar(siguiente);
+  }
+
+  marcarTodas(marcadas: boolean): void {
+    this.fijarSinMarcar(new Set(marcadas ? [] : this.lineasVendibles().map((linea) => linea.id)));
+  }
+
+  /** Solo se guardan ids de este carrito: los de líneas que ya no existen no pintan nada. */
+  private fijarSinMarcar(ids: ReadonlySet<string>): void {
+    const existentes = new Set((this.consulta.data()?.lineas ?? []).map((linea) => linea.id));
+    const vigentes = new Set([...ids].filter((id) => existentes.has(id)));
+    this.sinMarcar.set(vigentes);
+    this.almacenSinMarcar.guardar([...vigentes]);
+  }
+
+  /** Las líneas de la cotización que se van a pagar. */
+  private readonly cotizadasPorPagar = computed<readonly LineaCotizada[]>(() => {
+    const porPagar = new Set(this.lineasPorPagar().map((linea) => linea.id));
+    return (this.cotizacion.data()?.lineas ?? []).filter((linea) => porPagar.has(linea.lineaId));
+  });
+
+  /**
+   * Lo que el comprador ve como subtotal: la suma de lo marcado, con los precios del servidor.
+   * Antes cada pantalla sumaba el precio guardado en el navegador al agregar, que podía estar viejo
+   * o faltar (y entonces sumaba cero). Es la misma suma que hace el servidor —las líneas con
+   * precio—, así que con todo marcado coincide con su subtotal; y es solo para mostrar: el pedido
+   * lo vuelve a calcular el servidor. Cero sin nada marcado o mientras la cotización llega.
+   */
+  readonly subtotal = computed(() =>
+    this.cotizadasPorPagar().reduce((suma, linea) => suma + (linea.subtotal ?? 0), 0),
+  );
+
+  /**
+   * Lo que se ahorra lo marcado pagando sin pasarela —transferencia, en el punto o contra
    * entrega—: subtotal publicado menos subtotal de contado, los dos del servidor (ADR-0095). Cero
    * sin cotización o si no hay descuento; nunca negativo.
    */
   readonly ahorroSinPasarela = computed(() => {
-    const cotizacion = this.cotizacion.data();
-    return cotizacion ? Math.max(0, cotizacion.subtotal - cotizacion.subtotalContado) : 0;
+    const contado = this.cotizadasPorPagar().reduce(
+      (suma, linea) => suma + (linea.subtotalContado ?? 0),
+      0,
+    );
+    return Math.max(0, this.subtotal() - contado);
   });
 
   /** El precio de hoy de una línea; `null` si todavía no llegó o si ya no se vende. */
@@ -165,6 +248,40 @@ export class CarritoStore {
     }
   }
 
+  /**
+   * Las líneas pagadas salen del carrito y las que se dejaron fuera se quedan, para otra compra.
+   * Si se pagó todo —o no se sabe qué, `null`: un pedido anotado antes de que existiera la
+   * selección—, es {@link limpiar}. Mismo momento que `limpiar`: cuando el pago ya salió bien.
+   *
+   * Lo que queda vuelve a estar marcado: es otra compra, y arranca como arrancan todas.
+   *
+   * <p>No lanza. Si quitar una línea falla, se queda en el carrito y el comprador la quita a mano;
+   * es el mal menor frente a romper la pantalla final de una compra que ya está pagada.
+   */
+  async quitarPagadas(lineaIds: readonly string[] | null): Promise<void> {
+    const id = this.carritoId();
+    if (!id) {
+      return;
+    }
+    try {
+      const carrito = this.consulta.data() ?? (await this.repositorio.ver(id));
+      const pagadas = new Set(lineaIds ?? []);
+      if (lineaIds === null || !carrito || carrito.lineas.every((linea) => pagadas.has(linea.id))) {
+        this.limpiar();
+        return;
+      }
+      this.sinMarcar.set(new Set());
+      this.almacenSinMarcar.guardar([]);
+      for (const linea of carrito.lineas) {
+        if (pagadas.has(linea.id)) {
+          await this.eliminarLinea(linea.id);
+        }
+      }
+    } catch {
+      // Ver arriba: una línea pagada que se queda es lo que se puede arreglar a mano.
+    }
+  }
+
   /** Olvida el id solo si sigue siendo el activo: otra mutación pudo haber creado uno nuevo. */
   private soltarId(id: string | null): void {
     if (this.carritoId() !== id) {
@@ -172,6 +289,8 @@ export class CarritoStore {
     }
     this.almacenCarritoId.borrar();
     this.carritoId.set(null);
+    this.sinMarcar.set(new Set());
+    this.almacenSinMarcar.guardar([]);
   }
 
   async actualizarCantidad(lineaId: string, cantidad: number): Promise<void> {

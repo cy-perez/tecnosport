@@ -2,8 +2,10 @@ import { Provider } from '@angular/core';
 import { SnapshotLinea } from '../app/features/carrito/domain/snapshot-linea.model';
 import { ALMACEN_CARRITO_ID } from '../app/features/carrito/domain/almacen-carrito-id.puerto';
 import { ALMACEN_SNAPSHOT_LINEAS } from '../app/features/carrito/domain/almacen-snapshot-lineas.puerto';
+import { ALMACEN_LINEAS_SIN_MARCAR } from '../app/features/carrito/domain/almacen-lineas-sin-marcar.puerto';
 import { CarritoIdLocalStorageAlmacen } from '../app/features/carrito/infrastructure/carrito-id.almacen';
 import { SnapshotLineasLocalStorageAlmacen } from '../app/features/carrito/infrastructure/snapshot-lineas.almacen';
+import { LineasSinMarcarLocalStorageAlmacen } from '../app/features/carrito/infrastructure/lineas-sin-marcar.almacen';
 
 /**
  * Los mismos adaptadores que provee `app.config.ts`, no dobles: las pruebas ya siembran y limpian
@@ -15,6 +17,7 @@ export function proveerAlmacenesCarrito(): Provider[] {
   return [
     { provide: ALMACEN_CARRITO_ID, useClass: CarritoIdLocalStorageAlmacen },
     { provide: ALMACEN_SNAPSHOT_LINEAS, useClass: SnapshotLineasLocalStorageAlmacen },
+    { provide: ALMACEN_LINEAS_SIN_MARCAR, useClass: LineasSinMarcarLocalStorageAlmacen },
   ];
 }
 
@@ -29,4 +32,8 @@ export function sembrarCarritoId(id: string): void {
 
 export function sembrarSnapshotLinea(snapshot: SnapshotLinea): void {
   new SnapshotLineasLocalStorageAlmacen().guardar(snapshot);
+}
+
+export function sembrarLineasSinMarcar(lineaIds: readonly string[]): void {
+  new LineasSinMarcarLocalStorageAlmacen().guardar(lineaIds);
 }

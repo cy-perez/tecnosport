@@ -21,6 +21,7 @@ import {
 } from './core/consultas/transferencia-estado-consultas';
 import { ALMACEN_CARRITO_ID } from './features/carrito/domain/almacen-carrito-id.puerto';
 import { ALMACEN_SNAPSHOT_LINEAS } from './features/carrito/domain/almacen-snapshot-lineas.puerto';
+import { ALMACEN_LINEAS_SIN_MARCAR } from './features/carrito/domain/almacen-lineas-sin-marcar.puerto';
 import { ALMACEN_CORREO_DE_PEDIDO } from './features/checkout/domain/almacen-correo-de-pedido.puerto';
 import { CorreoDePedidoSessionStorage } from './features/checkout/infrastructure/correo-de-pedido.session-storage';
 import { ALMACEN_CARRITO_POR_PAGAR } from './features/checkout/domain/almacen-carrito-por-pagar.puerto';
@@ -28,6 +29,7 @@ import { CarritoPorPagarSessionStorage } from './features/checkout/infrastructur
 import { REPOSITORIO_CARRITO } from './features/carrito/domain/repositorio-carrito.puerto';
 import { CarritoIdLocalStorageAlmacen } from './features/carrito/infrastructure/carrito-id.almacen';
 import { SnapshotLineasLocalStorageAlmacen } from './features/carrito/infrastructure/snapshot-lineas.almacen';
+import { LineasSinMarcarLocalStorageAlmacen } from './features/carrito/infrastructure/lineas-sin-marcar.almacen';
 import { CarritoHttpRepositorio } from './features/carrito/infrastructure/carrito-http.repositorio';
 import { REPOSITORIO_CATEGORIAS } from './features/catalogo/domain/repositorio-categorias.puerto';
 import { CategoriasHttpRepositorio } from './features/catalogo/infrastructure/categorias-http.repositorio';
@@ -68,12 +70,13 @@ export const appConfig: ApplicationConfig = {
     // esa ruta): el carrito lo necesita el encabezado, que se renderiza siempre, no solo dentro
     // de /carrito — ver application/carrito.store.ts.
     { provide: REPOSITORIO_CARRITO, useClass: CarritoHttpRepositorio },
-    // Los dos almacenes van aquí y no en carrito.routes.ts por el mismo motivo: los usa
+    // Los tres almacenes van aquí y no en carrito.routes.ts por el mismo motivo: los usa
     // CarritoStore, que es `providedIn: 'root'`, y el encabezado lo consulta en todas las
     // pantallas. Darle al InjectionToken una `factory` por defecto sería más corto y volvería
     // a invertir la dependencia, ahora escondida dentro de `domain`.
     { provide: ALMACEN_CARRITO_ID, useClass: CarritoIdLocalStorageAlmacen },
     { provide: ALMACEN_SNAPSHOT_LINEAS, useClass: SnapshotLineasLocalStorageAlmacen },
+    { provide: ALMACEN_LINEAS_SIN_MARCAR, useClass: LineasSinMarcarLocalStorageAlmacen },
     { provide: ALMACEN_CORREO_DE_PEDIDO, useClass: CorreoDePedidoSessionStorage },
     { provide: ALMACEN_CARRITO_POR_PAGAR, useClass: CarritoPorPagarSessionStorage },
     // El puerto de categorías sube aquí desde `catalogo.routes.ts` por el mismo motivo que el

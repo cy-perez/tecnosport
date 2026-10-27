@@ -7,7 +7,8 @@ import { REPOSITORIO_CARRITO, RepositorioCarrito } from '../domain/repositorio-c
 import { SnapshotLinea } from '../domain/snapshot-linea.model';
 import { CarritoIdLocalStorageAlmacen } from '../infrastructure/carrito-id.almacen';
 import { CarritoStore } from './carrito.store';
-import { proveerAlmacenesCarrito } from '../../../../testing/carrito';
+import { LineasSinMarcarLocalStorageAlmacen } from '../infrastructure/lineas-sin-marcar.almacen';
+import { proveerAlmacenesCarrito, sembrarLineasSinMarcar } from '../../../../testing/carrito';
 
 /** El precio que el servidor da hoy en estas pruebas. */
 const PRECIO_DE_HOY = 150_000;
@@ -19,21 +20,27 @@ class RepositorioCarritoFalso implements RepositorioCarrito {
     if (!carrito) {
       return null;
     }
-    const lineas = carrito.lineas.map((linea) => ({
-      lineaId: linea.id,
-      varianteId: linea.varianteId,
-      cantidad: linea.cantidad,
-      precioUnitario: PRECIO_DE_HOY,
-      subtotal: PRECIO_DE_HOY * linea.cantidad,
-      precioContado: this.contado,
-      subtotalContado: this.contado * linea.cantidad,
-    }));
+    const lineas = carrito.lineas.map((linea) => {
+      const seVende = !this.sinPrecio.has(linea.varianteId);
+      return {
+        lineaId: linea.id,
+        varianteId: linea.varianteId,
+        cantidad: linea.cantidad,
+        precioUnitario: seVende ? PRECIO_DE_HOY : null,
+        subtotal: seVende ? PRECIO_DE_HOY * linea.cantidad : null,
+        precioContado: seVende ? this.contado : null,
+        subtotalContado: seVende ? this.contado * linea.cantidad : null,
+      };
+    });
     return {
       lineas,
-      subtotal: lineas.reduce((suma, linea) => suma + linea.subtotal, 0),
-      subtotalContado: lineas.reduce((suma, linea) => suma + linea.subtotalContado, 0),
+      subtotal: lineas.reduce((suma, linea) => suma + (linea.subtotal ?? 0), 0),
+      subtotalContado: lineas.reduce((suma, linea) => suma + (linea.subtotalContado ?? 0), 0),
     };
   }
+  /** Variantes que ya no se venden: la cotización las trae sin precio. */
+  readonly sinPrecio = new Set<string>();
+  llamadasEliminar = 0;
   /** El precio de contado por unidad; por debajo del de hoy, hay descuento sin pasarela. */
   contado = PRECIO_DE_HOY;
   llamadasCrear = 0;
@@ -85,6 +92,7 @@ class RepositorioCarritoFalso implements RepositorioCarrito {
   }
 
   async eliminarLinea(carritoId: string, lineaId: string): Promise<Carrito> {
+    this.llamadasEliminar++;
     this.carrito = { ...this.carrito, lineas: this.carrito.lineas.filter((l) => l.id !== lineaId) };
     return this.carrito;
   }
@@ -251,5 +259,139 @@ describe('CarritoStore', () => {
     ).rejects.toThrow('sin existencias');
     expect(store.carritoId()).toBe('carrito-1');
     expect(repositorio.llamadasCrear).toBe(1);
+  });
+});
+
+/**
+ * Pagar solo una parte del carrito: todas arrancan marcadas, lo desmarcado se queda para otra
+ * compra, y una línea que ya no se vende no se paga ni tiene casilla.
+ */
+describe('CarritoStore y la selección de lo que se paga', () => {
+  beforeEach(() => {
+    window.localStorage.clear();
+  });
+
+  async function conLineas(repositorio: RepositorioCarritoFalso, ...variantes: string[]) {
+    const { store } = await renderConRepositorio(repositorio);
+    for (const variante of variantes) {
+      await store.agregarAlCarrito(variante, 1, snapshotDePrueba(variante));
+      await vi.waitFor(() => expect(store.carritoId()).not.toBeNull());
+    }
+    await vi.waitFor(() => expect(store.cotizacion.data()?.lineas.length).toBe(variantes.length));
+    return store;
+  }
+
+  it('todas arrancan marcadas, también la que se agrega después', async () => {
+    const repositorio = new RepositorioCarritoFalso();
+    const store = await conLineas(repositorio, 'variante-1', 'variante-2');
+    store.marcar('linea-variante-1', false);
+
+    await store.agregarAlCarrito('variante-3', 1, snapshotDePrueba('variante-3'));
+
+    await vi.waitFor(() =>
+      expect(store.lineasPorPagar().map((linea) => linea.id)).toEqual([
+        'linea-variante-2',
+        'linea-variante-3',
+      ]),
+    );
+    expect(store.estaMarcada('linea-variante-3')).toBe(true);
+  });
+
+  it('el subtotal y el ahorro son los de lo marcado', async () => {
+    const repositorio = new RepositorioCarritoFalso();
+    repositorio.contado = 145_000;
+    const store = await conLineas(repositorio, 'variante-1', 'variante-2');
+    expect(store.subtotal()).toBe(300_000);
+
+    store.marcar('linea-variante-2', false);
+
+    expect(store.subtotal()).toBe(150_000);
+    expect(store.ahorroSinPasarela()).toBe(5_000);
+    expect(store.todasMarcadas()).toBe(false);
+  });
+
+  it('marcarTodas desmarca y vuelve a marcar todas', async () => {
+    const store = await conLineas(new RepositorioCarritoFalso(), 'variante-1', 'variante-2');
+
+    store.marcarTodas(false);
+    expect(store.lineasPorPagar()).toEqual([]);
+    expect(store.subtotal()).toBe(0);
+
+    store.marcarTodas(true);
+    expect(store.lineasPorPagar().length).toBe(2);
+    expect(store.todasMarcadas()).toBe(true);
+  });
+
+  it('una línea que ya no se vende queda fuera del pago y del subtotal', async () => {
+    const repositorio = new RepositorioCarritoFalso();
+    repositorio.sinPrecio.add('variante-2');
+    const store = await conLineas(repositorio, 'variante-1', 'variante-2', 'variante-3');
+
+    expect(store.lineaSeVende('linea-variante-2')).toBe(false);
+    expect(store.lineasPorPagar().map((linea) => linea.id)).toEqual([
+      'linea-variante-1',
+      'linea-variante-3',
+    ]);
+    expect(store.subtotal()).toBe(300_000);
+  });
+
+  /** Con una sola vendible no hay casillas, y lo desmarcado antes no puede quedarse atrapado. */
+  it('con una sola línea vendible no hay selección y se paga entera', async () => {
+    const repositorio = new RepositorioCarritoFalso();
+    const store = await conLineas(repositorio, 'variante-1', 'variante-2');
+    store.marcar('linea-variante-1', false);
+
+    await store.eliminarLinea('linea-variante-2');
+
+    await vi.waitFor(() => expect(store.seleccionHabilitada()).toBe(false));
+    expect(store.lineasPorPagar().map((linea) => linea.id)).toEqual(['linea-variante-1']);
+    expect(store.estaMarcada('linea-variante-1')).toBe(true);
+  });
+
+  it('desmarcar queda guardado en el almacén', async () => {
+    const repositorio = new RepositorioCarritoFalso();
+    const previo = await conLineas(repositorio, 'variante-1', 'variante-2');
+    previo.marcar('linea-variante-2', false);
+
+    expect(new LineasSinMarcarLocalStorageAlmacen().leer()).toEqual(['linea-variante-2']);
+  });
+
+  it('una desmarcada guardada se respeta al cargar', async () => {
+    sembrarLineasSinMarcar(['linea-variante-1']);
+    const store = await conLineas(new RepositorioCarritoFalso(), 'variante-1', 'variante-2');
+
+    expect(store.lineasPorPagar().map((linea) => linea.id)).toEqual(['linea-variante-2']);
+  });
+
+  it('quitarPagadas quita solo las pagadas y deja lo demás marcado', async () => {
+    const repositorio = new RepositorioCarritoFalso();
+    const store = await conLineas(repositorio, 'variante-1', 'variante-2', 'variante-3');
+    store.marcar('linea-variante-3', false);
+
+    await store.quitarPagadas(['linea-variante-1', 'linea-variante-2']);
+
+    await vi.waitFor(() =>
+      expect(store.consulta.data()?.lineas.map((linea) => linea.id)).toEqual(['linea-variante-3']),
+    );
+    expect(store.carritoId()).toBe('carrito-1');
+    expect(new LineasSinMarcarLocalStorageAlmacen().leer()).toEqual([]);
+  });
+
+  it('quitarPagadas con todo pagado, o sin saber qué, limpia el carrito', async () => {
+    const repositorio = new RepositorioCarritoFalso();
+    const store = await conLineas(repositorio, 'variante-1', 'variante-2');
+
+    await store.quitarPagadas(['linea-variante-1', 'linea-variante-2']);
+
+    expect(store.carritoId()).toBeNull();
+    expect(repositorio.llamadasEliminar).toBe(0);
+  });
+
+  it('quitarPagadas sin lista conocida limpia el carrito', async () => {
+    const store = await conLineas(new RepositorioCarritoFalso(), 'variante-1', 'variante-2');
+
+    await store.quitarPagadas(null);
+
+    expect(store.carritoId()).toBeNull();
   });
 });
