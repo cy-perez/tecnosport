@@ -1,5 +1,9 @@
 package co.tecnosport.api.application.proveedores;
 
+import co.tecnosport.api.application.catalogo.EliminarProducto;
+import co.tecnosport.api.application.catalogo.ProductoConVentasException;
+import co.tecnosport.api.application.catalogo.ProductoNoEncontradoPorIdException;
+import co.tecnosport.api.application.catalogo.ProductoPublicadoException;
 import co.tecnosport.api.domain.proveedores.LoteIngesta;
 import java.util.Objects;
 import java.util.UUID;
@@ -28,6 +32,11 @@ import java.util.UUID;
  * reintentar termina el trabajo porque borrar un objeto que no está no falla. Con lotes de cientos
  * de fotos eso alarga la transacción; si llega a pesar, el borrado de objetos sale de ella.
  *
+ * <p>Los productos se borran con {@link EliminarProducto}, el caso de uso del catálogo, y aquí se
+ * traducen sus dos negativas —publicado, o ya vendido— a «se queda». Hasta el 27 de octubre de 2026
+ * pasaba por un puerto, {@code EliminacionDeProductos}, cuya única implementación vivía también en
+ * {@code application}: no era un puerto, era una indirección (docs/01-arquitectura.md).
+ *
  * <p>Una aprobación de un borrador de este lote que confirme mientras tanto puede dejar su producto
  * fuera de la cuenta: se lee antes de que exista. Es una carrera de dos personas sobre el mismo
  * lote en el mismo segundo, y el producto queda en borrador, visible en el panel.
@@ -35,15 +44,15 @@ import java.util.UUID;
 public final class EliminarLoteDeIngesta {
 
   private final RepositorioLotesIngesta repositorioLotes;
-  private final EliminacionDeProductos eliminacionDeProductos;
+  private final EliminarProducto eliminarProducto;
   private final AlmacenDeArchivosDeProveedor almacen;
 
   public EliminarLoteDeIngesta(
       RepositorioLotesIngesta repositorioLotes,
-      EliminacionDeProductos eliminacionDeProductos,
+      EliminarProducto eliminarProducto,
       AlmacenDeArchivosDeProveedor almacen) {
     this.repositorioLotes = Objects.requireNonNull(repositorioLotes);
-    this.eliminacionDeProductos = Objects.requireNonNull(eliminacionDeProductos);
+    this.eliminarProducto = Objects.requireNonNull(eliminarProducto);
     this.almacen = Objects.requireNonNull(almacen);
   }
 
@@ -61,7 +70,7 @@ public final class EliminarLoteDeIngesta {
     int eliminados = 0;
     int conservados = 0;
     for (UUID productoId : dependencias.productos()) {
-      if (eliminacionDeProductos.eliminarSiSePuede(productoId)) {
+      if (eliminarSiSePuede(productoId)) {
         eliminados++;
       } else {
         conservados++;
@@ -72,5 +81,23 @@ public final class EliminarLoteDeIngesta {
     }
     repositorioLotes.eliminarConSuHistorial(loteId);
     return new LoteEliminado(eliminados, conservados, dependencias.archivos().size());
+  }
+
+  /**
+   * Las dos negativas que significan «este producto se queda» —publicado, o ya vendido— no tumban
+   * el borrado del lote entero; cualquier otra excepción sí, porque es un fallo y no una regla.
+   *
+   * @return {@code false} si se queda; {@code true} si se borró o ya no existía
+   */
+  private boolean eliminarSiSePuede(UUID productoId) {
+    try {
+      eliminarProducto.ejecutar(productoId);
+      return true;
+    } catch (ProductoPublicadoException | ProductoConVentasException e) {
+      return false;
+    } catch (ProductoNoEncontradoPorIdException e) {
+      // Ya no está: lo que se quería ya pasó.
+      return true;
+    }
   }
 }
