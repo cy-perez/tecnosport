@@ -10,7 +10,6 @@ import co.tecnosport.api.application.compartido.TextosDeCorreo;
 import co.tecnosport.api.application.legal.RepositorioAutorizaciones;
 import co.tecnosport.api.domain.compartido.CorreoElectronico;
 import co.tecnosport.api.domain.legal.AutorizacionDatos;
-import co.tecnosport.api.domain.usuario.CorreoYaRegistradoException;
 import co.tecnosport.api.domain.usuario.Rol;
 import co.tecnosport.api.domain.usuario.TokenVerificacionCorreo;
 import co.tecnosport.api.domain.usuario.Usuario;
@@ -22,6 +21,13 @@ import java.util.Objects;
  * El registro público siempre crea {@code CLIENTE} — nunca {@code ADMIN}, ese rol solo lo siembra
  * {@code SembradorAdmin}. La cuenta nace sin verificar (docs/08-seguridad-legal.md): no se puede
  * iniciar sesión con ella hasta seguir el enlace del correo que este caso de uso envía.
+ *
+ * <p><b>Responde igual exista o no la cuenta.</b> Hasta el 27 de octubre de 2026 un correo ya
+ * registrado daba 409 {@code CORREO_YA_REGISTRADO}, y eso convertía el formulario público en un
+ * oráculo de qué correos tienen cuenta. Ahora, si la cuenta ya existe, no se crea nada y se le
+ * escribe al titular —que es el único que lee ese buzón— para decirle que alguien intentó
+ * registrarse con su correo y cómo entrar o recuperar la clave. La clave se codifica igual en los
+ * dos caminos, para que tampoco el tiempo de respuesta lo delate.
  */
 public final class RegistrarUsuario {
 
@@ -33,6 +39,7 @@ public final class RegistrarUsuario {
   private final Reloj reloj;
   private final Duration vigenciaToken;
   private final String urlBaseVerificacion;
+  private final String urlRecuperarClave;
   private final LimitadorDeIntentos limitadorDeIntentos;
   private final int maximoIntentosPorCuenta;
   private final Duration ventanaIntentosPorCuenta;
@@ -48,6 +55,7 @@ public final class RegistrarUsuario {
       Reloj reloj,
       Duration vigenciaToken,
       String urlBaseVerificacion,
+      String urlRecuperarClave,
       LimitadorDeIntentos limitadorDeIntentos,
       int maximoIntentosPorCuenta,
       Duration ventanaIntentosPorCuenta,
@@ -61,6 +69,7 @@ public final class RegistrarUsuario {
     this.reloj = Objects.requireNonNull(reloj);
     this.vigenciaToken = Objects.requireNonNull(vigenciaToken);
     this.urlBaseVerificacion = Objects.requireNonNull(urlBaseVerificacion);
+    this.urlRecuperarClave = Objects.requireNonNull(urlRecuperarClave);
     this.limitadorDeIntentos = Objects.requireNonNull(limitadorDeIntentos);
     this.maximoIntentosPorCuenta = maximoIntentosPorCuenta;
     this.ventanaIntentosPorCuenta = Objects.requireNonNull(ventanaIntentosPorCuenta);
@@ -81,17 +90,19 @@ public final class RegistrarUsuario {
       throw new LimiteDeIntentosExcedidoException();
     }
 
-    // Antes que el correo duplicado: responder 409 a quien no autorizó le confirmaría que ese
-    // correo tiene cuenta sin haber consentido nada.
+    // Antes de mirar si la cuenta existe: sin autorización se rechaza igual en los dos casos.
     AutorizacionDatos.exigirAutorizacion(comando.autorizaDatos());
 
+    // Se codifica antes de saber si la cuenta existe: es el paso caro, y saltárselo en un camino
+    // le devolvería al otro la diferencia de tiempo que este caso de uso quiere borrar.
+    String claveHash = codificadorDeClaves.codificar(comando.claveTextoPlano());
+
     if (repositorioUsuarios.buscarPorCorreo(correo).isPresent()) {
-      throw new CorreoYaRegistradoException();
+      avisarAlTitular(correo);
+      return;
     }
 
-    Usuario usuario =
-        Usuario.crear(
-            correo, codificadorDeClaves.codificar(comando.claveTextoPlano()), Rol.CLIENTE, ahora);
+    Usuario usuario = Usuario.crear(correo, claveHash, Rol.CLIENTE, ahora);
 
     // Antes de guardar nada: sin autorización no hay cuenta, y la constancia se construye con el
     // id del usuario que está a punto de existir. Si falta el sí, esto revienta aquí y no queda
@@ -127,6 +138,22 @@ public final class RegistrarUsuario {
       // cuenta creada el día que el SMTP falló se queda sin verificar"— y adr/0045 la cierra por
       // los dos lados: un SMTP caído ya no pierde el correo, porque la bandeja lo reintenta, y
       // además existe ReenviarVerificacion para cuando el enlace se venza o no llegue.
+    }
+  }
+
+  /**
+   * El aviso al titular de una cuenta que ya existe. El límite por cuenta de arriba es también el
+   * que acota cuántos de estos le llegan a un buzón ajeno.
+   */
+  private void avisarAlTitular(CorreoElectronico correo) {
+    try {
+      enviadorDeCorreo.enviar(
+          correo,
+          textos.texto(TextoDeCorreo.USUARIO_CUENTA_EXISTENTE_ASUNTO),
+          textos.texto(TextoDeCorreo.USUARIO_CUENTA_EXISTENTE_CUERPO, urlRecuperarClave));
+    } catch (CorreoNoEnviadoException registradoPorElAdaptador) {
+      // Mismo criterio que el de la verificación: responder con un error aquí diría que la cuenta
+      // existe, que es justo lo que este camino calla.
     }
   }
 }

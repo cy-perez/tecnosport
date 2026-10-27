@@ -130,7 +130,6 @@ import co.tecnosport.api.domain.difusion.ProductoNoDifundibleException;
 import co.tecnosport.api.domain.inventario.ExistenciaInsuficienteException;
 import co.tecnosport.api.domain.pedido.EnlaceDeCompraNoVigenteException;
 import co.tecnosport.api.domain.usuario.CorreoSinVerificarException;
-import co.tecnosport.api.domain.usuario.CorreoYaRegistradoException;
 import java.net.URI;
 import java.util.List;
 import java.util.Locale;
@@ -202,8 +201,8 @@ public class ManejadorDeErrores {
     return problema(HttpStatus.NOT_FOUND, "Imagen no encontrada", excepcion);
   }
 
-  // 409, mismo criterio que CorreoYaRegistradoException: la solicitud está bien formada, el
-  // conflicto es que el SKU ya está en uso en otro producto.
+  // 409: la solicitud está bien formada, el conflicto es que el SKU ya está en uso en otro
+  // producto.
   @ExceptionHandler(SetRotacionNoEncontradoException.class)
   public ProblemDetail setRotacionNoEncontrado(SetRotacionNoEncontradoException excepcion) {
     return problema(HttpStatus.NOT_FOUND, "Set de rotación no encontrado", excepcion);
@@ -1001,13 +1000,6 @@ public class ManejadorDeErrores {
   @ExceptionHandler(CredencialesInvalidasException.class)
   public ProblemDetail credencialesInvalidas(CredencialesInvalidasException excepcion) {
     return problema(HttpStatus.UNAUTHORIZED, "Credenciales inválidas", excepcion);
-  }
-
-  // 409, mismo criterio que ExistenciaInsuficienteException: la solicitud está bien formada, el
-  // conflicto es que ya existe una cuenta con ese correo.
-  @ExceptionHandler(CorreoYaRegistradoException.class)
-  public ProblemDetail correoYaRegistrado(CorreoYaRegistradoException excepcion) {
-    return problema(HttpStatus.CONFLICT, "Correo ya registrado", excepcion);
   }
 
   // 403, no 401: las credenciales sí son correctas, pero la cuenta no puede iniciar sesión hasta

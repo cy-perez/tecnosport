@@ -280,7 +280,7 @@ class AutenticacionControladorTest {
   }
 
   @Test
-  void registrarUnCorreoYaExistenteDevuelve409() throws Exception {
+  void registrarUnCorreoYaExistenteRespondeIgualQueUnoNuevo() throws Exception {
     conUsuarioAdmin("admin@tecnosport.co", "clave-correcta");
 
     mockMvc
@@ -290,8 +290,7 @@ class AutenticacionControladorTest {
                 .content(
                     json.writeValueAsString(
                         new RegistrarUsuarioRequest("admin@tecnosport.co", "clave-segura", true))))
-        .andExpect(status().isConflict())
-        .andExpect(jsonPath("$.codigo").value("CORREO_YA_REGISTRADO"));
+        .andExpect(status().isCreated());
   }
 
   @Test
@@ -597,6 +596,7 @@ class AutenticacionControladorTest {
           Instant::now,
           VIGENCIA_TOKEN_VERIFICACION,
           "http://localhost:4200/es/cuenta/verificar-correo",
+          "http://localhost:4200/es/cuenta/recuperar-clave",
           limitadorDeIntentos,
           MAXIMO_INTENTOS_POR_CUENTA,
           VENTANA_INTENTOS_POR_CUENTA,

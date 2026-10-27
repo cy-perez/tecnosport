@@ -3,7 +3,6 @@ import { crearClienteContratos } from '@tecnosport/contratos';
 import { baseUrl } from '../../../core/http/base-url';
 import { DemasiadosIntentosError } from '../../../core/autenticacion/sesion.errores';
 import { ErrorHttp, exigirExito } from '../../../core/http/respuesta-http';
-import { CorreoYaRegistradoError } from '../domain/cuenta.errores';
 import { RepositorioCuenta } from '../domain/repositorio-cuenta.puerto';
 import { ConfiguracionGoogle } from '../domain/boton-google.puerto';
 import { desempaquetar } from '../../../core/http/respuesta-http';
@@ -35,9 +34,6 @@ export class CuentaHttpRepositorio implements RepositorioCuenta {
     const resultado = await this.cliente.POST('/api/v1/auth/registro', {
       body: { correo, clave, autorizaDatos },
     });
-    if (resultado.response.status === 409) {
-      throw new CorreoYaRegistradoError();
-    }
     if (resultado.response.status === 429) {
       throw new DemasiadosIntentosError();
     }
