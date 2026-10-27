@@ -163,9 +163,22 @@ public final class ArmadorDeBultos {
             valorDeclaradoMaximo, "El valor declarado máximo no puede ser nulo.");
   }
 
-  /** Un pedido que se paga en línea: el declarado solo asegura, así que es el de la mercancía. */
+  /**
+   * Un pedido que se paga en línea: el declarado solo asegura, así que es el de la mercancía. Sin
+   * pedido todavía, el del catálogo es el publicado: el más alto que el comprador puede llegar a
+   * pagar, y por tanto el que se declara si paga con pasarela (ADR-0095).
+   */
   public List<BultoDespachable> armar(List<LineaAEmpacar> lineas) {
-    return armar(lineas, null);
+    return armar(lineas, null, Variante::precio);
+  }
+
+  /**
+   * Como {@link #armar(List)}, pero sin pedido y sabiendo que no se paga con pasarela: el declarado
+   * del catálogo es el precio de contado, que es lo que se va a cobrar (ADR-0095). Lo usa la
+   * cotización con recaudo, que solo pide la contraentrega.
+   */
+  public List<BultoDespachable> armarAlContado(List<LineaAEmpacar> lineas) {
+    return armar(lineas, null, Variante::precioContado);
   }
 
   /**
@@ -180,7 +193,9 @@ public final class ArmadorDeBultos {
   public List<BultoDespachable> armarParaRecaudo(
       List<LineaAEmpacar> lineas, Dinero totalARecaudar) {
     Objects.requireNonNull(totalARecaudar, "El total a recaudar no puede ser nulo.");
-    return armar(lineas, totalARecaudar);
+    // Recaudo solo hay en contraentrega, y contraentrega paga el precio de contado (ADR-0095): una
+    // línea sin pedido detrás declara ese.
+    return armar(lineas, totalARecaudar, Variante::precioContado);
   }
 
   /**
@@ -217,7 +232,10 @@ public final class ArmadorDeBultos {
     return pedido.metodoPago() == MetodoPago.CONTRAENTREGA;
   }
 
-  private List<BultoDespachable> armar(List<LineaAEmpacar> lineas, Dinero totalARecaudar) {
+  private List<BultoDespachable> armar(
+      List<LineaAEmpacar> lineas,
+      Dinero totalARecaudar,
+      java.util.function.Function<Variante, Dinero> precioDelCatalogo) {
     Objects.requireNonNull(lineas, "Las líneas a empacar no pueden ser nulas.");
     List<Unidad> unidades = new ArrayList<>();
     for (LineaAEmpacar linea : lineas) {
@@ -228,8 +246,11 @@ public final class ArmadorDeBultos {
       Producto producto = producto(linea.varianteId());
       Variante variante = variante(producto, linea.varianteId());
       // El del pedido cuando lo hay —es el que el comprador pagó y contra el que se reclama—, y el
-      // del catálogo cuando todavía no hay pedido, que es el caso del checkout.
-      Dinero declarado = Objects.requireNonNullElseGet(linea.valorDeclarado(), variante::precio);
+      // del catálogo cuando todavía no hay pedido, que es el caso del checkout: el publicado o el
+      // de contado según quién pregunta (ADR-0095).
+      Dinero declarado =
+          Objects.requireNonNullElseGet(
+              linea.valorDeclarado(), () -> precioDelCatalogo.apply(variante));
       for (int unidad = 0; unidad < linea.cantidad(); unidad++) {
         unidades.add(new Unidad(producto, variante, declarado));
       }

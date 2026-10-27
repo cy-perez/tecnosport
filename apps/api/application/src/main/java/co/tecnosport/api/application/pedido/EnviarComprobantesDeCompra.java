@@ -114,6 +114,22 @@ public final class EnviarComprobantesDeCompra {
     return new ResultadoComprobantes(pendientes.size(), enviados, fallidos);
   }
 
+  private String totales(Pedido pedido) {
+    if (pedido.descuento().valor().signum() == 0) {
+      return textos.texto(
+          TextoDeCorreo.PEDIDO_COMPROBANTE_TOTALES,
+          textos.dinero(pedido.subtotal()),
+          textos.dinero(pedido.costoEnvio()),
+          textos.dinero(pedido.total()));
+    }
+    return textos.texto(
+        TextoDeCorreo.PEDIDO_COMPROBANTE_TOTALES_CON_DESCUENTO,
+        textos.dinero(pedido.subtotalPublicado()),
+        textos.dinero(pedido.costoEnvio()),
+        textos.dinero(pedido.descuento()),
+        textos.dinero(pedido.total()));
+  }
+
   private void enviar(Pedido pedido) {
     StringBuilder cuerpo = new StringBuilder();
     cuerpo.append(
@@ -121,6 +137,9 @@ public final class EnviarComprobantesDeCompra {
             TextoDeCorreo.PEDIDO_COMPROBANTE_CUERPO,
             pedido.numeroPedido().valor(),
             FECHA.format(pedido.creadoEn().atZone(ZONA_COLOMBIA))));
+    // Las líneas y el subtotal van al precio publicado y el descuento aparte, antes del total
+    // (ADR-0095): así la cuenta se lee de arriba abajo y el descuento se ve. Sin descuento, el
+    // publicado es lo que se cobró y el correo queda como siempre.
     for (LineaPedido linea : pedido.lineas()) {
       cuerpo.append(
           textos.texto(
@@ -128,14 +147,9 @@ public final class EnviarComprobantesDeCompra {
               linea.cantidad(),
               linea.descripcion(),
               linea.sku().valor(),
-              textos.dinero(linea.subtotal())));
+              textos.dinero(linea.subtotalPublicado())));
     }
-    cuerpo.append(
-        textos.texto(
-            TextoDeCorreo.PEDIDO_COMPROBANTE_TOTALES,
-            textos.dinero(pedido.subtotal()),
-            textos.dinero(pedido.costoEnvio()),
-            textos.dinero(pedido.total())));
+    cuerpo.append(totales(pedido));
     cuerpo.append(entrega(pedido));
     cuerpo.append(textos.texto(pago(pedido)));
     cuerpo.append(textos.texto(TextoDeCorreo.PEDIDO_COMPROBANTE_VENDEDOR));

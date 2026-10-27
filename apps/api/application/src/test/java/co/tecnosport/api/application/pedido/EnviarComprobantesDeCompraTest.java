@@ -224,6 +224,63 @@ class EnviarComprobantesDeCompraTest {
         cuerpo.contains(TextoDeCorreo.PEDIDO_COMPROBANTE_TOTALES.clave() + "|179800"), cuerpo);
   }
 
+  /** Sin descuento el comprobante no habla de él: los totales de siempre. */
+  @Test
+  void sinDescuentoNoHayLineaDeDescuento() {
+    pedidoEn(MetodoPago.CONTRAENTREGA, TipoEntrega.ENVIO_A_DOMICILIO);
+
+    casoDeUso().ejecutar();
+
+    String cuerpo = cuerpoUnico();
+    assertFalse(
+        cuerpo.contains(TextoDeCorreo.PEDIDO_COMPROBANTE_TOTALES_CON_DESCUENTO.clave()), cuerpo);
+  }
+
+  /**
+   * ADR-0095: pagado sin pasarela, las líneas y el subtotal van al precio publicado y el descuento
+   * aparece aparte, antes del total. Dos unidades anunciadas a 53.000 que se cobraron a 50.000:
+   * 6.000 de descuento y 100.000 de total, sin flete.
+   */
+  @Test
+  void conDescuentoLoMuestraEntreElEnvioYElTotal() {
+    Pedido pedido =
+        Pedido.crear(
+            NumeroPedido.de(2026, 1),
+            null,
+            new CorreoElectronico("cliente@tecnosport.co"),
+            List.of(
+                new LineaPedido(
+                    UUID.randomUUID(),
+                    UUID.randomUUID(),
+                    new Sku("TS-GOR-1"),
+                    "Gorra",
+                    2,
+                    Dinero.deCop(50_000),
+                    BigDecimal.ZERO,
+                    null,
+                    UUID.randomUUID(),
+                    null,
+                    Dinero.deCop(53_000))),
+            TipoEntrega.RETIRO_EN_PUNTO,
+            null,
+            MetodoPago.TRANSFERENCIA_MANUAL,
+            "cliente@tecnosport.co",
+            COMPRADO);
+    pedido.transicionar(EstadoPedido.PAGADO, "sistema", "prueba", COMPRADO.plusSeconds(60));
+    pedidos.guardar(pedido);
+
+    casoDeUso().ejecutar();
+
+    String cuerpo = cuerpoUnico();
+    assertTrue(cuerpo.contains("2|Gorra|TS-GOR-1|106000"), cuerpo);
+    assertTrue(
+        cuerpo.contains(
+            TextoDeCorreo.PEDIDO_COMPROBANTE_TOTALES_CON_DESCUENTO.clave()
+                + "|106000|0|6000|100000"),
+        cuerpo);
+    assertFalse(cuerpo.contains(TextoDeCorreo.PEDIDO_COMPROBANTE_TOTALES.clave() + "|"), cuerpo);
+  }
+
   /** ADR-0073: el comprobante dice con qué transportadora va, que es la que el comprador eligió. */
   @Test
   void aDomicilioNombraLaTransportadoraDelFlete() {

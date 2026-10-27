@@ -345,7 +345,8 @@ public class RepositorioPedidosJpa implements RepositorioPedidos {
         l.getTasaIva(),
         l.getImagenUrl(),
         l.getIdReserva(),
-        l.getDetalleVariante());
+        l.getDetalleVariante(),
+        Dinero.deCop(l.getPrecioPublicado()));
   }
 
   private HistorialPedido aHistorial(HistorialPedidoJpaEntity h) {
@@ -394,6 +395,7 @@ public class RepositorioPedidosJpa implements RepositorioPedidos {
             l.nombre(),
             l.cantidad(),
             l.precioUnitario().valor(),
+            l.precioPublicado().valor(),
             l.tasaIva(),
             l.imagenUrl(),
             l.idReserva())

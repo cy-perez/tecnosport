@@ -64,6 +64,7 @@ class ConfiguracionLimiteIntentosTest {
 
     assertTrue(rutas.contains("/api/v1/pedidos"));
     assertTrue(rutas.contains("/api/v1/pedidos/metodos-de-pago-disponibles"));
+    assertTrue(rutas.contains("/api/v1/pedidos/metodos-de-pago-con-precio"));
     assertTrue(rutas.contains("/api/v1/envios/cotizacion"));
     assertTrue(rutas.contains("/api/v1/auth/sesion"));
   }

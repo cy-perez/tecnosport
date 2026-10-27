@@ -31,6 +31,10 @@ public class LineaPedidoJpaEntity {
   @Column(name = "precio_unitario", nullable = false)
   private BigDecimal precioUnitario;
 
+  /** El precio anunciado al comprar (V124, ADR-0095); {@code precioUnitario} es lo que se cobra. */
+  @Column(name = "precio_publicado", nullable = false)
+  private BigDecimal precioPublicado;
+
   @Column(name = "tasa_iva", nullable = false)
   private BigDecimal tasaIva;
 
@@ -54,6 +58,7 @@ public class LineaPedidoJpaEntity {
       String nombre,
       int cantidad,
       BigDecimal precioUnitario,
+      BigDecimal precioPublicado,
       BigDecimal tasaIva,
       String imagenUrl,
       UUID idReserva) {
@@ -64,6 +69,7 @@ public class LineaPedidoJpaEntity {
     this.nombre = nombre;
     this.cantidad = cantidad;
     this.precioUnitario = precioUnitario;
+    this.precioPublicado = precioPublicado;
     this.tasaIva = tasaIva;
     this.imagenUrl = imagenUrl;
     this.idReserva = idReserva;
@@ -95,6 +101,10 @@ public class LineaPedidoJpaEntity {
 
   public BigDecimal getPrecioUnitario() {
     return precioUnitario;
+  }
+
+  public BigDecimal getPrecioPublicado() {
+    return precioPublicado;
   }
 
   public BigDecimal getTasaIva() {

@@ -1,5 +1,6 @@
 package co.tecnosport.api.presentation.pedido;
 
+import co.tecnosport.api.application.envio.MedioDePagoConPrecio;
 import co.tecnosport.api.application.envio.MetodosDePagoDisponibles;
 import co.tecnosport.api.application.envio.MetodosDePagoDisponiblesComando;
 import co.tecnosport.api.application.pedido.ConsultarSeguimientoPedido;
@@ -10,13 +11,16 @@ import co.tecnosport.api.application.pedido.ReintentarPago;
 import co.tecnosport.api.application.pedido.ReintentarPagoComando;
 import co.tecnosport.api.application.pedido.SolicitarEnlaceDeSeguimiento;
 import co.tecnosport.api.application.pedido.SolicitarEnlaceDeSeguimientoComando;
+import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.pedido.Contacto;
 import co.tecnosport.api.domain.pedido.Direccion;
 import co.tecnosport.api.domain.pedido.MetodoPago;
 import co.tecnosport.api.domain.pedido.Pedido;
 import co.tecnosport.api.domain.pedido.TipoEntrega;
 import co.tecnosport.api.presentation.compartido.IpDelCliente;
+import co.tecnosport.api.presentation.compartido.dto.DineroRespuesta;
 import co.tecnosport.api.presentation.pedido.dto.CrearPedidoRequest;
+import co.tecnosport.api.presentation.pedido.dto.MetodosDePagoConPrecioRespuesta;
 import co.tecnosport.api.presentation.pedido.dto.MetodosDePagoDisponiblesRequest;
 import co.tecnosport.api.presentation.pedido.dto.PedidoRespuesta;
 import co.tecnosport.api.presentation.pedido.dto.PedidoSeguimientoRespuesta;
@@ -96,20 +100,7 @@ public class PedidoControlador {
   @PostMapping("/metodos-de-pago-disponibles")
   public List<MetodoPago> metodosDePagoDisponibles(
       @RequestBody MetodosDePagoDisponiblesRequest cuerpo) {
-    MetodosDePagoDisponiblesComando comando =
-        new MetodosDePagoDisponiblesComando(
-            cuerpo.lineas().stream()
-                .map(
-                    l ->
-                        new MetodosDePagoDisponiblesComando.LineaComando(
-                            l.varianteId(), l.cantidad()))
-                .toList(),
-            cuerpo.correo(),
-            TipoEntrega.valueOf(cuerpo.tipoEntrega()),
-            cuerpo.direccion() == null ? null : aDireccion(cuerpo.direccion()),
-            null,
-            cuerpo.telefono(),
-            cuerpo.transportadora());
+    MetodosDePagoDisponiblesComando comando = aComando(cuerpo);
     // Por NOMBRE y no por el orden del enum. Es lo que hacia `map(Enum::name).sorted()` cuando
     // la lista viajaba como cadenas, y este es el orden en que el checkout pinta los botones:
     // dejar que Jackson serialice el enum en su orden de declaracion los habria movido de sitio
@@ -117,6 +108,44 @@ public class PedidoControlador {
     return metodosDePagoDisponibles.ejecutar(comando).stream()
         .sorted(Comparator.comparing(Enum::name))
         .toList();
+  }
+
+  /**
+   * La misma consulta que {@code /metodos-de-pago-disponibles}, con lo que el comprador pagaría de
+   * mercancía con cada medio (ADR-0095). Una ruta aparte y no otra forma de la de arriba: aquélla
+   * devuelve un arreglo de nombres que el checkout ya lee, y cambiarle la forma lo rompería hasta
+   * que el frontend se ponga al día. El cuerpo es el mismo, y el límite de intentos también.
+   */
+  @PostMapping("/metodos-de-pago-con-precio")
+  public MetodosDePagoConPrecioRespuesta metodosDePagoConPrecio(
+      @RequestBody MetodosDePagoDisponiblesRequest cuerpo) {
+    return new MetodosDePagoConPrecioRespuesta(
+        metodosDePagoDisponibles.conPrecios(aComando(cuerpo)).stream()
+            .map(PedidoControlador::aRespuesta)
+            .toList());
+  }
+
+  private static MetodosDePagoConPrecioRespuesta.Metodo aRespuesta(MedioDePagoConPrecio medio) {
+    return new MetodosDePagoConPrecioRespuesta.Metodo(
+        medio.metodo(), dinero(medio.subtotal()), dinero(medio.descuento()));
+  }
+
+  private static DineroRespuesta dinero(Dinero valor) {
+    return new DineroRespuesta(valor.valor().longValueExact(), Dinero.MONEDA);
+  }
+
+  private MetodosDePagoDisponiblesComando aComando(MetodosDePagoDisponiblesRequest cuerpo) {
+    return new MetodosDePagoDisponiblesComando(
+        cuerpo.lineas().stream()
+            .map(
+                l -> new MetodosDePagoDisponiblesComando.LineaComando(l.varianteId(), l.cantidad()))
+            .toList(),
+        cuerpo.correo(),
+        TipoEntrega.valueOf(cuerpo.tipoEntrega()),
+        cuerpo.direccion() == null ? null : aDireccion(cuerpo.direccion()),
+        null,
+        cuerpo.telefono(),
+        cuerpo.transportadora());
   }
 
   @PostMapping("/{id}/reintentar-pago")

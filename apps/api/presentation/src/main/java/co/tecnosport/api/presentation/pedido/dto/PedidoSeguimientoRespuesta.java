@@ -40,4 +40,6 @@ public record PedidoSeguimientoRespuesta(
     List<HistorialPedidoRespuesta> historial,
     List<RetractoPublicoRespuesta> retractos,
     /** La transportadora que eligió el comprador (ADR-0073); nula en recogida. */
-    String transportadora) {}
+    String transportadora,
+    /** El descuento por pagar sin pasarela (ADR-0095), ya restado en {@code subtotal}. */
+    DineroRespuesta descuento) {}

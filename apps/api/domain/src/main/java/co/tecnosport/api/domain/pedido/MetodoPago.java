@@ -1,5 +1,8 @@
 package co.tecnosport.api.domain.pedido;
 
+import co.tecnosport.api.domain.catalogo.Variante;
+import co.tecnosport.api.domain.compartido.Dinero;
+
 /**
  * Tabla de métodos de docs/11-pagos-y-envios.md.
  *
@@ -87,5 +90,14 @@ public enum MetodoPago {
    */
   public boolean laCobraUnaPasarela() {
     return pasarela() != ProveedorDePago.NINGUNO;
+  }
+
+  /**
+   * El precio de la variante que se cobra con este medio (ADR-0095, decisión 3): el publicado si lo
+   * cobra una pasarela —Wompi o Sistecrédito—, el de contado si no. Vive aquí y no en {@code
+   * Variante} porque el pedido ya conoce el catálogo y el catálogo no conoce los medios de pago.
+   */
+  public Dinero precioDe(Variante variante) {
+    return laCobraUnaPasarela() ? variante.precio() : variante.precioContado();
   }
 }

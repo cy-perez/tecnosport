@@ -304,6 +304,50 @@ class CotizarEnvioTest {
     }
   }
 
+  /**
+   * ADR-0095: con recaudo el medio es contraentrega, que paga el precio de contado, y ese se
+   * declara. Sin recaudo el medio puede ser cualquiera y se declara el publicado, el más alto que
+   * el comprador puede llegar a pagar: es el que la guía declarará si paga con pasarela.
+   */
+  @Test
+  void conRecaudoSeDeclaraElContadoYSinElElPublicado() {
+    Producto bolso =
+        Producto.crear(
+            "Bolso",
+            new Slug("bolso"),
+            "Descripción",
+            Marca.crear("TecnoSport"),
+            Categoria.crear("Bolsos", new Slug("bolsos"), LineaCatalogo.ROPA));
+    Variante conDosPrecios =
+        Variante.crear(
+            new Sku("TS-BOL-1"),
+            Dinero.deCop(230_000),
+            Dinero.deCop(239_000),
+            BigDecimal.ZERO,
+            null,
+            PAQUETE_CAMISETA,
+            List.of());
+    bolso.agregarVariante(conDosPrecios);
+    productos.conProductos(bolso);
+    List<CotizarEnvioComando.LineaComando> lineas =
+        List.of(new CotizarEnvioComando.LineaComando(conDosPrecios.id(), 1));
+    cotizador.devolver(
+        new TarifaEnvio(
+            "t",
+            "Coordinadora",
+            "Standard",
+            Dinero.deCop(10_540),
+            2,
+            true,
+            AHORA.plusSeconds(3600)));
+
+    caso.ejecutar(new CotizarEnvioComando(lineas, BOGOTA, false, null));
+    assertEquals(Dinero.deCop(239_000), cotizador.ultima().bultos().get(0).valorDeclarado());
+
+    caso.ejecutar(new CotizarEnvioComando(lineas, BOGOTA, true, null));
+    assertEquals(Dinero.deCop(230_000), cotizador.ultima().bultos().get(0).valorDeclarado());
+  }
+
   @Test
   void elDestinoViajaTalCualAlCotizador() {
     cotizador.devolver(tarifa("t", 10_540, 2, AHORA.plusSeconds(3600)));

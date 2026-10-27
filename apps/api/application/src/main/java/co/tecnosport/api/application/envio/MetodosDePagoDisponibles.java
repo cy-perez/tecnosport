@@ -13,6 +13,7 @@ import co.tecnosport.api.domain.pedido.MetodoPago;
 import co.tecnosport.api.domain.pedido.PoliticaContraentrega;
 import co.tecnosport.api.domain.pedido.TipoEntrega;
 import java.math.BigDecimal;
+import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
@@ -55,6 +56,11 @@ import java.util.Set;
  *
  * <p>Consecuencia de la que conviene acordarse: esto depende ahora de un proveedor externo. Si
  * Skydropx no responde, no se ofrece contraentrega. Falla cerrado, igual que la cotización.
+ *
+ * <p><b>Dos sumas del carrito, no una</b> (ADR-0095). Con pasarela se cobra el precio publicado;
+ * sin ella, el de contado. El mínimo de Sistecrédito se mide contra el publicado, que es lo que
+ * Sistecrédito cobra; el tope de la contraentrega y lo que se declara para recaudar, contra el de
+ * contado, que es lo que el mensajero cobra en la puerta.
  */
 public final class MetodosDePagoDisponibles {
 
@@ -128,6 +134,39 @@ public final class MetodosDePagoDisponibles {
 
   public Set<MetodoPago> ejecutar(MetodosDePagoDisponiblesComando comando) {
     Objects.requireNonNull(comando, "El comando no puede ser nulo.");
+    return disponibles(comando, new CarritoPerezoso(comando.lineas()));
+  }
+
+  /**
+   * Los mismos medios que {@link #ejecutar}, cada uno con lo que el comprador pagaría de mercancía
+   * si lo elige (ADR-0095): el subtotal publicado con pasarela, el de contado sin ella, y el
+   * descuento que eso supone. Ordenados por nombre, que es el orden en que el checkout los pinta.
+   *
+   * <p>Sin flete: aquí solo se cotiza el envío con recaudo, y el flete de los demás medios lo
+   * cotiza el checkout aparte. El flete se cobra igual con cualquier medio (decisión 7), así que el
+   * subtotal basta para comparar.
+   */
+  public List<MedioDePagoConPrecio> conPrecios(MetodosDePagoDisponiblesComando comando) {
+    Objects.requireNonNull(comando, "El comando no puede ser nulo.");
+    CarritoPerezoso carrito = new CarritoPerezoso(comando.lineas());
+    Set<MetodoPago> disponibles = disponibles(comando, carrito);
+    DatosCarrito datos = carrito.datos();
+    return disponibles.stream()
+        .sorted(Comparator.comparing(Enum::name))
+        .map(
+            metodo -> {
+              Dinero subtotal =
+                  metodo.laCobraUnaPasarela() ? datos.subtotalPublicado() : datos.subtotalContado();
+              return new MedioDePagoConPrecio(
+                  metodo,
+                  subtotal,
+                  Dinero.deCop(datos.subtotalPublicado().valor().subtract(subtotal.valor())));
+            })
+        .toList();
+  }
+
+  private Set<MetodoPago> disponibles(
+      MetodosDePagoDisponiblesComando comando, CarritoPerezoso carrito) {
     Set<MetodoPago> disponibles = habilitados();
     // Perezoso y memorizado, no resuelto de entrada. Las dos cosas importan: resolverlo hace un
     // `buscarPorVarianteId` por línea y esto corre en cada carga del checkout, así que calcularlo
@@ -135,7 +174,6 @@ public final class MetodosDePagoDisponibles {
     // calcularlo siempre se las cobraría también a un retiro en punto sin contraentrega, que no
     // lo mira nunca. Y no es solo coste: resolver el carrito puede lanzar
     // `VarianteNoEncontradaException`, así que adelantarlo cambiaría cuándo falla.
-    CarritoPerezoso carrito = new CarritoPerezoso(comando.lineas());
     if (!contraentregaElegible(comando, carrito)) {
       disponibles.remove(MetodoPago.CONTRAENTREGA);
     }
@@ -157,9 +195,13 @@ public final class MetodosDePagoDisponibles {
    * La consecuencia es que un carrito cuya mercancía queda justo por debajo del mínimo y lo
    * superaría sumando el flete no ve Sistecrédito. Se pierde una venta rara; la alternativa
    * —ofrecerlo y que la pasarela lo rechace con el 802— le rompe el pago a alguien que ya eligió.
+   *
+   * <p>Al precio <b>publicado</b>: con Sistecrédito no hay descuento por pagar sin pasarela, así
+   * que el crédito que se pide es por el publicado (ADR-0095).
    */
   private boolean alcanzaElMinimoDeSistecredito(CarritoPerezoso carrito) {
-    return carrito.datos().total().valor().compareTo(montoMinimoSistecredito.valor()) >= 0;
+    return carrito.datos().subtotalPublicado().valor().compareTo(montoMinimoSistecredito.valor())
+        >= 0;
   }
 
   /** Resuelve el carrito como mucho una vez, y solo si alguien lo pide. */
@@ -191,7 +233,10 @@ public final class MetodosDePagoDisponibles {
       return false;
     }
     DatosCarrito datos = carrito.datos();
-    Dinero aRecaudar = Dinero.deCop(datos.total().valor().add(conRecaudo.get().costo().valor()));
+    // Al precio de contado: contraentrega no pasa por pasarela y lleva el descuento (ADR-0095), así
+    // que es lo que el pedido cobrará y lo que el mensajero recauda.
+    Dinero aRecaudar =
+        Dinero.deCop(datos.subtotalContado().valor().add(conRecaudo.get().costo().valor()));
     if (!elRecaudoCuadra(comando.lineas(), aRecaudar)) {
       return false;
     }
@@ -219,6 +264,9 @@ public final class MetodosDePagoDisponibles {
    * recauda la suma de los valores declarados y la plataforma exige un mínimo por bulto, así que un
    * carrito de muchas unidades muy baratas declara más de lo que vale y cobraría de más en la
    * puerta ({@code adr/0037}). Ese carrito no lleva contraentrega, y se entera aquí y no al emitir.
+   *
+   * <p>Las líneas van sin valor declarado, y {@link ArmadorDeBultos#armarParaRecaudo} toma entonces
+   * el precio de contado del catálogo, el mismo que {@code CrearPedido} congelará con este medio.
    *
    * <p>Se arman los bultos de verdad en vez de estimar la suma: el piso vive en {@link
    * ArmadorDeBultos} y una segunda copia de esa regla aquí podría quedar desincronizada sin que
@@ -281,7 +329,8 @@ public final class MetodosDePagoDisponibles {
   }
 
   private DatosCarrito resolverCarrito(List<MetodosDePagoDisponiblesComando.LineaComando> lineas) {
-    BigDecimal suma = BigDecimal.ZERO;
+    BigDecimal publicado = BigDecimal.ZERO;
+    BigDecimal contado = BigDecimal.ZERO;
     Set<LineaCatalogo> categorias = new HashSet<>();
     for (MetodosDePagoDisponiblesComando.LineaComando linea : lineas) {
       Producto producto =
@@ -293,11 +342,15 @@ public final class MetodosDePagoDisponibles {
               .filter(v -> v.id().equals(linea.varianteId()))
               .findFirst()
               .orElseThrow(() -> new VarianteNoEncontradaException(linea.varianteId()));
-      suma = suma.add(variante.precio().valor().multiply(BigDecimal.valueOf(linea.cantidad())));
+      BigDecimal cantidad = BigDecimal.valueOf(linea.cantidad());
+      publicado = publicado.add(variante.precio().valor().multiply(cantidad));
+      contado = contado.add(variante.precioContado().valor().multiply(cantidad));
       categorias.add(producto.categoria().linea());
     }
-    return new DatosCarrito(Dinero.deCop(suma), categorias);
+    return new DatosCarrito(Dinero.deCop(publicado), Dinero.deCop(contado), categorias);
   }
 
-  private record DatosCarrito(Dinero total, Set<LineaCatalogo> categorias) {}
+  /** La mercancía a los dos precios: con pasarela y sin ella (ADR-0095). */
+  private record DatosCarrito(
+      Dinero subtotalPublicado, Dinero subtotalContado, Set<LineaCatalogo> categorias) {}
 }

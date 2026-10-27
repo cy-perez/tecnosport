@@ -43,8 +43,7 @@ public final class CotizarEnvio {
       throw new IllegalArgumentException("Una cotización necesita al menos una línea.");
     }
 
-    List<Bulto> bultos =
-        armador.armar(aEmpacar(comando)).stream().map(BultoDespachable::bulto).toList();
+    List<Bulto> bultos = bultos(comando);
     return deBultos(destino, bultos, comando.conRecaudo(), Set.of(), comando.transportadora());
   }
 
@@ -60,8 +59,7 @@ public final class CotizarEnvio {
     if (comando.lineas() == null || comando.lineas().isEmpty()) {
       throw new IllegalArgumentException("Una cotización necesita al menos una línea.");
     }
-    List<Bulto> bultos =
-        armador.armar(aEmpacar(comando)).stream().map(BultoDespachable::bulto).toList();
+    List<Bulto> bultos = bultos(comando);
     return TarifaEnvio.unaPorTransportadora(
         vigentes(destino, bultos, comando.conRecaudo(), Set.of(), null));
   }
@@ -188,6 +186,23 @@ public final class CotizarEnvio {
                 !transportadorasExcluidas.contains(
                     tarifa.transportadora().toLowerCase(Locale.ROOT)))
         .toList();
+  }
+
+  /**
+   * El valor declarado depende del precio que se va a cobrar (ADR-0095), y la cotización solo sabe
+   * una cosa del medio de pago: si lleva recaudo. Con recaudo es contraentrega, que paga el precio
+   * de contado, y ese se declara —es además lo que el mensajero cobra—. Sin recaudo el medio puede
+   * ser cualquiera, y se declara el publicado: si el comprador paga con pasarela la guía saldrá con
+   * ese, y declarar aquí el de contado dejaría pasar un artículo al filo del techo asegurable que
+   * la emisión después rechazaría. El seguro de un pago sin pasarela queda así un poco por encima
+   * de lo que la guía declarará, que es el lado barato del error.
+   */
+  private List<Bulto> bultos(CotizarEnvioComando comando) {
+    List<BultoDespachable> armados =
+        comando.conRecaudo()
+            ? armador.armarAlContado(aEmpacar(comando))
+            : armador.armar(aEmpacar(comando));
+    return armados.stream().map(BultoDespachable::bulto).toList();
   }
 
   /**

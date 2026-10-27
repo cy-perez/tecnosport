@@ -17,9 +17,23 @@ import co.tecnosport.api.application.carrito.RepositorioCarrito;
 import co.tecnosport.api.application.carrito.VerCarrito;
 import co.tecnosport.api.application.compartido.Reloj;
 import co.tecnosport.api.domain.carrito.Carrito;
+import co.tecnosport.api.domain.catalogo.Categoria;
+import co.tecnosport.api.domain.catalogo.ImagenProducto;
+import co.tecnosport.api.domain.catalogo.LineaCatalogo;
+import co.tecnosport.api.domain.catalogo.Marca;
+import co.tecnosport.api.domain.catalogo.Producto;
+import co.tecnosport.api.domain.catalogo.TipoImagen;
+import co.tecnosport.api.domain.catalogo.Variante;
+import co.tecnosport.api.domain.catalogo.VarianteDeImagen;
+import co.tecnosport.api.domain.compartido.Dinero;
+import co.tecnosport.api.domain.compartido.HashContenido;
+import co.tecnosport.api.domain.compartido.Sku;
+import co.tecnosport.api.domain.compartido.Slug;
 import co.tecnosport.api.presentation.carrito.dto.AgregarLineaRequest;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,6 +50,7 @@ class CarritoControladorTest {
 
   @Autowired private MockMvc mockMvc;
   @Autowired private RepositorioCarritoDobleDePrueba repositorio;
+  @Autowired private RepositorioProductosDobleDePrueba productos;
 
   private final ObjectMapper json = new ObjectMapper();
 
@@ -66,6 +81,59 @@ class CarritoControladorTest {
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.lineas", hasSize(0)))
         .andExpect(jsonPath("$.subtotal.valor").value(0));
+  }
+
+  /**
+   * ADR-0095: los campos de siempre llevan el publicado y los nuevos el de contado, por línea y en
+   * el carrito.
+   */
+  @Test
+  void laCotizacionTraeTambienElPrecioDeContado() throws Exception {
+    Producto producto =
+        Producto.crear(
+            "Bolso",
+            new Slug("bolso"),
+            "Descripción",
+            Marca.crear("TecnoSport"),
+            Categoria.crear("Bolsos", new Slug("bolsos"), LineaCatalogo.ROPA));
+    producto.asignarImagenPrincipal(
+        ImagenProducto.crear(
+            TipoImagen.PRINCIPAL,
+            0,
+            List.of(new VarianteDeImagen(800, "https://cdn.tecnosport.co/bolso.jpg", 1000)),
+            null,
+            600,
+            new HashContenido("%064x".formatted(9)),
+            "alt es",
+            "alt en"));
+    Variante variante =
+        Variante.crear(
+            new Sku("TS-BOL-1"),
+            Dinero.deCop(230_000),
+            Dinero.deCop(239_000),
+            BigDecimal.ZERO,
+            null,
+            null,
+            List.of());
+    producto.agregarVariante(variante);
+    producto.publicar();
+    productos.conProductos(producto);
+    Carrito carrito = Carrito.crear(null, Instant.now());
+    carrito.agregarLinea(variante.id(), 2, Instant.now());
+    repositorio.guardar(carrito);
+
+    try {
+      mockMvc
+          .perform(get("/api/v1/carritos/{id}/cotizacion", carrito.id()))
+          .andExpect(status().isOk())
+          .andExpect(jsonPath("$.lineas[0].precioUnitario.valor").value(239_000))
+          .andExpect(jsonPath("$.lineas[0].precioContado.valor").value(230_000))
+          .andExpect(jsonPath("$.lineas[0].subtotalContado.valor").value(460_000))
+          .andExpect(jsonPath("$.subtotal.valor").value(478_000))
+          .andExpect(jsonPath("$.subtotalContado.valor").value(460_000));
+    } finally {
+      productos.limpiar();
+    }
   }
 
   @Test

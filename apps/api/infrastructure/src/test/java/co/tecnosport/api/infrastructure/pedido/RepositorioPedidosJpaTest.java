@@ -231,6 +231,48 @@ class RepositorioPedidosJpaTest {
     assertThat(encontrado.historial()).hasSize(1);
   }
 
+  /**
+   * ADR-0095: el precio que se cobra y el publicado vuelven los dos de la base, y con ellos el
+   * descuento. Si el mapeo dejara el publicado fuera, volvería igual al cobrado y el descuento se
+   * perdería en silencio.
+   */
+  @Test
+  void elPrecioPublicadoYElDescuentoVuelvenDeLaBase() {
+    LineaPedido conDescuento =
+        new LineaPedido(
+            UUID.randomUUID(),
+            UUID.randomUUID(),
+            new Sku("TS-BOL-1"),
+            "Bolso",
+            2,
+            Dinero.deCop(230_000),
+            BigDecimal.ZERO,
+            null,
+            UUID.randomUUID(),
+            null,
+            Dinero.deCop(239_000));
+    Pedido pedido =
+        Pedido.crear(
+            NUMERO,
+            null,
+            new CorreoElectronico("cliente@tecnosport.co"),
+            List.of(conDescuento),
+            TipoEntrega.RETIRO_EN_PUNTO,
+            null,
+            MetodoPago.TRANSFERENCIA_MANUAL,
+            "cliente@tecnosport.co",
+            Instant.now());
+
+    repositorio.guardar(pedido);
+
+    Pedido encontrado = repositorio.buscarPorId(pedido.id()).orElseThrow();
+    LineaPedido linea = encontrado.lineas().get(0);
+    assertThat(linea.precioUnitario()).isEqualTo(Dinero.deCop(230_000));
+    assertThat(linea.precioPublicado()).isEqualTo(Dinero.deCop(239_000));
+    assertThat(encontrado.descuento()).isEqualTo(Dinero.deCop(18_000));
+    assertThat(encontrado.total()).isEqualTo(Dinero.deCop(460_000));
+  }
+
   @Test
   void guardarUnPedidoDeRetiroEnPuntoSinDireccion() {
     Pedido pedido =

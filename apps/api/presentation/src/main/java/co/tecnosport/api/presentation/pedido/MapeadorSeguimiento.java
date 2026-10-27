@@ -73,7 +73,8 @@ public class MapeadorSeguimiento {
         repositorioSolicitudes.buscarPorPedidoId(pedido.id()).stream()
             .map(this::aRespuesta)
             .toList(),
-        completa.transportadora());
+        completa.transportadora(),
+        completa.descuento());
   }
 
   private EnvioPublicoRespuesta aRespuesta(Envio envio) {

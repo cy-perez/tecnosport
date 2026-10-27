@@ -59,4 +59,10 @@ public record PedidoRespuesta(
      * Hasta cuándo se guarda en el punto una recogida lista, o nulo si no está esperando a que la
      * recojan (ADR-0094). Pasada esta hora el panel la muestra vencida.
      */
-    Instant recogidaVenceEn) {}
+    Instant recogidaVenceEn,
+    /**
+     * El descuento por pagar sin pasarela (ADR-0095), ya restado en {@code subtotal}: lo que las
+     * líneas habrían costado al precio publicado menos lo que se cobra. Cero con Wompi y
+     * Sistecrédito.
+     */
+    DineroRespuesta descuento) {}

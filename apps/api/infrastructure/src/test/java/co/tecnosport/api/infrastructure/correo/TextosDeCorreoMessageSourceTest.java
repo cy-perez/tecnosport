@@ -315,6 +315,40 @@ class TextosDeCorreoMessageSourceTest {
     assertTrue(totales.contains("7.850"), totales);
   }
 
+  /**
+   * ADR-0095: el descuento por pagar sin pasarela, entre el envío y el total, en el orden en que se
+   * pasan los argumentos y en los dos idiomas.
+   */
+  @Test
+  void elComprobanteConDescuentoLoMuestraAntesDelTotal() {
+    String es =
+        textos()
+            .texto(
+                TextoDeCorreo.PEDIDO_COMPROBANTE_TOTALES_CON_DESCUENTO,
+                "106.000",
+                "0",
+                "6.000",
+                "100.000");
+
+    assertTrue(
+        es.contains(
+            "Descuento por pagar por transferencia, en el punto o contra entrega: -$ 6.000"),
+        es);
+    assertTrue(es.indexOf("6.000") < es.indexOf("Total: $ 100.000"), es);
+
+    ResourceBundleMessageSource fuente = new ResourceBundleMessageSource();
+    fuente.setBasename("correos");
+    fuente.setDefaultEncoding("UTF-8");
+    fuente.setFallbackToSystemLocale(false);
+    String en =
+        fuente.getMessage(
+            TextoDeCorreo.PEDIDO_COMPROBANTE_TOTALES_CON_DESCUENTO.clave(),
+            new Object[] {"106,000", "0", "6,000", "100,000"},
+            Locale.of("en"));
+    assertTrue(en.contains("Discount for paying by bank transfer"), en);
+    assertTrue(en.contains("-COP 6,000"), en);
+  }
+
   /** Y existe en inglés de verdad, como los demás. */
   @Test
   void elComprobanteExisteEnIngles() {

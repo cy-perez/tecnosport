@@ -218,7 +218,12 @@ public final class CrearPedido {
             lineaComando ->
                 congeladasPorVariante.put(
                     lineaComando.varianteId(),
-                    congelarLinea(lineaComando, vigenciaReserva, ahora, enlacesUsados)));
+                    congelarLinea(
+                        lineaComando,
+                        comando.metodoPago(),
+                        vigenciaReserva,
+                        ahora,
+                        enlacesUsados)));
 
     // El pedido conserva el orden del comprador: lo que se ordenó fue la toma de bloqueos, no las
     // líneas que verá en su comprobante.
@@ -340,6 +345,7 @@ public final class CrearPedido {
 
   private LineaPedido congelarLinea(
       CrearPedidoComando.LineaComando lineaComando,
+      MetodoPago metodoPago,
       Duration vigenciaReserva,
       Instant ahora,
       List<EnlaceDeCompra> enlacesUsados) {
@@ -372,17 +378,20 @@ public final class CrearPedido {
             .or(producto::imagenPrincipal)
             .map(ImagenProducto::url)
             .orElse(null);
+    // El precio lo elige el servidor con el medio de pago (ADR-0095): el publicado si lo cobra una
+    // pasarela, el de contado si no. Se congelan los dos, para que el descuento quede auditable.
     return new LineaPedido(
         GeneradorIdentificador.nuevo(),
         variante.id(),
         variante.sku(),
         producto.nombre(),
         lineaComando.cantidad(),
-        variante.precio(),
+        metodoPago.precioDe(variante),
         variante.tasaIva(),
         imagenUrl,
         reserva.id(),
-        detalleDe(variante));
+        detalleDe(variante),
+        variante.precio());
   }
 
   /**
