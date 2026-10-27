@@ -7,7 +7,6 @@ import {
   signal,
   viewChild,
 } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { usarIdiomaActivo, usarTraductor } from '../../../core/i18n/traductor';
 import { formatearPrecio } from '../../../shared/ts-precio/formato-precio';
@@ -32,8 +31,6 @@ export class CarritoPage {
   private readonly enfocarDespuesDePintar = usarFoco();
   private readonly traducir = usarTraductor();
   private readonly idioma = usarIdiomaActivo();
-  private readonly router = inject(Router);
-  private readonly ruta = inject(ActivatedRoute);
 
   /**
    * Lo último que pasó con una línea, para la región viva. Cambiar la cantidad o quitar una línea
@@ -143,12 +140,9 @@ export class CarritoPage {
     this.anuncioLinea.set({ tipo: 'seleccion' });
   }
 
-  protected irAPagar(): void {
-    if (this.store.lineasPorPagar().length === 0) {
-      this.faltaPorPagar.set(this.store.hayLineasVendibles() ? 'nada_marcado' : 'nada_a_la_venta');
-      return;
-    }
-    void this.router.navigate(['../checkout'], { relativeTo: this.ruta });
+  /** «Ir a pagar» sin nada que pagar: con algo marcado, el botón es un enlace y esto no corre. */
+  protected avisarQueFalta(): void {
+    this.faltaPorPagar.set(this.store.hayLineasVendibles() ? 'nada_marcado' : 'nada_a_la_venta');
   }
 
   /** El nombre guardado de la línea, o el genérico si no hay foto guardada (otro dispositivo). */

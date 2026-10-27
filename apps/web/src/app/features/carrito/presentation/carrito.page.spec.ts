@@ -1,5 +1,4 @@
-import { TestBed } from '@angular/core/testing';
-import { Router, provideRouter } from '@angular/router';
+import { provideRouter } from '@angular/router';
 import { TranslocoTestingModule } from '@jsverse/transloco';
 import { provideTanStackQuery, QueryClient } from '@tanstack/angular-query-experimental';
 import { fireEvent, render, screen } from '@testing-library/angular';
@@ -153,7 +152,8 @@ describe('CarritoPage', () => {
 
     expect(await screen.findByText('Morral urbano')).toBeTruthy();
     expect((await screen.findAllByText(/300\.000/)).length).toBeGreaterThan(0);
-    expect(screen.getByRole('button', { name: 'Ir a pagar' })).toBeTruthy();
+    // Un enlace, no un botón: lo busca así el recorrido de compra de Playwright (`e2e/compra`).
+    expect(screen.getByRole('link', { name: 'Ir a pagar' })).toBeTruthy();
     // Con una sola línea no hay nada que elegir.
     expect(screen.queryByRole('checkbox')).toBeNull();
     expect(screen.getByRole('link', { name: 'Seguir comprando' })).toBeTruthy();
@@ -412,30 +412,29 @@ describe('CarritoPage y la selección de lo que se paga', () => {
     expect(screen.getByRole('status').textContent).toMatch(/1 de 2 productos en este pago/);
   });
 
-  it('sin nada marcado, ir a pagar dice qué falta y no navega', async () => {
-    const { fixture } = await renderCarrito(new RepositorioCarritoFalso(carritoDeDos));
+  it('sin nada marcado, ir a pagar no es un enlace y dice qué falta', async () => {
+    await renderCarrito(new RepositorioCarritoFalso(carritoDeDos));
     await screen.findByText('2 de 2 productos en este pago');
-    const navegar = vi.spyOn(fixture.debugElement.injector.get(Router), 'navigate');
 
     fireEvent.click(casilla('Seleccionar todos'));
+    expect(screen.queryByRole('link', { name: 'Ir a pagar' })).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Ir a pagar' }));
 
     expect(await screen.findByRole('alert')).toHaveProperty(
       'textContent',
       expect.stringContaining('Marca al menos un producto para ir a pagar.'),
     );
-    expect(navegar).not.toHaveBeenCalled();
   });
 
-  it('con algo marcado, ir a pagar lleva al checkout', async () => {
+  it('con algo marcado, ir a pagar es el enlace al checkout', async () => {
     await renderCarrito(new RepositorioCarritoFalso(carritoDeDos));
     await screen.findByText('2 de 2 productos en este pago');
-    const navegar = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
 
     fireEvent.click(casilla('Incluir en este pago: Morral urbano'));
-    fireEvent.click(screen.getByRole('button', { name: 'Ir a pagar' }));
 
-    expect(navegar).toHaveBeenCalledWith(['../checkout'], expect.anything());
-    expect(screen.queryByRole('alert')).toBeNull();
+    expect(screen.getByRole('link', { name: 'Ir a pagar' }).getAttribute('href')).toMatch(
+      /\/checkout$/,
+    );
+    expect(screen.queryByRole('button', { name: 'Ir a pagar' })).toBeNull();
   });
 });
