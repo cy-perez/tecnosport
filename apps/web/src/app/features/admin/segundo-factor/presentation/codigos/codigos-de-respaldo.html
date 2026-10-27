@@ -1,0 +1,31 @@
+<section class="flex flex-col gap-16" aria-labelledby="codigos-de-respaldo-titulo">
+  <h2 id="codigos-de-respaldo-titulo" class="m-0 text-lg" tabindex="-1">
+    {{ 'admin.segundoFactor.codigos.titulo' | transloco }}
+  </h2>
+  <p class="m-0 font-medio">{{ 'admin.segundoFactor.codigos.aviso' | transloco }}</p>
+  <p class="m-0 text-sm text-ts-texto-suave">
+    {{ 'admin.segundoFactor.codigos.explicacion' | transloco }}
+  </p>
+
+  <ol class="m-0 grid list-none grid-cols-2 gap-8 p-0">
+    @for (codigo of codigos(); track codigo) {
+      <li>
+        <code class="font-mono">{{ codigo }}</code>
+      </li>
+    }
+  </ol>
+
+  <div class="flex flex-wrap items-center gap-8">
+    <ts-boton variante="secundario" (click)="copiar()">
+      {{ 'admin.segundoFactor.codigos.copiar' | transloco }}
+    </ts-boton>
+    <a
+      class="anillo-foco inline-flex min-h-tactil items-center px-12 text-ts-primario underline"
+      [href]="enlaceDescarga()"
+      [attr.download]="'admin.segundoFactor.codigos.archivo' | transloco"
+    >
+      {{ 'admin.segundoFactor.codigos.descargar' | transloco }}
+    </a>
+  </div>
+  <p class="m-0 text-sm" role="status">{{ aviso() }}</p>
+</section>

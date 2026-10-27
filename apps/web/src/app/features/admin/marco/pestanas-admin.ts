@@ -14,8 +14,8 @@ interface PestanaAdmin {
 /**
  * Las secciones del panel, en el orden en que se recorren.
  *
- * <p>`Resumen` primero porque es la que sirve `/:lang/admin`, y `Cambiar mi clave` al final porque
- * es lo único de la lista que no es trabajo del negocio. Entre medias van juntas las que se
+ * <p>`Resumen` primero porque es la que sirve `/:lang/admin`, y `Cambiar mi clave` y `Seguridad` al
+ * final porque son lo único de la lista que no es trabajo del negocio. Entre medias van juntas las que se
  * consultan seguidas: pedidos, el catálogo con sus dos listas de inventario, lo que llega de los
  * proveedores —proveedores, ingestas, borradores y la tecnología que llega por listas— y las
  * dos bandejas.
@@ -38,6 +38,7 @@ const PESTANAS: readonly PestanaAdmin[] = [
   { clave: 'admin.panel.ir_a_envios', segmentos: ['envios'] },
   { clave: 'admin.panel.ir_a_referencias_envio', segmentos: ['envios', 'referencias'] },
   { clave: 'admin.panel.ir_a_clave', segmentos: ['clave'] },
+  { clave: 'admin.panel.ir_a_seguridad', segmentos: ['seguridad'] },
 ];
 
 /**

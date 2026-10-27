@@ -91,6 +91,7 @@ describe('PestanasAdmin', () => {
       esAdmin.panel.ir_a_envios,
       esAdmin.panel.ir_a_referencias_envio,
       esAdmin.panel.ir_a_clave,
+      esAdmin.panel.ir_a_seguridad,
     ]) {
       expect(screen.getByRole('link', { name: nombre })).toBeTruthy();
     }

@@ -13,7 +13,7 @@ import {
   RepositorioSesion,
 } from '../../core/autenticacion/repositorio-sesion.puerto';
 import { ResultadoInicioSesion, Sesion } from '../../core/autenticacion/sesion.model';
-import { adminGuard } from './admin.guard';
+import { activacionSegundoFactorGuard, adminGuard } from './admin.guard';
 
 class RepositorioSesionFalso implements RepositorioSesion {
   async iniciarSesionConGoogle(): Promise<Sesion> {
@@ -146,5 +146,78 @@ describe('adminGuard', () => {
     );
 
     expect(resultado).toBe(true);
+  });
+});
+
+const ADMIN_RESTRINGIDO: Sesion = {
+  usuarioId: 'u1',
+  rol: 'ADMIN',
+  accessToken: 'jwt',
+  segundoFactorPorActivar: true,
+};
+
+/**
+ * ADR-0096: con la sesión restringida todo `/admin/**` responde 403. El guardia del panel la manda
+ * a activar el segundo factor, y la pantalla de activación —fuera del marco— la deja pasar.
+ */
+describe('adminGuard con la sesión restringida', () => {
+  it('manda a activar el segundo factor, no al panel', async () => {
+    await configurar(new RepositorioSesionFalso(ADMIN_RESTRINGIDO));
+
+    const resultado = await TestBed.runInInjectionContext(() =>
+      adminGuard(rutaConLang('en'), { url: '/en/admin/pedidos' } as RouterStateSnapshot),
+    );
+
+    expect((resultado as UrlTree).toString()).toBe('/en/admin/activar-segundo-factor');
+  });
+});
+
+describe('activacionSegundoFactorGuard', () => {
+  it('deja pasar la sesión restringida', async () => {
+    await configurar(new RepositorioSesionFalso(ADMIN_RESTRINGIDO));
+
+    const resultado = await TestBed.runInInjectionContext(() =>
+      activacionSegundoFactorGuard(rutaConLang('es'), {} as RouterStateSnapshot),
+    );
+
+    expect(resultado).toBe(true);
+  });
+
+  it('deja pasar a un ADMIN con la sesión completa, que lo activa por su cuenta', async () => {
+    await configurar(
+      new RepositorioSesionFalso({
+        usuarioId: 'u1',
+        rol: 'ADMIN',
+        accessToken: 'jwt',
+        segundoFactorPorActivar: false,
+      }),
+    );
+
+    const resultado = await TestBed.runInInjectionContext(() =>
+      activacionSegundoFactorGuard(rutaConLang('es'), {} as RouterStateSnapshot),
+    );
+
+    expect(resultado).toBe(true);
+  });
+
+  it('sin sesión de administrador, al inicio de sesión recordando a dónde iba', async () => {
+    await configurar(
+      new RepositorioSesionFalso({
+        usuarioId: 'u1',
+        rol: 'CLIENTE',
+        accessToken: 'jwt',
+        segundoFactorPorActivar: false,
+      }),
+    );
+
+    const resultado = await TestBed.runInInjectionContext(() =>
+      activacionSegundoFactorGuard(rutaConLang('es'), {
+        url: '/es/admin/activar-segundo-factor',
+      } as RouterStateSnapshot),
+    );
+
+    expect((resultado as UrlTree).toString()).toBe(
+      '/es/admin/iniciar-sesion?destino=%2Fes%2Fadmin%2Factivar-segundo-factor',
+    );
   });
 });

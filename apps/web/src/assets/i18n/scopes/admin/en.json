@@ -74,7 +74,11 @@
     "ajustes_de_talla_distintos": "The supplier names the sizes of the two differently, like the women's and men's drafts of the same post: merged, there would be no way to know which size to order.",
     "entrega_no_aplica": "That is not how this order is delivered: a pickup is marked ready and handed over at our location, and a home delivery is shipped with a tracking number.",
     "numero_de_pedido_no_coincide": "That number is not this order’s. Ask the person picking up to show the number from their email or order page. Do not hand it over.",
-    "pago_con_transaccion_o_resuelto": "The payment already has its transaction or was resolved: reload the page."
+    "pago_con_transaccion_o_resuelto": "The payment already has its transaction or was resolved: reload the page.",
+    "segundo_factor_ya_activo": "This account already has two-step verification on. To switch phones, turn it off in Security and turn it on again.",
+    "activacion_segundo_factor_no_iniciada": "The pending setup expired or was never started. Enter your password again to get a new key.",
+    "segundo_factor_no_activo": "This account doesn't have two-step verification on.",
+    "segundo_factor_obligatorio": "The admin panel requires two-step verification for administrators: it cannot be turned off."
   },
   "iniciarSesion": {
     "titulo": "Admin panel",
@@ -143,7 +147,8 @@
     "ir_a_borradores": "Drafts",
     "ir_a_tecnologia": "Technology",
     "ir_a_enlaces_compra": "Purchase links",
-    "ir_a_referencias_envio": "Shipping weights and sizes"
+    "ir_a_referencias_envio": "Shipping weights and sizes",
+    "ir_a_seguridad": "Security"
   },
   "pedidos": {
     "titulo": "Orders",
@@ -1863,6 +1868,67 @@
       "anulado": "Link voided: the reserved unit is free again.",
       "errorAnular": "We couldn't void the link.",
       "mensaje": "Hi! We confirmed your {{producto}} ({{detalle}}). You can buy it with this link until {{fecha}}: {{url}}"
+    }
+  },
+  "segundoFactor": {
+    "claveActual": "Current password",
+    "codigoAplicacion": "App code",
+    "codigoAplicacionORespaldo": "App code or backup code",
+    "enviando": "One moment…",
+    "error": "The action couldn't be completed. Try again.",
+    "error_clave_actual": "The current password isn't correct.",
+    "error_codigo": "That code isn't valid. Make sure it's the one the app shows right now and try again.",
+    "error_demasiados_intentos": "Too many attempts in a row. Wait a few minutes and try again.",
+    "error_sesion_expirada": "Your session expired. Sign in again and repeat the step.",
+    "errores": {
+      "clave_requerida": "Enter your current password.",
+      "codigo_requerido": "Enter the code.",
+      "codigo_seis_digitos": "The app code is 6 digits.",
+      "codigo_formato": "The code is 6 digits from the app, or a 16-character backup code."
+    },
+    "activar": {
+      "titulo": "Turn on two-step verification",
+      "explicacion": "With two-step verification, signing in to the panel asks for your password plus a 6-digit code from an authenticator app on your phone. Start by confirming your password.",
+      "explicacion_obligatoria": "The admin panel requires two-step verification for administrators. Turn it on to continue: until then you cannot open any other section. Start by confirming your password.",
+      "continuar": "Continue",
+      "titulo_clave": "Add the account to your app",
+      "instrucciones": "In your authenticator app (Google Authenticator, Microsoft Authenticator, 1Password or another) add a new time-based account with this key. Then enter the {{digitos}}-digit code it shows; it changes every {{segundos}} seconds.",
+      "copiar_clave": "Copy the key",
+      "copiar_uri": "Copy the setup link",
+      "uri": "If your app accepts a setup link, paste this one:",
+      "activar": "Turn on",
+      "exito": "Two-step verification is on. From now on, signing in to the panel will ask for an app code.",
+      "ir_al_panel": "Go to the panel",
+      "copiado": "Copied.",
+      "error_copiar": "Couldn't copy. Select the text and copy it by hand."
+    },
+    "codigos": {
+      "titulo": "Your backup codes",
+      "aviso": "Save them now: they won't be shown again.",
+      "explicacion": "If you lose your phone, each of these codes works once instead of the app code. Keep them off this device, somewhere safe.",
+      "copiar": "Copy the codes",
+      "descargar": "Download as text",
+      "archivo": "tecnosport-backup-codes.txt",
+      "copiados": "Codes copied.",
+      "error_copiar": "Couldn't copy them. Download them or write them down.",
+      "guardados": "I saved my backup codes",
+      "error_sin_guardar": "Check the box once you have saved the codes."
+    },
+    "seguridad": {
+      "titulo": "Security",
+      "error_estado": "Couldn't check two-step verification. Reload the page.",
+      "inactivo": "Your account doesn't have two-step verification. With it, signing in to the panel also asks for a code from an authenticator app on your phone.",
+      "activar": "Turn on two-step verification",
+      "activo": "Two-step verification on since {{fecha}}.",
+      "restantes": "You have {{restantes}} unused backup code(s) left.",
+      "regenerar_titulo": "Backup codes",
+      "regenerar_explicacion": "Generate ten new codes. The previous ones, used or not, stop working, and sessions on other devices are signed out.",
+      "regenerar": "Generate new codes",
+      "desactivar_titulo": "Turn off two-step verification",
+      "desactivar_explicacion": "To switch phones, turn it off and on again with the new one. Sessions on other devices are signed out.",
+      "obligatorio": "The admin panel requires two-step verification for administrators, so it cannot be turned off here.",
+      "desactivar": "Turn off",
+      "desactivado": "Two-step verification turned off. Other sessions were signed out."
     }
   }
 }

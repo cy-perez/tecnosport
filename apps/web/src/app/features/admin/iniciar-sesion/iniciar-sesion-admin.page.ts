@@ -7,14 +7,7 @@ import {
   signal,
 } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
-import {
-  AbstractControl,
-  FormControl,
-  FormGroup,
-  ReactiveFormsModule,
-  ValidationErrors,
-  Validators,
-} from '@angular/forms';
+import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { correoValido } from '../../../shared/formularios/validadores';
 import { ActivatedRoute, Router } from '@angular/router';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
@@ -31,28 +24,8 @@ import {
 } from '../../../core/autenticacion/sesion.errores';
 import { Sesion } from '../../../core/autenticacion/sesion.model';
 import { usarFoco } from '../../../shared/foco/foco';
-
-/**
- * Seis dígitos de la aplicación, o un código de respaldo: 16 caracteres Base32, con o sin guiones
- * y en cualquier caso, que es lo que el servidor acepta (ADR-0096). Se normaliza igual que allá
- * para no rechazar aquí lo que allá entraría.
- */
-const CODIGO_DE_LA_APLICACION = /^\d{6}$/;
-const CODIGO_DE_RESPALDO = /^[A-Za-z2-7]{16}$/;
-
-function normalizarCodigo(valor: string): string {
-  return valor.replace(/[\s-]/g, '');
-}
-
-function codigoValido(control: AbstractControl<string>): ValidationErrors | null {
-  const codigo = normalizarCodigo(control.value ?? '');
-  if (codigo === '') {
-    return null;
-  }
-  return CODIGO_DE_LA_APLICACION.test(codigo) || CODIGO_DE_RESPALDO.test(codigo)
-    ? null
-    : { codigoInvalido: true };
-}
+import { normalizarCodigo } from '../segundo-factor/domain/codigo-segundo-factor';
+import { codigoDeLaAplicacionODeRespaldo } from '../segundo-factor/presentation/codigo.validador';
 
 /** Los dos pasos del inicio de sesión: la clave, y el código cuando la cuenta tiene segundo factor. */
 type Paso = 'clave' | 'codigo';
@@ -100,7 +73,7 @@ export class IniciarSesionAdminPage {
   protected readonly formCodigo = new FormGroup({
     codigo: new FormControl('', {
       nonNullable: true,
-      validators: [Validators.required, codigoValido],
+      validators: [Validators.required, codigoDeLaAplicacionODeRespaldo],
     }),
   });
 

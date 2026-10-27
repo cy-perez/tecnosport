@@ -1,6 +1,11 @@
 import { isPlatformBrowser } from '@angular/common';
 import { inject, PLATFORM_ID } from '@angular/core';
-import { CanActivateFn, Router } from '@angular/router';
+import {
+  ActivatedRouteSnapshot,
+  CanActivateFn,
+  Router,
+  RouterStateSnapshot,
+} from '@angular/router';
 import { SesionStore } from '../../core/autenticacion/sesion.store';
 
 /**
@@ -35,12 +40,47 @@ export const adminGuard: CanActivateFn = async (route, estado) => {
 
   await sesionStore.listo;
 
-  if (sesionStore.esAdmin()) {
+  if (!sesionStore.esAdmin()) {
+    return alInicioDeSesion(router, route, estado);
+  }
+  // Sesión restringida (ADR-0096): el servidor exige el segundo factor y esta cuenta no lo tiene.
+  // Todo `/admin/**` le responde 403, así que dejarla pasar es pintar un panel que falla entero.
+  // Se la lleva a activarlo, que es lo único que su token permite.
+  if (sesionStore.sesion()?.segundoFactorPorActivar) {
+    return router.parseUrl(`/${idiomaDe(route)}/admin/activar-segundo-factor`);
+  }
+  return true;
+};
+
+/**
+ * La pantalla de activación del segundo factor: cualquier `ADMIN`, con la sesión restringida o
+ * completa —la segunda es quien lo activa por su cuenta sin que el servidor lo exija—. Sin sesión
+ * de administrador, al inicio de sesión como el resto del panel. Mismas razones que
+ * {@link adminGuard} para no decidir en el servidor.
+ */
+export const activacionSegundoFactorGuard: CanActivateFn = async (route, estado) => {
+  const sesionStore = inject(SesionStore);
+  const router = inject(Router);
+
+  if (!isPlatformBrowser(inject(PLATFORM_ID))) {
     return true;
   }
 
-  const idioma = route.paramMap.get('lang') ?? route.parent?.paramMap.get('lang') ?? 'es';
-  const destino = router.parseUrl(`/${idioma}/admin/iniciar-sesion`);
+  await sesionStore.listo;
+
+  return sesionStore.esAdmin() ? true : alInicioDeSesion(router, route, estado);
+};
+
+function idiomaDe(route: ActivatedRouteSnapshot): string {
+  return route.paramMap.get('lang') ?? route.parent?.paramMap.get('lang') ?? 'es';
+}
+
+function alInicioDeSesion(
+  router: Router,
+  route: ActivatedRouteSnapshot,
+  estado: RouterStateSnapshot | undefined,
+) {
+  const destino = router.parseUrl(`/${idiomaDe(route)}/admin/iniciar-sesion`);
   // A dónde iba, para volver ahí después de iniciar sesión. Sin esto, abrir un
   // enlace directo a una pantalla de /admin sin sesión terminaba en el panel y
   // había que volver a buscar el enlace — encontrado probando el asistente de
@@ -49,4 +89,4 @@ export const adminGuard: CanActivateFn = async (route, estado) => {
     destino.queryParams = { destino: estado.url };
   }
   return destino;
-};
+}

@@ -1,0 +1,125 @@
+<ts-pagina-formulario [titulo]="'admin.segundoFactor.seguridad.titulo' | transloco">
+  @if (consulta.isPending()) {
+    <ts-esqueleto />
+  } @else if (consulta.isError()) {
+    <p class="m-0 text-ts-error" role="alert">
+      {{ 'admin.segundoFactor.seguridad.error_estado' | transloco }}
+    </p>
+  } @else if (estado(); as actual) {
+    @if (!actual.activo) {
+      <p class="m-0 mb-16">{{ 'admin.segundoFactor.seguridad.inactivo' | transloco }}</p>
+      <ts-boton variante="primario" [enlace]="['/', idioma(), 'admin', 'activar-segundo-factor']">
+        {{ 'admin.segundoFactor.seguridad.activar' | transloco }}
+      </ts-boton>
+    } @else {
+      <p class="m-0">
+        {{ 'admin.segundoFactor.seguridad.activo' | transloco: { fecha: activadoEn() } }}
+      </p>
+      <p class="m-0 mt-8 text-ts-texto-suave">
+        {{
+          'admin.segundoFactor.seguridad.restantes'
+            | transloco: { restantes: actual.codigosDeRespaldoRestantes }
+        }}
+      </p>
+
+      <section class="mt-32 flex flex-col gap-16" aria-labelledby="seguridad-regenerar-titulo">
+        <h2 id="seguridad-regenerar-titulo" class="m-0 text-lg">
+          {{ 'admin.segundoFactor.seguridad.regenerar_titulo' | transloco }}
+        </h2>
+        <p class="m-0 text-sm text-ts-texto-suave">
+          {{ 'admin.segundoFactor.seguridad.regenerar_explicacion' | transloco }}
+        </p>
+        <form
+          class="flex flex-col gap-16"
+          [formGroup]="formRegenerar"
+          (submit)="$event.preventDefault(); regenerarCodigos()"
+        >
+          <ts-campo
+            idCampo="regenerar-clave-actual"
+            tipo="password"
+            autocompletar="current-password"
+            [label]="'admin.segundoFactor.claveActual' | transloco"
+            [obligatorio]="true"
+            [error]="erroresRegenerar().clave"
+            formControlName="claveActual"
+          />
+          <ts-campo
+            idCampo="regenerar-codigo"
+            autocompletar="one-time-code"
+            [label]="'admin.segundoFactor.codigoAplicacionORespaldo' | transloco"
+            [obligatorio]="true"
+            [error]="erroresRegenerar().codigo"
+            formControlName="codigo"
+          />
+          <p class="m-0 text-ts-error" role="alert">{{ errorRegenerar() }}</p>
+          <ts-boton
+            variante="secundario"
+            tipo="submit"
+            [cargando]="regenerando()"
+            [etiquetaCargando]="'admin.segundoFactor.enviando' | transloco"
+          >
+            {{ 'admin.segundoFactor.seguridad.regenerar' | transloco }}
+          </ts-boton>
+        </form>
+        @if (codigosNuevos().length > 0) {
+          <app-codigos-de-respaldo [codigos]="codigosNuevos()" />
+        }
+      </section>
+
+      <section class="mt-32 flex flex-col gap-16" aria-labelledby="seguridad-desactivar-titulo">
+        <h2 id="seguridad-desactivar-titulo" class="m-0 text-lg">
+          {{ 'admin.segundoFactor.seguridad.desactivar_titulo' | transloco }}
+        </h2>
+        @if (actual.obligatorio) {
+          <p class="m-0 text-sm text-ts-texto-suave">
+            {{ 'admin.segundoFactor.seguridad.obligatorio' | transloco }}
+          </p>
+        } @else {
+          <p class="m-0 text-sm text-ts-texto-suave">
+            {{ 'admin.segundoFactor.seguridad.desactivar_explicacion' | transloco }}
+          </p>
+          <form
+            class="flex flex-col gap-16"
+            [formGroup]="formDesactivar"
+            (submit)="$event.preventDefault(); desactivar()"
+          >
+            <ts-campo
+              idCampo="desactivar-clave-actual"
+              tipo="password"
+              autocompletar="current-password"
+              [label]="'admin.segundoFactor.claveActual' | transloco"
+              [obligatorio]="true"
+              [error]="erroresDesactivar().clave"
+              formControlName="claveActual"
+            />
+            <ts-campo
+              idCampo="desactivar-codigo"
+              autocompletar="one-time-code"
+              [label]="'admin.segundoFactor.codigoAplicacionORespaldo' | transloco"
+              [obligatorio]="true"
+              [error]="erroresDesactivar().codigo"
+              formControlName="codigo"
+            />
+            <p class="m-0 text-ts-error" role="alert">{{ errorDesactivar() }}</p>
+            <ts-boton
+              variante="peligro"
+              tipo="submit"
+              [cargando]="desactivando()"
+              [etiquetaCargando]="'admin.segundoFactor.enviando' | transloco"
+            >
+              {{ 'admin.segundoFactor.seguridad.desactivar' | transloco }}
+            </ts-boton>
+          </form>
+        }
+      </section>
+    }
+  }
+
+  <!-- Fuera de las ramas: tras desactivar, el estado se recarga y la sección del formulario
+       desaparece; una región viva dentro de ella no alcanzaría a decir nada. -->
+  <p class="m-0 mt-16" role="status">
+    @if (desactivado()) {
+      {{ 'admin.segundoFactor.seguridad.desactivado' | transloco }}
+    }
+  </p>
+</ts-pagina-formulario>
