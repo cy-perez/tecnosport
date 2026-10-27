@@ -690,8 +690,8 @@ descuento exacto por producto: el publicado menos el de contado. Se escogió el
 descuento en lugar de un recargo para que el precio anunciado fuera el máximo
 (artículo 26 de la Ley 1480: el consumidor solo está obligado a pagar el precio
 anunciado). El descuento varía por producto: por el cargo fijo de la pasarela y el
-redondeo a la unidad de mil, es de un 3 % en lo caro y crece en lo barato —6 % en un
-producto de $50.000, 20 % en uno de $8.000 que se publica a $10.000—.
+redondeo, es de un 3 % en lo caro y crece en lo barato —5 % en un producto de $50.000,
+13 % en uno de $8.000 que se publica a $9.200—.
 
 **Qué dice el texto publicado (versión `2026-10-27.1`).** Términos, numeral 4: el
 precio publicado es el máximo y el detalle antes de pagar muestra el descuento.

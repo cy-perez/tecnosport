@@ -8,7 +8,9 @@
 -- Los precios que ya estan en el catalogo son de contado (decision 6 del ADR, del negocio): se
 -- copian a `precio_contado` y `precio` se recalcula con la formula de `ComisionDePasarela`:
 --
---     publicado = ceil( (contado + fija * (1 + iva)) / (1 - variable * (1 + iva)) / 1000 ) * 1000
+--     exacto    = (contado + fija * (1 + iva)) / (1 - variable * (1 + iva))
+--     publicado = ceil(exacto / 100) * 100     si exacto < 100000   (a la centena)
+--                 ceil(exacto / 1000) * 1000   si no                (a la unidad de mil)
 --
 -- LAS TARIFAS ESTAN ESCRITAS AQUI A MANO y son las del plan de Wompi leido en el portal el 26 de
 -- octubre de 2026: 2,65 % + $700 + IVA del 19 %. Son las mismas que traen por omision
@@ -21,7 +23,11 @@ alter table variante add column precio_contado numeric(14, 2);
 
 update variante
 set precio_contado = precio,
-    precio = ceil((precio + 700 * (1 + 0.19)) / (1 - 0.0265 * (1 + 0.19)) / 1000) * 1000;
+    precio = case
+        when (precio + 700 * (1 + 0.19)) / (1 - 0.0265 * (1 + 0.19)) < 100000
+            then ceil((precio + 700 * (1 + 0.19)) / (1 - 0.0265 * (1 + 0.19)) / 100) * 100
+        else ceil((precio + 700 * (1 + 0.19)) / (1 - 0.0265 * (1 + 0.19)) / 1000) * 1000
+    end;
 
 alter table variante alter column precio_contado set not null;
 

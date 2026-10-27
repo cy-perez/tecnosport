@@ -70,7 +70,7 @@ class RecalcularPreciosPublicadosTest {
                 "Producto CAMISETA",
                 Dinero.deCop(50_000),
                 Dinero.deCop(52_000),
-                Dinero.deCop(53_000))),
+                Dinero.deCop(52_500))),
         pendientes);
     assertTrue(precios.grabados.isEmpty(), "previsualizar no graba nada");
   }

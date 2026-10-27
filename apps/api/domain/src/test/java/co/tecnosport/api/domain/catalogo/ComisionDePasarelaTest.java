@@ -29,8 +29,12 @@ class ComisionDePasarelaTest {
     "1000000, 1034000",
     // (100.000 + 833) / 0,968465 = 104.116,2
     "100000, 105000",
-    // (50.000 + 833) / 0,968465 = 52.488,2
-    "50000, 53000"
+    // (50.000 + 833) / 0,968465 = 52.488,2, por debajo de 100.000: a la centena
+    "50000, 52500",
+    // (8.000 + 833) / 0,968465 = 9.120,6: el caso que motivó la centena
+    "8000, 9200",
+    // (30.000 + 833) / 0,968465 = 31.836,8
+    "30000, 31900"
   })
   void publicaLosEjemplosDelAdr(long contado, long publicado) {
     assertEquals(Dinero.deCop(publicado), WOMPI.publicadoDesde(Dinero.deCop(contado)));
@@ -56,9 +60,23 @@ class ComisionDePasarelaTest {
   }
 
   @Test
-  void siempreRedondeaHaciaArribaALaUnidadDeMil() {
+  void porDebajoDeCienMilRedondeaHaciaArribaALaCentena() {
     // (100 + 833) / 0,968465 = 963,4 → 1.000
     assertEquals(Dinero.deCop(1_000), WOMPI.publicadoDesde(Dinero.deCop(100)));
+    // (1.000 + 833) / 0,968465 = 1.892,7 → 1.900, no 2.000
+    assertEquals(Dinero.deCop(1_900), WOMPI.publicadoDesde(Dinero.deCop(1_000)));
+  }
+
+  /** El umbral mira el resultado exacto: justo por debajo va a la centena, desde él a miles. */
+  @Test
+  void elUmbralDeLosMilesEsElResultadoExacto() {
+    ComisionDePasarela sinComision =
+        new ComisionDePasarela(BigDecimal.ZERO, Dinero.deCop(0), BigDecimal.ZERO);
+
+    assertEquals(Dinero.deCop(99_900), sinComision.publicadoDesde(Dinero.deCop(99_801)));
+    assertEquals(Dinero.deCop(100_000), sinComision.publicadoDesde(Dinero.deCop(99_901)));
+    assertEquals(Dinero.deCop(100_000), sinComision.publicadoDesde(Dinero.deCop(100_000)));
+    assertEquals(Dinero.deCop(101_000), sinComision.publicadoDesde(Dinero.deCop(100_001)));
   }
 
   /** Un resultado que ya es múltiplo de mil no sube al siguiente. */

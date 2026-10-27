@@ -1,7 +1,9 @@
 # ADR-0095: el precio publicado incluye la comisión de Wompi, y sin pasarela se descuenta
 
 Fecha: 2026-10-26
-Estado: aceptada. El negocio cerró las tres preguntas abiertas el mismo día (decisiones 6 a 8).
+Estado: aceptada. El negocio cerró las tres preguntas abiertas el mismo día (decisiones 6 a 8),
+y el 27 de octubre cambió el redondeo de lo barato (decisión 9) y la forma de anunciar el
+descuento (decisión 10).
 Relacionados: `adr/0048` (Sistecrédito es una segunda pasarela), `adr/0094` (pago en el punto),
 `docs/11-pagos-y-envios.md`, `CalculadoraDeMargen`.
 
@@ -46,10 +48,11 @@ Aprobada por el negocio el 26 de octubre de 2026:
    único que se anuncia como precio del producto:
 
    ```
-   publicado = unidadDeMilSiguiente( (contado + fija × (1 + IVA)) / (1 − variable × (1 + IVA)) )
+   exacto    = (contado + fija × (1 + IVA)) / (1 − variable × (1 + IVA))
+   publicado = centenaSiguiente(exacto) si exacto < 100.000; unidadDeMilSiguiente(exacto) si no
    ```
 
-   Con las tarifas de hoy: `(contado + 833) / (1 − 0,031535)`, subido a la unidad de mil. El
+   Con las tarifas de hoy: `(contado + 833) / (1 − 0,031535)`, subido como dice la decisión 9. El
    bolso de $230.000 de contado se publica a **$239.000**; si se paga con Wompi, el negocio
    recibe $230.630.
 2. **El tope de ganancia no cambia, y la comisión se suma después.** `CalculadoraDeMargen` sigue
@@ -72,8 +75,9 @@ Aprobada por el negocio el 26 de octubre de 2026:
 6. **Los precios que ya están en el catálogo son de contado.** La migración los copia al precio
    de contado y calcula el publicado con la fórmula de la decisión 1. Cuánto sube el precio de
    vitrina depende del valor, porque el cargo fijo y el redondeo a la unidad de mil pesan más en
-   lo barato: $50.000 pasa a $53.000 (6 %), $100.000 a $105.000 (5 %), $230.000 a $239.000
-   (3,9 %) y $1.000.000 a $1.034.000 (3,4 %). Una transferencia sigue dejando lo mismo que hoy.
+   lo barato: $8.000 pasa a $9.200 (15 %), $50.000 a $52.500 (5 %), $100.000 a $105.000 (5 %),
+   $230.000 a $239.000 (3,9 %) y $1.000.000 a $1.034.000 (3,4 %). Una transferencia sigue
+   dejando lo mismo que hoy.
 7. **La comisión sobre el envío la absorbe el negocio.** El flete se cobra igual con cualquier
    medio de pago y no lleva comisión adentro: con un flete de $15.000 pagado con Wompi son unos
    $473 por pedido. No se le suma nada al flete, porque eso sería un recargo sobre el envío.
@@ -86,11 +90,21 @@ Aprobada por el negocio el 26 de octubre de 2026:
    con menos de un 5 % de margen. Una configuración sin precio de mercado sigue sin sugerencia,
    y quien revisa fija el precio de contado. Como la ropa, la sugerencia no obliga.
 
+9. **Por debajo de $100.000 el publicado se sube a la centena, no a la unidad de mil**
+   (27/10/2026). Con el cargo fijo dentro, subir a la unidad de mil publicaba un cable de $8.000
+   a $10.000, un 25 % más, cuando la comisión solo explica $9.200: en lo barato el redondeo
+   pesaba más que la comisión. El umbral mira el resultado exacto, antes de redondear.
+10. **La vitrina no muestra un segundo precio, muestra el ahorro** (27/10/2026). El artículo 26
+   de la Ley 1480 dice que, cuando aparezcan dos o más precios, el consumidor solo está
+   obligado a pagar el más bajo. La ficha, la tarjeta y el carrito dicen «Ahorras $X pagando por
+   transferencia, en el punto o contra entrega»; el desglose con el descuento solo aparece en el
+   checkout, con el medio ya elegido. Si basta es el punto 12 de `docs/14`.
+
 ## Consecuencias
 
-- **La vitrina muestra dos cifras:** «$239.000» y, debajo, «$230.000 pagando por transferencia,
-  en el punto o contra entrega». El checkout enseña el total que corresponde al medio antes de
-  confirmar. Todo pasa por Transloco, en español e inglés.
+- **La vitrina muestra el precio y el ahorro:** «$239.000» y, debajo, «Ahorras $9.000 pagando
+  por transferencia, en el punto o contra entrega» (decisión 10). El checkout enseña el total
+  que corresponde al medio antes de confirmar. Todo pasa por Transloco, en español e inglés.
 - **Los términos y condiciones cambian.** Hay que declarar el descuento, a qué medios aplica y
   que el precio anunciado es el máximo. Eso se hace con la skill `textos-legales-comerciales` y
   luego `vacios-legales-del-sitio`, nunca a mano. Si el descuento se trata como una promoción,
@@ -122,5 +136,5 @@ Un caso de uso a la vez, cada uno con su prueba y en su propio PR:
    `Variante`. La migración copia el precio actual al de contado y calcula el publicado.
 2. `CalculadoraDeMargen` devuelve el precio de contado. La sugerencia de tecnología, con su tope.
 3. `CrearPedido` elige el precio según el medio de pago y guarda el descuento.
-4. La vitrina, el carrito y el checkout muestran las dos cifras, en español y en inglés.
+4. La vitrina y el carrito muestran el ahorro, y el checkout el descuento, en español y en inglés.
 5. Los términos y condiciones, con la skill de textos legales y luego la de vacíos legales.

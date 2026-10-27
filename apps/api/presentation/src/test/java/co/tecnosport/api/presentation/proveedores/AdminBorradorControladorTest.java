@@ -175,8 +175,8 @@ class AdminBorradorControladorTest {
         .andExpect(jsonPath("$.items[0].precioProveedor").value(53000))
         .andExpect(jsonPath("$.items[0].precioVentaSugerido").value(71600))
         // El sugerido es de contado; el publicado le suma la comisión de Wompi (ADR-0095):
-        // (71.600 + 833) / 0,968465 = 74.791, subido a 75.000.
-        .andExpect(jsonPath("$.items[0].precioPublicadoSugerido").value(75000))
+        // (71.600 + 833) / 0,968465 = 74.791, subido a la centena: 74.800.
+        .andExpect(jsonPath("$.items[0].precioPublicadoSugerido").value(74800))
         .andExpect(jsonPath("$.items[0].alertas[0]").value("SIN_FOTOS"))
         .andExpect(jsonPath("$.items[0].tallas.tipo").value("DESCONOCIDA"));
 
@@ -213,7 +213,7 @@ class AdminBorradorControladorTest {
         .perform(get("/api/v1/admin/borradores/{id}", borrador.id()))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.borrador.id").value(borrador.id().toString()))
-        .andExpect(jsonPath("$.borrador.precioPublicadoSugerido").value(75000))
+        .andExpect(jsonPath("$.borrador.precioPublicadoSugerido").value(74800))
         .andExpect(jsonPath("$.textos[0]").value("Bolso 💰 53.000"))
         .andExpect(jsonPath("$.fotos[0].mensajeId").value(foto.id().toString()))
         .andExpect(jsonPath("$.fotos[0].url").value("https://firmada.local/leer/p/f.jpg"))
@@ -238,8 +238,8 @@ class AdminBorradorControladorTest {
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.titulo").value("Bolso mediano ejecutivo"))
         .andExpect(jsonPath("$.precioVentaSugerido").value(75000))
-        // El publicado sigue al contado editado: (75.000 + 833) / 0,968465 = 78.302 → 79.000.
-        .andExpect(jsonPath("$.precioPublicadoSugerido").value(79000))
+        // El publicado sigue al contado editado: (75.000 + 833) / 0,968465 = 78.302 → 78.400.
+        .andExpect(jsonPath("$.precioPublicadoSugerido").value(78400))
         .andExpect(jsonPath("$.tallas.tipo").value("UNICA"))
         .andExpect(jsonPath("$.tallas.sirveHasta").value("L"))
         .andExpect(jsonPath("$.cantidadTonos").value(4));
