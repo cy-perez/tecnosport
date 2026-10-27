@@ -41,6 +41,11 @@ class RepositorioCarritoFalso implements RepositorioCarrito {
   /** Variantes que ya no se venden: la cotización las trae sin precio. */
   readonly sinPrecio = new Set<string>();
   llamadasEliminar = 0;
+  readonly actualizadas: { lineaId: string; cantidad: number }[] = [];
+  /** Lo que otra pestaña le hizo al carrito sin que esta se enterara: la caché no lo tiene. */
+  cambiarEnOtraPestana(lineas: Carrito['lineas']): void {
+    this.carrito = { ...this.carrito, lineas };
+  }
   /** El precio de contado por unidad; por debajo del de hoy, hay descuento sin pasarela. */
   contado = PRECIO_DE_HOY;
   llamadasCrear = 0;
@@ -84,6 +89,7 @@ class RepositorioCarritoFalso implements RepositorioCarrito {
   }
 
   async actualizarCantidad(carritoId: string, lineaId: string, cantidad: number): Promise<Carrito> {
+    this.actualizadas.push({ lineaId, cantidad });
     this.carrito = {
       ...this.carrito,
       lineas: this.carrito.lineas.map((l) => (l.id === lineaId ? { ...l, cantidad } : l)),
@@ -335,17 +341,52 @@ describe('CarritoStore y la selección de lo que se paga', () => {
     expect(store.subtotal()).toBe(300_000);
   });
 
-  /** Con una sola vendible no hay casillas, y lo desmarcado antes no puede quedarse atrapado. */
-  it('con una sola línea vendible no hay selección y se paga entera', async () => {
+  it('con una sola línea, y marcada, no hay nada que elegir', async () => {
+    const store = await conLineas(new RepositorioCarritoFalso(), 'variante-1');
+
+    expect(store.seleccionHabilitada()).toBe(false);
+    expect(store.lineasPorPagar().map((linea) => linea.id)).toEqual(['linea-variante-1']);
+  });
+
+  /** Una desmarcada nunca vuelve sola al pago: conserva su casilla para que la marquen. */
+  it('al quitar la otra, la desmarcada sigue fuera y con su casilla', async () => {
     const repositorio = new RepositorioCarritoFalso();
     const store = await conLineas(repositorio, 'variante-1', 'variante-2');
     store.marcar('linea-variante-1', false);
 
     await store.eliminarLinea('linea-variante-2');
 
-    await vi.waitFor(() => expect(store.seleccionHabilitada()).toBe(false));
-    expect(store.lineasPorPagar().map((linea) => linea.id)).toEqual(['linea-variante-1']);
-    expect(store.estaMarcada('linea-variante-1')).toBe(true);
+    await vi.waitFor(() => expect(store.consulta.data()?.lineas.length).toBe(1));
+    expect(store.seleccionHabilitada()).toBe(true);
+    expect(store.lineasPorPagar()).toEqual([]);
+    expect(store.estaMarcada('linea-variante-1')).toBe(false);
+  });
+
+  /**
+   * Encontrado en la revisión: con «sin casillas todo cuenta como marcado», si la marcada dejaba
+   * de venderse en mitad del checkout, el pedido salía con la que el comprador desmarcó.
+   */
+  it('si la marcada deja de venderse, no se paga la desmarcada', async () => {
+    const repositorio = new RepositorioCarritoFalso();
+    const store = await conLineas(repositorio, 'variante-1', 'variante-2');
+    store.marcar('linea-variante-2', false);
+
+    repositorio.sinPrecio.add('variante-1');
+    await store.cotizacion.refetch();
+
+    await vi.waitFor(() => expect(store.lineaSeVende('linea-variante-1')).toBe(false));
+    expect(store.lineasPorPagar()).toEqual([]);
+    expect(store.hayLineasVendibles()).toBe(true);
+  });
+
+  it('sin ninguna línea que se venda, no hay vendibles ni nada por pagar', async () => {
+    const repositorio = new RepositorioCarritoFalso();
+    repositorio.sinPrecio.add('variante-1').add('variante-2');
+    const store = await conLineas(repositorio, 'variante-1', 'variante-2');
+
+    expect(store.hayLineasVendibles()).toBe(false);
+    expect(store.seleccionHabilitada()).toBe(false);
+    expect(store.lineasPorPagar()).toEqual([]);
   });
 
   it('desmarcar queda guardado en el almacén', async () => {
@@ -363,35 +404,87 @@ describe('CarritoStore y la selección de lo que se paga', () => {
     expect(store.lineasPorPagar().map((linea) => linea.id)).toEqual(['linea-variante-2']);
   });
 
-  it('quitarPagadas quita solo las pagadas y deja lo demás marcado', async () => {
+  it('quitarPagadas quita lo que llevó el pedido y deja lo demás marcado', async () => {
     const repositorio = new RepositorioCarritoFalso();
     const store = await conLineas(repositorio, 'variante-1', 'variante-2', 'variante-3');
     store.marcar('linea-variante-3', false);
 
-    await store.quitarPagadas(['linea-variante-1', 'linea-variante-2']);
+    await store.quitarPagadas([
+      { varianteId: 'variante-1', cantidad: 1 },
+      { varianteId: 'variante-2', cantidad: 1 },
+    ]);
 
     await vi.waitFor(() =>
       expect(store.consulta.data()?.lineas.map((linea) => linea.id)).toEqual(['linea-variante-3']),
     );
     expect(store.carritoId()).toBe('carrito-1');
+    expect(store.estaMarcada('linea-variante-3')).toBe(true);
     expect(new LineasSinMarcarLocalStorageAlmacen().leer()).toEqual([]);
   });
 
-  it('quitarPagadas con todo pagado, o sin saber qué, limpia el carrito', async () => {
+  /** Con pasarela, entre salir a pagar y volver pagado se pudo subir la cantidad. */
+  it('quitarPagadas deja las unidades que se agregaron después de pagar', async () => {
+    const repositorio = new RepositorioCarritoFalso();
+    const store = await conLineas(repositorio, 'variante-1', 'variante-2');
+    await store.actualizarCantidad('linea-variante-1', 3);
+
+    await store.quitarPagadas([{ varianteId: 'variante-1', cantidad: 1 }]);
+
+    expect(repositorio.actualizadas.at(-1)).toEqual({ lineaId: 'linea-variante-1', cantidad: 2 });
+    expect(repositorio.llamadasEliminar).toBe(0);
+  });
+
+  it('quitarPagadas con todo pagado limpia el carrito sin borrar línea por línea', async () => {
     const repositorio = new RepositorioCarritoFalso();
     const store = await conLineas(repositorio, 'variante-1', 'variante-2');
 
-    await store.quitarPagadas(['linea-variante-1', 'linea-variante-2']);
+    await store.quitarPagadas([
+      { varianteId: 'variante-1', cantidad: 1 },
+      { varianteId: 'variante-2', cantidad: 1 },
+    ]);
 
     expect(store.carritoId()).toBeNull();
     expect(repositorio.llamadasEliminar).toBe(0);
   });
 
-  it('quitarPagadas sin lista conocida limpia el carrito', async () => {
-    const store = await conLineas(new RepositorioCarritoFalso(), 'variante-1', 'variante-2');
+  /** La caché puede tener un minuto: lo agregado en otra pestaña no está en ella. */
+  it('quitarPagadas decide con el carrito del servidor, no con la caché', async () => {
+    const repositorio = new RepositorioCarritoFalso();
+    const store = await conLineas(repositorio, 'variante-1');
+    repositorio.cambiarEnOtraPestana([
+      { id: 'linea-variante-1', varianteId: 'variante-1', cantidad: 1 },
+      { id: 'linea-variante-9', varianteId: 'variante-9', cantidad: 1 },
+    ]);
 
-    await store.quitarPagadas(null);
+    await store.quitarPagadas([{ varianteId: 'variante-1', cantidad: 1 }]);
 
-    expect(store.carritoId()).toBeNull();
+    expect(store.carritoId()).toBe('carrito-1');
+    await vi.waitFor(() =>
+      expect(store.consulta.data()?.lineas.map((linea) => linea.id)).toEqual(['linea-variante-9']),
+    );
+  });
+
+  it('si quitar una línea falla, las demás pagadas igual salen', async () => {
+    const repositorio = new RepositorioCarritoFalso();
+    const store = await conLineas(repositorio, 'variante-1', 'variante-2', 'variante-3');
+    const original = repositorio.eliminarLinea.bind(repositorio);
+    repositorio.eliminarLinea = async (carritoId: string, lineaId: string) => {
+      if (lineaId === 'linea-variante-1') {
+        throw new Error('se cayó la red');
+      }
+      return original(carritoId, lineaId);
+    };
+
+    await store.quitarPagadas([
+      { varianteId: 'variante-1', cantidad: 1 },
+      { varianteId: 'variante-2', cantidad: 1 },
+    ]);
+
+    await vi.waitFor(() =>
+      expect(store.consulta.data()?.lineas.map((linea) => linea.id)).toEqual([
+        'linea-variante-1',
+        'linea-variante-3',
+      ]),
+    );
   });
 });

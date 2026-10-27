@@ -27,9 +27,10 @@
   "envio_aparte": "Shipping is quoted at checkout, based on your destination.",
   "seguir_comprando": "Continue shopping",
   "incluir_en_el_pago": "Include in this payment",
-  "incluir_en_el_pago_de": "Include {{nombre}} in this payment",
+  "incluir_en_el_pago_de": "Include in this payment: {{nombre}}",
   "no_se_vende": "No longer for sale: it isn't included in this payment.",
   "seleccionar_todos": "Select all",
   "seleccionados": "{{marcados}} of {{total}} products in this payment",
-  "nada_por_pagar": "Select at least one product to check out."
+  "nada_por_pagar": "Select at least one product to check out.",
+  "nada_a_la_venta": "None of these products are for sale right now."
 }

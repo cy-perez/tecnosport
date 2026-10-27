@@ -74,12 +74,17 @@ export class CarritoPage {
   }));
 
   /**
-   * Se pulsó «Ir a pagar» sin nada marcado. El botón no se deshabilita —saldría del orden de
-   * tabulación sin explicar nada—: se deja vivo y se dice qué falta.
+   * Se pulsó «Ir a pagar» sin nada que pagar. El botón no se deshabilita —saldría del orden de
+   * tabulación sin explicar nada—: se deja vivo y se dice qué falta. Son dos casos con dos textos:
+   * con todo desmarcado se pide marcar algo; si nada se vende, no hay casilla que marcar, y pedirlo
+   * mandaba a buscar algo que no está.
    */
-  protected readonly faltaSeleccion = signal(false);
+  protected readonly faltaPorPagar = signal<'nada_marcado' | 'nada_a_la_venta' | null>(null);
 
-  /** El del servidor (`CarritoStore.subtotal`), no la suma de los precios guardados al agregar. */
+  /**
+   * El de lo marcado (`CarritoStore.subtotal`), con los precios por línea del servidor; no la suma
+   * de los precios guardados al agregar.
+   */
   protected readonly total = computed(() => this.store.subtotal());
 
   /** El tope que manda el servidor con el carrito; `null` mientras el carrito no ha llegado. */
@@ -134,13 +139,13 @@ export class CarritoPage {
 
   /** Marcar cambia el total más abajo, y quien usa lector de pantalla no lo ve cambiar. */
   private alCambiarSeleccion(): void {
-    this.faltaSeleccion.set(false);
+    this.faltaPorPagar.set(null);
     this.anuncioLinea.set({ tipo: 'seleccion' });
   }
 
   protected irAPagar(): void {
     if (this.store.lineasPorPagar().length === 0) {
-      this.faltaSeleccion.set(true);
+      this.faltaPorPagar.set(this.store.hayLineasVendibles() ? 'nada_marcado' : 'nada_a_la_venta');
       return;
     }
     void this.router.navigate(['../checkout'], { relativeTo: this.ruta });

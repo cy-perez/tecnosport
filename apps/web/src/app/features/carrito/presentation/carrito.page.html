@@ -22,6 +22,10 @@
     } @else if (anuncio?.tipo === 'seleccion') {
       {{ 'carrito.seleccionados' | transloco: seleccion() }}. {{ 'carrito.total' | transloco }}:
       <ts-precio [valor]="total()" moneda="COP" />
+      <!-- Desmarcar cambia el total y el ahorro, igual que cambiar una cantidad. -->
+      @if (ahorro(); as ahorroTexto) {
+        <span>. {{ 'carrito.ahorro_sin_pasarela' | transloco: { ahorro: ahorroTexto } }}</span>
+      }
     } @else if (anuncio?.tipo === 'eliminada') {
       {{ 'carrito.anuncio_eliminada' | transloco: { nombre: anuncio.nombre } }}
     } @else if (anuncio?.tipo === 'error') {
@@ -106,9 +110,12 @@
           'carrito.seguir_comprando' | transloco
         }}</ts-boton>
       </div>
-      @if (faltaSeleccion()) {
+      @if (faltaPorPagar(); as falta) {
         <p class="m-0 mt-8 text-sm text-ts-error" role="alert">
-          {{ 'carrito.nada_por_pagar' | transloco }}
+          {{
+            (falta === 'nada_marcado' ? 'carrito.nada_por_pagar' : 'carrito.nada_a_la_venta')
+              | transloco
+          }}
         </p>
       }
     }

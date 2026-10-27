@@ -100,28 +100,33 @@ export class CarritoStore {
     (this.consulta.data()?.lineas ?? []).filter((linea) => this.lineaSeVende(linea.id)),
   );
 
+  /** `false` si ninguna línea se vende: no hay nada que marcar, y decir "marca algo" sería falso. */
+  readonly hayLineasVendibles = computed(() => this.lineasVendibles().length > 0);
+
   /**
-   * Las casillas solo aparecen con dos líneas vendibles o más: con una no hay nada que elegir. Y
-   * sin casillas todo cuenta como marcado, para que una línea desmarcada cuando había dos no se
-   * quede fuera del pago, sin casilla con que volver a marcarla, al quitar la otra.
+   * Las casillas aparecen con dos líneas vendibles o más, porque con una no hay nada que elegir;
+   * **y también mientras quede alguna desmarcada**, aunque sea la única. Una desmarcada nunca
+   * vuelve sola al pago: si la otra deja de venderse en mitad del checkout, cobrar la que el
+   * comprador dejó fuera a propósito es justo lo que no puede pasar. La casilla se queda para que
+   * la pueda volver a marcar.
    */
-  readonly seleccionHabilitada = computed(() => this.lineasVendibles().length >= 2);
+  readonly seleccionHabilitada = computed(() => {
+    const vendibles = this.lineasVendibles();
+    const sinMarcar = this.sinMarcar();
+    return vendibles.length >= 2 || vendibles.some((linea) => sinMarcar.has(linea.id));
+  });
 
   /**
    * Lo que se va a pagar: las líneas vendibles que siguen marcadas. Es lo único que el checkout
    * cotiza, consulta y manda en el pedido; las demás se quedan en el carrito para otra compra.
    */
   readonly lineasPorPagar = computed<readonly LineaCarrito[]>(() => {
-    const vendibles = this.lineasVendibles();
-    if (!this.seleccionHabilitada()) {
-      return vendibles;
-    }
     const sinMarcar = this.sinMarcar();
-    return vendibles.filter((linea) => !sinMarcar.has(linea.id));
+    return this.lineasVendibles().filter((linea) => !sinMarcar.has(linea.id));
   });
 
   estaMarcada(lineaId: string): boolean {
-    return !this.seleccionHabilitada() || !this.sinMarcar().has(lineaId);
+    return !this.sinMarcar().has(lineaId);
   }
 
   readonly todasMarcadas = computed(
@@ -249,37 +254,76 @@ export class CarritoStore {
   }
 
   /**
-   * Las líneas pagadas salen del carrito y las que se dejaron fuera se quedan, para otra compra.
-   * Si se pagó todo —o no se sabe qué, `null`: un pedido anotado antes de que existiera la
-   * selección—, es {@link limpiar}. Mismo momento que `limpiar`: cuando el pago ya salió bien.
+   * Lo que llevó el pedido sale del carrito, y lo que se dejó fuera se queda para otra compra. Si
+   * no queda nada, es {@link limpiar}. Mismo momento que `limpiar`: cuando el pago ya salió bien.
    *
-   * Lo que queda vuelve a estar marcado: es otra compra, y arranca como arrancan todas.
+   * <p><b>Por variante y cantidad, que es lo que el pedido lleva, y no por id de línea.</b> Con
+   * pasarela, entre salir a pagar y volver pagado puede pasar mucho: quien subió de 1 a 3 unidades
+   * conserva las 2 que no pagó, y quien quitó la línea y la volvió a agregar —otro id— no se queda
+   * con la pagada en el carrito para comprarla dos veces.
    *
-   * <p>No lanza. Si quitar una línea falla, se queda en el carrito y el comprador la quita a mano;
-   * es el mal menor frente a romper la pantalla final de una compra que ya está pagada.
+   * <p><b>Con el carrito del servidor, no con la caché</b>, que puede tener un minuto: si en otra
+   * pestaña se agregó algo, esa línea no está en la caché, y decidir con ella vaciaba un carrito que
+   * todavía tenía lo nuevo. Sin red se usa la caché, que es lo único que hay.
+   *
+   * <p>Lo que queda vuelve a estar marcado: es otra compra, y arranca como arrancan todas.
+   *
+   * <p>No lanza. Cada línea se intenta aparte: si una falla, se queda esa —el comprador la quita a
+   * mano— y las demás siguen. Es el mal menor frente a romper la pantalla final de una compra que
+   * ya está pagada.
    */
-  async quitarPagadas(lineaIds: readonly string[] | null): Promise<void> {
+  async quitarPagadas(
+    pagadas: readonly { readonly varianteId: string; readonly cantidad: number }[],
+  ): Promise<void> {
     const id = this.carritoId();
     if (!id) {
       return;
     }
+    let carrito: Carrito | null;
     try {
-      const carrito = this.consulta.data() ?? (await this.repositorio.ver(id));
-      const pagadas = new Set(lineaIds ?? []);
-      if (lineaIds === null || !carrito || carrito.lineas.every((linea) => pagadas.has(linea.id))) {
-        this.limpiar();
+      carrito = await this.repositorio.ver(id);
+    } catch {
+      carrito = this.consulta.data() ?? null;
+      if (!carrito) {
         return;
       }
-      this.sinMarcar.set(new Set());
-      this.almacenSinMarcar.guardar([]);
-      for (const linea of carrito.lineas) {
-        if (pagadas.has(linea.id)) {
-          await this.eliminarLinea(linea.id);
-        }
-      }
-    } catch {
-      // Ver arriba: una línea pagada que se queda es lo que se puede arreglar a mano.
     }
+    if (!carrito) {
+      // El servidor ya no lo tiene: no queda nada que conservar.
+      this.limpiar();
+      return;
+    }
+    const pagado = new Map<string, number>();
+    for (const linea of pagadas) {
+      pagado.set(linea.varianteId, (pagado.get(linea.varianteId) ?? 0) + linea.cantidad);
+    }
+    const quedan = carrito.lineas.filter(
+      (linea) => linea.cantidad > (pagado.get(linea.varianteId) ?? 0),
+    );
+    if (quedan.length === 0) {
+      this.limpiar();
+      return;
+    }
+    this.sinMarcar.set(new Set());
+    this.almacenSinMarcar.guardar([]);
+    for (const linea of carrito.lineas) {
+      const unidadesPagadas = pagado.get(linea.varianteId) ?? 0;
+      if (unidadesPagadas === 0) {
+        continue;
+      }
+      try {
+        if (linea.cantidad <= unidadesPagadas) {
+          await this.repositorio.eliminarLinea(id, linea.id);
+        } else {
+          await this.repositorio.actualizarCantidad(id, linea.id, linea.cantidad - unidadesPagadas);
+        }
+      } catch {
+        // Ver arriba: esta se queda, y las demás siguen.
+      }
+    }
+    // Volver a pedirlo, y no escribir la caché a mano: una lectura que iba en vuelo desde antes de
+    // los borrados la pisaría con las líneas pagadas. Invalidar la cancela y pide la de ahora.
+    await this.queryClient.invalidateQueries({ queryKey: ['carrito', id] });
   }
 
   /** Olvida el id solo si sigue siendo el activo: otra mutación pudo haber creado uno nuevo. */

@@ -393,8 +393,8 @@ describe('CarritoPage y la selección de lo que se paga', () => {
     await renderCarrito(new RepositorioCarritoFalso(carritoDeDos));
 
     expect(await screen.findByText('2 de 2 productos en este pago')).toBeTruthy();
-    expect(casilla('Incluir Morral urbano en este pago').checked).toBe(true);
-    expect(casilla('Incluir Gorra plana en este pago').checked).toBe(true);
+    expect(casilla('Incluir en este pago: Morral urbano').checked).toBe(true);
+    expect(casilla('Incluir en este pago: Gorra plana').checked).toBe(true);
     expect(casilla('Seleccionar todos').checked).toBe(true);
     expect((await screen.findAllByText(/300\.000/)).length).toBeGreaterThan(0);
   });
@@ -403,7 +403,7 @@ describe('CarritoPage y la selección de lo que se paga', () => {
     await renderCarrito(new RepositorioCarritoFalso(carritoDeDos));
     await screen.findByText('2 de 2 productos en este pago');
 
-    fireEvent.click(casilla('Incluir Gorra plana en este pago'));
+    fireEvent.click(casilla('Incluir en este pago: Gorra plana'));
 
     expect(await screen.findByText('1 de 2 productos en este pago')).toBeTruthy();
     expect(casilla('Seleccionar todos').checked).toBe(false);
@@ -432,7 +432,7 @@ describe('CarritoPage y la selección de lo que se paga', () => {
     await screen.findByText('2 de 2 productos en este pago');
     const navegar = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
 
-    fireEvent.click(casilla('Incluir Morral urbano en este pago'));
+    fireEvent.click(casilla('Incluir en este pago: Morral urbano'));
     fireEvent.click(screen.getByRole('button', { name: 'Ir a pagar' }));
 
     expect(navegar).toHaveBeenCalledWith(['../checkout'], expect.anything());

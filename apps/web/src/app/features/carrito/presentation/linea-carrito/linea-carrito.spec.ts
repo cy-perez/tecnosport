@@ -220,7 +220,7 @@ describe('LineaCarritoComponent', () => {
       );
 
       const casilla = screen.getByRole('checkbox', {
-        name: 'Incluir Morral urbano en este pago',
+        name: 'Incluir en este pago: Morral urbano',
       }) as HTMLInputElement;
       expect(casilla.checked).toBe(true);
 
@@ -233,7 +233,7 @@ describe('LineaCarritoComponent', () => {
       await renderLinea({ linea: lineaDePrueba(), seleccionable: true, marcada: false });
 
       const casilla = screen.getByRole('checkbox', {
-        name: 'Incluir Producto en este pago',
+        name: 'Incluir en este pago: Producto',
       }) as HTMLInputElement;
       expect(casilla.checked).toBe(false);
     });
