@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import co.tecnosport.api.application.compartido.RelojFalso;
 import co.tecnosport.api.application.proveedores.ApoyoDeCatalogoParaIngesta.CalculadorDePHashPorContenido;
 import co.tecnosport.api.application.proveedores.ApoyoDeCatalogoParaIngesta.RepositorioBorradoresEnMemoria;
+import co.tecnosport.api.application.proveedores.ApoyoDeCatalogoParaIngesta.RepositorioInventarioEnMemoria;
 import co.tecnosport.api.application.proveedores.ApoyoDeCatalogoParaIngesta.RepositorioProductosDeProveedorEnMemoria;
 import co.tecnosport.api.application.proveedores.ApoyoDeCatalogoParaIngesta.RepositorioProductosEnMemoria;
 import co.tecnosport.api.application.proveedores.ApoyoDeIngesta.AlmacenEnMemoria;
@@ -480,6 +481,75 @@ class ResolverBorradorTest {
         Optional.of(Dinero.deCop(65000)),
         deCaballero.precioProveedor(),
         "el gemelo sigue encontrándose y se renueva con el precio nuevo");
+  }
+
+  /**
+   * Revisión adversarial del 27 de octubre de 2026: con venta bajo confirmación, la renovación
+   * reponía la existencia nominal del de dama y al gemelo solo lo renovaba. El de caballero quedaba
+   * disponible y sin una sola unidad que vender.
+   */
+  @Test
+  void bajoConfirmacionLaRenovacionReponeTambienAlGemelo() {
+    proveedor.definirAjustesDeIngesta(new AjustesDeIngesta(false, true, null, null));
+    String texto =
+        "NIKE UNISEX ULTRALIVIANO🔥\nTallas disponibles en la foto!\n"
+            + "Horma normal Dama, Aumenta 1 Cab⚠️⚠️\n💰*$85,000*";
+    resolver(publicacion(texto, "foto-nike"), tenis(List.of("41", "42", "43")));
+    BorradorProducto dama =
+        borradores.enEstado(EstadoBorrador.EN_REVISION).stream()
+            .filter(b -> b.generoDeCalzado().equals(Optional.of(GeneroDeCalzado.DAMA)))
+            .findFirst()
+            .orElseThrow();
+    BorradorProducto caballero =
+        borradores.enEstado(EstadoBorrador.EN_REVISION).stream()
+            .filter(b -> b.generoDeCalzado().equals(Optional.of(GeneroDeCalzado.CABALLERO)))
+            .findFirst()
+            .orElseThrow();
+    Producto deDama =
+        productoExistente(
+            "Tenis Nike", 65000, dama.huella().orElseThrow(), EstadoDisponibilidad.DISPONIBLE);
+    Producto deCaballero =
+        productoExistente(
+            "Tenis Nike", 65000, caballero.huella().orElseThrow(), EstadoDisponibilidad.DISPONIBLE);
+    deDama.agregarVariante(varianteDeTalla("TEN-DAMA-38", 120000));
+    deCaballero.agregarVariante(varianteDeTalla("TEN-CAB-41", 120000));
+    PHash foto = dama.pHash().orElseThrow();
+    caballero.aprobar(deCaballero.id(), foto);
+    borradores.porId.remove(dama.id());
+    dama.aprobar(deDama.id(), foto);
+    borradores.guardar(dama);
+    RepositorioInventarioEnMemoria inventario = new RepositorioInventarioEnMemoria();
+    ResolverBorrador conExistencia =
+        new ResolverBorrador(
+            borradores,
+            productosDeProveedor,
+            productos,
+            publicaciones,
+            almacen,
+            new CalculadorDePHashPorContenido(),
+            new RelojFalso(AHORA),
+            FACTORES,
+            new TopesDeGanancia(Dinero.deCop(20000), Dinero.deCop(30000)),
+            6,
+            new ExistenciaBajoConfirmacion(
+                inventario, productosDeProveedor, new RelojFalso(AHORA), 2));
+
+    conExistencia.ejecutar(
+        publicacion(texto, "foto-nike", FECHA_DEL_MENSAJE.plusSeconds(86_400)),
+        mensajes,
+        proveedor,
+        List.of(tenis(List.of("41", "42", "43"))));
+
+    UUID delCaballero = deCaballero.variantes().getFirst().id();
+    assertEquals(
+        2,
+        inventario.buscarPorVarianteId(delCaballero).orElseThrow().saldoTotal(),
+        "el gemelo vuelve a la existencia nominal, como el de dama");
+  }
+
+  private static Variante varianteDeTalla(String sku, long precio) {
+    return Variante.crear(
+        new Sku(sku), Dinero.deCop(precio), BigDecimal.ZERO, null, null, List.of());
   }
 
   /** Un bolso del mismo anuncio no talla: ni se corre ni se parte. */

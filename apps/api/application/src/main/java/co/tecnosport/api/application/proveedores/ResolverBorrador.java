@@ -710,6 +710,12 @@ public final class ResolverBorrador {
                 }
               }
               repositorioProductos.actualizar(gemelo);
+              // Como al de dama: renovado sin reponer, quedaba disponible y sin existencia.
+              if (!extraido.estaAgotado()
+                  && proveedor.ajustesDeIngesta().ventaBajoConfirmacion()
+                  && existenciaBajoConfirmacion != null) {
+                existenciaBajoConfirmacion.reponer(gemelo);
+              }
             });
     repositorioBorradores.guardar(
         BorradorProducto.conSet(
