@@ -140,6 +140,39 @@ class RepositorioCarritoFalso implements RepositorioCarrito {
   }
 }
 
+/** El mismo carrito, con la cotización trayendo sin precio las variantes que ya no se venden. */
+class RepositorioCarritoConAgotadas extends RepositorioCarritoFalso {
+  constructor(
+    carrito: Carrito,
+    private readonly agotadas: readonly string[],
+  ) {
+    super(carrito);
+  }
+
+  override async cotizar(carritoId: string): Promise<CarritoCotizado | null> {
+    const cotizado = await super.cotizar(carritoId);
+    if (!cotizado) {
+      return null;
+    }
+    const lineas = cotizado.lineas.map((linea) =>
+      this.agotadas.includes(linea.varianteId)
+        ? {
+            ...linea,
+            precioUnitario: null,
+            subtotal: null,
+            precioContado: null,
+            subtotalContado: null,
+          }
+        : linea,
+    );
+    return {
+      lineas,
+      subtotal: lineas.reduce((suma, linea) => suma + (linea.subtotal ?? 0), 0),
+      subtotalContado: lineas.reduce((suma, linea) => suma + (linea.subtotalContado ?? 0), 0),
+    };
+  }
+}
+
 function pedidoDePrueba(overrides: Partial<Pedido> = {}): Pedido {
   return {
     id: 'pedido-1',
@@ -1419,6 +1452,49 @@ describe('ConfirmarPage', () => {
    * Salir a la pasarela no es haber pagado: quien cancela en Wompi vuelve a un carrito vacío si se
    * vacía aquí. Se anota cuál carrito salió a pagarse, y lo vacía la pantalla de estado.
    */
+  /** El total cambia solo, pero no dice cuál salió: lo dice el aviso, y el pedido sale sin él. */
+  it('nombra el producto marcado que ya no se vende, y el pedido sale sin él', async () => {
+    sembrarCarritoId('carrito-1');
+    sembrarSnapshotLinea({ ...snapshotDePrueba('variante-2'), nombreProducto: 'Gorra plana' });
+    const pedidos = new RepositorioPedidosFalso(pedidoDePrueba({ metodoPago: 'CONTRAENTREGA' }));
+
+    const { fixture } = await renderConDatos(
+      'CONTRAENTREGA',
+      new RepositorioCarritoConAgotadas(CARRITO_CON_DOS_LINEAS, ['variante-2']),
+      pedidos,
+    );
+    await screen.findByText('compra@ejemplo.co');
+    await esperarCarritoCargado(fixture);
+
+    expect(
+      await screen.findByText(
+        'Ya no está a la venta y no entra en este pedido: Gorra plana. Sigue en tu carrito.',
+      ),
+    ).toBeTruthy();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Confirmar pedido' }));
+
+    await vi.waitFor(() =>
+      expect(pedidos.ultimoComando?.lineas.map((linea) => linea.varianteId)).toEqual([
+        'variante-1',
+      ]),
+    );
+  });
+
+  it('con todo a la venta no avisa nada', async () => {
+    sembrarCarritoId('carrito-1');
+
+    const { fixture } = await renderConDatos(
+      'CONTRAENTREGA',
+      new RepositorioCarritoFalso(CARRITO_CON_DOS_LINEAS),
+      new RepositorioPedidosFalso(pedidoDePrueba({ metodoPago: 'CONTRAENTREGA' })),
+    );
+    await screen.findByText('compra@ejemplo.co');
+    await esperarCarritoCargado(fixture);
+
+    expect(screen.queryByText(/no entra en este pedido/)).toBeNull();
+  });
+
   it('al salir hacia Wompi, el carrito queda lleno y anotado para vaciarlo al volver pagado', async () => {
     sembrarCarritoId('carrito-1');
     const pedidos = new RepositorioPedidosFalso(pedidoDePrueba({ metodoPago: 'WOMPI' }));

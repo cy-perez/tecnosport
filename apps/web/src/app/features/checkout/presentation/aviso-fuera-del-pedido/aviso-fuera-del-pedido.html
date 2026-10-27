@@ -1,0 +1,6 @@
+<!-- El borde lleva el color de aviso y el texto el normal: así el contraste es el del cuerpo. -->
+@if (nombres(); as productos) {
+  <p class="m-0 mb-16 rounded-md border border-ts-aviso p-12 text-sm" role="alert">
+    {{ 'checkout.resumen.fuera_del_pedido' | transloco: { productos } }}
+  </p>
+}

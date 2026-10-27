@@ -6,6 +6,8 @@
   </a>
 
   @if (checkout.datosEntrega(); as datos) {
+    <!-- Antes del desglose: el total que sigue ya es el del pedido sin ese producto. -->
+    <app-aviso-fuera-del-pedido />
     <dl
       class="m-0 mb-24 grid grid-cols-[auto_1fr] gap-x-16 gap-y-8 [&_dt]:text-ts-texto-suave [&_dd]:m-0"
     >

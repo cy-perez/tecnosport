@@ -210,6 +210,39 @@ const COTIZACION: CotizacionEnvio = {
   opciones: [],
 };
 
+/** El mismo carrito, con la cotización trayendo sin precio las variantes que ya no se venden. */
+class RepositorioCarritoConAgotadas extends RepositorioCarritoFalso {
+  constructor(
+    carrito: Carrito,
+    private readonly agotadas: readonly string[],
+  ) {
+    super(carrito);
+  }
+
+  override async cotizar(carritoId: string): Promise<CarritoCotizado | null> {
+    const cotizado = await super.cotizar(carritoId);
+    if (!cotizado) {
+      return null;
+    }
+    const lineas = cotizado.lineas.map((linea) =>
+      this.agotadas.includes(linea.varianteId)
+        ? {
+            ...linea,
+            precioUnitario: null,
+            subtotal: null,
+            precioContado: null,
+            subtotalContado: null,
+          }
+        : linea,
+    );
+    return {
+      lineas,
+      subtotal: lineas.reduce((suma, linea) => suma + (linea.subtotal ?? 0), 0),
+      subtotalContado: lineas.reduce((suma, linea) => suma + (linea.subtotalContado ?? 0), 0),
+    };
+  }
+}
+
 function snapshotDePrueba(varianteId: string): SnapshotLinea {
   return {
     varianteId,
@@ -774,6 +807,26 @@ describe('ResumenPage', () => {
       // 2 × 150.000 y no las tres unidades.
       expect((await screen.findAllByText(/300\.000/)).length).toBeGreaterThan(0);
       expect(screen.queryByText(/450\.000/)).toBeNull();
+    });
+
+    it('nombra el marcado que ya no se vende y no lo suma', async () => {
+      await renderResumen(new RepositorioCarritoConAgotadas(carritoDeDos, ['variante-2']));
+
+      expect(
+        await screen.findByText(
+          'Ya no está a la venta y no entra en este pedido: Gorra plana. Sigue en tu carrito.',
+        ),
+      ).toBeTruthy();
+      expect((await screen.findAllByText(/300\.000/)).length).toBeGreaterThan(0);
+    });
+
+    it('no nombra el que ya no se vende si el comprador lo había desmarcado', async () => {
+      sembrarLineasSinMarcar(['linea-2']);
+
+      await renderResumen(new RepositorioCarritoConAgotadas(carritoDeDos, ['variante-2']));
+
+      expect(await screen.findByText('Morral urbano')).toBeTruthy();
+      expect(screen.queryByText(/no entra en este pedido/)).toBeNull();
     });
 
     it('sin nada marcado lo dice y manda al carrito a elegir', async () => {

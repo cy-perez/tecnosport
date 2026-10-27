@@ -42,6 +42,7 @@ import {
 import { DEPARTAMENTOS, municipiosDeDepartamento } from '../../domain/geografia-co';
 import { Direccion, TipoEntrega } from '../../domain/pedido.model';
 import { requiereDireccion as tipoEntregaRequiereDireccion } from '../../domain/reglas-pedido';
+import { AvisoFueraDelPedido } from '../aviso-fuera-del-pedido/aviso-fuera-del-pedido';
 
 interface ValoresDireccion {
   codigoDaneDepartamento: string;
@@ -62,6 +63,7 @@ interface ValoresDireccion {
 @Component({
   selector: 'app-resumen',
   imports: [
+    AvisoFueraDelPedido,
     ReactiveFormsModule,
     NgOptimizedImage,
     TranslocoPipe,
