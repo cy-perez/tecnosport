@@ -144,8 +144,13 @@ class RepositorioPedidosFalso implements RepositorioPedidos {
     throw new Error('no usado en esta prueba');
   }
 
+  falloDeReintento: unknown = null;
+
   async reintentarPago(): Promise<Pedido> {
     this.llamadasReintentar++;
+    if (this.falloDeReintento) {
+      throw this.falloDeReintento;
+    }
     return this.pedidoReintentado;
   }
 
@@ -590,6 +595,22 @@ describe('EstadoPage', () => {
     await screen.findByText('Pedido TS-2026-000001');
 
     expect(screen.queryByRole('button', { name: 'Reintentar pago' })).toBeFalsy();
+  });
+
+  /** Con el enlace de compra vencido el servidor no reabre el pedido: hay que pedir otro. */
+  it('reintentar con el enlace de compra vencido dice que se pida otro por WhatsApp', async () => {
+    const pedidos = new RepositorioPedidosFalso();
+    pedidos.falloDeReintento = new ErrorHttp(409, 'enlace vencido', 'ENLACE_DE_COMPRA_NO_VIGENTE');
+    await renderConPedidoEnMemoria(
+      pedidoDePrueba({ estado: 'PAGO_FALLIDO', metodoPago: 'WOMPI' }),
+      pedidos,
+      new RepositorioPagosFalso(),
+    );
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Reintentar pago' }));
+
+    expect(await screen.findByText(esCheckout.confirmar.disponibilidad_por_confirmar)).toBeTruthy();
+    expect(screen.queryByText(esCheckout.estado.error_reintento)).toBeNull();
   });
 
   it('reintentar con un método de Wompi crea el intento de pago', async () => {

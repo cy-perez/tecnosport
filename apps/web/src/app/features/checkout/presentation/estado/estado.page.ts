@@ -481,9 +481,19 @@ export class EstadoPage {
       // único rechazo de la pasarela que cambia lo que el comprador debe hacer desde aquí.
       const enCurso =
         error instanceof ErrorHttp && error.datos['motivoSistecredito'] === 'SOLICITUD_EN_CURSO';
+      // Un equipo de color por confirmar no se vuelve a cobrar con el enlace vencido: lo que sirve
+      // es pedir otro por WhatsApp, y el genérico no lo dice.
+      const sinEnlace =
+        error instanceof ErrorHttp &&
+        (error.codigo === 'ENLACE_DE_COMPRA_NO_VIGENTE' ||
+          error.codigo === 'DISPONIBILIDAD_POR_CONFIRMAR');
       this.error.set(
         this.transloco.translate(
-          enCurso ? 'checkout.confirmar.sistecredito_801' : 'checkout.estado.error_reintento',
+          enCurso
+            ? 'checkout.confirmar.sistecredito_801'
+            : sinEnlace
+              ? 'checkout.confirmar.disponibilidad_por_confirmar'
+              : 'checkout.estado.error_reintento',
         ),
       );
     } finally {
