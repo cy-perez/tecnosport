@@ -352,6 +352,13 @@ public final class CrearPedido {
     Producto producto = buscarProductoVendible(lineaComando.varianteId());
     Variante variante = buscarVarianteVendible(producto, lineaComando.varianteId());
     Optional<EnlaceDeCompra> enlace = enlaceDeLaLinea(lineaComando, producto, variante, ahora);
+    // Lo que se cobra con este medio tiene que ser un precio. `Variante` ya no admite un contado en
+    // cero ni la base tampoco (V135), así que hoy esto no dispara; queda como la última guarda
+    // antes de reservar, porque el daño de que falle es vender regalado. Misma excepción que lo
+    // que no se vende, para no decirle a nadie por qué.
+    if (metodoPago.precioDe(variante).valor().signum() <= 0) {
+      throw new VarianteNoEncontradaException(variante.id());
+    }
 
     Inventario inventario =
         repositorioInventario

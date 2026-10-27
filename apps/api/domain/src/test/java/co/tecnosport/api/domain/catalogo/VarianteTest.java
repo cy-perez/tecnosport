@@ -149,15 +149,17 @@ class VarianteTest {
   }
 
   /**
-   * Al reconstruir desde la base, cero pasa: una variante guardada así antes de que el panel lo
-   * impidiera se tiene que poder leer, o deja de cargar la ficha entera. El publicado por debajo
-   * del contado sigue sin pasar.
+   * Al reconstruir, cero tampoco pasa desde el 27/10/2026. Antes pasaba —para que una variante
+   * guardada así se pudiera leer— y se vendía regalada con cualquier medio sin pasarela. La V135 no
+   * arranca si la base tiene una, así que ninguna llega aquí. El publicado por debajo del contado
+   * sigue sin pasar.
    */
   @Test
-  void reconstruirAceptaCeroPeroNoUnPublicadoMenor() {
-    assertDoesNotThrow(() -> reconstruida(0, 0));
-    assertDoesNotThrow(() -> reconstruida(0, 1_000));
+  void reconstruirRechazaUnContadoEnCeroYUnPublicadoMenor() {
+    assertThrows(ExcepcionDeDominio.class, () -> reconstruida(0, 0));
+    assertThrows(ExcepcionDeDominio.class, () -> reconstruida(0, 1_000));
     assertThrows(ExcepcionDeDominio.class, () -> reconstruida(1_000, 900));
+    assertDoesNotThrow(() -> reconstruida(1_000, 1_000));
   }
 
   private static Variante reconstruida(long contado, long publicado) {

@@ -160,6 +160,7 @@ public final class Variante {
     this.precio = Objects.requireNonNull(precio, "El precio de la variante no puede ser nulo.");
     this.precioContado =
         Objects.requireNonNull(precioContado, "El precio de contado no puede ser nulo.");
+    exigirMayorQueCero(sku, precioContado);
     validarPrecios(sku, precioContado, precio);
     this.tasaIva = validarTasaIva(tasaIva);
     this.codigoBarras = codigoBarras == null || codigoBarras.isBlank() ? null : codigoBarras.trim();
@@ -360,8 +361,12 @@ public final class Variante {
 
   /**
    * Cero no es un precio: {@link Dinero} lo admite, pero un precio en cero desde el panel solo
-   * puede ser un error de digitación, y lo que se publicaría es un producto regalado. Se exige al
-   * crear y al cambiar el precio, no al reconstruir ({@link #validarPrecios}).
+   * puede ser un error de digitación, y lo que se publicaría es un producto regalado.
+   *
+   * <p>Se exige también al reconstruir desde el 27/10/2026. Antes solo al crear y al cambiar el
+   * precio, y la base no lo impedía: una variante con contado 0 se cobraba 0 con transferencia, en
+   * el punto o contra entrega. La V135 pone la misma regla en la tabla y no arranca si encuentra
+   * una fila en cero, así que ninguna puede llegar aquí desde el adaptador.
    */
   private static void exigirMayorQueCero(Sku sku, Dinero contado) {
     if (contado.valor().signum() <= 0) {
