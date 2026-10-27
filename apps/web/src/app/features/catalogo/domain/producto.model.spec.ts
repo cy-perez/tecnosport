@@ -54,8 +54,8 @@ function productoCon(variantes: Variante[]): Producto {
     marca: { id: 'm', nombre: 'M' },
     categoria: {
       id: 'c',
-      nombre: 'C',
-      slug: 'c',
+      nombre: 'Bolsos de mano',
+      slug: 'bolsos-dama-bolsos-de-mano',
       linea: 'BOLSOS',
       padreId: null,
       hashtags: [],

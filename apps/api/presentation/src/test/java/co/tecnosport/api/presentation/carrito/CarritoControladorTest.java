@@ -95,7 +95,8 @@ class CarritoControladorTest {
             new Slug("bolso"),
             "Descripción",
             Marca.crear("TecnoSport"),
-            Categoria.crear("Bolsos", new Slug("bolsos"), LineaCatalogo.ROPA));
+            Categoria.crear(
+                "Bolsos de mano", new Slug("bolsos-dama-bolsos-de-mano"), LineaCatalogo.BOLSOS));
     producto.asignarImagenPrincipal(
         ImagenProducto.crear(
             TipoImagen.PRINCIPAL,

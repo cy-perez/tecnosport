@@ -763,7 +763,8 @@ class RepositorioProductosJpaTest {
   @Test
   void losPreciosDelCatalogoTraenElContadoYElPublicadoDeCadaVariante() {
     MarcaJpaEntity marca = marca("Marca precios T2");
-    CategoriaJpaEntity categoria = categoria("Bolsos", "bolsos-pr2", "BOLSOS");
+    CategoriaJpaEntity categoria =
+        categoria("Bolsos de mano", "bolsos-dama-bolsos-de-mano-pr2", "BOLSOS");
     ProductoJpaEntity productoJpa =
         producto("Bolso Lucía", "bolso-lucia-precios", "PUBLICADO", marca, categoria);
     VarianteJpaEntity variante = variante(productoJpa, "TS-PRECIOS-2", "230000");
@@ -786,7 +787,8 @@ class RepositorioProductosJpaTest {
   @Test
   void actualizarElPublicadoNoTocaElContado() {
     MarcaJpaEntity marca = marca("Marca precios T3");
-    CategoriaJpaEntity categoria = categoria("Bolsos", "bolsos-pr3", "BOLSOS");
+    CategoriaJpaEntity categoria =
+        categoria("Bolsos de mano", "bolsos-dama-bolsos-de-mano-pr3", "BOLSOS");
     ProductoJpaEntity productoJpa =
         producto("Bolso Ana", "bolso-ana-precios", "PUBLICADO", marca, categoria);
     VarianteJpaEntity variante = variante(productoJpa, "TS-PRECIOS-3", "230000");
@@ -811,7 +813,8 @@ class RepositorioProductosJpaTest {
   @Test
   void actualizarElPublicadoNoPisaUnContadoQueCambio() {
     MarcaJpaEntity marca = marca("Marca precios T4");
-    CategoriaJpaEntity categoria = categoria("Bolsos", "bolsos-pr4", "BOLSOS");
+    CategoriaJpaEntity categoria =
+        categoria("Bolsos de mano", "bolsos-dama-bolsos-de-mano-pr4", "BOLSOS");
     ProductoJpaEntity productoJpa =
         producto("Bolso Eva", "bolso-eva-precios", "PUBLICADO", marca, categoria);
     VarianteJpaEntity variante = variante(productoJpa, "TS-PRECIOS-4", "230000");
@@ -834,7 +837,8 @@ class RepositorioProductosJpaTest {
   @Test
   void actualizarElPublicadoNoPisaUnPublicadoQueCambio() {
     MarcaJpaEntity marca = marca("Marca precios T5");
-    CategoriaJpaEntity categoria = categoria("Bolsos", "bolsos-pr5", "BOLSOS");
+    CategoriaJpaEntity categoria =
+        categoria("Bolsos de mano", "bolsos-dama-bolsos-de-mano-pr5", "BOLSOS");
     ProductoJpaEntity productoJpa =
         producto("Bolso Sol", "bolso-sol-precios", "PUBLICADO", marca, categoria);
     VarianteJpaEntity variante = variante(productoJpa, "TS-PRECIOS-5", "230000");
