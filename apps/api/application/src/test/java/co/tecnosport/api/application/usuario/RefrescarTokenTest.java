@@ -1,13 +1,17 @@
 package co.tecnosport.api.application.usuario;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import co.tecnosport.api.domain.compartido.CorreoElectronico;
+import co.tecnosport.api.domain.usuario.PoliticaDeSegundoFactor;
 import co.tecnosport.api.domain.usuario.Rol;
+import co.tecnosport.api.domain.usuario.SegundoFactor;
 import co.tecnosport.api.domain.usuario.SesionRefresco;
+import co.tecnosport.api.domain.usuario.Totp;
 import co.tecnosport.api.domain.usuario.Usuario;
 import java.time.Duration;
 import java.time.Instant;
@@ -29,7 +33,50 @@ class RefrescarTokenTest {
     usuario = Usuario.crear(new CorreoElectronico("admin@tecnosport.co"), "hash", Rol.ADMIN, AHORA);
     usuarios.conUsuario(usuario);
     return new RefrescarToken(
-        sesiones, usuarios, new GeneradorDeTokensFalso(), new RelojFalso(AHORA), VIGENCIA_REFRESCO);
+        sesiones,
+        usuarios,
+        new GeneradorDeTokensFalso(),
+        new RelojFalso(AHORA),
+        VIGENCIA_REFRESCO,
+        factores,
+        new PoliticaDeSegundoFactor(exigido));
+  }
+
+  private RepositorioSegundosFactoresFalso factores = new RepositorioSegundosFactoresFalso();
+  private boolean exigido;
+
+  /**
+   * ADR-0096. Con la bandera encendida, el refresco de un ADMIN sin factor sale restringido —el
+   * alcance se recalcula en cada emisión, así que la bandera alcanza a las sesiones ya abiertas—, y
+   * en cuanto activa el factor sale completo.
+   */
+  @Test
+  void elRefrescoRecalculaElAlcance() {
+    exigido = true;
+    RefrescarToken caso = crear();
+    SesionRefresco original = sesionVigente();
+
+    TokensDeSesion restringida = caso.ejecutar(new RefrescarTokenComando(original.id()));
+
+    assertTrue(restringida.segundoFactorPorActivar());
+    assertTrue(restringida.accessToken().endsWith(":SOLO_ACTIVAR_SEGUNDO_FACTOR"));
+
+    SegundoFactor factor = SegundoFactor.iniciar(usuario.id(), AHORA);
+    factor.confirmar(
+        Totp.codigoEn(factor.clave(), Totp.pasoDe(AHORA)), AHORA, Duration.ofMinutes(15));
+    factores.con(factor);
+    TokensDeSesion completa =
+        caso.ejecutar(new RefrescarTokenComando(restringida.refreshTokenId()));
+
+    assertFalse(completa.segundoFactorPorActivar());
+    assertTrue(completa.accessToken().endsWith(":COMPLETO"));
+  }
+
+  @Test
+  void sinLaBanderaNadieSaleRestringido() {
+    RefrescarToken caso = crear();
+    assertFalse(
+        caso.ejecutar(new RefrescarTokenComando(sesionVigente().id())).segundoFactorPorActivar());
   }
 
   private SesionRefresco sesionVigente() {

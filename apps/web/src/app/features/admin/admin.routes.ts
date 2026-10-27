@@ -11,7 +11,9 @@ import { CategoriasAdminHttpRepositorio } from './categorias/infrastructure/cate
 import { REPOSITORIO_CATEGORIAS_ADMIN } from './categorias/domain/repositorio-categorias-admin.puerto';
 import { MarcasAdminHttpRepositorio } from './marcas/infrastructure/marcas-admin-http.repositorio';
 import { REPOSITORIO_MARCAS_ADMIN } from './marcas/domain/repositorio-marcas-admin.puerto';
-import { adminGuard } from './admin.guard';
+import { activacionSegundoFactorGuard, adminGuard } from './admin.guard';
+import { REPOSITORIO_SEGUNDO_FACTOR } from './segundo-factor/domain/repositorio-segundo-factor.puerto';
+import { SegundoFactorHttpRepositorio } from './segundo-factor/infrastructure/segundo-factor-http.repositorio';
 import { REPOSITORIO_ATENCION } from './atencion/domain/repositorio-atencion.puerto';
 import { AtencionHttpRepositorio } from './atencion/infrastructure/atencion-http.repositorio';
 import { CapturaStore } from '../captura360/application/captura.store';
@@ -108,6 +110,20 @@ export const adminRoutes: Routes = [
             (m) => m.IniciarSesionAdminPage,
           ),
       },
+      {
+        // Activar el segundo factor (ADR-0096). Hermana de `iniciar-sesion` y fuera del marco:
+        // con la sesión restringida, `adminGuard` manda aquí y el resto del panel responde 403,
+        // así que unas pestañas que llevan a pantallas vedadas solo estorbarían.
+        path: 'activar-segundo-factor',
+        canActivate: [activacionSegundoFactorGuard],
+        providers: [
+          { provide: REPOSITORIO_SEGUNDO_FACTOR, useClass: SegundoFactorHttpRepositorio },
+        ],
+        loadComponent: () =>
+          import('./segundo-factor/presentation/activar/activar-segundo-factor.page').then(
+            (m) => m.ActivarSegundoFactorPage,
+          ),
+      },
       // El marco con la barra de secciones, y con el `adminGuard` una sola vez. Las nueve
       // pantallas de abajo lo declaraban cada una por su cuenta —la misma condición escrita nueve
       // veces— y `iniciar-sesion` se queda fuera a propósito: es hermana de este nodo, no hija,
@@ -132,6 +148,17 @@ export const adminRoutes: Routes = [
             path: 'clave',
             loadComponent: () =>
               import('./clave/cambiar-clave-admin.page').then((m) => m.CambiarClaveAdminPage),
+          },
+          {
+            // El segundo factor de la cuenta: su estado, regenerar los códigos y desactivarlo.
+            path: 'seguridad',
+            providers: [
+              { provide: REPOSITORIO_SEGUNDO_FACTOR, useClass: SegundoFactorHttpRepositorio },
+            ],
+            loadComponent: () =>
+              import('./segundo-factor/presentation/seguridad/seguridad-admin.page').then(
+                (m) => m.SeguridadAdminPage,
+              ),
           },
           {
             path: 'pedidos',

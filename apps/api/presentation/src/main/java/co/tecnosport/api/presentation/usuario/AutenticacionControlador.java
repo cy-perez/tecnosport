@@ -14,6 +14,7 @@ import co.tecnosport.api.application.usuario.RefrescarToken;
 import co.tecnosport.api.application.usuario.RefrescarTokenComando;
 import co.tecnosport.api.application.usuario.RegistrarUsuario;
 import co.tecnosport.api.application.usuario.RegistrarUsuarioComando;
+import co.tecnosport.api.application.usuario.ResultadoInicioSesion;
 import co.tecnosport.api.application.usuario.SesionDeRefrescoInvalidaException;
 import co.tecnosport.api.application.usuario.SolicitarRecuperacion;
 import co.tecnosport.api.application.usuario.SolicitarRecuperacionComando;
@@ -24,6 +25,7 @@ import co.tecnosport.api.presentation.compartido.CuboDeIp;
 import co.tecnosport.api.presentation.compartido.IpDelCliente;
 import co.tecnosport.api.presentation.usuario.dto.CambiarClaveRequest;
 import co.tecnosport.api.presentation.usuario.dto.ConfirmarRecuperacionRequest;
+import co.tecnosport.api.presentation.usuario.dto.DesafioSegundoFactorRespuesta;
 import co.tecnosport.api.presentation.usuario.dto.IniciarSesionRequest;
 import co.tecnosport.api.presentation.usuario.dto.ReenviarVerificacionRequest;
 import co.tecnosport.api.presentation.usuario.dto.RegistrarUsuarioRequest;
@@ -31,6 +33,7 @@ import co.tecnosport.api.presentation.usuario.dto.SesionRespuesta;
 import co.tecnosport.api.presentation.usuario.dto.SolicitarRecuperacionRequest;
 import co.tecnosport.api.presentation.usuario.dto.VerificarCorreoRequest;
 import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import java.time.Duration;
@@ -170,17 +173,37 @@ public class AutenticacionControlador {
     return respuestaConCookie(tokens);
   }
 
+  /**
+   * <b>Dos respuestas buenas</b> desde ADR-0096. 200 con la sesión y la cookie, como siempre; o 202
+   * si la cuenta tiene el segundo factor activo: el desafío para {@code POST
+   * /auth/segundo-factor/verificacion} y <b>ni cookie ni token</b>. Un cliente que solo mire si la
+   * respuesta fue {@code ok} se equivoca con el 202 —también es {@code ok}—, así que se decide por
+   * el estado.
+   */
   @PostMapping("/sesion")
-  public ResponseEntity<SesionRespuesta> iniciarSesion(
+  @ApiResponse(
+      responseCode = "200",
+      description = "Sesión abierta: el token de acceso en el cuerpo y el de refresco en la cookie",
+      content = @Content(schema = @Schema(implementation = SesionRespuesta.class)))
+  @ApiResponse(
+      responseCode = "202",
+      description = "La cuenta tiene segundo factor: falta el código. Sin cookie ni token",
+      content = @Content(schema = @Schema(implementation = DesafioSegundoFactorRespuesta.class)))
+  public ResponseEntity<?> iniciarSesion(
       @RequestBody IniciarSesionRequest cuerpo, HttpServletRequest peticion) {
     // Agrupada como en el filtro: una IPv6 nueva del mismo /64 no estrena el tope de cuenta+IP.
     String origen = CuboDeIp.de(IpDelCliente.de(peticion));
-    TokensDeSesion tokens =
+    ResultadoInicioSesion resultado =
         transaccion.execute(
             estado ->
                 iniciarSesion.ejecutar(
                     new IniciarSesionComando(cuerpo.correo(), cuerpo.clave(), origen)));
-    return respuestaConCookie(tokens);
+    return switch (resultado) {
+      case ResultadoInicioSesion.SesionAbierta abierta -> respuestaConCookie(abierta.tokens());
+      case ResultadoInicioSesion.SegundoFactorRequerido requerido ->
+          ResponseEntity.status(HttpStatus.ACCEPTED)
+              .body(new DesafioSegundoFactorRespuesta(requerido.desafio(), requerido.venceEn()));
+    };
   }
 
   // 204 y no 401 cuando NO llega la cookie: quien nunca inició sesión no está fallando la

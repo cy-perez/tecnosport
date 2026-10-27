@@ -27,10 +27,19 @@ public final class HuellaDeToken {
 
   public static String de(UUID token) {
     Objects.requireNonNull(token, "El token no puede ser nulo.");
+    return de(token.toString());
+  }
+
+  /**
+   * La misma huella de un texto cualquiera. La usan los códigos de respaldo del segundo factor
+   * (ADR-0096), que son 80 bits de {@code SecureRandom} y por la misma razón no necesitan sal: se
+   * buscan por la huella.
+   */
+  public static String de(String texto) {
+    Objects.requireNonNull(texto, "El texto no puede ser nulo.");
     try {
       byte[] resumen =
-          MessageDigest.getInstance("SHA-256")
-              .digest(token.toString().getBytes(StandardCharsets.UTF_8));
+          MessageDigest.getInstance("SHA-256").digest(texto.getBytes(StandardCharsets.UTF_8));
       return HexFormat.of().formatHex(resumen);
     } catch (NoSuchAlgorithmException imposible) {
       // Toda JVM tiene que traer SHA-256 (javadoc de MessageDigest).

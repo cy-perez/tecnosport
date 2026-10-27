@@ -156,7 +156,16 @@ class CodigosDeCableTest {
           Map.entry(CategoriaNoEsHojaException.class, "CATEGORIA_NO_ES_HOJA"),
           Map.entry(
               ProfundidadDeCategoriaExcedidaException.class, "PROFUNDIDAD_DE_CATEGORIA_EXCEDIDA"),
-          Map.entry(CicloDeCategoriasException.class, "CICLO_DE_CATEGORIAS"));
+          Map.entry(CicloDeCategoriasException.class, "CICLO_DE_CATEGORIAS"),
+          // ADR-0096. El segundo paso del inicio de sesión: `sesion-http.repositorio.ts` decide
+          // con ellos si el código estaba mal —se corrige escribiendo— o si el desafío venció y hay
+          // que volver a la clave.
+          Map.entry(
+              co.tecnosport.api.domain.usuario.CodigoSegundoFactorInvalidoException.class,
+              "CODIGO_SEGUNDO_FACTOR_INVALIDO"),
+          Map.entry(
+              co.tecnosport.api.domain.usuario.DesafioSegundoFactorInvalidoException.class,
+              "DESAFIO_SEGUNDO_FACTOR_INVALIDO"));
 
   /** Los que tienen una clave de traducción en `admin.errores.*`. */
   private static final Map<Class<? extends Exception>, String> CABLEADOS_EN_TRADUCCIONES =
@@ -246,7 +255,21 @@ class CodigosDeCableTest {
           Map.entry(MarcaYaExisteException.class, "MARCA_YA_EXISTE"),
           // 26 de octubre de 2026: el panel de pedidos traduce estos dos (ADR-0094).
           Map.entry(EntregaNoAplicaException.class, "ENTREGA_NO_APLICA"),
-          Map.entry(NumeroDePedidoNoCoincideException.class, "NUMERO_DE_PEDIDO_NO_COINCIDE"));
+          Map.entry(NumeroDePedidoNoCoincideException.class, "NUMERO_DE_PEDIDO_NO_COINCIDE"),
+          // 27 de octubre de 2026: la pantalla de seguridad del panel traduce los cuatro 409 del
+          // segundo factor (ADR-0096).
+          Map.entry(
+              co.tecnosport.api.domain.usuario.SegundoFactorYaActivoException.class,
+              "SEGUNDO_FACTOR_YA_ACTIVO"),
+          Map.entry(
+              co.tecnosport.api.domain.usuario.ActivacionSegundoFactorNoIniciadaException.class,
+              "ACTIVACION_SEGUNDO_FACTOR_NO_INICIADA"),
+          Map.entry(
+              co.tecnosport.api.domain.usuario.SegundoFactorNoActivoException.class,
+              "SEGUNDO_FACTOR_NO_ACTIVO"),
+          Map.entry(
+              co.tecnosport.api.domain.usuario.SegundoFactorObligatorioException.class,
+              "SEGUNDO_FACTOR_OBLIGATORIO"));
 
   @Test
   void losCodigosQueUnAdaptadorDelFrontendCableaNoCambian() {

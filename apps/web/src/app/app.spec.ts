@@ -11,7 +11,7 @@ import {
   REPOSITORIO_SESION,
   RepositorioSesion,
 } from './core/autenticacion/repositorio-sesion.puerto';
-import { Sesion } from './core/autenticacion/sesion.model';
+import { ResultadoInicioSesion, Sesion } from './core/autenticacion/sesion.model';
 import {
   REPOSITORIO_CARRITO,
   RepositorioCarrito,
@@ -86,12 +86,16 @@ class RepositorioSesionFalso implements RepositorioSesion {
     throw new Error('no usado en esta prueba');
   }
 
-  async iniciarSesion(): Promise<Sesion> {
+  async iniciarSesion(): Promise<ResultadoInicioSesion> {
     throw new Error('no usado en esta prueba');
   }
   async refrescar(): Promise<Sesion | null> {
     return null;
   }
+  async verificarSegundoFactor(): Promise<Sesion> {
+    throw new Error('no usado en esta prueba');
+  }
+
   async cambiarClave(): Promise<Sesion> {
     throw new Error('no usado en esta prueba');
   }

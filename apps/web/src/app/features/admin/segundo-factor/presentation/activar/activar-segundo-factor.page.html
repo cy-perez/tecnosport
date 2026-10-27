@@ -1,0 +1,117 @@
+<ts-pagina-formulario [titulo]="'admin.segundoFactor.activar.titulo' | transloco">
+  @switch (paso()) {
+    @case ('clave') {
+      <p class="m-0 mb-16">
+        {{
+          (obligatoria()
+            ? 'admin.segundoFactor.activar.explicacion_obligatoria'
+            : 'admin.segundoFactor.activar.explicacion'
+          ) | transloco
+        }}
+      </p>
+      <form
+        class="flex flex-col gap-16"
+        [formGroup]="formClave"
+        (submit)="$event.preventDefault(); continuar()"
+      >
+        <ts-campo
+          idCampo="activar-clave-actual"
+          tipo="password"
+          autocompletar="current-password"
+          [label]="'admin.segundoFactor.claveActual' | transloco"
+          [obligatorio]="true"
+          [error]="errorClave()"
+          formControlName="claveActual"
+        />
+        <ts-boton
+          variante="primario"
+          tipo="submit"
+          [cargando]="enviando()"
+          [etiquetaCargando]="'admin.segundoFactor.enviando' | transloco"
+        >
+          {{ 'admin.segundoFactor.activar.continuar' | transloco }}
+        </ts-boton>
+      </form>
+    }
+    @case ('codigo') {
+      @if (activacion(); as datos) {
+        <!-- Sin QR (ADR-0096): pintarlo pediría una dependencia. La clave en Base32 se escribe a
+             mano en cualquier aplicación de autenticación, y la URI se pega en las que la
+             aceptan. -->
+        <section class="flex flex-col gap-16">
+          <h2 id="activar-titulo-clave" class="m-0 text-lg" tabindex="-1">
+            {{ 'admin.segundoFactor.activar.titulo_clave' | transloco }}
+          </h2>
+          <p class="m-0">
+            {{
+              'admin.segundoFactor.activar.instrucciones'
+                | transloco: { digitos: datos.digitos, segundos: datos.periodoSegundos }
+            }}
+          </p>
+          <p class="m-0">
+            <code class="font-mono text-lg">{{ secretoAgrupado() }}</code>
+          </p>
+          <div class="flex flex-wrap gap-8">
+            <ts-boton variante="secundario" (click)="copiar(datos.secreto)">
+              {{ 'admin.segundoFactor.activar.copiar_clave' | transloco }}
+            </ts-boton>
+            <ts-boton variante="texto" (click)="copiar(datos.uri)">
+              {{ 'admin.segundoFactor.activar.copiar_uri' | transloco }}
+            </ts-boton>
+          </div>
+          <p class="m-0 text-sm text-ts-texto-suave">
+            {{ 'admin.segundoFactor.activar.uri' | transloco }}
+            <code class="font-mono break-all">{{ datos.uri }}</code>
+          </p>
+        </section>
+      }
+      <form
+        class="mt-16 flex flex-col gap-16"
+        [formGroup]="formCodigo"
+        (submit)="$event.preventDefault(); activar()"
+      >
+        <ts-campo
+          idCampo="activar-codigo"
+          autocompletar="one-time-code"
+          modoEntrada="numeric"
+          [label]="'admin.segundoFactor.codigoAplicacion' | transloco"
+          [obligatorio]="true"
+          [error]="errorCodigo()"
+          formControlName="codigo"
+        />
+        <ts-boton
+          variante="primario"
+          tipo="submit"
+          [cargando]="enviando()"
+          [etiquetaCargando]="'admin.segundoFactor.enviando' | transloco"
+        >
+          {{ 'admin.segundoFactor.activar.activar' | transloco }}
+        </ts-boton>
+      </form>
+    }
+    @case ('codigos') {
+      <!-- Sin región viva: nace llena y no se anunciaría (apps/web/CLAUDE.md). Lo que se anuncia
+           es el titular de los códigos, que recibe el foco. -->
+      <p class="m-0 mb-16">
+        {{ 'admin.segundoFactor.activar.exito' | transloco }}
+      </p>
+      <app-codigos-de-respaldo [codigos]="codigos()" />
+      <div class="mt-16 flex flex-col gap-16">
+        <ts-checkbox
+          idCasilla="activar-codigos-guardados"
+          [etiqueta]="'admin.segundoFactor.codigos.guardados' | transloco"
+          [marcado]="guardados()"
+          [error]="errorGuardados()"
+          (marcadoCambio)="marcarGuardados($event)"
+        />
+        <ts-boton variante="primario" (click)="irAlPanel()">
+          {{ 'admin.segundoFactor.activar.ir_al_panel' | transloco }}
+        </ts-boton>
+      </div>
+    }
+  }
+
+  <!-- Fuera de los pasos: el aviso de "la activación venció" se pinta al volver a la clave. -->
+  <p class="m-0 mt-16 text-ts-error" role="alert">{{ error() }}</p>
+  <p class="m-0 text-sm" role="status">{{ aviso() }}</p>
+</ts-pagina-formulario>

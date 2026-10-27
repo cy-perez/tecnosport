@@ -7,6 +7,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import co.tecnosport.api.application.usuario.GeneradorDeTokens;
 import co.tecnosport.api.domain.compartido.CorreoElectronico;
+import co.tecnosport.api.domain.usuario.AlcanceDeAcceso;
 import co.tecnosport.api.domain.usuario.Rol;
 import co.tecnosport.api.domain.usuario.Usuario;
 import java.time.Instant;
@@ -46,10 +47,35 @@ class CadenaDeSeguridadTest {
   @Autowired private GeneradorDeTokens generadorDeTokens;
 
   private String tokenDe(Rol rol) {
+    return tokenDe(rol, AlcanceDeAcceso.COMPLETO);
+  }
+
+  private String tokenDe(Rol rol, AlcanceDeAcceso alcance) {
     Usuario usuario =
         Usuario.crear(
             new CorreoElectronico("prueba-cadena@tecnosport.co"), "hash", rol, Instant.now());
-    return generadorDeTokens.generarAcceso(usuario, Instant.now());
+    return generadorDeTokens.generarAcceso(usuario, alcance, Instant.now());
+  }
+
+  /**
+   * ADR-0096. La sesión restringida de un administrador sin segundo factor —el panel se lo exige—
+   * no abre el panel, y sí abre la activación. Con un 401 en el panel el frontend refrescaría en
+   * bucle; con un 403 sabe que tiene que llevarla a activar el factor.
+   */
+  @Test
+  void laSesionRestringidaSoloAbreElSegundoFactor() throws Exception {
+    String restringido = tokenDe(Rol.ADMIN, AlcanceDeAcceso.SOLO_ACTIVAR_SEGUNDO_FACTOR);
+    mockMvc
+        .perform(get("/api/v1/admin/pedidos").header("Authorization", "Bearer " + restringido))
+        .andExpect(status().isForbidden());
+    mockMvc
+        .perform(
+            post("/api/v1/auth/segundo-factor/activacion")
+                .header("Authorization", "Bearer " + restringido)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"claveActual\":\"x\"}"))
+        .andExpect(status().isUnauthorized())
+        .andExpect(jsonPath("$.codigo").value("CREDENCIALES_INVALIDAS"));
   }
 
   @Test
@@ -101,6 +127,53 @@ class CadenaDeSeguridadTest {
                 .content("{\"correo\":\"nadie@tecnosport.co\",\"clave\":\"x\"}"))
         .andExpect(status().isUnauthorized())
         .andExpect(jsonPath("$.codigo").value("CREDENCIALES_INVALIDAS"));
+  }
+
+  /**
+   * ADR-0096. El segundo factor es del panel: sin sesión es un 401 —para que el frontend refresque—
+   * y con la de un cliente, un 403. Con la de un administrador la cadena deja pasar y responde el
+   * caso de uso: el token de la prueba no es de nadie que exista, así que la clave no coincide.
+   */
+  @Test
+  void elSegundoFactorEsDelPanel() throws Exception {
+    String cuerpo = "{\"claveActual\":\"x\"}";
+    mockMvc
+        .perform(
+            post("/api/v1/auth/segundo-factor/activacion")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(cuerpo))
+        .andExpect(status().isUnauthorized());
+    mockMvc
+        .perform(
+            post("/api/v1/auth/segundo-factor/activacion")
+                .header("Authorization", "Bearer " + tokenDe(Rol.CLIENTE))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(cuerpo))
+        .andExpect(status().isForbidden());
+    mockMvc
+        .perform(
+            post("/api/v1/auth/segundo-factor/activacion")
+                .header("Authorization", "Bearer " + tokenDe(Rol.ADMIN))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(cuerpo))
+        .andExpect(status().isUnauthorized())
+        .andExpect(jsonPath("$.codigo").value("CREDENCIALES_INVALIDAS"));
+  }
+
+  /**
+   * El segundo paso del inicio de sesión es público: quien llega todavía no tiene token. Si la
+   * regla de arriba lo cerrara, el 401 sería {@code NO_AUTENTICADO} y nadie con segundo factor
+   * podría entrar; abierto, responde el caso de uso.
+   */
+  @Test
+  void elSegundoPasoDelInicioDeSesionEsPublico() throws Exception {
+    mockMvc
+        .perform(
+            post("/api/v1/auth/segundo-factor/verificacion")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"desafio\":\"no-es-un-uuid\",\"codigo\":\"123456\"}"))
+        .andExpect(status().isUnauthorized())
+        .andExpect(jsonPath("$.codigo").value("DESAFIO_SEGUNDO_FACTOR_INVALIDO"));
   }
 
   /**

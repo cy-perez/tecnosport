@@ -7,5 +7,13 @@ import java.util.UUID;
  * {@code refreshTokenId} es el token de refresco tal cual: un identificador opaco, no un JWT — el
  * cliente lo guarda en la cookie {@code HttpOnly} y lo presenta sin más para refrescar
  * (docs/08-seguridad-legal.md).
+ *
+ * <p>{@code segundoFactorPorActivar}: el token de acceso es de alcance restringido (ADR-0096) y el
+ * cliente tiene que llevar a la persona a activar el segundo factor antes que a ninguna otra parte.
  */
-public record TokensDeSesion(UUID usuarioId, Rol rol, String accessToken, UUID refreshTokenId) {}
+public record TokensDeSesion(
+    UUID usuarioId,
+    Rol rol,
+    String accessToken,
+    UUID refreshTokenId,
+    boolean segundoFactorPorActivar) {}

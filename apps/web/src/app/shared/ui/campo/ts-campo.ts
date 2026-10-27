@@ -131,6 +131,21 @@ export class TsCampo implements ControlValueAccessor {
    */
   readonly ayuda = input<string | null>(null);
 
+  /**
+   * El `autocomplete` del control: `username` y `current-password` en el inicio de sesión, para que
+   * el gestor de contraseñas sepa qué rellenar, y `one-time-code` en el código del segundo factor,
+   * que es lo que hace que el teléfono ofrezca el código recibido. Sin valor no se pinta el
+   * atributo y manda el navegador.
+   */
+  readonly autocompletar = input<string | null>(null);
+
+  /**
+   * El `inputmode`: qué teclado abre el teléfono. `numeric` para los seis dígitos de la aplicación
+   * de autenticación; el código de respaldo lleva letras y se queda con el teclado normal. No
+   * restringe lo que se puede escribir: eso lo valida el formulario.
+   */
+  readonly modoEntrada = input<'text' | 'numeric' | 'decimal' | 'email' | 'tel' | null>(null);
+
   /** `p-12` de la base y `ps-48` encima cuando hay ancla: `cn` resuelve el conflicto de relleno
    * inicial a favor de lo último, que es justo lo que hace falta. */
   protected readonly clasesControl = computed(() =>

@@ -1,7 +1,7 @@
 import { Component, inject } from '@angular/core';
 import { render } from '@testing-library/angular';
 import { REPOSITORIO_SESION, RepositorioSesion } from '../autenticacion/repositorio-sesion.puerto';
-import { Sesion } from '../autenticacion/sesion.model';
+import { ResultadoInicioSesion, Sesion } from '../autenticacion/sesion.model';
 import { SesionStore } from '../autenticacion/sesion.store';
 import { crearClienteAutenticado } from './cliente-autenticado';
 
@@ -14,13 +14,17 @@ class RepositorioSesionFalso implements RepositorioSesion {
 
   constructor(private sesionAlRefrescar: Sesion | null = null) {}
 
-  async iniciarSesion(): Promise<Sesion> {
+  async iniciarSesion(): Promise<ResultadoInicioSesion> {
     throw new Error('no usado en estas pruebas');
   }
 
   async refrescar(): Promise<Sesion | null> {
     this.llamadasRefrescar++;
     return this.sesionAlRefrescar;
+  }
+
+  async verificarSegundoFactor(): Promise<Sesion> {
+    throw new Error('no usado en esta prueba');
   }
 
   async cambiarClave(): Promise<Sesion> {
@@ -36,12 +40,16 @@ class RepositorioSesionQueFalla implements RepositorioSesion {
     throw new Error('no usado en esta prueba');
   }
 
-  async iniciarSesion(): Promise<Sesion> {
+  async iniciarSesion(): Promise<ResultadoInicioSesion> {
     throw new Error('no usado en estas pruebas');
   }
 
   async refrescar(): Promise<Sesion | null> {
     throw new Error('el servidor no respondió');
+  }
+
+  async verificarSegundoFactor(): Promise<Sesion> {
+    throw new Error('no usado en esta prueba');
   }
 
   async cambiarClave(): Promise<Sesion> {
@@ -80,7 +88,12 @@ describe('crearClienteAutenticado', () => {
 
   it('agrega Authorization con el token de la sesión', async () => {
     const store = await crearSesionStore(new RepositorioSesionFalso());
-    store.sesion.set({ usuarioId: 'u1', rol: 'ADMIN', accessToken: 'jwt-valido' });
+    store.sesion.set({
+      usuarioId: 'u1',
+      rol: 'ADMIN',
+      accessToken: 'jwt-valido',
+      segundoFactorPorActivar: false,
+    });
     let cabeceraVista: string | null = null;
     vi.stubGlobal(
       'fetch',
@@ -118,9 +131,15 @@ describe('crearClienteAutenticado', () => {
       usuarioId: 'u1',
       rol: 'ADMIN',
       accessToken: 'jwt-nuevo',
+      segundoFactorPorActivar: false,
     });
     const store = await crearSesionStore(repositorio);
-    store.sesion.set({ usuarioId: 'u1', rol: 'ADMIN', accessToken: 'jwt-viejo' });
+    store.sesion.set({
+      usuarioId: 'u1',
+      rol: 'ADMIN',
+      accessToken: 'jwt-viejo',
+      segundoFactorPorActivar: false,
+    });
     repositorio.llamadasRefrescar = 0; // descarta el refresco silencioso de arranque de SesionStore
     const cabecerasVistas: (string | null)[] = [];
     vi.stubGlobal(
@@ -143,7 +162,12 @@ describe('crearClienteAutenticado', () => {
 
   it('si el refresco falla, deja pasar el 401 sin reintentar', async () => {
     const store = await crearSesionStore(new RepositorioSesionQueFalla());
-    store.sesion.set({ usuarioId: 'u1', rol: 'ADMIN', accessToken: 'jwt-viejo' });
+    store.sesion.set({
+      usuarioId: 'u1',
+      rol: 'ADMIN',
+      accessToken: 'jwt-viejo',
+      segundoFactorPorActivar: false,
+    });
     let llamadas = 0;
     vi.stubGlobal(
       'fetch',

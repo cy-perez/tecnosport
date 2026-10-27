@@ -7,7 +7,8 @@ import java.time.Instant;
 final class GeneradorDeTokensFalso implements GeneradorDeTokens {
 
   @Override
-  public String generarAcceso(Usuario usuario, Instant ahora) {
-    return "token-de-prueba:" + usuario.id();
+  public String generarAcceso(
+      Usuario usuario, co.tecnosport.api.domain.usuario.AlcanceDeAcceso alcance, Instant ahora) {
+    return "token-de-prueba:" + usuario.id() + ":" + alcance;
   }
 }

@@ -1,6 +1,8 @@
 import { ErrorHttp } from '../http/respuesta-http';
 import {
   ClaveActualIncorrectaError,
+  CodigoSegundoFactorInvalidoError,
+  DesafioSegundoFactorVencidoError,
   CuentaGoogleSinRegistroError,
   CuentaExistenteRequiereClaveError,
   DemasiadosIntentosError,
@@ -35,16 +37,25 @@ describe('SesionHttpRepositorio.refrescar', () => {
 
   it('devuelve la sesión cuando el servidor responde 200', async () => {
     const repositorio = conRespuesta(
-      new Response(JSON.stringify({ usuarioId: 'u1', rol: 'ADMIN', accessToken: 'jwt' }), {
-        status: 200,
-        headers: { 'Content-Type': 'application/json' },
-      }),
+      new Response(
+        JSON.stringify({
+          usuarioId: 'u1',
+          rol: 'ADMIN',
+          accessToken: 'jwt',
+          segundoFactorPorActivar: false,
+        }),
+        {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        },
+      ),
     );
 
     await expect(repositorio.refrescar()).resolves.toEqual({
       usuarioId: 'u1',
       rol: 'ADMIN',
       accessToken: 'jwt',
+      segundoFactorPorActivar: false,
     });
   });
 
@@ -123,6 +134,45 @@ describe('SesionHttpRepositorio.iniciarSesion', () => {
       ErrorHttp,
     );
   });
+
+  it('el 200 es la sesión abierta', async () => {
+    const repositorio = conRespuesta(
+      new Response(
+        JSON.stringify({
+          usuarioId: 'u1',
+          rol: 'ADMIN',
+          accessToken: 'jwt',
+          segundoFactorPorActivar: true,
+        }),
+        { status: 200, headers: { 'Content-Type': 'application/json' } },
+      ),
+    );
+
+    await expect(repositorio.iniciarSesion('admin@tecnosport.co', 'la-buena')).resolves.toEqual({
+      tipo: 'sesion',
+      sesion: { usuarioId: 'u1', rol: 'ADMIN', accessToken: 'jwt', segundoFactorPorActivar: true },
+    });
+  });
+
+  /**
+   * ADR-0096: `ok` es cierto en el 200 y en el 202, y el tipo generado es la unión de los dos
+   * cuerpos. Si se mirara solo `ok`, el desafío se mapearía como una sesión sin token y la
+   * pantalla entraría al panel con un `accessToken` vacío.
+   */
+  it('el 202 es el desafío del segundo factor, no una sesión', async () => {
+    const repositorio = conRespuesta(
+      new Response(JSON.stringify({ desafio: 'desafio-1', venceEn: '2026-10-27T12:05:00Z' }), {
+        status: 202,
+        headers: { 'Content-Type': 'application/json' },
+      }),
+    );
+
+    await expect(repositorio.iniciarSesion('admin@tecnosport.co', 'la-buena')).resolves.toEqual({
+      tipo: 'segundo-factor',
+      desafio: 'desafio-1',
+      venceEn: '2026-10-27T12:05:00Z',
+    });
+  });
 });
 
 describe('SesionHttpRepositorio.cambiarClave', () => {
@@ -148,16 +198,25 @@ describe('SesionHttpRepositorio.cambiarClave', () => {
 
   it('devuelve la sesión nueva que abre el servidor', async () => {
     const repositorio = conRespuesta(
-      new Response(JSON.stringify({ usuarioId: 'u1', rol: 'ADMIN', accessToken: 'jwt.nuevo' }), {
-        status: 200,
-        headers: { 'Content-Type': 'application/json' },
-      }),
+      new Response(
+        JSON.stringify({
+          usuarioId: 'u1',
+          rol: 'ADMIN',
+          accessToken: 'jwt.nuevo',
+          segundoFactorPorActivar: false,
+        }),
+        {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        },
+      ),
     );
 
     await expect(repositorio.cambiarClave('jwt.viejo', 'vieja', 'nueva')).resolves.toEqual({
       usuarioId: 'u1',
       rol: 'ADMIN',
       accessToken: 'jwt.nuevo',
+      segundoFactorPorActivar: false,
     });
   });
 
@@ -240,5 +299,86 @@ describe('SesionHttpRepositorio.iniciarSesionConGoogle', () => {
     await expect(
       conProblema(429, 'LIMITE_DE_INTENTOS_EXCEDIDO').iniciarSesionConGoogle('c', false),
     ).rejects.toBeInstanceOf(DemasiadosIntentosError);
+  });
+});
+
+/**
+ * ADR-0096: el segundo paso responde 401 por dos motivos con remedios opuestos. Con el código
+ * equivocado basta escribir otro; con el desafío muerto ningún código sirve y hay que volver a la
+ * clave. Los separa el `codigo` del cuerpo.
+ */
+describe('SesionHttpRepositorio.verificarSegundoFactor', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  function conRespuesta(respuesta: Response): SesionHttpRepositorio {
+    vi.stubGlobal('window', undefined);
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => respuesta),
+    );
+    return new SesionHttpRepositorio();
+  }
+
+  function problema(estado: number, codigo: string): Response {
+    return new Response(JSON.stringify({ codigo, status: estado }), {
+      status: estado,
+      headers: { 'Content-Type': 'application/problem+json' },
+    });
+  }
+
+  it('con el código bueno devuelve la sesión', async () => {
+    const repositorio = conRespuesta(
+      new Response(
+        JSON.stringify({
+          usuarioId: 'u1',
+          rol: 'ADMIN',
+          accessToken: 'jwt',
+          segundoFactorPorActivar: false,
+        }),
+        { status: 200, headers: { 'Content-Type': 'application/json' } },
+      ),
+    );
+
+    await expect(repositorio.verificarSegundoFactor('desafio-1', '123456')).resolves.toEqual({
+      usuarioId: 'u1',
+      rol: 'ADMIN',
+      accessToken: 'jwt',
+      segundoFactorPorActivar: false,
+    });
+  });
+
+  it('CODIGO_SEGUNDO_FACTOR_INVALIDO es el código equivocado', async () => {
+    await expect(
+      conRespuesta(problema(401, 'CODIGO_SEGUNDO_FACTOR_INVALIDO')).verificarSegundoFactor(
+        'desafio-1',
+        '000000',
+      ),
+    ).rejects.toBeInstanceOf(CodigoSegundoFactorInvalidoError);
+  });
+
+  it('DESAFIO_SEGUNDO_FACTOR_INVALIDO es el desafío vencido', async () => {
+    await expect(
+      conRespuesta(problema(401, 'DESAFIO_SEGUNDO_FACTOR_INVALIDO')).verificarSegundoFactor(
+        'desafio-1',
+        '123456',
+      ),
+    ).rejects.toBeInstanceOf(DesafioSegundoFactorVencidoError);
+  });
+
+  it('el 429 es el límite de intentos', async () => {
+    await expect(
+      conRespuesta(problema(429, 'LIMITE_DE_INTENTOS_EXCEDIDO')).verificarSegundoFactor(
+        'desafio-1',
+        '123456',
+      ),
+    ).rejects.toBeInstanceOf(DemasiadosIntentosError);
+  });
+
+  it('un fallo de servidor sigue siendo ErrorHttp', async () => {
+    await expect(
+      conRespuesta(new Response(null, { status: 500 })).verificarSegundoFactor('d', '123456'),
+    ).rejects.toBeInstanceOf(ErrorHttp);
   });
 });

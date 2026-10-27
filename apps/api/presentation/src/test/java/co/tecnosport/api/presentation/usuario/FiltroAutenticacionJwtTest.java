@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import co.tecnosport.api.application.usuario.ClaimsAcceso;
 import co.tecnosport.api.application.usuario.VerificadorDeTokens;
+import co.tecnosport.api.domain.usuario.AlcanceDeAcceso;
 import co.tecnosport.api.domain.usuario.Rol;
 import java.util.Optional;
 import java.util.UUID;
@@ -45,7 +46,7 @@ class FiltroAutenticacionJwtTest {
     FiltroAutenticacionJwt filtro =
         new FiltroAutenticacionJwt(
             new VerificadorDeTokensDobleDePrueba(
-                Optional.of(new ClaimsAcceso(usuarioId, Rol.ADMIN))));
+                Optional.of(new ClaimsAcceso(usuarioId, Rol.ADMIN, AlcanceDeAcceso.COMPLETO))));
     MockHttpServletRequest request = new MockHttpServletRequest();
     request.addHeader("Authorization", "Bearer token-valido");
     MockHttpServletResponse response = new MockHttpServletResponse();
@@ -59,6 +60,32 @@ class FiltroAutenticacionJwtTest {
         autenticacion.getAuthorities().stream()
             .map(GrantedAuthority::getAuthority)
             .anyMatch("ROLE_ADMIN"::equals));
+  }
+
+  /**
+   * ADR-0096. Un administrador con la sesión restringida no lleva {@code ROLE_ADMIN}: lleva la
+   * autoridad que solo abre el segundo factor, y el panel le responde 403.
+   */
+  @Test
+  void unTokenRestringidoNoLlevaElRolDeAdmin() throws Exception {
+    FiltroAutenticacionJwt filtro =
+        new FiltroAutenticacionJwt(
+            new VerificadorDeTokensDobleDePrueba(
+                Optional.of(
+                    new ClaimsAcceso(
+                        UUID.randomUUID(),
+                        Rol.ADMIN,
+                        AlcanceDeAcceso.SOLO_ACTIVAR_SEGUNDO_FACTOR))));
+    MockHttpServletRequest request = new MockHttpServletRequest();
+    request.addHeader("Authorization", "Bearer token-restringido");
+
+    filtro.doFilter(request, new MockHttpServletResponse(), new MockFilterChain());
+
+    assertEquals(
+        java.util.List.of("ROLE_ADMIN_POR_ACTIVAR"),
+        SecurityContextHolder.getContext().getAuthentication().getAuthorities().stream()
+            .map(GrantedAuthority::getAuthority)
+            .toList());
   }
 
   @Test

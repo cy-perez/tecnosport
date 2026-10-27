@@ -21,10 +21,22 @@ final class SesionConCookie {
   private SesionConCookie() {}
 
   static ResponseEntity<SesionRespuesta> respuesta(TokensDeSesion tokens) {
-    ResponseCookie cookie = cookie(tokens.refreshTokenId().toString(), VIGENCIA_REFRESCO);
-    SesionRespuesta cuerpo =
-        new SesionRespuesta(tokens.usuarioId(), tokens.rol().name(), tokens.accessToken());
-    return ResponseEntity.ok().header(HttpHeaders.SET_COOKIE, cookie.toString()).body(cuerpo);
+    return ResponseEntity.ok()
+        .header(HttpHeaders.SET_COOKIE, cookieDe(tokens).toString())
+        .body(cuerpo(tokens));
+  }
+
+  /** La cookie de una sesión recién abierta, para las respuestas que llevan más que la sesión. */
+  static ResponseCookie cookieDe(TokensDeSesion tokens) {
+    return cookie(tokens.refreshTokenId().toString(), VIGENCIA_REFRESCO);
+  }
+
+  static SesionRespuesta cuerpo(TokensDeSesion tokens) {
+    return new SesionRespuesta(
+        tokens.usuarioId(),
+        tokens.rol().name(),
+        tokens.accessToken(),
+        tokens.segundoFactorPorActivar());
   }
 
   static ResponseCookie cookie(String valor, Duration vigencia) {

@@ -74,7 +74,11 @@
     "ajustes_de_talla_distintos": "El proveedor nombra distinto las tallas de los dos, como el de dama y el de caballero de un mismo anuncio: unidos, no se sabría qué talla pedirle.",
     "entrega_no_aplica": "Ese no es el camino de entrega de este pedido: una recogida se marca lista y se entrega en el punto, y un envío a domicilio se despacha con guía.",
     "numero_de_pedido_no_coincide": "Ese número no es el de este pedido. Pídele a quien vino que te muestre el número del correo o de la pantalla de su pedido. No lo entregues.",
-    "pago_con_transaccion_o_resuelto": "El pago ya tiene su transacción o ya se resolvió: recarga la página."
+    "pago_con_transaccion_o_resuelto": "El pago ya tiene su transacción o ya se resolvió: recarga la página.",
+    "segundo_factor_ya_activo": "Esta cuenta ya tiene el segundo factor activo. Para cambiar de teléfono, desactívalo en Seguridad y vuelve a activarlo.",
+    "activacion_segundo_factor_no_iniciada": "La activación pendiente venció o no se inició. Escribe otra vez tu clave para recibir una clave nueva.",
+    "segundo_factor_no_activo": "Esta cuenta no tiene el segundo factor activo.",
+    "segundo_factor_obligatorio": "El panel exige el segundo factor a los administradores: no se puede desactivar."
   },
   "iniciarSesion": {
     "titulo": "Panel administrativo",
@@ -90,6 +94,24 @@
       "correo_requerido": "Escribe el correo.",
       "correo_invalido": "Ese correo no tiene una forma válida.",
       "clave_requerida": "Escribe la clave."
+    },
+    "segundoFactor": {
+      "explicacion_aplicacion": "Tu cuenta tiene segundo factor. Abre tu aplicación de autenticación y escribe el código de 6 dígitos que muestra ahora.",
+      "explicacion_respaldo": "Escribe uno de tus códigos de respaldo, con o sin guiones. Cada uno sirve una sola vez.",
+      "codigo_aplicacion": "Código de la aplicación",
+      "codigo_respaldo": "Código de respaldo",
+      "verificar": "Verificar y entrar",
+      "verificando": "Verificando…",
+      "usar_respaldo": "No tengo el teléfono: usar un código de respaldo",
+      "usar_aplicacion": "Usar el código de la aplicación",
+      "volver": "Volver a la clave",
+      "error_codigo": "Ese código no es válido. Revisa que sea el que muestra la aplicación ahora y vuelve a escribirlo.",
+      "error_desafio_vencido": "El paso del código venció o se agotaron sus intentos. Escribe otra vez tu clave para recibir uno nuevo.",
+      "error_demasiados_intentos": "Demasiados intentos seguidos. Espera unos minutos y vuelve a probar.",
+      "errores": {
+        "codigo_requerido": "Escribe el código.",
+        "codigo_formato": "El código son 6 dígitos de la aplicación, o un código de respaldo de 16 caracteres."
+      }
     }
   },
   "panel": {
@@ -125,7 +147,8 @@
     "ir_a_borradores": "Borradores",
     "ir_a_tecnologia": "Tecnología",
     "ir_a_enlaces_compra": "Enlaces de compra",
-    "ir_a_referencias_envio": "Pesos y medidas de envío"
+    "ir_a_referencias_envio": "Pesos y medidas de envío",
+    "ir_a_seguridad": "Seguridad"
   },
   "pedidos": {
     "titulo": "Pedidos",
@@ -1845,6 +1868,67 @@
       "anulado": "Enlace anulado: la unidad apartada vuelve a estar libre.",
       "errorAnular": "No se pudo anular el enlace.",
       "mensaje": "¡Hola! Te confirmamos el {{producto}} ({{detalle}}). Puedes comprarlo con este enlace hasta el {{fecha}}: {{url}}"
+    }
+  },
+  "segundoFactor": {
+    "claveActual": "Clave actual",
+    "codigoAplicacion": "Código de la aplicación",
+    "codigoAplicacionORespaldo": "Código de la aplicación o de respaldo",
+    "enviando": "Un momento…",
+    "error": "No se pudo completar la acción. Vuelve a intentarlo.",
+    "error_clave_actual": "La clave actual no es correcta.",
+    "error_codigo": "Ese código no es válido. Revisa que sea el que muestra la aplicación ahora y vuelve a escribirlo.",
+    "error_demasiados_intentos": "Demasiados intentos seguidos. Espera unos minutos y vuelve a probar.",
+    "error_sesion_expirada": "Tu sesión venció. Vuelve a entrar y repite el paso.",
+    "errores": {
+      "clave_requerida": "Escribe tu clave actual.",
+      "codigo_requerido": "Escribe el código.",
+      "codigo_seis_digitos": "El código de la aplicación son 6 dígitos.",
+      "codigo_formato": "El código son 6 dígitos de la aplicación, o un código de respaldo de 16 caracteres."
+    },
+    "activar": {
+      "titulo": "Activar el segundo factor",
+      "explicacion": "Con el segundo factor, entrar al panel pide tu clave y además un código de 6 dígitos de una aplicación de autenticación en tu teléfono. Empieza confirmando tu clave.",
+      "explicacion_obligatoria": "El panel exige el segundo factor a los administradores. Actívalo para seguir: hasta entonces no puedes entrar a ninguna otra sección. Empieza confirmando tu clave.",
+      "continuar": "Continuar",
+      "titulo_clave": "Agrega la cuenta a tu aplicación",
+      "instrucciones": "En tu aplicación de autenticación (Google Authenticator, Microsoft Authenticator, 1Password u otra) agrega una cuenta nueva con esta clave, de tipo basada en tiempo. Luego escribe el código de {{digitos}} dígitos que muestra; cambia cada {{segundos}} segundos.",
+      "copiar_clave": "Copiar la clave",
+      "copiar_uri": "Copiar el enlace de configuración",
+      "uri": "Si tu aplicación acepta un enlace de configuración, pega este:",
+      "activar": "Activar",
+      "exito": "Segundo factor activado. Desde ahora, entrar al panel te pedirá un código de la aplicación.",
+      "ir_al_panel": "Ir al panel",
+      "copiado": "Copiado.",
+      "error_copiar": "No se pudo copiar. Selecciona el texto y cópialo a mano."
+    },
+    "codigos": {
+      "titulo": "Tus códigos de respaldo",
+      "aviso": "Guárdalos ahora: no se vuelven a mostrar.",
+      "explicacion": "Si pierdes el teléfono, cada uno de estos códigos sirve una sola vez en lugar del de la aplicación. Guárdalos fuera de este equipo, en un lugar seguro.",
+      "copiar": "Copiar los códigos",
+      "descargar": "Descargar como texto",
+      "archivo": "tecnosport-codigos-de-respaldo.txt",
+      "copiados": "Códigos copiados.",
+      "error_copiar": "No se pudieron copiar. Descárgalos o anótalos a mano.",
+      "guardados": "Ya guardé mis códigos de respaldo",
+      "error_sin_guardar": "Marca la casilla cuando hayas guardado los códigos."
+    },
+    "seguridad": {
+      "titulo": "Seguridad",
+      "error_estado": "No se pudo consultar el segundo factor. Recarga la página.",
+      "inactivo": "Tu cuenta no tiene segundo factor. Con él, entrar al panel pide además un código de una aplicación de autenticación en tu teléfono.",
+      "activar": "Activar el segundo factor",
+      "activo": "Segundo factor activo desde el {{fecha}}.",
+      "restantes": "Te quedan {{restantes}} código(s) de respaldo sin usar.",
+      "regenerar_titulo": "Códigos de respaldo",
+      "regenerar_explicacion": "Genera diez códigos nuevos. Los anteriores, usados o no, dejan de servir, y se cierran las sesiones abiertas en otros equipos.",
+      "regenerar": "Generar códigos nuevos",
+      "desactivar_titulo": "Desactivar el segundo factor",
+      "desactivar_explicacion": "Para cambiar de teléfono, desactívalo y vuelve a activarlo con el nuevo. Se cierran las sesiones abiertas en otros equipos.",
+      "obligatorio": "El panel exige el segundo factor a los administradores, así que no se puede desactivar desde aquí.",
+      "desactivar": "Desactivar",
+      "desactivado": "Segundo factor desactivado. Las demás sesiones quedaron cerradas."
     }
   }
 }

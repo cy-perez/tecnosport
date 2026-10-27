@@ -20,6 +20,49 @@
         },
         "type" : "object"
       },
+      "ActivacionConfirmadaRespuesta" : {
+        "properties" : {
+          "codigosDeRespaldo" : {
+            "items" : {
+              "type" : "string"
+            },
+            "type" : "array"
+          },
+          "sesion" : {
+            "$ref" : "#/components/schemas/SesionRespuesta"
+          }
+        },
+        "required" : [
+          "codigosDeRespaldo",
+          "sesion"
+        ],
+        "type" : "object"
+      },
+      "ActivacionSegundoFactorRespuesta" : {
+        "properties" : {
+          "digitos" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "periodoSegundos" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "secreto" : {
+            "type" : "string"
+          },
+          "uri" : {
+            "type" : "string"
+          }
+        },
+        "required" : [
+          "digitos",
+          "periodoSegundos",
+          "secreto",
+          "uri"
+        ],
+        "type" : "object"
+      },
       "ActualizarCantidadRequest" : {
         "properties" : {
           "cantidad" : {
@@ -914,6 +957,50 @@
         },
         "type" : "object"
       },
+      "ClaveYCodigoSegundoFactorRequest" : {
+        "properties" : {
+          "claveActual" : {
+            "type" : "string"
+          },
+          "codigo" : {
+            "type" : "string"
+          }
+        },
+        "required" : [
+          "claveActual",
+          "codigo"
+        ],
+        "type" : "object"
+      },
+      "CodigoSegundoFactorRequest" : {
+        "properties" : {
+          "codigo" : {
+            "type" : "string"
+          }
+        },
+        "required" : [
+          "codigo"
+        ],
+        "type" : "object"
+      },
+      "CodigosDeRespaldoRegeneradosRespuesta" : {
+        "properties" : {
+          "codigosDeRespaldo" : {
+            "items" : {
+              "type" : "string"
+            },
+            "type" : "array"
+          },
+          "sesion" : {
+            "$ref" : "#/components/schemas/SesionRespuesta"
+          }
+        },
+        "required" : [
+          "codigosDeRespaldo",
+          "sesion"
+        ],
+        "type" : "object"
+      },
       "ColorDePaletaRespuesta" : {
         "properties" : {
           "coloresPatron" : {
@@ -1365,6 +1452,23 @@
         },
         "required" : [
           "colores"
+        ],
+        "type" : "object"
+      },
+      "DesafioSegundoFactorRespuesta" : {
+        "properties" : {
+          "desafio" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "venceEn" : {
+            "format" : "date-time",
+            "type" : "string"
+          }
+        },
+        "required" : [
+          "desafio",
+          "venceEn"
         ],
         "type" : "object"
       },
@@ -1834,6 +1938,30 @@
             "type" : "string"
           }
         },
+        "type" : "object"
+      },
+      "EstadoSegundoFactorRespuesta" : {
+        "properties" : {
+          "activadoEn" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "activo" : {
+            "type" : "boolean"
+          },
+          "codigosDeRespaldoRestantes" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "obligatorio" : {
+            "type" : "boolean"
+          }
+        },
+        "required" : [
+          "activo",
+          "codigosDeRespaldoRestantes",
+          "obligatorio"
+        ],
         "type" : "object"
       },
       "ExistenciaAjustadaRespuesta" : {
@@ -2444,6 +2572,17 @@
           "fechaLista",
           "modelos",
           "modo"
+        ],
+        "type" : "object"
+      },
+      "IniciarActivacionSegundoFactorRequest" : {
+        "properties" : {
+          "claveActual" : {
+            "type" : "string"
+          }
+        },
+        "required" : [
+          "claveActual"
         ],
         "type" : "object"
       },
@@ -4774,11 +4913,17 @@
           "rol" : {
             "type" : "string"
           },
+          "segundoFactorPorActivar" : {
+            "type" : "boolean"
+          },
           "usuarioId" : {
             "format" : "uuid",
             "type" : "string"
           }
         },
+        "required" : [
+          "segundoFactorPorActivar"
+        ],
         "type" : "object"
       },
       "SetRespuesta" : {
@@ -5409,6 +5554,21 @@
             "type" : "string"
           }
         },
+        "type" : "object"
+      },
+      "VerificarSegundoFactorRequest" : {
+        "properties" : {
+          "codigo" : {
+            "type" : "string"
+          },
+          "desafio" : {
+            "type" : "string"
+          }
+        },
+        "required" : [
+          "codigo",
+          "desafio"
+        ],
         "type" : "object"
       }
     }
@@ -10340,6 +10500,176 @@
         ]
       }
     },
+    "/api/v1/auth/segundo-factor" : {
+      "get" : {
+        "operationId" : "consultarSegundoFactor",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/EstadoSegundoFactorRespuesta"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "segundo-factor-controlador"
+        ]
+      }
+    },
+    "/api/v1/auth/segundo-factor/activacion" : {
+      "post" : {
+        "operationId" : "iniciarActivacionSegundoFactor",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/IniciarActivacionSegundoFactorRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ActivacionSegundoFactorRespuesta"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "segundo-factor-controlador"
+        ]
+      }
+    },
+    "/api/v1/auth/segundo-factor/activacion/confirmar" : {
+      "post" : {
+        "operationId" : "confirmarActivacionSegundoFactor",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/CodigoSegundoFactorRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ActivacionConfirmadaRespuesta"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "segundo-factor-controlador"
+        ]
+      }
+    },
+    "/api/v1/auth/segundo-factor/codigos-de-respaldo" : {
+      "post" : {
+        "operationId" : "regenerarCodigosDeRespaldo",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ClaveYCodigoSegundoFactorRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/CodigosDeRespaldoRegeneradosRespuesta"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "segundo-factor-controlador"
+        ]
+      }
+    },
+    "/api/v1/auth/segundo-factor/desactivacion" : {
+      "post" : {
+        "operationId" : "desactivarSegundoFactor",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ClaveYCodigoSegundoFactorRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SesionRespuesta"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "segundo-factor-controlador"
+        ]
+      }
+    },
+    "/api/v1/auth/segundo-factor/verificacion" : {
+      "post" : {
+        "operationId" : "verificarSegundoFactor",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/VerificarSegundoFactorRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SesionRespuesta"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "segundo-factor-controlador"
+        ]
+      }
+    },
     "/api/v1/auth/sesion" : {
       "post" : {
         "operationId" : "iniciarSesion",
@@ -10362,7 +10692,17 @@
                 }
               }
             },
-            "description" : "OK"
+            "description" : "Sesión abierta: el token de acceso en el cuerpo y el de refresco en la cookie"
+          },
+          "202" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/DesafioSegundoFactorRespuesta"
+                }
+              }
+            },
+            "description" : "La cuenta tiene segundo factor: falta el código. Sin cookie ni token"
           }
         },
         "tags" : [

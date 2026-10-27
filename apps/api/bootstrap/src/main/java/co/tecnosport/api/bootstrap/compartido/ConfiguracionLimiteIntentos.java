@@ -48,7 +48,9 @@ public class ConfiguracionLimiteIntentos {
         "/api/v1/auth/recuperacion/confirmar",
         // ADR-0074: crear cuentas con Google también se frena por IP en el filtro, como el
         // registro.
-        "/api/v1/auth/google");
+        "/api/v1/auth/google",
+        // ADR-0096: el segundo paso del inicio de sesión es público, como el primero.
+        "/api/v1/auth/segundo-factor/verificacion");
     return registro;
   }
 

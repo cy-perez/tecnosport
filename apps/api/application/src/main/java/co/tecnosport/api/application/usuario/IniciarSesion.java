@@ -5,7 +5,10 @@ import co.tecnosport.api.application.compartido.LimiteDeIntentosExcedidoExceptio
 import co.tecnosport.api.application.compartido.Reloj;
 import co.tecnosport.api.domain.compartido.CorreoElectronico;
 import co.tecnosport.api.domain.compartido.GeneradorIdentificador;
+import co.tecnosport.api.domain.usuario.AlcanceDeAcceso;
 import co.tecnosport.api.domain.usuario.CorreoSinVerificarException;
+import co.tecnosport.api.domain.usuario.DesafioSegundoFactor;
+import co.tecnosport.api.domain.usuario.PoliticaDeSegundoFactor;
 import co.tecnosport.api.domain.usuario.SesionRefresco;
 import co.tecnosport.api.domain.usuario.Usuario;
 import java.time.Duration;
@@ -24,6 +27,11 @@ import java.util.Objects;
  * IP se cierra a sí mismo, no al titular. Por cuenta sola queda un tope mucho mayor, que solo
  * alcanza un ataque repartido entre muchos orígenes y que es el que frena la adivinanza
  * distribuida.
+ *
+ * <p><b>Y desde ADR-0096 la clave correcta no siempre abre sesión.</b> Si la cuenta tiene el
+ * segundo factor activo, el resultado es un desafío de unos minutos que se resuelve con el código
+ * ({@code VerificarSegundoFactor}), y ninguna sesión todavía. Se decide después de comprobar que el
+ * correo está verificado, para que el orden de los errores sea el mismo con y sin factor.
  */
 public final class IniciarSesion {
 
@@ -37,6 +45,10 @@ public final class IniciarSesion {
   private final int maximoIntentosPorCuentaEIp;
   private final int maximoIntentosPorCuenta;
   private final Duration ventanaIntentosPorCuenta;
+  private final RepositorioSegundosFactores repositorioSegundosFactores;
+  private final RepositorioDesafiosSegundoFactor repositorioDesafios;
+  private final Duration vigenciaDesafio;
+  private final PoliticaDeSegundoFactor politicaDeSegundoFactor;
 
   /**
    * Un hash cualquiera con el que comparar cuando no hay cuenta, o la cuenta no tiene clave. Sin
@@ -56,7 +68,11 @@ public final class IniciarSesion {
       LimitadorDeIntentos limitadorDeIntentos,
       int maximoIntentosPorCuentaEIp,
       int maximoIntentosPorCuenta,
-      Duration ventanaIntentosPorCuenta) {
+      Duration ventanaIntentosPorCuenta,
+      RepositorioSegundosFactores repositorioSegundosFactores,
+      RepositorioDesafiosSegundoFactor repositorioDesafios,
+      Duration vigenciaDesafio,
+      PoliticaDeSegundoFactor politicaDeSegundoFactor) {
     this.repositorioUsuarios = Objects.requireNonNull(repositorioUsuarios);
     this.repositorioSesiones = Objects.requireNonNull(repositorioSesiones);
     this.codificadorDeClaves = Objects.requireNonNull(codificadorDeClaves);
@@ -72,10 +88,14 @@ public final class IniciarSesion {
     this.maximoIntentosPorCuentaEIp = maximoIntentosPorCuentaEIp;
     this.maximoIntentosPorCuenta = maximoIntentosPorCuenta;
     this.ventanaIntentosPorCuenta = Objects.requireNonNull(ventanaIntentosPorCuenta);
+    this.repositorioSegundosFactores = Objects.requireNonNull(repositorioSegundosFactores);
+    this.repositorioDesafios = Objects.requireNonNull(repositorioDesafios);
+    this.vigenciaDesafio = Objects.requireNonNull(vigenciaDesafio);
+    this.politicaDeSegundoFactor = Objects.requireNonNull(politicaDeSegundoFactor);
     this.hashDeRelleno = codificadorDeClaves.codificar(GeneradorIdentificador.nuevo().toString());
   }
 
-  public TokensDeSesion ejecutar(IniciarSesionComando comando) {
+  public ResultadoInicioSesion ejecutar(IniciarSesionComando comando) {
     Objects.requireNonNull(comando, "El comando no puede ser nulo.");
 
     CorreoElectronico correo = new CorreoElectronico(comando.correo());
@@ -120,11 +140,27 @@ public final class IniciarSesion {
       throw new CorreoSinVerificarException();
     }
 
+    if (repositorioSegundosFactores.estaActivo(usuario.id())) {
+      DesafioSegundoFactor desafio =
+          DesafioSegundoFactor.crear(usuario.id(), ahora, vigenciaDesafio);
+      repositorioDesafios.guardar(desafio);
+      return new ResultadoInicioSesion.SegundoFactorRequerido(desafio.id(), desafio.expiraEn());
+    }
+
     SesionRefresco sesion =
         SesionRefresco.crear(usuario.id(), GeneradorIdentificador.nuevo(), ahora, vigenciaRefresco);
     repositorioSesiones.guardar(sesion);
 
-    String accessToken = generadorDeTokens.generarAcceso(usuario, ahora);
-    return new TokensDeSesion(usuario.id(), usuario.rol(), accessToken, sesion.id());
+    // Sin factor activo —si lo tuviera, habría salido arriba con el desafío—. Si el panel se lo
+    // exige, la sesión solo sirve para activarlo.
+    AlcanceDeAcceso alcance = politicaDeSegundoFactor.alcance(usuario, false);
+    String accessToken = generadorDeTokens.generarAcceso(usuario, alcance, ahora);
+    return new ResultadoInicioSesion.SesionAbierta(
+        new TokensDeSesion(
+            usuario.id(),
+            usuario.rol(),
+            accessToken,
+            sesion.id(),
+            alcance == AlcanceDeAcceso.SOLO_ACTIVAR_SEGUNDO_FACTOR));
   }
 }

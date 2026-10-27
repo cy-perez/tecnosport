@@ -9,6 +9,8 @@ import { REPOSITORIO_CATEGORIAS } from '../catalogo/domain/repositorio-categoria
 import { REPOSITORIO_PRODUCTOS_NO_PUBLICADOS } from './productos/domain/productos-no-publicados.puerto';
 import { REPOSITORIO_ARCHIVOS_DE_INGESTA } from './ingestas/domain/repositorio-archivos-de-ingesta.puerto';
 import { REPOSITORIO_RECALCULO_PRECIOS } from './productos/domain/recalculo-precios.puerto';
+import { REPOSITORIO_SEGUNDO_FACTOR } from './segundo-factor/domain/repositorio-segundo-factor.puerto';
+import { activacionSegundoFactorGuard, adminGuard } from './admin.guard';
 
 /**
  * Lo que los specs de página **no** pueden ver.
@@ -100,6 +102,26 @@ describe('adminRoutes', () => {
   it('la pantalla de precios provee el puerto del recálculo', () => {
     expect(proveeTokens(buscarRuta(adminRoutes, 'precios'))).toContain(
       REPOSITORIO_RECALCULO_PRECIOS,
+    );
+  });
+
+  /**
+   * ADR-0096. La activación del segundo factor es hermana del marco y no hija: si colgara de él,
+   * heredaría el `adminGuard`, que manda la sesión restringida justo a esta pantalla — un bucle de
+   * redirecciones del que no sale nadie.
+   */
+  it('la activación del segundo factor queda fuera del marco, con su guardia y su puerto', () => {
+    const marco = adminRoutes[0].children?.find((ruta) => ruta.canActivate?.includes(adminGuard));
+    const activar = buscarRuta(adminRoutes, 'activar-segundo-factor');
+
+    expect(marco?.children?.some((ruta) => ruta.path === 'activar-segundo-factor')).toBe(false);
+    expect(activar.canActivate).toEqual([activacionSegundoFactorGuard]);
+    expect(proveeTokens(activar)).toContain(REPOSITORIO_SEGUNDO_FACTOR);
+  });
+
+  it('la pantalla de seguridad provee el puerto del segundo factor', () => {
+    expect(proveeTokens(buscarRuta(adminRoutes, 'seguridad'))).toContain(
+      REPOSITORIO_SEGUNDO_FACTOR,
     );
   });
 

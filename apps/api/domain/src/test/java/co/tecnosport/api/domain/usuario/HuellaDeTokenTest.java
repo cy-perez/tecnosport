@@ -26,4 +26,9 @@ class HuellaDeTokenTest {
   void laHuellaNoContieneElToken() {
     assertFalse(HuellaDeToken.de(TOKEN).contains("0192f4a0"));
   }
+
+  @Test
+  void laDeUnUuidEsLaDeSuTexto() {
+    assertEquals(HuellaDeToken.de(TOKEN.toString()), HuellaDeToken.de(TOKEN));
+  }
 }

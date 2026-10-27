@@ -1,23 +1,30 @@
 import { Component, inject } from '@angular/core';
 import { render } from '@testing-library/angular';
 import { REPOSITORIO_SESION, RepositorioSesion } from './repositorio-sesion.puerto';
-import { Sesion } from './sesion.model';
+import { ResultadoInicioSesion, Sesion } from './sesion.model';
 import { SesionStore } from './sesion.store';
 
 const SESION_DE_PRUEBA: Sesion = {
   usuarioId: 'usuario-1',
   rol: 'ADMIN',
   accessToken: 'jwt.valido',
+  segundoFactorPorActivar: false,
 };
 const SESION_TRAS_CAMBIAR: Sesion = {
   usuarioId: 'usuario-1',
   rol: 'ADMIN',
   accessToken: 'jwt.nuevo',
+  segundoFactorPorActivar: false,
 };
 
 class RepositorioSesionFalso implements RepositorioSesion {
   async iniciarSesionConGoogle(): Promise<Sesion> {
-    return { usuarioId: 'u-google', rol: 'CLIENTE', accessToken: 'jwt-google' };
+    return {
+      usuarioId: 'u-google',
+      rol: 'CLIENTE',
+      accessToken: 'jwt-google',
+      segundoFactorPorActivar: false,
+    };
   }
 
   llamadasIniciar = 0;
@@ -26,8 +33,24 @@ class RepositorioSesionFalso implements RepositorioSesion {
 
   constructor(private sesionAlRefrescar: Sesion | null = null) {}
 
-  async iniciarSesion(): Promise<Sesion> {
+  /** Si está, el primer paso responde con el desafío del segundo factor en vez de la sesión. */
+  desafioAlIniciar: string | null = null;
+  desafioVerificado: string | null = null;
+
+  async iniciarSesion(): Promise<ResultadoInicioSesion> {
     this.llamadasIniciar++;
+    if (this.desafioAlIniciar !== null) {
+      return {
+        tipo: 'segundo-factor',
+        desafio: this.desafioAlIniciar,
+        venceEn: '2026-10-27T12:05:00Z',
+      };
+    }
+    return { tipo: 'sesion', sesion: SESION_DE_PRUEBA };
+  }
+
+  async verificarSegundoFactor(desafio: string): Promise<Sesion> {
+    this.desafioVerificado = desafio;
     return SESION_DE_PRUEBA;
   }
 
@@ -59,8 +82,12 @@ class RepositorioSesionQueFalla implements RepositorioSesion {
     throw new Error('no usado en esta prueba');
   }
 
-  async iniciarSesion(): Promise<Sesion> {
+  async iniciarSesion(): Promise<ResultadoInicioSesion> {
     throw new Error('correo o clave incorrectos');
+  }
+
+  async verificarSegundoFactor(): Promise<Sesion> {
+    throw new Error('no usado en esta prueba');
   }
 
   async cambiarClave(): Promise<Sesion> {
@@ -134,11 +161,49 @@ describe('SesionStore', () => {
     const { store } = await renderConRepositorio(repositorio);
     await store.listo;
 
-    const sesion = await store.iniciarSesion('admin@tecnosport.co', 'clave-segura');
+    const resultado = await store.iniciarSesion('admin@tecnosport.co', 'clave-segura');
 
     expect(repositorio.llamadasIniciar).toBe(1);
-    expect(store.sesion()).toEqual(sesion);
+    expect(resultado).toEqual({ tipo: 'sesion', sesion: SESION_DE_PRUEBA });
+    expect(store.sesion()).toEqual(SESION_DE_PRUEBA);
     expect(store.esAdmin()).toBe(true);
+  });
+
+  /**
+   * ADR-0096: con segundo factor, el primer paso no abre sesión —el servidor no manda ni token ni
+   * cookie—. Dejar una sesión en la pestaña aquí haría creer al guardia del panel que ya se entró.
+   */
+  it('con segundo factor, el primer paso devuelve el desafío y no deja sesión', async () => {
+    const repositorio = new RepositorioSesionFalso(null);
+    repositorio.desafioAlIniciar = 'desafio-1';
+    const { store } = await renderConRepositorio(repositorio);
+    await store.listo;
+
+    const resultado = await store.iniciarSesion('admin@tecnosport.co', 'clave-segura');
+
+    expect(resultado.tipo).toBe('segundo-factor');
+    expect(store.sesion()).toBeNull();
+  });
+
+  it('verificar el segundo factor deja la sesión que devuelve el servidor', async () => {
+    const repositorio = new RepositorioSesionFalso(null);
+    const { store } = await renderConRepositorio(repositorio);
+    await store.listo;
+
+    await store.verificarSegundoFactor('desafio-1', '123456');
+
+    expect(repositorio.desafioVerificado).toBe('desafio-1');
+    expect(store.sesion()).toEqual(SESION_DE_PRUEBA);
+  });
+
+  /** Activar el factor revoca las sesiones y abre una nueva: la pestaña tiene que quedarse esa. */
+  it('adoptar reemplaza la sesión por la nueva', async () => {
+    const { store } = await renderConRepositorio(new RepositorioSesionFalso(SESION_DE_PRUEBA));
+    await store.listo;
+
+    store.adoptar(SESION_TRAS_CAMBIAR);
+
+    expect(store.sesion()).toEqual(SESION_TRAS_CAMBIAR);
   });
 
   /** ADR-0074: entrar con Google deja la sesión igual que entrar con clave. */
@@ -152,6 +217,7 @@ describe('SesionStore', () => {
       usuarioId: 'u-google',
       rol: 'CLIENTE',
       accessToken: 'jwt-google',
+      segundoFactorPorActivar: false,
     });
   });
 

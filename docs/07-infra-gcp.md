@@ -456,6 +456,31 @@ Consecuencia para el primer `apply` de un ambiente: con `secretos_cargados =
 false` la revisión de la API **no arranca**, y es a propósito — se cargan los
 valores con gcloud, se pone `true` y se vuelve a aplicar.
 
+**Y una sexta desde el 27 de octubre de 2026: `SEGUNDO_FACTOR_LLAVE`** (ADR-0096),
+la llave AES-256 con la que se cifra el secreto TOTP de cada segundo factor del
+panel antes de guardarlo. 32 bytes en Base64 estándar; la API se niega a arrancar
+con otra cosa. No permite hacerse pasar por nadie, pero **perderla es perder todos
+los factores**, y por eso tampoco tiene valor por omisión: un despliegue que
+arranque con una llave inventada cifraría con ella y el siguiente, con la de
+verdad, no podría leer nada. Va montada solo cuando `segundo_factor_listo = true`,
+y el orden importa porque montar un secreto sin versión deja la revisión sin
+arrancar y el código nuevo sin la llave tampoco arranca:
+
+1. `terraform apply -var "segundo_factor_listo=false"` — crea el recipiente
+   `segundo-factor-llave` y el permiso de lectura de la cuenta de la API.
+2. Cargar la llave:
+   `node -e "process.stdout.write(require('crypto').randomBytes(32).toString('base64'))" | gcloud secrets versions add segundo-factor-llave --project tecnosport-dev --data-file=-`
+3. `terraform apply` — con `segundo_factor_listo = true` de `terraform.tfvars`,
+   monta `SEGUNDO_FACTOR_LLAVE` y `ADMIN_EXIGE_SEGUNDO_FACTOR=true`.
+4. Mezclar el código.
+
+Si la llave se pierde o se rota sin migrar, el procedimiento es
+`infra/operacion/restablecer-segundo-factor.sql`: borra el factor del
+administrador y lo obliga a activarlo otra vez. Se corre a mano en la consola SQL
+de la base, con el correo de la cuenta en lugar de `CORREO_DEL_ADMIN`; los pasos
+están en `docs/08-seguridad-legal.md`. Con la llave perdida hay que correrlo una
+vez por cada administrador que tuviera factor.
+
 ```
 APP_URL_PUBLICA
 API_URL_PUBLICA
@@ -523,6 +548,10 @@ TRANSFERENCIA_BANCO, TRANSFERENCIA_TIPO_CUENTA, TRANSFERENCIA_NUMERO_CUENTA,
 TRANSFERENCIA_TITULAR
 
 JWT_SECRETO, JWT_MINUTOS_ACCESO, JWT_DIAS_REFRESCO
+SEGUNDO_FACTOR_LLAVE (sin valor por omisión, ADR-0096), ADMIN_EXIGE_SEGUNDO_FACTOR (false por
+omisión; true en dev), SEGUNDO_FACTOR_MINUTOS_DESAFIO, SEGUNDO_FACTOR_INTENTOS_POR_DESAFIO,
+SEGUNDO_FACTOR_INTENTOS_CUENTA_IP, SEGUNDO_FACTOR_INTENTOS_CUENTA, SEGUNDO_FACTOR_MINUTOS_VENTANA,
+SEGUNDO_FACTOR_MINUTOS_ACTIVACION_PENDIENTE, SEGUNDO_FACTOR_EMISOR
 GOOGLE_CLIENT_ID (vacío apaga "entrar con Google", adr/0074), GOOGLE_URL_LLAVES, GOOGLE_URL_SCRIPT
 
 VERIFICACION_CORREO_HORAS_VENCIMIENTO

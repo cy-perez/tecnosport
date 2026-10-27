@@ -72,3 +72,11 @@ ingesta_lista           = true
 # recipiente, y despues se carga una clave aleatoria:
 #   node -e "process.stdout.write(require('crypto').randomBytes(32).toString('base64url'))" | gcloud secrets versions add proxy-web-clave --project tecnosport-dev --data-file=-
 proxy_web_listo = true
+
+# ADR-0096. La llave AES-256 de los segundos factores del panel. La primera vez se aplica con
+# `-var "segundo_factor_listo=false"` para que exista el recipiente y el permiso, y despues se carga
+# una llave de 32 bytes en Base64 estandar (no base64url: la API la lee con el decodificador
+# estandar y se niega a arrancar si no son 32 bytes exactos):
+#   node -e "process.stdout.write(require('crypto').randomBytes(32).toString('base64'))" | gcloud secrets versions add segundo-factor-llave --project tecnosport-dev --data-file=-
+# **Esa llave no se rota ni se pierde**: sin ella ningun factor guardado se puede leer.
+segundo_factor_listo = true

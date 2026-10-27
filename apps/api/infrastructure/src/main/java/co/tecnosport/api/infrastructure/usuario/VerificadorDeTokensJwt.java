@@ -2,6 +2,7 @@ package co.tecnosport.api.infrastructure.usuario;
 
 import co.tecnosport.api.application.usuario.ClaimsAcceso;
 import co.tecnosport.api.application.usuario.VerificadorDeTokens;
+import co.tecnosport.api.domain.usuario.AlcanceDeAcceso;
 import co.tecnosport.api.domain.usuario.Rol;
 import java.util.Objects;
 import java.util.Optional;
@@ -36,7 +37,12 @@ public final class VerificadorDeTokensJwt implements VerificadorDeTokens {
       Jwt token = jwtDecoder.decode(jwt);
       UUID usuarioId = UUID.fromString(token.getSubject());
       Rol rol = Rol.valueOf(token.getClaimAsString(GeneradorDeTokensJwt.CLAIM_ROL));
-      return Optional.of(new ClaimsAcceso(usuarioId, rol));
+      // Un valor que no se conoce no es "completo por si acaso": es un token que no se entiende, y
+      // valueOf lo manda al catch.
+      String alcance = token.getClaimAsString(GeneradorDeTokensJwt.CLAIM_ALCANCE);
+      AlcanceDeAcceso alcanceDeAcceso =
+          alcance == null ? AlcanceDeAcceso.COMPLETO : AlcanceDeAcceso.valueOf(alcance);
+      return Optional.of(new ClaimsAcceso(usuarioId, rol, alcanceDeAcceso));
     } catch (JwtException | IllegalArgumentException e) {
       return Optional.empty();
     }

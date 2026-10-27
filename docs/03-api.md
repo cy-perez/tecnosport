@@ -417,6 +417,12 @@ POST /api/v1/auth/google                     entrar o crear la cuenta con Google
 GET  /api/v1/auth/google/configuracion       si este ambiente tiene cliente de Google, cuál, y de dónde se carga su script
 POST /api/v1/auth/verificacion | /verificacion/reenviar
 POST /api/v1/auth/recuperacion | /recuperacion/confirmar
+POST /api/v1/auth/segundo-factor/verificacion       segundo paso del inicio de sesión (adr/0096), sin sesión
+POST /api/v1/auth/segundo-factor/activacion          ADMIN: clave actual → clave TOTP pendiente
+POST /api/v1/auth/segundo-factor/activacion/confirmar  ADMIN: primer código → activo, sesión nueva y códigos de respaldo
+GET  /api/v1/auth/segundo-factor                     ADMIN: {activo, activadoEn, codigosDeRespaldoRestantes, obligatorio}
+POST /api/v1/auth/segundo-factor/codigos-de-respaldo  ADMIN: clave + código → diez códigos nuevos y sesión nueva
+POST /api/v1/auth/segundo-factor/desactivacion       ADMIN: clave + código → sin factor y sesión nueva
 GET  /api/v1/cuenta/pedidos
 GET/POST/PATCH /api/v1/cuenta/direcciones
 ```
@@ -425,6 +431,30 @@ GET/POST/PATCH /api/v1/cuenta/direcciones
 `/auth/recuperacion/confirmar` (token + clave nueva) son dos pasos, no uno —
 `/auth/recuperacion` responde 204 siempre, exista o no una cuenta con ese
 correo (docs/08-seguridad-legal.md, OWASP: no se revela cuál de los dos fue).
+
+**`POST /auth/sesion` tiene dos respuestas buenas desde `adr/0096`.** 200 con la
+sesión y la cookie, como siempre; o **202** `{desafio, venceEn}` si la cuenta
+tiene el segundo factor activo, **sin cookie ni token**. Un cliente que mire
+`response.ok` confunde las dos: hay que decidir por el estado. El desafío dura
+cinco minutos y se cambia por la sesión en `POST /auth/segundo-factor/verificacion`
+`{desafio, codigo}` —seis dígitos de la aplicación o un código de respaldo—, que
+responde exactamente como el 200 del inicio de sesión. Dos 401 distintos:
+`CODIGO_SEGUNDO_FACTOR_INVALIDO` (el desafío sigue vivo: se corrige escribiendo) y
+`DESAFIO_SEGUNDO_FACTOR_INVALIDO` (venció, se usó o agotó sus cinco intentos: hay
+que volver a la clave). Topes: cinco por desafío, cinco por cuenta e IP y diez por
+cuenta sola cada quince minutos (429), más el filtro por IP de `/auth`.
+
+El resto de `/auth/segundo-factor/**` exige rol `ADMIN` (o la sesión restringida
+de un administrador que todavía no lo activó, cuando el panel lo exige).
+`/activacion` pide `{claveActual}` y responde `{secreto, uri, digitos,
+periodoSegundos}` (409 `SEGUNDO_FACTOR_YA_ACTIVO`); `/activacion/confirmar` pide
+`{codigo}` y responde `{sesion, codigosDeRespaldo}` con cookie nueva: revoca las
+demás sesiones (409 `ACTIVACION_SEGUNDO_FACTOR_NO_INICIADA`).
+`/codigos-de-respaldo` y `/desactivacion` piden `{claveActual, codigo}` —el código
+puede ser de la aplicación o de respaldo—, revocan las demás sesiones y responden
+con cookie nueva; los dos avisan por correo. Desactivar con
+`ADMIN_EXIGE_SEGUNDO_FACTOR` encendida responde 409 `SEGUNDO_FACTOR_OBLIGATORIO`, y
+sin factor activo, 409 `SEGUNDO_FACTOR_NO_ACTIVO`.
 
 `/auth/verificacion/reenviar` (solo el correo) responde 204 con **tres**
 desenlaces indistinguibles: la cuenta no existe, existe sin verificar —y recibe

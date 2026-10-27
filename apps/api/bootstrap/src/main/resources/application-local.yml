@@ -18,3 +18,6 @@ tecnosport:
     secreto: ${JWT_SECRETO:placeholder_jwt_secreto_de_desarrollo_no_usar_en_produccion}
   admin-semilla:
     clave: ${ADMIN_CLAVE:admin_clave_de_desarrollo_cambiar}
+  segundo-factor:
+    # 32 bytes en Base64: "desarrollo-local-no-usar-en-prod". AES-256 lo exige.
+    llave: ${SEGUNDO_FACTOR_LLAVE:ZGVzYXJyb2xsby1sb2NhbC1uby11c2FyLWVuLXByb2Q=}

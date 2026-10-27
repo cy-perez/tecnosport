@@ -1,7 +1,8 @@
 import type { components } from '@tecnosport/contratos';
-import { Rol, Sesion } from './sesion.model';
+import { ResultadoInicioSesion, Rol, Sesion } from './sesion.model';
 
-type SesionDto = components['schemas']['SesionRespuesta'];
+type SesionDto = Partial<components['schemas']['SesionRespuesta']>;
+type DesafioDto = components['schemas']['DesafioSegundoFactorRespuesta'];
 
 const ROLES_VALIDOS: readonly Rol[] = ['CLIENTE', 'ADMIN'];
 
@@ -17,5 +18,13 @@ export function aSesion(dto: SesionDto): Sesion {
     usuarioId: dto.usuarioId ?? '',
     rol: aRol(dto.rol),
     accessToken: dto.accessToken ?? '',
+    // Solo `true` restringe: un campo ausente en una respuesta vieja no puede encerrar al panel.
+    // Restringir de más tampoco protegería nada, porque quien decide el alcance es el token.
+    segundoFactorPorActivar: dto.segundoFactorPorActivar === true,
   };
+}
+
+/** El 202 del primer paso: el desafío que el segundo paso tiene que presentar con el código. */
+export function aDesafio(dto: DesafioDto): ResultadoInicioSesion {
+  return { tipo: 'segundo-factor', desafio: dto.desafio, venceEn: dto.venceEn };
 }

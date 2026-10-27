@@ -132,7 +132,13 @@ import co.tecnosport.api.domain.inventario.ExistenciaInsuficienteException;
 import co.tecnosport.api.domain.pedido.EnlaceDeCompraNoVigenteException;
 import co.tecnosport.api.domain.pedido.EntregaNoAplicaException;
 import co.tecnosport.api.domain.pedido.NumeroDePedidoNoCoincideException;
+import co.tecnosport.api.domain.usuario.ActivacionSegundoFactorNoIniciadaException;
+import co.tecnosport.api.domain.usuario.CodigoSegundoFactorInvalidoException;
 import co.tecnosport.api.domain.usuario.CorreoSinVerificarException;
+import co.tecnosport.api.domain.usuario.DesafioSegundoFactorInvalidoException;
+import co.tecnosport.api.domain.usuario.SegundoFactorNoActivoException;
+import co.tecnosport.api.domain.usuario.SegundoFactorObligatorioException;
+import co.tecnosport.api.domain.usuario.SegundoFactorYaActivoException;
 import java.net.URI;
 import java.util.List;
 import java.util.Locale;
@@ -1033,6 +1039,46 @@ public class ManejadorDeErrores {
   @ExceptionHandler(CorreoSinVerificarException.class)
   public ProblemDetail correoSinVerificar(CorreoSinVerificarException excepcion) {
     return problema(HttpStatus.FORBIDDEN, "Correo sin verificar", excepcion);
+  }
+
+  // ADR-0096. 409: la cuenta ya tiene el segundo factor activo; para cambiar de teléfono, primero
+  // se desactiva.
+  @ExceptionHandler(SegundoFactorYaActivoException.class)
+  public ProblemDetail segundoFactorYaActivo(SegundoFactorYaActivoException excepcion) {
+    return problema(HttpStatus.CONFLICT, "El segundo factor ya está activo", excepcion);
+  }
+
+  @ExceptionHandler(SegundoFactorNoActivoException.class)
+  public ProblemDetail segundoFactorNoActivo(SegundoFactorNoActivoException excepcion) {
+    return problema(HttpStatus.CONFLICT, "El segundo factor no está activo", excepcion);
+  }
+
+  // 409 y no 403: la persona puede hacerlo todo, salvo esto, y es por una regla del panel
+  // (ADMIN_EXIGE_SEGUNDO_FACTOR), no por quién es.
+  @ExceptionHandler(SegundoFactorObligatorioException.class)
+  public ProblemDetail segundoFactorObligatorio(SegundoFactorObligatorioException excepcion) {
+    return problema(HttpStatus.CONFLICT, "El segundo factor es obligatorio", excepcion);
+  }
+
+  // 401 como la clave equivocada: es la misma clase de error —el secreto no coincide— y se
+  // corrige igual, escribiendo bien.
+  @ExceptionHandler(CodigoSegundoFactorInvalidoException.class)
+  public ProblemDetail codigoSegundoFactorInvalido(CodigoSegundoFactorInvalidoException excepcion) {
+    return problema(HttpStatus.UNAUTHORIZED, "Código inválido", excepcion);
+  }
+
+  // 401: el segundo paso venció, se usó o agotó sus intentos. La salida es volver a escribir la
+  // clave, que es lo que el frontend hace con este código.
+  @ExceptionHandler(DesafioSegundoFactorInvalidoException.class)
+  public ProblemDetail desafioSegundoFactorInvalido(
+      DesafioSegundoFactorInvalidoException excepcion) {
+    return problema(HttpStatus.UNAUTHORIZED, "El inicio de sesión venció", excepcion);
+  }
+
+  @ExceptionHandler(ActivacionSegundoFactorNoIniciadaException.class)
+  public ProblemDetail activacionSegundoFactorNoIniciada(
+      ActivacionSegundoFactorNoIniciadaException excepcion) {
+    return problema(HttpStatus.CONFLICT, "No hay una activación en curso", excepcion);
   }
 
   // 429, mismo código que ya escribe a mano FiltroLimiteIntentos para el límite por IP — el

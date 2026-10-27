@@ -2,6 +2,7 @@ package co.tecnosport.api.presentation.usuario;
 
 import co.tecnosport.api.application.usuario.ClaimsAcceso;
 import co.tecnosport.api.application.usuario.VerificadorDeTokens;
+import co.tecnosport.api.domain.usuario.AlcanceDeAcceso;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -30,6 +31,13 @@ public class FiltroAutenticacionJwt extends OncePerRequestFilter {
 
   private static final String PREFIJO_BEARER = "Bearer ";
 
+  /**
+   * ADR-0096. La autoridad de un administrador cuya sesión solo sirve para activar el segundo
+   * factor: no es {@code ROLE_ADMIN}, así que {@code /api/v1/admin/**} le responde 403, y {@code
+   * ConfiguracionSeguridad} la deja entrar a {@code /api/v1/auth/segundo-factor/**}.
+   */
+  public static final String ROL_ADMIN_POR_ACTIVAR = "ADMIN_POR_ACTIVAR";
+
   private final VerificadorDeTokens verificadorDeTokens;
 
   public FiltroAutenticacionJwt(VerificadorDeTokens verificadorDeTokens) {
@@ -50,8 +58,11 @@ public class FiltroAutenticacionJwt extends OncePerRequestFilter {
   }
 
   private void autenticar(ClaimsAcceso claims) {
-    List<GrantedAuthority> autoridades =
-        List.of(new SimpleGrantedAuthority("ROLE_" + claims.rol().name()));
+    String rol =
+        claims.alcance() == AlcanceDeAcceso.SOLO_ACTIVAR_SEGUNDO_FACTOR
+            ? ROL_ADMIN_POR_ACTIVAR
+            : claims.rol().name();
+    List<GrantedAuthority> autoridades = List.of(new SimpleGrantedAuthority("ROLE_" + rol));
     var autenticacion =
         new UsernamePasswordAuthenticationToken(claims.usuarioId(), null, autoridades);
     SecurityContextHolder.getContext().setAuthentication(autenticacion);

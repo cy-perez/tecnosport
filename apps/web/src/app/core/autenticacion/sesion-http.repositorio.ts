@@ -1,18 +1,23 @@
 import { Injectable } from '@angular/core';
-import { crearClienteContratos } from '@tecnosport/contratos';
+import { crearClienteContratos, type components } from '@tecnosport/contratos';
 import { baseUrl } from '../http/base-url';
 import { desempaquetar, ErrorHttp } from '../http/respuesta-http';
-import { aSesion } from './mapeador-sesion';
+import { aDesafio, aSesion } from './mapeador-sesion';
 import { RepositorioSesion } from './repositorio-sesion.puerto';
 import {
   ClaveActualIncorrectaError,
+  CodigoSegundoFactorInvalidoError,
   CorreoSinVerificarError,
   CuentaExistenteRequiereClaveError,
   CuentaGoogleSinRegistroError,
   DemasiadosIntentosError,
+  DesafioSegundoFactorVencidoError,
   SesionExpiradaError,
 } from './sesion.errores';
-import { Sesion } from './sesion.model';
+import { ResultadoInicioSesion, Sesion } from './sesion.model';
+
+type SesionDto = components['schemas']['SesionRespuesta'];
+type DesafioDto = components['schemas']['DesafioSegundoFactorRespuesta'];
 
 /**
  * `/auth/refresco` y `/auth/cierre` dependen de la cookie `HttpOnly` de
@@ -28,7 +33,7 @@ import { Sesion } from './sesion.model';
 export class SesionHttpRepositorio implements RepositorioSesion {
   private readonly cliente = crearClienteContratos(baseUrl());
 
-  async iniciarSesion(correo: string, clave: string): Promise<Sesion> {
+  async iniciarSesion(correo: string, clave: string): Promise<ResultadoInicioSesion> {
     const respuesta = await this.cliente.POST('/api/v1/auth/sesion', {
       body: { correo, clave },
     });
@@ -42,7 +47,46 @@ export class SesionHttpRepositorio implements RepositorioSesion {
     if (respuesta.response.status === 429) {
       throw new DemasiadosIntentosError();
     }
-    return aSesion(desempaquetar(respuesta, 'no se pudo iniciar sesión'));
+    const cuerpo = desempaquetar(respuesta, 'no se pudo iniciar sesión');
+    // `ok` es cierto con el 200 y con el 202, y el tipo generado es la unión de los dos cuerpos: lo
+    // que separa "sesión abierta" de "falta el código" es el estado, no la forma del JSON
+    // (ADR-0096). El 202 no trae cookie ni token.
+    if (respuesta.response.status === 202) {
+      return aDesafio(cuerpo as DesafioDto);
+    }
+    return { tipo: 'sesion', sesion: aSesion(cuerpo as SesionDto) };
+  }
+
+  /**
+   * El segundo paso del inicio de sesión (ADR-0096). Público como el primero: todavía no hay token.
+   *
+   * <p>**Dos 401 distintos**, y la pantalla hace cosas opuestas con cada uno: con
+   * `CODIGO_SEGUNDO_FACTOR_INVALIDO` el desafío sigue vivo y basta con escribir otro código; con
+   * `DESAFIO_SEGUNDO_FACTOR_INVALIDO` —vencido, usado, o cinco fallos— ningún código va a servir y
+   * hay que volver a la clave. Confundirlos deja a alguien tecleando códigos buenos contra un
+   * desafío muerto.
+   */
+  async verificarSegundoFactor(desafio: string, codigo: string): Promise<Sesion> {
+    const respuesta = await this.cliente.POST('/api/v1/auth/segundo-factor/verificacion', {
+      body: { desafio, codigo },
+    });
+    try {
+      return aSesion(desempaquetar(respuesta, 'no se pudo verificar el segundo factor'));
+    } catch (error) {
+      if (!(error instanceof ErrorHttp)) {
+        throw error;
+      }
+      if (error.codigo === 'CODIGO_SEGUNDO_FACTOR_INVALIDO') {
+        throw new CodigoSegundoFactorInvalidoError();
+      }
+      if (error.codigo === 'DESAFIO_SEGUNDO_FACTOR_INVALIDO') {
+        throw new DesafioSegundoFactorVencidoError();
+      }
+      if (error.estado === 429) {
+        throw new DemasiadosIntentosError();
+      }
+      throw error;
+    }
   }
 
   /**

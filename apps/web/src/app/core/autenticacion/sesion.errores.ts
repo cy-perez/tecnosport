@@ -31,3 +31,16 @@ export class CuentaGoogleSinRegistroError extends Error {}
  * (ADR-0074).
  */
 export class CuentaExistenteRequiereClaveError extends Error {}
+
+/**
+ * El código del segundo factor no es válido (401 con código `CODIGO_SEGUNDO_FACTOR_INVALIDO`). El
+ * desafío sigue vivo: se corrige escribiendo otro código, sin volver a la clave.
+ */
+export class CodigoSegundoFactorInvalidoError extends Error {}
+
+/**
+ * El desafío del segundo paso ya no sirve (401 con código `DESAFIO_SEGUNDO_FACTOR_INVALIDO`): venció,
+ * ya se usó o se agotaron sus intentos. Escribir otro código no sirve de nada; hay que volver a la
+ * clave para que el servidor emita uno nuevo.
+ */
+export class DesafioSegundoFactorVencidoError extends Error {}

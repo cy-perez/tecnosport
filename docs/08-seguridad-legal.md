@@ -52,6 +52,35 @@ el panel administrativo, el asistente de captura y la cuenta opcional del client
   la identidad y la sesión sigue siendo la nuestra: el mismo token y la misma
   cookie de refresco. Esta línea decía "no en la fase 1; el diseño lo permite
   después sin migración", y lo segundo era falso: hizo falta `V90`.
+- **Segundo factor del panel, desde el 27 de octubre de 2026** (`ADR-0096`):
+  TOTP de seis dígitos con diez códigos de respaldo, sin dependencias. La clave
+  TOTP se guarda cifrada con AES-256-GCM (`SEGUNDO_FACTOR_LLAVE`) y los códigos
+  por su SHA-256. Con el factor activo, la clave correcta deja un desafío de cinco
+  minutos (202) y el código abre la sesión. Con `ADMIN_EXIGE_SEGUNDO_FACTOR`, un
+  ADMIN sin factor entra con un token de alcance restringido (`ROLE_ADMIN_POR_ACTIVAR`)
+  que no abre `/api/v1/admin/**`. Entrar con Google no aplica: esa puerta no
+  admite ADMIN. Recuperar la clave por correo **no** desactiva el factor.
+
+### Restablecer el segundo factor de un administrador
+
+Si el administrador perdió el teléfono **y** los códigos de respaldo, o si la
+llave `SEGUNDO_FACTOR_LLAVE` se perdió o se rotó sin migrar las filas —y entonces
+ningún factor se puede descifrar—, no hay camino desde el panel, a propósito. El
+procedimiento es `infra/operacion/restablecer-segundo-factor.sql`:
+
+1. Abrir el archivo, reemplazar `CORREO_DEL_ADMIN` en la línea del `select` por
+   el correo de la cuenta.
+2. Ejecutarlo entero en la consola SQL de la base (Neon en dev). Es un solo
+   bloque `DO`, atómico: borra el factor y sus códigos, los desafíos pendientes y
+   los conteos del límite del segundo paso, y revoca todas las sesiones de esa
+   cuenta. Si el correo no es de un ADMIN, o se dejó el marcador, falla sin tocar
+   nada.
+3. La persona entra con su clave; con la bandera encendida, la sesión solo le
+   sirve para activar el factor otra vez.
+
+No cambia la clave: si el motivo es que alguien más pudo tenerla, recuperarla
+por correo después. `RestablecerSegundoFactorSqlTest` ejecuta el archivo tal
+cual contra PostgreSQL con las migraciones reales.
 
 ## Pagos
 
@@ -160,8 +189,12 @@ Hay que tenerlo presente al decidir qué se prueba ahí y con qué clave se entr
   prueba de una solicitud de crédito real a nombre de una persona.
 - **La clave del administrador de dev tiene que ser distinta de la de
   producción**, y el panel tiene que llevar **segundo factor antes de abrir
-  producción**. Hoy no lo tiene: el inicio de sesión es correo y clave, y el
-  correo del administrador es el mismo público de contacto. Separar los dos
+  producción**. ~~Hoy no lo tiene~~ **Lo tiene desde el 27 de octubre de 2026**
+  (`adr/0096`): TOTP de seis dígitos con diez códigos de respaldo, inicio de
+  sesión en dos pasos (202 con un desafío de cinco minutos, y el código abre la
+  sesión), y con `ADMIN_EXIGE_SEGUNDO_FACTOR=true` —encendida en dev— un ADMIN sin
+  factor entra con una sesión que solo sirve para activarlo. El correo del
+  administrador sigue siendo el mismo público de contacto; separar los dos
   correos es una decisión pendiente del dueño.
 - La federación de GitHub con el proyecto exige desde el 27 de octubre de 2026
   el repositorio **y** la rama `main` (`attribute_condition` en

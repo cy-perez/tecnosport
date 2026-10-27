@@ -1,6 +1,7 @@
 package co.tecnosport.api.infrastructure.usuario;
 
 import co.tecnosport.api.application.usuario.GeneradorDeTokens;
+import co.tecnosport.api.domain.usuario.AlcanceDeAcceso;
 import co.tecnosport.api.domain.usuario.Usuario;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
@@ -23,6 +24,13 @@ public final class GeneradorDeTokensJwt implements GeneradorDeTokens {
 
   static final String EMISOR = "tecnosport";
   static final String CLAIM_ROL = "rol";
+
+  /**
+   * ADR-0096. Ausente en los tokens emitidos antes de que existiera —siguen vivos hasta quince
+   * minutos después del despliegue—, y entonces vale {@code COMPLETO}, que es lo que eran.
+   */
+  static final String CLAIM_ALCANCE = "alcance";
+
   private static final int BYTES_MINIMOS_SECRETO =
       32; // HS256 exige una llave de al menos 256 bits.
 
@@ -36,7 +44,7 @@ public final class GeneradorDeTokensJwt implements GeneradorDeTokens {
   }
 
   @Override
-  public String generarAcceso(Usuario usuario, Instant ahora) {
+  public String generarAcceso(Usuario usuario, AlcanceDeAcceso alcance, Instant ahora) {
     JwtClaimsSet claims =
         JwtClaimsSet.builder()
             .issuer(EMISOR)
@@ -44,6 +52,7 @@ public final class GeneradorDeTokensJwt implements GeneradorDeTokens {
             .issuedAt(ahora)
             .expiresAt(ahora.plus(vigenciaAcceso))
             .claim(CLAIM_ROL, usuario.rol().name())
+            .claim(CLAIM_ALCANCE, alcance.name())
             .build();
     return jwtEncoder.encode(JwtEncoderParameters.from(claims)).getTokenValue();
   }
