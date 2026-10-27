@@ -213,6 +213,34 @@ class RepositorioPagosQueFalla implements RepositorioPagos {
   }
 }
 
+/** El servidor dice que la reserva venció la primera vez; la segunda, con un pedido nuevo, cobra. */
+class RepositorioPagosConReservaVencida implements RepositorioPagos {
+  pedidosPedidos: string[] = [];
+
+  async crearIntento(pedidoId: string): Promise<IntentoDePago> {
+    this.pedidosPedidos.push(pedidoId);
+    if (this.pedidosPedidos.length === 1) {
+      throw new ErrorHttp(409, 'reserva vencida', 'RESERVA_DEL_PEDIDO_VENCIDA');
+    }
+    return {
+      referencia: 'TS-2026-000002-1',
+      monto: { valor: 150_000, moneda: 'COP' },
+      firmaIntegridad: 'firma',
+      llavePublica: 'pub_test_xyz',
+      ambiente: 'sandbox',
+      montoEnCentavos: 18_990_000,
+    };
+  }
+
+  async crearIntentoSistecredito(): Promise<IntentoSistecredito> {
+    throw new Error('no usado en esta prueba');
+  }
+
+  async registrarIdTransaccion(): Promise<void> {
+    throw new Error('no usado en esta prueba');
+  }
+}
+
 /**
  * La pasarela rechazando el credito, con la forma exacta que manda el backend: un 409 con el
  * `motivoSistecredito` ya clasificado. Es el rechazo con codigo `4` de la prueba contra dev del 23
@@ -1220,6 +1248,34 @@ describe('ConfirmarPage', () => {
       expect(carrito.carritoId()).toBeNull();
       expect(new CarritoIdLocalStorageAlmacen().leer()).toBeNull();
     });
+  });
+
+  /**
+   * Un pedido en PAGO_PENDIENTE cuya reserva venció ya no se cobra (el servidor responde 409
+   * `RESERVA_DEL_PEDIDO_VENCIDA`). Reintentar con el mismo pedido repetiría ese 409 para siempre:
+   * lo que sirve es crear otro, que vuelve a reservar.
+   */
+  it('con la reserva vencida lo dice, y el siguiente clic crea un pedido nuevo', async () => {
+    sembrarCarritoId('carrito-1');
+    const pedidos = new RepositorioPedidosFalso(pedidoDePrueba({ metodoPago: 'WOMPI' }));
+    const pagos = new RepositorioPagosConReservaVencida();
+
+    const { fixture } = await renderConDatos(
+      'WOMPI',
+      new RepositorioCarritoFalso(CARRITO_CON_LINEAS),
+      pedidos,
+      pagos,
+    );
+    await screen.findByText('compra@ejemplo.co');
+    await esperarCarritoCargado(fixture);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Confirmar pedido' }));
+    expect(await screen.findByText(esCheckout.confirmar.reserva_vencida)).toBeTruthy();
+    expect(pedidos.llamadasCrear).toBe(1);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Confirmar pedido' }));
+    await vi.waitFor(() => expect(pedidos.llamadasCrear).toBe(2));
+    await vi.waitFor(() => expect(pagos.pedidosPedidos.length).toBe(2));
   });
 
   it('si el intento de pago falla, el carrito queda intacto para reintentar', async () => {

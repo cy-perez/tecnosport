@@ -83,6 +83,15 @@ export class CheckoutStore {
    */
   readonly medioYaNoDisponible = signal(false);
 
+  /**
+   * El servidor respondió que la reserva del pedido venció (`RESERVA_DEL_PEDIDO_VENCIDA`): ese
+   * pedido ya no se puede cobrar, y reintentarlo repetiría el mismo 409. Olvidarlo hace que el
+   * siguiente "Confirmar" cree uno nuevo, que vuelve a reservar contra la existencia de ahora.
+   */
+  olvidarPedido(): void {
+    this.pedido.set(null);
+  }
+
   /** Lo llama confirmar cuando la consulta fresca ya no trae el medio elegido. */
   descartarMetodoNoDisponible(): void {
     this.metodoPago.set(null);

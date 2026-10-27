@@ -167,6 +167,21 @@ public final class Inventario {
             null));
   }
 
+  /**
+   * Si la reserva sigue apartando la unidad: existe en este libro, no venció y nadie la confirmó ni
+   * la liberó. Es la pregunta que hay que hacer antes de cobrar — una reserva vencida dejó de
+   * descontar del disponible, así que la unidad pudo venderse a otro mientras tanto. Una reserva
+   * que no es de este libro responde {@code false}, no una excepción: para quien pregunta, "no la
+   * encuentro" y "ya no aparta nada" significan lo mismo.
+   */
+  public boolean reservaSigueVigente(UUID idReserva, Instant ahora) {
+    return movimientos.stream()
+        .filter(m -> m.tipo() == TipoMovimientoInventario.RESERVA && m.id().equals(idReserva))
+        .findFirst()
+        .map(reserva -> reservaVigente(reserva, ahora))
+        .orElse(false);
+  }
+
   /** Si la reserva ya se convirtió en venta. */
   public boolean estaConfirmada(UUID idReserva) {
     return tieneSalida(idReserva);

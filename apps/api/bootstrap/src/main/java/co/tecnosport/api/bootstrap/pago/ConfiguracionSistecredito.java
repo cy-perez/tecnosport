@@ -96,6 +96,7 @@ public class ConfiguracionSistecredito {
       RepositorioPedidos repositorioPedidos,
       RepositorioPagos repositorioPagos,
       PasarelaSistecredito pasarelaSistecredito,
+      RepositorioInventario repositorioInventario,
       EnTransaccionPropia enTransaccionPropia,
       Reloj reloj,
       PropiedadesSistecredito propiedades) {
@@ -103,6 +104,7 @@ public class ConfiguracionSistecredito {
         repositorioPedidos,
         repositorioPagos,
         pasarelaSistecredito,
+        repositorioInventario,
         enTransaccionPropia,
         reloj,
         propiedades.urlRespuesta(),
