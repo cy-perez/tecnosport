@@ -5,10 +5,7 @@ import co.tecnosport.api.application.proveedores.AlmacenDeArchivosDeProveedor;
 import co.tecnosport.api.application.proveedores.BorradorNoEncontradoException;
 import co.tecnosport.api.domain.proveedores.BorradorTecnologia;
 import co.tecnosport.api.domain.proveedores.EstadoBorrador;
-import co.tecnosport.api.domain.proveedores.FotoDeBorradorTecnologia;
-import java.util.ArrayList;
 import java.util.EnumSet;
-import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
@@ -32,6 +29,10 @@ import java.util.UUID;
  * {@link EnTransaccionPropia}. Al revés, el fallo deja objetos huérfanos en el bucket privado —sin
  * fila que los nombre, nadie los ve—, que es el daño menor y lo que {@code npm run huerfanos}
  * encuentra. Las configuraciones y las fotos de la base se van en cascada.
+ *
+ * <p><b>Del bucket se borra el prefijo entero del borrador</b>, no solo lo que nombran sus fotos:
+ * una subida firmada que el panel no llegó a confirmar también deja un objeto ahí, y ninguna fila
+ * lo nombra.
  */
 public final class EliminarBorradorTecnologia {
 
@@ -56,7 +57,7 @@ public final class EliminarBorradorTecnologia {
    * bucket, para que quien llame lo registre.
    */
   public int ejecutar(UUID id) {
-    List<String> referencias =
+    String prefijo =
         enTransaccionPropia.ejecutar(
             () -> {
               BorradorTecnologia borrador =
@@ -66,14 +67,9 @@ public final class EliminarBorradorTecnologia {
               if (!ELIMINABLES.contains(borrador.estado())) {
                 throw new BorradorTecnologiaNoEliminableException(borrador.estado());
               }
-              List<String> suyas = new ArrayList<>();
-              for (FotoDeBorradorTecnologia foto : borrador.fotos()) {
-                suyas.addAll(foto.referencias());
-              }
               repositorio.eliminar(id);
-              return suyas;
+              return ClavesDeFotosDeTecnologia.prefijo(borrador.proveedorId(), id);
             });
-    referencias.forEach(almacen::borrar);
-    return referencias.size();
+    return almacen.borrarPorPrefijo(prefijo);
   }
 }

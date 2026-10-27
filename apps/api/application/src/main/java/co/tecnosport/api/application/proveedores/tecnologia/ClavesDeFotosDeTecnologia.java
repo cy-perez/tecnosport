@@ -71,7 +71,8 @@ final class ClavesDeFotosDeTecnologia {
     return EXTENSIONES.get(contentTypeDe(objectKey));
   }
 
-  private static String prefijo(UUID proveedorId, UUID borradorId) {
+  /** Todo lo de un borrador en el bucket privado: lo que se borra con él o al aprobarlo. */
+  static String prefijo(UUID proveedorId, UUID borradorId) {
     return "proveedores/" + proveedorId + "/borradores-tecnologia/" + borradorId + "/";
   }
 }

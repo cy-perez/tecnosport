@@ -228,6 +228,7 @@ class TecnologiaPorListasTest {
                 productos, atributos, inventario, reloj, false, TarifasDePrueba.WOMPI),
             privado,
             publico,
+            transaccionDelBorrado,
             EXISTENCIA)
         .ejecutar(
             new AprobarBorradorTecnologiaComando(
@@ -633,6 +634,47 @@ class TecnologiaPorListasTest {
   }
 
   /**
+   * Revisión adversarial del 27 de octubre de 2026: el borrado se llevaba solo lo que nombraban las
+   * fotos del borrador. Una subida firmada que el panel no confirmó deja un objeto bajo su prefijo
+   * que ninguna fila nombra, y quedaba huérfano para siempre.
+   */
+  @Test
+  void borrarUnoSeLlevaTodoSuPrefijoAunqueNingunaFotoLoNombre() {
+    BorradorTecnologia borrador = unA17ListoParaAprobar();
+    String huerfano =
+        "proveedores/" + proveedor.id() + "/borradores-tecnologia/" + borrador.id() + "/x.avif";
+    privado.guardar(huerfano, "image/avif", new byte[3]);
+    String delVecino = "proveedores/" + proveedor.id() + "/borradores-tecnologia/otro/1.avif";
+    privado.guardar(delVecino, "image/avif", new byte[3]);
+
+    eliminar().ejecutar(borrador.id());
+
+    assertFalse(privado.objetos.containsKey(huerfano));
+    assertTrue(privado.objetos.containsKey(delVecino), "lo de otro borrador se queda");
+  }
+
+  /**
+   * Y al aprobar, los originales del bucket privado se quedaban para siempre: el producto ya tiene
+   * sus copias en el público. Se borran después de confirmar la aprobación, nunca antes.
+   */
+  @Test
+  void aprobarBorraLosOriginalesDelBucketPrivadoDespuesDeConfirmar() {
+    BorradorTecnologia borrador = unA17ListoParaAprobar();
+    String prefijo =
+        "proveedores/" + proveedor.id() + "/borradores-tecnologia/" + borrador.id() + "/";
+    long antes = privado.objetos.keySet().stream().filter(k -> k.startsWith(prefijo)).count();
+
+    aprobar(borrador.id());
+
+    assertEquals(
+        List.of((int) privado.objetos.size() + (int) antes),
+        transaccionDelBorrado.objetosAlConfirmar,
+        "al confirmar seguían todos");
+    assertTrue(privado.objetos.keySet().stream().noneMatch(k -> k.startsWith(prefijo)));
+    assertFalse(publico.objetos.isEmpty(), "el producto tiene sus copias en el público");
+  }
+
+  /**
    * Revisión adversarial del 27 de octubre de 2026: las fotos se borraban del bucket antes que la
    * fila y dentro de la transacción. Un fallo después las dejaba borradas con la fila revertida.
    */
@@ -708,6 +750,7 @@ class TecnologiaPorListasTest {
     EliminarBorradoresTecnologiaSinAprobar enBloque =
         new EliminarBorradoresTecnologiaSinAprobar(borradores, eliminar());
     assertEquals(3, enBloque.contar());
+    int transaccionesAntes = transaccionDelBorrado.veces;
 
     BorradoresEliminados primera = enBloque.ejecutar(2);
     BorradoresEliminados segunda = enBloque.ejecutar(2);
@@ -718,7 +761,10 @@ class TecnologiaPorListasTest {
     assertEquals(0, segunda.quedan());
     assertEquals(1, borradores.porId.size(), "el aprobado se queda");
     assertTrue(borradores.porId.containsKey(aprobado.id()));
-    assertEquals(3, transaccionDelBorrado.veces, "una transacción por borrador, no por tanda");
+    assertEquals(
+        3,
+        transaccionDelBorrado.veces - transaccionesAntes,
+        "una transacción por borrador, no por tanda");
   }
 
   @Test

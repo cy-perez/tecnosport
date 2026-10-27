@@ -206,12 +206,10 @@ public class AdminTecnologiaControlador {
   @PostMapping("/borradores-tecnologia/{id}/aprobar")
   public ProductoAdminRespuesta aprobar(
       @PathVariable UUID id, @RequestBody AprobarBorradorTecnologiaPeticion cuerpo) {
+    // Sin transacción aquí: el caso de uso abre la suya y limpia el bucket privado al confirmarla.
     Producto producto =
-        transaccion.execute(
-            estado ->
-                aprobarBorrador.ejecutar(
-                    new AprobarBorradorTecnologiaComando(
-                        id, cuerpo.marcaId(), cuerpo.categoriaId())));
+        aprobarBorrador.ejecutar(
+            new AprobarBorradorTecnologiaComando(id, cuerpo.marcaId(), cuerpo.categoriaId()));
     log.info(
         "Borrador de tecnología {} aprobado: producto {} con {} variante(s)",
         id,

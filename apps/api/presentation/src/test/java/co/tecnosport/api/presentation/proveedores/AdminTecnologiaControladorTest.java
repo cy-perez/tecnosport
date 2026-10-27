@@ -901,6 +901,13 @@ class AdminTecnologiaControladorTest {
     public void borrar(String objectKey) {
       objetos.remove(objectKey);
     }
+
+    @Override
+    public int borrarPorPrefijo(String prefijo) {
+      List<String> suyas = objetos.keySet().stream().filter(k -> k.startsWith(prefijo)).toList();
+      suyas.forEach(objetos::remove);
+      return suyas.size();
+    }
   }
 
   @TestConfiguration
@@ -1029,6 +1036,12 @@ class AdminTecnologiaControladorTest {
               TarifasDePrueba.WOMPI),
           almacen,
           noUsado(AlmacenDeImagenes.class),
+          new co.tecnosport.api.application.compartido.EnTransaccionPropia() {
+            @Override
+            public <T> T ejecutar(java.util.function.Supplier<T> trabajo) {
+              return trabajo.get();
+            }
+          },
           2);
     }
 

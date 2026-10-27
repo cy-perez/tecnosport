@@ -784,6 +784,11 @@ class AdminBorradorControladorTest {
         public void borrar(String objectKey) {
           objetosBorrados.claves.add(objectKey);
         }
+
+        @Override
+        public int borrarPorPrefijo(String prefijo) {
+          throw new UnsupportedOperationException();
+        }
       };
     }
 

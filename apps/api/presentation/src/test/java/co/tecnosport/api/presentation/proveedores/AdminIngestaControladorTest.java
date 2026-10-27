@@ -848,6 +848,13 @@ class AdminIngestaControladorTest {
     public void borrar(String objectKey) {
       objetos.remove(objectKey);
     }
+
+    @Override
+    public int borrarPorPrefijo(String prefijo) {
+      List<String> suyas = objetos.keySet().stream().filter(k -> k.startsWith(prefijo)).toList();
+      suyas.forEach(objetos::remove);
+      return suyas.size();
+    }
   }
 
   /** Cuenta cuántas transacciones hay abiertas, para saber desde dónde se encoló. */

@@ -81,6 +81,7 @@ public class ConfiguracionListasDeTecnologia {
       AgregarVariante agregarVariante,
       AlmacenDeArchivosDeProveedor almacenPrivado,
       AlmacenDeImagenes almacenDeImagenes,
+      EnTransaccionPropia enTransaccionPropia,
       PropiedadesProveedores propiedades) {
     return new AprobarBorradorTecnologia(
         borradores,
@@ -94,6 +95,7 @@ public class ConfiguracionListasDeTecnologia {
         agregarVariante,
         almacenPrivado,
         almacenDeImagenes,
+        enTransaccionPropia,
         propiedades.tecnologia().existenciaPorVariante());
   }
 
