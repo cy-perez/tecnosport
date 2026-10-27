@@ -20,7 +20,7 @@ carpeta se sigue encontrando y las fotos que ya tiene no se pierden.
 las fotos que dejó la persona no se tocan nunca.
 
 **Solo tiene carpeta lo que se va a ofrecer** (regla 18, 15/10/2026): un modelo cuyas
-configuraciones quedan todas con menos de un 10 % de margen no la recibe, porque la
+configuraciones quedan todas por debajo de la ganancia mínima no la recibe, porque la
 carpeta es donde la persona descarga fotos y nadie debe buscar fotos de lo que no va
 a entrar. Si el modelo ya tenía carpeta de una lista anterior, no se borra —puede
 tener fotos—: `retirados_con_carpeta` la informa y la persona decide.
@@ -170,7 +170,7 @@ def texto_de_ficha(productos: list, retirados: list = ()) -> str:
         L.append(f"  costo {pesos(p.get('precio_proveedor_cop'))} · mercado {pesos(p.get('precio_mercado_cop'))}"
                  f" · colores sugeridos: {sugeridos}")
     if retirados:
-        L += ["", "NO SE OFRECEN: MENOS DE UN 10 % DE MARGEN (REGLA 18)", "-" * 60]
+        L += ["", "NO SE OFRECEN: NO LLEGAN A LA GANANCIA MÍNIMA (REGLA 18)", "-" * 60]
         for p in retirados:
             L.append(f"- {p['titulo']}: costo {pesos(p.get('precio_proveedor_cop'))} · mercado "
                      f"{pesos(p.get('precio_mercado_cop'))} · margen {margen(p) * 100:.1f} %")

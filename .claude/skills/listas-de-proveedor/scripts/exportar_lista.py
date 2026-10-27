@@ -24,8 +24,9 @@ precio de mercado y los colores que sugieren los emojis de la lista. Con eso:
 Solo se exportan los modelos terminados (con descripción): uno a medio investigar
 no puede convertirse en un producto. Los demás se informan.
 
-Y solo las configuraciones con al menos un 10 % de margen sobre el costo (regla 18,
-`MARGEN_MINIMO`): las demás van como desaparecidas, y se informan.
+Y solo las configuraciones que le ganan al costo la ganancia mínima —el 10 %, con el tope de
+`TOPE_GANANCIA_TECNOLOGIA`— (regla 18, `margen.py`): las demás van como desaparecidas, y se
+informan.
 """
 
 import argparse
@@ -39,7 +40,7 @@ from colores import colores_sugeridos  # noqa: E402
 import descripciones  # noqa: E402
 from parsear_lista import atributo_sim  # noqa: E402
 import rutas  # noqa: E402
-from margen import MARGEN_MINIMO, margen, se_ofrece  # noqa: E402
+from margen import ganancia_minima, margen, se_ofrece  # noqa: E402
 
 # Lo que caben las columnas de la API (V92). Pasarse tumba la lista entera en una transacción,
 # así que el que no cabe se queda fuera aquí y se dice.
@@ -104,8 +105,11 @@ def exportar(datos: dict) -> tuple[dict, list]:
         bajos = [p for p in productos if not se_ofrece(p)]
         for p in bajos:
             sin_margen.append(p["id"])
-            fuera.append((p["titulo"], f"margen de {margen(p) * 100:.1f} % frente al mercado, por debajo del "
-                                       f"mínimo de {MARGEN_MINIMO * 100:.0f} %: deja de ofrecerse"))
+            ganancia = p["precio_mercado_cop"] - p["precio_proveedor_cop"]
+            minima = ganancia_minima(p["precio_proveedor_cop"])
+            fuera.append((p["titulo"], f"margen de {margen(p) * 100:.1f} % frente al mercado: le gana "
+                                       f"{ganancia:,.0f} al costo y la ganancia mínima es {minima:,.0f}"
+                                       .replace(",", ".") + ": deja de ofrecerse"))
         productos = [p for p in productos if p not in bajos]
         if productos:
             por_modelo[mid] = productos

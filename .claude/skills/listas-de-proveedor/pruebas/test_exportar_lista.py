@@ -112,8 +112,8 @@ class Exportar(unittest.TestCase):
 
 
 class MargenMinimo(unittest.TestCase):
-    """Regla 18, 15/10/2026: con menos de un 10 % sobre el costo no se ofrece
-    (el umbral era 5 % hasta el 24/10/2026)."""
+    """Regla 18, 15/10/2026: lo que no le gana al costo el 10 % no se ofrece (el umbral era 5 %
+    hasta el 24/10/2026), y desde el 27/10/2026 el mínimo no pasa de 400.000."""
 
     def a17(self, sim, costo, mercado):
         return producto(f"samsung-galaxy-a17-5g-8gb-ram-256gb-{sim}", f"Samsung Galaxy A17 5G 8GB RAM 256GB {sim}",
@@ -133,6 +133,15 @@ class MargenMinimo(unittest.TestCase):
     def test_el_diez_por_ciento_justo_se_ofrece(self):
         lista, _ = self.exportar(self.a17("1-sim", 1_000_000, 1_100_000))
         self.assertEqual(1, len(lista["modelos"]))
+
+    def test_el_tope_de_ganancia_limita_el_minimo(self):
+        """Cinco millones pedirían 500.000 con el 10 %; el tope los baja a 400.000."""
+        lista, _ = self.exportar(self.a17("1-sim", 5_000_000, 5_400_000))
+        self.assertEqual(1, len(lista["modelos"]))
+
+        lista, fuera = self.exportar(self.a17("1-sim", 5_000_000, 5_399_000))
+        self.assertEqual([], lista["modelos"])
+        self.assertIn("la ganancia mínima es 400.000", dict(fuera)["Samsung Galaxy A17 5G 8GB RAM 256GB 1-sim"])
 
     def test_por_debajo_del_costo_tambien(self):
         lista, _ = self.exportar(self.a17("1-sim", 840_000, 799_010))

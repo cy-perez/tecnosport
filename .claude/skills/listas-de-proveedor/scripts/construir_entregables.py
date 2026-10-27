@@ -136,7 +136,7 @@ def main():
     carpetas, xlsx, sin_fotos, retirados = construir(datos, Path(args.salida))
     modelos = {p.get("id_modelo") or p["id"] for p in datos["productos"]}
     print(f"FICHAS -> {Path(args.salida) / 'fichas'} ({len(carpetas)} modelos; "
-          f"{len(modelos) - len(carpetas)} sin carpeta por tener menos de un 10 % de margen)")
+          f"{len(modelos) - len(carpetas)} sin carpeta por no llegar a la ganancia mínima)")
     print(f"XLSX   -> {xlsx}")
     if retirados:
         print(f"\n{len(retirados)} carpetas de una lista anterior son de modelos que hoy no se ofrecen "
