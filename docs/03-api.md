@@ -14,9 +14,15 @@ TypeScript de `packages/contratos`. No se escriben interfaces de respuesta a man
 - Dinero como entero de pesos más el código de moneda:
   `{ "valor": 189900, "moneda": "COP" }`. Nunca un texto con separadores.
   **Excepción del panel:** el precio de una variante viaja como entero de pesos a
-  secas (`precio: 189900`) al agregarla, al cambiarlo y en el resumen de variantes
-  de la edición. Es solo COP, lo escribe una persona del negocio, y así lo hacía ya
-  `AgregarVariantePeticion`; la vitrina y los pedidos siguen con `{ valor, moneda }`.
+  secas (`precioContado: 189900`) al agregarla, al cambiarlo y en el resumen de
+  variantes de la edición. Es solo COP, lo escribe una persona del negocio, y así lo
+  hacía ya `AgregarVariantePeticion`; la vitrina y los pedidos siguen con
+  `{ valor, moneda }`.
+- **Dos precios por variante desde el 26 de octubre de 2026** (`ADR-0095`). En la
+  vitrina, el carrito y los pedidos, `precio` es el **publicado** —el que se anuncia y
+  el máximo que alguien paga— y `precioContado` el que se paga sin pasarela. Lo que
+  escribe el panel es siempre el de contado: **el publicado nunca viaja del cliente al
+  servidor**, lo calcula `ComisionDePasarela`. Detalle en `docs/02-modelo-datos.md`.
 - Paginación por cursor en el catálogo, por página en el panel administrativo. La
   respuesta siempre trae `items` y metadatos, nunca un arreglo desnudo.
 
@@ -55,7 +61,8 @@ GET  /api/v1/productos/{slug}               incluye imágenes y set de rotación
 GET  /api/v1/categorias                     el árbol completo, con `padreId`; incluye las vacías
 GET  /api/v1/marcas                         solo las que tienen algo publicado
 POST /api/v1/carritos
-GET  /api/v1/carritos/{id}
+GET  /api/v1/carritos/{id}                  con los dos precios: `subtotal` publicado y `subtotalContado`, y por línea
+                                             `precioContado` y `subtotalContado` junto a los publicados (adr/0095)
 POST /api/v1/carritos/{id}/lineas
 PATCH /api/v1/carritos/{id}/lineas/{lineaId}
 DELETE /api/v1/carritos/{id}/lineas/{lineaId}
@@ -64,7 +71,11 @@ POST /api/v1/envios/modalidades             qué formas de entrega tiene este ca
                                              retiroEnPunto}; la recogida solo si todo es de proveedores locales (adr/0093)
                                              POST /pedidos con RETIRO_EN_PUNTO fuera de eso: 409 RETIRO_EN_PUNTO_NO_DISPONIBLE
 POST /api/v1/pedidos/metodos-de-pago-disponibles   qué métodos ofrece el negocio hoy y aplican a este carrito y destino
-POST /api/v1/pedidos                        revalida precios, existencias y costo de envío, reserva; una línea de color
+POST /api/v1/pedidos/metodos-de-pago-con-precio    la misma consulta y el mismo cuerpo, con {metodos: [{metodo, subtotal, descuento}]}:
+                                             la mercancía, sin flete, al precio de cada medio, y lo que ahorra (adr/0095)
+POST /api/v1/pedidos                        revalida precios, existencias y costo de envío, reserva; el precio de cada línea
+                                             lo elige el servidor con `metodoPago`: publicado con pasarela, de contado sin
+                                             ella. La respuesta trae `descuento` y por línea `precioPublicado`. Una línea de color
                                              por confirmar sin `enlaceCompra` vigente: 409 DISPONIBILIDAD_POR_CONFIRMAR, o 410
                                              ENLACE_DE_COMPRA_NO_VIGENTE si lo trae vencido, usado o anulado (adr/0086)
 GET  /api/v1/enlaces-de-compra/{token}      la variante que habilita y hasta cuándo; 410 si ya no sirve, sin decir por qué
@@ -78,6 +89,15 @@ POST /api/v1/pedidos/{id}/reintentar-pago   PAGO_FALLIDO -> PAGO_PENDIENTE
 POST /api/v1/pedidos/{id}/seguimiento       el del enlace de los correos, sin sesión
 POST /api/v1/pedidos/seguimiento            manda ese enlace al correo, por el número legible (202)
 ```
+
+**`metodos-de-pago-con-precio` es una ruta aparte y no otra forma de
+`metodos-de-pago-disponibles`** (27 de octubre de 2026, `ADR-0095`). Aquélla
+devuelve un arreglo de nombres que ya tenía lectores, y cambiarle la forma los
+rompía; ésta devuelve un objeto para poder crecer. Tienen el mismo cuerpo, el
+mismo orden por nombre y el mismo límite de intentos, y el checkout ya solo llama a
+la nueva. Las cifras son informativas: el precio que se cobra lo fija `POST
+/pedidos` con el catálogo de ese momento. El seguimiento por `{id}` trae también
+`descuento`, ya restado en `subtotal`.
 
 **Los dos seguimientos no son el mismo endpoint con otra llave**, y la
 diferencia es de seguridad, no de comodidad:
@@ -274,7 +294,7 @@ flete ni la comisión de recaudo: eso es margen (`docs/11-pagos-y-envios.md`).
 | `categoria` | slug de la categoría |
 | `marca` | id de la marca |
 | `linea` | `ROPA_Y_CALZADO`, `BOLSOS` o `TECNOLOGIA` |
-| `precioMin`, `precioMax` | rango sobre el precio "desde" del producto (el menor precio entre sus variantes activas, el precio vive en la variante) |
+| `precioMin`, `precioMax` | rango sobre el precio "desde" del producto (el menor precio entre sus variantes activas, el precio vive en la variante). Es el **publicado**, el que se anuncia (`ADR-0095`), y también lo es el de `PRECIO_ASC` y `PRECIO_DESC` |
 | `texto` | búsqueda libre por nombre, por similitud (`pg_trgm`), no exige substring exacto |
 | `orden` | `RELEVANCIA` (predeterminado; sin `texto` cae a `MAS_RECIENTES`), `PRECIO_ASC`, `PRECIO_DESC`, `MAS_RECIENTES` |
 | `cursor` | opaco — viene de `cursorSiguiente` de la página anterior, nunca se construye a mano |
@@ -429,7 +449,8 @@ GET/PATCH /api/v1/admin/productos/{id}                       detalle —con la g
 POST /api/v1/admin/productos/{id}/publicacion                BORRADOR -> PUBLICADO; 409 si no tiene imagen principal
 DELETE /api/v1/admin/productos/{id}/publicacion              PUBLICADO -> BORRADOR: lo saca de la vitrina sin tocar los pedidos
 DELETE /api/v1/admin/productos/{id}                          borra el producto entero; 204. 409 si está publicado o si alguna variante se vendió
-POST /api/v1/admin/variantes                                 crea una variante (con atributos) e inventario inicial
+POST /api/v1/admin/variantes                                 crea una variante (con atributos) e inventario inicial; recibe `precioContado` y el
+                                                             publicado lo calcula el servidor (adr/0095)
 GET /api/v1/admin/variantes/sin-medir                        las activas sin paquete, con el total y cuántas ya están publicadas
 GET /api/v1/admin/variantes/medidas                          las activas **con** su paquete, tengan o no: la lista que permite corregir
 PATCH /api/v1/admin/variantes/{id}/paquete                   pone o corrige las cuatro medidas; 422 si alguna no es mayor que cero
@@ -440,8 +461,13 @@ POST /api/v1/admin/productos/{id}/imagen-principal            confirma la subida
 PUT /api/v1/admin/productos/{id}/imagen-principal/variante   de qué color es la principal ({varianteId} o null); 204, 400 si no hay principal o la variante es ajena
 PUT /api/v1/admin/productos/{id}/tallas/{modeloId}           corrige la talla ({talla}) del modelo de esa variante en todos sus colores; el SKU no cambia;
                                                              204, 422 TALLA_REPETIDA si algún color ya la tiene
-PUT /api/v1/admin/productos/{id}/precios                     cambia el precio de venta ({precios: [{varianteId, precio}]}, pesos enteros) de las que vengan;
-                                                             204, 422 si alguno no es mayor que cero, la variante es ajena o viene dos veces; todo o nada
+PUT /api/v1/admin/productos/{id}/precios                     cambia el precio de contado ({precios: [{varianteId, precioContado}]}, pesos enteros) de las que
+                                                             vengan, y el servidor recalcula su publicado (adr/0095); 204, 422 si alguno no es mayor que
+                                                             cero, la variante es ajena o viene dos veces; todo o nada
+GET /api/v1/admin/precios/recalculo                          las variantes cuyo publicado no es el que dan las tarifas de Wompi de hoy: {variantes:
+                                                             [{varianteId, sku, nombreProducto, precioContado, publicadoActual, publicadoNuevo}]}
+POST /api/v1/admin/precios/recalculo                         recalcula lo que esté desalineado en ese momento, no la lista que se vio; {recalculadas}.
+                                                             En una transacción, y cada cambio queda en el registro. El de contado no se toca
 PUT /api/v1/admin/productos/{id}/paleta                      la paleta oficial de un equipo de tecnología ({colores}); completa las variantes de los
                                                              colores que falten en cada configuración que se vende; {variantesNuevas} (adr/0086)
 GET/POST /api/v1/admin/enlaces-de-compra                     los de la última semana con su estado, y generar uno ({varianteId}): aparta una unidad
@@ -460,6 +486,10 @@ GET /api/v1/admin/ingestas/{id}                              un lote con su esta
 GET /api/v1/admin/borradores                                 paginado; ?estado= y ?proveedorId= filtran
 GET/PATCH /api/v1/admin/borradores/{id}                      detalle —con las fotos firmadas y los textos— y corrección de lo extraído; 409 si ya se decidió
 POST /api/v1/admin/borradores/{id}/aprobar                   crea el producto publicado con sus variantes, fotos e inventario inicial; 422 sin fotos, precio o título; 409 si el mismo anuncio ya es un producto
+                                                             `precioVenta` es el de contado y el publicado lo calcula el servidor (adr/0095); el borrador
+                                                             trae `precioPublicadoSugerido` solo para mirar. En tecnología, el `precioVenta` de cada
+                                                             configuración —el de contado— se elige con `PATCH /borradores-tecnologia/{id}`, y el
+                                                             borrador trae por configuración `precioContadoSugerido` y `precioPublicadoSugerido`
                                                              cada foto dice su `prenda` (desde 1): las del mismo número son una variante; un color repetido
                                                              entre prendas se numera. 422 PRENDA_INCOHERENTE si una prenda no tiene color o trae dos (ADR-0070)
 POST /api/v1/admin/borradores/{id}/rechazar                  lo cierra con un motivo; 409 si ya se decidió
@@ -701,6 +731,10 @@ reintento por su cuenta.
 ## Reglas que el backend nunca delega al cliente
 
 1. Recalcular precio, IVA y total.
+   **Y elegir cuál de los dos precios se cobra** (`ADR-0095`): `CrearPedido` toma el
+   publicado o el de contado según el `metodoPago`, y el descuento sale de esa
+   elección. El cliente no manda ni el precio ni el descuento, y el panel no manda
+   el publicado: solo el de contado.
 2. Verificar existencias.
 3. **Cotizar el envío y elegir la tarifa.** El costo de envío no se acepta del
    cliente en ninguna petición, y el identificador de tarifa del proveedor nunca

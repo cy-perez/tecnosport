@@ -11,12 +11,40 @@
   2016, art. 1.3.1.15.2, literal a). La columna se queda porque la calidad se
   pierde al cruzar los topes del parágrafo 3 del art. 437 del Estatuto Tributario;
   el día que eso pase, el desglose vuelve a calcularse hacia atrás desde ella.
+- **Cada variante tiene dos precios desde el 26 de octubre de 2026** (`ADR-0095`,
+  `V123`). `precio_contado` es el que el negocio quiere recibir neto. `precio` es el
+  **publicado**: el único que se anuncia y el máximo que alguien paga, que es el de
+  contado con la comisión de Wompi dentro:
+
+  ```
+  exacto    = (contado + fija × (1 + IVA)) / (1 − variable × (1 + IVA))
+  publicado = a la centena siguiente si exacto < 100.000; a la unidad de mil siguiente si no
+  ```
+
+  Lo calcula `ComisionDePasarela` con las tarifas de `tecnosport.wompi.comision.*`
+  (`WOMPI_COMISION_VARIABLE`, `_FIJA`, `_IVA`: 2,65 % + $700 + IVA del 19 %, leídas
+  en el portal el 26 de octubre). Con esas, 8.000 de contado se publica a 9.200,
+  100.000 a 105.000 y 230.000 a 239.000. El publicado **se sube, nunca se baja**:
+  bajarlo dejaría la venta por Wompi unos pesos por debajo del contado. El umbral de
+  los 100.000 mira el exacto, antes de redondear (decisión 9 del ADR, 27 de octubre).
+  Un `check` exige `precio >= precio_contado`, y el dominio lo exige al construir la
+  variante.
+- **Qué precio se cobra lo decide el medio de pago** (`MetodoPago.precioDe`): el
+  publicado con `WOMPI` y `SISTECREDITO`; el de contado con `TRANSFERENCIA_MANUAL`,
+  `PAGO_EN_PUNTO` y `CONTRAENTREGA`. La diferencia es el **descuento por pagar sin
+  pasarela**, y es solo de la mercancía: el flete cuesta lo mismo con cualquier medio y
+  la comisión de Wompi sobre él la absorbe el negocio (decisión 7).
+- **Cambiar la tarifa no mueve ningún precio.** Los publicados los recalcula una persona
+  desde el panel (**Precios publicados**, `RecalcularPreciosPublicados`), que enseña la
+  lista antes de aplicarla y no toca el de contado.
 - Todo cálculo intermedio en `BigDecimal`, con un solo redondeo al final,
-  `HALF_UP`.
+  `HALF_UP`. La excepción es el precio publicado, que se redondea hacia arriba
+  (`CEILING`) en la división y en la unidad.
 - Prohibido `double`, `float` y `Double` en cualquier parte del recorrido.
 - **El total del pedido es subtotal de líneas más costo de envío**, y las dos
   cifras se guardan y se muestran por separado (`adr/0021`). El costo de envío es
-  un `Dinero` como cualquier otro: escala 0, sin fracciones de peso.
+  un `Dinero` como cualquier otro: escala 0, sin fracciones de peso. El subtotal es
+  a lo que se cobra, así que ya lleva el descuento si lo hubo.
 - **El costo de envío no se reparte entre las líneas.** Repartirlo obligaría a
   redondear N veces y a decidir qué pasa con el sobrante; es un cargo del pedido,
   no de la mercancía.
@@ -106,7 +134,8 @@ movimientos. Si es de la categoría celulares, además tiene N unidades con IMEI
 Estos ejes se modelan como **atributos**, no como columnas fijas: una tabla
 `atributo` con su tipo y sus valores permitidos, y la variante guarda pares
 atributo-valor. Así se agrega "material" sin migrar el esquema. Lo que sí es
-columna fija en la variante: `sku`, `precio`, `tasa_iva`, `estado`,
+columna fija en la variante: `sku`, `precio` —el publicado— y `precio_contado`
+(`V123`, arriba), `tasa_iva`, `estado`,
 `codigo_barras`, y **el paquete: `peso_gramos`, `largo_cm`, `ancho_cm`,
 `alto_cm`**. Hubo también `existencia`, y la `V59` la borró (`ADR-0050`).
 
@@ -342,7 +371,7 @@ panel. Ver `ADR-0018`.
 | Agregado | Contenido | Nota |
 |---|---|---|
 | `Producto` | variantes, imágenes, set de rotación, marca, categoría, estado | Raíz del catálogo |
-| `Variante` | sku, atributos, precio, paquete | Dentro de `Producto`. Sin existencia: la tiene `Inventario` (`ADR-0050`) |
+| `Variante` | sku, atributos, precio publicado y de contado, paquete | Dentro de `Producto`. Sin existencia: la tiene `Inventario` (`ADR-0050`) |
 | `UnidadSerializada` | imei, estado, variante | Solo celulares |
 | `Inventario` | movimientos y reservas | El saldo no se edita: se agrega movimiento |
 | `Carrito` | líneas, identificador anónimo o de usuario | Vive 30 días |
@@ -706,9 +735,21 @@ aviso_revision
 
 ## Congelado del pedido
 
-Al crear el pedido se copian nombre, SKU, precio unitario, tasa de IVA e imagen a
-la línea. Si mañana sube el precio, el pedido histórico no cambia. Un pedido nunca
-lee el catálogo actual para reconstruir su total.
+Al crear el pedido se copian nombre, SKU, precio unitario, precio publicado, tasa
+de IVA e imagen a la línea. Si mañana sube el precio, el pedido histórico no cambia.
+Un pedido nunca lee el catálogo actual para reconstruir su total.
+
+**Dos precios en la línea desde el 27 de octubre de 2026** (`ADR-0095`, `V124`).
+`precio_unitario` es lo que se cobra, y lo elige `CrearPedido` con el medio de pago:
+el publicado con pasarela, el de contado sin ella. `precio_publicado` congela el
+anunciado al comprar. El descuento no tiene columna: `Pedido.descuento()` es la suma
+de `(precio_publicado − precio_unitario) × cantidad`, ya restada en `subtotal()`, y
+`subtotalPublicado()` es lo que las líneas habrían costado al precio anunciado. La
+`V124` puso el publicado igual al unitario en las líneas anteriores —se cobraron al
+único precio que había—, así que su descuento es cero. Un `check` exige
+`precio_publicado >= precio_unitario`: cobrar por encima del anunciado sería un
+recargo. Un pedido no cambia de medio de pago, así que el precio no se recalcula; el
+reintegro devuelve lo que se pagó, que es `precio_unitario`.
 
 **El costo de envío se congela igual que el precio**, y por el mismo motivo: es
 parte de lo que el comprador aceptó. Que mañana la transportadora suba la tarifa
@@ -782,13 +823,19 @@ es el tenis, y decide la categoría que el panel propone.
   `precio_proveedor` y el borrador de la renovación lleva la alerta
   `PRECIO_CAMBIO`.
 
-El precio de venta que se sugiere es `precio_proveedor × factor de margen`,
+El precio que se sugiere es `precio_proveedor × factor de margen`,
 subido a la unidad de mil siguiente (72.500 es 73.000; desde el 12 de octubre de
 2026, antes era la centena con `HALF_UP`) y llevado a los topes de ganancia, donde
 el máximo baja a la unidad de mil anterior para cumplirse; el factor sale del proveedor y, si no lo
 tiene, de la línea (`PROVEEDORES_MARGEN_BOLSOS`, `PROVEEDORES_MARGEN_ROPA`,
 `PROVEEDORES_MARGEN_CALZADO`; el del calzado es el de la ropa mientras el
 negocio no defina uno propio).
+**Desde el 26 de octubre de 2026 ese es el precio de contado** (`ADR-0095`, decisión 2):
+el cálculo no cambió y los topes se miden contra él, porque la comisión de Wompi va
+encima y no es ganancia. El borrador lo guarda y el panel lo edita y lo manda al
+aprobar —el campo sigue llamándose `precioVenta`—; junto a él la respuesta trae
+`precioPublicadoSugerido`, el que se anunciaría con la fórmula de arriba, solo para
+mirar. Aprobar calcula el publicado en el servidor.
 Aprobar crea el producto **con una variante por cada tono y talla** —solo las tallas
 de ese tono cuando el borrador trae tallas por tono—, copia las
 fotos del bucket privado al público y registra la existencia inicial que el
@@ -805,7 +852,7 @@ calzado entran por la exportación (`entraPorExportacion()`). Tres tablas (`V92`
 | Tabla | Contenido | Nota |
 |---|---|---|
 | `borrador_tecnologia` | proveedor, `id_modelo`, huella, título, marca y categoría sugeridas (texto), descripción, meta, paleta, producto, estado, visto en | Un modelo de la lista esperando revisión. Índice único parcial `(proveedor_id, id_modelo) where estado = 'EN_REVISION'`: la lista siguiente actualiza ese. `producto_id` presente desde que nace = configuraciones nuevas de un producto que ya se vende |
-| `borrador_tecnologia_configuracion` | borrador, orden, sku, RAM, almacenamiento, SIM, costo, precio de mercado, colores sugeridos y elegidos, precio de venta | En el orden de la lista. Los colores, uno por línea. Sin colores elegidos la configuración no se vende |
+| `borrador_tecnologia_configuracion` | borrador, orden, sku, RAM, almacenamiento, SIM, costo, precio de mercado, colores sugeridos y elegidos, precio de venta | El precio de venta es el **de contado** (`ADR-0095`); el publicado lo calcula el catálogo al aprobar. En el orden de la lista. Los colores, uno por línea. Sin colores elegidos la configuración no se vende |
 | `variante_de_proveedor` | variante, producto, proveedor, configuración, color, costo, actualizado en | De qué configuración sale cada variante y su costo de hoy, que es lo que la lista de mañana mueve. Se va con la variante. El costo no es el precio y no sale al comprador |
 
 La huella de un modelo es `sha256(proveedor | "modelo" | id del modelo)`, **sin
@@ -821,6 +868,25 @@ nunca lo reservado; lo de tecnología vence a los
 una lista no entre dos veces ni más vieja que la última. Las configuraciones de
 un borrador no llevan un único por sku: Hibernate las reescribe por posición, y
 lo sostiene el agregado.
+
+**El precio sugerido de tecnología tiene tope** (`ADR-0095`, decisión 8, 26 de octubre de
+2026). Antes nadie sugería precio: quien revisaba lo fijaba mirando el de mercado. Ahora
+`SugerenciaDePrecioTecnologia` sugiere el de contado:
+
+```
+contado sugerido = min(precioMercado, costo + ganancia máxima)
+```
+
+con la ganancia máxima en `PROVEEDORES_TECNOLOGIA_GANANCIA_MAXIMA`
+(`tecnosport.proveedores.tecnologia.ganancia-maxima`, 400.000 y como mínimo 1.000).
+Cuando manda el mercado, la sugerencia es el precio de mercado tal cual, aunque no sea
+redondo: es contra el que se compite. Cuando manda el tope, se **baja** a la unidad de
+mil anterior, porque subir rompería el tope. Sin precio de mercado no hay sugerencia y
+quien revisa fija el contado. El panel recibe por configuración `precioContadoSugerido` y
+`precioPublicadoSugerido` —este solo para mirar—, y la sugerencia no obliga. No hay
+ganancia mínima: el piso lo pone la skill de listas, y la aprobación rechaza un contado
+que no supere el costo. Un equipo con mercado de 1.000.000 se sugiere de contado a
+1.000.000 y publicado a 1.034.000: el de mercado compite con el de contado.
 
 **El color —y desde `ADR-0089` la talla del calzado— se confirma antes de venderse** (`ADR-0086`, V117; la columna se llamaba `color_por_confirmar` hasta `V120`). En el calzado de un proveedor que vende bajo confirmación, la marca la pone la aprobación y la existencia es la nominal de la tecnología, que se repone cuando el modelo reaparece. `producto.paleta`
 guarda los colores oficiales del modelo, uno por línea, que la ficha dice al pie

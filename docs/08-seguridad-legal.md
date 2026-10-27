@@ -57,6 +57,12 @@ el panel administrativo, el asistente de captura y la cuenta opcional del client
 - **Envío:** el costo lo cotiza y lo elige el servidor. El cliente no manda el
   flete ni el identificador de tarifa del proveedor, por la misma razón por la
   que no manda el precio.
+- **Descuento por medio de pago** (`ADR-0095`): el cliente tampoco manda el
+  descuento. Manda el método de pago, y `CrearPedido` elige con él el precio de
+  cada línea —el publicado con pasarela, el de contado sin ella— y congela los
+  dos, así que el descuento se deduce y queda auditable. Un `check` en la base
+  impide cobrar por encima del publicado. El panel solo escribe el precio de
+  contado; el publicado lo calcula el servidor con la comisión configurada.
 - **Seguimiento:** el webhook de Skydropx se verifica con su firma antes de
   aplicar nada, es idempotente por evento y responde 200 incluso al descartar.
   Un evento falsificado podría marcar un pedido como entregado, y de ahí cuelgan
