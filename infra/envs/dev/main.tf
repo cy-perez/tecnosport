@@ -283,7 +283,13 @@ resource "google_iam_workload_identity_pool_provider" "github" {
 
   # **Esta condición es la seguridad entera.** Sin ella, cualquier repositorio de GitHub del mundo
   # puede pedirle un token a este proveedor y desplegar en este proyecto.
-  attribute_condition = "assertion.repository == \"${var.repositorio_github}\""
+  #
+  # Y la rama, desde el 27 de octubre de 2026: con solo el repositorio, cualquier rama —también una
+  # que nadie revisó— podía cambiar su flujo, pedir el token y desplegar o leer los secretos. El
+  # único flujo que se autentica es `desplegar-dev.yml`, que corre al mezclar a `main` y a demanda;
+  # a demanda desde otra rama deja de autenticar, y es lo que se busca: lo que se despliega pasó por
+  # la protección de `main`.
+  attribute_condition = "assertion.repository == \"${var.repositorio_github}\" && assertion.ref == \"refs/heads/main\""
 
   oidc {
     issuer_uri = "https://token.actions.githubusercontent.com"
