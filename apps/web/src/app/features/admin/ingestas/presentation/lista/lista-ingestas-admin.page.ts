@@ -13,9 +13,6 @@ import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { mensajeDeError } from '../../../../../core/errores/mensaje-de-error';
-import { ErrorHttp } from '../../../../../core/http/respuesta-http';
-import { QueryClient } from '@tanstack/angular-query-experimental';
-import { CLAVE_INGESTAS_ADMIN } from '../../application/listar-ingestas.consulta';
 import { fechaConHora } from '../../../../../core/i18n/fecha-colombia';
 import { usarTraductor } from '../../../../../core/i18n/traductor';
 import { usarFoco } from '../../../../../shared/foco/foco';
@@ -320,7 +317,6 @@ export class ListaIngestasAdminPage {
   // --- Eliminar una ingesta, con su pregunta en una fila aparte como en la lista de productos. ---
 
   private readonly eliminacion = usarEliminarIngesta();
-  private readonly queryClient = inject(QueryClient);
   private eliminacionEnVuelo = false;
   protected readonly eliminando = computed(() => this.eliminacion.isPending());
   /** El lote cuya fila está preguntando: una sola a la vez. */
@@ -376,11 +372,7 @@ export class ListaIngestasAdminPage {
         this.errorEliminar.set(
           mensajeDeError(error, this.transloco, 'admin.ingestas.eliminar.error'),
         );
-        // Ya no existe —otra pestaña la borró—: reintentar daría 404 para siempre, así que la lista
-        // se vuelve a pedir y la fila desaparece.
-        if (error instanceof ErrorHttp && error.estado === 404) {
-          void this.queryClient.invalidateQueries({ queryKey: CLAVE_INGESTAS_ADMIN });
-        }
+        // Con un 404 la lista se vuelve a pedir sola: lo hace la mutación (`usarEliminarIngesta`).
       },
     });
   }
@@ -504,9 +496,8 @@ export class ListaIngestasAdminPage {
           this.errorOrden.set(
             mensajeDeError(error, this.transloco, `admin.ingestas.ordenes.error.${orden}`),
           );
-          // La fila cambió mientras se pulsaba —terminó, o la detuvo otra pestaña—: se vuelve a
-          // pedir para que los botones digan lo que de verdad se puede hacer.
-          void this.queryClient.invalidateQueries({ queryKey: CLAVE_INGESTAS_ADMIN });
+          // La lista se vuelve a pedir sola, para que los botones digan lo que de verdad se puede
+          // hacer: lo hace la mutación (`usarOrdenarIngesta`).
         },
       },
     );
