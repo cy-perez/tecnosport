@@ -59,6 +59,7 @@ export function aBorrador(dto: BorradorDto): Borrador {
     linea: dto.linea ?? null,
     precioProveedor: dto.precioProveedor ?? null,
     precioVentaSugerido: dto.precioVentaSugerido ?? null,
+    precioPublicadoSugerido: dto.precioPublicadoSugerido ?? null,
     tallas: aTallas(dto.tallas),
     cantidadTonos: dto.cantidadTonos ?? 0,
     tonosNombrados: dto.tonosNombrados ?? [],

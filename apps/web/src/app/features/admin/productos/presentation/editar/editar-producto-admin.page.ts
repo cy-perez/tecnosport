@@ -218,7 +218,8 @@ export class EditarProductoAdminPage {
       sku: variante.sku,
       detalle: variante.atributos.map((atributo) => atributo.valor).join(' · '),
       muestra: this.muestraDeVariante(variante.atributos),
-      precio: variante.precio,
+      precioContado: variante.precioContado,
+      precioPublicado: variante.precioPublicado,
     })),
   );
 

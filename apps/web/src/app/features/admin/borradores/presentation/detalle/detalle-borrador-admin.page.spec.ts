@@ -274,6 +274,23 @@ describe('DetalleBorradorAdminPage', () => {
     expect(screen.getByText(/precio del proveedor: \$ 53\.000/)).toBeTruthy();
   });
 
+  /**
+   * Los dos precios del borrador son de contado: el que se anuncia lleva la comisión de Wompi
+   * encima y lo calcula el servidor. Se dice en la ayuda de los dos campos (ADR-0095).
+   */
+  it('rotula los precios como de contado y dice a cuánto se publicaría el sugerido', async () => {
+    await renderPagina();
+
+    const sugerido = await screen.findByLabelText(d.precioSugerido);
+    const aprobar = screen.getByLabelText(a.precioVenta);
+    expect(d.precioSugerido).toMatch(/contado/);
+    expect(a.precioVenta).toMatch(/contado/);
+    for (const campo of [sugerido, aprobar]) {
+      const ayuda = document.getElementById(campo.getAttribute('aria-describedby') ?? '');
+      expect(ayuda?.textContent?.replace(/\s+/g, ' ')).toContain('$ 76.000');
+    }
+  });
+
   it('prellena los datos extraídos y el precio de venta con el sugerido', async () => {
     await renderPagina();
 

@@ -16,6 +16,8 @@ function configuracion(cambios: Partial<ConfiguracionTecnologia> = {}): Configur
     sim: '1 SIM',
     costoProveedor: 675_000,
     precioMercado: 849_900,
+    precioContadoSugerido: 849_900,
+    precioPublicadoSugerido: 879_000,
     coloresSugeridos: ['Negro', 'Rosado'],
     coloresElegidos: [],
     precioVenta: null,
@@ -39,10 +41,33 @@ describe('borrador de tecnología', () => {
     expect(coloresIniciales(configuracion(), [])).toEqual(['Negro', 'Rosado']);
   });
 
-  it('el precio arranca en el fijado y si no en el de mercado', () => {
+  it('el precio arranca en el fijado y si no en el sugerido de contado', () => {
     expect(precioInicial(configuracion())).toBe(849_900);
     expect(precioInicial(configuracion({ precioVenta: 829_900 }))).toBe(829_900);
-    expect(precioInicial(configuracion({ precioMercado: null }))).toBeNull();
+    expect(
+      precioInicial(
+        configuracion({
+          precioMercado: null,
+          precioContadoSugerido: null,
+          precioPublicadoSugerido: null,
+        }),
+      ),
+    ).toBeNull();
+  });
+
+  /**
+   * Con el tope de ganancia (ADR-0095, decisión 8) el de mercado ya no es el punto de partida: un
+   * equipo de $675.000 que el mercado vende a $1.200.000 se sugiere de contado a $1.075.000. Y el
+   * publicado no es el que se escribe: el campo es de contado.
+   */
+  it('no arranca en el de mercado ni en el publicado cuando el tope los separa', () => {
+    const conTope = configuracion({
+      precioMercado: 1_200_000,
+      precioContadoSugerido: 1_075_000,
+      precioPublicadoSugerido: 1_111_000,
+    });
+
+    expect(precioInicial(conTope)).toBe(1_075_000);
   });
 
   it('no se aprueba sin nada que vender, con un precio pendiente ni al costo', () => {
@@ -86,5 +111,4 @@ describe('borrador de tecnología', () => {
   it('los colores escritos a mano se separan por coma, sin repetir', () => {
     expect(separarColoresEscritos(' Negro, Azul claro,,Negro ')).toEqual(['Negro', 'Azul claro']);
   });
-
 });

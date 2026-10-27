@@ -26,6 +26,7 @@ const PESTANAS: readonly PestanaAdmin[] = [
   { clave: 'admin.panel.ir_a_productos', segmentos: ['productos'] },
   { clave: 'admin.panel.ir_a_existencias', segmentos: ['productos', 'existencias'] },
   { clave: 'admin.panel.ir_a_medidas', segmentos: ['productos', 'medidas'] },
+  { clave: 'admin.panel.ir_a_precios', segmentos: ['productos', 'precios'] },
   { clave: 'admin.panel.ir_a_marcas', segmentos: ['marcas'] },
   { clave: 'admin.panel.ir_a_categorias', segmentos: ['categorias'] },
   { clave: 'admin.panel.ir_a_proveedores', segmentos: ['proveedores'] },

@@ -107,6 +107,7 @@
       "enlace": "Review stock and count"
     },
     "ir_a_medidas": "Package measurements",
+    "ir_a_precios": "Published prices",
     "ir_a_clave": "Change my password",
     "ir_a_categorias": "Categories",
     "ir_a_panel": "Overview",
@@ -336,8 +337,9 @@
       "variantes": "Variants",
       "variantesAyuda": "Each one with its SKU and what sets it apart. Add them with “Add variant”.",
       "precios": {
-        "ayuda": "The selling price of each variant, in pesos. Existing orders keep the price they were bought at.",
-        "precioDe": "Price of {{variante}}",
+        "ayuda": "The cash price of each variant, in pesos: what you receive when paid by transfer, at the store or cash on delivery. The published price adds the Wompi fee to it. Existing orders keep the price they were bought at.",
+        "precioDe": "Cash price of {{variante}}",
+        "sePublicaA": "Published today at {{precio}}.",
         "paraTodas": "Price for all",
         "paraTodasAyuda": "Copies it into every variant; it is saved with “Save prices”.",
         "aplicarATodas": "Apply to all",
@@ -451,7 +453,8 @@
     "agregarVariante": {
       "titulo": "Add variant",
       "sku": "SKU",
-      "precio": "Price",
+      "precioContado": "Cash price",
+      "precioContadoAyuda": "In pesos. The published price adds the Wompi fee to it.",
       "tasaIva": "VAT rate",
       "codigoBarras": "Barcode",
       "existenciaInicial": "Initial stock",
@@ -540,6 +543,28 @@
         "estado": "Status",
         "peso": "Weight",
         "dimensiones": "Length × width × height"
+      }
+    },
+    "precios": {
+      "titulo": "Published prices",
+      "explicacion": "The published price of each variant is the cash price plus the Wompi fee. If the Wompi rate changes, here you see which advertised prices are out of date and what they would become. None changes until you apply it.",
+      "errorLista": "The prices to recalculate could not be loaded. Try again.",
+      "alDia": "Every published price is up to date with the Wompi rate.",
+      "resumen": "{{total}} variant(s) have an out-of-date published price.",
+      "recalcular": "Recalculate {{total}} price(s)",
+      "pregunta": "Recalculate the published price of {{total}} variant(s)?",
+      "loQueImplica": "The store will start advertising the new price of each one. The cash price does not change, and existing orders keep the price they were bought at.",
+      "confirmar": "Yes, recalculate",
+      "recalculando": "Recalculating…",
+      "cancelar": "Cancel",
+      "hecho": "{{recalculadas}} published price(s) were recalculated.",
+      "error": "The prices could not be recalculated. Try again.",
+      "columnas": {
+        "producto": "Product",
+        "sku": "SKU",
+        "contado": "Cash",
+        "publicadoActual": "Published today",
+        "publicadoNuevo": "New published"
       }
     },
     "publicar": {
@@ -1263,8 +1288,9 @@
       "coloresDe": "Colors of {{configuracion}}",
       "coloresEscritos": "Colors",
       "coloresEscritosAyuda": "For example: Black, Light blue",
-      "precioVenta": "Sale price",
-      "ayudaPrecio": "Cost {{costo}} · market price {{mercado}}",
+      "precioVenta": "Cash price",
+      "ayudaPrecio": "Cost {{costo}} · market price {{mercado}}. The published price adds the Wompi fee to it.",
+      "ayudaPrecioConSugerido": "Cost {{costo}} · market price {{mercado}} · suggested cash price {{contado}}, published at {{publicado}} with the Wompi fee.",
       "precioIlegible": "Type the price in pesos, without decimals: 849.900 or 849900.",
       "guardar": "Save the selection",
       "guardando": "Saving…",
@@ -1394,6 +1420,7 @@
     "todosLosProveedores": "All suppliers",
     "sinTitulo": "(untitled)",
     "precioProveedor": "Supplier: {{precio}}",
+    "publicadoSugerido": "Would be published at {{precio}}",
     "revisar": "Review",
     "estados": {
       "EN_REVISION": "In review",
@@ -1403,7 +1430,7 @@
     },
     "columnas": {
       "titulo": "Product",
-      "precios": "Suggested price",
+      "precios": "Suggested cash price",
       "alertas": "Alerts",
       "estado": "Status",
       "acciones": "Actions"
@@ -1475,8 +1502,9 @@
       "explicacion": "What the extraction understood. Fix anything wrong here and save; the approval below starts from this data.",
       "tituloProducto": "Title",
       "tipo": "Product type",
-      "precioSugerido": "Suggested sale price",
+      "precioSugerido": "Suggested cash price",
       "precioSugeridoAyuda": "In pesos, no decimals. Comes from the supplier price times the margin; you can adjust it.",
+      "precioSugeridoAyudaConPublicado": "In pesos, no decimals. Comes from the supplier price times the margin; you can adjust it. With the saved suggestion it is published at {{publicado}}, which includes the Wompi fee.",
       "tipoDeTalla": "Sizes",
       "sirveHasta": "Fits up to",
       "sirveHastaAyuda": "Only if the supplier wrote “fits up to”. If they did not, leave it blank.",
@@ -1507,8 +1535,9 @@
       "marca": "Brand",
       "categoria": "Category",
       "seleccionar": "Select an option",
-      "precioVenta": "Sale price",
-      "precioVentaAyuda": "The final one, in pesos. Starts from the suggested price.",
+      "precioVenta": "Cash price",
+      "precioVentaAyuda": "The final one, in pesos. Starts from the suggested price. The published price adds the Wompi fee to it.",
+      "precioVentaAyudaConPublicado": "The final one, in pesos. Starts from the suggested price. The published price adds the Wompi fee to it: with the suggestion, {{publicado}}.",
       "existenciaInicial": "Units per variant",
       "existenciaInicialAyuda": "What goes into stock for each colour and size. Zero leaves the product sold out until you count.",
       "altEs": "Alternative text for the photos (Spanish)",

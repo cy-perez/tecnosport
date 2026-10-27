@@ -20,10 +20,18 @@ export interface ConfiguracionTecnologia {
   readonly sim: string | null;
   readonly costoProveedor: number;
   readonly precioMercado: number | null;
+  /**
+   * El de mercado sin ganarle al costo más del tope (ADR-0095, decisión 8), calculado por el
+   * servidor. `null` cuando la lista no trajo precio de mercado: ahí no hay sugerencia.
+   */
+  readonly precioContadoSugerido: number | null;
+  /** El sugerido de contado con la comisión de Wompi encima: el que se anunciaría. */
+  readonly precioPublicadoSugerido: number | null;
   /** Los que deduce la skill de los emojis de la lista; vacío si la lista no los dice. */
   readonly coloresSugeridos: readonly string[];
   /** Vacío es «esta configuración no se vende». */
   readonly coloresElegidos: readonly string[];
+  /** El de contado ya fijado; el publicado lo calcula el servidor al aprobar. */
   readonly precioVenta: number | null;
 }
 
@@ -133,9 +141,13 @@ export function coloresIniciales(
   return configuracion.coloresSugeridos.filter((color) => paleta.includes(color));
 }
 
-/** El precio con que arranca el campo: el ya fijado, o el de mercado como punto de partida. */
+/**
+ * El precio de contado con que arranca el campo: el ya fijado, o el sugerido de contado. Ya no el
+ * de mercado a secas: sin tope, un equipo barato de costo se sugería a lo que valía en el mercado
+ * aunque eso fuera ganarle cualquier cifra (ADR-0095, decisión 8).
+ */
 export function precioInicial(configuracion: ConfiguracionTecnologia): number | null {
-  return configuracion.precioVenta ?? configuracion.precioMercado;
+  return configuracion.precioVenta ?? configuracion.precioContadoSugerido;
 }
 
 export type ProblemaDeAprobacion = 'nadaQueVender' | 'faltaPrecio' | 'precioBajoCosto' | null;

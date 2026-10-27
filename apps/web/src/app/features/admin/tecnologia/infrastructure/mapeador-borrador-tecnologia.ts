@@ -19,6 +19,8 @@ function aConfiguracion(dto: ConfiguracionDto): ConfiguracionTecnologia {
     sim: dto.sim ?? null,
     costoProveedor: dto.costoProveedor,
     precioMercado: dto.precioMercado ?? null,
+    precioContadoSugerido: dto.precioContadoSugerido ?? null,
+    precioPublicadoSugerido: dto.precioPublicadoSugerido ?? null,
     coloresSugeridos: dto.coloresSugeridos,
     coloresElegidos: dto.coloresElegidos,
     precioVenta: dto.precioVenta ?? null,

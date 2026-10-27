@@ -111,7 +111,8 @@ export class AgregarVarianteAdminPage {
   protected readonly form = new FormGroup(
     {
       sku: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
-      precio: new FormControl<number | null>(null, {
+      // De contado: el publicado lo calcula el servidor con la comisión de Wompi (ADR-0095).
+      precioContado: new FormControl<number | null>(null, {
         validators: [Validators.required, Validators.min(0)],
       }),
       // Cero, y no 0.19, porque el negocio no es responsable de IVA (par. 3 del art. 437 del
@@ -275,7 +276,7 @@ export class AgregarVarianteAdminPage {
       {
         productoId: this.productoId(),
         sku: valores.sku,
-        precio: valores.precio ?? 0,
+        precioContado: valores.precioContado ?? 0,
         tasaIva: valores.tasaIva,
         codigoBarras: valores.codigoBarras || null,
         existenciaInicial: valores.existenciaInicial,

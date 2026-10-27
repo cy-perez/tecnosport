@@ -95,9 +95,27 @@ function conjuntoDePrueba(): ProductoAdminDetalle {
       linea: 'ROPA',
     },
     variantes: [
-      { id: 'n-sm', sku: 'C-N-SM', precio: 60000, atributos: atributos('Negro', '#111111', 'S-M') },
-      { id: 'n-l', sku: 'C-N-L', precio: 60000, atributos: atributos('Negro', '#111111', 'L') },
-      { id: 'v-sm', sku: 'C-V-SM', precio: 60000, atributos: atributos('Vino', '#722F37', 'S-M') },
+      {
+        id: 'n-sm',
+        sku: 'C-N-SM',
+        precioContado: 60000,
+        precioPublicado: 63000,
+        atributos: atributos('Negro', '#111111', 'S-M'),
+      },
+      {
+        id: 'n-l',
+        sku: 'C-N-L',
+        precioContado: 60000,
+        precioPublicado: 63000,
+        atributos: atributos('Negro', '#111111', 'L'),
+      },
+      {
+        id: 'v-sm',
+        sku: 'C-V-SM',
+        precioContado: 60000,
+        precioPublicado: 63000,
+        atributos: atributos('Vino', '#722F37', 'S-M'),
+      },
     ],
   };
 }
@@ -133,8 +151,20 @@ function bodiDePrueba(): ProductoAdminDetalle {
     nombre: 'Bodi herraje',
     tallaSirveHasta: 'L',
     variantes: [
-      { id: 'v-negro', sku: 'PRV-1', precio: 60000, atributos: atributos('Negro', '#111111') },
-      { id: 'v-vino', sku: 'PRV-2', precio: 60000, atributos: atributos('Vino', '#722F37') },
+      {
+        id: 'v-negro',
+        sku: 'PRV-1',
+        precioContado: 60000,
+        precioPublicado: 63000,
+        atributos: atributos('Negro', '#111111'),
+      },
+      {
+        id: 'v-vino',
+        sku: 'PRV-2',
+        precioContado: 60000,
+        precioPublicado: 63000,
+        atributos: atributos('Vino', '#722F37'),
+      },
     ],
   };
 }
@@ -327,11 +357,13 @@ class RepositorioProductosAdminFalso implements RepositorioProductosAdmin {
   preciosCambiados: CambiarPreciosAdmin[] = [];
 
   /** Un precio que cambió en el servidor por otra vía: lo verá el siguiente `obtener`. */
-  precioEnElServidor(varianteId: string, precio: number): void {
+  precioEnElServidor(varianteId: string, precioContado: number): void {
     if (this.producto) {
       this.producto = {
         ...this.producto,
-        variantes: this.producto.variantes.map((v) => (v.id === varianteId ? { ...v, precio } : v)),
+        variantes: this.producto.variantes.map((v) =>
+          v.id === varianteId ? { ...v, precioContado } : v,
+        ),
       };
     }
   }
@@ -343,12 +375,12 @@ class RepositorioProductosAdminFalso implements RepositorioProductosAdmin {
       throw this.falloAlCambiarPrecios;
     }
     if (this.producto) {
-      const porId = new Map(comando.precios.map((p) => [p.varianteId, p.precio]));
+      const porId = new Map(comando.precios.map((p) => [p.varianteId, p.precioContado]));
       this.producto = {
         ...this.producto,
         variantes: this.producto.variantes.map((v) => ({
           ...v,
-          precio: porId.get(v.id) ?? v.precio,
+          precioContado: porId.get(v.id) ?? v.precioContado,
         })),
       };
     }
@@ -621,7 +653,8 @@ describe('EditarProductoAdminPage', () => {
           {
             id: 'n-m',
             sku: 'C-N-M',
-            precio: 60000,
+            precioContado: 60000,
+            precioPublicado: 63000,
             atributos: [
               { nombre: 'Color', valor: 'Negro', colorHex: '#111111' },
               { nombre: 'Talla', valor: 'm', colorHex: null },
@@ -656,7 +689,8 @@ describe('EditarProductoAdminPage', () => {
           {
             id: 'v1',
             sku: 'MOR-1',
-            precio: 60000,
+            precioContado: 60000,
+            precioPublicado: 63000,
             atributos: [{ nombre: 'Color', valor: 'Negro', colorHex: '#111111' }],
           },
         ],
@@ -671,14 +705,14 @@ describe('EditarProductoAdminPage', () => {
 
   describe('precios', () => {
     const campo = (sku: string) =>
-      screen.getByLabelText(new RegExp(`^Precio de ${sku} —`)) as HTMLInputElement;
+      screen.getByLabelText(new RegExp(`^Precio de contado de ${sku} —`)) as HTMLInputElement;
 
     /** Viaja solo el que cambió, y el campo queda con lo que el servidor grabó. */
     it('cambia el precio de una variante y manda solo esa', async () => {
       const repositorio = new RepositorioProductosAdminFalso(conjuntoDePrueba());
       const { container } = await renderPagina(repositorio);
 
-      await screen.findByLabelText(/^Precio de C-N-SM —/);
+      await screen.findByLabelText(/^Precio de contado de C-N-SM —/);
       expect(campo('C-N-SM').value).toBe('60000');
       await esperarSinViolaciones(container);
 
@@ -687,25 +721,40 @@ describe('EditarProductoAdminPage', () => {
 
       await vi.waitFor(() =>
         expect(repositorio.preciosCambiados).toEqual([
-          { productoId: 'p1', precios: [{ varianteId: 'n-l', precio: 65000 }] },
+          { productoId: 'p1', precios: [{ varianteId: 'n-l', precioContado: 65000 }] },
         ]),
       );
       expect(await screen.findByText('Precios guardados.')).toBeTruthy();
       expect(campo('C-N-SM').value).toBe('60000');
     });
 
+    /**
+     * El campo es de contado; el publicado lo calcula el servidor y se enseña al lado del campo,
+     * el de hoy, para que quien edita vea lo que anuncia la tienda (ADR-0095).
+     */
+    it('dice a cuánto se publica hoy cada variante', async () => {
+      const repositorio = new RepositorioProductosAdminFalso(conjuntoDePrueba());
+      await renderPagina(repositorio);
+      await screen.findByLabelText(/^Precio de contado de C-N-SM —/);
+
+      const ayuda = document.getElementById(campo('C-N-SM').getAttribute('aria-describedby') ?? '');
+      expect(ayuda?.textContent?.replace(/\s+/g, ' ').trim()).toBe(
+        esAdmin.productos.editar.precios.sePublicaA.replace('{{precio}}', '$ 63.000'),
+      );
+    });
+
     /** En Colombia el punto separa miles: «79.000» no puede grabarse como 79 pesos. */
     it('lee el punto como separador de miles', async () => {
       const repositorio = new RepositorioProductosAdminFalso(conjuntoDePrueba());
       await renderPagina(repositorio);
-      await screen.findByLabelText(/^Precio de C-N-SM —/);
+      await screen.findByLabelText(/^Precio de contado de C-N-SM —/);
 
       fireEvent.input(campo('C-N-SM'), { target: { value: '79.000' } });
       fireEvent.click(screen.getByRole('button', { name: 'Guardar precios' }));
 
       await vi.waitFor(() =>
         expect(repositorio.preciosCambiados).toEqual([
-          { productoId: 'p1', precios: [{ varianteId: 'n-sm', precio: 79000 }] },
+          { productoId: 'p1', precios: [{ varianteId: 'n-sm', precioContado: 79000 }] },
         ]),
       );
     });
@@ -717,7 +766,7 @@ describe('EditarProductoAdminPage', () => {
     it('un refetch conserva lo tecleado y trae lo que cambió en el servidor', async () => {
       const repositorio = new RepositorioProductosAdminFalso(conjuntoDePrueba());
       await renderPagina(repositorio);
-      await screen.findByLabelText(/^Precio de C-N-SM —/);
+      await screen.findByLabelText(/^Precio de contado de C-N-SM —/);
       fireEvent.input(campo('C-N-SM'), { target: { value: '65000' } });
       repositorio.precioEnElServidor('v-sm', 70000);
 
@@ -750,9 +799,9 @@ describe('EditarProductoAdminPage', () => {
           {
             productoId: 'p1',
             precios: [
-              { varianteId: 'n-sm', precio: 69000 },
-              { varianteId: 'n-l', precio: 69000 },
-              { varianteId: 'v-sm', precio: 69000 },
+              { varianteId: 'n-sm', precioContado: 69000 },
+              { varianteId: 'n-l', precioContado: 69000 },
+              { varianteId: 'v-sm', precioContado: 69000 },
             ],
           },
         ]),
@@ -762,7 +811,7 @@ describe('EditarProductoAdminPage', () => {
     it('un precio en cero, con decimales o vacío no manda ninguno y dice por qué', async () => {
       const repositorio = new RepositorioProductosAdminFalso(conjuntoDePrueba());
       await renderPagina(repositorio);
-      await screen.findByLabelText(/^Precio de C-N-SM —/);
+      await screen.findByLabelText(/^Precio de contado de C-N-SM —/);
       const mensaje = esAdmin.productos.editar.precios.invalido;
 
       for (const malo of ['0', '65000.5', '']) {
@@ -780,7 +829,7 @@ describe('EditarProductoAdminPage', () => {
     it('sin cambios no llama al servidor y lo dice', async () => {
       const repositorio = new RepositorioProductosAdminFalso(conjuntoDePrueba());
       await renderPagina(repositorio);
-      await screen.findByLabelText(/^Precio de C-N-SM —/);
+      await screen.findByLabelText(/^Precio de contado de C-N-SM —/);
 
       fireEvent.click(screen.getByRole('button', { name: 'Guardar precios' }));
 
@@ -792,7 +841,7 @@ describe('EditarProductoAdminPage', () => {
       const repositorio = new RepositorioProductosAdminFalso(conjuntoDePrueba());
       repositorio.falloAlCambiarPrecios = new Error('falló');
       await renderPagina(repositorio);
-      await screen.findByLabelText(/^Precio de C-N-SM —/);
+      await screen.findByLabelText(/^Precio de contado de C-N-SM —/);
 
       fireEvent.input(campo('C-N-SM'), { target: { value: '65000' } });
       fireEvent.click(screen.getByRole('button', { name: 'Guardar precios' }));
@@ -868,8 +917,20 @@ describe('EditarProductoAdminPage', () => {
         ...productoDePrueba(),
         imagenPrincipalUrl: URL_PRINCIPAL,
         variantes: [
-          { id: 'v-s', sku: 'PRV-S', precio: 60000, atributos: atributos('S-M') },
-          { id: 'v-l', sku: 'PRV-L', precio: 60000, atributos: atributos('L-XL') },
+          {
+            id: 'v-s',
+            sku: 'PRV-S',
+            precioContado: 60000,
+            precioPublicado: 63000,
+            atributos: atributos('S-M'),
+          },
+          {
+            id: 'v-l',
+            sku: 'PRV-L',
+            precioContado: 60000,
+            precioPublicado: 63000,
+            atributos: atributos('L-XL'),
+          },
         ],
       };
     }
@@ -883,7 +944,8 @@ describe('EditarProductoAdminPage', () => {
           {
             id: 'v-s',
             sku: 'PRV-S',
-            precio: 60000,
+            precioContado: 60000,
+            precioPublicado: 63000,
             atributos: [{ nombre: 'Talla', valor: 'S-M', colorHex: null }],
           },
         ],
@@ -1595,7 +1657,7 @@ describe('EditarProductoAdminPage', () => {
       const { container } = await renderPagina(new RepositorioProductosAdminFalso(bodiDePrueba()));
       await screen.findByDisplayValue('Bodi herraje');
 
-      const fila = screen.getByText(/^Precio de PRV-2 —/).closest('li')!;
+      const fila = screen.getByText(/^Precio de contado de PRV-2 —/).closest('li')!;
       await vi.waitFor(() =>
         expect(fila.querySelector('ts-muestra-color path')?.getAttribute('fill')).toBe('#722F37'),
       );

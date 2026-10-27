@@ -155,6 +155,14 @@
                   </td>
                   <td class="tabular-nums">
                     <p class="m-0">{{ precio(borrador.precioVentaSugerido) }}</p>
+                    @if (borrador.precioPublicadoSugerido !== null) {
+                      <p class="m-0 text-xs text-ts-texto-suave">
+                        {{
+                          'admin.borradores.publicadoSugerido'
+                            | transloco: { precio: precio(borrador.precioPublicadoSugerido) }
+                        }}
+                      </p>
+                    }
                     <p class="m-0 text-xs text-ts-texto-suave">
                       {{
                         'admin.borradores.precioProveedor'

@@ -98,7 +98,7 @@ export class ProductosAdminHttpRepositorio implements RepositorioProductosAdmin 
       body: {
         productoId: comando.productoId,
         sku: comando.sku,
-        precio: comando.precio,
+        precioContado: comando.precioContado,
         tasaIva: comando.tasaIva,
         codigoBarras: comando.codigoBarras ?? undefined,
         existenciaInicial: comando.existenciaInicial,
@@ -323,7 +323,10 @@ export class ProductosAdminHttpRepositorio implements RepositorioProductosAdmin 
     const respuesta = await this.cliente.PUT('/api/v1/admin/productos/{id}/precios', {
       params: { path: { id: comando.productoId } },
       body: {
-        precios: comando.precios.map((p) => ({ varianteId: p.varianteId, precio: p.precio })),
+        precios: comando.precios.map((p) => ({
+          varianteId: p.varianteId,
+          precioContado: p.precioContado,
+        })),
       },
     });
     exigirExito(respuesta, 'no se pudieron cambiar los precios');

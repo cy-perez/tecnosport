@@ -74,7 +74,11 @@ export interface ValorAtributoAdmin {
 export interface AgregarVarianteAdmin {
   readonly productoId: string;
   readonly sku: string;
-  readonly precio: number;
+  /**
+   * El precio de contado, en pesos enteros: lo que el negocio quiere recibir neto. El publicado lo
+   * calcula el servidor sumándole la comisión de Wompi (ADR-0095).
+   */
+  readonly precioContado: number;
   readonly tasaIva: number;
   readonly codigoBarras: string | null;
   readonly existenciaInicial: number;
@@ -115,12 +119,14 @@ export interface ImagenDeGaleriaAdmin {
   readonly varianteId: string | null;
 }
 
-/** Una variante como la lista la edición: su SKU, lo que la distingue y su precio de venta. */
+/** Una variante como la lista la edición: su SKU, lo que la distingue y sus dos precios. */
 export interface VarianteResumenAdmin {
   readonly id: string;
   readonly sku: string;
-  /** En pesos enteros, como el de `AgregarVarianteAdmin`. */
-  readonly precio: number;
+  /** El que se edita, en pesos enteros, como el de `AgregarVarianteAdmin`. */
+  readonly precioContado: number;
+  /** El que se anuncia: el de contado con la comisión de Wompi encima. Lo calcula el servidor. */
+  readonly precioPublicado: number;
   readonly atributos: readonly {
     readonly nombre: string;
     readonly valor: string;
@@ -162,12 +168,13 @@ export interface CambiarTallaAdmin {
 }
 
 /**
- * Los precios de venta como tienen que quedar, por variante; las que no vayan no se tocan. Los
- * pedidos ya hechos no cambian: cada línea guardó el precio con que se compró.
+ * Los precios de contado como tienen que quedar, por variante; las que no vayan no se tocan. El
+ * publicado lo recalcula el servidor (ADR-0095). Los pedidos ya hechos no cambian: cada línea
+ * guardó el precio con que se compró.
  */
 export interface CambiarPreciosAdmin {
   readonly productoId: string;
-  readonly precios: readonly { readonly varianteId: string; readonly precio: number }[];
+  readonly precios: readonly { readonly varianteId: string; readonly precioContado: number }[];
 }
 
 /** La foto de la galería que pasa a ser la principal; la principal anterior ocupa su puesto. */
@@ -354,4 +361,17 @@ export interface TandaDeProductosEliminados {
   readonly siguiente: string | null;
   /** El tope que fijó la primera tanda; las siguientes lo repiten. */
   readonly hasta: string | null;
+}
+
+/**
+ * Una variante cuyo precio publicado ya no corresponde a la tarifa de Wompi de hoy (ADR-0095): el
+ * de contado no cambia, el publicado pasaría de `publicadoActual` a `publicadoNuevo`.
+ */
+export interface PrecioPorRecalcular {
+  readonly varianteId: string;
+  readonly sku: string;
+  readonly nombreProducto: string;
+  readonly precioContado: number;
+  readonly publicadoActual: number;
+  readonly publicadoNuevo: number;
 }
