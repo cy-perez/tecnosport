@@ -85,7 +85,12 @@ public final class ImportarListaDeTecnologia {
   private final RepositorioListasDeTecnologia listas;
   private final Reloj reloj;
   private final int existenciaPorVariante;
+  private final MargenMinimo margenMinimo;
 
+  /**
+   * @param margenMinimo el de tecnología: el 10 % del costo con el tope de ganancia de la
+   *     sugerencia
+   */
   public ImportarListaDeTecnologia(
       RepositorioProveedores repositorioProveedores,
       RepositorioProductosDeProveedor productosDeProveedor,
@@ -95,7 +100,9 @@ public final class ImportarListaDeTecnologia {
       RepositorioInventario repositorioInventario,
       RepositorioListasDeTecnologia listas,
       Reloj reloj,
-      int existenciaPorVariante) {
+      int existenciaPorVariante,
+      MargenMinimo margenMinimo) {
+    this.margenMinimo = Objects.requireNonNull(margenMinimo);
     this.repositorioProveedores = Objects.requireNonNull(repositorioProveedores);
     this.productosDeProveedor = Objects.requireNonNull(productosDeProveedor);
     this.repositorioProductos = Objects.requireNonNull(repositorioProductos);
@@ -215,7 +222,7 @@ public final class ImportarListaDeTecnologia {
             // queda agotada por el proveedor hasta que una lista le devuelva el margen (27 de
             // octubre de 2026). La lista no mueve el precio; subirlo es del panel.
             Dinero precio = precioPorVariante.get(v.varianteId());
-            boolean alcanza = precio == null || MargenMinimo.alcanza(precio, c.costoProveedor());
+            boolean alcanza = precio == null || margenMinimo.alcanza(precio, c.costoProveedor());
             margenPorVariante.put(v.varianteId(), alcanza);
             objetivos.put(
                 v.varianteId(), alcanza && hoyLoTiene(c, v.color()) ? existenciaPorVariante : 0);

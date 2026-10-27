@@ -882,7 +882,8 @@ class AdminBorradorControladorTest {
           inerte(AlmacenDeImagenes.class),
           inerte(ProcesadorDeImagenes.class),
           inerte(CalculadorDePHash.class),
-          (Reloj) () -> T);
+          (Reloj) () -> T,
+          co.tecnosport.api.domain.proveedores.MargenMinimo.dePrendas(Dinero.deCop(20_000)));
     }
 
     @Bean

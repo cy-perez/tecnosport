@@ -47,6 +47,7 @@ import co.tecnosport.api.domain.proveedores.GeneroDeCalzado;
 import co.tecnosport.api.domain.proveedores.HuellaProveedor;
 import co.tecnosport.api.domain.proveedores.IdExternoDeMensaje;
 import co.tecnosport.api.domain.proveedores.LoteIngesta;
+import co.tecnosport.api.domain.proveedores.MargenMinimo;
 import co.tecnosport.api.domain.proveedores.MensajeProveedor;
 import co.tecnosport.api.domain.proveedores.OrigenDelCostoDeSet;
 import co.tecnosport.api.domain.proveedores.PHash;
@@ -74,6 +75,14 @@ class AprobarBorradorTest {
 
   private static final Instant FECHA_DEL_MENSAJE = Instant.parse("2026-09-28T15:15:00Z");
   private static final Instant AHORA = Instant.parse("2026-09-30T12:00:00Z");
+
+  /**
+   * La ganancia mínima de las prendas en estas pruebas. No es la del negocio ({@code
+   * PROVEEDORES_GANANCIA_MINIMA}): es la que deja aprobar el bolso de 53.000 a 60.000, el precio
+   * más bajo con que lo aprueban las pruebas que no tratan del margen. Por encima del 10 % de ese
+   * costo (5.300), para que la prueba del margen distinga una regla de la otra.
+   */
+  private static final MargenMinimo MARGEN = MargenMinimo.dePrendas(Dinero.deCop(7_000));
 
   private final RepositorioProveedoresEnMemoria proveedores = new RepositorioProveedoresEnMemoria();
   private final RepositorioMensajesEnMemoria mensajes = new RepositorioMensajesEnMemoria();
@@ -173,7 +182,8 @@ class AprobarBorradorTest {
         almacenPublico,
         new ProcesadorNulo(),
         new CalculadorDePHashPorContenido(),
-        new RelojFalso(AHORA));
+        new RelojFalso(AHORA),
+        MARGEN);
   }
 
   private AprobarBorradorComando comando(List<FotoAprobada> fotos) {
@@ -193,30 +203,39 @@ class AprobarBorradorTest {
 
   /**
    * Revisión adversarial del 27 de octubre de 2026: se aprobaba con cualquier precio mayor que
-   * cero. El de contado tiene que dejar el 10 % sobre el costo (regla 18), y el rechazo llega antes
-   * de subir una sola foto.
+   * cero. El de contado tiene que ganarle al costo la ganancia mínima de las prendas, en pesos y no
+   * en porcentaje, y el rechazo llega antes de subir una sola foto. Con el 10 %, que pedía 5.300
+   * sobre este costo, 59.999 se aprobaba.
    */
   @Test
-  void noSeApruebaConMenosDelMargenMinimoSobreElCosto() {
-    // Costo 53.000: 58.000 le gana un 9,4 %.
-    AprobarBorradorComando sinMargen =
-        new AprobarBorradorComando(
-            borrador.id(),
-            "Bolso de dama mediano",
-            null,
-            ApoyoDeCatalogoParaIngesta.BOLSOS_DE_MANO.id(),
-            ApoyoDeCatalogoParaIngesta.MARCA.id(),
-            58000,
-            null,
-            1,
-            "Bolso de dama mediano",
-            "Medium ladies bag",
-            List.of(new FotoAprobada(foto1.id(), "Negro", "#000000")));
+  void noSeApruebaConMenosDeLaGananciaMinimaSobreElCosto() {
+    // Costo 53.000: 59.999 le gana 6.999, un peso menos que la mínima de estas pruebas.
+    AprobarBorradorComando sinMargen = conPrecio(59_999);
 
-    assertThrows(PrecioSinMargenMinimoException.class, () -> caso().ejecutar(sinMargen));
+    PrecioSinMargenMinimoException rechazo =
+        assertThrows(PrecioSinMargenMinimoException.class, () -> caso().ejecutar(sinMargen));
+    assertTrue(rechazo.getMessage().contains("7000 pesos"), rechazo.getMessage());
     assertTrue(productos.porId.isEmpty());
     assertTrue(almacenPublico.objetos.isEmpty());
     assertEquals(EstadoBorrador.EN_REVISION, borrador.estado());
+
+    caso().ejecutar(conPrecio(60_000));
+    assertEquals(EstadoBorrador.APROBADO, borrador.estado());
+  }
+
+  private AprobarBorradorComando conPrecio(long precioContado) {
+    return new AprobarBorradorComando(
+        borrador.id(),
+        "Bolso de dama mediano",
+        null,
+        ApoyoDeCatalogoParaIngesta.BOLSOS_DE_MANO.id(),
+        ApoyoDeCatalogoParaIngesta.MARCA.id(),
+        precioContado,
+        null,
+        1,
+        "Bolso de dama mediano",
+        "Medium ladies bag",
+        List.of(new FotoAprobada(foto1.id(), "Negro", "#000000")));
   }
 
   /**
@@ -1706,8 +1725,9 @@ class AprobarBorradorTest {
             new ProcesadorNulo(),
             new CalculadorDePHashPorContenido(),
             new RelojFalso(AHORA),
+            MARGEN,
             new ExistenciaBajoConfirmacion(
-                inventario, productosDeProveedor, new RelojFalso(AHORA), 2));
+                inventario, productosDeProveedor, new RelojFalso(AHORA), 2, MARGEN));
 
     Producto producto =
         caso.ejecutar(
@@ -1746,7 +1766,8 @@ class AprobarBorradorTest {
     proveedor.definirAjustesDeIngesta(new AjustesDeIngesta(false, true, null, null));
     proveedores.guardar(proveedor);
     ExistenciaBajoConfirmacion existencia =
-        new ExistenciaBajoConfirmacion(inventario, productosDeProveedor, new RelojFalso(AHORA), 2);
+        new ExistenciaBajoConfirmacion(
+            inventario, productosDeProveedor, new RelojFalso(AHORA), 2, MARGEN);
     AprobarBorrador caso =
         new AprobarBorrador(
             borradores,
@@ -1770,6 +1791,7 @@ class AprobarBorradorTest {
             new ProcesadorNulo(),
             new CalculadorDePHashPorContenido(),
             new RelojFalso(AHORA),
+            MARGEN,
             existencia);
     Producto producto =
         caso.ejecutar(

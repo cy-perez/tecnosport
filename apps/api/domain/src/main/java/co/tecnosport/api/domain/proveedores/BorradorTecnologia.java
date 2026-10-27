@@ -289,10 +289,11 @@ public final class BorradorTecnologia {
 
   /**
    * @param productoId el producto que nació, o el que ya existía y recibió las variantes
+   * @param margenMinimo el de tecnología, con el tope de ganancia configurado
    */
-  public void aprobar(UUID productoId) {
+  public void aprobar(UUID productoId, MargenMinimo margenMinimo) {
     exigirEnRevision("aprobar");
-    exigirAprobable();
+    exigirAprobable(margenMinimo);
     this.productoId =
         Objects.requireNonNull(productoId, "Aprobar es crear o completar un producto.");
     this.estado = EstadoBorrador.APROBADO;
@@ -303,7 +304,8 @@ public final class BorradorTecnologia {
    * configuración con colores, o una con colores y sin precio. Un borrador de configuraciones
    * nuevas no pide fotos: el producto ya tiene las suyas.
    */
-  public void exigirAprobable() {
+  public void exigirAprobable(MargenMinimo margenMinimo) {
+    Objects.requireNonNull(margenMinimo, "Aprobar tecnología exige su margen mínimo.");
     if (fotosQueFaltan() > 0) {
       throw new ExcepcionDeDominio(
           "Un modelo nuevo necesita "
@@ -325,9 +327,10 @@ public final class BorradorTecnologia {
       }
       // Vender al costo no es vender (tools/cargar-catalogo.mjs): un cero de menos al teclear se
       // publicaría y se vendería con pérdida en cada unidad. Y superarlo por poco tampoco: hace
-      // falta el margen mínimo de la regla 18 (27 de octubre de 2026). Se compara el de contado,
-      // que es lo que el negocio recibe: el publicado lleva encima la comisión, que no es ganancia.
-      MargenMinimo.exigir(c.precioVenta(), c.costoProveedor(), c.titulo());
+      // falta el margen mínimo de tecnología: el 10 % de la regla 18 con el tope de ganancia (27 de
+      // octubre de 2026). Se compara el de contado, que es lo que el negocio recibe: el publicado
+      // lleva encima la comisión, que no es ganancia.
+      margenMinimo.exigir(c.precioVenta(), c.costoProveedor(), c.titulo());
     }
   }
 

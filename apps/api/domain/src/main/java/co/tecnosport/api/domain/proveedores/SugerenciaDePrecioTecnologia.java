@@ -16,9 +16,11 @@ import java.util.Objects;
  * </pre>
  *
  * <p>El precio publicado sugerido sale de este con la comisión de la pasarela, como cualquier otro
- * precio de contado. No hay ganancia mínima: el piso lo pone la skill de listas, que ya excluye lo
- * que queda por debajo del costo o con menos de un 5 % de margen. Sin precio de mercado no hay
- * sugerencia, y quien revisa fija el contado. Como en la ropa, la sugerencia no obliga.
+ * precio de contado. La sugerencia no tiene piso propio: el piso es el {@link MargenMinimo} de
+ * tecnología, {@code min(10 % del costo, gananciaMaxima)} desde el 27 de octubre de 2026. La skill
+ * de listas no ofrece lo que queda por debajo (regla 18, con el mismo tope), y la aprobación y la
+ * lista lo exigen sobre el contado que se fije. Sin precio de mercado no hay sugerencia, y quien
+ * revisa fija el contado. Como en la ropa, la sugerencia no obliga.
  *
  * <h2>El redondeo</h2>
  *
@@ -29,7 +31,8 @@ import java.util.Objects;
  * menos mil pesos: con menos, bajar a la unidad de mil podría dejar la sugerencia por debajo del
  * costo.
  *
- * @param gananciaMaxima lo más que el contado sugerido le gana al costo
+ * @param gananciaMaxima lo más que el contado sugerido le gana al costo, y el tope del margen
+ *     mínimo de tecnología
  */
 public record SugerenciaDePrecioTecnologia(Dinero gananciaMaxima) {
 

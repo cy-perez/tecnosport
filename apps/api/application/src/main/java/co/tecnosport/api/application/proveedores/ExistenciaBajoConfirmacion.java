@@ -35,15 +35,19 @@ public final class ExistenciaBajoConfirmacion {
   private final RepositorioProductosDeProveedor productosDeProveedor;
   private final Reloj reloj;
   private final int existenciaPorVariante;
+  private final MargenMinimo margenMinimo;
 
   /**
    * @param existenciaPorVariante la nominal de cada talla; la misma que la tecnología por omisión
+   * @param margenMinimo el de las prendas —el calzado lo es—: la ganancia mínima de su sugerencia
    */
   public ExistenciaBajoConfirmacion(
       RepositorioInventario repositorioInventario,
       RepositorioProductosDeProveedor productosDeProveedor,
       Reloj reloj,
-      int existenciaPorVariante) {
+      int existenciaPorVariante,
+      MargenMinimo margenMinimo) {
+    this.margenMinimo = Objects.requireNonNull(margenMinimo);
     this.repositorioInventario = Objects.requireNonNull(repositorioInventario);
     this.productosDeProveedor = Objects.requireNonNull(productosDeProveedor);
     this.reloj = Objects.requireNonNull(reloj);
@@ -73,7 +77,7 @@ public final class ExistenciaBajoConfirmacion {
       if (!variante.seVende()
           || !producto
               .precioProveedor()
-              .map(costo -> MargenMinimo.alcanza(variante.precioContado(), costo))
+              .map(costo -> margenMinimo.alcanza(variante.precioContado(), costo))
               .orElse(true)) {
         continue;
       }

@@ -183,9 +183,9 @@ describe('PanelAdminPage', () => {
    * vivía en esta pantalla y esta prueba comprobaba las dos cosas a la vez.
    */
   /**
-   * El tercero (27 de octubre de 2026): lo que el costo del proveedor dejó con menos del 10 % de
-   * margen. La lista y la ingesta lo agotan solas, así que sin este aviso nadie se entera. Un
-   * renglón por producto, con su enlace a la ficha, donde se sube el contado.
+   * El tercero (27 de octubre de 2026): lo que el costo del proveedor dejó sin la ganancia mínima,
+   * que depende de la línea. La lista y la ingesta lo agotan solas, así que sin este aviso nadie se
+   * entera. Un renglón por producto, con su enlace a la ficha, donde se sube el contado.
    */
   it('avisa de lo que el costo dejó sin margen, un producto por renglón', async () => {
     await renderPanel(NADA_SIN_MEDIR, TODO_CON_EXISTENCIA, {

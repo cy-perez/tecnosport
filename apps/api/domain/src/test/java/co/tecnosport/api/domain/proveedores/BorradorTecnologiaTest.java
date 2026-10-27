@@ -19,6 +19,7 @@ class BorradorTecnologiaTest {
   private static final UUID PROVEEDOR = UUID.fromString("018f0000-0000-7000-8000-000000000001");
   private static final Instant LUNES = Instant.parse("2026-10-05T05:00:00Z");
   private static final Instant JUEVES = Instant.parse("2026-10-08T05:00:00Z");
+  private static final MargenMinimo MARGEN = MargenMinimo.deTecnologia(Dinero.deCop(400_000));
 
   private static ModeloDeLista a17(List<String> paleta) {
     return new ModeloDeLista(
@@ -110,22 +111,23 @@ class BorradorTecnologiaTest {
   void noSeApruebaSinNadaQueVenderNiConUnPrecioPendiente() {
     BorradorTecnologia borrador = conCuatroFotos(nuevo());
     UUID producto = UUID.randomUUID();
-    assertThrows(ExcepcionDeDominio.class, () -> borrador.aprobar(producto));
+    assertThrows(ExcepcionDeDominio.class, () -> borrador.aprobar(producto, MARGEN));
 
     borrador.elegir(List.of(new BorradorTecnologia.Eleccion("a17-256", List.of("Negro"), null)));
-    assertThrows(ExcepcionDeDominio.class, () -> borrador.aprobar(producto));
+    assertThrows(ExcepcionDeDominio.class, () -> borrador.aprobar(producto, MARGEN));
 
     borrador.elegir(
         List.of(
             new BorradorTecnologia.Eleccion("a17-256", List.of("Negro"), Dinero.deCop(849_900))));
-    borrador.aprobar(producto);
+    borrador.aprobar(producto, MARGEN);
     assertEquals(EstadoBorrador.APROBADO, borrador.estado());
     assertEquals(producto, borrador.productoId().orElseThrow());
   }
 
   /**
    * Revisión adversarial del 27 de octubre de 2026: bastaba superar el costo. Ahora hace falta el
-   * margen mínimo de la regla 18 —el 10 % sobre el costo—, medido sobre el precio de contado.
+   * margen mínimo de tecnología —el 10 % sobre el costo, con el tope de ganancia—, medido sobre el
+   * precio de contado.
    */
   @Test
   void noSeApruebaConMenosDelMargenMinimo() {
@@ -134,12 +136,26 @@ class BorradorTecnologiaTest {
     borrador.elegir(
         List.of(
             new BorradorTecnologia.Eleccion("a17-256", List.of("Negro"), Dinero.deCop(740_000))));
-    assertThrows(PrecioSinMargenMinimoException.class, () -> borrador.aprobar(UUID.randomUUID()));
+    assertThrows(
+        PrecioSinMargenMinimoException.class, () -> borrador.aprobar(UUID.randomUUID(), MARGEN));
 
     borrador.elegir(
         List.of(
             new BorradorTecnologia.Eleccion("a17-256", List.of("Negro"), Dinero.deCop(742_500))));
-    borrador.aprobar(UUID.randomUUID());
+    borrador.aprobar(UUID.randomUUID(), MARGEN);
+    assertEquals(EstadoBorrador.APROBADO, borrador.estado());
+  }
+
+  /** El margen que recibe es el que manda: con un tope de 50.000, el 10 % de 675.000 no aplica. */
+  @Test
+  void elTopeDeGananciaBajaElMinimoQueSeExige() {
+    BorradorTecnologia borrador = conCuatroFotos(nuevo());
+    borrador.elegir(
+        List.of(
+            new BorradorTecnologia.Eleccion("a17-256", List.of("Negro"), Dinero.deCop(725_000))));
+    assertThrows(PrecioSinMargenMinimoException.class, () -> borrador.exigirAprobable(MARGEN));
+
+    borrador.aprobar(UUID.randomUUID(), MargenMinimo.deTecnologia(Dinero.deCop(50_000)));
     assertEquals(EstadoBorrador.APROBADO, borrador.estado());
   }
 
@@ -151,7 +167,7 @@ class BorradorTecnologiaTest {
             new BorradorTecnologia.Eleccion("a17-256", List.of("Negro"), Dinero.deCop(849_900))));
     assertEquals(Set.of(), borrador.skusDescartados(), "en revisión no hay nada decidido");
 
-    borrador.aprobar(UUID.randomUUID());
+    borrador.aprobar(UUID.randomUUID(), MARGEN);
 
     assertEquals(Set.of("a17-128"), borrador.skusDescartados());
   }
@@ -228,12 +244,12 @@ class BorradorTecnologiaTest {
     borrador.elegir(
         List.of(
             new BorradorTecnologia.Eleccion("a17-256", List.of("Negro"), Dinero.deCop(67_500))));
-    assertThrows(ExcepcionDeDominio.class, () -> borrador.aprobar(UUID.randomUUID()));
+    assertThrows(ExcepcionDeDominio.class, () -> borrador.aprobar(UUID.randomUUID(), MARGEN));
 
     borrador.elegir(
         List.of(
             new BorradorTecnologia.Eleccion("a17-256", List.of("Negro"), Dinero.deCop(675_000))));
-    assertThrows(ExcepcionDeDominio.class, () -> borrador.aprobar(UUID.randomUUID()));
+    assertThrows(ExcepcionDeDominio.class, () -> borrador.aprobar(UUID.randomUUID(), MARGEN));
   }
 
   @Test
@@ -318,11 +334,11 @@ class BorradorTecnologiaTest {
     }
 
     ExcepcionDeDominio error =
-        assertThrows(ExcepcionDeDominio.class, () -> borrador.aprobar(UUID.randomUUID()));
+        assertThrows(ExcepcionDeDominio.class, () -> borrador.aprobar(UUID.randomUUID(), MARGEN));
     assertTrue(error.getMessage().contains("tiene 3"), error.getMessage());
 
     borrador.agregarFoto(foto("h3"));
-    borrador.aprobar(UUID.randomUUID());
+    borrador.aprobar(UUID.randomUUID(), MARGEN);
     assertEquals(EstadoBorrador.APROBADO, borrador.estado());
   }
 
@@ -340,7 +356,7 @@ class BorradorTecnologiaTest {
         List.of(
             new BorradorTecnologia.Eleccion("a17-512", List.of("Negro"), Dinero.deCop(1_049_900))));
 
-    borrador.aprobar(borrador.productoId().orElseThrow());
+    borrador.aprobar(borrador.productoId().orElseThrow(), MARGEN);
 
     assertEquals(EstadoBorrador.APROBADO, borrador.estado());
   }
@@ -595,7 +611,7 @@ class BorradorTecnologiaTest {
     borrador.elegir(
         List.of(
             new BorradorTecnologia.Eleccion("a17-256", List.of("Negro"), Dinero.deCop(849_900))));
-    borrador.aprobar(UUID.randomUUID());
+    borrador.aprobar(UUID.randomUUID(), MARGEN);
 
     assertThrows(ExcepcionDeDominio.class, () -> borrador.editarDescripcion("Otra."));
   }
