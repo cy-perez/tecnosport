@@ -41,7 +41,7 @@ Están al inicio de `scripts/parsear_lista.py` y se cambian ahí:
 | Categorías que se publican | celulares, tablets, relojes, audífonos, consolas, computadores, proyectores, parlantes |
 | Condición publicable | solo `nuevo`, es decir sellado y sin activar |
 | Se descartan siempre | usados, "NUEVOS ACTIVOS", "IPH CON CAJA", cables, cargadores, power bank, accesorios sueltos (control de consola, pencil táctil, rastreador tipo tag), lo que quede sin precio, los celulares por debajo de 500.000 COP, los computadores sin marca o sin referencia, lo que la lista no permite identificar (regla 10, con confirmación) y **todo** lo de Krono, BMAX, itel, ZTE, Infinix y Tecno |
-| Margen mínimo para ofrecer | **10 %** del precio de mercado sobre el costo del proveedor; por debajo, la configuración no se propone y, si ya se vendía, deja de ofrecerse y no se le crea carpeta de modelo (regla 18, `MARGEN_MINIMO` en `scripts/margen.py`) |
+| Margen mínimo para ofrecer | el precio de mercado le gana al costo del proveedor por lo menos **el 10 % del costo, sin pasar de 400.000 COP** —el tope es `PROVEEDORES_TECNOLOGIA_GANANCIA_MAXIMA` de la API—; por debajo, la configuración no se propone y, si ya se vendía, deja de ofrecerse y no se le crea carpeta de modelo (regla 18, `MARGEN_MINIMO` y `TOPE_GANANCIA_TECNOLOGIA` en `scripts/margen.py`) |
 
 Estas ya están decididas por el negocio y no se vuelven a preguntar en cada
 lista:
@@ -213,11 +213,16 @@ lista:
     pasado con los cables: nacieron en el catálogo el mismo día en que la regla 5
     decidió que nunca entrarían.
 
-18. **Con menos de un 10 % de margen no se ofrece** (decisión del negocio,
-    15/10/2026; el umbral subió del 5 % al 10 % el 24/10/2026). El margen es
-    el precio de mercado que asignó el paso 4 sobre el costo del proveedor. La
-    configuración que no llega al 10 % —incluida la que queda en 0 % o por
-    debajo del costo— no se propone si es nueva y deja de ofrecerse si ya se
+18. **Lo que no le gana al costo la ganancia mínima no se ofrece**:
+    `mercado − costo ≥ min(10 % del costo, 400.000)` (decisión del negocio,
+    15/10/2026; el umbral subió del 5 % al 10 % el 24/10/2026, y el tope de
+    400.000 entró el 27/10/2026). El margen es el precio de mercado que asignó
+    el paso 4 sobre el costo del proveedor. El tope es la ganancia máxima que
+    la API sugiere (`PROVEEDORES_TECNOLOGIA_GANANCIA_MAXIMA`), y la API exige
+    la misma regla al aprobar: un equipo de cinco millones no tiene que ganarle
+    500.000 al costo, le bastan 400.000. Si el tope cambia allá, cambia en
+    `TOPE_GANANCIA_TECNOLOGIA`. La configuración que no llega —incluida la que
+    queda en 0 % o por debajo del costo— no se propone si es nueva y deja de ofrecerse si ya se
     vendía. Si todas las configuraciones de un modelo quedan
     por debajo, el modelo entero deja de ofrecerse.
     La regla vive en `scripts/margen.py` y la aplican dos pasos con el mismo
@@ -245,7 +250,7 @@ lista:
 Si el negocio cambia de opinión, se ajustan `CATEGORIAS_INCLUIDAS`,
 `CONDICIONES_PUBLICABLES`, `PRECIO_MINIMO_CELULAR_COP`, `DESCARTAR_SIN_PRECIO`,
 `DESCARTAR_COMPUTADOR_SIN_REFERENCIA`, `MARCAS_EXCLUIDAS`, `LINEAS_EXCLUIDAS` o `DATOS_DEL_PROVEEDOR` al inicio
-de `scripts/parsear_lista.py`, y `MARGEN_MINIMO` en `scripts/margen.py`.
+de `scripts/parsear_lista.py`, y `MARGEN_MINIMO` y `TOPE_GANANCIA_TECNOLOGIA` en `scripts/margen.py`.
 
 ## Dónde está corriendo esta skill
 
@@ -579,7 +584,7 @@ python3 scripts/construir_entregables.py catalogo/productos.json      # deja tod
 Produce:
 
 - `fichas/<Modelo>/` — una carpeta por modelo **que se va a ofrecer** (regla 18:
-  el que no llega al 10 % de margen en ninguna configuración no la recibe), que se
+  el que no llega a la ganancia mínima en ninguna configuración no la recibe), que se
   queda de una lista a la siguiente: `<id del modelo>-ficha.txt` (el modelo, sus configuraciones de esta
   lista con costo, precio de mercado y colores sugeridos, la descripción, los
   supuestos, los pendientes y las fuentes) y `Fotos originales/`, vacía la
@@ -638,7 +643,7 @@ node tools/importar-lista-tecnologia.mjs catalogo/5-api/lista-api.json --inventa
 ```
 
 Solo se exportan los modelos con descripción; los demás se dicen. Tampoco se
-exporta la configuración con menos de un 10 % de margen (regla 18): va como
+exporta la configuración que no llega a la ganancia mínima (regla 18): va como
 desaparecida y la salida dice cuál y con cuánto.
 
 La exportación deja además `5-api/avisos-panel.json`: por modelo, las

@@ -32,6 +32,7 @@ import co.tecnosport.api.application.proveedores.ResolverBorrador;
 import co.tecnosport.api.application.proveedores.SolicitarSubidaDeFotoDeBorrador;
 import co.tecnosport.api.application.proveedores.UnirBorradores;
 import co.tecnosport.api.application.proveedores.VerBorrador;
+import co.tecnosport.api.domain.proveedores.MargenMinimo;
 import co.tecnosport.api.infrastructure.proveedores.extraccion.InterpreteDeLecturaDeFotosJson;
 import co.tecnosport.api.infrastructure.proveedores.imagenes.CalculadorDePHashAwt;
 import co.tecnosport.api.infrastructure.proveedores.imagenes.ProcesadorDeImagenesNulo;
@@ -66,7 +67,11 @@ public class ConfiguracionBorradores {
       Reloj reloj,
       PropiedadesProveedores propiedades) {
     return new ExistenciaBajoConfirmacion(
-        inventario, productosDeProveedor, reloj, propiedades.tecnologia().existenciaPorVariante());
+        inventario,
+        productosDeProveedor,
+        reloj,
+        propiedades.tecnologia().existenciaPorVariante(),
+        margenDePrendas(propiedades));
   }
 
   @Bean
@@ -111,6 +116,7 @@ public class ConfiguracionBorradores {
       ProcesadorDeImagenes procesador,
       CalculadorDePHash calculadorDePHash,
       Reloj reloj,
+      PropiedadesProveedores propiedades,
       ExistenciaBajoConfirmacion existenciaBajoConfirmacion) {
     return new AprobarBorrador(
         borradores,
@@ -128,7 +134,16 @@ public class ConfiguracionBorradores {
         procesador,
         calculadorDePHash,
         reloj,
+        margenDePrendas(propiedades),
         existenciaBajoConfirmacion);
+  }
+
+  /**
+   * Lo que entra por el chat —ropa, calzado y bolsos— exige la ganancia mínima de su sugerencia
+   * ({@code PROVEEDORES_GANANCIA_MINIMA}); {@link ResolverBorrador} la saca de los mismos topes.
+   */
+  private static MargenMinimo margenDePrendas(PropiedadesProveedores propiedades) {
+    return MargenMinimo.dePrendas(propiedades.ganancia().aTopes().minima());
   }
 
   @Bean

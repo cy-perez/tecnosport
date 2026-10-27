@@ -94,6 +94,7 @@ public final class AprobarBorrador {
   private final ProcesadorDeImagenes procesador;
   private final CalculadorDePHash calculadorDePHash;
   private final Reloj reloj;
+  private final MargenMinimo margenMinimo;
 
   public AprobarBorrador(
       RepositorioBorradores repositorioBorradores,
@@ -110,7 +111,8 @@ public final class AprobarBorrador {
       AlmacenDeImagenes almacenDeImagenes,
       ProcesadorDeImagenes procesador,
       CalculadorDePHash calculadorDePHash,
-      Reloj reloj) {
+      Reloj reloj,
+      MargenMinimo margenMinimo) {
     this(
         repositorioBorradores,
         repositorioPublicaciones,
@@ -127,10 +129,13 @@ public final class AprobarBorrador {
         procesador,
         calculadorDePHash,
         reloj,
+        margenMinimo,
         null);
   }
 
   /**
+   * @param margenMinimo el de las prendas, el calzado y los bolsos: la ganancia mínima de su
+   *     sugerencia, en pesos
    * @param existenciaBajoConfirmacion la de lo que se vende bajo confirmación (ADR-0089); nula solo
    *     donde ningún proveedor vende así
    */
@@ -150,7 +155,9 @@ public final class AprobarBorrador {
       ProcesadorDeImagenes procesador,
       CalculadorDePHash calculadorDePHash,
       Reloj reloj,
+      MargenMinimo margenMinimo,
       ExistenciaBajoConfirmacion existenciaBajoConfirmacion) {
+    this.margenMinimo = Objects.requireNonNull(margenMinimo);
     this.existenciaBajoConfirmacion = existenciaBajoConfirmacion;
     this.repositorioBorradores = Objects.requireNonNull(repositorioBorradores);
     this.repositorioPublicaciones = Objects.requireNonNull(repositorioPublicaciones);
@@ -194,8 +201,8 @@ public final class AprobarBorrador {
     Dinero precioProveedor =
         borrador.precioProveedor().orElseThrow(BorradorSinPrecioException::new);
     // Cualquier precio mayor que cero se aprobaba (27 de octubre de 2026): el de contado tiene que
-    // dejar el margen mínimo de la regla 18 sobre el costo, como en tecnología.
-    MargenMinimo.exigir(Dinero.deCop(comando.precioVenta()), precioProveedor, "este producto");
+    // ganarle al costo por lo menos la ganancia mínima de la sugerencia.
+    margenMinimo.exigir(Dinero.deCop(comando.precioVenta()), precioProveedor, "este producto");
     Proveedor proveedor =
         repositorioProveedores
             .buscarPorId(borrador.proveedorId())

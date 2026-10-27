@@ -37,6 +37,7 @@ import co.tecnosport.api.domain.proveedores.HuellaProveedor;
 import co.tecnosport.api.domain.proveedores.IdExternoDeMensaje;
 import co.tecnosport.api.domain.proveedores.LecturaDeCalzado;
 import co.tecnosport.api.domain.proveedores.LoteIngesta;
+import co.tecnosport.api.domain.proveedores.MargenMinimo;
 import co.tecnosport.api.domain.proveedores.MensajeProveedor;
 import co.tecnosport.api.domain.proveedores.MotivoDePublicacion;
 import co.tecnosport.api.domain.proveedores.OrdenDePublicacion;
@@ -536,7 +537,11 @@ class ResolverBorradorTest {
             new TopesDeGanancia(Dinero.deCop(20000), Dinero.deCop(30000)),
             6,
             new ExistenciaBajoConfirmacion(
-                inventario, productosDeProveedor, new RelojFalso(AHORA), 2));
+                inventario,
+                productosDeProveedor,
+                new RelojFalso(AHORA),
+                2,
+                MargenMinimo.dePrendas(Dinero.deCop(20000))));
 
     conExistencia.ejecutar(
         publicacion(texto, "foto-nike", FECHA_DEL_MENSAJE.plusSeconds(86_400)),
@@ -553,9 +558,11 @@ class ResolverBorradorTest {
 
   /**
    * Revisión adversarial del 27 de octubre de 2026: el costo nuevo de un anuncio que deja menos del
-   * 10 % sobre el contado solo ponía PRECIO_CAMBIO, y bajo confirmación además se reponía. Ahora
-   * las variantes de los dos gemelos quedan agotadas por el proveedor, no se reponen y el panel lo
-   * avisa; con el margen de vuelta, vuelven a la venta.
+   * margen mínimo sobre el contado solo ponía PRECIO_CAMBIO, y bajo confirmación además se reponía.
+   * Ahora las variantes de los dos gemelos quedan agotadas por el proveedor, no se reponen y el
+   * panel lo avisa; con el margen de vuelta, vuelven a la venta. El mínimo del calzado es la
+   * ganancia mínima de los topes (20.000 aquí), no el 10 %: con el 10 % las dos seguirían a la
+   * venta.
    */
   @Test
   void unCostoQueQuitaElMargenAgotaLasVariantesDeLosDosGemelos() {
@@ -580,10 +587,10 @@ class ResolverBorradorTest {
     Producto deCaballero =
         productoExistente(
             "Tenis Nike", 60000, caballero.huella().orElseThrow(), EstadoDisponibilidad.DISPONIBLE);
-    // Contado 70.000: sobre el costo de antes (60.000) le gana un 16 %; sobre el de hoy (65.000),
-    // un 7,7 %.
-    deDama.agregarVariante(varianteDeTalla("TEN-DAMA-38", 70000));
-    deCaballero.agregarVariante(varianteDeTalla("TEN-CAB-41", 70000));
+    // Contado 80.000: al costo de antes (60.000) le gana 20.000; al de hoy (65.000), 15.000, que es
+    // un 23 % pero no llega a la ganancia mínima.
+    deDama.agregarVariante(varianteDeTalla("TEN-DAMA-38", 80000));
+    deCaballero.agregarVariante(varianteDeTalla("TEN-CAB-41", 80000));
     PHash foto = dama.pHash().orElseThrow();
     caballero.aprobar(deCaballero.id(), foto);
     borradores.porId.remove(dama.id());
@@ -603,7 +610,11 @@ class ResolverBorradorTest {
             new TopesDeGanancia(Dinero.deCop(20000), Dinero.deCop(30000)),
             6,
             new ExistenciaBajoConfirmacion(
-                inventario, productosDeProveedor, new RelojFalso(AHORA), 2));
+                inventario,
+                productosDeProveedor,
+                new RelojFalso(AHORA),
+                2,
+                MargenMinimo.dePrendas(Dinero.deCop(20000))));
 
     conExistencia.ejecutar(
         publicacion(texto, "foto-nike", FECHA_DEL_MENSAJE.plusSeconds(86_400)),
@@ -618,12 +629,13 @@ class ResolverBorradorTest {
     assertTrue(inventario.buscarPorVarianteId(laDeDama).isEmpty(), "no se repone");
     assertTrue(inventario.buscarPorVarianteId(laDelCaballero).isEmpty(), "no se repone");
 
-    // El proveedor baja el costo a 62.000 (un 12,9 %): el anuncio siguiente lo devuelve a la venta.
+    // El proveedor baja el costo a 60.000 (la ganancia mínima justa): el anuncio siguiente lo
+    // devuelve a la venta.
     conExistencia.ejecutar(
         publicacion(texto, "foto-nike", FECHA_DEL_MENSAJE.plusSeconds(2 * 86_400)),
         mensajes,
         proveedor,
-        List.of(tenis(List.of("41", "42", "43"), 62000)));
+        List.of(tenis(List.of("41", "42", "43"), 60000)));
 
     assertFalse(productosDeProveedor.retiradas.contains(laDeDama));
     assertFalse(productosDeProveedor.retiradas.contains(laDelCaballero));

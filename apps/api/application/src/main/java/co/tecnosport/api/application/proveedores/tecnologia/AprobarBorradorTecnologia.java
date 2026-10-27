@@ -39,6 +39,7 @@ import co.tecnosport.api.domain.proveedores.ConfiguracionTecnologia;
 import co.tecnosport.api.domain.proveedores.ConfirmacionDeColor;
 import co.tecnosport.api.domain.proveedores.EstadoBorrador;
 import co.tecnosport.api.domain.proveedores.FotoDeBorradorTecnologia;
+import co.tecnosport.api.domain.proveedores.MargenMinimo;
 import co.tecnosport.api.domain.proveedores.VarianteDeProveedor;
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -101,7 +102,12 @@ public final class AprobarBorradorTecnologia {
   private final AlmacenDeImagenes almacenDeImagenes;
   private final int existenciaPorVariante;
   private final EnTransaccionPropia enTransaccionPropia;
+  private final MargenMinimo margenMinimo;
 
+  /**
+   * @param margenMinimo el de tecnología: el 10 % del costo con el tope de ganancia de la
+   *     sugerencia
+   */
   public AprobarBorradorTecnologia(
       RepositorioBorradoresTecnologia repositorioBorradores,
       RepositorioVariantesDeProveedor variantesDeProveedor,
@@ -115,7 +121,9 @@ public final class AprobarBorradorTecnologia {
       AlmacenDeArchivosDeProveedor almacenPrivado,
       AlmacenDeImagenes almacenDeImagenes,
       EnTransaccionPropia enTransaccionPropia,
-      int existenciaPorVariante) {
+      int existenciaPorVariante,
+      MargenMinimo margenMinimo) {
+    this.margenMinimo = Objects.requireNonNull(margenMinimo);
     this.enTransaccionPropia = Objects.requireNonNull(enTransaccionPropia);
     this.repositorioBorradores = Objects.requireNonNull(repositorioBorradores);
     this.variantesDeProveedor = Objects.requireNonNull(variantesDeProveedor);
@@ -165,7 +173,7 @@ public final class AprobarBorradorTecnologia {
     }
     prefijo[0] = ClavesDeFotosDeTecnologia.prefijo(borrador.proveedorId(), borradorId);
     // Antes de tocar el catálogo: lo que impide aprobar se sabe sin crear nada.
-    borrador.exigirAprobable();
+    borrador.exigirAprobable(margenMinimo);
     LocalDate deLaLista = LocalDate.ofInstant(borrador.vistoEn(), ZonaDelNegocio.ZONA);
     listas
         .fechaDeLaUltima(borrador.proveedorId())
@@ -248,7 +256,7 @@ public final class AprobarBorradorTecnologia {
       repositorioProductos.actualizar(producto);
     }
 
-    borrador.aprobar(producto.id());
+    borrador.aprobar(producto.id(), margenMinimo);
     repositorioBorradores.actualizar(borrador);
     return repositorioProductos.buscarPorId(producto.id()).orElseThrow();
   }

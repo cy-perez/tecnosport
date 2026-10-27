@@ -143,6 +143,7 @@ public final class ResolverBorrador {
   private final Reloj reloj;
   private final Map<LineaCatalogo, BigDecimal> factorPorLinea;
   private final TopesDeGanancia topesDeGanancia;
+  private final MargenMinimo margenMinimo;
   private final int umbralHamming;
   private final ExistenciaBajoConfirmacion existenciaBajoConfirmacion;
 
@@ -197,6 +198,8 @@ public final class ResolverBorrador {
     this.reloj = Objects.requireNonNull(reloj);
     this.factorPorLinea = Map.copyOf(Objects.requireNonNull(factorPorLinea));
     this.topesDeGanancia = Objects.requireNonNull(topesDeGanancia);
+    // Lo que entra por el chat son prendas, calzado y bolsos: su mínimo es el de la sugerencia.
+    this.margenMinimo = MargenMinimo.dePrendas(topesDeGanancia.minima());
     if (umbralHamming < 0) {
       throw new IllegalArgumentException("El umbral de Hamming no puede ser negativo.");
     }
@@ -758,7 +761,7 @@ public final class ResolverBorrador {
               Map<UUID, Boolean> margen = new LinkedHashMap<>();
               producto.variantes().stream()
                   .filter(v -> v.estado() == EstadoVariante.ACTIVA)
-                  .forEach(v -> margen.put(v.id(), MargenMinimo.alcanza(v.precioContado(), costo)));
+                  .forEach(v -> margen.put(v.id(), margenMinimo.alcanza(v.precioContado(), costo)));
               productosDeProveedor.marcarMargenDeVariantes(margen);
             });
   }
